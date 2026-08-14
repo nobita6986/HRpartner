@@ -14,16 +14,17 @@ const service = new TicketService(prisma);
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  ctx: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await ctx.params;
     const actor = getSessionUser(req);
     const idempotencyKey = getIdempotencyKey(req);
     const body = await req.json().catch(() => ({}));
 
     const ticket = await service.cancelTicket(
       {
-        ticketId: params.id,
+        ticketId: id,
         reason: body.reason,
         idempotencyKey,
       },

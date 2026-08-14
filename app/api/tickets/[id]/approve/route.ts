@@ -23,16 +23,17 @@ const service = new TicketService(prisma);
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  ctx: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await ctx.params;
     const actor = getSessionUser(req);
     const idempotencyKey = getIdempotencyKey(req);
     const body = await req.json().catch(() => ({}));
 
     // V4 (F27): route này CHỈ approve — ghi nhận chi tiền đi qua /api/tickets/[id]/pay
     const input = {
-      ticketId: params.id,
+      ticketId: id,
       note: body.note,
       idempotencyKey,
     };

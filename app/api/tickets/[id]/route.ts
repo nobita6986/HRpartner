@@ -14,11 +14,12 @@ const service = new TicketService(prisma);
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  ctx: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await ctx.params;
     const actor = getSessionUser(req);
-    const { ticket, history } = await service.getTicket(params.id, actor);
+    const { ticket, history } = await service.getTicket(id, actor);
     return NextResponse.json({ ticket, history }, { status: 200 });
   } catch (err) {
     if (err instanceof TicketServiceError) {
