@@ -431,8 +431,9 @@
     .diagram .mermaid { min-width: 700px; }  /* mobile: scroll ngang, không zoom */
   }
   /* Desktop: Gantt + sequenceDiagram cần không gian ngang tối thiểu, không bị co cột */
-  .diagram .mermaid { min-width: 720px; }
+  .diagram .mermaid { min-width: 1400px; }
   .diagram { overflow-x: auto; }
+  .diagram > pre.mermaid { display: inline-block; min-width: 1400px; }
 
   /* HERO — gradient nhẹ + dot grid */
   .hero {
