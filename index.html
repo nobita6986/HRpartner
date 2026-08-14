@@ -430,6 +430,9 @@
     .diagram { padding: 12px; border-radius: 12px; }
     .diagram .mermaid { min-width: 700px; }  /* mobile: scroll ngang, không zoom */
   }
+  /* Desktop: Gantt + sequenceDiagram cần không gian ngang tối thiểu, không bị co cột */
+  .diagram .mermaid { min-width: 720px; }
+  .diagram { overflow-x: auto; }
 
   /* HERO — gradient nhẹ + dot grid */
   .hero {
@@ -927,6 +930,7 @@ flowchart LR
       <span class="pill warn">🟡 Chờ duyệt</span>
       <span class="pill info">🔵 Tạm nghỉ</span>
       <span class="pill danger">🔴 Nghỉ việc / Bị chặn</span>
+    </div>
     <div class="diagram">
       <div class="caption">Bốn vòng đời chạy song song</div>
 <pre class="mermaid">
@@ -963,8 +967,6 @@ flowchart LR
   RR -.->|"mọi portal<br/>cùng thấy"| DA
 </pre>
     </div>
-
-    </div>
   </div>
 </section>
 
@@ -984,7 +986,8 @@ flowchart LR
       <div class="join">↓</div>
       <div class="node dest"><b>🎁 Hoa hồng CTV</b><span>Trả theo mốc giữ chân (bắt đầu, giữ đủ 30 ngày...) — dòng đảo khi thu hồi.</span></div>
       <div class="join">↓</div>
-      <div class="node dest"><b>📊 Doanh thu tạm tính hôm nay</b><span>GPS check-in × giá bán — số nhảy mỗi ngày cho lãnh đạo theo dõi; nhãn TẠM TÍNH, không dùng đối soát.</span>
+      <div class="node dest"><b>📊 Doanh thu tạm tính hôm nay</b><span>GPS check-in × giá bán — số nhảy mỗi ngày cho lãnh đạo theo dõi; nhãn TẠM TÍNH, không dùng đối soát.</span></div>
+    </div>
     <div class="diagram">
       <div class="caption">Dòng lỗi chấm công — mỗi dòng có 'mạng sống' riêng</div>
 <pre class="mermaid">
@@ -1054,7 +1057,8 @@ flowchart TD
       <div class="s"><div><b>Nộp hồ sơ</b><span>Vendor/CTV nộp trên cổng, CTV/Sale rải link, hoặc lao động tự đăng ký.</span></div></div>
       <div class="s"><div><b>Đối chiếu CCCD</b><span>Hệ thống tự kiểm tra: đã có trong dữ liệu chưa? đang bị luật chặn nào không? Gộp hồ sơ chỉ khi khớp ít nhất 2/3 thông tin (CCCD, họ tên, ngày sinh) — khớp 1 mình phải HR duyệt tay để tránh gộp nhầm người.</span></div></div>
       <div class="s"><div><b>HR duyệt</b><span>Ba kết quả: tạo hồ sơ mới · gộp vào hồ sơ cũ · từ chối kèm lý do (người nộp nhìn thấy).</span></div></div>
-      <div class="s"><div><b>Thành hồ sơ chính thức</b><span>Ghi rõ nguồn đưa vào — ai giới thiệu được hưởng hoa hồng khi đến mốc.</span>
+      <div class="s"><div><b>Thành hồ sơ chính thức</b><span>Ghi rõ nguồn đưa vào — ai giới thiệu được hưởng hoa hồng khi đến mốc.</span></div></div>
+    </div>
     <div class="diagram">
       <div class="caption">Vendor nộp hồ sơ — ví dụ ứng viên Nguyễn Văn An từ Vendor Long Vân</div>
 <pre class="mermaid">
@@ -1101,7 +1105,8 @@ sequenceDiagram
     <div class="steps">
       <div class="s"><div><b>Người lao động tạo đơn</b><span>Tạm ứng / phản ánh sai công / xin nghỉ — vài chạm trên app.</span></div></div>
       <div class="s"><div><b>HR xác nhận hợp lệ</b><span>Đối chiếu công, hạn mức. Có thể từ chối kèm lý do hoặc người lao động tự rút đơn.</span></div></div>
-      <div class="s"><div><b>Kế toán duyệt chi</b><span>Chi từ quỹ vào đúng tài khoản đã xác thực — ghi dấu vết từng bước.</span>
+      <div class="s"><div><b>Kế toán duyệt chi</b><span>Chi từ quỹ vào đúng tài khoản đã xác thực — ghi dấu vết từng bước.</span></div></div>
+    </div>
     <div class="diagram">
       <div class="caption">Trạng thái đơn — đi qua 2 chữ ký</div>
 <pre class="mermaid">
@@ -1196,7 +1201,8 @@ sequenceDiagram
       <div class="item mile"><span class="when">~12 tuần</span><b>Vận hành nội bộ chính thức</b><span>Mốc quan trọng đầu tiên.</span></div>
       <div class="item"><span class="when">7 tuần</span><b>Mở các cổng</b><span>App người lao động, cổng đối tác, CTV + link giới thiệu, app hiện trường cho PM.</span></div>
       <div class="item"><span class="when">4–5 tuần</span><b>Tài chính đầy đủ</b><span>Bảng lương, hoa hồng, báo cáo.</span></div>
-      <div class="item"><span class="when">Sau đó</span><b>Mở rộng theo nhu cầu</b><span>Máy chấm công kết nối trực tiếp · bảng KPI vận hành (tỷ lệ lấp đầy, đi làm đều, giữ chân) · báo cáo chất lượng dữ liệu · ứng dụng kho · trí tuệ nhân tạo gợi ý việc phù hợp...</span>
+      <div class="item"><span class="when">Sau đó</span><b>Mở rộng theo nhu cầu</b><span>Máy chấm công kết nối trực tiếp · bảng KPI vận hành (tỷ lệ lấp đầy, đi làm đều, giữ chân) · báo cáo chất lượng dữ liệu · ứng dụng kho · trí tuệ nhân tạo gợi ý việc phù hợp...</span></div>
+    </div>
     <div class="diagram">
       <div class="caption">Lộ trình triển khai — Gantt</div>
 <pre class="mermaid">
@@ -1220,8 +1226,6 @@ gantt
   section Sau đó
   Nhân sự nội bộ + mở rộng :m9, 2027-02-22, 4w
 </pre>
-    </div>
-</div>
     </div>
   </div>
 </section>
