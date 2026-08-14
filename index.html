@@ -609,6 +609,43 @@ flowchart TB
       </div>
     </div>
 
+    <div class="diagram">
+      <div class="caption">Bốn vòng đời chạy song song — khi một thẻ hồ sơ hiển thị "Đang rảnh", nghĩa là <i>giấy tờ đã chuẩn</i> + <i>quan hệ lao động đang làm</i> + <i>vừa kết thúc điều động ở dự án cũ</i> + <i>rủi ro bình thường</i>.</div>
+<pre class="mermaid">
+flowchart LR
+  subgraph HS["📋 Hồ sơ giấy tờ"]
+    H1["Chưa đủ<br/>thông tin"] --> H2["Chờ xác<br/>minh"]
+    H2 --> H3["Đã xác<br/>minh ✅"]
+    H2 -->|"không hợp lệ"| H4["Bị từ chối<br/>❌"]
+    H4 -->|"khiếu nại / bổ sung"| H2
+  end
+  subgraph QH["🤝 Quan hệ lao động"]
+    Q1["Chưa có"] --> Q2["Đang làm<br/>🟢"]
+    Q2 --> Q3["Tạm nghỉ<br/>🔵"]
+    Q3 --> Q2
+    Q2 -->|"nghỉ việc /<br/>bị chấm dứt"| Q4["Nghỉ việc<br/>🔴"]
+  end
+  subgraph DA["🏢 Tại dự án"]
+    D1["Chờ xếp<br/>việc"] --> D2["Đang làm<br/>🟢"]
+    D2 --> D3["Tạm dừng<br/>🔵"]
+    D3 --> D2
+    D2 -->|"kết thúc hợp đồng"| D4["Kết thúc<br/>⚪"]
+    D2 -->|"chuyển dự án<br/>(mốc ngày nửa mở)"| D5["Chuyển dự án<br/>↔️"]
+    D2 -->|"huỷ điều động"| D6["Hủy<br/>⚪"]
+    D5 --> D2
+  end
+  subgraph RR["⚠️ Rủi ro"]
+    R1["Bình thường"] --> R2["Xem xét"]
+    R2 -->|"bỏ việc / kỷ luật"| R3["Chặn<br/>🚫"]
+    R2 --> R1
+    R3 -->|"HR gỡ sau kỳ"| R1
+  end
+  HS -.->|"chỉ HR /<br/>ứng viên thấy"| QH
+  QH -.->|"chỉ HR /<br/>Vendor thấy"| DA
+  RR -.->|"mọi portal<br/>cùng thấy"| DA
+</pre>
+    </div>
+
     <div class="legend">
       <span class="pill ok">🟢 Đang làm</span>
       <span class="pill muted">⚪ Đang rảnh (tự suy ra)</span>
@@ -670,7 +707,64 @@ stateDiagram-v2
 </pre>
         </div>
         <p style="font-size:13px;color:var(--ink2)">Ba loại đơn trong một hệ thống: phản ánh sai công · tạm ứng · xin nghỉ. <b>HR quyết định "có hợp lệ không", Kế toán quyết định "chi từ quỹ"</b> — hai người, hai bước, mỗi bước đều lưu dấu vết. Tiền tạm ứng chỉ chuyển vào tài khoản ngân hàng đã xác thực trong hồ sơ.</p>
+
+      <div class="diagram" style="margin-top:14px">
+        <div class="caption">Thứ tự thao tác khi một đơn tạm ứng chạy từ app người lao động về đến tài khoản ngân hàng</div>
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor NLD as 👷 Người lao động
+  participant APP as 📱 App HRP
+  participant HR as 👔 HR
+  participant KT as 💰 Kế toán
+  participant BANK as 🏦 Ngân hàng
+  participant AUD as 📋 Audit log
+
+  NLD->>APP: Tạo đơn tạm ứng 2.000.000 đ
+  APP->>APP: Validate số tiền ≤ 70% lương kỳ
+  APP->>HR: 🔔 Notify: HĐ-2026-0089 chờ duyệt
+  HR->>APP: Xem hồ sơ + lịch sử đơn
+  HR->>APP: ✅ Xác nhận hợp lệ
+  HR->>AUD: Ghi: HR xác nhận lúc 14:32
+  HR->>KT: 🔔 Notify: Kế toán duyệt chi
+  KT->>APP: Kiểm tra quỹ tạm ứng
+  KT->>APP: ✅ Duyệt chi
+  KT->>AUD: Ghi: KT duyệt lúc 15:10
+  KT->>BANK: Lệnh chuyển 2.000.000 đ → STK ****5678
+  BANK-->>KT: ✅ Thành công
+  KT->>APP: Cập nhật trạng thái = ĐÃ CHI
+  APP->>NLD: 🔔 "Đã chuyển 2.000.000 đ vào VCB ***5678"
+  APP->>AUD: Ghi: đóng đơn lúc 15:14
+</pre>
       </div>
+    </div>
+
+    <div class="diagram">
+      <div class="caption">Dòng lỗi chấm công — mỗi dòng có "mạng sống" riêng trước khi trở thành dòng thuần</div>
+<pre class="mermaid">
+flowchart TD
+  F["Đối tác gửi file<br/>CSV / XLSX"] --> P["Parse &amp; validate<br/>theo mẫu đã khai"]
+  P -->|"định dạng sai"| E1["❌ LỖI ĐỊNH DẠNG<br/>từ chối nguyên file<br/>gửi lại"]
+  P -->|"OK"| M["Ghép mã NV từ<br/>employee_code / CCCD"]
+  M -->|"mã lạ"| E2["⚠️ MÃ LẠ<br/>chờ Kế toán dò tay<br/>trong 24h"]
+  M -->|"CCCD trùng<br/>2 người"| E3["⚠️ TRÙNG CCCD<br/>HR Manager xử lý<br/>gộp hồ sơ"]
+  M -->|"OK"| R["Bảng công thô — raw<br/>status: DRAFT"]
+  R -->|"check-in/out<br/>trống"| E4["⚠️ THIẾU CHECK<br/>liên hệ PM xác minh<br/>tạo dòng điều chỉnh"]
+  R -->|"ngoài ca<br/>&gt; 1h"| E5["⚠️ NGOÀI CA<br/>PM xác nhận OT<br/>hoặc loại"]
+  R -->|"scan trùng<br/>&lt; 30s"| E6["⚠️ TRÙNG SCAN<br/>tự bỏ dòng sau"]
+  R -->|"OK"| C["Chuẩn hoá<br/>status: READY"]
+  C --> K["Kế toán duyệt →<br/>KHÓA KỲ 🔒"]
+  K -->|"sai sau khóa?"| ADJ["Tạo dòng ADJUSTMENT<br/>ở kỳ sau kèm lý do<br/>audit log đầy đủ"]
+  K --> LOCKED["ĐÃ KHÓA — bất biến<br/>chỉ xem, không sửa"]
+  style E1 fill:#FEE2E2,color:#B91C1C
+  style E2 fill:#FEF3C7,color:#B45309
+  style E3 fill:#FEF3C7,color:#B45309
+  style E4 fill:#FEF3C7,color:#B45309
+  style E5 fill:#FEF3C7,color:#B45309
+  style E6 fill:#FEF3C7,color:#B45309
+  style K fill:#FFF1E4,color:#C2410C
+  style LOCKED fill:#DCFCE7,color:#15803D
+</pre>
     </div>
   </div>
 </section>
@@ -722,6 +816,125 @@ gantt
     </div>
     <div class="legend">
       <span class="pill muted" style="border-color:var(--line)">Mở rộng sau (khi đủ điều kiện): máy chấm công kết nối trực tiếp · ứng dụng cài từ kho · đóng gói cho khách hàng · trí tuệ nhân tạo gợi ý việc phù hợp</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Đối tác cung ứng</div>
+    <h2>Luồng nộp hồ sơ ứng viên — từ vendor về đến hồ sơ vàng</h2>
+    <p class="sub">Đối tác chỉ nộp hồ sơ — không tự tạo được hồ sơ lao động. Hệ thống check 3 điều kiện chặn tự động trước cả khi HR nhìn thấy.</p>
+
+    <div class="diagram">
+      <div class="caption">Ai làm gì, lúc nào, hệ thống check gì — qua ví dụ ứng viên Nguyễn Văn An nộp từ Vendor Long Vân</div>
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor V as 🏢 Vendor Long Vân
+  participant VP as 🌐 Cổng vendor
+  participant SYS as ⚙️ HRP Core
+  participant HR as 👔 HR
+  participant NLD as 👷 Ứng viên<br/>Nguyễn Văn An
+  participant P as 📱 App HRP
+
+  V->>VP: Đăng nhập (OAuth)
+  V->>VP: Upload hồ sơ: tên, CCCD, SĐT, ảnh CCCD
+  VP->>SYS: POST /api/vendors/applicants
+  SYS->>SYS: Check 1: đã có tiến cử trong 7 ngày?
+  SYS->>SYS: Check 2: đang hưởng hoa hồng?
+  SYS->>SYS: Check 3: đang hưởng lương vendor?
+  alt Một trong 3 điều kiện trùng
+    SYS-->>VP: ❌ BLOCKED + lý do
+    VP->>V: "Ứng viên đã có người tiến cử, chờ 5 ngày"
+  else OK — chưa ai tiến cử
+    SYS->>SYS: Tạo submission trạng thái CHỜ_DUYỆT
+    SYS->>HR: 🔔 Notify: hồ sơ mới từ Vendor Long Vân
+    HR->>SYS: Xem hồ sơ + CCCD chip (nếu có)
+    HR->>NLD: SMS + Zalo: HRP đã nhận hồ sơ, vui lòng xác nhận
+    NLD->>P: Đăng ký tài khoản bằng CCCD
+    P->>SYS: Xác nhận "tôi đúng người trong hồ sơ"
+    HR->>SYS: ✅ Duyệt → MATCHED
+    SYS->>SYS: Tạo bản ghi worker + assignment mồi
+    SYS-->>VP: "Hồ sơ đã duyệt — chờ điều động"
+    alt Sau 30 ngày ứng viên làm việc liên tục
+      SYS->>SYS: Vendor nhận hoa hồng giữ chân
+      SYS-->>VP: "💰 Hoa hồng mốc 30 ngày: 1.200.000 đ"
+    end
+  end
+</pre>
+    </div>
+
+    <div class="two-col" style="margin-top:18px">
+      <div>
+        <div class="eyebrow">Vòng đời hồ sơ vendor</div>
+        <div class="diagram" style="margin:0">
+<pre class="mermaid">
+stateDiagram-v2
+  [*] --> DRAFT: Vendor soạn hồ sơ
+  DRAFT --> SUBMITTED: Vendor upload
+  SUBMITTED --> BLOCKED: Hệ thống chặn<br/>3 điều kiện
+  SUBMITTED --> PENDING_HR: HR vào xem
+  PENDING_HR --> INCOMPLETE: HR yêu cầu bổ sung
+  INCOMPLETE --> PENDING_HR: Vendor bổ sung
+  PENDING_HR --> MATCHED: HR duyệt ✅
+  PENDING_HR --> REJECTED: HR từ chối ❌<br/>+ lý do
+  PENDING_HR --> DUPLICATE: Trùng hồ sơ → gộp
+  MATCHED --> WORKING: Có assignment<br/>đang làm
+  MATCHED --> EXPIRED: 90 ngày không<br/>được điều động
+  REJECTED --> DRAFT: Vendor sửa<br/>nộp lại
+  REJECTED --> [*]
+  DUPLICATE --> [*]
+  EXPIRED --> [*]
+  WORKING --> [*]
+  BLOCKED --> DRAFT: Vendor đợi hết<br/>thời hạn chặn
+</pre>
+        </div>
+      </div>
+      <div>
+        <div class="eyebrow">Atypism — 5 trường hợp người lao động xuất hiện</div>
+        <div class="steps">
+          <div class="s"><div><b>① HR tự tuyển</b><span>HR/Sale đăng tuyển → phỏng vấn → tạo hồ sơ thẳng. Nguồn = HR_DIRECT.</span></div></div>
+          <div class="s"><div><b>② Vendor nộp</b><span>Vendor Long Vân nộp hồ sơ qua cổng. Nguồn = VENDOR. HR duyệt → hồ sơ Vendor sở hữu hoa hồng giữ chân.</span></div></div>
+          <div class="s"><div><b>③ CTV giới thiệu</b><span>Cộng tác viên (cá nhân) giới thiệu người quen. Nguồn = REFERRER. Hoa hồng chia mốc 30/60/90 ngày.</span></div></div>
+          <div class="s"><div><b>④ Tự đăng ký</b><span>Người lao động vào app → tạo tài khoản → nộp hồ sơ. Nguồn = SELF. Phải có HR duyệt ≥ 24h.</span></div></div>
+          <div class="s"><div><b>⑤ Hợp nhất tự động</b><span>CCCD đã có → HR quyết định GỘP (giữ nguồn có hoa hồng cao nhất) hoặc TẠO MỚI (ghi rõ lý do).</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Tổng hệ thống</div>
+    <h2>Một trang web, một hệ thống, mười hai bảng chính</h2>
+    <p class="sub">Toàn bộ được ráp từ 12 bảng chính — mỗi bảng phục vụ đúng một việc, không bảng nào chứa dữ liệu lẫn lộn giữa hai domain.</p>
+    <div class="diagram">
+      <div class="caption">Mười hai bảng chính — Khoanh vùng theo domain (CRM · Dự án · Nhân sự · Chấm công · Tài chính · Nền tảng)</div>
+<pre class="mermaid">
+mindmap
+  root((HRP<br/>12 bảng chính))
+    CRM
+      client_companies
+      crm_leads
+    Dự án
+      outsourcing_projects
+      staffing_orders
+      staffing_order_slots
+    Nhân sự
+      workers
+      project_assignments
+    Chấm công
+      timesheet_periods
+      timesheet_lines
+    Tài chính
+      pay_runs
+      statements
+    Nền tảng
+      users
+      audit_logs
+</pre>
     </div>
   </div>
 </section>
