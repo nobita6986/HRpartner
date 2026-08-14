@@ -1,539 +1,735 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="HRP - Hệ thống Quản trị Nguồn Nhân lực & Cung ứng Nhân lực">
-    <title>HRP - Hệ thống Quản trị Nhân lực</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👷</text></svg>">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#F97316">
+  <meta name="description" content="HRP — Hệ thống quản trị cung ứng nhân lực. Bức tranh toàn cảnh: từ khách hàng, dự án, nhu cầu tuyển, người lao động, chấm công, đối soát — đến trả lương và hoa hồng.">
+  <meta name="color-scheme" content="light dark">
+  <title>Toàn cảnh HRP · Hệ thống quản trị cung ứng nhân lực</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👷</text></svg>">
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
-            background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
-            color: #1f2937;
-            line-height: 1.6;
-            min-height: 100vh;
-        }
+  <!-- Mermaid cho diagram -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
+  <script defer>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.mermaid) {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        mermaid.initialize({
+          startOnLoad: true,
+          theme: isDark ? 'dark' : 'base',
+          themeVariables: {
+            primaryColor: isDark ? '#2E2214' : '#FFF1E4',
+            primaryTextColor: isDark ? '#F0EAE1' : '#26211B',
+            primaryBorderColor: '#F97316',
+            lineColor: '#C2410C',
+            secondaryColor: isDark ? '#1F1B16' : '#FFFFFF',
+            tertiaryColor: isDark ? '#1F1B16' : '#FFFFFF',
+            fontFamily: '"Segoe UI", system-ui, sans-serif',
+          },
+          securityLevel: 'loose',
+          flowchart: { htmlLabels: true, curve: 'basis' },
+          gantt: { useMaxWidth: true },
+        });
+      }
+    });
+  </script>
 
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
+<style>
+  /* ═══════ TOKENS ═══════ */
+  :root {
+    --bg: #FBFAF8;
+    --surface: #FFFFFF;
+    --surface2: #F4F0EA;
+    --ink: #26211B;
+    --ink2: #5F584F;
+    --line: #E6E0D8;
+    --brand: #F97316;
+    --brand-strong: #C2410C;
+    --brand-soft: #FFF1E4;
+    --ok: #15803D;
+    --ok-soft: #DCFCE7;
+    --warn: #B45309;
+    --warn-soft: #FEF3C7;
+    --danger: #B91C1C;
+    --danger-soft: #FEE2E2;
+    --info: #1D4ED8;
+    --info-soft: #DBEAFE;
+    --muted: #8A8177;
+    --muted-soft: #ECECE9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16130F;
+      --surface: #1F1B16;
+      --surface2: #2A251E;
+      --ink: #F0EAE1;
+      --ink2: #A89F93;
+      --line: #3A342B;
+      --brand: #FB923C;
+      --brand-strong: #FDBA74;
+      --brand-soft: #2E2214;
+      --ok: #4ADE80; --ok-soft: #14351F;
+      --warn: #FBBF24; --warn-soft: #3A2E10;
+      --danger: #F87171; --danger-soft: #3D1515;
+      --info: #60A5FA; --info-soft: #14233D;
+      --muted: #8A8177;
+      --muted-soft: #2A2A2A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16130F;
+    --surface: #1F1B16;
+    --surface2: #2A251E;
+    --ink: #F0EAE1;
+    --ink2: #A89F93;
+    --line: #3A342B;
+    --brand: #FB923C;
+    --brand-strong: #FDBA74;
+    --brand-soft: #2E2214;
+    --ok: #4ADE80; --ok-soft: #14351F;
+    --warn: #FBBF24; --warn-soft: #3A2E10;
+    --danger: #F87171; --danger-soft: #3D1515;
+    --info: #60A5FA; --info-soft: #14233D;
+    --muted: #8A8177;
+    --muted-soft: #2A2A2A;
+  }
 
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: #fff7ed;
-            border: 1px solid #fed7aa;
-            color: #9a3412;
-            padding: 6px 16px;
-            border-radius: 9999px;
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 24px;
-        }
+  /* ═══════ BASE ═══════ */
+  * { box-sizing: border-box; }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Segoe UI", system-ui, "Noto Sans", "Helvetica Neue", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;  /* chặn horizontal scroll do overflow ngầm */
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
 
-        .badge::before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            background: #f97316;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
+  /* ═══════ HERO ═══════ */
+  .hero { padding: 72px 0 56px; border-bottom: 1px solid var(--line); }
+  .kicker {
+    font-size: 12px; font-weight: 700; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--brand-strong);
+  }
+  h1 {
+    font-size: clamp(30px, 4.6vw, 44px); line-height: 1.15;
+    font-weight: 800; letter-spacing: -0.015em; margin: 14px 0 12px;
+    text-wrap: balance;
+  }
+  .lede { font-size: 18px; color: var(--ink2); max-width: 680px; margin: 0 0 36px; }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+  /* chuỗi giá trị lõi — thesis của trang */
+  .chain {
+    display: flex; flex-wrap: wrap; align-items: stretch; gap: 0;
+    border: 1px solid var(--line); border-radius: 14px;
+    background: var(--surface); overflow: hidden;
+  }
+  .chain .step {
+    flex: 1 1 120px; padding: 16px 14px; position: relative;
+    display: flex; flex-direction: column; gap: 2px;
+    border-right: 1px solid var(--line);
+  }
+  .chain .step:last-child { border-right: 0; }
+  .chain .step .n {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    letter-spacing: .1em; text-transform: uppercase;
+  }
+  .chain .step .t { font-weight: 700; font-size: 14.5px; }
+  .chain .step .d { font-size: 12px; color: var(--ink2); }
+  .chain .step.hinge { background: var(--brand-soft); }
+  .chain .step.hinge .t { color: var(--brand-strong); }
+  .chain .step:not(.hinge)::after {
+    content: "→"; position: absolute; right: -10px; top: 50%;
+    transform: translateY(-50%); color: var(--brand);
+    font-weight: 800; z-index: 1; background: var(--surface);
+    padding: 0 2px; font-size: 15px;
+  }
+  .chain .step:last-child::after { display: none; }
+  .stats {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px;
+  }
+  .stat {
+    border: 1px solid var(--line); background: var(--surface);
+    border-radius: 999px; padding: 6px 14px; font-size: 13px;
+  }
+  .stat b { color: var(--brand-strong); font-variant-numeric: tabular-nums; }
 
-        .hero {
-            text-align: center;
-            margin-bottom: 64px;
-        }
+  /* ═══════ SECTIONS ═══════ */
+  section { padding: 56px 0; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--brand-strong);
+    margin: 0 0 6px;
+  }
+  h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 10px; text-wrap: balance; }
+  .sub { color: var(--ink2); max-width: 720px; margin: 0 0 28px; }
 
-        .logo {
-            font-size: 64px;
-            margin-bottom: 12px;
-        }
+  /* ═══════ CHU TRÌNH VẬN HÀNH ═══════ */
+  .steps { counter-reset: s; display: flex; flex-direction: column; gap: 10px; }
+  .steps .s {
+    counter-increment: s; display: flex; gap: 14px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .steps .s::before {
+    content: counter(s); font-weight: 800; color: var(--brand-strong);
+    background: var(--brand-soft); border-radius: 10px;
+    min-width: 30px; height: 30px; display: inline-flex;
+    align-items: center; justify-content: center; font-size: 14px;
+    flex-shrink: 0;
+  }
+  .steps .s b { display: block; font-size: 15px; }
+  .steps .s span { font-size: 13.5px; color: var(--ink2); }
 
-        h1 {
-            font-size: 44px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 12px;
-            letter-spacing: -0.02em;
-        }
+  /* ═══════ PORTAL TRIPTYCH ═══════ */
+  .triptych { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  @media (max-width: 860px) { .triptych { grid-template-columns: 1fr; } }
+  .portal {
+    border: 1px solid var(--line); border-radius: 14px;
+    background: var(--surface); padding: 22px; display: flex;
+    flex-direction: column; gap: 12px;
+  }
+  .portal .url {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 12.5px; color: var(--brand-strong);
+    background: var(--brand-soft); border-radius: 6px;
+    padding: 3px 8px; display: inline-block; width: fit-content;
+    word-break: break-all;  /* tránh tràn URLmobile */
+  }
+  .portal h3 { margin: 0; font-size: 19px; font-weight: 800; }
+  .portal .who { font-size: 13px; color: var(--ink2); }
+  .portal ul { margin: 0; padding-left: 18px; font-size: 13.5px; display: flex; flex-direction: column; gap: 5px; }
+  .portal .style {
+    font-size: 12.5px; border-top: 1px dashed var(--line);
+    padding-top: 10px; color: var(--ink2); margin-top: auto;
+  }
+  .portal .style b { color: var(--ink); }
 
-        .brand {
-            color: #f97316;
-        }
+  /* mockup điện thoại worker */
+  .phone {
+    width: 236px; margin: 4px auto 0; border: 1px solid var(--line);
+    border-radius: 22px; background: var(--surface);
+    box-shadow: 0 10px 30px rgba(0,0,0,.08); overflow: hidden;
+    font-size: 11.5px;
+    max-width: 100%;  /* mobile: không vượt container */
+  }
+  .phone .ph-head {
+    background: var(--brand); color: #fff; font-weight: 700;
+    padding: 8px 12px; display: flex; justify-content: space-between;
+  }
+  .phone .ph-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .phone .ph-label { font-size: 10px; letter-spacing: .1em; color: var(--muted); font-weight: 700; }
+  .phone .ph-card { border: 1px solid var(--line); border-radius: 10px; padding: 9px; }
+  .phone .ph-card .st { color: var(--ok); font-weight: 800; }
+  .phone .ph-btn {
+    background: var(--brand); color: #fff; text-align: center;
+    font-weight: 800; border-radius: 8px; padding: 9px; letter-spacing: .04em;
+  }
+  .phone .ph-tabs {
+    display: flex; border-top: 1px solid var(--line); background: var(--surface2);
+  }
+  .phone .ph-tabs div {
+    flex: 1; text-align: center; padding: 7px 0; font-size: 14px;
+  }
+  .phone .big { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
 
-        .subtitle {
-            font-size: 18px;
-            color: #64748b;
-            max-width: 640px;
-            margin: 0 auto;
-        }
+  /* ═══════ DIAGRAM ═══════ */
+  .diagram {
+    background: #FFFFFF; color: #26211B;
+    border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px; margin: 6px 0 4px;
+    overflow-x: auto;
+  }
+  @media (prefers-color-scheme: dark) {
+    .diagram { background: #1F1B16; color: #F0EAE1; border-color: var(--line); }
+  }
+  .diagram .caption {
+    font-size: 12px; color: #6E6660; text-align: left;
+    margin-bottom: 10px; font-weight: 600;
+  }
+  @media (prefers-color-scheme: dark) {
+    .diagram .caption { color: #A89F93; }
+  }
+  .diagram pre.mermaid {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    margin: 0; font-size: 13px;
+  }
+  .diagram .mermaid { text-align: center; min-width: 600px; }  /* giữ SVG rộng để đọc được */
+  .two-col { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
 
-        .section {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            padding: 32px;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
+  /* ═══════ VÒNG ĐỜI ═══════ */
+  .sm {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+  }
+  .sm .row {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .sm .row .name {
+    font-weight: 800; font-size: 13.5px; margin-bottom: 8px;
+  }
+  .sm .row .name .tag { color: var(--brand-strong); background: var(--brand-soft); padding: 1px 6px; border-radius: 5px; }
+  .sm .flow { font-size: 12.5px; color: var(--ink2); }
+  .sm .flow b { color: var(--ink); font-weight: 600; }
+  .sm .flow .arrow { color: var(--brand); font-weight: 800; }
+  .sm .flow .bad { color: var(--danger); font-weight: 600; }
+  .sm .note { margin-top: 8px; font-size: 12px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
 
-        .section-title {
-            font-size: 22px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+  /* ═══════ BLOCK RULES ═══════ */
+  .blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .block {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px;
+  }
+  .block h4 { margin: 0 0 6px; font-size: 15px; font-weight: 800; }
+  .block p { margin: 0; font-size: 13px; color: var(--ink2); }
+  .block h4::before {
+    content: "⛔"; margin-right: 8px; font-size: 13px;
+  }
+  .block.ok h4::before { content: "✅"; }
+  .block.override h4::before { content: "✍️"; }
 
-        .section-title .icon {
-            font-size: 24px;
-        }
+  /* ═══════ BADGE LEGEND ═══════ */
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .pill { font-size: 12.5px; font-weight: 600; padding: 3px 11px; border-radius: 999px; border: 1px solid transparent; }
+  .pill.ok { color: var(--ok); background: var(--ok-soft); }
+  .pill.warn { color: var(--warn); background: var(--warn-soft); }
+  .pill.danger { color: var(--danger); background: var(--danger-soft); }
+  .pill.info { color: var(--info); background: var(--info-soft); }
+  .pill.muted { color: var(--muted); background: var(--muted-soft); }
 
-        .section p {
-            color: #475569;
-            margin-bottom: 12px;
-        }
+  /* ═══════ PRINCIPLES ═══════ */
+  .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .principle {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px;
+  }
+  .principle h4 { margin: 0 0 6px; font-size: 15px; font-weight: 800; }
+  .principle p { margin: 0; font-size: 13px; color: var(--ink2); }
+  .principle h4::before {
+    content: "◆"; color: var(--brand); margin-right: 8px; font-size: 11px;
+    vertical-align: 1px;
+  }
 
-        .section p:last-child {
-            margin-bottom: 0;
-        }
+  footer {
+    padding: 40px 0 64px; color: var(--ink2); font-size: 13px;
+  }
+  footer a { color: var(--brand-strong); }
 
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
-        }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--brand); outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
 
-        .feature {
-            background: #fafafa;
-            border: 1px solid #f1f5f9;
-            border-radius: 10px;
-            padding: 18px;
-        }
+  /* ════════════════════════════════════════════════════════════════════
+     MOBILE FRIENDLY — iPhone SE (375px) trở lên
+     ════════════════════════════════════════════════════════════════════ */
+  @media (max-width: 640px) {
+    /* Container padding nhỏ lại */
+    .wrap { padding: 0 16px; }
 
-        .feature-icon {
-            font-size: 24px;
-            margin-bottom: 8px;
-        }
+    /* Hero gọn hơn */
+    .hero { padding: 44px 0 36px; }
+    h1 { font-size: clamp(26px, 7vw, 34px); margin: 10px 0 10px; }
+    .lede { font-size: 16px; margin-bottom: 24px; }
+    .kicker { font-size: 11px; letter-spacing: .12em; }
 
-        .feature-title {
-            font-weight: 600;
-            color: #0f172a;
-            margin-bottom: 4px;
-            font-size: 15px;
-        }
+    /* Chain (7 step) → 1 cột, dọc, KHÔNG mũi tên ngang */
+    .chain {
+      flex-direction: column;
+      border-radius: 12px;
+    }
+    .chain .step {
+      flex: 1 1 auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px;
+    }
+    .chain .step:last-child { border-bottom: 0; }
+    .chain .step:not(.hinge)::after {
+      content: "↓";  /* mũi tên xuống mobile */
+      right: auto;
+      left: 50%;
+      top: auto;
+      bottom: -10px;
+      transform: translateX(-50%);
+      background: var(--surface);
+      border-radius: 50%;
+      width: 20px; height: 20px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .chain .step:last-child::after { display: none; }
 
-        .feature-desc {
-            font-size: 14px;
-            color: #64748b;
-        }
+    /* Section padding nhỏ */
+    section { padding: 36px 0; }
+    h2 { font-size: 22px; }
+    .sub { font-size: 14px; margin-bottom: 20px; }
 
-        .strengths {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
-        }
+    /* Stats wrap gọn */
+    .stats { gap: 8px; margin-top: 18px; }
+    .stat { font-size: 12px; padding: 5px 12px; }
 
-        .strength {
-            display: flex;
-            gap: 12px;
-            padding: 16px;
-            background: #fff7ed;
-            border-radius: 10px;
-            border-left: 4px solid #f97316;
-        }
+    /* Phone mockup full-width */
+    .phone {
+      width: 100%;
+      max-width: 280px;
+      font-size: 11px;
+    }
+    .phone .ph-body { padding: 8px; gap: 6px; }
+    .phone .ph-card { padding: 7px; }
 
-        .strength-icon {
-            font-size: 24px;
-            flex-shrink: 0;
-        }
+    /* Step card mobile */
+    .steps .s { padding: 12px 14px; gap: 12px; }
+    .steps .s::before { min-width: 28px; height: 28px; font-size: 13px; }
+    .steps .s b { font-size: 14.5px; }
+    .steps .s span { font-size: 13px; }
 
-        .strength-title {
-            font-weight: 600;
-            color: #0f172a;
-            margin-bottom: 4px;
-            font-size: 15px;
-        }
+    /* Diagram scroll ngang được rồi, tăng padding diagram */
+    .diagram { padding: 14px; }
 
-        .strength-desc {
-            font-size: 14px;
-            color: #64748b;
-        }
+    /* Pill nhỏ hơn */
+    .pill { font-size: 12px; padding: 3px 9px; }
 
-        .timeline {
-            position: relative;
-            padding-left: 28px;
-        }
+    /* Two-col đã có media nhưng check lại */
+    .two-col { gap: 24px; }
 
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 8px;
-            top: 8px;
-            bottom: 8px;
-            width: 2px;
-            background: #fed7aa;
-        }
+    /* Footer padding */
+    footer { padding: 32px 0 48px; }
 
-        .milestone {
-            position: relative;
-            margin-bottom: 20px;
-            padding-bottom: 4px;
-        }
+    /* Tăng tap zone cho link/button trong flow */
+    .portal .url { padding: 6px 10px; font-size: 13px; }
+  }
 
-        .milestone:last-child {
-            margin-bottom: 0;
-        }
+  /* Tablet (641-860px) — bước đệm */
+  @media (min-width: 641px) and (max-width: 860px) {
+    .triptych { grid-template-columns: 1fr; max-width: 520px; margin: 0 auto; }
+    .two-col { grid-template-columns: 1fr; max-width: 520px; margin: 0 auto; }
+    .chain { gap: 0; }
+    .chain .step { flex: 1 1 calc(50% - 0px); }
+  }
 
-        .milestone::before {
-            content: '';
-            position: absolute;
-            left: -24px;
-            top: 6px;
-            width: 12px;
-            height: 12px;
-            background: #f97316;
-            border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 0 0 1px #f97316;
-        }
-
-        .milestone-date {
-            font-size: 13px;
-            color: #f97316;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .milestone-title {
-            font-weight: 600;
-            color: #0f172a;
-            margin-bottom: 4px;
-        }
-
-        .milestone-desc {
-            font-size: 14px;
-            color: #64748b;
-        }
-
-        .progress-card {
-            background: linear-gradient(135deg, #fff7ed, #ffffff);
-            border: 1px solid #fed7aa;
-        }
-
-        .progress-bar {
-            background: #f1f5f9;
-            border-radius: 9999px;
-            height: 12px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-
-        .progress-fill {
-            background: linear-gradient(90deg, #f97316, #ea580c);
-            height: 100%;
-            border-radius: 9999px;
-            width: 5%;
-        }
-
-        .progress-text {
-            font-size: 14px;
-            color: #64748b;
-            text-align: center;
-        }
-
-        .eta {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-top: 16px;
-        }
-
-        .eta-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 16px;
-            text-align: center;
-        }
-
-        .eta-label {
-            font-size: 13px;
-            color: #64748b;
-            margin-bottom: 4px;
-        }
-
-        .eta-value {
-            font-size: 18px;
-            font-weight: 700;
-            color: #f97316;
-        }
-
-        .footer {
-            margin-top: 48px;
-            text-align: center;
-            font-size: 14px;
-            color: #64748b;
-        }
-
-        .footer a {
-            color: #f97316;
-            text-decoration: none;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 640px) {
-            h1 {
-                font-size: 32px;
-            }
-            .subtitle {
-                font-size: 16px;
-            }
-            .section {
-                padding: 24px;
-            }
-            .logo {
-                font-size: 56px;
-            }
-        }
-    </style>
+  /* Print friendly */
+  @media print {
+    body { background: white; color: black; }
+    .chain .step:not(.hinge)::after { display: none; }
+    section { page-break-inside: avoid; }
+  }
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="hero">
-            <div class="badge">
-                <span>Đang phát triển — Sprint 1</span>
-            </div>
-            <div class="logo">👷</div>
-            <h1><span class="brand">HRP</span> — HR Partner</h1>
-            <p class="subtitle">
-                Hệ ERP Nhân sự nội bộ của <strong>HRP Việt Nam</strong><br>
-                Hoàn chỉnh, đặc biệt tối ưu cho lao động phổ thông
-            </p>
-        </div>
 
-        <!-- TÓM LƯỢC DỰ ÁN -->
-        <div class="section">
-            <h2 class="section-title">
-                <span class="icon">📋</span> Tóm lược dự án
-            </h2>
-            <p>
-                <strong>HRP (HR Partner)</strong> là hệ <strong>ERP Nhân sự hoàn chỉnh</strong> được <strong>Công ty HRP Việt Nam</strong>
-                phát triển và triển khai <strong>nội bộ</strong> để phục vụ trực tiếp cho nghiệp vụ HR của chính công ty —
-                từ tuyển dụng, hồ sơ, chấm công, tính lương, đào tạo, đánh giá, đến nghỉ việc, đảm bảo tuân thủ
-                pháp luật lao động Việt Nam.
-            </p>
-            <p>
-                Đặc biệt, HRP sinh ra để giải quyết bài toán <strong>lao động phổ thông</strong> (thời vụ, bán thời gian,
-                theo dự án, theo ca, làm việc tại nhiều công trường/cơ sở) — nhóm lao động mà các phần mềm HR truyền thống
-                thường hỗ trợ kém.
-            </p>
-            <p>
-                Hệ thống cung cấp <strong>3 cổng</strong> trên cùng một nền tảng: <strong>Worker Portal</strong> (mobile-first cho người lao động),
-                <strong>Admin Dashboard</strong> (cho HR/admin/CEO) và <strong>Vendor Portal</strong> (cho đối tác cung ứng nhân lực),
-                kết nối trực tiếp với <strong>Zalo OA</strong> để tận dụng hệ sinh thái phổ biến nhất với người lao động Việt Nam.
-            </p>
-            <p>
-                <strong>Mục tiêu triển khai nội bộ tại HRP Việt Nam:</strong> phục vụ <strong>2.000–5.000 người lao động</strong>,
-                giảm 70% thời gian xử lý nhân sự, đảm bảo 100% tuân thủ Nghị định 13/2023, Luật Dữ liệu 2024, Bộ luật Lao động 2019.
-            </p>
-        </div>
+<div class="hero">
+  <div class="wrap">
+    <div class="kicker">HRP · Unified Plan v4.3 · Bức tranh toàn cảnh</div>
+    <h1>Một hệ thống cho toàn bộ nghiệp vụ cung ứng nhân sự.</h1>
+    <p class="lede">Từ khách hàng, nhu cầu tuyển, người lao động, chấm công, đối soát — đến trả lương và hoa hồng. Vận hành nội bộ trước, mở rộng ra đối tác và người lao động sau. Mọi con số đã chốt là không sửa.</p>
 
-        <!-- TÍNH NĂNG CHÍNH -->
-        <div class="section">
-            <h2 class="section-title">
-                <span class="icon">⚡</span> Tính năng chính
-            </h2>
-            <div class="features-grid">
-                <div class="feature">
-                    <div class="feature-icon">🔐</div>
-                    <div class="feature-title">Đăng nhập Zalo / OTP</div>
-                    <div class="feature-desc">1 chạm qua Zalo OA hoặc OTP SMS — phù hợp lao động phổ thông</div>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">📋</div>
-                    <div class="feature-title">Quản lý hồ sơ NLĐ</div>
-                    <div class="feature-desc">CCCD, ngân hàng, hợp đồng, lý lịch — tập trung & bảo mật</div>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">📍</div>
-                    <div class="feature-title">Chấm công GPS + Selfie</div>
-                    <div class="feature-desc">Check-in/out tại công trường với xác thực vị trí & khuôn mặt</div>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">💰</div>
-                    <div class="feature-title">Tính lương tự động</div>
-                    <div class="feature-desc">Đối soát với bảng chấm công nhập từ Excel/PDF, hỗ trợ B2B/B2C, phiếu lương điện tử</div>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">📊</div>
-                    <div class="feature-title">CRM & Quản lý dự án</div>
-                    <div class="feature-desc">Pipeline khách hàng doanh nghiệp, deal, đơn hàng, hoa hồng CTV</div>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🤝</div>
-                    <div class="feature-title">Vendor Portal</div>
-                    <div class="feature-desc">Đối tác tự quản lý cung ứng nhân lực, đối soát công nợ</div>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">💬</div>
-                    <div class="feature-title">Tích hợp Zalo OA</div>
-                    <div class="feature-desc">Gửi payslip, thông báo, support qua Zalo — kênh quen thuộc</div>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">📱</div>
-                    <div class="feature-title">PWA — Cài như app</div>
-                    <div class="feature-desc">Mobile-first, cài đặt 1 chạm, dùng được offline tại công trường</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ĐIỂM MẠNH -->
-        <div class="section">
-            <h2 class="section-title">
-                <span class="icon">💪</span> Điểm mạnh khác biệt
-            </h2>
-            <div class="strengths">
-                <div class="strength">
-                    <div class="strength-icon">🇻🇳</div>
-                    <div>
-                        <div class="strength-title">Tuân thủ pháp luật VN 100%</div>
-                        <div class="strength-desc">Nghị định 13/2023, Luật Dữ liệu 2024, lưu trữ nội địa cho dữ liệu nhạy cảm</div>
-                    </div>
-                </div>
-                <div class="strength">
-                    <div class="strength-icon">📱</div>
-                    <div>
-                        <div class="strength-title">Mobile-first, không cần đào tạo</div>
-                        <div class="strength-desc">Đăng nhập Zalo 1 chạm, giao diện đơn giản cho lao động phổ thông</div>
-                    </div>
-                </div>
-                <div class="strength">
-                    <div class="strength-icon">⚡</div>
-                    <div>
-                        <div class="strength-title">Triển khai nhanh, chi phí thấp</div>
-                        <div class="strength-desc">Next.js + Vercel + Neon + Cloudflare R2 — MVP trong 8 tuần</div>
-                    </div>
-                </div>
-                <div class="strength">
-                    <div class="strength-icon">🔄</div>
-                    <div>
-                        <div class="strength-title">Import Excel / PDF linh hoạt</div>
-                        <div class="strength-desc">Đổ dữ liệu chấm công, bảng lương từ Excel hoặc PDF — không cần API máy chấm công</div>
-                    </div>
-                </div>
-                <div class="strength">
-                    <div class="strength-icon">🌐</div>
-                    <div>
-                        <div class="strength-title">Multi-tenant & Multi-domain</div>
-                        <div class="strength-desc">Hỗ trợ nhiều domain trỏ về cùng app, dễ mở rộng thương hiệu</div>
-                    </div>
-                </div>
-                <div class="strength">
-                    <div class="strength-icon">📈</div>
-                    <div>
-                        <div class="strength-title">CRM tích hợp quản lý dự án</div>
-                        <div class="strength-desc">Từ pipeline bán hàng → dự án → chấm công → thanh toán trên 1 nền tảng</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- LỘ TRÌNH -->
-        <div class="section">
-            <h2 class="section-title">
-                <span class="icon">🗓️</span> Lộ trình thực hiện
-            </h2>
-            <div class="timeline">
-                <div class="milestone">
-                    <div class="milestone-date">Tháng 1–2 (Sprint 1–4)</div>
-                    <div class="milestone-title">Phase 1a — MVP Cốt lõi</div>
-                    <div class="milestone-desc">
-                        Nền tảng + Auth (OTP/Zalo) + Worker Portal + Admin Dashboard cơ bản + CRM & Projects
-                    </div>
-                </div>
-                <div class="milestone">
-                    <div class="milestone-date">Tháng 3 (Sprint 5–6)</div>
-                    <div class="milestone-title">Phase 1b — Chấm công GPS</div>
-                    <div class="milestone-desc">
-                        Selfie + GPS check-in + Vendor Portal + Talent Pool matching
-                    </div>
-                </div>
-                <div class="milestone">
-                    <div class="milestone-date">Tháng 4–5 (Sprint 7–9)</div>
-                    <div class="milestone-title">Phase 2 — Payroll & Nghiệp vụ</div>
-                    <div class="milestone-desc">
-                        Import chấm công từ Excel/PDF + Tính lương tự động + Phiếu lương Zalo + Báo cáo thuế
-                    </div>
-                </div>
-                <div class="milestone">
-                    <div class="milestone-date">Tháng 6 (Sprint 10+)</div>
-                    <div class="milestone-title">Phase 3 — Scale & Self-host</div>
-                    <div class="milestone-desc">
-                        Di chuyển sang hạ tầng VN (VNG/Viettel) + Advanced reporting + eKYC CCCD
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TIẾN ĐỘ & THỜI GIAN HOÀN THÀNH -->
-        <div class="section progress-card">
-            <h2 class="section-title">
-                <span class="icon">⏱️</span> Tiến độ & Thời gian hoàn thành
-            </h2>
-            <div class="progress-bar">
-                <div class="progress-fill"></div>
-            </div>
-            <div class="progress-text">5% hoàn thành — Đang khởi tạo nền tảng</div>
-
-            <div class="eta">
-                <div class="eta-card">
-                    <div class="eta-label">🎯 MVP (Phase 1)</div>
-                    <div class="eta-value">~6 tuần</div>
-                </div>
-                <div class="eta-card">
-                    <div class="eta-label">🚀 Production-ready</div>
-                    <div class="eta-value">2–3 tháng</div>
-                </div>
-                <div class="eta-card">
-                    <div class="eta-label">🇻🇳 Self-host VN</div>
-                    <div class="eta-value">~6 tháng</div>
-                </div>
-                <div class="eta-card">
-                    <div class="eta-label">📅 Bắt đầu</div>
-                    <div class="eta-value">14/08/2026</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>© 2026 HRP Việt Nam — Hệ thống đang được phát triển</p>
-            <p style="margin-top: 8px;">
-                <a href="https://github.com/nobita6986/hrp-erp">GitHub</a> ·
-                <a href="mailto:contact@hrpartner.vn">contact@hrpartner.vn</a>
-            </p>
-        </div>
+    <div class="chain">
+      <div class="step hinge"><span class="n">Bán hàng</span><span class="t">Khách hàng</span><span class="d">doanh nghiệp thuê nhân sự</span></div>
+      <div class="step"><span class="n">Dự án</span><span class="t">Dự án cung ứng</span><span class="d">địa điểm, PM, sale phụ trách</span></div>
+      <div class="step"><span class="n">Tuyển dụng</span><span class="t">Nhu cầu tuyển</span><span class="d">vị trí × ca × số lượng</span></div>
+      <div class="step"><span class="n">Hồ sơ</span><span class="t">Người lao động</span><span class="d">1 CCCD = 1 hồ sơ duy nhất</span></div>
+      <div class="step"><span class="n">Điều động</span><span class="t">Gán dự án</span><span class="d">mã nhân viên tại dự án</span></div>
+      <div class="step"><span class="n">Chấm công</span><span class="t">Chốt công</span><span class="d">nhập file → duyệt → khóa</span></div>
+      <div class="step hinge"><span class="n">Tài chính</span><span class="t">Đối soát &amp; lương</span><span class="d">2 biên bản: trả vendor / thu KH</span></div>
     </div>
+
+    <div class="stats">
+      <span class="stat">Vận hành nội bộ <b>~12 tuần</b></span>
+      <span class="stat">Đầy đủ (gồm 3 cổng) <b>~6–7 tháng</b></span>
+      <span class="stat">Thiết kế cho <b>5.000</b> lao động</span>
+      <span class="stat">Đội ngũ <b>5 lập trình viên</b></span>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Nghiệp vụ lõi</div>
+    <h2>Chu trình vận hành hàng tháng</h2>
+    <p class="sub">Mỗi kỳ lương, hệ thống chạy theo đúng chu trình dưới đây — mọi bước đều có người chịu trách nhiệm và dấu vết thao tác.</p>
+    <div class="steps">
+      <div class="s"><div><b>Tiếp nhận nhu cầu</b><span>Khách hàng ký hợp đồng cung ứng → mở dự án → khai báo nhu cầu tuyển theo từng vị trí, ca làm, số lượng và thời hạn.</span></div></div>
+      <div class="s"><div><b>Tìm người &amp; gán việc</b><span>Người lao động vào hệ thống từ 4 nguồn: HR/Sale tự tuyển, Vendor cung ứng, CTV giới thiệu, hoặc tự đăng ký. HR duyệt hồ sơ rồi gán vào dự án — mỗi người có một mã nhân viên riêng tại dự án đó.</span></div></div>
+      <div class="s"><div><b>Chấm công</b><span>Hai luồng song song: file chấm công đối tác gửi về (để TÍNH LƯƠNG) và app chụp hình + định vị GPS (để QUẢN LÝ Ý THỨC — không dùng tính lương).</span></div></div>
+      <div class="s"><div><b>Chốt công</b><span>Kế toán đối chiếu, xử lý dòng lỗi, duyệt và KHÓA kỳ công. Sau khi khóa, không ai sửa được — sai sót chỉ điều chỉnh ở kỳ sau kèm lý do.</span></div></div>
+      <div class="s"><div><b>Đối soát</b><span>Hệ thống tự tạo 2 biên bản riêng: biên bản TRẢ VENDOR (theo giá mua) và biên bản THU KHÁCH HÀNG (theo giá bán). Vendor xác nhận hoặc phản đối ngay trên cổng của họ.</span></div></div>
+      <div class="s"><div><b>Trả lương &amp; hoa hồng</b><span>Bảng lương tự động theo công đã khóa + luật lao động VN (BHXH, thuế TNCN). Tiền về đúng tài khoản ngân hàng đã xác thực. Hoa hồng CTV trả theo mốc giữ chân.</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Ai dùng gì</div>
+    <h2>Ba cổng, ba nhóm người, một dữ liệu</h2>
+    <p class="sub">Một hệ thống duy nhất với ba giao diện riêng cho từng đối tượng — dữ liệu nằm chung một kho nên không bao giờ lệch nhau.</p>
+
+    <div class="triptych">
+      <div class="portal">
+        <span class="url">hrpartner.vn/admin</span>
+        <h3>Cổng quản lý nội bộ</h3>
+        <div class="who">HR, Sale, PM, Kế toán, Quản trị — nơi vận hành toàn bộ chu trình.</div>
+        <ul>
+          <li><b>Hồ sơ lao động</b> — thẻ từng người: quê quán, đang làm dự án nào, ai giới thiệu, ai phụ trách</li>
+          <li><b>Khách hàng, dự án, nhu cầu tuyển</b> — thẻ dự án: địa điểm, PM, Sale, đã gán bao nhiêu người</li>
+          <li><b>Chốt công</b> — nhập file chấm công, xử lý dòng lỗi, duyệt và khóa kỳ</li>
+          <li><b>Đối soát</b> — 2 biên bản riêng: trả vendor / thu khách hàng</li>
+          <li><b>Duyệt đơn</b> — phản ánh sai công, tạm ứng, xin nghỉ — duyệt 2 bước</li>
+        </ul>
+        <div class="style"><b>Cách xem:</b> danh mục (hồ sơ, dự án) hiển thị dạng thẻ — nhìn lướt là thấy; màn hình tài chính hiển thị dạng bảng để so sánh từng dòng.</div>
+      </div>
+
+      <div class="portal">
+        <span class="url">hrpartner.vn/m</span>
+        <h3>App người lao động</h3>
+        <div class="who">Lao động phổ thông — chữ to, thao tác đơn giản, cài được trên điện thoại.</div>
+        <ul>
+          <li>Chưa có việc → xem nhu cầu tuyển + ứng tuyển 1 chạm</li>
+          <li>Xem ca làm hôm nay + tuần này</li>
+          <li>Xem phiếu lương — <b>chỉ thấy số nhận</b>, không thấy chi tiết BHXH/thuế</li>
+          <li>Chấm công bằng chụp hình + định vị</li>
+          <li>Đơn của tôi: phản ánh công, tạm ứng, xin nghỉ</li>
+        </ul>
+        <div class="phone">
+          <div class="ph-head"><span>HRP</span><span>☰</span></div>
+          <div class="ph-body">
+            <div class="ph-label">HÔM NAY</div>
+            <div class="ph-card">
+              <div class="st">🟢 ĐANG LÀM VIỆC</div>
+              <div><b>Ca sáng</b> · 07:00 – 16:00</div>
+              <div>KCN Tân Bình · Đóng gói hàng hóa</div>
+              <div>Vào: 07:05 · Ra dự kiến: 16:00</div>
+            </div>
+            <div class="ph-btn">CHẤM CÔNG RA</div>
+            <div class="ph-card"><span class="big">11/14 ngày</span> &nbsp;💰 <span class="big">5.280.000 đ</span> <span class="ph-label">tạm tính</span></div>
+            <div class="ph-label">THÔNG BÁO (2)</div>
+            <div class="ph-card">💰 Đã trả lương tháng 7 — 2 ngày trước</div>
+            <div class="ph-card">⏰ Đổi ca ngày mai — 3 giờ trước</div>
+          </div>
+          <div class="ph-tabs"><div>🏠</div><div>📅</div><div>💰</div><div>📝</div></div>
+        </div>
+        <div class="style"><b>Đăng nhập:</b> mã nhân viên tại dự án / mã HRP / CCCD + <b>mật khẩu đặt lúc đăng ký</b>. Đổi SIM không mất tài khoản. Zalo là cách đăng nhập phụ tiện lợi.</div>
+      </div>
+
+      <div class="portal">
+        <span class="url">vendor.hrpartner.vn</span>
+        <h3>Cổng đối tác cung ứng</h3>
+        <div class="who">Công ty cung ứng nhân lực đối tác — nộp hồ sơ và đối soát công nợ.</div>
+        <ul>
+          <li>Xem nhu cầu tuyển đang mở: vị trí, ca, còn bao nhiêu chỗ</li>
+          <li><b>Nộp hồ sơ ứng viên</b> — hệ thống tự đối chiếu CCCD, báo chặn nếu đã có người tiến cử</li>
+          <li>Theo dõi: chờ duyệt / duyệt / từ chối kèm lý do</li>
+          <li><b>Xác nhận hoặc phản đối</b> biên bản đối soát hàng kỳ</li>
+        </ul>
+        <div class="style"><b>Nguyên tắc:</b> đối tác chỉ nộp hồ sơ — HR duyệt xong mới thành người của hệ thống. Không đối tác nào tự tạo được hồ sơ.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Nguồn tuyển</div>
+    <h2>Một người = một hồ sơ, chống tranh chấp tự động</h2>
+    <p class="sub">Một lao động có thể được nhiều người tiến cử (HR/Sale, Vendor, CTV). Hệ thống dùng <b>CCCD</b> làm chìa khóa: biết người đó đã có trong dữ liệu chưa, do ai đưa vào, ai đang hưởng hoa hồng — và <b>tự động chặn</b> người nộp sau trong các trường hợp:</p>
+
+    <div class="blocks">
+      <div class="block">
+        <h4>Đã có người tiến cử trong 7 ngày qua</h4>
+        <p>Kể cả hồ sơ đó đang chờ duyệt hay đã bị từ chối. Người giới thiệu đầu tiên có 7 ngày để xử lý. Sau đó, nếu hồ sơ bị từ chối hoặc bỏ lửng → người khác mới được tiến cử lại. Số ngày điều chỉnh được.</p>
+      </div>
+      <div class="block">
+        <h4>Đang có người hưởng hoa hồng từ người đó</h4>
+        <p>CTV giới thiệu đang còn quyền lợi hoa hồng (người lao động vẫn đang làm việc) → không ai khác được nhận người này làm nguồn của mình.</p>
+      </div>
+      <div class="block">
+        <h4>Người đó đang hưởng lương từ vendor</h4>
+        <p>Lao động đang được đối tác cung ứng trả lương (đang làm việc tại dự án theo hợp đồng thuê ngoài) → không được chuyển nguồn, tránh cướp người giữa các đối tác.</p>
+      </div>
+      <div class="block override">
+        <h4>HR vẫn có thể thêm tay khi cần</h4>
+        <p>Ví dụ: hợp đồng đối tác đã hết hạn nhưng hệ thống chưa cập nhật. HR quản lý bấm "thêm với lý do" — hệ thống lưu lại ai làm, lúc nào, lý do gì để truy vết chống lạm dụng.</p>
+      </div>
+    </div>
+
+    <div class="diagram">
+      <div class="caption">Luồng nộp hồ sơ ứng viên — từ lúc nộp đến khi thành hồ sơ chính thức</div>
+<pre class="mermaid">
+flowchart TB
+  S(["Hồ sơ ứng viên nộp vào<br/>(Vendor / CTV / tự đăng ký)"]) --> G{"Hệ thống đối chiếu CCCD:<br/>đã có trong dữ liệu chưa?"}
+  G -->|"Chưa có"| HR{"HR duyệt"}
+  G -->|"Đã có"| BL["CHẶN khi:<br/>· đã có người tiến cử trong 7 ngày qua<br/>· đang có người hưởng hoa hồng<br/>· đang hưởng lương từ vendor"]
+  HR -->|"Trùng hồ sơ"| MG["Gộp vào hồ sơ cũ"]
+  HR -->|"Mới"| CR["Tạo hồ sơ mới<br/>ghi rõ nguồn đưa vào"]
+  HR -->|"Từ chối"| RJ["Từ chối + lý do<br/>người nộp nhìn thấy"]
+  BL --> OV["HR quản lý được thêm tay<br/>với lý do (lưu dấu vết)"]
+</pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Hồ sơ lao động</div>
+    <h2>Bốn vòng đời tách bạch của một người lao động</h2>
+    <p class="sub">Thay vì một trạng thái duy nhất khó hiểu, hồ sơ theo dõi riêng 4 chuyện độc lập — mỗi chuyện có vòng đời của nó. Trạng thái "đang rảnh" trên thẻ hồ sơ là <b>tự suy ra</b>: đang làm việc nhưng chưa có dự án.</p>
+
+    <div class="sm">
+      <div class="row">
+        <div class="name">📋 Hồ sơ giấy tờ — <span class="tag">hồ sơ</span></div>
+        <div class="flow"><b>Chưa đủ thông tin</b> <span class="arrow">→</span> <b>Chờ xác minh</b> <span class="arrow">→</span> <b>Đã xác minh</b> <span class="bad">| Bị từ chối</span></div>
+      </div>
+      <div class="row">
+        <div class="name">🤝 Quan hệ lao động — <span class="tag">làm việc</span></div>
+        <div class="flow"><b>Chưa có</b> <span class="arrow">→</span> <b>Đang làm</b> <span class="arrow">→</span> <b>Tạm nghỉ</b> <span class="bad">| Nghỉ việc</span></div>
+      </div>
+      <div class="row">
+        <div class="name">🏢 Tại dự án — <span class="tag">điều động</span></div>
+        <div class="flow"><b>Chờ xếp việc</b> <span class="arrow">→</span> <b>Đang làm</b> <span class="arrow">→</span> <b>Tạm dừng</b> <span class="bad">| Kết thúc | Chuyển dự án | Hủy</span></div>
+        <div class="note">Chuyển dự án dùng mốc ngày "nửa mở" — ngày 15 chuyển thì dự án cũ tính đến hết ngày 14, không bao giờ trùng công. Một người có thể làm nhiều dự án nếu ca không trùng, một dự án được đánh dấu là chính.</div>
+      </div>
+      <div class="row">
+        <div class="name">⚠️ Rủi ro — <span class="tag">cảnh báo</span></div>
+        <div class="flow"><b>Bình thường</b> <span class="arrow">→</span> <b>Xem xét</b> <span class="arrow">→</span> <b>Chặn</b></div>
+        <div class="note">Ví dụ: bỏ việc ngang, vi phạm kỷ luật → chặn không cho điều động tiếp.</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span class="pill ok">🟢 Đang làm</span>
+      <span class="pill muted">⚪ Đang rảnh (tự suy ra)</span>
+      <span class="pill warn">🟡 Chờ duyệt</span>
+      <span class="pill info">🔵 Tạm nghỉ</span>
+      <span class="pill danger">🔴 Nghỉ việc / Bị chặn</span>
+      <span class="pill muted" style="border-color:var(--line)">Màu badge thống nhất trên toàn hệ thống</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Chấm công &amp; tiền</div>
+    <h2>Chốt một lần, tiền chảy ba hướng</h2>
+    <p class="sub">Dữ liệu chấm công chỉ chảy một chiều về phía khóa kỳ. Một khi đã <b>khóa</b>, không ai sửa được — sai sót chỉ điều chỉnh ở kỳ sau kèm lý do. Từ kỳ công đã khóa, tiền tự chảy về đúng ba nơi:</p>
+
+    <div class="diagram">
+      <div class="caption">Từ bảng công đã khóa → lương, hai biên bản đối soát và hoa hồng</div>
+<pre class="mermaid">
+flowchart LR
+  subgraph CC["CHẤM CÔNG"]
+    E["Dữ liệu thô<br/>(file đối tác / GPS)"] --> L["Bảng công chuẩn hóa"]
+    L --> P["Chốt kỳ công<br/>ĐÃ KHÓA — không sửa"]
+  end
+  P --> LU["Bảng lương<br/>1 người = 1 kết quả / kỳ<br/>(tính theo luật: BHXH, thuế)"]
+  P --> VS["Biên bản đối soát<br/><b>TRẢ VENDOR</b><br/>(giá mua)"]
+  P --> CS["Biên bản đối soát<br/><b>THU KHÁCH HÀNG</b><br/>(giá bán)"]
+  LU --> SL["Phiếu lương<br/>người lao động chỉ thấy số nhận"]
+  AS["Gán dự án"] -.-> HH["Hoa hồng CTV<br/>trả theo mốc giữ chân<br/>(bắt đầu, giữ đủ 30 ngày...)"]
+</pre>
+    </div>
+
+    <div class="two-col" style="margin-top:18px">
+      <div>
+        <div class="eyebrow">Quy trình nhập công</div>
+        <div class="steps">
+          <div class="s"><div><b>Đối tác gửi file chấm công</b><span>Mỗi đối tác có mẫu riêng — hệ thống nhận diện cột tự động theo mẫu đã khai.</span></div></div>
+          <div class="s"><div><b>Xem trước &amp; ghép mã</b><span>Tự ghép mã nhân viên trong file với hồ sơ. Dòng không ghép được đưa vào danh sách chờ kế toán dò.</span></div></div>
+          <div class="s"><div><b>Duyệt &amp; khóa kỳ</b><span>Kế toán duyệt → khóa. Nộp trùng file cũ → hệ thống tự bỏ qua, không lệch số.</span></div></div>
+          <div class="s"><div><b>Sai sau khóa?</b><span>Không sửa — tạo dòng điều chỉnh ở kỳ sau kèm lý do, có dấu vết ai tạo.</span></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="eyebrow">Duyệt đơn — tạm ứng qua 2 chữ ký</div>
+        <div class="diagram" style="margin:0">
+<pre class="mermaid">
+stateDiagram-v2
+  [*] --> CHODUYET: Người lao động tạo đơn
+  CHODUYET --> HRXACNHAN: HR xác nhận hợp lệ
+  CHODUYET --> TUCHOI: Từ chối (bắt buộc ghi lý do)
+  CHODUYET --> RUTDON: Tự rút đơn
+  HRXACNHAN --> DUYET: Kế toán duyệt chi
+  HRXACNHAN --> TUCHOI
+  HRXACNHAN --> RUTDON
+  DUYET --> DACHI: Kế toán chi tiền
+  DUYET --> DONG: Đóng đơn
+  DACHI --> DONG
+</pre>
+        </div>
+        <p style="font-size:13px;color:var(--ink2)">Ba loại đơn trong một hệ thống: phản ánh sai công · tạm ứng · xin nghỉ. <b>HR quyết định "có hợp lệ không", Kế toán quyết định "chi từ quỹ"</b> — hai người, hai bước, mỗi bước đều lưu dấu vết. Tiền tạm ứng chỉ chuyển vào tài khoản ngân hàng đã xác thực trong hồ sơ.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Nguyên tắc vận hành</div>
+    <h2>Tám nguyên tắc không thể phá vỡ</h2>
+    <div class="principles">
+      <div class="principle"><h4>1 người = 1 CCCD = 1 hồ sơ</h4><p>Dù vào từ nhiều nguồn (HR, Vendor, CTV, tự đăng ký) — hệ thống gộp về đúng một hồ sơ duy nhất.</p></div>
+      <div class="principle"><h4>Nguồn tuyển có chủ quyền</h4><p>Ai đưa người vào được ghi rõ; người nộp sau bị chặn tự động (7 ngày / đang hưởng hoa hồng / đang hưởng lương vendor).</p></div>
+      <div class="principle"><h4>Đã chốt là không sửa</h4><p>Kỳ công, bảng lương, biên bản đối soát — sau khi khóa chỉ được điều chỉnh ở kỳ sau, kèm lý do và dấu vết.</p></div>
+      <div class="principle"><h4>Tiền về đúng tài khoản đã xác thực</h4><p>Người lao động không tự đổi được số tài khoản — muốn đổi phải xác nhận thêm hoặc nhờ HR, chặn mọi chiêu lừa đảo.</p></div>
+      <div class="principle"><h4>Vendor chỉ nộp hồ sơ</h4><p>Không đối tác nào tự tạo hồ sơ — mọi ứng viên đều qua HR duyệt, tránh hồ sơ rác và tranh chấp.</p></div>
+      <div class="principle"><h4>Người lao động chỉ thấy số nhận</h4><p>Chi tiết BHXH, thuế thu nhập chỉ kế toán xem — tránh hiểu lầm "sao lương bị trừ".</p></div>
+      <div class="principle"><h4>Đăng nhập bằng mã + mật khẩu</h4><p>Mã nhân viên dự án / mã HRP / CCCD + mật khẩu đặt lúc đăng ký. Đổi SIM không mất tài khoản; sai 5 lần khóa 15 phút.</p></div>
+      <div class="principle"><h4>Hồ sơ cá nhân được bảo vệ</h4><p>Ảnh CCCD, ảnh chân dung lưu riêng trên kho Cloudflare; mọi lượt xem đều có dấu vết — tuân thủ Nghị định 13/2023 và Luật Dữ liệu 2024.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Lộ trình</div>
+    <h2>Từ số 0 đến vận hành: ba tháng cho nội bộ, sáu bảy tháng cho toàn cảnh</h2>
+    <p class="sub">Ưu tiên vận hành nội bộ trước — cổng đối tác và app người lao động mở sau khi chu trình lõi đã chạy ổn trên dữ liệu thật.</p>
+    <div class="diagram">
+      <div class="caption">Lộ trình triển khai — khởi động 24/08/2026</div>
+<pre class="mermaid">
+gantt
+  title HRP — Lộ trình triển khai
+  dateFormat YYYY-MM-DD
+  section Khởi động (2 tuần)
+  Thu thập dữ liệu thật + chốt thiết kế :s0, 2026-08-24, 2w
+  section Giai đoạn 1 — Nền tảng (4-5 tuần)
+  Hồ sơ lao động + khách hàng + dự án + nhu cầu tuyển :w1, 2026-09-07, 5w
+  section Giai đoạn 2 — Vận hành (4 tuần)
+  Nhập & chốt công + đối soát :w2, 2026-10-12, 4w
+  section Chạy thử (2 tuần)
+  Chạy dữ liệu thật + đào tạo :uat, 2026-11-09, 2w
+  Vận hành nội bộ chính thức :milestone, 2026-11-23, 0d
+  section Giai đoạn 3 — Mở cổng (7 tuần)
+  App người lao động + Cổng đối tác + CTV :w3, 2026-11-23, 7w
+  section Giai đoạn 4 — Tài chính đầy đủ (4-5 tuần)
+  Bảng lương + hoa hồng + báo cáo :w4, 2027-01-18, 5w
+  section Sau đó
+  Nhân sự nội bộ + mở rộng theo nhu cầu :m9, 2027-02-22, 4w
+</pre>
+    </div>
+    <div class="legend">
+      <span class="pill muted" style="border-color:var(--line)">Mở rộng sau (khi đủ điều kiện): máy chấm công kết nối trực tiếp · ứng dụng cài từ kho · đóng gói cho khách hàng · trí tuệ nhân tạo gợi ý việc phù hợp</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Dựng từ <a href="docs/UNIFIED_PLAN_v3.md">docs/UNIFIED_PLAN_v3.md</a> (&gt;= v3.3) · HRP — Hệ thống quản trị cung ứng nhân lực · 15/08/2026
+  </div>
+</footer>
 </body>
 </html>
