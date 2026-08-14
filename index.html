@@ -9,6 +9,10 @@
   <title>Toàn cảnh HRP · Hệ thống quản trị cung ứng nhân lực</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👷</text></svg>">
 
+  <meta property="og:title" content="Toàn cảnh HRP · Hệ thống quản trị cung ứng nhân lực">
+  <meta property="og:description" content="Một hệ thống cho toàn bộ nghiệp vụ của bạn — từ khách hàng đến trả lương, mọi con số đã chốt là không sửa.">
+  <meta property="og:type" content="website">
+
   <!-- Mermaid cho diagram bổ sung -->
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
   <script defer>
@@ -28,16 +32,16 @@
             fontFamily: '"Segoe UI", system-ui, sans-serif',
           },
           securityLevel: 'loose',
-          flowchart: { htmlLabels: true, curve: 'basis' },
+          flowchart: { htmlLabels: true, curve: 'basis', useMaxWidth: true },
           sequence: { useMaxWidth: true, showSequenceNumbers: true },
+          gantt: { useMaxWidth: true },
         });
       }
     });
   </script>
 
-<title>Toàn cảnh HRP</title>
-
 <style>
+
   /* ═══════ TOKENS ═══════ */
   :root {
     --bg: #FBFAF8;
@@ -72,8 +76,7 @@
       --warn: #FBBF24; --warn-soft: #3A2E10;
       --danger: #F87171; --danger-soft: #3D1515;
       --info: #60A5FA; --info-soft: #14233D;
-      --muted: #8A8177;
-      --muted-soft: #2A2A2A;
+      --muted: #8A8177; --muted-soft: #2A2A2A;
     }
   }
   :root[data-theme="dark"] {
@@ -91,8 +94,7 @@
     --warn: #FBBF24; --warn-soft: #3A2E10;
     --danger: #F87171; --danger-soft: #3D1515;
     --info: #60A5FA; --info-soft: #14233D;
-    --muted: #8A8177;
-    --muted-soft: #2A2A2A;
+    --muted: #8A8177; --muted-soft: #2A2A2A;
   }
 
   /* ═══════ BASE (mobile-first) ═══════ */
@@ -359,21 +361,222 @@
     * { animation: none !important; transition: none !important; }
   }
 
-  /* ═══════ DIAGRAM (mermaid bổ sung) ═══════ */
-  .diagram {
-    background: #FFFFFF; color: #26211B;
-    border: 1px solid var(--line); border-radius: 14px;
-    padding: 18px; margin-top: 16px;
-    overflow-x: auto;
+  /* ════════════════════════════════════════════════════════════════════
+     NÂNG CẤP THẨM MỸ — phiên bản trình bày sếp xem
+     ════════════════════════════════════════════════════════════════════ */
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-feature-settings: "kern", "liga", "ss01";
+    -webkit-text-stroke: 0.2px;
+  }
+
+  /* HERO — gradient nhẹ + dot grid */
+  .hero {
+    position: relative;
+    background:
+      radial-gradient(ellipse 60% 80% at 20% 0%, rgba(249,115,22,.08), transparent 60%),
+      radial-gradient(ellipse 40% 60% at 100% 30%, rgba(251,146,60,.05), transparent 70%);
+    padding: 64px 0 56px;
+  }
+  .hero::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(38,33,27,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(38,33,27,.025) 1px, transparent 1px);
+    background-size: 28px 28px;
+    background-position: -1px -1px;
+    mask-image: linear-gradient(180deg, rgba(0,0,0,.4), transparent 70%);
+    -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,.4), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .hero .wrap { position: relative; z-index: 1; }
+
+  /* Kicker — thêm gạch ngang cam */
+  .kicker { display: inline-flex; align-items: center; gap: 8px; }
+  .kicker::before {
+    content: "";
+    width: 24px; height: 2px;
+    background: var(--brand-strong);
+    display: inline-block;
+  }
+
+  /* H1 — badge version nhỏ */
+  h1 { position: relative; }
+  h1::after {
+    content: "v4.8";
+    position: absolute; top: -10px; right: 0;
+    font-size: 11px; font-weight: 700;
+    color: var(--brand-strong);
+    background: var(--brand-soft);
+    padding: 3px 9px; border-radius: 999px;
+    letter-spacing: .04em;
+  }
+  @media (max-width: 600px) { h1::after { display: none; } }
+
+  /* NAV — backdrop blur */
+  .nav {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(251,250,248,.85);
+    transition: box-shadow .2s ease;
   }
   @media (prefers-color-scheme: dark) {
-    .diagram { background: #1F1B16; color: #F0EAE1; border-color: var(--line); }
+    .nav { background: rgba(22,19,15,.85); }
+  }
+
+  /* BTN — ripple + lift */
+  .btn {
+    transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+    box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 1px 2px rgba(249,115,22,.15);
+  }
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(249,115,22,.30);
+  }
+  .btn:active { transform: translateY(0); }
+
+  /* CARD — accent trái + lift */
+  .card {
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: "";
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--brand);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform .25s ease;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(38,33,27,.06);
+    border-color: var(--brand-soft);
+  }
+  .card:hover::before { transform: scaleY(1); }
+
+  /* BLOCK / PRINCIPLE — hover nhẹ */
+  .block, .principle {
+    transition: transform .2s ease, border-color .2s ease, background .2s ease;
+  }
+  .block:hover, .principle:hover {
+    transform: translateY(-1px);
+    border-color: var(--brand-soft);
+    background: var(--bg);
+  }
+
+  /* STEPS — accent trái + slide */
+  .steps .s {
+    transition: transform .15s ease, border-color .2s ease;
+    border-left: 3px solid transparent;
+  }
+  .steps .s:hover {
+    transform: translateX(2px);
+    border-left-color: var(--brand);
+    border-color: var(--brand-soft);
+  }
+  @media (min-width: 760px) {
+    .steps .s:hover { transform: translateX(4px); }
+  }
+
+  /* TIMELINE — milestones nổi */
+  .tl .item.mile {
+    background: var(--surface);
+    padding: 14px 16px;
+    margin: -6px -16px;
+    border-radius: 12px;
+    border: 1px solid var(--ok-soft);
+  }
+  .tl .item.mile b { color: var(--ok); }
+
+  /* FLOW NODE — gradient cho "dest" */
+  .flow .node { transition: transform .15s ease, box-shadow .2s ease; }
+  .flow .node:hover {
+    transform: translateX(2px);
+    box-shadow: 0 4px 14px rgba(249,115,22,.10);
+  }
+  @media (min-width: 760px) {
+    .flow .node.dest {
+      background: linear-gradient(180deg, var(--brand-soft) 0%, var(--surface) 50%);
+    }
+  }
+
+  /* STAT */
+  .stat { transition: transform .15s ease, border-color .2s ease; }
+  .stat:hover {
+    transform: translateY(-1px);
+    border-color: var(--brand-soft);
+  }
+
+  /* EYEBROW — pill */
+  .eyebrow {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--brand-soft);
+  }
+
+  /* SECTION — divider gradient */
+  section {
+    border-bottom: 1px solid transparent;
+    background-image: linear-gradient(180deg, transparent 0, transparent calc(100% - 1px), var(--line) 100%);
+  }
+
+  /* Anchor offset cho sticky nav */
+  [id] { scroll-margin-top: 70px; }
+
+  /* CHAIN step hover */
+  .chain .step { transition: background .15s ease; }
+  .chain .step:hover { background: var(--brand-soft); }
+
+  /* PHONE mockup gradient + tilt */
+  .phone .ph-head {
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-strong) 100%);
+  }
+  .phone { transition: transform .25s ease; }
+  .phone:hover { transform: translateY(-3px) rotate(-0.5deg); }
+
+  /* CTA BAND — gradient + dot pattern */
+  .cta-band {
+    background:
+      radial-gradient(circle at 20% 0%, rgba(255,255,255,.12), transparent 50%),
+      linear-gradient(135deg, #C2410C 0%, #9A3309 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-band::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+  }
+  .cta-band > * { position: relative; z-index: 1; }
+
+  /* DIAGRAM (mermaid) */
+  .diagram {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px;
+    margin-top: 18px;
+    overflow-x: auto;
+    box-shadow: 0 1px 0 rgba(38,33,27,.02);
   }
   .diagram .caption {
-    font-size: 12px; color: #6E6660; margin-bottom: 8px; font-weight: 600;
-  }
-  @media (prefers-color-scheme: dark) {
-    .diagram .caption { color: #A89F93; }
+    font-size: 12px; font-weight: 600;
+    color: var(--ink2);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
   }
   .diagram pre.mermaid {
     font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
@@ -383,10 +586,37 @@
   @media (max-width: 760px) {
     .diagram { padding: 12px; border-radius: 12px; }
   }
+
+  /* SECTION NUMBER — số thứ tự trước eyebrow */
+  section .wrap > .eyebrow { position: relative; padding-left: 14px; }
+  section .wrap > .eyebrow::before {
+    counter-increment: section;
+    content: counter(section, decimal-leading-zero);
+    position: absolute; left: 0; top: 50%;
+    transform: translateY(-50%);
+    color: var(--brand);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .04em;
+  }
+  body { counter-reset: section; }
+
+  /* FOCUS nâng cấp */
+  a:focus-visible, .btn:focus-visible, button:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  ::selection { background: var(--brand-soft); color: var(--brand-strong); }
+
+  @media print {
+    body { background: white; color: black; }
+    .nav, .cta-band, footer { display: none; }
+    section { page-break-inside: avoid; }
+  }
 </style>
 </head>
 <body>
-
 <nav class="nav">
   <div class="nav-inner">
     <a class="brand" href="#top">HRP<span> · Cung ứng nhân sự</span></a>
@@ -445,6 +675,7 @@
           <li>Chốt công — nhập file, xử lý lỗi, khóa kỳ</li>
           <li>Đối soát — 2 biên bản: trả vendor / thu khách hàng</li>
           <li>Duyệt đơn — phản ánh công, tạm ứng, xin nghỉ</li>
+          <li><b>App hiện trường cho PM</b> — điểm danh, báo sự cố, chuyển người ngay tại công trường (nút lớn, dùng offline)</li>
         </ul>
         <div class="foot"><b>Cách xem:</b> danh mục hiển thị dạng thẻ — nhìn lướt là thấy; màn tài chính dạng bảng để so từng dòng.</div>
       </div>
@@ -505,30 +736,28 @@
     <p class="sub">Mỗi kỳ lương, hệ thống chạy đúng chu trình này — mọi bước đều có người chịu trách nhiệm và dấu vết thao tác.</p>
     <div class="steps">
       <div class="s"><div><b>Tiếp nhận nhu cầu</b><span>Khách hàng ký hợp đồng → mở dự án → khai nhu cầu tuyển theo vị trí, ca, số lượng, thời hạn.</span></div></div>
-      <div class="s"><div><b>Tìm người &amp; gán việc</b><span>Lao động vào từ 4 nguồn: HR/Sale tự tuyển, Vendor cung ứng, CTV giới thiệu (kể cả link giới thiệu), tự đăng ký. HR duyệt rồi gán dự án — mỗi người một mã nhân viên tại dự án đó. Tại một thời điểm mỗi người chỉ làm đúng 1 dự án — chuyển dự án qua HR điều chuyển.</span></div></div>
+      <div class="s"><div><b>Tìm người &amp; gán việc</b><span>Lao động vào từ 4 nguồn: HR/Sale tự tuyển, Vendor cung ứng, CTV giới thiệu (kể cả link giới thiệu), tự đăng ký. HR duyệt rồi gán dự án — mỗi người một mã nhân viên tại dự án đó. Tại một thời điểm mỗi người chỉ làm đúng 1 dự án — chuyển dự án qua HR điều chuyển, cần đổi cả nhóm thì chuyển hàng loạt 1 lần.</span></div></div>
       <div class="s"><div><b>Chấm công</b><span>Hai luồng: file chấm công đối tác gửi về (để TÍNH LƯƠNG) + app chụp hình định vị GPS (để QUẢN LÝ Ý THỨC — không dùng tính lương).</span></div></div>
       <div class="s"><div><b>Chốt công</b><span>Kế toán đối chiếu, xử lý dòng lỗi, duyệt và KHÓA kỳ. Đã khóa là không sửa — sai sót chỉ điều chỉnh kỳ sau kèm lý do.</span></div></div>
-      <div class="s"><div><b>Đối soát</b><span>Tự tạo 2 biên bản riêng: TRẢ VENDOR (giá mua) và THU KHÁCH HÀNG (giá bán). Đối tác xác nhận hoặc phản đối ngay trên cổng của họ.</span></div></div>
-      <div class="s"><div><b>Trả lương &amp; hoa hồng</b><span>Bảng lương tự động theo công đã khóa + luật lao động VN (BHXH, thuế TNCN). Tiền về đúng tài khoản đã xác thực. Hoa hồng CTV theo mốc giữ chân.</span></div></div>
-    </div>
-
+      <div class="s"><div><b>Đối soát</b><span>Tự tạo 2 biên bản riêng: TRẢ VENDOR (giá mua) và THU KHÁCH HÀNG (giá bán). Đối tác xác nhận hoặc phản đối ngay trên cổng của họ.
     <div class="diagram">
-      <div class="caption">Cùng chu trình trên, nhìn dưới dạng sơ đồ — biết ai làm gì, khi nào, và đầu ra là gì</div>
+      <div class="caption">Cùng chu trình trên — nhìn dưới dạng sơ đồ</div>
 <pre class="mermaid">
 flowchart LR
-  S1["1️⃣ Tiếp nhận<br/>KH → Dự án → Nhu cầu tuyển"] --> S2["2️⃣ Tìm người &amp; gán<br/>4 nguồn → HR duyệt → mã NV"]
+  S1["1️⃣ Tiếp nhận<br/>KH → Dự án → Nhu cầu"] --> S2["2️⃣ Tìm người &amp; gán<br/>4 nguồn → HR duyệt"]
   S2 --> S3["3️⃣ Chấm công<br/>file đối tác + GPS"]
   S3 --> S4["4️⃣ Chốt công<br/>xử lý lỗi → duyệt → KHÓA 🔒"]
   S4 --> S5["5️⃣ Đối soát<br/>2 biên bản tách biệt"]
   S4 --> S6["6️⃣ Trả lương<br/>+ BHXH, thuế"]
   S5 --> S7["Vendor xác nhận/<br/>phản đối"]
   S6 --> S8["Phiếu lương<br/>chỉ NET"]
-  S2 -.->|"HR điều chuyển<br/>mốc ngày nửa mở"| S2
-  S4 -.->|"sai sau khóa →<br/>ADJUSTMENT kỳ sau"| S4
   style S4 fill:#FFF1E4,color:#C2410C,stroke:#F97316,stroke-width:2px
   style S5 fill:#FFF1E4,color:#C2410C
   style S6 fill:#FFF1E4,color:#C2410C
 </pre>
+    </div>
+</span></div></div>
+      <div class="s"><div><b>Trả lương &amp; hoa hồng</b><span>Bảng lương tự động theo công đã khóa + luật lao động VN (BHXH, thuế TNCN). Tiền về đúng tài khoản đã xác thực. Hoa hồng CTV theo mốc giữ chân.</span></div></div>
     </div>
   </div>
 </section>
@@ -558,9 +787,14 @@ flowchart LR
         <div class="note">Bỏ việc ngang, vi phạm kỷ luật → chặn không cho điều động tiếp.</div>
       </div>
     </div>
-
+    <div class="legend">
+      <span class="pill ok">🟢 Đang làm</span>
+      <span class="pill muted">⚪ Đang rảnh (tự suy ra)</span>
+      <span class="pill warn">🟡 Chờ duyệt</span>
+      <span class="pill info">🔵 Tạm nghỉ</span>
+      <span class="pill danger">🔴 Nghỉ việc / Bị chặn</span>
     <div class="diagram">
-      <div class="caption">Bốn vòng đời chạy song song — một thẻ hồ sơ hiển thị "Đang rảnh" khi <i>giấy tờ OK</i> + <i>quan hệ LD đang làm</i> + <i>vừa kết thúc điều động</i> + <i>rủi ro bình thường</i></div>
+      <div class="caption">Bốn vòng đời chạy song song</div>
 <pre class="mermaid">
 flowchart LR
   subgraph HS["📋 Hồ sơ giấy tờ"]
@@ -590,18 +824,12 @@ flowchart LR
     R2 --> R1
     R3 -->|"HR gỡ sau kỳ"| R1
   end
-  HS -.->|"chỉ HR /<br/>ứng viên thấy"| QH
-  QH -.->|"HR / Vendor<br/>thấy"| DA
+  HS -.->|"HR / ứng viên"| QH
+  QH -.->|"HR / Vendor"| DA
   RR -.->|"mọi portal<br/>cùng thấy"| DA
 </pre>
     </div>
 
-    <div class="legend">
-      <span class="pill ok">🟢 Đang làm</span>
-      <span class="pill muted">⚪ Đang rảnh (tự suy ra)</span>
-      <span class="pill warn">🟡 Chờ duyệt</span>
-      <span class="pill info">🔵 Tạm nghỉ</span>
-      <span class="pill danger">🔴 Nghỉ việc / Bị chặn</span>
     </div>
   </div>
 </section>
@@ -620,22 +848,20 @@ flowchart LR
       <div class="join">↓</div>
       <div class="node dest"><b>🏢 Biên bản THU KHÁCH HÀNG</b><span>Công đã duyệt × giá bán — tách bạch hoàn toàn với biên bản trả vendor.</span></div>
       <div class="join">↓</div>
-      <div class="node dest"><b>🎁 Hoa hồng CTV</b><span>Trả theo mốc giữ chân (bắt đầu, giữ đủ 30 ngày...) — dòng đảo khi thu hồi.</span></div>
-    </div>
-
+      <div class="node dest"><b>🎁 Hoa hồng CTV</b><span>Trả theo mốc giữ chân (bắt đầu, giữ đủ 30 ngày...) — dòng đảo khi thu hồi.</span>
     <div class="diagram">
-      <div class="caption">Dòng lỗi chấm công — mỗi dòng có "mạng sống" riêng trước khi trở thành dòng thuần</div>
+      <div class="caption">Dòng lỗi chấm công — mỗi dòng có 'mạng sống' riêng</div>
 <pre class="mermaid">
 flowchart TD
   F["Đối tác gửi file<br/>CSV / XLSX"] --> P["Parse &amp; validate<br/>theo mẫu đã khai"]
   P -->|"định dạng sai"| E1["❌ LỖI ĐỊNH DẠNG<br/>từ chối nguyên file"]
-  P -->|"OK"| M["Ghép mã NV từ<br/>employee_code / CCCD"]
+  P -->|"OK"| M["Ghép mã NV<br/>employee_code / CCCD"]
   M -->|"mã lạ"| E2["⚠️ MÃ LẠ<br/>KT dò tay 24h"]
   M -->|"CCCD trùng 2 người"| E3["⚠️ TRÙNG CCCD<br/>HR Manager gộp"]
   M -->|"OK"| R["Bảng công thô<br/>status: DRAFT"]
-  R -->|"thiếu check-in/out"| E4["⚠️ THIẾU CHECK<br/>PM xác minh"]
-  R -->|"ngoài ca &gt; 1h"| E5["⚠️ NGOÀI CA<br/>PM xác nhận OT"]
-  R -->|"scan trùng &lt; 30s"| E6["⚠️ TRÙNG SCAN<br/>tự bỏ dòng sau"]
+  R -->|"thiếu check"| E4["⚠️ THIẾU CHECK<br/>PM xác minh"]
+  R -->|"ngoài ca > 1h"| E5["⚠️ NGOÀI CA<br/>PM xác nhận OT"]
+  R -->|"scan trùng < 30s"| E6["⚠️ TRÙNG SCAN<br/>tự bỏ dòng sau"]
   R -->|"OK"| C["Chuẩn hoá<br/>status: READY"]
   C --> K["Kế toán duyệt →<br/>KHÓA KỲ 🔒"]
   K -->|"sai sau khóa?"| ADJ["Tạo dòng ADJUSTMENT<br/>ở kỳ sau kèm lý do"]
@@ -649,6 +875,10 @@ flowchart TD
   style K fill:#FFF1E4,color:#C2410C,stroke:#F97316,stroke-width:2px
   style LOCKED fill:#DCFCE7,color:#15803D
 </pre>
+    </div>
+</div>
+      <div class="join">↓</div>
+      <div class="node dest"><b>📊 Doanh thu tạm tính hôm nay</b><span>GPS check-in × giá bán — số nhảy mỗi ngày cho lãnh đạo theo dõi; nhãn TẠM TÍNH, không dùng đối soát.</span></div>
     </div>
   </div>
 </section>
@@ -678,7 +908,7 @@ flowchart TD
       </div>
       <div class="block aff">
         <h4>Link giới thiệu của CTV/Sale</h4>
-        <p>Mỗi CTV/Sale có link riêng để rải. Người đăng ký theo link nào tự ghi nguồn cho chủ link — bấm nhiều link chỉ tính cái đầu tiên, hiệu lực 30 ngày, và vẫn chịu đầy đủ các luật chặn ở trên.</p>
+        <p>Mỗi CTV/Sale có link riêng để rải. Người đăng ký theo link nào tự ghi nguồn cho chủ link — bấm nhiều link chỉ tính cái đầu tiên, hiệu lực 30 ngày. Kể cả khi Zalo tự xóa cookie, mã vẫn được giữ (theo link + ô điền tay). Vẫn chịu đầy đủ các luật chặn ở trên.</p>
       </div>
       <div class="block override">
         <h4>HR thêm tay khi cần — có quy tắc rõ ràng</h4>
@@ -690,11 +920,9 @@ flowchart TD
       <div class="s"><div><b>Nộp hồ sơ</b><span>Vendor/CTV nộp trên cổng, CTV/Sale rải link, hoặc lao động tự đăng ký.</span></div></div>
       <div class="s"><div><b>Đối chiếu CCCD</b><span>Hệ thống tự kiểm tra: đã có trong dữ liệu chưa? đang bị luật chặn nào không?</span></div></div>
       <div class="s"><div><b>HR duyệt</b><span>Ba kết quả: tạo hồ sơ mới · gộp vào hồ sơ cũ · từ chối kèm lý do (người nộp nhìn thấy).</span></div></div>
-      <div class="s"><div><b>Thành hồ sơ chính thức</b><span>Ghi rõ nguồn đưa vào — ai giới thiệu được hưởng hoa hồng khi đến mốc.</span></div></div>
-    </div>
-
+      <div class="s"><div><b>Thành hồ sơ chính thức</b><span>Ghi rõ nguồn đưa vào — ai giới thiệu được hưởng hoa hồng khi đến mốc.</span>
     <div class="diagram">
-      <div class="caption">Ai làm gì, lúc nào, hệ thống check gì — qua ví dụ ứng viên Nguyễn Văn An nộp từ Vendor Long Vân</div>
+      <div class="caption">Vendor nộp hồ sơ — ví dụ ứng viên Nguyễn Văn An từ Vendor Long Vân</div>
 <pre class="mermaid">
 sequenceDiagram
   autonumber
@@ -704,32 +932,29 @@ sequenceDiagram
   participant HR as 👔 HR
   actor NLD as 👷 Ứng viên
   participant P as 📱 App HRP
-
   V->>VP: Đăng nhập (OAuth)
-  V->>VP: Upload hồ sơ: tên, CCCD, SĐT, ảnh CCCD
+  V->>VP: Upload hồ sơ: tên, CCCD, SĐT, ảnh
   VP->>SYS: POST /api/vendors/applicants
-  SYS->>SYS: Check 1: đã có tiến cử 7 ngày?
+  SYS->>SYS: Check 1: tiến cử 7 ngày?
   SYS->>SYS: Check 2: đang hưởng hoa hồng?
   SYS->>SYS: Check 3: đang hưởng lương vendor?
-  alt Một trong 3 điều kiện trùng
+  alt Trùng 1 trong 3 điều kiện
     SYS-->>VP: ❌ BLOCKED + lý do
-    VP->>V: "Ứng viên đã có người tiến cử"
-  else OK — chưa ai tiến cử
-    SYS->>SYS: Tạo submission status CHỜ_DUYỆT
-    SYS->>HR: 🔔 Notify hồ sơ mới từ Vendor Long Vân
-    HR->>SYS: Xem hồ sơ + CCCD chip
-    HR->>NLD: SMS + Zalo: HRP đã nhận hồ sơ
-    NLD->>P: Đăng ký tài khoản bằng CCCD
-    P->>SYS: Xác nhận "tôi đúng người trong hồ sơ"
+    VP->>V: Ứng viên đã có người tiến cử
+  else OK
+    SYS->>HR: 🔔 Hồ sơ mới
+    HR->>NLD: SMS + Zalo nhận hồ sơ
+    NLD->>P: Đăng ký bằng CCCD
+    P->>SYS: Xác nhận đúng người
     HR->>SYS: ✅ Duyệt → MATCHED
-    SYS->>SYS: Tạo worker + assignment mồi
-    SYS-->>VP: "Hồ sơ đã duyệt — chờ điều động"
+    SYS-->>VP: Hồ sơ đã duyệt
     alt Sau 30 ngày làm liên tục
-      SYS->>SYS: Vendor nhận hoa hồng giữ chân
-      SYS-->>VP: "💰 Hoa hồng 30 ngày: 1.200.000 đ"
+      SYS-->>VP: 💰 Hoa hồng giữ chân
     end
   end
 </pre>
+    </div>
+</div></div>
     </div>
   </div>
 </section>
@@ -742,11 +967,9 @@ sequenceDiagram
     <div class="steps">
       <div class="s"><div><b>Người lao động tạo đơn</b><span>Tạm ứng / phản ánh sai công / xin nghỉ — vài chạm trên app.</span></div></div>
       <div class="s"><div><b>HR xác nhận hợp lệ</b><span>Đối chiếu công, hạn mức. Có thể từ chối kèm lý do hoặc người lao động tự rút đơn.</span></div></div>
-      <div class="s"><div><b>Kế toán duyệt chi</b><span>Chi từ quỹ vào đúng tài khoản đã xác thực — ghi dấu vết từng bước.</span></div></div>
-    </div>
-
+      <div class="s"><div><b>Kế toán duyệt chi</b><span>Chi từ quỹ vào đúng tài khoản đã xác thực — ghi dấu vết từng bước.</span>
     <div class="diagram">
-      <div class="caption">Trạng thái đơn — đi qua 2 chữ ký (HR xác nhận → Kế toán duyệt chi)</div>
+      <div class="caption">Trạng thái đơn — đi qua 2 chữ ký</div>
 <pre class="mermaid">
 stateDiagram-v2
   [*] --> CHODUYET: Người lao động tạo đơn
@@ -764,7 +987,7 @@ stateDiagram-v2
     </div>
 
     <div class="diagram">
-      <div class="caption">Thứ tự thao tác khi một đơn tạm ứng chạy từ app người lao động về đến tài khoản ngân hàng</div>
+      <div class="caption">Đơn tạm ứng chạy từ app về đến tài khoản ngân hàng</div>
 <pre class="mermaid">
 sequenceDiagram
   autonumber
@@ -774,23 +997,24 @@ sequenceDiagram
   participant KT as 💰 Kế toán
   participant BANK as 🏦 Ngân hàng
   participant AUD as 📋 Audit log
-
   NLD->>APP: Tạo đơn tạm ứng 2.000.000 đ
-  APP->>APP: Validate số tiền ≤ 70% lương kỳ
-  APP->>HR: 🔔 Notify: HĐ-2026-0089 chờ duyệt
+  APP->>APP: Validate ≤ 70% lương kỳ
+  APP->>HR: 🔔 HĐ-2026-0089 chờ duyệt
   HR->>APP: Xem hồ sơ + lịch sử đơn
   HR->>APP: ✅ Xác nhận hợp lệ
-  HR->>AUD: Ghi HR xác nhận lúc 14:32
-  HR->>KT: 🔔 Notify: Kế toán duyệt chi
+  HR->>AUD: Ghi HR xác nhận 14:32
+  HR->>KT: 🔔 Kế toán duyệt chi
   KT->>APP: Kiểm tra quỹ tạm ứng
   KT->>APP: ✅ Duyệt chi
-  KT->>AUD: Ghi KT duyệt lúc 15:10
-  KT->>BANK: Lệnh chuyển 2.000.000 đ → STK ****5678
+  KT->>AUD: Ghi KT duyệt 15:10
+  KT->>BANK: Chuyển 2.000.000 đ → STK ****5678
   BANK-->>KT: ✅ Thành công
-  KT->>APP: Cập nhật trạng thái = ĐÃ CHI
-  APP->>NLD: 🔔 Đã chuyển 2.000.000 đ vào VCB ***5678
-  APP->>AUD: Ghi đóng đơn lúc 15:14
+  KT->>APP: Trạng thái = ĐÃ CHI
+  APP->>NLD: 🔔 Đã chuyển vào VCB ***5678
+  APP->>AUD: Ghi đóng đơn 15:14
 </pre>
+    </div>
+</div></div>
     </div>
   </div>
 </section>
@@ -838,32 +1062,32 @@ sequenceDiagram
       <div class="item mile"><span class="when">~12 tuần</span><b>Vận hành nội bộ chính thức</b><span>Mốc quan trọng đầu tiên.</span></div>
       <div class="item"><span class="when">7 tuần</span><b>Mở ba cổng</b><span>App người lao động, cổng đối tác, CTV + link giới thiệu.</span></div>
       <div class="item"><span class="when">4–5 tuần</span><b>Tài chính đầy đủ</b><span>Bảng lương, hoa hồng, báo cáo.</span></div>
-      <div class="item"><span class="when">Sau đó</span><b>Mở rộng theo nhu cầu</b><span>Máy chấm công kết nối trực tiếp · bảng KPI vận hành (tỷ lệ lấp đầy, đi làm đều, giữ chân) · báo cáo chất lượng dữ liệu · ứng dụng kho · trí tuệ nhân tạo gợi ý việc phù hợp...</span></div>
-    </div>
-
+      <div class="item"><span class="when">Sau đó</span><b>Mở rộng theo nhu cầu</b><span>Máy chấm công kết nối trực tiếp · bảng KPI vận hành (tỷ lệ lấp đầy, đi làm đều, giữ chân) · báo cáo chất lượng dữ liệu · ứng dụng kho · trí tuệ nhân tạo gợi ý việc phù hợp...</span>
     <div class="diagram">
-      <div class="caption">Cùng lộ trình, nhìn dạng Gantt — biết mốc nào trước, mốc nào chạy song song</div>
+      <div class="caption">Lộ trình triển khai — Gantt</div>
 <pre class="mermaid">
 gantt
   title HRP — Lộ trình triển khai
   dateFormat YYYY-MM-DD
   axisFormat %d/%m
-  section Khởi động (2 tuần)
+  section Khởi động
   Thu thập dữ liệu thật + chốt thiết kế :s0, 2026-08-24, 2w
-  section Giai đoạn 1 — Nền tảng (4-5 tuần)
-  Hồ sơ lao động + KH + dự án + nhu cầu tuyển :w1, 2026-09-07, 5w
-  section Giai đoạn 2 — Vận hành (4 tuần)
+  section GĐ 1 — Nền tảng
+  Hồ sơ LĐ + KH + dự án + NTT :w1, 2026-09-07, 5w
+  section GĐ 2 — Vận hành
   Nhập &amp; chốt công + đối soát :w2, 2026-10-12, 4w
-  section Chạy thử (2 tuần)
+  section Chạy thử
   Chạy dữ liệu thật + đào tạo :uat, 2026-11-09, 2w
   Vận hành nội bộ chính thức :milestone, 2026-11-23, 0d
-  section Giai đoạn 3 — Mở cổng (7 tuần)
+  section GĐ 3 — Mở cổng
   App NLD + Cổng đối tác + CTV :w3, 2026-11-23, 7w
-  section Giai đoạn 4 — Tài chính đầy đủ (4-5 tuần)
+  section GĐ 4 — Tài chính
   Bảng lương + hoa hồng + báo cáo :w4, 2027-01-18, 5w
   section Sau đó
   Nhân sự nội bộ + mở rộng :m9, 2027-02-22, 4w
 </pre>
+    </div>
+</div>
     </div>
   </div>
 </section>
@@ -903,7 +1127,7 @@ gantt
       <div><b>Liên hệ</b><br>contact@hrpartner.vn<br>Hotline: 09xx xxx xxx</div>
       <div><b>Website</b><br><a href="https://hrpartner.vn">hrpartner.vn</a><br><a href="https://vendor.hrpartner.vn">vendor.hrpartner.vn</a></div>
     </div>
-    Dựng từ <a href="docs/UNIFIED_PLAN_v3.md">docs/UNIFIED_PLAN_v3.md</a> (&gt;= v3.3) · HRP · 15/08/2026
+    Dựng từ <a href="UNIFIED_PLAN_v4.md">docs/UNIFIED_PLAN_v4.md</a> (v4.8) · HRP · 15/08/2026
   </div>
 </footer>
 </body>
