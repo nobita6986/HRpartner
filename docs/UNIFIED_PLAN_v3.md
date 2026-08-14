@@ -1,7 +1,7 @@
 # HRP SYSTEM — UNIFIED PROJECT PLAN (v3.0)
 ## Hệ thống Quản trị Nguồn Nhân lực & Cung ứng Nhân lực
 
-> **Phiên bản:** 3.1 (tiếp thu Báo cáo Đánh giá Khả thi + bài học từ Odoo HR)
+> **Phiên bản:** 3.2 (tiếp thu Báo cáo Đánh giá Khả thi + bài học Odoo HR + bài học Viet-ERP VN compliance)
 > **Ngày:** 14/08/2026
 > **Trạng thái:** Draft - Chờ phê duyệt
 
@@ -50,6 +50,20 @@
 | 26 | **`payroll_config` bảng key-value + effective-dated**: OVERTIME_TOLERANCE_MIN, OT_15_RATE, BH_LUONG_MIN_REGION_1, TNCN_GIAM_TRU_BAN_THAN, BHXH_RATE_EMPLOYEE, ... | Odoo `res.config.settings` |
 | 27 | **Calc input snapshot** (`calc_input_snapshot` JSONB): chụp `config_version` + rates tại thời điểm tính — replay được | ADR-013 (bất biến khi LOCK) |
 | 28 | **Luồng pay_run cập nhật**: snapshot config → hours breakdown → hourly_wage → apply rules theo sequence → pay_run_rule_overrides → LOCK | Tổng hợp Odoo |
+
+### 0.1.2. Thay đổi v3.2 (bổ sung từ bài học Viet-ERP — Vietnamese HR compliance)
+
+| # | Bổ sung | Nguồn |
+|---|---------|-------|
+| 29 | **`Dependent` model** (người phụ thuộc giảm trừ TNCN 4.4M/người): `fullName`, `dateOfBirth`, `relationship`, `nationalId`, `taxDependentCode` (MST NPT), `validFrom/To` | Viet-ERP HRM `Dependent` |
+| 30 | **Worker bổ sung VN compliance fields**: `gender`, `maritalStatus`, `permanentAddress`/`currentAddress`/`hometown`, `ethnicGroup`, `religion`, `nationality` | Viet-ERP HRM `Employee` 34 fields |
+| 31 | **CCCD đầy đủ**: `cccdIssuedDate`, `cccdIssuedPlace`, `cccdExpiryDate`, `cccdChipData` (eKYC) | Bắt buộc theo NĐ 13/2023 + Luật CCCD 2023 |
+| 32 | **Worker thuế & BH**: `taxCode` (MST cá nhân, unique), `insuranceCode` (số sổ BHXH, unique), `bankAccount`/`bankName`/`bankBranch` | HRM `tax_code`/`insurance_code` |
+| 33 | **`tax_brackets` bảng riêng** (PIT progressive 7 bậc), tách khỏi `payroll_config` JSON — query/audit/versioning tốt hơn | Tổng hợp Odoo + Viet-ERP |
+| 34 | **`calculateVietnameseTaxes()` service** (BigInt VND nguyên, pure, không truy cập DB) + golden tests (vitest) | Refactor Viet-ERP `packages/vietnam` |
+| 35 | **`payrollConfigRepo.loadTaxConfig(asOfDate)`** — load snapshot effective-dated từ `payroll_config` + `tax_brackets` | Odoo `res.config_settings` |
+| 36 | **File `src/shared/utils/money.ts`**: BigInt helpers (`mulRateVnd`, `roundHalfDownVnd`, `formatVnd`) | Internal |
+| 37 | **`prisma/schema-v3.1-patches.prisma`** patch file — copy từng block vào schema chính | Internal |
 
 ### 0.2. Các điểm review KHÔNG tiếp thu / tiếp thu có điều chỉnh
 
@@ -1576,6 +1590,134 @@ model payroll_config {
 - Holiday_worked_rate riêng (Odoo `public_leaves_rate`)
 - Paid/unpaid leave tracking (cần module HRM M9)
 - Multi-currency (V3 chỉ VND — đơn giản hóa)
+
+#### 12.5.2. Bài học từ Viet-ERP (`nclamvn/Viet-ERP`) — Vietnamese HR compliance
+
+> Phân tích từ repo tham khảo Việt Nam: `apps/HRM/prisma/schema.prisma` (EmployeePayroll — 30+ fields phục vụ BHXH/TNCN), `packages/vietnam/src/tax/pit.ts` (PIT progressive brackets), `packages/vietnam/src/insurance/bhxh.ts` (BHXH/BHYT/BHTN theo Luật BHXH 2014).
+
+**Những gì HRP V3 đã có (giữ vững):**
+
+| Pattern Viet-ERP | V3 HRP đã có | Ghi chú |
+|---|---|---|
+| `Decimal @db.Decimal(15, 2)` cho tiền | `BigInt` cho tiền | V3 an toàn hơn (không float), nhưng Viet-ERP dùng Decimal cho audit trail |
+| `EmployeePayroll` có 30+ fields tính lương | `worker_pay_results` + 9 fields hours (v3.1) | V3 normalize tốt hơn, Viet-ERP dùng flat field |
+| `PersonalDeduction = 11_000_000` hard-coded | `payroll_config.key = 'TNCN_GIAM_TRU_BAN_THAN'` | V3 đúng — có versioning/effective-dated |
+| BHXH rates hard-coded trong file | `payroll_config` key-value | V3 đúng |
+
+**Những gì V3 BỔ SUNG từ Viet-ERP (áp dụng vào v3.1):**
+
+| # | Bổ sung cho V3 | Nguồn Viet-ERP | Tại sao cần |
+|---|-----------------|----------------|--------------|
+| **C1** | **`Dependent` model** (người phụ thuộc giảm trừ TNCN): `fullName`, `dateOfBirth`, `relationship`, `nationalId`, `taxDependentCode` (MST NPT), `validFrom`/`validTo` | `apps/HRM/prisma/schema.prisma` line 429-444 | Hiện V3 không lưu NPT — không thể tính giảm trừ 4.4M/người |
+| **C2** | **Bổ sung field Worker**: `gender`, `maritalStatus`, `permanentAddress`/`currentAddress`/`hometown`, `ethnicGroup` (dân tộc), `religion`, `nationality` | HRM line 347-427 | Cần cho: Mẫu 02/ĐK-NPT-TNCN, Mẫu 05/KK-TNCN, Mẫu TK1-TS |
+| **C3** | **CCCD đầy đủ**: `cccdIssuedDate`, `cccdIssuedPlace`, `cccdExpiryDate`, `cccdChipData` (JSON — lưu eKYC) | HRM `nationalIdDate`/`Place` | Bắt buộc từ 2025 CCCD gắn chip; Mẫu 01/TSTK phải có ngày cấp |
+| **C4** | **Worker thuế & BH**: `taxCode` (MST cá nhân, unique), `insuranceCode` (số sổ BHXH, unique), `bankAccount`/`bankName`/`bankBranch` | HRM line 378-382 | Tra cứu chéo với cơ quan thuế + cơ quan BHXH |
+| **C5** | **`tax_brackets` bảng riêng** (PIT progressive 7 bậc), tách khỏi `payroll_config` JSON | Odoo `payroll.bonus.deduction` + service pattern | Khi QH sửa luật (vd tăng giảm trừ), chỉ INSERT version mới, không sửa cũ; query + audit nhanh hơn JSON |
+| **C6** | **`calculateVietnameseTaxes()` service** (BigInt VND nguyên, pure function, không truy cập DB) | Viet-ERP `packages/vietnam` (refactor) | Domain layer riêng, dễ test golden case, không phụ thuộc Prisma |
+| **C7** | **`payroll_config` schema + `payrollConfigRepo.loadTaxConfig(asOfDate)`** | Odoo `res.config_settings` + Viet-ERP `MINIMUM_WAGE_2024` constant | Config tập trung, versioning, audit được |
+| **C8** | **`calcInputSnapshot` (JSONB)** lưu trên `worker_pay_results` | HRP v3.1 §12.5.1 B7 | ADR-013: replay được khi audit, biết chính xác tính với config version nào |
+
+**Schema bổ sung (xem `prisma/schema-v3.1-patches.prisma`):**
+
+```prisma
+// Worker — thêm field VN compliance
+model Worker {
+  // ... existing fields ...
+  gender              Gender?
+  maritalStatus       MaritalStatus?
+  permanentAddress    String?
+  currentAddress      String?
+  hometown            String?
+  ethnicGroup         String?
+  religion            String?
+  nationality         String           @default("VN")
+  cccdIssuedDate      DateTime?
+  cccdIssuedPlace     String?
+  cccdExpiryDate      DateTime?
+  cccdChipData        Json?
+  taxCode             String?          @unique
+  insuranceCode       String?          @unique
+  bankAccount         String?
+  bankName            String?
+  bankBranch          String?
+  dependents          Dependent[]      @relation("WorkerDependents")
+}
+
+// Dependent — mới
+model Dependent {
+  id               String                @id @default(uuid())
+  workerId         String
+  fullName         String
+  dateOfBirth      DateTime
+  relationship     DependentRelationship
+  nationalId       String?
+  taxDependentCode String?               @unique
+  validFrom        DateTime
+  validTo          DateTime?
+  isActive         Boolean               @default(true)
+  // ... timestamps
+  worker           Worker                @relation("WorkerDependents", fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+// TaxBracket — mới (bảng riêng thay vì JSON array)
+model TaxBracket {
+  id               String    @id @default(uuid())
+  ordinal          Int       // 1..7
+  lowerBoundVnd    BigInt
+  upperBoundVnd    BigInt?
+  ratePercent      Decimal   @db.Decimal(5, 2)
+  cumulativeTaxVnd BigInt
+  effectiveFrom    DateTime
+  effectiveTo      DateTime?
+  isActive         Boolean   @default(true)
+  legalRef         String?
+  @@unique([ordinal, effectiveFrom])
+}
+
+// PayrollConfig — đã có ở v3.1, bổ sung 'legalRef'
+```
+
+**File TypeScript đã tạo (xem `src/domains/payroll/`):**
+
+```
+src/domains/payroll/
+├── calculateVietnameseTaxes.ts          # Pure service, BigInt
+├── calculateVietnameseTaxes.test.ts     # Golden tests (vitest)
+├── payrollConfigRepo.ts                 # Load effective-dated snapshot
+└── index.ts                             # Barrel
+src/shared/utils/money.ts                # BigInt helpers (mulRateVnd, roundHalfDownVnd)
+prisma/schema-v3.1-patches.prisma        # Patch file (Worker fields + Dependent + TaxBracket)
+```
+
+**Golden test case (đã pass trong `calculateVietnameseTaxes.test.ts`):**
+
+```
+NLĐ: gross 25.000.000đ/tháng, 1 NPT
+  BHXH NLĐ (10.5%):     2.625.000đ
+  Giảm trừ bản thân:    11.000.000đ
+  Giảm trừ NPT (1):      4.400.000đ
+  Thu nhập chịu thuế:    6.975.000đ (bậc 2, 10%)
+  TNCN:                 447.500đ (250k + 197.5k)
+  Net:                 21.927.500đ
+  BHXH DN (cost-to-co): 5.500.000đ (22%)
+```
+
+**Mapping sang biểu mẫu thuế VN (mục tiêu post-go-live):**
+
+| Biểu mẫu | HRP model liên quan | Trạng thái |
+|---|---|---|
+| Mẫu 05/KK-TNCN (Khai khấu trừ thuế) | `worker_pay_results` (PIT, deductions) | ✅ Có data |
+| Mẫu 02/ĐK-NPT-TNCN (ĐK người phụ thuộc) | `Dependent` + `Worker.taxCode` | ✅ Sau khi có Dependent model |
+| Mẫu 07/ĐK-NPT-TNCN (Thay đổi NPT) | `Dependent.validFrom/validTo` + audit | ✅ Schema đủ |
+| Mẫu TK1-TS (Tờ khai tham gia BHXH) | `Worker` (gender, DOB, CCCD) + `Assignment` | ✅ Sau khi Worker có CCCD đầy đủ |
+| Báo cáo BHXH hàng tháng | `worker_pay_results.bhxh*` + export | 🔨 Wave 4 |
+
+**Tiêu chí chấp nhận Module M8 (bổ sung vào DoD §6.6):**
+- [ ] `calculateVietnameseTaxes()` có ≥ 10 golden tests pass
+- [ ] Tất cả config lấy từ `payroll_config`/`tax_brackets` — KHÔNG hard-code
+- [ ] Mọi field tiền là `BigInt` — `grep -r "\.toNumber()" src/domains/payroll/` trả về 0
+- [ ] Migration test: áp dụng NĐ mới (vd tăng `TNCN_GIAM_TRU_BAN_THAN`) → kỳ lương mới tự động dùng giá trị mới, kỳ cũ vẫn dùng cũ (effective-dated)
+- [ ] `calcInputSnapshot` được lưu cho mỗi `worker_pay_results` khi LOCK
 
 
 
