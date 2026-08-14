@@ -3,7 +3,7 @@
 /**
  * DataTable — Reusable TanStack Table wrapper cho HRP.
  *
- * Pattern học t� satnaing/shadcn-admin:
+ * Pattern học từ satnaing/shadcn-admin:
  *   - URL-synced state (pagination, filters)
  *   - Toolbar với search + column faceted filters
  *   - Bulk actions (row selection)

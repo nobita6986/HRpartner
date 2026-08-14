@@ -40,7 +40,29 @@ type ConfigLoader = {
       orderBy: { effectiveFrom: 'desc' };
     }) => Promise<PayrollConfigRow[]>;
   };
+  taxBracket: {
+    findMany: (args: {
+      where: {
+        isActive: true;
+        effectiveFrom: { lte: Date };
+        OR: Array<{ effectiveTo: null } | { effectiveTo: { gt: Date } }>;
+      };
+      orderBy: { ordinal: 'asc' };
+    }) => Promise<TaxBracketRow[]>;
+  };
 };
+
+/** DB row shape cho `tax_brackets` (V4 F25 — bảng là nguồn sự thật cho PIT brackets) */
+export interface TaxBracketRow {
+  ordinal: number;
+  lowerBoundVnd: bigint;
+  upperBoundVnd: bigint | null;
+  ratePercent: unknown; // Prisma.Decimal
+  cumulativeTaxVnd: bigint;
+  effectiveFrom: Date;
+  effectiveTo: Date | null;
+  isActive: boolean;
+}
 
 /**
  * Load tax config có hiệu lực tại `asOfDate`.
@@ -92,11 +114,27 @@ export async function loadTaxConfig(
     return DEFAULT_VN_TAX_CONFIG_2024;
   }
 
-  return buildConfigFromRows(latestByKey, asOfDate);
+  // V4 (F25): PIT brackets đọc từ BẢNG tax_brackets (canonical) — không còn key JSON PIT_BRACKETS
+  const bracketRows = await db.taxBracket.findMany({
+    where: {
+      isActive: true,
+      effectiveFrom: { lte: asOfDate },
+      OR: [{ effectiveTo: null }, { effectiveTo: { gt: asOfDate } }],
+    },
+    orderBy: { ordinal: 'asc' },
+  });
+  const pitBrackets: TaxBracket[] = bracketRows.map((b) => ({
+    lowerBoundVnd: b.lowerBoundVnd,
+    ratePercent: Number(b.ratePercent),
+    cumulativeTaxVnd: b.cumulativeTaxVnd,
+  }));
+
+  return buildConfigFromRows(latestByKey, pitBrackets, asOfDate);
 }
 
 function buildConfigFromRows(
   rows: Map<string, PayrollConfigRow>,
+  pitBrackets: readonly TaxBracket[], // V4 (F25): từ bảng tax_brackets, không từ JSON
   asOfDate: Date,
 ): VietnameseTaxConfig {
   const get = (key: string): PayrollConfigRow => {
@@ -104,19 +142,6 @@ function buildConfigFromRows(
     if (!r) throw new Error(`Missing payroll_config key: ${key}`);
     return r;
   };
-
-  // PIT brackets được lưu dạng JSON array (key: 'PIT_BRACKETS')
-  const bracketsRow = get('PIT_BRACKETS');
-  const bracketsRaw = bracketsRow.valueJson as Array<{
-    lowerBound: number | string;
-    ratePercent: number;
-    cumulativeTax: number | string;
-  }>;
-  const pitBrackets: TaxBracket[] = bracketsRaw.map((b) => ({
-    lowerBoundVnd: BigInt(b.lowerBound),
-    ratePercent: b.ratePercent,
-    cumulativeTaxVnd: BigInt(b.cumulativeTax),
-  }));
 
   return {
     configVersion: `${asOfDate.getFullYear()}-Q${Math.ceil((asOfDate.getMonth() + 1) / 3)}`,

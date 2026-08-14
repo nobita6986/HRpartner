@@ -112,6 +112,9 @@ function makeMockPrisma() {
         const ticket: MockTicket = {
           id: `ticket-${++ticketCounter}`,
           ...data,
+          // Mirror schema @default (Prisma thật tự điền — mock phải làm tương tự)
+          amountVnd: data.amountVnd ?? 0n,
+          deductionVnd: data.deductionVnd ?? 0n,
           version: data.version ?? 1,
           isOverdue: false,
           createdAt: new Date(),
@@ -516,9 +519,9 @@ describe('TicketService — Concurrency', () => {
       { id: 'w1', role: 'WORKER' },
     );
 
-    // Simulate concurrent update by mutating ticket.version
-    const idx = prisma._data.tickets.findIndex((x) => x.id === t.id);
-    prisma._data.tickets[idx].version = 999;
+    // Giả lập 1 actor khác thắng race giữa find và update: updateMany trả count 0 1 lần
+    // (Cách cũ: mutate version trong store KHÔNG giả lập được race — service đọc lại version mới)
+    (prisma.ticket.updateMany as any).mockImplementationOnce(async () => ({ count: 0 }));
 
     await expect(
       service.approveTicket(

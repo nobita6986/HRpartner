@@ -299,8 +299,9 @@ function computeEffectiveRatePercent(taxVnd: bigint, grossVnd: bigint): number {
  *   DEFAULT_VN_TAX_CONFIG_2024,
  * );
  * // result.bhxhEmployeeVnd = 2_000_000n
- * // result.pitAmountVnd = ~1_650_000n
- * // result.netSalaryVnd = ~20_300_000n
+ * // result.totalEmployeeInsuranceVnd = 2_625_000n (10.5%)
+ * // result.pitAmountVnd = 447_500n
+ * // result.netSalaryVnd = 21_927_500n  (V4 F26: khớp golden case bên dưới)
  * ```
  */
 export function calculateVietnameseTaxes(

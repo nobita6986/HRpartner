@@ -36,12 +36,11 @@
  *   - HRP v3.2 §12.5.1 (doD có state transition test)
  */
 
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, TicketAction } from '@prisma/client'; // TicketAction là VALUE (enum dùng trong TRANSITIONS)
 import type {
   Ticket,
   TicketType,
   TicketStatus,
-  TicketAction,
   TicketActorRole,
   TicketHistory,
   AuditLog,
@@ -345,6 +344,8 @@ export class TicketService {
   ): Promise<Ticket> {
     validateCreateInput(input);
 
+    // TODO(V4 F24): MVP dùng metadata-based idempotency (đơn giản, đủ cho ticket).
+    // Từ Wave 2: chuyển sang bảng idempotency_keys theo ADR-014 — scope (actorId, route, key) + request hash.
     // Idempotency check (trước khi INSERT)
     if (input.idempotencyKey) {
       const existing = await this.prisma.ticket.findFirst({

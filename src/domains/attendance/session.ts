@@ -3,6 +3,10 @@
  * Production sẽ thay bằng `getServerSession()` từ NextAuth với role từ Worker.user.role.
  *
  * Stub này giả định Bearer token là `userId:role` để test nhanh.
+ *
+ * ⚠️ STUB AUTH — CHỈ DÙNG CHO DEV/TEST (V4):
+ * Role lấy từ header do CLIENT tự khai — KHÔNG được deploy production.
+ * Trước khi deploy: thay bằng JWT thật — đăng nhập mật khẩu (ADR-007 V4.2) — getServerSession thật.
  */
 import { NextRequest } from 'next/server';
 import { TicketActorRole } from '@prisma/client';

@@ -1,6 +1,9 @@
 /**
  * Module M7 — Attendance & Tickets (Timesheet, GPS, Ticket)
  *
+ * ⚠️ V4 F23: ĐÃ HỢP NHẤT vào `schema.prisma` chính (14/08/2026).
+ * File này chỉ giữ làm tài liệu tham khảo lịch sử — mọi thay đổi tiếp theo sửa ở schema.prisma.
+ *
  * Ticket system: Worker gửi yêu cầu (Advance Salary / Timesheet Dispute / Leave),
  * HR/Accountant duyệt theo workflow 2 bước. Audit đầy đủ.
  *

@@ -11,7 +11,8 @@
 
 /**
  * Làm tròn tiền VND theo NĐ 123/2020 (làm tròn xuống đồng).
- * Ví dụ: 1500.4 → 1500 ; 1500.6 → 1501 (banker's rounding).
+ * Policy HRP = TRUNCATE (luôn chặn dưới): 1500.49 → 1500 ; 1500.99 → 1500.
+ * (V4 F29: sửa comment sai — code KHÔNG dùng banker's rounding.)
  *
  * Input có thể là BigInt | number | string (chuỗi decimal).
  * Output: BigInt.
@@ -38,7 +39,7 @@ export function roundHalfDownVnd(value: bigint | number | string): bigint {
 }
 
 /**
- * Cộng 2 BigInt an toàn. Ném lỗi nếu tràn (gần như không xảy ra với VND).
+ * Cộng 2 BigInt an toàn (BigInt không tràn — độ dài không giới hạn). V4 F29.
  */
 export function addVnd(a: bigint, b: bigint): bigint {
   return a + b;

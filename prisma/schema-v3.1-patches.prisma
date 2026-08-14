@@ -1,6 +1,9 @@
 /**
  * Prisma schema PATCHES — HRP v3.1 (Module M8 Payroll + Vietnamese compliance)
  *
+ * ⚠️ V4 F23: ĐÃ HỢP NHẤT vào `schema.prisma` chính (14/08/2026).
+ * File này chỉ giữ làm tài liệu tham khảo lịch sử — mọi thay đổi tiếp theo sửa ở schema.prisma.
+ *
  * File này KHÔNG thay thế `schema.prisma` gốc — chỉ chứa:
  *   1. Patch cho Worker model (CCCD/que_quan/dan_toc) — học từ Viet-ERP HRM
  *   2. Patch cho Dependent (người phụ thuộc giảm trừ TNCN)
@@ -244,7 +247,7 @@ model TaxBracket {
  * 13. TNCN_GIAM_TRU_BAN_THAN        = 11_000_000      (Luật TNCN, Điều 19)
  * 14. TNCN_GIAM_TRU_NGUOI_PHUC_THUOC = 4_400_000
  *
- * 15. PIT_BRACKETS (JSON_ARRAY): [
+ * 15. ~~PIT_BRACKETS (JSON_ARRAY)~~ — V4 F25: DEPRECATED, brackets đọc từ bảng `tax_brackets`: [
  *       { ordinal: 1, lowerBound: 0,        upperBound: 5_000_000,    rate: 5,  cumulative: 0 },
  *       { ordinal: 2, lowerBound: 5_000_000, upperBound: 10_000_000,   rate: 10, cumulative: 250_000 },
  *       { ordinal: 3, lowerBound: 10_000_000,upperBound: 18_000_000,   rate: 15, cumulative: 750_000 },

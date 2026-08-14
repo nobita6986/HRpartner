@@ -44,7 +44,7 @@ interface StaffingOrder {
   shift: string;
   startDate: string;
   deadline: string;
-  hourlyRateVnd: number;
+  hourlyRateVnd: number; // CHỈ demo display — V4 F28: production là BigInt VND nguyên (ADR-010)
   priority: 'NORMAL' | 'HIGH' | 'URGENT';
   status: 'OPEN' | 'CLOSING_SOON' | 'CLOSED';
 }

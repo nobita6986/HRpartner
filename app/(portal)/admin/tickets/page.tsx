@@ -33,7 +33,7 @@ import { DataTable, type DataTableFilterDef } from '@/src/shared/ui/data-table/d
 import { ViewToggle, useViewModeFromUrl } from '@/src/shared/ui/view-toggle/view-toggle';
 import { SlideOutDrawer } from '@/src/shared/ui/sheet/slide-out-drawer';
 
-// �══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 // MOCK DATA — sẽ thay bằng API call trong production
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -45,7 +45,7 @@ interface Ticket {
   workerName: string;
   workerCode: string;
   title: string;
-  amountVnd?: number;  // BigInt trong DB
+  amountVnd?: number;  // CHỈ demo display — V4 F28: production là BigInt VND nguyên (ADR-010), API trả string
   createdAt: string;
   slaDueAt?: string;
 }
@@ -244,7 +244,7 @@ const filters: DataTableFilterDef[] = [
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN PAGE
-// �══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 
 export default function TicketsPage() {
   const [tickets, setTickets] = React.useState<Ticket[]>(MOCK_TICKETS);

@@ -64,7 +64,7 @@ describe('calculateVietnameseTaxes() — Golden tests', () => {
     });
   });
 
-  describe('Case 3: Thu nhập cao (bậc 7 — 35%)', () => {
+  describe('Case 3: Thu nhập cao (cap BHXH, thuế bậc 6 — 30%)', () => {
     const input: PayrollTaxInput = {
       grossIncomeVnd: 100_000_000n,
       insuranceSalaryVnd: 99_200_000n, // cap = 20 × min_wage = 99.2M
@@ -76,8 +76,8 @@ describe('calculateVietnameseTaxes() — Golden tests', () => {
       expect(result.cappedInsuranceSalaryVnd).toBe(99_200_000n);
     });
 
-    it('TNCN thuộc bậc 7 (35%)', () => {
-      expect(result.pitBracketRatePercent).toBe(35);
+    it('TNCN thuộc bậc 6 (30%) — taxable 78.584.000 < 80M', () => {
+      expect(result.pitBracketRatePercent).toBe(30);
     });
 
     it('Net = gross - BH_NLĐ - TNCN > 60M', () => {
@@ -163,8 +163,9 @@ describe('calculateVietnameseTaxes() — Golden tests', () => {
       const badCfg = {
         ...cfg,
         pitBrackets: [
-          { lowerBoundVnd: 5_000_000n, ratePercent: 10, cumulativeTaxVnd: 0n },
-          { lowerBoundVnd: 0n, ratePercent: 5, cumulativeTaxVnd: 0n }, // sai thứ tự
+          { lowerBoundVnd: 0n, ratePercent: 5, cumulativeTaxVnd: 0n },
+          { lowerBoundVnd: 10_000_000n, ratePercent: 10, cumulativeTaxVnd: 250_000n },
+          { lowerBoundVnd: 8_000_000n, ratePercent: 15, cumulativeTaxVnd: 750_000n }, // sai thứ tự (giảm)
         ],
       };
       expect(() =>
