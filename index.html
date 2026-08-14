@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="HRP - Hệ thống Quản trị Nguồn Nhân lực & Cung ứng Nhân lực">
+    <title>HRP - Hệ thống Quản trị Nhân lực</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👷</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
+            color: #1f2937;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #9a3412;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 32px;
+        }
+
+        .badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #f97316;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .logo {
+            font-size: 80px;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+
+        .brand {
+            color: #f97316;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: #64748b;
+            margin-bottom: 48px;
+            line-height: 1.6;
+        }
+
+        .status-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .status-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 16px;
+        }
+
+        .progress-bar {
+            background: #f1f5f9;
+            border-radius: 9999px;
+            height: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #f97316, #ea580c);
+            height: 100%;
+            border-radius: 9999px;
+            width: 5%;
+            transition: width 0.5s ease;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .feature {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: left;
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .feature-desc {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .footer {
+            margin-top: 48px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .footer a {
+            color: #f97316;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 36px;
+            }
+            .subtitle {
+                font-size: 16px;
+            }
+            .logo {
+                font-size: 64px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="badge">
+            <span>Đang phát triển</span>
+        </div>
+
+        <div class="logo">👷</div>
+
+        <h1><span class="brand">HRP</span> — HR Partner</h1>
+
+        <p class="subtitle">
+            Hệ thống Quản trị Nguồn Nhân lực &amp; Cung ứng Nhân lực<br>
+            Kết nối lao động phổ thông với nhà thầu
+        </p>
+
+        <div class="status-card">
+            <div class="status-title">Tiến độ Sprint 1 — M0 + M1</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="progress-text">5% hoàn thành · Khởi tạo nền tảng</div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">📱</div>
+                <div class="feature-title">Worker Portal</div>
+                <div class="feature-desc">App mobile-first cho người lao động</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">👔</div>
+                <div class="feature-title">Admin Dashboard</div>
+                <div class="feature-desc">Quản lý dự án, nhân sự, payroll</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🤝</div>
+                <div class="feature-title">Vendor Portal</div>
+                <div class="feature-desc">Cổng đối tác cung ứng nhân lực</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">💬</div>
+                <div class="feature-title">Zalo Login</div>
+                <div class="feature-desc">Đăng nhập 1 chạm qua Zalo OA</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2026 HRP — Hệ thống đang được phát triển</p>
+            <p style="margin-top: 8px;">Liên hệ: <a href="mailto:contact@hrpartner.vn">contact@hrpartner.vn</a></p>
+        </div>
+    </div>
+</body>
+</html>
