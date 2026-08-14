@@ -102,7 +102,6 @@ function errorResponse(err: unknown): NextResponse {
       { status: statusMap[err.code] ?? 500 },
     );
   }
-  if (err instanceof Response) return err;
   console.error('[POST /api/tickets] unexpected error', err);
   return NextResponse.json({ error: 'INTERNAL', message: String(err) }, { status: 500 });
 }
