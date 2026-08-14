@@ -17,17 +17,14 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
             background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
             color: #1f2937;
+            line-height: 1.6;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
         }
 
         .container {
-            max-width: 800px;
-            width: 100%;
-            text-align: center;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px;
         }
 
         .badge {
@@ -41,7 +38,7 @@
             border-radius: 9999px;
             font-size: 14px;
             font-weight: 500;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
 
         .badge::before {
@@ -58,16 +55,21 @@
             50% { opacity: 0.5; }
         }
 
+        .hero {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
         .logo {
-            font-size: 80px;
-            margin-bottom: 16px;
+            font-size: 64px;
+            margin-bottom: 12px;
         }
 
         h1 {
-            font-size: 48px;
+            font-size: 44px;
             font-weight: 700;
             color: #0f172a;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             letter-spacing: -0.02em;
         }
 
@@ -76,66 +78,59 @@
         }
 
         .subtitle {
-            font-size: 20px;
+            font-size: 18px;
             color: #64748b;
-            margin-bottom: 48px;
-            line-height: 1.6;
+            max-width: 640px;
+            margin: 0 auto;
         }
 
-        .status-card {
+        .section {
             background: white;
             border: 1px solid #e5e7eb;
             border-radius: 16px;
             padding: 32px;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
-        .status-title {
-            font-size: 18px;
-            font-weight: 600;
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
             color: #0f172a;
             margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .progress-bar {
-            background: #f1f5f9;
-            border-radius: 9999px;
-            height: 12px;
-            overflow: hidden;
+        .section-title .icon {
+            font-size: 24px;
+        }
+
+        .section p {
+            color: #475569;
             margin-bottom: 12px;
         }
 
-        .progress-fill {
-            background: linear-gradient(90deg, #f97316, #ea580c);
-            height: 100%;
-            border-radius: 9999px;
-            width: 5%;
-            transition: width 0.5s ease;
+        .section p:last-child {
+            margin-bottom: 0;
         }
 
-        .progress-text {
-            font-size: 14px;
-            color: #64748b;
-        }
-
-        .features {
+        .features-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 16px;
-            margin-bottom: 32px;
         }
 
         .feature {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: left;
+            background: #fafafa;
+            border: 1px solid #f1f5f9;
+            border-radius: 10px;
+            padding: 18px;
         }
 
         .feature-icon {
-            font-size: 28px;
+            font-size: 24px;
             margin-bottom: 8px;
         }
 
@@ -143,6 +138,7 @@
             font-weight: 600;
             color: #0f172a;
             margin-bottom: 4px;
+            font-size: 15px;
         }
 
         .feature-desc {
@@ -150,8 +146,150 @@
             color: #64748b;
         }
 
+        .strengths {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .strength {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            background: #fff7ed;
+            border-radius: 10px;
+            border-left: 4px solid #f97316;
+        }
+
+        .strength-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .strength-title {
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 4px;
+            font-size: 15px;
+        }
+
+        .strength-desc {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 28px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: #fed7aa;
+        }
+
+        .milestone {
+            position: relative;
+            margin-bottom: 20px;
+            padding-bottom: 4px;
+        }
+
+        .milestone:last-child {
+            margin-bottom: 0;
+        }
+
+        .milestone::before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 6px;
+            width: 12px;
+            height: 12px;
+            background: #f97316;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 1px #f97316;
+        }
+
+        .milestone-date {
+            font-size: 13px;
+            color: #f97316;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .milestone-title {
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .milestone-desc {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .progress-card {
+            background: linear-gradient(135deg, #fff7ed, #ffffff);
+            border: 1px solid #fed7aa;
+        }
+
+        .progress-bar {
+            background: #f1f5f9;
+            border-radius: 9999px;
+            height: 12px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #f97316, #ea580c);
+            height: 100%;
+            border-radius: 9999px;
+            width: 5%;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            color: #64748b;
+            text-align: center;
+        }
+
+        .eta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .eta-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .eta-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .eta-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f97316;
+        }
+
         .footer {
             margin-top: 48px;
+            text-align: center;
             font-size: 14px;
             color: #64748b;
         }
@@ -167,66 +305,228 @@
 
         @media (max-width: 640px) {
             h1 {
-                font-size: 36px;
+                font-size: 32px;
             }
             .subtitle {
                 font-size: 16px;
             }
+            .section {
+                padding: 24px;
+            }
             .logo {
-                font-size: 64px;
+                font-size: 56px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="badge">
-            <span>Đang phát triển</span>
+        <div class="hero">
+            <div class="badge">
+                <span>Đang phát triển — Sprint 1</span>
+            </div>
+            <div class="logo">👷</div>
+            <h1><span class="brand">HRP</span> — HR Partner</h1>
+            <p class="subtitle">
+                Hệ thống Quản trị Nguồn Nhân lực &amp; Cung ứng Nhân lực<br>
+                Kết nối lao động phổ thông với nhà thầu
+            </p>
         </div>
 
-        <div class="logo">👷</div>
+        <!-- TÓM LƯỢC DỰ ÁN -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="icon">📋</span> Tóm lược dự án
+            </h2>
+            <p>
+                <strong>HRP</strong> là hệ thống SaaS phục vụ các <strong>nhà thầu phụ</strong> trong ngành xây dựng, sản xuất,
+                dịch vụ — những đơn vị thường xuyên cần tuyển dụng <strong>lao động phổ thông</strong> (thời vụ, bán thời gian,
+                theo dự án) nhưng gặp khó khăn trong quản lý nhân sự, chấm công, tính lương và tuân thủ pháp luật lao động.
+            </p>
+            <p>
+                Hệ thống cung cấp <strong>3 cổng</strong> trên cùng một nền tảng: <strong>Worker Portal</strong> (mobile-first cho người lao động),
+                <strong>Admin Dashboard</strong> (cho HR/admin) và <strong>Vendor Portal</strong> (cho đối tác cung ứng nhân lực),
+                kết nối trực tiếp với <strong>Zalo OA</strong> để tận dụng hệ sinh thái phổ biến nhất với công nhân Việt Nam.
+            </p>
+            <p>
+                Mục tiêu 12 tháng đầu: phục vụ <strong>2.000–5.000 người lao động</strong> và <strong>5–10 nhà thầu</strong>,
+                giảm 70% thời gian xử lý nhân sự và đảm bảo 100% tuân thủ Nghị định 13/2023, Luật Dữ liệu 2024.
+            </p>
+        </div>
 
-        <h1><span class="brand">HRP</span> — HR Partner</h1>
+        <!-- TÍNH NĂNG CHÍNH -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="icon">⚡</span> Tính năng chính
+            </h2>
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-icon">🔐</div>
+                    <div class="feature-title">Đăng nhập Zalo / OTP</div>
+                    <div class="feature-desc">1 chạm qua Zalo OA hoặc OTP SMS — phù hợp lao động phổ thông</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📋</div>
+                    <div class="feature-title">Quản lý hồ sơ NLĐ</div>
+                    <div class="feature-desc">CCCD, ngân hàng, hợp đồng, lý lịch — tập trung & bảo mật</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📍</div>
+                    <div class="feature-title">Chấm công GPS + Selfie</div>
+                    <div class="feature-desc">Check-in/out tại công trường với xác thực vị trí & khuôn mặt</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">💰</div>
+                    <div class="feature-title">Tính lương tự động</div>
+                    <div class="feature-desc">Đối soát với máy chấm công, hỗ trợ B2B/B2C, phiếu lương điện tử</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">CRM & Quản lý dự án</div>
+                    <div class="feature-desc">Pipeline nhà thầu, deal, đơn hàng, hoa hồng CTV</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🤝</div>
+                    <div class="feature-title">Vendor Portal</div>
+                    <div class="feature-desc">Đối tác tự quản lý cung ứng nhân lực, đối soát công nợ</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">💬</div>
+                    <div class="feature-title">Tích hợp Zalo OA</div>
+                    <div class="feature-desc">Gửi payslip, thông báo, support qua Zalo — kênh quen thuộc</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📱</div>
+                    <div class="feature-title">PWA — Cài như app</div>
+                    <div class="feature-desc">Mobile-first, cài đặt 1 chạm, dùng được offline tại công trường</div>
+                </div>
+            </div>
+        </div>
 
-        <p class="subtitle">
-            Hệ thống Quản trị Nguồn Nhân lực &amp; Cung ứng Nhân lực<br>
-            Kết nối lao động phổ thông với nhà thầu
-        </p>
+        <!-- ĐIỂM MẠNH -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="icon">💪</span> Điểm mạnh khác biệt
+            </h2>
+            <div class="strengths">
+                <div class="strength">
+                    <div class="strength-icon">🇻🇳</div>
+                    <div>
+                        <div class="strength-title">Tuân thủ pháp luật VN 100%</div>
+                        <div class="strength-desc">Nghị định 13/2023, Luật Dữ liệu 2024, lưu trữ nội địa cho dữ liệu nhạy cảm</div>
+                    </div>
+                </div>
+                <div class="strength">
+                    <div class="strength-icon">📱</div>
+                    <div>
+                        <div class="strength-title">Mobile-first, không cần đào tạo</div>
+                        <div class="strength-desc">Đăng nhập Zalo 1 chạm, giao diện đơn giản cho lao động phổ thông</div>
+                    </div>
+                </div>
+                <div class="strength">
+                    <div class="strength-icon">⚡</div>
+                    <div>
+                        <div class="strength-title">Triển khai nhanh, chi phí thấp</div>
+                        <div class="strength-desc">Next.js + Vercel + Neon + Cloudflare R2 — MVP trong 8 tuần</div>
+                    </div>
+                </div>
+                <div class="strength">
+                    <div class="strength-icon">🔄</div>
+                    <div>
+                        <div class="strength-title">Tích hợp sẵn với máy chấm công</div>
+                        <div class="strength-desc">Adapter pattern hỗ trợ ZKTeco, Ronald Jack, Wise Eye...</div>
+                    </div>
+                </div>
+                <div class="strength">
+                    <div class="strength-icon">🌐</div>
+                    <div>
+                        <div class="strength-title">Multi-tenant & Multi-domain</div>
+                        <div class="strength-desc">Hỗ trợ nhiều domain trỏ về cùng app, dễ mở rộng thương hiệu</div>
+                    </div>
+                </div>
+                <div class="strength">
+                    <div class="strength-icon">📈</div>
+                    <div>
+                        <div class="strength-title">CRM tích hợp quản lý dự án</div>
+                        <div class="strength-desc">Từ pipeline bán hàng → dự án → chấm công → thanh toán trên 1 nền tảng</div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <div class="status-card">
-            <div class="status-title">Tiến độ Sprint 1 — M0 + M1</div>
+        <!-- LỘ TRÌNH -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="icon">🗓️</span> Lộ trình thực hiện
+            </h2>
+            <div class="timeline">
+                <div class="milestone">
+                    <div class="milestone-date">Tháng 1–2 (Sprint 1–4)</div>
+                    <div class="milestone-title">Phase 1a — MVP Cốt lõi</div>
+                    <div class="milestone-desc">
+                        Nền tảng + Auth (OTP/Zalo) + Worker Portal + Admin Dashboard cơ bản + CRM & Projects
+                    </div>
+                </div>
+                <div class="milestone">
+                    <div class="milestone-date">Tháng 3 (Sprint 5–6)</div>
+                    <div class="milestone-title">Phase 1b — Chấm công GPS</div>
+                    <div class="milestone-desc">
+                        Selfie + GPS check-in + Vendor Portal + Talent Pool matching
+                    </div>
+                </div>
+                <div class="milestone">
+                    <div class="milestone-date">Tháng 4–5 (Sprint 7–9)</div>
+                    <div class="milestone-title">Phase 2 — Payroll & Tích hợp</div>
+                    <div class="milestone-desc">
+                        Tích hợp máy chấm công + Tính lương tự động + Phiếu lương Zalo + Báo cáo thuế
+                    </div>
+                </div>
+                <div class="milestone">
+                    <div class="milestone-date">Tháng 6 (Sprint 10+)</div>
+                    <div class="milestone-title">Phase 3 — Scale & Self-host</div>
+                    <div class="milestone-desc">
+                        Di chuyển sang hạ tầng VN (VNG/Viettel) + Advanced reporting + eKYC CCCD
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TIẾN ĐỘ & THỜI GIAN HOÀN THÀNH -->
+        <div class="section progress-card">
+            <h2 class="section-title">
+                <span class="icon">⏱️</span> Tiến độ & Thời gian hoàn thành
+            </h2>
             <div class="progress-bar">
                 <div class="progress-fill"></div>
             </div>
-            <div class="progress-text">5% hoàn thành · Khởi tạo nền tảng</div>
-        </div>
+            <div class="progress-text">5% hoàn thành — Đang khởi tạo nền tảng</div>
 
-        <div class="features">
-            <div class="feature">
-                <div class="feature-icon">📱</div>
-                <div class="feature-title">Worker Portal</div>
-                <div class="feature-desc">App mobile-first cho người lao động</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">👔</div>
-                <div class="feature-title">Admin Dashboard</div>
-                <div class="feature-desc">Quản lý dự án, nhân sự, payroll</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">🤝</div>
-                <div class="feature-title">Vendor Portal</div>
-                <div class="feature-desc">Cổng đối tác cung ứng nhân lực</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">💬</div>
-                <div class="feature-title">Zalo Login</div>
-                <div class="feature-desc">Đăng nhập 1 chạm qua Zalo OA</div>
+            <div class="eta">
+                <div class="eta-card">
+                    <div class="eta-label">🎯 MVP (Phase 1)</div>
+                    <div class="eta-value">~6 tuần</div>
+                </div>
+                <div class="eta-card">
+                    <div class="eta-label">🚀 Production-ready</div>
+                    <div class="eta-value">~5 tháng</div>
+                </div>
+                <div class="eta-card">
+                    <div class="eta-label">🇻🇳 Self-host VN</div>
+                    <div class="eta-value">~6 tháng</div>
+                </div>
+                <div class="eta-card">
+                    <div class="eta-label">📅 Bắt đầu</div>
+                    <div class="eta-value">14/08/2026</div>
+                </div>
             </div>
         </div>
 
         <div class="footer">
             <p>© 2026 HRP — Hệ thống đang được phát triển</p>
-            <p style="margin-top: 8px;">Liên hệ: <a href="mailto:contact@hrpartner.vn">contact@hrpartner.vn</a></p>
+            <p style="margin-top: 8px;">
+                <a href="https://github.com/nobita6986/hrp-erp">GitHub</a> ·
+                <a href="mailto:contact@hrpartner.vn">contact@hrpartner.vn</a>
+            </p>
         </div>
     </div>
 </body>
