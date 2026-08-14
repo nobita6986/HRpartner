@@ -1,0 +1,944 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// HRP — Prisma schema hợp nhất (V4 F23)
+//
+// Nguồn hợp nhất:
+//   - UNIFIED_PLAN_v4.md §9  (Worker, Source, Assignment — 5 state machine)
+//   - UNIFIED_PLAN_v4.md §10 (Contracts, Rate cards — tách vendor pay / client bill)
+//   - UNIFIED_PLAN_v4.md §12 (Attendance 3 tầng, Statements, canonical statuses)
+//   - schema-v3.1-patches.prisma   (VN compliance: Worker fields, Dependent, PayrollConfig, TaxBracket)
+//   - schema-m7-tickets.prisma     (Ticket workflow, AuditLog)
+//
+// Quy ước V4:
+//   - Tiền = BigInt VND nguyên (ADR-010) — cấm Decimal/float cho tiền
+//   - status enum là nguồn sự thật DUY NHẤT (F3) — không có docStatus
+//   - Canonical naming: cccdNumber, salaryPerDayVnd, employeeCode (ở assignment), userId (ở worker)
+//   - Partial unique index (1 accepted source, 1 PRIMARY ACTIVE) tạo qua migration SQL
+//
+// Wave 4 sẽ bổ sung: pay_runs, worker_pay_results, earning/deduction_lines,
+// payslips, commission_policies/ledger, payroll_rules, pay_run_rule_overrides (plan §12.5, §10.3).
+// workflow_definitions chỉ thêm khi cần cấu hình 3-tier theo dự án (F2).
+// M9 (sau core): Ticket mở rộng actorType EMPLOYEE + employeeId nullable (F13 / V4.1 G6).
+// ═══════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+enum DependentRelationship {
+  SPOUSE
+  CHILD
+  PARENT
+  SIBLING
+  OTHER
+}
+
+enum TicketType {
+  TIMESHEET_DISPUTE // Phản ánh sai công
+  ADVANCE_SALARY // Yêu cầu tạm ứng
+  LEAVE_REQUEST // Xin nghỉ phép (worker) — M9 tái dùng cho employee (F13)
+  OTHER
+}
+
+enum TicketStatus {
+  PENDING // vừa tạo, chờ HR review
+  HR_APPROVED // HR đã xác nhận (cho ADVANCE: chuyển Accountant)
+  REJECTED // HR/Accountant từ chối (terminal)
+  CANCELLED // Worker tự rút (chỉ khi PENDING/HR_APPROVED)
+  APPROVED // Hoàn tất duyệt (cho ADVANCE: Accountant chi; cho DISPUTE: HR chốt)
+  PAID // Cho ADVANCE: đã chi tiền (terminal)
+  CLOSED // Ticket hoàn tất (terminal — dispute đã xử lý)
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TicketActorRole {
+  WORKER
+  HR_STAFF
+  HR_MANAGER
+  ACCOUNTANT
+  PM
+  ADMIN
+}
+
+enum TicketAction {
+  CREATE
+  REVIEW // HR review lần đầu
+  APPROVE_HR // HR approve chuyển Accountant
+  APPROVE_FINAL // Accountant approve chi
+  REJECT
+  CANCEL // Worker tự rút
+  PAY // Accountant chi tiền — endpoint /pay riêng (F27)
+  CLOSE // Đóng ticket
+  COMMENT // Worker/HR comment trong ticket
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 1. USERS & AUTH (ADR-007: OTP baseline + JWT; auth_identities Wave 1)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model User {
+  id           String   @id @default(uuid())
+  phone        String? // V4.2: KHÔNG phải định danh — chỉ là thông tin liên hệ, đổi được
+  passwordHash String?  @map("password_hash") // V4.2 (ADR-007): argon2/bcrypt — đặt lúc đăng ký
+  affCode      String?  @unique @map("aff_code") // V4.5 G13 — link giới thiệu CTV/Sale (first-click wins)
+  name         String?
+  role         String // 'ADMIN' | 'HR_MANAGER' | 'HR_STAFF' | 'SALE' | 'PM' | 'ACCOUNTANT' | 'VENDOR_ADMIN' | 'VENDOR_STAFF' | 'CTV' | 'WORKER' | 'EMPLOYEE'
+  vendorId     String?  @map("vendor_id")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  candidateSubmissions CandidateSubmission[]
+  sourceClaims         SourceClaim[]
+  payrollConfigs       PayrollConfig[]
+
+  @@index([role, isActive])
+  @@map("users")
+}
+
+// TODO Wave 1: model AuthIdentity — provider PHONE | ZALO | CREDENTIAL (CCCD), providerId, accountId (ADR-007 + G9)
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 2. WORKER — CHỈ master data (plan v4 §9.2 + VN compliance patch v3.1)
+//    source/employment/workSetting KHÔNG nằm ở đây (F15: source_claims + assignment)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Worker {
+  id        String @id @default(uuid())
+  userId    String @unique @map("user_id") // "USR-001" — Primary UserID, tạo khi đăng ký, KHÔNG đổi (F16)
+  fullName  String? @map("full_name")
+  phone     String? @unique // V4.2: liên hệ (đổi được) — KHÔNG phải định danh; unique chỉ để gợi ý dedup
+  cccdNumber String? @unique @map("cccd_number") // F17 (chuẩn: cccdNumber, không dùng nationalId)
+  cccdImageUrl String? @map("cccd_image_url")
+  selfieImageUrl String? @map("selfie_image_url")
+  dateOfBirth DateTime? @map("date_of_birth") @db.Date
+  gender    Gender?
+  maritalStatus MaritalStatus? @map("marital_status")
+
+  // VN compliance (patch v3.1 — C1/C2/C3)
+  permanentAddress String? @map("permanent_address")
+  currentAddress   String? @map("current_address")
+  hometown         String?
+  ethnicGroup      String? @map("ethnic_group")
+  religion         String?
+  nationality      String  @default("VN")
+  cccdIssuedDate   DateTime? @map("cccd_issued_date") @db.Date
+  cccdIssuedPlace  String? @map("cccd_issued_place")
+  cccdExpiryDate   DateTime? @map("cccd_expiry_date") @db.Date
+  cccdChipData     Json? @map("cccd_chip_data") // dữ liệu chip NFC (eKYC — hoãn, post-go-live)
+  taxCode          String? @unique @map("tax_code")
+  insuranceCode    String? @unique @map("insurance_code")
+  bankAccount      String? @map("bank_account")
+  bankName         String? @map("bank_name")
+  bankBranch       String? @map("bank_branch")
+
+  // 5 state machine (v4 §9.1 — canonical, F15)
+  profileStatus    String @default("INCOMPLETE") @map("profile_status") // INCOMPLETE | PENDING_VERIFY | VERIFIED | REJECTED
+  employmentStatus String @default("NONE") @map("employment_status") // NONE | ACTIVE | SUSPENDED | TERMINATED
+  riskStatus       String @default("NORMAL") @map("risk_status") // NORMAL | REVIEW | BLOCKED
+
+  // CRM ownership (data isolation §9.7)
+  ownerId      String? @map("owner_id")
+  assignedToId String? @map("assigned_to_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  dependents  Dependent[] @relation("WorkerDependents")
+  tickets     Ticket[]
+  assignments ProjectAssignment[]
+  sourceClaims SourceClaim[]
+  submissions CandidateSubmission[]
+
+  @@index([profileStatus, employmentStatus])
+  @@index([ownerId, assignedToId])
+  @@map("workers")
+}
+
+model Dependent {
+  id              String   @id @default(uuid())
+  workerId        String   @map("worker_id")
+  fullName        String   @map("full_name")
+  dateOfBirth     DateTime @map("date_of_birth") @db.Date
+  relationship    DependentRelationship
+  nationalId      String?  @map("national_id")
+  taxDependentCode String? @unique @map("tax_dependent_code") // MST NPT (Mẫu 07/ĐK-NPT-TNCN)
+  registeredAt    DateTime? @map("registered_at")
+  validFrom       DateTime @map("valid_from") @db.Date
+  validTo         DateTime? @map("valid_to") @db.Date // null = còn hiệu lực
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  worker Worker @relation("WorkerDependents", fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId, isActive])
+  @@map("dependents")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3. CRM — Client, Lead, Project, Staffing Order (plan v4 §9, ERD tầng 1-3)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model ClientCompany {
+  id          String   @id @default(uuid())
+  code        String   @unique // "CC-001"
+  name        String
+  taxCode     String?  @unique @map("tax_code") // MST công ty
+  industry    String?
+  companySize String?  @map("company_size") // SMALL | MEDIUM | LARGE | ENTERPRISE
+  status      String   @default("PROSPECT") // PROSPECT | ACTIVE | BLACKLISTED
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  projects Project[]
+  leads    CrmLead[]
+
+  @@map("client_companies")
+}
+
+model CrmLead {
+  id               String    @id @default(uuid())
+  name             String
+  clientCompanyId  String?   @map("client_company_id")
+  contactName      String?   @map("contact_name")
+  contactPhone     String?   @map("contact_phone")
+  expectedRevenueVnd BigInt? @map("expected_revenue_vnd") // V4: BigInt VND nguyên (ADR-010)
+  expectedCloseDate DateTime? @map("expected_close_date") @db.Date
+  stage            String    @default("NEW") // NEW | QUALIFIED | PROPOSAL | NEGOTIATION | WON | LOST
+  probability      Int       @default(10) // 0-100
+  ownerUserId      String?   @map("owner_user_id")
+  convertedProjectId String? @map("converted_project_id")
+  convertedAt      DateTime? @map("converted_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  clientCompany ClientCompany? @relation(fields: [clientCompanyId], references: [id])
+
+  @@index([stage])
+  @@map("crm_leads")
+}
+
+model Project {
+  id              String   @id @default(uuid())
+  code            String   @unique // "PRJ-2025-001"
+  clientCompanyId String   @map("client_company_id")
+  name            String
+  pmUserId        String?  @map("pm_user_id") // Project Manager
+  siteAddress     String?  @map("site_address")
+  startDate       DateTime @map("start_date") @db.Date
+  endDate         DateTime? @map("end_date") @db.Date
+  status          String   @default("DRAFT") // DRAFT | ACTIVE | PAUSED | COMPLETED | CANCELLED
+  budgetVnd       BigInt?  @map("budget_vnd") // V4: BigInt VND nguyên (ADR-010)
+  billingTerms    Json?    @map("billing_terms") // { type: 'monthly', dayOfMonth: 5 }
+  quota           Int      @default(0) // quota tuyển (14.4 — OCC qua version)
+  filled          Int      @default(0) // V4: luôn cùng transaction với assignment (9.9)
+  version         Int      @default(1)
+  isPublic        Boolean  @default(false) @map("is_public") // job board (A-04)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  clientCompany  ClientCompany   @relation(fields: [clientCompanyId], references: [id])
+  assignments    ProjectAssignment[]
+  staffingOrders StaffingOrder[]
+  submissions    CandidateSubmission[]
+  sites          Site[]
+
+  @@index([status, isPublic])
+  @@map("outsourcing_projects") // ERD DDL dùng tên này; plan §9 SQL mẫu dùng "projects" — DB thật là outsourcing_projects
+}
+
+model StaffingOrder {
+  id           String   @id @default(uuid())
+  projectId    String   @map("project_id")
+  code         String   @unique // "SO-001"
+  title        String
+  description  String?
+  deadlineDate DateTime? @map("deadline_date") @db.Date
+  status       String   @default("OPEN") // OPEN | CLOSING_SOON | CLOSED | CANCELLED
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  project     Project             @relation(fields: [projectId], references: [id])
+  slots       StaffingOrderSlot[]
+  assignments ProjectAssignment[]
+
+  @@index([projectId, status])
+  @@map("staffing_orders")
+}
+
+model StaffingOrderSlot {
+  id             String   @id @default(uuid())
+  staffingOrderId String  @map("staffing_order_id")
+  positionCode   String   @map("position_code") // 'ELECTRICIAN'
+  positionTitle  String   @map("position_title")
+  slotsNeeded    Int      @map("slots_needed")
+  slotsFilled    Int      @default(0) @map("slots_filled") // denormalized (O9) — update trong transaction
+  hourlyRateVnd  BigInt?  @map("hourly_rate_vnd") // V4: BigInt VND nguyên
+  shiftStart     String?  @map("shift_start") // "07:00"
+  shiftEnd       String?  @map("shift_end") // "16:00"
+  validFrom      DateTime @map("valid_from") @db.Date
+  validTo        DateTime? @map("valid_to") @db.Date
+  workLocation   String?  @map("work_location")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  staffingOrder StaffingOrder @relation(fields: [staffingOrderId], references: [id], onDelete: Cascade)
+
+  @@index([staffingOrderId, validFrom])
+  @@map("staffing_order_slots")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3b. SITE — địa điểm làm việc (V4.2 Q2 đã chốt: geofence + rate theo site)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Site {
+  id            String   @id @default(uuid())
+  projectId     String   @map("project_id")
+  name          String
+  address       String?
+  latitude      Decimal? @db.Decimal(10, 7)
+  longitude     Decimal? @db.Decimal(10, 7)
+  radiusMeters  Int      @default(200) @map("radius_meters") // geofence default 200m [CẦN CHỐT theo site]
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
+  @@map("sites")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 4. NGUỒN TUYỂN — Submission + SourceClaim (plan v4 §9.3, ADR-012)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Vendor {
+  id        String   @id @default(uuid())
+  code      String   @unique // "VD-001"
+  name      String
+  taxCode   String?  @unique @map("tax_code")
+  phone     String?
+  email     String?
+  area      String?
+  status    String   @default("ACTIVE") // ACTIVE | INACTIVE
+  createdAt DateTime @default(now()) @map("created_at")
+
+  submissions  CandidateSubmission[]
+  sourceClaims SourceClaim[]
+
+  @@map("vendors")
+}
+
+model CandidateSubmission {
+  id            String   @id @default(uuid())
+  vendorId      String?  @map("vendor_id")
+  ctvId         String?  @map("ctv_id")
+  projectId     String?  @map("project_id")
+  fullName      String   @map("full_name")
+  phone         String
+  cccdNumber    String?  @map("cccd_number") // F17
+  dateOfBirth   DateTime? @map("date_of_birth") @db.Date
+  gender        String?
+  experience    String?
+  cccdImageUrl  String?  @map("cccd_image_url")
+  status        String   @default("NEW") // NEW | SCREENING | QUALIFIED | REJECTED | WITHDRAWN | MERGED
+  mergedWorkerId String? @map("merged_worker_id")
+  dedupWorkerId  String?  @map("dedup_worker_id") // V4.3 G11: worker trùng CCCD đã tồn tại (Referral Guard §9.3.1)
+  blockCode      String?  @map("block_code") // V4.3: IN_7D_WINDOW | COMMISSION_ACTIVE | VENDOR_PAYROLL_ACTIVE
+  overrideCase   String?  @map("override_case") // V4.4 G12: S1 | S2 | S3 (SOP override §9.3.1)
+  reviewedBy    String?  @map("reviewed_by")
+  reviewNote    String?  @map("review_note")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  vendor        Vendor?  @relation(fields: [vendorId], references: [id])
+  ctv           User?    @relation(fields: [ctvId], references: [id])
+  project       Project? @relation(fields: [projectId], references: [id])
+  mergedWorker  Worker?  @relation(fields: [mergedWorkerId], references: [id])
+  sourceClaims  SourceClaim[]
+
+  @@index([vendorId, phone]) // V4.5 G13: bỏ unique để nộp LẠI cùng người cho nhu cầu khác — chống trùng bằng Referral Guard
+  @@index([cccdNumber]) // V4.3 G11: Referral Guard tra cứu nhanh theo CCCD
+  @@index([status])
+  @@map("candidate_submissions")
+}
+
+model SourceClaim {
+  id                 String   @id @default(uuid())
+  workerId           String   @map("worker_id")
+  claimType          String   @map("claim_type") // HRP_DIRECT | VENDOR_SUPPLIED | CTV_REFERRAL
+  vendorId           String?  @map("vendor_id")
+  ctvId              String?  @map("ctv_id")
+  submissionId       String?  @map("submission_id")
+  registrationChannel String @default("SALE_ADDED") @map("registration_channel")
+  // SELF_REGISTER | SALE_ADDED | HR_ADDED | VENDOR_ADDED | CTV_ADDED | AFF_CTV | AFF_SALE (V4.5)
+  accepted           Boolean  @default(false) // DUY NHẤT 1 claim accepted / worker (partial unique index qua migration)
+  acceptedBy         String?  @map("accepted_by")
+  claimedBy          String?  @map("claimed_by")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  worker     Worker              @relation(fields: [workerId], references: [id])
+  vendor     Vendor?             @relation(fields: [vendorId], references: [id])
+  ctv        User?               @relation(fields: [ctvId], references: [id])
+  submission CandidateSubmission? @relation(fields: [submissionId], references: [id])
+
+  @@index([workerId, accepted])
+  // Migration SQL: CREATE UNIQUE INDEX one_accepted_source ON source_claims(workerId) WHERE accepted;
+  @@map("source_claims")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 5. ASSIGNMENT — employmentType/workSetting ở đây, half-open, đa assignment (v4 §9.4)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model ProjectAssignment {
+  id             String    @id @default(uuid())
+  workerId       String    @map("worker_id")
+  projectId      String    @map("project_id")
+  staffingOrderId String?  @map("staffing_order_id")
+  employeeCode   String    @map("employee_code") // mã NV tại dự án — Secondary UserID (F16)
+  employmentType String    @map("employment_type") // HRP_EMPLOYED | OUTSOURCED | REFERRED_OUT
+  workSetting    String?   @map("work_setting") // PHOTHONG | VANPHONG | CONGXUONG (nếu HRP_EMPLOYED)
+  validFrom      DateTime  @map("valid_from") @db.Timestamptz(3) // V4.9 G17 (T3): TIMESTAMP — chuyển GIỮA CA trong ngày; nửa mở [from, to)
+  validTo        DateTime? @map("valid_to") @db.Timestamptz(3)
+  status         String    @default("PLANNED") // PLANNED | ACTIVE | PAUSED | ENDED | TRANSFERRED | CANCELLED
+  isPrimary      Boolean   @default(true) @map("is_primary") // G14: luôn true khi ACTIVE — 1 người chỉ 1 dự án tại 1 thời điểm (giữ cho tương lai)
+  managerId      String?   @map("manager_id")
+  referrerId     String?   @map("referrer_id")
+  salaryPerDayVnd BigInt   @default(0) @map("salary_per_day_vnd") // F18 — BigInt VND nguyên (ADR-010)
+  salaryType     String   @default("DAILY") @map("salary_type") // V4.9 G17 (B3): DAILY | MONTHLY (proration khối văn phòng)
+  salaryMonthVnd BigInt?  @map("salary_month_vnd") // V4.9: lương tháng cho MONTHLY
+  transferReason String?   @map("transfer_reason")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  worker        Worker        @relation(fields: [workerId], references: [id])
+  project       Project       @relation(fields: [projectId], references: [id])
+  staffingOrder StaffingOrder? @relation(fields: [staffingOrderId], references: [id])
+  tickets       Ticket[]
+
+  @@unique([projectId, employeeCode])
+  @@index([workerId, status])
+  // Migration SQL (G14): CREATE UNIQUE INDEX one_active_assignment ON project_assignments(workerId) WHERE status = 'ACTIVE';
+  @@map("project_assignments")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 6. CHẤM CÔNG 3 TẦNG (v4 §12.2 — canonical, F2/F19/F6)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model AttendanceImportBatch {
+  id               String    @id @default(uuid())
+  uploadedByActorId String   @map("uploaded_by_actor_id")
+  uploadedByRole   String    @map("uploaded_by_role")
+  source           String // 'CSV' | 'XLSX' (PDF chỉ là attachment — 12.1)
+  fileUrl          String    @map("file_url") // R2 (ADR-006)
+  fileHash         String    @map("file_hash") // SHA-256 — chống import trùng
+  totalRows        Int       @map("total_rows")
+  matchedRows      Int       @default(0) @map("matched_rows")
+  unmatchedRows    Int       @default(0) @map("unmatched_rows")
+  anomalyRows      Int       @default(0) @map("anomaly_rows")
+  status           String    @default("PENDING") // PENDING | PREVIEWED | COMMITTED | FAILED
+  errors           Json      @default("[]")
+  startedAt        DateTime  @default(now()) @map("started_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at") // V4.12 G20-T11: heartbeat cho watchdog
+  retryCount       Int       @default(0) @map("retry_count") // V4.13 G21-T15: quá IMPORT_MAX_RETRY → FAILED cứng
+  completedAt      DateTime? @map("completed_at")
+
+  rawRows AttendanceImportRow[]
+
+  @@index([status, startedAt])
+  @@map("attendance_import_batches")
+}
+
+model AttendanceImportRow {
+  id              String    @id @default(uuid())
+  batchId         String    @map("batch_id")
+  rowNumber       Int       @map("row_number")
+  rawEmployeeCode String    @map("raw_employee_code")
+  rawDate         String    @map("raw_date")
+  rawTime         String    @map("raw_time")
+  rawType         String    @map("raw_type") // 'IN' | 'OUT'
+  parsedDate      DateTime? @map("parsed_date") @db.Date
+  parsedTime      String?   @map("parsed_time")
+  matchedWorkerId String?   @map("matched_worker_id")
+  anomalyType     String?   @map("anomaly_type") // MISSING_CHECKOUT | INVALID_CODE | DUPLICATE_SCAN | OUTSIDE_SHIFT | INVALID_DATE
+  anomalyNote     String?   @map("anomaly_note")
+  status          String    @default("PENDING") // PENDING | MATCHED | UNMATCHED | ANOMALY | COMMITTED
+
+  batch AttendanceImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, rowNumber]) // V4.11 G19-T9: idempotent tuyệt đối — chống zombie job parse đúp
+  @@index([batchId, status])
+  @@map("attendance_import_rows")
+}
+
+model ImportTemplate {
+  id            String   @id @default(uuid())
+  partnerName   String   @map("partner_name")
+  columnMapping Json     @map("column_mapping") // { employeeCode: 'Mã NV', date: 'Ngày', in: 'Vào', out: 'Ra', ... }
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("import_templates")
+}
+
+// Lịch ngày lễ — chuẩn cho tách ca vắt ngày (V4.11 G19-B8)
+model Holiday {
+  id        String   @id @default(uuid())
+  date      DateTime @unique @db.Date // ngày lễ (lịch VN — §14.8)
+  name      String
+  type      String   @default("PUBLIC_HOLIDAY") // PUBLIC_HOLIDAY | WEEKEND | COMPANY_HOLIDAY
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("holidays")
+}
+
+// Khấu trừ cuối khi chấm dứt (V4.12 G20-B11 — AWOL ôm tài sản/phạt hợp đồng)
+model WorkerDeduction {
+  id        String   @id @default(uuid())
+  workerId  String   @map("worker_id")
+  amountVnd BigInt   @map("amount_vnd") // VND nguyên (ADR-010)
+  reason    String
+  status    String   @default("PENDING") // PENDING | APPLIED | CANCELLED
+  createdBy String?  @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([workerId, status])
+  @@map("worker_deductions")
+}
+
+model AttendanceEvent {
+  id              String    @id @default(uuid())
+  externalEventId String    @map("external_event_id")
+  source          String // IMPORTED | MACHINE | GPS | MANUAL
+  status          String    @default("APPENDED") // V4.13 G21-T14: QUEUED | APPENDED | FAILED (write-behind check-in)
+  workerId        String?   @map("worker_id")
+  projectId       String?   @map("project_id")
+  assignmentId    String?   @map("assignment_id")
+  workDate        DateTime  @map("work_date") @db.Date
+  checkInTime     String?   @map("check_in_time")
+  checkOutTime    String?   @map("check_out_time")
+  shiftCode       String?   @map("shift_code") // nhiều ca
+  payloadHash     String    @map("payload_hash")
+  capturedAt      DateTime? @map("captured_at") // thời điểm tại nguồn (thiết bị/máy)
+  receivedAt      DateTime  @default(now()) @map("received_at") // thời điểm server nhận — risk flag nếu lệch > 15'
+  importBatchId   String?   @map("import_batch_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@unique([source, externalEventId]) // re-import idempotent
+  @@index([workerId, workDate])
+  @@map("attendance_events")
+}
+
+model TimesheetPeriod {
+  id         String    @id @default(uuid())
+  projectId  String?   @map("project_id") // null = all projects
+  month      Int
+  year       Int
+  status     String    @default("PENDING") // PENDING | REVIEWED | APPROVED | LOCKED (F2 — canonical)
+  version    Int       @default(1) // mở lại sau LOCKED → version mới (F21)
+  approvedBy String?   @map("approved_by")
+  lockedAt   DateTime? @map("locked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  lines TimesheetLine[]
+
+  @@unique([projectId, month, year, version])
+  @@map("timesheet_periods")
+}
+
+model TimesheetLine {
+  id           String    @id @default(uuid())
+  periodId     String    @map("period_id")
+  workerId     String    @map("worker_id")
+  projectId    String    @map("project_id")
+  assignmentId String?   @map("assignment_id")
+  workDate     DateTime  @map("work_date") @db.Date
+  shiftCode    String?   @map("shift_code")
+  regularHours Decimal   @default(0) @map("regular_hours") @db.Decimal(5, 2)
+  ot15Hours    Decimal   @default(0) @map("ot15_hours") @db.Decimal(5, 2) // ×1.5
+  ot20Hours    Decimal   @default(0) @map("ot20_hours") @db.Decimal(5, 2) // ×2.0
+  ot30Hours    Decimal   @default(0) @map("ot30_hours") @db.Decimal(5, 2) // ×3.0
+  allowance    Json? // phụ cấp (F19 canonical)
+  exception    Json? // ngoại lệ đã xử lý
+  source       String    @default("MANUAL") // DEVICE | GPS_SELFIE | MANUAL | ADJUSTMENT (O7)
+  anomalyType  String?   @map("anomaly_type") // O8
+  version      Int       @default(1)
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  period TimesheetPeriod @relation(fields: [periodId], references: [id])
+
+  @@index([workerId, workDate])
+  @@map("timesheet_lines")
+}
+
+model TimesheetAdjustment {
+  id         String   @id @default(uuid())
+  periodId   String   @map("period_id")
+  workerId   String   @map("worker_id")
+  workDate   DateTime? @map("work_date") @db.Date
+  deltaHours Decimal  @map("delta_hours") @db.Decimal(5, 2)
+  reason     String
+  createdBy  String?  @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("timesheet_adjustments")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 7. HỢP ĐỒNG & RATE CARD (v4 §10 — tách vendor pay / client bill)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Contract {
+  id         String    @id @default(uuid())
+  contractNo String    @map("contract_no")
+  type       String // WORKER_LABOR | CLIENT_SUPPLY | VENDOR_FRAMEWORK
+  projectId  String?   @map("project_id")
+  signDate   DateTime? @map("sign_date") @db.Date
+  startDate  DateTime  @map("start_date") @db.Date
+  endDate    DateTime? @map("end_date") @db.Date
+  status     String    @default("DRAFT") // DRAFT | ACTIVE | EXPIRED | TERMINATED
+  fileUrl    String?   @map("file_url") // R2
+  version    Int       @default(1) // annex/phụ lục = version mới
+  parentId   String?   @map("parent_id")
+  notes      String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  parties     ContractParty[]
+  vendorRates VendorRateCard[]
+  clientRates ClientRateCard[]
+
+  @@map("contracts")
+}
+
+model ContractParty {
+  id         String @id @default(uuid())
+  contractId String @map("contract_id")
+  partyType  String @map("party_type") // CLIENT | VENDOR | WORKER | LEGAL_ENTITY
+  partyId    String @map("party_id")
+  role       String @default("PARTY") // PARTY | GUARANTOR | ...
+
+  contract Contract @relation(fields: [contractId], references: [id])
+
+  @@unique([contractId, partyType, partyId])
+  @@map("contract_parties")
+}
+
+model VendorRateCard {
+  id            String    @id @default(uuid())
+  contractId    String    @map("contract_id")
+  rateType      String    @map("rate_type") // HOURLY | DAILY | MONTHLY | PER_HEAD
+  price         BigInt // VND nguyên (ADR-010)
+  workType      String?   @map("work_type") // PHOTHONG | VANPHONG | CONGXUONG | theo vị trí
+  siteId        String?   @map("site_id") // → sites.id (V4.2 Q2)
+  effectiveFrom DateTime  @map("effective_from") @db.Date
+  effectiveTo   DateTime? @map("effective_to") @db.Date
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  contract Contract @relation(fields: [contractId], references: [id])
+
+  @@map("vendor_rate_cards")
+}
+
+model ClientRateCard {
+  id            String    @id @default(uuid())
+  contractId    String    @map("contract_id")
+  rateType      String    @map("rate_type")
+  price         BigInt // VND nguyên (ADR-010)
+  workType      String?   @map("work_type")
+  siteId        String?   @map("site_id") // → sites.id (V4.2 Q2)
+  effectiveFrom DateTime  @map("effective_from") @db.Date
+  effectiveTo   DateTime? @map("effective_to") @db.Date
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  contract Contract @relation(fields: [contractId], references: [id])
+
+  @@map("client_rate_cards")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 8. STATEMENTS — 2 luồng độc lập (v4 §12.6) — DRAFT→SENT→DISPUTED→CONFIRMED→LOCKED→PAID
+// ═══════════════════════════════════════════════════════════════════════════
+
+model VendorStatement {
+  id          String    @id @default(uuid())
+  vendorId    String    @map("vendor_id")
+  periodMonth Int       @map("period_month")
+  periodYear  Int       @map("period_year")
+  totalAmount BigInt    @default(0) @map("total_amount")
+  status      String    @default("DRAFT") // DRAFT | SENT | DISPUTED | CONFIRMED | LOCKED | PAID
+  version     Int       @default(1)
+  sentAt      DateTime? @map("sent_at")
+  lockedAt    DateTime? @map("locked_at")
+  disputeCount Int      @default(0) @map("dispute_count") // V4.9 G17 (B1): tối đa 2 vòng
+  confirmDeadlineAt DateTime? @map("confirm_deadline_at") // V4.9: SLA 3 ngày → AUTO-CONFIRMED
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  lines VendorStatementLine[]
+
+  @@unique([vendorId, periodMonth, periodYear, version])
+  @@map("vendor_statements")
+}
+
+model VendorStatementLine {
+  id           String  @id @default(uuid())
+  statementId  String  @map("statement_id")
+  workerId     String  @map("worker_id")
+  assignmentId String? @map("assignment_id")
+  totalHours   Decimal @map("total_hours") @db.Decimal(8, 2)
+  rate         BigInt // rate version tại thời điểm công
+  amount       BigInt
+
+  statement VendorStatement @relation(fields: [statementId], references: [id])
+
+  @@map("vendor_statement_lines")
+}
+
+model ClientStatement {
+  id          String    @id @default(uuid())
+  clientId    String    @map("client_id")
+  periodMonth Int       @map("period_month")
+  periodYear  Int       @map("period_year")
+  totalAmount BigInt    @default(0) @map("total_amount")
+  status      String    @default("DRAFT")
+  version     Int       @default(1)
+  sentAt      DateTime? @map("sent_at")
+  lockedAt    DateTime? @map("locked_at")
+  disputeCount Int      @default(0) @map("dispute_count") // V4.9 G17 (B1)
+  confirmDeadlineAt DateTime? @map("confirm_deadline_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  lines ClientStatementLine[]
+
+  @@unique([clientId, periodMonth, periodYear, version])
+  @@map("client_statements")
+}
+
+model ClientStatementLine {
+  id           String  @id @default(uuid())
+  statementId  String  @map("statement_id")
+  workerId     String  @map("worker_id")
+  assignmentId String? @map("assignment_id")
+  totalHours   Decimal @map("total_hours") @db.Decimal(8, 2)
+  rate         BigInt
+  amount       BigInt
+
+  statement ClientStatement @relation(fields: [statementId], references: [id])
+
+  @@map("client_statement_lines")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 9. PAYROLL CONFIG & TAX (patch v3.1 — F11/F12/F25)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model PayrollConfig {
+  id            String    @id @default(uuid())
+  key           String // 'BHXH_RATE_EMPLOYEE', 'MIN_WAGE_REGION_1', ... (F11)
+  valueJson     Json      @map("value_json")
+  valueType     String    @map("value_type") // NUMBER | PERCENT ("0.08") | MULTIPLIER ("1.5") | MONEY | BOOLEAN | STRING (F12)
+  description   String?
+  legalRef      String?   @map("legal_ref") // "Nghị định 74/2024/NĐ-CP, Điều 3"
+  version       Int       @default(1)
+  effectiveFrom DateTime  @map("effective_from")
+  effectiveTo   DateTime? @map("effective_to")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdBy     String?   @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  createdByUser User? @relation(fields: [createdBy], references: [id])
+
+  @@unique([key, version])
+  @@index([key, isActive, effectiveFrom])
+  @@map("payroll_config")
+}
+
+model TaxBracket {
+  id               String    @id @default(uuid())
+  ordinal          Int // 1..7
+  lowerBoundVnd    BigInt    @map("lower_bound_vnd")
+  upperBoundVnd    BigInt?   @map("upper_bound_vnd") // null = không giới hạn trên
+  ratePercent      Decimal   @map("rate_percent") @db.Decimal(5, 2) // 5.00 .. 35.00
+  cumulativeTaxVnd BigInt    @map("cumulative_tax_vnd")
+  effectiveFrom    DateTime  @map("effective_from")
+  effectiveTo      DateTime? @map("effective_to")
+  isActive         Boolean   @default(true) @map("is_active")
+  legalRef         String?   @map("legal_ref")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@unique([ordinal, effectiveFrom])
+  @@index([isActive, effectiveFrom])
+  @@map("tax_brackets")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 10. TICKET (schema-m7 — state machine 7 status × 8 action, ADR-014)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Ticket {
+  id              String          @id @default(uuid())
+  type            TicketType
+  status          TicketStatus    @default(PENDING)
+  priority        TicketPriority  @default(NORMAL)
+
+  workerId        String          @map("worker_id")
+  worker          Worker          @relation(fields: [workerId], references: [id])
+  createdByActorId String         @map("created_by_actor_id") // user tạo (worker, hoặc HR tạo hộ)
+  createdByRole   TicketActorRole @map("created_by_role")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  assignmentId    String?         @map("assignment_id")
+  assignment      ProjectAssignment? @relation(fields: [assignmentId], references: [id])
+
+  workDate        DateTime?       @map("work_date") @db.Date
+  currentHours    Decimal?        @map("current_hours") @db.Decimal(5, 2)
+  requestedHours  Decimal?        @map("requested_hours") @db.Decimal(5, 2)
+  deltaHours      Decimal?        @map("delta_hours") @db.Decimal(5, 2)
+  reasonCode      String?         @map("reason_code") // 'MISSING_CHECKOUT', 'SHIFT_MISMATCH', 'MACHINE_ERROR', ...
+
+  amountVnd       BigInt          @default(0) @map("amount_vnd") // ADR-010
+  requestedPayDate DateTime?      @map("requested_pay_date") @db.Date
+  deductMonth     Int?            @map("deduct_month")
+  deductYear      Int?            @map("deduct_year")
+  deductionVnd    BigInt          @default(0) @map("deduction_vnd")
+
+  leaveFromDate   DateTime?       @map("leave_from_date") @db.Date
+  leaveToDate     DateTime?       @map("leave_to_date") @db.Date
+  leaveDays       Decimal?        @map("leave_days") @db.Decimal(4, 1)
+  leaveTypeCode   String?         @map("leave_type_code") // 'ANNUAL', 'SICK', 'UNPAID', 'MATERNITY'
+
+  title           String
+  description     String          @db.Text
+  metadata        Json?           @default("{}")
+
+  slaDueAt        DateTime?       @map("sla_due_at")
+  isOverdue       Boolean         @default(false) @map("is_overdue")
+
+  version         Int             @default(1) // optimistic locking
+
+  history         TicketHistory[]
+  comments        TicketComment[]
+  notifications   TicketNotification[]
+
+  @@index([type, status])
+  @@index([workerId, status])
+  @@index([status, priority, createdAt])
+  @@index([slaDueAt])
+  @@map("tickets")
+}
+
+model TicketHistory {
+  id             String          @id @default(uuid())
+  ticketId       String          @map("ticket_id")
+  ticket         Ticket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  action         TicketAction
+  fromStatus     TicketStatus?   @map("from_status")
+  toStatus       TicketStatus    @map("to_status")
+
+  actorId        String?         @map("actor_id") // null cho system
+  actorRole      TicketActorRole @map("actor_role")
+  actorName      String?         @map("actor_name") // denormalized cho audit
+
+  note           String?         @db.Text
+  payload        Json?           @default("{}")
+  ipAddress      String?         @map("ip_address")
+  userAgent      String?         @map("user_agent")
+
+  idempotencyKey String?         @map("idempotency_key")
+
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_history")
+}
+
+model TicketComment {
+  id         String          @id @default(uuid())
+  ticketId   String          @map("ticket_id")
+  ticket     Ticket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  authorId   String          @map("author_id")
+  authorRole TicketActorRole @map("author_role")
+  authorName String          @map("author_name")
+
+  body       String          @db.Text
+  isInternal Boolean         @default(false) @map("is_internal") // true = chỉ HR
+
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_comments")
+}
+
+model TicketNotification {
+  id            String          @id @default(uuid())
+  ticketId      String          @map("ticket_id")
+  ticket        Ticket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  recipientId   String          @map("recipient_id")
+  recipientRole TicketActorRole @map("recipient_role")
+
+  channel       String          @default("IN_APP") // 'IN_APP' | 'EMAIL' | 'SMS' | 'ZALO'
+  status        String          @default("PENDING") // 'PENDING' | 'SENT' | 'FAILED' | 'READ'
+  retryCount    Int             @default(0) @map("retry_count")
+  failureReason String?         @map("failure_reason")
+
+  subject       String
+  body          String          @db.Text
+  linkUrl       String?         @map("link_url")
+  payload       Json?           @default("{}")
+
+  scheduledAt   DateTime        @default(now()) @map("scheduled_at")
+  sentAt        DateTime?       @map("sent_at")
+  readAt        DateTime?       @map("read_at")
+
+  @@index([status, scheduledAt])
+  @@index([recipientId, status])
+  @@map("ticket_notifications")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 11. AUDIT LOG (ADR-014 — mọi entity)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?  @map("actor_id")
+  actorRole  String?  @map("actor_role")
+  entityType String   @map("entity_type") // 'Ticket' | 'Attendance' | 'PayRun' | 'Statement' | ...
+  entityId   String   @map("entity_id")
+  action     String // 'CREATE' | 'UPDATE' | 'DELETE' | 'STATE_TRANSITION' | ...
+  diff       Json?    @default("{}")
+  metadata   Json?    @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+  @@map("audit_logs")
+}
