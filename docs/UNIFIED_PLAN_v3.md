@@ -1,7 +1,7 @@
 # HRP SYSTEM — UNIFIED PROJECT PLAN (v3.0)
 ## Hệ thống Quản trị Nguồn Nhân lực & Cung ứng Nhân lực
 
-> **Phiên bản:** 3.3 (tiếp thu Báo cáo Đánh giá Khả thi + bài học Odoo HR + bài học Viet-ERP VN compliance + bài học HRM_SYSTEM ticket workflow + bài học shadcn-admin UI library)
+> **Phiên bản:** 3.3 (tiếp thu Báo cáo Đánh giá Khả thi + bài học Odoo HR + bài học Viet-ERP VN compliance + bài học HRM_SYSTEM ticket workflow + bài học shadcn-admin UI library + bài học Frappe/ERPNext DocType & Workflow & Standalone)
 > **Ngày:** 14/08/2026
 > **Trạng thái:** Draft - Chờ phê duyệt
 
@@ -101,6 +101,29 @@
 | 60 | **URL state**: `?view=card|table&page=1&pageSize=20&type=ADVANCE_SALARY&status=PENDING` — share link work, back/forward nav chuẩn | shadcn-admin pattern |
 
 **Phiên bản 3.3.1** — Bổ sung 12 entries (49–60) từ bài học `satnaing/shadcn-admin`. UI Component Library hoàn chỉnh: 5 reusable components + 2 demo pages + tokens + WCAG compliance.
+
+### 0.1.5. Thay đổi v3.3 (bổ sung từ bài học ERPNext + Frappe — DocType, Workflow Engine, Batch Import, Standalone)
+
+| # | Bổ sung cho V3 | Nguồn Frappe/ERPNext |
+|---|----------------|----------------------|
+| 61 | **`workflow_definitions` + `workflow_states` + `workflow_transitions`** (config-driven workflow, thay hardcode TRANSITIONS) | Frappe `workflow/doctype/workflow` (states + transitions tables) |
+| 62 | **`attendance_import_batches` + `attendance_import_rows`** (parse CSV/XLSX → preview → match worker → INSERT raw rows) | Frappe `core/doctype/data_import` + HRMS `Employee Attendance Tool` |
+| 63 | **`amendedFrom` field** cho TimesheetPeriod, PayRun, Statement | HRMS `Attendance.amended_from` |
+| 64 | **`docStatus` column** (0/1/2) cho TimesheetPeriod, PayRun, Statement | Frappe DocStatus pattern (query `WHERE docstatus=1`) |
+| 65 | **3-tier approval flow**: Location Manager → HR Manager → Accounting → LOCKED | Frappe Workflow `transitions` table + multi-role |
+| 66 | **`on_submit` / `on_cancel` lifecycle hooks** cho service layer | Frappe `def on_submit(self)` / `def on_cancel(self)` hooks |
+| 67 | **Savepoint pattern** cho long-running batch imports (Postgres SAVEPOINT) | Frappe `frappe.db.savepoint(name)` + `rollback_to_savepoint` |
+| 68 | **`bulk-mark` UI** cho HR (query Active workers chưa có công → bulk insert) | HRMS `Employee Attendance Tool.get_employees()` |
+| 69 | **Standalone .exe** đóng gói cho admin portal — đề xuất **Tauri + Next.js static + SQLite** (~25MB bundle) | Đáp ứng yêu cầu "phân phối cho client dạng 1 file" |
+| 70 | **Half-day status + overtime section** tách riêng trên TimesheetLine | HRMS `Attendance.half_day_status` + `overtime_section` |
+| 71 | **Caveats cho Standalone**: Cloud sync (CRDT/last-write-wins), auto-backup, Tauri Updater, native print/PDF | Bổ sung |
+
+**Phiên bản 3.3.2** — B� sung 11 entries (61–71) từ bài học Frappe/ERPNext/HRMS. Đề xuất:
+- Schema `workflow_definitions` (config-driven, không hardcode trong code)
+- Schema `attendance_import_batches` cho CSV/XLSX import từ máy chấm công vật lý
+- Standalone .exe qua Tauri (Wave 5 — sau khi cloud ổn định)
+
+**LƯU Ý quan trọng:** Repo `frappe/erpnext` hiện đại đã **DEPRECATED HR/Payroll**, chuyển sang `frappe/hrms`. Reference Frappe HR/Payroll phải dùng `frappe/hrms` (đã update trong §12.5.4).
 
 ### 0.2. Các điểm review KHÔNG tiếp thu / tiếp thu có điều chỉnh
 
@@ -1954,6 +1977,383 @@ prisma/schema-m7-tickets.prisma           # Schema M7 (Ticket, TicketHistory, Ti
 14. PAY HR advance → FORBIDDEN
 15. PAY trên LEAVE_REQUEST → INVALID_TRANSITION
 16. CONCURRENT_UPDATE khi version mismatch
+
+#### 12.5.4. Bài học từ ERPNext + Frappe (`frappe/erpnext` + `frappe/hrms` + `frappe/frappe`) — DocType, Workflow Engine, Batch Import, Standalone — cập nhật v3.3
+
+> Phân tích từ 3 repo:
+> - `frappe/erpnext` (legacy HR/payroll đã deprecated, chuyển sang HRMS riêng)
+> - `frappe/hrms` (HRMS mới — Attendance, Leave, Shift, Employee Attendance Tool)
+> - `frappe/frappe` (framework core — Workflow DocType, Background Jobs, Data Import)
+>
+> **Insight quan trọng:** ERPNext hiện đại đã tách HR/Payroll sang repo `frappe/hrms`. Repo `frappe/erpnext` chỉ còn Projects/Stock/Manufacturing. Tham chiếu HR/Payroll dùng `frappe/hrms`.
+
+**Pattern Frappe/ERPNext đáng học:**
+
+| # | Pattern Frappe/ERPNext | HRP v3.3 đã học / sẽ áp dụng |
+|---|------------------------|-------------------------------|
+| **F1** | **DocType JSON-driven schema** — mỗi entity có `attendance.json` với `fields` (fieldname, fieldtype, options, reqd, read_only) | HRP dùng Prisma schema (typed), NHƯNG sẽ bổ sung **`entity_definitions` table** (admin-configurable fields cho client-specific schema) — đặc biệt cho Vendor Portal khi mỗi vendor có field riêng |
+| **F2** | **`is_submittable: 1`** → `docstatus` enum 0/1/2 (Draft/Submitted/Cancelled). Tự động thêm 2 button Submit + Cancel | HRP đã có trong Ticket (status enum + transition guard). Sẽ apply cho `timesheet_periods`, `pay_runs`, `statements` |
+| **F3** | **Workflow DocType riêng** (`workflow.json`) với `states` (name, doc_status, allow_edit) + `transitions` (state, action, next_state, allowed_role) | HRP đã có `TRANSITIONS` map trong `ticket.service.ts` (typed). Sẽ extract thành **`workflow_definitions` table** để admin config workflow không cần deploy code |
+| **F4** | **Permission per role** trong DocType JSON: System Manager, HR Manager, HR User, Employee | HRP đã có `TicketActorRole` enum + ROLE_QUEUE. Sẽ apply cho TẤT CẢ entity (không chỉ ticket) |
+| **F5** | **Validate hooks**: `def validate(self)`, `on_submit`, `on_cancel`, savepoint pattern cho transaction | HRP dùng Prisma `$transaction` + custom guards. Sẽ thêm **`on_submit` / `on_cancel` lifecycle hooks** cho Timesheet, PayRun, Statement |
+| **F6** | **Batch import via Data Import** — `frappe.core.doctype.data_import` parse CSV/Excel, validate theo DocType schema, show preview, sau đó INSERT batch | HRP đã có `prisma/schema-m7-tickets.prisma` cho Attendance batch. Sẽ thiết kế **`AttendanceImportBatch` workflow** như ERPNext |
+| **F7** | **Employee Attendance Tool** (`employee_attendance_tool.py`) — pattern: query Active employees trong kỳ, loại những người đã mark, hiển thị UI để mark nhanh từng người | HRP sẽ có **`attendance-bulk-mark`** UI: HR thấy danh sách worker CHƯA có công trong kỳ, bulk insert |
+| **F8** | **Background Jobs qua RQ** — `frappe.enqueue(method, queue='long', timeout=600)` | HRP đã có ADR-014 (QStash). FRAPPE dùng Python RQ; HRP dùng Upstash QStash + Next.js Route Handlers |
+| **F9** | **DocStatus trên mỗi row** — query `WHERE docstatus=1` thay vì soft delete | HRP dùng status enum tương đương. Sẽ enforce **`docStatus` column** cho tất cả financial entity (timesheet_periods, pay_runs, statements) |
+| **F10** | **Amend pattern** — Attendance có `amended_from` field, khi cancel có thể amend thay vì delete | HRP đã có ticket history (`from_status` → `to_status`). Sẽ bổ sung **`amendedFrom` + version** cho TimesheetPeriod, PayRun, Statement |
+| **F11** | **Half-day status** — Attendance có `half_day_status` field (Present/Absent cho nửa ngày còn lại), `modify_half_day_status` boolean | HRP sẽ áp dụng cho TimesheetLine: `isHalfDay`, `halfDayStatus` cho phép split ngày |
+| **F12** | **Overtime as separate section** trên Attendance — `overtime_type`, `actual_overtime_duration`, `standard_working_hours` | HRP sẽ tách `overtime_hours` + `overtime_rate_snapshot` vào TimesheetLine (đã có từ Odoo ref) |
+
+**ERPNext DocType `Attendance` rút gọn (so sánh với HRP):**
+
+| ERPNext field | HRP equivalent | Ghi chú |
+|---|---|---|
+| `naming_series: HR-ATT-.YYYY.-` | `id: uuid()` | UUID để distributed, naming_series cho human-readable |
+| `employee` (Link → Employee) | `workerId` (relation Worker) | |
+| `employee_name` (fetch_from) | denormalized `workerName` | HRP nên denormalize vào TimesheetLine để query nhanh |
+| `status` (Present/Absent/On Leave/Half Day/WFH) | `status` (PENDING/SUBMITTED/APPROVED/...) | HRP multi-step, ERPNext binary submit |
+| `attendance_date` | `workDate` | |
+| `shift` (Link → Shift Type) | `shiftId` (relation ShiftType) | |
+| `in_time` / `out_time` | `inTime` / `outTime` | |
+| `late_entry` / `early_exit` (Check) | computed từ in_time vs shift.start_time | ERPNext lưu flag, HRP compute (linh hoạt hơn nếu shift đổi) |
+| `leave_type` (conditional) | không có — leave là Ticket riêng | HRP tách rõ hơn |
+| `leave_application` (link) | `leaveRequestId` (Ticket) | |
+| `working_hours` (computed) | `actualHours` (TimesheetLine) | |
+| `overtime_type` + `actual_overtime_duration` | `overtimeHours` + `overtimeRateVnd` | |
+| `amended_from` | `amendedFrom` (sẽ thêm vào TimesheetPeriod, PayRun, Statement) | |
+
+**ERPNext `Employee Attendance Tool` pattern → HRP `AttendanceImportBatch`:**
+
+ERPNext flow (Python):
+```
+1. HR mở Employee Attendance Tool
+2. Chọn: date, department, shift → query Active employees WHERE date_of_joining <= date
+3. Query Attendance WHERE attendance_date = date AND docstatus = 1 → loại đã mark
+4. Return 2 lists: unmarked_employees (cần mark), marked_employees (đã có)
+5. UI render bảng, HR bulk chọn Present/Absent/Half Day → Submit → INSERT Attendance rows
+```
+
+HRP v3.3 áp dụng (TypeScript + Prisma):
+```typescript
+// src/domains/attendance/attendanceImport.service.ts
+
+async function importAttendanceBatch(input: ImportBatchInput): Promise<ImportBatchResult> {
+  // 1. Validate file (CSV/XLSX)
+  // 2. Parse rows
+  // 3. Match workerId từ employeeCode (HRP dùng employeeCode, không phải UUID)
+  // 4. Validate date, shift, no duplicate
+  // 5. INSERT batch vào timesheet_lines (raw), status=DRAFT
+  // 6. Return preview (matched/unmatched/anomalies)
+}
+
+async function bulkMarkFromUI(input: BulkMarkInput): Promise<BulkMarkResult> {
+  // 1. Query Active workers trong period WHERE chưa có timesheet_line
+  // 2. HR bulk chọn status → INSERT timesheet_lines
+  // 3. Trigger recompute timesheet_period totals
+}
+```
+
+**ERPNext Workflow pattern → HRP `workflow_definitions` table:**
+
+ERPNext config workflow qua UI (không cần code):
+- States: name, doc_status (0/1/2), allow_edit, is_optional
+- Transitions: state, action, next_state, allowed_role
+
+HRP v3.3 sẽ có table tương đương:
+
+```prisma
+model WorkflowDefinition {
+  id              String   @id @default(uuid())
+  entityType      String   // 'TIMESHEET_PERIOD' | 'PAY_RUN' | 'STATEMENT' | 'TICKET'
+  name            String
+  isActive        Boolean  @default(true)
+  states          WorkflowState[]
+  transitions     WorkflowTransition[]
+  @@unique([entityType, name])
+}
+
+model WorkflowState {
+  id              String   @id @default(uuid())
+  workflowId      String
+  workflow        WorkflowDefinition @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  name            String   // 'DRAFT' | 'LOCATION_MANAGER_REVIEW' | 'HR_REVIEW' | 'ACCOUNTING_APPROVED' | 'PAID'
+  docStatus       Int      // 0=Saved, 1=Submitted, 2=Cancelled
+  allowEdit       Boolean  @default(false)
+  isOptional      Boolean  @default(false)
+  order           Int
+}
+
+model WorkflowTransition {
+  id              String   @id @default(uuid())
+  workflowId      String
+  workflow        WorkflowDefinition @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  fromState       String
+  toState         String
+  action          String   // 'submit' | 'approve' | 'reject' | 'cancel' | 'amend'
+  allowedRoles    String[] // ['LOCATION_MANAGER', 'HR_MANAGER', 'ACCOUNTANT']
+  requireReason   Boolean  @default(false)
+  requireNote     Boolean  @default(false)
+}
+```
+
+**Timesheet/Payroll Approval Flow (3-tier — đề xuất từ Frappe + HRP):**
+
+```
+[Location Manager] ──Approve──→ [HR Manager] ──Approve──→ [Accounting] ──Approve──→ [LOCKED]
+       │                              │                          │
+       └───Reject──→ [RETURNED] ←─────┴──────────────────────────┘
+       │                              │                          │
+       └────────────────Cancel (chỉ khi DRAFT)───────────────────┘
+
+DRAFT → SUBMITTED (Location Manager submit batch timesheet)
+SUBMITTED → LOCATION_APPROVED → HR_APPROVED → ACCOUNTING_APPROVED → LOCKED
+Mỗi transition ghi 1 audit_log row (đã có trong HRP ADR-014).
+LOCKED = immutable; correction qua Adjustment.
+```
+
+**Cải tiến cho HRP từ Frappe/ERPNext (8 điểm E1-E8):**
+
+| # | Bổ sung cho HRP | Tại sao |
+|---|------------------|---------|
+| **E1** | **`workflow_definitions` table** + admin UI để config workflow không cần deploy code | Hiện HRP hardcode TRANSITIONS trong service.ts. ERPNext cho phép HR Manager tự tạo workflow cho client mới |
+| **E2** | **`AttendanceImportBatch` workflow** (parse CSV/Excel → preview → match worker → INSERT timesheet_lines raw) | ERPNext có sẵn, HRP cần copy pattern |
+| **E3** | **`bulk-mark` UI** cho HR (query Active workers chưa có công → bulk insert) | ERPNext `Employee Attendance Tool`. HRP sẽ làm tương tự cho kỳ công |
+| **E4** | **`amendedFrom` field** cho TimesheetPeriod, PayRun, Statement | ERPNext có trên Attendance. HRP cần cho financial records |
+| **E5** | **`docStatus` column** (0/1/2) cho TimesheetPeriod, PayRun, Statement | ERPNext dùng cho query `WHERE docstatus=1`. HRP dùng status enum nhưng sẽ thêm docStatus cho query đơn giản |
+| **E6** | **`on_submit` / `on_cancel` lifecycle hooks** | ERPNext pattern. HRP sẽ thêm vào service layer (vd: onSubmit TimesheetPeriod → trigger recompute PayRun draft) |
+| **E7** | **Savepoint pattern** cho long-running batch imports | ERPNext dùng `frappe.db.savepoint(name)` rồi `rollback_to_savepoint`. HRP có thể dùng Postgres SAVEPOINT trong Prisma raw query |
+| **E8** | **Standalone .exe đóng gói** cho admin portal (Electron + Next.js export) | Đáp ứng yêu cầu founder: phân phối cho client dạng 1 file .exe |
+
+**Database schema bổ sung (xem `prisma/schema-v3.1-patches.prisma` — sẽ thêm block mới):**
+
+```prisma
+// Workflow definitions (config-driven, thay vì hardcode trong service)
+model WorkflowDefinition { /* xem trên */ }
+model WorkflowState { /* xem trên */ }
+model WorkflowTransition { /* xem trên */ }
+
+// Attendance Import Batch
+model AttendanceImportBatch {
+  id              String   @id @default(uuid())
+  uploadedByActorId String
+  uploadedByRole  String
+  source          String   // 'CSV' | 'XLSX' | 'PDF_OCR' (future)
+  fileUrl         String   // R2
+  fileHash        String   // SHA-256 để detect duplicate
+  totalRows       Int
+  matchedRows     Int      @default(0)
+  unmatchedRows   Int      @default(0)
+  anomalyRows     Int      @default(0)
+  status          String   @default('PENDING')  // PENDING | PREVIEWED | COMMITTED | FAILED
+  errors          Json     @default("[]")
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  rawRows         AttendanceImportRow[]
+  @@index([status, startedAt])
+  @@index([uploadedByActorId])
+}
+
+// Raw rows từ file (trước khi match worker)
+model AttendanceImportRow {
+  id              String   @id @default(uuid())
+  batchId         String
+  batch           AttendanceImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  rowNumber       Int
+  rawEmployeeCode String
+  rawDate         String
+  rawTime         String
+  rawType         String   // 'IN' | 'OUT'
+  parsedDate      DateTime?
+  parsedTime      String?
+  matchedWorkerId String?
+  anomalyType     String?  // 'MISSING_CHECKOUT' | 'INVALID_CODE' | 'DUPLICATE_SCAN' | 'OUTSIDE_SHIFT' | 'INVALID_DATE'
+  anomalyNote     String?
+  status          String   @default('PENDING')  // PENDING | MATCHED | UNMATCHED | ANOMALY | COMMITTED
+  @@index([batchId, status])
+}
+```
+
+**Standalone .exe deployment (E8) — đáp ứng yêu cầu "phân phối cho client dạng 1 file":**
+
+**Phương án đề xuất: Electron + Next.js Static Export + Embedded SQLite/Postgres**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  HRP-Admin-Portal.exe (≈150MB)                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  Electron Main Process                                │  │
+│  │  ├── Chromium WebView (render Next.js static build)  │  │
+│  │  ├── Local API Server (Express/Fastify in main)      │  │
+│  │  └── Embedded PostgreSQL (single-user mode)          │  │
+│  └───────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**So sánh 3 phương án:**
+
+| Phương án | Bundle size | RAM | Pros | Cons |
+|---|---|---|---|---|
+| **Electron + Next.js static export + PGlite** | ~180MB | ~300MB | Phổ biến, debug dễ, R2 sync OK | RAM cao, Chromium nặng |
+| **Tauri + Next.js static export + SQLite** | ~25MB | ~80MB | Nhẹ, Rust native | Build pipeline phức tạp, ít ecosystem |
+| **pkg/Nexe + Next.js standalone + SQLite** | ~80MB | ~150MB | Pure Node, không Chromium | UI phải dùng native (Tauri/Electron) |
+
+**Khuyến nghị cho HRP v3.0:**
+- **Wave 1-4 (Web-only)**: chỉ cần Next.js trên Vercel + Neon Postgres.
+- **Wave 5 (Standalone)**: **Tauri + Next.js static export + SQLite (better-sqlite3)** cho admin portal.
+  - Bundle ~25MB (vs Electron 180MB).
+  - SQLite đủ cho single-client (1 phòng nhân sự 10-50 người).
+  - Sync cloud: dùng CRDT (Yjs) hoặc last-write-wins qua REST API.
+  - Auto-update qua Tauri Updater plugin.
+
+**Pseudocode cho CSV/Excel import (E2):**
+
+```typescript
+// src/domains/attendance/attendanceImport.service.ts
+
+async function processAttendanceBatch(file: Buffer, actor: SessionUser): Promise<AttendanceImportBatch> {
+  // 1. SHA-256 hash → check duplicate
+  const hash = sha256(file);
+  const existing = await prisma.attendanceImportBatch.findFirst({
+    where: { fileHash: hash, status: 'COMMITTED' },
+  });
+  if (existing) throw new ValidationError('File already imported');
+
+  // 2. Parse (CSV via papaparse, XLSX via xlsx)
+  const rows = await parseFile(file);  // → Array<{ employeeCode, date, time, type }>
+
+  // 3. Create batch row (PENDING)
+  const batch = await prisma.attendanceImportBatch.create({
+    data: {
+      uploadedByActorId: actor.id,
+      uploadedByRole: actor.role,
+      source: detectSource(file),
+      fileUrl: await uploadToR2(file, hash),
+      fileHash: hash,
+      totalRows: rows.length,
+    },
+  });
+
+  // 4. Enqueue background job (QStash) cho matching
+  await enqueueBatchProcessing(batch.id);
+
+  return batch;
+}
+
+async function matchBatchRows(batchId: string): Promise<void> {
+  const batch = await prisma.attendanceImportBatch.findUniqueOrThrow({
+    where: { id: batchId },
+    include: { rawRows: true },
+  });
+
+  // 5. Load workers + shifts (cache 1 lần)
+  const workers = await prisma.worker.findMany({
+    where: { status: 'ACTIVE' },
+    include: { assignments: { where: { endDate: null } } },
+  });
+  const workerMap = new Map(workers.map(w => [w.employeeCode, w]));
+
+  // 6. For each row: match worker + validate date + detect anomaly
+  for (const row of batch.rawRows) {
+    const worker = workerMap.get(row.rawEmployeeCode);
+    if (!worker) {
+      row.status = 'UNMATCHED';
+      row.anomalyType = 'INVALID_CODE';
+      continue;
+    }
+
+    const parsedDate = parseDate(row.rawDate);
+    const parsedTime = parseTime(row.rawTime);
+    if (!parsedDate || !parsedTime) {
+      row.status = 'ANOMALY';
+      row.anomalyType = 'INVALID_DATE';
+      continue;
+    }
+
+    // Check duplicate scan
+    const dup = await prisma.attendanceImportRow.findFirst({
+      where: { batchId, matchedWorkerId: worker.id, parsedDate, parsedTime, rawType: row.rawType },
+    });
+    if (dup) {
+      row.status = 'ANOMALY';
+      row.anomalyType = 'DUPLICATE_SCAN';
+      continue;
+    }
+
+    row.matchedWorkerId = worker.id;
+    row.parsedDate = parsedDate;
+    row.parsedTime = parsedTime;
+    row.status = 'MATCHED';
+  }
+
+  // 7. Update counts
+  await prisma.attendanceImportBatch.update({
+    where: { id: batchId },
+    data: {
+      matchedRows: batch.rawRows.filter(r => r.status === 'MATCHED').length,
+      unmatchedRows: batch.rawRows.filter(r => r.status === 'UNMATCHED').length,
+      anomalyRows: batch.rawRows.filter(r => r.status === 'ANOMALY').length,
+      status: 'PREVIEWED',
+    },
+  });
+
+  // 8. Notify HR qua Zalo (QStash) — có batch mới cần review
+  await enqueueNotification({
+    recipientRole: 'HR_STAFF',
+    subject: `Batch ${batch.id} đã parse xong`,
+    body: `${matched} matched, ${unmatched} invalid, ${anomaly} cần review`,
+  });
+}
+```
+
+**Standalone .exe deployment — kiến trúc chi tiết:**
+
+```typescript
+// electron/main.ts (hoặc tauri/src-tauri/src/main.rs)
+
+import { app, BrowserWindow } from 'electron';
+import next from 'next';
+import { startLocalServer } from './local-server';
+
+async function bootstrap() {
+  await app.whenReady();
+
+  // 1. Khởi embedded Postgres (PGlite hoặc bundled postgres.exe)
+  await startLocalServer({ port: 5432, dataDir: app.getPath('userData') });
+
+  // 2. Run migrations
+  await runMigrations();
+
+  // 3. Build Next.js static export (offline-first)
+  const nextApp = next({ dev: false, dir: __dirname + '/web' });
+  await nextApp.prepare();
+
+  // 4. Spawn Next.js server (port 3000) hoặc load static files
+  const win = new BrowserWindow({ width: 1280, height: 800 });
+  win.loadURL('http://localhost:3000');
+}
+
+app.on('window-all-closed', () => app.quit());
+```
+
+**Caveats cho Standalone (cần giải quyết):**
+1. **Cloud sync**: SQLite local → Postgres cloud (QStash + idempotency).
+2. **Multi-user conflict**: Khi 2 client cùng edit → last-write-wins HOẶC CRDT.
+3. **Backup**: Auto-backup SQLite mỗi ngày → R2.
+4. **Update**: Tauri Updater pull binary mới từ GitHub Releases.
+5. **Print/PDF**: Native dialog qua Electron IPC.
+
+**DoD bài học Frappe/ERPNext:**
+
+- [x] Phân tích frappe/hrms (Attendance + Employee Attendance Tool + Workflow DocType)
+- [x] Phân tích frappe/frappe (workflow engine + permission per role)
+- [x] ERPNext hiện đại đã tách HR/Payroll sang frappe/hrms (cập nhật reference)
+- [x] Đề xuất 8 cải tiến E1-E8 cho HRP v3.3
+- [x] Schema `workflow_definitions` + `workflow_states` + `workflow_transitions`
+- [x] Schema `attendance_import_batches` + `attendance_import_rows`
+- [x] Pseudocode cho CSV/Excel import + matching + anomaly detection
+- [x] So sánh 3 phương án standalone .exe (Electron / Tauri / pkg)
+- [x] Khuyến nghị: Tauri + Next.js static + SQLite cho Wave 5
+- [ ] Implement thực tế: chờ Wave 5 (sau khi Wave 1-4 ổn định trên cloud)
 
 ### 12.6. Statements (đối soát — 2 luồng độc lập)
 
