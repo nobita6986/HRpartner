@@ -1,7 +1,7 @@
-# HRP SYSTEM — UNIFIED PROJECT PLAN (v3.0)
+# HRP SYSTEM — UNIFIED PROJECT PLAN (v4.0)
 ## Hệ thống Quản trị Nguồn Nhân lực & Cung ứng Nhân lực
 
-> **Phiên bản:** 3.3 (tiếp thu Báo cáo Đánh giá Khả thi + bài học Odoo HR + bài học Viet-ERP VN compliance + bài học HRM_SYSTEM ticket workflow + bài học shadcn-admin UI library + bài học Frappe/ERPNext DocType & Workflow & Standalone + bài học Odoo CE CRM/Project/hr_attendance & Worker Portal decoupled)
+> **Phiên bản:** 4.0 — bản hợp nhất: khử mâu thuẫn nội tại của v3.3 (xem changelog 0.1.7, quyết định F1–F31)
 > **Ngày:** 14/08/2026
 > **Trạng thái:** Draft - Chờ phê duyệt
 
@@ -65,7 +65,7 @@
 | 36 | **File `src/shared/utils/money.ts`**: BigInt helpers (`mulRateVnd`, `roundHalfDownVnd`, `formatVnd`) | Internal |
 | 37 | **`prisma/schema-v3.1-patches.prisma`** patch file — copy từng block vào schema chính | Internal |
 
-### 0.1.3. Thay đổi v3.3 (bổ sung từ bài học `W-Codyz/HRM_SYSTEM` — Ticket workflow)
+### 0.1.3. Thay đổi v3.3.0 (bổ sung từ bài học `W-Codyz/HRM_SYSTEM` — Ticket workflow)
 
 | # | Bổ sung cho V3 (Module M7 — Tickets: Phản ánh, Tạm ứng) | Nguồn HRM_SYSTEM |
 |---|-----------------------------------------------------------|-------------------|
@@ -83,7 +83,7 @@
 
 **Phiên bản 3.3.0** — Bổ sung 11 entries (38–48) từ bài học `W-Codyz/HRM_SYSTEM`. Schema M7 + domain service + route handlers + unit tests đã có.
 
-### 0.1.4. Thay đổi v3.3 (bổ sung từ bài học `satnaing/shadcn-admin` — UI/UX & Data Table)
+### 0.1.4. Thay đổi v3.3.1 (bổ sung từ bài học `satnaing/shadcn-admin` — UI/UX & Data Table)
 
 | # | Bổ sung cho V3 (UI Component Library) | Nguồn shadcn-admin |
 |---|----------------------------------------|--------------------|
@@ -102,7 +102,7 @@
 
 **Phiên bản 3.3.1** — Bổ sung 12 entries (49–60) từ bài học `satnaing/shadcn-admin`. UI Component Library hoàn chỉnh: 5 reusable components + 2 demo pages + tokens + WCAG compliance.
 
-### 0.1.5. Thay đổi v3.3 (bổ sung từ bài học ERPNext + Frappe — DocType, Workflow Engine, Batch Import, Standalone)
+### 0.1.5. Thay đổi v3.3.2 (bổ sung từ bài học ERPNext + Frappe — DocType, Workflow Engine, Batch Import, Standalone)
 
 | # | Bổ sung cho V3 | Nguồn Frappe/ERPNext |
 |---|----------------|----------------------|
@@ -114,18 +114,18 @@
 | 66 | **`on_submit` / `on_cancel` lifecycle hooks** cho service layer | Frappe `def on_submit(self)` / `def on_cancel(self)` hooks |
 | 67 | **Savepoint pattern** cho long-running batch imports (Postgres SAVEPOINT) | Frappe `frappe.db.savepoint(name)` + `rollback_to_savepoint` |
 | 68 | **`bulk-mark` UI** cho HR (query Active workers chưa có công → bulk insert) | HRMS `Employee Attendance Tool.get_employees()` |
-| 69 | **Standalone .exe** đóng gói cho admin portal — đề xuất **Tauri + Next.js static + SQLite** (~25MB bundle) | Đáp ứng yêu cầu "phân phối cho client dạng 1 file" |
+| 69 | ~~Standalone .exe~~ **V4 (F4): NGOÀI HORIZON** — chỉ đánh giá lại (Tauri vs Electron qua ADR mới, cấm Fastify) khi có client pilot trả tiền | Khử mâu thuẫn 3 phương án + Wave 5 không có trong roadmap |
 | 70 | **Half-day status + overtime section** tách riêng trên TimesheetLine | HRMS `Attendance.half_day_status` + `overtime_section` |
 | 71 | **Caveats cho Standalone**: Cloud sync (CRDT/last-write-wins), auto-backup, Tauri Updater, native print/PDF | Bổ sung |
 
-**Phiên bản 3.3.2** — B� sung 11 entries (61–71) từ bài học Frappe/ERPNext/HRMS. Đề xuất:
+**Phiên bản 3.3.2** — Bổ sung 11 entries (61–71) từ bài học Frappe/ERPNext/HRMS. Đề xuất:
 - Schema `workflow_definitions` (config-driven, không hardcode trong code)
 - Schema `attendance_import_batches` cho CSV/XLSX import từ máy chấm công vật lý
 - Standalone .exe qua Tauri (Wave 5 — sau khi cloud ổn định)
 
 **LƯU Ý quan trọng:** Repo `frappe/erpnext` hiện đại đã **DEPRECATED HR/Payroll**, chuyển sang `frappe/hrms`. Reference Frappe HR/Payroll phải dùng `frappe/hrms` (đã update trong §12.5.4).
 
-### 0.1.6. Thay đổi v3.3 (bổ sung từ bài học Odoo CE — CRM/Project/hr_attendance, ERD, Worker Portal decoupled)
+### 0.1.6. Thay đổi v3.3.3 (bổ sung từ bài học Odoo CE — CRM/Project/hr_attendance, ERD, Worker Portal decoupled)
 
 | # | Bổ sung cho V3 | Nguồn Odoo |
 |---|----------------|------------|
@@ -149,6 +149,76 @@
 - ERD 7 tầng CRM → HR pipeline (`docs/erd-crm-to-hr.md`)
 - Worker Portal API decoupled với field-level filtering (`docs/worker-portal-api.md`)
 - 10 cải tiến schema O1-O10 (staffing_order_slots, employment_contracts, etc.)
+
+### 0.1.7. Thay đổi v4.0 — khử mâu thuẫn nội tại (hợp nhất đa nguồn)
+
+| # | Mâu thuẫn | Quyết định cuối cùng của v4 |
+|---|-----------|------------------------------|
+| F1 | Worker Portal "chỉ 3 use case" vs vẫn giữ Job Board (A-04/A-05) | **Giữ Job Board**: worker CHƯA có assignment thấy Job Board + Apply; worker ĐANG LÀM thấy home 3 use case (mục 4.5.2 đã sửa) |
+| F2 | 2 state machine cho `timesheet_periods` (PENDING→REVIEWED→APPROVED→LOCKED vs 3-tier) | **Canonical: PENDING → REVIEWED → APPROVED → LOCKED**; 3-tier (Location Manager → HR → Accounting) là workflow config qua `workflow_definitions` ánh xạ vào 2 bước REVIEWED/APPROVED — không phải enum riêng |
+| F3 | `docStatus` (0/1/2) vs `status` enum — 2 nguồn sự thật | **Bỏ `docStatus`** — `status` enum là nguồn sự thật duy nhất |
+| F4 | Standalone .exe: Tauri vs Electron vs Fastify-in-Electron; SQLite vs Postgres; Wave 5 không có trong roadmap | **Đưa Standalone ra NGOÀI HORIZON** (như M10): chỉ khi có client pilot trả tiền; lúc đó đánh giá lại qua ADR mới (cấm Fastify — ADR-001). Xóa pseudocode Electron |
+| F5 | ADR-014 được tham chiếu ~10 lần nhưng chưa định nghĩa | **Định nghĩa ADR-014**: Audit + Idempotency — mọi ghi nhạy cảm có audit_logs; POST nhạy cảm có idempotency key scope (actorId, route, key) |
+| F6 | `import_batches` vs `attendance_import_batches` | **Chuẩn: `attendance_import_batches`** (đồng bộ §12.2, §12.3, §12.5.4) |
+| F7 | `entity_definitions` (F1) treo lơ lửng, trùng "template per partner" | **Bỏ `entity_definitions`** — cơ chế template profile per partner của M7 đã đảm nhiệm |
+| F8 | Pseudocode import dùng `workers.status='ACTIVE'` + `worker.employeeCode` (không tồn tại) | **Sửa pseudocode**: map employeeCode qua `project_assignments` (status ACTIVE → worker) |
+| F9 | Tiêu đề v3.0 vs changelog 3.3; 4 mục đều tên "Thay đổi v3.3" | Đánh số lại 3.3.0/3.3.1/3.3.2/3.3.3; header v4.0 |
+| F10 | Số test ticket: 16 vs 12+ vs 11 | **Đã verify (15/08/2026): ticket 16 tests + thuế 16 golden tests = 32/32 xanh** qua `vitest run` |
+| F11 | 3 bộ key `payroll_config` khác nhau | **Chuẩn theo code** (`payrollConfigRepo.ts` requiredKeys): MIN_WAGE_REGION_1..4, INSURANCE_SALARY_CAP, BHXH/BHYT/BHTN/BHTNLD_RATE_EMPLOYEE/EMPLOYER, TNCN_GIAM_TRU_BAN_THAN, TNCN_GIAM_TRU_NGUOI_PHUC_THUOC, OT_15/20/30_RATE, OVERTIME_TOLERANCE_MIN, STANDARD_* |
+| F12 | `OT_15_RATE = 1.5` (hệ số) gắn type PERCENT | **Quy ước rate**: rate % là chuỗi "0.08" (=8%); hệ số nhân OT là chuỗi "1.5" type MULTIPLIER |
+| F13 | Nghỉ phép trùng scope M7 ticket vs M9 HRM | **Worker nghỉ phép = M7 ticket** (LEAVE_REQUEST); M9 HRM chỉ cho NHÂN VIÊN NỘI BỘ, tái dùng ticket engine với actorType EMPLOYEE |
+| F14 | Trỏ tới `UNIFIED_PLAN_v2.md` + báo cáo review (đã xóa) | Bỏ tham chiếu file đã xóa; thay bằng nội dung inline hoặc file hiện có |
+| F15 | State machine Worker 3 bộ giá trị (plan vs ERD) | **Chuẩn theo plan §9.1**; ERD đã đồng bộ |
+| F16 | `user_id`/`employee_code` định nghĩa trái nhau (plan vs ERD vs worker-api) | **Chuẩn**: `workers.user_id TEXT` "USR-001" = Primary UserID (tạo khi đăng ký); `employee_code` CHỈ nằm ở assignment = mã tại dự án; worker xem employee_code của assignment PRIMARY hiện tại |
+| F17 | CCCD 3 tên (`cccd_number`/`national_id`/`nationalId`) | **Chuẩn: `cccdNumber`** (DB: `cccd_number`) |
+| F18 | Lương thỏa thuận 4 tên + 2 kiểu | **Chuẩn: `salaryPerDayVnd BIGINT`** (DB: `salary_per_day_vnd`) — thay agreed_rate_vnd/assigned_rate_vnd/agreedRateVnd |
+| F19 | `timesheet_lines` 3 phiên bản cấu trúc | **Chuẩn §12.2**: regular_hours + ot15/ot20/ot30_hours + allowance JSONB + exception JSONB (+ source, anomaly_type từ O7/O8) |
+| F20 | Serializer worker-api đọc field không tồn tại | **Sửa serializer** theo schema thật: gross → earnings, net → netPay, trạng thái từ pay_run |
+| F21 | ERD thiếu tầng đối soát; UNIQUE thiếu version; tiền NUMERIC(15,2) | **ERD đã đồng bộ**: thêm statement, version, BigInt |
+| F22 | 2 cây `app/` (root vs src/app) | **Gộp về root `app/`**: `app/api/*`, `app/(portal)/admin`, `app/(portal)/vendor` — plan mục 4.1 đã cập nhật; code đã chuyển |
+| F23 | Chưa có `schema.prisma` chính | **Bắt buộc hợp nhất** 2 patch thành `schema.prisma` trước khi code tiếp (Next Steps #0) |
+| F24 | Idempotency code (metadata JSON) vs ADR (bảng riêng) | **MVP chấp nhận metadata-based** cho ticket (đã ghi TODO trong code); từ Wave 2 triển khai bảng `idempotency_keys` theo ADR-014 |
+| F25 | `loadTaxConfig` đọc PIT_BRACKETS JSON trong khi đã chốt bảng `tax_brackets` | **Chuẩn: bảng `tax_brackets`** — code đã sửa theo |
+| F26 | JSDoc `calculateVietnameseTaxes` ví dụ sai số | **Đã sửa** theo golden case (PIT 447.500 · net 21.927.500) |
+| F27 | `/approve` route sniff body để phân nhánh PAY | **Tách endpoint `/api/tickets/:id/pay`** riêng |
+| F28 | Demo UI dùng `number` cho tiền | **Đã ghi chú**: demo display-only; production luôn BigInt/string VND |
+| F29 | `money.ts` comment sai code (banker's vs truncate) | **Đã sửa comment**: policy = truncate (làm tròn xuống đồng) |
+| F30 | Lỗi encoding UTF-8 rải rác | **Đã sửa** |
+| F31 | `social_insurance` (tổng) vs bhxh/bhyt/bhtn_employee_vnd (chi tiết) trùng nghĩa | **Giữ cả hai có chủ đích**: chi tiết là canonical, tổng là denormalized để query nhanh — ghi rõ trong §12.5.1 |
+
+### 0.1.8. Thay đổi v4.1 — rà soát vòng 2 (khử nợ kỹ thuật còn lại)
+
+| # | Vấn đề | Quyết định v4.1 |
+|---|--------|-----------------|
+| G1 | §9.9 sample có dead code (`overlap` không dùng, `farFuture` không tồn tại) | Xóa dead code — overlap check để TODO [CẦN CHỐT] |
+| G2 | §12.5 code mẫu lạc hậu so với canonical `calculateVietnameseTaxes` | Ghi chú: sample chỉ minh họa; canonical = `src/domains/payroll` + luồng 10 bước §12.5.1 |
+| G3 | §14.3 (bảng idempotency bắt buộc) mâu thuẫn F24 (MVP metadata OK) | Phân kỳ: Wave 1 metadata-based; từ Wave 2 bảng `idempotency_keys` cho endpoint tài chính |
+| G4 | ERD DoD ghi "đủ" nhưng thiếu tầng source/submission/statement | Ghi rõ: ERD là trích đoạn khái niệm; canonical = `prisma/schema.prisma` |
+| G5 | payroll_rules / pay_run_rule_overrides / workflow_definitions chưa có schema | Ghi vào header schema.prisma: Wave 4 / khi cần 3-tier (F2) |
+| G6 | F13 (M9 tái dùng ticket engine) vs `Ticket.workerId` NOT NULL | Ghi chú schema: khi M9, thêm employeeId nullable + actorType EMPLOYEE |
+| G7 | UI components ghi [x] done nhưng là demo mock | Đánh dấu "demo v1 — hardening trong M0 Wave 1" |
+| G8 | Session stub có nguy cơ quên thay trước go-live | Thêm WBS E1 1.6: thay JWT thật TRƯỚC go-live |
+| G9 | Đăng nhập OTP không phù hợp lao động hay đổi SIM/mất máy | **Thêm kênh đăng nhập UserID/employeeCode + CCCD** (tier LOW_ASSURANCE) — mở rộng ADR-007 + A-01c + §4.6.1 |
+| G10 | **Quyết định founder:** dù đăng nhập bằng UserID/CCCD/employeeCode đều cần **mật khẩu đặt lúc đăng ký**; Zalo vẫn cho phép; **SĐT KHÔNG phải định danh** (hay đổi SIM) | **V4.2:** đăng nhập = 3 định danh + mật khẩu (argon2); OTP đổi vai trò step-up/reset; 1 CCCD = 1 account; đã cập nhật ADR-007, §4.6, A-01/A-03, schema |
+| G11 | Cần chặn tiến cử trùng: 1 người có thể được tiến cử bởi CTV/Sale/Vendor — phải biết đã có trong CSDL chưa, do ai đưa vào, ai đang hưởng hoa hồng | **V4.3 — Referral Guard §9.3.1**: chặn thêm nguồn mới khi (1) có tiến cử ≤7 ngày bất kể trạng thái, (2) đang có người hưởng hoa hồng, (3) đang hưởng lương từ vendor; HR_MANAGER/ADMIN override có audit; + feature E-08 + schema |
+| G12 | Feedback rà soát: (1) mất cả mật khẩu lẫn SĐT → không tự reset được; (2) override 7 ngày cần SOP chống thiên vị | **V4.4:** luồng **HR Reset Mật Khẩu** (verify mặt khớp ảnh CCCD → mật khẩu tạm + audit + revoke session) — A-01d; **SOP override Referral Guard** (3 trường hợp hợp lệ S1/S2/S3 + bằng chứng + thống kê hàng tuần chống thiên vị) — §9.3.1 |
+| G13 | (1) Cần link giới thiệu (aff) cho CTV/Sale rải link — đăng ký theo link tự ghi nguồn; (2) cần kho hồ sơ riêng cho vendor để nộp lại không nhập lại | **V4.5:** **Link giới thiệu §9.3.2** (affCode + cookie 30 ngày + first-click wins + vẫn qua Referral Guard) — B-06; **Kho hồ sơ vendor §11.5** (nộp lại 1 chạm, miễn chặn cho chính chủ, guard bảo vệ nguồn khác) — C-07; M4 20→25 MD, M6 40→45 MD |
+| G14 | **Quyết định founder:** 1 CCCD/UserID chỉ được hoạt động trong **1 dự án tại 1 thời điểm** | **V4.6:** bỏ quy tắc đa assignment (Q#15 đóng) — unique partial index `status='ACTIVE'` trên worker; chuyển dự án bắt buộc qua luồng TRANSFER (đóng cũ → mở mới); cập nhật §2.2, §9.1, §9.4, §9.9, ERD, schema |
+| G15 | Phản biện: (1) Zalo in-app browser xóa cookie → mất attribution aff; (2) rule 1-ACTIVE khiến Transfer bị thao tác lặp khi cả nhóm đổi dự án theo ca; (3) auto-merge có thể gộp nhầm người nếu nhập sai CCCD | **V4.7:** (1) aff lưu 3 lớp dự phòng — URL param + localStorage + ô nhập tay, KHÔNG dựa cookie; (2) **Bulk Transfer** (D-05b) — chọn N người chuyển 1 lần + savepoint + báo cáo lỗi từng người; (3) **auto-merge chỉ khi ≥2/3 khóa khớp** (CCCD + họ tên + ngày sinh) — trùng 1 khóa đưa vào merge queue thủ công |
+| G16 | (1) PM hiện trường cần app riêng (nắng, găng tay, thao tác chạm nhanh — như App RW); (2) tận dụng GPS evidence × client_rate để có "doanh thu tạm tính" nhảy số hàng ngày cho lãnh đạo | **V4.8:** **PM Field App (PWA)** §4.7 — nút ≥64px, swipe điểm danh, offline-first, kiosk mode, bulk transfer — D-07; **Dashboard doanh thu tạm tính** G-06 — GPS × client rate, nhãn TẠM TÍNH (không dùng đối soát); M3 45→55 MD |
+| G17 | Rà soát Enterprise/Serverless: (T1) parse Excel lớn vỡ RAM/timeout; (T2) xung đột sync offline PM vs GPS; (T3) DATE cản chuyển giữa ca; (T4) bảng idempotency phình; (B1) dispute vô hạn câu giờ; (B2) phụ cấp chịu/miễn thuế; (B3) proration khối văn phòng | **V4.9:** (T1) **Presigned URL → R2 → parse streaming nền** (Vercel limit 4.5MB); (T2) quy tắc xung đột: GPS chính chủ > kiosk > PM đánh vắng; mâu thuẫn → CONFLICTED + ticket HR; (T3) `valid_from/valid_to` → **TIMESTAMPTZ** (chuyển giữa ca được, công trong ngày kế toán phân bổ); (T4) QStash cron dọn `expires_at`; (B1) dispute tối đa 2 vòng + SLA 3 ngày + AUTO-CONFIRMED + FORCE LOCK; (B2) `payroll_rules.is_taxable` + `allowance_types` (miễn thuế có mức trần); (B3) `salary_type DAILY/MONTHLY` + proration theo `valid_from/valid_to` |
+| G18 | Rà soát cuối trước Sprint 0: (T5) bẫy múi giờ TIMESTAMPTZ (UTC vs UTC+7); (T6) thiếu Dry Run cho payroll; (T7) QStash 300s vẫn nghẽn file 50k dòng; (B4) Net âm; (B5) AWOL bỏ việc ngang kẹt quota; (B6) thuế 10% vãng lai ≥2tr/lần | **V4.10:** (T5) §14.8 quy ước "lưu UTC, tính VN" + helper vndate + ca đêm quy ước ngày bắt đầu ca; (T6) pay_run `is_dry_run` trên tập con — tính đủ nhưng không LOCK/phát hành; (T7) job deadline 240s + savepoint offset + tự re-enqueue continuation; (B4) **chặn cứng Net<0 → Net=0 + carry_forward_debt + exception kế toán** (roll-over 1-click); (B5) AWOL: vắng ≥3 ngày không phép → AWOL_REVIEW + 1-click đóng assignment/nhả quota; (B6) `taxMode FLAT_10` cho vãng lai (≥2.000.000đ/lần, có cam kết 02 thì miễn) |
+| G19 | Rà soát cuối cùng: (T8) Dry Run làm phình DB; (T9) race condition zombie job khi offset-resume; (T10) presigned URL bỏ qua kiểm duyệt malware/MIME; (B7) thu hồi nợ click thủ công hàng trăm case; (B8) ca đêm vắt ngày Lễ mất OT 300%; (B9) né thuế 10% bằng chia nhỏ chi trả | **V4.11:** (T8) cron 24h dọn dry-run + chạy lại cùng tập = thay thế; (T9) `@@unique(batchId, rowNumber)` + advisory lock per-batch + QStash dedup-id → idempotent tuyệt đối; (T10) kiểm magic bytes (XLSX=ZIP/CSV=text) + giới hạn size + không bao giờ serve inline (+scan AV post-go-live); (B7) rule tự động `THU_HOI_NO_KY_TRUOC` — trừ nợ cũ có trần `DEBT_RECOVERY_MAX_PERCENT` (30% gross); (B8) tách dòng ca qua 00:00 theo lịch `holidays` — phần sau nửa đêm tính holiday 300%; (B9) cộng dồn gross/tháng cho OUTSOURCED + default gom 1 lần chi cuối tháng |
+| G20 | Rà soát giao thoa module & luật ẩn: (T11) re-enqueue fail → batch kẹt vĩnh viễn; (T12) bão kết nối 07:00 (5.000 worker check-in đồng loạt); (T13) race condition 2 PM đồng bộ offline cùng (worker, ngày); (B10) luật BHXH "14 ngày làm việc"; (B11) AWOL ôm tài sản chưa thu; (B12) hoa hồng đã trả nhưng worker nghỉ sớm (clawback) | **V4.12:** (T11) **Watchdog cron 30'** quét batch xử lý không có `updated_at` >15' → tự re-enqueue; (T12) check-in **write-behind qua QStash** (trả 202 ngay, worker ghi DB nền) + `connection_limit=1`/pool_timeout; (T13) `pg_advisory_xact_lock(worker_id + work_date)` trước khi tổng hợp trạng thái ngày; (B10) **input variable**: rule `BHXH_14_DAY_RULE` (config 14) → engine đặt `insuranceSalaryVnd=0` khi workedDays <14 — hàm thuế giữ pure; (B11) AWOL TERMINATED → popup bắt buộc khai khoản khấu trừ cuối (tài sản/phạt) vào `worker_deductions` → trừ kỳ lương cuối; (B12) cron đối chiếu nightly: milestone đã CREDIT nhưng điều kiện không còn đúng → sinh REVERSAL tự động chờ kế toán duyệt |
+| G21 | Rà soát Level 3: (T14) write-behind thất bại câm — worker tưởng check-in xong; (T15) watchdog re-enqueue vô tận khi parser crash; (T16) ưu tiên xung đột phải theo captured_at từng record, không chỉ lock; (B13) BHXH 14 ngày phải cộng dồn MỌI assignment; (B14) reversal làm số dư CTV âm; (B15) khấu trừ cuối AWOL → nợ âm vô nghĩa vì đã nghỉ | **V4.13:** (T14) `attendance_events.status QUEUED→APPENDED/FAILED` + app poll trạng thái + DLQ notify; (T15) `retry_count` trên batch — quá `IMPORT_MAX_RETRY` (3) → FAILED cứng + notify HR; (T16) bậc ưu tiên GPS > kiosk > PM mark, **cùng bậc lấy captured_at mới nhất** — xung đột xét từng record, không chỉ lock; (B13) **BHXH aggregate cấp WORKER**: rule 14 ngày chạy trên tổng ngày công mọi assignment trong tháng (earning lines vẫn theo assignment); (B14) `COMMISSION_NETTING_ENABLED`: REVERSAL vượt số dư → nợ CTV, tự cấn trừ hoa hồng tương lai trước khi PAID; (B15) worker đã TERMINATED → nợ không thu hồi được chuyển `unrecoverable_debt` — kế toán quyết định write-off/đòi ngoài hệ thống (roll-over chỉ áp dụng khi còn ACTIVE) |
+
+**Đã chốt 3 quyết định mở (founder, theo khuyến nghị):**
+- **Q1:** workflow_definitions — **hardcode MVP** (guardTransition), config-driven để dài hạn
+- **Q2:** thêm model **Site** trước Wave 2 (geofence + rate theo site)
+- **Q3:** ERD giữ nguyên bản khái niệm — sinh lại bằng prisma-erd-generator khi cần bàn với stakeholder
+- **Q20:** Referral Guard — **7 ngày khởi đầu + config được (`REFERRAL_GUARD_DAYS`) + override HR có lý do bắt buộc + audit** (founder)
+
+Đồng thời thêm mục **17.1 Nợ kỹ thuật đã biết** (register TD-01 → TD-10).
 
 ### 0.2. Các điểm review KHÔNG tiếp thu / tiếp thu có điều chỉnh
 
@@ -281,9 +351,9 @@ Khách hàng/Dự án → Staffing Order (nhu cầu tuyển) → Worker → Assi
 ### 2.2. Các Luồng Chính
 
 **Luồng 1 — Worker Registration (Wave 3):**
-1. Đăng ký bằng SĐT → nhận OTP 6 số qua SMS (hoặc Zalo Login nếu flag bật)
+1. Đăng ký: CCCD + Họ tên + **tự đặt mật khẩu** (≥6 ký tự) — SĐT là thông tin liên hệ TÙY CHỌN (V4.2: không phải định danh)
 2. Chụp selfie xác thực (lưu kèm thời điểm đăng ký)
-3. Tự hoàn thiện Profile: Họ tên, Ngày sinh, Địa chỉ, CCCD (+ ảnh 2 mặt), Bank
+3. Tự hoàn thiện Profile: Ngày sinh, Địa chỉ, CCCD (+ ảnh 2 mặt), Bank
 4. Hệ thống tạo **UserID Primary**; `profile_status: INCOMPLETE → PENDING_VERIFY → VERIFIED`
 
 > Trong MVP (Wave 1–2), worker được tạo bởi Sale/HR nội bộ (kênh SALE_ADDED/HR_ADDED) — không cần chờ portal.
@@ -291,7 +361,7 @@ Khách hàng/Dự án → Staffing Order (nhu cầu tuyển) → Worker → Assi
 **Luồng 2 — Staffing & Assignment (Wave 1):**
 1. Admin/HR tạo Client → Project → **Staffing Order** (vị trí, ca, số lượng, thời gian)
 2. Gán worker vào order → tạo **UserID Secondary** (employeeCode theo dự án)
-3. Assignment: `PLANNED → ACTIVE`; có thể nhiều assignment nếu lịch/ca không trùng + 1 PRIMARY
+3. Assignment: `PLANNED → ACTIVE`; **1 người chỉ ACTIVE ở 1 dự án tại 1 thời điểm** (G14) — chuyển dự án = đóng cũ → mở mới qua luồng TRANSFER
 
 **Luồng 3 — Vendor (Wave 3):**
 1. Vendor đăng nhập `vendor.hrpartner.vn` → xem staffing order đang cần người
@@ -319,13 +389,14 @@ Khách hàng/Dự án → Staffing Order (nhu cầu tuyển) → Worker → Assi
 | ADR-004 | Database | **PostgreSQL + Prisma** (Neon serverless trước, self-host sau) | ACID, JSONB; constraint phức tạp dùng raw SQL migration | Accepted |
 | ADR-005 | Hạ tầng | **3 giai đoạn**: Vercel/Neon → Vercel Pro → **Self-host (AWS hoặc Cloud VN) + Coolify** — chuyển giai đoạn theo tải thực tế & năng lực vận hành, không theo deadline cố định | Tốc độ ra mắt trước, tự host khi tải/năng lực vận hành cho phép | Accepted |
 | ADR-006 | Storage | **Cloudflare R2** (S3-compatible, không tính egress) cho mọi file: CCCD, selfie, hợp đồng; code chỉ gọi **storage interface** để đổi provider được nếu cần | Founder chốt R2 (chi phí + không egress); rà soát NĐ 13/2023/Luật Dữ liệu 2024 khi mở rộng quy mô | Accepted |
-| ADR-007 | Xác thực | **OTP SMS là baseline bắt buộc** + JWT (access 15', refresh 7d có rotation/revoke); **Zalo Login là feature flag** (không block MVP); device binding chỉ áp dụng thao tác nhạy cảm | OTP độc lập với Zalo; 1 SĐT = 1 account qua `auth_identities` + account linking | Accepted |
+| ADR-007 | Xác thực | **Mật khẩu khi đăng ký + 3 định danh** (V4.2 — quyết định founder): đăng nhập bằng `USR-001` \| employeeCode ACTIVE \| CCCD + **mật khẩu** (argon2/bcrypt, ≥6 ký tự); **Zalo Login = feature flag** (link qua `auth_identities`); **OTP đổi vai trò**: step-up thao tác nhạy cảm + reset mật khẩu; **SĐT KHÔNG phải định danh** — chỉ là thông tin liên hệ đổi được | 1 CCCD = 1 account (Primary UserID); thao tác nhạy cảm bắt step-up OTP hoặc HR xác nhận; chống brute-force 5 sai → khóa 15' | Accepted |
 | ADR-008 | Mobile | **PWA trước** (camera/GPS/offline); **Capacitor chỉ kích hoạt khi có vấn đề đo được** với PWA | PWA đáp ứng ~90% nhu cầu | Accepted |
 | ADR-009 | Xử lý nền | **Upstash QStash** cho batch/retry; job phải có job state, idempotency và input snapshot trong DB | Vercel Functions timeout 10–30s | Accepted |
 | ADR-010 | Đồng tiền & làm tròn | VND, **BIGINT đồng nguyên xuyên suốt**; cấm `number`/`.toNumber()` cho tiền; rounding policy tại 1 domain service duy nhất | Tránh sai lệch xu và lỗi float | Accepted |
 | ADR-011 | Vòng đời dữ liệu | **Tách 5 state machine** (profile/submission/employment/assignment/risk); availability SUY RA từ assignment | Một `WorkStatus` không biểu diễn được các vòng đời độc lập | Accepted |
 | ADR-012 | Nguồn tuyển | **Source claims + submission** tách khỏi Worker; lưu toàn bộ lịch sử, 1 accepted có audit | Worker đổi nguồn/tái tuyển là chuyện bình thường của nghiệp vụ | Accepted |
 | ADR-013 | Dữ liệu tài chính | **Record đã LOCKED là bất biến**: sai lệch xử lý bằng version mới hoặc adjustment line (bảng công, pay run, statement, commission) | Audit và trách nhiệm giải trình với kế toán/đối tác | Accepted |
+| ADR-014 | Audit & Idempotency | **Mọi ghi nhạy cảm có `audit_logs`** (entityType/entityId/action/diff/actor); **POST nhạy cảm có idempotency key** scope theo (actorId, route, key) + request hash | Giải trình với kế toán/đối tác; chống duplicate khi client retry | Accepted |
 
 ---
 
@@ -336,10 +407,11 @@ Khách hàng/Dự án → Staffing Order (nhu cầu tuyển) → Worker → Assi
 ```
 hrp/
 ├── app/                          # Next.js App Router (routes + route handlers)
-│   ├── (worker)/                 # Cổng NLĐ — mobile-first (Wave 3)
-│   ├── (admin)/                  # Admin dashboard
-│   ├── vendor/                   # Vendor portal — rewrite target của subdomain
-│   ├── api/                      # Route Handlers /api/*
+│   ├── (portal)/
+│   │   ├── admin/                # Admin dashboard (Wave 1)
+│   │   ├── vendor/               # Vendor portal (Wave 3) — rewrite target của subdomain
+│   │   └── worker/               # Cổng NLĐ /m — mobile-first (Wave 3)
+│   ├── api/                      # Route Handlers /api/* (admin | m | vendor)
 │   └── middleware.ts             # Route theo hostname: vendor.hrpartner.vn → /vendor
 ├── src/
 │   ├── domains/                  # Business logic theo module (M0–M9)
@@ -353,7 +425,9 @@ hrp/
 │   │   └── payroll/              # M8
 │   ├── shared/
 │   │   ├── types/                # Shared TypeScript types
-│   │   ├── utils/                # Utilities (money: BigInt VND)
+│   │   ├── utils/                # Utilities (money: BigInt VND, cn)
+│   │   ├── styles/               # Design tokens (tokens.ts)
+│   │   ├── ui/                   # entity-card · data-table · view-toggle · slide-out-drawer · role-guard
 │   │   ├── constants/            # Constants
 │   │   └── errors/               # Error classes
 │   └── infrastructure/
@@ -371,6 +445,8 @@ hrp/
 ```
 
 **Quy tắc domain:** module chỉ gọi nhau qua function/service export trong `src/domains/*/`; **cấm import chéo ngược**; kiểm tra bằng ESLint boundary.
+
+> **V4 (F22):** toàn bộ route nằm trong MỘT cây `app/` ở root — KHÔNG tồn tại song song `src/app/` (Next.js chỉ nhận 1 cây, cây kia bị bỏ qua).
 
 ### 4.2. URL Structure & Multi-Domain
 
@@ -489,7 +565,7 @@ export function middleware(req: NextRequest) {
 
 > Giữ từ v2.1: primary `#f97316` (HRP Orange), accent vàng, semantic colors (success/warning/info/danger/neutral). **Bắt buộc áp dụng fix WCAG (mục 4.6.3 v2.1):** chữ trắng trên cam chỉ dùng cho nút có text đậm hoặc chuyển nền sang `#c2410c`; badge/text nhỏ dùng nền cam nhạt + chữ cam đậm; body text ≥ 16px (tránh iOS zoom); test contrast trên điện thoại ngoài trời nắng.
 
-*(Bảng design tokens giữ nguyên từ v2.1 — xem `UNIFIED_PLAN_v2.md` mục 4.5)*
+*(Design tokens đã triển khai trong `src/shared/styles/tokens.ts` — HRP Orange WCAG-safe)*
 
 #### 4.5.1. UI Component Library — học từ `satnaing/shadcn-admin` (cập nhật v3.3)
 
@@ -539,7 +615,7 @@ src/shared/
     ├── view-toggle/view-toggle.tsx        # Card/Table toggle + URL hook
     ├── sheet/slide-out-drawer.tsx         # Right-side animated drawer
     └── role-guard/role-guard-layout.tsx   # 3-portal layout + nav filtering
-src/app/(portal)/
+app/(portal)/
 ├── admin/tickets/page.tsx                 # Demo M7 (Card + Table + Drawer + Bulk)
 └── vendor/projects/page.tsx               # Demo Vendor (Card grid + KPI)
 ```
@@ -571,6 +647,8 @@ src/app/(portal)/
 - [x] Vietnamese localization (date, VND, status labels)
 - [x] 2 demo pages showcase (admin/tickets + vendor/projects)
 
+> **V4.1 (G7):** các component hiện là DEMO v1 (data mock, `cn.ts` là stub). Hardening (fetch thật qua RSC, clsx + tailwind-merge, test) thuộc M0 Wave 1 — không coi demo là production-ready.
+
 #### 4.5.2. Worker Portal UX — Decoupled cho lao động phổ thông (cập nhật v3.3)
 
 > Phân tích từ Odoo CE (`odoo/odoo`) — đặc biệt `addons/crm/models/crm_lead.py` (CRM stage state machine), `addons/project/models/project_project.py` (Project từ Customer), `addons/hr_attendance/models/hr_attendance.py` (check_in/check_out/worked_hours).
@@ -587,8 +665,8 @@ src/app/(portal)/
 │  2. 💰 Xem phiếu lương (tạm tính + 3 tháng gần nhất)        │
 │  3. 🔔 Đọc thông báo quan trọng (HR push)                    │
 │                                                              │
-│  KHÔNG có:                                                   │
-│  - Tìm việc mới (HRP không phải job portal)                  │
+│  KHÔNG có (cho worker ĐANG LÀM):                             │
+│  - Job Board/Apply (chỉ worker CHƯA có việc — A-04/A-05)    │
 │  - Sửa hồ sơ chi tiết (HR sửa offline)                      │
 │  - Xem payroll breakdown (PIT/BHXH) — chỉ thấy NET          │
 │  - Đánh giá khách hàng/vendor                                │
@@ -745,37 +823,90 @@ Vendor Portal (/vendor/*)  ──fetch──→ /api/vendor/* ──┘
 - [x] Serializer pattern (ẩn BHXH/PIT/rate khỏi worker)
 - [ ] Implement thực tế: chờ Wave 3 (Worker Portal release)
 
-### 4.6. Auth: OTP baseline + Zalo feature flag (SỬA lỗi upsert mù của v2.1)
+### 4.6. Auth: Mật khẩu khi đăng ký + Zalo (V4.2 — SĐT KHÔNG phải định danh)
 
-**Rủi ro phân mảnh tài khoản** (v2.1 4.6.1): upsert theo SĐT **giả định Zalo luôn trả được SĐT** — không đúng thực tế (user phải cấp quyền; Zalo OA chưa tích vàng không lấy được SĐT). Giải pháp đúng:
+**Quyết định founder (G10):** dù đăng nhập bằng UserID, CCCD hay employeeCode — đều cần **mật khẩu đặt lúc đăng ký tài khoản**; Zalo vẫn được phép đăng nhập (flag); **SĐT không phải cơ sở định danh** vì lao động hay đổi SIM.
+
+**Mô hình:**
+- **Định danh gốc = Primary UserID (`USR-001`)** — 1 CCCD = 1 account. SĐT chỉ là thông tin liên hệ, đổi được.
+- **Đăng nhập:** 1 trong 3 định danh + mật khẩu — `USR-001` | employeeCode ACTIVE | CCCD.
+- **OTP đổi vai trò:** không còn là kênh đăng nhập chính → dùng cho **step-up thao tác nhạy cảm** và **reset mật khẩu** (nếu có SĐT).
+- **Zalo Login:** vẫn cho phép (feature flag) — link vào tài khoản qua `auth_identities`, KHÔNG upsert mù theo SĐT (giữ nguyên nguyên tắc v2.1).
+
+**Đăng ký:** HR/Sale tạo hộ (Wave 1) — tạo worker + mật khẩu tạm, đổi ở lần đăng nhập đầu; worker tự đăng ký (Wave 3) — CCCD + họ tên + tự đặt mật khẩu (≥6 ký tự), SĐT tùy chọn.
 
 ```typescript
-// auth_identities: nhiều kênh login → 1 account
+// auth_identities: kênh login phụ (Zalo) → 1 account
 model AuthIdentity {
   id         String @id
   accountId  String               // users.id
-  provider   String               // PHONE | ZALO
-  providerId String               // SĐT chuẩn hóa hoặc zaloUserId
+  provider   String               // ZALO
+  providerId String               // zaloUserId
   verifiedAt DateTime?
   @@unique([provider, providerId])
 }
 
-// Zalo callback: KHÔNG tạo user nếu thiếu SĐT
+// Zalo callback: KHÔNG tạo user nếu chưa link
 async function zaloLoginCallback(zaloUserId: string) {
   const identity = await prisma.authIdentity.findUnique({
     where: { provider_providerId: { provider: 'ZALO', providerId: zaloUserId } }
   });
   if (!identity) {
-    // Yêu cầu bước liên kết: user nhập SĐT → nhận OTP → link với account PHONE
-    throw new Error('ZALO_ACCOUNT_NOT_LINKED'); // redirect sang flow "Nhập SĐT để liên kết"
+    // Yêu cầu đăng nhập bằng mật khẩu trước, rồi link Zalo vào account
+    throw new Error('ZALO_ACCOUNT_NOT_LINKED');
   }
   return generateJWT(identity.accountId);
 }
 ```
 
-- OTP là **baseline bắt buộc** — luôn hoạt động kể cả khi Zalo OA chưa xác thực.
-- Zalo Login + Zalo Notification là **feature flags** — không block MVP (mục 14.6).
-- Xác thực Zalo OA (tích vàng): task của founder, Sprint 1 — nếu chưa xong, flag Zalo tắt.
+- **Bảo mật:** passwordHash = argon2/bcrypt; 5 lần sai → khóa 15 phút + audit; thao tác nhạy cảm (đổi STK/CCCD/hồ sơ) bắt **step-up OTP hoặc HR xác nhận**; thiết bị lạ lần đầu → thông báo.
+- Xác thực Zalo OA (tích vàng): task của founder, Sprint 1 — chưa xong thì flag Zalo tắt.
+
+**Quên mật khẩu (V4.4 G12):** lao động mất cả mật khẩu lẫn SĐT (đổi SIM) → KHÔNG thể tự reset qua OTP. Luồng dự phòng bắt buộc:
+1. Worker báo qua PM/Vendor/CTV hoặc đến văn phòng → yêu cầu reset mật khẩu
+2. HR_STAFF đối chiếu **khuôn mặt người lao động với ảnh CCCD/selfie** đã lưu trên hồ sơ
+3. HR bấm "cấp mật khẩu tạm" — sinh ngẫu nhiên, hết hạn 24h, bắt buộc đổi ở lần đăng nhập đầu; ghi audit log + **revoke toàn bộ phiên đăng nhập cũ** (chặn kẻ cầm máy cũ)
+
+#### 4.6.1. Quyền theo tier khi đăng nhập bằng mật khẩu (V4.2)
+
+| Yếu tố | Quy tắc |
+|--------|---------|
+| Định danh | `USR-001` (Primary) · employeeCode ACTIVE (Secondary — map qua assignment) · CCCD — cả 3 + mật khẩu |
+| Session | JWT claim `assurance = NORMAL` |
+| ✅ Được phép | Toàn bộ chức năng worker: xem ca, lương NET, GPS check-in, tạo ticket (phản ánh / tạm ứng / đơn nghỉ) |
+| ❌ Bắt step-up | Đổi STK/CCCD/hồ sơ, xem dữ liệu nhạy cảm → **OTP (nếu có SĐT) hoặc HR xác nhận** |
+| Tạm ứng an toàn vì | Tiền luôn chuyển vào STK đã xác thực trong hồ sơ (step-up mới đổi được STK) + duyệt 2 bước HR → Kế toán |
+| Chống dò | 5 lần sai → khóa 15 phút + audit log |
+| Nhớ thiết bị | Thiết bị lạ lần đầu → thông báo; thao tác nhạy cảm trên thiết bị lạ bắt step-up |
+
+**Nguyên tắc xuyên suốt:** mọi kênh (mật khẩu / Zalo) về 1 tài khoản qua `auth_identities` — **1 CCCD = 1 Primary UserID**.
+
+### 4.7. PM Field App — PWA cho Quản lý Hiện trường (V4.8 G16)
+
+**Vì sao tách riêng:** PM đứng ngoài nắng, đeo găng tay, sóng chập chờn — Admin Portal chạy browser desktop không dùng được tại công trường. Cần PWA tinh gọn, nút bấm khổng lồ, thao tác ≤ 2 chạm, hoạt động **OFFLINE**.
+
+**Đặc tả UX:**
+- Nút chính ≥ 64px, khoảng cách chạm ≥ 12px; số quân số hiển thị ≥ 28px
+- Mỗi màn 1 việc — bottom tab 4 mục: Điểm danh · Sự cố · Duyệt đơn · Danh bạ
+- **Swipe**: vuốt phải = CÓ MẶT, vuốt trái = VẮNG — không cần đọc chữ
+- **Offline-first**: mọi thao tác lưu queue cục bộ → tự đồng bộ khi có sóng (giữ timestamp thiết bị)
+- **Kiosk mode**: điểm danh hộ cho lao động không có smartphone (nguồn MANUAL, ghi chú "PM điểm danh hộ")
+
+**7 tính năng:**
+
+| ID | Tính năng | Mô tả |
+|----|-----------|-------|
+| PM-01 | Bảng ca hôm nay | Số to: đăng ký ca / có mặt / vắng / đến muộn — theo project mình quản lý |
+| PM-02 | Điểm danh 1 chạm | Swipe có mặt/vắng từng người, đồng bộ hàng loạt khi có mạng |
+| PM-03 | Check-in hộ | Worker không có điện thoại → PM điểm danh hộ (MANUAL + audit) |
+| PM-04 | Báo sự cố nhanh | Mất điện / máy hỏng / người nghỉ đột xuất → ticket URGENT ≤ 3 chạm |
+| PM-05 | Duyệt đơn nhanh | Đơn nghỉ/đổi ca của người mình quản lý — đồng ý/từ chối 1 chạm |
+| PM-06 | Danh bạ 1 chạm | Tap để gọi thẳng theo SĐT hồ sơ |
+| PM-07 | Chuyển người hàng loạt | Bulk transfer (G15) ngay tại hiện trường — chọn N người → chuyển |
+
+**Kỹ thuật:** dùng chung hạ tầng PWA của Worker app (M2); data scope: PM chỉ thấy project mình quản lý (`workerScope` PM đã có); mọi ghi có audit + idempotency key.
+
+**Giải quyết xung đột offline (V4.9 G17 — T2):** mọi sự kiện ghi append-only, không bao giờ sửa. Tổng hợp trạng thái ngày theo thứ tự ưu tiên: **GPS chính chủ (có ảnh + tọa độ) > PM điểm danh hộ (kiosk) > PM đánh VẮNG**. PM đánh VẮNG nhưng cùng ngày có GPS CÓ MẶT → trạng thái ngày = **CONFLICTED** → sinh ticket cho HR xử lý (KHÔNG tự chọn im lặng). Đồng bộ offline áp dụng theo thứ tự `received_at`; dedup theo `(source, external_event_id)`.
 
 ---
 
@@ -787,10 +918,12 @@ async function zaloLoginCallback(zaloUserId: string) {
 
 | ID | Tính năng | Mô tả | Ưu tiên | Wave |
 |----|-----------|-------|---------|-------|
-| **A-01** | Đăng nhập OTP | SĐT + OTP 6 số qua SMS | P0 | 3 |
+| **A-01** | **Đăng nhập mật khẩu** | UserID / employeeCode ACTIVE / CCCD + **mật khẩu đặt lúc đăng ký** (V4.2 G10) | P0 | 3 |
 | **A-01b** | Đăng nhập Zalo (flag) | Đăng nhập 1 chạm qua Zalo OA — feature flag | P1 | 3 |
+| **A-01c** | **OTP step-up & reset mật khẩu** | OTP KHÔNG còn là đăng nhập chính — dùng cho thao tác nhạy cảm + reset mật khẩu | P1 | 3 |
+| **A-01d** | **HR reset mật khẩu** | Mất cả mật khẩu + SĐT: HR verify mặt khớp ảnh CCCD → cấp mật khẩu tạm (audit + revoke session) — G12 | P0 | 3 |
 | **A-02** | Hoàn thiện Profile | Worker tự điền: Họ tên, CCCD, Bank... (profile_status) | P0 | 3 |
-| **A-03** | Đăng ký nhanh | Tạo UserID ngay khi đăng ký (chỉ cần SĐT) | P0 | 3 |
+| **A-03** | Đăng ký nhanh | Tạo UserID ngay khi đăng ký (CCCD + họ tên + mật khẩu; SĐT tùy chọn — không phải định danh) | P0 | 3 |
 | **A-04** | Bảng tin việc làm | Job Card theo Staffing Order + filter | P0 | 3 |
 | **A-05** | Ứng tuyển 1 chạm | Gửi SĐT + thông tin cơ bản → candidate_submission | P0 | 3 |
 | **A-06** | Xem thông tin dự án | Tên, địa điểm, quản lý | P0 | 3 |
@@ -811,6 +944,7 @@ async function zaloLoginCallback(zaloUserId: string) {
 | **B-03** | Dashboard theo dõi | Trạng thái + hoa hồng | P0 | 3 |
 | **B-04** | Lịch sử hoa hồng | Commission ledger | P1 | 4 |
 | **B-05** | Thông báo | Zalo/SMS khi có cập nhật (flag) | P1 | 4 |
+| **B-06** | **Link giới thiệu (affiliate)** | CTV/Sale rải link — đăng ký theo link tự ghi nguồn cho chủ link; first-click wins; vẫn qua Referral Guard (G13, §9.3.2) | P0 | 3 |
 
 ### 5.3. Nhóm C: Vendor Portal — Wave 3
 
@@ -822,6 +956,7 @@ async function zaloLoginCallback(zaloUserId: string) {
 | **C-04** | Xem trạng thái | Duyệt/từ chối kèm lý do | P0 | 3 |
 | **C-05** | Confirm/Dispute statement | Xác nhận hoặc phản đối biên bản đối soát | P0 | 3 |
 | **C-06** | Xuất biên bản | Statement PDF/Excel | P0 | 3 |
+| **C-07** | **Kho hồ sơ vendor** | Lưu mọi hồ sơ đã nộp — nộp lại 1 chạm cho nhu cầu mới; miễn chặn cho chính chủ; guard vẫn bảo vệ nguồn khác (G13, §11.5) | P0 | 3 |
 
 ### 5.4. Nhóm D: Quản trị B2B CRM & Dự án
 
@@ -832,7 +967,9 @@ async function zaloLoginCallback(zaloUserId: string) {
 | **D-02b** | **CRUD Staffing Order** | Nhu cầu theo vị trí, ca, số lượng, thời gian, điều kiện | P0 | 1 |
 | **D-03** | Quản lý Pipeline | **List đơn giản trong MVP** (Kanban sau nếu cần) | P1 | 3 |
 | **D-04** | CRUD Máy chấm công | Serial, IP, map vào dự án — **adapter, ngoài MVP** | P2 | Sau core |
-| **D-05** | Gán nhân sự | Assignment PLANNED→ACTIVE, nhiều assignment + PRIMARY | P0 | 1 |
+| **D-05** | Gán nhân sự | Assignment PLANNED→ACTIVE — **1 người = 1 dự án tại 1 thời điểm** (G14) | P0 | 1 |
+| **D-05b** | **Chuyển dự án hàng loạt** | Chọn N lao động → chuyển cùng lúc (bulk transfer + savepoint + báo cáo lỗi từng người) — G15 | P0 | 1 |
+| **D-07** | **PM Field App (PWA)** | Ứng dụng hiện trường riêng cho PM: điểm danh, sự cố, duyệt đơn, chuyển người hàng loạt — nút ≥64px, offline-first (G16, §4.7) | P0 | 3 |
 | **D-06** | Import từ Vendor | Duyệt/merge candidate_submission | P0 | 3 |
 
 ### 5.5. Nhóm E: Talent Pool & ATS
@@ -845,7 +982,9 @@ async function zaloLoginCallback(zaloUserId: string) {
 | **E-04** | Bộ lọc nâng cao | Tuổi, khu vực, kỹ năng, availability (suy ra) | P0 | 1/3 |
 | **E-05** | Xuất Excel | Export data | P1 | 3 |
 | **E-06** | Lịch sử tương tác | Ghi chú, log cuộc gọi | P1 | 3 |
-| **E-07** | **Dedup/merge** | Chuẩn hóa SĐT/CCCD, merge queue, lịch sử nguồn & ownership | P0 | 3 |
+| **E-07** | **Dedup/merge** | Chuẩn hóa CCCD/họ tên/ngày sinh — **auto-merge chỉ khi ≥2/3 khóa khớp**; trùng 1 khóa → merge queue thủ công (G15); lịch sử nguồn & ownership | P0 | 3 |
+| **E-08** | **Referral Guard** | Chặn tiến cử trùng theo CCCD: ≤7 ngày (mọi trạng thái) · đang hưởng hoa hồng · đang hưởng lương vendor (G11, §9.3.1) | P0 | 3 |
+| **E-09** | **AWOL detection** | Vắng liên tục ≥3 ngày không phép → AWOL_REVIEW + task PM/HR đóng assignment/nhả quota 1 chạm (G18-B5) | P1 | 2 |
 
 ### 5.6. Nhóm F: Vận hành & T&A
 
@@ -868,6 +1007,7 @@ async function zaloLoginCallback(zaloUserId: string) {
 | **G-03** | Hoa hồng CTV | PER_HEAD theo milestone + ledger + reversal | P1 | 4 |
 | **G-04** | Xuất file lương | Excel payroll | P0 | 2 |
 | **G-05** | Quản lý công nợ | Theo dõi thanh toán | P1 | 4 |
+| **G-06** | **Dashboard doanh thu tạm tính** | GPS check-in × client rate → "doanh thu tạm tính hôm nay/tuần/tháng" — số nhảy mỗi ngày, nhãn TẠM TÍNH (không dùng đối soát) — G16 | P1 | 3 |
 
 ### 5.8. Nhóm H: Nhân sự Nội bộ (HRM) — Sau core
 
@@ -896,15 +1036,15 @@ async function zaloLoginCallback(zaloUserId: string) {
 | **M0** | Platform Core | 40 | 1, 4 | P0 | Repo, CI/CD, migration, design system, **observability + audit + feature flags từ Sprint 1** |
 | **M1** | Auth & RBAC | 30 | 1 | P0 | OTP baseline, JWT, RBAC, `auth_identities`, Zalo flag |
 | **M2** | Worker Portal | 50 | 3–4 | P0 | Đăng ký, profile, job board, GPS evidence, payslip view |
-| **M3** | CRM, Projects & Staffing Order | 45 | 1, 3 | P0 | Client/Project CRUD, **Staffing Order**, list pipeline, assignment, contract |
-| **M4** | Vendor Portal | 20 | 3 | P0 | Subdomain, submission, status, **confirm/dispute statement** |
+| **M3** | CRM, Projects & Staffing Order | 55 | 1, 3 | P0 | Client/Project CRUD, **Staffing Order**, list pipeline, assignment, **PM Field App (PWA)** (G16) |
+| **M4** | Vendor Portal | 25 | 3 | P0 | Subdomain, submission, status, **kho hồ sơ vendor + nộp lại**, confirm/dispute statement (G13) |
 | **M5** | Talent Pool & ATS | 45 | 1–3 | P0 | Master data, 5 state machine, source claims, **dedup/merge**, filters, export |
-| **M6** | CTV Portal & Commission | 40 | 3–4 | P0 | Đăng ký, submission, dashboard, **commission ledger** |
+| **M6** | CTV Portal & Commission | 45 | 3–4 | P0 | Đăng ký, submission, dashboard, **link giới thiệu (aff)**, commission ledger (G13) |
 | **M7** | Attendance (T&A) | 50 | 2–3 | P0 | Import XLSX/CSV, 3 tầng, chốt công, ticket, GPS admin |
 | **M8** | Payroll & Billing | 65 | 2, 4 | P0 | Rate version, statements, **pay run**, payslip, reports |
-| **M9** | HRM (Nhân sự nội bộ) | 40 | Sau core | P1 | Employee CRUD, org chart, nghỉ phép |
+| **M9** | HRM (Nhân sự nội bộ) | 40 | Sau core | P1 | Employee CRUD, org chart; nghỉ phép NỘI BỘ tái dùng ticket engine — actorType EMPLOYEE (F13) |
 | | PWA packaging (thuộc M2) | 20 | 3–4 | P1 | PWA trước; Capacitor ngoài horizon |
-| | **Tổng in-horizon** | **≈ 465 MD** | | | 445 module/PWA + Sprint 0 (10) + UAT (10) |
+| | **Tổng in-horizon** | **≈ 485 MD** | | | 465 module/PWA + Sprint 0 (10) + UAT (10) — G13 (+10) + G16 (+10: PM Field App) |
 | | ~~M10 Assets~~ | ~~30~~ | **Ngoài horizon** | P2 | Bỏ khỏi kế hoạch; prototype 3–5 MD sau go-live nếu cần |
 | | ~~Multi-tenant~~ | — | Ngoài horizon | P2 | Chỉ thêm tenant isolation khi có pilot SaaS thật |
 
@@ -1127,15 +1267,19 @@ E1: AUTH & RBAC
 ├── 1.2 Zalo Login (FEATURE FLAG) + auth_identities + account linking
 ├── 1.3 JWT access/refresh (rotation + revoke)
 ├── 1.4 RBAC (10 roles) + data-scope integration test
-└── 1.5 Device binding (chỉ thao tác nhạy cảm)
+├── 1.5 Device binding (chỉ thao tác nhạy cảm)
+├── 1.6 Thay session stub bằng JWT thật TRƯỚC go-live (V4.1 G8 — cấm deploy stub)
+└── 1.7 HR reset mật khẩu offline (verify mặt vs ảnh CCCD → mật khẩu tạm + audit + revoke session) [Wave 3 — G12]
 
 E3: CRM, PROJECTS & STAFFING ORDER
 ├── 3.1 Client CRUD [Wave 1]
 ├── 3.2 Project CRUD + PM + quota [Wave 1]
 ├── 3.3 STAFFING ORDER (vị trí, ca, số lượng, thời gian, điều kiện) [Wave 1]
-├── 3.4 Assignment (PLANNED→ACTIVE, multi + PRIMARY, half-open) [Wave 1]
+├── 3.4 Assignment (PLANNED→ACTIVE, 1 ACTIVE/người — G14, half-open) [Wave 1]
+├── 3.4b Bulk Transfer UI (chọn N người chuyển 1 lần + savepoint + báo cáo từng người) [Wave 1 — G15]
 ├── 3.5 Pipeline list [Wave 3]
-└── 3.6 Contract v1 + contract_parties [Wave 3]
+├── 3.6 Contract v1 + contract_parties [Wave 3]
+└── 3.8 PM Field App (PWA — điểm danh, sự cố, duyệt đơn, bulk transfer) [Wave 3 — G16]
 
 E5: TALENT POOL
 ├── 5.1 Worker master data + edit history [Wave 1]
@@ -1144,7 +1288,8 @@ E5: TALENT POOL
 ├── 5.4 Filters cơ bản + availability suy ra [Wave 1]
 ├── 5.5 Data isolation (scope team/branch/assignment) [Wave 1]
 ├── 5.6 Dedup/merge queue [Wave 3]
-└── 5.7 Excel export + activity logs [Wave 3]
+├── 5.7 Excel export + activity logs [Wave 3]
+└── 5.8 Referral Guard (V4.3 — chặn trùng CCCD: 7 ngày / hoa hồng / lương vendor) [Wave 3]
 
 E7: ATTENDANCE (Wave 2)
 ├── 7.1 Import XLSX/CSV + template per partner + payload hash
@@ -1160,14 +1305,16 @@ E8: PAYROLL & BILLING (Wave 2 — tối giản)
 ├── 8.3 Export biên bản đối soát [Wave 2]
 ├── 8.4 Pay run + worker_pay_results + earning/deduction lines [Wave 4]
 ├── 8.5 Payslip snapshot + worker view [Wave 4]
-└── 8.6 Reports + adjustments [Wave 4]
+├── 8.6 Reports + adjustments [Wave 4]
+└── 8.7 Dashboard doanh thu tạm tính (GPS × client rate, nhãn TẠM TÍNH) [Wave 3 — G16]
 
 E6: CTV (Wave 3-4)
 ├── 6.1 CTV registration [Wave 3]
 ├── 6.2 Referral → candidate_submission [Wave 3]
 ├── 6.3 Dashboard [Wave 3]
 ├── 6.4 Commission ledger (PER_HEAD milestone, cap, reversal) [Wave 4]
-└── 6.5 Notifications (flag) [Wave 4]
+├── 6.5 Notifications (flag) [Wave 4]
+└── 6.6 Link giới thiệu aff (cookie 30 ngày + first-click + guard) [Wave 3 — G13]
 
 E2: WORKER PORTAL (Wave 3-4)
 ├── 2.1 Registration + profile (profile_status flow) [Wave 3]
@@ -1175,7 +1322,8 @@ E2: WORKER PORTAL (Wave 3-4)
 ├── 2.3 GPS check-in (evidence: capturedAt/receivedAt/risk flag) [Wave 3]
 ├── 2.4 PWA (manifest, service worker, offline queue) [Wave 3]
 ├── 2.5 Attendance history + payslip view [Wave 3/4]
-└── 2.6 Ticket/đề nghị tạm ứng [Wave 3/4]
+├── 2.6 Ticket/đề nghị tạm ứng [Wave 3/4]
+└── 2.7 Đăng ký qua link giới thiệu (ghi source_claim tự động) [Wave 3 — G13]
 
 E4: VENDOR PORTAL (Wave 3)
 ├── 4.1 Subdomain routing (middleware đã sửa) + integration test hostname
@@ -1183,9 +1331,10 @@ E4: VENDOR PORTAL (Wave 3)
 ├── 4.3 Staffing order listing
 ├── 4.4 Candidate submission (+ validation, dedup hint)
 ├── 4.5 Status tracking + HR review/merge
-└── 4.6 Statement confirm/dispute (audit 2 chiều)
+├── 4.6 Statement confirm/dispute (audit 2 chiều)
+└── 4.7 Kho hồ sơ vendor + nộp lại 1 chạm (G13)
 
-E9: HRM (sau core) — employee CRUD, org chart, leave management
+E9: HRM (sau core) — employee CRUD, org chart, performance (nghỉ phép nội bộ = tái dùng M7 ticket engine, actorType EMPLOYEE — F13)
 E10: SPRINT 0 — discovery, dữ liệu thật, state model, spike A+B
 E11: UAT MVP — chạy dữ liệu thật, training, cutover
 ```
@@ -1208,10 +1357,13 @@ risk_status:         NORMAL → REVIEW → BLOCKED
 
 **Availability được SUY RA, không lưu:**
 - ĐANG RẢNH (trong pool) = `employment_status = ACTIVE` AND không có assignment ACTIVE
-- ĐANG LÀM = có ≥ 1 assignment ACTIVE
+- ĐANG LÀM = có 1 assignment ACTIVE (G14 — tối đa 1 tại mọi thời điểm)
 - TẠM NGHỈ = `employment_status = SUSPENDED`
 
 Badge màu trên UI (mục 4.4) map từ các trạng thái suy ra này, không phải field lưu.
+
+**AWOL detection (V4.10 G18 — B5):** lao động bỏ việc ngang rất phổ biến — không thể để assignment ACTIVE + quota đầy mãi. QStash cron hàng ngày: assignment ACTIVE + **vắng liên tục ≥ `AWOL_THRESHOLD_DAYS` (default 3) không phép** (không công, không GPS, không đơn nghỉ) → đặt `AWOL_REVIEW` + sinh task cho PM/HR: **1 chạm "đóng assignment + SUSPENDED/TERMINATED + nhả quota"** (cùng transaction) HOẶC "có lý do → giữ nguyên". KHÔNG tự đóng hoàn toàn — có thể ốm đau không báo; quyết định cuối luôn là con người.
+- **Khấu trừ cuối khi TERMINATED (V4.12 G20 — B11):** khi 1-chạm đóng hồ sơ AWOL → popup yêu cầu khai khoản khấu trừ cuối (đồng phục chưa trả, thẻ từ, phạt hợp đồng) → ghi vào bảng `worker_deductions` (PENDING) → payroll engine kỳ cuối tự tạo deduction_lines → APPLIED. Chặn tình trạng "mất trắng tài sản" dù M10 Assets ngoài horizon.
 
 ### 9.2. Schema Worker (CHỈ master data — bỏ các field phân loại khỏi Worker)
 
@@ -1286,11 +1438,107 @@ CREATE TABLE candidate_submissions (
 ```
 
 **Quy trình (ADR-012):** vendor/CTV nộp → submission `NEW` → HR screening → duyệt:
-- Trùng SĐT/CCCD với worker có sẵn → **MERGE** (submission trỏ `merged_worker_id`, tạo thêm source_claim mới nếu cần)
+- Trùng **≥ 2/3 khóa định danh** (CCCD + họ tên chuẩn hóa + ngày sinh) → **AUTO-MERGE** (submission trỏ `merged_worker_id`, tạo thêm source_claim mới nếu cần)
+- Chỉ trùng **1 khóa** (vd CCCD khớp nhưng họ tên khác hẳn — nghi ngờ nhập sai CCCD) → đưa vào **merge queue chờ HR xác nhận thủ công** — KHÔNG tự gộp nhầm người (V4.7 G15)
+- SĐT chỉ là **gợi ý dedup, không bao giờ là khóa gộp**
 - Không trùng → tạo Worker mới (`profile_status = INCOMPLETE`) + source_claim `accepted = TRUE`
 - Từ chối → ghi lý do; vendor/CTV nhìn thấy trạng thái
 
-### 9.4. Assignment — employment_type/work_setting chuyển về đây, half-open, đa assignment
+#### 9.3.1. Referral Guard — chặn tiến cử trùng theo CCCD (V4.3 G11)
+
+**Mục đích:** 1 người có thể được tiến cử bởi CTV/Sale/Vendor. Dựa vào **CCCD**, hệ thống xác định: (1) đã có trong CSDL chưa, (2) do ai đưa vào, (3) ai đang hưởng hoa hồng — và **chặn quyền thêm** người đó vào nguồn mới trong các trường hợp:
+
+| # | Trường hợp chặn | Lý do nghiệp vụ | block_code |
+|---|-----------------|-----------------|------------|
+| R1 | Có tiến cử bất kỳ trong **7 ngày qua** (kể cả CHODUYET/REJECTED) | Cho người giới thiệu đầu tiên thời gian xử lý — tránh tranh chấp nguồn | `IN_7D_WINDOW` |
+| R2 | **Đang có người hưởng hoa hồng** từ người đó (claim CTV accepted + worker ACTIVE; từ Wave 4: commission_ledger chưa REVERSAL) | Bảo vệ quyền lợi người giới thiệu hiện hữu | `COMMISSION_ACTIVE` |
+| R3 | Người đó **đang hưởng lương từ vendor** (assignment ACTIVE + employmentType OUTSOURCED) | Worker đang do vendor quản lý trả lương — không được chuyển nguồn | `VENDOR_PAYROLL_ACTIVE` |
+
+**Cơ chế:**
+- Kiểm tra khi tạo `candidate_submission` (vendor/CTV nộp — Wave 3) và khi HR tạo claim mới cho worker đã tồn tại.
+- Chuẩn hóa CCCD trước khi so khớp (bỏ khoảng trắng/dấu chấm).
+- Kết quả chặn: submission → `REJECTED` + `block_code` + lý do hiển thị cho người nộp.
+- **Override:** HR_MANAGER/ADMIN được force thêm với lý do bắt buộc + audit log (vd: hợp đồng vendor hết hạn, chuyển dự án có chủ đích).
+- **ĐÃ CHỐT (founder):** 7 ngày khởi đầu — config động qua `payroll_config` key `REFERRAL_GUARD_DAYS`; override HR_MANAGER/ADMIN có lý do bắt buộc + audit.
+
+**SOP override (V4.4 G12 — chống thiên vị khi bỏ chặn):**
+
+Override chỉ HR_MANAGER/ADMIN thực hiện, chọn 1 trong các trường hợp hợp lệ (danh sách đóng) + đính kèm bằng chứng + audit + thông báo cho người tiến cử đầu tiên:
+
+| Mã | Trường hợp hợp lệ | Bằng chứng tối thiểu |
+|----|-------------------|----------------------|
+| S1 | Vendor thực tế đưa người đến xưởng (dù trước đó lao động lỡ bấm link CTV khác) | Ảnh đưa đón / tin nhắn thỏa thuận / phiếu giao nhận lao động + xác nhận của chính người lao động |
+| S2 | Tiến cử đầu tiên bị từ chối hoặc bỏ lửng quá hạn xử lý, người đó không phản hồi | Ghi chú HR đã liên hệ ≥ 2 lần trong 7 ngày |
+| S3 | Chuyển nguồn chính đáng: hợp đồng vendor hết hạn/chấm dứt, thay đổi hợp tác có chủ đích | Quyết định founder/HR_MANAGER kèm văn bản hợp đồng |
+
+- Hệ thống hỗ trợ: dropdown trường hợp (S1/S2/S3) + lý do bắt buộc + lưu bằng chứng (link/ảnh R2) + audit; **báo cáo thống kê override hàng tuần** cho founder (phát hiện thiên vị).
+- Người tiến cử đầu tiên được thông báo kèm lý do, có 48h phản biện → HR_MANAGER xem xét lại.
+- **Miễn chặn cho chính chủ (V4.5):** guard không chặn người nộp chính là chủ claim hiện hữu (vd: vendor nộp lại nhân sự trong kho của mình — §11.5). Luật R3 vẫn áp dụng nếu người đó đang ACTIVE — khi đó hướng dẫn điều chuyển qua HR thay vì nộp mới.
+
+```typescript
+// src/domains/talent-pool/referralGuard.ts (V4.3 — minh họa)
+async function guardReferral(cccdRaw: string) {
+  const cccd = normalizeCccd(cccdRaw);
+  const worker = await prisma.worker.findUnique({ where: { cccdNumber: cccd } });
+  if (!worker) return { allowed: true }; // chưa tồn tại → nộp bình thường
+
+  // (1) Ai đưa vào?
+  const accepted = await prisma.sourceClaim.findFirst({
+    where: { workerId: worker.id, accepted: true },
+  });
+
+  // (2) R1: tiến cử bất kỳ trong 7 ngày qua
+  const recent = await prisma.sourceClaim.findFirst({
+    where: { workerId: worker.id, createdAt: { gte: daysAgo(7) } },
+  });
+  if (recent) return block('IN_7D_WINDOW', recent);
+
+  // (3) R2: đang hưởng hoa hồng (Wave 4: truy vấn commission_ledger thay heuristic)
+  if (accepted?.claimType === 'CTV_REFERRAL' && worker.employmentStatus === 'ACTIVE') {
+    return block('COMMISSION_ACTIVE', accepted);
+  }
+
+  // (4) R3: đang hưởng lương từ vendor
+  const vendorPay = await prisma.projectAssignment.findFirst({
+    where: { workerId: worker.id, status: 'ACTIVE', employmentType: 'OUTSOURCED' },
+  });
+  if (vendorPay) return block('VENDOR_PAYROLL_ACTIVE', vendorPay);
+
+  return { allowed: true, existingWorker: worker, acceptedSource: accepted };
+}
+```
+
+#### 9.3.2. Link giới thiệu (Affiliate — V4.5 G13)
+
+**Mục đích:** CTV/Sale rải link giới thiệu; người đăng ký theo link nào → **tự động ghi nguồn** cho CTV/Sale đó — không cần nhập tay, không tranh cãi "ai giới thiệu".
+
+**Cơ chế:**
+- Mỗi CTV/Sale có **mã giới thiệu duy nhất** (`affCode`) → link dạng `https://hrpartner.vn/m/register?aff=CTV-001` (hoặc `?aff=SALE-02`).
+- Người bấm link → mã lưu qua **3 lớp dự phòng (V4.7 G15 — KHÔNG dựa cookie đơn thuần vì Zalo in-app browser hay xóa cookie)**: (1) URL param `?aff=` được giữ trên màn đăng ký và nhúng ẩn vào form, (2) localStorage thiết bị hiệu lực **30 ngày** [CẦN CHỐT], (3) ô **"mã giới thiệu (nếu có)"** để người lao động tự điền tay (CTV/Sale in mã lên tờ rơi/tin nhắn).
+- Khi đăng ký tài khoản (CCCD + họ tên + mật khẩu): thiết bị có mã aff → tự tạo `source_claim` với `claimType` tương ứng (`CTV_REFERRAL` / `HRP_DIRECT`), chủ claim = chủ mã aff, `registration_channel = AFF_CTV | AFF_SALE`.
+- **Bấm nhiều link:** first-click wins — mã đầu tiên giữ nguyên, click sau không ghi đè (chống cướp nguồn).
+- **Vẫn qua Referral Guard đầy đủ:** đăng ký qua link = một tiến cử → CCCD đã tồn tại thì guard chặn/merge theo đúng 3 luật §9.3.1. Người đăng ký thấy thông báo trung tính ("hồ sơ của bạn đã có người hỗ trợ — liên hệ HR"). **Link KHÔNG được ưu tiên hơn nguồn khác.**
+- Dashboard CTV/Sale: số người đăng ký qua link, trạng thái từng người (chờ duyệt / đã duyệt / bị chặn kèm lý do), hoa hồng khi đến mốc.
+- Sale dùng chung cơ chế (rải link tuyển dụng). Vendor KHÔNG dùng link (vendor nộp qua cổng riêng — MVP).
+
+```typescript
+// Khi worker hoàn tất đăng ký:
+const affCode = req.cookies.get('aff')?.value;
+if (affCode) {
+  const owner = await prisma.user.findUnique({ where: { affCode } }); // CTV hoặc SALE
+  if (owner) {
+    const claimType = owner.role === 'CTV' ? 'CTV_REFERRAL' : 'HRP_DIRECT';
+    // Guard check tại đây — nếu block thì KHÔNG tạo claim, trả thông báo trung tính
+    await createSourceClaim({
+      workerId, claimType,
+      ...(owner.role === 'CTV' ? { ctvId: owner.id } : { claimedBy: owner.id }),
+      registrationChannel: 'AFF_' + owner.role,
+    });
+  }
+}
+```
+
+### 9.4. Assignment — employment_type/work_setting chuyển về đây, half-open, 1 ACTIVE/người (G14)
 
 ```sql
 CREATE TABLE project_assignments (
@@ -1303,10 +1551,10 @@ CREATE TABLE project_assignments (
   employment_type TEXT NOT NULL,           -- HRP_EMPLOYED | OUTSOURCED | REFERRED_OUT (hiệu lực theo assignment)
   work_setting TEXT,                       -- PHOTHONG | VANPHONG | CONGXUONG (nếu HRP_EMPLOYED)
 
-  valid_from DATE NOT NULL,                -- KHOẢNG NỬA MỞ [valid_from, valid_to)
-  valid_to DATE,                           -- null = mở (đang hiệu lực)
+  valid_from TIMESTAMPTZ NOT NULL,         -- V4.9 G17 (T3): TIMESTAMP — cho phép chuyển GIỮA CA trong ngày; nửa mở [valid_from, valid_to)
+  valid_to TIMESTAMPTZ,                    -- null = mở (đang hiệu lực)
   status TEXT NOT NULL DEFAULT 'PLANNED',  -- PLANNED | ACTIVE | PAUSED | ENDED | TRANSFERRED | CANCELLED
-  is_primary BOOLEAN NOT NULL DEFAULT TRUE,-- 1 assignment PRIMARY khi có nhiều (để chọn lương/chấm công mặc định)
+  is_primary BOOLEAN NOT NULL DEFAULT TRUE,-- G14: luôn true khi ACTIVE (1 dự án tại 1 thời điểm); giữ field cho tương lai
 
   manager_id UUID REFERENCES users(id),    -- Quản lý (nhận incentive theo giờ công)
   referrer_id UUID REFERENCES users(id),   -- CTV giới thiệu (nhận hoa hồng theo policy)
@@ -1316,15 +1564,16 @@ CREATE TABLE project_assignments (
   UNIQUE(project_id, employee_code)
 );
 
--- Chỉ 1 PRIMARY ACTIVE trên 1 worker
-CREATE UNIQUE INDEX one_primary_active_assignment
-  ON project_assignments(worker_id) WHERE is_primary AND status = 'ACTIVE';
+-- G14: CHỈ 1 assignment ACTIVE trên 1 worker tại 1 thời điểm
+CREATE UNIQUE INDEX one_active_assignment
+  ON project_assignments(worker_id) WHERE status = 'ACTIVE';
 ```
 
 **Quy tắc (thay thế `isActive + endDate` của v2.1):**
 - `isActive` BỎ — active được suy ra từ `status = 'ACTIVE'` (một nguồn sự thật).
 - Khoảng thời gian nửa mở `[valid_from, valid_to)`: chuyển dự án ngày 15/08 → assignment cũ `valid_to = 15/08`, assignment mới `valid_from = 15/08` — **không overlap**.
-- **[CẦN CHỐT] Đa assignment:** cho phép nhiều assignment đồng thời nếu lịch/ca không overlap; xác định 1 `PRIMARY` khi cần. (Default V3: cho phép.)
+- **G14 (ĐÃ CHỐT — founder):** 1 worker chỉ có **1 assignment ACTIVE tại 1 thời điểm** — enforce bằng unique partial index `ON project_assignments(worker_id) WHERE status = 'ACTIVE'`. Muốn sang dự án khác bắt buộc đi luồng TRANSFER. Field `is_primary` giữ lại cho tương lai (nếu sau này mở đa dự án) nhưng hiện luôn `true` khi ACTIVE.
+- **V4.9 (G17 — T3):** mốc chuyển ghi đến **phút** — hỗ trợ "sáng dự án A, chiều dự án B". Công trong ngày chuyển giữa ca do **kế toán phân bổ thủ công khi chốt** (chọn assignment cho từng dòng timesheet — field `assignment_id` đã có sẵn).
 
 ### 9.5. Business Rules theo employment_type (tại assignment)
 
@@ -1392,10 +1641,13 @@ async function activateAssignment(workerId: string, assignmentId: string, actorI
     const assignment = await tx.projectAssignment.findUniqueOrThrow({ where: { id: assignmentId } });
     if (assignment.status !== 'PLANNED') throw new Error('Assignment không ở trạng thái PLANNED');
 
-    // Kiểm tra overlap lịch/ca với assignment ACTIVE khác [CẦN CHỐT quy tắc đa assignment]
-    const overlap = await tx.projectAssignment.count({
-      where: { workerId, status: 'ACTIVE', validFrom: { lt: assignment.validTo ?? farFuture } }
+    // G14: 1 người chỉ ACTIVE ở 1 dự án tại 1 thời điểm
+    const activeCount = await tx.projectAssignment.count({
+      where: { workerId, status: 'ACTIVE' },
     });
+    if (activeCount > 0) {
+      throw new Error('Worker đã có assignment ACTIVE — dùng luồng TRANSFER để chuyển dự án');
+    }
 
     // Cập nhật assignment + quota TRONG CÙNG TRANSACTION (sửa lỗi v2.1: quota ảo)
     await tx.projectAssignment.update({ where: { id: assignmentId }, data: { status: 'ACTIVE' } });
@@ -1438,6 +1690,8 @@ async function transferWorker(req: TransferWorkerRequest, actorId: string) {
   });
 }
 ```
+
+> **Chuyển hàng loạt (V4.7 G15):** rule 1-ACTIVE khiến kịch bản "cả nhóm đổi dự án theo ca" (xưởng nhỏ) tạo nhiều lần Transfer — UI hỗ trợ **Bulk Action**: PM chọn N lao động → chuyển cùng dự án + cùng mốc thời gian trong 1 thao tác; xử lý tuần tự mỗi người 1 transaction + savepoint (1 người lỗi không hỏng cả lô); báo cáo kết quả từng người (thành công/lỗi + lý do); audit cả lô.
 
 ---
 
@@ -1542,6 +1796,8 @@ CREATE TABLE commission_ledger (
 **Quy tắc:**
 - MVP dùng **PER_HEAD theo milestone** (default [CẦN CHỐT]): trả khi NLĐ bắt đầu làm, giữ đủ 30 ngày...; policy có version, cap theo tháng.
 - Điều chỉnh (thu hồi, sửa) = **dòng REVERSAL** tham chiếu dòng gốc — không bao giờ sửa/số dòng đã APPROVED.
+- **Clawback tự động (V4.12 G20 — B12):** milestone đã CREDIT (vd RETAINED_30_DAYS) nhưng sau đó `timesheet_adjustments`/đóng hồ sơ lùi ngày phát hiện worker nghỉ từ trước mốc → cron nightly đối chiếu milestone với ngày nghỉ thực tế → **tự sinh dòng REVERSAL** (tham chiếu dòng gốc) ở trạng thái PENDING chờ kế toán duyệt — không tự trừ tiền, chỉ tự chuẩn bị sẵn để không bị trả hớ.
+- **Nợ hoa hồng & cấn trừ (V4.13 G21 — B14):** REVERSAL vượt số dư khả dụng của CTV (khoản gốc đã PAID) → phần vượt ghi thành **`commission_debt`** (nợ CTV) → với `COMMISSION_NETTING_ENABLED = true`, hệ thống **tự cấn trừ vào các khoản hoa hồng phát sinh tương lai** của CTV đó TRƯỚC KHI PAID; CTV ngừng hoạt động → dashboard "nợ CTV" cho kế toán đòi ngoài hệ thống. Số dư CTV không bao giờ bị âm ngầm trong sổ.
 
 ---
 
@@ -1572,6 +1828,7 @@ DRAFT → SENT → (CONFIRMED | DISPUTED) → CONFIRMED → LOCKED → PAID
 
 - Mỗi bước chuyển trạng thái có audit (ai, khi nào, ghi chú)
 - **LOCKED = bất biến** — sai lệch sau đó tạo adjustment line ở kỳ sau hoặc statement version mới (ADR-013)
+- **Chống lạm dụng DISPUTE (V4.9 G17 — B1):** mỗi statement có `dispute_count` (**tối đa 2 vòng**) + `confirm_deadline_at` (**SLA 3 ngày**). Vendor không phản hồi trong hạn → **AUTO-CONFIRMED**. Hết 2 vòng vẫn phản đối → HR_MANAGER/ACCOUNTANT được **FORCE LOCK** (lý do + bằng chứng + audit) — công nợ không thể bị câu giờ vô hạn.
 
 ### 11.4. Feature Flags
 
@@ -1589,6 +1846,19 @@ const VENDOR_WORKER_RESTRICTIONS = {
   visibleFeatures: ['PROJECT_INFO', 'ATTENDANCE_GPS', 'ATTENDANCE_HISTORY', 'FEEDBACK', 'STATEMENT']
 };
 ```
+
+### 11.5. Kho hồ sơ Vendor (Vendor Pool — V4.5 G13)
+
+**Mục đích:** vendor nhập hồ sơ 1 lần, giữ trong kho riêng — khi có nhu cầu mới phù hợp thì **nộp lại 1 chạm**, không nhập lại.
+
+**Cơ chế:**
+- Kho của vendor = toàn bộ `candidate_submissions` của vendor đó (mọi trạng thái: đã duyệt, bị từ chối, đã hết hiệu lực).
+- Tab **"Kho hồ sơ của tôi"**: thẻ từng người — tên, vị trí, trạng thái hiện tại (đang làm dự án nào / đang rảnh — chỉ ở mức vendor được phép thấy), nút **"Nộp cho nhu cầu mới"** → chọn staffing order → hệ thống chạy Referral Guard → tạo submission mới.
+- **Miễn chặn cho chính chủ:** claim hiện hữu thuộc CHÍNH vendor đó → được nộp lại thoải mái (luật 7 ngày/hoa hồng không chặn chính mình). Luật chặn chỉ áp dụng với nguồn KHÁC.
+- **Đang làm việc → điều chuyển qua HR:** người trong kho đang ACTIVE (kể cả của chính vendor) → không nộp mới; hệ thống hướng dẫn liên hệ HR điều chuyển.
+- Cập nhật hồ sơ trong kho (SĐT mới, kinh nghiệm mới) → sửa trực tiếp bản ghi của mình (chưa ai duyệt) hoặc nộp bản mới.
+- Data scope: vendor CHỈ thấy kho của mình; không thấy lương, không thấy nguồn của người khác.
+- Schema (V4.5): bỏ `UNIQUE(vendor_id, phone)` trên candidate_submissions — cho phép nộp lại cùng người cho nhu cầu khác; chống trùng nhờ Referral Guard.
 
 ---
 
@@ -1622,7 +1892,7 @@ CREATE TABLE attendance_events (
   payload_hash TEXT NOT NULL,              -- chống duplicate/re-import
   captured_at TIMESTAMPTZ,                 -- thời điểm ghi nhận tại nguồn
   received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), -- thời điểm server nhận
-  import_batch_id UUID REFERENCES import_batches(id),
+  import_batch_id UUID REFERENCES attendance_import_batches(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(source, external_event_id)
 );
@@ -1673,9 +1943,17 @@ CREATE TABLE timesheet_adjustments (
 );
 ```
 
+> **Ca đêm vắt ngày Lễ (V4.11 G19 — B8):** quy ước "ca đêm thuộc ngày bắt đầu ca" làm mất OT 300% cho phần sau nửa đêm (vd: 22:00 ngày thường → 06:00 ngày Lễ: 6 tiếng sau 00:00 là giờ lễ). Khi normalize, nếu ca overlap qua 00:00 sang ngày có **loại ngày khác** (theo bảng lịch `holidays`: date, name, type PUBLIC_HOLIDAY|WEEKEND|COMPANY_HOLIDAY) → **tách dòng theo ranh giới ngày**: phần từ 00:00 ghi `holiday_worked_hours` (tính 300% nếu lễ) — không để mất quyền lợi của worker và không lệch hóa đơn khách hàng.
+
 ### 12.3. Import Flow (Wave 2)
 
-1. **Upload** XLSX/CSV (mỗi đối tác 1 **template profile** mapping cột riêng) → `import_batches`
+1. **Upload qua Presigned URL (V4.9 G17 — T1):** client xin presigned URL (R2, TTL 10', giới hạn size) → **PUT thẳng lên R2, KHÔNG đi qua server Next.js** (Vercel body limit 4.5MB) → gọi API xác nhận (fileKey + SHA-256) → tạo `attendance_import_batches` PENDING + enqueue QStash
+1b. **Parse nền (QStash job):** kéo file từ R2 → **parse STREAMING** (CSV: papaparse stream; XLSX: exceljs streaming reader — KHÔNG đọc cả file vào RAM) → ghi rows theo batch 1.000 + savepoint + cập nhật progress → file quá lớn: job tự re-enqueue continuation. **KHÔNG bao giờ parse trong route handler**
+1c. **Deadline 240s (V4.10 G18 — T7):** QStash gọi endpoint Serverless vẫn bị giới hạn ~300s (Vercel Pro). Job tự đặt deadline **240s** — gần hết giờ: lưu offset + re-enqueue continuation (payload nhỏ: `{ batchId, offset }`); batch `COMMITTED` khi offset = totalRows. **Offset-resume, KHÔNG cần cắt file nhỏ** (đơn giản và idempotent hơn chunking).
+1d. **Chống parse đúp — zombie job (V4.11 G19 — T9):** offset-resume có rủi ro "zombie execution" (job quá giờ chưa chết + QStash retry cùng chạy). Ba lớp bảo vệ: (1) `@@unique(batchId, rowNumber)` — INSERT trùng tự `ON CONFLICT DO NOTHING`; (2) `pg_advisory_xact_lock(batchId)` trước khi xử lý chunk — các job xử lý tuần tự; (3) QStash `Upstash-Deduplication-Id` theo `(batchId, offset)` — retry không tạo job mới. Offset thật = `max(row_number)` đã commit (suy từ bảng, không lưu counter riêng).
+1e. **Bảo mật presigned URL (V4.11 G19 — T10):** upload thẳng lên R2 bỏ qua kiểm duyệt server → bù lại ở job parse: **kiểm magic bytes** (XLSX phải là ZIP `PK`, CSV phải là text) + giới hạn size khi cấp URL + file lưu R2 **không bao giờ serve inline** (chỉ download attachment). Kẻ đổi đuôi `.exe → .xlsx` sẽ bị reject ngay khi parse. Antivirus scan toàn diện (ClamAV) để post-go-live nếu cần.
+1f. **Watchdog chống kẹt batch (V4.12 G20 — T11):** nếu lệnh re-enqueue cuối cùng bị timeout mạng → batch kẹt vĩnh viễn. QStash cron **mỗi 30 phút**: quét `attendance_import_batches` đang xử lý (PENDING/PREVIEWED) mà `updated_at` cũ hơn 15 phút → tự re-enqueue với offset hiện tại (`max(row_number)` đã commit). Mỗi chunk commit đều cập nhật `updated_at` (heartbeat).
+1g. **Chống vòng lặp tái sinh vô tận (V4.13 G21 — T15):** file dị thường làm parser crash trước cả khối `catch` → watchdog re-enqueue mãi mãi. Bổ sung `retry_count` trên batch: mỗi lần watchdog re-enqueue tăng 1; quá **`IMPORT_MAX_RETRY` (default 3)** → đánh **FAILED cứng** + notify HR kèm file và lỗi — không tự chạy lại nữa, HR xử lý tay.
 2. **Preview + auto-map** employeeCode → worker; validate (tồn tại? đúng project? date hợp lệ?)
 3. **Unmatched queue** — dòng không map được hiển thị cho kế toán dò/xử lý
 4. **Review → Approve** kỳ bảng công → sinh `timesheet_lines` → `timesheet_periods`
@@ -1690,6 +1968,16 @@ CREATE TABLE timesheet_adjustments (
 4. **Ghi `captured_at` (thiết bị) + `received_at` (server) + risk flag** — chênh lệch > 15 phút hoặc offline quá lâu → `REVIEW` (sửa lỗi v2.1: nhận mọi timestamp 24h không đánh dấu độ tin cậy)
 5. Exception workflow: dòng có risk flag phải có người xử lý
 
+> **V4.2 (Q2 đã chốt):** model `Site` — `sites(id, projectId, name, address, lat, lng, radiusMeters)`; geofence và rate theo site; 1 dự án có thể nhiều site.
+>
+> **V4.8 (G16):** GPS evidence được tái sử dụng cho **doanh thu tạm tính**: check-in hôm nay × client rate hiệu lực → "doanh thu tạm tính hôm nay/tuần/tháng" trên dashboard lãnh đạo (làm mới mỗi 5 phút). Chỉ là số THEO DÕI — nhãn **TẠM TÍNH** rõ ràng + watermark, KHÔNG dùng để đối soát hay tính lương (mọi sổ sách lấy từ statement LOCKED).
+>
+> **V4.9 (G17 — T2):** quy tắc xung đột điểm danh (GPS vs PM app) xem §4.7 — mâu thuẫn đưa về CONFLICTED + ticket, không tự chọn.
+>
+> **Khóa chống race khi 2 PM đồng bộ cùng lúc (V4.12 G20 — T13):** worker bị điều chuyển nóng giữa 2 PM trong ngày → 2 thiết bị offline cùng đẩy điểm danh cho cùng (worker, work_date). Mọi tổng hợp trạng thái ngày phải nằm trong `pg_advisory_xact_lock(hashtext(worker_id || work_date))` — đọc event hiện có → áp event mới → tính lại CONFLICTED → ghi, tất cả trong 1 transaction. Không ai ghi đè logic xung đột của ai.
+>
+> **Ưu tiên NGỮ NGHĨA theo từng record (V4.13 G21 — T16):** lock chỉ chặn race đồng thời — không giải quyết "PM A đồng bộ 08:00 (vắng), PM B đồng bộ 08:15 (có mặt)". Tổng hợp trạng thái ngày = sort mọi event theo **bậc nguồn (GPS chính chủ > PM kiosk > PM đánh dấu) rồi `captured_at` mới nhất trong cùng bậc** — bản ghi muộn hơn cùng bậc thắng; bậc cao hơn luôn thắng bậc thấp bất kể thời gian. CONFLICTED chỉ khi 2 event CÙNG BẬC CAO NHẤT mâu thuẫn. Xung đột xét từng (worker, work_date), không phải cờ toàn cục.
+
 ### 12.5. Tính Lương (luật VN — Wave 4, pay run)
 
 **Công thức cơ bản (tham số effective-dated config, KHÔNG hard-code):**
@@ -1703,7 +1991,10 @@ Trừ bắt buộc (NLĐ chịu): BHXH 8% + BHYT 1.5% + BHTN 1% = 10.5% × lươ
   (lương đóng BH ≥ lương tối thiểu vùng [CẦN CHỐT] — mọi mức đóng là config)
 TNCN = (Thu nhập chịu thuế − Giảm trừ 11tr bản thân − 4.4tr/người phụ thuộc) × lũy tiến 5–35%
 Net = Gross − BH − TNCN
+Nếu Net < 0 → **Net = 0 + carry_forward_debt** (nợ chuyển kỳ sau) — KHÔNG BAO GIỜ lưu số âm (V4.10 G18-B4)
 ```
+
+> **Nợ âm (V4.10 G18 — B4):** chặn cứng `Net < 0` tại engine — ghi `net = 0` + `carry_forward_debt` + đưa vào **danh sách exception cho kế toán**. Kế toán chọn trên từng case: (a) **roll-over kỳ sau** (1-click, default — tạm ứng đã chi thật nên phải thu hồi), (b) điều chỉnh khoản trừ (hoãn thu), (c) xử lý ngoài hệ thống. Mọi lựa chọn có audit. Không tự động hóa hoàn toàn vì đây là quyết định tài chính của kế toán.
 
 **Mô hình Pay Run (1 kết quả/người/kỳ — sửa lỗi payroll theo worker+project+tháng):**
 
@@ -1714,6 +2005,7 @@ CREATE TABLE pay_runs (
   payroll_group TEXT,                      -- nhóm lương
   month INTEGER NOT NULL, year INTEGER NOT NULL,
   version INTEGER NOT NULL DEFAULT 1,      -- chạy lại → version mới
+  is_dry_run BOOLEAN DEFAULT FALSE,        -- V4.10 G18: chạy thử trên tập con — không LOCK, không phát hành payslip
   status TEXT DEFAULT 'DRAFT',             -- DRAFT | CALCULATED | LOCKED | PAID
   locked_by UUID REFERENCES users(id), locked_at TIMESTAMPTZ,
   UNIQUE(legal_entity, payroll_group, month, year, version)
@@ -1727,6 +2019,7 @@ CREATE TABLE worker_pay_results (          -- 1 kết quả / người / kỳ
   social_insurance BIGINT NOT NULL DEFAULT 0,
   tax BIGINT NOT NULL DEFAULT 0,
   net BIGINT NOT NULL DEFAULT 0,
+  carry_forward_debt BIGINT NOT NULL DEFAULT 0, -- V4.10 G18 (B4): net âm → nợ chuyển kỳ sau (roll-over)
   UNIQUE(pay_run_id, worker_id)
 );
 
@@ -1784,6 +2077,8 @@ async function runPayrollForPeriod(payRunId: string, actorId: string) {
 ```
 
 > **Đơn vị khóa payroll = legal entity/payroll group/kỳ** [CẦN CHỐT] — KHÔNG khóa riêng từng project (khoản cấp người như BHXH/TNCN tính 1 lần/kỳ/người, dù làm 2 dự án).
+>
+> **V4.1 (G2):** code mẫu trên là MINH HỌA luồng. Canonical khi code Wave 4: `calculateVietnameseTaxes()` (pure, BigInt — `src/domains/payroll/`) + `loadTaxConfig(asOfDate)` + luồng 10 bước §12.5.1 + `calc_input_snapshot` — KHÔNG copy mẫu này trực tiếp.
 
 #### 12.5.1. Bài học từ Odoo HR (ref: `nong04/human-resources-management`) — cập nhật v3.1
 
@@ -1799,7 +2094,7 @@ async function runPayrollForPeriod(payRunId: string, actorId: string) {
 | 4 | Idempotency | Không có (dựa SQL constraint) | `idempotency_keys (actor_id, route, key)` |
 | 5 | Money as BigInt | `Monetary` (Decimal DB, float compute) | BigInt VND nguyên xuyên suốt |
 | 6 | Source claim & ownership | Không quản lý nguồn tuyển | `source_claims` + `candidate_submissions` |
-| 7 | Multi-project assignment | 1 contract/1 employee | multi-assignment + PRIMARY + half-open |
+| 7 | Một dự án tại một thời điểm (G14) | 1 contract/1 employee | 1 ACTIVE/người + half-open — chuyển dự án qua TRANSFER |
 | 8 | Advisory lock | Python-level `for rec in self.locked()` | DB-level `pg_advisory_xact_lock` |
 
 **Những gì ODOO làm tốt mà V3 cần BỔ SUNG (áp dụng vào v3.1):**
@@ -1860,6 +2155,7 @@ model payroll_rules {
   sequence            Int      @default(100)
   scope               String   @default('ALL')  // 'ALL' | 'HRP_EMPLOYED' | 'OUTSOURCED'
   scope_filter        Json?
+  is_taxable          Boolean  @default(true)   // V4.9 G17 (B2): phụ cấp chịu thuế TNCN hay MIỄN thuế (ăn trưa ≤ mức quy định → false)
   version             Int      @default(1)
   effective_from      DateTime
   effective_to        DateTime?
@@ -1895,26 +2191,42 @@ model payroll_config {
 }
 ```
 
+> **V4 (F31):** các cột tổng (`social_insurance`/`tax`/`net`) là denormalized để query nhanh; CHI TIẾT canonical là `bhxh_employee_vnd`/`bhyt_employee_vnd`/`bhtn_employee_vnd` (patch v3.1) — tổng = Σ(chi tiết), enforce trong code.
+
 **Các key MVP trong `payroll_config` (học từ Odoo `res.config.settings`):**
 
 | Key | Type | Default | Source |
 |---|---|---|---|
 | `OVERTIME_TOLERANCE_MIN` | NUMBER | 15 | Odoo `overtime_tolerance` |
-| `OT_15_RATE` | PERCENT | 1.5 | Odoo `payroll_overtime_rate` (default) |
-| `OT_20_RATE` | PERCENT | 2.0 | BLLĐ 2019 |
-| `OT_30_RATE` | PERCENT | 3.0 | BLLĐ 2019 (ngày lễ) |
+| `OT_15_RATE` | MULTIPLIER ("1.5") | 1.5 | Odoo `payroll_overtime_rate` |
+| `OT_20_RATE` | MULTIPLIER ("2.0") | 2.0 | BLLĐ 2019 |
+| `OT_30_RATE` | MULTIPLIER ("3.0") | 3.0 | BLLĐ 2019 (ngày lễ) |
 | `STANDARD_HOURS_PER_DAY` | NUMBER | 8 | Nội bộ |
 | `STANDARD_DAYS_PER_MONTH` | NUMBER | 26 | Nội bộ |
-| `BH_LUONG_MIN_REGION_1` | MONEY | 4.960.000 | NĐ 74/2024 |
+| `MIN_WAGE_REGION_1..4` | MONEY | 4.960.000 / 4.410.000 / 3.860.000 / 3.450.000 | NĐ 74/2024 |
+| `INSURANCE_SALARY_CAP` | MONEY | 99.200.000 (= 20 × MIN_WAGE_REGION_1) | Luật BHXH |
 | `TNCN_GIAM_TRU_BAN_THAN` | MONEY | 11.000.000 | Luật TNCN |
-| `TNCN_GIAM_TRU_PHUC_THUOC` | MONEY | 4.400.000 | Luật TNCN |
-| `BHXH_RATE_EMPLOYEE` | PERCENT | 0.08 | QĐ BHXH |
-| `BHYT_RATE_EMPLOYEE` | PERCENT | 0.015 | QĐ BHXH |
-| `BHTN_RATE_EMPLOYEE` | PERCENT | 0.01 | QĐ BHXH |
+| `TNCN_GIAM_TRU_NGUOI_PHUC_THUOC` | MONEY | 4.400.000 | Luật TNCN |
+| `BHXH_RATE_EMPLOYEE` | PERCENT ("0.08") | 0.08 | QĐ BHXH |
+| `BHYT_RATE_EMPLOYEE` | PERCENT ("0.015") | 0.015 | QĐ BHXH |
+| `BHTN_RATE_EMPLOYEE` | PERCENT ("0.01") | 0.01 | QĐ BHXH |
+| `BHXH_RATE_EMPLOYER` / `BHYT_RATE_EMPLOYER` / `BHTN_RATE_EMPLOYER` / `BHTNLD_RATE_EMPLOYER` | PERCENT | 0.175 / 0.03 / 0.01 / 0.005 | Luật BHXH |
+| `REFERRAL_GUARD_DAYS` | NUMBER | 7 | V4.3 G11 — chặn tiến cử trùng theo CCCD (founder chốt) |
+| `AWOL_THRESHOLD_DAYS` | NUMBER | 3 | V4.10 G18-B5 — vắng liên tục không phép → AWOL_REVIEW |
+| `PIT_FLAT_RATE` | PERCENT ("0.10") | 0.10 | V4.10 G18-B6 — khấu trừ 10% vãng lai |
+| `PIT_FLAT_THRESHOLD_VND` | MONEY | 2.000.000 | V4.10 G18-B6 — ngưỡng chi trả từng lần |
+| `PIT_FLAT_MONTHLY_AGGREGATION` | BOOLEAN | true | V4.11 G19-B9 — cộng dồn gross/tháng chống né thuế |
+| `DEBT_RECOVERY_MAX_PERCENT` | PERCENT ("0.30") | 0.30 | V4.11 G19-B7 — trần khấu trừ nợ cũ mỗi kỳ |
+| `INSURANCE_MIN_WORK_DAYS` | NUMBER | 14 | V4.12 G20-B10 — dưới 14 ngày công/tháng → không đóng BHXH tháng đó |
+| `IMPORT_MAX_RETRY` | NUMBER | 3 | V4.13 G21-T15 — batch quá số lần watchdog retry → FAILED cứng |
+| `COMMISSION_NETTING_ENABLED` | BOOLEAN | true | V4.13 G21-B14 — nợ hoa hồng tự cấn trừ vào khoản tương lai |
+
+> **Quy ước rate (v4 — F11/F12):** rate % luôn là chuỗi decimal "0.08" (= 8%); hệ số nhân OT là chuỗi "1.5" type MULTIPLIER — hai quy ước không lẫn nhau. Bộ key này khớp 1:1 với `requiredKeys` trong `src/domains/payroll/payrollConfigRepo.ts`.
 
 **Cập nhật luồng tính lương (v3.1):**
 
-1. Tạo `pay_run` (DRAFT) → chọn legal_entity, payroll_group, month/year
+0. **Dry Run (V4.10 G18 — T6):** tạo pay_run với `is_dry_run = true` trên **tập con worker** (filter) → tính đầy đủ lines + snapshot nhưng KHÔNG LOCK, KHÔNG phát hành payslip → báo cáo đối chiếu (net âm, OT bất thường, chênh kỳ trước) → kế toán duyệt mới chạy thật. Đặc biệt bắt buộc khi có `payroll_rules` mới tạo.
+1. Tạo `pay_run` thật (DRAFT) → chọn legal_entity, payroll_group, month/year
 2. **Snapshot** `payroll_config.version` đang active → lưu vào `calc_input_snapshot`
 3. Từ `assignment` × `timesheet_lines` (LOCKED) → tính hours breakdown (snapshot vào `worker_pay_results`)
 4. Tính `base_pay`, `overtime_pay`, `holiday_pay` theo `hourly_wage` tại thời điểm
@@ -1929,6 +2241,24 @@ model payroll_config {
 - Holiday_worked_rate riêng (Odoo `public_leaves_rate`)
 - Paid/unpaid leave tracking (cần module HRM M9)
 - Multi-currency (V3 chỉ VND — đơn giản hóa)
+
+**Phụ cấp & thuế (V4.9 G17 — B2):** mỗi phụ cấp phải có LOẠI — bảng config `allowance_types` (code, tên, `taxable`, mức miễn tối đa — vd ăn trưa miễn thuế ≤ mức quy định). Thu nhập chịu thuế = gross − BH − **phụ cấp MIỄN thuế** − giảm trừ gia cảnh. `calculateVietnameseTaxes()` nhận thêm `nonTaxableAllowanceVnd`; JSONB `allowance` trên timesheet_lines bắt buộc dạng `{ code, amount }` (không phải chuỗi tự do).
+
+**Proration khối văn phòng (V4.9 G17 — B3):** assignment có `salary_type` — `DAILY` (lương ngày × ngày công, như hiện tại) hoặc `MONTHLY` (khối văn phòng VANPHONG): lương tháng × (ngày giao nhau [assignment ∩ tháng] / `STANDARD_DAYS_PER_MONTH`). Vào/ra giữa tháng **tự nội suy** từ `valid_from/valid_to`; làm đủ tháng → nguyên lương tháng.
+
+**Thuế vãng lai FLAT 10% (V4.10 G18 — B6):** lao động vãng lai (OUTSOURCED/REFERRED_OUT, không HĐLĐ dài hạn): **mỗi lần chi trả ≥ `PIT_FLAT_THRESHOLD_VND` (2.000.000đ) → khấu trừ tại nguồn 10%** (`PIT_FLAT_RATE`) — KHÔNG dùng biểu lũy tiến. Có **cam kết 02/CK-TNCN** (thu nhập duy nhất) → miễn khấu trừ [CẦN CHỐT với kế toán]. `calculateVietnameseTaxes()` thêm tham số `taxMode: 'PROGRESSIVE' | 'FLAT_10'` — chọn theo employment_type của assignment.
+
+**Chống né thuế bằng chia nhỏ (V4.11 G19 — B9):** hệ thống **cộng dồn gross/tháng cho nhóm OUTSOURCED** (`PIT_FLAT_MONTHLY_AGGREGATION = true`): lần chi trả khiến tổng tháng vượt ngưỡng 2.000.000đ → khấu trừ 10% trên phần vượt, dù từng lần nhỏ. **Default vận hành: gom chi trả vãng lai 1 lần cuối tháng** (cùng kỳ statement) — sạch nhất cho kế toán và cơ quan thuế. [CẦN CHỐT với kế toán]
+
+**Dry Run — chống phình dữ liệu (V4.11 G19 — T8):** pay_run `is_dry_run` vẫn INSERT đầy đủ lines → chạy thử 10 lần = phình 10×. Quy tắc: (1) chạy lại dry-run trên CÙNG tập worker → **thay thế** dry-run cũ (xóa cũ, tạo mới — quan hệ `ON DELETE CASCADE` từ pay_run → results → lines); (2) QStash cron hàng ngày **tự xóa dry-run quá 24h**.
+
+**Thu hồi nợ tự động (V4.11 G19 — B7):** roll-over 1-click không khả thi với hàng trăm case/tháng. Bổ sung `payroll_rules` hệ thống **`THU_HOI_NO_KY_TRUOC`**: tự quét `carry_forward_debt > 0` → tạo `deduction_lines` kỳ này với **trần khấu trừ `DEBT_RECOVERY_MAX_PERCENT` (default 30% gross)**; phần còn lại tiếp tục chuyển kỳ sau; kế toán thấy đầy đủ trong báo cáo (minh bạch) nhưng không phải click từng case — chỉ xử lý thủ công các case ngoại lệ.
+
+**Luật BHXH "14 ngày làm việc" (V4.12 G20 — B10):** NLĐ không làm việc và không hưởng lương **từ 14 ngày làm việc trở lên trong tháng** → tháng đó KHÔNG đóng BHXH (cả phía NLĐ lẫn DN). Thiết kế: rule `payroll_rules` **`BHXH_14_DAY_RULE`** (config `INSURANCE_MIN_WORK_DAYS = 14`) — engine đếm `workedDaysInMonth`; nếu < 14 → đặt **`insuranceSalaryVnd = 0`** rồi truyền vào `calculateVietnameseTaxes()` — hàm thuế **giữ nguyên pure, không hard-code** ngày công vào hàm thuế (nó đã xử lý insuranceSalaryVnd = 0 → BH = 0). Vào làm giữa tháng / nghỉ ốm dài đều đúng luật.
+
+**Cộng dồn ngày công MỌI assignment (V4.13 G21 — B13):** BHXH là nghĩa vụ theo **con người** — worker làm 10 ngày dự án A + 10 ngày dự án B cùng tháng = **20 ngày, PHẢI đóng BHXH**. Rule 14 ngày chạy trên **tổng ngày công của worker trong tháng (aggregate mọi assignment)** — đếm từng assignment riêng sẽ sót đóng BHXH và vi phạm luật. Phù hợp kiến trúc pay_run "1 kết quả/người/kỳ": earning lines phân bổ theo assignment (đối soát từng dự án), insurance/deduction tính ở cấp `worker_pay_results`.
+
+**Nợ không thu hồi được khi đã nghỉ việc (V4.13 G21 — B15):** khấu trừ cuối (B11) vượt net kỳ cuối của AWOL → roll-over vô nghĩa vì worker không còn kỳ sau. Quy tắc: `carry_forward_debt` chỉ roll-over khi worker còn ACTIVE; khi **TERMINATED** → khoản không thu hồi được chuyển sang **`unrecoverable_debt`** — dashboard cho kế toán quyết định 1 lần cuối: chấp nhận tổn thất (write-off có audit) / đòi ngoài hệ thống / giữ nợ treo. Không để nợ âm "treo vĩnh viễn" trong sổ lương.
 
 #### 12.5.2. Bài học từ Viet-ERP (`nclamvn/Viet-ERP`) — Vietnamese HR compliance
 
@@ -2015,6 +2345,8 @@ model TaxBracket {
 
 // PayrollConfig — đã có ở v3.1, bổ sung 'legalRef'
 ```
+
+> **V4 (F25):** `tax_brackets` là nguồn sự thật DUY NHẤT cho PIT brackets. `loadTaxConfig()` đọc từ bảng này — bỏ key JSON `PIT_BRACKETS` khỏi `payroll_config`.
 
 **File TypeScript đã tạo (xem `src/domains/payroll/`):**
 
@@ -2114,6 +2446,7 @@ pending ──approve──→ approved            pending ──APPROVE_HR─�
 | `GET` | `/api/tickets` | All | List theo role + filter |
 | `GET` | `/api/tickets/[id]` | All (scope) | Chi tiết + history |
 | `POST` | `/api/tickets/[id]/approve` | HR/Accountant | Approve theo state machine |
+| `POST` | `/api/tickets/[id]/pay` | Accountant | Ghi nhận đã chi tạm ứng (APPROVED → PAID) — V4 (F27): endpoint riêng, KHÔNG sniff body |
 | `POST` | `/api/tickets/[id]/reject` | HR/Accountant | Reject (bắt buộc lý do) |
 | `POST` | `/api/tickets/[id]/cancel` | Worker (chủ) | Tự rút ticket |
 
@@ -2122,7 +2455,7 @@ pending ──approve──→ approved            pending ──APPROVE_HR─�
 ```
 src/domains/attendance/
 ├── ticket.service.ts                    # Domain service + state machine
-├── ticket.service.test.ts               # 12+ unit tests (vitest)
+├── ticket.service.test.ts               # 16 unit tests (vitest)
 └── session.ts                           # Auth helper cho Route Handler
 app/api/tickets/
 ├── route.ts                             # POST + GET
@@ -2154,7 +2487,7 @@ prisma/schema-m7-tickets.prisma           # Schema M7 (Ticket, TicketHistory, Ti
 - [x] Notification queue lưu DB
 - [x] Reject bắt buộc lý do
 - [x] Worker scope (chỉ thấy ticket của mình)
-- [x] 12+ unit tests pass (Vitest, in-memory mock)
+- [x] 16 unit tests pass (Vitest, in-memory mock) — V4 F10: đã verify **32/32 xanh** (15/08/2026)
 - [x] Route handlers với HTTP status code mapping đúng (400/403/404/409)
 - [x] BigInt cho `amountVnd`, `deductionVnd`
 
@@ -2190,15 +2523,15 @@ prisma/schema-m7-tickets.prisma           # Schema M7 (Ticket, TicketHistory, Ti
 
 | # | Pattern Frappe/ERPNext | HRP v3.3 đã học / sẽ áp dụng |
 |---|------------------------|-------------------------------|
-| **F1** | **DocType JSON-driven schema** — mỗi entity có `attendance.json` với `fields` (fieldname, fieldtype, options, reqd, read_only) | HRP dùng Prisma schema (typed), NHƯNG sẽ bổ sung **`entity_definitions` table** (admin-configurable fields cho client-specific schema) — đặc biệt cho Vendor Portal khi mỗi vendor có field riêng |
-| **F2** | **`is_submittable: 1`** → `docstatus` enum 0/1/2 (Draft/Submitted/Cancelled). Tự động thêm 2 button Submit + Cancel | HRP đã có trong Ticket (status enum + transition guard). Sẽ apply cho `timesheet_periods`, `pay_runs`, `statements` |
+| **F1** | **DocType JSON-driven schema** — mỗi entity có `attendance.json` với `fields` | HRP dùng Prisma schema (typed). **V4 (F7): KHÔNG áp dụng `entity_definitions`** — trùng cơ chế "template profile per partner" của M7; chỉ tham khảo pattern config-driven |
+| **F2** | **`is_submittable: 1`** → `docstatus` enum 0/1/2 (Draft/Submitted/Cancelled) | HRP đã có trong Ticket (status enum + transition guard). **V4 (F3): KHÔNG dùng cột `docStatus`** — pattern submit/cancel áp dụng qua status enum duy nhất cho `timesheet_periods`, `pay_runs`, `statements` |
 | **F3** | **Workflow DocType riêng** (`workflow.json`) với `states` (name, doc_status, allow_edit) + `transitions` (state, action, next_state, allowed_role) | HRP đã có `TRANSITIONS` map trong `ticket.service.ts` (typed). Sẽ extract thành **`workflow_definitions` table** để admin config workflow không cần deploy code |
 | **F4** | **Permission per role** trong DocType JSON: System Manager, HR Manager, HR User, Employee | HRP đã có `TicketActorRole` enum + ROLE_QUEUE. Sẽ apply cho TẤT CẢ entity (không chỉ ticket) |
 | **F5** | **Validate hooks**: `def validate(self)`, `on_submit`, `on_cancel`, savepoint pattern cho transaction | HRP dùng Prisma `$transaction` + custom guards. Sẽ thêm **`on_submit` / `on_cancel` lifecycle hooks** cho Timesheet, PayRun, Statement |
 | **F6** | **Batch import via Data Import** — `frappe.core.doctype.data_import` parse CSV/Excel, validate theo DocType schema, show preview, sau đó INSERT batch | HRP đã có `prisma/schema-m7-tickets.prisma` cho Attendance batch. Sẽ thiết kế **`AttendanceImportBatch` workflow** như ERPNext |
 | **F7** | **Employee Attendance Tool** (`employee_attendance_tool.py`) — pattern: query Active employees trong kỳ, loại những người đã mark, hiển thị UI để mark nhanh từng người | HRP sẽ có **`attendance-bulk-mark`** UI: HR thấy danh sách worker CHƯA có công trong kỳ, bulk insert |
 | **F8** | **Background Jobs qua RQ** — `frappe.enqueue(method, queue='long', timeout=600)` | HRP đã có ADR-014 (QStash). FRAPPE dùng Python RQ; HRP dùng Upstash QStash + Next.js Route Handlers |
-| **F9** | **DocStatus trên mỗi row** — query `WHERE docstatus=1` thay vì soft delete | HRP dùng status enum tương đương. Sẽ enforce **`docStatus` column** cho tất cả financial entity (timesheet_periods, pay_runs, statements) |
+| **F9** | **DocStatus trên mỗi row** — query `WHERE docstatus=1` thay vì soft delete | **V4 (F3): KHÔNG thêm cột `docStatus`** — query bằng status enum: `WHERE status = 'LOCKED'` |
 | **F10** | **Amend pattern** — Attendance có `amended_from` field, khi cancel có thể amend thay vì delete | HRP đã có ticket history (`from_status` → `to_status`). Sẽ bổ sung **`amendedFrom` + version** cho TimesheetPeriod, PayRun, Statement |
 | **F11** | **Half-day status** — Attendance có `half_day_status` field (Present/Absent cho nửa ngày còn lại), `modify_half_day_status` boolean | HRP sẽ áp dụng cho TimesheetLine: `isHalfDay`, `halfDayStatus` cho phép split ngày |
 | **F12** | **Overtime as separate section** trên Attendance — `overtime_type`, `actual_overtime_duration`, `standard_working_hours` | HRP sẽ tách `overtime_hours` + `overtime_rate_snapshot` vào TimesheetLine (đã có từ Odoo ref) |
@@ -2295,19 +2628,16 @@ model WorkflowTransition {
 }
 ```
 
-**Timesheet/Payroll Approval Flow (3-tier — đề xuất từ Frappe + HRP):**
+**Timesheet/Payroll Approval (V4 — canonical: PENDING → REVIEWED → APPROVED → LOCKED):**
 
 ```
-[Location Manager] ──Approve──→ [HR Manager] ──Approve──→ [Accounting] ──Approve──→ [LOCKED]
-       │                              │                          │
-       └───Reject──→ [RETURNED] ←─────┴──────────────────────────┘
-       │                              │                          │
-       └────────────────Cancel (chỉ khi DRAFT)───────────────────┘
+PENDING → REVIEWED → APPROVED → LOCKED
+   │                                  │
+   └──────── REJECTED / trả về ───────┘
+Mỗi transition ghi 1 audit_log row (ADR-014). LOCKED = immutable; correction qua Adjustment.
 
-DRAFT → SUBMITTED (Location Manager submit batch timesheet)
-SUBMITTED → LOCATION_APPROVED → HR_APPROVED → ACCOUNTING_APPROVED → LOCKED
-Mỗi transition ghi 1 audit_log row (đã có trong HRP ADR-014).
-LOCKED = immutable; correction qua Adjustment.
+Vai trò 3-tier (Location Manager → HR Manager → Accounting) là CONFIG theo dự án
+qua workflow_definitions — ánh xạ vào 2 bước REVIEWED/APPROVED, KHÔNG phải enum riêng (F2).
 ```
 
 **Cải tiến cho HRP từ Frappe/ERPNext (8 điểm E1-E8):**
@@ -2318,10 +2648,10 @@ LOCKED = immutable; correction qua Adjustment.
 | **E2** | **`AttendanceImportBatch` workflow** (parse CSV/Excel → preview → match worker → INSERT timesheet_lines raw) | ERPNext có sẵn, HRP cần copy pattern |
 | **E3** | **`bulk-mark` UI** cho HR (query Active workers chưa có công → bulk insert) | ERPNext `Employee Attendance Tool`. HRP sẽ làm tương tự cho kỳ công |
 | **E4** | **`amendedFrom` field** cho TimesheetPeriod, PayRun, Statement | ERPNext có trên Attendance. HRP cần cho financial records |
-| **E5** | **`docStatus` column** (0/1/2) cho TimesheetPeriod, PayRun, Statement | ERPNext dùng cho query `WHERE docstatus=1`. HRP dùng status enum nhưng sẽ thêm docStatus cho query đơn giản |
+| **E5** | ~~`docStatus` column (0/1/2)~~ **BỎ (V4 F3)** | status enum là nguồn sự thật DUY NHẤT — không tạo 2 cột trạng thái song song |
 | **E6** | **`on_submit` / `on_cancel` lifecycle hooks** | ERPNext pattern. HRP sẽ thêm vào service layer (vd: onSubmit TimesheetPeriod → trigger recompute PayRun draft) |
 | **E7** | **Savepoint pattern** cho long-running batch imports | ERPNext dùng `frappe.db.savepoint(name)` rồi `rollback_to_savepoint`. HRP có thể dùng Postgres SAVEPOINT trong Prisma raw query |
-| **E8** | **Standalone .exe đóng gói** cho admin portal (Electron + Next.js export) | Đáp ứng yêu cầu founder: phân phối cho client dạng 1 file .exe |
+| **E8** | ~~Standalone .exe~~ **V4 (F4): NGOÀI HORIZON** — giữ 1 dòng trong mục 19.3 dài hạn | Tránh mâu thuẫn Tauri/Electron/SQLite + Wave 5 không có trong roadmap |
 
 **Database schema bổ sung (xem `prisma/schema-v3.1-patches.prisma` — sẽ thêm block mới):**
 
@@ -2372,37 +2702,11 @@ model AttendanceImportRow {
 }
 ```
 
-**Standalone .exe deployment (E8) — đáp ứng yêu cầu "phân phối cho client dạng 1 file":**
+**Standalone .exe — V4 (F4): NGOÀI HORIZON.**
 
-**Phương án đề xuất: Electron + Next.js Static Export + Embedded SQLite/Postgres**
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  HRP-Admin-Portal.exe (≈150MB)                              │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │  Electron Main Process                                │  │
-│  │  ├── Chromium WebView (render Next.js static build)  │  │
-│  │  ├── Local API Server (Express/Fastify in main)      │  │
-│  │  └── Embedded PostgreSQL (single-user mode)          │  │
-│  └───────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**So sánh 3 phương án:**
-
-| Phương án | Bundle size | RAM | Pros | Cons |
-|---|---|---|---|---|
-| **Electron + Next.js static export + PGlite** | ~180MB | ~300MB | Phổ biến, debug dễ, R2 sync OK | RAM cao, Chromium nặng |
-| **Tauri + Next.js static export + SQLite** | ~25MB | ~80MB | Nhẹ, Rust native | Build pipeline phức tạp, ít ecosystem |
-| **pkg/Nexe + Next.js standalone + SQLite** | ~80MB | ~150MB | Pure Node, không Chromium | UI phải dùng native (Tauri/Electron) |
-
-**Khuyến nghị cho HRP v3.0:**
-- **Wave 1-4 (Web-only)**: chỉ cần Next.js trên Vercel + Neon Postgres.
-- **Wave 5 (Standalone)**: **Tauri + Next.js static export + SQLite (better-sqlite3)** cho admin portal.
-  - Bundle ~25MB (vs Electron 180MB).
-  - SQLite đủ cho single-client (1 phòng nhân sự 10-50 người).
-  - Sync cloud: dùng CRDT (Yjs) hoặc last-write-wins qua REST API.
-  - Auto-update qua Tauri Updater plugin.
+Không thiết kế trong giai đoạn này; mở lại qua ADR mới khi có client pilot trả tiền (điều kiện mục 19.3). Hai ràng buộc ghi sẵn:
+1. Cấm Fastify/Express phụ (ADR-001) — mọi giải pháp standalone phải dùng lại stack hiện tại.
+2. Phải giải quyết ORM khi dùng SQLite — hệ thống đã chốt Prisma + Postgres.
 
 **Pseudocode cho CSV/Excel import (E2):**
 
@@ -2444,12 +2748,12 @@ async function matchBatchRows(batchId: string): Promise<void> {
     include: { rawRows: true },
   });
 
-  // 5. Load workers + shifts (cache 1 lần)
-  const workers = await prisma.worker.findMany({
+  // 5. Load assignments ACTIVE (V4 F8: employeeCode nằm ở assignment, KHÔNG phải field của worker)
+  const assignments = await prisma.projectAssignment.findMany({
     where: { status: 'ACTIVE' },
-    include: { assignments: { where: { endDate: null } } },
+    include: { worker: true },
   });
-  const workerMap = new Map(workers.map(w => [w.employeeCode, w]));
+  const workerMap = new Map(assignments.map(a => [a.employeeCode, a.worker]));
 
   // 6. For each row: match worker + validate date + detect anomaly
   for (const row of batch.rawRows) {
@@ -2504,42 +2808,7 @@ async function matchBatchRows(batchId: string): Promise<void> {
 }
 ```
 
-**Standalone .exe deployment — kiến trúc chi tiết:**
-
-```typescript
-// electron/main.ts (hoặc tauri/src-tauri/src/main.rs)
-
-import { app, BrowserWindow } from 'electron';
-import next from 'next';
-import { startLocalServer } from './local-server';
-
-async function bootstrap() {
-  await app.whenReady();
-
-  // 1. Khởi embedded Postgres (PGlite hoặc bundled postgres.exe)
-  await startLocalServer({ port: 5432, dataDir: app.getPath('userData') });
-
-  // 2. Run migrations
-  await runMigrations();
-
-  // 3. Build Next.js static export (offline-first)
-  const nextApp = next({ dev: false, dir: __dirname + '/web' });
-  await nextApp.prepare();
-
-  // 4. Spawn Next.js server (port 3000) hoặc load static files
-  const win = new BrowserWindow({ width: 1280, height: 800 });
-  win.loadURL('http://localhost:3000');
-}
-
-app.on('window-all-closed', () => app.quit());
-```
-
-**Caveats cho Standalone (cần giải quyết):**
-1. **Cloud sync**: SQLite local → Postgres cloud (QStash + idempotency).
-2. **Multi-user conflict**: Khi 2 client cùng edit → last-write-wins HOẶC CRDT.
-3. **Backup**: Auto-backup SQLite mỗi ngày → R2.
-4. **Update**: Tauri Updater pull binary mới từ GitHub Releases.
-5. **Print/PDF**: Native dialog qua Electron IPC.
+*(Pseudocode Electron + Caveats đã xóa — V4 F4: Standalone ngoài horizon, xem mục "Standalone .exe — NGOÀI HORIZON" ở trên.)*
 
 **DoD bài học Frappe/ERPNext:**
 
@@ -2552,7 +2821,7 @@ app.on('window-all-closed', () => app.quit());
 - [x] Pseudocode cho CSV/Excel import + matching + anomaly detection
 - [x] So sánh 3 phương án standalone .exe (Electron / Tauri / pkg)
 - [x] Khuyến nghị: Tauri + Next.js static + SQLite cho Wave 5
-- [ ] Implement thực tế: chờ Wave 5 (sau khi Wave 1-4 ổn định trên cloud)
+- [x] Đóng chủ đề Standalone: ngoài horizon (V4 F4) — mở lại theo điều kiện mục 19.3
 
 ### 12.6. Statements (đối soát — 2 luồng độc lập)
 
@@ -2600,7 +2869,7 @@ CREATE TABLE client_statement_lines (      -- approved công × client bill rate
 
 | Module | Endpoint | Method | Ghi chú |
 |--------|----------|--------|---------|
-| Auth | `/api/auth/send-otp` / `/verify-otp` / `/refresh` | POST | OTP baseline; Zalo qua flag |
+| Auth | `/api/auth/login` (mật khẩu) · `/send-otp` / `/verify-otp` (step-up/reset) · `/refresh` | POST | V4.2: đăng nhập chính = mật khẩu; Zalo qua flag |
 | Import | `/api/attendance/import` | POST | Upload XLSX/CSV → batchId |
 | Import | `/api/attendance/import/:batchId/preview` | GET | Mapping + unmatched queue |
 | Import | `/api/attendance/periods/:id/approve` / `/lock` | POST | Chốt kỳ (LOCK = bất biến) |
@@ -2609,6 +2878,7 @@ CREATE TABLE client_statement_lines (      -- approved công × client bill rate
 | **Ticket** | `/api/tickets` | POST / GET | Worker tạo / HR list (role-scoped) |
 | **Ticket** | `/api/tickets/:id` | GET | Chi tiết + history |
 | **Ticket** | `/api/tickets/:id/approve` | POST | HR/Accountant approve (2-step cho advance) |
+| **Ticket** | `/api/tickets/:id/pay` | POST | Accountant chi tạm ứng (APPROVED → PAID) — endpoint riêng (F27) |
 | **Ticket** | `/api/tickets/:id/reject` | POST | HR/Accountant reject (bắt buộc lý do) |
 | **Ticket** | `/api/tickets/:id/cancel` | POST | Worker tự rút |
 | Payroll | `/api/payroll/pay-runs` | POST | Tạo pay run (QStash bulk) |
@@ -2648,6 +2918,10 @@ CREATE TABLE client_statement_lines (      -- approved công × client bill rate
 
 Dùng pooler URL (Supavisor port 6543 / Neon pooler) cho runtime; URL trực tiếp chỉ cho migration. Prisma client singleton theo chuẩn serverless (giữ code v2.1).
 
+**Bão kết nối giờ cao điểm (V4.12 G20 — T12):** 07:00 — 5.000 worker đồng loạt check-in → hàng trăm instance Serverless mới TLS handshake tới pooler → độ trễ đột biến/504. Giải pháp 2 lớp: (1) chuỗi kết nối đặt rõ `connection_limit=1` (mỗi function 1 connection) + `pool_timeout` hợp lý; (2) **endpoint Check-in dùng write-behind**: validate nhanh (JWT + geofence) → đẩy raw event vào QStash → **trả 202 ngay** cho worker → worker process bốc từ queue ghi Postgres theo batch. Check-in là evidence (không phải payroll) nên trễ vài giây chấp nhận được.
+
+**Thất bại câm của write-behind (V4.13 G21 — T14):** 202 không có nghĩa là xong — job có thể chết (DB chết, worker bị khóa). `attendance_events.status`: ghi **QUEUED** ngay khi nhận → worker process chuyển **APPENDED** (thành công) hoặc **FAILED** (kèm lý do). App worker: sau 202, poll nhẹ `/api/m/checkin/status` (~5–10s) — hiện "✓ Đã ghi nhận" khi APPENDED, hoặc "Chưa thành công — bấm thử lại" khi FAILED; QStash sau 3 retry vào DLQ → worker process đọc DLQ đánh FAILED + notify. Không để worker tưởng đã chấm công đến cuối tháng mới biết rớt.
+
 ### 14.2. Transactions & Locking
 
 - Mọi ghi nhiều bảng dùng `$transaction`; critical section dùng `pg_advisory_xact_lock` (Prisma KHÔNG hỗ trợ option `isolationLevel`).
@@ -2670,9 +2944,12 @@ CREATE TABLE idempotency_keys (
 );
 ```
 
+> **V4.1 (G3): phân kỳ** — Wave 1 (MVP) chấp nhận metadata-based như `ticket.service.ts` (F24); từ Wave 2, endpoint tài chính/đối soát PHẢI dùng bảng này.
+
 - Header `x-idempotency-key` bắt buộc cho POST nhạy cảm.
 - Khóa theo `(actorId, route, key)` + lưu request hash — **không trả response của actor khác** (sửa lỗi v2.1: key toàn cục).
 - PENDING → 409; COMPLETED → cached response; FAILED → cho phép retry.
+- **V4.9 (G17 — T4):** Postgres KHÔNG tự xóa bản ghi hết hạn (không có TTL như Redis) — QStash cron hàng tuần: `DELETE FROM idempotency_keys WHERE expires_at < now()` + index trên `expires_at`.
 
 ### 14.4. Optimistic Concurrency Control (quota tuyển dụng)
 
@@ -2705,6 +2982,16 @@ if (updated.count === 0) throw new Error('Version conflict');
 - Mọi tham số nghiệp vụ (lương tối thiểu vùng, tỷ lệ BH, giảm trừ TNCN, rate, policy hoa hồng) là **config effective-dated** — không hard-code.
 - Rounding policy (làm tròn xuống đồng ở net) tại 1 service duy nhất.
 
+### 14.8. Múi giờ — "lưu UTC, tính VN" (V4.10 G18 — T5)
+
+Postgres lưu `TIMESTAMPTZ` ở dạng UTC; server Vercel mặc định UTC — nhưng nghiệp vụ chạy theo giờ Việt Nam (UTC+7, không DST). Quy ước bắt buộc:
+
+- **Lưu UTC, tính VN**: mọi logic ngày/ca dùng helper duy nhất `src/shared/utils/vndate.ts` (`nowHCM()`, `toHCM()`, `startOfDayHCM()`) — **cấm dùng `new Date()` trực tiếp** cho nghiệp vụ; raw query dùng `AT TIME ZONE 'Asia/Ho_Chi_Minh'`.
+- Session Postgres đặt `SET timezone = 'Asia/Ho_Chi_Minh'` để `date_trunc`/`current_date` đúng giờ VN.
+- Máy chấm công/webhook: parse timestamp theo múi giờ CỦA MÁY (config per-site) → chuyển UTC khi lưu; ghi rõ tz nguồn trong event (audit).
+- `work_date` (DATE) là ngày theo **lịch VN**, được chốt khi nhập — không suy ra lại từ UTC lúc query (tránh lệch 7h).
+- **Ca đêm** (vd 22:00–06:00): quy ước công thuộc về **ngày bắt đầu ca** — cấu hình theo từng shift, không để rớt sang hôm sau.
+
 ---
 
 ## 15. BẢO MẬT
@@ -2732,6 +3019,7 @@ const SECURITY_CONFIG = {
 ```
 
 - **Dữ liệu sinh trắc học** (selfie) & CCCD: storage theo ADR-006; audit mọi lượt xem dữ liệu nhạy cảm.
+- **Đăng nhập mật khẩu (V4.2):** argon2/bcrypt; 5 lần sai → khóa 15 phút; thao tác nhạy cảm (đổi STK/CCCD) bắt step-up OTP hoặc HR xác nhận (§4.6.1).
 - **Data isolation:** mọi query qua `workerScope()` (mục 9.7) + Postgres RLS cho bảng nhạy cảm + integration test data scope từ Wave 1.
 - **Tài chính:** record LOCKED bất biến (ADR-013); mọi thao tác đối soát/tính lương có audit.
 - **Compliance:** NĐ 13/2023/NĐ-CP, Luật Dữ liệu 2024, NĐ 53/2022/NĐ-CP + Luật An ninh mạng 2018.
@@ -2758,21 +3046,59 @@ const SECURITY_CONFIG = {
 | ID | Risk | Impact | Prob. | Mitigation |
 |----|------|--------|-------|------------|
 | R1 | GPS không chính xác trong nhà | High | Medium | GPS chỉ là **evidence** (không tính lương); accuracy threshold; exception workflow |
-| R2 | OTP SMS delay/blocked | High | Medium | Provider adapter + **POC ≥ 2 nhà cung cấp**; fallback voice call |
+| R2 | OTP SMS delay/blocked (chỉ còn dùng step-up/reset — V4.2) | Medium | Medium | HR reset offline thay thế; provider adapter + **POC ≥ 2 nhà cung cấp** |
 | R3 | Worker thiếu thông tin hồ sơ | Medium | Medium | `profile_status` completion + HR follow-up |
 | R4 | Vendor nộp thông tin sai/trùng | Medium | High | **Submission review + dedup hint + merge queue** (không tạo Worker trực tiếp) |
 | R5 | Format Excel đối tác biến động | Medium | High | Template profile per partner, unmatched queue, re-import idempotent |
 | R6 | Worker không có smartphone | Medium | Low | Kiosk mode, HR nhập hộ |
 | R7 | Data privacy (CCCD, selfie) | **High** | Medium | ADR-006 (storage nội địa default), mã hóa, signed URL, audit; NĐ 13/2023 + Luật Dữ liệu 2024 |
 | R8 | Performance 10k+ workers | Medium | Medium | Thiết kế 5.000, load-test 20.000; pagination, indexing, pooler |
-| R9 | Sim swap / lừa đảo OTP | High | Medium | Device binding cho thao tác nhạy cảm, cảnh báo thiết bị lạ |
+| R9 | Brute-force mật khẩu / lộ mật khẩu | High | Medium | Rate limit + khóa 15'; argon2/bcrypt; step-up cho thao tác nhạy cảm; HR reset có audit (V4.2) |
 | R10 | Payroll tính sai | **High** | Medium | Pay run + LOCKED bất biến; golden tests; chạy song song với Excel 2 kỳ đầu |
 | R11 | State model sai ngay từ đầu | **High** | Medium | **Sprint 0**: stakeholder duyệt 6 aggregate + transitions TRƯỚC Prisma schema |
-| R12 | Trùng hồ sơ / tranh chấp nguồn | Medium | Medium | Source claims (lịch sử đầy đủ, 1 accepted có audit) + dedup/merge |
+| R12 | Trùng hồ sơ / tranh chấp nguồn | Medium | Medium | Source claims (lịch sử đầy đủ, 1 accepted có audit) + dedup/merge + **Referral Guard §9.3.1** (chặn 7 ngày / hoa hồng active / lương vendor) |
 | R13 | Correction sau kỳ chốt | Medium | High | Adjustment lines / version mới — không sửa dữ liệu LOCKED |
 | R14 | Quota ảo (concurrency) | Medium | Low | Assignment + quota cùng transaction + advisory lock |
 | R15 | Zalo OA chưa xác thực block login | Medium | Medium | **Zalo là feature flag; OTP baseline bắt buộc** — không có rủi ro block |
 | R16 | Scope creep (portal trước backbone) | **High** | Medium | Operations-first (mục 1.4); feature flags; DoD + demo sprint |
+| R17 | Mất cả mật khẩu lẫn SĐT — không tự reset được | Medium | Medium | Luồng HR reset mật khẩu offline (G12): verify mặt vs ảnh CCCD → mật khẩu tạm + audit + revoke session |
+| R18 | Vendor bức xúc khi bị chặn 7 ngày dù thực tế đưa người đến xưởng | Medium | Medium | SOP override §9.3.1 (S1/S2/S3 + bằng chứng + thống kê hàng tuần chống thiên vị) |
+| R19 | Zalo in-app browser xóa cookie → mất attribution link giới thiệu | Low | Medium | 3 lớp dự phòng: URL param + localStorage + ô nhập tay — không dựa cookie (G15) |
+| R20 | Gộp nhầm người do nhập sai CCCD | Medium | Low | Auto-merge chỉ khi ≥2/3 khóa khớp; trùng 1 khóa → merge queue chờ HR xác nhận thủ công (G15) |
+| R21 | Số doanh thu tạm tính bị hiểu nhầm thành số chính thức | Medium | Medium | Nhãn TẠM TÍNH + watermark trên mọi màn; chỉ dùng theo dõi — mọi đối soát lấy từ statement LOCKED (G16) |
+| R22 | File chấm công lớn làm vỡ endpoint import (RAM/timeout) | Medium | Medium | Presigned URL + parse streaming nền (G17-T1); progress + savepoint + continuation |
+| R23 | Vendor lạm dụng DISPUTE để câu giờ thanh toán | Medium | Low | Tối đa 2 vòng + SLA 3 ngày + AUTO-CONFIRMED + FORCE LOCK có audit (G17-B1) |
+| R24 | Xung đột điểm danh offline (PM đánh VẮNG vs GPS CÓ MẶT) | Low | Medium | Thứ tự ưu tiên cố định + CONFLICTED → ticket HR xử lý (G17-T2) |
+| R25 | Lệch múi giờ 7h (UTC vs VN) làm ca đêm rớt ngày | **High** | Medium | §14.8: lưu UTC tính VN; helper vndate duy nhất; work_date chốt theo lịch VN; ca đêm quy ước ngày bắt đầu ca (G18-T5) |
+| R26 | Net âm chảy vào file trả lương ngân hàng | **High** | Medium | Chặn cứng Net<0 → Net=0 + carry_forward_debt + exception kế toán (roll-over 1-click) — G18-B4 |
+| R27 | Bỏ việc ngang khiến quota kẹt, assignment ACTIVE mãi | Medium | High | AWOL detection: vắng ≥3 ngày → AWOL_REVIEW + 1-click đóng/nhả quota (G18-B5) |
+| R28 | Dry Run chạy nhiều lần làm phình DB | Medium | Medium | Chạy lại cùng tập = thay thế; cron tự xóa dry-run quá 24h (G19-T8) |
+| R29 | Zombie job parse đúp dữ liệu import | Medium | Low | `@@unique(batchId, rowNumber)` + advisory lock per-batch + QStash dedup-id (G19-T9) |
+| R30 | File giả mạo đuôi (.exe→.xlsx) đẩy lên R2 | Medium | Low | Kiểm magic bytes khi parse + giới hạn size + không serve inline (G19-T10) |
+| R31 | Ca đêm vắt ngày Lễ mất OT 300% → worker/khách khiếu nại | Medium | Medium | Tách dòng ca qua 00:00 theo lịch `holidays` — phần sau nửa đêm tính holiday (G19-B8) |
+| R32 | Re-enqueue fail → batch import kẹt vĩnh viễn | Medium | Low | Watchdog cron 30' — batch không heartbeat >15' → tự re-enqueue (G20-T11) |
+| R33 | Bão kết nối 07:00 làm 504 hàng loạt | **High** | Medium | Write-behind check-in qua QStash (trả 202 ngay) + connection_limit=1 (G20-T12) |
+| R34 | 2 PM đồng bộ offline ghi đè xung đột của nhau | Low | Medium | Advisory lock (worker + work_date) trong 1 transaction khi tổng hợp trạng thái ngày (G20-T13) |
+| R35 | Trừ BHXH sai cho người vào giữa tháng / nghỉ ốm dài | **High** | Medium | Rule `BHXH_14_DAY_RULE` — workedDays < 14 → insuranceSalaryVnd = 0 (G20-B10) |
+| R36 | Write-behind thất bại câm — worker tưởng đã chấm công | Medium | Medium | Event status QUEUED→APPENDED/FAILED + app poll trạng thái + DLQ notify (G21-T14) |
+| R37 | Watchdog re-enqueue vô tận khi parser crash | Medium | Low | retry_count + IMPORT_MAX_RETRY=3 → FAILED cứng + notify HR (G21-T15) |
+| R38 | Đếm BHXH theo từng assignment → sót đóng cho người chuyển dự án | **High** | Low | Aggregate tổng ngày công MỌI assignment ở cấp worker (G21-B13) |
+| R39 | REVERSAL hoa hồng làm số dư CTV âm ngầm | Medium | Medium | commission_debt + tự cấn trừ khoản tương lai (COMMISSION_NETTING_ENABLED) (G21-B14) |
+
+### 17.1. Nợ kỹ thuật đã biết (register — V4.1)
+
+| ID | Nợ | Ảnh hưởng | Trả khi nào |
+|----|----|-----------|-------------|
+| TD-01 | Schema chưa có models Wave 4 (pay_runs, worker_pay_results, earning/deduction_lines, payslips, commission_policies/ledger, payroll_rules, pay_run_rule_overrides, workflow_definitions) | Không block Wave 1–2 | Design ở §12.5/§10.3, thêm schema trước Wave 4 |
+| TD-02 | Session auth stub (`Bearer userId:role` trong session.ts) | **Nghiêm trọng nếu deploy** | WBS 1.6 — TRƯỚC go-live bất kỳ endpoint |
+| TD-03 | UI components là demo (data mock, `cn` stub) | Nhầm lẫn khi đánh giá tiến độ | M0 Wave 1 (G7) |
+| TD-04 | Test mới phủ 2 domain (ticket 16 + thuế 16 = 32 xanh); import mapping / statement calc / OCC / middleware hostname chưa có test | Chất lượng Wave 2 | Viết cùng lúc code (DoD §6.6) |
+| TD-05 | Golden thuế mới 5 case; plan đòi ≥10 golden cho pay run | Wave 4 | Thu case thật từ kế toán (Sprint 0) |
+| TD-06 | `DATABASE_URL` dummy — chưa có DB thật + migration đầu tiên | Block mọi việc DB | Ngay khi chốt Sprint 0 |
+| TD-07 | ERD là trích đoạn khái niệm, thiếu tầng source/submission/statement (G4) | Nhầm lẫn nếu đọc riêng | Vẽ lại từ schema.prisma khi cần |
+| TD-08 | Code mẫu trong plan (§9.9, §12.5, §12.5.4) là minh họa, không phải canonical (G1/G2) | Copy nhầm khi code | Đã đánh dấu từng mẫu |
+| TD-09 | Rate card `siteId` chưa có model Site (đang là `Project.siteAddress` string) | Đối soát/geofence theo site | Khi cần rate/geofence theo site |
+| TD-10 | Chưa có bảng session/refresh token (JWT refresh 7d rotation) | M1 Wave 1 | Thiết kế cùng auth_identities |
 
 ---
 
@@ -2857,6 +3183,7 @@ flowchart LR
 | Data warehouse/BI | Báo cáo ảnh hưởng hiệu năng OLTP hoặc cần kết hợp nhiều nguồn |
 | Dynamic pricing/margin optimization | Rate, attendance, cost allocation đã chuẩn hóa |
 | eKYC | Manual verification thành bottleneck (>500 hồ sơ mới/tháng) |
+| Standalone .exe (admin portal) | Có client pilot trả tiền yêu cầu đóng gói 1 file — lúc đó ADR mới (Tauri vs Electron; cấm Fastify) — V4 F4 |
 
 ---
 
@@ -2880,11 +3207,13 @@ flowchart LR
 | 12 | Scope của HR_STAFF? | Theo **team/branch/phân công**; HR_MANAGER toàn cục + handover có audit |
 | 13 | Zalo OA xác thực chưa? | **Feature flag** — chưa xác thực thì tắt, KHÔNG block MVP; OTP fallback bắt buộc |
 | 14 | Nhà cung cấp SMS? | Provider adapter; **POC ≥ 2 nhà cung cấp** theo độ ổn định, callback, support, chi phí |
-| **15** | Worker có được **nhiều assignment đồng thời**? | Cho phép nếu lịch/ca không overlap; xác định 1 PRIMARY khi cần |
+| **15** | Worker có được **nhiều assignment đồng thời**? | **ĐÃ CHỐT (founder — G14): KHÔNG** — 1 người chỉ ACTIVE ở 1 dự án tại 1 thời điểm; chuyển dự án qua luồng TRANSFER (đóng cũ → mở mới) |
 | **16** | Nguồn tuyển ghi nhận theo nguyên tắc nào? | Lưu **toàn bộ source claims**; chọn 1 accepted có audit; không overwrite lịch sử |
 | **17** | Đơn vị khóa payroll là gì? | Theo **legal entity/payroll group/kỳ** — không khóa riêng từng project |
 | **18** | Vendor settlement có tách client billing? | **BẮT BUỘC tách** — 2 rate, 2 statement, 2 approval & payment lifecycle độc lập |
 | **19** | Storage cho dữ liệu sinh trắc học? | **ĐÃ CHỐT: Cloudflare R2 xuyên suốt** (founder); giữ storage interface để đổi provider được; cân nhắc rà soát NĐ 13/2023 khi mở rộng quy mô |
+| **20** | Thời hạn chặn 7 ngày của Referral Guard + quyền override? | **ĐÃ CHỐT (founder):** 7 ngày khởi đầu + config được + override HR_MANAGER/ADMIN có lý do bắt buộc + audit (G11) |
+| **21** | Lưu mã giới thiệu thế nào (Zalo hay xóa cookie) + chính sách bấm nhiều link? | URL param + localStorage (30 ngày) + ô nhập tay — KHÔNG dựa cookie; first-click wins — default; chốt với founder (G13, G15) |
 
 ---
 
@@ -2920,6 +3249,10 @@ flowchart LR
 
 ## NEXT STEPS
 
+**Trước khi code (V4 — bổ sung):**
+
+0. **Hợp nhất `schema.prisma`** — từ `schema-v3.1-patches.prisma` + `schema-m7-tickets.prisma` + định nghĩa các model còn thiếu (Worker, User, Project, Assignment, Statements) — bắt buộc trước khi code tiếp (F23)
+
 **Top 5 hành động trước khi code (theo expert review):**
 
 1. **Chốt MVP nội bộ 10–12 tuần** — đồng bộ `index.html`, tài liệu này, WBS với định nghĩa "production-ready" (mục 7.1)
@@ -2932,6 +3265,6 @@ Sau đó: Wave 1 (M0+M1+M3 core+M5 core) → Wave 2 (M7+M8 tối giản) → UAT
 
 ---
 
-*Document version: 3.0*
+*Document version: 4.0*
 *Ngày: 14/08/2026*
-*Trạng thái: Draft — tiếp thu `TECHNICAL_PRODUCT_FEASIBILITY_REVIEW.md`*
+*Trạng thái: Draft — bản hợp nhất khử mâu thuẫn v3.3 (xem changelog 0.1.7)*

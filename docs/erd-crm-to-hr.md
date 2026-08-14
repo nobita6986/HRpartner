@@ -7,6 +7,8 @@
 > - `addons/hr_attendance/models/hr_attendance.py` — `hr.attendance` với `employee_id`, `check_in`/`check_out`, `worked_hours` (computed), `overtime_hours`, `overtime_status` (to_approve/approved/refused)
 >
 > **Lưu ý:** `hr_contract` (Negotiation → Signed → Active → Terminated) là Enterprise. HRP sẽ tự build dựa trên Ticket state machine pattern.
+>
+> **V4 sync (14/08/2026):** ERD đã đồng bộ với `UNIFIED_PLAN_v4.md` — chuẩn tên/state theo changelog 0.1.7 (F15–F21).
 
 ## ERD Mermaid
 
@@ -74,16 +76,16 @@ erDiagram
 
     Worker {
         uuid id PK
-        string employeeCode UK "EMP-001"
+        string userId UK "USR-001 (Primary UserID)"
         string fullName
         string phone UK "+84..."
-        string nationalId UK "CCCD/CMND"
+        string cccdNumber UK "CCCD"
         string taxCode UK "MST cá nhân"
         string bankAccount
         string bankName
-        enum employmentStatus "PROSPECTIVE|ACTIVE|RESIGNED|TERMINATED"
-        enum profileStatus "DRAFT|SUBMITTED|VERIFIED"
-        enum submissionStatus "OPEN|MATCHED|REJECTED"
+        enum employmentStatus "NONE|ACTIVE|SUSPENDED|TERMINATED"
+        enum profileStatus "INCOMPLETE|PENDING_VERIFY|VERIFIED|REJECTED"
+        enum riskStatus "NORMAL|REVIEW|BLOCKED"
     }
 
     %% ════════════════════════════════════════════════════════════════
@@ -95,11 +97,12 @@ erDiagram
 
     ProjectAssignment {
         uuid id PK
-        enum assignmentStatus "PROPOSED|ACTIVE|PAUSED|ENDED|CANCELLED"
-        date startDate
-        date endDate
-        decimal agreedRateVnd "snapshot tại thời điểm assign"
-        decimal agreedMultiplier "1.0 normal, 1.5 OT, 2.0 holiday"
+        string employeeCode UK "mã NV tại dự án"
+        enum assignmentStatus "PLANNED|ACTIVE|PAUSED|ENDED|TRANSFERRED|CANCELLED"
+        date validFrom "nửa mở [from, to)"
+        date validTo
+        bigint salaryPerDayVnd "snapshot tại thời điểm assign"
+        boolean isPrimary "G14: luôn true — 1 dự án tại 1 thời điểm"
         json workingHours "Mon-Sun time windows"
     }
 
@@ -114,7 +117,8 @@ erDiagram
         uuid id PK
         int year
         int month
-        enum status "DRAFT|SUBMITTED|LOCATION_APPROVED|HR_APPROVED|ACCOUNTING_APPROVED|LOCKED"
+        int version "mở lại sau LOCKED → version mới"
+        enum status "PENDING|REVIEWED|APPROVED|LOCKED"
         date lockedAt
         string lockedBy
     }
@@ -123,9 +127,11 @@ erDiagram
         uuid id PK
         date workDate
         decimal regularHours
-        decimal overtimeHours
-        decimal totalHours "regularHours + overtimeHours"
-        decimal actualHours "thực tế từ máy chấm công"
+        decimal ot15Hours "OT ngày thường ×1.5"
+        decimal ot20Hours "OT nghỉ tuần ×2.0"
+        decimal ot30Hours "OT lễ ×3.0"
+        json allowance "phụ cấp"
+        json exception "ngoại lệ đã xử lý"
         enum source "DEVICE|GPS_SELFIE|MANUAL|ADJUSTMENT"
         enum anomalyType "MISSING_CHECKOUT|INVALID_CODE|..."
     }
@@ -166,7 +172,7 @@ CREATE TABLE crm_leads (
     client_company_id UUID REFERENCES client_companies(id),
     contact_name TEXT,
     contact_phone TEXT,
-    expected_revenue_vnd NUMERIC(15,2) DEFAULT 0,
+    expected_revenue_vnd BIGINT DEFAULT 0,       -- V4: BigInt VND nguyên (ADR-010)
     expected_close_date DATE,
     stage TEXT DEFAULT 'NEW',                     -- 'NEW' | 'QUALIFIED' | 'PROPOSAL' | 'NEGOTIATION' | 'WON' | 'LOST'
     probability INT DEFAULT 10,                   -- 0-100
@@ -187,7 +193,7 @@ CREATE TABLE outsourcing_projects (
     start_date DATE NOT NULL,
     end_date DATE,
     status TEXT DEFAULT 'DRAFT',                  -- 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED'
-    budget_vnd NUMERIC(15,2),
+    budget_vnd BIGINT,                           -- V4: BigInt VND nguyên (ADR-010)
     billing_terms JSONB,                          -- { type: 'monthly', dayOfMonth: 5 }
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -211,7 +217,7 @@ CREATE TABLE staffing_order_slots (
     position_title TEXT NOT NULL,
     slots_needed INT NOT NULL,
     slots_filled INT DEFAULT 0,                   -- denormalized, trigger updated
-    hourly_rate_vnd NUMERIC(12,0),
+    hourly_rate_vnd BIGINT,                      -- V4: BigInt VND nguyên (ADR-010)
     shift_start TIME,
     shift_end TIME,
     valid_from DATE NOT NULL,
@@ -222,17 +228,17 @@ CREATE TABLE staffing_order_slots (
 -- TẦNG 4: WORKER
 CREATE TABLE workers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    employee_code TEXT UNIQUE NOT NULL,           -- 'EMP-001'
-    user_id UUID UNIQUE REFERENCES users(id),
+    user_id TEXT UNIQUE NOT NULL,                 -- 'USR-001' (Primary UserID — tạo khi đăng ký, KHÔNG đổi)
     full_name TEXT NOT NULL,
     phone TEXT UNIQUE NOT NULL,                   -- '+84912345678' (E.164)
-    national_id TEXT UNIQUE,
+    cccd_number TEXT UNIQUE,                      -- V4 F17 (thay national_id)
     tax_code TEXT UNIQUE,
     bank_account TEXT,
     bank_name TEXT,
-    employment_status TEXT DEFAULT 'PROSPECTIVE', -- 'PROSPECTIVE' | 'ACTIVE' | 'RESIGNED' | 'TERMINATED'
-    profile_status TEXT DEFAULT 'DRAFT',          -- 'DRAFT' | 'SUBMITTED' | 'VERIFIED'
-    submission_status TEXT DEFAULT 'OPEN',
+    employment_status TEXT DEFAULT 'NONE',        -- 'NONE' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED'
+    profile_status TEXT DEFAULT 'INCOMPLETE',     -- 'INCOMPLETE' | 'PENDING_VERIFY' | 'VERIFIED' | 'REJECTED'
+    risk_status TEXT DEFAULT 'NORMAL',            -- 'NORMAL' | 'REVIEW' | 'BLOCKED'
+    -- (submission_status KHÔNG nằm ở worker — thuộc candidate_submissions)
     date_of_birth DATE,
     gender TEXT,
     address JSONB,
@@ -246,14 +252,15 @@ CREATE TABLE project_assignments (
     staffing_slot_id UUID NOT NULL REFERENCES staffing_order_slots(id),
     project_id UUID NOT NULL REFERENCES outsourcing_projects(id),
     employment_contract_id UUID,                  -- FK sau khi ký HĐLĐ
-    assignment_status TEXT DEFAULT 'PROPOSED',    -- 'PROPOSED' | 'ACTIVE' | 'PAUSED' | 'ENDED' | 'CANCELLED'
-    start_date DATE NOT NULL,
-    end_date DATE,
-    agreed_rate_vnd NUMERIC(12,0) NOT NULL,       -- snapshot tại thời điểm assign
-    agreed_multiplier NUMERIC(3,2) DEFAULT 1.00,
+    employee_code TEXT NOT NULL,                  -- mã NV tại dự án (do KH/xưởng tạo)
+    assignment_status TEXT DEFAULT 'PLANNED',     -- 'PLANNED' | 'ACTIVE' | 'PAUSED' | 'ENDED' | 'TRANSFERRED' | 'CANCELLED'
+    valid_from DATE NOT NULL,                     -- nửa mở [valid_from, valid_to)
+    valid_to DATE,
+    is_primary BOOLEAN DEFAULT TRUE,              -- G14: 1 worker chỉ 1 assignment ACTIVE tại 1 thời điểm
+    salary_per_day_vnd BIGINT NOT NULL DEFAULT 0, -- V4 F18 (thay agreed_rate_vnd) — BigInt VND nguyên
     working_hours JSONB,                          -- { mon: ['08:00','17:00'], tue: [...] }
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    CHECK (end_date IS NULL OR end_date >= start_date)
+    CHECK (valid_to IS NULL OR valid_to >= valid_from)
 );
 CREATE INDEX idx_pa_worker_status ON project_assignments(worker_id, assignment_status);
 CREATE INDEX idx_pa_project_status ON project_assignments(project_id, assignment_status);
@@ -264,10 +271,11 @@ CREATE TABLE timesheet_periods (
     year INT NOT NULL,
     month INT NOT NULL CHECK (month BETWEEN 1 AND 12),
     project_id UUID REFERENCES outsourcing_projects(id),  -- NULL = all projects
-    status TEXT DEFAULT 'DRAFT',
+    status TEXT DEFAULT 'PENDING',  -- 'PENDING' | 'REVIEWED' | 'APPROVED' | 'LOCKED' (V4 F2)
+    version INT NOT NULL DEFAULT 1,                        -- V4 F21: mở lại sau LOCKED → version mới
     locked_at TIMESTAMPTZ,
     locked_by UUID,
-    UNIQUE(year, month, project_id)
+    UNIQUE(year, month, project_id, version)
 );
 
 CREATE TABLE timesheet_lines (
@@ -276,13 +284,14 @@ CREATE TABLE timesheet_lines (
     assignment_id UUID NOT NULL REFERENCES project_assignments(id),
     work_date DATE NOT NULL,
     regular_hours NUMERIC(5,2) DEFAULT 0,
-    overtime_hours NUMERIC(5,2) DEFAULT 0,
-    actual_hours NUMERIC(5,2),                    -- từ máy chấm công
+    ot15_hours NUMERIC(5,2) DEFAULT 0,            -- OT ngày thường ×1.5
+    ot20_hours NUMERIC(5,2) DEFAULT 0,            -- OT nghỉ tuần ×2.0
+    ot30_hours NUMERIC(5,2) DEFAULT 0,            -- OT lễ/Tết ×3.0
+    allowance JSONB,                              -- phụ cấp
+    exception JSONB,                              -- ngoại lệ đã xử lý
     source TEXT DEFAULT 'MANUAL',                 -- 'DEVICE' | 'GPS_SELFIE' | 'MANUAL' | 'ADJUSTMENT'
-    anomaly_type TEXT,                            -- 'MISSING_CHECKOUT' | 'INVALID_CODE' | 'DUPLICATE_SCAN' | ...
-    approved BOOLEAN DEFAULT FALSE,
-    approved_by UUID,
-    approved_at TIMESTAMPTZ
+    anomaly_type TEXT                             -- 'MISSING_CHECKOUT' | 'INVALID_CODE' | 'DUPLICATE_SCAN' | ...
+    -- (V4 F19: duyệt công ở cấp PERIOD, không duyệt từng dòng)
 );
 ```
 
@@ -298,9 +307,9 @@ DRAFT ──(PM submits)──→ ACTIVE ──(PM pauses)──→ PAUSED
   └────(PM cancels)──→ CANCELLED
 
 CRM Lead:   NEW → QUALIFIED → PROPOSAL → NEGOTIATION → WON (→ project) | LOST
-Worker:     PROSPECTIVE → ACTIVE → RESIGNED | TERMINATED
-Assignment: PROPOSED → ACTIVE → PAUSED → ENDED | CANCELLED
-Timesheet:  DRAFT → SUBMITTED → LOCATION_APPROVED → HR_APPROVED → ACCOUNTING_APPROVED → LOCKED
+Worker:     NONE → ACTIVE → SUSPENDED | TERMINATED  (profile/submission/risk là 3 vòng đời riêng)
+Assignment: PLANNED → ACTIVE → PAUSED | ENDED | TRANSFERRED | CANCELLED
+Timesheet:  PENDING → REVIEWED → APPROVED → LOCKED  (3-tier theo dự án = config workflow — V4 F2)
 ```
 
 ## Mapping to HRP v3.0 Modules
@@ -335,7 +344,7 @@ Timesheet:  DRAFT → SUBMITTED → LOCATION_APPROVED → HR_APPROVED → ACCOUN
 ## DoD
 
 - [x] ERD vẽ qua 7 tầng (CRM → Project → Staffing → Worker → Assignment → Timesheet → Payroll)
-- [x] PostgreSQL DDL cho 7 table chính (excerpt — full schema trong prisma/schema-m7-tickets.prisma + schema-v3.1-patches.prisma)
+- [x] PostgreSQL DDL cho 7 table chính (excerpt khái niệm — **canonical là `prisma/schema.prisma` (V4 F23)**; ERD chưa vẽ tầng source/submission/statement — G4)
 - [x] State machines 5 entity (Lead, Project, Worker, Assignment, Timesheet)
 - [x] Mapping 9 concept Odoo → module HRP v3
 - [x] 10 cải tiến O1-O10

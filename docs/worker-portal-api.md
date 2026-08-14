@@ -70,7 +70,7 @@
 }
 ```
 
-**Ẩn khỏi worker:** `clientCompanyId`, `vendorId`, `agreedRateVnd`, `agreedMultiplier`, `assignedAt`, `projectCode`.
+**Ẩn khỏi worker:** `clientCompanyId`, `vendorId`, `salaryPerDayVnd`, `assignedMultiplier`, `assignedAt`, `projectCode`.
 
 ---
 
@@ -326,7 +326,7 @@
     "phone": "0901 234 567",
     "dateOfBirth": "15/05/1985",
     "gender": "Nam",
-    "nationalId": "079XXXXXXXXX",
+    "cccdNumber": "079XXXXXXXXX",
     "taxCode": "8XXXXXX9",
     "bankAccount": {
       "bankName": "Vietcombank",
@@ -420,33 +420,32 @@ const shifts = await prisma.timesheetLine.findMany({
 ```typescript
 // src/shared/serializers/workerPayslip.ts
 
-export function serializePayslipForWorker(payResult: WorkerPayResult): WorkerPayslipDTO {
+export function serializePayslipForWorker(
+  payResult: WorkerPayResult,
+  payRun: PayRun,
+): WorkerPayslipDTO {
+  // V4 (F20): khớp schema worker_pay_results + pay_runs — KHÔNG dùng field không tồn tại
+  const finalized = payRun.status === 'LOCKED' || payRun.status === 'PAID';
   return {
-    month: formatMonth(payResult.period.month, payResult.period.year),
-    periodStart: formatDate(payResult.period.startDate),
-    periodEnd: formatDate(payResult.period.endDate),
-    isFinalized: payResult.status === 'PAID',
-    status: payResult.status === 'PAID' ? 'Đã trả' : 'Tạm tính',
-    statusIcon: payResult.status === 'PAID' ? '✅' : '🟡',
+    month: `Tháng ${payRun.month}/${payRun.year}`,
+    periodStart: `01/${String(payRun.month).padStart(2, '0')}/${payRun.year}`,
+    isFinalized: finalized,
+    status: finalized ? 'Đã chốt' : 'Tạm tính',
+    statusIcon: finalized ? '✅' : '🟡',
     earnings: [
       {
-        label: `Lương chính (${payResult.workedDays} ngày × ${payResult.standardHoursPerDay}h)`,
-        amount: formatVnd(payResult.grossSalary),  // ← đã trừ BHXH
+        label: 'Lương tháng',
+        amount: formatVnd(payResult.gross),
       },
-      ...payResult.allowances.map(a => ({
-        label: a.name,
-        amount: formatVnd(a.amount),
-      })),
     ],
-    totalEarnings: formatVnd(payResult.netSalary),  // ← net, không gross
-    deductions: [],  // ← LUÔN RỖNG cho worker (compliance: BHXH đã trừ ở gross)
+    totalEarnings: formatVnd(payResult.net),  // ← net, không gross
+    deductions: [],  // ← LUÔN RỖNG cho worker (BHXH/PIT đã trừ khi tính gross→net)
     totalDeductions: '0 đ',
-    netPay: formatVnd(payResult.netSalary),
+    netPay: formatVnd(payResult.net),
     netPayIcon: '💰',
-    note: payResult.status === 'PAID'
-      ? `Đã trả vào ${formatDate(payResult.paidAt)}.`
-      : 'Chưa phải lương chính thức. Lương chốt vào ngày 5 hàng tháng.',
+    note: finalized ? 'Lương đã chốt.' : 'Chưa phải lương chính thức.',
   };
+}
 
   // ⚠️ EXPLICITLY NOT INCLUDED:
   // - bhxhAmount, bhytAmount, bhtnAmount (luôn trừ vào gross)
