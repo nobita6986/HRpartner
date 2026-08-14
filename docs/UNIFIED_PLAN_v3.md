@@ -1,7 +1,7 @@
 # HRP SYSTEM — UNIFIED PROJECT PLAN (v3.0)
 ## Hệ thống Quản trị Nguồn Nhân lực & Cung ứng Nhân lực
 
-> **Phiên bản:** 3.3 (tiếp thu Báo cáo Đánh giá Khả thi + bài học Odoo HR + bài học Viet-ERP VN compliance + bài học HRM_SYSTEM ticket workflow)
+> **Phiên bản:** 3.3 (tiếp thu Báo cáo Đánh giá Khả thi + bài học Odoo HR + bài học Viet-ERP VN compliance + bài học HRM_SYSTEM ticket workflow + bài học shadcn-admin UI library)
 > **Ngày:** 14/08/2026
 > **Trạng thái:** Draft - Chờ phê duyệt
 
@@ -82,6 +82,25 @@
 | 48 | **Reject bắt buộc có lý do** (lưu `note` vào `ticket_history`) | Cải tiến (HRM `review_notes` optional) |
 
 **Phiên bản 3.3.0** — Bổ sung 11 entries (38–48) từ bài học `W-Codyz/HRM_SYSTEM`. Schema M7 + domain service + route handlers + unit tests đã có.
+
+### 0.1.4. Thay đổi v3.3 (bổ sung từ bài học `satnaing/shadcn-admin` — UI/UX & Data Table)
+
+| # | Bổ sung cho V3 (UI Component Library) | Nguồn shadcn-admin |
+|---|----------------------------------------|--------------------|
+| 49 | **`src/shared/styles/tokens.ts`** — HRP Orange palette (orange-50 → orange-950) + semantic + component tokens | shadcn-admin dùng neutral; HRP cần brand |
+| 50 | **`src/shared/ui/entity-card/entity-card.tsx`** — Reusable card (avatar, badges, meta, actions, selection, footer, hover/focus) | shadcn-admin chỉ có Table. HRP thêm Card cho directory |
+| 51 | **`src/shared/ui/data-table/data-table.tsx`** — TanStack Table wrapper (Toolbar + FacetedFilter + ColumnToggle + Pagination + BulkActions) | shadcn-admin `users-table.tsx` (URL-synced state pattern) |
+| 52 | **`src/shared/ui/data-table/use-table-url-state.ts`** — Hook đồng bộ pagination/filter với URL search params | shadcn-admin `use-table-url-state.ts` (deep-link, back/forward nav) |
+| 53 | **`src/shared/ui/view-toggle/view-toggle.tsx`** — Card ↔ Table toggle (URL sync + localStorage fallback) | Bổ sung (shadcn-admin chỉ Table) |
+| 54 | **`src/shared/ui/sheet/slide-out-drawer.tsx`** — Right-side animated drawer (ESC + backdrop + scroll lock + focus trap) | shadcn-admin dùng Dialog (modal center). Drawer tốt hơn cho reconciliation |
+| 55 | **`src/shared/ui/role-guard/role-guard-layout.tsx`** — 3 portal variants (admin sidebar / worker bottom tab / vendor mini-sidebar) + role-based nav filtering | shadcn-admin chỉ 1 admin layout |
+| 56 | **`src/shared/utils/cn.ts`** — tailwind-merge stub (production sẽ dùng clsx + tailwind-merge) | shadcn-admin `lib/utils.ts` |
+| 57 | **Demo page `src/app/(portal)/admin/tickets/page.tsx`** — M7 showcase: Card view (EntityCard grid) + Table view (DataTable + BulkActions) + Drawer detail (SlideOutDrawer) + RoleGuardLayout sidebar | Bổ sung |
+| 58 | **Demo page `src/app/(portal)/vendor/projects/page.tsx`** — Vendor Portal showcase: Card grid cho staffing orders + KPI strip + CTA "Nộp ứng viên" | Bổ sung |
+| 59 | **HRP Orange WCAG fix**: orange-500 chỉ cho background/button ≥ 18px BOLD; body text dùng orange-700 (4.7:1); badge dùng orange-50 bg + orange-800 text | Bổ sung theo HRP v3 §4.5 WCAG requirement |
+| 60 | **URL state**: `?view=card|table&page=1&pageSize=20&type=ADVANCE_SALARY&status=PENDING` — share link work, back/forward nav chuẩn | shadcn-admin pattern |
+
+**Phiên bản 3.3.1** — Bổ sung 12 entries (49–60) từ bài học `satnaing/shadcn-admin`. UI Component Library hoàn chỉnh: 5 reusable components + 2 demo pages + tokens + WCAG compliance.
 
 ### 0.2. Các điểm review KHÔNG tiếp thu / tiếp thu có điều chỉnh
 
@@ -423,6 +442,86 @@ export function middleware(req: NextRequest) {
 > Giữ từ v2.1: primary `#f97316` (HRP Orange), accent vàng, semantic colors (success/warning/info/danger/neutral). **Bắt buộc áp dụng fix WCAG (mục 4.6.3 v2.1):** chữ trắng trên cam chỉ dùng cho nút có text đậm hoặc chuyển nền sang `#c2410c`; badge/text nhỏ dùng nền cam nhạt + chữ cam đậm; body text ≥ 16px (tránh iOS zoom); test contrast trên điện thoại ngoài trời nắng.
 
 *(Bảng design tokens giữ nguyên từ v2.1 — xem `UNIFIED_PLAN_v2.md` mục 4.5)*
+
+#### 4.5.1. UI Component Library — học từ `satnaing/shadcn-admin` (cập nhật v3.3)
+
+> Phân tích từ repo tham khảo Next.js Admin Dashboard: `src/features/users/components/users-table.tsx` (TanStack Table + URL state), `users-columns.tsx` (typed ColumnDef), `users-action-dialog.tsx` (Zod + react-hook-form), `data-table-bulk-actions.tsx` (multi-select toolbar).
+
+**Những gì shadcn-admin làm TỐT (giữ lại):**
+
+| Pattern shadcn-admin | HRP v3.3 đã học & áp dụng |
+|---|---|
+| TanStack Table với URL-synced state (filter, pagination) | `useNextTableUrlState` hook đồng bộ qua Next.js `useSearchParams` |
+| Column visibility toggle (`<Settings2/>`) | `ColumnToggle` subcomponent trong DataTable |
+| Bulk action bar (khi có selection) | `bulkActions` slot trong DataTable |
+| Faceted filter dropdown (multi-select checkbox) | `FacetedFilter` subcomponent |
+| Reset filter button (X) | Inline trong Toolbar |
+| Zod schema + react-hook-form cho dialog | Sẽ áp dụng cho Worker Profile, Ticket form (Module M7) |
+| Custom column definitions tách riêng file | Pattern HRP: `tickets-columns.tsx`, `workers-columns.tsx` |
+| URL state cho back/forward navigation | Đã có trong `use-table-url-state` |
+
+**HRP v3.3 BỔ SUNG so với shadcn-admin:**
+
+| # | Bổ sung cho HRP | Tại sao |
+|---|------------------|---------|
+| **U1** | **`ViewToggle` component** (Card ↔ Table) | shadcn-admin chỉ có Table. HRP cần Card cho directory (Vendor, Talent Pool, Tickets overview) |
+| **U2** | **`EntityCard` component** (reusable card với avatar, badges, meta grid, actions, selection) | Vendor portal không cần Table — chỉ scan card |
+| **U3** | **Slide-out Drawer** thay vì Dialog (cho record detail) | Drawer cho phép nhìn table bên trái + chi tiết bên phải (better cho reconciliation workflow) |
+| **U4** | **`RoleGuardLayout`** với 3 portal variants (admin sidebar / worker bottom tab / vendor mini-sidebar) | shadcn-admin chỉ có 1 layout admin. HRP có 3 cổng |
+| **U5** | **HRP Orange tokens** đầy đủ (`src/shared/styles/tokens.ts`) — primitive → semantic → component | shadcn-admin dùng neutral default. HRP cần brand primary |
+| **U6** | **WCAG-compliant variants** rõ ràng (orange-700 cho text thay orange-500) | shadcn-admin không enforce. HRP enforce qua design review checklist |
+| **U7** | **Selection state** tích hợp EntityCard + DataTable (cùng `selected: boolean`) | Cho bulk operations (HR duyệt nhiều ticket) |
+| **U8** | **Server-side data fetching** (RSC) + client-side table render | shadcn-admin dùng data mock. HRP v3 sẽ fetch từ API |
+| **U9** | **Vietnamese localization** (date format, VND currency, status labels) | shadcn-admin tiếng Anh |
+| **U10** | **Slide-in animation** cho Drawer | shadcn-admin dùng modal dialog không animate |
+| **U11** | **Bottom tab bar** cho Worker Portal (mobile-first) | shadcn-admin chỉ desktop |
+| **U12** | **Per-role nav filtering** (HR_MANAGER thấy Payroll, WORKER thấy Payslip) | shadcn-admin hardcode nav |
+
+**File TypeScript đã tạo (xem `src/shared/` + `src/app/(portal)/`):**
+
+```
+src/shared/
+├── styles/tokens.ts                       # HRP Orange palette + semantic + component tokens
+├── utils/cn.ts                            # tailwind-merge stub
+└── ui/
+    ├── entity-card/entity-card.tsx        # Card + Grid components
+    ├── data-table/
+    │   ├── data-table.tsx                 # TanStack wrapper + Toolbar + Pagination
+    │   └── use-table-url-state.ts         # URL-synced state hook
+    ├── view-toggle/view-toggle.tsx        # Card/Table toggle + URL hook
+    ├── sheet/slide-out-drawer.tsx         # Right-side animated drawer
+    └── role-guard/role-guard-layout.tsx   # 3-portal layout + nav filtering
+src/app/(portal)/
+├── admin/tickets/page.tsx                 # Demo M7 (Card + Table + Drawer + Bulk)
+└── vendor/projects/page.tsx               # Demo Vendor (Card grid + KPI)
+```
+
+**Đặc tả quan trọng:**
+
+1. **Brand primary `#f97316`** (orange-500) — chỉ dùng cho background (button, badge bg, link hover). KHÔNG dùng làm body text color.
+2. **Text trên orange-500**: `#ffffff` (white) — chỉ dùng cho button ≥ 18px BOLD, icon ≥ 24px.
+3. **Body text / link**: dùng `orange-700 (#c2410c)` — contrast 4.7:1 trên white (WCAG AA pass).
+4. **Card border hover**: `orange-300` — đủ nổi bật, không gây rối.
+5. **Selection state**: card + table dùng `orange-50` background + `orange-500` border.
+6. **Focus ring**: `orange-200` ring-2 ring-offset-2 (keyboard accessible).
+7. **Empty state**: icon `text-slate-300` + text `text-slate-700` (không dùng orange để tránh over-brand).
+8. **Drawer backdrop**: `bg-slate-900/40 backdrop-blur-[2px]` (mờ nhẹ, nhìn thấy table bên dưới).
+9. **Bulk action bar**: `bg-orange-50 border-orange-200` (active state, nổi bật nhưng không aggressive).
+10. **Số tiền VND**: format `Intl.NumberFormat('vi-VN')` + ` ₫` suffix.
+11. **Date**: format `vi-VN` locale + `toLocaleDateString/toLocaleString`.
+12. **URL state** đồng bộ: `?view=card|table&page=1&pageSize=20&type=ADVANCE_SALARY&status=PENDING` — share link work.
+
+**DoD Component Library:**
+
+- [x] 5 reusable components (EntityCard, DataTable, ViewToggle, SlideOutDrawer, RoleGuardLayout)
+- [x] HRP Orange tokens (primitive → semantic → component)
+- [x] WCAG-compliant variants (orange-700 cho text, white-on-orange-500 chỉ cho button bold)
+- [x] URL-synced state cho table + view mode
+- [x] Bulk selection (card + table unified)
+- [x] 3 portal layouts (admin / worker / vendor)
+- [x] Slide-in animation cho drawer
+- [x] Vietnamese localization (date, VND, status labels)
+- [x] 2 demo pages showcase (admin/tickets + vendor/projects)
 
 ### 4.6. Auth: OTP baseline + Zalo feature flag (SỬA lỗi upsert mù của v2.1)
 
