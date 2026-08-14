@@ -271,6 +271,17 @@
   .steps .s b { display: block; font-size: 15px; }
   .steps .s span { font-size: 13.5px; color: var(--ink2); }
 
+  /* FIX: diagram trong .s (step) phải chiếm phần còn lại của flex row.
+     Wrapper div (không class) giữa .s và .diagram phải full width,
+     còn .diagram tự co theo nội dung nhưng vẫn stretch theo wrapper. */
+  .steps .s > div:not(.diagram):not([class]) {
+    flex: 1 1 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .steps .s .diagram { width: 100%; min-width: 0; align-self: stretch; }
+
   /* ═══════ BLOCK RULES ═══════ */
   .block { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
   .block h4 { margin: 0 0 6px; font-size: 15px; font-weight: 800; }
@@ -402,8 +413,19 @@
     margin: 0; font-size: 13px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
   }
-  .diagram .mermaid { text-align: center; min-width: 600px; }
+  .diagram pre.mermaid svg {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+  }
+  @media (max-width: 760px) {
+    .diagram pre.mermaid { display: block; }  /* mobile: cho SVG overflow-x scroll ngang */
+  }
   @media (max-width: 760px) {
     .diagram { padding: 12px; border-radius: 12px; }
     .diagram .mermaid { min-width: 700px; }  /* mobile: scroll ngang, không zoom */
