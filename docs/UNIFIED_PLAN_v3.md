@@ -1,7 +1,7 @@
 # HRP SYSTEM — UNIFIED PROJECT PLAN (v3.0)
 ## Hệ thống Quản trị Nguồn Nhân lực & Cung ứng Nhân lực
 
-> **Phiên bản:** 3.3 (tiếp thu Báo cáo Đánh giá Khả thi + bài học Odoo HR + bài học Viet-ERP VN compliance + bài học HRM_SYSTEM ticket workflow + bài học shadcn-admin UI library + bài học Frappe/ERPNext DocType & Workflow & Standalone)
+> **Phiên bản:** 3.3 (tiếp thu Báo cáo Đánh giá Khả thi + bài học Odoo HR + bài học Viet-ERP VN compliance + bài học HRM_SYSTEM ticket workflow + bài học shadcn-admin UI library + bài học Frappe/ERPNext DocType & Workflow & Standalone + bài học Odoo CE CRM/Project/hr_attendance & Worker Portal decoupled)
 > **Ngày:** 14/08/2026
 > **Trạng thái:** Draft - Chờ phê duyệt
 
@@ -124,6 +124,31 @@
 - Standalone .exe qua Tauri (Wave 5 — sau khi cloud ổn định)
 
 **LƯU Ý quan trọng:** Repo `frappe/erpnext` hiện đại đã **DEPRECATED HR/Payroll**, chuyển sang `frappe/hrms`. Reference Frappe HR/Payroll phải dùng `frappe/hrms` (đã update trong §12.5.4).
+
+### 0.1.6. Thay đổi v3.3 (bổ sung từ bài học Odoo CE — CRM/Project/hr_attendance, ERD, Worker Portal decoupled)
+
+| # | Bổ sung cho V3 | Nguồn Odoo |
+|---|----------------|------------|
+| 72 | **`docs/erd-crm-to-hr.md`** — ERD 7 tầng CRM→HR pipeline (Mermaid + PostgreSQL DDL) | Odoo `crm.lead` + `project.project` + `project.task` |
+| 73 | **`staffing_order_slots` table** — tách riêng (1 order → N slots theo vị trí/ca/số lượng) | Odoo gộp `project.task`. HRP tách để vendor/HR query "cần bao nhiêu người" |
+| 74 | **`client_companies` table** độc lập (không gộp `companies` HRP self) | HRP có nhiều client vs 1 HRP company. Tách rõ |
+| 75 | **`employment_contracts` state machine** Negotiation → Signed → Active → Terminated | Odoo Enterprise `hr.contract` |
+| 76 | **`assigned_rate_vnd` + `assigned_multiplier`** snapshot trên assignment | Odoo lưu `hourly_cost` master. HRP snapshot chống đổi rate ảnh hưởng history |
+| 77 | **`workers` 3 vòng đời riêng** (`employmentStatus` vs `profileStatus` vs `submissionStatus`) | Odoo 1 `active` flag. HRP tách rõ "đã verify CCCD" vs "đang làm việc" |
+| 78 | **`outsourcing_projects.status`** state machine DRAFT/ACTIVE/PAUSED/COMPLETED/CANCELLED | Odoo Project đơn giản |
+| 79 | **`timesheet_lines.source`** enum: DEVICE/GPS_SELFIE/MANUAL/ADJUSTMENT | Odoo chỉ `check_in/check_out`. HRP track nguồn cho audit |
+| 80 | **`timesheet_lines.anomaly_type`** enum (MISSING_CHECKOUT/INVALID_CODE/etc) | Odoo không có |
+| 81 | **`staffing_order_slots.slots_filled`** denormalized + trigger update | Odoo `count()` query. HRP denormalize cho Vendor Portal scan |
+| 82 | **`docs/worker-portal-api.md`** — 7 Worker API endpoints với field-level filtering (ẩn BHXH/PIT/rate) | Bổ sung từ yêu cầu "Worker app cho lao động phổ thông" |
+| 83 | **Worker Portal UX** viec3mien.vn style: font 18px+, contrast 10:1+, CTA 56px, 1 cột, bottom tab | Bổ sung |
+| 84 | **Decoupled API architecture** 3 cổng (Admin `/api/admin/*`, Worker `/api/m/*`, Vendor `/api/vendor/*`) | Odoo monolithic. HRP tách rõ để enforce RBAC + field filter |
+| 85 | **Worker scope middleware** — MỌI worker query `WHERE workerId = session.id` | Bổ sung (Odoo không enforce) |
+| 86 | **`serializePayslipForWorker`** — chỉ trả NET, KHÔNG trả BHXH/PIT/taxable income | Compliance: lao động phổ thông không hiểu breakdown |
+
+**Phiên bản 3.3.3** — Bổ sung 15 entries (72–86) từ bài học Odoo CE (`odoo/odoo`). Đề xuất:
+- ERD 7 tầng CRM → HR pipeline (`docs/erd-crm-to-hr.md`)
+- Worker Portal API decoupled với field-level filtering (`docs/worker-portal-api.md`)
+- 10 cải tiến schema O1-O10 (staffing_order_slots, employment_contracts, etc.)
 
 ### 0.2. Các điểm review KHÔNG tiếp thu / tiếp thu có điều chỉnh
 
@@ -545,6 +570,180 @@ src/app/(portal)/
 - [x] Slide-in animation cho drawer
 - [x] Vietnamese localization (date, VND, status labels)
 - [x] 2 demo pages showcase (admin/tickets + vendor/projects)
+
+#### 4.5.2. Worker Portal UX — Decoupled cho lao động phổ thông (cập nhật v3.3)
+
+> Phân tích từ Odoo CE (`odoo/odoo`) — đặc biệt `addons/crm/models/crm_lead.py` (CRM stage state machine), `addons/project/models/project_project.py` (Project từ Customer), `addons/hr_attendance/models/hr_attendance.py` (check_in/check_out/worked_hours).
+>
+> Reference UX: [viec3mien.vn](https://viec3mien.vn/) — việc làm 3 miền, layout đơn giản cho lao động phổ thông Việt Nam.
+
+**Triết lý thiết kế Worker Portal:**
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  WORKER PORTAL — chỉ 3 use case                               │
+│                                                              │
+│  1. 📅 Xem ca làm (shift hôm nay + tuần này)                │
+│  2. 💰 Xem phiếu lương (tạm tính + 3 tháng gần nhất)        │
+│  3. 🔔 Đọc thông báo quan trọng (HR push)                    │
+│                                                              │
+│  KHÔNG có:                                                   │
+│  - Tìm việc mới (HRP không phải job portal)                  │
+│  - Sửa hồ sơ chi tiết (HR sửa offline)                      │
+│  - Xem payroll breakdown (PIT/BHXH) — chỉ thấy NET          │
+│  - Đánh giá khách hàng/vendor                                │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**ERD 7 tầng CRM → HR (xem `docs/erd-crm-to-hr.md`):**
+
+```
+ClientCompany ──CRM Lead──→ CrmLead ──WON──→ OutsourcingProject
+                                                │
+                                                ├──StaffingOrder──→ StaffingOrderSlot
+                                                │                         │
+                                                │                         ▼
+                                                │              ProjectAssignment ←── Worker
+                                                │                         │
+                                                │                         ▼
+                                                │                  TimesheetLine
+                                                │                         │
+                                                │                         ▼
+                                                └──TimesheetPeriod──→ PayRun──→ WorkerPayResult
+```
+
+**Decoupled API Architecture (xem `docs/worker-portal-api.md` chi tiết):**
+
+```
+Admin Portal (/admin/*)    ──fetch──→ /api/admin/*  ──┐
+Worker Portal (/m/*)       ──fetch──→ /api/m/*      ──┼──→ Domain Services ──→ PostgreSQL
+Vendor Portal (/vendor/*)  ──fetch──→ /api/vendor/* ──┘
+```
+
+**7 Worker API endpoints (tất cả trả JSON flat + tiếng Việt + status icon):**
+
+| Endpoint | Mục đích | Fields top-level | Hidden từ worker |
+|----------|----------|------------------|------------------|
+| `GET /api/m/home` | "Hôm nay của tôi" | worker, today, thisMonth, unreadCount, quickActions | clientCompanyId, vendorId, agreedRateVnd |
+| `GET /api/m/shifts?week=` | Lịch tuần | weekRange, shifts[], summary | assignedRateVnd, projectCode |
+| `GET /api/m/payslips?month=` | Phiếu lương | earnings[], totalEarnings, netPay, history[] | bhxhAmount, pitAmount, taxableIncome, payRunId |
+| `GET /api/m/notifications` | Thông báo | unreadCount, notifications[] | actorRole, retryCount, scheduledAt |
+| `POST /api/m/notifications/{id}/read` | Đánh dấu đã đọc | 204 No Content | — |
+| `GET /api/m/tickets` | Đơn của tôi | tickets[] | workerId, reviewerId, version |
+| `GET /api/m/profile` | Hồ sơ | fullName, phone, nationalId (mask), bankAccount (masked) | cccdChipData, internalNotes, riskStatus |
+
+**UX Principles (viec3mien.vn style):**
+
+| Nguyên tắc | HRP v3.3 áp dụng |
+|------------|-------------------|
+| **Font lớn** | Body 18px (HRP mặc định 14px). Headline 28-32px. Worker Portal dùng `text-lg` (18px) cho body |
+| **Contrast cao** | Body `text-slate-900` (15.8:1). Secondary `text-slate-700` (10:1). Không dùng orange làm text |
+| **Layout 1 cột** | Mobile-first, max-width 480px. Bottom tab bar (đã có trong RoleGuardLayout worker variant) |
+| **CTA lớn** | Button height 56px (HRP mặc định 36-44px). Full-width trên mobile |
+| **Icon trước text** | Emoji 📅 💰 🔔 ngay đầu tiêu đề (worker dễ scan) |
+| **Tap zone lớn** | ≥ 48×48px (WCAG AAA). HRP mặc định 36×36 — sẽ tăng cho Worker Portal |
+| **Ít text** | Mỗi màn tối đa 30 từ visible. Worker không đọc long-form |
+| **Big number** | Số tiền `text-3xl font-bold` (worker cần thấy rõ số lương) |
+| **Status icon rõ** | 🟢 = đang làm, ✅ = xong, 🔴 = vấn đề, 🟡 = tạm tính, ⏳ = chờ |
+| **No nested menu** | Max 3 cấp navigation. Tab bar = home root, 4 tabs |
+
+**Mockup Worker Home (`/m`):**
+
+```
+┌──────────────────────────────────────────┐
+│  HRP                              ☰ Menu │
+│  Xin chào Nguyễn Văn An                  │
+├──────────────────────────────────────────┤
+│                                          │
+│  HÔM NAY — Thứ Sáu, 14/08/2026          │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │ 🟢 ĐANG LÀM VIỆC                  │  │
+│  │                                    │  │
+│  │ Ca sáng                            │  │
+│  │ 07:00 – 16:00                      │  │
+│  │                                    │  │
+│  │ KCN Tân Bình, Q.7                  │  │
+│  │ Đóng gói hàng hóa                  │  │
+│  │                                    │  │
+│  │ Vào: 07:05    Ra dự kiến: 16:00    │  │
+│  │                                    │  │
+│  │ [    CHẤM CÔNG RA    ]            │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  THÁNG NÀY — Tháng 8                     │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │ 11/14 ngày    💰 5.280.000 đ      │  │
+│  │ làm việc      tạm tính             │  │
+│  └────────────────────────────────────┘  │
+│                                          │
+│  🔔 THÔNG BÁO (2 chưa đọc)               │
+│                                          │
+│  [💰] Đã trả lương tháng 7               │
+│       5.120.000 đ — 2 ngày trước         │
+│                                          │
+│  [⏰] Đổi ca ngày mai                    │
+│       13h-22h — 3 giờ trước              │
+│                                          │
+├──────────────────────────────────────────┤
+│  [🏠 Trang chủ]  [📅 Ca]  [💰 Lương]  [📝 Đơn] │
+└──────────────────────────────────────────┘
+```
+
+**Cải tiến cho HRP từ Odoo (10 điểm O1-O10 — xem `docs/erd-crm-to-hr.md` chi tiết):**
+
+| # | Bổ sung cho HRP | Tại sao |
+|---|------------------|---------|
+| **O1** | `staffing_order_slots` table tách riêng (1 order → N slots theo vị trí/ca/số lượng) | Odoo gộp `project.task`. HRP cần query "cần bao nhiêu người cho vị trí X" |
+| **O2** | `client_companies` table độc lập (không gộp vào `companies` HRP self) | HRP có nhiều client companies vs 1 HRP company. Tách rõ |
+| **O3** | `employment_contracts` state machine Negotiation → Signed → Active → Terminated | Odoo Enterprise có. HRP cần build cho VN compliance |
+| **O4** | `assigned_rate_vnd` + `assigned_multiplier` snapshot trên assignment | Odoo lưu `hourly_cost` master. HRP snapshot để tránh đổi rate ảnh hưởng history |
+| **O5** | `workers.employment_status` vs `profile_status` vs `submission_status` (3 vòng đời) | Odoo 1 flag. HRP tách rõ |
+| **O6** | `outsourcing_projects.status` state machine riêng | Odoo đơn giản. HRP cần DRAFT/ACTIVE/PAUSED/COMPLETED/CANCELLED |
+| **O7** | `timesheet_lines.source` enum: DEVICE/GPS_SELFIE/MANUAL/ADJUSTMENT | Odoo chỉ `check_in/check_out`. HRP track nguồn cho audit |
+| **O8** | `timesheet_lines.anomaly_type` enum | Odoo không có. HRP flag MISSING_CHECKOUT/INVALID_CODE/etc |
+| **O9** | `staffing_order_slots.slots_filled` denormalized + trigger update | Odoo `count()` query. HRP denormalize cho Vendor Portal scan nhanh |
+| **O10** | `outsourcing_projects.billing_terms` JSONB | Odoo tách `account.payment.term`. HRP gộp JSON cho MVP |
+
+**Security Boundaries (quan trọng nhất):**
+
+```typescript
+// MỌI Worker API PHẢI enforce:
+1. session.role === 'WORKER' (reject nếu khác)
+2. WHERE workerId = session.id (worker chỉ xem của mình)
+3. Field-level filter (serializePayslipForWorker bỏ BHXH/PIT/rate)
+4. Rate limit 30 req/min (mobile data)
+5. Không expose error stack trace (chỉ friendly message tiếng Việt)
+```
+
+**Field-Level Filtering — Ví dụ quan trọng nhất (Payslip):**
+
+```typescript
+// Worker CHỈ thấy NET, KHÔNG thấy breakdown:
+{
+  netPay: '5.280.000 đ',       // ← worker thấy
+  // ❌ KHÔNG trả:
+  // bhxhAmount, bhytAmount, bhtnAmount
+  // pitAmount, taxableIncome, taxBracket
+  // vendorPayRate, clientBillRate
+  // payRunId, payRunCode
+}
+```
+
+> **Lý do compliance:** BHXH/PIT đã được trừ tự động vào gross trước khi tính NET. Nếu trả breakdown cho worker (lao động phổ thông), dễ gây hiểu lầm "tại sao lương em bị trừ?". HR/Accountant xem breakdown ở Admin Portal.
+
+**DoD Worker Portal:**
+
+- [x] ERD 7 tầng CRM → HR pipeline
+- [x] Decoupled API architecture (Admin / Worker / Vendor tách biệt)
+- [x] 7 Worker API endpoints với field-level filtering
+- [x] UX principles viec3mien.vn (font lớn, contrast cao, 1 cột, CTA lớn)
+- [x] Mockup Worker Home
+- [x] Security boundaries (worker scope + field filter + rate limit)
+- [x] 10 cải tiến O1-O10 từ Odoo
+- [x] Serializer pattern (ẩn BHXH/PIT/rate khỏi worker)
+- [ ] Implement thực tế: chờ Wave 3 (Worker Portal release)
 
 ### 4.6. Auth: OTP baseline + Zalo feature flag (SỬA lỗi upsert mù của v2.1)
 
