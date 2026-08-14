@@ -1,7 +1,7 @@
 # HRP SYSTEM — UNIFIED PROJECT PLAN (v3.0)
 ## Hệ thống Quản trị Nguồn Nhân lực & Cung ứng Nhân lực
 
-> **Phiên bản:** 3.2 (tiếp thu Báo cáo Đánh giá Khả thi + bài học Odoo HR + bài học Viet-ERP VN compliance)
+> **Phiên bản:** 3.3 (tiếp thu Báo cáo Đánh giá Khả thi + bài học Odoo HR + bài học Viet-ERP VN compliance + bài học HRM_SYSTEM ticket workflow)
 > **Ngày:** 14/08/2026
 > **Trạng thái:** Draft - Chờ phê duyệt
 
@@ -64,6 +64,24 @@
 | 35 | **`payrollConfigRepo.loadTaxConfig(asOfDate)`** — load snapshot effective-dated từ `payroll_config` + `tax_brackets` | Odoo `res.config_settings` |
 | 36 | **File `src/shared/utils/money.ts`**: BigInt helpers (`mulRateVnd`, `roundHalfDownVnd`, `formatVnd`) | Internal |
 | 37 | **`prisma/schema-v3.1-patches.prisma`** patch file — copy từng block vào schema chính | Internal |
+
+### 0.1.3. Thay đổi v3.3 (bổ sung từ bài học `W-Codyz/HRM_SYSTEM` — Ticket workflow)
+
+| # | Bổ sung cho V3 (Module M7 — Tickets: Phản ánh, Tạm ứng) | Nguồn HRM_SYSTEM |
+|---|-----------------------------------------------------------|-------------------|
+| 38 | **`prisma/schema-m7-tickets.prisma`**: `Ticket` (7 status × 8 action), `TicketHistory` (audit log mỗi transition), `TicketComment`, `TicketNotification` (DB queue), `AuditLog` (chung, ADR-014) | HRM `leave_requests` + `notifications` |
+| 39 | **`src/domains/attendance/ticket.service.ts`** — Domain service với state machine typed (`TRANSITIONS: Record<TicketStatus, Partial<Record<TicketAction, ...>>>`) | HRM `leave_requests.php` (state machine) |
+| 40 | **Optimistic locking** qua `version` field + `updateMany({ where: { id, version } })` chống race condition | Cải tiến từ HRM `WHERE status = 'pending'` |
+| 41 | **2-step approval cho Advance Salary**: HR confirm (`HR_APPROVED`) → Accountant chi (`APPROVED` → `PAID`) | Cải tiến từ HRM 1-step |
+| 42 | **6 role queue**: WORKER, HR_STAFF (PENDING), HR_MANAGER (PENDING/HR_APPROVED), ACCOUNTANT (HR_APPROVED), PM, ADMIN (all) | Cải tiến từ HRM admin/manager/employee |
+| 43 | **Idempotency** qua `x-idempotency-key` header + lưu `metadata.idempotencyKey` | Bổ sung (HRM không có) |
+| 44 | **Auto SLA** qua `slaDueAt` (LOW 72h, NORMAL 48h, HIGH 24h, URGENT 4h) | Bổ sung |
+| 45 | **6 API endpoints**: POST /api/tickets, GET list, GET [id], POST [id]/{approve,reject,cancel} | Bổ sung route theo Next.js App Router |
+| 46 | **`src/domains/attendance/ticket.service.test.ts`** — 16 unit tests (vitest, in-memory mock) covering: create happy/idempotency/validation, approve 2-step & fast-track, reject, cancel (own/other/terminal), pay (right role/wrong type), concurrent update | Bổ sung (HRM không có test) |
+| 47 | **BigInt** cho `amountVnd`, `deductionVnd` (thay `decimal(12,2)` của HRM) | Cải tiến theo ADR-010 |
+| 48 | **Reject bắt buộc có lý do** (lưu `note` vào `ticket_history`) | Cải tiến (HRM `review_notes` optional) |
+
+**Phiên bản 3.3.0** — Bổ sung 11 entries (38–48) từ bài học `W-Codyz/HRM_SYSTEM`. Schema M7 + domain service + route handlers + unit tests đã có.
 
 ### 0.2. Các điểm review KHÔNG tiếp thu / tiếp thu có điều chỉnh
 
@@ -1721,6 +1739,123 @@ NLĐ: gross 25.000.000đ/tháng, 1 NPT
 
 
 
+#### 12.5.3. Bài học từ `W-Codyz/HRM_SYSTEM` (PHP/SQL) — Ticket workflow & approval — cập nhật v3.3
+
+> Phân tích từ repo tham khảo PHP/MySQL: `backend/api/leave_requests.php` (state machine `pending → approved/rejected/cancelled`), `database/hrm_system.sql` (4 bảng: `leave_requests`, `leave_types`, `leave_balance`, `users` với role `admin/manager/employee`).
+
+**Những gì HRM_SYSTEM làm TỐT (giữ lại):**
+
+| Pattern HRM_SYSTEM | V3 HRP đã học & cải tiến |
+|---|---|
+| State machine rõ ràng `pending → approved/rejected/cancelled` | V3 có state machine **typed** qua `TRANSITIONS` map (compile-time safe) + 7 trạng thái (thêm `HR_APPROVED`, `PAID`, `CLOSED`) |
+| UPDATE có guard `WHERE status = 'pending'` (atomic transition) | V3 dùng **optimistic locking** (`version` field) + `updateMany({ where: { id, version } })` chống race condition |
+| 2 role approve: `admin` + `manager` | V3 phân **6 role** (HR_STAFF, HR_MANAGER, ACCOUNTANT, ADMIN, PM, WORKER) + ROLE_QUEUE cho UI |
+| `beginTransaction` cho approval (update request + leave balance) | V3 dùng Prisma `$transaction` cho MỌI action ghi, không chỉ approval |
+| `notifications` helper fire-and-forget | V3 lưu DB `ticket_notifications` (retry queue), channel `IN_APP/EMAIL/SMS/ZALO` |
+| Cancel chỉ khi `pending`, employee chỉ cancel của mình | V3 tương tự nhưng guard qua `guardTransition()` — chỉ `WORKER` mới được `CANCEL` |
+| Reviewer ghi `reviewed_by`, `reviewed_at`, `review_notes` | V3 ghi **mọi transition** vào `ticket_history` (không chỉ final) + `audit_logs` chung |
+
+**Những gì V3 BỔ SUNG so với HRM_SYSTEM:**
+
+| # | Bổ sung cho V3 (Module M7) | Tại sao |
+|---|----------------------------|---------|
+| **T1** | **2-step approval cho Advance Salary** (HR confirm → Accountant chi) | HRM_SYSTEM chỉ có 1-step. HRP v3 tách **quyết định** (HR xác nhận hợp lệ) vs **chi tiền** (Accountant chi từ quỹ) |
+| **T2** | **3 loại ticket** trong 1 bảng: `TIMESHEET_DISPUTE`, `ADVANCE_SALARY`, `LEAVE_REQUEST` + `OTHER` | HRM_SYSTEM chỉ có `leave_requests`. HRP v3 hợp nhất để UI quản lý 1 chỗ |
+| **T3** | **`ticket_history` table riêng** — log MỌI transition (CREATE, REVIEW, APPROVE_HR, APPROVE_FINAL, REJECT, CANCEL, PAY, CLOSE, COMMENT) | HRM_SYSTEM không có history — chỉ ghi đè `reviewed_*` 1 lần. HRP v3 cần audit chi tiết để tranh chấp |
+| **T4** | **`ticket_notifications` table** (DB-backed queue) | HRM_SYSTEM dùng helper in-process. HRP v3 cần retry được khi Zalo/SMS fail |
+| **T5** | **Idempotency** qua `x-idempotency-key` header | HRM_SYSTEM không có. HRP v3 theo ADR-014 cho mọi POST |
+| **T6** | **BigInt** cho `amountVnd`, `deductionVnd` | HRM_SYSTEM dùng `decimal(12,2)` (MySQL). HRP v3 chuẩn VND nguyên theo ADR-010 |
+| **T7** | **Optimistic locking** `version` field | HRM_SYSTEM dùng `WHERE status = 'pending'` (chỉ chống race trên field đó). HRP v3 chống race trên MỌI field |
+| **T8** | **Role-based QUEUE**: HR_STAFF chỉ thấy `PENDING`, ACCOUNTANT chỉ thấy `HR_APPROVED` | HRM_SYSTEM filter toàn bộ + manual check. HRP v3 có `ROLE_QUEUE` map → query gọn |
+| **T9** | **Auto SLA** qua `slaDueAt` (LOW 72h, NORMAL 48h, HIGH 24h, URGENT 4h) | HRM_SYSTEM không có. HRP v3 có cron check `isOverdue` + notify manager |
+| **T10** | **`audit_logs` bảng chung** (ADR-014) — mọi entity | HRM_SYSTEM chỉ log `reviewed_*`. HRP v3 audit **mọi** entity |
+| **T11** | **Worker cancel ticket** (HRM_SYSTEM có, HRP v3 giữ) | Tương tự |
+| **T12** | **`reject` bắt buộc có lý do** | HRM_SYSTEM `review_notes` optional. HRP v3 bắt buộc (audit) |
+
+**State machine so sánh:**
+
+```
+HRM_SYSTEM:                              HRP v3 (M7):
+pending ──approve──→ approved            pending ──APPROVE_HR──→ hr_approved ──APPROVE_FINAL──→ approved
+   │                                       │                       │                            │
+   │                                       │                       └──────REJECT──→ rejected    ├─PAY─→ paid ──CLOSE─→ closed
+   │                                       │                                                                              
+   └──reject──→ rejected                  └──REJECT────────────→ rejected                       
+                                          ──CANCEL (worker)──→ cancelled                      
+                                          (PENDING/HR_APPROVED)                                 
+```
+
+**API Endpoints M7:**
+
+| Method | Path | Actor | Mục đích |
+|---|---|---|---|
+| `POST` | `/api/tickets` | Worker/HR | Tạo ticket mới (idempotent) |
+| `GET` | `/api/tickets` | All | List theo role + filter |
+| `GET` | `/api/tickets/[id]` | All (scope) | Chi tiết + history |
+| `POST` | `/api/tickets/[id]/approve` | HR/Accountant | Approve theo state machine |
+| `POST` | `/api/tickets/[id]/reject` | HR/Accountant | Reject (bắt buộc lý do) |
+| `POST` | `/api/tickets/[id]/cancel` | Worker (chủ) | Tự rút ticket |
+
+**File TypeScript đã tạo (xem `src/domains/attendance/` + `app/api/tickets/`):**
+
+```
+src/domains/attendance/
+├── ticket.service.ts                    # Domain service + state machine
+├── ticket.service.test.ts               # 12+ unit tests (vitest)
+└── session.ts                           # Auth helper cho Route Handler
+app/api/tickets/
+├── route.ts                             # POST + GET
+├── [id]/route.ts                        # GET single
+├── [id]/approve/route.ts                # POST approve / pay
+├── [id]/reject/route.ts                 # POST reject
+└── [id]/cancel/route.ts                 # POST cancel
+prisma/schema-m7-tickets.prisma           # Schema M7 (Ticket, TicketHistory, TicketComment, TicketNotification, AuditLog)
+```
+
+**Đặc tả quan trọng:**
+
+1. **State machine typed**: `TRANSITIONS: Record<TicketStatus, Partial<Record<TicketAction, ...>>>` — TypeScript exhaustiveness check ngăn quên transition.
+2. **Optimistic lock**: Mỗi `updateMany` có `WHERE version = currentVersion` → throw `CONCURRENT_UPDATE` nếu conflict.
+3. **Audit đa lớp**: `ticket_history` (riêng ticket) + `audit_logs` (chung, ADR-014) → query 2 chiều.
+4. **Notification queue**: Insert row `ticket_notifications` với `status='PENDING'` → worker process gửi sau (QStash).
+5. **Reject bắt buộc lý do**: Validate ngay đầu `rejectTicket()`, lưu vào `ticket_history.note`.
+6. **Worker scope**: Worker chỉ thấy `tickets WHERE workerId = self`; HR/Accountant thấy theo `ROLE_QUEUE`.
+7. **2-step cho ADVANCE**: HR_APPROVED → APPROVED do Accountant, sau đó mới PAY (terminal PAID).
+
+**DoD Module M7 (ticket sub-module):**
+
+- [x] Schema `tickets`, `ticket_history`, `ticket_comments`, `ticket_notifications`, `audit_logs`
+- [x] State machine typed với 7 status × 8 action
+- [x] Prisma `$transaction` wrap MỌI mutation
+- [x] Optimistic lock qua `version`
+- [x] Idempotency qua header `x-idempotency-key`
+- [x] Audit log mỗi transition (2 lớp: `ticket_history` + `audit_logs`)
+- [x] Notification queue lưu DB
+- [x] Reject bắt buộc lý do
+- [x] Worker scope (chỉ thấy ticket của mình)
+- [x] 12+ unit tests pass (Vitest, in-memory mock)
+- [x] Route handlers với HTTP status code mapping đúng (400/403/404/409)
+- [x] BigInt cho `amountVnd`, `deductionVnd`
+
+**Test cases chính (xem `ticket.service.test.ts`):**
+
+1. CREATE TIMESHEET_DISPUTE happy path
+2. CREATE idempotency (cùng key → trả về ticket cũ)
+3. VALIDATION amountVnd = 0
+4. APPROVE HR_STAFF (advance) → HR_APPROVED
+5. APPROVE ACCOUNTANT → APPROVED
+6. APPROVE WORKER → FORBIDDEN
+7. APPROVE HR_MANAGER fast-track (LEAVE/DISPUTE) → APPROVED
+8. REJECT HR PENDING → REJECTED (terminal)
+9. REJECT thiếu lý do → VALIDATION
+10. CANCEL Worker PENDING → CANCELLED
+11. CANCEL Worker ticket người khác → FORBIDDEN
+12. CANCEL Worker ticket terminal → INVALID_TRANSITION
+13. PAY ACCOUNTANT advance APPROVED → PAID
+14. PAY HR advance → FORBIDDEN
+15. PAY trên LEAVE_REQUEST → INVALID_TRANSITION
+16. CONCURRENT_UPDATE khi version mismatch
+
 ### 12.6. Statements (đối soát — 2 luồng độc lập)
 
 ```sql
@@ -1773,6 +1908,11 @@ CREATE TABLE client_statement_lines (      -- approved công × client bill rate
 | Import | `/api/attendance/periods/:id/approve` / `/lock` | POST | Chốt kỳ (LOCK = bất biến) |
 | Check-in | `/api/attendance/checkin` | POST | workerId từ JWT; capturedAt/receivedAt/risk flag |
 | Statement | `/api/statements/vendor/:id/confirm` / `/dispute` | POST | Vendor portal; audit 2 chiều |
+| **Ticket** | `/api/tickets` | POST / GET | Worker tạo / HR list (role-scoped) |
+| **Ticket** | `/api/tickets/:id` | GET | Chi tiết + history |
+| **Ticket** | `/api/tickets/:id/approve` | POST | HR/Accountant approve (2-step cho advance) |
+| **Ticket** | `/api/tickets/:id/reject` | POST | HR/Accountant reject (bắt buộc lý do) |
+| **Ticket** | `/api/tickets/:id/cancel` | POST | Worker tự rút |
 | Payroll | `/api/payroll/pay-runs` | POST | Tạo pay run (QStash bulk) |
 | Payroll | `/api/payroll/pay-runs/:id/calculate` / `/lock` | POST | Golden tests bắt buộc |
 | Payslip | `/api/payslips/:id` | GET | Snapshot (worker xem của mình) |

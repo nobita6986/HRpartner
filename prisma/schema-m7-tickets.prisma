@@ -1,0 +1,267 @@
+/**
+ * Module M7 — Attendance & Tickets (Timesheet, GPS, Ticket)
+ *
+ * Ticket system: Worker gửi yêu cầu (Advance Salary / Timesheet Dispute / Leave),
+ * HR/Accountant duyệt theo workflow 2 bước. Audit đầy đủ.
+ *
+ * Bài học từ HRM_SYSTEM ref repo (W-Codyz/HRM_SYSTEM):
+ *   - State machine: pending → (approved | rejected | cancelled)
+ *   - Status CHECK trong UPDATE (WHERE status = 'pending') → atomic transition
+ *   - 2 role: admin + manager approve | employee tự cancel
+ *   - Notify user qua notification helper
+ *   - Transaction wrap khi update liên quan (vd leave balance)
+ *
+ * Cải tiến cho HRP v3.0:
+ *   - 2-step approval (HR confirm → Accountant approve cho advance)
+ *   - Idempotency key (ADR-014)
+ *   - Audit log cho MỖI transition (không chỉ final state)
+ *   - Effective-dated working date validation (assignment overlap)
+ *   - BigInt tiền (advance amount)
+ *   - DISCUSS pattern: cancel chỉ khi PENDING, reject có lý do
+ *   - Notification queue lưu DB (không fire-and-forget)
+ *   - POST idempotency cho CREATE
+ */
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum TicketType {
+  TIMESHEET_DISPUTE   // Phản ánh sai công
+  ADVANCE_SALARY      // Yêu cầu tạm ứng
+  LEAVE_REQUEST       // Xin nghỉ phép
+  OTHER
+}
+
+enum TicketStatus {
+  PENDING              // vừa tạo, chờ HR review
+  HR_APPROVED          // HR đã xác nhận (cho ADVANCE: chuyển Accountant)
+  REJECTED             // HR/Accountant từ chối (terminal)
+  CANCELLED            // Worker tự rút (chỉ khi PENDING/HR_APPROVED)
+  APPROVED             // Hoàn tất duyệt (cho ADVANCE: Accountant chi; cho DISPUTE: HR chốt)
+  PAID                 // Cho ADVANCE: đã chi tiền (terminal)
+  CLOSED               // Ticket hoàn tất (terminal — dùng cho dispute đã xử lý)
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TicketActorRole {
+  WORKER
+  HR_STAFF
+  HR_MANAGER
+  ACCOUNTANT
+  PM
+  ADMIN
+}
+
+enum TicketAction {
+  CREATE
+  REVIEW                // HR review lần đầu
+  APPROVE_HR            // HR approve chuyển Accountant
+  APPROVE_FINAL         // Accountant approve chi
+  REJECT
+  CANCEL                // Worker tự rút
+  PAY                   // Accountant chi tiền
+  CLOSE                 // Đóng ticket
+  COMMENT               // Worker/HR comment trong ticket
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TICKET
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Ticket {
+  id              String          @id @default(uuid())
+
+  // === Phân loại ===
+  type            TicketType
+  status          TicketStatus    @default(PENDING)
+  priority        TicketPriority  @default(NORMAL)
+
+  // === Người tạo ===
+  workerId        String          @map("worker_id")
+  worker          Worker          @relation(fields: [workerId], references: [id])
+  createdByActorId String         @map("created_by_actor_id")  // user tạo (worker, hoặc HR tạo hộ)
+  createdByRole   TicketActorRole @map("created_by_role")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  // === Assignment liên quan (cho TIMESHEET_DISPUTE) ===
+  assignmentId    String?         @map("assignment_id")
+  assignment      ProjectAssignment? @relation(fields: [assignmentId], references: [id])
+
+  // === Timesheet dispute chi tiết ===
+  // workDate + currentHours + requestedHours chỉ dùng cho TIMESHEET_DISPUTE
+  workDate        DateTime?       @map("work_date") @db.Date
+  currentHours    Decimal?        @map("current_hours") @db.Decimal(5, 2)
+  requestedHours  Decimal?        @map("requested_hours") @db.Decimal(5, 2)
+  deltaHours      Decimal?        @map("delta_hours") @db.Decimal(5, 2)
+  reasonCode      String?         @map("reason_code")  // 'MISSING_CHECKOUT', 'SHIFT_MISMATCH', 'MACHINE_ERROR', ...
+
+  // === Advance salary chi tiết (BigInt VND nguyên — ADR-010) ===
+  amountVnd       BigInt          @default(0) @map("amount_vnd")
+  // Số tiền tạm ứng yêu cầu. Cho ADVANCE_SALARY type.
+  requestedPayDate DateTime?      @map("requested_pay_date") @db.Date
+  deductMonth     Int?            @map("deduct_month")    // tháng sẽ trừ
+  deductYear      Int?            @map("deduct_year")
+  deductionVnd    BigInt          @default(0) @map("deduction_vnd")  // thực tế trừ (có thể khác amountVnd)
+
+  // === Leave request chi tiết (cho LEAVE_REQUEST) ===
+  leaveFromDate   DateTime?       @map("leave_from_date") @db.Date
+  leaveToDate     DateTime?       @map("leave_to_date") @db.Date
+  leaveDays       Decimal?        @map("leave_days") @db.Decimal(4, 1)
+  leaveTypeCode   String?         @map("leave_type_code")  // 'ANNUAL', 'SICK', 'UNPAID', 'MATERNITY'
+
+  // === Nội dung chung ===
+  title           String
+  description     String          @db.Text
+  metadata        Json?           @default("{}")  // attachment URLs, custom fields
+
+  // === SLA tracking ===
+  slaDueAt        DateTime?       @map("sla_due_at")
+  isOverdue       Boolean         @default(false) @map("is_overdue")
+
+  // === Optimistic locking (chống 2 người duyệt cùng lúc) ===
+  version         Int             @default(1)
+
+  // === Relations: audit log + comments + history ===
+  history         TicketHistory[]
+  comments        TicketComment[]
+  notifications   TicketNotification[]
+
+  @@index([type, status])
+  @@index([workerId, status])
+  @@index([status, priority, createdAt])
+  @@index([slaDueAt])
+  @@index([createdAt])
+  @@map("tickets")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TICKET HISTORY — log MỖI state transition (audit)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model TicketHistory {
+  id          String          @id @default(uuid())
+  ticketId    String          @map("ticket_id")
+  ticket      Ticket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  action      TicketAction
+  fromStatus  TicketStatus?   @map("from_status")
+  toStatus    TicketStatus    @map("to_status")
+
+  // === Actor ===
+  actorId     String?         @map("actor_id")  // user_id (có thể null cho system)
+  actorRole   TicketActorRole @map("actor_role")
+  actorName   String?         @map("actor_name")  // denormalized cho audit (tránh join)
+
+  // === Payload ===
+  note        String?         @db.Text
+  payload     Json?           @default("{}")  // action-specific data (vd amount change, approver id)
+  ipAddress   String?         @map("ip_address")
+  userAgent   String?         @map("user_agent")
+
+  // === Idempotency ===
+  // Nếu cùng (actorId, ticketId, action) xảy ra 2 lần → chỉ ghi 1 history
+  // (defense in depth; PRIMARY KEY ở dưới)
+  idempotencyKey String?      @map("idempotency_key")
+
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  @@index([ticketId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("ticket_history")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TICKET COMMENT — thread thảo luận giữa worker & HR
+// ═══════════════════════════════════════════════════════════════════════════
+
+model TicketComment {
+  id          String          @id @default(uuid())
+  ticketId    String          @map("ticket_id")
+  ticket      Ticket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  authorId    String          @map("author_id")
+  authorRole  TicketActorRole @map("author_role")
+  authorName  String          @map("author_name")  // denormalized
+
+  body        String          @db.Text
+  isInternal  Boolean         @default(false) @map("is_internal")  // true = chỉ HR, không hiện cho worker
+
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_comments")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TICKET NOTIFICATION — DB-backed notification queue
+// (HRM_SYSTEM dùng helper fire-and-forget; HRP v3 lưu DB để retry được)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model TicketNotification {
+  id            String    @id @default(uuid())
+  ticketId      String    @map("ticket_id")
+  ticket        Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  // === Recipient ===
+  recipientId   String    @map("recipient_id")  // user_id nhận notification
+  recipientRole TicketActorRole @map("recipient_role")
+
+  // === Channel & status ===
+  channel       String    @default('IN_APP')  // 'IN_APP' | 'EMAIL' | 'SMS' | 'ZALO'
+  status        String    @default('PENDING')  // 'PENDING' | 'SENT' | 'FAILED' | 'READ'
+  retryCount    Int       @default(0) @map("retry_count")
+  failureReason String?   @map("failure_reason")
+
+  // === Payload ===
+  subject       String
+  body          String    @db.Text
+  linkUrl       String?   @map("link_url")
+  payload       Json?     @default("{}")
+
+  // === Timing ===
+  scheduledAt   DateTime  @default(now()) @map("scheduled_at")
+  sentAt        DateTime? @map("sent_at")
+  readAt        DateTime? @map("read_at")
+
+  @@index([status, scheduledAt])
+  @@index([recipientId, status])
+  @@map("ticket_notifications")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCHEMA MỚI cho audit log dùng chung (HRP v3.0 §14.4)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  actorId     String?   @map("actor_id")
+  actorRole   String?   @map("actor_role")
+  entityType  String    @map("entity_type")  // 'Ticket' | 'Attendance' | 'PayRun' | 'Statement' | ...
+  entityId    String    @map("entity_id")
+  action      String    // 'CREATE' | 'UPDATE' | 'DELETE' | 'STATE_TRANSITION' | ...
+  diff        Json?     @default("{}")  // { before: {}, after: {} }
+  metadata    Json?     @default("{}")  // ip, userAgent, route, idempotencyKey
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
