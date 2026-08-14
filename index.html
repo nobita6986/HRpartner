@@ -799,22 +799,24 @@ flowchart LR
     <div class="diagram">
       <div class="caption">Đối soát 2 vòng — quá 3 ngày tự xác nhận</div>
 <pre class="mermaid">
-stateDiagram-v2
-  [*] --> CHO_VENDOR: HR tạo biên bản
-  CHO_VENDOR --> VENDOR_XACNHAN: Vendor xác nhận
-  CHO_VENDOR --> VENDOR_PHANDOI: Vendor phản đối (vòng 1)
-  VENDOR_PHANDOI --> HR_CHINHSUA: HR chỉnh sửa
-  VENDOR_PHANDOI --> AUTO_CONFIRM: ⏰ Quá 3 ngày không trả lời
-  HR_CHINHSUA --> CHO_VENDOR: Gửi lại (vòng 2)
-  CHO_VENDOR --> AUTO_CONFIRM
-  VENDOR_XACNHAN --> LOCKED: 🔒 Khóa biên bản
-  AUTO_CONFIRM --> LOCKED: Khóa — không ai câu giờ được
-  LOCKED --> [*]
-  note right of AUTO_CONFIRM: Phản đối tối đa 2 vòng
-Quá 2 vòng → HR Manager bắt buộc đối thoại
+flowchart TD
+  A["📝 HR tạo biên bản<br/>CHO_VENDOR"] --> B{"Vendor xem"}
+  B -->|"✅ Xác nhận"| LOCKED["🔒 Khóa biên bản<br/>HOÀN TẤT"]
+  B -->|"❌ Phản đối<br/>vòng 1"| C["⚠️ Phản đối vòng 1<br/>HR chỉnh sửa"]
+  C -->|"Gửi lại<br/>vòng 2"| A
+  C -->|"⏰ Quá 3 ngày<br/>không trả lời"| AUTO["⏰ Tự xác nhận<br/>không ai câu giờ được"]
+  A -->|"⏰ Quá 3 ngày<br/>Vendor im lặng"| AUTO
+  AUTO --> LOCKED
+  note["📌 Quy tắc: Phản đối tối đa 2 vòng.<br/>Quá 2 vòng → HR Manager bắt buộc đối thoại với Vendor."]:::rule
+  AUTO -.-> note
+  style LOCKED fill:#DCFCE7,color:#15803D,stroke:#15803D,stroke-width:2px
+  style AUTO fill:#FEF3C7,color:#B45309,stroke:#B45309,stroke-width:2px
+  style C fill:#FEF3C7,color:#B45309
+  style note fill:#FFF1E4,color:#C2410C,stroke:#F97316,stroke-width:1px,stroke-dasharray:4
 </pre>
     </div>
-</span></div></div>
+  </div>
+</div>
       <div class="s"><div><b>Trả lương &amp; hoa hồng</b><span>Bảng lương tự động theo công đã khóa + luật lao động VN (BHXH, thuế TNCN — kể cả thuế 10% cho lao động vãng lai). Tiền về đúng tài khoản đã xác thực. <b>Không bao giờ có lương âm</b> — thiếu bao nhiêu chuyển trừ kỳ sau, kế toán duyệt từng trường hợp. Hoa hồng CTV theo mốc giữ chân.</span>
     <div class="diagram">
       <div class="caption">Tính lương — không bao giờ có lương âm</div>
@@ -834,7 +836,8 @@ flowchart TD
   style G fill:#DCFCE7,color:#15803D
 </pre>
     </div>
-</div></div>
+  </div>
+</div>
     </div>
   </div>
 </section>
