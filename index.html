@@ -371,7 +371,7 @@
   }
 
   /* ════════════════════════════════════════════════════════════════════
-     NÂNG CẤP THẨM MỸ — phiên bản trình bày sếp xem (v4.10)
+     NÂNG CẤP THẨM MỸ — phiên bản trình bày sếp xem (v4.13)
      ════════════════════════════════════════════════════════════════════ */
 
   /* FIX: bỏ font-feature gây reflow khi hover vào Mermaid */
@@ -466,7 +466,7 @@
   /* H1 — badge version + meta ngày */
   h1 { position: relative; }
   h1::after {
-    content: "v4.10";
+    content: "v4.13";
     position: absolute; top: -10px; right: 0;
     font-size: 11px; font-weight: 700;
     color: var(--brand-strong);
@@ -710,7 +710,7 @@
     </div>
 
     <div class="hero-meta">
-      <span class="meta-item"><span class="dot">●</span> Phiên bản <b>v4.10</b></span>
+      <span class="meta-item"><span class="dot">●</span> Phiên bản <b>v4.13</b></span>
       <span class="meta-item">Hoàn thành <b>15/08/2026</b> lúc <b>01:54 ICT</b></span>
       <span class="meta-item">Dựng từ <b>UNIFIED_PLAN_v4.md</b></span>
       <span class="meta-item">Thiết kế cho <b>5.000</b> lao động</span>
@@ -796,11 +796,14 @@
     <h2>Chu trình vận hành hàng tháng</h2>
     <p class="sub">Mỗi kỳ lương, hệ thống chạy đúng chu trình này — mọi bước đều có người chịu trách nhiệm và dấu vết thao tác.</p>
     <div class="steps">
-      <div class="s"><div><b>Tiếp nhận nhu cầu</b><span>Khách hàng ký hợp đồng → mở dự án → khai nhu cầu tuyển theo vị trí, ca, số lượng, thời hạn.</span></div></div>
-      <div class="s"><div><b>Tìm người &amp; gán việc</b><span>Lao động vào từ 4 nguồn: HR/Sale tự tuyển, Vendor cung ứng, CTV giới thiệu (kể cả link giới thiệu), tự đăng ký. HR duyệt rồi gán dự án — mỗi người một mã nhân viên tại dự án đó. Tại một thời điểm mỗi người chỉ làm đúng 1 dự án — chuyển dự án qua HR điều chuyển, cần đổi cả nhóm thì chuyển hàng loạt 1 lần. <b>Bỏ việc ngang liên tục 3 ngày không phép → hệ thống tự cảnh báo</b> để HR đóng hồ sơ, nhả chỗ tuyển.</span></div></div>
-      <div class="s"><div><b>Chấm công</b><span>Hai luồng: file chấm công đối tác gửi về (để TÍNH LƯƠNG) + app chụp hình định vị GPS (để QUẢN LÝ Ý THỨC — không dùng tính lương). PM có app hiện trường điểm danh nhanh, dùng được cả khi mất sóng.</span></div></div>
-      <div class="s"><div><b>Chốt công</b><span>Kế toán đối chiếu, xử lý dòng lỗi, duyệt và KHÓA kỳ. Đã khóa là không sửa — sai sót chỉ điều chỉnh kỳ sau kèm lý do.</span></div></div>
-      <div class="s"><div><b>Đối soát</b><span>Tự tạo 2 biên bản riêng: TRẢ VENDOR (giá mua) và THU KHÁCH HÀNG (giá bán). Đối tác xác nhận hoặc phản đối ngay trên cổng của họ — phản đối tối đa 2 vòng, quá hạn tự xác nhận.
+      <div class="s"><div><b>1. Tiếp nhận nhu cầu</b><span>Khách hàng ký hợp đồng → mở dự án → khai nhu cầu tuyển theo vị trí, ca, số lượng, thời hạn.</span></div></div>
+      <div class="s"><div><b>2. Tìm người &amp; gán việc</b><span>Lao động vào từ 4 nguồn: HR/Sale tự tuyển, Vendor cung ứng, CTV giới thiệu (kể cả link giới thiệu), tự đăng ký. HR duyệt rồi gán dự án — mỗi người một mã nhân viên tại dự án đó. Tại một thời điểm mỗi người chỉ làm đúng 1 dự án — chuyển dự án qua HR điều chuyển, cần đổi cả nhóm thì chuyển hàng loạt 1 lần. <b>Bỏ việc ngang liên tục 3 ngày không phép → hệ thống tự cảnh báo</b> để HR đóng hồ sơ, nhả chỗ tuyển.</span></div></div>
+      <div class="s"><div><b>3. Chấm công</b><span>Hai luồng: file chấm công đối tác gửi về (để TÍNH LƯƠNG) + app chụp hình định vị GPS (để QUẢN LÝ Ý THỨC — không dùng tính lương). PM có app hiện trường điểm danh nhanh, dùng được cả khi mất sóng.</span></div></div>
+      <div class="s"><div><b>4. Chốt công</b><span>Kế toán đối chiếu, xử lý dòng lỗi, duyệt và KHÓA kỳ. Đã khóa là không sửa — sai sót chỉ điều chỉnh kỳ sau kèm lý do.</span></div></div>
+      <div class="s"><div><b>5. Đối soát</b><span>Tự tạo 2 biên bản riêng: TRẢ VENDOR (giá mua) và THU KHÁCH HÀNG (giá bán). Đối tác xác nhận hoặc phản đối ngay trên cổng của họ — phản đối tối đa 2 vòng, quá hạn tự xác nhận.</span></div></div>
+      <div class="s"><div><b>6. Trả lương &amp; hoa hồng</b><span>Bảng lương tự động theo công đã khóa + luật lao động VN (BHXH, thuế TNCN — kể cả thuế 10% cho lao động vãng lai). Tiền về đúng tài khoản đã xác thực. <b>Không bao giờ có lương âm</b> — thiếu bao nhiêu chuyển trừ kỳ sau, kế toán duyệt từng trường hợp. Hoa hồng CTV theo mốc giữ chân.</span></div></div>
+    </div>
+
     <div class="diagram">
       <div class="caption">Cùng chu trình trên — nhìn dưới dạng sơ đồ</div>
 <pre class="mermaid">
@@ -837,9 +840,7 @@ flowchart TD
   style note fill:#FFF1E4,color:#C2410C,stroke:#F97316,stroke-width:1px,stroke-dasharray:4
 </pre>
     </div>
-  </div>
-</div>
-      <div class="s"><div><b>Trả lương &amp; hoa hồng</b><span>Bảng lương tự động theo công đã khóa + luật lao động VN (BHXH, thuế TNCN — kể cả thuế 10% cho lao động vãng lai). Tiền về đúng tài khoản đã xác thực. <b>Không bao giờ có lương âm</b> — thiếu bao nhiêu chuyển trừ kỳ sau, kế toán duyệt từng trường hợp. Hoa hồng CTV theo mốc giữ chân.</span>
+
     <div class="diagram">
       <div class="caption">Tính lương — không bao giờ có lương âm</div>
 <pre class="mermaid">
@@ -859,9 +860,6 @@ flowchart TD
 </pre>
     </div>
   </div>
-</div>
-    </div>
-  </div>
 </section>
 
 <section>
@@ -876,6 +874,8 @@ flowchart TD
       <div class="card"><h3>🚨 Báo sự cố 3 chạm</h3><div class="who">Mất điện, máy hỏng, người nghỉ đột xuất → tạo báo cáo khẩn vài giây, HR nhận ngay.</div></div>
       <div class="card"><h3>✅ Duyệt đơn 1 chạm</h3><div class="who">Đơn xin nghỉ / đổi ca của người mình quản lý — đồng ý hoặc từ chối ngay tại chỗ.</div></div>
       <div class="card"><h3>🔄 Chuyển người hàng loạt</h3><div class="who">Cả nhóm đổi dự án theo ca → chọn nhiều người, chuyển 1 lần — khỏi thao tác lặp từng người.</div></div>
+    </div>
+
     <div class="diagram">
       <div class="caption">App hiện trường PM — mất sóng vẫn điểm danh được</div>
 <pre class="mermaid">
@@ -892,9 +892,6 @@ flowchart LR
   style S2 fill:#FFF1E4,color:#C2410C,stroke:#F97316,stroke-width:2px
   style S1 fill:#DCFCE7,color:#15803D
 </pre>
-    </div>
-
-  </div>
     </div>
   </div>
 </section>
@@ -1268,7 +1265,7 @@ gantt
     </div>
     Dựng từ <a href="docs/UNIFIED_PLAN_v4.md">docs/UNIFIED_PLAN_v4.md</a>
     <div class="meta">
-      <span><b>Phiên bản tài liệu:</b> v4.10</span>
+      <span><b>Phiên bản tài liệu:</b> v4.13</span>
       <span><b>Cập nhật lần cuối:</b> 15/08/2026, 01:54 ICT</span>
       <span><b>Nguồn:</b> docs/UNIFIED_PLAN_v4.md</span>
     </div>

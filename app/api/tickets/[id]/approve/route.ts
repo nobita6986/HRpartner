@@ -1,7 +1,7 @@
 /**
  * POST /api/tickets/[id]/approve
  *
- * Body: { note?: string, paidAmountVnd?: string, paidAt?: string }
+ * Body: { note?: string }  — V4 (F27): ghi nhận chi tiền đi qua /api/tickets/[id]/pay riêng
  * Headers:
  *   - Authorization: Bearer <userId>:<role>:<name>
  *   - x-idempotency-key: <uuid> (optional)
@@ -11,7 +11,7 @@
  *   PENDING + HR_MANAGER → APPROVED (cho LEAVE/DISPUTE — fast-track)
  *   HR_APPROVED + ACCOUNTANT → APPROVED (cho ADVANCE)
  *   HR_APPROVED + HR_MANAGER → APPROVED (cho LEAVE/DISPUTE)
- *   APPROVED + ACCOUNTANT → PAID (cho ADVANCE — đã chi tiền)
+ *   APPROVED + ACCOUNTANT → PAID (qua /pay — xem route pay, V4 F27)
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
@@ -30,23 +30,14 @@ export async function POST(
     const idempotencyKey = getIdempotencyKey(req);
     const body = await req.json().catch(() => ({}));
 
-    // Phân biệt route theo path con hay không
-    // URL: /api/tickets/[id]/approve  (Next.js dynamic segment cùng path)
-    // Logic phân nhánh nằm trong service.approveTicket() / service.payAdvance()
-    // Tạm thời: nếu body có paidAmountVnd/paidAt → payAdvance; ngược lại approve
-    const isPayAction = body.paidAmountVnd !== undefined || body.paidAt !== undefined;
-
+    // V4 (F27): route này CHỈ approve — ghi nhận chi tiền đi qua /api/tickets/[id]/pay
     const input = {
       ticketId: params.id,
       note: body.note,
       idempotencyKey,
-      ...(body.paidAmountVnd !== undefined && { paidAmountVnd: BigInt(body.paidAmountVnd) }),
-      ...(body.paidAt && { paidAt: new Date(body.paidAt) }),
     };
 
-    const ticket = isPayAction
-      ? await service.payAdvance(input, actor)
-      : await service.approveTicket(input, actor);
+    const ticket = await service.approveTicket(input, actor);
 
     return NextResponse.json({ ticket }, { status: 200 });
   } catch (err) {
