@@ -337,55 +337,102 @@ export default function TraCuuPage() {
                     </div>
                   </div>
                   
-                  <div className="p-6 bg-slate-50/50 overflow-x-auto">
-                    <div className="min-w-[800px] grid grid-cols-7 gap-3">
-                      {/* Headers */}
-                      {['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'].map(dayName => (
-                        <div key={dayName} className="text-center font-bold text-sm text-slate-500 pb-2 border-b border-slate-200">
-                          {dayName}
-                        </div>
-                      ))}
-                      
-                      {/* Grid Cells */}
-                      {generateCalendarGrid(days).map((day, idx) => {
+                  <div className="p-4 md:p-6 bg-slate-50/50">
+                    {/* Mobile View: Vertical List */}
+                    <div className="flex flex-col gap-3 md:hidden">
+                      {days.map((day, idx) => {
                         const [, mStr, dStr] = day.date.split('-');
                         const dateNum = parseInt(dStr, 10);
                         const monthNum = parseInt(mStr, 10);
                         
-                        if (day.isPadding) {
-                          return (
-                            <div key={`pad-${idx}`} className="flex flex-col rounded-xl p-3 border border-transparent opacity-40 bg-slate-200/50 items-center justify-center min-h-[110px]">
-                              <span className="text-2xl font-extrabold text-slate-400">{dateNum}/{monthNum}</span>
-                            </div>
-                          );
-                        }
-
+                        // Parse date properly handling timezone issues by using the parts
+                        const dayOfWeek = new Date(parseInt(day.date.split('-')[0]), monthNum - 1, dateNum).getDay();
+                        const dayNames = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+                        
                         return (
                           <div 
-                            key={idx} 
+                            key={`mob-${idx}`} 
                             className={cn(
-                              "relative flex flex-col rounded-xl p-3 border shadow-sm transition-all hover:shadow-md min-h-[110px]",
+                              "flex items-center justify-between p-4 rounded-xl border shadow-sm",
                               getStatusColor(day.status)
                             )}
                           >
-                            <div className="text-[13px] font-bold mb-1.5 opacity-80 flex justify-between uppercase tracking-wider">
-                              <span className="text-lg">{dateNum}/{monthNum}</span>
-                            </div>
-                            
-                            <div className="font-extrabold text-[13px] mb-3">{getStatusLabel(day.status)}</div>
-                            
-                            {day.status !== 'ABSENT' && (
-                              <div className="mt-auto flex justify-between items-end text-[11px] opacity-90">
-                                <div className="flex flex-col gap-0.5">
-                                  <span>In: <span className="font-semibold">{day.in}</span></span>
-                                  <span>Out: <span className="font-semibold">{day.out}</span></span>
-                                </div>
-                                {day.ot ? <span className="font-bold text-rose-700 bg-rose-100 border border-rose-200 px-1 py-0.5 rounded">+{day.ot}h</span> : null}
+                            <div className="flex items-center gap-4">
+                              <div className="flex flex-col items-center justify-center min-w-[50px] min-h-[50px] bg-white/60 rounded-lg shadow-sm border border-black/5">
+                                <span className="text-lg font-bold">{dateNum}</span>
+                                <span className="text-[10px] uppercase font-semibold opacity-70">{dayNames[dayOfWeek]}</span>
                               </div>
-                            )}
+                              <div>
+                                <div className="font-extrabold text-[14px]">{getStatusLabel(day.status)}</div>
+                                {day.status !== 'ABSENT' && (
+                                  <div className="text-[12px] opacity-90 mt-1 flex gap-3">
+                                    <span>In: <span className="font-semibold">{day.in}</span></span>
+                                    <span>Out: <span className="font-semibold">{day.out}</span></span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {day.ot ? (
+                              <div className="font-bold text-rose-700 bg-rose-100 border border-rose-200 px-2 py-1 rounded-md text-sm whitespace-nowrap">
+                                +{day.ot}h
+                              </div>
+                            ) : null}
                           </div>
                         );
                       })}
+                    </div>
+
+                    {/* Desktop View: Grid */}
+                    <div className="hidden md:block overflow-x-auto pb-2">
+                      <div className="min-w-[800px] grid grid-cols-7 gap-3">
+                        {/* Headers */}
+                        {['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'].map(dayName => (
+                          <div key={dayName} className="text-center font-bold text-sm text-slate-500 pb-2 border-b border-slate-200">
+                            {dayName}
+                          </div>
+                        ))}
+                        
+                        {/* Grid Cells */}
+                        {generateCalendarGrid(days).map((day, idx) => {
+                          const [, mStr, dStr] = day.date.split('-');
+                          const dateNum = parseInt(dStr, 10);
+                          const monthNum = parseInt(mStr, 10);
+                          
+                          if (day.isPadding) {
+                            return (
+                              <div key={`pad-${idx}`} className="flex flex-col rounded-xl p-3 border border-transparent opacity-40 bg-slate-200/50 items-center justify-center min-h-[110px]">
+                                <span className="text-2xl font-extrabold text-slate-400">{dateNum}/{monthNum}</span>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div 
+                              key={idx} 
+                              className={cn(
+                                "relative flex flex-col rounded-xl p-3 border shadow-sm transition-all hover:shadow-md min-h-[110px]",
+                                getStatusColor(day.status)
+                              )}
+                            >
+                              <div className="text-[13px] font-bold mb-1.5 opacity-80 flex justify-between uppercase tracking-wider">
+                                <span className="text-lg">{dateNum}/{monthNum}</span>
+                              </div>
+                              
+                              <div className="font-extrabold text-[13px] mb-3">{getStatusLabel(day.status)}</div>
+                              
+                              {day.status !== 'ABSENT' && (
+                                <div className="mt-auto flex justify-between items-end text-[11px] opacity-90">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span>In: <span className="font-semibold">{day.in}</span></span>
+                                    <span>Out: <span className="font-semibold">{day.out}</span></span>
+                                  </div>
+                                  {day.ot ? <span className="font-bold text-rose-700 bg-rose-100 border border-rose-200 px-1 py-0.5 rounded">+{day.ot}h</span> : null}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>

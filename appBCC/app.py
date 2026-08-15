@@ -10,7 +10,18 @@ from PySide6.QtCore import Qt, Signal, QObject, QThread
 from PySide6.QtGui import QColor, QIcon, QPixmap, QCursor
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path="../.env")
+import sys
+
+if getattr(sys, 'frozen', False):
+    application_path = os.path.dirname(sys.executable)
+else:
+    application_path = os.path.dirname(os.path.abspath(__file__))
+
+env_path = os.path.join(application_path, '.env')
+if not os.path.exists(env_path):
+    env_path = os.path.join(application_path, '..', '.env')
+
+load_dotenv(dotenv_path=env_path)
 
 from core_pipeline import preview_file, push_to_db, clear_db_period, fetch_employee_timesheet, update_employee_timesheet, export_employee_history, export_project_payroll
 from formulas.formula_registry import FormulaRegistry
