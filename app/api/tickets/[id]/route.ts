@@ -5,12 +5,11 @@
  * Permission: HR/Accountant/PM/Admin xem được. Worker chỉ xem ticket của mình.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { TicketService, TicketServiceError } from '@/src/domains/attendance/ticket.service';
 import { getSessionUser } from '@/src/domains/attendance/session';
+import { getPrisma } from '@/src/lib/db';
 
-const prisma = new PrismaClient();
-const service = new TicketService(prisma);
+const service = new TicketService(getPrisma());
 
 export async function GET(
   req: NextRequest,

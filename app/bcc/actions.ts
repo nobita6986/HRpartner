@@ -1,11 +1,10 @@
 'use server';
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { getPrisma } from '@/src/lib/db';
 
 export async function fetchOptions() {
   try {
+    const prisma = getPrisma();
     const timesheets = await prisma.portalTimesheet.findMany({
       select: { project: true, periodMonth: true, periodYear: true },
       distinct: ['project', 'periodMonth', 'periodYear']
@@ -36,6 +35,7 @@ export async function fetchPortalTimesheet(employeeCode: string, project: string
   const [month, year] = period.split('/').map(Number);
 
   try {
+    const prisma = getPrisma();
     const timesheets = await prisma.portalTimesheet.findMany({
       where: {
         employeeCode: {

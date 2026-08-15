@@ -11,12 +11,11 @@
  * Response: 200 { ticket } | 400/403/404/409 { error, message }
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { TicketService, TicketServiceError } from '@/src/domains/attendance/ticket.service';
 import { getSessionUser, getIdempotencyKey } from '@/src/domains/attendance/session';
+import { getPrisma } from '@/src/lib/db';
 
-const prisma = new PrismaClient();
-const service = new TicketService(prisma);
+const service = new TicketService(getPrisma());
 
 export async function POST(
   req: NextRequest,
