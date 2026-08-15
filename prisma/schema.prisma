@@ -1031,6 +1031,9 @@ model PortalTimesheet {
   fullName       String   @map("full_name")
   project        String
   
+  periodMonth    Int?     @map("period_month")
+  periodYear     Int?     @map("period_year")
+  
   totalWorkDays  Decimal  @default(0) @map("total_work_days") @db.Decimal(5, 2)
   otHours        Decimal  @default(0) @map("ot_hours") @db.Decimal(5, 2)
   absentDays     Decimal  @default(0) @map("absent_days") @db.Decimal(5, 2)

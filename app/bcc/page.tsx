@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Calendar as CalendarIcon, Clock, AlertCircle, Receipt } from 'lucide-react';
-import { fetchPortalTimesheet } from './actions';
+import { fetchPortalTimesheet, fetchOptions } from './actions';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -45,6 +45,8 @@ interface TimesheetData {
   employeeCode: string;
   fullName: string;
   project: string;
+  periodMonth?: number | null;
+  periodYear?: number | null;
   totalWorkDays: number;
   otHours: number;
   absentDays: number;
@@ -55,24 +57,50 @@ interface TimesheetData {
 
 export default function TraCuuPage() {
   const [employeeCode, setEmployeeCode] = useState('');
-  const [data, setData] = useState<TimesheetData | null>(null);
+  const [timesheets, setTimesheets] = useState<TimesheetData[]>([]);
+  const [activeId, setActiveId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'CALENDAR' | 'PAYSLIP'>('CALENDAR');
 
+  const [projects, setProjects] = useState<string[]>([]);
+  const [periods, setPeriods] = useState<string[]>([]);
+  const [selectedProject, setSelectedProject] = useState('');
+  const [selectedPeriod, setSelectedPeriod] = useState('');
+
+  useEffect(() => {
+    async function loadOptions() {
+      const { projects, periods } = await fetchOptions();
+      setProjects(projects);
+      setPeriods(periods);
+      if (projects.length > 0) setSelectedProject(projects[0]);
+      if (periods.length > 0) setSelectedPeriod(periods[0]);
+    }
+    loadOptions();
+  }, []);
+
+  const data = timesheets.find(t => t.id === activeId) || null;
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!employeeCode) return;
+    if (!employeeCode || !selectedProject || !selectedPeriod) {
+      setError('Vui lòng chọn Dự án, Kỳ lương và nhập Mã nhân viên.');
+      return;
+    }
     
     setLoading(true);
     setError('');
-    setData(null);
+    setTimesheets([]);
+    setActiveId('');
 
-    const result = await fetchPortalTimesheet(employeeCode);
+    const result = await fetchPortalTimesheet(employeeCode, selectedProject, selectedPeriod);
     if (result.error) {
       setError(result.error);
-    } else if (result.data) {
-      setData(result.data);
+    } else if (result.data && Array.isArray(result.data)) {
+      setTimesheets(result.data);
+      if (result.data.length > 0) {
+        setActiveId(result.data[0].id);
+      }
     }
     
     setLoading(false);
@@ -155,15 +183,34 @@ export default function TraCuuPage() {
       <div className="max-w-5xl mx-auto space-y-8">
         
         {/* Header & Search */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-4">
+          <img src="/logo.png" alt="HRP Logo" className="h-14 w-auto mx-auto drop-shadow-sm" />
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
             Tra cứu Bảng Công Cá Nhân
           </h1>
           <p className="text-slate-500">Tra cứu nhanh dữ liệu chấm công và bảng lương từ dự án của bạn.</p>
         </div>
 
-        <div className="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-2">
-          <form onSubmit={handleSearch} className="flex gap-2">
+        <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+          <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-3">
+            <select
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+              className="block w-full md:w-1/3 rounded-xl border-0 py-3 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-blue-600 outline-none sm:text-sm"
+            >
+              <option value="" disabled>Chọn dự án...</option>
+              {projects.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            
+            <select
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value)}
+              className="block w-full md:w-1/4 rounded-xl border-0 py-3 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-blue-600 outline-none sm:text-sm"
+            >
+              <option value="" disabled>Kỳ lương...</option>
+              {periods.map(p => <option key={p} value={p}>Tháng {p}</option>)}
+            </select>
+
             <div className="relative flex-1">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <Search className="h-5 w-5 text-slate-400" aria-hidden="true" />
@@ -173,7 +220,7 @@ export default function TraCuuPage() {
                 value={employeeCode}
                 onChange={(e) => setEmployeeCode(e.target.value)}
                 className="block w-full rounded-xl border-0 py-3 pl-10 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 outline-none sm:text-sm sm:leading-6"
-                placeholder="Nhập Mã thẻ / ID nhân viên..."
+                placeholder="Mã NV..."
               />
             </div>
             <button
@@ -206,10 +253,9 @@ export default function TraCuuPage() {
                   <span className="font-medium bg-slate-100 px-3 py-1 rounded-md text-slate-800 border border-slate-200">
                     Mã: {data.employeeCode}
                   </span>
-                  <span className="flex items-center gap-1">
-                    Dự án: <strong className="text-slate-800">{data.project}</strong>
-                  </span>
                 </div>
+                
+                {/* Dropdown Chọn Kỳ Lương - Đã chuyển lên form tra cứu bên trên */}
               </div>
               <div className="text-right md:border-l md:border-slate-200 pl-6">
                 <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Cập nhật lần cuối</p>
@@ -302,13 +348,14 @@ export default function TraCuuPage() {
                       
                       {/* Grid Cells */}
                       {generateCalendarGrid(days).map((day, idx) => {
-                        const [, , dStr] = day.date.split('-');
+                        const [, mStr, dStr] = day.date.split('-');
                         const dateNum = parseInt(dStr, 10);
+                        const monthNum = parseInt(mStr, 10);
                         
                         if (day.isPadding) {
                           return (
                             <div key={`pad-${idx}`} className="flex flex-col rounded-xl p-3 border border-transparent opacity-40 bg-slate-200/50 items-center justify-center min-h-[110px]">
-                              <span className="text-3xl font-extrabold text-slate-400">{dateNum}</span>
+                              <span className="text-2xl font-extrabold text-slate-400">{dateNum}/{monthNum}</span>
                             </div>
                           );
                         }
@@ -322,7 +369,7 @@ export default function TraCuuPage() {
                             )}
                           >
                             <div className="text-[13px] font-bold mb-1.5 opacity-80 flex justify-between uppercase tracking-wider">
-                              <span className="text-xl">{dateNum}</span>
+                              <span className="text-lg">{dateNum}/{monthNum}</span>
                             </div>
                             
                             <div className="font-extrabold text-[13px] mb-3">{getStatusLabel(day.status)}</div>
