@@ -5,7 +5,7 @@
 > Muc dich: dong bang contract giua Python ETL (`appBCC/`) va web (`app/bcc/` + `app/api/`).
 > Truoc day khong co tai lieu rang buoc — appBCC co the gay loan data neu doi schema tho.
 >
-> **Trang thai**: Cho founder (sep) ky duyet truoc khi freeze.
+> **Trang thai**: **FREEZE** — founder da ky duyet 16/08/2026 (lenh "Gate 1: OK").
 
 ---
 
@@ -174,9 +174,9 @@ Neu Tier 3 (Auditor) phat hien appBCC hoac web vi pham contract:
 
 ```
 Phien ban: v1.0
-Ngay ky:    __________________
-Ky ten:     __________________ (founder / sep)
-Ghi chu:    __________________
+Ngay ky:    16/08/2026
+Ky ten:     Founder (sep) — duyet qua chat: "Gate 1: OK"
+Ghi chu:    Freeze contract portal_timesheets v1.0
 ```
 
 > Freeze sau khi sep ky. Moi thay doi schema `portal_timesheets` sau freeze phai qua Tier 1 review + cap nhat contract + tier 3 audit.
