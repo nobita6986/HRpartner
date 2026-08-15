@@ -65,9 +65,22 @@ Quyết định (DEC-31): không drop index; khai báo vào schema.prisma; `g0_b
 
 Route: `PROMPT_TIER2_R3.md` → Tier 2 round 3 thực hiện (sửa schema + migration + verify). Sau đó mở Tier 3 re-audit Round 2.
 
-## 7. Revision Log
+## 7. Resolution Round 3 — P3009 (failed migration record) · 16/08
+
+Tier 2 round 3: sửa schema + migration xong (commit `552b623`, validate PASS; DEV-06 ghi nhận — `@@index` dùng tên field camelCase `[employeeCode, project, periodMonth, periodYear]`, SQL sinh ra tương đương, chấp nhận). **Diff dev DB vs schema = 0 DDL** — DB khớp canonical 100%.
+
+Nhưng deploy vẫn bị chặn bởi **P3009**: bản ghi `g0_baseline` trạng thái failed (từ lần P3018 ở round 2) nằm trong `_prisma_migrations` của dev branch — Prisma không tự chạy lại failed migration.
+
+Quyết định (Planner): **phương án (A)** — `prisma migrate resolve --rolled-back 20260816010542_g0_baseline` trên dev branch, rồi `migrate deploy` lại. Lý do: migration đã sửa `IF NOT EXISTS` sẽ được **thực thi thật sự** (no-op trên dev vì state đã khớp) — history phản ánh đúng "migration này đã chạy", không đánh dấu suông như phương án (B). `resolve --rolled-back` chỉ xóa failed record (SQL round 2 đã rollback hoàn toàn trong transaction — không để lại gì), an toàn trên dev branch.
+
+Ghi nhận cho tương lai: production main có thể gặp state tương tự khi deploy Phase 1 (bảng tồn tại ngoài migration history) — sẽ xử bằng đúng quy trình DEC-31 + resolve này, sau khi khảo sát read-only. Planner sẽ ra DEC riêng lúc đó.
+
+Route: `PROMPT_TIER2_R4.md` → Tier 2 round 4 (resolve + deploy + diff + seed confirm + HANDOFF).
+
+## 8. Revision Log
 
 | Ver | Ngày | Thay đổi |
 |---|---|---|
 | `v1.0` | `2026-08-16` | Khởi tạo — Resolution AUD-001…005 Round 1: DEC-30 (paths-based monorepo), đóng AUD-005 (verify runtime 200), BLOCKED AUD-002 chờ sếp cấp dev DB, WAIT AUD-004 chờ ký contract, ACCEPT_RISK AUD-003 (Phase 4) |
 | `v1.1` | `2026-08-16` | Resolution Round 2 (BLK-04 drift): **DEC-31** — g0_baseline `IF NOT EXISTS` + khai báo `idx_timesheets_lookup` vào schema; AC-06/AC-09 PASS; route Tier 2 round 3 qua PROMPT_TIER2_R3 |
+| `v1.2` | `2026-08-16` | Resolution Round 3 (P3009 failed record): chọn phương án (A) `resolve --rolled-back` + deploy lại trên dev; diff = 0 DDL đã chứng minh state khớp; route Tier 2 round 4 qua PROMPT_TIER2_R4 |
