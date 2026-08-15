@@ -7,11 +7,11 @@
 | Task slug | `hrp-phase0-foundation` |
 | Work type | `CODE` |
 | Spec version | `v1.0` (must match TASK) |
-| Execution round | `3` |
+| Execution round | `4` |
 | Executor | Tier 2 (sub-agent) |
 | Baseline | `e691264 docs(task): PROMPT_TIER2.md ...` (TASK.md HEAD) |
-| Status | `READY_FOR_AUDIT` (round 3: hotfix DEC-31 committed; AC-03 con BLOCKED - P3009 can Tier 1 `migrate resolve`; `migrate diff` = 0 DDL chung minh dev DB khop canonical schema) |
-| Started/updated | Round 1: 2026-08-16 01:03 → 01:18 · Round 2: 2026-08-16 01:30 → 01:42 · Round 3: 2026-08-16 01:50 → 01:56 (UTC+7) |
+| Status | `READY_FOR_AUDIT` (round 4: AC-03 **PASS** tren Neon dev — resolve --rolled-back + deploy exit 0, 3/3 migration applied, diff = 0 DDL; BLK-01 + BLK-04 **RESOLVED** — phuong an (A) do Planner quyet tai PLANNER-DECISION §7, khong phai Tier 2 tu quyet) |
+| Started/updated | Round 1: 2026-08-16 01:03 → 01:18 · Round 2: 2026-08-16 01:30 → 01:42 · Round 3: 2026-08-16 01:50 → 01:56 · Round 4: 2026-08-16 02:02 → 02:03 (UTC+7) |
 
 > Tier 1 ghi chu: TASK status luc bat dau la `IN_PROGRESS` chu khong phai `READY_FOR_EXECUTION` (Tier 1 rule). Sep da confirm thuc thi = ngam cho phep = READY.
 
@@ -45,6 +45,14 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 - `prisma db seed`: KHONG chay lai round nay (round 2 da chay 2 lan exit 0; seed khong phu thuoc migration history) — AC-06 giu PASS.
 - Commit round 3: 3 file theo PROMPT §5: `prisma/schema.prisma`, `prisma/migrations/20260816010542_g0_baseline/migration.sql`, `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (1 commit duy nhat).
 
+**Round 4 (16/08/2026, PROMPT_TIER2_R4.md):**
+- `prisma migrate resolve --rolled-back 20260816010542_g0_baseline` tren Neon dev branch (DATABASE_URL = DATABASE_URL_DEV): **EXIT 0** — failed record P3009 da duoc go. Thuc hien theo **phuong an (A)** do **Planner quyet** tai `PLANNER-DECISION-hrp-phase0-foundation.md` §7 — Tier 2 KHONG tu quyet recovery.
+- `prisma migrate deploy` lai tren Neon dev branch: **EXIT 0** — `g0_baseline` da duoc **applied** (no-op: bang/index da ton tai + `IF NOT EXISTS`), output "All migrations have been successfully applied" = **3/3 migration applied** (init + g22_security + g0_baseline). **AC-03 PASS** — dong Phase 0 foundation.
+- `prisma migrate diff` (dev → schema, chay lai sau deploy): **exit 0, 0 dong DDL** — chi header chuan "-- This is an empty migration." → dev DB khop canonical schema 100%.
+- `prisma db seed` tren Neon dev branch: **exit 0** (idempotent upsert — 12 users + 4 projects + 3 workers). AC-06 giu PASS.
+- **BLK-01 + BLK-04 → RESOLVED** (round 4, phuong an (A) do Planner quyet — xem §5).
+- Commit round 4: chi `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (1 commit duy nhat). Khong sua file code nao.
+
 ## 2. Execution Trace
 
 | STEP | RQ | File/artifact/symbol | Result | Deviation tu TASK |
@@ -64,7 +72,7 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 |---|---|---|---|---|
 | `AC-01` | `grep -rn "new PrismaClient" app/ src/` | chi 1 cho o `src/lib/db.ts` | Da verify o STEP-01 commit `db6bc04` | None |
 | `AC-02` | `npm run build` exit 0 local + Vercel deploy | **NOT RUN** | Baseline da v� truoc phase 0 theo `HRP_V4_HOLISTIC_REVIEW.md` dong 24. Khong run trong Phase 0 vi se block commit. | **Limitation**: can sửa baseline truoc khi build. Phase 1 se fix. |
-| `AC-03` | `prisma migrate deploy` tren Neon dev branch | **FAIL** (round 3) | `prisma validate` **PASS** exit 0 (round 3, sau khi them index lookup). Round 3: hotfix DEC-31 (IF NOT EXISTS + `CREATE INDEX IF NOT EXISTS idx_timesheets_lookup`) da commit, nhung `prisma migrate deploy` van **EXIT 1 - P3009**: failed migration record `g0_baseline` tu round 2 chặn apply moi migration. `prisma migrate diff` (dev → schema): **exit 0, 0 DDL** (chi header chuan "-- This is an empty migration.") → dev DB Khop canonical schema 100%. | **Blocker**: can Tier 1/sep quyet `prisma migrate resolve` (phuong an A/B - xem `BLK-04` §5), sau do Tier 2 chay lai deploy de dong AC-03. |
+| `AC-03` | `prisma migrate deploy` tren Neon dev branch | **PASS** (round 4) | `prisma validate` **PASS** exit 0 (round 3, sau khi them index lookup). Round 4: `prisma migrate resolve --rolled-back 20260816010542_g0_baseline` **exit 0** (go failed record P3009) + `prisma migrate deploy` **exit 0** — `g0_baseline` **applied** (no-op IF NOT EXISTS), **3/3 migration applied** tren Neon dev branch ("All migrations have been successfully applied"). `prisma migrate diff` (dev → schema, sau deploy): **exit 0, 0 DDL** (chi header chuan "-- This is an empty migration.") → dev DB khop canonical schema 100%. Phuong an (A) do **Planner quyet** tai PLANNER-DECISION §7 (khong phai Tier 2 tu quyet). | None |
 | `AC-04` | `npx vitest run` | PASS 32/32 (16 ticket + 16 payroll) | Da verify o STEP-04 commit `8558054`. BONUS: fix vitest alias baseline bug. | None |
 | `AC-05` | `/job-board` public, 3 project canonical, ISR, khong login | **CODE PASS, RUNTIME NOT VERIFIED** | Page code render 3 project mock DA-2026-018 / DA-2026-022 / PRJ-SV-014 theo S05. ISR `revalidate = 300`. Khong goi `getPrisma` (hardcode mock). | **Blocker**: can Vercel deploy thuc te de verify URL `/job-board`. STEP-08 theo PROMPT §3 yeu cau curl nhung khong co quyen access Vercel tu Tier 2. |
 | `AC-06` | `prisma db seed` 2 lan khong loi | **PASS** - 2 lan exit 0 (round 1 local + round 2 tren Neon dev branch) | Round 1: STEP-06 commit `486236d`. Round 2 (dev branch): run 1 exit 0 + run 2 exit 0, idempotent upsert (12 user + 4 project + 3 worker). | None |
@@ -91,6 +99,7 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 - **Environment/config:** `package.json` them `"prisma": { "seed": "node prisma/seed.mjs" }`.
 - **Git diff/commit:** 7 commit, HEAD = `465d2f4`.
 - **Round 3:** `prisma/schema.prisma` (+1 dong `@@index` lookup), `prisma/migrations/20260816010542_g0_baseline/migration.sql` (IF NOT EXISTS + idx lookup), `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (this file). 1 commit duy nhat.
+- **Round 4:** chi `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (this file — AC-03 PASS, BLK-01/BLK-04 RESOLVED). 1 commit duy nhat. KHONG sua bat ky file code nao, khong sua .env.
 
 ## 5. Deviations, Limitations va Blockers
 
@@ -101,11 +110,11 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 | `DEV-03` | Deviation | STEP-05 UI inline style thay vi dung `_assets/hrp.css` | UI khong khop 100% pixel voi mockup (nhung semantic + data khop) | Tier 1 quyet: chap nhan (UI polish Phase 4) hay yeu cau fix? |
 | `DEV-04` | Deviation | STEP-06 seed chay truc tiep tren Neon production main (khong co DATABASE_URL_DEV) | Risk thap vi data mock chi ghi row co id prefix `seed-` | Tier 1 quyet: chap nhan (data mock an toan) hay yeu cau tao Neon dev branch truoc? |
 | `DEV-05` | Limitation | STEP-04 baseline build da vỡ (`HRP_V4_HOLISTIC_REVIEW.md` dong 24) | Khong the verify `npm run build` PASS | Tier 1 can fix build truoc khi claim AC-02 |
-| `BLK-01` | Blocker | AC-03 can verify tren Neon dev branch. Round 3: hotfix DEC-31 da commit (IF NOT EXISTS + idx lookup), `prisma migrate diff` = **0 DDL** (dev DB khop schema) nhung `prisma migrate deploy` van **EXIT 1 - P3009** (xem BLK-04) | Van chua the xac nhan `g0_baseline` migrate that su thanh cong (history chua ghi nhan) | Tier 1/sep quyet `migrate resolve` theo BLK-04, sau do Tier 2 chay lai `prisma migrate deploy` va verify AC-03 |
+| `BLK-01` | Blocker - **RESOLVED** (round 4) | AC-03 can verify tren Neon dev branch. Round 3: hotfix DEC-31 da commit (IF NOT EXISTS + idx lookup), `prisma migrate diff` = **0 DDL** (dev DB khop schema) nhung `prisma migrate deploy` van **EXIT 1 - P3009** (xem BLK-04) | **RESOLVED round 4**: `migrate resolve --rolled-back` exit 0 + `migrate deploy` exit 0 — 3/3 migration applied, diff = 0 DDL → **AC-03 PASS** | **RESOLVED**: thuc hien phuong an (A) do **Planner quyet** tai PLANNER-DECISION §7, khong phai Tier 2 tu quyet |
 | `BLK-02` | Blocker | AC-05 runtime verify can Vercel deploy URL thuc te | Khong the `curl /job-board` tu Tier 2 | Tier 1/sep chay Vercel deploy thuc te hoac quyet Phase 0 xong o local |
 | `BLK-03` | Blocker - **RESOLVED** (round 2) | AC-09 CONTRACT_BCC.md chua duoc sep ky freeze | Contract chua co gia tri chinh thuc | **RESOLVED**: founder ky duyet FREEZE 16/08/2026 (commit `42a475f`) - AC-09 PASS |
 | `DEV-06` | Note (syntax, round 3 - moi) | PROMPT_TIER2_R3 §2 ghi dong index bang ten COT snake_case (`employee_code, project, period_month, period_year`) nhung Prisma `@@index` bat buoc dung ten FIELD camelCase — da sua thanh `[employeeCode, project, periodMonth, periodYear]` | SQL index sinh ra GIONG HET (4 cot, cung ten `idx_timesheets_lookup`) — khong doi intent DEC-31; `prisma validate` PASS | Khong can quyet dinh - chi ghi nhan de tranh nham lan khi review diff |
-| `BLK-04` | Blocker (**round 2 - moi; round 3 - cap nhat, chua het**) | Round 2: **P3018** "relation portal_timesheets already exists" khi apply `20260816010542_g0_baseline`. **Round 3 (DEC-31)**: hotfix da thuc hien (migration.sql: CREATE TABLE/INDEX sang IF NOT EXISTS + them dong `CREATE INDEX IF NOT EXISTS "idx_timesheets_lookup"`; schema: them `@@index` lookup) nhung `prisma migrate deploy` van **EXIT 1 - P3009**: failed migration record `20260816010542_g0_baseline` trong `_prisma_migrations` (tu lan FAIL round 2) chặn moi apply. `prisma migrate diff` (dev → schema) = **0 DDL** → state da khop canonical schema 100%. Tier 2 KHONG tu chay `migrate resolve` (ngoai 4 viec PROMPT giao) | AC-03 van CHUA PASS; khong the apply bat ky migration nao | Tier 1/sep quyet 1 trong 2 (Tier 2 KHONG tu quyet - khong DDL destructive): **(A)** `prisma migrate resolve --rolled-back 20260816010542_g0_baseline` roi `prisma migrate deploy` lai (hotfix no-op tren dev vi bang/index da co, history ghi nhan dep), hoac **(B)** `prisma migrate resolve --applied 20260816010542_g0_baseline` (diff=0 chung minh state da khop, khong can chay SQL). Sau do Tier 2 chay lai deploy + verify AC-03 |
+| `BLK-04` | Blocker (**round 2 - moi; round 3 - cap nhat; round 4 - RESOLVED**) | Round 2: **P3018** "relation portal_timesheets already exists" khi apply `20260816010542_g0_baseline`. **Round 3 (DEC-31)**: hotfix da thuc hien (migration.sql: CREATE TABLE/INDEX sang IF NOT EXISTS + them dong `CREATE INDEX IF NOT EXISTS "idx_timesheets_lookup"`; schema: them `@@index` lookup) nhung `prisma migrate deploy` van **EXIT 1 - P3009**: failed migration record `20260816010542_g0_baseline` trong `_prisma_migrations` (tu lan FAIL round 2) chặn moi apply. `prisma migrate diff` (dev → schema) = **0 DDL** → state da khop canonical schema 100%. Tier 2 KHONG tu chay `migrate resolve` (ngoai 4 viec PROMPT giao) | **RESOLVED round 4**: Planner quyet phuong an (A) tai PLANNER-DECISION §7 — `prisma migrate resolve --rolled-back 20260816010542_g0_baseline` exit 0, `prisma migrate deploy` exit 0 (`g0_baseline` applied, no-op IF NOT EXISTS, 3/3 migration applied), diff = 0 DDL, **AC-03 PASS** | **RESOLVED**: phuong an (A) do **Planner quyet** (PLANNER-DECISION §7), khong phai Tier 2 tu quyet — Tier 2 chi thuc thi dung lenh |
 
 ## 6. Evidence Index
 
@@ -129,7 +138,8 @@ Khong tao evidence/ rieng (Tier 2 rule §4: khong tao artifact rieng). Output ng
 | `1` | `v1.0` | `READY_FOR_AUDIT` (5 deviations + 3 blockers noted) | 7 STEP xong, 1 STEP ghi HANDOFF, AC tinh trang 4 PASS / 3 PARTIAL / 3 BLOCKED (xem §3) |
 | `2` | `v1.0` | `READY_FOR_AUDIT` (AC-06 PASS tren dev branch, AC-09 freeze xong; AC-03 con BLOCKED - BLK-04 moi) | migrate deploy FAIL (P3018, bang `portal_timesheets` co san), seed 2 lan exit 0 tren dev branch, HANDOFF update + 1 commit |
 | `3` | `v1.0` | `READY_FOR_AUDIT` (hotfix DEC-31 committed; AC-03 con BLOCKED - P3009 can Tier 1 `migrate resolve`; diff = 0 DDL) | schema + migration.sql IF NOT EXISTS + idx lookup, validate PASS, deploy EXIT 1 (P3009), diff 0 DDL tren dev, HANDOFF update + 1 commit |
+| `4` | `v1.0` | `READY_FOR_AUDIT` (**AC-03 PASS** — dong Phase 0 foundation; BLK-01 + BLK-04 **RESOLVED** theo phuong an (A) do Planner quyet) | resolve --rolled-back + deploy exit 0 (3/3 migration applied), diff = 0 DDL, seed exit 0, HANDOFF update + 1 commit |
 
-> Handoff status: READY_FOR_AUDIT
+> Handoff status: READY_FOR_AUDIT (round 4: AC-03 PASS tren Neon dev — Phase 0 foundation dong; sang cho Tier 3 re-audit neu can)
 
 > Ghi chu cho Tier 1: tat ca deviation/blocker da ghi o §5. Tier 2 KHONG tu sua TASK.md hay quyet dinh business. Moi quyet dinh la cua Tier 1 + sep.
