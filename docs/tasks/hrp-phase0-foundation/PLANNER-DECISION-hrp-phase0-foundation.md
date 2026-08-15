@@ -51,9 +51,23 @@ Sau 2 gate: mở **Tier 3 re-audit Round 2** (chạy lại AC-03, AC-05 runtime,
 | ID | Quyết định | Nội dung chốt | Nguồn |
 |---|---|---|---|
 | **DEC-30** | Paths-based monorepo | Giai đoạn source-only (3 package hiện tại): monorepo hiện thực bằng tsconfig paths (`@hrp/*` → `packages/*/src/index.ts`), **không dùng npm workspaces** — đã chứng minh build local + Vercel xanh. Bổ sung `workspaces` khi package đầu tiên cần install dependency riêng (ra DEC mới lúc đó). | AUDIT Round 1 — AUD-001 |
+| **DEC-31** | Drift recovery g0_baseline + canonical hóa index lookup | Bảng `portal_timesheets` trên DB thật đã tồn tại **đúng 13 cột** (khớp schema.prisma — Planner tự diff: chỉ dư 1 index `idx_timesheets_lookup`). Index đó nằm trên `(employee_code, project, period_month, period_year)` — **chính là key upsert R-21** trong CONTRACT_BCC §5.2 → **giữ, khai báo vào schema.prisma** (`@@index`, name giữ nguyên). Migration `g0_baseline` (chưa applied ở bất kỳ DB nào) sửa sang **`IF NOT EXISTS`** + bổ sung CREATE INDEX lookup. KHÔNG drop bất kỳ object nào. | Survey Planner 16/08 (diff + pg_indexes) |
 
-## 6. Revision Log
+## 6. Resolution Round 2 — BLK-04 (drift) · 16/08
+
+Tier 2 round 2 báo cáo: **AC-06 PASS** (seed 2 lần exit 0 trên dev branch), **AC-09 PASS** (contract FREEZE `42a475f`), **AC-03 BLOCKED** — `migrate deploy` fail P3018: bảng `portal_timesheets` đã tồn tại trên dev branch (kế thừa state từ main — bảng được tạo ngoài migration history).
+
+Planner tự khảo sát (read-only, chỉ trỏ dev branch):
+- `migrate diff` dev DB vs `schema.prisma` = đúng 1 dòng `DROP INDEX "idx_timesheets_lookup"` → bảng khớp hoàn toàn schema, không thiếu cột.
+- `pg_indexes` cho thấy `idx_timesheets_lookup` trên `(employee_code, project, period_month, period_year)` = key định danh upsert R-21 (CONTRACT_BCC §5.2) → index của appBCC, **giữ lại**.
+
+Quyết định (DEC-31): không drop index; khai báo vào schema.prisma; `g0_baseline` chuyển `IF NOT EXISTS` (an toàn — chưa applied ở bất kỳ DB nào) + bổ sung index lookup. **Tiêu chí AC-03 PASS**: `migrate deploy` exit 0 trên dev branch + `migrate diff` dev vs schema ra **rỗng hoàn toàn (0 dòng)**.
+
+Route: `PROMPT_TIER2_R3.md` → Tier 2 round 3 thực hiện (sửa schema + migration + verify). Sau đó mở Tier 3 re-audit Round 2.
+
+## 7. Revision Log
 
 | Ver | Ngày | Thay đổi |
 |---|---|---|
 | `v1.0` | `2026-08-16` | Khởi tạo — Resolution AUD-001…005 Round 1: DEC-30 (paths-based monorepo), đóng AUD-005 (verify runtime 200), BLOCKED AUD-002 chờ sếp cấp dev DB, WAIT AUD-004 chờ ký contract, ACCEPT_RISK AUD-003 (Phase 4) |
+| `v1.1` | `2026-08-16` | Resolution Round 2 (BLK-04 drift): **DEC-31** — g0_baseline `IF NOT EXISTS` + khai báo `idx_timesheets_lookup` vào schema; AC-06/AC-09 PASS; route Tier 2 round 3 qua PROMPT_TIER2_R3 |

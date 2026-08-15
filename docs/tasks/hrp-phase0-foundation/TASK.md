@@ -2,7 +2,7 @@
 
 > Pipeline 3-tier: `TASK.md` (Tier 1 — Planner) → `HANDOFF.md` (Tier 2 — Executor) → `AUDIT.md` (Tier 3 — Auditor)
 > Spec version: `v1.0` · Ngày khởi tạo: **16/08/2026**
-> Status: `CONDITIONAL` — Tier 2 đã thực thi + push (7 commit); Tier 3 audit Round 1 = CONDITIONAL; Planner Resolution xong 16/08 (`PLANNER-DECISION-hrp-phase0-foundation.md` v1.0); chờ 2 gate founder: ký `docs/CONTRACT_BCC.md` + cấp Neon dev branch (`DATABASE_URL_DEV`)
+> Status: `ROUND_3` — 2 gate founder xong 16/08 (contract FREEZE + `DATABASE_URL_DEV`); Tier 2 round 2: AC-06 PASS (seed 2 lần dev), AC-09 PASS, AC-03 BLOCKED (drift P3018) → Planner DEC-31 (PLANNER-DECISION v1.1) → Tier 2 round 3 đang xử theo `PROMPT_TIER2_R3.md`; xong mở Tier 3 re-audit Round 2
 > Căn cứ: **D13** (backbone invariant-phase + monorepo Phương án A), **D14** (freeze Mockup Baseline = trigger Phase 0; founder cho khởi động sớm 16/08 song song dry-run mockup), `docs/PHASE_KHOAHOC_V1.md` §4, `docs/MODULE_TACH_V2.md` §VII W1 + 5 điều chỉnh kỹ thuật đã duyệt 16/08/2026.
 
 ---
@@ -107,3 +107,4 @@
 |---|---|---|---|
 | `v1.0` | `2026-08-16` | Khởi tạo contract Phase 0 Foundation: 8 STEP, 10 AC, 5 RISK, phân vai 3-tier | Lệnh founder "vào Phase 0" + D13–D16 đã chốt |
 | `v1.1` | `2026-08-16` | Planner Resolution Round 1: DEC-30 paths-based monorepo (STEP-04/AC-02); bỏ `/docs` khỏi URL matrix (STEP-08); Status → CONDITIONAL chờ 2 gate founder | AUDIT Round 1 CONDITIONAL → PLANNER-DECISION v1.0 |
+| `v1.2` | `2026-08-16` | Resolution Round 2: DEC-31 drift recovery (g0_baseline IF NOT EXISTS + idx_timesheets_lookup vào schema); Status → ROUND_3 | Tier 2 round 2 (AC-03 BLOCKED P3018) → PLANNER-DECISION v1.1 |
