@@ -3,8 +3,10 @@
 -- Add-only: chi CREATE TABLE + CREATE INDEX, KHONG DROP/RENAME/TRUNCATE.
 -- Muc dich: tao bang portal_timesheets con thieu trong 2 migration truoc.
 -- Verify: prisma validate + kiem tra khong doi voi 38 model khac.
+-- DEC-31 (16/08/2026): IF NOT EXISTS de tuong thich drift state that
+-- (bang portal_timesheets da ton tai tren Neon dev branch ngoai migration history).
 
-CREATE TABLE "portal_timesheets" (
+CREATE TABLE IF NOT EXISTS "portal_timesheets" (
     "id" TEXT NOT NULL,
     "employee_code" TEXT NOT NULL,
     "full_name" TEXT NOT NULL,
@@ -21,4 +23,6 @@ CREATE TABLE "portal_timesheets" (
     CONSTRAINT "portal_timesheets_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "portal_timesheets_employee_code_idx" ON "portal_timesheets"("employee_code");
+CREATE INDEX IF NOT EXISTS "portal_timesheets_employee_code_idx" ON "portal_timesheets"("employee_code");
+
+CREATE INDEX IF NOT EXISTS "idx_timesheets_lookup" ON "portal_timesheets"("employee_code", "project", "period_month", "period_year");

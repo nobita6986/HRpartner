@@ -1045,6 +1045,7 @@ model PortalTimesheet {
   createdAt      DateTime @default(now()) @map("created_at")
   
   @@index([employeeCode])
+  @@index([employeeCode, project, periodMonth, periodYear], name: "idx_timesheets_lookup")
   @@map("portal_timesheets")
 }
 
