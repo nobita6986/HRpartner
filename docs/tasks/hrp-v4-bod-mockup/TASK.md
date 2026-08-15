@@ -6,8 +6,8 @@
 |---|---|
 | Task slug | `hrp-v4-bod-mockup` |
 | Work type | `DESIGN` |
-| Spec version | `v1.10` |
-| Status | IN_PROGRESS — STEP-08: audit round 3 đã có (verdict CONDITIONAL, AC-13 PASS), Planner Resolution AUD-015…018 đã ghi §9; còn 2 dry-run ≤15 phút chờ founder làm presenter (AC-12) + freeze chỉ sau PM/BoD ký. STEP-09 (S05) đã dựng — chờ re-audit round 4 cùng dry-run evidence. |
+| Spec version | `v1.11` |
+| Status | IN_PROGRESS — STEP-08: audit round 3 đã có (verdict CONDITIONAL, AC-13 PASS), Planner Resolution AUD-015…018 đã ghi §9; còn 2 dry-run ≤15 phút chờ founder làm presenter (AC-12) + freeze chỉ sau PM/BoD ký. STEP-09 (S05) đã dựng — chờ re-audit round 4 cùng dry-run evidence. Roadmap D13–D16 đã chốt 16/08 (xem §11): freeze Mockup Baseline = trigger Phase 0. |
 | Planner | `Tier 1 — Planner / Product & Architecture Decision Owner` |
 | Executor | `Tier 1 Planner + ui-ux-pro-max skill (founder ủy quyền 15/08/2026 — thay sếp làm phần Figma)` |
 | Auditor | `Tier 3 — independent audit context` |
@@ -386,3 +386,15 @@ Frame inventory (PDD §8.1) — medium HTML theo DEC-27: mỗi frame = 1 file `m
 | `v1.8` | `2026-08-15` | **Planner Resolution audit round 2 (verdict CONDITIONAL):** AUD-007 z-index state-panel 45→60; AUD-008 thêm back-link 4 state in-place; AUD-009 ACCEPT_RISK contrast AA (DEC-29 — giữ G27 #FFF/#F26522); AUD-010 sửa label V2/CONFIRMED; AUD-011 11px→12px toàn bộ; AUD-012 deviation sticky 3 cột (medium scale-to-fit); AUD-013 F50 "13"→"12"; AUD-014 deviation dispute 1 dòng theo §4.4 (PDD §6.6 minh họa 2 dòng) | AUDIT.md round 2 (Tier 3, 15/08/2026) |
 | `v1.9` | `2026-08-15` | **STEP-08 (phần tự chủ — chuẩn bị demo BoD):** (1) Trang 60 đủ `F60_D01`…`F60_D08` + `F60_D09_D12_Notes` — mỗi D01–D08 có variant A/B + recommendation (assumption đang demo) + mức chặn nếu BoD chọn khác; D09–D12 deferred có owner+due. (2) `DECISION_LOG.md` D01–D12 (recommendation, variants, owner, due, mức chặn; checklist sau buổi họp: chốt chọn, Archive trang 90, freeze chỉ sau ký). (3) `F80_DemoExport.html` — 16 bước đúng thứ tự F00A lồng iframe + 3 khoảnh khắc bắt buộc tô cam + print CSS từng trang; `F80_DemoExport.pdf` (browser print — Chrome headless, DEC-27). (4) mockup/index.html: nhóm 60 done + nhóm 80 mới. Chưa xong: 2 dry-run ≤15 phút cần founder làm presenter (AC-12 evidence video/log); freeze chờ PM/BoD ký (không freeze sớm) | STEP-08; RQ-11; AC-12/AC-13; DEC-27; RISK-03 |
 | `v1.10` | `2026-08-15` | **Planner Resolution audit round 3 (verdict CONDITIONAL):** AUD-015 sửa 11px→12px (F60_D09_D12_Notes `.meta span`, F80 `.legend span`); AUD-016 F00A 04:10 "claim 4 ngày trước"→"claim 12/08 — 3 ngày trước" (DEC-17); AUD-017 gỡ inline italic thừa F80 bước 13:00; AUD-018 thêm dòng prototype assumption vào header F60_D09_D12_Notes. Ngoài ra: **STEP-09 hoàn tất** — `S05_JobBoard_Public_1440` (1 frame tĩnh công cộng: header logo + Đăng nhập/Đăng ký, không sidebar quản trị; filter minh họa địa điểm/ca; 3 card DA-2026-018 `50/47`, DA-2026-022 `80/80`, PRJ-SV-014 `35/32` + nút Ứng tuyển; watermark; không PII; không hotspot — RQ-13/AC-15) | AUDIT.md round 3 (Tier 3, 15/08/2026); STEP-09 |
+| `v1.11` | `2026-08-16` | **Roadmap Alignment — D13–D16 chốt (§11):** founder duyệt toàn bộ kiến nghị Planner về `docs/MODULE_TACH_V2.md` + `docs/PHASE_KHOAHOC_V1.md` — D13 backbone invariant-phase + monorepo Phương án A; D14 freeze Mockup Baseline = trigger Phase 0; D15 rào /bcc JWT tuần đầu Phase 1; D16 chốt hạ tầng load test/outbox trước Phase 4. Ghi vào DECISION_LOG.md 0.2 | Lệnh founder 16/08/2026 ("ok duyệt hết"); DECISION_LOG D13–D16 |
+
+## 11. Roadmap Alignment — D13–D16 (chốt 16/08/2026)
+
+Founder duyệt toàn bộ kiến nghị Planner về `docs/MODULE_TACH_V2.md` + `docs/PHASE_KHOAHOC_V1.md`. Chi tiết đầy đủ (owner, due, trạng thái) tại `DECISION_LOG.md`:
+
+- **D13 — Backbone:** chia phase theo invariant (PHASE_KHOAHOC_V1 §3: 0 Foundation → 1 Identity → 2 Scope → 3 Integrity → 4 Vertical Slices → 5 UAT, sau đó P1–P3) + Phương án A vertical-slice monorepo (3 sub-package đầu: money, payroll-core, job-board). Không microservice.
+- **D14 — Trigger Phase 0:** **freeze Mockup Baseline v1** (sau PM/BoD ký) = điểm kết thúc task này + khởi động Phase 0 Foundation.
+- **D15 — An ninh:** rào /bcc bằng JWT tối giản vào tuần đầu Phase 1 (dữ liệu thật đang chạy public).
+- **D16 — Hạ tầng:** chốt dứt điểm trước Phase 4 — nâng Vercel/Neon hoặc thu nhỏ tiêu chí load test + outbox theo Hobby (khuyến nghị Planner: in-process drain + cron daily lưới an toàn).
+
+Điều chỉnh kỹ thuật kèm theo (đã duyệt): `BYPASS_RLS` chỉ dev local (guard `NODE_ENV`); workspaces `packages/*` phải cập nhật `vercel.json` buildCommand (Phase 0 DoD); `prisma/migrations/` đưa vào git ở Phase 0; đóng băng contract bảng appBCC ↔ web trong Phase 0 (R-21); re-scale burndown theo AI throughput thực đo sau Phase 0.
