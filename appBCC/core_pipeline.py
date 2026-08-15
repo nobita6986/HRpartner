@@ -21,7 +21,7 @@ def index_to_excel_col(col_idx):
 def setup_directories():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def preview_file(file_path, project_name, period_month, period_year, log_callback=print):
+def preview_file(file_path, project_name, period_month, period_year, log_callback=print, review_callback=None):
     """
     Xử lý file và trả về danh sách dữ liệu đã chuẩn hóa (dạng dict) để Preview trên UI.
     """
@@ -78,7 +78,7 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                 
         # 3. Ánh xạ AI cho các cột Summary
         log_callback(f"[1/3] Đang phân tích {len(summary_headers_to_map)} cột tổng hợp bằng AI/Từ điển...")
-        ai_result = get_mapping_from_ai(list(summary_headers_to_map.values()))
+        ai_result = get_mapping_from_ai(list(summary_headers_to_map.values()), review_callback=review_callback)
         
         for i, header_text in summary_headers_to_map.items():
             mapped_key = ai_result.get(header_text)
@@ -114,20 +114,27 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                         break
                 
                 daily_data = []
+                passed_drop = False
+                prev_day = -1
+                
                 for day, idxs in daily_cols.items():
                     day_val = int(day)
                     
+                    if prev_day != -1 and day_val < prev_day:
+                        passed_drop = True
+                    prev_day = day_val
+                    
                     # Xác định tháng/năm chuẩn cho từng ngày dựa vào việc có vắt tháng hay không
                     if crosses_month:
-                        if day_val > 15: 
-                            # Nửa đầu chu kỳ (Tháng trước)
+                        if not passed_drop: 
+                            # Nửa đầu chu kỳ (Tháng trước, trước khi rớt qua ngày 1)
                             calc_month = period_month - 1
                             calc_year = period_year
                             if calc_month == 0:
                                 calc_month = 12
                                 calc_year -= 1
                         else:
-                            # Nửa sau chu kỳ (Tháng này)
+                            # Nửa sau chu kỳ (Tháng này, sau khi đã qua ngày 1)
                             calc_month = period_month
                             calc_year = period_year
                     else:

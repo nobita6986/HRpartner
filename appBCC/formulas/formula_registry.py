@@ -15,8 +15,8 @@ class FormulaRegistry:
         if getattr(sys, 'frozen', False):
             # 1. Load các plugin đi kèm bên trong file exe (được compile sẵn)
             try:
-                import formulas.actro_formula
-                for name, obj in inspect.getmembers(formulas.actro_formula, inspect.isclass):
+                actro = importlib.import_module("formulas.actro_formula")
+                for name, obj in inspect.getmembers(actro, inspect.isclass):
                     if issubclass(obj, BaseFormula) and obj != BaseFormula:
                         instance = obj()
                         cls._registry[instance.project_name] = instance

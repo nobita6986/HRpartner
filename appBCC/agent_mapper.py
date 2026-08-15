@@ -25,7 +25,7 @@ def save_dict(d):
     with open(DICT_FILE, "w", encoding="utf-8") as f:
         json.dump(d, f, ensure_ascii=False, indent=4)
 
-def get_mapping_from_ai(headers):
+def get_mapping_from_ai(headers, review_callback=None):
     """
     Sử dụng LLM (Deepseek API) + Local Dictionary để map column.
     Chỉ gọi AI cho những header chưa có trong từ điển.
@@ -86,6 +86,9 @@ Yêu cầu:
             result_text = result_text.replace("```", "").strip()
             
         ai_mapping = json.loads(result_text)
+        
+        if review_callback and unknown_headers:
+            ai_mapping = review_callback(unknown_headers, ai_mapping)
         
         # Cập nhật từ điển
         for h in unknown_headers:

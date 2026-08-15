@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                                QHBoxLayout, QPushButton, QLabel, QLineEdit, 
                                QFileDialog, QTextEdit, QMessageBox, QGroupBox,
                                QTableWidget, QTableWidgetItem, QHeaderView, QComboBox, QProgressBar,
-                               QMenu, QDialog, QDialogButtonBox, QSpinBox, QDoubleSpinBox, QGridLayout, QTabWidget)
+                               QMenu, QDialog, QDialogButtonBox, QSpinBox, QDoubleSpinBox, QGridLayout, QTabWidget, QFormLayout)
 from PySide6.QtCore import Qt, Signal, QObject, QThread
 from PySide6.QtGui import QColor, QIcon, QPixmap, QCursor
 from dotenv import load_dotenv
@@ -31,6 +31,7 @@ class WorkerSignals(QObject):
     done_signal = Signal(object)
     push_done_signal = Signal(bool)
     clear_done_signal = Signal(bool)
+    review_mapping_signal = Signal(list, dict, object, dict)
 
 class ParseWorker(QThread):
     def __init__(self, file_path, project_name, period_month, period_year, signals):
@@ -45,8 +46,70 @@ class ParseWorker(QThread):
         def logger(msg):
             self.signals.log_signal.emit(msg)
             
-        data = preview_file(self.file_path, self.project_name, self.period_month, self.period_year, logger)
+        def review_callback(unknown_headers, ai_mapping):
+            event = threading.Event()
+            result_container = {}
+            self.signals.review_mapping_signal.emit(unknown_headers, ai_mapping, event, result_container)
+            event.wait()
+            return result_container.get('mapping', ai_mapping)
+            
+        data = preview_file(self.file_path, self.project_name, self.period_month, self.period_year, log_callback=logger, review_callback=review_callback)
         self.signals.done_signal.emit(data)
+
+from agent_mapper import STANDARD_COLUMNS
+
+class ReviewMappingDialog(QDialog):
+    def __init__(self, unknown_headers, ai_mapping, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Xác nhận Map Cột (AI Đề xuất)")
+        self.setMinimumWidth(600)
+        self.setMinimumHeight(400)
+        self.unknown_headers = unknown_headers
+        self.ai_mapping = ai_mapping
+        self.final_mapping = {}
+        
+        layout = QVBoxLayout(self)
+        
+        info = QLabel("AI đã tự động phân tích và ghép các cột mới vào hệ thống.\nVui lòng kiểm tra và điều chỉnh (nếu cần) trước khi tiếp tục:")
+        info.setStyleSheet("font-weight: bold; color: #2b579a;")
+        layout.addWidget(info)
+        
+        self.table = QTableWidget()
+        self.table.setColumnCount(2)
+        self.table.setHorizontalHeaderLabels(["Cột trên Excel (Tiếng Việt)", "Map vào Hệ thống (Chuẩn)"])
+        self.table.setRowCount(len(unknown_headers))
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        
+        self.combos = []
+        for i, header in enumerate(unknown_headers):
+            self.table.setItem(i, 0, QTableWidgetItem(header))
+            
+            cbo = QComboBox()
+            cbo.addItem("--- Bỏ qua (Không map) ---", "null")
+            for col in STANDARD_COLUMNS:
+                cbo.addItem(col, col)
+                
+            suggested = ai_mapping.get(header)
+            if suggested and suggested in STANDARD_COLUMNS:
+                cbo.setCurrentText(suggested)
+            else:
+                cbo.setCurrentIndex(0)
+                
+            self.table.setCellWidget(i, 1, cbo)
+            self.combos.append((header, cbo))
+            
+        layout.addWidget(self.table)
+        
+        btn_box = QDialogButtonBox(QDialogButtonBox.Ok)
+        btn_box.button(QDialogButtonBox.Ok).setText("Xác nhận & Tiếp tục")
+        btn_box.accepted.connect(self.accept)
+        layout.addWidget(btn_box)
+        
+    def accept(self):
+        for header, cbo in self.combos:
+            val = cbo.currentData()
+            self.final_mapping[header] = None if val == "null" else val
+        super().accept()
 
 class PushWorker(QThread):
     def __init__(self, data_list, db_url, signals):
@@ -164,6 +227,7 @@ class MainWindow(QMainWindow):
         self.signals.done_signal.connect(self.on_parse_done)
         self.signals.push_done_signal.connect(self.on_push_done)
         self.signals.clear_done_signal.connect(self.on_clear_done)
+        self.signals.review_mapping_signal.connect(self.on_review_mapping_requested)
 
         self.setup_ui()
 
@@ -190,6 +254,11 @@ class MainWindow(QMainWindow):
         self.tab_export = QWidget()
         self.setup_tab_export()
         self.tabs.addTab(self.tab_export, "Trích Xuất & Sao Lưu")
+        
+        # TAB 4: Cài Đặt Hệ Thống
+        self.tab_settings = QWidget()
+        self.setup_tab_settings()
+        self.tabs.addTab(self.tab_settings, "Cài Đặt Hệ Thống")
 
     def setup_tab_batch(self):
         layout = QVBoxLayout()
@@ -416,13 +485,24 @@ class MainWindow(QMainWindow):
         self.append_log("--- BẮT ĐẦU PHÂN TÍCH ---")
         self.append_log(f"Kỳ lương: Tháng {period_month}/{period_year}")
         
+        if self.worker.isRunning():
+            return
+            
         self.progress_bar.setVisible(True)
+        self.progress_bar.setRange(0, 0) # Indeterminate mode
         self.worker = ParseWorker(self.selected_file, project_name, period_month, period_year, self.signals)
         self.worker.start()
 
+    def on_review_mapping_requested(self, headers, ai_mapping, event, result_container):
+        dialog = ReviewMappingDialog(headers, ai_mapping, self)
+        dialog.exec()
+        result_container['mapping'] = dialog.final_mapping
+        event.set()
+
     def on_parse_done(self, data):
-        self.btn_parse.setEnabled(True)
+        self.parsed_data = data
         self.progress_bar.setVisible(False)
+        self.btn_parse.setEnabled(True)
         if not data:
             self.append_log("Lỗi: Không có dữ liệu preview!")
             return
@@ -918,19 +998,22 @@ class MainWindow(QMainWindow):
     # -------------------------------------------------------------
     def setup_tab_export(self):
         layout = QVBoxLayout()
+        layout.setSpacing(20) # Tăng khoảng cách dọc giữa các GroupBox
         self.tab_export.setLayout(layout)
         
         # Section 1: Lịch sử Cá nhân
         group1 = QGroupBox("Tải Lịch sử Bảng Công (Theo Cá Nhân)")
         layout1 = QGridLayout()
+        layout1.setVerticalSpacing(15) # Tăng khoảng cách dọc giữa các hàng
         
         layout1.addWidget(QLabel("Mã Nhân Viên (Từ file Excel):"), 0, 0)
         self.txt_export_emp = QLineEdit()
         self.txt_export_emp.setPlaceholderText("Nhập mã nhân viên...")
+        self.txt_export_emp.setStyleSheet("padding: 6px;")
         layout1.addWidget(self.txt_export_emp, 0, 1)
         
         self.btn_export_history = QPushButton("📥 Tải Lịch Sử Về Máy")
-        self.btn_export_history.setStyleSheet("background-color: #198754; color: white; font-weight: bold;")
+        self.btn_export_history.setStyleSheet("background-color: #198754; color: white; font-weight: bold; padding: 6px;")
         self.btn_export_history.clicked.connect(self.run_export_history)
         layout1.addWidget(self.btn_export_history, 0, 2)
         
@@ -940,24 +1023,28 @@ class MainWindow(QMainWindow):
         # Section 2: Bảng lương Dự án
         group2 = QGroupBox("Sao lưu Bảng Lương (Theo Dự Án)")
         layout2 = QGridLayout()
+        layout2.setVerticalSpacing(15) # Tăng khoảng cách dọc giữa các hàng
         
         layout2.addWidget(QLabel("Dự án / Công thức:"), 0, 0)
         self.cbo_export_project = QComboBox()
         self.cbo_export_project.addItems(FormulaRegistry.get_all_projects())
+        self.cbo_export_project.setStyleSheet("padding: 5px;")
         layout2.addWidget(self.cbo_export_project, 0, 1, 1, 2)
         
         layout2.addWidget(QLabel("Kỳ lương:"), 1, 0)
         self.cbo_export_month = QComboBox()
         self.cbo_export_month.addItems([f"Tháng {i}" for i in range(1, 13)])
         self.cbo_export_month.setCurrentIndex(datetime.now().month - 1)
+        self.cbo_export_month.setStyleSheet("padding: 5px;")
         layout2.addWidget(self.cbo_export_month, 1, 1)
         
         self.txt_export_year = QLineEdit()
         self.txt_export_year.setText(str(datetime.now().year))
+        self.txt_export_year.setStyleSheet("padding: 5px;")
         layout2.addWidget(self.txt_export_year, 1, 2)
         
         self.btn_export_payroll = QPushButton("📥 Tải Bảng Lương Dự Án")
-        self.btn_export_payroll.setStyleSheet("background-color: #0dcaf0; color: #000; font-weight: bold;")
+        self.btn_export_payroll.setStyleSheet("background-color: #0dcaf0; color: #000; font-weight: bold; padding: 8px;")
         self.btn_export_payroll.clicked.connect(self.run_export_payroll)
         layout2.addWidget(self.btn_export_payroll, 2, 0, 1, 3)
         
@@ -966,7 +1053,20 @@ class MainWindow(QMainWindow):
         
         # Section 3: Quản trị Hệ thống (Nguy hiểm)
         group3 = QGroupBox("Quản trị Cơ sở dữ liệu (Nguy hiểm)")
-        group3.setStyleSheet("QGroupBox { color: red; font-weight: bold; border: 1px solid red; margin-top: 10px; }")
+        group3.setStyleSheet("""
+            QGroupBox { 
+                color: red; 
+                font-weight: bold; 
+                border: 1px solid red; 
+                margin-top: 25px; 
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 0 5px;
+                left: 10px;
+            }
+        """)
         layout3 = QVBoxLayout()
         
         lbl_warning = QLabel("⚠️ Cảnh báo: Thao tác dưới đây sẽ xoá toàn bộ bảng lương của Dự án và Kỳ lương hiện tại (đang chọn ở mục Sao lưu phía trên) khỏi Database. Hãy cân nhắc kỹ.")
@@ -1067,8 +1167,95 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Lỗi", "Không thể xuất file. Xem chi tiết trong Log.")
 
 
+    # -------------------------------------------------------------
+    # TAB 4: CÀI ĐẶT HỆ THỐNG
+    # -------------------------------------------------------------
+    def setup_tab_settings(self):
+        layout = QVBoxLayout()
+        self.tab_settings.setLayout(layout)
+        
+        group = QGroupBox("Cấu hình Môi trường (Environment Variables)")
+        form = QFormLayout()
+        
+        self.txt_db_url = QLineEdit()
+        self.txt_db_url.setEchoMode(QLineEdit.PasswordEchoOnEdit)
+        self.txt_db_url.setText(os.environ.get("DATABASE_URL", ""))
+        self.txt_db_url.setPlaceholderText("postgres://user:pass@host/db")
+        
+        # API Key Row with Check Button
+        api_layout = QHBoxLayout()
+        self.txt_deepseek_api = QLineEdit()
+        self.txt_deepseek_api.setEchoMode(QLineEdit.PasswordEchoOnEdit)
+        self.txt_deepseek_api.setText(os.environ.get("DEEPSEEK_API_KEY", ""))
+        self.txt_deepseek_api.setPlaceholderText("sk-...")
+        api_layout.addWidget(self.txt_deepseek_api)
+        
+        btn_check_api = QPushButton("Kiểm tra API")
+        btn_check_api.clicked.connect(self.check_deepseek_api)
+        api_layout.addWidget(btn_check_api)
+        
+        form.addRow("DATABASE_URL (Neon Postgres):", self.txt_db_url)
+        form.addRow("DEEPSEEK_API_KEY (AI Mapping):", api_layout)
+        group.setLayout(form)
+        layout.addWidget(group)
+        
+        btn_save = QPushButton("💾 Lưu Cài Đặt vào file .env")
+        btn_save.setFixedHeight(40)
+        btn_save.setStyleSheet("background-color: #2b579a; color: white; font-weight: bold; font-size: 14px;")
+        btn_save.clicked.connect(self.save_settings)
+        layout.addWidget(btn_save)
+        
+        info_label = QLabel("Lưu ý: Mật khẩu và Token sẽ được mã hoá ẩn đi trên giao diện.\nFile .env sẽ được tạo tự động cùng thư mục với file .exe khi bạn nhấn Lưu.")
+        info_label.setStyleSheet("color: #666; font-style: italic;")
+        layout.addWidget(info_label)
+        
+        layout.addStretch()
+
+    def save_settings(self):
+        db_url = self.txt_db_url.text().strip()
+        api_key = self.txt_deepseek_api.text().strip()
+        
+        if getattr(sys, 'frozen', False):
+            application_path = os.path.dirname(sys.executable)
+        else:
+            application_path = os.path.dirname(os.path.abspath(__file__))
+            
+        env_path = os.path.join(application_path, '.env')
+        
+        try:
+            with open(env_path, "w", encoding="utf-8") as f:
+                f.write(f"DATABASE_URL={db_url}\n")
+                f.write(f"DEEPSEEK_API_KEY={api_key}\n")
+                
+            os.environ["DATABASE_URL"] = db_url
+            os.environ["DEEPSEEK_API_KEY"] = api_key
+            self.db_url = db_url
+            
+            QMessageBox.information(self, "Thành công", f"Đã lưu cấu hình an toàn vào: {env_path}\nBạn có thể sử dụng hệ thống bình thường.")
+        except Exception as e:
+            QMessageBox.critical(self, "Lỗi", f"Không thể lưu file .env: {e}")
+
+    def check_deepseek_api(self):
+        api_key = self.txt_deepseek_api.text().strip()
+        if not api_key:
+            QMessageBox.warning(self, "Cảnh báo", "Vui lòng nhập API Key trước khi kiểm tra.")
+            return
+            
+        import urllib.request
+        import urllib.error
+        try:
+            req = urllib.request.Request("https://api.deepseek.com/models", headers={"Authorization": f"Bearer {api_key}"})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                if response.status == 200:
+                    QMessageBox.information(self, "Thành công", "API Key hợp lệ! Đã kết nối thành công tới Deepseek.")
+        except urllib.error.HTTPError as e:
+            QMessageBox.warning(self, "Thất bại", f"API Key không hợp lệ hoặc lỗi mạng.\nMã lỗi: {e.code}\nChi tiết: {e.reason}")
+        except Exception as e:
+            QMessageBox.critical(self, "Lỗi", f"Không thể kết nối tới Deepseek: {str(e)}")
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setStyleSheet("QWidget { font-size: 14px; }")
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
