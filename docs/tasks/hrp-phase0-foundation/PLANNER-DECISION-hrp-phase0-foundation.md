@@ -1,0 +1,59 @@
+# PLANNER-DECISION — hrp-phase0-foundation · Round 1
+
+> Tier 1 (Planner) · 16/08/2026 · Đối tượng: `AUDIT.md` Round 1 (Tier 3, verdict **CONDITIONAL**)
+> Quy tắc: mọi sửa chữa đi qua file này — **không giao sửa trực tiếp cho Tier 2**.
+
+---
+
+## 1. Tóm tắt verdict Tier 3 + verify bổ sung của Planner
+
+| Nguồn | Kết quả |
+|---|---|
+| Tier 3 — AUDIT.md Round 1 | **CONDITIONAL** · 0 P0/P1 · 2 P2 (AUD-001, AUD-002) · 3 P3 (AUD-003…005) · "Code an toàn" |
+| Planner tự chạy `npm run build` (16/08) | **exit 0** — build local xanh với cách paths-based hiện tại |
+| Planner tự curl URL matrix production (16/08) | `/` 200 · `/bcc` 200 · **`/job-board` 200** — deploy Vercel thật đã xanh |
+
+**Hệ quả:** AUD-005 đóng được ngay bằng bằng chứng mới của Planner (không cần chờ Tier 2). AUD-001 đủ căn cứ chuyển thành quyết định kiến trúc chính thức (DEC-30).
+
+## 2. Resolution từng finding
+
+| ID | Sev | Quyết định | Lý do / Điều kiện | Owner | Due |
+|---|---|---|---|---|---|
+| **AUD-001** | P2 | **ACCEPT_DEVIATION → DEC-30** | Tier 2 bỏ `npm workspaces`, resolve qua tsconfig paths trực tiếp vào `packages/*/src`. Planner verify: build local exit 0 + `/job-board` 200 production → cách paths-based hoạt động trên cả local lẫn Vercel. Với 3 package **source-only** (được Next bundle trực tiếp, chưa cần install dependency riêng) thì npm workspaces là thừa rủi ro (RISK-02). **DEC-30 chốt**: monorepo Phương án A hiện thực bằng *paths-based monorepo*; bổ sung `workspaces` khi package đầu tiên cần cài dependency riêng (khi đó ra DEC mới). Điều kiện kèm theo: Vercel build xanh — **đã đạt 16/08**. | Planner (tôi) | Xong 16/08 |
+| **AUD-002** | P2 | **BLOCKED — chờ sếp** | AC-03 không thể đóng nếu không có dev DB: migration g0_baseline đã xác nhận add-only + `prisma validate` pass (an toàn về SQL), nhưng chưa chạy `migrate deploy` thật trên môi trường sạch. Action sếp: tạo Neon branch dev + thêm `DATABASE_URL_DEV` vào `.env` local. Khi có env: Tier 2 round 2 chạy migrate deploy trên dev branch + seed 2 lần (đóng AC-03 + AC-06 runtime) → mở re-audit. Trong lúc chờ: AC-03, AC-06 giữ PARTIAL. | Sếp | Trước khi đóng Phase 0 |
+| **AUD-003** | P3 | **ACCEPT_RISK** | Hardcode data + inline style trong `app/job-board/page.tsx` là chấp nhận được cho demo A-04 (Phase 0 non-goal: "KHÔNG UI nghiệp vụ mới ngoài job-board"). Backlog chính thức: **Phase 4** refactor — query thật từ DB (`Project`/`StaffingOrder` isPublic) + style về `_assets/hrp.css`. Ghi vào TASK Phase 4 khi lập. | Planner | Phase 4 |
+| **AUD-004** | P3 | **WAIT_FOUNDER** | `docs/CONTRACT_BCC.md` tồn tại, khớp model `PortalTimesheet`. Action sếp: review + ký xác nhận Freeze. AC-09 đóng khi có chữ ký. | Sếp | Trước khi đóng Phase 0 |
+| **AUD-005** | P3 | **CLOSED — Planner tự verify 16/08** | `/`, `/bcc`, `/job-board` đều 200 production → deploy Vercel xanh, AC-05 đủ runtime evidence. `/docs` 404 là **hiện trạng đúng**: repo không có site docs (docs/ là thư mục .md nội bộ, không route, không index.html) — URL matrix trong TASK ghi nhầm, Planner sửa TASK v1.1 (bỏ `/docs` khỏi matrix). Không cần Tier 2 round 2 cho phần này. | Planner (tôi) | Xong 16/08 |
+
+## 3. Verdict Planner sau Round 1
+
+**Duy trì `CONDITIONAL`** với chính xác 2 gate còn lại — đều thuộc sếp:
+
+1. **GATE-1**: sếp ký `docs/CONTRACT_BCC.md` (Freeze) → đóng AC-09 (AUD-004).
+2. **GATE-2**: sếp tạo Neon dev branch + cấp `DATABASE_URL_DEV` → Tier 2 round 2 migrate+seed → đóng AC-03/AC-06 runtime (AUD-002).
+
+Sau 2 gate: mở **Tier 3 re-audit Round 2** (chạy lại AC-03, AC-05 runtime, AC-06, AC-09) → PASS → đóng Phase 0, chuyển Phase 1.
+
+**Không cần giao sửa code nào cho Tier 2 lúc này** (workspaces đã xử bằng DEC-30, deploy đã xanh).
+
+## 4. Phân công tiếp theo (route qua file này)
+
+| Việc | Ai | Khi |
+|---|---|---|
+| Tạo Neon branch dev + ghi `DATABASE_URL_DEV` vào `.env` local (không commit .env) | Sếp | Khi thuận tiện |
+| Review + ký `docs/CONTRACT_BCC.md` | Sếp | Khi thuận tiện |
+| Tier 2 round 2: `prisma migrate deploy` lên dev branch + seed 2 lần idempotent + cập nhật HANDOFF §5 (chỉ 2 việc này, tham chiếu PLANNER-DECISION này) | Orchestrator spawn sau khi sếp xong 2 gate | Sau GATE-2 |
+| Tier 3 re-audit Round 2 (AC-03, AC-05 runtime, AC-06, AC-09) | Tier 3 | Sau round 2 |
+| Đóng Phase 0 PASS + cập nhật Revision Log | Tier 1 (tôi) | Sau re-audit PASS |
+
+## 5. DEC mới phát sinh
+
+| ID | Quyết định | Nội dung chốt | Nguồn |
+|---|---|---|---|
+| **DEC-30** | Paths-based monorepo | Giai đoạn source-only (3 package hiện tại): monorepo hiện thực bằng tsconfig paths (`@hrp/*` → `packages/*/src/index.ts`), **không dùng npm workspaces** — đã chứng minh build local + Vercel xanh. Bổ sung `workspaces` khi package đầu tiên cần install dependency riêng (ra DEC mới lúc đó). | AUDIT Round 1 — AUD-001 |
+
+## 6. Revision Log
+
+| Ver | Ngày | Thay đổi |
+|---|---|---|
+| `v1.0` | `2026-08-16` | Khởi tạo — Resolution AUD-001…005 Round 1: DEC-30 (paths-based monorepo), đóng AUD-005 (verify runtime 200), BLOCKED AUD-002 chờ sếp cấp dev DB, WAIT AUD-004 chờ ký contract, ACCEPT_RISK AUD-003 (Phase 4) |

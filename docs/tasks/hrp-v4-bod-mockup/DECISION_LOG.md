@@ -37,11 +37,12 @@ Founder duyệt toàn bộ kiến nghị Planner (đối chiếu `docs/MODULE_TA
 | D14 | Trigger khởi động Phase 0 | **Freeze Mockup Baseline v1** (sau PM/BoD ký) = điểm kết thúc task mockup + trigger Phase 0 Foundation. | Sếp (Giám đốc) | Chốt 16/08/2026 | CHỐT |
 | D15 | Rào /bcc | JWT tối giản cho /bcc vào **tuần đầu Phase 1** — vì appBCC đang bơm dữ liệu thật (PII) vào Neon trong khi /bcc công khai không auth. Ưu tiên an ninh, trước cả khi permission-resolver đầy đủ. | Planner + AI coding | Tuần đầu Phase 1 | CHỐT |
 | D16 | Hạ tầng load test + outbox | Chốt dứt điểm **TRƯỚC Phase 4**: (a) nâng plan Vercel/Neon, hoặc (b) thu nhỏ tiêu chí load test theo Hobby + outbox in-process drain (cron daily làm lưới an toàn). Khuyến nghị Planner: **(b)**. | Sếp (Giám đốc) | Trước khi khởi động Phase 4 | CHỐT |
+| DEC-30 | Paths-based monorepo (điều chỉnh cách hiện thực D13) | Monorepo hiện thực bằng **tsconfig paths** (`@hrp/*` → `packages/*/src/index.ts`), **không dùng npm workspaces** — bằng chứng: `npm run build` local exit 0 + `/job-board` 200 production 16/08. Bổ sung workspaces khi package đầu tiên cần cài dependency riêng (ra DEC mới lúc đó). Phát sinh từ AUDIT Round 1 Phase 0 (AUD-001). | Planner | Chốt 16/08/2026 | CHỐT |
 
 **Điều chỉnh kỹ thuật kèm theo** (Planner đã nêu, founder duyệt 16/08/2026):
 
 - `BYPASS_RLS` env flag chỉ cho dev local — guard cứng `NODE_ENV !== 'production'` + assert lúc startup.
-- Tách workspaces `packages/*` phải cập nhật `vercel.json` buildCommand — đưa vào Phase 0 DoD (tránh vỡ build).
+- Tách workspaces `packages/*` phải cập nhật `vercel.json` buildCommand — đưa vào Phase 0 DoD (tránh vỡ build). → **Đã điều chỉnh 16/08 bằng DEC-30**: paths-based, không dùng workspaces, `vercel.json` giữ nguyên.
 - `prisma/migrations/` đưa vào git trong Phase 0 (hiện đang untracked).
 - Phase 0 đóng băng **contract bảng appBCC ↔ web** (cột, format period, trạng thái) — xử lý R-21.
 - Re-scale burndown theo **AI throughput thực đo sau Phase 0** (không tin con số 5-dev).
@@ -59,3 +60,4 @@ Founder duyệt toàn bộ kiến nghị Planner (đối chiếu `docs/MODULE_TA
 |-----|------|----------|
 | 0.1 | 2026-08-15 | Khởi tạo — D01–D12 theo DEC-03…DEC-14, owner + due đề xuất |
 | 0.2 | 2026-08-16 | Thêm **D13–D16 — Kiến trúc & Roadmap** (backbone invariant-phase + monorepo Phương án A; trigger Phase 0 = freeze Mockup Baseline; rào /bcc JWT tuần đầu Phase 1; chốt hạ tầng load test/outbox trước Phase 4) — founder duyệt toàn bộ 16/08/2026 |
+| 0.3 | 2026-08-16 | Thêm **DEC-30 — Paths-based monorepo** (điều chỉnh cách hiện thực D13 sau AUDIT Round 1 Phase 0: tsconfig paths thay npm workspaces, build local + Vercel xanh) |
