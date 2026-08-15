@@ -1,0 +1,11 @@
+{
+  "name": "@hrp/money",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BigInt VND money helpers (HRP ADR-010) - extracted from src/shared/utils/money.ts",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest run"
+  }
+}

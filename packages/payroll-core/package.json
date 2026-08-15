@@ -1,0 +1,11 @@
+{
+  "name": "@hrp/payroll-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Payroll pure calculation + effective-dated config loader (HRP M8) - extracted from src/domains/payroll/",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest run"
+  }
+}

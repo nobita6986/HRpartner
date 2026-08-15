@@ -4,11 +4,11 @@ import path from 'path';
 export default defineConfig({
   resolve: {
     alias: {
-      // '@/shared/...' → src/shared/... (khớp tsconfig paths @/* → ./*)
-      '@': path.resolve(__dirname, 'src'),
+      // '@/*' -> './*' (root) - khop tsconfig paths
+      '@': path.resolve(__dirname, '.'),
     },
   },
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'packages/**/*.test.ts'],
   },
 });

@@ -21,6 +21,12 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@hrp/money": [
+        "packages/money/src/index.ts"
+      ],
+      "@hrp/payroll-core": [
+        "packages/payroll-core/src/index.ts"
       ]
     },
     "plugins": [
