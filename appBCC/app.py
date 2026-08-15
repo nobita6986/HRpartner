@@ -19,6 +19,7 @@ class WorkerSignals(QObject):
     log_signal = Signal(str)
     done_signal = Signal(object)
     push_done_signal = Signal(bool)
+    clear_done_signal = Signal(bool)
 
 class ParseWorker(QThread):
     def __init__(self, file_path, project_name, period_month, period_year, signals):
@@ -64,7 +65,7 @@ class ClearDbWorker(QThread):
             self.signals.log_signal.emit(msg)
             
         success = clear_db_period(self.project, self.month, self.year, self.db_url, logger)
-        self.signals.push_done_signal.emit(success)
+        self.signals.clear_done_signal.emit(success)
 
 class EditTimesheetDialog(QDialog):
     def __init__(self, emp_data, parent=None):
@@ -151,6 +152,7 @@ class MainWindow(QMainWindow):
         self.signals.log_signal.connect(self.append_log)
         self.signals.done_signal.connect(self.on_parse_done)
         self.signals.push_done_signal.connect(self.on_push_done)
+        self.signals.clear_done_signal.connect(self.on_clear_done)
 
         self.setup_ui()
 
@@ -333,16 +335,11 @@ class MainWindow(QMainWindow):
         self.btn_reset.clicked.connect(self.run_reset)
         self.btn_reset.setStyleSheet("background-color: #6c757d; color: white; font-weight: bold; padding: 10px;")
         
-        self.btn_clear_db = QPushButton("Xoá sạch DB kỳ này")
-        self.btn_clear_db.clicked.connect(self.run_clear_db)
-        self.btn_clear_db.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold; padding: 10px;")
-        
         self.btn_export_template = QPushButton("Xuất Excel Chuẩn Hoá")
         self.btn_export_template.setEnabled(False)
         self.btn_export_template.clicked.connect(self.run_export_template)
         self.btn_export_template.setStyleSheet("background-color: #198754; color: white; font-weight: bold; padding: 10px;")
         
-        btn_layout.addWidget(self.btn_clear_db)
         btn_layout.addWidget(self.btn_export_template)
         btn_layout.addWidget(self.btn_push)
         btn_layout.addWidget(self.btn_reset)
@@ -709,16 +706,16 @@ class MainWindow(QMainWindow):
             self.worker_push.start()
 
     def run_clear_db(self):
-        project_name = self.cbo_project.currentText()
+        project_name = self.cbo_export_project.currentText()
         if not project_name or project_name == "Chưa cài đặt Plugin nào!":
-            QMessageBox.warning(self, "Lỗi", "Vui lòng chọn Dự án cần xoá.")
+            QMessageBox.warning(self, "Lỗi", "Vui lòng chọn Dự án cần xoá ở phần Sao Lưu Bảng Lương.")
             return
             
-        period_month = self.cbo_month.currentIndex() + 1
+        period_month = self.cbo_export_month.currentIndex() + 1
         try:
-            period_year = int(self.txt_year.text().strip())
+            period_year = int(self.txt_export_year.text().strip())
         except:
-            QMessageBox.warning(self, "Lỗi", "Năm không hợp lệ!")
+            QMessageBox.warning(self, "Lỗi", "Năm không hợp lệ ở phần Sao Lưu Bảng Lương!")
             return
             
         reply = QMessageBox.question(self, 'CẢNH BÁO NGUY HIỂM', 
@@ -726,19 +723,17 @@ class MainWindow(QMainWindow):
                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
-            self.btn_parse.setEnabled(False)
-            self.btn_push.setEnabled(False)
-            self.btn_export_template.setEnabled(False)
+            self.btn_export_payroll.setEnabled(False)
+            self.btn_export_history.setEnabled(False)
             self.btn_clear_db.setEnabled(False)
-            self.append_log(f"--- ĐANG XOÁ DB DỰ ÁN {project_name} (Tháng {period_month}/{period_year}) ---")
-            self.progress_bar.setVisible(True)
+            self.log_export(f"--- ĐANG XOÁ DB DỰ ÁN {project_name} (Tháng {period_month}/{period_year}) ---")
+            # Reuse ClearDbWorker which was imported
             self.worker_clear = ClearDbWorker(project_name, period_month, period_year, self.db_url, self.signals)
             self.worker_clear.start()
 
     def on_push_done(self, success):
         self.btn_push.setEnabled(True)
         self.btn_export_template.setEnabled(True)
-        self.btn_clear_db.setEnabled(True)
         self.progress_bar.setVisible(False)
         if success:
             QMessageBox.information(self, "Thành công", "Đã thực thi cập nhật Database thành công!")
@@ -748,6 +743,15 @@ class MainWindow(QMainWindow):
             self.btn_export_template.setEnabled(False)
         else:
             QMessageBox.critical(self, "Lỗi", "Không thể push lên Database. Xem Log để biết chi tiết.")
+
+    def on_clear_done(self, success):
+        self.btn_export_payroll.setEnabled(True)
+        self.btn_export_history.setEnabled(True)
+        self.btn_clear_db.setEnabled(True)
+        if success:
+            QMessageBox.information(self, "Thành công", "Đã dọn dẹp Database thành công!")
+        else:
+            QMessageBox.critical(self, "Lỗi", "Có lỗi xảy ra khi xoá Database. Xem Log để biết chi tiết.")
 
     # -------------------------------------------------------------
     # TAB 2: ĐỐI SOÁT CÁ NHÂN
@@ -824,14 +828,14 @@ class MainWindow(QMainWindow):
         self.btn_recon_fetch.setEnabled(False)
         
         class FetchWorker(QThread):
-            def __init__(self, p, m, y, e, db, parent=None):
+            def __init__(self, p, m, y, e, db, log_cb, parent=None):
                 super().__init__(parent)
-                self.args = (p, m, y, e, db)
+                self.args = (p, m, y, e, db, log_cb)
                 self.result = None
             def run(self):
                 self.result = fetch_employee_timesheet(*self.args)
                 
-        self.fetch_worker = FetchWorker(project, period_month, period_year, emp_code, self.db_url)
+        self.fetch_worker = FetchWorker(project, period_month, period_year, emp_code, self.db_url, self.log_recon)
         self.fetch_worker.finished.connect(self.on_recon_fetched)
         self.fetch_worker.start()
 
@@ -948,6 +952,26 @@ class MainWindow(QMainWindow):
         
         group2.setLayout(layout2)
         layout.addWidget(group2)
+        
+        # Section 3: Quản trị Hệ thống (Nguy hiểm)
+        group3 = QGroupBox("Quản trị Cơ sở dữ liệu (Nguy hiểm)")
+        group3.setStyleSheet("QGroupBox { color: red; font-weight: bold; border: 1px solid red; margin-top: 10px; }")
+        layout3 = QVBoxLayout()
+        
+        lbl_warning = QLabel("⚠️ Cảnh báo: Thao tác dưới đây sẽ xoá toàn bộ bảng lương của Dự án và Kỳ lương hiện tại (đang chọn ở mục Sao lưu phía trên) khỏi Database. Hãy cân nhắc kỹ.")
+        lbl_warning.setWordWrap(True)
+        lbl_warning.setStyleSheet("color: red; font-style: italic;")
+        layout3.addWidget(lbl_warning)
+        
+        self.btn_clear_db = QPushButton("🗑️ Xoá sạch DB kỳ này")
+        self.btn_clear_db.clicked.connect(self.run_clear_db)
+        self.btn_clear_db.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold; padding: 10px;")
+        layout3.addWidget(self.btn_clear_db)
+        
+        group3.setLayout(layout3)
+        layout.addWidget(group3)
+        
+        layout.addStretch()
         
         # Log area
         self.txt_export_log = QTextEdit()

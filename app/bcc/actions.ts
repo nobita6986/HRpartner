@@ -11,8 +11,10 @@ export async function fetchOptions() {
       distinct: ['project', 'periodMonth', 'periodYear']
     });
     
-    const projects = Array.from(new Set(timesheets.map(t => t.project))).sort();
-    const periods = Array.from(new Set(timesheets.map(t => `${t.periodMonth}/${t.periodYear}`))).sort((a, b) => {
+    const projects = Array.from(new Set(timesheets.map(t => t.project).filter(Boolean))).sort();
+    
+    const validPeriods = timesheets.filter(t => t.periodMonth !== null && t.periodYear !== null);
+    const periods = Array.from(new Set(validPeriods.map(t => `${t.periodMonth}/${t.periodYear}`))).sort((a, b) => {
       const [mA, yA] = a.split('/').map(Number);
       const [mB, yB] = b.split('/').map(Number);
       if (yA !== yB) return yB - yA;

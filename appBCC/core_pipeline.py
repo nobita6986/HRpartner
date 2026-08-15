@@ -401,6 +401,14 @@ def fetch_employee_timesheet(project, period_month, period_year, emp_code, db_ur
             if not result:
                 return None
                 
+            daily_data = result.daily_data
+            if daily_data and isinstance(daily_data, str):
+                daily_data = json.loads(daily_data)
+                
+            payroll_data = result.payroll_data
+            if payroll_data and isinstance(payroll_data, str):
+                payroll_data = json.loads(payroll_data)
+                
             # Parse result into dict similar to preview_data
             return {
                 "id": str(result.id),
@@ -412,8 +420,8 @@ def fetch_employee_timesheet(project, period_month, period_year, emp_code, db_ur
                 "totalWorkDays": float(result.total_work_days),
                 "otHours": float(result.ot_hours),
                 "absentDays": float(result.absent_days),
-                "dailyData": json.loads(result.daily_data) if result.daily_data else [],
-                "payrollData": json.loads(result.payroll_data) if result.payroll_data else None,
+                "dailyData": daily_data if daily_data else [],
+                "payrollData": payroll_data if payroll_data else None,
                 "totalIncome": float(result.total_income) if result.total_income else 0,
                 "rawData": {"total_days": float(result.total_work_days), "absent_days": float(result.absent_days)}, 
                 "hasError": False,
