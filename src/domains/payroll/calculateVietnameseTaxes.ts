@@ -29,7 +29,7 @@ import {
   minVnd,
   maxVnd,
   nonNegativeVnd,
-} from '@/shared/utils/money';
+} from '@/src/shared/utils/money';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES

@@ -282,12 +282,12 @@ function ColumnToggle<TData>({ table }: { table: ReturnType<typeof useReactTable
 // SUBCOMPONENT: Pagination
 // ═══════════════════════════════════════════════════════════════════════════
 
-interface PaginationProps {
-  table: ReturnType<typeof useReactTable<unknown>>;
+interface PaginationProps<TData> {
+  table: ReturnType<typeof useReactTable<TData>>;
   totalRows?: number;
 }
 
-function DataTablePagination({ table, totalRows }: PaginationProps) {
+function DataTablePagination<TData>({ table, totalRows }: PaginationProps<TData>) {
   const { pageIndex, pageSize } = table.getState().pagination;
   const total = totalRows ?? table.getFilteredRowModel().rows.length;
   const pageCount = table.getPageCount();

@@ -50,3 +50,8 @@ __pycache__/
 docs.zip
 index - Copy.html
 index - Copy (2).html
+
+# public/ là build artifact (sinh bởi scripts/copy-static.mjs khi next build)
+public/index.html
+public/ve-hrp.html
+public/docs/

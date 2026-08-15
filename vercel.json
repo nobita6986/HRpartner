@@ -1,21 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "",
-  "outputDirectory": ".",
-  "framework": null,
-  "installCommand": "echo 'skip install - static html only'",
-  "cleanUrls": true,
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "buildCommand": "node scripts/copy-static.mjs && npx prisma generate && next build",
+  "outputDirectory": ".next",
+  "cleanUrls": false,
   "trailingSlash": false,
   "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/(.*)/", "destination": "/$1/index.html" },
     { "source": "/(.*)", "destination": "/$1.html" }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
-      ]
-    }
   ]
 }

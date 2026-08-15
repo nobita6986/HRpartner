@@ -99,7 +99,7 @@ export function useTableUrlState({
         const s = parseStringParam(raw ?? null);
         return s ? { id: cfg.columnId, value: s } : null;
       })
-      .filter((x): x is { id: string; value: unknown } => x !== null);
+      .filter((x): x is NonNullable<typeof x> => x !== null);
   }, [columnFilters, search]);
 
   const onColumnFiltersChange: OnChangeFn<ColumnFiltersState> = (updater) => {
