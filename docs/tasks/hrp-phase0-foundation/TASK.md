@@ -86,7 +86,7 @@
 | Vai | Ai | Nhiệm vụ trong task này |
 |---|---|---|
 | **Tier 1 — Planner** | Claude chính (tôi) | Chốt contract TASK.md này; ra decisions (DEC-30+); duyệt HANDOFF của Tier 2; Planner Resolution cho mọi finding của Tier 3; cập nhật Revision Log |
-| **Tier 2 — Executor** | Claude chính (tôi đóng vai) theo lệnh founder | Thực thi STEP-01…08 đúng thứ tự; ghi HANDOFF.md (Execution Trace + evidence từng AC + deviation/BLK) theo template `.ai-pipeline/templates/HANDOFF.template.md` |
+| **Tier 2 — Executor** | **Sub-agent riêng** (lệnh founder 16/08: "Tier 2 là thằng khác") — nhận prompt tại `PROMPT_TIER2.md` | Thực thi STEP-01…08 đúng thứ tự; ghi HANDOFF.md (Execution Trace + evidence từng AC + deviation/BLK) theo template `.ai-pipeline/templates/HANDOFF.template.md` |
 | **Tier 3 — Auditor** | Sub-agent độc lập (không thấy quá trình Tier 2 làm) | Đọc TASK.md + HANDOFF.md + **code thật trên repo**; viết AUDIT.md (findings `AUD-xxx`, verdict `PASS/CONDITIONAL/FAIL/BLOCKED`, severity P0–P3) |
 
 **Quy trình**: Tier 1 viết TASK (xong) → founder duyệt → Tier 2 thực thi + HANDOFF → Tier 3 audit (background agent) → Tier 1 Planner Resolution → lặp tới PASS.
