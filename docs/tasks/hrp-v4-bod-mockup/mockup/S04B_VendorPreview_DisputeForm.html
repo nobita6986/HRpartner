@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>S04B_VendorPreview_DisputeForm — Phản đối statement (hi-fi)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="S04B_VendorPreview_DisputeForm">
+<div class="portal-shell">
+
+  <header class="portal-top">
+    <span class="logo">HR<em>P</em></span>
+    <span class="pt-sep"></span>
+    <span class="pt-context">Cổng đối tác · Nhân lực Bắc Việt</span>
+    <span class="pt-spacer"></span>
+    <span class="watermark-badge">DỮ LIỆU MINH HỌA</span>
+    <span class="badge badge-info"><span class="material-symbols-outlined mi">visibility</span>Chế độ xem đối tác</span>
+    <span class="badge badge-outline">HI-FI · STEP-05</span>
+    <div class="user-chip"><span class="avatar">BV</span><div><div class="u-name">Đại diện Bắc Việt</div><div class="u-role">Nhân lực Bắc Việt</div></div></div>
+  </header>
+
+  <main class="portal-body">
+    <div class="page-head">
+      <div class="crumb">Cổng đối tác <span class="sep">/</span> Statements <span class="sep">/</span> Kỳ 08/2026 · An Phát</div>
+      <div class="page-title-row">
+        <div>
+          <h1 class="page-title">Phản đối statement · Kỳ 08/2026 · An Phát</h1>
+          <div class="title-sub">Statement V1 · 728.460.000 ₫ · Không submit thật (PDD §1.3)</div>
+        </div>
+        <div class="context-bar">
+          <span class="badge badge-outline"><span class="material-symbols-outlined mi">schedule</span>Hạn: 18/08/2026 18:00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="banner banner-warning">
+      <span class="material-symbols-outlined mi">schedule</span>
+      <div>Gửi trước <b>18/08/2026 18:00</b> — phản đối quá hạn không được tiếp nhận. Còn 2 ngày.</div>
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="material-symbols-outlined mi">forum</span>Phản đối có cấu trúc</div>
+        <span class="small muted">Phản đối được audit — không quay về chat rời rạc</span>
+      </div>
+      <div class="card-body vstack">
+
+        <div class="field">
+          <label class="field-label">Phạm vi phản đối <span class="req">*</span></label>
+          <div class="radio-list">
+            <label class="radio-row"><input type="radio" name="scope" checked aria-label="Toàn bộ statement"/><span>Toàn bộ statement</span></label>
+            <label class="radio-row"><input type="radio" name="scope" aria-label="Chọn dòng cụ thể"/><span>Chọn dòng cụ thể<span class="rr-sub tbl-sub-block">mở bảng dòng và tick — mỗi dòng phản đối có lý do riêng</span></span></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="dp-reason">Lý do <span class="req">*</span></label>
+          <div class="select-wrap full">
+            <select class="input full" id="dp-reason">
+              <option value="">— Chọn lý do —</option>
+              <option>Sai giờ</option>
+              <option>Sai rate</option>
+              <option>Thiếu worker</option>
+              <option>Khác</option>
+            </select>
+            <span class="material-symbols-outlined mi">expand_more</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="dp-desc">Mô tả <span class="req">*</span></label>
+          <textarea class="input" id="dp-desc" placeholder="VD: Dòng Bùi Đức Long — ngày 14/08 ca đêm bị tính thiếu 2 giờ regular…"></textarea>
+          <span class="field-hint">Bắt buộc — mô tả càng cụ thể, xử lý càng nhanh.</span>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Bằng chứng</label>
+          <div class="file-row">
+            <span class="material-symbols-outlined mi">attach_file</span>
+            <span>bang_doi_chieu_BCV.xlsx</span>
+            <span class="small muted">240 KB</span>
+            <button class="icon-btn icon-btn-sm push-right" aria-label="Bỏ file"><span class="material-symbols-outlined mi">close</span></button>
+          </div>
+          <span class="field-hint">Tên file và dung lượng hiển thị rõ — PDF/xlsx/ảnh · tối đa 10 MB.</span>
+        </div>
+
+      </div>
+      <div class="card-foot row">
+        <span class="small muted"><span class="material-symbols-outlined mi mi-sm">history</span> Phản đối ghi vào audit của statement — HRP xử lý và gửi lại V2.</span>
+        <span class="push-right"></span>
+        <a class="btn btn-ghost" href="S04B_VendorPreview_Sent.html">Hủy</a>
+        <a class="btn btn-primary" href="S04B_VendorPreview_Sent.html"><span class="material-symbols-outlined mi">send</span>Gửi phản đối</a>
+      </div>
+    </section>
+
+  </main>
+</div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

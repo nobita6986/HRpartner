@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>F50_HotspotMap — Bản đồ 11 hotspot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  .f1 { padding: 28px 40px; height: 100%; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
+  .f1-head { display: flex; align-items: center; gap: 14px; }
+  .f1-title { font: 700 24px/32px var(--font-head); letter-spacing: -.01em; }
+  .f1-note { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .f2-sec { display: flex; flex-direction: column; gap: 10px; }
+  .f2-callout { background: var(--primary-soft); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); padding: 12px 16px; font: 400 13px/20px var(--font-body); color: var(--primary-dark); display: flex; gap: 10px; align-items: flex-start; }
+  .f2-callout.warn { background: var(--warning-soft); color: var(--on-surface); border-color: rgba(180, 83, 9, .3); }
+  .hm-table th, .hm-table td { text-align: left; vertical-align: top; }
+  .hm-hot { font: 500 13px/20px var(--font-body); color: var(--on-surface); }
+  .hm-back { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .hm-step { font: 600 12px/14px var(--font-label); color: var(--primary-dark); white-space: nowrap; }
+</style>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="F50_HotspotMap">
+  <div class="f1">
+
+    <div class="f1-head">
+      <span class="f1-title">F50 — Bản đồ 11 hotspot (PDD §8.3 · AC-12)</span>
+      <span class="f1-note">Mỗi hotspot = <b>1 cú click từ frame A sang frame B</b>, dùng thẻ &lt;a&gt; nối file. Trình tự chạy đúng 11 click theo kịch bản khóa §4.4 — xem click-path 16 bước tại <a href="F00A_DemoNarrative.html">F00A</a></span>
+      <span class="watermark-badge push-right">DỮ LIỆU MINH HỌA</span>
+    </div>
+
+    <div class="f2-sec">
+      <div class="section-label">11 hotspot — From (bấm gì) → To (đến đâu) → Back-path (về bằng gì)</div>
+      <div class="tbl-wrap" style="background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md)">
+        <table class="tbl hm-table">
+          <thead>
+            <tr><th style="width:44px">#</th><th>From — hotspot (bấm gì)</th><th style="width:280px">To (đích)</th><th style="width:280px">Back-path (về bằng gì)</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="hm-step">01</td>
+              <td><a href="S01_ControlTower_Default_1440.html">S01 Control Tower</a><br/><span class="hm-hot">Queue “An Phát — thiếu 3 người”</span></td>
+              <td><a href="S02_Staffing_Default_1440.html">S02 Staffing default</a></td>
+              <td class="hm-back">Sidebar “Tổng quan” hoặc crumb Vận hành → S01</td>
+            </tr>
+            <tr>
+              <td class="hm-step">02</td>
+              <td><a href="S02_Staffing_Default_1440.html">S02 Staffing</a><br/><span class="hm-hot">Card Nguyễn Văn Nam — nút “Bố trí”</span></td>
+              <td><a href="S02A_AssignmentConflict_Drawer.html">S02A Assignment conflict drawer</a></td>
+              <td class="hm-back">“Hủy” (đóng drawer) → S02</td>
+            </tr>
+            <tr>
+              <td class="hm-step">03</td>
+              <td><a href="S02A_AssignmentConflict_Drawer.html">S02A Conflict drawer</a><br/><span class="hm-hot">Nút “Chuyển dự án”</span></td>
+              <td><a href="S02A_TransferPreview.html">S02A Transfer preview</a></td>
+              <td class="hm-back">“Hủy” → S02A drawer</td>
+            </tr>
+            <tr>
+              <td class="hm-step">04</td>
+              <td><a href="S02_Staffing_Default_1440.html">S02 Staffing</a><br/><span class="hm-hot">Card Huy — “Nguồn tuyển”</span></td>
+              <td><a href="S02B_ReferralGuard_Drawer_Protected.html">S02B Referral Guard drawer (đang bảo vệ)</a></td>
+              <td class="hm-back">“Giữ nguồn hiện tại” / đóng drawer → S02</td>
+            </tr>
+            <tr>
+              <td class="hm-step">05</td>
+              <td><a href="S02_Staffing_Default_1440.html">S02 Staffing header</a><br/><span class="hm-hot">“Xem bảng công — 7 ngoại lệ”</span></td>
+              <td><a href="S03_Attendance_Exceptions.html">S03 Attendance exceptions</a></td>
+              <td class="hm-back">Sidebar “Dự án” / crumb → S02 · “Tổng quan” → S01</td>
+            </tr>
+            <tr>
+              <td class="hm-step">06</td>
+              <td><a href="S03_Attendance_Exceptions.html">S03 Attendance</a><br/><span class="hm-hot">Dòng AP-QM-1048 — “Xem”</span></td>
+              <td><a href="S03_ResolveDrawer.html">S03 Resolve drawer</a></td>
+              <td class="hm-back">Đóng drawer → S03</td>
+            </tr>
+            <tr>
+              <td class="hm-step">07</td>
+              <td><a href="S03_Attendance_Resolved.html">S03 Attendance resolved</a><br/><span class="hm-hot">Nút “Khóa kỳ”</span></td>
+              <td><a href="S03B_LockConfirmation.html">S03B Lock confirmation dialog</a></td>
+              <td class="hm-back">“Quay lại kiểm tra” → S03 resolved</td>
+            </tr>
+            <tr>
+              <td class="hm-step">08</td>
+              <td><a href="S03B_LockConfirmation.html">S03B Lock dialog</a><br/><span class="hm-hot">“Khóa và tạo đối soát”</span></td>
+              <td><a href="S04_Reconciliation_Internal.html">S04 Reconciliation internal</a></td>
+              <td class="hm-back">Đích cuối flow — không cần back trong demo</td>
+            </tr>
+            <tr>
+              <td class="hm-step">09</td>
+              <td><a href="S04_Reconciliation_Internal.html">S04 Reconciliation</a><br/><span class="hm-hot">Dòng Bùi Đức Long — “Lineage”</span></td>
+              <td><a href="S04A_Lineage_Drawer.html">S04A Lineage drawer</a></td>
+              <td class="hm-back">Đóng drawer → S04</td>
+            </tr>
+            <tr>
+              <td class="hm-step">10</td>
+              <td><a href="S04_Reconciliation_Internal.html">S04 Reconciliation</a><br/><span class="hm-hot">“Xem như Vendor”</span></td>
+              <td><a href="S04B_VendorPreview_Sent.html">S04B Vendor preview (đã gửi)</a></td>
+              <td class="hm-back">“Về HRP” → S04</td>
+            </tr>
+            <tr>
+              <td class="hm-step">11</td>
+              <td><a href="S04B_VendorPreview_Sent.html">S04B Vendor preview</a><br/><span class="hm-hot">Nút “Phản đối”</span></td>
+              <td><a href="S04B_VendorPreview_DisputeForm.html">S04B Dispute form</a></td>
+              <td class="hm-back">“Hủy” → S04B preview · sau gửi: <a href="S04_VendorDisputed.html">S04 VendorDisputed</a> → “Về statement”</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="f2-callout warn">
+      <span class="material-symbols-outlined mi">sync_alt</span>
+      <span><b>Deviation ghi nhận (từ audit round 1):</b> PDD §8.3 mô tả hotspot #9 là “Reconciliation line: Nguyễn Văn Nam”. Kịch bản khóa trong TASK §4.5 (đã duyệt) đặt số liệu AC-02 (Long 208h/12h OT, 13.108.000 ₫) trên dòng <b>Bùi Đức Long</b> — hotspot chạy trên dòng Long, đích vẫn là S04A_Lineage_Drawer. Không thay đổi gì về hành vi, chỉ khác tên dòng trong kịch bản.</span>
+    </div>
+
+    <div class="f2-callout">
+      <span class="material-symbols-outlined mi">info</span>
+      <span><b>State frames ngoài hotspot map:</b> 12 frame STATE (STEP-06) là các biến thể trạng thái của frame gốc — không nằm trong 11 hotspot, mở trực tiếp từ <a href="index.html">index.html</a> hoặc qua link “Quay lại” trong từng state. <b>AC-12:</b> 2 dry-run ≤ 15 phút ở STEP-08 chạy đúng 11 hotspot này, tổng 22 click.</span>
+    </div>
+
+    <div class="f2-sec">
+      <div class="section-label">Click-path 16 bước demo (F00A) — đối chiếu hotspot</div>
+      <div class="small muted">
+        02:10–03:10 Guided transfer (hotspot 02→03) · 06:20–08:30 Exception → Lock (hotspot 05→08) · 09:30–13:00 Vendor payable vs client receivable (hotspot 09→11) · chi tiết từng bước + lời thoại tại <a href="F00A_DemoNarrative.html">F00A_DemoNarrative</a>.
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>S01_ControlTower_EmptyQueue — Control Tower · Empty queue (hi-fi)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  .s01-grid { display: grid; grid-template-columns: 460px 1fr; gap: 12px; align-items: stretch; }
+  .s01-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .s01-fill .bar-row { grid-template-columns: 110px 1fr 108px; }
+  .chart-note { margin-top: 10px; }
+  .kpi-band .kpi .delta { margin-top: 2px; }
+</style>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="S01_ControlTower_EmptyQueue">
+<div class="app-shell">
+
+  <!-- Sidebar (PDD §2.1 — 232px) -->
+  <aside class="sidebar">
+    <div class="sidebar-logo"><span class="logo">HR<em>P</em></span></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Vận hành</div>
+      <a class="sidebar-item active" href="#"><span class="material-symbols-outlined mi">dashboard</span>Tổng quan</a>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">work</span>Dự án</a>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">groups</span>Nhân lực</a>
+      <a class="sidebar-item" href="S03_Attendance_Exceptions.html"><span class="material-symbols-outlined mi">fingerprint</span>Chấm công<span class="count">7</span></a>
+      <a class="sidebar-item" href="S04_Reconciliation_Internal.html"><span class="material-symbols-outlined mi">balance</span>Đối soát<span class="count">1</span></a>
+      <div class="nav-group-label">Báo cáo</div>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">assessment</span>Báo cáo</a>
+    </nav>
+    <div class="sidebar-foot"><div class="small muted">HRP v4 · BoD mockup</div></div>
+  </aside>
+
+  <!-- Top bar 56px -->
+  <header class="topbar">
+    <div class="topbar-context">
+      <span class="material-symbols-outlined mi">domain</span>
+      <span>HRP · Miền Bắc</span>
+      <span class="ctx-sub">Kỳ 08/2026</span>
+    </div>
+    <div class="topbar-search"><span class="material-symbols-outlined mi">search</span><input placeholder="Tìm người, dự án, batch…" aria-label="Tìm kiếm"/></div>
+    <div class="topbar-actions">
+      <span class="watermark-badge">DỮ LIỆU MINH HỌA</span>
+      <span class="badge badge-outline">HI-FI · STEP-05</span>
+      <span class="badge badge-success">STATE · EMPTY QUEUE</span>
+      <button class="icon-btn" aria-label="Thông báo"><span class="material-symbols-outlined mi">notifications</span><span class="badge-dot"></span></button>
+      <div class="user-chip"><span class="avatar">LH</span><div><div class="u-name">Lê Thu Hà</div><div class="u-role">HR Ops</div></div></div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="page-head">
+      <div class="crumb">Vận hành <span class="sep">/</span> Tổng quan</div>
+      <div class="page-title-row">
+        <div>
+          <h1 class="page-title">Tổng quan vận hành</h1>
+          <div class="title-sub">Dữ liệu cập nhật 15/08/2026 · 08:42 · DỮ LIỆU MINH HỌA</div>
+        </div>
+        <div class="context-bar">
+          <span class="chip active"><span class="material-symbols-outlined mi">domain</span>Miền Bắc</span>
+          <span class="chip"><span class="material-symbols-outlined mi">calendar_month</span>08/2026</span>
+          <button class="btn btn-ghost"><span class="material-symbols-outlined mi">refresh</span>Tải lại</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI strip — một band phẳng, không card nổi (PDD §3.3) -->
+    <div class="kpi-band" aria-label="Chỉ số vận hành toàn miền">
+      <a class="kpi" href="#proj" title="Click để lọc bảng dự án (PDD §3.4)">
+        <div class="kpi-label"><span class="material-symbols-outlined mi">groups</span>Active</div>
+        <div class="kpi-value">1.842 <span class="unit">người</span></div>
+        <div class="kpi-sub">Lao động đang làm việc toàn miền</div>
+        <div class="delta delta-up"><span class="material-symbols-outlined mi mi-sm">trending_up</span>+132 · 8 tuần</div>
+      </a>
+      <a class="kpi" href="#proj" title="Click để lọc bảng dự án (PDD §3.4)">
+        <div class="kpi-label"><span class="material-symbols-outlined mi">person_off</span>Thiếu</div>
+        <div class="kpi-value">126 <span class="unit">người</span></div>
+        <div class="kpi-sub">Nhu cầu − ACTIVE toàn miền</div>
+      </a>
+      <a class="kpi" href="#proj" title="Click để lọc bảng dự án (PDD §3.4)">
+        <div class="kpi-label"><span class="material-symbols-outlined mi">task_alt</span>Công hoàn chỉnh</div>
+        <div class="kpi-value">97,8<span class="unit">%</span></div>
+        <div class="kpi-sub">Bảng công đã khớp &amp; duyệt</div>
+      </a>
+      <a class="kpi" href="#proj" title="Click để lọc bảng dự án (PDD §3.4)">
+        <div class="kpi-label"><span class="material-symbols-outlined mi">send</span>ĐS sẵn sàng</div>
+        <div class="kpi-value">12<span class="unit">/15</span></div>
+        <div class="kpi-sub">Bộ đối soát sẵn sàng gửi</div>
+      </a>
+    </div>
+
+    <div class="s01-grid">
+      <!-- Hàng đợi cần xử lý — state: trống sau khi xử lý hết (STEP-06 · AC-11) -->
+      <section class="card">
+        <div class="card-head">
+          <div class="card-title"><span class="material-symbols-outlined mi">bolt</span>Hàng đợi cần xử lý</div>
+          <span class="badge badge-success">0 việc</span>
+        </div>
+        <div class="card-body queue p-0">
+          <div class="empty">
+            <span class="material-symbols-outlined mi">check_circle</span>
+            <div class="empty-title">Hàng đợi trống — mọi việc đã xử lý</div>
+            <div class="small muted">Không còn việc cần xử lý cho Miền Bắc · kỳ 08/2026.</div>
+          </div>
+        </div>
+        <div class="card-foot small muted">State minh họa (STEP-06 · AC-11). Quay lại: <a href="S01_ControlTower_Default_1440.html">S01 default</a>.</div>
+      </section>
+
+      <!-- 2 chart nhỏ — không donut/gauge (PDD §3.3) -->
+      <div class="s01-charts">
+        <section class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="material-symbols-outlined mi">show_chart</span>Xu hướng 8 tuần — ACTIVE</div>
+            <span class="small muted">toàn miền</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-box">
+              <svg class="chart-svg" viewBox="0 0 340 150" role="img" aria-label="Biểu đồ ACTIVE 8 tuần: tăng từ 1.710 lên 1.842 người, cao nhất kỳ">
+                <g stroke="var(--line)" stroke-width="1">
+                  <line x1="34" y1="105.2" x2="328" y2="105.2"/>
+                  <line x1="34" y1="82.4" x2="328" y2="82.4"/>
+                  <line x1="34" y1="59.6" x2="328" y2="59.6"/>
+                  <line x1="34" y1="36.8" x2="328" y2="36.8"/>
+                </g>
+                <g fill="var(--on-surface-variant)" font-size="9" text-anchor="end">
+                  <text x="30" y="108.2">1.700</text>
+                  <text x="30" y="85.4">1.750</text>
+                  <text x="30" y="62.6">1.800</text>
+                  <text x="30" y="39.8">1.850</text>
+                </g>
+                <polyline points="34,100.6 76,87.9 118,75.6 160,63.2 202,55 244,60.5 286,47.7 328,40.4" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linejoin="round"/>
+                <g fill="var(--surface)" stroke="var(--primary)" stroke-width="2">
+                  <circle cx="34" cy="100.6" r="3"/><circle cx="76" cy="87.9" r="3"/><circle cx="118" cy="75.6" r="3"/><circle cx="160" cy="63.2" r="3"/>
+                  <circle cx="202" cy="55" r="3"/><circle cx="244" cy="60.5" r="3"/><circle cx="286" cy="47.7" r="3"/>
+                </g>
+                <circle cx="328" cy="40.4" r="7" fill="rgba(242,101,34,.18)"/>
+                <circle cx="328" cy="40.4" r="4.5" fill="var(--primary)"/>
+                <g font-size="10.5" fill="var(--on-surface)" font-weight="600">
+                  <text x="34" y="92" text-anchor="middle">1.710</text>
+                  <text x="244" y="52" text-anchor="middle">1.798</text>
+                  <text x="328" y="30" text-anchor="end">1.842</text>
+                </g>
+                <g font-size="9.5" fill="var(--on-surface-variant)" text-anchor="middle">
+                  <text x="34" y="146">T-7</text>
+                  <text x="118" y="146">T-5</text>
+                  <text x="202" y="146">T-3</text>
+                  <text x="328" y="146" text-anchor="end">Hôm nay</text>
+                </g>
+              </svg>
+            </div>
+            <div class="chart-note small muted">1.842 ACTIVE · <b>+132 (+7,7%)</b> trong 8 tuần · cao nhất kỳ</div>
+          </div>
+        </section>
+
+        <section class="card s01-fill">
+          <div class="card-head">
+            <div class="card-title"><span class="material-symbols-outlined mi">donut_small</span>Fill rate — kỳ này</div>
+          </div>
+          <div class="card-body">
+            <div class="bar-row">
+              <span class="bar-name">An Phát</span>
+              <span class="bar-track tgt"><span class="bar-fill" style="width:94%"></span></span>
+              <span class="bar-val">47/50 · 94,0%</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-name">Yên Phong</span>
+              <span class="bar-track tgt"><span class="bar-fill" style="width:100%"></span></span>
+              <span class="bar-val">80/80 · 100,0%</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-name">Sao Việt</span>
+              <span class="bar-track tgt"><span class="bar-fill" style="width:91.4%"></span></span>
+              <span class="bar-val">32/35 · 91,4%</span>
+            </div>
+            <div class="chart-note small muted">Fill rate = ACTIVE / Nhu cầu · vạch đứt = target 100%</div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Danh mục dự án ưu tiên — An Phát đầu, highlight nhẹ (PDD §3.3) -->
+    <section class="card" id="proj">
+      <div class="card-head">
+        <div class="card-title"><span class="material-symbols-outlined mi">work</span>Danh mục dự án ưu tiên</div>
+        <span class="small muted">Click CTA để bố trí người</span>
+      </div>
+      <div class="tbl-wrap tbl-flush">
+        <table class="tbl">
+          <thead>
+            <tr><th>Dự án</th><th>PM</th><th>Nhu cầu / Active</th><th>Công</th><th>Statement</th><th class="tbl-num">Margin dự kiến</th><th>CTA</th></tr>
+          </thead>
+          <tbody>
+            <tr class="hl">
+              <td><b>Nhà máy Điện tử An Phát</b> <span class="tbl-sub">DA-2026-018</span></td>
+              <td>Nguyễn Thùy Linh</td>
+              <td><b>47/50</b> <a class="badge badge-danger" href="S02_Staffing_Default_1440.html" title="Hotspot §8.3: Thiếu 3 người → Staffing"><span class="material-symbols-outlined mi">error</span>Thiếu 3</a></td>
+              <td><a class="badge badge-warning" href="S03_Attendance_Exceptions.html" title="Hotspot §8.3: 7 ngoại lệ công → Attendance"><span class="material-symbols-outlined mi">error</span>7 ngoại lệ</a></td>
+              <td><span class="badge badge-info"><span class="material-symbols-outlined mi">send</span>Đã gửi</span></td>
+              <td class="tbl-num"><b class="money">186.360.000 ₫</b> <span class="tbl-sub">20,37%</span></td>
+              <td><a class="btn btn-primary" href="S02_Staffing_Default_1440.html"><span class="material-symbols-outlined mi">group_add</span>Bố trí người</a></td>
+            </tr>
+            <tr>
+              <td><b>Kho vận Yên Phong</b> <span class="tbl-sub">DA-2026-022</span></td>
+              <td>Trần Quốc Bảo</td>
+              <td><b>80/80</b> <span class="badge badge-success"><span class="material-symbols-outlined mi">check_circle</span>Đủ</span></td>
+              <td><span class="badge badge-success"><span class="material-symbols-outlined mi">lock</span>Đã khóa</span></td>
+              <td><span class="badge badge-success"><span class="material-symbols-outlined mi">check_circle</span>Đã xác nhận</span></td>
+              <td class="tbl-num"><b class="money">108.100.000 ₫</b> <span class="tbl-sub">17,42%</span></td>
+              <td><span class="small muted">Đã đủ người</span></td>
+            </tr>
+            <tr>
+              <td><b>Nhà máy Sao Việt</b> <span class="tbl-sub">PRJ-SV-014</span></td>
+              <td>Nguyễn Hữu Tâm</td>
+              <td><b>32/35</b> <span class="badge badge-warning"><span class="material-symbols-outlined mi">error</span>Thiếu 3</span></td>
+              <td><span class="small muted">—</span></td>
+              <td><span class="badge badge-neutral"><span class="material-symbols-outlined mi">draft</span>Nháp</span></td>
+              <td class="tbl-num"><b class="money">36.300.000 ₫</b> <span class="tbl-sub">11,89%</span></td>
+              <td><a class="btn btn-secondary" href="S02_Staffing_Default_1440.html"><span class="material-symbols-outlined mi">group_add</span>Bố trí người</a></td>
+            </tr>
+            <tr>
+              <td colspan="7" class="small muted">… và 2 dự án khác (ẩn gộp) — danh mục đầy đủ tại màn Dự án · hàng nền nhạt = ưu tiên demo (PDD §3.3)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

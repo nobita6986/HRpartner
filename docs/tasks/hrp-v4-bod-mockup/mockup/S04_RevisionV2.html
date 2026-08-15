@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>S04_RevisionV2 — Reconciliation · V2 sau điều chỉnh (hi-fi)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="S04_RevisionV2">
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><span class="logo">HR<em>P</em></span></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Vận hành</div>
+      <a class="sidebar-item" href="S01_ControlTower_Default_1440.html"><span class="material-symbols-outlined mi">dashboard</span>Tổng quan</a>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">work</span>Dự án</a>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">groups</span>Nhân lực</a>
+      <a class="sidebar-item" href="S03_Attendance_Locked_ReadOnly.html"><span class="material-symbols-outlined mi">fingerprint</span>Chấm công<span class="count">7</span></a>
+      <a class="sidebar-item active" href="#"><span class="material-symbols-outlined mi">balance</span>Đối soát<span class="count">1</span></a>
+      <div class="nav-group-label">Báo cáo</div>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">assessment</span>Báo cáo</a>
+    </nav>
+    <div class="sidebar-foot"><div class="small muted">HRP v4 · BoD mockup</div></div>
+  </aside>
+
+  <header class="topbar">
+    <div class="topbar-context">
+      <span class="material-symbols-outlined mi">domain</span>
+      <span>HRP · Miền Bắc</span>
+      <span class="ctx-sub">Kỳ 08/2026</span>
+    </div>
+    <div class="topbar-search"><span class="material-symbols-outlined mi">search</span><input placeholder="Tìm người, dự án, batch…" aria-label="Tìm kiếm"/></div>
+    <div class="topbar-actions">
+      <span class="watermark-badge">DỮ LIỆU MINH HỌA</span>
+      <span class="badge badge-outline">HI-FI · STEP-05</span>
+      <span class="badge badge-warning">STATE · REVISION V2</span>
+      <button class="icon-btn" aria-label="Thông báo"><span class="material-symbols-outlined mi">notifications</span><span class="badge-dot"></span></button>
+      <div class="user-chip"><span class="avatar">LH</span><div><div class="u-name">Lê Thu Hà</div><div class="u-role">HR Ops</div></div></div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="page-head">
+      <div class="crumb">Đối soát <span class="sep">/</span> An Phát <span class="sep">/</span> Kỳ 08/2026</div>
+      <div class="page-title-row">
+        <div>
+          <h1 class="page-title">Đối soát · An Phát · Kỳ 08/2026</h1>
+          <div class="title-sub">TS-2026-08-AP · V2 · tạo sau điều chỉnh từ V1 · DỮ LIỆU MINH HỌA</div>
+        </div>
+        <div class="context-bar">
+          <span class="badge badge-primary"><span class="material-symbols-outlined mi">lock</span>TS-2026-08-AP · V2 · DRAFT</span>
+          <span class="badge badge-outline"><span class="material-symbols-outlined mi">history</span>Version trace</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="banner banner-info">
+      <span class="material-symbols-outlined mi">edit</span>
+      <div><b>Điều chỉnh V1 → V2:</b> Bùi Đức Long +2,0h OT (13/08) theo khiếu nại Bắc Việt · payable +174.000 ₫, receivable +216.000 ₫ · margin giữ 20,37%. (State minh họa STEP-06 · AC-11) Quay lại: <a href="S04_Reconciliation_Internal.html">S04 default</a>.</div>
+    </div>
+
+    <!-- Summary band 3 số — không card nổi (PDD §6) -->
+    <div class="kpi-band kpi-band-3" aria-label="Tóm tắt đối soát">
+      <div class="kpi">
+        <div class="kpi-label">Vendor payable</div>
+        <div class="kpi-value">728.634.000 <span class="unit">₫</span></div>
+        <div class="kpi-sub">Nhân lực Bắc Việt · Statement V2 · DRAFT — sau điều chỉnh</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Client receivable</div>
+        <div class="kpi-value">915.036.000 <span class="unit">₫</span></div>
+        <div class="kpi-sub">Điện tử An Phát · CL-0018</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Margin</div>
+        <div class="kpi-value">186.402.000 <span class="unit">₫</span></div>
+        <div class="kpi-sub">20,37% · chưa trừ phí quản lý</div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="tabs">
+        <a class="tab active" href="#vendor">Vendor payable<span class="t-count">47</span></a>
+        <a class="tab" href="#client">Client receivable</a>
+        <a class="tab" href="S04_MarginComparison.html">Margin comparison</a>
+      </div>
+
+      <!-- Vendor payable -->
+      <div id="vendor">
+        <div class="stmt-head">
+          <span class="material-symbols-outlined mi">store</span>
+          <b>Vendor: Nhân lực Bắc Việt · Statement V2 · DRAFT</b>
+          <span class="sh-spacer"></span>
+          <a class="btn btn-secondary" href="S04B_VendorPreview_Sent.html"><span class="material-symbols-outlined mi">visibility</span>Xem như Vendor</a>
+          <a class="btn btn-primary" href="S04B_VendorPreview_Sent.html"><span class="material-symbols-outlined mi">send</span>Tạo bản gửi</a>
+        </div>
+        <div class="tbl-wrap tbl-flush">
+          <table class="tbl">
+            <thead>
+              <tr><th>Worker</th><th>Assignment</th><th class="tbl-num">Reg h</th><th class="tbl-num">OT h</th><th>Rate snapshot (vendor)</th><th class="tbl-num">Amount</th><th class="col-act"></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Bùi Đức Long · HRP-02483 <span class="badge badge-warning badge-sm"><span class="material-symbols-outlined mi mi-xs">edit</span>Điều chỉnh +2h OT</span></td>
+                <td>ASG-004821 · ACTIVE<span class="tbl-sub tbl-sub-block">từ 12/08 · An Phát</span></td>
+                <td class="tbl-num">208</td><td class="tbl-num">14</td>
+                <td class="tbl-sub">58.000 / 87.000</td>
+                <td class="tbl-num money tbl-strong">13.282.000 ₫</td>
+                <td><a class="btn btn-secondary btn-sm" href="S04A_Lineage_Drawer.html">Lineage</a></td>
+              </tr>
+              <tr>
+                <td>Phan Văn Khánh · HRP-02522</td>
+                <td>ASG-004905 · ACTIVE<span class="tbl-sub tbl-sub-block">từ 12/08 · An Phát</span></td>
+                <td class="tbl-num">196</td><td class="tbl-num">8</td>
+                <td class="tbl-sub">58.000 / 87.000</td>
+                <td class="tbl-num money tbl-strong">12.064.000 ₫</td>
+                <td><button class="btn btn-secondary btn-sm">Lineage</button></td>
+              </tr>
+              <tr>
+                <td>Trần Thị Mai · HRP-02431</td>
+                <td>ASG-004937 · ACTIVE<span class="tbl-sub tbl-sub-block">từ 12/08 · An Phát</span></td>
+                <td class="tbl-num">96</td><td class="tbl-num">0</td>
+                <td class="tbl-sub">58.000 / 87.000</td>
+                <td class="tbl-num money tbl-strong">5.568.000 ₫</td>
+                <td><button class="btn btn-secondary btn-sm">Lineage</button></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="5">… và 44 dòng khác (ẩn gộp — đầy đủ khi mở statement)</td><td class="tbl-num money">728.634.000 ₫</td><td></td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="card-foot small muted">47 workers · 9.624 regular hours · 492,5 OT (sau điều chỉnh) — Total 728.634.000 ₫ (vendor payable, rate đối tác).</div>
+      </div>
+
+      <!-- Client receivable — cùng nguồn kỳ, rate khác (PDD §6: split view) -->
+      <div id="client" class="divider">
+        <div class="stmt-head">
+          <span class="material-symbols-outlined mi">apartment</span>
+          <b>Client: Điện tử An Phát · CL-0018 · Invoice dự kiến V2 · DRAFT</b>
+          <span class="sh-spacer"></span>
+          <span class="badge badge-outline">Rate client không gửi cho vendor</span>
+        </div>
+        <div class="tbl-wrap tbl-flush">
+          <table class="tbl">
+            <thead>
+              <tr><th>Worker</th><th>Assignment</th><th class="tbl-num">Reg h</th><th class="tbl-num">OT h</th><th>Rate snapshot (client)</th><th class="tbl-num">Amount</th><th class="col-act"></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Bùi Đức Long · HRP-02483 <span class="badge badge-warning badge-sm"><span class="material-symbols-outlined mi mi-xs">edit</span>Điều chỉnh +2h OT</span></td>
+                <td>ASG-004821 · ACTIVE</td>
+                <td class="tbl-num">208</td><td class="tbl-num">14</td>
+                <td class="tbl-sub">72.000 / 108.000</td>
+                <td class="tbl-num money tbl-strong">16.488.000 ₫</td>
+                <td><a class="btn btn-secondary btn-sm" href="S04A_Lineage_Drawer.html">Lineage</a></td>
+              </tr>
+              <tr>
+                <td>Phan Văn Khánh · HRP-02522</td>
+                <td>ASG-004905 · ACTIVE</td>
+                <td class="tbl-num">196</td><td class="tbl-num">8</td>
+                <td class="tbl-sub">72.000 / 108.000</td>
+                <td class="tbl-num money tbl-strong">14.976.000 ₫</td>
+                <td><button class="btn btn-secondary btn-sm">Lineage</button></td>
+              </tr>
+              <tr>
+                <td>Trần Thị Mai · HRP-02431</td>
+                <td>ASG-004937 · ACTIVE</td>
+                <td class="tbl-num">96</td><td class="tbl-num">0</td>
+                <td class="tbl-sub">72.000 / 108.000</td>
+                <td class="tbl-num money tbl-strong">6.912.000 ₫</td>
+                <td><button class="btn btn-secondary btn-sm">Lineage</button></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="5">… và 44 dòng khác (ẩn gộp)</td><td class="tbl-num money">915.036.000 ₫</td><td></td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="card-foot small muted">Cùng source period — hai rate, hai workflow: payable cho vendor, receivable cho client. Margin = 915.036.000 − 728.634.000 = 186.402.000 ₫ (20,37%).</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

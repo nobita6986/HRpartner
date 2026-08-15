@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>S03B_LockConfirmation — Khóa kỳ (hi-fi)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="S03B_LockConfirmation">
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><span class="logo">HR<em>P</em></span></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Vận hành</div>
+      <a class="sidebar-item" href="S01_ControlTower_Default_1440.html"><span class="material-symbols-outlined mi">dashboard</span>Tổng quan</a>
+      <a class="sidebar-item" href="S02_Staffing_Default_1440.html"><span class="material-symbols-outlined mi">work</span>Dự án</a>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">groups</span>Nhân lực</a>
+      <a class="sidebar-item active" href="#"><span class="material-symbols-outlined mi">fingerprint</span>Chấm công<span class="count">7</span></a>
+      <a class="sidebar-item" href="S04_Reconciliation_Internal.html"><span class="material-symbols-outlined mi">balance</span>Đối soát<span class="count">1</span></a>
+      <div class="nav-group-label">Báo cáo</div>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">assessment</span>Báo cáo</a>
+    </nav>
+    <div class="sidebar-foot"><div class="small muted">HRP v4 · BoD mockup</div></div>
+  </aside>
+
+  <header class="topbar">
+    <div class="topbar-context">
+      <span class="material-symbols-outlined mi">domain</span>
+      <span>HRP · Miền Bắc</span>
+      <span class="ctx-sub">Kỳ 08/2026</span>
+    </div>
+    <div class="topbar-search"><span class="material-symbols-outlined mi">search</span><input placeholder="Tìm người, dự án, batch…" aria-label="Tìm kiếm"/></div>
+    <div class="topbar-actions">
+      <span class="watermark-badge">DỮ LIỆU MINH HỌA</span>
+      <span class="badge badge-outline">HI-FI · STEP-05</span>
+      <button class="icon-btn" aria-label="Thông báo"><span class="material-symbols-outlined mi">notifications</span><span class="badge-dot"></span></button>
+      <div class="user-chip"><span class="avatar">LH</span><div><div class="u-name">Lê Thu Hà</div><div class="u-role">HR Ops</div></div></div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="page-head">
+      <div class="crumb">Chấm công <span class="sep">/</span> An Phát <span class="sep">/</span> Kỳ 08/2026</div>
+      <div class="page-title-row">
+        <div>
+          <h1 class="page-title">Chấm công · An Phát · 08/2026</h1>
+          <div class="title-sub">File: AP_QM_T08_2026.xlsx · 1.222 dòng · DỮ LIỆU MINH HỌA</div>
+        </div>
+        <div class="context-bar">
+          <span class="badge badge-outline"><span class="material-symbols-outlined mi">upload_file</span>PREVIEWED</span>
+          <span class="badge badge-success"><span class="material-symbols-outlined mi">task_alt</span>7/7 exception đã xử lý</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-band kpi-band-5" aria-label="Thống kê batch chấm công">
+      <div class="kpi"><div class="kpi-label">Đã khớp</div><div class="kpi-value">1.215</div><div class="kpi-sub">dòng khớp tự động</div></div>
+      <div class="kpi"><div class="kpi-label">Ngoại lệ</div><div class="kpi-value">7</div><div class="kpi-sub">7/7 đã xử lý · 0 blocker</div></div>
+      <div class="kpi"><div class="kpi-label">Chưa map</div><div class="kpi-value">0</div><div class="kpi-sub">đã gán đủ worker</div></div>
+      <div class="kpi"><div class="kpi-label">Giờ thường</div><div class="kpi-value">9.624</div><div class="kpi-sub">giờ toàn kỳ</div></div>
+      <div class="kpi"><div class="kpi-label">OT 1.5/2.0/3.0</div><div class="kpi-value">490,5</div><div class="kpi-sub">426,5 + 48,0 + 16,0</div></div>
+    </div>
+
+    <section class="card">
+      <div class="readiness-card">
+        <div class="readiness">
+          <span class="readiness-label">7/7 resolved · Sẵn sàng khóa</span>
+          <span class="readiness-track"><span class="readiness-fill done" style="width:100%"></span></span>
+        </div>
+        <span class="small muted"><span class="material-symbols-outlined mi mi-sm">verified_user</span> Maker: Lê Thu Hà · Checker: Nguyễn Thanh Huyền</span>
+        <a class="btn btn-primary" href="S03B_LockConfirmation.html"><span class="material-symbols-outlined mi">lock</span>Duyệt kỳ</a>
+      </div>
+    </section>
+
+    <div class="small muted">Bảng 7 ngoại lệ như S03_Attendance_Resolved — bị scrim làm mờ phía sau dialog.</div>
+  </main>
+</div>
+
+<div class="scrim"></div>
+<div class="dialog" role="dialog" aria-modal="true" aria-label="Khóa kỳ chấm công An Phát 08/2026">
+  <div class="dialog-head">
+    <div class="dialog-title"><span class="material-symbols-outlined mi">lock</span>Khóa kỳ chấm công · An Phát · 08/2026</div>
+  </div>
+  <div class="dialog-body vstack">
+    <div class="sum-list">
+      <div class="sum-row"><span class="k">Dòng thô (raw)</span><span class="v">1.222</span></div>
+      <div class="sum-row"><span class="k">Dòng đã normalize</span><span class="v">1.222</span></div>
+      <div class="sum-row"><span class="k">Workers</span><span class="v">47</span></div>
+      <div class="sum-row"><span class="k">Blocker</span><span class="v">0</span></div>
+      <div class="sum-row"><span class="k">Exception đã xử lý</span><span class="v">7</span></div>
+      <div class="sum-row"><span class="k">Giờ thường</span><span class="v">9.624 giờ</span></div>
+      <div class="sum-row"><span class="k">Giờ OT</span><span class="v">490,5 giờ</span></div>
+    </div>
+    <div class="banner banner-info">
+      <span class="material-symbols-outlined mi">info</span>
+      <div>Sau khi khóa, không sửa trực tiếp. Sai lệch tạo adjustment/version mới.</div>
+    </div>
+  </div>
+  <div class="dialog-foot">
+    <a class="btn btn-ghost" href="S03_Attendance_Resolved.html">Quay lại kiểm tra</a>
+    <a class="btn btn-primary" href="S04_Reconciliation_Internal.html"><span class="material-symbols-outlined mi">lock</span>Khóa và tạo đối soát</a>
+  </div>
+</div>
+
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

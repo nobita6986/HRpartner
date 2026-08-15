@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>F01_StatusLanguage — Foundations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  .f1 { padding: 28px 40px; height: 100%; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
+  .f1-head { display: flex; align-items: center; gap: 14px; }
+  .f1-title { font: 700 24px/32px var(--font-head); letter-spacing: -.01em; }
+  .f1-note { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .vocab { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .vocab .v-title { font: 600 12px/16px var(--font-label); letter-spacing: .04em; text-transform: uppercase; color: var(--on-surface-variant); }
+  .vocab .v-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .vocab .v-src { font: 400 11px/14px var(--font-label); color: var(--on-surface-variant); margin-left: auto; }
+  .blocked-demo { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 14px 16px; display: flex; align-items: center; gap: 14px; }
+</style>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="F01_StatusLanguage">
+  <div class="f1">
+
+    <div class="f1-head">
+      <span class="f1-title">F01 — Status Language</span>
+      <span class="f1-note">PDD §2.4: badge luôn có <b>icon + text</b>, không màu-only · Từ vựng khớp schema (EV-10)</span>
+      <span class="watermark-badge push-right">DỮ LIỆU MINH HỌA</span>
+    </div>
+
+    <div class="vocab">
+      <span class="v-title">Profile</span>
+      <div class="v-row">
+        <span class="badge badge-warning"><span class="material-symbols-outlined">description</span>Chưa đủ hồ sơ</span>
+        <span class="badge badge-info"><span class="material-symbols-outlined">hourglass_top</span>Chờ xác minh</span>
+        <span class="badge badge-success"><span class="material-symbols-outlined">verified</span>Đã xác minh</span>
+        <span class="badge badge-danger"><span class="material-symbols-outlined">cancel</span>Bị từ chối</span>
+        <span class="v-src">schema: Worker.profileStatus</span>
+      </div>
+    </div>
+
+    <div class="vocab">
+      <span class="v-title">Assignment</span>
+      <div class="v-row">
+        <span class="badge badge-info"><span class="material-symbols-outlined">schedule</span>Dự kiến</span>
+        <span class="badge badge-success"><span class="material-symbols-outlined">play_circle</span>Đang làm</span>
+        <span class="badge badge-warning"><span class="material-symbols-outlined">pause_circle</span>Tạm dừng</span>
+        <span class="badge badge-neutral"><span class="material-symbols-outlined">stop_circle</span>Đã kết thúc</span>
+        <span class="badge badge-neutral"><span class="material-symbols-outlined">swap_horiz</span>Đã chuyển</span>
+        <span class="v-src">schema: WorkerAssignment.status</span>
+      </div>
+    </div>
+
+    <div class="vocab">
+      <span class="v-title">Risk (D11 — không màu-only, có icon + text)</span>
+      <div class="v-row">
+        <span class="badge badge-success"><span class="material-symbols-outlined">check_circle</span>Bình thường</span>
+        <span class="badge badge-warning"><span class="material-symbols-outlined">error</span>Cần xem xét</span>
+        <span class="badge badge-danger"><span class="material-symbols-outlined">block</span>Bị chặn</span>
+        <span class="v-src">schema: Worker.riskStatus</span>
+      </div>
+    </div>
+
+    <div class="vocab">
+      <span class="v-title">Attendance</span>
+      <div class="v-row">
+        <span class="badge badge-success"><span class="material-symbols-outlined">task_alt</span>Đã khớp</span>
+        <span class="badge badge-neutral"><span class="material-symbols-outlined">rule</span>Chưa khớp</span>
+        <span class="badge badge-warning"><span class="material-symbols-outlined">error</span>Bất thường</span>
+        <span class="badge badge-info"><span class="material-symbols-outlined">fact_check</span>Đã duyệt</span>
+        <span class="badge badge-neutral"><span class="material-symbols-outlined">lock</span>Đã khóa</span>
+      </div>
+    </div>
+
+    <div class="vocab">
+      <span class="v-title">Statement</span>
+      <div class="v-row">
+        <span class="badge badge-neutral"><span class="material-symbols-outlined">draft</span>Nháp</span>
+        <span class="badge badge-info"><span class="material-symbols-outlined">send</span>Đã gửi</span>
+        <span class="badge badge-danger"><span class="material-symbols-outlined">forum</span>Bị phản đối</span>
+        <span class="badge badge-success"><span class="material-symbols-outlined">check_circle</span>Đã xác nhận</span>
+        <span class="badge badge-neutral"><span class="material-symbols-outlined">lock</span>Đã khóa</span>
+        <span class="badge badge-success"><span class="material-symbols-outlined">payments</span>Đã thanh toán</span>
+        <span class="v-src">schema: VendorStatement.status</span>
+      </div>
+    </div>
+
+    <div class="vocab">
+      <span class="v-title">Batch nhập chấm công — mã hiển thị khớp schema</span>
+      <div class="v-row">
+        <span class="badge badge-outline"><span class="material-symbols-outlined">upload_file</span>PREVIEWED</span>
+        <span class="v-src">schema: AttendanceImportBatch.status (EV-10) — S03 dùng badge này ở header batch</span>
+      </div>
+    </div>
+
+    <div class="blocked-demo">
+      <span class="avatar avatar-lg">MT</span>
+      <div>
+        <div class="row"><b>Nguyễn Minh Tuấn</b> <span class="wc-id">HRP-02504</span> <span class="badge badge-danger"><span class="material-symbols-outlined">block</span>Bị chặn · hồ sơ cần review</span></div>
+        <div class="small muted mt-4">Ví dụ card BLOCKED: CTA bị disabled <b>kèm lý do</b> (không chỉ mất nút — PDD §2.4)</div>
+        <div class="mt-8"><button class="btn btn-secondary btn-sm" disabled>Bố trí vào dự án</button> <span class="small muted">disabled + lý do hiển thị</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

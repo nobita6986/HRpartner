@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>S04_MarginComparison — So sánh margin 3 dự án (hi-fi)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="S04_MarginComparison">
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><span class="logo">HR<em>P</em></span></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Vận hành</div>
+      <a class="sidebar-item" href="S01_ControlTower_Default_1440.html"><span class="material-symbols-outlined mi">dashboard</span>Tổng quan</a>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">work</span>Dự án</a>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">groups</span>Nhân lực</a>
+      <a class="sidebar-item" href="S03_Attendance_Locked_ReadOnly.html"><span class="material-symbols-outlined mi">fingerprint</span>Chấm công<span class="count">7</span></a>
+      <a class="sidebar-item active" href="#"><span class="material-symbols-outlined mi">balance</span>Đối soát<span class="count">1</span></a>
+      <div class="nav-group-label">Báo cáo</div>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">assessment</span>Báo cáo</a>
+    </nav>
+    <div class="sidebar-foot"><div class="small muted">HRP v4 · BoD mockup</div></div>
+  </aside>
+
+  <header class="topbar">
+    <div class="topbar-context">
+      <span class="material-symbols-outlined mi">domain</span>
+      <span>HRP · Miền Bắc</span>
+      <span class="ctx-sub">Kỳ 08/2026</span>
+    </div>
+    <div class="topbar-search"><span class="material-symbols-outlined mi">search</span><input placeholder="Tìm người, dự án, batch…" aria-label="Tìm kiếm"/></div>
+    <div class="topbar-actions">
+      <span class="watermark-badge">DỮ LIỆU MINH HỌA</span>
+      <span class="badge badge-outline">HI-FI · STEP-05</span>
+      <button class="icon-btn" aria-label="Thông báo"><span class="material-symbols-outlined mi">notifications</span><span class="badge-dot"></span></button>
+      <div class="user-chip"><span class="avatar">LH</span><div><div class="u-name">Lê Thu Hà</div><div class="u-role">HR Ops</div></div></div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="page-head">
+      <div class="crumb">Đối soát <span class="sep">/</span> Kỳ 08/2026</div>
+      <div class="page-title-row">
+        <div>
+          <h1 class="page-title">Đối soát · Kỳ 08/2026 · Margin comparison</h1>
+          <div class="title-sub">DỮ LIỆU MINH HỌA</div>
+        </div>
+        <div class="context-bar">
+          <span class="badge badge-primary"><span class="material-symbols-outlined mi">lock</span>TS-2026-08-AP · LOCKED v1</span>
+          <span class="badge badge-outline"><span class="material-symbols-outlined mi">analytics</span>Margin riêng từng dự án</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-band kpi-band-3" aria-label="Tóm tắt đối soát toàn kỳ">
+      <div class="kpi">
+        <div class="kpi-label">Vendor payable (kỳ)</div>
+        <div class="kpi-value">1.509.760.000 <span class="unit">₫</span></div>
+        <div class="kpi-sub">3 dự án đã đối soát</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Client receivable (kỳ)</div>
+        <div class="kpi-value">1.840.520.000 <span class="unit">₫</span></div>
+        <div class="kpi-sub">3 dự án đã đối soát</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Margin (kỳ)</div>
+        <div class="kpi-value">330.760.000 <span class="unit">₫</span></div>
+        <div class="kpi-sub">17,97%</div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="tabs">
+        <a class="tab" href="S04_Reconciliation_Internal.html#vendor">Vendor payable<span class="t-count">47</span></a>
+        <a class="tab" href="S04_Reconciliation_Internal.html#client">Client receivable</a>
+        <a class="tab active" href="S04_MarginComparison.html">Margin comparison</a>
+      </div>
+      <div class="tbl-wrap tbl-flush">
+        <table class="tbl">
+          <thead>
+            <tr><th>Dự án</th><th class="tbl-num">Vendor payable</th><th class="tbl-num">Client receivable</th><th class="tbl-num">Tạm ứng</th><th class="tbl-num">Margin</th><th class="tbl-num">Margin %</th></tr>
+          </thead>
+          <tbody>
+            <tr class="hl">
+              <td><b>DA-2026-018 · Nhà máy Điện tử An Phát</b><span class="tbl-sub tbl-sub-block">KCN Quang Minh · PM Nguyễn Thùy Linh</span></td>
+              <td class="tbl-num money">728.460.000 ₫</td>
+              <td class="tbl-num money">914.820.000 ₫</td>
+              <td class="tbl-num money">0 ₫</td>
+              <td class="tbl-num money tbl-strong">186.360.000 ₫</td>
+              <td class="tbl-num tbl-strong">20,37%</td>
+            </tr>
+            <tr>
+              <td><b>DA-2026-022 · Kho vận Yên Phong</b><span class="tbl-sub tbl-sub-block">PM Trần Quốc Bảo · CL-0021 Đông Dương</span></td>
+              <td class="tbl-num money">512.400.000 ₫</td>
+              <td class="tbl-num money">620.500.000 ₫</td>
+              <td class="tbl-num money">0 ₫</td>
+              <td class="tbl-num money tbl-strong">108.100.000 ₫</td>
+              <td class="tbl-num tbl-strong">17,42%</td>
+            </tr>
+            <tr>
+              <td><b>PRJ-SV-014 · Nhà máy Sao Việt</b><span class="tbl-sub tbl-sub-block">PM Nguyễn Hữu Tâm</span></td>
+              <td class="tbl-num money">268.900.000 ₫</td>
+              <td class="tbl-num money">305.200.000 ₫</td>
+              <td class="tbl-num money">0 ₫</td>
+              <td class="tbl-num money tbl-strong">36.300.000 ₫</td>
+              <td class="tbl-num tbl-strong">11,89%</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr><td>Tổng kỳ (3 dự án)</td><td class="tbl-num money">1.509.760.000 ₫</td><td class="tbl-num money">1.840.520.000 ₫</td><td class="tbl-num money">0 ₫</td><td class="tbl-num money">330.760.000 ₫</td><td class="tbl-num">17,97%</td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="card-foot small muted">Tạm ứng 0 — chưa tạm ứng trong kỳ (minh họa) · hàng nền nhạt = dự án ưu tiên demo (PDD §3.3) · Margin % = Margin / Client receivable.</div>
+    </section>
+
+  </main>
+</div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

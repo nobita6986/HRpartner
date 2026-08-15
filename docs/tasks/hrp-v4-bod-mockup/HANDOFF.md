@@ -1,0 +1,107 @@
+# HANDOFF: hrp-v4-bod-mockup
+
+## 0. Control
+
+| Field | Value |
+|---|---|
+| Task slug | `hrp-v4-bod-mockup` |
+| Work type | `DESIGN` |
+| Spec version | `v1.4` (khớp TASK.md) |
+| Execution round | `2` |
+| Executor | `Tier 1 Planner + ui-ux-pro-max skill (founder ủy quyền 15/08/2026 — thay sếp làm phần Figma; DEC-27: medium HTML)` |
+| Baseline | `git a4327ab` · thực tế ngày 15/08/2026 · `docs/UNIFIED_PLAN_v4.md` (v4.20), `stitch/warm_professionalism/DESIGN.md` (G27), `docs/HRP_V4_MOCKUP_EXECUTION_PLAN.md` (PDD) |
+| Status | `READY_FOR_AUDIT` |
+| Started/updated | `2026-08-15 (VN)` — STEP-01 08:40 → STEP-06 21:10 cùng ngày |
+
+## 1. Outcome Summary
+
+Đã dựng xong **22/22 frame low-fi** của flow chính (STEP-01/02/03) theo DEC-27 — medium HTML/CSS prototype, mỗi frame = 1 file tự chứa trong `mockup/`, artboard 1440×900 tự scale theo cửa sổ (frame.js), mở `mockup/index.html` là bản đồ 10 nhóm.
+
+- **STEP-01** (foundations): `_assets/hrp.css` — tokens canonical G27 "Warm Professionalism" (primary `#F26522`, dark `#A63B00`, Be Vietnam Pro + Inter), app shell (sidebar 232 / topbar 56 / gutter 24 / radius 6 / drawer 480 / z-scale 10-40-50-60 / motion 150-250ms), toàn bộ component class dùng chung (button, badge icon+text, KPI band, table 44px, drawer, dialog, banner, chip, seg, queue, timeline, skeleton, empty, form, tabs, portal). `frame.js` chèn labelbar (link về index.html + tên frame + 1440×900) và scale-to-fit. `F00_Cover` + `F01_Tokens/TypeSpacing/StatusLanguage/Density_Variant_44_52`.
+- **STEP-02** (low-fi, 7 frame): `S01_ControlTower_Default_1440` (KPI band phẳng 4 số + queue 4 mục + 2 chart + project table 3 dòng + 2 dòng ẩn), `S02_Staffing_Default_1440` (12 worker card + filter + seg Grid/Compact + phân trang 128), `S02A_AssignmentConflict_Drawer` + `S02A_TransferPreview` (guided transfer 1-ACTIVE), `S02B_ReferralGuard_Drawer_Protected` + `S02B_ReferralGuard_OverrideRequested` (timeline 3 sự kiện + kết luận + override form), `F00A_DemoNarrative` (click-path 16 bước PDD §1.3 + 3 khoảnh khắc bắt buộc §1.4).
+- **STEP-03** (low-fi, 10 frame): `S03_Attendance_Exceptions` (stats band 5 số, bảng 7 exception đúng taxonomy ×1, blocker trước, bulk bar, readiness 5/7), `S03_ResolveDrawer` (3 band raw/suggested/result — AP-QM-1048 → Mai), `S03_Attendance_Resolved` (7/7 · maker Lê Thu Hà / checker Nguyễn Thanh Huyền), `S03B_LockConfirmation` (dialog đúng 7 số §5.6, primary không màu success), `S03_Attendance_Locked_ReadOnly` (bất biến + adjustment path), `S04_Reconciliation_Internal` (summary band 3 số + tabs + vendor/client split cùng file anchor), `S04_MarginComparison` (3 dự án + tổng kỳ), `S04A_Lineage_Drawer` (chain + phép tính Long đầy đủ), `S04B_VendorPreview_Sent` (portal đối tác, ẩn client rate/margin/salary, deadline 18/08 18:00), `S04B_VendorPreview_DisputeForm` (phạm vi + lý do danh mục + mô tả + bằng chứng + deadline).
+- **Low-fi mode**: class `.wf` trên `.frame-canvas` chuyển toàn bộ token về xám + viền đứt; STEP-05 gỡ `.wf` là có hi-fi (không sửa nội dung).
+- **STEP-05 (hi-fi + components)**: gỡ toàn bộ `.wf` low-fi; áp radius G27 8/16/24 (AUD-003); pass cleanup inline (AUD-004): `.icon-btn` position:relative, class `.tbl-sub-block`, badge `HI-FI · STEP-05` mọi frame; `F02_ComponentSet` — 17 component PDD §8.2 dùng class chung hrp.css (không detach, không inline override); RightDrawer/ConfirmationDialog link tới frame live S02A/S03B (tránh nested).
+- **STEP-06 (hi-fi S03/S04 + 12 state + wire 11 hotspot)**: hi-fi Attendance/Reconciliation; 12 state frame đúng tên §4.5 — overlay (S01_Loading, S03_ImportProgress, S03_ImportFailed: scrim + state-card + skeleton/progress), in-place (S01_EmptyQueue, S01_StaleBanner, S02B_Expired, S02_CardBlocked, S04_ConfirmedLocked, S04_RevisionV2, S04_VendorDisputed), st-hide (S02_Staffing_NoResult, S04_EmptyPayment); mỗi state có badge `STATE · …` màu semantic + note trung thực `(State minh họa STEP-06 · AC-11)` + link quay về frame gốc. `F50_HotspotMap` — bảng 11 hotspot PDD §8.3 (from → to → back-path) + deviation Long/Nam ghi rõ.
+- **Wire & verify**: 11 hotspot link đúng đích; back-path bổ sung — S04B_VendorPreview_Sent thêm nút `Về HRP` → S04; sidebar `Dự án` 3 frame S03 trỏ → S02 (trước là `#`); link-check toàn bộ 36 frame: ALL OK (script bỏ anchor + http + assets).
+- **Chưa hoàn thành (theo kế hoạch)**: STEP-08 (dry-run, trang 60, Decision Log), STEP-09 (S05). Không tự ghi audit verdict.
+
+## 2. Execution Trace
+
+| STEP | RQ | File/artifact/symbol | Result | Deviation từ TASK |
+|---|---|---|---|---|
+| `STEP-01` | `RQ-07`, `RQ-09` | `mockup/index.html`, `mockup/_assets/hrp.css`, `mockup/_assets/frame.js`, `mockup/F00_Cover.html`, `mockup/F01_Tokens.html`, `mockup/F01_TypeSpacing.html`, `mockup/F01_StatusLanguage.html`, `mockup/F01_Density_Variant_44_52.html` | DONE | None — DEC-27 đã chuyển medium từ Figma sang HTML |
+| `STEP-02` | `RQ-01`, `RQ-02`, `RQ-03`, `RQ-04`, `RQ-07` | `mockup/S01_ControlTower_Default_1440.html`, `mockup/S02_Staffing_Default_1440.html`, `mockup/S02A_AssignmentConflict_Drawer.html`, `mockup/S02A_TransferPreview.html`, `mockup/S02B_ReferralGuard_Drawer_Protected.html`, `mockup/S02B_ReferralGuard_OverrideRequested.html`, `mockup/F00A_DemoNarrative.html` | DONE | (a) Drawer frame dựng trên underlying truncated 3 card + note trung thực "bị scrim làm mờ" thay vì duplicate cả 12 card (file tự chứa, PDD §4.4); (b) F00A là trang presenter — không low-fi (không có app shell để gray-out) |
+| `STEP-03` | `RQ-01`, `RQ-02`, `RQ-05`, `RQ-06`, `RQ-07` | `mockup/S03_Attendance_Exceptions.html`, `mockup/S03_ResolveDrawer.html`, `mockup/S03_Attendance_Resolved.html`, `mockup/S03B_LockConfirmation.html`, `mockup/S03_Attendance_Locked_ReadOnly.html`, `mockup/S04_Reconciliation_Internal.html`, `mockup/S04_MarginComparison.html`, `mockup/S04A_Lineage_Drawer.html`, `mockup/S04B_VendorPreview_Sent.html`, `mockup/S04B_VendorPreview_DisputeForm.html` | DONE | (a) Tab "Client receivable" nằm trong cùng file S04_Reconciliation_Internal (anchor `#client`) — frame inventory §4.5 không có file ClientReceivable riêng; (b) bulk "Đánh dấu đã xử lý" là link fast-path → S03_Attendance_Resolved (không phải hotspot chính thức §8.3); (c) dialog lock giữ "Khóa và tạo đối soát" màu primary — không màu success — đúng PDD §5.6 |
+| `STEP-05` | `RQ-07`, `RQ-08`, `RQ-09` | `mockup/F02_ComponentSet.html`, hi-fi toàn bộ 22 frame (gỡ `.wf`, radius 8/16/24, badge HI-FI) | DONE | (a) Radius 8/16/24 theo DEC-28 — ghi chú ở F02 callout; (b) RightDrawer/ConfirmationDialog không dựng lại trong F02 — link tới S02A/S03B live (tránh nested) |
+| `STEP-06` | `RQ-02`, `RQ-08`, `RQ-10` | `mockup/F50_HotspotMap.html`, 12 state frame (`S01_ControlTower_Loading/EmptyQueue/StaleBanner`, `S02_Staffing_NoResult`, `S02B_ReferralGuard_Expired`, `S02_CardBlocked`, `S03_ImportProgress/ImportFailed`, `S04_VendorDisputed/ConfirmedLocked/RevisionV2/EmptyPayment`), `mockup/index.html` (14 dòng done), `F00A_DemoNarrative` foot | DONE | (a) PDD §8.3 hotspot #9 ghi "Nguyễn Văn Nam" — §4.5 locked scenario (audit round 1) dùng dòng Bùi Đức Long cho lineage: giữ Long, ghi deviation trong F50; (b) S04B_VendorPreview_Sent thiếu back-path → thêm nút "Về HRP" → S04; (c) sidebar Dự án S03×3 trỏ S02; (d) S02_CardBlocked note chuẩn hóa mẫu audit |
+
+## 3. Acceptance Evidence
+
+| AC | Command/check | Exit/result | Evidence summary/link | Limitation |
+|---|---|---|---|---|
+| `AC-01` | Mở `mockup/index.html`, bấm theo click-path PDD §1.3 (16 bước trong F00A) | PASS (walkthrough link) | `mockup/F00A_DemoNarrative.html` — từng bước có link đúng frame; KPI/queue S01 → S02/S03/S04 | Chưa dry-run thật (STEP-08) |
+| `AC-02` | Cộng tay mọi validation rule §4.4 | PASS | 914.820.000−728.460.000=186.360.000 ✓ 20,37%; Long 13.108.000/16.272.000/3.164.000 ✓ (S04+S04A); Khánh 12.064.000/14.976.000 ✓; Mai 5.568.000/6.912.000 ✓; 426,5+48,0+16,0=490,5 ✓ (S03 band); 1.222−1.215=7 ✓ | 44 dòng ẩn gộp S04 — TASK v1.4 đã sửa text "43"→"44" (47−3) |
+| `AC-03` | Grep toàn bộ frame | PASS | ID worker/project/vendor giữ nguyên giữa frame; tiền vi-VN nguyên đồng; watermark `DỮ LIỆU MINH HỌA` trên topbar mọi frame app-shell; không SĐT/CCCD/bank/lương trên card | Không có PII thật trong dữ liệu mock |
+| `AC-04` | Đối chiếu index.html với §4.5 | PASS | Không frame Payroll/TNCN/BHXH/Worker Portal/CRM; S05 chưa dựng (STEP-09) nên chưa có trong flow | S05 sẽ thêm sau |
+| `AC-05` | Visual | PASS (hi-fi) | S02 dùng card 12 (WorkerCard ×5 variant trong F02); S03/S04 dùng table | — |
+| `AC-06` | Bấm S02 Nam → Bố trí | PASS | `S02A_AssignmentConflict_Drawer.html` (guided: Xem assignment / Chuyển dự án — không toast lỗi) → `S02A_TransferPreview.html` (đóng cũ ACTIVE→TRANSFERRED 15/08 06:00, mở mới PLANNED→ACTIVE 15/08 06:00, quota 80→79 / 47→48, lý do bắt buộc) | — |
+| `AC-07` | Bấm S02 Huy → nguồn tuyển | PASS | `S02B_ReferralGuard_Drawer_Protected.html` (timeline 12/08·12/08·15/08, kết luận `Chặn nhận nguồn mới đến hết 18/08`, lý do `Claim CTV đang trong cửa sổ bảo vệ 7 ngày`, badge `còn 3 ngày`) → `S02B_ReferralGuard_OverrideRequested.html` (lý do + bằng chứng bắt buộc, maker-checker) | Override form chỉ hiện sau khi bấm Yêu cầu override (demo path) |
+| `AC-08` | Bấm flow 06:20–08:30 | PASS | S03 default (5/7 · Còn 2 blocker) → S03_ResolveDrawer (gán Mai) → S03_Attendance_Resolved (7/7 · maker/checker) → S03B_LockConfirmation (1.222 raw · 0 blocker · 7 đã xử lý · 9.624h · 490,5h OT) → S03_Attendance_Locked_ReadOnly | Không có animation state — đi bằng link giữa frame |
+| `AC-09` | Đối chiếu bảng S03 với §4.4 | PASS | 7 taxonomy đúng 1 lần: UNMATCHED/SOURCE_CONFLICT/WRONG_PROJECT/CROSS_DAY_SHIFT/MISSING_CHECKOUT/DUPLICATE_EVENT/INACTIVE_ASSIGNMENT; blocker row 1+2; 2 row chưa map = AP-QM-1048 (badge Chưa map) + AP-QM-1128 (badge Chưa map assignment) | WRONG_PROJECT = blocker-class (DEC-09) nhưng đã xử lý trong demo state (DEC-18 + §4.4 line 202 canonical) |
+| `AC-10` | Mở frame ở 1366×768 | PASS (kiến trúc) | frame.js scale-to-fit toàn bộ artboard — không che CTA vì cả màn hiển thị; badge đều icon+text; không gradient/nested card/emoji icon/hero-scale | Chưa chụp screenshot 2 viewport — Tier 3 round 2 kiểm tra (1366×768) |
+| `AC-11` | Page tree | PASS | 12/12 state frame §4.5 + badge STATE + note trung thực + back-link (grep từng file) | F50 ghi deviation hotspot #9 (Nam→Long) |
+| `AC-12` | Dry-run | NOT YET | STEP-08 | — |
+| `AC-13` | Trang 60 | NOT YET | STEP-08 | — |
+| `AC-14` | Đọc HANDOFF + AUDIT + TASK §9 | PARTIAL | HANDOFF.md (round 1+2) ✓; AUDIT.md round 1 đã có + §9 resolution ✓; chờ Tier 3 append round 2 | — |
+| `AC-15` | S05 | NOT YET | STEP-09 | — |
+
+## 4. Changed Deliverables
+
+- **Source/artifact changed:** `docs/tasks/hrp-v4-bod-mockup/mockup/index.html`, `mockup/_assets/hrp.css`, `mockup/_assets/frame.js`, 22 file frame (liệt kê §2), `docs/tasks/hrp-v4-bod-mockup/TASK.md` (v1.4 — sửa lỗi số học §4.4: 44 dòng ẩn gộp, thêm Revision Log), `docs/tasks/hrp-v4-bod-mockup/HANDOFF.md` (file này).
+- **Dependency:** None — không dùng thư viện ngoài Google Fonts (Be Vietnam Pro, Inter, Material Symbols Outlined).
+- **Schema/migration:** None.
+- **Environment/config:** None — `.env` không bị đụng, mock data hư cấu (DEC-14), không dùng dữ liệu viec3mien.
+- **Git diff/commit:** Not created — chưa commit (chờ lệnh sếp; git status hiện có `docs/UNIFIED_PLAN_v4.md` modified + `docs.zip` untracked từ trước, không thuộc task này).
+
+## 5. Deviations, Limitations và Blockers
+
+| ID | Type | Evidence | Impact | Decision needed from Planner |
+|---|---|---|---|---|
+| `BLK-01` | Limitation | STEP-08/09 chưa chạy | Dry-run, trang 60, Decision Log, S05 chưa có | None — đúng thứ tự pipeline |
+| `BLK-02` | Deviation | Drawer frame (S02A/S02B/S03_Resolve/S04A) dựng trên underlying truncated + note "bị scrim làm mờ" | Không duplicate nguyên frame nền trong file drawer | Chấp nhận pattern (file tự chứa, PDD §4.4 đòi drawer trên đúng ngữ cảnh) hay yêu cầu full nền? |
+| `BLK-03` | Deviation | Tab "Client receivable" cùng file với S04_Reconciliation_Internal (anchor), không phải file riêng | 1 file chứa 2 tab vendor/client + file MarginComparison riêng | Chấp nhận (frame inventory §4.5 chỉ có 2 tên file S04 nội bộ)? |
+| `BLK-04` | Deviation | Bulk "Đánh dấu đã xử lý" là link trực tiếp → S03_Attendance_Resolved | Thêm 1 path ngoài 11 hotspot §8.3 | Chấp nhận là fast-path minh họa (không đưa vào hotspot map)? |
+| `BLK-05` | Deviation | TASK.md v1.4: sửa "43 dòng ẩn gộp" → "44" (47 workers − 3 hiển thị) | AC-02 sẽ cộng tay; text cũ lệch số workers | Đã tự xử lý (Planner sửa contract + Revision Log v1.4) |
+| `BLK-06` | Limitation | Stitch MCP chưa xuất hiện trong session dù sếp đã thêm | Không ảnh hưởng medium HTML (DEC-27) | Nếu Stitch xuất hiện: dùng bổ trợ cho hi-fi/variant, không thay thế HTML path |
+| `BLK-07` | Deviation | Hotspot #9 PDD §8.3 ghi "Nguyễn Văn Nam" — §4.5 locked scenario dùng dòng Bùi Đức Long | Đích Lineage drawer giữ nguyên; tên dòng khác | Chấp nhận + đã ghi deviation trong F50? |
+| `BLK-08` | Enhancement | S04B_VendorPreview_Sent không có back-link → thêm nút "Về HRP" → S04 | Khớp F50 back-path #10; không đổi nghiệp vụ | Chấp nhận? |
+| `BLK-09` | Enhancement | Sidebar "Dự án" 3 frame S03 trỏ → S02_Staffing (trước là `#`) | Back-path hotspot #5 mượt hơn; đúng mô hình nav | Chấp nhận? |
+
+## 6. Evidence Index
+
+| Evidence | Path | Proves |
+|---|---|---|
+| `E-01` | `mockup/index.html` | Bản đồ 10 nhóm / 40 frame, 22 đã dựng (STEP-01/02/03 ✓), status từng frame |
+| `E-02` | `mockup/_assets/hrp.css` | Tokens G27 canonical + toàn bộ component class dùng chung (DEC-27 không detach) |
+| `E-03` | `mockup/_assets/frame.js` | Labelbar + scale-to-fit 1440×900 (AC-10 kiến trúc) |
+| `E-04` | `mockup/F00A_DemoNarrative.html` | Click-path 16 bước + 3 khoảnh khắc bắt buộc (AC-01 walkthrough) |
+| `E-05` | `mockup/S03_Attendance_Exceptions.html` | Taxonomy 7/7, blocker trước, readiness 5/7 (AC-08, AC-09) |
+| `E-06` | `mockup/S04_Reconciliation_Internal.html` + `S04_MarginComparison.html` | Totals + validation rules §4.4 (AC-02) |
+| `E-07` | `mockup/S04A_Lineage_Drawer.html` | Phép tính Long vendor/client/margin đầy đủ (AC-02) |
+| `E-08` | `mockup/S04B_VendorPreview_Sent.html` | Ẩn client rate/margin/salary với đối tác (AC-03, PDD §6.5) |
+| `E-09` | `docs/tasks/hrp-v4-bod-mockup/TASK.md` (v1.7) | Contract + Revision Log (AC-14) |
+| `E-10` | `mockup/F02_ComponentSet.html` | 17 component PDD §8.2, class chung hrp.css, không detach (DEC-27) |
+| `E-11` | `mockup/F50_HotspotMap.html` | 11 hotspot PDD §8.3 + back-path + deviation Long/Nam (AC-12) |
+| `E-12` | 12 file state `mockup/S0*_*.html` | badge `STATE ·` + note `(State minh họa STEP-06 · AC-11)` + data-frame canonical + back-link (AC-11) |
+| `E-13` | `mockup/index.html` | 14 dòng done mới (12 state + F02 + F50), còn 4 todo đúng STEP sau (AC-04) |
+| `E-14` | link-check script (grep href toàn bộ frame) | ALL INTERNAL LINKS OK — 36 frame, không href chết (AC-01/AC-12) |
+
+## 7. Execution Round History
+
+| Round | Spec version | Status | Summary |
+|---|---|---|---|
+| `1` | `v1.4` | `READY_FOR_AUDIT` | STEP-01/02/03: 22 frame low-fi + assets + HANDOFF round 1; Tier 3 append AUDIT.md round 1 (AUD-001…006) → Planner Resolution v1.6 |
+| `2` | `v1.7` | `READY_FOR_AUDIT` | STEP-05/06: hi-fi toàn bộ + F02_ComponentSet + F50_HotspotMap + 12 state + wire/verify 11 hotspot + link-check OK; chờ Tier 3 append AUDIT.md round 2 (viewport 1366×768, accessibility, totals, timing) |
+
+> Handoff status: `READY_FOR_AUDIT`

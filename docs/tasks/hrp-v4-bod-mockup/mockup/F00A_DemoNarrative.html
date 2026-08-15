@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>F00A_DemoNarrative — Click-path presenter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  .f1 { padding: 24px 40px; height: 100%; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+  .f1-head { display: flex; align-items: center; gap: 14px; }
+  .f1-title { font: 700 24px/32px var(--font-head); letter-spacing: -.01em; }
+  .f1-note { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .must-keep { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .mk { border: 1px solid var(--outline-variant); border-radius: var(--radius-md); padding: 10px 14px; display: flex; gap: 10px; align-items: flex-start; background: var(--surface); }
+  .mk .mi { color: var(--primary-dark); font-size: 20px; }
+  .mk .t { font: 600 13px/18px var(--font-head); }
+  .mk .d { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .step-row { display: flex; align-items: flex-start; gap: 12px; padding: 9px 14px; border-bottom: 1px solid var(--line); font: 400 13px/18px var(--font-body); }
+  .step-row:last-child { border-bottom: 0; }
+  .st-time { font: 700 12px/16px var(--font-label); color: var(--primary-dark); width: 46px; flex-shrink: 0; font-variant-numeric: tabular-nums; padding-top: 1px; }
+  .st-file { width: 236px; flex-shrink: 0; }
+  .st-file a { font: 600 12px/16px var(--font-label); color: var(--primary-dark); text-decoration: none; }
+  .st-file a:hover { text-decoration: underline; }
+  .st-file .st-fstate { font: 400 11px/14px var(--font-label); color: var(--on-surface-variant); }
+  .st-act { flex: 1; min-width: 0; }
+  .st-say { flex: 1; min-width: 0; color: var(--on-surface-variant); font-style: italic; }
+  .st-mk { flex-shrink: 0; }
+  .st-mk .mi { font-size: 16px; }
+  .mk-legend { display: flex; gap: 14px; font: 500 12px/16px var(--font-label); color: var(--on-surface-variant); align-items: center; }
+</style>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="F00A_DemoNarrative">
+  <div class="f1">
+
+    <div class="f1-head">
+      <span class="f1-title">F00A — Demo Narrative · Click-path presenter</span>
+      <span class="f1-note">PDD §1.3 · 16 bước · 00:00–13:00 · bấm tên file để mở đúng frame tại bước đó</span>
+      <span class="watermark-badge push-right">DỮ LIỆU MINH HỌA</span>
+    </div>
+
+    <div>
+      <div class="section-label">3 khoảnh khắc bắt buộc — không được cắt (PDD §1.4), kể cả khi rút còn 7 phút</div>
+      <div class="must-keep">
+        <div class="mk"><span class="material-symbols-outlined mi">swap_horiz</span><div><div class="t">Guided Transfer — rule 1-ACTIVE</div><div class="d">Bước 02:10–03:10 · Nam chuyển Yên Phong → An Phát</div></div></div>
+        <div class="mk"><span class="material-symbols-outlined mi">lock</span><div><div class="t">Exception → Lock — Attendance</div><div class="d">Bước 06:20–08:30 · AP-QM-1048 → Khóa kỳ bất biến</div></div></div>
+        <div class="mk"><span class="material-symbols-outlined mi">balance</span><div><div class="t">Vendor payable vs client receivable + lineage</div><div class="d">Bước 09:30–13:00 · hai rate, hai workflow, một chuỗi dữ liệu</div></div></div>
+      </div>
+    </div>
+
+    <div class="mk-legend">
+      <span><span class="material-symbols-outlined mi mi-md mi-tone">swap_horiz</span> Khoảnh khắc 1</span>
+      <span><span class="material-symbols-outlined mi mi-md mi-tone">lock</span> Khoảnh khắc 2</span>
+      <span><span class="material-symbols-outlined mi mi-md mi-tone">balance</span> Khoảnh khắc 3</span>
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="material-symbols-outlined mi">route</span>Click-path đầy đủ (PDD §1.3)</div>
+        <span class="small muted">Không submit thật ở bước 03:10 và 12:10</span>
+      </div>
+      <div class="card-body p-0">
+
+        <div class="step-row">
+          <span class="st-time">00:00</span>
+          <span class="st-file"><a href="S01_ControlTower_Default_1440.html">S01_ControlTower_Default_1440</a><div class="st-fstate">mở bộ lọc Tháng 08/2026 · Miền Bắc</div></span>
+          <span class="st-act">Mở bộ lọc “Tháng 08/2026 · Miền Bắc”</span>
+          <span class="st-say">“Đây không phải dashboard báo cáo cuối tháng; đây là hàng đợi điều hành hôm nay.”</span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">00:40</span>
+          <span class="st-file"><a href="S02_Staffing_Default_1440.html">S02_Staffing_Default_1440</a><div class="st-fstate">click cảnh báo “Thiếu 3 người”</div></span>
+          <span class="st-act">Click dòng cảnh báo dự án “Thiếu 3 người”</span>
+          <span class="st-say">“Từ KPI đi thẳng tới vấn đề cần xử lý, không phải mở nhiều module.”</span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">01:20</span>
+          <span class="st-file"><a href="S02_Staffing_Default_1440.html">S02_Staffing_Default_1440</a><div class="st-fstate">Talent Pool lọc Sẵn sàng · Bắc Ninh/Hà Nội · Ca D1</div></span>
+          <span class="st-act">Mở Talent Pool đã lọc <b>Sẵn sàng · Bắc Ninh/Hà Nội · Ca D1</b></span>
+          <span class="st-say">“Card giúp HR quét nhanh con người, nguồn, kỹ năng và availability.”</span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">02:10</span>
+          <span class="st-file"><a href="S02A_AssignmentConflict_Drawer.html">S02A_AssignmentConflict_Drawer</a><div class="st-fstate">Chọn Nam → Bố trí vào dự án</div></span>
+          <span class="st-act">Chọn <b>Nguyễn Văn Nam</b> → <b>Bố trí vào dự án</b></span>
+          <span class="st-say">Hệ thống mở guided drawer: người này đang ACTIVE ở dự án Yên Phong; chỉ có Xem assignment hoặc Chuyển dự án.</span>
+          <span class="st-mk" title="Khoảnh khắc bắt buộc 1"><span class="material-symbols-outlined mi">swap_horiz</span></span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">03:10</span>
+          <span class="st-file"><a href="S02A_TransferPreview.html">S02A_TransferPreview</a><div class="st-fstate">Chuyển dự án → preview đóng cũ/mở mới</div></span>
+          <span class="st-act">Click <b>Chuyển dự án</b> → xem preview đóng cũ/mở mới</span>
+          <span class="st-say">“Rule 1-ACTIVE không hiện thành lỗi kỹ thuật; hệ thống dẫn người dùng qua đúng quy trình.” Không submit thật.</span>
+          <span class="st-mk" title="Khoảnh khắc bắt buộc 1"><span class="material-symbols-outlined mi">swap_horiz</span></span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">04:10</span>
+          <span class="st-file"><a href="S02B_ReferralGuard_Drawer_Protected.html">S02B_ReferralGuard_Drawer_Protected</a><div class="st-fstate">Mở Huy → tab Nguồn tuyển</div></span>
+          <span class="st-act">Đóng drawer, mở <b>Phạm Quốc Huy</b> → tab <b>Nguồn tuyển</b></span>
+          <span class="st-say">Timeline cho thấy CTV Nguyễn Hoàng Duy tạo claim 4 ngày trước; vendor mới nộp hôm nay.</span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">04:50</span>
+          <span class="st-file"><a href="S02B_ReferralGuard_Drawer_Protected.html">S02B_ReferralGuard_Drawer_Protected</a><div class="st-fstate">Xem lý do bảo vệ (claim tạo 12/08)</div></span>
+          <span class="st-act">Click <b>Xem lý do bảo vệ</b></span>
+          <span class="st-say">“HRP giữ lịch sử nguồn, không overwrite. Override là ngoại lệ có permission, lý do và bằng chứng.”</span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">05:40</span>
+          <span class="st-file"><a href="S03_Attendance_Exceptions.html">S03_Attendance_Exceptions</a><div class="st-fstate">breadcrumb dự án → badge 7 ngoại lệ công ✓</div></span>
+          <span class="st-act">Click breadcrumb dự án → badge <b>7 ngoại lệ công</b></span>
+          <span class="st-say">Chuyển sang Attendance Workbench với filter dự án/kỳ đã giữ nguyên.</span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">06:20</span>
+          <span class="st-file"><a href="S03_ResolveDrawer.html">S03_ResolveDrawer</a><div class="st-fstate">exception Mã NV không khớp → right drawer ✓</div></span>
+          <span class="st-act">Click exception <b>Mã NV không khớp</b> → mở right drawer</span>
+          <span class="st-say">Map <b>AP-QM-1048</b> vào worker Trần Thị Mai; preview dòng trước/sau, không sửa raw event.</span>
+          <span class="st-mk" title="Khoảnh khắc bắt buộc 2"><span class="material-symbols-outlined mi">lock</span></span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">07:30</span>
+          <span class="st-file"><a href="S03_Attendance_Resolved.html">S03_Attendance_Resolved</a><div class="st-fstate">Duyệt kỳ ✓</div></span>
+          <span class="st-act">Chọn các exception đã resolved → <b>Duyệt kỳ</b></span>
+          <span class="st-say">Thanh readiness đổi từ “7 ngoại lệ” thành “Sẵn sàng khóa”; hiển thị maker/checker.</span>
+          <span class="st-mk" title="Khoảnh khắc bắt buộc 2"><span class="material-symbols-outlined mi">lock</span></span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">08:30</span>
+          <span class="st-file"><a href="S03B_LockConfirmation.html">S03B_LockConfirmation</a><div class="st-fstate">Khóa kỳ → confirmation ✓</div></span>
+          <span class="st-act">Click <b>Khóa kỳ</b> → confirmation summary</span>
+          <span class="st-say">“Khóa là bất biến. Sai sau khóa đi bằng adjustment/version mới.” Chọn “Khóa và tạo đối soát”.</span>
+          <span class="st-mk" title="Khoảnh khắc bắt buộc 2"><span class="material-symbols-outlined mi">lock</span></span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">09:30</span>
+          <span class="st-file"><a href="S04_Reconciliation_Internal.html">S04_Reconciliation_Internal</a><div class="st-fstate">tab split Vendor/Client ✓</div></span>
+          <span class="st-act">Mở tab split <b>Vendor payable / Client receivable</b></span>
+          <span class="st-say">Chỉ ra cùng source period nhưng hai rate, hai workflow và margin riêng.</span>
+          <span class="st-mk" title="Khoảnh khắc bắt buộc 3"><span class="material-symbols-outlined mi">balance</span></span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">10:30</span>
+          <span class="st-file"><a href="S04A_Lineage_Drawer.html">S04A_Lineage_Drawer</a><div class="st-fstate">worker line → lineage drawer ✓</div></span>
+          <span class="st-act">Click một worker line → lineage drawer</span>
+          <span class="st-say">Timesheet version, quantity, vendor rate, client rate và số tiền đều truy nguyên được.</span>
+          <span class="st-mk" title="Khoảnh khắc bắt buộc 3"><span class="material-symbols-outlined mi">balance</span></span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">11:30</span>
+          <span class="st-file"><a href="S04B_VendorPreview_Sent.html">S04B_VendorPreview_Sent</a><div class="st-fstate">Xem như Vendor ✓</div></span>
+          <span class="st-act">Click <b>Xem như Vendor</b></span>
+          <span class="st-say">Chuyển sang portal preview với dữ liệu vendor được phép thấy; salary/margin bị ẩn.</span>
+          <span class="st-mk" title="Khoảnh khắc bắt buộc 3"><span class="material-symbols-outlined mi">balance</span></span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">12:10</span>
+          <span class="st-file"><a href="S04B_VendorPreview_DisputeForm.html">S04B_VendorPreview_DisputeForm</a><div class="st-fstate">Phản đối → reason + attachment ✓</div></span>
+          <span class="st-act">Click <b>Phản đối</b> → reason + attachment panel</span>
+          <span class="st-say">“Phản đối có cấu trúc, deadline và audit; không quay về chat rời rạc.” Không submit.</span>
+        </div>
+
+        <div class="step-row">
+          <span class="st-time">13:00</span>
+          <span class="st-file"><a href="S04_MarginComparison.html">S04_MarginComparison</a><div class="st-fstate">quay về Internal, kết ở margin ✓</div></span>
+          <span class="st-act">Quay về Internal view, kết thúc ở margin summary</span>
+          <span class="st-say">“Một chuỗi dữ liệu, bốn quyết định: tuyển, bố trí, chốt công, đối soát.”</span>
+          <span class="st-mk" title="Khoảnh khắc bắt buộc 3"><span class="material-symbols-outlined mi">balance</span></span>
+        </div>
+
+      </div>
+      <div class="card-foot small muted">Tất cả frame trong click-path đã dựng xong (STEP-03 ✓) · 12 frame STATE hoàn tất (STEP-06 ✓) · bản đồ 11 hotspot + back-path tại <a href="F50_HotspotMap.html">F50_HotspotMap</a> — bấm tên file ở từng bước để mở đúng frame.</div>
+    </section>
+
+  </div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

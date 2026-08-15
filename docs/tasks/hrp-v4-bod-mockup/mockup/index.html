@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HRP Mockup — Bản đồ frame</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  body.map { background: var(--backdrop); padding: 32px 40px 48px; min-height: 100vh; }
+  .map-wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .map-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .map-title { font: 700 28px/36px var(--font-head); letter-spacing: -.01em; }
+  .map-note { font: 400 13px/18px var(--font-label); color: var(--on-surface-variant); max-width: 720px; }
+  .legend { display: flex; gap: 16px; font: 500 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .group { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+  .group-head { padding: 12px 16px; background: var(--container-low); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+  .group-head .g-num { font: 700 12px/16px var(--font-label); color: var(--primary-dark); letter-spacing: .05em; white-space: nowrap; }
+  .group-head .g-name { font: 600 14px/20px var(--font-head); }
+  .group-head .g-note { margin-left: auto; font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); text-align: right; }
+  .frame-row { display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-bottom: 1px solid var(--line); font: 400 13px/20px var(--font-body); }
+  .frame-row:last-child { border-bottom: 0; }
+  .st { width: 22px; display: inline-flex; justify-content: center; flex-shrink: 0; }
+  .st.done { color: var(--success); }
+  .st.todo { color: var(--outline); }
+  .fname { font: 600 13px/16px var(--font-label); white-space: nowrap; }
+  .fdesc { color: var(--on-surface-variant); font: 400 12px/18px var(--font-label); }
+  .fstep { margin-left: auto; font: 600 11px/14px var(--font-label); color: var(--on-surface-variant); background: var(--container); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+  a.fname { color: var(--primary-dark); text-decoration: none; }
+  a.fname:hover { text-decoration: underline; }
+</style>
+</head>
+<body class="map">
+<div class="map-wrap">
+
+  <div class="map-head">
+    <span class="logo" style="font-size:26px">HR<em>P</em></span>
+    <h1 class="map-title">Bản đồ frame — Mockup BoD</h1>
+    <span class="watermark-badge">DỮ LIỆU MINH HỌA</span>
+    <div class="map-note">Medium HTML theo <b>DEC-27</b> · Mỗi frame = 1 file tự chứa (artboard 1440×900, tự scale) · Nguồn: TASK.md §4.5 · Tokens canonical G27 (DEC-26) · Mở frame bằng cách bấm tên file đã dựng.</div>
+  </div>
+
+  <div class="legend">
+    <span><span class="material-symbols-outlined" style="font-size:16px; color:var(--success)">task_alt</span> Đã dựng — bấm vào tên để mở</span>
+    <span><span class="material-symbols-outlined" style="font-size:16px; color:var(--outline)">circle</span> Chưa dựng (theo STEP ghi bên phải)</span>
+  </div>
+
+  <div class="group">
+    <div class="group-head"><span class="g-num">00</span><span class="g-name">Cover &amp; Demo Narrative</span><span class="g-note">Timeline 13 phút · 4 aha · 3 khoảnh khắc bắt buộc</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="F00_Cover.html">F00_Cover.html</a><span class="fdesc">Cover + scenario + timeline + 3 khoảnh khắc bắt buộc (PDD §1.4)</span><span class="fstep">STEP-01 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="F00A_DemoNarrative.html">F00A_DemoNarrative.html</a><span class="fdesc">Click-path 16 bước 00:00–13:00 + 3 khoảnh khắc bắt buộc (PDD §1.3–§1.4)</span><span class="fstep">STEP-02 ✓</span></div>
+  </div>
+
+  <div class="group">
+    <div class="group-head"><span class="g-num">01</span><span class="g-name">Foundations</span><span class="g-note">Tokens G27 · typography · status · density D02</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="F01_Tokens.html">F01_Tokens.html</a><span class="fdesc">Tokens DESIGN.md canonical G27 + semantic PDD + buttons + layout spec</span><span class="fstep">STEP-01 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="F01_TypeSpacing.html">F01_TypeSpacing.html</a><span class="fdesc">Type scale Be Vietnam Pro + Inter · spacing 8px · grid 12 cột</span><span class="fstep">STEP-01 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="F01_StatusLanguage.html">F01_StatusLanguage.html</a><span class="fdesc">5 bộ từ vựng trạng thái icon+text · PREVIEWED · card blocked</span><span class="fstep">STEP-01 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="F01_Density_Variant_44_52.html">F01_Density_Variant_44_52.html</a><span class="fdesc">D02A compact 44px (default) vs D02B comfortable 52px</span><span class="fstep">STEP-01 ✓</span></div>
+  </div>
+
+  <div class="group">
+    <div class="group-head"><span class="g-num">02</span><span class="g-name">Components</span><span class="g-note">Bộ PDD §8.2 — 17 component</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="F02_ComponentSet.html">F02_ComponentSet.html</a><span class="fdesc">AppShell · SidebarItem · Breadcrumb · Button · StatusBadge · FilterChip · SegmentedControl · SearchField · WorkerCard ×5 · DataTable · SummaryBandMetric · RightDrawer · ConfirmationDialog · EmptyState · Skeleton · TimelineEvent · EvidenceAttachment · AuditMeta</span><span class="fstep">STEP-05 ✓</span></div>
+  </div>
+
+  <div class="group">
+    <div class="group-head"><span class="g-num">10</span><span class="g-name">Control Tower</span><span class="g-note">KPI 4 số · queue 4 mục · 2 chart · project table</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S01_ControlTower_Default_1440.html">S01_ControlTower_Default_1440.html</a><span class="fdesc">Hi-fi PDD §3.2 — KPI band phẳng · queue 4 · 2 chart · project table · link S02/S03/S04</span><span class="fstep">STEP-02 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S01_ControlTower_Loading.html">S01_ControlTower_Loading.html</a><span class="fdesc">Skeleton KPI/queue/charts</span><span class="fstep">STEP-06 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S01_ControlTower_EmptyQueue.html">S01_ControlTower_EmptyQueue.html</a><span class="fdesc">Queue rỗng + hướng dẫn</span><span class="fstep">STEP-06 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S01_ControlTower_StaleBanner.html">S01_ControlTower_StaleBanner.html</a><span class="fdesc">Banner dữ liệu cũ + nút làm mới</span><span class="fstep">STEP-06 ✓</span></div>
+  </div>
+
+  <div class="group">
+    <div class="group-head"><span class="g-num">20</span><span class="g-name">Staffing &amp; Talent Pool</span><span class="g-note">47/50 ACTIVE · Thiếu 3 · 12 card · 2 rule drawers</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S02_Staffing_Default_1440.html">S02_Staffing_Default_1440.html</a><span class="fdesc">Header 47/50 + badge 7 ngoại lệ · filter · 12 card · phân trang 128 kết quả</span><span class="fstep">STEP-02 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S02_Staffing_NoResult.html">S02_Staffing_NoResult.html</a><span class="fdesc">Filter không kết quả</span><span class="fstep">STEP-06 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S02A_AssignmentConflict_Drawer.html">S02A_AssignmentConflict_Drawer.html</a><span class="fdesc">Nam — guided transfer 1-ACTIVE (drawer 480px trên S02)</span><span class="fstep">STEP-02 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S02A_TransferPreview.html">S02A_TransferPreview.html</a><span class="fdesc">Đóng cũ / mở mới · quota ±1 · lý do bắt buộc</span><span class="fstep">STEP-02 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S02B_ReferralGuard_Drawer_Protected.html">S02B_ReferralGuard_Drawer_Protected.html</a><span class="fdesc">Huy — timeline 12/08·12/08·15/08 · còn 3 ngày · Giữ nguồn / Override</span><span class="fstep">STEP-02 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S02B_ReferralGuard_Expired.html">S02B_ReferralGuard_Expired.html</a><span class="fdesc">Hết cửa sổ bảo vệ — nhận nguồn lại bình thường</span><span class="fstep">STEP-06 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S02B_ReferralGuard_OverrideRequested.html">S02B_ReferralGuard_OverrideRequested.html</a><span class="fdesc">Yêu cầu override + lý do + bằng chứng (maker-checker)</span><span class="fstep">STEP-02 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S02_CardBlocked.html">S02_CardBlocked.html</a><span class="fdesc">Card Tuấn BLOCKED — CTA disabled có lý do</span><span class="fstep">STEP-06 ✓</span></div>
+  </div>
+
+  <div class="group">
+    <div class="group-head"><span class="g-num">30</span><span class="g-name">Attendance Workbench</span><span class="g-note">7 exception đúng taxonomy · resolve drawer · lock</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S03_Attendance_Exceptions.html">S03_Attendance_Exceptions.html</a><span class="fdesc">Bảng 7 exception blocker trước · readiness 5/7</span><span class="fstep">STEP-03 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S03_ResolveDrawer.html">S03_ResolveDrawer.html</a><span class="fdesc">3 band: raw source / suggested match / result preview</span><span class="fstep">STEP-03 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S03_Attendance_Resolved.html">S03_Attendance_Resolved.html</a><span class="fdesc">7/7 Sẵn sàng khóa · maker Lê Thu Hà / checker Nguyễn Thanh Huyền</span><span class="fstep">STEP-03 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S03B_LockConfirmation.html">S03B_LockConfirmation.html</a><span class="fdesc">1.222 raw · 0 blocker · 9.624h · 490,5h OT</span><span class="fstep">STEP-03 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S03_Attendance_Locked_ReadOnly.html">S03_Attendance_Locked_ReadOnly.html</a><span class="fdesc">Locked bất biến — read-only + banner</span><span class="fstep">STEP-03 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S03_ImportProgress.html">S03_ImportProgress.html</a><span class="fdesc">Import AP_QM_T08_2026.xlsx đang chạy</span><span class="fstep">STEP-06 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S03_ImportFailed.html">S03_ImportFailed.html</a><span class="fdesc">Import lỗi + retry + error report</span><span class="fstep">STEP-06 ✓</span></div>
+  </div>
+
+  <div class="group">
+    <div class="group-head"><span class="g-num">40</span><span class="g-name">Reconciliation &amp; Vendor Preview</span><span class="g-note">728.460.000 / 914.820.000 / 186.360.000</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S04_Reconciliation_Internal.html">S04_Reconciliation_Internal.html</a><span class="fdesc">2 tab vendor/client · summary band 3 số · bảng 3 dòng</span><span class="fstep">STEP-03 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S04_MarginComparison.html">S04_MarginComparison.html</a><span class="fdesc">An Phát 20,37% · Yên Phong 17,42% · Sao Việt 11,89%</span><span class="fstep">STEP-03 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S04A_Lineage_Drawer.html">S04A_Lineage_Drawer.html</a><span class="fdesc">Long 13.108.000 → 16.272.000 → margin 3.164.000</span><span class="fstep">STEP-03 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S04B_VendorPreview_Sent.html">S04B_VendorPreview_Sent.html</a><span class="fdesc">Bắc Việt — ẩn client rate/margin/salary · deadline 18/08 18:00</span><span class="fstep">STEP-03 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S04B_VendorPreview_DisputeForm.html">S04B_VendorPreview_DisputeForm.html</a><span class="fdesc">Phản đối có cấu trúc: lý do + dòng + bằng chứng</span><span class="fstep">STEP-03 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S04_VendorDisputed.html">S04_VendorDisputed.html</a><span class="fdesc">Statement Bị phản đối — hàng đợi xử lý</span><span class="fstep">STEP-06 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S04_ConfirmedLocked.html">S04_ConfirmedLocked.html</a><span class="fdesc">Đã xác nhận → Đã khóa (không giả lập PAID)</span><span class="fstep">STEP-06 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S04_RevisionV2.html">S04_RevisionV2.html</a><span class="fdesc">Revision V2 sau dispute — version trace</span><span class="fstep">STEP-06 ✓</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="S04_EmptyPayment.html">S04_EmptyPayment.html</a><span class="fdesc">Chưa có statement nào — empty state</span><span class="fstep">STEP-06 ✓</span></div>
+  </div>
+
+  <div class="group">
+    <div class="group-head"><span class="g-num">50</span><span class="g-name">Prototype Flow &amp; Bộ mặt công cộng</span><span class="g-note">11 hotspot · S05 tĩnh không wire (Q#23)</span></div>
+    <div class="frame-row"><span class="st done"><span class="material-symbols-outlined">task_alt</span></span><a class="fname" href="F50_HotspotMap.html">F50_HotspotMap.html</a><span class="fdesc">Bản đồ 11 hotspot PDD §8.3 + back-path + deviation ghi chú</span><span class="fstep">STEP-06 ✓</span></div>
+    <div class="frame-row"><span class="st todo"><span class="material-symbols-outlined">circle</span></span><span class="fname">S05_JobBoard_Public_1440</span><span class="fdesc">1 frame tĩnh hi-fi — 3 job card An Phát 50/47 · Yên Phong 80/80 · Sao Việt 35/32</span><span class="fstep">STEP-09</span></div>
+  </div>
+
+  <div class="group">
+    <div class="group-head"><span class="g-num">60</span><span class="g-name">BoD Decision Variants</span><span class="g-note">D01–D08 chọn · D09–D12 ghi chú owner+due</span></div>
+    <div class="frame-row"><span class="st todo"><span class="material-symbols-outlined">circle</span></span><span class="fname">F60_D01 … F60_D08</span><span class="fdesc">Variant từng quyết định để BoD chọn (DEC-03…DEC-10)</span><span class="fstep">STEP-08</span></div>
+    <div class="frame-row"><span class="st todo"><span class="material-symbols-outlined">circle</span></span><span class="fname">F60_D09_D12_Notes</span><span class="fdesc">D09–D12 deferred — owner + due</span><span class="fstep">STEP-08</span></div>
+  </div>
+
+  <div class="group">
+    <div class="group-head"><span class="g-num">90</span><span class="g-name">Archive</span><span class="g-note">Bản bỏ đi sau BoD</span></div>
+    <div class="frame-row"><span class="st todo"><span class="material-symbols-outlined">circle</span></span><span class="fname">F90_Archive</span><span class="fdesc">Variant không được chọn chuyển về đây</span><span class="fstep">STEP-08</span></div>
+  </div>
+
+</div>
+</body>
+</html>

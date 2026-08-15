@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>S03_ImportProgress — Attendance · Import progress (hi-fi)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="S03_ImportProgress">
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><span class="logo">HR<em>P</em></span></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Vận hành</div>
+      <a class="sidebar-item" href="S01_ControlTower_Default_1440.html"><span class="material-symbols-outlined mi">dashboard</span>Tổng quan</a>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">work</span>Dự án</a>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">groups</span>Nhân lực</a>
+      <a class="sidebar-item active" href="#"><span class="material-symbols-outlined mi">fingerprint</span>Chấm công<span class="count">7</span></a>
+      <a class="sidebar-item" href="S04_Reconciliation_Internal.html"><span class="material-symbols-outlined mi">balance</span>Đối soát<span class="count">1</span></a>
+      <div class="nav-group-label">Báo cáo</div>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">assessment</span>Báo cáo</a>
+    </nav>
+    <div class="sidebar-foot"><div class="small muted">HRP v4 · BoD mockup</div></div>
+  </aside>
+
+  <header class="topbar">
+    <div class="topbar-context">
+      <span class="material-symbols-outlined mi">domain</span>
+      <span>HRP · Miền Bắc</span>
+      <span class="ctx-sub">Kỳ 08/2026</span>
+    </div>
+    <div class="topbar-search"><span class="material-symbols-outlined mi">search</span><input placeholder="Tìm người, dự án, batch…" aria-label="Tìm kiếm"/></div>
+    <div class="topbar-actions">
+      <span class="watermark-badge">DỮ LIỆU MINH HỌA</span>
+      <span class="badge badge-outline">HI-FI · STEP-05</span>
+      <span class="badge badge-info">STATE · IMPORTING</span>
+      <button class="icon-btn" aria-label="Thông báo"><span class="material-symbols-outlined mi">notifications</span><span class="badge-dot"></span></button>
+      <div class="user-chip"><span class="avatar">LH</span><div><div class="u-name">Lê Thu Hà</div><div class="u-role">HR Ops</div></div></div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="page-head">
+      <div class="crumb">Chấm công <span class="sep">/</span> An Phát <span class="sep">/</span> Kỳ 08/2026</div>
+      <div class="page-title-row">
+        <div>
+          <h1 class="page-title">Chấm công · An Phát · 08/2026</h1>
+          <div class="title-sub">File: AP_QM_T08_2026.xlsx · 1.222 dòng · nhập 08:14 bởi Lê Thu Hà · DỮ LIỆU MINH HỌA</div>
+        </div>
+        <div class="context-bar">
+          <span class="badge badge-outline"><span class="material-symbols-outlined mi">upload_file</span>PREVIEWED</span>
+          <span class="badge badge-primary"><span class="material-symbols-outlined mi">fingerprint</span>Batch AP_QM_T08_2026</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats band phẳng (PDD §5.2) -->
+    <div class="kpi-band kpi-band-5" aria-label="Thống kê batch chấm công">
+      <div class="kpi">
+        <div class="kpi-label">Đã khớp</div>
+        <div class="kpi-value">1.215</div>
+        <div class="kpi-sub">dòng khớp tự động</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Ngoại lệ</div>
+        <div class="kpi-value">7</div>
+        <div class="kpi-sub">7 taxonomy × 1 (DEC-18)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Chưa map</div>
+        <div class="kpi-value">2</div>
+        <div class="kpi-sub">UNMATCHED + INACTIVE_ASSIGNMENT</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Giờ thường</div>
+        <div class="kpi-value">9.624</div>
+        <div class="kpi-sub">giờ toàn kỳ</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">OT 1.5/2.0/3.0</div>
+        <div class="kpi-value">490,5</div>
+        <div class="kpi-sub">426,5 + 48,0 + 16,0</div>
+      </div>
+    </div>
+
+    <!-- Filter tabs -->
+    <section class="card">
+      <div class="filterbar">
+        <span class="chip"><span class="material-symbols-outlined mi">rule</span>Tất cả</span>
+        <span class="chip active"><span class="material-symbols-outlined mi">error</span>Ngoại lệ (7)</span>
+        <span class="chip"><span class="material-symbols-outlined mi">person_off</span>Chưa map (2)</span>
+        <div class="topbar-search"><span class="material-symbols-outlined mi">search</span><input placeholder="Mã NV, tên…" aria-label="Tìm ngoại lệ"/></div>
+        <span class="chip"><span class="material-symbols-outlined mi">tune</span>Filters</span>
+        <span class="spacer"></span>
+        <button class="btn btn-secondary"><span class="material-symbols-outlined mi">download</span>Export review</button>
+      </div>
+    </section>
+
+    <!-- Bulk action bar — chỉ xuất hiện khi có selection, không làm table nhảy (PDD §5.3) -->
+    <div class="bulk-bar">
+      <span class="material-symbols-outlined mi">done_all</span>
+      <b>2 selected</b>
+      <button class="btn btn-secondary btn-sm"><span class="material-symbols-outlined mi">person_add</span>Gán worker</button>
+      <a class="btn btn-secondary btn-sm" href="S03_Attendance_Resolved.html"><span class="material-symbols-outlined mi">check</span>Đánh dấu đã xử lý</a>
+      <span class="spacer small muted">Hai row blocker đang được chọn sẵn — sẵn sàng thao tác hàng loạt</span>
+    </div>
+
+    <!-- Exception table — blocker trước, sort mặc định (PDD §5.3) -->
+    <section class="card">
+      <div class="tbl-wrap tbl-flush">
+        <table class="tbl">
+          <thead>
+            <tr><th class="col-cb"><input type="checkbox" aria-label="Chọn tất cả"/></th><th>Mã NV</th><th>Worker</th><th>Ngày</th><th>Ca</th><th class="tbl-num">Vào</th><th class="tbl-num">Ra</th><th class="tbl-num">Regular</th><th class="tbl-num">OT</th><th>Trạng thái</th><th class="col-act"></th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="checkbox" checked aria-label="Chọn AP-QM-1048"/></td>
+              <td><b>AP-QM-1048</b></td>
+              <td><span class="badge badge-neutral"><span class="material-symbols-outlined mi">person_off</span>Chưa map</span><span class="ex-type">UNMATCHED_EMPLOYEE · Chưa tìm thấy mã nhân viên</span></td>
+              <td>12/08</td><td>D1</td><td class="tbl-num">06:02</td><td class="tbl-num">14:07</td><td class="tbl-num">8,0</td><td class="tbl-num">0</td>
+              <td><span class="badge badge-danger"><span class="material-symbols-outlined mi">error</span>Blocked · chờ xử lý</span></td>
+              <td><a class="btn btn-secondary btn-sm" href="S03_ResolveDrawer.html" title="Hotspot §8.3: AP-QM-1048 → Resolve drawer">Xem</a></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" checked aria-label="Chọn AP-QM-1140"/></td>
+              <td><b>AP-QM-1140</b></td>
+              <td>Nguyễn Thị Thảo<span class="ex-type">SOURCE_CONFLICT · Hai nguồn điểm danh mâu thuẫn</span></td>
+              <td>09/08</td><td>D1</td><td class="tbl-num">06:05</td><td class="tbl-num">14:10</td><td class="tbl-num">8,0</td><td class="tbl-num">0</td>
+              <td><span class="badge badge-danger"><span class="material-symbols-outlined mi">error</span>Blocked · chờ xử lý</span></td>
+              <td><button class="btn btn-secondary btn-sm">Xem</button></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" aria-label="Chọn AP-QM-1128"/></td>
+              <td><b>AP-QM-1128</b></td>
+              <td>Lê Văn Đức <span class="badge badge-neutral"><span class="material-symbols-outlined mi">person_off</span>Chưa map assignment</span><span class="ex-type">INACTIVE_ASSIGNMENT · Assignment chưa ACTIVE</span></td>
+              <td>05/08</td><td>D1</td><td class="tbl-num">06:01</td><td class="tbl-num">14:05</td><td class="tbl-num">8,0</td><td class="tbl-num">0</td>
+              <td><span class="badge badge-success"><span class="material-symbols-outlined mi">task_alt</span>Đã xử lý · đã kích hoạt</span></td>
+              <td><button class="btn btn-secondary btn-sm">Xem</button></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" aria-label="Chọn AP-QM-1115"/></td>
+              <td><b>AP-QM-1115</b></td>
+              <td>Trần Văn Hòa<span class="ex-type">WRONG_PROJECT · Người không thuộc dự án ngày này</span></td>
+              <td>10/08</td><td>T1</td><td class="tbl-num">07:28</td><td class="tbl-num">16:31</td><td class="tbl-num">8,0</td><td class="tbl-num">0</td>
+              <td><span class="badge badge-success"><span class="material-symbols-outlined mi">task_alt</span>Đã xử lý</span></td>
+              <td><button class="btn btn-secondary btn-sm">Xem</button></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" aria-label="Chọn AP-QM-1102"/></td>
+              <td><b>AP-QM-1102</b></td>
+              <td>Phạm Thị Nhung<span class="ex-type">DUPLICATE_EVENT · Có bản ghi trùng</span></td>
+              <td>11/08</td><td>D2</td><td class="tbl-num">14:03</td><td class="tbl-num">22:00</td><td class="tbl-num">8,0</td><td class="tbl-num">0</td>
+              <td><span class="badge badge-success"><span class="material-symbols-outlined mi">task_alt</span>Đã xử lý · giữ 1 event</span></td>
+              <td><button class="btn btn-secondary btn-sm">Xem</button></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" aria-label="Chọn AP-QM-1097"/></td>
+              <td><b>AP-QM-1097</b></td>
+              <td>Phan Văn Khánh<span class="ex-type">MISSING_CHECKOUT · Thiếu giờ ra</span></td>
+              <td>13/08</td><td>D1</td><td class="tbl-num">06:00</td><td class="tbl-num">—</td><td class="tbl-num">8,0</td><td class="tbl-num">0</td>
+              <td><span class="badge badge-success"><span class="material-symbols-outlined mi">task_alt</span>Đã xử lý · có correction</span></td>
+              <td><button class="btn btn-secondary btn-sm">Xem</button></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" aria-label="Chọn AP-QM-1021"/></td>
+              <td><b>AP-QM-1021</b></td>
+              <td>Bùi Đức Long<span class="ex-type">CROSS_DAY_SHIFT · Ca vắt ngày cần tách</span></td>
+              <td>14/08</td><td>N1</td><td class="tbl-num">21:58</td><td class="tbl-num">06:04</td><td class="tbl-num">2+6</td><td class="tbl-num">0</td>
+              <td><span class="badge badge-success"><span class="material-symbols-outlined mi">task_alt</span>Đã xử lý · tách 2 dòng</span></td>
+              <td><button class="btn btn-secondary btn-sm">Xem</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-foot small muted">Sort mặc định: blocker trước, rồi theo ngày/mã NV (PDD §5.3) · header + 3 cột đầu sticky khi cuộn · số giờ căn phải, không hiện tiền ở màn này</div>
+    </section>
+
+    <!-- Readiness + Duyệt kỳ disabled -->
+    <section class="card">
+      <div class="readiness-card">
+        <div class="readiness">
+          <span class="readiness-label">5/7 resolved · Còn 2 blocker</span>
+          <span class="readiness-track"><span class="readiness-fill" style="width:71.4%"></span></span>
+        </div>
+        <button class="btn btn-primary" disabled title="Còn 2 blocker — chưa thể duyệt kỳ (PDD §5.2)">Duyệt kỳ</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="scrim"></div>
+<div class="state-panel">
+  <div class="state-card">
+    <div class="sc-title"><span class="material-symbols-outlined mi">upload_file</span>Đang nhập batch AP_QM_T08_2026.xlsx…</div>
+    <div class="sc-body">
+      <div class="progress"><div class="progress-fill" style="width:64%"></div></div>
+      <div class="small muted">1.222 dòng phát hiện · đang khớp worker &amp; assignment — 784/1.222 đã xử lý</div>
+    </div>
+    <div class="sc-foot">State minh họa (STEP-06 · AC-11) — tiến trình import đè lên màn chấm công, nền bên dưới là S03 default bị làm mờ. Quay lại: <a href="S03_Attendance_Exceptions.html">S03 default</a>.</div>
+  </div>
+</div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

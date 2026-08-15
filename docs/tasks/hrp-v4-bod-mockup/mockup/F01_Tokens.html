@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>F01_Tokens — Foundations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  .f1 { padding: 28px 40px; height: 100%; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+  .f1-head { display: flex; align-items: center; gap: 14px; }
+  .f1-title { font: 700 24px/32px var(--font-head); letter-spacing: -.01em; }
+  .f1-note { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .swatch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .swatch { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+  .swatch .c { height: 56px; border-bottom: 1px solid var(--line); }
+  .swatch .meta { padding: 8px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .swatch .nm { font: 600 12px/16px var(--font-head); }
+  .swatch .hx { font: 400 11px/14px var(--font-label); color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: .03em; }
+  .swatch .us { font: 400 11px/14px var(--font-label); color: var(--on-surface-variant); }
+  .btn-demo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .spec-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+</style>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="F01_Tokens">
+  <div class="f1">
+
+    <div class="f1-head">
+      <span class="f1-title">F01 — Design Tokens</span>
+      <span class="f1-note">Nguồn canonical: <b>stitch/warm_professionalism/DESIGN.md</b> “Warm Professionalism” (G27 — chốt 15/08/2026) · DEC-26 “thay token, không thay semantics”</span>
+      <span class="watermark-badge push-right">DỮ LIỆU MINH HỌA</span>
+    </div>
+
+    <div>
+      <div class="section-label">Brand &amp; Neutral (DESIGN.md G27)</div>
+      <div class="swatch-grid">
+        <div class="swatch"><div class="c" style="background:#f26522"></div><div class="meta"><span class="nm">Primary</span><span class="hx">#F26522</span><span class="us">CTA chính, active state — canonical</span></div></div>
+        <div class="swatch"><div class="c" style="background:#a63b00"></div><div class="meta"><span class="nm">Primary Dark / Container</span><span class="hx">#A63B00</span><span class="us">Hover/active; primary-container</span></div></div>
+        <div class="swatch"><div class="c" style="background:#ffffff"></div><div class="meta"><span class="nm">On Primary / Surface</span><span class="hx">#FFFFFF</span><span class="us">Chữ trên primary; nền card/input</span></div></div>
+        <div class="swatch"><div class="c" style="background:#fdf1ec"></div><div class="meta"><span class="nm">Primary Soft</span><span class="hx">#FDF1EC</span><span class="us">Tint ~10% — hover, badge</span></div></div>
+        <div class="swatch"><div class="c" style="background:#faf9f7"></div><div class="meta"><span class="nm">Background</span><span class="hx">#FAF9F7</span><span class="us">Nền app (Canvas → background)</span></div></div>
+        <div class="swatch"><div class="c" style="background:#1a1c1b"></div><div class="meta"><span class="nm">On Surface</span><span class="hx">#1A1C1B</span><span class="us">Text chính (Ink → on-surface)</span></div></div>
+        <div class="swatch"><div class="c" style="background:#594138"></div><div class="meta"><span class="nm">On Surface Variant</span><span class="hx">#594138</span><span class="us">Text phụ, label (Neutral →)</span></div></div>
+        <div class="swatch"><div class="c" style="background:#8d7166"></div><div class="meta"><span class="nm">Outline</span><span class="hx">#8D7166</span><span class="us">Viền mạnh</span></div></div>
+        <div class="swatch"><div class="c" style="background:#e1bfb3"></div><div class="meta"><span class="nm">Outline Variant</span><span class="hx">#E1BFB3</span><span class="us">Viền mặc định (Border →)</span></div></div>
+        <div class="swatch"><div class="c" style="background:#f4f3f1"></div><div class="meta"><span class="nm">Container Low</span><span class="hx">#F4F3F1</span><span class="us">Table head, row hover</span></div></div>
+        <div class="swatch"><div class="c" style="background:#efeeec"></div><div class="meta"><span class="nm">Container</span><span class="hx">#EFEEEC</span><span class="us">Fill, skeleton, disabled</span></div></div>
+        <div class="swatch"><div class="c" style="background:#815432"></div><div class="meta"><span class="nm">Secondary</span><span class="hx">#815432</span><span class="us">Brand phụ, icon</span></div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Semantic — giữ nguyên PDD §2.2 (DEC-26; DESIGN.md chỉ định nghĩa error #BA1A1A)</div>
+      <div class="swatch-grid">
+        <div class="swatch"><div class="c" style="background:#2563eb"></div><div class="meta"><span class="nm">Info</span><span class="hx">#2563EB</span><span class="us">Chờ xác minh, đã gửi</span></div></div>
+        <div class="swatch"><div class="c" style="background:#16803a"></div><div class="meta"><span class="nm">Success</span><span class="hx">#16803A</span><span class="us">Đã xác minh, đã khớp</span></div></div>
+        <div class="swatch"><div class="c" style="background:#b45309"></div><div class="meta"><span class="nm">Warning</span><span class="hx">#B45309</span><span class="us">Cần xem xét, bất thường</span></div></div>
+        <div class="swatch"><div class="c" style="background:#c2413b"></div><div class="meta"><span class="nm">Danger</span><span class="hx">#C2413B</span><span class="us">Bị chặn, bị phản đối</span></div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Buttons — states (skill: hover 150ms, focus ring, loading, disabled rõ ràng)</div>
+      <div class="btn-demo">
+        <button class="btn btn-primary"><span class="material-symbols-outlined">add</span>Bố trí vào dự án</button>
+        <button class="btn btn-primary" disabled>Primary disabled</button>
+        <button class="btn btn-primary loading">Khóa và tạo đối soát</button>
+        <button class="btn btn-secondary"><span class="material-symbols-outlined">visibility</span>Xem như Vendor</button>
+        <button class="btn btn-ghost">Hủy</button>
+        <button class="btn btn-danger"><span class="material-symbols-outlined">block</span>Chặn nhận nguồn</button>
+        <button class="btn btn-secondary btn-sm">Density 32px</button>
+        <button class="btn btn-primary btn-lg">Primary 44px</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Layout spec (PDD §2.1 — giữ nguyên, RQ-09)</div>
+      <div class="spec-chips">
+        <span class="chip"><span class="material-symbols-outlined">vertical_split</span>Sidebar 232px</span>
+        <span class="chip"><span class="material-symbols-outlined">horizontal_split</span>Top bar 56px</span>
+        <span class="chip"><span class="material-symbols-outlined">margin</span>Gutter 24px</span>
+        <span class="chip"><span class="material-symbols-outlined">rounded_corner</span>Radius 8/16/24</span>
+        <span class="chip"><span class="material-symbols-outlined">picture_in_picture_alt</span>Right drawer 480px (440–520)</span>
+        <span class="chip"><span class="material-symbols-outlined">grid_view</span>Grid 1440 · 12 cột</span>
+        <span class="chip"><span class="material-symbols-outlined">straighten</span>Spacing 8px scale</span>
+        <span class="chip"><span class="material-symbols-outlined">aspect_ratio</span>Artboard 1440×900 · kiểm tra 1366×768</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

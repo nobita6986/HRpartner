@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>F01_TypeSpacing — Foundations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  .f1 { padding: 28px 40px; height: 100%; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+  .f1-head { display: flex; align-items: center; gap: 14px; }
+  .f1-title { font: 700 24px/32px var(--font-head); letter-spacing: -.01em; }
+  .f1-note { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .type-row { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .type-meta { font: 400 11px/14px var(--font-label); color: var(--on-surface-variant); letter-spacing: .03em; }
+  .type-sample { color: var(--on-surface); }
+  .space-scale { display: flex; align-items: flex-end; gap: 14px; padding: 14px 0; }
+  .space-bar { background: var(--primary-soft); border: 1px dashed var(--outline-variant); border-bottom: 0; display: flex; align-items: flex-end; justify-content: center; font: 600 11px/14px var(--font-label); color: var(--primary-dark); padding-top: 6px; }
+  .grid-demo { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; }
+  .grid-demo div { height: 34px; background: var(--primary-soft); border: 1px solid var(--outline-variant); border-radius: var(--radius); }
+</style>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="F01_TypeSpacing">
+  <div class="f1">
+
+    <div class="f1-head">
+      <span class="f1-title">F01 — Typography &amp; Spacing</span>
+      <span class="f1-note">Font: <b>Be Vietnam Pro</b> (heading/body) + <b>Inter</b> (label) — DEC-26 · PDD §2.3: page title 24/32, table 14/20, tiền/KPI 18–24 tabular</span>
+      <span class="watermark-badge push-right">DỮ LIỆU MINH HỌA</span>
+    </div>
+
+    <div>
+      <div class="section-label">Type scale (DESIGN.md G27 + PDD §2.3)</div>
+      <div class="type-grid">
+        <div class="type-row">
+          <span class="type-meta">headline-xl · 40/52 · 700 · Be Vietnam Pro · ls −0.02em</span>
+          <span class="type-sample" style="font:700 40px/52px var(--font-head); letter-spacing:-.02em">Control Tower</span>
+        </div>
+        <div class="type-row">
+          <span class="type-meta">headline-lg · 32/40 · 600 · ls −0.01em</span>
+          <span class="type-sample" style="font:600 32px/40px var(--font-head); letter-spacing:-.01em">Đối soát kỳ 08/2026</span>
+        </div>
+        <div class="type-row">
+          <span class="type-meta">page title (PDD §2.3) / headline-md · 24/32 · 600</span>
+          <span class="type-sample" style="font:600 24px/32px var(--font-head)">Chấm công — Xử lý ngoại lệ</span>
+        </div>
+        <div class="type-row">
+          <span class="type-meta">body-lg · 18/28 · 400</span>
+          <span class="type-sample" style="font:400 18px/28px var(--font-body)">Bắc Việt đang phản hồi statement — còn 2 ngày.</span>
+        </div>
+        <div class="type-row">
+          <span class="type-meta">body-md / table · 14/20 · 400 (PDD §2.3)</span>
+          <span class="type-sample" style="font:400 14px/20px var(--font-body)">Bùi Đức Long · 208h × 58.000 + 12h × 87.000 = 13.108.000 ₫</span>
+        </div>
+        <div class="type-row">
+          <span class="type-meta">label-md · 14/20 · 500 · Inter · ls +0.01em</span>
+          <span class="type-sample" style="font:500 14px/20px var(--font-label); letter-spacing:.01em">Nhu cầu dự án · ACTIVE · Thiếu</span>
+        </div>
+        <div class="type-row">
+          <span class="type-meta">label-sm / table header · 12/16 · 600 · Inter · ls +0.03em</span>
+          <span class="type-sample" style="font:600 12px/16px var(--font-label); letter-spacing:.03em; text-transform:uppercase">MÃ NV · WORKER · NGÀY · CA · LOẠI NGOẠI LỆ</span>
+        </div>
+        <div class="type-row">
+          <span class="type-meta">KPI / money · 18–24 · tabular-nums (không dùng 1.2B, không float)</span>
+          <span class="type-sample tabular" style="font:600 24px/32px var(--font-head)">914.820.000 ₫ <span style="font-size:15px; color:var(--on-surface-variant)">· 20,37%</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Spacing — 8px linear scale (Material 4/8dp)</div>
+      <div class="space-scale">
+        <div class="space-bar" style="height:8px; width:56px">8</div>
+        <div class="space-bar" style="height:16px; width:56px">16</div>
+        <div class="space-bar" style="height:24px; width:56px">24</div>
+        <div class="space-bar" style="height:32px; width:56px">32</div>
+        <div class="space-bar" style="height:40px; width:56px">40</div>
+        <div class="space-bar" style="height:48px; width:56px">48</div>
+        <div class="space-bar" style="height:56px; width:56px">56</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Grid desktop — 1440 · 12 cột · margin 24 · gutter 24 (PDD §2.1)</div>
+      <div class="grid-demo">
+        <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>
