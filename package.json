@@ -10,6 +10,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
   },
+  "prisma": {
+    "seed": "node prisma/seed.mjs"
+  },
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "@tanstack/react-table": "^8.20.5",
