@@ -373,3 +373,153 @@ Sắp xếp P0 → P3. Không có finding P0/P1 trong round 2. Tổng 8 finding 
 | 2 | `AUD-014` | — | `OPEN` | Chờ Planner Resolution (TASK §9) |
 
 > Đã bàn giao AUDIT.md cho Tier 1; chờ Planner Resolution trong TASK.md.
+
+---
+
+# AUDIT ROUND 3 — DESIGN_AUDIT (STEP-08 phần tự chủ)
+
+## 0. Audit Control — Round 3
+
+| Field | Value |
+|---|---|
+| Task slug | `hrp-v4-bod-mockup` |
+| Work/Audit type | `DESIGN / DESIGN_AUDIT` |
+| Spec version | `v1.9` (TASK.md Status READY_FOR_AUDIT; khớp HANDOFF round 3) |
+| Execution round | `3` (STEP-08 phần tự chủ: trang 60, DECISION_LOG.md, F80 export; HANDOFF Status READY_FOR_AUDIT) |
+| Audit round | `3` |
+| Auditor/context | `Tier 3 — Auditor (context độc lập; tự đọc 10 file mới + grep + link-check + cộng tay; không dùng bảng AC của HANDOFF làm đúng)` |
+| Baseline/diff/artifacts | `mockup/F60_D01.html`…`F60_D08.html`, `mockup/F60_D09_D12_Notes.html`, `DECISION_LOG.md`, `mockup/F80_DemoExport.html` + `F80_DemoExport.pdf`, `mockup/index.html` (nhóm 60/80); đối chiếu `TASK.md` v1.9, `HANDOFF.md` round 3, `F00A_DemoNarrative.html`, PDD §10.2, DEC-03…DEC-14/17/27 |
+| Independence | `Confirmed` — mọi kết luận round 3 từ đọc trực tiếp từng file + grep + kiểm tra file thật; HANDOFF chỉ là tuyên bố cần kiểm chứng |
+| Audit time | `2026-08-15 (VN)` |
+
+## 1. Findings — Round 3
+
+Không có finding P0/P1/P2 trong round 3. Tổng 4 finding mới (AUD-015 → AUD-018), tất cả P3; finding round 1/2 đã đóng, không tái phạm nghiêm trọng (xem §7).
+
+### AUD-015 — Font 11px xuất hiện lại ở 2 frame mới: `.meta span` F60_D09_D12_Notes và `.legend span` F80_DemoExport — tái phạm AUD-011 (PDD §2.3 "không nhỏ hơn 12px")
+
+- **Severity:** `P3`
+- **Status:** `OPEN`
+- **RQ/AC:** `RQ-09 / AC-10` (PDD §2.3), re-audit `AUD-011`
+- **Evidence:**
+  - `mockup/F60_D09_D12_Notes.html:27` — `.meta span { font: 600 11px/1 var(--font-label); ... }` (chip Owner/Due/Deferred)
+  - `mockup/F80_DemoExport.html:19` — `.legend span { font: 600 11px/1 var(--font-label); ... }` (chú giải 3 khoảnh khắc)
+  - PDD §2.3 (`docs/HRP_V4_MOCKUP_EXECUTION_PLAN.md:156`): "Label/caption 12/16, 500 — Không nhỏ hơn 12 px"
+  - Round 2 `AUD-011` đã yêu cầu nâng 11px→12px toàn bộ (7 chỗ hrp.css + .hm-step F50) và đã đóng — frame mới round 3 tái phạm ở CSS cục bộ frame
+  - Các frame F60_D01–D08 khác dùng ≥12px (`f60-chip` 12px, `.sub` 12px, `.rec-card` 13px) — chỉ 2 chỗ này vi phạm
+- **Impact:** Nhỏ — 2 chip label 11px trên trang phục vụ BoD; khi scale-to-fit (frame.js ~85% tại 1366×768) càng khó đọc; trái chuẩn đã chốt PDD §2.3.
+- **Decision needed from Planner:** Nâng 2 rule lên 12px (sửa CSS cục bộ 2 file), hoặc ACCEPT_RISK kèm ghi chú.
+
+### AUD-016 — F00A_DemoNarrative bước 04:10 còn lời dẫn "tạo claim 4 ngày trước" — lệch DEC-17 (claim 12/08 = 3 ngày trước 15/08), tự mâu thuẫn với bước 04:50 cùng file
+
+- **Severity:** `P3`
+- **Status:** `OPEN`
+- **RQ/AC:** `RQ-07 / AC-01, AC-12` (presentation strings §4.4; DEC-17)
+- **Evidence:**
+  - `mockup/F00A_DemoNarrative.html:110` — `"Timeline cho thấy CTV Nguyễn Hoàng Duy tạo claim 4 ngày trước; vendor mới nộp hôm nay."` (step-say bước 04:10)
+  - `TASK.md` DEC-17 (v1.9, §3): "claim CTV **12/08** → HR xác nhận 12/08 → vendor Bắc Việt nộp lại **15/08**… Presenter nói 'claim tạo ngày **12/08**' (bỏ '4 ngày trước')"; 15/08 − 12/08 = **3 ngày**, không phải 4
+  - Mâu thuẫn nội bộ chính frame: cùng file bước 04:50 (`F00A_DemoNarrative.html:115`) ghi đúng "claim tạo 12/08"
+  - `F80_DemoExport.html:119` (bước 6, 04:10) đã bỏ cụm này — "Huy là người giới thiệu — Referral Guard khoá…" (không nhắc "4 ngày trước")
+- **Impact:** Người dẫn demo đọc nguyên văn F00A bước 04:10 sẽ nói sai ngày/nhầm số ngày so với DEC-17 đã chốt; BoD hỏi lại ngày claim sẽ lệch với drawer S02B (12/08).
+- **Decision needed from Planner:** Sửa 1 dòng text F00A:110 thành "claim tạo ngày 12/08" (bỏ "4 ngày trước") — khớp DEC-17 và bước 04:50; hoặc ACCEPT_RISK kèm ghi chú presenter.
+
+### AUD-017 — F80_DemoExport:239 inline `style="font-style:italic;"` thừa — tái phạm nhẹ DEC-27/RISK-05 (không inline override)
+
+- **Severity:** `P3`
+- **Status:** `OPEN`
+- **RQ/AC:** `RQ-07 / AC-10` (DEC-27 "không inline override", RISK-05), re-audit `AUD-004`
+- **Evidence:**
+  - `mockup/F80_DemoExport.html:239` — `<span class="step-say" style="font-style:italic;">` trong khi class `.step-say` đã khai italic (`F80_DemoExport.html:28` — `.step-say { font: 400 italic 12px/16px ... }`) — inline duplicate, không thêm hiệu lực
+  - `TASK.md:85` DEC-27: `"không detach"→chỉ dùng class chung, không inline override (RISK-05)`; AUD-004 round 1 đóng với ACCEPT_RISK cho inline width/height dữ liệu minh họa — style thừa này không thuộc ngoại lệ đó
+- **Impact:** Rất nhỏ — 1 thuộc tính lặp; không phá token nhưng là dạng inline đã bị cấm; 16 bước F80 là tài liệu presenter nên sạch nhất có thể.
+- **Decision needed from Planner:** Bỏ thuộc tính inline dòng 239 (class đã có italic), hoặc ACCEPT_RISK.
+
+### AUD-018 — F60_D09_D12_Notes header thiếu dòng "Prototype assumption — không phải quyết định final của BoD (PDD §10.2)" mà 8 frame F60_D01–D08 đều có
+
+- **Severity:** `P3`
+- **Status:** `OPEN`
+- **RQ/AC:** `RQ-11 / AC-13` (DEC-02 — mọi recommendation là prototype assumption)
+- **Evidence:**
+  - `mockup/F60_D09_D12_Notes.html:38` — header note chỉ ghi "Không chặn demo — chốt sau buổi BoD, ghi owner + due theo RQ-11" — không có cụm assumption
+  - 8/8 frame khác đều có: `F60_D01.html:40`, `F60_D02.html:40`, `F60_D03.html:40`, `F60_D04.html:40`, `F60_D05.html:40`, `F60_D06.html:40`, `F60_D07.html:40`, `F60_D08.html:40` — "Prototype assumption — không phải quyết định final của BoD (PDD §10.2)"
+  - Giảm nhẹ: `DECISION_LOG.md:4` ghi rõ "mọi recommendation hiện là *prototype assumption*, chưa phải quyết định final (PDD §10.2)" và F60_D09_D12_Notes link sang DECISION_LOG.md (dòng 85)
+- **Impact:** BoD mở thẳng trang D09–D12 không thấy cảnh báo assumption như 8 trang kia — nhất quán nội dung trang 60 bị đứt 1 mắt xích; không chặn quyết định.
+- **Decision needed from Planner:** Thêm cụm cảnh báo vào header F60_D09_D12_Notes cho khớp 8 frame còn lại, hoặc ACCEPT_RISK (DECISION_LOG đã ghi).
+
+## 2. Acceptance Verification — Round 3
+
+| AC | Independent method | Result | Evidence | Finding |
+|---|---|---|---|---|
+| `AC-01` | Đối chiếu F80 16 bước vs F00A + link-check | PASS | 16/16 bước khớp timestamp + frame (00:00→13:00); mọi href F60/F80 trỏ file tồn tại (25 đích nội bộ + `../DECISION_LOG.md` OK); 0 link chết | AUD-016 (lời dẫn ngày, không phải link) |
+| `AC-02` | Cộng tay số liệu frame mới | PASS | F80 bước 16 kết: `728.460.000 / 914.820.000 / 186.360.000 (20,37%)` — khớp §4.4; F60/F80 không đưa số mới nào khác canonical | None |
+| `AC-03` | Grep PII/ID + watermark | PASS | Watermark `DỮ LIỆU MINH HỌA` 10/10 file mới; không SĐT/CCCD/bank/brand thật trong F60/F80/DECISION_LOG (đọc trực tiếp) | None |
+| `AC-04` | index.html vs §4.5 | PASS | Nhóm 60 → 4 dòng done (D01–D04, D05–D08, D09–D12 Notes, DECISION_LOG) link đúng; nhóm 80 mới F80 done; F90 Archive giữ todo; S05 vẫn todo (STEP-09); 36 frame cũ không frame nào bị xóa | None |
+| `AC-10` | Kiến trúc + tokens + font | PASS (kiến trúc) | F60 dùng class token G27 từ hrp.css (badge-primary/badge-neutral/warning-soft/primary-soft/push-right/small/muted đều tồn tại); frame.js scale-to-fit dùng ở F60; F80 là trang document (như index.html) không cần scale; không scrim/state-panel (không tái phạm AUD-007) | AUD-015 (11px), AUD-017 (inline) |
+| `AC-12` | Dry-run 2 lần ≤15 phút | PARTIAL | Tài liệu sẵn sàng: F00A 16 bước + F80 HTML/PDF đúng thứ tự (RISK-03 fallback 7 phút); PDF tồn tại 4.952.284 bytes (4,8MB, khớp HANDOFF khai); **chưa chạy dry-run thật — cần sếp làm presenter** (đúng kế hoạch, không phải fail) | AUD-016 (lời dẫn presenter) |
+| `AC-13` | Trang 60 + Decision Log | PASS | F60_D01…D08: mỗi D có bối cảnh + recommendation (variant A — đang demo) + variant A/B + mức chặn nếu BoD chọn khác; recommendation khớp DEC-03…DEC-10 (D01 4 KPI vận hành · D02 44px · D03 card 3 cột · D04 guided transfer · D05 HR_MANAGER maker-checker · D06 Review→Approve→Lock · D07 3 blocker UNMATCHED+SOURCE_CONFLICT+WRONG_PROJECT · D08 rate+quantity+amount); D09–D12 Notes owner+due khớp DEC-11…DEC-14; DECISION_LOG.md D01–D12 đủ recommendation/variants/owner/due/mức chặn + checklist sau họp + "freeze chỉ sau PM/BoD ký" (dòng 5, 35) | AUD-018 (thiếu assumption header) |
+| `AC-14` | 3 file + Resolution | PARTIAL | TASK v1.9 Status READY_FOR_AUDIT + Revision Log v1.9 khớp HANDOFF round 3; HANDOFF AC-12 PARTIAL ghi trung thực "chưa chạy dry-run — cần sếp làm presenter"; BLK-10 (Chrome headless thay Edge) ghi rõ là deviation cùng bản chất "browser print" (DEC-27); **chờ round 3 Resolution (AUD-015…018 + BLK-10)** | None |
+| `AC-15` | S05 job board | N/A | STEP-09 — ngoài round 3 (index.html nhóm 50 S05 vẫn todo) | — |
+
+## 3. Scope và Impact — Round 3
+
+- **Deliverables in scope:** 10 file mới round 3 (F60_D01…D08, F60_D09_D12_Notes, F80_DemoExport.html) + `DECISION_LOG.md` + `F80_DemoExport.pdf` + `mockup/index.html` (nhóm 60/80) — tôi đã đọc trực tiếp 100% file HTML mới (10/10) + DECISION_LOG.md + index.html, kiểm tra file PDF tồn tại + dung lượng; đối chiếu TASK v1.9, HANDOFF round 3, F00A (16 bước), DEC-03…DEC-14/17/27, PDD §10.2.
+- **Out-of-scope changes:** Không sửa bất kỳ file nào; mọi finding là mô tả + evidence chờ Planner Resolution. 2 dry-run (AC-12) và freeze baseline thuộc sếp/BoD, không phải phần tự chủ executor.
+- **Blast radius:** AUD-015/017 ảnh hưởng 2 file trình BoD (font chip nhỏ + 1 inline thừa — cosmetic); AUD-016 ảnh hưởng lời dẫn presenter 1 bước trong F00A (nói sai ngày claim nếu đọc nguyên văn — đêm demo); AUD-018 ảnh hưởng nhất quán trang 60 (1 trong 9 trang thiếu cảnh báo assumption). Không finding nào phá số liệu/flow/hierarchy.
+- **Data/security/migration/operations:** Không schema/env thay đổi; mock data hư cấu (DEC-14); watermark đủ 10/10 file mới; không PII thật; PDF là export tĩnh không mang dữ liệu nhạy ngoài watermark.
+
+## 4. Independent Evidence — Round 3
+
+| Check/command | Exit/result | Summary | Evidence path/limitation |
+|---|---|---|---|
+| Đọc trực tiếp 10 file F60/F80 | PASS | Cấu trúc đồng nhất: header assumption (8/9) + chip nav D01–D09_D12 + back-link "← Bản đồ frame" → index.html; rec-card recommendation; variant-grid A/B (A được tô primary); block-note mức chặn; bod-note chờ họp | `F60_D01…D08.html`, `F60_D09_D12_Notes.html` |
+| Recommendation vs DEC-03…DEC-10 | PASS | D01 4 KPI vận hành ✓ (DEC-03); D02 44px ✓ (DEC-04); D03 card 3 cột ✓ (DEC-05); D04 guided transfer, error-modal chỉ ở trang 60 ✓ (DEC-06); D05 HR_MANAGER + maker-checker + nút theo permission ✓ (DEC-07); D06 Review→Approve→Lock ✓ (DEC-08); D07 3 blocker ✓ (DEC-09); D08 rate+quantity+amount ✓ (DEC-10); mức chặn mỗi D khớp "Chặn:" của từng DEC | từng frame + TASK §3 |
+| D09–D12 vs DEC-11…DEC-14 | PASS | D09 SLA 3 ngày làm việc (owner sếp, due sau BoD) ✓; D10 margin Director+Accountant, PM theo permission (owner PM) ✓; D11 "Cần xem xét"/"Bị chặn" không màu-only (owner Planner) ✓; D12 brand ẩn danh "Áp dụng từ đầu" ✓ | `F60_D09_D12_Notes.html:57-79`, `DECISION_LOG.md` |
+| Freeze note | PASS | DECISION_LOG.md:5 "Freeze Mockup Baseline v1 chỉ thực hiện sau khi PM/BoD ký xác nhận — không freeze sớm" + checklist dòng 35 "PM/BoD ký xác nhận → freeze" | `DECISION_LOG.md` |
+| Link-check F60/F80 | PASS | 25 đích nội bộ + `../DECISION_LOG.md` + F01_Density đều tồn tại — 0 link chết | grep href + kiểm tra file |
+| F80 vs F00A (16 bước) | PASS | 16/16 khớp thứ tự + timestamp + frame: 00:00 S01 · 00:40 S02 · 01:20 S02 · 02:10 S02A · 03:10 S02A_Transfer · 04:10/04:50 S02B · 05:40 S03 · 06:20 Resolve · 07:30 Resolved · 08:30 S03B · 09:30 S04 · 10:30 S04A · 11:30 S04B · 12:10 Dispute · 13:00 Margin | `F80_DemoExport.html:52-242` vs `F00A_DemoNarrative.html:69-188` |
+| 3 khoảnh khắc bắt buộc tô cam | PASS | Guided Transfer 02:10–03:10 (bước 4–5, class mom) · Exception→Lock 06:20–08:30 (bước 9–11 mom) · Dual Reconciliation 09:30–13:00 (bước 12–16 mom) — khớp F00A §1.4 (3 mk) | `F80_DemoExport.html` class `mom` |
+| Print CSS | PASS | `@media print` `.step { page-break-after: always }` + `.step-frame { height: 1180px }` — mỗi bước 1 trang | `F80_DemoExport.html:31-36` |
+| PDF | PASS (tồn tại + dung lượng) | `F80_DemoExport.pdf` = 4.952.284 bytes (4,8MB) — khớp HANDOFF E-18; không mở nội dung (phạm vi cho phép) | `ls -la` |
+| `grep "43 dòng"` frame mới | 0 match | Không tái phạm AUD-002 | F60/F80/DECISION_LOG |
+| `grep scrim/state-panel` F60/F80 | 0 match | Không tái phạm AUD-007 (z-index) | toàn bộ frame mới |
+| `grep 11px` F60/F80 | 2 match | `F60_D09_D12_Notes.html:27`, `F80_DemoExport.html:19` | → AUD-015 |
+| `grep "4 ngày trước"` F00A | 1 match | `F00A_DemoNarrative.html:110` lệch DEC-17 | → AUD-016 |
+| `grep style="` F60/F80 | 1 match | `F80_DemoExport.html:239` font-style thừa (class đã italic) | → AUD-017 |
+| class tokens G27 | PASS | badge-primary/badge-neutral/warning-soft/primary-soft/push-right/small/muted đều có trong `_assets/hrp.css` (17 match) | hrp.css |
+| index.html nhóm 60/80/90 | PASS | Nhóm 60: 4 dòng done đúng link; nhóm 80: F80 done; F90 todo đúng (chờ BoD); không frame cũ nào bị xóa (36 frame giữ nguyên) | `mockup/index.html:120-136` |
+| HANDOFF trung thực | PASS | AC-12 PARTIAL ghi rõ "chưa chạy dry-run thật — cần sếp làm presenter, evidence video/log sau khi chạy"; BLK-10 ghi deviation Chrome headless thay Edge kèm lý do + câu hỏi cho Planner | `HANDOFF.md` §3, §5 |
+
+## 5. Coverage Gaps — Round 3
+
+- Không mở nội dung PDF (phạm vi chỉ kiểm tra tồn tại + dung lượng — đã làm); không in thật để đo số trang/scale iframe trong PDF.
+- Không chạy trình duyệt: không click chip nav F60, không mở F80 dạng sống, không đo pixel font sau scale-to-fit — kết luận từ đọc DOM/CSS, mức tin cậy cao.
+- 2 dry-run AC-12 chưa chạy — thuộc sếp làm presenter (BLK-01); timing 16 bước (00:00–13:00) là thiết kế từ F00A, chưa đo thực tế.
+- AUD-016 nằm ở frame cũ F00A (round 1/2) nhưng chỉ lộ ra khi đối chiếu F80 round 3 — đưa vào round 3 vì ảnh hưởng trực tiếp bài demo BoD.
+- Ảnh hưởng tới verdict: thấp — 4 finding đều P3 cosmetic/text; không gap nào chặn kết luận round 3.
+
+## 6. Verdict và Planner Questions — Round 3
+
+- **Verdict:** `CONDITIONAL`.
+- **Reason:** Không có P0/P1/P2. AC-13 PASS đầy đủ: trang 60 có đủ D01–D08 (bối cảnh + recommendation variant A + variant A/B + mức chặn, khớp DEC-03…DEC-10), D09–D12 owner+due khớp DEC-11…DEC-14, DECISION_LOG.md D01–D12 đầy đủ + freeze chỉ sau PM/BoD ký; F80 export đúng thứ tự 16 bước F00A (16/16), 3 khoảnh khắc bắt buộc tô cam đúng phạm vi, print CSS 1 bước/trang, PDF tồn tại 4,8MB; index.html nhóm 60 done + nhóm 80 mới đúng, F90 todo, không frame nào bị xóa; link-check 0 chết. AC-12 chỉ PARTIAL vì 2 dry-run cần sếp làm presenter — HANDOFF ghi trung thực, đúng kế hoạch, không phải fail. Còn 4 finding P3 (AUD-015 11px, AUD-016 lời dẫn ngày claim, AUD-017 inline thừa, AUD-018 thiếu assumption header) — đều là sửa text/CSS cục bộ trước đêm demo; cần Planner quyết định → CONDITIONAL, không PASS tuyệt đối, cũng không FAIL/BLOCKED.
+- **Planner decisions required:** `AUD-015`, `AUD-016`, `AUD-017`, `AUD-018` (P3 — nên resolve trước buổi BoD vì AUD-016 là lời dẫn presenter có thể đọc sai ngày; AUD-015/017/018 là cosmetic nhưng xuất hiện trên tài liệu trình BoD). Ngoài ra cần Planner ghi nhận `BLK-10` (Chrome headless thay Edge — deviation hợp lệ cùng bản chất browser print DEC-27, không đổi contract) để đóng AC-14 round 3.
+
+## 7. Re-audit Trace — Round 3
+
+| Audit round | Finding ID | Previous status | Current status | Closure evidence |
+|---|---|---|---|---|
+| 1 | `AUD-001` | CLOSED | `CLOSED` | Không tái phạm: F60/F80/DECISION_LOG không nhắc client ID lệch; S04/S04A đã dùng CL-0018 |
+| 1 | `AUD-002` | CLOSED | `CLOSED` | Grep "43 dòng" frame mới = 0 match |
+| 1 | `AUD-003` | CLOSED | `CLOSED` | F60 dùng `--radius-md` 16px (G27 8/16/24) qua class chung; không scale radius mới |
+| 1 | `AUD-004` | CLOSED (ACCEPT_RISK) | `CLOSED` (tái phạm nhẹ → AUD-017) | F60 sạch inline (0 match); F80 còn 1 inline `font-style` thừa dòng 239 → finding mới AUD-017 |
+| 1 | `AUD-005` | CLOSED | `CLOSED` | Không liên quan frame mới (S03 sort giữ nguyên đã sửa) |
+| 1 | `AUD-006` | CLOSED | `CLOSED` | Không liên quan frame mới (S04A note đã đúng) |
+| 2 | `AUD-007` | CLOSED | `CLOSED` | Grep scrim/state-panel F60/F80 = 0 match |
+| 2 | `AUD-008` | CLOSED | `CLOSED` | F60 có back-link "← Bản đồ frame" → index.html (9/9 file); F80 là trang document (tương đương index.html) không cần back-link — ghi chú |
+| 2 | `AUD-009` | CLOSED (ACCEPT_RISK DEC-29) | `CLOSED` | Chip nav `.f60-chip.on` dùng primary+trắng = cùng token G27 đã được DEC-29 chấp nhận toàn hệ — nhất quán, không finding mới |
+| 2 | `AUD-010` | CLOSED | `CLOSED` | Frame mới không chứa label "V1 · DRAFT" |
+| 2 | `AUD-011` | CLOSED | `CLOSED` (tái phạm → AUD-015) | 2 rule 11px mới ở F60_D09_D12_Notes:27 + F80:19 → finding mới AUD-015 |
+| 2 | `AUD-012` | CLOSED (deviation) | `CLOSED` | Không liên quan frame mới |
+| 2 | `AUD-013` | CLOSED | `CLOSED` | F80 header ghi "16 bước" đúng; không ghi số frame STATE |
+| 2 | `AUD-014` | CLOSED (deviation) | `CLOSED` | Không liên quan frame mới |
+
+> Đã bàn giao AUDIT.md cho Tier 1; chờ Planner Resolution trong TASK.md.

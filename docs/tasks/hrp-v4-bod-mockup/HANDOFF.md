@@ -6,12 +6,12 @@
 |---|---|
 | Task slug | `hrp-v4-bod-mockup` |
 | Work type | `DESIGN` |
-| Spec version | `v1.4` (khớp TASK.md) |
-| Execution round | `2` |
+| Spec version | `v1.9` (khớp TASK.md) |
+| Execution round | `3` |
 | Executor | `Tier 1 Planner + ui-ux-pro-max skill (founder ủy quyền 15/08/2026 — thay sếp làm phần Figma; DEC-27: medium HTML)` |
 | Baseline | `git a4327ab` · thực tế ngày 15/08/2026 · `docs/UNIFIED_PLAN_v4.md` (v4.20), `stitch/warm_professionalism/DESIGN.md` (G27), `docs/HRP_V4_MOCKUP_EXECUTION_PLAN.md` (PDD) |
 | Status | `READY_FOR_AUDIT` |
-| Started/updated | `2026-08-15 (VN)` — STEP-01 08:40 → STEP-06 21:10 cùng ngày |
+| Started/updated | `2026-08-15 (VN)` — STEP-01 08:40 → STEP-06 21:10 → STEP-08 (phần tự chủ) 23:30 cùng ngày |
 
 ## 1. Outcome Summary
 
@@ -24,7 +24,12 @@
 - **STEP-05 (hi-fi + components)**: gỡ toàn bộ `.wf` low-fi; áp radius G27 8/16/24 (AUD-003); pass cleanup inline (AUD-004): `.icon-btn` position:relative, class `.tbl-sub-block`, badge `HI-FI · STEP-05` mọi frame; `F02_ComponentSet` — 17 component PDD §8.2 dùng class chung hrp.css (không detach, không inline override); RightDrawer/ConfirmationDialog link tới frame live S02A/S03B (tránh nested).
 - **STEP-06 (hi-fi S03/S04 + 12 state + wire 11 hotspot)**: hi-fi Attendance/Reconciliation; 12 state frame đúng tên §4.5 — overlay (S01_Loading, S03_ImportProgress, S03_ImportFailed: scrim + state-card + skeleton/progress), in-place (S01_EmptyQueue, S01_StaleBanner, S02B_Expired, S02_CardBlocked, S04_ConfirmedLocked, S04_RevisionV2, S04_VendorDisputed), st-hide (S02_Staffing_NoResult, S04_EmptyPayment); mỗi state có badge `STATE · …` màu semantic + note trung thực `(State minh họa STEP-06 · AC-11)` + link quay về frame gốc. `F50_HotspotMap` — bảng 11 hotspot PDD §8.3 (from → to → back-path) + deviation Long/Nam ghi rõ.
 - **Wire & verify**: 11 hotspot link đúng đích; back-path bổ sung — S04B_VendorPreview_Sent thêm nút `Về HRP` → S04; sidebar `Dự án` 3 frame S03 trỏ → S02 (trước là `#`); link-check toàn bộ 36 frame: ALL OK (script bỏ anchor + http + assets).
-- **Chưa hoàn thành (theo kế hoạch)**: STEP-08 (dry-run, trang 60, Decision Log), STEP-09 (S05). Không tự ghi audit verdict.
+- **STEP-08 (phần tự chủ — round 3, chuẩn bị demo BoD)**:
+  - **Trang 60** `F60_D01.html`…`F60_D08.html` + `F60_D09_D12_Notes.html` — mỗi D01–D08 1 file: bối cảnh + recommendation (variant A — assumption đang demo) + variant A/B so sánh + mức chặn nếu BoD chọn khác + ô ghi chú BoD chờ buổi họp; header mọi file ghi rõ "Prototype assumption — không phải quyết định final của BoD (PDD §10.2)"; chip nav D01→D09–D12 + back-link bản đồ.
+  - **`DECISION_LOG.md`** — bảng D01–D08 (recommendation, variants, áp dụng, owner Sếp, due buổi BoD, mức chặn) + D09–D12 deferred (owner + due đề xuất; D12 brand ẩn danh đang áp dụng từ đầu) + checklist sau buổi họp (chốt chọn → Archive trang 90 → freeze chỉ sau PM/BoD ký).
+  - **Export dự phòng** `F80_DemoExport.html` — 16 bước đúng thứ tự F00A (00:00→13:00), mỗi bước: thời gian + link frame + hành động + lời dẫn; 3 khoảnh khắc bắt buộc (Guided Transfer 02:10–03:10 · Exception→Lock 06:20–08:30 · Dual Reconciliation 09:30–13:00) tô viền cam theo RISK-03 fallback 7 phút; print CSS mỗi bước 1 trang → `F80_DemoExport.pdf` (4,8MB) đã in bằng Chrome headless (DEC-27 browser print).
+  - **index.html**: nhóm 60 → 4 dòng done (D01–D04, D05–D08, D09–D12 Notes, Decision Log) + nhóm 80 mới (F80 done); F90 Archive giữ todo (chờ kết quả buổi BoD).
+- **Chưa hoàn thành (đúng kế hoạch)**: 2 dry-run ≤15 phút cần **sếp làm presenter** (AC-12 — evidence video/log); freeze Mockup Baseline v1 chỉ sau PM/BoD ký (không freeze sớm); STEP-09 (S05). Không tự ghi audit verdict.
 
 ## 2. Execution Trace
 
@@ -35,6 +40,7 @@
 | `STEP-03` | `RQ-01`, `RQ-02`, `RQ-05`, `RQ-06`, `RQ-07` | `mockup/S03_Attendance_Exceptions.html`, `mockup/S03_ResolveDrawer.html`, `mockup/S03_Attendance_Resolved.html`, `mockup/S03B_LockConfirmation.html`, `mockup/S03_Attendance_Locked_ReadOnly.html`, `mockup/S04_Reconciliation_Internal.html`, `mockup/S04_MarginComparison.html`, `mockup/S04A_Lineage_Drawer.html`, `mockup/S04B_VendorPreview_Sent.html`, `mockup/S04B_VendorPreview_DisputeForm.html` | DONE | (a) Tab "Client receivable" nằm trong cùng file S04_Reconciliation_Internal (anchor `#client`) — frame inventory §4.5 không có file ClientReceivable riêng; (b) bulk "Đánh dấu đã xử lý" là link fast-path → S03_Attendance_Resolved (không phải hotspot chính thức §8.3); (c) dialog lock giữ "Khóa và tạo đối soát" màu primary — không màu success — đúng PDD §5.6 |
 | `STEP-05` | `RQ-07`, `RQ-08`, `RQ-09` | `mockup/F02_ComponentSet.html`, hi-fi toàn bộ 22 frame (gỡ `.wf`, radius 8/16/24, badge HI-FI) | DONE | (a) Radius 8/16/24 theo DEC-28 — ghi chú ở F02 callout; (b) RightDrawer/ConfirmationDialog không dựng lại trong F02 — link tới S02A/S03B live (tránh nested) |
 | `STEP-06` | `RQ-02`, `RQ-08`, `RQ-10` | `mockup/F50_HotspotMap.html`, 12 state frame (`S01_ControlTower_Loading/EmptyQueue/StaleBanner`, `S02_Staffing_NoResult`, `S02B_ReferralGuard_Expired`, `S02_CardBlocked`, `S03_ImportProgress/ImportFailed`, `S04_VendorDisputed/ConfirmedLocked/RevisionV2/EmptyPayment`), `mockup/index.html` (14 dòng done), `F00A_DemoNarrative` foot | DONE | (a) PDD §8.3 hotspot #9 ghi "Nguyễn Văn Nam" — §4.5 locked scenario (audit round 1) dùng dòng Bùi Đức Long cho lineage: giữ Long, ghi deviation trong F50; (b) S04B_VendorPreview_Sent thiếu back-path → thêm nút "Về HRP" → S04; (c) sidebar Dự án S03×3 trỏ S02; (d) S02_CardBlocked note chuẩn hóa mẫu audit |
+| `STEP-08` (phần tự chủ) | `RQ-11`, `AC-12`, `AC-13` | `mockup/F60_D01.html`…`F60_D08.html`, `mockup/F60_D09_D12_Notes.html`, `DECISION_LOG.md`, `mockup/F80_DemoExport.html` + `F80_DemoExport.pdf`, `mockup/index.html` (nhóm 60 done + nhóm 80) | DONE | (a) 2 dry-run chưa chạy — cần sếp làm presenter (không thuộc phần tự chủ); (b) PDF in bằng Chrome headless (DEC-27 ghi "browser print" — Edge headless không xuất file, đã chuyển Chrome); (c) variant B của D01/D05/D07/D08 do Planner định nghĩa thay thế hợp lý (TASK chỉ ghi variant A được chọn) — ghi rõ là option để BoD cân nhắc, không phải yêu cầu cũ của contract |
 
 ## 3. Acceptance Evidence
 
@@ -51,14 +57,15 @@
 | `AC-09` | Đối chiếu bảng S03 với §4.4 | PASS | 7 taxonomy đúng 1 lần: UNMATCHED/SOURCE_CONFLICT/WRONG_PROJECT/CROSS_DAY_SHIFT/MISSING_CHECKOUT/DUPLICATE_EVENT/INACTIVE_ASSIGNMENT; blocker row 1+2; 2 row chưa map = AP-QM-1048 (badge Chưa map) + AP-QM-1128 (badge Chưa map assignment) | WRONG_PROJECT = blocker-class (DEC-09) nhưng đã xử lý trong demo state (DEC-18 + §4.4 line 202 canonical) |
 | `AC-10` | Mở frame ở 1366×768 | PASS (kiến trúc) | frame.js scale-to-fit toàn bộ artboard — không che CTA vì cả màn hiển thị; badge đều icon+text; không gradient/nested card/emoji icon/hero-scale | Chưa chụp screenshot 2 viewport — Tier 3 round 2 kiểm tra (1366×768) |
 | `AC-11` | Page tree | PASS | 12/12 state frame §4.5 + badge STATE + note trung thực + back-link (grep từng file) | F50 ghi deviation hotspot #9 (Nam→Long) |
-| `AC-12` | Dry-run | NOT YET | STEP-08 | — |
-| `AC-13` | Trang 60 | NOT YET | STEP-08 | — |
-| `AC-14` | Đọc HANDOFF + AUDIT + TASK §9 | PARTIAL | HANDOFF.md (round 1+2) ✓; AUDIT.md round 1 đã có + §9 resolution ✓; chờ Tier 3 append round 2 | — |
+| `AC-12` | Dry-run 2 lần ≤15 phút | PARTIAL | Sẵn sàng về tài liệu: F00A_DemoNarrative (16 bước) + F80_DemoExport HTML/PDF (đúng thứ tự, RISK-03 fallback 7 phút) + link-check OK; **chưa chạy dry-run thật — cần sếp làm presenter, evidence video/log sau khi chạy** | 2 dry-run thuộc sếp — không tự chạy |
+| `AC-13` | Trang 60 + Decision Log | PASS | `F60_D01`…`F60_D08` (variant + recommendation + mức chặn từng D) + `F60_D09_D12_Notes` (D09–D12 owner+due) + `DECISION_LOG.md` (D01–D12 đủ owner+due theo RQ-11) | Kết quả chọn của BoD ghi sau buổi họp |
+| `AC-14` | Đọc HANDOFF + AUDIT + TASK §9 | PARTIAL | HANDOFF.md (round 1+2+3) ✓; AUDIT.md round 1+2 đã có + §9 resolution ✓; chờ Tier 3 append round 3 | — |
 | `AC-15` | S05 | NOT YET | STEP-09 | — |
 
 ## 4. Changed Deliverables
 
 - **Source/artifact changed:** `docs/tasks/hrp-v4-bod-mockup/mockup/index.html`, `mockup/_assets/hrp.css`, `mockup/_assets/frame.js`, 22 file frame (liệt kê §2), `docs/tasks/hrp-v4-bod-mockup/TASK.md` (v1.4 — sửa lỗi số học §4.4: 44 dòng ẩn gộp, thêm Revision Log), `docs/tasks/hrp-v4-bod-mockup/HANDOFF.md` (file này).
+- **Round 3 (STEP-08 phần tự chủ):** `mockup/F60_D01.html`…`F60_D08.html`, `mockup/F60_D09_D12_Notes.html`, `DECISION_LOG.md` (mới), `mockup/F80_DemoExport.html` (mới), `mockup/F80_DemoExport.pdf` (mới — 4,8MB, in Chrome headless), `mockup/index.html` (nhóm 60 done + nhóm 80), `TASK.md` (v1.9 — Status/Revision Log), `HANDOFF.md` (file này, round 3).
 - **Dependency:** None — không dùng thư viện ngoài Google Fonts (Be Vietnam Pro, Inter, Material Symbols Outlined).
 - **Schema/migration:** None.
 - **Environment/config:** None — `.env` không bị đụng, mock data hư cấu (DEC-14), không dùng dữ liệu viec3mien.
@@ -68,7 +75,8 @@
 
 | ID | Type | Evidence | Impact | Decision needed from Planner |
 |---|---|---|---|---|
-| `BLK-01` | Limitation | STEP-08/09 chưa chạy | Dry-run, trang 60, Decision Log, S05 chưa có | None — đúng thứ tự pipeline |
+| `BLK-01` | Limitation | STEP-08 đã xong phần tự chủ (trang 60, Decision Log, F80 export); **2 dry-run chờ sếp làm presenter**; STEP-09 (S05) chưa chạy | AC-12 chưa đóng hoàn toàn; S05 chưa có | Sếp chạy dry-run khi sẵn sàng (đã xác nhận "quay lại STEP-08 khi sếp sẵn sàng") |
+| `BLK-10` | Deviation | PDF export dùng **Chrome headless** (Edge headless không xuất file dù chạy 2 lần) | Vẫn đúng "browser print" (DEC-27) — chỉ khác trình duyệt | Chấp nhận Chrome là trình duyệt in? |
 | `BLK-02` | Deviation | Drawer frame (S02A/S02B/S03_Resolve/S04A) dựng trên underlying truncated + note "bị scrim làm mờ" | Không duplicate nguyên frame nền trong file drawer | Chấp nhận pattern (file tự chứa, PDD §4.4 đòi drawer trên đúng ngữ cảnh) hay yêu cầu full nền? |
 | `BLK-03` | Deviation | Tab "Client receivable" cùng file với S04_Reconciliation_Internal (anchor), không phải file riêng | 1 file chứa 2 tab vendor/client + file MarginComparison riêng | Chấp nhận (frame inventory §4.5 chỉ có 2 tên file S04 nội bộ)? |
 | `BLK-04` | Deviation | Bulk "Đánh dấu đã xử lý" là link trực tiếp → S03_Attendance_Resolved | Thêm 1 path ngoài 11 hotspot §8.3 | Chấp nhận là fast-path minh họa (không đưa vào hotspot map)? |
@@ -96,6 +104,11 @@
 | `E-12` | 12 file state `mockup/S0*_*.html` | badge `STATE ·` + note `(State minh họa STEP-06 · AC-11)` + data-frame canonical + back-link (AC-11) |
 | `E-13` | `mockup/index.html` | 14 dòng done mới (12 state + F02 + F50), còn 4 todo đúng STEP sau (AC-04) |
 | `E-14` | link-check script (grep href toàn bộ frame) | ALL INTERNAL LINKS OK — 36 frame, không href chết (AC-01/AC-12) |
+| `E-15` | `mockup/F60_D01.html`…`F60_D08.html` + `F60_D09_D12_Notes.html` | Trang 60 đủ D01–D08 (variant A/B + recommendation + mức chặn) + D09–D12 deferred owner+due (AC-13) |
+| `E-16` | `DECISION_LOG.md` | D01–D12 owner + due + trạng thái + checklist sau buổi BoD (RQ-11, AC-13) |
+| `E-17` | `mockup/F80_DemoExport.html` | 16 bước đúng thứ tự F00A + 3 khoảnh khắc bắt buộc tô cam + print CSS (RISK-03) |
+| `E-18` | `mockup/F80_DemoExport.pdf` | PDF dự phòng 4,8MB in từ browser (DEC-27) |
+| `E-19` | `TASK.md` v1.9 | Contract: Status round 3 + Revision Log v1.9 (AC-14) |
 
 ## 7. Execution Round History
 
@@ -103,5 +116,6 @@
 |---|---|---|---|
 | `1` | `v1.4` | `READY_FOR_AUDIT` | STEP-01/02/03: 22 frame low-fi + assets + HANDOFF round 1; Tier 3 append AUDIT.md round 1 (AUD-001…006) → Planner Resolution v1.6 |
 | `2` | `v1.7` | `READY_FOR_AUDIT` | STEP-05/06: hi-fi toàn bộ + F02_ComponentSet + F50_HotspotMap + 12 state + wire/verify 11 hotspot + link-check OK; chờ Tier 3 append AUDIT.md round 2 (viewport 1366×768, accessibility, totals, timing) |
+| `3` | `v1.9` | `READY_FOR_AUDIT` | STEP-08 phần tự chủ: trang 60 (F60_D01…D08 + F60_D09_D12_Notes) + DECISION_LOG.md + F80_DemoExport HTML/PDF + index nhóm 60/80; chờ Tier 3 append AUDIT.md round 3 (trang 60 variant, Decision Log RQ-11, export đúng thứ tự, deviation Chrome print) |
 
 > Handoff status: `READY_FOR_AUDIT`

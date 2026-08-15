@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>F60_D02 — Trang 60 · Mật độ bảng 44/52</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  .f1 { padding: 24px 40px; height: 100%; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+  .f1-head { display: flex; align-items: center; gap: 14px; }
+  .f1-title { font: 700 24px/32px var(--font-head); letter-spacing: -.01em; }
+  .f1-note { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .f60-nav { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .f60-chip { font: 600 12px/1 var(--font-label); color: var(--on-surface-variant); border: 1px solid var(--outline-variant); border-radius: 999px; padding: 6px 12px; text-decoration: none; background: var(--surface); }
+  .f60-chip.on { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+  .f60-back { margin-left: auto; font: 500 12px/16px var(--font-label); color: var(--primary-dark); text-decoration: none; }
+  .rec-card { border: 1px solid var(--primary); border-radius: var(--radius-md); padding: 12px 16px; background: var(--primary-soft); display: flex; gap: 10px; align-items: flex-start; }
+  .rec-card .mi { color: var(--primary-dark); font-size: 20px; }
+  .variant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .vcard { border: 1px solid var(--outline-variant); border-radius: var(--radius-md); padding: 12px 14px; background: var(--surface); display: flex; flex-direction: column; gap: 8px; }
+  .vcard.rec { border-color: var(--primary); }
+  .vcard h3 { font: 700 14px/20px var(--font-head); display: flex; align-items: center; gap: 8px; }
+  .vcard p { font: 400 13px/20px var(--font-body); color: var(--on-surface); margin: 0; }
+  .vcard .sub { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .block-note { background: var(--warning-soft); border: 1px solid rgba(180,83,9,.3); border-radius: var(--radius-md); padding: 10px 14px; font: 400 13px/20px var(--font-body); display: flex; gap: 10px; align-items: flex-start; }
+  .bod-note { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); display: flex; gap: 8px; align-items: center; }
+</style>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="F60_D02">
+  <div class="f1">
+
+    <div class="f1-head">
+      <span class="f1-title">Trang 60 · D02 — Mật độ bảng (row height)</span>
+      <span class="f1-note">Prototype assumption — không phải quyết định final của BoD (PDD §10.2)</span>
+      <span class="watermark-badge push-right">DỮ LIỆU MINH HỌA</span>
+    </div>
+
+    <div class="f60-nav">
+      <a class="f60-chip" href="F60_D01.html">D01</a>
+      <a class="f60-chip on" href="F60_D02.html">D02</a>
+      <a class="f60-chip" href="F60_D03.html">D03</a>
+      <a class="f60-chip" href="F60_D04.html">D04</a>
+      <a class="f60-chip" href="F60_D05.html">D05</a>
+      <a class="f60-chip" href="F60_D06.html">D06</a>
+      <a class="f60-chip" href="F60_D07.html">D07</a>
+      <a class="f60-chip" href="F60_D08.html">D08</a>
+      <a class="f60-chip" href="F60_D09_D12_Notes.html">D09–D12</a>
+      <a class="f60-back" href="index.html">← Bản đồ frame</a>
+    </div>
+
+    <div class="small muted"><b>Bối cảnh:</b> Mật độ dòng bảng ảnh hưởng khả năng quét nhanh của HR Ops. Đã dựng cả 2 variant ở Foundations.</div>
+
+    <div class="rec-card">
+      <span class="material-symbols-outlined mi">recommend</span>
+      <div><b>Khuyến nghị — Variant A (compact 44px):</b> trình diễn mặc định 44px cho bảng vận hành nhiều dòng (chấm công 1.222 dòng, đối soát 47 dòng). Variant B (52px) dành cho màn ít dòng, đọc thoải mái hơn.</div>
+    </div>
+
+    <div class="variant-grid">
+      <div class="vcard rec">
+        <h3><span class="badge badge-primary">A</span> Compact — 44px</h3>
+        <p>Row 44px, quét được nhiều dòng hơn trên 900px chiều cao. Đang là default toàn bộ mockup.</p>
+        <div class="sub">Áp dụng: S01 project table, S03 attendance, S04 reconciliation.</div>
+      </div>
+      <div class="vcard">
+        <h3><span class="badge badge-neutral">B</span> Comfortable — 52px</h3>
+        <p>Row 52px, dễ đọc hơn nhưng ít dòng hơn trên màn hình.</p>
+        <div class="sub">Xem so sánh: <a href="F01_Density_Variant_44_52.html">F01_Density_Variant_44_52</a></div>
+      </div>
+    </div>
+
+    <div class="block-note">
+      <span class="material-symbols-outlined mi">block</span>
+      <span><b>Nếu BoD chọn khác:</b> chọn B → đổi biến density ở 1 chỗ (CSS token), không phải vẽ lại — Foundations đã chuẩn bị cho cả 2 (DEC-04).</span>
+    </div>
+
+    <div class="bod-note"><span class="material-symbols-outlined mi">forum</span> Ghi chú BoD: — chờ buổi họp —</div>
+
+  </div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>
