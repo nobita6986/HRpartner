@@ -12,7 +12,7 @@
 //   - Tiền = BigInt VND nguyên (ADR-010) — cấm Decimal/float cho tiền
 //   - status enum là nguồn sự thật DUY NHẤT (F3) — không có docStatus
 //   - Canonical naming: cccdNumber, salaryPerDayVnd, employeeCode (ở assignment), userId (ở worker)
-//   - Partial unique index (1 accepted source, 1 PRIMARY ACTIVE) tạo qua migration SQL
+//   - Partial unique index (1 accepted source — Referral Guard; 1 ACTIVE assignment — G14) trong migration g22_security
 //
 // Wave 4 sẽ bổ sung: pay_runs, worker_pay_results, earning/deduction_lines,
 // payslips, commission_policies/ledger, payroll_rules, pay_run_rule_overrides (plan §12.5, §10.3).
@@ -99,6 +99,25 @@ enum TicketAction {
   COMMENT // Worker/HR comment trong ticket
 }
 
+// V4.14 G22 — 13 role (canonical docs/data-scope-security.md §3.1)
+// ADMIN = ROOT: bất khả tước — resolve permission short-circuit `role = ADMIN → ALL`
+// (quyền root là tiên đề, không phụ thuộc row nào — permission tạo sau tự thuộc root)
+enum SystemRole {
+  ADMIN
+  HR_MANAGER
+  DIRECTOR // Ban giám đốc — đọc toàn bộ, ghi qua Permission Pool (G22)
+  HR_STAFF
+  SALE
+  PM
+  ACCOUNTANT
+  MKT // account nghiệp vụ CRM — không đọc Worker (Q#22)
+  VENDOR_ADMIN
+  VENDOR_STAFF
+  CTV
+  WORKER
+  EMPLOYEE
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // 1. USERS & AUTH (ADR-007: OTP baseline + JWT; auth_identities Wave 1)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -109,7 +128,7 @@ model User {
   passwordHash String?  @map("password_hash") // V4.2 (ADR-007): argon2/bcrypt — đặt lúc đăng ký
   affCode      String?  @unique @map("aff_code") // V4.5 G13 — link giới thiệu CTV/Sale (first-click wins)
   name         String?
-  role         String // 'ADMIN' | 'HR_MANAGER' | 'HR_STAFF' | 'SALE' | 'PM' | 'ACCOUNTANT' | 'VENDOR_ADMIN' | 'VENDOR_STAFF' | 'CTV' | 'WORKER' | 'EMPLOYEE'
+  role         SystemRole // V4.14 G22 — enum 13 role (ADMIN = root bất khả tước §15.1)
   vendorId     String?  @map("vendor_id")
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -118,9 +137,63 @@ model User {
   candidateSubmissions CandidateSubmission[]
   sourceClaims         SourceClaim[]
   payrollConfigs       PayrollConfig[]
+  permissionGrants     UserPermissionGrant[]
+
+  // G22 — data isolation relations (§9.7 + docs/data-scope-security.md)
+  ownedWorkers    Worker[]  @relation("WorkerOwner")
+  assignedWorkers Worker[]  @relation("WorkerAssignee")
+  workerAccount   Worker?   @relation("WorkerAccount")
+  managedProjects Project[] @relation("ProjectPm")
 
   @@index([role, isActive])
   @@map("users")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 1b. PERMISSION POOL (V4.14 G22 — canonical docs/data-scope-security.md §4)
+//     Feature Permission ≠ Data Scope — 2 trục độc lập, kiểm tra cả hai (§15.1 plan)
+//     ROOT: role ADMIN short-circuit → ALL, bất khả tước; service chặn ghi nhắm ADMIN.
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Permission {
+  code            String             @id // 'CAN_APPROVE_PAYROLL', 'CAN_MANAGE_PERMISSIONS', ...
+  group           String             @map("perm_group") // 'PAYROLL' | 'CONTRACT' | 'TICKET' | 'REFERRAL' | 'STATEMENT' | 'WORKER' | 'SYSTEM' (tránh reserved word "group")
+  description     String?
+  rolePermissions RolePermission[]
+  userGrants      UserPermissionGrant[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  role           SystemRole
+  permissionCode String   @map("permission_code")
+  grantedBy      String?  @map("granted_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  permission Permission @relation(fields: [permissionCode], references: [code])
+
+  @@id([role, permissionCode])
+  @@map("role_permissions")
+}
+
+model UserPermissionGrant {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  permissionCode String    @map("permission_code")
+  grantType      String    @map("grant_type") // GRANT | REVOKE
+  // G22 — root bất khả tước: service CHẶN ghi row nhắm user role ADMIN (short-circuit vẫn là chốt cuối)
+  reason         String // BẮT BUỘC — audit (vì sao cấp/thu)
+  grantedBy      String    @map("granted_by")
+  expiresAt      DateTime? @map("expires_at") // null = vô hạn; hết hạn bỏ qua khi resolve
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  permission Permission @relation(fields: [permissionCode], references: [code])
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@unique([userId, permissionCode, grantType]) // mỗi cặp chỉ 1 row GRANT + 1 row REVOKE
+  @@index([userId])
+  @@map("user_permission_grants")
 }
 
 // TODO Wave 1: model AuthIdentity — provider PHONE | ZALO | CREDENTIAL (CCCD), providerId, accountId (ADR-007 + G9)
@@ -164,9 +237,10 @@ model Worker {
   employmentStatus String @default("NONE") @map("employment_status") // NONE | ACTIVE | SUSPENDED | TERMINATED
   riskStatus       String @default("NORMAL") @map("risk_status") // NORMAL | REVIEW | BLOCKED
 
-  // CRM ownership (data isolation §9.7)
+  // CRM ownership (data isolation §9.7 — canonical docs/data-scope-security.md)
   ownerId      String? @map("owner_id")
   assignedToId String? @map("assigned_to_id")
+  accountUserId String? @unique @map("account_user_id") // V4.14 G22 — link tài khoản đăng nhập (role WORKER) ↔ hồ sơ lao động; scope WORKER dùng field này
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -176,6 +250,11 @@ model Worker {
   assignments ProjectAssignment[]
   sourceClaims SourceClaim[]
   submissions CandidateSubmission[]
+
+  // G22 — FK chủ sở hữu (thay String thô, giữ nguyên tên cột owner_id/assigned_to_id)
+  owner      User? @relation("WorkerOwner", fields: [ownerId], references: [id])
+  assignedTo User? @relation("WorkerAssignee", fields: [assignedToId], references: [id])
+  account    User? @relation("WorkerAccount", fields: [accountUserId], references: [id])
 
   @@index([profileStatus, employmentStatus])
   @@index([ownerId, assignedToId])
@@ -267,8 +346,10 @@ model Project {
   staffingOrders StaffingOrder[]
   submissions    CandidateSubmission[]
   sites          Site[]
+  pmUser         User?           @relation("ProjectPm", fields: [pmUserId], references: [id]) // G22
 
   @@index([status, isPublic])
+  @@index([pmUserId, status]) // G22 — scope PM (relation filter §9.7)
   @@map("outsourcing_projects") // ERD DDL dùng tên này; plan §9 SQL mẫu dùng "projects" — DB thật là outsourcing_projects
 }
 
@@ -405,7 +486,8 @@ model SourceClaim {
   submission CandidateSubmission? @relation(fields: [submissionId], references: [id])
 
   @@index([workerId, accepted])
-  // Migration SQL: CREATE UNIQUE INDEX one_accepted_source ON source_claims(workerId) WHERE accepted;
+  @@index([vendorId, accepted]) // G22 — scope VENDOR (relation filter §9.7)
+  @@index([ctvId, accepted]) // G22 — scope CTV (relation filter §9.7)
   @@map("source_claims")
 }
 
@@ -440,7 +522,7 @@ model ProjectAssignment {
 
   @@unique([projectId, employeeCode])
   @@index([workerId, status])
-  // Migration SQL (G14): CREATE UNIQUE INDEX one_active_assignment ON project_assignments(workerId) WHERE status = 'ACTIVE';
+  @@index([projectId, status]) // G22 — scope PM (relation filter §9.7)
   @@map("project_assignments")
 }
 
@@ -942,3 +1024,24 @@ model AuditLog {
   @@index([actorId, createdAt])
   @@map("audit_logs")
 }
+
+model PortalTimesheet {
+  id             String   @id @default(uuid())
+  employeeCode   String   @map("employee_code")
+  fullName       String   @map("full_name")
+  project        String
+  
+  totalWorkDays  Decimal  @default(0) @map("total_work_days") @db.Decimal(5, 2)
+  otHours        Decimal  @default(0) @map("ot_hours") @db.Decimal(5, 2)
+  absentDays     Decimal  @default(0) @map("absent_days") @db.Decimal(5, 2)
+  
+  dailyData      Json?    @map("daily_data") 
+  payrollData    Json?    @map("payroll_data")
+  totalIncome    Decimal? @default(0) @map("total_income") @db.Decimal(12, 2)
+  
+  createdAt      DateTime @default(now()) @map("created_at")
+  
+  @@index([employeeCode])
+  @@map("portal_timesheets")
+}
+

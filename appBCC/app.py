@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                                QFileDialog, QTextEdit, QMessageBox, QGroupBox,
                                QTableWidget, QTableWidgetItem, QHeaderView, QComboBox, QProgressBar)
 from PySide6.QtCore import Qt, Signal, QObject, QThread
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QIcon, QPixmap
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path="../.env")
@@ -19,17 +19,19 @@ class WorkerSignals(QObject):
     push_done_signal = Signal(bool)
 
 class ParseWorker(QThread):
-    def __init__(self, file_path, project_name, signals):
+    def __init__(self, file_path, project_name, period_month, period_year, signals):
         super().__init__()
         self.file_path = file_path
         self.project_name = project_name
+        self.period_month = period_month
+        self.period_year = period_year
         self.signals = signals
 
     def run(self):
         def logger(msg):
             self.signals.log_signal.emit(msg)
             
-        data = preview_file(self.file_path, self.project_name, logger)
+        data = preview_file(self.file_path, self.project_name, self.period_month, self.period_year, logger)
         self.signals.done_signal.emit(data)
 
 class PushWorker(QThread):
@@ -52,6 +54,12 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("HrP ETL Desktop - Bóc tách Bảng Lương AI")
         self.setMinimumSize(950, 750)
 
+        # Cài đặt Window Icon
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        icon_path = os.path.join(base_dir, "favicon.ico")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
+
         self.selected_file = None
         self.parsed_data = None
         self.db_url = os.environ.get("DATABASE_URL", "postgresql://...")
@@ -70,6 +78,23 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout()
         main_widget.setLayout(layout)
 
+        # Header Logo & Title
+        header_layout = QHBoxLayout()
+        
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        logo_path = os.path.join(base_dir, "logo.png")
+        if os.path.exists(logo_path):
+            logo_label = QLabel()
+            pixmap = QPixmap(logo_path).scaledToHeight(50, Qt.SmoothTransformation)
+            logo_label.setPixmap(pixmap)
+            header_layout.addWidget(logo_label)
+            
+        title_label = QLabel("HỆ THỐNG XỬ LÝ BẢNG LƯƠNG TỰ ĐỘNG BẰNG AI")
+        title_label.setStyleSheet("font-size: 20px; font-weight: bold; color: #2b579a; margin-left: 10px;")
+        header_layout.addWidget(title_label)
+        header_layout.addStretch()
+        layout.addLayout(header_layout)
+
         # Cấu hình & Đầu vào
         config_group = QGroupBox("Cấu hình & Đầu vào")
         config_layout = QVBoxLayout()
@@ -85,6 +110,25 @@ class MainWindow(QMainWindow):
             
         row2.addWidget(self.cbo_project)
         config_layout.addLayout(row2)
+
+        row_period = QHBoxLayout()
+        row_period.addWidget(QLabel("Kỳ lương tính toán:"))
+        self.cbo_month = QComboBox()
+        self.cbo_month.addItems([f"Tháng {i}" for i in range(1, 13)])
+        
+        import datetime
+        current_date = datetime.datetime.now()
+        self.cbo_month.setCurrentIndex(current_date.month - 1)
+        
+        self.txt_year = QLineEdit()
+        self.txt_year.setText(str(current_date.year))
+        self.txt_year.setFixedWidth(80)
+        
+        row_period.addWidget(self.cbo_month)
+        row_period.addWidget(QLabel("Năm:"))
+        row_period.addWidget(self.txt_year)
+        row_period.addStretch()
+        config_layout.addLayout(row_period)
 
         row3 = QHBoxLayout()
         row3.addWidget(QLabel("File Excel Bảng Lương:"))
@@ -116,10 +160,12 @@ class MainWindow(QMainWindow):
         self.cbo_emp_check.setEnabled(False)
         row_check1.addWidget(self.cbo_emp_check)
         
-        row_check1.addWidget(QLabel("Cột cần kiểm tra:"))
-        self.cbo_attr_check = QComboBox()
-        self.cbo_attr_check.setEnabled(False)
-        row_check1.addWidget(self.cbo_attr_check)
+        row_check1.addWidget(QLabel("Cột Excel (A, AA...):"))
+        self.txt_col_check = QLineEdit()
+        self.txt_col_check.setPlaceholderText("Ví dụ: Z, AA")
+        self.txt_col_check.setEnabled(False)
+        self.txt_col_check.setFixedWidth(100)
+        row_check1.addWidget(self.txt_col_check)
         
         self.btn_run_check = QPushButton("Tra cứu nhanh")
         self.btn_run_check.setEnabled(False)
@@ -199,21 +245,29 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Lỗi", "Vui lòng chọn Dự án / Công thức tính lương hợp lệ!")
             return
             
+        try:
+            period_month = self.cbo_month.currentIndex() + 1
+            period_year = int(self.txt_year.text().strip())
+        except:
+            QMessageBox.warning(self, "Lỗi", "Năm không hợp lệ!")
+            return
+            
         self.btn_parse.setEnabled(False)
         self.btn_push.setEnabled(False)
         
         # Khoá check
         self.cbo_emp_check.setEnabled(False)
-        self.cbo_attr_check.setEnabled(False)
+        self.txt_col_check.setEnabled(False)
         self.btn_run_check.setEnabled(False)
         self.txt_excel_cell.clear()
         self.txt_parsed_value.clear()
         
         self.txt_log.clear()
         self.append_log("--- BẮT ĐẦU PHÂN TÍCH ---")
+        self.append_log(f"Kỳ lương: Tháng {period_month}/{period_year}")
         
         self.progress_bar.setVisible(True)
-        self.worker = ParseWorker(self.selected_file, project_name, self.signals)
+        self.worker = ParseWorker(self.selected_file, project_name, period_month, period_year, self.signals)
         self.worker.start()
 
     def on_parse_done(self, data):
@@ -228,21 +282,13 @@ class MainWindow(QMainWindow):
         
         # Bật Double-check
         self.cbo_emp_check.setEnabled(True)
-        self.cbo_attr_check.setEnabled(True)
+        self.txt_col_check.setEnabled(True)
         self.btn_run_check.setEnabled(True)
         
         # Nạp danh sách nhân viên
         self.cbo_emp_check.clear()
         for item in data:
             self.cbo_emp_check.addItem(f"{item.get('employeeCode')} - {item.get('fullName')}")
-            
-        # Nạp cột tiêu biểu của dự án
-        self.cbo_attr_check.clear()
-        project_name = self.cbo_project.currentText()
-        formula_engine = FormulaRegistry.get_formula(project_name)
-        if formula_engine and hasattr(formula_engine, 'get_check_columns'):
-            self.check_cols_map = formula_engine.get_check_columns()
-            self.cbo_attr_check.addItems(list(self.check_cols_map.keys()))
         
         # Đổ dữ liệu lên bảng
         self.table_preview.setRowCount(0)
@@ -262,25 +308,31 @@ class MainWindow(QMainWindow):
         if emp_idx < 0: return
         
         employee = self.parsed_data[emp_idx]
-        attr_display = self.cbo_attr_check.currentText()
-        raw_key = self.check_cols_map.get(attr_display)
+        col_str = self.txt_col_check.text().strip().upper()
         
-        trace_map = employee.get("traceMap", {})
-        if raw_key in trace_map:
-            cell = trace_map[raw_key]["cell"]
-            val = trace_map[raw_key]["value"]
-            self.txt_excel_cell.setText(cell)
+        if not col_str.isalpha():
+            self.txt_excel_cell.setText("LỖI")
+            self.txt_parsed_value.setText("Tên cột không hợp lệ")
+            return
+            
+        # Tính col_idx
+        col_idx = 0
+        for char in col_str:
+            col_idx = col_idx * 26 + (ord(char) - ord('A') + 1)
+        col_idx -= 1
+        
+        excel_row = employee.get("excelRow", "?")
+        raw_row = employee.get("rawRow", [])
+        
+        if col_idx < len(raw_row):
+            val = raw_row[col_idx]
+            self.txt_excel_cell.setText(f"{col_str}{excel_row}")
             self.txt_parsed_value.setText(str(val))
-            self.append_log(f"[Kiểm tra] {employee.get('employeeCode')} | {attr_display} -> Excel: {cell}, Value: {val}")
+            self.append_log(f"[Kiểm tra] {employee.get('employeeCode')} | {col_str}{excel_row} -> Giá trị đang giữ: {val}")
         else:
-            # Special keys like net_income that aren't directly in traceMap
-            if raw_key == "net_income":
-                val = employee.get("totalIncome", 0)
-                self.txt_excel_cell.setText("(Tính toán bởi Formula)")
-                self.txt_parsed_value.setText(str(val))
-            else:
-                self.txt_excel_cell.setText("Không tìm thấy toạ độ")
-                self.txt_parsed_value.setText("N/A")
+            self.txt_excel_cell.setText(f"{col_str}{excel_row}")
+            self.txt_parsed_value.setText("N/A")
+            self.append_log(f"[Kiểm tra] {employee.get('employeeCode')} | Lỗi: Cột {col_str} vượt quá giới hạn file!")
 
     def run_push(self):
         reply = QMessageBox.question(self, 'Xác nhận', 'Bạn có chắc chắn muốn đẩy dữ liệu này lên Database?',

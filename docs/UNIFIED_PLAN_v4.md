@@ -1,4 +1,4 @@
-# HRP SYSTEM — UNIFIED PROJECT PLAN (v4.0)
+# HRP SYSTEM — UNIFIED PROJECT PLAN (v4.20)
 ## Hệ thống Quản trị Nguồn Nhân lực & Cung ứng Nhân lực
 
 > **Phiên bản:** 4.0 — bản hợp nhất: khử mâu thuẫn nội tại của v3.3 (xem changelog 0.1.7, quyết định F1–F31)
@@ -186,7 +186,7 @@
 | F30 | Lỗi encoding UTF-8 rải rác | **Đã sửa** |
 | F31 | `social_insurance` (tổng) vs bhxh/bhyt/bhtn_employee_vnd (chi tiết) trùng nghĩa | **Giữ cả hai có chủ đích**: chi tiết là canonical, tổng là denormalized để query nhanh — ghi rõ trong §12.5.1 |
 
-### 0.1.8. Thay đổi v4.1 — rà soát vòng 2 (khử nợ kỹ thuật còn lại)
+### 0.1.8. Thay đổi v4.1→v4.14 — rà soát vòng 2 + quyết định founder
 
 | # | Vấn đề | Quyết định v4.1 |
 |---|--------|-----------------|
@@ -211,14 +211,64 @@
 | G19 | Rà soát cuối cùng: (T8) Dry Run làm phình DB; (T9) race condition zombie job khi offset-resume; (T10) presigned URL bỏ qua kiểm duyệt malware/MIME; (B7) thu hồi nợ click thủ công hàng trăm case; (B8) ca đêm vắt ngày Lễ mất OT 300%; (B9) né thuế 10% bằng chia nhỏ chi trả | **V4.11:** (T8) cron 24h dọn dry-run + chạy lại cùng tập = thay thế; (T9) `@@unique(batchId, rowNumber)` + advisory lock per-batch + QStash dedup-id → idempotent tuyệt đối; (T10) kiểm magic bytes (XLSX=ZIP/CSV=text) + giới hạn size + không bao giờ serve inline (+scan AV post-go-live); (B7) rule tự động `THU_HOI_NO_KY_TRUOC` — trừ nợ cũ có trần `DEBT_RECOVERY_MAX_PERCENT` (30% gross); (B8) tách dòng ca qua 00:00 theo lịch `holidays` — phần sau nửa đêm tính holiday 300%; (B9) cộng dồn gross/tháng cho OUTSOURCED + default gom 1 lần chi cuối tháng |
 | G20 | Rà soát giao thoa module & luật ẩn: (T11) re-enqueue fail → batch kẹt vĩnh viễn; (T12) bão kết nối 07:00 (5.000 worker check-in đồng loạt); (T13) race condition 2 PM đồng bộ offline cùng (worker, ngày); (B10) luật BHXH "14 ngày làm việc"; (B11) AWOL ôm tài sản chưa thu; (B12) hoa hồng đã trả nhưng worker nghỉ sớm (clawback) | **V4.12:** (T11) **Watchdog cron 30'** quét batch xử lý không có `updated_at` >15' → tự re-enqueue; (T12) check-in **write-behind qua QStash** (trả 202 ngay, worker ghi DB nền) + `connection_limit=1`/pool_timeout; (T13) `pg_advisory_xact_lock(worker_id + work_date)` trước khi tổng hợp trạng thái ngày; (B10) **input variable**: rule `BHXH_14_DAY_RULE` (config 14) → engine đặt `insuranceSalaryVnd=0` khi workedDays <14 — hàm thuế giữ pure; (B11) AWOL TERMINATED → popup bắt buộc khai khoản khấu trừ cuối (tài sản/phạt) vào `worker_deductions` → trừ kỳ lương cuối; (B12) cron đối chiếu nightly: milestone đã CREDIT nhưng điều kiện không còn đúng → sinh REVERSAL tự động chờ kế toán duyệt |
 | G21 | Rà soát Level 3: (T14) write-behind thất bại câm — worker tưởng check-in xong; (T15) watchdog re-enqueue vô tận khi parser crash; (T16) ưu tiên xung đột phải theo captured_at từng record, không chỉ lock; (B13) BHXH 14 ngày phải cộng dồn MỌI assignment; (B14) reversal làm số dư CTV âm; (B15) khấu trừ cuối AWOL → nợ âm vô nghĩa vì đã nghỉ | **V4.13:** (T14) `attendance_events.status QUEUED→APPENDED/FAILED` + app poll trạng thái + DLQ notify; (T15) `retry_count` trên batch — quá `IMPORT_MAX_RETRY` (3) → FAILED cứng + notify HR; (T16) bậc ưu tiên GPS > kiosk > PM mark, **cùng bậc lấy captured_at mới nhất** — xung đột xét từng record, không chỉ lock; (B13) **BHXH aggregate cấp WORKER**: rule 14 ngày chạy trên tổng ngày công mọi assignment trong tháng (earning lines vẫn theo assignment); (B14) `COMMISSION_NETTING_ENABLED`: REVERSAL vượt số dư → nợ CTV, tự cấn trừ hoa hồng tương lai trước khi PAID; (B15) worker đã TERMINATED → nợ không thu hồi được chuyển `unrecoverable_debt` — kế toán quyết định write-off/đòi ngoài hệ thống (roll-over chỉ áp dụng khi còn ACTIVE) |
+| G22 | (1) **Quyết định founder — mô hình quyền ROOT:** toàn bộ quyền nằm trong tay admin root; mọi permission khởi tạo (kể cả tạo sau) tự động thuộc root; dưới root là account nghiệp vụ (Ban giám đốc, Kế toán, MKT, Sale...) do root phân quyền; root có thể ủy quyền phân quyền cho giám đốc nhưng **không ai tước được quyền root**; (2) Hấp thụ thiết kế **Data-Scope Security** (Visibility Matrix → 2 lớp phòng thủ) | **V4.14:** Permission Pool (`Permission`/`RolePermission`/`UserPermissionGrant` + `CAN_MANAGE_PERMISSIONS`) — resolve short-circuit `ADMIN → ALL` (root bất khả tước, 2 tầng: chặn ghi + short-circuit); 2 lớp Data Scope: L1 `withAuthScope` (Prisma Client Extension, deny-by-default) + L2 Postgres RLS (chặn cả `$queryRaw`); role +2 (**DIRECTOR**, **MKT** — tổng 13); schema delta: `SystemRole` enum + `Worker.accountUserId` + FK owner/assignedTo/pmUser + index relation filter; §15.1 + canonical `docs/data-scope-security.md`; M1/E1 30→35 MD; Q#22 mở |
 
 **Đã chốt 3 quyết định mở (founder, theo khuyến nghị):**
 - **Q1:** workflow_definitions — **hardcode MVP** (guardTransition), config-driven để dài hạn
 - **Q2:** thêm model **Site** trước Wave 2 (geofence + rate theo site)
 - **Q3:** ERD giữ nguyên bản khái niệm — sinh lại bằng prisma-erd-generator khi cần bàn với stakeholder
 - **Q20:** Referral Guard — **7 ngày khởi đầu + config được (`REFERRAL_GUARD_DAYS`) + override HR có lý do bắt buộc + audit** (founder)
+- **Quyền ROOT (G22 — founder):** toàn bộ quyền thuộc admin root, bất khả tước; permission mới tự thuộc root; account nghiệp vụ dưới root do root phân quyền; ủy quyền phân quyền (`CAN_MANAGE_PERMISSIONS`) cho giám đốc được — nhưng không ai tước được quyền root (chi tiết §15.1 + `docs/data-scope-security.md` §4.0)
 
 Đồng thời thêm mục **17.1 Nợ kỹ thuật đã biết** (register TD-01 → TD-10).
+
+### 0.1.9. Thay đổi v4.15 — trang công cộng = trang tìm việc (founder, 15/08/2026)
+
+| # | Vấn đề | Quyết định v4.15 |
+|---|--------|------------------|
+| G23 | V4 chưa coi trang web công cộng HRP là bề mặt sản phẩm hạng nhất: job board (A-04/A-05) bị gộp vào Worker Portal và dồn Wave 3, dù `Project.isPublic` đã có từ init | **Q#23 ĐÃ CHỐT (founder):** trang công cộng HRP là trang tìm việc 4 trang (Home tìm việc, Danh sách việc, Chi tiết việc, Công ty đang tuyển) đọc từ `Project.isPublic` + StaffingOrder, ISR 300s; **A-04 kéo về Wave 1 sau M3** (Job List + Job Detail công cộng); apply self-service (A-05) + PWA vẫn Wave 3; demo BoD thêm 1 frame tĩnh `S05_JobBoard_Public` (không flow); đồng bộ nhãn Q#22 theo HR §5 |
+
+Cập nhật liên quan: §5.1 (A-04 Wave 1), §6.2 (M2 note), §7.2 (Wave 1 + A-04 row, Wave 3 M2), WBS E2 2.2, §9.7 (MKT row), Q#22/Q#23.
+
+### 0.1.10. Thay đổi v4.16 — tham chiếu cạnh tranh viec3mien.vn (founder, 15/08/2026)
+
+| # | Vấn đề | Quyết định v4.16 |
+|---|--------|------------------|
+| G24 | Học hỏi từ SaaS cùng ngách (viec3mien.vn — lead management + bonus engine cho lao động phổ thông): kit phân tích do founder cung cấp 15/08/2026 | Thêm **§20 Tham chiếu cạnh tranh** + tài liệu `docs/competitive-analysis-viec3mien.md` (đã lược PII/credential); chốt 3 bài học: **L1** work-queue + transition matrix → M5 (chi tiết hóa Q1), **L2** field visibility per role × action → §9.7, **L3** trạng thái chi thật tách khỏi LOCKED → M8/M6. Không đổi scope, không đổi MD, không copy IP/PII |
+
+Cập nhật liên quan: MỤC LỤC + đánh số lại §21 Open Questions, §22 Glossary; footer version.
+
+### 0.1.11. Thay đổi v4.17 — bảo mật: đánh giá đối thủ & phòng tránh (founder, 15/08/2026)
+
+| # | Vấn đề | Quyết định v4.17 |
+|---|--------|------------------|
+| G25 | Sếp yêu cầu đánh giá bảo mật của đối thủ từ kit pentest (15 findings: 5 CRITICAL, 7 HIGH) và cách HRP phòng tránh | **§20.1** — verdict + bảng phòng tránh 5 nhóm lỗi (A–E) map vào cơ chế HRP; **§15.2** — 4 cam kết hardening mới (security headers bắt buộc, cấm Swagger/debug endpoint production, response không chứa thông tin nội bộ, secret & UAT tách biệt). Không thêm module, không đổi MD |
+
+Cập nhật liên quan: `docs/competitive-analysis-viec3mien.md` §6 (mở rộng: bảng 15 findings + gốc rễ kiến trúc); footer version.
+
+### 0.1.12. Thay đổi v4.18 — backup & khôi phục (founder, 15/08/2026)
+
+| # | Vấn đề | Quyết định v4.18 |
+|---|--------|------------------|
+| G26 | Kịch bản "dữ liệu bị xóa sạch" (bài học đối thủ §20.1) — plan chưa có cam kết backup/khôi phục | **§18.4** — backup daily **Neon → Cloudflare R2** (RPO ≤ 24h, nâng 2×/ngày khi cần); khôi phục bất kỳ lúc nào; restore test hàng tháng bắt buộc; RTO mục tiêu ≤ 4h; R2 bucket riêng + versioning + retention ≥ 30 ngày. Không thêm module, không đổi MD |
+
+Cập nhật liên quan: §17 RỦI RO (kịch bản mất dữ liệu); footer version.
+
+### 0.1.13. Thay đổi v4.19 — design system & bộ mặt công cộng (founder, 15/08/2026)
+
+| # | Vấn đề | Quyết định v4.19 |
+|---|--------|------------------|
+| G27 | Sếp làm demo trên Google Stitch (thư mục `stitch/`): design system "Warm Professionalism" + 3 page demo (landing, job board, cộng tác viên) | Chốt `stitch/warm_professionalism/DESIGN.md` làm **design system canonical** — primary **#F26522**, hover/dark **#A63B00**, Be Vietnam Pro + Inter, grid 1440/12 cột, 8px spacing. 3 page demo đã chuẩn hóa (bỏ brand thật + tên đối thủ, ảnh tạm → icon/text, thêm nút Ứng tuyển + filter ca + watermark "DỮ LIỆU MINH HỌA") làm **base cho bộ mặt công cộng Q#23** (job board A-04 Wave 1 sau M3) + trang CTV công cộng; nút Ứng tuyển mở rộng sau Wave 3 (A-05). Tailwind CDN chỉ dùng cho demo — production compile + self-host font (§15.2). Không đổi MD |
+
+Cập nhật liên quan: §13 (design system canonical); `stitch/*/code.html` (3 file) + `DESIGN.md`; footer version.
+
+### 0.1.14. Thay đổi v4.20 — hoa hồng động + tách phase compliance (founder, 15/08/2026)
+
+| # | Vấn đề | Quyết định v4.20 |
+|---|--------|------------------|
+| G28 | 2 mục [CẦN CHỐT với kế toán] còn treo: mức hoa hồng CTV và mức đóng BHXH/TNCN | **Hoa hồng:** mức là dữ liệu động, không giống nhau giữa các trường hợp — set trong **admin panel / Giám đốc dashboard** (quyền ROOT/DIRECTOR), policy version + effective-dated (Q#2 ĐÃ CHỐT). **BHXH/TNCN:** pay run Wave 4 vẫn tính theo **luật mặc định** (config effective-dated có sẵn — luật không cần chốt với kế toán); toàn bộ phần phức tạp (Dependent/NPT, mẫu khai 02/05/07/TK1-TS, báo cáo BHXH, quyết toán, cam kết 02) tách thành **Phase Compliance riêng, triển khai sau cùng** (Q#4 ĐÃ CHỐT). Không thêm module, không đổi MD |
+
+Cập nhật liên quan: §7.2 (roadmap + Phase Compliance), §10 (quy tắc hoa hồng), §12.5 (công thức lương, biểu mẫu thuế), §21 (Q#2, Q#4); footer version.
 
 ### 0.2. Các điểm review KHÔNG tiếp thu / tiếp thu có điều chỉnh
 
@@ -226,7 +276,7 @@
 |------|---------------|-------|
 | "Card/List bắt buộc mọi màn" là nợ scope (P2) | **Dung hòa**: Card cho màn directory (Talent Pool, Dự án, Client, Vendor, CTV) theo yêu cầu founder; **table mặc định** cho BCC, payroll, đối soát, audit | Review đúng về bản chất tabular của màn tài chính; founder đúng về nhu cầu "nhìn lướt là thấy" của màn directory |
 | Storage: v2.1 đổi sang Cloudflare R2 | **Giữ Cloudflare R2 xuyên suốt** (quyết định của founder); vẫn giữ abstraction S3-compatible để đổi provider được nếu cần | Founder chọn R2 vì chi phí thấp + không tính egress |
-| Nội dung compliance/BHXH/TNCN | **Giữ nguyên** từ v2 | Review tuyên bố ngoài phạm vi; đây là yêu cầu pháp lý của dự án |
+| Nội dung compliance/BHXH/TNCN | **Giữ nguyên** từ v2; v4.20 (G28): pay run vẫn tính theo luật mặc định, mảng phức tạp (NPT, biểu mẫu, báo cáo nộp cơ quan, quyết toán) tách **Phase Compliance sau cùng** | Review tuyên bố ngoài phạm vi; đây là yêu cầu pháp lý của dự án |
 | "1 giờ = 1 điểm" KPI bị bỏ | **Tiếp thu có điều chỉnh**: giờ công giữ lại dưới dạng incentive theo policy (đây là cơ chế trả thưởng quản lý/CTV đang tồn tại trong nghiệp vụ công ty); khái niệm "KPI" dành cho chỉ số vận hành | Tránh vứt bỏ nghiệp vụ đang chạy; chỉ sửa tên gọi và cách lưu |
 
 ### 0.3. Hướng dẫn cho AI / người chỉnh sửa
@@ -260,8 +310,9 @@
 17. [Rủi ro & Mitigation](#17-rủi-ro--mitigation)
 18. [Lộ trình Hạ tầng](#18-lộ-trình-hạ-tầng)
 19. [Tính năng Mở rộng Post-Go-Live](#19-tính-năng-mở-rộng-post-go-live)
-20. [Open Questions [CẦN CHỐT]](#20-open-questions-cần-chốt)
-21. [Glossary](#21-glossary)
+20. [Tham chiếu Cạnh tranh](#20-tham-chiếu-cạnh-tranh)
+21. [Open Questions [CẦN CHỐT]](#21-open-questions-cần-chốt)
+22. [Glossary](#22-glossary)
 
 ---
 
@@ -331,6 +382,7 @@ Khách hàng/Dự án → Staffing Order (nhu cầu tuyển) → Worker → Assi
 | **Wave 3** (7 tuần) | Worker Portal + PWA + GPS evidence, Vendor Portal (submission + confirm/dispute), CTV core | Mở 3 cổng bên ngoài |
 | **Wave 4** (4–5 tuần) | Pay run + payslip + reports, commission ledger, hardening | Đầy đủ M0–M8 |
 | **Sau core** | M9 HRM; theo điều kiện: máy chấm công, Capacitor, M10, multi-tenant | Nội bộ + mở rộng |
+| **Phase Compliance (sau cùng, G28)** | Mảng thuế TNCN/BHXH phức tạp: Dependent model (NPT), mẫu khai 02/05/07/TK1-TS, báo cáo BHXH nộp cơ quan, quyết toán, cam kết 02 | Pay run (Wave 4) vẫn tính BH/TNCN theo luật mặc định — phase này chỉ bổ sung, không block go-live |
 
 ---
 
@@ -924,7 +976,7 @@ async function zaloLoginCallback(zaloUserId: string) {
 | **A-01d** | **HR reset mật khẩu** | Mất cả mật khẩu + SĐT: HR verify mặt khớp ảnh CCCD → cấp mật khẩu tạm (audit + revoke session) — G12 | P0 | 3 |
 | **A-02** | Hoàn thiện Profile | Worker tự điền: Họ tên, CCCD, Bank... (profile_status) | P0 | 3 |
 | **A-03** | Đăng ký nhanh | Tạo UserID ngay khi đăng ký (CCCD + họ tên + mật khẩu; SĐT tùy chọn — không phải định danh) | P0 | 3 |
-| **A-04** | Bảng tin việc làm | Job Card theo Staffing Order + filter | P0 | 3 |
+| **A-04** | Bảng tin việc làm | Job Card theo Staffing Order + filter — **công cộng, kéo về Wave 1 sau M3 (Q#23)** | P0 | 1 (sau M3) |
 | **A-05** | Ứng tuyển 1 chạm | Gửi SĐT + thông tin cơ bản → candidate_submission | P0 | 3 |
 | **A-06** | Xem thông tin dự án | Tên, địa điểm, quản lý | P0 | 3 |
 | **A-07** | Chấm công in-site | Quẹt thẻ máy vật lý — **adapter, ngoài MVP** | P1 | Sau core |
@@ -1034,8 +1086,8 @@ async function zaloLoginCallback(zaloUserId: string) {
 | Module | Tên | Effort (MD) | Wave | Priority | Ghi chú |
 |--------|-----|-------------|------|----------|---------|
 | **M0** | Platform Core | 40 | 1, 4 | P0 | Repo, CI/CD, migration, design system, **observability + audit + feature flags từ Sprint 1** |
-| **M1** | Auth & RBAC | 30 | 1 | P0 | OTP baseline, JWT, RBAC, `auth_identities`, Zalo flag |
-| **M2** | Worker Portal | 50 | 3–4 | P0 | Đăng ký, profile, job board, GPS evidence, payslip view |
+| **M1** | Auth & RBAC | 35 | 1 | P0 | OTP baseline, JWT, RBAC, `auth_identities`, Zalo flag, Permission Pool (G22) + `withAuthScope` + RLS |
+| **M2** | Worker Portal | 50 | 3–4 | P0 | Đăng ký, profile, apply funnel (A-05), GPS evidence, payslip view (job board công cộng đã chuyển Wave 1 — Q#23) |
 | **M3** | CRM, Projects & Staffing Order | 55 | 1, 3 | P0 | Client/Project CRUD, **Staffing Order**, list pipeline, assignment, **PM Field App (PWA)** (G16) |
 | **M4** | Vendor Portal | 25 | 3 | P0 | Subdomain, submission, status, **kho hồ sơ vendor + nộp lại**, confirm/dispute statement (G13) |
 | **M5** | Talent Pool & ATS | 45 | 1–3 | P0 | Master data, 5 state machine, source claims, **dedup/merge**, filters, export |
@@ -1044,7 +1096,7 @@ async function zaloLoginCallback(zaloUserId: string) {
 | **M8** | Payroll & Billing | 65 | 2, 4 | P0 | Rate version, statements, **pay run**, payslip, reports |
 | **M9** | HRM (Nhân sự nội bộ) | 40 | Sau core | P1 | Employee CRUD, org chart; nghỉ phép NỘI BỘ tái dùng ticket engine — actorType EMPLOYEE (F13) |
 | | PWA packaging (thuộc M2) | 20 | 3–4 | P1 | PWA trước; Capacitor ngoài horizon |
-| | **Tổng in-horizon** | **≈ 485 MD** | | | 465 module/PWA + Sprint 0 (10) + UAT (10) — G13 (+10) + G16 (+10: PM Field App) |
+| | **Tổng in-horizon** | **≈ 490 MD** | | | 470 module/PWA + Sprint 0 (10) + UAT (10) — G13 (+10) + G16 (+10: PM Field App) + G22 (+5: Permission Pool/withAuthScope/RLS) |
 | | ~~M10 Assets~~ | ~~30~~ | **Ngoài horizon** | P2 | Bỏ khỏi kế hoạch; prototype 3–5 MD sau go-live nếu cần |
 | | ~~Multi-tenant~~ | — | Ngoài horizon | P2 | Chỉ thêm tenant isolation khi có pilot SaaS thật |
 
@@ -1154,6 +1206,7 @@ Một feature được coi là done khi:
 | M0 | Repo, CI/CD, design system, audit, feature flags, observability tối thiểu | Push là auto-deploy; mọi ghi có audit |
 | M1 | OTP, JWT, RBAC, auth_identities (Zalo = flag) | User nội bộ đăng nhập, scope hoạt động |
 | M3 core | Client/Project CRUD, **Staffing Order**, PM, assignment | Tạo được order + gán worker |
+| A-04 công cộng (kéo từ Wave 3) | Job List + Job Detail công cộng đọc từ `Project.isPublic` + StaffingOrder, server-rendered (ISR 300s) | Người lạ vào hrp.vn thấy việc đang tuyển đúng dữ liệu isPublic; nút Ứng tuyển dẫn đăng ký (funnel A-05 — Wave 3) |
 | M5 core | Worker master, 5 state machine, source claims, submission | Worker đầy đủ vòng đời |
 
 **Exit criteria:** Admin tạo Client → Project → Order → Worker (nhập tay) → Assignment; availability suy ra đúng; audit đầy đủ.
@@ -1175,7 +1228,7 @@ Chạy dữ liệu thật, sửa exception, phân quyền, training, cutover →
 
 | Thành phần | Deliverables | Exit Criteria |
 |------------|--------------|---------------|
-| M2 | Đăng ký, profile, job board, GPS evidence (+ PWA) | Worker tự đăng ký & check-in |
+| M2 | Đăng ký, profile, apply funnel (A-05), GPS evidence (+ PWA) | Worker tự đăng ký & check-in |
 | M4 | Vendor submission, status, confirm/dispute statement | Vendor nộp được ứng viên |
 | M6 core | CTV đăng ký, submission, dashboard | CTV theo dõi được referral |
 | M3 hoàn thiện | Pipeline list, contract v1 | |
@@ -1239,7 +1292,7 @@ Cắt theo thứ tự: pipeline list → M5 dedup/merge → confirm/dispute (tha
 | Epic | Tên | Module | Wave | Effort (MD) |
 |------|-----|--------|------|-------------|
 | **E0** | Platform Core & Observability | M0 | 1, 4 | 40 |
-| **E1** | Auth & RBAC | M1 | 1 | 30 |
+| **E1** | Auth & RBAC | M1 | 1 | 35 |
 | **E2** | Worker Portal (B2C) + PWA | M2 | 3–4 | 50 + 20 |
 | **E3** | CRM, Projects & Staffing Order | M3 | 1, 3 | 45 |
 | **E4** | Vendor Portal + Confirm/Dispute | M4 | 3 | 20 |
@@ -1266,7 +1319,7 @@ E1: AUTH & RBAC
 ├── 1.1 OTP SMS (baseline) + rate limit
 ├── 1.2 Zalo Login (FEATURE FLAG) + auth_identities + account linking
 ├── 1.3 JWT access/refresh (rotation + revoke)
-├── 1.4 RBAC (10 roles) + data-scope integration test
+├── 1.4 RBAC (13 roles) + Permission Pool + withAuthScope + RLS + data-scope integration test
 ├── 1.5 Device binding (chỉ thao tác nhạy cảm)
 ├── 1.6 Thay session stub bằng JWT thật TRƯỚC go-live (V4.1 G8 — cấm deploy stub)
 └── 1.7 HR reset mật khẩu offline (verify mặt vs ảnh CCCD → mật khẩu tạm + audit + revoke session) [Wave 3 — G12]
@@ -1318,7 +1371,7 @@ E6: CTV (Wave 3-4)
 
 E2: WORKER PORTAL (Wave 3-4)
 ├── 2.1 Registration + profile (profile_status flow) [Wave 3]
-├── 2.2 Job board theo staffing order + apply [Wave 3]
+├── 2.2 Job board công cộng theo staffing order [Wave 1 — Q#23] + apply [Wave 3]
 ├── 2.3 GPS check-in (evidence: capturedAt/receivedAt/risk flag) [Wave 3]
 ├── 2.4 PWA (manifest, service worker, offline queue) [Wave 3]
 ├── 2.5 Attendance history + payslip view [Wave 3/4]
@@ -1598,13 +1651,17 @@ CREATE UNIQUE INDEX one_active_assignment
 
 | Role | Workers nhìn thấy |
 |------|-------------------|
-| ADMIN, HR_MANAGER | Toàn bộ (HR_MANAGER có quyền toàn cục + cơ chế handover có audit) |
+| ADMIN (root) | Toàn bộ — root bất khả tước (G22 §15.1) |
+| HR_MANAGER, DIRECTOR | Toàn bộ (HR_MANAGER có quyền toàn cục + cơ chế handover có audit) |
 | HR_STAFF | Theo **team/branch/phân công** [CẦN CHỐT] |
 | SALE / NVKD | `ownerId = mình` HOẶC `assignedToId = mình` (có delegate + handover có audit khi nghỉ việc) |
 | PM | Worker có assignment ACTIVE thuộc project/order mình quản lý |
 | VENDOR | Worker có accepted source_claim `vendorId = vendor của mình` |
 | CTV | Worker có accepted source_claim `ctvId = mình` |
+| MKT | Không đọc Worker — chỉ CRM (lead/client + dự án isPublic) [ĐÃ CHỐT — Q#22, HR §5] |
 | WORKER | Chỉ bản thân |
+
+> **Canonical (V4.14 G22):** triển khai đầy đủ ma trận này (buildWorkerScope) + Permission Pool + 2 lớp phòng thủ (withAuthScope + RLS) tại `docs/data-scope-security.md` §2–§6.
 
 ```typescript
 // Query scoping utility — MỌI query worker phải đi qua hàm này
@@ -1794,7 +1851,7 @@ CREATE TABLE commission_ledger (
 ```
 
 **Quy tắc:**
-- MVP dùng **PER_HEAD theo milestone** (default [CẦN CHỐT]): trả khi NLĐ bắt đầu làm, giữ đủ 30 ngày...; policy có version, cap theo tháng.
+- MVP dùng **PER_HEAD theo milestone**: trả khi NLĐ bắt đầu làm, giữ đủ 30 ngày...; policy có version, cap theo tháng. **Mức hoa hồng là dữ liệu động (G28):** không có mức cố định duy nhất — mỗi policy/milestone có mức riêng, set trong **admin panel / Giám đốc dashboard** (quyền ROOT/DIRECTOR), effective-dated như mọi config khác.
 - Điều chỉnh (thu hồi, sửa) = **dòng REVERSAL** tham chiếu dòng gốc — không bao giờ sửa/số dòng đã APPROVED.
 - **Clawback tự động (V4.12 G20 — B12):** milestone đã CREDIT (vd RETAINED_30_DAYS) nhưng sau đó `timesheet_adjustments`/đóng hồ sơ lùi ngày phát hiện worker nghỉ từ trước mốc → cron nightly đối chiếu milestone với ngày nghỉ thực tế → **tự sinh dòng REVERSAL** (tham chiếu dòng gốc) ở trạng thái PENDING chờ kế toán duyệt — không tự trừ tiền, chỉ tự chuẩn bị sẵn để không bị trả hớ.
 - **Nợ hoa hồng & cấn trừ (V4.13 G21 — B14):** REVERSAL vượt số dư khả dụng của CTV (khoản gốc đã PAID) → phần vượt ghi thành **`commission_debt`** (nợ CTV) → với `COMMISSION_NETTING_ENABLED = true`, hệ thống **tự cấn trừ vào các khoản hoa hồng phát sinh tương lai** của CTV đó TRƯỚC KHI PAID; CTV ngừng hoạt động → dashboard "nợ CTV" cho kế toán đòi ngoài hệ thống. Số dư CTV không bao giờ bị âm ngầm trong sổ.
@@ -1985,10 +2042,10 @@ CREATE TABLE timesheet_adjustments (
 ```
 Gross = Ngày công × lương ngày (từ assignment)
       + OT × (lương giờ × 1.5 | 2.0 | 3.0)
-      + Phụ cấp (config) [CẦN CHỐT danh mục]
+      + Phụ cấp (config — danh mục động set trong admin panel, G28)
 
 Trừ bắt buộc (NLĐ chịu): BHXH 8% + BHYT 1.5% + BHTN 1% = 10.5% × lương đóng BH
-  (lương đóng BH ≥ lương tối thiểu vùng [CẦN CHỐT] — mọi mức đóng là config)
+  (lương đóng BH ≥ lương tối thiểu vùng — mọi mức đóng là config theo luật mặc định; tinh chỉnh thuộc Phase Compliance, G28)
 TNCN = (Thu nhập chịu thuế − Giảm trừ 11tr bản thân − 4.4tr/người phụ thuộc) × lũy tiến 5–35%
 Net = Gross − BH − TNCN
 Nếu Net < 0 → **Net = 0 + carry_forward_debt** (nợ chuyển kỳ sau) — KHÔNG BAO GIỜ lưu số âm (V4.10 G18-B4)
@@ -2246,9 +2303,9 @@ model payroll_config {
 
 **Proration khối văn phòng (V4.9 G17 — B3):** assignment có `salary_type` — `DAILY` (lương ngày × ngày công, như hiện tại) hoặc `MONTHLY` (khối văn phòng VANPHONG): lương tháng × (ngày giao nhau [assignment ∩ tháng] / `STANDARD_DAYS_PER_MONTH`). Vào/ra giữa tháng **tự nội suy** từ `valid_from/valid_to`; làm đủ tháng → nguyên lương tháng.
 
-**Thuế vãng lai FLAT 10% (V4.10 G18 — B6):** lao động vãng lai (OUTSOURCED/REFERRED_OUT, không HĐLĐ dài hạn): **mỗi lần chi trả ≥ `PIT_FLAT_THRESHOLD_VND` (2.000.000đ) → khấu trừ tại nguồn 10%** (`PIT_FLAT_RATE`) — KHÔNG dùng biểu lũy tiến. Có **cam kết 02/CK-TNCN** (thu nhập duy nhất) → miễn khấu trừ [CẦN CHỐT với kế toán]. `calculateVietnameseTaxes()` thêm tham số `taxMode: 'PROGRESSIVE' | 'FLAT_10'` — chọn theo employment_type của assignment.
+**Thuế vãng lai FLAT 10% (V4.10 G18 — B6):** lao động vãng lai (OUTSOURCED/REFERRED_OUT, không HĐLĐ dài hạn): **mỗi lần chi trả ≥ `PIT_FLAT_THRESHOLD_VND` (2.000.000đ) → khấu trừ tại nguồn 10%** (`PIT_FLAT_RATE`) — KHÔNG dùng biểu lũy tiến. Có **cam kết 02/CK-TNCN** (thu nhập duy nhất) → miễn khấu trừ — thuộc **Phase Compliance sau cùng (G28)**. `calculateVietnameseTaxes()` thêm tham số `taxMode: 'PROGRESSIVE' | 'FLAT_10'` — chọn theo employment_type của assignment.
 
-**Chống né thuế bằng chia nhỏ (V4.11 G19 — B9):** hệ thống **cộng dồn gross/tháng cho nhóm OUTSOURCED** (`PIT_FLAT_MONTHLY_AGGREGATION = true`): lần chi trả khiến tổng tháng vượt ngưỡng 2.000.000đ → khấu trừ 10% trên phần vượt, dù từng lần nhỏ. **Default vận hành: gom chi trả vãng lai 1 lần cuối tháng** (cùng kỳ statement) — sạch nhất cho kế toán và cơ quan thuế. [CẦN CHỐT với kế toán]
+**Chống né thuế bằng chia nhỏ (V4.11 G19 — B9):** hệ thống **cộng dồn gross/tháng cho nhóm OUTSOURCED** (`PIT_FLAT_MONTHLY_AGGREGATION = true`): lần chi trả khiến tổng tháng vượt ngưỡng 2.000.000đ → khấu trừ 10% trên phần vượt, dù từng lần nhỏ. **Default vận hành: gom chi trả vãng lai 1 lần cuối tháng** (cùng kỳ statement) — sạch nhất cho kế toán và cơ quan thuế. (Vận hành thực tế thuộc Phase Compliance — G28)
 
 **Dry Run — chống phình dữ liệu (V4.11 G19 — T8):** pay_run `is_dry_run` vẫn INSERT đầy đủ lines → chạy thử 10 lần = phình 10×. Quy tắc: (1) chạy lại dry-run trên CÙNG tập worker → **thay thế** dry-run cũ (xóa cũ, tạo mới — quan hệ `ON DELETE CASCADE` từ pay_run → results → lines); (2) QStash cron hàng ngày **tự xóa dry-run quá 24h**.
 
@@ -2373,7 +2430,7 @@ NLĐ: gross 25.000.000đ/tháng, 1 NPT
   BHXH DN (cost-to-co): 5.500.000đ (22%)
 ```
 
-**Mapping sang biểu mẫu thuế VN (mục tiêu post-go-live):**
+**Mapping sang biểu mẫu thuế VN (Phase Compliance — sau cùng, G28):**
 
 | Biểu mẫu | HRP model liên quan | Trạng thái |
 |---|---|---|
@@ -2381,7 +2438,7 @@ NLĐ: gross 25.000.000đ/tháng, 1 NPT
 | Mẫu 02/ĐK-NPT-TNCN (ĐK người phụ thuộc) | `Dependent` + `Worker.taxCode` | ✅ Sau khi có Dependent model |
 | Mẫu 07/ĐK-NPT-TNCN (Thay đổi NPT) | `Dependent.validFrom/validTo` + audit | ✅ Schema đủ |
 | Mẫu TK1-TS (Tờ khai tham gia BHXH) | `Worker` (gender, DOB, CCCD) + `Assignment` | ✅ Sau khi Worker có CCCD đầy đủ |
-| Báo cáo BHXH hàng tháng | `worker_pay_results.bhxh*` + export | 🔨 Wave 4 |
+| Báo cáo BHXH hàng tháng | `worker_pay_results.bhxh*` + export | 🔨 Phase Compliance (sau cùng) |
 
 **Tiêu chí chấp nhận Module M8 (bổ sung vào DoD §6.6):**
 - [ ] `calculateVietnameseTaxes()` có ≥ 10 golden tests pass
@@ -2908,6 +2965,8 @@ CREATE TABLE client_statement_lines (      -- approved công × client bill rate
 | Monitoring | Sentry + audit log | **Từ Sprint 1** |
 | Feature flags | Config-driven (DB/env) | Zalo, vendor portal, GPS, commission |
 
+**Design system canonical (V4.19 — G27):** `stitch/warm_professionalism/DESIGN.md` ("Warm Professionalism") — primary **#F26522**, hover/dark **#A63B00**, Be Vietnam Pro + Inter, grid 1440/12 cột, 8px spacing. Base cho job board công cộng (Q#23), trang CTV công cộng và admin portal. Page demo: `stitch/*/code.html` (đã chuẩn hóa — watermark "DỮ LIỆU MINH HỌA", không brand thật, icon Material Symbols).
+
 *(Environment variables: giữ nguyên từ v2.1 mục 13.2 — `R2_*` cho storage; `ZALO_*` chỉ dùng khi flag bật)*
 
 ---
@@ -3024,6 +3083,34 @@ const SECURITY_CONFIG = {
 - **Tài chính:** record LOCKED bất biến (ADR-013); mọi thao tác đối soát/tính lương có audit.
 - **Compliance:** NĐ 13/2023/NĐ-CP, Luật Dữ liệu 2024, NĐ 53/2022/NĐ-CP + Luật An ninh mạng 2018.
 
+### 15.1. Mô hình quyền & Data Scope (V4.14 — G22)
+
+**Quyết định founder (G22) — mô hình quyền ROOT:**
+- **Root = `ADMIN`** — nắm **toàn bộ quyền**, bất khả tước. Mọi permission khởi tạo (kể cả tạo sau này) tự động thuộc root: resolve permission luôn short-circuit `role = ADMIN → ALL` — quyền root là tiên đề, không phụ thuộc hàng dữ liệu nào (kể cả row REVOKE lọt vào DB cũng vô hiệu).
+- Dưới root là các **account nghiệp vụ** (Ban giám đốc `DIRECTOR`, Kế toán `ACCOUNTANT`, `MKT`, `SALE`...) — toàn bộ quyền do root cấp qua Permission Pool (`RolePermission` + `UserPermissionGrant`).
+- Root **ủy quyền phân quyền** (`CAN_MANAGE_PERMISSIONS`) cho giám đốc — người được ủy quyền chỉ cấp/thu được các permission **mình đang có**, không cấp được `CAN_MANAGE_PERMISSIONS` cho người khác (chỉ root), và **không bao giờ chạm được quyền root**. Mọi grant/revoke có lý do bắt buộc + audit.
+
+**Hai trục quyền độc lập — mọi thao tác qua cả hai:**
+| Trục | Câu hỏi | Cơ chế |
+|------|---------|--------|
+| **Feature Permission** | Được làm hành động X không? (duyệt lương, sửa hợp đồng, phân quyền) | Permission Pool — `requirePermission()` |
+| **Data Scope** | Được thấy bản ghi nào? | Visibility Matrix §9.7 → `withAuthScope` + RLS |
+
+**Hai lớp phòng thủ cho Data Scope:**
+- **L1 — `withAuthScope`** (Prisma Client Extension): tiêm `where` tự động vào mọi `findMany/findUnique/count/aggregate/update/delete`; `findUnique` ngoài scope → `null` (không rò tồn tại); `create` ép `ownerId` từ session; role không khai báo scope → **throw** (deny-by-default, không trả rỗng).
+- **L2 — Postgres RLS**: policy SQL + `set_config('app.user_id'|'app.role', ..., true)` per-transaction — chặn cả `$queryRaw` và mọi đường đi vòng ORM (tool DB, migration script).
+
+**Canonical:** `docs/data-scope-security.md` — schema delta (`SystemRole` enum 13 role, `Worker.accountUserId`, FK owner/assignedTo/pmUser, index relation filter), Permission Pool (`Permission`/`RolePermission`/`UserPermissionGrant`), mã `withAuthScope` + `withRlsSession` đầy đủ, checklist chống rò rỉ.
+
+### 15.2. Hardening bề mặt API & hạ tầng (V4.17 — G25)
+
+Học từ pentest đối thủ (15 findings, 5 CRITICAL — chi tiết §20.1): bổ sung 4 cam kết vận hành, **không thêm module, không đổi MD**:
+
+1. **Security headers bắt buộc** (đối thủ thiếu 7/7 — F-07): `Content-Security-Policy`, `Strict-Transport-Security (max-age=31536000)`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` — cấu hình tập trung trong `next.config.ts`, Smoke test kiểm tra mỗi deploy.
+2. **Cấm bề mặt debug/API-spec trên production** (đối thủ: F-03 lộ 1.382 endpoints): không Swagger/OpenAPI/GraphQL-playground/debug endpoint nào tồn tại ở production; spec API nội bộ nằm trong repo `docs/`, không public.
+3. **Response API không chứa thông tin nội bộ** (đối thủ: F-05/F-06/F-10): không trả version framework, host nội bộ, tên tenant, cờ môi trường; mọi `GET` chỉ gồm field nghiệp vụ qua projection §9.7; pagination bắt buộc với cap mặc định.
+4. **Secret & môi trường** (đối thủ: F-01 mật khẩu mặc định của framework): không có `env.js` public — secret chỉ tồn tại server-side; UAT/staging tách domain + basic-auth, không trỏ về dữ liệu production thật; root account tạo qua seed với mật khẩu mạnh bắt buộc, **không tồn tại mật khẩu mặc định**.
+
 ---
 
 ## 16. CHIẾN LƯỢC TESTING
@@ -3139,6 +3226,16 @@ flowchart LR
 - **VPS:** AWS (Lightsail/EC2 — **region Singapore** để ping tốt về VN, ~$50–100/tháng) **hoặc** VNG Cloud / Viettel IDC / Bizfly — 4 vCPU/8GB + **Coolify**; PostgreSQL trên VPS hoặc Managed DB tương ứng
 - Lý do: sở hữu + kiểm soát chi phí & dữ liệu; AWS SG có ping ~20–40ms về VN; nếu client/đối tác yêu cầu dữ liệu đặt tại VN (NĐ 53/2022 + Luật An ninh mạng) thì chọn Cloud VN
 - **Chi phí thật:** + ~0.5 FTE dev/ops — so sánh trung thực 24 tháng giữ nguyên từ v2.1: self-host chỉ có lợi khi đã có nhân lực kiêm vận hành hoặc bắt buộc pháp lý
+
+### 18.4. Backup & Khôi phục (V4.18 — G26)
+
+> **Quyết định founder (15/08/2026):** sau khi triển khai production, **backup daily từ Neon về Cloudflare R2** — khôi phục được bất kỳ lúc nào, mất tối đa 24h dữ liệu; nâng 2 lần/ngày khi cần.
+
+- **RPO ≤ 24h** (mặc định daily; tăng 2×/ngày khi dữ liệu nhạy cảm tăng); **RTO mục tiêu ≤ 4h**.
+- **Restore test hàng tháng bắt buộc:** backup chưa từng restore thành công = không phải backup. Checklist: restore vào Neon branch tạm → verify checksum + count các bảng chính → smoke query → xóa branch.
+- **Bucket riêng** cho backup (tách khỏi storage nghiệp vụ ADR-006), bật versioning, retention ≥ 30 ngày.
+- **Kịch bản thảm họa** (mất toàn bộ DB — bài học đối thủ §20.1): restore bản gần nhất + audit log so khớp xác định chính xác thời điểm mất dữ liệu; điều tra trước khi mở lại public.
+- Trước khi có backup R2 (GĐ1 MVP): dựa vào Neon branch/PITR + dữ liệu demo không nhạy cảm.
 - Migration checklist (pg_dump → restore → verify → switch DNS → giữ Neon 7 ngày): giữ nguyên từ v2.1 mục 18.5
 
 ---
@@ -3187,16 +3284,44 @@ flowchart LR
 
 ---
 
-## 20. OPEN QUESTIONS [CẦN CHỐT]
+## 20. THAM CHIẾU CẠNH TRANH (thêm v4.16 — G24)
+
+> Nguồn phân tích đầy đủ: `docs/competitive-analysis-viec3mien.md` (đã lược PII/credential/token). Mục này chỉ ghi các bài học **ĐÃ ÁP DỤNG** vào plan; không đổi scope, không đổi MD.
+
+| ID | Bài học (từ viec3mien.vn) | Áp dụng vào | Wave | Tác động |
+|----|---------------------------|-------------|------|----------|
+| **L1** | **Work-queue + transition matrix:** nhân viên thao tác trên ~10 ngăn việc; mỗi ngăn khai báo `statusInGroup` + `statusToUpdate` (được phép chuyển tới đâu) + quyền thao tác + cờ cảnh báo quá hạn — không bao giờ thao tác raw state machine | M5 Talent Pool (submission pipeline + workbench) — chi tiết hóa quyết định Q1 (hardcode MVP → config-driven dài hạn) | 1–3 | Làm rõ thiết kế state/UI của M5; không đổi MD |
+| **L2** | **Field visibility matrix per role × action:** campaign khai báo field hiển thị/xem/thêm/sửa/ẩn theo từng nhóm user — cùng tinh thần projection §9.7 + vendor preview ẩn client rate/margin | §9.7 Visibility Matrix + `docs/data-scope-security.md` (bổ sung chiều view/add/edit bên cạnh row-level) | 1 | Chi tiết hóa quy tắc đã có; không thêm module |
+| **L3** | **Tách trạng thái chi thật khỏi LOCKED:** họ có `ImportPaymentStatus`/`UpdatePaymentStatus` riêng (đối soát xong → import trạng thái chi → duyệt) — tránh nhầm "đã khóa" với "đã trả" | M8 Statement (vendor payable + client receivable) và M6 Commission ledger — thêm trạng thái chi/đã trả độc lập sau LOCKED, có audit | 2, 4 | Bổ sung trạng thái vào state machine Statement/Ledger khi mở task CODE; không đổi MD |
+
+**Nguyên tắc:** chỉ hấp thụ ý tưởng kiến trúc; **không** copy IP (permission tree, JD, logic bonus nguyên văn); **không** dùng PII/brand thật của họ; dữ liệu kit nằm ngoài repo HRP (không commit).
+
+### 20.1. Đánh giá bảo mật đối thủ & bảng phòng tránh (v4.17 — G25)
+
+**Verdict:** 15 findings — 5 CRITICAL, 7 HIGH (CVSS 9.8: chiếm quyền admin < 5 phút qua mật khẩu mặc định của framework + không lockout; dump toàn bộ PII 1.244 hồ sơ bằng 1 API call). Điểm họ làm đúng: AES at-rest cho SĐT/CCCD (HRP đang defer B3), bcrypt, gate debug endpoint, ẩn source map, có WAF. Gốc rễ không phải 15 lỗi rời rạc mà là **4 lỗi kiến trúc**: (1) không defense-in-depth — mọi tầng dựa vào 1 lớp Cloudflare; (2) authorization chỉ theo role, không theo tenant/ownership (IDOR + bulk dump); (3) lộ bề mặt quá nhiều — Swagger, env.js, UAT, JS bundle đều public; (4) bảo vệ dữ liệu chỉ ở tầng mã hóa mà không giới hạn **quyền đọc** — mã hóa vô nghĩa khi attacker đã có admin token.
+
+| Nhóm lỗi của họ (finding) | Cơ chế phòng tránh của HRP | Nơi chốt |
+|---|---|---|
+| **A. Xác thực yếu** — F-01 default creds, F-02 không lockout, F-05 RSA public key public | Seed root với mật khẩu mạnh bắt buộc, không default creds; 5 lần sai → khóa 15 phút; HTTPS chuẩn thay cho RSA tự chế; OTP step-up cho thao tác nhạy cảm | §15, §15.2 |
+| **B. Lộ bề mặt API & logic riêng** — F-03 Swagger 1.382 endpoints, F-12 workflow config, F-14 permission tree, F-15 bonus logic | Không Swagger/OpenAPI/debug endpoint production; mọi GET qua projection §9.7 (không trả toàn bộ config); permission catalog chỉ trả theo role người gọi | §15.2, §9.7 |
+| **C. Authorization & bulk dump** — F-04/F-11 GetAll không giới hạn, F-06 lộ tenant, F-13 lộ khách hàng | Hai lớp `withAuthScope` + RLS deny-by-default (§15.1); pagination bắt buộc + cap; response không chứa thông tin nội bộ | §15.1, §15.2 |
+| **D. Hạ tầng & cấu hình** — F-07 thiếu 7 headers, F-09 nginx 2019, F-10 UAT lộ | Security headers đầy đủ qua next.config; serverless Vercel/Neon (không tự quản nginx); UAT tách domain + basic-auth | §15.2, §13 |
+| **E. Bảo vệ PII** — tác động F-04/F-11 + họ mã hóa AES at-rest | Minimisation (chỉ thu thập PII cần thiết); ảnh CCCD mã hóa + signed URL TTL (§15); at-rest: Neon platform-level ngay, field-level AES sau MVP (B3); audit mọi lượt xem nhạy cảm | §15, §5 (B3) |
+
+**Kỷ luật kèm theo:** bảng này vô nghĩa nếu không test — integration test data scope (Wave 1, §15) + Smoke test headers mỗi deploy là điều kiện để claim "mạnh hơn đối thủ". Bảng 15 findings + phân tích gốc rễ đầy đủ: `docs/competitive-analysis-viec3mien.md` §6 (mở rộng v4.17).
+
+---
+
+## 21. OPEN QUESTIONS [CẦN CHỐT]
 
 > Khuyến nghị từ Báo cáo Đánh giá Khả thi (mục 6). Các mục đã có quyết định ghi rõ.
 
 | # | Câu hỏi | Khuyến nghị (expert) |
 |---|---------|----------------------|
 | 1 | Hãng/protocol máy chấm công? | **ĐÓNG trong MVP**: không tích hợp máy; mở lại khi ≥ 2 site dùng cùng protocol (adapter interface sẵn) |
-| 2 | Chính sách hoa hồng CTV? | **PER_HEAD theo milestone** (bắt đầu làm, giữ đủ 30 ngày...); policy version + cap + reversal; mức cụ thể chốt với founder |
+| 2 | Chính sách hoa hồng CTV? | **ĐÃ CHỐT (founder — G28):** PER_HEAD theo milestone; policy version + cap + reversal; **mức hoa hồng là dữ liệu động** (không giống nhau giữa các trường hợp) — set trong **admin panel / Giám đốc dashboard** (quyền ROOT/DIRECTOR), effective-dated |
 | 3 | Đơn giá B2B quản lý ở đâu? | **Thu file rate thật ngay Sprint 0**; tách client bill rate và vendor pay rate |
-| 4 | Mức đóng BHXH/phụ cấp? | Mọi tham số **effective-dated config**, không hard-code; mức cụ thể chốt với kế toán |
+| 4 | Mức đóng BHXH/phụ cấp? | **ĐÃ CHỐT (founder — G28):** pay run Wave 4 **vẫn tính BH/TNCN theo luật mặc định** (config effective-dated có sẵn — luật không cần chốt với kế toán); toàn bộ phần phức tạp (Dependent/NPT, mẫu khai 02/05/07/TK1-TS, báo cáo BHXH, quyết toán, cam kết 02) **tách thành Phase Compliance riêng, triển khai sau cùng** |
 | 5 | Có dùng eKYC không? | **Hoãn** — kích hoạt khi manual verification là bottleneck (>500 hồ sơ mới/tháng) |
 | 6 | Số lượng worker 12 tháng tới? | Thiết kế cho **5.000**, load-test **20.000** |
 | 7 | Bao nhiêu vendor đối tác? | 5–10 → **admin reconciliation trước**, portal đầy đủ khi workflow nội bộ ổn |
@@ -3214,10 +3339,12 @@ flowchart LR
 | **19** | Storage cho dữ liệu sinh trắc học? | **ĐÃ CHỐT: Cloudflare R2 xuyên suốt** (founder); giữ storage interface để đổi provider được; cân nhắc rà soát NĐ 13/2023 khi mở rộng quy mô |
 | **20** | Thời hạn chặn 7 ngày của Referral Guard + quyền override? | **ĐÃ CHỐT (founder):** 7 ngày khởi đầu + config được + override HR_MANAGER/ADMIN có lý do bắt buộc + audit (G11) |
 | **21** | Lưu mã giới thiệu thế nào (Zalo hay xóa cookie) + chính sách bấm nhiều link? | URL param + localStorage (30 ngày) + ô nhập tay — KHÔNG dựa cookie; first-click wins — default; chốt với founder (G13, G15) |
+| **22** | Scope dữ liệu của **MKT** và **Ban giám đốc (DIRECTOR)**? | **ĐÃ CHỐT (HR §5):** DIRECTOR đọc toàn bộ có projection (ẩn CCCD/bank/selfie, ghi vẫn qua Permission Pool); MKT: CRM scope — lead/client + dự án isPublic, KHÔNG đọc Worker; quyền feature do root cấp (G22) |
+| **23** | Trang web công cộng HRP có là trang tìm việc không? Scope và timing? | **ĐÃ CHỐT (founder, 15/08/2026):** có — trang công cộng 4 trang (Home tìm việc, Danh sách việc, Chi tiết việc, Công ty đang tuyển) đọc từ `Project.isPublic` + StaffingOrder, ISR 300s; job board công cộng (A-04) kéo về **Wave 1 sau M3**; apply self-service (A-05) + PWA vẫn Wave 3; demo BoD thêm 1 frame tĩnh `S05_JobBoard_Public` (không flow) |
 
 ---
 
-## 21. GLOSSARY
+## 22. GLOSSARY
 
 | Term | Definition |
 |------|------------|
@@ -3238,6 +3365,9 @@ flowchart LR
 | **Spike** | Thử nghiệm kỹ thuật có giới hạn thời gian để chốt thiết kế |
 | **Wave** | Giai đoạn triển khai (thay Phase cũ) |
 | **RBAC / RLS** | Role-Based Access Control / Row-Level Security |
+| **Permission Pool** | Bảng role ↔ permission động (`Permission`/`RolePermission`/`UserPermissionGrant`) — không hardcode quyền trong code (G22 §15.1) |
+| **Root** | Admin root — nắm toàn bộ quyền bất khả tước; ủy quyền phân quyền được nhưng không ai thu hồi được quyền root (G22) |
+| **withAuthScope** | Prisma Client Extension tiêm where theo Visibility Matrix vào mọi query — L1 Data Scope (G22) |
 | **ADR** | Architecture Decision Record |
 | **PWA** | Progressive Web App |
 | **MD** | Man-day — đơn vị effort |
@@ -3265,6 +3395,6 @@ Sau đó: Wave 1 (M0+M1+M3 core+M5 core) → Wave 2 (M7+M8 tối giản) → UAT
 
 ---
 
-*Document version: 4.0*
-*Ngày: 14/08/2026*
-*Trạng thái: Draft — bản hợp nhất khử mâu thuẫn v3.3 (xem changelog 0.1.7)*
+*Document version: 4.20*
+*Ngày: 15/08/2026*
+*Trạng thái: Bản chuẩn (canonical) — đã qua các vòng phản biện G10–G28 (xem changelog 0.1.8–0.1.14); mô hình quyền ROOT đã chốt (G22 §15.1); job board công cộng đã chốt (Q#23 §21, Wave 1 sau M3); tham chiếu cạnh tranh đã hấp thụ (G24 §20); đánh giá bảo mật đối thủ + hardening bề mặt đã chốt (G25 §15.2, §20.1); backup daily Neon → R2 đã chốt (G26 §18.4); design system "Warm Professionalism" + 3 page demo đã chốt (G27 §13, stitch/); mức hoa hồng động (admin panel) + BHXH/TNCN tách Phase Compliance sau cùng đã chốt (G28 §21 Q#2/Q#4); chờ chốt các mục [CẦN CHỐT] còn lại (§21) + dữ liệu mẫu để khởi động Sprint 0*

@@ -20,7 +20,7 @@ def index_to_excel_col(col_idx):
 def setup_directories():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def preview_file(file_path, project_name, log_callback=print):
+def preview_file(file_path, project_name, period_month, period_year, log_callback=print):
     """
     Xử lý file và trả về danh sách dữ liệu đã chuẩn hóa (dạng dict) để Preview trên UI.
     """
@@ -101,7 +101,36 @@ def preview_file(file_path, project_name, log_callback=print):
             
             # Daily Data
             daily_data = []
+            
+            # Tính toán việc vắt tháng
+            days_list = [int(d) for d in daily_cols.keys()]
+            crosses_month = False
+            for i in range(1, len(days_list)):
+                if days_list[i] < days_list[i-1]:
+                    crosses_month = True
+                    break
+            
             for day, idxs in daily_cols.items():
+                day_val = int(day)
+                
+                # Xác định tháng/năm chuẩn cho từng ngày dựa vào việc có vắt tháng hay không
+                if crosses_month:
+                    if day_val > 15: 
+                        # Nửa đầu chu kỳ (Tháng trước)
+                        calc_month = period_month - 1
+                        calc_year = period_year
+                        if calc_month == 0:
+                            calc_month = 12
+                            calc_year -= 1
+                    else:
+                        # Nửa sau chu kỳ (Tháng này)
+                        calc_month = period_month
+                        calc_year = period_year
+                else:
+                    # Không vắt tháng (Ví dụ 1->30)
+                    calc_month = period_month
+                    calc_year = period_year
+                
                 in_time = str(row[idxs["in"]]).split(' ')[-1] if pd.notna(row[idxs["in"]]) else ""
                 out_time = str(row[idxs["out"]]).split(' ')[-1] if pd.notna(row[idxs["out"]]) else ""
                 
@@ -125,9 +154,8 @@ def preview_file(file_path, project_name, log_callback=print):
                 elif ot_val > 0:
                     status = "OVERTIME"
                     
-                # Giả lập năm tháng
                 daily_data.append({
-                    "date": f"2026-06-{day}",
+                    "date": f"{calc_year}-{calc_month:02d}-{day_val:02d}",
                     "status": status,
                     "in": in_time if in_time and in_time != 'nan' else "",
                     "out": out_time if out_time and out_time != 'nan' else "",
@@ -157,23 +185,28 @@ def preview_file(file_path, project_name, log_callback=print):
             # Gọi Formula
             payroll_data = formula_engine.calculate(raw_data) if formula_engine else None
             
-            # Tổng hợp (mock vài field cho giao diện Lịch)
-            total_days = sum(1 for d in daily_data if d["status"] != "ABSENT")
-            total_ot = sum(d["ot"] for d in daily_data)
-            absent_days = sum(1 for d in daily_data if d["status"] == "ABSENT")
+            # Tổng hợp (ưu tiên lấy từ raw_data tức là Cột Tổng Hợp của Excel)
+            calc_total_days = sum(1 for d in daily_data if d["status"] != "ABSENT")
+            calc_total_ot = sum(d["ot"] for d in daily_data)
+            calc_absent_days = sum(1 for d in daily_data if d["status"] == "ABSENT")
+            
+            # Lưu lại toàn bộ dòng để support tra cứu nhanh theo cột (A, B, C...)
+            raw_row_list = [val if pd.notna(val) else "" for val in row.values]
             
             preview_data.append({
                 "id": str(uuid.uuid4()),
                 "employeeCode": emp_code,
                 "fullName": full_name,
                 "project": project_name,
-                "totalWorkDays": total_days,
-                "otHours": total_ot,
-                "absentDays": absent_days, 
+                "totalWorkDays": raw_data.get("total_days", calc_total_days),
+                "otHours": sum([raw_data.get(k, 0) for k in ["ot_130", "ot_150", "ot_180", "ot_200", "ot_210", "ot_250", "ot_260", "sunday_200", "holiday_300"]]) or calc_total_ot,
+                "absentDays": raw_data.get("absent_days", calc_absent_days), 
                 "dailyData": daily_data,
                 "payrollData": payroll_data,
                 "totalIncome": payroll_data["summary"]["netIncome"] if payroll_data else 0,
-                "traceMap": trace_map
+                "traceMap": trace_map,
+                "rawRow": raw_row_list,
+                "excelRow": idx + 1
             })
             
         log_callback(f"[3/3] Xử lý hoàn tất! Đã trích xuất {len(preview_data)} nhân viên.")

@@ -105,6 +105,51 @@ export default function TraCuuPage() {
 
   const days = data?.dailyData || [];
 
+  const generateCalendarGrid = (daysList: DailyData[]) => {
+    if (!daysList || daysList.length === 0) return [];
+    
+    const grid: (DailyData & { isPadding?: boolean })[] = [];
+    const [sYear, sMonth, sDay] = daysList[0].date.split('-').map(Number);
+    const startDate = new Date(sYear, sMonth - 1, sDay);
+    const startDayOfWeek = startDate.getDay(); 
+    
+    for (let i = 0; i < startDayOfWeek; i++) {
+      const padDate = new Date(sYear, sMonth - 1, sDay - (startDayOfWeek - i));
+      const pYear = padDate.getFullYear();
+      const pMonth = String(padDate.getMonth() + 1).padStart(2, '0');
+      const pDate = String(padDate.getDate()).padStart(2, '0');
+      grid.push({
+        date: `${pYear}-${pMonth}-${pDate}`,
+        status: 'WORKING',
+        isPadding: true
+      });
+    }
+    
+    daysList.forEach(day => grid.push(day));
+    
+    const lastDay = daysList[daysList.length - 1];
+    const [eYear, eMonth, eDay] = lastDay.date.split('-').map(Number);
+    const endDate = new Date(eYear, eMonth - 1, eDay);
+    
+    const remainder = grid.length % 7;
+    if (remainder !== 0) {
+      const paddingEnd = 7 - remainder;
+      for (let i = 1; i <= paddingEnd; i++) {
+        const padDate = new Date(eYear, eMonth - 1, eDay + i);
+        const pYear = padDate.getFullYear();
+        const pMonth = String(padDate.getMonth() + 1).padStart(2, '0');
+        const pDate = String(padDate.getDate()).padStart(2, '0');
+        grid.push({
+          date: `${pYear}-${pMonth}-${pDate}`,
+          status: 'WORKING',
+          isPadding: true
+        });
+      }
+    }
+    
+    return grid;
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-5xl mx-auto space-y-8">
@@ -246,39 +291,54 @@ export default function TraCuuPage() {
                     </div>
                   </div>
                   
-                  <div className="p-6 bg-slate-50/50">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
-                      {days.map((day, idx) => {
-                        const d = new Date(day.date);
-                        const weekday = d.toLocaleDateString('vi-VN', { weekday: 'long' });
-                        const dateStr = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-                        
-                        return (
-                        <div 
-                          key={idx} 
-                          className={cn(
-                            "relative flex flex-col rounded-xl p-3 border shadow-sm transition-all hover:shadow-md",
-                            getStatusColor(day.status)
-                          )}
-                        >
-                          <div className="text-[11px] font-bold mb-1.5 opacity-80 flex justify-between uppercase tracking-wider">
-                            <span>{weekday}</span>
-                            <span>{dateStr}</span>
-                          </div>
-                          
-                          <div className="font-extrabold text-sm mb-3">{getStatusLabel(day.status)}</div>
-                          
-                          {day.status !== 'ABSENT' && (
-                            <div className="mt-auto flex justify-between items-end text-xs opacity-90">
-                              <div className="flex flex-col gap-0.5">
-                                <span>In: <span className="font-semibold">{day.in}</span></span>
-                                <span>Out: <span className="font-semibold">{day.out}</span></span>
-                              </div>
-                              {day.ot ? <span className="font-bold text-rose-700 bg-rose-100 border border-rose-200 px-1.5 py-0.5 rounded">+{day.ot}h</span> : null}
-                            </div>
-                          )}
+                  <div className="p-6 bg-slate-50/50 overflow-x-auto">
+                    <div className="min-w-[800px] grid grid-cols-7 gap-3">
+                      {/* Headers */}
+                      {['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'].map(dayName => (
+                        <div key={dayName} className="text-center font-bold text-sm text-slate-500 pb-2 border-b border-slate-200">
+                          {dayName}
                         </div>
-                      )})}
+                      ))}
+                      
+                      {/* Grid Cells */}
+                      {generateCalendarGrid(days).map((day, idx) => {
+                        const [, , dStr] = day.date.split('-');
+                        const dateNum = parseInt(dStr, 10);
+                        
+                        if (day.isPadding) {
+                          return (
+                            <div key={`pad-${idx}`} className="flex flex-col rounded-xl p-3 border border-transparent opacity-40 bg-slate-200/50 items-center justify-center min-h-[110px]">
+                              <span className="text-3xl font-extrabold text-slate-400">{dateNum}</span>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div 
+                            key={idx} 
+                            className={cn(
+                              "relative flex flex-col rounded-xl p-3 border shadow-sm transition-all hover:shadow-md min-h-[110px]",
+                              getStatusColor(day.status)
+                            )}
+                          >
+                            <div className="text-[13px] font-bold mb-1.5 opacity-80 flex justify-between uppercase tracking-wider">
+                              <span className="text-xl">{dateNum}</span>
+                            </div>
+                            
+                            <div className="font-extrabold text-[13px] mb-3">{getStatusLabel(day.status)}</div>
+                            
+                            {day.status !== 'ABSENT' && (
+                              <div className="mt-auto flex justify-between items-end text-[11px] opacity-90">
+                                <div className="flex flex-col gap-0.5">
+                                  <span>In: <span className="font-semibold">{day.in}</span></span>
+                                  <span>Out: <span className="font-semibold">{day.out}</span></span>
+                                </div>
+                                {day.ot ? <span className="font-bold text-rose-700 bg-rose-100 border border-rose-200 px-1 py-0.5 rounded">+{day.ot}h</span> : null}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

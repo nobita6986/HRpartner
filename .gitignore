@@ -41,8 +41,10 @@ prisma/migrations/dev.db*
 # Python BCC app (module báo cáo chấm công — chỉ commit mã nguồn)
 appBCC/venv/
 appBCC/BCC_Output/
+appBCC/docs/*.xlsx
 __pycache__/
 *.pyc
+~$*
 
 # junk files (không thuộc repo)
 docs.zip
