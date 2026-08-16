@@ -8,17 +8,17 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `DRAFT` — chuyển `READY_FOR_EXECUTION` khi `hrp-phase1-bcc-fence` ACCEPTED (cập nhật Baseline) |
+| Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 — Planner / Product & Architecture Decision Owner |
 | Executor | Tier 2 — bên ngoài, do sếp giao (Cursor/agent khác — Tier 1 KHÔNG spawn Tier 2/3; quy ước 16/08) |
 | Auditor | Tier 3 — bên ngoài, do sếp giao (độc lập với Tier 2) |
-| Baseline | `d49a9de` (main 16/08/2026) — **sẽ cập nhật thành commit ACCEPTED của bcc-fence trước khi giao** |
+| Baseline | `4a3a0fe` (main 16/08/2026 — `hrp-phase1-bcc-fence` ACCEPTED, production `/bcc` rào JWT PASS 10/10 AC) |
 | Modules | Phase 1 Identity (tuần 2) — chạm: `src/shared/auth/{permission-catalog,permission-resolver,auth-context,require-permission,with-auth-scope}.ts` (mới) + tests; `app/api/tickets/*` (6 route — thay stub); `prisma/seed.mjs` (mở rộng permissions); `prisma/migrations/*` (UNIQUE portal_timesheets). **KHÔNG tạo bộ đăng nhập/JWT mới — tái sử dụng bộ của bcc-fence** |
 | ADR references | **PHASE_KHOAHOC_V1.md §4 Phase 1 DoD** (6 mục còn lại); **`docs/data-scope-security.md` §4** (Permission Pool + thuật toán resolve + G22 root), **§5.1** (AuthContext), **§5.4** (pool chưa phân công); **CONTRACT_BCC §10** (UNIQUE portal_timesheets); D15 (rào /bcc tuần 1); G22 (root bất khả tước) |
 | Current execution round | 1 |
 | Current audit round | 0 (chưa audit) |
-| Next gate | bcc-fence ACCEPTED → cập nhật Baseline → `/code` → `/audit` → `/resolve` → ACCEPTED |
-| Updated | 2026-08-16 15:30 ICT |
+| Next gate | `/code hrp-phase1-identity-core` → `/audit` → `/resolve` → ACCEPTED |
+| Updated | 2026-08-16 17:05 ICT |
 
 ## 1. Outcome
 
@@ -184,3 +184,4 @@
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | 2026-08-16 | Initial contract — identity-core: permission catalog ≥10 + resolver 65 case + auth-context/require-permission + with-auth-scope deny-by-default + seed idempotent + thay stub 6 route tickets + UNIQUE portal_timesheets (CONTRACT_BCC §10). 🚫 KHÔNG tạo bộ đăng nhập/JWT mới (lưu ý sếp) | Sếp yêu cầu "viết TASK identity-core ngay bây giờ"; căn cứ PHASE_KHOAHOC §4 DoD + data-scope-security §4-§5.1 |
+| `v1.0-ready` | 2026-08-16 | Chuyển `READY_FOR_EXECUTION`; Baseline cập nhật `4a3a0fe` sau khi `hrp-phase1-bcc-fence` ACCEPTED (audit round 2 PASS production 10/10 AC). Không đổi contract sản phẩm | Gate bcc-fence closed |
