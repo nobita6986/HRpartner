@@ -1046,6 +1046,8 @@ model PortalTimesheet {
   
   @@index([employeeCode])
   @@index([employeeCode, project, periodMonth, periodYear], name: "idx_timesheets_lookup")
+  // STEP-08 / RQ-09: chống bơm trùng công theo (NV, dự án, kỳ)
+  @@unique([employeeCode, project, periodMonth, periodYear], name: "uq_portal_timesheets_period")
   @@map("portal_timesheets")
 }
 
