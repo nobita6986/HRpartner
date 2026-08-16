@@ -1,0 +1,545 @@
+<title>Lộ trình HRP V4</title>
+<style>
+/* ============ Tokens — kế thừa G27 Warm Professionalism (hrp.css canonical) ============ */
+:root {
+  --primary: #f26522;
+  --primary-dark: #a63b00;
+  --accent-text: #a63b00;
+  --primary-soft: #fdf1ec;
+  --on-primary: #ffffff;
+  --bg: #faf9f7;
+  --surface: #ffffff;
+  --ink: #1a1c1b;
+  --ink-soft: #594138;
+  --outline: #8d7166;
+  --line: #ebe9e5;
+  --container-low: #f4f3f1;
+  --success: #16803a;
+  --success-soft: #e7f4ec;
+  --info: #2563eb;
+  --info-soft: #e8f0fe;
+  --rail-track: #e7e2da;
+  --rail-done: #16803a;
+  --rail-current: #f26522;
+  --shadow: 0 1px 2px rgba(26, 28, 27, .05), 0 4px 14px rgba(26, 28, 27, .06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --primary: #ff7a38;
+    --primary-dark: #c95415;
+    --accent-text: #ffa67a;
+    --primary-soft: #2b1c12;
+    --on-primary: #1a0f08;
+    --bg: #161311;
+    --surface: #211c18;
+    --ink: #f4efe9;
+    --ink-soft: #b3a698;
+    --outline: #9a8a7b;
+    --line: #352d24;
+    --container-low: #2a241e;
+    --success: #4cc07a;
+    --success-soft: #14321f;
+    --info: #7aa2f7;
+    --info-soft: #16233d;
+    --rail-track: #3a322a;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"] {
+  --primary: #ff7a38;
+  --primary-dark: #c95415;
+  --primary-soft: #2b1c12;
+  --on-primary: #1a0f08;
+  --bg: #161311;
+  --surface: #211c18;
+  --ink: #f4efe9;
+  --ink-soft: #b3a698;
+  --outline: #9a8a7b;
+  --line: #352d24;
+  --container-low: #2a241e;
+  --success: #4cc07a;
+  --success-soft: #14321f;
+  --info: #7aa2f7;
+  --info-soft: #16233d;
+  --rail-track: #3a322a;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.35);
+}
+
+/* ============ Base ============ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Be Vietnam Pro', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px 64px; }
+.fn { font-variant-numeric: tabular-nums; }
+
+/* ============ Header ============ */
+header { padding: 40px 0 8px; }
+.eyebrow {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--accent-text);
+  margin-bottom: 10px;
+}
+h1 {
+  font-size: 30px; font-weight: 800; letter-spacing: -.02em;
+  line-height: 1.15; text-wrap: balance;
+}
+.sub { color: var(--ink-soft); max-width: 640px; margin-top: 8px; font-size: 14.5px; }
+
+.stat-strip {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px; margin-top: 22px;
+}
+.stat {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; padding: 12px 16px; box-shadow: var(--shadow);
+}
+.stat .k { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); font-family: 'Inter', 'Segoe UI', sans-serif; }
+.stat .v { font-size: 19px; font-weight: 800; margin-top: 2px; letter-spacing: -.01em; }
+.stat .v em { font-style: normal; color: var(--accent-text); }
+.stat .d { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+
+/* ============ Metro timeline ============ */
+.section-label {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-soft); margin: 40px 0 14px;
+}
+.metro { overflow-x: auto; padding: 26px 4px 30px; }
+.metro-inner { position: relative; min-width: 1060px; }
+.metro-track {
+  position: absolute; left: 34px; right: 34px; top: 22px; height: 4px;
+  background: var(--rail-track); border-radius: 2px;
+}
+.metro-track .done-part {
+  position: absolute; left: 0; top: 0; height: 100%;
+  width: 33.5%;
+  background: linear-gradient(90deg, var(--rail-done) 0%, var(--rail-done) 88%, var(--rail-current) 100%);
+  border-radius: 2px 0 0 2px;
+}
+.stops { display: flex; justify-content: space-between; position: relative; }
+.stop { width: 88px; display: flex; flex-direction: column; align-items: center; text-align: center; flex: 0 0 auto; }
+.stop-dot {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12.5px; font-weight: 800;
+  border: 3px solid var(--bg);
+  position: relative; z-index: 1;
+}
+.stop.done .stop-dot { background: var(--success); color: #fff; }
+.stop.current .stop-dot { background: var(--primary); color: var(--on-primary); box-shadow: 0 0 0 5px var(--primary-soft); }
+.stop.pending .stop-dot { background: var(--surface); color: var(--ink-soft); border-color: var(--outline); }
+.stop.future .stop-dot { background: var(--container-low); color: var(--outline); border-color: var(--line); }
+.stop-name { font-size: 12px; font-weight: 700; margin-top: 9px; letter-spacing: -.01em; }
+.stop-week { font-size: 11px; color: var(--ink-soft); margin-top: 1px; }
+.stop-tag {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px; margin-top: 6px;
+}
+.stop.done .stop-tag { background: var(--success-soft); color: var(--success); }
+.stop.pending .stop-tag { background: var(--info-soft); color: var(--info); }
+.you-are-here {
+  position: absolute; top: -26px; left: 50%; transform: translateX(-50%);
+  background: var(--primary); color: var(--on-primary);
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 999px 999px 999px 2px;
+  white-space: nowrap;
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(242, 101, 34, .45); }
+  70% { box-shadow: 0 0 0 12px rgba(242, 101, 34, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(242, 101, 34, 0); }
+}
+.stop.current .stop-dot { animation: pulse 2.2s infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .stop.current .stop-dot { animation: none; }
+}
+
+/* ============ Grid: phase detail + UI rail ============ */
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+@media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+
+.phase-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; padding: 16px 18px; margin-bottom: 10px;
+  box-shadow: var(--shadow);
+  display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px;
+}
+.phase-card.is-current { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary), var(--shadow); }
+.pc-badge {
+  width: 56px; height: 28px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; letter-spacing: .02em;
+}
+.badge-done { background: var(--success-soft); color: var(--success); }
+.badge-current { background: var(--primary); color: var(--on-primary); }
+.badge-wait { background: var(--info-soft); color: var(--info); }
+.badge-idle { background: var(--container-low); color: var(--ink-soft); }
+.pc-title { font-size: 14.5px; font-weight: 800; letter-spacing: -.01em; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.pc-title .wk { font-size: 11.5px; font-weight: 600; color: var(--ink-soft); font-family: 'Inter', 'Segoe UI', sans-serif; }
+.pc-inv { font-size: 13px; color: var(--ink-soft); margin-top: 3px; }
+.pc-foot { font-size: 12px; margin-top: 7px; color: var(--ink-soft); }
+.pc-foot b { color: var(--ink); font-weight: 700; }
+.pc-status {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 999px; margin-left: auto; white-space: nowrap;
+}
+.st-xong { background: var(--success-soft); color: var(--success); }
+.st-dang { background: var(--primary-soft); color: var(--accent-text); }
+.st-san { background: var(--info-soft); color: var(--info); }
+.st-cho { background: var(--container-low); color: var(--ink-soft); }
+
+/* UI milestones rail */
+.rail {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 18px; box-shadow: var(--shadow); position: sticky; top: 16px;
+}
+.rail h3 { font-size: 13px; font-weight: 800; letter-spacing: -.01em; margin-bottom: 14px; }
+.rail-item { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+.rail-item:first-of-type { border-top: none; }
+.ri-dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 4px; }
+.ri-done { background: var(--success); }
+.ri-next { background: var(--primary); box-shadow: 0 0 0 4px var(--primary-soft); }
+.ri-later { background: var(--outline); }
+.ri-title { font-size: 13px; font-weight: 700; letter-spacing: -.01em; }
+.ri-desc { font-size: 12px; color: var(--ink-soft); }
+.ri-when {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--accent-text); margin-bottom: 1px;
+}
+
+/* ============ Burndown ============ */
+.burndown { margin-top: 8px; }
+.burndown-bar {
+  display: flex; height: 40px; border-radius: 9px; overflow: hidden;
+  border: 1px solid var(--line); margin-top: 14px;
+}
+.bd-seg { display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0; }
+.bd-seg .lbl { font-size: 10.5px; font-weight: 800; color: rgba(255,255,255,.95); font-family: 'Inter', 'Segoe UI', sans-serif; letter-spacing: .05em; }
+.bd-seg.is-done { background: var(--success); }
+.bd-seg.is-current { background: var(--primary); }
+.bd-seg.is-current .lbl { color: var(--on-primary); }
+.bd-seg.is-later { background: var(--container-low); }
+.bd-seg.is-later .lbl { color: var(--ink-soft); }
+.bd-marker {
+  position: relative; margin-top: 6px; height: 1px;
+}
+.bd-marker::after {
+  content: "BẠN ĐANG Ở ĐÂY — tuần 3 / 15 MVP nội bộ";
+  position: absolute; top: 2px; left: 21%;
+  transform: translateX(-50%);
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  color: var(--accent-text); white-space: nowrap;
+}
+.bd-legend { display: flex; gap: 16px; margin-top: 20px; flex-wrap: wrap; font-size: 12px; color: var(--ink-soft); }
+.bd-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.sw-done { background: var(--success); }
+.sw-cur { background: var(--primary); }
+.sw-later { background: var(--container-low); border: 1px solid var(--line); }
+
+footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-soft); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">HRP V4 · Invariant Pipeline · D13 chốt 16/08/2026</div>
+  <h1>Lộ trình thực thi &amp; vị trí hiện tại</h1>
+  <p class="sub">Mỗi phase đóng băng một bất biến (DB → Đăng nhập → Phân quyền dữ liệu → Toàn vẹn giao dịch) trước khi layer trên dùng — phase sau không phá được phase trước. Mockup Baseline v1 đã được PM/BoD ký và đóng băng.</p>
+
+  <div class="stat-strip">
+    <div class="stat">
+      <div class="k">Phase đã xong</div>
+      <div class="v">2 / 6 <span style="font-size:12.5px;font-weight:600;color:var(--ink-soft)">MVP nội bộ</span></div>
+      <div class="d">Mockup ✅ · Phase 0 Foundation ✅ · Phase 1 Identity ✅</div>
+    </div>
+    <div class="stat">
+      <div class="k">Đang đứng</div>
+      <div class="v"><em>Phase 2</em> · Tenant Scope</div>
+      <div class="d">TASK v1.4 READY_FOR_EXECUTION — chờ sếp giao Tier 2 (<code>/code</code>)</div>
+    </div>
+    <div class="stat">
+      <div class="k">UI thật đầu tiên</div>
+      <div class="v fn">cuối 4A · W5–W6</div>
+      <div class="d">Staffing Fill — demo sếp; Job Board public đã chạy từ Phase 0</div>
+    </div>
+  </div>
+</header>
+
+<div class="section-label">Tuyến metro — 10 ga · MVP nội bộ 15 tuần → Full V4 24–29 tuần (Q1/2027)</div>
+
+<div class="metro">
+  <div class="metro-inner">
+    <div class="metro-track"><div class="done-part"></div></div>
+    <div class="stops">
+
+      <div class="stop done">
+        <div class="stop-dot">M</div>
+        <div class="stop-name">Mockup</div>
+        <div class="stop-week">Baseline v1</div>
+        <div class="stop-tag">đóng băng 16/08</div>
+      </div>
+
+      <div class="stop done">
+        <div class="stop-dot">0</div>
+        <div class="stop-name">Foundation</div>
+        <div class="stop-week fn">1 tuần</div>
+        <div class="stop-tag">Xong</div>
+      </div>
+
+      <div class="stop done">
+        <div class="stop-dot">1</div>
+        <div class="stop-name">Identity</div>
+        <div class="stop-week fn">2 tuần</div>
+        <div class="stop-tag">Xong</div>
+      </div>
+
+      <div class="stop current" style="position:relative;">
+        <div class="you-are-here">Đang ở đây</div>
+        <div class="stop-dot">2</div>
+        <div class="stop-name">Tenant Scope</div>
+        <div class="stop-week fn">2 tuần</div>
+        <div class="stop-tag" style="background:var(--primary-soft);color:var(--accent-text);">READY</div>
+      </div>
+
+      <div class="stop pending">
+        <div class="stop-dot">3</div>
+        <div class="stop-name">Integrity</div>
+        <div class="stop-week fn">2 tuần</div>
+        <div class="stop-tag">TASK sẵn</div>
+      </div>
+
+      <div class="stop future">
+        <div class="stop-dot">4</div>
+        <div class="stop-name">Slices</div>
+        <div class="stop-week fn">6 tuần</div>
+        <div class="stop-tag">UI thật</div>
+      </div>
+
+      <div class="stop future">
+        <div class="stop-dot">5</div>
+        <div class="stop-name">UAT + Cutover</div>
+        <div class="stop-week fn">2 tuần</div>
+        <div class="stop-tag">GO-LIVE</div>
+      </div>
+
+      <div class="stop future">
+        <div class="stop-dot">P1</div>
+        <div class="stop-name">Portals</div>
+        <div class="stop-week fn">4–6 tuần</div>
+        <div class="stop-tag">sau MVP</div>
+      </div>
+
+      <div class="stop future">
+        <div class="stop-dot">P2</div>
+        <div class="stop-name">Commission</div>
+        <div class="stop-week fn">2–3 tuần</div>
+        <div class="stop-tag">sau MVP</div>
+      </div>
+
+      <div class="stop future">
+        <div class="stop-dot">P3</div>
+        <div class="stop-name">Payroll</div>
+        <div class="stop-week fn">3–5 tuần</div>
+        <div class="stop-tag">Full V4</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Chi tiết từng phase</div>
+
+<div class="grid2">
+  <div>
+
+    <div class="phase-card">
+      <div class="pc-badge badge-done">0</div>
+      <div>
+        <div class="pc-title">Foundation <span class="wk fn">1 tuần</span><span class="pc-status st-xong">Xong</span></div>
+        <div class="pc-inv">Prisma singleton duy nhất + migration gộp + 3 sub-package (money, payroll-core, job-board).</div>
+        <div class="pc-foot"><b>Exit:</b> build + migrate trên DB sạch; <b>Job Board public lên Vercel</b> — sếp duyệt link.</div>
+      </div>
+    </div>
+
+    <div class="phase-card">
+      <div class="pc-badge badge-done">1</div>
+      <div>
+        <div class="pc-title">Identity <span class="wk fn">2 tuần</span><span class="pc-status st-xong">Xong</span></div>
+        <div class="pc-inv">JWT + 13 vai trò + RBAC + AuthContext thật (không nhận từ body tự khai). Đã ACCEPTED: bcc-fence + identity-core.</div>
+        <div class="pc-foot"><b>Exit:</b> không JWT → 401; đủ quyền → 200; thiếu permission → 403.</div>
+      </div>
+    </div>
+
+    <div class="phase-card is-current">
+      <div class="pc-badge badge-current">2</div>
+      <div>
+        <div class="pc-title">Tenant Scope <span class="wk fn">2 tuần</span><span class="pc-status st-dang">Đang chạy</span></div>
+        <div class="pc-inv">RLS Postgres (SET LOCAL, không BYPASSRLS) + withDbContext + masking 7 trường nhạy cảm thành <code>***</code>.</div>
+        <div class="pc-foot"><b>Bàn giao sếp:</b> giao Tier 2 bằng <code>/code hrp-phase2-tenant-scope</code> → HANDOFF → giao Tier 3 <code>/audit</code> → tôi <code>/resolve</code>.</div>
+      </div>
+    </div>
+
+    <div class="phase-card">
+      <div class="pc-badge badge-wait">3</div>
+      <div>
+        <div class="pc-title">Integrity <span class="wk fn">2 tuần</span><span class="pc-status st-san">TASK DRAFT sẵn</span></div>
+        <div class="pc-inv">Idempotency bảng (ADR-014) + Audit chuẩn (actor/reason/ip/ua/before-after) + Outbox (D16: in-process + cron) + State machine → 409.</div>
+        <div class="pc-foot"><b>Mở khi:</b> tenant-scope ACCEPTED — chỉ còn 1 điều kiện.</div>
+      </div>
+    </div>
+
+    <div class="phase-card">
+      <div class="pc-badge badge-idle">4</div>
+      <div>
+        <div class="pc-title">Vertical Slices <span class="wk fn">6 tuần</span><span class="pc-status st-cho">Chờ</span></div>
+        <div class="pc-inv">4 luồng E2E theo click-path mockup — <b>UI thật bắt đầu từ đây</b>: 4A Staffing Fill (S01→S02→S02A→S02B) · 4B Attendance Lock (S03→S03B→S03_Resolve) · 4C Dual Reconciliation (S04→S04A→S04B) · 4D Job Board (S05, chỉ polish).</div>
+        <div class="pc-foot"><b>Exit:</b> demo sếp 4 slice 30–45 phút; HR + PM + Accountant tạo được 1 statement cuối kỳ và khóa được.</div>
+      </div>
+    </div>
+
+    <div class="phase-card">
+      <div class="pc-badge badge-idle">5</div>
+      <div>
+        <div class="pc-title">UAT + Cutover <span class="wk fn">2 tuần</span><span class="pc-status st-cho">Chờ</span></div>
+        <div class="pc-inv">2 kỳ shadow chạy song song (sai số ≤ 0.01%) + security matrix 13 role × 8 bảng + load 5.000 check-in / 100 transfer / 20 statement song song.</div>
+        <div class="pc-foot"><b>Exit:</b> runbook ký sếp → <b>GO-LIVE nội bộ</b> (hết 15 tuần MVP).</div>
+      </div>
+    </div>
+
+    <div class="phase-card">
+      <div class="pc-badge badge-idle">P1</div>
+      <div>
+        <div class="pc-title">External Portals <span class="wk fn">4–6 tuần</span><span class="pc-status st-cho">Sau go-live</span></div>
+        <div class="pc-inv">Worker PWA (chấm công/claim) + Vendor Portal (đối soát) + CTV dashboard — người dùng bên ngoài.</div>
+        <div class="pc-foot"><b>Tiền điều kiện:</b> MVP nội bộ chạy ổn định.</div>
+      </div>
+    </div>
+
+    <div class="phase-card">
+      <div class="pc-badge badge-idle">P2</div>
+      <div>
+        <div class="pc-title">Commission <span class="wk fn">2–3 tuần</span><span class="pc-status st-cho">Sau go-live</span></div>
+        <div class="pc-inv">Group policy + individual override + ledger hoa hồng + permission CAN_OVERRIDE_INDIVIDUAL_COMMISSION.</div>
+        <div class="pc-foot"><b>Tiền điều kiện:</b> P1 xong.</div>
+      </div>
+    </div>
+
+    <div class="phase-card">
+      <div class="pc-badge badge-idle">P3</div>
+      <div>
+        <div class="pc-title">Payroll Engine <span class="wk fn">3–5 tuần</span><span class="pc-status st-cho">Sau go-live</span></div>
+        <div class="pc-inv">TNCN/BHXH tính thật + payslip — thay placeholder Phase 4; golden case 5 loại NPT; lock guard VERIFIED.</div>
+        <div class="pc-foot"><b>Exit:</b> parallel-run 1 kỳ sai số ≤ 0.01% → <b>FULL V4 hoàn tất (Q1/2027)</b>.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="rail">
+    <h3>Mốc UI — khi nào thấy gì</h3>
+
+    <div class="rail-item">
+      <div class="ri-dot ri-done"></div>
+      <div>
+        <div class="ri-when">16/08/2026</div>
+        <div class="ri-title">Mockup Baseline v1 đóng băng</div>
+        <div class="ri-desc">48 file · ~22 màn nghiệp vụ — PM/BoD đã ký (D14). UI tĩnh xem trước luồng.</div>
+      </div>
+    </div>
+
+    <div class="rail-item">
+      <div class="ri-dot ri-done"></div>
+      <div>
+        <div class="ri-when">Từ Phase 0</div>
+        <div class="ri-title">Job Board public chạy thật</div>
+        <div class="ri-desc">Read-only, không cần login — CTV xem job công khai ngay từ bây giờ.</div>
+      </div>
+    </div>
+
+    <div class="rail-item">
+      <div class="ri-dot ri-next"></div>
+      <div>
+        <div class="ri-when">W5–W6 · cuối 4A</div>
+        <div class="ri-title">UI thật đầu tiên: Staffing Fill</div>
+        <div class="ri-desc">S01→S02→S02A→S02B có dữ liệu thật — khoảnh khắc demo BoD "Guided Transfer 02:10–03:10". Demo sếp, sếp accept.</div>
+      </div>
+    </div>
+
+    <div class="rail-item">
+      <div class="ri-dot ri-later"></div>
+      <div>
+        <div class="ri-when">4B → 4C</div>
+        <div class="ri-title">2 khoảnh khắc còn lại</div>
+        <div class="ri-desc">Exception→Lock (06:20–08:30) · Dual Reconciliation (09:30–13:00) — mỗi slice demo sếp.</div>
+      </div>
+    </div>
+
+    <div class="rail-item">
+      <div class="ri-dot ri-later"></div>
+      <div>
+        <div class="ri-when">Cuối Phase 4</div>
+        <div class="ri-title">Demo tổng 4 slice</div>
+        <div class="ri-desc">1 buổi 30–45 phút; UI dùng chung shared component (tokens G27, sheet, data-table, role-guard).</div>
+      </div>
+    </div>
+
+    <div class="rail-item">
+      <div class="ri-dot ri-later"></div>
+      <div>
+        <div class="ri-when">Phase 5</div>
+        <div class="ri-title">UAT người dùng thật</div>
+        <div class="ri-desc">HR + PM + Accountant dùng dữ liệu shadow 2 kỳ — trải nghiệm nội bộ đầy đủ 4 luồng.</div>
+      </div>
+    </div>
+
+    <div class="rail-item">
+      <div class="ri-dot ri-later"></div>
+      <div>
+        <div class="ri-when">P1 → P3 · Q1/2027</div>
+        <div class="ri-title">Giao diện đầy đủ 100%</div>
+        <div class="ri-desc">Worker PWA + Vendor Portal + CTV dashboard (P1) · Commission (P2) · Payslip + payroll thật (P3) — toàn bộ tính năng đã thiết kế.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="burndown">
+  <div class="section-label">Burndown MVP nội bộ — 15 tuần (ước lượng PHASE_KHOAHOC §7)</div>
+  <div class="burndown-bar">
+    <div class="bd-seg is-done" style="width:6.67%"><span class="lbl">P0</span></div>
+    <div class="bd-seg is-done" style="width:13.33%"><span class="lbl">P1</span></div>
+    <div class="bd-seg is-current" style="width:13.33%"><span class="lbl">P2</span></div>
+    <div class="bd-seg is-later" style="width:13.33%"><span class="lbl">P3</span></div>
+    <div class="bd-seg is-later" style="width:40%"><span class="lbl">P4 — 4 slice</span></div>
+    <div class="bd-seg is-later" style="width:13.33%"><span class="lbl">P5</span></div>
+  </div>
+  <div class="bd-marker"></div>
+  <div class="bd-legend">
+    <span><i class="sw sw-done"></i>Đã xong (P0, P1)</span>
+    <span><i class="sw sw-cur"></i>Đang chạy (P2 — đầu tuần 3)</span>
+    <span><i class="sw sw-later"></i>Chưa tới (P3–P5)</span>
+    <span>+ P1–P3 (9–14 tuần sau go-live) → Full V4</span>
+  </div>
+</div>
+
+<footer>
+  <span>Nguồn: docs/PHASE_KHOAHOC_V1.md · docs/tasks/*/TASK.md · DECISION_LOG (D13–D16) — trạng thái 16/08/2026</span>
+  <span>Pipeline 3 tầng: TASK (Tier 1) → HANDOFF (Tier 2) → AUDIT (Tier 3)</span>
+</footer>
+
+</div>
