@@ -120,7 +120,7 @@ h1 {
 }
 .metro-track .done-part {
   position: absolute; left: 0; top: 0; height: 100%;
-  width: 33.5%;
+  width: 44.4%;
   background: linear-gradient(90deg, var(--rail-done) 0%, var(--rail-done) 88%, var(--rail-current) 100%);
   border-radius: 2px 0 0 2px;
 }
@@ -236,8 +236,8 @@ h1 {
   position: relative; margin-top: 6px; height: 1px;
 }
 .bd-marker::after {
-  content: "BẠN ĐANG Ở ĐÂY — tuần 3 / 15 MVP nội bộ";
-  position: absolute; top: 2px; left: 21%;
+  content: "BẠN ĐANG Ở ĐÂY — tuần 4 / 15 MVP nội bộ";
+  position: absolute; top: 2px; left: 34%;
   transform: translateX(-50%);
   font-family: 'Inter', 'Segoe UI', sans-serif;
   font-size: 10px; font-weight: 700; letter-spacing: .08em;
@@ -251,6 +251,86 @@ h1 {
 .sw-later { background: var(--container-low); border: 1px solid var(--line); }
 
 footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-soft); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+/* ============ Phase detail (mở rộng — cập nhật sau mỗi task) ============ */
+.phase-detail { margin-top: 8px; }
+.pd-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  margin-bottom: 10px; box-shadow: var(--shadow);
+}
+.pd-card > summary {
+  list-style: none; cursor: pointer;
+  padding: 14px 18px; display: grid;
+  grid-template-columns: 14px 56px 1fr auto auto;
+  gap: 12px; align-items: center; user-select: none;
+  border-radius: 12px;
+}
+.pd-card > summary::-webkit-details-marker { display: none; }
+.pd-card > summary::before {
+  content: "▸"; color: var(--ink-soft); font-size: 11px;
+  transition: transform .15s ease;
+}
+.pd-card[open] > summary::before { transform: rotate(90deg); color: var(--primary); }
+.pd-card > summary:hover { background: var(--container-low); }
+.pd-card[open] > summary { border-bottom: 1px solid var(--line); border-radius: 12px 12px 0 0; }
+.pd-badge {
+  width: 56px; height: 28px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; letter-spacing: .02em;
+}
+.pd-title { font-size: 14.5px; font-weight: 800; letter-spacing: -.01em; }
+.pd-tag {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+}
+.pd-hint {
+  font-size: 12px; color: var(--ink-soft);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+.pd-body { padding: 14px 18px 16px; }
+.pd-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 760px) { .pd-row { grid-template-columns: 1fr; } }
+.pd-col h4 {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-soft); margin-bottom: 8px;
+}
+.pd-col ul, .pd-sub ul { list-style: none; padding: 0; margin: 0; }
+.pd-col li, .pd-sub li {
+  font-size: 13px; line-height: 1.55; padding: 4px 0 4px 14px;
+  position: relative; color: var(--ink);
+}
+.pd-col li::before, .pd-sub li::before {
+  content: "●"; position: absolute; left: 0; top: 8px;
+  color: var(--primary); font-size: 6px;
+}
+.pd-col li code, .pd-sub li code, .pd-files code {
+  background: var(--container-low); padding: 1px 5px; border-radius: 4px;
+  font-size: 11.5px; border: 1px solid var(--line);
+  word-break: break-word;
+}
+.pd-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 760px) { .pd-sub-grid { grid-template-columns: 1fr; } }
+.pd-sub {
+  background: var(--container-low); border-radius: 8px;
+  padding: 12px 14px;
+}
+.pd-sub h4 {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 12px; font-weight: 800; letter-spacing: -.01em;
+  color: var(--ink); margin-bottom: 6px;
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+}
+.pd-sub-hint { font-size: 11px; font-weight: 500; color: var(--ink-soft); }
+.pd-files {
+  margin-top: 12px; padding: 10px 12px;
+  background: var(--container-low); border-radius: 8px;
+  font-size: 12px; color: var(--ink-soft);
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline;
+}
+.pd-files + .pd-files { margin-top: 6px; }
+.pd-file-label { font-weight: 700; color: var(--ink); margin-right: 4px; }
 </style>
 
 <div class="wrap">
@@ -263,13 +343,13 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
   <div class="stat-strip">
     <div class="stat">
       <div class="k">Phase đã xong</div>
-      <div class="v">2 / 6 <span style="font-size:12.5px;font-weight:600;color:var(--ink-soft)">MVP nội bộ</span></div>
-      <div class="d">Mockup ✅ · Phase 0 Foundation ✅ · Phase 1 Identity ✅</div>
+      <div class="v">3 / 6 <span style="font-size:12.5px;font-weight:600;color:var(--ink-soft)">MVP nội bộ</span></div>
+      <div class="d">Mockup ✅ · Phase 0 Foundation ✅ · Phase 1 Identity ✅ · Phase 2 Tenant Scope ✅</div>
     </div>
     <div class="stat">
       <div class="k">Đang đứng</div>
-      <div class="v"><em>Phase 2</em> · Tenant Scope</div>
-      <div class="d">TASK v1.4 READY_FOR_EXECUTION — chờ sếp giao Tier 2 (<code>/code</code>)</div>
+      <div class="v"><em>Phase 3</em> · Integrity</div>
+      <div class="d">TASK v1.1 READY_FOR_EXECUTION — chờ sếp giao Tier 2 (<code>/code</code>)</div>
     </div>
     <div class="stat">
       <div class="k">UI thật đầu tiên</div>
@@ -307,19 +387,19 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
         <div class="stop-tag">Xong</div>
       </div>
 
-      <div class="stop current" style="position:relative;">
-        <div class="you-are-here">Đang ở đây</div>
+      <div class="stop done">
         <div class="stop-dot">2</div>
         <div class="stop-name">Tenant Scope</div>
         <div class="stop-week fn">2 tuần</div>
-        <div class="stop-tag" style="background:var(--primary-soft);color:var(--accent-text);">READY</div>
+        <div class="stop-tag">Xong</div>
       </div>
 
-      <div class="stop pending">
+      <div class="stop current" style="position:relative;">
+        <div class="you-are-here">Đang ở đây</div>
         <div class="stop-dot">3</div>
         <div class="stop-name">Integrity</div>
         <div class="stop-week fn">2 tuần</div>
-        <div class="stop-tag">TASK sẵn</div>
+        <div class="stop-tag" style="background:var(--primary-soft);color:var(--accent-text);">READY</div>
       </div>
 
       <div class="stop future">
@@ -384,21 +464,21 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
       </div>
     </div>
 
-    <div class="phase-card is-current">
-      <div class="pc-badge badge-current">2</div>
+    <div class="phase-card">
+      <div class="pc-badge badge-done">2</div>
       <div>
-        <div class="pc-title">Tenant Scope <span class="wk fn">2 tuần</span><span class="pc-status st-dang">Đang chạy</span></div>
-        <div class="pc-inv">RLS Postgres (SET LOCAL, không BYPASSRLS) + withDbContext + masking 7 trường nhạy cảm thành <code>***</code>.</div>
-        <div class="pc-foot"><b>Bàn giao sếp:</b> giao Tier 2 bằng <code>/code hrp-phase2-tenant-scope</code> → HANDOFF → giao Tier 3 <code>/audit</code> → tôi <code>/resolve</code>.</div>
+        <div class="pc-title">Tenant Scope <span class="wk fn">2 tuần</span><span class="pc-status st-xong">Xong</span></div>
+        <div class="pc-inv">RLS Postgres (SET LOCAL, không BYPASSRLS) + withDbContext + masking 7 trường nhạy cảm thành <code>***</code>. Đã ACCEPTED 16/08 (10/10 AC).</div>
+        <div class="pc-foot"><b>Bàn giao sếp:</b> production RLS chạy runbook trước Phase 4 (DEC-08).</div>
       </div>
     </div>
 
-    <div class="phase-card">
-      <div class="pc-badge badge-wait">3</div>
+    <div class="phase-card is-current">
+      <div class="pc-badge badge-current">3</div>
       <div>
-        <div class="pc-title">Integrity <span class="wk fn">2 tuần</span><span class="pc-status st-san">TASK DRAFT sẵn</span></div>
+        <div class="pc-title">Integrity <span class="wk fn">2 tuần</span><span class="pc-status st-dang">Đang chạy</span></div>
         <div class="pc-inv">Idempotency bảng (ADR-014) + Audit chuẩn (actor/reason/ip/ua/before-after) + Outbox (D16: in-process + cron) + State machine → 409.</div>
-        <div class="pc-foot"><b>Mở khi:</b> tenant-scope ACCEPTED — chỉ còn 1 điều kiện.</div>
+        <div class="pc-foot"><b>Bàn giao sếp:</b> giao Tier 2 bằng <code>/code hrp-phase3-integrity</code> → HANDOFF → giao Tier 3 <code>/audit</code> → tôi <code>/resolve</code>.</div>
       </div>
     </div>
 
@@ -518,21 +598,365 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
   </div>
 </div>
 
+<div class="section-label">Mở rộng · Việc cần làm, thay đổi UX, artifacts theo từng phase</div>
+<p class="sub" style="margin-top:0;margin-bottom:14px">Mỗi phase liệt kê 3 nhóm: <b>việc kỹ thuật</b> (deliverable + file), <b>thay đổi UX</b> (user nhìn thấy gì — nếu có), và <b>artifact files</b> để sếp truy nguyên. Click ▸ để mở rộng. Cập nhật sau mỗi task ACCEPTED.</p>
+
+<div class="phase-detail">
+
+  <details class="pd-card">
+    <summary>
+      <span class="pd-badge badge-done">0</span>
+      <span class="pd-title">Foundation</span>
+      <span class="pd-tag st-xong">Done</span>
+      <span class="pd-hint">W1 · 1 tuần</span>
+    </summary>
+    <div class="pd-body">
+      <div class="pd-row">
+        <div class="pd-col">
+          <h4>Việc kỹ thuật</h4>
+          <ul>
+            <li>Prisma singleton duy nhất tại <code>src/lib/db.ts</code> — mọi route/service chỉ gọi <code>getPrisma()</code>; cấm <code>new PrismaClient()</code> rải rác.</li>
+            <li>Gộp migration <code>g0_baseline</code> chứa toàn bộ model V4; xóa 2 file patch cũ.</li>
+            <li>Tách 3 sub-package rủi ro thấp: <code>@hrp/money</code>, <code>@hrp/payroll-core</code>, <code>@hrp/job-board</code> (mới, read-only ISR).</li>
+            <li>Refactor 6 route <code>/api/tickets/*</code> qua <code>getPrisma()</code>.</li>
+            <li>Build &amp; test pass; <code>prisma migrate dev</code> chạy trên DB sạch + DB upgrade.</li>
+          </ul>
+        </div>
+        <div class="pd-col">
+          <h4>Thay đổi UX</h4>
+          <ul>
+            <li><b>Chưa có UI thật</b> — phase này chỉ chuẩn bị nền tảng.</li>
+            <li>Trang <code>/job-board</code> public lên Vercel — sếp duyệt link đầu tiên (không cần login).</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pd-files">
+        <span class="pd-file-label">Artifacts:</span>
+        <code>src/lib/db.ts</code> · <code>prisma/schema.prisma</code> · <code>prisma/migrations/g0_baseline/</code> · <code>packages/{money,payroll-core,job-board}/</code> · <code>app/job-board/</code>
+      </div>
+    </div>
+  </details>
+
+  <details class="pd-card">
+    <summary>
+      <span class="pd-badge badge-done">1</span>
+      <span class="pd-title">Identity</span>
+      <span class="pd-tag st-xong">Done</span>
+      <span class="pd-hint">W2 · 2 tuần</span>
+    </summary>
+    <div class="pd-body">
+      <div class="pd-row">
+        <div class="pd-col">
+          <h4>Việc kỹ thuật</h4>
+          <ul>
+            <li>JWT verify bằng <code>jose</code> + <code>auth-context.ts</code> decode <code>userId</code>/<code>role</code>.</li>
+            <li>Permission catalog 7+ code theo HOLISTIC_REVIEW §9.1; permission-resolver 13 role × 5 bảng = 65 case PASS.</li>
+            <li><code>with-auth-scope.ts</code> Prisma Extension deny-by-default.</li>
+            <li><code>require-permission.ts</code> helper throw 403 với reason.</li>
+            <li>Seed permission idempotent — re-run không mất grant manual.</li>
+            <li>Middleware Next.js bắt cookie <code>hrp_token</code>; route <code>/api/me</code> trả <code>{userId, role}</code>.</li>
+            <li>Task con <code>hrp-phase1-bcc-fence</code>: rào <code>/bcc</code> bằng JWT tối giản (D15).</li>
+          </ul>
+        </div>
+        <div class="pd-col">
+          <h4>Thay đổi UX</h4>
+          <ul>
+            <li><b>Chưa có UI thật mới</b> — phase này chỉ API backend.</li>
+            <li>Trang <code>/bcc</code> (BCC Sync) yêu cầu đăng nhập thật thay vì stub — sếp/test thấy 401 khi không JWT, 200 khi có JWT.</li>
+            <li>Behavior đã chốt: <b>không tạo lại bộ login/JWT/cookie</b> trong task sau — Phase 1 là nguồn duy nhất (DEC-11).</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pd-files">
+        <span class="pd-file-label">Artifacts:</span>
+        <code>src/shared/auth/{jwt,auth-context,require-permission,with-auth-scope,permission-catalog,permission-resolver}.ts</code> · <code>app/api/auth/*</code> · <code>app/api/me/route.ts</code> · <code>middleware.ts</code> · <code>app/bcc/</code>
+      </div>
+    </div>
+  </details>
+
+  <details class="pd-card">
+    <summary>
+      <span class="pd-badge badge-done">2</span>
+      <span class="pd-title">Tenant Scope</span>
+      <span class="pd-tag st-xong">Done</span>
+      <span class="pd-hint">Xong 16/08 · W3</span>
+    </summary>
+    <div class="pd-body">
+      <div class="pd-row">
+        <div class="pd-col">
+          <h4>Việc kỹ thuật</h4>
+          <ul>
+            <li>Tách credential web/ETL (DEC-09 A): web runtime dùng role <code>app_user_writer</code>, migrate qua <code>directUrl = DATABASE_URL_ADMIN</code>; appBCC 1 dòng env → <code>APPBCC_DATABASE_URL</code> (role <code>hrp_etl</code>, grants tối thiểu).</li>
+            <li>3 migration RLS dev: <code>s1_rls_worker</code>, <code>s1_rls_project</code>, <code>s1_rls_vendor</code> — <code>FORCE ROW LEVEL SECURITY</code>, không <code>BYPASSRLS</code>.</li>
+            <li><code>with-db-context.ts</code> + <code>rls-context.ts</code> set 4 GUC (<code>app.user_id</code>, <code>app.role</code>, <code>app.vendor_id</code>, <code>app.worker_id</code>) bằng <code>set_config(..., true)</code> trong transaction — <b>cấm SET ROLE</b>.</li>
+            <li>4 scope builder: <code>scopes/{worker,project,vendor,ctv}.scope.ts</code> — model thiếu vẫn deny-by-default.</li>
+            <li><code>worker-projection.ts</code> mask 7 trường: <code>cccdNumber</code>, <code>cccdImageUrl</code>, <code>selfieImageUrl</code>, <code>cccdChipData</code>, <code>bankAccount</code>, <code>bankName</code>, <code>bankBranch</code> thành <code>***</code> khi thiếu <code>CAN_VIEW_WORKER_SENSITIVE</code>.</li>
+            <li>2 route demo: <code>GET /api/workers</code> (list scoped), <code>GET /api/workers/me</code> (chỉ WORKER; role khác 403).</li>
+            <li>13 role × 4 bảng matrix = <b>52 case PASS</b> + L2 two-transaction integration + checklist §5.7.</li>
+            <li>Runbook production RLS (defer tới trước Phase 4 theo DEC-08) — preflight, apply order, rollback &lt;5 phút, dry-run trên dev.</li>
+          </ul>
+        </div>
+        <div class="pd-col">
+          <h4>Thay đổi UX</h4>
+          <ul>
+            <li><b>Chưa có UI thật mới</b> — phase này chỉ API backend.</li>
+            <li>Người dùng nội bộ (HR/PM/CTV/VENDOR/...) thấy <b>danh sách worker/admin</b> giờ tự giới hạn row theo scope — không còn thấy row ngoài phạm vi quyền.</li>
+            <li>7 trường nhạy cảm (CCCD, bank, selfie) ở role <b>không có</b> <code>CAN_VIEW_WORKER_SENSITIVE</code> sẽ hiển thị thành <code>***</code> thay vì plaintext.</li>
+            <li>ADMIN vẫn thấy tất cả + plaintext — phục vụ kiểm toán.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pd-files">
+        <span class="pd-file-label">Artifacts:</span>
+        <code>prisma/migrations/*_s1_rls_{worker,project,vendor}/</code> · <code>src/shared/auth/with-db-context.ts</code> · <code>src/shared/auth/rls-context.ts</code> · <code>src/shared/auth/scopes/*.scope.ts</code> · <code>src/shared/auth/worker-projection.ts</code> · <code>app/api/workers/{route,me/route}.ts</code> · <code>appBCC/app.py</code> (1 dòng env)
+      </div>
+    </div>
+  </details>
+
+  <details class="pd-card" open>
+    <summary>
+      <span class="pd-badge badge-current">3</span>
+      <span class="pd-title">Integrity</span>
+      <span class="pd-tag st-dang">Đang chạy</span>
+      <span class="pd-hint">W4 · 2 tuần</span>
+    </summary>
+    <div class="pd-body">
+      <div class="pd-row">
+        <div class="pd-col">
+          <h4>Việc kỹ thuật</h4>
+          <ul>
+            <li>Migration dev: bảng <code>idempotency_keys</code> (UNIQUE <code>(actorId, route, key)</code> + request hash + response JSON + <code>expiresAt</code> 24h), bảng <code>outbox</code> (eventType, payload, status PENDING/PROCESSED/FAILED, retryCount, availableAt), 3 cột nullable AuditLog (<code>reason</code>, <code>ip_address</code>, <code>user_agent</code>).</li>
+            <li>4 helper integrity: <code>idempotency.ts</code> (check-or-create + replay theo ADR-014), <code>audit.ts</code> (writer chuẩn 5 thành phần), <code>outbox.ts</code> (enqueue + drain in-process sau commit + cron daily retry PENDING — D16 (b)), <code>state-machine.ts</code> (generic + <code>IllegalTransitionError</code> → 409).</li>
+            <li>Refactor <code>ticket.service.ts</code>: bỏ idempotency query metadata, nối 4 helper, bộ <code>TRANSITIONS</code> + role guard + ticketTypes + optimistic lock + SLA giữ nguyên — không đổi nghiệp vụ.</li>
+            <li>Test: 2 lần cùng <code>Idempotency-Key</code> → 1 transition + 1 audit + lần 2 nhận kết quả lần 1; <code>PENDING → PAY</code> sai luồng → 409 reason; outbox rollback không còn event; drain idempotent.</li>
+            <li>Runbook production (defer): migration + bật cron outbox, preflight, rollback &lt;5 phút, verify.</li>
+          </ul>
+        </div>
+        <div class="pd-col">
+          <h4>Thay đổi UX</h4>
+          <ul>
+            <li><b>Chưa có UI thật mới</b> — chỉ API backend.</li>
+            <li>User thấy: <b>retry nút approve/reject/pay</b> (mạng chập chờn) → chỉ 1 transition xảy ra, lần 2 nhận kết quả lần 1 — không còn double-state.</li>
+            <li>Transition sai (vd <code>PENDING → PAY</code> không qua <code>APPROVED</code>) → trả 409 với reason — debug được, không còn lỗi mơ hồ.</li>
+            <li>Notification ghi <b>outbox cùng transaction</b> — process chết giữa chừng không làm mất thông báo; cron daily lưới an toàn đẩy lại.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pd-files">
+        <span class="pd-file-label">Artifacts:</span>
+        <code>prisma/migrations/*_s1_{outbox,idempotency}.sql</code> · <code>src/shared/integrity/{idempotency,audit,outbox,state-machine}.ts</code> · <code>src/domains/attendance/ticket.service.ts</code> · <code>app/api/tickets/*</code>
+      </div>
+    </div>
+  </details>
+
+  <details class="pd-card">
+    <summary>
+      <span class="pd-badge badge-idle">4</span>
+      <span class="pd-title">Vertical Slices (4A · 4B · 4C · 4D)</span>
+      <span class="pd-tag st-cho">Chờ</span>
+      <span class="pd-hint">W5–W10 · 6 tuần</span>
+    </summary>
+    <div class="pd-body">
+      <div class="pd-sub-grid">
+        <div class="pd-sub">
+          <h4>4A · Staffing Fill <span class="pd-sub-hint">1.5 tuần · UI thật đầu tiên</span></h4>
+          <ul>
+            <li><b>Tech:</b> schema migration (nếu cần) + service/repository + route + UI mount + 4-role integration test (ADMIN/HR_STAFF/VENDOR/WORKER) + E2E theo click-path <code>S01 → S02 → S02A → S02B</code>.</li>
+            <li><b>UX:</b> CTV/WORKER/VENDOR nộp hồ sơ → HR review → PM phê duyệt → gửi Client. Khoảnh khắc demo BoD <b>Guided Transfer 02:10–03:10</b>. 4 vai trò thấy 4 view khác nhau (RBAC + RLS + projection).</li>
+          </ul>
+        </div>
+        <div class="pd-sub">
+          <h4>4B · Attendance Lock <span class="pd-sub-hint">1.5 tuần</span></h4>
+          <ul>
+            <li><b>Tech:</b> service + repository + route + UI + 4-role test + E2E theo <code>S03 → S03B → S03_Resolve</code>.</li>
+            <li><b>UX:</b> HR nhập giờ → exception hiện → sửa → <b>lock</b>. Khoảnh khắc demo <b>Exception→Lock 06:20–08:30</b>. Sau lock → không thể sửa, phải mở khóa có audit.</li>
+          </ul>
+        </div>
+        <div class="pd-sub">
+          <h4>4C · Dual Reconciliation <span class="pd-sub-hint">1.5 tuần</span></h4>
+          <ul>
+            <li><b>Tech:</b> service + repository + route + UI + 4-role test + E2E theo <code>S04 → S04A → S04B</code>.</li>
+            <li><b>UX:</b> Vendor xác nhận statement → Client xác nhận → đối chiếu 2 bên → Accountant khóa. Khoảnh khắc demo <b>Dual Reconciliation 09:30–13:00</b>. Sai lệch → highlight dòng chênh + audit log.</li>
+          </ul>
+        </div>
+        <div class="pd-sub">
+          <h4>4D · Job Board public <span class="pd-sub-hint">1.0 tuần · chỉ polish</span></h4>
+          <ul>
+            <li><b>Tech:</b> polish + analytics tracking; bản chất đã chạy từ Phase 0.</li>
+            <li><b>UX:</b> vẫn public (không cần login) — CTV và bên ngoài xem job công khai; thêm analytics thống kê view/apply.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pd-files">
+        <span class="pd-file-label">Shared UI:</span>
+        <code>tokens G27</code> · <code>sheet</code> · <code>data-table</code> · <code>role-guard</code> · <code>audit-trail</code> · <code>state-badge</code>
+      </div>
+      <div class="pd-files">
+        <span class="pd-file-label">Artifacts:</span>
+        <code>src/domains/{staffing,attendance,reconciliation,job-board}/</code> · <code>app/(portal)/*</code> · <code>tests/e2e/{4A,4B,4C,4D}/*</code>
+      </div>
+    </div>
+  </details>
+
+  <details class="pd-card">
+    <summary>
+      <span class="pd-badge badge-idle">5</span>
+      <span class="pd-title">UAT + Cutover</span>
+      <span class="pd-tag st-cho">Chờ</span>
+      <span class="pd-hint">W11–W12 · 2 tuần</span>
+    </summary>
+    <div class="pd-body">
+      <div class="pd-row">
+        <div class="pd-col">
+          <h4>Việc kỹ thuật</h4>
+          <ul>
+            <li>2 kỳ shadow reconciliation (HRP vs Excel cũ) chạy song song — sai số ≤ 0.01%.</li>
+            <li>Security matrix 13 role × 8 bảng = <b>104 case PASS</b>.</li>
+            <li>Load burst 5.000 check-in / 100 transfer / 20 statement song song (V4 §17 R-39).</li>
+            <li>Runbook deploy + rollback + incident có chữ ký sếp.</li>
+            <li>Cutover dry-run 1 lần trên staging Neon riêng.</li>
+            <li>Go-live đợt 1: <b>1 dự án + 1 vendor + 1 client</b> (giới hạn scope quan sát).</li>
+          </ul>
+        </div>
+        <div class="pd-col">
+          <h4>Thay đổi UX</h4>
+          <ul>
+            <li>HR + PM + Accountant dùng <b>data thật</b> (tháng 06 + 07/2026) trên hệ thống — nội bộ chuyển từ Excel sang HRP.</li>
+            <li>Email domain nội bộ dùng cho go-live; dự án/vendor/client đầu tiên onboard.</li>
+            <li>User thấy: hệ thống chạy ổn định, có runbook khi sự cố, có người chịu trách nhiệm vận hành.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pd-files">
+        <span class="pd-file-label">Artifacts:</span>
+        <code>docs/runbook/{deploy,rollback,incident}.md</code> · <code>tests/load/{5000-checkin,100-transfer,20-statement}/</code> · <code>tests/security/matrix-13-role-8-table.spec.ts</code> · <code>docs/uat/signoff.md</code>
+      </div>
+    </div>
+  </details>
+
+  <details class="pd-card">
+    <summary>
+      <span class="pd-badge badge-idle">P1</span>
+      <span class="pd-title">External Portals</span>
+      <span class="pd-tag st-cho">Sau go-live</span>
+      <span class="pd-hint">4–6 tuần</span>
+    </summary>
+    <div class="pd-body">
+      <div class="pd-row">
+        <div class="pd-col">
+          <h4>Việc kỹ thuật</h4>
+          <ul>
+            <li>Worker PWA: GPS evidence + offline storage IndexedDB + push notification.</li>
+            <li>Vendor Portal: confirm/dispute statement + audit + SLA tracking.</li>
+            <li>CTV Dashboard: source claim overview + commission cumulative.</li>
+            <li>Điều kiện: Phase 4 đã có source of truth (Worker CRUD, Vendor Statement, CTV SourceClaim).</li>
+            <li><b>Không:</b> native app, eKYC (deferred theo V4 §5).</li>
+          </ul>
+        </div>
+        <div class="pd-col">
+          <h4>Thay đổi UX</h4>
+          <ul>
+            <li>3 cổng bên ngoài ra đời — đây là lúc <b>người dùng ngoài công ty</b> (worker/vendor/CTV) bắt đầu dùng hệ thống thật.</li>
+            <li>Worker chấm công bằng điện thoại (có GPS); Vendor xác nhận công nợ online; CTV xem hoa hồng cộng dồn.</li>
+            <li>Audit + SLA đảm bảo vendor phản hồi trong X ngày, ngược lại hệ thống tự nhắc.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pd-files">
+        <span class="pd-file-label">Artifacts:</span>
+        <code>app/worker-pwa/</code> · <code>app/vendor-portal/</code> · <code>app/ctv-dashboard/</code> · <code>packages/pwa-shared/</code>
+      </div>
+    </div>
+  </details>
+
+  <details class="pd-card">
+    <summary>
+      <span class="pd-badge badge-idle">P2</span>
+      <span class="pd-title">Commission</span>
+      <span class="pd-tag st-cho">Sau go-live</span>
+      <span class="pd-hint">2–3 tuần</span>
+    </summary>
+    <div class="pd-body">
+      <div class="pd-row">
+        <div class="pd-col">
+          <h4>Việc kỹ thuật</h4>
+          <ul>
+            <li>CommissionGroup policy (placeholder đã có từ Phase 0) + individual override + ledger reversal chuẩn.</li>
+            <li>Permission <code>CAN_OVERRIDE_INDIVIDUAL_COMMISSION</code> — audit log mỗi lần override.</li>
+            <li>Tính hoa hồng CTV + Worker + Referrer trên cùng ledger.</li>
+            <li>Điều kiện: P1 đã có SourceClaim + ProjectAssignment ổn định.</li>
+          </ul>
+        </div>
+        <div class="pd-col">
+          <h4>Thay đổi UX</h4>
+          <ul>
+            <li>HR/Accountant nội bộ: <b>dashboard hoa hồng</b> theo tháng/quý, filter theo CTV/Worker/Referrer.</li>
+            <li>Override flow: chọn chính sách → nhập lý do → audit log ghi lại.</li>
+            <li>Worker/CTV thấy số hoa hồng cộng dồn realtime; ledger truy vết được từng khoản.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pd-files">
+        <span class="pd-file-label">Artifacts:</span>
+        <code>src/domains/commission/</code> · <code>prisma/models/commission-ledger.prisma</code> · <code>app/(internal)/commission/</code>
+      </div>
+    </div>
+  </details>
+
+  <details class="pd-card">
+    <summary>
+      <span class="pd-badge badge-idle">P3</span>
+      <span class="pd-title">Payroll Engine</span>
+      <span class="pd-tag st-cho">Sau go-live</span>
+      <span class="pd-hint">3–5 tuần</span>
+    </summary>
+    <div class="pd-body">
+      <div class="pd-row">
+        <div class="pd-col">
+          <h4>Việc kỹ thuật</h4>
+          <ul>
+            <li>Thay MOCKED ở Phase 4 bằng engine tính TNCN/BHXH thật theo luật VN.</li>
+            <li>Payslip PDF/HTML cho worker.</li>
+            <li>Golden case 5 loại NPT: người Việt, nước ngoài, có người phụ thuộc, có tạm ứng, có điều chỉnh.</li>
+            <li>Parallel run 1 kỳ với engine cũ (Excel/Python) — sai số ≤ 0.01%.</li>
+            <li>Lock guard: không cho <code>PayRun.LOCK</code> nếu statutory status ≠ <code>VERIFIED</code>.</li>
+            <li>Điều kiện: Phase 4 đã có PayRun + WorkerPayResult + StatutoryCalculation (placeholder).</li>
+          </ul>
+        </div>
+        <div class="pd-col">
+          <h4>Thay đổi UX</h4>
+          <ul>
+            <li>Worker thấy <b>payslip thật</b> (lương gross, BHXH, TNCN, net) — tải PDF/HTML.</li>
+            <li>HR chạy 1 kỳ payroll cuối tháng thật trên hệ thống, không cần Excel song song.</li>
+            <li>Accountant kiểm tra statutory VERIFIED trước khi khóa kỳ; nếu chưa → hệ thống chặn + gợi ý bước thiếu.</li>
+            <li><b>Full V4 hoàn tất</b>: tất cả tính năng đã thiết kế đều chạy thật.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pd-files">
+        <span class="pd-file-label">Artifacts:</span>
+        <code>src/domains/payroll/{engine,statutory,calculator,cases}/</code> · <code>packages/payroll-core</code> (đã có từ P0) · <code>app/(internal)/payroll/runs/</code> · <code>app/worker-pwa/payslips/</code>
+      </div>
+    </div>
+  </details>
+
+</div>
+
 <div class="burndown">
   <div class="section-label">Burndown MVP nội bộ — 15 tuần (ước lượng PHASE_KHOAHOC §7)</div>
   <div class="burndown-bar">
     <div class="bd-seg is-done" style="width:6.67%"><span class="lbl">P0</span></div>
     <div class="bd-seg is-done" style="width:13.33%"><span class="lbl">P1</span></div>
-    <div class="bd-seg is-current" style="width:13.33%"><span class="lbl">P2</span></div>
-    <div class="bd-seg is-later" style="width:13.33%"><span class="lbl">P3</span></div>
+    <div class="bd-seg is-done" style="width:13.33%"><span class="lbl">P2</span></div>
+    <div class="bd-seg is-current" style="width:13.33%"><span class="lbl">P3</span></div>
     <div class="bd-seg is-later" style="width:40%"><span class="lbl">P4 — 4 slice</span></div>
     <div class="bd-seg is-later" style="width:13.33%"><span class="lbl">P5</span></div>
   </div>
   <div class="bd-marker"></div>
   <div class="bd-legend">
     <span><i class="sw sw-done"></i>Đã xong (P0, P1)</span>
-    <span><i class="sw sw-cur"></i>Đang chạy (P2 — đầu tuần 3)</span>
-    <span><i class="sw sw-later"></i>Chưa tới (P3–P5)</span>
+    <span><i class="sw sw-cur"></i>Đang chạy (P3 — đầu tuần 4)</span>
+    <span><i class="sw sw-later"></i>Chưa tới (P4–P5)</span>
     <span>+ P1–P3 (9–14 tuần sau go-live) → Full V4</span>
   </div>
 </div>
@@ -540,6 +964,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
 <footer>
   <span>Nguồn: docs/PHASE_KHOAHOC_V1.md · docs/tasks/*/TASK.md · DECISION_LOG (D13–D16) — trạng thái 16/08/2026</span>
   <span>Pipeline 3 tầng: TASK (Tier 1) → HANDOFF (Tier 2) → AUDIT (Tier 3)</span>
+  <span style="flex-basis:100%;margin-top:6px;color:var(--accent-text)">Cập nhật sau mỗi task ACCEPTED · Bản chi tiết lần đầu: 16/08/2026 (baseline)</span>
 </footer>
 
 </div>
