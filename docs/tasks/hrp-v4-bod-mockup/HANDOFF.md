@@ -6,12 +6,12 @@
 |---|---|
 | Task slug | `hrp-v4-bod-mockup` |
 | Work type | `DESIGN` |
-| Spec version | `v1.12` (khớp TASK.md) |
-| Execution round | `4` |
+| Spec version | `v1.13` (khớp TASK.md) |
+| Execution round | `5` |
 | Executor | `Tier 1 Planner + ui-ux-pro-max skill (founder ủy quyền 15/08/2026 — thay sếp làm phần Figma; DEC-27: medium HTML)` |
 | Baseline | `git a4327ab` · thực tế ngày 15/08/2026 · `docs/UNIFIED_PLAN_v4.md` (v4.20), `stitch/warm_professionalism/DESIGN.md` (G27), `docs/HRP_V4_MOCKUP_EXECUTION_PLAN.md` (PDD) |
 | Status | `READY_FOR_AUDIT` |
-| Started/updated | `2026-08-15 (VN)` — STEP-01 08:40 → STEP-06 21:10 → STEP-08 (phần tự chủ) 23:30 cùng ngày · `2026-08-16 (VN)` — STEP-10 (DEC-33, bộ công cụ diễn thuyết tiếng Việt) |
+| Started/updated | `2026-08-15 (VN)` — STEP-01 08:40 → STEP-06 21:10 → STEP-08 (phần tự chủ) 23:30 cùng ngày · `2026-08-16 (VN)` — STEP-10 (DEC-33, bộ công cụ diễn thuyết tiếng Việt) · round 5 (AUD-020 ví dụ 21/21 + AUD-021 .st-fstate 12px) |
 
 ## 1. Outcome Summary
 
@@ -36,6 +36,11 @@
   - **`PRESENTER_GUIDE.md`** (mới, task folder) — đủ 3 phần: (a) bảng 21 thuật ngữ EN→VI (nguồn DEC-33); (b) 3 mẹo diễn thuyết 15 phút (mở sẵn F01B tab riêng tham khảo — **glossary không tính vào 15 phút dry-run**; gặp thuật ngữ EN thì nói "tức là…" + nghĩa Việt; dừng lại ở 3 khoảnh khắc tô cam trong F80 để sếp hỏi); (c) nhắc 11 hotspot đúng trình tự F00A + demo ≤15 phút + không submit thật ở 03:10/12:10 + fallback PDF.
   - **`mockup/index.html`** (cập nhật) — nhóm 01 Foundations thêm dòng `F01B_Glossary.html` (done, mô tả "Từ điển thuật ngữ EN→VI — DEC-33").
   - **KHÔNG sửa 30 frame màn hình khác** — UI giữ nguyên thuật ngữ EN chuẩn ngành (DEC-33).
+- **Round 5 (Planner Resolution audit round 4 — AUD-020/021, TASK v1.13)**:
+  - **`F01B_Glossary.html`** (cập nhật) — bổ sung **ví dụ ngắn đủ 21/21 dòng**, dùng nguyên văn cột "Ví dụ ngắn" bảng canonical DEC-33 (DECISION_LOG v0.6 — AUD-019). 3 dòng có ví dụ cũ đã đối chiếu chuẩn: Fill rate (`47/50 = 94%`) khớp — giữ nguyên; Blocker (`3 loại dưới`) và SLA (`ví dụ 3 ngày`) lệch chuẩn — đã sửa cho khớp nguyên văn (`"Còn 3 yếu tố chặn → chưa khóa được"` / `"3 ngày kể từ khi gửi bảng kê"`); Blocker nghĩa chỉnh `(3 loại dưới)` → `(3 loại: #12/13/14)` theo canonical. Foot note cập nhật "nghĩa + ví dụ ngắn dùng nguyên theo bảng canonical DEC-33 · 21/21 dòng có ví dụ".
+  - **`PRESENTER_GUIDE.md`** (cập nhật) — bảng 21 thuật ngữ §1 thêm cột **Ví dụ ngắn** (ghép ví dụ đang nằm lẫn trong cột nghĩa của Fill rate/SLA ra cột riêng), khớp 100% bảng canonical DEC-33: 21/21 dòng nghĩa + ví dụ nguyên văn.
+  - **`F00A_DemoNarrative.html`** (cập nhật — AUD-021) — `.st-fstate` 11px → **12px** (PDD §2.3 / AUD-011; tàn dư pre-existing, sửa cùng round vì chạm file). 16 mốc thời gian + 16 link frame giữ nguyên — diff chỉ có 1 rule font.
+  - **KHÔNG sửa 30 frame màn hình, TASK.md/AUDIT.md/DECISION_LOG.md, appBCC/.env.**
 
 ## 2. Execution Trace
 
@@ -48,6 +53,7 @@
 | `STEP-06` | `RQ-02`, `RQ-08`, `RQ-10` | `mockup/F50_HotspotMap.html`, 12 state frame (`S01_ControlTower_Loading/EmptyQueue/StaleBanner`, `S02_Staffing_NoResult`, `S02B_ReferralGuard_Expired`, `S02_CardBlocked`, `S03_ImportProgress/ImportFailed`, `S04_VendorDisputed/ConfirmedLocked/RevisionV2/EmptyPayment`), `mockup/index.html` (14 dòng done), `F00A_DemoNarrative` foot | DONE | (a) PDD §8.3 hotspot #9 ghi "Nguyễn Văn Nam" — §4.5 locked scenario (audit round 1) dùng dòng Bùi Đức Long cho lineage: giữ Long, ghi deviation trong F50; (b) S04B_VendorPreview_Sent thiếu back-path → thêm nút "Về HRP" → S04; (c) sidebar Dự án S03×3 trỏ S02; (d) S02_CardBlocked note chuẩn hóa mẫu audit |
 | `STEP-08` (phần tự chủ) | `RQ-11`, `AC-12`, `AC-13` | `mockup/F60_D01.html`…`F60_D08.html`, `mockup/F60_D09_D12_Notes.html`, `DECISION_LOG.md`, `mockup/F80_DemoExport.html` + `F80_DemoExport.pdf`, `mockup/index.html` (nhóm 60 done + nhóm 80) | DONE | (a) 2 dry-run chưa chạy — cần sếp làm presenter (không thuộc phần tự chủ); (b) PDF in bằng Chrome headless (DEC-27 ghi "browser print" — Edge headless không xuất file, đã chuyển Chrome); (c) variant B của D01/D05/D07/D08 do Planner định nghĩa thay thế hợp lý (TASK chỉ ghi variant A được chọn) — ghi rõ là option để BoD cân nhắc, không phải yêu cầu cũ của contract |
 | `STEP-10` | `RQ-14` | `mockup/F01B_Glossary.html` (mới), `mockup/F00A_DemoNarrative.html` (lời thoại Việt 16 bước), `PRESENTER_GUIDE.md` (mới), `mockup/index.html` (dòng F01B nhóm 01), `HANDOFF.md` (round 4) | DONE | (a) F01B dùng đúng 21 thuật ngữ + nghĩa theo DEC-33, không thêm nghĩa/ví dụ mới cho mục không có sẵn; (b) Lời thoại Việt F00A là diễn đạt dễ nói (kèm EN lần đầu) — không dịch nguyên văn, giữ lời thoại gốc bên cạnh; (c) không đổi thời gian/thứ tự/click-path/file đích F00A; không sửa 30 frame màn hình |
+| `round 5` (AUD-020/021) | `RQ-14`, `RQ-09` | `mockup/F01B_Glossary.html` (ví dụ ngắn 21/21 dòng), `PRESENTER_GUIDE.md` (cột Ví dụ ngắn), `mockup/F00A_DemoNarrative.html` (`.st-fstate` 12px), `HANDOFF.md` (round 5) | DONE | (a) Ví dụ dùng **nguyên văn** cột "Ví dụ ngắn" bảng canonical DEC-33 (DECISION_LOG v0.6 — AUD-019), không bịa ví dụ khác; (b) Fill rate khớp chuẩn giữ nguyên, Blocker + SLA lệch chuẩn đã sửa cho khớp; (c) F00A chỉ sửa 1 rule font 11px→12px (AUD-021), 0 thay đổi mốc thời gian/link; không đụng 30 frame UI, TASK/AUDIT/DECISION_LOG, appBCC/.env |
 
 ## 3. Acceptance Evidence
 
@@ -69,12 +75,15 @@
 | `AC-14` | Đọc HANDOFF + AUDIT + TASK §9 | PARTIAL | HANDOFF.md (round 1+2+3) ✓; AUDIT.md round 1+2 đã có + §9 resolution ✓; chờ Tier 3 append round 3 | — |
 | `AC-15` | S05 | NOT YET | STEP-09 | — |
 | `AC-16` | Đọc 3 file + link-check (STEP-10, DEC-33) | PASS | `mockup/F01B_Glossary.html` — 21 thuật ngữ EN→VI (≥15), mỗi dòng "EN → VI — nghĩa 1 dòng + ví dụ ngắn", nhóm 4 module S01–S04, watermark có dấu, tokens G27 (render check class/token tồn tại trong hrp.css); `mockup/index.html` có dòng F01B nhóm 01 (done); `F00A_DemoNarrative.html` — đủ 16/16 lời thoại có bản diễn đạt Việt (thẻ `VI`), thời gian/thứ tự/click-path không đổi; `PRESENTER_GUIDE.md` tồn tại đủ 3 phần (thuật ngữ + 3 mẹo 15 phút + quy ước glossary ngoài giờ dry-run + nhắc 11 hotspot); link-check: index→F01B OK, F01B→F00A/PRESENTER_GUIDE OK, F00A→F01B OK, không đổi link nào của 16 bước | UI 30 frame không bị Việt hóa (chỉ sửa 5 file: F01B, F00A, PRESENTER_GUIDE, index, HANDOFF) |
+| `AC-16` (re-verify round 5 — AUD-020) | Grep từng dòng F01B + PRESENTER_GUIDE đối chiếu bảng canonical DEC-33 (DECISION_LOG v0.6) | PASS | `mockup/F01B_Glossary.html`: 21/21 `.gl-line` có `(ví dụ: …)` — ví dụ nguyên văn khớp từng dòng canonical (Control Tower `"Mở Trung tâm điều hành xem Fill rate toàn hệ"` → Client `"Điện tử An Phát duyệt bảng kê"`); Fill rate `47/50 = 94%` khớp, Blocker/SLA đã sửa theo chuẩn; `PRESENTER_GUIDE.md` §1: 21/21 dòng có cột Ví dụ ngắn khớp canonical | Ví dụ đối chiếu bằng grep chuỗi canonical, không mở trình duyệt |
+| `AC-10` (re-verify round 5 — AUD-021) | Grep font + diff F00A | PASS | `mockup/F00A_DemoNarrative.html`: `.st-fstate` `400 12px/14px` — grep `11px` trong F00A = 0 match; `git diff` chỉ có 1 rule font đổi, **16 mốc thời gian (00:00–13:00) + 16 link frame giữ nguyên** | Không chụp pixel — suy từ CSS + diff |
 
 ## 4. Changed Deliverables
 
 - **Source/artifact changed:** `docs/tasks/hrp-v4-bod-mockup/mockup/index.html`, `mockup/_assets/hrp.css`, `mockup/_assets/frame.js`, 22 file frame (liệt kê §2), `docs/tasks/hrp-v4-bod-mockup/TASK.md` (v1.4 — sửa lỗi số học §4.4: 44 dòng ẩn gộp, thêm Revision Log), `docs/tasks/hrp-v4-bod-mockup/HANDOFF.md` (file này).
 - **Round 3 (STEP-08 phần tự chủ):** `mockup/F60_D01.html`…`F60_D08.html`, `mockup/F60_D09_D12_Notes.html`, `DECISION_LOG.md` (mới), `mockup/F80_DemoExport.html` (mới), `mockup/F80_DemoExport.pdf` (mới — 4,8MB, in Chrome headless), `mockup/index.html` (nhóm 60 done + nhóm 80), `TASK.md` (v1.9 — Status/Revision Log), `HANDOFF.md` (file này, round 3).
 - **Round 4 (STEP-10, DEC-33 — đúng 5 file, không hơn):** `mockup/F01B_Glossary.html` (mới), `mockup/F00A_DemoNarrative.html` (cập nhật — lời thoại Việt 16 bước + header note + legend), `PRESENTER_GUIDE.md` (mới), `mockup/index.html` (thêm 1 dòng F01B nhóm 01), `HANDOFF.md` (file này, round 4). KHÔNG sửa 30 frame màn hình, không sửa TASK.md/AUDIT.md/DECISION_LOG.md.
+- **Round 5 (AUD-020/021 — đúng 4 file, không hơn):** `mockup/F01B_Glossary.html` (ví dụ ngắn 21/21 dòng theo bảng canonical DEC-33), `PRESENTER_GUIDE.md` (thêm cột Ví dụ ngắn — khớp canonical 21/21), `mockup/F00A_DemoNarrative.html` (`.st-fstate` 11px→12px — AUD-021), `HANDOFF.md` (file này, round 5). KHÔNG sửa 30 frame màn hình, TASK.md/AUDIT.md/DECISION_LOG.md, appBCC/.env.
 - **Dependency:** None — không dùng thư viện ngoài Google Fonts (Be Vietnam Pro, Inter, Material Symbols Outlined).
 - **Schema/migration:** None.
 - **Environment/config:** None — `.env` không bị đụng, mock data hư cấu (DEC-14), không dùng dữ liệu viec3mien.
@@ -94,7 +103,7 @@
 | `BLK-07` | Deviation | Hotspot #9 PDD §8.3 ghi "Nguyễn Văn Nam" — §4.5 locked scenario dùng dòng Bùi Đức Long | Đích Lineage drawer giữ nguyên; tên dòng khác | Chấp nhận + đã ghi deviation trong F50? |
 | `BLK-08` | Enhancement | S04B_VendorPreview_Sent không có back-link → thêm nút "Về HRP" → S04 | Khớp F50 back-path #10; không đổi nghiệp vụ | Chấp nhận? |
 | `BLK-09` | Enhancement | Sidebar "Dự án" 3 frame S03 trỏ → S02_Staffing (trước là `#`) | Back-path hotspot #5 mượt hơn; đúng mô hình nav | Chấp nhận? |
-| `BLK-11` | Deviation (tuân thủ DEC-33) | F01B dùng nguyên 21 thuật ngữ + nghĩa theo danh sách DEC-33 — mục không kèm ví dụ trong danh sách thì không thêm ví dụ mới ("không thêm bớt nghĩa"); lời thoại Việt F00A là diễn đạt dễ nói (thẻ `VI`), giữ nguyên lời thoại gốc bên cạnh | Presenter có 2 bản để chọn giọng; glossary tránh bịa nghĩa | Xác nhận giữ nguyên cách diễn đạt tự nhiên thay vì dịch từng chữ? (không chặn — AC-16 pass) |
+| `BLK-11` | Deviation (tuân thủ DEC-33) — **đóng round 5 (AUD-020)** | Round 4: mục không kèm ví dụ trong danh sách thì không thêm (AC-16 pass-condition chưa trọn — AUD-020). Round 5 (sau AUD-019 chốt bảng canonical DEC-33 v0.6 có cột "Ví dụ ngắn"): bổ sung **ví dụ ngắn 21/21 dòng** F01B + cột Ví dụ ngắn PRESENTER_GUIDE — dùng nguyên văn bảng canonical, không bịa; lời thoại Việt F00A giữ nguyên bản round 4 | Presenter có glossary đủ nghĩa + ví dụ khớp chuẩn; AC-16 "mỗi dòng có ví dụ ngắn" đạt trọn | Không cần — đã xử lý theo Resolution round 4 (TASK v1.13 AUD-020) |
 
 ## 6. Evidence Index
 
@@ -124,6 +133,8 @@
 | `E-22` | `PRESENTER_GUIDE.md` | Bảng 21 thuật ngữ + 3 mẹo 15 phút + nhắc 11 hotspot/≤15 phút + quy ước glossary ngoài giờ dry-run (AC-16) |
 | `E-23` | `mockup/index.html` | Dòng `F01B_Glossary.html` nhóm 01 Foundations — done (AC-16) |
 | `E-24` | link-check grep (STEP-10) | index→F01B OK · F01B→F00A/PRESENTER_GUIDE OK · F00A→F01B OK · 16 link bước F00A không đổi (AC-16) |
+| `E-25` | `mockup/F01B_Glossary.html` + `PRESENTER_GUIDE.md` | 21/21 dòng có ví dụ ngắn nguyên văn bảng canonical DEC-33 (AUD-020 — re-verify AC-16) |
+| `E-26` | `mockup/F00A_DemoNarrative.html` | `.st-fstate` 12px — grep `11px` = 0; 16 mốc thời gian + 16 link giữ nguyên (AUD-021 — re-verify AC-10) |
 
 ## 7. Execution Round History
 
@@ -133,5 +144,6 @@
 | `2` | `v1.7` | `READY_FOR_AUDIT` | STEP-05/06: hi-fi toàn bộ + F02_ComponentSet + F50_HotspotMap + 12 state + wire/verify 11 hotspot + link-check OK; chờ Tier 3 append AUDIT.md round 2 (viewport 1366×768, accessibility, totals, timing) |
 | `3` | `v1.9` | `READY_FOR_AUDIT` | STEP-08 phần tự chủ: trang 60 (F60_D01…D08 + F60_D09_D12_Notes) + DECISION_LOG.md + F80_DemoExport HTML/PDF + index nhóm 60/80; chờ Tier 3 append AUDIT.md round 3 (trang 60 variant, Decision Log RQ-11, export đúng thứ tự, deviation Chrome print) |
 | `4` | `v1.12` | `READY_FOR_AUDIT` | STEP-10 (DEC-33 — bộ công cụ diễn thuyết tiếng Việt): F01B_Glossary (21 thuật ngữ, 4 nhóm) + F00A lời thoại Việt 16 bước + PRESENTER_GUIDE.md + index dòng F01B; chờ Tier 3 append AUDIT.md round 4 (AC-16: ≥15 thuật ngữ, 16 lời thoại, guide 3 phần, UI 30 frame không Việt hóa) |
+| `5` | `v1.13` | `READY_FOR_AUDIT` | Planner Resolution round 4 (AUD-020/021 — TASK v1.13): F01B_Glossary bổ sung ví dụ ngắn 21/21 dòng (nguyên văn bảng canonical DEC-33 v0.6; sửa Blocker/SLA lệch chuẩn) + PRESENTER_GUIDE thêm cột Ví dụ ngắn khớp canonical + F00A `.st-fstate` 11px→12px (AUD-021, 16 mốc/16 link giữ nguyên); chờ Tier 3 re-audit round 5 (re-verify AC-16/AC-10 + đối chiếu canonical 21/21) |
 
 > Handoff status: `READY_FOR_AUDIT`

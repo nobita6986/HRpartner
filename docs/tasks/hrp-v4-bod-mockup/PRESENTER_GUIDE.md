@@ -6,31 +6,31 @@
 
 ---
 
-## 1. Bảng 21 thuật ngữ EN → VI (nguồn DEC-33, dùng nguyên, không thêm bớt nghĩa)
+## 1. Bảng 21 thuật ngữ EN → VI (nguồn DEC-33 — bảng canonical DECISION_LOG v0.6, dùng nguyên: nghĩa + ví dụ ngắn, không thêm bớt)
 
-| Nhóm module | Thuật ngữ EN | Tiếng Việt | Nghĩa 1 dòng |
-|---|---|---|---|
-| Bảng điều hành (S01) | Control Tower | Trung tâm điều hành | màn hình tổng quan KPI vận hành nhân sự |
-| Bảng điều hành (S01) | Fill rate | Tỷ lệ lấp đầy | % chỗ đã có người trên tổng cần (ví dụ 47/50 = 94%) |
-| Bảng điều hành (S01) | Workforce | Lực lượng lao động | tổng nhân sự đang hoạt động |
-| Bố trí nhân sự (S02) | Staffing | Bố trí nhân sự | ghép người vào đúng dự án, đúng ca |
-| Bố trí nhân sự (S02) | Talent Pool | Kho ứng viên | danh sách lao động sẵn sàng đi làm |
-| Bố trí nhân sự (S02) | Referral Guard | Chốt chặn giới thiệu | quy tắc chống gian lận khi giới thiệu người |
-| Bố trí nhân sự (S02) | Override | Ghi đè chặn | người có quyền cho phép vượt quy tắc (có ghi lý do) |
-| Bố trí nhân sự (S02) | Maker-checker | Người tạo – Người kiểm | thao tác quan trọng cần 2 người xác nhận |
-| Chuyên cần (S03) | Attendance | Chuyên cần | chấm công, bảng công theo ca |
-| Chuyên cần (S03) | Lock | Khóa chốt | đóng băng số liệu kỳ công, không sửa thêm |
-| Chuyên cần (S03) | Blocker | Yếu tố chặn | lỗi dữ liệu chặn không cho khóa (3 loại dưới) |
-| Chuyên cần (S03) | UNMATCHED_EMPLOYEE | Nhân viên không khớp | công thuộc về ai không xác định được |
-| Chuyên cần (S03) | SOURCE_CONFLICT | Xung đột nguồn | hai nguồn dữ liệu công mâu thuẫn nhau |
-| Chuyên cần (S03) | WRONG_PROJECT | Sai dự án | công ghi nhầm sang dự án khác |
-| Đối soát (S04) | Reconciliation | Đối soát | đối chiếu công-lương giữa đơn vị cung ứng và khách hàng |
-| Đối soát (S04) | Statement | Bảng kê | bảng kê công-lương gửi khách hàng xác nhận |
-| Đối soát (S04) | Margin | Biên lợi nhuận | chênh lệch giữa tiền thu khách hàng và tiền trả đơn vị cung ứng |
-| Đối soát (S04) | Payroll | Tính lương | xử lý bảng lương theo kỳ |
-| Đối soát (S04) | SLA | Cam kết dịch vụ | hạn chót đơn vị cung ứng xác nhận đối soát (ví dụ 3 ngày) |
-| Đối soát (S04) | Vendor | Đơn vị cung ứng | bên cung cấp lao động |
-| Đối soát (S04) | Client | Khách hàng | nhà máy/kho thuê nhân sự |
+| Nhóm module | Thuật ngữ EN | Tiếng Việt | Nghĩa 1 dòng | Ví dụ ngắn |
+|---|---|---|---|---|
+| Bảng điều hành (S01) | Control Tower | Trung tâm điều hành | màn hình tổng quan KPI vận hành nhân sự | "Mở Trung tâm điều hành xem Fill rate toàn hệ" |
+| Bảng điều hành (S01) | Fill rate | Tỷ lệ lấp đầy | % chỗ đã có người trên tổng cần | 47/50 = 94% |
+| Bảng điều hành (S01) | Workforce | Lực lượng lao động | tổng nhân sự đang hoạt động | "Hôm nay 124 người đang làm" |
+| Bố trí nhân sự (S02) | Staffing | Bố trí nhân sự | ghép người vào đúng dự án, đúng ca | "Chuyển Long sang ca D1 An Phát" |
+| Bố trí nhân sự (S02) | Talent Pool | Kho ứng viên | danh sách lao động sẵn sàng đi làm | "Kéo thêm 5 người từ kho ứng viên" |
+| Bố trí nhân sự (S02) | Referral Guard | Chốt chặn giới thiệu | quy tắc chống gian lận khi giới thiệu người | "Người này đang hoạt động ở dự án khác → bị chặn" |
+| Bố trí nhân sự (S02) | Override | Ghi đè chặn | người có quyền cho phép vượt quy tắc (có ghi lý do) | "HR Manager duyệt ghi đè vì đã xác minh" |
+| Bố trí nhân sự (S02) | Maker-checker | Người tạo – Người kiểm | thao tác quan trọng cần 2 người xác nhận | "Bảng kê phải qua người tạo + người duyệt" |
+| Chuyên cần (S03) | Attendance | Chuyên cần | chấm công, bảng công theo ca | "Duyệt bất thường chuyên cần tháng 7" |
+| Chuyên cần (S03) | Lock | Khóa chốt | đóng băng số liệu kỳ công, không sửa thêm | "Đã khóa → chỉ xem, không sửa được" |
+| Chuyên cần (S03) | Blocker | Yếu tố chặn | lỗi dữ liệu chặn không cho khóa (3 loại: #12/13/14) | "Còn 3 yếu tố chặn → chưa khóa được" |
+| Chuyên cần (S03) | UNMATCHED_EMPLOYEE | Nhân viên không khớp | công thuộc về ai không xác định được | "Mã thẻ 12345 không có trong danh sách" |
+| Chuyên cần (S03) | SOURCE_CONFLICT | Xung đột nguồn | hai nguồn dữ liệu công mâu thuẫn nhau | "File import nói 8h, máy chấm công nói 7h" |
+| Chuyên cần (S03) | WRONG_PROJECT | Sai dự án | công ghi nhầm sang dự án khác | "Công của An Phát ghi nhầm vào Yên Phong" |
+| Đối soát (S04) | Reconciliation | Đối soát | đối chiếu công-lương giữa đơn vị cung ứng và khách hàng | "Tháng 7: đối soát 44 dòng công" |
+| Đối soát (S04) | Statement | Bảng kê | bảng kê công-lương gửi khách hàng xác nhận | "Gửi bảng kê cho khách duyệt trước ngày 5" |
+| Đối soát (S04) | Margin | Biên lợi nhuận | chênh lệch giữa tiền thu khách hàng và tiền trả đơn vị cung ứng | "Margin 18% dự án An Phát" |
+| Đối soát (S04) | Payroll | Tính lương | xử lý bảng lương theo kỳ | "Chạy tính lương kỳ tháng 7" |
+| Đối soát (S04) | SLA | Cam kết dịch vụ | hạn chót đơn vị cung ứng xác nhận đối soát | "3 ngày kể từ khi gửi bảng kê" |
+| Đối soát (S04) | Vendor | Đơn vị cung ứng | bên cung cấp lao động | "Xem danh sách các đơn vị cung ứng" |
+| Đối soát (S04) | Client | Khách hàng | nhà máy/kho thuê nhân sự | "Điện tử An Phát duyệt bảng kê" |
 
 ## 2. Ba mẹo diễn thuyết 15 phút
 
