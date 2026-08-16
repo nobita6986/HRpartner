@@ -59,7 +59,6 @@ Ngoài ra khi viết contract: **chỉ đọc** source/schema/test để xác mi
 - **`app/bcc/` + `appBCC/` là khu vực sếp phát triển song song** — không đổi logic, không stage. NGOẠI LỆ duy nhất (đã chốt DEC-09 A): `appBCC/app.py` chỉ được đổi **đúng 1 dòng** env `DATABASE_URL` → `APPBCC_DATABASE_URL`.
 - **CẤM `git add -A` / `git add .`** — chỉ add đúng file của task.
 - **Phone/password thật KHÔNG BAO GIỜ vào HANDOFF.md/AUDIT.md/repo** (repo public) — evidence luôn masked.
-- `docs/tasks/hrp-gitlab-mirror/` là việc ngoài pipeline (sếp tự quản) — hỏi sếp trước khi đụng.
 
 ### 3.3 Kỷ luật contract (rút từ tier1.md + kinh nghiệm)
 
@@ -101,8 +100,7 @@ Kho quyết định chi tiết: `docs/tasks/hrp-v4-bod-mockup/DECISION_LOG.md`.
 | `hrp-phase1-identity-core` | v1.1-close | **ACCEPTED** (commit `dc3e772`) | JWT + 13 role + RBAC. Đóng |
 | `hrp-phase2-tenant-scope` | v1.4-close | **ACCEPTED** (commit `e963d82`) | RLS + scope + masking 7 trường + runbook production. Đóng 16/08 — production RLS theo runbook trước Phase 4 |
 | `hrp-phase2-tenant-scope-v2` | — | **CANCELLED** | Tách sai (1 phase = 1 contract) — bỏ qua, đừng đọc nhầm |
-| `hrp-phase3-integrity` | v1.1 | **READY_FOR_EXECUTION** | ⬅️ **ĐANG CHỜ SẾP GIAO TIER 2: `/code hrp-phase3-integrity`** — Baseline `e963d82`, DEC-07/Q-01 đã đóng |
-| `hrp-gitlab-mirror` | — | Ngoài pipeline | Việc của sếp — hỏi trước khi đụng |
+| `hrp-phase3-integrity` | v1.2 | **READY_FOR_EXECUTION** | ⬅️ **ĐANG CHỜ SẾP GIAO TIER 2: `/code hrp-phase3-integrity`** — Baseline `e963d82`, DEC-07/Q-01 đã đóng; Planner Resolution TR2-01..04 (TIER2-REPORT.md đã xử, 16/08) |
 
 ### Vị trí lộ trình hiện tại
 
