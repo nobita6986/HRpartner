@@ -61,3 +61,5 @@ public/docs/
 .codegraph/
 stitch/
 favicon.ico
+
+.vercel
