@@ -175,18 +175,94 @@ async function seedWorkers() {
   return count;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 1 identity-core (TASK hrp-phase1-identity-core, RQ-08 + DEC-07):
+// Seed Permission catalog + RolePermission matrix idempotent.
+// - Upsert Permission (code + group + description) — không reset.
+// - Upsert RolePermission (role + permissionCode) — không reset.
+// - KHÔNG đụng UserPermissionGrant (giữ nguyên grant manual — DEC-07).
+// - KHÔNG reset password user (đảm bảo idempotent).
+// ─────────────────────────────────────────────────────────────────────────────
+const PERMISSION_SEED = [
+  { code: 'CAN_MANAGE_PERMISSIONS',     group: 'SYSTEM',    description: 'Cấp/thu quyền cho user khác (chỉ root cấp được — G22).' },
+  { code: 'CAN_CREATE_WORKER',          group: 'WORKER',    description: 'Tạo hồ sơ worker mới (Sale/HR tạo nguồn).' },
+  { code: 'CAN_VIEW_UNASSIGNED_POOL',   group: 'WORKER',    description: 'Xem pool worker chưa phân công (assignedToId = null).' },
+  { code: 'CAN_VIEW_WORKER_SENSITIVE',  group: 'WORKER',    description: 'Xem trường nhạy cảm (CCCD, bankAccount, selfie) — Phase 2 masking.' },
+  { code: 'CAN_APPROVE_PAYROLL',        group: 'PAYROLL',   description: 'Duyệt bảng lương (HR_MANAGER + ACCOUNTANT).' },
+  { code: 'CAN_FORCE_LOCK_STATEMENT',   group: 'STATEMENT', description: 'Khóa statement cưỡng bức (reconciliation cuối kỳ).' },
+  { code: 'CAN_OVERRIDE_REFERRAL_GUARD',group: 'REFERRAL',  description: 'Bỏ qua referral guard (SOP S1/S2/S3 §9.3.1).' },
+  { code: 'CAN_APPROVE_TICKET_LEVEL2',  group: 'TICKET',    description: 'Duyệt ticket level 2 (duyệt 2 chữ ký cho ADVANCE_SALARY).' },
+  { code: 'CAN_PROCESS_TICKET',         group: 'TICKET',    description: 'Xử lý ticket (cancel/pay/reject — Planner bổ sung nhóm TICKET).' },
+  { code: 'CAN_EDIT_CONTRACT',          group: 'CONTRACT',  description: 'Sửa hợp đồng worker (HR_MANAGER).' },
+];
+
+// Role → tập permission codes (theo data-scope-security §4.2 seed mẫu + DEC-02 bổ sung).
+// ADMIN short-circuit nên không cần row (resolver trả ALL).
+const ROLE_PERMISSION_SEED = [
+  // HR_MANAGER — đa quyền nhất (trừ MANAGE root + VIEW_WORKER_SENSITIVE giai đoạn đầu)
+  { role: 'HR_MANAGER', code: 'CAN_CREATE_WORKER' },
+  { role: 'HR_MANAGER', code: 'CAN_VIEW_UNASSIGNED_POOL' },
+  { role: 'HR_MANAGER', code: 'CAN_APPROVE_PAYROLL' },
+  { role: 'HR_MANAGER', code: 'CAN_FORCE_LOCK_STATEMENT' },
+  { role: 'HR_MANAGER', code: 'CAN_OVERRIDE_REFERRAL_GUARD' },
+  { role: 'HR_MANAGER', code: 'CAN_APPROVE_TICKET_LEVEL2' },
+  { role: 'HR_MANAGER', code: 'CAN_PROCESS_TICKET' },
+  { role: 'HR_MANAGER', code: 'CAN_EDIT_CONTRACT' },
+  { role: 'HR_MANAGER', code: 'CAN_VIEW_WORKER_SENSITIVE' },
+
+  // HR_STAFF — tạo worker, xử lý ticket
+  { role: 'HR_STAFF', code: 'CAN_CREATE_WORKER' },
+  { role: 'HR_STAFF', code: 'CAN_PROCESS_TICKET' },
+
+  // SALE — tạo worker
+  { role: 'SALE', code: 'CAN_CREATE_WORKER' },
+
+  // ACCOUNTANT — duyệt payroll
+  { role: 'ACCOUNTANT', code: 'CAN_APPROVE_PAYROLL' },
+];
+
+async function seedPermissions() {
+  let permCount = 0;
+  let rpCount = 0;
+
+  // 1. Upsert Permission catalog
+  for (const p of PERMISSION_SEED) {
+    await prisma.permission.upsert({
+      where: { code: p.code },
+      update: { group: p.group, description: p.description },
+      create: { code: p.code, group: p.group, description: p.description },
+    });
+    permCount++;
+  }
+
+  // 2. Upsert RolePermission matrix
+  for (const rp of ROLE_PERMISSION_SEED) {
+    await prisma.rolePermission.upsert({
+      where: { role_permissionCode: { role: rp.role, permissionCode: rp.code } },
+      update: {},
+      create: { role: rp.role, permissionCode: rp.code, grantedBy: 'root' },
+    });
+    rpCount++;
+  }
+
+  // 3. KHÔNG đụng UserPermissionGrant (theo DEC-07 — giữ nguyên grant manual).
+  return { permCount, rpCount };
+}
+
 async function main() {
-  console.log('[seed.mjs] Phase 0 fixtures - idempotent upsert');
+  console.log('[seed.mjs] Phase 0 fixtures + Phase 1 identity-core permissions - idempotent upsert');
   console.log('[seed.mjs] CANONICAL MOCK ONLY - no real PII');
 
   const users = await seedUsers();
   const projects = await seedProjects();
   const workers = await seedWorkers();
   const auth = await seedAuthAccounts();
+  const perms = await seedPermissions();
 
   console.log(`[seed.mjs] Upserted: ${users} users, ${projects} projects, ${workers} workers`);
   console.log(`[seed.mjs] Auth accounts (ENV): ${auth.created} created, ${auth.updated} updated, ${auth.skipped} skipped`);
-  console.log(`[seed.mjs] Total scenarios: ${users + projects + workers} (12 role + 4 project + 3 worker + 1 client = 20)`);
+  console.log(`[seed.mjs] Permissions: ${perms.permCount} catalog, ${perms.rpCount} role-permissions`);
+  console.log(`[seed.mjs] Total scenarios: ${users + projects + workers + perms.permCount + perms.rpCount} (12 role + 4 project + 3 worker + 1 client + 10 perm + 13 role-perm = 43)`);
 }
 
 main()

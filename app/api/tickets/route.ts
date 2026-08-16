@@ -2,33 +2,29 @@
  * POST /api/tickets
  * Worker (hoặc HR tạo hộ) tạo ticket mới.
  *
- * Body: CreateTicketInput
- * Headers:
- *   - Authorization: Bearer <userId>:<role>
- *   - x-idempotency-key: <uuid> (optional)
- *
- * Response: 201 { ticket: Ticket }
- *           400 { error, message } validation
- *           401 { error, message } auth
+ * Auth (Phase 1 identity-core — RQ-07, DEC-08):
+ *  - JWT verify; SystemRole ngoài 6 TicketActorRole → 403.
+ *  - GET/POST chỉ cần auth (200 role yếu theo PHASE_KHOAHOC exit criteria).
+ *  - Idempotency key giữ nguyên hành vi Phase 3.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
-import { TicketService, TicketServiceError } from '@/src/domains/attendance/ticket.service';
-import { getSessionUser, getIdempotencyKey } from '@/src/domains/attendance/session';
+import { TicketService } from '@/src/domains/attendance/ticket.service';
+import { getTicketAuth, ticketsErrorResponse } from '@/src/shared/auth/ticket-route-helpers';
+import { getIdempotencyKey } from '@/src/domains/attendance/session';
 import { getPrisma } from '@/src/lib/db';
 
 const service = new TicketService(getPrisma());
 
 export async function POST(req: NextRequest) {
   try {
-    const actor = getSessionUser(req);
+    const { sessionUser } = await getTicketAuth(req);
     const body = await req.json();
     const idempotencyKey = getIdempotencyKey(req);
 
     // Body mặc định: worker tự tạo cho mình
-    if (actor.role === 'WORKER') {
-      body.workerId = body.workerId ?? actor.id;
-      if (body.workerId !== actor.id) {
+    if (sessionUser.role === 'WORKER') {
+      body.workerId = body.workerId ?? sessionUser.id;
+      if (body.workerId !== sessionUser.id) {
         return NextResponse.json(
           { error: 'FORBIDDEN', message: 'Worker can only create ticket for self' },
           { status: 403 },
@@ -52,19 +48,16 @@ export async function POST(req: NextRequest) {
       idempotencyKey,
     };
 
-    const ticket = await service.createTicket(input, actor);
+    const ticket = await service.createTicket(input, sessionUser);
     return NextResponse.json({ ticket }, { status: 201 });
   } catch (err) {
-    return errorResponse(err);
+    return ticketsErrorResponse(err);
   }
 }
 
-/**
- * GET /api/tickets?status=&type=&workerId=&assignedToMe=&take=&skip=
- */
 export async function GET(req: NextRequest) {
   try {
-    const actor = getSessionUser(req);
+    const { sessionUser } = await getTicketAuth(req);
     const url = new URL(req.url);
 
     const statusParam = url.searchParams.get('status');
@@ -80,28 +73,9 @@ export async function GET(req: NextRequest) {
       orderBy: (url.searchParams.get('orderBy') as any) ?? 'createdAt',
     };
 
-    const result = await service.listTickets(filter, actor);
+    const result = await service.listTickets(filter, sessionUser);
     return NextResponse.json(result, { status: 200 });
   } catch (err) {
-    return errorResponse(err);
+    return ticketsErrorResponse(err);
   }
-}
-
-function errorResponse(err: unknown): NextResponse {
-  if (err instanceof TicketServiceError) {
-    const statusMap: Record<string, number> = {
-      NOT_FOUND: 404,
-      INVALID_TRANSITION: 409,
-      FORBIDDEN: 403,
-      VALIDATION: 400,
-      CONCURRENT_UPDATE: 409,
-      IDEMPOTENCY_CONFLICT: 409,
-    };
-    return NextResponse.json(
-      { error: err.code, message: err.message },
-      { status: statusMap[err.code] ?? 500 },
-    );
-  }
-  console.error('[POST /api/tickets] unexpected error', err);
-  return NextResponse.json({ error: 'INTERNAL', message: String(err) }, { status: 500 });
 }
