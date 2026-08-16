@@ -1,4 +1,4 @@
-# HRP SYSTEM — UNIFIED PROJECT PLAN (v4.21)
+# HRP SYSTEM — UNIFIED PROJECT PLAN (v4.22)
 ## Hệ thống Quản trị Nguồn Nhân lực & Cung ứng Nhân lực
 
 > **Phiên bản:** 4.0 — bản hợp nhất: khử mâu thuẫn nội tại của v3.3 (xem changelog 0.1.7, quyết định F1–F31)
@@ -280,6 +280,15 @@ Cập nhật liên quan: §7.2 (roadmap + Phase Compliance), §10 (quy tắc hoa
 | G32 | `ve-hrp.html` (bản trực quan) lạc hậu so với V4 tại 12 điểm (domain tự vẽ, "50/64" feature, "4 vòng đời" vs 5 SM, tags trạng thái sai, tạm ứng 70%/50%, quy tắc quá 2 vòng, mục "Cho cuộc họp" lỗi thời, WBS 465 MD, ma trận 11/13 roles, 21/29 payroll keys, BHXH "21.5%", "OAuth" vendor) | Đồng bộ `ve-hrp.html` (root + public/) theo V4 — chi tiết từng mục ghi trong changelog của chính file đó |
 
 Cập nhật liên quan: §6 (row M7), §12.3 (1h), §21 (Q#24/Q#25); footer version.
+
+### 0.1.16. Thay đổi v4.22 — chốt Q#24/Q#25 (founder, 16/08/2026)
+
+| # | Vấn đề | Quyết định v4.22 |
+|---|--------|------------------|
+| G33 | Q#24 (V4.21) còn treo — lịch chốt công/trả lương | **✅ ĐÃ CHỐT (founder, 16/08):** HRP phục vụ **80 đơn vị sử dụng lao động**, phụ thuộc hoàn toàn vào ngày trả lương của từng đơn vị → **KHÔNG có mốc cố định toàn hệ thống**; cut-off + pay day **config theo từng khách hàng/payroll group** (khớp Q#17); ngày rơi cuối tuần/lễ → lùi theo ngày làm việc |
+| G34 | Q#25 (V4.21) còn treo — cơ chế khách hàng xác nhận biên bản đối soát (Billing Client G-02b) | **✅ ĐÃ CHỐT (founder, 16/08):** khách hàng xác nhận bằng **bản cứng** (quy trình chính thức); hệ thống **tự sinh statement PDF sẵn sàng để in**; trạng thái xác nhận do KT ghi thủ công có audit; link xác nhận online qua email → **tùy chọn P2, không bắt buộc MVP** |
+
+Cập nhật liên quan: §21 (Q#24/Q#25 → ĐÃ CHỐT); footer version.
 
 ### 0.2. Các điểm review KHÔNG tiếp thu / tiếp thu có điều chỉnh
 
@@ -3353,8 +3362,8 @@ flowchart LR
 | **21** | Lưu mã giới thiệu thế nào (Zalo hay xóa cookie) + chính sách bấm nhiều link? | URL param + localStorage (30 ngày) + ô nhập tay — KHÔNG dựa cookie; first-click wins — default; chốt với founder (G13, G15) |
 | **22** | Scope dữ liệu của **MKT** và **Ban giám đốc (DIRECTOR)**? | **ĐÃ CHỐT (HR §5):** DIRECTOR đọc toàn bộ có projection (ẩn CCCD/bank/selfie, ghi vẫn qua Permission Pool); MKT: CRM scope — lead/client + dự án isPublic, KHÔNG đọc Worker; quyền feature do root cấp (G22) |
 | **23** | Trang web công cộng HRP có là trang tìm việc không? Scope và timing? | **ĐÃ CHỐT (founder, 15/08/2026):** có — trang công cộng 4 trang (Home tìm việc, Danh sách việc, Chi tiết việc, Công ty đang tuyển) đọc từ `Project.isPublic` + StaffingOrder, ISR 300s; job board công cộng (A-04) kéo về **Wave 1 sau M3**; apply self-service (A-05) + PWA vẫn Wave 3; demo BoD thêm 1 frame tĩnh `S05_JobBoard_Public` (không flow) |
-| **24** | Lịch chốt công / trả lương cố định? | **CẦN CHỐT (founder):** khuyến nghị chốt công **mùng 5**, trả lương **mùng 10** hàng tháng (đề xuất từ rà soát ve-hrp 16/08 — V4.21 G30); cut-off/pay day config theo payroll group (khớp Q#17); ngày rơi cuối tuần/lễ → lùi theo ngày làm việc |
-| **25** | Khách hàng xác nhận biên bản đối soát (Billing Client G-02b) bằng cách nào? | **CẦN CHỐT (founder):** khuyến nghị MVP = gửi statement PDF qua email + link xác nhận (token hết hạn, không cần đăng nhập); trạng thái xác nhận do KT ghi thủ công có audit; tự động hóa sau Wave 4 |
+| **24** | Lịch chốt công / trả lương cố định? | **ĐÃ CHỐT (founder, 16/08 — V4.22 G33):** HRP phục vụ **80 đơn vị sử dụng lao động**, phụ thuộc hoàn toàn vào ngày trả lương của họ → **KHÔNG áp mốc cố định**; cut-off + pay day **config theo từng khách hàng/payroll group** (khớp Q#17); ngày rơi cuối tuần/lễ → lùi theo ngày làm việc |
+| **25** | Khách hàng xác nhận biên bản đối soát (Billing Client G-02b) bằng cách nào? | **ĐÃ CHỐT (founder, 16/08 — V4.22 G34):** khách hàng xác nhận bằng **bản cứng** (quy trình chính thức); hệ thống **tự sinh statement PDF sẵn sàng để in**; trạng thái xác nhận do KT ghi thủ công có audit; link xác nhận online qua email (token hết hạn) là **tùy chọn P2** — không bắt buộc MVP |
 
 ---
 
@@ -3409,6 +3418,6 @@ Sau đó: Wave 1 (M0+M1+M3 core+M5 core) → Wave 2 (M7+M8 tối giản) → UAT
 
 ---
 
-*Document version: 4.21*
+*Document version: 4.22*
 *Ngày: 16/08/2026*
-*Trạng thái: Bản chuẩn (canonical) — đã qua các vòng phản biện G10–G32 (xem changelog 0.1.8–0.1.15); mô hình quyền ROOT đã chốt (G22 §15.1); job board công cộng đã chốt (Q#23 §21, Wave 1 sau M3); tham chiếu cạnh tranh đã hấp thụ (G24 §20); đánh giá bảo mật đối thủ + hardening bề mặt đã chốt (G25 §15.2, §20.1); backup daily Neon → R2 đã chốt (G26 §18.4); design system "Warm Professionalism" + 3 page demo đã chốt (G27 §13, stitch/); mức hoa hồng động (admin panel) + BHXH/TNCN tách Phase Compliance sau cùng đã chốt (G28 §21 Q#2/Q#4); rà soát ve-hrp.html đã hấp thụ (G29–G32: taxonomy lỗi import §12.3, Q#24/Q#25, đồng bộ ve-hrp); chờ chốt các mục [CẦN CHỐT] còn lại (§21 — nay gồm Q#24/Q#25) + dữ liệu mẫu để khởi động Sprint 0*
+*Trạng thái: Bản chuẩn (canonical) — đã qua các vòng phản biện G10–G34 (xem changelog 0.1.8–0.1.16); mô hình quyền ROOT đã chốt (G22 §15.1); job board công cộng đã chốt (Q#23 §21, Wave 1 sau M3); tham chiếu cạnh tranh đã hấp thụ (G24 §20); đánh giá bảo mật đối thủ + hardening bề mặt đã chốt (G25 §15.2, §20.1); backup daily Neon → R2 đã chốt (G26 §18.4); design system "Warm Professionalism" + 3 page demo đã chốt (G27 §13, stitch/); mức hoa hồng động (admin panel) + BHXH/TNCN tách Phase Compliance sau cùng đã chốt (G28 §21 Q#2/Q#4); rà soát ve-hrp.html đã hấp thụ (G29–G32: taxonomy lỗi import §12.3, Q#24/Q#25, đồng bộ ve-hrp); Q#24/Q#25 đã chốt 16/08 (G33–G34: lịch chốt công/trả lương config theo từng khách hàng — 80 ĐVSDL; statement xác nhận bản cứng + PDF in); chỉ còn chờ dữ liệu mẫu (Q#9) để khởi động Sprint 0*
