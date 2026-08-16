@@ -523,3 +523,200 @@ Không có finding P0/P1/P2 trong round 3. Tổng 4 finding mới (AUD-015 → A
 | 2 | `AUD-014` | CLOSED (deviation) | `CLOSED` | Không liên quan frame mới |
 
 > Đã bàn giao AUDIT.md cho Tier 1; chờ Planner Resolution trong TASK.md.
+
+# AUDIT ROUND 4 — DESIGN_AUDIT (STEP-10 — Verify AC-16, DEC-33)
+
+## 0. Audit Control — Round 4
+
+| Field | Value |
+|---|---|
+| Task slug | `hrp-v4-bod-mockup` |
+| Work/Audit type | `DESIGN / DESIGN_AUDIT` |
+| Spec version | `v1.12` (khớp TASK.md + HANDOFF.md round 4) |
+| Execution round | `4` |
+| Audit round | `4` |
+| Auditor/context | `Tier 3 — Auditor (context độc lập; không kế thừa bảng AC của HANDOFF — tự chạy git diff/grep/đọc từng file)` |
+| Baseline/diff/artifacts | `git eefba52` (cha `d8b677e`); đối tượng kiểm: `mockup/F01B_Glossary.html` (mới), `mockup/F00A_DemoNarrative.html`, `mockup/index.html`, `PRESENTER_GUIDE.md` (mới), `HANDOFF.md`; nguồn đối chiếu: `TASK.md` (v1.12 — RQ-14/STEP-10/AC-16), `DECISION_LOG.md` (DEC-33), `mockup/_assets/hrp.css` (G27) |
+| Independence | `Confirmed` — chạy lại `git show eefba52 --stat/--name-status`, `git diff d8b677e..eefba52` cho F00A + toàn cục, đọc trực tiếp 3 file + index.html, grep hrp.css từng token/class, kiểm tra tồn tại từng frame đích, đếm tay 21 thuật ngữ / 16 lời thoại |
+| Audit time | `2026-08-16 (VN)` |
+
+## 1. Findings — Round 4
+
+Sắp xếp P0 → P3. Không có finding P0/P1/P2. Mọi finding dưới đây đều P3 (không chặn AC-16 — AC-16 ghi `Blocking? No`).
+
+### AUD-019 — Danh sách canonical 21 thuật ngữ của DEC-33 không được ghi trong repo — không kiểm chứng độc lập được claim "dùng nguyên, không thêm bớt nghĩa"
+
+- **Severity:** `P3` (traceability)
+- **Status:** `OPEN`
+- **RQ/AC:** `RQ-14 / AC-16`
+- **Location:** `DECISION_LOG.md:42` (DEC-33 chỉ ghi scope "≥15 thuật ngữ EN→VI + nghĩa 1 dòng + ví dụ" — không liệt kê 21 thuật ngữ, không kèm nghĩa/ví dụ); `HANDOFF.md:97` (BLK-11 claim "F01B dùng nguyên 21 thuật ngữ + nghĩa theo danh sách DEC-33")
+- **Observed fact:** Grep toàn repo (`Control Tower`, `Chốt chặn giới thiệu`, `Kho ứng viên`...) cho thấy danh sách 21 thuật ngữ kèm nghĩa **chỉ tồn tại trong chính 2 deliverable** (`F01B_Glossary.html:44-76`, `PRESENTER_GUIDE.md:11-33`) — không có bản chuẩn nào ngoài deliverable để đối chiếu. `git show d8b677e:DECISION_LOG.md` xác nhận DEC-33 từ khi khởi tạo (commit d8b677e, cùng ngày) cũng chỉ ghi "≥15".
+- **Impact:** Không thể xác minh độc lập khẳng định "đúng theo danh sách DEC-33 / không thêm bớt nghĩa" (BLK-11). Auditor chỉ kiểm chứng được tính nhất quán nội bộ (F01B ↔ PRESENTER_GUIDE khớp 21/21 nghĩa; nghĩa spot-check khớp nghiệp vụ §4.4 — xem §2). Khi freeze Mockup Baseline (D14), nếu danh sách thuật ngữ không được chốt văn bản, re-audit sau này không có chuẩn.
+- **Recommendation:** Planner ghi danh sách 21 thuật ngữ chốt (EN → VI + nghĩa) vào `DECISION_LOG.md` DEC-33 (hoặc mục kèm) trước buổi BoD để trở thành chuẩn so sánh chính thức.
+
+### AUD-020 — AC-16 yêu cầu "mỗi dòng có nghĩa tiếng Việt 1 dòng + ví dụ ngắn" nhưng F01B chỉ có ví dụ ở 3/21 dòng
+
+- **Severity:** `P3` (theo chữ nghĩa pass-condition)
+- **Status:** `OPEN`
+- **RQ/AC:** `RQ-14 / AC-16` (pass condition, `TASK.md:305`); scope DEC-33 (`DECISION_LOG.md:42`) cũng ghi "nghĩa 1 dòng + ví dụ"
+- **Location:** `mockup/F01B_Glossary.html` — ví dụ tường minh chỉ có 3 dòng: `:45` (Fill rate — "47/50 = 94%"), `:62` (Blocker — "3 loại dưới"), `:74` (SLA — "ví dụ 3 ngày"); 18/21 dòng còn lại (vd `:44` Control Tower, `:46` Workforce, `:51-55`, `:60-61`, `:63-65`, `:70-73`, `:75-76`) chỉ có nghĩa 1 dòng, không kèm ví dụ ngắn
+- **Observed fact:** Đếm tay từng `.gl-line` trong 4 nhóm: 21 dòng × `gl-en → gl-vi + gl-def` đều đủ nghĩa 1 dòng; nhưng tiêu chí "ví dụ ngắn" của AC-16 chỉ đạt 3/21 dòng. HANDOFF BLK-11 giải thích chủ đích "mục không kèm ví dụ trong danh sách thì không thêm" — nhưng vì danh sách canonical không có trong repo (AUD-019), lý do này không đối chiếu được.
+- **Impact:** Thấp — glossary vẫn dùng được cho presenter; nhưng pass-condition AC-16 (viết trong contract v1.12) chưa đạt trọn vẹn, cần Planner chọn 1 trong 2 hướng.
+- **Recommendation:** (a) bổ sung ví dụ ngắn cho 18 dòng còn lại trong F01B + PRESENTER_GUIDE, hoặc (b) nếu chuẩn DEC-33 chỉ đòi "nghĩa 1 dòng, ví dụ khi có sẵn" thì sửa lại wording AC-16 (`TASK.md:305`) + DEC-33 cho khớp ý định.
+
+### AUD-021 — F00A `.st-fstate` vẫn 11px — tàn dư của chuẩn AUD-011 (PDD §2.3 ≥12px), tồn tại từ trước eefba52
+
+- **Severity:** `P3`
+- **Status:** `OPEN` (pre-existing — KHÔNG phải regression của STEP-10; nêu vì cùng file được chạm tay)
+- **RQ/AC:** `RQ-09 / AC-10` (chuẩn 12px từ AUD-011, PDD §2.3)
+- **Location:** `mockup/F00A_DemoNarrative.html:28` — `.st-file .st-fstate { font: 400 11px/14px ... }`
+- **Observed fact:** Diff `d8b677e..eefba52` xác nhận dòng này nằm trong context **không đổi** của commit — 11px có từ trước (round 1/2), bị sót khỏi sweep AUD-011 (round 2 — chỉ sửa 7 chỗ hrp.css + `.hm-step` F50). Toàn bộ rule MỚI của round 4 đều ≥12px (`.vi-tag` 12px `:33`, `.say-orig/.say-vi` thừa hưởng 13px từ `.step-row` `:22`; F01B toàn bộ 12px).
+- **Impact:** Rất thấp — text phụ dưới tên file, chỉ có trên tài liệu presenter (không phải UI 30 frame); nhưng vi phạm chuẩn font đã chốt.
+- **Recommendation:** Nâng 11px→12px ở `F00A_DemoNarrative.html:28` khi Planner đóng round 4 (1 dòng).
+
+## 2. Acceptance Verification — Round 4
+
+Bảng kết quả độc lập từng mục (AC-16 / RQ-14 / DEC-33 — không kế thừa HANDOFF):
+
+| # | Hạng mục | Kết quả | Bằng chứng độc lập |
+|---|---|---|---|
+| 1 | Commit `eefba52` = đúng 5 file, không file lạ, không đụng appBCC | `PASS` | `git show eefba52 --name-status`: 2 A (`PRESENTER_GUIDE.md`, `mockup/F01B_Glossary.html`) + 3 M (`HANDOFF.md`, `mockup/F00A_DemoNarrative.html`, `mockup/index.html`); cha = `d8b677e`; `git diff d8b677e..eefba52 --stat` trùng khớp 5 file — không file nào ngoài danh sách |
+| 2 | F01B tồn tại + đủ 21/21 thuật ngữ EN→VI (≥15 theo DEC-33) | `PASS` | Đếm tay `mockup/F01B_Glossary.html:44-76`: 21 `.gl-line` đủ `gl-en → gl-vi + gl-def`; khớp 21/21 với bảng `PRESENTER_GUIDE.md:11-33` |
+| 3 | Mỗi dòng có nghĩa tiếng Việt 1 dòng | `PASS` | 21/21 `.gl-def` đều 1 câu ngắn; spot-check nghĩa khớp nghiệp vụ: Fill rate 47/50=94% ✓ §4.4 (`F01B:45`), Blocker 3 loại ✓ DEC-09 (`:62`), Override có quyền + lý do ✓ DEC-07 (`:54`), Maker-checker 2 người ✓ DEC-08 (`:55`), SLA 3 ngày ✓ DEC-19 (`:74`) |
+| 4 | Ví dụ ngắn mỗi dòng (theo chữ nghĩa AC-16) | `CONDITIONAL` | Chỉ 3/21 dòng có ví dụ tường minh (`F01B:45,62,74`) — 18 dòng thiếu → **AUD-020** |
+| 5 | Nhóm theo module: 4 nhóm đúng 3/5/6/7 | `PASS` | `F01B:42-47` Bảng điều hành (S01) = 3 · `:49-56` Bố trí nhân sự (S02) = 5 · `:58-66` Chuyên cần (S03) = 6 · `:68-77` Đối soát (S04) = 7 · tổng 21 ✓ |
+| 6 | Watermark `DỮ LIỆU MINH HỌA` có dấu | `PASS` | `F01B:37` (class `watermark-badge push-right`) · `F00A:47` |
+| 7 | Không PII, không brand thật | `PASS` | F01B chỉ chứa thuật ngữ (0 SĐT/CCCD/bank/lương, 0 tên công ty/người thật); F00A các bản Việt chỉ dùng nhân vật/ID/số canonical §4.4 (An Phát, Nam, Mai, Long, Duy, AP-QM-1048, 1.222, 490,5...) |
+| 8 | Render hợp lệ: class/token tồn tại trong hrp.css | `PASS` | Grep `_assets/hrp.css`: `body.backdrop` (`:84`), `.frame-wrap` (`:115`), `.frame-canvas` (`:116`), `.watermark-badge` (`:290`), `.push-right` (`:835`), tokens `--primary/--primary-dark/--primary-soft/--surface/--on-surface/--on-surface-variant/--line/--radius-md` (`:12-41`) + `--font-head/--font-body/--font-label` (`:46-48`) — đủ 100%; font ≥12px toàn bộ F01B |
+| 9 | F00A: 16/16 lời thoại có bản diễn đạt Việt | `PASS` | Đếm `span.say-vi` = 16 (dòng 77, 84, 91, 98, 106, 114, 121, 128, 135, 143, 151, 159, 167, 175, 183, 190), mỗi bản có thẻ `VI` + kèm EN trong ngoặc lần đầu; lời thoại gốc giữ nguyên trong `.say-orig` |
+| 10 | F00A: mốc thời gian (00:00–13:00) + 16 link frame KHÔNG đổi | `PASS` | `git diff d8b677e..eefba52 -- mockup/F00A_DemoNarrative.html`: 0 thay đổi trên bất kỳ `st-time`/`href` nào của 16 bước (chỉ thêm `.say-orig/.say-vi` wrapper + header note `:46` + legend `:63`); 16 mốc 00:00→13:00 giữ nguyên |
+| 11 | index.html: nhóm 01 có dòng F01B (done) | `PASS` | `mockup/index.html:62` — `F01B_Glossary.html` · `Từ điển thuật ngữ EN→VI — DEC-33` · `STEP-10 ✓`, nằm trong group-head 01 Foundations (`:58`), đúng vị trí giữa F01_StatusLanguage và F01_Density |
+| 12 | PRESENTER_GUIDE.md tồn tại + đủ 3 phần | `PASS` | §1 bảng 21 thuật ngữ (`PRESENTER_GUIDE.md:11-33`); §2 ba mẹo 15 phút (`:35-44`) — Mẹo 1 ghi rõ "**Glossary là tài liệu tham khảo — không tính vào 15 phút dry-run**" (`:38`); §3 nhắc **11 hotspot** đúng trình tự F00A (`:48`) + tổng demo ≤15 phút (`:49`) + không submit thật 03:10/12:10 (`:50`) + fallback PDF (`:51`) + con số cốt lõi (`:52`) |
+| 13 | UI 30 frame không bị Việt hóa | `PASS` | `git diff d8b677e..eefba52 --stat` = đúng 5 file nêu ở mục 1 — 0 file S0x/F0x/F5x/F6x/F8x nào khác bị sửa; F00A là trang presenter (ngoài 30 frame màn hình) |
+| 14 | Link-check | `PASS` | index → `F01B_Glossary.html` OK (cùng thư mục, file tồn tại); F01B → `F00A_DemoNarrative.html` + `../PRESENTER_GUIDE.md` OK (`F01B:81`); F00A → `F01B_Glossary.html` OK (`F00A:46`); 16 link bước trỏ 14 file đích — kiểm tra từng file tồn tại trên đĩa: 14/14 OK (S02_Staffing 2 bước, S04_Reconciliation_Internal 2 bước) |
+
+**Verdict AC-16:** `CONDITIONAL` — xem §6.
+
+## 3. Scope và Impact — Round 4
+
+- **Trong phạm vi:** 3 artifact STEP-10 (`F01B_Glossary.html`, lời thoại Việt trong `F00A_DemoNarrative.html`, `PRESENTER_GUIDE.md`) + `index.html` (dòng F01B) + tính nguyên vẹn của 30 frame UI + link-check. Không re-audit toàn bộ nội dung nghiệp vụ 30 frame (đã làm round 1–3).
+- **Ngoài phạm vi:** 2 dry-run AC-12 (thuộc sếp, vẫn chờ); S05 (STEP-09 — thuộc re-audit round khác); nội dung thuật ngữ EN trên UI (cố ý giữ nguyên theo DEC-33).
+- **Impact tổng thể:** Thấp — không có gap chặn BoD demo; 3 finding đều P3. AUD-020 là gap theo chữ nghĩa pass-condition AC-16 duy nhất; AUD-019/021 là traceability/cosmetic.
+
+## 4. Independent Evidence — Round 4
+
+- `git show eefba52 --stat` / `--name-status` — 5 file, không file lạ, cha `d8b677e`; appBCC không đụng.
+- `git diff d8b677e..eefba52 --stat` — trùng khớp 5 file (bằng chứng mục 1, 13).
+- `git diff d8b677e..eefba52 -- mockup/F00A_DemoNarrative.html` — toàn bộ diff là thêm wrapper `.say-orig/.say-vi`, header note, legend; 0 thay đổi time/link.
+- Đếm tay: 21 `.gl-line` F01B (nhóm 3/5/6/7) · 16 `st-time` + 16 `say-vi` F00A · 21 hàng bảng PRESENTER_GUIDE §1.
+- Grep `_assets/hrp.css` — mọi class/token F01B + F00A mới (mục 8).
+- Kiểm tra tồn tại 14 file frame đích của 16 link F00A (mục 14).
+- Grep toàn repo danh sách canonical DEC-33 (AUD-019) — chỉ xuất hiện trong chính deliverable.
+- `git show d8b677e:DECISION_LOG.md` — DEC-33 ngay khi khởi tạo cũng không liệt kê 21 thuật ngữ.
+
+## 5. Coverage Gaps — Round 4
+
+- Không chạy trình duyệt: không render F01B thật, không đo pixel sau scale-to-fit — kết luận từ đọc DOM/CSS, mức tin cậy cao (cấu trúc đơn giản: 4 box grid 2 cột).
+- "Đúng nghĩa theo DEC-33" chỉ kiểm chứng được ở mức nhất quán nội bộ + spot-check nghiệp vụ §4.4 (21/21 F01B = 21/21 PRESENTER_GUIDE); chuẩn canonical vắng mặt trong repo → AUD-019.
+- "Ví dụ ngắn": chỉ đếm ví dụ tường minh có từ "(ví dụ …)" hoặc "(…)" trong `.gl-def`; không suy đoán ví dụ ngầm → AUD-020 giữ nguyên trạng.
+
+## 6. Verdict và Planner Questions — Round 4
+
+- **Verdict AC-16:** `CONDITIONAL`.
+- **Reason:** Không có P0/P1/P2. Đạt trọn vẹn các mục chính của AC-16/RQ-14/DEC-33: commit đúng 5 file (không đụng 30 frame UI — mục 13); F01B tồn tại, **21/21 thuật ngữ** EN→VI nhóm 4 module đúng 3/5/6/7, nghĩa 1 dòng đủ + spot-check khớp nghiệp vụ, watermark có dấu, không PII/brand thật, token/class đều có trong hrp.css; index.html nhóm 01 có dòng F01B done; F00A **16/16** lời thoại có bản diễn đạt Việt dễ nói (thẻ VI, EN kèm lần đầu) trong khi **mốc thời gian 00:00–13:00 và 16 link frame không đổi** (diff chỉ thêm); PRESENTER_GUIDE đủ 3 phần, có quy ước "glossary không tính vào 15 phút dry-run" đúng DEC-33; link-check 0 chết. Còn 3 finding P3 cần Planner quyết định trước freeze: **AUD-020** (gap theo chữ nghĩa AC-16: "ví dụ ngắn" chỉ 3/21 dòng — bổ sung ví dụ hoặc sửa wording chuẩn), **AUD-019** (chốt danh sách canonical 21 thuật ngữ vào DECISION_LOG để có chuẩn so sánh khi freeze D14), **AUD-021** (11px pre-existing ở F00A:28). → CONDITIONAL, không PASS tuyệt đối (gap chuẩn văn bản còn mở), cũng không FAIL/BLOCKED (nội dung core 100% đạt, AC-16 `Blocking? No`).
+- **Planner decisions required:** `AUD-019`, `AUD-020`, `AUD-021` (cả 3 P3 — nên resolve trong round này vì bộ công cụ diễn thuyết sẽ được sếp dùng trực tiếp trong buổi BoD; AUD-019/020 đặc biệt liên quan freeze baseline D14).
+
+## 7. Re-audit Trace — Round 4
+
+| Audit round | Finding ID | Previous status | Current status | Closure evidence |
+|---|---|---|---|---|
+| 1 | `AUD-001`…`AUD-010` | CLOSED | `CLOSED` | Không liên quan file STEP-10 (F01B mới, F00A chỉ thêm bản Việt) — không tái phạm |
+| 2 | `AUD-011` | CLOSED | `CLOSED` (tàn dư → AUD-021) | Rule mới F01B/F00A đều ≥12px; sót `.st-fstate` 11px pre-existing tại `F00A:28` → finding mới AUD-021 |
+| 2 | `AUD-012` | CLOSED (deviation) | `CLOSED` | Không liên quan |
+| 2 | `AUD-013` | CLOSED | `CLOSED` | Không liên quan |
+| 2 | `AUD-014` | CLOSED (deviation) | `CLOSED` | Không liên quan |
+| 3 | `AUD-015` | CLOSED | `CLOSED` | Rule mới F01B/F00A không có 11px nào mới |
+| 3 | `AUD-016` | CLOSED | `CLOSED` | Lời dẫn 04:10 giữ đúng bản đã sửa — "claim ngày 12/08 — 3 ngày trước" (`F00A:114`); bản Việt cùng bước dùng đúng "3 ngày trước" |
+| 3 | `AUD-017` | CLOSED | `CLOSED` | Không inline style attribute mới trong F01B/F00A (dùng `<style>` block + class) |
+| 3 | `AUD-018` | CLOSED | `CLOSED` | Không liên quan (F60) |
+
+> Đã bàn giao AUDIT.md round 4 cho Tier 1; chờ Planner Resolution cho AUD-019/020/021 trong TASK.md §9.
+
+# AUDIT ROUND 5 — RE-VERIFY AUD-019/020/021 (commit `bddb748`, cha `84ba2fc`)
+
+## 0. Audit Control — Round 5
+
+| Field | Value |
+|---|---|
+| Task slug | `hrp-v4-bod-mockup` |
+| Work/Audit type | `DESIGN / DESIGN_AUDIT (re-verify)` |
+| Spec version | `v1.13` (Planner Resolution round 4 — TASK.md) |
+| Execution round | `5` |
+| Audit round | `5` |
+| Auditor/context | `Tier 3 — Auditor (context độc lập; tự chạy git show/diff/grep — không kế thừa claim Tier 2)` |
+| Baseline/diff/artifacts | `git bddb748` (cha `84ba2fc`); kiểm: `mockup/F01B_Glossary.html`, `mockup/F00A_DemoNarrative.html`, `PRESENTER_GUIDE.md`, `HANDOFF.md` (4 file commit) + `DECISION_LOG.md` (canonical — commit 84ba2fc); chuẩn đối chiếu: bảng canonical `DECISION_LOG.md:48-70` |
+| Independence | `Confirmed` — đọc trực tiếp 3 nguồn (canonical / F01B / PRESENTER_GUIDE) và so sánh từng dòng 21/21; grep `11px`, `ví dụ`, `gl-line`, `st-time`, `say-vi`; diff `84ba2fc..bddb748` cho F00A + toàn cục |
+| Audit time | `2026-08-16 (VN)` |
+
+## 1. Findings — Round 5
+
+### AUD-022 — Nghĩa dòng 17 (Margin) lệch từ so với bảng canonical: "tiền thu khách" vs "giữa tiền thu khách hàng" — vi phạm mandate "PHẢI khớp 100%" của canonical
+
+- **Severity:** `P3` (wording — 1/21 dòng, 2 file mỗi file 1 chỗ)
+- **Status:** `OPEN` (phát hiện mới trong re-verify — không nằm trong 3 finding round 4)
+- **RQ/AC:** `RQ-14 / AC-16` (gián tiếp — AC-16 không đòi khớp nguyên văn, nhưng `DECISION_LOG.md:46` tự mandate "F01B_Glossary + PRESENTER_GUIDE.md PHẢI khớp 100% danh sách này")
+- **Location:** `DECISION_LOG.md:66` (canonical: "Chênh lệch **tiền thu khách** và tiền trả đơn vị cung ứng") vs `mockup/F01B_Glossary.html:72` ("chênh lệch **giữa tiền thu khách hàng** và tiền trả đơn vị cung ứng") + `PRESENTER_GUIDE.md:29` (giống F01B — F01B ↔ PG khớp nhau 100%)
+- **Observed fact:** So sánh tay từng dòng 3 nguồn: ví dụ 21/21 khớp nguyên văn; nghĩa 20/21 khớp (sai khác chỉ là hoa/thường đầu câu — canonical viết hoa, F01B/PG viết thường, chấp nhận được vì F01B dùng lowercase nhất quán); duy nhất dòng 17 Margin: canonical thiếu "giữa" + viết "khách" trong khi F01B/PG viết "khách hàng". Nghĩa ngữ nghĩa tương đương, nhưng claim Tier 2 "dùng nguyên văn bảng canonical / khớp 100%" không đúng tuyệt đối ở dòng này.
+- **Impact:** Rất thấp — không ảnh hưởng người dùng (nghĩa tương đương, rõ nghĩa hơn); chỉ lệch chữ nghĩa giữa chuẩn và deliverable đúng vào mandate khớp 100% vừa lập (AUD-019).
+- **Recommendation:** Planner chọn 1 chiều: (a) sửa `DECISION_LOG.md:66` thành "Chênh lệch giữa tiền thu khách hàng và tiền trả đơn vị cung ứng" (đồng bộ với F01B/PG — biến thể rõ nghĩa hơn), hoặc (b) sửa 2 chỗ F01B/PG về nguyên văn canonical. 1 dòng × 2 file.
+
+## 2. Re-verify các finding round 4
+
+| Finding round 4 | Yêu cầu Planner Resolution (TASK v1.13) | Kiểm độc lập (tự chạy) | Verdict |
+|---|---|---|---|
+| `AUD-019` (canonical list không có trong repo) | Ghi bảng 21 thuật ngữ canonical vào DECISION_LOG (v0.6) | `DECISION_LOG.md:44-70` — mục "Danh sách thuật ngữ canonical — DEC-33" tồn tại, **21/21 dòng** (`sed 48,70` đếm = 21 data rows), mỗi dòng đủ 4 cột EN / VI / Nghĩa (1 dòng) / Ví dụ ngắn; Revision Log v0.6 tại `:96` ghi "bổ sung theo AUD-019"; bảng đã commit ở `84ba2fc` (stat: DECISION_LOG.md +29) — không phải thay đổi chưa commit (git status sạch cho file này) | **`RESOLVED`** |
+| `AUD-020` (ví dụ ngắn chỉ 3/21 dòng F01B) | F01B 21/21 dòng có ví dụ + PRESENTER_GUIDE có cột Ví dụ ngắn | `mockup/F01B_Glossary.html:44-76` — 21/21 `.gl-line` đều có "(ví dụ: …)" (grep `ví dụ` = 22 = 21 dòng + 1 foot note; `gl-line` = 21); ví dụ **21/21 khớp nguyên văn** bảng canonical (so tay từng dòng: 47/50=94%, "Hôm nay 124 người đang làm", "Mã thẻ 12345…", "Margin 18%…"…); `PRESENTER_GUIDE.md:11-33` — có cột **Ví dụ ngắn**, 21/21 khớp canonical (grep ví dụ = 22 = 21 dòng + 1 header); nghĩa khớp 20/21 — dòng 17 Margin lệch từ → **AUD-022** (mới) | **`RESOLVED`** (kèm AUD-022) |
+| `AUD-021` (F00A `.st-fstate` 11px) | Nâng 11px→12px | `mockup/F00A_DemoNarrative.html:28` — `font: 400 12px/14px` ✓; grep `11px` toàn file = **0**; diff `84ba2fc..bddb748 -- F00A` = **đúng 1 dòng** (CSS 11px→12px, không gì khác) → 16 mốc thời gian (00:00–13:00) + 16 link frame giữ nguyên (st-time = 16, say-vi = 16 + 1 CSS rule) | **`RESOLVED`** |
+
+## 3. Acceptance Verification — Round 5
+
+Re-check nhanh toàn bộ chuỗi AC-16 sau sửa (mục 2 round 4 + đối chiếu mới):
+
+| # | Hạng mục | Kết quả |
+|---|---|---|
+| 1 | Commit `bddb748` = đúng 4 file (F01B, PRESENTER_GUIDE, F00A, HANDOFF) | `PASS` — `git show --stat` = 4 file, cha `84ba2fc` (Planner Resolution: DECISION_LOG + TASK); không file lạ, không đụng appBCC/frame UI |
+| 2 | F01B: 21/21 thuật ngữ, mỗi dòng nghĩa 1 dòng + ví dụ ngắn, nhóm 4 module 3/5/6/7 | `PASS` — giữ nguyên cấu trúc round 4 (21 dòng, nhóm 3/5/6/7) + ví dụ 21/21 |
+| 3 | F01B khớp canonical DEC-33 | `PASS` (ví dụ 21/21 + nghĩa 20/21 nguyên văn; dòng 17 lệch từ → AUD-022 P3) |
+| 4 | PRESENTER_GUIDE: cột Ví dụ ngắn khớp 100% | `PASS` (21/21 ví dụ khớp; cùng lệch từ dòng 17 như F01B — 2 file nhất quán với nhau) |
+| 5 | F00A: `.st-fstate` 12px, grep 11px = 0 | `PASS` |
+| 6 | F00A: 16 mốc thời gian + 16 link frame không đổi | `PASS` — diff 1 dòng CSS duy nhất |
+| 7 | Các mục round 4 còn lại (watermark, PII, token hrp.css, index dòng F01B, 3 phần PRESENTER_GUIDE, UI 30 frame, link-check) | `PASS` — không file nào khác bị đụng trong bddb748; mọi thứ giữ nguyên kết quả round 4 |
+
+## 4. Scope và Impact — Round 5
+
+- **Trong phạm vi:** đóng 3 finding round 4 (AUD-019/020/021) theo Planner Resolution v1.13 + re-verify toàn chuỗi AC-16 bị ảnh hưởng.
+- **Ngoài phạm vi:** nội dung nghiệp vụ 30 frame (round 1–3), dry-run AC-12, S05 (STEP-09).
+- **Impact:** Không có gap chặn demo. Còn đúng 1 nit P3 (AUD-022 — 1 dòng wording, 2 file) cần Planner quyết định chiều sửa trước freeze.
+
+## 5. Coverage Gaps — Round 5
+
+- So sánh 3 nguồn bằng đọc tay + grep đếm; không dùng script diff tự động chuẩn hóa — nhưng dòng 17 là lệch duy nhất phát hiện được vì 20/21 dòng còn lại khớp chữ — mức tin cậy cao.
+- Không chạy trình duyệt (không thay đổi render-path — F01B chỉ mở rộng nội dung `.gl-def`, F00A chỉ đổi 1 font-size).
+- Git status: AUDIT.md đang modified (round 4 + 5, không commit — đúng lệnh read-only); appBCC modified từ trước (ngoài task).
+
+## 6. Verdict và Planner Questions — Round 5
+
+- **Verdict AC-16 (tổng):** `CONDITIONAL` — đường biên sát PASS.
+- **Reason:** Cả 3 finding round 4 đều **RESOLVED** bằng bằng chứng độc lập: AUD-019 (bảng canonical 21/21 dòng, 4 cột, commit 84ba2fc — `DECISION_LOG.md:44-70`), AUD-020 (F01B 21/21 dòng có ví dụ, ví dụ 21/21 khớp nguyên văn canonical; PRESENTER_GUIDE cột Ví dụ ngắn 21/21), AUD-021 (F00A:28 12px, grep 11px = 0, diff F00A = 1 dòng CSS — 16 mốc + 16 link không đổi). Mọi pass-condition AC-16 (TASK.md:305) đều đạt: glossary tồn tại, 21 ≥ 15 thuật ngữ, mỗi dòng nghĩa + ví dụ, nhóm module, index dòng F01B, 16/16 lời thoại Việt không đổi click-path, PRESENTER_GUIDE đủ 3 phần, UI 30 frame nguyên vẹn, link-check OK. Còn **1 finding P3 mới (AUD-022)**: nghĩa dòng 17 Margin lệch từ giữa canonical và F01B/PG (2 file nhất quán nhau) — vi phạm đúng mandate "PHẢI khớp 100%" vừa được lập ra để đóng AUD-019, nên không thể PASS tuyệt đối; sửa 1 dòng (chọn chiều) là đủ → CONDITIONAL.
+- **Planner decisions required:** `AUD-022` (P3 — chọn chiều sửa: đồng bộ canonical về F01B/PG hoặc ngược lại; 1 dòng × 2 file). Sau khi sửa, không cần re-audit toàn bộ — chỉ xác nhận dòng 17.
+
+## 7. Re-audit Trace — Round 5
+
+| Finding | Round 4 status | Round 5 status | Closure evidence |
+|---|---|---|---|
+| `AUD-019` | OPEN | **`RESOLVED`** | Bảng canonical tồn tại + commit (`DECISION_LOG.md:44-70`, revision 0.6 `:96`; `84ba2fc` stat +29) |
+| `AUD-020` | OPEN | **`RESOLVED`** (kèm AUD-022) | F01B 21/21 dòng có ví dụ khớp canonical; PG cột Ví dụ ngắn 21/21; nghĩa 20/21 nguyên văn — dòng 17 lệch → AUD-022 |
+| `AUD-021` | OPEN | **`RESOLVED`** | F00A:28 12px; grep 11px = 0; diff 84ba2fc..bddb748 = 1 dòng CSS, 16 mốc + 16 link không đổi |
+| `AUD-022` (mới) | — | `OPEN` (P3) | `DECISION_LOG.md:66` vs `F01B:72`/`PG:29` — chờ Planner chọn chiều sửa |
+
+> Đã bàn giao AUDIT.md round 5 cho Tier 1; chờ Planner Resolution cho AUD-022 trong TASK.md §9 (AUD-019/020/021 đã đóng).

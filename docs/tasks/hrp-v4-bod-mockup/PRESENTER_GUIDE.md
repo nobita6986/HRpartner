@@ -26,7 +26,7 @@
 | Chuyên cần (S03) | WRONG_PROJECT | Sai dự án | công ghi nhầm sang dự án khác | "Công của An Phát ghi nhầm vào Yên Phong" |
 | Đối soát (S04) | Reconciliation | Đối soát | đối chiếu công-lương giữa đơn vị cung ứng và khách hàng | "Tháng 7: đối soát 44 dòng công" |
 | Đối soát (S04) | Statement | Bảng kê | bảng kê công-lương gửi khách hàng xác nhận | "Gửi bảng kê cho khách duyệt trước ngày 5" |
-| Đối soát (S04) | Margin | Biên lợi nhuận | chênh lệch giữa tiền thu khách hàng và tiền trả đơn vị cung ứng | "Margin 18% dự án An Phát" |
+| Đối soát (S04) | Margin | Biên lợi nhuận | chênh lệch tiền thu khách và tiền trả đơn vị cung ứng | "Margin 18% dự án An Phát" |
 | Đối soát (S04) | Payroll | Tính lương | xử lý bảng lương theo kỳ | "Chạy tính lương kỳ tháng 7" |
 | Đối soát (S04) | SLA | Cam kết dịch vụ | hạn chót đơn vị cung ứng xác nhận đối soát | "3 ngày kể từ khi gửi bảng kê" |
 | Đối soát (S04) | Vendor | Đơn vị cung ứng | bên cung cấp lao động | "Xem danh sách các đơn vị cung ứng" |
