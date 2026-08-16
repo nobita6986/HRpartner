@@ -10,8 +10,8 @@
 | Spec version | `v1.0` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 — Planner / Product & Architecture Decision Owner |
-| Executor | Tier 2 — Implementation Engineer |
-| Auditor | Tier 3 — independent context |
+| Executor | Tier 2 — **bên ngoài, do sếp giao** (Cursor/agent khác — Tier 1 KHÔNG spawn Tier 2/3; quy ước 16/08) |
+| Auditor | Tier 3 — **bên ngoài, do sếp giao** (độc lập với Tier 2) |
 | Baseline | `f382c8d` (main 16/08/2026 — Phase 0 ACCEPTED) |
 | Modules | Phase 1 Identity (tuần 1) — chạm: `middleware.ts` (mới), `app/login/*` (mới), `app/api/auth/*` + `app/api/me/*` (mới), `src/shared/auth/*` (mới), `prisma/seed.mjs`, `package.json` |
 | ADR references | **D15** (DECISION_LOG — rào /bcc JWT tối giản tuần đầu Phase 1, trước permission-resolver); **ADR-007** (JWT + passwordHash argon2/bcrypt); `docs/PHASE_KHOAHOC_V1.md` §4 Phase 1 DoD (2 mục đầu: `/api/me` + 401 không 500); `docs/CONTRACT_BCC.md` §6 (quy tắc PII); `docs/data-scope-security.md` §15.1 (ADMIN = root) |
@@ -184,3 +184,4 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | 2026-08-16 | Khởi tạo contract — rào `/bcc` JWT tối giản tuần đầu Phase 1 (D15): login phone+password, jose JWT 8h, cookie httpOnly + Bearer, middleware fail-closed, seed 2 tài khoản idempotent từ ENV, `/api/me` theo DoD PHASE_KHOAHOC §4 | Lệnh sếp vào Phase 1 16/08 + D15 + PHASE_KHOAHOC_V1 §4 |
+| `v1.1` | 2026-08-16 | **Đổi quy trình giao việc** — Executor/Auditor là Tier 2/3 bên ngoài do sếp giao (Cursor/agent khác), Tier 1 KHÔNG spawn sub-agent đảm nhiệm Tier 2/3. Ghi nhận tiến độ: STEP-01..08 đã xong (commit `5851b5b` + HANDOFF `a0123fd`, `1993f7d`); **STEP-09 chưa chạy** — production sạch (chỉ có `DATABASE_URL` cũ, chưa set 5 ENV mới, chưa seed Neon main, chưa deploy). `.gitignore` đang có thay đổi chưa commit (thêm `.vercel/`). Giá trị 4 biến tài khoản do sếp cấp TRỰC TIẾP cho Tier 2 ngoài | Lệnh sếp 16/08 — Tier 1 chỉ đảm nhiệm Tier 1 |
