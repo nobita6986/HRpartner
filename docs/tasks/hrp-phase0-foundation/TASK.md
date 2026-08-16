@@ -2,7 +2,7 @@
 
 > Pipeline 3-tier: `TASK.md` (Tier 1 — Planner) → `HANDOFF.md` (Tier 2 — Executor) → `AUDIT.md` (Tier 3 — Auditor)
 > Spec version: `v1.0` · Ngày khởi tạo: **16/08/2026**
-> Status: `PASS` — Tier 3 re-audit Round 2 (16/08): **10/10 AC PASS, 0 P0/P1** (AUDIT.md Round 2). Còn 1 exit gate cuối: **sếp duyệt demo** https://hrpartner.vn/job-board (DoD §8). AUD-006/007 (P3) + DEV-01…04 → backlog Phase 4.
+> Status: `READY_FOR_EXECUTION` — lệnh sếp 16/08: demo `/job-board` chưa đúng design → **sửa ngay trước khi duyệt** (STEP-09 + AC-11 mới). Tier 2 nhận việc. Sau PASS → sếp duyệt demo → đóng Phase 0.
 > Căn cứ: **D13** (backbone invariant-phase + monorepo Phương án A), **D14** (freeze Mockup Baseline = trigger Phase 0; founder cho khởi động sớm 16/08 song song dry-run mockup), `docs/PHASE_KHOAHOC_V1.md` §4, `docs/MODULE_TACH_V2.md` §VII W1 + 5 điều chỉnh kỹ thuật đã duyệt 16/08/2026.
 
 ---
@@ -56,6 +56,7 @@
 | STEP-06 | `prisma/seed.ts`: fixtures 20 scenario từ `data-scope-security.md` — dùng canonical mock data, **không PII thật** (masked CCCD/SĐT, không bank, không lương trên card), idempotent (upsert) | AC-06 |
 | STEP-07 | `docs/CONTRACT_BCC.md`: đóng băng contract bảng appBCC ↔ web (cột, format period `MM/YYYY`, trạng thái, quy tắc upsert versioned) — xử lý R-21; founder ký duyệt | AC-09 |
 | STEP-08 | Demo A-04: deploy job-board lên Vercel + verify URL matrix (`/`, `/bcc`, `/job-board` — `/docs` không phải site, bỏ khỏi matrix 16/08) | AC-05, AC-02 |
+| STEP-09 | **UI polish `/job-board`**: bám đúng design system **Warm Professionalism** (`stitch/warm_professionalism/DESIGN.md`): primary `#F26522` (canonical G27), nền `#FAF9F7`, font **Be Vietnam Pro** (headline/body) + **Inter** (label), radius 8px button / 16px card, spacing 8px scale, card padding 24px, border `#EAE8E4`, shadow ambient orange. Bám layout mockup `docs/tasks/hrp-v4-bod-mockup/mockup/S05_JobBoard_Public_1440.html`; header public tham chiếu `stitch/hrp_landing_page_html_standard/code.html` (brand.orange `#f26522`, orangeDark `#a63b00`). Watermark **"DỮ LIỆU MINH HỌA" có dấu**. **Bỏ toàn bộ inline style tự bịa** (màu xanh `#0F4C81`). KHÔNG đổi logic/data (`listPublicJobs`, `revalidate = 300`, không auth, 3 project canonical) | AC-11 |
 
 ## 5. Acceptance Criteria (AC)
 
@@ -71,6 +72,7 @@
 | AC-08 | `prisma/migrations/` (2 folder + g0_baseline + migration_lock) được commit vào git | git ls-files |
 | AC-09 | `docs/CONTRACT_BCC.md` tồn tại, ghi cột/format/trạng thái, founder ký duyệt | sếp duyệt |
 | AC-10 | Không có destructive migration trên production Neon main; chỉ add-only sau khi verify dev branch | audit migration SQL |
+| AC-11 | `/job-board` dùng đúng design tokens Warm Professionalism: không còn màu xanh `#0F4C81`; có primary `#F26522` + nền `#FAF9F7` + font Be Vietnam Pro; watermark có dấu "DỮ LIỆU MINH HỌA"; layout khớp S05 | đọc code + curl production + mắt sếp |
 
 ## 6. Rủi ro (RISK)
 
@@ -99,6 +101,7 @@
 - [x] 7 chỗ `new PrismaClient()` đã quy về `getPrisma()`
 - [x] `vitest run` pass
 - [x] 3 sub-package tách xong (`@hrp/money`, `@hrp/payroll-core`, `@hrp/job-board`)
+- [ ] `/job-board` khớp design Warm Professionalism (STEP-09 / AC-11)
 - [ ] **Demo**: link public `app/job-board` lên Vercel — sếp duyệt
 
 ## 9. Revision Log
@@ -109,3 +112,4 @@
 | `v1.1` | `2026-08-16` | Planner Resolution Round 1: DEC-30 paths-based monorepo (STEP-04/AC-02); bỏ `/docs` khỏi URL matrix (STEP-08); Status → CONDITIONAL chờ 2 gate founder | AUDIT Round 1 CONDITIONAL → PLANNER-DECISION v1.0 |
 | `v1.2` | `2026-08-16` | Resolution Round 2: DEC-31 drift recovery (g0_baseline IF NOT EXISTS + idx_timesheets_lookup vào schema); Status → ROUND_3 | Tier 2 round 2 (AC-03 BLOCKED P3018) → PLANNER-DECISION v1.1 |
 | `v1.3` | `2026-08-16` | Tier 3 re-audit Round 2: **PASS 10/10 AC, 0 P0/P1**; DoD kỹ thuật hoàn thành; Status → PASS chờ sếp duyệt demo | AUDIT.md Round 2 → PLANNER-DECISION v1.3 |
+| `v1.4` | `2026-08-16` | Thêm **STEP-09 + AC-11** (UI polish theo Warm Professionalism) — lệnh sếp: demo chưa đúng design, sửa ngay trước khi duyệt; Status → READY_FOR_EXECUTION | PLANNER-DECISION v1.4 |

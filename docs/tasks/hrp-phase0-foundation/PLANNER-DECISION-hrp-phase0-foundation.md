@@ -87,7 +87,16 @@ Planner chốt: **Phase 0 đạt DoD kỹ thuật**. Exit gate cuối = sếp du
 
 Backlog Phase 4 chính thức: AUD-003 + AUD-006 (job-board: query DB thật + watermark có dấu + hrp.css), DEV-01…04, AUD-007 (dọn harness artifacts nếu cần).
 
-## 9. Revision Log
+## 9. Resolution Round 5 — Demo chưa đúng design → sửa ngay · 16/08
+
+Sếp review demo `/job-board` và xác nhận: bản hiện tại là rough demo — Tier 2 dùng inline style tự bịa (primary xanh `#0F4C81`, nền xám lạnh, font system-ui) thay vì design system đã chốt **Warm Professionalism** (`stitch/warm_professionalism/DESIGN.md`: primary `#F26522` G27, nền `#FAF9F7`, Be Vietnam Pro + Inter).
+
+Quyết định (lệnh sếp qua chọn lựa 16/08): **sửa ngay trước khi duyệt demo** — kéo phần UI của AUD-003/AUD-006 từ backlog Phase 4 về Phase 0:
+- TASK v1.4: thêm **STEP-09 + AC-11** (UI polish theo Warm Professionalism + mockup S05 + header mẫu `stitch/hrp_landing_page_html_standard/code.html`; watermark có dấu; không đổi logic/data).
+- Status TASK → `READY_FOR_EXECUTION` — Tier 2 nhận qua `/code` hoặc prompt.
+- Sau Tier 3 verify AC-11 → sếp duyệt demo → đóng Phase 0.
+
+## 10. Revision Log
 
 | Ver | Ngày | Thay đổi |
 |---|---|---|
@@ -95,3 +104,4 @@ Backlog Phase 4 chính thức: AUD-003 + AUD-006 (job-board: query DB thật + w
 | `v1.1` | `2026-08-16` | Resolution Round 2 (BLK-04 drift): **DEC-31** — g0_baseline `IF NOT EXISTS` + khai báo `idx_timesheets_lookup` vào schema; AC-06/AC-09 PASS; route Tier 2 round 3 qua PROMPT_TIER2_R3 |
 | `v1.2` | `2026-08-16` | Resolution Round 3 (P3009 failed record): chọn phương án (A) `resolve --rolled-back` + deploy lại trên dev; diff = 0 DDL đã chứng minh state khớp; route Tier 2 round 4 qua PROMPT_TIER2_R4 |
 | `v1.3` | `2026-08-16` | Resolution Round 4: re-audit **PASS 10/10 AC, 0 P0/P1**; chốt DoD kỹ thuật xong; AUD-006/007 + DEV-01…04 → backlog Phase 4; chờ sếp duyệt demo → đóng Phase 0 |
+| `v1.4` | `2026-08-16` | Resolution Round 5: lệnh sếp sửa UI ngay — thêm STEP-09 + AC-11 vào TASK v1.4, Status READY_FOR_EXECUTION; kéo UI AUD-003/006 từ Phase 4 về Phase 0 |
