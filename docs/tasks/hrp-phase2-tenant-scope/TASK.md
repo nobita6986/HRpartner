@@ -8,17 +8,17 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.4` |
-| Status | `READY_FOR_EXECUTION` — Baseline `dc3e772`, DEC-09 chốt A, không còn câu hỏi mở; tài liệu gọn theo mô hình artifact (1 task 1 contract) |
+| Status | `REVISION_REQUIRED` — Round 2 (AUD-001 fix tên bảng HANDOFF; AUD-002 STEP-10 runbook + dry-run; PLN-001 1 dòng env appBCC theo DEC-09 A; KHÔNG đụng file dirty `appBCC/*` của sếp) |
 | Planner | Tier 1 — Planner / Product & Architecture Decision Owner |
 | Executor | Tier 2 — bên ngoài, do sếp giao (Cursor/agent khác — Tier 1 KHÔNG spawn Tier 2/3) |
 | Auditor | Tier 3 — bên ngoài, do sếp giao (độc lập với Tier 2) |
 | Baseline | `dc3e772` (main 16/08/2026 — `hrp-phase1-identity-core` ACCEPTED; bcc-fence `4a3a0fe` nằm trong tổ tiên) |
 | Modules | Phase 2 Tenant Scope — migration RLS dev; DB roles; `src/shared/auth/{with-db-context,rls-context,scopes/*.scope,worker-projection,with-auth-scope}.ts`; `app/api/workers/*`; `prisma/schema.prisma` (chỉ dòng `directUrl` datasource — không đổi model); `appBCC/app.py` (duy nhất 1 dòng env `DATABASE_URL` → `APPBCC_DATABASE_URL` theo DEC-09 A); tests; runbook production |
 | ADR references | `docs/PHASE_KHOAHOC_V1.md` §4 Phase 2; `docs/data-scope-security.md` §1.2, §5-§6; G22 root bất khả tước; DEC-08 (RLS production hoãn tới trước Phase 4) |
-| Current execution round | 1 |
-| Current audit round | 0 (chưa audit) |
-| Next gate | `/code hrp-phase2-tenant-scope` → `/audit` → `/resolve` → ACCEPTED |
-| Updated | 2026-08-16 20:25 ICT |
+| Current execution round | 2 (remediation — đang mở) |
+| Current audit round | 1 (verdict CONDITIONAL — 9/10 AC PASS, AC-10 PARTIAL) |
+| Next gate | `/code hrp-phase2-tenant-scope` (remediation) → `/audit` (round 2) → `/resolve` → ACCEPTED |
+| Updated | 2026-08-16 22:10 ICT |
 
 ## 1. Outcome
 
@@ -172,7 +172,11 @@
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| 1 | AUD-001 | ACCEPT_FIX | HANDOFF §5.2 (và §3 mô tả migration) sai tên bảng: `project_skill_requirements` + `vendor_members` không tồn tại — schema thật chỉ 13 bảng Phase 2 (Tier 3 đã kiểm `pg_class`). Tier 2 sửa văn bản đối chiếu đúng 13 bảng thật (3 chính + 10 còn lại). | None | Tier 2 (Round 2) |
+| 1 | AUD-002 | ACCEPT_FIX | AC-10 must-gate: runbook production + dry-run rollback dev phải có evidence thật trong HANDOFF body (STEP-10 PENDING). Không chấp nhận đóng task khi thiếu. | None | Tier 2 (Round 2) |
+| 1 | AUD-003 | CLOSED | `tx.$extends is not a function` đã fix tại route (`withDbContext` + SCOPE_REGISTRY); grep 0 hit runtime. Ghi nhận, không patch thêm. | None | Đã đóng |
+| 1 | Q3 (appBCC dirty) | REJECT (giữ nguyên) | Diff working tree `appBCC/agent_mapper.py` (model deepseek-chat + timeout) + `appBCC/app.py` (icon path/threading) tồn tại TRƯỚC task — là việc song song của sếp; commit `7d2803b` KHÔNG chứa appBCC → Tier 2 không commit nhầm. Tier 2 KHÔNG stage/revert/đụng 2 file này; chỉ cam kết commit round 2 không chứa appBCC. **Sửa quyết định REJECT_CHANGE trước đó của lượt xử lý sơ bộ — revert sẽ phá việc sếp.** | None | Tier 2 (Round 2) |
+| 1 | PLN-001 (Planner tự xác minh) | ACCEPT_FIX | **DEC-09 A phần appBCC CHƯA thực thi:** `appBCC/app.py:227` vẫn đọc `DATABASE_URL` (grep 5 hit), commit `7d2803b` không có appBCC, HANDOFF §3 không liệt kê file này. RQ-01/AC-01 chỉ mới đạt phần role DB; phần "appBCC chỉ dùng credential ETL riêng" chưa có. Tier 2 round 2 đổi ĐÚNG 1 dòng env load DB chính → `APPBCC_DATABASE_URL`, evidence grep trước/sau + ghi vào HANDOFF §3/§5. | None | Tier 2 (Round 2) |
 
 ## 10. Revision Log
 
@@ -184,3 +188,4 @@
 | `v1.2b` | 2026-08-16 | Cập nhật Baseline `dc3e772` sau khi `hrp-phase1-identity-core` ACCEPTED (audit round 2 PASS). Không đổi contract sản phẩm | Gate identity-core closed |
 | `v1.3` | 2026-08-16 | DEC-09 **CHỐT A** (sếp quyết định 16/08): tách credential web/ETL — dev `DATABASE_URL` → `app_user_writer`, migrate qua `directUrl` (`DATABASE_URL_ADMIN`), appBCC 1 dòng env → `APPBCC_DATABASE_URL` (`hrp_etl`); production không đổi (DEC-08). Mở ngoại lệ duy nhất cho `appBCC/app.py` + dòng `directUrl` datasource. Q-01 đóng; Status `READY_FOR_EXECUTION` | Sếp chốt A; Planner khóa wiring migrate/runtime |
 | `v1.4` | 2026-08-16 | Làm lại tài liệu theo tier1.md + 01-planner-rules: **bỏ `PROMPT_TIER2.md`** (mô hình artifact tối giản — Tier 1 chỉ tạo TASK.md, giao việc bằng lệnh `/code`); đưa cảnh báo chống tái tạo login/JWT vào contract (DEC-11 + RQ-10); runbook production chuyển thành section trong `HANDOFF.md` (không file phụ). Không đổi sản phẩm | Sếp yêu cầu làm lại tài liệu theo chuẩn pipeline |
+| `v1.4` | 2026-08-16 | **Planner Resolution audit round 1** (verdict CONDITIONAL — 9/10 AC PASS, AC-10 PARTIAL): AUD-001/002 ACCEPT_FIX → Tier 2 round 2; AUD-003 CLOSED; Q3 REJECT giữ nguyên (file dirty `appBCC/*` là việc sếp — cấm revert, **sửa quyết định sơ bộ REJECT_CHANGE**); **PLN-001** — Planner tự grep phát hiện 1 dòng env `APPBCC_DATABASE_URL` của DEC-09 A chưa thực thi. Status → `REVISION_REQUIRED` round 2; giữ Spec v1.4 (lỗi thực thi, không đổi contract) | AUDIT.md round 1 (Tier 3, 16/08/2026 21:37) |
