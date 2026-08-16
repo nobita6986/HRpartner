@@ -103,17 +103,48 @@ body {
   color: var(--on-surface); background: transparent;
 }
 
-.filter-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-.filter-group { display: flex; align-items: center; gap: 8px; }
-.filter-label { font-family: var(--font-label); font-weight: 600; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
-.fchip {
-  font-family: var(--font-label); font-weight: 500; font-size: 12px; line-height: 16px;
-  color: var(--on-surface-variant); background: var(--surface);
-  border: 1px solid var(--outline-variant); border-radius: 999px; padding: 5px 12px; cursor: default;
-}
-.fchip.on { color: var(--primary-dark); background: var(--primary-soft); border-color: var(--primary); font-weight: 600; }
+/* STEP-10/AC-12 (DEC-32): sidebar filter trai 240px — thay filter chips ngang,
+   bam mockup S05 v2 (filter-panel/fgroup/fopt/fcheck/fcount). */
+.pub-body { display: flex; gap: 20px; align-items: flex-start; }
 
-.job-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.filter-panel {
+  width: 240px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-md); padding: 20px;
+}
+.filter-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; }
+.filter-title { font-family: var(--font-head); font-weight: 700; font-size: 14px; line-height: 20px; color: var(--on-surface); }
+.filter-clear {
+  font-family: var(--font-label); font-weight: 600; font-size: 12px; line-height: 16px;
+  color: var(--primary-dark); background: none; border: 0; padding: 0; cursor: pointer;
+}
+.filter-clear:hover:not(:disabled) { text-decoration: underline; }
+.filter-clear:disabled { opacity: 0.5; cursor: default; }
+
+.fgroup { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; border-top: 1px solid var(--line); }
+.filter-label { font-family: var(--font-label); font-weight: 600; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); margin-bottom: 4px; }
+
+.fopt {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 4px 0;
+  font-family: var(--font-body); font-weight: 400; font-size: 13px; line-height: 18px;
+  color: var(--on-surface-variant); background: none; border: 0; text-align: left; cursor: pointer;
+}
+.fopt:hover { color: var(--on-surface); }
+.fopt.on { color: var(--on-surface); font-weight: 500; }
+
+.fcheck {
+  width: 16px; height: 16px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--outline-variant); border-radius: 4px; background: var(--surface);
+  color: var(--on-primary);
+}
+.fcheck svg { opacity: 0; transition: opacity var(--t-fast) var(--ease-out); }
+.fcheck.on { background: var(--primary); border-color: var(--primary); }
+.fcheck.on svg { opacity: 1; }
+
+.fopt-label { flex: 1; }
+.fcount { margin-left: auto; font-family: var(--font-label); font-weight: 400; font-size: 11px; line-height: 16px; color: var(--on-surface-variant); }
+
+.job-grid { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .job-card {
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
   padding: 24px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-card);
@@ -169,6 +200,9 @@ body {
   .pub-header { padding: 0 24px; gap: 16px; }
   .pub-nav { gap: 14px; }
   .pub-main { padding: 24px 24px 20px; }
+  /* STEP-10/AC-12: <900px panel full width, nam tren grid (khong vo layout) */
+  .pub-body { flex-direction: column; }
+  .filter-panel { width: 100%; }
   .job-grid { grid-template-columns: 1fr; }
   .pub-foot { padding: 12px 24px; }
 }

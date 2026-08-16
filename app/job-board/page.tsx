@@ -1,22 +1,8 @@
-import { Search, MapPin, Globe } from 'lucide-react';
+import { Search, Globe } from 'lucide-react';
 import { listPublicJobs } from '@hrp/job-board';
+import JobBoardFilter from './JobBoardFilter';
 
 export const revalidate = 300;
-
-const BADGE_TEXT: Record<string, string> = {
-  TUYEN_GAP: 'Tuyển gấp',
-  DA_NHAN_DU: 'Đã nhận đủ',
-  DANG_TUYEN: 'Đang tuyển',
-};
-
-const BADGE_CLASS: Record<string, string> = {
-  TUYEN_GAP: 'badge-warning',
-  DA_NHAN_DU: 'badge-success',
-  DANG_TUYEN: 'badge-neutral',
-};
-
-const FILTERS_LOCATION = ['Tất cả', 'Bắc Ninh', 'Bắc Giang'];
-const FILTERS_SHIFT = ['Tất cả', 'HC', 'D1', 'D2', 'N1', 'T1'];
 
 export default function JobBoardPage() {
   const jobs = listPublicJobs();
@@ -51,55 +37,8 @@ export default function JobBoardPage() {
           </div>
         </div>
 
-        {/* Filter minh họa (STEP-09 — không hoạt động) */}
-        <div className="filter-row">
-          <div className="filter-group">
-            <span className="filter-label">Địa điểm</span>
-            {FILTERS_LOCATION.map((f, i) => (
-              <span key={f} className={`fchip${i === 0 ? ' on' : ''}`}>{f}</span>
-            ))}
-          </div>
-          <div className="filter-group">
-            <span className="filter-label">Ca</span>
-            {FILTERS_SHIFT.map((f, i) => (
-              <span key={f} className={`fchip${i === 0 ? ' on' : ''}`}>{f}</span>
-            ))}
-          </div>
-        </div>
-
-        <div className="job-grid">
-          {jobs.map((job) => {
-            const remaining = job.totalNeeded - job.totalFilled;
-            const pct = Math.round((job.totalFilled / job.totalNeeded) * 100);
-            return (
-              <article key={job.projectCode} className="job-card">
-                <div className="job-top">
-                  <span className={`badge ${BADGE_CLASS[job.badge]}`}>{BADGE_TEXT[job.badge]}</span>
-                  <span className="job-code">{job.projectCode}</span>
-                </div>
-                <div className="job-name">{job.name}</div>
-                <div className="job-meta">
-                  <MapPin size={17} aria-hidden="true" />
-                  {job.location}
-                </div>
-                <div className="job-shifts">
-                  {job.shifts.map((s) => (
-                    <span key={s.code} className="shift-chip">{s.code} · {s.hours}</span>
-                  ))}
-                </div>
-                <div className="job-counts">
-                  <div className="count"><b>{job.totalNeeded}</b><span>Cần</span></div>
-                  <div className="count"><b>{job.totalFilled}</b><span>Đã nhận</span></div>
-                  <div className={`count${remaining > 0 ? ' miss' : ''}`}><b>{remaining}</b><span>Còn thiếu</span></div>
-                </div>
-                <div className="job-progress">
-                  <i className={pct >= 100 ? 'full' : undefined} style={{ width: `${Math.min(pct, 100)}%` }} />
-                </div>
-                <button className="apply-btn" disabled type="button" title="Tính năng Ứng tuyển thuộc Wave 3 (A-05)">Ứng tuyển</button>
-              </article>
-            );
-          })}
-        </div>
+        {/* STEP-10/AC-12 (DEC-32): sidebar filter trai 240px + grid - client-side that */}
+        <JobBoardFilter jobs={jobs} />
       </main>
 
       <footer className="pub-foot">

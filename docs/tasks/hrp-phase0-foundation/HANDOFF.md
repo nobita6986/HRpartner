@@ -6,12 +6,12 @@
 |---|---|
 | Task slug | `hrp-phase0-foundation` |
 | Work type | `CODE` |
-| Spec version | `v1.4` (must match TASK) |
-| Execution round | `5` |
+| Spec version | `v1.6` (must match TASK) |
+| Execution round | `6` |
 | Executor | Tier 2 (sub-agent) |
-| Baseline | `e691264 docs(task): PROMPT_TIER2.md ...` (TASK.md HEAD) |
-| Status | `READY_FOR_AUDIT` (round 5: STEP-09 + AC-11 **DONE** — /job-board UI polish theo Warm Professionalism, tsc + build + vitest exit 0, push origin main) |
-| Started/updated | Round 1: 2026-08-16 01:03 → 01:18 · Round 2: 2026-08-16 01:30 → 01:42 · Round 3: 2026-08-16 01:50 → 01:56 · Round 4: 2026-08-16 02:02 → 02:03 · Round 5 (STEP-09): 2026-08-16 11:10 → 11:25 (UTC+7) |
+| Baseline | `ef6876e docs(task): DEC-32 job-board them cot filter trai - mockup S05 v2 + TASK v1.6 (STEP-10, AC-12)` |
+| Status | `READY_FOR_AUDIT` (round 6: STEP-10 + AC-12 **DONE** — sidebar filter trai 240px 4 nhom client-side that, tsc + build + vitest 41/41 exit 0, push origin main) |
+| Started/updated | Round 1: 2026-08-16 01:03 → 01:18 · Round 2: 2026-08-16 01:30 → 01:42 · Round 3: 2026-08-16 01:50 → 01:56 · Round 4: 2026-08-16 02:02 → 02:03 · Round 5 (STEP-09): 2026-08-16 11:10 → 11:25 · Round 6 (STEP-10): 2026-08-16 12:20 → 12:45 (UTC+7) |
 
 > Tier 1 ghi chu: TASK status luc bat dau la `IN_PROGRESS` chu khong phai `READY_FOR_EXECUTION` (Tier 1 rule). Sep da confirm thuc thi = ngam cho phep = READY.
 
@@ -61,6 +61,14 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 - Verify: `npx tsc --noEmit` exit 0; `npm run build` exit 0 (`/job-board` static, revalidate 5m — ISR giu nguyen); `npx vitest run` 32/32 pass exit 0.
 - Commit round 5: 4 file — `app/job-board/page.tsx`, `app/globals.css`, `app/layout.tsx`, `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (1 commit duy nhat) + push origin main.
 
+**Round 6 (16/08/2026, PROMPT_TIER2_R6.md — STEP-10 + AC-12, DEC-32):**
+- `packages/job-board/src/index.ts`: them **additive** field `province: 'BAC_NINH' | 'BAC_GIANG'` + `type: 'NHA_MAY' | 'KHO_VAN'` vao `PublicJobCard` (3 mock project, KHONG doi ten/ma/so lieu canonical: 50/47, 80/80, 35/32) + type `PublicJobFilters` + pure function `matchesFilters(job, filters)` (undefined = "Tất cả"). KHONG doi `listPublicJobs()` signature.
+- `app/job-board/JobBoardFilter.tsx` (MOI, "use client"): sidebar filter trai 240px theo mockup S05 v2 — head "Bộ lọc" + nut "Xóa bộ lọc" (primaryDark, disabled khi da reset), 4 nhom (Địa điểm / Ca làm / Loại hình / Trạng thái tuyển), option checkbox vuong 16px (icon Check lucide-react, co san) + so dem **tinh tu data** (khong hardcode). Client-side that: chon 1 muc/nhom → loc ngay tren 3 card canonical; "Tất cả" = default checked; "Xóa bộ lọc" reset. Grid card giu nguyen markup (badge/so lieu/nut Ứng tuyển disabled).
+- `app/job-board/page.tsx`: **bo filter chips ngang** (`.filter-row` + `.fchip`), them `<JobBoardFilter jobs={jobs} />`; header/hero/search/footer giu nguyen o server; **`revalidate = 300` giu nguyen** (build: `/job-board` static revalidate 5m); khong auth.
+- `app/globals.css`: bo class chips (`.filter-row`/`.filter-group`/`.fchip`), them `.pub-body`, `.filter-panel` (240px, surface, border `--line` #EAE8E4, radius `--radius-md` 16px, padding 20px), `.filter-head`, `.filter-title`, `.filter-clear`, `.fgroup` (border-top `--line`), `.fopt`, `.fcheck`, `.fopt-label`, `.fcount` — toan bo dung token Warm Professionalism co san (KHONG bia mau moi, KHONG inline style mau). Responsive <900px: `.pub-body` xuong cot, `.filter-panel` width 100% (nam tren grid, khong vo layout).
+- Verify: `npx tsc --noEmit` exit 0; `npm run build` exit 0 (`/job-board` static revalidate 5m giu nguyen); `npx vitest run` **41/41 pass** (32 cu + 9 test moi `packages/job-board/src/filter.test.ts` — AC-12: Bac Giang → chi Sao Viet, N1 → chi An Phat, Kho van → chi Yen Phong, khong loc → 3 card, so dem that, canonical khong doi).
+- Commit round 6: 6 file — `app/job-board/page.tsx`, `app/job-board/JobBoardFilter.tsx` (new), `app/globals.css`, `packages/job-board/src/index.ts`, `packages/job-board/src/filter.test.ts` (new), `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (1 commit duy nhat) + push origin main. KHONG dong appBCC (founder), khong them dependency, khong .env, khong DB.
+
 ## 2. Execution Trace
 
 | STEP | RQ | File/artifact/symbol | Result | Deviation tu TASK |
@@ -74,6 +82,7 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 | `STEP-07` | `RQ-07` | `docs/CONTRACT_BCC.md` (new) | `DONE` | None |
 | `STEP-08` | `RQ-08` | `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (this file) | `DONE` | None |
 | `STEP-09` (round 5) | `AC-11` | `app/job-board/page.tsx` + `app/globals.css` + `app/layout.tsx` | `DONE` | Bo inline style tu bia; dung CSS variables/class (khong CDN tailwind, khong them dependency). Font Be Vietnam Pro + Inter qua `next/font/google` ap toan app (ca /bcc — theo design system). Icon dung lucide-react co san thay Material Symbols. Nut "Ung tuyen" giu `disabled` (khong flow A-05 Wave 3) nhung giu mau primary orange 60% opacity (mockup S05 la static, button trong mo phong khong co trang thai). |
+| `STEP-10` (round 6) | `AC-12` | `app/job-board/JobBoardFilter.tsx` (new) + `app/job-board/page.tsx` + `app/globals.css` + `packages/job-board/src/index.ts` + `packages/job-board/src/filter.test.ts` (new) | `DONE` | Bo filter chips ngang → sidebar filter trai 240px (surface/border `--line`/radius 16px/padding 20px, 4 nhom + nut "Xóa bộ lọc" + so dem that tinh tu data). Filter client-side that qua `matchesFilters()` (React state, khong DB). Field `province`/`type` them **additive** — khong doi so lieu canonical (50/47/3, 80/80/0, 35/32/3), khong doi ten/ma project. `revalidate = 300` giu nguyen, khong auth. Responsive <900px panel width 100% nam tren grid. Xem DEV-07. |
 
 ## 3. Acceptance Evidence
 
@@ -90,6 +99,7 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 | `AC-09` | `docs/CONTRACT_BCC.md` ton tai | **PASS** - file 182 dong | STEP-07 commit `465d2f4` + founder ky duyet FREEZE 16/08/2026 (commit rieng `42a475f`). | None (freeze da xong). |
 | `AC-10` | Khong destructive migration tren production | PASS - chi CREATE TABLE + CREATE INDEX | SQL o `prisma/migrations/20260816010542_g0_baseline/migration.sql` review thu cong. Khong DROP/RENAME/TRUNCATE. | None |
 | `AC-11` (round 5) | `/job-board` dung design tokens Warm Professionalism | **PASS** (code + build; mắt sếp la gate cuoi) | `grep -rn "#0F4C81\|#F7F8FA\|#E5E7EB\|system-ui\|DU LIEU MINH HOA" app/` chi con 1 match la comment trong globals.css (mo ta viec thay the). Primary `#F26522` + nền `#FAF9F7` + font **Be Vietnam Pro** (next/font/google, subset vietnamese) co trong code. Watermark **"DỮ LIỆU MINH HOA" co dau**. Layout bam S05 (header public + search + filter + 3 card). `npx tsc --noEmit` exit 0, `npm run build` exit 0 (`/job-board` static revalidate 5m), `npx vitest run` 32/32 exit 0. Xem §1 Round 5 + commit round 5. | Runtime curl tren Vercel van can Tier 1/sep (xem BLK-02); `next/font/google` can network o build time (ok o local build). |
+| `AC-12` (round 6) | `/job-board` co cot filter trai khop mockup S05 v2; filter client-side that; so lieu canonical khong doi; khong auth; `revalidate = 300` giu | **PASS** (code + build + vitest; mắt sếp la gate cuoi) | Panel 240px (surface, border `#EAE8E4`, radius 16px, padding 20px), head "Bộ lọc" + nut "Xóa bộ lọc" (primaryDark) + 4 nhom (Địa điểm/Ca làm/Loại hình/Trạng thái tuyển) + so dem **tinh tu data**. Filter that qua React state + `matchesFilters()`: **"Bắc Giang" → chi Sao Việt**; **"Ca làm = N1" → chi An Phát**; **"Loại hình = Kho vận" → chi Yên Phong**; "Xóa bộ lọc" reset ve 3 card — 9 test moi `packages/job-board/src/filter.test.ts` pass. `grep -rn "fchip\|filter-row" app/ packages/` = 0 match (chips da bo). Field `province`/`type` additive — 50/47/3, 80/80/0, 35/32/3 giu nguyen (test verify). `npx tsc --noEmit` exit 0, `npm run build` exit 0 (`/job-board` static **revalidate 5m**), `npx vitest run` **41/41** exit 0. Khong them dependency (Check/MapPin lucide-react co san). Xem §1 Round 6 + commit round 6. | Client-side interaction (click filter) chi verify duoc qua code + test pure (vitest), chua curl runtime tren Vercel (xem BLK-02); cần mắt sếp duyet demo. |
 
 ## 4. Changed Deliverables
 
@@ -111,6 +121,7 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 - **Round 3:** `prisma/schema.prisma` (+1 dong `@@index` lookup), `prisma/migrations/20260816010542_g0_baseline/migration.sql` (IF NOT EXISTS + idx lookup), `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (this file). 1 commit duy nhat.
 - **Round 4:** chi `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (this file — AC-03 PASS, BLK-01/BLK-04 RESOLVED). 1 commit duy nhat. KHONG sua bat ky file code nao, khong sua .env.
 - **Round 5 (STEP-09/AC-11):** `app/job-board/page.tsx` (rewrite — bo inline style, dung class tokens, layout S05), `app/globals.css` (tokens Warm Professionalism + class job-board), `app/layout.tsx` (next/font Be Vietnam Pro + Inter, lang vi), `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (this file). 1 commit duy nhat + push origin main. KHONG dong appBCC/agent_mapper.py + appBCC/app.py (founder), khong them dependency.
+- **Round 6 (STEP-10/AC-12):** `app/job-board/JobBoardFilter.tsx` (new, "use client"), `app/job-board/page.tsx` (bo chips, render JobBoardFilter, giu revalidate 300), `app/globals.css` (bo `.fchip`, them `.filter-panel`/`.fgroup`/`.fopt`/`.fcheck`/`.fcount`... + responsive), `packages/job-board/src/index.ts` (additive `province`/`type` + `matchesFilters()`), `packages/job-board/src/filter.test.ts` (new, 9 test), `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (this file). 1 commit duy nhat + push origin main. KHONG dong appBCC/agent_mapper.py + appBCC/app.py (founder), khong them dependency, khong .env, khong DB.
 
 ## 5. Deviations, Limitations va Blockers
 
@@ -125,6 +136,7 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 | `BLK-02` | Blocker | AC-05 runtime verify can Vercel deploy URL thuc te | Khong the `curl /job-board` tu Tier 2 | Tier 1/sep chay Vercel deploy thuc te hoac quyet Phase 0 xong o local |
 | `BLK-03` | Blocker - **RESOLVED** (round 2) | AC-09 CONTRACT_BCC.md chua duoc sep ky freeze | Contract chua co gia tri chinh thuc | **RESOLVED**: founder ky duyet FREEZE 16/08/2026 (commit `42a475f`) - AC-09 PASS |
 | `DEV-06` | Note (syntax, round 3 - moi) | PROMPT_TIER2_R3 §2 ghi dong index bang ten COT snake_case (`employee_code, project, period_month, period_year`) nhung Prisma `@@index` bat buoc dung ten FIELD camelCase — da sua thanh `[employeeCode, project, periodMonth, periodYear]` | SQL index sinh ra GIONG HET (4 cot, cung ten `idx_timesheets_lookup`) — khong doi intent DEC-31; `prisma validate` PASS | Khong can quyet dinh - chi ghi nhan de tranh nham lan khi review diff |
+| `DEV-07` | Note (implementation, round 6 - moi) | Mockup S05 v2 dung `<span class="fopt">` (frame tinh, khong hoạt động) — Tier 2 dung `<button class="fopt">` vi filter phai client-side that (click duoc); them `.fopt-label` (flex 1) va hover, nut "Xóa bộ lọc" `disabled` khi da reset (tinh nang UX nho, token co san) | Dung y design (hinh thuc, spacing, mau, typography giong mockup) — chi khac element semantics; khong bia mau moi (chi token `--primary`/`--primary-dark`/`--outline-variant`/`--on-primary`... da co) | Khong can quyet dinh - chi ghi nhan de review khong nham la "le khỏi mockup" |
 | `BLK-04` | Blocker (**round 2 - moi; round 3 - cap nhat; round 4 - RESOLVED**) | Round 2: **P3018** "relation portal_timesheets already exists" khi apply `20260816010542_g0_baseline`. **Round 3 (DEC-31)**: hotfix da thuc hien (migration.sql: CREATE TABLE/INDEX sang IF NOT EXISTS + them dong `CREATE INDEX IF NOT EXISTS "idx_timesheets_lookup"`; schema: them `@@index` lookup) nhung `prisma migrate deploy` van **EXIT 1 - P3009**: failed migration record `20260816010542_g0_baseline` trong `_prisma_migrations` (tu lan FAIL round 2) chặn moi apply. `prisma migrate diff` (dev → schema) = **0 DDL** → state da khop canonical schema 100%. Tier 2 KHONG tu chay `migrate resolve` (ngoai 4 viec PROMPT giao) | **RESOLVED round 4**: Planner quyet phuong an (A) tai PLANNER-DECISION §7 — `prisma migrate resolve --rolled-back 20260816010542_g0_baseline` exit 0, `prisma migrate deploy` exit 0 (`g0_baseline` applied, no-op IF NOT EXISTS, 3/3 migration applied), diff = 0 DDL, **AC-03 PASS** | **RESOLVED**: phuong an (A) do **Planner quyet** (PLANNER-DECISION §7), khong phai Tier 2 tu quyet — Tier 2 chi thuc thi dung lenh |
 
 ## 6. Evidence Index
@@ -151,7 +163,8 @@ Khong tao evidence/ rieng (Tier 2 rule §4: khong tao artifact rieng). Output ng
 | `3` | `v1.0` | `READY_FOR_AUDIT` (hotfix DEC-31 committed; AC-03 con BLOCKED - P3009 can Tier 1 `migrate resolve`; diff = 0 DDL) | schema + migration.sql IF NOT EXISTS + idx lookup, validate PASS, deploy EXIT 1 (P3009), diff 0 DDL tren dev, HANDOFF update + 1 commit |
 | `4` | `v1.0` | `READY_FOR_AUDIT` (**AC-03 PASS** — dong Phase 0 foundation; BLK-01 + BLK-04 **RESOLVED** theo phuong an (A) do Planner quyet) | resolve --rolled-back + deploy exit 0 (3/3 migration applied), diff = 0 DDL, seed exit 0, HANDOFF update + 1 commit |
 | `5` | `v1.4` | `READY_FOR_AUDIT` (**STEP-09 + AC-11 DONE** — /job-board UI polish theo Warm Professionalism; tsc/build/vitest exit 0; push origin main) | Bo inline style tu bia (xanh #0F4C81...), dung tokens G27 trong globals.css, font Be Vietnam Pro + Inter (next/font/google), watermark co dau "DỮ LIỆU MINH HỌA", layout bam S05; 4 file (3 code + HANDOFF) 1 commit + push |
+| `6` | `v1.6` | `READY_FOR_AUDIT` (**STEP-10 + AC-12 DONE** — sidebar filter trai 240px 4 nhom, filter client-side that, so dem that; tsc/build/vitest 41/41 exit 0; push origin main) | Bo filter chips ngang → panel trai theo mockup S05 v2 (DEC-32): `.filter-panel` 240px + 4 nhom + "Xóa bộ lọc" + so dem tinh tu data; them `province`/`type` + `matchesFilters()` vao @hrp/job-board (additive, canonical giu nguyen); 9 test moi filter.test.ts; 6 file 1 commit + push |
 
-> Handoff status: READY_FOR_AUDIT (round 5: STEP-09 + AC-11 DONE — /job-board dung Warm Professionalism; tsc + build + vitest exit 0, da push origin main; cho Tier 3 audit + sep duyet demo)
+> Handoff status: READY_FOR_AUDIT (round 6: STEP-10 + AC-12 DONE — /job-board co sidebar filter trai 240px 4 nhom, filter client-side that, so lieu canonical giu nguyen, revalidate 300 giu; tsc + build + vitest 41/41 exit 0, da push origin main; cho Tier 3 audit + sep duyet demo)
 
 > Ghi chu cho Tier 1: tat ca deviation/blocker da ghi o §5. Tier 2 KHONG tu sua TASK.md hay quyet dinh business. Moi quyet dinh la cua Tier 1 + sep.
