@@ -7,18 +7,18 @@
 | Task slug | `hrp-phase2-tenant-scope` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.2` |
-| Status | `DRAFT` — chờ `hrp-phase1-identity-core` ACCEPTED và quyết định tách credential runtime/ETL tại DEC-09 trước khi chuyển `READY_FOR_EXECUTION` |
+| Spec version | `v1.3` |
+| Status | `READY_FOR_EXECUTION` — Baseline `dc3e772`, DEC-09 chốt A (tách credential web/ETL), không còn câu hỏi mở. Sếp giao `/code hrp-phase2-tenant-scope` cho Tier 2 |
 | Planner | Tier 1 — Planner / Product & Architecture Decision Owner |
 | Executor | Tier 2 — bên ngoài, do sếp giao (Cursor/agent khác — Tier 1 KHÔNG spawn Tier 2/3) |
 | Auditor | Tier 3 — bên ngoài, do sếp giao (độc lập với Tier 2) |
 | Baseline | `dc3e772` (main 16/08/2026 — `hrp-phase1-identity-core` ACCEPTED; bcc-fence `4a3a0fe` nằm trong tổ tiên) |
-| Modules | Phase 2 Tenant Scope — migration RLS dev; DB roles; `src/shared/auth/{with-db-context,rls-context,scopes/*.scope,worker-projection,with-auth-scope}.ts`; `app/api/workers/*`; tests; runbook production |
+| Modules | Phase 2 Tenant Scope — migration RLS dev; DB roles; `src/shared/auth/{with-db-context,rls-context,scopes/*.scope,worker-projection,with-auth-scope}.ts`; `app/api/workers/*`; `prisma/schema.prisma` (chỉ dòng `directUrl` datasource — không đổi model); `appBCC/app.py` (duy nhất 1 dòng env `DATABASE_URL` → `APPBCC_DATABASE_URL` theo DEC-09 A); tests; runbook production |
 | ADR references | `docs/PHASE_KHOAHOC_V1.md` §4 Phase 2; `docs/data-scope-security.md` §1.2, §5-§6; G22 root bất khả tước; DEC-08 (RLS production hoãn tới trước Phase 4) |
 | Current execution round | 1 |
 | Current audit round | 0 (chưa audit) |
-| Next gate | identity-core ACCEPTED + DEC-09 chốt → cập nhật Baseline → `/code hrp-phase2-tenant-scope` → `/audit` → `/resolve` → ACCEPTED |
-| Updated | 2026-08-16 19:55 ICT |
+| Next gate | sếp giao Tier 2: `/code hrp-phase2-tenant-scope` → `/audit` → `/resolve` → ACCEPTED |
+| Updated | 2026-08-16 20:10 ICT |
 
 ## 1. Outcome
 
@@ -60,7 +60,7 @@
 | `DEC-06` | CHOSEN | Matrix bắt buộc: 13 role × 4 bảng `Worker`, `Project`, `Ticket`, `VendorStatement` = 52 case. Mỗi case assert row-set và field projection; thêm integration L2 với hai transaction role khác nhau | PHASE_KHOAHOC §4; EV-04 | CHỐT |
 | `DEC-07` | CHOSEN | Route demo: `GET /api/workers` (list scoped) và `GET /api/workers/me` (chỉ role WORKER; role khác 403). Mọi query chạy qua `withDbContext` + extended Prisma client | Planner; PHASE_KHOAHOC exit criteria | CHỐT |
 | `DEC-08` | CHOSEN | **RLS production hoãn tới trước Phase 4**. Task này chỉ áp/verify trên `DATABASE_URL_DEV` và bàn giao runbook production + rollback đã dry-run trên dev; tuyệt đối không đụng Neon main | Sếp chốt 16/08 | CHỐT |
-| `DEC-09` | NEED_USER_DECISION | Cách cấp credential riêng cho appBCC ETL: (A) tạo `APPBCC_DATABASE_URL` role `hrp_etl` riêng, còn web chuyển sang `APP_DATABASE_URL` role `app_user_writer`; hoặc (B) hoãn toàn bộ L2 RLS, chỉ làm L1 builders/masking cho đến khi tách được. **Cấm** cho role web runtime làm member `hrp_etl` | Planner; EV-03 | CHỜ — ảnh hưởng RQ-01, STEP-01..04, AC-01..03 |
+| `DEC-09` | CHOSEN | **Phương án A (sếp chốt 16/08):** tách credential web/ETL ở dev — web runtime dùng `DATABASE_URL` repoint về role `app_user_writer` (không superuser/owner/BYPASSRLS, không member `hrp_etl`); `prisma migrate` dùng `directUrl = env("DATABASE_URL_ADMIN")` (admin string hiện tại, giữ quyền DDL cho migration engine); appBCC ETL dùng `APPBCC_DATABASE_URL` (role `hrp_etl`, grants tối thiểu theo khảo sát STEP-01). Production Vercel/Neon main KHÔNG đổi trong task này (DEC-08) — việc chuyển Vercel sang role restricted nằm trong runbook trước Phase 4. **Cấm** cho role web runtime làm member `hrp_etl` | Sếp chốt 16/08; Planner; EV-03 | CHỐT |
 | `DEC-10` | ASSUMPTION | identity-core seed `CAN_VIEW_WORKER_SENSITIVE`, `CAN_VIEW_UNASSIGNED_POOL` và interface `withAuthScope` theo đúng TASK identity-core | Planner | Hết hiệu lực khi identity-core ACCEPTED |
 
 ## 4. Contract
@@ -69,7 +69,7 @@
 
 | RQ ID | Requirement | Priority | Source | Failure behavior |
 |---|---|---|---|---|
-| `RQ-01` | Tách credential/DB role web runtime và appBCC ETL theo DEC-09; runtime roles không owner, không BYPASSRLS, không là member `hrp_etl` | Must | DEC-03/09 | Không tách được → dừng L2 RLS, báo BLOCKED; không dùng exemption chung |
+| `RQ-01` | Tách credential/DB role web runtime và appBCC ETL theo DEC-09 A: dev `DATABASE_URL` → role `app_user_writer` (không owner/BYPASSRLS/member `hrp_etl`); datasource thêm `directUrl = env("DATABASE_URL_ADMIN")` để migrate giữ quyền DDL; appBCC đổi 1 dòng env sang `APPBCC_DATABASE_URL` (role `hrp_etl`, grants tối thiểu) | Must | DEC-03/09 | Không tách được → dừng L2 RLS, báo BLOCKED; không dùng exemption chung |
 | `RQ-02` | 3 migration RLS dev theo DEC-04, `FORCE ROW LEVEL SECURITY`, policy đúng 13-role matrix; không chạm `portal_timesheets` | Must | DEC-02/04 | Apply/policy fail → rollback dev, không chuyển bước |
 | `RQ-03` | `with-db-context.ts` + `rls-context.ts` set đầy đủ 4 GUC bằng `set_config(..., true)` trong transaction; kiểm thử không leak giữa transactions | Must | DEC-02 | Leak/SET ROLE = fail |
 | `RQ-04` | `scopes/{worker,project,vendor,ctv}.scope.ts` có builders tường minh theo matrix; nối vào with-auth-scope; model thiếu builder vẫn deny-by-default | Must | DEC-01/06 | Row ngoài scope hoặc silent empty sai quy ước = fail |
@@ -78,7 +78,7 @@
 | `RQ-07` | 52/52 matrix + L2 two-transaction integration + checklist chống leak §5.7 PASS | Must | DEC-06; data-scope-security §5.7 | Bất kỳ case fail = chặn bàn giao |
 | `RQ-08` | `npm run build` và toàn bộ `vitest run` PASS; không `.only`/skip sót | Must | global rules §4 | Fail = chặn bàn giao |
 | `RQ-09` | Soạn runbook production RLS trước Phase 4: preflight, apply order, verification appBCC, rollback <5 phút; dry-run rollback trên dev; production không thay đổi | Must | DEC-08 | Runbook thiếu/dry-run fail = chặn bàn giao |
-| `RQ-10` | Không sửa/commit `app/bcc/*`, `appBCC/*`, `app/job-board/*`; không credential, token, PII thật trong source/evidence; chỉ stage file task | Must | global rules §3, §5 | Audit block |
+| `RQ-10` | Không sửa/commit `app/bcc/*`, `appBCC/*` (ngoại trừ 1 dòng env `DATABASE_URL` → `APPBCC_DATABASE_URL` trong `appBCC/app.py` theo DEC-09 A), `app/job-board/*`; không credential, token, PII thật trong source/evidence; chỉ stage file task | Must | global rules §3, §5 | Audit block |
 
 ### 4.2 Scope boundaries
 
@@ -87,12 +87,15 @@
 - Migration RLS dev và DB roles theo DEC-09.
 - `src/shared/auth/with-db-context.ts`, `rls-context.ts`, `scopes/{worker,project,vendor,ctv}.scope.ts`, `worker-projection.ts`, sửa tối thiểu `with-auth-scope.ts` để đăng ký builders.
 - `app/api/workers/route.ts`, `app/api/workers/me/route.ts`.
+- `prisma/schema.prisma` — CHỈ thêm dòng `directUrl` trong datasource block (DEC-09 A); không đổi model/field.
+- `appBCC/app.py` — CHỈ đổi 1 dòng env `DATABASE_URL` → `APPBCC_DATABASE_URL` (DEC-09 A); không đổi logic.
 - Unit/integration tests và runbook production trong chính task directory.
 
 **Out of scope:**
 
 - Login/JWT/cookie/auth endpoints/middleware/JWT helper và ticket stub replacement — identity-core.
-- `app/bcc/*`, `appBCC/*`, `app/job-board/*`, `portal_timesheets`.
+- `app/bcc/*`, `app/job-board/*`, `portal_timesheets`.
+- `appBCC/*` ngoại trừ 1 dòng env nêu trên — mọi logic appBCC khác là vùng cấm.
 - Prisma model/schema fields; outbox/audit/idempotency/state machine; Phase 4 UI.
 
 ### 4.3 Data, State, Permission và Interface Rules
@@ -107,7 +110,7 @@
 
 | STEP ID | RQ | Target | Change intent/deliverable | Dependency/skill | Verify | Stop condition |
 |---|---|---|---|---|---|---|
-| `STEP-01` | RQ-01 | DB dev + appBCC config (read-only survey) | Khảo sát role/web URL/ETL URL hiện hữu, quyền cần của appBCC; thực hiện phương án DEC-09 đã chốt hoặc báo BLOCKED nếu chưa thể tách | identity-core ACCEPTED; DEC-09 | Catalog query read-only, evidence mask | Không có role/credential separation hợp lệ → dừng trước migration L2 |
+| `STEP-01` | RQ-01 | DB dev + appBCC config (read-only survey) | Khảo sát role/web URL/ETL URL hiện hữu, quyền cần của appBCC; thực hiện tách credential theo DEC-09 A hoặc báo BLOCKED nếu chưa thể tách | identity-core ACCEPTED; DEC-09 | Catalog query read-only, evidence mask; smoke `prisma migrate` qua `directUrl` vẫn chạy + runtime role bị RLS áp dụng | Không có role/credential separation hợp lệ → dừng trước migration L2 |
 | `STEP-02` | RQ-02 | `prisma/migrations/*_s1_rls_worker` | Worker policies, child tables theo worker, FORCE RLS, runtime grants tối thiểu | STEP-01 | migrate dev + policy smoke 2 role | Apply/policy fail |
 | `STEP-03` | RQ-02 | `prisma/migrations/*_s1_rls_project` | Project/staffing/site policies theo matrix | STEP-02 | migrate dev + PM/public smoke | Apply/policy fail |
 | `STEP-04` | RQ-02 | `prisma/migrations/*_s1_rls_vendor` | Vendor/submission/statement/line policies theo matrix | STEP-03 | migrate dev + vendor scope smoke | Apply/policy fail |
@@ -122,7 +125,7 @@
 
 | AC ID | RQ | Pass condition | Verification method | Required evidence | Blocking? |
 |---|---|---|---|---|---|
-| `AC-01` | RQ-01 | Web runtime DB role không owner/BYPASSRLS/member `hrp_etl`; appBCC chỉ dùng credential ETL riêng và có grants tối thiểu | Read-only role/grant checks | Commands + masked role names/outputs | Yes |
+| `AC-01` | RQ-01 | Web runtime DB role không owner/BYPASSRLS/member `hrp_etl`; appBCC chỉ dùng credential ETL riêng và có grants tối thiểu; `prisma migrate` qua `directUrl` (admin) vẫn exit 0 | Read-only role/grant checks + migrate smoke | Commands + masked role names/outputs | Yes |
 | `AC-02` | RQ-02 | 3 migration chỉ áp trên dev, sạch, `FORCE RLS` đúng bảng phạm vi, không chạm `portal_timesheets` | Prisma migrate + catalog query | Command, exit code, migration status | Yes |
 | `AC-03` | RQ-03 | Bốn GUC tồn tại trong transaction và không leak qua transaction khác; grep không có `SET ROLE` | vitest + grep | Test output | Yes |
 | `AC-04` | RQ-04 | Builders tạo đúng row scope theo role; model thiếu builder throw deny-by-default | vitest | Unit output | Yes |
@@ -152,7 +155,7 @@
 
 | Risk ID | Risk | Trigger | Mitigation | Rollback/Recovery |
 |---|---|---|---|---|
-| `RISK-01` | Web runtime shares ETL exemption, making L2 RLS ineffective | DEC-09 survey shows same role/member | Hard block RQ-01; split credential or defer L2 | Do not apply RLS; retain current Phase 1 fence |
+| `RISK-01` | Web runtime shares ETL exemption, making L2 RLS ineffective | STEP-01 survey shows same role/member | Hard block RQ-01; tách credential theo DEC-09 A (đã chốt) — runtime không member `hrp_etl` | Do not apply RLS; retain current Phase 1 fence |
 | `RISK-02` | Incorrect policy hides/leaks rows | Matrix/integration fails | 52 cases + L1/L2 independent tests | Dev rollback: drop policies then disable RLS only on Phase 2 tables |
 | `RISK-03` | GUC/session role leak through pool | SET ROLE/global setting or cross-tx test failure | SET LOCAL only + AC-03 | Revert helper, re-run tests |
 | `RISK-04` | appBCC ETL fails after role separation | ETL smoke fails dev | Minimum grants + dev ETL smoke before HANDOFF | Restore ETL grants; do not relax web runtime role |
@@ -162,7 +165,7 @@
 
 | ID | Question | Owner | Due | Blocks execution? |
 |---|---|---|---|---|
-| `Q-01` | DEC-09: sếp chọn (A) tách `APP_DATABASE_URL` / `APPBCC_DATABASE_URL` với role riêng, hay (B) defer L2 RLS và chỉ triển khai L1 builders/masking? | Sếp | Trước khi `READY_FOR_EXECUTION` | Yes |
+| `Q-01` | ~~DEC-09: sếp chọn (A) tách `APP_DATABASE_URL` / `APPBCC_DATABASE_URL` với role riêng, hay (B) defer L2 RLS và chỉ triển khai L1 builders/masking?~~ → **ĐÃ CHỐT: A** — tách credential web/ETL; wiring chi tiết trong DEC-09 v1.3 | Sếp — chốt 16/08 | Đã đóng | No |
 
 ## 9. Planner Resolution
 
@@ -178,3 +181,4 @@
 | `v1.1` | 2026-08-16 | DEC-08: production RLS hoãn tới trước Phase 4 | Sếp chốt phương án B |
 | `v1.2` | 2026-08-16 | Planner revision sau rà soát: bỏ traceability/RQ sai, bỏ scope ticket/UNIQUE trùng identity-core, khôi phục DEC-08 B, thêm hard gate tách role credential web/ETL (DEC-09), sửa RQ→STEP→AC đầy đủ | Rà soát theo yêu cầu sếp |
 | `v1.2b` | 2026-08-16 | Cập nhật Baseline `dc3e772` sau khi `hrp-phase1-identity-core` ACCEPTED (audit round 2 PASS). Không đổi contract sản phẩm | Gate identity-core closed |
+| `v1.3` | 2026-08-16 | DEC-09 **CHỐT A** (sếp quyết định 16/08): tách credential web/ETL — dev `DATABASE_URL` → `app_user_writer`, migrate qua `directUrl` (`DATABASE_URL_ADMIN`), appBCC 1 dòng env → `APPBCC_DATABASE_URL` (`hrp_etl`); production không đổi (DEC-08). Mở ngoại lệ duy nhất cho `appBCC/app.py` + dòng `directUrl` datasource. Q-01 đóng; Status `READY_FOR_EXECUTION` | Sếp chốt A; Planner khóa wiring migrate/runtime |
