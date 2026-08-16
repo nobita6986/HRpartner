@@ -1,4 +1,22 @@
 import './globals.css';
+import { Be_Vietnam_Pro, Inter } from 'next/font/google';
+
+// Font chuẩn Warm Professionalism (stitch/warm_professionalism/DESIGN.md — STEP-09):
+// Be Vietnam Pro cho headline/body, Inter cho label. Gán qua CSS variable --font-bvp /
+// --font-inter, globals.css map sang --font-head / --font-body / --font-label.
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ['latin', 'vietnamese'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-bvp',
+  display: 'swap',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 export const metadata = {
   title: 'Tra cứu Bảng công HRP',
@@ -14,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="vi" className={`${beVietnamPro.variable} ${inter.variable}`}>
       <body>{children}</body>
     </html>
   )

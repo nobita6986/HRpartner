@@ -6,12 +6,12 @@
 |---|---|
 | Task slug | `hrp-phase0-foundation` |
 | Work type | `CODE` |
-| Spec version | `v1.0` (must match TASK) |
-| Execution round | `4` |
+| Spec version | `v1.4` (must match TASK) |
+| Execution round | `5` |
 | Executor | Tier 2 (sub-agent) |
 | Baseline | `e691264 docs(task): PROMPT_TIER2.md ...` (TASK.md HEAD) |
-| Status | `READY_FOR_AUDIT` (round 4: AC-03 **PASS** tren Neon dev — resolve --rolled-back + deploy exit 0, 3/3 migration applied, diff = 0 DDL; BLK-01 + BLK-04 **RESOLVED** — phuong an (A) do Planner quyet tai PLANNER-DECISION §7, khong phai Tier 2 tu quyet) |
-| Started/updated | Round 1: 2026-08-16 01:03 → 01:18 · Round 2: 2026-08-16 01:30 → 01:42 · Round 3: 2026-08-16 01:50 → 01:56 · Round 4: 2026-08-16 02:02 → 02:03 (UTC+7) |
+| Status | `READY_FOR_AUDIT` (round 5: STEP-09 + AC-11 **DONE** — /job-board UI polish theo Warm Professionalism, tsc + build + vitest exit 0, push origin main) |
+| Started/updated | Round 1: 2026-08-16 01:03 → 01:18 · Round 2: 2026-08-16 01:30 → 01:42 · Round 3: 2026-08-16 01:50 → 01:56 · Round 4: 2026-08-16 02:02 → 02:03 · Round 5 (STEP-09): 2026-08-16 11:10 → 11:25 (UTC+7) |
 
 > Tier 1 ghi chu: TASK status luc bat dau la `IN_PROGRESS` chu khong phai `READY_FOR_EXECUTION` (Tier 1 rule). Sep da confirm thuc thi = ngam cho phep = READY.
 
@@ -53,6 +53,14 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 - **BLK-01 + BLK-04 → RESOLVED** (round 4, phuong an (A) do Planner quyet — xem §5).
 - Commit round 4: chi `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (1 commit duy nhat). Khong sua file code nao.
 
+**Round 5 (16/08/2026, STEP-09 + AC-11 — UI polish `/job-board`):**
+- `app/job-board/page.tsx`: bo TOAN BO inline style tu bia (xanh `#0F4C81`, xam lanh `#F7F8FA`/`#E5E7EB`, font system-ui, nut mau xanh) → dung class CSS + tokens Warm Professionalism. Layout bam mockup `S05_JobBoard_Public_1440.html`: header public (logo HR`P` orange, nav Viec lam/Ve HRP/Lien he, Dang nhap ghost + Dang ky primary `#F26522`), search bar minh hoa, filter Dia diem/Ca dang chip, 3 card project, footer. Watermark **"DỮ LIỆU MINH HỌA" co dau** (header + footer). Icon lucide-react (co san trong dependencies) thay Material Symbols. Nut "Ứng tuyển" giu `disabled` + title tieng Viet co dau (khong flow, A-05 Wave 3).
+- `app/globals.css`: them block tokens Warm Professionalism (canonical G27, cung ten bien voi `_assets/hrp.css`: `--primary #f26522`, `--primary-dark #a63b00`, `--background #faf9f7`, `--surface`, `--on-surface`, `--line #eae8e4`, radius 8px/16px, `--shadow-card` ambient orange `rgba(242,101,34,0.08)`, `--font-head/body/label`) + class component cua job-board (`.pub-*`, `.fchip`, `.job-card`, `.badge-*`, `.apply-btn`, `.watermark-badge`...) + responsive collapse grid 1 cot < 900px.
+- `app/layout.tsx`: them `next/font/google` **Be Vietnam Pro** (400/500/600/700, subset vietnamese) + **Inter** (400/500/600) qua bien `--font-bvp`/`--font-inter`; `lang="vi"`. Font ap toan app (ca /bcc) — theo design system Warm Professionalism (font Be Vietnam Pro la font chuan toan app).
+- **KHONG doi**: `listPublicJobs()` + data 3 project canonical (DA-2026-018 50/47/3, DA-2026-022 80/80/0, PRJ-SV-014 35/32/3), `revalidate = 300`, khong auth. **KHONG dung**: CDN tailwind script, Material Symbols (khong them dependency). KHONG dong file appBCC/agent_mapper.py + appBCC/app.py (founder).
+- Verify: `npx tsc --noEmit` exit 0; `npm run build` exit 0 (`/job-board` static, revalidate 5m — ISR giu nguyen); `npx vitest run` 32/32 pass exit 0.
+- Commit round 5: 4 file — `app/job-board/page.tsx`, `app/globals.css`, `app/layout.tsx`, `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (1 commit duy nhat) + push origin main.
+
 ## 2. Execution Trace
 
 | STEP | RQ | File/artifact/symbol | Result | Deviation tu TASK |
@@ -65,6 +73,7 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 | `STEP-06` | `RQ-06` | `prisma/seed.mjs` (new) + `package.json` (them prisma.seed) | `DONE` | Dung `.mjs` thay vi `.ts` vi chua co `ts-node`. Seed chay truc tiep tren Neon production main (vi khong co dev DB) - data mock an toan, chi ghi row co id prefix `seed-`. |
 | `STEP-07` | `RQ-07` | `docs/CONTRACT_BCC.md` (new) | `DONE` | None |
 | `STEP-08` | `RQ-08` | `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (this file) | `DONE` | None |
+| `STEP-09` (round 5) | `AC-11` | `app/job-board/page.tsx` + `app/globals.css` + `app/layout.tsx` | `DONE` | Bo inline style tu bia; dung CSS variables/class (khong CDN tailwind, khong them dependency). Font Be Vietnam Pro + Inter qua `next/font/google` ap toan app (ca /bcc — theo design system). Icon dung lucide-react co san thay Material Symbols. Nut "Ung tuyen" giu `disabled` (khong flow A-05 Wave 3) nhung giu mau primary orange 60% opacity (mockup S05 la static, button trong mo phong khong co trang thai). |
 
 ## 3. Acceptance Evidence
 
@@ -80,6 +89,7 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 | `AC-08` | `git ls-files prisma/migrations` | 3 file tracked cu + 1 file moi (g0_baseline migration.sql) | Da verify o STEP-03 commit `397f823`. | Note: 2 folder migration cu + `migration_lock.toml` DA tracked tu commit `668db49` truoc do. STEP-03 chi them folder moi. |
 | `AC-09` | `docs/CONTRACT_BCC.md` ton tai | **PASS** - file 182 dong | STEP-07 commit `465d2f4` + founder ky duyet FREEZE 16/08/2026 (commit rieng `42a475f`). | None (freeze da xong). |
 | `AC-10` | Khong destructive migration tren production | PASS - chi CREATE TABLE + CREATE INDEX | SQL o `prisma/migrations/20260816010542_g0_baseline/migration.sql` review thu cong. Khong DROP/RENAME/TRUNCATE. | None |
+| `AC-11` (round 5) | `/job-board` dung design tokens Warm Professionalism | **PASS** (code + build; mắt sếp la gate cuoi) | `grep -rn "#0F4C81\|#F7F8FA\|#E5E7EB\|system-ui\|DU LIEU MINH HOA" app/` chi con 1 match la comment trong globals.css (mo ta viec thay the). Primary `#F26522` + nền `#FAF9F7` + font **Be Vietnam Pro** (next/font/google, subset vietnamese) co trong code. Watermark **"DỮ LIỆU MINH HOA" co dau**. Layout bam S05 (header public + search + filter + 3 card). `npx tsc --noEmit` exit 0, `npm run build` exit 0 (`/job-board` static revalidate 5m), `npx vitest run` 32/32 exit 0. Xem §1 Round 5 + commit round 5. | Runtime curl tren Vercel van can Tier 1/sep (xem BLK-02); `next/font/google` can network o build time (ok o local build). |
 
 ## 4. Changed Deliverables
 
@@ -100,6 +110,7 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 - **Git diff/commit:** 7 commit, HEAD = `465d2f4`.
 - **Round 3:** `prisma/schema.prisma` (+1 dong `@@index` lookup), `prisma/migrations/20260816010542_g0_baseline/migration.sql` (IF NOT EXISTS + idx lookup), `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (this file). 1 commit duy nhat.
 - **Round 4:** chi `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (this file — AC-03 PASS, BLK-01/BLK-04 RESOLVED). 1 commit duy nhat. KHONG sua bat ky file code nao, khong sua .env.
+- **Round 5 (STEP-09/AC-11):** `app/job-board/page.tsx` (rewrite — bo inline style, dung class tokens, layout S05), `app/globals.css` (tokens Warm Professionalism + class job-board), `app/layout.tsx` (next/font Be Vietnam Pro + Inter, lang vi), `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (this file). 1 commit duy nhat + push origin main. KHONG dong appBCC/agent_mapper.py + appBCC/app.py (founder), khong them dependency.
 
 ## 5. Deviations, Limitations va Blockers
 
@@ -107,7 +118,7 @@ Da thuc thi 7/8 STEP (STEP-08 la viet HANDOFF nay):
 |---|---|---|---|---|
 | `DEV-01` | Deviation | STEP-04 PROMPT §3 yeu cau them `"workspaces"` vao package.json, em KHONG them | Tranh break Vercel build; co the xem la "Phase 0 thieu 1 phan" | Tier 1 quyet: chap nhan hay yeu cau fix o Phase 1? |
 | `DEV-02` | Deviation | STEP-05 service hardcode 3 mock project thay vi query Prisma | DB production co the rong, job-board co data demo ngay | Tier 1 quyet: chap nhan (Phase 4 moi switch sang query that) hay yeu cau fix ngay? |
-| `DEV-03` | Deviation | STEP-05 UI inline style thay vi dung `_assets/hrp.css` | UI khong khop 100% pixel voi mockup (nhung semantic + data khop) | Tier 1 quyet: chap nhan (UI polish Phase 4) hay yeu cau fix? |
+| `DEV-03` | Deviation - **RESOLVED** (round 5) | STEP-05 UI inline style thay vi dung `_assets/hrp.css` | **RESOLVED round 5**: STEP-09/AC-11 bo toan bo inline style tu bia, dung CSS variables/class dung tokens Warm Professionalism trong `app/globals.css` (khong dung CDN tailwind, khong them dependency) — UI gio khop S05 | **RESOLVED** boi STEP-09 — khong can quyet dinh |
 | `DEV-04` | Deviation | STEP-06 seed chay truc tiep tren Neon production main (khong co DATABASE_URL_DEV) | Risk thap vi data mock chi ghi row co id prefix `seed-` | Tier 1 quyet: chap nhan (data mock an toan) hay yeu cau tao Neon dev branch truoc? |
 | `DEV-05` | Limitation | STEP-04 baseline build da vỡ (`HRP_V4_HOLISTIC_REVIEW.md` dong 24) | Khong the verify `npm run build` PASS | Tier 1 can fix build truoc khi claim AC-02 |
 | `BLK-01` | Blocker - **RESOLVED** (round 4) | AC-03 can verify tren Neon dev branch. Round 3: hotfix DEC-31 da commit (IF NOT EXISTS + idx lookup), `prisma migrate diff` = **0 DDL** (dev DB khop schema) nhung `prisma migrate deploy` van **EXIT 1 - P3009** (xem BLK-04) | **RESOLVED round 4**: `migrate resolve --rolled-back` exit 0 + `migrate deploy` exit 0 — 3/3 migration applied, diff = 0 DDL → **AC-03 PASS** | **RESOLVED**: thuc hien phuong an (A) do **Planner quyet** tai PLANNER-DECISION §7, khong phai Tier 2 tu quyet |
@@ -139,7 +150,8 @@ Khong tao evidence/ rieng (Tier 2 rule §4: khong tao artifact rieng). Output ng
 | `2` | `v1.0` | `READY_FOR_AUDIT` (AC-06 PASS tren dev branch, AC-09 freeze xong; AC-03 con BLOCKED - BLK-04 moi) | migrate deploy FAIL (P3018, bang `portal_timesheets` co san), seed 2 lan exit 0 tren dev branch, HANDOFF update + 1 commit |
 | `3` | `v1.0` | `READY_FOR_AUDIT` (hotfix DEC-31 committed; AC-03 con BLOCKED - P3009 can Tier 1 `migrate resolve`; diff = 0 DDL) | schema + migration.sql IF NOT EXISTS + idx lookup, validate PASS, deploy EXIT 1 (P3009), diff 0 DDL tren dev, HANDOFF update + 1 commit |
 | `4` | `v1.0` | `READY_FOR_AUDIT` (**AC-03 PASS** — dong Phase 0 foundation; BLK-01 + BLK-04 **RESOLVED** theo phuong an (A) do Planner quyet) | resolve --rolled-back + deploy exit 0 (3/3 migration applied), diff = 0 DDL, seed exit 0, HANDOFF update + 1 commit |
+| `5` | `v1.4` | `READY_FOR_AUDIT` (**STEP-09 + AC-11 DONE** — /job-board UI polish theo Warm Professionalism; tsc/build/vitest exit 0; push origin main) | Bo inline style tu bia (xanh #0F4C81...), dung tokens G27 trong globals.css, font Be Vietnam Pro + Inter (next/font/google), watermark co dau "DỮ LIỆU MINH HỌA", layout bam S05; 4 file (3 code + HANDOFF) 1 commit + push |
 
-> Handoff status: READY_FOR_AUDIT (round 4: AC-03 PASS tren Neon dev — Phase 0 foundation dong; sang cho Tier 3 re-audit neu can)
+> Handoff status: READY_FOR_AUDIT (round 5: STEP-09 + AC-11 DONE — /job-board dung Warm Professionalism; tsc + build + vitest exit 0, da push origin main; cho Tier 3 audit + sep duyet demo)
 
 > Ghi chu cho Tier 1: tat ca deviation/blocker da ghi o §5. Tier 2 KHONG tu sua TASK.md hay quyet dinh business. Moi quyet dinh la cua Tier 1 + sep.

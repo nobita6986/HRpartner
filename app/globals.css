@@ -1,1 +1,174 @@
 @import "tailwindcss";
+
+/* ==========================================================================
+   HRP Design Tokens — Warm Professionalism (canonical G27, chot 15/08/2026)
+   Nguon: stitch/warm_professionalism/DESIGN.md + mockup _assets/hrp.css
+   STEP-09: /job-board dung tokens nay thay inline style tu bia (xanh #0F4C81...)
+   ========================================================================== */
+:root {
+  /* Brand */
+  --primary: #f26522;            /* Primary canonical */
+  --primary-dark: #a63b00;       /* Hover/active; primary-container */
+  --on-primary: #ffffff;
+  --primary-soft: #fdf1ec;       /* tint ~10% cho badge/filter active */
+
+  /* Neutral */
+  --background: #faf9f7;
+  --surface: #ffffff;
+  --on-surface: #1a1c1b;
+  --on-surface-variant: #594138;
+  --outline: #8d7166;
+  --outline-variant: #e1bfb3;
+  --container-low: #f4f3f1;
+  --container: #efeeec;
+  --line: #eae8e4;               /* viền card 1px (DESIGN.md Elevation) */
+
+  /* Semantic */
+  --success: #16803a;   --success-soft: #e7f4ec;
+  --warning: #b45309;   --warning-soft: #fdf1e7;
+
+  /* Layout / elevation */
+  --radius: 8px;                 /* button / chip */
+  --radius-md: 16px;             /* card */
+  --shadow-card: 0 1px 2px rgba(26, 28, 27, 0.04), 0 6px 18px rgba(242, 101, 34, 0.08); /* ambient orange */
+
+  /* Type — bien font duoc gan boi next/font/google trong app/layout.tsx */
+  --font-head: var(--font-bvp), sans-serif;
+  --font-body: var(--font-bvp), sans-serif;
+  --font-label: var(--font-inter), var(--font-bvp), sans-serif;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-fast: 150ms;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--on-surface);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   Public job board (layout bam S05_JobBoard_Public_1440.html, STEP-09/AC-11)
+   ========================================================================== */
+.pub { min-height: 100vh; display: flex; flex-direction: column; background: var(--background); }
+
+.pub-header {
+  height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 28px;
+  padding: 0 40px; background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.logo { font-family: var(--font-head); font-weight: 700; font-size: 22px; line-height: 1; letter-spacing: -0.01em; color: var(--on-surface); }
+.logo em { color: var(--primary); font-style: normal; }
+
+.pub-nav { display: flex; gap: 20px; }
+.pub-nav span { font-family: var(--font-body); font-weight: 500; font-size: 14px; line-height: 20px; color: var(--on-surface-variant); cursor: default; }
+.pub-nav span.on { color: var(--on-surface); font-weight: 600; border-bottom: 2px solid var(--primary); padding-bottom: 2px; }
+
+.pub-auth { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+.pub-btn-ghost {
+  font-family: var(--font-label); font-weight: 600; font-size: 13px; line-height: 20px;
+  color: var(--primary-dark); background: transparent; border: 1px solid var(--outline-variant);
+  border-radius: var(--radius); padding: 8px 16px; cursor: pointer;
+}
+.pub-btn-primary {
+  font-family: var(--font-label); font-weight: 600; font-size: 13px; line-height: 20px;
+  color: var(--on-primary); background: var(--primary); border: 0;
+  border-radius: var(--radius); padding: 8px 16px; cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out);
+}
+.pub-btn-primary:hover { background: var(--primary-dark); }
+
+.watermark-badge {
+  border: 1px dashed var(--outline-variant); color: var(--on-surface-variant);
+  border-radius: var(--radius); padding: 5px 10px;
+  font-family: var(--font-label); font-weight: 700; font-size: 12px; line-height: 1;
+  letter-spacing: 0.08em; background: var(--surface); white-space: nowrap;
+}
+
+.pub-main { flex: 1; padding: 28px 40px 24px; display: flex; flex-direction: column; gap: 18px; }
+
+.hero { display: flex; flex-direction: column; gap: 10px; }
+.hero h1 { font-family: var(--font-head); font-weight: 700; font-size: 28px; line-height: 36px; letter-spacing: -0.01em; color: var(--on-surface); margin: 0; }
+.hero .sub { font-family: var(--font-body); font-weight: 400; font-size: 14px; line-height: 22px; color: var(--on-surface-variant); max-width: 640px; }
+
+.search-bar {
+  display: flex; align-items: center; gap: 10px; max-width: 520px; height: 44px;
+  background: var(--surface); border: 1px solid var(--outline-variant);
+  border-radius: 12px; padding: 0 14px;
+}
+.search-bar input {
+  flex: 1; border: 0; outline: 0;
+  font-family: var(--font-body); font-weight: 400; font-size: 14px; line-height: 20px;
+  color: var(--on-surface); background: transparent;
+}
+
+.filter-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.filter-group { display: flex; align-items: center; gap: 8px; }
+.filter-label { font-family: var(--font-label); font-weight: 600; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+.fchip {
+  font-family: var(--font-label); font-weight: 500; font-size: 12px; line-height: 16px;
+  color: var(--on-surface-variant); background: var(--surface);
+  border: 1px solid var(--outline-variant); border-radius: 999px; padding: 5px 12px; cursor: default;
+}
+.fchip.on { color: var(--primary-dark); background: var(--primary-soft); border-color: var(--primary); font-weight: 600; }
+
+.job-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.job-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+  padding: 24px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-card);
+}
+.job-top { display: flex; align-items: center; gap: 10px; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px;
+  border-radius: 999px; font-family: var(--font-label); font-weight: 600; font-size: 12px;
+  line-height: 1; letter-spacing: 0.01em; white-space: nowrap;
+}
+.badge-warning { background: var(--warning-soft); color: var(--warning); }
+.badge-success { background: var(--success-soft); color: var(--success); }
+.badge-neutral { background: var(--container); color: var(--on-surface-variant); }
+
+.job-code { font-family: var(--font-label); font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.04em; color: var(--on-surface-variant); }
+.job-name { font-family: var(--font-head); font-weight: 700; font-size: 17px; line-height: 24px; color: var(--on-surface); }
+.job-meta { display: flex; align-items: center; gap: 8px; font-family: var(--font-body); font-weight: 400; font-size: 13px; line-height: 18px; color: var(--on-surface-variant); }
+
+.job-shifts { display: flex; gap: 6px; flex-wrap: wrap; }
+.shift-chip {
+  font-family: var(--font-label); font-weight: 600; font-size: 11px; line-height: 16px;
+  color: var(--on-surface-variant); background: var(--container); border-radius: 6px; padding: 3px 8px;
+}
+
+.job-counts { display: flex; gap: 18px; padding-top: 4px; border-top: 1px solid var(--line); }
+.count b { display: block; font-family: var(--font-head); font-weight: 700; font-size: 16px; line-height: 24px; color: var(--on-surface); }
+.count span { font-family: var(--font-label); font-weight: 400; font-size: 11px; line-height: 16px; color: var(--on-surface-variant); }
+.count.miss b { color: var(--primary-dark); }
+
+.job-progress { height: 6px; border-radius: 999px; background: var(--container); overflow: hidden; }
+.job-progress i { display: block; height: 100%; background: var(--primary); border-radius: 999px; }
+.job-progress i.full { background: var(--success); }
+
+.apply-btn {
+  width: 100%; font-family: var(--font-label); font-weight: 600; font-size: 14px; line-height: 20px;
+  color: var(--on-primary); background: var(--primary); border: 0; border-radius: var(--radius);
+  padding: 10px 16px; cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out);
+}
+.apply-btn:hover:not(:disabled) { background: var(--primary-dark); }
+.apply-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.pub-foot {
+  flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 12px 40px;
+  border-top: 1px solid var(--line); background: var(--surface);
+  font-family: var(--font-label); font-weight: 400; font-size: 12px; line-height: 16px;
+  color: var(--on-surface-variant);
+}
+.push-right { margin-left: auto; }
+
+@media (max-width: 900px) {
+  .pub-header { padding: 0 24px; gap: 16px; }
+  .pub-nav { gap: 14px; }
+  .pub-main { padding: 24px 24px 20px; }
+  .job-grid { grid-template-columns: 1fr; }
+  .pub-foot { padding: 12px 24px; }
+}
