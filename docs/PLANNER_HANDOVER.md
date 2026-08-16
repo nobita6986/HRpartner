@@ -99,30 +99,29 @@ Kho quyết định chi tiết: `docs/tasks/hrp-v4-bod-mockup/DECISION_LOG.md`.
 | `hrp-phase0-foundation` | — | Đã xong | DB + Prisma singleton + 3 sub-package. Đóng |
 | `hrp-phase1-bcc-fence` | — | **ACCEPTED** | Rào /bcc JWT (D15). Đóng |
 | `hrp-phase1-identity-core` | v1.1-close | **ACCEPTED** (commit `dc3e772`) | JWT + 13 role + RBAC. Đóng |
-| `hrp-phase2-tenant-scope` | v1.4 | **READY_FOR_EXECUTION** | ⬅️ **ĐANG CHỜ SẾP GIAO TIER 2: `/code hrp-phase2-tenant-scope`** |
+| `hrp-phase2-tenant-scope` | v1.4-close | **ACCEPTED** (commit `e963d82`) | RLS + scope + masking 7 trường + runbook production. Đóng 16/08 — production RLS theo runbook trước Phase 4 |
 | `hrp-phase2-tenant-scope-v2` | — | **CANCELLED** | Tách sai (1 phase = 1 contract) — bỏ qua, đừng đọc nhầm |
-| `hrp-phase3-integrity` | v1.0 | **DRAFT** | Contract đã viết xong; mở khi tenant-scope ACCEPTED (cập nhật Baseline + đóng DEC-07/Q-01) |
+| `hrp-phase3-integrity` | v1.1 | **READY_FOR_EXECUTION** | ⬅️ **ĐANG CHỜ SẾP GIAO TIER 2: `/code hrp-phase3-integrity`** — Baseline `e963d82`, DEC-07/Q-01 đã đóng |
 | `hrp-gitlab-mirror` | — | Ngoài pipeline | Việc của sếp — hỏi trước khi đụng |
 
 ### Vị trí lộ trình hiện tại
 
 ```
-Mockup ✅ → Phase 0 ✅ → Phase 1 ✅ → [ Phase 2 ĐANG CHẠY ] → Phase 3 DRAFT sẵn
+Mockup ✅ → Phase 0 ✅ → Phase 1 ✅ → Phase 2 ✅ → [ Phase 3 ĐANG CHẠY ]
 → Phase 4 (UI thật, 6 tuần) → Phase 5 (UAT, GO-LIVE) → P1..P3 (Full V4, Q1/2027)
 ```
 
-Tuần 3/15 MVP nội bộ. UI thật đầu tiên: cuối slice 4A (W5–W6).
+Tuần 4/15 MVP nội bộ. UI thật đầu tiên: cuối slice 4A (W5–W6).
 
 ---
 
 ## 6. Hàng đợi việc tiếp theo (làm theo đúng thứ tự)
 
-1. **Việc đang chờ duy nhất:** sếp giao Tier 2 chạy `hrp-phase2-tenant-scope` (bạn nhắc sếp nếu sếp chưa làm; bạn KHÔNG tự chạy).
-2. Tier 2 xong → `HANDOFF.md` kết `READY_FOR_AUDIT` → báo sếp giao Tier 3 `/audit hrp-phase2-tenant-scope`.
+1. **Việc đang chờ duy nhất:** sếp giao Tier 2 chạy `hrp-phase3-integrity` (bạn nhắc sếp nếu sếp chưa làm; bạn KHÔNG tự chạy).
+2. Tier 2 xong → `HANDOFF.md` kết `READY_FOR_AUDIT` → báo sếp giao Tier 3 `/audit hrp-phase3-integrity`.
 3. Tier 3 xong → bạn **`/resolve`**: xử lý từng `AUD-xxx` trong Planner Resolution, verify evidence thật (Iron Rule 4) trước khi ACCEPTED.
-4. tenant-scope ACCEPTED → cập nhật `hrp-phase3-integrity/TASK.md`: Baseline = commit accept, đóng Q-01/DEC-07, status → `READY_FOR_EXECUTION` → báo sếp giao Tier 2.
-5. Khi Phase 3 chạy → bắt đầu chuẩn bị TASK phase 4 (4 slice — đọc PHASE_KHOAHOC §4 Phase 4 trước).
-6. **Sau MỖI task có thay đổi trạng thái → cập nhật roadmap (xem §8) NGAY LẬP TỨC** — đây là yêu cầu của sếp.
+4. Phase 3 ACCEPTED → bắt đầu chuẩn bị TASK phase 4 (4 slice — đọc PHASE_KHOAHOC §4 Phase 4 trước).
+5. **Sau MỖI task có thay đổi trạng thái → cập nhật roadmap (xem §8) NGAY LẬP TỨC** — đây là yêu cầu của sếp.
 
 ---
 
@@ -178,11 +177,11 @@ File `docs/roadmap-hrp-v4.html` là roadmap trực quan (design system G27: cam 
 
 - [ ] Đọc `.ai-pipeline/tier1.md` + `rules/01-planner-rules.md` + `templates/TASK.template.md`
 - [ ] Đọc toàn bộ `docs/PHASE_KHOAHOC_V1.md`
-- [ ] Đọc `docs/tasks/hrp-phase2-tenant-scope/TASK.md` (contract đang chạy) + `hrp-phase3-integrity/TASK.md`
+- [ ] Đọc `docs/tasks/hrp-phase3-integrity/TASK.md` (contract đang chờ giao) + `hrp-phase2-tenant-scope/TASK.md` (mẫu ACCEPTED)
 - [ ] Mở `docs/roadmap-hrp-v4.html` bằng trình duyệt (xem cấu trúc §8)
-- [ ] `git log --oneline -12` + `git status` — lưu ý: `appBCC/*`, `prisma/schema.prisma` đang modified là working tree của Tier 2 — **không stage, không đụng**
+- [ ] `git log --oneline -12` + `git status` — lưu ý: `appBCC/*` đang modified là working tree song song của sếp — **không stage, không đụng**
 - [ ] Hỏi sếp: Tier 2/3 hiện là ai? Có HANDOFF nào đang chờ audit không?
-- [ ] Xác nhận lại 2 việc chờ: (1) giao `/code hrp-phase2-tenant-scope`; (2) roadmap phải cập nhật sau mỗi task
+- [ ] Xác nhận lại 2 việc chờ: (1) giao `/code hrp-phase3-integrity`; (2) roadmap phải cập nhật sau mỗi task
 
 ---
 
