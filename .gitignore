@@ -64,3 +64,8 @@ favicon.ico
 
 .vercel
 .env.production.local
+
+# Phase 2 runtime tokens + role passwords (NEVER commit — contain DB credentials)
+.ai-pipeline/admin-token.txt
+.ai-pipeline/manager-token.txt
+.ai-pipeline/role_secrets.txt

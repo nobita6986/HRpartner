@@ -1,27 +1,27 @@
 /**
- * with-auth-scope — Phase 1 identity-core SKELETON (RQ-06, DEC-06).
+ * with-auth-scope — Phase 2 identity-core EXTENSION (RQ-04, DEC-06).
  *
- * ⚠️ Phase 1 SKELETON — chưa có scope builders (Phase 2 mới có).
- * Chức năng duy nhất Phase 1: deny-by-default theo role gate.
+ * Phase 2 UPDATE (từ Phase 1 SKELETON):
+ *   - Đăng ký scope builders qua SCOPE_REGISTRY cho 4 model chính: Worker, Project,
+ *     Vendor, CandidateSubmission (theo §5.3 + DEC-06).
+ *   - Root roles (ADMIN/HR_MANAGER/DIRECTOR) passthrough toàn bộ model (G22 root bất khả tước).
+ *   - Các role khác: lookup builder theo model name. Nếu có builder → inject WHERE.
+ *     Nếu KHÔNG có builder → throw AuthScopeError DENY_BY_DEFAULT (mặc định §1.3).
+ *   - READ_OPS (findMany/findFirst/findUnique/findUniqueOrThrow/count/aggregate):
+ *     inject WHERE clause cho non-root role.
+ *   - WRITE_OPS (create/createMany/update/updateMany/delete/deleteMany):
+ *     cùng gate — non-root không có builder phải throw.
  *
- * Quy tắc (DEC-06 + data-scope-security §1.3):
- *   - Role chưa có builder scope: chỉ ADMIN/HR_MANAGER/DIRECTOR được qua; role khác throw AuthScopeError.
- *   - Phase 2: nối scope builders (workerScope, projectScope, ...) vào `READ_OPS` + `WRITE_OPS` injection.
- *
- * Phase 1 hành vi cụ thể:
- *   - getSession() → wrap prisma client → apply gate.
- *   - READ_OPS (findMany / findFirst / findUnique / findUniqueOrThrow / count / aggregate):
- *     nhánh DENY: role không thuộc { ADMIN, HR_MANAGER, DIRECTOR } → throw AuthScopeError.
- *     nhánh PASS: passthrough (chưa inject where — Phase 2 sẽ thay).
- *   - WRITE_OPS (create / update / updateMany / delete / deleteMany): same gate.
- *   - CREATE: ép ownerId từ session nếu có (placeholder — Phase 1 chưa enforce).
- *
- * Lưu ý: §1.3 cũng nói "thiếu session → throw" — router phải gọi getSession() trước khi dùng.
+ * Lưu ý §5.7:
+ *   - findUnique ngoài scope → trả null/P2025 y hệt "không tồn tại" (Prisma tự lo vì
+ *     WHERE không match → P2025 nếu findUniqueOrThrow, null nếu findUnique).
+ *   - $queryRaw KHÔNG qua extension → cấm dùng. Phase 2 helper dùng `withDbContext`
+ *     cho mọi DB operation trong context.
  */
-import { SystemRole } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import type { AuthContext } from './auth-context';
+import { SCOPE_REGISTRY } from './scopes';
 
-/** Lỗi chuẩn hoá — caller map 403/500. */
 export class AuthScopeError extends Error {
   constructor(
     public readonly code: 'DENY_BY_DEFAULT' | 'INTERNAL',
@@ -33,20 +33,18 @@ export class AuthScopeError extends Error {
   }
 }
 
-/** Role được passthrough khi chưa có builder (Phase 1). Phase 2 sẽ thay bằng injected where. */
-const PASS_THROUGH_ROLES: readonly SystemRole[] = ['ADMIN', 'HR_MANAGER', 'DIRECTOR'];
+const ROOT_ROLES: readonly string[] = ['ADMIN', 'HR_MANAGER', 'DIRECTOR'];
 
-/** Tất cả model — Phase 1 chưa có builder → gate toàn cục. Phase 2 narrowing per model. */
 const READ_OPS = ['findMany', 'findFirst', 'findUnique', 'findUniqueOrThrow', 'count', 'aggregate'] as const;
 const WRITE_OPS = ['create', 'createMany', 'update', 'updateMany', 'delete', 'deleteMany'] as const;
+const ALL_OPS = [...READ_OPS, ...WRITE_OPS] as const;
 
 /**
- * Trả một Prisma Client Extension — Phase 1 gate.
+ * Prisma Client Extension factory — Phase 2.
+ *
  * Cách dùng:
  *   const db = prisma.$extends(withAuthScope(ctx));
- *   const rows = await db.user.findMany(); // gate check
- *
- * @throws AuthScopeError('DENY_BY_DEFAULT') nếu role không thuộc PASS_THROUGH_ROLES.
+ *   const rows = await db.worker.findMany(); // WHERE injected theo scope
  */
 export function withAuthScope(ctx: AuthContext) {
   if (!ctx?.userId || !ctx?.role) {
@@ -54,20 +52,35 @@ export function withAuthScope(ctx: AuthContext) {
   }
 
   return {
-    name: 'withAuthScope-Phase1',
+    name: 'withAuthScope-Phase2',
     query: {
       $allModels: {
         async $allOperations({ model, operation, args, query }: any) {
-          if (READ_OPS.includes(operation) || WRITE_OPS.includes(operation)) {
-            if (!PASS_THROUGH_ROLES.includes(ctx.role)) {
-              throw new AuthScopeError(
-                'DENY_BY_DEFAULT',
-                `Role ${ctx.role} bị chặn truy cập model ${model} (Phase 1 deny-by-default — Phase 2 sẽ nới scope theo builder).`,
-                { userId: ctx.userId, role: ctx.role, model, operation },
-              );
-            }
+          if (!ALL_OPS.includes(operation as any)) {
+            return query(args);
           }
-          return query(args);
+
+          // Root roles: passthrough không inject
+          if (ROOT_ROLES.includes(ctx.role)) {
+            return query(args);
+          }
+
+          // Non-root: lookup builder
+          const builder = SCOPE_REGISTRY[model];
+          if (!builder) {
+            // Model chưa có builder → DENY_BY_DEFAULT (1.3)
+            throw new AuthScopeError(
+              'DENY_BY_DEFAULT',
+              `Role ${ctx.role} không có scope cho model ${model} (Phase 2 chưa đăng ký builder — deny-by-default).`,
+              { userId: ctx.userId, role: ctx.role, model, operation },
+            );
+          }
+
+          // Inject WHERE clause
+          const where = builder(ctx);
+          const newArgs = { ...args, where: { AND: [args.where, where].filter(Boolean) } };
+
+          return query(newArgs);
         },
       },
     },
@@ -75,20 +88,31 @@ export function withAuthScope(ctx: AuthContext) {
 }
 
 /**
- * Helper tạo Prisma client đã extend — Phase 1 chỉ là convenience.
- * Caller chịu trách nhiệm truyền ctx đã verify.
- *
- * Phase 2 sẽ thay bằng: `prisma.$extends(withAuthScope(ctx))` + inject where theo model.
+ * Helper helper — authorize a request for a model (pre-check trước khi vào route).
+ * Phase 2 dùng cho self-test / debug.
  */
-export function authorizeForPhase1(ctx: AuthContext): {
+export function authorizeForPhase2(ctx: AuthContext, model: string): {
   allowed: boolean;
   reason?: string;
 } {
-  if (!PASS_THROUGH_ROLES.includes(ctx.role)) {
+  if (ROOT_ROLES.includes(ctx.role)) return { allowed: true };
+  const builder = SCOPE_REGISTRY[model];
+  if (!builder) {
     return {
       allowed: false,
-      reason: `Role ${ctx.role} không thuộc PASS_THROUGH_ROLES (Phase 1 deny-by-default).`,
+      reason: `Role ${ctx.role} không có builder cho model ${model} (deny-by-default)`,
     };
   }
-  return { allowed: true };
+  try {
+    builder(ctx);
+    return { allowed: true };
+  } catch (e) {
+    return {
+      allowed: false,
+      reason: (e as Error).message,
+    };
+  }
 }
+
+/** Re-export Prisma type cho consumer. */
+export type { Prisma };
