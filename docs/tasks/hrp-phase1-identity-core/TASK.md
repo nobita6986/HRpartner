@@ -7,18 +7,18 @@
 | Task slug | `hrp-phase1-identity-core` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
-| Status | `REVISION_REQUIRED` — audit logic PASS nhưng AC-07 production chưa đạt: migration UNIQUE chỉ áp dev, Neon main chưa chạy |
+| Spec version | `v1.1-close` |
+| Status | `ACCEPTED` — Tier 3 PASS round 2 + Planner nghiệm thu 16/08: 10/10 AC đạt, UNIQUE đã áp Neon main production, PII redacted, GAP-001 RESOLVED |
 | Planner | Tier 1 — Planner / Product & Architecture Decision Owner |
 | Executor | Tier 2 — bên ngoài, do sếp giao (Cursor/agent khác — Tier 1 KHÔNG spawn Tier 2/3; quy ước 16/08) |
 | Auditor | Tier 3 — bên ngoài, do sếp giao (độc lập với Tier 2) |
 | Baseline | `4a3a0fe` (main 16/08/2026 — `hrp-phase1-bcc-fence` ACCEPTED, production `/bcc` rào JWT PASS 10/10 AC) |
 | Modules | Phase 1 Identity (tuần 2) — chạm: `src/shared/auth/{permission-catalog,permission-resolver,auth-context,require-permission,with-auth-scope}.ts` (mới) + tests; `app/api/tickets/*` (6 route — thay stub); `prisma/seed.mjs` (mở rộng permissions); `prisma/migrations/*` (UNIQUE portal_timesheets). **KHÔNG tạo bộ đăng nhập/JWT mới — tái sử dụng bộ của bcc-fence** |
 | ADR references | **PHASE_KHOAHOC_V1.md §4 Phase 1 DoD** (6 mục còn lại); **`docs/data-scope-security.md` §4** (Permission Pool + thuật toán resolve + G22 root), **§5.1** (AuthContext), **§5.4** (pool chưa phân công); **CONTRACT_BCC §10** (UNIQUE portal_timesheets); D15 (rào /bcc tuần 1); G22 (root bất khả tước) |
-| Current execution round | 2 — production migration + evidence-redaction remediation pending |
-| Current audit round | 1 — PASS with coverage gap / AC-07 production pending |
-| Next gate | Tier 2 remediation → `/audit hrp-phase1-identity-core` re-audit → `/resolve` → ACCEPTED |
-| Updated | 2026-08-16 18:55 ICT |
+| Current execution round | 2 — closed (production migration + redaction remediation hoàn tất) |
+| Current audit round | 2 — PASS (GAP-001 RESOLVED, 10/10 AC) |
+| Next gate | Phase 2 — `hrp-phase2-tenant-scope` (chờ sếp chốt DEC-09 credential separation trước READY_FOR_EXECUTION) |
+| Updated | 2026-08-16 19:50 ICT |
 
 ## 1. Outcome
 
@@ -178,6 +178,7 @@
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
 | 1 | GAP-001 (auditor coverage gap, not formal finding) | ACCEPT_FIX | AUDIT verdict PASS nhưng AUDIT §5 và HANDOFF RISK-03 đều xác nhận migration `uq_portal_timesheets_period` mới áp dev; AC-07/DEC-09 yêu cầu production khi duplicate-check sạch. Production duplicate-check đã sạch (264 rows, 0 groups), nên thiếu duy nhất maintenance execution + re-audit evidence. HANDOFF cũng phải redact mọi phone/account value thật trước khi re-audit theo global rules §3. | v1.1: status `REVISION_REQUIRED`; STEP-07/AC-07 khóa production maintenance evidence; thêm revision log. | Tier 2: redact HANDOFF + apply migration production trong maintenance window; Tier 3: re-audit AC-07/AC-10; Planner closes only after PASS. |
+| 2 | GAP-001 | **CLOSED — nghiệm thu** | Tier 2 round 2: STEP-R2.A redact HANDOFF (phone `09****`, id `****`, bỏ secret literal — grep 0 matches); STEP-R2.B apply UNIQUE production — `apply-uniq-portal` trả `applied: NEWLY_APPLIED`, constraint `uq_portal_timesheets_period` đúng §10, 264 rows / 0 duplicates; insert-test bị chặn (PG `23505` → Prisma `P2010`, transaction rollback, không tạo row); 3 endpoint admin + `MIGRATION_SECRET` + secret file cleanup sạch (curl 404, smoke test `/api/tickets` 401, `/api/me` 401, `/bcc` 307, `/login` 200). Tier 3 round 2 PASS: 10/10 AC, §5 Coverage Gaps None, §7 GAP-001 RESOLVED. DEV-R2-01: Tier 2 không tự commit round 2 → Planner chốt merge working tree (HANDOFF redacted + AUDIT round 2) vào commit nghiệm thu. | v1.1-close: status `ACCEPTED`; audit round 2 PASS. | Tier 1 Planner — nghiệm thu 16/08. |
 
 ## 10. Revision Log
 
@@ -186,3 +187,4 @@
 | `v1.0` | 2026-08-16 | Initial contract — identity-core: permission catalog ≥10 + resolver 65 case + auth-context/require-permission + with-auth-scope deny-by-default + seed idempotent + thay stub 6 route tickets + UNIQUE portal_timesheets (CONTRACT_BCC §10). 🚫 KHÔNG tạo bộ đăng nhập/JWT mới (lưu ý sếp) | Sếp yêu cầu "viết TASK identity-core ngay bây giờ"; căn cứ PHASE_KHOAHOC §4 DoD + data-scope-security §4-§5.1 |
 | `v1.0-ready` | 2026-08-16 | Chuyển `READY_FOR_EXECUTION`; Baseline cập nhật `4a3a0fe` sau khi `hrp-phase1-bcc-fence` ACCEPTED (audit round 2 PASS production 10/10 AC). Không đổi contract sản phẩm | Gate bcc-fence closed |
 | `v1.1` | 2026-08-16 | Post-audit remediation: phục hồi contract bị ghi đè nhầm; status `REVISION_REQUIRED`; ACCEPT_FIX GAP-001. Khóa AC-07/STEP-07: UNIQUE phải áp trên Neon main trong maintenance window và re-audit; yêu cầu Tier 2 redact PII/account thật trong HANDOFF trước re-audit. | AUDIT round 1 §5-§6 + HANDOFF RISK-03; Planner review |
+| `v1.1-close` | 2026-08-16 | Nghiệm thu: status `ACCEPTED`. Tier 3 round 2 PASS — AC-07 (UNIQUE applied production, insert-test 23505) + AC-10 (redaction) đóng GAP-001; 10/10 AC. Planner Resolution round 2 CLOSED. Phase 1 tuần 2 hoàn tất → gate Phase 2 `hrp-phase2-tenant-scope`. | AUDIT round 2 verdict PASS + HANDOFF round 2 STEP-R2.A..D |
