@@ -27,7 +27,10 @@
   .st-file a:hover { text-decoration: underline; }
   .st-file .st-fstate { font: 400 11px/14px var(--font-label); color: var(--on-surface-variant); }
   .st-act { flex: 1; min-width: 0; }
-  .st-say { flex: 1; min-width: 0; color: var(--on-surface-variant); font-style: italic; }
+  .st-say { flex: 1; min-width: 0; }
+  .st-say .say-orig { display: block; color: var(--on-surface-variant); font-style: italic; }
+  .st-say .say-vi { display: block; margin-top: 5px; color: var(--on-surface); font-style: normal; }
+  .vi-tag { display: inline-block; font: 600 12px/16px var(--font-label); color: var(--primary-dark); background: var(--primary-soft); border-radius: 4px; padding: 0 6px; margin-right: 6px; vertical-align: 1px; }
   .st-mk { flex-shrink: 0; }
   .st-mk .mi { font-size: 16px; }
   .mk-legend { display: flex; gap: 14px; font: 500 12px/16px var(--font-label); color: var(--on-surface-variant); align-items: center; }
@@ -40,7 +43,7 @@
 
     <div class="f1-head">
       <span class="f1-title">F00A — Demo Narrative · Click-path presenter</span>
-      <span class="f1-note">PDD §1.3 · 16 bước · 00:00–13:00 · bấm tên file để mở đúng frame tại bước đó</span>
+      <span class="f1-note">PDD §1.3 · 16 bước · 00:00–13:00 · bấm tên file để mở đúng frame tại bước đó · <b>Lời thoại Việt bổ sung theo DEC-33</b> · <a href="F01B_Glossary.html">Glossary EN→VI (F01B)</a></span>
       <span class="watermark-badge push-right">DỮ LIỆU MINH HỌA</span>
     </div>
 
@@ -57,6 +60,7 @@
       <span><span class="material-symbols-outlined mi mi-md mi-tone">swap_horiz</span> Khoảnh khắc 1</span>
       <span><span class="material-symbols-outlined mi mi-md mi-tone">lock</span> Khoảnh khắc 2</span>
       <span><span class="material-symbols-outlined mi mi-md mi-tone">balance</span> Khoảnh khắc 3</span>
+      <span><span class="vi-tag">VI</span> Lời thoại tiếng Việt dễ nói (DEC-33)</span>
     </div>
 
     <section class="card">
@@ -70,28 +74,28 @@
           <span class="st-time">00:00</span>
           <span class="st-file"><a href="S01_ControlTower_Default_1440.html">S01_ControlTower_Default_1440</a><div class="st-fstate">mở bộ lọc Tháng 08/2026 · Miền Bắc</div></span>
           <span class="st-act">Mở bộ lọc “Tháng 08/2026 · Miền Bắc”</span>
-          <span class="st-say">“Đây không phải dashboard báo cáo cuối tháng; đây là hàng đợi điều hành hôm nay.”</span>
+          <span class="st-say"><span class="say-orig">“Đây không phải dashboard báo cáo cuối tháng; đây là hàng đợi điều hành hôm nay.”</span><span class="say-vi"><span class="vi-tag">VI</span>Đây là Control Tower — trung tâm điều hành: không phải báo cáo cuối tháng, mà là danh sách việc cần xử lý hôm nay.</span></span>
         </div>
 
         <div class="step-row">
           <span class="st-time">00:40</span>
           <span class="st-file"><a href="S02_Staffing_Default_1440.html">S02_Staffing_Default_1440</a><div class="st-fstate">click cảnh báo “Thiếu 3 người”</div></span>
           <span class="st-act">Click dòng cảnh báo dự án “Thiếu 3 người”</span>
-          <span class="st-say">“Từ KPI đi thẳng tới vấn đề cần xử lý, không phải mở nhiều module.”</span>
+          <span class="st-say"><span class="say-orig">“Từ KPI đi thẳng tới vấn đề cần xử lý, không phải mở nhiều module.”</span><span class="say-vi"><span class="vi-tag">VI</span>Dự án An Phát đang thiếu 3 người — tỷ lệ lấp đầy (fill rate) 47 trên 50. Từ KPI nhảy thẳng tới đúng vấn đề, không phải mở nhiều màn hình.</span></span>
         </div>
 
         <div class="step-row">
           <span class="st-time">01:20</span>
           <span class="st-file"><a href="S02_Staffing_Default_1440.html">S02_Staffing_Default_1440</a><div class="st-fstate">Talent Pool lọc Sẵn sàng · Bắc Ninh/Hà Nội · Ca D1</div></span>
           <span class="st-act">Mở Talent Pool đã lọc <b>Sẵn sàng · Bắc Ninh/Hà Nội · Ca D1</b></span>
-          <span class="st-say">“Card giúp HR quét nhanh con người, nguồn, kỹ năng và availability.”</span>
+          <span class="st-say"><span class="say-orig">“Card giúp HR quét nhanh con người, nguồn, kỹ năng và availability.”</span><span class="say-vi"><span class="vi-tag">VI</span>Kho ứng viên (talent pool) dạng thẻ để bộ phận nhân sự quét nhanh: ai sẵn sàng, thuộc đơn vị cung ứng nào, kỹ năng gì, làm được ca nào.</span></span>
         </div>
 
         <div class="step-row">
           <span class="st-time">02:10</span>
           <span class="st-file"><a href="S02A_AssignmentConflict_Drawer.html">S02A_AssignmentConflict_Drawer</a><div class="st-fstate">Chọn Nam → Bố trí vào dự án</div></span>
           <span class="st-act">Chọn <b>Nguyễn Văn Nam</b> → <b>Bố trí vào dự án</b></span>
-          <span class="st-say">Hệ thống mở guided drawer: người này đang ACTIVE ở dự án Yên Phong; chỉ có Xem assignment hoặc Chuyển dự án.</span>
+          <span class="st-say"><span class="say-orig">Hệ thống mở guided drawer: người này đang ACTIVE ở dự án Yên Phong; chỉ có Xem assignment hoặc Chuyển dự án.</span><span class="say-vi"><span class="vi-tag">VI</span>Hệ thống mở cửa sổ hướng dẫn (guided drawer): anh Nam đang làm tại dự án Yên Phong — chỉ có hai lựa chọn: xem việc đang làm hoặc chuyển dự án.</span></span>
           <span class="st-mk" title="Khoảnh khắc bắt buộc 1"><span class="material-symbols-outlined mi">swap_horiz</span></span>
         </div>
 
@@ -99,7 +103,7 @@
           <span class="st-time">03:10</span>
           <span class="st-file"><a href="S02A_TransferPreview.html">S02A_TransferPreview</a><div class="st-fstate">Chuyển dự án → preview đóng cũ/mở mới</div></span>
           <span class="st-act">Click <b>Chuyển dự án</b> → xem preview đóng cũ/mở mới</span>
-          <span class="st-say">“Rule 1-ACTIVE không hiện thành lỗi kỹ thuật; hệ thống dẫn người dùng qua đúng quy trình.” Không submit thật.</span>
+          <span class="st-say"><span class="say-orig">“Rule 1-ACTIVE không hiện thành lỗi kỹ thuật; hệ thống dẫn người dùng qua đúng quy trình.” Không submit thật.</span><span class="say-vi"><span class="vi-tag">VI</span>Quy tắc mỗi người chỉ gắn một dự án đang làm (1-ACTIVE) không báo lỗi, mà dẫn người dùng đi đúng quy trình: đóng việc cũ, mở việc mới, cập nhật số lượng từng dự án. Chúng ta không bấm xác nhận thật.</span></span>
           <span class="st-mk" title="Khoảnh khắc bắt buộc 1"><span class="material-symbols-outlined mi">swap_horiz</span></span>
         </div>
 
@@ -107,28 +111,28 @@
           <span class="st-time">04:10</span>
           <span class="st-file"><a href="S02B_ReferralGuard_Drawer_Protected.html">S02B_ReferralGuard_Drawer_Protected</a><div class="st-fstate">Mở Huy → tab Nguồn tuyển</div></span>
           <span class="st-act">Đóng drawer, mở <b>Phạm Quốc Huy</b> → tab <b>Nguồn tuyển</b></span>
-          <span class="st-say">Timeline cho thấy CTV Nguyễn Hoàng Duy tạo claim ngày 12/08 — 3 ngày trước; vendor mới nộp hôm nay.</span>
+          <span class="st-say"><span class="say-orig">Timeline cho thấy CTV Nguyễn Hoàng Duy tạo claim ngày 12/08 — 3 ngày trước; vendor mới nộp hôm nay.</span><span class="say-vi"><span class="vi-tag">VI</span>Dòng thời gian (timeline) cho thấy cộng tác viên Duy giới thiệu người ngày 12/08 — 3 ngày trước; đơn vị cung ứng (vendor) hôm nay mới nộp lại hồ sơ.</span></span>
         </div>
 
         <div class="step-row">
           <span class="st-time">04:50</span>
           <span class="st-file"><a href="S02B_ReferralGuard_Drawer_Protected.html">S02B_ReferralGuard_Drawer_Protected</a><div class="st-fstate">Xem lý do bảo vệ (claim tạo 12/08)</div></span>
           <span class="st-act">Click <b>Xem lý do bảo vệ</b></span>
-          <span class="st-say">“HRP giữ lịch sử nguồn, không overwrite. Override là ngoại lệ có permission, lý do và bằng chứng.”</span>
+          <span class="st-say"><span class="say-orig">“HRP giữ lịch sử nguồn, không overwrite. Override là ngoại lệ có permission, lý do và bằng chứng.”</span><span class="say-vi"><span class="vi-tag">VI</span>Hệ thống giữ lịch sử nguồn giới thiệu, không ghi đè. Chốt chặn giới thiệu (referral guard) đang bảo vệ nguồn này; muốn ghi đè chặn (override) phải là người có quyền, kèm lý do và bằng chứng.</span></span>
         </div>
 
         <div class="step-row">
           <span class="st-time">05:40</span>
           <span class="st-file"><a href="S03_Attendance_Exceptions.html">S03_Attendance_Exceptions</a><div class="st-fstate">breadcrumb dự án → badge 7 ngoại lệ công ✓</div></span>
           <span class="st-act">Click breadcrumb dự án → badge <b>7 ngoại lệ công</b></span>
-          <span class="st-say">Chuyển sang Attendance Workbench với filter dự án/kỳ đã giữ nguyên.</span>
+          <span class="st-say"><span class="say-orig">Chuyển sang Attendance Workbench với filter dự án/kỳ đã giữ nguyên.</span><span class="say-vi"><span class="vi-tag">VI</span>Chuyển sang màn Chuyên cần (attendance) — bảng công theo ca; bộ lọc dự án An Phát và kỳ 08/2026 giữ nguyên.</span></span>
         </div>
 
         <div class="step-row">
           <span class="st-time">06:20</span>
           <span class="st-file"><a href="S03_ResolveDrawer.html">S03_ResolveDrawer</a><div class="st-fstate">exception Mã NV không khớp → right drawer ✓</div></span>
           <span class="st-act">Click exception <b>Mã NV không khớp</b> → mở right drawer</span>
-          <span class="st-say">Map <b>AP-QM-1048</b> vào worker Trần Thị Mai; preview dòng trước/sau, không sửa raw event.</span>
+          <span class="st-say"><span class="say-orig">Map <b>AP-QM-1048</b> vào worker Trần Thị Mai; preview dòng trước/sau, không sửa raw event.</span><span class="say-vi"><span class="vi-tag">VI</span>Dòng công AP-QM-1048 không tìm được chủ — yếu tố chặn (blocker) loại “nhân viên không khớp” (UNMATCHED_EMPLOYEE). Hệ thống gợi ý gán cho chị Trần Thị Mai, xem trước kết quả, không sửa dữ liệu gốc.</span></span>
           <span class="st-mk" title="Khoảnh khắc bắt buộc 2"><span class="material-symbols-outlined mi">lock</span></span>
         </div>
 
@@ -136,7 +140,7 @@
           <span class="st-time">07:30</span>
           <span class="st-file"><a href="S03_Attendance_Resolved.html">S03_Attendance_Resolved</a><div class="st-fstate">Duyệt kỳ ✓</div></span>
           <span class="st-act">Chọn các exception đã resolved → <b>Duyệt kỳ</b></span>
-          <span class="st-say">Thanh readiness đổi từ “7 ngoại lệ” thành “Sẵn sàng khóa”; hiển thị maker/checker.</span>
+          <span class="st-say"><span class="say-orig">Thanh readiness đổi từ “7 ngoại lệ” thành “Sẵn sàng khóa”; hiển thị maker/checker.</span><span class="say-vi"><span class="vi-tag">VI</span>Cả 7 ngoại lệ đã xử lý xong — thanh sẵn sàng chuyển thành “Sẵn sàng khóa”, hiện rõ người tạo (maker) và người kiểm (checker).</span></span>
           <span class="st-mk" title="Khoảnh khắc bắt buộc 2"><span class="material-symbols-outlined mi">lock</span></span>
         </div>
 
@@ -144,7 +148,7 @@
           <span class="st-time">08:30</span>
           <span class="st-file"><a href="S03B_LockConfirmation.html">S03B_LockConfirmation</a><div class="st-fstate">Khóa kỳ → confirmation ✓</div></span>
           <span class="st-act">Click <b>Khóa kỳ</b> → confirmation summary</span>
-          <span class="st-say">“Khóa là bất biến. Sai sau khóa đi bằng adjustment/version mới.” Chọn “Khóa và tạo đối soát”.</span>
+          <span class="st-say"><span class="say-orig">“Khóa là bất biến. Sai sau khóa đi bằng adjustment/version mới.” Chọn “Khóa và tạo đối soát”.</span><span class="say-vi"><span class="vi-tag">VI</span>Khóa chốt (lock) là đóng băng số liệu kỳ công: 1.222 dòng công, không còn yếu tố chặn, 9.624 giờ thường, 490,5 giờ tăng ca. Sau khóa nếu sai thì phải đi bằng điều chỉnh hoặc phiên bản mới.</span></span>
           <span class="st-mk" title="Khoảnh khắc bắt buộc 2"><span class="material-symbols-outlined mi">lock</span></span>
         </div>
 
@@ -152,7 +156,7 @@
           <span class="st-time">09:30</span>
           <span class="st-file"><a href="S04_Reconciliation_Internal.html">S04_Reconciliation_Internal</a><div class="st-fstate">tab split Vendor/Client ✓</div></span>
           <span class="st-act">Mở tab split <b>Vendor payable / Client receivable</b></span>
-          <span class="st-say">Chỉ ra cùng source period nhưng hai rate, hai workflow và margin riêng.</span>
+          <span class="st-say"><span class="say-orig">Chỉ ra cùng source period nhưng hai rate, hai workflow và margin riêng.</span><span class="say-vi"><span class="vi-tag">VI</span>Màn Đối soát (reconciliation): cùng kỳ công nhưng hai bảng kê — tiền trả đơn vị cung ứng (vendor) và tiền thu khách hàng (client), hai đơn giá khác nhau; chênh lệch chính là biên lợi nhuận (margin) 186.360.000 đồng.</span></span>
           <span class="st-mk" title="Khoảnh khắc bắt buộc 3"><span class="material-symbols-outlined mi">balance</span></span>
         </div>
 
@@ -160,7 +164,7 @@
           <span class="st-time">10:30</span>
           <span class="st-file"><a href="S04A_Lineage_Drawer.html">S04A_Lineage_Drawer</a><div class="st-fstate">worker line → lineage drawer ✓</div></span>
           <span class="st-act">Click một worker line → lineage drawer</span>
-          <span class="st-say">Timesheet version, quantity, vendor rate, client rate và số tiền đều truy nguyên được.</span>
+          <span class="st-say"><span class="say-orig">Timesheet version, quantity, vendor rate, client rate và số tiền đều truy nguyên được.</span><span class="say-vi"><span class="vi-tag">VI</span>Bấm một dòng là thấy cửa sổ truy nguyên (lineage): phiên bản bảng công, số giờ, đơn giá của đơn vị cung ứng và của khách hàng, số tiền quy ra. Ví dụ chú Long: trả 13.108.000, thu 16.272.000, lời 3.164.000 đồng.</span></span>
           <span class="st-mk" title="Khoảnh khắc bắt buộc 3"><span class="material-symbols-outlined mi">balance</span></span>
         </div>
 
@@ -168,7 +172,7 @@
           <span class="st-time">11:30</span>
           <span class="st-file"><a href="S04B_VendorPreview_Sent.html">S04B_VendorPreview_Sent</a><div class="st-fstate">Xem như Vendor ✓</div></span>
           <span class="st-act">Click <b>Xem như Vendor</b></span>
-          <span class="st-say">Chuyển sang portal preview với dữ liệu vendor được phép thấy; salary/margin bị ẩn.</span>
+          <span class="st-say"><span class="say-orig">Chuyển sang portal preview với dữ liệu vendor được phép thấy; salary/margin bị ẩn.</span><span class="say-vi"><span class="vi-tag">VI</span>Xem bằng mắt của đơn vị cung ứng: họ chỉ thấy bảng kê của mình — giờ, đơn giá, thành tiền; đơn giá khách hàng và biên lợi nhuận bị ẩn. Hạn xác nhận theo cam kết dịch vụ (SLA) là 18/08.</span></span>
           <span class="st-mk" title="Khoảnh khắc bắt buộc 3"><span class="material-symbols-outlined mi">balance</span></span>
         </div>
 
@@ -176,14 +180,14 @@
           <span class="st-time">12:10</span>
           <span class="st-file"><a href="S04B_VendorPreview_DisputeForm.html">S04B_VendorPreview_DisputeForm</a><div class="st-fstate">Phản đối → reason + attachment ✓</div></span>
           <span class="st-act">Click <b>Phản đối</b> → reason + attachment panel</span>
-          <span class="st-say">“Phản đối có cấu trúc, deadline và audit; không quay về chat rời rạc.” Không submit.</span>
+          <span class="st-say"><span class="say-orig">“Phản đối có cấu trúc, deadline và audit; không quay về chat rời rạc.” Không submit.</span><span class="say-vi"><span class="vi-tag">VI</span>Không đồng ý thì phản đối theo mẫu có cấu trúc: chọn dòng, ghi lý do, đính kèm bằng chứng, có thời hạn và được ghi lại để đối soát (audit). Chúng ta không bấm gửi thật.</span></span>
         </div>
 
         <div class="step-row">
           <span class="st-time">13:00</span>
           <span class="st-file"><a href="S04_MarginComparison.html">S04_MarginComparison</a><div class="st-fstate">quay về Internal, kết ở margin ✓</div></span>
           <span class="st-act">Quay về Internal view, kết thúc ở margin summary</span>
-          <span class="st-say">“Một chuỗi dữ liệu, bốn quyết định: tuyển, bố trí, chốt công, đối soát.”</span>
+          <span class="st-say"><span class="say-orig">“Một chuỗi dữ liệu, bốn quyết định: tuyển, bố trí, chốt công, đối soát.”</span><span class="say-vi"><span class="vi-tag">VI</span>Kết lại: một chuỗi dữ liệu xuyên suốt, bốn quyết định — tuyển người, bố trí nhân sự, khóa công và đối soát — dừng ở bảng so sánh biên lợi nhuận giữa các dự án.</span></span>
           <span class="st-mk" title="Khoảnh khắc bắt buộc 3"><span class="material-symbols-outlined mi">balance</span></span>
         </div>
 
