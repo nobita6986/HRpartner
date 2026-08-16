@@ -96,6 +96,16 @@ Quyết định (lệnh sếp qua chọn lựa 16/08): **sửa ngay trước khi
 - Status TASK → `READY_FOR_EXECUTION` — Tier 2 nhận qua `/code` hoặc prompt.
 - Sau Tier 3 verify AC-11 → sếp duyệt demo → đóng Phase 0.
 
+## 11. Resolution Round 6 — AC-11 PASS (Tier 3 Round 3) · 16/08
+
+Tier 3 Round 3 (AUDIT.md section Round 3, tự kiểm không tin HANDOFF): **AC-11 PASS 13/13**, 0 P0/P1.
+- **AUD-008** (P3): comment `globals.css:6` còn nhắc "#0F4C81" (mô tả việc thay thế, không render) → không cần sửa.
+- **AUD-009** (P3): 1 inline style `width` động cho progress bar (data-driven) → giữ, hợp lý.
+- **AUD-006** (Round 2 — watermark không dấu) → **RESOLVED**: production render "DỮ LIỆU MINH HỌA" có dấu.
+- Planner tự curl production 16/08: CSS bundle chứa `#f26522` / `#faf9f7` / `#eae8e4` + Be Vietnam Pro + Inter; `#0F4C81` = 0 (HTML lẫn CSS); watermark có dấu.
+
+Gate cuối duy nhất = **sếp duyệt demo** https://hrpartner.vn/job-board. Sau "demo OK": đóng Phase 0 → Phase 1 (D15: rào /bcc JWT tối giản tuần đầu).
+
 ## 10. Revision Log
 
 | Ver | Ngày | Thay đổi |
@@ -105,3 +115,4 @@ Quyết định (lệnh sếp qua chọn lựa 16/08): **sửa ngay trước khi
 | `v1.2` | `2026-08-16` | Resolution Round 3 (P3009 failed record): chọn phương án (A) `resolve --rolled-back` + deploy lại trên dev; diff = 0 DDL đã chứng minh state khớp; route Tier 2 round 4 qua PROMPT_TIER2_R4 |
 | `v1.3` | `2026-08-16` | Resolution Round 4: re-audit **PASS 10/10 AC, 0 P0/P1**; chốt DoD kỹ thuật xong; AUD-006/007 + DEV-01…04 → backlog Phase 4; chờ sếp duyệt demo → đóng Phase 0 |
 | `v1.4` | `2026-08-16` | Resolution Round 5: lệnh sếp sửa UI ngay — thêm STEP-09 + AC-11 vào TASK v1.4, Status READY_FOR_EXECUTION; kéo UI AUD-003/006 từ Phase 4 về Phase 0 |
+| `v1.5` | `2026-08-16` | Resolution Round 6: Tier 3 Round 3 **AC-11 PASS 13/13** (0 P0/P1; AUD-008/009 P3 cosmetic không chặn); AUD-006 RESOLVED; production live UI Warm Professionalism; chờ sếp duyệt demo → đóng Phase 0 |

@@ -77,3 +77,44 @@
 - Build local xanh + production URL matrix (`/`, `/bcc`, `/job-board`) đều 200 + nội dung job-board đủ watermark & 3 project canonical (AC-02, AC-05 runtime).
 - An toàn: g0_baseline add-only `IF NOT EXISTS`, không destructive; schema khớp contract 13 cột; app/bcc chỉ đổi import; không secret leak trong mọi commit mới.
 - Đề nghị Tier 1 đóng Phase 0 theo DoD §8 (duyệt demo job-board) và chuyển AUD-006/AUD-007 cùng các mục backlog đã ghi nhận (DEV-01…04) vào TASK Phase 4.
+
+---
+
+## Round 3 — Verify STEP-09/AC-11 (16/08/2026)
+
+> Tier 3 audit sau commit `e6d7f2b` (round 5 — UI polish `/job-board` theo Warm Professionalism).
+> Toàn bộ lệnh dưới đây do tôi (Tier 3) tự chạy lại trên repo — không tin claim trong HANDOFF §1 Round 5.
+> Tuân thủ: read-only tuyệt đối, không commit/push, chỉ sửa AUDIT.md.
+
+### Bảng kết quả từng mục kiểm
+
+| # | Mục kiểm | Kết quả | Evidence (lệnh + output thật tôi tự chạy) |
+|---|---|---|---|
+| 1 | Scope commit `e6d7f2b` | **PASS** | `git show e6d7f2b --stat` → đúng 4 file: `app/globals.css` (+173), `app/job-board/page.tsx` (113 ±), `app/layout.tsx` (+20), `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (+24). Không file lạ, không đụng `appBCC/`. Commit là HEAD (e6d7f2b). |
+| 2 | `page.tsx` bỏ toàn bộ inline style màu cũ | **PASS** | Bản trước (e6d7f2b^) có 15+ chỗ inline style `#0F4C81`/`system-ui`/`#F7F8FA`/`#E5E7EB`/không dấu (dòng 18–47) — bản mới dùng class `pub-*`, `fchip`, `job-card`, `badge-*`, `apply-btn`, `watermark-badge`. Còn đúng 1 inline style `style={{ width: ... }}` (dòng 96) là **width động theo dữ liệu** của thanh progress — không phải màu/style tự bịa (xem AUD-009). |
+| 3 | Data 3 project canonical không đổi | **PASS** | `packages/job-board/src/index.ts` (không nằm trong commit e6d7f2b): DA-2026-018 `50/47` (thiếu 3), DA-2026-022 `80/80` (thiếu 0), PRJ-SV-014 `35/32` (thiếu 3); `listPublicJobs()` giữ nguyên. |
+| 4 | `revalidate = 300` giữ + không auth | **PASS** | `app/job-board/page.tsx:4` `export const revalidate = 300`; không import auth/session, không gọi `getPrisma`. Build route table: `/job-board` ○ Static, Revalidate 5m. |
+| 5 | Watermark có dấu | **PASS** | `app/job-board/page.tsx:39` (header) + `:108` (footer): **"DỮ LIỆU MINH HỌA"** có dấu. Grep `DU LIEU MINH HOA` toàn `app/`: 0 match. |
+| 6 | `globals.css` tokens Warm Professionalism | **PASS** | `:root`: `--primary #f26522` (:10), `--primary-dark #a63b00` (:11), `--background #faf9f7` (:16), `--line #eae8e4` (:24), `--radius 8px` (:31, button/chip), `--radius-md 16px` (:32, card), `--shadow-card` ambient orange `rgba(242, 101, 34, 0.08)` (:33). `.job-card` padding 24px (:119). |
+| 7 | `layout.tsx` font Be Vietnam Pro + Inter | **PASS** | `next/font/google`: `Be_Vietnam_Pro` (subsets `latin`+`vietnamese`, 400/500/600/700) + `Inter` (400/500/600), gán `--font-bvp`/`--font-inter`; `<html lang="vi">`; metadata giữ nguyên (ngoài phạm vi). |
+| 8 | Grep toàn `app/` không còn token cũ | **PASS** | `#0F4C81`: 1 match duy nhất ở `app/globals.css:6` — **comment** mô tả việc thay thế, không phải màu render (xem AUD-008). `system-ui`: 0. `DU LIEU MINH HOA`: 0. `#F7F8FA`/`#E5E7EB`/Material Symbols/CDN tailwind: 0. `lucide-react ^0.468.0` đã có sẵn trong `package.json` (package.json không nằm trong commit — không thêm dependency). |
+| 9 | `npx tsc --noEmit` | **PASS** | exit 0. |
+| 10 | `npm run build` | **PASS** | exit 0. `/job-board` ○ Static Revalidate 5m (ISR giữ nguyên), route table đủ `/bcc` + `/job-board`; "Compiled successfully in 17.3s". |
+| 11 | `npx vitest run` | **PASS** | Test Files 2 passed, **Tests 32 passed (32)**, exit 0 (ticket 16 + payroll 16). |
+| 12 | Curl production `https://hrpartner.vn/job-board` | **PASS** | HTTP 200 (0.15s). HTML: watermark **"DỮ LIỆU MINH HỌA" có dấu** (4 match), `0f4c81` = 0 match. CSS tĩnh `/_next/static/css/693d078eae805d40.css`: `f26522` (2), `faf9f7`, `eae8e4`, `--radius:8px`, `--radius-md:16px`, `--shadow-card:0 1px 2px #1a1c1b0a,0 6px 18px #f2652214` (ambient orange dạng minified = rgba(242,101,34,0.08)), `@font-face` **Be Vietnam Pro** + **Inter** + Fallback. `system-ui` chỉ xuất hiện trong boilerplate 404 built-in Next.js (RSC payload `"404: This page could not be found."`) — không phải code dự án. **Deploy production đã là bản mới — verify runtime xong, không cần chờ.** |
+| 13 | Layout khớp S05 + header tham chiếu landing standard | **PASS** | Đối chiếu `docs/tasks/hrp-v4-bod-mockup/mockup/S05_JobBoard_Public_1440.html`: đủ nav "Việc làm/Về HRP/Liên hệ", nút "Đăng nhập/Đăng ký", watermark header+footer (mockup 2 match), 3 project code DA-2026-018 / DA-2026-022 / PRJ-SV-014, badge "Tuyển gấp/Đã nhận đủ/Đang tuyển", 3 nút "Ứng tuyển" — trùng cấu trúc implementation. `stitch/hrp_landing_page_html_standard/code.html`: `#f26522` + `orangeDark: '#a63b00'` — khớp `--primary`/`--primary-dark`. |
+
+### Findings mới
+
+| ID | Severity | Mô tả | Vị trí (file:line) | Đề xuất |
+|---|---|---|---|---|
+| AUD-008 | P3 | `app/globals.css:6` vẫn còn chuỗi "#0F4C81" trong comment mô tả việc thay thế inline style cũ ("xanh #0F4C81...") — không phải màu render (grep dính 1 match văn bản). Không ảnh hưởng AC-11: không còn **màu** xanh nào được render. HANDOFF đã thừa nhận match này. | `app/globals.css:6` | Không bắt buộc; nếu muốn `grep #0F4C81` về 0 tuyệt đối, xóa cụm từ trong comment ở lần sửa UI sau. |
+| AUD-009 | P3 | `app/job-board/page.tsx:96` còn đúng 1 inline style `style={{ width: ... }}` cho thanh tiến độ — width động theo dữ liệu (pct), data-driven hợp lý, **không** phải màu/style tự bịa. | `app/job-board/page.tsx:96` | Observation, không cần hành động. |
+
+### Verdict AC-11: **PASS**
+
+- **13/13 mục kiểm PASS**; 0 finding P0/P1; chỉ 2 observation P3 (AUD-008, AUD-009) không chặn.
+- Đủ 5 tiêu chí AC-11: (1) hết màu xanh `#0F4C81` (chỉ còn comment), (2) có primary `#F26522` + nền `#FAF9F7` + font **Be Vietnam Pro** (next/font, subset vietnamese) — đều xác nhận trong CSS tĩnh production, (3) watermark có dấu **"DỮ LIỆU MINH HỌA"** (code + production HTML), (4) layout khớp S05 (đối chiếu mockup + `code.html` brand tokens `#f26522`/`#a63b00`), (5) KHÔNG đổi logic/data: `listPublicJobs()`, `revalidate = 300`, không auth, 3 project canonical (50/47/3, 80/80/0, 35/32/3).
+- **AUD-006 (round 2 — watermark không dấu) → RESOLVED**: production giờ render "DỮ LIỆU MINH HỌA" có dấu (4 match trong HTML).
+- Runtime production đã verify xong (deploy live, HTTP 200, CSS tĩnh chứa đủ tokens + @font-face) — không cần ghi "chờ deploy".
+- Tổng thể: STEP-09 hoàn thành đúng spec, không deviation mới ngoài 2 observation P3 cosmetic. **AC-11 PASS**; gate còn lại thuộc sếp: mắt sếp duyệt demo `/job-board` (DoD §8) — ngoài phạm vi Tier 3.
