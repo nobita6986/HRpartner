@@ -12,13 +12,13 @@
 | Planner | Tier 1 — Planner / Product & Architecture Decision Owner |
 | Executor | Tier 2 — bên ngoài, do sếp giao (Cursor/agent khác — Tier 1 KHÔNG spawn Tier 2/3) |
 | Auditor | Tier 3 — bên ngoài, do sếp giao (độc lập với Tier 2) |
-| Baseline | `4a3a0fe` (main 16/08/2026 — `hrp-phase1-bcc-fence` ACCEPTED); **cập nhật thành commit `hrp-phase1-identity-core` ACCEPTED trước khi giao** |
+| Baseline | `dc3e772` (main 16/08/2026 — `hrp-phase1-identity-core` ACCEPTED; bcc-fence `4a3a0fe` nằm trong tổ tiên) |
 | Modules | Phase 2 Tenant Scope — migration RLS dev; DB roles; `src/shared/auth/{with-db-context,rls-context,scopes/*.scope,worker-projection,with-auth-scope}.ts`; `app/api/workers/*`; tests; runbook production |
 | ADR references | `docs/PHASE_KHOAHOC_V1.md` §4 Phase 2; `docs/data-scope-security.md` §1.2, §5-§6; G22 root bất khả tước; DEC-08 (RLS production hoãn tới trước Phase 4) |
 | Current execution round | 1 |
 | Current audit round | 0 (chưa audit) |
 | Next gate | identity-core ACCEPTED + DEC-09 chốt → cập nhật Baseline → `/code hrp-phase2-tenant-scope` → `/audit` → `/resolve` → ACCEPTED |
-| Updated | 2026-08-16 18:00 ICT |
+| Updated | 2026-08-16 19:55 ICT |
 
 ## 1. Outcome
 
@@ -177,3 +177,4 @@
 | `v1.0` | 2026-08-16 | Initial Phase 2 contract | Sếp yêu cầu viết Phase 2 |
 | `v1.1` | 2026-08-16 | DEC-08: production RLS hoãn tới trước Phase 4 | Sếp chốt phương án B |
 | `v1.2` | 2026-08-16 | Planner revision sau rà soát: bỏ traceability/RQ sai, bỏ scope ticket/UNIQUE trùng identity-core, khôi phục DEC-08 B, thêm hard gate tách role credential web/ETL (DEC-09), sửa RQ→STEP→AC đầy đủ | Rà soát theo yêu cầu sếp |
+| `v1.2b` | 2026-08-16 | Cập nhật Baseline `dc3e772` sau khi `hrp-phase1-identity-core` ACCEPTED (audit round 2 PASS). Không đổi contract sản phẩm | Gate identity-core closed |
