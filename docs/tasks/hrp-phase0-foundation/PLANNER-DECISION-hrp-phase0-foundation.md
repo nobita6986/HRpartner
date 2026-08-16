@@ -115,6 +115,15 @@ Quyết định (DEC-32):
 - TASK Phase 0 v1.6: **STEP-10 + AC-12** — filter **client-side hoạt động thật** trên data hardcode (được thêm field `province`/`type` additive vào `listPublicJobs()`, không đổi số liệu canonical). KHÔNG đụng DB — query DB thật vẫn thuộc Phase 4 (AUD-003).
 - Route: `PROMPT_TIER2_R6.md` → Tier 2 round 6 → Tier 3 verify AC-12 → sếp duyệt demo.
 
+## 13. Resolution Round 8 — AC-12 PASS (Tier 3 Round 4) · 16/08
+
+Tier 3 Round 4 (AUDIT.md section Round 4, tự kiểm không tin HANDOFF): **AC-12 PASS 15/15**, 0 P0/P1.
+- **AUD-010** (P3): inline `style={{ width }}` progress bar chuyển sang `JobBoardFilter.tsx:184` (data-driven, tiếp nối AUD-009) → giữ, hợp lý.
+- **AUD-011** (P3): option filter dùng `<button>` thay `<span>` mockup tĩnh (bắt buộc để click client-side thật — DEV-07) + nút "Xóa bộ lọc" có trạng thái `disabled` → ghi nhận.
+- Production đã live bản mới: HTML chứa `filter-panel` + "Xóa bộ lọc" + 4 nhóm + số đếm khớp mockup; ISR `revalidate = 300` giữ; 41/41 test (32 cũ + 9 mới).
+
+Gate cuối duy nhất = **sếp duyệt demo** https://hrpartner.vn/job-board (mắt sếp — click filter thật). Sau "demo OK": đóng Phase 0 → Phase 1 (D15: rào /bcc JWT tối giản tuần đầu).
+
 ## 10. Revision Log
 
 | Ver | Ngày | Thay đổi |
@@ -126,3 +135,4 @@ Quyết định (DEC-32):
 | `v1.4` | `2026-08-16` | Resolution Round 5: lệnh sếp sửa UI ngay — thêm STEP-09 + AC-11 vào TASK v1.4, Status READY_FOR_EXECUTION; kéo UI AUD-003/006 từ Phase 4 về Phase 0 |
 | `v1.5` | `2026-08-16` | Resolution Round 6: Tier 3 Round 3 **AC-11 PASS 13/13** (0 P0/P1; AUD-008/009 P3 cosmetic không chặn); AUD-006 RESOLVED; production live UI Warm Professionalism; chờ sếp duyệt demo → đóng Phase 0 |
 | `v1.6` | `2026-08-16` | Resolution Round 7: lệnh sếp bổ sung **cột filter trái** → **DEC-32** (mockup S05 v2 + DECISION_LOG mockup v0.4); TASK v1.6 thêm STEP-10 + AC-12 (filter client-side thật trên data hardcode); route Tier 2 round 6 qua PROMPT_TIER2_R6 |
+| `v1.7` | `2026-08-16` | Resolution Round 8: Tier 3 Round 4 **AC-12 PASS 15/15** (0 P0/P1; AUD-010/011 P3 ghi nhận); production live filter trái; chờ sếp duyệt demo → đóng Phase 0 |

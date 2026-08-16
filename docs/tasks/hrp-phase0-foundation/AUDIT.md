@@ -118,3 +118,45 @@
 - **AUD-006 (round 2 — watermark không dấu) → RESOLVED**: production giờ render "DỮ LIỆU MINH HỌA" có dấu (4 match trong HTML).
 - Runtime production đã verify xong (deploy live, HTTP 200, CSS tĩnh chứa đủ tokens + @font-face) — không cần ghi "chờ deploy".
 - Tổng thể: STEP-09 hoàn thành đúng spec, không deviation mới ngoài 2 observation P3 cosmetic. **AC-11 PASS**; gate còn lại thuộc sếp: mắt sếp duyệt demo `/job-board` (DoD §8) — ngoài phạm vi Tier 3.
+
+---
+
+## Round 4 — Verify STEP-10/AC-12 (16/08/2026)
+
+> Tier 3 audit sau commit `50a6c7c` (round 6 — sidebar filter trái `/job-board` theo mockup S05 v2, DEC-32).
+> Toàn bộ lệnh dưới đây do tôi (Tier 3) tự chạy lại trên repo + production — không tin claim trong HANDOFF §1 Round 6.
+> Tuân thủ: read-only tuyệt đối, không commit/push, chỉ sửa AUDIT.md (file này).
+
+### Bảng kết quả từng mục kiểm
+
+| # | Mục kiểm | Kết quả | Evidence (lệnh + output thật tôi tự chạy) |
+|---|---|---|---|
+| 1 | Scope commit `50a6c7c` | **PASS** | `git show 50a6c7c --stat` → đúng 6 file: `app/globals.css` (+52/−20), `app/job-board/JobBoardFilter.tsx` (mới, +193), `app/job-board/page.tsx` (69 ±), `docs/tasks/hrp-phase0-foundation/HANDOFF.md` (+25), `packages/job-board/src/filter.test.ts` (mới, +76), `packages/job-board/src/index.ts` (+37). Không file lạ, không đụng `appBCC/`, không dependency mới, không `.env`/DB. Commit là HEAD. |
+| 2 | `JobBoardFilter.tsx`: 4 nhóm filter đúng mockup S05 v2 | **PASS** | Đối chiếu từng nhóm với mockup (S05 dòng 107–134): **Địa điểm** (Tất cả/Bắc Ninh/Bắc Giang), **Ca làm** (Tất cả/HC/D1/D2/N1/T1), **Loại hình** (Tất cả/Nhà máy/Kho vận), **Trạng thái tuyển** (Tất cả/Tuyển gấp/Đang tuyển/Đã nhận đủ) — cùng thứ tự option, cùng nhãn tiếng Việt có dấu. `FILTER_GROUPS` tại `app/job-board/JobBoardFilter.tsx:32-73`. |
+| 3 | "Tất cả" default + nút "Xóa bộ lọc" reset | **PASS** | `useState` khởi tạo cả 4 nhóm = `TAT_CA` (`JobBoardFilter.tsx:105-110`); option đang chọn có class `on` + `fcheck on`. Nút "Xóa bộ lọc" (`:129-131`) gọi `clearAll()` (`:120-122`) reset 4 nhóm về `TAT_CA`, `disabled` khi đã reset (UX nhỏ, ghi DEV-07 của Tier 2 — chấp nhận). |
+| 4 | Số đếm tính từ data thật (không hardcode) | **PASS** | `countForOption()` (`JobBoardFilter.tsx:99-102`) đếm qua `matchesFilters(job, { [groupId]: value })` trên `jobs` truyền từ `listPublicJobs()` — không có số hardcode trong file UI. Production render đúng: Địa điểm 3/2/1, Ca làm 3/1/2/1/1/1, Loại hình 3/2/1, Trạng thái 3/1/1/1 — khớp 100% mockup. |
+| 5 | Filter hoạt động client-side thật (state + matchesFilters) | **PASS** | Component `'use client'` (`:1`); `selected` state + `toFilters()` (`:88-96`) → `visibleJobs = jobs.filter(matchesFilters)` (`:113`) render vào `.job-grid`; `select()` (`:116-118`) cập nhật state → re-render. Không chạm DB (`revalidate = 300`, `listPublicJobs()` không đổi signature). Logic 3 case AC-12 verify bằng code + 9 test pure (mục 8). |
+| 6 | Checkbox 16px + icon lucide-react | **PASS** | `.fcheck` = `width/height 16px` (`app/globals.css:135-136`); icon `Check` từ `lucide-react` size 13 (`JobBoardFilter.tsx:14,147`) — lucide có sẵn trong dependencies từ round 5, không thêm gì. `MapPin` dùng cho job-meta (`:14,170`). |
+| 7 | `packages/job-board/src/index.ts`: `province`/`type` additive + canonical không đổi | **PASS** | `PublicJobCard` thêm 2 field (`index.ts:25-27`) — dữ liệu 3 project giữ nguyên: DA-2026-018 `50/47` (thiếu 3, TUYEN_GAP, NHA_MAY, BAC_NINH), DA-2026-022 `80/80` (thiếu 0, DA_NHAN_DU, KHO_VAN, BAC_NINH), PRJ-SV-014 `35/32` (thiếu 3, DANG_TUYEN, NHA_MAY, BAC_GIANG). Khớp mockup từng card (S05 dòng 139–200). `listPublicJobs()` signature giữ nguyên (`:94`). |
+| 8 | `matchesFilters()` logic đúng 3 case AC-12 | **PASS** | Đọc code (`index.ts:43-49`): province/type/status so khớp đúng; shift qua `job.shifts.some(code)`. Tự chạy 9 test `filter.test.ts` (mục 10): **Bắc Giang → chỉ PRJ-SV-014**, **N1 → chỉ DA-2026-018**, **Kho vận → chỉ DA-2026-022**, không lọc → 3 card, đếm thật (Bắc Ninh 2 / Bắc Giang 1, Nhà máy 2 / Kho vận 1, HC 1 / D1 2 / D2 1 / N1 1 / T1 1). |
+| 9 | `globals.css`: `.filter-panel`/`.fopt`/`.fcheck` token Warm Professionalism; hết `.fchip`/`.filter-row` | **PASS** | `.filter-panel` (`globals.css:110-114`): width 240px, `var(--surface)`, border `var(--line)` (#eae8e4), radius `var(--radius-md)` 16px, padding 20px — khớp mockup (S05 dòng 33). `.fopt`/`.fcheck`/`.fcount`/`.filter-clear` toàn bộ dùng token có sẵn (primary/primary-dark/outline-variant/on-primary/font-head/body/label), không màu mới. Grep `fchip|filter-row|filter-group` trên `app/` + `packages/`: **0 match** — chips ngang đã bỏ. |
+| 10 | Grep hết `#0F4C81` + không inline style màu mới | **PASS** | `grep -rn "#0F4C81" app/ packages/` → 1 match duy nhất `app/globals.css:6` = **comment** (mô tả việc thay thế, từ round 3 — AUD-008, không render). `JobBoardFilter.tsx`/`page.tsx` chỉ còn 1 inline style duy nhất `style={{ width: ... }}` (progress bar, data-driven — xem AUD-010), không màu. |
+| 11 | Responsive <900px | **PASS** | `globals.css:204-206`: `.pub-body { flex-direction: column }` + `.filter-panel { width: 100% }` + `.job-grid` 1 cột — panel nằm trên grid, không vỡ layout. |
+| 12 | `npx tsc --noEmit` | **PASS** | Tự chạy: exit 0. |
+| 13 | `npm run build` | **PASS** | Tự chạy: `BUILD_EXIT=0`, route table: `/job-board` ○ Static, **Revalidate 5m** (ISR giữ nguyên), đủ `/bcc` + `/job-board`; "Generating static pages (7/7)". |
+| 14 | `npx vitest run` | **PASS** | Tự chạy: Test Files 3 passed, **Tests 41 passed (41)**, `VITEST_EXIT=0` (filter.test.ts 9 mới + ticket 16 + payroll 16). |
+| 15 | Curl production `https://hrpartner.vn/job-board` | **PASS** | HTTP 200 (0.98s). HTML đã là **bản mới (deploy live — không cần chờ)**: `filter-panel` (1), "Bộ lọc" (2), "Xóa bộ lọc" (1); đủ 4 nhóm + option nhãn có dấu (Bắc Ninh/Bắc Giang, Nhà máy/Kho vận, Tuyển gấp/Đang tuyển/Đã nhận đủ); "Tất cả" default `fopt on` + `fcheck on`; 16 số đếm theo đúng thứ tự 3/2/1 · 3/1/2/1/1/1 · 3/2/1 · 3/1/1/1; SSR render đủ **3 job-card** (DA-2026-018 / DA-2026-022 / PRJ-SV-014). CSS tĩnh `/_next/static/css/fb53feb1b552a8bc.css` chứa `filter-panel` (2), `fopt` (5), `fcheck` (4), `fgroup` (1), `fcount` (1), `fopt-label` (1). Header ISR: `Cache-Control: public, max-age=0, must-revalidate`, `Age: 29`. |
+
+### Findings mới
+
+| ID | Severity | Mô tả | Vị trí (file:line) | Đề xuất |
+|---|---|---|---|---|
+| AUD-010 | P3 | Inline style `style={{ width: ... }}` cho thanh tiến độ **di chuyển** từ `app/job-board/page.tsx:96` (round 3 — AUD-009) sang `app/job-board/JobBoardFilter.tsx:184` khi card được chuyển vào component filter — vẫn là width động theo dữ liệu (pct = totalFilled/totalNeeded), data-driven hợp lý, **không** phải màu/style tự bịa. | `app/job-board/JobBoardFilter.tsx:184` | Observation, không cần hành động (tiếp nối AUD-009). |
+| AUD-011 | P3 | Option filter dùng `<button class="fopt">` thay vì `<span>` như mockup frame tĩnh (S05 dòng 39) — bắt buộc vì filter phải click được client-side thật (AC-12 yêu cầu hoạt động, mockup là frame tĩnh). Đã được Tier 2 ghi DEV-07. Nút "Xóa bộ lọc" có thêm trạng thái `disabled` khi đã reset (mockup không mô tả trạng thái này) — phụ trợ UX, token có sẵn. | `app/job-board/JobBoardFilter.tsx:140-152` | Ghi nhận, không cần hành động. |
+
+### Verdict AC-12: **PASS**
+
+- **15/15 mục kiểm PASS**; 0 finding P0/P1; chỉ 2 observation P3 (AUD-010 tiếp nối AUD-009, AUD-011 — semantics button so với mockup tĩnh) không chặn.
+- Đủ 6 tiêu chí AC-12: (1) cột filter trái 240px khớp mockup S05 v2 — panel `.filter-panel` surface/border `--line`/radius 16px/padding 20px, 4 nhóm đúng thứ tự + nhãn, nút "Xóa bộ lọc", số đếm; (2) filter **client-side thật** trên 3 card canonical (state + `matchesFilters()`, không DB, không đổi `listPublicJobs()`); (3) 3 case logic chuẩn: Bắc Giang → chỉ Sao Việt, N1 → chỉ An Phát, Kho vận → chỉ Yên Phong (9 test pure pass + đọc code); (4) "Xóa bộ lọc" reset về 3 card (`clearAll` → TAT_CA cả 4 nhóm); (5) số liệu canonical **không đổi** (50/47/3 · 80/80/0 · 35/32/3 — test + production SSR 3 card); (6) không auth, `revalidate = 300` giữ (build: `/job-board` Static Revalidate 5m).
+- **Runtime production đã verify xong** (deploy live: HTTP 200, HTML chứa panel + 4 nhóm + đủ số đếm, CSS bundle chứa `filter-panel`/`fopt`/`fcheck`). Hạn chế duy nhất: click filter chỉ verify được qua code + 9 test pure (curl không mô phỏng được click) — tương đương mức chứng minh của filter client-side trong phạm vi Phase 0; mắt sếp duyệt demo là gate cuối (DoD §8), ngoài phạm vi Tier 3.
+- Tổng thể: STEP-10 hoàn thành đúng spec DEC-32, không deviation mới ngoài 2 observation P3. **AC-12 PASS**.
