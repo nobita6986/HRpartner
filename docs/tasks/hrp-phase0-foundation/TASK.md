@@ -2,7 +2,7 @@
 
 > Pipeline 3-tier: `TASK.md` (Tier 1 — Planner) → `HANDOFF.md` (Tier 2 — Executor) → `AUDIT.md` (Tier 3 — Auditor)
 > Spec version: `v1.0` · Ngày khởi tạo: **16/08/2026**
-> Status: `PASS` — STEP-09/AC-11 (PASS 13/13) + STEP-10/AC-12 (PASS 15/15) hoàn thành; production live filter trái theo mockup S05 v2. Gate cuối duy nhất: **sếp mở https://hrpartner.vn/job-board duyệt demo** → đóng Phase 0.
+> Status: `ACCEPTED` — toàn bộ AC PASS (Round 2: 10/10, Round 3: AC-11 13/13, Round 4: AC-12 15/15), production live. **Sếp nghiệm thu demo 16/08 bằng lệnh "chúng ta vào phase 1"** → Phase 0 đóng, chuyển sang Phase 1 — Identity (D15: rào /bcc JWT tuần đầu).
 > Căn cứ: **D13** (backbone invariant-phase + monorepo Phương án A), **D14** (freeze Mockup Baseline = trigger Phase 0; founder cho khởi động sớm 16/08 song song dry-run mockup), `docs/PHASE_KHOAHOC_V1.md` §4, `docs/MODULE_TACH_V2.md` §VII W1 + 5 điều chỉnh kỹ thuật đã duyệt 16/08/2026.
 
 ---
@@ -104,7 +104,7 @@
 - [x] `vitest run` pass
 - [x] 3 sub-package tách xong (`@hrp/money`, `@hrp/payroll-core`, `@hrp/job-board`)
 - [x] `/job-board` khớp design Warm Professionalism + filter trái S05 v2 (AC-11 PASS 13/13 + AC-12 PASS 15/15)
-- [ ] **Demo**: link public `app/job-board` lên Vercel — sếp duyệt
+- [x] **Demo**: link public `app/job-board` lên Vercel — sếp duyệt (16/08: sếp nghiệm thu, lệnh chuyển Phase 1)
 
 ## 9. Revision Log
 
@@ -118,3 +118,4 @@
 | `v1.5` | `2026-08-16` | Tier 3 Round 3: **AC-11 PASS 13/13**, 0 P0/P1 (AUD-008/009 P3 cosmetic); AUD-006 RESOLVED; production live; DoD "khớp design" tick; Status → PASS chờ sếp duyệt demo | PLANNER-DECISION v1.5 |
 | `v1.6` | `2026-08-16` | Thêm **STEP-10 + AC-12** (cột filter trái theo mockup S05 v2, DEC-32) — lệnh sếp sau review demo; filter client-side hoạt động thật trên 3 card canonical; DoD "khớp design" mở lại; Status → READY_FOR_EXECUTION | PLANNER-DECISION v1.6 |
 | `v1.7` | `2026-08-16` | Tier 3 Round 4: **AC-12 PASS 15/15**, 0 P0/P1 (AUD-010/011 P3 ghi nhận); production live filter trái; DoD "khớp design" tick; Status → PASS chờ sếp duyệt demo | PLANNER-DECISION v1.7 |
+| `v1.8` | `2026-08-16` | **Sếp nghiệm thu demo** (lệnh "chúng ta vào phase 1" 16/08) — DoD cuối tick; Status → `ACCEPTED`. Phase 0 đóng; Phase 1 (Identity) bắt đầu bằng task `hrp-phase1-bcc-fence` (D15). Lưu ý quy ước pipeline mới: từ đây Planner Resolution ghi trong TASK.md, không tạo file PLANNER-DECISION riêng (.ai-pipeline/tier1.md 16/08) | Lệnh sếp 16/08 |
