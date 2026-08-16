@@ -7,18 +7,18 @@
 | Task slug | `hrp-phase1-bcc-fence` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Spec version | `v1.1` |
+| Status | `ACCEPTED` — Tier 3 PASS round 2 + Planner nghiệm thu 16/08 |
 | Planner | Tier 1 — Planner / Product & Architecture Decision Owner |
 | Executor | Tier 2 — **bên ngoài, do sếp giao** (Cursor/agent khác — Tier 1 KHÔNG spawn Tier 2/3; quy ước 16/08) |
 | Auditor | Tier 3 — **bên ngoài, do sếp giao** (độc lập với Tier 2) |
 | Baseline | `f382c8d` (main 16/08/2026 — Phase 0 ACCEPTED) |
 | Modules | Phase 1 Identity (tuần 1) — chạm: `middleware.ts` (mới), `app/login/*` (mới), `app/api/auth/*` + `app/api/me/*` (mới), `src/shared/auth/*` (mới), `prisma/seed.mjs`, `package.json` |
 | ADR references | **D15** (DECISION_LOG — rào /bcc JWT tối giản tuần đầu Phase 1, trước permission-resolver); **ADR-007** (JWT + passwordHash argon2/bcrypt); `docs/PHASE_KHOAHOC_V1.md` §4 Phase 1 DoD (2 mục đầu: `/api/me` + 401 không 500); `docs/CONTRACT_BCC.md` §6 (quy tắc PII); `docs/data-scope-security.md` §15.1 (ADMIN = root) |
-| Current execution round | 1 |
-| Current audit round | 0 (chưa audit) |
-| Next gate | verify-task → `/code` → `/audit` → `/resolve` → ACCEPTED |
-| Updated | 2026-08-16 13:30 ICT |
+| Current execution round | 2 |
+| Current audit round | 2 — PASS |
+| Next gate | ACCEPTED — mở task kế tiếp `hrp-phase1-identity-core` |
+| Updated | 2026-08-16 16:55 ICT |
 
 ## 1. Outcome
 
@@ -177,7 +177,7 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| — | — | — | (chưa có audit) | — | — |
+| 2 | None | ACCEPT_FIX | Tier 3 verdict PASS: 10/10 AC verified on production `https://hrpartner.vn`; no findings; HANDOFF round 2 `READY_FOR_AUDIT`; AUDIT round 2 confirms `/bcc` redirect 307 without token, login 200 + HttpOnly cookie, `/api/me` 200 with JWT/401 without, logout clears cookie, `app/bcc/` diff rỗng, test 55/55 PASS. Planner accepts closure. | Status → `ACCEPTED`; current execution/audit round updated; no product contract change. | Closed by Planner 2026-08-16 — next task `hrp-phase1-identity-core` |
 
 ## 10. Revision Log
 
@@ -185,3 +185,4 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 |---|---|---|---|
 | `v1.0` | 2026-08-16 | Khởi tạo contract — rào `/bcc` JWT tối giản tuần đầu Phase 1 (D15): login phone+password, jose JWT 8h, cookie httpOnly + Bearer, middleware fail-closed, seed 2 tài khoản idempotent từ ENV, `/api/me` theo DoD PHASE_KHOAHOC §4 | Lệnh sếp vào Phase 1 16/08 + D15 + PHASE_KHOAHOC_V1 §4 |
 | `v1.1` | 2026-08-16 | **Đổi quy trình giao việc** — Executor/Auditor là Tier 2/3 bên ngoài do sếp giao (Cursor/agent khác), Tier 1 KHÔNG spawn sub-agent đảm nhiệm Tier 2/3. Ghi nhận tiến độ: STEP-01..08 đã xong (commit `5851b5b` + HANDOFF `a0123fd`, `1993f7d`); **STEP-09 chưa chạy** — production sạch (chỉ có `DATABASE_URL` cũ, chưa set 5 ENV mới, chưa seed Neon main, chưa deploy). `.gitignore` đang có thay đổi chưa commit (thêm `.vercel/`). Giá trị 4 biến tài khoản do sếp cấp TRỰC TIẾP cho Tier 2 ngoài | Lệnh sếp 16/08 — Tier 1 chỉ đảm nhiệm Tier 1 |
+| `v1.1-close` | 2026-08-16 | `/resolve` sau AUDIT round 2 PASS: cập nhật Control status `ACCEPTED`, execution round 2, audit round 2 PASS; Planner Resolution ghi nhận no findings + 10/10 AC PASS production. Không đổi contract sản phẩm | AUDIT.md round 2 verdict PASS |
