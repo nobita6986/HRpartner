@@ -896,7 +896,7 @@
       </div>
 
       <div class="card">
-        <span class="tag">Người lao động · hrpartner.vn/m</span>
+        <span class="tag">Người lao động · hrpartner.vn</span>
         <h3>App người lao động</h3>
         <div class="who">Lao động phổ thông — chữ to, thao tác đơn giản, cài được trên điện thoại.</div>
         <ul>
@@ -983,14 +983,17 @@ flowchart TD
   B -->|"✅ Xác nhận"| LOCKED["🔒 Khóa biên bản<br/>HOÀN TẤT"]
   B -->|"❌ Phản đối<br/>vòng 1"| C["⚠️ Phản đối vòng 1<br/>HR chỉnh sửa"]
   C -->|"Gửi lại<br/>vòng 2"| A
+  C -->|"❌ Phản đối<br/>vòng 2"| FL["🔒 FORCE LOCK<br/>HR Manager/Kế toán chốt<br/>lý do + bằng chứng + audit"]
   C -->|"⏰ Quá 3 ngày<br/>không trả lời"| AUTO["⏰ Tự xác nhận<br/>không ai câu giờ được"]
   A -->|"⏰ Quá 3 ngày<br/>Vendor im lặng"| AUTO
   AUTO --> LOCKED
-  note["📌 Quy tắc: Phản đối tối đa 2 vòng.<br/>Quá 2 vòng → HR Manager bắt buộc đối thoại với Vendor."]:::rule
+  FL --> LOCKED
+  note["📌 Quy tắc: Phản đối tối đa 2 vòng.<br/>Quá 2 vòng → HR Manager/Kế toán FORCE LOCK<br/>(lý do + bằng chứng + audit — G17-B1)."]:::rule
   AUTO -.-> note
   style LOCKED fill:#DCFCE7,color:#15803D,stroke:#15803D,stroke-width:2px
   style AUTO fill:#FEF3C7,color:#B45309,stroke:#B45309,stroke-width:2px
   style C fill:#FEF3C7,color:#B45309
+  style FL fill:#FEE2E2,color:#B91C1C,stroke:#B91C1C,stroke-width:2px
   style note fill:#FFF1E4,color:#C2410C,stroke:#F97316,stroke-width:1px,stroke-dasharray:4
 </pre>
     </div>
@@ -1000,7 +1003,7 @@ flowchart TD
 <pre class="mermaid">
 flowchart TD
   A["Bảng công<br/>đã khóa 🔒"] --> B{"Loại lao động?"}
-  B -->|"Chính thức<br/>≥ 3 tháng"| C1["Thuế lũy tiến 5/10/15/20/25%<br/>+ BHXH 21.5%"]
+  B -->|"Chính thức<br/>≥ 3 tháng"| C1["Thuế lũy tiến 5/10/15/20/25%<br/>+ BHXH 10.5% (NLĐ)<br/>(DN đóng 22%)"]
   B -->|"Vãng lai<br/>≥ 2 triệu/lần"| C2["Thuế 10% khấu trừ<br/>tại nguồn"]
   C1 --> D["Lương NET"]
   C2 --> D
@@ -1053,9 +1056,13 @@ flowchart LR
 <section>
   <div class="wrap">
     <div class="eyebrow">Hồ sơ lao động</div>
-    <h2>Bốn vòng đời tách bạch của một người lao động</h2>
-    <p class="sub">Thay vì một trạng thái duy nhất khó hiểu, hồ sơ theo dõi riêng 4 chuyện độc lập — mỗi chuyện có vòng đời của nó. "Đang rảnh" là tự suy ra: đang làm việc nhưng chưa có dự án.</p>
+    <h2>Năm vòng đời tách bạch của một người lao động</h2>
+    <p class="sub">Thay vì một trạng thái duy nhất khó hiểu, hồ sơ theo dõi riêng 5 chuyện độc lập — mỗi chuyện có vòng đời của nó (ADR-011: profile/submission/employment/assignment/risk). "Đang rảnh" là tự suy ra: đang làm việc nhưng chưa có dự án.</p>
     <div class="sm">
+      <div class="row">
+        <div class="name">🗂️ Ứng tuyển — <span class="tag">tuyển dụng</span></div>
+        <div class="flow"><b>Mới</b> <span class="arrow">→</span> <b>Sàng lọc</b> <span class="arrow">→</span> <b>Đạt</b> <span class="bad">| Loại | Rút | Gộp trùng</span></div>
+      </div>
       <div class="row">
         <div class="name">📋 Hồ sơ giấy tờ — <span class="tag">hồ sơ</span></div>
         <div class="flow"><b>Chưa đủ thông tin</b> <span class="arrow">→</span> <b>Chờ xác minh</b> <span class="arrow">→</span> <b>Đã xác minh</b> <span class="bad">| Bị từ chối</span></div>
@@ -1083,9 +1090,16 @@ flowchart LR
       <span class="pill danger">🔴 Nghỉ việc / Bị chặn</span>
     </div>
     <div class="diagram">
-      <div class="caption">Bốn vòng đời chạy song song</div>
+      <div class="caption">Năm vòng đời chạy song song</div>
 <pre class="mermaid">
 flowchart LR
+  subgraph UT["🗂️ Ứng tuyển"]
+    U1["Mới"] --> U2["Sàng lọc"]
+    U2 --> U3["Đạt ✅"]
+    U2 -->|"loại"| U4["Loại ❌"]
+    U2 -->|"rút"| U5["Rút ↩️"]
+    U3 -->|"gộp trùng"| U6["Gộp 🔀"]
+  end
   subgraph HS["📋 Hồ sơ giấy tờ"]
     H1["Chưa đủ<br/>thông tin"] --> H2["Chờ xác<br/>minh"]
     H2 --> H3["Đã xác<br/>minh ✅"]
@@ -1113,7 +1127,8 @@ flowchart LR
     R2 --> R1
     R3 -->|"HR gỡ sau kỳ"| R1
   end
-  HS -.->|"HR / ứng viên"| QH
+  UT -.->|"HR / ứng viên"| HS
+  HS -.->|"HR / Vendor"| QH
   QH -.->|"HR / Vendor"| DA
   RR -.->|"mọi portal<br/>cùng thấy"| DA
 </pre>
@@ -1220,14 +1235,14 @@ flowchart TD
 
 <section id="cong-cong-khai">
   <div class="wrap">
-    <div class="eyebrow">§4.5 — Ba cổng công cộng</div>
+    <div class="eyebrow">§4.2 — URL Structure (theo V4)</div>
     <h2>Ba cổng, một tài khoản = ba vai trò</h2>
-    <p class="sub">Worker Portal (NLĐ), Vendor Portal (nhà thầu phụ), CTV Portal (cộng tác viên) — mỗi cổng chạy trên một subdomain riêng, dùng chung một database và một bộ quyền. Cộng thêm <b>Trang tìm việc công cộng (A-04)</b> đọc từ <code>Project.isPublic</code> — không cần đăng nhập, ISR 300s.</p>
+    <p class="sub">Worker Portal (NLĐ), Vendor Portal (nhà thầu phụ), CTV Portal (cộng tác viên) — chạy trong <b>1 app duy nhất</b>, chỉ Vendor qua subdomain riêng (ADR-003), dùng chung một database và một bộ quyền. Cộng thêm <b>Trang tìm việc công cộng (A-04)</b> tại domain gốc <b>hrp.vn</b>, đọc từ <code>Project.isPublic</code> — không cần đăng nhập, ISR 300s.</p>
 
     <div class="grid grid-auto">
       <div class="block">
         <h4>Worker Portal</h4>
-        <p class="muted">app.hrpartner.vn — PWA · mobile-first</p>
+        <p class="muted">hrpartner.vn (chính) — PWA · mobile-first · Wave 3</p>
         <ul class="list">
           <li>Đăng ký nhanh bằng CCCD + họ tên + MK</li>
           <li>Check-in GPS (selfie + tọa độ)</li>
@@ -1247,7 +1262,7 @@ flowchart TD
       </div>
       <div class="block">
         <h4>CTV Portal</h4>
-        <p class="muted">ctv.hrpartner.vn — link giới thiệu</p>
+        <p class="muted">hrpartner.vn — dashboard trong app · trang CTV công cộng trên hrp.vn</p>
         <ul class="list">
           <li>Nhập người được giới thiệu, kèm link riêng</li>
           <li>Dashboard theo dõi (status + hoa hồng)</li>
@@ -1257,7 +1272,7 @@ flowchart TD
       </div>
       <div class="block">
         <h4>Trang tìm việc công cộng</h4>
-        <p class="muted">jobs.hrpartner.vn — ISR · không cần đăng nhập</p>
+        <p class="muted">hrp.vn — domain gốc · ISR · không cần đăng nhập</p>
         <ul class="list">
           <li>4 trang: Home · Danh sách · Chi tiết việc · Cty đang tuyển</li>
           <li>Đọc từ <code>Project.isPublic</code> + StaffingOrder</li>
@@ -1314,7 +1329,7 @@ stateDiagram-v2
 
     <h3 style="margin-top:24px">Ticket — đi qua hai chữ ký (§12.5.3)</h3>
     <div class="diagram">
-      <div class="caption">7 trạng thái × 8 action — typed qua TRANSITIONS Record</div>
+      <div class="caption">7 trạng thái × 10 action — typed qua TicketAction enum</div>
 <pre class="mermaid">
 stateDiagram-v2
   direction LR
@@ -1335,7 +1350,7 @@ stateDiagram-v2
 
     <h3 style="margin-top:24px">Statement — đối soát vendor &amp; client (§11.3)</h3>
     <div class="diagram">
-      <div class="caption">AUTO-CONFIRMED nếu SLA 3 ngày quá hạn · tối đa 2 vòng DISPUTE</div>
+      <div class="caption">AUTO-CONFIRMED nếu SLA 3 ngày quá hạn · tối đa 2 vòng DISPUTE · quá 2 vòng → FORCE LOCK (G17-B1)</div>
 <pre class="mermaid">
 stateDiagram-v2
   direction LR
@@ -1345,6 +1360,7 @@ stateDiagram-v2
   SENT --> DISPUTED: vendor báo lỗi
   DISPUTED --> CONFIRMED: HRP xử lý xong
   DISPUTED --> DRAFT: tạo version mới
+  DISPUTED --> LOCKED: quá 2 vòng → FORCE LOCK (HR Manager/KT, audit)
   CONFIRMED --> LOCKED: chốt (bất biến)
   LOCKED --> PAID: chi trả
   PAID --> [*]
@@ -1354,15 +1370,17 @@ stateDiagram-v2
     <h3 style="margin-top:24px">Visibility / Decision Matrix (§9.7) — ai thấy gì</h3>
     <div class="grid grid-auto">
       <div class="block"><h4>ADMIN (root)</h4><p class="muted">Toàn bộ — bất khả tước (G22)</p></div>
-      <div class="block"><h4>HR_MANAGER · DIRECTOR</h4><p class="muted">Toàn bộ (HR_MANAGER có handover + audit)</p></div>
-      <div class="block"><h4>HR_STAFF</h4><p class="muted">Theo team / branch / phân công</p></div>
-      <div class="block"><h4>SALE · NVKD</h4><p class="muted">ownerId = mình HOẶC assignedToId = mình</p></div>
+      <div class="block"><h4>DIRECTOR</h4><p class="muted">Đọc toàn bộ có projection (ẩn CCCD/bank/selfie) — ghi qua Permission Pool (Q#22)</p></div>
+      <div class="block"><h4>HR_MANAGER</h4><p class="muted">Toàn bộ — handover + audit</p></div>
+      <div class="block"><h4>HR_STAFF</h4><p class="muted">Theo team / branch / phân công (Q#12)</p></div>
+      <div class="block"><h4>SALE</h4><p class="muted">ownerId = mình HOẶC assignedToId = mình</p></div>
       <div class="block"><h4>PM</h4><p class="muted">Worker có assignment ACTIVE thuộc project mình quản lý</p></div>
-      <div class="block"><h4>VENDOR</h4><p class="muted">Worker có source_claim vendorId = vendor mình</p></div>
-      <div class="block"><h4>CTV</h4><p class="muted">Worker có source_claim ctvId = mình</p></div>
-      <div class="block"><h4>MKT</h4><p class="muted">Chỉ CRM (lead/client + isPublic)</p></div>
-      <div class="block"><h4>WORKER</h4><p class="muted">Chỉ bản thân</p></div>
       <div class="block"><h4>ACCOUNTANT</h4><p class="muted">Theo assignment / scope tài chính</p></div>
+      <div class="block"><h4>MKT</h4><p class="muted">Chỉ CRM (lead/client + isPublic — Q#22)</p></div>
+      <div class="block"><h4>VENDOR_ADMIN · VENDOR_STAFF</h4><p class="muted">Worker có source_claim vendorId = vendor mình</p></div>
+      <div class="block"><h4>CTV</h4><p class="muted">Worker có source_claim ctvId = mình</p></div>
+      <div class="block"><h4>WORKER</h4><p class="muted">Chỉ bản thân</p></div>
+      <div class="block"><h4>EMPLOYEE</h4><p class="muted">Nhân sự nội bộ (M9 — sau core)</p></div>
     </div>
   </div>
 </section>
@@ -1370,7 +1388,7 @@ stateDiagram-v2
 <section id="wbs">
   <div class="wrap">
     <div class="eyebrow">§6.2 + §8.1 — Module WBS</div>
-    <h2>Mười module, 465 man-days</h2>
+    <h2>Mười module, ≈490 man-days</h2>
     <p class="sub">Phân rã theo M0 → M9. Mỗi module có <b>Definition of Done 10 tiêu chí</b>: state-transition test, migration trên DB sạch + DB cũ, authz + data scope integration test, idempotency, audit, UI theo loại công việc, monitoring, demo thật, E2E vertical slice.</p>
 
     <table class="data">
@@ -1381,39 +1399,40 @@ stateDiagram-v2
         <tr><td><b>E0</b></td><td>Platform Core &amp; Observability</td><td>M0</td><td>1, 4</td><td style="text-align:right">40</td></tr>
         <tr><td><b>E1</b></td><td>Auth &amp; RBAC</td><td>M1</td><td>1</td><td style="text-align:right">35</td></tr>
         <tr><td><b>E2</b></td><td>Worker Portal + PWA</td><td>M2</td><td>3–4</td><td style="text-align:right">50+20</td></tr>
-        <tr><td><b>E3</b></td><td>CRM, Projects &amp; Staffing Order</td><td>M3</td><td>1, 3</td><td style="text-align:right">45</td></tr>
-        <tr><td><b>E4</b></td><td>Vendor Portal + Confirm/Dispute</td><td>M4</td><td>3</td><td style="text-align:right">20</td></tr>
+        <tr><td><b>E3</b></td><td>CRM, Projects &amp; Staffing Order</td><td>M3</td><td>1, 3</td><td style="text-align:right">55</td></tr>
+        <tr><td><b>E4</b></td><td>Vendor Portal + Confirm/Dispute</td><td>M4</td><td>3</td><td style="text-align:right">25</td></tr>
         <tr><td><b>E5</b></td><td>Talent Pool, Source Claims &amp; Dedup</td><td>M5</td><td>1–3</td><td style="text-align:right">45</td></tr>
-        <tr><td><b>E6</b></td><td>CTV Portal &amp; Commission Ledger</td><td>M6</td><td>3–4</td><td style="text-align:right">40</td></tr>
+        <tr><td><b>E6</b></td><td>CTV Portal &amp; Commission Ledger</td><td>M6</td><td>3–4</td><td style="text-align:right">45</td></tr>
         <tr><td><b>E7</b></td><td>Attendance Import &amp; Timesheet</td><td>M7</td><td>2–3</td><td style="text-align:right">50</td></tr>
         <tr><td><b>E8</b></td><td>Payroll, Pay Run &amp; Statements</td><td>M8</td><td>2, 4</td><td style="text-align:right">65</td></tr>
         <tr><td><b>E9</b></td><td>HRM (Nhân sự nội bộ)</td><td>M9</td><td>Sau core</td><td style="text-align:right">40</td></tr>
         <tr><td><b>E10</b></td><td>Sprint 0 (discovery + 2 spike)</td><td>—</td><td>0</td><td style="text-align:right">10</td></tr>
         <tr><td><b>E11</b></td><td>UAT MVP</td><td>—</td><td>UAT</td><td style="text-align:right">10</td></tr>
-        <tr style="background:var(--surface)"><td colspan="4"><b>Tổng in-horizon (M0–M8 + UAT)</b></td><td style="text-align:right"><b>≈ 465</b></td></tr>
+        <tr style="background:var(--surface)"><td colspan="4"><b>Tổng in-horizon (M0–M8 + UAT)</b></td><td style="text-align:right"><b>≈ 490</b></td></tr>
       </tbody>
     </table>
+    <p class="muted" style="margin-top:12px">≈ 490 MD = 470 module/PWA + Sprint 0 (10) + UAT (10) — đồng bộ UNIFIED_PLAN v4.21 sau G13/G16/G22.</p>
   </div>
 </section>
 
 <section id="tinh-nang">
   <div class="wrap">
-    <div class="eyebrow">§0.1 — 50 tính năng (đánh số theo plan)</div>
+    <div class="eyebrow">§0.1 — 64 tính năng (đánh số theo plan)</div>
     <h2>Tất cả những gì hệ thống sẽ làm</h2>
-    <p class="sub"><b>50 feature ID</b> nhóm A→H. Trạng thái: <span class="tag done">đã làm</span> = có code + test xanh · <span class="tag ok">phê duyệt</span> = đã chốt trong plan · <span class="tag plan">đề xuất</span> = chưa có trong MVP/sprint 0.</p>
+    <p class="sub"><b>64 feature ID</b> nhóm A→H. Trạng thái: <span class="tag done">đã làm</span> = có code + test xanh · <span class="tag ok">phê duyệt</span> = đã chốt trong plan (P0/P1 theo V4 §5) · <span class="tag plan">đề xuất</span> = P2 / ngoài MVP.</p>
 
     <details open>
-      <summary><b>Nhóm A — Worker Portal (13 feature)</b></summary>
+      <summary><b>Nhóm A — Worker Portal (16 feature)</b></summary>
       <table class="data">
         <thead><tr><th>ID</th><th>Tên</th><th>Module</th><th>Trạng thái</th></tr></thead>
         <tbody>
           <tr><td>A-01</td><td>Đăng nhập mật khẩu</td><td>M1 · M2</td><td><span class="tag ok">phê duyệt</span></td></tr>
-          <tr><td>A-01b</td><td>Đăng nhập Zalo (flag)</td><td>M1</td><td><span class="tag plan">đề xuất</span></td></tr>
+          <tr><td>A-01b</td><td>Đăng nhập Zalo (flag)</td><td>M1</td><td><span class="tag ok">phê duyệt</span> · feature flag</td></tr>
           <tr><td>A-01c</td><td>OTP step-up &amp; reset MK</td><td>M1</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>A-01d</td><td>HR reset MK (mặt vs CCCD)</td><td>M1 · Admin</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>A-02</td><td>Hoàn thiện Profile</td><td>M2 · M5</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>A-03</td><td>Đăng ký nhanh (CCCD + họ tên + MK)</td><td>M2</td><td><span class="tag ok">phê duyệt</span></td></tr>
-          <tr><td>A-04</td><td>Bảng tin việc làm (job board)</td><td>M2 · M3</td><td><span class="tag done">đã làm</span> · Wave 1 (Q#23)</td></tr>
+          <tr><td>A-04</td><td>Bảng tin việc làm (job board)</td><td>M2 · M3</td><td><span class="tag ok">phê duyệt</span> · Wave 1 sau M3 (Q#23)</td></tr>
           <tr><td>A-05</td><td>Ứng tuyển 1 chạm</td><td>M2</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>A-06</td><td>Xem thông tin dự án</td><td>M2 · M3</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>A-07</td><td>Chấm công in-site (máy vật lý)</td><td>M7</td><td><span class="tag plan">đề xuất · ngoài MVP</span></td></tr>
@@ -1435,8 +1454,8 @@ stateDiagram-v2
           <tr><td>B-01</td><td>Đăng ký CTV</td><td>M6</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>B-02</td><td>Nhập người được giới thiệu</td><td>M6 · M5</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>B-03</td><td>Dashboard theo dõi</td><td>M6</td><td><span class="tag ok">phê duyệt</span></td></tr>
-          <tr><td>B-04</td><td>Lịch sử hoa hồng (ledger)</td><td>M6 · M8</td><td><span class="tag plan">đề xuất</span></td></tr>
-          <tr><td>B-05</td><td>Thông báo Zalo/SMS (flag)</td><td>M6</td><td><span class="tag plan">đề xuất</span></td></tr>
+          <tr><td>B-04</td><td>Lịch sử hoa hồng (ledger)</td><td>M6 · M8</td><td><span class="tag ok">phê duyệt</span></td></tr>
+          <tr><td>B-05</td><td>Thông báo Zalo/SMS (flag)</td><td>M6</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>B-06</td><td>Link giới thiệu (first-click wins)</td><td>M6 · M5</td><td><span class="tag ok">phê duyệt</span></td></tr>
         </tbody>
       </table>
@@ -1459,14 +1478,14 @@ stateDiagram-v2
     </details>
 
     <details>
-      <summary><b>Nhóm D — CRM &amp; Dự án (8 feature)</b></summary>
+      <summary><b>Nhóm D — CRM &amp; Dự án (9 feature)</b></summary>
       <table class="data">
         <thead><tr><th>ID</th><th>Tên</th><th>Module</th><th>Trạng thái</th></tr></thead>
         <tbody>
           <tr><td>D-01</td><td>CRUD Khách hàng (client_company)</td><td>M3</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>D-02</td><td>CRUD Dự án (outsourcing_project)</td><td>M3</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>D-02b</td><td>CRUD Staffing Order (vị trí, ca, SL)</td><td>M3</td><td><span class="tag ok">phê duyệt</span></td></tr>
-          <tr><td>D-03</td><td>Quản lý Pipeline (list đơn giản)</td><td>M3</td><td><span class="tag plan">đề xuất</span></td></tr>
+          <tr><td>D-03</td><td>Quản lý Pipeline (list đơn giản)</td><td>M3</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>D-04</td><td>CRUD Máy chấm công (adapter)</td><td>M7</td><td><span class="tag plan">đề xuất · sau core</span></td></tr>
           <tr><td>D-05</td><td>Gán nhân sự (PLANNED→ACTIVE)</td><td>M3 · M5</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>D-05b</td><td>Chuyển dự án hàng loạt</td><td>M3</td><td><span class="tag ok">phê duyệt</span></td></tr>
@@ -1485,11 +1504,11 @@ stateDiagram-v2
           <tr><td>E-02</td><td>Vòng đời trạng thái (5 SM)</td><td>M5</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>E-03</td><td>Phân loại nguồn gốc (source_claims)</td><td>M5</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>E-04</td><td>Bộ lọc nâng cao (tuổi/khu vực/kỹ năng)</td><td>M5</td><td><span class="tag ok">phê duyệt</span></td></tr>
-          <tr><td>E-05</td><td>Xuất Excel</td><td>M5</td><td><span class="tag plan">đề xuất</span></td></tr>
-          <tr><td>E-06</td><td>Lịch sử tương tác (note/call)</td><td>M5</td><td><span class="tag plan">đề xuất</span></td></tr>
+          <tr><td>E-05</td><td>Xuất Excel</td><td>M5</td><td><span class="tag ok">phê duyệt</span></td></tr>
+          <tr><td>E-06</td><td>Lịch sử tương tác (note/call)</td><td>M5</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>E-07</td><td>Dedup/merge (≥2/3 khóa khớp)</td><td>M5</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>E-08</td><td>Referral Guard (chặn CCCD)</td><td>M5 · M6</td><td><span class="tag ok">phê duyệt</span></td></tr>
-          <tr><td>E-09</td><td>AWOL detection (≥3 ngày)</td><td>M5</td><td><span class="tag plan">đề xuất</span></td></tr>
+          <tr><td>E-09</td><td>AWOL detection (≥3 ngày)</td><td>M5</td><td><span class="tag ok">phê duyệt</span></td></tr>
         </tbody>
       </table>
     </details>
@@ -1504,23 +1523,23 @@ stateDiagram-v2
           <tr><td>F-03</td><td>Tách công HRP vs Vendor</td><td>M7 · M8</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>F-04</td><td>Xử lý ticket (phản ánh, tạm ứng)</td><td>M7</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>F-05</td><td>Check-in GPS log (evidence + risk flag)</td><td>M7</td><td><span class="tag ok">phê duyệt</span></td></tr>
-          <tr><td>F-06</td><td>SOP ngoại lệ (mất điện, adj.)</td><td>M7</td><td><span class="tag plan">đề xuất</span></td></tr>
+          <tr><td>F-06</td><td>SOP ngoại lệ (mất điện, adj.)</td><td>M7</td><td><span class="tag ok">phê duyệt</span></td></tr>
         </tbody>
       </table>
     </details>
 
     <details>
-      <summary><b>Nhóm G — Lương &amp; Thanh toán (6 feature)</b></summary>
+      <summary><b>Nhóm G — Lương &amp; Thanh toán (7 feature)</b></summary>
       <table class="data">
         <thead><tr><th>ID</th><th>Tên</th><th>Module</th><th>Trạng thái</th></tr></thead>
         <tbody>
           <tr><td>G-01</td><td>Tính lương HRP (pay run)</td><td>M8</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>G-02</td><td>Đối soát Vendor (statement)</td><td>M8</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>G-02b</td><td>Billing Client (statement riêng)</td><td>M8</td><td><span class="tag ok">phê duyệt</span></td></tr>
-          <tr><td>G-03</td><td>Hoa hồng CTV (PER_HEAD + ledger)</td><td>M8 · M6</td><td><span class="tag plan">đề xuất</span></td></tr>
+          <tr><td>G-03</td><td>Hoa hồng CTV (PER_HEAD + ledger)</td><td>M8 · M6</td><td><span class="tag ok">phê duyệt</span></td></tr>
           <tr><td>G-04</td><td>Xuất file lương Excel</td><td>M8</td><td><span class="tag ok">phê duyệt</span></td></tr>
-          <tr><td>G-05</td><td>Quản lý công nợ</td><td>M8</td><td><span class="tag plan">đề xuất</span></td></tr>
-          <tr><td>G-06</td><td>Dashboard doanh thu tạm tính</td><td>M8 · M7</td><td><span class="tag plan">đề xuất</span></td></tr>
+          <tr><td>G-05</td><td>Quản lý công nợ</td><td>M8</td><td><span class="tag ok">phê duyệt</span></td></tr>
+          <tr><td>G-06</td><td>Dashboard doanh thu tạm tính</td><td>M8 · M7</td><td><span class="tag ok">phê duyệt</span></td></tr>
         </tbody>
       </table>
     </details>
@@ -1580,7 +1599,7 @@ stateDiagram-v2
 
     <p class="muted" style="margin-top:18px"><b>BHXH doanh nghiệp (cost-to-co): 22%</b> = 17.5% BHXH + 3% BHYT + 1% BHTN + 0.5% BHTNLD = <b>5.500.000đ</b>. Chi phí tổng một lao động gross 25M = <b>30.500.000đ</b>.</p>
 
-    <h3 style="margin-top:24px">21 payroll_config keys (§12.5.1)</h3>
+    <h3 style="margin-top:24px">29 payroll_config keys (§12.5.1 — một số dòng gộp nhiều key)</h3>
     <table class="data">
       <thead><tr><th>Key</th><th>Type</th><th>Default</th><th>Nguồn</th></tr></thead>
       <tbody>
@@ -1705,7 +1724,7 @@ sequenceDiagram
   participant HR as 👔 HR
   actor NLD as 👷 Ứng viên
   participant P as 📱 App HRP
-  V->>VP: Đăng nhập (OAuth)
+  V->>VP: Đăng nhập (tài khoản vendor riêng)
   V->>VP: Upload hồ sơ: tên, CCCD, SĐT, ảnh
   VP->>SYS: POST /api/vendors/applicants
   SYS->>SYS: Check 1: tiến cử 7 ngày?
@@ -1736,7 +1755,7 @@ sequenceDiagram
   <div class="wrap">
     <div class="eyebrow">Duyệt đơn</div>
     <h2>Tạm ứng qua hai chữ ký</h2>
-    <p class="sub">Ba loại đơn trong một hệ thống: phản ánh sai công · tạm ứng · xin nghỉ. HR quyết định "có hợp lệ không", Kế toán quyết định "chi từ quỹ" — tiền chỉ chuyển vào tài khoản ngân hàng đã xác thực. Mỗi đơn có hạn xử lý theo mức khẩn (24–72 giờ) và hệ thống tự nhắc người phụ trách khi sắp trễ.</p>
+    <p class="sub">Ba loại đơn trong một hệ thống: phản ánh sai công · tạm ứng · xin nghỉ. HR quyết định "có hợp lệ không", Kế toán quyết định "chi từ quỹ" — tiền chỉ chuyển vào tài khoản ngân hàng đã xác thực. Mỗi đơn có hạn xử lý tự động theo mức khẩn (Auto SLA: URGENT 4h · HIGH 24h · NORMAL 48h · LOW 72h) và hệ thống tự nhắc người phụ trách khi sắp trễ.</p>
     <div class="steps">
       <div class="s"><div><b>Người lao động tạo đơn</b><span>Tạm ứng / phản ánh sai công / xin nghỉ — vài chạm trên app.</span></div></div>
       <div class="s"><div><b>HR xác nhận hợp lệ</b><span>Đối chiếu công, hạn mức. Có thể từ chối kèm lý do hoặc người lao động tự rút đơn.</span></div></div>
@@ -1772,7 +1791,7 @@ sequenceDiagram
   participant BANK as 🏦 Ngân hàng
   participant AUD as 📋 Audit log
   NLD->>APP: Tạo đơn tạm ứng 2.000.000 đ
-  APP->>APP: Validate ≤ 70% lương kỳ
+  APP->>APP: Validate hạn mức theo policy/project (Q#8)
   APP->>HR: 🔔 HĐ-2026-0089 chờ duyệt
   HR->>APP: Xem hồ sơ + lịch sử đơn
   HR->>APP: ✅ Xác nhận hợp lệ
@@ -1881,19 +1900,19 @@ gantt
 <section>
   <div class="wrap">
     <div class="eyebrow">Cho cuộc họp</div>
-    <h2>Những điều cần lãnh đạo quyết</h2>
-    <p class="sub">Thiết kế đã khép kín — các điểm dưới đây là quyết định nghiệp vụ cần chốt để bắt đầu triển khai:</p>
+    <h2>Những điều cần lãnh đạo quyết — trạng thái theo V4 §21</h2>
+    <p class="sub">Thiết kế đã khép kín — đa số điểm dưới đây đã được chốt trong V4 §21/G28; chỉ còn Q#24, Q#25 (mới bổ sung V4.21) và dữ liệu mẫu là mở:</p>
     <div class="grid grid-auto">
-      <div class="card"><h3>Mức hoa hồng CTV</h3><div class="who">Đề xuất: theo đầu người, 2 mốc (bắt đầu đi làm + giữ đủ 30 ngày), có trần theo tháng. Cần con số cụ thể.</div></div>
-      <div class="card"><h3>Hạn mức tạm ứng</h3><div class="who">Đề xuất: tối đa 50% lương kỳ trước đã chốt; HR duyệt hợp lệ, kế toán chi.</div></div>
-      <div class="card"><h3>Lịch chốt &amp; trả lương</h3><div class="who">Đề xuất: chốt công mùng 5, trả lương mùng 10 hàng tháng. Cần chốt ngày chính thức.</div></div>
-      <div class="card"><h3>Khách hàng xác nhận đối soát thế nào?</h3><div class="who">Vendor đã xác nhận/phản đối trên cổng riêng. Khách hàng: gửi biên bản qua email/PDF trước, cổng riêng sau? Cần chốt.</div></div>
-      <div class="card"><h3>Quy mô thực tế</h3><div class="who">Bao nhiêu lao động và bao nhiêu đối tác trong 12 tháng tới? (Thiết kế hiện tại: 5.000 lao động.)</div></div>
-      <div class="card"><h3>Bán kính chấm công GPS</h3><div class="who">Đề xuất 200m quanh nhà máy, chỉnh theo từng địa điểm. Cần xác nhận cho các xưởng hiện có.</div></div>
-      <div class="card"><h3>Phụ cấp miễn thuế</h3><div class="who">Loại phụ cấp nào không tính thuế (ăn trưa, điện thoại...) và mức bao nhiêu? Cần danh mục từ kế toán.</div></div>
-      <div class="card"><h3>Lao động vãng lai &amp; cam kết 02</h3><div class="who">Vãng lai ≥2.000.000đ/lần khấu trừ 10% tại nguồn — ai có cam kết 02/CK-TNCN để miễn? Chốt với kế toán.</div></div>
-      <div class="card"><h3>Dữ liệu mẫu từ kế toán</h3><div class="who">Cần 2–3 file chấm công thật + 2 kỳ đối soát đã chốt trước khi bắt đầu — ai là đầu mối cung cấp?</div></div>
-      <div class="card"><h3>Phân vai duyệt</h3><div class="who">Ai duyệt hồ sơ tuyển? Ai duyệt đơn? (Đề xuất: nhân viên HR duyệt thường, trưởng phòng HR phê ngoại lệ.)</div></div>
+      <div class="card"><h3>Mức hoa hồng CTV</h3><div class="who">✅ ĐÃ CHỐT (G28 · Q#2): PER_HEAD theo mốc giữ chân — mức là dữ liệu động, set trong admin panel (quyền ROOT/DIRECTOR).</div></div>
+      <div class="card"><h3>Hạn mức tạm ứng</h3><div class="who">✅ ĐÃ CHỐT (Q#8): hạn mức config theo project/policy — không có % cố định; 2 bước HR xác nhận + KT duyệt chi.</div></div>
+      <div class="card"><h3>Lịch chốt &amp; trả lương</h3><div class="who">🆕 Q#24 (V4.21): khuyến nghị chốt công mùng 5, trả lương mùng 10, config theo payroll group — chờ founder chốt.</div></div>
+      <div class="card"><h3>Khách hàng xác nhận đối soát thế nào?</h3><div class="who">🆕 Q#25 (V4.21): khuyến nghị email + link xác nhận (token hết hạn, không cần đăng nhập) — chờ founder chốt.</div></div>
+      <div class="card"><h3>Quy mô thực tế</h3><div class="who">✅ ĐÃ CHỐT (Q#6): thiết kế cho 5.000 lao động, load-test 20.000.</div></div>
+      <div class="card"><h3>Bán kính chấm công GPS</h3><div class="who">✅ ĐÃ CHỐT (Q#10): config theo site (200m chỉ là default) + luôn có accuracy check + exception workflow.</div></div>
+      <div class="card"><h3>Phụ cấp miễn thuế</h3><div class="who">✅ ĐÃ CHỐT (Q#4): tính theo luật mặc định (is_taxable trên allowance); phần phức tạp → Phase Compliance.</div></div>
+      <div class="card"><h3>Lao động vãng lai &amp; cam kết 02</h3><div class="who">✅ ĐÃ CHỐT (Q#4): vãng lai ≥2tr/lần khấu trừ 10% tại nguồn; cam kết 02 → Phase Compliance.</div></div>
+      <div class="card"><h3>Dữ liệu mẫu từ kế toán</h3><div class="who">⏳ CÒN MỞ: 2–3 file chấm công thật + 2 kỳ đối soát đã chốt — phải có TRƯỚC Sprint 1 (Q#9), cần đầu mối cung cấp.</div></div>
+      <div class="card"><h3>Phân vai duyệt</h3><div class="who">✅ ĐÃ CHỐT (Q#12): HR_STAFF theo team/branch/phân công; HR_MANAGER toàn cục + handover có audit.</div></div>
     </div>
   </div>
 </section>
@@ -1917,9 +1936,9 @@ gantt
     </div>
     Dựng từ <a href="docs/UNIFIED_PLAN_v4.md">docs/UNIFIED_PLAN_v4.md</a>
     <div class="meta">
-      <span><b>Phiên bản tài liệu:</b> v4.20</span>
-      <span><b>Cập nhật lần cuối:</b> 15/08/2026, 02:45 ICT</span>
-      <span><b>Nguồn:</b> docs/UNIFIED_PLAN_v4.md (v4.20)</span>
+      <span><b>Phiên bản tài liệu:</b> v4.21</span>
+      <span><b>Cập nhật lần cuối:</b> 16/08/2026</span>
+      <span><b>Nguồn:</b> docs/UNIFIED_PLAN_v4.md (v4.21)</span>
     </div>
 
   </div>

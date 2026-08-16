@@ -1,4 +1,4 @@
-# HRP SYSTEM — UNIFIED PROJECT PLAN (v4.20)
+# HRP SYSTEM — UNIFIED PROJECT PLAN (v4.21)
 ## Hệ thống Quản trị Nguồn Nhân lực & Cung ứng Nhân lực
 
 > **Phiên bản:** 4.0 — bản hợp nhất: khử mâu thuẫn nội tại của v3.3 (xem changelog 0.1.7, quyết định F1–F31)
@@ -269,6 +269,17 @@ Cập nhật liên quan: §13 (design system canonical); `stitch/*/code.html` (3
 | G28 | 2 mục [CẦN CHỐT với kế toán] còn treo: mức hoa hồng CTV và mức đóng BHXH/TNCN | **Hoa hồng:** mức là dữ liệu động, không giống nhau giữa các trường hợp — set trong **admin panel / Giám đốc dashboard** (quyền ROOT/DIRECTOR), policy version + effective-dated (Q#2 ĐÃ CHỐT). **BHXH/TNCN:** pay run Wave 4 vẫn tính theo **luật mặc định** (config effective-dated có sẵn — luật không cần chốt với kế toán); toàn bộ phần phức tạp (Dependent/NPT, mẫu khai 02/05/07/TK1-TS, báo cáo BHXH, quyết toán, cam kết 02) tách thành **Phase Compliance riêng, triển khai sau cùng** (Q#4 ĐÃ CHỐT). Không thêm module, không đổi MD |
 
 Cập nhật liên quan: §7.2 (roadmap + Phase Compliance), §10 (quy tắc hoa hồng), §12.5 (công thức lương, biểu mẫu thuế), §21 (Q#2, Q#4); footer version.
+
+### 0.1.15. Thay đổi v4.21 — rà soát ve-hrp.html, hấp thụ ý tưởng tiến bộ (Planner, 16/08/2026)
+
+| # | Vấn đề | Quyết định v4.21 |
+|---|--------|------------------|
+| G29 | Rà soát `ve-hrp.html` phát hiện taxonomy 6 loại lỗi nhập file chấm công kèm chủ xử lý — V4 mới có "unmatched/anomalies queue" mà chưa phân loại | §12.3 — thêm mục **1h taxonomy lỗi import**: ĐỊNH DẠNG/MÃ LẠ/THIẾU CHECK-IN/OUT → KT, TRÙNG CCCD → HR, NGOÀI CA/TRÙNG SCAN → PM; unmatched queue phân loại theo taxonomy, UI lọc theo chủ xử lý |
+| G30 | ve-hrp đề xuất lịch chốt công/trả lương cố định (mùng 5/mùng 10) — V4 §21 chưa có mục này | Thêm **Q#24** [CẦN CHỐT]: cut-off + pay day config theo payroll group (khớp Q#17) — khuyến nghị chốt công mùng 5, trả lương mùng 10, ngày cuối tuần/lễ lùi theo ngày làm việc |
+| G31 | ve-hrp hỏi cơ chế khách hàng xác nhận biên bản đối soát (Billing Client G-02b) — V4 chưa định nghĩa | Thêm **Q#25** [CẦN CHỐT]: khuyến nghị MVP = statement PDF qua email + link xác nhận (token hết hạn, không cần đăng nhập); trạng thái xác nhận KT ghi thủ công có audit; tự động hóa sau Wave 4 |
+| G32 | `ve-hrp.html` (bản trực quan) lạc hậu so với V4 tại 12 điểm (domain tự vẽ, "50/64" feature, "4 vòng đời" vs 5 SM, tags trạng thái sai, tạm ứng 70%/50%, quy tắc quá 2 vòng, mục "Cho cuộc họp" lỗi thời, WBS 465 MD, ma trận 11/13 roles, 21/29 payroll keys, BHXH "21.5%", "OAuth" vendor) | Đồng bộ `ve-hrp.html` (root + public/) theo V4 — chi tiết từng mục ghi trong changelog của chính file đó |
+
+Cập nhật liên quan: §6 (row M7), §12.3 (1h), §21 (Q#24/Q#25); footer version.
 
 ### 0.2. Các điểm review KHÔNG tiếp thu / tiếp thu có điều chỉnh
 
@@ -1092,7 +1103,7 @@ async function zaloLoginCallback(zaloUserId: string) {
 | **M4** | Vendor Portal | 25 | 3 | P0 | Subdomain, submission, status, **kho hồ sơ vendor + nộp lại**, confirm/dispute statement (G13) |
 | **M5** | Talent Pool & ATS | 45 | 1–3 | P0 | Master data, 5 state machine, source claims, **dedup/merge**, filters, export |
 | **M6** | CTV Portal & Commission | 45 | 3–4 | P0 | Đăng ký, submission, dashboard, **link giới thiệu (aff)**, commission ledger (G13) |
-| **M7** | Attendance (T&A) | 50 | 2–3 | P0 | Import XLSX/CSV, 3 tầng, chốt công, ticket, GPS admin |
+| **M7** | Attendance (T&A) | 50 | 2–3 | P0 | Import XLSX/CSV (taxonomy lỗi import — §12.3 1h), 3 tầng, chốt công, ticket, GPS admin |
 | **M8** | Payroll & Billing | 65 | 2, 4 | P0 | Rate version, statements, **pay run**, payslip, reports |
 | **M9** | HRM (Nhân sự nội bộ) | 40 | Sau core | P1 | Employee CRUD, org chart; nghỉ phép NỘI BỘ tái dùng ticket engine — actorType EMPLOYEE (F13) |
 | | PWA packaging (thuộc M2) | 20 | 3–4 | P1 | PWA trước; Capacitor ngoài horizon |
@@ -2011,8 +2022,9 @@ CREATE TABLE timesheet_adjustments (
 1e. **Bảo mật presigned URL (V4.11 G19 — T10):** upload thẳng lên R2 bỏ qua kiểm duyệt server → bù lại ở job parse: **kiểm magic bytes** (XLSX phải là ZIP `PK`, CSV phải là text) + giới hạn size khi cấp URL + file lưu R2 **không bao giờ serve inline** (chỉ download attachment). Kẻ đổi đuôi `.exe → .xlsx` sẽ bị reject ngay khi parse. Antivirus scan toàn diện (ClamAV) để post-go-live nếu cần.
 1f. **Watchdog chống kẹt batch (V4.12 G20 — T11):** nếu lệnh re-enqueue cuối cùng bị timeout mạng → batch kẹt vĩnh viễn. QStash cron **mỗi 30 phút**: quét `attendance_import_batches` đang xử lý (PENDING/PREVIEWED) mà `updated_at` cũ hơn 15 phút → tự re-enqueue với offset hiện tại (`max(row_number)` đã commit). Mỗi chunk commit đều cập nhật `updated_at` (heartbeat).
 1g. **Chống vòng lặp tái sinh vô tận (V4.13 G21 — T15):** file dị thường làm parser crash trước cả khối `catch` → watchdog re-enqueue mãi mãi. Bổ sung `retry_count` trên batch: mỗi lần watchdog re-enqueue tăng 1; quá **`IMPORT_MAX_RETRY` (default 3)** → đánh **FAILED cứng** + notify HR kèm file và lỗi — không tự chạy lại nữa, HR xử lý tay.
+1h. **Taxonomy lỗi import (V4.21 G29 — từ rà soát ve-hrp 16/08):** preview và unmatched queue phân loại lỗi thành 6 loại kèm **chủ xử lý**: `LỖI ĐỊNH DẠNG` (KT), `MÃ LẠ` (KT), `TRÙNG CCCD` (HR), `THIẾU CHECK-IN/OUT` (KT), `NGOÀI CA` (PM), `TRÙNG SCAN` (PM). UI hiển thị theo taxonomy + filter theo owner — kế toán/HR không phải dò tay từng dòng.
 2. **Preview + auto-map** employeeCode → worker; validate (tồn tại? đúng project? date hợp lệ?)
-3. **Unmatched queue** — dòng không map được hiển thị cho kế toán dò/xử lý
+3. **Unmatched queue** — dòng không map được phân loại theo taxonomy (1h), hiển thị cho đúng chủ xử lý dò/xử lý
 4. **Review → Approve** kỳ bảng công → sinh `timesheet_lines` → `timesheet_periods`
 5. **LOCK** kỳ (bất biến — ADR-013)
 6. **Re-import idempotent**: trùng `(source, external_event_id)` hoặc `payload_hash` → bỏ qua, không tạo bản ghi lặp
@@ -3341,6 +3353,8 @@ flowchart LR
 | **21** | Lưu mã giới thiệu thế nào (Zalo hay xóa cookie) + chính sách bấm nhiều link? | URL param + localStorage (30 ngày) + ô nhập tay — KHÔNG dựa cookie; first-click wins — default; chốt với founder (G13, G15) |
 | **22** | Scope dữ liệu của **MKT** và **Ban giám đốc (DIRECTOR)**? | **ĐÃ CHỐT (HR §5):** DIRECTOR đọc toàn bộ có projection (ẩn CCCD/bank/selfie, ghi vẫn qua Permission Pool); MKT: CRM scope — lead/client + dự án isPublic, KHÔNG đọc Worker; quyền feature do root cấp (G22) |
 | **23** | Trang web công cộng HRP có là trang tìm việc không? Scope và timing? | **ĐÃ CHỐT (founder, 15/08/2026):** có — trang công cộng 4 trang (Home tìm việc, Danh sách việc, Chi tiết việc, Công ty đang tuyển) đọc từ `Project.isPublic` + StaffingOrder, ISR 300s; job board công cộng (A-04) kéo về **Wave 1 sau M3**; apply self-service (A-05) + PWA vẫn Wave 3; demo BoD thêm 1 frame tĩnh `S05_JobBoard_Public` (không flow) |
+| **24** | Lịch chốt công / trả lương cố định? | **CẦN CHỐT (founder):** khuyến nghị chốt công **mùng 5**, trả lương **mùng 10** hàng tháng (đề xuất từ rà soát ve-hrp 16/08 — V4.21 G30); cut-off/pay day config theo payroll group (khớp Q#17); ngày rơi cuối tuần/lễ → lùi theo ngày làm việc |
+| **25** | Khách hàng xác nhận biên bản đối soát (Billing Client G-02b) bằng cách nào? | **CẦN CHỐT (founder):** khuyến nghị MVP = gửi statement PDF qua email + link xác nhận (token hết hạn, không cần đăng nhập); trạng thái xác nhận do KT ghi thủ công có audit; tự động hóa sau Wave 4 |
 
 ---
 
@@ -3395,6 +3409,6 @@ Sau đó: Wave 1 (M0+M1+M3 core+M5 core) → Wave 2 (M7+M8 tối giản) → UAT
 
 ---
 
-*Document version: 4.20*
-*Ngày: 15/08/2026*
-*Trạng thái: Bản chuẩn (canonical) — đã qua các vòng phản biện G10–G28 (xem changelog 0.1.8–0.1.14); mô hình quyền ROOT đã chốt (G22 §15.1); job board công cộng đã chốt (Q#23 §21, Wave 1 sau M3); tham chiếu cạnh tranh đã hấp thụ (G24 §20); đánh giá bảo mật đối thủ + hardening bề mặt đã chốt (G25 §15.2, §20.1); backup daily Neon → R2 đã chốt (G26 §18.4); design system "Warm Professionalism" + 3 page demo đã chốt (G27 §13, stitch/); mức hoa hồng động (admin panel) + BHXH/TNCN tách Phase Compliance sau cùng đã chốt (G28 §21 Q#2/Q#4); chờ chốt các mục [CẦN CHỐT] còn lại (§21) + dữ liệu mẫu để khởi động Sprint 0*
+*Document version: 4.21*
+*Ngày: 16/08/2026*
+*Trạng thái: Bản chuẩn (canonical) — đã qua các vòng phản biện G10–G32 (xem changelog 0.1.8–0.1.15); mô hình quyền ROOT đã chốt (G22 §15.1); job board công cộng đã chốt (Q#23 §21, Wave 1 sau M3); tham chiếu cạnh tranh đã hấp thụ (G24 §20); đánh giá bảo mật đối thủ + hardening bề mặt đã chốt (G25 §15.2, §20.1); backup daily Neon → R2 đã chốt (G26 §18.4); design system "Warm Professionalism" + 3 page demo đã chốt (G27 §13, stitch/); mức hoa hồng động (admin panel) + BHXH/TNCN tách Phase Compliance sau cùng đã chốt (G28 §21 Q#2/Q#4); rà soát ve-hrp.html đã hấp thụ (G29–G32: taxonomy lỗi import §12.3, Q#24/Q#25, đồng bộ ve-hrp); chờ chốt các mục [CẦN CHỐT] còn lại (§21 — nay gồm Q#24/Q#25) + dữ liệu mẫu để khởi động Sprint 0*
