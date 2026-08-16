@@ -12,8 +12,61 @@
  * (khong can DB, chi load + assert schema).
  */
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 1 bcc-fence (TASK hrp-phase1-bcc-fence, RQ-05 / DEC-05):
+// 2 tài khoản auth từ ENV (ADMIN + HR_MANAGER). Upsert theo phone (User.phone
+// KHÔNG unique trong schema → findFirst + update/create). Tài khoản đã tồn tại
+// → KHÔNG reset passwordHash. Thiếu ENV → skip + cảnh báo (không crash).
+// Chỉ chạm bảng `users` — không đụng bảng khác, không xóa row (EV-06, RISK-02).
+// KHÔNG log phone/password/hash dưới mọi hình thức.
+// ─────────────────────────────────────────────────────────────────────────────
+const AUTH_ACCOUNTS = [
+  { role: 'ADMIN', phoneEnv: 'ADMIN_PHONE', passwordEnv: 'ADMIN_PASSWORD', name: 'Admin HRP (bcc-fence)' },
+  { role: 'HR_MANAGER', phoneEnv: 'HR_PHONE', passwordEnv: 'HR_PASSWORD', name: 'HR Manager (bcc-fence)' },
+];
+
+async function seedAuthAccounts() {
+  let created = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (const acc of AUTH_ACCOUNTS) {
+    const phone = process.env[acc.phoneEnv];
+    const password = process.env[acc.passwordEnv];
+
+    if (!phone || !password) {
+      console.warn(`[seed.mjs] SKIP ${acc.role}: thieu ENV ${acc.phoneEnv} hoac ${acc.passwordEnv}`);
+      skipped++;
+      continue;
+    }
+
+    const existing = await prisma.user.findFirst({ where: { phone } });
+
+    if (existing) {
+      // Đã tồn tại → chỉ cập nhật role/isActive/name, GIỮ NGUYÊN passwordHash
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { name: acc.name, role: acc.role, isActive: true },
+      });
+      if (!existing.passwordHash) {
+        console.warn(`[seed.mjs] WARN ${acc.role}: user da ton tai nhung chua co passwordHash — giu nguyen, dang nhap chua kha dung`);
+      }
+      updated++;
+    } else {
+      const passwordHash = await bcrypt.hash(password, 10);
+      await prisma.user.create({
+        data: { phone, passwordHash, name: acc.name, role: acc.role, isActive: true },
+      });
+      created++;
+    }
+  }
+
+  return { created, updated, skipped };
+}
 
 const ROLE_SCENARIOS = [
   // 12 SystemRole × minimum 1 user moi role = 12 row
@@ -129,8 +182,10 @@ async function main() {
   const users = await seedUsers();
   const projects = await seedProjects();
   const workers = await seedWorkers();
+  const auth = await seedAuthAccounts();
 
   console.log(`[seed.mjs] Upserted: ${users} users, ${projects} projects, ${workers} workers`);
+  console.log(`[seed.mjs] Auth accounts (ENV): ${auth.created} created, ${auth.updated} updated, ${auth.skipped} skipped`);
   console.log(`[seed.mjs] Total scenarios: ${users + projects + workers} (12 role + 4 project + 3 worker + 1 client = 20)`);
 }
 
