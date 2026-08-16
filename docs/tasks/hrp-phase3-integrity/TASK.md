@@ -7,18 +7,18 @@
 | Task slug | `hrp-phase3-integrity` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
-| Status | `DRAFT` — chờ `hrp-phase2-tenant-scope` ACCEPTED để cập nhật Baseline trước khi chuyển `READY_FOR_EXECUTION` |
+| Spec version | `v1.1` |
+| Status | `READY_FOR_EXECUTION` — chờ sếp giao Tier 2 bằng lệnh `/code hrp-phase3-integrity` |
 | Planner | Tier 1 — Planner / Product & Architecture Decision Owner |
 | Executor | Tier 2 — bên ngoài, do sếp giao (Cursor/agent khác — Tier 1 KHÔNG spawn Tier 2/3) |
 | Auditor | Tier 3 — bên ngoài, do sếp giao (độc lập với Tier 2) |
-| Baseline | TBD — commit ACCEPTED của `hrp-phase2-tenant-scope` (cập nhật trước khi giao) |
+| Baseline | `e963d82` (main 16/08/2026 — `hrp-phase2-tenant-scope` ACCEPTED, verdict PASS 10/10 AC) |
 | Modules | Phase 3 Integrity — chạm: `prisma/migrations/*` (bảng `idempotency_keys`, `outbox`, cột AuditLog); `src/shared/integrity/{idempotency,audit,outbox,state-machine}.ts` (mới) + tests; `src/domains/attendance/ticket.service.ts` (refactor); `app/api/tickets/*` (nối middleware/helper); runbook production trong HANDOFF |
 | ADR references | **PHASE_KHOAHOC_V1.md §4 Phase 3** (DoD + exit criteria); **ADR-014** (UNIFIED_PLAN_v4:451 — audit mọi ghi nhạy cảm + idempotency scope (actorId, route, key) + request hash); **UNIFIED_PLAN_v4:180 (F24)** (bỏ idempotency metadata → bảng riêng); **D16** (outbox in-process drain + cron daily lưới an toàn — khuyến nghị Planner (b), sếp chốt 16/08) |
-| Current execution round | 1 |
+| Current execution round | 1 (chưa mở) |
 | Current audit round | 0 (chưa audit) |
-| Next gate | tenant-scope ACCEPTED → cập nhật Baseline → `/code hrp-phase3-integrity` → `/audit` → `/resolve` → ACCEPTED |
-| Updated | 2026-08-16 20:40 ICT |
+| Next gate | `/code hrp-phase3-integrity` → `/audit` → `/resolve` → ACCEPTED |
+| Updated | 2026-08-16 22:50 ICT |
 
 ## 1. Outcome
 
@@ -63,7 +63,7 @@
 | `DEC-04` | CHOSEN | `state-machine.ts` helper tổng quát (generic: `S`, `A` — compile-time safe) ký hiệu sẵn cho Ticket, Statement, Timesheet, PayRun, WorkerAssignment, SourceClaim; transition không hợp lệ → `IllegalTransitionError` → **HTTP 409 kèm reason** (KHÔNG silent fail). Ticket refactor sang helper này, giữ nguyên bộ `TRANSITIONS` hiện tại | PHASE_KHOAHOC DoD; EV-04 | CHỐT |
 | `DEC-05` | CHOSEN | **Production defer:** task này chỉ áp migration/code trên dev; migration production + bật cron outbox production nằm trong runbook bàn giao ở HANDOFF, thực hiện cùng đợt Phase 4 (nhất quán DEC-08 tenant-scope) | Planner; DEC-08 | CHỐT |
 | `DEC-06` | CHOSEN | 🚫 **KHÔNG tạo lại bộ đăng nhập/JWT/cookie/register/endpoint auth mới** — tái sử dụng identity-core (`jwt.ts`, `auth-context.ts`, `require-permission.ts`, `with-auth-scope.ts`, `app/api/auth/*`, `app/api/me`, `middleware.ts`, cookie `hrp_token`); chỉ ĐỌC và gọi | Sếp lưu ý 16/08 | CHỐT — vi phạm = audit BLOCK |
-| `DEC-07` | ASSUMPTION | `hrp-phase2-tenant-scope` ACCEPTED trước khi task này chạy (route tickets chạy qua withDbContext + RLS dev khi exit criteria kiểm "đúng RLS từ Phase 2") | Planner | Hết hiệu lực khi tenant-scope ACCEPTED |
+| `DEC-07` | ASSUMPTION | `hrp-phase2-tenant-scope` ACCEPTED trước khi task này chạy (route tickets chạy qua withDbContext + RLS dev khi exit criteria kiểm "đúng RLS từ Phase 2") | Planner | ĐÃ ĐÓNG — tenant-scope ACCEPTED `e963d82` (16/08) |
 
 ## 4. Contract
 
@@ -159,7 +159,7 @@
 
 | ID | Question | Owner | Due | Blocks execution? |
 |---|---|---|---|---|
-| `Q-01` | Xác nhận `hrp-phase2-tenant-scope` ACCEPTED (đóng cửa DEC-07) | Sếp/Tier 3 | Trước khi `READY_FOR_EXECUTION` | Yes |
+| `Q-01` | ~~Xác nhận `hrp-phase2-tenant-scope` ACCEPTED (đóng cửa DEC-07)~~ → **ĐÃ ĐÓNG** — tenant-scope ACCEPTED `e963d82` (verdict PASS 10/10 AC) | Sếp/Tier 3 | Đã đóng 16/08 | No |
 
 ## 9. Planner Resolution
 
@@ -172,3 +172,4 @@
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | 2026-08-16 | Initial contract — Phase 3 Integrity: migration idempotency_keys + outbox + cột AuditLog; 4 helper integrity; refactor ticket.service (giữ nghiệp vụ); 409 illegal transition; test 2-lần-cùng-key; runbook production (production defer theo DEC-08). 🚫 không tạo lại auth | Sếp yêu cầu "viết task phase 3 luôn để chờ đó"; căn cứ PHASE_KHOAHOC §4 Phase 3 DoD + ADR-014 + D16 |
+| `v1.1` | 2026-08-16 | Mở task: Baseline = `e963d82` (tenant-scope ACCEPTED 10/10 AC); DEC-07 đóng, Q-01 đóng; Status → `READY_FOR_EXECUTION`. Không đổi contract sản phẩm | Gate tenant-scope closed |
