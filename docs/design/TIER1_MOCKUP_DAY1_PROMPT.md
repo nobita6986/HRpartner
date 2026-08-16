@@ -1,6 +1,6 @@
 # Prompt đầu tiên cho Tier 1 — HRP V4 Mockup
 
-Dùng prompt này trong Planner AI đã được cấu hình bằng `TIER1_PROMPT.md`.
+Dùng prompt này trong Planner AI đã được cấu hình bằng `.ai-pipeline/tier1.md`.
 
 ---
 
@@ -20,7 +20,7 @@ Không tạo HANDOFF/AUDIT trong lần này và không tách bất kỳ section 
 
 Đọc và dẫn chiếu, không sao chép dài:
 
-1. `TIER1_PROMPT.md`.
+1. `.ai-pipeline/tier1.md`.
 2. `.ai-pipeline/templates/TASK.template.md`.
 3. `docs/UNIFIED_PLAN_v4.md`.
 4. `docs/HRP_V4_MOCKUP_EXECUTION_PLAN.md`.

@@ -56,3 +56,8 @@ index - Copy (2).html
 public/index.html
 public/ve-hrp.html
 public/docs/
+
+# HRP pipeline runtime artifacts (không commit — đã có trong repo chỉ local)
+.codegraph/
+stitch/
+favicon.ico
