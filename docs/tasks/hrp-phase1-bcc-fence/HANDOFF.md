@@ -12,8 +12,8 @@
 | Current audit round | `0 (chưa audit)` |
 | Executor | `Tier 2 — Implementation Engineer` |
 | Baseline | `f382c8d` (TASK) — actual start state: `main fa6c5b1` (HEAD trước khi tôi commit) |
-| Status | `BLOCKED` (STEP-01..08 hoàn tất; STEP-09 chờ ENV production) |
-| Started/updated | `2026-08-16 14:45 / 15:20 ICT` |
+| Status | `BLOCKED` (STEP-01..08 hoàn tất; STEP-09 chờ xác thực CLI vào đúng tài khoản Vercel sở hữu `hrpartner.vn`) |
+| Started/updated | `2026-08-16 14:45 / 15:45 ICT` |
 
 ## 1. Outcome Summary
 
@@ -22,7 +22,7 @@
 - Seed idempotent thêm 2 tài khoản auth (ADMIN + HR_MANAGER) từ ENV — upsert theo `phone`, KHÔNG reset passwordHash tài khoản đã tồn tại, thiếu ENV → skip + cảnh báo.
 - Verify local trọn bộ trên **Neon dev branch** (`DATABASE_URL_DEV`, pattern giống Phase 0 — KHÔNG đụng Neon main): `npm run test` 55/55 pass (10/10 lần liên tiếp ổn định sau khi sửa 1 flaky test), `npm run build` exit 0, curl matrix T1–T9 + isActive=false đều đúng kỳ vọng.
 - Commit `5851b5b` (16 file, 650 insertions, prefix `feat(auth):` — theo ủy quyền Planner).
-- STEP-09 (deploy production + seed production + curl production) CHƯA làm — chờ Planner cung cấp 5 ENV production qua Vercel dashboard.
+- STEP-09 (set ENV + seed production + deploy + verify production) CHƯA làm. Planner đã cấp giá trị 4 biến tài khoản (KHÔNG ghi vào repo — đã nhận 16/08) + chỉ thị tự sinh `JWT_SECRET`, NHƯNG bị chặn ở bước xác thực Vercel: CLI đang trỏ tài khoản `thuanndbx-4962` (org `thuans-projects-24578862`, 30 project — KHÔNG có project `hrpartner.vn`). Sếp báo repo deploy bằng tài khoản Vercel KHÁC → dừng theo lệnh, chưa set ENV, chưa seed production, chưa deploy.
 
 ## 2. Execution Trace
 
@@ -36,7 +36,7 @@
 | `STEP-06` | `RQ-02` | `app/login/page.tsx`, `app/login/login-form.tsx` | `DONE` — form Warm Professionalism (tokens globals.css: `--primary #F26522`, `--background #FAF9F7`, Be Vietnam Pro); lỗi chung "Sai số điện thoại hoặc mật khẩu"; redirect callback/`/bcc`; không lưu password URL/localStorage; `Suspense` cho `useSearchParams` | None |
 | `STEP-07` | `RQ-05` | `prisma/seed.mjs`, `.env.example` (mới) | `DONE` — seed 2 lần trên dev branch: 12→14 users (2 created), 14→14 (0 created, 2 updated — password giữ nguyên), exit 0; chỉ chạm bảng `users`; `.env.example` chỉ tên biến (0 dòng có giá trị) | DEV-02: chạy seed/verify trên Neon dev branch thay vì main (RISK-02) — production seed thuộc STEP-09 |
 | `STEP-08` | `RQ-09` | Local verify trọn bộ | `DONE` — `npm run test` 55/55 (10/10 lần), `npm run build` exit 0, curl matrix T1–T9 + isActive=false PASS (chi tiết §3) | None |
-| `STEP-09` | `RQ-01` | Deploy Vercel production + ENV + seed production | `BLOCKED` — chờ Planner cung cấp 5 ENV production (`JWT_SECRET`, `ADMIN_PHONE`, `ADMIN_PASSWORD`, `HR_PHONE`, `HR_PASSWORD`) qua Vercel dashboard; KHÔNG tự deploy khi chưa có lệnh | BLK-01 |
+| `STEP-09` | `RQ-01` | Set ENV production + seed Neon main + deploy + verify production | `BLOCKED` — Planner đã cấp giá trị 4 biến tài khoản (16/08) + chỉ thị tự sinh `JWT_SECRET`; chặn ở xác thực: CLI trỏ tài khoản Vercel KHÔNG sở hữu project `hrpartner.vn`. Chưa set ENV / chưa seed / chưa deploy theo lệnh sếp | BLK-02 |
 | `STEP-10` | — | `docs/tasks/hrp-phase1-bcc-fence/HANDOFF.md` | `DONE` | None |
 
 ## 3. Acceptance Evidence
@@ -54,7 +54,7 @@ Môi trường evidence local: dev server `next dev` port 3100, `DATABASE_URL` =
 | `AC-07` | `git diff --stat app/bcc/` | `PASS` | Output rỗng — kiểm tra trước và sau commit `5851b5b` | None |
 | `AC-08` | `npm run test` + `npm run build` | `PASS` | `npm run test`: 6 files, **55/55 passed** — chạy 10 lần liên tiếp đều pass sau khi sửa flaky (DEV-05); `npm run build`: exit 0 (route đủ: `/login`, `/api/auth/login`, `/api/auth/logout`, `/api/me`, Middleware 39.3 kB) | None |
 | `AC-09` | Logout flow | `PASS` local | `POST /api/auth/logout` (có cookie) → `200` + `Set-Cookie: hrp_token=; Max-Age=0`; sau logout, request KHÔNG cookie → `/api/me` `401` | Stateless JWT: token cũ tự giữ vẫn verify qua header (TASK §4.3 đã ghi nhận — không server-side revocation, LIM-01) |
-| `AC-10` | E2E production | `BLOCKED` | — | Chờ STEP-09 (BLK-01) |
+| `AC-10` | E2E production | `BLOCKED` | — | Chờ STEP-09 (BLK-02 — xác thực tài khoản Vercel) |
 
 ## 4. Changed Deliverables
 
@@ -74,7 +74,8 @@ Môi trường evidence local: dev server `next dev` port 3100, `DATABASE_URL` =
 | `DEV-04` | Deviation (UI) | `placeholder="0912345678"` trong form login — số ảo minh họa | Không phải PII thật | Ghi nhận |
 | `DEV-05` | Fix flaky test | Test "token giả mạo" mutate ký tự CUỐI token: base64url không padding, ký tự cuối có bit thừa — đổi char có thể decode ra cùng bytes → verify thành công (~1/64 lần, tái lập 2 lần trong 10+ chạy). Đã sửa: mutate ký tự GIỮA segment signature (bytes đổi chắc chắn) → 10/10 chạy liên tiếp pass | Suite ổn định; bài học ghi trong comment test | Ghi nhận |
 | `LIM-01` | Limitation | JWT stateless: sau logout, token cũ nếu giữ lại vẫn verify được qua `Authorization` header (browser flow xóa cookie → 401, đã verify T7b) | TASK §4.3 ghi nhận sẵn: không server-side revocation tuần đầu | Đã chốt trong contract — không cần hành động |
-| `BLK-01` | Blocker | STEP-09 cần 5 ENV production (`JWT_SECRET` ≥32 ký tự + `ADMIN_PHONE`/`ADMIN_PASSWORD`/`HR_PHONE`/`HR_PASSWORD`) do sếp/Planner cấp qua Vercel dashboard | Chưa deploy production; `/bcc` production VẪN mở như trước (rủi ro pre-task còn đó) | Planner cung cấp ENV + lệnh deploy thì tôi chạy STEP-09 (seed production + curl production + verify AC-01/02/04/10 production) |
+| `BLK-01` | Resolved | Giá trị 4 biến tài khoản đã được Planner cấp 16/08 (evidence masked: `0931****66`, `0987****99`, `Admin***`) + chỉ thị tự sinh `JWT_SECRET` | Đã nhận — giá trị không ghi vào repo theo quy tắc | Không còn |
+| `BLK-02` | Blocker | `vercel whoami` = `thuanndbx-4962` (org `thuans-projects-24578862`); `vercel project ls` (2 trang) = 30 project, KHÔNG có `hrp`/`hrpartner.vn` — CLI trỏ tài khoản KHÔNG sở hữu project production của repo (sếp xác nhận deploy bằng tài khoản KHÁC). CLI tự login qua device flow khi chạy `vercel whoami` lần đầu (không set ENV, không deploy, không seed — không có thay đổi phía Vercel ngoài session login) | Chưa thể set ENV production / seed Neon main / deploy; `/bcc` production VẪN mở như trước (rủi ro pre-task còn đó) | Sếp đăng nhập CLI bằng tài khoản Vercel sở hữu project `hrpartner.vn` rồi báo — tôi tiếp tục STEP-09 (set 5 ENV qua stdin không in giá trị → seed Neon main chỉ bảng `users` → deploy → verify curl production mask evidence) |
 
 ## 6. Evidence Index
 
@@ -90,4 +91,4 @@ Output ngắn để ở §3. Raw log matrix: `%TEMP%\hrp-curl-matrix.log` (local
 |---|---|---|---|
 | `1` | `v1.0` | `BLOCKED` (STEP-01..08 DONE) | Code xong + verify local xong trên dev branch; chờ Planner cấp ENV production để chạy STEP-09 |
 
-> Handoff status: BLOCKED — chờ Planner cung cấp giá trị ENV production (5 biến) để chạy STEP-09
+> Handoff status: BLOCKED — chờ Planner/sếp đăng nhập CLI bằng tài khoản Vercel sở hữu project hrpartner.vn để chạy STEP-09 (4 giá trị tài khoản đã nhận, JWT_SECRET tự sinh, chưa set)
