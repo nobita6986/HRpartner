@@ -77,12 +77,16 @@ function makeMockPrisma() {
   const tickets: MockTicket[] = [];
   const histories: MockHistory[] = [];
   const audits: any[] = [];
-  const notifications: any[] = [];
+  // Phase 3 / RQ-05: notifications đi qua outbox trước, drain mới tạo TicketNotification.
+  // Test mock track outboxEvents thay vì notifications trực tiếp.
+  const outboxEvents: any[] = [];
+  // Phase 3 / RQ-02: withIdempotency wrapper sẽ đụng idempotencyKey.
+  const idemRows = new Map<string, any>();
 
   let ticketCounter = 0;
   let historyCounter = 0;
   let auditCounter = 0;
-  let notifCounter = 0;
+  let outboxCounter = 0;
 
   return {
     $transaction: vi.fn(async (fn: any) => fn(tx)),
@@ -152,14 +156,36 @@ function makeMockPrisma() {
         return a;
       }),
     },
-    ticketNotification: {
+    outboxEvent: {
       create: vi.fn(async ({ data }: any) => {
-        const n = { id: `n-${++notifCounter}`, ...data };
-        notifications.push(n);
-        return n;
+        const e = {
+          id: `outbox-${++outboxCounter}`,
+          ...data,
+          status: data.status ?? 'PENDING',
+          retryCount: data.retryCount ?? 0,
+          createdAt: new Date(),
+        };
+        outboxEvents.push(e);
+        return e;
       }),
     },
-    _data: { tickets, histories, audits, notifications },
+    // Phase 3 / RQ-02: withIdempotency wrapper sẽ đụng idempotencyKey.
+    idempotencyKey: {
+      findUnique: vi.fn(async ({ where }: any) => {
+        const w = where.uq_idempotency_keys_scope;
+        return idemRows.get(`${w.actorId}|${w.route}|${w.key}`) ?? null;
+      }),
+      create: vi.fn(async ({ data }: any) => {
+        const r = {
+          id: `idem-${idemRows.size + 1}`,
+          ...data,
+          createdAt: new Date(),
+        };
+        idemRows.set(`${data.actorId}|${data.route}|${data.key}`, r);
+        return r;
+      }),
+    },
+    _data: { tickets, histories, audits, outboxEvents },
   };
 }
 
@@ -199,10 +225,13 @@ describe('TicketService — CREATE', () => {
     expect(prisma._data.histories).toHaveLength(1);
     expect(prisma._data.histories[0].action).toBe('CREATE');
     expect(prisma._data.audits).toHaveLength(1);
-    expect(prisma._data.notifications).toHaveLength(1);
+    expect(prisma._data.outboxEvents).toHaveLength(1);
+    expect(prisma._data.outboxEvents[0].eventType).toBe('TicketNotification');
   });
 
-  it('idempotency: 2 lần tạo cùng key → trả về ticket cũ', async () => {
+  it('idempotency: 2 lần tạo cùng key → trả về ticket c� (via withIdempotency wrapper)', async () => {
+    // Phase 3 / RQ-02 (DEC-02): idempotency chuyển sang `withIdempotency` wrapper.
+    // Route handler sẽ wrap createTicket; service KHÔNG tự check metadata nữa.
     const input = {
       workerId: 'w1',
       type: 'ADVANCE_SALARY' as const,
@@ -215,11 +244,23 @@ describe('TicketService — CREATE', () => {
     };
     const actor = { id: 'w1', role: 'WORKER' as const, name: 'A' };
 
-    const t1 = await service.createTicket(input, actor);
-    const t2 = await service.createTicket(input, actor);
+    const { withIdempotency } = await import('@/src/shared/integrity/idempotency');
+    const wrap = (key: string) =>
+      withIdempotency({
+        prisma,
+        route: 'POST:/api/tickets',
+        actorId: actor.id,
+        key,
+        requestBody: input,
+        handler: async () => ({ body: await service.createTicket(input, actor) }),
+      });
 
-    expect(t2.id).toBe(t1.id);
+    const r1 = await wrap('idem-123');
+    const r2 = await wrap('idem-123');
+
+    expect((r2.body as any).id).toBe((r1.body as any).id);
     expect(prisma._data.tickets).toHaveLength(1);
+    expect(r2.replayed).toBe(true);
   });
 
   it('VALIDATION: amountVnd = 0 → throw', async () => {

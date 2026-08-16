@@ -7,6 +7,7 @@ import { TicketService } from '@/src/domains/attendance/ticket.service';
 import { requireTicketAuth, ticketsErrorResponse } from '@/src/shared/auth/ticket-route-helpers';
 import { getIdempotencyKey } from '@/src/domains/attendance/session';
 import { getPrisma } from '@/src/lib/db';
+import { withIdempotency } from '@/src/shared/integrity/idempotency';
 
 const service = new TicketService(getPrisma());
 
@@ -28,8 +29,25 @@ export async function POST(
       ...(body.paidAt && { paidAt: new Date(body.paidAt) }),
     };
 
-    const ticket = await service.payAdvance(input, sessionUser);
-    return NextResponse.json({ ticket }, { status: 200 });
+    // Phase 3 / RQ-02: wrap handler nếu có key.
+    if (!idempotencyKey) {
+      const ticket = await service.payAdvance(input, sessionUser);
+      return NextResponse.json({ ticket }, { status: 200 });
+    }
+
+    const result = await withIdempotency({
+      prisma: getPrisma(),
+      route: 'POST:/api/tickets/{id}/pay',
+      actorId: sessionUser.id,
+      key: idempotencyKey,
+      requestBody: body,
+      handler: async () => ({
+        body: { ticket: await service.payAdvance(input, sessionUser) },
+        statusCode: 200,
+      }),
+    });
+
+    return NextResponse.json(result.body, { status: result.statusCode });
   } catch (err) {
     return ticketsErrorResponse(err);
   }

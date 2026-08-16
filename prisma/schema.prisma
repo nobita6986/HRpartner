@@ -1019,11 +1019,59 @@ model AuditLog {
   action     String // 'CREATE' | 'UPDATE' | 'DELETE' | 'STATE_TRANSITION' | ...
   diff       Json?    @default("{}")
   metadata   Json?    @default("{}")
+  // Phase 3 / RQ-03 — DEC-03: chuẩn hóa 3 cột nullable; dữ liệu cũ giữ nguyên.
+  reason     String?  @db.Text
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([entityType, entityId])
   @@index([actorId, createdAt])
   @@map("audit_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 12. INTEGRITY — Phase 3 (DEC-02 + DEC-01 + ADR-014)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Idempotency keys cho POST/PATCH/DELETE nhạy cảm.
+/// Scope UNIQUE (actorId, route, key) — đảm bảo retry trong TTL trả đúng kết quả lần đầu.
+/// TTL 24h (giữ hành vi hiện tại của ticket.service round 1).
+/// `response` lưu JSON kết quả lần đầu để replay khi client retry.
+model IdempotencyKey {
+  id          String   @id @default(uuid())
+  actorId     String   @map("actor_id")
+  route       String   // vd 'POST:/api/tickets', 'POST:/api/tickets/{id}/approve'
+  key         String   // x-idempotency-key
+  requestHash String   @map("request_hash") // SHA-256 của body để phát hiện client sai key
+  response    Json     @default("{}")
+  statusCode  Int      @default(200) @map("status_code")
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([actorId, route, key], name: "uq_idempotency_keys_scope")
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}
+
+/// Outbox cho side-effect (notification + future email/sms/zalo).
+/// Enqueue trong cùng $transaction với state change → rollback = không event.
+/// Drain in-process sau commit + cron daily lưới an toàn (DEC-01, D16 (b)).
+model OutboxEvent {
+  id          String    @id @default(uuid())
+  eventType   String    @map("event_type") // vd 'TicketNotification'
+  aggregateId String    @map("aggregate_id") // ticketId, statementId, ...
+  payload     Json      @default("{}")
+  status      String    @default("PENDING") // 'PENDING' | 'PROCESSED' | 'FAILED'
+  retryCount  Int       @default(0) @map("retry_count")
+  availableAt DateTime  @default(now()) @map("available_at") // cho delayed retry
+  lastError   String?   @map("last_error") @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+  processedAt DateTime? @map("processed_at")
+
+  @@index([status, availableAt])
+  @@index([aggregateId])
+  @@map("outbox_events")
 }
 
 model PortalTimesheet {

@@ -120,7 +120,7 @@ h1 {
 }
 .metro-track .done-part {
   position: absolute; left: 0; top: 0; height: 100%;
-  width: 44.4%;
+  width: 55.6%;
   background: linear-gradient(90deg, var(--rail-done) 0%, var(--rail-done) 88%, var(--rail-current) 100%);
   border-radius: 2px 0 0 2px;
 }
@@ -343,13 +343,13 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
   <div class="stat-strip">
     <div class="stat">
       <div class="k">Phase đã xong</div>
-      <div class="v">3 / 6 <span style="font-size:12.5px;font-weight:600;color:var(--ink-soft)">MVP nội bộ</span></div>
-      <div class="d">Mockup ✅ · Phase 0 Foundation ✅ · Phase 1 Identity ✅ · Phase 2 Tenant Scope ✅</div>
+      <div class="v">4 / 6 <span style="font-size:12.5px;font-weight:600;color:var(--ink-soft)">MVP nội bộ</span></div>
+      <div class="d">Mockup ✅ · Phase 0 Foundation ✅ · Phase 1 Identity ✅ · Phase 2 Tenant Scope ✅ · Phase 3 Integrity ✅</div>
     </div>
     <div class="stat">
       <div class="k">Đang đứng</div>
-      <div class="v"><em>Phase 3</em> · Integrity</div>
-      <div class="d">TASK v1.1 READY_FOR_EXECUTION — chờ sếp giao Tier 2 (<code>/code</code>)</div>
+      <div class="v"><em>Phase 4</em> · Vertical Slices</div>
+      <div class="d">Chưa có TASK — chờ sếp giao <code>/plan</code> để Tier 1 soạn contract</div>
     </div>
     <div class="stat">
       <div class="k">UI thật đầu tiên</div>
@@ -394,19 +394,19 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
         <div class="stop-tag">Xong</div>
       </div>
 
-      <div class="stop current" style="position:relative;">
-        <div class="you-are-here">Đang ở đây</div>
+      <div class="stop done">
         <div class="stop-dot">3</div>
         <div class="stop-name">Integrity</div>
         <div class="stop-week fn">2 tuần</div>
-        <div class="stop-tag" style="background:var(--primary-soft);color:var(--accent-text);">READY</div>
+        <div class="stop-tag">Xong</div>
       </div>
 
-      <div class="stop future">
+      <div class="stop current" style="position:relative;">
+        <div class="you-are-here">Đang ở đây</div>
         <div class="stop-dot">4</div>
         <div class="stop-name">Slices</div>
         <div class="stop-week fn">6 tuần</div>
-        <div class="stop-tag">UI thật</div>
+        <div class="stop-tag" style="background:var(--primary-soft);color:var(--accent-text);">chờ /plan</div>
       </div>
 
       <div class="stop future">
@@ -473,21 +473,21 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
       </div>
     </div>
 
-    <div class="phase-card is-current">
-      <div class="pc-badge badge-current">3</div>
+    <div class="phase-card">
+      <div class="pc-badge badge-done">3</div>
       <div>
-        <div class="pc-title">Integrity <span class="wk fn">2 tuần</span><span class="pc-status st-dang">Đang chạy</span></div>
-        <div class="pc-inv">Idempotency bảng (ADR-014) + Audit chuẩn (actor/reason/ip/ua/before-after) + Outbox (D16: in-process + cron) + State machine → 409.</div>
-        <div class="pc-foot"><b>Bàn giao sếp:</b> giao Tier 2 bằng <code>/code hrp-phase3-integrity</code> → HANDOFF → giao Tier 3 <code>/audit</code> → tôi <code>/resolve</code>.</div>
+        <div class="pc-title">Integrity <span class="wk fn">2 tuần</span><span class="pc-status st-xong">Xong</span></div>
+        <div class="pc-inv">Idempotency bảng (ADR-014) + Audit chuẩn (actor/reason/ip/ua/before-after) + Outbox (D16: in-process + cron) + State machine → 409. Đã ACCEPTED 16/08 (8/8 AC, vitest 325/325).</div>
+        <div class="pc-foot"><b>Bàn giao sếp:</b> migration production + cron outbox theo runbook HANDOFF §7 trước Phase 4 (DEC-05).</div>
       </div>
     </div>
 
-    <div class="phase-card">
-      <div class="pc-badge badge-idle">4</div>
+    <div class="phase-card is-current">
+      <div class="pc-badge badge-current">4</div>
       <div>
-        <div class="pc-title">Vertical Slices <span class="wk fn">6 tuần</span><span class="pc-status st-cho">Chờ</span></div>
+        <div class="pc-title">Vertical Slices <span class="wk fn">6 tuần</span><span class="pc-status st-dang">Đang đứng</span></div>
         <div class="pc-inv">4 luồng E2E theo click-path mockup — <b>UI thật bắt đầu từ đây</b>: 4A Staffing Fill (S01→S02→S02A→S02B) · 4B Attendance Lock (S03→S03B→S03_Resolve) · 4C Dual Reconciliation (S04→S04A→S04B) · 4D Job Board (S05, chỉ polish).</div>
-        <div class="pc-foot"><b>Exit:</b> demo sếp 4 slice 30–45 phút; HR + PM + Accountant tạo được 1 statement cuối kỳ và khóa được.</div>
+        <div class="pc-foot">Chưa có TASK — chờ sếp giao <code>/plan</code> cho Tier 1 soạn contract.</div>
       </div>
     </div>
 
@@ -948,15 +948,15 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
     <div class="bd-seg is-done" style="width:6.67%"><span class="lbl">P0</span></div>
     <div class="bd-seg is-done" style="width:13.33%"><span class="lbl">P1</span></div>
     <div class="bd-seg is-done" style="width:13.33%"><span class="lbl">P2</span></div>
-    <div class="bd-seg is-current" style="width:13.33%"><span class="lbl">P3</span></div>
-    <div class="bd-seg is-later" style="width:40%"><span class="lbl">P4 — 4 slice</span></div>
+    <div class="bd-seg is-done" style="width:13.33%"><span class="lbl">P3</span></div>
+    <div class="bd-seg is-current" style="width:40%"><span class="lbl">P4 — 4 slice</span></div>
     <div class="bd-seg is-later" style="width:13.33%"><span class="lbl">P5</span></div>
   </div>
   <div class="bd-marker"></div>
   <div class="bd-legend">
-    <span><i class="sw sw-done"></i>Đã xong (P0, P1)</span>
-    <span><i class="sw sw-cur"></i>Đang chạy (P3 — đầu tuần 4)</span>
-    <span><i class="sw sw-later"></i>Chưa tới (P4–P5)</span>
+    <span><i class="sw sw-done"></i>Đã xong (P0–P3)</span>
+    <span><i class="sw sw-cur"></i>Đang chạy (P4 — tuần 4)</span>
+    <span><i class="sw sw-later"></i>Chưa tới (P5)</span>
     <span>+ P1–P3 (9–14 tuần sau go-live) → Full V4</span>
   </div>
 </div>

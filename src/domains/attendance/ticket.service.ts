@@ -45,6 +45,14 @@ import type {
   TicketHistory,
   AuditLog,
 } from '@prisma/client';
+// Phase 3 / RQ-03 + RQ-04 + RQ-05: refactor lớp integrity, giữ nghiệp vụ.
+import { writeAuditLog } from '@/src/shared/integrity/audit';
+import {
+  IllegalTransitionError,
+  guardTransition as guardTransitionGeneric,
+  type TransitionMap,
+} from '@/src/shared/integrity/state-machine';
+import { enqueueOutbox } from '@/src/shared/integrity/outbox';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -130,71 +138,58 @@ export interface ListTicketsFilter {
  * Thiết kế: dùng Map literal để TypeScript check `key` exhaustively.
  * Mỗi transition ghi MỘT history row + audit log.
  */
-const TRANSITIONS: Record<
-  TicketStatus,
-  Partial<
-    Record<
-      TicketAction,
-      {
-        to: TicketStatus;
-        allowedRoles: readonly TicketActorRole[];
-        // Một số action yêu cầu loại ticket cụ thể (vd APPROVE_FINAL chỉ cho ADVANCE)
-        ticketTypes?: readonly TicketType[];
-      }
-    >
-  >
-> = {
+const TRANSITIONS: TransitionMap<TicketStatus, TicketAction, TicketActorRole> = {
   PENDING: {
-    [TicketAction.APPROVE_HR]: {
+    APPROVE_HR: {
       to: 'HR_APPROVED',
       allowedRoles: ['HR_STAFF', 'HR_MANAGER', 'ADMIN'],
     },
-    [TicketAction.REJECT]: {
-      to: 'REJECTED',
-      allowedRoles: ['HR_STAFF', 'HR_MANAGER', 'ADMIN'],
-    },
-    [TicketAction.APPROVE_FINAL]: {
+    APPROVE_FINAL: {
       // Shortcut: Manager approve thẳng (skip HR step) — cho dispute/leave đơn giản
       to: 'APPROVED',
       allowedRoles: ['HR_MANAGER', 'ADMIN'],
       ticketTypes: ['TIMESHEET_DISPUTE', 'LEAVE_REQUEST'],
     },
-    [TicketAction.CANCEL]: {
+    REJECT: {
+      to: 'REJECTED',
+      allowedRoles: ['HR_STAFF', 'HR_MANAGER', 'ADMIN'],
+    },
+    CANCEL: {
       to: 'CANCELLED',
       allowedRoles: ['WORKER'],  // chỉ worker tạo mới được cancel
     },
   },
 
   HR_APPROVED: {
-    [TicketAction.APPROVE_FINAL]: {
+    APPROVE_FINAL: {
       to: 'APPROVED',
       // Accountant approve advance; HR_Manager approve dispute/leave nếu đã HR_APPROVED
       allowedRoles: ['ACCOUNTANT', 'HR_MANAGER', 'ADMIN'],
     },
-    [TicketAction.REJECT]: {
+    REJECT: {
       to: 'REJECTED',
       allowedRoles: ['ACCOUNTANT', 'HR_MANAGER', 'ADMIN'],
     },
-    [TicketAction.CANCEL]: {
+    CANCEL: {
       to: 'CANCELLED',
       allowedRoles: ['WORKER'],
     },
   },
 
   APPROVED: {
-    [TicketAction.PAY]: {
+    PAY: {
       to: 'PAID',
       allowedRoles: ['ACCOUNTANT', 'ADMIN'],
       ticketTypes: ['ADVANCE_SALARY'],
     },
-    [TicketAction.CLOSE]: {
+    CLOSE: {
       to: 'CLOSED',
       allowedRoles: ['HR_STAFF', 'HR_MANAGER', 'ADMIN', 'WORKER'],
     },
   },
 
   PAID: {
-    [TicketAction.CLOSE]: {
+    CLOSE: {
       to: 'CLOSED',
       allowedRoles: ['HR_STAFF', 'HR_MANAGER', 'ADMIN'],
     },
@@ -293,31 +288,23 @@ function guardTransition(
   action: TicketAction,
   actorRole: TicketActorRole,
 ): TicketStatus {
-  const fromMap = TRANSITIONS[ticket.status];
-  const transition = fromMap[action];
-
-  if (!transition) {
-    throw new TicketServiceError(
-      'INVALID_TRANSITION',
-      `Action ${action} not allowed from status ${ticket.status}`,
-    );
+  try {
+    return guardTransitionGeneric(ticket.status, action, TRANSITIONS, {
+      actorRole,
+      entityType: ticket.type,
+    });
+  } catch (err) {
+    if (err instanceof IllegalTransitionError) {
+      // Map sang TicketServiceError code để giữ contract cũ (test cũ expect).
+      // Route handler Phase 3 map tiếp sang HTTP 409.
+      const code =
+        err.code === 'ROLE_NOT_ALLOWED'
+          ? 'FORBIDDEN'
+          : 'INVALID_TRANSITION';
+      throw new TicketServiceError(code, err.message);
+    }
+    throw err;
   }
-
-  if (!transition.allowedRoles.includes(actorRole)) {
-    throw new TicketServiceError(
-      'FORBIDDEN',
-      `Role ${actorRole} cannot perform ${action} on ticket status ${ticket.status}`,
-    );
-  }
-
-  if (transition.ticketTypes && !transition.ticketTypes.includes(ticket.type)) {
-    throw new TicketServiceError(
-      'INVALID_TRANSITION',
-      `Action ${action} only valid for ticket types: ${transition.ticketTypes.join(', ')}`,
-    );
-  }
-
-  return transition.to;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -344,24 +331,11 @@ export class TicketService {
   ): Promise<Ticket> {
     validateCreateInput(input);
 
-    // TODO(V4 F24): MVP dùng metadata-based idempotency (đơn giản, đủ cho ticket).
-    // Từ Wave 2: chuyển sang bảng idempotency_keys theo ADR-014 — scope (actorId, route, key) + request hash.
-    // Idempotency check (trước khi INSERT)
-    if (input.idempotencyKey) {
-      const existing = await this.prisma.ticket.findFirst({
-        where: {
-          workerId: input.workerId,
-          createdByActorId: actor.id,
-          metadata: {
-            path: ['idempotencyKey'],
-            equals: input.idempotencyKey,
-          },
-        },
-      });
-      if (existing) {
-        return existing;
-      }
-    }
+    // Phase 3 / RQ-02 (DEC-02): idempotency KHÔNG qua metadata.path nữa.
+    // Cơ chế mới: route handler gọi `withIdempotency` trước khi gọi createTicket.
+    // Service này giữ metadata.idempotencyKey để debug/trace — KHÔNG check replay.
+    //
+    // F24 TODO (đã đóng — Phase 3 chuyển sang bảng idempotency_keys): xem ADR-014.
 
     // Tính deltaHours cho dispute
     let deltaHours: Prisma.Decimal | null = null;
@@ -870,23 +844,41 @@ export class TicketService {
       action: string;
       diff: unknown;
       metadata?: Record<string, unknown>;
+      reason?: string;
+      ipAddress?: string;
+      userAgent?: string;
     },
   ): Promise<AuditLog> {
-    if (this.auditLogger) {
-      // Delegate cho custom audit logger (vd ghi thêm vào Sentry/Datadog)
-      return this.auditLogger(tx, entry);
-    }
-
-    return tx.auditLog.create({
-      data: {
-        actorId: entry.actorId,
-        actorRole: entry.actorRole,
-        entityType: entry.entityType,
-        entityId: entry.entityId,
-        action: entry.action,
-        diff: (entry.diff ?? {}) as Prisma.JsonObject,
-        metadata: (entry.metadata ?? {}) as Prisma.JsonObject,
+    // Phase 3 / RQ-03: delegate sang helper integrity/audit.
+    // Custom logger (Sentry/Datadog) vẫn được respect qua ctor param.
+    return writeAuditLog({
+      prisma: tx,
+      actor: {
+        id: entry.actorId,
+        role: entry.actorRole,
+        ipAddress: entry.ipAddress,
+        userAgent: entry.userAgent,
       },
+      entityType: entry.entityType,
+      entityId: entry.entityId,
+      action: entry.action,
+      diff: {
+        before: (entry.diff as { before?: unknown } | undefined)?.before,
+        after: (entry.diff as { after?: unknown } | undefined)?.after,
+      },
+      reason: entry.reason,
+      metadata: entry.metadata,
+      customLogger: this.auditLogger
+        ? (prisma, row) => this.auditLogger!(prisma, {
+            actorId: row.actorId ?? '',
+            actorRole: row.actorRole as TicketActorRole,
+            entityType: row.entityType,
+            entityId: row.entityId,
+            action: row.action,
+            diff: row.diff,
+            metadata: row.metadata as Record<string, unknown> | undefined,
+          })
+        : undefined,
     });
   }
 
@@ -900,12 +892,12 @@ export class TicketService {
       linkUrl?: string;
     },
   ): Promise<void> {
-    // Resolve recipient IDs theo role (đơn giản: enqueue 1 record, worker pool sẽ fill recipientId)
-    // Implementation thật: query User table cho role, tạo N notifications
-    // Để giữ service đơn giản, ta dùng 1 placeholder recipientId = 'ROLE:' + role
-    // Worker sẽ fill sau (vd cron job).
-    await tx.ticketNotification.create({
-      data: {
+    // Phase 3 / RQ-05 (DEC-01): enqueue qua outbox cùng transaction với state change.
+    // Drain in-process (sau commit) sẽ tạo TicketNotification row.
+    await enqueueOutbox(tx, {
+      eventType: 'TicketNotification',
+      aggregateId: notif.ticketId,
+      payload: {
         ticketId: notif.ticketId,
         recipientId: `ROLE:${notif.recipientRole}`,
         recipientRole: notif.recipientRole,

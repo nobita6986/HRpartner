@@ -7,18 +7,18 @@
 | Task slug | `hrp-phase3-integrity` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.2` |
-| Status | `READY_FOR_EXECUTION` — chờ sếp giao Tier 2 bằng lệnh `/code hrp-phase3-integrity` |
+| Spec version | `v1.3-close` |
+| Status | `ACCEPTED` — Audit round 1: verdict PASS (8/8 AC). Integrity ready; migration production + cron outbox theo runbook HANDOFF §7 trước Phase 4 (DEC-05) |
 | Planner | Tier 1 — Planner / Product & Architecture Decision Owner |
 | Executor | Tier 2 — bên ngoài, do sếp giao (Cursor/agent khác — Tier 1 KHÔNG spawn Tier 2/3) |
 | Auditor | Tier 3 — bên ngoài, do sếp giao (độc lập với Tier 2) |
 | Baseline | `e963d82` (main 16/08/2026 — `hrp-phase2-tenant-scope` ACCEPTED, verdict PASS 10/10 AC) |
 | Modules | Phase 3 Integrity — chạm: `prisma/migrations/*` (bảng `idempotency_keys`, `outbox`, cột AuditLog); `src/shared/integrity/{idempotency,audit,outbox,state-machine}.ts` (mới) + tests; `src/domains/attendance/ticket.service.ts` (refactor); `app/api/tickets/*` (nối middleware/helper); runbook production trong HANDOFF |
 | ADR references | **PHASE_KHOAHOC_V1.md §4 Phase 3** (DoD + exit criteria); **ADR-014** (UNIFIED_PLAN_v4:451 — audit mọi ghi nhạy cảm + idempotency scope (actorId, route, key) + request hash); **UNIFIED_PLAN_v4:180 (F24)** (bỏ idempotency metadata → bảng riêng); **D16** (outbox in-process drain + cron daily lưới an toàn — khuyến nghị Planner (b), sếp chốt 16/08) |
-| Current execution round | 1 (chưa mở) |
-| Current audit round | 0 (chưa audit) |
-| Next gate | `/code hrp-phase3-integrity` → `/audit` → `/resolve` → ACCEPTED |
-| Updated | 2026-08-16 23:07 ICT |
+| Current execution round | 1 (đã đóng) |
+| Current audit round | 1 (verdict PASS — 8/8 AC, không finding) |
+| Next gate | — (task đóng; Phase 4 tiếp theo) |
+| Updated | 2026-08-16 23:55 ICT |
 
 ## 1. Outcome
 
@@ -169,6 +169,7 @@
 | Tier2-report (pre-round 1) | `TR2-02` | Commit round 2 Phase 2 nằm trong `e963d82` do Planner thực hiện lúc nghiệm thu — KHÔNG có can thiệp ngoài quy trình giữa 2 session | `git show e963d82 --stat` → đúng 4 file (HANDOFF, AUDIT, TASK, _t3-dryrun-rollback.mjs) | Không | Planner xác nhận 16/08 |
 | Tier2-report (pre-round 1) | `TR2-03` | Chọn phương án (b): sửa `.ai-pipeline/scripts/verify-task.ps1` (file Tier 1 sở hữu) — regex chấp nhận cell multi-STEP/multi-AC, range STEP-01..10, alias "all", chú thích trong ngoặc đơn, ô Status kèm annotation; strip backtick trước khi check | Verify PASS exit 0 cả 5 TASK đã nghiệm thu/READY: phase3, phase2, phase1-identity, phase1-bcc-fence, mockup | Có — script pipeline (không đổi contract sản phẩm) | Planner đóng 16/08 |
 | Tier2-report (pre-round 1) | `TR2-04` | `strict_1commit` của sếp CHỈ áp dụng Phase 2 round 2 residue (1 dòng env appBCC — sếp tự commit); Phase 3 thực thi ĐỦ 8 RQ/STEP/AC theo contract — KHÔNG áp strict_1commit | Tier 2 escalate đúng tier2.md; contract Phase 3 không đổi | Không | Planner chốt 16/08 — sếp giao lại `/code` KHÔNG chọn strict_1commit |
+| Audit round 1 | — (không có finding mở) | **Nghiệm thu — verdict PASS 8/8 AC.** Planner tự chạy lại evidence (Iron Rule 4): `npx vitest run` → 325/325 PASS exit 0; `node scripts/_phase3-ac01-verify.cjs` → exit 0 (3 cột AuditLog + UNIQUE idem + index outbox); `npm run build` → exit 0; `npx prisma migrate status` → up-to-date; vùng cấm sạch (`app/bcc`, `app/job-board`, `middleware.ts`, auth files — chỉ `ticket-route-helpers.ts` in-scope) | Không | Planner nghiệm thu 16/08 — Status → `ACCEPTED` |
 
 ## 10. Revision Log
 
@@ -177,3 +178,4 @@
 | `v1.0` | 2026-08-16 | Initial contract — Phase 3 Integrity: migration idempotency_keys + outbox + cột AuditLog; 4 helper integrity; refactor ticket.service (giữ nghiệp vụ); 409 illegal transition; test 2-lần-cùng-key; runbook production (production defer theo DEC-08). 🚫 không tạo lại auth | Sếp yêu cầu "viết task phase 3 luôn để chờ đó"; căn cứ PHASE_KHOAHOC §4 Phase 3 DoD + ADR-014 + D16 |
 | `v1.1` | 2026-08-16 | Mở task: Baseline = `e963d82` (tenant-scope ACCEPTED 10/10 AC); DEC-07 đóng, Q-01 đóng; Status → `READY_FOR_EXECUTION`. Không đổi contract sản phẩm | Gate tenant-scope closed |
 | `v1.2` | 2026-08-16 | Planner Resolution đợt 1 (Tier 2 report pre-round 1 — TR2-01..04): baseline đúng; lịch sử commit nghiệm thu rõ ràng; sửa `verify-task.ps1` (multi-STEP/multi-AC/range/alias "all"/chú thích + ô Status kèm annotation) → verify PASS; `strict_1commit` chỉ áp dụng Phase 2 residue — Phase 3 thực thi đủ 8 RQ. Contract sản phẩm KHÔNG đổi | `TIER2-REPORT.md` (Tier 2 escalate 16/08 22:48 ICT) |
+| `v1.3` | 2026-08-16 | **Close — nghiệm thu:** AUDIT round 1 verdict PASS (8/8 AC, không finding); Planner re-verify đủ evidence chính (vitest 325/325, ac01 verify, build, migrate status, vùng cấm); Status → `ACCEPTED`. Contract KHÔNG đổi; production theo runbook HANDOFF §7 trước Phase 4 | `AUDIT.md` round 1 (Tier 3, 16/08 23:45 ICT) |
