@@ -7,8 +7,8 @@
 | Task slug | `hrp-phase2-tenant-scope` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
-| Status | `DRAFT` — chờ sếp chốt DEC-08 (timing production) + dependency identity-core ACCEPTED |
+| Spec version | `v1.1` |
+| Status | `DRAFT` — chờ dependency identity-core ACCEPTED (Baseline cập nhật xong là chuyển READY_FOR_EXECUTION) |
 | Planner | Tier 1 — Planner / Product & Architecture Decision Owner |
 | Executor | Tier 2 — bên ngoài, do sếp giao (Cursor/agent khác — Tier 1 KHÔNG spawn Tier 2/3; quy ước 16/08) |
 | Auditor | Tier 3 — bên ngoài, do sếp giao (độc lập với Tier 2) |
@@ -17,8 +17,8 @@
 | ADR references | **PHASE_KHOAHOC_V1.md §4 Phase 2** (invariant + DoD); **`docs/data-scope-security.md` §5.2-5.3** (ma trận scope), **§5.7** (checklist chống rò rỉ), **§6** (RLS + GUC); **D13** (backbone invariant), **DEC-30/31** (monorepo paths / drift recovery); G22 (root bất khả tước) |
 | Current execution round | 1 |
 | Current audit round | 0 (chưa audit) |
-| Next gate | sếp chốt DEC-08 → cập nhật Baseline → `/code` → `/audit` → `/resolve` → ACCEPTED |
-| Updated | 2026-08-16 15:00 ICT |
+| Next gate | identity-core ACCEPTED → cập nhật Baseline → `/code` → `/audit` → `/resolve` → ACCEPTED |
+| Updated | 2026-08-16 15:10 ICT |
 
 ## 1. Outcome
 
@@ -66,7 +66,7 @@
 | `DEC-05` | CHOSEN | **Field masking** theo §2: `worker-projection.ts` ẩn `cccdNumber`, `cccdImageUrl`, `selfieImageUrl`, `cccdChipData`, `bankAccount`, `bankName`, `bankBranch` → `***` khi role thiếu permission `CAN_VIEW_WORKER_SENSITIVE` (permission này do identity-core seed). ADMIN/HR_MANAGER/DIRECTOR thấy nguyên văn | Planner | CHỐT |
 | `DEC-06` | CHOSEN | **52 case = 13 role × 4 bảng**: `workers`, `projects`, `tickets`, `vendor_statements` — mỗi case assert (a) đúng tập row theo ma trận §5.2-5.3, (b) đúng field bị che. Thêm integration test L2: 2 transaction song song khác role → row-set khác nhau | Planner | CHỐT |
 | `DEC-07` | CHOSEN | Route demo: `GET /api/workers` (list theo scope — dùng cho matrix) + `GET /api/workers/me` (WORKER thấy chính mình; role khác trả 403) — đúng exit criteria PHASE_KHOAHOC §4. Mọi query qua `withDbContext` + `db = prisma.$extends(withAuthScope(ctx))` | Planner | CHỐT |
-| `DEC-08` | NEED_USER_DECISION | **Timing áp RLS lên production (Neon main)**: (A) áp ngay trong Phase 2 sau khi 52 case + verify appBCC PASS — backstop có hiệu lực thật sớm nhất, chấp nhận rủi ro can thiệp DB production đang có dữ liệu thật + appBCC chạy hàng ngày; (B) chỉ áp trên `DATABASE_URL_DEV`, production hoãn tới trước Phase 4 — an toàn tuyệt đối cho luồng hiện tại, nhưng production chưa có backstop DB (chỉ có rào app-level từ Phase 1) | Sếp | CHỜ — quyết định này đổi STEP-10 + AC-09 |
+| `DEC-08` | CHOSEN | **Timing áp RLS lên production (Neon main) = phương án B (sếp chốt 16/08)**: Phase 2 chỉ áp trên `DATABASE_URL_DEV`; production **hoãn tới trước Phase 4** (trigger: trước khi khởi động Phase 4, planner mở task/step áp production). Phase 2 giao đủ **runbook apply + rollback** (đã kiểm tra trên dev) để ngày đó chỉ cần chạy + sếp ký. Lưu ý chấp nhận: tới trước Phase 4, production chỉ có rào app-level từ Phase 1, chưa có backstop DB | Sếp chốt 16/08 qua AskUserQuestion | CHỐT |
 | `DEC-09` | ASSUMPTION | identity-core seed đủ: `CAN_VIEW_WORKER_SENSITIVE` (dùng cho masking), `CAN_VIEW_UNASSIGNED_POOL` (pool worker chưa phân công — §5.4, test matrix có case HR_STAFF không thấy pool) | Planner | Hết hiệu lực khi identity-core ACCEPTED |
 | `DEC-10` | ASSUMPTION | Ma trận §5.2-5.3 là canonical cho builders; chỗ nào 2 tài liệu lệch (số role 13 vs 11) → **13 role thật** (schema hiện tại) thắng | Planner | — |
 
@@ -125,21 +125,21 @@
 | `STEP-07` | RQ-07 | `src/shared/auth/worker-projection.ts` | Masking 7 field theo DEC-05, gắn `CAN_VIEW_WORKER_SENSITIVE` | STEP-06 | vitest: role có/không permission → plaintext/`***` | — |
 | `STEP-08` | RQ-08 | `app/api/workers/route.ts` + `app/api/workers/me/route.ts` | 2 route demo qua withDbContext + extension; 401/403/200 | STEP-05..07 | `next dev` + curl 13 role → đúng matrix (evidence masked) | — |
 | `STEP-09` | RQ-09 | Tests | 52/52 case + integration L2 + checklist §5.7 + full `vitest run` + `npm run build` | STEP-06..08 | Tất cả PASS, build exit 0 | Bất kỳ case fail |
-| `STEP-10` | RQ-01..04 | Production (theo DEC-08) | (A) Áp 3 migration lên Neon main + verify appBCC thật + curl production matrix; hoặc (B) chỉ viết runbook apply + rollback, chưa chạy | DEC-08 | Theo DEC-08 | appBCC lỗi production → rollback ngay (RISK-01) |
+| `STEP-10` | RQ-01..04 | Runbook production (DEC-08 = B) | Viết runbook `docs/tasks/hrp-phase2-tenant-scope/RUNBOOK_PRODUCTION.md`: thứ tự áp 3 migration lên Neon main, bước verify appBCC sau apply, script rollback (DROP POLICY + DISABLE RLS) <5 phút, cửa sổ ngoài giờ làm. **KHÔNG chạy lên production trong task này** | DEC-08 | Runbook đầy đủ + dry-run lệnh rollback trên dev (không phá dữ liệu) | — |
 
 ## 6. Acceptance
 
 | AC ID | RQ | Pass condition | Verification method | Required evidence | Blocking? |
 |---|---|---|---|---|---|
 | `AC-01` | RQ-01..03 | 3 migration áp sạch trên `DATABASE_URL_DEV`: `prisma validate` + migrate exit 0, không destructive, không đụng `portal_timesheets`, không bảng nào ngoài danh sách DEC-04 | Command | Log command + exit code + `migrate status` | Yes |
-| `AC-02` | RQ-04 | appBCC push timesheet + recon update worker hoạt động nguyên trạng sau migration (trên dev; và trên production nếu DEC-08 = A) | Thực chạy appBCC | Evidence masked (số row, không PII) | Yes |
+| `AC-02` | RQ-04 | appBCC push timesheet + recon update worker hoạt động nguyên trạng sau migration (trên dev — DEC-08 = B) | Thực chạy appBCC | Evidence masked (số row, không PII) | Yes |
 | `AC-03` | RQ-05 | GUC 4 biến chỉ sống trong transaction; 2 session song song khác role không rò role cho nhau; không dùng `SET ROLE` (grep sạch) | vitest + grep | Test output + grep result | Yes |
-| `AC-04` | RQ-08 | curl matrix: WORKER `GET /api/workers/me` → đúng 1 row của mình + `cccdNumber = ***`; ADMIN → toàn bộ + plaintext; không JWT → 401; HR_STAFF → đúng tập assigned + không thấy pool (trừ khi có `CAN_VIEW_UNASSIGNED_POOL`); MKT → 403 | curl production/dev | Command + output masked | Yes |
+| `AC-04` | RQ-08 | curl matrix (dev — DEC-08 = B): WORKER `GET /api/workers/me` → đúng 1 row của mình + `cccdNumber = ***`; ADMIN → toàn bộ + plaintext; không JWT → 401; HR_STAFF → đúng tập assigned + không thấy pool (trừ khi có `CAN_VIEW_UNASSIGNED_POOL`); MKT → 403 | curl dev | Command + output masked | Yes |
 | `AC-05` | RQ-09 | 52/52 case matrix PASS (13 role × 4 bảng), mỗi case assert row-set + masked field | vitest | Test output `52 passed` | Yes |
 | `AC-06` | RQ-06, RQ-09 | Checklist §5.7 đủ 8 mục PASS: findUnique ngoài scope = null; count/aggregate bị scope; updateMany/deleteMany ngoài scope = 0 row; create ép owner từ session; `$queryRaw` không dùng trong code có ctx; nested write có test; export đi qua cùng layer; `getSession` thiếu vendorId → throw | vitest + grep | Test output + code refs | Yes |
 | `AC-07` | RQ-09 | `npm run build` exit 0 + toàn bộ `vitest run` PASS (không test skip/only sót) | Command | Log + exit code | Yes |
 | `AC-08` | RQ-10 | `git diff` cho `app/bcc/`, `appBCC/`, `app/job-board/` rỗng; grep không có credential/PII thật | git diff + grep | Diff + grep output | Yes |
-| `AC-09` | RQ-01..04 | Theo DEC-08: (A) production áp xong + curl production matrix PASS + appBCC production OK; hoặc (B) runbook apply/rollback đầy đủ + ký sếp, production chưa đụng | Theo DEC-08 | Theo DEC-08 | Yes |
+| `AC-09` | RQ-01..04 | Runbook production đầy đủ: thứ tự apply, verify appBCC, script rollback đã dry-run trên dev; **production chưa đụng** (verify `migrate status` production không đổi) | Đọc runbook + kiểm tra dry-run evidence + `migrate status` production | Runbook + dry-run log + status | Yes |
 
 ### Traceability
 
@@ -171,7 +171,7 @@
 
 | ID | Question | Owner | Due | Blocks execution? |
 |---|---|---|---|---|
-| `Q-01` | DEC-08 — timing áp RLS production: (A) ngay trong Phase 2 hay (B) hoãn tới trước Phase 4? | Sếp | Trước khi READY_FOR_EXECUTION | Yes (đổi STEP-10 + AC-09) |
+| — | Không còn câu hỏi mở — DEC-08 đã sếp chốt (B) 16/08 | — | — | — |
 
 ## 9. Planner Resolution
 
@@ -184,3 +184,4 @@
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | 2026-08-16 | Initial contract — Phase 2 Tenant Scope: L2 RLS (3 migration FORCE + miễn trừ ETL) + with-db-context/rls-context + 4 scope builders + worker-projection + route demo `/api/workers*` + 52-case matrix | Sếp yêu cầu "viết task p2 dần đi"; căn cứ PHASE_KHOAHOC_V1 §4 + data-scope-security §5-§7 |
+| `v1.1` | 2026-08-16 | DEC-08 CHỐT = phương án B (sếp qua AskUserQuestion): production hoãn tới trước Phase 4; STEP-10 đổi thành viết runbook (không chạy production); AC-02/AC-04/AC-09 đổi theo B; đóng Q-01 | DEC-08 |
