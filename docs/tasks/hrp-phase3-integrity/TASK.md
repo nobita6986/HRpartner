@@ -7,7 +7,7 @@
 | Task slug | `hrp-phase3-integrity` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.1` |
+| Spec version | `v1.2` |
 | Status | `READY_FOR_EXECUTION` — chờ sếp giao Tier 2 bằng lệnh `/code hrp-phase3-integrity` |
 | Planner | Tier 1 — Planner / Product & Architecture Decision Owner |
 | Executor | Tier 2 — bên ngoài, do sếp giao (Cursor/agent khác — Tier 1 KHÔNG spawn Tier 2/3) |
@@ -18,7 +18,7 @@
 | Current execution round | 1 (chưa mở) |
 | Current audit round | 0 (chưa audit) |
 | Next gate | `/code hrp-phase3-integrity` → `/audit` → `/resolve` → ACCEPTED |
-| Updated | 2026-08-16 22:50 ICT |
+| Updated | 2026-08-16 23:07 ICT |
 
 ## 1. Outcome
 
@@ -165,7 +165,10 @@
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| Tier2-report (pre-round 1) | `TR2-01` | Baseline `e963d82` xác nhận ĐÚNG — commit tồn tại, tác giả/message khớp nghiệm thu Phase 2 | `git cat-file -t e963d82` → commit; `git log e963d82 -1` khớp "hrp-phase2-tenant-scope ACCEPTED" | Không | Planner đóng 16/08 |
+| Tier2-report (pre-round 1) | `TR2-02` | Commit round 2 Phase 2 nằm trong `e963d82` do Planner thực hiện lúc nghiệm thu — KHÔNG có can thiệp ngoài quy trình giữa 2 session | `git show e963d82 --stat` → đúng 4 file (HANDOFF, AUDIT, TASK, _t3-dryrun-rollback.mjs) | Không | Planner xác nhận 16/08 |
+| Tier2-report (pre-round 1) | `TR2-03` | Chọn phương án (b): sửa `.ai-pipeline/scripts/verify-task.ps1` (file Tier 1 sở hữu) — regex chấp nhận cell multi-STEP/multi-AC, range STEP-01..10, alias "all", chú thích trong ngoặc đơn, ô Status kèm annotation; strip backtick trước khi check | Verify PASS exit 0 cả 5 TASK đã nghiệm thu/READY: phase3, phase2, phase1-identity, phase1-bcc-fence, mockup | Có — script pipeline (không đổi contract sản phẩm) | Planner đóng 16/08 |
+| Tier2-report (pre-round 1) | `TR2-04` | `strict_1commit` của sếp CHỈ áp dụng Phase 2 round 2 residue (1 dòng env appBCC — sếp tự commit); Phase 3 thực thi ĐỦ 8 RQ/STEP/AC theo contract — KHÔNG áp strict_1commit | Tier 2 escalate đúng tier2.md; contract Phase 3 không đổi | Không | Planner chốt 16/08 — sếp giao lại `/code` KHÔNG chọn strict_1commit |
 
 ## 10. Revision Log
 
@@ -173,3 +176,4 @@
 |---|---|---|---|
 | `v1.0` | 2026-08-16 | Initial contract — Phase 3 Integrity: migration idempotency_keys + outbox + cột AuditLog; 4 helper integrity; refactor ticket.service (giữ nghiệp vụ); 409 illegal transition; test 2-lần-cùng-key; runbook production (production defer theo DEC-08). 🚫 không tạo lại auth | Sếp yêu cầu "viết task phase 3 luôn để chờ đó"; căn cứ PHASE_KHOAHOC §4 Phase 3 DoD + ADR-014 + D16 |
 | `v1.1` | 2026-08-16 | Mở task: Baseline = `e963d82` (tenant-scope ACCEPTED 10/10 AC); DEC-07 đóng, Q-01 đóng; Status → `READY_FOR_EXECUTION`. Không đổi contract sản phẩm | Gate tenant-scope closed |
+| `v1.2` | 2026-08-16 | Planner Resolution đợt 1 (Tier 2 report pre-round 1 — TR2-01..04): baseline đúng; lịch sử commit nghiệm thu rõ ràng; sửa `verify-task.ps1` (multi-STEP/multi-AC/range/alias "all"/chú thích + ô Status kèm annotation) → verify PASS; `strict_1commit` chỉ áp dụng Phase 2 residue — Phase 3 thực thi đủ 8 RQ. Contract sản phẩm KHÔNG đổi | `TIER2-REPORT.md` (Tier 2 escalate 16/08 22:48 ICT) |

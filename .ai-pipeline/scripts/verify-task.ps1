@@ -77,24 +77,36 @@ try {
         Add-Error "No acceptance ID found (expected AC-01 or higher)."
     }
 
-    $isReady = $content -match "\| Status \| `?READY_FOR_EXECUTION`? \|"
+    $backtickPattern = [regex]::Escape([string][char]96)
+    $statusNormalized = $content -replace $backtickPattern, ""
+
+    # Status cell may carry an annotation after the value (e.g. "READY_FOR_EXECUTION — chờ sếp giao").
+    $isReady = $statusNormalized -match "\|\s*Status\s*\|\s*READY_FOR_EXECUTION"
     if ($isReady) {
         if ($content -match "NEED_USER_DECISION") {
             Add-Error "READY_FOR_EXECUTION task still contains NEED_USER_DECISION."
         }
-        if ($content -match "<[^>]+>" -or $content -match "\bTBD\b" -or $content -match "\bTODO\b") {
+        # "TODO(" = reference to an existing code TODO (e.g. TODO(V4 F24)) — not a placeholder.
+        if ($content -match "<[^>]+>" -or $content -match "\bTBD\b" -or $content -match "\bTODO\b(?!\s*\()") {
             Add-Error "READY_FOR_EXECUTION task still contains placeholders/TBD/TODO."
         }
-    } else {
+    } elseif ($statusNormalized -notmatch "\|\s*Status\s*\|\s*ACCEPTED") {
         Add-Warning "Task is not READY_FOR_EXECUTION; placeholder checks are non-blocking."
     }
 
-    $backtickPattern = [regex]::Escape([string][char]96)
-    $normalizedContent = $content -replace $backtickPattern, ""
-    $rqIds = [regex]::Matches($normalizedContent, "RQ-\d{2,}") | ForEach-Object { $_.Value } | Sort-Object -Unique
+    $rqIds = [regex]::Matches($statusNormalized, "RQ-\d{2,}") | ForEach-Object { $_.Value } | Sort-Object -Unique
+    # A trace row may map one RQ to several STEPs and/or several ACs, incl. ranges:
+    #   | RQ-03 | STEP-03, STEP-06 | AC-03 |
+    #   | RQ-06 | STEP-07 | AC-02, AC-04, AC-05, AC-06 |
+    #   | RQ-10 | STEP-01..10 | AC-10 |
+    #   | RQ-10 | all | AC-08 |                       (alias: all = every step)
+    #   | RQ-06 | STEP-04 | AC-02 (case deny) |       (annotation in parens)
+    $stepToken = "(?:STEP-\d{2,}(?:\.\.\d{1,})?|all)"
+    $acToken   = "AC-\d{2,}(?:\.\.\d{1,})?"
+    $noteToken = "(?:\s*\([^|)]*\))?"
     foreach ($rqId in $rqIds) {
-        $tracePattern = "\|\s*$([regex]::Escape($rqId))\s*\|\s*STEP-\d{2,}\s*\|\s*AC-\d{2,}\s*\|"
-        if ($normalizedContent -notmatch $tracePattern) {
+        $tracePattern = "\|\s*$([regex]::Escape($rqId))\s*\|\s*${stepToken}(?:\s*,\s*${stepToken})*${noteToken}\s*\|\s*${acToken}(?:\s*,\s*${acToken})*${noteToken}\s*\|"
+        if ($statusNormalized -notmatch $tracePattern) {
             Add-Error "Requirement $rqId has no direct RQ -> STEP -> AC traceability row."
         }
     }
