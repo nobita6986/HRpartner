@@ -63,3 +63,4 @@ stitch/
 favicon.ico
 
 .vercel
+.env.production.local
