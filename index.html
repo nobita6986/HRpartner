@@ -91,15 +91,6 @@
   footer .row{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
   footer a{color:var(--brand-strong);font-weight:600}
   footer a:hover{text-decoration:underline}
-
-  /* roadmap inline */
-  .roadmap-section{padding:48px 0 64px;border-top:1px solid var(--line)}
-  .roadmap-section h2{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:8px}
-  .roadmap-section .lede{margin-top:8px}
-  .roadmap-frame{
-    width:100%;border:1px solid var(--line);border-radius:16px;
-    background:var(--card);margin-top:22px;display:block;min-height:3200px;
-  }
 </style>
 </head>
 <body>
@@ -158,24 +149,15 @@
         <div class="more">Tra cứu ngay →</div>
       </a>
 
-      <a class="card" href="#roadmap-v4">
+      <a class="card" href="docs/roadmap-hrp-v4.html">
         <div class="ic">🗺️</div>
         <h2>Roadmap V4</h2>
-        <p>Lộ trình trực quan 6 phase + 3 phase mở rộng: vị trí hiện tại, burndown 15 tuần MVP nội bộ và các mốc UI cho đến Full V4.</p>
+        <p>Lộ trình trực quan 6 phase + 3 phase mở rộng. Đang đứng: Phase 3 · Integrity — 3/6 MVP nội bộ, tuần 4/15. Burndown và các mốc UI đến Full V4.</p>
         <div><span class="tag wip">Đang thực thi</span></div>
         <div class="more">Xem lộ trình →</div>
       </a>
 
     </div>
-  </div>
-</div>
-
-<div class="roadmap-section" id="roadmap-v4">
-  <div class="wrap">
-    <div class="kicker">Lộ trình V4</div>
-    <h2>Lộ trình thực thi &amp; vị trí hiện tại</h2>
-    <p class="lede">Mỗi phase đóng băng một bất biến (DB → Đăng nhập → Phân quyền dữ liệu → Toàn vẹn giao dịch) trước khi layer trên dùng. Bản chi tiết đầy đủ: tuyến metro 10 ga, chi tiết từng phase (việc kỹ thuật · thay đổi UX · artifacts), mốc UI và burndown 15 tuần. <b>Trạng thái 16/08/2026: 3/6 phase MVP — đang đứng Phase 3 · Integrity.</b></p>
-    <iframe id="roadmap-frame" class="roadmap-frame" src="docs/roadmap-hrp-v4.html" title="Roadmap HRP V4" loading="lazy"></iframe>
   </div>
 </div>
 
@@ -187,21 +169,5 @@
     </div>
   </div>
 </footer>
-<script>
-  (function(){
-    var f=document.getElementById('roadmap-frame');
-    function fit(){
-      var d=null; try{ d=f.contentDocument; }catch(e){}
-      if(d&&d.body){
-        f.style.height=Math.max(d.body.scrollHeight,d.documentElement.scrollHeight)+'px';
-      }
-    }
-    f.addEventListener('load',function(){
-      fit();
-      try{ f.contentWindow.addEventListener('resize',fit); }catch(e){}
-    });
-    window.addEventListener('resize',fit);
-  })();
-</script>
 </body>
 </html>
