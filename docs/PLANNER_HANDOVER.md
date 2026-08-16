@@ -121,7 +121,7 @@ Tuần 4/15 MVP nội bộ. UI thật đầu tiên: cuối slice 4A (W5–W6).
 2. Tier 2 xong → `HANDOFF.md` kết `READY_FOR_AUDIT` → báo sếp giao Tier 3 `/audit hrp-phase3-integrity`.
 3. Tier 3 xong → bạn **`/resolve`**: xử lý từng `AUD-xxx` trong Planner Resolution, verify evidence thật (Iron Rule 4) trước khi ACCEPTED.
 4. Phase 3 ACCEPTED → bắt đầu chuẩn bị TASK phase 4 (4 slice — đọc PHASE_KHOAHOC §4 Phase 4 trước).
-5. **Sau MỖI task có thay đổi trạng thái → cập nhật roadmap (xem §8) NGAY LẬP TỨC** — đây là yêu cầu của sếp.
+5. **Sau MỖI task có thay đổi trạng thái → cập nhật bộ đôi roadmap + index rồi PUSH (xem §8) NGAY LẬP TỨC** — đây là yêu cầu của sếp.
 
 ---
 
@@ -146,7 +146,9 @@ Trạng thái task hợp lệ: `DRAFT` → `READY_FOR_EXECUTION` → `REVISION_R
 
 ## 8. BẮT BUỘC: cập nhật roadmap sau mỗi task
 
-File `docs/roadmap-hrp-v4.html` là roadmap trực quan (design system G27: cam `#f26522`, tự chuyển sáng/tối). **Sau mỗi task đổi trạng thái phase, cập nhật file này trong CÙNG lượt bàn giao.** Các vị trí phải rà:
+**Sau mỗi task đổi trạng thái phase, cập nhật CẢ HAI file trong CÙNG lượt bàn giao rồi commit + `git push origin main`** (yêu cầu sếp 16/08 — mọi người xem kết quả qua GitHub):
+
+**1. `docs/roadmap-hrp-v4.html`** — roadmap trực quan (design system G27: cam `#f26522`, tự chuyển sáng/tối). Các vị trí phải rà:
 
 | Chỗ trong file | Sửa gì khi phase đổi trạng thái |
 |---|---|
@@ -159,6 +161,8 @@ File `docs/roadmap-hrp-v4.html` là roadmap trực quan (design system G27: cam 
 | `footer` | Cập nhật ngày "trạng thái DD/MM/YYYY" |
 
 **Ví dụ cụ thể:** khi tenant-scope ACCEPTED → ga "2" thành `done`, ga "3" thành `current` (gắn `.you-are-here`), `done-part` → `44.4%`, stat "2/6"→"3/6", "Đang đứng: Phase 3 · Integrity", burndown P2→done, P3→current, marker `21%`→`34%`, footer đổi ngày. File cũng là trang xem nhanh cho sếp — mở bằng trình duyệt khi bàn giao.
+
+**2. `index.html`** — card "Roadmap V4" trong grid trang chủ: cập nhật dòng mô tả card (số phase `x/6`, tên phase đang đứng, tuần) + ngày `hero-meta`/footer khi cần. Card link tới `docs/roadmap-hrp-v4.html` như cũ — **KHÔNG iframe/inline** (sếp đã thử và bỏ 16/08).
 
 ---
 
