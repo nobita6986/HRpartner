@@ -77,10 +77,21 @@ Ghi nhận cho tương lai: production main có thể gặp state tương tự k
 
 Route: `PROMPT_TIER2_R4.md` → Tier 2 round 4 (resolve + deploy + diff + seed confirm + HANDOFF).
 
-## 8. Revision Log
+## 8. Resolution Round 4 — Re-audit PASS · 16/08
+
+Tier 3 re-audit Round 2 (AUDIT.md section Round 2): **PASS — 10/10 AC, 0 P0/P1**. 2 ghi chú P3 không chặn:
+- **AUD-006** (P3): watermark bản deploy là "DU LIEU MINH HOA" không dấu (mockup S05 có dấu) → gộp backlog Phase 4 cùng AUD-003 (refactor job-board: query DB thật + hrp.css).
+- **AUD-007** (P3): untracked harness artifacts tồn tại từ trước task — không cần hành động.
+
+Planner chốt: **Phase 0 đạt DoD kỹ thuật**. Exit gate cuối = sếp duyệt demo https://hrpartner.vn/job-board. Sau "demo OK": đóng Phase 0 → **Phase 1** (D15: rào /bcc JWT tối giản tuần đầu — ưu tiên an ninh vì appBCC đang bơm dữ liệu thật vào Neon).
+
+Backlog Phase 4 chính thức: AUD-003 + AUD-006 (job-board: query DB thật + watermark có dấu + hrp.css), DEV-01…04, AUD-007 (dọn harness artifacts nếu cần).
+
+## 9. Revision Log
 
 | Ver | Ngày | Thay đổi |
 |---|---|---|
 | `v1.0` | `2026-08-16` | Khởi tạo — Resolution AUD-001…005 Round 1: DEC-30 (paths-based monorepo), đóng AUD-005 (verify runtime 200), BLOCKED AUD-002 chờ sếp cấp dev DB, WAIT AUD-004 chờ ký contract, ACCEPT_RISK AUD-003 (Phase 4) |
 | `v1.1` | `2026-08-16` | Resolution Round 2 (BLK-04 drift): **DEC-31** — g0_baseline `IF NOT EXISTS` + khai báo `idx_timesheets_lookup` vào schema; AC-06/AC-09 PASS; route Tier 2 round 3 qua PROMPT_TIER2_R3 |
 | `v1.2` | `2026-08-16` | Resolution Round 3 (P3009 failed record): chọn phương án (A) `resolve --rolled-back` + deploy lại trên dev; diff = 0 DDL đã chứng minh state khớp; route Tier 2 round 4 qua PROMPT_TIER2_R4 |
+| `v1.3` | `2026-08-16` | Resolution Round 4: re-audit **PASS 10/10 AC, 0 P0/P1**; chốt DoD kỹ thuật xong; AUD-006/007 + DEV-01…04 → backlog Phase 4; chờ sếp duyệt demo → đóng Phase 0 |

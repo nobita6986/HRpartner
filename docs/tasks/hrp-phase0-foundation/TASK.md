@@ -2,7 +2,7 @@
 
 > Pipeline 3-tier: `TASK.md` (Tier 1 — Planner) → `HANDOFF.md` (Tier 2 — Executor) → `AUDIT.md` (Tier 3 — Auditor)
 > Spec version: `v1.0` · Ngày khởi tạo: **16/08/2026**
-> Status: `ROUND_3` — 2 gate founder xong 16/08 (contract FREEZE + `DATABASE_URL_DEV`); Tier 2 round 2: AC-06 PASS (seed 2 lần dev), AC-09 PASS, AC-03 BLOCKED (drift P3018) → Planner DEC-31 (PLANNER-DECISION v1.1) → Tier 2 round 3 đang xử theo `PROMPT_TIER2_R3.md`; xong mở Tier 3 re-audit Round 2
+> Status: `PASS` — Tier 3 re-audit Round 2 (16/08): **10/10 AC PASS, 0 P0/P1** (AUDIT.md Round 2). Còn 1 exit gate cuối: **sếp duyệt demo** https://hrpartner.vn/job-board (DoD §8). AUD-006/007 (P3) + DEV-01…04 → backlog Phase 4.
 > Căn cứ: **D13** (backbone invariant-phase + monorepo Phương án A), **D14** (freeze Mockup Baseline = trigger Phase 0; founder cho khởi động sớm 16/08 song song dry-run mockup), `docs/PHASE_KHOAHOC_V1.md` §4, `docs/MODULE_TACH_V2.md` §VII W1 + 5 điều chỉnh kỹ thuật đã duyệt 16/08/2026.
 
 ---
@@ -94,11 +94,11 @@
 
 ## 8. Definition of Done (Phase 0 — PHASE_KHOAHOC §4)
 
-- [ ] `npm run build` exit 0
-- [ ] `prisma migrate dev` chạy trên DB sạch + DB upgrade
-- [ ] 7 chỗ `new PrismaClient()` đã quy về `getPrisma()`
-- [ ] `vitest run` pass
-- [ ] 3 sub-package tách xong (`@hrp/money`, `@hrp/payroll-core`, `@hrp/job-board`)
+- [x] `npm run build` exit 0
+- [x] `prisma migrate deploy` chạy trên Neon dev branch (upgrade path state thật + 3/3 migration; diff = 0 DDL)
+- [x] 7 chỗ `new PrismaClient()` đã quy về `getPrisma()`
+- [x] `vitest run` pass
+- [x] 3 sub-package tách xong (`@hrp/money`, `@hrp/payroll-core`, `@hrp/job-board`)
 - [ ] **Demo**: link public `app/job-board` lên Vercel — sếp duyệt
 
 ## 9. Revision Log
@@ -108,3 +108,4 @@
 | `v1.0` | `2026-08-16` | Khởi tạo contract Phase 0 Foundation: 8 STEP, 10 AC, 5 RISK, phân vai 3-tier | Lệnh founder "vào Phase 0" + D13–D16 đã chốt |
 | `v1.1` | `2026-08-16` | Planner Resolution Round 1: DEC-30 paths-based monorepo (STEP-04/AC-02); bỏ `/docs` khỏi URL matrix (STEP-08); Status → CONDITIONAL chờ 2 gate founder | AUDIT Round 1 CONDITIONAL → PLANNER-DECISION v1.0 |
 | `v1.2` | `2026-08-16` | Resolution Round 2: DEC-31 drift recovery (g0_baseline IF NOT EXISTS + idx_timesheets_lookup vào schema); Status → ROUND_3 | Tier 2 round 2 (AC-03 BLOCKED P3018) → PLANNER-DECISION v1.1 |
+| `v1.3` | `2026-08-16` | Tier 3 re-audit Round 2: **PASS 10/10 AC, 0 P0/P1**; DoD kỹ thuật hoàn thành; Status → PASS chờ sếp duyệt demo | AUDIT.md Round 2 → PLANNER-DECISION v1.3 |

@@ -32,3 +32,48 @@
 1. Tất cả các yếu tố core (Database Integrity, Scope Adherence, Secret/PII Leak) đều vượt qua. **Không có finding P0 hay P1**. Code an toàn.
 2. Có một số finding P2/P3 liên quan tới Deviations (tự bỏ workspaces để tránh build lỗi) và Blockers (thiếu môi trường test Neon dev branch, chưa deploy Vercel, chưa có chữ ký Founder). 
 3. Các vấn đề này cần Tier 1 (Planner) xác nhận chấp thuận hoặc lên kế hoạch xử lý (Phase 1) trước khi có thể chuyển trạng thái sang PASS hoàn toàn.
+
+---
+
+## Round 2 — Re-audit (16/08/2026)
+
+> Tier 3 re-audit sau Resolution Round 1–3 của Planner (PLANNER-DECISION v1.2) + Tier 2 round 2–4.
+> Toàn bộ lệnh dưới đây do tôi (Tier 3) tự chạy lại trên repo — không tin claim trong HANDOFF.
+> Tuân thủ: read-only tuyệt đối (ngoại lệ duy nhất: seed 1 lần trên dev branch), không commit/push, không ghi giá trị URL/password.
+
+### Bảng AC
+
+| AC | Kết quả | Evidence (lệnh + output thật tôi tự chạy) |
+|---|---|---|
+| AC-01 | **PASS** | `grep -rn "new PrismaClient" app/ src/ packages/` → chỉ 1 dòng duy nhất `src/lib/db.ts:10` (cache globalThis). Seed script (`prisma/seed.mjs`) tạo PrismaClient riêng — ngoài phạm vi grep AC-01, là script CLI không qua Next runtime, chấp nhận. |
+| AC-02 | **PASS** | `npm run build` local → `[exited with code 0]`; route table in ra đủ `/bcc` + `/job-board` (job-board revalidate 5m). Curl production: `https://hrpartner.vn/` → 200, `/bcc` → 200, `/job-board` → 200. |
+| AC-03 | **PASS** | Trên **Neon dev branch** (DATABASE_URL = DATABASE_URL_DEV, không in giá trị): `npx prisma migrate status` → exit 0, "3 migrations found", "Database schema is up to date!" (không có failed record). `npx prisma migrate diff --from-url (dev) --to-schema-datamodel prisma/schema.prisma --script` → exit 0, output chỉ `-- This is an empty migration.` = **0 DDL** → dev DB khớp canonical 100%. Đọc `migration.sql`: `CREATE TABLE IF NOT EXISTS` (dòng 9), `CREATE INDEX IF NOT EXISTS` (dòng 26), `CREATE INDEX IF NOT EXISTS "idx_timesheets_lookup"` (dòng 28); **không có** DROP/TRUNCATE/RENAME. Không chạy deploy/resolve. |
+| AC-04 | **PASS** | `npx vitest run` → Test Files 2 passed, **Tests 32 passed (32)**, exit 0 (ticket 16 + payroll 16). |
+| AC-05 | **PASS** | Đọc `app/job-board/page.tsx`: `revalidate = 300` (dòng 3), không auth, không gọi DB; watermark (dòng 30, 89); 3 project canonical khớp `packages/job-board/src/index.ts`: DA-2026-018 `50/47`, DA-2026-022 `80/80`, PRJ-SV-014 `35/32`. Curl production `/job-board` → 200, HTML chứa "DU LIEU MINH HOA", đủ 3 mã project + tên (An Phat / Yen Phong / Sao Viet). Ghi chú P3: chuỗi watermark ở bản deploy là bản **không dấu** "DU LIEU MINH HOA" (mockup S05 dùng "DỮ LIỆU MINH HỌA" có dấu) — xem AUD-006. |
+| AC-06 | **PASS** | Đọc `prisma/seed.mjs`: toàn bộ dùng `upsert` (idempotent), PII masked (SĐT `090****001`, CCCD `084****1234`), không bank/lương thật. **Chạy 1 lần** (ngoại lệ Planner) trên dev branch: `prisma db seed` → exit 0, `Upserted: 12 users, 4 projects, 3 workers` — upsert, không destructive. |
+| AC-07 | **PASS** | `ls prisma/_archive/` → đúng 3 tệp: `README.md` + `schema-m7-tickets.prisma` + `schema-v3.1-patches.prisma`. `prisma/` gốc chỉ còn `schema.prisma` + `seed.mjs` + `migrations/`. |
+| AC-08 | **PASS** | `git ls-files prisma/migrations/` → `20260815013341_init`, `20260815084134_g22_security`, `20260816010542_g0_baseline` (mỗi folder 1 migration.sql) + `migration_lock.toml`. |
+| AC-09 | **PASS** | `docs/CONTRACT_BCC.md` §11: `Ngay ky: 16/08/2026`, `Ky ten: Founder (sep) — duyet qua chat: "Gate 1: OK"`; header dòng 8: **FREEZE** — founder da ky duyet 16/08/2026. |
+| AC-10 | **PASS** | `git log` `127c2ec..HEAD` (9 commit): chỉ docs + `prisma/schema.prisma` (+1 dòng `@@index` lookup, DEC-31) + `migration.sql` g0_baseline (IF NOT EXISTS + idx). Không `.env`, không `*.xlsx`, không `db_*.txt` (xlsx/txt appBCC đã được `.gitignore` che — verify bằng `git check-ignore`). Quét secret `git log -p` grep `npg_|postgres://|password|token|SECRET|API_KEY`: chỉ trúng chữ hướng dẫn trong doc PROMPT/HANDOFF (vd "Không kèm giá trị URL/password") và 1 comment CSS `/* ═══════ TOKENS ═══════ */` thuộc file `docs/app-big-picture.html` bị **xóa** (commit 7bfa69a) — không có secret thật, không có lệnh migrate trỏ production trong diff. |
+
+### Kiểm an toàn bổ sung (§3)
+
+- **git status**: đúng như trạng thái cho phép — chỉ còn 2 file modified `appBCC/agent_mapper.py` + `appBCC/app.py` (founder làm song song, không đụng). Các mục untracked còn lại (`.ai-pipeline/`, `.claude/`, `.codegraph/`, `stitch/`, `favicon.ico`, `TIER1/2/3_PROMPT.md`) đều có mtime **15/08** — tồn tại TRƯỚC khi task bắt đầu (16/08 01:03), là artifact harness/pipeline, **không phải sản phẩm thừa của Tier 2** (các round 1–4 không để lại file untracked mới) — ghi nhận, không flag (xem AUD-007).
+- **Schema `PortalTimesheet`**: có `@@index([employeeCode, project, periodMonth, periodYear], name: "idx_timesheets_lookup")` (sau `@@index([employeeCode])`); đối chiếu 13 cột với CONTRACT §2.2: id, employee_code, full_name, project, period_month, period_year, total_work_days DECIMAL(5,2), ot_hours DECIMAL(5,2), absent_days DECIMAL(5,2), daily_data JSONB, payroll_data JSONB, total_income DECIMAL(12,2), created_at TIMESTAMP(3) — **khớp 100%**, không field nào đổi. `git diff 127c2ec..HEAD -- prisma/schema.prisma` = đúng 1 dòng thêm (index lookup).
+- **`app/bcc/actions.ts`**: diff bản trước refactor (commit `4665692`) vs sau (commit `db6bc04` — STEP-01) chỉ đổi: import `PrismaClient` + `new PrismaClient()` → `import { getPrisma } from '@/src/lib/db'` + 2 dòng `const prisma = getPrisma();` trong `fetchOptions` và `fetchPortalTimesheet`. **Logic giữ nguyên.** `app/bcc/page.tsx` không bị chạm bởi Tier 2 (`git log db6bc04..HEAD -- app/bcc/` rỗng).
+- **`docs/tasks/hrp-v4-bod-mockup/*`**: `git diff 127c2ec..HEAD` trên thư mục này = **rỗng** — không ai đụng trong phạm vi audit.
+
+### Findings mới
+
+| ID | Severity | Mô tả | Vị trí (file:line) | Đề xuất |
+|---|---|---|---|---|
+| AUD-006 | P3 | Watermark job-board ở bản deploy là chuỗi **không dấu** "DU LIEU MINH HOA" trong khi mockup S05 dùng "DỮ LIỆU MINH HỌA" (có dấu). Toàn trang dùng kiểu không dấu nhất quán (badge "Tuyen gap", nút "Ung tuyen") — thuần cosmetic, không ảnh hưởng AC (nội dung watermark minh họa vẫn hiển thị rõ) | `app/job-board/page.tsx:30,89` | Gộp vào backlog polish job-board Phase 4 (cùng AUD-003 round 1) |
+| AUD-007 | P3 | Working tree còn mục untracked (`.ai-pipeline/`, `.claude/`, `.codegraph/`, `stitch/`, `favicon.ico`, `TIER1/2/3_PROMPT.md`) — đều tồn tại từ **trước task** (mtime 15/08), là artifact harness/pipeline, không phát sinh trong các round Tier 2 | repo root | Không cần hành động cho Phase 0; sếp cân nhắc thêm vào `.gitignore` hoặc quyết định đưa vào git riêng |
+
+### Verdict Round 2: **PASS** + lý do
+
+- **10/10 AC PASS** (không có PARTIAL/FAIL); 0 finding P0/P1; chỉ 2 ghi chú P3 cosmetic/observation (AUD-006, AUD-007) không chặn.
+- 2 gate founder đã đóng: contract FREEZE ký 16/08 (AC-09) + Neon dev branch có `DATABASE_URL_DEV` (AC-03, AC-06 runtime PASS — tôi tự chạy lại: migrate status up-to-date 3/3, diff = 0 DDL, seed exit 0).
+- Build local xanh + production URL matrix (`/`, `/bcc`, `/job-board`) đều 200 + nội dung job-board đủ watermark & 3 project canonical (AC-02, AC-05 runtime).
+- An toàn: g0_baseline add-only `IF NOT EXISTS`, không destructive; schema khớp contract 13 cột; app/bcc chỉ đổi import; không secret leak trong mọi commit mới.
+- Đề nghị Tier 1 đóng Phase 0 theo DoD §8 (duyệt demo job-board) và chuyển AUD-006/AUD-007 cùng các mục backlog đã ghi nhận (DEV-01…04) vào TASK Phase 4.
