@@ -2,7 +2,7 @@
 
 > Pipeline 3-tier: `TASK.md` (Tier 1 — Planner) → `HANDOFF.md` (Tier 2 — Executor) → `AUDIT.md` (Tier 3 — Auditor)
 > Spec version: `v1.0` · Ngày khởi tạo: **16/08/2026**
-> Status: `PASS` — STEP-09/AC-11 hoàn thành (Tier 3 Round 3 PASS 13/13, 0 P0/P1; deploy production đã live bản UI mới). Gate cuối duy nhất: **sếp mở https://hrpartner.vn/job-board duyệt demo** → đóng Phase 0.
+> Status: `READY_FOR_EXECUTION` — lệnh sếp 16/08 (review demo): bổ sung **bảng filter cột trái** cho `/job-board` (STEP-10 + AC-12 mới, DEC-32; mockup S05 đã cập v2). Tier 2 nhận việc. Sau PASS → sếp duyệt demo → đóng Phase 0.
 > Căn cứ: **D13** (backbone invariant-phase + monorepo Phương án A), **D14** (freeze Mockup Baseline = trigger Phase 0; founder cho khởi động sớm 16/08 song song dry-run mockup), `docs/PHASE_KHOAHOC_V1.md` §4, `docs/MODULE_TACH_V2.md` §VII W1 + 5 điều chỉnh kỹ thuật đã duyệt 16/08/2026.
 
 ---
@@ -57,6 +57,7 @@
 | STEP-07 | `docs/CONTRACT_BCC.md`: đóng băng contract bảng appBCC ↔ web (cột, format period `MM/YYYY`, trạng thái, quy tắc upsert versioned) — xử lý R-21; founder ký duyệt | AC-09 |
 | STEP-08 | Demo A-04: deploy job-board lên Vercel + verify URL matrix (`/`, `/bcc`, `/job-board` — `/docs` không phải site, bỏ khỏi matrix 16/08) | AC-05, AC-02 |
 | STEP-09 | **UI polish `/job-board`**: bám đúng design system **Warm Professionalism** (`stitch/warm_professionalism/DESIGN.md`): primary `#F26522` (canonical G27), nền `#FAF9F7`, font **Be Vietnam Pro** (headline/body) + **Inter** (label), radius 8px button / 16px card, spacing 8px scale, card padding 24px, border `#EAE8E4`, shadow ambient orange. Bám layout mockup `docs/tasks/hrp-v4-bod-mockup/mockup/S05_JobBoard_Public_1440.html`; header public tham chiếu `stitch/hrp_landing_page_html_standard/code.html` (brand.orange `#f26522`, orangeDark `#a63b00`). Watermark **"DỮ LIỆU MINH HỌA" có dấu**. **Bỏ toàn bộ inline style tự bịa** (màu xanh `#0F4C81`). KHÔNG đổi logic/data (`listPublicJobs`, `revalidate = 300`, không auth, 3 project canonical) | AC-11 |
+| STEP-10 | **Sidebar filter trái `/job-board` (DEC-32)**: bám mockup `S05_JobBoard_Public_1440.html` **v2** — bỏ filter chips ngang, thêm panel filter trái 240px (surface, border `#EAE8E4`, radius 16px, padding 20px), 4 nhóm: **Địa điểm** (Tất cả/Bắc Ninh/Bắc Giang), **Ca làm** (Tất cả/HC/D1/D2/N1/T1), **Loại hình** (Tất cả/Nhà máy/Kho vận), **Trạng thái tuyển** (Tất cả/Tuyển gấp/Đang tuyển/Đã nhận đủ) + nút **"Xóa bộ lọc"** + số đếm từng mục. **Filter hoạt động client-side thật** trên 3 card canonical (KHÔNG đụng DB — query DB thật thuộc Phase 4/AUD-003): chọn 1 mục/nhóm → chỉ card khớp hiển thị; "Tất cả" = default; "Xóa bộ lọc" reset. Được phép thêm field hỗ trợ filter vào `listPublicJobs()` (vd `province`, `type`) — **additive, không đổi số liệu canonical** (50/47/3, 80/80/0, 35/32/3). Responsive <900px: panel co lại/xuống trên grid. Không auth, giữ `revalidate = 300` | AC-12 |
 
 ## 5. Acceptance Criteria (AC)
 
@@ -73,6 +74,7 @@
 | AC-09 | `docs/CONTRACT_BCC.md` tồn tại, ghi cột/format/trạng thái, founder ký duyệt | sếp duyệt |
 | AC-10 | Không có destructive migration trên production Neon main; chỉ add-only sau khi verify dev branch | audit migration SQL |
 | AC-11 | `/job-board` dùng đúng design tokens Warm Professionalism: không còn màu xanh `#0F4C81`; có primary `#F26522` + nền `#FAF9F7` + font Be Vietnam Pro; watermark có dấu "DỮ LIỆU MINH HỌA"; layout khớp S05 | đọc code + curl production + mắt sếp |
+| AC-12 | `/job-board` có **cột filter trái khớp mockup S05 v2** (panel 240px, 4 nhóm filter + nút Xóa bộ lọc + số đếm); filter **hoạt động client-side thật**: chọn "Bắc Giang" → chỉ Sao Việt; chọn "Ca làm = N1" → chỉ An Phát; chọn "Loại hình = Kho vận" → chỉ Yên Phong; "Xóa bộ lọc" reset về 3 card; số liệu canonical không đổi; không auth, `revalidate = 300` giữ | đọc code + `npm run build` + curl production + mắt sếp |
 
 ## 6. Rủi ro (RISK)
 
@@ -101,7 +103,7 @@
 - [x] 7 chỗ `new PrismaClient()` đã quy về `getPrisma()`
 - [x] `vitest run` pass
 - [x] 3 sub-package tách xong (`@hrp/money`, `@hrp/payroll-core`, `@hrp/job-board`)
-- [x] `/job-board` khớp design Warm Professionalism (STEP-09 / AC-11 — Tier 3 Round 3 PASS 13/13)
+- [ ] `/job-board` khớp design Warm Professionalism + filter trái S05 v2 (STEP-09/AC-11 PASS trước đó; STEP-10/AC-12 chờ Tier 2)
 - [ ] **Demo**: link public `app/job-board` lên Vercel — sếp duyệt
 
 ## 9. Revision Log
@@ -114,3 +116,4 @@
 | `v1.3` | `2026-08-16` | Tier 3 re-audit Round 2: **PASS 10/10 AC, 0 P0/P1**; DoD kỹ thuật hoàn thành; Status → PASS chờ sếp duyệt demo | AUDIT.md Round 2 → PLANNER-DECISION v1.3 |
 | `v1.4` | `2026-08-16` | Thêm **STEP-09 + AC-11** (UI polish theo Warm Professionalism) — lệnh sếp: demo chưa đúng design, sửa ngay trước khi duyệt; Status → READY_FOR_EXECUTION | PLANNER-DECISION v1.4 |
 | `v1.5` | `2026-08-16` | Tier 3 Round 3: **AC-11 PASS 13/13**, 0 P0/P1 (AUD-008/009 P3 cosmetic); AUD-006 RESOLVED; production live; DoD "khớp design" tick; Status → PASS chờ sếp duyệt demo | PLANNER-DECISION v1.5 |
+| `v1.6` | `2026-08-16` | Thêm **STEP-10 + AC-12** (cột filter trái theo mockup S05 v2, DEC-32) — lệnh sếp sau review demo; filter client-side hoạt động thật trên 3 card canonical; DoD "khớp design" mở lại; Status → READY_FOR_EXECUTION | PLANNER-DECISION v1.6 |

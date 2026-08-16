@@ -106,6 +106,15 @@ Tier 3 Round 3 (AUDIT.md section Round 3, tự kiểm không tin HANDOFF): **AC-
 
 Gate cuối duy nhất = **sếp duyệt demo** https://hrpartner.vn/job-board. Sau "demo OK": đóng Phase 0 → Phase 1 (D15: rào /bcc JWT tối giản tuần đầu).
 
+## 12. Resolution Round 7 — Lệnh sếp: filter trái → DEC-32 · 16/08
+
+Sếp review demo (sau AC-11 PASS): job-board "khá hơn rất nhiều" nhưng **thiếu bảng filter cột trái**. Planner khảo sát: mockup `S05` hiện tại (DEC-25) KHÔNG có cột filter trái — chỉ có filter chips ngang (Địa điểm + Ca), trang đang khớp mockup cũ. Sếp chọn qua AskUserQuestion: **"Xây luôn + cập mockup S05"**.
+
+Quyết định (DEC-32):
+- Mockup `S05` cập **v2**: bỏ filter chips ngang, thêm **panel filter trái 240px** — 4 nhóm ánh xạ 1:1 với data 3 card canonical (Địa điểm / Ca làm / Loại hình / Trạng thái tuyển) + nút "Xóa bộ lọc" + số đếm. Ghi vào DECISION_LOG mockup v0.4.
+- TASK Phase 0 v1.6: **STEP-10 + AC-12** — filter **client-side hoạt động thật** trên data hardcode (được thêm field `province`/`type` additive vào `listPublicJobs()`, không đổi số liệu canonical). KHÔNG đụng DB — query DB thật vẫn thuộc Phase 4 (AUD-003).
+- Route: `PROMPT_TIER2_R6.md` → Tier 2 round 6 → Tier 3 verify AC-12 → sếp duyệt demo.
+
 ## 10. Revision Log
 
 | Ver | Ngày | Thay đổi |
@@ -116,3 +125,4 @@ Gate cuối duy nhất = **sếp duyệt demo** https://hrpartner.vn/job-board. 
 | `v1.3` | `2026-08-16` | Resolution Round 4: re-audit **PASS 10/10 AC, 0 P0/P1**; chốt DoD kỹ thuật xong; AUD-006/007 + DEV-01…04 → backlog Phase 4; chờ sếp duyệt demo → đóng Phase 0 |
 | `v1.4` | `2026-08-16` | Resolution Round 5: lệnh sếp sửa UI ngay — thêm STEP-09 + AC-11 vào TASK v1.4, Status READY_FOR_EXECUTION; kéo UI AUD-003/006 từ Phase 4 về Phase 0 |
 | `v1.5` | `2026-08-16` | Resolution Round 6: Tier 3 Round 3 **AC-11 PASS 13/13** (0 P0/P1; AUD-008/009 P3 cosmetic không chặn); AUD-006 RESOLVED; production live UI Warm Professionalism; chờ sếp duyệt demo → đóng Phase 0 |
+| `v1.6` | `2026-08-16` | Resolution Round 7: lệnh sếp bổ sung **cột filter trái** → **DEC-32** (mockup S05 v2 + DECISION_LOG mockup v0.4); TASK v1.6 thêm STEP-10 + AC-12 (filter client-side thật trên data hardcode); route Tier 2 round 6 qua PROMPT_TIER2_R6 |

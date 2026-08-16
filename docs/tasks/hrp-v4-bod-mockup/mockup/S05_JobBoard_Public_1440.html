@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="_assets/hrp.css"/>
 <style>
-  /* ── Job board công cộng — tokens F01/G27, không sidebar quản trị (DEC-25, STEP-09) ── */
+  /* ── Job board công cộng — tokens F01/G27; bổ sung cột filter trái 16/08 (DEC-32); không sidebar quản trị (DEC-25) ── */
   .pub { height: 100%; display: flex; flex-direction: column; background: var(--background); }
   .pub-header { height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 28px; padding: 0 40px; background: var(--surface); border-bottom: 1px solid var(--line); }
   .pub-brand { display: flex; align-items: center; gap: 8px; text-decoration: none; }
@@ -28,12 +28,22 @@
   .search-bar { display: flex; align-items: center; gap: 10px; max-width: 520px; height: 44px; background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 0 14px; }
   .search-bar .mi { color: var(--on-surface-variant); font-size: 20px; }
   .search-bar input { flex: 1; border: 0; outline: 0; font: 400 14px/20px var(--font-body); color: var(--on-surface); background: transparent; }
-  .filter-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-  .filter-group { display: flex; align-items: center; gap: 8px; }
-  .filter-label { font: 600 12px/16px var(--font-label); color: var(--on-surface-variant); }
-  .fchip { font: 500 12px/16px var(--font-label); color: var(--on-surface-variant); background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 999px; padding: 5px 12px; cursor: default; }
-  .fchip.on { color: var(--primary-dark); background: var(--primary-soft); border-color: var(--primary); font-weight: 600; }
-  .job-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  /* ── Bộ lọc cột trái (DEC-32 — bổ sung 16/08, thay filter chips ngang) ── */
+  .pub-body { display: flex; gap: 20px; align-items: flex-start; }
+  .filter-panel { width: 240px; flex-shrink: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 4px; }
+  .filter-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; }
+  .filter-title { font: 700 14px/20px var(--font-head); color: var(--on-surface); }
+  .filter-clear { font: 600 12px/16px var(--font-label); color: var(--primary-dark); background: none; border: 0; padding: 0; cursor: pointer; }
+  .fgroup { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .filter-label { font: 600 12px/16px var(--font-label); color: var(--on-surface-variant); margin-bottom: 4px; }
+  .fopt { display: flex; align-items: center; gap: 8px; padding: 4px 0; font: 400 13px/18px var(--font-body); color: var(--on-surface-variant); cursor: default; }
+  .fopt.on { color: var(--on-surface); font-weight: 500; }
+  .fcheck { width: 16px; height: 16px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--outline-variant); border-radius: 4px; background: var(--surface); color: #FFF; }
+  .fcheck .mi { font-size: 13px; opacity: 0; }
+  .fcheck.on { background: var(--primary); border-color: var(--primary); }
+  .fcheck.on .mi { opacity: 1; }
+  .fcount { margin-left: auto; font: 400 11px/16px var(--font-label); color: var(--on-surface-variant); }
+  .job-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .job-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 18px; display: flex; flex-direction: column; gap: 12px; }
   .job-top { display: flex; align-items: center; gap: 10px; }
   .job-code { font: 600 11px/16px var(--font-label); letter-spacing: .04em; color: var(--on-surface-variant); }
@@ -86,24 +96,43 @@
         </div>
       </div>
 
-      <!-- Filter minh họa (STEP-09 — không hoạt động) -->
-      <div class="filter-row">
-        <div class="filter-group">
-          <span class="filter-label">Địa điểm</span>
-          <span class="fchip on">Tất cả</span>
-          <span class="fchip">Bắc Ninh</span>
-          <span class="fchip">Bắc Giang</span>
-        </div>
-        <div class="filter-group">
-          <span class="filter-label">Ca</span>
-          <span class="fchip on">Tất cả</span>
-          <span class="fchip">HC</span>
-          <span class="fchip">D1</span>
-          <span class="fchip">D2</span>
-          <span class="fchip">N1</span>
-          <span class="fchip">T1</span>
-        </div>
-      </div>
+      <!-- Bộ lọc cột trái (DEC-32 — bổ sung 16/08, thay filter chips ngang; filter minh họa, không hoạt động) -->
+      <div class="pub-body">
+
+        <aside class="filter-panel" aria-label="Bộ lọc việc làm">
+          <div class="filter-head">
+            <span class="filter-title">Bộ lọc</span>
+            <button class="filter-clear" type="button">Xóa bộ lọc</button>
+          </div>
+          <div class="fgroup">
+            <span class="filter-label">Địa điểm</span>
+            <span class="fopt on"><span class="fcheck on"><span class="material-symbols-outlined mi">check</span></span>Tất cả<span class="fcount">3</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Bắc Ninh<span class="fcount">2</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Bắc Giang<span class="fcount">1</span></span>
+          </div>
+          <div class="fgroup">
+            <span class="filter-label">Ca làm</span>
+            <span class="fopt on"><span class="fcheck on"><span class="material-symbols-outlined mi">check</span></span>Tất cả<span class="fcount">3</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>HC<span class="fcount">1</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>D1<span class="fcount">2</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>D2<span class="fcount">1</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>N1<span class="fcount">1</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>T1<span class="fcount">1</span></span>
+          </div>
+          <div class="fgroup">
+            <span class="filter-label">Loại hình</span>
+            <span class="fopt on"><span class="fcheck on"><span class="material-symbols-outlined mi">check</span></span>Tất cả<span class="fcount">3</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Nhà máy<span class="fcount">2</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Kho vận<span class="fcount">1</span></span>
+          </div>
+          <div class="fgroup">
+            <span class="filter-label">Trạng thái tuyển</span>
+            <span class="fopt on"><span class="fcheck on"><span class="material-symbols-outlined mi">check</span></span>Tất cả<span class="fcount">3</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Tuyển gấp<span class="fcount">1</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Đang tuyển<span class="fcount">1</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Đã nhận đủ<span class="fcount">1</span></span>
+          </div>
+        </aside>
 
       <div class="job-grid">
 
@@ -171,6 +200,7 @@
         </article>
 
       </div>
+      </div><!-- /pub-body -->
 
     </main>
 
