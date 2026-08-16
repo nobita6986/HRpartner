@@ -6,15 +6,15 @@
 |---|---|
 | Task slug | `hrp-v4-bod-mockup` |
 | Work type | `DESIGN` |
-| Spec version | `v1.11` |
-| Status | IN_PROGRESS — STEP-08: audit round 3 đã có (verdict CONDITIONAL, AC-13 PASS), Planner Resolution AUD-015…018 đã ghi §9; còn 2 dry-run ≤15 phút chờ founder làm presenter (AC-12) + freeze chỉ sau PM/BoD ký. STEP-09 (S05) đã dựng — chờ re-audit round 4 cùng dry-run evidence. **STEP-10 mới (DEC-33 — bộ công cụ diễn thuyết tiếng Việt: F01B_Glossary + lời thoại Việt F00A + PRESENTER_GUIDE.md) READY_FOR_EXECUTION** — Tier 2 mockup nhận việc. Roadmap D13–D16 đã chốt 16/08 (xem §11): freeze Mockup Baseline = trigger Phase 0. |
+| Spec version | `v1.15-close` |
+| Status | `ACCEPTED` — freeze Mockup Baseline v1 (D14): 2 dry-run ≤15 phút hoàn thành (sếp xác nhận 16/08/2026) + PM/BoD đã ký; Phase 0 đã khởi động từ baseline này |
 | Planner | `Tier 1 — Planner / Product & Architecture Decision Owner` |
 | Executor | `Tier 1 Planner + ui-ux-pro-max skill (founder ủy quyền 15/08/2026 — thay sếp làm phần Figma)` |
 | Auditor | `Tier 3 — independent audit context` |
 | Baseline | `git a4327ab` · kiểm tra nguồn thực tế ngày 15/08/2026 · `docs/UNIFIED_PLAN_v4.md` (v4.20), `stitch/warm_professionalism/DESIGN.md` (design system canonical G27), `docs/HRP_V4_MOCKUP_EXECUTION_PLAN.md` (PDD), `docs/HRP_V4_HOLISTIC_REVIEW.md` (HR), `docs/data-scope-security.md`, `prisma/schema.prisma`, skill `ui-ux-pro-max` (user-level — design intelligence/QA UX, lệnh founder 15/08/2026) |
 | Modules | `M3, M4, M5, M7, M8` + `A-04 công cộng (Q#23 — frame tĩnh S05)` |
 | ADR references | `plan v4.14 §9.4 (G14 — 1-ACTIVE)` · `§9.3.1 (G11 — Referral Guard)` · `§15.1 (G22 — ROOT/13 role)` · `§9.7 (Visibility Matrix)` · `ADR-010 (BigInt VND nguyên)` · `plan v4.15 (Q#23 — job board công cộng)` · `plan v4.19 §13 (G27 — design system canonical "Warm Professionalism")` |
-| Updated | `2026-08-15 (VN)` |
+| Updated | `2026-08-16 (VN)` |
 
 ## 1. Outcome
 
@@ -394,6 +394,7 @@ Frame inventory (PDD §8.1) — medium HTML theo DEC-27: mỗi frame = 1 file `m
 | `v1.12` | `2026-08-16` | Thêm **RQ-14 + STEP-10 + AC-16** — Bộ công cụ diễn thuyết tiếng Việt (DEC-33): `F01B_Glossary` (từ điển EN→VI), lời thoại Việt trong F00A, `PRESENTER_GUIDE.md`; UI 30 frame giữ nguyên. Lệnh founder sau review mockup: "nhiều từ chuyên môn tiếng Anh quá, khó diễn thuyết" | Lệnh founder 16/08/2026; DEC-33 (DECISION_LOG 0.5) |
 | `v1.13` | `2026-08-16` | **Planner Resolution audit round 4 (verdict CONDITIONAL — AC-16, 13/14 mục):** AUD-019 CLOSED bởi Planner — ghi bảng **21 thuật ngữ canonical DEC-33** vào DECISION_LOG v0.6 (chuẩn đối chiếu F01B + PRESENTER_GUIDE); AUD-020 route Tier 2 round 5 — bổ sung **ví dụ ngắn đủ 21/21 dòng** F01B (dùng nguyên ví dụ canonical) + đồng bộ cột ví dụ trong PRESENTER_GUIDE; AUD-021 route Tier 2 round 5 — sửa `.st-fstate` 11px→12px trong F00A (tàn dư AUD-011, pre-existing, sửa cùng round vì chạm file) | AUDIT.md round 4 (Tier 3, 16/08/2026) |
 | `v1.14` | `2026-08-16` | **Planner Resolution audit round 5 (re-verify):** AUD-019/020/021 **RESOLVED** (Tier 3 tự kiểm `bddb748` — 21/21 ví dụ khớp nguyên văn canonical, F00A hết 11px, 16 mốc + 16 link nguyên vẹn); **AUD-022 CLOSED bởi Planner** — sửa dòng Margin về đúng canonical ("tiền thu khách") trong F01B + PRESENTER_GUIDE (Tier 3 đã nêu rõ: sau sửa chỉ cần xác nhận dòng 17, không cần re-audit toàn bộ — Planner tự grep xác nhận khớp). **AC-16 đạt toàn bộ pass-condition** | AUDIT.md round 5 (Tier 3, 16/08/2026) |
+| `v1.15-close` | `2026-08-16` | **ĐÓNG TASK — freeze Mockup Baseline v1 (D14):** 2 dry-run AC-12 ≤15 phút hoàn thành (sếp xác nhận 16/08/2026) + **PM/BoD đã ký** → Mockup Baseline v1 đóng băng = trigger Phase 0 theo D14. Spec version nâng lên `v1.15-close` (đóng contract — không thay đổi thêm). Task chuyển `ACCEPTED` | Sếp: "sếp đã ký xong nhé !" (16/08/2026); D14 — freeze baseline sau PM/BoD ký |
 
 ## 11. Roadmap Alignment — D13–D16 (chốt 16/08/2026)
 
