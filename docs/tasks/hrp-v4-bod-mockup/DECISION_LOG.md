@@ -41,6 +41,34 @@ Founder duyệt toàn bộ kiến nghị Planner (đối chiếu `docs/MODULE_TA
 | DEC-32 | Job-board bổ sung **cột filter trái** (nâng cấp S05) | Sếp review demo `/job-board` 16/08: bổ sung **bảng filter cột trái** theo mẫu job portal (thay filter chips ngang trong S05 v1). Panel 240px, surface, radius-lg, 4 nhóm filter ánh xạ 1:1 với data 3 card canonical: **Địa điểm** (Tất cả/Bắc Ninh/Bắc Giang), **Ca làm** (HC/D1/D2/N1/T1), **Loại hình** (Nhà máy/Kho vận), **Trạng thái tuyển** (Tuyển gấp/Đang tuyển/Đã nhận đủ) + nút "Xóa bộ lọc". Mockup S05 cập nhật v2 (frame tĩnh — filter vẫn minh họa). Phase 0 triển khai filter **client-side hoạt động thật** trên data hardcode (không DB — query DB thật thuộc Phase 4 như AUD-003). | Sếp (Giám đốc) | Chốt 16/08/2026 | CHỐT |
 | DEC-33 | Bộ công cụ diễn thuyết tiếng Việt cho mockup BoD | Sếp review toàn bộ mockup 16/08: "nhiều từ chuyên môn tiếng Anh quá, rất khó để tôi diễn thuyết và sếp theo dõi". Planner khảo sát: status text đã tiếng Việt (F01_StatusLanguage), phần khó là **nhãn module/KPI EN** (Control Tower, Fill rate, Reconciliation, Margin, Referral Guard...). Sếp chọn qua AskUserQuestion: **Phương án A — Glossary + Việt hóa lời thoại** (KHÔNG Việt hóa UI 30 frame — thuật ngữ EN là chuẩn ngành với khách DN, giữ production-like). Scope: (1) frame mới `F01B_Glossary` (≥15 thuật ngữ EN→VI + nghĩa 1 dòng + ví dụ, nhóm theo module); (2) F00A_DemoNarrative: 16 lời thoại có bản diễn đạt tiếng Việt dễ nói (không đổi click-path); (3) `PRESENTER_GUIDE.md` (thuật ngữ + mẹo ≤15 phút; glossary mở tham khảo, không tính vào giờ dry-run). | Sếp (Giám đốc) | Chốt 16/08/2026 | CHỐT |
 
+### Danh sách thuật ngữ canonical — DEC-33 (chốt 16/08, bổ sung theo AUD-019)
+
+Từ điển EN→VI chính thức cho mockup BoD — F01B_Glossary + PRESENTER_GUIDE.md PHẢI khớp 100% danh sách này:
+
+| # | EN | VI | Nghĩa (1 dòng) | Ví dụ ngắn |
+|---|----|----|----------------|------------|
+| 1 | Control Tower | Trung tâm điều hành | Màn hình tổng quan KPI vận hành nhân sự | "Mở Trung tâm điều hành xem Fill rate toàn hệ" |
+| 2 | Fill rate | Tỷ lệ lấp đầy | % chỗ đã có người trên tổng cần | 47/50 = 94% |
+| 3 | Workforce | Lực lượng lao động | Tổng nhân sự đang hoạt động | "Hôm nay 124 người đang làm" |
+| 4 | Staffing | Bố trí nhân sự | Ghép người vào đúng dự án, đúng ca | "Chuyển Long sang ca D1 An Phát" |
+| 5 | Talent Pool | Kho ứng viên | Danh sách lao động sẵn sàng đi làm | "Kéo thêm 5 người từ kho ứng viên" |
+| 6 | Referral Guard | Chốt chặn giới thiệu | Quy tắc chống gian lận khi giới thiệu người | "Người này đang hoạt động ở dự án khác → bị chặn" |
+| 7 | Override | Ghi đè chặn | Người có quyền cho phép vượt quy tắc (có ghi lý do) | "HR Manager duyệt ghi đè vì đã xác minh" |
+| 8 | Maker-checker | Người tạo – Người kiểm | Thao tác quan trọng cần 2 người xác nhận | "Bảng kê phải qua người tạo + người duyệt" |
+| 9 | Attendance | Chuyên cần | Chấm công, bảng công theo ca | "Duyệt bất thường chuyên cần tháng 7" |
+| 10 | Lock | Khóa chốt | Đóng băng số liệu kỳ công, không sửa thêm | "Đã khóa → chỉ xem, không sửa được" |
+| 11 | Blocker | Yếu tố chặn | Lỗi dữ liệu chặn không cho khóa (3 loại: #12/13/14) | "Còn 3 yếu tố chặn → chưa khóa được" |
+| 12 | UNMATCHED_EMPLOYEE | Nhân viên không khớp | Công thuộc về ai không xác định được | "Mã thẻ 12345 không có trong danh sách" |
+| 13 | SOURCE_CONFLICT | Xung đột nguồn | Hai nguồn dữ liệu công mâu thuẫn nhau | "File import nói 8h, máy chấm công nói 7h" |
+| 14 | WRONG_PROJECT | Sai dự án | Công ghi nhầm sang dự án khác | "Công của An Phát ghi nhầm vào Yên Phong" |
+| 15 | Reconciliation | Đối soát | Đối chiếu công-lương giữa đơn vị cung ứng và khách hàng | "Tháng 7: đối soát 44 dòng công" |
+| 16 | Statement | Bảng kê | Bảng kê công-lương gửi khách hàng xác nhận | "Gửi bảng kê cho khách duyệt trước ngày 5" |
+| 17 | Margin | Biên lợi nhuận | Chênh lệch tiền thu khách và tiền trả đơn vị cung ứng | "Margin 18% dự án An Phát" |
+| 18 | Payroll | Tính lương | Xử lý bảng lương theo kỳ | "Chạy tính lương kỳ tháng 7" |
+| 19 | SLA | Cam kết dịch vụ | Hạn chót đơn vị cung ứng xác nhận đối soát | "3 ngày kể từ khi gửi bảng kê" |
+| 20 | Vendor | Đơn vị cung ứng | Bên cung cấp lao động | "Xem danh sách các đơn vị cung ứng" |
+| 21 | Client | Khách hàng | Nhà máy/kho thuê nhân sự | "Điện tử An Phát duyệt bảng kê" |
+
 **Điều chỉnh kỹ thuật kèm theo** (Planner đã nêu, founder duyệt 16/08/2026):
 
 - `BYPASS_RLS` env flag chỉ cho dev local — guard cứng `NODE_ENV !== 'production'` + assert lúc startup.
@@ -65,3 +93,4 @@ Founder duyệt toàn bộ kiến nghị Planner (đối chiếu `docs/MODULE_TA
 | 0.3 | 2026-08-16 | Thêm **DEC-30 — Paths-based monorepo** (điều chỉnh cách hiện thực D13 sau AUDIT Round 1 Phase 0: tsconfig paths thay npm workspaces, build local + Vercel xanh) |
 | 0.4 | 2026-08-16 | Thêm **DEC-32 — Job-board cột filter trái** (lệnh sếp sau review demo): mockup `S05` cập nhật v2 (bỏ filter chips ngang, thêm panel filter trái 240px + 4 nhóm + nút xóa bộ lọc); Phase 0 triển khai filter client-side hoạt động thật trên data hardcode |
 | 0.5 | 2026-08-16 | Thêm **DEC-33 — Bộ công cụ diễn thuyết tiếng Việt** (lệnh sếp: mockup nhiều thuật ngữ EN quá): Phương án A — `F01B_Glossary` (từ điển EN→VI) + lời thoại Việt trong F00A + `PRESENTER_GUIDE.md`; UI 30 frame giữ nguyên thuật ngữ EN chuẩn ngành |
+| 0.6 | 2026-08-16 | Bổ sung **bảng 21 thuật ngữ canonical DEC-33** (sau AUD-019 — audit round 4): danh sách đầy đủ EN→VI + nghĩa + ví dụ ngắn, là chuẩn đối chiếu cho F01B + PRESENTER_GUIDE |
