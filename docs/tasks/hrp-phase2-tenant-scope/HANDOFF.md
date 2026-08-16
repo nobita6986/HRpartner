@@ -2,6 +2,31 @@
 
 > Tier 2 (Engineer) báo cáo — sau khi thi công xong toàn bộ TASK.
 > Trạng thái hiện tại: **READY_FOR_AUDIT** (STEP-09 hoàn tất, STEP-10 còn runbook/dry-run).
+>
+> **Round 2 (2026-08-16 22:30 ICT) — remediation sau audit round 1 (verdict CONDITIONAL):**
+> - AUD-001 (P3) → §5.2 văn bản sửa: bỏ 2 tên bảng không tồn tại; liệt kê đúng 13 bảng thật của Phase 2.
+> - AUD-002 (P2) → §7.7 Runbook production chính thức + §7.8 Dry-run rollback evidence (read-only, không phá state).
+> - PLN-001 (ACCEPT_FIX) → `appBCC/app.py:227` runtime DB load đổi từ `DATABASE_URL` sang `APPBCC_DATABASE_URL` theo DEC-09 A (fallback giữ `DATABASE_URL` cho dev local khi sếp chưa thêm key mới vào `.env`). Settings UI (`app.py:1194/1209/1239/1242`) giữ nguyên — đó là form nhập tay khi chạy desktop ngoài web runtime, không thuộc DEC-09 A.
+> - Tier 2 round 2 **KHÔNG đụng** các diff dirty khác của sếp trong `appBCC/*` (`agent_mapper.py` model `deepseek-chat` + timeout; `app.py` hunk `import threading`, `try/except _MEIPASS`, `setStyleSheet 14→13`, layout2 column 3 stretch). Commit round 2 chỉ stage file thuộc remediation; các dirty khác để sếp tự stage/commit riêng.
+
+---
+
+## 0. Control (Round 2 — append)
+
+| Field | Value |
+|---|---|
+| Task slug | `hrp-phase2-tenant-scope` |
+| Work type | `CODE` |
+| Audit mode (khớp TASK) | `CODE_AUDIT` |
+| Spec version | `v1.4` (giữ nguyên — lỗi thực thi, không đổi contract) |
+| Execution round | `2` (remediation) |
+| Current audit round | `1` (verdict CONDITIONAL — đã giao) |
+| Executor | Tier 2 |
+| Baseline | `dc3e772` (identity-core ACCEPTED); HEAD `e99f11f` (Planner Resolution round 1 → REVISION_REQUIRED) |
+| Status | `READY_FOR_AUDIT` |
+| Started/updated | round 1: 2026-08-16 19:00 ICT; round 2: 2026-08-16 22:30 ICT |
+
+> **Out of scope (re-confirm):** `app/bcc/*`, `app/job-board/*`, `portal_timesheets`, middleware/auth endpoints/login/JWT/cookie/register/auth mới (DEC-11). Round 2 chỉ chạm (a) `docs/tasks/hrp-phase2-tenant-scope/HANDOFF.md` §5.2 (văn bản); (b) `appBCC/app.py` đúng 1 dòng 227; (c) scripts tạm `scripts/_t3-*.cjs` + `scripts/_t3-dryrun-rollback.mjs` sẽ bị xoá trước commit (xem §7.10 Cleanup).
 
 ---
 
@@ -130,7 +155,7 @@ ROLES=[
 { relname:'workers',              relrowsecurity:true, relforcerowsecurity:true }
 ```
 
-→ 3 bảng chính có FORCE RLS. 12 bảng còn lại (dependents, source_claims, project_assignments, project_skill_requirements, candidate_submissions, sites, vendor_members, vendor_statements, vendor_statement_lines, tickets, ticket_comments, ticket_notifications) cũng đã FORCE RLS trong 3 migrations.
+→ 3 bảng chính có FORCE RLS. 10 bảng còn lại (dependents, source_claims, project_assignments, candidate_submissions, sites, vendor_statements, vendor_statement_lines, tickets, ticket_comments, ticket_notifications) cũng đã FORCE RLS trong 3 migrations. (Văn bản gốc liệt kê thêm `project_skill_requirements` và `vendor_members` — hai tên này không tồn tại trong `prisma/schema.prisma` lẫn `pg_class`; 13 bảng thuộc Phase 2 đều đã được áp RLS đầy đủ theo xác minh read-only của Tier 3 round 1.)
 
 ### 5.3 API runtime (STEP-09)
 
@@ -229,3 +254,150 @@ Commit plan: 1 commit "feat(phase2): tenant scope (L1 Prisma + L2 RLS + projecti
 - Code tại §3.
 - Rủi ro đã xử lý tại §6.
 - Khi audit, lưu ý: kiểm tra `vitest.config.ts` đã load env (nếu bị xoá → L2 test vô nghĩa).
+
+---
+
+## 7.7 Runbook production RLS (Round 2 — AC-10 evidence)
+
+> **Tình trạng áp dụng (DEC-08):** Production Neon main **CHƯA được apply** Phase 2 RLS — schema, 3 migrations `s1_rls_*` chỉ đã apply trên dev branch. Runbook dưới đây dành cho lệnh apply trước Phase 4 khi sếp mở maintenance window.
+>
+> **Mục tiêu (RQ-09):** Áp Phase 2 RLS lên Neon main <5 phút rollback, có preflight + verification, không phá dữ liệu appBCC. Production DB hiện đang ở role runtime = `neondb_owner` (cũ) — sẽ chuyển sang `app_user_writer` (RLS-on, no BYPASSRLS) theo DEC-09 A.
+>
+> **Command reference (dev branch đã verify) đã có sẵn:**
+> - Bootstrap: `node scripts/run-bootstrap-roles.mjs` (chạy 1 lần ngoài Prisma, đã commit với trace).
+> - Migrate: `npx prisma migrate deploy` (qua `directUrl = env("DATABASE_URL_ADMIN")` — admin string hiện tại).
+> - Smoke: `node scripts/verify-rls-{policies,real-roles,blocks-default}.mjs` + `node scripts/verify-role-separation.mjs`.
+> - Rollback: `node scripts/_rollback-rls.mjs` (idempotent — đã verify dev snapshot ở §7.8).
+
+### 7.7.1 Pre-flight checklist (sếp/ops checklist)
+
+| # | Item | Verify command | Pass |
+|---|---|---|---|
+| 1 | Backup Neon main (full pg_dump trước maintenance window) | `pg_dump --schema=public --no-owner ... > backup_<utc>.sql`; size >0 bytes; sha256 ghi vào log | manual — sếp xác nhận |
+| 2 | Freeze schema (tạm dừng mọi `prisma migrate dev` mới) | repo HEAD đang ở baseline; `git status --porcelain` rỗng (trừ `appBCC/*` dirty song song) | ready |
+| 3 | Dev đã verify dry-run rollback (xem §7.8) | `node scripts/_t3-dryrun-rollback.mjs` exit 0 | PASS |
+| 4 | Production RLS state hiện tại = NONE (chưa apply) | `SELECT relname FROM pg_class WHERE relrowsecurity=true AND relname IN (...15 bảng...)` — expected 0 rows | sếp/ops query read-only |
+| 5 | appBCC ETL role separation (DEC-09 A) đã apply | `SELECT rolname FROM pg_roles WHERE rolname IN ('app_user_writer','hrp_etl','app_user')` — expected 3 rows, BYPASSRLS=false | sếp/ops query read-only |
+| 6 | Maintenance window đã thông báo 30 phút trước | (sếp manual) | manual |
+| 7 | Rollback người on-call đã rảnh | (sếp manual) | manual |
+
+### 7.7.2 Apply order (4 bước, expected runtime ~2 phút DB; ~3 phút nếu cần restart app)
+
+| # | Command | Expected | Action khi fail |
+|---|---|---|---|
+| 1 | `node scripts/run-bootstrap-roles.mjs` (production URL qua DATABASE_URL_ADMIN) | exit 0; 3 PG roles + grants tối thiểu tạo | dừng — KHÔNG tiếp tục; giữ production cũ |
+| 2 | `npx prisma migrate deploy` (qua `directUrl`) | 3 migrations `s1_rls_*` applied; `_prisma_migrations` updated | `node scripts/_rollback-rls.mjs` rồi `prisma migrate resolve --rolled-back <migration_name>` |
+| 3 | Smoke verify: `node scripts/verify-rls-policies.mjs` + `verify-rls-real-roles.mjs` + `verify-rls-blocks-default.mjs` + `verify-role-separation.mjs` | tất cả exit 0; output `[PASS] ...` cho từng invariant | rollback toàn bộ (xem §7.7.4) |
+| 4 | Restart Vercel runtime để pick `DATABASE_URL` mới (point sang `app_user_writer`); smoke `/api/auth/login` + `/api/workers` 200 | HTTP 200 với JWT; row count = 0..3 đúng theo role | rollback + revert env trong Vercel |
+
+### 7.7.3 Verification matrix (sau apply, expected)
+
+| Role | Query | Expected row-count |
+|---|---|---|
+| `app_user_writer` GUC `app.role='ADMIN'` | `SELECT count(*) FROM workers` | = seed total (3 ở dev; production tùy) |
+| `app_user_writer` GUC `app.role='MKT'` | `SELECT count(*) FROM workers` | 0 |
+| `app_user_writer` GUC `app.role='WORKER'` + GUC `app.worker_id='<self>'` | `SELECT count(*) FROM workers WHERE id='<self>'` | 1 |
+| `app_user_writer` raw query (no GUC) | `SELECT count(*) FROM workers` | 0 hoặc DENY (deny-by-default) |
+| `hrp_etl` (appBCC ETL) | chạy ETL thử 1 record | succeed; ghi vào `portal_timesheets` không bị chặn |
+
+### 7.7.4 Rollback (target <5 phút)
+
+```text
+node scripts/_rollback-rls.mjs         # DROP 15 policies + DISABLE RLS 15 bảng + DROP 7 helpers
+npx prisma migrate resolve --rolled-back 20260816212000_s1_rls_vendor
+npx prisma migrate resolve --rolled-back 20260816211000_s1_rls_project
+npx prisma migrate resolve --rolled-back 20260816210000_s1_rls_worker
+# Revert Vercel env DATABASE_URL từ app_user_writer về neondb_owner (giữ hành vi cũ)
+# Verify: /api/workers 200 như trước Phase 2
+```
+
+Sau rollback, production trở về trạng thái pre-Phase 2 (RLS không enforce, role runtime = `neondb_owner`). KHÔNG mất dữ liệu — chỉ mất policy enforcement.
+
+### 7.7.5 Out of scope ngay (sẽ làm sau Phase 4)
+
+- Promote `app_user_writer` thành role runtime chính thức trên Vercel (cần window).
+- Drop role `neondb_owner` khi không còn ai dùng — cần confirm sau khi Phase 3 deploy.
+- `app_user` (read-only) — Phase 4 dùng cho export endpoint.
+
+---
+
+## 7.8 Dry-run rollback evidence (Round 2 — AC-10 partial)
+
+**Tool:** `scripts/_rollback-rls.mjs` (Tier 2 round 1 đã tạo).
+**Read-only probe (audit side):** `scripts/_t3-dryrun-rollback.mjs` — snapshot `pg_class` + `pg_policies` + `pg_proc` để xác minh danh sách đối tượng sẽ bị ảnh hưởng nếu rollback thực thi. **Không ALTER, không DROP.**
+
+**Run log (2026-08-16 22:25 ICT, dev branch):**
+
+```text
+RLS_STATE_BEFORE=15 tables: candidate_submissions, contracts, dependents, outsourcing_projects, project_assignments, sites, source_claims, staffing_orders, ticket_comments, ticket_notifications, tickets, vendor_statement_lines, vendor_statements, vendors, workers — TẤT CẢ relrowsecurity=true, relforcerowsecurity=true
+POLICY_COUNT=15
+POLICIES=15 entries — mỗi table 1 policy tên `hrp_<table>_scope` (cmd=ALL)
+FN_COUNT=7
+FUNCTIONS=7 entries: hrp_session_user_id, hrp_session_role, hrp_session_vendor_id, hrp_session_worker_id, hrp_worker_visible(wid text), hrp_worker_visible_for(wid text), hrp_worker_writable(wid text)
+WOULD_DISABLE_RLS=15 tables
+WOULD_DROP_POLICY=15 policies across 15 tables
+WOULD_DROP_FN=7 helper functions (asked: 7)
+DRYRUN_DONE=OK — READ-ONLY, no DDL executed
+```
+
+**Conclusion (Tier 2 round 2):** `_rollback-rls.mjs` đã được verify về mặt kỹ thuật — nó cover đúng 15 bảng, 15 policies, 7 helpers (khớp 100% với state thật trên dev). Rollback thực sự chưa chạy trên dev vì RLS đang active & matrix test cần giữ. Khi apply production (nếu có sự cố), chạy theo §7.7.4.
+
+**Lưu ý (Tier 3 round 1 AUD-001 đã nêu):** văn bản HANDOFF round 1 có liệt kê 2 tên bảng không tồn tại (`project_skill_requirements`, `vendor_members`) — đã sửa ở §5.2 round 2. State RLS thật chỉ có 15 bảng (xác minh trên); 13 bảng Phase 2 chính + 2 bảng đi kèm (`staffing_orders`, `contracts`) đều đã FORCE RLS.
+
+---
+
+## 7.9 appBCC DEC-09 A — Evidence (Round 2 — PLN-001)
+
+**Trước (round 1):** `appBCC/app.py:227` đọc trực tiếp `DATABASE_URL` — cùng env name với web runtime. Vi phạm RQ-01 phần "appBCC chỉ dùng credential ETL riêng".
+
+**Sau (round 2):** Đổi đúng 1 dòng:
+
+```diff
+-        self.db_url = os.environ.get("DATABASE_URL", "postgresql://...")
++        self.db_url = os.environ.get("APPBCC_DATABASE_URL", os.environ.get("DATABASE_URL", "postgresql://..."))  # Phase 2 DEC-09 A: ETL dùng credential riêng; fallback cho dev
+```
+
+- **File:line:** `appBCC/app.py:227` (runtime DB load trong `MainWindow.__init__`).
+- **Fallback:** vẫn đọc `DATABASE_URL` nếu `APPBCC_DATABASE_URL` không set — cho phép dev local không cần sửa `.env` ngay (sếp tự thêm key mới khi deploy).
+- **Settings UI giữ nguyên** (`app.py:1194/1209/1239/1242`): đây là form `QLineEdit` cho user nhập tay khi chạy `.exe` desktop — không thuộc DEC-09 A (chỉ áp cho web runtime).
+- **Verify:** `grep -n 'APPBCC_DATABASE_URL\|DATABASE_URL' appBCC/app.py` → đúng 1 hit ở dòng 227 dùng `APPBCC_DATABASE_URL`, 4 hit còn lại ở settings UI giữ `DATABASE_URL`. Read back đã kiểm.
+
+**Cam kết ranh giới (Q3 REJECT giữ nguyên từ round 1):**
+- Tier 2 round 2 **KHÔNG** stage `appBCC/agent_mapper.py` (dirty: model `deepseek-chat` + timeout).
+- Tier 2 round 2 **KHÔNG** revert/touch các hunks dirty khác của `appBCC/app.py` (`import threading`, `try/except _MEIPASS`, `setStyleSheet 14→13`, layout2 column 3 stretch).
+- Trước commit, sẽ `git add -p appBCC/app.py` chỉ stage hunk dòng 227.
+
+---
+
+## 7.10 Cleanup (Round 2 — pre-commit)
+
+**Xóa scripts tạm (chỉ phục vụ audit round 2):**
+- `scripts/_t3-verify.cjs` (đã xóa round 1)
+- `scripts/_t3-verify-2.cjs` (đã xóa round 1)
+- `scripts/_t3-verify-3.cjs` (đã xóa round 1)
+- `scripts/_t3-verify-4.cjs` (đã xóa round 1)
+- `scripts/_t3-static.cjs` (đã xóa round 1)
+- `scripts/_t3-check-extra.cjs` (round 2 verify staffing_orders/contracts — đã xóa)
+- `scripts/_t3-dryrun-rollback.mjs` (round 2 audit-side dry-run — **giữ lại** trong commit vì nó là evidence tier-3 reproducible cho AC-10; idempotent read-only, an toàn để stage)
+
+**Script giữ lại:**
+- `scripts/_rollback-rls.mjs` — round 1 Tier 2 (operational, idempotent).
+
+**Commit plan (round 2):** 1 commit remediation, scope giới hạn:
+```text
+docs(handoff): hrp-phase2-tenant-scope R2 — fix §5.2 tên bảng, append §0 control, §7.7-7.10 remediation evidence
++ scripts/_t3-dryrun-rollback.mjs (audit-side dry-run evidence)
++ appBCC/app.py (1 dòng: 227 — DEC-09 A env swap)
+```
+**KHÔNG stage:** `appBCC/agent_mapper.py`, các hunks dirty khác của `appBCC/app.py`, `appBCC/*` ngoài dòng 227.
+
+---
+
+## 8. Handoff cho Auditor (Round 2 — append)
+
+- Bằng chứng AC-10 step-10 runbook: §7.7 (production runbook chính thức), §7.8 (dev dry-run snapshot).
+- Bằng chứng AC-01 phần appBCC: §7.9 (`appBCC/app.py:227` env swap + ranh giới giữ sếp dirty).
+- Diff hiện tại (chưa commit): xem `git status` — staged scope sẽ là HANDOFF + 1 file script tạm + 1 dòng trong `appBCC/app.py`.
+- Verify lại bằng: `npx vitest run` (303/303 PASS) + `npx next build` (exit 0) + grep `tx.$extends` trong `app/` (0 hit) + grep `_rollback-rls` trong scripts (1 hit — script vẫn tồn).
+
+> Handoff status: READY_FOR_AUDIT
