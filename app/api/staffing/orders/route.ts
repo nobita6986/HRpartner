@@ -2,11 +2,14 @@
  * GET /api/staffing/orders — List StaffingOrders
  * POST /api/staffing/orders — Create StaffingOrder
  *
- * Phase 4 slice 4A STEP-06 (RQ-01, RQ-18).
+ * Phase 4 slice 4A STEP-06 + AC-10 (RQ-01, RQ-18).
  *
  * Auth: cookie hrp_token (Phase 1).
  * 401: thiếu/sai token.
  * 403: role không có quyền (chỉ ADMIN/HR_MANAGER/HR_STAFF/PM/SALE được list, ADMIN/HR_MANAGER/HR_STAFF được tạo).
+ *
+ * AC-10: POST bọc withIdempotency (header x-idempotency-key, TTL 24h).
+ * Outbox events được gửi trong service (createStaffingOrder, updateStaffingOrderStatus).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -14,9 +17,11 @@ import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
+import { withIdempotency } from '@/src/shared/integrity/idempotency';
 import {
   listStaffingOrders,
   createStaffingOrder,
+  updateStaffingOrderStatus,
   StaffingOrderServiceError,
 } from '@/src/domains/staffing/order.service';
 import type { CreateStaffingOrderInput } from '@/src/domains/staffing/types';
@@ -26,6 +31,10 @@ export const runtime = 'nodejs';
 
 const LIST_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'SALE', 'DIRECTOR', 'ACCOUNTANT'] as const);
 const CREATE_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF'] as const);
+
+function getIdempotencyKey(req: NextRequest): string | undefined {
+  return req.headers.get('x-idempotency-key') ?? undefined;
+}
 
 export async function GET(req: NextRequest) {
   let ctx;
@@ -88,7 +97,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'INVALID_BODY', message: 'Body phải là JSON hợp lệ' }, { status: 400 });
   }
 
-  // Basic validation
   if (!body.projectId || !body.title || !Array.isArray(body.slots) || body.slots.length === 0) {
     return NextResponse.json(
       { error: 'VALIDATION_ERROR', message: 'Thiếu required fields: projectId, title, slots[]' },
@@ -97,17 +105,41 @@ export async function POST(req: NextRequest) {
   }
 
   const prisma = getPrisma();
+  const idempotencyKey = getIdempotencyKey(req);
+
+  // AC-10: idempotency wrap
+  if (!idempotencyKey) {
+    try {
+      const order = await withDbContext(prisma, ctx, (tx) => createStaffingOrder(tx, ctx, body));
+      return NextResponse.json({ order }, { status: 201 });
+    } catch (e) {
+      if (e instanceof AuthScopeError) return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
+      if (e instanceof StaffingOrderServiceError) return NextResponse.json({ error: e.code, message: e.message }, { status: 400 });
+      console.error('[api/staffing/orders POST] error:', e);
+      return NextResponse.json({ error: 'INTERNAL', message: 'Failed to create order' }, { status: 500 });
+    }
+  }
+
   try {
-    const order = await withDbContext(prisma, ctx, (tx) => createStaffingOrder(tx, ctx, body));
-    return NextResponse.json({ order }, { status: 201 });
+    const result = await withIdempotency({
+      prisma,
+      route: 'POST:/api/staffing/orders',
+      actorId: ctx.userId,
+      key: idempotencyKey,
+      requestBody: body,
+      handler: async () => {
+        const order = await withDbContext(prisma, ctx, (tx) => createStaffingOrder(tx, ctx, body));
+        return { body: { order }, statusCode: 201 };
+      },
+    });
+    return NextResponse.json(result.body, { status: result.statusCode });
   } catch (e) {
-    if (e instanceof AuthScopeError) {
-      return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
+    if (e instanceof AuthScopeError) return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
+    if (e instanceof StaffingOrderServiceError) return NextResponse.json({ error: e.code, message: e.message }, { status: 400 });
+    if (e instanceof Error && e.name === 'IdempotencyConflictError') {
+      return NextResponse.json({ error: 'IDEMPOTENCY_CONFLICT', message: e.message }, { status: 409 });
     }
-    if (e instanceof StaffingOrderServiceError) {
-      return NextResponse.json({ error: e.code, message: e.message }, { status: 400 });
-    }
-    console.error('[api/staffing/orders POST] error:', e);
+    console.error('[api/staffing/orders POST idempotency] error:', e);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to create order' }, { status: 500 });
   }
 }

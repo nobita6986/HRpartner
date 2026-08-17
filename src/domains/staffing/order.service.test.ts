@@ -26,6 +26,7 @@ type MockTx = {
     update: MockFn;
     count: MockFn;
   };
+  outboxEvent: { create: MockFn };
   $queryRawUnsafe: MockFn;
 };
 
@@ -38,6 +39,9 @@ function makeMockTx(overrides?: Partial<MockTx>): MockTx {
       findFirst: vi.fn().mockResolvedValue(null),
       update: vi.fn().mockResolvedValue(null),
       count: vi.fn().mockResolvedValue(0),
+    },
+    outboxEvent: {
+      create: vi.fn().mockResolvedValue({ id: 'ev-001', status: 'PENDING' }),
     },
     $queryRawUnsafe: vi.fn().mockResolvedValue([{ max_num: null }]),
     ...overrides,
@@ -121,7 +125,12 @@ describe('order.service', () => {
         staffingOrder: {
           ...makeMockTx().staffingOrder,
           create: vi.fn().mockImplementation(() =>
-            Promise.resolve({ id: `o-${counter}`, code: `SO-${String(counter).padStart(5,'0')}`, status: 'OPEN' })
+            Promise.resolve({
+              id: `o-${counter}`,
+              code: `SO-${String(counter).padStart(5, '0')}`,
+              status: 'OPEN',
+              slots: [],
+            })
           ),
         },
       });
@@ -146,6 +155,9 @@ describe('order.service', () => {
           ...makeMockTx().staffingOrder,
           findUnique: vi.fn().mockResolvedValue({ id: 'o1', status: 'OPEN' }),
           update: vi.fn().mockResolvedValue({ id: 'o1', status: 'CLOSING_SOON' }),
+        },
+        outboxEvent: {
+          create: vi.fn().mockResolvedValue({ id: 'ev-001', status: 'PENDING' }),
         },
       });
 

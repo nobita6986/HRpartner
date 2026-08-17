@@ -1,8 +1,8 @@
 /**
  * GET /api/staffing/orders/[id] — Get StaffingOrder detail
- * PATCH /api/staffing/orders/[id] — Update status
+ * PATCH /api/staffing/orders/[id] — Update status (with idempotency)
  *
- * Phase 4 slice 4A STEP-06 (RQ-01, RQ-18).
+ * Phase 4 slice 4A STEP-06 + AC-10 (RQ-01, RQ-18).
  *
  * Auth: cookie hrp_token (Phase 1).
  * 401: thiếu/sai token.
@@ -14,6 +14,7 @@ import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
+import { withIdempotency } from '@/src/shared/integrity/idempotency';
 import {
   getStaffingOrder,
   updateStaffingOrderStatus,
@@ -27,6 +28,10 @@ export const runtime = 'nodejs';
 const GET_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'SALE', 'DIRECTOR', 'ACCOUNTANT'] as const);
 const UPDATE_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF'] as const);
 
+function getIdempotencyKey(req: NextRequest): string | undefined {
+  return req.headers.get('x-idempotency-key') ?? undefined;
+}
+
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, { params }: RouteParams) {
@@ -34,9 +39,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
     ctx = await getAuthContext(req);
   } catch (e) {
-    if (e instanceof AuthSessionError) {
-      return NextResponse.json({ error: e.code, message: e.message }, { status: 401 });
-    }
+    if (e instanceof AuthSessionError) return NextResponse.json({ error: e.code, message: e.message }, { status: 401 });
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to build auth context' }, { status: 500 });
   }
 
@@ -57,9 +60,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     if (e instanceof StaffingOrderServiceError) {
       return NextResponse.json({ error: e.code, message: e.message }, { status: e.code === 'NOT_FOUND' ? 404 : 400 });
     }
-    if (e instanceof AuthScopeError) {
-      return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
-    }
+    if (e instanceof AuthScopeError) return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
     console.error('[api/staffing/orders/[id] GET] error:', e);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to get order' }, { status: 500 });
   }
@@ -70,9 +71,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   try {
     ctx = await getAuthContext(req);
   } catch (e) {
-    if (e instanceof AuthSessionError) {
-      return NextResponse.json({ error: e.code, message: e.message }, { status: 401 });
-    }
+    if (e instanceof AuthSessionError) return NextResponse.json({ error: e.code, message: e.message }, { status: 401 });
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to build auth context' }, { status: 500 });
   }
 
@@ -94,23 +93,55 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const validStatuses = ['OPEN', 'CLOSING_SOON', 'CLOSED', 'CANCELLED'] as const;
   if (!validStatuses.includes(body.status as typeof validStatuses[number])) {
-    return NextResponse.json({ error: 'VALIDATION_ERROR', message: `status phải là một trong: ${validStatuses.join(', ')}` }, { status: 400 });
+    return NextResponse.json(
+      { error: 'VALIDATION_ERROR', message: `status phải là một trong: ${validStatuses.join(', ')}` },
+      { status: 400 },
+    );
   }
 
   const prisma = getPrisma();
+  const idempotencyKey = getIdempotencyKey(req);
+
+  if (!idempotencyKey) {
+    try {
+      const updated = await withDbContext(prisma, ctx, (tx) =>
+        updateStaffingOrderStatus(tx, ctx, id, body.status as any),
+      );
+      return NextResponse.json({ order: updated });
+    } catch (e) {
+      if (e instanceof StaffingOrderServiceError) {
+        return NextResponse.json({ error: e.code, message: e.message }, { status: e.code === 'NOT_FOUND' ? 404 : 400 });
+      }
+      if (e instanceof AuthScopeError) return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
+      console.error('[api/staffing/orders/[id] PATCH] error:', e);
+      return NextResponse.json({ error: 'INTERNAL', message: 'Failed to update order' }, { status: 500 });
+    }
+  }
+
   try {
-    const updated = await withDbContext(prisma, ctx, (tx) =>
-      updateStaffingOrderStatus(tx, ctx, id, body.status as any),
-    );
-    return NextResponse.json({ order: updated });
+    const result = await withIdempotency({
+      prisma,
+      route: `PATCH:/api/staffing/orders/${id}`,
+      actorId: ctx.userId,
+      key: idempotencyKey,
+      requestBody: body,
+      handler: async () => {
+        const updated = await withDbContext(prisma, ctx, (tx) =>
+          updateStaffingOrderStatus(tx, ctx, id, body.status as any),
+        );
+        return { body: { order: updated }, statusCode: 200 };
+      },
+    });
+    return NextResponse.json(result.body, { status: result.statusCode });
   } catch (e) {
     if (e instanceof StaffingOrderServiceError) {
       return NextResponse.json({ error: e.code, message: e.message }, { status: e.code === 'NOT_FOUND' ? 404 : 400 });
     }
-    if (e instanceof AuthScopeError) {
-      return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
+    if (e instanceof AuthScopeError) return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
+    if (e instanceof Error && e.name === 'IdempotencyConflictError') {
+      return NextResponse.json({ error: 'IDEMPOTENCY_CONFLICT', message: e.message }, { status: 409 });
     }
-    console.error('[api/staffing/orders/[id] PATCH] error:', e);
+    console.error('[api/staffing/orders/[id] PATCH idempotency] error:', e);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to update order' }, { status: 500 });
   }
 }

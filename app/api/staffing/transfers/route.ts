@@ -1,11 +1,11 @@
 /**
- * POST /api/staffing/transfers — Guided Transfer (STEP-06, RQ-02).
+ * POST /api/staffing/transfers — Guided Transfer (STEP-06, RQ-02, AC-10).
  *
- * Body: { workerId, fromProjectId, toProjectId, transferDate, positionCode?, positionTitle?, transferReason? }
+ * Body: single { workerId, fromProjectId, toProjectId, transferDate, ... }
+ * Bulk: array [{ ... }, { ... }]
  *
- * Auth: cookie hrp_token (Phase 1).
- * 401: thiếu/sai token.
- * 403: role không có quyền (ADMIN/HR_MANAGER/HR_STAFF).
+ * AC-10: POST bọc withIdempotency.
+ * Outbox event được gửi trong transferWorker service.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -13,6 +13,7 @@ import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
+import { withIdempotency } from '@/src/shared/integrity/idempotency';
 import {
   transferWorker,
   bulkTransferWorker,
@@ -25,14 +26,16 @@ export const runtime = 'nodejs';
 
 const TRANSFER_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF'] as const);
 
+function getIdempotencyKey(req: NextRequest): string | undefined {
+  return req.headers.get('x-idempotency-key') ?? undefined;
+}
+
 export async function POST(req: NextRequest) {
   let ctx;
   try {
     ctx = await getAuthContext(req);
   } catch (e) {
-    if (e instanceof AuthSessionError) {
-      return NextResponse.json({ error: e.code, message: e.message }, { status: 401 });
-    }
+    if (e instanceof AuthSessionError) return NextResponse.json({ error: e.code, message: e.message }, { status: 401 });
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to build auth context' }, { status: 500 });
   }
 
@@ -52,11 +55,40 @@ export async function POST(req: NextRequest) {
 
   const prisma = getPrisma();
 
-  // Single transfer
+  // Single transfer — idempotency
   if (!Array.isArray(body)) {
+    const idempotencyKey = getIdempotencyKey(req);
+
+    if (!idempotencyKey) {
+      try {
+        const result = await withDbContext(prisma, ctx, (tx) => transferWorker(tx, ctx, body));
+        return NextResponse.json({ transfer: result }, { status: 201 });
+      } catch (e) {
+        if (e instanceof TransferServiceError) {
+          const status = e.code === 'PERMISSION_DENIED' ? 403
+            : e.code === 'NO_ACTIVE_ASSIGNMENT' || e.code === 'MULTIPLE_ACTIVE_ASSIGNMENTS' ? 409
+            : e.code === 'PROJECT_QUOTA_FULL' ? 409 : 400;
+          return NextResponse.json({ error: e.code, message: e.message }, { status });
+        }
+        if (e instanceof AuthScopeError) return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
+        console.error('[api/staffing/transfers POST] error:', e);
+        return NextResponse.json({ error: 'INTERNAL', message: 'Failed to transfer worker' }, { status: 500 });
+      }
+    }
+
     try {
-      const result = await withDbContext(prisma, ctx, (tx) => transferWorker(tx, ctx, body));
-      return NextResponse.json({ transfer: result }, { status: 201 });
+      const result = await withIdempotency({
+        prisma,
+        route: 'POST:/api/staffing/transfers',
+        actorId: ctx.userId,
+        key: idempotencyKey,
+        requestBody: body,
+        handler: async () => {
+          const r = await withDbContext(prisma, ctx, (tx) => transferWorker(tx, ctx, body));
+          return { body: { transfer: r }, statusCode: 201 };
+        },
+      });
+      return NextResponse.json(result.body, { status: result.statusCode });
     } catch (e) {
       if (e instanceof TransferServiceError) {
         const status = e.code === 'PERMISSION_DENIED' ? 403
@@ -64,15 +96,16 @@ export async function POST(req: NextRequest) {
           : e.code === 'PROJECT_QUOTA_FULL' ? 409 : 400;
         return NextResponse.json({ error: e.code, message: e.message }, { status });
       }
-      if (e instanceof AuthScopeError) {
-        return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
+      if (e instanceof AuthScopeError) return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
+      if (e instanceof Error && e.name === 'IdempotencyConflictError') {
+        return NextResponse.json({ error: 'IDEMPOTENCY_CONFLICT', message: e.message }, { status: 409 });
       }
-      console.error('[api/staffing/transfers POST] error:', e);
+      console.error('[api/staffing/transfers POST idempotency] error:', e);
       return NextResponse.json({ error: 'INTERNAL', message: 'Failed to transfer worker' }, { status: 500 });
     }
   }
 
-  // Bulk transfer
+  // Bulk transfer — no idempotency (per-item savepoint)
   try {
     const result = await bulkTransferWorker(prisma, ctx, body);
     return NextResponse.json(result);

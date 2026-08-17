@@ -20,6 +20,7 @@ type MockFn = ReturnType<typeof vi.fn>;
 type MockTx = {
   $executeRawUnsafe: MockFn;
   $queryRawUnsafe: MockFn;
+  outboxEvent: { create: MockFn };
   projectAssignment: {
     update: MockFn;
     create: MockFn;
@@ -35,6 +36,9 @@ function makeMockTx(overrides?: Partial<MockTx>): MockTx {
   return {
     $executeRawUnsafe: vi.fn().mockResolvedValue(null),
     $queryRawUnsafe: vi.fn().mockResolvedValue([]),
+    outboxEvent: {
+      create: vi.fn().mockResolvedValue({ id: 'ev-001', status: 'PENDING' }),
+    },
     projectAssignment: {
       update: vi.fn(),
       create: vi.fn(),

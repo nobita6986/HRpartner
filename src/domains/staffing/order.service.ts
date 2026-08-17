@@ -23,6 +23,7 @@ import type { Prisma } from '@prisma/client';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
 import { SCOPE_REGISTRY } from '@/src/shared/auth/scopes';
 import { buildStaffingOrderScope, buildStaffingOrderSlotScope } from '@/src/shared/auth/scopes/staffing.scope';
+import { enqueueOutbox } from '@/src/shared/integrity/outbox';
 import type {
   CreateStaffingOrderInput,
   CreateSlotInput,
@@ -100,6 +101,19 @@ export async function createStaffingOrder(
       },
     },
     include: { slots: true },
+  });
+
+  // Outbox: publish event — same tx, rollback-safe
+  await enqueueOutbox(tx, {
+    eventType: 'StaffingOrderCreated',
+    aggregateId: order.id,
+    payload: {
+      orderId: order.id,
+      code: order.code,
+      projectId: order.projectId,
+      slotCount: order.slots.length,
+      createdBy: ctx.userId,
+    },
   });
 
   return order;
@@ -208,11 +222,25 @@ export async function updateStaffingOrderStatus(
     );
   }
 
-  return tx.staffingOrder.update({
+  const updated = await tx.staffingOrder.update({
     where: { id: orderId },
     data: { status: newStatus },
     select: { id: true, status: true },
   });
+
+  // Outbox: publish event
+  await enqueueOutbox(tx, {
+    eventType: 'StaffingOrderStatusChanged',
+    aggregateId: orderId,
+    payload: {
+      orderId,
+      fromStatus: current.status,
+      toStatus: newStatus,
+      changedBy: ctx.userId,
+    },
+  });
+
+  return updated;
 }
 
 /**

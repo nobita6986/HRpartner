@@ -25,6 +25,7 @@
 import { Prisma } from '@prisma/client';
 import type { PrismaClient } from '@prisma/client';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
+import { enqueueOutbox } from '@/src/shared/integrity/outbox';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -212,6 +213,21 @@ export async function transferWorker(
       `Project ${input.toProjectId} quota=${toProject.quota} sẽ bị vượt sau transfer (filled=${toProject.filled})`,
     );
   }
+
+  // Outbox: publish event
+  await enqueueOutbox(tx, {
+    eventType: 'WorkerTransferred',
+    aggregateId: newAssignment.id,
+    payload: {
+      workerId: input.workerId,
+      fromProjectId: input.fromProjectId,
+      toProjectId: input.toProjectId,
+      oldAssignmentId: oldAssignment.id,
+      newAssignmentId: newAssignment.id,
+      transferDate: input.transferDate,
+      transferredBy: ctx.userId,
+    },
+  });
 
   return {
     oldAssignmentId: oldAssignment.id,
