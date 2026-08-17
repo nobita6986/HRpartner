@@ -7,7 +7,7 @@
 | Task slug | `hrp-phase4-vertical-slices` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 — Planner (Product & Architecture Decision Owner) |
 | Executor | Tier 2 (agent ngoài — sếp giao qua Cursor) |
@@ -18,7 +18,7 @@
 | Current execution round | 1 |
 | Current audit round | 0 (chưa audit) |
 | Next gate | `/code` → `/audit` → `/resolve` → `ACCEPTED` |
-| Updated | 2026-08-17 00:30 ICT |
+| Updated | 2026-08-17 09:10 ICT |
 
 ## 1. Outcome
 
@@ -54,7 +54,10 @@ Sau Phase 4 (6 tuần, 4 slice × 1.5 tuần — PHASE_KHOAHOC §4), nội bộ 
 | `EV-07` | src/shared/auth/permission-catalog.ts:37-90, scopes/{worker,project,vendor,ctv}.scope.ts, with-auth-scope.ts, with-db-context.ts, worker-projection.ts | 8 permission CAN_* (CAN_VIEW_WORKER_SENSITIVE, CAN_FORCE_LOCK_STATEMENT:62, CAN_OVERRIDE_REFERRAL_GUARD:67, CAN_APPROVE_PAYROLL:57, CAN_VIEW_UNASSIGNED_POOL:47…), scope 4 role sẵn | Permission/scope mới chỉ thêm entry, không viết lại |
 | `EV-08` | src/shared/ui/{data-table,entity-card,role-guard,sheet,view-toggle}/ | 5 shared UI component Phase 0 sẵn | DEC-02: UI tái dùng, không dựng lại |
 | `EV-09` | app/api/{auth,me,tickets,workers}/; không có app/admin; package.json | API hiện có 4 nhánh; app/admin chưa tồn tại (V4 §4.2 yêu cầu); KHÔNG có framework E2E (chỉ vitest) | UI mount app/admin/*; E2E click-path = integration test gọi route handler trực tiếp trong vitest |
-| `EV-10` | vitest 325/325 (Phase 3); prisma/migrations/2026081621*_s1_rls_{worker,project,vendor} | Baseline test; RLS mới chỉ phủ worker(7)/project(4)/vendor(4) | RISK-02: verify RLS cho bảng statements/import trước khi viết route |
+| `EV-10` | prisma/migrations/2026081621*_s1_rls_{worker,project,vendor}/migration.sql | RLS ĐÃ phủ 15 bảng: workers + dependents/source_claims/project_assignments/tickets/ticket_comments/ticket_notifications; outsourcing_projects + sites/**staffing_orders**/contracts; vendors + **candidate_submissions**/vendor_statements/vendor_statement_lines. THIẾU: `staffing_order_slots`; attendance_import_batches/rows, attendance_events, timesheet_periods/lines/adjustments, client_statements/lines | 4A chỉ thiếu `staffing_order_slots` (DEC-15, STEP-21); 4B/4C tự mang policy theo slice |
+| `EV-11` | Planner tự chạy 17/08 08:28 | Baseline sanity GREEN: `npx vitest run` → 19 files, 325/325 PASS exit 0 (26.5s); `npm run build` → exit 0 | Trả lời Q4.1 TIER2-REPORT: KHÔNG cần Tier 2 chạy lại sanity — evidence đã có trong contract |
+| `EV-12` | prisma/seed.mjs:1-80 + src/domains/attendance/ticket.service.test.ts:1-30 | Seed Phase 0 dùng mock data chuẩn (An Phat/Yen Phong/Sao Viet, phone masked `09x****xxx`, không PII thật) + mode `--check`; test Phase 3 dùng **Prisma mock in-memory** — không cần DB thật | DEC-16: unit/integration test dùng mock; seed dev DB chỉ cho demo tay |
+| `EV-13` | docs/tasks/hrp-v4-bod-mockup/mockup/F00A_DemoNarrative.html + stitch/warm_professionalism/DESIGN.md | Cả 2 file ĐỀU tồn tại (Tier 2 khảo sát thiếu — đã verify bằng `ls` 17/08) | Trả lời Q3.1/Q3.2 TIER2-REPORT: Tier 2 dùng đúng 2 path này |
 
 ## 3. Decisions và Assumptions
 
@@ -74,6 +77,9 @@ Sau Phase 4 (6 tuần, 4 slice × 1.5 tuần — PHASE_KHOAHOC §4), nội bộ 
 | `DEC-12` | CHOSEN | TimesheetPeriod SM PENDING→REVIEWED→APPROVED→LOCKED, maker-checker D06 (maker ≠ checker); mở lại sau LOCKED → version+1 (F21); re-import idempotent nhờ UNIQUE(source, external_event_id) + payload_hash | §12.1-12.3 + D06 / Planner | Hiệu lực cả task |
 | `DEC-13` | CHOSEN | Test 4-role = ADMIN, HR_STAFF, VENDOR, WORKER — tái dùng scopes/ + matrix-scope pattern Phase 2 | EV-07 / Planner | Hiệu lực cả task |
 | `DEC-14` | CHOSEN | Fixture giả hoàn toàn — CẤM dữ liệu thật (PII/CCCD/lương thật); nhân vật mockup (Mai, AP-QM-1048, kỳ 08/2026) dùng làm fixture để tái hiện 3 moment | Iron Rule 4 + EV-02 / Planner | Hiệu lực cả task |
+| `DEC-15` | CHOSEN | RLS spec (trả lời Q1.1–Q1.3 TIER2-REPORT): (a) Round 1 CHỈ thiếu `staffing_order_slots` — STEP-21 migration additive: ENABLE + FORCE RLS, policy `hrp_staffing_order_slot_scope` TO `app_user_writer, app_user`, USING/WITH CHECK qua EXISTS (`staffing_orders.project_id` → `hrp_project_visible_for`/`hrp_project_writable`) — mirror pattern `vendor_statement_lines` (s1_rls_vendor §4). `staffing_orders`, `candidate_submissions`, `source_claims` ĐÃ có policy Phase 2 — cấm viết lại. (b) 4B/4C: mỗi slice mang migration RLS cho bảng mình dùng, cùng pattern + deny-by-default: attendance_*/timesheet_* scope theo project (`hrp_project_visible_for`) + ADMIN/HR/ACCOUNTANT; client_statements/lines chỉ nội bộ ADMIN/HR_MANAGER/DIRECTOR/ACCOUNTANT/SALE (chưa có client portal → chưa có client GUC). (c) Production apply vẫn defer theo runbook DEC-05/DEC-08 — KHÔNG thuộc task này | EV-10 + data-scope-security §5 / Planner | Hiệu lực cả task |
+| `DEC-16` | CHOSEN | Fixture spec (trả lời Q2.1): unit + integration test dùng **Prisma mock in-memory** (pattern `ticket.service.test.ts`) — KHÔNG cần DB thật; ID cố định `seed-mai-001`, `seed-prj-ap-qm-1048`… khai báo trong fixture module `src/domains/{staffing,attendance,reconciliation}/fixtures.ts`. Demo tay trên dev DB dùng `scripts/seed-phase4-fixture.cjs` extend convention seed.mjs (phone masked, không PII thật, idempotent upsert) | EV-12 / Planner | Hiệu lực cả task |
+| `DEC-17` | CHOSEN | UI spec (trả lời Q3.2): bám narrative F00A_DemoNarrative.html (16 bước) + tokens Warm Professionalism (stitch/warm_professionalism/DESIGN.md — đã có sẵn); round 1 UI = skeleton đủ render narrative (shared/ui + text/button/table), design polish để round sau — chấp nhận khuyến nghị Tier 2 | EV-13 / Planner | Hiệu lực cả task |
 
 ## 4. Contract
 
@@ -100,7 +106,8 @@ Sau Phase 4 (6 tuần, 4 slice × 1.5 tuần — PHASE_KHOAHOC §4), nội bộ 
 | `RQ-17` | SourceClaim: `accepted` duy nhất 1/worker (partial unique index); claimType HRP_DIRECT\|VENDOR_SUPPLIED\|CTV_REFERRAL; dedup gợi ý theo phone/cccd | Must | EV-05:470-497 / DEC-10 | Claim thứ 2 accepted cùng worker → 409 |
 | `RQ-18` | Permission/4-role: mọi route mới qua require-permission + RLS context (with-auth-scope/with-db-context); test 4 role ADMIN/HR_STAFF/VENDOR/WORKER mỗi slice | Must | EV-07 / DEC-13 | Thiếu quyền → 403; scope sai → không thấy dữ liệu |
 | `RQ-19` | Integrity: mọi POST/PATCH mới bọc withIdempotency + audit (reason/ip_address/user_agent) + outbox cho notification; IllegalTransitionError → 409 | Must | EV-06 (pattern Phase 3) | Gọi lại idempotent → 1 hiệu ứng; thiếu audit → FAIL AC |
-| `RQ-20` | Regression: vitest toàn bộ green (baseline 325 + mới), `npm run build` exit 0, `npx prisma validate` exit 0, vùng cấm sạch | Must | EV-10 / Iron Rule 4 | Bất kỳ test đỏ → BLOCKED handoff |
+| `RQ-20` | Regression: vitest toàn bộ green (baseline 325 + mới), `npm run build` exit 0, `npx prisma validate` exit 0, vùng cấm sạch | Must | EV-11 / Iron Rule 4 | Bất kỳ test đỏ → BLOCKED handoff |
+| `RQ-21` | RLS cho bảng slice dùng: `staffing_order_slots` (4A, STEP-21) + attendance/timesheet/client statements (4B/4C, mỗi slice tự mang) — migration additive, ENABLE+FORCE, policy TO app_user_writer, app_user, reuse helper Phase 2, deny-by-default ngoài scope | Must | EV-10 / DEC-15 | Role ngoài scope → 0 row (không leak, không 403 giả) |
 
 ### 4.2 Scope boundaries
 
@@ -134,6 +141,7 @@ Sau Phase 4 (6 tuần, 4 slice × 1.5 tuần — PHASE_KHOAHOC §4), nội bộ 
 | STEP ID | RQ | Target | Change intent/deliverable | Dependency/skill | Verify | Stop condition |
 |---|---|---|---|---|---|---|
 | `STEP-01` | RQ-18,19 | app/admin/layout + nav | Khung UI nội bộ + mount 4 nhóm trang (Staffing/Chấm công/Đối soát/Job Board) + role-guard | EV-08, EV-09 | `npm run build` exit 0 | Build đỏ |
+| `STEP-21` | RQ-21 | prisma/migrations/2026xxxx_s1_rls_phase4/migration.sql | **[Chạy ngay sau STEP-01, trước STEP-02]** Migration RLS `staffing_order_slots` theo DEC-15(a): ENABLE + FORCE + policy `hrp_staffing_order_slot_scope` EXISTS qua staffing_orders.project_id (reuse `hrp_project_visible_for`/`hrp_project_writable`) | EV-10, pattern s1_rls_vendor §4 | `npx prisma migrate dev` trên DATABASE_URL_DEV + query verify: VENDOR/PM ngoài scope → 0 slot; SQL additive-only | Policy thiếu hoặc leak row ngoài scope |
 | `STEP-02` | RQ-01 | src/domains/staffing/order.service.ts + prisma/migrations | Service StaffingOrder + slot + `slotsFilled` cùng transaction (O9); migration nếu thiếu index | EV-05:357-398 | `npx vitest run src/domains/staffing` exit 0 | Quota/fill lệch |
 | `STEP-03` | RQ-02 | src/domains/staffing/transfer.service.ts | Guided Transfer §9.9: advisory lock + 1-ACTIVE + quota 2 project 1 tx | DEC-08, state-machine.ts | vitest chứng minh 1-ACTIVE + rollback | Không atomic |
 | `STEP-04` | RQ-03 | src/domains/staffing/referral-guard.service.ts | R1/R2/R3 + override S1/S2/S3 + audit + REFERRAL_GUARD_DAYS config | DEC-09 | vitest 3 rule + 3 override case | Guard bỏ sót case |
@@ -174,6 +182,7 @@ Sau Phase 4 (6 tuần, 4 slice × 1.5 tuần — PHASE_KHOAHOC §4), nội bộ 
 | `AC-14` | RQ-01..17 | UI app/admin mở được 4 nhóm trang, role-guard chặn đúng, khớp narrative F00A (visual check) | Mở tay local | Screenshot/đường dẫn | Yes |
 | `AC-15` | RQ-01..17 | HANDOFF.md đủ: runbook demo 3 moment, seed fixture giả, rollback, cron chạy nội bộ, quyết định implementation | Đọc HANDOFF | File đầy đủ theo template | Yes |
 | `AC-16` | — | Không đụng production: không chạy migrate deploy/dev vào DATABASE_URL, không đổi RLS đã ACCEPT trừ khi thêm policy additive mới | Hỏi + log | Khai báo trong HANDOFF | Yes |
+| `AC-17` | RQ-21 | Policy `hrp_staffing_order_slot_scope` tồn tại trên dev DB; migration additive-only (không DROP/ALTER phá); test role ngoài scope (vd VENDOR) SELECT slots → 0 row | Query dev DB + vitest | Output query + diff SQL additive | Yes |
 
 ### Traceability
 
@@ -199,13 +208,14 @@ Sau Phase 4 (6 tuần, 4 slice × 1.5 tuần — PHASE_KHOAHOC §4), nội bộ 
 | `RQ-18` | `STEP-01`,`STEP-07`,`STEP-12`,`STEP-17` | `AC-08`,`AC-09` |
 | `RQ-19` | `STEP-06`,`STEP-11`,`STEP-16`,`STEP-18` | `AC-10` |
 | `RQ-20` | `STEP-20` | `AC-11`,`AC-12`,`AC-13` |
+| `RQ-21` | `STEP-21` | `AC-17` |
 
 ## 7. Risk và Rollback
 
 | Risk ID | Risk | Trigger | Mitigation | Rollback/Recovery |
 |---|---|---|---|---|
 | `RISK-01` | Migration chạy nhầm vào DATABASE_URL production (Neon — dữ liệu thật) | Gõ nhầm lệnh migrate | CẤM `prisma migrate dev/deploy` vào prod; chỉ `prisma validate` + `migrate diff`; dùng DATABASE_URL_DEV | Neon branch/point-in-time restore; báo sếp ngay |
-| `RISK-02` | RLS thiếu policy cho bảng slice dùng (statements/import — Phase 2 mới phủ worker/project/vendor) → route 403/scope sai | Test 4-role đỏ | Verify policy trước khi viết route (STEP-01); nếu thiếu → migration thêm policy additive (pattern DEC-08) | Revert migration + reapply |
+| `RISK-02` | RLS thiếu policy cho bảng slice dùng → route 403/scope sai. Đã verify 17/08 (EV-10): 4A chỉ thiếu `staffing_order_slots` (15 bảng khác đã phủ từ Phase 2); 4B/4C (attendance_*/timesheet_*/client_statements*) chưa có policy | Test 4-role đỏ | DEC-15: STEP-21 migration policy slots cho 4A; 4B/4C mỗi slice tự mang migration RLS (additive, pattern Phase 2) | Revert migration + reapply |
 | `RISK-03` | File import > 4.5MB (Vercel body limit) | Khách hàng gửi file lớn | Chặn sớm ở route với thông báo rõ (400 + hướng dẫn tách file); giới hạn ghi vào HANDOFF | Sếp xác nhận giới hạn MVP (DEC-04) |
 | `RISK-04` | Advisory lock gây deadlock/timeout khi transaction dài | Await ngoài DB trong khóa | Cấm await ngoài DB trong khóa (§9.9); test song song AC-01 | Timeout transaction tự rollback, thử lại idempotent |
 | `RISK-05` | Cron SLA auto-confirm xung đột outbox cron | 2 cron chạy trùng giờ | 1 cron handler in-process xử lý cả 2 (D16-b), idempotent | Rerun cron bằng tay (runbook) |
@@ -235,3 +245,4 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | 2026-08-17 | Initial contract — 4 slice 4A–4D, 20 RQ, 20 STEP, 16 AC, 7 DEC đã chốt + 7 assumption/decision mới, 5 open question | Sếp giao "làm 1" (soạn TASK Phase 4); sources: PHASE_KHOAHOC §4, F00A, DECISION_LOG D01–D16, UNIFIED_PLAN v4.22 |
+| `v1.1` | 2026-08-17 | Planner trả lời TIER2-REPORT.md (pre-round 1): **Vấn đề 1** — staffing_orders/candidate_submissions/source_claims ĐÃ có RLS Phase 2 (sửa EV-10); chỉ thiếu staffing_order_slots → thêm DEC-15, STEP-21, RQ-21, AC-17. **Vấn đề 2** — DEC-16 fixture spec (mock in-memory + seed cjs). **Vấn đề 3** — F00A + DESIGN.md tồn tại (EV-13) + DEC-17 UI skeleton round 1. **Vấn đề 4** — Planner tự chạy sanity (EV-11: vitest 325/325 + build exit 0), Tier 2 khỏi chạy lại. Không sửa RQ/STEP/AC cũ — chỉ bổ sung | TIER2-REPORT.md 4 vấn đề + Planner verify 17/08 |
