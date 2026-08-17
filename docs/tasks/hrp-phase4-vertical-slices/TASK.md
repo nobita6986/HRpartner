@@ -7,7 +7,7 @@
 | Task slug | `hrp-phase4-vertical-slices` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.2` |
+| Spec version | `v1.3` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 — Planner (Product & Architecture Decision Owner) |
 | Executor | Tier 2 (agent ngoài — sếp giao qua Cursor) |
@@ -15,10 +15,10 @@
 | Baseline | `5488516` — Phase 3 Integrity ACCEPTED (16/08, PASS 8/8 AC, vitest 325/325) |
 | Modules | M2 (Job Board), M3 (CRM/Staffing), M4 (Đối soát), M5 (Vận hành lao động), M7 (Chấm công), M8 (Statement) |
 | ADR references | ADR-010 (BigInt VND nguyên), ADR-011 (5 state machine), ADR-013 (LOCKED bất biến → adjustment), ADR-014 (Ticket SM — pattern tái dùng) |
-| Current execution round | 1 (đã đóng — STEP-21/AC-17 xong) → 2 (chờ /code: STEP-01..07) |
-| Current audit round | 1 (verdict CONDITIONAL — STEP-21/AC-17 PASS; STEP-01..07 defer round 2) |
-| Next gate | `/code` (round 2: STEP-01..07) → `/audit` → `/resolve` → `ACCEPTED` |
-| Updated | 2026-08-17 09:20 ICT |
+| Current execution round | 1 (đã đóng — STEP-21/AC-17 xong) → 2a (đã đóng — STEP-01..03, commit `8c7fb91` + `67f5ba0`) → 2b (chờ /code: STEP-04..05 API routes + guards) |
+| Current audit round | 2a (verdict CONDITIONAL — PARTIAL PASS: STEP-01..03 OK; AC-01..15 defer 2b/2c) |
+| Next gate | `/code` (round 2b: STEP-04..05) → `/audit` → `/resolve` → `ACCEPTED` |
+| Updated | 2026-08-17 11:20 ICT |
 
 ## 1. Outcome
 
@@ -240,6 +240,7 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 |---|---|---|---|---|---|
 | — | — | — | Chưa có audit round 1 | — | — |
 | 1 | — (không có finding mở) | **Verdict CONDITIONAL chấp thuận — tiếp tục round 2.** Tier 3 xác nhận STEP-21/AC-17 PASS (7/7 matrix); STEP-01..07 + AC-01/02/08/09/10/14/15 chưa đạt → round 2. Planner tự chạy lại evidence (Iron Rule 4) 17/08 09:11–09:15: `node scripts/_phase4-verify-slots-rls-strong.cjs` exit 0 (7/7); `node scripts/_phase4-verify-phase3-intact.cjs` exit 0; `npx prisma migrate status` up-to-date (10 migrations); migration SQL additive-only (ENABLE/FORCE/CREATE POLICY, mirror s1_rls_vendor §4); diff vùng cấm sạch (appBCC dirty có từ TRƯỚC round 1 — của sếp); `npx vitest run` 325/325 exit 0. **Duyệt DEC-NEW-04/05** (apply SQL trực tiếp + `prisma migrate resolve --applied` — sếp đã chấp thuận 17/08 08:35, lý do shadow DB + `portal_timesheets` raw của appBCC). **Duyệt DEC-NEW-06** (chia round 2 thành 2a/2b/2c theo budget) với điều kiện: mỗi sub-round giữ vitest + build green; round 2 chỉ đóng khi STEP-01..07 + AC-01/02/08/09/10/14/15 đạt | v1.2 (không đổi RQ/STEP/AC) | Tier 2 — round 2 (sếp giao /code) |
+| 2a | — (không có finding mở) | **Verdict CONDITIONAL chấp thuận — tiếp tục round 2b.** Tier 3: STEP-01..03 đạt (admin layout + order.service + transfer.service), AC-17 PASS kế thừa round 1, AC-01..15 defer 2b/2c. Planner tự chạy lại evidence 17/08 11:06–11:12: `npx vitest run` **343/343 exit 0** (+18); `npm run build` exit 0; diff vùng cấm sạch. **Duyệt DEC-NEW-07/08/09/10** (tách `server-session.ts` read-only thay vì sửa `auth-context.ts`; advisory lock `hashtext($1::text)`; `buildStaffingOrderScope` reuse `buildProjectScope`; mở rộng Role type DIRECTOR/SALE trong role-guard — không đụng vùng cấm). **Vi phạm quy trình đã Planner khắc phục trước push:** Tier 2 stage nhầm `appBCC/agent_mapper.py` + `appBCC/app.py` (việc sếp, CẤM stage) + `docs/tasks/hrp-phase1-bcc-fence/AUDIT.md` (stray, sếp quyết) vào commit round 2a `fdebbf7`; Tier 3 bỏ sót khi chấm AC-16 PASS. Planner đã gỡ 3 file khỏi commit (nội dung nguyên vẹn trong working tree) → commit sạch `8c7fb91` + `67f5ba0`; `fdebbf7`/`760683f` bỏ (local-only, chưa push — origin/main = `cd5c2c9`, không cần force). Nhắc Tier 2: chỉ `git add` đúng file theo contract, CẤM `git add -A`/`git add .` | v1.3 (không đổi RQ/STEP/AC) | Tier 2 — round 2b (sếp giao /code) |
 
 ## 10. Revision Log
 
@@ -248,3 +249,4 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 | `v1.0` | 2026-08-17 | Initial contract — 4 slice 4A–4D, 20 RQ, 20 STEP, 16 AC, 7 DEC đã chốt + 7 assumption/decision mới, 5 open question | Sếp giao "làm 1" (soạn TASK Phase 4); sources: PHASE_KHOAHOC §4, F00A, DECISION_LOG D01–D16, UNIFIED_PLAN v4.22 |
 | `v1.1` | 2026-08-17 | Planner trả lời TIER2-REPORT.md (pre-round 1): **Vấn đề 1** — staffing_orders/candidate_submissions/source_claims ĐÃ có RLS Phase 2 (sửa EV-10); chỉ thiếu staffing_order_slots → thêm DEC-15, STEP-21, RQ-21, AC-17. **Vấn đề 2** — DEC-16 fixture spec (mock in-memory + seed cjs). **Vấn đề 3** — F00A + DESIGN.md tồn tại (EV-13) + DEC-17 UI skeleton round 1. **Vấn đề 4** — Planner tự chạy sanity (EV-11: vitest 325/325 + build exit 0), Tier 2 khỏi chạy lại. Không sửa RQ/STEP/AC cũ — chỉ bổ sung | TIER2-REPORT.md 4 vấn đề + Planner verify 17/08 |
 | `v1.2` | 2026-08-17 | Planner Resolution cho audit round 1 (verdict CONDITIONAL — PARTIAL PASS): nghiệm thu STEP-21/AC-17, duyệt DEC-NEW-04/05/06, mở round 2 cho STEP-01..07. Không đổi RQ/STEP/AC | AUDIT.md round 1 (Tier 3, 17/08 09:00) + Planner tự verify evidence 17/08 |
+| `v1.3` | 2026-08-17 | Planner Resolution cho audit round 2a (verdict CONDITIONAL — PARTIAL PASS): nghiệm thu STEP-01..03, duyệt DEC-NEW-07/08/09/10, mở round 2b (STEP-04..05 API routes + guards). Ghi nhận + khắc phục vi phạm stage appBCC/bcc-fence của Tier 2 trong commit round 2a — commit sạch `8c7fb91` + `67f5ba0` thay `fdebbf7` + `760683f` (chưa push nên không cần force). Không đổi RQ/STEP/AC | AUDIT.md round 2a (Tier 3, 17/08 11:05) + Planner tự verify evidence 17/08 |
