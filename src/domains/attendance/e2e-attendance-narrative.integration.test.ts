@@ -13,6 +13,7 @@
 import { describe, it, expect } from 'vitest';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
 import { transitionTimesheetPeriod } from './timesheet.service';
+import { resolveUnmatchedRows } from './resolve-adjustment.service';
 
 interface MockRow {
   id: string;
@@ -65,12 +66,21 @@ function makeStore() {
       fileUrl: '',
       fileHash: 'abc',
       totalRows: 50,
-      matchedRows: 50,
-      unmatchedRows: 0,
+      matchedRows: 47,
+      unmatchedRows: 3,
       anomalyRows: 0,
-      status: 'COMMITTED',
+      status: 'PREVIEWED',
       errors: [],
     });
+
+    // Unmatched rows for resolve test (AP-QM-0148 etc)
+    insert('attendance_import_rows', { id: 'row-001', batchId: 'batch-001', rowNumber: 101, rawEmployeeCode: 'AP-QM-0148', rawDate: '2026-08-01', rawTime: '08:00', rawType: 'IN', status: 'UNMATCHED', anomalyNote: 'Ma NV khong tim duoc', matchedWorkerId: null });
+    insert('attendance_import_rows', { id: 'row-002', batchId: 'batch-001', rowNumber: 102, rawEmployeeCode: 'EMP-002', rawDate: '2026-08-01', rawTime: '08:00', rawType: 'IN', status: 'UNMATCHED', anomalyNote: 'Ma NV khong tim duoc', matchedWorkerId: null });
+    insert('attendance_import_rows', { id: 'row-003', batchId: 'batch-001', rowNumber: 103, rawEmployeeCode: 'EMP-003', rawDate: '2026-08-01', rawTime: '08:00', rawType: 'IN', status: 'UNMATCHED', anomalyNote: 'Ma NV khong tim duoc', matchedWorkerId: null });
+    // Matched rows
+    for (let i = 1; i <= 47; i++) {
+      insert('attendance_import_rows', { id: 'row-m' + i, batchId: 'batch-001', rowNumber: i, rawEmployeeCode: 'EMP-' + i, rawDate: '2026-08-01', rawTime: '08:00', rawType: 'IN', status: 'MATCHED', matchedWorkerId: 'w-' + i });
+    }
   }
 
   return { table, insert, findFirst, seedNarrative, tables };
@@ -105,8 +115,46 @@ function makeMockTx(store: ReturnType<typeof makeStore>): any {
       },
     },
     attendanceImportBatch: {
+      findUnique: findUniqueImpl('attendance_import_batches'),
       findMany: () => Promise.resolve([...store.table('attendance_import_batches').values()]),
+      update: (args: any) => {
+        const id = args.where.id;
+        const t = store.table('attendance_import_batches');
+        const existing = t.get(id);
+        if (!existing) return Promise.reject(new Error('not found'));
+        const updated = { ...existing, ...args.data };
+        t.set(id, updated);
+        return Promise.resolve(updated);
+      },
     },
+    attendanceImportRow: {
+      findMany: (args: any) => {
+        const batchIdFilter = args?.where?.batchId;
+        const statusFilter = args?.where?.status;
+        const idInFilter = args?.where?.id?.in;
+        const rows = [];
+        for (const row of store.table('attendance_import_rows').values()) {
+           if (batchIdFilter !== undefined && row.batchId !== batchIdFilter) continue;
+            if (statusFilter !== undefined && row.status !== statusFilter) continue;
+            if (idInFilter !== undefined && !idInFilter.includes(row.id)) continue;
+            rows.push(row);
+        }
+        return Promise.resolve(rows);
+      },
+      count: (args: any) => {
+        const batchIdFilter = args?.where?.batchId;
+        const statusFilter = args?.where?.status;
+        let count = 0;
+        for (const row of store.table('attendance_import_rows').values()) {
+            if (batchIdFilter !== undefined && row.batchId !== batchIdFilter) continue;
+            if (statusFilter !== undefined && row.status !== statusFilter) continue;
+            count++;
+        }
+        return Promise.resolve(count);
+      },
+      updateMany: () => Promise.resolve({ count: 0 }),
+    },
+    $executeRawUnsafe: () => Promise.resolve(1),
     auditLog: {
       findFirst: (args: any) => store.findFirst('audit_logs', args?.where ?? {}),
       create: () => Promise.resolve({ id: 'audit-1' }),
@@ -135,7 +183,18 @@ describe('E2E — F00A narrative slice 4B bước 6-10 (moment 06:20–08:30)', 
 
     const batches = await tx.attendanceImportBatch.findMany();
     expect(batches).toHaveLength(1);
-    expect(batches[0].anomalyRows).toBe(0);
+    expect(batches[0].unmatchedRows).toBe(3);
+  });
+
+  it('Bước 7: Resolve drawer -- map AP-QM-0148 => worker-001', async () => {
+    const store = makeStore();
+    store.seedNarrative();
+    const tx = makeMockTx(store);
+
+    const result = await resolveUnmatchedRows(tx, adminCtx(), 'batch-001', [
+      { rowId: 'row-001', matchedWorkerId: 'worker-001', note: 'Mai xac nhan AP-QM-0148 = worker-001' },
+    ]);
+    expect(result.updatedCount).toBe(1);
   });
 
   it('Bước 8: Duyệt kỳ — PENDING → REVIEWED (Mai review)', async () => {
