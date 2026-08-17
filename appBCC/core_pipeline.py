@@ -164,13 +164,63 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                         status = "ABSENT"
                     elif ot_val > 0:
                         status = "OVERTIME"
+
+                    # Phân tích Ca làm việc & Loại Ngày (Fallback chung)
+                    shift_type = "Ca 1 (Sáng)"
+                    if in_time and in_time != 'nan':
+                        try:
+                            h = int(in_time.split(':')[0])
+                            if 12 <= h < 20: shift_type = "Ca 2 (Chiều)"
+                            elif h >= 20 or h < 4: shift_type = "Ca 3 (Đêm)"
+                        except: pass
+                    
+                    import datetime
+                    day_type = "Ngày thường"
+                    try:
+                        d_obj = datetime.date(calc_year, calc_month, day_val)
+                        if d_obj.weekday() == 6: day_type = "Chủ nhật"
+                    except: pass
+                        
+                    # Tạo Breakdown chi tiết
+                    breakdown = []
+                    
+                    if project_name == "Nhà máy Actro - Vĩnh Phúc":
+                        normal_h = safe_float(row[idxs["in"] + 2]) if (idxs["in"] + 2) < len(row) else 0
+                        h_8_17 = safe_float(row[idxs["in"] + 4]) if (idxs["in"] + 4) < len(row) else 0
+                        h_20_22 = safe_float(row[idxs["in"] + 5]) if (idxs["in"] + 5) < len(row) else 0
+                        night_h = safe_float(row[idxs["in"] + 6]) if (idxs["in"] + 6) < len(row) else 0
+                        
+                        if normal_h > 0:
+                            # Xác định rate cho normal_hours của Actro
+                            rate = 100
+                            if day_type == "Chủ nhật":
+                                rate = 270 if shift_type == "Ca 3 (Đêm)" else 200
+                            elif shift_type == "Ca 3 (Đêm)":
+                                rate = 130
+                            breakdown.append({"name": f"Hành chính ({shift_type})", "hours": normal_h, "rate": rate})
+                            
+                        if ot_150 > 0: breakdown.append({"name": "Tăng ca 150%", "hours": ot_150, "rate": 150})
+                        if ot_200 > 0: breakdown.append({"name": "Tăng ca 200%", "hours": ot_200, "rate": 200})
+                        if ot_210 > 0: breakdown.append({"name": "Tăng ca 210%", "hours": ot_210, "rate": 210})
+                        if night_h > 0: breakdown.append({"name": "Giờ làm đêm", "hours": night_h, "rate": 130})
+                        if h_8_17 > 0: breakdown.append({"name": "Giờ 8h~17h", "hours": h_8_17, "rate": None})
+                        if h_20_22 > 0: breakdown.append({"name": "Giờ 20h~22h", "hours": h_20_22, "rate": None})
+                    else:
+                        # Dự án khác
+                        if in_time and out_time:
+                            breakdown.append({"name": f"Hành chính ({shift_type})", "hours": 8, "rate": 100})
+                        if ot_val > 0:
+                            breakdown.append({"name": "Tăng ca", "hours": ot_val, "rate": 150})
                         
                     daily_data.append({
                         "date": f"{calc_year}-{calc_month:02d}-{day_val:02d}",
                         "status": status,
                         "in": in_time if in_time and in_time != 'nan' else "",
                         "out": out_time if out_time and out_time != 'nan' else "",
-                        "ot": ot_val
+                        "ot": ot_val,
+                        "shiftType": shift_type,
+                        "dayType": day_type,
+                        "breakdown": breakdown
                     })
                     
                 # Tính tổng hợp từ daily_data làm dữ liệu fallback

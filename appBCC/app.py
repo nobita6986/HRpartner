@@ -1,5 +1,6 @@
 import sys
 import os
+import threading
 from datetime import datetime
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                                QHBoxLayout, QPushButton, QLabel, QLineEdit, 
@@ -212,14 +213,18 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(950, 750)
 
         # Cài đặt Window Icon
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        try:
+            base_dir = sys._MEIPASS
+        except Exception:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+        
         icon_path = os.path.join(base_dir, "favicon.ico")
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
         self.selected_file = None
         self.parsed_data = None
-        self.db_url = os.environ.get("DATABASE_URL", "postgresql://...")
+        self.db_url = os.environ.get("APPBCC_DATABASE_URL", os.environ.get("DATABASE_URL", "postgresql://..."))  # Phase 2 DEC-09 A: ETL dùng credential riêng; fallback cho dev
         self.check_cols_map = {}
 
         self.signals = WorkerSignals()
@@ -485,7 +490,7 @@ class MainWindow(QMainWindow):
         self.append_log("--- BẮT ĐẦU PHÂN TÍCH ---")
         self.append_log(f"Kỳ lương: Tháng {period_month}/{period_year}")
         
-        if self.worker.isRunning():
+        if hasattr(self, 'worker') and self.worker.isRunning():
             return
             
         self.progress_bar.setVisible(True)
@@ -1029,24 +1034,31 @@ class MainWindow(QMainWindow):
         self.cbo_export_project = QComboBox()
         self.cbo_export_project.addItems(FormulaRegistry.get_all_projects())
         self.cbo_export_project.setStyleSheet("padding: 5px;")
-        layout2.addWidget(self.cbo_export_project, 0, 1, 1, 2)
+        layout2.addWidget(self.cbo_export_project, 0, 1, 1, 3) # Extend to col 3
         
         layout2.addWidget(QLabel("Kỳ lương:"), 1, 0)
         self.cbo_export_month = QComboBox()
         self.cbo_export_month.addItems([f"Tháng {i}" for i in range(1, 13)])
         self.cbo_export_month.setCurrentIndex(datetime.now().month - 1)
         self.cbo_export_month.setStyleSheet("padding: 5px;")
+        self.cbo_export_month.setFixedWidth(120)
         layout2.addWidget(self.cbo_export_month, 1, 1)
         
         self.txt_export_year = QLineEdit()
         self.txt_export_year.setText(str(datetime.now().year))
         self.txt_export_year.setStyleSheet("padding: 5px;")
+        self.txt_export_year.setFixedWidth(100)
         layout2.addWidget(self.txt_export_year, 1, 2)
+        
+        # Add empty spacer to column 3 to push everything left
+        spacer = QLabel("")
+        layout2.addWidget(spacer, 1, 3)
+        layout2.setColumnStretch(3, 1)
         
         self.btn_export_payroll = QPushButton("📥 Tải Bảng Lương Dự Án")
         self.btn_export_payroll.setStyleSheet("background-color: #0dcaf0; color: #000; font-weight: bold; padding: 8px;")
         self.btn_export_payroll.clicked.connect(self.run_export_payroll)
-        layout2.addWidget(self.btn_export_payroll, 2, 0, 1, 3)
+        layout2.addWidget(self.btn_export_payroll, 2, 0, 1, 4)
         
         group2.setLayout(layout2)
         layout.addWidget(group2)
@@ -1255,7 +1267,7 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setStyleSheet("QWidget { font-size: 14px; }")
+    app.setStyleSheet("QWidget { font-size: 13px; }")
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

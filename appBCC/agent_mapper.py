@@ -70,12 +70,13 @@ Yêu cầu:
 
     try:
         response = client.chat.completions.create(
-            model="deepseek-v4-flash",
+            model="deepseek-chat",
             messages=[
                 {"role": "system", "content": "You are a data mapping assistant. Only output raw JSON."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.1
+            temperature=0.1,
+            timeout=15.0
         )
         
         result_text = response.choices[0].message.content.strip()

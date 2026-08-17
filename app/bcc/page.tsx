@@ -12,12 +12,22 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 
 type DailyStatus = 'WORKING' | 'OVERTIME' | 'LATE' | 'ABSENT';
 
+interface DailyBreakdown {
+  name: string;
+  hours: number;
+  rate: number | null;
+}
+
 interface DailyData {
   date: string;
   status: DailyStatus;
   in?: string;
   out?: string;
   ot?: number;
+  shiftType?: string;
+  dayType?: string;
+  breakdown?: DailyBreakdown[];
+  isPadding?: boolean;
 }
 
 interface PayrollItem {
@@ -62,6 +72,7 @@ export default function TraCuuPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'CALENDAR' | 'PAYSLIP'>('CALENDAR');
+  const [selectedDay, setSelectedDay] = useState<DailyData | null>(null);
 
   const [projects, setProjects] = useState<string[]>([]);
   const [periods, setPeriods] = useState<string[]>([]);
@@ -352,8 +363,9 @@ export default function TraCuuPage() {
                         return (
                           <div 
                             key={`mob-${idx}`} 
+                            onClick={() => !day.isPadding && setSelectedDay(day)}
                             className={cn(
-                              "flex items-center justify-between p-4 rounded-xl border shadow-sm",
+                              "flex items-center justify-between p-4 rounded-xl border shadow-sm cursor-pointer hover:shadow-md transition-all",
                               getStatusColor(day.status)
                             )}
                           >
@@ -409,8 +421,9 @@ export default function TraCuuPage() {
                           return (
                             <div 
                               key={idx} 
+                              onClick={() => !day.isPadding && setSelectedDay(day)}
                               className={cn(
-                                "relative flex flex-col rounded-xl p-3 border shadow-sm transition-all hover:shadow-md min-h-[110px]",
+                                "relative flex flex-col rounded-xl p-3 border shadow-sm transition-all hover:shadow-md min-h-[110px] cursor-pointer",
                                 getStatusColor(day.status)
                               )}
                             >
@@ -555,6 +568,76 @@ export default function TraCuuPage() {
           </div>
         )}
       </div>
+
+      {/* Modal Chi tiết Ngày Công */}
+      {selectedDay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="text-lg font-bold text-slate-800">
+                Chi tiết ngày {new Date(selectedDay.date).toLocaleDateString('vi-VN')}
+              </h3>
+              <button onClick={() => setSelectedDay(null)} className="text-slate-400 hover:text-slate-600">
+                <span className="text-3xl leading-none">&times;</span>
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <div className="text-center w-full">
+                  <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Giờ Vào</p>
+                  <p className="text-2xl font-bold text-slate-800">{selectedDay.in || '--:--'}</p>
+                </div>
+                <div className="h-12 w-px bg-slate-200 mx-4"></div>
+                <div className="text-center w-full">
+                  <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Giờ Ra</p>
+                  <p className="text-2xl font-bold text-slate-800">{selectedDay.out || '--:--'}</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">Phân tích Giờ Công</h4>
+                <table className="w-full text-sm border-collapse border border-slate-200">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th className="border border-slate-200 p-2 text-left">Nội dung</th>
+                      <th className="border border-slate-200 p-2 text-center w-20">Số giờ</th>
+                      <th className="border border-slate-200 p-2 text-center w-20">Tỷ lệ</th>
+                      <th className="border border-slate-200 p-2 text-right w-32">Thành tiền (VNĐ)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedDay.breakdown && selectedDay.breakdown.length > 0 ? (
+                      selectedDay.breakdown.map((item, idx) => (
+                        <tr key={idx}>
+                          <td className="border border-slate-200 p-2 font-medium">{item.name}</td>
+                          <td className="border border-slate-200 p-2 text-center font-bold text-slate-700">{item.hours}h</td>
+                          <td className="border border-slate-200 p-2 text-center font-bold text-blue-600">{item.rate ? `${item.rate}%` : '-'}</td>
+                          <td className="border border-slate-200 p-2 text-right text-slate-600">
+                            {item.rate 
+                              ? formatMoney((data?.payrollData?.salaryItems?.[0]?.rate || 0) * (item.rate / 100) * item.hours)
+                              : '-'}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="border border-slate-200 p-4 text-center text-slate-500">Chưa có dữ liệu phân tích chi tiết</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+                <p className="text-xs text-slate-400 mt-3">* Đơn giá cơ sở được lấy từ thông số lương: <strong className="text-slate-600">{formatMoney(data?.payrollData?.salaryItems?.[0]?.rate || 0)} đ/giờ</strong></p>
+              </div>
+            </div>
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button onClick={() => setSelectedDay(null)} className="px-6 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition-colors">
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
