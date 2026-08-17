@@ -46,6 +46,8 @@ export type Role =
   | 'ACCOUNTANT'
   | 'PM'
   | 'ADMIN'
+  | 'DIRECTOR'
+  | 'SALE'
   | 'VENDOR'
   | 'CTV';
 
@@ -96,6 +98,35 @@ export const VENDOR_NAV: NavItem[] = [
   { href: '/vendor/submissions', label: 'Đã nộp ứng viên', icon: Users, roles: ['VENDOR', 'CTV'] },
   { href: '/vendor/statements', label: 'Đối soát', icon: FileText, roles: ['VENDOR'] },
   { href: '/vendor/settings', label: 'Cài đặt', icon: Settings, roles: ['VENDOR', 'CTV'] },
+];
+
+/**
+ * Phase 4 nav (4 nhóm slice 4A–4D) — DEC-17 UI skeleton round 1.
+ * Items 4B/4C/4D mount nhưng chỉ render placeholder skeleton tới round 2.
+ *
+ * - /admin — Control Tower (S01 tổng quan)
+ * - /admin/staffing — Staffing (S02 + S02A + S02B: Guided Transfer + Referral Guard)
+ * - /admin/attendance — Chấm công (S03 + S03A + S03B, slice 4B)
+ * - /admin/reconciliation — Đối soát (S04 + S04A + S04B, slice 4C)
+ * - /admin/jobs — Job Board admin (S05, slice 4D)
+ * - /admin/workers, /admin/projects, /admin/clients — Phase 0/1 giữ nguyên
+ * - /admin/tickets — Phase 3 ACCEPTED, slice khác
+ * - /admin/payroll — Phase 4 async (M9 P2)
+ * - /admin/statements — Phase 4 slice 4C mount
+ * - /admin/settings — Phase 1 giữ
+ */
+export const ADMIN_NAV_PHASE4: NavItem[] = [
+  { href: '/admin', label: 'Tổng quan', icon: LayoutDashboard, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT', 'SALE', 'DIRECTOR'] },
+  { href: '/admin/staffing', label: 'Staffing', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'], badge: 'M3' },
+  { href: '/admin/attendance', label: 'Chấm công', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT'], badge: 'M7' },
+  { href: '/admin/reconciliation', label: 'Đối soát', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], badge: 'M4' },
+  { href: '/admin/jobs', label: 'Job Board', icon: Briefcase, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'], badge: 'M2' },
+  { href: '/admin/workers', label: 'Nhân sự', icon: Users, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'] },
+  { href: '/admin/projects', label: 'Dự án', icon: Briefcase, roles: ['ADMIN', 'PM', 'HR_MANAGER'] },
+  { href: '/admin/clients', label: 'Khách hàng', icon: Building2, roles: ['ADMIN', 'PM'] },
+  { href: '/admin/tickets', label: 'Phản ánh / Tạm ứng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'ACCOUNTANT'], badge: 'M7' },
+  { href: '/admin/payroll', label: 'Tính lương', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'] },
+  { href: '/admin/settings', label: 'Cài đặt', icon: Settings, roles: ['ADMIN'] },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════

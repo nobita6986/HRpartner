@@ -22,6 +22,7 @@ import {
   buildVendorStatementScope,
   buildCtvSourceClaimScope,
 } from './ctv.scope';
+import { buildStaffingOrderScope, buildStaffingOrderSlotScope } from './staffing.scope';
 
 export type ScopeBuilder = (ctx: AuthContext) => Prisma.Args<unknown, 'findMany'>['where'];
 
@@ -33,6 +34,9 @@ export const SCOPE_REGISTRY: Record<string, ScopeBuilder> = {
   VendorStatement: buildVendorStatementScope,
   VendorStatementLine: buildVendorStatementScope,
   SourceClaim: buildCtvSourceClaimScope,
+  // Phase 4 slice 4A — DEC-15 / STEP-02
+  StaffingOrder: buildStaffingOrderScope,
+  StaffingOrderSlot: buildStaffingOrderSlotScope,
 };
 
 export {
