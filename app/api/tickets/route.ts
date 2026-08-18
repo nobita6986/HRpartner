@@ -24,8 +24,11 @@ export async function POST(req: NextRequest) {
 
     // Body mặc định: worker tự tạo cho mình
     if (sessionUser.role === 'WORKER') {
-      body.workerId = body.workerId ?? sessionUser.workerId;  // DEC-01: use Worker.id
-      if (body.workerId !== sessionUser.id) {
+      // DEC-01: use Worker.id for ticket.workerId
+      body.workerId = body.workerId ?? sessionUser.workerId;
+      // F1-01 CRITICAL fix: so sanh Worker.id vs Worker.id (khong phai User.id).
+      // Worker khong the tao ticket cho worker khac.
+      if (!sessionUser.workerId || body.workerId !== sessionUser.workerId) {
         return NextResponse.json(
           { error: 'FORBIDDEN', message: 'Worker can only create ticket for self' },
           { status: 403 },
