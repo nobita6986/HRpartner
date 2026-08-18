@@ -8,17 +8,17 @@
 | Work type | `CODE + INFRA + OPS` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.1` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `REVISION_REQUIRED` |
 | Planner | Tier 1 — Planner (Product & Architecture Decision Owner) |
 | Executor | Tier 2 (agent ngoài — sếp giao qua Cursor: `/code hrp-phase5-uat-cutover`) |
 | Auditor | Tier 3 (independent context) |
 | Baseline | `614dca5` — Phase 4 ACCEPTED (18/08, 437 tests, 4 slice, 7 round) |
 | Modules | M2 (Job Board), M3 (CRM/Staffing), M4 (Đối soát), M7 (Chấm công), M9 (Infra) |
 | ADR references | ADR-014 (idempotency + outbox), D16-b (outbox in-process + cron), ADR-013 (LOCKED bất biến) |
-| Current execution round | 1 (chờ /code: STEP-01..07) |
-| Current audit round | 0 (chưa audit) |
+| Current execution round | 2 (chờ /code: STEP-02 sửa AUD-001 theo §9) |
+| Current audit round | 1 (verdict FAIL — AUD-001 P1 OPEN) |
 | Next gate | `/code` → `/audit` → `/resolve` → `ACCEPTED` |
-| Updated | 2026-08-18 14:27 ICT |
+| Updated | 2026-08-18 15:14 ICT |
 
 ## 1. Outcome
 
@@ -161,9 +161,20 @@ Sau Phase 5 (2 tuần), HRP chạy được trên **production Neon** với 1 d�
 
 Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 
+### Round 1 — Verdict FAIL (AUD-001) → REVISION_REQUIRED (Planner 18/08 15:14)
+
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| — | — | — | Chưa có audit | — | — |
+| `1` | `AUD-001` | ACCEPT_FIX | P1 xác nhận THẬT: Planner tự chạy `node scripts/verify-rls-phase5.cjs` 18/08 15:10 → 12 fail / 2 pass, Prisma error code `42883` `operator does not exist: name = text[]`, exit 1 — khớp chẩn đoán Tier 3 (mảng param `[table, policy]` không spread). Gate `verify-audit.ps1` PASS (RESULT: PASS exit 0) — AUDIT.md hợp lệ | Không — giữ `v1.1` (lỗi thực thi) | Tier 2 sửa + HANDOFF round 2 → Tier 3 re-audit |
+
+**Directive cho Tier 2 round 2 (đúng 1 việc — STEP-02/RQ-04/AC-04):** sửa `scripts/verify-rls-phase5.cjs` đủ 4 điểm rồi handoff lại:
+
+1. **Spread tham số mảng Prisma** — `$queryRawUnsafe(sql, [table, policy])` → `$queryRawUnsafe(sql, table, policy)` (hoặc `...[table, policy]`); áp dụng cả phần 2 (`[table]`). Đây là gốc lỗi `42883`.
+2. **Bổ sung bảng thứ 7 `client_statements`** (policy `hrp_client_statement_scope`) — script mới liệt kê 6 bảng, TASK yêu cầu 7 bảng × policy (RQ-04/STEP-02/AC-04 "7/7 PASS"). Planner phát hiện khi đọc script.
+3. **Sửa false-pass phần 3 (functional):** hiện `catch` tính mọi error là PASS ("RLS DENY (error as expected)") — kể cả role không tồn tại hay lỗi kết nối. Phải phân biệt: (a) `SET LOCAL ROLE` lỗi / role không tồn tại → FAIL rõ ràng; (b) query 0 rows → PASS; (c) query > 0 rows → FAIL. (Bài học F5-04: check không thể fail = vô giá trị.)
+4. **Chạy lại** `node scripts/verify-rls-phase5.cjs` → exit 0, dán output vào HANDOFF §3 kèm lệnh chính xác (Tier 3 sẽ chạy lại — C-06).
+
+Các AC còn lại (AC-01..03, AC-05..11) PASS round 1. Tier 3 re-audit round 2 tập trung C-06 + AC-04; các check khác chỉ cần xác nhận không thay đổi.
 
 ## 10. Revision Log
 
@@ -171,3 +182,4 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 |---|---|---|---|
 | `v1.0` | 2026-08-18 | Initial contract — 6 STEP (wire UI + RLS + cron + security matrix + seed + runbook) + 4 OP (shadow + load test + dry-run + go-live). Baseline: Phase 4 ACCEPTED (`614dca5`, 437 tests) | Sếp chốt 18/08: gộp UI wire Phase 4 4D vào Phase 5 UAT/GO-LIVE |
 | `v1.1` | 2026-08-18 | Sếp chốt 3 câu: OP-01 sếp tự làm (DEC-06); OP-02 → STEP-07 giao Tier 2 viết k6 (DEC-07, RQ-11, AC-11); Cron = Vercel Cron Jobs (DEC-02). Còn **7 STEP + 3 OP** | Chốt theo câu hỏi Planner (tiếng Việt), 18/08 14:27 |
+| `v1.1` (round 2) | 2026-08-18 | Không đổi contract — mở execution round 2: Tier 2 sửa AUD-001 theo 4 điểm §9 (spread param, bảng thứ 7 `client_statements`, sửa false-pass, chạy lại exit 0) | Tier 3 audit round 1 verdict FAIL (AUD-001 P1) — 18/08 15:08 |
