@@ -1,20 +1,18 @@
 /**
  * prisma/seed.mjs - Phase 0 fixtures (idempotent upsert)
  *
- * Constraints (PROMPT §1.4):
- *   - Canonical mock data only: An Phat / Yen Phong / Sao Viet
- *   - CCCD/SDT masked (e.g. 084****1234)
- *   - No real bank account, no real salary
- *   - 20 scenario fixtures (Role x Scope matrix tu data-scope-security.md)
+ * Uses DATABASE_URL_ADMIN if set (bypasses RLS for seed).
+ * Falls back to DATABASE_URL otherwise.
  *
- * Lenh chay: prisma db seed (can DATABASEX_URL trong env).
- * Phase 0 BLK: khong co dev DB rieng, chi verify bang 'node prisma/seed.mjs --check'
- * (khong can DB, chi load + assert schema).
+ * Phase 5: extended with 2 vendors, timesheet LOCKED, vendor statement SENT.
  */
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+// Use DATABASE_URL_ADMIN if set (bypasses RLS for seed), else DATABASE_URL.
+const adminUrl = process.env.DATABASE_URL_ADMIN ?? process.env.DATABASE_URL;
+if (!adminUrl) { console.error('[seed] No DATABASE_URL or DATABASE_URL_ADMIN'); process.exit(1); }
+const prisma = new PrismaClient({ datasources: { db: { url: adminUrl } });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Phase 1 bcc-fence (TASK hrp-phase1-bcc-fence, RQ-05 / DEC-05):
@@ -92,10 +90,36 @@ const PROJECT_SCENARIOS = [
 ];
 
 const WORKER_SCENARIOS = [
+  // Phase 0: 3 workers
   { empCode: 'EMP-001', fullName: 'Nguyen Van Worker A',  cccd: '084****1234' },
   { empCode: 'EMP-002', fullName: 'Tran Thi Worker B',    cccd: '085****2345' },
   { empCode: 'EMP-003', fullName: 'Le Van Worker C',      cccd: '086****3456' },
+  // Phase 5: +2 workers for F00A demo (total 5)
+  { empCode: 'EMP-004', fullName: 'Pham Thi Worker D',    cccd: '087****4567' },
+  { empCode: 'EMP-005', fullName: 'Hoang Van Worker E',  cccd: '088****5678' },
 ];
+
+// ─── Phase 5: Vendors (2) ────────────────────────────────────────────────
+const VENDOR_SCENARIOS = [
+  { code: 'VND-001', name: 'Cong ty TNHH Nhan su Vien Dong',  taxCode: '09****001', address: 'Bac Ninh', status: 'ACTIVE' },
+  { code: 'VND-002', name: 'Cong ty TNHH Tu Van Nhan luc',    taxCode: '09****002', address: 'Bac Giang', status: 'ACTIVE' },
+];
+
+// ─── Phase 5: Timesheet period LOCKED (for F00A moment 09:30) ──────────
+const TIMESHEET_PERIOD_SEED = {
+  month: 7,
+  year: 2026,
+  projectCode: 'DA-2026-018',
+  status: 'LOCKED',
+};
+
+// ─── Phase 5: VendorStatement SENT (for F00A moment 11:30) ──────────────
+const STATEMENT_SEED = {
+  periodMonth: 7,
+  periodYear: 2026,
+  vendorCode: 'VND-001',
+  status: 'SENT',
+};
 
 async function seedUsers() {
   let count = 0;
@@ -173,6 +197,75 @@ async function seedWorkers() {
     count++;
   }
   return count;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 5 UAT/Cutover STEP-05 (RQ-08):
+// Seed 2 vendors + timesheet period LOCKED + vendor statement SENT (F00A demo).
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function seedVendors() {
+  let count = 0;
+  for (const v of VENDOR_SCENARIOS) {
+    await prisma.vendor.upsert({
+      where: { id: `seed-vendor-${v.code}` },
+      update: { name: v.name, taxCode: v.taxCode, address: v.address, status: v.status },
+      create: {
+        id: `seed-vendor-${v.code}`,
+        code: v.code,
+        name: v.name,
+        taxCode: v.taxCode,
+        address: v.address,
+        status: v.status,
+      },
+    });
+    count++;
+  }
+  return count;
+}
+
+async function seedTimesheetPeriod() {
+  const proj = await prisma.project.findUnique({ where: { code: TIMESHEET_PERIOD_SEED.projectCode } });
+  if (!proj) { console.warn('[seed] project not found, skipping timesheet period'); return 0; }
+
+  await prisma.timesheetPeriod.upsert({
+    where: { id: `seed-period-2026-07` },
+    update: { status: 'LOCKED', projectId: proj.id },
+    create: {
+      id: `seed-period-2026-07`,
+      projectId: proj.id,
+      month: TIMESHEET_PERIOD_SEED.month,
+      year: TIMESHEET_PERIOD_SEED.year,
+      status: 'LOCKED',
+      lockedAt: new Date('2026-08-15T08:30:00Z'),
+      version: 1,
+    },
+  });
+  return 1;
+}
+
+async function seedVendorStatement() {
+  const vendor = await prisma.vendor.findUnique({ where: { id: 'seed-vendor-VND-001' } });
+  const period = await prisma.timesheetPeriod.findUnique({ where: { id: 'seed-period-2026-07' } });
+  if (!vendor || !period) { console.warn('[seed] vendor/period not found, skipping statement'); return 0; }
+
+  await prisma.vendorStatement.upsert({
+    where: { id: 'seed-vs-2026-07-vnd001' },
+    update: { status: 'SENT' },
+    create: {
+      id: 'seed-vs-2026-07-vnd001',
+      vendorId: vendor.id,
+      periodMonth: STATEMENT_SEED.periodMonth,
+      periodYear: STATEMENT_SEED.periodYear,
+      totalAmount: BigInt(15000000),
+      status: 'SENT',
+      sentAt: new Date('2026-08-15T11:30:00Z'),
+      confirmDeadlineAt: new Date('2026-08-18T08:00:00Z'),
+      disputeCount: 0,
+      version: 1,
+    },
+  });
+  return 1;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -256,13 +349,17 @@ async function main() {
   const users = await seedUsers();
   const projects = await seedProjects();
   const workers = await seedWorkers();
+  const vendors = await seedVendors();
+  const periods = await seedTimesheetPeriod();
+  const statements = await seedVendorStatement();
   const auth = await seedAuthAccounts();
   const perms = await seedPermissions();
 
-  console.log(`[seed.mjs] Upserted: ${users} users, ${projects} projects, ${workers} workers`);
+  console.log(`[seed.mjs] Upserted: ${users} users, ${projects} projects, ${workers} workers, ${vendors} vendors`);
+  console.log(`[seed.mjs] Phase 5: ${periods} timesheet period (LOCKED), ${statements} vendor statement (SENT)`);
   console.log(`[seed.mjs] Auth accounts (ENV): ${auth.created} created, ${auth.updated} updated, ${auth.skipped} skipped`);
   console.log(`[seed.mjs] Permissions: ${perms.permCount} catalog, ${perms.rpCount} role-permissions`);
-  console.log(`[seed.mjs] Total scenarios: ${users + projects + workers + perms.permCount + perms.rpCount} (12 role + 4 project + 3 worker + 1 client + 10 perm + 13 role-perm = 43)`);
+  console.log(`[seed.mjs] F00A demo ready: 5 workers, 3 projects, 2 vendors, 1 period LOCKED, 1 statement SENT`);
 }
 
 main()

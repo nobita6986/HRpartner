@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 interface Job {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   isPublic: boolean;
   availableSlots: number;
   projectCode?: string;
@@ -22,12 +22,6 @@ interface ApplyResult {
   sourceClaimId: string;
   status: string;
 }
-
-const MOCK_JOBS: Job[] = [
-  { id: 'mock-1', title: 'Nhan vien san xuat', description: 'Cong viec tai nha may dien tu An Phat, KCN Yen Phong, Bac Ninh.', isPublic: true, availableSlots: 5, projectCode: 'DA-2026-018', location: 'Bac Ninh', shifts: [{ code: 'D1', hours: '06:00-14:00' }, { code: 'D2', hours: '14:00-22:00' }, { code: 'N1', hours: '22:00-06:00' }], totalNeeded: 50, totalFilled: 47, badge: 'TUYEN_GAP' },
-  { id: 'mock-2', title: 'Nhan vien kho van', description: 'Cong viec tai kho van Yen Phong, Bac Ninh.', isPublic: true, availableSlots: 0, projectCode: 'DA-2026-022', location: 'KCN Yen Phong, Bac Ninh', shifts: [{ code: 'T1', hours: '07:30-16:30' }], totalNeeded: 80, totalFilled: 80, badge: 'DA_NHAN_DU' },
-  { id: 'mock-3', title: 'Nhan vien hanh chinh', description: 'Cong viec tai nha may Sao Viet, KCN Quang Chau, Bac Giang.', isPublic: true, availableSlots: 3, projectCode: 'PRJ-SV-014', location: 'KCN Quang Chau, Bac Giang', shifts: [{ code: 'HC', hours: '08:00-17:00' }, { code: 'D1', hours: '06:00-14:00' }], totalNeeded: 35, totalFilled: 32, badge: 'DANG_TUYEN' },
-];
 
 const BADGE_CLASSES: Record<string, string> = {
   TUYEN_GAP: 'bg-red-100 text-red-700',
@@ -58,7 +52,9 @@ function JobCard({ job, onApply }: JobCardProps) {
           <span className={'px-2 py-1 rounded-full text-xs font-medium ' + badgeClass}>{badgeLabel}</span>
         )}
       </div>
-      <p className='text-sm line-clamp-2' style={{ color: 'var(--on-surface-variant)' }}>{job.description}</p>
+      {job.description && (
+        <p className='text-sm line-clamp-2' style={{ color: 'var(--on-surface-variant)' }}>{job.description}</p>
+      )}
       <div className='flex flex-wrap gap-2 text-sm' style={{ color: 'var(--on-surface-variant)' }}>
         {job.location && <span className='flex items-center gap-1'>
           <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
@@ -155,13 +151,24 @@ function ApplyForm({ job, onClose, onSuccess }: ApplyFormProps) {
 }
 
 export default function JobsPage() {
-  const [jobs, setJobs] = useState<Job[]>(MOCK_JOBS);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [successResult, setSuccessResult] = useState<ApplyResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('/api/jobs').then((res) => res.json()).then((data) => { if (data.jobs && Array.isArray(data.jobs)) { setJobs(data.jobs); } }).catch(console.error).finally(() => setLoading(false));
+    fetch('/api/jobs')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.jobs && Array.isArray(data.jobs)) {
+          setJobs(data.jobs);
+        } else {
+          setError('Khong the tai danh sach viec lam');
+        }
+      })
+      .catch((e) => setError(String(e)))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleApply = (jobId: string) => { const job = jobs.find((j) => j.id === jobId); if (job) { setSelectedJob(job); setSuccessResult(null); } };

@@ -7,6 +7,16 @@
   "outputDirectory": ".next",
   "cleanUrls": false,
   "trailingSlash": false,
+  "crons": [
+    {
+      "path": "/api/cron/outbox",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/disputes",
+      "schedule": "*/5 * * * *"
+    }
+  ],
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
     { "source": "/(.*)/", "destination": "/$1/index.html" },

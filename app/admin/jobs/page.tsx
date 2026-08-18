@@ -1,10 +1,18 @@
-﻿'use client';
+﻿/**
+ * /admin/jobs -- Admin Job Board
+ *
+ * Phase 5 UAT/Cutover STEP-01 (RQ-01): wire from API (no more MOCK_*).
+ *
+ * F00A bước 5: HR xem danh sach job, submissions, claims.
+ * 3 tabs: Jobs | Submissions | Claims
+ */
+'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type Tab = 'jobs' | 'submissions' | 'claims';
 
-interface MockJob {
+interface Job {
   id: string;
   title: string;
   projectCode: string;
@@ -13,42 +21,25 @@ interface MockJob {
   status: 'TUYEN_GAP' | 'DA_NHAN_DU' | 'DANG_TUYEN';
 }
 
-interface MockSubmission {
+interface Submission {
   id: string;
   code: string;
   fullName: string;
   phone: string;
-  projectName: string;
+  projectName: string | null;
   status: string;
   createdAt: string;
 }
 
-interface MockClaim {
+interface Claim {
   id: string;
-  workerName: string;
+  workerId: string;
+  workerName: string | null;
   claimType: string;
   accepted: boolean;
   acceptedBy: string | null;
   createdAt: string;
 }
-
-const MOCK_JOBS: MockJob[] = [
-  { id: 'mock-1', title: 'Nhan vien san xuat', projectCode: 'DA-2026-018', availableSlots: 5, totalNeeded: 50, status: 'TUYEN_GAP' },
-  { id: 'mock-2', title: 'Nhan vien kho van', projectCode: 'DA-2026-022', availableSlots: 0, totalNeeded: 80, status: 'DA_NHAN_DU' },
-  { id: 'mock-3', title: 'Nhan vien hanh chinh', projectCode: 'PRJ-SV-014', availableSlots: 3, totalNeeded: 35, status: 'DANG_TUYEN' },
-];
-
-const MOCK_SUBMISSIONS: MockSubmission[] = [
-  { id: 'sub-1', code: 'VD-0001', fullName: 'Nguyen Van A', phone: '0912345678', projectName: 'Nhan vien san xuat', status: 'NEW', createdAt: '2026-08-15' },
-  { id: 'sub-2', code: 'VD-0002', fullName: 'Tran Thi B', phone: '0987654321', projectName: 'Nhan vien hanh chinh', status: 'QUALIFIED', createdAt: '2026-08-16' },
-  { id: 'sub-3', code: 'VD-0003', fullName: 'Le Van C', phone: '0932123456', projectName: 'Nhan vien san xuat', status: 'REJECTED', createdAt: '2026-08-17' },
-];
-
-const MOCK_CLAIMS: MockClaim[] = [
-  { id: 'clm-1', workerName: 'Ung vien 5678', claimType: 'HRP_DIRECT', accepted: false, acceptedBy: null, createdAt: '2026-08-15' },
-  { id: 'clm-2', workerName: 'Nguyen Van A', claimType: 'HRP_DIRECT', accepted: true, acceptedBy: 'admin-1', createdAt: '2026-08-16' },
-  { id: 'clm-3', workerName: 'Ung vien 3456', claimType: 'HRP_DIRECT', accepted: false, acceptedBy: null, createdAt: '2026-08-17' },
-];
 
 const STATUS_COLORS: Record<string, string> = {
   TUYEN_GAP: 'bg-red-100 text-red-700',
@@ -56,6 +47,7 @@ const STATUS_COLORS: Record<string, string> = {
   DANG_TUYEN: 'bg-blue-100 text-blue-700',
   NEW: 'bg-yellow-100 text-yellow-700',
   QUALIFIED: 'bg-green-100 text-green-700',
+  SCREENING: 'bg-blue-100 text-blue-700',
   REJECTED: 'bg-gray-100 text-gray-700',
 };
 
@@ -68,11 +60,88 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function LoadingRow({ cols }: { cols: number }) {
+  return (
+    <tr>
+      {Array.from({ length: cols }).map((_, i) => (
+        <td key={i} className="px-4 py-3">
+          <div className="h-4 rounded animate-pulse bg-gray-200 dark:bg-gray-700" />
+        </td>
+      ))}
+    </tr>
+  );
+}
+
 export default function AdminJobsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('jobs');
 
+  // Jobs state
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(false);
+  const [jobsError, setJobsError] = useState('');
+
+  // Submissions state
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [submissionsLoading, setSubmissionsLoading] = useState(false);
+  const [submissionsError, setSubmissionsError] = useState('');
+
+  // Claims state
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [claimsLoading, setClaimsLoading] = useState(false);
+  const [claimsError, setClaimsError] = useState('');
+
+  // ── Fetch jobs (public) ────────────────────────────────────────────────
+  useEffect(() => {
+    setJobsLoading(true);
+    fetch('/api/jobs')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.jobs && Array.isArray(d.jobs)) {
+          setJobs(d.jobs.map((j: any) => ({
+            id: j.id,
+            title: j.title,
+            projectCode: j.projectCode ?? j.title,
+            availableSlots: j.availableSlots ?? 0,
+            totalNeeded: j.totalNeeded ?? 0,
+            status: j.badge ?? 'DANG_TUYEN',
+          })));
+        }
+      })
+      .catch((e) => setJobsError(String(e)))
+      .finally(() => setJobsLoading(false));
+  }, []);
+
+  // ── Fetch submissions (auth required) ──────────────────────────────────
+  const fetchSubmissions = () => {
+    setSubmissionsLoading(true);
+    fetch('/api/jobs/submissions?tab=submissions')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.rows) setSubmissions(d.rows);
+      })
+      .catch((e) => setSubmissionsError(String(e)))
+      .finally(() => setSubmissionsLoading(false));
+  };
+
+  // ── Fetch claims (auth required) ──────────────────────────────────────
+  const fetchClaims = () => {
+    setClaimsLoading(true);
+    fetch('/api/jobs/submissions?tab=claims')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.rows) setClaims(d.rows);
+      })
+      .catch((e) => setClaimsError(String(e)))
+      .finally(() => setClaimsLoading(false));
+  };
+
+  useEffect(() => {
+    if (activeTab === 'submissions') fetchSubmissions();
+    else if (activeTab === 'claims') fetchClaims();
+  }, [activeTab]);
+
   const handlePostNewJob = () => {
-    alert('Post New Job - Chuc nang dang phat trien');
+    alert('Post New Job — chuc nang dang phat trien (Phase 6+)');
   };
 
   return (
@@ -116,6 +185,7 @@ export default function AdminJobsPage() {
           ))}
         </div>
 
+        {/* ── Jobs Tab ──────────────────────────────────────────────── */}
         {activeTab === 'jobs' && (
           <div className='rounded-lg overflow-hidden' style={{ border: '1px solid var(--outline)' }}>
             <table className='w-full'>
@@ -128,23 +198,32 @@ export default function AdminJobsPage() {
                 </tr>
               </thead>
               <tbody>
-                {MOCK_JOBS.map((job, idx) => (
-                  <tr key={job.id} style={{ borderTop: idx > 0 ? '1px solid var(--outline)' : 'none' }}>
-                    <td className='px-4 py-3' style={{ color: 'var(--on-surface)' }}>{job.title}</td>
-                    <td className='px-4 py-3 font-mono text-sm' style={{ color: 'var(--on-surface-variant)' }}>{job.projectCode}</td>
-                    <td className='px-4 py-3 text-center' style={{ color: 'var(--on-surface-variant)' }}>
-                      {job.availableSlots} / {job.totalNeeded}
-                    </td>
-                    <td className='px-4 py-3 text-center'>
-                      <StatusBadge status={job.status} />
-                    </td>
-                  </tr>
-                ))}
+                {jobsLoading ? (
+                  <LoadingRow cols={4} />
+                ) : jobsError ? (
+                  <tr><td colSpan={4} className='px-4 py-3 text-red-500 text-sm'>{jobsError}</td></tr>
+                ) : jobs.length === 0 ? (
+                  <tr><td colSpan={4} className='px-4 py-8 text-center text-sm' style={{ color: 'var(--on-surface-variant)' }}>Chua co job nao.</td></tr>
+                ) : (
+                  jobs.map((job, idx) => (
+                    <tr key={job.id} style={{ borderTop: idx > 0 ? '1px solid var(--outline)' : 'none' }}>
+                      <td className='px-4 py-3' style={{ color: 'var(--on-surface)' }}>{job.title}</td>
+                      <td className='px-4 py-3 font-mono text-sm' style={{ color: 'var(--on-surface-variant)' }}>{job.projectCode}</td>
+                      <td className='px-4 py-3 text-center' style={{ color: 'var(--on-surface-variant)' }}>
+                        {job.availableSlots} / {job.totalNeeded}
+                      </td>
+                      <td className='px-4 py-3 text-center'>
+                        <StatusBadge status={job.status} />
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         )}
 
+        {/* ── Submissions Tab ───────────────────────────────────────── */}
         {activeTab === 'submissions' && (
           <div className='rounded-lg overflow-hidden' style={{ border: '1px solid var(--outline)' }}>
             <table className='w-full'>
@@ -159,23 +238,34 @@ export default function AdminJobsPage() {
                 </tr>
               </thead>
               <tbody>
-                {MOCK_SUBMISSIONS.map((sub, idx) => (
-                  <tr key={sub.id} style={{ borderTop: idx > 0 ? '1px solid var(--outline)' : 'none' }}>
-                    <td className='px-4 py-3 font-mono text-sm' style={{ color: 'var(--on-surface)' }}>{sub.code}</td>
-                    <td className='px-4 py-3' style={{ color: 'var(--on-surface)' }}>{sub.fullName}</td>
-                    <td className='px-4 py-3' style={{ color: 'var(--on-surface-variant)' }}>{sub.phone}</td>
-                    <td className='px-4 py-3' style={{ color: 'var(--on-surface)' }}>{sub.projectName}</td>
-                    <td className='px-4 py-3 text-center'>
-                      <StatusBadge status={sub.status} />
-                    </td>
-                    <td className='px-4 py-3 text-center' style={{ color: 'var(--on-surface-variant)' }}>{sub.createdAt}</td>
-                  </tr>
-                ))}
+                {submissionsLoading ? (
+                  <LoadingRow cols={6} />
+                ) : submissionsError ? (
+                  <tr><td colSpan={6} className='px-4 py-3 text-red-500 text-sm'>{submissionsError}</td></tr>
+                ) : submissions.length === 0 ? (
+                  <tr><td colSpan={6} className='px-4 py-8 text-center text-sm' style={{ color: 'var(--on-surface-variant)' }}>Chua co don ung tuyen nao.</td></tr>
+                ) : (
+                  submissions.map((sub, idx) => (
+                    <tr key={sub.id} style={{ borderTop: idx > 0 ? '1px solid var(--outline)' : 'none' }}>
+                      <td className='px-4 py-3 font-mono text-sm' style={{ color: 'var(--on-surface)' }}>{sub.code ?? sub.id}</td>
+                      <td className='px-4 py-3' style={{ color: 'var(--on-surface)' }}>{sub.fullName}</td>
+                      <td className='px-4 py-3' style={{ color: 'var(--on-surface-variant)' }}>{sub.phone}</td>
+                      <td className='px-4 py-3' style={{ color: 'var(--on-surface)' }}>{sub.projectName ?? '-'}</td>
+                      <td className='px-4 py-3 text-center'>
+                        <StatusBadge status={sub.status} />
+                      </td>
+                      <td className='px-4 py-3 text-center' style={{ color: 'var(--on-surface-variant)' }}>
+                        {sub.createdAt ? new Date(sub.createdAt).toLocaleDateString('vi-VN') : '-'}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         )}
 
+        {/* ── Claims Tab ────────────────────────────────────────────── */}
         {activeTab === 'claims' && (
           <div className='rounded-lg overflow-hidden' style={{ border: '1px solid var(--outline)' }}>
             <table className='w-full'>
@@ -189,21 +279,31 @@ export default function AdminJobsPage() {
                 </tr>
               </thead>
               <tbody>
-                {MOCK_CLAIMS.map((claim, idx) => (
-                  <tr key={claim.id} style={{ borderTop: idx > 0 ? '1px solid var(--outline)' : 'none' }}>
-                    <td className='px-4 py-3' style={{ color: 'var(--on-surface)' }}>{claim.workerName}</td>
-                    <td className='px-4 py-3' style={{ color: 'var(--on-surface-variant)' }}>{claim.claimType}</td>
-                    <td className='px-4 py-3 text-center'>
-                      {claim.accepted ? (
-                        <span className='px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700'>Yes</span>
-                      ) : (
-                        <span className='px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700'>Pending</span>
-                      )}
-                    </td>
-                    <td className='px-4 py-3' style={{ color: 'var(--on-surface-variant)' }}>{claim.acceptedBy || '-'}</td>
-                    <td className='px-4 py-3 text-center' style={{ color: 'var(--on-surface-variant)' }}>{claim.createdAt}</td>
-                  </tr>
-                ))}
+                {claimsLoading ? (
+                  <LoadingRow cols={5} />
+                ) : claimsError ? (
+                  <tr><td colSpan={5} className='px-4 py-3 text-red-500 text-sm'>{claimsError}</td></tr>
+                ) : claims.length === 0 ? (
+                  <tr><td colSpan={5} className='px-4 py-8 text-center text-sm' style={{ color: 'var(--on-surface-variant)' }}>Chua co claim nao.</td></tr>
+                ) : (
+                  claims.map((claim, idx) => (
+                    <tr key={claim.id} style={{ borderTop: idx > 0 ? '1px solid var(--outline)' : 'none' }}>
+                      <td className='px-4 py-3' style={{ color: 'var(--on-surface)' }}>{claim.workerName ?? claim.workerId}</td>
+                      <td className='px-4 py-3' style={{ color: 'var(--on-surface-variant)' }}>{claim.claimType}</td>
+                      <td className='px-4 py-3 text-center'>
+                        {claim.accepted ? (
+                          <span className='px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700'>Yes</span>
+                        ) : (
+                          <span className='px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700'>Pending</span>
+                        )}
+                      </td>
+                      <td className='px-4 py-3' style={{ color: 'var(--on-surface-variant)' }}>{claim.acceptedBy ?? '-'}</td>
+                      <td className='px-4 py-3 text-center' style={{ color: 'var(--on-surface-variant)' }}>
+                        {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString('vi-VN') : '-'}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
