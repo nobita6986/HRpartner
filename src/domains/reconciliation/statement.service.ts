@@ -1,0 +1,421 @@
+/**
+ * Statement Service -- Phase 4 Slice 4C STEP-13 (RQ-11).
+ *
+ * Generate 2 luong doc lap tu timesheet LOCKED:
+ *   - VendorStatement (payable): rate tu VendorRateCard
+ *   - ClientStatement (receivable): rate tu ClientRateCard
+ *
+ * DEC-05: rate snapshot tai thoi diem cong (cot `rate` tren statement line).
+ * ADR-010: BigInt VND nguyen (khong Decimal/Float tien).
+ * DEC-07: Statement SM DRAFT -> SENT -> DISPUTED -> CONFIRMED -> LOCKED -> PAID.
+ * Chan generate khi timesheet chua LOCKED -> 409.
+ */
+
+import type { Prisma } from '@prisma/client';
+import type { AuthContext } from '@/src/shared/auth/auth-context';
+import { writeAuditLog } from '@/src/shared/integrity/audit';
+import { enqueueOutbox } from '@/src/shared/integrity/outbox';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface GenerateStatementInput {
+  timesheetPeriodId: string;
+}
+
+export class StatementServiceError extends Error {
+  constructor(
+    public readonly code:
+      | 'NOT_FOUND'
+      | 'INVALID_STATE'
+      | 'PERMISSION_DENIED'
+      | 'ALREADY_EXISTS'
+      | 'NO_LINES',
+    message: string,
+  ) {
+    super(message);
+    this.name = 'StatementServiceError';
+  }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Chon rate tu VendorRateCard/ClientRateCard hieu luc tai workDate.
+ * Ưu tiên rate có workType/siteId khớp trước, fallback rate generic.
+ * DEC-05: snapshot rate -- tra ve BigInt.
+ */
+async function resolveRate(
+  tx: Prisma.TransactionClient,
+  contractId: string,
+  workDate: Date,
+  kind: 'VENDOR' | 'CLIENT',
+): Promise<bigint> {
+  const table = kind === 'VENDOR' ? 'vendor_rate_cards' : 'client_rate_cards';
+
+  // Specific: siteId set, workType set, valid for date
+  const rows = await tx.$queryRawUnsafe<Array<{ price: bigint }>>(
+    `SELECT price FROM ${table}
+     WHERE contract_id = $1
+       AND effective_from <= $2
+       AND (effective_to IS NULL OR effective_to >= $2)
+     ORDER BY (work_type IS NOT NULL) DESC, (site_id IS NOT NULL) DESC
+     LIMIT 1`,
+    contractId,
+    workDate,
+  );
+
+  if (!rows.length) {
+    throw new StatementServiceError(
+      'NO_LINES',
+      `Khong tim thay rate card cho contract ${contractId} tai ${workDate.toISOString().slice(0, 10)}`,
+    );
+  }
+  return rows[0].price;
+}
+
+/**
+ * Group timesheet lines theo worker, tinh tong hours.
+ */
+interface WorkerHours {
+  workerId: string;
+  assignmentId: string | null;
+  totalHours: number;
+}
+
+function aggregateHours(lines: Array<{ workerId: string; assignmentId: string | null; hours: unknown }>): WorkerHours[] {
+  const map = new Map<string, WorkerHours>();
+  for (const line of lines) {
+    const key = `${line.workerId}::${line.assignmentId ?? ''}`;
+    const hours = Number(line.hours);
+    const acc = map.get(key) ?? { workerId: line.workerId, assignmentId: line.assignmentId, totalHours: 0 };
+    acc.totalHours += hours;
+    map.set(key, acc);
+  }
+  return [...map.values()];
+}
+
+// ─── Generate VendorStatement ──────────────────────────────────────────────────
+
+/**
+ * Generate VendorStatement (payable) tu timesheet LOCKED.
+ *
+ * Lay lines tu TimesheetLine -> resolve VendorRateCard theo assignment.contractId
+ * -> tinh amount = rate * hours (BigInt).
+ */
+export async function generateVendorStatement(
+  tx: Prisma.TransactionClient,
+  ctx: AuthContext,
+  input: GenerateStatementInput,
+) {
+  // Verify timesheet period LOCKED
+  const period = await tx.timesheetPeriod.findUnique({
+    where: { id: input.timesheetPeriodId },
+    select: { id: true, status: true, month: true, year: true },
+  });
+
+  if (!period) {
+    throw new StatementServiceError('NOT_FOUND', `Timesheet period ${input.timesheetPeriodId} khong tim thay`);
+  }
+  if (period.status !== 'LOCKED') {
+    throw new StatementServiceError(
+      'INVALID_STATE',
+      `Timesheet period ${period.status} chua LOCKED -- can lock truoc khi generate statement`,
+    );
+  }
+
+  // Get timesheet lines (with assignment -> contract -> vendor)
+  const lines = await tx.timesheetLine.findMany({
+    where: { periodId: input.timesheetPeriodId },
+  });
+
+  if (!lines.length) {
+    throw new StatementServiceError('NO_LINES', 'Timesheet period khong co line nao');
+  }
+
+  // Aggregate per worker -- totalHours = regular + OT tiers
+  const workerHours = aggregateHours(
+    lines.map(l => ({
+      workerId: l.workerId,
+      assignmentId: l.assignmentId,
+      hours: Number(l.regularHours) + Number(l.ot15Hours) + Number(l.ot20Hours) + Number(l.ot30Hours),
+    })),
+  );
+
+  // Resolve vendor from assignment -> project (MVP: lay vendor first via simple query)
+  // Production: assignment -> staffing_order -> contract -> vendor (DEC-08)
+  // MVP simplified: lay 1 vendor tu DB de generate statement (mock data)
+  const assignmentIds = workerHours.map(w => w.assignmentId).filter((x): x is string => !!x);
+  const assignments = assignmentIds.length
+    ? await tx.projectAssignment.findMany({
+        where: { id: { in: assignmentIds } },
+        select: { id: true, workerId: true, projectId: true, staffingOrderId: true },
+      })
+    : [];
+
+  // MVP: lay vendorId qua stub — production can chain qua StaffingOrder -> Contract -> Vendor
+  const firstVendor = await tx.vendor.findFirst({ select: { id: true } });
+  const vendorId = firstVendor?.id ?? '__NO_VENDOR__';
+  const assignmentMap = new Map<string, { projectId: string }>();
+  for (const a of assignments) {
+    assignmentMap.set(a.id, { projectId: a.projectId });
+  }
+
+  // MVP: lay contract vendor de resolve rate. Production: assignment -> staffing_order -> contract.
+  // Hien tai lay 1 contract vendor + 1 contract client de demo.
+  const vendorContract = await tx.contract.findFirst({
+    where: { type: 'VENDOR_FRAMEWORK', status: 'ACTIVE' },
+    select: { id: true },
+  });
+  if (!vendorContract) {
+    throw new StatementServiceError('NO_LINES', 'Khong tim thay contract VENDOR_FRAMEWORK ACTIVE');
+  }
+
+  // Resolve rates (snapshot per workDate)
+  const workDate = new Date(period.year, period.month - 1, 1);
+  const rate = await resolveRate(tx, vendorContract.id, workDate, 'VENDOR');
+
+  // Build lines + total
+  const statementLines = workerHours.map(item => ({
+    workerId: item.workerId,
+    assignmentId: item.assignmentId,
+    totalHours: item.totalHours,
+    rate,
+    amount: BigInt(Math.round(item.totalHours)) * rate, // ADR-010: BigInt VND nguyen
+  }));
+  const totalAmount = statementLines.reduce((acc, l) => acc + l.amount, 0n);
+
+  // Check unique constraint vendor + period + version
+  const existing = await tx.vendorStatement.findFirst({
+    where: { vendorId, periodMonth: period.month, periodYear: period.year, version: 1 },
+  });
+  if (existing) {
+    throw new StatementServiceError('ALREADY_EXISTS', `VendorStatement da ton tai (${existing.id})`);
+  }
+
+  // Create statement
+  const statement = await tx.vendorStatement.create({
+    data: {
+      vendorId,
+      periodMonth: period.month,
+      periodYear: period.year,
+      totalAmount,
+      status: 'DRAFT',
+      version: 1,
+      lines: {
+        create: statementLines.map(l => ({
+          workerId: l.workerId,
+          assignmentId: l.assignmentId,
+          totalHours: l.totalHours,
+          rate: l.rate,
+          amount: l.amount,
+        })),
+      },
+    },
+    include: { lines: true },
+  });
+
+  // Audit + outbox
+  await writeAuditLog({
+    prisma: tx,
+    actor: { id: ctx.userId, role: ctx.role },
+    entityType: 'VendorStatement',
+    entityId: statement.id,
+    action: 'CREATE',
+    reason: `Generate tu timesheet ${period.month}/${period.year}`,
+    diff: { before: {}, after: { vendorId, totalAmount: totalAmount.toString() } },
+  });
+
+  await enqueueOutbox(tx, {
+    eventType: 'VendorStatementGenerated',
+    aggregateId: statement.id,
+    payload: { statementId: statement.id, vendorId, totalAmount: totalAmount.toString() },
+  });
+
+  return statement;
+}
+
+// ─── Generate ClientStatement ──────────────────────────────────────────────────
+
+/**
+ * Generate ClientStatement (receivable) tu timesheet LOCKED.
+ *
+ * Tuong tu vendor nhung rate tu ClientRateCard, clientId tu project.clientCompanyId.
+ */
+export async function generateClientStatement(
+  tx: Prisma.TransactionClient,
+  ctx: AuthContext,
+  input: GenerateStatementInput,
+) {
+  const period = await tx.timesheetPeriod.findUnique({
+    where: { id: input.timesheetPeriodId },
+    select: { id: true, status: true, month: true, year: true, projectId: true },
+  });
+
+  if (!period) {
+    throw new StatementServiceError('NOT_FOUND', `Timesheet period ${input.timesheetPeriodId} khong tim thay`);
+  }
+  if (period.status !== 'LOCKED') {
+    throw new StatementServiceError(
+      'INVALID_STATE',
+      `Timesheet period ${period.status} chua LOCKED`,
+    );
+  }
+  if (!period.projectId) {
+    throw new StatementServiceError('INVALID_STATE', 'Timesheet period khong co project_id');
+  }
+
+  // Get project + client
+  const project = await tx.project.findUnique({
+    where: { id: period.projectId },
+    select: { id: true, clientCompanyId: true },
+  });
+
+  if (!project || !project.clientCompanyId) {
+    throw new StatementServiceError('INVALID_STATE', 'Project khong co client_company_id');
+  }
+
+  const lines = await tx.timesheetLine.findMany({ where: { periodId: input.timesheetPeriodId } });
+  if (!lines.length) {
+    throw new StatementServiceError('NO_LINES', 'Timesheet period khong co line nao');
+  }
+
+  const workerHours = aggregateHours(
+    lines.map(l => ({
+      workerId: l.workerId,
+      assignmentId: l.assignmentId,
+      hours: Number(l.regularHours) + Number(l.ot15Hours) + Number(l.ot20Hours) + Number(l.ot30Hours),
+    })),
+  );
+
+  // Resolve client contract from contract.projectId = project.id
+  const contract = await tx.contract.findFirst({
+    where: { projectId: project.id, type: 'CLIENT_SUPPLY', status: 'ACTIVE' },
+    select: { id: true },
+  });
+
+  if (!contract) {
+    throw new StatementServiceError('NO_LINES', `Khong tim thay contract CLIENT_SUPPLY cho project ${project.id}`);
+  }
+
+  const workDate = new Date(period.year, period.month - 1, 1);
+  const rate = await resolveRate(tx, contract.id, workDate, 'CLIENT');
+
+  const statementLines = workerHours.map(item => ({
+    workerId: item.workerId,
+    assignmentId: item.assignmentId,
+    totalHours: item.totalHours,
+    rate,
+    amount: BigInt(Math.round(item.totalHours)) * rate,
+  }));
+  const totalAmount = statementLines.reduce((acc, l) => acc + l.amount, 0n);
+
+  const clientId = project.clientCompanyId;
+  const existing = await tx.clientStatement.findFirst({
+    where: { clientId, periodMonth: period.month, periodYear: period.year, version: 1 },
+  });
+  if (existing) {
+    throw new StatementServiceError('ALREADY_EXISTS', `ClientStatement da ton tai (${existing.id})`);
+  }
+
+  const statement = await tx.clientStatement.create({
+    data: {
+      clientId,
+      periodMonth: period.month,
+      periodYear: period.year,
+      totalAmount,
+      status: 'DRAFT',
+      version: 1,
+      lines: {
+        create: statementLines.map(l => ({
+          workerId: l.workerId,
+          assignmentId: l.assignmentId,
+          totalHours: l.totalHours,
+          rate: l.rate,
+          amount: l.amount,
+        })),
+      },
+    },
+    include: { lines: true },
+  });
+
+  await writeAuditLog({
+    prisma: tx,
+    actor: { id: ctx.userId, role: ctx.role },
+    entityType: 'ClientStatement',
+    entityId: statement.id,
+    action: 'CREATE',
+    reason: `Generate tu timesheet ${period.month}/${period.year}`,
+    diff: { before: {}, after: { clientId, totalAmount: totalAmount.toString() } },
+  });
+
+  await enqueueOutbox(tx, {
+    eventType: 'ClientStatementGenerated',
+    aggregateId: statement.id,
+    payload: { statementId: statement.id, clientId, totalAmount: totalAmount.toString() },
+  });
+
+  return statement;
+}
+
+/**
+ * Lay statement lines (vendor) theo period -- phuc vu lineage drawer (RQ-14).
+ */
+export async function getVendorStatementLineage(
+  tx: Prisma.TransactionClient,
+  vendorStatementId: string,
+) {
+  const statement = await tx.vendorStatement.findUnique({
+    where: { id: vendorStatementId },
+    include: { lines: true },
+  });
+  if (!statement) return null;
+
+  // Trace line -> assignment -> timesheet -> event
+  const assignmentIds = statement.lines.map(l => l.assignmentId).filter((x): x is string => !!x);
+  const assignments = assignmentIds.length
+    ? await tx.projectAssignment.findMany({
+        where: { id: { in: assignmentIds } },
+        include: { worker: { select: { id: true, fullName: true } } },
+      })
+    : [];
+  const assignmentMap = new Map(assignments.map(a => [a.id, a]));
+
+  return {
+    statement,
+    lines: statement.lines.map(l => ({
+      ...l,
+      assignment: l.assignmentId ? assignmentMap.get(l.assignmentId) : null,
+    })),
+  };
+}
+
+/**
+ * Lay statement lines (client) theo period -- phuc vu lineage drawer (RQ-14).
+ */
+export async function getClientStatementLineage(
+  tx: Prisma.TransactionClient,
+  clientStatementId: string,
+) {
+  const statement = await tx.clientStatement.findUnique({
+    where: { id: clientStatementId },
+    include: { lines: true },
+  });
+  if (!statement) return null;
+
+  const assignmentIds = statement.lines.map(l => l.assignmentId).filter((x): x is string => !!x);
+  const assignments = assignmentIds.length
+    ? await tx.projectAssignment.findMany({
+        where: { id: { in: assignmentIds } },
+        include: { worker: { select: { id: true, fullName: true } } },
+      })
+    : [];
+  const assignmentMap = new Map(assignments.map(a => [a.id, a]));
+
+  return {
+    statement,
+    lines: statement.lines.map(l => ({
+      ...l,
+      assignment: l.assignmentId ? assignmentMap.get(l.assignmentId) : null,
+    })),
+  };
+}

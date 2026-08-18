@@ -64,6 +64,11 @@ export const PERMISSION_CATALOG: readonly PermissionDescriptor[] = [
     description: 'Khóa statement cưỡng bức (reconciliation cuối kỳ).',
   },
   {
+    code: 'CAN_VIEW_STATEMENT_MARGIN',
+    group: PERMISSION_GROUPS.STATEMENT,
+    description: 'Xem margin statement (ADMIN + ACCOUNTANT). PM khong xem (DEC-06).',
+  },
+  {
     code: 'CAN_OVERRIDE_REFERRAL_GUARD',
     group: PERMISSION_GROUPS.REFERRAL,
     description: 'Bỏ qua referral guard (SOP S1/S2/S3 §9.3.1).',
