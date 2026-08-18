@@ -1,28 +1,28 @@
-/**
- * Ticket Service Unit Tests — Vitest
+﻿/**
+ * Ticket Service Unit Tests â€” Vitest
  *
- * Test state machine transitions & role guards. Dùng Prisma mock (in-memory).
+ * Test state machine transitions & role guards. DÃ¹ng Prisma mock (in-memory).
  *
  * Cover:
- *   1. CREATE — happy path + idempotency
- *   2. APPROVE (HR_STAFF) → HR_APPROVED (advance)
- *   3. APPROVE (ACCOUNTANT) → APPROVED (advance)
- *   4. APPROVE (HR_MANAGER) → APPROVED (fast-track dispute)
- *   5. APPROVE (WORKER) → FORBIDDEN
- *   6. REJECT (HR) → REJECTED (terminal)
- *   7. CANCEL (worker) trên PENDING → CANCELLED
- *   8. CANCEL (worker) trên APPROVED → INVALID_TRANSITION
- *   9. PAY (Accountant) trên APPROVED advance → PAID
- *  10. PAY (HR) trên APPROVED advance → FORBIDDEN
- *  11. CONCURRENT_UPDATE khi version không khớp
+ *   1. CREATE â€” happy path + idempotency
+ *   2. APPROVE (HR_STAFF) â†’ HR_APPROVED (advance)
+ *   3. APPROVE (ACCOUNTANT) â†’ APPROVED (advance)
+ *   4. APPROVE (HR_MANAGER) â†’ APPROVED (fast-track dispute)
+ *   5. APPROVE (WORKER) â†’ FORBIDDEN
+ *   6. REJECT (HR) â†’ REJECTED (terminal)
+ *   7. CANCEL (worker) trÃªn PENDING â†’ CANCELLED
+ *   8. CANCEL (worker) trÃªn APPROVED â†’ INVALID_TRANSITION
+ *   9. PAY (Accountant) trÃªn APPROVED advance â†’ PAID
+ *  10. PAY (HR) trÃªn APPROVED advance â†’ FORBIDDEN
+ *  11. CONCURRENT_UPDATE khi version khÃ´ng khá»›p
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TicketService, TicketServiceError } from './ticket.service';
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Mock Prisma client (in-memory store)
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 interface MockTicket {
   id: string;
@@ -77,10 +77,10 @@ function makeMockPrisma() {
   const tickets: MockTicket[] = [];
   const histories: MockHistory[] = [];
   const audits: any[] = [];
-  // Phase 3 / RQ-05: notifications đi qua outbox trước, drain mới tạo TicketNotification.
-  // Test mock track outboxEvents thay vì notifications trực tiếp.
+  // Phase 3 / RQ-05: notifications Ä‘i qua outbox trÆ°á»›c, drain má»›i táº¡o TicketNotification.
+  // Test mock track outboxEvents thay vÃ¬ notifications trá»±c tiáº¿p.
   const outboxEvents: any[] = [];
-  // Phase 3 / RQ-02: withIdempotency wrapper sẽ đụng idempotencyKey.
+  // Phase 3 / RQ-02: withIdempotency wrapper sáº½ Ä‘á»¥ng idempotencyKey.
   const idemRows = new Map<string, any>();
 
   let ticketCounter = 0;
@@ -116,7 +116,7 @@ function makeMockPrisma() {
         const ticket: MockTicket = {
           id: `ticket-${++ticketCounter}`,
           ...data,
-          // Mirror schema @default (Prisma thật tự điền — mock phải làm tương tự)
+          // Mirror schema @default (Prisma tháº­t tá»± Ä‘iá»n â€” mock pháº£i lÃ m tÆ°Æ¡ng tá»±)
           amountVnd: data.amountVnd ?? 0n,
           deductionVnd: data.deductionVnd ?? 0n,
           version: data.version ?? 1,
@@ -169,7 +169,7 @@ function makeMockPrisma() {
         return e;
       }),
     },
-    // Phase 3 / RQ-02: withIdempotency wrapper sẽ đụng idempotencyKey.
+    // Phase 3 / RQ-02: withIdempotency wrapper sáº½ Ä‘á»¥ng idempotencyKey.
     idempotencyKey: {
       findUnique: vi.fn(async ({ where }: any) => {
         const w = where.uq_idempotency_keys_scope;
@@ -195,29 +195,29 @@ let service: TicketService;
 
 beforeEach(() => {
   prisma = makeMockPrisma();
-  tx = prisma;  // mock $transaction dùng chung
+  tx = prisma;  // mock $transaction dÃ¹ng chung
   service = new TicketService(prisma as any);
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TEST CASES
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-describe('TicketService — CREATE', () => {
-  it('tạo ticket TIMESHEET_DISPUTE thành công', async () => {
+describe('TicketService â€” CREATE', () => {
+  it('táº¡o ticket TIMESHEET_DISPUTE thÃ nh cÃ´ng', async () => {
     const ticket = await service.createTicket(
       {
         workerId: 'w1',
         type: 'TIMESHEET_DISPUTE',
-        title: 'Sai công ngày 10/8',
-        description: 'Tôi đi làm 8h nhưng hệ thống ghi 6h',
+        title: 'Sai cÃ´ng ngÃ y 10/8',
+        description: 'TÃ´i Ä‘i lÃ m 8h nhÆ°ng há»‡ thá»‘ng ghi 6h',
         assignmentId: 'a1',
         workDate: new Date('2025-08-10'),
         currentHours: 6,
         requestedHours: 8,
         reasonCode: 'MISSING_CHECKOUT',
       },
-      { id: 'w1', role: 'WORKER', name: 'Nguyễn Văn A' },
+      { id: 'USR-w1', role: 'WORKER', workerId: 'w1', name: '' },
     );
 
     expect(ticket.status).toBe('PENDING');
@@ -229,20 +229,20 @@ describe('TicketService — CREATE', () => {
     expect(prisma._data.outboxEvents[0].eventType).toBe('TicketNotification');
   });
 
-  it('idempotency: 2 lần tạo cùng key → trả về ticket c� (via withIdempotency wrapper)', async () => {
-    // Phase 3 / RQ-02 (DEC-02): idempotency chuyển sang `withIdempotency` wrapper.
-    // Route handler sẽ wrap createTicket; service KHÔNG tự check metadata nữa.
+  it('idempotency: 2 láº§n táº¡o cÃ¹ng key â†’ tráº£ vá» ticket cï¿½ (via withIdempotency wrapper)', async () => {
+    // Phase 3 / RQ-02 (DEC-02): idempotency chuyá»ƒn sang `withIdempotency` wrapper.
+    // Route handler sáº½ wrap createTicket; service KHÃ”NG tá»± check metadata ná»¯a.
     const input = {
       workerId: 'w1',
       type: 'ADVANCE_SALARY' as const,
-      title: 'Tạm ứng',
-      description: 'Cần tiền',
+      title: 'Táº¡m á»©ng',
+      description: 'Cáº§n tiá»n',
       amountVnd: 2000000n,
       deductMonth: 8,
       deductYear: 2025,
       idempotencyKey: 'idem-123',
     };
-    const actor = { id: 'w1', role: 'WORKER' as const, name: 'A' };
+    const actor = { id: 'USR-w1', role: 'WORKER' as const, workerId: 'w1', name: 'A' };
 
     const { withIdempotency } = await import('@/src/shared/integrity/idempotency');
     const wrap = (key: string) =>
@@ -263,7 +263,7 @@ describe('TicketService — CREATE', () => {
     expect(r2.replayed).toBe(true);
   });
 
-  it('VALIDATION: amountVnd = 0 → throw', async () => {
+  it('VALIDATION: amountVnd = 0 â†’ throw', async () => {
     await expect(
       service.createTicket(
         {
@@ -275,30 +275,30 @@ describe('TicketService — CREATE', () => {
           deductMonth: 8,
           deductYear: 2025,
         },
-        { id: 'w1', role: 'WORKER' },
+        { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
       ),
     ).rejects.toThrow(TicketServiceError);
   });
 });
 
-describe('TicketService — APPROVE (advance salary 2-step)', () => {
+describe('TicketService â€” APPROVE (advance salary 2-step)', () => {
   async function seedAdvance(): Promise<string> {
     const t = await service.createTicket(
       {
         workerId: 'w1',
         type: 'ADVANCE_SALARY',
-        title: 'Tạm ứng',
+        title: 'Táº¡m á»©ng',
         description: 'Test',
         amountVnd: 2000000n,
         deductMonth: 8,
         deductYear: 2025,
       },
-      { id: 'w1', role: 'WORKER', name: 'A' },
+      { id: 'USR-w1', role: 'WORKER', workerId: 'w1', name: '' },
     );
     return t.id;
   }
 
-  it('HR_STAFF approve → HR_APPROVED', async () => {
+  it('HR_STAFF approve â†’ HR_APPROVED', async () => {
     const id = await seedAdvance();
     const after = await service.approveTicket(
       { ticketId: id, note: 'OK' },
@@ -307,44 +307,44 @@ describe('TicketService — APPROVE (advance salary 2-step)', () => {
     expect(after.status).toBe('HR_APPROVED');
   });
 
-  it('ACCOUNTANT approve HR_APPROVED → APPROVED', async () => {
+  it('ACCOUNTANT approve HR_APPROVED â†’ APPROVED', async () => {
     const id = await seedAdvance();
     await service.approveTicket(
       { ticketId: id },
       { id: 'hr1', role: 'HR_STAFF' },
     );
     const after = await service.approveTicket(
-      { ticketId: id, note: 'Chi tháng này' },
+      { ticketId: id, note: 'Chi thÃ¡ng nÃ y' },
       { id: 'acc1', role: 'ACCOUNTANT' },
     );
     expect(after.status).toBe('APPROVED');
   });
 
-  it('WORKER approve → FORBIDDEN', async () => {
+  it('WORKER approve â†’ FORBIDDEN', async () => {
     const id = await seedAdvance();
     await expect(
       service.approveTicket(
         { ticketId: id },
-        { id: 'w1', role: 'WORKER' },
+        { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
       ),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 });
 
-describe('TicketService — APPROVE (LEAVE/DISPUTE fast-track)', () => {
-  it('HR_MANAGER approve trực tiếp → APPROVED (skip HR step)', async () => {
+describe('TicketService â€” APPROVE (LEAVE/DISPUTE fast-track)', () => {
+  it('HR_MANAGER approve trá»±c tiáº¿p â†’ APPROVED (skip HR step)', async () => {
     const t = await service.createTicket(
       {
         workerId: 'w1',
         type: 'TIMESHEET_DISPUTE',
-        title: 'Sai công',
+        title: 'Sai cÃ´ng',
         description: 'Test',
         assignmentId: 'a1',
         workDate: new Date('2025-08-10'),
         currentHours: 6,
         requestedHours: 8,
       },
-      { id: 'w1', role: 'WORKER' },
+      { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
     );
 
     const after = await service.approveTicket(
@@ -356,29 +356,29 @@ describe('TicketService — APPROVE (LEAVE/DISPUTE fast-track)', () => {
   });
 });
 
-describe('TicketService — REJECT', () => {
-  it('HR reject PENDING → REJECTED (terminal)', async () => {
+describe('TicketService â€” REJECT', () => {
+  it('HR reject PENDING â†’ REJECTED (terminal)', async () => {
     const t = await service.createTicket(
       {
         workerId: 'w1',
         type: 'LEAVE_REQUEST',
-        title: 'Nghỉ phép',
+        title: 'Nghá»‰ phÃ©p',
         description: 'Test',
         leaveFromDate: new Date('2025-08-15'),
         leaveToDate: new Date('2025-08-16'),
       },
-      { id: 'w1', role: 'WORKER' },
+      { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
     );
 
     const after = await service.rejectTicket(
-      { ticketId: t.id, reason: 'Không hợp lệ' },
+      { ticketId: t.id, reason: 'KhÃ´ng há»£p lá»‡' },
       { id: 'hr1', role: 'HR_STAFF' },
     );
 
     expect(after.status).toBe('REJECTED');
   });
 
-  it('reject thiếu lý do → VALIDATION', async () => {
+  it('reject thiáº¿u lÃ½ do â†’ VALIDATION', async () => {
     const t = await service.createTicket(
       {
         workerId: 'w1',
@@ -388,7 +388,7 @@ describe('TicketService — REJECT', () => {
         leaveFromDate: new Date('2025-08-15'),
         leaveToDate: new Date('2025-08-16'),
       },
-      { id: 'w1', role: 'WORKER' },
+      { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
     );
 
     await expect(
@@ -400,8 +400,8 @@ describe('TicketService — REJECT', () => {
   });
 });
 
-describe('TicketService — CANCEL', () => {
-  it('Worker cancel PENDING ticket của mình → CANCELLED', async () => {
+describe('TicketService â€” CANCEL', () => {
+  it('Worker cancel PENDING ticket cá»§a mÃ¬nh â†’ CANCELLED', async () => {
     const t = await service.createTicket(
       {
         workerId: 'w1',
@@ -411,18 +411,18 @@ describe('TicketService — CANCEL', () => {
         leaveFromDate: new Date('2025-08-15'),
         leaveToDate: new Date('2025-08-16'),
       },
-      { id: 'w1', role: 'WORKER' },
+      { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
     );
 
     const after = await service.cancelTicket(
-      { ticketId: t.id, reason: 'Đổi kế hoạch' },
-      { id: 'w1', role: 'WORKER' },
+      { ticketId: t.id, reason: 'Äá»•i káº¿ hoáº¡ch' },
+      { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
     );
 
     expect(after.status).toBe('CANCELLED');
   });
 
-  it('Worker cancel ticket người khác → FORBIDDEN', async () => {
+  it('Worker cancel ticket ngÆ°á»i khÃ¡c â†’ FORBIDDEN', async () => {
     const t = await service.createTicket(
       {
         workerId: 'w1',
@@ -432,7 +432,7 @@ describe('TicketService — CANCEL', () => {
         leaveFromDate: new Date('2025-08-15'),
         leaveToDate: new Date('2025-08-16'),
       },
-      { id: 'w1', role: 'WORKER' },
+      { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
     );
 
     await expect(
@@ -443,7 +443,7 @@ describe('TicketService — CANCEL', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
-  it('Cancel terminal ticket → INVALID_TRANSITION', async () => {
+  it('Cancel terminal ticket â†’ INVALID_TRANSITION', async () => {
     const t = await service.createTicket(
       {
         workerId: 'w1',
@@ -453,7 +453,7 @@ describe('TicketService — CANCEL', () => {
         leaveFromDate: new Date('2025-08-15'),
         leaveToDate: new Date('2025-08-16'),
       },
-      { id: 'w1', role: 'WORKER' },
+      { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
     );
     await service.rejectTicket(
       { ticketId: t.id, reason: 'No' },
@@ -463,25 +463,25 @@ describe('TicketService — CANCEL', () => {
     await expect(
       service.cancelTicket(
         { ticketId: t.id },
-        { id: 'w1', role: 'WORKER' },
+        { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
       ),
     ).rejects.toMatchObject({ code: 'INVALID_TRANSITION' });
   });
 });
 
-describe('TicketService — PAY (advance chi tiền)', () => {
-  it('ACCOUNTANT pay APPROVED advance → PAID', async () => {
+describe('TicketService â€” PAY (advance chi tiá»n)', () => {
+  it('ACCOUNTANT pay APPROVED advance â†’ PAID', async () => {
     const t = await service.createTicket(
       {
         workerId: 'w1',
         type: 'ADVANCE_SALARY',
-        title: 'Tạm ứng',
+        title: 'Táº¡m á»©ng',
         description: 'Test',
         amountVnd: 2000000n,
         deductMonth: 8,
         deductYear: 2025,
       },
-      { id: 'w1', role: 'WORKER' },
+      { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
     );
     await service.approveTicket({ ticketId: t.id }, { id: 'hr1', role: 'HR_STAFF' });
     await service.approveTicket({ ticketId: t.id }, { id: 'acc1', role: 'ACCOUNTANT' });
@@ -490,7 +490,7 @@ describe('TicketService — PAY (advance chi tiền)', () => {
       {
         ticketId: t.id,
         paidAmountVnd: 1800000n,
-        note: 'Đã chuyển khoản',
+        note: 'ÄÃ£ chuyá»ƒn khoáº£n',
       },
       { id: 'acc1', role: 'ACCOUNTANT' },
     );
@@ -499,18 +499,18 @@ describe('TicketService — PAY (advance chi tiền)', () => {
     expect(after.deductionVnd).toBe(1800000n);
   });
 
-  it('HR pay advance → FORBIDDEN', async () => {
+  it('HR pay advance â†’ FORBIDDEN', async () => {
     const t = await service.createTicket(
       {
         workerId: 'w1',
         type: 'ADVANCE_SALARY',
-        title: 'Tạm ứng',
+        title: 'Táº¡m á»©ng',
         description: 'Test',
         amountVnd: 2000000n,
         deductMonth: 8,
         deductYear: 2025,
       },
-      { id: 'w1', role: 'WORKER' },
+      { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
     );
     await service.approveTicket({ ticketId: t.id }, { id: 'hr1', role: 'HR_STAFF' });
     await service.approveTicket({ ticketId: t.id }, { id: 'acc1', role: 'ACCOUNTANT' });
@@ -523,7 +523,7 @@ describe('TicketService — PAY (advance chi tiền)', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
-  it('PAY trên LEAVE_REQUEST → INVALID_TRANSITION', async () => {
+  it('PAY trÃªn LEAVE_REQUEST â†’ INVALID_TRANSITION', async () => {
     const t = await service.createTicket(
       {
         workerId: 'w1',
@@ -533,7 +533,7 @@ describe('TicketService — PAY (advance chi tiền)', () => {
         leaveFromDate: new Date('2025-08-15'),
         leaveToDate: new Date('2025-08-16'),
       },
-      { id: 'w1', role: 'WORKER' },
+      { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
     );
     await service.approveTicket({ ticketId: t.id }, { id: 'mgr1', role: 'HR_MANAGER' });
 
@@ -546,8 +546,8 @@ describe('TicketService — PAY (advance chi tiền)', () => {
   });
 });
 
-describe('TicketService — Concurrency', () => {
-  it('CONCURRENT_UPDATE khi version không khớp', async () => {
+describe('TicketService â€” Concurrency', () => {
+  it('CONCURRENT_UPDATE khi version khÃ´ng khá»›p', async () => {
     const t = await service.createTicket(
       {
         workerId: 'w1',
@@ -557,11 +557,11 @@ describe('TicketService — Concurrency', () => {
         leaveFromDate: new Date('2025-08-15'),
         leaveToDate: new Date('2025-08-16'),
       },
-      { id: 'w1', role: 'WORKER' },
+      { id: 'USR-w1', role: 'WORKER', workerId: 'w1' },
     );
 
-    // Giả lập 1 actor khác thắng race giữa find và update: updateMany trả count 0 1 lần
-    // (Cách cũ: mutate version trong store KHÔNG giả lập được race — service đọc lại version mới)
+    // Giáº£ láº­p 1 actor khÃ¡c tháº¯ng race giá»¯a find vÃ  update: updateMany tráº£ count 0 1 láº§n
+    // (CÃ¡ch cÅ©: mutate version trong store KHÃ”NG giáº£ láº­p Ä‘Æ°á»£c race â€” service Ä‘á»c láº¡i version má»›i)
     (prisma.ticket.updateMany as any).mockImplementationOnce(async () => ({ count: 0 }));
 
     await expect(

@@ -59,6 +59,7 @@ export function toSessionUser(
   return {
     id: ctx.userId,
     role,
+    ...(ctx.workerId && { workerId: ctx.workerId }),  // DEC-01: thread Worker.id via ctx
     ...(meta?.ipAddress && { ipAddress: meta.ipAddress }),
     ...(meta?.userAgent && { userAgent: meta.userAgent }),
   };

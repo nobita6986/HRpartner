@@ -52,8 +52,14 @@ export class StaffingOrderServiceError extends Error {
 
 // ─── Code generator ─────────────────────────────────────────────────────────
 
-/** Lấy mã SO tiếp theo: "SO-" + zero-padded sequential integer. */
+/** Lay ma SO tiep theo: "SO-" + zero-padded sequential integer.
+ *  DEC-02: pg_advisory_xact_lock chong race giua 2 request dong thoi.
+ *  Advisory lock key = hashtext('staffing_order_code') (EV-12, giong pattern transfer.service.ts).
+ */
 async function generateOrderCode(tx: Prisma.TransactionClient): Promise<string> {
+  // Chong race: khoa transaction-scoped voi key hang. Moi request tao order
+  // deu phai cho de lay lock nay truoc khi SELECT MAX+1.
+  await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext('staffing_order_code'))`);
   const rows = await tx.$queryRawUnsafe<Array<{ max_num: bigint | null }>>(
     `SELECT MAX(SUBSTRING(code FROM 4)::bigint AS max_num FROM staffing_orders WHERE code ~ '^SO-[0-9]+$'`,
   );

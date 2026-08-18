@@ -1,42 +1,42 @@
-/**
- * Ticket Service — Domain logic cho Module M7 (Phản ánh, Tạm ứng)
+﻿/**
+ * Ticket Service â€” Domain logic cho Module M7 (Pháº£n Ã¡nh, Táº¡m á»©ng)
  *
- * WORKFLOW (state machine — cải tiến từ HRM_SYSTEM ref repo):
+ * WORKFLOW (state machine â€” cáº£i tiáº¿n tá»« HRM_SYSTEM ref repo):
  *
  *   CREATE (Worker)
- *     ↓
+ *     â†“
  *   PENDING
- *     ↓                      \→ REJECTED (terminal)
- *   HR_APPROVED              /   (HR/Accountant từ chối)
- *     ↓                      \
+ *     â†“                      \â†’ REJECTED (terminal)
+ *   HR_APPROVED              /   (HR/Accountant tá»« chá»‘i)
+ *     â†“                      \
  *   APPROVED (cho LEAVE/DISPUTE)  \
- *     ↓                          \
+ *     â†“                          \
  *   CLOSED                          \
  *                                   \
  *   (cho ADVANCE_SALARY)             \
- *   APPROVED → PAID                   \
- *     ↓                                \
+ *   APPROVED â†’ PAID                   \
+ *     â†“                                \
  *   CLOSED                              \
  *
- *   PENDING / HR_APPROVED → CANCELLED (worker tự rút)
+ *   PENDING / HR_APPROVED â†’ CANCELLED (worker tá»± rÃºt)
  *
- * CẢI TIẾN so với HRM_SYSTEM:
- *   - 2-step approval cho ADVANCE_SALARY (HR confirm → Accountant approve)
+ * Cáº¢I TIáº¾N so vá»›i HRM_SYSTEM:
+ *   - 2-step approval cho ADVANCE_SALARY (HR confirm â†’ Accountant approve)
  *   - Idempotency key (header x-idempotency-key) cho POST
- *   - Optimistic locking (version field) chống race condition
- *   - Audit log MỖI transition (không chỉ final state)
- *   - DB-backed notification queue (retry được)
- *   - BigInt tiền (VND nguyên)
+ *   - Optimistic locking (version field) chá»‘ng race condition
+ *   - Audit log Má»–I transition (khÃ´ng chá»‰ final state)
+ *   - DB-backed notification queue (retry Ä‘Æ°á»£c)
+ *   - BigInt tiá»n (VND nguyÃªn)
  *   - Transition guard qua state machine map (compile-time safe)
- *   - Tất cả thao tác ghi trong Prisma $transaction
+ *   - Táº¥t cáº£ thao tÃ¡c ghi trong Prisma $transaction
  *
- * Tham khảo:
+ * Tham kháº£o:
  *   - HRM_SYSTEM backend/api/leave_requests.php (state machine)
- *   - HRP v3.0 §7.2 (M7 wave 2-3), §9.7 (workerScope), §14.3 (idempotency)
- *   - HRP v3.2 §12.5.1 (doD có state transition test)
+ *   - HRP v3.0 Â§7.2 (M7 wave 2-3), Â§9.7 (workerScope), Â§14.3 (idempotency)
+ *   - HRP v3.2 Â§12.5.1 (doD cÃ³ state transition test)
  */
 
-import { PrismaClient, Prisma, TicketAction } from '@prisma/client'; // TicketAction là VALUE (enum dùng trong TRANSITIONS)
+import { PrismaClient, Prisma, TicketAction } from '@prisma/client'; // TicketAction lÃ  VALUE (enum dÃ¹ng trong TRANSITIONS)
 import type {
   Ticket,
   TicketType,
@@ -45,7 +45,7 @@ import type {
   TicketHistory,
   AuditLog,
 } from '@prisma/client';
-// Phase 3 / RQ-03 + RQ-04 + RQ-05: refactor lớp integrity, giữ nghiệp vụ.
+// Phase 3 / RQ-03 + RQ-04 + RQ-05: refactor lá»›p integrity, giá»¯ nghiá»‡p vá»¥.
 import { writeAuditLog } from '@/src/shared/integrity/audit';
 import {
   IllegalTransitionError,
@@ -54,13 +54,14 @@ import {
 } from '@/src/shared/integrity/state-machine';
 import { enqueueOutbox } from '@/src/shared/integrity/outbox';
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TYPES
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 export interface SessionUser {
   id: string;
   role: TicketActorRole;
+  workerId?: string;  // DEC-01: Worker.id for WORKER role (from ctx.workerId). Not set for other roles.
   name?: string;
   ipAddress?: string;
   userAgent?: string;
@@ -100,7 +101,7 @@ export interface ApproveTicketInput {
   ticketId: string;
   note?: string;
   idempotencyKey?: string;
-  // Cho ADVANCE_SALARY step 2: Accountant confirm đã chi
+  // Cho ADVANCE_SALARY step 2: Accountant confirm Ä‘Ã£ chi
   paidAmountVnd?: bigint;
   paidAt?: Date;
 }
@@ -122,21 +123,21 @@ export interface ListTicketsFilter {
   type?: TicketType;
   status?: TicketStatus[];
   includeClosed?: boolean;
-  assignedToMe?: boolean;  // HR role: ticket trong queue của mình
+  assignedToMe?: boolean;  // HR role: ticket trong queue cá»§a mÃ¬nh
   take?: number;
   skip?: number;
   orderBy?: 'createdAt' | 'priority' | 'slaDueAt';
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// STATE MACHINE — định nghĩa transition hợp lệ + role được phép
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// STATE MACHINE â€” Ä‘á»‹nh nghÄ©a transition há»£p lá»‡ + role Ä‘Æ°á»£c phÃ©p
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /**
- * Map: từ status hiện tại → action → đích đến + roles được phép thực hiện.
+ * Map: tá»« status hiá»‡n táº¡i â†’ action â†’ Ä‘Ã­ch Ä‘áº¿n + roles Ä‘Æ°á»£c phÃ©p thá»±c hiá»‡n.
  *
- * Thiết kế: dùng Map literal để TypeScript check `key` exhaustively.
- * Mỗi transition ghi MỘT history row + audit log.
+ * Thiáº¿t káº¿: dÃ¹ng Map literal Ä‘á»ƒ TypeScript check `key` exhaustively.
+ * Má»—i transition ghi Má»˜T history row + audit log.
  */
 const TRANSITIONS: TransitionMap<TicketStatus, TicketAction, TicketActorRole> = {
   PENDING: {
@@ -145,7 +146,7 @@ const TRANSITIONS: TransitionMap<TicketStatus, TicketAction, TicketActorRole> = 
       allowedRoles: ['HR_STAFF', 'HR_MANAGER', 'ADMIN'],
     },
     APPROVE_FINAL: {
-      // Shortcut: Manager approve thẳng (skip HR step) — cho dispute/leave đơn giản
+      // Shortcut: Manager approve tháº³ng (skip HR step) â€” cho dispute/leave Ä‘Æ¡n giáº£n
       to: 'APPROVED',
       allowedRoles: ['HR_MANAGER', 'ADMIN'],
       ticketTypes: ['TIMESHEET_DISPUTE', 'LEAVE_REQUEST'],
@@ -156,14 +157,14 @@ const TRANSITIONS: TransitionMap<TicketStatus, TicketAction, TicketActorRole> = 
     },
     CANCEL: {
       to: 'CANCELLED',
-      allowedRoles: ['WORKER'],  // chỉ worker tạo mới được cancel
+      allowedRoles: ['WORKER'],  // chá»‰ worker táº¡o má»›i Ä‘Æ°á»£c cancel
     },
   },
 
   HR_APPROVED: {
     APPROVE_FINAL: {
       to: 'APPROVED',
-      // Accountant approve advance; HR_Manager approve dispute/leave nếu đã HR_APPROVED
+      // Accountant approve advance; HR_Manager approve dispute/leave náº¿u Ä‘Ã£ HR_APPROVED
       allowedRoles: ['ACCOUNTANT', 'HR_MANAGER', 'ADMIN'],
     },
     REJECT: {
@@ -195,28 +196,28 @@ const TRANSITIONS: TransitionMap<TicketStatus, TicketAction, TicketActorRole> = 
     },
   },
 
-  // ═══ Terminal states — không transition nào hợp lệ ═══
+  // â•â•â• Terminal states â€” khÃ´ng transition nÃ o há»£p lá»‡ â•â•â•
   REJECTED: {},
   CANCELLED: {},
   CLOSED: {},
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ROLE → ALLOWED ACTIONS (cho UI / List endpoint)
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ROLE â†’ ALLOWED ACTIONS (cho UI / List endpoint)
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 export const ROLE_QUEUE: Record<TicketActorRole, TicketStatus[]> = {
-  WORKER: [],  // worker không có queue riêng, họ xem ticket của mình
-  HR_STAFF: ['PENDING'],  // HR staff chỉ review PENDING
+  WORKER: [],  // worker khÃ´ng cÃ³ queue riÃªng, há» xem ticket cá»§a mÃ¬nh
+  HR_STAFF: ['PENDING'],  // HR staff chá»‰ review PENDING
   HR_MANAGER: ['PENDING', 'HR_APPROVED'],  // Manager approve dispute/leave
-  ACCOUNTANT: ['HR_APPROVED'],  // Accountant chỉ duyệt advance đã HR confirm
+  ACCOUNTANT: ['HR_APPROVED'],  // Accountant chá»‰ duyá»‡t advance Ä‘Ã£ HR confirm
   PM: [],
   ADMIN: ['PENDING', 'HR_APPROVED', 'APPROVED', 'PAID'],
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CUSTOM ERROR (để route handler chuyển sang HTTP status code)
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// CUSTOM ERROR (Ä‘á»ƒ route handler chuyá»ƒn sang HTTP status code)
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 export class TicketServiceError extends Error {
   constructor(
@@ -234,9 +235,9 @@ export class TicketServiceError extends Error {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // GUARDS (pure functions)
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function validateCreateInput(input: CreateTicketInput): void {
   if (!input.workerId) throw new TicketServiceError('VALIDATION', 'workerId is required');
@@ -278,7 +279,7 @@ function validateCreateInput(input: CreateTicketInput): void {
       break;
 
     case 'OTHER':
-      // Không yêu cầu field riêng
+      // KhÃ´ng yÃªu cáº§u field riÃªng
       break;
   }
 }
@@ -295,8 +296,8 @@ function guardTransition(
     });
   } catch (err) {
     if (err instanceof IllegalTransitionError) {
-      // Map sang TicketServiceError code để giữ contract cũ (test cũ expect).
-      // Route handler Phase 3 map tiếp sang HTTP 409.
+      // Map sang TicketServiceError code Ä‘á»ƒ giá»¯ contract cÅ© (test cÅ© expect).
+      // Route handler Phase 3 map tiáº¿p sang HTTP 409.
       const code =
         err.code === 'ROLE_NOT_ALLOWED'
           ? 'FORBIDDEN'
@@ -307,9 +308,9 @@ function guardTransition(
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // SERVICE
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 export class TicketService {
   constructor(
@@ -317,13 +318,13 @@ export class TicketService {
     private readonly auditLogger?: AuditLogger,
   ) {}
 
-  // ═══════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // CREATE
-  // ═══════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
-   * Worker (hoặc HR tạo hộ) tạo ticket mới.
-   * Idempotency: nếu trong vòng 24h đã có ticket cùng (workerId, type, idempotencyKey) → trả về ticket cũ.
+   * Worker (hoáº·c HR táº¡o há»™) táº¡o ticket má»›i.
+   * Idempotency: náº¿u trong vÃ²ng 24h Ä‘Ã£ cÃ³ ticket cÃ¹ng (workerId, type, idempotencyKey) â†’ tráº£ vá» ticket cÅ©.
    */
   async createTicket(
     input: CreateTicketInput,
@@ -331,26 +332,26 @@ export class TicketService {
   ): Promise<Ticket> {
     validateCreateInput(input);
 
-    // Phase 3 / RQ-02 (DEC-02): idempotency KHÔNG qua metadata.path nữa.
-    // Cơ chế mới: route handler gọi `withIdempotency` trước khi gọi createTicket.
-    // Service này giữ metadata.idempotencyKey để debug/trace — KHÔNG check replay.
+    // Phase 3 / RQ-02 (DEC-02): idempotency KHÃ”NG qua metadata.path ná»¯a.
+    // CÆ¡ cháº¿ má»›i: route handler gá»i `withIdempotency` trÆ°á»›c khi gá»i createTicket.
+    // Service nÃ y giá»¯ metadata.idempotencyKey Ä‘á»ƒ debug/trace â€” KHÃ”NG check replay.
     //
-    // F24 TODO (đã đóng — Phase 3 chuyển sang bảng idempotency_keys): xem ADR-014.
+    // F24 TODO (Ä‘Ã£ Ä‘Ã³ng â€” Phase 3 chuyá»ƒn sang báº£ng idempotency_keys): xem ADR-014.
 
-    // Tính deltaHours cho dispute
+    // TÃ­nh deltaHours cho dispute
     let deltaHours: Prisma.Decimal | null = null;
     if (input.type === 'TIMESHEET_DISPUTE' && input.currentHours !== undefined) {
       deltaHours = new Prisma.Decimal(input.requestedHours!).sub(input.currentHours);
     }
 
-    // Tính leaveDays
+    // TÃ­nh leaveDays
     let leaveDays: Prisma.Decimal | null = null;
     if (input.type === 'LEAVE_REQUEST' && input.leaveFromDate && input.leaveToDate) {
       const ms = input.leaveToDate.getTime() - input.leaveFromDate.getTime();
       leaveDays = new Prisma.Decimal(ms / (1000 * 60 * 60 * 24) + 1);
     }
 
-    // Validate SLA: setup auto-overdue check (sẽ chạy cron)
+    // Validate SLA: setup auto-overdue check (sáº½ cháº¡y cron)
     const slaDueAt = this.computeSlaDueAt(input.priority ?? 'NORMAL');
 
     const ticket = await this.prisma.$transaction(async (tx) => {
@@ -415,12 +416,12 @@ export class TicketService {
         metadata: { ipAddress: actor.ipAddress, userAgent: actor.userAgent },
       });
 
-      // Queue notification cho HR (PENDING → HR review)
+      // Queue notification cho HR (PENDING â†’ HR review)
       await this.enqueueNotification(tx, {
         ticketId: created.id,
         recipientRole: 'HR_STAFF',
         subject: `[Ticket ${created.type}] ${created.title}`,
-        body: `Worker ${created.workerId} vừa tạo ticket mới.`,
+        body: `Worker ${created.workerId} vá»«a táº¡o ticket má»›i.`,
         linkUrl: `/admin/tickets/${created.id}`,
       });
 
@@ -430,14 +431,14 @@ export class TicketService {
     return ticket;
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // APPROVE (HR_STAFF hoặc direct APPROVE_FINAL cho HR_MANAGER)
-  // ═══════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // APPROVE (HR_STAFF hoáº·c direct APPROVE_FINAL cho HR_MANAGER)
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Approve theo state machine. Map action theo type:
-   *   - LEAVE_REQUEST / TIMESHEET_DISPUTE: APPROVE_HR hoặc APPROVE_FINAL
-   *   - ADVANCE_SALARY: APPROVE_HR (HR xác nhận) → sau đó APPROVE_FINAL (Accountant chi)
+   *   - LEAVE_REQUEST / TIMESHEET_DISPUTE: APPROVE_HR hoáº·c APPROVE_FINAL
+   *   - ADVANCE_SALARY: APPROVE_HR (HR xÃ¡c nháº­n) â†’ sau Ä‘Ã³ APPROVE_FINAL (Accountant chi)
    */
   async approveTicket(input: ApproveTicketInput, actor: SessionUser): Promise<Ticket> {
     return this.prisma.$transaction(async (tx) => {
@@ -445,12 +446,12 @@ export class TicketService {
         where: { id: input.ticketId },
       });
 
-      // Worker không được approve ticket của mình
+      // Worker khÃ´ng Ä‘Æ°á»£c approve ticket cá»§a mÃ¬nh
       if (actor.role === 'WORKER') {
         throw new TicketServiceError('FORBIDDEN', 'Worker cannot approve tickets');
       }
 
-      // Tự guard qua state machine
+      // Tá»± guard qua state machine
       const action: TicketAction = this.inferApproveAction(ticket, actor.role);
       const toStatus = guardTransition(ticket, action, actor.role);
 
@@ -514,18 +515,18 @@ export class TicketService {
       await this.enqueueNotification(tx, {
         ticketId: ticket.id,
         recipientRole: 'WORKER',
-        subject: `Ticket ${after.type} đã được ${toStatus === 'APPROVED' ? 'duyệt' : 'chuyển tiếp'}`,
-        body: input.note ?? `Ticket "${after.title}" đã được cập nhật trạng thái.`,
+        subject: `Ticket ${after.type} Ä‘Ã£ Ä‘Æ°á»£c ${toStatus === 'APPROVED' ? 'duyá»‡t' : 'chuyá»ƒn tiáº¿p'}`,
+        body: input.note ?? `Ticket "${after.title}" Ä‘Ã£ Ä‘Æ°á»£c cáº­p nháº­t tráº¡ng thÃ¡i.`,
         linkUrl: `/worker/tickets/${ticket.id}`,
       });
 
-      // Nếu APPROVE_FINAL cho ADVANCE → enqueue cho Accountant (PAI)
+      // Náº¿u APPROVE_FINAL cho ADVANCE â†’ enqueue cho Accountant (PAI)
       if (action === 'APPROVE_FINAL' && toStatus === 'APPROVED' && ticket.type === 'ADVANCE_SALARY') {
         await this.enqueueNotification(tx, {
           ticketId: ticket.id,
           recipientRole: 'ACCOUNTANT',
-          subject: `[Advance] Đã duyệt HR — sẵn sàng chi`,
-          body: `Ticket advance ${ticket.id} đã được HR duyệt. Cần chi ${ticket.amountVnd.toString()} VND.`,
+          subject: `[Advance] ÄÃ£ duyá»‡t HR â€” sáºµn sÃ ng chi`,
+          body: `Ticket advance ${ticket.id} Ä‘Ã£ Ä‘Æ°á»£c HR duyá»‡t. Cáº§n chi ${ticket.amountVnd.toString()} VND.`,
           linkUrl: `/accountant/tickets/${ticket.id}`,
         });
       }
@@ -535,10 +536,10 @@ export class TicketService {
   }
 
   /**
-   * Map action approve phù hợp dựa trên loại ticket + role.
+   * Map action approve phÃ¹ há»£p dá»±a trÃªn loáº¡i ticket + role.
    * Logic:
-   *   - ADVANCE_SALARY: HR → APPROVE_HR; Accountant → APPROVE_FINAL
-   *   - LEAVE/DISPUTE: HR_STAFF → APPROVE_HR; HR_MANAGER → APPROVE_FINAL (nhanh)
+   *   - ADVANCE_SALARY: HR â†’ APPROVE_HR; Accountant â†’ APPROVE_FINAL
+   *   - LEAVE/DISPUTE: HR_STAFF â†’ APPROVE_HR; HR_MANAGER â†’ APPROVE_FINAL (nhanh)
    */
   private inferApproveAction(ticket: Ticket, role: TicketActorRole): TicketAction {
     if (ticket.type === 'ADVANCE_SALARY') {
@@ -550,9 +551,9 @@ export class TicketService {
     return 'APPROVE_HR';
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // REJECT
-  // ═══════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   async rejectTicket(input: RejectTicketInput, actor: SessionUser): Promise<Ticket> {
     if (!input.reason?.trim()) {
@@ -609,8 +610,8 @@ export class TicketService {
       await this.enqueueNotification(tx, {
         ticketId: ticket.id,
         recipientRole: 'WORKER',
-        subject: `Ticket bị từ chối`,
-        body: `Lý do: ${input.reason}`,
+        subject: `Ticket bá»‹ tá»« chá»‘i`,
+        body: `LÃ½ do: ${input.reason}`,
         linkUrl: `/worker/tickets/${ticket.id}`,
       });
 
@@ -618,9 +619,9 @@ export class TicketService {
     });
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // CANCEL (worker tự rút)
-  // ═══════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // CANCEL (worker tá»± rÃºt)
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   async cancelTicket(input: CancelTicketInput, actor: SessionUser): Promise<Ticket> {
     return this.prisma.$transaction(async (tx) => {
@@ -628,8 +629,8 @@ export class TicketService {
         where: { id: input.ticketId },
       });
 
-      // Worker chỉ cancel được ticket của mình
-      if (actor.role === 'WORKER' && ticket.workerId !== actor.id) {
+      // Worker chá»‰ cancel Ä‘Æ°á»£c ticket cá»§a mÃ¬nh
+      if (actor.role === 'WORKER' && ticket.workerId !== (actor.workerId ?? actor.id)) {
         throw new TicketServiceError('FORBIDDEN', 'Cannot cancel another worker\'s ticket');
       }
 
@@ -676,9 +677,9 @@ export class TicketService {
     });
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // PAY (Accountant ghi nhận đã chi tiền advance)
-  // ═══════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // PAY (Accountant ghi nháº­n Ä‘Ã£ chi tiá»n advance)
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   async payAdvance(input: ApproveTicketInput, actor: SessionUser): Promise<Ticket> {
     return this.prisma.$transaction(async (tx) => {
@@ -743,8 +744,8 @@ export class TicketService {
       await this.enqueueNotification(tx, {
         ticketId: ticket.id,
         recipientRole: 'WORKER',
-        subject: `[Advance] Tạm ứng đã chi`,
-        body: `Bạn đã nhận ${after.deductionVnd.toString()} VND.`,
+        subject: `[Advance] Táº¡m á»©ng Ä‘Ã£ chi`,
+        body: `Báº¡n Ä‘Ã£ nháº­n ${after.deductionVnd.toString()} VND.`,
         linkUrl: `/worker/tickets/${ticket.id}`,
       });
 
@@ -752,9 +753,9 @@ export class TicketService {
     });
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // LIST (cho UI table)
-  // ═══════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   async listTickets(filter: ListTicketsFilter, actor: SessionUser): Promise<{
     items: Ticket[];
@@ -762,9 +763,9 @@ export class TicketService {
   }> {
     const where: Prisma.TicketWhereInput = {};
 
-    // Worker chỉ thấy ticket của mình
+    // Worker chá»‰ tháº¥y ticket cá»§a mÃ¬nh
     if (actor.role === 'WORKER') {
-      where.workerId = actor.id;
+      where.workerId = actor.workerId ?? actor.id;  // DEC-01
     } else if (filter.workerId) {
       where.workerId = filter.workerId;
     }
@@ -774,12 +775,12 @@ export class TicketService {
     if (filter.status) {
       where.status = { in: filter.status };
     } else if (!filter.includeClosed) {
-      // Mặc định loại trừ terminal
+      // Máº·c Ä‘á»‹nh loáº¡i trá»« terminal
       where.status = { notIn: ['REJECTED', 'CANCELLED', 'CLOSED'] };
     }
 
     if (filter.assignedToMe) {
-      // HR/Accountant: ticket trong queue của role
+      // HR/Accountant: ticket trong queue cá»§a role
       const queue = ROLE_QUEUE[actor.role];
       if (queue.length > 0) {
         where.status = { in: queue };
@@ -805,9 +806,9 @@ export class TicketService {
     return { items, total };
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // GET (single ticket + history)
-  // ═══════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   async getTicket(ticketId: string, actor: SessionUser): Promise<{
     ticket: Ticket;
@@ -817,8 +818,8 @@ export class TicketService {
       where: { id: ticketId },
     });
 
-    // Worker chỉ xem ticket của mình
-    if (actor.role === 'WORKER' && ticket.workerId !== actor.id) {
+    // Worker chá»‰ xem ticket cá»§a mÃ¬nh
+    if (actor.role === 'WORKER' && ticket.workerId !== (actor.workerId ?? actor.id)) {
       throw new TicketServiceError('FORBIDDEN', 'Cannot view another worker\'s ticket');
     }
 
@@ -830,9 +831,9 @@ export class TicketService {
     return { ticket, history };
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // PRIVATE HELPERS
-  // ═══════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   private async writeAuditLog(
     tx: Prisma.TransactionClient,
@@ -850,7 +851,7 @@ export class TicketService {
     },
   ): Promise<AuditLog> {
     // Phase 3 / RQ-03: delegate sang helper integrity/audit.
-    // Custom logger (Sentry/Datadog) vẫn được respect qua ctor param.
+    // Custom logger (Sentry/Datadog) váº«n Ä‘Æ°á»£c respect qua ctor param.
     return writeAuditLog({
       prisma: tx,
       actor: {
@@ -892,8 +893,8 @@ export class TicketService {
       linkUrl?: string;
     },
   ): Promise<void> {
-    // Phase 3 / RQ-05 (DEC-01): enqueue qua outbox cùng transaction với state change.
-    // Drain in-process (sau commit) sẽ tạo TicketNotification row.
+    // Phase 3 / RQ-05 (DEC-01): enqueue qua outbox cÃ¹ng transaction vá»›i state change.
+    // Drain in-process (sau commit) sáº½ táº¡o TicketNotification row.
     await enqueueOutbox(tx, {
       eventType: 'TicketNotification',
       aggregateId: notif.ticketId,
@@ -922,9 +923,9 @@ export class TicketService {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // CUSTOM AUDIT LOGGER TYPE
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 export type AuditLogger = (
   tx: Prisma.TransactionClient,

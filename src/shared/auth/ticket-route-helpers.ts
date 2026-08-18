@@ -101,3 +101,8 @@ export async function requireTicketAuth(
 export async function getTicketAuth(req: NextRequest): Promise<TicketAuthContext> {
   return requireTicketAuth(req);
 }
+
+/** Trich idempotency key tu request header. */
+export function getIdempotencyKey(req: NextRequest): string | undefined {
+  return req.headers.get('x-idempotency-key') ?? undefined;
+}

@@ -28,6 +28,7 @@ type MockTx = {
   };
   outboxEvent: { create: MockFn };
   $queryRawUnsafe: MockFn;
+  $executeRawUnsafe: MockFn;  // STEP-03: advisory lock
 };
 
 function makeMockTx(overrides?: Partial<MockTx>): MockTx {
@@ -44,6 +45,7 @@ function makeMockTx(overrides?: Partial<MockTx>): MockTx {
       create: vi.fn().mockResolvedValue({ id: 'ev-001', status: 'PENDING' }),
     },
     $queryRawUnsafe: vi.fn().mockResolvedValue([{ max_num: null }]),
+    $executeRawUnsafe: vi.fn().mockResolvedValue([]),  // STEP-03: advisory lock
     ...overrides,
   };
 }
@@ -99,6 +101,7 @@ describe('order.service', () => {
           ...makeMockTx().staffingOrder,
           create: vi.fn().mockResolvedValue(mockOrder),
         },
+        $executeRawUnsafe: vi.fn().mockResolvedValue([]),  // STEP-03 advisory lock
       });
 
       const result = await createStaffingOrder(tx as any, ADMIN_CTX, {
@@ -122,6 +125,7 @@ describe('order.service', () => {
         $queryRawUnsafe: vi.fn().mockImplementation(() =>
           Promise.resolve([{ max_num: BigInt(counter++) }])
         ),
+        $executeRawUnsafe: vi.fn().mockResolvedValue([]),  // STEP-03 advisory lock
         staffingOrder: {
           ...makeMockTx().staffingOrder,
           create: vi.fn().mockImplementation(() =>

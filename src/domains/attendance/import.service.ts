@@ -397,13 +397,19 @@ export async function getBatchPreview(
 
   if (!batch) throw new ImportServiceError('NOT_FOUND', `Batch ${batchId} không tìm thấy`);
 
-  // Blockers: UNMATCHED + ANOMALY có blocker
+  // Blockers: UNMATCHED + ANOMALY co blocker
   const blockers: Array<{ rowNumber: number; type: BlockerType; owner: string; note: string }> = [];
+  // Count breakdown: RQ-04 fix -- dem thuc theo anomalyType
+  const anomalyBreakdown = Object.fromEntries(ANOMALY_TYPES.map(t => [t, 0])) as Record<AnomalyType, number>;
   for (const row of batch.rawRows) {
     if (row.status === 'UNMATCHED') {
       blockers.push({ rowNumber: row.rowNumber, type: 'UNMATCHED_EMPLOYEE', owner: 'KT', note: row.anomalyNote ?? '' });
     } else if (row.anomalyType) {
       blockers.push({ rowNumber: row.rowNumber, type: 'WRONG_PROJECT', owner: ANOMALY_OWNER[row.anomalyType as AnomalyType] ?? 'KT', note: row.anomalyNote ?? '' });
+      // Count anomaly type
+      if (row.anomalyType in anomalyBreakdown) {
+        (anomalyBreakdown as Record<string, number>)[row.anomalyType]++;
+      }
     }
   }
 
@@ -414,7 +420,7 @@ export async function getBatchPreview(
     unmatchedRows: batch.unmatchedRows,
     anomalyRows: batch.anomalyRows,
     blockers,
-    anomalyBreakdown: Object.fromEntries(ANOMALY_TYPES.map(t => [t, 0])) as Record<AnomalyType, number>,
+    anomalyBreakdown,
   };
 }
 

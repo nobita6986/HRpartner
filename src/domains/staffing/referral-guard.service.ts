@@ -188,10 +188,12 @@ export async function applyOverride(
   guardResult: GuardResult,
   override: OverrideInput,
 ): Promise<void> {
-  if (!guardResult.allowed) {
+  // DEC-03: override CHI duoc khi worker bi block (allowed === false).
+  // Neu worker khong bi block (allowed === true) -> khong co gi de override.
+  if (guardResult.allowed) {
     throw new ReferralGuardError(
-      'BLOCKED',
-      `Cannot override: worker not blocked (blockCode=${guardResult.blockCode}). Run evaluateReferralGuard first.`,
+      'NOT_BLOCKED',
+      `Cannot override: worker not blocked. There is nothing to override.`,
     );
   }
 
@@ -230,7 +232,7 @@ export async function applyOverride(
 
 export class ReferralGuardError extends Error {
   constructor(
-    public readonly code: 'BLOCKED' | 'PERMISSION_DENIED' | 'INTERNAL',
+    public readonly code: 'BLOCKED' | 'NOT_BLOCKED' | 'PERMISSION_DENIED' | 'INTERNAL',
     message: string,
     public readonly details?: { blockCode?: number; failedRules?: GuardRule[] },
   ) {

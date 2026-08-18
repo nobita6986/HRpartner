@@ -240,8 +240,9 @@ export async function transferWorker(
 }
 
 /**
- * Bulk transfer — N worker 1 lệnh, savepoint per worker (DEC-08 G15).
- * Nếu 1 người fail, skip + ghi lỗi, những người khác vẫn thành công.
+ * Bulk transfer -- N worker 1 lệnh.
+ * 1 transaction độc lập mỗi worker: nếu 1 người fail, những người khác vẫn thành công (G15).
+ * Code dùng $transaction độc lập mỗi người, không phải savepoint.
  */
 export async function bulkTransferWorker(
   prisma: PrismaClient,

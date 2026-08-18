@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TicketService } from '@/src/domains/attendance/ticket.service';
 import { getTicketAuth, ticketsErrorResponse } from '@/src/shared/auth/ticket-route-helpers';
-import { getIdempotencyKey } from '@/src/domains/attendance/session';
+import { getIdempotencyKey } from '@/src/shared/auth/ticket-route-helpers';
 import { getPrisma } from '@/src/lib/db';
 import { withIdempotency } from '@/src/shared/integrity/idempotency';
 
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     // Body mặc định: worker tự tạo cho mình
     if (sessionUser.role === 'WORKER') {
-      body.workerId = body.workerId ?? sessionUser.id;
+      body.workerId = body.workerId ?? sessionUser.workerId;  // DEC-01: use Worker.id
       if (body.workerId !== sessionUser.id) {
         return NextResponse.json(
           { error: 'FORBIDDEN', message: 'Worker can only create ticket for self' },

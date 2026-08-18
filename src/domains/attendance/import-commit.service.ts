@@ -196,7 +196,10 @@ export async function commitBatch(
     const workDateStr = workDate.toISOString().split('T')[0];
     const externalEventId = makeExternalEventId('IMPORT', row.rawEmployeeCode, workDateStr, row.rawTime ?? '00:00', row.rawType);
     const payloadHash = makePayloadHash(row.matchedWorkerId, workDateStr, 'DEFAULT', row.rawTime ?? '00:00', '');
-    const capturedAt = now; // MVP: no device timestamp in CSV
+    // TODO(capturedAt): nguon capturedAt (timestamp tu thiet bi/cham cong). Hien tai
+    // CSV chua co cot device timestamp -> dung `now` tam thoi. Phase sau se parse
+    // cot `captured_at` tu CSV/XLSX device export (AP/QM/EM).
+    const capturedAt = now;
 
     // Risk flag: receivedAt - capturedAt > 15 min
     const diffMs = now.getTime() - capturedAt.getTime();
