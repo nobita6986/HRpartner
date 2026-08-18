@@ -120,7 +120,7 @@ h1 {
 }
 .metro-track .done-part {
   position: absolute; left: 0; top: 0; height: 100%;
-  width: 55.6%;
+  width: 61%;
   background: linear-gradient(90deg, var(--rail-done) 0%, var(--rail-done) 88%, var(--rail-current) 100%);
   border-radius: 2px 0 0 2px;
 }
@@ -344,12 +344,12 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
     <div class="stat">
       <div class="k">Phase đã xong</div>
       <div class="v">4 / 6 <span style="font-size:12.5px;font-weight:600;color:var(--ink-soft)">MVP nội bộ</span></div>
-      <div class="d">Mockup ✅ · Phase 0 Foundation ✅ · Phase 1 Identity ✅ · Phase 2 Tenant Scope ✅ · Phase 3 Integrity ✅</div>
+      <div class="d">Mockup ✅ · Phase 0 Foundation ✅ · Phase 1 Identity ✅ · Phase 2 Tenant Scope ✅ · Phase 3 Integrity ✅ · Phase 4 Vertical Slices ✅</div>
     </div>
     <div class="stat">
       <div class="k">Đang đứng</div>
-      <div class="v"><em>Phase 4</em> · Vertical Slices</div>
-      <div class="d">TASK v2.0 ACCEPTED (21 RQ · 21 STEP · 17 AC) — 4A ✅ · 4B ✅ · 4C ✅ · 4D ✅ — Phase 4 HOÀN TẤT 18/08 (437/437 test) — sếp gõ <code>/code hrp-phase5-uat-cutover</code> để giao Tier 2 Phase 5</div>
+      <div class="v"><em>Phase 5</em> · UAT + Cutover</div>
+      <div class="d">TASK v1.1 READY_FOR_EXECUTION (7 STEP + 3 OP) — Tier 2 round 1 đang chạy: wire UI + RLS production + cron + security matrix + seed + runbook + k6</div>
     </div>
     <div class="stat">
       <div class="k">UI thật đầu tiên</div>
@@ -401,19 +401,19 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
         <div class="stop-tag">Xong</div>
       </div>
 
-      <div class="stop current" style="position:relative;">
-        <div class="you-are-here">Đang ở đây</div>
+      <div class="stop done">
         <div class="stop-dot">4</div>
         <div class="stop-name">Slices</div>
         <div class="stop-week fn">6 tuần</div>
-        <div class="stop-tag" style="background:var(--primary-soft);color:var(--accent-text);">chờ /code</div>
+        <div class="stop-tag">Xong</div>
       </div>
 
-      <div class="stop future">
+      <div class="stop current" style="position:relative;">
+        <div class="you-are-here">Đang ở đây</div>
         <div class="stop-dot">5</div>
         <div class="stop-name">UAT + Cutover</div>
         <div class="stop-week fn">2 tuần</div>
-        <div class="stop-tag">GO-LIVE</div>
+        <div class="stop-tag" style="background:var(--primary-soft);color:var(--accent-text);">đang chạy</div>
       </div>
 
       <div class="stop future">
@@ -482,21 +482,21 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
       </div>
     </div>
 
-    <div class="phase-card is-current">
-      <div class="pc-badge badge-current">4</div>
+    <div class="phase-card">
+      <div class="pc-badge badge-done">4</div>
       <div>
-        <div class="pc-title">Vertical Slices <span class="wk fn">6 tuần</span><span class="pc-status st-dang">Đang đứng</span></div>
+        <div class="pc-title">Vertical Slices <span class="wk fn">6 tuần</span><span class="pc-status st-xong">Xong</span></div>
         <div class="pc-inv">4 luồng E2E theo click-path mockup — <b>UI thật bắt đầu từ đây</b>: 4A Staffing Fill (S01→S02→S02A→S02B) · 4B Attendance Lock (S03→S03B→S03_Resolve) · 4C Dual Reconciliation (S04→S04A→S04B) · 4D Job Board (S05, chỉ polish).</div>
-        <div class="pc-foot">TASK v1.1 READY_FOR_EXECUTION — Phase 5 UAT/Cutover: wire UI + RLS production + cron + security matrix + seed + runbook + load test k6 (7 STEP + 3 OP). <code>/code hrp-phase5-uat-cutover</code> để giao Tier 2.</div>
+        <div class="pc-foot"><b>Exit:</b> 4A ✅ · 4B ✅ · 4C ✅ · 4D ✅ — ACCEPTED 18/08 (437/437 test).</div>
       </div>
     </div>
 
-    <div class="phase-card">
-      <div class="pc-badge badge-idle">5</div>
+    <div class="phase-card is-current">
+      <div class="pc-badge badge-current">5</div>
       <div>
-        <div class="pc-title">UAT + Cutover <span class="wk fn">2 tuần</span><span class="pc-status st-cho">Chờ</span></div>
+        <div class="pc-title">UAT + Cutover <span class="wk fn">2 tuần</span><span class="pc-status st-dang">Đang đứng</span></div>
         <div class="pc-inv">2 kỳ shadow chạy song song (sai số ≤ 0.01%) + security matrix 13 role × 8 bảng + load 5.000 check-in / 100 transfer / 20 statement song song.</div>
-        <div class="pc-foot"><b>Exit:</b> runbook ký sếp → <b>GO-LIVE nội bộ</b> (hết 15 tuần MVP).</div>
+        <div class="pc-foot">TASK v1.1 READY_FOR_EXECUTION — Tier 2 round 1 đang chạy: wire UI + RLS production + cron + security matrix + seed + runbook + load test k6 (7 STEP + 3 OP). <b>Exit:</b> runbook ký sếp → <b>GO-LIVE nội bộ</b> (hết 15 tuần MVP).</div>
       </div>
     </div>
 
@@ -751,10 +751,10 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
 
   <details class="pd-card" open>
     <summary>
-      <span class="pd-badge badge-current">4</span>
+      <span class="pd-badge badge-done">4</span>
       <span class="pd-title">Vertical Slices (4A · 4B · 4C · 4D)</span>
-      <span class="pd-tag st-dang">Đang chạy</span>
-      <span class="pd-hint">W11–W12 · 2 tuần · TASK v1.1 READY · Phase 4 ✅ · Phase 5 UAT/Cutover đang chạy</span>
+      <span class="pd-tag st-xong">Xong</span>
+      <span class="pd-hint">6 tuần · ACCEPTED 18/08 — 437/437 test · Phase 5 UAT/Cutover đang chạy</span>
     </summary>
     <div class="pd-body">
       <div class="pd-sub-grid">
@@ -949,14 +949,14 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
     <div class="bd-seg is-done" style="width:13.33%"><span class="lbl">P1</span></div>
     <div class="bd-seg is-done" style="width:13.33%"><span class="lbl">P2</span></div>
     <div class="bd-seg is-done" style="width:13.33%"><span class="lbl">P3</span></div>
-    <div class="bd-seg is-current" style="width:40%"><span class="lbl">P4 — 4 slice</span></div>
-    <div class="bd-seg is-later" style="width:13.33%"><span class="lbl">P5</span></div>
+    <div class="bd-seg is-done" style="width:40%"><span class="lbl">P4 — 4 slice</span></div>
+    <div class="bd-seg is-current" style="width:13.33%"><span class="lbl">P5</span></div>
   </div>
   <div class="bd-marker"></div>
   <div class="bd-legend">
-    <span><i class="sw sw-done"></i>Đã xong (P0–P3)</span>
-    <span><i class="sw sw-cur"></i>Đang chạy (P4 — tuần 4)</span>
-    <span><i class="sw sw-later"></i>Chưa tới (P5)</span>
+    <span><i class="sw sw-done"></i>Đã xong (P0–P4)</span>
+    <span><i class="sw sw-cur"></i>Đang chạy (P5)</span>
+    <span><i class="sw sw-later"></i>Chưa tới (P1–P3)</span>
     <span>+ P1–P3 (9–14 tuần sau go-live) → Full V4</span>
   </div>
 </div>
