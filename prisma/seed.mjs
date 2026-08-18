@@ -82,10 +82,14 @@ const ROLE_SCENARIOS = [
   { code: 'WORKER',       name: 'Tran Van L (Worker)',          phone: '087****012' },
 ];
 
+// SECURITY (AUD-004 P1): All seed projects MUST default to isPublic=false to
+// prevent `staffing_orders` leak via `hrp_project_visible_for` (MKT/CTV/WORKER
+// only see staffing_orders when project.is_public=true). Public visibility for
+// job board demo is opt-in per project — none by default for safety.
 const PROJECT_SCENARIOS = [
-  { code: 'DA-2026-018', name: 'Nha may Dien tu An Phat',           site: 'Bac Ninh',                  quota: 50, filled: 47, isPublic: true },
-  { code: 'DA-2026-022', name: 'Kho van Yen Phong',                site: 'KCN Yen Phong, Bac Ninh',   quota: 80, filled: 80, isPublic: true },
-  { code: 'PRJ-SV-014',  name: 'Nha may Sao Viet',                 site: 'KCN Quang Chau, Bac Giang', quota: 35, filled: 32, isPublic: true },
+  { code: 'DA-2026-018', name: 'Nha may Dien tu An Phat',           site: 'Bac Ninh',                  quota: 50, filled: 47, isPublic: false },
+  { code: 'DA-2026-022', name: 'Kho van Yen Phong',                site: 'KCN Yen Phong, Bac Ninh',   quota: 80, filled: 80, isPublic: false },
+  { code: 'PRJ-SV-014',  name: 'Nha may Sao Viet',                 site: 'KCN Quang Chau, Bac Giang', quota: 35, filled: 32, isPublic: false },
   { code: 'PRJ-INTERNAL',name: 'Du an noi bo HRP (khong public)',  site: 'Ha Noi',                    quota: 5,  filled: 2,  isPublic: false },
 ];
 
