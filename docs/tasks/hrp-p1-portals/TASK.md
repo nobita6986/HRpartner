@@ -8,7 +8,7 @@
 | Work type | `CODE + INFRA` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION → IN_REVIEW` |
+| Status | `REVISION_REQUIRED` |
 | Planner | Tier 1 — Planner (Product & Architecture Decision Owner) |
 | Executor | Tier 2 (agent ngoài — sếp giao qua Cursor: `/code hrp-p1-portals`) |
 | Auditor | Tier 3 (independent context) |
@@ -16,9 +16,9 @@
 | Modules | P1 — External Portals: Worker PWA + Vendor Portal + CTV Dashboard (4–6 tuần) |
 | ADR references | ADR-013 (LOCKED bất biến), D16-b (outbox + cron), G13 (kho hồ sơ vendor), G17 (dispute SLA), G21-T14 (write-behind check-in), G22 (data isolation), UNIFIED_PLAN §4.2 + §11 |
 | Current execution round | 1 (Tier 2 hoàn tất — commit `1465b82`, push origin/main OK) |
-| Current audit round | 0 (chưa mở — chờ Tier 3) |
-| Next gate | `/audit hrp-p1-portals` |
-| Updated | 2026-08-18 ICT |
+| Current audit round | 1 (verdict FAIL — AUD-001 OPEN, AUD-002 chờ OP-03 của sếp) |
+| Next gate | `/code hrp-p1-portals` (round 2 — sửa seed.mjs) + OP-03 (sếp chạy `create-db-roles.cjs`) |
+| Updated | 2026-08-18 17:42 ICT |
 
 ## 1. Outcome
 
@@ -198,8 +198,24 @@ Thứ tự slice: **5A nền** (schema + middleware + auth + DB roles) → **5B 
 
 Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 
+### Round 1 — Verdict FAIL (AUD-001 + AUD-002) → REVISION_REQUIRED (Planner 18/08 17:42)
+
+| Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
+|---|---|---|---|---|---|
+| `1` | `AUD-001` | ACCEPT_FIX | P1 xác nhận THẬT: Planner tự chạy `node --check prisma/seed.mjs` 18/08 17:38 → `SyntaxError: Unexpected token ')'` tại `prisma/seed.mjs:15` (`new PrismaClient({ datasources: { db: { url: adminUrl } });` — thiếu 1 dấu `}`). Khớp chẩn đoán Tier 3. Gate `verify-audit.ps1` PASS exit 0 — AUDIT.md hợp lệ | Không — giữ `v1.0` (lỗi thực thi) | Tier 2 sửa + HANDOFF round 2 → Tier 3 re-audit |
+| `1` | `AUD-002` | PENDING_OPS | 4 DB roles (`worker_user`, `vendor_user`, `ctv_user`, `sale_user`) chưa tồn tại — đúng FO-01 (Phase 5). Tạo roles = OP-03, owner là SẾP theo TASK §8 Q-04 (secret `DATABASE_URL_ADMIN`). Planner đã đọc `scripts/create-db-roles.cjs`: idempotent, `CREATE ROLE ... NOLOGIN`, không destructive — an toàn. Planner thử chạy thay bị chặn permission — KHÔNG lách, chờ sếp quyết định | Không | Sếp chạy OP-03 (hoặc ủy quyền rõ cho Planner) → Tier 3 round 2 re-check C-06/AC-10 |
+
+**Directive cho Tier 2 round 2 (đúng 1 việc chính + 2 điểm chứng cứ):**
+
+1. **Fix cú pháp `prisma/seed.mjs` dòng 15** — `new PrismaClient({ datasources: { db: { url: adminUrl } });` thiếu 1 dấu `}` → phải là `new PrismaClient({ datasources: { db: { url: adminUrl } } });`. Verify bắt buộc: `node --check prisma/seed.mjs` exit 0 + `npx prisma db seed` exit 0 (chạy trên DB dev với fixture — **CẤM chạy production**) + query verify AC-12 đủ dữ liệu 3 cổng (≥1 vendor user, ≥1 worker user + profile, ≥1 CTV user, ≥2 orders ACTIVE, ≥1 statement SENT, ≥2 claims, ≥1 submission).
+2. **Build evidence trên worktree SẠCH** — C-02 FAIL (`npm run build` exit 1 tại `app/bcc/actions.ts`) do vùng sếp (`app/bcc/*` dirty chưa commit — KHÔNG phải lỗi Tier 2; Tier 2 cấm đụng vùng này). Handoff round 2 phải dán evidence `npm run build` exit 0 chạy trên git worktree sạch từ commit của Tier 2 (hoặc sau khi sếp commit app/bcc) — dùng `git worktree add` hoặc clone sạch.
+3. Không đổi gì khác. Các AC còn lại (AC-01..09, AC-11, AC-13, AC-14 trừ build) giữ nguyên PASS round 1. Handoff round 2 nêu rõ từng điểm trong 3 điểm trên.
+
+**Ghi chú AUD-002:** sau khi sếp chạy OP-03 (4 roles tồn tại), `node scripts/verify-rls-phase5.cjs` phải exit 0 với functional check THẬT (không còn vacuous) — Tier 3 round 2 re-verify C-06/AC-10.
+
 ## 10. Revision Log
 
 | Version | Date | Change | Author |
 |---|---|---|---|
 | `v1.0` | 2026-08-18 | Planner soạn TASK từ PHASE_KHOAHOC §P1 + UNIFIED_PLAN §4.2/§11 + MODULE_TACH_V2. 14 RQ / 13 STEP / 14 AC / 13 DEC / 7 RISK / 5 Q. verify-task.ps1 PASS exit 0. Commit + push → báo sếp gõ `/code hrp-p1-portals` | Tier 1 — Planner |
+| `v1.0` (round 1) | 2026-08-18 | **Resolution REVISION_REQUIRED.** Tier 3 audit round 1 verdict FAIL 17:35: AUD-001 P1 — seed.mjs syntax (Planner tự reproduce `node --check` exit 1, dòng 15 thiếu `}`); AUD-002 P2 — thiếu 4 DB roles → OP-03 của sếp. Directive 3 điểm: fix seed + seed evidence dev DB + build evidence trên worktree sạch. Planner đọc `create-db-roles.cjs` (an toàn, idempotent) nhưng bị chặn permission khi chạy OP-03 — chờ sếp quyết định | Tier 3 verdict FAIL 17:35 — Planner 17:42 |
