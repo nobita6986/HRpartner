@@ -12,7 +12,7 @@ import bcrypt from 'bcryptjs';
 // Use DATABASE_URL_ADMIN if set (bypasses RLS for seed), else DATABASE_URL.
 const adminUrl = process.env.DATABASE_URL_ADMIN ?? process.env.DATABASE_URL;
 if (!adminUrl) { console.error('[seed] No DATABASE_URL or DATABASE_URL_ADMIN'); process.exit(1); }
-const prisma = new PrismaClient({ datasources: { db: { url: adminUrl } });
+const prisma = new PrismaClient({ datasources: { db: { url: adminUrl } } });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Phase 1 bcc-fence (TASK hrp-phase1-bcc-fence, RQ-05 / DEC-05):
