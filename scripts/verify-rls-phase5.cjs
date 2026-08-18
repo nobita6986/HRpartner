@@ -60,6 +60,29 @@ async function verify() {
 
   console.log('=== RLS Phase 5 Verification (Round 2) ===\n');
 
+  // ── 0. DB roles existence (4 portal roles from STEP-09) ───────────────────
+  console.log('--- 0. DB roles existence (4 portal roles) ---');
+  const DB_ROLES = ['worker_user', 'vendor_user', 'ctv_user', 'sale_user'];
+  for (const role of DB_ROLES) {
+    try {
+      const result = await prisma.$queryRawUnsafe(
+        `SELECT 1 FROM pg_roles WHERE rolname = $1`,
+        role,
+      );
+      if (result.length > 0) {
+        console.log(`  ✓ role "${role}" exists`);
+        pass++;
+      } else {
+        // STEP-09 / DEC-09 / FO-01: role missing = FAIL
+        console.log(`  ✗ role "${role}" MISSING — run scripts/create-db-roles.cjs`);
+        fail++;
+      }
+    } catch (e) {
+      console.log(`  ✗ role "${role}" ERROR: ${e.message.split('\n')[0]}`);
+      fail++;
+    }
+  }
+
   // ── 1. Policy existence (7 tables × 1 policy = 7 checks) ─────────────────
   console.log('--- 1. Policy existence (7 tables × 1 policy) ---');
   for (const table of TABLES) {

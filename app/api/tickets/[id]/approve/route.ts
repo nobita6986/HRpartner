@@ -10,6 +10,7 @@ import { requireTicketAuth, ticketsErrorResponse } from '@/src/shared/auth/ticke
 import { getIdempotencyKey } from '@/src/shared/auth/ticket-route-helpers';
 import { getPrisma } from '@/src/lib/db';
 import { withIdempotency } from '@/src/shared/integrity/idempotency';
+import { notifyTicketStatusChange } from '@/src/shared/push/trigger';
 
 const service = new TicketService(getPrisma());
 
@@ -33,6 +34,8 @@ export async function POST(
     // Phase 3 / RQ-02: wrap handler nếu có key (client retry → replay kết quả cũ).
     if (!idempotencyKey) {
       const ticket = await service.approveTicket(input, sessionUser);
+      // P1 STEP-05: notify worker
+      await notifyTicketStatusChange(ticket.workerId, ticket.title, ticket.status).catch(() => {});
       return NextResponse.json({ ticket }, { status: 200 });
     }
 
@@ -42,10 +45,12 @@ export async function POST(
       actorId: sessionUser.id,
       key: idempotencyKey,
       requestBody: body,
-      handler: async () => ({
-        body: { ticket: await service.approveTicket(input, sessionUser) },
-        statusCode: 200,
-      }),
+      handler: async () => {
+        const ticket = await service.approveTicket(input, sessionUser);
+        // P1 STEP-05: notify worker
+        await notifyTicketStatusChange(ticket.workerId, ticket.title, ticket.status).catch(() => {});
+        return { body: { ticket }, statusCode: 200 };
+      },
     });
 
     return NextResponse.json(result.body, { status: result.statusCode });

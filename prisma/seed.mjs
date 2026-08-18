@@ -268,6 +268,125 @@ async function seedVendorStatement() {
   return 1;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// P1 Portals STEP-11 (DEC-12): seed users + worker profile + claims + submissions
+// 3 cổng: vendor.hrpartner.vn, worker.hrpartner.vn, ctv.hrpartner.vn
+// Phone masked 09x****xxx (DEC-12). All upsert (idempotent).
+// ═══════════════════════════════════════════════════════════════════════════
+const PORTAL_USERS_SEED = [
+  { phone: '0910000001', role: 'VENDOR_ADMIN', vendorCode: 'VND-001', affCode: null, name: 'Vendor Admin Demo' },
+  { phone: '0910000002', role: 'WORKER', vendorCode: null, affCode: null, name: 'Worker Demo' },
+  { phone: '0910000003', role: 'CTV', vendorCode: null, affCode: 'CTV-DEMO-001', name: 'CTV Demo' },
+];
+
+async function seedPortalUsers() {
+  let count = 0;
+  for (const u of PORTAL_USERS_SEED) {
+    const existing = await prisma.user.findFirst({ where: { phone: u.phone } });
+    const data = {
+      role: u.role,
+      isActive: true,
+      fullName: u.name,
+      affCode: u.affCode,
+    };
+
+    if (u.vendorCode) {
+      const vendor = await prisma.vendor.findUnique({ where: { code: u.vendorCode } });
+      if (vendor) data.vendorId = vendor.id;
+    }
+
+    if (existing) {
+      await prisma.user.update({ where: { id: existing.id }, data });
+    } else {
+      // No passwordHash — user must be created via admin in production (DEC-12 note).
+      // Seed gives a dev password so test login works.
+      const passwordHash = await bcrypt.hash('demo-portal-2026', 10);
+      await prisma.user.create({
+        data: {
+          phone: u.phone,
+          passwordHash,
+          ...data,
+        },
+      });
+    }
+    count++;
+  }
+  return count;
+}
+
+async function seedWorkerProfile() {
+  // Find worker demo user
+  const workerUser = await prisma.user.findFirst({ where: { phone: '0910000002' } });
+  if (!workerUser) { console.warn('[seed] worker user not found, skipping profile'); return 0; }
+
+  // Check if Worker profile exists
+  let worker = await prisma.worker.findUnique({ where: { userId: workerUser.id } });
+  if (!worker) {
+    worker = await prisma.worker.create({
+      data: {
+        userId: workerUser.id,
+        fullName: workerUser.fullName ?? 'Worker Demo',
+        phone: workerUser.phone,
+        phoneNormalized: workerUser.phone,
+        employmentStatus: 'NONE',
+        profileStatus: 'INCOMPLETE',
+        riskStatus: 'NORMAL',
+      },
+    });
+  }
+  return worker ? 1 : 0;
+}
+
+async function seedSourceClaims() {
+  const ctvUser = await prisma.user.findFirst({ where: { phone: '0910000003' } });
+  if (!ctvUser) { console.warn('[seed] ctv user not found, skipping claims'); return 0; }
+
+  // Find any worker to claim
+  const worker = await prisma.worker.findFirst();
+  if (!worker) { console.warn('[seed] no worker, skipping claims'); return 0; }
+
+  let count = 0;
+  for (const claimType of ['HRP_DIRECT', 'CTV_REFERRAL']) {
+    const id = `seed-claim-${ctvUser.id}-${claimType}`;
+    await prisma.sourceClaim.upsert({
+      where: { id },
+      update: { accepted: claimType === 'CTV_REFERRAL' },
+      create: {
+        id,
+        workerId: worker.id,
+        claimType,
+        ctvId: ctvUser.id,
+        accepted: claimType === 'CTV_REFERRAL',
+      },
+    });
+    count++;
+  }
+  return count;
+}
+
+async function seedCandidateSubmissionForVendor() {
+  const vendor = await prisma.vendor.findUnique({ where: { code: 'VND-001' } });
+  if (!vendor) { console.warn('[seed] vendor not found, skipping submission'); return 0; }
+
+  // Find a project
+  const project = await prisma.project.findFirst();
+  if (!project) { console.warn('[seed] no project, skipping submission'); return 0; }
+
+  await prisma.candidateSubmission.upsert({
+    where: { id: 'seed-cs-vnd001-01' },
+    update: { status: 'NEW' },
+    create: {
+      id: 'seed-cs-vnd001-01',
+      vendorId: vendor.id,
+      projectId: project.id,
+      fullName: 'Ứng viên demo',
+      phone: '0987654321',
+      status: 'NEW',
+    },
+  });
+  return 1;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Phase 1 identity-core (TASK hrp-phase1-identity-core, RQ-08 + DEC-07):
 // Seed Permission catalog + RolePermission matrix idempotent.
@@ -352,14 +471,19 @@ async function main() {
   const vendors = await seedVendors();
   const periods = await seedTimesheetPeriod();
   const statements = await seedVendorStatement();
+  const portalUsers = await seedPortalUsers();
+  const workerProfile = await seedWorkerProfile();
+  const claims = await seedSourceClaims();
+  const submissions = await seedCandidateSubmissionForVendor();
   const auth = await seedAuthAccounts();
   const perms = await seedPermissions();
 
   console.log(`[seed.mjs] Upserted: ${users} users, ${projects} projects, ${workers} workers, ${vendors} vendors`);
   console.log(`[seed.mjs] Phase 5: ${periods} timesheet period (LOCKED), ${statements} vendor statement (SENT)`);
+  console.log(`[seed.mjs] P1 Portals: ${portalUsers} users, ${workerProfile} worker profile, ${claims} source claims, ${submissions} candidate submissions`);
   console.log(`[seed.mjs] Auth accounts (ENV): ${auth.created} created, ${auth.updated} updated, ${auth.skipped} skipped`);
   console.log(`[seed.mjs] Permissions: ${perms.permCount} catalog, ${perms.rpCount} role-permissions`);
-  console.log(`[seed.mjs] F00A demo ready: 5 workers, 3 projects, 2 vendors, 1 period LOCKED, 1 statement SENT`);
+  console.log(`[seed.mjs] F00A + P1 demo ready: 5 workers, 3 projects, 2 vendors, 1 period LOCKED, 1 statement SENT, 3 portal users`);
 }
 
 main()

@@ -1,7 +1,9 @@
 /**
  * POST /api/auth/login (Phase 1 bcc-fence — RQ-02, DEC-01/03/05/10)
+ * P1 Portals STEP-03: extended with role-based redirect URL (DEC-13).
  *
  * Nhận { phone, password } (zod): đúng + isActive → JWT 8h + Set-Cookie hrp_token.
+ * Response có thêm redirectTo theo role (client redirect về domain đúng).
  * Sai/khóa/malformed → 401 JSON, message chung KHÔNG lộ tài khoản tồn tại hay không.
  * KHÔNG log password/token dưới mọi hình thức.
  */
@@ -26,6 +28,18 @@ function unauthorizedResponse(): NextResponse {
     { error: 'INVALID_CREDENTIALS', message: 'Sai số điện thoại hoặc mật khẩu' },
     UNAUTHORIZED,
   );
+}
+
+// DEC-13: role → redirect URL after login
+const ROLE_REDIRECT: Record<string, string> = {
+  VENDOR_ADMIN:  'https://vendor.hrpartner.vn',
+  VENDOR_STAFF: 'https://vendor.hrpartner.vn',
+  WORKER:       'https://worker.hrpartner.vn',
+  CTV:          'https://ctv.hrpartner.vn',
+};
+
+function getRedirectUrl(role: string): string | null {
+  return ROLE_REDIRECT[role] ?? null;
 }
 
 export async function POST(req: NextRequest) {
@@ -57,8 +71,12 @@ export async function POST(req: NextRequest) {
     }
 
     const token = await signJwt(user.id, user.role);
+    const redirectTo = getRedirectUrl(user.role);
 
-    const res = NextResponse.json({ ok: true });
+    const res = NextResponse.json({
+      ok: true,
+      ...(redirectTo ? { redirectTo } : {}),
+    });
     res.cookies.set(AUTH_COOKIE_NAME, token, {
       httpOnly: true,
       // Deviation (TASK mục lưu ý kỹ thuật): Secure chỉ bật ở production vì local dev

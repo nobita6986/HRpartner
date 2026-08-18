@@ -628,6 +628,11 @@ model AttendanceEvent {
   capturedAt      DateTime? @map("captured_at") // thời điểm tại nguồn (thiết bị/máy)
   receivedAt      DateTime  @default(now()) @map("received_at") // thời điểm server nhận — risk flag nếu lệch > 15'
   importBatchId   String?   @map("import_batch_id")
+  // GPS evidence (P1 portals — DEC-03)
+  gpsLatitude     Decimal?  @map("gps_latitude") @db.Decimal(10, 7)
+  gpsLongitude    Decimal?  @map("gps_longitude") @db.Decimal(10, 7)
+  gpsAccuracyMeters Int?   @map("gps_accuracy_meters")
+  geofenceResult  String?   @map("geofence_result") // INSIDE | OUTSIDE | NONE
   createdAt       DateTime  @default(now()) @map("created_at")
 
   @@unique([source, externalEventId]) // re-import idempotent
@@ -1098,5 +1103,18 @@ model PortalTimesheet {
   // STEP-08 / RQ-09: chống bơm trùng công theo (NV, dự án, kỳ)
   @@unique([employeeCode, project, periodMonth, periodYear], name: "uq_portal_timesheets_period")
   @@map("portal_timesheets")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  endpoint  String
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, endpoint], name: "userId_endpoint")
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
