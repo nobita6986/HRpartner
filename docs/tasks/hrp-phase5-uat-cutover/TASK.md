@@ -188,6 +188,7 @@ Các AC còn lại (AC-01..03, AC-05..11) PASS round 1. Tier 3 re-audit round 2 
 |---|---|---|---|
 | `FO-01` | LOW | 4 check functional trong `verify-rls-phase5.cjs` đang vacuous: role DB `sale_user`/`worker_user` KHÔNG tồn tại (Planner check `pg_roles` → 0 row) nên script pass nhánh "role missing". 21 check còn lại (7 policy + 14 enabled/FORCE) là THẬT trên production. Xử lý trước OP-04: tạo 2 role `NOLOGIN` qua `DATABASE_URL_ADMIN` (idempotent) hoặc script tự phân loại "role missing" thành SKIP (không PASS) | Tier 2 / trước OP-04 |
 | `FO-02` | LOW | AC-11 k6 mới có 3 script + README, chưa có run thật + báo cáo p95. Gate p95 < 2s phải chạy trên môi trường đích trong OP-03 dry-run | Sếp + Tier 2 / trong OP-03 |
+| `FO-03` | LOW | Vercel Hobby chặn cron `*/5` (gói free chỉ cho cron 1 lần/ngày) → deploy production bị từ chối. Planner chuyển tạm 2 cron sang `0 0 * * *` (daily 07:00 ICT) để deploy 18/08 (dpl_GjUyqLQdSC2A5HPnTKwx3hB2XS56). Khắc phục để đúng contract 5 phút: GitHub Actions scheduled gọi `/api/cron/outbox` + `/api/cron/disputes` với `CRON_SECRET` (miễn phí, Tier 2 làm) hoặc nâng Vercel Pro | Tier 2 + sếp / sau go-live đợt 1 |
 
 Ghi chú OP: OP-01 (shadow 2 kỳ) + OP-03 (dry-run) + OP-04 (go-live đợt 1) là việc sếp theo DEC-06 — nằm ngoài CODE_AUDIT, không block ACCEPTED; runbook đã đủ 5 mục (AC-08) để sếp thực thi.
 
@@ -199,3 +200,4 @@ Ghi chú OP: OP-01 (shadow 2 kỳ) + OP-03 (dry-run) + OP-04 (go-live đợt 1) 
 | `v1.1` | 2026-08-18 | Sếp chốt 3 câu: OP-01 sếp tự làm (DEC-06); OP-02 → STEP-07 giao Tier 2 viết k6 (DEC-07, RQ-11, AC-11); Cron = Vercel Cron Jobs (DEC-02). Còn **7 STEP + 3 OP** | Chốt theo câu hỏi Planner (tiếng Việt), 18/08 14:27 |
 | `v1.1` (round 2) | 2026-08-18 | Không đổi contract — mở execution round 2: Tier 2 sửa AUD-001 theo 4 điểm §9 (spread param, bảng thứ 7 `client_statements`, sửa false-pass, chạy lại exit 0) | Tier 3 audit round 1 verdict FAIL (AUD-001 P1) — 18/08 15:08 |
 | `v1.1` (closed) | 2026-08-18 | **Resolution ACCEPTED — TASK CLOSED.** Tier 2 fix `c61db96` + Tier 3 audit round 2 PASS + Planner verify độc lập (script 25/25 exit 0 trên production, migrate status up-to-date). 2 follow-up LOW: FO-01 role DB vacuous, FO-02 k6 chưa run thật — trước OP-04/trong OP-03 | Tier 3 verdict PASS 15:26 — Planner 15:31 |
+| `v1.1` (ops) | 2026-08-18 | Production **hrpartner.vn đã deploy code mới** (dpl_GjUyqLQdSC2A5HPnTKwx3hB2XS56, READY): `/api/jobs` HTTP 200 trả dữ liệu thật từ Neon (3 jobs), `/index.html` bản mới. Cron Hobby phải hạ về daily tạm → ghi FO-03 | Planner 16:05 ICT |
