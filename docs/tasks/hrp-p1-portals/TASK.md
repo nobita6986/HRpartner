@@ -8,7 +8,7 @@
 | Work type | `CODE + INFRA` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `IN_REVIEW` |
+| Status | `REVISION_REQUIRED` |
 | Planner | Tier 1 — Planner (Product & Architecture Decision Owner) |
 | Executor | Tier 2 (agent ngoài — sếp giao qua Cursor: `/code hrp-p1-portals`) |
 | Auditor | Tier 3 (independent context) |
@@ -16,9 +16,9 @@
 | Modules | P1 — External Portals: Worker PWA + Vendor Portal + CTV Dashboard (4–6 tuần) |
 | ADR references | ADR-013 (LOCKED bất biến), D16-b (outbox + cron), G13 (kho hồ sơ vendor), G17 (dispute SLA), G21-T14 (write-behind check-in), G22 (data isolation), UNIFIED_PLAN §4.2 + §11 |
 | Current execution round | 2 (AUD-001 fix — commit `552fa3a`) |
-| Current audit round | 2 (chờ Tier 3 re-audit) |
-| Next gate | `/audit hrp-p1-portals` |
-| Updated | 2026-08-18 17:49 ICT |
+| Current audit round | 2 (verdict FAIL 21:46 — AUD-003 OPEN: seed truyền field `address` không có trong model Vendor) |
+| Next gate | `/code hrp-p1-portals` (round 3 — xóa `address` khỏi seed + bắt buộc tự chạy seed local trước Handoff) |
+| Updated | 2026-08-18 21:48 ICT |
 
 ## 1. Outcome
 
@@ -224,6 +224,19 @@ Sếp đã ủy quyền rõ cho Planner chạy OP-03 ("ok uỷ quyền cho mày 
 
 → **FO-01 đóng; AC-10 + C-06 PASS** sẵn cho Tier 3 round 2 re-verify (chạy lại `scripts/verify-rls-phase5.cjs` phải exit 0). Ghi chú vận hành: dòng `DATABASE_URL_ADMIN` trong `.env` bọc ngoặc kép `"` — khi extract phải trim quote trước khi gán env (lần chạy đầu bị `ENOTFOUND base` do dính ký tự `"`; đã chẩn đoán bằng lệnh masked không in secret và khắc phục).
 
+### Round 2 — Verdict FAIL (AUD-003) → REVISION_REQUIRED (Planner 18/08 21:48)
+
+| Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
+|---|---|---|---|---|---|
+| `2` | `AUD-003` | ACCEPT_FIX | P1 xác nhận THẬT bằng spot-check: `prisma/seed.mjs:104-105` (VENDOR_SCENARIOS), `:212` (update), `:218` (create) truyền field `address` vào `prisma.vendor.upsert()`, trong khi `model Vendor` (`schema.prisma:420-435`) KHÔNG có field `address` (chỉ `code/name/taxCode/phone/email/area/status`) → lỗi `Unknown argument address` của Tier 3 là đúng. `npx prisma validate` exit 0 — schema hợp lệ, lỗi nằm hoàn toàn ở seed. Gate `verify-audit.ps1` PASS exit 0. AUD-001 + AUD-002 đã CLOSED đúng (AC-10/C-06 PASS nhờ OP-03) | Không — giữ `v1.0` (lỗi thực thi) | Tier 2 sửa seed + **bắt buộc tự chạy seed local** → HANDOFF round 3 → Tier 3 re-audit |
+
+**Directive cho Tier 2 round 3 (đúng 2 việc + 1 điểm chứng cứ cứng):**
+
+1. **Xóa ngay field `address` khỏi `prisma/seed.mjs`** — đúng 3 chỗ: 2 dòng `VENDOR_SCENARIOS` (104-105) + `update` (212) + `create` (218) trong `prisma.vendor.upsert()`. **KHÔNG được sửa `schema.prisma` để thêm cột `address`** (vi phạm quy tắc cấm sửa schema Phase 0-5 — RQ-12 chỉ cho sửa file seed). Nếu muốn giữ dữ liệu tỉnh demo, map sang field `area` ĐÃ CÓ SẴN trong model Vendor — không tạo field mới. Đây là lỗi seed thứ 2 liên tiếp (sau AUD-001) — chứng tỏ Tier 2 round 2 handoff mà KHÔNG tự chạy seed, dù Directive round 2 đã yêu cầu.
+2. **BẮT BUỘC tự chạy test local TRƯỚC khi Handoff round 3** (điểm mới — round 2 đã bỏ qua): chạy `node --check prisma/seed.mjs` exit 0 + `npx prisma db seed` exit 0 trên **DB dev** (`DATABASE_URL_DEV` — **CẤM chạy production**) + query verify AC-12 đủ dữ liệu 3 cổng (≥1 vendor user, ≥1 worker user + profile, ≥1 CTV user, ≥2 orders ACTIVE, ≥1 statement SENT, ≥2 claims, ≥1 submission). **Dán evidence thật (command + exit code + output) của cả 3 lệnh vào HANDOFF round 3** — Tier 3 round 3 sẽ FAIL ngay nếu thiếu 1 trong 3.
+3. **Build evidence trên worktree sạch** (như round 2): `npm run build` exit 0 trên worktree từ commit của Tier 2 — vì `app/bcc/*` vùng sếp vẫn dirty (C-02 không phải lỗi Tier 2, nhưng evidence build sạch vẫn bắt buộc).
+4. Không đổi gì khác. Các AC còn lại (AC-01..11, AC-13, AC-14) giữ nguyên PASS round 2. Handoff round 3 nêu rõ từng điểm trong 4 điểm trên.
+
 ## 10. Revision Log
 
 | Version | Date | Change | Author |
@@ -231,3 +244,4 @@ Sếp đã ủy quyền rõ cho Planner chạy OP-03 ("ok uỷ quyền cho mày 
 | `v1.0` | 2026-08-18 | Planner soạn TASK từ PHASE_KHOAHOC §P1 + UNIFIED_PLAN §4.2/§11 + MODULE_TACH_V2. 14 RQ / 13 STEP / 14 AC / 13 DEC / 7 RISK / 5 Q. verify-task.ps1 PASS exit 0. Commit + push → báo sếp gõ `/code hrp-p1-portals` | Tier 1 — Planner |
 | `v1.0` (round 1) | 2026-08-18 | **Resolution REVISION_REQUIRED.** Tier 3 audit round 1 verdict FAIL 17:35: AUD-001 P1 — seed.mjs syntax (Planner tự reproduce `node --check` exit 1, dòng 15 thiếu `}`); AUD-002 P2 — thiếu 4 DB roles → OP-03 của sếp. Directive 3 điểm: fix seed + seed evidence dev DB + build evidence trên worktree sạch. Planner đọc `create-db-roles.cjs` (an toàn, idempotent) nhưng bị chặn permission khi chạy OP-03 — chờ sếp quyết định | Tier 3 verdict FAIL 17:35 — Planner 17:42 |
 | `v1.0` (round 1 follow-up) | 2026-08-18 | **AUD-002 CLOSED — OP-03 hoàn tất 17:49.** Sếp ủy quyền Planner chạy: `create-db-roles.cjs` exit 0 (4 roles created trên production), `verify-rls-phase5.cjs` exit 0 (29 passed / 0 failed, functional THẬT). FO-01 đóng; AC-10 + C-06 PASS sẵn cho Tier 3 round 2 re-verify. Task vẫn `REVISION_REQUIRED` (AUD-001 chờ Tier 2) | Tier 1 — Planner (OP-03 ủy quyền bởi Sếp) |
+| `v1.0` (round 2) | 2026-08-18 | **Resolution REVISION_REQUIRED.** Tier 3 audit round 2 verdict FAIL 21:46: AUD-001/002 CLOSED (fix `}` + OP-03 29/29) nhưng lòi **AUD-003 P1** — seed.mjs truyền field `address` không tồn tại trong model Vendor → `npx prisma db seed` exit 1, AC-12 vẫn FAIL. Planner spot-check xác nhận THẬT (seed.mjs:104-105/212/218 vs schema.prisma:420-435; `prisma validate` exit 0) — Tier 2 không tự chạy seed local trước Handoff round 2. Directive round 3: xóa `address` (cấm sửa schema; muốn giữ tỉnh → dùng `area` sẵn có) + **bắt buộc dán evidence 3 lệnh** (`node --check`, `npx prisma db seed` trên dev, query verify AC-12) vào HANDOFF round 3 + build evidence worktree sạch | Tier 3 verdict FAIL 21:46 — Planner 21:48 |
