@@ -8,17 +8,17 @@
 | Work type | `CODE + INFRA` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_UAT` |
+| Status | `REVISION_REQUIRED` |
 | Planner | Tier 1 — Planner (Product & Architecture Decision Owner) |
 | Executor | Tier 2 (agent ngoài — sếp giao qua Cursor: `/code hrp-p1-portals`) |
 | Auditor | Tier 3 (independent context) |
 | Baseline | `aa57fa2` — Phase 5 ACCEPTED + production deploy 18/08 (548 tests, 11/11 AC, dpl_GjUyqLQdSC2A5HPnTKwx3hB2XS56, hrpartner.vn chạy code mới) |
 | Modules | P1 — External Portals: Worker PWA + Vendor Portal + CTV Dashboard (4–6 tuần) |
 | ADR references | ADR-013 (LOCKED bất biến), D16-b (outbox + cron), G13 (kho hồ sơ vendor), G17 (dispute SLA), G21-T14 (write-behind check-in), G22 (data isolation), UNIFIED_PLAN §4.2 + §11 |
-| Current execution round | 3 (AUD-003 CLOSED — commit `36158c8`) |
-| Current audit round | 3 (Tier 2 self-audit: PASS — chờ Tier 3 re-audit) |
-| Next gate | `/audit hrp-p1-portals` |
-| Updated | 2026-08-18 22:12 ICT |
+| Current execution round | 4 (Chờ fix AUD-004) |
+| Current audit round | 3 (Verdict FAIL) |
+| Next gate | `/code hrp-p1-portals` |
+| Updated | 2026-08-18 22:25 ICT |
 
 ## 1. Outcome
 
@@ -248,6 +248,17 @@ Tier 2 thực thi directive round 3:
 
 → AUD-003 CLOSED. Status: READY_FOR_UAT. Next gate: `/audit hrp-p1-portals`
 
+### Round 3 — Verdict FAIL (AUD-004) → REVISION_REQUIRED (Planner 18/08 22:25)
+
+| Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
+|---|---|---|---|---|---|
+| `3` | `AUD-004` | ACCEPT_FIX | P1 xác nhận THẬT: `seed.mjs` chạy thành công (AC-12 PASS), nhưng sinh ra dữ liệu `staffing_orders` làm lộ điểm yếu RLS policy. Test `security-matrix` báo rò rỉ bảng `staffing_orders` cho role MKT, CTV, WORKER (expected 0, got 2). Sếp xác nhận test security-matrix thất bại 104/104 case nếu policy không đúng. | Không — giữ `v1.0` (lỗi thực thi RLS policy/query) | Tier 2 sửa policy + HANDOFF round 4 → Tier 3 re-audit |
+
+**Directive cho Tier 2 round 4 (đúng 1 việc chính + 1 điểm evidence cứng):**
+
+1. **Fix rò rỉ dữ liệu bảng `staffing_orders` (AUD-004)** — Viết/cập nhật policy RLS hoặc logic query cho bảng `staffing_orders` sao cho các role không có thẩm quyền (như MKT, CTV, WORKER) BỊ CHẶN ĐỨNG (trả về 0 rows hoặc 403). **Chừng nào test `security-matrix` chưa xanh hết 104/104 case thì chưa cho qua cửa.**
+2. **Evidence bắt buộc trong HANDOFF round 4:** Cung cấp command và output THẬT của lệnh test `npx vitest run -- security-matrix` chứng minh 104/104 tests PASS. Các AC khác giữ nguyên PASS.
+
 ## 10. Revision Log
 
 | Version | Date | Change | Author |
@@ -256,3 +267,4 @@ Tier 2 thực thi directive round 3:
 | `v1.0` (round 1) | 2026-08-18 | **Resolution REVISION_REQUIRED.** Tier 3 audit round 1 verdict FAIL 17:35: AUD-001 P1 — seed.mjs syntax (Planner tự reproduce `node --check` exit 1, dòng 15 thiếu `}`); AUD-002 P2 — thiếu 4 DB roles → OP-03 của sếp. Directive 3 điểm: fix seed + seed evidence dev DB + build evidence trên worktree sạch. Planner đọc `create-db-roles.cjs` (an toàn, idempotent) nhưng bị chặn permission khi chạy OP-03 — chờ sếp quyết định | Tier 3 verdict FAIL 17:35 — Planner 17:42 |
 | `v1.0` (round 1 follow-up) | 2026-08-18 | **AUD-002 CLOSED — OP-03 hoàn tất 17:49.** Sếp ủy quyền Planner chạy: `create-db-roles.cjs` exit 0 (4 roles created trên production), `verify-rls-phase5.cjs` exit 0 (29 passed / 0 failed, functional THẬT). FO-01 đóng; AC-10 + C-06 PASS sẵn cho Tier 3 round 2 re-verify. Task vẫn `REVISION_REQUIRED` (AUD-001 chờ Tier 2) | Tier 1 — Planner (OP-03 ủy quyền bởi Sếp) |
 | `v1.0` (round 2) | 2026-08-18 | **Resolution REVISION_REQUIRED.** Tier 3 audit round 2 verdict FAIL 21:46: AUD-001/002 CLOSED (fix `}` + OP-03 29/29) nhưng lòi **AUD-003 P1** — seed.mjs truyền field `address` không tồn tại trong model Vendor → `npx prisma db seed` exit 1, AC-12 vẫn FAIL. Planner spot-check xác nhận THẬT (seed.mjs:104-105/212/218 vs schema.prisma:420-435; `prisma validate` exit 0) — Tier 2 không tự chạy seed local trước Handoff round 2. Directive round 3: xóa `address` (cấm sửa schema; muốn giữ tỉnh → dùng `area` sẵn có) + **bắt buộc dán evidence 3 lệnh** (`node --check`, `npx prisma db seed` trên dev, query verify AC-12) vào HANDOFF round 3 + build evidence worktree sạch | Tier 3 verdict FAIL 21:46 — Planner 21:48 |
+| `v1.0` (round 3) | 2026-08-18 | **Resolution REVISION_REQUIRED.** Tier 3 audit round 3 verdict FAIL 22:23: AUD-004 P1 — Lỗi RLS policy làm rò rỉ bảng `staffing_orders` cho MKT, CTV, WORKER. Test `security-matrix` thất bại (expected 0, got 2). Directive round 4: Tier 2 cập nhật policy cho `staffing_orders` để chặn các role không thẩm quyền. Bắt buộc dán evidence test `security-matrix` PASS xanh 104/104 case. | Tier 3 verdict FAIL 22:23 — Planner 22:25 |

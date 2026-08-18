@@ -7,25 +7,29 @@
 | Task slug | `hrp-p1-portals` |
 | Work/Audit type | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Execution round | `2` |
-| Audit round | `2` |
+| Execution round | `3` |
+| Audit round | `3` |
 | Round opened by | `HANDOFF.md` |
 | Round closes when | `verdict PASS + Planner Resolution ACCEPTED` |
 | Auditor/context | `Tier 3` |
 | Baseline/diff/artifacts | `aa57fa2`..`HEAD` |
 | Independence | `Confirmed` |
-| Audit time | `2026-08-18 21:46 ICT` |
+| Audit time | `2026-08-18 22:23 ICT` |
 
 ## 1. Findings
 
-### AUD-003 — Lỗi Schema trong `prisma/seed.mjs` (Vendor address)
+### AUD-004 — Lỗi RLS Policy / Rò rỉ dữ liệu `staffing_orders` cho MKT, CTV, WORKER
 
 - **Severity:** P1 (Blocker)
 - **Status:** OPEN
-- **RQ/AC:** RQ-12 / AC-12
-- **Evidence:** `npx prisma db seed` báo lỗi `Unknown argument address. Available options are marked with ?.` ở `prisma.vendor.upsert()`.
-- **Impact:** Mặc dù Tier 2 đã sửa lỗi cú pháp (`AUD-001`), nhưng lại lòi ra lỗi truyền field `address` không tồn tại trong model `Vendor`. Seed script vẫn tiếp tục rớt, chưa có dữ liệu demo.
-- **Decision needed from Planner:** None (Tier 2 cần fix bằng cách bỏ field `address` khỏi lệnh tạo/cập nhật Vendor, hoặc thêm field `address` vào schema nếu cần, nhưng cấm sửa Phase 0-5 nên chỉ được sửa file seed).
+- **RQ/AC:** RQ-11, RQ-14 / AC-11, AC-14
+- **Evidence:** Lệnh `npx vitest run -- security-matrix` thất bại ở 4 tests:
+  - `MKT × staffing_orders → expected 0, got 2`
+  - `CTV × staffing_orders → expected 0, got 2`
+  - `WORKER × staffing_orders → expected 0, got 2`
+  - `MKT không thấy staffing_orders → expected 0, got 2`
+- **Impact:** Khi lỗi `AUD-003` được sửa và `seed.mjs` sinh ra dữ liệu `staffing_orders` thành công, bộ test lập tức phát hiện rò rỉ dữ liệu! Các role `MKT`, `CTV`, và `WORKER` có thể xem được dữ liệu `staffing_orders` trái phép (đáng lẽ phải trả về 0 rows do bị chặn bởi RLS hoặc logic chặn cấp app, nhưng lại trả về 2). 
+- **Decision needed from Planner:** None. Tier 2 bắt buộc phải fix lại policy (RLS hoặc logic query) để các role ngoài luồng không thể đọc trộm bảng `staffing_orders`.
 
 ## 2. Acceptance Verification
 
@@ -41,23 +45,23 @@
 | `AC-08` | Kho hồ sơ G13 | PASS | Submission logic updated | None |
 | `AC-09` | CTV dashboard claims & summary | PASS | APIs verified | None |
 | `AC-10` | Đóng FO-01: DB roles + verify | PASS | `scripts/verify-rls-phase5.cjs` (29/29 passed) | Đã giải quyết `AUD-002` |
-| `AC-11` | Security matrix mở rộng | PASS | 104 tests matrix pass hoàn toàn | None |
-| `AC-12` | Seed dữ liệu 3 cổng | FAIL | `npx prisma db seed` exit 1 | `AUD-003` |
+| `AC-11` | Security matrix mở rộng | FAIL | 4 test cases fail (`AUD-004`) | `AUD-004` |
+| `AC-12` | Seed dữ liệu 3 cổng | PASS | `npx prisma db seed` chạy thành công không lỗi | Đã giải quyết `AUD-001`, `AUD-003` |
 | `AC-13` | Runbook & UAT checklist | PASS | Đã có trong `HANDOFF.md` | None |
-| `AC-14` | Regression toàn bộ | PASS | 595 tests PASS (Build rớt do `appBCC` của Sếp) | None |
+| `AC-14` | Regression toàn bộ | FAIL | 4 tests rớt (Build vẫn rớt do `appBCC` của Sếp) | `AUD-004` |
 
 ### Mandatory Checks (Deep Audit — C-01..C-10)
 
 | Check | Status | Evidence (command + exit + output) |
 |---|---|---|
-| `C-01` | DONE | `exit code 0`, 595 tests PASS |
+| `C-01` | FAIL | `exit code 1`, 4 tests thất bại |
 | `C-02` | FAIL | `npm run build` exit code 1 (Do code `appBCC` của Sếp lỗi TS) |
 | `C-03` | DONE | Authentication APIs bọc đúng roles và context |
 | `C-04` | DONE | Prisma migration `p1_portals_schema` sạch sẽ |
 | `C-05` | DONE | Idempotent POST `worker/checkins` kiểm tra qua payloadHash |
 | `C-06` | DONE | `scripts/verify-rls-phase5.cjs` exit code 0 |
 | `C-07` | DONE | `git diff --name-only` không chạm vùng cấm `appBCC` |
-| `C-08` | DONE | `security-matrix` mở rộng cover đủ 13 role × bảng scope |
+| `C-08` | FAIL | `security-matrix` mở rộng báo rò rỉ dữ liệu `staffing_orders` |
 | `C-09` | DONE | TASK contract chuẩn |
 | `C-10` | DONE | Files changes khớp với TASK |
 
@@ -71,10 +75,10 @@
 
 | Check/command | Exit/result | Summary | Evidence path/limitation |
 |---|---|---|---|
-| `npx vitest run` | `0` | Toàn bộ 595 tests passed. | Local check |
+| `npx vitest run` | `1` | Rớt 4 test case liên quan tới `staffing_orders` security. | Local check |
 | `npm run build` | `1` | Rớt ở `app/bcc/actions.ts` (ngoài phạm vi Tier 2). | Local check |
 | `node scripts/verify-rls-phase5.cjs` | `0` | Sếp đã chạy OP-03 thành công, 29/29 checks PASS. | Local check |
-| `npx prisma db seed` | `1` | Lỗi schema "Unknown argument address" tại bảng Vendor. | Local check |
+| `npx prisma db seed` | `0` | Đã fix lỗi schema, seed thành công. | Local check |
 
 ## 5. Coverage Gaps
 
@@ -83,8 +87,8 @@
 ## 6. Verdict
 
 - **Verdict:** FAIL
-- **Reason:** Sếp đã sửa lỗi `AUD-002` bằng lệnh OP-03 giúp check RLS thành công (AC-10 pass). Tier 2 cũng đã sửa lỗi cú pháp (`AUD-001`), nhưng script seed lại bị lỗi Schema do Tier 2 truyền field `address` vào `Vendor.upsert()`, field này không tồn tại trong `schema.prisma`. Điều này chứng tỏ Tier 2 không chạy test lệnh seed ở local.
-- **Planner decisions required:** Chuyển trả task lại cho Tier 2 xóa trường `address` khỏi script seed.
+- **Reason:** Tier 2 đã sửa thành công lệnh `seed` (AC-12 Pass). Nhưng trớ trêu thay, khi seed tạo ra dữ liệu bảng `staffing_orders`, nó lại làm lộ ra một điểm yếu bảo mật (hoặc lỗi cấu hình RLS) khiến các role MKT, CTV, WORKER có thể đọc được dữ liệu này. Điều này làm bài kiểm tra `security-matrix` thất bại (AC-11 và AC-14 Fail). 
+- **Planner decisions required:** Chuyển trả task lại cho Tier 2 fix lỗi policy/query cho `staffing_orders`.
 
 ## 7. Re-audit Trace
 
@@ -92,6 +96,7 @@
 |---|---|---|---|---|
 | `1` | `AUD-001` | `NEW` | `CLOSED` | Đã fix lỗi ngoặc `}` |
 | `1` | `AUD-002` | `NEW` | `CLOSED` | Sếp đã tạo DB roles (`verify-rls-phase5.cjs` xanh 29/29) |
-| `2` | `AUD-003` | `-` | `OPEN` | Pending fix từ Tier 2 (xóa `address`) |
+| `2` | `AUD-003` | `NEW` | `CLOSED` | Đã xóa field `address`, seed chạy tốt. |
+| `3` | `AUD-004` | `-` | `OPEN` | Pending fix từ Tier 2 (chống rò rỉ `staffing_orders`) |
 
 > Đã bàn giao AUDIT.md cho Tier 1; chờ Planner Resolution trong TASK.md.
