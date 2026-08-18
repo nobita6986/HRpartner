@@ -8,17 +8,17 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `REVISION_REQUIRED` |
 | Planner | Tier 1 — Planner (Product & Architecture Decision Owner) |
 | Executor | Tier 2 (agent ngoài — sếp giao qua Cursor) |
 | Auditor | Tier 3 (independent context) |
 | Baseline | `0be9f1c` (HEAD 18/08 — sau khi 4B ACCEPTED; các file trong scope KHÔNG đổi từ khi phân tích) |
 | Modules | M3 (Staffing — referral-guard, order code), M7 (Attendance/Ticket — ticket identity, import preview, import commit, session stub) + repo hygiene |
 | ADR references | ADR-007 (auth identity — workerId ≠ userId), ADR-014 (Ticket SM + audit), G22 (permission pool — không đổi) |
-| Current execution round | 1 |
-| Current audit round | 0 (chưa audit) |
-| Next gate | `verify-task` → `/code` → `/audit` → `/resolve` → `ACCEPTED` |
-| Updated | 2026-08-18 ICT |
+| Current execution round | 1 (đã đóng — REVISION: F1-01) → 2 (chờ /code: fix F1-01) |
+| Current audit round | 1 (Tier 3 PASS nhưng Planner phát hiện F1-01 CRITICAL — REVISION) |
+| Next gate | `/code` (round 2: fix F1-01 route self-check) → `/audit` → `/resolve` → `ACCEPTED` |
+| Updated | 2026-08-18 11:05 ICT |
 
 ## 1. Outcome
 
@@ -183,10 +183,11 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| — | — | — | Chưa có audit round 1 | — | — |
+| 1 | F1-01 (Planner tự phát hiện) | **Verdict REVISION_REQUIRED — chưa ACCEPT.** Tier 3 verdict PASS nhưng Planner tự đọc code (Iron Rule 4) phát hiện 1 regression CRITICAL: **F1-01** — `app/api/tickets/route.ts:28` so sánh `body.workerId !== sessionUser.id` (Worker.id vs User.id) → worker tự tạo ticket LUÔN 403 (dòng 27 đã gán đúng `sessionUser.workerId` nhưng dòng 28 so sai field). Vitest 412/412 + build exit 0 KHÔNG bắt được vì route handler không được unit-test (bài học F5-04 mock không bắt lỗi runtime). **7/8 fix còn lại ĐẠT:** RQ-02 referral-guard `if (guardResult.allowed) throw NOT_BLOCKED` đúng (AUDIT.md mô tả nhầm thành `=== 'NOT_BLOCKED'` — code thật đúng); RQ-03 advisory lock `pg_advisory_xact_lock(hashtext('staffing_order_code'))` đúng; RQ-04 anomalyBreakdown đếm từ rawRows; RQ-05 marker TODO(capturedAt); RQ-06 xóa session.ts + relocate getIdempotencyKey sang ticket-route-helpers.ts (grep `getSessionUser` = 0); RQ-07 comment bulk đúng; RQ-08 repo sạch. **Fix F1-01:** sửa dòng 28 thành `if (body.workerId !== sessionUser.workerId)` (so Worker.id với chính nó — chặn worker tạo hộ worker khác). **Round 2 giao Tier 2:** sửa đúng 1 dòng + bổ sung test chứng minh worker tự tạo ticket trả 201 (không 403) | v1.0 (không đổi RQ/STEP/AC — lỗi thực thi) | Tier 2 — round 2 (sếp giao /code) |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | 2026-08-18 | Initial contract — 8 defect từ đợt rà soát code (sếp nghiệm thu 18/08): 4 bug CRITICAL/HIGH (ticket identity, referral-guard đảo điều kiện, order code race, preview breakdown) + 4 quick win (marker `TODO(capturedAt)`, xóa stub auth, đính chính comment, verify repo hygiene). 9 RQ, 9 STEP, 9 AC, 6 DEC | Sếp giao "chuyển bug 1–4 thành sub-task cho Tier 2"; sources: đợt rà soát code + đọc schema/service + `git ls-files` |
+| `v1.0` (r2) | 2026-08-18 | Planner Resolution round 1 — verdict **REVISION_REQUIRED**: 7/8 defect ĐẠT, phát hiện F1-01 (CRITICAL) route self-check `body.workerId !== sessionUser.id` so Worker.id vs User.id → worker tự tạo ticket luôn 403. Không đổi contract (lỗi thực thi) — mở round 2 | AUDIT.md round 1 (Tier 3 PASS) + Planner tự đọc code 18/08 11:00 |
