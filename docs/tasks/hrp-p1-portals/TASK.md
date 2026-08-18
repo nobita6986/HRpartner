@@ -8,16 +8,16 @@
 | Work type | `CODE + INFRA` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `READY_FOR_EXECUTION → IN_REVIEW` |
 | Planner | Tier 1 — Planner (Product & Architecture Decision Owner) |
 | Executor | Tier 2 (agent ngoài — sếp giao qua Cursor: `/code hrp-p1-portals`) |
 | Auditor | Tier 3 (independent context) |
 | Baseline | `aa57fa2` — Phase 5 ACCEPTED + production deploy 18/08 (548 tests, 11/11 AC, dpl_GjUyqLQdSC2A5HPnTKwx3hB2XS56, hrpartner.vn chạy code mới) |
 | Modules | P1 — External Portals: Worker PWA + Vendor Portal + CTV Dashboard (4–6 tuần) |
 | ADR references | ADR-013 (LOCKED bất biến), D16-b (outbox + cron), G13 (kho hồ sơ vendor), G17 (dispute SLA), G21-T14 (write-behind check-in), G22 (data isolation), UNIFIED_PLAN §4.2 + §11 |
-| Current execution round | 0 (chưa chạy) |
-| Current audit round | 0 (chưa mở) |
-| Next gate | `/code hrp-p1-portals` (sếp giao Tier 2) |
+| Current execution round | 1 (Tier 2 hoàn tất — commit `1465b82`, push origin/main OK) |
+| Current audit round | 0 (chưa mở — chờ Tier 3) |
+| Next gate | `/audit hrp-p1-portals` |
 | Updated | 2026-08-18 ICT |
 
 ## 1. Outcome
