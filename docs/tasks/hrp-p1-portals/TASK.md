@@ -16,9 +16,9 @@
 | Modules | P1 — External Portals: Worker PWA + Vendor Portal + CTV Dashboard (4–6 tuần) |
 | ADR references | ADR-013 (LOCKED bất biến), D16-b (outbox + cron), G13 (kho hồ sơ vendor), G17 (dispute SLA), G21-T14 (write-behind check-in), G22 (data isolation), UNIFIED_PLAN §4.2 + §11 |
 | Current execution round | 1 (Tier 2 hoàn tất — commit `1465b82`, push origin/main OK) |
-| Current audit round | 1 (verdict FAIL — AUD-001 OPEN, AUD-002 chờ OP-03 của sếp) |
-| Next gate | `/code hrp-p1-portals` (round 2 — sửa seed.mjs) + OP-03 (sếp chạy `create-db-roles.cjs`) |
-| Updated | 2026-08-18 17:42 ICT |
+| Current audit round | 1 (verdict FAIL — AUD-001 OPEN chờ Tier 2 round 2; AUD-002 CLOSED 18/08: OP-03 xong, sếp ủy quyền Planner chạy) |
+| Next gate | `/code hrp-p1-portals` (round 2 — sửa seed.mjs; OP-03 đã xong) |
+| Updated | 2026-08-18 17:49 ICT |
 
 ## 1. Outcome
 
@@ -191,7 +191,7 @@ Thứ tự slice: **5A nền** (schema + middleware + auth + DB roles) → **5B 
 | `Q-01` | DEC-01: worker/CTV dùng subdomain (khác UNIFIED_PLAN §4.2 để root cho job board) — sếp xác nhận khi duyệt TASK | Sếp | Khi duyệt TASK | Không — đổi lại chỉ 1 dòng ALLOWED_HOSTS |
 | `Q-02` | OP-01: DNS 3 subdomain (vendor/worker/ctv CNAME → Vercel) + gán domain trong Vercel project — ai thao tác? | Sếp/người giữ domain | Trước UAT production | Không — OP, Tier 2 test host header local |
 | `Q-03` | OP-02: VAPID keys (`npx web-push generate-vapid-keys`) — sếp tạo + set env Vercel | Sếp | Trước STEP-05 verify push thật | Không — thiếu keys → flag off |
-| `Q-04` | OP-03: chạy `scripts/create-db-roles.cjs` với `DATABASE_URL_ADMIN` (secret sếp giữ) | Sếp | Trước bật cổng | Không — STEP-09 viết sẵn script idempotent |
+| `Q-04` | OP-03: chạy `scripts/create-db-roles.cjs` với `DATABASE_URL_ADMIN` (secret sếp giữ) | Sếp — ủy quyền Planner | **DONE 18/08 17:49** (xem §9) | Không — STEP-09 viết sẵn script idempotent |
 | `Q-05` | OP-04: UAT 3 cổng với user thật (1 vendor thật confirm 1 biên bản) | Sếp | Trước nghiệm thu P1 | Không — OP |
 
 ## 9. Planner Resolution
@@ -213,9 +213,21 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 
 **Ghi chú AUD-002:** sau khi sếp chạy OP-03 (4 roles tồn tại), `node scripts/verify-rls-phase5.cjs` phải exit 0 với functional check THẬT (không còn vacuous) — Tier 3 round 2 re-verify C-06/AC-10.
 
+### Round 1 — AUD-002 CLOSED: OP-03 hoàn tất (Planner 18/08 17:49)
+
+Sếp đã ủy quyền rõ cho Planner chạy OP-03 ("ok uỷ quyền cho mày làm"). Evidence thật:
+
+| Step | Command | Exit | Output |
+|---|---|---|---|
+| Tạo roles | `node scripts/create-db-roles.cjs` (env `DATABASE_URL_ADMIN` từ .env — secret sếp giữ, không in ra) | `0` | `CREATE: role "worker_user" created` + `vendor_user` + `ctv_user` + `sale_user` → `DONE: 4 DB roles ready` |
+| Verify RLS | `node scripts/verify-rls-phase5.cjs` | `0` | `=== RESULT: 29 passed, 0 failed ===` — 4 roles exist ✓, 7 bảng × policy ✓, RLS+FORCE ✓, functional deny THẬT (SALE/WORKER ngoài scope → 0 rows, hết vacuous) |
+
+→ **FO-01 đóng; AC-10 + C-06 PASS** sẵn cho Tier 3 round 2 re-verify (chạy lại `scripts/verify-rls-phase5.cjs` phải exit 0). Ghi chú vận hành: dòng `DATABASE_URL_ADMIN` trong `.env` bọc ngoặc kép `"` — khi extract phải trim quote trước khi gán env (lần chạy đầu bị `ENOTFOUND base` do dính ký tự `"`; đã chẩn đoán bằng lệnh masked không in secret và khắc phục).
+
 ## 10. Revision Log
 
 | Version | Date | Change | Author |
 |---|---|---|---|
 | `v1.0` | 2026-08-18 | Planner soạn TASK từ PHASE_KHOAHOC §P1 + UNIFIED_PLAN §4.2/§11 + MODULE_TACH_V2. 14 RQ / 13 STEP / 14 AC / 13 DEC / 7 RISK / 5 Q. verify-task.ps1 PASS exit 0. Commit + push → báo sếp gõ `/code hrp-p1-portals` | Tier 1 — Planner |
 | `v1.0` (round 1) | 2026-08-18 | **Resolution REVISION_REQUIRED.** Tier 3 audit round 1 verdict FAIL 17:35: AUD-001 P1 — seed.mjs syntax (Planner tự reproduce `node --check` exit 1, dòng 15 thiếu `}`); AUD-002 P2 — thiếu 4 DB roles → OP-03 của sếp. Directive 3 điểm: fix seed + seed evidence dev DB + build evidence trên worktree sạch. Planner đọc `create-db-roles.cjs` (an toàn, idempotent) nhưng bị chặn permission khi chạy OP-03 — chờ sếp quyết định | Tier 3 verdict FAIL 17:35 — Planner 17:42 |
+| `v1.0` (round 1 follow-up) | 2026-08-18 | **AUD-002 CLOSED — OP-03 hoàn tất 17:49.** Sếp ủy quyền Planner chạy: `create-db-roles.cjs` exit 0 (4 roles created trên production), `verify-rls-phase5.cjs` exit 0 (29 passed / 0 failed, functional THẬT). FO-01 đóng; AC-10 + C-06 PASS sẵn cho Tier 3 round 2 re-verify. Task vẫn `REVISION_REQUIRED` (AUD-001 chờ Tier 2) | Tier 1 — Planner (OP-03 ủy quyền bởi Sếp) |
