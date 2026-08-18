@@ -59,10 +59,12 @@ const ROLE_EXPECT_SCOPE: Record<string, Set<string>> = {
   HR_MANAGER:   new Set(TABLES.map(t => t.name)),        // root
   DIRECTOR:     new Set(TABLES.map(t => t.name)),        // root
   HR_STAFF:      new Set(['workers', 'vendors', 'staffing_orders', 'attendance_events', 'timesheet_periods']),
-  // SALE/MKT/CTV: see projects via RLS (hrp_project_visible_for) — observed from live DB
-  SALE:         new Set(['projects']),
+  // SALE: sees ALL vendors (vendor policy allows ACCOUNTANT/SALE) + projects via hrp_project_visible_for
+  // staffing_orders visible via hrp_project_visible_for(project_id) — SALE sees all projects
+  SALE:         new Set(['projects', 'vendors', 'staffing_orders']),
   PM:           new Set(['projects', 'staffing_orders', 'attendance_events', 'timesheet_periods']),
-  ACCOUNTANT:   new Set(['timesheet_periods', 'vendor_statements', 'client_statements']),
+  // ACCOUNTANT: sees ALL vendors (vendor policy allows ACCOUNTANT/SALE) + timesheet/statement tables
+  ACCOUNTANT:   new Set(['timesheet_periods', 'vendor_statements', 'client_statements', 'vendors']),
   MKT:          new Set(['projects']),
   VENDOR_ADMIN: new Set(['workers', 'staffing_orders', 'vendor_statements']),
   VENDOR_STAFF: new Set(['workers', 'staffing_orders', 'vendor_statements']),

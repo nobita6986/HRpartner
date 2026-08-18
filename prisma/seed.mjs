@@ -101,8 +101,8 @@ const WORKER_SCENARIOS = [
 
 // ─── Phase 5: Vendors (2) ────────────────────────────────────────────────
 const VENDOR_SCENARIOS = [
-  { code: 'VND-001', name: 'Cong ty TNHH Nhan su Vien Dong',  taxCode: '09****001', address: 'Bac Ninh', status: 'ACTIVE' },
-  { code: 'VND-002', name: 'Cong ty TNHH Tu Van Nhan luc',    taxCode: '09****002', address: 'Bac Giang', status: 'ACTIVE' },
+  { code: 'VND-001', name: 'Cong ty TNHH Nhan su Vien Dong',  taxCode: '09****001', area: 'Bac Ninh',   status: 'ACTIVE' },
+  { code: 'VND-002', name: 'Cong ty TNHH Tu Van Nhan luc',    taxCode: '09****002', area: 'Bac Giang', status: 'ACTIVE' },
 ];
 
 // ─── Phase 5: Timesheet period LOCKED (for F00A moment 09:30) ──────────
@@ -209,13 +209,13 @@ async function seedVendors() {
   for (const v of VENDOR_SCENARIOS) {
     await prisma.vendor.upsert({
       where: { id: `seed-vendor-${v.code}` },
-      update: { name: v.name, taxCode: v.taxCode, address: v.address, status: v.status },
+      update: { name: v.name, taxCode: v.taxCode, area: v.area, status: v.status },
       create: {
         id: `seed-vendor-${v.code}`,
         code: v.code,
         name: v.name,
         taxCode: v.taxCode,
-        address: v.address,
+        area: v.area,
         status: v.status,
       },
     });
@@ -268,6 +268,58 @@ async function seedVendorStatement() {
   return 1;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// P1 Portals STEP-11 (DEC-12 + RQ-12): seed ≥2 staffing orders OPEN
+// StaffingOrder.status = 'OPEN' (not 'ACTIVE' — see schema StaffingOrder model)
+const STAFFING_ORDER_SEED = [
+  { code: 'SO-VND001-001', title: 'Tuyen 5 dien cong Cho an',         projectCode: 'DA-2026-018', slotsNeeded: 5, positionCode: 'ELECTRICIAN', positionTitle: 'Điện công',     shiftStart: '07:00', shiftEnd: '16:00', workLocation: 'KCN Cho An, Bac Ninh' },
+  { code: 'SO-VND001-002', title: 'Tuyen 3 han sy Khu cong nghiep',   projectCode: 'DA-2026-022', slotsNeeded: 3, positionCode: 'WELDER',      positionTitle: 'Hàn sợi',        shiftStart: '08:00', shiftEnd: '17:00', workLocation: 'KCN Bac Ninh II' },
+];
+
+async function seedStaffingOrders() {
+  let count = 0;
+  for (const s of STAFFING_ORDER_SEED) {
+    const project = await prisma.project.findUnique({ where: { code: s.projectCode } });
+    if (!project) { console.warn(`[seed] project ${s.projectCode} not found, skipping order`); continue; }
+
+    const validFrom = new Date('2026-08-01');
+    const validTo   = new Date('2026-12-31');
+
+    const order = await prisma.staffingOrder.upsert({
+      where: { id: `seed-order-${s.code}` },
+      update: { status: 'OPEN' },
+      create: {
+        id: `seed-order-${s.code}`,
+        code: s.code,
+        title: s.title,
+        projectId: project.id,
+        status: 'OPEN',
+        deadlineDate: validTo,
+      },
+    });
+
+    await prisma.staffingOrderSlot.upsert({
+      where: { id: `seed-slot-${s.code}` },
+      update: { slotsNeeded: s.slotsNeeded },
+      create: {
+        id: `seed-slot-${s.code}`,
+        staffingOrderId: order.id,
+        positionCode: s.positionCode,
+        positionTitle: s.positionTitle,
+        slotsNeeded: s.slotsNeeded,
+        slotsFilled: 0,
+        shiftStart: s.shiftStart,
+        shiftEnd: s.shiftEnd,
+        validFrom,
+        validTo,
+        workLocation: s.workLocation,
+      },
+    });
+    count++;
+  }
+  return count;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // P1 Portals STEP-11 (DEC-12): seed users + worker profile + claims + submissions
 // 3 cổng: vendor.hrpartner.vn, worker.hrpartner.vn, ctv.hrpartner.vn
@@ -286,7 +338,7 @@ async function seedPortalUsers() {
     const data = {
       role: u.role,
       isActive: true,
-      fullName: u.name,
+      name: u.name,
       affCode: u.affCode,
     };
 
@@ -325,9 +377,8 @@ async function seedWorkerProfile() {
     worker = await prisma.worker.create({
       data: {
         userId: workerUser.id,
-        fullName: workerUser.fullName ?? 'Worker Demo',
+        fullName: workerUser.name ?? 'Worker Demo',
         phone: workerUser.phone,
-        phoneNormalized: workerUser.phone,
         employmentStatus: 'NONE',
         profileStatus: 'INCOMPLETE',
         riskStatus: 'NORMAL',
@@ -471,6 +522,7 @@ async function main() {
   const vendors = await seedVendors();
   const periods = await seedTimesheetPeriod();
   const statements = await seedVendorStatement();
+  const staffingOrders = await seedStaffingOrders();
   const portalUsers = await seedPortalUsers();
   const workerProfile = await seedWorkerProfile();
   const claims = await seedSourceClaims();
@@ -479,7 +531,7 @@ async function main() {
   const perms = await seedPermissions();
 
   console.log(`[seed.mjs] Upserted: ${users} users, ${projects} projects, ${workers} workers, ${vendors} vendors`);
-  console.log(`[seed.mjs] Phase 5: ${periods} timesheet period (LOCKED), ${statements} vendor statement (SENT)`);
+  console.log(`[seed.mjs] Phase 5: ${periods} timesheet period (LOCKED), ${statements} vendor statement (SENT), ${staffingOrders} staffing orders (OPEN)`);
   console.log(`[seed.mjs] P1 Portals: ${portalUsers} users, ${workerProfile} worker profile, ${claims} source claims, ${submissions} candidate submissions`);
   console.log(`[seed.mjs] Auth accounts (ENV): ${auth.created} created, ${auth.updated} updated, ${auth.skipped} skipped`);
   console.log(`[seed.mjs] Permissions: ${perms.permCount} catalog, ${perms.rpCount} role-permissions`);
