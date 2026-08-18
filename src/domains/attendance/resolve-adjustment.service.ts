@@ -110,16 +110,8 @@ export async function resolveUnmatchedRows(
     }
   }
 
-  // Update rows
-  await tx.attendanceImportRow.updateMany({
-    where: { id: { in: rowIds }, batchId },
-    data: resolves.reduce((acc, r, i) => {
-      acc[`_p${i}`] = r.matchedWorkerId;
-      return acc;
-    }, {} as Record<string, string>),
-  });
-
-  // Build update using raw SQL for flexibility
+  // Update rows using raw SQL — F5-04 fix: xóa updateMany chết (data key giả `_p${i}`).
+  // raw SQL cho phép update từng row với matched_worker_id riêng biệt.
   let updatedCount = 0;
   for (const resolve of resolves) {
     const result = await tx.$executeRawUnsafe(

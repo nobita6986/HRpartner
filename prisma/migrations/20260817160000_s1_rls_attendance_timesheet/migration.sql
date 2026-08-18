@@ -34,12 +34,7 @@ BEGIN
       TO app_user_writer, app_user
       USING (
         hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
-        -- PM: chỉ thấy batch có gắn project mình quản lý (batch không có project_id → PM không thấy)
-        OR (hrp_session_role() = 'PM' AND EXISTS (
-          SELECT 1 FROM outsourcing_projects p
-          WHERE p.pm_user_id = hrp_session_user_id()
-            AND p.project_type IN ('OUTSOURCING', 'HRP_EMPLOYED')
-        ))
+        -- PM: deny — batch là root nội bộ HR, có PII (raw_employee_code, errors)
       );
   END IF;
 END$$;
@@ -65,11 +60,7 @@ BEGIN
           WHERE b.id = attendance_import_rows.batch_id
             AND (
               hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
-              OR (hrp_session_role() = 'PM' AND EXISTS (
-                SELECT 1 FROM outsourcing_projects p
-                WHERE p.pm_user_id = hrp_session_user_id()
-                  AND p.project_type IN ('OUTSOURCING', 'HRP_EMPLOYED')
-              ))
+              -- PM: deny — batch policy chặn rồi
             )
         )
       );
@@ -99,7 +90,10 @@ BEGIN
         -- PM: events thuộc project mình quản lý
         OR (hrp_session_role() = 'PM' AND project_id IS NOT NULL AND hrp_project_visible_for(project_id))
         -- WORKER: chỉ events của chính mình
-        OR (hrp_session_role() = 'WORKER' AND worker_id = hrp_session_user_id())
+        OR (hrp_session_role() = 'WORKER' AND worker_id IS NOT NULL AND hrp_worker_visible_for(worker_id))
+      )
+      WITH CHECK (
+        hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
       );
   END IF;
 END$$;
@@ -123,7 +117,10 @@ BEGIN
       USING (
         -- ADMIN/HR/ACCOUNTANT: all
         hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF', 'ACCOUNTANT', 'DIRECTOR')
-        -- PM: periods gắn project mình quản lý
+        OR (hrp_session_role() = 'PM' AND project_id IS NOT NULL AND hrp_project_visible_for(project_id))
+      )
+      WITH CHECK (
+        hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
         OR (hrp_session_role() = 'PM' AND project_id IS NOT NULL AND hrp_project_visible_for(project_id))
       );
   END IF;
@@ -153,6 +150,16 @@ BEGIN
               OR (hrp_session_role() = 'PM' AND p.project_id IS NOT NULL AND hrp_project_visible_for(p.project_id))
             )
         )
+      )
+      WITH CHECK (
+        EXISTS (
+          SELECT 1 FROM timesheet_periods p
+          WHERE p.id = timesheet_lines.period_id
+            AND (
+              hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
+              OR (hrp_session_role() = 'PM' AND p.project_id IS NOT NULL AND hrp_project_visible_for(p.project_id))
+            )
+        )
       );
   END IF;
 END$$;
@@ -177,6 +184,15 @@ BEGIN
         -- ADMIN/HR: all
         hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
         -- PM: adjustments thuộc period của project mình quản lý
+        OR (hrp_session_role() = 'PM' AND EXISTS (
+          SELECT 1 FROM timesheet_periods p
+          WHERE p.id = timesheet_adjustments.period_id
+            AND p.project_id IS NOT NULL
+            AND hrp_project_visible_for(p.project_id)
+        ))
+      )
+      WITH CHECK (
+        hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
         OR (hrp_session_role() = 'PM' AND EXISTS (
           SELECT 1 FROM timesheet_periods p
           WHERE p.id = timesheet_adjustments.period_id

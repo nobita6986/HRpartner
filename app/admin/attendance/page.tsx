@@ -45,6 +45,16 @@ interface Period {
   lockedAt: string | null;
 }
 
+interface UnmatchedRow {
+  id: string;
+  batchId: string;
+  rowNumber: number;
+  rawEmployeeCode: string;
+  rawDate: string;
+  rawTime: string;
+  rawType: string;
+}
+
 const MOCK_BATCHES: Batch[] = [
   {
     id: 'batch-001',
@@ -67,6 +77,12 @@ const MOCK_PERIODS: Period[] = [
     version: 1,
     lockedAt: null,
   },
+];
+
+const MOCK_UNMATCHED_ROWS: UnmatchedRow[] = [
+  { id: 'row-001', batchId: 'batch-001', rowNumber: 101, rawEmployeeCode: 'AP-QM-1048', rawDate: '2026-08-01', rawTime: '08:00', rawType: 'IN' },
+  { id: 'row-002', batchId: 'batch-001', rowNumber: 102, rawEmployeeCode: 'EMP-002', rawDate: '2026-08-01', rawTime: '08:00', rawType: 'IN' },
+  { id: 'row-003', batchId: 'batch-001', rowNumber: 103, rawEmployeeCode: 'EMP-003', rawDate: '2026-08-01', rawTime: '17:00', rawType: 'OUT' },
 ];
 
 function StatusBadge({ status }: { status: BatchStatus | PeriodStatus }) {
@@ -100,12 +116,241 @@ function AnomalyBadge({ count }: { count: number }) {
     </span>
   );
 }
+function ResolveDrawer({
+  row,
+  onClose,
+  onResolved,
+}: {
+  row: UnmatchedRow | null;
+  onClose: () => void;
+  onResolved: (rowId: string, workerId: string) => void;
+}) {
+  const [workerCode, setWorkerCode] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  if (!row) return null;
+
+  const submit = async () => {
+    if (!workerCode.trim()) {
+      setError('Nhap ma nhan vien');
+      return;
+    }
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/attendance/import/${row.batchId}/resolve`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          resolves: [{ rowId: row.id, matchedWorkerId: workerCode.trim(), note: 'Resolved via UI' }],
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setError(j.message ?? 'Resolve that bai');
+        return;
+      }
+      onResolved(row.id, workerCode.trim());
+      onClose();
+    } catch (e) {
+      setError('Network error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex justify-end"
+      style={{ background: 'rgba(0,0,0,0.4)' }}
+      onClick={onClose}
+    >
+      <div
+        className="h-full w-full max-w-md p-6 shadow-xl"
+        style={{ background: 'var(--surface)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <h3 className="mb-4 text-lg font-semibold" style={{ color: 'var(--on-surface)' }}>
+          Resolve unmatched row
+        </h3>
+        <p className="mb-2 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
+          Ma nhan vien (raw): <strong>{row.rawEmployeeCode}</strong>
+        </p>
+        <p className="mb-4 text-xs" style={{ color: 'var(--on-surface-variant)' }}>
+          Row #{row.rowNumber} -- {row.rawDate} {row.rawTime} {row.rawType}
+        </p>
+        <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+          Worker ID (matched)
+        </label>
+        <input
+          type="text"
+          value={workerCode}
+          onChange={e => setWorkerCode(e.target.value)}
+          className="mb-4 w-full rounded border px-3 py-2 text-sm"
+          style={{ borderColor: 'var(--outline)' }}
+          placeholder="worker-001"
+        />
+        {error && (
+          <p className="mb-4 text-sm" style={{ color: 'var(--error)' }}>{error}</p>
+        )}
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="rounded border px-4 py-2 text-sm"
+            style={{ borderColor: 'var(--outline)', color: 'var(--on-surface)' }}
+          >
+            Huy
+          </button>
+          <button
+            onClick={submit}
+            disabled={submitting}
+            className="rounded px-4 py-2 text-sm font-medium text-white"
+            style={{ background: 'var(--primary-dark)' }}
+          >
+            {submitting ? 'Dang luu...' : 'Resolve'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdjustmentDrawer({
+  period,
+  onClose,
+  onCreated,
+}: {
+  period: Period | null;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [workerId, setWorkerId] = useState('');
+  const [deltaHours, setDeltaHours] = useState('0');
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  if (!period) return null;
+
+  const submit = async () => {
+    if (!workerId.trim()) {
+      setError('Nhap worker ID');
+      return;
+    }
+    if (!reason.trim()) {
+      setError('Nhap ly do (required RQ-10)');
+      return;
+    }
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch('/api/attendance/adjustments', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          periodId: period.id,
+          workerId: workerId.trim(),
+          deltaHours: Number(deltaHours),
+          reason: reason.trim(),
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setError(j.message ?? 'Tao adjustment that bai');
+        return;
+      }
+      onCreated();
+      onClose();
+    } catch (e) {
+      setError('Network error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex justify-end"
+      style={{ background: 'rgba(0,0,0,0.4)' }}
+      onClick={onClose}
+    >
+      <div
+        className="h-full w-full max-w-md p-6 shadow-xl"
+        style={{ background: 'var(--surface)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <h3 className="mb-4 text-lg font-semibold" style={{ color: 'var(--on-surface)' }}>
+          Tao adjustment -- Thang {period.month}/{period.year} v{period.version}
+        </h3>
+        <p className="mb-4 text-xs" style={{ color: 'var(--on-surface-variant)' }}>
+          Status: {period.status}. ADR-013: LOCKED bat bien -- can REOPEN truoc.
+        </p>
+        <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+          Worker ID
+        </label>
+        <input
+          type="text"
+          value={workerId}
+          onChange={e => setWorkerId(e.target.value)}
+          className="mb-3 w-full rounded border px-3 py-2 text-sm"
+          style={{ borderColor: 'var(--outline)' }}
+        />
+        <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+          Delta hours (positive = +, negative = -)
+        </label>
+        <input
+          type="number"
+          step="0.5"
+          value={deltaHours}
+          onChange={e => setDeltaHours(e.target.value)}
+          className="mb-3 w-full rounded border px-3 py-2 text-sm"
+          style={{ borderColor: 'var(--outline)' }}
+        />
+        <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+          Reason (required)
+        </label>
+        <textarea
+          value={reason}
+          onChange={e => setReason(e.target.value)}
+          rows={3}
+          className="mb-4 w-full rounded border px-3 py-2 text-sm"
+          style={{ borderColor: 'var(--outline)' }}
+          placeholder="Vi du: di muon 30 phut do tac duong"
+        />
+        {error && (
+          <p className="mb-4 text-sm" style={{ color: 'var(--error)' }}>{error}</p>
+        )}
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="rounded border px-4 py-2 text-sm"
+            style={{ borderColor: 'var(--outline)', color: 'var(--on-surface)' }}
+          >
+            Huy
+          </button>
+          <button
+            onClick={submit}
+            disabled={submitting}
+            className="rounded px-4 py-2 text-sm font-medium text-white"
+            style={{ background: 'var(--primary-dark)' }}
+          >
+            {submitting ? 'Dang luu...' : 'Tao adjustment'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 export default function AttendancePage() {
   const [tab, setTab] = useState<Tab>('batches');
   const [batches] = useState<Batch[]>(MOCK_BATCHES);
   const [periods] = useState<Period[]>(MOCK_PERIODS);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showResolveDrawer, setShowResolveDrawer] = useState<UnmatchedRow | null>(null);
+  const [showAdjustmentDrawer, setShowAdjustmentDrawer] = useState<Period | null>(null);
 
   return (
     <div className="px-6 py-8 lg:px-8" style={{ background: 'var(--surface)' }}>
@@ -225,6 +470,15 @@ export default function AttendancePage() {
                     <div className="flex items-center gap-3">
                       <StatusBadge status={p.status} />
                       {p.status !== 'LOCKED' && (
+                        <button
+                          onClick={() => setShowAdjustmentDrawer(p)}
+                          className="rounded border px-3 py-1 text-xs font-medium"
+                          style={{ borderColor: 'var(--primary-dark)', color: 'var(--primary-dark)' }}
+                        >
+                          + Adjustment
+                        </button>
+                      )}
+                      {p.status !== 'LOCKED' && (
                         <div className="flex gap-2">
                           {p.status === 'PENDING' && (
                             <button
@@ -294,10 +548,37 @@ export default function AttendancePage() {
             ))}
           </div>
 
-          <div className="rounded-lg border p-8 text-center" style={{ borderColor: 'var(--outline-variant)' }}>
-            <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-              Exception Workbench — cần commit batch trước để hiển thị exception rows.
-            </p>
+          <div className="overflow-hidden rounded-lg border" style={{ borderColor: 'var(--outline-variant)' }}>
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ background: 'var(--surface-container)' }}>
+                  <th className="px-4 py-3 text-left font-medium" style={{ color: 'var(--on-surface)' }}>ID</th>
+                  <th className="px-4 py-3 text-left font-medium" style={{ color: 'var(--on-surface)' }}>Employee code</th>
+                  <th className="px-4 py-3 text-left font-medium" style={{ color: 'var(--on-surface)' }}>Date</th>
+                  <th className="px-4 py-3 text-left font-medium" style={{ color: 'var(--on-surface)' }}>Time</th>
+                  <th className="px-4 py-3 text-left font-medium" style={{ color: 'var(--on-surface)' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {MOCK_UNMATCHED_ROWS.map(row => (
+                  <tr key={row.id} className="border-t" style={{ borderColor: 'var(--outline-variant)' }}>
+                    <td className="px-4 py-3">{row.id}</td>
+                    <td className="px-4 py-3">{row.rawEmployeeCode}</td>
+                    <td className="px-4 py-3">{row.rawDate}</td>
+                    <td className="px-4 py-3">{row.rawTime}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => setShowResolveDrawer(row)}
+                        className="rounded border px-3 py-1 text-xs font-medium"
+                        style={{ borderColor: 'var(--primary-dark)', color: 'var(--primary-dark)' }}
+                      >
+                        Resolve
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -346,6 +627,8 @@ export default function AttendancePage() {
           </div>
         </div>
       )}
+      <ResolveDrawer row={showResolveDrawer} onClose={() => setShowResolveDrawer(null)} onResolved={() => {}} />
+      <AdjustmentDrawer period={showAdjustmentDrawer} onClose={() => setShowAdjustmentDrawer(null)} onCreated={() => {}} />
     </div>
   );
 }
