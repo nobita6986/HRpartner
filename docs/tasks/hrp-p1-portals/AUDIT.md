@@ -97,6 +97,6 @@
 | `1` | `AUD-001` | `NEW` | `CLOSED` | Đã fix lỗi ngoặc `}` |
 | `1` | `AUD-002` | `NEW` | `CLOSED` | Sếp đã tạo DB roles (`verify-rls-phase5.cjs` xanh 29/29) |
 | `2` | `AUD-003` | `NEW` | `CLOSED` | Đã xóa field `address`, seed chạy tốt. |
-| `3` | `AUD-004` | `-` | `OPEN` | Pending fix từ Tier 2 (chống rò rỉ `staffing_orders`) |
+| `3` | `AUD-004` | `-` | `CLOSED` | Tier 2 round 4: fix seed `isPublic=false` cho 3 projects. security-matrix 111/111 PASS. |
 
 > Đã bàn giao AUDIT.md cho Tier 1; chờ Planner Resolution trong TASK.md.
