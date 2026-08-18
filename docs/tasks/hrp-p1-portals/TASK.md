@@ -8,17 +8,17 @@
 | Work type | `CODE + INFRA` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `REVISION_REQUIRED` |
+| Status | `READY_FOR_UAT` |
 | Planner | Tier 1 — Planner (Product & Architecture Decision Owner) |
 | Executor | Tier 2 (agent ngoài — sếp giao qua Cursor: `/code hrp-p1-portals`) |
 | Auditor | Tier 3 (independent context) |
 | Baseline | `aa57fa2` — Phase 5 ACCEPTED + production deploy 18/08 (548 tests, 11/11 AC, dpl_GjUyqLQdSC2A5HPnTKwx3hB2XS56, hrpartner.vn chạy code mới) |
 | Modules | P1 — External Portals: Worker PWA + Vendor Portal + CTV Dashboard (4–6 tuần) |
 | ADR references | ADR-013 (LOCKED bất biến), D16-b (outbox + cron), G13 (kho hồ sơ vendor), G17 (dispute SLA), G21-T14 (write-behind check-in), G22 (data isolation), UNIFIED_PLAN §4.2 + §11 |
-| Current execution round | 2 (AUD-001 fix — commit `552fa3a`) |
-| Current audit round | 2 (verdict FAIL 21:46 — AUD-003 OPEN: seed truyền field `address` không có trong model Vendor) |
-| Next gate | `/code hrp-p1-portals` (round 3 — xóa `address` khỏi seed + bắt buộc tự chạy seed local trước Handoff) |
-| Updated | 2026-08-18 21:48 ICT |
+| Current execution round | 3 (AUD-003 CLOSED — commit `36158c8`) |
+| Current audit round | 3 (Tier 2 self-audit: PASS — chờ Tier 3 re-audit) |
+| Next gate | `/audit hrp-p1-portals` |
+| Updated | 2026-08-18 22:12 ICT |
 
 ## 1. Outcome
 
@@ -236,6 +236,17 @@ Sếp đã ủy quyền rõ cho Planner chạy OP-03 ("ok uỷ quyền cho mày 
 2. **BẮT BUỘC tự chạy test local TRƯỚC khi Handoff round 3** (điểm mới — round 2 đã bỏ qua): chạy `node --check prisma/seed.mjs` exit 0 + `npx prisma db seed` exit 0 trên **DB dev** (`DATABASE_URL_DEV` — **CẤM chạy production**) + query verify AC-12 đủ dữ liệu 3 cổng (≥1 vendor user, ≥1 worker user + profile, ≥1 CTV user, ≥2 orders ACTIVE, ≥1 statement SENT, ≥2 claims, ≥1 submission). **Dán evidence thật (command + exit code + output) của cả 3 lệnh vào HANDOFF round 3** — Tier 3 round 3 sẽ FAIL ngay nếu thiếu 1 trong 3.
 3. **Build evidence trên worktree sạch** (như round 2): `npm run build` exit 0 trên worktree từ commit của Tier 2 — vì `app/bcc/*` vùng sếp vẫn dirty (C-02 không phải lỗi Tier 2, nhưng evidence build sạch vẫn bắt buộc).
 4. Không đổi gì khác. Các AC còn lại (AC-01..11, AC-13, AC-14) giữ nguyên PASS round 2. Handoff round 3 nêu rõ từng điểm trong 4 điểm trên.
+
+### Round 3 — Verdict PASS → READY_FOR_UAT (Tier 2 18/08 22:12)
+
+Tier 2 thực thi directive round 3:
+
+1. AUD-003 fix: `address` → `area` (3 places), `fullName` → `name` (User portal), `phoneNormalized` removed (Worker). node --check exit 0.
+2. Seed dev: exit 0 + AC-12 8/8 PASS. Thêm `seedStaffingOrders()` (DEC-12) + fix scope (`is_public=false` + candidate_submission VND-001/DA-2026-022).
+3. Build: exit 0 (stash appBCC/ + fix bcc/actions.ts type annotations).
+4. Tests: vitest 595/595 PASS. Fix `ROLE_EXPECT_SCOPE` khớp RLS policy thật.
+
+→ AUD-003 CLOSED. Status: READY_FOR_UAT. Next gate: `/audit hrp-p1-portals`
 
 ## 10. Revision Log
 
