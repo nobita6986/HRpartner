@@ -7,7 +7,7 @@
 | Task slug | `hrp-phase5-uat-cutover` |
 | Work type | `CODE + INFRA + OPS` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 — Planner (Product & Architecture Decision Owner) |
 | Executor | Tier 2 (agent ngoài — sếp giao qua Cursor: `/code hrp-phase5-uat-cutover`) |
@@ -15,10 +15,10 @@
 | Baseline | `614dca5` — Phase 4 ACCEPTED (18/08, 437 tests, 4 slice, 7 round) |
 | Modules | M2 (Job Board), M3 (CRM/Staffing), M4 (Đối soát), M7 (Chấm công), M9 (Infra) |
 | ADR references | ADR-014 (idempotency + outbox), D16-b (outbox in-process + cron), ADR-013 (LOCKED bất biến) |
-| Current execution round | 1 (chờ /code: STEP-01..06) |
+| Current execution round | 1 (chờ /code: STEP-01..07) |
 | Current audit round | 0 (chưa audit) |
 | Next gate | `/code` → `/audit` → `/resolve` → `ACCEPTED` |
-| Updated | 2026-08-18 13:00 ICT |
+| Updated | 2026-08-18 14:27 ICT |
 
 ## 1. Outcome
 
@@ -31,8 +31,7 @@ Sau Phase 5 (2 tuần), HRP chạy được trên **production Neon** với 1 d�
 - Không wire UI vendor portal / client portal / worker PWA (P1 — Phase sau).
 - Không wire UI public job board với domain thật (Q-04 — P2).
 - Không payroll tính lương/thuế thật (P3).
-- Không load test 5000 concurrent (OP-02 — sếp/người làm, không phải code Tier 2).
-- Không shadow reconciliation data thật (OP-01 — sếp/người làm).
+- Không shadow reconciliation data thật (OP-01 — sếp tự làm, DEC-06).
 - Không deployment production thật (OP-04 — sếp/người làm, chỉ chuẩn bị runbook).
 - Không đụng `appBCC/*`, `docs/consolidation_plan.md`, `docs/tasks/hrp-defectfix-code-review/` (việc riêng).
 - Không sửa logic Phase 4 đã ACCEPT (chỉ wire UI, không đổi service/route).
@@ -59,12 +58,13 @@ Sau Phase 5 (2 tuần), HRP chạy được trên **production Neon** với 1 d�
 | ID | Type | Decision/Assumption | Source/Owner | Status/Expiry |
 |---|---|---|---|---|
 | `DEC-01` | CHOSEN | Gom UI wire (Phase 4 4D mockup) vào Phase 5 — không tách task riêng | Sếp chốt 18/08 | Hiệu lực cả task |
-| `DEC-02` | CHOSEN | Cron dùng Vercel Cron Jobs (`vercel.json` cron schedule) gọi API route handler `/api/cron/outbox` + `/api/cron/disputes`; mỗi 5 phút, idempotent | Planner / D16-b | Hiệu lực cả task |
+| `DEC-02` | CHOSEN | Cron dùng Vercel Cron Jobs (`vercel.json` cron schedule) gọi API route handler `/api/cron/outbox` + `/api/cron/disputes`; mỗi 5 phút, idempotent | Sếp chốt 18/08 / D16-b | Hiệu lực cả task |
 | `DEC-03` | CHOSEN | Production RLS apply migration `20260817160000` theo DEC-NEW-04/05: SQL trực tiếp qua `DATABASE_URL_ADMIN` + `prisma migrate resolve --applied` (shadow DB + `portal_timesheets` raw của appBCC) | Planner / DEC-NEW-04/05 (sếp chấp thuận 17/08) | Hiệu lực cả task |
 | `DEC-04` | CHOSEN | Security matrix: vitest integration test, 13 role × 8 bảng = 104 case, verify role ngoài scope → 0 row hoặc 403 | Planner / PHASE_KHOAHOC §5 DoD | Hiệu lực cả task |
 | `DEC-05` | CHOSEN | Seed script: `prisma/seed.mjs` mở rộng đủ 3 moment F00A (ít nhất 5 worker, 3 project, 2 vendor, 1 timesheet period LOCKED, 1 statement SENT) | Planner | Hiệu lực cả task |
-| `DEC-06` | ASSUMPTION | OP-01 (shadow reconciliation 2 kỳ), OP-02 (load test), OP-03 (cutover dry-run), OP-04 (go-live đợt 1) là việc của sếp/người — không giao Tier 2 | Planner | Sếp xác nhận |
-| `DEC-07` | CHOSEN | UI wire pattern: dùng React state + `useEffect` fetch API, loading/error state, giữ nguyên CSS class Phase 4 | Planner | Hiệu lực cả task |
+| `DEC-06` | CHOSEN | OP-01 (shadow reconciliation 2 kỳ) — sếp tự làm, không giao Tier 2 | Sếp chốt 18/08 | Hiệu lực cả task |
+| `DEC-07` | CHOSEN | OP-02 (load test) — Tier 2 làm: viết 3 k6 script (`scripts/load-test/`) + chạy + báo cáo p95 < 2s (STEP-07) | Sếp chốt 18/08 | Hiệu lực cả task |
+| `DEC-08` | CHOSEN | UI wire pattern: dùng React state + `useEffect` fetch API, loading/error state, giữ nguyên CSS class Phase 4 | Planner | Hiệu lực cả task |
 
 ## 4. Contract — Requirements
 
@@ -82,6 +82,7 @@ Sau Phase 5 (2 tuần), HRP chạy được trên **production Neon** với 1 d�
 | `RQ-08` | Seed script đủ cho demo 3 moment F00A: ít nhất 5 worker, 3 project, 2 vendor, 1 timesheet period LOCKED, 1 statement SENT | Must | EV-11, DEC-05 | `npx prisma db seed` → demo đủ 3 moment |
 | `RQ-09` | Runbook production: deploy steps (Vercel + Neon), rollback plan, incident response, env vars checklist, cron schedule | Must | PHASE_KHOAHOC §5 DoD | File `HANDOFF.md` §runbook đủ 5 mục |
 | `RQ-10` | Xác nhận UI admin staffing đã wire (EV-07) — không cần sửa, chỉ audit + ghi nhận | Should | EV-07 | Audit PASS |
+| `RQ-11` | Load test: k6 script 5.000 check-in / 100 transfer / 20 statement song song, chạy + báo cáo p95 < 2s | Must | PHASE_KHOAHOC §5 DoD, DEC-07 | Report p95 < 2s |
 
 ### 4.2 Rules
 
@@ -97,12 +98,13 @@ Sau Phase 5 (2 tuần), HRP chạy được trên **production Neon** với 1 d�
 
 | STEP | RQ | Location | What to build | Source | Verify |
 |---|---|---|---|---|---|
-| `STEP-01` | RQ-01,02,03,10 | `app/(jobs)/page.tsx`, `app/admin/jobs/page.tsx`, `app/admin/reconciliation/page.tsx`, `app/admin/attendance/page.tsx` | Wire UI: xóa `MOCK_*`, thêm `useEffect` fetch API thật, loading/error state; riêng staffing xác nhận PASS (EV-07) | EV-03..07, DEC-07 | Mở browser: admin jobs/reconciliation/attendance hiển thị dữ liệu từ API; public job board fetch từ `/api/jobs` |
+| `STEP-01` | RQ-01,02,03,10 | `app/(jobs)/page.tsx`, `app/admin/jobs/page.tsx`, `app/admin/reconciliation/page.tsx`, `app/admin/attendance/page.tsx` | Wire UI: xóa `MOCK_*`, thêm `useEffect` fetch API thật, loading/error state; riêng staffing xác nhận PASS (EV-07) | EV-03..07, DEC-08 | Mở browser: admin jobs/reconciliation/attendance hiển thị dữ liệu từ API; public job board fetch từ `/api/jobs` |
 | `STEP-02` | RQ-04 | `prisma/migrations/20260817160000*/migration.sql` + `scripts/verify-rls-phase5.cjs` | Apply migration pending lên production + script verify 7 bảng × policy | EV-08, DEC-03 | `migrate status` up-to-date; verify script: role ngoài scope → 0 row |
 | `STEP-03` | RQ-05,06 | `vercel.json` + `app/api/cron/outbox/route.ts` + `app/api/cron/disputes/route.ts` | 2 route cron handler + `vercel.json` cron schedule (mỗi 5 phút) | EV-09, DEC-02 | `GET /api/cron/outbox` → 200, events drained; `GET /api/cron/disputes` → 200, SLA-quá-hạn auto-confirmed |
 | `STEP-04` | RQ-07 | `src/domains/security/security-matrix.integration.test.ts` | 13 role × 8 bảng = 104 case, dùng mock in-memory (DEC-14) | EV-10, DEC-04 | `npx vitest run` 104/104 PASS |
 | `STEP-05` | RQ-08 | `prisma/seed.mjs` | Mở rộng seed: 5 worker, 3 project, 2 vendor, 1 timesheet LOCKED, 1 statement SENT | EV-11, DEC-05 | `npx prisma db seed` → seed thành công; query verify đủ dữ liệu 3 moment |
 | `STEP-06` | RQ-09 | `docs/tasks/hrp-phase5-uat-cutover/HANDOFF.md` | Runbook: deploy steps, rollback plan, incident response, env vars checklist, cron schedule | PHASE_KHOAHOC §5 | HANDOFF.md §runbook đủ 5 mục |
+| `STEP-07` | RQ-11 | `scripts/load-test/k6-checkin.js` + `scripts/load-test/k6-transfer.js` + `scripts/load-test/k6-statement.js` | 3 k6 script + chạy + báo cáo p95 | PHASE_KHOAHOC §5, DEC-07 | `k6 run` → p95 < 2s |
 
 ## 6. Acceptance
 
@@ -118,6 +120,7 @@ Sau Phase 5 (2 tuần), HRP chạy được trên **production Neon** với 1 d�
 | `AC-08` | HANDOFF runbook đủ 5 mục | `HANDOFF.md` có: deploy steps, rollback plan, incident response, env vars, cron schedule | PASS |
 | `AC-09` | Regression: vitest toàn bộ + build + vùng cấm | `npx vitest run` ≥ 437 exit 0; `npm run build` exit 0; `git diff --name-only` sạch vùng cấm | PASS |
 | `AC-10` | Không regression defectfix (route.ts:28 workerId check) | `grep "body.workerId !== sessionUser.workerId" app/api/tickets/route.ts` = 1 | PASS |
+| `AC-11` | Load test k6: 5.000 check-in, 100 transfer, 20 statement → p95 < 2s | `k6 run scripts/load-test/*.js` → p95 < 2s | PASS |
 
 ### Traceability
 
@@ -133,6 +136,7 @@ Sau Phase 5 (2 tuần), HRP chạy được trên **production Neon** với 1 d�
 | RQ-08 | STEP-05 | AC-07 |
 | RQ-09 | STEP-06 | AC-08 |
 | RQ-10 | STEP-01 | AC-03 |
+| RQ-11 | STEP-07 | AC-11 |
 
 ## 7. Risk
 
@@ -148,8 +152,8 @@ Sau Phase 5 (2 tuần), HRP chạy được trên **production Neon** với 1 d�
 
 | ID | Question | Owner | Due | Blocks execution? |
 |---|---|---|---|---|
-| `Q-01` | OP-01 (shadow reconciliation 2 kỳ) — data thật tháng 06+07 ở đâu? Ai chạy? | Sếp | Trước OP-01 | Không — OP, không phải STEP |
-| `Q-02` | OP-02 (load test) — dùng k6 hay artillery? Ai viết script? | Sếp | Trước OP-02 | Không — OP |
+| `Q-01` | OP-01 (shadow reconciliation 2 kỳ) — data thật tháng 06+07 ở đâu? Ai chạy? ✅ Đã trả lời 18/08 (DEC-06): sếp tự làm, không giao Tier 2 | Sếp | Trước OP-01 | Không — OP, không phải STEP |
+| `Q-02` | OP-02 (load test) — dùng k6 hay artillery? Ai viết script? ✅ Đã trả lời 18/08 (DEC-07): k6, Tier 2 làm — thành STEP-07 | Sếp | Trước OP-02 | Không — đã thành STEP-07 |
 | `Q-03` | OP-03 (cutover dry-run) — staging Neon riêng đã có chưa? | Sếp | Trước OP-03 | Không — OP |
 | `Q-04` | OP-04 (go-live đợt 1) — chọn dự án/vendor/client nào? | Sếp | Trước OP-04 | Không — OP |
 
@@ -166,3 +170,4 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | 2026-08-18 | Initial contract — 6 STEP (wire UI + RLS + cron + security matrix + seed + runbook) + 4 OP (shadow + load test + dry-run + go-live). Baseline: Phase 4 ACCEPTED (`614dca5`, 437 tests) | Sếp chốt 18/08: gộp UI wire Phase 4 4D vào Phase 5 UAT/GO-LIVE |
+| `v1.1` | 2026-08-18 | Sếp chốt 3 câu: OP-01 sếp tự làm (DEC-06); OP-02 → STEP-07 giao Tier 2 viết k6 (DEC-07, RQ-11, AC-11); Cron = Vercel Cron Jobs (DEC-02). Còn **7 STEP + 3 OP** | Chốt theo câu hỏi Planner (tiếng Việt), 18/08 14:27 |
