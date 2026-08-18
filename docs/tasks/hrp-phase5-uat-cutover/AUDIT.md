@@ -7,25 +7,25 @@
 | Task slug | `hrp-phase5-uat-cutover` |
 | Work/Audit type | `CODE_AUDIT` |
 | Spec version | `v1.1` |
-| Execution round | `1` |
-| Audit round | `1` |
+| Execution round | `2` |
+| Audit round | `2` |
 | Round opened by | `HANDOFF.md` |
 | Round closes when | `verdict PASS + Planner Resolution ACCEPTED` |
 | Auditor/context | `Tier 3` |
 | Baseline/diff/artifacts | `614dca5`..`HEAD` |
 | Independence | `Confirmed` |
-| Audit time | `2026-08-18 15:08 ICT` |
+| Audit time | `2026-08-18 15:26 ICT` |
 
 ## 1. Findings
 
 ### AUD-001 — `scripts/verify-rls-phase5.cjs` lỗi cú pháp Prisma
 
 - **Severity:** P1
-- **Status:** OPEN
+- **Status:** RESOLVED
 - **RQ/AC:** RQ-04 / AC-04
-- **Evidence:** `node scripts/verify-rls-phase5.cjs` → `ERROR: operator does not exist: name = text[]`
-- **Impact:** Lỗi cú pháp mảng tham số của Prisma khiến kịch bản kiểm tra chính bị gãy, fail C-06. RLS chưa thể được Audit an toàn.
-- **Decision needed from Planner:** Cần Tier 2 sửa mảng parameter Prisma (`[table, policy]` → `... table, policy`) rồi đẩy lại lên nhánh.
+- **Evidence:** `node scripts/verify-rls-phase5.cjs` → `=== RESULT: 25 passed, 0 failed ===`
+- **Impact:** Lỗi cú pháp mảng tham số của Prisma đã được Tier 2 fix. Script chạy đúng, C-06 pass.
+- **Decision needed from Planner:** None
 
 ## 2. Acceptance Verification
 
@@ -34,7 +34,7 @@
 | `AC-01` | Đọc code & `grep MOCK_` cho jobs UI | PASS | `0 MOCK_JOBS` | None |
 | `AC-02` | Đọc code & `grep MOCK_` cho admin UI | PASS | `0 MOCK_STATEMENTS` | None |
 | `AC-03` | UI staffing đã wire (EV-07) | PASS | `2 fetch calls` | None |
-| `AC-04` | RLS Verify Script | FAIL | `node scripts/verify-rls-phase5.cjs` exit code 1 | AUD-001 |
+| `AC-04` | RLS Verify Script | PASS | `node scripts/verify-rls-phase5.cjs` exit code 0 | None |
 | `AC-05` | Cron outbox + dispute hoạt động | PASS | Bọc `CRON_SECRET` fail-closed (401) | None |
 | `AC-06` | Security matrix 104/104 | PASS | `npx vitest run` 104/104 | None |
 | `AC-07` | Seed script mở rộng đủ F00A | PASS | `npx prisma db seed` code đủ | None |
@@ -52,18 +52,18 @@
 | `C-03` | DONE | `app/api/cron/outbox/route.ts` & `disputes` bọc `CRON_SECRET` fail-closed (401). |
 | `C-04` | SKIP | Phase 5 không thay đổi schema/query mới. |
 | `C-05` | SKIP | Chỉ có route cron (GET), gọi hàm service idempotent. |
-| `C-06` | FAIL | `node scripts/verify-rls-phase5.cjs` exit code 1. |
+| `C-06` | DONE | `node scripts/verify-rls-phase5.cjs` exit code 0, 25/25 checks PASS. |
 | `C-07` | DONE | `git status` clean ở vùng cấm `appBCC/*`. |
 | `C-08` | DONE | `548 tests` cover hết Security Matrix 13 role × 8 table. |
 | `C-09` | DONE | `verify-task.ps1` exit code 0 `RESULT: PASS`. |
-| `C-10` | DONE | `git diff --name-only e3b5ed5~1..e3b5ed5` chuẩn 18 files. |
+| `C-10` | DONE | `git diff --name-only c86b624..HEAD` chuẩn files. |
 
 ## 3. Scope
 
 - **Deliverables in scope:** Cập nhật 4 trang giao diện Admin UI, 1 Public UI. Thêm Security Matrix 111 tests. Thêm k6 scripts. Thêm cron outbox & dispute.
 - **Out-of-scope changes:** None.
 - **Blast radius/callers/affected flows:** Các Route cron mới, RLS.
-- **Data/security/migration/operations:** Migration chưa chạy thành công do script gãy.
+- **Data/security/migration/operations:** Migration RLS và Policy chạy hoàn hảo trên 7 bảng.
 
 ## 4. Independent Evidence
 
@@ -71,25 +71,25 @@
 |---|---|---|---|
 | `npx vitest run` | `0` | Toàn bộ **548/548 tests passed**. | Local check |
 | `npx next build` | `0` | Biên dịch Next.js thành công 100%. | Local check |
-| `node scripts/verify-rls-phase5.cjs` | `1` | FAIL do lỗi cú pháp Prisma (ARRAY Binding). | Local check |
+| `node scripts/verify-rls-phase5.cjs` | `0` | 25/25 checks pass. Script cú pháp đã được fix. | Local check |
 | `verify-task.ps1` | `0` | Pass: TASK contract chuẩn xác. | Local check |
 | `git diff --name-only` | `0` | Clean scope. | Local check |
 | `git status` | `0` | Vùng cấm không bị ảnh hưởng. | Local check |
 
 ## 5. Coverage Gaps
 
-- Phần RLS Verification chưa thể hoàn thiện do Script từ Tier 2 bị gãy, cản trở verify tự động trên các Table như `attendance_import_batches`...
+- None. Mọi tính năng giao ước đều được test đầy đủ, script verify đã chạy trơn tru.
 
 ## 6. Verdict
 
-- **Verdict:** FAIL
-- **Reason:** Mandatory Check `C-06` FAIL. Lỗi cú pháp (Syntax) từ Prisma binding của file verify-rls-phase5.cjs cản trở nghiệm thu toàn bộ 7 bảng RLS. P1 bug AUD-001.
-- **Planner decisions required:** Yêu cầu Tier 2 sửa ngay lỗi AUD-001 (Syntax script) sau đó Handoff lại (Round 2).
+- **Verdict:** PASS
+- **Reason:** Tier 2 đã fix triệt để lỗi AUD-001 trong file `scripts/verify-rls-phase5.cjs`. Toàn bộ 11 AC đã PASS xanh rờn. Mandatory C-06 pass với 25/25 checks policy RLS thành công.
+- **Planner decisions required:** None. Sẵn sàng Go-live và nghiệm thu Phase 5 UAT Cutover.
 
 ## 7. Re-audit Trace
 
 | Audit round | Finding ID | Previous status | Current status | Closure evidence |
 |---|---|---|---|---|
-| `1` | `AUD-001` | `NEW` | `OPEN` | Đang đợi Tier 2 sửa |
+| `2` | `AUD-001` | `OPEN` | `RESOLVED` | Tier 2 sửa mảng parameter Prisma (`... table, policy`). Script exit 0, 25/25 checks RLS. |
 
 > Đã bàn giao AUDIT.md cho Tier 1; chờ Planner Resolution trong TASK.md.
