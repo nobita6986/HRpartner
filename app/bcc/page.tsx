@@ -3,51 +3,12 @@
 import { useState, useEffect } from 'react';
 import { Search, Calendar as CalendarIcon, Clock, AlertCircle, Receipt } from 'lucide-react';
 import { fetchPortalTimesheet, fetchOptions } from './actions';
+import type { DailyData, DailyStatus, DailyBreakdown, PayrollItem, PayrollData } from './types';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
-}
-
-type DailyStatus = 'WORKING' | 'OVERTIME' | 'LATE' | 'ABSENT';
-
-interface DailyBreakdown {
-  name: string;
-  hours: number;
-  rate: number | null;
-}
-
-interface DailyData {
-  date: string;
-  status: DailyStatus;
-  in?: string;
-  out?: string;
-  ot?: number;
-  shiftType?: string;
-  dayType?: string;
-  breakdown?: DailyBreakdown[];
-  isPadding?: boolean;
-}
-
-interface PayrollItem {
-  name: string;
-  qty: number | null;
-  rate: number | null;
-  total: number;
-}
-
-interface PayrollData {
-  salaryItems: PayrollItem[];
-  allowances: PayrollItem[];
-  deductions: PayrollItem[];
-  summary: {
-    totalSalary: number;
-    totalAllowance: number;
-    grossIncome: number;
-    totalDeduction: number;
-    netIncome: number;
-  };
 }
 
 interface TimesheetData {
@@ -63,6 +24,7 @@ interface TimesheetData {
   dailyData?: DailyData[];
   payrollData?: PayrollData;
   updatedAt: string;
+  source?: string;
 }
 
 export default function TraCuuPage() {
