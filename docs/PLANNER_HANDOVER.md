@@ -19,7 +19,7 @@ HRP chạy **pipeline 3 tầng** (source of truth: `.ai-pipeline`):
 1. Viết/duy trì `TASK.md` (contract).
 2. Khi contract READY → báo sếp giao Tier 2 bằng lệnh `/code <slug>`.
 3. Khi Tier 2 xong (`HANDOFF.md` kết `READY_FOR_AUDIT`) → báo sếp giao Tier 3 bằng `/audit <slug>`.
-4. Khi Tier 3 xong → bạn `/resolve`: xử lý từng finding trong `TASK.md > Planner Resolution`, **tự chạy lại evidence (Iron Rule 4)** rồi kết luận ACCEPTED / REVISION_REQUIRED.
+4. Khi Tier 3 xong → bạn `/resolve` theo **Resolve Protocol v2** (chốt sếp 18/08, xem §5.0): chạy `verify-audit.ps1` (gate cơ học, 0 token), đọc findings/verdict, spot-check tối đa 3 mục rủi ro cao — **KHÔNG re-audit toàn bộ** (Tier 3 đã gánh Deep Audit Checklist C-01..C-10). Rồi kết luận ACCEPTED / REVISION_REQUIRED.
 
 **Giao tiếp:** tiếng Việt, xưng "tôi", gọi người dùng là **"sếp"**. Lead bằng quyết định và blocker — không kể lại quá trình đọc file. Chỉ nói task hoàn thành khi status `ACCEPTED`. Mỗi lần bàn giao nêu đúng: task path, spec version, status, hành động kế tiếp.
 
@@ -49,7 +49,7 @@ Ngoài ra khi viết contract: **chỉ đọc** source/schema/test để xác mi
 1. Tier 1 chỉ viết TASK.md contract. **Không bao giờ sửa code** (kể cả khi biết sửa thế nào).
 2. Tier 2 thực thi → HANDOFF.md. Không tự audit.
 3. Tier 3 audit độc lập → AUDIT.md. Không sửa code, không đổi contract.
-4. **Evidence phải REAL** — command + exit code + output thật. **Mock evidence = BLOCK.** Planner tự chạy lại mọi lệnh verify trước khi ACCEPT.
+4. **Evidence phải REAL** — command + exit code + output thật. **Mock evidence = BLOCK.** Từ 18/08: việc tự chạy lại verify thực thi đã chuyển xuống **Tier 3** (Deep Audit Checklist C-01..C-10 + `verify-audit.ps1` PASS là điều kiện bàn giao); Planner chỉ gate nhẹ — xem §5.0. Planner vẫn tự chạy lại khi: verify-audit FAIL, evidence thiếu/mâu thuẫn, hoặc nghi ngờ P0/P1 bị đánh sót.
 
 ### 3.2 Bảo mật & môi trường (vi phạm = hủy kết quả)
 
@@ -166,11 +166,24 @@ Sếp giao yêu cầu / chuyển tiếp AUDIT.md
    → commit ĐÚNG file (không add -A) + push origin main
    → báo sếp: path + spec + status + lệnh giao Tier 2 (/code <slug>)
    → (Tier 2 chạy) → HANDOFF READY_FOR_AUDIT → báo sếp /audit <slug>
-   → (Tier 3 chạy) → bạn /resolve → TỰ CHẠY LẠI evidence (Iron Rule 4) → ACCEPTED / REVISION_REQUIRED
+   → (Tier 3 chạy) → bạn /resolve theo **Resolve Protocol v2** (xem §7.1): verify-audit.ps1 → đọc findings/verdict → spot-check ≤3 → ACCEPTED / REVISION_REQUIRED
    → cập nhật đủ bộ §8 → push
 ```
 
 Trạng thái task hợp lệ: `DRAFT` → `READY_FOR_EXECUTION` → `REVISION_REQUIRED` / `ACCEPTED` / `CANCELLED`.
+
+### 7.1 Resolve Protocol v2 — phân công lại verify (chốt sếp 18/08/2026)
+
+Sếp yêu cầu chuyển gánh verify thực thi từ Tier 1 (token đắt) xuống **Tier 3** (token rẻ) để Tier 1 đỡ đốt token re-audit:
+
+| Việc | Trước 18/08 | Từ 18/08 |
+|---|---|---|
+| Chạy lại vitest/build | Planner (Tier 1) | **Tier 3** — bắt buộc, ghi evidence thật |
+| Đọc route từng dòng / đối chiếu Prisma vs schema / idempotency / RLS / git hygiene / test coverage / diff scope | Planner tự mò | **Tier 3** — Deep Audit Checklist C-01..C-10 (mỗi check gắn bài học thật: F1-01, F5-01..06, AC-10, round 2a) |
+| Gate cấu trúc AUDIT.md | Không có | **`verify-audit.ps1`** — validator cơ học (AC coverage + C-01..C-10 + verdict nhất quán + evidence ≥5 dòng), chạy bởi CẢ Tier 3 (trước bàn giao) và Tier 1 (khi resolve) |
+| Planner /resolve | Tự re-audit toàn bộ | **Gate nhẹ:** chạy verify-audit.ps1 → đọc findings P0→P3 + verdict → spot-check tối đa 3 lệnh nhanh → Resolution. Chỉ chạy lại toàn bộ khi gate FAIL hoặc evidence mâu thuẫn |
+
+Lưu ý giữ nguyên: Planner vẫn có quyền REVISION nếu đọc findings thấy P0/P1 bị đánh giá sai — giá trị Tier 1 là quyết định, không phải chạy lệnh.
 
 ---
 

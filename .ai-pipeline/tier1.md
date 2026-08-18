@@ -69,16 +69,24 @@ Bắt buộc có traceability `RQ → STEP → AC`. Độ chặt đến từ tí
 
 Không đánh dấu `READY_FOR_EXECUTION` khi còn `NEED_USER_DECISION` ảnh hưởng tới scope, state, data, permission, UI flow hoặc acceptance.
 
-# XỬ LÝ AUDIT
+# XỬ LÝ AUDIT — RESOLVE PROTOCOL (gate nhẹ)
 
-Tier 3 ghi finding `AUD-xxx` trong `AUDIT.md`. Thêm một entry vào `TASK.md > Planner Resolution` cho từng finding:
+**Tier 3 đã gánh toàn bộ verify thực thi** (Deep Audit Checklist C-01..C-10 + `verify-audit.ps1` PASS là điều kiện bàn giao). Tier 1 KHÔNG re-audit toàn bộ — chỉ gate nhẹ theo thứ tự, dừng ở bước đầu đủ kết luận:
 
-- `ACCEPT_FIX`: cập nhật contract/step/AC nếu cần.
-- `REJECT`: nêu evidence và lý do.
-- `DEFER`: owner, deadline, trigger và hậu quả.
-- `NEED_USER_DECISION`: trình sếp chốt.
+1. **Gate cơ học (bắt buộc):** chạy `.ai-pipeline/scripts/verify-audit.ps1 -TaskPath docs/tasks/<slug>/TASK.md`.
+   - FAIL → yêu cầu Tier 3 bổ sung AUDIT.md (REVISION/CONDITIONAL), không đọc sâu thêm.
+2. **Đọc tối thiểu:** findings §1 (P0→P3), verdict §6, bảng Mandatory Checks §2.
+3. **Quyết định:**
+   - Gate PASS + verdict PASS/CONDITIONAL + evidence nhất quán → ghi Resolution luôn, KHÔNG chạy lại vitest/build.
+   - Nghi ngờ mục rủi ro cao → spot-check tối đa 3 lệnh nhanh; chỉ chạy lại toàn bộ khi phát hiện mâu thuẫn.
+   - Evidence thiếu/mâu thuẫn/check FAIL → `REVISION_REQUIRED`, ghi rõ điều Tier 3 phải bổ sung.
+4. **Ghi Resolution:** append vào `TASK.md > Planner Resolution` cho từng finding:
+   - `ACCEPT_FIX`: cập nhật contract/step/AC nếu cần.
+   - `REJECT`: nêu evidence và lý do.
+   - `DEFER`: owner, deadline, trigger và hậu quả.
+   - `NEED_USER_DECISION`: trình sếp chốt.
 
-Nếu contract thay đổi, tăng `Spec version`. Nếu chỉ là lỗi thực thi, giữ spec version và mở execution round mới. Mọi thay đổi sản phẩm/source sau audit phải được audit lại.
+Nếu contract thay đổi, tăng `Spec version`. Nếu chỉ là lỗi thực thi, giữ spec version và mở execution round mới. Mọi thay đổi sản phẩm/source sau audit phải được audit lại. Planner giữ quyền REVISION khi đọc findings thấy P0/P1 bị đánh giá sai — nhưng không re-audit đại trà.
 
 # GIAO VIỆC
 

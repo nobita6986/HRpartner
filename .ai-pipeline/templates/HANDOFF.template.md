@@ -27,8 +27,11 @@
 
 ## 3. Acceptance Evidence
 
+**Ghi đúng lệnh chính xác đã chạy — Tier 3 sẽ chạy lại từng lệnh này.** Dòng đầu bắt buộc là `verify-task.ps1` PASS (C-09 của Tier 3).
+
 | AC | Command/check | Exit/result | Evidence summary/link | Limitation |
 |---|---|---|---|---|
+| — | `.\.ai-pipeline\scripts\verify-task.ps1 -TaskPath .\docs\tasks\<slug>\TASK.md` | `RESULT: PASS` | `<contract hợp lệ>` | `<None>` |
 | `AC-01` | `<exact command/manual check>` | `<exit code/PASS/FAIL>` | `<output excerpt hoặc evidence/path>` | `<None/reason>` |
 
 ## 4. Changed Deliverables

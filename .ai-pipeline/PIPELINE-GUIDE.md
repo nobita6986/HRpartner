@@ -42,12 +42,17 @@ docs/tasks/<task-slug>/
    ↓
 5. Sếp gõ: /audit <slug>  (hoặc /audit nếu chỉ có 1 HANDOFF READY_FOR_AUDIT)
    → Tier 3 (sub-agent độc lập) đọc TASK.md + HANDOFF.md
-   → Tier 3 tự chạy command/visual check quan trọng (không tin bảng AC của HANDOFF)
+   → Tier 3 tự chạy lại TOÀN BỘ verify thực thi theo Deep Audit Checklist C-01..C-10 (vitest, build, đọc route từng dòng, đối chiếu Prisma vs schema, idempotency/outbox, migration/RLS, git hygiene, test coverage, verify-task, diff scope) — không tin HANDOFF
+   → Tier 3 chạy verify-audit.ps1 → bắt buộc PASS → mới được bàn giao
    → Tier 3 append AUDIT.md round mới, có verdict PASS/CONDITIONAL/FAIL/BLOCKED
    → Tier 3 kết thúc bằng dòng "Đã bàn giao AUDIT.md cho Tier 1; chờ Planner Resolution trong TASK.md."
    ↓
 6. Sếp gõ: /resolve <slug>
-   → Tier 1 đọc AUDIT.md, với từng AUD-xxx append quyết định vào TASK.md §9 Planner Resolution:
+   → Tier 1 gate NHẸ (Resolve Protocol v2 — không re-audit toàn bộ):
+        1. Chạy verify-audit.ps1 (0 token AI). FAIL → trả Tier 3 bổ sung.
+        2. Đọc findings P0→P3 + verdict + bảng Mandatory Checks.
+        3. Gate PASS + evidence nhất quán → ghi Resolution luôn; nghi ngờ → spot-check tối đa 3 lệnh nhanh.
+   → Với từng AUD-xxx append quyết định vào TASK.md §9 Planner Resolution:
         ACCEPT_FIX / REJECT / DEFER / NEED_USER_DECISION
    → Nếu contract đổi: tăng Spec version, update RQ/STEP/AC/traceability, set REVISION_REQUIRED
    → Nếu chỉ lỗi thực thi: giữ Spec version, mở execution round mới
@@ -204,18 +209,24 @@ Khi sếp gõ `/plan <slug> <yêu-cầu>`, Tier 1 phải:
 - [ ] Set `Status: READY_FOR_EXECUTION`.
 - [ ] Báo sếp: "Task `<slug>` sẵn sàng. Gõ `/code <slug>` để giao Tier 2."
 
-## 9. Checklist sau audit (Tier 1, khi gõ `/resolve`)
+## 9. Checklist sau audit (Tier 1, khi gõ `/resolve`) — Resolve Protocol v2
 
-- [ ] Đọc `docs/tasks/<slug>/AUDIT.md` round mới nhất.
+Tier 3 đã gánh toàn bộ verify thực thi (Deep Audit Checklist C-01..C-10). Tier 1 chỉ gate nhẹ:
+
+- [ ] Chạy `.\.ai-pipeline\scripts\verify-audit.ps1 -TaskPath .\docs\tasks\<slug>\TASK.md` → bắt buộc `RESULT: PASS`. FAIL → yêu cầu Tier 3 bổ sung, dừng.
+- [ ] Đọc `docs/tasks/<slug>/AUDIT.md` — findings P0→P3 (§1), bảng Mandatory Checks (§2), verdict (§6). KHÔNG chạy lại vitest/build.
+- [ ] Nghi ngờ mục rủi ro cao → spot-check TỐI ĐA 3 lệnh nhanh (grep/1 command); chỉ chạy lại toàn bộ khi phát hiện mâu thuẫn.
 - [ ] Với từng `AUD-xxx` OPEN, append 1 dòng vào `TASK.md §9 Planner Resolution`:
   - `ACCEPT_FIX` — nếu contract đổi → tăng Spec version, update contract.
   - `REJECT` — nêu evidence, lý do.
   - `DEFER` — owner, deadline, trigger, hậu quả.
   - `NEED_USER_DECISION` — trình sếp chốt.
 - [ ] Nếu có `ACCEPT_FIX` làm đổi contract → update §10 Revision Log.
+- [ ] Chạy `.\.ai-pipeline\scripts\verify-task.ps1` sau khi sửa TASK.md.
 - [ ] Set status:
   - `REVISION_REQUIRED` nếu cần revision.
   - `READY_FOR_EXECUTION` nếu chỉ cần Tier 2 re-run (không đổi contract).
+  - `ACCEPTED` nếu verdict PASS + không còn finding mở + sếp nghiệm thu.
 - [ ] Báo sếp: "Đã xử lý audit round N của `<slug>`. Trạng thái: `<status>`. Gõ `/code <slug>` (revision) hoặc nghiệm thu."
 
 ## 10. Nghiệm thu (Tier 1 + sếp)
