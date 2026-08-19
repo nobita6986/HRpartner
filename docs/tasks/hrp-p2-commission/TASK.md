@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `READY_FOR_AUDIT` |
 | Planner | Tier 1 — Planner (Product & Architecture Decision Owner) |
 | Executor | Tier 2 (agent ngoài — sếp giao qua Cursor: `/code hrp-p2-commission`) |
 | Auditor | Tier 3 (independent context) |
@@ -17,8 +17,8 @@
 | ADR references | ADR-010 (Tiền BigInt), ADR-013 (Record khóa là bất biến), V4.13 G21-B14 (Nợ hoa hồng & netting) |
 | Current execution round | 1 |
 | Current audit round | 0 |
-| Next gate | `/code hrp-p2-commission` |
-| Updated | 2026-08-19 08:25 ICT |
+| Next gate | `/audit hrp-p2-commission` |
+| Updated | 2026-08-19 09:15 ICT |
 
 ## 1. Outcome
 
