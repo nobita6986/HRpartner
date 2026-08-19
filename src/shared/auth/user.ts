@@ -5,7 +5,7 @@
 import { NextRequest } from 'next/server';
 import { verifyJwt, type AuthClaims } from './jwt';
 
-export const AUTH_COOKIE_NAME = 'hrp_token';
+export const AUTH_COOKIE_NAME = 'hrp_session';
 
 /** Lấy raw token từ cookie (ưu tiên) hoặc Bearer header. Không token → null. */
 export function getTokenFromRequest(req: NextRequest): string | null {

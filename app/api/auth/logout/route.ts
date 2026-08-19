@@ -15,6 +15,7 @@ export async function POST(_req: NextRequest) {
     sameSite: 'lax',
     path: '/',
     maxAge: 0,
+    ...(process.env.NODE_ENV === 'production' ? { domain: '.hrpartner.vn' } : {}),
   });
   return res;
 }

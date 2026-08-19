@@ -27,7 +27,7 @@ export interface ServerSession {
  */
 export async function getServerSession(): Promise<ServerSession | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get('hrp_token')?.value;
+  const token = cookieStore.get('hrp_session')?.value;
   if (!token) return null;
 
   try {

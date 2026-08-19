@@ -36,7 +36,8 @@ const PORTAL_DOMAINS: Record<string, string> = {
 const INTERNAL_DOMAINS = new Set(['hrpartner.vn', 'localhost']);
 
 function getHost(req: NextRequest): string {
-  return req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '';
+  const hostHeader = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '';
+  return hostHeader.split(',')[0].trim().split(':')[0];
 }
 
 function isInternal(host: string): boolean {
