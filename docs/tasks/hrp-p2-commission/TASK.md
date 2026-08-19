@@ -1,4 +1,4 @@
-﻿# TASK: hrp-p2-commission
+# TASK: hrp-p2-commission
 
 ## 0. Control
 
@@ -7,18 +7,18 @@
 | Task slug | `hrp-p2-commission` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
-| Status | `READY_FOR_AUDIT` |
+| Spec version | `v1.1` |
+| Status | `REVISION_REQUIRED` |
 | Planner | Tier 1 — Planner (Product & Architecture Decision Owner) |
 | Executor | Tier 2 (agent ngoài — sếp giao qua Cursor: `/code hrp-p2-commission`) |
 | Auditor | Tier 3 (independent context) |
 | Baseline | `HEAD` của `main` (sau khi hoàn thành `hrp-p1-portals` - Round 4 ACCEPTED) |
 | Modules | P2 — Commission (Group policy + individual override + ledger) |
 | ADR references | ADR-010 (Tiền BigInt), ADR-013 (Record khóa là bất biến), V4.13 G21-B14 (Nợ hoa hồng & netting) |
-| Current execution round | 1 |
-| Current audit round | 0 |
-| Next gate | `/audit hrp-p2-commission` |
-| Updated | 2026-08-19 09:15 ICT |
+| Current execution round | 2 |
+| Current audit round | 1 |
+| Next gate | `/code hrp-p2-commission` |
+| Updated | 2026-08-19 10:45 ICT |
 
 ## 1. Outcome
 
@@ -145,11 +145,14 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| (Chưa audit) | | | | | |
+| 1 | AUD-001 | ACCEPT_FIX | RLS là bắt buộc theo Phase 2. Cần viết migration DDL cho RLS. | Yêu cầu Tier 2 bổ sung migration RLS. | Tier 2 |
+| 1 | AUD-002 | ACCEPT_FIX | Kiến trúc yêu cầu event-driven via outbox pattern. | Yêu cầu Tier 2 thêm `enqueueOutbox` vào luồng duyệt/chuyển trạng thái. | Tier 2 |
+| 1 | AUD-003 | ACCEPT_FIX | Lỗi DB schema ở môi trường test làm vitest fail diện rộng. | Yêu cầu Tier 2 chạy prisma migrate reset trên test DB hoặc fix lệnh test. | Tier 2 |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | 2026-08-19 | Tạo contract ban đầu cho P2 Commission | Yêu cầu triển khai tiếp roadmap sau khi P1 ACCEPTED |
+| `v1.1` | 2026-08-19 | Bổ sung yêu cầu sửa lỗi bảo mật và outbox từ Audit Round 1 | Giải quyết AUD-001, AUD-002, AUD-003 |
 

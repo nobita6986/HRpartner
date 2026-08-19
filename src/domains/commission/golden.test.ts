@@ -166,6 +166,9 @@ function makeMockTx(): { tx: any; store: MockStore } {
     auditLog: {
       create: vi.fn(async () => ({})),
     },
+    outboxEvent: {
+      create: vi.fn(async ({ data }: any) => ({ id: newId(), ...data })),
+    },
   };
 
   return { tx, store };

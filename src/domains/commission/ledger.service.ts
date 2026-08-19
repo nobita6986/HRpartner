@@ -18,6 +18,7 @@
 import type { PrismaClient, CommissionLedger, Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { writeAuditLog, type AuditActor } from '@/src/shared/integrity/audit';
+import { enqueueOutbox, type OutboxPrisma } from '@/src/shared/integrity/outbox';
 
 export type LedgerTx = PrismaClient | Prisma.TransactionClient;
 
@@ -153,6 +154,19 @@ export async function approveLedger(
     reason: input.reason ?? null,
   });
 
+  await enqueueOutbox(prisma as OutboxPrisma, {
+    eventType: 'CommissionLedgerApproved',
+    aggregateId: updated.id,
+    payload: {
+      ledgerId: updated.id,
+      ctvId: updated.ctvId,
+      amount: updated.amount.toString(),
+      month: updated.month,
+      year: updated.year,
+      approvedBy: input.actor.id,
+    },
+  });
+
   // Netting chỉ áp dụng khi pay() (set PAID) — approve chỉ set APPROVED.
   return { ledger: updated, netting: null };
 }
@@ -214,6 +228,23 @@ export async function payLedger(
     reason: input.reason ?? null,
   });
 
+  await enqueueOutbox(prisma as OutboxPrisma, {
+    eventType: 'CommissionLedgerPaid',
+    aggregateId: updated.id,
+    payload: {
+      ledgerId: updated.id,
+      ctvId: updated.ctvId,
+      amount: updated.amount.toString(),
+      month: updated.month,
+      year: updated.year,
+      paidAt: updated.paidAt?.toISOString() ?? null,
+      netting: netting
+        ? { debtId: netting.debtId, debtReduced: netting.debtReduced.toString(), netPaid: netting.netPaid.toString() }
+        : null,
+      paidBy: input.actor.id,
+    },
+  });
+
   return { ledger: updated, netting };
 }
 
@@ -249,6 +280,16 @@ export async function rejectLedger(
     action: 'REJECT',
     diff: { before: { status: 'PENDING' }, after: { status: 'REJECTED', reason: input.reason } },
     reason: input.reason,
+  });
+  await enqueueOutbox(prisma as OutboxPrisma, {
+    eventType: 'CommissionLedgerRejected',
+    aggregateId: updated.id,
+    payload: {
+      ledgerId: updated.id,
+      ctvId: updated.ctvId,
+      reason: input.reason,
+      rejectedBy: input.actor.id,
+    },
   });
   return updated;
 }
@@ -324,6 +365,20 @@ export async function createReversal(
     reason: input.reason,
   });
 
+  await enqueueOutbox(prisma as OutboxPrisma, {
+    eventType: 'CommissionReversalCreated',
+    aggregateId: reversal.id,
+    payload: {
+      reversalId: reversal.id,
+      creditId: credit.id,
+      ctvId: credit.ctvId,
+      amount: reversalAmount.toString(),
+      partialAmount: input.partialAmount ? input.partialAmount.toString() : null,
+      reason: input.reason,
+      createdBy: input.actor.id,
+    },
+  });
+
   return reversal;
 }
 
@@ -385,6 +440,18 @@ export async function applyReversal(
     diff: {
       before: { status: 'PENDING' },
       after: { status: 'APPROVED', debtId },
+    },
+  });
+
+  await enqueueOutbox(prisma as OutboxPrisma, {
+    eventType: 'CommissionReversalApproved',
+    aggregateId: reversal.id,
+    payload: {
+      reversalId: reversal.id,
+      ctvId: reversal.ctvId,
+      amount: reversal.amount.toString(),
+      debtId,
+      approvedBy: actor.id,
     },
   });
 

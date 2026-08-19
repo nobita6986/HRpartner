@@ -23,6 +23,7 @@ import type { PrismaClient, Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { FEATURE_FLAGS } from '@/src/shared/feature-flags';
 import { writeAuditLog } from '@/src/shared/integrity/audit';
+import { enqueueOutbox, type OutboxPrisma } from '@/src/shared/integrity/outbox';
 
 export type PolicyTx = PrismaClient | Prisma.TransactionClient;
 
@@ -276,6 +277,23 @@ export async function evaluateAndCreateCredit(
       action: 'CREATE',
       diff: { before: null, after: { created, source: 'evaluateAndCreateCredit', assignmentId, ctvId, policyId: policy.id } },
     });
+    for (const { milestone, ledgerId } of created) {
+      await enqueueOutbox(prisma as OutboxPrisma, {
+        eventType: 'CommissionCreditCreated',
+        aggregateId: ledgerId,
+        payload: {
+          ledgerId,
+          ctvId,
+          workerId: assignment.workerId,
+          assignmentId,
+          milestone,
+          month: now.getMonth() + 1,
+          year: now.getFullYear(),
+          policyId: policy.id,
+          createdBy: ctx.actor.id,
+        },
+      });
+    }
   }
 
   return { evaluated, created, skipped, policyId: policy.id, ctvId };
