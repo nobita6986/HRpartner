@@ -340,6 +340,18 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
 .pd-file-label { font-weight: 700; color: var(--ink); margin-right: 4px; }
 
 
+.summary-box { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 24px; margin-top: 30px; box-shadow: var(--shadow); }
+.summary-box h3 { color: var(--primary); margin-bottom: 16px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+.summary-box h3.aim { color: var(--info); }
+.summary-box h3.have { color: var(--success); }
+.summary-box p { margin-bottom: 12px; color: var(--ink); }
+.summary-box ul { margin-left: 20px; color: var(--ink-soft); font-size: 14.5px; margin-bottom: 16px; }
+.summary-box li { margin-bottom: 6px; }
+.summary-box strong { color: var(--ink); }
+.pd-col h4 { color: var(--ink); margin-bottom: 10px; font-size: 14px; }
+.pd-col ul { margin-left: 18px; color: var(--ink-soft); font-size: 13.5px; }
+.pd-col li { margin-bottom: 8px; }
+.impact { display: block; color: var(--success); font-style: normal; margin-top: 2px; font-size: 12px; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -348,7 +360,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
   <header>
     <div class="eyebrow">Hệ sinh thái ERP Workspace</div>
     <h1>Lộ trình chuyển đổi HRP Portal Ecosystem</h1>
-    <p class="sub">Biến HRP từ công cụ thu thập dữ liệu nội bộ thành Chợ việc làm, B2B Vendor Portal, và Dashboard tương tác cao cho Công nhân, CTV, Ban Giám đốc.</p>
+    <p class="sub">Tài liệu Demo dành cho Ban Giám Đốc (BoD): Tầm nhìn, Hiện trạng và Kế hoạch biến HRP thành hệ sinh thái All-in-One.</p>
     
     <div class="stat-strip">
       <div class="stat">
@@ -359,17 +371,54 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
       <div class="stat">
         <div class="k">Trọng tâm Kỹ thuật</div>
         <div class="v">High <em>Concurrency</em></div>
-        <div class="d">Redis, Pre-compute, Rate Limit</div>
+        <div class="d">Chịu tải 10,000 requests/s</div>
       </div>
       <div class="stat">
         <div class="k">Design System</div>
         <div class="v">Warm <em>Professionalism</em></div>
-        <div class="d">Tích hợp từ stitch/</div>
+        <div class="d">UX/UI hiện đại, thân thiện</div>
       </div>
     </div>
   </header>
 
-  <div class="section-label">Bản đồ tuyến đường (Milestones)</div>
+  <div class="section-label">Bức tranh Toàn cảnh ERP (Executive Summary)</div>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+    
+    <div class="summary-box">
+      <h3 class="have">✅ Những gì đã có (Nền móng)</h3>
+      <p>Hệ thống hiện tại đang sở hữu bộ "động cơ" backend cực kỳ mạnh mẽ, đã được thẩm định an toàn:</p>
+      <ul>
+        <li><strong>Core Database (PostgreSQL/Prisma):</strong> Chứa dữ liệu hàng chục ngàn công nhân, đối tác, hợp đồng.</li>
+        <li><strong>Commission Engine (Phase 2):</strong> Tự động đối soát và tính hoa hồng realtime không lệch 1 đồng. Tự động truy thu (Clawback).</li>
+        <li><strong>RLS Security (Phase 1):</strong> Bảo mật đa tầng 13 role, ai chỉ được thấy dữ liệu của người nấy.</li>
+        <li><strong>API Tuyển dụng & Ticketing:</strong> Hệ thống luân chuyển đơn từ, hồ sơ chuẩn xác.</li>
+      </ul>
+      <p style="font-size:13px; color:var(--ink-soft); font-style:italic;">* Nhược điểm: Chỉ dân kỹ thuật hoặc HR hiểu, người dùng cuối thấy giao diện hiện tại quá nghèo nàn.</p>
+    </div>
+
+    <div class="summary-box" style="border-color: var(--primary);">
+      <h3>🚧 Đang xây dựng (Trọng tâm hiện tại)</h3>
+      <p>Tập trung toàn lực đắp "áo khoác" UI/UX và giải quyết bài toán chịu tải để mở cửa đón người dùng:</p>
+      <ul>
+        <li><strong>Hệ sinh thái Portal (5 Milestones):</strong> Xây dựng các app chuyên biệt cho từng người: App Công nhân, App CTV, App Vendor, BoD Dashboard.</li>
+        <li><strong>Kiến trúc High Concurrency:</strong> Tách app tính lương (Python) riêng, dùng Redis Cache và Virtual Waiting Room để chịu tải hàng ngàn công nhân vào kỳ lương mà không sập.</li>
+        <li><strong>Design System:</strong> Áp dụng chuẩn warm_professionalism định vị thương hiệu hiện đại.</li>
+      </ul>
+    </div>
+
+    <div class="summary-box">
+      <h3 class="aim">🎯 Hướng tới (Tương lai)</h3>
+      <p>Khi Hệ sinh thái Portal hoàn thành, HRP sẽ không chỉ là ERP nội bộ mà trở thành:</p>
+      <ul>
+        <li><strong>B2B Job Market:</strong> Tự động matching nhu cầu tuyển dụng (Vendor) và ứng viên (CTV).</li>
+        <li><strong>Payroll AI Auditing:</strong> Tích hợp AI để tự động phát hiện gian lận chấm công, sai lệch phiếu lương so với luật.</li>
+        <li><strong>Full Digital Transformation:</strong> Xóa sổ 100% giấy tờ và file Excel, mọi quy trình từ Onboarding đến Offboarding diễn ra trên App.</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="section-label" style="margin-top: 50px;">Bản đồ tuyến đường (Milestones)</div>
   <div class="metro">
     <div class="metro-inner" style="min-width: 900px;">
       <div class="metro-track"><div class="done-part" style="width: 10%;"></div></div>
@@ -417,52 +466,137 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
   <div class="grid2" style="margin-top: 30px;">
     <!-- Left Column: Milestone Details -->
     <div>
-      <div class="section-label">Chi tiết từng Milestone</div>
+      <div class="section-label">Chi tiết từng Milestone (Click để xem chi tiết)</div>
 
-      <div class="phase-card is-current">
-        <div class="pc-badge badge-current">M1</div>
-        <div>
-          <div class="pc-title">Nền tảng Design System & Public Layout <span class="pc-status st-dang">WIP</span></div>
-          <div class="pc-inv">Cập nhật <code>globals.css</code> với mã màu và typography mới. Xây dựng <code>app/(portal)/layout.tsx</code> (Global Navbar & Footer).</div>
-          <div class="pc-foot"><b>Exit:</b> Giao diện public có khung chuẩn, sẵn sàng ráp component.</div>
+      <details class="pd-card" open>
+        <summary>
+          <span class="pd-badge badge-current">M1</span>
+          <span class="pd-title">Nền tảng Design System & Public Layout</span>
+          <span class="pd-tag st-dang">WIP</span>
+        </summary>
+        <div class="pd-body">
+          <div class="pd-row">
+            <div class="pd-col">
+              <h4>Chi tiết Công việc (Action) & Tác dụng (Impact)</h4>
+              <ul>
+                <li>Cập nhật <code>globals.css</code> với mã màu Primary (#f26522) và font Be Vietnam Pro.
+                  <span class="impact">🎯 Tác dụng: Tạo nhận diện thương hiệu chuyên nghiệp, thay thế giao diện thô sơ cũ.</span>
+                </li>
+                <li>Xây dựng cấu trúc <code>app/(portal)/layout.tsx</code> (Global Navbar & Footer).
+                  <span class="impact">🎯 Tác dụng: Gom nhóm các trang public vào một giao diện chuẩn, dễ dàng cho marketing và SEO.</span>
+                </li>
+                <li>Tạo các UI Components dùng chung (Button, Card, Input) chuẩn Tailwind v4.
+                  <span class="impact">🎯 Tác dụng: Tăng tốc độ code cho các Milestone sau, đảm bảo UI nhất quán.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
-      </div>
+      </details>
 
-      <div class="phase-card">
-        <div class="pc-badge badge-idle">M2</div>
-        <div>
-          <div class="pc-title">Landing Page & Chợ Việc Làm <span class="pc-status st-cho">TODO</span></div>
-          <div class="pc-inv">Cắt HTML từ stitch/hrp_landing_page_html_standard. Tích hợp API /api/jobs vào thanh tìm kiếm. Xây dựng luồng Apply hồ sơ.</div>
-          <div class="pc-foot"><b>Exit:</b> Ứng viên tự do có thể tìm việc và nộp hồ sơ chuẩn SEO.</div>
+      <details class="pd-card">
+        <summary>
+          <span class="pd-badge badge-idle">M2</span>
+          <span class="pd-title">Landing Page & Chợ Việc Làm</span>
+          <span class="pd-tag st-cho">TODO</span>
+        </summary>
+        <div class="pd-body">
+          <div class="pd-row">
+            <div class="pd-col">
+              <h4>Chi tiết Công việc (Action) & Tác dụng (Impact)</h4>
+              <ul>
+                <li>Cắt HTML từ stitch/hrp_landing_page_html_standard thành các Component (Hero, Service).
+                  <span class="impact">🎯 Tác dụng: Có một bộ mặt sang trọng trên internet để chạy quảng cáo Ads.</span>
+                </li>
+                <li>Tích hợp API /api/jobs vào thanh tìm kiếm.
+                  <span class="impact">🎯 Tác dụng: Ứng viên có thể tìm việc trực tiếp từ data thực tế của công ty.</span>
+                </li>
+                <li>Xây dựng luồng Apply hồ sơ trực tuyến.
+                  <span class="impact">🎯 Tác dụng: Giảm thiểu thao tác nhập liệu tay của HR, ứng viên điền thẳng vào DB.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
-      </div>
+      </details>
 
-      <div class="phase-card">
-        <div class="pc-badge badge-idle">M3</div>
-        <div>
-          <div class="pc-title">Affiliate / CTV Workspace <span class="pc-status st-cho">TODO</span></div>
-          <div class="pc-inv">Biến ctv.hrpartner.vn thành Marketing & Sales Hub. Tích hợp mã Referral QR, biểu đồ hoa hồng realtime.</div>
-          <div class="pc-foot"><b>Exit:</b> CTV có công cụ xịn để kiếm tiền và rải link.</div>
+      <details class="pd-card">
+        <summary>
+          <span class="pd-badge badge-idle">M3</span>
+          <span class="pd-title">Affiliate / CTV Workspace</span>
+          <span class="pd-tag st-cho">TODO</span>
+        </summary>
+        <div class="pd-body">
+          <div class="pd-row">
+            <div class="pd-col">
+              <h4>Chi tiết Công việc (Action) & Tác dụng (Impact)</h4>
+              <ul>
+                <li>Thay thế giao diện ctv cũ bằng bản xịn từ stitch/hrp_collaborator_page_html_standard.
+                  <span class="impact">🎯 Tác dụng: Gây ấn tượng mạnh với CTV, tạo động lực để họ làm việc.</span>
+                </li>
+                <li>Tích hợp mã Referral QR và nút Share lên Mạng xã hội.
+                  <span class="impact">🎯 Tác dụng: Giúp CTV kiếm thêm ứng viên dễ dàng với 1 thao tác. Tính viral cao.</span>
+                </li>
+                <li>Hiển thị biểu đồ tiền hoa hồng realtime và nút Rút tiền.
+                  <span class="impact">🎯 Tác dụng: Minh bạch tài chính tuyệt đối, kích thích CTV hoạt động liên tục.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
-      </div>
+      </details>
 
-      <div class="phase-card">
-        <div class="pc-badge badge-idle">M4</div>
-        <div>
-          <div class="pc-title">Worker Workspace & Kiến trúc Chịu tải <span class="pc-status st-cho">TODO</span></div>
-          <div class="pc-inv">Giải bài toán Thundering Herd vào kỳ lương. Pre-compute Payslip từ Python, Redis Cache, Neon Connection Pooling, Rate Limiting.</div>
-          <div class="pc-foot"><b>Exit:</b> App Công nhân mượt mà, chịu tải 10,000 req/s.</div>
+      <details class="pd-card">
+        <summary>
+          <span class="pd-badge badge-idle">M4</span>
+          <span class="pd-title">Worker App & High Concurrency</span>
+          <span class="pd-tag st-cho">TODO</span>
+        </summary>
+        <div class="pd-body">
+          <div class="pd-row">
+            <div class="pd-col">
+              <h4>Chi tiết Công việc (Action) & Tác dụng (Impact)</h4>
+              <ul>
+                <li>Dựng luồng Pre-compute Payslip từ ppBCC (Python), lưu JSON.
+                  <span class="impact">🎯 Tác dụng: Triệt tiêu rủi ro nghẽn CPU trên web server khi tính lương trực tiếp.</span>
+                </li>
+                <li>Tích hợp Redis Cache và Neon Connection Pooling / PgBouncer.
+                  <span class="impact">🎯 Tác dụng: Tránh sập Database khi 10,000 công nhân vào xem lương (Thundering Herd).</span>
+                </li>
+                <li>Xây dựng "Phòng chờ ảo" (Virtual Waiting Room) bằng Vercel Edge.
+                  <span class="impact">🎯 Tác dụng: Điều tiết lưu lượng mượt mà, giúp web không bao giờ bị báo lỗi 503.</span>
+                </li>
+                <li>Giao diện xem Phiếu lương và Lịch làm việc siêu mượt trên mobile (PWA).
+                  <span class="impact">🎯 Tác dụng: Công nhân tự tra cứu, HR không còn bị phàn nàn hay phải in giấy tờ.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
-      </div>
+      </details>
 
-      <div class="phase-card">
-        <div class="pc-badge badge-idle">M5</div>
-        <div>
-          <div class="pc-title">BoD Dashboard & Vendor Workspace <span class="pc-status st-cho">TODO</span></div>
-          <div class="pc-inv">Dashboard tổng hợp cho Giám đốc (Headcount, Quỹ lương). Quản lý Pipeline và Đối soát công nợ cho Vendor.</div>
-          <div class="pc-foot"><b>Exit:</b> Toàn bộ hệ sinh thái HRP khép kín hoàn chỉnh.</div>
+      <details class="pd-card">
+        <summary>
+          <span class="pd-badge badge-idle">M5</span>
+          <span class="pd-title">BoD Dashboard & Vendor Workspace</span>
+          <span class="pd-tag st-cho">TODO</span>
+        </summary>
+        <div class="pd-body">
+          <div class="pd-row">
+            <div class="pd-col">
+              <h4>Chi tiết Công việc (Action) & Tác dụng (Impact)</h4>
+              <ul>
+                <li>Cắt HTML từ stitch/hrp_balanced_4_card_dashboard làm Dashboard Giám đốc (/bod).
+                  <span class="impact">🎯 Tác dụng: Cung cấp "Radar" tổng chỉ huy cho C-Level (Headcount, Quỹ lương, Hiệu suất). Ra quyết định tức thời.</span>
+                </li>
+                <li>Nâng cấp endor.hrpartner.vn bổ sung phễu ứng viên (Pipeline).
+                  <span class="impact">🎯 Tác dụng: Các nhà cung ứng nắm rõ chất lượng ứng viên của họ, tự đối soát công nợ mà không phiền HR.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
-      </div>
+      </details>
 
     </div>
 
