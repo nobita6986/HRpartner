@@ -17,7 +17,7 @@
 | ADR references | None |
 | Current execution round | 2 |
 | Current audit round | 1 |
-| Next gate | erify-task → /code → /audit → /resolve → ACCEPTED |
+| Next gate | /audit hrp-portal-m1-design-system |
 | Updated | 2026-08-19 16:20 +07:00 |
 
 ## 1. Outcome
