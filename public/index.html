@@ -1,0 +1,181 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#F97316">
+<title>HRP â€” Há»‡ thá»‘ng quáº£n trá»‹ cung á»©ng nhÃ¢n lá»±c</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --brand:#F97316; --brand-strong:#C2410C; --brand-soft:#FFF1E4;
+    --bg:#FBFAF8; --card:#FFFFFF; --ink:#26211B; --muted:#6E645A; --line:#E8E4DC;
+    --radius:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --brand-soft:#2E2214; --bg:#16130F; --card:#201C17; --ink:#F2EFE9; --muted:#A99E8F; --line:#322C24;
+    }
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Be Vietnam Pro",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink);
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+  /* nav */
+  .nav{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--line)}
+  .nav-inner{max-width:1080px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:24px}
+  .brand{font-weight:800;font-size:19px;letter-spacing:-.01em}
+  .brand span{color:var(--brand)}
+  .nav-links{display:flex;gap:20px;margin-left:auto;font-size:14.5px;color:var(--muted)}
+  .nav-links a:hover{color:var(--ink)}
+  .nav-links a.on{color:var(--brand-strong);font-weight:600}
+
+  /* hero */
+  .hero{padding:72px 0 56px}
+  .kicker{
+    display:inline-block;font-size:13px;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--brand-strong);
+    background:var(--brand-soft);border:1px solid var(--line);
+    border-radius:999px;padding:6px 14px;margin-bottom:18px;
+  }
+  h1{font-size:clamp(30px,4.5vw,46px);line-height:1.15;letter-spacing:-.02em;font-weight:800;max-width:760px}
+  h1 em{font-style:normal;color:var(--brand)}
+  .lede{font-size:17px;color:var(--muted);max-width:640px;margin-top:16px}
+  .cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--brand);color:#FFF;font-weight:600;font-size:15px;
+    padding:12px 22px;border-radius:10px;transition:transform .15s ease,background .15s ease;
+  }
+  .btn:hover{background:var(--brand-strong);transform:translateY(-1px)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:hover{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-strong);transform:translateY(-1px)}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:16px;margin-top:36px;font-size:13px;color:var(--muted)}
+  .hero-meta b{color:var(--ink)}
+  .dot{color:var(--brand)}
+
+  /* cards */
+  .cards{padding:24px 0 72px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:24px;display:flex;flex-direction:column;gap:10px;
+    transition:border-color .15s ease,transform .15s ease;
+  }
+  .card:hover{border-color:var(--brand);transform:translateY(-2px)}
+  .card .ic{
+    width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    background:var(--brand-soft);font-size:22px;
+  }
+  .card h2{font-size:18px;font-weight:700}
+  .card p{font-size:14.5px;color:var(--muted);flex:1}
+  .tag{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:4px 10px;width:fit-content}
+  .tag.ok{background:#E9F7EE;color:#16803A}
+  .tag.wip{background:#FFF7E6;color:#B45309}
+  @media (prefers-color-scheme: dark){
+    .tag.ok{background:#14351F;color:#7BD79C}
+    .tag.wip{background:#33250E;color:#E8B05C}
+  }
+  .card .more{font-size:14px;font-weight:600;color:var(--brand-strong)}
+
+  /* footer */
+  footer{border-top:1px solid var(--line);padding:28px 0 44px;font-size:13px;color:var(--muted)}
+  footer .row{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
+  footer a{color:var(--brand-strong);font-weight:600}
+  footer a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">HRP<span>.</span></a>
+    <div class="nav-links">
+      <a class="on" href="index.html">Trang chá»§</a>
+      <a href="ve-hrp.html">Vá» HRP</a>
+    </div>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="kicker">HRP â€” Há»‡ thá»‘ng quáº£n trá»‹ cung á»©ng nhÃ¢n lá»±c</div>
+    <h1>Má»™t há»‡ thá»‘ng cho toÃ n bá»™ nghiá»‡p vá»¥ <em>cung á»©ng nhÃ¢n sá»±</em>.</h1>
+    <p class="lede">Tá»« khÃ¡ch hÃ ng, nhu cáº§u tuyá»ƒn, ngÆ°á»i lao Ä‘á»™ng, cháº¥m cÃ´ng, Ä‘á»‘i soÃ¡t â€” Ä‘áº¿n tráº£ lÆ°Æ¡ng vÃ  hoa há»“ng. Má»i con sá»‘ Ä‘Ã£ chá»‘t lÃ  khÃ´ng sá»­a.</p>
+    <div class="cta-row">
+      <a class="btn" href="docs/tasks/hrp-v4-bod-mockup/mockup/index.html">Xem demo BoD â€” mockup hi-fi â†—</a>
+      <a class="btn ghost" href="ve-hrp.html">TÃ¬m hiá»ƒu vá» HRP</a>
+    </div>
+    <div class="hero-meta">
+      <span class="meta-item"><span class="dot">â—</span> PhiÃªn báº£n <b>v4.22</b></span>
+      <span class="meta-item">Demo BoD: <b>36 frame hi-fi</b> Â· 11 hotspot</span>
+      <span class="meta-item">Cáº­p nháº­t <b>18/08/2026</b></span>
+    </div>
+  </div>
+</div>
+
+<div class="cards">
+  <div class="wrap">
+    <div class="grid">
+
+      <a class="card" href="ve-hrp.html">
+        <div class="ic">ðŸ¢</div>
+        <h2>Há»‡ quáº£n trá»‹ HRP</h2>
+        <p>ToÃ n cáº£nh há»‡ thá»‘ng: ba cá»•ng (ná»™i bá»™, Ä‘á»‘i tÃ¡c, ngÆ°á»i lao Ä‘á»™ng), chuá»—i nghiá»‡p vá»¥ tá»« bÃ¡n hÃ ng Ä‘áº¿n tráº£ lÆ°Æ¡ng, nguyÃªn táº¯c chá»‘ng tranh cháº¥p vÃ  lá»™ trÃ¬nh triá»ƒn khai.</p>
+        <div><span class="tag ok">v4.22</span></div>
+        <div class="more">Xem toÃ n cáº£nh â†’</div>
+      </a>
+
+      <a class="card" href="docs/tasks/hrp-v4-bod-mockup/mockup/index.html">
+        <div class="ic">ðŸ“±</div>
+        <h2>Demo BoD â€” Mockup</h2>
+        <p>36 frame HTML má»Ÿ Ä‘Æ°á»£c trÃªn má»i trÃ¬nh duyá»‡t: Control Tower, Staffing, Cháº¥m cÃ´ng, Äá»‘i soÃ¡t, Cá»•ng Ä‘á»‘i tÃ¡c â€” cháº¡y Ä‘Ãºng ká»‹ch báº£n khÃ³a ká»³ 08/2026 theo 11 hotspot.</p>
+        <div><span class="tag ok">Sáºµn sÃ ng demo</span></div>
+        <div class="more">Má»Ÿ báº£n Ä‘á»“ frame â†’</div>
+      </a>
+
+      <a class="card" href="roadmap-hrp-v4.html">
+        <div class="ic">ðŸ—ºï¸</div>
+        <h2>Roadmap V4</h2>
+        <p>Lá»™ trÃ¬nh trá»±c quan 6 phase + 3 phase má»Ÿ rá»™ng. Phase 5 âœ… ACCEPTED. P1 Portals âœ… ACCEPTED. P2 Commission âœ… ACCEPTED. Burndown vÃ  cÃ¡c má»‘c UI Ä‘áº¿n Full V4.</p>
+        <div><span class="tag done">Chá» OP P1/P2</span></div>
+        <div class="more">Xem lá»™ trÃ¬nh â†’</div>
+      </a>
+
+      <a class="card" href="roadmap-portals.html" style="border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary), var(--shadow);">
+        <div class="ic">ðŸš€</div>
+        <h2>Roadmap: Portal Ecosystem</h2>
+        <p>Lá»™ trÃ¬nh biáº¿n HRP thÃ nh Há»‡ sinh thÃ¡i All-in-One: Job Market, CTV Hub, BoD Dashboard, Worker & Vendor Workspace.</p>
+        <div><span class="tag wip">Phase Má»›i Nháº¥t</span></div>
+        <div class="more">Xem káº¿ hoáº¡ch â†’</div>
+      </a>
+
+      <a class="card" href="bcc">
+        <div class="ic">ðŸ§®</div>
+        <h2>Tra cá»©u báº£ng cÃ´ng</h2>
+        <p>Tra cá»©u báº£ng cÃ´ng cÃ¡ nhÃ¢n vÃ  phiáº¿u lÆ°Æ¡ng chi tiáº¿t theo mÃ£ tháº» â€” lá»‹ch cháº¥m cÃ´ng tá»«ng ngÃ y, tá»•ng cÃ´ng, tÄƒng ca, báº£ng lÆ°Æ¡ng Aâ€“E.</p>
+        <div><span class="tag ok">ÄÃ£ triá»ƒn khai</span></div>
+        <div class="more">Tra cá»©u ngay â†’</div>
+      </a>
+
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span>HRP â€” Há»‡ thá»‘ng quáº£n trá»‹ cung á»©ng nhÃ¢n lá»±c Â· <b>v4.20</b> Â· 18/08/2026</span>
+      <span>Dá»±ng tá»« <a href="docs/UNIFIED_PLAN_v4.md">UNIFIED_PLAN_v4.md</a> Â· <a href="mailto:contact@hrpartner.vn">LiÃªn há»‡</a></span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
