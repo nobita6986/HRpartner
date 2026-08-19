@@ -1,37 +1,128 @@
-﻿# CONTRACT: HRP Portal Ecosystem - Milestone 1 (Design System & Public Layout)
+﻿# TASK: hrp-portal-m1-design-system
 
-## 1. Metadata
-- **Task ID:** `hrp-portal-m1-design-system`
-- **Phase:** Phase Extension - Job Market Portal (Milestone 1)
-- **Role:** Tier 2 (Figma Owner / Frontend Engineer)
-- **Status:** COMPLETED
+## 0. Control
 
-## 2. Context & Objectives
-Ban Giám đốc đã chốt hướng đi mới: Biến HRP thành một Hệ sinh thái Digital Workspaces. Bước đầu tiên (Milestone 1) là "khoác áo mới" cho toàn bộ hệ thống bằng Design System `warm_professionalism` và dựng bộ khung (Layout) cho Public Portal (khách vãng lai).
+| Field | Value |
+|---|---|
+| Task slug | hrp-portal-m1-design-system |
+| Work type | CODE |
+| Audit mode (Tier 3 đọc) | CODE_AUDIT |
+| Spec version | 1.1 |
+| Status | READY_FOR_EXECUTION |
+| Planner | Tier 1 (Antigravity) |
+| Executor | Tier 2 (Figma Owner / Frontend Engineer) |
+| Auditor | Tier 3 (Auditor) |
+| Baseline | HEAD of main |
+| Modules | M1-Portal |
+| ADR references | None |
+| Current execution round | 2 |
+| Current audit round | 1 |
+| Next gate | erify-task → /code → /audit → /resolve → ACCEPTED |
+| Updated | 2026-08-19 16:20 +07:00 |
 
-**Mục tiêu:**
-1. Cấu hình Tailwind v4 (`app/globals.css`) theo đúng thông số từ `F01_Tokens.html (hoặc stitch/warm_professionalism)`.
-2. Slicing (cắt HTML) bộ Global Navbar và Global Footer từ `S05_JobBoard_Public_1440.html (hoặc stitch tương ứng)`.
-3. Xây dựng Layout wrapper `app/(portal)/layout.tsx` để chứa Navbar/Footer này. Các trang public (Trang chủ, CTV Portal) sẽ dùng layout này để tách biệt với Admin/Worker Dashboard.
+## 1. Outcome
 
-## 3. Specifications (Yêu cầu kỹ thuật)
+### User-visible outcome
 
-### 3.1. Design System Integration
-- Đọc file `F01_Tokens.html (hoặc stitch/warm_professionalism)`.
-- Chuyển đổi các biến màu sắc (đặc biệt là dải màu `brand-orange: #f26522`, `brand-dark`, v.v...) vào `app/globals.css` theo chuẩn Tailwind v4 (`@theme { --color-brand-orange: #f26522; ... }`).
-- Cấu hình font chữ: `Be Vietnam Pro` (chính) và `Inter` (phụ). Import từ Google Fonts nếu chưa có.
+- Áp dụng Design System warm_professionalism (F01) vào toàn cục (mã màu, font chữ, UI components).
+- Người dùng khách khi truy cập (portal) sẽ thấy thanh điều hướng Global Navbar và Footer hoàn chỉnh theo bộ mockup S05_JobBoard_Public_1440.html.
+- Các bài Test (Vitest) cho tính năng xác thực phải PASS 100% (cập nhật Cookie name).
 
-### 3.2. Public Layout (`app/(portal)/layout.tsx`)
-- Tạo file `app/(portal)/layout.tsx`.
-- Cắt đoạn Header (Navigation) và Footer từ file `S05_JobBoard_Public_1440.html (hoặc stitch tương ứng)`.
-- **Yêu cầu Header:** Có Logo HRP, các menu link (Việc làm, Dịch vụ Tuyển dụng, Cộng tác viên...), và nút Đăng nhập / Đăng ký.
-- Đảm bảo Responsive: Nút menu hamburger trên Mobile phải hoạt động (hiển thị dropdown menu khi click - dùng React `useState`).
+### Non-goals
 
-## 4. Bàn giao (Handoff Requirements)
-Tier 2 sau khi hoàn thành cần:
-1. Đảm bảo app build thành công (`npm run build`).
-2. Viết báo cáo vào `HANDOFF.md` liệt kê các biến CSS đã thiết lập và ảnh chụp màn hình (nếu có thể) xác nhận Navbar đã lên hình.
-3. Pass lại cho Tier 3 Audit.
+- Không xây dựng nội dung bên trong của Landing Page (Hero section, search jobs), phần này thuộc M2.
+- Không đụng chạm vào Dashboard của Admin/Worker/Vendor.
 
-> **Planner Note:** Chỉ làm Layout và Design System. Phần ruột của Landing Page (Hero Section, Job Search) sẽ làm ở Milestone 2.
+## 2. Evidence và Baseline
 
+| Evidence ID | Source | Observed fact | Planning impact |
+|---|---|---|---|
+| EV-01 | F01_Tokens.html | Màu chủ đạo là #f26522, Font là Be Vietnam Pro. | Cần setup CSS variables cho Tailwind v4. |
+| EV-02 | S05_JobBoard_Public_1440.html | Chứa thiết kế của Header và Footer dùng chung. | Layout của (portal) sẽ tái sử dụng cấu trúc này. |
+| EV-03 | Tier 3 Audit Report | src/shared/auth/user.test.ts lỗi do cookie chưa khớp hrp_session. | Phải thêm task update unit test. |
+
+## 3. Decisions và Assumptions
+
+| ID | Type | Decision/Assumption | Source/Owner | Status/Expiry |
+|---|---|---|---|---|
+| DEC-01 | CHOSEN | Dùng thư mục stitch/warm_professionalism làm token CSS gốc vì nó sinh ra từ F01. | Planner | Valid |
+| DEC-02 | CHOSEN | Sửa luôn test lỗi trong cùng round này để giữ green build. | Tier 3 | Valid |
+
+## 4. Contract
+
+### 4.1 Requirements
+
+| RQ ID | Requirement | Priority | Source | Failure behavior |
+|---|---|---|---|---|
+| RQ-01 | Config globals.css với các biến màu Tailwind v4 từ F01. | Must | EV-01 | Sai màu nhận diện. |
+| RQ-02 | Xây dựng Layout component pp/(portal)/layout.tsx kèm Global Navbar/Footer. | Must | EV-02 | Mất header ở trang công khai. |
+| RQ-03 | Fix 2 test thất bại trong src/shared/auth/user.test.ts (đổi tên cookie thành hrp_session). | Must | EV-03 | Build CI thất bại. |
+| RQ-04 | Cập nhật HANDOFF.md với trạng thái đúng là READY_FOR_AUDIT. | Must | Tier 3 | Pipeline từ chối nghiệm thu. |
+
+### 4.2 Scope boundaries
+
+**In scope:**
+- pp/globals.css
+- pp/(portal)/layout.tsx, pp/components/GlobalNavbar.tsx, pp/components/GlobalFooter.tsx
+- src/shared/auth/user.test.ts
+- HANDOFF.md
+
+**Out of scope:**
+- Chỉnh sửa logic của Auth.
+- Xây dựng phần nội dung của trang chủ (Landing Page).
+
+### 4.3 Data, State, Permission và Interface Rules
+
+- **Interface:** Layout (portal) chỉ tác động đến các route /, /home, /ctv (nếu nằm trong route group (portal)).
+- **Failure:** Test unit của user.test.ts phải PASS. Nếu FAIL, không được chuyển trạng thái sang READY_FOR_AUDIT.
+
+## 5. Execution Plan
+
+| STEP ID | RQ | Target | Change intent/deliverable | Dependency/skill | Verify | Stop condition |
+|---|---|---|---|---|---|---|
+| STEP-01 | RQ-03 | src/shared/auth/user.test.ts | Sửa mock cookie name trong 2 bài test từ cũ thành hrp_session. | N/A | 
+px vitest run src/shared/auth/user.test.ts | Nếu test đỏ, phải sửa đến khi xanh. |
+| STEP-02 | RQ-04 | HANDOFF.md | Viết lại HANDOFF.md, cập nhật trạng thái READY_FOR_AUDIT. | N/A | Review markdown. | Hoàn tất file. |
+
+## 6. Acceptance
+
+| AC ID | RQ | Pass condition | Verification method | Required evidence | Blocking? |
+|---|---|---|---|---|---|
+| AC-01 | RQ-01 | pp/globals.css có mã màu --color-primary: #f26522. | Đọc code. | Trích xuất file thay đổi. | Yes |
+| AC-02 | RQ-02 | Layout chứa GlobalNavbar. | Đọc code. | Trích xuất file thay đổi. | Yes |
+| AC-03 | RQ-03 | Tất cả test đều PASS (Exit 0). | 
+px vitest run | Output màn hình (PASS). | Yes |
+
+### Traceability
+
+| Requirement | Execution | Acceptance |
+|---|---|---|
+| RQ-03 | STEP-01 | AC-03 |
+| RQ-04 | STEP-02 | N/A |
+
+## 7. Risk và Rollback
+
+| Risk ID | Risk | Trigger | Mitigation | Rollback/Recovery |
+|---|---|---|---|---|
+| RISK-01 | Sửa unit test sai làm logic Auth bị ảnh hưởng. | Test báo lỗi syntax. | Chỉ sửa đúng string hrp_session. | Git revert file test. |
+
+## 8. Open Questions
+
+| ID | Question | Owner | Due | Blocks execution? |
+|---|---|---|---|---|
+| Q-01 | None | N/A | N/A | No |
+
+## 9. Planner Resolution
+
+| Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
+|---|---|---|---|---|---|
+| 1 | AUD-001 | ACCEPT_FIX | Thiếu định dạng pipeline 10 sections. | Cập nhật toàn bộ TASK.md theo template v1.1. | Tier 1 |
+| 1 | AUD-002 | ACCEPT_FIX | Handoff sai trạng thái. | Bổ sung RQ-04 ép Tier 2 viết chuẩn. | Tier 1 |
+| 1 | AUD-003 | ACCEPT_FIX | Regression cookie auth name. | Bổ sung RQ-03 và STEP-01. | Tier 1 |
+
+## 10. Revision Log
+
+| Spec version | Date | Change | Reason/Audit refs |
+|---|---|---|---|
+| 1.0 | 2026-08-19 | Khởi tạo hợp đồng (sai format). | Init Milestone 1 |
+| 1.1 | 2026-08-19 | Re-write toàn bộ theo AI Pipeline chuẩn. Thêm task fix test. | Fix AUD-001, AUD-003 |
