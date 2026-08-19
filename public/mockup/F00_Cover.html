@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>F00_Cover — HRP Mockup BoD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  .cover { padding: 40px 48px 28px; height: 100%; display: flex; flex-direction: column; gap: 22px; }
+  .cover-head { display: flex; align-items: center; gap: 14px; }
+  .cover-head .ctx { font: 500 13px/20px var(--font-label); color: var(--on-surface-variant); }
+  .cover-title { font: 700 40px/48px var(--font-head); letter-spacing: -.02em; color: var(--on-surface); }
+  .cover-sub { font: 400 16px/24px var(--font-body); color: var(--on-surface-variant); margin-top: 6px; max-width: 720px; }
+  .scenario { border-left: 3px solid var(--primary); background: var(--surface); border-radius: 0 var(--radius-md) var(--radius-md) 0; padding: 14px 18px; font: 400 14px/22px var(--font-body); box-shadow: 0 1px 2px rgba(26,28,27,.05); }
+  .scenario b { color: var(--primary-dark); }
+  .aha-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .aha { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .aha .n { font: 700 12px/16px var(--font-label); color: var(--primary-dark); letter-spacing: .04em; }
+  .aha .t { font: 600 14px/18px var(--font-head); }
+  .aha .m { font: 500 11px/14px var(--font-label); color: var(--on-surface-variant); letter-spacing: .03em; }
+  .aha .q { font: italic 400 12px/18px var(--font-body); color: var(--on-surface-variant); }
+  .cover-cols { display: grid; grid-template-columns: 340px 1fr; gap: 16px; flex: 1; min-height: 0; }
+  .must { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+  .must-item { display: flex; gap: 10px; align-items: flex-start; }
+  .must-item .mi { color: var(--primary-dark); }
+  .must-item b { display: block; font: 600 13px/18px var(--font-body); }
+  .must-item span { font: 400 12px/17px var(--font-body); color: var(--on-surface-variant); }
+  .timeline-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 14px 16px; overflow-y: auto; }
+  .tl-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; }
+  .tl-row { display: flex; gap: 10px; padding: 5px 0; border-bottom: 1px dashed var(--line); font: 400 12px/17px var(--font-body); }
+  .tl-row:last-child { border-bottom: 0; }
+  .tl-row .t { font: 600 11px/14px var(--font-label); color: var(--primary-dark); white-space: nowrap; padding-top: 1px; width: 42px; flex-shrink: 0; }
+  .cover-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+</style>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="F00_Cover">
+  <div class="cover">
+
+    <div class="cover-head">
+      <span class="logo">HR<em>P</em></span>
+      <span class="ctx">Bộ mockup trình BoD · 15/08/2026 · Miền Bắc · Kỳ 08/2026</span>
+      <span class="watermark-badge push-right">DỮ LIỆU MINH HỌA</span>
+    </div>
+
+    <div>
+      <h1 class="cover-title">Một chuỗi dữ liệu, bốn quyết định</h1>
+      <p class="cover-sub">Tuyển · Bố trí · Chốt công · Đối soát — 4 màn kể một scenario liên tục, 13 phút, để BoD chốt D01–D12 trong một buổi.</p>
+    </div>
+
+    <div class="scenario">
+      Dự án <b>Nhà máy Điện tử An Phát — KCN Quang Minh</b> cần 50 lao động cho kỳ tháng 08/2026, hiện ACTIVE <b>47</b> và <b>thiếu 3</b>. HR cần bổ sung người, nhưng một ứng viên đã ACTIVE ở dự án khác và một ứng viên khác đang có nguồn CTV được bảo vệ. Cuối kỳ có <b>7 ngoại lệ chấm công</b>. Sau khi xử lý và khóa kỳ, HRP sinh đối soát vendor <b>728.460.000 ₫</b>, đối soát khách hàng <b>914.820.000 ₫</b>, margin <b>186.360.000 ₫</b>.
+    </div>
+
+    <div class="aha-grid">
+      <div class="aha">
+        <span class="n">AHA 1</span>
+        <span class="t">Operations Control Tower</span>
+        <span class="m">M3 · M5 · M7 · M8</span>
+        <span class="q">“Tôi biết ngay dự án nào thiếu người, kỳ công nào đang kẹt và tiền nào sắp được chốt.”</span>
+      </div>
+      <div class="aha">
+        <span class="n">AHA 2</span>
+        <span class="t">Project Staffing + Talent Pool</span>
+        <span class="m">M3 · M5</span>
+        <span class="q">“Hệ thống không chỉ lưu hồ sơ; nó giúp lấp nhu cầu và chặn điều phối/nguồn tuyển sai.”</span>
+      </div>
+      <div class="aha">
+        <span class="n">AHA 3</span>
+        <span class="t">Attendance Reconciliation Workbench</span>
+        <span class="m">M7</span>
+        <span class="q">“Kế toán không dò cả file; chỉ xử lý 7 ngoại lệ rồi khóa nguồn sự thật.”</span>
+      </div>
+      <div class="aha">
+        <span class="n">AHA 4</span>
+        <span class="t">Dual Reconciliation + Vendor Preview</span>
+        <span class="m">M8 · M4</span>
+        <span class="q">“Cùng một kỳ công tạo payable, receivable và margin; vendor xác nhận trên dữ liệu có audit.”</span>
+      </div>
+    </div>
+
+    <div class="cover-cols">
+      <div class="must">
+        <div class="section-label">3 khoảnh khắc bắt buộc — không được cắt (PDD §1.4)</div>
+        <div class="must-item">
+          <span class="material-symbols-outlined mi-fill">swap_horiz</span>
+          <div><b>1 · Guided Transfer cho rule 1-ACTIVE</b><span>Nam đang ACTIVE ở Yên Phong → drawer dẫn quy trình, không phải lỗi kỹ thuật.</span></div>
+        </div>
+        <div class="must-item">
+          <span class="material-symbols-outlined mi-fill">lock</span>
+          <div><b>2 · Exception → Lock trong Attendance</b><span>7 ngoại lệ → xử lý → khóa kỳ bất biến, sinh đối soát.</span></div>
+        </div>
+        <div class="must-item">
+          <span class="material-symbols-outlined mi-fill">account_balance</span>
+          <div><b>3 · Vendor payable vs client receivable + lineage</b><span>Hai rate, hai workflow, một margin truy nguyên được đến từng giờ công.</span></div>
+        </div>
+        <div class="small muted">Nếu rút demo còn 7 phút: chỉ giữ 3 khoảnh khắc này. Referral Guard có thể nói nhanh bằng frame tĩnh — không loại khỏi bộ mockup.</div>
+      </div>
+
+      <div class="timeline-card">
+        <div class="section-label">Timeline 13 phút (click-path PDD §1.3)</div>
+        <div class="tl-cols">
+          <div>
+            <div class="tl-row"><span class="t">00:00</span>Control Tower — mở filter “Tháng 08/2026 · Miền Bắc”</div>
+            <div class="tl-row"><span class="t">00:40</span>Click cảnh báo dự án “Thiếu 3 người”</div>
+            <div class="tl-row"><span class="t">01:20</span>Talent Pool lọc <i>Sẵn sàng · Bắc Ninh/Hà Nội · Ca D1</i></div>
+            <div class="tl-row"><span class="t">02:10</span>Chọn <b>Nguyễn Văn Nam</b> → Bố trí vào dự án → guided drawer</div>
+            <div class="tl-row"><span class="t">03:10</span>Preview đóng cũ / mở mới — không submit</div>
+            <div class="tl-row"><span class="t">04:10</span>Mở <b>Phạm Quốc Huy</b> → tab Nguồn tuyển</div>
+            <div class="tl-row"><span class="t">04:50</span>Referral Guard — xem lý do bảo vệ (claim tạo ngày 12/08)</div>
+            <div class="tl-row"><span class="t">05:40</span>Breadcrumb dự án → badge “7 ngoại lệ công”</div>
+          </div>
+          <div>
+            <div class="tl-row"><span class="t">06:20</span>Exception “Mã NV không khớp” → map AP-QM-1048 → Trần Thị Mai</div>
+            <div class="tl-row"><span class="t">07:30</span>Duyệt kỳ — readiness → “Sẵn sàng khóa” · maker/checker</div>
+            <div class="tl-row"><span class="t">08:30</span>Khóa kỳ → confirmation → “Khóa và tạo đối soát”</div>
+            <div class="tl-row"><span class="t">09:30</span>Reconciliation — tab Vendor payable / Client receivable</div>
+            <div class="tl-row"><span class="t">10:30</span>Lineage drawer — dòng Bùi Đức Long truy nguyên đủ</div>
+            <div class="tl-row"><span class="t">11:30</span>“Xem như Vendor” — salary/margin bị ẩn</div>
+            <div class="tl-row"><span class="t">12:10</span>Phản đối có cấu trúc, deadline, audit — không submit</div>
+            <div class="tl-row"><span class="t">13:00</span>Quay về internal — kết thúc ở margin summary</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cover-foot">
+      <span>Toàn bộ dữ liệu là minh họa — tên công ty/người hư cấu, không PII thật · Nguồn số liệu: TASK.md §4.4 (canonical mock data)</span>
+      <span class="tabular">728.460.000 ₫ · 914.820.000 ₫ · 186.360.000 ₫ (20,37%)</span>
+    </div>
+
+  </div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

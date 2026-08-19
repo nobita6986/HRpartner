@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>F02_ComponentSet — Components</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  .f1 { padding: 28px 40px; height: 100%; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
+  .f1-head { display: flex; align-items: center; gap: 14px; }
+  .f1-title { font: 700 24px/32px var(--font-head); letter-spacing: -.01em; }
+  .f1-note { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .f2-sec { display: flex; flex-direction: column; gap: 10px; }
+  .f2-demo { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 14px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .f2-demo.v { flex-direction: column; align-items: stretch; }
+  .f2-split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .f2-mini-sidebar { width: 232px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; flex-shrink: 0; }
+  .f2-tag { font: 600 11px/12px var(--font-label); color: var(--primary-dark); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
+  .f2-callout { background: var(--primary-soft); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); padding: 12px 16px; font: 400 13px/20px var(--font-body); color: var(--primary-dark); display: flex; gap: 10px; align-items: flex-start; }
+</style>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="F02_ComponentSet">
+  <div class="f1">
+
+    <div class="f1-head">
+      <span class="f1-title">F02 — Component Set (PDD §8.2)</span>
+      <span class="f1-note">17 component — dùng chung CSS trong <b>_assets/hrp.css</b> · semantic naming · không detach/không inline override (DEC-27) · tokens xem <a href="F01_Tokens.html">F01_Tokens</a></span>
+      <span class="watermark-badge push-right">DỮ LIỆU MINH HỌA</span>
+    </div>
+
+    <div class="f2-sec">
+      <div class="section-label">Button — variants · sizes · states</div>
+      <div class="f2-demo">
+        <button class="btn btn-primary"><span class="material-symbols-outlined">group_add</span>Bố trí vào dự án</button>
+        <button class="btn btn-secondary"><span class="material-symbols-outlined">visibility</span>Xem như Vendor</button>
+        <button class="btn btn-ghost">Hủy</button>
+        <button class="btn btn-danger"><span class="material-symbols-outlined">block</span>Chặn nhận nguồn</button>
+        <button class="btn btn-primary" disabled>Primary disabled</button>
+        <button class="btn btn-primary loading">Khóa và tạo đối soát</button>
+        <button class="btn btn-secondary btn-sm">Density 32px</button>
+        <button class="btn btn-primary btn-lg">Primary 44px</button>
+      </div>
+    </div>
+
+    <div class="f2-sec">
+      <div class="section-label">StatusBadge — icon + text, không màu-only (PDD §2.4 · AC-10)</div>
+      <div class="f2-demo">
+        <span class="badge badge-success"><span class="material-symbols-outlined mi">check_circle</span>Đã xác minh</span>
+        <span class="badge badge-warning"><span class="material-symbols-outlined mi">error</span>Cần xem xét</span>
+        <span class="badge badge-danger"><span class="material-symbols-outlined mi">block</span>Bị chặn</span>
+        <span class="badge badge-info"><span class="material-symbols-outlined mi">schedule</span>Dự kiến</span>
+        <span class="badge badge-neutral"><span class="material-symbols-outlined mi">person_off</span>Chưa map</span>
+        <span class="badge badge-primary"><span class="material-symbols-outlined mi">groups</span>47/50 ACTIVE</span>
+        <span class="badge badge-outline"><span class="material-symbols-outlined mi">upload_file</span>PREVIEWED</span>
+        <span class="badge badge-warning badge-sm"><span class="material-symbols-outlined mi mi-xs">error</span>7 ngoại lệ</span>
+      </div>
+    </div>
+
+    <div class="f2-sec">
+      <div class="section-label">FilterChip · SegmentedControl · SearchField</div>
+      <div class="f2-demo v">
+        <div class="row">
+          <span class="chip active"><span class="material-symbols-outlined mi">filter_alt</span>Trạng thái: Tất cả</span>
+          <span class="chip"><span class="material-symbols-outlined mi">place</span>Khu vực: Miền Bắc</span>
+          <span class="chip"><span class="material-symbols-outlined mi">schedule</span>Ca: Tất cả</span>
+          <span class="chip"><span class="material-symbols-outlined mi">handshake</span>Nguồn: Tất cả</span>
+          <span class="chip"><span class="material-symbols-outlined mi">tune</span>Bộ lọc</span>
+          <div class="seg push-right" role="group" aria-label="Chế độ hiển thị">
+            <button class="active" aria-pressed="true"><span class="material-symbols-outlined mi">grid_view</span>Grid</button>
+            <button aria-pressed="false"><span class="material-symbols-outlined mi">view_agenda</span>Compact</button>
+          </div>
+        </div>
+        <div class="topbar-search" style="max-width:320px"><span class="material-symbols-outlined mi">search</span><input placeholder="Tìm người, dự án, batch…" aria-label="Tìm kiếm"/></div>
+      </div>
+    </div>
+
+    <div class="f2-split">
+      <div class="f2-sec">
+        <div class="section-label">SidebarItem (sidebar 232px — PDD §2.1) · Breadcrumb</div>
+        <div class="f2-demo v">
+          <div class="f2-mini-sidebar">
+            <div class="sidebar-logo"><span class="logo">HR<em>P</em></span></div>
+            <nav class="sidebar-nav">
+              <div class="nav-group-label">Vận hành</div>
+              <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">dashboard</span>Tổng quan</a>
+              <a class="sidebar-item active" href="#"><span class="material-symbols-outlined mi">work</span>Dự án</a>
+              <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">fingerprint</span>Chấm công<span class="count">7</span></a>
+              <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">balance</span>Đối soát<span class="count">1</span></a>
+            </nav>
+          </div>
+          <div class="crumb"><a href="#">Vận hành</a> <span class="sep">/</span> Dự án <span class="sep">/</span> An Phát <span class="sep">/</span> Bố trí nhân sự</div>
+        </div>
+      </div>
+
+      <div class="f2-sec">
+        <div class="section-label">SummaryBandMetric (kpi-band phẳng, không card nổi) · DataTable</div>
+        <div class="f2-demo v">
+          <div class="kpi-band kpi-band-3" aria-label="Tóm tắt mẫu">
+            <div class="kpi">
+              <div class="kpi-label">Vendor payable</div>
+              <div class="kpi-value">728.460.000 <span class="unit">₫</span></div>
+              <div class="kpi-sub">47 workers · kỳ 08/2026</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Client receivable</div>
+              <div class="kpi-value">914.820.000 <span class="unit">₫</span></div>
+              <div class="kpi-sub">CL-0018 · Invoice V1</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Margin</div>
+              <div class="kpi-value">186.360.000 <span class="unit">₫</span></div>
+              <div class="kpi-sub">20,37%</div>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead>
+                <tr><th>Worker</th><th class="tbl-num">Reg h</th><th class="tbl-num">OT h</th><th class="tbl-num">Amount</th><th class="col-act"></th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Bùi Đức Long <span class="tbl-sub">HRP-02483</span></td><td class="tbl-num">208</td><td class="tbl-num">12</td><td class="tbl-num money tbl-strong">13.108.000 ₫</td><td><button class="btn btn-secondary btn-sm">Lineage</button></td></tr>
+                <tr><td>Phan Văn Khánh <span class="tbl-sub">HRP-02522</span></td><td class="tbl-num">196</td><td class="tbl-num">8</td><td class="tbl-num money tbl-strong">12.064.000 ₫</td><td><button class="btn btn-secondary btn-sm">Lineage</button></td></tr>
+                <tr><td>Trần Thị Mai <span class="tbl-sub">HRP-02431</span></td><td class="tbl-num">96</td><td class="tbl-num">0</td><td class="tbl-num money tbl-strong">5.568.000 ₫</td><td><button class="btn btn-secondary btn-sm">Lineage</button></td></tr>
+              </tbody>
+              <tfoot>
+                <tr><td colspan="2">… và 44 dòng khác (ẩn gộp)</td><td></td><td class="tbl-num money">728.460.000 ₫</td><td></td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="small muted">Density 44px (D02A default) · variant 52px xem <a href="F01_Density_Variant_44_52.html">F01_Density</a> · số liệu mẫu §4.4.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="f2-sec">
+      <div class="section-label">WorkerCard ×5 variants (PDD §4.2 — card chỉ dùng cho Talent Pool)</div>
+      <div class="f2-demo" style="align-items:stretch">
+        <div class="worker-card">
+          <div class="wc-head">
+            <span class="avatar avatar-lg">BL</span>
+            <div><div class="wc-name">Bùi Đức Long</div><div class="wc-id">HRP-02483</div></div>
+            <span class="badge badge-success push-right"><span class="material-symbols-outlined mi">play_circle</span>Đang làm</span>
+          </div>
+          <div class="wc-meta">
+            <span><span class="material-symbols-outlined mi">place</span>Bắc Ninh</span>
+            <span><span class="material-symbols-outlined mi">schedule</span>D1/N1</span>
+            <span><span class="material-symbols-outlined mi">build</span>Kho</span>
+          </div>
+          <div class="wc-foot">
+            <button class="btn btn-secondary btn-sm">Xem hồ sơ</button>
+            <button class="btn btn-primary" disabled>Bố trí</button>
+          </div>
+        </div>
+        <div class="worker-card">
+          <div class="wc-head">
+            <span class="avatar avatar-lg">TM</span>
+            <div><div class="wc-name">Trần Thị Mai</div><div class="wc-id">HRP-02431</div></div>
+            <span class="badge badge-success push-right"><span class="material-symbols-outlined mi">verified</span>Đã xác minh</span>
+          </div>
+          <div class="wc-meta">
+            <span><span class="material-symbols-outlined mi">place</span>Bắc Giang</span>
+            <span><span class="material-symbols-outlined mi">schedule</span>D1</span>
+            <span><span class="material-symbols-outlined mi">build</span>QA ngoại quan</span>
+          </div>
+          <div class="wc-foot">
+            <button class="btn btn-secondary btn-sm">Xem hồ sơ</button>
+            <button class="btn btn-primary">Bố trí</button>
+          </div>
+        </div>
+        <div class="worker-card">
+          <div class="wc-head">
+            <span class="avatar avatar-lg">DC</span>
+            <div><div class="wc-name">Đỗ Văn Cường</div><div class="wc-id">HRP-02465</div></div>
+            <span class="badge badge-warning push-right"><span class="material-symbols-outlined mi">error</span>Cần xem xét</span>
+          </div>
+          <div class="wc-meta">
+            <span><span class="material-symbols-outlined mi">place</span>Đông Anh</span>
+            <span><span class="material-symbols-outlined mi">schedule</span>N1</span>
+            <span><span class="material-symbols-outlined mi">build</span>Vận hành máy</span>
+          </div>
+          <div class="wc-foot">
+            <button class="btn btn-secondary btn-sm">Xem hồ sơ</button>
+            <button class="btn btn-primary" disabled>Bố trí</button>
+          </div>
+        </div>
+        <div class="worker-card">
+          <div class="wc-head">
+            <span class="avatar avatar-lg">VH</span>
+            <div><div class="wc-name">Vũ Thị Hương</div><div class="wc-id">HRP-02497</div></div>
+            <span class="badge badge-info push-right"><span class="material-symbols-outlined mi">schedule</span>Dự kiến</span>
+          </div>
+          <div class="wc-meta">
+            <span><span class="material-symbols-outlined mi">place</span>Vĩnh Phúc</span>
+            <span><span class="material-symbols-outlined mi">schedule</span>HC/D1</span>
+            <span><span class="material-symbols-outlined mi">build</span>Admin xưởng</span>
+          </div>
+          <div class="wc-foot">
+            <button class="btn btn-secondary btn-sm">Xem hồ sơ</button>
+            <button class="btn btn-primary">Bố trí</button>
+          </div>
+        </div>
+        <div class="worker-card blocked">
+          <div class="wc-head">
+            <span class="avatar avatar-lg">MT</span>
+            <div><div class="wc-name">Nguyễn Minh Tuấn</div><div class="wc-id">HRP-02504</div></div>
+            <span class="badge badge-danger push-right"><span class="material-symbols-outlined mi">block</span>Bị chặn</span>
+          </div>
+          <div class="wc-meta">
+            <span><span class="material-symbols-outlined mi">place</span>Hà Nội</span>
+            <span><span class="material-symbols-outlined mi">schedule</span>D2</span>
+            <span><span class="material-symbols-outlined mi">build</span>Lắp ráp</span>
+          </div>
+          <div class="blocked-note"><span class="material-symbols-outlined mi">gpp_bad</span>CCCD chưa xác minh — CTA disabled có lý do (PDD §4.6)</div>
+          <div class="wc-foot">
+            <button class="btn btn-secondary btn-sm">Xem hồ sơ</button>
+            <button class="btn btn-primary" disabled>Bố trí</button>
+          </div>
+        </div>
+      </div>
+      <div class="small muted">WorkerCard đầy đủ với nguồn tuyển + availability: xem <a href="S02_Staffing_Default_1440.html">S02 default</a>.</div>
+    </div>
+
+    <div class="f2-split">
+      <div class="f2-sec">
+        <div class="section-label">EmptyState · Skeleton</div>
+        <div class="f2-demo v">
+          <div class="empty">
+            <span class="material-symbols-outlined mi">inbox</span>
+            <div class="empty-title">Chưa có dữ liệu</div>
+            <div class="small muted">Mô tả + hướng dẫn hành động tiếp theo.</div>
+          </div>
+          <div class="vstack" style="width:100%">
+            <div class="skeleton" style="height:16px"></div>
+            <div class="skeleton" style="height:16px; width:72%"></div>
+            <div class="skeleton" style="height:16px; width:48%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="f2-sec">
+        <div class="section-label">TimelineEvent · EvidenceAttachment · AuditMeta</div>
+        <div class="f2-demo v">
+          <div class="timeline">
+            <div class="tl-event">
+              <div class="tl-time">12/08</div>
+              <div class="tl-text">CTV tạo submission</div>
+            </div>
+            <div class="tl-event">
+              <div class="tl-time">12/08</div>
+              <div class="tl-text">HR xác nhận nhận hồ sơ</div>
+            </div>
+            <div class="tl-event tl-latest">
+              <div class="tl-time">15/08 · hôm nay</div>
+              <div class="tl-text">Vendor nộp lại hồ sơ</div>
+            </div>
+          </div>
+          <div class="file-row">
+            <span class="material-symbols-outlined mi">attach_file</span>
+            <span>bang_doi_chieu_BCV.xlsx</span>
+            <span class="small muted">240 KB</span>
+          </div>
+          <div class="small muted"><span class="material-symbols-outlined mi mi-sm">history</span> Audit: tạo 15/08 14:52 bởi Bắc Việt · DSP-2026-0815-01</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="f2-sec">
+      <div class="section-label">RightDrawer (480px) · ConfirmationDialog — cấu trúc component</div>
+      <div class="f2-demo v">
+        <div class="row">
+          <span class="badge badge-outline"><span class="material-symbols-outlined mi">vertical_split</span>drawer-head / drawer-body / drawer-foot</span>
+          <span class="badge badge-outline"><span class="material-symbols-outlined mi">check_circle</span>dialog-title / dialog-body / dialog-actions</span>
+          <span class="small muted">Không dựng đè ở đây để tránh nested — xem live: <a href="S02A_AssignmentConflict_Drawer.html">S02A drawer</a> · <a href="S03B_LockConfirmation.html">S03B dialog</a></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="f2-callout">
+      <span class="material-symbols-outlined mi">info</span>
+      <span>Component dùng class chung trong <b>_assets/hrp.css</b> — frame không detach, không inline override (DEC-27; AUD-004 đã xử lý). Radius 8/16/24 theo G27 (DEC-28). State variants xem các frame STATE trong bản đồ: <a href="index.html">index.html</a>.</span>
+    </div>
+
+  </div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

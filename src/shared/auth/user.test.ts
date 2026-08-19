@@ -7,8 +7,8 @@ function makeReq(headers: Record<string, string>): NextRequest {
 }
 
 describe('getTokenFromRequest (cookie + Bearer — DEC-03)', () => {
-  it('đọc token từ cookie hrp_token', () => {
-    const req = makeReq({ cookie: 'hrp_token=abc123; other=1' });
+  it('đọc token từ cookie hrp_session', () => {
+    const req = makeReq({ cookie: 'hrp_session=abc123; other=1' });
     expect(getTokenFromRequest(req)).toBe('abc123');
   });
 
@@ -19,7 +19,7 @@ describe('getTokenFromRequest (cookie + Bearer — DEC-03)', () => {
 
   it('cookie ưu tiên hơn Bearer', () => {
     const req = makeReq({
-      cookie: 'hrp_token=cook123',
+      cookie: 'hrp_session=cook123',
       authorization: 'Bearer bea456',
     });
     expect(getTokenFromRequest(req)).toBe('cook123');

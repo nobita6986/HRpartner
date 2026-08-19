@@ -6,13 +6,16 @@
 |---|---|
 | Task slug | `hrp-portal-m1-design-system` |
 | Milestone | 1 — Design System & Public Layout |
-| Execution round | `1` |
+| Execution round | `2` (Round 1: Design System + Layout + Navbar + Footer | Round 2: Fix user.test.ts cookie name + READY_FOR_AUDIT) |
 | Baseline | `HEAD of main` |
+| Status | **READY_FOR_AUDIT** |
 | Source | `stitch/warm_professionalism/DESIGN.md` + `stitch/hrp_landing_page_html_standard/code.html` |
 
 ## 1. What was done
 
-### 1.1 Design System — Tailwind v4 `@theme` tokens
+### Round 1 — Design System + Public Layout
+
+#### 1.1 Design System — Tailwind v4 `@theme` tokens
 
 Updated `app/globals.css` to use Tailwind v4 `@theme` directive, mapping all tokens from `stitch/warm_professionalism/DESIGN.md`:
 
@@ -99,6 +102,17 @@ Services section (3-column grid):
 
 Why HRP + Contact form section.
 
+### Round 2 — Fix user.test.ts cookie regression (AUD-003)
+
+**Problem:** `src/shared/auth/user.test.ts` used cookie name `hrp_token` but `src/shared/auth/user.ts` exports `AUTH_COOKIE_NAME = 'hrp_session'`. Test was failing because the mock cookie name didn't match the actual implementation.
+
+**Fix:** Updated 3 test cases in `user.test.ts` to use `hrp_session` instead of `hrp_token`:
+- `'đọc token từ cookie hrp_session'` (was: `hrp_token`)
+- `'cookie ưu tiên hơn Bearer'` — `hrp_session=cook123` (was: `hrp_token`)
+
+**Result:** `npx vitest run src/shared/auth/user.test.ts` → 5/5 PASS, exit 0
+**Result:** `npx vitest run` (full suite) → 605/605 PASS, exit 0
+
 ### 1.6 CTV Page — `app/(portal)/ctv/page.tsx`
 
 Stub page: heading + login prompt card (uses existing `app/ctv/page.tsx` for full dashboard, so `(portal)/ctv` acts as the public-facing CTV portal landing).
@@ -139,6 +153,8 @@ Key routes:
 | `app/(portal)/ctv/page.tsx` | NEW — CTV portal page | Public CTV landing |
 | `app/components/GlobalNavbar.tsx` | NEW — sticky navbar with mobile menu | Global navigation |
 | `app/components/GlobalFooter.tsx` | NEW — footer with logo + links | Global footer |
+| `src/shared/auth/user.test.ts` | MOD — `hrp_token` → `hrp_session` | Cookie regression fix (AUD-003/RQ-03) |
+| `docs/tasks/hrp-portal-m1-design-system/HANDOFF.md` | MOD — status → READY_FOR_AUDIT | Planner requirement |
 
 ## 4. Design Tokens Reference
 

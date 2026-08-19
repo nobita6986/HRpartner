@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>F60_D09–D12 — Trang 60 · Quyết định deferred (owner + due)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  .f1 { padding: 24px 40px; height: 100%; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+  .f1-head { display: flex; align-items: center; gap: 14px; }
+  .f1-title { font: 700 24px/32px var(--font-head); letter-spacing: -.01em; }
+  .f1-note { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .f60-nav { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .f60-chip { font: 600 12px/1 var(--font-label); color: var(--on-surface-variant); border: 1px solid var(--outline-variant); border-radius: 999px; padding: 6px 12px; text-decoration: none; background: var(--surface); }
+  .f60-chip.on { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+  .f60-back { margin-left: auto; font: 500 12px/16px var(--font-label); color: var(--primary-dark); text-decoration: none; }
+  .defer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .vcard { border: 1px solid var(--outline-variant); border-radius: var(--radius-md); padding: 12px 14px; background: var(--surface); display: flex; flex-direction: column; gap: 8px; }
+  .vcard h3 { font: 700 14px/20px var(--font-head); display: flex; align-items: center; gap: 8px; }
+  .vcard p { font: 400 13px/20px var(--font-body); color: var(--on-surface); margin: 0; }
+  .vcard .sub { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+  .meta span { font: 600 12px/1 var(--font-label); color: var(--on-surface-variant); border: 1px solid var(--outline-variant); border-radius: 999px; padding: 5px 10px; background: var(--background); }
+  .block-note { background: var(--warning-soft); border: 1px solid rgba(180,83,9,.3); border-radius: var(--radius-md); padding: 10px 14px; font: 400 13px/20px var(--font-body); display: flex; gap: 10px; align-items: flex-start; }
+</style>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="F60_D09_D12_Notes">
+  <div class="f1">
+
+    <div class="f1-head">
+      <span class="f1-title">Trang 60 · D09–D12 — Quyết định deferred (owner + due)</span>
+      <span class="f1-note">Prototype assumption — không phải quyết định final của BoD (PDD §10.2) · Không chặn demo — chốt sau buổi BoD, ghi owner + due theo RQ-11</span>
+      <span class="watermark-badge push-right">DỮ LIỆU MINH HỌA</span>
+    </div>
+
+    <div class="f60-nav">
+      <a class="f60-chip" href="F60_D01.html">D01</a>
+      <a class="f60-chip" href="F60_D02.html">D02</a>
+      <a class="f60-chip" href="F60_D03.html">D03</a>
+      <a class="f60-chip" href="F60_D04.html">D04</a>
+      <a class="f60-chip" href="F60_D05.html">D05</a>
+      <a class="f60-chip" href="F60_D06.html">D06</a>
+      <a class="f60-chip" href="F60_D07.html">D07</a>
+      <a class="f60-chip" href="F60_D08.html">D08</a>
+      <a class="f60-chip on" href="F60_D09_D12_Notes.html">D09–D12</a>
+      <a class="f60-back" href="index.html">← Bản đồ frame</a>
+    </div>
+
+    <div class="defer-grid">
+
+      <div class="vcard">
+        <h3><span class="badge badge-neutral">D09</span> SLA vendor confirm đối soát</h3>
+        <p>Vendor xác nhận bản đối soát trong <b>3 ngày làm việc</b> (quá hạn = tự xác nhận + dispute sau). Cần sếp xác nhận con số này đúng thực tế vận hành.</p>
+        <div class="meta"><span>Owner: Sếp (Giám đốc)</span><span>Due: sau buổi BoD</span><span>Deferred</span></div>
+      </div>
+
+      <div class="vcard">
+        <h3><span class="badge badge-neutral">D10</span> Ai thấy số margin</h3>
+        <p>Margin kỳ (doanh thu − chi phí) mặc định hiển thị cho <b>Director + Accountant</b>; PM chỉ thấy nếu được cấp permission. Chốt danh sách role sau buổi họp.</p>
+        <div class="meta"><span>Owner: PM</span><span>Due: sau buổi BoD</span><span>Deferred</span></div>
+      </div>
+
+      <div class="vcard">
+        <h3><span class="badge badge-neutral">D11</span> Từ vựng rủi ro</h3>
+        <p>Dùng <b>"Cần xem xét"</b> (warning) và <b>"Bị chặn"</b> (blocker) — không dùng màu sắc làm tín hiệu duy nhất. Chốt từ vựng cuối với BoD.</p>
+        <div class="meta"><span>Owner: Planner (design)</span><span>Due: sau buổi BoD</span><span>Deferred</span></div>
+      </div>
+
+      <div class="vcard">
+        <h3><span class="badge badge-neutral">D12</span> Brand khách hàng trên frame</h3>
+        <p><b>Đang áp dụng ngay:</b> toàn bộ frame dùng brand ẩn danh (An Phát, Yên Phong, Sao Việt là tên minh họa) + watermark DỮ LIỆU MINH HỌA. Khi triển khai client thật mới thay brand thật.</p>
+        <div class="meta"><span>Owner: Sếp (Giám đốc)</span><span>Due: khi vào client thật</span><span>Áp dụng từ đầu</span></div>
+      </div>
+
+    </div>
+
+    <div class="block-note">
+      <span class="material-symbols-outlined mi">block</span>
+      <span><b>Không chặn demo:</b> D09–D12 là quyết định hoàn thiện, không ảnh hưởng đường đi 16 bước demo hôm nay. Nội dung chi tiết (Decision Log đầy đủ D01–D12 + owner + due) xem tại <a href="../DECISION_LOG.md">DECISION_LOG.md</a>.</span>
+    </div>
+
+  </div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

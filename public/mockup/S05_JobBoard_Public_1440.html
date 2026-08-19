@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>S05 — Job Board công cộng (frame tĩnh)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  /* ── Job board công cộng — tokens F01/G27; bổ sung cột filter trái 16/08 (DEC-32); không sidebar quản trị (DEC-25) ── */
+  .pub { height: 100%; display: flex; flex-direction: column; background: var(--background); }
+  .pub-header { height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 28px; padding: 0 40px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .pub-brand { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+  .pub-nav { display: flex; gap: 20px; }
+  .pub-nav span { font: 500 14px/20px var(--font-body); color: var(--on-surface-variant); cursor: default; }
+  .pub-nav span.on { color: var(--on-surface); font-weight: 600; border-bottom: 2px solid var(--primary); padding-bottom: 2px; }
+  .pub-auth { margin-left: auto; display: flex; gap: 10px; }
+  .pub-btn-ghost { font: 600 13px/20px var(--font-label); color: var(--primary-dark); background: transparent; border: 1px solid var(--outline-variant); border-radius: 8px; padding: 8px 16px; cursor: pointer; }
+  .pub-btn-primary { font: 600 13px/20px var(--font-label); color: #FFF; background: var(--primary); border: 0; border-radius: 8px; padding: 8px 16px; cursor: pointer; }
+  .pub-btn-primary:hover { background: var(--primary-dark); }
+  .pub-main { flex: 1; overflow-y: auto; padding: 28px 40px 24px; display: flex; flex-direction: column; gap: 18px; }
+  .hero { display: flex; flex-direction: column; gap: 10px; }
+  .hero h1 { font: 700 28px/36px var(--font-head); letter-spacing: -.01em; color: var(--on-surface); }
+  .hero .sub { font: 400 14px/22px var(--font-body); color: var(--on-surface-variant); max-width: 640px; }
+  .search-bar { display: flex; align-items: center; gap: 10px; max-width: 520px; height: 44px; background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 0 14px; }
+  .search-bar .mi { color: var(--on-surface-variant); font-size: 20px; }
+  .search-bar input { flex: 1; border: 0; outline: 0; font: 400 14px/20px var(--font-body); color: var(--on-surface); background: transparent; }
+  /* ── Bộ lọc cột trái (DEC-32 — bổ sung 16/08, thay filter chips ngang) ── */
+  .pub-body { display: flex; gap: 20px; align-items: flex-start; }
+  .filter-panel { width: 240px; flex-shrink: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 4px; }
+  .filter-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; }
+  .filter-title { font: 700 14px/20px var(--font-head); color: var(--on-surface); }
+  .filter-clear { font: 600 12px/16px var(--font-label); color: var(--primary-dark); background: none; border: 0; padding: 0; cursor: pointer; }
+  .fgroup { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .filter-label { font: 600 12px/16px var(--font-label); color: var(--on-surface-variant); margin-bottom: 4px; }
+  .fopt { display: flex; align-items: center; gap: 8px; padding: 4px 0; font: 400 13px/18px var(--font-body); color: var(--on-surface-variant); cursor: default; }
+  .fopt.on { color: var(--on-surface); font-weight: 500; }
+  .fcheck { width: 16px; height: 16px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--outline-variant); border-radius: 4px; background: var(--surface); color: #FFF; }
+  .fcheck .mi { font-size: 13px; opacity: 0; }
+  .fcheck.on { background: var(--primary); border-color: var(--primary); }
+  .fcheck.on .mi { opacity: 1; }
+  .fcount { margin-left: auto; font: 400 11px/16px var(--font-label); color: var(--on-surface-variant); }
+  .job-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .job-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .job-top { display: flex; align-items: center; gap: 10px; }
+  .job-code { font: 600 11px/16px var(--font-label); letter-spacing: .04em; color: var(--on-surface-variant); }
+  .job-name { font: 700 17px/24px var(--font-head); color: var(--on-surface); }
+  .job-meta { display: flex; align-items: center; gap: 8px; font: 400 13px/18px var(--font-body); color: var(--on-surface-variant); }
+  .job-meta .mi { font-size: 17px; color: var(--on-surface-variant); }
+  .job-shifts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .shift-chip { font: 600 11px/16px var(--font-label); color: var(--on-surface-variant); background: var(--container); border-radius: 6px; padding: 3px 8px; }
+  .job-counts { display: flex; gap: 18px; padding-top: 4px; border-top: 1px solid var(--line); }
+  .count b { display: block; font: 700 16px/24px var(--font-head); color: var(--on-surface); }
+  .count span { font: 400 11px/16px var(--font-label); color: var(--on-surface-variant); }
+  .count.miss b { color: var(--primary-dark); }
+  .job-progress { height: 6px; border-radius: 999px; background: var(--container); overflow: hidden; }
+  .job-progress i { display: block; height: 100%; background: var(--primary); border-radius: 999px; }
+  .job-progress i.full { background: var(--success); }
+  .apply-btn { width: 100%; font: 600 14px/20px var(--font-label); color: #FFF; background: var(--primary); border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer; }
+  .apply-btn:hover { background: var(--primary-dark); }
+  .pub-foot { flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 12px 40px; border-top: 1px solid var(--line); background: var(--surface); font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .pub-foot .mi { font-size: 15px; }
+</style>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="S05_JobBoard_Public_1440">
+  <div class="pub">
+
+    <!-- Header công cộng — không sidebar quản trị (DEC-25) -->
+    <header class="pub-header">
+      <a class="pub-brand"><span class="logo">HR<em>P</em></span></a>
+      <nav class="pub-nav">
+        <span class="on">Việc làm</span>
+        <span>Về HRP</span>
+        <span>Liên hệ</span>
+      </nav>
+      <div class="pub-auth">
+        <button class="pub-btn-ghost" type="button">Đăng nhập</button>
+        <button class="pub-btn-primary" type="button">Đăng ký</button>
+      </div>
+      <span class="watermark-badge">DỮ LIỆU MINH HỌA</span>
+    </header>
+
+    <main class="pub-main">
+
+      <div class="hero">
+        <h1>Tìm việc tại các nhà máy, kho vận khu công nghiệp</h1>
+        <div class="sub">Việc làm vận hành theo dự án — ca làm rõ ràng, bảng công minh bạch, đối soát công khai với đơn vị cung ứng. Số liệu trên trang là minh họa.</div>
+        <div class="search-bar">
+          <span class="material-symbols-outlined mi">search</span>
+          <input type="search" placeholder="Tìm theo vị trí, địa điểm…" aria-label="Tìm kiếm việc làm"/>
+        </div>
+      </div>
+
+      <!-- Bộ lọc cột trái (DEC-32 — bổ sung 16/08, thay filter chips ngang; filter minh họa, không hoạt động) -->
+      <div class="pub-body">
+
+        <aside class="filter-panel" aria-label="Bộ lọc việc làm">
+          <div class="filter-head">
+            <span class="filter-title">Bộ lọc</span>
+            <button class="filter-clear" type="button">Xóa bộ lọc</button>
+          </div>
+          <div class="fgroup">
+            <span class="filter-label">Địa điểm</span>
+            <span class="fopt on"><span class="fcheck on"><span class="material-symbols-outlined mi">check</span></span>Tất cả<span class="fcount">3</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Bắc Ninh<span class="fcount">2</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Bắc Giang<span class="fcount">1</span></span>
+          </div>
+          <div class="fgroup">
+            <span class="filter-label">Ca làm</span>
+            <span class="fopt on"><span class="fcheck on"><span class="material-symbols-outlined mi">check</span></span>Tất cả<span class="fcount">3</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>HC<span class="fcount">1</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>D1<span class="fcount">2</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>D2<span class="fcount">1</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>N1<span class="fcount">1</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>T1<span class="fcount">1</span></span>
+          </div>
+          <div class="fgroup">
+            <span class="filter-label">Loại hình</span>
+            <span class="fopt on"><span class="fcheck on"><span class="material-symbols-outlined mi">check</span></span>Tất cả<span class="fcount">3</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Nhà máy<span class="fcount">2</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Kho vận<span class="fcount">1</span></span>
+          </div>
+          <div class="fgroup">
+            <span class="filter-label">Trạng thái tuyển</span>
+            <span class="fopt on"><span class="fcheck on"><span class="material-symbols-outlined mi">check</span></span>Tất cả<span class="fcount">3</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Tuyển gấp<span class="fcount">1</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Đang tuyển<span class="fcount">1</span></span>
+            <span class="fopt"><span class="fcheck"><span class="material-symbols-outlined mi">check</span></span>Đã nhận đủ<span class="fcount">1</span></span>
+          </div>
+        </aside>
+
+      <div class="job-grid">
+
+        <!-- An Phát — thiếu 3, Tuyển gấp -->
+        <article class="job-card">
+          <div class="job-top">
+            <span class="badge badge-warning">Tuyển gấp</span>
+            <span class="job-code">DA-2026-018</span>
+          </div>
+          <div class="job-name">Nhà máy Điện tử An Phát</div>
+          <div class="job-meta"><span class="material-symbols-outlined mi">location_on</span> Bắc Ninh</div>
+          <div class="job-shifts">
+            <span class="shift-chip">D1 · 06:00–14:00</span>
+            <span class="shift-chip">D2 · 14:00–22:00</span>
+            <span class="shift-chip">N1 · 22:00–06:00</span>
+          </div>
+          <div class="job-counts">
+            <div class="count"><b>50</b><span>Cần</span></div>
+            <div class="count"><b>47</b><span>Đã nhận</span></div>
+            <div class="count miss"><b>3</b><span>Còn thiếu</span></div>
+          </div>
+          <div class="job-progress"><i style="width:94%"></i></div>
+          <button class="apply-btn" type="button">Ứng tuyển</button>
+        </article>
+
+        <!-- Yên Phong — đủ 80/80 -->
+        <article class="job-card">
+          <div class="job-top">
+            <span class="badge badge-success">Đã nhận đủ</span>
+            <span class="job-code">DA-2026-022</span>
+          </div>
+          <div class="job-name">Kho vận Yên Phong</div>
+          <div class="job-meta"><span class="material-symbols-outlined mi">location_on</span> KCN Yên Phong, Bắc Ninh</div>
+          <div class="job-shifts">
+            <span class="shift-chip">T1 · 07:30–16:30</span>
+          </div>
+          <div class="job-counts">
+            <div class="count"><b>80</b><span>Cần</span></div>
+            <div class="count"><b>80</b><span>Đã nhận</span></div>
+            <div class="count"><b>0</b><span>Còn thiếu</span></div>
+          </div>
+          <div class="job-progress"><i class="full" style="width:100%"></i></div>
+          <button class="apply-btn" type="button">Ứng tuyển</button>
+        </article>
+
+        <!-- Sao Việt — 35/32 -->
+        <article class="job-card">
+          <div class="job-top">
+            <span class="badge badge-neutral">Đang tuyển</span>
+            <span class="job-code">PRJ-SV-014</span>
+          </div>
+          <div class="job-name">Nhà máy Sao Việt</div>
+          <div class="job-meta"><span class="material-symbols-outlined mi">location_on</span> KCN Quang Châu, Bắc Giang</div>
+          <div class="job-shifts">
+            <span class="shift-chip">HC · 08:00–17:00</span>
+            <span class="shift-chip">D1 · 06:00–14:00</span>
+          </div>
+          <div class="job-counts">
+            <div class="count"><b>35</b><span>Cần</span></div>
+            <div class="count"><b>32</b><span>Đã nhận</span></div>
+            <div class="count miss"><b>3</b><span>Còn thiếu</span></div>
+          </div>
+          <div class="job-progress"><i style="width:91.4%"></i></div>
+          <button class="apply-btn" type="button">Ứng tuyển</button>
+        </article>
+
+      </div>
+      </div><!-- /pub-body -->
+
+    </main>
+
+    <footer class="pub-foot">
+      <span class="material-symbols-outlined mi">public</span>
+      <span>Trang tìm việc công cộng — frame tĩnh minh họa (STEP-09 · AC-15). Không có flow ứng tuyển (A-05 thuộc Wave 3).</span>
+      <span style="margin-left:auto">© 2026 HRP · DỮ LIỆU MINH HỌA</span>
+    </footer>
+
+  </div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>S02B_ReferralGuard_Drawer_Protected — Referral Guard (hi-fi)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  .s02-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .s02-card { padding: 12px 14px; gap: 8px; }
+  .s02-card .wc-foot { padding-top: 8px; }
+  .s02-avail { font: 500 13px/18px var(--font-body); color: var(--on-surface); }
+  .s02-avail .mi { font-size: 15px; color: var(--on-surface-variant); }
+  .s02-src { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .s02-src a { color: var(--primary-dark); text-decoration: none; }
+  .worker-card.selected { border-color: var(--primary); box-shadow: 0 4px 14px rgba(166, 59, 0, .14); }
+  .guard-conclusion { border: 1px solid rgba(180, 83, 9, .25); background: var(--warning-soft); color: var(--warning); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .guard-conclusion .g-title { font: 600 14px/20px var(--font-body); display: flex; align-items: center; gap: 8px; }
+  .guard-conclusion .g-title .mi { font-size: 18px; }
+  .guard-conclusion .g-reason { font: 400 13px/18px var(--font-body); padding-left: 26px; }
+</style>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="S02B_ReferralGuard_Drawer_Protected">
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><span class="logo">HR<em>P</em></span></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Vận hành</div>
+      <a class="sidebar-item" href="S01_ControlTower_Default_1440.html"><span class="material-symbols-outlined mi">dashboard</span>Tổng quan</a>
+      <a class="sidebar-item active" href="#"><span class="material-symbols-outlined mi">work</span>Dự án</a>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">groups</span>Nhân lực</a>
+      <a class="sidebar-item" href="S03_Attendance_Exceptions.html"><span class="material-symbols-outlined mi">fingerprint</span>Chấm công<span class="count">7</span></a>
+      <a class="sidebar-item" href="S04_Reconciliation_Internal.html"><span class="material-symbols-outlined mi">balance</span>Đối soát<span class="count">1</span></a>
+      <div class="nav-group-label">Báo cáo</div>
+      <a class="sidebar-item" href="#"><span class="material-symbols-outlined mi">assessment</span>Báo cáo</a>
+    </nav>
+    <div class="sidebar-foot"><div class="small muted">HRP v4 · BoD mockup</div></div>
+  </aside>
+
+  <header class="topbar">
+    <div class="topbar-context">
+      <span class="material-symbols-outlined mi">domain</span>
+      <span>HRP · Miền Bắc</span>
+      <span class="ctx-sub">Kỳ 08/2026</span>
+    </div>
+    <div class="topbar-search"><span class="material-symbols-outlined mi">search</span><input placeholder="Tìm người, dự án, batch…" aria-label="Tìm kiếm"/></div>
+    <div class="topbar-actions">
+      <span class="watermark-badge">DỮ LIỆU MINH HỌA</span>
+      <span class="badge badge-outline">HI-FI · STEP-05</span>
+      <button class="icon-btn" aria-label="Thông báo"><span class="material-symbols-outlined mi">notifications</span><span class="badge-dot"></span></button>
+      <div class="user-chip"><span class="avatar">LH</span><div><div class="u-name">Lê Thu Hà</div><div class="u-role">HR Ops</div></div></div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="page-head">
+      <div class="crumb"><a href="S01_ControlTower_Default_1440.html">Vận hành</a> <span class="sep">/</span> Dự án <span class="sep">/</span> An Phát <span class="sep">/</span> Bố trí nhân sự</div>
+      <div class="page-title-row">
+        <div>
+          <h1 class="page-title">DA-2026-018 · Nhà máy Điện tử An Phát</h1>
+          <div class="title-sub">KCN Quang Minh · 01/08–31/12/2026 · DỮ LIỆU MINH HỌA</div>
+        </div>
+        <div class="context-bar">
+          <span class="badge badge-primary"><span class="material-symbols-outlined mi">groups</span>47/50 ACTIVE</span>
+          <span class="badge badge-danger"><span class="material-symbols-outlined mi">error</span>Thiếu 3</span>
+          <a class="btn btn-secondary" href="S03_Attendance_Exceptions.html"><span class="material-symbols-outlined mi">fact_check</span>Xem bảng công<span class="badge badge-warning badge-sm"><span class="material-symbols-outlined mi mi-xs">error</span>7 ngoại lệ</span></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="s02-grid">
+      <div class="worker-card s02-card selected">
+        <div class="wc-head">
+          <span class="avatar avatar-lg">PH</span>
+          <div><div class="wc-name">Phạm Quốc Huy</div><div class="wc-id">HRP-02444</div></div>
+        </div>
+        <span class="badge badge-warning as-start"><span class="material-symbols-outlined mi">shield</span>Nguồn đang được bảo vệ · còn 3 ngày</span>
+        <div class="wc-meta">
+          <span><span class="material-symbols-outlined mi">place</span>Sóc Sơn</span>
+          <span><span class="material-symbols-outlined mi">schedule</span>D1/D2</span>
+          <span><span class="material-symbols-outlined mi">build</span>Đóng gói</span>
+        </div>
+        <div class="s02-avail"><span class="material-symbols-outlined mi">event_available</span>Sẵn sàng từ 15/08</div>
+        <div class="s02-src">Nguồn: CTV Nguyễn Hoàng Duy · xem nguồn tuyển</div>
+        <div class="wc-foot">
+          <button class="btn btn-secondary btn-sm">Xem hồ sơ</button>
+          <button class="btn btn-primary">Bố trí</button>
+        </div>
+      </div>
+
+      <div class="worker-card s02-card">
+        <div class="wc-head">
+          <span class="avatar avatar-lg">NN</span>
+          <div><div class="wc-name">Nguyễn Văn Nam</div><div class="wc-id">HRP-02418</div></div>
+          <span class="badge badge-success push-right"><span class="material-symbols-outlined mi">play_circle</span>Đang làm</span>
+        </div>
+        <div class="wc-meta">
+          <span><span class="material-symbols-outlined mi">place</span>Bắc Ninh</span>
+          <span><span class="material-symbols-outlined mi">schedule</span>D1/N1</span>
+          <span><span class="material-symbols-outlined mi">build</span>Lắp ráp SMT</span>
+        </div>
+        <div class="s02-avail"><span class="material-symbols-outlined mi">apartment</span>Đang làm DA-2026-022 · từ 10/06/2026</div>
+        <div class="s02-src">Nguồn: HRP trực tiếp</div>
+        <div class="wc-foot">
+          <button class="btn btn-secondary btn-sm">Xem hồ sơ</button>
+          <a class="btn btn-primary" href="S02A_AssignmentConflict_Drawer.html"><span class="material-symbols-outlined mi">group_add</span>Bố trí</a>
+        </div>
+      </div>
+
+      <div class="worker-card s02-card">
+        <div class="wc-head">
+          <span class="avatar avatar-lg">BL</span>
+          <div><div class="wc-name">Bùi Đức Long</div><div class="wc-id">HRP-02483</div></div>
+          <span class="badge badge-success push-right"><span class="material-symbols-outlined mi">play_circle</span>Đang làm</span>
+        </div>
+        <div class="wc-meta">
+          <span><span class="material-symbols-outlined mi">place</span>Bắc Ninh</span>
+          <span><span class="material-symbols-outlined mi">schedule</span>D1/N1</span>
+          <span><span class="material-symbols-outlined mi">build</span>Kho</span>
+        </div>
+        <div class="s02-avail"><span class="material-symbols-outlined mi">apartment</span>Đang làm DA-2026-018</div>
+        <div class="s02-src">Nguồn: Vendor Bắc Việt</div>
+        <div class="wc-foot">
+          <button class="btn btn-secondary btn-sm">Xem hồ sơ</button>
+          <button class="btn btn-primary" disabled>Bố trí</button>
+          <span class="small muted push-right">Đang ACTIVE</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="small muted">Phần còn lại của grid 12 card như S02 default — bị scrim làm mờ · card Huy đang được chọn (selected).</div>
+  </main>
+</div>
+
+<div class="scrim"></div>
+<aside class="drawer" role="dialog" aria-modal="true" aria-label="Nguồn tuyển Phạm Quốc Huy">
+  <div class="drawer-head">
+    <div>
+      <div class="drawer-title">Nguồn tuyển — Phạm Quốc Huy</div>
+      <div class="drawer-sub">HRP-02444 · Đóng gói · D1/D2</div>
+    </div>
+    <a class="icon-btn" href="S02_Staffing_Default_1440.html" aria-label="Đóng"><span class="material-symbols-outlined mi">close</span></a>
+  </div>
+  <div class="drawer-body">
+
+    <span class="badge badge-warning as-start"><span class="material-symbols-outlined mi">shield</span>Nguồn đang được bảo vệ · còn 3 ngày</span>
+
+    <div>
+      <div class="section-label">Timeline claim</div>
+      <div class="timeline">
+        <div class="tl-event">
+          <div class="tl-time">12/08</div>
+          <div class="tl-text">CTV Nguyễn Hoàng Duy tạo submission</div>
+        </div>
+        <div class="tl-event">
+          <div class="tl-time">12/08</div>
+          <div class="tl-text">HR xác nhận nhận hồ sơ</div>
+        </div>
+        <div class="tl-event tl-latest">
+          <div class="tl-time">15/08 · hôm nay</div>
+          <div class="tl-text">Vendor Bắc Việt nộp lại hồ sơ</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="guard-conclusion">
+      <div class="g-title"><span class="material-symbols-outlined mi">gavel</span>Kết luận: Chặn nhận nguồn mới đến hết 18/08</div>
+      <div class="g-reason">Lý do: Claim CTV đang trong cửa sổ bảo vệ 7 ngày</div>
+    </div>
+
+    <div class="small muted">Hồ sơ trùng nguồn từ Vendor Bắc Việt sẽ được tự động mở lại sau 18/08 — không cần thao tác thủ công.</div>
+
+  </div>
+  <div class="drawer-foot">
+    <a class="btn btn-primary" href="S02_Staffing_Default_1440.html"><span class="material-symbols-outlined mi">check</span>Giữ nguồn hiện tại</a>
+    <a class="btn btn-secondary" href="S02B_ReferralGuard_OverrideRequested.html"><span class="material-symbols-outlined mi">lock_open</span>Yêu cầu override</a>
+  </div>
+</aside>
+
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>

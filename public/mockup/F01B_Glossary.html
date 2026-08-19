@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>F01B_Glossary — Foundations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_assets/hrp.css"/>
+<style>
+  .gl { padding: 28px 40px; height: 100%; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
+  .gl-head { display: flex; align-items: center; gap: 14px; }
+  .gl-title { font: 700 24px/32px var(--font-head); letter-spacing: -.01em; }
+  .gl-note { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+  .gl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+  .gl-box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .gl-box .gl-name { font: 600 12px/16px var(--font-label); letter-spacing: .04em; text-transform: uppercase; color: var(--primary-dark); padding: 2px 0 6px; border-bottom: 1px solid var(--line); margin-bottom: 2px; }
+  .gl-line { display: flex; align-items: baseline; gap: 7px; padding: 5px 0; border-bottom: 1px solid var(--line); font: 400 12px/16px var(--font-body); }
+  .gl-line:last-child { border-bottom: 0; }
+  .gl-en { font: 600 12px/16px var(--font-label); color: var(--on-surface); white-space: nowrap; }
+  .gl-ar { color: var(--primary); font-weight: 600; }
+  .gl-vi { font: 600 12px/16px var(--font-label); color: var(--primary-dark); white-space: nowrap; }
+  .gl-def { color: var(--on-surface-variant); }
+  .gl-foot { font: 400 12px/16px var(--font-label); color: var(--on-surface-variant); }
+</style>
+</head>
+<body class="backdrop">
+<div class="frame-wrap">
+<div class="frame-canvas" data-frame="F01B_Glossary">
+  <div class="gl">
+
+    <div class="gl-head">
+      <span class="gl-title">F01B — Glossary thuật ngữ EN → VI</span>
+      <span class="gl-note">DEC-33 — UI các frame giữ nguyên thuật ngữ tiếng Anh chuẩn ngành</span>
+      <span class="watermark-badge push-right">DỮ LIỆU MINH HỌA</span>
+    </div>
+
+    <div class="gl-grid">
+
+      <div class="gl-box">
+        <span class="gl-name">Bảng điều hành (S01)</span>
+        <div class="gl-line"><span class="gl-en">Control Tower</span><span class="gl-ar">→</span><span class="gl-vi">Trung tâm điều hành</span><span class="gl-def">màn hình tổng quan KPI vận hành nhân sự (ví dụ: "Mở Trung tâm điều hành xem Fill rate toàn hệ")</span></div>
+        <div class="gl-line"><span class="gl-en">Fill rate</span><span class="gl-ar">→</span><span class="gl-vi">Tỷ lệ lấp đầy</span><span class="gl-def">% chỗ đã có người trên tổng cần (ví dụ: 47/50 = 94%)</span></div>
+        <div class="gl-line"><span class="gl-en">Workforce</span><span class="gl-ar">→</span><span class="gl-vi">Lực lượng lao động</span><span class="gl-def">tổng nhân sự đang hoạt động (ví dụ: "Hôm nay 124 người đang làm")</span></div>
+      </div>
+
+      <div class="gl-box">
+        <span class="gl-name">Bố trí nhân sự (S02)</span>
+        <div class="gl-line"><span class="gl-en">Staffing</span><span class="gl-ar">→</span><span class="gl-vi">Bố trí nhân sự</span><span class="gl-def">ghép người vào đúng dự án, đúng ca (ví dụ: "Chuyển Long sang ca D1 An Phát")</span></div>
+        <div class="gl-line"><span class="gl-en">Talent Pool</span><span class="gl-ar">→</span><span class="gl-vi">Kho ứng viên</span><span class="gl-def">danh sách lao động sẵn sàng đi làm (ví dụ: "Kéo thêm 5 người từ kho ứng viên")</span></div>
+        <div class="gl-line"><span class="gl-en">Referral Guard</span><span class="gl-ar">→</span><span class="gl-vi">Chốt chặn giới thiệu</span><span class="gl-def">quy tắc chống gian lận khi giới thiệu người (ví dụ: "Người này đang hoạt động ở dự án khác → bị chặn")</span></div>
+        <div class="gl-line"><span class="gl-en">Override</span><span class="gl-ar">→</span><span class="gl-vi">Ghi đè chặn</span><span class="gl-def">người có quyền cho phép vượt quy tắc (có ghi lý do) (ví dụ: "HR Manager duyệt ghi đè vì đã xác minh")</span></div>
+        <div class="gl-line"><span class="gl-en">Maker-checker</span><span class="gl-ar">→</span><span class="gl-vi">Người tạo – Người kiểm</span><span class="gl-def">thao tác quan trọng cần 2 người xác nhận (ví dụ: "Bảng kê phải qua người tạo + người duyệt")</span></div>
+      </div>
+
+      <div class="gl-box">
+        <span class="gl-name">Chuyên cần (S03)</span>
+        <div class="gl-line"><span class="gl-en">Attendance</span><span class="gl-ar">→</span><span class="gl-vi">Chuyên cần</span><span class="gl-def">chấm công, bảng công theo ca (ví dụ: "Duyệt bất thường chuyên cần tháng 7")</span></div>
+        <div class="gl-line"><span class="gl-en">Lock</span><span class="gl-ar">→</span><span class="gl-vi">Khóa chốt</span><span class="gl-def">đóng băng số liệu kỳ công, không sửa thêm (ví dụ: "Đã khóa → chỉ xem, không sửa được")</span></div>
+        <div class="gl-line"><span class="gl-en">Blocker</span><span class="gl-ar">→</span><span class="gl-vi">Yếu tố chặn</span><span class="gl-def">lỗi dữ liệu chặn không cho khóa (3 loại: #12/13/14) (ví dụ: "Còn 3 yếu tố chặn → chưa khóa được")</span></div>
+        <div class="gl-line"><span class="gl-en">UNMATCHED_EMPLOYEE</span><span class="gl-ar">→</span><span class="gl-vi">Nhân viên không khớp</span><span class="gl-def">công thuộc về ai không xác định được (ví dụ: "Mã thẻ 12345 không có trong danh sách")</span></div>
+        <div class="gl-line"><span class="gl-en">SOURCE_CONFLICT</span><span class="gl-ar">→</span><span class="gl-vi">Xung đột nguồn</span><span class="gl-def">hai nguồn dữ liệu công mâu thuẫn nhau (ví dụ: "File import nói 8h, máy chấm công nói 7h")</span></div>
+        <div class="gl-line"><span class="gl-en">WRONG_PROJECT</span><span class="gl-ar">→</span><span class="gl-vi">Sai dự án</span><span class="gl-def">công ghi nhầm sang dự án khác (ví dụ: "Công của An Phát ghi nhầm vào Yên Phong")</span></div>
+      </div>
+
+      <div class="gl-box">
+        <span class="gl-name">Đối soát (S04)</span>
+        <div class="gl-line"><span class="gl-en">Reconciliation</span><span class="gl-ar">→</span><span class="gl-vi">Đối soát</span><span class="gl-def">đối chiếu công-lương giữa đơn vị cung ứng và khách hàng (ví dụ: "Tháng 7: đối soát 44 dòng công")</span></div>
+        <div class="gl-line"><span class="gl-en">Statement</span><span class="gl-ar">→</span><span class="gl-vi">Bảng kê</span><span class="gl-def">bảng kê công-lương gửi khách hàng xác nhận (ví dụ: "Gửi bảng kê cho khách duyệt trước ngày 5")</span></div>
+        <div class="gl-line"><span class="gl-en">Margin</span><span class="gl-ar">→</span><span class="gl-vi">Biên lợi nhuận</span><span class="gl-def">chênh lệch tiền thu khách và tiền trả đơn vị cung ứng (ví dụ: "Margin 18% dự án An Phát")</span></div>
+        <div class="gl-line"><span class="gl-en">Payroll</span><span class="gl-ar">→</span><span class="gl-vi">Tính lương</span><span class="gl-def">xử lý bảng lương theo kỳ (ví dụ: "Chạy tính lương kỳ tháng 7")</span></div>
+        <div class="gl-line"><span class="gl-en">SLA</span><span class="gl-ar">→</span><span class="gl-vi">Cam kết dịch vụ</span><span class="gl-def">hạn chót đơn vị cung ứng xác nhận đối soát (ví dụ: "3 ngày kể từ khi gửi bảng kê")</span></div>
+        <div class="gl-line"><span class="gl-en">Vendor</span><span class="gl-ar">→</span><span class="gl-vi">Đơn vị cung ứng</span><span class="gl-def">bên cung cấp lao động (ví dụ: "Xem danh sách các đơn vị cung ứng")</span></div>
+        <div class="gl-line"><span class="gl-en">Client</span><span class="gl-ar">→</span><span class="gl-vi">Khách hàng</span><span class="gl-def">nhà máy/kho thuê nhân sự (ví dụ: "Điện tử An Phát duyệt bảng kê")</span></div>
+      </div>
+
+    </div>
+
+    <div class="gl-foot">21 thuật ngữ · nhóm theo module S01–S04 · nghĩa + ví dụ ngắn dùng nguyên theo bảng canonical DEC-33 (không thêm bớt) · 21/21 dòng có ví dụ · Presenter dùng kèm <a href="F00A_DemoNarrative.html">F00A_DemoNarrative</a> (lời thoại Việt) và <a href="../PRESENTER_GUIDE.md">PRESENTER_GUIDE.md</a></div>
+
+  </div>
+</div>
+</div>
+<script src="_assets/frame.js"></script>
+</body>
+</html>
