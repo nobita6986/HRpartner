@@ -1039,6 +1039,97 @@ model AuditLog {
 // 12. INTEGRITY — Phase 3 (DEC-02 + DEC-01 + ADR-014)
 // ═══════════════════════════════════════════════════════════════════════════
 
+// 12. COMMISSION (V4.13 G21-B14 — Hoa hồng CTV/Sale)
+//     ADR-013 (Record khóa bất biến): KHÔNG có @@unique trên ledger để cho phép
+//     nhiều dòng CREDIT/REVERSAL cho cùng ctv+worker+month/year (milestones + clawback).
+//     ADR-010: Mọi trường tiền BigInt (VND nguyên).
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// CommissionPolicy — chính sách hoa hồng (group + version).
+/// `calcType`:
+///   - PER_HEAD_MILESTONE: thưởng cố định per head theo milestone (vd 500_000 per worker RETAINED_30_DAYS).
+///   - PERCENT_OF_REVENUE: % giá trị vòng đời worker (revenue_attribution_vnd) trong kỳ.
+/// `value` BigInt — cho PER_HEAD_MILESTONE = số tiền/head; cho PERCENT_OF_REVENUE = số basis points (1 = 0.01%).
+/// Versioning: cập nhật policy TẠO ROW MỚI (version++) thay vì UPDATE — ADR-013 ledger tham chiếu version cụ thể.
+/// `conditions` Json: { milestones: [{code: 'RETAINED_30_DAYS', days: 30}, ...], requireAssignment: 'ACTIVE', ... }
+model CommissionPolicy {
+  id            String    @id @default(uuid())
+  name          String    // vd 'CTV-2026-Q3-Standard'
+  calcType      String    @map("calc_type") // PER_HEAD_MILESTONE | PERCENT_OF_REVENUE
+  value         BigInt    @map("value") // BigInt VND nguyên (ADR-010) — ý nghĩa theo calcType
+  conditions    Json      @default("{}") @map("conditions") // flexible: milestones, scope, ...
+  effectiveFrom DateTime  @map("effective_from") @db.Date
+  effectiveTo   DateTime? @map("effective_to") @db.Date
+  version       Int       @default(1) // immutable per id; mỗi lần "update" = tạo row mới
+  createdBy     String?   @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  ledgerEntries CommissionLedger[]
+
+  @@index([effectiveFrom, effectiveTo])
+  @@map("commission_policies")
+}
+
+/// CommissionLedger — sổ cái hoa hồng (append-only theo ADR-013).
+/// `direction`:
+///   - CREDIT: hoa hồng dự kiến/phát sinh (Cộng).
+///   - REVERSAL: dòng đảo (clawback) — Trừ khi đã APPROVED/PAID; PENDING chờ kế toán duyệt (DEC-05).
+/// `status`: PENDING → APPROVED → PAID. REJECTED chỉ từ PENDING. Không quay lui.
+/// `milestone` mã milestone đạt được (vd 'RETAINED_30_DAYS'); dùng để idempotent (cùng policy+worker+month+milestone chỉ tạo 1 CREDIT).
+/// `reversalOfId` chỉ REVERSAL: id của dòng CREDIT bị đảo.
+/// Idempotency: dùng IdempotencyKey (route POST:/api/admin/commission-ledger/credit) + @@index([ctvId, workerId, month, year, milestone]).
+model CommissionLedger {
+  id            String    @id @default(uuid())
+  ctvId         String    @map("ctv_id")
+  workerId      String?   @map("worker_id") // null nếu PERCENT_OF_REVENUE không gắn worker
+  assignmentId  String?   @map("assignment_id")
+  policyId      String    @map("policy_id")
+  milestone     String    @map("milestone") // 'RETAINED_30_DAYS' | ...
+  amount        BigInt    @map("amount") // BigInt VND nguyên (ADR-010) — luôn dương
+  direction     String    @map("direction") // CREDIT | REVERSAL
+  reversalOfId  String?   @map("reversal_of_id") // chỉ REVERSAL
+  month         Int       @map("month") // 1..12
+  year          Int       @map("year") // 2026
+  status        String    @default("PENDING") @map("status") // PENDING | APPROVED | PAID | REJECTED
+  createdBy     String?   @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  approvedBy    String?   @map("approved_by")
+  approvedAt    DateTime? @map("approved_at")
+  paidAt        DateTime? @map("paid_at")
+  rejectedBy    String?   @map("rejected_by")
+  rejectedAt    DateTime? @map("rejected_at")
+  rejectionReason String? @map("rejection_reason") @db.Text
+
+  policy        CommissionPolicy @relation(fields: [policyId], references: [id])
+  reversalOf    CommissionLedger?  @relation("ReversalPair", fields: [reversalOfId], references: [id])
+  reversals     CommissionLedger[] @relation("ReversalPair")
+
+  @@index([ctvId, month, year])
+  @@index([workerId, month, year])
+  @@index([status])
+  @@index([ctvId, workerId, month, year, milestone]) // idempotency lookup
+  @@map("commission_ledger")
+}
+
+/// CommissionDebt — nợ hoa hồng (V4.13 G21-B14 — Nợ hoa hồng & netting).
+/// Khi REVERSAL APPROVED vượt số dư khả dụng → tạo Debt. CREDIT APPROVED sẽ cấn trừ Debt trước khi thành PAID.
+/// `status`: OPEN → PARTIAL → CLEARED. Không xóa debt khi CLEARED (audit).
+model CommissionDebt {
+  id          String    @id @default(uuid())
+  ctvId       String    @map("ctv_id")
+  originLedgerId String? @map("origin_ledger_id") // REVERSAL sinh ra debt này
+  amountVnd   BigInt    @map("amount_vnd") // BigInt VND nguyên (ADR-010) — số tiền nợ ban đầu
+  remainingVnd BigInt   @map("remaining_vnd") // số nợ còn lại (giảm khi netting)
+  status      String    @default("OPEN") @map("status") // OPEN | PARTIAL | CLEARED
+  reason      String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+  clearedAt   DateTime? @map("cleared_at")
+
+  @@index([ctvId, status])
+  @@map("commission_debts")
+}
+
 /// Idempotency keys cho POST/PATCH/DELETE nhạy cảm.
 /// Scope UNIQUE (actorId, route, key) — đảm bảo retry trong TTL trả đúng kết quả lần đầu.
 /// TTL 24h (giữ hành vi hiện tại của ticket.service round 1).
