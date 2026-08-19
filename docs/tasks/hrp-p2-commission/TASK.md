@@ -8,16 +8,16 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.2` |
-| Status | `REVISION_REQUIRED` |
+| Status | `ACCEPTED` |
 | Planner | Tier 1 — Planner (Product & Architecture Decision Owner) |
 | Executor | Tier 2 (agent ngoài — sếp giao qua Cursor: `/code hrp-p2-commission`) |
 | Auditor | Tier 3 (independent context) |
 | Baseline | `HEAD` của `main` (sau khi hoàn thành `hrp-p1-portals` - Round 4 ACCEPTED) |
 | Modules | P2 — Commission (Group policy + individual override + ledger) |
 | ADR references | ADR-010 (Tiền BigInt), ADR-013 (Record khóa là bất biến), V4.13 G21-B14 (Nợ hoa hồng & netting) |
-| Current execution round | 4 ✅ COMPLETED |
-| Current audit round | 4 |
-| Next gate | `/audit hrp-p2-commission` |
+| Current execution round | 4 |
+| Current audit round | 5 |
+| Next gate | `DONE` |
 | Updated | 2026-08-19 14:30 ICT |
 
 ## 1. Outcome
@@ -149,7 +149,8 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 | 1 | AUD-002 | ACCEPT_FIX | Kiến trúc yêu cầu event-driven via outbox pattern. | Yêu cầu Tier 2 thêm `enqueueOutbox` vào luồng duyệt/chuyển trạng thái. | Tier 2 ✅ CLOSED |
 | 1 | AUD-003 | ACCEPT_FIX | Lỗi DB schema ở môi trường test làm vitest fail diện rộng. | Yêu cầu Tier 2 chạy prisma migrate reset trên test DB hoặc fix lệnh test. | Tier 2 ✅ CLOSED |
 | **2** | **AUD-003** | **ACCEPT_FIX** | **Tier 2 lần trước nhầm lẫn "pre-existing". Thực tế: lỗi `permission denied for schema public` xảy ra tại `rolePermission.findMany()` trong `permission-resolver.ts` — chứng tỏ `app_user_writer` thiếu quyền schema-level. Cần grant USAGE + CREATE trên schema public cho app_user_writer (hoặc dùng prisma migrate reset). Không được phép bỏ qua.** | **Yêu cầu Tier 2 grant quyền schema cho app_user_writer trên dev DB, verify `npx vitest run` exit 0.** | **Tier 2 (Round 3) ✅ CLOSED** |
-| 4 | AUD-003 | ACCEPT_FIX | Lỗi timeout connection pool do Neon DB không đáp ứng đủ tải khi chạy vitest song song nhiều integration tests. Đây là hạn chế hạ tầng khách quan, không phải lỗi logic. | Cho phép Tier 2 giới hạn concurrency của vitest (VD: cập nhật package.json hoặc chạy lệnh với cờ `--poolOptions.threads.maxThreads=1 --poolOptions.threads.minThreads=1 --fileParallelism false`) để tránh vỡ pool. | Tier 2 (Round 4) |
+| 4 | AUD-003 | ACCEPT_FIX | Lỗi timeout connection pool do Neon DB không đáp ứng đủ tải khi chạy vitest song song nhiều integration tests. Đây là hạn chế hạ tầng khách quan, không phải lỗi logic. | Cho phép Tier 2 giới hạn concurrency của vitest (VD: cập nhật package.json hoặc chạy lệnh với cờ `--poolOptions.threads.maxThreads=1 --poolOptions.threads.minThreads=1 --fileParallelism false`) để tránh vỡ pool. | Tier 2 (Round 4) ✅ CLOSED |
+| 5 | None | ACCEPTED | Tier 3 Verdict PASS. 605/605 tests xanh. Mọi requirements đã thỏa mãn. | Đóng task. | Tier 1 ✅ CLOSED |
 
 ## 10. Revision Log
 
@@ -158,4 +159,5 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 | `v1.0` | 2026-08-19 | Tạo contract ban đầu cho P2 Commission | Yêu cầu triển khai tiếp roadmap sau khi P1 ACCEPTED |
 | `v1.1` | 2026-08-19 | Bổ sung yêu cầu sửa lỗi bảo mật và outbox từ Audit Round 1 | Giải quyết AUD-001, AUD-002, AUD-003 |
 | `v1.2` | 2026-08-19 | Cho phép giới hạn luồng test để tránh lỗi timeout Neon pooler | Giải quyết hạ tầng test báo lỗi từ Audit Round 4 |
+| `v1.2` | 2026-08-19 | Đóng task | Audit Round 5 PASS |
 

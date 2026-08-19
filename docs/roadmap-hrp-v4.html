@@ -415,19 +415,19 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
         <div class="stop-tag">Xong</div>
       </div>
 
-      <div class="stop current" style="position:relative;">
-        <div class="you-are-here">Đang ở đây</div>
+      <div class="stop done">
         <div class="stop-dot">P1</div>
         <div class="stop-name">Portals</div>
         <div class="stop-week fn">4–6 tuần</div>
         <div class="stop-tag" style="background:var(--success-soft);color:var(--success);">ACCEPTED</div>
       </div>
 
-      <div class="stop future">
+      <div class="stop current" style="position:relative;">
+        <div class="you-are-here">Đang ở đây</div>
         <div class="stop-dot">P2</div>
         <div class="stop-name">Commission</div>
         <div class="stop-week fn">2–3 tuần</div>
-        <div class="stop-tag">sau MVP</div>
+        <div class="stop-tag" style="background:var(--success-soft);color:var(--success);">ACCEPTED</div>
       </div>
 
       <div class="stop future">
@@ -834,9 +834,9 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
     </div>
   </details>
 
-  <details class="pd-card is-current">
+  <details class="pd-card">
     <summary>
-      <span class="pd-badge badge-current">P1</span>
+      <span class="pd-badge badge-done">P1</span>
       <span class="pd-title">External Portals</span>
       <span class="pd-tag st-ok">ACCEPTED</span>
       <span class="pd-hint">4–6 tuần</span>
@@ -869,11 +869,11 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
     </div>
   </details>
 
-  <details class="pd-card">
+  <details class="pd-card is-current">
     <summary>
-      <span class="pd-badge badge-idle">P2</span>
+      <span class="pd-badge badge-current">P2</span>
       <span class="pd-title">Commission</span>
-      <span class="pd-tag st-cho">Sau go-live</span>
+      <span class="pd-tag st-ok">ACCEPTED</span>
       <span class="pd-hint">2–3 tuần</span>
     </summary>
     <div class="pd-body">
@@ -955,8 +955,8 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
   <div class="bd-marker"></div>
   <div class="bd-legend">
     <span><i class="sw sw-done"></i>Đã xong (P0–P5)</span>
-    <span><i class="sw sw-cur"></i>Đang: GO-LIVE đợt 1 + P1 Portals (ACCEPTED, chờ UAT)</span>
-    <span><i class="sw sw-later"></i>Chưa tới (P2–P3)</span>
+    <span><i class="sw sw-cur"></i>Đang: Chờ UAT/Ops P1 & P2 (Cả hai đã ACCEPTED)</span>
+    <span><i class="sw sw-later"></i>Chưa tới (P3 Payroll)</span>
     <span>+ P1–P3 (9–14 tuần sau go-live) → Full V4</span>
   </div>
 </div>
