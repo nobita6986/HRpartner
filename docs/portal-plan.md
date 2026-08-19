@@ -64,6 +64,9 @@ Lộ trình được điều chỉnh để ưu tiên bài toán chịu tải c�
   - Stress-test (Giả lập 10,000 req/s).
 - **Milestone 4: BoD Dashboard**
   - Xây dựng trang tổng quan cho Ban Giám Đốc.
-- **Milestone 5: Vendor & Admin Refinement**
+- **Milestone 5: Control Tower (BoD Dashboard)**
+  - Triển khai giao diện S01_ControlTower_Default_1440.html.
+  - Xây dựng trang tổng quan cho Ban Giám Đốc.
+- **Milestone 6: Vendor Portal & Reconciliation**
   - Đồng bộ UI/UX nội bộ và hệ thống đối soát công nợ Vendor.
-
+  - Triển khai S02_Staffing và S04_Reconciliation.

@@ -352,8 +352,6 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
 .pd-col ul { margin-left: 18px; color: var(--ink-soft); font-size: 13.5px; }
 .pd-col li { margin-bottom: 8px; }
 .impact { display: block; color: var(--success); font-style: normal; margin-top: 2px; font-size: 12px; font-weight: 600; }
-.mockup-link { display: inline-block; background: var(--primary-soft); color: var(--primary-dark); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; margin-top: 8px; border: 1px solid var(--primary); }
-.mockup-link:hover { background: var(--primary); color: white; }
 </style>
 </head>
 <body>
@@ -367,7 +365,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
     <div class="stat-strip">
       <div class="stat">
         <div class="k">Tổng số Milestone</div>
-        <div class="v">5 <em>chặng</em></div>
+        <div class="v">6 <em>chặng</em></div>
         <div class="d">Cuốn chiếu theo User Role</div>
       </div>
       <div class="stat">
@@ -402,7 +400,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
       <h3>🚧 Đang xây dựng (Trọng tâm)</h3>
       <p>Tập trung toàn lực đắp "áo khoác" UI/UX (từ bộ Mockup BoD) và giải quyết bài toán chịu tải:</p>
       <ul>
-        <li><strong>Hệ sinh thái Portal (5 Milestones):</strong> Xây dựng các app chuyên biệt cho từng người: App Công nhân, App CTV, App Vendor, BoD Dashboard.</li>
+        <li><strong>Hệ sinh thái Portal (6 Milestones):</strong> Xây dựng các app chuyên biệt cho từng người: App Công nhân, App CTV, App Vendor, BoD Dashboard.</li>
         <li><strong>Kiến trúc High Concurrency:</strong> Tách app tính lương (Python) riêng, dùng Redis Cache và Virtual Waiting Room để chịu tải hàng ngàn công nhân.</li>
         <li><strong>S0x Mockups Integration:</strong> Đưa toàn bộ các thiết kế S01-S05 (Job Board, Control Tower, Reconciliation) vào Production.</li>
       </ul>
@@ -422,7 +420,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
 
   <div class="section-label" style="margin-top: 50px;">Bản đồ tuyến đường (Milestones)</div>
   <div class="metro">
-    <div class="metro-inner" style="min-width: 900px;">
+    <div class="metro-inner" style="min-width: 950px;">
       <div class="metro-track"><div class="done-part" style="width: 10%;"></div></div>
       <div class="stops">
         
@@ -456,8 +454,15 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
 
         <div class="stop pending">
           <div class="stop-dot">M5</div>
-          <div class="stop-name">BoD & Vendor</div>
-          <div class="stop-week fn">Dashboards</div>
+          <div class="stop-name">Control Tower</div>
+          <div class="stop-week fn">BoD Dashboard</div>
+          <div class="stop-tag">TODO</div>
+        </div>
+
+        <div class="stop pending">
+          <div class="stop-dot">M6</div>
+          <div class="stop-name">Vendor Portal</div>
+          <div class="stop-week fn">B2B Partners</div>
           <div class="stop-tag">TODO</div>
         </div>
 
@@ -580,7 +585,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
       <details class="pd-card">
         <summary>
           <span class="pd-badge badge-idle">M5</span>
-          <span class="pd-title">Control Tower & Vendor Reconciliation</span>
+          <span class="pd-title">Control Tower (BoD Dashboard)</span>
           <span class="pd-tag st-cho">TODO</span>
         </summary>
         <div class="pd-body">
@@ -591,13 +596,39 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
                 <li>Triển khai giao diện S01_ControlTower cho Ban Giám Đốc.
                   <span class="impact">🎯 Tác dụng: Cung cấp "Radar" tổng chỉ huy cho C-Level (Headcount, Quỹ lương, Hiệu suất). Ra quyết định tức thời.</span>
                 </li>
-                <li>Triển khai giao diện S02_Staffing và S04_Reconciliation cho Vendor.
-                  <span class="impact">🎯 Tác dụng: Vendor nắm rõ chất lượng ứng viên, tự đối soát công nợ mà không phiền HR, chống gian lận (Referral Guard).</span>
+                <li>Tích hợp các chỉ số báo cáo thời gian thực về dòng tiền dự án.
+                  <span class="impact">🎯 Tác dụng: BoD nắm bắt tức thì bức tranh sức khỏe dự án mà không cần đợi kế toán chốt sổ.</span>
                 </li>
               </ul>
             </div>
             <div class="pd-col">
               <div style="border:1px solid var(--line); border-radius:8px; overflow:hidden;"><img src="images/bod_dashboard.jpg" style="width:100%; display:block;" alt="Control Tower Dashboard"></div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="pd-card">
+        <summary>
+          <span class="pd-badge badge-idle">M6</span>
+          <span class="pd-title">Vendor Portal & Reconciliation</span>
+          <span class="pd-tag st-cho">TODO</span>
+        </summary>
+        <div class="pd-body">
+          <div class="pd-row" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start;">
+            <div class="pd-col">
+              <h4>Chi tiết Công việc (Action) & Tác dụng (Impact)</h4>
+              <ul>
+                <li>Triển khai giao diện S02_Staffing và S04_Reconciliation cho Vendor.
+                  <span class="impact">🎯 Tác dụng: Vendor nắm rõ chất lượng ứng viên, tự đối soát công nợ mà không phiền HR.</span>
+                </li>
+                <li>Xây dựng phễu ứng viên (Pipeline) và tích hợp Referral Guard.
+                  <span class="impact">🎯 Tác dụng: Ngăn chặn gian lận "cướp" ứng viên, tự động phân xử hoa hồng.</span>
+                </li>
+              </ul>
+            </div>
+            <div class="pd-col">
+              <div style="border:1px solid var(--line); border-radius:8px; overflow:hidden;"><img src="images/vendor_portal.jpg" style="width:100%; display:block;" alt="Vendor Portal"></div>
             </div>
           </div>
         </div>
@@ -611,24 +642,19 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
       
       <div style="margin-top:20px; font-weight:bold;">S01_ControlTower</div>
       <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 5px;">Dashboard Điều hành cho Ban Giám đốc và Quản lý.</div>
-      <a class="mockup-link" href="#" onclick="alert('Bản HTML này nằm ở thư mục docs/tasks/hrp-v4-bod-mockup/mockup')">Xem UI Demo</a>
-
+      
       <div style="margin-top:20px; font-weight:bold;">S02_Staffing</div>
       <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 5px;">Quản lý Phễu ứng viên & Vendor (Tích hợp Referral Guard).</div>
-      <a class="mockup-link" href="#" onclick="alert('Bản HTML này nằm ở thư mục docs/tasks/hrp-v4-bod-mockup/mockup')">Xem UI Demo</a>
-
+      
       <div style="margin-top:20px; font-weight:bold;">S03_Attendance</div>
       <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 5px;">Chấm công, Xử lý Ngoại lệ và xem Công/Lương (Worker).</div>
-      <a class="mockup-link" href="#" onclick="alert('Bản HTML này nằm ở thư mục docs/tasks/hrp-v4-bod-mockup/mockup')">Xem UI Demo</a>
-
+      
       <div style="margin-top:20px; font-weight:bold;">S04_Reconciliation</div>
       <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 5px;">Đối soát Công nợ nội bộ và Vendor. Quản lý Margin.</div>
-      <a class="mockup-link" href="#" onclick="alert('Bản HTML này nằm ở thư mục docs/tasks/hrp-v4-bod-mockup/mockup')">Xem UI Demo</a>
-
+      
       <div style="margin-top:20px; font-weight:bold;">S05_JobBoard_Public</div>
       <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 5px;">Cổng thông tin Tìm việc & Landing Page (Public).</div>
-      <a class="mockup-link" href="#" onclick="alert('Bản HTML này nằm ở thư mục docs/tasks/hrp-v4-bod-mockup/mockup')">Xem UI Demo</a>
-
+      
     </div>
   </div>
 
