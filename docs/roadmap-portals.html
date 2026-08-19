@@ -352,8 +352,8 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
 .pd-col ul { margin-left: 18px; color: var(--ink-soft); font-size: 13.5px; }
 .pd-col li { margin-bottom: 8px; }
 .impact { display: block; color: var(--success); font-style: normal; margin-top: 2px; font-size: 12px; font-weight: 600; }
-.iframe-wrapper { border:1px solid var(--line); border-radius:8px; overflow:hidden; position: relative; background: #fff; cursor: zoom-in; }
-.iframe-wrapper iframe { width: 1440px; height: 1100px; transform-origin: top left; border: none; pointer-events: none; display: block; }
+.iframe-wrapper { border:1px solid var(--line); border-radius:8px; overflow:hidden; position: relative; background: #fff; cursor: zoom-in; width: 100%; display: block; }
+.iframe-wrapper iframe { position: absolute; top: 0; left: 0; width: 1440px; height: 1100px; transform-origin: top left; border: none; pointer-events: none; display: block; }
 </style>
 </head>
 <body>
@@ -742,5 +742,6 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
   </script>
 </body>
 </html>
+
 
 
