@@ -352,8 +352,8 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
 .pd-col ul { margin-left: 18px; color: var(--ink-soft); font-size: 13.5px; }
 .pd-col li { margin-bottom: 8px; }
 .impact { display: block; color: var(--success); font-style: normal; margin-top: 2px; font-size: 12px; font-weight: 600; }
-.iframe-wrapper { border:1px solid var(--line); border-radius:8px; overflow:hidden; position: relative; height: 350px; background: #fff; }
-.iframe-wrapper iframe { width: 1440px; height: 1100px; transform: scale(0.32); transform-origin: top left; border: none; pointer-events: none; }
+.iframe-wrapper { border:1px solid var(--line); border-radius:8px; overflow:hidden; position: relative; background: #fff; cursor: zoom-in; }
+.iframe-wrapper iframe { width: 1440px; height: 1100px; transform-origin: top left; border: none; pointer-events: none; display: block; }
 </style>
 </head>
 <body>
@@ -668,5 +668,79 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
 
 </div>
 
+  <!-- Lightbox Modal -->
+  <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 99999; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px);">
+    <div style="position: relative; width: 100%; height: 100%; max-width: 1440px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
+      <div style="padding: 14px 20px; background: var(--surface); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 16px; color: var(--ink); display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+          Chế độ xem chi tiết Mockup
+        </h3>
+        <button onclick="closeLightbox()" style="background: var(--bg); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font-size: 20px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; hover: background: var(--line);">&times;</button>
+      </div>
+      <div style="flex: 1; position: relative; overflow: auto; -webkit-overflow-scrolling: touch; background: var(--bg);">
+        <iframe id="lightbox-iframe" src="" style="width: 1440px; height: 2000px; border: none; pointer-events: auto; display: block;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Responsive Iframes
+    function resizeIframes() {
+      document.querySelectorAll('.iframe-wrapper').forEach(wrapper => {
+        const width = wrapper.clientWidth;
+        // Calculate scale to fit 1440px iframe into container width
+        const scale = width / 1440;
+        const iframe = wrapper.querySelector('iframe');
+        iframe.style.transform = 'scale(' + scale + ')';
+        // Adjust container height to match scaled iframe (let's say we want to show top 850px of mockup)
+        wrapper.style.height = (1050 * scale) + 'px';
+      });
+    }
+    window.addEventListener('resize', resizeIframes);
+    // Give it a tiny delay on first load to ensure CSS is applied
+    setTimeout(resizeIframes, 50);
+
+    // Lightbox Logic
+    function openLightbox(src) {
+      document.getElementById('lightbox-iframe').src = src;
+      document.getElementById('lightbox').style.display = 'block';
+      document.body.style.overflow = 'hidden'; // prevent bg scroll
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox').style.display = 'none';
+      document.getElementById('lightbox-iframe').src = '';
+      document.body.style.overflow = '';
+    }
+    document.getElementById('lightbox').addEventListener('click', function(e) {
+      if (e.target === this) closeLightbox();
+    });
+
+    document.querySelectorAll('.iframe-wrapper').forEach(wrapper => {
+      wrapper.addEventListener('click', () => {
+        const src = wrapper.querySelector('iframe').src;
+        openLightbox(src);
+      });
+      // Add hover overlay
+      const overlay = document.createElement('div');
+      overlay.innerHTML = '<span style="background:rgba(0,0,0,0.75); color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight: 500; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display:flex; gap:6px; align-items:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg> Bấm để Phóng to</span>';
+      overlay.style.position = 'absolute';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.display = 'flex';
+      overlay.style.justifyContent = 'center';
+      overlay.style.alignItems = 'center';
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.2s';
+      overlay.style.background = 'rgba(255,255,255,0.1)';
+      wrapper.appendChild(overlay);
+      wrapper.addEventListener('mouseenter', () => overlay.style.opacity = '1');
+      wrapper.addEventListener('mouseleave', () => overlay.style.opacity = '0');
+    });
+  </script>
 </body>
 </html>
+
+
