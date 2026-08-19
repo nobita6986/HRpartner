@@ -27,5 +27,16 @@ export default defineConfig({
         }
       })(),
     },
+    poolOptions: {
+      threads: {
+        maxThreads: 1,
+        minThreads: 1,
+      },
+      forks: {
+        maxForks: 1,
+        minForks: 1,
+      },
+    },
+    fileParallelism: false,
   },
 });
