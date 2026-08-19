@@ -23,6 +23,20 @@ vi.mock('@/src/lib/db', () => ({
         return null;
       },
     },
+    $transaction: async <T>(fn: (tx: any) => Promise<T>): Promise<T> => {
+      const tx = {
+        $executeRawUnsafe: async () => ({}),
+        worker: {
+          findUnique: async ({ where }: any) => {
+            if (where.accountUserId) {
+              return workerRows.find((w) => w.accountUserId === where.accountUserId) ?? null;
+            }
+            return null;
+          },
+        },
+      };
+      return fn(tx);
+    },
   }),
 }));
 

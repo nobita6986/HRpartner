@@ -10,7 +10,15 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Mock permission-resolver at module level (before importing talent-pool.repo)
+vi.mock('@/src/shared/auth/permission-resolver', () => ({
+  resolveEffectivePermissions: vi.fn().mockResolvedValue(
+    new Set(['CAN_VIEW_UNASSIGNED_POOL'])
+  ),
+}));
+
 type MockFn = ReturnType<typeof vi.fn>;
+
 type MockPrisma = {
   $queryRawUnsafe: MockFn;
   worker: {
@@ -32,16 +40,11 @@ function makeMockPrisma(overrides?: Partial<MockPrisma>): MockPrisma {
 
 const HR_CTX = { userId: 'hr-001', role: 'HR_MANAGER' as const };
 
-import { queryTalentPool, countUnassignedWorkers, TalentPoolError } from './talent-pool.repo';
+import { queryTalentPool, countUnassignedWorkers } from './talent-pool.repo';
 
 describe('talent-pool.repo', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.doMock('@/src/shared/auth/permission-resolver', () => ({
-      resolveEffectivePermissions: vi.fn().mockResolvedValue(
-        new Set(['CAN_VIEW_UNASSIGNED_POOL'])
-      ),
-    }));
   });
 
   it('queryTalentPool returns rows with pagination', async () => {
@@ -50,7 +53,7 @@ describe('talent-pool.repo', () => {
       { id: 'wk-002', name: 'Tran Van B', vendor: { id: 'v2', name: 'Vendor B' } },
     ];
     const prisma = makeMockPrisma({
-      $queryRawUnsafe: vi.fn().mockResolvedValue([]), // no active workers
+      $queryRawUnsafe: vi.fn().mockResolvedValue([]),
       worker: {
         findMany: vi.fn().mockResolvedValue(workers),
         count: vi.fn().mockResolvedValue(2),
