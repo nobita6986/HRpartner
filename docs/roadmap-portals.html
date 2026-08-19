@@ -352,6 +352,8 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
 .pd-col ul { margin-left: 18px; color: var(--ink-soft); font-size: 13.5px; }
 .pd-col li { margin-bottom: 8px; }
 .impact { display: block; color: var(--success); font-style: normal; margin-top: 2px; font-size: 12px; font-weight: 600; }
+.mockup-link { display: inline-block; background: var(--primary-soft); color: var(--primary-dark); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; margin-top: 8px; border: 1px solid var(--primary); }
+.mockup-link:hover { background: var(--primary); color: white; }
 </style>
 </head>
 <body>
@@ -374,9 +376,9 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
         <div class="d">Chịu tải 10,000 requests/s</div>
       </div>
       <div class="stat">
-        <div class="k">Design System</div>
-        <div class="v">Warm <em>Professionalism</em></div>
-        <div class="d">UX/UI hiện đại, thân thiện</div>
+        <div class="k">Thiết kế Tham chiếu</div>
+        <div class="v">BoD <em>Mockups</em></div>
+        <div class="d">S01 đến S05 UI/UX</div>
       </div>
     </div>
   </header>
@@ -389,7 +391,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
       <p>Hệ thống hiện tại đang sở hữu bộ "động cơ" backend cực kỳ mạnh mẽ, đã được thẩm định an toàn:</p>
       <ul>
         <li><strong>Core Database (PostgreSQL/Prisma):</strong> Chứa dữ liệu hàng chục ngàn công nhân, đối tác, hợp đồng.</li>
-        <li><strong>Commission Engine (Phase 2):</strong> Tự động đối soát và tính hoa hồng realtime không lệch 1 đồng. Tự động truy thu (Clawback).</li>
+        <li><strong>Commission Engine (Phase 2):</strong> Tự động đối soát và tính hoa hồng realtime không lệch 1 đồng.</li>
         <li><strong>RLS Security (Phase 1):</strong> Bảo mật đa tầng 13 role, ai chỉ được thấy dữ liệu của người nấy.</li>
         <li><strong>API Tuyển dụng & Ticketing:</strong> Hệ thống luân chuyển đơn từ, hồ sơ chuẩn xác.</li>
       </ul>
@@ -397,12 +399,12 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
     </div>
 
     <div class="summary-box" style="border-color: var(--primary);">
-      <h3>🚧 Đang xây dựng (Trọng tâm hiện tại)</h3>
-      <p>Tập trung toàn lực đắp "áo khoác" UI/UX và giải quyết bài toán chịu tải để mở cửa đón người dùng:</p>
+      <h3>🚧 Đang xây dựng (Trọng tâm)</h3>
+      <p>Tập trung toàn lực đắp "áo khoác" UI/UX (từ bộ Mockup BoD) và giải quyết bài toán chịu tải:</p>
       <ul>
         <li><strong>Hệ sinh thái Portal (5 Milestones):</strong> Xây dựng các app chuyên biệt cho từng người: App Công nhân, App CTV, App Vendor, BoD Dashboard.</li>
-        <li><strong>Kiến trúc High Concurrency:</strong> Tách app tính lương (Python) riêng, dùng Redis Cache và Virtual Waiting Room để chịu tải hàng ngàn công nhân vào kỳ lương mà không sập.</li>
-        <li><strong>Design System:</strong> Áp dụng chuẩn warm_professionalism định vị thương hiệu hiện đại.</li>
+        <li><strong>Kiến trúc High Concurrency:</strong> Tách app tính lương (Python) riêng, dùng Redis Cache và Virtual Waiting Room để chịu tải hàng ngàn công nhân.</li>
+        <li><strong>S0x Mockups Integration:</strong> Đưa toàn bộ các thiết kế S01-S05 (Job Board, Control Tower, Reconciliation) vào Production.</li>
       </ul>
     </div>
 
@@ -412,7 +414,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
       <ul>
         <li><strong>B2B Job Market:</strong> Tự động matching nhu cầu tuyển dụng (Vendor) và ứng viên (CTV).</li>
         <li><strong>Payroll AI Auditing:</strong> Tích hợp AI để tự động phát hiện gian lận chấm công, sai lệch phiếu lương so với luật.</li>
-        <li><strong>Full Digital Transformation:</strong> Xóa sổ 100% giấy tờ và file Excel, mọi quy trình từ Onboarding đến Offboarding diễn ra trên App.</li>
+        <li><strong>Full Digital Transformation:</strong> Xóa sổ 100% giấy tờ và file Excel, mọi quy trình diễn ra trên App.</li>
       </ul>
     </div>
 
@@ -479,14 +481,11 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
             <div class="pd-col">
               <h4>Chi tiết Công việc (Action) & Tác dụng (Impact)</h4>
               <ul>
-                <li>Cập nhật <code>globals.css</code> với mã màu Primary (#f26522) và font Be Vietnam Pro.
+                <li>Cập nhật <code>globals.css</code> với mã màu và font từ bộ Design System F01 (BoD Mockup).
                   <span class="impact">🎯 Tác dụng: Tạo nhận diện thương hiệu chuyên nghiệp, thay thế giao diện thô sơ cũ.</span>
                 </li>
                 <li>Xây dựng cấu trúc <code>app/(portal)/layout.tsx</code> (Global Navbar & Footer).
                   <span class="impact">🎯 Tác dụng: Gom nhóm các trang public vào một giao diện chuẩn, dễ dàng cho marketing và SEO.</span>
-                </li>
-                <li>Tạo các UI Components dùng chung (Button, Card, Input) chuẩn Tailwind v4.
-                  <span class="impact">🎯 Tác dụng: Tăng tốc độ code cho các Milestone sau, đảm bảo UI nhất quán.</span>
                 </li>
               </ul>
             </div>
@@ -497,7 +496,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
       <details class="pd-card">
         <summary>
           <span class="pd-badge badge-idle">M2</span>
-          <span class="pd-title">Landing Page & Chợ Việc Làm</span>
+          <span class="pd-title">Job Board & Chợ Việc Làm</span>
           <span class="pd-tag st-cho">TODO</span>
         </summary>
         <div class="pd-body">
@@ -505,14 +504,11 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
             <div class="pd-col">
               <h4>Chi tiết Công việc (Action) & Tác dụng (Impact)</h4>
               <ul>
-                <li>Cắt HTML từ stitch/hrp_landing_page_html_standard thành các Component (Hero, Service).
-                  <span class="impact">🎯 Tác dụng: Có một bộ mặt sang trọng trên internet để chạy quảng cáo Ads.</span>
+                <li>Triển khai giao diện S05_JobBoard_Public.
+                  <span class="impact">🎯 Tác dụng: Có một bộ mặt sang trọng trên internet để chạy quảng cáo Ads thu hút ứng viên tự do.</span>
                 </li>
-                <li>Tích hợp API /api/jobs vào thanh tìm kiếm.
-                  <span class="impact">🎯 Tác dụng: Ứng viên có thể tìm việc trực tiếp từ data thực tế của công ty.</span>
-                </li>
-                <li>Xây dựng luồng Apply hồ sơ trực tuyến.
-                  <span class="impact">🎯 Tác dụng: Giảm thiểu thao tác nhập liệu tay của HR, ứng viên điền thẳng vào DB.</span>
+                <li>Tích hợp API /api/jobs vào thanh tìm kiếm và luồng Apply trực tuyến.
+                  <span class="impact">🎯 Tác dụng: Giảm thiểu thao tác nhập liệu tay của HR, ứng viên điền hồ sơ đẩy thẳng vào Database.</span>
                 </li>
               </ul>
             </div>
@@ -531,10 +527,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
             <div class="pd-col">
               <h4>Chi tiết Công việc (Action) & Tác dụng (Impact)</h4>
               <ul>
-                <li>Thay thế giao diện ctv cũ bằng bản xịn từ stitch/hrp_collaborator_page_html_standard.
-                  <span class="impact">🎯 Tác dụng: Gây ấn tượng mạnh với CTV, tạo động lực để họ làm việc.</span>
-                </li>
-                <li>Tích hợp mã Referral QR và nút Share lên Mạng xã hội.
+                <li>Nâng cấp giao diện CTV, tích hợp mã Referral QR và nút Share.
                   <span class="impact">🎯 Tác dụng: Giúp CTV kiếm thêm ứng viên dễ dàng với 1 thao tác. Tính viral cao.</span>
                 </li>
                 <li>Hiển thị biểu đồ tiền hoa hồng realtime và nút Rút tiền.
@@ -549,7 +542,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
       <details class="pd-card">
         <summary>
           <span class="pd-badge badge-idle">M4</span>
-          <span class="pd-title">Worker App & High Concurrency</span>
+          <span class="pd-title">Worker App & Attendance (High Concurrency)</span>
           <span class="pd-tag st-cho">TODO</span>
         </summary>
         <div class="pd-body">
@@ -557,17 +550,14 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
             <div class="pd-col">
               <h4>Chi tiết Công việc (Action) & Tác dụng (Impact)</h4>
               <ul>
-                <li>Dựng luồng Pre-compute Payslip từ ppBCC (Python), lưu JSON.
+                <li>Triển khai giao diện S03_Attendance cho công nhân xem công/lương.
+                  <span class="impact">🎯 Tác dụng: Công nhân tự tra cứu, HR không còn bị phàn nàn hay phải in giấy tờ.</span>
+                </li>
+                <li>Dựng luồng Pre-compute Payslip từ ppBCC (Python), tích hợp Redis Cache.
                   <span class="impact">🎯 Tác dụng: Triệt tiêu rủi ro nghẽn CPU trên web server khi tính lương trực tiếp.</span>
                 </li>
-                <li>Tích hợp Redis Cache và Neon Connection Pooling / PgBouncer.
-                  <span class="impact">🎯 Tác dụng: Tránh sập Database khi 10,000 công nhân vào xem lương (Thundering Herd).</span>
-                </li>
                 <li>Xây dựng "Phòng chờ ảo" (Virtual Waiting Room) bằng Vercel Edge.
-                  <span class="impact">🎯 Tác dụng: Điều tiết lưu lượng mượt mà, giúp web không bao giờ bị báo lỗi 503.</span>
-                </li>
-                <li>Giao diện xem Phiếu lương và Lịch làm việc siêu mượt trên mobile (PWA).
-                  <span class="impact">🎯 Tác dụng: Công nhân tự tra cứu, HR không còn bị phàn nàn hay phải in giấy tờ.</span>
+                  <span class="impact">🎯 Tác dụng: Điều tiết lưu lượng mượt mà, giúp web không bao giờ sập khi 10,000 công nhân ùa vào (Thundering Herd).</span>
                 </li>
               </ul>
             </div>
@@ -578,7 +568,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
       <details class="pd-card">
         <summary>
           <span class="pd-badge badge-idle">M5</span>
-          <span class="pd-title">BoD Dashboard & Vendor Workspace</span>
+          <span class="pd-title">Control Tower & Vendor Reconciliation</span>
           <span class="pd-tag st-cho">TODO</span>
         </summary>
         <div class="pd-body">
@@ -586,11 +576,11 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
             <div class="pd-col">
               <h4>Chi tiết Công việc (Action) & Tác dụng (Impact)</h4>
               <ul>
-                <li>Cắt HTML từ stitch/hrp_balanced_4_card_dashboard làm Dashboard Giám đốc (/bod).
+                <li>Triển khai giao diện S01_ControlTower cho Ban Giám Đốc.
                   <span class="impact">🎯 Tác dụng: Cung cấp "Radar" tổng chỉ huy cho C-Level (Headcount, Quỹ lương, Hiệu suất). Ra quyết định tức thời.</span>
                 </li>
-                <li>Nâng cấp endor.hrpartner.vn bổ sung phễu ứng viên (Pipeline).
-                  <span class="impact">🎯 Tác dụng: Các nhà cung ứng nắm rõ chất lượng ứng viên của họ, tự đối soát công nợ mà không phiền HR.</span>
+                <li>Triển khai giao diện S02_Staffing và S04_Reconciliation cho Vendor.
+                  <span class="impact">🎯 Tác dụng: Vendor nắm rõ chất lượng ứng viên, tự đối soát công nợ mà không phiền HR, chống gian lận (Referral Guard).</span>
                 </li>
               </ul>
             </div>
@@ -602,25 +592,34 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
 
     <!-- Right Column: UI / Assets Map -->
     <div class="rail" style="padding-top: 50px;">
-      <div class="section-label">Tài nguyên Thiết kế (Stitch)</div>
+      <div class="section-label">Bản đồ Thiết kế (BoD Mockups)</div>
       
-      <div style="margin-top:20px; font-weight:bold;">warm_professionalism</div>
-      <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 15px;">Mã màu: Primary #f26522. Typography: Be Vietnam Pro. Dùng cho toàn bộ M1-M5.</div>
+      <div style="margin-top:20px; font-weight:bold;">S01_ControlTower</div>
+      <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 5px;">Dashboard Điều hành cho Ban Giám đốc và Quản lý.</div>
+      <a class="mockup-link" href="#" onclick="alert('Bản HTML này nằm ở thư mục docs/tasks/hrp-v4-bod-mockup/mockup')">Xem UI Demo</a>
 
-      <div style="margin-top:15px; font-weight:bold;">hrp_landing_page_html_standard</div>
-      <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 15px;">Giao diện Landing Page, Search Bar, Global Navigation. (Dùng cho M1, M2)</div>
+      <div style="margin-top:20px; font-weight:bold;">S02_Staffing</div>
+      <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 5px;">Quản lý Phễu ứng viên & Vendor (Tích hợp Referral Guard).</div>
+      <a class="mockup-link" href="#" onclick="alert('Bản HTML này nằm ở thư mục docs/tasks/hrp-v4-bod-mockup/mockup')">Xem UI Demo</a>
 
-      <div style="margin-top:15px; font-weight:bold;">hrp_collaborator_page_html_standard</div>
-      <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 15px;">Dashboard cho CTV, hiển thị danh sách ứng viên và hoa hồng. (Dùng cho M3)</div>
+      <div style="margin-top:20px; font-weight:bold;">S03_Attendance</div>
+      <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 5px;">Chấm công, Xử lý Ngoại lệ và xem Công/Lương (Worker).</div>
+      <a class="mockup-link" href="#" onclick="alert('Bản HTML này nằm ở thư mục docs/tasks/hrp-v4-bod-mockup/mockup')">Xem UI Demo</a>
 
-      <div style="margin-top:15px; font-weight:bold;">hrp_balanced_4_card_dashboard</div>
-      <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 15px;">Dashboard cho Ban Giám Đốc (4 thẻ chỉ số) và Admin nội bộ. (Dùng cho M5)</div>
+      <div style="margin-top:20px; font-weight:bold;">S04_Reconciliation</div>
+      <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 5px;">Đối soát Công nợ nội bộ và Vendor. Quản lý Margin.</div>
+      <a class="mockup-link" href="#" onclick="alert('Bản HTML này nằm ở thư mục docs/tasks/hrp-v4-bod-mockup/mockup')">Xem UI Demo</a>
+
+      <div style="margin-top:20px; font-weight:bold;">S05_JobBoard_Public</div>
+      <div style="font-size:13px; color:var(--ink-soft); margin-bottom: 5px;">Cổng thông tin Tìm việc & Landing Page (Public).</div>
+      <a class="mockup-link" href="#" onclick="alert('Bản HTML này nằm ở thư mục docs/tasks/hrp-v4-bod-mockup/mockup')">Xem UI Demo</a>
+
     </div>
   </div>
 
   <footer>
-    <span>Nguồn: docs/portal-plan.md · docs/portal_plan_evaluation.md — Trạng thái: 19/08/2026</span>
-    <span>Phát triển bởi đội ngũ kỹ thuật. Áp dụng kiến trúc High Concurrency & Microservices.</span>
+    <span>Nguồn: docs/portal-plan.md · docs/tasks/hrp-v4-bod-mockup — Trạng thái: 19/08/2026</span>
+    <span>Phát triển bởi đội ngũ kỹ thuật. Kế thừa toàn bộ logic từ các phiên bản ERP V4.</span>
     <span style="flex-basis:100%;margin-top:6px;color:var(--accent-text)">Cập nhật sau mỗi Milestone ACCEPTED.</span>
   </footer>
 
