@@ -1,61 +1,68 @@
 ﻿# Kế hoạch phát triển: Hệ sinh thái Portal Toàn diện (All-in-One ERP Workspace)
 
 ## 1. Tầm nhìn chiến lược (Vision: User-Centric ERP)
-Sếp nhận định cực kỳ chính xác: **"Xây dựng hệ thống xong mà người dùng không thể thao tác hay tương tác thì không có tác dụng gì"**. Điểm nghẽn lớn nhất của phần mềm doanh nghiệp là chỉ phục vụ chiều thu thập dữ liệu (cho HR/Kế toán) mà quên mất việc mang lại giá trị thực tế cho người dùng đầu cuối.
+"Xây dựng hệ thống xong mà người dùng không thể thao tác hay tương tác thì không có tác dụng gì". Điểm nghẽn lớn nhất của phần mềm doanh nghiệp là chỉ phục vụ chiều thu thập dữ liệu mà quên mất trải nghiệm của người dùng cuối.
 
 Chúng ta sẽ chuyển hướng mạnh mẽ, biến HRP thành một **Hệ sinh thái Không gian làm việc số (Digital Workspaces)**. Từng nhóm người dùng (Worker, Vendor, CTV, BoD, Public) khi truy cập vào subdomain của mình sẽ thấy một ứng dụng hoàn chỉnh, có lợi ích rõ ràng, giúp họ giải quyết công việc hàng ngày một cách sung sướng nhất.
 
 ## 2. Quy hoạch Không gian làm việc cho từng Role (The Workspaces)
 
 ### 2.1. Public Portal (Chợ Giao dịch việc làm)
-- **Đối tượng:** Ứng viên tự do, người tìm việc.
-- **Giá trị:** Tìm việc nhanh, minh bạch, uy tín.
-- **Tính năng tương tác:**
-  - Landing Page với thiết kế `warm_professionalism` thu hút.
-  - Tìm kiếm công việc theo địa điểm, ngành nghề với filter realtime.
-  - Nộp hồ sơ (Apply) nhanh chóng, theo dõi trạng thái hồ sơ (Pending, Interview, Accepted).
+- **Đối tượng:** Ứng viên tự do.
+- **Giá trị:** Landing Page thu hút (`warm_professionalism`), SEO-friendly. Tìm kiếm việc làm với filter realtime và nộp hồ sơ nhanh chóng.
 
-### 2.2. Worker Workspace (App cho Người lao động - worker.hrpartner.vn)
-- **Hiện trạng:** Quá nghèo nàn (Chỉ có check-in GPS và xem ticket).
-- **Quy hoạch mới (Self-Service PWA):**
-  - **Quản lý thu nhập:** Xem phiếu lương (Payslip) chi tiết từng đồng, lịch sử nhận lương.
-  - **Quản lý công việc:** Xem lịch làm việc (Shift/Roster), thông tin dự án đang tham gia.
-  - **Tương tác HR:** Tạo yêu cầu nghỉ phép, khiếu nại (Dispute), cập nhật thông tin cá nhân (STK Ngân hàng, size đồng phục).
-  - **Gamification:** Điểm thưởng chuyên cần, thông báo nội bộ từ công ty.
+### 2.2. Worker Workspace (worker.hrpartner.vn)
+- **Quy hoạch mới:** Trở thành "sổ tay điện tử" của công nhân. 
+- **Tính năng:** Xem Phiếu lương (Payslip) minh bạch, quản lý ca làm việc (Shift), xin nghỉ phép, nhận điểm thưởng chuyên cần và cập nhật thông tin cá nhân.
 
-### 2.3. Vendor Workspace (App cho Đối tác cung ứng - vendor.hrpartner.vn)
-- **Hiện trạng:** Chỉ xem order, đẩy hồ sơ thô, xem statement.
-- **Quy hoạch mới (B2B Partner Portal):**
-  - **Quản lý Pipeline:** Xem phễu chuyển đổi của ứng viên do mình cung cấp (Bao nhiêu người pass, bao nhiêu rớt, lý do rớt).
-  - **SLA & Công nợ:** Theo dõi thời gian phản hồi (SLA), đối soát công nợ tự động (Confirm/Dispute statement) trực quan.
-  - **Hỗ trợ kinh doanh:** Nhận thông báo Order khẩn cấp (Push notification), chat/trao đổi trực tiếp với HR của HRP trên từng đơn hàng.
+### 2.3. Vendor Workspace (vendor.hrpartner.vn)
+- **Quy hoạch mới:** B2B Partner Portal. 
+- **Tính năng:** Xem "phễu ứng viên" (tỷ lệ đậu/rớt), theo dõi thời gian phản hồi (SLA), đối soát công nợ tự động trực quan và trao đổi trực tiếp với HR.
 
 ### 2.4. Affiliate / CTV Workspace (ctv.hrpartner.vn)
-- **Hiện trạng:** Bảng table hiển thị danh sách người đã giới thiệu khô khan.
-- **Quy hoạch mới (Marketing & Sales Hub):**
-  - **Công cụ bán hàng:** Nút "Tạo link Affiliate", mã QR Code để đi rải trên Zalo/Facebook.
-  - **Theo dõi hoa hồng (Real-time):** Giao diện ví điện tử, biểu đồ hoa hồng dự kiến, hoa hồng đã duyệt. Nút "Yêu cầu rút tiền" (Withdrawal request).
-  - **Kích thích chéo:** Bảng xếp hạng CTV (Leaderboard), các chương trình thưởng nóng (Campaigns). Kho tài liệu hình ảnh (Marketing Kits) để CTV tải về đăng bài.
+- **Hiện trạng Logic:** Nền tảng luồng Affiliate đã cực kỳ vững chắc (qua `SourceClaim` và `CommissionLedger`). Hệ thống đã tự động cộng/trừ hoa hồng.
+- **Quy hoạch mới (Marketing Hub):** Nút "Tạo link Affiliate/Mã QR", ví điện tử theo dõi tiền hoa hồng realtime, nút "Yêu cầu rút tiền", bảng xếp hạng CTV. Thay thế giao diện khô khan hiện tại bằng bản thiết kế xịn từ `stitch`.
 
-### 2.5. BoD Dashboard (Không gian của Ban Giám Đốc)
-- **Đối tượng:** C-Level, Giám đốc, Quản lý cấp cao.
-- **Quy hoạch mới (Executive Summary):**
-  - 4 Thẻ chỉ số sinh tử: Tổng Headcount (Biến động), Tỷ lệ lấp đầy Dự án, Sức khỏe tài chính (Quỹ lương/Hoa hồng), Hiệu suất tuyển dụng.
-  - Biểu đồ xu hướng (Trend charts) cập nhật realtime từ Prisma.
+### 2.5. BoD Dashboard (Báo cáo nhanh cho Giám đốc)
+- **Quy hoạch mới:** Gom mọi số liệu sinh tử về 1 trang duy nhất cho C-Level (từ thiết kế `hrp_balanced_4_card_dashboard`).
+- **Tính năng:** 4 thẻ chỉ số quan trọng: Tổng Headcount (Biến động), Tỷ lệ lấp đầy Dự án, Sức khỏe tài chính (Quỹ lương/Hoa hồng), và Hiệu suất tuyển dụng.
 
-## 3. Rà soát Codebase (Gap Analysis)
-- **Core Database & Logic:** 80% logic nghiệp vụ phía sau (Backend) cho Worker, Vendor, CTV đã làm xong ở Phase 1 & 2. (VD: Bảng `Tickets`, `SourceClaims`, `CommissionLedger`, `Orders`).
-- **Giao diện (Frontend):** 
-  - Thư mục `stitch/` đã có các bản HTML tĩnh cho Public Portal, CTV, và Admin Dashboard. Cần Slicing thành React Component.
-  - Riêng **Worker** và **Vendor** hiện đang xài UI thô sơ (làm bằng Tailwind cơ bản ở Phase 1), cần lên ý tưởng UX/UI mới hoặc vẽ thêm bản thiết kế để nâng cấp.
-- **Kiến trúc Layout:** Cần chia tách các Layout rõ ràng trong Next.js: `app/(portal)` cho Public, `app/worker` cho Worker, `app/vendor` cho Vendor, v.v... đảm bảo mỗi bên có Navbar/Sidebar riêng biệt.
+---
+
+## 3. Đánh giá Kiến trúc chịu tải cao (High Concurrency Architecture)
+
+Khi chuyển HRP thành một Portal tương tác cao, đặc biệt là **Worker Workspace**, chúng ta sẽ đối mặt với bài toán **"Thundering Herd" (Hiệu ứng bầy đàn)**: Hàng ngàn công nhân sẽ đồng loạt đăng nhập vào ngày phát lương để xem Payslip.
+
+Để giải quyết vấn đề quá tải Database Connections và nghẽn CPU, kiến trúc hệ thống sẽ áp dụng:
+
+1. **Pre-computed Snapshot (Tận dụng Microservice appBCC):**
+   - TUYỆT ĐỐI không tính toán lương (gross-to-net, thuế, BHXH) khi user bấm xem.
+   - Các tác vụ tính toán nặng nề được đẩy sang service Python (`appBCC`). Khi tính xong, `appBCC` đẩy bản ghi (Snapshot JSON) lên Database. Next.js chỉ việc truy vấn và render tĩnh, giải phóng hoàn toàn CPU.
+2. **Caching (Redis):**
+   - Vào kỳ lương, hệ thống sẽ "warm-up" dữ liệu phiếu lương vào Redis (In-memory cache). Các API xem lương sẽ đọc từ Redis thay vì chọc thẳng xuống PostgreSQL.
+3. **Connection Pooling:**
+   - Đảm bảo sử dụng Neon Serverless Driver (qua WebSockets) hoặc PgBouncer để giới hạn số lượng connection, bảo vệ DB không bị sập.
+4. **Rate Limiting & Virtual Waiting Room:**
+   - Dùng Vercel Edge Middleware để giới hạn truy cập. Nếu vượt mức (ví dụ 5000 request/giây), người dùng đến sau sẽ vào "Phòng chờ ảo" để điều tiết lưu lượng.
+
+---
 
 ## 4. Chiến lược triển khai (Milestones)
 
-- **Milestone 1:** Cấu hình Design System `warm_professionalism` và xây dựng Public Portal (Landing Page + Chợ việc làm).
-- **Milestone 2:** Nâng cấp toàn diện CTV Workspace (Affiliate Hub) bằng giao diện có sẵn từ `stitch/`.
-- **Milestone 3:** Xây dựng BoD Dashboard cho Ban Giám Đốc.
-- **Milestone 4:** Tái cấu trúc Worker Workspace (Thêm Quản lý thu nhập, Lịch làm việc, Profile).
-- **Milestone 5:** Nâng cấp Vendor Workspace (B2B Pipeline & SLA).
+Lộ trình được điều chỉnh để ưu tiên bài toán chịu tải của Worker Workspace ngay từ sớm:
 
-> Kế hoạch này đảm bảo HRP không chỉ là phần mềm quản lý, mà là một **sản phẩm B2C/B2B** mang lại trải nghiệm xuất sắc cho tất cả các bên tham gia.
+- **Milestone 1: Design System & Public Portal**
+  - Cấu hình Design System `warm_professionalism` (`globals.css`).
+  - Cắt HTML Landing Page & Chợ việc làm.
+- **Milestone 2: Affiliate Hub (CTV Workspace)**
+  - Đắp giao diện `hrp_collaborator_page_html_standard` vào `app/ctv`. 
+  - Nối API Referral, hiển thị biểu đồ hoa hồng.
+- **Milestone 3: Worker Workspace & Kiến trúc Chịu tải** *(Ưu tiên giải quyết rủi ro Thundering Herd)*
+  - Xây dựng luồng Pre-compute Payslip từ `appBCC`.
+  - Tích hợp Redis Cache và Neon Connection Pooling.
+  - Xây dựng giao diện xem lương và lịch làm việc cho công nhân.
+  - Stress-test (Giả lập 10,000 req/s).
+- **Milestone 4: BoD Dashboard**
+  - Xây dựng trang tổng quan cho Ban Giám Đốc.
+- **Milestone 5: Vendor & Admin Refinement**
+  - Đồng bộ UI/UX nội bộ và hệ thống đối soát công nợ Vendor.
