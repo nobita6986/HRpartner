@@ -8,7 +8,7 @@
 | Work type | CODE |
 | Audit mode (Tier 3 đọc) | CODE_AUDIT |
 | Spec version | v1.0 |
-| Status | READY_FOR_EXECUTION |
+| Status | ACCEPTED |
 | Planner | Tier 1 (Antigravity) |
 | Executor | Tier 2 |
 | Auditor | Tier 3 |
@@ -16,8 +16,8 @@
 | Modules | M6-Admin |
 | ADR references | None |
 | Current execution round | 1 |
-| Current audit round | 0 |
-| Next gate | /code hrp-portal-m6-payroll-tickets |
+| Current audit round | 1 |
+| Next gate | None (Closed) |
 | Updated | 2026-08-20 14:45 +07:00 |
 
 ## 1. Outcome
@@ -111,10 +111,11 @@ Hoàn thiện 2 phân hệ Quản trị còn thiếu trong Admin Panel (đã đ�
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 1 | N/A | ACCEPT | Tier 3 kiểm định PASS (C-01..C-10 đạt). Không có finding lớn. Build xanh. | None | Tier 1 |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | 1.0 | 2026-08-20 | Tạo task hrp-portal-m6-payroll-tickets. | Khởi tạo phân hệ Payroll và Tickets tiếp nối M5. |
+| 1.0 | 2026-08-20 | Đóng task thành công (ACCEPTED). | Đạt đầy đủ tiêu chí M6. |
