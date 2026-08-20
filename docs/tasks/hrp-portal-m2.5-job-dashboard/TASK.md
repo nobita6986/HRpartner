@@ -18,7 +18,7 @@
 | Current execution round | 1 |
 | Current audit round | 1 |
 | Next gate | /audit hrp-portal-m2.5-job-dashboard |
-| Updated | 2026-08-20 09:50 +07:00 |
+| Updated | 2026-08-20 10:28 +07:00 |
 
 ## 1. Outcome
 
@@ -112,10 +112,11 @@ px vitest run exit 0 | Test đỏ. |
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 1 | AUD-001 | ACCEPT_FIX | Lỗi quên commit xoá file cũ (conflict route). Tier 3 đã tự xử lý fix trong commit 70da44e. | Không | Tier 1 |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | 1.0 | 2026-08-20 | Tạo task hrp-portal-m2.5-job-dashboard. | Sếp đính chính thiết kế cho trang chủ tìm việc. |
+| 1.0 | 2026-08-20 | Đóng task, chuyển trạng thái thành ACCEPTED. | Audit round 1 PASS. Handoff sang M3. |
