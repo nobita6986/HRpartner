@@ -243,3 +243,9 @@ Card "Roadmap V4": cập nhật dòng mô tả + ngày hero-meta/footer — **ch
 ---
 
 *Tài liệu do Tier 1 Planner (Antigravity) viết cập nhật ngày 20/08/2026 ~13:20 ICT — trạng thái chuẩn: M3 ACCEPTED, M5 ACCEPTED, M6 ACCEPTED, M7 READY. CSDL đã được seed lại.*
+**M8 - Worker Concurrency (hrp-portal-m8-worker-concurrency):**
+- **Nguồn gốc:** Giai đoạn 2 của Kế hoach tổng thể (M3: Chiỗu tải & Worker Waiting Room).
+- **Tiến độ:** Planner đã tạo hợp ống (READY_FOR_EXECUTION). Yêu cấu setup Redis, Rate Limiting, và mock data từ Python.
+- **Chờ sếp:** Gọi lệnh `/code hrp-portal-m8-worker-concurrency` (sau khi M7 đảx được xử lí luòng).
+
+
