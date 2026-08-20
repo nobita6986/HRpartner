@@ -92,7 +92,9 @@
 
 | Requirement | Execution | Acceptance |
 |---|---|---|
-| `RQ-01` -> `RQ-03` | `STEP-01` | `AC-01` |
+| `RQ-01` | `STEP-01` | `AC-01` |
+| `RQ-02` | `STEP-01` | `AC-01` |
+| `RQ-03` | `STEP-01` | `AC-01` |
 | `RQ-04` | `STEP-02` | `AC-02` |
 | `RQ-05` | `STEP-03` | `AC-03` |
 
@@ -112,7 +114,9 @@
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 1 | BLK-03 | Sửa Traceability | Script verify-task không hỗ trợ range `->`. | Đã sửa thành 3 dòng RQ-01, RQ-02, RQ-03. | Antigravity / DONE |
+| 1 | BLK-01 | Chờ task hrp-m11.1-db-baseline | Lỗi DB drift Neon chung với M11. | Phải dọn dẹp DB trước khi verify được AC-01. | Antigravity / BLOCKED |
+| 1 | DEV-01 | Tạo task hrp-portal-m12.1-bod-projects | Hiển thị Vendor Statement thay cho Project làm sai khác nghiệp vụ BoD mong đợi. Cần truy vấn `Project` thật. | Mở task M12.1 riêng để sửa. | Antigravity / PLANNED |
 
 ## 10. Revision Log
 
