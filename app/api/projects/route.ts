@@ -1,7 +1,7 @@
 /**
- * GET /api/workers — M5 Admin Master Data (RQ-02)
+ * GET /api/projects — M5 Admin Master Data (RQ-02)
  *
- * List all workers for admin. Auth via hrp_token cookie.
+ * List all projects for admin. Auth via hrp_token cookie.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   if (!VIEWER_ROLES.has(ctx.role)) {
     return NextResponse.json(
-      { error: 'FORBIDDEN', message: 'Role ' + ctx.role + ' khong co quyen xem nhan vien.' },
+      { error: 'FORBIDDEN', message: 'Role ' + ctx.role + ' khong co quyen xem du an.' },
       { status: 403 },
     );
   }
@@ -40,28 +40,28 @@ export async function GET(req: NextRequest) {
   const search = searchParams.get('search') ?? undefined;
 
   const where: Record<string, unknown> = {};
-  if (status) where.employmentStatus = status;
+  if (status) where.status = status;
   if (search) {
     where.OR = [
-      { userId: { contains: search, mode: 'insensitive' } },
-      { fullName: { contains: search, mode: 'insensitive' } },
-      { phone: { contains: search, mode: 'insensitive' } },
+      { code: { contains: search, mode: 'insensitive' } },
+      { name: { contains: search, mode: 'insensitive' } },
     ];
   }
 
   try {
     const [rows, total] = await Promise.all([
-      prisma.worker.findMany({
+      prisma.project.findMany({
         where,
+        include: { clientCompany: { select: { id: true, name: true, code: true } } },
         orderBy: { createdAt: 'desc' },
         take,
         skip,
       }),
-      prisma.worker.count({ where }),
+      prisma.project.count({ where }),
     ]);
-    return NextResponse.json({ workers: rows, total, take, skip });
+    return NextResponse.json({ projects: rows, total, take, skip });
   } catch (err) {
-    console.error('[api/workers] query error:', err);
-    return NextResponse.json({ error: 'INTERNAL', message: 'Failed to query workers' }, { status: 500 });
+    console.error('[api/projects] query error:', err);
+    return NextResponse.json({ error: 'INTERNAL', message: 'Failed to query projects' }, { status: 500 });
   }
 }

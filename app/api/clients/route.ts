@@ -1,7 +1,7 @@
 /**
- * GET /api/workers — M5 Admin Master Data (RQ-02)
+ * GET /api/clients — M5 Admin Master Data (RQ-02)
  *
- * List all workers for admin. Auth via hrp_token cookie.
+ * List all client companies for admin. Auth via hrp_token cookie.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   if (!VIEWER_ROLES.has(ctx.role)) {
     return NextResponse.json(
-      { error: 'FORBIDDEN', message: 'Role ' + ctx.role + ' khong co quyen xem nhan vien.' },
+      { error: 'FORBIDDEN', message: 'Role ' + ctx.role + ' khong co quyen xem khach hang.' },
       { status: 403 },
     );
   }
@@ -36,32 +36,31 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const take = Math.min(parseInt(searchParams.get('take') ?? '50', 10), 200);
   const skip = parseInt(searchParams.get('skip') ?? '0', 10);
-  const status = searchParams.get('status') ?? undefined;
   const search = searchParams.get('search') ?? undefined;
 
   const where: Record<string, unknown> = {};
-  if (status) where.employmentStatus = status;
   if (search) {
     where.OR = [
-      { userId: { contains: search, mode: 'insensitive' } },
-      { fullName: { contains: search, mode: 'insensitive' } },
-      { phone: { contains: search, mode: 'insensitive' } },
+      { code: { contains: search, mode: 'insensitive' } },
+      { name: { contains: search, mode: 'insensitive' } },
+      { taxId: { contains: search, mode: 'insensitive' } },
+      { contactEmail: { contains: search, mode: 'insensitive' } },
     ];
   }
 
   try {
     const [rows, total] = await Promise.all([
-      prisma.worker.findMany({
+      prisma.clientCompany.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         take,
         skip,
       }),
-      prisma.worker.count({ where }),
+      prisma.clientCompany.count({ where }),
     ]);
-    return NextResponse.json({ workers: rows, total, take, skip });
+    return NextResponse.json({ clients: rows, total, take, skip });
   } catch (err) {
-    console.error('[api/workers] query error:', err);
-    return NextResponse.json({ error: 'INTERNAL', message: 'Failed to query workers' }, { status: 500 });
+    console.error('[api/clients] query error:', err);
+    return NextResponse.json({ error: 'INTERNAL', message: 'Failed to query clients' }, { status: 500 });
   }
 }

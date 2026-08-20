@@ -97,82 +97,42 @@ Kho quyết định chi tiết: `docs/tasks/hrp-v4-bod-mockup/DECISION_LOG.md` +
 
 ---
 
-## 5. Lịch sử & trạng thái task (18/08/2026)
-
-| Task | Spec | Status | Ghi chú |
-|---|---|---|---|
-| `hrp-v4-bod-mockup` | v1.15-close | **ACCEPTED** | Mockup Baseline v1 đóng băng (D14) |
-| `hrp-phase0-foundation` | — | Đã xong | DB + Prisma + 3 sub-package |
-| `hrp-phase1-bcc-fence` | — | **ACCEPTED** | Rào /bcc JWT (D15) |
-| `hrp-phase1-identity-core` | v1.1-close | **ACCEPTED** (`dc3e772`) | JWT + 13 role + RBAC |
-| `hrp-phase2-tenant-scope` | v1.4-close | **ACCEPTED** (`e963d82`) | RLS + scope + masking 7 trường + runbook production |
-| `hrp-phase3-integrity` | v1.2 | **ACCEPTED** (`5488516`, 16/08) | Idempotency (ADR-014, TTL 24h) + outbox + AuditLog 3 cột + 4 helper + 22 tests |
-| `hrp-phase4-vertical-slices` | v2.0 | **ACCEPTED** (`614dca5`, 18/08) | 4 slice 4A-4B-4C-4D × 7 round, 437 tests, 17 AC |
-| `hrp-defectfix-code-review` | v1.0 r3 | **ACCEPTED** (`d990f84`, 18/08) | 8/8 defect; F2-01 LOW follow-up (test POST /api/tickets) gộp đợt sau |
-| `hrp-phase5-uat-cutover` | v1.1 | **ACCEPTED TASK CLOSED** (`fedfd46`, 18/08) | 548 tests, 11/11 AC. **Production ĐÃ deploy** (`aa57fa2`, dpl_GjUyqLQdSC2A5HPnTKwx3hB2XS56) — hrpartner.vn chạy code mới |
-| `hrp-p1-portals` | v1.0 | **REVISION_REQUIRED** (lần 2, `fd3727a`+`4630437`) | ⬅️ **CONTRACT ĐANG CHẠY** — 595 tests, 14 RQ / 13 STEP / 14 AC; round 2 verdict FAIL (AUD-003) → chờ sếp `/code` round 3 |
+## 5. Lịch sử & trạng thái task (20/08/2026)
 
 ### Vị trí lộ trình hiện tại
 
-```
-Mockup ✅ → Phase 0 ✅ → Phase 1 ✅ → Phase 2 ✅ → Phase 3 ✅ → Phase 4 ✅
-→ Phase 5 ✅ (ACCEPTED + production deployed 18/08 — hrpartner.vn live, GO-LIVE đợt 1 đang chạy)
-→ [ P1 Portals ĐANG CHẠY — TASK mở, round 2 REVISION_REQUIRED (AUD-003), chờ /code round 3 ]
-→ P2 (commission engine) → P3 (payroll/payslip) — Full V4
-```
+HRP V4 (Phân hệ Portals - Front-end):
+M1 (Design System) ✅ -> M2 (Landing Page) ✅ -> M2.5 (Job Dashboard) ✅ -> M3 (API Integration Jobs/Auth) ✅
+-> M4 (UI Fixes - Icon, Logo, NavBar, Scroll) ❌ [REJECTED vòng 1 do sót logo Admin]
+-> M5 (Admin Master Data) ⏳ [READY_FOR_EXECUTION]
 
-### 5.1 TRẠNG THÁI CHI TIẾT — P1 PORTALS (phần việc đang dở — đọc kỹ)
+### 5.1 TRẠNG THÁI CHI TIẾT
 
-P1 = 3 cổng bên ngoài (4-6 tuần): **vendor.hrpartner.vn** (nộp ứng viên + kho hồ sơ G13 + confirm/dispute biên bản G17 + xuất biên bản), **worker.hrpartner.vn PWA** (chấm công GPS evidence + offline queue G21-T14 + push), **ctv.hrpartner.vn** (source claim + mã giới thiệu). 4 slice: 5A nền → 5B Worker PWA → 5C Vendor Portal → 5D CTV.
+**M4 - UI Fixes (hrp-portal-m4-ui-fixes):**
+- **Sự cố:** Tier 3 phát hiện Tier 2 quên đổi logo sang logo.png (RQ-05) nên đã tự động sửa chui, nhưng LẠI SÓT khu vực Admin Panel (src/shared/ui/role-guard/role-guard-layout.tsx).
+- **Quyết định Planner:** Từ chối nghiệm thu (REJECTED vòng 1) để đảm bảo Tier 2 làm triệt để (Không vi phạm quyền Planner sửa code).
+- **Chờ sếp:** Gọi lệnh /code hrp-portal-m4-ui-fixes để Tier 2 tiến hành sửa lại logo Admin.
 
-**Diễn biến 2 round đã chạy:**
+**M5 - Admin Master Data (hrp-portal-m5-admin-master-data):**
+- **Nguồn gốc:** Khảo sát cho thấy Admin Panel hiện tại có Navbar nhưng click vào các trang quản lý nhân sự, dự án, khách hàng đều báo 404.
+- **Tiến độ:** Planner đã tạo hợp đồng (READY_FOR_EXECUTION), yêu cầu xây dựng 3 page /admin/workers, /admin/projects, /admin/clients dạng CRUD cơ bản.
+- **Chờ sếp:** Gọi lệnh /code hrp-portal-m5-admin-master-data (có thể làm sau M4).
 
-| Mốc | Sự kiện |
-|---|---|
-| `afdef0b` | Planner soạn TASK v1.0 READY → sếp `/code` round 1 |
-| `1465b82` | Tier 2 round 1: 595 tests (+47), 13 STEP |
-| `6ff614d` | Tier 3 audit round 1 FAIL (17:35): **AUD-001** seed.mjs:15 thiếu `}`; **AUD-002** thiếu 4 DB roles → Planner Resolution REVISION (17:42) — Directive 3 điểm |
-| `ddc7383` | **OP-03 DONE (17:49)** — sếp ủy quyền Planner chạy `create-db-roles.cjs` exit 0 (4 roles) + `verify-rls-phase5.cjs` exit 0 (**29/29, functional THẬT**). **FO-01 ĐÓNG; AC-10 + C-06 PASS** |
-| `552fa3a` | Tier 2 round 2: fix AUD-001 (dấu `}`) |
-| `fd3727a`+`4630437` | Tier 3 audit round 2 **FAIL (21:46)**: AUD-001/002 CLOSED nhưng lòi **AUD-003 P1** — seed.mjs truyền field `address` vào `prisma.vendor.upsert()` (không tồn tại trong model Vendor) → `npx prisma db seed` exit 1, **AC-12 vẫn FAIL**. Planner spot-check xác nhận THẬT (seed.mjs:104-105/212/218 vs schema.prisma:420-435; `prisma validate` exit 0). **Chứng tỏ Tier 2 không tự chạy seed local trước Handoff dù Directive round 2 đã yêu cầu.** → Planner Resolution REVISION lần 2 (21:48) |
-
-**Directive round 3 đã giao Tier 2 (ghi đầy đủ tại TASK §9):**
-1. **Xóa ngay field `address` khỏi `prisma/seed.mjs` đúng 3 chỗ** (2 dòng VENDOR_SCENARIOS + update + create). **CẤM sửa `schema.prisma` thêm cột** (RQ-12/DEC-13 chỉ cho sửa seed). Muốn giữ tỉnh demo → map sang field `area` ĐÃ CÓ.
-2. **BẮT BUỘC tự chạy test local TRƯỚC Handoff round 3** + dán evidence thật 3 lệnh vào HANDOFF: `node --check prisma/seed.mjs` exit 0 + `npx prisma db seed` exit 0 trên **DB dev** (CẤM production) + query verify AC-12 (≥1 vendor user, ≥1 worker user + profile, ≥1 CTV user, ≥2 orders ACTIVE, ≥1 statement SENT, ≥2 claims, ≥1 submission). Tier 3 round 3 sẽ FAIL ngay nếu thiếu 1 trong 3.
-3. Build evidence trên worktree sạch (C-02 build FAIL do `app/bcc/*` dirty vùng sếp — KHÔNG phải lỗi Tier 2, nhưng evidence sạch vẫn bắt buộc).
-4. Không đổi gì khác; các AC còn lại giữ PASS round 2.
-
-**Việc chờ duy nhất hiện tại:** sếp gõ **`/code hrp-p1-portals`** (round 3).
-
-**Các OP của sếp liên quan P1 (chưa đến lượt, đừng thúc):**
-- OP-01: DNS 3 subdomain CNAME → Vercel + gán domain (trước UAT production).
-- OP-02: VAPID keys (`npx web-push generate-vapid-keys`) + set env Vercel (trước verify push thật; thiếu keys → flag off).
-- OP-04: UAT 3 cổng với user thật (1 vendor thật confirm 1 biên bản).
-- Phase 5 leftovers theo runbook: seed production §2.3 (sếp giữ `DATABASE_URL_ADMIN`), UAT 12 test case, FO-02 (k6 chưa run thật — chạy trong OP-03 dry-run), FO-03 (cron Vercel Hobby chỉ cho 1 lần/ngày — khắc phục bằng GitHub Actions scheduled + `CRON_SECRET` hoặc nâng Pro).
-
-### 5.2 Kiến thức kỹ thuật bắt buộc (đã tích luỹ — đừng phát minh lại)
-
-- **RLS pattern Phase 2:** `FORCE ROW LEVEL SECURITY`, policy `TO app_user_writer, app_user`, dùng helper `hrp_session_role()`, `hrp_session_user_id()`, `hrp_project_visible_for(pid)`, `hrp_project_writable(pid)`, `hrp_worker_visible_for(wid)` (SECURITY DEFINER; GUC qua `set_config(..., true)`; **CẤM SET ROLE**). Child table scope qua EXISTS parent FK. Migration RLS phải additive-only (ENABLE + FORCE + CREATE POLICY, DO-block IF EXISTS) + có script verify.
-- **AC-10 (idempotency + outbox):** mọi route POST/PATCH mới phải bọc `withIdempotency` (header `x-idempotency-key`, TTL 24h, trùng → 409 `IdempotencyConflictError`) + `enqueueOutbox` + `writeAuditLog` trong cùng transaction (pattern `app/api/tickets/*`, `src/shared/integrity/*`). Ngoại lệ đã chốt: bulk per-item (DEC-NEW-11).
-- **Timesheet SM:** PENDING → REVIEWED → APPROVED → LOCKED, maker≠checker (MAKER_EQ_CHECKER → 409), reopen version+1; **ADR-013**: LOCKED bất biến → mọi sửa sau LOCKED qua `TimesheetAdjustment`.
-- **Taxonomy G29:** 6 lỗi — FORMAT_ERROR/UNKNOWN_CODE/MISSING_PUNCH → KT; DUPLICATE_CCCD → HR; OUTSIDE_SHIFT/DUPLICATE_SCAN → PM. 3 blockers: UNMATCHED_EMPLOYEE, SOURCE_CONFLICT, WRONG_PROJECT.
-- **Testing:** vitest only; Prisma mock in-memory; fixture giả (DEC-14). Tiến trình test: 325 → 343 → 351 → 367 → 385 → 398 (P4) → 548 (P5) → **595 (P1)**. ⚠️ **Bài học F5-04:** mock không validate Prisma runtime — với `updateMany`/`$executeRawUnsafe`/upsert args, phải ĐỐI CHIẾU tên field với `prisma/schema.prisma` (chính là cách bắt AUD-003).
-- **P1 nền đã có:** `ctx.vendorId`/`ctx.workerId` trong `src/shared/auth/auth-context.ts`; `applyForJob` service (tái dùng cho vendor submission); `CandidateSubmission` đầy đủ G13; cron `autoConfirmDisputes` + outbox chạy production từ Phase 5. Còn thiếu: cột GPS attendance_events, bảng `push_subscriptions` (đã có sau round 1), FEATURE_FLAGS (`src/shared/feature-flags.ts`), manifest/SW.
-- **Seed (P1):** `prisma/seed.mjs` dùng `DATABASE_URL_ADMIN ?? DATABASE_URL`; chứa fixture ADMIN/HR_MANAGER + vendor/worker/CTV/orders/statements/claims. AC-12 verify query: ≥1 vendor user, ≥1 worker user + profile, ≥1 CTV user, ≥2 orders ACTIVE, ≥1 statement SENT, ≥2 claims, ≥1 submission. **Field Vendor có:** `code/name/taxCode/phone/email/area/status` (KHÔNG có address).
-- **.env gotcha:** dòng `DATABASE_URL_ADMIN` bọc ngoặc kép `"` — khi extract phải `.Trim('"')` (lần đầu bị `ENOTFOUND base`). Chẩn đoán format bằng lệnh masked.
-- **Vercel:** project `hrp-erp` (account `nguyenchanhiepvp-8526`), KHÔNG nối GitHub auto-deploy — deploy bằng CLI `vercel --prod --yes`; Hobby chặn cron >1/ngày (FO-03); rollback `vercel --prod --restore-from=dpl_GjUyqLQdSC2A5HPnTKwx3hB2XS56`.
+### 5.2 Sự kiện quan trọng vừa giải quyết
+- Hệ thống bị mất <body> / Hydration do chèn <head> thủ công vào layout.tsx -> Đã hotfix thành công bằng @import trong globals.css (M4).
+- Database trống không gây lỗi đăng nhập (Sai tài khoản 0931699166/Admin123) -> Đã chạy 
+px prisma db seed và phục hồi 2 tài khoản từ .env.
 
 ---
 
 ## 6. Hàng đợi việc tiếp theo (làm theo đúng thứ tự)
 
-1. **Việc đang chờ duy nhất:** sếp gõ **`/code hrp-p1-portals`** trong Cursor để giao Tier 2 **round 3** (bạn nhắc sếp nếu sếp chưa làm; bạn KHÔNG tự chạy — skill `/code` không có trong môi trường Planner). Tier 2 sẽ thực thi Directive 4 điểm ở §5.1.
-2. Tier 2 xong → **HANDOFF.md kết `READY_FOR_AUDIT`, kèm evidence 3 lệnh seed** (bắt buộc — thiếu = báo sếp trả lại Tier 2 ngay, không đưa qua Tier 3) → báo sếp giao Tier 3 `/audit hrp-p1-portals`.
-3. Tier 3 xong → bạn **`/resolve`** theo §7.1: verify-audit.ps1 → đọc findings → spot-check ≤3 (gợi ý: grep `address` trong seed.mjs phải 0 hit; đọc HANDOFF evidence seed; đối chiếu field upsert vs schema). → **ACCEPTED P1** khi mọi AC PASS (đặc biệt AC-12 seed exit 0).
-4. **P1 ACCEPTED** → chuẩn bị Ops cho sếp (OP-01 DNS, OP-02 VAPID, OP-04 UAT) + roadmap §8.2. Phase tiếp theo: **P2 commission engine thật + ledger** (CTV chỉ mới xem "tích lũy dự kiến" ở P1).
-5. **Sau MỖI task đổi trạng thái → cập nhật đủ bộ dưới §8 rồi PUSH NGAY** (yêu cầu sếp).
-
----
+1. **Sếp gõ lệnh /code hrp-portal-m4-ui-fixes** để Tier 2 sửa dứt điểm Logo trong Admin Panel (Round 2).
+2. Khi Tier 3 kiểm định xong M4, Planner tiến hành /resolve hrp-portal-m4-ui-fixes để đóng task.
+3. **Sếp gõ lệnh /code hrp-portal-m5-admin-master-data** để khởi tạo phân hệ Master Data cho Admin.
+4. Tương tự, Tier 3 audit và Planner /resolve hrp-portal-m5-admin-master-data.
+5. Tiếp tục khảo sát M6 (Tính lương & Phản ánh) hoặc cập nhật roadmap.
+6. LUÔN LUÔN cập nhật docs/roadmap-portals.html, public/roadmap-portals.html và file này sau mỗi lần resolve.
 
 ## 7. Vòng lặp vận hành chuẩn của Planner
 
@@ -278,4 +238,4 @@ Card "Roadmap V4": cập nhật dòng mô tả + ngày hero-meta/footer — **ch
 
 ---
 
-*Tài liệu do Tier 1 Planner (agent tiền nhiệm) viết ngày 18/08/2026 ~21:50 ICT — trạng thái chuẩn tại thời điểm chuyển giao: Phase 0-5 + defectfix ACCEPTED, production hrpartner.vn đã deploy code Phase 5 (18/08); P1 Portals TASK v1.0 REVISION_REQUIRED lần 2 (AUD-003 seed address, commits fd3727a + 4630437), round 3 chờ sếp giao `/code hrp-p1-portals`. Mọi số liệu trong `TASK.md` và `PHASE_KHOAHOC_V1.md` là nguồn tin chính xác hơn tài liệu này nếu có mâu thuẫn.*
+*Tài liệu do Tier 1 Planner (Antigravity) viết cập nhật ngày 20/08/2026 ~13:20 ICT — trạng thái chuẩn: M3 ACCEPTED, M4 REJECTED (chờ fix logo), M5 READY. CSDL đã được seed lại.*

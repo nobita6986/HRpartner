@@ -51,6 +51,33 @@ const SLICE_CARDS = [
     href: '/admin/jobs',
     description: 'Worker nộp đơn từ link public. SourceClaim accepted duy nhất 1/worker.',
   },
+  {
+    id: 'projects',
+    label: 'Dự án',
+    module: 'M5',
+    narrative: 'Master Data',
+    moment: 'RQ-02',
+    href: '/admin/projects',
+    description: 'Quản lý danh sách dự án — xem, lọc theo trạng thái.',
+  },
+  {
+    id: 'workers',
+    label: 'Nhân viên',
+    module: 'M5',
+    narrative: 'Master Data',
+    moment: 'RQ-02',
+    href: '/admin/workers',
+    description: 'Quản lý danh sách nhân viên — xem, lọc theo trạng thái.',
+  },
+  {
+    id: 'clients',
+    label: 'Khách hàng',
+    module: 'M5',
+    narrative: 'Master Data',
+    moment: 'RQ-02',
+    href: '/admin/clients',
+    description: 'Quản lý danh sách khách hàng — xem, tìm kiếm.',
+  },
 ] as const;
 
 export default function AdminControlTowerPage() {
@@ -69,7 +96,7 @@ export default function AdminControlTowerPage() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {SLICE_CARDS.map((card) => (
           <a
             key={card.id}
