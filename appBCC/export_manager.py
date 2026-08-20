@@ -533,3 +533,94 @@ def export_payroll_to_excel(parsed_data: list, project_name: str,
     """Hàm tiện ích để export payroll"""
     manager = ExportManager(parsed_data, project_name, period_month, period_year)
     return manager.export_to_excel(output_path)
+
+
+def export_clean_parse_to_excel(parsed_data: list, project_name: str,
+                                period_month: int, period_year: int,
+                                output_path: str) -> dict:
+    """Xuất checkpoint dữ liệu đã parse, không kèm bất kỳ kết quả payroll nào."""
+    workbook = openpyxl.Workbook()
+    summary_sheet = workbook.active
+    summary_sheet.title = "Dữ liệu sạch"
+    trace_sheet = workbook.create_sheet("Nguồn cột")
+    daily_sheet = workbook.create_sheet("Công hàng ngày")
+
+    headers = [
+        "Mã NV", "Họ tên", "Dòng Excel", "Ngày vào", "Loại công việc",
+        "Tổng công đã parse", "Tổng OT đã parse", "Ngày nghỉ đã parse",
+        "KC", "KD", "KE", "KF", "KH", "KI", "KJ", "KK", "Lỗi parse",
+    ]
+    summary_sheet.append(headers)
+
+    trace_headers = ["Mã NV", "Họ tên", "Trường đã map", "Ô Excel nguồn", "Giá trị nguồn"]
+    trace_sheet.append(trace_headers)
+
+    daily_headers = [
+        "Mã NV", "Ngày", "Trạng thái", "Giờ vào", "Giờ ra", "OT",
+        "OT ngày", "OT đêm", "OT chủ nhật", "Ca", "Loại ngày",
+    ]
+    daily_sheet.append(daily_headers)
+
+    for employee in parsed_data:
+        raw_data = employee.get("rawData", {})
+        summary_sheet.append([
+            employee.get("employeeCode", ""),
+            employee.get("fullName", ""),
+            employee.get("excelRow", ""),
+            raw_data.get("start_date", ""),
+            raw_data.get("work_type", ""),
+            employee.get("totalWorkDays", 0),
+            employee.get("otHours", 0),
+            employee.get("absentDays", 0),
+            raw_data.get("ot_kc", 0),
+            raw_data.get("ot_kd", 0),
+            raw_data.get("ot_ke", 0),
+            raw_data.get("ot_kf", 0),
+            raw_data.get("ot_kh", 0),
+            raw_data.get("ot_ki", 0),
+            raw_data.get("ot_kj", 0),
+            raw_data.get("ot_kk", 0),
+            employee.get("errorMsg", ""),
+        ])
+
+        for field, source in employee.get("traceMap", {}).items():
+            trace_sheet.append([
+                employee.get("employeeCode", ""),
+                employee.get("fullName", ""),
+                field,
+                source.get("cell", ""),
+                source.get("value", ""),
+            ])
+
+        for day in employee.get("dailyData", []):
+            daily_sheet.append([
+                employee.get("employeeCode", ""),
+                day.get("date", ""),
+                day.get("status", ""),
+                day.get("in", ""),
+                day.get("out", ""),
+                day.get("ot", 0),
+                day.get("ot_day", 0),
+                day.get("ot_night", 0),
+                day.get("ot_sun", 0),
+                day.get("shiftType", ""),
+                day.get("dayType", ""),
+            ])
+
+    for worksheet in workbook.worksheets:
+        worksheet.freeze_panes = "A2"
+        for cell in worksheet[1]:
+            cell.font = Font(name="Arial", size=10, bold=True)
+            cell.fill = PatternFill(start_color="CCE5FF", end_color="CCE5FF", fill_type="solid")
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+        worksheet.auto_filter.ref = worksheet.dimensions
+        for column in worksheet.columns:
+            values = [len(str(cell.value or "")) for cell in column]
+            worksheet.column_dimensions[column[0].column_letter].width = min(max(values, default=10) + 2, 40)
+
+    workbook.save(output_path)
+    return {
+        "success": True,
+        "sheets_created": ["Dữ liệu sạch", "Nguồn cột", "Công hàng ngày"],
+        "total_employees": len(parsed_data),
+    }

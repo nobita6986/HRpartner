@@ -59,7 +59,17 @@ def index_to_excel_col(col_idx):
 def setup_directories():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def preview_file(file_path, project_name, period_month, period_year, log_callback=print, review_callback=None, holiday_config=None, sheet_name=None):
+def preview_file(
+    file_path,
+    project_name,
+    period_month,
+    period_year,
+    log_callback=print,
+    review_callback=None,
+    holiday_config=None,
+    sheet_name=None,
+    calculate_payroll=True,
+):
     """
     Xử lý file và trả về danh sách dữ liệu đã chuẩn hóa (dạng dict) để Preview trên UI.
 
@@ -151,22 +161,40 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                 # Chỉ ghi đè nếu chưa có (giữ lại cột cố định như Ngày vào, Loại)
                 col_map[mapped_key] = i
         
-        # ── Actro: Hardcode summary columns (KC=289, KD=290, KE=291, KF=292, KH=294, KI=295, KJ=296, KK=297)
-        # Đây là các cột OT summary đã được HR tính sẵn theo công thức SUMIFS
-        # Cấu trúc này match với LCNT7.xlsx
-        # NOTE: pandas uses 0-based index, openpyxl uses 1-based. 
-        #       So we subtract 1 from openpyxl column numbers.
+        # ── Actro: map khối tổng hợp theo marker trong chính BCC ───────────────
+        # BCC thay đổi số ngày trong chu kỳ nên khối sau ngày 25 có thể dịch cột
+        # giữa các tháng. "26-25" luôn là cột đầu của khối tổng hợp Actro.
         if _strip_accents(project_name) == _strip_accents("Nhà máy Actro - Vĩnh Phúc"):
-            col_map["ot_kc"] = 288  # KC - tổng hợp (pandas 0-based)
-            col_map["ot_kd"] = 289  # KD - số giờ ban ngày (×1.0)
-            col_map["ot_ke"] = 290  # KE - ? (×1.0)
-            col_map["ot_kf"] = 291  # KF - OT ngày (×1.5)
-            col_map["ot_kh"] = 293  # KH - OT đêm (×2.0)
-            col_map["ot_ki"] = 294  # KI - giờ OT ban ngày (×1.3)
-            col_map["ot_kj"] = 295  # KJ - OT CN (×2.0)
-            col_map["ot_kk"] = 296  # KK - ? (×2.7)
-            # BCC col KL (openpyxl 298) chứa "Loại công việc"
-            col_map["work_type"] = 297  # pandas 0-based index
+            actro_marker_row = df.iloc[header_row_idx - 1].values if header_row_idx > 0 else row7
+            actro_summary_marker = next(
+                (
+                    index
+                    for index, value in enumerate(actro_marker_row)
+                    if pd.notna(value) and str(value).strip() == "26-25"
+                ),
+                None,
+            )
+            if actro_summary_marker is None or actro_summary_marker == 0:
+                raise ValueError(
+                    "Không tìm thấy cột '26-25' để xác định khối tổng hợp Actro."
+                )
+
+            actro_summary_start = actro_summary_marker - 1
+            col_map.update({
+                "ot_kc": actro_summary_start,
+                "ot_kd": actro_summary_start + 1,
+                "ot_ke": actro_summary_start + 2,
+                "ot_kf": actro_summary_start + 3,
+                "ot_kh": actro_summary_start + 5,
+                "ot_ki": actro_summary_start + 6,
+                "ot_kj": actro_summary_start + 7,
+                "ot_kk": actro_summary_start + 8,
+                "work_type": actro_summary_start + 9,
+            })
+            if col_map["work_type"] >= len(row7):
+                raise ValueError(
+                    "Khối tổng hợp Actro không đủ cột để đọc Loại công việc."
+                )
                 
         # 4. Trích xuất dữ liệu
         preview_data = []
@@ -174,7 +202,9 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
         
         # Bắt đầu đọc từ sau dòng header 2 dòng
         df = df.iloc[header_row_idx + 2:]
-        formula_engine = FormulaRegistry.get_formula(project_name)
+        formula_engine = (
+            FormulaRegistry.get_formula(project_name) if calculate_payroll else None
+        )
 
         # ── Lấy holidays cho kỳ này (Actro) ──────────────────────
         period_holidays = []
@@ -439,7 +469,8 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                     if pd.notna(wt_val):
                         work_type = str(wt_val).strip()
 
-                # ── Calculate period_end (last day of the period) ─────────────
+                # ── Calculate period boundaries ────────────────────────────────
+                period_start = f"{period_year}-{period_month:02d}-01"
                 period_end = f"{period_year}-{period_month:02d}-{last_day_in_month(period_month, period_year)}"
                 
                 # ── Raw Data cho Formula Engine + Trace Map ──────────────
@@ -454,6 +485,7 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                     "absent_days": calc_absent_days,
                     "start_date": start_date,
                     "work_type": work_type,
+                    "period_start": period_start,
                     "period_end": period_end,
                     "holidays": period_holidays,
                 }
@@ -494,7 +526,7 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                             "value": f_val
                         }
                 
-                # Gọi Formula
+                # Gọi Formula khi đây là luồng tính lương; clean parse chỉ giữ raw_data.
                 payroll_data = formula_engine.calculate(raw_data) if formula_engine else None
                 
                 final_total_days = raw_data.get("total_days", calc_total_days)

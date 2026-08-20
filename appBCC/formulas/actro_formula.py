@@ -132,7 +132,7 @@ class ActroFormula(BaseFormula):
         # KX : Thâm niên — prorate theo KL
         tham_nien = self._tham_nien(
             raw_data.get("start_date"),
-            raw_data.get("period_end"),
+            raw_data.get("period_start"),
             total_days,
         )
 
@@ -227,7 +227,7 @@ class ActroFormula(BaseFormula):
     def _tham_nien(
         self,
         start_date: str | None,
-        period_end: str | None = None,
+        period_start: str | None = None,
         total_workdays: float = 0.0,
     ) -> float:
         if not start_date:
@@ -237,19 +237,19 @@ class ActroFormula(BaseFormula):
         except (ValueError, TypeError):
             return 0.0
 
-        if period_end:
+        if period_start:
             try:
-                end = datetime.strptime(period_end, "%Y-%m-%d").date()
+                reference_date = datetime.strptime(period_start, "%Y-%m-%d").date()
             except (ValueError, TypeError):
-                end = date.today()
+                reference_date = date.today()
         else:
-            end = date.today()
+            reference_date = date.today()
 
-        working_days = (end - start).days
-        if working_days < self.THAM_NIEN_DAYS_THRESHOLD:
+        seniority_days = (reference_date - start).days
+        if seniority_days < self.THAM_NIEN_DAYS_THRESHOLD:
             return 0.0
 
-        months = working_days / 30.0
+        months = seniority_days / 30.0
         if months >= 12:
             monthly = 600_000.0
         elif months >= 6:

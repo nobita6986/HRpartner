@@ -100,7 +100,7 @@ class WorkerSignals(QObject):
     review_mapping_signal = Signal(list, dict, object, dict)
 
 class ParseWorker(QThread):
-    def __init__(self, file_path, project_name, period_month, period_year, signals, holiday_config=None, sheet_name=None):
+    def __init__(self, file_path, project_name, period_month, period_year, signals, holiday_config=None, sheet_name=None, calculate_payroll=False):
         super().__init__()
         self.file_path = file_path
         self.project_name = project_name
@@ -109,6 +109,7 @@ class ParseWorker(QThread):
         self.signals = signals
         self.holiday_config = holiday_config
         self.sheet_name = sheet_name
+        self.calculate_payroll = calculate_payroll
 
     def run(self):
         def logger(msg):
@@ -121,9 +122,17 @@ class ParseWorker(QThread):
             event.wait()
             return result_container.get('mapping', ai_mapping)
 
-        data = preview_file(self.file_path, self.project_name, self.period_month, self.period_year,
-                          log_callback=logger, review_callback=review_callback,
-                          holiday_config=self.holiday_config, sheet_name=self.sheet_name)
+        data = preview_file(
+            self.file_path,
+            self.project_name,
+            self.period_month,
+            self.period_year,
+            log_callback=logger,
+            review_callback=review_callback,
+            holiday_config=self.holiday_config,
+            sheet_name=self.sheet_name,
+            calculate_payroll=self.calculate_payroll,
+        )
         self.signals.done_signal.emit(data)
 
 from agent_mapper import STANDARD_COLUMNS
@@ -845,7 +854,7 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(config_group)
 
-        self.btn_parse = QPushButton("Bắt đầu bóc tách & Chuẩn hóa")
+        self.btn_parse = QPushButton("1. Bóc tách dữ liệu sạch")
         self.btn_parse.setEnabled(False)
         self.btn_parse.clicked.connect(self.run_parse)
         self.btn_parse.setStyleSheet("background-color: #2b579a; color: white; font-weight: bold; padding: 8px;")
@@ -919,8 +928,18 @@ class MainWindow(QMainWindow):
         
         preview_layout.addWidget(self.table)
         
-        # Nút Push và Làm mới
+        # Nút xuất dữ liệu sạch, tính lương, push và làm mới
         btn_layout = QHBoxLayout()
+        self.btn_export_clean = QPushButton("2. Xuất dữ liệu sạch")
+        self.btn_export_clean.setEnabled(False)
+        self.btn_export_clean.clicked.connect(self.run_export_clean)
+        self.btn_export_clean.setStyleSheet("background-color: #0d6efd; color: white; font-weight: bold; padding: 10px;")
+
+        self.btn_calculate_payroll = QPushButton("3. Xác nhận & tính lương")
+        self.btn_calculate_payroll.setEnabled(False)
+        self.btn_calculate_payroll.clicked.connect(self.run_calculate_payroll)
+        self.btn_calculate_payroll.setStyleSheet("background-color: #6f42c1; color: white; font-weight: bold; padding: 10px;")
+
         self.btn_push = QPushButton("Push lên Database (HrP)")
         self.btn_push.setEnabled(False)
         self.btn_push.clicked.connect(self.run_push)
@@ -935,6 +954,8 @@ class MainWindow(QMainWindow):
         self.btn_export_template.clicked.connect(self.run_export_template)
         self.btn_export_template.setStyleSheet("background-color: #198754; color: white; font-weight: bold; padding: 10px;")
         
+        btn_layout.addWidget(self.btn_export_clean)
+        btn_layout.addWidget(self.btn_calculate_payroll)
         btn_layout.addWidget(self.btn_export_template)
         btn_layout.addWidget(self.btn_push)
         btn_layout.addWidget(self.btn_reset)
@@ -1039,7 +1060,16 @@ class MainWindow(QMainWindow):
 
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, 0) # Indeterminate mode
-        self.worker = ParseWorker(self.selected_file, project_name, period_month, period_year, self.signals, self.holiday_config, sheet_name=chosen_sheet)
+        self.worker = ParseWorker(
+            self.selected_file,
+            project_name,
+            period_month,
+            period_year,
+            self.signals,
+            self.holiday_config,
+            sheet_name=chosen_sheet,
+            calculate_payroll=False,
+        )
         self.worker.start()
 
     def on_review_mapping_requested(self, headers, ai_mapping, event, result_container):
@@ -1067,8 +1097,10 @@ class MainWindow(QMainWindow):
             return
 
         self.parsed_data = data
-        self.btn_push.setEnabled(True)
-        self.btn_export_template.setEnabled(True)
+        self.btn_push.setEnabled(False)
+        self.btn_export_template.setEnabled(False)
+        self.btn_export_clean.setEnabled(True)
+        self.btn_calculate_payroll.setEnabled(True)
         
         # Bật Double-check
         self.cbo_emp_check.setEnabled(True)
@@ -1348,6 +1380,95 @@ class MainWindow(QMainWindow):
             traceback.print_exc()
             QMessageBox.critical(self, "Lỗi", f"Không thể xuất file: {str(e)}")
 
+    def run_export_clean(self):
+        """Xuất checkpoint dữ liệu đã parse, không có bất kỳ khoản payroll nào."""
+        if not self.parsed_data:
+            QMessageBox.warning(self, "Lỗi", "Chưa có dữ liệu sạch để xuất.")
+            return
+
+        project_name = self.cbo_project.currentText()
+        period_month = self.cbo_month.currentIndex() + 1
+        try:
+            period_year = int(self.txt_year.text().strip())
+        except ValueError:
+            QMessageBox.warning(self, "Lỗi", "Năm không hợp lệ.")
+            return
+
+        project_slug = _strip_accents(project_name).replace(" ", "_").replace("-", "_")
+        default_name = f"DU_LIEU_SACH_{period_month}_{period_year}_{project_slug}.xlsx"
+        save_path, _ = QFileDialog.getSaveFileName(
+            self, "Lưu dữ liệu sạch", default_name, "Excel Files (*.xlsx)"
+        )
+        if not save_path:
+            return
+
+        try:
+            from export_manager import export_clean_parse_to_excel
+            result = export_clean_parse_to_excel(
+                self.parsed_data, project_name, period_month, period_year, save_path
+            )
+            self.append_log(
+                f"Đã xuất dữ liệu sạch: {result['total_employees']} nhân viên | {save_path}"
+            )
+            QMessageBox.information(
+                self,
+                "Đã xuất dữ liệu sạch",
+                "File chỉ chứa dữ liệu đã parse, nguồn cột và công hàng ngày. "
+                "Không có kết quả lương hoặc phụ cấp.",
+            )
+        except Exception as error:
+            self.append_log(f"Lỗi xuất dữ liệu sạch: {error}")
+            QMessageBox.critical(self, "Lỗi", f"Không thể xuất dữ liệu sạch: {error}")
+
+    def run_calculate_payroll(self):
+        """Chỉ tính payroll sau khi người dùng đã review dữ liệu sạch."""
+        if not self.parsed_data:
+            QMessageBox.warning(self, "Lỗi", "Chưa có dữ liệu sạch để tính lương.")
+            return
+
+        answer = QMessageBox.question(
+            self,
+            "Xác nhận tính lương",
+            "Bạn đã đối soát dữ liệu sạch và muốn tính lương cho toàn bộ bản ghi đang preview?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+
+        project_name = self.cbo_project.currentText()
+        formula_engine = FormulaRegistry.get_formula(project_name)
+        if not formula_engine:
+            QMessageBox.warning(self, "Lỗi", "Không tìm thấy công thức cho dự án đã chọn.")
+            return
+
+        failures = []
+        for employee in self.parsed_data:
+            if employee.get("hasError"):
+                failures.append(employee.get("employeeCode", "Không rõ mã"))
+                continue
+            try:
+                payroll_data = formula_engine.calculate(employee.get("rawData", {}))
+                employee["payrollData"] = payroll_data
+                employee["totalIncome"] = payroll_data["summary"]["netIncome"]
+            except Exception as error:
+                employee["hasError"] = True
+                employee["errorMsg"] = f"Không thể tính lương: {error}"
+                failures.append(employee.get("employeeCode", "Không rõ mã"))
+
+        self.populate_table()
+        self.btn_export_template.setEnabled(not failures)
+        self.btn_push.setEnabled(not failures)
+        if failures:
+            self.append_log(f"Tính lương chưa hoàn tất. Lỗi tại {len(failures)} nhân viên.")
+            QMessageBox.warning(
+                self, "Có lỗi tính lương", f"Không thể tính lương cho {len(failures)} nhân viên."
+            )
+            return
+
+        self.append_log("Đã tính lương sau khi người dùng xác nhận dữ liệu sạch.")
+        QMessageBox.information(self, "Đã tính lương", "Đã tính lương cho toàn bộ dữ liệu đã được đối soát.")
+
     def run_reset(self):
         self.parsed_data = None
         self.table.setRowCount(0)
@@ -1356,6 +1477,8 @@ class MainWindow(QMainWindow):
         self.btn_parse.setEnabled(False)
         self.btn_push.setEnabled(False)
         self.btn_export_template.setEnabled(False)
+        self.btn_export_clean.setEnabled(False)
+        self.btn_calculate_payroll.setEnabled(False)
         
         self.cbo_emp_check.clear()
         self.cbo_emp_check.setEnabled(False)
