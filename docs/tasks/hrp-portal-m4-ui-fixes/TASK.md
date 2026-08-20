@@ -15,9 +15,9 @@
 | Baseline | HEAD of main |
 | Modules | M4-Hotfixes |
 | ADR references | None |
-| Current execution round | 1 |
-| Current audit round | 0 |
-| Next gate | /code hrp-portal-m4-ui-fixes (Sửa lại logo Admin) |
+| Current execution round | 2 |
+| Current audit round | 1 |
+| Next gate | /audit hrp-portal-m4-ui-fixes |
 | Updated | 2026-08-20 12:16 +07:00 |
 
 ## 1. Outcome

@@ -163,7 +163,7 @@ export function RoleGuardLayout({
       {portal !== 'worker' && (
         <aside
           className={cn(
-            'hidden border-r border-slate-200 bg-white md:block',
+            'relative hidden border-r border-slate-200 bg-white md:block',
             portal === 'admin' ? 'md:col-span-1' : 'md:col-span-1',
           )}
         >
@@ -246,17 +246,21 @@ function SidebarHeader({
   title,
   subtitle,
   portal,
+  logoSrc = '/logo.png',
 }: {
   title: string;
   subtitle?: string;
   portal: 'admin' | 'worker' | 'vendor';
+  logoSrc?: string;
 }) {
   return (
     <div className="border-b border-slate-200 px-4 py-4">
       <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-orange-600 text-sm font-bold text-white">
-          H
-        </div>
+        <img
+          src={logoSrc}
+          alt={title}
+          style={{ height: '36px', width: 'auto' }}
+        />
         <div className="min-w-0">
           <div className="truncate text-base font-bold text-slate-900">{title}</div>
           {subtitle && (
@@ -285,7 +289,7 @@ function UserFooter({
   return (
     <div className="absolute inset-x-0 bottom-0 border-t border-slate-200 bg-white p-3">
       <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-800">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-800">
           {user?.name?.[0]?.toUpperCase() ?? 'U'}
         </div>
         <div className="min-w-0 flex-1">
