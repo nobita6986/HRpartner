@@ -746,6 +746,28 @@ Chỉ mở public thật khi đạt đủ:
 7. Có runbook ẩn job, khóa slot, xử lý duplicate, xóa file và rollback public flag.
 8. Tier 3 đã test public/private projection, IDOR, spam, duplicate apply và conversion race.
 
+### 7.10. Backend/Frontend delta sau mỗi phase
+
+Bảng này là checklist bắt buộc khi kết thúc phase. “Backend thay đổi” mô tả contract/runtime; “Frontend thay đổi” mô tả màn hình, state và cách người dùng nhận thấy kết quả. Phase không được báo cáo hoàn tất nếu một trong hai cột chưa có evidence hoặc được ghi rõ là `N/A` theo scope.
+
+| Phase | Backend thay đổi | Frontend thay đổi | Kết quả người dùng nhìn thấy |
+|---|---|---|---|
+| G0 Baseline | Prisma canonical, migration/seed, DB singleton, CI scripts, fixture | Không mở feature mới; chuẩn hóa route/layout/token build nếu cần | Build/test/migrate lặp lại được; chưa coi là feature business |
+| M1 Identity/RLS | AuthIdentity, session/refresh, OTP, Permission Pool, custom group, `withDbContext`, RLS, projection DTO | Login/session expiry, role-aware navigation, 401/403/locked states, không render field bị deny | Mỗi role chỉ thấy đúng dữ liệu và thao tác được cấp |
+| M3/M5 Backbone | Site, StaffingOrder/Slot, Worker/submission/source claim, 5 state machines, dedup, referral, assignment/quota | Admin Client/Project/Worker/Staffing screens, status badges, conflict/guard drawers, audit timeline | HR tạo được nhu cầu và quản lý worker/assignment không vi phạm invariant |
+| MP-1 Publish job | Project/StaffingOrder CRUD, public projection, `publicSlug`, expiry/index/cache policy | Admin Jobs create/edit/publish/unpublish; public job list/detail, filter, empty/loading/error | HR publish 1 việc và ứng viên nhìn thấy đúng việc công khai |
+| MP-2 Apply | `CandidateSubmission`, application status history, upload metadata, idempotency, tracking-code query | Public Apply form, validation, upload progress/error, success tracking page; HR application queue | Ứng viên submit một lần; HR thấy hồ sơ; ứng viên tự tra trạng thái |
+| MP-3 Convert/Place | Screening/qualify/reject/withdraw commands, dedup/referral guard, Worker conversion, assignment preview/activate | Screening drawer, duplicate/guard warning, conversion confirmation, assignment preview, status update | Một ứng viên đi hết tới Worker/Assignment; duplicate/quota/1-active bị chặn rõ ràng |
+| M7 Attendance | R2 presign, import job/QStash, raw events, normalized lines, exceptions, approve/lock/correction | Import wizard/progress/error, Exception Workbench, Resolve Drawer, locked read-only; worker/PM check-in states | HR xử lý được công và biết chính xác job/event đang QUEUED/APPENDED/FAILED |
+| M8 Billing/Reconciliation | Site/rate version, statement lineage, vendor/client split, dispute/revision, payment sub-ledger | Margin comparison, lineage drawer, vendor dispute form, locked/payment states, exports | Kế toán truy được từng dòng tiền và không sửa statement đã lock |
+| M6 Commission | Group policy, individual override, permission, ledger/reversal/debt/netting, snapshot | Admin policy/override screens, CTV ledger/pending/approved/paid/debt | Hoa hồng thay đổi theo policy thật; không còn hardcode |
+| PAY shell | PayRun/results/lines/payslip snapshot, QStash chunk, manual/deferred statutory adapter | Payroll dry-run/status, result review, payslip scope; không mở statutory UI nếu flag tắt | Có thể dry-run và phát snapshot có kiểm soát; chưa tuyên bố compliance hoàn chỉnh |
+| PAY statutory | TNCN/BHXH engine, config/rules/dependent/forms, parallel-run evidence | Payroll statutory breakdown, warnings, accountant approval, compliance reports | Chỉ sau sign-off mới được LOCK/phát hành theo luật |
+| M4 Vendor | Vendor submission/document vault/confirm-dispute scoped APIs | Vendor order/submission/statement/dispute screens, own-only projection | Vendor tự theo dõi và phản hồi đúng dữ liệu của mình |
+| M2 Worker/PM PWA | Offline queue, GPS evidence, receipt polling, worker self-scope | Mobile check-in, application/assignment status, attendance/payslip links, offline/retry | Worker dùng được trên mạng yếu; không hiển thị thành công giả |
+| M9 HRM | Employee/actorType, org/leave/ticket reuse, performance records | Employee directory/org chart/leave/performance screens | HR quản lý nhân sự nội bộ tách khỏi worker outsourcing |
+| OPS hardening | QStash contract, outbox handlers, Redis rate limit, Sentry, backup/restore, metrics | Stale banner, job retry/DLQ views, operational error states | Team vận hành nhìn thấy lỗi, retry và rollback có kiểm soát |
+
 ## 8. TEST STRATEGY CHI TIẾT
 
 ### 8.1. Test pyramid
@@ -763,6 +785,7 @@ Chỉ mở public thật khi đạt đủ:
 
 | Domain | Case tối thiểu |
 |---|---|
+| Marketplace | public projection, publish/unpublish, apply idempotency, tracking status, duplicate apply, screening race, conversion race, quota/1-active |
 | Auth/RLS | root, DIRECTOR projection, MKT deny Worker, PM scope, vendor IDOR, worker self-only |
 | Assignment | activate race, transfer giữa kỳ, pause/resume, quota full, terminal status, stale version |
 | Referral | protected, expired, override denied, override granted, first-click, duplicate submission |
@@ -787,7 +810,7 @@ Chỉ mở public thật khi đạt đủ:
 2. Migration dry-run trên staging clone.
 3. Seed/fixture version khớp code.
 4. Feature flag mặc định an toàn (`false` cho portal/commission/statutory mới).
-5. Smoke test auth → staffing → attendance → statement.
+5. Smoke test auth → publish job → apply → screening → convert Worker → assignment; sau đó mới smoke attendance → statement.
 6. Kiểm tra queue depth, DB connections, error rate, Sentry và backup gần nhất.
 7. Phê duyệt cutover bởi Planner + Coding + Audit; task không được tự deploy production.
 
