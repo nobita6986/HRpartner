@@ -116,7 +116,7 @@
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 1 | BLK-01 | Mở task infra hrp-m11.1-db-baseline để fix DB drift | Môi trường Neon DB gặp lỗi đồng bộ schema cũ, không thể migrate M11 an toàn. Cần chuẩn hóa DB trước. | Chuyển phần việc Migration DB của M11 sang M11.2, M11.1 làm DB baseline. | Antigravity / DONE |
 
 ## 10. Revision Log
 

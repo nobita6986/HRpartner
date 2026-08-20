@@ -953,10 +953,22 @@ class MainWindow(QMainWindow):
         self.btn_export_template.setEnabled(False)
         self.btn_export_template.clicked.connect(self.run_export_template)
         self.btn_export_template.setStyleSheet("background-color: #198754; color: white; font-weight: bold; padding: 10px;")
-        
+
+        self.btn_download_adjustment_template = QPushButton("Tải mẫu cộng/trừ")
+        self.btn_download_adjustment_template.setEnabled(False)
+        self.btn_download_adjustment_template.clicked.connect(self.run_download_adjustment_template)
+        self.btn_download_adjustment_template.setStyleSheet("background-color: #fd7e14; color: white; font-weight: bold; padding: 10px;")
+
+        self.btn_apply_adjustments = QPushButton("Tải file cộng/trừ")
+        self.btn_apply_adjustments.setEnabled(False)
+        self.btn_apply_adjustments.clicked.connect(self.run_apply_adjustments)
+        self.btn_apply_adjustments.setStyleSheet("background-color: #d63384; color: white; font-weight: bold; padding: 10px;")
+
         btn_layout.addWidget(self.btn_export_clean)
         btn_layout.addWidget(self.btn_calculate_payroll)
         btn_layout.addWidget(self.btn_export_template)
+        btn_layout.addWidget(self.btn_download_adjustment_template)
+        btn_layout.addWidget(self.btn_apply_adjustments)
         btn_layout.addWidget(self.btn_push)
         btn_layout.addWidget(self.btn_reset)
         
@@ -1110,6 +1122,8 @@ class MainWindow(QMainWindow):
         self.btn_export_template.setEnabled(True)
         self.btn_export_clean.setEnabled(True)
         self.btn_calculate_payroll.setEnabled(True)
+        self.btn_download_adjustment_template.setEnabled(True)
+        self.btn_apply_adjustments.setEnabled(False)
         
         # Bật Double-check
         self.cbo_emp_check.setEnabled(True)
@@ -1362,6 +1376,96 @@ class MainWindow(QMainWindow):
             traceback.print_exc()
             QMessageBox.critical(self, "Lỗi", f"Không thể xuất file: {str(e)}")
 
+    def run_download_adjustment_template(self):
+        """Tải file mẫu cộng/trừ về máy."""
+        from adjustments_template import build_adjustment_template
+
+        save_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Lưu file mẫu cộng/trừ",
+            "MAU_CAP_NHAP_KHOAN_THUONG_PHAT.xlsx",
+            "Excel Files (*.xlsx)",
+        )
+        if not save_path:
+            return
+        try:
+            build_adjustment_template(save_path)
+            self.append_log(f"Đã tạo file mẫu cộng/trừ: {save_path}")
+            QMessageBox.information(
+                self,
+                "Đã tạo file mẫu",
+                "File mẫu cộng/trừ đã sẵn sàng. Có 2 sheet:\n"
+                "- 'Danh sách khoản': nhập mã NV và các khoản theo cặp cộng/trừ (cột lẻ xanh, cột chẵn đỏ).\n"
+                "- 'Hướng dẫn': giải thích cách dùng và quy tắc phân biệt cộng/trừ.",
+            )
+        except Exception as error:
+            self.append_log(f"Lỗi tạo file mẫu: {error}")
+            QMessageBox.critical(self, "Lỗi", f"Không thể tạo file mẫu: {error}")
+
+    def run_apply_adjustments(self):
+        """Đọc file cộng/trừ do người dùng upload và gộp vào payroll đã tính."""
+        if not self.parsed_data:
+            QMessageBox.warning(self, "Lỗi", "Chưa có dữ liệu để áp dụng.")
+            return
+        if any(not item.get("payrollData") for item in self.parsed_data):
+            QMessageBox.warning(
+                self,
+                "Chưa tính lương",
+                "Vui lòng xác nhận & tính lương trước khi tải file cộng/trừ.",
+            )
+            return
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Chọn file cộng/trừ",
+            "",
+            "Excel Files (*.xlsx)",
+        )
+        if not file_path:
+            return
+
+        try:
+            from adjustments import parse_adjustment_file, apply_adjustments_to_payroll
+
+            adjustments_by_code = parse_adjustment_file(file_path)
+        except Exception as error:
+            self.append_log(f"Lỗi đọc file cộng/trừ: {error}")
+            QMessageBox.critical(self, "Lỗi", f"Không thể đọc file cộng/trừ: {error}")
+            return
+
+        if not adjustments_by_code:
+            QMessageBox.warning(
+                self,
+                "Không có dữ liệu",
+                "File cộng/trừ không có dòng hợp lệ nào. Kiểm tra lại cột Mã NV.",
+            )
+            return
+
+        applied = 0
+        skipped = 0
+        for employee in self.parsed_data:
+            code = employee.get("employeeCode")
+            if not code or code not in adjustments_by_code:
+                skipped += 1
+                continue
+            employee["payrollData"] = apply_adjustments_to_payroll(
+                employee.get("payrollData"),
+                adjustments_by_code[code],
+            )
+            employee["totalIncome"] = employee["payrollData"]["summary"]["netIncome"]
+            applied += 1
+
+        self.populate_table()
+        self.append_log(
+            f"Đã áp dụng cộng/trừ cho {applied} nhân viên (bỏ qua {skipped} không có trong file)."
+        )
+        QMessageBox.information(
+            self,
+            "Đã áp dụng cộng/trừ",
+            f"Đã gộp khoản cộng/trừ cho {applied} nhân viên từ file {os.path.basename(file_path)}.\n"
+            f"Nếu sau này muốn thay đổi, chỉ cần sửa header cột trong file mẫu rồi tải lại.",
+        )
+
     def run_export_clean(self):
         """Xuất checkpoint dữ liệu đã parse, không có bất kỳ khoản payroll nào."""
         if not self.parsed_data:
@@ -1447,6 +1551,7 @@ class MainWindow(QMainWindow):
         self.populate_table()
         self.btn_export_template.setEnabled(not failures)
         self.btn_push.setEnabled(not failures)
+        self.btn_apply_adjustments.setEnabled(not failures)
         if failures:
             self.append_log(f"Tính lương chưa hoàn tất. Lỗi tại {len(failures)} nhân viên.")
             QMessageBox.warning(
@@ -1467,6 +1572,8 @@ class MainWindow(QMainWindow):
         self.btn_export_template.setEnabled(False)
         self.btn_export_clean.setEnabled(False)
         self.btn_calculate_payroll.setEnabled(False)
+        self.btn_download_adjustment_template.setEnabled(False)
+        self.btn_apply_adjustments.setEnabled(False)
         
         self.cbo_emp_check.clear()
         self.cbo_emp_check.setEnabled(False)
