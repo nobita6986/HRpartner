@@ -60,7 +60,8 @@ avLinks và tạo mới component cho route /ve-chung-toi. |
 | RQ-02 | Cập nhật logic Infinite Scroll ở pp/(portal)/page.tsx: Hiện "Đang tải thêm..." khi cuộn xuống đáy. Hiện "Đã xem toàn bộ danh sách" khi hết data. | Must | EV-02 | Dòng chữ hiện tĩnh gây nhầm lẫn. |
 | RQ-03 | Xóa 2 menu "Dịch vụ Tuyển dụng", "Giải pháp Nhân sự" khỏi GlobalNavbar. | Must | EV-03 | Menu thừa. |
 | RQ-04 | Cập nhật nội dung route /ve-chung-toi bằng JSX từ file index.html (thư mục gốc). | Must | EV-03 | Trang cũ / Lỗi 404. |
-| RQ-05 | Pass toàn bộ test suite hiện có. | Must | Baseline | CI fail. |
+| RQ-05 | Thay thế các logo chữ HRP trên web (ở Header, Footer, v.v...) bằng hình ảnh từ file logo.png (sử dụng thẻ img src="/logo.png"). Cần điều chỉnh CSS/Kích thước cho phù hợp layout. | Must | Sếp giao | Vẫn hiện logo chữ. |
+| RQ-06 | Pass toàn bộ test suite hiện có. | Must | Baseline | CI fail. |
 
 ### 4.2 Scope boundaries
 
@@ -78,18 +79,20 @@ avLinks và tạo mới component cho route /ve-chung-toi. |
 | STEP ID | RQ | Target | Change intent/deliverable | Dependency/skill | Verify | Stop condition |
 |---|---|---|---|---|---|---|
 | STEP-01 | RQ-01 | pp/layout.tsx / CSS | Tìm và fix cách import Material Symbols hợp lệ để render được icon. | N/A | Check UI thấy icon | Hydration lỗi |
-| STEP-02 | RQ-02 | pp/(portal)/page.tsx | Bổ sung thư viện/hook như eact-intersection-observer để bắt sự kiện cuộn đáy. Quản lý state hasMore. Cập nhật giao diện text. | STEP-01 | Cuộn UI | Lỗi logic tải data |
+| STEP-02 | RQ-02 | pp/(portal)/page.tsx | Bổ sung thư viện/hook như 
+eact-intersection-observer để bắt sự kiện cuộn đáy. Quản lý state hasMore. Cập nhật giao diện text. | STEP-01 | Cuộn UI | Lỗi logic tải data |
 | STEP-03 | RQ-03 | GlobalNavbar.tsx | Xóa 2 object trong mảng 
 avLinks. | N/A | Check header | Break Navbar |
 | STEP-04 | RQ-04 | pp/(portal)/ve-chung-toi/page.tsx | Chuyển đổi mã HTML từ root index.html sang dạng React Component và render tại route này. | N/A | Check /ve-chung-toi | Vỡ layout trang |
-| STEP-05 | RQ-05 | Toàn bộ | Chạy itest. | STEP-04 | Exit 0 | Lỗi test |
+| STEP-05 | RQ-05 | GlobalNavbar.tsx, GlobalFooter.tsx | Thay component logo dạng text thành thẻ Image hoặc img trỏ đến /logo.png. Căn chỉnh kích thước (ví dụ: height 40px) để không làm vỡ Header. | N/A | Check logo | Logo quá to/nhỏ |
+| STEP-06 | RQ-06 | Toàn bộ | Chạy itest. | STEP-05 | Exit 0 | Lỗi test |
 
 ## 6. Acceptance
 
 | AC ID | RQ | Pass condition | Verification method | Required evidence | Blocking? |
 |---|---|---|---|---|---|
 | AC-01 | RQ-01..04 | Các tính năng UX (Icon, Scroll, Navbar, Trang About) hoạt động chuẩn. | Đọc code / Test UI | Screenshot / Network | Yes |
-| AC-02 | RQ-05 | itest báo pass. | Lệnh test | Exit 0 | Yes |
+| AC-02 | RQ-06 | itest báo pass. | Lệnh test | Exit 0 | Yes |
 
 ### Traceability
 
@@ -99,7 +102,8 @@ avLinks. | N/A | Check header | Break Navbar |
 | RQ-02 | STEP-02 | AC-01 |
 | RQ-03 | STEP-03 | AC-01 |
 | RQ-04 | STEP-04 | AC-01 |
-| RQ-05 | STEP-05 | AC-02 |
+| RQ-05 | STEP-05 | AC-01 |
+| RQ-06 | STEP-06 | AC-02 |
 
 ## 7. Risk và Rollback
 
