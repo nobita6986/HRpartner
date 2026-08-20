@@ -16,9 +16,9 @@
 | Modules | M2-Landing-Page |
 | ADR references | None |
 | Current execution round | 1 |
-| Current audit round | 0 |
-| Next gate | /code hrp-portal-m2-landing-page |
-| Updated | 2026-08-20 09:18 +07:00 |
+| Current audit round | 1 |
+| Next gate | Tiến hành M3 - Job Search API / CTV Registration |
+| Updated | 2026-08-20 09:45 +07:00 |
 
 ## 1. Outcome
 
@@ -118,10 +118,11 @@ px vitest run | Output màn hình (PASS). | Yes |
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 1 | - | ACCEPT_FIX | Audit PASS 100%. verify-audit.ps1 exit 0. AC-01..03 đạt chuẩn. Route được rename thành ctv-portal để tránh conflict. | Cập nhật tên route sang ctv-portal | Tier 1 |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | 1.0 | 2026-08-20 | Khởi tạo hợp đồng M2. | Yêu cầu thiết kế Landing Page và CTV. |
+| 1.0 | 2026-08-20 | Đóng task, chuyển trạng thái thành ACCEPTED. | Audit round 1 PASS. Handoff sang M3. |
