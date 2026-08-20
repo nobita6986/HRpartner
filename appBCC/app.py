@@ -27,6 +27,84 @@ if getattr(sys, 'frozen', False):
 else:
     application_path = os.path.dirname(os.path.abspath(__file__))
 
+from PySide6.QtCore import QPropertyAnimation, QEasingCurve, QTimer, QPoint
+
+
+def make_action_button(text, base_color, tooltip=""):
+    """Tạo QPushButton có hover sáng hơn, click nhấn xuống rõ ràng.
+
+    Hiệu ứng:
+    - Hover: sáng viền + nền mờ hơn nhẹ.
+    - Pressed: dịch xuống 2px (pulse) + đổi tông nền đậm hơn.
+    - Click: flash trắng 120ms để xác nhận thao tác đã được nhận.
+    - Busy: đổi nhãn thành "...  Đang chạy" và disable nút trong lúc xử lý.
+    """
+    button = QPushButton(text)
+    style_base = (
+        f"QPushButton {{"
+        f"  background-color: {base_color}; color: white; font-weight: bold;"
+        f"  padding: 10px 14px; border: none; border-radius: 6px;"
+        f"  font-size: 13px;"
+        f"  transition: none;"
+        f"}}"
+        f"QPushButton:hover {{"
+        f"  background-color: {base_color}dd; border: 1px solid #ffffff66;"
+        f"  padding: 9px 14px 11px 14px;"
+        f"}}"
+        f"QPushButton:pressed {{"
+        f"  background-color: {base_color}aa; padding: 11px 14px 9px 14px;"
+        f"}}"
+        f"QPushButton:disabled {{"
+        f"  background-color: #adb5bd; color: #f8f9fa;"
+        f"}}"
+    )
+    button.setStyleSheet(style_base)
+    if tooltip:
+        button.setToolTip(tooltip)
+    button.setCursor(QCursor(Qt.PointingHandCursor))
+    button.setMinimumHeight(38)
+
+    button._original_text = text
+
+    def _pulse_down():
+        animation = QPropertyAnimation(button, b"pos", button)
+        animation.setDuration(110)
+        animation.setEasingCurve(QEasingCurve.OutCubic)
+        start_pos = button.pos()
+        animation.setStartValue(start_pos)
+        animation.setEndValue(QPoint(start_pos.x(), start_pos.y() + 2))
+        animation.start(QPropertyAnimation.DeleteWhenStopped)
+
+    button._pulse_down = _pulse_down
+    button.pressed.connect(_pulse_down)
+
+    def _flash():
+        original_style = button.styleSheet()
+        flash_style = original_style.replace(
+            f"background-color: {base_color}",
+            "background-color: #ffffff; color: " + base_color,
+        )
+        button.setStyleSheet(flash_style)
+        QTimer.singleShot(
+            130,
+            lambda: button.setStyleSheet(original_style) if not button.isEnabled() else None,
+        )
+
+    button._flash = _flash
+    button.clicked.connect(_flash)
+
+    def _set_busy(busy: bool):
+        if busy:
+            button._cached_text = button.text()
+            button.setText(button._original_text + "  ...  Đang chạy")
+            button.setEnabled(False)
+        else:
+            button.setText(button._original_text)
+            button.setEnabled(True)
+
+    button._set_busy = _set_busy
+    return button
+
 env_path = os.path.join(application_path, '.env')
 if not os.path.exists(env_path):
     env_path = os.path.join(application_path, '..', '.env')
@@ -854,14 +932,40 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(config_group)
 
-        self.btn_parse = QPushButton("1. Bóc tách dữ liệu sạch")
+        # Hàng nút hành động đánh số 1-2-3 liên tiếp
+        steps_group = QGroupBox("Quy trình bóc tách & tính lương")
+        steps_layout = QHBoxLayout()
+
+        self.btn_parse = make_action_button(
+            "1. Bóc tách dữ liệu sạch",
+            "#2b579a",
+            "Parse file Excel BCC đã chọn thành dữ liệu sạch.",
+        )
         self.btn_parse.setEnabled(False)
         self.btn_parse.clicked.connect(self.run_parse)
-        self.btn_parse.setStyleSheet("background-color: #2b579a; color: white; font-weight: bold; padding: 8px;")
-        config_layout.addWidget(self.btn_parse)
 
-        config_group.setLayout(config_layout)
-        layout.addWidget(config_group)
+        self.btn_export_clean = make_action_button(
+            "2. Xuất dữ liệu sạch",
+            "#0d6efd",
+            "Xuất file Excel với dữ liệu BCC đã được chuẩn hoá (chưa qua tính lương).",
+        )
+        self.btn_export_clean.setEnabled(False)
+        self.btn_export_clean.clicked.connect(self.run_export_clean)
+
+        self.btn_calculate_payroll = make_action_button(
+            "3. Xác nhận & tính lương",
+            "#6f42c1",
+            "Tính lương cho toàn bộ nhân viên dựa trên dữ liệu đã chuẩn hoá.",
+        )
+        self.btn_calculate_payroll.setEnabled(False)
+        self.btn_calculate_payroll.clicked.connect(self.run_calculate_payroll)
+
+        steps_layout.addWidget(self.btn_parse)
+        steps_layout.addWidget(self.btn_export_clean)
+        steps_layout.addWidget(self.btn_calculate_payroll)
+        steps_layout.addStretch()
+        steps_group.setLayout(steps_layout)
+        layout.addWidget(steps_group)
         
         # Double-check chuyên biệt hoá
         check_group = QGroupBox("Kiểm tra chéo nhanh (Định vị toạ độ Excel)")
@@ -930,39 +1034,60 @@ class MainWindow(QMainWindow):
         
         # Nút xuất dữ liệu sạch, tính lương, push và làm mới
         btn_layout = QHBoxLayout()
-        self.btn_export_clean = QPushButton("2. Xuất dữ liệu sạch")
+        self.btn_export_clean = make_action_button(
+            "2. Xuất dữ liệu sạch",
+            "#0d6efd",
+            "Xuất file Excel với dữ liệu BCC đã được chuẩn hoá (chưa qua tính lương).",
+        )
         self.btn_export_clean.setEnabled(False)
         self.btn_export_clean.clicked.connect(self.run_export_clean)
-        self.btn_export_clean.setStyleSheet("background-color: #0d6efd; color: white; font-weight: bold; padding: 10px;")
 
-        self.btn_calculate_payroll = QPushButton("3. Xác nhận & tính lương")
+        self.btn_calculate_payroll = make_action_button(
+            "3. Xác nhận & tính lương",
+            "#6f42c1",
+            "Tính lương cho toàn bộ nhân viên dựa trên dữ liệu đã chuẩn hoá.",
+        )
         self.btn_calculate_payroll.setEnabled(False)
         self.btn_calculate_payroll.clicked.connect(self.run_calculate_payroll)
-        self.btn_calculate_payroll.setStyleSheet("background-color: #6f42c1; color: white; font-weight: bold; padding: 10px;")
 
-        self.btn_push = QPushButton("Push lên Database (HrP)")
+        self.btn_push = make_action_button(
+            "4. Push lên Database (HrP)",
+            "#00763a",
+            "Đẩy bảng lương đã tính lên hệ thống HrP.",
+        )
         self.btn_push.setEnabled(False)
         self.btn_push.clicked.connect(self.run_push)
-        self.btn_push.setStyleSheet("background-color: #00763a; color: white; font-weight: bold; padding: 10px;")
-        
-        self.btn_reset = QPushButton("Làm mới (Reset)")
+
+        self.btn_reset = make_action_button(
+            "Làm mới (Reset)",
+            "#6c757d",
+            "Xoá dữ liệu hiện tại để bắt đầu lại từ đầu.",
+        )
         self.btn_reset.clicked.connect(self.run_reset)
-        self.btn_reset.setStyleSheet("background-color: #6c757d; color: white; font-weight: bold; padding: 10px;")
-        
-        self.btn_export_template = QPushButton("Xuất Excel Chuẩn Hoá")
+
+        self.btn_export_template = make_action_button(
+            "1b. Xuất Excel Chuẩn Hoá",
+            "#198754",
+            "Xuất Excel chuẩn hoá đầy đủ (kèm payroll, không cần bước review).",
+        )
         self.btn_export_template.setEnabled(False)
         self.btn_export_template.clicked.connect(self.run_export_template)
-        self.btn_export_template.setStyleSheet("background-color: #198754; color: white; font-weight: bold; padding: 10px;")
 
-        self.btn_download_adjustment_template = QPushButton("Tải mẫu cộng/trừ")
+        self.btn_download_adjustment_template = make_action_button(
+            "Tải mẫu cộng/trừ",
+            "#fd7e14",
+            "Tải file mẫu Excel để nhập các khoản cộng/trừ tuỳ ý.",
+        )
         self.btn_download_adjustment_template.setEnabled(False)
         self.btn_download_adjustment_template.clicked.connect(self.run_download_adjustment_template)
-        self.btn_download_adjustment_template.setStyleSheet("background-color: #fd7e14; color: white; font-weight: bold; padding: 10px;")
 
-        self.btn_apply_adjustments = QPushButton("Tải file cộng/trừ")
+        self.btn_apply_adjustments = make_action_button(
+            "Áp dụng file cộng/trừ",
+            "#d63384",
+            "Upload file cộng/trừ đã điền để gộp vào payroll đã tính.",
+        )
         self.btn_apply_adjustments.setEnabled(False)
         self.btn_apply_adjustments.clicked.connect(self.run_apply_adjustments)
-        self.btn_apply_adjustments.setStyleSheet("background-color: #d63384; color: white; font-weight: bold; padding: 10px;")
 
         btn_layout.addWidget(self.btn_export_clean)
         btn_layout.addWidget(self.btn_calculate_payroll)
@@ -1348,6 +1473,8 @@ class MainWindow(QMainWindow):
         if not save_path:
             return
 
+        self.btn_export_template._set_busy(True)
+        QApplication.processEvents()
         self.append_log("Đang xuất file chuẩn hoá đầy đủ...")
         try:
             from export_manager import export_payroll_to_excel
@@ -1371,10 +1498,14 @@ class MainWindow(QMainWindow):
                 raise Exception("Export failed")
 
         except Exception as e:
-            self.append_log(f"Lỗi khi xuất file chuẩn hoá: {str(e)}")
+            self.btn_export_template._set_busy(False)
+            self.append_log(f"Lỗi khi xuất file chu�n hoá: {str(e)}")
             import traceback
             traceback.print_exc()
             QMessageBox.critical(self, "Lỗi", f"Không thể xuất file: {str(e)}")
+            return
+        finally:
+            self.btn_export_template._set_busy(False)
 
     def run_download_adjustment_template(self):
         """Tải file mẫu cộng/trừ về máy."""
@@ -1424,11 +1555,14 @@ class MainWindow(QMainWindow):
         if not file_path:
             return
 
+        self.btn_apply_adjustments._set_busy(True)
+        QApplication.processEvents()
         try:
             from adjustments import parse_adjustment_file, apply_adjustments_to_payroll
 
             adjustments_by_code = parse_adjustment_file(file_path)
         except Exception as error:
+            self.btn_apply_adjustments._set_busy(False)
             self.append_log(f"Lỗi đọc file cộng/trừ: {error}")
             QMessageBox.critical(self, "Lỗi", f"Không thể đọc file cộng/trừ: {error}")
             return
@@ -1456,6 +1590,7 @@ class MainWindow(QMainWindow):
             applied += 1
 
         self.populate_table()
+        self.btn_apply_adjustments._set_busy(False)
         self.append_log(
             f"Đã áp dụng cộng/trừ cho {applied} nhân viên (bỏ qua {skipped} không có trong file)."
         )
@@ -1528,6 +1663,9 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Lỗi", "Không tìm thấy công thức cho dự án đã chọn.")
             return
 
+        self.btn_calculate_payroll._set_busy(True)
+        QApplication.processEvents()
+
         failures = []
         for employee in self.parsed_data:
             if employee.get("hasError"):
@@ -1552,6 +1690,7 @@ class MainWindow(QMainWindow):
         self.btn_export_template.setEnabled(not failures)
         self.btn_push.setEnabled(not failures)
         self.btn_apply_adjustments.setEnabled(not failures)
+        self.btn_calculate_payroll._set_busy(False)
         if failures:
             self.append_log(f"Tính lương chưa hoàn tất. Lỗi tại {len(failures)} nhân viên.")
             QMessageBox.warning(
@@ -1560,7 +1699,7 @@ class MainWindow(QMainWindow):
             return
 
         self.append_log("Đã tính lương sau khi người dùng xác nhận dữ liệu sạch.")
-        QMessageBox.information(self, "Đã tính lương", "Đã tính lương cho toàn bộ dữ liệu đã được đối soát.")
+        QMessageBox.information(self, "�ã tính lương", "Đã tính lương cho toàn bộ dữ liệu đã được đối soát.")
 
     def run_reset(self):
         self.parsed_data = None
