@@ -4,11 +4,20 @@ import json
 import uuid
 import re
 import calendar
+import unicodedata
 from sqlalchemy import create_engine, text
 from datetime import datetime
 from formulas.formula_registry import FormulaRegistry
 from agent_mapper import get_mapping_from_ai
 from formulas.actro_config import is_sunday_or_holiday, get_ot_multiplier, get_holidays_for_period
+
+
+def _strip_accents(s: str) -> str:
+    """Bỏ dấu tiếng Việt để so sánh không phân biệt dấu."""
+    return ''.join(
+        c for c in unicodedata.normalize('NFD', s)
+        if unicodedata.category(c) != 'Mn'
+    )
 
 OUTPUT_DIR = "BCC_Output"
 
@@ -147,7 +156,7 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
         # Cấu trúc này match với LCNT7.xlsx
         # NOTE: pandas uses 0-based index, openpyxl uses 1-based. 
         #       So we subtract 1 from openpyxl column numbers.
-        if project_name == "Nhà máy Actro - Vĩnh Phúc":
+        if _strip_accents(project_name) == _strip_accents("Nhà máy Actro - Vĩnh Phúc"):
             col_map["ot_kc"] = 288  # KC - tổng hợp (pandas 0-based)
             col_map["ot_kd"] = 289  # KD - số giờ ban ngày (×1.0)
             col_map["ot_ke"] = 290  # KE - ? (×1.0)
@@ -164,14 +173,14 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
         # Bắt đầu đọc từ sau dòng header 2 dòng
         df = df.iloc[header_row_idx + 2:]
         formula_engine = FormulaRegistry.get_formula(project_name)
-        
+
         # ── Lấy holidays cho kỳ này (Actro) ──────────────────────
         period_holidays = []
         holiday_multiplier_map = {}  # date -> multiplier
         holiday_affects_chuyencan = True
         holiday_counts_working = True
         
-        if project_name == "Nhà máy Actro - Vĩnh Phúc":
+        if _strip_accents(project_name) == _strip_accents("Nhà máy Actro - Vĩnh Phúc"):
             if holiday_config and holiday_config.get("holidays"):
                 # Dùng holiday_config từ UI
                 for h in holiday_config["holidays"]:
@@ -274,7 +283,7 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                     # Xác định loại ngày: weekday, sunday, holiday, sunday_holiday
                     day_type_key = "weekday"
                     day_multiplier = 1.0  # Default multiplier
-                    if project_name == "Nhà máy Actro - Vĩnh Phúc":
+                    if _strip_accents(project_name) == _strip_accents("Nhà máy Actro - Vĩnh Phúc"):
                         date_iso = f"{calc_year}-{calc_month:02d}-{day_val:02d}"
                         is_weekend, is_holiday, day_type_str = is_sunday_or_holiday(
                             date_iso, 
@@ -309,7 +318,7 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                     # Tạo Breakdown chi tiết
                     breakdown = []
                     
-                    if project_name == "Nhà máy Actro - Vĩnh Phúc":
+                    if _strip_accents(project_name) == _strip_accents("Nhà máy Actro - Vĩnh Phúc"):
                         normal_h = safe_float(row[idxs["in"] + 2]) if (idxs["in"] + 2) < len(row) else 0
                         h_8_17 = safe_float(row[idxs["in"] + 4]) if (idxs["in"] + 4) < len(row) else 0
                         h_20_22 = safe_float(row[idxs["in"] + 5]) if (idxs["in"] + 5) < len(row) else 0
@@ -370,7 +379,7 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                 # HR dùng công thức SUMIFS để tính sẵn các cột KC, KD, KE, KF, KH, KI, KJ, KK
                 # LƯƠNG = LCB/giờ × (KD×1 + KE×1 + KF×1.5 + KH×2 + KI×1.3 + KJ×2 + KK×2.7)
                 # CÔNG HC = (KD + KE + KI) / 8
-                if project_name == "Nhà máy Actro - Vĩnh Phúc" and "ot_kf" in col_map:
+                if _strip_accents(project_name) == _strip_accents("Nhà máy Actro - Vĩnh Phúc") and "ot_kf" in col_map:
                     # Đọc trực tiếp từ summary columns
                     ot_kc = safe_float(row[col_map.get("ot_kc", 289)])
                     ot_kd = safe_float(row[col_map.get("ot_kd", 290)])
@@ -454,7 +463,10 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
 
                         # Chỉ ghi đè bằng số cho các cột OT/timekeeping thực sự
                         # Giữ lại start_date, work_type, period_end đã parse đúng ở trên
-                        if key in ("total_days", "absent_days", "ot_day", "ot_night",
+                        # NOTE: total_days bị LOẠI TRỪ cho Actro vì Actro đã tính
+                        #       calc_total_days = calc_cong_hc từ cột KC:KK ở trên.
+                        #       Nếu để vào whitelist, cột Excel thường ghi đè sai giá trị này.
+                        if key in ("absent_days", "ot_day", "ot_night",
                                    "ot_sunday", "normal_hours", "base_salary",
                                    "phu_cap_nha_o", "tru_ung", "bu_luong", "soi_kinh",
                                    "ot_130", "ot_150", "ot_180", "ot_200", "ot_210",

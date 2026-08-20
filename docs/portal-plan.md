@@ -1,72 +1,75 @@
-﻿# Kế hoạch phát triển: Hệ sinh thái Portal Toàn diện (All-in-One ERP Workspace)
+# K? ho?ch ph�t tri?n: H? sinh th�i Portal To�n di?n (All-in-One ERP Workspace)
 
-## 1. Tầm nhìn chiến lược (Vision: User-Centric ERP)
-"Xây dựng hệ thống xong mà người dùng không thể thao tác hay tương tác thì không có tác dụng gì". Điểm nghẽn lớn nhất của phần mềm doanh nghiệp là chỉ phục vụ chiều thu thập dữ liệu mà quên mất trải nghiệm của người dùng cuối.
+## 1. T?m nh�n chi?n lu?c (Vision: User-Centric ERP)
+"X�y d?ng h? th?ng xong m� ngu?i d�ng kh�ng th? thao t�c hay tuong t�c th� kh�ng c� t�c d?ng g�". �i?m ngh?n l?n nh?t c?a ph?n m?m doanh nghi?p l� ch? ph?c v? chi?u thu th?p d? li?u m� qu�n m?t tr?i nghi?m c?a ngu?i d�ng cu?i.
 
-Chúng ta sẽ chuyển hướng mạnh mẽ, biến HRP thành một **Hệ sinh thái Không gian làm việc số (Digital Workspaces)**. Từng nhóm người dùng (Worker, Vendor, CTV, BoD, Public) khi truy cập vào subdomain của mình sẽ thấy một ứng dụng hoàn chỉnh, có lợi ích rõ ràng, giúp họ giải quyết công việc hàng ngày một cách sung sướng nhất.
+Ch�ng ta s? chuy?n hu?ng m?nh m?, bi?n HRP th�nh m?t **H? sinh th�i Kh�ng gian l�m vi?c s? (Digital Workspaces)**. T?ng nh�m ngu?i d�ng (Worker, Vendor, CTV, BoD, Public) khi truy c?p v�o subdomain c?a m�nh s? th?y m?t ?ng d?ng ho�n ch?nh, c� l?i �ch r� r�ng, gi�p h? gi?i quy?t c�ng vi?c h�ng ng�y m?t c�ch sung su?ng nh?t.
 
-## 2. Quy hoạch Không gian làm việc cho từng Role (The Workspaces)
+## 2. Quy ho?ch Kh�ng gian l�m vi?c cho t?ng Role (The Workspaces)
 
-### 2.1. Public Portal (Chợ Giao dịch việc làm)
-- **Đối tượng:** Ứng viên tự do.
-- **Giá trị:** Landing Page thu hút (`warm_professionalism`), SEO-friendly. Tìm kiếm việc làm với filter realtime và nộp hồ sơ nhanh chóng.
+### 2.1. Public Portal (Ch? Giao d?ch vi?c l�m)
+- **�?i tu?ng:** ?ng vi�n t? do.
+- **Gi� tr?:** Landing Page thu h�t (`warm_professionalism`), SEO-friendly. T�m ki?m vi?c l�m v?i filter realtime v� n?p h? so nhanh ch�ng.
 
 ### 2.2. Worker Workspace (worker.hrpartner.vn)
-- **Quy hoạch mới:** Trở thành "sổ tay điện tử" của công nhân. 
-- **Tính năng:** Xem Phiếu lương (Payslip) minh bạch, quản lý ca làm việc (Shift), xin nghỉ phép, nhận điểm thưởng chuyên cần và cập nhật thông tin cá nhân.
+- **Quy ho?ch m?i:** Tr? th�nh "s? tay di?n t?" c?a c�ng nh�n. 
+- **T�nh nang:** Xem Phi?u luong (Payslip) minh b?ch, qu?n l� ca l�m vi?c (Shift), xin ngh? ph�p, nh?n di?m thu?ng chuy�n c?n v� c?p nh?t th�ng tin c� nh�n.
 
 ### 2.3. Vendor Workspace (vendor.hrpartner.vn)
-- **Quy hoạch mới:** B2B Partner Portal. 
-- **Tính năng:** Xem "phễu ứng viên" (tỷ lệ đậu/rớt), theo dõi thời gian phản hồi (SLA), đối soát công nợ tự động trực quan và trao đổi trực tiếp với HR.
+- **Quy ho?ch m?i:** B2B Partner Portal. 
+- **T�nh nang:** Xem "ph?u ?ng vi�n" (t? l? d?u/r?t), theo d�i th?i gian ph?n h?i (SLA), d?i so�t c�ng n? t? d?ng tr?c quan v� trao d?i tr?c ti?p v?i HR.
 
 ### 2.4. Affiliate / CTV Workspace (ctv.hrpartner.vn)
-- **Hiện trạng Logic:** Nền tảng luồng Affiliate đã cực kỳ vững chắc (qua `SourceClaim` và `CommissionLedger`). Hệ thống đã tự động cộng/trừ hoa hồng.
-- **Quy hoạch mới (Marketing Hub):** Nút "Tạo link Affiliate/Mã QR", ví điện tử theo dõi tiền hoa hồng realtime, nút "Yêu cầu rút tiền", bảng xếp hạng CTV. Thay thế giao diện khô khan hiện tại bằng bản thiết kế xịn từ `stitch`.
+- **Hi?n tr?ng Logic:** N?n t?ng lu?ng Affiliate d� c?c k? v?ng ch?c (qua `SourceClaim` v� `CommissionLedger`). H? th?ng d� t? d?ng c?ng/tr? hoa h?ng.
+- **Quy ho?ch m?i (Marketing Hub):** N�t "T?o link Affiliate/M� QR", v� di?n t? theo d�i ti?n hoa h?ng realtime, n�t "Y�u c?u r�t ti?n", b?ng x?p h?ng CTV. Thay th? giao di?n kh� khan hi?n t?i b?ng b?n thi?t k? x?n t? `stitch`.
 
-### 2.5. BoD Dashboard (Báo cáo nhanh cho Giám đốc)
-- **Quy hoạch mới:** Gom mọi số liệu sinh tử về 1 trang duy nhất cho C-Level (từ thiết kế `hrp_balanced_4_card_dashboard`).
-- **Tính năng:** 4 thẻ chỉ số quan trọng: Tổng Headcount (Biến động), Tỷ lệ lấp đầy Dự án, Sức khỏe tài chính (Quỹ lương/Hoa hồng), và Hiệu suất tuyển dụng.
+### 2.5. BoD Dashboard (B�o c�o nhanh cho Gi�m d?c)
+- **Quy ho?ch m?i:** Gom m?i s? li?u sinh t? v? 1 trang duy nh?t cho C-Level (t? thi?t k? `hrp_balanced_4_card_dashboard`).
+- **T�nh nang:** 4 th? ch? s? quan tr?ng: T?ng Headcount (Bi?n d?ng), T? l? l?p d?y D? �n, S?c kh?e t�i ch�nh (Qu? luong/Hoa h?ng), v� Hi?u su?t tuy?n d?ng.
 
 ---
 
-## 3. Đánh giá Kiến trúc chịu tải cao (High Concurrency Architecture)
+## 3. ��nh gi� Ki?n tr�c ch?u t?i cao (High Concurrency Architecture)
 
-Khi chuyển HRP thành một Portal tương tác cao, đặc biệt là **Worker Workspace**, chúng ta sẽ đối mặt với bài toán **"Thundering Herd" (Hiệu ứng bầy đàn)**: Hàng ngàn công nhân sẽ đồng loạt đăng nhập vào ngày phát lương để xem Payslip.
+Khi chuy?n HRP th�nh m?t Portal tuong t�c cao, d?c bi?t l� **Worker Workspace**, ch�ng ta s? d?i m?t v?i b�i to�n **"Thundering Herd" (Hi?u ?ng b?y d�n)**: H�ng ng�n c�ng nh�n s? d?ng lo?t dang nh?p v�o ng�y ph�t luong d? xem Payslip.
 
-Để giải quyết vấn đề quá tải Database Connections và nghẽn CPU, kiến trúc hệ thống sẽ áp dụng:
+�? gi?i quy?t v?n d? qu� t?i Database Connections v� ngh?n CPU, ki?n tr�c h? th?ng s? �p d?ng:
 
-1. **Pre-computed Snapshot (Tận dụng Microservice appBCC):**
-   - TUYỆT ĐỐI không tính toán lương (gross-to-net, thuế, BHXH) khi user bấm xem.
-   - Các tác vụ tính toán nặng nề được đẩy sang service Python (`appBCC`). Khi tính xong, `appBCC` đẩy bản ghi (Snapshot JSON) lên Database. Next.js chỉ việc truy vấn và render tĩnh, giải phóng hoàn toàn CPU.
+1. **Pre-computed Snapshot (T?n d?ng Microservice appBCC):**
+   - TUY?T �?I kh�ng t�nh to�n luong (gross-to-net, thu?, BHXH) khi user b?m xem.
+   - C�c t�c v? t�nh to�n n?ng n? du?c d?y sang service Python (`appBCC`). Khi t�nh xong, `appBCC` d?y b?n ghi (Snapshot JSON) l�n Database. Next.js ch? vi?c truy v?n v� render tinh, gi?i ph�ng ho�n to�n CPU.
 2. **Caching (Redis):**
-   - Vào kỳ lương, hệ thống sẽ "warm-up" dữ liệu phiếu lương vào Redis (In-memory cache). Các API xem lương sẽ đọc từ Redis thay vì chọc thẳng xuống PostgreSQL.
+   - V�o k? luong, h? th?ng s? "warm-up" d? li?u phi?u luong v�o Redis (In-memory cache). C�c API xem luong s? d?c t? Redis thay v� ch?c th?ng xu?ng PostgreSQL.
 3. **Connection Pooling:**
-   - Đảm bảo sử dụng Neon Serverless Driver (qua WebSockets) hoặc PgBouncer để giới hạn số lượng connection, bảo vệ DB không bị sập.
+   - �?m b?o s? d?ng Neon Serverless Driver (qua WebSockets) ho?c PgBouncer d? gi?i h?n s? lu?ng connection, b?o v? DB kh�ng b? s?p.
 4. **Rate Limiting & Virtual Waiting Room:**
-   - Dùng Vercel Edge Middleware để giới hạn truy cập. Nếu vượt mức (ví dụ 5000 request/giây), người dùng đến sau sẽ vào "Phòng chờ ảo" để điều tiết lưu lượng.
+   - D�ng Vercel Edge Middleware d? gi?i h?n truy c?p. N?u vu?t m?c (v� d? 5000 request/gi�y), ngu?i d�ng d?n sau s? v�o "Ph�ng ch? ?o" d? di?u ti?t luu lu?ng.
 
 ---
 
-## 4. Chiến lược triển khai (Milestones)
+## 4. Chi?n lu?c tri?n khai (Milestones)
 
-Lộ trình được điều chỉnh để ưu tiên bài toán chịu tải của Worker Workspace ngay từ sớm:
+L? tr�nh du?c di?u ch?nh d? uu ti�n b�i to�n ch?u t?i c?a Worker Workspace ngay t? s?m:
 
 - **Milestone 1: Design System & Public Portal**
-  - Cấu hình Design System `warm_professionalism` (`globals.css`).
-  - Cắt HTML Landing Page & Chợ việc làm.
+  - C?u h�nh Design System `warm_professionalism` (`globals.css`).
+  - C?t HTML Landing Page & Ch? vi?c l�m.
 - **Milestone 2: Affiliate Hub (CTV Workspace)**
-  - Đắp giao diện `hrp_collaborator_page_html_standard` vào `app/ctv`. 
-  - Nối API Referral, hiển thị biểu đồ hoa hồng.
-- **Milestone 3: Worker Workspace & Kiến trúc Chịu tải** *(Ưu tiên giải quyết rủi ro Thundering Herd)*
-  - Xây dựng luồng Pre-compute Payslip từ `appBCC`.
-  - Tích hợp Redis Cache và Neon Connection Pooling.
-  - Xây dựng giao diện xem lương và lịch làm việc cho công nhân.
-  - Stress-test (Giả lập 10,000 req/s).
+  - �?p giao di?n `hrp_collaborator_page_html_standard` v�o `app/ctv`. 
+  - N?i API Referral, hi?n th? bi?u d? hoa h?ng.
+- **Milestone 3: Worker Workspace & Ki?n tr�c Ch?u t?i** *(Uu ti�n gi?i quy?t r?i ro Thundering Herd)*
+  - T�ch h?p Virtual Waiting Room (Rate Limit).
+  - T�ch h?p Redis Cache v� Neon Connection Pooling.
+  - X�y d?ng giao di?n xem luong v� l?ch l�m vi?c cho c�ng nh�n.
+  - Stress-test (Gi? l?p 10,000 req/s).
 - **Milestone 4: BoD Dashboard**
-  - Xây dựng trang tổng quan cho Ban Giám Đốc.
+  - X�y d?ng trang t?ng quan cho Ban Gi�m �?c.
 - **Milestone 5: Control Tower (BoD Dashboard)**
-  - Triển khai giao diện S01_ControlTower_Default_1440.html.
-  - Xây dựng trang tổng quan cho Ban Giám Đốc.
+  - Tri?n khai giao di?n S01_ControlTower_Default_1440.html.
+  - X�y d?ng trang t?ng quan cho Ban Gi�m �?c.
 - **Milestone 6: Vendor Portal & Reconciliation**
-  - Đồng bộ UI/UX nội bộ và hệ thống đối soát công nợ Vendor.
-  - Triển khai S02_Staffing và S04_Reconciliation.
+  - �?ng b? UI/UX n?i b? v� h? th?ng d?i so�t c�ng n? Vendor.
+  - Tri?n khai S02_Staffing v� S04_Reconciliation.
+
+- **Milestone 7: Pre-compute Payslip**
+  - �ua lu?ng t�nh to�n luong n?ng n? v? l?i cho Python ppBCC d? t?i uu tri?t d?.

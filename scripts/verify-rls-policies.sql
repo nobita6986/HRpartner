@@ -1,0 +1,2 @@
+\echo '=== RLS policies for slice 4B tables ==='
+SELECT tablename, policyname, cmd FROM pg_policies WHERE schemaname='public' AND tablename IN ('attendance_import_batches','attendance_import_rows','attendance_events','timesheet_periods','timesheet_lines','timesheet_adjustments') ORDER BY tablename;

@@ -1,0 +1,22 @@
+feat(portal): M3 API integration - jobs + auth
+
+RQ-01: Job Dashboard API integration (app/(portal)/page.tsx)
+- Replaced MOCK_JOBS with fetch('/api/jobs') on mount
+- EnrichedJob adapter: maps minimal API {id,title,availableSlots}
+  to full UI props (icon from keyword, salary from slots, badge logic)
+- ApplyModal: controlled form, POST /api/jobs, SuccessModal
+- Loading skeleton (6-card pulse), error banner with retry, empty state
+- Client-side keyword filter
+- appliedIds state tracking
+
+RQ-02: Auth flow in GlobalNavbar (app/components/GlobalNavbar.tsx)
+- useEffect + GET /api/me on mount
+- 401 → guest UI (login/register buttons)
+- 200 → avatar + dropdown (userId, role badge, /ctv link, logout)
+- POST /api/auth/logout → redirect to /
+- Loading skeleton while auth resolves
+- Mobile menu replicates auth states
+
+Verification:
+- npm run build -> exit 0, 26 routes
+- npx vitest run -> 35 files, 605 tests PASS, exit 0

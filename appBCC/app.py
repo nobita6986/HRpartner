@@ -1,3 +1,4 @@
+import unicodedata
 import sys
 import os
 import threading
@@ -11,7 +12,15 @@ from PySide6.QtCore import Qt, Signal, QObject, QThread
 from PySide6.QtGui import QColor, QIcon, QPixmap, QCursor
 from dotenv import load_dotenv
 
+import unicodedata
 import sys
+def _strip_accents(s: str) -> str:
+    """Bỏ dấu tiếng Việt: 'Nhà máy Actro' → 'Nha may Actro'"""
+    return ''.join(
+        c for c in unicodedata.normalize('NFD', s)
+        if unicodedata.category(c) != 'Mn'
+    )
+
 
 if getattr(sys, 'frozen', False):
     application_path = os.path.dirname(sys.executable)
@@ -1291,7 +1300,9 @@ class MainWindow(QMainWindow):
         except:
             period_year = datetime.now().year
         
-        default_name = f"LCNT_{period_month}_{period_year}_{project_name[:20].replace(' ', '_')}.xlsx"
+        project_name_raw = project_name
+        project_name_slug = _strip_accents(project_name_raw).replace(' ', '_').replace('-', '_')
+        default_name = f"LCNT_{period_month}_{period_year}_{project_name_slug}.xlsx"
         save_path, _ = QFileDialog.getSaveFileName(
             self, "Lưu File Chuẩn Hoá", default_name, "Excel Files (*.xlsx)"
         )

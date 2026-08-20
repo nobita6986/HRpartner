@@ -5,13 +5,26 @@ import formulas
 from formulas.base_formula import BaseFormula
 import sys
 import os
+import unicodedata
+
+
+def _strip_accents(s: str) -> str:
+    """Bỏ dấu tiếng Việt: 'Nhà máy' → 'Nha may'"""
+    return ''.join(
+        c for c in unicodedata.normalize('NFD', s)
+        if unicodedata.category(c) != 'Mn'
+    )
+
 
 class FormulaRegistry:
     _registry = {}
+    _accentless_map = {}  # "nha may Actro - Vinh Phuc" → key
 
     @classmethod
     def load_plugins(cls):
         """Tự động quét thư mục formulas và đăng ký tất cả các class kế thừa BaseFormula"""
+        cls._registry = {}
+        cls._accentless_map = {}
         if getattr(sys, 'frozen', False):
             # 1. Load các plugin đi kèm bên trong file exe (được compile sẵn)
             try:
@@ -20,6 +33,7 @@ class FormulaRegistry:
                     if issubclass(obj, BaseFormula) and obj != BaseFormula:
                         instance = obj()
                         cls._registry[instance.project_name] = instance
+                        cls._accentless_map[_strip_accents(instance.project_name)] = instance.project_name
             except Exception as e:
                 print("Lỗi load internal plugin actro_formula:", e)
                 
@@ -38,6 +52,7 @@ class FormulaRegistry:
                                 if issubclass(obj, BaseFormula) and obj != BaseFormula:
                                     instance = obj()
                                     cls._registry[instance.project_name] = instance
+                                    cls._accentless_map[_strip_accents(instance.project_name)] = instance.project_name
                         except Exception as e:
                             print(f"Lỗi load external plugin {module_name}: {e}")
         else:
@@ -51,6 +66,7 @@ class FormulaRegistry:
                     if issubclass(obj, BaseFormula) and obj != BaseFormula:
                         instance = obj()
                         cls._registry[instance.project_name] = instance
+                        cls._accentless_map[_strip_accents(instance.project_name)] = instance.project_name
 
     @classmethod
     def get_all_projects(cls) -> list:
@@ -62,4 +78,12 @@ class FormulaRegistry:
     def get_formula(cls, project_name: str) -> BaseFormula:
         if not cls._registry:
             cls.load_plugins()
-        return cls._registry.get(project_name)
+        # Ưu tiên exact match trước
+        if project_name in cls._registry:
+            return cls._registry[project_name]
+        # Fallback: tìm theo tên không dấu
+        accentless = _strip_accents(project_name)
+        if accentless in cls._accentless_map:
+            original_key = cls._accentless_map[accentless]
+            return cls._registry[original_key]
+        return None

@@ -8,7 +8,7 @@ HR workbook columns (KS:LA):
   KV  : Phụ cấp đời sống
   KW  : Phụ cấp nhà ở  (INPUT)
   KX  : Thâm niên
-  KY  : Thanh toán  = SUM(KS:KX)
+  KY  : Thanh toán  = KS + SUM(KT:KX) = Lương giờ + Tổng phụ cấp
   KZ  : Trừ ứng     (INPUT)
   LA  : Thực nhận   = ROUNDDOWN(KY-KZ, -3)
 
@@ -21,7 +21,7 @@ Constants:
   Standard workdays  = 26 / tháng
 
 Allowances (only KT:KX — no Suất ăn, KPI, Bù lương):
-  KT  : Chuyên cần = IF(KL>25, 400k, IF(KL>24, 200k, 0))
+  KT  : Chuyên cần = IF(KL > 25, 400k, IF(KL >= 25, 200k, 0))
   KU  : Soi kính   = IF(loại="Soi kính", 450k/26xKL, 0)
   KV  : Đời sống   = 300k/26 x KL
   KW  : Nhà ở      = INPUT
@@ -199,11 +199,15 @@ class ActroFormula(BaseFormula):
         }
 
     def _chuyen_can(self, total_workdays: float) -> float:
-        # KT = IF(KL >= 26, 400k, IF(KL >= 25, 200k, 0))
-        # standard_workdays = 26 - holiday_count; thiếu 1 công → 200k
-        if total_workdays >= 26:
+        # LCNT7.xlsx: IF(KL>25, 400000, IF(KL>24, 200000, 0))
+        # Ví dụ:
+        #   KL=25.875 → 400000 (25.875 > 25)
+        #   KL=25.000 → 200000 (25 > 25 là FALSE, nhưng 25 > 24 là TRUE)
+        #   KL=24.937 → 200000 (24.937 > 24)
+        #   KL=24.000 → 0     (24 > 24 là FALSE, 24 > 24 là FALSE)
+        if total_workdays > 25:
             return 400_000.0
-        if total_workdays >= 25:
+        if total_workdays > 24:
             return 200_000.0
         return 0.0
 

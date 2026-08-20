@@ -1,0 +1,5 @@
+Name repr: 'Nhà máy Actro - Vĩnh Phúc'
+Name len: 25
+Name chars: ['N', 'h', 'à', ' ', 'm', 'á', 'y', ' ', 'A', 'c', 't', 'r', 'o', ' ', '-', ' ', 'V', 'ĩ', 'n', 'h', ' ', 'P', 'h', 'ú', 'c']
+Match with test: False
+Match with VN: True
