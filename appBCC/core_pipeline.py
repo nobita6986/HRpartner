@@ -160,11 +160,13 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
             col_map["ot_kc"] = 288  # KC - tổng hợp (pandas 0-based)
             col_map["ot_kd"] = 289  # KD - số giờ ban ngày (×1.0)
             col_map["ot_ke"] = 290  # KE - ? (×1.0)
-            col_map["ot_kf"] = 291  # KF - OT ngày (×1.5) 
+            col_map["ot_kf"] = 291  # KF - OT ngày (×1.5)
             col_map["ot_kh"] = 293  # KH - OT đêm (×2.0)
             col_map["ot_ki"] = 294  # KI - giờ OT ban ngày (×1.3)
             col_map["ot_kj"] = 295  # KJ - OT CN (×2.0)
             col_map["ot_kk"] = 296  # KK - ? (×2.7)
+            # BCC col KL (openpyxl 298) chứa "Loại công việc"
+            col_map["work_type"] = 297  # pandas 0-based index
                 
         # 4. Trích xuất dữ liệu
         preview_data = []

@@ -212,10 +212,17 @@ class ActroFormula(BaseFormula):
         return 0.0
 
     def _soi_kinh(self, work_type: str, total_workdays: float) -> float:
+        import math
         bare = _strip_accents(work_type.casefold())
+        # "Không soi kính" → không có phụ cấp
+        # "Soi kính" → có phụ cấp 450k/26 x KL (Excel FLOOR = luôn làm tròn xuống)
+        if "khong" in bare and "soi kinh" in bare:
+            return 0.0  # "Không soi kính" = no allowance
+        if "khong" in bare:
+            return 0.0
         if "soi kinh" not in bare:
             return 0.0
-        return round(self.SOI_KINH_MONTHLY / 26 * total_workdays)
+        return math.floor(self.SOI_KINH_MONTHLY / 26 * total_workdays)
 
     def _tham_nien(
         self,
