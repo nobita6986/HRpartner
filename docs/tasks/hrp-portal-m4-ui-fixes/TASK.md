@@ -8,7 +8,7 @@
 | Work type | CODE |
 | Audit mode (Tier 3 đọc) | CODE_AUDIT |
 | Spec version | v1.0 |
-| Status | READY_FOR_AUDIT |
+| Status | ACCEPTED |
 | Planner | Tier 1 (Antigravity) |
 | Executor | Tier 2 |
 | Auditor | Tier 3 |
@@ -16,9 +16,9 @@
 | Modules | M4-Hotfixes |
 | ADR references | None |
 | Current execution round | 2 |
-| Current audit round | 1 |
-| Next gate | /audit hrp-portal-m4-ui-fixes |
-| Updated | 2026-08-20 12:16 +07:00 |
+| Current audit round | 2 |
+| Next gate | None (Closed) |
+\| Updated \| 2026-08-20 14:40 +07:00 \|
 
 ## 1. Outcome
 
@@ -122,6 +122,7 @@ avLinks. | N/A | Check header | Break Navbar |
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
 | 1 | AUD-001 | REJECT | Mặc dù Tier 3 đã tự sửa logo trên Navbar/Footer Public, nhưng trong Admin Panel (src/shared/ui/role-guard/role-guard-layout.tsx) vẫn còn sót logo chữ "H". Yêu cầu Tier 2 làm triệt để. | Cập nhật RQ-05 để rõ ràng hơn. | Tier 1 |
+| 2 | AUD-002 | ACCEPT | Tier 2 đã fix dứt điểm logo ở Admin Panel. Build xanh, test pass. | None | Tier 1 |
 
 ## 10. Revision Log
 
@@ -129,3 +130,5 @@ avLinks. | N/A | Check header | Break Navbar |
 |---|---|---|---|
 | 1.0 | 2026-08-20 | Tạo task hrp-portal-m4-ui-fixes. | Sếp yêu cầu fix gấp các lỗi UI và đổi nội dung trang Về chúng tôi. |
 | 1.1 | 2026-08-20 | Cập nhật trạng thái REJECTED. | Tier 2 và 3 bỏ sót logo trong Admin Panel. Yêu cầu làm lại. |
+
+|  1.1 | 2026-08-20 | Đóng task thành công (ACCEPTED). | Lỗi logo đã được fix hoàn toàn ở R2. |

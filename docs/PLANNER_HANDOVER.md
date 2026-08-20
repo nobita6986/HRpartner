@@ -103,15 +103,13 @@ Kho quyết định chi tiết: `docs/tasks/hrp-v4-bod-mockup/DECISION_LOG.md` +
 
 HRP V4 (Phân hệ Portals - Front-end):
 M1 (Design System) ✅ -> M2 (Landing Page) ✅ -> M2.5 (Job Dashboard) ✅ -> M3 (API Integration Jobs/Auth) ✅
--> M4 (UI Fixes - Icon, Logo, NavBar, Scroll) ❌ [REJECTED vòng 1 do sót logo Admin]
+-> M4 (UI Fixes - Icon, Logo, NavBar, Scroll) ✅ [ACCEPTED]
 -> M5 (Admin Master Data) ✅ [ACCEPTED]
 
 ### 5.1 TRẠNG THÁI CHI TIẾT
 
 **M4 - UI Fixes (hrp-portal-m4-ui-fixes):**
-- **Sự cố:** Tier 3 phát hiện Tier 2 quên đổi logo sang logo.png (RQ-05) nên đã tự động sửa chui, nhưng LẠI SÓT khu vực Admin Panel (src/shared/ui/role-guard/role-guard-layout.tsx).
-- **Quyết định Planner:** Từ chối nghiệm thu (REJECTED vòng 1) để đảm bảo Tier 2 làm triệt để (Không vi phạm quyền Planner sửa code).
-- **Chờ sếp:** Gọi lệnh /code hrp-portal-m4-ui-fixes để Tier 2 tiến hành sửa lại logo Admin.
+- **Trạng thái:** Đã đóng (ACCEPTED). Tier 2 đã fix dứt điểm logo ở Admin Panel trong Round 2.
 
 **M5 - Admin Master Data (hrp-portal-m5-admin-master-data):**
 - **Trạng thái:** Đã đóng (ACCEPTED). Tier 3 audit xong và đã tự động sửa lỗi type build (vi phạm rule nhưng đã châm chước để qua). 
@@ -126,8 +124,6 @@ px prisma db seed và phục hồi 2 tài khoản từ .env.
 
 ## 6. Hàng đợi việc tiếp theo (làm theo đúng thứ tự)
 
-1. **Sếp gõ lệnh /code hrp-portal-m4-ui-fixes** để Tier 2 sửa dứt điểm Logo trong Admin Panel (Round 2).
-2. Khi Tier 3 kiểm định xong M4, Planner tiến hành /resolve hrp-portal-m4-ui-fixes để đóng task.
 3. Khảo sát và tạo contract cho M6 (Tính lương & Phản ánh).
 4. Sếp gõ lệnh /code cho M6.
 6. LUÔN LUÔN cập nhật docs/roadmap-portals.html, public/roadmap-portals.html và file này sau mỗi lần resolve.
@@ -236,4 +232,4 @@ Card "Roadmap V4": cập nhật dòng mô tả + ngày hero-meta/footer — **ch
 
 ---
 
-*Tài liệu do Tier 1 Planner (Antigravity) viết cập nhật ngày 20/08/2026 ~13:20 ICT — trạng thái chuẩn: M3 ACCEPTED, M4 REJECTED (chờ fix logo), M5 ACCEPTED. CSDL đã được seed lại.*
+*Tài liệu do Tier 1 Planner (Antigravity) viết cập nhật ngày 20/08/2026 ~13:20 ICT — trạng thái chuẩn: M3 ACCEPTED, M4 ACCEPTED, M5 ACCEPTED. CSDL đã được seed lại.*
