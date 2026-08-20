@@ -17,7 +17,7 @@
 | ADR references | None |
 | Current execution round | 1 |
 | Current audit round | 0 |
-| Next gate | /code hrp-portal-m4-ui-fixes |
+| Next gate | /code hrp-portal-m4-ui-fixes (Sửa lại logo Admin) |
 | Updated | 2026-08-20 12:16 +07:00 |
 
 ## 1. Outcome
@@ -60,7 +60,7 @@ avLinks và tạo mới component cho route /ve-chung-toi. |
 | RQ-02 | Cập nhật logic Infinite Scroll ở pp/(portal)/page.tsx: Hiện "Đang tải thêm..." khi cuộn xuống đáy. Hiện "Đã xem toàn bộ danh sách" khi hết data. | Must | EV-02 | Dòng chữ hiện tĩnh gây nhầm lẫn. |
 | RQ-03 | Xóa 2 menu "Dịch vụ Tuyển dụng", "Giải pháp Nhân sự" khỏi GlobalNavbar. | Must | EV-03 | Menu thừa. |
 | RQ-04 | Cập nhật nội dung route /ve-chung-toi bằng JSX từ file index.html (thư mục gốc). | Must | EV-03 | Trang cũ / Lỗi 404. |
-| RQ-05 | Thay thế các logo chữ HRP trên web (ở Header, Footer, v.v...) bằng hình ảnh từ file logo.png (sử dụng thẻ img src="/logo.png"). Cần điều chỉnh CSS/Kích thước cho phù hợp layout. | Must | Sếp giao | Vẫn hiện logo chữ. |
+| RQ-05 | Thay thế các logo chữ HRP trên web (ở Header, Footer Public và cả SidebarHeader trong Admin Panel src/shared/ui/role-guard/role-guard-layout.tsx) bằng hình ảnh từ file logo.png (sử dụng thẻ img src="/logo.png"). Cần điều chỉnh CSS/Kích thước cho phù hợp layout. | Must | Sếp giao | Vẫn hiện logo chữ. |
 | RQ-06 | Pass toàn bộ test suite hiện có. | Must | Baseline | CI fail. |
 
 ### 4.2 Scope boundaries
@@ -121,10 +121,11 @@ avLinks. | N/A | Check header | Break Navbar |
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 1 | AUD-001 | REJECT | Mặc dù Tier 3 đã tự sửa logo trên Navbar/Footer Public, nhưng trong Admin Panel (src/shared/ui/role-guard/role-guard-layout.tsx) vẫn còn sót logo chữ "H". Yêu cầu Tier 2 làm triệt để. | Cập nhật RQ-05 để rõ ràng hơn. | Tier 1 |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | 1.0 | 2026-08-20 | Tạo task hrp-portal-m4-ui-fixes. | Sếp yêu cầu fix gấp các lỗi UI và đổi nội dung trang Về chúng tôi. |
+| 1.1 | 2026-08-20 | Cập nhật trạng thái REJECTED. | Tier 2 và 3 bỏ sót logo trong Admin Panel. Yêu cầu làm lại. |
