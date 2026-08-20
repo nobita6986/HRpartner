@@ -8,7 +8,7 @@
 | Work type | CODE |
 | Audit mode (Tier 3 đọc) | CODE_AUDIT |
 | Spec version | v1.0 |
-| Status | READY_FOR_EXECUTION |
+| Status | ACCEPTED |
 | Planner | Tier 1 (Antigravity) |
 | Executor | Tier 2 |
 | Auditor | Tier 3 |
@@ -112,7 +112,8 @@
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 1 | AUD-001 | ACCEPT | Dùng CSS Tailwind thuần giúp tránh đụng độ (Mitigation RISK-01). UI đạt 95% là tuyệt vời. | Không | Tier 1 |
+| 1 | N/A (Gap) | ACCEPT (with debt) | Mock Data đang hard-code. Cần tạo task để tách API và query từ DB. | Chuyển sang Next Task | Tier 1 |
 
 ## 10. Revision Log
 
