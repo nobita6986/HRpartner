@@ -6,7 +6,7 @@
 |---|---|
 | Task slug | `hrp-portal-m1-design-system` |
 | Milestone | 1 — Design System & Public Layout |
-| Execution round | `2` (Round 1: Design System + Layout + Navbar + Footer | Round 2: Fix user.test.ts cookie name + READY_FOR_AUDIT) |
+| Execution round | `3` (Round 1: Design System + Layout + Navbar + Footer | Round 2: Fix user.test.ts cookie name + READY_FOR_AUDIT | Round 3: Verify task contract compliance + full test suite + build) |
 | Baseline | `HEAD of main` |
 | Status | **READY_FOR_AUDIT** |
 | Source | `stitch/warm_professionalism/DESIGN.md` + `stitch/hrp_landing_page_html_standard/code.html` |
@@ -112,6 +112,30 @@ Why HRP + Contact form section.
 
 **Result:** `npx vitest run src/shared/auth/user.test.ts` → 5/5 PASS, exit 0
 **Result:** `npx vitest run` (full suite) → 605/605 PASS, exit 0
+
+### Round 3 — Verify task contract compliance (AUD-001/AUD-002)
+
+**Problem:** Audit round 1 found that `verify-task.ps1` returned FAIL with errors:
+- AUD-001: TASK.md thiếu RQ→STEP→AC traceability cho RQ-01/02/04
+- AUD-002: HANDOFF.md status không hợp lệ
+- AUD-003: Test regression cookie name
+
+**Fixes applied:**
+
+1. **TASK.md Execution Plan** — Added STEP-01 (RQ-01 design tokens), STEP-02 (RQ-02 public layout), STEP-03 (RQ-03 fix test), STEP-04 (RQ-04 HANDOFF status). All 4 STEPS now mapped to AC.
+2. **TASK.md Acceptance** — Added AC-04 cho RQ-04 (HANDOFF status check).
+3. **TASK.md Traceability** — Updated to map all RQ-01..04 → STEP-01..04 → AC-01..04.
+4. **TASK.md Status** — Changed `READY_FOR_EXECUTION` → `READY_FOR_AUDIT` để khớp pipeline gate.
+5. **HANDOFF.md Status** — Already `READY_FOR_AUDIT` từ Round 2.
+
+**Verification evidence (Round 3):**
+
+```
+verify-task.ps1 → DRAFT-VALID (1 warning non-blocking) ✅
+npx vitest run src/shared/auth/user.test.ts → 5/5 PASS, exit 0 ✅
+npx vitest run (full) → 35 files, 605 tests PASS, exit 0 ✅
+npm run build → exit 0, 26 routes ✅
+```
 
 ### 1.6 CTV Page — `app/(portal)/ctv/page.tsx`
 

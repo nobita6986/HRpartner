@@ -8,7 +8,7 @@
 | Work type | CODE |
 | Audit mode (Tier 3 đọc) | CODE_AUDIT |
 | Spec version | 1.1 |
-| Status | READY_FOR_EXECUTION |
+| Status | READY_FOR_AUDIT |
 | Planner | Tier 1 (Antigravity) |
 | Executor | Tier 2 (Figma Owner / Frontend Engineer) |
 | Auditor | Tier 3 (Auditor) |
@@ -80,25 +80,26 @@
 
 | STEP ID | RQ | Target | Change intent/deliverable | Dependency/skill | Verify | Stop condition |
 |---|---|---|---|---|---|---|
-| STEP-01 | RQ-03 | src/shared/auth/user.test.ts | Sửa mock cookie name trong 2 bài test từ cũ thành hrp_session. | N/A | 
-px vitest run src/shared/auth/user.test.ts | Nếu test đỏ, phải sửa đến khi xanh. |
-| STEP-02 | RQ-04 | HANDOFF.md | Viết lại HANDOFF.md, cập nhật trạng thái READY_FOR_AUDIT. | N/A | Review markdown. | Hoàn tất file. |
-
+| `STEP-01` | `RQ-01` | `app/globals.css` | Thêm Tailwind v4 `@theme` tokens từ F01 (warm_professionalism). | N/A | Code review (AC-01) | Thiếu token primary |
+| `STEP-02` | `RQ-02` | `app/(portal)/layout.tsx`, `app/components/GlobalNavbar.tsx`, `app/components/GlobalFooter.tsx` | Tạo route group (portal) layout với Header/Footer theo S05 mockup. | `STEP-01` | `npm run build` exit 0 | Build fail |
+| `STEP-03` | `RQ-03` | `src/shared/auth/user.test.ts` | Sửa mock cookie name trong test từ `hrp_token` thành `hrp_session` để khớp `AUTH_COOKIE_NAME`. | N/A | `npx vitest run src/shared/auth/user.test.ts` exit 0 | Nếu test đỏ, phải sửa đến khi xanh |
+| `STEP-04` | `RQ-04` | `docs/tasks/hrp-portal-m1-design-system/HANDOFF.md` | Cập nhật status → `READY_FOR_AUDIT`. | `STEP-01..03` | Review markdown | Status không đúng |
 ## 6. Acceptance
 
 | AC ID | RQ | Pass condition | Verification method | Required evidence | Blocking? |
 |---|---|---|---|---|---|
-| AC-01 | RQ-01 | pp/globals.css có mã màu --color-primary: #f26522. | Đọc code. | Trích xuất file thay đổi. | Yes |
-| AC-02 | RQ-02 | Layout chứa GlobalNavbar. | Đọc code. | Trích xuất file thay đổi. | Yes |
-| AC-03 | RQ-03 | Tất cả test đều PASS (Exit 0). | 
-px vitest run | Output màn hình (PASS). | Yes |
-
+| `AC-01` | `RQ-01` | `app/globals.css` có `--color-primary: #f26522` và các token warm_professionalism đầy đủ. | Đọc code. | Trích xuất file thay đổi. | Yes |
+| `AC-02` | `RQ-02` | `app/(portal)/layout.tsx` chứa `<GlobalNavbar />` + `<GlobalFooter />`. | Đọc code. | Trích xuất file thay đổi. | Yes |
+| `AC-03` | `RQ-03` | Tất cả test đều PASS (Exit 0). | `npx vitest run` | Output màn hình (PASS). | Yes |
+| `AC-04` | `RQ-04` | `HANDOFF.md` có status = `READY_FOR_AUDIT`. | Đọc file. | Grep `READY_FOR_AUDIT` trong HANDOFF. | Yes |
 ### Traceability
 
 | Requirement | Execution | Acceptance |
 |---|---|---|
-| RQ-03 | STEP-01 | AC-03 |
-| RQ-04 | STEP-02 | N/A |
+| RQ-01 | STEP-01 (Design System tokens in globals.css) | AC-01 |
+| RQ-02 | STEP-02 (Public Layout with GlobalNavbar/Footer) | AC-02 |
+| RQ-03 | STEP-03 (Fix user.test.ts cookie name) | AC-03 |
+| RQ-04 | STEP-04 (Update HANDOFF.md to READY_FOR_AUDIT) | AC-04 |
 
 ## 7. Risk và Rollback
 
