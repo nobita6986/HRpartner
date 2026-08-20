@@ -245,4 +245,9 @@ Card "Roadmap V4": cập nhật dòng mô tả + ngày hero-meta/footer — **ch
 *Tài liệu do Tier 1 Planner (Antigravity) viết cập nhật ngày 20/08/2026 ~13:20 ICT — trạng thái chuẩn: M3 ACCEPTED, M6 ACCEPTED, M7 ACCEPTED, M8 ACCEPTED. CSDL đã được seed lại.*
 **M8 - Worker Concurrency (hrp-portal-m8-worker-concurrency):**
 - **Tr?ng th�i:** �� d�ng (ACCEPTED). H? th?ng ch?u t?i (Rate Limit / Waiting Room) v� UI Worker d?c t? Cache d� ho�n thi?n.
-- **Ch? s?p:** Ti?n v�o Giai do?n 3 (M2/M6 g?c) - Affiliate Hub & Vendor Portal.
+- **Ch? s?p:** Ti?n v�o Giai do?n 3 (M2/M6 g?c) - Affiliate Hub & Vendor Portal.**M9 - Affiliate Hub & Vendor Portal (hrp-portal-m9-affiliate-vendor):**
+- **Nguồn gốc:** Giai đoạn 3 của Kế hoach tổng thễ (M2 và M6 gốc).
+- **Tiến độ:** Planner đã tạo hợp đồng (READY_FOR_EXECUTION). Yêu cầu đắp UI moi, ve chart cho CTV, va lam Statements cho Vendor.
+- **Chờ sẽp:** Gọi lệnh `/code hrp-portal-m9-affiliate-vendor`.
+
+
