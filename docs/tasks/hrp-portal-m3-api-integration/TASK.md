@@ -18,7 +18,7 @@
 | Current execution round | 1 |
 | Current audit round | 1 |
 | Next gate | /audit hrp-portal-m3-api-integration |
-| Updated | 2026-08-20 11:08 +07:00 |
+| Updated | 2026-08-20 12:05 +07:00 |
 
 ## 1. Outcome
 
@@ -113,10 +113,11 @@ px vitest run | Test đỏ. |
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 1 | - | ACCEPT_FIX | Audit PASS 100%. verify-audit.ps1 exit 0. Không có finding mới. | Không | Tier 1 |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | 1.0 | 2026-08-20 | Tạo task hrp-portal-m3-api-integration. | Bắt đầu M3 (Job Search API / Auth Portal). |
+| 1.0 | 2026-08-20 | Đóng task, chuyển trạng thái thành ACCEPTED. | Audit round 1 PASS. Handoff sang M4. |
