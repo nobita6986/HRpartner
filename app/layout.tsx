@@ -1,9 +1,6 @@
 import './globals.css';
 import { Be_Vietnam_Pro, Inter } from 'next/font/google';
 
-// Font chuẩn Warm Professionalism (stitch/warm_professionalism/DESIGN.md — STEP-09):
-// Be Vietnam Pro cho headline/body, Inter cho label. Gán qua CSS variable --font-bvp /
-// --font-inter, globals.css map sang --font-head / --font-body / --font-label.
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],
   weight: ['400', '500', '600', '700'],
@@ -31,7 +28,7 @@ export const metadata = {
     'apple-mobile-web-app-title': 'HRPartner Worker',
   },
   manifest: '/manifest.json',
-}
+};
 
 export default function RootLayout({
   children,
@@ -40,7 +37,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi" className={`${beVietnamPro.variable} ${inter.variable}`}>
+      <head>
+        <link
+          rel="preconnect"
+          href="https://fonts.googleapis.com"
+        />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body>{children}</body>
     </html>
-  )
+  );
 }

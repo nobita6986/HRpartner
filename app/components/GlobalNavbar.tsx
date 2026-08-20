@@ -18,8 +18,6 @@ async function logout() {
 
 const navLinks = [
   { href: '/', label: 'Việc làm' },
-  { href: '/dich-vu-tuyen-dung', label: 'Dịch vụ Tuyển dụng' },
-  { href: '/giai-phap-nhan-su', label: 'Giải pháp Nhân sự' },
   { href: '/ctv-portal', label: 'Cộng tác viên' },
   { href: '/ve-chung-toi', label: 'Về chúng tôi' },
   { href: '/lien-he', label: 'Liên hệ' },

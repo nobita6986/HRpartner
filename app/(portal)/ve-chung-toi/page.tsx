@@ -1,0 +1,220 @@
+import Link from 'next/link';
+
+export const metadata = {
+  title: 'Về HRP — Hệ thống quản trị cung ứng nhân lực',
+  description:
+    'HRP là hệ thống quản trị cung ứng nhân lực toàn diện: từ khách hàng, nhu cầu tuyển, người lao động, chấm công, đối soát đến trả lương.',
+};
+
+const CARDS = [
+  {
+    icon: '🏢',
+    title: 'Hệ quản trị HRP',
+    desc: 'Toàn cảnh hệ thống: ba cổng (nội bộ, đối tác, người lao động), chuỗi nghiệp vụ từ bán hàng đến trả lương, nguyên tắc chống tranh chấp và lộ trình triển khai.',
+    tag: 'v4.22',
+    tagStyle: 'ok',
+    href: '/ve-hrp',
+    more: 'Xem toàn cảnh →',
+  },
+  {
+    icon: '📱',
+    title: 'Demo BoD — Mockup',
+    desc: '36 frame HTML mở được trên mọi trình duyệt: Control Tower, Staffing, Chấm công, Đối soát, Cổng đối tác — chạy đúng kịch bản khóa kỳ 08/2026 theo 11 hotspot.',
+    tag: 'Sẵn sàng demo',
+    tagStyle: 'ok',
+    href: '/docs/tasks/hrp-v4-bod-mockup/mockup/index.html',
+    more: 'Mở bản đồ frame →',
+  },
+  {
+    icon: '🗺️',
+    title: 'Roadmap V4',
+    desc: 'Lộ trình trực quan 6 phase + 3 phase mở rộng. Phase 5 ✅ ACCEPTED. P1 Portals ✅ ACCEPTED. P2 Commission ✅ ACCEPTED. Burndown và các mốc UI đến Full V4.',
+    tag: 'Chờ OP P1/P2',
+    tagStyle: 'wip',
+    href: '/roadmap-hrp-v4.html',
+    more: 'Xem lộ trình →',
+  },
+  {
+    icon: '🚀',
+    title: 'Roadmap: Portal Ecosystem',
+    desc: 'Lộ trình biến HRP thành Hệ sinh thái All-in-One: Job Market, CTV Hub, BoD Dashboard, Worker & Vendor Workspace.',
+    tag: 'Phase Mới Nhất',
+    tagStyle: 'wip',
+    href: '/roadmap-portals.html',
+    more: 'Xem kế hoạch →',
+  },
+  {
+    icon: '🧾',
+    title: 'Tra cứu bảng công',
+    desc: 'Tra cứu bảng công cá nhân và phiếu lương chi tiết theo mã thẻ — lịch chấm công từng ngày, tổng công, tăng ca, bảng lương A–E.',
+    tag: 'Đã triển khai',
+    tagStyle: 'ok',
+    href: '/bcc',
+    more: 'Tra cứu ngay →',
+  },
+];
+
+export default function VeChungToiPage() {
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
+
+      {/* Hero */}
+      <section className="py-16 md:py-20 px-6 md:px-[5%]" style={{ backgroundColor: 'var(--color-background)' }}>
+        <div className="max-w-5xl mx-auto">
+          {/* Kicker */}
+          <div
+            className="inline-block text-sm font-bold tracking-widest uppercase mb-6 px-4 py-1.5 rounded-full"
+            style={{
+              color: 'var(--color-primary-dark)',
+              backgroundColor: 'var(--color-primary-soft)',
+              border: '1px solid var(--color-outline-variant)',
+            }}
+          >
+            HRP — Hệ thống quản trị cung ứng nhân lực
+          </div>
+
+          {/* Headline */}
+          <h1
+            className="text-4xl md:text-5xl font-extrabold leading-tight mb-6"
+            style={{ letterSpacing: '-0.02em', color: 'var(--color-on-surface)', maxWidth: '760px' }}
+          >
+            Một hệ thống cho toàn bộ nghiệp vụ{' '}
+            <em className="not-italic" style={{ color: 'var(--color-primary)' }}>
+              cung ứng nhân sự
+            </em>
+            .
+          </h1>
+
+          {/* Lede */}
+          <p
+            className="text-lg md:text-xl mb-8"
+            style={{ color: 'var(--color-on-surface-variant)', maxWidth: '640px', lineHeight: 1.7 }}
+          >
+            Từ khách hàng, nhu cầu tuyển, người lao động, chấm công, đối soát — đến trả lương và hoa hồng.
+            Mọi con số đã chốt là không sửa.
+          </p>
+
+          {/* CTA Row */}
+          <div className="flex flex-wrap gap-3 mb-10">
+            <a
+              href="/docs/tasks/hrp-v4-bod-mockup/mockup/index.html"
+              className="inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-xl text-white transition-all hover:-translate-y-0.5 hover:shadow-md"
+              style={{ backgroundColor: 'var(--color-primary)' }}
+            >
+              Xem demo BoD — mockup hi-fi
+            </a>
+            <Link
+              href="/ve-hrp"
+              className="inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-sm"
+              style={{
+                color: 'var(--color-on-surface)',
+                border: '1px solid var(--color-outline-variant)',
+                backgroundColor: 'var(--color-background)',
+              }}
+            >
+              Tìm hiểu về HRP
+            </Link>
+          </div>
+
+          {/* Meta */}
+          <div className="flex flex-wrap gap-6 text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+            <span>
+              <span className="font-bold" style={{ color: 'var(--color-on-surface)' }}>v4.22</span>
+            </span>
+            <span>
+              Demo BoD: <span className="font-bold" style={{ color: 'var(--color-on-surface)' }}>36 frame hi-fi</span> · 11 hotspot
+            </span>
+            <span>
+              Cập nhật <span className="font-bold" style={{ color: 'var(--color-on-surface)' }}>18/08/2026</span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Cards */}
+      <section className="px-6 md:px-[5%] pb-20">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {CARDS.map((card) => (
+              <a
+                key={card.title}
+                href={card.href}
+                className="flex flex-col gap-3 rounded-2xl p-6 border border-outline-variant transition-all hover:-translate-y-1 hover:border-primary hover:shadow-md"
+                style={{ backgroundColor: 'var(--color-surface)' }}
+              >
+                {/* Icon */}
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl"
+                  style={{ backgroundColor: 'var(--color-primary-soft)' }}
+                >
+                  {card.icon}
+                </div>
+
+                {/* Title */}
+                <h2 className="text-lg font-bold" style={{ color: 'var(--color-on-surface)' }}>
+                  {card.title}
+                </h2>
+
+                {/* Description */}
+                <p className="text-sm flex-1 leading-relaxed" style={{ color: 'var(--color-on-surface-variant)' }}>
+                  {card.desc}
+                </p>
+
+                {/* Tag */}
+                <div>
+                  <span
+                    className="inline-block text-xs font-bold px-2.5 py-1 rounded-full"
+                    style={
+                      card.tagStyle === 'ok'
+                        ? { backgroundColor: 'var(--color-success-soft)', color: 'var(--color-success)' }
+                        : { backgroundColor: 'var(--color-warning-soft)', color: 'var(--color-warning)' }
+                    }
+                  >
+                    {card.tag}
+                  </span>
+                </div>
+
+                {/* More link */}
+                <span className="text-sm font-semibold" style={{ color: 'var(--color-primary-dark)' }}>
+                  {card.more}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="px-6 md:px-[5%] py-8 mt-auto" style={{ borderTop: '1px solid var(--color-line)' }}>
+        <div
+          className="max-w-5xl mx-auto flex flex-wrap justify-between gap-4 text-sm"
+          style={{ color: 'var(--color-on-surface-variant)' }}
+        >
+          <span>
+            HRP — Hệ thống quản trị cung ứng nhân lực ·{' '}
+            <strong style={{ color: 'var(--color-on-surface)' }}>v4.22</strong> · 18/08/2026
+          </span>
+          <span>
+            Dựng từ{' '}
+            <a
+              href="/docs/UNIFIED_PLAN_v4.md"
+              className="font-semibold hover:underline"
+              style={{ color: 'var(--color-primary-dark)' }}
+            >
+              UNIFIED_PLAN_v4.md
+            </a>{' '}
+            ·{' '}
+            <a
+              href="mailto:contact@hrpartner.vn"
+              className="font-semibold hover:underline"
+              style={{ color: 'var(--color-primary-dark)' }}
+            >
+              Liên hệ
+            </a>
+          </span>
+        </div>
+      </footer>
+
+    </div>
+  );
+}

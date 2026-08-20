@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 // ─── API Types ───────────────────────────────────────────────────────────────
 
@@ -384,6 +384,11 @@ export default function JobsPage() {
   const [appliedIds, setAppliedIds] = useState<string[]>([]);
   const [successCode, setSuccessCode] = useState('');
 
+  // Infinite scroll state
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     setFetchError('');
@@ -393,6 +398,7 @@ export default function JobsPage() {
       const data = await res.json();
       const apiJobs: ApiJob[] = Array.isArray(data.jobs) ? data.jobs : [];
       setJobs(apiJobs.map(enrichJob));
+      setHasMore(false); // API doesn't support pagination yet
     } catch (e) {
       setFetchError(e instanceof Error ? e.message : 'Không thể tải danh sách việc làm');
     } finally {
@@ -403,6 +409,25 @@ export default function JobsPage() {
   useEffect(() => {
     fetchJobs();
   }, [fetchJobs]);
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore && !loadingMore && !loading) {
+          setLoadingMore(true);
+          setTimeout(() => setLoadingMore(false), 800);
+        }
+      },
+      { rootMargin: '200px' },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, loading]);
 
   const toggleCheckbox = (
     value: string,
@@ -683,16 +708,26 @@ export default function JobsPage() {
               </div>
             )}
 
-            {/* Load more spinner */}
-            <div className="flex flex-col items-center justify-center py-6 gap-3 w-full">
-              <div
-                className="w-8 h-8 border-4 rounded-full animate-spin"
-                style={{ borderColor: 'rgba(242, 101, 34, 0.3)', borderTopColor: 'var(--color-primary)' }}
-              />
-              <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-                Đang tải thêm việc làm...
-              </p>
-            </div>
+            {/* Load more / end state */}
+            {!loading && !fetchError && filteredJobs.length > 0 && (
+              <div className="flex flex-col items-center justify-center py-6 gap-3 w-full" ref={sentinelRef}>
+                {loadingMore ? (
+                  <>
+                    <div
+                      className="w-8 h-8 border-4 rounded-full animate-spin"
+                      style={{ borderColor: 'rgba(242, 101, 34, 0.3)', borderTopColor: 'var(--color-primary)' }}
+                    />
+                    <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+                      Đang tải thêm việc làm...
+                    </p>
+                  </>
+                ) : !hasMore ? (
+                  <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+                    Đã xem toàn bộ danh sách
+                  </p>
+                ) : null}
+              </div>
+            )}
           </>
         )}
       </div>
