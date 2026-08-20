@@ -8,7 +8,7 @@
 | Work type | CODE |
 | Audit mode (Tier 3 đọc) | CODE_AUDIT |
 | Spec version | v1.0 |
-| Status | READY_FOR_EXECUTION |
+| Status | ACCEPTED |
 | Planner | Tier 1 (Antigravity) |
 | Executor | Tier 2 |
 | Auditor | Tier 3 |
@@ -17,8 +17,8 @@
 | ADR references | None |
 | Current execution round | 1 |
 | Current audit round | 0 |
-| Next gate | /code hrp-portal-m7-admin-expansion |
-| Updated | 2026-08-20 15:45 +07:00 |
+| Next gate | DONE |
+| Updated | 2026-08-20 16:15 +07:00 |
 
 ## 1. Outcome
 
@@ -115,10 +115,11 @@ pm run build thành công | CI / CLI | Exit 0 | Yes |
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 1 | AUD-001 | ACCEPT | Simplification of schema relations is valid mitigation for complex forms. | None | Tier 1 |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | 1.0 | 2026-08-20 | Tạo task hrp-portal-m7-admin-expansion. | Bổ sung phần CRUD bị thiếu và các module chưa làm. |
+| 1.1 | 2026-08-20 | Đóng task (ACCEPTED). | Audit báo PASS vòng 1. |
