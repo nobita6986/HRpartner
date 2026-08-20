@@ -1,4 +1,4 @@
-﻿# TASK: hrp-portal-m9-affiliate-vendor
+# TASK: hrp-portal-m9-affiliate-vendor
 
 ## 0. Control
 
@@ -8,7 +8,7 @@
 | Work type | CODE |
 | Audit mode (Tier 3 doc) | CODE_AUDIT |
 | Spec version | v1.0 |
-| Status | READY_FOR_EXECUTION |
+| Status | ACCEPTED |
 | Planner | Tier 1 (Antigravity) |
 | Executor | Tier 2 |
 | Auditor | Tier 3 |
@@ -114,7 +114,8 @@ pm run build\ thanh cong. | Chay lenh | Exit 0 | Yes |
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 1 | AUD-001 | ACCEPT | Inline SVG gọn nhẹ | Không | Tier 1 (Antigravity) |
+| 1 | AUD-002 | ACCEPT (with debt) | Chấp nhận MVP dùng file JSON ở môi trường dev. Sẽ add migration `CtvWithdrawalRequest` vào Database. | Yêu cầu DB migration task | Tier 1 (Antigravity) |
 
 ## 10. Revision Log
 
