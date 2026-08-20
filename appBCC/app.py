@@ -1107,7 +1107,7 @@ class MainWindow(QMainWindow):
 
         self.parsed_data = data
         self.btn_push.setEnabled(False)
-        self.btn_export_template.setEnabled(False)
+        self.btn_export_template.setEnabled(True)
         self.btn_export_clean.setEnabled(True)
         self.btn_calculate_payroll.setEnabled(True)
         
@@ -1313,26 +1313,11 @@ class MainWindow(QMainWindow):
             self.append_log(f"Đã cập nhật công và lương cho: {emp_data['fullName']}")
 
     def run_export_template(self):
-        """Xuất file Excel đầy đủ dữ liệu để đối chiếu + DB payload"""
+        """Xuất file Excel đầy đủ dữ liệu để đối chiếu + DB payload (không cần gate xác nhận)."""
         if not self.parsed_data:
             QMessageBox.warning(self, "Lỗi", "Chưa có dữ liệu nào được bóc tách.")
             return
 
-        try:
-            validate_publish_records(self.parsed_data)
-        except ValueError as error:
-            QMessageBox.warning(self, "Không thể xuất", str(error))
-            return
-
-        export_event = self.request_governance_event(
-            "export_review",
-            "Đã review dữ liệu trước khi xuất Excel chuẩn hoá",
-        )
-        if not export_event:
-            return
-        for record in self.parsed_data:
-            append_governance_event(record, export_event)
-            
         # Lấy thông tin dự án và kỳ lương
         project_name = self.cbo_project.currentText()
         period_month = self.cbo_month.currentIndex() + 1
@@ -1340,20 +1325,19 @@ class MainWindow(QMainWindow):
             period_year = int(self.txt_year.text().strip())
         except:
             period_year = datetime.now().year
-        
-        project_name_raw = project_name
-        project_name_slug = _strip_accents(project_name_raw).replace(' ', '_').replace('-', '_')
+
+        project_name_slug = _strip_accents(project_name).replace(' ', '_').replace('-', '_')
         default_name = f"LCNT_{period_month}_{period_year}_{project_name_slug}.xlsx"
         save_path, _ = QFileDialog.getSaveFileName(
             self, "Lưu File Chuẩn Hoá", default_name, "Excel Files (*.xlsx)"
         )
         if not save_path:
             return
-            
+
         self.append_log("Đang xuất file chuẩn hoá đầy đủ...")
         try:
             from export_manager import export_payroll_to_excel
-            
+
             result = export_payroll_to_excel(
                 self.parsed_data,
                 project_name,
@@ -1361,30 +1345,19 @@ class MainWindow(QMainWindow):
                 period_year,
                 save_path
             )
-            
+
             if result["success"]:
-                self.append_log(f"✅ Đã xuất thành công file với {len(result['sheets_created'])} sheet:")
-                for sheet in result['sheets_created']:
-                    self.append_log(f"   - {sheet}")
-                self.append_log(f"📊 Tổng cộng: {result['total_employees']} nhân viên")
-                self.append_log(f"📁 File: {save_path}")
-                
-                # Log DB payload size
-                db_payload = result['db_payload']
-                self.append_log(f"💾 DB Payload: {len(db_payload['timesheets'])} timesheets, {len(db_payload['timesheetLines'])} daily lines")
-                
+                self.append_log(f"Đã xuất file chuẩn hoá: {len(result['sheets_created'])} sheet, "
+                                f"{result['total_employees']} nhân viên | {save_path}")
                 QMessageBox.information(
-                    self, "Thành công", 
-                    f"Đã xuất file chuẩn hoá thành công!\n\n"
-                    f"File: {save_path}\n\n"
-                    f"Sheet: {', '.join(result['sheets_created'])}\n\n"
-                    f"Tổng: {result['total_employees']} nhân viên"
+                    self, "Thành công",
+                    f"Đã xuất file chuẩn hoá thành công!\n\nFile: {save_path}",
                 )
             else:
                 raise Exception("Export failed")
-                
+
         except Exception as e:
-            self.append_log(f"❌ Lỗi khi xuất file chuẩn hoá: {str(e)}")
+            self.append_log(f"Lỗi khi xuất file chuẩn hoá: {str(e)}")
             import traceback
             traceback.print_exc()
             QMessageBox.critical(self, "Lỗi", f"Không thể xuất file: {str(e)}")

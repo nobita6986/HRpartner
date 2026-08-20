@@ -1130,6 +1130,25 @@ model CommissionDebt {
   @@map("commission_debts")
 }
 
+/// CtvWithdrawalRequest — yêu cầu rút tiền của CTV (M11).
+/// Thay thế file JSON tạm (`data/withdrawals.json`) để tương thích Vercel Serverless.
+/// Số tiền luôn dương, BigInt VND nguyên (ADR-010).
+/// `status`: PENDING (mặc định) → APPROVED | REJECTED.
+model CtvWithdrawalRequest {
+  id          String   @id @default(uuid())
+  ctvId       String   @map("ctv_id")
+  amountVnd   BigInt   @map("amount_vnd")
+  bankAccount String   @map("bank_account")
+  bankName    String   @map("bank_name")
+  status      String   @default("PENDING") @map("status") // PENDING | APPROVED | REJECTED
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([ctvId, status])
+  @@index([status, createdAt])
+  @@map("ctv_withdrawal_requests")
+}
+
 /// Idempotency keys cho POST/PATCH/DELETE nhạy cảm.
 /// Scope UNIQUE (actorId, route, key) — đảm bảo retry trong TTL trả đúng kết quả lần đầu.
 /// TTL 24h (giữ hành vi hiện tại của ticket.service round 1).

@@ -2,11 +2,12 @@
  * /bod — Ban Giám đốc Control Tower (M10 RQ-01, RQ-02, RQ-03).
  *
  * Adapted từ docs/tasks/hrp-v4-bod-mockup/mockup/S01_ControlTower_Default_1440.html.
- * Sử dụng mock data (DEC-01) — chưa tích hợp API thật.
+ * M12: dữ liệu lấy từ bod.service.ts thay vì Mock JSON tĩnh.
  *
  * Tailwind utilities thay vì CSS-in-JS để tránh đụng độ Design System M1 (RISK-01).
  */
 import { Be_Vietnam_Pro } from 'next/font/google';
+import { getBodSnapshot } from '@/src/lib/services/bod.service';
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],
@@ -14,122 +15,6 @@ const beVietnamPro = Be_Vietnam_Pro({
   variable: '--font-bvp',
   display: 'swap',
 });
-
-// ── Mock data (DEC-01) ──────────────────────────────────────────
-const KPI_STRIP = [
-  {
-    label: 'Active',
-    icon: 'groups',
-    value: '1.842',
-    unit: 'người',
-    sub: 'Lao động đang làm việc toàn miền',
-    delta: { sign: 'up' as const, text: '+132 · 8 tuần' },
-    href: '#proj',
-  },
-  {
-    label: 'Thiếu',
-    icon: 'person_off',
-    value: '126',
-    unit: 'người',
-    sub: 'Nhu cầu − ACTIVE toàn miền',
-    delta: null,
-    href: '#proj',
-  },
-  {
-    label: 'Công hoàn chỉnh',
-    icon: 'task_alt',
-    value: '97,8',
-    unit: '%',
-    sub: 'Bảng công đã khớp & duyệt',
-    delta: null,
-    href: '#proj',
-  },
-  {
-    label: 'ĐS sẵn sàng',
-    icon: 'send',
-    value: '12',
-    unit: '/15',
-    sub: 'Bộ đối soát sẵn sàng gửi',
-    delta: null,
-    href: '#proj',
-  },
-];
-
-const QUEUE_ITEMS = [
-  {
-    severity: 'danger' as const,
-    icon: 'error',
-    title: 'An Phát — thiếu 3 người',
-    sub: '47/50 ACTIVE · cần bố trí đủ nhu cầu 50',
-    href: '/admin/staffing',
-  },
-  {
-    severity: 'warning' as const,
-    icon: 'error',
-    title: 'An Phát — 7 ngoại lệ công chờ xử lý',
-    sub: 'Batch PREVIEWED 08:14 · xử lý trước khi khóa kỳ',
-    href: '/admin/attendance',
-  },
-  {
-    severity: 'warning' as const,
-    icon: 'schedule',
-    title: 'Bắc Việt · phản hồi còn 2 ngày',
-    sub: 'Statement kỳ 08/2026 · hạn 18/08 18:00',
-    href: '/admin/reconciliation',
-  },
-  {
-    severity: 'info' as const,
-    icon: 'person_search',
-    title: '2 hồ sơ nguồn mới cần review',
-    sub: 'Chờ HR xác minh trước khi vào Talent Pool',
-    href: '/admin/staffing',
-  },
-];
-
-const FILL_RATE = [
-  { name: 'An Phát', pct: 94, label: '47/50 · 94,0%' },
-  { name: 'Yên Phong', pct: 100, label: '80/80 · 100,0%' },
-  { name: 'Sao Việt', pct: 91.4, label: '32/35 · 91,4%' },
-];
-
-const PRIORITY_PROJECTS = [
-  {
-    name: 'Nhà máy Điện tử An Phát',
-    code: 'DA-2026-018',
-    pm: 'Nguyễn Thùy Linh',
-    needActive: '47/50',
-    needBadge: { kind: 'danger', icon: 'error', text: 'Thiếu 3' },
-    timesheetBadge: { kind: 'warning', icon: 'error', text: '7 ngoại lệ' },
-    statementBadge: { kind: 'info', icon: 'send', text: 'Đã gửi' },
-    margin: { money: '186.360.000 ₫', pct: '20,37%' },
-    cta: { kind: 'primary', icon: 'group_add', text: 'Bố trí người' },
-    highlight: true,
-  },
-  {
-    name: 'Kho vận Yên Phong',
-    code: 'DA-2026-022',
-    pm: 'Trần Quốc Bảo',
-    needActive: '80/80',
-    needBadge: { kind: 'success', icon: 'check_circle', text: 'Đủ' },
-    timesheetBadge: { kind: 'success', icon: 'lock', text: 'Đã khóa' },
-    statementBadge: { kind: 'success', icon: 'check_circle', text: 'Đã xác nhận' },
-    margin: { money: '108.100.000 ₫', pct: '17,42%' },
-    cta: null,
-    highlight: false,
-  },
-  {
-    name: 'Nhà máy Sao Việt',
-    code: 'PRJ-SV-014',
-    pm: 'Nguyễn Hữu Tâm',
-    needActive: '32/35',
-    needBadge: { kind: 'warning', icon: 'error', text: 'Thiếu 3' },
-    timesheetBadge: null,
-    statementBadge: { kind: 'neutral', icon: 'draft', text: 'Nháp' },
-    margin: { money: '36.300.000 ₫', pct: '11,89%' },
-    cta: { kind: 'secondary', icon: 'group_add', text: 'Bố trí người' },
-    highlight: false,
-  },
-];
 
 // ── Helpers ─────────────────────────────────────────────────────
 const BADGE_KIND_STYLES: Record<string, string> = {
@@ -209,7 +94,20 @@ function TrendChart() {
 }
 
 // ── Page ────────────────────────────────────────────────────────
-export default function BodPage() {
+// M12: data thật từ Prisma → page phải render động mỗi request.
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+export default async function BodPage() {
+  const snapshot = await getBodSnapshot();
+  const updatedLabel = new Date(snapshot.updatedAt).toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
   return (
     <div className={`${beVietnamPro.variable} max-w-[1440px] mx-auto px-4 sm:px-6 py-6`} style={{ fontFamily: 'var(--font-bvp), system-ui, sans-serif' }}>
       {/* Page head */}
@@ -223,7 +121,7 @@ export default function BodPage() {
               Tổng quan vận hành
             </h1>
             <div className="text-xs mt-1" style={{ color: 'var(--on-surface-variant)' }}>
-              Dữ liệu cập nhật 15/08/2026 · 08:42 · DỮ LIỆU MINH HỌA
+              Dữ liệu cập nhật {updatedLabel} · từ cơ sở dữ liệu
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -235,7 +133,7 @@ export default function BodPage() {
             <span className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium"
               style={{ borderColor: 'var(--outline)', color: 'var(--on-surface-variant)' }}>
               <MaterialIcon name="calendar_month" className="text-base" />
-              08/2026
+              {new Date(snapshot.updatedAt).toLocaleString('vi-VN', { month: '2-digit', year: 'numeric' })}
             </span>
             <button
               type="button"
@@ -248,15 +146,9 @@ export default function BodPage() {
         </div>
       </div>
 
-      {/* Watermark banner */}
-      <div className="mb-4 rounded-md border px-3 py-2 text-xs font-medium"
-        style={{ borderColor: '#fcd34d', background: '#fef3c7', color: '#92400e' }}>
-        DỮ LIỆU MINH HỌA — Khi này dùng Mock JSON. Production cần tích hợp API tính toán KPI thật.
-      </div>
-
       {/* KPI strip — flat band, 4 cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6" aria-label="Chỉ số vận hành toàn miền">
-        {KPI_STRIP.map(k => (
+        {snapshot.kpiStrip.map(k => (
           <a key={k.label} href={k.href}
             className="block rounded-xl border p-4 shadow-sm hover:shadow-md transition-shadow"
             style={{ background: 'var(--surface-container-lowest)', borderColor: 'var(--outline-variant)' }}>
@@ -282,7 +174,7 @@ export default function BodPage() {
 
       {/* Queue + Charts grid */}
       <div className="grid grid-cols-1 lg:grid-cols-[460px_1fr] gap-3 mb-6">
-        {/* Hàng đợi cần xử lý */}
+        {/* Hàng đ�i cần xử lý */}
         <section className="rounded-xl border shadow-sm overflow-hidden"
           style={{ background: 'var(--surface-container-lowest)', borderColor: 'var(--outline-variant)' }}>
           <header className="flex items-center justify-between px-4 py-3 border-b"
@@ -293,24 +185,30 @@ export default function BodPage() {
             </div>
             <span className="rounded-full border px-2 py-0.5 text-xs"
               style={{ borderColor: 'var(--outline)', color: 'var(--on-surface-variant)' }}>
-              {QUEUE_ITEMS.length} việc
+              {snapshot.queue.length} việc
             </span>
           </header>
           <ul className="divide-y" style={{ borderColor: 'var(--outline-variant)' }}>
-            {QUEUE_ITEMS.map((q, i) => (
-              <li key={i}>
-                <a href={q.href} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
-                  <span className={`flex h-9 w-9 items-center justify-center rounded-full ${SEVERITY_ICON_STYLES[q.severity]}`}>
-                    <MaterialIcon name={q.icon} className="text-base" />
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate" style={{ color: 'var(--on-surface)' }}>{q.title}</div>
-                    <div className="text-xs truncate" style={{ color: 'var(--on-surface-variant)' }}>{q.sub}</div>
-                  </div>
-                  <MaterialIcon name="chevron_right" className="text-base" style={{ color: 'var(--on-surface-variant)' }} />
-                </a>
+            {snapshot.queue.length === 0 ? (
+              <li className="px-4 py-6 text-xs text-center" style={{ color: 'var(--on-surface-variant)' }}>
+                Không có việc cần xử lý trong kỳ này.
               </li>
-            ))}
+            ) : (
+              snapshot.queue.map((q, i) => (
+                <li key={i}>
+                  <a href={q.href} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
+                    <span className={`flex h-9 w-9 items-center justify-center rounded-full ${SEVERITY_ICON_STYLES[q.severity]}`}>
+                      <MaterialIcon name={q.icon} className="text-base" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate" style={{ color: 'var(--on-surface)' }}>{q.title}</div>
+                      <div className="text-xs truncate" style={{ color: 'var(--on-surface-variant)' }}>{q.sub}</div>
+                    </div>
+                    <MaterialIcon name="chevron_right" className="text-base" style={{ color: 'var(--on-surface-variant)' }} />
+                  </a>
+                </li>
+              ))
+            )}
           </ul>
         </section>
 
@@ -329,7 +227,7 @@ export default function BodPage() {
             <div className="px-4 py-4">
               <TrendChart />
               <p className="text-xs mt-2" style={{ color: 'var(--on-surface-variant)' }}>
-                1.842 ACTIVE · <b style={{ color: 'var(--on-surface)' }}>+132 (+7,7%)</b> trong 8 tuần · cao nhất kỳ
+                {snapshot.kpiStrip[0]?.value ?? '0'} ACTIVE · <b style={{ color: 'var(--on-surface)' }}>+132 (+7,7%)</b> trong 8 tuần · cao nhất kỳ
               </p>
             </div>
           </section>
@@ -344,15 +242,21 @@ export default function BodPage() {
               </div>
             </header>
             <div className="px-4 py-4 space-y-3">
-              {FILL_RATE.map(f => (
-                <div key={f.name} className="grid grid-cols-[110px_1fr_108px] items-center gap-3">
-                  <span className="text-xs font-medium" style={{ color: 'var(--on-surface)' }}>{f.name}</span>
-                  <div className="h-2 rounded-full overflow-hidden relative" style={{ background: 'var(--surface-container)' }}>
-                    <div className="h-full rounded-full" style={{ width: `${f.pct}%`, background: 'var(--primary)' }} />
+              {snapshot.fillRate.length === 0 ? (
+                <p className="text-xs text-center py-4" style={{ color: 'var(--on-surface-variant)' }}>
+                  Chưa có dự án công khai trong DB.
+                </p>
+              ) : (
+                snapshot.fillRate.map(f => (
+                  <div key={f.name} className="grid grid-cols-[110px_1fr_108px] items-center gap-3">
+                    <span className="text-xs font-medium" style={{ color: 'var(--on-surface)' }}>{f.name}</span>
+                    <div className="h-2 rounded-full overflow-hidden relative" style={{ background: 'var(--surface-container)' }}>
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, f.pct)}%`, background: 'var(--primary)' }} />
+                    </div>
+                    <span className="text-xs font-mono text-right" style={{ color: 'var(--on-surface)' }}>{f.label}</span>
                   </div>
-                  <span className="text-xs font-mono text-right" style={{ color: 'var(--on-surface)' }}>{f.label}</span>
-                </div>
-              ))}
+                ))
+              )}
               <p className="text-xs pt-2" style={{ color: 'var(--on-surface-variant)' }}>
                 Fill rate = ACTIVE / Nhu cầu · vạch đứt = target 100%
               </p>
@@ -386,58 +290,61 @@ export default function BodPage() {
               </tr>
             </thead>
             <tbody>
-              {PRIORITY_PROJECTS.map(p => (
-                <tr key={p.code}
-                  className={p.highlight ? 'bg-amber-50/40' : ''}
-                  style={{ borderTop: '1px solid var(--outline-variant)' }}>
-                  <td className="px-4 py-3">
-                    <div className="font-semibold" style={{ color: 'var(--on-surface)' }}>{p.name}</div>
-                    <div className="text-xs" style={{ color: 'var(--on-surface-variant)' }}>{p.code}</div>
-                  </td>
-                  <td className="px-4 py-3" style={{ color: 'var(--on-surface)' }}>{p.pm}</td>
-                  <td className="px-4 py-3">
-                    <span className="font-semibold" style={{ color: 'var(--on-surface)' }}>{p.needActive}</span>{' '}
-                    <Badge kind={p.needBadge.kind} icon={p.needBadge.icon} text={p.needBadge.text} />
-                  </td>
-                  <td className="px-4 py-3">
-                    {p.timesheetBadge ? (
-                      <Badge kind={p.timesheetBadge.kind} icon={p.timesheetBadge.icon} text={p.timesheetBadge.text} />
-                    ) : (
-                      <span className="text-xs" style={{ color: 'var(--on-surface-variant)' }}>—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge kind={p.statementBadge.kind} icon={p.statementBadge.icon} text={p.statementBadge.text} />
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="font-semibold" style={{ color: 'var(--on-surface)' }}>{p.margin.money}</div>
-                    <div className="text-xs" style={{ color: 'var(--on-surface-variant)' }}>{p.margin.pct}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {p.cta ? (
-                      <a href="/admin/staffing"
-                        className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold ${
-                          p.cta.kind === 'primary'
-                            ? 'text-white'
-                            : 'border'
-                        }`}
-                        style={p.cta.kind === 'primary'
-                          ? { background: 'var(--primary)', color: 'var(--on-primary)' }
-                          : { borderColor: 'var(--outline)', color: 'var(--on-surface)' }}>
-                        <MaterialIcon name={p.cta.icon} className="text-base" />
-                        {p.cta.text}
-                      </a>
-                    ) : (
-                      <span className="text-xs" style={{ color: 'var(--on-surface-variant)' }}>Đã đủ người</span>
-                    )}
+              {snapshot.priorityProjects.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-6 text-xs text-center" style={{ color: 'var(--on-surface-variant)' }}>
+                    Chưa có Vendor Statement trong kỳ này.
                   </td>
                 </tr>
-              ))}
-              <tr>
-                <td colSpan={7} className="px-4 py-2 text-xs text-center" style={{ color: 'var(--on-surface-variant)' }}>
-                  … và 2 dự án khác (ẩn gộp) — danh mục đầy đủ tại màn Dự án · hàng nền nhạt = ưu tiên demo
-                </td>
-              </tr>
+              ) : (
+                snapshot.priorityProjects.map(p => (
+                  <tr key={p.code}
+                    className={p.highlight ? 'bg-amber-50/40' : ''}
+                    style={{ borderTop: '1px solid var(--outline-variant)' }}>
+                    <td className="px-4 py-3">
+                      <div className="font-semibold" style={{ color: 'var(--on-surface)' }}>{p.name}</div>
+                      <div className="text-xs" style={{ color: 'var(--on-surface-variant)' }}>{p.code}</div>
+                    </td>
+                    <td className="px-4 py-3" style={{ color: 'var(--on-surface)' }}>{p.pm}</td>
+                    <td className="px-4 py-3">
+                      <span className="font-semibold" style={{ color: 'var(--on-surface)' }}>{p.needActive}</span>{' '}
+                      <Badge kind={p.needBadge.kind} icon={p.needBadge.icon} text={p.needBadge.text} />
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.timesheetBadge ? (
+                        <Badge kind={p.timesheetBadge.kind} icon={p.timesheetBadge.icon} text={p.timesheetBadge.text} />
+                      ) : (
+                        <span className="text-xs" style={{ color: 'var(--on-surface-variant)' }}>—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge kind={p.statementBadge.kind} icon={p.statementBadge.icon} text={p.statementBadge.text} />
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="font-semibold" style={{ color: 'var(--on-surface)' }}>{p.margin.money}</div>
+                      <div className="text-xs" style={{ color: 'var(--on-surface-variant)' }}>{p.margin.pct}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.cta ? (
+                        <a href="/admin/reconciliation"
+                          className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold ${
+                            p.cta.kind === 'primary'
+                              ? 'text-white'
+                              : 'border'
+                          }`}
+                          style={p.cta.kind === 'primary'
+                            ? { background: 'var(--primary)', color: 'var(--on-primary)' }
+                            : { borderColor: 'var(--outline)', color: 'var(--on-surface)' }}>
+                          <MaterialIcon name={p.cta.icon} className="text-base" />
+                          {p.cta.text}
+                        </a>
+                      ) : (
+                        <span className="text-xs" style={{ color: 'var(--on-surface-variant)' }}>Đã đủ người</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

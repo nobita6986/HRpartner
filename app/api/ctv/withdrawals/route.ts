@@ -1,41 +1,13 @@
 /**
- * POST /api/ctv/withdrawals — M9 RQ-02
- * CTV tạo yêu cầu rút tiền.
- * MVP: Lưu vào JSON file. Production: cần migration CtvWithdrawalRequest.
+ * POST /api/ctv/withdrawals — M11 (refactor M9 RQ-02).
+ * CTV tạo yêu cầu rút tiền. Lưu vào DB qua Prisma thay vì file JSON.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { getPrisma } from '@/src/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-interface WithdrawalRecord {
-  id: string;
-  ctvId: string;
-  amountVnd: number;
-  bankAccount: string;
-  bankName: string;
-  status: string;
-  createdAt: string;
-}
-
-const STORE_PATH = path.join(process.cwd(), 'data', 'withdrawals.json');
-
-async function readStore(): Promise<WithdrawalRecord[]> {
-  try {
-    const raw = await fs.readFile(STORE_PATH, 'utf-8');
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
-async function writeStore(records: WithdrawalRecord[]): Promise<void> {
-  await fs.mkdir(path.dirname(STORE_PATH), { recursive: true });
-  await fs.writeFile(STORE_PATH, JSON.stringify(records, null, 2), 'utf-8');
-}
 
 export async function POST(req: NextRequest) {
   let ctx;
@@ -64,7 +36,8 @@ export async function POST(req: NextRequest) {
 
   const { amountVnd, bankAccount, bankName } = body;
 
-  if (!amountVnd || Number(amountVnd) <= 0) {
+  const amountBig = typeof amountVnd === 'bigint' ? amountVnd : BigInt(Number(amountVnd) || 0);
+  if (amountBig <= 0n) {
     return NextResponse.json(
       { error: 'VALIDATION', message: 'amountVnd phải lớn hơn 0.' },
       { status: 400 },
@@ -78,26 +51,38 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const record: WithdrawalRecord = {
-    id: crypto.randomUUID(),
-    ctvId: ctx.userId,
-    amountVnd: Number(amountVnd),
-    bankAccount,
-    bankName,
-    status: 'PENDING',
-    createdAt: new Date().toISOString(),
-  };
+  const prisma = getPrisma();
+  const created = await prisma.ctvWithdrawalRequest.create({
+    data: {
+      ctvId: ctx.userId,
+      amountVnd: amountBig,
+      bankAccount: String(bankAccount),
+      bankName: String(bankName),
+      status: 'PENDING',
+    },
+    select: {
+      id: true,
+      ctvId: true,
+      amountVnd: true,
+      bankAccount: true,
+      bankName: true,
+      status: true,
+      createdAt: true,
+    },
+  });
 
-  const store = await readStore();
-  store.push(record);
-  await writeStore(store);
+  console.log(`[withdrawals] New withdrawal: ${created.id} for CTV ${ctx.userId}, amount ${created.amountVnd}`);
 
-  console.log(`[withdrawals] New withdrawal: ${record.id} for CTV ${ctx.userId}, amount ${amountVnd}`);
-
-  return NextResponse.json({
-    withdrawal: record,
-    note: 'MVP: Lưu vào JSON. Production cần migration CtvWithdrawalRequest.',
-  }, { status: 201 });
+  return NextResponse.json(
+    {
+      withdrawal: {
+        ...created,
+        amountVnd: created.amountVnd.toString(),
+        createdAt: created.createdAt.toISOString(),
+      },
+    },
+    { status: 201 },
+  );
 }
 
 /**
@@ -118,8 +103,26 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 
-  const store = await readStore();
-  const items = store.filter(r => r.ctvId === ctx.userId);
+  const prisma = getPrisma();
+  const records = await prisma.ctvWithdrawalRequest.findMany({
+    where: { ctvId: ctx.userId },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      ctvId: true,
+      amountVnd: true,
+      bankAccount: true,
+      bankName: true,
+      status: true,
+      createdAt: true,
+    },
+  });
+
+  const items = records.map((r) => ({
+    ...r,
+    amountVnd: r.amountVnd.toString(),
+    createdAt: r.createdAt.toISOString(),
+  }));
 
   return NextResponse.json({ items });
 }
