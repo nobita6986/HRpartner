@@ -8,7 +8,7 @@
 | Work type | INFRA |
 | Audit mode (Tier 3 đọc) | INFRA_AUDIT |
 | Spec version | v1.0 |
-| Status | READY_FOR_EXECUTION |
+| Status | ACCEPTED |
 | Planner | Tier 1 (Antigravity) |
 | Executor | Tier 2 |
 | Auditor | Tier 3 |
@@ -96,7 +96,7 @@
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 1 | N/A | ACCEPT | Script chạy thành công, query DB không còn lỗi 42501. | Không | Tier 1 |
 
 ## 10. Revision Log
 
