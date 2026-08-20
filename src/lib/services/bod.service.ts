@@ -64,23 +64,9 @@ function currentPeriod(): { month: number; year: number } {
   return { month: now.getUTCMonth() + 1, year: now.getUTCFullYear() };
 }
 
-function formatThousands(n: number): string {
-  return n.toLocaleString('vi-VN');
-}
-
 function formatVnd(amount: bigint | number): string {
   const v = typeof amount === 'bigint' ? amount : BigInt(amount);
   return `${v.toLocaleString('vi-VN')} ₫`;
-}
-
-function severityKind(status: string, lockedAt: Date | null, sentAt: Date | null): {
-  badge: { kind: 'danger' | 'warning' | 'success' | 'info' | 'neutral'; icon: string; text: string };
-} {
-  if (status === 'PAID') return { badge: { kind: 'success', icon: 'check_circle', text: 'Đã thanh toán' } };
-  if (status === 'CONFIRMED' || status === 'LOCKED') return { badge: { kind: 'success', icon: 'check_circle', text: 'Đã xác nhận' } };
-  if (status === 'SENT') return { badge: { kind: 'info', icon: 'send', text: 'Đã gửi' } };
-  if (status === 'DISPUTED') return { badge: { kind: 'warning', icon: 'error', text: 'Đang tranh chấp' } };
-  return { badge: { kind: 'neutral', icon: 'draft', text: 'Nháp' } };
 }
 
 // ── Aggregation queries ─────────────────────────────────────────
@@ -93,21 +79,26 @@ export const getHeadcount = cache(async (): Promise<{
   needTotal: number;
   deltaText: string | null;
 }> => {
-  const prisma = getPrisma();
-  const [activeAssignments, totalNeededAgg] = await Promise.all([
-    prisma.projectAssignment.count({ where: { status: 'ACTIVE' } }),
-    prisma.staffingOrderSlot.aggregate({
-      _sum: { slotsNeeded: true },
-      where: { validTo: null },
-    }),
-  ]);
-  const need = totalNeededAgg._sum.slotsNeeded ?? 0;
-  const delta = activeAssignments >= 1500 ? `+${Math.round(activeAssignments * 0.07)} · 8 tuần` : null;
-  return {
-    active: activeAssignments,
-    needTotal: need,
-    deltaText: delta,
-  };
+  try {
+    const prisma = getPrisma();
+    const [activeAssignments, totalNeededAgg] = await Promise.all([
+      prisma.projectAssignment.count({ where: { status: 'ACTIVE' } }),
+      prisma.staffingOrderSlot.aggregate({
+        _sum: { slotsNeeded: true },
+        where: { validTo: null },
+      }),
+    ]);
+    const need = totalNeededAgg._sum.slotsNeeded ?? 0;
+    const delta = activeAssignments >= 1500 ? `+${Math.round(activeAssignments * 0.07)} · 8 tuần` : null;
+    return {
+      active: activeAssignments,
+      needTotal: need,
+      deltaText: delta,
+    };
+  } catch (err) {
+    console.error('[bod] getHeadcount failed, fallback 0:', (err as Error).message);
+    return { active: 0, needTotal: 0, deltaText: null };
+  }
 });
 
 /**
@@ -120,42 +111,52 @@ export const getFinance = cache(async (period: { month: number; year: number }):
   readyStatements: number;
   totalStatements: number;
 }> => {
-  const prisma = getPrisma();
-  const [vendorAgg, commissionAgg, readyCount, totalCount] = await Promise.all([
-    prisma.vendorStatement.aggregate({
-      _sum: { totalAmount: true },
-      where: {
-        periodMonth: period.month,
-        periodYear: period.year,
-        status: { in: ['CONFIRMED', 'LOCKED', 'PAID'] },
-      },
-    }),
-    prisma.commissionLedger.aggregate({
-      _sum: { amount: true },
-      where: {
-        month: period.month,
-        year: period.year,
-        status: { in: ['APPROVED', 'PAID'] },
-        direction: 'CREDIT',
-      },
-    }),
-    prisma.vendorStatement.count({
-      where: {
-        periodMonth: period.month,
-        periodYear: period.year,
-        status: { in: ['CONFIRMED', 'LOCKED', 'PAID'] },
-      },
-    }),
-    prisma.vendorStatement.count({
-      where: { periodMonth: period.month, periodYear: period.year },
-    }),
-  ]);
-  return {
-    vendorTotalVnd: vendorAgg._sum.totalAmount ?? BigInt(0),
-    commissionTotalVnd: commissionAgg._sum.amount ?? BigInt(0),
-    readyStatements: readyCount,
-    totalStatements: totalCount,
-  };
+  try {
+    const prisma = getPrisma();
+    const [vendorAgg, commissionAgg, readyCount, totalCount] = await Promise.all([
+      prisma.vendorStatement.aggregate({
+        _sum: { totalAmount: true },
+        where: {
+          periodMonth: period.month,
+          periodYear: period.year,
+          status: { in: ['CONFIRMED', 'LOCKED', 'PAID'] },
+        },
+      }),
+      prisma.commissionLedger.aggregate({
+        _sum: { amount: true },
+        where: {
+          month: period.month,
+          year: period.year,
+          status: { in: ['APPROVED', 'PAID'] },
+          direction: 'CREDIT',
+        },
+      }),
+      prisma.vendorStatement.count({
+        where: {
+          periodMonth: period.month,
+          periodYear: period.year,
+          status: { in: ['CONFIRMED', 'LOCKED', 'PAID'] },
+        },
+      }),
+      prisma.vendorStatement.count({
+        where: { periodMonth: period.month, periodYear: period.year },
+      }),
+    ]);
+    return {
+      vendorTotalVnd: vendorAgg._sum.totalAmount ?? BigInt(0),
+      commissionTotalVnd: commissionAgg._sum.amount ?? BigInt(0),
+      readyStatements: readyCount,
+      totalStatements: totalCount,
+    };
+  } catch (err) {
+    console.error('[bod] getFinance failed, fallback 0:', (err as Error).message);
+    return {
+      vendorTotalVnd: BigInt(0),
+      commissionTotalVnd: BigInt(0),
+      readyStatements: 0,
+      totalStatements: 0,
+    };
+  }
 });
 
 /**
@@ -166,138 +167,209 @@ export const getPipeline = cache(async (): Promise<{
   accepted: number;
   acceptanceRatioPct: number;
 }> => {
-  const prisma = getPrisma();
-  const [submitted, accepted] = await Promise.all([
-    prisma.candidateSubmission.count(),
-    prisma.sourceClaim.count({ where: { accepted: true } }),
-  ]);
-  const ratio = submitted === 0 ? 0 : Math.round((accepted / submitted) * 1000) / 10;
-  return { submitted, accepted, acceptanceRatioPct: ratio };
+  try {
+    const prisma = getPrisma();
+    const [submitted, accepted] = await Promise.all([
+      prisma.candidateSubmission.count(),
+      prisma.sourceClaim.count({ where: { accepted: true } }),
+    ]);
+    const ratio = submitted === 0 ? 0 : Math.round((accepted / submitted) * 1000) / 10;
+    return { submitted, accepted, acceptanceRatioPct: ratio };
+  } catch (err) {
+    console.error('[bod] getPipeline failed, fallback 0:', (err as Error).message);
+    return { submitted: 0, accepted: 0, acceptanceRatioPct: 0 };
+  }
 });
 
 /**
  * Fill rate per project — ACTIVE assignments vs total slot headcount.
  */
 async function getFillRateRows(): Promise<FillRateRow[]> {
-  const prisma = getPrisma();
-  const projects = await prisma.project.findMany({
-    where: { isPublic: true },
-    take: 5,
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      name: true,
-      staffingOrders: {
-        select: {
-          slots: { select: { slotsNeeded: true, slotsFilled: true } },
+  try {
+    const prisma = getPrisma();
+    const projects = await prisma.project.findMany({
+      where: { isPublic: true },
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        staffingOrders: {
+          select: {
+            slots: { select: { slotsNeeded: true, slotsFilled: true } },
+          },
+        },
+        assignments: {
+          where: { status: 'ACTIVE' },
+          select: { id: true },
         },
       },
-      assignments: {
-        where: { status: 'ACTIVE' },
-        select: { id: true },
-      },
-    },
-  });
-  if (projects.length === 0) return [];
-  return projects.map((p) => {
-    let total = 0;
-    let filled = 0;
-    for (const o of p.staffingOrders) {
-      for (const s of o.slots) {
-        total += s.slotsNeeded;
-        filled += s.slotsFilled;
+    });
+    if (projects.length === 0) return [];
+    return projects.map((p) => {
+      let total = 0;
+      let filled = 0;
+      for (const o of p.staffingOrders) {
+        for (const s of o.slots) {
+          total += s.slotsNeeded ?? 0;
+          filled += s.slotsFilled ?? 0;
+        }
       }
-    }
-    const active = p.assignments.length;
-    const pct = total === 0 ? 0 : Math.round((active / total) * 1000) / 10;
-    return {
-      name: p.name,
-      pct,
-      label: `${active}/${total} · ${pct.toLocaleString('vi-VN', { minimumFractionDigits: 1 })}%`,
-    };
-  });
+      const active = p.assignments.length;
+      const pct = total === 0 ? 0 : Math.round((active / total) * 1000) / 10;
+      return {
+        name: p.name,
+        pct,
+        label: `${active}/${total} · ${pct.toLocaleString('vi-VN', { minimumFractionDigits: 1 })}%`,
+      };
+    });
+  } catch (err) {
+    console.error('[bod] getFillRateRows failed, fallback []:', (err as Error).message);
+    return [];
+  }
 }
 
 /**
  * Hàng đ�i cần xử lý — statements chưa gửi + assignments có vấn đề.
  */
 async function getQueue(): Promise<QueueItem[]> {
-  const prisma = getPrisma();
-  const period = currentPeriod();
-  const [draftStatements, sentStatements] = await Promise.all([
-    prisma.vendorStatement.findMany({
-      where: { periodMonth: period.month, periodYear: period.year, status: 'DRAFT' },
-      take: 3,
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, vendorId: true },
-    }),
-    prisma.vendorStatement.findMany({
-      where: { periodMonth: period.month, periodYear: period.year, status: 'SENT' },
-      take: 2,
-      orderBy: { sentAt: 'desc' },
-      select: { id: true, vendorId: true },
-    }),
-  ]);
-  const queue: QueueItem[] = [];
-  for (const s of draftStatements) {
-    queue.push({
-      severity: 'warning',
-      icon: 'draft',
-      title: `Vendor statement nháp kỳ ${MONTH_LABELS[period.month - 1]}/${period.year}`,
-      sub: `Vendor ${s.vendorId.slice(0, 8)}… · cần gửi trước khi khóa kỳ`,
-      href: '/admin/reconciliation',
-    });
+  try {
+    const prisma = getPrisma();
+    const period = currentPeriod();
+    const [draftStatements, sentStatements] = await Promise.all([
+      prisma.vendorStatement.findMany({
+        where: { periodMonth: period.month, periodYear: period.year, status: 'DRAFT' },
+        take: 3,
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, vendorId: true },
+      }),
+      prisma.vendorStatement.findMany({
+        where: { periodMonth: period.month, periodYear: period.year, status: 'SENT' },
+        take: 2,
+        orderBy: { sentAt: 'desc' },
+        select: { id: true, vendorId: true },
+      }),
+    ]);
+    const queue: QueueItem[] = [];
+    for (const s of draftStatements) {
+      queue.push({
+        severity: 'warning',
+        icon: 'draft',
+        title: `Vendor statement nháp kỳ ${MONTH_LABELS[period.month - 1]}/${period.year}`,
+        sub: `Vendor ${s.vendorId.slice(0, 8)}… · cần gửi trước khi khóa kỳ`,
+        href: '/admin/reconciliation',
+      });
+    }
+    for (const s of sentStatements) {
+      queue.push({
+        severity: 'info',
+        icon: 'send',
+        title: `Vendor statement đã gửi · chờ xác nhận`,
+        sub: `Vendor ${s.vendorId.slice(0, 8)}… · kỳ ${MONTH_LABELS[period.month - 1]}/${period.year}`,
+        href: '/admin/reconciliation',
+      });
+    }
+    return queue;
+  } catch (err) {
+    console.error('[bod] getQueue failed, fallback []:', (err as Error).message);
+    return [];
   }
-  for (const s of sentStatements) {
-    queue.push({
-      severity: 'info',
-      icon: 'send',
-      title: `Vendor statement đã gửi · chờ xác nhận`,
-      sub: `Vendor ${s.vendorId.slice(0, 8)}… · kỳ ${MONTH_LABELS[period.month - 1]}/${period.year}`,
-      href: '/admin/reconciliation',
-    });
-  }
-  return queue;
 }
 
 /**
- * Priority projects — top theo margin (VendorStatement.totalAmount).
+ * Priority projects — top 3 dự án nội bộ theo quy mô (quota) hoặc ACTIVE assignments (DEC-02).
+ * RQ-02: lấy từ bảng Project (kết hợp ProjectAssignment ACTIVE), KHÔNG lấy từ VendorStatement.
  */
 async function getPriorityProjects(): Promise<PriorityProjectRow[]> {
-  const prisma = getPrisma();
-  const period = currentPeriod();
-  const statements = await prisma.vendorStatement.findMany({
-    where: { periodMonth: period.month, periodYear: period.year },
-    orderBy: { totalAmount: 'desc' },
-    take: 3,
-    select: {
-      id: true,
-      vendorId: true,
-      status: true,
-      totalAmount: true,
-      sentAt: true,
-      lockedAt: true,
-    },
-  });
-  if (statements.length === 0) return [];
-  return statements.map((s, idx) => {
-    const stmtSeverity = severityKind(s.status, s.lockedAt, s.sentAt);
-    const money = formatVnd(s.totalAmount);
-    return {
-      name: `Vendor ${s.vendorId.slice(0, 6)}`,
-      code: `STMT-${s.id.slice(0, 6).toUpperCase()}`,
-      pm: '—',
-      needActive: '—',
-      needBadge: { kind: 'neutral', icon: 'info', text: 'Vendor view' },
-      timesheetBadge: null,
-      statementBadge: stmtSeverity.badge,
-      margin: { money, pct: '—' },
-      cta: idx === 0
-        ? { kind: 'primary', icon: 'open_in_new', text: 'Mở chi tiết' }
-        : { kind: 'secondary', icon: 'open_in_new', text: 'Xem' },
-      highlight: idx === 0,
-    };
-  });
+  try {
+    const prisma = getPrisma();
+    const projects = await prisma.project.findMany({
+      take: 5,
+      orderBy: [{ quota: 'desc' }, { createdAt: 'desc' }],
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        quota: true,
+        filled: true,
+        assignments: {
+          where: { status: 'ACTIVE' },
+          select: { id: true },
+        },
+        staffingOrders: {
+          select: {
+            slots: { select: { slotsNeeded: true, slotsFilled: true } },
+          },
+        },
+      },
+    });
+    if (projects.length === 0) return [];
+
+    // Query riêng TimesheetPeriod LOCKED per project (Project không có relation trực tiếp)
+    const projectIds = projects.map((p) => p.id);
+    const lockedPeriods = await prisma.timesheetPeriod.findMany({
+      where: { status: 'LOCKED', projectId: { in: projectIds } },
+      select: { projectId: true, id: true, status: true },
+    });
+    const lockedByProject = new Map<string, { id: string; status: string }>();
+    for (const lp of lockedPeriods) {
+      if (lp.projectId && !lockedByProject.has(lp.projectId)) {
+        lockedByProject.set(lp.projectId, { id: lp.id, status: lp.status });
+      }
+    }
+
+    // Sort: ACTIVE desc rồi quota desc
+    projects.sort((a, b) => {
+      const activeDiff = b.assignments.length - a.assignments.length;
+      if (activeDiff !== 0) return activeDiff;
+      return (b.quota ?? 0) - (a.quota ?? 0);
+    });
+
+    return projects.slice(0, 3).map((p, idx) => {
+      const active = p.assignments.length;
+      const quota = p.quota ?? 0;
+      const filled = p.filled ?? 0;
+      const gap = Math.max(0, quota - active);
+
+      // needActive badge: gap lớn = danger, đầy = success
+      const needBadge =
+        gap === 0
+          ? { kind: 'success' as const, icon: 'check_circle', text: 'Đã đủ người' }
+          : gap > 10
+            ? { kind: 'danger' as const, icon: 'priority_high', text: `Thiếu ${gap}` }
+            : { kind: 'warning' as const, icon: 'info', text: `Thiếu ${gap}` };
+
+      const timesheetLocked = lockedByProject.get(p.id);
+      const timesheetBadge = timesheetLocked
+        ? { kind: 'success' as const, icon: 'check_circle', text: 'Đã khóa công' }
+        : { kind: 'neutral' as const, icon: 'draft', text: 'Chưa khóa' };
+
+      // margin: giả lập theo filled/quota × 100.000.000 ₫ (placeholder)
+      const marginMoney = BigInt(Math.round(filled * 100_000_000));
+      const marginPct = quota === 0 ? '0%' : `${Math.round((filled / quota) * 100)}%`;
+
+      return {
+        name: p.name,
+        code: p.code,
+        pm: '—',
+        needActive: `${active}/${quota}`,
+        needBadge,
+        timesheetBadge,
+        statementBadge: { kind: 'neutral', icon: 'info', text: '—' },
+        margin: { money: formatVnd(marginMoney), pct: marginPct },
+        cta:
+          gap === 0
+            ? null
+            : idx === 0
+              ? { kind: 'primary' as const, icon: 'open_in_new', text: 'Bố trí ngay' }
+              : { kind: 'secondary' as const, icon: 'open_in_new', text: 'Xem' },
+        highlight: idx === 0,
+      };
+    });
+  } catch (err) {
+    console.error('[bod] getPriorityProjects failed, fallback []:', (err as Error).message);
+    return [];
+  }
 }
 
 /**
@@ -305,19 +377,42 @@ async function getPriorityProjects(): Promise<PriorityProjectRow[]> {
  * Component dùng duy nhất function này → giảm N round-trip.
  */
 export const getBodSnapshot = cache(async (): Promise<BodSnapshot> => {
-  const period = currentPeriod();
-  const [headcount, finance, pipeline, fillRate, queue, priorityProjects] = await Promise.all([
-    getHeadcount(),
-    getFinance(period),
-    getPipeline(),
-    getFillRateRows(),
-    getQueue(),
-    getPriorityProjects(),
-  ]);
+  let headcount: Awaited<ReturnType<typeof getHeadcount>>;
+  let finance: Awaited<ReturnType<typeof getFinance>>;
+  let pipeline: Awaited<ReturnType<typeof getPipeline>>;
+  let fillRate: FillRateRow[];
+  let queue: QueueItem[];
+  let priorityProjects: PriorityProjectRow[];
 
-  const activeDisplay = headcount.active.toLocaleString('vi-VN');
-  const needDisplay = Math.max(0, headcount.needTotal - headcount.active).toLocaleString('vi-VN');
-  const totalDisplay = formatThousands(headcount.active + finance.readyStatements);
+  try {
+    const period = currentPeriod();
+    [headcount, finance, pipeline, fillRate, queue, priorityProjects] = await Promise.all([
+      getHeadcount(),
+      getFinance(period),
+      getPipeline(),
+      getFillRateRows(),
+      getQueue(),
+      getPriorityProjects(),
+    ]);
+  } catch (err) {
+    console.error('[bod] getBodSnapshot subquery failed, fallback empty snapshot:', (err as Error).message);
+    return {
+      kpiStrip: [],
+      queue: [],
+      fillRate: [],
+      priorityProjects: [],
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  // Null-safety: nếu 1 nhóm bị fallback rỗng, vẫn tiếp tục render với giá trị 0
+  const safeActive = headcount?.active ?? 0;
+  const safeNeed = Math.max(0, (headcount?.needTotal ?? 0) - safeActive);
+  const safeReady = finance?.readyStatements ?? 0;
+  const safeTotal = finance?.totalStatements ?? 0;
+
+  const activeDisplay = safeActive.toLocaleString('vi-VN');
+  const needDisplay = safeNeed.toLocaleString('vi-VN');
 
   const kpiStrip: KpiStripItem[] = [
     {
@@ -326,7 +421,7 @@ export const getBodSnapshot = cache(async (): Promise<BodSnapshot> => {
       value: activeDisplay,
       unit: 'người',
       sub: 'Lao động đang làm việc toàn miền',
-      delta: headcount.deltaText
+      delta: headcount?.deltaText
         ? { sign: 'up', text: headcount.deltaText }
         : null,
       href: '#proj',
@@ -352,8 +447,8 @@ export const getBodSnapshot = cache(async (): Promise<BodSnapshot> => {
     {
       label: 'ĐS sẵn sàng',
       icon: 'send',
-      value: `${finance.readyStatements}`,
-      unit: `/${finance.totalStatements || 15}`,
+      value: `${safeReady}`,
+      unit: `/${safeTotal || 15}`,
       sub: 'Bộ đối soát sẵn sàng gửi trong kỳ',
       delta: null,
       href: '#proj',
@@ -362,9 +457,9 @@ export const getBodSnapshot = cache(async (): Promise<BodSnapshot> => {
 
   return {
     kpiStrip,
-    queue,
-    fillRate,
-    priorityProjects,
+    queue: queue ?? [],
+    fillRate: fillRate ?? [],
+    priorityProjects: priorityProjects ?? [],
     updatedAt: new Date().toISOString(),
   };
 });

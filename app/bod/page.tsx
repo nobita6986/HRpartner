@@ -290,10 +290,10 @@ export default async function BodPage() {
               </tr>
             </thead>
             <tbody>
-              {snapshot.priorityProjects.length === 0 ? (
+              {                snapshot.priorityProjects.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-6 text-xs text-center" style={{ color: 'var(--on-surface-variant)' }}>
-                    Chưa có Vendor Statement trong kỳ này.
+                    Chưa có dự án ưu tiên trong hệ thống.
                   </td>
                 </tr>
               ) : (
