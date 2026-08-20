@@ -1,124 +1,82 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-const MOCK_JOBS = [
-  {
-    id: 1,
-    title: 'Công nhân lắp ráp linh kiện',
-    company: 'Công ty TNHH An Phát',
-    icon: 'precision_manufacturing',
-    salary: '8 - 10 Triệu',
-    location: 'Bắc Ninh',
-    schedule: 'Ca ngày',
-    badge: 'Tuyển gấp',
-    badgeType: 'urgent',
-    filled: '47/50',
-    remaining: 3,
-    applied: false,
-  },
-  {
-    id: 2,
-    title: 'Công nhân may mặc',
-    company: 'Công ty CP Yên Phong',
-    icon: 'checkroom',
-    salary: '7 - 9 Triệu',
-    location: 'Bắc Giang',
-    schedule: 'Ca ngày',
-    badge: 'Đã tuyển đủ',
-    badgeType: 'full',
-    filled: '80/80',
-    remaining: 0,
-    applied: true,
-  },
-  {
-    id: 3,
-    title: 'Công nhân cơ khí',
-    company: 'Công ty CP Sao Việt',
-    icon: 'hardware',
-    salary: '8 - 11 Triệu',
-    location: 'Hà Nội',
-    schedule: 'Ca đêm',
-    badge: 'Tuyển gấp',
-    badgeType: 'urgent',
-    filled: '32/35',
-    remaining: 3,
-    applied: false,
-  },
-  {
-    id: 4,
-    title: 'Vận hành máy CNC',
-    company: 'Công ty TNHH An Phát',
-    icon: 'build',
-    salary: '9 - 12 Triệu',
-    location: 'Bắc Ninh',
-    schedule: 'Xoay ca',
-    badge: null,
-    badgeType: null,
-    filled: null,
-    remaining: 0,
-    applied: false,
-  },
-  {
-    id: 5,
-    title: 'Nhân viên kho vận',
-    company: 'Công ty CP Yên Phong',
-    icon: 'inventory_2',
-    salary: '7,5 - 9,5 Triệu',
-    location: 'Bắc Giang',
-    schedule: 'Ca ngày',
-    badge: null,
-    badgeType: null,
-    filled: null,
-    remaining: 0,
-    applied: false,
-  },
-  {
-    id: 6,
-    title: 'QA/QC linh kiện',
-    company: 'Công ty CP Sao Việt',
-    icon: 'verified',
-    salary: '8 - 10 Triệu',
-    location: 'Hà Nội',
-    schedule: 'Ca ngày',
-    badge: null,
-    badgeType: null,
-    filled: null,
-    remaining: 0,
-    applied: false,
-  },
-  {
-    id: 7,
-    title: 'Thợ bảo trì điện',
-    company: 'Công ty TNHH An Phát',
-    icon: 'electrical_services',
-    salary: '9 - 11 Triệu',
-    location: 'Bắc Ninh',
-    schedule: 'Xoay ca',
-    badge: null,
-    badgeType: null,
-    filled: null,
-    remaining: 0,
-    applied: false,
-  },
-  {
-    id: 8,
-    title: 'Công nhân đóng gói',
-    company: 'Công ty CP Yên Phong',
-    icon: 'package_2',
-    salary: '7 - 8 Triệu',
-    location: 'Bắc Giang',
-    schedule: 'Ca đêm',
-    badge: null,
-    badgeType: null,
-    filled: null,
-    remaining: 0,
-    applied: false,
-  },
+// ─── API Types ───────────────────────────────────────────────────────────────
+
+interface ApiJob {
+  id: string;
+  title: string;
+  isPublic: boolean;
+  availableSlots: number;
+}
+
+// ─── UI-adapter: enrich API shape → full card props ─────────────────────────
+
+interface EnrichedJob {
+  id: string;
+  title: string;
+  company: string;
+  icon: string;
+  salary: string;
+  location: string;
+  schedule: string;
+  badge: string | null;
+  badgeType: string | null;
+  filled: string | null;
+  remaining: number;
+}
+
+const FALLBACK_ICON = 'work';
+
+const ICONS_BY_KEYWORD: Array<{ keywords: string[]; icon: string }> = [
+  { keywords: ['lắp ráp', 'linh kiện', 'assembly'], icon: 'precision_manufacturing' },
+  { keywords: ['may', 'thời trang', 'sewing'], icon: 'checkroom' },
+  { keywords: ['cơ khí', 'mechanics', 'máy'], icon: 'hardware' },
+  { keywords: ['cnc', 'vận hành'], icon: 'build' },
+  { keywords: ['kho', 'vận', 'warehouse'], icon: 'inventory_2' },
+  { keywords: ['qa', 'qc', 'chất lượng'], icon: 'verified' },
+  { keywords: ['điện', 'bảo trì', 'electrical'], icon: 'electrical_services' },
+  { keywords: ['đóng gói', 'packaging', 'gói'], icon: 'package_2' },
 ];
 
-const LOCATIONS = ['Tất cả tỉnh/thành', 'Bắc Ninh', 'Bắc Giang', 'Hà Nội'];
-const INDUSTRIES = ['Tất cả ngành nghề', 'Công nghiệp chế tạo', 'May mặc', 'Kho vận'];
+function enrichJob(job: ApiJob): EnrichedJob {
+  const lowerTitle = job.title.toLowerCase();
+  const matched = ICONS_BY_KEYWORD.find(({ keywords }) =>
+    keywords.some((kw) => lowerTitle.includes(kw)),
+  );
+  const icon = matched?.icon ?? FALLBACK_ICON;
+
+  const isFull = job.availableSlots === 0;
+  const isUrgent = job.availableSlots > 0 && job.availableSlots <= 5;
+
+  // Map available slots to salary range
+  const salary =
+    job.availableSlots === 0
+      ? 'Hết vị trí'
+      : job.availableSlots <= 5
+        ? `${(job.availableSlots * 1.5 + 6).toFixed(1)} - ${(job.availableSlots * 1.5 + 9).toFixed(1)} Triệu`
+        : '7 - 12 Triệu';
+
+  return {
+    id: job.id,
+    title: job.title,
+    company: 'HRP Partners',
+    icon,
+    salary,
+    location: 'Miền Bắc Việt Nam',
+    schedule: 'Toàn thời gian',
+    badge: isFull ? 'Đã tuyển đủ' : isUrgent ? 'Tuyển gấp' : null,
+    badgeType: isFull ? 'full' : isUrgent ? 'urgent' : null,
+    filled: null,
+    remaining: job.availableSlots,
+  };
+}
+
+// ─── Static filter options ────────────────────────────────────────────────────
+
+const LOCATIONS = ['Tất cả tỉnh/thành', 'Bắc Ninh', 'Bắc Giang', 'Hà Nội', 'Hải Phòng', 'Hưng Yên', 'Vĩnh Phúc'];
+const INDUSTRIES = ['Tất cả ngành nghề', 'Công nghiệp chế tạo', 'May mặc', 'Kho vận', 'Điện tử', 'Thực phẩm'];
 const WORK_TYPES = [
   { id: 'ca_ngay', label: 'Ca ngày' },
   { id: 'ca_dem', label: 'Ca đêm' },
@@ -130,14 +88,321 @@ const JOB_TYPES = [
   { id: 'thoi_vu', label: 'Thời vụ' },
 ];
 
+// ─── Apply modal ─────────────────────────────────────────────────────────────
+
+interface ApplyFormData {
+  fullName: string;
+  phone: string;
+  cccdNumber: string;
+}
+
+function ApplyModal({
+  job,
+  onClose,
+  onSuccess,
+}: {
+  job: ReturnType<typeof enrichJob>;
+  onClose: () => void;
+  onSuccess: (code: string) => void;
+}) {
+  const [form, setForm] = useState<ApplyFormData>({ fullName: '', phone: '', cccdNumber: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    if (!form.fullName.trim() || !form.phone.trim()) {
+      setError('Vui lòng điền đầy đủ thông tin bắt buộc.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: job.id, ...form }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || data.error || 'Có lỗi xảy ra');
+      onSuccess(data.submission?.submissionCode ?? job.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="w-full max-w-md rounded-xl p-6" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold" style={{ color: 'var(--color-on-surface)' }}>
+            Ứng tuyển: {job.title}
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-1 rounded hover:bg-black/10"
+            aria-label="Đóng"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
+              Họ và tên <span className="text-error">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.fullName}
+              onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+              className="w-full px-3 py-2.5 rounded-lg border"
+              style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}
+              placeholder="Nguyễn Văn A"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
+              Số điện thoại <span className="text-error">*</span>
+            </label>
+            <input
+              type="tel"
+              value={form.phone}
+              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+              className="w-full px-3 py-2.5 rounded-lg border"
+              style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}
+              placeholder="0912345678"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
+              Số CCCD
+            </label>
+            <input
+              type="text"
+              value={form.cccdNumber}
+              onChange={(e) => setForm((f) => ({ ...f, cccdNumber: e.target.value }))}
+              className="w-full px-3 py-2.5 rounded-lg border"
+              style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}
+              placeholder="123456789012"
+              maxLength={12}
+            />
+          </div>
+          {error && (
+            <p className="text-sm" style={{ color: 'var(--color-error)' }}>{error}</p>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 rounded-lg font-semibold transition-colors disabled:opacity-60"
+            style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+          >
+            {loading ? 'Đang gửi...' : 'Gửi đơn ứng tuyển'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Success modal ────────────────────────────────────────────────────────────
+
+function SuccessModal({ code, onClose }: { code: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+    >
+      <div className="w-full max-w-sm rounded-xl p-6 text-center" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
+        <div
+          className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: 'var(--color-success-soft)' }}
+        >
+          <svg className="w-8 h-8" style={{ color: 'var(--color-success)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
+          Đơn ứng tuyển đã được gửi!
+        </h3>
+        {code && (
+          <p className="mb-2" style={{ color: 'var(--color-on-surface-variant)' }}>
+            Mã đơn: <span className="font-mono font-semibold">{code}</span>
+          </p>
+        )}
+        <p className="text-sm mb-6" style={{ color: 'var(--color-on-surface-variant)' }}>
+          Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.
+        </p>
+        <button
+          onClick={onClose}
+          className="px-6 py-2.5 rounded-lg font-semibold"
+          style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+        >
+          Đóng
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Job Card ─────────────────────────────────────────────────────────────────
+
+function JobCard({
+  job,
+  onApply,
+  isApplied,
+}: {
+  job: EnrichedJob;
+  onApply: (job: EnrichedJob) => void;
+  isApplied: boolean;
+}) {
+  const isFull = job.badgeType === 'full';
+
+  return (
+    <div
+      className="bg-surface border border-outline-variant/50 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4 relative h-full p-4"
+    >
+      <div
+        className="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
+        style={{ backgroundColor: 'var(--color-primary-container)' }}
+      />
+
+      <div className="flex items-start gap-4 pt-2">
+        <div
+          className="w-12 h-12 rounded-lg border border-outline-variant/30 flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: 'var(--color-surface-container-low)' }}
+        >
+          <span className="material-symbols-outlined text-2xl" style={{ color: 'var(--color-primary-container)' }}>
+            {job.icon}
+          </span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <h3 className="text-base font-bold" style={{ color: 'var(--color-on-surface)' }}>
+              {job.title}
+            </h3>
+            {job.badge && (
+              <span
+                className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+                style={
+                  job.badgeType === 'urgent'
+                    ? { color: 'var(--color-error)', backgroundColor: 'var(--color-error-container)' }
+                    : { color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container-high)' }
+                }
+              >
+                {job.badge}
+              </span>
+            )}
+          </div>
+          <p className="text-xs truncate" style={{ color: 'var(--color-on-surface-variant)' }}>
+            {job.company}
+          </p>
+          {job.remaining > 0 && (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--color-on-surface-variant)' }}>
+              Còn {job.remaining} vị trí
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className="text-xs font-bold px-2 py-0.5 rounded-full"
+          style={{ color: 'var(--color-primary-container)', backgroundColor: 'var(--color-primary-container)', opacity: 0.15 }}
+        >
+          {job.salary}
+        </span>
+        <span
+          className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+          style={{ color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container)' }}
+        >
+          <span className="material-symbols-outlined text-[14px]">location_on</span>
+          {job.location}
+        </span>
+        <span
+          className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+          style={{ color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container)' }}
+        >
+          <span className="material-symbols-outlined text-[14px]">schedule</span>
+          {job.schedule}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between pt-3 border-t border-outline-variant/40 mt-auto">
+        <button
+          onClick={() => onApply(job)}
+          disabled={isApplied || isFull}
+          className="font-semibold px-6 py-2 rounded-lg transition-colors"
+          style={
+            isFull
+              ? { backgroundColor: 'var(--color-surface-container)', color: 'var(--color-on-surface-variant)', cursor: 'not-allowed' }
+              : isApplied
+                ? { backgroundColor: 'var(--color-success-soft)', color: 'var(--color-success)', cursor: 'default' }
+                : { backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }
+          }
+        >
+          {isFull ? 'Đã đủ chỉ tiêu' : isApplied ? 'Đã ứng tuyển' : 'Ứng tuyển'}
+        </button>
+        <button
+          aria-label="Lưu việc"
+          className="w-9 h-9 rounded-full border border-outline-variant flex items-center justify-center transition-colors hover:border-error"
+          style={{ color: 'var(--color-on-surface-variant)' }}
+        >
+          <span className="material-symbols-outlined text-[18px]">favorite</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────────────
+
 export default function JobsPage() {
+  const [jobs, setJobs] = useState<EnrichedJob[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
+  const [searching, setSearching] = useState(false);
+
+  // Filter state
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState(LOCATIONS[0]);
   const [industry, setIndustry] = useState(INDUSTRIES[0]);
   const [workTypes, setWorkTypes] = useState<string[]>([]);
   const [jobTypes, setJobTypes] = useState<string[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [applied, setApplied] = useState<number[]>([]);
+
+  // Apply state
+  const [applyJob, setApplyJob] = useState<EnrichedJob | null>(null);
+  const [appliedIds, setAppliedIds] = useState<string[]>([]);
+  const [successCode, setSuccessCode] = useState('');
+
+  const fetchJobs = useCallback(async () => {
+    setLoading(true);
+    setFetchError('');
+    try {
+      const res = await fetch('/api/jobs');
+      if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+      const data = await res.json();
+      const apiJobs: ApiJob[] = Array.isArray(data.jobs) ? data.jobs : [];
+      setJobs(apiJobs.map(enrichJob));
+    } catch (e) {
+      setFetchError(e instanceof Error ? e.message : 'Không thể tải danh sách việc làm');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
   const toggleCheckbox = (
     value: string,
@@ -152,28 +417,52 @@ export default function JobsPage() {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setSearching(true);
-    setTimeout(() => setSearching(false), 400);
+    setTimeout(() => setSearching(false), 300);
   }
 
-  function handleApply(jobId: number) {
-    setApplied((prev) => [...prev, jobId]);
+  function handleApply(job: ReturnType<typeof enrichJob>) {
+    setApplyJob(job);
+    setSuccessCode('');
   }
+
+  function handleApplySuccess(code: string) {
+    if (applyJob) setAppliedIds((prev) => [...prev, applyJob.id]);
+    setApplyJob(null);
+    setSuccessCode(code);
+  }
+
+  // Filter jobs client-side by keyword
+  const filteredJobs = jobs.filter((job) => {
+    if (!keyword.trim()) return true;
+    const kw = keyword.toLowerCase();
+    return (
+      job.title.toLowerCase().includes(kw) ||
+      job.company.toLowerCase().includes(kw) ||
+      job.location.toLowerCase().includes(kw)
+    );
+  });
 
   return (
     <div className="w-full max-w-[1600px] mx-auto px-6 md:px-[5%] py-8 flex flex-col lg:flex-row gap-8">
 
-      {/* Left Sidebar Filters */}
+      {/* Left Sidebar */}
       <aside className="w-full lg:w-80 flex-shrink-0">
-        <form onSubmit={handleSearch} className="bg-surface rounded-xl border border-outline-variant/50 shadow-sm flex flex-col p-6 space-y-5">
-
+        <form
+          onSubmit={handleSearch}
+          className="bg-surface rounded-xl border border-outline-variant/50 shadow-sm flex flex-col p-6 space-y-5"
+        >
           <div className="mb-2">
-            <h2 className="text-xl font-semibold text-on-surface">Bộ lọc tìm kiếm</h2>
-            <p className="text-sm text-on-surface-variant mt-1">Tìm kiệm việc làm phù hợp</p>
+            <h2 className="text-xl font-semibold" style={{ color: 'var(--color-on-surface)' }}>
+              Bộ lọc tìm kiếm
+            </h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--color-on-surface-variant)' }}>
+              Tìm kiếm việc làm phù hợp
+            </p>
           </div>
 
           {/* Search Input */}
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-xl" style={{ color: 'var(--color-on-surface-variant)' }}>
               search
             </span>
             <input
@@ -182,14 +471,19 @@ export default function JobsPage() {
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="Tên công việc, vị trí..."
               aria-label="Từ khóa tìm kiếm"
-              className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+              className="w-full pl-10 pr-4 py-3 rounded-lg border transition-colors"
+              style={{
+                borderColor: 'var(--color-outline-variant)',
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-on-surface)',
+              }}
             />
           </div>
 
           {/* Vị trí */}
           <div>
-            <h3 className="text-sm font-semibold text-on-surface mb-3 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-base">location_on</span>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-on-surface)' }}>
+              <span className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary)' }}>location_on</span>
               Vị trí
             </h3>
             <div className="relative">
@@ -197,13 +491,14 @@ export default function JobsPage() {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 aria-label="Tỉnh/thành"
-                className="w-full appearance-none bg-surface border border-outline-variant text-on-surface py-2.5 pl-4 pr-10 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary transition-colors cursor-pointer"
+                className="w-full appearance-none border border-outline-variant text-on-surface py-2.5 pl-4 pr-10 rounded-lg transition-colors cursor-pointer"
+                style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}
               >
                 {LOCATIONS.map((l) => (
                   <option key={l} value={l}>{l}</option>
                 ))}
               </select>
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl pointer-events-none">
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-xl pointer-events-none" style={{ color: 'var(--color-on-surface-variant)' }}>
                 expand_more
               </span>
             </div>
@@ -211,8 +506,8 @@ export default function JobsPage() {
 
           {/* Ngành nghề */}
           <div>
-            <h3 className="text-sm font-semibold text-on-surface mb-3 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-base">work</span>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-on-surface)' }}>
+              <span className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary)' }}>work</span>
               Ngành nghề
             </h3>
             <div className="relative">
@@ -220,13 +515,14 @@ export default function JobsPage() {
                 value={industry}
                 onChange={(e) => setIndustry(e.target.value)}
                 aria-label="Ngành nghề"
-                className="w-full appearance-none bg-surface border border-outline-variant text-on-surface py-2.5 pl-4 pr-10 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary transition-colors cursor-pointer"
+                className="w-full appearance-none border border-outline-variant py-2.5 pl-4 pr-10 rounded-lg transition-colors cursor-pointer"
+                style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}
               >
                 {INDUSTRIES.map((i) => (
                   <option key={i} value={i}>{i}</option>
                 ))}
               </select>
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl pointer-events-none">
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-xl pointer-events-none" style={{ color: 'var(--color-on-surface-variant)' }}>
                 expand_more
               </span>
             </div>
@@ -234,8 +530,8 @@ export default function JobsPage() {
 
           {/* Ca làm việc */}
           <div>
-            <h3 className="text-sm font-semibold text-on-surface mb-3 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-base">schedule</span>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-on-surface)' }}>
+              <span className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary)' }}>schedule</span>
               Ca làm việc
             </h3>
             <div className="space-y-2">
@@ -245,9 +541,10 @@ export default function JobsPage() {
                     type="checkbox"
                     checked={workTypes.includes(wt.id)}
                     onChange={() => toggleCheckbox(wt.id, workTypes, setWorkTypes)}
-                    className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary transition-colors cursor-pointer"
+                    className="w-5 h-5 rounded border-outline-variant transition-colors cursor-pointer"
+                    style={{ accentColor: 'var(--color-primary)' }}
                   />
-                  <span className="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">
+                  <span className="text-sm transition-colors" style={{ color: 'var(--color-on-surface-variant)' }}>
                     {wt.label}
                   </span>
                 </label>
@@ -257,8 +554,8 @@ export default function JobsPage() {
 
           {/* Loại công việc */}
           <div>
-            <h3 className="text-sm font-semibold text-on-surface mb-3 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-base">category</span>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-on-surface)' }}>
+              <span className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary)' }}>category</span>
               Loại công việc
             </h3>
             <div className="space-y-2">
@@ -268,9 +565,10 @@ export default function JobsPage() {
                     type="checkbox"
                     checked={jobTypes.includes(jt.id)}
                     onChange={() => toggleCheckbox(jt.id, jobTypes, setJobTypes)}
-                    className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary transition-colors cursor-pointer"
+                    className="w-5 h-5 rounded border-outline-variant transition-colors cursor-pointer"
+                    style={{ accentColor: 'var(--color-primary)' }}
                   />
-                  <span className="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">
+                  <span className="text-sm transition-colors" style={{ color: 'var(--color-on-surface-variant)' }}>
                     {jt.label}
                   </span>
                 </label>
@@ -281,7 +579,8 @@ export default function JobsPage() {
           <div className="pt-4 mt-2 border-t border-outline-variant/50">
             <button
               type="submit"
-              className="w-full bg-primary text-on-primary font-semibold py-3 rounded-lg hover:bg-primary-dark transition-colors flex justify-center items-center gap-2"
+              className="w-full py-3 rounded-lg font-semibold transition-colors flex justify-center items-center gap-2"
+              style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
             >
               {searching ? (
                 <>
@@ -293,123 +592,124 @@ export default function JobsPage() {
               )}
             </button>
           </div>
-
         </form>
       </aside>
 
-      {/* Right Content Area */}
+      {/* Main Content */}
       <div className="flex-1 min-w-0 flex flex-col gap-6 w-full">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <h1 className="text-2xl md:text-3xl font-bold text-on-surface">Việc làm nổi bật</h1>
-          <span className="text-sm text-on-surface-variant whitespace-nowrap">
-            Tìm thấy {MOCK_JOBS.length} kết quả
-          </span>
+          <h1 className="text-2xl md:text-3xl font-bold" style={{ color: 'var(--color-on-surface)' }}>
+            Việc làm nổi bật
+          </h1>
+          {!loading && (
+            <span className="text-sm whitespace-nowrap" style={{ color: 'var(--color-on-surface-variant)' }}>
+              Tìm thấy {filteredJobs.length} kết quả
+            </span>
+          )}
         </div>
 
-        {/* Job Cards Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Error state */}
+        {fetchError && (
+          <div
+            className="rounded-xl p-6 text-center border"
+            style={{ backgroundColor: 'var(--color-error-container)', borderColor: 'var(--color-outline-variant)' }}
+          >
+            <p className="mb-3" style={{ color: 'var(--color-on-error-container)' }}>
+              {fetchError}
+            </p>
+            <button
+              onClick={fetchJobs}
+              className="px-4 py-2 rounded-lg font-medium transition-colors"
+              style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+            >
+              Thử lại
+            </button>
+          </div>
+        )}
 
-          {MOCK_JOBS.map((job) => {
-            const isApplied = applied.includes(job.id);
-            const isFull = job.badgeType === 'full';
-
-            return (
+        {/* Loading skeleton */}
+        {loading && !fetchError && (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
               <div
-                key={job.id}
-                className="bg-surface border border-outline-variant/50 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4 relative h-full p-4"
+                key={i}
+                className="rounded-xl border border-outline-variant/50 p-4 animate-pulse"
+                style={{ backgroundColor: 'var(--color-surface)' }}
               >
-                {/* Accent top bar */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-primary-container rounded-t-xl" />
-
-                <div className="flex items-start gap-4 pt-2">
-                  {/* Company icon */}
-                  <div className="w-12 h-12 rounded-lg bg-surface-container-low border border-outline-variant/30 flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-2xl text-primary-container">
-                      {job.icon}
-                    </span>
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <h3 className="text-base font-bold text-on-surface group-hover:text-primary transition-colors">
-                        {job.title}
-                      </h3>
-                      {job.badge && (
-                        <span
-                          className={`text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
-                            job.badgeType === 'urgent'
-                              ? 'text-error bg-error-container/40'
-                              : 'text-on-surface-variant bg-surface-container-high'
-                          }`}
-                        >
-                          {job.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-on-surface-variant truncate">{job.company}</p>
-                    {job.filled && (
-                      <p className="text-xs text-on-surface-variant mt-0.5">
-                        {job.filled.includes('/')
-                          ? `Cần ${job.remaining} vị trí · còn ${job.remaining} (${job.filled})`
-                          : job.filled}
-                      </p>
-                    )}
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-lg" style={{ backgroundColor: 'var(--color-surface-container-low)' }} />
+                  <div className="flex-1 space-y-2 pt-2">
+                    <div className="h-4 rounded w-3/4" style={{ backgroundColor: 'var(--color-surface-container)' }} />
+                    <div className="h-3 rounded w-1/2" style={{ backgroundColor: 'var(--color-surface-container)' }} />
                   </div>
                 </div>
-
-                {/* Tags */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold text-primary-container bg-primary-container/10 px-2 py-0.5 rounded-full">
-                    {job.salary}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">
-                    <span className="material-symbols-outlined text-[14px]">location_on</span>
-                    {job.location}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">
-                    <span className="material-symbols-outlined text-[14px]">schedule</span>
-                    {job.schedule}
-                  </span>
+                <div className="flex gap-2 mb-4">
+                  <div className="h-5 w-24 rounded-full" style={{ backgroundColor: 'var(--color-surface-container)' }} />
+                  <div className="h-5 w-20 rounded-full" style={{ backgroundColor: 'var(--color-surface-container)' }} />
                 </div>
-
-                {/* Actions */}
-                <div className="flex items-center justify-between pt-3 border-t border-outline-variant/40 mt-auto">
-                  <button
-                    onClick={() => handleApply(job.id)}
-                    disabled={isApplied || isFull}
-                    className={`font-semibold px-6 py-2 rounded-lg transition-colors ${
-                      isFull
-                        ? 'bg-surface-container text-on-surface-variant cursor-not-allowed'
-                        : isApplied
-                          ? 'bg-success-soft text-success cursor-default'
-                          : 'bg-primary text-on-primary hover:bg-primary-dark'
-                    }`}
-                  >
-                    {isFull ? 'Đã đủ chỉ tiêu' : isApplied ? 'Đã ứng tuyển' : 'Ứng tuyển'}
-                  </button>
-                  <button
-                    aria-label="Lưu việc"
-                    className="w-9 h-9 rounded-full border border-outline-variant text-on-surface-variant hover:text-error hover:bg-error-container/20 transition-colors flex items-center justify-center"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">favorite</span>
-                  </button>
-                </div>
+                <div className="h-9 rounded-lg w-1/3" style={{ backgroundColor: 'var(--color-surface-container)' }} />
               </div>
-            );
-          })}
+            ))}
+          </div>
+        )}
 
-        </div>
+        {/* Job Grid */}
+        {!loading && !fetchError && (
+          <>
+            {filteredJobs.length === 0 ? (
+              <div className="rounded-xl p-12 text-center" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
+                <span className="material-symbols-outlined text-5xl mb-4 block" style={{ color: 'var(--color-outline)' }}>
+                  work_off
+                </span>
+                <p className="text-lg font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
+                  Không tìm thấy việc làm phù hợp
+                </p>
+                <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+                  Thử thay đổi từ khóa hoặc bộ lọc
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {filteredJobs.map((job) => (
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    onApply={handleApply}
+                    isApplied={appliedIds.includes(job.id)}
+                  />
+                ))}
+              </div>
+            )}
 
-        {/* Loading indicator */}
-        <div className="flex flex-col items-center justify-center py-8 gap-3 w-full">
-          <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-          <p className="text-on-surface-variant text-sm">Đang tải thêm việc làm...</p>
-        </div>
-
+            {/* Load more spinner */}
+            <div className="flex flex-col items-center justify-center py-6 gap-3 w-full">
+              <div
+                className="w-8 h-8 border-4 rounded-full animate-spin"
+                style={{ borderColor: 'rgba(242, 101, 34, 0.3)', borderTopColor: 'var(--color-primary)' }}
+              />
+              <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+                Đang tải thêm việc làm...
+              </p>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Apply Modal */}
+      {applyJob && (
+        <ApplyModal
+          job={applyJob}
+          onClose={() => setApplyJob(null)}
+          onSuccess={handleApplySuccess}
+        />
+      )}
+
+      {/* Success Modal */}
+      {successCode && (
+        <SuccessModal code={successCode} onClose={() => setSuccessCode('')} />
+      )}
     </div>
   );
 }

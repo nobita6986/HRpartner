@@ -8,7 +8,7 @@
 | Work type | CODE |
 | Audit mode (Tier 3 đọc) | CODE_AUDIT |
 | Spec version | v1.0 |
-| Status | READY_FOR_EXECUTION |
+| Status | READY_FOR_AUDIT |
 | Planner | Tier 1 (Antigravity) |
 | Executor | Tier 2 |
 | Auditor | Tier 3 |
@@ -16,8 +16,8 @@
 | Modules | M3-Portal-API |
 | ADR references | None |
 | Current execution round | 1 |
-| Current audit round | 0 |
-| Next gate | /code hrp-portal-m3-api-integration |
+| Current audit round | 1 |
+| Next gate | /audit hrp-portal-m3-api-integration |
 | Updated | 2026-08-20 11:08 +07:00 |
 
 ## 1. Outcome
