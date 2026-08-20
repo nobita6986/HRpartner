@@ -1,4 +1,4 @@
-# CHUYỂN GIAO VAI TRÒ TIER 1 — PLANNER (HRP)
+﻿# CHUYỂN GIAO VAI TRÒ TIER 1 — PLANNER (HRP)
 
 > **Đọc tài liệu này TRƯỚC KHI làm bất kỳ việc gì.** Bạn (Agent mới) tiếp nhận vai trò **Tier 1 — Planner / Product & Architecture Decision Owner** của dự án HRP, kể từ **18/08/2026 (~21:50 ICT)**.
 > Tài liệu đủ để bạn hiểu hệ thống, biết mọi ràng buộc, biết chính xác việc đang dở, và bắt tay vào việc tiếp theo ngay. Mọi quy tắc dưới đây là **bắt buộc**, không phải gợi ý.
@@ -242,10 +242,7 @@ Card "Roadmap V4": cập nhật dòng mô tả + ngày hero-meta/footer — **ch
 
 ---
 
-*Tài liệu do Tier 1 Planner (Antigravity) viết cập nhật ngày 20/08/2026 ~13:20 ICT — trạng thái chuẩn: M3 ACCEPTED, M5 ACCEPTED, M6 ACCEPTED, M7 ACCEPTED. CSDL đã được seed lại.*
+*Tài liệu do Tier 1 Planner (Antigravity) viết cập nhật ngày 20/08/2026 ~13:20 ICT — trạng thái chuẩn: M3 ACCEPTED, M6 ACCEPTED, M7 ACCEPTED, M8 ACCEPTED. CSDL đã được seed lại.*
 **M8 - Worker Concurrency (hrp-portal-m8-worker-concurrency):**
-- **Nguồn gốc:** Giai đoạn 2 của Kế hoach tổng thể (M3: Chiỗu tải & Worker Waiting Room).
-- **Tiến độ:** Planner đã tạo hợp ống (READY_FOR_EXECUTION). Yêu cấu setup Redis, Rate Limiting, và mock data từ Python.
-- **Chờ sếp:** Gọi lệnh `/code hrp-portal-m8-worker-concurrency` (sau khi M7 đảx được xử lí luòng).
-
-
+- **Tr?ng th�i:** �� d�ng (ACCEPTED). H? th?ng ch?u t?i (Rate Limit / Waiting Room) v� UI Worker d?c t? Cache d� ho�n thi?n.
+- **Ch? s?p:** Ti?n v�o Giai do?n 3 (M2/M6 g?c) - Affiliate Hub & Vendor Portal.

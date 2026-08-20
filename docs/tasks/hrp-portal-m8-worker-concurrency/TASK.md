@@ -1,4 +1,4 @@
-# TASK: hrp-portal-m8-worker-concurrency
+﻿# TASK: hrp-portal-m8-worker-concurrency
 
 ## 0. Control
 
@@ -8,7 +8,7 @@
 | Work type | CODE |
 | Audit mode (Tier 3 doc) | CODE_AUDIT |
 | Spec version | v1.0 |
-| Status | READY_FOR_EXECUTION |
+| Status | ACCEPTED |
 | Planner | Tier 1 (Antigravity) |
 | Executor | Tier 2 |
 | Auditor | Tier 3 |
@@ -17,8 +17,8 @@
 | ADR references | Architecture: High Concurrency & Redis |
 | Current execution round | 1 |
 | Current audit round | 0 |
-| Next gate | /code hrp-portal-m8-worker-concurrency |
-| Updated | 2026-08-20 16:15 +07:00 |
+| Next gate | DONE |
+| Updated | 2026-08-20 16:45 +07:00 |
 
 ## 1. Outcome
 
@@ -114,10 +114,12 @@
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 1 | AUD-001 | ACCEPT | In-memory cache is acceptable for dev as long as the interface matches Redis | None | Tier 1 |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | 1.0 | 2026-08-20 | Tao task hrp-portal-m8-worker-concurrency. | M3 goc - Kien truc chiu tai. |
+| 1.1 | 2026-08-20 | Đóng task (ACCEPTED). | Audit báo PASS vòng 1. |
+
