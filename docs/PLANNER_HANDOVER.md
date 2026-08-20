@@ -230,24 +230,21 @@ Card "Roadmap V4": cập nhật dòng mô tả + ngày hero-meta/footer — **ch
 
 ---
 
-## 10. Checklist ngày đầu
+## 10. Checklist ng�y d?u
 
-- [ ] Đọc `.ai-pipeline/tier1.md` + `rules/01-planner-rules.md` + `templates/TASK.template.md`
-- [ ] Đọc `docs/tasks/hrp-p1-portals/TASK.md` §0 + §9 + §10 (contract v1.0 REVISION_REQUIRED, Directive round 3) + `AUDIT.md` (round 2, AUD-003)
-- [ ] Đọc lại §5.1 tài liệu này (AUD-003 + Directive 4 điểm round 3) — đây là phần việc đang dở
-- [ ] Mở `docs/roadmap-hrp-v4.html` bằng trình duyệt (xem cấu trúc §8.2)
-- [ ] `git log --oneline -8` + `git status` — lưu ý: `app/bcc/*` + `appBCC/*` dirty là working tree của sếp — không đụng; các file stray (`apply-changes.mjs`, `write_script.py`, `do_write.py`, `appBCC/analyze_*.py`...) KHÔNG commit — hỏi sếp xoá hay giữ
-- [ ] Hỏi sếp: Tier 2/3 hiện là ai? Đã gõ `/code hrp-p1-portals` (round 3) chưa?
-- [ ] Xác nhận lại 2 việc chờ: (1) sếp gõ `/code` round 3; (2) sau mỗi task cập nhật đủ bộ §8 rồi push
+- [ ] �?c `.ai-pipeline/tier1.md` + `rules/01-planner-rules.md` + `templates/TASK.template.md`
+- [ ] �?c `docs/tasks/hrp-portal-m9-affiliate-vendor/TASK.md` (contract v1.0 READY_FOR_EXECUTION)
+- [ ] �?c `docs/portal_audit_report.md` d? n?m du?c K? ho?ch t?ng th? (Master Plan) g?m 4 giai do?n m� ch�ng ta dang th?c hi?n.
+- [ ] M? `docs/roadmap-portals.html` b?ng tr�nh duy?t d? xem ti?n d? (hi?n M4, M5, M6, M7, M8 d� DONE, dang l�m M9).
+- [ ] X�c nh?n l?i v?i s?p: Tier 2/3 hi?n l� ai? �� g� `/code hrp-portal-m9-affiliate-vendor` chua?
+- [ ] Sau m?i round/task, lu�n nh? c?p nh?t d?ng b? c�c file theo m?c s? 8 v� push.
 
 ---
 
-*Tài liệu do Tier 1 Planner (Antigravity) viết cập nhật ngày 20/08/2026 ~13:20 ICT — trạng thái chuẩn: M3 ACCEPTED, M6 ACCEPTED, M7 ACCEPTED, M8 ACCEPTED. CSDL đã được seed lại.*
-**M8 - Worker Concurrency (hrp-portal-m8-worker-concurrency):**
-- **Tr?ng th�i:** �� d�ng (ACCEPTED). H? th?ng ch?u t?i (Rate Limit / Waiting Room) v� UI Worker d?c t? Cache d� ho�n thi?n.
-- **Ch? s?p:** Ti?n v�o Giai do?n 3 (M2/M6 g?c) - Affiliate Hub & Vendor Portal.**M9 - Affiliate Hub & Vendor Portal (hrp-portal-m9-affiliate-vendor):**
-- **Nguồn gốc:** Giai đoạn 3 của Kế hoach tổng thễ (M2 và M6 gốc).
-- **Tiến độ:** Planner đã tạo hợp đồng (READY_FOR_EXECUTION). Yêu cầu đắp UI moi, ve chart cho CTV, va lam Statements cho Vendor.
-- **Chờ sẽp:** Gọi lệnh `/code hrp-portal-m9-affiliate-vendor`.
+*T�i li?u do Tier 1 Planner (Antigravity) c?p nh?t ng�y 20/08/2026 ~17:15 ICT.*
 
-
+**T�NH TR?NG HI?N T?I (Master Plan - Portal Refactor):**
+- **M7 (Admin Expansion):** ? �� d�ng (ACCEPTED). Ho�n thi?n CRUD Admin v� 3 trang Settings, Users, Vendors.
+- **M8 (Worker Concurrency - M3 g?c):** ? �� d�ng (ACCEPTED). H? th?ng ch?u t?i (Rate Limit / Waiting Room) v� UI Worker d?c t? Cache d� ho�n thi?n.
+- **M9 (Affiliate Hub & Vendor Portal - M2 & M6 g?c):** ? [READY_FOR_EXECUTION]. Planner d� t?o h?p d?ng (y�u c?u d?p UI m?i, v? chart cho CTV, v� l�m Statements cho Vendor).
+- **Ch? s?p:** G?i l?nh `/code hrp-portal-m9-affiliate-vendor` d? ph�i Tier 2 di l�m M9.
