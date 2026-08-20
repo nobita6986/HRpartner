@@ -141,10 +141,13 @@ model User {
   permissionGrants     UserPermissionGrant[]
 
   // G22 — data isolation relations (§9.7 + docs/data-scope-security.md)
-  ownedWorkers    Worker[]  @relation("WorkerOwner")
-  assignedWorkers Worker[]  @relation("WorkerAssignee")
-  workerAccount   Worker?   @relation("WorkerAccount")
-  managedProjects Project[] @relation("ProjectPm")
+  ownedWorkers       Worker[]  @relation("WorkerOwner")
+  assignedWorkers    Worker[]  @relation("WorkerAssignee")
+  workerAccount      Worker?   @relation("WorkerAccount")
+  managedProjects    Project[] @relation("ProjectPm")
+  subManagedProjects1 Project[] @relation("ProjectSubPm1") // M13: phó PM thứ 1
+  subManagedProjects2 Project[] @relation("ProjectSubPm2") // M13: phó PM thứ 2
+  managingWorkers    Worker[]  @relation("WorkerManager")   // M13: quản lý trực tiếp worker
 
   @@index([role, isActive])
   @@map("users")
@@ -242,6 +245,7 @@ model Worker {
   ownerId      String? @map("owner_id")
   assignedToId String? @map("assigned_to_id")
   accountUserId String? @unique @map("account_user_id") // V4.14 G22 — link tài khoản đăng nhập (role WORKER) ↔ hồ sơ lao động; scope WORKER dùng field này
+  managerId    String? @map("manager_id") // M13: quản lý trực tiếp (User.id) — phục vụ filter + scope UI về sau
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -256,9 +260,11 @@ model Worker {
   owner      User? @relation("WorkerOwner", fields: [ownerId], references: [id])
   assignedTo User? @relation("WorkerAssignee", fields: [assignedToId], references: [id])
   account    User? @relation("WorkerAccount", fields: [accountUserId], references: [id])
+  manager    User? @relation("WorkerManager", fields: [managerId], references: [id]) // M13
 
   @@index([profileStatus, employmentStatus])
   @@index([ownerId, assignedToId])
+  @@index([managerId]) // M13 — filter theo manager
   @@map("workers")
 }
 
@@ -329,7 +335,9 @@ model Project {
   code            String   @unique // "PRJ-2025-001"
   clientCompanyId String   @map("client_company_id")
   name            String
-  pmUserId        String?  @map("pm_user_id") // Project Manager
+  pmUserId        String?  @map("pm_user_id") // Project Manager (chính)
+  subPmUserId1    String?  @map("sub_pm_user_id_1") // M13: phó PM thứ 1 — quan hệ tới users.id
+  subPmUserId2    String?  @map("sub_pm_user_id_2") // M13: phó PM thứ 2 — quan hệ tới users.id
   siteAddress     String?  @map("site_address")
   startDate       DateTime @map("start_date") @db.Date
   endDate         DateTime? @map("end_date") @db.Date
@@ -348,9 +356,13 @@ model Project {
   submissions    CandidateSubmission[]
   sites          Site[]
   pmUser         User?           @relation("ProjectPm", fields: [pmUserId], references: [id]) // G22
+  subPm1         User?           @relation("ProjectSubPm1", fields: [subPmUserId1], references: [id]) // M13
+  subPm2         User?           @relation("ProjectSubPm2", fields: [subPmUserId2], references: [id]) // M13
 
   @@index([status, isPublic])
   @@index([pmUserId, status]) // G22 — scope PM (relation filter §9.7)
+  @@index([subPmUserId1])     // M13 — scope sub-PM thứ 1
+  @@index([subPmUserId2])     // M13 — scope sub-PM thứ 2
   @@map("outsourcing_projects") // ERD DDL dùng tên này; plan §9 SQL mẫu dùng "projects" — DB thật là outsourcing_projects
 }
 
