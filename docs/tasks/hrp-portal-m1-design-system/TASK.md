@@ -8,17 +8,17 @@
 | Work type | CODE |
 | Audit mode (Tier 3 đọc) | CODE_AUDIT |
 | Spec version | 1.1 |
-| Status | READY_FOR_AUDIT |
+| Status | ACCEPTED |
 | Planner | Tier 1 (Antigravity) |
 | Executor | Tier 2 (Figma Owner / Frontend Engineer) |
 | Auditor | Tier 3 (Auditor) |
 | Baseline | HEAD of main |
 | Modules | M1-Portal |
 | ADR references | None |
-| Current execution round | 2 |
-| Current audit round | 1 |
-| Next gate | /audit hrp-portal-m1-design-system |
-| Updated | 2026-08-19 16:20 +07:00 |
+| Current execution round | 3 |
+| Current audit round | 2 |
+| Next gate | Tiến hành M2 - Landing Page Content |
+| Updated | 2026-08-20 09:10 +07:00 |
 
 ## 1. Outcome
 
@@ -120,6 +120,7 @@
 | 1 | AUD-001 | ACCEPT_FIX | Thiếu định dạng pipeline 10 sections. | Cập nhật toàn bộ TASK.md theo template v1.1. | Tier 1 |
 | 1 | AUD-002 | ACCEPT_FIX | Handoff sai trạng thái. | Bổ sung RQ-04 ép Tier 2 viết chuẩn. | Tier 1 |
 | 1 | AUD-003 | ACCEPT_FIX | Regression cookie auth name. | Bổ sung RQ-03 và STEP-01. | Tier 1 |
+| 2 | - | ACCEPT_FIX | Audit PASS 100%. verify-audit.ps1 exit 0. AC-01..04 đạt chuẩn. | Không | Tier 1 |
 
 ## 10. Revision Log
 
@@ -127,3 +128,4 @@
 |---|---|---|---|
 | 1.0 | 2026-08-19 | Khởi tạo hợp đồng (sai format). | Init Milestone 1 |
 | 1.1 | 2026-08-19 | Re-write toàn bộ theo AI Pipeline chuẩn. Thêm task fix test. | Fix AUD-001, AUD-003 |
+|  1.1 | 2026-08-20 | Đóng task, chuyển trạng thái thành ACCEPTED. | Audit round 2 PASS. Handoff sang M2. |
