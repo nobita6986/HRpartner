@@ -15,9 +15,7 @@ export function GlobalFooter() {
 
           {/* Logo */}
           <Link href="/" className="flex-shrink-0">
-            <span className="text-2xl font-extrabold tracking-tight text-brand-dark">
-              HR<span className="text-primary">P</span>
-            </span>
+            <img src="/logo.png" alt="HRP Logo" style={{ height: '32px', width: 'auto' }} />
           </Link>
 
           {/* Nav Links */}

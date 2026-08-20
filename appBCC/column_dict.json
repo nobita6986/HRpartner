@@ -1,9 +1,12 @@
 {
     "Số giờ làm việc ban ngày 주간 근무시간": "normal_hours",
-    "Shift day/ 주간 - 1.5": "ot_150",
+    "Shift day/ 주간 - 1.5": "ot_day",
+    "Night day/ 야간 - 2": "ot_night",
+    "Sunday/ 일요일 - 2": "ot_sunday",
     "2.1": "ot_210",
-    "Night day/ 야간 - 2": "ot_200",
     "1.3": "ot_130",
-    "Sunday/ 일요일 - 2": "sunday_200",
-    "2.7": "sunday_night_270"
+    "2.7": "sunday_night_270",
+    "Shift day/ 주간": "ot_day",
+    "Night day/ 야간": "ot_night",
+    "Sunday/ 일요일": "ot_sunday"
 }

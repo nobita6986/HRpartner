@@ -86,6 +86,8 @@ export async function POST(req: NextRequest) {
       sameSite: 'lax',
       path: '/',
       maxAge: JWT_TTL_SECONDS,
+      // Đặt domain để chia sẻ cookie giữa các subdomain (tránh xung đột token gây infinite redirect)
+      ...(process.env.NODE_ENV === 'production' ? { domain: '.hrpartner.vn' } : {}),
     });
     return res;
   } catch (error) {

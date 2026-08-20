@@ -3,12 +3,41 @@ import pandas as pd
 import json
 import uuid
 import re
+import calendar
 from sqlalchemy import create_engine, text
 from datetime import datetime
 from formulas.formula_registry import FormulaRegistry
 from agent_mapper import get_mapping_from_ai
+from formulas.actro_config import is_sunday_or_holiday, get_ot_multiplier, get_holidays_for_period
 
 OUTPUT_DIR = "BCC_Output"
+
+
+def list_visible_sheets(file_path):
+    """
+    Trả về (visible_sheet_names, hidden_count) của file Excel.
+    - visible_sheet_names: list tên các sheet có sheet_state == 'visible'
+    - hidden_count: số sheet bị ẩn (hidden hoặc veryHidden)
+    Dùng openpyxl; với file .xlsx chuẩn thì đáng tin cậy.
+    """
+    import openpyxl
+    wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
+    try:
+        visible = []
+        hidden = 0
+        for name in wb.sheetnames:
+            state = wb[name].sheet_state  # 'visible' | 'hidden' | 'veryHidden'
+            if state == "visible":
+                visible.append(name)
+            else:
+                hidden += 1
+        return visible, hidden
+    finally:
+        wb.close()
+
+
+def last_day_in_month(month: int, year: int) -> int:
+    return calendar.monthrange(year, month)[1]
 
 def index_to_excel_col(col_idx):
     """Chuyển đổi index 0, 1, 2... thành toạ độ cột Excel A, B, C... AA..."""
@@ -21,15 +50,32 @@ def index_to_excel_col(col_idx):
 def setup_directories():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def preview_file(file_path, project_name, period_month, period_year, log_callback=print, review_callback=None):
+def preview_file(file_path, project_name, period_month, period_year, log_callback=print, review_callback=None, holiday_config=None, sheet_name=None):
     """
     Xử lý file và trả về danh sách dữ liệu đã chuẩn hóa (dạng dict) để Preview trên UI.
+
+    Parameters
+    ----------
+    sheet_name : str | None
+        Tên sheet muốn parse. Nếu None thì đọc sheet đầu tiên theo pd.read_excel
+        mặc định (giữ behavior cũ, backward-compatible).
     """
     setup_directories()
-    
+
     log_callback(f"[1/3] Đang đọc file: {os.path.basename(file_path)}...")
     try:
-        df = pd.read_excel(file_path, header=None)
+        if sheet_name:
+            log_callback(f"      Sheet được chọn: '{sheet_name}'")
+        # Khi sheet_name=None, pd.read_excel trả về dict {sheet_name: DataFrame}.
+        # Ta ép về 1 sheet đầu tiên để giữ behavior cũ (backward-compatible).
+        read_result = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
+        if isinstance(read_result, dict):
+            # sheet_name=None → dict; lấy sheet đầu tiên
+            first_sheet_name = next(iter(read_result.keys()))
+            df = read_result[first_sheet_name]
+            log_callback(f"      (Mặc định đọc sheet đầu tiên: '{first_sheet_name}')")
+        else:
+            df = read_result
         
         # 1. Định vị dòng Header
         header_row_idx = -1
@@ -56,17 +102,26 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
             v = str(val).lower() if pd.notna(val) else ""
             if "mã thẻ" in v or "mã nv" in v: col_map["employee_code"] = i
             elif "họ và tên" in v or "họ tên" in v: col_map["full_name"] = i
+            elif "ngày vào" in v: col_map["start_date"] = i
+            elif "loại" in v and "công việc" in v: col_map["work_type"] = i
+            elif "loại" in v: col_map["work_type"] = i
             
         # Tìm cột ngày và Summary
         last_day_col = -1
         for i in range(len(row7)):
             val7 = str(row7[i]).strip() if pd.notna(row7[i]) else ""
             if val7.isdigit() and 1 <= int(val7) <= 31:
-                # Đây là cột bắt đầu của 1 ngày
+                # Day number column = In column (merged cell).
                 day_str = f"{int(val7):02d}"
-                # In thường ở i, Out ở i+1, OT ở i+3
-                daily_cols[day_str] = {"in": i, "out": i+1, "ot": i+3}
-                last_day_col = i + 9 # Mỗi ngày có ~10 sub-columns
+                day_start = i  # ← day number IS the In column (BCC Overtime sheet)
+                daily_cols[day_str] = {
+                    "in": day_start,                 # In time
+                    "out": day_start + 1,            # Out time
+                    "ot": day_start + 3,            # OT at 1.5× (ngày thường)
+                    "ot_night": day_start + 7,       # OT at 2.0× (đêm)
+                    "ot_sun": day_start + 8,        # OT at 2.1× (chủ nhật)
+                }
+                last_day_col = i + 9
         
         # Lấy các cột summary cuối cùng để gửi AI
         for i in range(last_day_col + 1, len(row7)):
@@ -79,11 +134,28 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
         # 3. Ánh xạ AI cho các cột Summary
         log_callback(f"[1/3] Đang phân tích {len(summary_headers_to_map)} cột tổng hợp bằng AI/Từ điển...")
         ai_result = get_mapping_from_ai(list(summary_headers_to_map.values()), review_callback=review_callback)
-        
+        ai_result_inv = {v: k for k, v in ai_result.items()}
+
         for i, header_text in summary_headers_to_map.items():
             mapped_key = ai_result.get(header_text)
-            if mapped_key:
+            if mapped_key and mapped_key not in col_map:
+                # Chỉ ghi đè nếu chưa có (giữ lại cột cố định như Ngày vào, Loại)
                 col_map[mapped_key] = i
+        
+        # ── Actro: Hardcode summary columns (KC=289, KD=290, KE=291, KF=292, KH=294, KI=295, KJ=296, KK=297)
+        # Đây là các cột OT summary đã được HR tính sẵn theo công thức SUMIFS
+        # Cấu trúc này match với LCNT7.xlsx
+        # NOTE: pandas uses 0-based index, openpyxl uses 1-based. 
+        #       So we subtract 1 from openpyxl column numbers.
+        if project_name == "Nhà máy Actro - Vĩnh Phúc":
+            col_map["ot_kc"] = 288  # KC - tổng hợp (pandas 0-based)
+            col_map["ot_kd"] = 289  # KD - số giờ ban ngày (×1.0)
+            col_map["ot_ke"] = 290  # KE - ? (×1.0)
+            col_map["ot_kf"] = 291  # KF - OT ngày (×1.5) 
+            col_map["ot_kh"] = 293  # KH - OT đêm (×2.0)
+            col_map["ot_ki"] = 294  # KI - giờ OT ban ngày (×1.3)
+            col_map["ot_kj"] = 295  # KJ - OT CN (×2.0)
+            col_map["ot_kk"] = 296  # KK - ? (×2.7)
                 
         # 4. Trích xuất dữ liệu
         preview_data = []
@@ -92,6 +164,31 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
         # Bắt đầu đọc từ sau dòng header 2 dòng
         df = df.iloc[header_row_idx + 2:]
         formula_engine = FormulaRegistry.get_formula(project_name)
+        
+        # ── Lấy holidays cho kỳ này (Actro) ──────────────────────
+        period_holidays = []
+        holiday_multiplier_map = {}  # date -> multiplier
+        holiday_affects_chuyencan = True
+        holiday_counts_working = True
+        
+        if project_name == "Nhà máy Actro - Vĩnh Phúc":
+            if holiday_config and holiday_config.get("holidays"):
+                # Dùng holiday_config từ UI
+                for h in holiday_config["holidays"]:
+                    date_str = h.get("date", "")
+                    mult = h.get("multiplier", 3.0)
+                    period_holidays.append(date_str)
+                    holiday_multiplier_map[date_str] = mult
+                holiday_affects_chuyencan = holiday_config.get("holiday_affects_chuyencan", True)
+                holiday_counts_working = holiday_config.get("holiday_counts_working", True)
+                log_callback(f"[HOLIDAY CONFIG] Đã load {len(period_holidays)} ngày lễ từ cấu hình user")
+            else:
+                # Fallback: dùng holidays mặc định
+                from formulas.actro_config import get_holidays_for_period
+                period_holidays = get_holidays_for_period(period_year, period_month)
+                for h in period_holidays:
+                    holiday_multiplier_map[h] = 3.0  # Default 300%
+                log_callback(f"[HOLIDAY CONFIG] Dùng {len(period_holidays)} ngày lễ mặc định")
         
         for idx, row in df.iterrows():
             try:
@@ -154,10 +251,10 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                             return 0
                             
                     # Tính tổng giờ OT trong ngày (Cột 150%, 200%, 210%)
-                    ot_150 = safe_float(row[idxs["ot"]])
-                    ot_200 = safe_float(row[idxs["in"] + 7]) if (idxs["in"] + 7) < len(row) else 0
-                    ot_210 = safe_float(row[idxs["in"] + 8]) if (idxs["in"] + 8) < len(row) else 0
-                    ot_val = ot_150 + ot_200 + ot_210
+                    ot_day   = safe_float(row[idxs["ot"]])         # OT at 1.5× (ban ngày)
+                    ot_night = safe_float(row[idxs["ot_night"]])   # OT at 2.0× (đêm)
+                    ot_sun   = safe_float(row[idxs["ot_sun"]])     # OT at 2.1× hoặc chủ nhật
+                    ot_val   = ot_day + ot_night + ot_sun
                     
                     status = "WORKING"
                     if not in_time and not out_time:
@@ -174,12 +271,40 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                             elif h >= 20 or h < 4: shift_type = "Ca 3 (Đêm)"
                         except: pass
                     
-                    import datetime
-                    day_type = "Ngày thường"
-                    try:
-                        d_obj = datetime.date(calc_year, calc_month, day_val)
-                        if d_obj.weekday() == 6: day_type = "Chủ nhật"
-                    except: pass
+                    # Xác định loại ngày: weekday, sunday, holiday, sunday_holiday
+                    day_type_key = "weekday"
+                    day_multiplier = 1.0  # Default multiplier
+                    if project_name == "Nhà máy Actro - Vĩnh Phúc":
+                        date_iso = f"{calc_year}-{calc_month:02d}-{day_val:02d}"
+                        is_weekend, is_holiday, day_type_str = is_sunday_or_holiday(
+                            date_iso, 
+                            period_holidays
+                        )
+                        if day_type_str == "sunday":
+                            day_type_key = "sunday"
+                            day_multiplier = holiday_multiplier_map.get(date_iso, 2.0)  # CN default 200%
+                        elif day_type_str == "holiday":
+                            day_type_key = "holiday"
+                            day_multiplier = holiday_multiplier_map.get(date_iso, 3.0)  # Lễ default 300%
+                        elif day_type_str == "sunday_holiday":
+                            day_type_key = "sunday_holiday"
+                            day_multiplier = holiday_multiplier_map.get(date_iso, 3.0)  # CN+Lễ default 300%
+                    
+                    # Parse shift type key
+                    shift_type_key = "day"
+                    if "Đêm" in shift_type:
+                        shift_type_key = "night"
+                    
+                    # Tính OT multiplier dựa trên loại ngày + ca
+                    ot_mult = get_ot_multiplier(day_type_key, shift_type_key)
+                    
+                    # Map day_type cho hiển thị
+                    day_type_display = {
+                        "weekday": "Ngày thường",
+                        "sunday": "Chủ nhật",
+                        "holiday": "Ngày lễ",
+                        "sunday_holiday": "CN & Lễ",
+                    }.get(day_type_key, "Ngày thường")
                         
                     # Tạo Breakdown chi tiết
                     breakdown = []
@@ -190,18 +315,25 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                         h_20_22 = safe_float(row[idxs["in"] + 5]) if (idxs["in"] + 5) < len(row) else 0
                         night_h = safe_float(row[idxs["in"] + 6]) if (idxs["in"] + 6) < len(row) else 0
                         
+                        # Tính rate hiển thị dựa trên day_type
+                        rate_display = 100
+                        if day_type_key == "sunday":
+                            rate_display = 200 if shift_type_key == "day" else 270
+                        elif day_type_key == "holiday":
+                            rate_display = 300
+                        elif day_type_key == "sunday_holiday":
+                            rate_display = 300
+                        elif shift_type_key == "night":
+                            rate_display = 130
+                        
                         if normal_h > 0:
-                            # Xác định rate cho normal_hours của Actro
-                            rate = 100
-                            if day_type == "Chủ nhật":
-                                rate = 270 if shift_type == "Ca 3 (Đêm)" else 200
-                            elif shift_type == "Ca 3 (Đêm)":
-                                rate = 130
-                            breakdown.append({"name": f"Hành chính ({shift_type})", "hours": normal_h, "rate": rate})
+                            breakdown.append({"name": f"Hành chính ({shift_type})", "hours": normal_h, "rate": rate_display})
                             
-                        if ot_150 > 0: breakdown.append({"name": "Tăng ca 150%", "hours": ot_150, "rate": 150})
-                        if ot_200 > 0: breakdown.append({"name": "Tăng ca 200%", "hours": ot_200, "rate": 200})
-                        if ot_210 > 0: breakdown.append({"name": "Tăng ca 210%", "hours": ot_210, "rate": 210})
+                        if ot_day > 0: breakdown.append({"name": "Tăng ca 150%", "hours": ot_day, "rate": 150})
+                        if ot_night > 0: breakdown.append({"name": "Tăng ca 200% đêm", "hours": ot_night, "rate": 200})
+                        if ot_sun > 0: 
+                            rate_sun = 210 if day_type_key == "sunday" else 300
+                            breakdown.append({"name": f"Tăng ca {rate_sun}% chủ nhật/lễ", "hours": ot_sun, "rate": rate_sun})
                         if night_h > 0: breakdown.append({"name": "Giờ làm đêm", "hours": night_h, "rate": 130})
                         if h_8_17 > 0: breakdown.append({"name": "Giờ 8h~17h", "hours": h_8_17, "rate": None})
                         if h_20_22 > 0: breakdown.append({"name": "Giờ 20h~22h", "hours": h_20_22, "rate": None})
@@ -218,40 +350,131 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                         "in": in_time if in_time and in_time != 'nan' else "",
                         "out": out_time if out_time and out_time != 'nan' else "",
                         "ot": ot_val,
+                        "ot_day": ot_day,
+                        "ot_night": ot_night,
+                        "ot_sun": ot_sun,
                         "shiftType": shift_type,
-                        "dayType": day_type,
+                        "dayType": day_type_display,
+                        "dayTypeKey": day_type_key,  # weekday, sunday, holiday, sunday_holiday
+                        "shiftTypeKey": shift_type_key,  # day, night
+                        "otMultiplier": day_multiplier,  # Custom multiplier from holiday config
+                        "isHoliday": day_type_key in ("holiday", "sunday_holiday"),
                         "breakdown": breakdown
                     })
                     
                 # Tính tổng hợp từ daily_data làm dữ liệu fallback
                 calc_total_days = sum(1 for d in daily_data if d["status"] != "ABSENT")
-                calc_total_ot = sum(d["ot"] for d in daily_data)
                 calc_absent_days = sum(1 for d in daily_data if d["status"] == "ABSENT")
                 
-                # Raw Data cho Formula Engine + Trace Map
+                # ── Actro: Dùng summary columns thay vì tính lại từ daily ──
+                # HR dùng công thức SUMIFS để tính sẵn các cột KC, KD, KE, KF, KH, KI, KJ, KK
+                # LƯƠNG = LCB/giờ × (KD×1 + KE×1 + KF×1.5 + KH×2 + KI×1.3 + KJ×2 + KK×2.7)
+                # CÔNG HC = (KD + KE + KI) / 8
+                if project_name == "Nhà máy Actro - Vĩnh Phúc" and "ot_kf" in col_map:
+                    # Đọc trực tiếp từ summary columns
+                    ot_kc = safe_float(row[col_map.get("ot_kc", 289)])
+                    ot_kd = safe_float(row[col_map.get("ot_kd", 290)])
+                    ot_ke = safe_float(row[col_map.get("ot_ke", 291)])
+                    ot_kf = safe_float(row[col_map.get("ot_kf", 292)])  # OT ngày (×1.5)
+                    ot_kh = safe_float(row[col_map.get("ot_kh", 294)])  # OT đêm (×2.0)
+                    ot_ki = safe_float(row[col_map.get("ot_ki", 295)])   # OT ngày (×1.3)
+                    ot_kj = safe_float(row[col_map.get("ot_kj", 296)])  # OT CN (×2.0)
+                    ot_kk = safe_float(row[col_map.get("ot_kk", 297)])
+                    
+                    # Map sang format ActroFormula expects
+                    # KF = OT ngày (hệ số 1.5 trong công thức)
+                    # KH = OT đêm (hệ số 2.0)
+                    # KJ = OT CN (hệ số 2.0)
+                    calc_ot_day = ot_kf   # OT ngày (từ KF)
+                    calc_ot_night = ot_kh  # OT đêm (từ KH)
+                    calc_ot_sun = ot_kj    # OT CN (từ KJ)
+                    calc_ot_ki = ot_ki     # OT ngày × 1.3 (từ KI) - dùng trong CÔNG HC
+                    calc_cong_hc = (ot_kd + ot_ke + ot_ki) / 8  # CÔNG HC = (KD + KE + KI) / 8
+                    
+                    # Override total_days bằng CÔNG HC × 8 (số giờ hành chính)
+                    # CÔNG HC là số ngày công quy đổi theo hệ số
+                    calc_total_days = calc_cong_hc
+                else:
+                    calc_ot_day = sum(d["ot_day"] for d in daily_data if "ot_day" in d) or sum(
+                        safe_float(row[idxs["ot"]]) for idxs in daily_cols.values()
+                    )
+                    calc_ot_night = sum(d.get("ot_night", 0) for d in daily_data)
+                    calc_ot_sun = sum(d.get("ot_sun", 0) for d in daily_data)
+                
+                # ── Parse start_date (Ngày vào) ─────────────────────────────────
+                start_date = ""
+                if "start_date" in col_map:
+                    sd_val = row[col_map["start_date"]]
+                    if pd.notna(sd_val):
+                        try:
+                            import datetime as dt
+                            if isinstance(sd_val, (dt.datetime, dt.date)):
+                                start_date = sd_val.strftime("%Y-%m-%d") if hasattr(sd_val, 'strftime') else str(sd_val)
+                            else:
+                                sd_str = str(sd_val).strip()
+                                for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y"):
+                                    try:
+                                        start_date = dt.datetime.strptime(sd_str, fmt).strftime("%Y-%m-%d")
+                                        break
+                                    except: pass
+                                if not start_date:
+                                    start_date = sd_str
+                        except: pass
+
+                # ── Parse work_type (Loại) ────────────────────────────────────
+                work_type = ""
+                if "work_type" in col_map:
+                    wt_val = row[col_map["work_type"]]
+                    if pd.notna(wt_val):
+                        work_type = str(wt_val).strip()
+
+                # ── Calculate period_end (last day of the period) ─────────────
+                period_end = f"{period_year}-{period_month:02d}-{last_day_in_month(period_month, period_year)}"
+                
+                # ── Raw Data cho Formula Engine + Trace Map ──────────────
                 raw_data = {
-                    "base_salary": 6000000, # Mock base_salary nếu file ko có
+                    "base_salary": 6000000,
                     "total_days": calc_total_days,
                     "normal_hours": calc_total_days * 8,
-                    "ot_150": calc_total_ot,
-                    "absent_days": calc_absent_days
+                    "ot_day": calc_ot_day,
+                    "ot_night": calc_ot_night,
+                    "ot_sunday": calc_ot_sun,
+                    "ot_holiday": 0,
+                    "absent_days": calc_absent_days,
+                    "start_date": start_date,
+                    "work_type": work_type,
+                    "period_end": period_end,
+                    "holidays": period_holidays,
                 }
                 
                 trace_map = {}
                 for key, col_idx in col_map.items():
                     if key not in ["employee_code", "full_name"]:
                         val = row[col_idx]
-                        try:
-                            f_val = float(val) if pd.notna(val) else 0
-                        except:
-                            f_val = 0
-                        
-                        # Ghi đè fallback bằng dữ liệu thực tế từ cột Tổng Hợp của Excel (nếu có)
-                        raw_data[key] = f_val
-                        
+
+                        # Chỉ ghi đè bằng số cho các cột OT/timekeeping thực sự
+                        # Giữ lại start_date, work_type, period_end đã parse đúng ở trên
+                        if key in ("total_days", "absent_days", "ot_day", "ot_night",
+                                   "ot_sunday", "normal_hours", "base_salary",
+                                   "phu_cap_nha_o", "tru_ung", "bu_luong", "soi_kinh",
+                                   "ot_130", "ot_150", "ot_180", "ot_200", "ot_210",
+                                   "ot_250", "ot_260", "sunday_200", "sunday_night_240",
+                                   "sunday_night_270", "holiday_300", "holiday_night_390",
+                                   "suat_an",
+                                   # Actro summary columns (KC, KD, KE, KF, KH, KI, KJ, KK)
+                                   "ot_kc", "ot_kd", "ot_ke", "ot_kf", "ot_kh", "ot_ki", "ot_kj", "ot_kk"):
+                            try:
+                                f_val = float(val) if pd.notna(val) else 0
+                            except:
+                                f_val = 0
+                            raw_data[key] = f_val
+                        else:
+                            # Giữ nguyên giá trị đã parse (start_date, work_type, period_end, ...)
+                            f_val = val
+
                         # Lưu toạ độ vào Trace Map
                         excel_col = index_to_excel_col(col_idx)
-                        excel_row = idx + 1 # idx trong pandas là 0-based, cộng 1 ra số dòng Excel
+                        excel_row = idx + 1
                         trace_map[key] = {
                             "cell": f"{excel_col}{excel_row}",
                             "value": f_val
@@ -261,7 +484,7 @@ def preview_file(file_path, project_name, period_month, period_year, log_callbac
                 payroll_data = formula_engine.calculate(raw_data) if formula_engine else None
                 
                 final_total_days = raw_data.get("total_days", calc_total_days)
-                final_ot_hours = sum([raw_data.get(k, 0) for k in ["ot_130", "ot_150", "ot_180", "ot_200", "ot_210", "ot_250", "ot_260", "sunday_200", "holiday_300"]]) or calc_total_ot
+                final_ot_hours = raw_data.get("ot_day", 0) + raw_data.get("ot_night", 0) + raw_data.get("ot_sunday", 0)
                 final_absent_days = raw_data.get("absent_days", calc_absent_days)
                 
                 # Ràng buộc DB: Decimal(5,2) tối đa là 999.99

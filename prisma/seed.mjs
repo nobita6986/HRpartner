@@ -381,12 +381,19 @@ async function seedWorkerProfile() {
     worker = await prisma.worker.create({
       data: {
         userId: workerUser.id,
+        accountUserId: workerUser.id,
         fullName: workerUser.name ?? 'Worker Demo',
         phone: workerUser.phone,
         employmentStatus: 'NONE',
         profileStatus: 'INCOMPLETE',
         riskStatus: 'NORMAL',
       },
+    });
+  } else if (!worker.accountUserId) {
+    // Sửa lỗi nạp thiếu accountUserId trước đây
+    await prisma.worker.update({
+      where: { id: worker.id },
+      data: { accountUserId: workerUser.id },
     });
   }
   return worker ? 1 : 0;

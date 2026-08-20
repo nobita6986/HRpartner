@@ -88,9 +88,7 @@ export function GlobalNavbar() {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center gap-2">
-              <span className="text-3xl font-extrabold tracking-tight" style={{ color: 'var(--color-brand-dark)' }}>
-                HR<span style={{ color: 'var(--color-primary)' }}>P</span>
-              </span>
+              <img src="/logo.png" alt="HRP Logo" style={{ height: '40px', width: 'auto' }} />
             </Link>
           </div>
 

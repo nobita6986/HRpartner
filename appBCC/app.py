@@ -2,11 +2,11 @@ import sys
 import os
 import threading
 from datetime import datetime
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                               QHBoxLayout, QPushButton, QLabel, QLineEdit, 
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+                               QHBoxLayout, QPushButton, QLabel, QLineEdit,
                                QFileDialog, QTextEdit, QMessageBox, QGroupBox,
                                QTableWidget, QTableWidgetItem, QHeaderView, QComboBox, QProgressBar,
-                               QMenu, QDialog, QDialogButtonBox, QSpinBox, QDoubleSpinBox, QGridLayout, QTabWidget, QFormLayout)
+                               QMenu, QDialog, QDialogButtonBox, QSpinBox, QDoubleSpinBox, QGridLayout, QTabWidget, QFormLayout, QCheckBox, QInputDialog)
 from PySide6.QtCore import Qt, Signal, QObject, QThread
 from PySide6.QtGui import QColor, QIcon, QPixmap, QCursor
 from dotenv import load_dotenv
@@ -24,8 +24,64 @@ if not os.path.exists(env_path):
 
 load_dotenv(dotenv_path=env_path)
 
-from core_pipeline import preview_file, push_to_db, clear_db_period, fetch_employee_timesheet, update_employee_timesheet, export_employee_history, export_project_payroll
+from core_pipeline import preview_file, push_to_db, clear_db_period, fetch_employee_timesheet, update_employee_timesheet, export_employee_history, export_project_payroll, list_visible_sheets
+from governance import append_governance_event, make_governance_event, validate_publish_records
 from formulas.formula_registry import FormulaRegistry
+
+class SheetSelectorDialog(QDialog):
+    """
+    Dialog cho phép user chọn 1 sheet để parse khi file Excel có nhiều sheet visible.
+    Chỉ liệt kê sheet visible; nếu có sheet ẩn sẽ hiện label nhắc nhở.
+    """
+    def __init__(self, visible_sheets: list, hidden_count: int = 0, parent=None):
+        super().__init__(parent)
+        self.visible_sheets = visible_sheets
+        self.hidden_count = hidden_count
+        self.selected_sheet = None
+        self.setWindowTitle("Chọn sheet chấm công")
+        self.setMinimumWidth(420)
+        self.setup_ui()
+
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+
+        info = QLabel(
+            f"<b>File Excel có {len(self.visible_sheets)} sheet hiển thị.</b><br>"
+            "Chọn 1 sheet chứa dữ liệu chấm công cần parse:"
+        )
+        info.setWordWrap(True)
+        info.setStyleSheet("color: #2b579a; padding: 8px; background-color: #f0f8ff; border-radius: 5px;")
+        layout.addWidget(info)
+
+        self.cbo_sheet = QComboBox()
+        for name in self.visible_sheets:
+            self.cbo_sheet.addItem(name)
+        if self.visible_sheets:
+            self.cbo_sheet.setCurrentIndex(0)
+        layout.addWidget(self.cbo_sheet)
+
+        if self.hidden_count > 0:
+            warn = QLabel(
+                f"Lưu ý: file có {self.hidden_count} sheet ẩn không hiển thị trong danh sách này. "
+                f"Liên hệ quản lý nhà máy nếu cần truy cập sheet ẩn."
+            )
+            warn.setWordWrap(True)
+            warn.setStyleSheet("color: #8a6d3b; padding: 8px; background-color: #fcf8e3; border-radius: 5px; font-style: italic;")
+            warn.setAlignment(Qt.AlignTop)
+            layout.addWidget(warn)
+
+        btn_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btn_box.button(QDialogButtonBox.Ok).setText("Parse sheet này")
+        btn_box.accepted.connect(self.accept)
+        btn_box.rejected.connect(self.reject)
+        layout.addWidget(btn_box)
+
+    def accept(self):
+        self.selected_sheet = self.cbo_sheet.currentText()
+        super().accept()
+
+    def get_selected_sheet(self):
+        return self.selected_sheet
 
 class WorkerSignals(QObject):
     log_signal = Signal(str)
@@ -35,29 +91,335 @@ class WorkerSignals(QObject):
     review_mapping_signal = Signal(list, dict, object, dict)
 
 class ParseWorker(QThread):
-    def __init__(self, file_path, project_name, period_month, period_year, signals):
+    def __init__(self, file_path, project_name, period_month, period_year, signals, holiday_config=None, sheet_name=None):
         super().__init__()
         self.file_path = file_path
         self.project_name = project_name
         self.period_month = period_month
         self.period_year = period_year
         self.signals = signals
+        self.holiday_config = holiday_config
+        self.sheet_name = sheet_name
 
     def run(self):
         def logger(msg):
             self.signals.log_signal.emit(msg)
-            
+
         def review_callback(unknown_headers, ai_mapping):
             event = threading.Event()
             result_container = {}
             self.signals.review_mapping_signal.emit(unknown_headers, ai_mapping, event, result_container)
             event.wait()
             return result_container.get('mapping', ai_mapping)
-            
-        data = preview_file(self.file_path, self.project_name, self.period_month, self.period_year, log_callback=logger, review_callback=review_callback)
+
+        data = preview_file(self.file_path, self.project_name, self.period_month, self.period_year,
+                          log_callback=logger, review_callback=review_callback,
+                          holiday_config=self.holiday_config, sheet_name=self.sheet_name)
         self.signals.done_signal.emit(data)
 
 from agent_mapper import STANDARD_COLUMNS
+
+class AddHolidayDialog(QDialog):
+    """
+    Dialog cho phép thêm ngày lễ với dropdown chọn ngày.
+    """
+    def __init__(self, year: int, month: int, existing_dates: list = None, parent=None):
+        super().__init__(parent)
+        self.year = year
+        self.month = month
+        self.existing_dates = existing_dates or []
+        self.result_date = None
+        self.setWindowTitle(f"Thêm Ngày Lễ - {month}/{year}")
+        self.setMinimumWidth(500)
+        self.setup_ui()
+    
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        
+        # Header
+        lbl = QLabel(f"<b>Thêm ngày lễ cho Tháng {self.month}/{self.year}</b>")
+        layout.addWidget(lbl)
+        
+        # Day selection
+        form = QFormLayout()
+        
+        self.cbo_day = QComboBox()
+        # Get days in month
+        import calendar
+        days_in_month = calendar.monthrange(self.year, self.month)[1]
+        for d in range(1, days_in_month + 1):
+            weekday_names = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"]
+            import datetime
+            wd = weekday_names[datetime.date(self.year, self.month, d).weekday()]
+            self.cbo_day.addItem(f"{d} ({wd})", d)
+        form.addRow("Ngày:", self.cbo_day)
+        
+        self.txt_name = QLineEdit()
+        self.txt_name.setPlaceholderText("VD: Tết Nguyên đán, Giỗ Tổ Hùng Vương...")
+        form.addRow("Tên ngày lễ:", self.txt_name)
+        
+        self.cbo_mult = QComboBox()
+        self.cbo_mult.addItems(["100%", "150%", "200%", "250%", "300% (Lễ)", "350%", "400%"])
+        self.cbo_mult.setCurrentIndex(4)  # Default 300%
+        form.addRow("Tỷ lệ OT:", self.cbo_mult)
+        
+        layout.addLayout(form)
+        
+        # Preview
+        self.lbl_preview = QLabel()
+        self.lbl_preview.setStyleSheet("color: #666; font-style: italic;")
+        layout.addWidget(self.lbl_preview)
+        self.cbo_day.currentIndexChanged.connect(self.update_preview)
+        self.update_preview()
+        
+        # Buttons
+        btn_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btn_box.accepted.connect(self.accept)
+        btn_box.rejected.connect(self.reject)
+        layout.addWidget(btn_box)
+    
+    def update_preview(self):
+        day = self.cbo_day.currentData()
+        if day:
+            import datetime
+            wd_names = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"]
+            wd = wd_names[datetime.date(self.year, self.month, day).weekday()]
+            date_str = f"{self.year}-{self.month:02d}-{day:02d}"
+            
+            mult_text = self.cbo_mult.currentText()
+            self.lbl_preview.setText(f"Preview: {wd} {day}/{self.month}/{self.year} - Tỷ lệ: {mult_text}")
+    
+    def accept(self):
+        day = self.cbo_day.currentData()
+        name = self.txt_name.text().strip() or f"Ngày lễ {day}/{self.month}"
+        mult_text = self.cbo_mult.currentText()
+        mult = float(mult_text.replace("%", "").split("(")[0].strip()) / 100.0
+        
+        date_str = f"{self.year}-{self.month:02d}-{day:02d}"
+        
+        # Check if already exists
+        if date_str in self.existing_dates:
+            QMessageBox.warning(self, "Lỗi", f"Ngày {date_str} đã có trong danh sách!")
+            return
+        
+        self.result_date = {
+            "date": date_str,
+            "name": name,
+            "multiplier": mult
+        }
+        super().accept()
+    
+    def get_result(self):
+        return self.result_date
+
+
+class HolidayConfigDialog(QDialog):
+    """
+    Dialog cho phép kế toán cấu hình ngày lễ và tỷ lệ OT tương ứng.
+    """
+    def __init__(self, year: int, month: int, existing_holidays: list = None, parent=None):
+        super().__init__(parent)
+        self.year = year
+        self.month = month
+        self.holidays = existing_holidays or []  # List of {"date": "YYYY-MM-DD", "multiplier": 3.0, "name": "Tết Dương lịch"}
+        self.setWindowTitle(f"Cấu Hình Ngày Lễ - Tháng {month}/{year}")
+        self.setMinimumSize(700, 500)
+        
+        self.setup_ui()
+    
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        
+        # Header
+        info = QLabel(
+            f"<b>Cấu hình ngày lễ cho kỳ lương Tháng {self.month}/{self.year}</b><br>"
+            "<i>Ngày lễ mặc định được tải từ lịch Việt Nam. Bạn có thể thêm/bớt/sửa ngày lễ.</i>"
+        )
+        info.setStyleSheet("color: #2b579a; padding: 10px; background-color: #f0f8ff; border-radius: 5px;")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        
+        # Bảng ngày lễ
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(["Ngày", "Tên ngày lễ", "Tỷ lệ OT (%)", "Xóa"])
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
+        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Fixed)
+        self.table.setColumnWidth(0, 120)
+        self.table.setColumnWidth(2, 100)
+        self.table.setColumnWidth(3, 60)
+        layout.addWidget(self.table)
+        
+        # Nút thêm ngày lễ
+        btn_layout = QHBoxLayout()
+        
+        self.btn_add = QPushButton("+ Thêm ngày lễ")
+        self.btn_add.setStyleSheet("background-color: #28a745; color: white; padding: 8px;")
+        self.btn_add.clicked.connect(self.add_holiday)
+        btn_layout.addWidget(self.btn_add)
+        
+        self.btn_add_common = QPushButton("+ Thêm ngày lễ phổ biến")
+        self.btn_add_common.setStyleSheet("background-color: #17a2b8; color: white; padding: 8px;")
+        self.btn_add_common.clicked.connect(self.show_common_holidays)
+        btn_layout.addWidget(self.btn_add_common)
+        
+        btn_layout.addStretch()
+        layout.addLayout(btn_layout)
+        
+        # Policy: Nghỉ lễ có ảnh hưởng chuyên cần?
+        policy_group = QGroupBox("Chính sách ngày lễ")
+        policy_layout = QVBoxLayout()
+        
+        self.chk_holiday_affects_chuyencan = QCheckBox(
+            "Nghỉ ngày lễ không ảnh hưởng đến thưởng chuyên cần"
+        )
+        self.chk_holiday_affects_chuyencan.setChecked(True)
+        policy_layout.addWidget(self.chk_holiday_affects_chuyencan)
+        
+        self.chk_holiday_counts_working = QCheckBox(
+            "Đi làm ngày lễ được tính công và hưởng OT lễ"
+        )
+        self.chk_holiday_counts_working.setChecked(True)
+        policy_layout.addWidget(self.chk_holiday_counts_working)
+        
+        policy_group.setLayout(policy_layout)
+        layout.addWidget(policy_group)
+        
+        # Buttons
+        btn_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btn_box.accepted.connect(self.accept)
+        btn_box.rejected.connect(self.reject)
+        layout.addWidget(btn_box)
+        
+        # Load existing holidays
+        self.refresh_table()
+    
+    def refresh_table(self):
+        self.table.setRowCount(len(self.holidays))
+        for i, h in enumerate(self.holidays):
+            # Date
+            date_item = QTableWidgetItem(h.get("date", ""))
+            date_item.setFlags(date_item.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(i, 0, date_item)
+            
+            # Name
+            name_item = QTableWidgetItem(h.get("name", ""))
+            self.table.setItem(i, 1, name_item)
+            
+            # Multiplier
+            mult = h.get("multiplier", 3.0)
+            mult_item = QTableWidgetItem(str(int(mult * 100)))
+            self.table.setItem(i, 2, mult_item)
+            
+            # Delete button
+            btn_del = QPushButton("Xóa")
+            btn_del.setStyleSheet("background-color: #dc3545; color: white; padding: 2px;")
+            btn_del.clicked.connect(lambda _, row=i: self.delete_holiday(row))
+            self.table.setCellWidget(i, 3, btn_del)
+    
+    def add_holiday(self):
+        existing_dates = [h["date"] for h in self.holidays]
+        dlg = AddHolidayDialog(self.year, self.month, existing_dates, self)
+        if dlg.exec():
+            result = dlg.get_result()
+            if result:
+                self.holidays.append(result)
+                self.refresh_table()
+    
+    def delete_holiday(self, row):
+        if 0 <= row < len(self.holidays):
+            self.holidays.pop(row)
+            self.refresh_table()
+    
+    def show_common_holidays(self):
+        """Hiển thị dialog chọn các ngày lễ phổ biến"""
+        from formulas.actro_config import VIETNAM_OFFICIAL_HOLIDAYS
+        import datetime
+        
+        # Filter holidays for current month
+        month_prefix = f"{self.year:04d}-{self.month:02d}-"
+        available = [h for h in VIETNAM_OFFICIAL_HOLIDAYS if h.startswith(month_prefix)]
+        
+        if not available:
+            QMessageBox.information(self, "Thông báo", f"Không có ngày lễ chính thức nào trong tháng {self.month}/{self.year}")
+            return
+        
+        # Build selection dialog
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Chọn ngày lễ phổ biến")
+        layout = QVBoxLayout(dlg)
+        
+        lbl = QLabel("Chọn các ngày lễ muốn thêm:")
+        layout.addWidget(lbl)
+        
+        checkboxes = []
+        existing_dates = [h["date"] for h in self.holidays]
+        
+        for h in available:
+            if h in existing_dates:
+                continue  # Skip already added
+            parts = h.split("-")
+            d = datetime.date(int(parts[0]), int(parts[1]), int(parts[2]))
+            weekday_names = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"]
+            weekday = weekday_names[d.weekday()]
+            
+            chk = QCheckBox(f"{weekday} {d.day}/{d.month} ({h})")
+            chk.setChecked(True)
+            layout.addWidget(chk)
+            checkboxes.append((h, chk))
+        
+        if not checkboxes:
+            QMessageBox.information(self, "Thông báo", "Tất cả ngày lễ đã được thêm vào!")
+            return
+        
+        btn_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btn_box.accepted.connect(dlg.accept)
+        btn_box.rejected.connect(dlg.reject)
+        layout.addWidget(btn_box)
+        
+        if dlg.exec():
+            for date_str, chk in checkboxes:
+                if chk.isChecked():
+                    parts = date_str.split("-")
+                    d = datetime.date(int(parts[0]), int(parts[1]), int(parts[2]))
+                    self.holidays.append({
+                        "date": date_str,
+                        "name": f"Ngày lễ {d.day}/{d.month}",
+                        "multiplier": 3.0
+                    })
+            self.refresh_table()
+    
+    def accept(self):
+        # Save changes
+        for i in range(self.table.rowCount()):
+            date_str = self.table.item(i, 0).text()
+            name_str = self.table.item(i, 1).text()
+            mult_str = self.table.item(i, 2).text()
+            
+            try:
+                mult = float(mult_str) / 100.0
+            except:
+                mult = 3.0
+            
+            # Update in list
+            for h in self.holidays:
+                if h["date"] == date_str:
+                    h["name"] = name_str
+                    h["multiplier"] = mult
+                    break
+        
+        super().accept()
+    
+    def get_config(self) -> dict:
+        """Trả về cấu hình ngày lễ"""
+        return {
+            "holidays": self.holidays,
+            "holiday_affects_chuyencan": self.chk_holiday_affects_chuyencan.isChecked(),
+            "holiday_counts_working": self.chk_holiday_counts_working.isChecked(),
+        }
+
 
 class ReviewMappingDialog(QDialog):
     def __init__(self, unknown_headers, ai_mapping, parent=None):
@@ -68,11 +430,13 @@ class ReviewMappingDialog(QDialog):
         self.unknown_headers = unknown_headers
         self.ai_mapping = ai_mapping
         self.final_mapping = {}
-        
+        self.review_event = None
+
         layout = QVBoxLayout(self)
-        
-        info = QLabel("AI đã tự động phân tích và ghép các cột mới vào hệ thống.\nVui lòng kiểm tra và điều chỉnh (nếu cần) trước khi tiếp tục:")
+
+        info = QLabel("AI hoặc từ điển đã đề xuất mapping. Vui lòng kiểm tra, điều chỉnh và xác nhận trước khi hệ thống sử dụng mapping này.")
         info.setStyleSheet("font-weight: bold; color: #2b579a;")
+        info.setWordWrap(True)
         layout.addWidget(info)
         
         self.table = QTableWidget()
@@ -100,6 +464,15 @@ class ReviewMappingDialog(QDialog):
             self.combos.append((header, cbo))
             
         layout.addWidget(self.table)
+
+        review_form = QFormLayout()
+        self.txt_actor = QLineEdit(os.environ.get("USERNAME", ""))
+        self.txt_actor.setPlaceholderText("Người xác nhận mapping")
+        self.txt_reason = QLineEdit("Đã kiểm tra mapping cột")
+        self.txt_reason.setPlaceholderText("Lý do/xác nhận")
+        review_form.addRow("Người xác nhận:", self.txt_actor)
+        review_form.addRow("Lý do:", self.txt_reason)
+        layout.addLayout(review_form)
         
         btn_box = QDialogButtonBox(QDialogButtonBox.Ok)
         btn_box.button(QDialogButtonBox.Ok).setText("Xác nhận & Tiếp tục")
@@ -107,6 +480,16 @@ class ReviewMappingDialog(QDialog):
         layout.addWidget(btn_box)
         
     def accept(self):
+        try:
+            self.review_event = make_governance_event(
+                action="mapping_review",
+                actor=self.txt_actor.text(),
+                reason=self.txt_reason.text(),
+            )
+        except ValueError as error:
+            QMessageBox.warning(self, "Thiếu xác nhận", str(error))
+            return
+
         for header, cbo in self.combos:
             val = cbo.currentData()
             self.final_mapping[header] = None if val == "null" else val
@@ -226,6 +609,7 @@ class MainWindow(QMainWindow):
         self.parsed_data = None
         self.db_url = os.environ.get("APPBCC_DATABASE_URL", os.environ.get("DATABASE_URL", "postgresql://..."))  # Phase 2 DEC-09 A: ETL dùng credential riêng; fallback cho dev
         self.check_cols_map = {}
+        self.pending_mapping_review_event = None
 
         self.signals = WorkerSignals()
         self.signals.log_signal.connect(self.append_log)
@@ -233,6 +617,9 @@ class MainWindow(QMainWindow):
         self.signals.push_done_signal.connect(self.on_push_done)
         self.signals.clear_done_signal.connect(self.on_clear_done)
         self.signals.review_mapping_signal.connect(self.on_review_mapping_requested)
+
+        # Holiday config cache
+        self.holiday_config = None  # Lưu cấu hình ngày lễ
 
         self.setup_ui()
 
@@ -264,6 +651,102 @@ class MainWindow(QMainWindow):
         self.tab_settings = QWidget()
         self.setup_tab_settings()
         self.tabs.addTab(self.tab_settings, "Cài Đặt Hệ Thống")
+        
+        # Cập nhật ngày lễ ban đầu
+        self.update_holidays_label()
+    
+    def on_project_changed(self):
+        """Cập nhật holidays label khi đổi dự án"""
+        self.update_holidays_label()
+    
+    def on_period_changed(self):
+        """Cập nhật holidays label khi đổi tháng/năm"""
+        self.update_holidays_label()
+    
+    def open_holiday_config(self):
+        """Mở dialog cấu hình ngày lễ"""
+        try:
+            period_month = self.cbo_month.currentIndex() + 1
+            period_year = int(self.txt_year.text().strip())
+        except:
+            QMessageBox.warning(self, "Lỗi", "Năm không hợp lệ!")
+            return
+        
+        project = self.cbo_project.currentText()
+        if not project or project == "Chưa cài đặt Plugin nào!":
+            QMessageBox.warning(self, "Lỗi", "Vui lòng chọn Dự án trước!")
+            return
+        
+        # Load existing holidays
+        from formulas.actro_config import get_holidays_for_period, VIETNAM_OFFICIAL_HOLIDAYS
+        
+        # Get existing holidays from config
+        existing = self.holiday_config.get("holidays", []) if self.holiday_config else []
+        
+        # If no existing, load default holidays for this period
+        if not existing and project == "Nhà máy Actro - Vĩnh Phúc":
+            default_holidays = get_holidays_for_period(period_year, period_month)
+            existing = [{"date": h, "name": f"Ngày lễ {h}", "multiplier": 3.0} for h in default_holidays]
+        
+        dlg = HolidayConfigDialog(period_year, period_month, existing, self)
+        if dlg.exec():
+            self.holiday_config = dlg.get_config()
+            self.update_holidays_label()
+            self.append_log(f"[CẤU HÌNH] Đã cập nhật ngày lễ. {len(self.holiday_config.get('holidays', []))} ngày lễ được áp dụng.")
+    
+    def update_holidays_label(self):
+        """Cập nhật hiển thị ngày lễ trong kỳ"""
+        project = self.cbo_project.currentText()
+        if not project or project == "Chưa cài đặt Plugin nào!":
+            self.lbl_holidays.setText("...")
+            return
+        
+        try:
+            period_month = self.cbo_month.currentIndex() + 1
+            period_year = int(self.txt_year.text().strip())
+        except:
+            self.lbl_holidays.setText("Năm không hợp lệ")
+            return
+        
+        # Import và lấy holidays
+        from formulas.actro_config import get_holidays_for_period, VIETNAM_OFFICIAL_HOLIDAYS
+        
+        if project == "Nhà máy Actro - Vĩnh Phúc":
+            # Ưu tiên dùng holiday_config nếu có
+            if self.holiday_config and self.holiday_config.get("holidays"):
+                holidays = self.holiday_config["holidays"]
+                holiday_strs = []
+                for h in holidays:
+                    date_str = h.get("date", "")
+                    mult = h.get("multiplier", 3.0)
+                    parts = date_str.split("-")
+                    import datetime
+                    d = datetime.date(int(parts[0]), int(parts[1]), int(parts[2]))
+                    weekday_names = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"]
+                    weekday = weekday_names[d.weekday()]
+                    holiday_strs.append(f"{weekday} {d.day}/{d.month} ({int(mult*100)}%)")
+                self.lbl_holidays.setText(", ".join(holiday_strs) if holiday_strs else "Không có")
+                self.lbl_holidays.setStyleSheet("color: #d63384; font-weight: bold;")
+            else:
+                # Fallback: dùng holidays mặc định
+                holidays = get_holidays_for_period(period_year, period_month)
+                if holidays:
+                    import datetime
+                    holiday_strs = []
+                    for h in holidays:
+                        parts = h.split("-")
+                        d = datetime.date(int(parts[0]), int(parts[1]), int(parts[2]))
+                        weekday_names = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"]
+                        weekday = weekday_names[d.weekday()]
+                        holiday_strs.append(f"{weekday} {d.day}/{d.month}")
+                    self.lbl_holidays.setText(", ".join(holiday_strs))
+                    self.lbl_holidays.setStyleSheet("color: #6c757d;")
+                else:
+                    self.lbl_holidays.setText("Không có ngày lễ trong kỳ này")
+                    self.lbl_holidays.setStyleSheet("color: #6c757d;")
+        else:
+            self.lbl_holidays.setText("Dự án khác (sử dụng config riêng)")
+            self.lbl_holidays.setStyleSheet("color: #666; font-style: italic;")
 
     def setup_tab_batch(self):
         layout = QVBoxLayout()
@@ -300,6 +783,7 @@ class MainWindow(QMainWindow):
             self.cbo_project.addItem("Chưa cài đặt Plugin nào!")
         else:
             self.cbo_project.addItems(projects)
+        self.cbo_project.currentIndexChanged.connect(self.on_project_changed)
         row1.addWidget(self.cbo_project)
         
         row1.addSpacing(20) # Khoảng cách giữa 2 phần
@@ -310,12 +794,14 @@ class MainWindow(QMainWindow):
         
         current_date = datetime.now()
         self.cbo_month.setCurrentIndex(current_date.month - 1)
+        self.cbo_month.currentIndexChanged.connect(self.on_period_changed)
         row1.addWidget(self.cbo_month)
         
         row1.addWidget(QLabel("Năm:"))
         self.txt_year = QLineEdit()
         self.txt_year.setText(str(current_date.year))
         self.txt_year.setFixedWidth(80)
+        self.txt_year.textChanged.connect(self.on_period_changed)
         row1.addWidget(self.txt_year)
         
         row1.addStretch()
@@ -332,6 +818,21 @@ class MainWindow(QMainWindow):
         row2.addWidget(self.txt_file)
         row2.addWidget(self.btn_browse)
         config_layout.addLayout(row2)
+        
+        # Hàng 3: Ngày lễ trong kỳ (hiển thị + nút cấu hình)
+        row3 = QHBoxLayout()
+        row3.addWidget(QLabel("Ngày lễ trong kỳ:"))
+        self.lbl_holidays = QLabel("...")
+        self.lbl_holidays.setStyleSheet("color: #666; font-style: italic;")
+        row3.addWidget(self.lbl_holidays)
+        row3.addStretch()
+        
+        self.btn_config_holidays = QPushButton("Cấu hình ngày lễ...")
+        self.btn_config_holidays.setStyleSheet("background-color: #d63384; color: white; padding: 5px 10px;")
+        self.btn_config_holidays.clicked.connect(self.open_holiday_config)
+        row3.addWidget(self.btn_config_holidays)
+        
+        config_layout.addLayout(row3)
 
         layout.addWidget(config_group)
 
@@ -492,20 +993,64 @@ class MainWindow(QMainWindow):
         
         if hasattr(self, 'worker') and self.worker.isRunning():
             return
-            
+
+        # ===================================================================
+        # Sheet selector: nếu file có > 1 sheet visible thì hỏi user chọn
+        # ===================================================================
+        chosen_sheet = None
+        try:
+            visible_sheets, hidden_count = list_visible_sheets(self.selected_file)
+        except Exception as e:
+            QMessageBox.critical(
+                self, "Lỗi đọc file",
+                f"Không đọc được danh sách sheet trong file:\n{e}"
+            )
+            return
+
+        if len(visible_sheets) == 0:
+            QMessageBox.warning(
+                self, "File không hợp lệ",
+                "File Excel không có sheet nào hiển thị được.\n"
+                "Có thể tất cả sheet đang bị ẩn. Liên hệ quản lý nhà máy để kiểm tra lại file."
+            )
+            self.btn_parse.setEnabled(True)
+            return
+        elif len(visible_sheets) == 1:
+            chosen_sheet = visible_sheets[0]
+            self.append_log(f"File có 1 sheet visible → parse luôn sheet '{chosen_sheet}'")
+        else:
+            dlg = SheetSelectorDialog(visible_sheets, hidden_count, self)
+            if dlg.exec() != QDialog.Accepted:
+                self.append_log("Đã huỷ chọn sheet. Không parse file.")
+                self.btn_parse.setEnabled(True)
+                self.progress_bar.setVisible(False)
+                return
+            chosen_sheet = dlg.get_selected_sheet()
+            self.append_log(f"User chọn sheet: '{chosen_sheet}'")
+
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, 0) # Indeterminate mode
-        self.worker = ParseWorker(self.selected_file, project_name, period_month, period_year, self.signals)
+        self.worker = ParseWorker(self.selected_file, project_name, period_month, period_year, self.signals, self.holiday_config, sheet_name=chosen_sheet)
         self.worker.start()
 
     def on_review_mapping_requested(self, headers, ai_mapping, event, result_container):
         dialog = ReviewMappingDialog(headers, ai_mapping, self)
-        dialog.exec()
-        result_container['mapping'] = dialog.final_mapping
+        if dialog.exec() == QDialog.Accepted:
+            result_container['mapping'] = dialog.final_mapping
+            result_container['review_event'] = dialog.review_event
+            self.pending_mapping_review_event = dialog.review_event
+        else:
+            result_container['mapping'] = {header: None for header in headers}
+            result_container['review_event'] = None
+            self.pending_mapping_review_event = None
         event.set()
 
     def on_parse_done(self, data):
         self.parsed_data = data
+        if self.pending_mapping_review_event:
+            for record in self.parsed_data:
+                append_governance_event(record, self.pending_mapping_review_event)
+            self.pending_mapping_review_event = None
         self.progress_bar.setVisible(False)
         self.btn_parse.setEnabled(True)
         if not data:
@@ -630,10 +1175,39 @@ class MainWindow(QMainWindow):
             if action == edit_action:
                 self.edit_employee_timesheet(row)
                 
+    def request_governance_event(self, action, default_reason):
+        actor, accepted = QInputDialog.getText(
+            self,
+            "Xác nhận người thực hiện",
+            "Người thực hiện:",
+            text=os.environ.get("USERNAME", ""),
+        )
+        if not accepted:
+            return None
+        reason, accepted = QInputDialog.getText(
+            self,
+            "Lý do xác nhận",
+            "Lý do:",
+            text=default_reason,
+        )
+        if not accepted:
+            return None
+        try:
+            return make_governance_event(action=action, actor=actor, reason=reason)
+        except ValueError as error:
+            QMessageBox.warning(self, "Thiếu xác nhận", str(error))
+            return None
+
     def edit_employee_timesheet(self, row):
         emp_data = self.parsed_data[row]
         dlg = EditTimesheetDialog(emp_data, self)
         if dlg.exec():
+            override_event = self.request_governance_event(
+                "timesheet_override",
+                "Đã kiểm tra và điều chỉnh bảng công",
+            )
+            if not override_event:
+                return
             new_daily_data = dlg.get_updated_daily_data()
             emp_data["dailyData"] = new_daily_data
             
@@ -654,7 +1228,7 @@ class MainWindow(QMainWindow):
             
             # Gọi lại plugin để tính
             project_name = self.cbo_project.currentText()
-            formula_engine = FormulaRegistry.get_engine(project_name)
+            formula_engine = FormulaRegistry.get_formula(project_name)
             if formula_engine:
                 try:
                     payroll_data = formula_engine.calculate(raw)
@@ -667,6 +1241,7 @@ class MainWindow(QMainWindow):
             # Xóa trạng thái lỗi nếu có
             emp_data["hasError"] = False
             emp_data["errorMsg"] = ""
+            append_governance_event(emp_data, override_event)
             
             # Cập nhật UI dòng đó
             self.table.item(row, 3).setText(str(emp_data["totalWorkDays"]))
@@ -688,33 +1263,78 @@ class MainWindow(QMainWindow):
             self.append_log(f"Đã cập nhật công và lương cho: {emp_data['fullName']}")
 
     def run_export_template(self):
+        """Xuất file Excel đầy đủ dữ liệu để đối chiếu + DB payload"""
         if not self.parsed_data:
             QMessageBox.warning(self, "Lỗi", "Chưa có dữ liệu nào được bóc tách.")
             return
+
+        try:
+            validate_publish_records(self.parsed_data)
+        except ValueError as error:
+            QMessageBox.warning(self, "Không thể xuất", str(error))
+            return
+
+        export_event = self.request_governance_event(
+            "export_review",
+            "Đã review dữ liệu trước khi xuất Excel chuẩn hoá",
+        )
+        if not export_event:
+            return
+        for record in self.parsed_data:
+            append_governance_event(record, export_event)
             
-        save_path, _ = QFileDialog.getSaveFileName(self, "Lưu File Chuẩn Hoá", "BangCongChuanHoa_Template.xlsx", "Excel Files (*.xlsx)")
+        # Lấy thông tin dự án và kỳ lương
+        project_name = self.cbo_project.currentText()
+        period_month = self.cbo_month.currentIndex() + 1
+        try:
+            period_year = int(self.txt_year.text().strip())
+        except:
+            period_year = datetime.now().year
+        
+        default_name = f"LCNT_{period_month}_{period_year}_{project_name[:20].replace(' ', '_')}.xlsx"
+        save_path, _ = QFileDialog.getSaveFileName(
+            self, "Lưu File Chuẩn Hoá", default_name, "Excel Files (*.xlsx)"
+        )
         if not save_path:
             return
             
-        self.append_log("Đang xuất file chuẩn hoá...")
+        self.append_log("Đang xuất file chuẩn hoá đầy đủ...")
         try:
-            import pandas as pd
-            export_list = []
-            for emp in self.parsed_data:
-                export_list.append({
-                    "Mã Nhân Viên": emp["employeeCode"],
-                    "Họ Tên": emp["fullName"],
-                    "Tổng ngày công": emp["totalWorkDays"],
-                    "Tổng giờ OT": emp["otHours"],
-                    "Ngày nghỉ": emp["absentDays"],
-                    "Tổng Thu Nhập": emp["totalIncome"]
-                })
-            df = pd.DataFrame(export_list)
-            df.to_excel(save_path, index=False)
-            self.append_log(f"✅ Đã xuất thành công file chuẩn hoá ra {save_path}")
-            QMessageBox.information(self, "Thành công", "Đã xuất file chuẩn hoá thành công!")
+            from export_manager import export_payroll_to_excel
+            
+            result = export_payroll_to_excel(
+                self.parsed_data,
+                project_name,
+                period_month,
+                period_year,
+                save_path
+            )
+            
+            if result["success"]:
+                self.append_log(f"✅ Đã xuất thành công file với {len(result['sheets_created'])} sheet:")
+                for sheet in result['sheets_created']:
+                    self.append_log(f"   - {sheet}")
+                self.append_log(f"📊 Tổng cộng: {result['total_employees']} nhân viên")
+                self.append_log(f"📁 File: {save_path}")
+                
+                # Log DB payload size
+                db_payload = result['db_payload']
+                self.append_log(f"💾 DB Payload: {len(db_payload['timesheets'])} timesheets, {len(db_payload['timesheetLines'])} daily lines")
+                
+                QMessageBox.information(
+                    self, "Thành công", 
+                    f"Đã xuất file chuẩn hoá thành công!\n\n"
+                    f"File: {save_path}\n\n"
+                    f"Sheet: {', '.join(result['sheets_created'])}\n\n"
+                    f"Tổng: {result['total_employees']} nhân viên"
+                )
+            else:
+                raise Exception("Export failed")
+                
         except Exception as e:
             self.append_log(f"❌ Lỗi khi xuất file chuẩn hoá: {str(e)}")
+            import traceback
+            traceback.print_exc()
             QMessageBox.critical(self, "Lỗi", f"Không thể xuất file: {str(e)}")
 
     def run_reset(self):
@@ -752,6 +1372,21 @@ class MainWindow(QMainWindow):
         if not selected_data:
             QMessageBox.warning(self, "Lỗi", "Vui lòng tick chọn ít nhất 1 nhân viên để Push!")
             return
+
+        try:
+            validate_publish_records(selected_data)
+        except ValueError as error:
+            QMessageBox.warning(self, "Không thể Push", str(error))
+            return
+
+        publish_event = self.request_governance_event(
+            "publish_review",
+            "Đã review dữ liệu trước khi push lên Portal",
+        )
+        if not publish_event:
+            return
+        for record in selected_data:
+            append_governance_event(record, publish_event)
             
         # Lấy thông tin dự án và kỳ lương từ giao diện
         project_name = self.cbo_project.currentText()
@@ -819,6 +1454,15 @@ class MainWindow(QMainWindow):
                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
+            clear_event = self.request_governance_event(
+                "period_clear",
+                "Đã xác nhận xoá dữ liệu kỳ lương",
+            )
+            if not clear_event:
+                return
+            self.log_export(
+                f"[GOVERNANCE] Xác nhận xóa: {clear_event['actor']} | {clear_event['reason']}"
+            )
             self.btn_export_payroll.setEnabled(False)
             self.btn_export_history.setEnabled(False)
             self.btn_clear_db.setEnabled(False)
@@ -947,6 +1591,12 @@ class MainWindow(QMainWindow):
         
         dlg = EditTimesheetDialog(emp_data, self)
         if dlg.exec():
+            override_event = self.request_governance_event(
+                "reconciliation_override",
+                "Đã kiểm tra và điều chỉnh bảng công đối soát",
+            )
+            if not override_event:
+                return
             # Update data
             new_daily_data = dlg.get_updated_daily_data()
             emp_data["dailyData"] = new_daily_data
@@ -970,6 +1620,7 @@ class MainWindow(QMainWindow):
                     payroll_data = formula_engine.calculate(raw)
                     emp_data["payrollData"] = payroll_data
                     emp_data["totalIncome"] = payroll_data["summary"]["netIncome"] if payroll_data else 0
+                    append_governance_event(emp_data, override_event)
                 except Exception as e:
                     self.log_recon(f"Lỗi tính lại lương: {str(e)}")
                     return
