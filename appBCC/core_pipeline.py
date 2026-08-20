@@ -59,6 +59,103 @@ def index_to_excel_col(col_idx):
 def setup_directories():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+ACTRO_AI_FIELDS_LOCAL = ("ot_kc", "ot_kd", "ot_ke", "ot_kf", "ot_kh", "ot_ki", "ot_kj", "ot_kk", "work_type")
+
+
+def _normalize_label_loc(label: str) -> str:
+    from unicodedata import normalize as _normalize
+    return _normalize("NFKD", label).encode("ascii", "ignore").decode("ascii").lower().strip()
+
+
+def _is_valid_actro_indices(positions: dict, total_columns: int) -> bool:
+    if not positions:
+        return False
+    if not all(field in positions for field in ACTRO_AI_FIELDS_LOCAL):
+        return False
+    values = list(positions.values())
+    if any(not isinstance(idx, int) or idx < 0 or idx >= total_columns for idx in values):
+        return False
+    if positions["ot_kc"] >= positions["ot_kd"] or positions["ot_kd"] >= positions["ot_kf"]:
+        return False
+    return positions["work_type"] > positions["ot_kk"]
+
+
+def _ask_ai_for_actro_positions(df: "pd.DataFrame", header_row_idx: int) -> dict | None:
+    """Gửi các hàng liên quan tới DeepSeek để AI gợi ý vị trí cột tổng hợp Actro.
+
+    Trả về dict với khoá là tên field chuẩn, value là chỉ số cột 0-based.
+    """
+    import os
+    import json
+
+    api_key = os.environ.get("DEEPSEEK_API_KEY")
+    if not api_key:
+        return None
+
+    try:
+        from openai import OpenAI
+    except ImportError:
+        return None
+
+    rows_slice = []
+    for r in range(max(0, header_row_idx - 2), min(len(df), header_row_idx + 6)):
+        cells = [
+            {
+                "col": i + 1,
+                "value": ("" if pd.isna(v) else str(v).replace("\n", " ")[:60]),
+            }
+            for i, v in enumerate(df.iloc[r].tolist())
+            if pd.notna(v) and i >= max(0, len(df.columns) - 80)
+        ]
+        rows_slice.append({"row": r + 1, "cells": cells})
+
+    sample = (
+        ["" if pd.isna(v) else str(v) for v in df.iloc[header_row_idx + 3].tolist()[-80:]]
+        if header_row_idx + 3 < len(df)
+        else []
+    )
+
+    prompt = (
+        "Bạn là AI phân tích bảng chấm công BCC của nhà máy Actro.\n"
+        "Dựa trên các hàng header được cung cấp, hãy trả về JSON duy nhất với các khoá:\n"
+        f"{list(ACTRO_AI_FIELDS_LOCAL)}\nMỗi value là chỉ số cột 0-based (đếm từ cột A=0).\n"
+        "Khoảng cách offset chuẩn: ot_kc..ot_kk liên tiếp, work_type nằm ngay sau ot_kk.\n"
+        "Chỉ trả JSON, không giải thích."
+    )
+
+    try:
+        client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com/v1")
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a data mapping assistant. Only output raw JSON."},
+                {
+                    "role": "user",
+                    "content": prompt
+                    + "\n\n[HEADER ROWS]\n"
+                    + json.dumps(rows_slice, ensure_ascii=False)
+                    + "\n\n[SAMPLE DATA]\n"
+                    + json.dumps(sample, ensure_ascii=False),
+                },
+            ],
+            temperature=0.0,
+            timeout=15.0,
+        )
+        text = response.choices[0].message.content.strip()
+        if text.startswith("```"):
+            text = text.replace("```json", "").replace("```", "").strip()
+        parsed = json.loads(text)
+        result = {}
+        for field in ACTRO_AI_FIELDS_LOCAL:
+            value = parsed.get(field)
+            if isinstance(value, int):
+                result[field] = value
+        return result or None
+    except Exception:
+        return None
+
+
+
 def preview_file(
     file_path,
     project_name,
@@ -161,25 +258,120 @@ def preview_file(
                 # Chỉ ghi đè nếu chưa có (giữ lại cột cố định như Ngày vào, Loại)
                 col_map[mapped_key] = i
         
-        # ── Actro: map khối tổng hợp theo marker trong chính BCC ───────────────
-        # BCC thay đổi số ngày trong chu kỳ nên khối sau ngày 25 có thể dịch cột
-        # giữa các tháng. "26-25" luôn là cột đầu của khối tổng hợp Actro.
+        # ── Actro: nhận diện khối tổng hợp theo cụm header bền vững ───────────
+        # Khối tổng hợp BCC Actro có thể dịch vị trí giữa các tháng. Vì vậy neo
+        # bằng cụm 4 header đặc trưng (Shift day / Night day / Sunday + "Số giờ
+        # làm việc ban ngày"), kèm dự phòng các marker "26-25", "25-25",
+        # "24-25", "23-25", "27-26", "26-26". Nếu không tìm được neo, parser
+        # dừng và trả về danh sách trống để workflow kiểm chứng lỗi mapping.
         if _strip_accents(project_name) == _strip_accents("Nhà máy Actro - Vĩnh Phúc"):
-            actro_marker_row = df.iloc[header_row_idx - 1].values if header_row_idx > 0 else row7
-            actro_summary_marker = next(
-                (
-                    index
-                    for index, value in enumerate(actro_marker_row)
-                    if pd.notna(value) and str(value).strip() == "26-25"
-                ),
-                None,
-            )
-            if actro_summary_marker is None or actro_summary_marker == 0:
-                raise ValueError(
-                    "Không tìm thấy cột '26-25' để xác định khối tổng hợp Actro."
-                )
+            def _normalize(value):
+                if not pd.notna(value):
+                    return ""
+                return _strip_accents(str(value).strip()).casefold()
 
-            actro_summary_start = actro_summary_marker - 1
+            def _find_marker(start_idx: int = 0):
+                candidates = ("26-25", "25-25", "24-25", "23-25", "27-26", "26-26", "26-24")
+                for r in range(max(0, header_row_idx - 2), header_row_idx + 3):
+                    row = df.iloc[r].tolist() if r < len(df) else []
+                    for idx in range(start_idx, len(row)):
+                        text = _normalize(row[idx]).replace(" ", "")
+                        if text in candidates:
+                            return idx, text
+                return None, None
+
+            marker_idx, marker_text = _find_marker()
+
+            summary_idx = None
+            for r in range(max(0, header_row_idx - 2), header_row_idx + 3):
+                row = df.iloc[r].tolist() if r < len(df) else []
+                summary_idx = next(
+                    (
+                        idx
+                        for idx, value in enumerate(row)
+                        if _normalize(value).startswith("so gio lam viec ban ngay")
+                    ),
+                    None,
+                )
+                if summary_idx is not None:
+                    break
+
+            shift_idx = night_idx = sunday_idx = None
+            for r in range(max(0, header_row_idx - 2), header_row_idx + 3):
+                row = df.iloc[r].tolist() if r < len(df) else []
+                normalized_row = [
+                    (_normalize(value), idx)
+                    for idx, value in enumerate(row)
+                    if pd.notna(value)
+                ]
+                labels = {label: idx for value, idx in normalized_row for label in ["shift day"] if value.startswith(label)}
+                for value, idx in normalized_row:
+                    if value.startswith("night day") and night_idx is None:
+                        night_idx = idx
+                    if value.startswith("sunday") and sunday_idx is None:
+                        sunday_idx = idx
+                if labels and labels["shift day"] < night_idx < sunday_idx:
+                    summary_idx = summary_idx or labels["shift day"] - 2
+                    break
+
+            if (
+                summary_idx is not None
+                and shift_idx is not None
+                and night_idx is not None
+                and sunday_idx is not None
+            ):
+                actro_summary_start = summary_idx
+            elif marker_idx is not None:
+                actro_summary_start = marker_idx - 1
+            else:
+                # ── AI fallback: nhờ AI đoán toạ độ cột Actro khi thuật toán thất bại
+                log_callback(
+                    "[ACTRO MAPPING] Không nhận diện được khối tổng hợp bằng marker/header. "
+                    "Đang chuyển sang AI để gợi ý vị trí cột."
+                )
+                ai_positions = _ask_ai_for_actro_positions(df, header_row_idx)
+                if ai_positions and review_callback:
+                    confirmed = review_callback(
+                        list(ai_positions.keys()),
+                        {field: _normalize_label(field) for field in ai_positions},
+                    )
+                    if confirmed:
+                        normalized = {
+                            _normalize_label(field): value
+                            for field, value in confirmed.items()
+                            if value
+                        }
+                        for field, value in normalized.items():
+                            ai_positions[field] = value
+                if ai_positions and _is_valid_actro_indices(ai_positions, len(row7)):
+                    actro_summary_start = ai_positions["ot_kc"]
+                    log_callback(
+                        "[ACTRO MAPPING] AI đã gợi ý và được xác nhận: "
+                        + ", ".join(f"{k}={v + 1}" for k, v in ai_positions.items())
+                    )
+                else:
+                    log_callback(
+                        "[ACTRO MAPPING] Không nhận diện được khối tổng hợp. "
+                        "Cần đối chiếu marker (26-25/25-25/24-25/23-25/27-26/26-26) "
+                        "hoặc cụm header (Shift day/Night day/Sunday). "
+                        "Dữ liệu sẽ trả về 0 bản ghi để tránh tính toán sai."
+                    )
+                    return []
+
+            work_type_idx = None
+            for r in range(max(0, header_row_idx - 2), header_row_idx + 3):
+                row = df.iloc[r].tolist() if r < len(df) else []
+                work_type_idx = next(
+                    (
+                        idx
+                        for idx, value in enumerate(row)
+                        if pd.notna(value) and _strip_accents(str(value)).strip().casefold().startswith("loai")
+                    ),
+                    None,
+                )
+                if work_type_idx is not None and work_type_idx > actro_summary_start:
+                    break
+
             col_map.update({
                 "ot_kc": actro_summary_start,
                 "ot_kd": actro_summary_start + 1,
@@ -189,13 +381,21 @@ def preview_file(
                 "ot_ki": actro_summary_start + 6,
                 "ot_kj": actro_summary_start + 7,
                 "ot_kk": actro_summary_start + 8,
-                "work_type": actro_summary_start + 9,
             })
-            if col_map["work_type"] >= len(row7):
-                raise ValueError(
-                    "Khối tổng hợp Actro không đủ cột để đọc Loại công việc."
+            if work_type_idx is not None:
+                col_map["work_type"] = work_type_idx
+            elif actro_summary_start + 9 < len(row7):
+                col_map["work_type"] = actro_summary_start + 9
+
+            if "work_type" not in col_map:
+                log_callback(
+                    "[ACTRO MAPPING] Không tìm thấy cột Loại công việc. "
+                    "Phụ cấp soi kính sẽ về 0 cho tất cả nhân viên."
                 )
-                
+            log_callback(
+                f"[ACTRO MAPPING] marker={marker_text} summary_start={actro_summary_start + 1}"
+            )
+    
         # 4. Trích xuất dữ liệu
         preview_data = []
         log_callback(f"[2/3] Bắt đầu đọc dữ liệu nhân viên từ dòng {header_row_idx + 3}...")

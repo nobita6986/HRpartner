@@ -1093,7 +1093,16 @@ class MainWindow(QMainWindow):
         self.progress_bar.setVisible(False)
         self.btn_parse.setEnabled(True)
         if not data:
-            self.append_log("Lỗi: Không có dữ liệu preview!")
+            self.append_log(
+                "[MAPPING] Không có dữ liệu preview. Khả năng cao parser chưa nhận diện được khối tổng hợp BCC."
+            )
+            QMessageBox.warning(
+                self,
+                "Không nhận diện được khối tổng hợp",
+                "Parser không tìm thấy khối tổng hợp Actro phù hợp với cấu trúc file này.\n\n"
+                "Vui lòng kiểm tra lại marker (26-25/25-25/24-25/23-25/27-26/26-26) hoặc cụm header "
+                "(Shift day / Night day / Sunday). Khi cấu trúc thay đổi, cần đối chiếu thủ công trước khi tính lương.",
+            )
             return
 
         self.parsed_data = data
@@ -1445,10 +1454,16 @@ class MainWindow(QMainWindow):
         failures = []
         for employee in self.parsed_data:
             if employee.get("hasError"):
-                failures.append(employee.get("employeeCode", "Không rõ mã"))
+                failures.append(employee.get("errorMsg") or "Lỗi dữ liệu")
+                continue
+            raw = employee.get("rawData", {})
+            if not raw.get("work_type"):
+                failures.append("Thiếu Loại công việc")
+                employee["hasError"] = True
+                employee["errorMsg"] = "Thiếu Loại công việc — cần kiểm tra cột 'Loại'."
                 continue
             try:
-                payroll_data = formula_engine.calculate(employee.get("rawData", {}))
+                payroll_data = formula_engine.calculate(raw)
                 employee["payrollData"] = payroll_data
                 employee["totalIncome"] = payroll_data["summary"]["netIncome"]
             except Exception as error:
