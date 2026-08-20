@@ -1034,21 +1034,6 @@ class MainWindow(QMainWindow):
         
         # Nút xuất dữ liệu sạch, tính lương, push và làm mới
         btn_layout = QHBoxLayout()
-        self.btn_export_clean = make_action_button(
-            "2. Xuất dữ liệu sạch",
-            "#0d6efd",
-            "Xuất file Excel với dữ liệu BCC đã được chuẩn hoá (chưa qua tính lương).",
-        )
-        self.btn_export_clean.setEnabled(False)
-        self.btn_export_clean.clicked.connect(self.run_export_clean)
-
-        self.btn_calculate_payroll = make_action_button(
-            "3. Xác nhận & tính lương",
-            "#6f42c1",
-            "Tính lương cho toàn bộ nhân viên dựa trên dữ liệu đã chuẩn hoá.",
-        )
-        self.btn_calculate_payroll.setEnabled(False)
-        self.btn_calculate_payroll.clicked.connect(self.run_calculate_payroll)
 
         self.btn_push = make_action_button(
             "4. Push lên Database (HrP)",
@@ -1074,7 +1059,7 @@ class MainWindow(QMainWindow):
         self.btn_export_template.clicked.connect(self.run_export_template)
 
         self.btn_download_adjustment_template = make_action_button(
-            "Tải mẫu cộng/trừ",
+            "Download mẫu cộng/trừ",
             "#fd7e14",
             "Tải file mẫu Excel để nhập các khoản cộng/trừ tuỳ ý.",
         )
@@ -1082,15 +1067,13 @@ class MainWindow(QMainWindow):
         self.btn_download_adjustment_template.clicked.connect(self.run_download_adjustment_template)
 
         self.btn_apply_adjustments = make_action_button(
-            "Áp dụng file cộng/trừ",
+            "Upload file cộng/trừ",
             "#d63384",
             "Upload file cộng/trừ đã điền để gộp vào payroll đã tính.",
         )
         self.btn_apply_adjustments.setEnabled(False)
         self.btn_apply_adjustments.clicked.connect(self.run_apply_adjustments)
 
-        btn_layout.addWidget(self.btn_export_clean)
-        btn_layout.addWidget(self.btn_calculate_payroll)
         btn_layout.addWidget(self.btn_export_template)
         btn_layout.addWidget(self.btn_download_adjustment_template)
         btn_layout.addWidget(self.btn_apply_adjustments)
