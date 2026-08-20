@@ -78,6 +78,24 @@ const SLICE_CARDS = [
     href: '/admin/clients',
     description: 'Quản lý danh sách khách hàng — xem, tìm kiếm.',
   },
+  {
+    id: 'payroll',
+    label: 'Cấu hình lương',
+    module: 'M6',
+    narrative: 'Payroll Config',
+    moment: 'RQ-01',
+    href: '/admin/payroll',
+    description: 'Quản lý cấu hình tham số lương — BHXH, thuế TNCN, lương tối thiểu.',
+  },
+  {
+    id: 'tickets',
+    label: 'Phản ánh',
+    module: 'M6',
+    narrative: 'Tickets',
+    moment: 'RQ-02',
+    href: '/admin/tickets',
+    description: 'Quản lý tickets từ người dùng — khiếu nại công, nghỉ phép, tạm ứng.',
+  },
 ] as const;
 
 export default function AdminControlTowerPage() {

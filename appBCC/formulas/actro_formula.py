@@ -153,9 +153,10 @@ class ActroFormula(BaseFormula):
             {"name": "Phụ cấp thâm niên", "qty": total_days, "rate": None,
              "total": tham_nien},
         ]
+        total_allowance = sum(i["total"] for i in allowance_items)
 
-        # KY : Thanh toán = SUM(KT:KX)
-        thanh_toan = sum(i["total"] for i in allowance_items)
+        # KY : Thanh toan = SUM(KS:KX) = Lương giờ + Tổng phụ cấp
+        thanh_toan = luong_hr + total_allowance
 
         # KZ : Trừ ứng — INPUT
         tru_ung = float(raw_data.get("tru_ung", 0) or 0)
@@ -165,8 +166,9 @@ class ActroFormula(BaseFormula):
         total_deduction = tru_ung
 
         # LA : Thực nhận = ROUNDDOWN(KY - KZ, -3)
+        # ROUNDDOWN(x, -3): floor về bội số 1000 gần nhất về phía 0
         net_income = thanh_toan - total_deduction
-        net_income_rounded = round(net_income / 1000) * 1000
+        net_income_rounded = int(net_income // 1000) * 1000  # always floor
         rounding_delta = net_income_rounded - net_income
 
         return {
