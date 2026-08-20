@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function LoginForm() {
+export default function LoginForm({ subtitle = 'Đăng nhập hệ thống' }: { subtitle?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callback = searchParams.get('callback') ?? '/bcc';
@@ -37,10 +37,17 @@ export default function LoginForm() {
         setError('Sai số điện thoại hoặc mật khẩu');
         return;
       }
-      // callback do chính middleware sinh (path + query) — chỉ cho phép redirect nội bộ
+
+      const data = await res.json();
+      
+      // Nếu API trả về URL đích cụ thể cho Role này (VD: https://worker.hrpartner.vn)
+      if (data.redirectTo) {
+        window.location.href = data.redirectTo;
+        return;
+      }
+
       const safeCallback = callback.startsWith('/') && !callback.startsWith('//') ? callback : '/bcc';
-      router.replace(safeCallback);
-      router.refresh();
+      window.location.href = safeCallback;
     } catch {
       setError('Có lỗi xảy ra, vui lòng thử lại sau.');
     } finally {
@@ -52,25 +59,25 @@ export default function LoginForm() {
     <div
       className="w-full max-w-sm rounded-2xl p-8"
       style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--line)',
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-line)',
         boxShadow: 'var(--shadow-card)',
         borderRadius: 'var(--radius-md)',
       }}
     >
       <div className="text-center mb-8">
         <img src="/logo.png" alt="HRP Logo" className="h-14 w-auto mx-auto mb-4" />
-        <h1 className="text-xl font-bold" style={{ color: 'var(--on-surface)' }}>
+        <h1 className="text-xl font-bold" style={{ color: 'var(--color-on-surface)' }}>
           Đăng nhập HRP
         </h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--on-surface-variant)' }}>
-          Tra cứu bảng công cá nhân
+        <p className="text-sm mt-1" style={{ color: 'var(--color-on-surface-variant)' }}>
+          {subtitle}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium mb-1.5" style={{ color: 'var(--on-surface-variant)' }}>
+          <label htmlFor="phone" className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-on-surface-variant)' }}>
             Số điện thoại
           </label>
           <input
@@ -82,17 +89,17 @@ export default function LoginForm() {
             onChange={(e) => setPhone(e.target.value)}
             className="block w-full rounded-xl px-4 py-3 text-sm outline-none"
             style={{
-              border: '1px solid var(--outline-variant)',
-              background: 'var(--container-low)',
-              color: 'var(--on-surface)',
-              borderRadius: 'var(--radius)',
+              border: '1px solid var(--color-outline-variant)',
+              background: 'var(--color-surface-container-low)',
+              color: 'var(--color-on-surface)',
+              borderRadius: 'var(--radius-DEFAULT)',
             }}
             placeholder="0912345678"
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-1.5" style={{ color: 'var(--on-surface-variant)' }}>
+          <label htmlFor="password" className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-on-surface-variant)' }}>
             Mật khẩu
           </label>
           <input
@@ -104,17 +111,17 @@ export default function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             className="block w-full rounded-xl px-4 py-3 text-sm outline-none"
             style={{
-              border: '1px solid var(--outline-variant)',
-              background: 'var(--container-low)',
-              color: 'var(--on-surface)',
-              borderRadius: 'var(--radius)',
+              border: '1px solid var(--color-outline-variant)',
+              background: 'var(--color-surface-container-low)',
+              color: 'var(--color-on-surface)',
+              borderRadius: 'var(--radius-DEFAULT)',
             }}
             placeholder="••••••••"
           />
         </div>
 
         {error && (
-          <div className="text-sm px-4 py-3 rounded-xl" style={{ background: 'var(--warning-soft)', color: 'var(--warning)' }}>
+          <div className="text-sm px-4 py-3 rounded-xl" style={{ background: 'var(--color-warning-soft)', color: 'var(--color-warning)' }}>
             {error}
           </div>
         )}
@@ -123,7 +130,7 @@ export default function LoginForm() {
           type="submit"
           disabled={loading}
           className="w-full py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
-          style={{ background: 'var(--primary)', borderRadius: 'var(--radius)' }}
+          style={{ background: 'var(--color-primary)', borderRadius: 'var(--radius-DEFAULT)' }}
         >
           {loading ? 'Đang đăng nhập…' : 'Đăng nhập'}
         </button>
