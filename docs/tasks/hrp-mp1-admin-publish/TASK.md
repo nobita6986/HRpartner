@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.1` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `REVISION_REQUIRED` |
 | Planner | `Tier 1` |
 | Executor | `Tier 2` |
 | Auditor | `Tier 3 independent context` |
@@ -16,9 +16,9 @@
 | Modules | `M3 CRM/Staffing`, `Marketplace MP-1` |
 | ADR references | `UNIFIED_PLAN_v5.md §7.9`, `§6.3`, `§6.4`; `V5_3_TIER_EXECUTION_GUIDE.md §3`, `§7` |
 | Current execution round | `2` |
-| Current audit round | `0` |
-| Next gate | `/code hrp-mp1-admin-publish` |
-| Updated | `2026-08-21 12:00 +07:00` |
+| Current audit round | `1` |
+| Next gate | `/audit hrp-mp1-admin-publish` |
+| Updated | `2026-08-21 16:00 +07:00` |
 
 ## 1. Outcome
 
@@ -151,6 +151,7 @@ HR/Sale có thể tạo hoặc chỉnh sửa một Staffing Order/Slot thuộc P
 |---|---|---|---|---|---|
 | 0 | BLK-01 | ACCEPT_FIX | Thu hẹp MP-1 theo canonical Project RLS: loại `HR_STAFF` khỏi write/publish; không bypass và không tạo migration nới RLS. `DIRECTOR` write qua Permission Pool. | Spec v1.1: DEC-06, RQ-01/02, AC-01/02 | Tier 2 / execution round 2 |
 | 0 | BLK-02 | ACCEPT_FIX | Bổ sung action permission `CAN_PUBLISH_JOB`, group `PROJECT`, default grants `HR_MANAGER` + `SALE`; ADMIN root; DIRECTOR user grant tùy nhu cầu. Permission không thay thế row scope. | Spec v1.1: DEC-07, STEP-02, AC-02 | Tier 2 / execution round 2 |
+| 1 | AUD-UX-001 | ACCEPT_FIX | `AUDIT.md` ghi PASS nhưng `AC-05` yêu cầu browser smoke/manual visual check kèm screenshot/video. HANDOFF §3/§5 chỉ có `npm run build` và nêu rõ không có browser screenshot. Build xanh không chứng minh loading/error/empty/publish-state trên `app/admin/jobs` và `app/job-board`. Không đóng task khi acceptance blocking còn thiếu evidence. | Không đổi contract; bổ sung evidence cho AC-05 | Tier 2 hoặc người chạy browser / trước audit round 2 |
 
 ## 10. Revision Log
 

@@ -348,8 +348,8 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
     </div>
     <div class="stat">
       <div class="k">Đang đứng</div>
-      <div class="v"><em>MP-1</em> · READY</div>
-      <div class="d"><b>hrp-mp1-admin-publish</b> TASK v1.1 đã resolve blocker: giữ canonical RLS, loại HR_STAFF khỏi write/publish, thêm CAN_PUBLISH_JOB; chờ Tier 2 execution round 2. M13 đã ACCEPTED.</div>
+      <div class="v"><em>MP-1</em> · REVISION</div>
+      <div class="d"><b>hrp-mp1-admin-publish</b> đã pass code/audit, nhưng AC-05 còn thiếu browser smoke evidence (screenshot/video); task chưa ACCEPTED. M13 đã ACCEPTED.</div>
     </div>
     <div class="stat">
       <div class="k">UI thật đầu tiên</div>
@@ -375,7 +375,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
           <div class="stop-dot">MP-1<div class="you-are-here">ĐANG MỞ</div></div>
           <div class="stop-name">Publish Job</div>
           <div class="stop-week fn">Admin + Public</div>
-          <div class="stop-tag">READY</div>
+          <div class="stop-tag">REVISION</div>
         </div>
         <div class="stop pending">
           <div class="stop-dot">MP-2</div>
@@ -411,9 +411,9 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
 <div class="phase-card is-current">
   <div class="pc-badge badge-current">MP-1</div>
   <div>
-    <div class="pc-title">Admin Publish + Public Read Contract <span class="wk fn">Sprint 1</span><span class="pc-status st-dang">READY</span></div>
+      <div class="pc-title">Admin Publish + Public Read Contract <span class="wk fn">Sprint 1</span><span class="pc-status st-dang">REVISION</span></div>
     <div class="pc-inv">Scope: Project/StaffingOrder/Slot public projection, publish/unpublish có permission + idempotency + audit, public job list/detail, không làm apply.</div>
-    <div class="pc-foot"><b>Task:</b> <code>docs/tasks/hrp-mp1-admin-publish/TASK.md</code> · <b>Next:</b> Tier 2 chạy <code>/code hrp-mp1-admin-publish</code> · <b>Gate:</b> HANDOFF READY_FOR_AUDIT → Tier 3 C-01..C-10 → Planner ACCEPTED.</div>
+    <div class="pc-foot"><b>Task:</b> <code>docs/tasks/hrp-mp1-admin-publish/TASK.md</code> · <b>Next:</b> bổ sung browser smoke evidence cho AC-05 → <code>/audit hrp-mp1-admin-publish</code> · <b>Gate:</b> Tier 3 C-01..C-10 → Planner ACCEPTED.</div>
   </div>
 </div>
 
