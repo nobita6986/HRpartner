@@ -8,7 +8,7 @@
 | Work type | CODE |
 | Audit mode (Tier 3 đọc) | CODE_AUDIT |
 | Spec version | v1.0 |
-| Status | READY_FOR_EXECUTION |
+| Status | REVISION_REQUIRED |
 | Planner | Tier 1 (Antigravity) |
 | Executor | Tier 2 |
 | Auditor | Tier 3 |
@@ -16,8 +16,8 @@
 | Modules | M13-Database-Backend |
 | ADR references | UNIFIED_PLAN_v5.md (M13) |
 | Current execution round | 1 |
-| Current audit round | 0 |
-| Next gate | /code hrp-m13-backend-expansion |
+| Current audit round | 1 |
+| Next gate | /audit hrp-m13-backend-expansion |
 | Updated | 2026-08-21 00:30 +07:00 |
 
 ## 1. Outcome
@@ -106,7 +106,8 @@
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| - | - | - | - | - | - |
+| 1 | AUD-STRUCT-001 | ACCEPT_FIX | `verify-audit.ps1` FAIL (22 errors): AUDIT.md lacks required sections 0-7, AC-01 verdict, C-01..C-10 rows, minimum evidence rows, and Tier 1 handoff line. The current APPROVE is not sufficient to close the task before the audit contract passes. | No change | Tier 3 / before acceptance |
+| 1 | AUD-MIG-001 | ACCEPT_FIX | RQ-03 evidence currently relies mainly on `migrate resolve --applied` and column existence checks. Add evidence for migration on a clean DB and an upgrade DB with existing data, or explicitly request an acceptance-contract decision with the limitation documented. | No change until evidence or contract decision | Tier 3 + Tier 1 / before acceptance |
 
 ## 10. Revision Log
 
