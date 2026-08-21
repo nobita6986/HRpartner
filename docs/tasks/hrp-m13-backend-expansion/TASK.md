@@ -16,9 +16,9 @@
 | Modules | M13-Database-Backend |
 | ADR references | UNIFIED_PLAN_v5.md (M13) |
 | Current execution round | 1 |
-| Current audit round | 1 |
-| Next gate | /audit hrp-m13-backend-expansion |
-| Updated | 2026-08-21 00:30 +07:00 |
+| Current audit round | 2 |
+| Next gate | /code hrp-m13-backend-expansion |
+| Updated | 2026-08-21 10:16 +07:00 |
 
 ## 1. Outcome
 
@@ -108,6 +108,8 @@
 |---|---|---|---|---|---|
 | 1 | AUD-STRUCT-001 | ACCEPT_FIX | `verify-audit.ps1` FAIL (22 errors): AUDIT.md lacks required sections 0-7, AC-01 verdict, C-01..C-10 rows, minimum evidence rows, and Tier 1 handoff line. The current APPROVE is not sufficient to close the task before the audit contract passes. | No change | Tier 3 / before acceptance |
 | 1 | AUD-MIG-001 | ACCEPT_FIX | RQ-03 evidence currently relies mainly on `migrate resolve --applied` and column existence checks. Add evidence for migration on a clean DB and an upgrade DB with existing data, or explicitly request an acceptance-contract decision with the limitation documented. | No change until evidence or contract decision | Tier 3 + Tier 1 / before acceptance |
+| 2 | AUD-MIG-001 | ACCEPT_RISK | Migration is additive and nullable, uses `ON DELETE SET NULL`, the idempotent apply script completed successfully, and no data-loss evidence was found. The missing ephemeral clean-DB run is accepted as a P2 operational gap for this task, with follow-up required before production migration policy is finalized. | No change | Tier 1 / follow-up before production release |
+| 2 | AUD-TEST-001 | FIX_REQUIRED | C-01 failed: `npx vitest run` reported 47 RLS/security-matrix failures, including `EMPLOYEE.staffing_orders` returning rows. This violates the existing Visibility Matrix and is a security regression, not an acceptable baseline change. Tier 2 must reproduce, identify the policy/session/migration cause, fix the source, and add focused regression coverage. | No change to expected security contract | Tier 2 / next execution round |
 
 ## 10. Revision Log
 

@@ -349,7 +349,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
     <div class="stat">
       <div class="k">Đang đứng</div>
       <div class="v"><em>MP-1</em> · READY</div>
-      <div class="d"><b>hrp-mp1-admin-publish</b> đã có TASK.md v1.0, chờ Tier 2 thực thi. M13 có HANDOFF/AUDIT nhưng contract audit đang FAIL, nên ở REVISION_REQUIRED và chưa được coi là ACCEPTED.</div>
+      <div class="d"><b>hrp-mp1-admin-publish</b> đã có TASK.md v1.0, chờ Tier 2 thực thi. M13 audit round 2 FAIL vì 47 lỗi regression RLS (P1); Tier 2 phải sửa trước khi M13 được ACCEPTED.</div>
     </div>
     <div class="stat">
       <div class="k">UI thật đầu tiên</div>
@@ -369,7 +369,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
           <div class="stop-dot">M13</div>
           <div class="stop-name">DB & Backend</div>
           <div class="stop-week fn">Audit gate</div>
-          <div class="stop-tag">REVISION</div>
+          <div class="stop-tag">P1 FIX</div>
         </div>
         <div class="stop current">
           <div class="stop-dot">MP-1<div class="you-are-here">ĐANG MỞ</div></div>
