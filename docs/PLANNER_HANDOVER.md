@@ -3,6 +3,40 @@
 > **Đọc tài liệu này TRƯỚC KHI làm bất kỳ việc gì.** Bạn (Agent mới) tiếp nhận vai trò **Tier 1 — Planner / Product & Architecture Decision Owner** của dự án HRP, kể từ **18/08/2026 (~21:50 ICT)**.
 > Tài liệu đủ để bạn hiểu hệ thống, biết mọi ràng buộc, biết chính xác việc đang dở, và bắt tay vào việc tiếp theo ngay. Mọi quy tắc dưới đây là **bắt buộc**, không phải gợi ý.
 
+## 0. CURRENT HANDOVER SNAPSHOT — 21/08/2026 18:20 +07:00
+
+> **Snapshot này là nguồn trạng thái hiện tại; các mục lịch sử bên dưới chỉ giữ để truy nguyên và không được dùng để suy ra task đang mở.**
+
+### Quyết định và task hiện tại
+
+| Hạng mục | Trạng thái | Artifact / commit | Hành động kế tiếp |
+|---|---|---|---|
+| M13 Database Backend | `ACCEPTED` | `docs/tasks/hrp-m13-backend-expansion/TASK.md`, `3eacd22` | Không mở lại; clean-DB migration là follow-up vận hành |
+| MP-1 Admin Publish + Public Read | `ACCEPTED` | `docs/tasks/hrp-mp1-admin-publish/TASK.md`, `ead9869` | Đóng với Founder waiver AC-05; residual visual risk đã ghi nhận |
+| MP-2 Apply + Tracking + HR Queue | `READY_FOR_EXECUTION` | `docs/tasks/hrp-mp2-apply-tracking/TASK.md`, `76fcaef` | Giao Tier 2: `/code hrp-mp2-apply-tracking` |
+| Roadmap | `MP-2 đang mở` | `docs/roadmap-portals.html` | Cập nhật sau mỗi round và push `origin/main` |
+
+### MP-2 phải làm gì
+
+- Canonical public apply: `POST /api/public/jobs/:slug/applications`.
+- Tạo `CandidateSubmission` độc lập, có `publicTrackingCode`, idempotency hash, duplicate guard theo job/slot/phone và `ApplicationStatusHistory`.
+- Anonymous applicant **không được tạo Worker hoặc SourceClaim**; service cũ đang có side effect với `PUBLIC` và phải được thay thế/điều chỉnh.
+- Tracking: `GET /api/public/applications/:trackingCode`, DTO không lộ phone/CCCD/CV/internal note/vendor/CTV/actor IDs.
+- Queue role theo scope hiện hành: `ADMIN`, `HR_MANAGER`, `DIRECTOR`, `SALE`; không tự mở RLS cho `HR_STAFF`.
+- UI: apply form + consent + optional CV metadata + success tracking + tracking page + HR queue; screening/convert Worker/assignment để MP-3.
+
+### Pipeline handoff
+
+1. Tier 1 chỉ sở hữu `TASK.md`; không sửa source, `HANDOFF.md` hoặc `AUDIT.md`.
+2. Tier 2 ghi `docs/tasks/hrp-mp2-apply-tracking/HANDOFF.md` với `READY_FOR_AUDIT` sau khi hoàn tất contract.
+3. Sếp gọi `/audit hrp-mp2-apply-tracking`; Tier 3 sở hữu `AUDIT.md` và phải chạy C-01..C-10 + `verify-audit.ps1` PASS.
+4. Sếp gọi `/resolve hrp-mp2-apply-tracking`; Tier 1 gate nhẹ rồi ACCEPTED/REVISION_REQUIRED.
+5. Sau mỗi status change: cập nhật TASK + roadmap, stage đúng file, commit và `git push origin main`.
+
+### Worktree caution
+
+Worktree còn thay đổi/untracked do Tier 2/Tier 3 trước đó. Không `git add -A`, không reset/revert và không xóa chúng; chỉ stage file thuộc task/roadmap đang xử lý.
+
 ---
 
 ## 1. Bạn là ai, trong hệ thống nào

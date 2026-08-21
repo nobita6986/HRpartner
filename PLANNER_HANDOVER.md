@@ -1,8 +1,26 @@
 ﻿# PLANNER HANDOVER (Tier 1)
 
-**Ngày cập nhật:** 19/08/2026
+**Ngày cập nhật:** 21/08/2026 18:20 +07:00
 **Vai trò hiện tại:** Tier 1 (Planner)
 **Người nhận bàn giao:** Next Agent (Tier 1)
+
+> **CURRENT STATUS:** M13 và MP-1 đã `ACCEPTED`. Task đang mở duy nhất là MP-2 `hrp-mp2-apply-tracking`, trạng thái `READY_FOR_EXECUTION`, spec `v1.0`. Đọc [docs/PLANNER_HANDOVER.md](docs/PLANNER_HANDOVER.md) để nhận đầy đủ pipeline rules và context.
+
+## 0. Việc tiếp theo ngay lập tức
+
+```text
+/code hrp-mp2-apply-tracking
+```
+
+Không tự viết code ở Tier 1. Sau khi Tier 2 ghi `HANDOFF.md` `READY_FOR_AUDIT`, gọi `/audit hrp-mp2-apply-tracking`; sau audit PASS mới `/resolve`.
+
+## 0.1. MP-2 contract tóm tắt
+
+- Apply canonical theo public job slug, idempotency bắt buộc, duplicate guard transactional.
+- Tạo `CandidateSubmission` + `ApplicationStatusHistory`; không tạo Worker/SourceClaim từ anonymous apply.
+- Tracking code public không lộ PII; HR/Sale queue dùng RLS scope hiện hành.
+- Không làm screening, Referral Guard, dedup resolution, Worker conversion hoặc Assignment; đó là MP-3.
+- Contract đầy đủ: `docs/tasks/hrp-mp2-apply-tracking/TASK.md`.
 
 ---
 
