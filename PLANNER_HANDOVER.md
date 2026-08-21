@@ -4,7 +4,7 @@
 **Vai trò hiện tại:** Tier 1 (Planner)
 **Người nhận bàn giao:** Next Agent (Tier 1)
 
-> **CURRENT STATUS:** M13 và MP-1 đã `ACCEPTED`. Task đang mở duy nhất là MP-2 `hrp-mp2-apply-tracking`, trạng thái `READY_FOR_EXECUTION`, spec `v1.0`. Đọc [docs/PLANNER_HANDOVER.md](docs/PLANNER_HANDOVER.md) để nhận đầy đủ pipeline rules và context.
+> **CURRENT STATUS (V5):** M13 và MP-1 đã `ACCEPTED`. Task đang mở duy nhất là MP-2 `hrp-mp2-apply-tracking`, trạng thái `READY_FOR_EXECUTION`, spec `v1.0`. Các nội dung Portal M1–M9 phía dưới là lịch sử V4; đọc [docs/PLANNER_HANDOVER.md](docs/PLANNER_HANDOVER.md) để nhận snapshot V5 và pipeline rules.
 
 ## 0. Việc tiếp theo ngay lập tức
 

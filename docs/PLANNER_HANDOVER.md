@@ -66,10 +66,10 @@ HRP chạy **pipeline 3 tầng** (source of truth: `.ai-pipeline`):
 | 1 | `.ai-pipeline/tier1.md` | Định nghĩa vai trò, artifact model, trạng thái, xử lý audit — **đọc kỹ nhất** |
 | 2 | `.ai-pipeline/rules/00-global-rules.md` + `01-planner-rules.md` | Ràng buộc toàn cục + riêng Planner |
 | 3 | `.ai-pipeline/templates/TASK.template.md` | Khuôn 11 section bắt buộc của contract |
-| 4 | `docs/PHASE_KHOAHOC_V1.md` | **Roadmap khoa học** 6 phase + 3 phase mở rộng — nền tảng mọi quyết định |
-| 5 | `docs/UNIFIED_PLAN_v4.md` | ADR (đặc biệt ADR-013 LOCKED bất biến, ADR-014 audit + idempotency) |
-| 6 | `docs/tasks/hrp-p1-portals/TASK.md` | **Contract đang chạy — đọc §0 + §9 + §10 trước hết** (v1.0, REVISION_REQUIRED round 3) |
-| 7 | `docs/roadmap-hrp-v4.html` | **Roadmap trực quan — bạn PHẢI duy trì** (xem §8.2) |
+| 4 | `docs/UNIFIED_PLAN_v5.md` | **Nguồn roadmap/contract hiện hành** — Marketplace-first, backend/frontend delta, phase MP-1/MP-2/MP-3 |
+| 5 | `docs/V5_3_TIER_EXECUTION_GUIDE.md` | **Quy trình thực thi V5** — Tier 1/2/3, evidence gate, demo flow và handoff |
+| 6 | `docs/PLANNER_HANDOVER.md` §0 | Snapshot trạng thái hiện tại; đọc trước lịch sử cũ |
+| 7 | `docs/roadmap-portals.html` | **Roadmap trực quan V5 — phải cập nhật sau mỗi status change** |
 | 8 | `.ai-pipeline/SKILL-ECOSYSTEM.md` | Skill map khi cần |
 
 Ngoài ra khi viết contract: **chỉ đọc** source/schema/test để xác minh baseline (`src/`, `prisma/schema.prisma`). Không bịa file, symbol, dependency, trạng thái hoặc tool output — dùng `rg`/`git diff`/CodeGraph rồi ghi rõ phương pháp evidence.
@@ -131,11 +131,13 @@ Kho quyết định chi tiết: `docs/tasks/hrp-v4-bod-mockup/DECISION_LOG.md` +
 
 ---
 
-## 5. Lịch sử & trạng thái task (20/08/2026)
+## 5. Lịch sử legacy V4 (chỉ để truy nguyên, không phải current plan)
+
+> Các mục M7–M9 và `roadmap-hrp-v4.html` bên dưới thuộc Portal Refactor V4 cũ. Không dùng chúng để chọn task mới; V5 snapshot ở §0 và `docs/UNIFIED_PLAN_v5.md` mới là nguồn sự thật.
 
 ### Vị trí lộ trình hiện tại
 
-HRP V4 (Phân hệ Portals - Front-end):
+HRP V4 (Phân hệ Portals - Front-end, legacy):
 M1 (Design System) ✅ -> M2 (Landing Page) ✅ -> M2.5 (Job Dashboard) ✅ -> M3 (API Integration Jobs/Auth) ✅
 -> M4 (UI Fixes - Icon, Logo, NavBar, Scroll) ✅ [ACCEPTED]
 -> M5 (Admin Master Data) ✅ [ACCEPTED]
@@ -167,10 +169,10 @@ px prisma db seed và phục hồi 2 tài khoản từ .env.
 
 ## 6. Hàng đợi việc tiếp theo (làm theo đúng thứ tự)
 
-3. **Sếp gõ lệnh /code hrp-portal-m7-admin-expansion** để Tier 2 bắt đầu thực thi bổ sung CRUD cho Admin.
-4. Tier 3 kiểm định và Planner /resolve M7.
-5. Sau đó mới tiến vào P3 Payroll Engine.
-6. LUÔN LUÔN cập nhật docs/roadmap-portals.html, public/roadmap-portals.html và file này sau mỗi lần resolve.
+3. **Không tiếp tục queue M7–M9 legacy** trừ khi sếp mở lại bằng task V5 riêng.
+4. Việc hiện tại là MP-2: `/code hrp-mp2-apply-tracking`.
+5. Tier 3 kiểm định rồi Planner `/resolve`; sau MP-2 mới lập contract MP-3.
+6. LUÔN cập nhật `docs/roadmap-portals.html` và file handover này sau mỗi status change V5.
 
 ## 7. Vòng lặp vận hành chuẩn của Planner
 
@@ -218,7 +220,7 @@ Lưu ý giữ nguyên: Planner vẫn có quyền REVISION nếu đọc findings 
 
 Sau khi sửa: chạy `powershell.exe -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/<slug>/TASK.md` → `DRAFT-VALID`/`RESULT: PASS` (warning "not READY_FOR_EXECUTION" là bình thường khi status = REVISION_REQUIRED).
 
-### 8.2 `docs/roadmap-hrp-v4.html` (roadmap trực quan — nếu trạng thái phase/slice đổi)
+### 8.2 `docs/roadmap-portals.html` (roadmap trực quan V5 — nếu trạng thái phase/slice đổi)
 
 | Chỗ trong file | Sửa gì |
 |---|---|
@@ -230,7 +232,7 @@ Sau khi sửa: chạy `powershell.exe -NoProfile -File .ai-pipeline/scripts/veri
 
 ### 8.3 `index.html` (trang chủ)
 
-Card "Roadmap V4": cập nhật dòng mô tả + ngày hero-meta/footer — **chỉ khi có ref cũ cần đổi**; card link như cũ, KHÔNG iframe/inline.
+Card roadmap: cập nhật dòng mô tả + ngày hero-meta/footer khi status Marketplace V5 đổi; không dùng `roadmap-hrp-v4.html` cho trạng thái hiện hành.
 
 ### 8.4 Memory của Planner (riêng của bạn, không commit)
 
@@ -264,21 +266,21 @@ Card "Roadmap V4": cập nhật dòng mô tả + ngày hero-meta/footer — **ch
 
 ---
 
-## 10. Checklist ng�y d?u
+## 10. Checklist ngày đầu (V5)
 
 - [ ] �?c `.ai-pipeline/tier1.md` + `rules/01-planner-rules.md` + `templates/TASK.template.md`
-- [ ] �?c `docs/tasks/hrp-portal-m9-affiliate-vendor/TASK.md` (contract v1.0 READY_FOR_EXECUTION)
-- [ ] �?c `docs/portal_audit_report.md` d? n?m du?c K? ho?ch t?ng th? (Master Plan) g?m 4 giai do?n m� ch�ng ta dang th?c hi?n.
-- [ ] M? `docs/roadmap-portals.html` b?ng tr�nh duy?t d? xem ti?n d? (hi?n M4, M5, M6, M7, M8 d� DONE, dang l�m M9).
-- [ ] X�c nh?n l?i v?i s?p: Tier 2/3 hi?n l� ai? �� g� `/code hrp-portal-m9-affiliate-vendor` chua?
+- [ ] Đọc `docs/UNIFIED_PLAN_v5.md`, `docs/V5_3_TIER_EXECUTION_GUIDE.md` và snapshot §0.
+- [ ] Đọc `docs/tasks/hrp-mp2-apply-tracking/TASK.md`.
+- [ ] Kiểm tra `docs/roadmap-portals.html`: MP-1 ACCEPTED, MP-2 READY_FOR_EXECUTION.
+- [ ] Báo sếp lệnh `/code hrp-mp2-apply-tracking`; không gọi task Portal V4 legacy.
 - [ ] Sau m?i round/task, lu�n nh? c?p nh?t d?ng b? c�c file theo m?c s? 8 v� push.
 
 ---
 
-*T�i li?u do Tier 1 Planner (Antigravity) c?p nh?t ng�y 20/08/2026 ~17:15 ICT.*
+*Các đoạn Portal V4 bên dưới là bản lưu lịch sử; snapshot V5 ở §0 được cập nhật ngày 21/08/2026 18:20 +07:00.*
 
-**T�NH TR?NG HI?N T?I (Master Plan - Portal Refactor):**
+**TÌNH TRẠNG LEGACY (Master Plan - Portal Refactor V4):**
 - **M7 (Admin Expansion):** ? �� d�ng (ACCEPTED). Ho�n thi?n CRUD Admin v� 3 trang Settings, Users, Vendors.
 - **M8 (Worker Concurrency - M3 g?c):** ? �� d�ng (ACCEPTED). H? th?ng ch?u t?i (Rate Limit / Waiting Room) v� UI Worker d?c t? Cache d� ho�n thi?n.
 - **M9 (Affiliate Hub & Vendor Portal - M2 & M6 g?c):** ? [READY_FOR_EXECUTION]. Planner d� t?o h?p d?ng (y�u c?u d?p UI m?i, v? chart cho CTV, v� l�m Statements cho Vendor).
-- **Ch? s?p:** G?i l?nh `/code hrp-portal-m9-affiliate-vendor` d? ph�i Tier 2 di l�m M9.
+- **Không phải queue hiện tại:** không gọi `/code hrp-portal-m9-affiliate-vendor`; xem MP-2 trong snapshot §0.
