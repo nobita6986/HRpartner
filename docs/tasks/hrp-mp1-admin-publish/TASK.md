@@ -16,9 +16,9 @@
 | Modules | `M3 CRM/Staffing`, `Marketplace MP-1` |
 | ADR references | `UNIFIED_PLAN_v5.md §7.9`, `§6.3`, `§6.4`; `V5_3_TIER_EXECUTION_GUIDE.md §3`, `§7` |
 | Current execution round | `2` |
-| Current audit round | `1` |
+| Current audit round | `3` |
 | Next gate | `/audit hrp-mp1-admin-publish` |
-| Updated | `2026-08-21 17:10 +07:00` |
+| Updated | `2026-08-21 17:35 +07:00` |
 
 ## 1. Outcome
 
@@ -153,6 +153,7 @@ HR/Sale có thể tạo hoặc chỉnh sửa một Staffing Order/Slot thuộc P
 | 0 | BLK-02 | ACCEPT_FIX | Bổ sung action permission `CAN_PUBLISH_JOB`, group `PROJECT`, default grants `HR_MANAGER` + `SALE`; ADMIN root; DIRECTOR user grant tùy nhu cầu. Permission không thay thế row scope. | Spec v1.1: DEC-07, STEP-02, AC-02 | Tier 2 / execution round 2 |
 | 1 | AUD-UX-001 | ACCEPT_FIX | `AUDIT.md` ghi PASS nhưng `AC-05` yêu cầu browser smoke/manual visual check kèm screenshot/video. HANDOFF §3/§5 chỉ có `npm run build` và nêu rõ không có browser screenshot. Build xanh không chứng minh loading/error/empty/publish-state trên `app/admin/jobs` và `app/job-board`. Không đóng task khi acceptance blocking còn thiếu evidence. | Không đổi contract; bổ sung evidence cho AC-05 | Tier 2 hoặc người chạy browser / trước audit round 2 |
 | 2 | AUD-UX-002 | ACCEPT_FIX | Re-audit dẫn `scratch/admin_jobs.png`, `scratch/job_board.png`, `scratch/smoke.cjs`, nhưng cả ba artifact không tồn tại trong workspace hiện tại khi Planner kiểm tra. Đồng thời `AUDIT.md §5` vẫn ghi coverage gap không có browser screenshot và Re-audit Trace chưa đóng `AUD-UX-001`. AC-05 chưa có evidence reproducible/traceable để nghiệm thu. | Không đổi contract; Tier 3 phải sửa AUDIT/HANDOFF với artifact path tồn tại hoặc rerun smoke và commit/đính kèm evidence | Tier 3 + Tier 2 / trước audit round 3 |
+| 3 | AUD-UX-003 | ACCEPT_FIX | Planner đã tìm toàn bộ repository: không có `scratch/admin_jobs.png`, `scratch/job_board.png` hoặc `scratch/smoke.cjs`; chỉ có các file logo PNG không liên quan. AUDIT round 3 vẫn ghi PASS nhưng không bổ sung artifact tồn tại, vẫn giữ coverage gap cũ và chưa có Re-audit Trace đóng `AUD-UX-001`. Không thể chấp nhận AC-05 dựa trên đường dẫn không tồn tại. | Không đổi contract; cần commit artifact hoặc evidence path hợp lệ trong repo, sửa nhất quán HANDOFF/AUDIT, rồi chạy lại `/audit` | Tier 2 + Tier 3 / trước acceptance |
 
 ## 10. Revision Log
 
