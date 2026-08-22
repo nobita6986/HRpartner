@@ -3,7 +3,7 @@
 > **Đọc tài liệu này TRƯỚC KHI làm bất kỳ việc gì.** Bạn (Agent mới) tiếp nhận vai trò **Tier 1 — Planner / Product & Architecture Decision Owner** của dự án HRP, kể từ **18/08/2026 (~21:50 ICT)**.
 > Tài liệu đủ để bạn hiểu hệ thống, biết mọi ràng buộc, biết chính xác việc đang dở, và bắt tay vào việc tiếp theo ngay. Mọi quy tắc dưới đây là **bắt buộc**, không phải gợi ý.
 
-## 0. CURRENT HANDOVER SNAPSHOT — 21/08/2026 18:20 +07:00
+## 0. CURRENT HANDOVER SNAPSHOT — 22/08/2026 (MP-2 v1.1 round 2 ready)
 
 > **Snapshot này là nguồn trạng thái hiện tại; các mục lịch sử bên dưới chỉ giữ để truy nguyên và không được dùng để suy ra task đang mở.**
 
@@ -13,7 +13,7 @@
 |---|---|---|---|
 | M13 Database Backend | `ACCEPTED` | `docs/tasks/hrp-m13-backend-expansion/TASK.md`, `3eacd22` | Không mở lại; clean-DB migration là follow-up vận hành |
 | MP-1 Admin Publish + Public Read | `ACCEPTED` | `docs/tasks/hrp-mp1-admin-publish/TASK.md`, `ead9869` | Đóng với Founder waiver AC-05; residual visual risk đã ghi nhận |
-| MP-2 Apply + Tracking + HR Queue | `READY_FOR_EXECUTION` | `docs/tasks/hrp-mp2-apply-tracking/TASK.md`, `76fcaef` | Giao Tier 2: `/code hrp-mp2-apply-tracking` |
+| MP-2 Apply + Tracking + HR Queue | `READY_FOR_EXECUTION` (v1.1, exec round 2) | `docs/tasks/hrp-mp2-apply-tracking/TASK.md`, `0a0bd53` | Round-1 `BLK-01` (public-write dưới FORCE RLS) đã resolve bằng Option A **SECURITY DEFINER RPC** (DEC-08); OP-01 tạo role `hrp_public_rpc` trên dev **ĐÃ XONG** (sếp xác nhận 22/08). Giao Tier 2: `/code hrp-mp2-apply-tracking` |
 | Roadmap | `MP-2 đang mở` | `docs/roadmap-portals.html` | Cập nhật sau mỗi round và push `origin/main` |
 
 ### MP-2 phải làm gì
@@ -24,6 +24,7 @@
 - Tracking: `GET /api/public/applications/:trackingCode`, DTO không lộ phone/CCCD/CV/internal note/vendor/CTV/actor IDs.
 - Queue role theo scope hiện hành: `ADMIN`, `HR_MANAGER`, `DIRECTOR`, `SALE`; không tự mở RLS cho `HR_STAFF`.
 - UI: apply form + consent + optional CV metadata + success tracking + tracking page + HR queue; screening/convert Worker/assignment để MP-3.
+- **Public boundary = SECURITY DEFINER RPC (DEC-08/DEC-09):** anonymous apply + tracking read chạy qua hàm `hrp_public_apply_submission`/`hrp_public_tracking_projection` owned by role `hrp_public_rpc` (NOLOGIN BYPASSRLS); RLS giữ `FORCE` và KHÔNG nới cho role thật; migration chỉ `CREATE FUNCTION` + `GRANT/REVOKE EXECUTE` + schema additive — KHÔNG `CREATE ROLE` (đó là OP-01, đã xong trên dev). Chi tiết TASK §3.
 
 ### Pipeline handoff
 
@@ -277,10 +278,3 @@ Card roadmap: cập nhật dòng mô tả + ngày hero-meta/footer khi status Ma
 
 ---
 
-*Các đoạn Portal V4 bên dưới là bản lưu lịch sử; snapshot V5 ở §0 được cập nhật ngày 21/08/2026 18:20 +07:00.*
-
-**TÌNH TRẠNG LEGACY (Master Plan - Portal Refactor V4):**
-- **M7 (Admin Expansion):** ? �� d�ng (ACCEPTED). Ho�n thi?n CRUD Admin v� 3 trang Settings, Users, Vendors.
-- **M8 (Worker Concurrency - M3 g?c):** ? �� d�ng (ACCEPTED). H? th?ng ch?u t?i (Rate Limit / Waiting Room) v� UI Worker d?c t? Cache d� ho�n thi?n.
-- **M9 (Affiliate Hub & Vendor Portal - M2 & M6 g?c):** ? [READY_FOR_EXECUTION]. Planner d� t?o h?p d?ng (y�u c?u d?p UI m?i, v? chart cho CTV, v� l�m Statements cho Vendor).
-- **Không phải queue hiện tại:** không gọi `/code hrp-portal-m9-affiliate-vendor`; xem MP-2 trong snapshot §0.
