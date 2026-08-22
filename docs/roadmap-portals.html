@@ -349,7 +349,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
     <div class="stat">
       <div class="k">Đang đứng</div>
       <div class="v"><em>MP-2</em> · READY</div>
-      <div class="d"><b>hrp-mp2-apply-tracking</b> đã có TASK.md v1.0, chờ Tier 2 thực thi. MP-1 đã ACCEPTED theo Founder waiver AC-05; residual visual risk được ghi nhận.</div>
+      <div class="d"><b>hrp-mp2-apply-tracking</b> đã có TASK.md <b>v1.1</b> (round 1 BLOCKED về ranh giới public-write đã resolve bằng SECURITY DEFINER RPC do role <code>hrp_public_rpc</code> sở hữu). Chờ sếp chạy OP-01 tạo role trên dev, rồi Tier 2 thực thi round 2. MP-1 đã ACCEPTED theo Founder waiver AC-05; residual visual risk được ghi nhận.</div>
     </div>
     <div class="stat">
       <div class="k">UI thật đầu tiên</div>
@@ -421,7 +421,7 @@ footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line);
   <div>
     <div class="pc-title">Apply + Tracking + HR Queue <span class="wk fn">Sprint 2</span><span class="pc-status st-dang">READY</span></div>
     <div class="pc-inv">Scope: CandidateSubmission, tracking code, idempotency/duplicate guard, status history, optional upload metadata, public apply/tracking UI và HR queue; không làm screening/Worker conversion/assignment.</div>
-    <div class="pc-foot"><b>Task:</b> <code>docs/tasks/hrp-mp2-apply-tracking/TASK.md</code> · <b>Next:</b> Tier 2 chạy <code>/code hrp-mp2-apply-tracking</code> · <b>Gate:</b> HANDOFF READY_FOR_AUDIT → Tier 3 C-01..C-10 → Planner ACCEPTED.</div>
+    <div class="pc-foot"><b>Task:</b> <code>docs/tasks/hrp-mp2-apply-tracking/TASK.md</code> (v1.1) · <b>Next:</b> sếp chạy OP-01 tạo role <code>hrp_public_rpc</code> (NOLOGIN BYPASSRLS) trên dev → Tier 2 chạy <code>/code hrp-mp2-apply-tracking</code> (round 2) · <b>Gate:</b> HANDOFF READY_FOR_AUDIT → Tier 3 C-01..C-10 → Planner ACCEPTED.</div>
   </div>
 </div>
 
