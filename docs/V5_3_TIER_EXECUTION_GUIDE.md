@@ -1,8 +1,9 @@
 # HRP V5 — Hướng dẫn chia phase và thực thi theo mô hình T1/T2/T3
 
-> **Version:** 1.0
+> **Version:** 1.1
 > **Nguồn pipeline:** `.ai-pipeline/tier1.md`, `.ai-pipeline/tier2.md`, `.ai-pipeline/tier3.md`
 > **Plan canonical:** `docs/UNIFIED_PLAN_v5.md`
+> **Revision 1.1 (2026-08-22):** tiếp thu `V5_READINESS_ASSESSMENT.md` — làm rõ TASK.md canonical (C-06), DEC-11 vs M1-02 (C-09), DEC-14 hybrid test (C-08), phân biệt open-question vs decision-gate (C-10). **Lưu ý namespace:** "C-06/C-08/C-09/C-10" nhắc ở đây là *consistency finding của Assessment*, KHÔNG phải Deep Audit Checklist `C-01..C-10` ở §4.3 (hai hệ đánh số trùng tên, khác nghĩa).
 > **Mục tiêu kinh doanh đầu tiên:** vận hành được Marketplace HRP: `Tạo việc → Công khai → Ứng tuyển → Sàng lọc → Tạo Worker → Xếp Assignment → Phản hồi trạng thái`.
 
 ## 1. Nguyên tắc điều hành
@@ -16,6 +17,8 @@
 - `evidence/`: chỉ chứa log/screenshot/file lớn được hai tài liệu trên dẫn chiếu.
 
 Không tạo báo cáo tiến độ riêng thay thế cho `HANDOFF.md` hoặc `AUDIT.md`. Không chép lại plan vào task; task chỉ dẫn chiếu phần liên quan và khóa contract cần thực thi.
+
+> **TASK.md canonical (C-06):** định dạng thực thi bắt buộc là template 11 mục `.ai-pipeline/templates/TASK.template.md` (§0 Control … §10 Revision Log). Các ví dụ ở §6.1/§6.2 dưới đây chỉ minh họa cách *phân rã* một phase thành nhiều task và cách viết acceptance — KHÔNG phải một định dạng TASK thứ hai. Khi có mâu thuẫn, template `.ai-pipeline` thắng.
 
 ### 1.2. Không dùng “build pass” để kết luận hoàn tất
 
@@ -62,6 +65,8 @@ Một task chỉ được coi là hoàn tất khi có đủ:
 
 **Marketplace launch gate:** MP-1/MP-2/MP-3 chưa được gọi là xong nếu chưa test public projection, duplicate apply, IDOR, referral/dedup và conversion race.
 
+> **M1-min & DEC-11 (C-09):** `V5-M1-02` (session/scope) **mở rộng identity-core sẵn có**, KHÔNG viết lại login/JWT/cookie/register/endpoint auth. Task M1-min chạm auth phải ghi rõ trong Scope là "extend identity-core"; nếu contract yêu cầu tạo lại auth → Tier 1 phải sửa contract trước khi giao (vi phạm DEC-11).
+
 ### 3.2. Các phase sau Marketplace
 
 1. M7 attendance/import/timesheet lock.
@@ -92,6 +97,8 @@ Checklist trước khi chuyển `READY_FOR_EXECUTION`:
 - Tạo traceability `RQ → STEP → AC`.
 - Chốt permission, data scope, state transition, idempotency và rollback.
 - Open Questions phải rỗng nếu câu hỏi có thể làm đổi implementation.
+
+> **Open-question vs decision-gate (C-10):** phân biệt hai loại. (a) *Open Question của TASK* = câu hỏi phạm vi task đó, phải đóng trước `READY_FOR_EXECUTION`. (b) *Decision-gate hệ thống* (ví dụ role `hrp_public_rpc` phải tồn tại trên dev, migration prod đã apply, secret test DB đã cấp) = điều kiện môi trường/quyết định ngoài task; ghi vào **Decisions/Assumptions (§3)** hoặc **Risk (§7)** kèm owner + trigger, KHÔNG để lẫn trong Open Questions. Task vẫn có thể `READY_FOR_EXECUTION` khi decision-gate được ghi rõ là điều kiện tiền đề do sếp/OP thực hiện.
 
 **Lệnh giao cho Tier 2:**
 
@@ -131,6 +138,7 @@ Nếu preflight fail, Tier 2 ghi `HANDOFF.md` với `BLOCKED` và dừng. Không
 - Mỗi thay đổi schema phải có migration/test.
 - Mỗi POST/PATCH/command phải có idempotency hoặc ghi lý do `N/A` trong HANDOFF.
 - Mỗi route phải có auth/scope/projection/error test.
+- **Chiến lược test hybrid (DEC-14, C-08):** logic thuần (money/rounding, state machine, projection) test bằng **unit** không cần DB; luật RLS/permission/idempotency/outbox test bằng **integration** chạm test DB tách biệt (không phải prod). Integration thiếu secret test DB thì đánh `ENV_BLOCKED` + ghi limitation, KHÔNG thay bằng mock giả để báo pass.
 - Chạy verify sau từng nhóm thay đổi, không dồn toàn bộ đến cuối.
 - Tối đa ba vòng tự sửa cho cùng một lỗi; lỗi kiến trúc/nghiệp vụ/security thì dừng và báo BLOCKED.
 

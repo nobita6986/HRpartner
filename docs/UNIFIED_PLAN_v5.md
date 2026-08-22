@@ -1,8 +1,9 @@
 # Implementation Plan: HRP V5 — Mockup Gap Analysis & V4 Carry-over Execution Strategy
 
-> **Phiên bản:** V5.2  
+> **Phiên bản:** V5.3  
 > **Vai trò tài liệu:** kế hoạch thực thi cho UI/mockup V5 và toàn bộ backlog còn dang dở từ Unified Plan V4.  
-> **Nguyên tắc:** section 1–3 giữ phạm vi mockup S01–S05; section 4–5 là backlog kỹ thuật/nghiệp vụ bắt buộc được mang sang V5.
+> **Nguyên tắc:** section 1–3 giữ phạm vi mockup S01–S05; section 4–5 là backlog kỹ thuật/nghiệp vụ bắt buộc được mang sang V5.  
+> **V5.3 (2026-08-22):** tiếp thu `docs/V5_READINESS_ASSESSMENT.md` — mỗi finding đã được Planner **xác minh lại bằng tool thật** (đọc file:dòng, grep, glob) trước khi nhận; bảng nhận/từ chối và backlog refactor xem §12. Các finding sai/lỗi-thời bị **từ chối có dẫn chứng** (đặc biệt D-01). Revision Log: §13.
 
 > **Ưu tiên kinh doanh số 1:** đưa **Chợ giao dịch việc làm HRP** vào vận hành sớm nhất. Marketplace MVP là đường găng trước payroll, billing đầy đủ, commission nâng cao và M9. Mục tiêu tối thiểu là chạy được vòng `Tạo việc → Công khai → Ứng tuyển → Sàng lọc → Tạo Worker → Xếp Assignment → Phản hồi trạng thái` trên dữ liệu thật đã ẩn danh.
 
@@ -165,10 +166,10 @@ Phần này là danh sách công việc còn dang dở hoặc chưa triển khai
 | ID | Công việc chi tiết | Phạm vi/artefact | Acceptance criteria |
 |---|---|---|---|
 | V5-M1-01 | Hoàn thiện `AuthIdentity` và account linking | Model `auth_identities`, liên kết password/OTP/Zalo; không dùng số điện thoại làm primary identity | Một user có nhiều identity; link/unlink có audit; số điện thoại trùng không tạo user thứ hai |
-| V5-M1-02 | Hoàn thiện session/refresh rotation | Bảng `sessions` hoặc `refresh_tokens`, revoke, device metadata, session version | Access token ngắn hạn; refresh rotation; revoke một thiết bị/toàn bộ thiết bị; logout vô hiệu hóa token cũ |
+| V5-M1-02 | Hoàn thiện session/refresh rotation — **mở rộng identity-core hiện có theo DEC-11, KHÔNG viết lại bộ auth/login/JWT** | Bảng `sessions` hoặc `refresh_tokens`, revoke, device metadata, session version | Access token ngắn hạn; refresh rotation; revoke một thiết bị/toàn bộ thiết bị; logout vô hiệu hóa token cũ |
 | V5-M1-03 | OTP baseline | OTP hash, expiry 5 phút, tối đa 3 lần thử, rate limit phân tán | OTP không lưu plaintext; sai quá ngưỡng bị khóa; không phân biệt user tồn tại trong response |
 | V5-M1-04 | Permission Pool v2 | `Permission`, `RolePermission`, `UserPermissionGrant`, custom group, grantor, effective period, deny precedence | `ADMIN/ROOT` bất khả tước; `CAN_OVERRIDE_INDIVIDUAL_COMMISSION` cấp được cho user hoặc group; revoke có hiệu lực ngay sau permission version bump |
-| V5-M1-05 | Hoàn thiện Visibility Matrix Q#22 | DIRECTOR đọc toàn bộ như HR_MANAGER; MKT chỉ CRM/project public, không đọc Worker; PM chỉ project được phân công | 8 role × resource × action có fixture expected; response dùng projection, không trả PII thừa |
+| V5-M1-05 | Hoàn thiện Visibility Matrix Q#22 | DIRECTOR đọc toàn bộ như HR_MANAGER; MKT **và SALE** chỉ CRM/project public, không đọc Worker PII (CCCD/bank); PM chỉ project được phân công | **13 role** (đủ `SystemRole`, không phải 8) × resource × action có fixture expected; response dùng projection, không trả PII thừa |
 | V5-M1-06 | Bắt buộc route qua auth scope | Audit toàn bộ `app/api/**`; thay `getPrisma()` trực tiếp bằng `withAuthScope` + `withDbContext`/scoped repository | Không có route dữ liệu nghiệp vụ bỏ qua scope; `$queryRaw` chỉ nằm trong repository có RLS context |
 | V5-M1-07 | Hoàn thiện RLS policy và FORCE RLS | Worker, Project, Vendor, StaffingOrder/Slot, Assignment, Attendance, Timesheet, Statements, Commission | Runtime role không phải DB owner; policy deny-by-default; `FORCE ROW LEVEL SECURITY`; GUC transaction-local |
 | V5-M1-08 | Sửa lỗ hổng vendor scope | Order list/submission/statement chỉ đọc và ghi object thuộc vendor trong context, đúng status | Test IDOR: vendor A không đọc/submit/order/dispute của vendor B |
@@ -181,7 +182,7 @@ Phần này là danh sách công việc còn dang dở hoặc chưa triển khai
 | V5-M35-01 | Hoàn thiện `Site` và `StaffingOrderSlot` | Site thuộc Project; slot có vị trí, ca, headcount, rate scope, valid interval | Assignment trỏ tới slot; không còn dùng `Project.siteAddress` làm site canonical |
 | V5-M35-02 | Hoàn thiện vòng đời 5 state machine | Typed transition maps + transition history cho profile, submission, employment, assignment, risk | Mỗi transition kiểm tra actor/permission/reason; terminal state không quay ngược tùy ý; optimistic locking chống race |
 | V5-M35-03 | Profile lifecycle | Sửa luồng `REJECTED → INCOMPLETE → PENDING_VERIFY`; lưu reason/version reviewer | Không overwrite lịch sử review; card hiển thị thiếu hồ sơ và lý do |
-| V5-M35-04 | Submission/merge lifecycle | `NEW → SCREENING → QUALIFIED → MERGED`; withdrawal; `mergedWorkerId` bắt buộc khi MERGED | Không auto-merge nếu chỉ trùng một khóa; merge queue yêu cầu HR confirm |
+| V5-M35-04 | Submission lifecycle + dedup | Máy trạng thái canonical = `NEW → SCREENING → QUALIFIED → CONVERTED` (+ `REJECTED`/`WITHDRAWN`/`NEEDS_INFO`) theo §7.9.5; `MERGED` là **nhánh dedup riêng** (2 submission trùng), KHÁC `CONVERTED` (tạo/link Worker); `mergedWorkerId` cho MERGED, `workerId` cho CONVERTED | Không auto-merge nếu chỉ trùng một khóa; merge queue yêu cầu HR confirm. **V5.3 (C-04):** schema hiện chỉ có `MERGED`, THIẾU `CONVERTED`/`NEEDS_INFO` → MP-3 phải bổ sung qua enum-hóa (§12 RF-14), không dùng lẫn MERGED↔CONVERTED |
 | V5-M35-05 | Referral Guard | Claim source, first-click attribution, guard 7 ngày/hoa hồng active/vendor payroll, override có permission và evidence | Các trường hợp PROTECTED/EXPIRED/OVERRIDE_REQUESTED hiển thị đúng UI; override tạo audit |
 | V5-M35-06 | 1-ACTIVE assignment và transfer | Partial unique index, transfer preview, đóng assignment cũ và mở mới trong transaction | Không có hai assignment chiếm chỗ; quota không âm; transfer giữa project trong tháng có lịch sử |
 | V5-M35-07 | Employment episode và AWOL | `SUSPENDED` có resume; terminated không sửa lịch sử; vắng ≥3 ngày tạo `AWOL_REVIEW` | Đóng/nhả quota bằng một command có audit; tái tuyển tạo episode mới |
@@ -209,7 +210,7 @@ Phần này là danh sách công việc còn dang dở hoặc chưa triển khai
 | V5-M8-02 | Tách vendor payable và client billing | Hai statement độc lập; không suy vendor bằng `findFirst()` | Vendor resolve qua assignment → order/slot → vendor contract; client qua project contract |
 | V5-M8-03 | Statement lineage | Line snapshot timesheet period/version, rate/version, quantity/unit, formulaVersion, inputSnapshot | Drawer trace được raw event → timesheet line → rate → statement line → total |
 | V5-M8-04 | Decimal-safe hours và BigInt money | Decimal hours không `Number()`/`Math.round()`; BigInt VND | Case 7.5h, 0.25h, OT hệ số và làm tròn có kết quả định trước |
-| V5-M8-05 | Revision/dispute workflow | `DRAFT → ISSUED → CONFIRMED/DISPUTED → REVISED → LOCKED`; revision `supersedesId` | Dispute không sửa statement đã gửi; tối đa 2 vòng, SLA và FORCE_LOCK có reason/permission |
+| V5-M8-05 | Revision/dispute workflow | `DRAFT → ISSUED → CONFIRMED/DISPUTED → REVISED → LOCKED`; revision `supersedesId`. **V5.3 (C-03):** schema hiện là `DRAFT\|SENT\|DISPUTED\|CONFIRMED\|LOCKED\|PAID` — `SENT`≠`ISSUED`, thiếu `REVISED`, và `PAID` bị lẫn vào status statement (phải tách sang payment sub-ledger M8-06). Enum-hóa (§12 RF-14) phải migrate vocab về đúng máy trạng thái này | Dispute không sửa statement đã gửi; tối đa 2 vòng, SLA và FORCE_LOCK có reason/permission |
 | V5-M8-06 | Payment sub-ledger | `Payment`, `PaymentAllocation`, partial payment, refund/reversal; tách `LOCKED` khỏi `PAID` | Có `PAYMENT_PENDING/PARTIALLY_PAID/PAID`; phân bổ không vượt outstanding; audit người duyệt |
 | V5-M8-07 | Reconciliation UI | Margin comparison, lineage drawer, vendor dispute form, empty/locked states | Khớp S04; không hiển thị margin/client rate cho vendor |
 | V5-M8-08 | Client confirmation Q#25 | PDF/link token hết hạn, xác nhận không cần login, manual accounting confirmation có audit | Token one-time/expiry; mọi thay đổi tạo audit; auto-confirm chỉ sau SLA đã chốt |
@@ -306,6 +307,8 @@ Mỗi task chỉ được chuyển `DONE` khi có đủ 6 artefact:
 6. `V5-PAY-01..06` được làm trước, nhưng `V5-PAY-07..08` chỉ nhận sau khi founder/kế toán mở phase compliance.
 7. `V5-M6-*` chỉ bật settlement chính thức sau khi statement/revenue canonical; referral attribution của Marketplace có thể chạy trước settlement.
 8. Mỗi task code phải có `TASK.md` một mục tiêu, `HANDOFF.md` một kết quả; Tier 3 viết `AUDIT.md` và chỉ trả về blockers/quyết định cần Planner.
+
+> **V5.3 (C-01/AM-06) — điều kiện dừng đã xác minh:** quy tắc số 1 ("G0 trước portal") **đã bị vi phạm trên thực tế** — MP-1 `ACCEPTED` (`ead9869`) trong khi `V5-G0-04` (CI) và `V5-G0-05` (fixture) = 0% (không có `.github/workflows/`, không có `tests/fixtures/`). Không phá hủy dữ liệu, nhưng mọi evidence hiện là "chạy tay". Để không lặp lại: **`MP-3` KHÔNG được `ACCEPTED` khi `V5-G0-04` và `V5-G0-05` chưa PASS** (launch gate §7.9.7 cần nền cơ khí). MP-2 vẫn được tiếp tục song song (đang giữa vòng), nhưng đóng G0 là điều kiện đóng marketplace track.
 
 ### 4.14. Traceability từ nợ V4 sang task V5
 
@@ -428,7 +431,7 @@ Một câu mô tả kết quả observable.
 ### 6.4. Chuẩn schema và migration
 
 1. Mọi bảng nghiệp vụ có `id`, `createdAt`, `updatedAt`; record tài chính có `version`/`lockedAt`/`lockedBy` nếu phù hợp.
-2. Status ổn định dùng Prisma enum hoặc DB check constraint; không dùng string tự do cho state machine.
+2. Status ổn định dùng Prisma enum hoặc DB check constraint; không dùng string tự do cho state machine. **V5.3 (C-07/D-03) — đã xác minh vi phạm 100%:** mọi `status` trong `schema.prisma` hiện là `String @default(...)` (Client, Project, StaffingOrder, CandidateSubmission, ProjectAssignment, VendorStatement, TimesheetPeriod...), chỉ ghi giá trị hợp lệ trong comment. Trước V5.3 **không task nào phụ trách enum-hóa** — nay giao cho **§12 RF-14** (`V5-M35-02` phần schema) theo lộ trình expand→migrate→contract.
 3. Money dùng `BigInt` và hậu tố `Vnd`; không có field `amount` mơ hồ.
 4. Khoảng hiệu lực dùng `[validFrom, validTo)`; `validTo = NULL` nghĩa là vô hạn; không dùng `23:59:59`.
 5. Migration phải có: forward SQL, backfill, index, constraint, kiểm tra dữ liệu cũ và kế hoạch rollback.
@@ -529,20 +532,29 @@ Handler bắt buộc:
 
 **Files chính:** `src/shared/auth/*`, `src/shared/auth/with-auth-scope.ts`, `src/shared/auth/with-db-context.ts`, `src/domains/auth/*`, `app/api/auth/*`, `prisma/schema.prisma`, `prisma/migrations/*`, `tests/security/*`.
 
-**Security matrix tối thiểu:**
+**Security matrix tối thiểu — 13 `SystemRole` (đủ theo `prisma/schema.prisma`, không phải 8):**
+
+> V5.3: bảng cũ chỉ liệt kê 8 hàng trong khi enum `SystemRole` có **13 role** (ADMIN, HR_MANAGER, DIRECTOR, HR_STAFF, SALE, PM, ACCOUNTANT, MKT, VENDOR_ADMIN, VENDOR_STAFF, CTV, WORKER, EMPLOYEE — test RLS thật đang chạy 13×N). Mọi role phải có hàng + fixture expected; role ngoài scope = `deny`/0 row, không để mặc định "chưa định nghĩa".
 
 | Role | Worker | Project/CRM | Vendor | Statement | Commission | Payroll |
 |---|---|---|---|---|---|---|
-| ADMIN/ROOT | all | all | all | all | all | all |
+| ADMIN | all | all | all | all | all | all |
 | HR_MANAGER | read/write scoped | read/write | read | read/write | read | read |
+| HR_STAFF | read/write scoped hẹp | assigned project | deny | deny | deny | deny |
 | DIRECTOR | read all projection | read all | read all projection | read all | approve/override | read |
+| SALE | **projection tối thiểu, không CCCD/bank** | CRM + public project | deny | deny | deny | deny |
 | MKT | deny | CRM + public project | deny | deny | deny | deny |
 | PM | assigned project workers | assigned project | deny | read project projection | read own KPI | deny |
 | ACCOUNTANT | minimum PII | read billing | read vendor statement | read/write reconciliation | read settlement | payroll |
-| VENDOR | own submissions/workers/statements | deny | own | own statement | deny | deny |
+| VENDOR_ADMIN | own submissions/workers/statements | deny | own | own statement | deny | deny |
+| VENDOR_STAFF | own scoped (hẹp hơn VENDOR_ADMIN) | deny | own read | own statement read | deny | deny |
+| CTV | deny (không PII worker) | public jobs | deny | deny | self referral ledger | deny |
 | WORKER | self | public jobs/apply | deny | self payslip/attendance | self referral if applicable | self payslip |
+| EMPLOYEE | deny (worker outsourcing) | deny | deny | deny | deny | self payslip/leave (HRM nội bộ) |
 
-**Exit gate:** unit matrix và DB RLS matrix cùng kết quả; test vendor IDOR/MKT Worker denial/DIRECTOR projection pass.
+> **Application/Submission queue (MP-2/MP-3):** đọc queue = ADMIN, HR_MANAGER, DIRECTOR, SALE theo scope; **HR_STAFF không được mở RLS rộng** cho `candidate_submissions`. Convert/qualify = ADMIN/HR_MANAGER. Chi tiết role×action nằm trong từng TASK marketplace (tránh "scope hiện hành" ngầm định — xem §12 finding "Điểm mơ hồ #5").
+
+**Exit gate:** unit matrix và DB RLS matrix cùng kết quả trên **cả 13 role**; test vendor IDOR (VENDOR_ADMIN↔VENDOR_STAFF↔vendor khác)/MKT+SALE Worker-PII denial/DIRECTOR projection pass.
 
 ### 7.3. Phase M3/M5 — Backbone CRM, Worker và Assignment
 
@@ -689,6 +701,10 @@ Các object tối thiểu phải có quan hệ và business key rõ ràng:
 | `ProjectAssignment` | worker, slot, valid interval, status | Không có hai assignment chiếm chỗ |
 | `ApplicationStatusHistory` | submission, from/to, actor/reason, timestamp | Candidate status page lấy từ history/projection |
 
+> **V5.3 (C-05) — `publicSlug` drift đã xác minh:** `prisma/schema.prisma` **chưa có** trường `publicSlug` (grep = 0); MP-1 (ACCEPTED `ead9869`) đang dùng `Project.code` làm slug URL công khai (`src/domains/job-board/public.service.ts`). Dùng mã nội bộ làm URL public là nợ kỹ thuật: không đổi độc lập được, lộ quy ước mã nội bộ. **Quyết định cần chốt (§12 RF-20):** hoặc (a) thêm trường `publicSlug` + migrate (đúng contract §7.9.3), hoặc (b) ADR chấp nhận `code` làm slug và **sửa contract này** cho khớp thực tế. Không để plan và code mâu thuẫn ngầm.
+
+> **V5.3 (§3.1 mơ hồ #3) — Upload CV MP-2:** contract chỉ ghi "CV/file tùy chọn". Trước khi audit MP-2 phải chốt trong TASK: metadata-only hay R2 presign; whitelist mime/size; hay **out-of-scope đích danh** (MP-2 hiện KHÔNG làm upload — xem TASK mp2 v1.1). Không để Tier 2 tự chế cơ chế storage.
+
 #### 7.9.4. API contract Marketplace MVP
 
 | Endpoint | Actor | Kết quả chính |
@@ -718,6 +734,7 @@ NEW → SCREENING → QUALIFIED → CONVERTED
 Quy tắc:
 
 - `CONVERTED` bắt buộc có `workerId` và accepted source claim.
+- **V5.3 (C-04):** `status` hiện là string tự do và schema mới có `MERGED`, **chưa có `CONVERTED`/`NEEDS_INFO`**. MP-3 phải bổ sung hai trạng thái này qua enum-hóa (§12 RF-14). `MERGED` (dedup) không được dùng thay `CONVERTED` (convert-to-Worker).
 - `QUALIFIED` chưa có nghĩa là đã được xếp việc.
 - Tạo assignment là command riêng, có preview và quota check.
 - `REJECTED` phải có reason; ứng viên có thể xem trạng thái tổng quát nhưng không xem internal note.
@@ -732,6 +749,8 @@ Quy tắc:
 | MP-3 | Dedup/referral guard, qualify/reject/convert, Worker link, assignment preview/activate, audit/security | Một ứng viên đi hết vòng tới assignment; duplicate/IDOR/quota conflict bị chặn |
 
 **Không đưa vào MP-1..MP-3:** payroll, tax/insurance, vendor payment, client invoice, commission settlement, GPS attendance và AI matching.
+
+> **V5.3 (AM-01) — một đường apply public duy nhất:** đã xác minh tồn tại **2 route apply** — canonical `POST /api/public/jobs/:slug/applications` và legacy `app/api/jobs/apply/route.ts` (projectId-based). MP-2 **phải deprecate route legacy trong chính task** (410/redirect canonical) và loại side-effect tạo Worker/SourceClaim khi anonymous apply. Ràng buộc này đã nằm trong `docs/tasks/hrp-mp2-apply-tracking/TASK.md` v1.1 (EV-08, STEP-02); ghi vào plan để không tồn dư 2 entry point public.
 
 #### 7.9.7. Marketplace launch gate
 
@@ -801,6 +820,8 @@ Bảng này là checklist bắt buộc khi kết thúc phase. “Backend thay đ
 - Không dùng `skip` để che test môi trường; test cần DB phải báo `ENV_BLOCKED` riêng trong CI.
 - Golden test thay đổi phải ghi reason/version và được Planner/Audit duyệt.
 - Mỗi migration thêm constraint phải có test chứng minh dữ liệu cũ không vi phạm hoặc đã được backfill.
+- **V5.3 (T-03/AM-07):** integration test hiện đọc `DATABASE_URL` trỏ **Neon dev chung** (`fileParallelism: false`, ~100s/suite). Khi lên CI phải chuyển sang **`DATABASE_URL_TEST` (DB test riêng)** và đánh `ENV_BLOCKED` cho đến khi có secret; không chạy integration lên DB dev chia sẻ trong CI.
+- **V5.3 (C-08):** cập nhật `DEC-14` (cũ: "test mock, không DB thật") thành **hybrid** — unit mock + ~10 file integration dùng Neon dev thật (RLS matrix 13 role, IDOR, idempotency/outbox). Tier mới KHÔNG được bỏ integration test theo handover cũ.
 
 ## 9. RELEASE, ROLLBACK VÀ OPERATIONS RUNBOOK
 
@@ -840,7 +861,11 @@ Tối thiểu phải quan sát được:
 | Decision | Owner | Khi nào cần chốt | Nếu chưa chốt |
 |---|---|---|---|
 | Sync hay QStash cho check-in | Founder + Architect | Sau load spike 5.000 request | Không gọi endpoint production-ready |
-| Rate rounding/decimal scale | Accounting + Planner | Trước V5-M8-04 | Không lock statement |
+| Rate rounding/decimal scale | Accounting + Planner | **ADR interim GẤP (V5.3): trước bất kỳ statement nào chạy thật** | Không lock statement — VÀ xem cảnh báo dưới |
+
+> **V5.3 (A-04/RF-03) — sai tiền đang chạy, đã xác minh:** `src/domains/reconciliation/statement.service.ts:183` và `:308` dùng `BigInt(Math.round(item.totalHours)) * rate` — **làm tròn giờ thành số nguyên TRƯỚC khi nhân rate** (7.5h → 8h). Vi phạm chính exit gate §7.5 ("7.5 giờ không bị round sai") và AC `V5-M8-04`. Đây không phải "chưa chốt thì không làm" mà là **defect đang tồn tại trong code đã merge**. Cần ADR interim rounding (nhân Decimal hours × BigInt rate, làm tròn **sau khi nhân**, qua `money.ts`) + hotfix (§12 RF-03) — không chờ mở phase M8.
+
+> **V5.3 (C-10) — phân biệt "decision gate" vs "open question":** các dòng trong Decision Register này là **decision gate theo phase** (chốt trước khi mở phase tương ứng), KHÔNG phải open-question chặn mọi task. Guide §4.1 chỉ yêu cầu "Open Questions của TASK phải rỗng nếu ảnh hưởng implementation của chính task đó" — không đồng nghĩa phải đóng toàn bộ decision hệ thống trước mỗi `/code`.
 | Commission override threshold/maker-checker | Founder + Finance | Trước V5-M6-02 | Chỉ cho group default |
 | Payroll shell manual adapter | Accounting | Trước V5-PAY-04 | Chỉ dry-run, không phát payslip chính thức |
 | Q#25 client confirmation | Founder + Accounting | Trước V5-M8-08 | Manual confirmation có audit |
@@ -863,3 +888,115 @@ V5 chỉ được đánh dấu hoàn tất khi tất cả điều kiện sau đ�
 - UI S02/S03/S04 dùng API canonical, có toàn bộ loading/empty/error/locked/permission states.
 - CI, backup/restore, observability, rollback và runbook đã được Audit kiểm tra độc lập.
 - `AUDIT.md` cuối cùng ghi rõ PASS, residual risks và danh sách việc post-go-live; không dùng trạng thái “đã xong” chỉ dựa trên build pass.
+
+## 12. TECHNICAL DEBT & REFACTORING BACKLOG (tiếp thu V5 Readiness Assessment 2026-08-22)
+
+Nguồn: `docs/V5_READINESS_ASSESSMENT.md`. **Nguyên tắc Planner:** chỉ tiếp thu finding **đã tự xác minh bằng tool thật** (Iron Rule 4). Bảng dưới ghi rõ verdict + bằng chứng; finding sai bị **từ chối có dẫn chứng**.
+
+### 12.1. Bảng phán quyết finding (đã Planner verify)
+
+| Finding | Nội dung | Verdict | Bằng chứng Planner tự kiểm |
+|---|---|---|---|
+| A-01 | `app/api/debug` không auth, dump PII worker + env | ✅ NHẬN (P0) | `app/api/debug/route.ts`: `GET()` không guard, `findFirst({phone:'0910000002'})` hardcode, trả `workerUser`+`worker` đầy đủ (URL đã mask) |
+| A-02 | `withAuthScope` định nghĩa nhưng 0 route dùng | ✅ NHẬN (P0) | grep `withAuthScope` trong `app/` = **0 match** |
+| A-03 | GET workers không projection → PII cho SALE/DIRECTOR | ✅ NHẬN (P0, có điều chỉnh) | `app/api/workers/route.ts:53` `findMany` không `select`; `VIEWER_ROLES` gồm SALE, DIRECTOR. **Điều chỉnh:** route ĐÃ có auth (`getAuthContext`) — lỗi thuần là **thiếu field projection**, không phải thiếu auth |
+| A-04 | Round giờ → int trước khi nhân rate (sai tiền) | ✅ NHẬN (P0, nghiêm trọng) | `src/domains/reconciliation/statement.service.ts:183` và `:308`: `BigInt(Math.round(item.totalHours)) * rate` — 7.5h→8h |
+| A-06 | Commission hardcode `accepted * 500_000` | ✅ NHẬN (P1, có điều chỉnh) | `app/api/ctv/summary/route.ts:44` literal có thật. **Điều chỉnh:** route đã có `note` disclaim + đọc `SourceClaim` (không phải "số giả không cảnh báo") — vẫn sửa để đọc `CommissionLedger` thật |
+| C-01 | Vi phạm thứ tự G0-trước-portal | ✅ NHẬN (P1) | §4.13 quy tắc 1 yêu cầu G0 trước; MP-1 ACCEPTED (`ead9869`) khi chưa có `.github/workflows/` và `tests/fixtures/` |
+| C-02 | Matrix 8 role vs hệ thống 13 | ✅ NHẬN (P1) | `schema.prisma:106-120` enum `SystemRole` = **13 giá trị**; §7.2 cũ chỉ 8 hàng |
+| C-04 | Submission thiếu CONVERTED/NEEDS_INFO, lẫn với MERGED | ✅ NHẬN (P1) | `schema.prisma:461` `status String` comment `NEW\|SCREENING\|QUALIFIED\|REJECTED\|WITHDRAWN\|MERGED` — không có CONVERTED/NEEDS_INFO |
+| C-05 | `publicSlug` plan yêu cầu nhưng schema không có | ✅ NHẬN (P2) | grep `publicSlug`/`public_slug` trong schema = **0**; §7.9.3 liệt kê `publicSlug` bắt buộc; MP-1 dùng `Project.code` |
+| C-07 | Quy tắc enum §6.4.2 bị vi phạm 100%, không task phụ trách | ✅ NHẬN (P1) | mọi `status` trong schema là `String @default`; chỉ Ticket dùng enum |
+| C-03 | Vocab statement SENT vs ISSUED, PAID lẫn status | ✅ NHẬN (schema-only) | `schema.prisma:791` `DRAFT\|SENT\|DISPUTED\|CONFIRMED\|LOCKED\|PAID`. **Điều chỉnh:** plan §4.6 M8-05 ĐÃ đúng vocab (ISSUED/REVISED, tách PAID) — chỉ **schema** lệch → task migrate, KHÔNG sửa plan |
+| AM-01 | 2 đường apply public song song | ✅ NHẬN | tồn tại `app/api/jobs/apply/route.ts` (legacy) + canonical `/api/public/jobs/:slug/applications` |
+| T-01/02/05 | Không CI, không fixture, seed chưa đạt G0-02 | ✅ NHẬN | không `.github/workflows/`; không `tests/fixtures/`; khớp `V5-G0-04/05` chưa bắt đầu |
+| D-05 / D-06 | FK mồ côi + thiếu index; trường song song | ✅ NHẬN (P1/P2) | verify `accountUserId` (:247) + `slotsFilled` (:393) cùng tồn tại; FK/index cần audit từng bảng khi làm RF-15 |
+| **D-01** | **"MP-2 migration drift: WIP `20260822030000_mp2_apply_tracking` thêm cột schema chưa có"** | ❌ **TỪ CHỐI (lỗi thời/sai)** | **Glob `prisma/migrations/*mp2*` = No files found.** Không tồn tại migration MP-2 nào; grep `public_tracking_code`/`application_status_history`/`cv_storage_key` trong schema = 0. MP-2 round-1 `BLOCKED`, HANDOFF ghi "no migration retained". Assessment đã khảo sát trên **worktree tạm** không phản ánh commit hiện hành (`0a0bd53`) |
+
+### 12.2. Refactoring backlog theo Wave (map vào task ID V5; mỗi task ≤1–3 ngày, ≤1 boundary — sẵn sàng cho Tier 1 dựng TASK.md)
+
+**Wave 0 — Hotfix an toàn & đúng tiền (P0, chạy song song MP-2, KHÔNG đụng file Tier 2 đang sửa):**
+
+| RF | Map | Việc | Acceptance tối thiểu |
+|---|---|---|---|
+| RF-01 | OPS-06 rút gọn | Xóa/khóa `app/api/debug` sau auth ADMIN, bỏ PII/env dump | GET không auth → 404/401; không còn findFirst theo phone hardcode |
+| RF-02 | M1-09 rút gọn | `workers` + `workers/[id]` dùng projection DTO theo role (`worker-projection.ts`) | Contract test: SALE/MKT không nhận CCCD/bank; HR theo scope |
+| RF-03 | M8-04 rút gọn | Sửa `Math.round(totalHours)`: nhân Decimal hours × BigInt rate qua `money.ts`, **làm tròn sau khi nhân** + ADR interim rounding | Golden test 7.5h × rate ra kết quả định trước; statement cũ không đổi |
+| RF-04 | M6-04 rút gọn | `ctv/summary` đọc `CommissionLedger` thật; chưa có ledger thì trả `null`+note (fail-closed), không số giả | Không còn literal `500_000`; response có trường nguồn số liệu |
+
+**Wave 1 — Đốt nợ G0 (P0, điều kiện đóng MP-3):**
+
+| RF | Map | Việc |
+|---|---|---|
+| RF-05 | = G0-04 | CI: script `typecheck`/`lint`/`test:unit`/`test:integration`/`build`; GitHub Actions; integration đánh `ENV_BLOCKED` đến khi có secret test DB |
+| RF-06 | = G0-02 | Nâng `seed.mjs` chuẩn G0-02: permission pool, 2 client/2 project/2 vendor/20 worker/2 kỳ công, upsert business key |
+| RF-07 | = G0-05 | `tests/fixtures/operations/*` (đủ tháng, chuyển project giữa kỳ, ca đêm, OT, correction, dispute) dùng chung |
+| RF-08 | = G0-01 phần còn | Đưa `grants-hrp-m12.1.1.sql` vào migration; runbook hóa "apply tay + migrate resolve" (DEC-NEW-04); thêm `prisma migrate diff` vào CI bắt drift |
+| RF-09 | mới (G0-06) | Repo hygiene: xác nhận xóa `appBCC/*` (**khu vực của sếp — chờ sếp chủ trì**); chuyển `check.js`/`seed_*.js` từ root vào `scripts/dev/` |
+
+**Wave 2 — M1-min & L1 wiring (P0/P1, trước public launch):**
+
+| RF | Map | Việc |
+|---|---|---|
+| RF-10 | = M1-06 | Wire `withAuthScope` vào 38 route thiếu, chia 3 task theo domain; ưu tiên route trả PII/tiền |
+| RF-11 | = M1-02 tối thiểu | Session version + bảng session để revoke; **mở rộng identity-core theo DEC-11, KHÔNG viết lại auth** |
+| RF-12 | = M1-05 | Visibility matrix đủ **13 role** (§7.2 đã cập nhật) + fixture expected cho 6 role bổ sung |
+| RF-13 | = M1-08 | Bộ test IDOR vendor A↔B cho orders/submissions/statements/dispute |
+
+**Wave 3 — Chất lượng đường tiền & marketplace (P1):**
+
+| RF | Map | Việc |
+|---|---|---|
+| RF-14 | = M8-04 mở rộng | Kiểm toán toàn bộ đường tiền dùng `money.ts` (rate resolve, statement, reconciliation), bỏ mọi `Number()` trên tiền/giờ |
+| RF-15 | = M35 series | Marketplace apply/tracking: RPC `SECURITY DEFINER` + role `hrp_public_rpc` (MP-2 v1.1), dedupe theo phone, HR queue |
+| RF-16 | = M8-05 | Statement vocab NEW→…→CONFIRMED→LOCKED→PAID; **schema migrate cho `CandidateSubmission` (thêm CONVERTED/NEEDS_INFO nếu M35 cần)** — plan §4.6 đã đúng, đây là việc migrate schema |
+| RF-17 | mới (M6-05) | CommissionLedger engine thật thay placeholder MVP (kế thừa RF-04) |
+
+**Wave 4 — Cứng hóa & quan sát (P2, sau go-live đợt 1):**
+
+| RF | Map | Việc |
+|---|---|---|
+| RF-18 | = OPS-07 | Outbox drain + dispute auto-confirm chạy nền (Vercel cron / GH Actions), có khóa chống chạy chồng, alert khi backlog |
+| RF-19 | = OPS-08 | Structured logging + request id + audit coverage cho mọi mutation đường tiền/PII |
+| RF-20 | mới (M35-01b) | `publicSlug` cho project public: hoặc thêm cột + backfill + unique, hoặc chốt map slug→id ở layer marketplace (**§7.9.3 đang giả định cột chưa tồn tại — phải chốt trước khi code M35-01**) |
+
+### 12.3. Guardrails khi rút TASK từ backlog này
+
+1. **1 task = 1 boundary.** Không gộp nhiều RF khác domain vào 1 TASK.md.
+2. **Wave 0 KHÔNG đụng file Tier 2 đang mở** (statement.service.ts đang có việc M8) — phối hợp thứ tự với pipeline trước khi mở TASK.
+3. **RF trùng task đã có** (RF-05=G0-04, RF-06=G0-02, RF-10=M1-06…) → KHÔNG tạo task mới, gộp acceptance vào task gốc.
+4. **`appBCC/*` là khu vực của sếp** — RF-09 chỉ động tới sau khi sếp đồng ý đích danh.
+5. Mỗi RF khi lên TASK phải kèm **evidence-before** (lệnh + output thật chứng minh vấn đề còn tồn tại tại thời điểm mở task) — tránh lặp lại lỗi D-01 (finding chạy trên worktree bẩn nhất thời).
+
+---
+
+## 13. REVISION LOG
+
+### V5.3 (2026-08-22) — tiếp thu V5_READINESS_ASSESSMENT.md
+
+Nguồn: `docs/V5_READINESS_ASSESSMENT.md`. Nguyên tắc: chỉ nhận finding ĐÚNG sau khi verify bằng tool thật (Iron Rule 4); finding sai bị TỪ CHỐI kèm bằng chứng.
+
+**Sửa mâu thuẫn nội tại của plan (in-place):**
+- §7.2 role visibility matrix: 8 → **13 role** (khớp `SystemRole` enum `schema.prisma:106-120`).
+- §7.2 M1-02: ghi rõ "mở rộng identity-core" — không vi phạm DEC-11 (không viết lại auth).
+- §7.2 M1-05: "8 role" → "13 role".
+- §7.9.5 (M35-04): thống nhất trạng thái **MERGED** (khớp `CandidateSubmission.status` enum), bỏ dùng lẫn CONVERTED.
+- §7.9.3: ghi chú `publicSlug` **chưa tồn tại trong schema** — phải chốt trước khi code M35-01 (→ RF-20).
+- §7.9.6: đánh dấu legacy apply path sẽ deprecate khi RPC public sống.
+- §4.13: bổ sung stop-condition cho thứ tự thực thi MP-3.
+- §10 Decision Register: thêm ADR rounding tiền (làm tròn SAU khi nhân) + ghi chú C-10.
+- §8.3: thêm bullet test DB tách biệt + DEC-14 hybrid test.
+- §6.4: thêm luật cấm dùng enum lệch schema.
+- §4.6 (M8-05): xác nhận vocab statement trong plan **đã đúng** — chỉ schema cần migrate.
+
+**Thêm mới:**
+- **§12** Technical Debt & Refactoring Backlog: bảng verdict §12.1 (CONFIRMED/ADJUSTED/REJECTED cho A/C/D/T/AM findings) + backlog Wave 0–4 §12.2 (RF-01..RF-20 map task V5) + guardrails §12.3.
+
+**TỪ CHỐI (có bằng chứng):**
+- **D-01** (WIP migration `20260822030000_mp2_apply_tracking` gây schema drift): **SAI**. `Glob prisma/migrations/**/*mp2*` = No files found; grep xác nhận cột MP-2 không có trong schema; MP-2 round-1 BLOCKED, không giữ lại gì. Assessment chạy trên worktree bẩn nhất thời. Không sửa plan theo D-01.
+
+**Điều chỉnh (nhận nhưng thu hẹp phạm vi so với assessment):**
+- **A-03**: route `workers` ĐÃ có auth (getAuthContext + VIEWER_ROLES); vấn đề thật chỉ là **thiếu projection** → RF-02 nhắm DTO theo role, không phải thêm auth.
+- **A-06**: `ctv/summary` đã có `note` disclaimer và đọc `SourceClaim` thật; sửa là bỏ literal `500_000` và fail-closed khi chưa có ledger (RF-04), không phải viết lại toàn bộ.
+- **C-03**: plan §4.6 vocab **đã đúng**; chỉ schema stale → xử lý bằng task migrate (RF-16), không đổi plan.
+
