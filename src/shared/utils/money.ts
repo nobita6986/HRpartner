@@ -78,6 +78,39 @@ export function mulRateVnd(amount: bigint, rate: string): bigint {
   return negative ? -result : result;
 }
 
+export type DecimalQuantity = string | number | { toString(): string };
+
+/**
+ * Nhân quantity decimal (giờ/số lượng) với rate BigInt VND mà không làm tròn
+ * quantity trước. ADR-010A interim: truncate phần nhỏ hơn 1 VND SAU phép nhân.
+ *
+ * Ví dụ: 7.5 giờ × 50_000 VND = 375_000 VND.
+ */
+export function multiplyDecimalByVnd(
+  quantity: DecimalQuantity,
+  rateVnd: bigint,
+): bigint {
+  if (rateVnd < 0n) {
+    throw new Error('rateVnd must be non-negative');
+  }
+
+  const source = typeof quantity === 'string'
+    ? quantity
+    : quantity.toString();
+  const value = source.trim();
+
+  if (!/^\d+(?:\.\d+)?$/u.test(value)) {
+    throw new Error('quantity must be a non-negative plain decimal');
+  }
+
+  const [whole, fraction = ''] = value.split('.');
+  const scale = 10n ** BigInt(fraction.length);
+  const scaledQuantity =
+    BigInt(whole) * scale + (fraction.length > 0 ? BigInt(fraction) : 0n);
+
+  return (scaledQuantity * rateVnd) / scale;
+}
+
 /**
  * Min(BigInt, BigInt) — BigInt không có Math.min native.
  */

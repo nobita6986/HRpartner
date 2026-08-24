@@ -11,10 +11,11 @@
  * Chan generate khi timesheet chua LOCKED -> 409.
  */
 
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
 import { writeAuditLog } from '@/src/shared/integrity/audit';
 import { enqueueOutbox } from '@/src/shared/integrity/outbox';
+import { multiplyDecimalByVnd } from '@/src/shared/utils/money';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,17 +80,31 @@ async function resolveRate(
 interface WorkerHours {
   workerId: string;
   assignmentId: string | null;
-  totalHours: number;
+  totalHours: Prisma.Decimal;
+}
+
+function decimalHours(value: unknown): Prisma.Decimal {
+  return new Prisma.Decimal(String(value));
+}
+
+function sumDecimalHours(...values: unknown[]): Prisma.Decimal {
+  return values.reduce<Prisma.Decimal>(
+    (total, value) => total.plus(decimalHours(value)),
+    new Prisma.Decimal(0),
+  );
 }
 
 function aggregateHours(lines: Array<{ workerId: string; assignmentId: string | null; hours: unknown }>): WorkerHours[] {
   const map = new Map<string, WorkerHours>();
   for (const line of lines) {
     const key = `${line.workerId}::${line.assignmentId ?? ''}`;
-    const hours = Number(line.hours);
-    const acc = map.get(key) ?? { workerId: line.workerId, assignmentId: line.assignmentId, totalHours: 0 };
-    acc.totalHours += hours;
-    map.set(key, acc);
+    const hours = decimalHours(line.hours);
+    const current = map.get(key);
+    map.set(key, {
+      workerId: line.workerId,
+      assignmentId: line.assignmentId,
+      totalHours: current ? current.totalHours.plus(hours) : hours,
+    });
   }
   return [...map.values()];
 }
@@ -137,7 +152,12 @@ export async function generateVendorStatement(
     lines.map(l => ({
       workerId: l.workerId,
       assignmentId: l.assignmentId,
-      hours: Number(l.regularHours) + Number(l.ot15Hours) + Number(l.ot20Hours) + Number(l.ot30Hours),
+      hours: sumDecimalHours(
+        l.regularHours,
+        l.ot15Hours,
+        l.ot20Hours,
+        l.ot30Hours,
+      ),
     })),
   );
 
@@ -180,7 +200,7 @@ export async function generateVendorStatement(
     assignmentId: item.assignmentId,
     totalHours: item.totalHours,
     rate,
-    amount: BigInt(Math.round(item.totalHours)) * rate, // ADR-010: BigInt VND nguyen
+    amount: multiplyDecimalByVnd(item.totalHours, rate), // ADR-010A: round only after multiplication
   }));
   const totalAmount = statementLines.reduce((acc, l) => acc + l.amount, 0n);
 
@@ -283,7 +303,12 @@ export async function generateClientStatement(
     lines.map(l => ({
       workerId: l.workerId,
       assignmentId: l.assignmentId,
-      hours: Number(l.regularHours) + Number(l.ot15Hours) + Number(l.ot20Hours) + Number(l.ot30Hours),
+      hours: sumDecimalHours(
+        l.regularHours,
+        l.ot15Hours,
+        l.ot20Hours,
+        l.ot30Hours,
+      ),
     })),
   );
 
@@ -305,7 +330,7 @@ export async function generateClientStatement(
     assignmentId: item.assignmentId,
     totalHours: item.totalHours,
     rate,
-    amount: BigInt(Math.round(item.totalHours)) * rate,
+    amount: multiplyDecimalByVnd(item.totalHours, rate),
   }));
   const totalAmount = statementLines.reduce((acc, l) => acc + l.amount, 0n);
 

@@ -325,6 +325,34 @@ describe('Statement generation (STEP-13, AC-05)', () => {
     // total = 12,500,000
     expect(stmt.totalAmount).toBe(12500000n);
   });
+
+  it('keeps 7.5h decimal until after vendor and client rate multiplication', async () => {
+    const store = makeStore();
+    store.seedReconciliation();
+    store.table('timesheet_lines').clear();
+    store.insert('timesheet_lines', {
+      id: 'tl-fractional',
+      periodId: 'period-aug',
+      workerId: 'w-fractional',
+      projectId: 'prj-AP',
+      assignmentId: null,
+      regularHours: 7.5,
+      ot15Hours: 0,
+      ot20Hours: 0,
+      ot30Hours: 0,
+    });
+    const tx = makeMockTx(store);
+
+    const vendor = await generateVendorStatement(tx, adminCtx(), {
+      timesheetPeriodId: 'period-aug',
+    });
+    const client = await generateClientStatement(tx, adminCtx(), {
+      timesheetPeriodId: 'period-aug',
+    });
+
+    expect(vendor.totalAmount).toBe(375_000n);
+    expect(client.totalAmount).toBe(600_000n);
+  });
 });
 
 describe('Margin (STEP-14, AC-05)', () => {
