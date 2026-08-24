@@ -131,6 +131,41 @@ describe('Phase 5 Security Matrix — 13 role × 8 table = 104 cases', () => {
   }
 });
 
+describe('Phase 5 Security — RLS structural regression guards', () => {
+  it('all matrix tables have FORCE RLS and at least one policy', async () => {
+    const prisma = getPrisma();
+    const tableNames = TABLES.map((table) => table.table);
+    const rows = await prisma.$queryRawUnsafe<Array<{
+      table_name: string;
+      rls_enabled: boolean;
+      rls_forced: boolean;
+      policy_count: number;
+    }>>(`
+      SELECT
+        c.relname AS table_name,
+        c.relrowsecurity AS rls_enabled,
+        c.relforcerowsecurity AS rls_forced,
+        COUNT(p.policyname)::int AS policy_count
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      LEFT JOIN pg_policies p
+        ON p.schemaname = n.nspname
+       AND p.tablename = c.relname
+      WHERE n.nspname = 'public'
+        AND c.relname = ANY($1::text[])
+      GROUP BY c.relname, c.relrowsecurity, c.relforcerowsecurity
+      ORDER BY c.relname
+    `, tableNames);
+
+    expect(rows).toHaveLength(TABLES.length);
+    for (const row of rows) {
+      expect(row.rls_enabled, `${row.table_name}: RLS must be enabled`).toBe(true);
+      expect(row.rls_forced, `${row.table_name}: RLS must be forced`).toBe(true);
+      expect(row.policy_count, `${row.table_name}: requires an RLS policy`).toBeGreaterThan(0);
+    }
+  });
+});
+
 describe('Phase 5 Security — functional edge cases', () => {
   it('WORKER không thấy workers của người khác', async () => {
     const prisma = getPrisma();

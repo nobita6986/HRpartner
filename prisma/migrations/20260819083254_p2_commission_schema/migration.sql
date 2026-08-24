@@ -1,4 +1,4 @@
-﻿-- Migration: p2_commission_schema
+-- Migration: p2_commission_schema
 -- Purpose: P2 Commission STEP-01 (RQ-01) — 3 models cho group policy + ledger + debt.
 --
 -- ADR-013 (Record khóa bất biến): KHÔNG có @@unique trên ledger để cho phép

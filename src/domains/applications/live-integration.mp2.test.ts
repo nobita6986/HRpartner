@@ -66,8 +66,9 @@ function applyArgs(o: ApplyOpts): any[] {
 const APPLY_CALL =
   'SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)';
 
-// Seed a job fixture (client_company → project → order → slot). These 4 tables
-// have RLS DISABLED (verified), so app_user_writer inserts them directly.
+// Seed a job fixture (client_company → project → order → slot). Project/order
+// tables use FORCE RLS, so every fixture transaction first establishes an
+// explicit ADMIN GUC context; public RPC calls clear app.role afterwards.
 type SeedOpts = {
   isPublic?: boolean; projStatus?: string; orderStatus?: string;
   slotsNeeded?: number; slotsFilled?: number; deadlineDate?: string | null;
@@ -113,7 +114,7 @@ async function expectSqlState(promise: Promise<any>, code: string) {
 describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)('MP-2 LIVE integration (AC-02/03/04/05)', () => {
   let Client: any;
   let writer: any; // app_user_writer — the real application principal (RLS-enforced)
-  let admin: any;  // neondb_owner — BYPASSRLS, used only for the committed race setup/cleanup
+  let admin: any;  // neondb_owner — explicit ADMIN GUC, used for committed race setup/cleanup
 
   beforeAll(async () => {
     // @ts-expect-error -- 'pg' ships no types; @types/pg not installed. LIVE block is ENV_BLOCKED (DEC-14).
@@ -122,6 +123,9 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)('MP-2 LIVE integration (AC
     await writer.connect();
     admin = new Client({ connectionString: ADMIN_URL });
     await admin.connect();
+    await admin.query(
+      "SELECT set_config('app.user_id', 'mp2-live-admin', false), set_config('app.role', 'ADMIN', false)",
+    );
   }, 30000);
   afterAll(async () => {
     await writer?.end().catch(() => {});
@@ -131,7 +135,14 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)('MP-2 LIVE integration (AC
   // Run body inside a transaction on `writer`, always ROLLBACK — zero residue.
   async function inRollback(fn: () => Promise<void>) {
     await writer.query('BEGIN');
-    try { await fn(); } finally { await writer.query('ROLLBACK').catch(() => {}); }
+    try {
+      await writer.query(
+        "SELECT set_config('app.user_id', 'mp2-live-fixture', true), set_config('app.role', 'ADMIN', true)",
+      );
+      await fn();
+    } finally {
+      await writer.query('ROLLBACK').catch(() => {});
+    }
   }
   const anon = () => writer.query(`SELECT set_config('app.role', '', true)`);        // public path
   const asRole = (r: string) => writer.query(`SELECT set_config('app.role', $1, true)`, [r]);
@@ -273,7 +284,7 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)('MP-2 LIVE integration (AC
     const racers: any[] = [];
     try {
       // Fixture must be COMMITTED so the independent racer connections can see it.
-      job = await seedJob(admin, 'race'); // admin: RLS-off tables, autocommit
+      job = await seedJob(admin, 'race'); // admin GUC context, autocommit
       for (let i = 0; i < N; i++) { const cl = new Client({ connectionString: WRITER_URL }); await cl.connect(); racers.push(cl); }
       const fire = racers.map(async (cl) => {
         await cl.query('BEGIN');

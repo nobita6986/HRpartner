@@ -224,14 +224,31 @@ AS $fn$
 $fn$;
 
 -- 7. Ownership + least-privilege EXECUTE (DEC-08). Role pre-provisioned by OP-01 -----
-ALTER FUNCTION hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamptz,text,text,integer,text,text,text,text) OWNER TO hrp_public_rpc;
-ALTER FUNCTION hrp_public_tracking_projection(text) OWNER TO hrp_public_rpc;
-
+-- Configure function ACLs while the migration connection still owns them.
 REVOKE ALL ON FUNCTION hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamptz,text,text,integer,text,text,text,text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION hrp_public_tracking_projection(text) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamptz,text,text,integer,text,text,text,text) TO app_user_writer, app_user;
 GRANT EXECUTE ON FUNCTION hrp_public_tracking_projection(text) TO app_user_writer, app_user;
+
+-- PostgreSQL 16/Neon provisions this membership with SET FALSE, and an ownership
+-- target must also have CREATE on the containing schema. Enable both only inside
+-- this migration transaction, transfer ownership, then restore the original
+-- SET FALSE / no-CREATE posture before commit.
+GRANT CREATE ON SCHEMA public TO hrp_public_rpc;
+DO $$
+BEGIN
+  EXECUTE format('GRANT hrp_public_rpc TO %I WITH SET TRUE', session_user);
+END
+$$;
+ALTER FUNCTION hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamptz,text,text,integer,text,text,text,text) OWNER TO hrp_public_rpc;
+ALTER FUNCTION hrp_public_tracking_projection(text) OWNER TO hrp_public_rpc;
+DO $$
+BEGIN
+  EXECUTE format('GRANT hrp_public_rpc TO %I WITH SET FALSE', session_user);
+END
+$$;
+REVOKE CREATE ON SCHEMA public FROM hrp_public_rpc;
 
 -- Minimal table privileges the NOLOGIN definer-owner needs (RLS bypass != grant).
 GRANT SELECT, INSERT ON "candidate_submissions" TO hrp_public_rpc;
