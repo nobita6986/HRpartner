@@ -12,7 +12,9 @@ import bcrypt from 'bcryptjs';
 // Use DATABASE_URL_ADMIN if set (bypasses RLS for seed), else DATABASE_URL.
 const adminUrl = process.env.DATABASE_URL_ADMIN ?? process.env.DATABASE_URL;
 if (!adminUrl) { console.error('[seed] No DATABASE_URL or DATABASE_URL_ADMIN'); process.exit(1); }
-const prisma = new PrismaClient({ datasources: { db: { url: adminUrl } } });
+const seedUrl = new URL(adminUrl);
+seedUrl.searchParams.set('connection_limit', '1');
+const prisma = new PrismaClient({ datasources: { db: { url: seedUrl.toString() } } });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Phase 1 bcc-fence (TASK hrp-phase1-bcc-fence, RQ-05 / DEC-05):
@@ -67,7 +69,7 @@ async function seedAuthAccounts() {
 }
 
 const ROLE_SCENARIOS = [
-  // 12 SystemRole × minimum 1 user moi role = 12 row
+  // 13 SystemRole × minimum 1 synthetic user per role.
   { code: 'ADMIN',        name: 'Founder Minh (admin)',         phone: '090****001' },
   { code: 'HR_MANAGER',   name: 'Nguyen Van A (HR Manager)',    phone: '091****002' },
   { code: 'DIRECTOR',     name: 'BGD Tran Thi B (Director)',    phone: '092****003' },
@@ -80,17 +82,23 @@ const ROLE_SCENARIOS = [
   { code: 'VENDOR_STAFF', name: 'Do Van I (Vendor Staff)',      phone: '089****010' },
   { code: 'CTV',          name: 'Ly Van K (CTV)',               phone: '088****011' },
   { code: 'WORKER',       name: 'Tran Van L (Worker)',          phone: '087****012' },
+  { code: 'EMPLOYEE',     name: 'Nhan vien M (Employee)',       phone: '086****013' },
 ];
 
 // SECURITY (AUD-004 P1): All seed projects MUST default to isPublic=false to
 // prevent `staffing_orders` leak via `hrp_project_visible_for` (MKT/CTV/WORKER
 // only see staffing_orders when project.is_public=true). Public visibility for
 // job board demo is opt-in per project — none by default for safety.
+const CLIENT_SCENARIOS = [
+  { id: 'seed-client-hrp-demo-1', code: 'CC-SEED-001', name: 'Khach hang mau Bac Ninh', taxCode: '08****001' },
+  { id: 'seed-client-hrp-demo-2', code: 'CC-SEED-002', name: 'Khach hang mau Bac Giang', taxCode: '08****002' },
+];
+
 const PROJECT_SCENARIOS = [
-  { code: 'DA-2026-018', name: 'Nha may Dien tu An Phat',           site: 'Bac Ninh',                  quota: 50, filled: 47, isPublic: false },
-  { code: 'DA-2026-022', name: 'Kho van Yen Phong',                site: 'KCN Yen Phong, Bac Ninh',   quota: 80, filled: 80, isPublic: false },
-  { code: 'PRJ-SV-014',  name: 'Nha may Sao Viet',                 site: 'KCN Quang Chau, Bac Giang', quota: 35, filled: 32, isPublic: false },
-  { code: 'PRJ-INTERNAL',name: 'Du an noi bo HRP (khong public)',  site: 'Ha Noi',                    quota: 5,  filled: 2,  isPublic: false },
+  { code: 'DA-2026-018', clientCode: 'CC-SEED-001', name: 'Nha may Dien tu An Phat',          site: 'Bac Ninh',                  quota: 50, filled: 47, isPublic: false },
+  { code: 'DA-2026-022', clientCode: 'CC-SEED-001', name: 'Kho van Yen Phong',                site: 'KCN Yen Phong, Bac Ninh',   quota: 80, filled: 80, isPublic: false },
+  { code: 'PRJ-SV-014',  clientCode: 'CC-SEED-002', name: 'Nha may Sao Viet',                 site: 'KCN Quang Chau, Bac Giang', quota: 35, filled: 32, isPublic: false },
+  { code: 'PRJ-INTERNAL',clientCode: 'CC-SEED-002', name: 'Du an noi bo HRP (khong public)', site: 'Ha Noi',                    quota: 5,  filled: 2,  isPublic: false },
 ];
 
 const WORKER_SCENARIOS = [
@@ -101,6 +109,15 @@ const WORKER_SCENARIOS = [
   // Phase 5: +2 workers for F00A demo (total 5)
   { empCode: 'EMP-004', fullName: 'Pham Thi Worker D',    cccd: '087****4567' },
   { empCode: 'EMP-005', fullName: 'Hoang Van Worker E',  cccd: '088****5678' },
+  ...Array.from({ length: 15 }, (_, index) => {
+    const number = index + 6;
+    const padded = String(number).padStart(3, '0');
+    return {
+      empCode: `EMP-${padded}`,
+      fullName: `Worker An Danh ${padded}`,
+      cccd: `09${String(number).padStart(2, '0')}****${String(6000 + number)}`,
+    };
+  }),
 ];
 
 // ─── Phase 5: Vendors (2) ────────────────────────────────────────────────
@@ -110,12 +127,10 @@ const VENDOR_SCENARIOS = [
 ];
 
 // ─── Phase 5: Timesheet period LOCKED (for F00A moment 09:30) ──────────
-const TIMESHEET_PERIOD_SEED = {
-  month: 7,
-  year: 2026,
-  projectCode: 'DA-2026-018',
-  status: 'LOCKED',
-};
+const TIMESHEET_PERIOD_SEEDS = [
+  { id: 'seed-period-2026-07', month: 7, year: 2026, projectCode: 'DA-2026-018', status: 'LOCKED', lockedAt: new Date('2026-08-15T08:30:00Z') },
+  { id: 'seed-period-2026-08', month: 8, year: 2026, projectCode: 'DA-2026-022', status: 'LOCKED', lockedAt: new Date('2026-09-15T08:30:00Z') },
+];
 
 // ─── Phase 5: VendorStatement SENT (for F00A moment 11:30) ──────────────
 const STATEMENT_SEED = {
@@ -145,24 +160,23 @@ async function seedUsers() {
 }
 
 async function seedProjects() {
-  // Tao 1 ClientCompany cho cac project
-  const client = await prisma.clientCompany.upsert({
-    where: { id: 'seed-client-hrp-demo' },
-    update: {},
-    create: {
-      id: 'seed-client-hrp-demo',
-      code: 'CC-SEED-001',
-      name: 'HRP Demo Client',
-      taxCode: '08****001',
-      status: 'ACTIVE',
-    },
-  });
+  const clients = new Map();
+  for (const c of CLIENT_SCENARIOS) {
+    const client = await prisma.clientCompany.upsert({
+      where: { code: c.code },
+      update: { name: c.name, taxCode: c.taxCode, status: 'ACTIVE' },
+      create: { ...c, status: 'ACTIVE' },
+    });
+    clients.set(c.code, client);
+  }
 
-  let count = 0;
+  let projectCount = 0;
   for (const p of PROJECT_SCENARIOS) {
+    const client = clients.get(p.clientCode);
+    if (!client) throw new Error(`[seed] missing client fixture ${p.clientCode}`);
     await prisma.project.upsert({
       where: { code: p.code },
-      update: { name: p.name, quota: p.quota, filled: p.filled, isPublic: p.isPublic, siteAddress: p.site },
+      update: { clientCompanyId: client.id, name: p.name, quota: p.quota, filled: p.filled, isPublic: p.isPublic, siteAddress: p.site },
       create: {
         id: `seed-proj-${p.code}`,
         code: p.code,
@@ -177,9 +191,9 @@ async function seedProjects() {
         version: 1,
       },
     });
-    count++;
+    projectCount++;
   }
-  return count;
+  return { clientCount: clients.size, projectCount };
 }
 
 async function seedWorkers() {
@@ -229,23 +243,26 @@ async function seedVendors() {
 }
 
 async function seedTimesheetPeriod() {
-  const proj = await prisma.project.findUnique({ where: { code: TIMESHEET_PERIOD_SEED.projectCode } });
-  if (!proj) { console.warn('[seed] project not found, skipping timesheet period'); return 0; }
-
-  await prisma.timesheetPeriod.upsert({
-    where: { id: `seed-period-2026-07` },
-    update: { status: 'LOCKED', projectId: proj.id },
-    create: {
-      id: `seed-period-2026-07`,
-      projectId: proj.id,
-      month: TIMESHEET_PERIOD_SEED.month,
-      year: TIMESHEET_PERIOD_SEED.year,
-      status: 'LOCKED',
-      lockedAt: new Date('2026-08-15T08:30:00Z'),
-      version: 1,
-    },
-  });
-  return 1;
+  let count = 0;
+  for (const period of TIMESHEET_PERIOD_SEEDS) {
+    const project = await prisma.project.findUnique({ where: { code: period.projectCode } });
+    if (!project) throw new Error(`[seed] project fixture not found: ${period.projectCode}`);
+    await prisma.timesheetPeriod.upsert({
+      where: { id: period.id },
+      update: { status: period.status, projectId: project.id, lockedAt: period.lockedAt },
+      create: {
+        id: period.id,
+        projectId: project.id,
+        month: period.month,
+        year: period.year,
+        status: period.status,
+        lockedAt: period.lockedAt,
+        version: 1,
+      },
+    });
+    count++;
+  }
+  return count;
 }
 
 async function seedVendorStatement() {
@@ -529,6 +546,9 @@ async function seedPermissions() {
 async function main() {
   console.log('[seed.mjs] Phase 0 fixtures + Phase 1 identity-core permissions - idempotent upsert');
   console.log('[seed.mjs] CANONICAL MOCK ONLY - no real PII');
+  await prisma.$executeRawUnsafe(
+    "SELECT set_config('app.user_id', 'g0-seed-admin', false), set_config('app.role', 'ADMIN', false)",
+  );
 
   const users = await seedUsers();
   const projects = await seedProjects();
@@ -544,12 +564,12 @@ async function main() {
   const auth = await seedAuthAccounts();
   const perms = await seedPermissions();
 
-  console.log(`[seed.mjs] Upserted: ${users} users, ${projects} projects, ${workers} workers, ${vendors} vendors`);
+  console.log(`[seed.mjs] Upserted: ${users} users, ${projects.clientCount} clients, ${projects.projectCount} projects, ${workers} workers, ${vendors} vendors`);
   console.log(`[seed.mjs] Phase 5: ${periods} timesheet period (LOCKED), ${statements} vendor statement (SENT), ${staffingOrders} staffing orders (OPEN)`);
   console.log(`[seed.mjs] P1 Portals: ${portalUsers} users, ${workerProfile} worker profile, ${claims} source claims, ${submissions} candidate submissions`);
   console.log(`[seed.mjs] Auth accounts (ENV): ${auth.created} created, ${auth.updated} updated, ${auth.skipped} skipped`);
   console.log(`[seed.mjs] Permissions: ${perms.permCount} catalog, ${perms.rpCount} role-permissions`);
-  console.log(`[seed.mjs] F00A + P1 demo ready: 5 workers, 3 projects, 2 vendors, 1 period LOCKED, 1 statement SENT, 3 portal users`);
+  console.log(`[seed.mjs] G0-02 ready: 13 roles, 2 clients, 4 projects, 2 vendors, 20 workers, 2 periods LOCKED`);
 }
 
 main()
