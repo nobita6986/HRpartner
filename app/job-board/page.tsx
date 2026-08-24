@@ -1,51 +1,41 @@
 import { Search, Globe } from 'lucide-react';
-import { listPublicJobs } from '@hrp/job-board';
-import JobBoardFilter from './JobBoardFilter';
+import { getPrisma } from '@/src/lib/db';
+import { listPublicJobProjection } from '@/src/domains/job-board/public.service';
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-export default function JobBoardPage() {
-  const jobs = listPublicJobs();
+export default async function JobBoardPage() {
+  const prisma = getPrisma();
+  const { jobs } = await prisma.$transaction((tx) => listPublicJobProjection(tx, { limit: 20 }));
 
   return (
     <div className="pub">
       <header className="pub-header">
-        <span className="logo">
-          HR<em>P</em>
-        </span>
-        <nav className="pub-nav">
-          <span className="on">Việc làm</span>
-          <span>Về HRP</span>
-          <span>Liên hệ</span>
-        </nav>
-        <div className="pub-auth">
-          <button className="pub-btn-ghost" type="button">Đăng nhập</button>
-          <button className="pub-btn-primary" type="button">Đăng ký</button>
-        </div>
-        <span className="watermark-badge">DỮ LIỆU MINH HỌA</span>
+        <span className="logo">HR<em>P</em></span>
+        <nav className="pub-nav"><span className="on">Việc làm</span><span>Về HRP</span><span>Liên hệ</span></nav>
+        <div className="pub-auth"><button className="pub-btn-ghost" type="button">Đăng nhập</button><button className="pub-btn-primary" type="button">Đăng ký</button></div>
       </header>
-
       <main className="pub-main">
         <div className="hero">
           <h1>Tìm việc tại các nhà máy, kho vận khu công nghiệp</h1>
-          <p className="sub">
-            Việc làm vận hành theo dự án — ca làm rõ ràng, bảng công minh bạch, đối soát công khai với đơn vị cung ứng. Số liệu trên trang là minh họa.
-          </p>
-          <div className="search-bar">
-            <Search size={20} aria-hidden="true" />
-            <input type="search" placeholder="Tìm theo vị trí, địa điểm…" aria-label="Tìm kiếm việc làm" />
-          </div>
+          <p className="sub">Các vị trí đang tuyển được HRP công khai theo dự án, ca làm và địa điểm.</p>
+          <div className="search-bar"><Search size={20} aria-hidden="true" /><span>Tìm theo vị trí, địa điểm</span></div>
         </div>
-
-        {/* STEP-10/AC-12 (DEC-32): sidebar filter trai 240px + grid - client-side that */}
-        <JobBoardFilter jobs={jobs} />
+        <section className="job-grid" aria-label="Việc làm đang tuyển">
+          {jobs.length === 0 ? <p>Hiện chưa có việc làm đang tuyển.</p> : jobs.map((job) => (
+            <article key={job.id} className="job-card">
+              <div className="job-top"><span className="badge badge-neutral">{job.statusLabel}</span><span className="job-code">{job.slug}</span></div>
+              <div className="job-name">{job.title}</div>
+              <div className="job-meta">{job.location ?? 'Liên hệ HRP để biết địa điểm'}</div>
+              <div className="job-shifts">{job.position}{job.shift ? ` · ${job.shift}` : ''}</div>
+              <div className="job-counts"><div className="count miss"><b>{job.availableSlots}</b><span>Vị trí còn trống</span></div></div>
+              <a className="apply-btn" href={`/api/jobs/${encodeURIComponent(job.slug)}`}>Xem chi tiết</a>
+            </article>
+          ))}
+        </section>
       </main>
-
-      <footer className="pub-foot">
-        <Globe size={15} aria-hidden="true" />
-        <span>Trang tìm việc công khai — Phase 0 demo (A-04). Không có flow ứng tuyển (A-05 thuộc Wave 3).</span>
-        <span className="push-right">© 2026 HRP · DỮ LIỆU MINH HỌA</span>
-      </footer>
+      <footer className="pub-foot"><Globe size={15} aria-hidden="true" /><span>Trang tìm việc công khai của HRP.</span><span className="push-right">© 2026 HRP</span></footer>
     </div>
   );
 }

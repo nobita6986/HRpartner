@@ -30,7 +30,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const LIST_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'SALE', 'DIRECTOR', 'ACCOUNTANT'] as const);
-const CREATE_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF'] as const);
+const CREATE_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'SALE'] as const);
 
 function getIdempotencyKey(req: NextRequest): string | undefined {
   return req.headers.get('x-idempotency-key') ?? undefined;
@@ -97,9 +97,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'INVALID_BODY', message: 'Body phải là JSON hợp lệ' }, { status: 400 });
   }
 
-  if (!body.projectId || !body.title || !Array.isArray(body.slots) || body.slots.length === 0) {
+  if (!body.projectId || !body.title?.trim() || !Array.isArray(body.slots) || body.slots.length === 0) {
     return NextResponse.json(
       { error: 'VALIDATION_ERROR', message: 'Thiếu required fields: projectId, title, slots[]' },
+      { status: 400 },
+    );
+  }
+  const invalidSlot = body.slots.some((slot) =>
+    !slot.positionCode?.trim() || !slot.positionTitle?.trim() ||
+    !Number.isInteger(slot.slotsNeeded) || slot.slotsNeeded <= 0 ||
+    !slot.validFrom || Number.isNaN(new Date(slot.validFrom).getTime()),
+  );
+  if (invalidSlot) {
+    return NextResponse.json(
+      { error: 'VALIDATION_ERROR', message: 'Mỗi slot cần positionCode, positionTitle, headcount dương và validFrom hợp lệ' },
       { status: 400 },
     );
   }

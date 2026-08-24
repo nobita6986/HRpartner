@@ -201,7 +201,7 @@ export async function updateStaffingOrderStatus(
   orderId: string,
   newStatus: StaffingOrderStatus,
 ) {
-  if (!['ADMIN', 'HR_MANAGER', 'HR_STAFF'].includes(ctx.role)) {
+  if (!['ADMIN', 'HR_MANAGER', 'SALE'].includes(ctx.role)) {
     throw new StaffingOrderServiceError(
       'PERMISSION_DENIED',
       `Role ${ctx.role} không có quyền cập nhật StaffingOrder`,

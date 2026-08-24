@@ -1,14 +1,24 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { listPublicJobs, applyForJob, SubmissionServiceError } from '@/src/domains/staffing/submission.service';
+import { listPublicJobProjection } from '@/src/domains/job-board/public.service';
+import { applyForJob, SubmissionServiceError } from '@/src/domains/staffing/submission.service';
+import { ApplicationServiceError } from '@/src/domains/applications/application.service';
+import { CvValidationError } from '@/src/domains/applications/apply-helpers';
 import { getPrisma } from '@/src/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
   const prisma = getPrisma();
-  const jobs = await prisma.$transaction(async (tx) => listPublicJobs(tx));
-  return NextResponse.json({ jobs });
+  const projection = await prisma.$transaction((tx) => listPublicJobProjection(tx, {
+    q: searchParams.get('q') ?? undefined,
+    area: searchParams.get('area') ?? undefined,
+    shift: searchParams.get('shift') ?? undefined,
+    offset: Number(searchParams.get('offset') ?? 0),
+    limit: Number(searchParams.get('limit') ?? 20),
+  }));
+  return NextResponse.json(projection);
 }
 
 export async function POST(req: NextRequest) {
@@ -23,7 +33,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields: projectId, fullName, phone' }, { status: 400 });
   }
 
-  // Public apply: no real auth. Use PUBLIC userId + WORKER role.
+  // Legacy public apply: no real auth. MP-2 (DEC-01) delegates to the canonical
+  // SECURITY DEFINER boundary; never creates a Worker/SourceClaim. Prefer
+  // POST /api/public/jobs/:slug/applications for new clients.
   const ctx = { userId: 'PUBLIC', role: 'WORKER' as const, permissions: [], dbLabel: null };
   const prisma = getPrisma();
 
@@ -34,8 +46,14 @@ export async function POST(req: NextRequest) {
       phone: body.phone!,
       cccdNumber: body.cccdNumber,
     }));
-    return NextResponse.json({ submission: result }, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
   } catch (e) {
+    if (e instanceof CvValidationError) {
+      return NextResponse.json({ error: e.code, message: e.message }, { status: 422 });
+    }
+    if (e instanceof ApplicationServiceError) {
+      return NextResponse.json({ error: e.code, message: e.message }, { status: e.httpStatus });
+    }
     if (e instanceof SubmissionServiceError) {
       const status = e.code === 'PROJECT_NOT_PUBLIC' ? 404 : 400;
       return NextResponse.json({ error: e.code, message: e.message }, { status });

@@ -18,7 +18,9 @@ interface Job {
   projectCode: string;
   availableSlots: number;
   totalNeeded: number;
-  status: 'TUYEN_GAP' | 'DA_NHAN_DU' | 'DANG_TUYEN';
+  status: string;
+  isPublic: boolean;
+  version: number;
 }
 
 interface Submission {
@@ -93,17 +95,23 @@ export default function AdminJobsPage() {
   // ── Fetch jobs (public) ────────────────────────────────────────────────
   useEffect(() => {
     setJobsLoading(true);
-    fetch('/api/jobs')
-      .then((r) => r.json())
+    fetch('/api/projects?take=50')
+      .then(async (r) => {
+        const payload = await r.json();
+        if (!r.ok) throw new Error(payload.message ?? payload.error ?? 'Không thể tải danh sách project');
+        return payload;
+      })
       .then((d) => {
-        if (d.jobs && Array.isArray(d.jobs)) {
-          setJobs(d.jobs.map((j: any) => ({
-            id: j.id,
-            title: j.title,
-            projectCode: j.projectCode ?? j.title,
-            availableSlots: j.availableSlots ?? 0,
-            totalNeeded: j.totalNeeded ?? 0,
-            status: j.badge ?? 'DANG_TUYEN',
+        if (d.projects && Array.isArray(d.projects)) {
+          setJobs(d.projects.map((project: any) => ({
+            id: project.id,
+            title: project.name,
+            projectCode: project.code,
+            availableSlots: project.quota ?? 0,
+            totalNeeded: project.quota ?? 0,
+            status: project.status,
+            isPublic: Boolean(project.isPublic),
+            version: project.version ?? 1,
           })));
         }
       })
@@ -140,8 +148,20 @@ export default function AdminJobsPage() {
     else if (activeTab === 'claims') fetchClaims();
   }, [activeTab]);
 
-  const handlePostNewJob = () => {
-    alert('Post New Job — chuc nang dang phat trien (Phase 6+)');
+  const handlePublish = async (job: Job) => {
+    const key = `admin-job-${job.id}-${job.version}-${job.isPublic ? 'unpublish' : 'publish'}`;
+    try {
+      const response = await fetch(`/api/projects/${job.id}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-idempotency-key': key },
+        body: JSON.stringify({ isPublic: !job.isPublic, expectedVersion: job.version }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message ?? payload.error ?? 'Không thể cập nhật trạng thái publish');
+      setJobs((current) => current.map((item) => item.id === job.id ? { ...item, isPublic: payload.project.isPublic, version: payload.project.version } : item));
+    } catch (error) {
+      setJobsError(error instanceof Error ? error.message : 'Không thể cập nhật trạng thái publish');
+    }
   };
 
   return (
@@ -157,14 +177,11 @@ export default function AdminJobsPage() {
             </p>
           </div>
           <button
-            onClick={handlePostNewJob}
+            onClick={() => setActiveTab('jobs')}
             className='flex items-center gap-2 py-2 px-4 rounded-lg font-medium transition-colors'
             style={{ backgroundColor: 'var(--primary)', color: 'var(--on-primary, white)' }}
           >
-            <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 4v16m8-8H4' />
-            </svg>
-            Post New Job
+            Quản lý trạng thái publish
           </button>
         </div>
 
@@ -195,15 +212,16 @@ export default function AdminJobsPage() {
                   <th className='text-left px-4 py-3 font-semibold' style={{ color: 'var(--on-surface)' }}>Code</th>
                   <th className='text-center px-4 py-3 font-semibold' style={{ color: 'var(--on-surface)' }}>Slots</th>
                   <th className='text-center px-4 py-3 font-semibold' style={{ color: 'var(--on-surface)' }}>Status</th>
+                  <th className='text-center px-4 py-3 font-semibold' style={{ color: 'var(--on-surface)' }}>Publish</th>
                 </tr>
               </thead>
               <tbody>
                 {jobsLoading ? (
-                  <LoadingRow cols={4} />
+                  <LoadingRow cols={5} />
                 ) : jobsError ? (
-                  <tr><td colSpan={4} className='px-4 py-3 text-red-500 text-sm'>{jobsError}</td></tr>
+                  <tr><td colSpan={5} className='px-4 py-3 text-red-500 text-sm'>{jobsError}</td></tr>
                 ) : jobs.length === 0 ? (
-                  <tr><td colSpan={4} className='px-4 py-8 text-center text-sm' style={{ color: 'var(--on-surface-variant)' }}>Chua co job nao.</td></tr>
+                  <tr><td colSpan={5} className='px-4 py-8 text-center text-sm' style={{ color: 'var(--on-surface-variant)' }}>Chưa có job public nào.</td></tr>
                 ) : (
                   jobs.map((job, idx) => (
                     <tr key={job.id} style={{ borderTop: idx > 0 ? '1px solid var(--outline)' : 'none' }}>
@@ -213,7 +231,17 @@ export default function AdminJobsPage() {
                         {job.availableSlots} / {job.totalNeeded}
                       </td>
                       <td className='px-4 py-3 text-center'>
-                        <StatusBadge status={job.status} />
+                        <StatusBadge status={job.isPublic ? 'Published' : job.status === 'CLOSED' ? 'Closed' : 'Unpublished'} />
+                      </td>
+                      <td className='px-4 py-3 text-center'>
+                        <button
+                          type='button'
+                          onClick={() => handlePublish(job)}
+                          className='px-3 py-1 text-sm font-medium rounded border'
+                          style={{ borderColor: 'var(--outline)', color: 'var(--primary)' }}
+                        >
+                          {job.isPublic ? 'Unpublish' : 'Publish'}
+                        </button>
                       </td>
                     </tr>
                   ))

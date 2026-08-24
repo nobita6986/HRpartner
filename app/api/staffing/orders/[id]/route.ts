@@ -26,7 +26,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const GET_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'SALE', 'DIRECTOR', 'ACCOUNTANT'] as const);
-const UPDATE_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF'] as const);
+const UPDATE_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'SALE'] as const);
 
 function getIdempotencyKey(req: NextRequest): string | undefined {
   return req.headers.get('x-idempotency-key') ?? undefined;

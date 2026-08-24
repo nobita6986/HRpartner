@@ -466,8 +466,9 @@ const PERMISSION_SEED = [
   { code: 'CAN_FORCE_LOCK_STATEMENT',   group: 'STATEMENT', description: 'Khóa statement cưỡng bức (reconciliation cuối kỳ).' },
   { code: 'CAN_OVERRIDE_REFERRAL_GUARD',group: 'REFERRAL',  description: 'Bỏ qua referral guard (SOP S1/S2/S3 §9.3.1).' },
   { code: 'CAN_APPROVE_TICKET_LEVEL2',  group: 'TICKET',    description: 'Duyệt ticket level 2 (duyệt 2 chữ ký cho ADVANCE_SALARY).' },
-  { code: 'CAN_PROCESS_TICKET',         group: 'TICKET',    description: 'Xử lý ticket (cancel/pay/reject — Planner bổ sung nhóm TICKET).' },
-  { code: 'CAN_EDIT_CONTRACT',          group: 'CONTRACT',  description: 'Sửa hợp đồng worker (HR_MANAGER).' },
+  { code: 'CAN_PROCESS_TICKET',         group: 'TICKET',   description: 'Xử lý ticket (cancel/pay/reject — Planner bổ sung nhóm TICKET).' },
+  { code: 'CAN_PUBLISH_JOB',            group: 'PROJECT',  description: 'Publish hoặc unpublish job trên public job board trong Project scope.' },
+  { code: 'CAN_EDIT_CONTRACT',          group: 'CONTRACT', description: 'Sửa hợp đồng worker (HR_MANAGER).' },
 ];
 
 // Role → tập permission codes (theo data-scope-security §4.2 seed mẫu + DEC-02 bổ sung).
@@ -483,13 +484,15 @@ const ROLE_PERMISSION_SEED = [
   { role: 'HR_MANAGER', code: 'CAN_PROCESS_TICKET' },
   { role: 'HR_MANAGER', code: 'CAN_EDIT_CONTRACT' },
   { role: 'HR_MANAGER', code: 'CAN_VIEW_WORKER_SENSITIVE' },
+  { role: 'HR_MANAGER', code: 'CAN_PUBLISH_JOB' },
 
   // HR_STAFF — tạo worker, xử lý ticket
   { role: 'HR_STAFF', code: 'CAN_CREATE_WORKER' },
   { role: 'HR_STAFF', code: 'CAN_PROCESS_TICKET' },
 
-  // SALE — tạo worker
+  // SALE — tạo worker và publish job trong Project scope
   { role: 'SALE', code: 'CAN_CREATE_WORKER' },
+  { role: 'SALE', code: 'CAN_PUBLISH_JOB' },
 
   // ACCOUNTANT — duyệt payroll
   { role: 'ACCOUNTANT', code: 'CAN_APPROVE_PAYROLL' },

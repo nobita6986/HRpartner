@@ -6,9 +6,10 @@
  * Resolver đọc từ DB để quyết định allow/deny (src/shared/auth/permission-resolver.ts).
  *
  * Convention: prefix `CAN_` cho action permission, không có cho nhóm.
- * Group dùng để UI phân tab/filter (PAYROLL, CONTRACT, TICKET, REFERRAL, STATEMENT, WORKER, SYSTEM).
+ * Group dùng để UI phân tab/filter (PAYROLL, CONTRACT, TICKET, REFERRAL, STATEMENT, WORKER, PROJECT, SYSTEM).
  */
 export const PERMISSION_GROUPS = {
+  PROJECT: 'PROJECT',
   SYSTEM: 'SYSTEM',
   PAYROLL: 'PAYROLL',
   CONTRACT: 'CONTRACT',
@@ -82,6 +83,11 @@ export const PERMISSION_CATALOG: readonly PermissionDescriptor[] = [
     code: 'CAN_PROCESS_TICKET',
     group: PERMISSION_GROUPS.TICKET,
     description: 'Xử lý ticket (cancel/pay/reject — Planner bổ sung nhóm TICKET).',
+  },
+  {
+    code: 'CAN_PUBLISH_JOB',
+    group: PERMISSION_GROUPS.PROJECT,
+    description: 'Publish hoặc unpublish job trên public job board trong Project scope.',
   },
   {
     code: 'CAN_EDIT_CONTRACT',
