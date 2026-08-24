@@ -12,6 +12,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { ANOMALY_TYPES, ANOMALY_OWNER, BLOCKER_TYPES } from './import.service';
+import {
+  OPERATIONS_FIXTURE_VERSION,
+  materializeOperationFixtures,
+  summarizeOperationScenario,
+} from '@/tests/fixtures/operations';
 
 describe('Taxonomy - 6 anomaly types G29', () => {
 
@@ -84,5 +89,30 @@ describe('Taxonomy - blockers D07', () => {
     expect(BLOCKER_TYPES).toContain('UNMATCHED_EMPLOYEE');
     expect(BLOCKER_TYPES).toContain('SOURCE_CONFLICT');
     expect(BLOCKER_TYPES).toContain('WRONG_PROJECT');
+  });
+});
+
+describe('G0-05 deterministic operation fixtures - attendance consumers', () => {
+  it('covers full month, project transfer, night shift and overtime totals', () => {
+    const fixtures = materializeOperationFixtures();
+
+    expect(OPERATIONS_FIXTURE_VERSION).toBe('v5-g0-05.1');
+    expect(Object.keys(fixtures)).toHaveLength(6);
+    expect(summarizeOperationScenario(fixtures.fullMonth).regularHours).toBe(176);
+    expect(summarizeOperationScenario(fixtures.midMonthTransfer).projectHours).toEqual({
+      'g005:project:a': 80,
+      'g005:project:b': 80,
+    });
+    expect(summarizeOperationScenario(fixtures.nightShift).nightHours).toBe(8);
+    expect(summarizeOperationScenario(fixtures.overtime).overtimeHours).toBe(3);
+  });
+
+  it('materializes equal fixtures without sharing mutable state', () => {
+    const first = materializeOperationFixtures();
+    const second = materializeOperationFixtures();
+
+    first.fullMonth.lines[0].regularHours = 0;
+    expect(second.fullMonth.lines[0].regularHours).toBe(8);
+    expect(materializeOperationFixtures()).toEqual(second);
   });
 });

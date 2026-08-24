@@ -25,6 +25,7 @@ import {
   autoConfirmExpiredStatements,
   DisputeServiceError,
 } from './dispute.service';
+import { materializeOperationFixtures } from '@/tests/fixtures/operations';
 
 interface MockRow { id: string; [key: string]: unknown; }
 
@@ -259,6 +260,20 @@ function adminCtx(): AuthContext {
 function accountantCtx(): AuthContext {
   return { userId: 'USR-AC', role: 'ACCOUNTANT' };
 }
+
+describe('G0-05 deterministic operation fixtures - reconciliation consumers', () => {
+  it('preserves correction delta and dispute amounts without environment state', () => {
+    const fixtures = materializeOperationFixtures();
+    const correction = fixtures.correction.correction!;
+    const dispute = fixtures.dispute.dispute!;
+
+    expect(correction.correctedRegularHours - correction.originalRegularHours).toBe(0.5);
+    expect(correction.reasonCode).toBe('MISSING_PUNCH');
+    expect(dispute.statementAmountVnd).toBe('12000000');
+    expect(dispute.disputedAmountVnd).toBe('800000');
+    expect(dispute.round).toBe(1);
+  });
+});
 
 function vendorCtx(): AuthContext {
   return { userId: 'USR-VENDOR', role: 'VENDOR_ADMIN', vendorId: 'vendor-1' };
