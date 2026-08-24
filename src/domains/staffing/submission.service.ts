@@ -8,7 +8,6 @@
  */
 import type { Prisma } from '@prisma/client';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
-import { PrismaClient } from '@prisma/client';
 import {
   submitPublicApplication,
   ApplicationServiceError,

@@ -36,8 +36,9 @@
  *   - HRP v3.2 Â§12.5.1 (doD cÃ³ state transition test)
  */
 
-import { PrismaClient, Prisma, TicketAction } from '@prisma/client'; // TicketAction lÃ  VALUE (enum dÃ¹ng trong TRANSITIONS)
+import { Prisma, TicketAction } from '@prisma/client'; // TicketAction lÃ  VALUE (enum dÃ¹ng trong TRANSITIONS)
 import type {
+  PrismaClient,
   Ticket,
   TicketType,
   TicketStatus,
