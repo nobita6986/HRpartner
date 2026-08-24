@@ -264,8 +264,9 @@ model Worker {
   dependents  Dependent[] @relation("WorkerDependents")
   tickets     Ticket[]
   assignments ProjectAssignment[]
-  sourceClaims SourceClaim[]
-  submissions CandidateSubmission[]
+  sourceClaims      SourceClaim[]
+  submissions       CandidateSubmission[] @relation("ConvertedWorkerSubmissions")
+  mergedSubmissions CandidateSubmission[] @relation("MergedWorkerSubmissions")
 
   // G22 — FK chủ sở hữu (thay String thô, giữ nguyên tên cột owner_id/assigned_to_id)
   owner      User? @relation("WorkerOwner", fields: [ownerId], references: [id])
@@ -471,6 +472,7 @@ model CandidateSubmission {
   experience    String?
   cccdImageUrl  String?  @map("cccd_image_url")
   status        CandidateSubmissionStatus @default(NEW)
+  workerId       String? @map("worker_id") // MP-3: canonical converted Worker link
   mergedWorkerId String? @map("merged_worker_id")
   dedupWorkerId  String?  @map("dedup_worker_id") // V4.3 G11: worker trùng CCCD đã tồn tại (Referral Guard §9.3.1)
   blockCode      String?  @map("block_code") // V4.3: IN_7D_WINDOW | COMMISSION_ACTIVE | VENDOR_PAYROLL_ACTIVE
@@ -494,13 +496,15 @@ model CandidateSubmission {
   vendor        Vendor?  @relation(fields: [vendorId], references: [id])
   ctv           User?    @relation(fields: [ctvId], references: [id])
   project       Project? @relation(fields: [projectId], references: [id])
-  mergedWorker  Worker?  @relation(fields: [mergedWorkerId], references: [id])
+  worker        Worker?  @relation("ConvertedWorkerSubmissions", fields: [workerId], references: [id])
+  mergedWorker  Worker?  @relation("MergedWorkerSubmissions", fields: [mergedWorkerId], references: [id])
   slot          StaffingOrderSlot? @relation(fields: [slotId], references: [id]) // MP-2 RQ-01
   sourceClaims  SourceClaim[]
   statusHistory ApplicationStatusHistory[] // MP-2 RQ-01/RQ-06
 
   @@index([vendorId, phone]) // V4.5 G13: bỏ unique để nộp LẠI cùng người cho nhu cầu khác — chống trùng bằng Referral Guard
   @@index([cccdNumber]) // V4.3 G11: Referral Guard tra cứu nhanh theo CCCD
+  @@index([workerId]) // MP-3 conversion lookup
   @@index([status])
   @@index([slotId, normalizedPhone]) // MP-2 DEC-04: duplicate-guard lookup (partial-unique backstop lives in migration SQL)
   @@map("candidate_submissions")

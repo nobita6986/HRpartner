@@ -26,4 +26,5 @@ export const INTEGRATION_TEST_FILES: string[] = [
   'src/domains/staffing/4role-staffing.integration.test.ts',
   'src/domains/applications/live-integration.mp2.test.ts',
   'src/domains/applications/security-boundary.mp2.test.ts',
+  'src/domains/applications/live-integration.mp3b.test.ts',
 ];

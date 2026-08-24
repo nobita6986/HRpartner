@@ -34,6 +34,7 @@ export default defineConfig({
       // A validated admin URL means the dedicated test DB can run the privileged
       // MP-2 boundary introspection. Without it, those tests remain ENV_BLOCKED.
       MP2_LIVE_SECURITY_CHECK: TEST_DB_ADMIN ? '1' : '',
+      MP3B_LIVE_CONVERSION_CHECK: TEST_DB_ADMIN ? '1' : '',
     },
     poolOptions: {
       threads: { maxThreads: 1, minThreads: 1 },
