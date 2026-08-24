@@ -8,7 +8,7 @@
  * ADMIN/HR_MANAGER/DIRECTOR/SALE only (DEC-06); RLS is the backstop, this
  * app-layer check is the primary gate + a stable 403 surface.
  */
-import type { Prisma } from '@prisma/client';
+import type { CandidateSubmissionStatus, Prisma } from '@prisma/client';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
 import { assertMp2Transition, StatusTransitionError } from './status-machine';
 
@@ -35,7 +35,7 @@ function checkQueueRole(ctx: AuthContext): void {
 export type ApplicationSource = 'PUBLIC' | 'VENDOR' | 'CTV';
 
 export interface QueueFilters {
-  status?: string;
+  status?: CandidateSubmissionStatus;
   slotId?: string;
   projectId?: string;
   source?: ApplicationSource;
@@ -242,7 +242,7 @@ export async function transitionApplicationStatus(
     throw e;
   }
 
-  await tx.candidateSubmission.update({ where: { id }, data: { status: toStatus } });
+  await tx.candidateSubmission.update({ where: { id }, data: { status: toStatus as CandidateSubmissionStatus } });
   await tx.applicationStatusHistory.create({
     data: {
       submissionId: id,

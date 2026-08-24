@@ -7,6 +7,7 @@
  * Auth: cookie hrp_token.
  * Roles: ADMIN, HR_MANAGER, HR_STAFF, VENDOR_ADMIN, VENDOR_STAFF.
  */
+import { CandidateSubmissionStatus } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
@@ -22,6 +23,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const LIST_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF', 'VENDOR_ADMIN', 'VENDOR_STAFF'] as const);
+const STATUSES = new Set(Object.values(CandidateSubmissionStatus));
 
 export async function GET(req: NextRequest) {
   let ctx;
@@ -40,7 +42,10 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const tab = searchParams.get('tab'); // 'submissions' | 'claims'
   const projectId = searchParams.get('projectId') ?? undefined;
-  const status = searchParams.get('status') ?? undefined;
+  const rawStatus = searchParams.get('status');
+  const status = rawStatus && STATUSES.has(rawStatus as CandidateSubmissionStatus)
+    ? rawStatus as CandidateSubmissionStatus
+    : undefined;
   const accepted = searchParams.get('accepted');
   const take = Math.min(50, parseInt(searchParams.get('take') ?? '20', 10));
   const skip = parseInt(searchParams.get('skip') ?? '0', 10);

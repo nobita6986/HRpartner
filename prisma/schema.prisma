@@ -119,6 +119,17 @@ enum SystemRole {
   EMPLOYEE
 }
 
+enum CandidateSubmissionStatus {
+  NEW
+  NEEDS_INFO
+  SCREENING
+  QUALIFIED
+  REJECTED
+  WITHDRAWN
+  CONVERTED
+  MERGED
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // 1. USERS & AUTH (ADR-007: OTP baseline + JWT; auth_identities Wave 1)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -459,13 +470,14 @@ model CandidateSubmission {
   gender        String?
   experience    String?
   cccdImageUrl  String?  @map("cccd_image_url")
-  status        String   @default("NEW") // NEW | SCREENING | QUALIFIED | REJECTED | WITHDRAWN | MERGED
+  status        CandidateSubmissionStatus @default(NEW)
   mergedWorkerId String? @map("merged_worker_id")
   dedupWorkerId  String?  @map("dedup_worker_id") // V4.3 G11: worker trùng CCCD đã tồn tại (Referral Guard §9.3.1)
   blockCode      String?  @map("block_code") // V4.3: IN_7D_WINDOW | COMMISSION_ACTIVE | VENDOR_PAYROLL_ACTIVE
   overrideCase   String?  @map("override_case") // V4.4 G12: S1 | S2 | S3 (SOP override §9.3.1)
   reviewedBy    String?  @map("reviewed_by")
   reviewNote    String?  @map("review_note")
+  version       Int      @default(0) // MP-3 optimistic transition guard
   // ── MP-2 Apply + Tracking (additive, nullable/backfill-safe) ──────────────
   slotId                 String?   @map("slot_id")                  // MP-2 RQ-01: linked StaffingOrderSlot
   publicTrackingCode     String?   @unique @map("public_tracking_code") // MP-2 RQ-01/4.3: high-entropy public code

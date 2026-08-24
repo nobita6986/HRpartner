@@ -6,7 +6,7 @@
  * DEC-10: SourceClaim.accepted duy nhất 1/worker (partial unique index da co).
  * Non-goals: khong lam payroll, khong eKYC NFC.
  */
-import type { Prisma } from '@prisma/client';
+import type { CandidateSubmissionStatus, Prisma } from '@prisma/client';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
 import {
   submitPublicApplication,
@@ -187,7 +187,7 @@ export async function applyForJob(
 export async function listSubmissions(
   tx: Prisma.TransactionClient,
   ctx: AuthContext,
-  opts?: { take?: number; skip?: number; projectId?: string; status?: string },
+  opts?: { take?: number; skip?: number; projectId?: string; status?: CandidateSubmissionStatus },
 ): Promise<{ rows: SubmissionRow[]; total: number }> {
   checkSubmissionRole(ctx);
 

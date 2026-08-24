@@ -6,6 +6,7 @@
  * (`listApplications`) is the primary DEC-06 role gate and raises a stable
  * FORBIDDEN(403) for non-queue roles; RLS is the backstop. No definer boundary.
  */
+import { CandidateSubmissionStatus } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
@@ -21,6 +22,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const SOURCES = new Set<ApplicationSource>(['PUBLIC', 'VENDOR', 'CTV']);
+const STATUSES = new Set(Object.values(CandidateSubmissionStatus));
 
 function parseIntOrUndefined(v: string | null): number | undefined {
   if (v == null || v.trim() === '') return undefined;
@@ -41,8 +43,9 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const rawSource = searchParams.get('source');
+  const rawStatus = searchParams.get('status');
   const filters: QueueFilters = {
-    status: searchParams.get('status') ?? undefined,
+    status: rawStatus && STATUSES.has(rawStatus as CandidateSubmissionStatus) ? rawStatus as CandidateSubmissionStatus : undefined,
     slotId: searchParams.get('slotId') ?? undefined,
     projectId: searchParams.get('projectId') ?? undefined,
     source: rawSource && SOURCES.has(rawSource as ApplicationSource) ? (rawSource as ApplicationSource) : undefined,
