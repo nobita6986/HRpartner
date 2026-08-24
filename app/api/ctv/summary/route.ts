@@ -1,11 +1,14 @@
 /**
- * GET /api/ctv/summary — P1 Portals STEP-08 (RQ-09).
- *
- * Returns CTV summary: counts by status + affCode + estimated commission (MVP).
+ * GET /api/ctv/summary — portal summary backed by canonical commission ledger.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthContext } from '@/src/shared/auth/auth-context';
 import { getPrisma } from '@/src/lib/db';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import {
+  getCtvBalance,
+  listLedgerByCtv,
+} from '@/src/domains/commission/ledger.service';
 
 export async function GET(req: NextRequest) {
   let ctx;
@@ -21,33 +24,62 @@ export async function GET(req: NextRequest) {
 
   const prisma = getPrisma();
 
-  // Get affCode from user
-  const user = await prisma.user.findUnique({
-    where: { id: ctx.userId },
-    select: { affCode: true, phone: true },
-  });
+  try {
+    const { user, claims, balance, ledgerTotal } = await withDbContext(
+      prisma,
+      ctx,
+      async (tx) => {
+        const [userRow, claimRows, availableBalance, ledgerPage] = await Promise.all([
+          tx.user.findUnique({
+            where: { id: ctx.userId },
+            select: { affCode: true, phone: true },
+          }),
+          tx.sourceClaim.findMany({
+            where: { ctvId: ctx.userId },
+            select: { accepted: true },
+          }),
+          getCtvBalance(tx, ctx.userId),
+          listLedgerByCtv(tx, ctx.userId, { take: 1, skip: 0 }),
+        ]);
 
-  const claims = await prisma.sourceClaim.findMany({
-    where: { ctvId: ctx.userId },
-    select: { accepted: true },
-  });
+        return {
+          user: userRow,
+          claims: claimRows,
+          balance: availableBalance,
+          ledgerTotal: ledgerPage.total,
+        };
+      },
+    );
 
-  const counts = {
-    total: claims.length,
-    pending: claims.filter((c) => !c.accepted).length,
-    accepted: claims.filter((c) => c.accepted).length,
-    rejected: 0,
-    merged: 0,
-  };
+    const counts = {
+      total: claims.length,
+      pending: claims.filter((claim) => !claim.accepted).length,
+      accepted: claims.filter((claim) => claim.accepted).length,
+      rejected: 0,
+      merged: 0,
+    };
+    const hasLedger = ledgerTotal > 0;
+    const availableVnd = hasLedger ? balance.toString() : null;
+    const note = hasLedger
+      ? 'Số dư từ CommissionLedger APPROVED/PAID, đã trừ REVERSAL.'
+      : 'Chưa có dữ liệu CommissionLedger; không ước tính hoa hồng.';
 
-  // MVP: estimated = accepted + merged * 0 (real engine is P2)
-  const estimatedCommission = counts.accepted * 500_000; // 500k VND per accepted (MVP placeholder)
-
-  return NextResponse.json({
-    affCode: user?.affCode ?? null,
-    phone: user?.phone ?? null,
-    counts,
-    estimatedCommission: estimatedCommission.toString(),
-    note: 'Tích lũy dự kiến — engine hoa hồng thật là P2',
-  });
+    return NextResponse.json({
+      affCode: user?.affCode ?? null,
+      phone: user?.phone ?? null,
+      counts,
+      estimatedCommission: availableVnd,
+      commissionSource: 'COMMISSION_LEDGER',
+      commission: {
+        source: 'COMMISSION_LEDGER',
+        availableVnd,
+        ledgerEntries: ledgerTotal,
+        note,
+      },
+      note,
+    });
+  } catch (error) {
+    console.error('[api/ctv/summary] query error:', error);
+    return NextResponse.json({ error: 'INTERNAL' }, { status: 500 });
+  }
 }
