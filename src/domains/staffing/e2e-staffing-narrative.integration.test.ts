@@ -61,7 +61,7 @@ function makeStore() {
         }
       }
       if (match) {
-        results.push(args?.select ? Object.fromEntries(Object.entries(row).filter(([k]) => args.select![k])) : row);
+        results.push((args?.select ? Object.fromEntries(Object.entries(row).filter(([k]) => args.select![k])) : row) as MockRow);
       }
     }
     return results;
@@ -75,7 +75,7 @@ function makeStore() {
 function makeMockTx(store: ReturnType<typeof makeStore>) {
   return {
     ...store,
-    $queryRawUnsafe: vi.fn(async (sql: string) => {
+    $queryRawUnsafe: vi.fn(async (sql: string, ..._params: any[]) => {
       if (sql.includes('SELECT MAX')) return [{ max_num: null }];
       if (sql.includes('SELECT id, project_id, valid_from')) {
         const Nam = store.findFirst('project_assignments', { workerId: 'worker-Nam', status: 'ACTIVE' });
@@ -231,8 +231,8 @@ describe('F00A Bước 1-5 — E2E Slice 4A Guided Transfer (moment 02:10–03:1
     expect(total).toBeGreaterThanOrEqual(1);
     const apOrder = rows.find((r: any) => r.projectId === 'prj-AP');
     expect(apOrder).toBeDefined();
-    expect(apOrder.title).toContain('An Phát');
-    expect(apOrder.status).toBe('OPEN');
+    expect(apOrder!.title).toContain('An Phát');
+    expect(apOrder!.status).toBe('OPEN');
   });
 
   // Step 2 (01:20): Mở Talent Pool → thấy Nam (chưa assign vào An Phát)

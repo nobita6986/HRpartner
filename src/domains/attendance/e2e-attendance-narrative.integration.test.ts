@@ -165,11 +165,11 @@ function makeMockTx(store: ReturnType<typeof makeStore>): any {
 }
 
 function adminCtx(userId = 'USR-HR'): AuthContext {
-  return { userId, role: 'ADMIN', sessionId: 'sess-001', scope: {} };
+  return { userId, role: 'ADMIN' };
 }
 
 function hrStaffCtx(): AuthContext {
-  return { userId: 'USR-HR-2', role: 'ADMIN', sessionId: 'sess-002', scope: {} };
+  return { userId: 'USR-HR-2', role: 'ADMIN' };
 }
 
 // ─── Tests ──────────────────────────────────────────────────────────────────

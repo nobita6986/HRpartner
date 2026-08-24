@@ -113,7 +113,7 @@ function makeMockTx(store: ReturnType<typeof makeStore>): any {
         for (const s of store.table('vendor_statements').values()) {
           if (where.periodMonth && s.periodMonth !== where.periodMonth) continue;
           if (where.periodYear && s.periodYear !== where.periodYear) continue;
-          sum += BigInt(s.totalAmount ?? 0);
+          sum += BigInt((s.totalAmount ?? 0) as number);
         }
         return Promise.resolve({ _sum: { totalAmount: sum } });
       },
@@ -184,7 +184,7 @@ function makeMockTx(store: ReturnType<typeof makeStore>): any {
         for (const s of store.table('client_statements').values()) {
           if (where.periodMonth && s.periodMonth !== where.periodMonth) continue;
           if (where.periodYear && s.periodYear !== where.periodYear) continue;
-          sum += BigInt(s.totalAmount ?? 0);
+          sum += BigInt((s.totalAmount ?? 0) as number);
         }
         return Promise.resolve({ _sum: { totalAmount: sum } });
       },
@@ -253,15 +253,15 @@ function makeMockTx(store: ReturnType<typeof makeStore>): any {
 }
 
 function adminCtx(): AuthContext {
-  return { userId: 'USR-ADMIN', role: 'ADMIN', sessionId: 'sess-1', scope: {} as any };
+  return { userId: 'USR-ADMIN', role: 'ADMIN' };
 }
 
 function accountantCtx(): AuthContext {
-  return { userId: 'USR-AC', role: 'ACCOUNTANT', sessionId: 'sess-1', scope: {} as any };
+  return { userId: 'USR-AC', role: 'ACCOUNTANT' };
 }
 
 function vendorCtx(): AuthContext {
-  return { userId: 'USR-VENDOR', role: 'VENDOR_ADMIN', sessionId: 'sess-1', vendorId: 'vendor-1', scope: {} as any };
+  return { userId: 'USR-VENDOR', role: 'VENDOR_ADMIN', vendorId: 'vendor-1' };
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -360,7 +360,7 @@ describe('Vendor preview (RQ-14, D08)', () => {
 
     const stmt = await generateVendorStatement(tx, adminCtx(), { timesheetPeriodId: 'period-aug' });
 
-    const otherVendor: AuthContext = { userId: 'USR-V2', role: 'VENDOR_ADMIN', sessionId: 'sess-1', vendorId: 'vendor-other', scope: {} as any };
+    const otherVendor: AuthContext = { userId: 'USR-V2', role: 'VENDOR_ADMIN', vendorId: 'vendor-other' };
     await expect(vendorPreviewStatement(tx, otherVendor, stmt.id)).rejects.toThrow(/Vendor chi xem statement cua minh/);
   });
 });

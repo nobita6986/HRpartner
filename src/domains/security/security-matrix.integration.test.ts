@@ -79,9 +79,9 @@ async function queryCount(prisma: any, role: string, table: string): Promise<num
       await tx.$executeRawUnsafe(`SELECT set_config('app.user_id', 'matrix-test', true)`);
       await tx.$executeRawUnsafe(`SELECT set_config('app.role', $1, true)`, role);
       await tx.$executeRawUnsafe(`SELECT set_config('app.vendor_id', '', true)`);
-      const r = await tx.$queryRawUnsafe<Array<{ n: number }>>(
+      const r = (await tx.$queryRawUnsafe(
         `SELECT COUNT(*)::int AS n FROM ${table}`,
-      );
+      )) as Array<{ n: number }>;
       return r[0]?.n ?? 0;
     });
   } catch {

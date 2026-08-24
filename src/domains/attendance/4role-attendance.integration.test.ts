@@ -158,7 +158,7 @@ function makeMockTx(store: ReturnType<typeof makeStore>): any {
 }
 
 function makeCtx(role: string, userId = 'USR-001'): AuthContext {
-  return { userId, role: role as AuthContext['role'], sessionId: 'sess-001', scope: {} };
+  return { userId, role: role as AuthContext['role'] };
 }
 
 // ─── Tests ──────────────────────────────────────────────────────────────────

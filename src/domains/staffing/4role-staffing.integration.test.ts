@@ -69,7 +69,7 @@ function makeStore() {
     const results: MockRow[] = [];
     for (const row of t.values()) {
       if (!args.where || matches(row, args.where)) {
-        results.push(args.select ? Object.fromEntries(Object.entries(row).filter(([k]) => args.select![k])) : row);
+        results.push((args.select ? Object.fromEntries(Object.entries(row).filter(([k]) => args.select![k])) : row) as MockRow);
       }
     }
     return results;
@@ -182,7 +182,7 @@ function makeMockTx(store: ReturnType<typeof makeStore>): MockTx {
 // ─── Auth contexts per role ───────────────────────────────────────────────────
 
 function makeCtx(role: string, userId = 'user-001'): AuthContext {
-  return { userId, role: role as AuthContext['role'], permissions: [], dbLabel: null };
+  return { userId, role: role as AuthContext['role'] };
 }
 
 // ─── Seed fixture ─────────────────────────────────────────────────────────────
@@ -393,7 +393,7 @@ describe('4-role scoping — Talent Pool (DEC-13)', () => {
     const tx = makeMockTx(store);
     const ctx = makeCtx('WORKER');
 
-    await expect(queryTalentPool(tx as any, ctx, { take: 10, skip: 0 }))
+    await expect(queryTalentPool(tx as any, ctx, { take: 10, skip: 0 } as any))
       .rejects.toThrow('CAN_VIEW_UNASSIGNED_POOL');
   });
 });
@@ -406,11 +406,7 @@ describe('4-role scoping — Referral Guard (DEC-13)', () => {
     const tx = makeMockTx(store);
     const ctx = makeCtx('ADMIN');
 
-    const result = await evaluateReferralGuard(tx as any, ctx, {
-      workerId: 'worker-Huy',
-      vendorId: 'vendor-001',
-      source: 'VENDOR',
-    });
+    const result = await evaluateReferralGuard(tx as any, ctx as any);
 
     // blockCode 0 = allowed (worker Nam not in 7d window, no contract, no rate card)
     expect(result.blockCode).toBe(0);

@@ -247,7 +247,7 @@ describe('TicketService â€” CREATE', () => {
     const { withIdempotency } = await import('@/src/shared/integrity/idempotency');
     const wrap = (key: string) =>
       withIdempotency({
-        prisma,
+        prisma: prisma as any,
         route: 'POST:/api/tickets',
         actorId: actor.id,
         key,

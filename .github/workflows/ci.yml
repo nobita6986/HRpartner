@@ -1,0 +1,82 @@
+## G0-04 / RQ-02, RQ-07. Minimal, reproducible CI: schema validation, typecheck, lint,
+## unit tests, build — on every PR and push to main. Integration (DB) tests run in a
+## SEPARATE job that fails closed (ENV_BLOCKED) when no dedicated test-DB secret is present,
+## and never runs privileged on fork PRs.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege: read-only by default (RQ-07). No job needs write scopes.
+permissions:
+  contents: read
+
+# One in-flight run per ref; new pushes cancel the old run.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality (schema · typecheck · lint · unit · build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Dummy, non-secret URL so `prisma generate/validate` and `next build` can read the
+      # datasource env WITHOUT a real database. Prisma connects lazily (on first query), and
+      # none of these steps issues one — nothing ever dials localhost. The unit lane ignores
+      # this entirely: vitest.unit.config.ts FORCES an unreachable sentinel of its own.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_dummy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install (clean, from lockfile)
+        run: npm ci
+      - name: Prisma generate
+        run: npm run prisma:generate
+      - name: Prisma schema validate
+        run: npx prisma validate
+      - name: Typecheck (tsc --noEmit)
+        run: npm run typecheck
+      - name: Lint (eslint .)
+        run: npm run lint
+      - name: Unit tests (no DB — fail-closed sentinel)
+        run: npm run test:unit
+      - name: Build (next build)
+        run: npm run build
+# <<APPEND-INTEGRATION-JOB>>
+  integration:
+    name: Integration (DB tests · fail-closed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Never run on a FORK pull request: secrets are not exposed to forks (RQ-07), and we do
+    # not want a dedicated test-DB touched from untrusted PR code. Same-repo PRs, pushes to
+    # main, and manual dispatch still run — and fail closed (ENV_BLOCKED) if no secret is set.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install (clean, from lockfile)
+        run: npm ci
+      - name: Prisma generate
+        run: npm run prisma:generate
+      - name: Integration tests (dedicated test DB only; ENV_BLOCKED if absent)
+        # The preflight refuses dev/prod URLs, requires DATABASE_URL_TEST, and prints ENV_BLOCKED
+        # Local runs may report ENV_BLOCKED with exit 0, but CI is always strict: a missing
+        # dedicated test DB is a red blocked check, never a green/fake integration PASS.
+        env:
+          DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST }}
+          DATABASE_URL_ADMIN_TEST: ${{ secrets.DATABASE_URL_ADMIN_TEST }}
+          CI_INTEGRATION_STRICT: '1'
+        run: npm run test:integration

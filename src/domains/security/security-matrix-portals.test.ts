@@ -19,7 +19,7 @@ describe('P1 Portal security matrix — scope checks', () => {
       expect(inScope).toBe(true);
     });
     it('VENDOR without vendorId → no scope', () => {
-      const ctx = { role: 'VENDOR_ADMIN', userId: 'u1' };
+      const ctx: { role: string; userId: string; vendorId?: string } = { role: 'VENDOR_ADMIN', userId: 'u1' };
       const inScope = !!ctx.vendorId;
       expect(inScope).toBe(false);
     });
@@ -32,7 +32,7 @@ describe('P1 Portal security matrix — scope checks', () => {
       expect(inScope).toBe(true);
     });
     it('WORKER without workerId → no scope', () => {
-      const ctx = { role: 'WORKER', userId: 'u1' };
+      const ctx: { role: string; userId: string; workerId?: string } = { role: 'WORKER', userId: 'u1' };
       const inScope = !!ctx.workerId;
       expect(inScope).toBe(false);
     });
