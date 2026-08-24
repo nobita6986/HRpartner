@@ -1,27 +1,26 @@
-import { NextResponse } from 'next/server';
-import { getPrisma } from '@/src/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
+import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const prisma = getPrisma();
-  
-  const dbUrl = process.env.DATABASE_URL || '';
-  const maskedUrl = dbUrl.replace(/:[^:@]*@/, ':***@');
-  
-  const workerUser = await prisma.user.findFirst({ where: { phone: '0910000002' } });
-  
-  let worker = null;
-  if (workerUser) {
-    worker = await prisma.worker.findUnique({
-      where: { accountUserId: workerUser.id }
-    });
+export async function GET(req: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
   }
-  
-  return NextResponse.json({
-    env: process.env.NODE_ENV,
-    dbUrl: maskedUrl,
-    workerUser,
-    worker,
-  });
+
+  let ctx;
+  try {
+    ctx = await getAuthContext(req);
+  } catch (error) {
+    if (error instanceof AuthSessionError) {
+      return NextResponse.json({ error: error.code }, { status: 401 });
+    }
+    return NextResponse.json({ error: 'INTERNAL' }, { status: 500 });
+  }
+
+  if (ctx.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
+
+  return NextResponse.json({ status: 'ok' });
 }
