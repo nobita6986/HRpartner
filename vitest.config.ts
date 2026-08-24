@@ -15,7 +15,13 @@ export default defineConfig({
     // Prisma falls back to whatever is in the shell, often the admin user
     // (neondb_owner) which has BYPASSRLS — making L2 tests useless.
     env: {
-      DATABASE_URL: (() => {
+      // Prefer a DATABASE_URL already present in the environment (e.g. a LIVE
+      // runner pointing at a SAFE, provisioned test DB). Only fall back to repo
+      // .env's DATABASE_URL (app_user_writer, RLS-enforcing) when nothing was
+      // passed, so ordinary test runs behave exactly as before. This stops a
+      // deliberately-passed test URL from being silently overridden with the
+      // repo .env (prod) URL — which would otherwise point LIVE tests at prod.
+      DATABASE_URL: process.env.DATABASE_URL ?? (() => {
         // Read .env DATABASE_URL at config-load time so RLS-enforcing user is used.
         try {
           const fs = require('node:fs');

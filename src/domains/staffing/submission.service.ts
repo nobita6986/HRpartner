@@ -9,6 +9,11 @@
 import type { Prisma } from '@prisma/client';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
 import { PrismaClient } from '@prisma/client';
+import {
+  submitPublicApplication,
+  ApplicationServiceError,
+} from '@/src/domains/applications/application.service';
+import { normalizePhone, sha256Hex } from '@/src/domains/applications/apply-helpers';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -131,52 +136,49 @@ export async function listPublicJobs(
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Public apply (no auth — worker applies from public job board)
+//
+// MP-2 (DEC-01/EV-03/EV-08): this legacy entry point MUST NOT create a
+// Worker/SourceClaim for an anonymous applicant, and MUST NOT write directly
+// under FORCE RLS. It is a thin compatibility wrapper that delegates to the
+// canonical SECURITY DEFINER boundary (`submitPublicApplication` →
+// `hrp_public_apply_submission`). A deterministic idempotency key derived from
+// the payload makes a repeated identical legacy POST replay instead of
+// duplicating. New clients should call `POST /api/public/jobs/:slug/applications`.
 // ═══════════════════════════════════════════════════════════════════════════
 
 export async function applyForJob(
   tx: Prisma.TransactionClient,
-  ctx: AuthContext,
+  _ctx: AuthContext,
   input: ApplyForJobInput,
-): Promise<{ submissionId: string; sourceClaimId: string }> {
+): Promise<{ trackingCode: string; status: string }> {
   if (!input.projectId || !input.fullName || !input.phone) {
     throw new SubmissionServiceError('VALIDATION', 'Thieu required fields: projectId, fullName, phone');
   }
 
-  // Verify project is public
-  const project = await tx.project.findUnique({ where: { id: input.projectId } });
-  if (!project || !project.isPublic) {
-    throw new SubmissionServiceError('PROJECT_NOT_PUBLIC', 'Job not found or not public');
-  }
+  const normalizedPhone = normalizePhone(input.phone);
+  const legacyKey =
+    'legacy:' + sha256Hex([input.projectId, input.fullName.trim(), normalizedPhone].join('|'));
 
-  // Create CandidateSubmission
-  const submission = await tx.candidateSubmission.create({
-    data: {
-      projectId: input.projectId,
+  try {
+    return await submitPublicApplication(tx, {
+      slug: input.projectId, // definer resolves project by code OR id
       fullName: input.fullName,
       phone: input.phone,
       cccdNumber: input.cccdNumber ?? null,
       dateOfBirth: input.dateOfBirth ?? null,
       gender: input.gender ?? null,
       experience: input.experience ?? null,
-      status: 'NEW',
-    },
-  });
-
-  // Claim type: MVP always HRP_DIRECT (vendor chain added Phase 5+)
-  // DEC-10: SourceClaim accepted unique 1/worker (partial unique index da co)
-  const claimType = 'HRP_DIRECT';
-  const claim = await tx.sourceClaim.create({
-    data: {
-      workerId: ctx.workerId ?? ctx.userId,
-      claimType,
-      vendorId: null,
-      submissionId: submission.id,
-      registrationChannel: 'SELF_REGISTER',
-      accepted: false,
-    },
-  });
-
-  return { submissionId: submission.id, sourceClaimId: claim.id };
+      consentAt: new Date(),
+      idempotencyKey: legacyKey,
+    });
+  } catch (e) {
+    // Preserve the legacy SubmissionServiceError surface for the not-public case;
+    // let the richer ApplicationServiceError (409/422/…) propagate to the route.
+    if (e instanceof ApplicationServiceError && e.code === 'JOB_NOT_AVAILABLE') {
+      throw new SubmissionServiceError('PROJECT_NOT_PUBLIC', 'Job not found, not public, or has no open slot');
+    }
+    throw e;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

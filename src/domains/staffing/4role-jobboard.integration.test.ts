@@ -105,6 +105,9 @@ function makeMockTx(store: ReturnType<typeof makeStore>) {
     worker: {
       findUnique: vi.fn(async (args: any) => store.table('workers').get(args.where?.id) ?? null),
     },
+    // MP-2 (DEC-01/DEC-08): anonymous apply delegates to the SECURITY DEFINER
+    // function via $queryRawUnsafe. Default: one NEW row.
+    $queryRawUnsafe: vi.fn(async (..._args: unknown[]) => [{ tracking_code: 'APP-TEST-CODE', status: 'NEW' }]),
     $transaction: vi.fn(async function(_fn: (tx: any) => Promise<unknown>) {
       // Sequential awaits — no $transaction wrapper
     }),
@@ -138,10 +141,11 @@ describe('4-role — Job Board (slice 4D)', () => {
   // ── RQ-16/RQ-17: Apply + SourceClaim unique ─────────────────────────────
 
   describe('WORKER — public apply', () => {
-    it('WORKER applyForJob tao submission + sourceClaim', async () => {
+    it('applyForJob delegates to the definer boundary — NO Worker/SourceClaim created', async () => {
       const store = makeStore();
       seed(store);
       const tx = makeMockTx(store);
+      tx.$queryRawUnsafe.mockResolvedValueOnce([{ tracking_code: 'APP-WXYZ-1234', status: 'NEW' }]);
 
       const result = await applyForJob(tx as any, WORKER, {
         projectId: 'p-1',
@@ -150,16 +154,17 @@ describe('4-role — Job Board (slice 4D)', () => {
         cccdNumber: '123456789012',
       });
 
-      expect(result.submissionId).toBeTruthy();
-      expect(result.sourceClaimId).toBeTruthy();
+      expect(result).toEqual({ trackingCode: 'APP-WXYZ-1234', status: 'NEW' });
 
-      const sub = store.table('candidate_submissions').get(result.submissionId) as any;
-      expect(sub.fullName).toBe('Tran Van C');
-      expect(sub.status).toBe('NEW');
+      // Delegated through the SECURITY DEFINER apply function.
+      expect(tx.$queryRawUnsafe).toHaveBeenCalledTimes(1);
+      expect(tx.$queryRawUnsafe.mock.calls[0][0]).toContain('hrp_public_apply_submission');
 
-      const claim = store.table('source_claims').get(result.sourceClaimId) as any;
-      expect(claim.claimType).toBe('HRP_DIRECT');
-      expect(claim.accepted).toBe(false);
+      // DEC-01/EV-08: anonymous apply must NEVER create a Worker or SourceClaim.
+      expect(tx.sourceClaim.create).not.toHaveBeenCalled();
+      expect(tx.candidateSubmission.create).not.toHaveBeenCalled();
+      expect(store.table('source_claims').size).toBe(0);
+      expect(store.table('candidate_submissions').size).toBe(0);
     });
 
     it('WORKER bi FORBIDDEN khi listSubmissions', async () => {

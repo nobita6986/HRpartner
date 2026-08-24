@@ -400,6 +400,7 @@ model StaffingOrderSlot {
   createdAt      DateTime @default(now()) @map("created_at")
 
   staffingOrder StaffingOrder @relation(fields: [staffingOrderId], references: [id], onDelete: Cascade)
+  submissions   CandidateSubmission[] // MP-2 RQ-01: applications linked to this slot
 
   @@index([staffingOrderId, validFrom])
   @@map("staffing_order_slots")
@@ -465,18 +466,51 @@ model CandidateSubmission {
   overrideCase   String?  @map("override_case") // V4.4 G12: S1 | S2 | S3 (SOP override §9.3.1)
   reviewedBy    String?  @map("reviewed_by")
   reviewNote    String?  @map("review_note")
+  // ── MP-2 Apply + Tracking (additive, nullable/backfill-safe) ──────────────
+  slotId                 String?   @map("slot_id")                  // MP-2 RQ-01: linked StaffingOrderSlot
+  publicTrackingCode     String?   @unique @map("public_tracking_code") // MP-2 RQ-01/4.3: high-entropy public code
+  normalizedPhone        String?   @map("normalized_phone")         // MP-2 DEC-04: duplicate-guard key
+  idempotencyKeyHash     String?   @unique @map("idempotency_key_hash")     // MP-2 DEC-03: sha256(client key)
+  idempotencyPayloadHash String?   @map("idempotency_payload_hash") // MP-2 DEC-03: sha256(canonical payload)
+  consentAt              DateTime? @map("consent_at")               // MP-2 RQ-02: applicant consent timestamp
+  cvStorageKey           String?   @map("cv_storage_key")           // MP-2 DEC-07: optional CV storage key (adapter deferred)
+  cvFileName             String?   @map("cv_file_name")             // MP-2 DEC-07: CV metadata only
+  cvMimeType             String?   @map("cv_mime_type")             // MP-2 DEC-07: PDF/JPEG/PNG allow-list
+  cvSizeBytes            Int?      @map("cv_size_bytes")            // MP-2 DEC-07: max 5 MiB
   createdAt     DateTime @default(now()) @map("created_at")
 
   vendor        Vendor?  @relation(fields: [vendorId], references: [id])
   ctv           User?    @relation(fields: [ctvId], references: [id])
   project       Project? @relation(fields: [projectId], references: [id])
   mergedWorker  Worker?  @relation(fields: [mergedWorkerId], references: [id])
+  slot          StaffingOrderSlot? @relation(fields: [slotId], references: [id]) // MP-2 RQ-01
   sourceClaims  SourceClaim[]
+  statusHistory ApplicationStatusHistory[] // MP-2 RQ-01/RQ-06
 
   @@index([vendorId, phone]) // V4.5 G13: bỏ unique để nộp LẠI cùng người cho nhu cầu khác — chống trùng bằng Referral Guard
   @@index([cccdNumber]) // V4.3 G11: Referral Guard tra cứu nhanh theo CCCD
   @@index([status])
+  @@index([slotId, normalizedPhone]) // MP-2 DEC-04: duplicate-guard lookup (partial-unique backstop lives in migration SQL)
   @@map("candidate_submissions")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 4b. APPLICATION STATUS HISTORY — MP-2 (RQ-01/RQ-06, DEC-05). Append-only.
+// ═══════════════════════════════════════════════════════════════════════════
+
+model ApplicationStatusHistory {
+  id           String   @id @default(uuid())
+  submissionId String   @map("submission_id")
+  fromStatus   String?  @map("from_status")
+  toStatus     String   @map("to_status")
+  actorUserId  String?  @map("actor_user_id") // NULL for anonymous public apply
+  reason       String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  submission CandidateSubmission @relation(fields: [submissionId], references: [id])
+
+  @@index([submissionId, createdAt])
+  @@map("application_status_history")
 }
 
 model SourceClaim {

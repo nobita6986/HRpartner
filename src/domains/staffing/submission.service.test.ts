@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import {
   listPublicJobs,
   applyForJob,
@@ -114,6 +114,9 @@ function makeMockTx(store: ReturnType<typeof makeStore>) {
     worker: {
       findUnique: vi.fn(async (args: any) => store.table('workers').get(args.where?.id) ?? null),
     },
+    // MP-2 (DEC-01/DEC-08): the anonymous apply path delegates to the
+    // SECURITY DEFINER function via $queryRawUnsafe. Default: one NEW row.
+    $queryRawUnsafe: vi.fn(async (..._args: unknown[]) => [{ tracking_code: 'APP-TEST-CODE', status: 'NEW' }]),
     $transaction: vi.fn(async function(_fn: (tx: any) => Promise<unknown>) {
       // Sequential awaits - no $transaction wrapper needed
     }),
@@ -180,13 +183,18 @@ describe('submission.service — Job Board (4D)', () => {
     });
   });
 
-  // ── applyForJob ──────────────────────────────────────────────────────────
+  // ── applyForJob (MP-2 DEC-01: legacy wrapper → definer boundary) ──────────
+  //
+  // The legacy entry point MUST NOT create a Worker/SourceClaim. It delegates to
+  // the SECURITY DEFINER apply function (mocked here via $queryRawUnsafe) and
+  // returns the stored tracking result.
 
   describe('applyForJob', () => {
-    it('tao submission + sourceClaim cho project public (HRP_DIRECT)', async () => {
+    it('delegates to the definer apply function and returns { trackingCode, status }', async () => {
       const store = makeStore();
       seed(store);
       const tx = makeMockTx(store);
+      tx.$queryRawUnsafe.mockResolvedValueOnce([{ tracking_code: 'APP-ABCD-EFGH', status: 'NEW' }]);
       const ctx = workerCtx();
 
       const result = await applyForJob(tx as any, ctx, {
@@ -196,42 +204,21 @@ describe('submission.service — Job Board (4D)', () => {
         cccdNumber: '123456789012',
       });
 
-      expect(result.submissionId).toBeTruthy();
-      expect(result.sourceClaimId).toBeTruthy();
+      expect(result).toEqual({ trackingCode: 'APP-ABCD-EFGH', status: 'NEW' });
 
-      // Verify submission created
-      const submissions = store.table('candidate_submissions');
-      expect(submissions.size).toBeGreaterThan(0);
-      const sub = Array.from(submissions.values())[0] as any;
-      expect(sub.fullName).toBe('Tran Van B');
-      expect(sub.projectId).toBe('p-1');
+      // Delegation happened through the definer boundary.
+      expect(tx.$queryRawUnsafe).toHaveBeenCalledTimes(1);
+      const [sql] = tx.$queryRawUnsafe.mock.calls[0];
+      expect(sql).toContain('hrp_public_apply_submission');
 
-      // Verify sourceClaim created
-      const claims = store.table('source_claims');
-      expect(claims.size).toBeGreaterThan(0);
-      const claim = Array.from(claims.values())[0] as any;
-      expect(claim.claimType).toBe('HRP_DIRECT');
-      expect(claim.accepted).toBe(false);
+      // DEC-01/EV-08: anonymous apply must NEVER create a Worker or SourceClaim.
+      expect(tx.sourceClaim.create).not.toHaveBeenCalled();
+      expect(tx.candidateSubmission.create).not.toHaveBeenCalled();
+      expect(store.table('source_claims').size).toBe(0);
+      expect(store.table('candidate_submissions').size).toBe(0);
     });
 
-    it('tao submission cho project (MVP claimType = HRP_DIRECT)', async () => {
-      const store = makeStore();
-      seed(store);
-      const tx = makeMockTx(store);
-      const ctx = workerCtx();
-
-      await applyForJob(tx as any, ctx, {
-        projectId: 'p-2',
-        fullName: 'Le Thi C',
-        phone: '0909987654',
-      });
-
-      const claims = store.table('source_claims');
-      const claim = Array.from(claims.values())[0] as any;
-      expect(claim.claimType).toBe('HRP_DIRECT');
-    });
-
-    it('throw VALIDATION khi thieu required fields', async () => {
+    it('throw VALIDATION khi thieu required fields (khong cham DB)', async () => {
       const store = makeStore();
       seed(store);
       const tx = makeMockTx(store);
@@ -248,19 +235,29 @@ describe('submission.service — Job Board (4D)', () => {
         fullName: 'Tran Van B',
         phone: '',
       })).rejects.toThrow(SubmissionServiceError);
+
+      expect(tx.$queryRawUnsafe).not.toHaveBeenCalled();
     });
 
-    it('throw PROJECT_NOT_PUBLIC khi project khong ton tai', async () => {
+    it('throw PROJECT_NOT_PUBLIC khi definer raise JOB_NOT_AVAILABLE (P0011)', async () => {
       const store = makeStore();
       seed(store);
       const tx = makeMockTx(store);
       const ctx = workerCtx();
 
+      tx.$queryRawUnsafe.mockRejectedValueOnce(
+        new Prisma.PrismaClientKnownRequestError('raw failed', {
+          code: 'P2010',
+          clientVersion: 'test',
+          meta: { code: 'P0011' },
+        }),
+      );
+
       await expect(applyForJob(tx as any, ctx, {
         projectId: 'p-nonexistent',
         fullName: 'Tran Van B',
         phone: '0909123456',
-      })).rejects.toThrow(SubmissionServiceError);
+      })).rejects.toMatchObject({ code: 'PROJECT_NOT_PUBLIC' });
     });
   });
 

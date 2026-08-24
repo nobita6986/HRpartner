@@ -2,24 +2,29 @@
 
 import { useState, useEffect } from 'react';
 
+// Aligned with the real public projection (PublicJobDto): the apply endpoint is
+// keyed by `slug` (= project.code), not by a raw project id.
 interface Job {
   id: string;
+  slug: string;
   title: string;
+  position?: string;
   description?: string;
-  isPublic: boolean;
+  isPublic?: boolean;
   availableSlots: number;
   projectCode?: string;
-  location?: string;
+  location?: string | null;
+  shift?: string | null;
   shifts?: ReadonlyArray<{ code: string; hours: string }>;
   totalNeeded?: number;
   totalFilled?: number;
   badge?: 'TUYEN_GAP' | 'DA_NHAN_DU' | 'DANG_TUYEN';
 }
 
+// MP-2 DEC-01/DEC-02: the canonical apply returns ONLY a safe tracking code +
+// status. No submissionId / sourceClaimId / PII is exposed to the applicant.
 interface ApplyResult {
-  submissionId: string;
-  submissionCode: string;
-  sourceClaimId: string;
+  trackingCode: string;
   status: string;
 }
 
@@ -93,35 +98,92 @@ function JobCard({ job, onApply }: JobCardProps) {
 
 interface ApplyFormProps { job: Job | null; onClose: () => void; onSuccess: (result: ApplyResult) => void; }
 
+// DEC-07: CV is METADATA ONLY in MP-2 (file name / MIME / size). The bytes are
+// never read or uploaded. MIME allow-list PDF/JPEG/PNG, max 5 MiB.
+const CV_MIME_ALLOW = ['application/pdf', 'image/jpeg', 'image/png'];
+const CV_MAX_BYTES = 5 * 1024 * 1024;
+
+// Friendly copy for the server error codes the canonical apply can return.
+const APPLY_ERRORS: Record<string, string> = {
+  DUPLICATE_APPLICATION: 'Bạn đã ứng tuyển vị trí này rồi. Hãy dùng mã đơn để tra cứu trạng thái.',
+  JOB_NOT_AVAILABLE: 'Vị trí này hiện không còn nhận hồ sơ.',
+  PROJECT_NOT_PUBLIC: 'Vị trí này hiện không còn nhận hồ sơ.',
+  CONSENT_REQUIRED: 'Vui lòng đồng ý cho phép xử lý thông tin.',
+  IDEMPOTENCY_PAYLOAD_MISMATCH: 'Thông tin đã thay đổi so với lần gửi trước, vui lòng gửi lại.',
+  IDEMPOTENCY_KEY_REQUIRED: 'Không thể gửi đơn, vui lòng tải lại trang.',
+  VALIDATION: 'Vui lòng kiểm tra lại thông tin đã nhập.',
+};
+
 function ApplyForm({ job, onClose, onSuccess }: ApplyFormProps) {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [cccdNumber, setCccdNumber] = useState('');
+  const [consent, setConsent] = useState(false);
+  const [cv, setCv] = useState<{ fileName: string; mimeType: string; sizeBytes: number } | null>(null);
+  const [cvError, setCvError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // DEC-03/04: one idempotency key per attempt. Regenerated whenever the payload
+  // changes, so an identical retry replays server-side (no double-insert) while
+  // an edited resubmission is treated as a new application.
+  const [idemKey, setIdemKey] = useState(() => crypto.randomUUID());
+  useEffect(() => {
+    setIdemKey(crypto.randomUUID());
+  }, [fullName, phone, cccdNumber, consent, cv?.fileName, cv?.sizeBytes]);
 
+  function handleCvPick(e: React.ChangeEvent<HTMLInputElement>) {
+    setCvError('');
+    const file = e.target.files?.[0];
+    if (!file) { setCv(null); return; }
+    if (!CV_MIME_ALLOW.includes(file.type)) { setCv(null); setCvError('Chỉ chấp nhận tệp PDF, JPEG hoặc PNG.'); return; }
+    if (file.size > CV_MAX_BYTES) { setCv(null); setCvError('Tệp vượt quá 5 MB.'); return; }
+    // Metadata only — do NOT read the file bytes (DEC-07).
+    setCv({ fileName: file.name, mimeType: file.type, sizeBytes: file.size });
+  }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!fullName.trim() || !phone.trim()) { setError('Vui long dien day du thong tin'); return; }
+    if (!fullName.trim() || !phone.trim()) { setError('Vui lòng điền họ tên và số điện thoại.'); return; }
+    if (!consent) { setError('Vui lòng đồng ý cho phép xử lý thông tin trước khi gửi.'); return; }
+    if (cvError) { setError(cvError); return; }
+    if (!job) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/jobs/apply', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ projectId: job?.id, fullName, phone, cccdNumber }) });
-      const data = await res.json();
-      if (!res.ok) { throw new Error(data.error || 'Co loi xay ra'); }
-      onSuccess(data.submission);
-    } catch (err) { setError(err instanceof Error ? err.message : 'Co loi xay ra'); }
-    finally { setLoading(false); }
+      // Canonical apply (DEC-01): slug-keyed public endpoint → SECURITY DEFINER
+      // boundary. Idempotency key travels in the header; consent as a flag.
+      const res = await fetch(`/api/public/jobs/${encodeURIComponent(job.slug)}/applications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'idempotency-key': idemKey },
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          phone: phone.trim(),
+          cccdNumber: cccdNumber.trim() || null,
+          consent: true,
+          cv,
+        }),
+      });
+      const data = await res.json().catch(() => ({} as Record<string, unknown>));
+      if (!res.ok) {
+        const code = typeof data?.error === 'string' ? data.error : '';
+        throw new Error(APPLY_ERRORS[code] ?? (typeof data?.message === 'string' ? data.message : 'Có lỗi xảy ra, vui lòng thử lại.'));
+      }
+      // Report success ONLY after the server confirms (201 + tracking code).
+      onSuccess({ trackingCode: String(data.trackingCode ?? ''), status: String(data.status ?? 'NEW') });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra, vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!job) return null;
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center p-4' style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className='w-full max-w-md rounded-xl p-6' style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--outline)' }}>
+      <div className='w-full max-w-md rounded-xl p-6' style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--outline)', maxHeight: '90vh', overflowY: 'auto' }}>
         <div className='flex items-center justify-between mb-6'>
-          <h3 className='text-lg font-semibold' style={{ color: 'var(--on-surface)' }}>Ung tuyen: {job.title}</h3>
-          <button onClick={onClose} className='p-1 rounded hover:bg-black/10'>
+          <h3 className='text-lg font-semibold' style={{ color: 'var(--on-surface)' }}>Ứng tuyển: {job.title}</h3>
+          <button onClick={onClose} aria-label='Đóng' className='p-1 rounded hover:bg-black/10'>
             <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
               <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
             </svg>
@@ -129,20 +191,30 @@ function ApplyForm({ job, onClose, onSuccess }: ApplyFormProps) {
         </div>
         <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
           <div>
-            <label className='block text-sm font-medium mb-1' style={{ color: 'var(--on-surface)' }}>Ho va ten *</label>
-            <input type='text' value={fullName} onChange={(e) => setFullName(e.target.value)} className='w-full px-3 py-2 rounded-lg border' style={{ borderColor: 'var(--outline)', backgroundColor: 'var(--surface)' }} placeholder='Nguyen Van A' required />
+            <label className='block text-sm font-medium mb-1' style={{ color: 'var(--on-surface)' }}>Họ và tên *</label>
+            <input type='text' value={fullName} onChange={(e) => setFullName(e.target.value)} className='w-full px-3 py-2 rounded-lg border' style={{ borderColor: 'var(--outline)', backgroundColor: 'var(--surface)' }} placeholder='Nguyễn Văn A' required />
           </div>
           <div>
-            <label className='block text-sm font-medium mb-1' style={{ color: 'var(--on-surface)' }}>So dien thoai *</label>
+            <label className='block text-sm font-medium mb-1' style={{ color: 'var(--on-surface)' }}>Số điện thoại *</label>
             <input type='tel' value={phone} onChange={(e) => setPhone(e.target.value)} className='w-full px-3 py-2 rounded-lg border' style={{ borderColor: 'var(--outline)', backgroundColor: 'var(--surface)' }} placeholder='0912345678' required />
           </div>
           <div>
-            <label className='block text-sm font-medium mb-1' style={{ color: 'var(--on-surface)' }}>So CCCD (optional)</label>
+            <label className='block text-sm font-medium mb-1' style={{ color: 'var(--on-surface)' }}>Số CCCD (không bắt buộc)</label>
             <input type='text' value={cccdNumber} onChange={(e) => setCccdNumber(e.target.value)} className='w-full px-3 py-2 rounded-lg border' style={{ borderColor: 'var(--outline)', backgroundColor: 'var(--surface)' }} placeholder='123456789012' />
           </div>
-          {error && <p className='text-sm' style={{ color: 'var(--error, #dc2626)' }}>{error}</p>}
+          <div>
+            <label className='block text-sm font-medium mb-1' style={{ color: 'var(--on-surface)' }}>CV (PDF/JPEG/PNG, ≤ 5 MB — không bắt buộc)</label>
+            <input type='file' accept='.pdf,image/jpeg,image/png' onChange={handleCvPick} className='w-full text-sm' />
+            {cv && <p className='text-xs mt-1' style={{ color: 'var(--on-surface-variant)' }}>{cv.fileName} ({Math.ceil(cv.sizeBytes / 1024)} KB)</p>}
+            {cvError && <p className='text-xs mt-1' style={{ color: 'var(--error, #dc2626)' }}>{cvError}</p>}
+          </div>
+          <label className='flex items-start gap-2 text-sm' style={{ color: 'var(--on-surface-variant)' }}>
+            <input type='checkbox' checked={consent} onChange={(e) => setConsent(e.target.checked)} className='mt-1' />
+            <span>Tôi đồng ý cho phép thu thập và xử lý thông tin cá nhân phục vụ mục đích tuyển dụng.</span>
+          </label>
+          {error && <p className='text-sm' role='alert' style={{ color: 'var(--error, #dc2626)' }}>{error}</p>}
           <button type='submit' disabled={loading} className='py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50' style={{ backgroundColor: 'var(--primary)', color: 'var(--on-primary, white)' }}>
-            {loading ? 'Dang gui...' : 'Gui don ung tuyen'}
+            {loading ? 'Đang gửi...' : 'Gửi đơn ứng tuyển'}
           </button>
         </form>
       </div>
@@ -200,10 +272,14 @@ export default function JobsPage() {
                 <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 13l4 4L19 7' />
               </svg>
             </div>
-            <h3 className='text-xl font-semibold mb-2' style={{ color: 'var(--on-surface)' }}>Don ung tuyen da duoc gui!</h3>
-            <p className='mb-4' style={{ color: 'var(--on-surface-variant)' }}>Ma don: <span className='font-mono font-semibold'>{successResult.submissionCode}</span></p>
-            <p className='text-sm mb-6' style={{ color: 'var(--on-surface-variant)' }}>Chung toi se lien he voi ban trong thoi gian som nhat.</p>
-            <button onClick={() => setSuccessResult(null)} className='py-2 px-6 rounded-lg font-medium' style={{ backgroundColor: 'var(--primary)', color: 'var(--on-primary, white)' }}>Dong</button>
+            <h3 className='text-xl font-semibold mb-2' style={{ color: 'var(--on-surface)' }}>Đã gửi đơn ứng tuyển!</h3>
+            <p className='mb-1' style={{ color: 'var(--on-surface-variant)' }}>Mã tra cứu của bạn:</p>
+            <p className='mb-4 text-lg font-mono font-semibold select-all' style={{ color: 'var(--on-surface)' }}>{successResult.trackingCode}</p>
+            <p className='text-sm mb-6' style={{ color: 'var(--on-surface-variant)' }}>Vui lòng lưu lại mã này để tra cứu trạng thái hồ sơ. Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.</p>
+            <div className='flex gap-2 justify-center'>
+              <a href='/track' className='py-2 px-6 rounded-lg font-medium' style={{ backgroundColor: 'var(--primary)', color: 'var(--on-primary, white)' }}>Tra cứu trạng thái</a>
+              <button onClick={() => setSuccessResult(null)} className='py-2 px-6 rounded-lg font-medium border' style={{ borderColor: 'var(--outline)', color: 'var(--on-surface)' }}>Đóng</button>
+            </div>
           </div>
         </div>
       )}

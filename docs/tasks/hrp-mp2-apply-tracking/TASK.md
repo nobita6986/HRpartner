@@ -7,18 +7,18 @@
 | Task slug | `hrp-mp2-apply-tracking` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 doc) | `CODE_AUDIT` |
-| Spec version | `v1.1` |
-| Status | `READY_FOR_EXECUTION` |
+| Spec version | `v1.2` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1` |
 | Executor | `Tier 2` |
 | Auditor | `Tier 3 independent context` |
 | Baseline | `5d75011` (docs-only delta từ `ead9869` MP-1 ACCEPTED — 45880b0/76fcaef/5d75011 chỉ đổi docs; code baseline không đổi. Đóng DEV-01 round 1) |
 | Modules | `Marketplace MP-2`, `M3 CRM/Staffing` |
 | ADR references | `UNIFIED_PLAN_v5.md 7.9.3-7.9.7`; `V5_3_TIER_EXECUTION_GUIDE.md 3.1, 7.3` |
-| Current execution round | `2` |
-| Current audit round | `0` |
-| Next gate | `/code hrp-mp2-apply-tracking` (round 2 — sau khi sếp chạy OP-01 tạo role trên dev) |
-| Updated | `2026-08-22 09:20 +07:00` |
+| Current execution round | `3` |
+| Current audit round | `2` |
+| Next gate | MP-2 đóng; Tier 1 lập contract MP-3 sau khi bảo đảm gate G0-04/G0-05 theo V5.3. |
+| Updated | `2026-08-24 11:15 +07:00` |
 
 ## 1. Outcome
 
@@ -181,6 +181,10 @@ An applicant can open an MP-1 public job, submit an application once, receive a 
 | Exec round 1 HANDOFF | `BLK-01` | Adopt Option A: public apply/tracking via `hrp_public_rpc`-owned `SECURITY DEFINER` RPC (DEC-08) + OP-01 role provisioning (DEC-09). RLS unchanged; no bypass by app roles; no `ADMIN` impersonation on the public path. | EV-07/08/09: FORCE RLS leaves no anonymous-write principal; a NOLOGIN BYPASSRLS-owned definer function is the minimal audited boundary and matches the M13 SECURITY DEFINER precedent. Sếp approved Option A. | Added DEC-08/09, EV-07..10, RQ-09; amended STEP-01/02/03; added OP-01/STEP-07; amended AC-02/04; added AC-09; added RISK-06/07. Spec → v1.1. | Tier 1 closes; sếp owns OP-01 provisioning; Tier 2 executes round 2 after dev role exists. |
 | Exec round 1 HANDOFF | `DEV-01` | Accept baseline realignment. | 45880b0/76fcaef/5d75011 are docs-only vs `ead9869`; code baseline unchanged. | §0 Baseline → `5d75011` (docs-only delta note). | Closed. |
 | Exec round 1 HANDOFF | `LIM-01` | Full-repo `tsc --noEmit` is NOT an MP-2 gate; use targeted `vitest` + `prisma validate` + scoped build. | Pre-existing errors in attendance/reconciliation/security/staffing/`mp1.contract.test.ts`, none in MP-2 files. | Added EV-10; STEP-06 verify wording. | Accepted baseline diagnostic; Tier 2 shows no NEW MP-2 type errors. |
+| Audit round 1 | `AUD-001` | `ACCEPT` ngoại lệ C-05; không yêu cầu bọc thêm `withIdempotency` hoặc `enqueueOutbox` trong MP-2. | Apply idempotency/duplicate/concurrency boundary nằm trong một transaction của `hrp_public_apply_submission` theo DEC-03/DEC-08; thêm wrapper ứng dụng sẽ tạo hai nguồn điều phối. Status PATCH bị state machine giới hạn và outbox không thuộc contract MP-2. Audit validator PASS, finding P3 duy nhất. | Không đổi RQ/AC hay source; ghi nhận SQL RPC là implementation canonical cho AC-03. | Finding đóng bởi Tier 1. |
+| Audit round 1 | `ENV_BLOCKED` / AC-01..05, AC-09 | `REVISION_REQUIRED`: chưa ACCEPTED cho đến khi có evidence LIVE bắt buộc, đặc biệt AC-09. | Audit verdict `CONDITIONAL`; AC-09 yêu cầu rõ `pg_roles`/`pg_proc`, grant listing và negative direct-INSERT nhưng 4 LIVE tests bị skip. Role `BYPASSRLS` là boundary P0/P1 không thể chấp nhận chỉ bằng STATIC assertions. AC-01/02/03/04/05 cũng còn row/concurrency/scope assertions bị ENV_BLOCKED. | Spec v1.2 chỉ mở round 3 evidence-only: apply migration trên DB test/dev an toàn đã provision `hrp_public_rpc`; chạy `MP2_LIVE_SECURITY_CHECK=1` và DB integration/concurrency/role-scope checks; ghi output vào HANDOFF. Không sửa kiến trúc/source trừ khi LIVE test phát hiện lỗi, khi đó dừng và báo blocker. | Sếp/OP cung cấp DB an toàn + apply/provision; Tier 2 chạy evidence; Tier 3 re-audit các AC PARTIAL và AUD-001 closure. |
+| Audit round 2 / Exec round 3 | `AUD-002` + AC-01..09 | `ACCEPTED`: đóng MP-2. | `verify-audit.ps1` PASS; Tier 3 verdict PASS; HANDOFF round 3 `READY_FOR_AUDIT`; 23/23 tests xanh gồm 15 LIVE tests trên Neon branch test riêng; direct INSERT dưới WORKER bị RLS từ chối, RPC role/function owner/grants đúng, idempotency race n=5 không tạo duplicate; 9/9 AC PASS. AUD-001 và AUD-002 đều CLOSED. | Không đổi RQ/AC/source contract. Status → `ACCEPTED`; current audit round → 2. | Tier 1 đóng task. MP-3 chỉ mở theo gate V5.3. |
+| Audit round 2 | `OBS-01` | `DEFER` đúng owner: chuyển Phase-5 STEP-02, không block MP-2. | Audit chỉ chứng minh đầy đủ trên DB test an toàn; RLS posture production chưa được kiểm chứng/apply. Production cutover là OP ngoài scope MP-2 và không được suy diễn từ test DB. | Không đổi MP-2. Phase-5 phải provision/apply/verify RLS production trước cutover, có rollback và evidence riêng. | OP / Phase-5 STEP-02. |
 
 ## 10. Revision Log
 
@@ -188,3 +192,5 @@ An applicant can open an MP-1 public job, submit an application once, receive a 
 |---|---|---|---|
 | `v1.0` | `2026-08-21` | Mở MP-2 theo Marketplace-first roadmap sau MP-1 ACCEPTED. | Apply funnel, tracking, queue; giữ boundary MP-3. |
 | `v1.1` | `2026-08-22` | Resolve round-1 `BLK-01`: chọn ranh giới public-write = `SECURITY DEFINER` RPC do role `hrp_public_rpc` (NOLOGIN BYPASSRLS) sở hữu; thêm DEC-08/09, EV-07..10, RQ-09, OP-01/STEP-07, AC-09, RISK-06/07; RLS giữ nguyên, không bypass bởi app role, không impersonate `ADMIN`. Đóng DEV-01/LIM-01. | Tier 2 HANDOFF round 1 BLOCKED (BLK-01/DEV-01/LIM-01); sếp duyệt Option A. |
+| `v1.2` | `2026-08-23` | Resolve audit round 1: chấp nhận AUD-001 (SQL RPC là idempotency boundary canonical); chuyển `REVISION_REQUIRED` và mở execution round 3 chỉ để thu evidence LIVE cho các AC đang PARTIAL, bắt buộc AC-09. | Tier 3 verdict CONDITIONAL; `verify-audit.ps1` PASS nhưng live DB assertions bị ENV_BLOCKED. |
+| `v1.2` | `2026-08-24` | Resolve audit round 2: 9/9 AC PASS, AUD-001/AUD-002 CLOSED, task `ACCEPTED`; OBS-01 defer sang Phase-5 STEP-02. | HANDOFF exec round 3 READY_FOR_AUDIT; AUDIT round 2 PASS; validator PASS; 23/23 tests gồm 15 LIVE. |
