@@ -4,6 +4,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { resolveEffectivePermissions } from '@/src/shared/auth/permission-resolver';
+import { projectWorker } from '@/src/shared/auth/worker-projection';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -43,6 +45,8 @@ export async function PUT(
   const { fullName, phone, cccdNumber, dateOfBirth, gender } = body;
 
   try {
+    const permissions = await resolveEffectivePermissions({ userId: ctx.userId, role: ctx.role });
+    const hasSensitivePermission = permissions.has('CAN_VIEW_WORKER_SENSITIVE');
     const worker = await prisma.worker.update({
       where: { id },
       data: {
@@ -53,7 +57,7 @@ export async function PUT(
         ...(gender !== undefined && { gender }),
       },
     });
-    return NextResponse.json({ worker });
+    return NextResponse.json({ worker: projectWorker(worker, hasSensitivePermission) });
   } catch (err: any) {
     if (err.code === 'P2025') {
       return NextResponse.json({ error: 'NOT_FOUND', message: 'Worker not found.' }, { status: 404 });

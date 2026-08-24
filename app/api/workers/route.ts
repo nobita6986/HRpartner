@@ -5,6 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { resolveEffectivePermissions } from '@/src/shared/auth/permission-resolver';
+import { projectWorker, projectWorkerList } from '@/src/shared/auth/worker-projection';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -49,6 +51,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const permissions = await resolveEffectivePermissions({ userId: ctx.userId, role: ctx.role });
+    const hasSensitivePermission = permissions.has('CAN_VIEW_WORKER_SENSITIVE');
     const [rows, total] = await Promise.all([
       prisma.worker.findMany({
         where,
@@ -58,7 +62,12 @@ export async function GET(req: NextRequest) {
       }),
       prisma.worker.count({ where }),
     ]);
-    return NextResponse.json({ workers: rows, total, take, skip });
+    return NextResponse.json({
+      workers: projectWorkerList(rows, hasSensitivePermission),
+      total,
+      take,
+      skip,
+    });
   } catch (err) {
     console.error('[api/workers] query error:', err);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to query workers' }, { status: 500 });
@@ -101,6 +110,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const permissions = await resolveEffectivePermissions({ userId: ctx.userId, role: ctx.role });
+    const hasSensitivePermission = permissions.has('CAN_VIEW_WORKER_SENSITIVE');
     const worker = await prisma.worker.create({
       data: {
         userId,
@@ -111,7 +122,7 @@ export async function POST(req: NextRequest) {
         gender: gender ?? null,
       },
     });
-    return NextResponse.json({ worker }, { status: 201 });
+    return NextResponse.json({ worker: projectWorker(worker, hasSensitivePermission) }, { status: 201 });
   } catch (err: any) {
     if (err.code === 'P2002') {
       return NextResponse.json({ error: 'CONFLICT', message: 'Worker da ton tai.' }, { status: 409 });
