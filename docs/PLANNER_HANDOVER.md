@@ -1,280 +1,150 @@
-﻿# CHUYỂN GIAO VAI TRÒ TIER 1 — PLANNER (HRP)
+# BÀN GIAO TIER 1 — PLANNER HRP V5
 
-> **Đọc tài liệu này TRƯỚC KHI làm bất kỳ việc gì.** Bạn (Agent mới) tiếp nhận vai trò **Tier 1 — Planner / Product & Architecture Decision Owner** của dự án HRP, kể từ **18/08/2026 (~21:50 ICT)**.
-> Tài liệu đủ để bạn hiểu hệ thống, biết mọi ràng buộc, biết chính xác việc đang dở, và bắt tay vào việc tiếp theo ngay. Mọi quy tắc dưới đây là **bắt buộc**, không phải gợi ý.
+> Snapshot canonical: **25/08/2026 (Asia/Bangkok)**. Agent tiếp nhận phải dùng mục 0 làm trạng thái hiện tại; không suy ra việc đang mở từ tài liệu/roadmap V4 cũ.
 
-## 0. CURRENT HANDOVER SNAPSHOT — 22/08/2026 (MP-2 v1.1 round 2 ready)
+## 0. Trạng thái hiện tại và lệnh tiếp tục
 
-> **Snapshot này là nguồn trạng thái hiện tại; các mục lịch sử bên dưới chỉ giữ để truy nguyên và không được dùng để suy ra task đang mở.**
+| Hạng mục | Giá trị |
+|---|---|
+| Branch | `main` |
+| HEAD | `ec7a0e4` — `docs(m1): define worker vendor cron auth scope` |
+| Remote | `main...origin/main [ahead 18]`; **chưa push** |
+| Task duy nhất đang mở | `hrp-v5-m1-06b-worker-vendor-cron-auth-scope` |
+| TASK | `docs/tasks/hrp-v5-m1-06b-worker-vendor-cron-auth-scope/TASK.md` |
+| Spec / status | `v1.0` / `READY_FOR_EXECUTION` |
+| Code baseline | `4bb4464` — M1-06a đã ACCEPTED; commit `ec7a0e4` chỉ thêm contract M1-06b |
+| Việc kế tiếp | Giao Tier 2: `/code hrp-v5-m1-06b-worker-vendor-cron-auth-scope` |
 
-### Quyết định và task hiện tại
+Không viết lại contract hoặc mở task song song. Tier 2 phải thực thi TASK v1.0, tạo `HANDOFF.md` và dừng ở `READY_FOR_AUDIT`. Sau đó giao Tier 3 bằng `/audit hrp-v5-m1-06b-worker-vendor-cron-auth-scope`; Tier 1 chỉ `/resolve` khi `AUDIT.md` đã hợp lệ.
 
-| Hạng mục | Trạng thái | Artifact / commit | Hành động kế tiếp |
-|---|---|---|---|
-| M13 Database Backend | `ACCEPTED` | `docs/tasks/hrp-m13-backend-expansion/TASK.md`, `3eacd22` | Không mở lại; clean-DB migration là follow-up vận hành |
-| MP-1 Admin Publish + Public Read | `ACCEPTED` | `docs/tasks/hrp-mp1-admin-publish/TASK.md`, `ead9869` | Đóng với Founder waiver AC-05; residual visual risk đã ghi nhận |
-| MP-2 Apply + Tracking + HR Queue | `READY_FOR_EXECUTION` (v1.1, exec round 2) | `docs/tasks/hrp-mp2-apply-tracking/TASK.md`, `0a0bd53` | Round-1 `BLK-01` (public-write dưới FORCE RLS) đã resolve bằng Option A **SECURITY DEFINER RPC** (DEC-08); OP-01 tạo role `hrp_public_rpc` trên dev **ĐÃ XONG** (sếp xác nhận 22/08). Giao Tier 2: `/code hrp-mp2-apply-tracking` |
-| Roadmap | `MP-2 đang mở` | `docs/roadmap-portals.html` | Cập nhật sau mỗi round và push `origin/main` |
+## 1. Phạm vi contract M1-06b đã khóa
 
-### MP-2 phải làm gì
+- Đúng **16 route** dưới năm root `worker/**`, `workers/**`, `vendor/**`, `vendors/**`, `cron/**`: 6 Worker, 8 Vendor, 2 cron.
+- Worker self-scope lấy từ `ctx.workerId`; Vendor self-scope lấy từ `ctx.vendorId`. Client không được override owner ID.
+- User route dùng canonical auth boundary của M1-06a (`withAuthorizedDb`/scoped repository), có L1 + L2 cùng transaction; không tạo wrapper cạnh tranh và không raw Prisma fallback.
+- Vendor dedup chỉ trả kết quả opaque, không lộ Worker ID/tên/CCCD/phone hoặc PII nội bộ. Cross-vendor object trả 404 và không có side effect.
+- Cron fail closed: thiếu `CRON_SECRET` → 503, secret/header sai → 401, cả hai phải có **zero DB calls**. DB work dùng system boundary riêng với stable actor `SYSTEM_CRON`; không giả user.
+- Không schema, migration, dependency, session/JWT/OTP, deploy hoặc push. Nếu cần một trong các thay đổi này, Tier 2 phải dừng và trả Planner.
+- Required LIVE evidence phải chạy trên DB test an toàn. Thiếu môi trường là `ENV_BLOCKED`, không được đổi thành PASS hoặc mock.
 
-- Canonical public apply: `POST /api/public/jobs/:slug/applications`.
-- Tạo `CandidateSubmission` độc lập, có `publicTrackingCode`, idempotency hash, duplicate guard theo job/slot/phone và `ApplicationStatusHistory`.
-- Anonymous applicant **không được tạo Worker hoặc SourceClaim**; service cũ đang có side effect với `PUBLIC` và phải được thay thế/điều chỉnh.
-- Tracking: `GET /api/public/applications/:trackingCode`, DTO không lộ phone/CCCD/CV/internal note/vendor/CTV/actor IDs.
-- Queue role theo scope hiện hành: `ADMIN`, `HR_MANAGER`, `DIRECTOR`, `SALE`; không tự mở RLS cho `HR_STAFF`.
-- UI: apply form + consent + optional CV metadata + success tracking + tracking page + HR queue; screening/convert Worker/assignment để MP-3.
-- **Public boundary = SECURITY DEFINER RPC (DEC-08/DEC-09):** anonymous apply + tracking read chạy qua hàm `hrp_public_apply_submission`/`hrp_public_tracking_projection` owned by role `hrp_public_rpc` (NOLOGIN BYPASSRLS); RLS giữ `FORCE` và KHÔNG nới cho role thật; migration chỉ `CREATE FUNCTION` + `GRANT/REVOKE EXECUTE` + schema additive — KHÔNG `CREATE ROLE` (đó là OP-01, đã xong trên dev). Chi tiết TASK §3.
+DB test đã dùng thành công ở các round trước:
 
-### Pipeline handoff
+- Env ngoài repo: `C:\CodeApp\Salary-app\.env.mp2-test.local`.
+- Biến cần dùng: `DATABASE_URL_TEST`, `DATABASE_URL_ADMIN_TEST`.
+- Writer role: `app_user_writer`; admin role: `neondb_owner`; phải cùng test target và khác repo dev/prod target.
+- Không in connection string, password/token hoặc nội dung `.env` vào terminal evidence, HANDOFF, AUDIT hay repo.
 
-1. Tier 1 chỉ sở hữu `TASK.md`; không sửa source, `HANDOFF.md` hoặc `AUDIT.md`.
-2. Tier 2 ghi `docs/tasks/hrp-mp2-apply-tracking/HANDOFF.md` với `READY_FOR_AUDIT` sau khi hoàn tất contract.
-3. Sếp gọi `/audit hrp-mp2-apply-tracking`; Tier 3 sở hữu `AUDIT.md` và phải chạy C-01..C-10 + `verify-audit.ps1` PASS.
-4. Sếp gọi `/resolve hrp-mp2-apply-tracking`; Tier 1 gate nhẹ rồi ACCEPTED/REVISION_REQUIRED.
-5. Sau mỗi status change: cập nhật TASK + roadmap, stage đúng file, commit và `git push origin main`.
+## 2. Các mốc V5 đã đóng
 
-### Worktree caution
-
-Worktree còn thay đổi/untracked do Tier 2/Tier 3 trước đó. Không `git add -A`, không reset/revert và không xóa chúng; chỉ stage file thuộc task/roadmap đang xử lý.
-
----
-
-## 1. Bạn là ai, trong hệ thống nào
-
-HRP chạy **pipeline 3 tầng** (source of truth: `.ai-pipeline`):
-
-| Tầng | Vai trò | Sản phẩm | Quy tắc |
-|---|---|---|---|
-| **Tier 1 — bạn** | Planner — quyết định scope, nghiệp vụ, kiến trúc | `docs/tasks/<slug>/TASK.md` | **Chỉ viết TASK.md, không bao giờ sửa code** |
-| Tier 2 | Engineer (agent ngoài, do SẾP giao — ví dụ Cursor) | `HANDOFF.md` | Thực thi contract; không tự audit |
-| Tier 3 | Auditor (agent ngoài, độc lập Tier 2, do SẾP giao) | `AUDIT.md` | Audit độc lập; không sửa code/contract |
-
-**Điểm mấu chốt:** bạn **KHÔNG spawn Tier 2/3**. Sếp giao việc cho các agent ngoài (skill `/code`, `/audit` KHÔNG có trong môi trường của bạn — bạn chỉ báo sếp gõ lệnh). Bạn chỉ:
-1. Viết/duy trì `TASK.md` (contract).
-2. Khi contract READY → báo sếp giao Tier 2 bằng lệnh `/code <slug>`.
-3. Khi Tier 2 xong (`HANDOFF.md` kết `READY_FOR_AUDIT`) → báo sếp giao Tier 3 bằng `/audit <slug>`.
-4. Khi Tier 3 xong → bạn `/resolve` theo **Resolve Protocol v2** (chốt sếp 18/08, xem §7.1): chạy `verify-audit.ps1` (gate cơ học, 0 token), đọc findings/verdict, spot-check tối đa 3 mục rủi ro cao — **KHÔNG re-audit toàn bộ** (Tier 3 đã gánh Deep Audit Checklist C-01..C-10). Rồi kết luận ACCEPTED / REVISION_REQUIRED.
-
-**Giao tiếp:** tiếng Việt, xưng "tôi", gọi người dùng là **"sếp"**. Lead bằng quyết định và blocker — không kể lại quá trình đọc file. Chỉ nói task hoàn thành khi status `ACCEPTED`. Mỗi lần bàn giao nêu đúng: task path, spec version, status, hành động kế tiếp.
-
----
-
-## 2. Bộ tài liệu nguồn — đọc theo thứ tự
-
-| # | File | Vì sao phải đọc |
+| Chặng | Trạng thái | Commit implementation/resolution chính |
 |---|---|---|
-| 1 | `.ai-pipeline/tier1.md` | Định nghĩa vai trò, artifact model, trạng thái, xử lý audit — **đọc kỹ nhất** |
-| 2 | `.ai-pipeline/rules/00-global-rules.md` + `01-planner-rules.md` | Ràng buộc toàn cục + riêng Planner |
-| 3 | `.ai-pipeline/templates/TASK.template.md` | Khuôn 11 section bắt buộc của contract |
-| 4 | `docs/UNIFIED_PLAN_v5.md` | **Nguồn roadmap/contract hiện hành** — Marketplace-first, backend/frontend delta, phase MP-1/MP-2/MP-3 |
-| 5 | `docs/V5_3_TIER_EXECUTION_GUIDE.md` | **Quy trình thực thi V5** — Tier 1/2/3, evidence gate, demo flow và handoff |
-| 6 | `docs/PLANNER_HANDOVER.md` §0 | Snapshot trạng thái hiện tại; đọc trước lịch sử cũ |
-| 7 | `docs/roadmap-portals.html` | **Roadmap trực quan V5 — phải cập nhật sau mỗi status change** |
-| 8 | `.ai-pipeline/SKILL-ECOSYSTEM.md` | Skill map khi cần |
+| Wave 0 RF-01..04 | `ACCEPTED` | `516956a`, `405f913`, `a79e041`, `d8ba10d` |
+| G0 quality/fixtures/migrations/seed/Prisma | `ACCEPTED` | `e6daa27`, `715a58b`, `1982300`, `19100db`, `1b9ed1d` |
+| MP-1 Publish + Public Read | `ACCEPTED` | `7831d56` |
+| MP-2 Apply + Tracking + HR Queue | `ACCEPTED` | `76096b7` |
+| MP-3A Screening | `ACCEPTED` | `58058b2` |
+| MP-3B Convert Worker | `ACCEPTED` | `42edc43` |
+| MP-3C Assignment Placement | `ACCEPTED` | `299614a` |
+| M1-06a Admin/CTV auth scope | `ACCEPTED` | `4bb4464` |
+| M1-06b Worker/Vendor/Cron auth scope | `READY_FOR_EXECUTION` | Contract `ec7a0e4` |
 
-Ngoài ra khi viết contract: **chỉ đọc** source/schema/test để xác minh baseline (`src/`, `prisma/schema.prisma`). Không bịa file, symbol, dependency, trạng thái hoặc tool output — dùng `rg`/`git diff`/CodeGraph rồi ghi rõ phương pháp evidence.
+MP-3C lưu ý: audit LIVE đã PASS nhưng browser evidence AC-08 **không được chạy**. Founder đã chọn waiver và Tier 1 ghi rõ trong TASK trước khi ACCEPTED. Không được báo lại rằng browser test đã PASS.
 
----
+## 3. Dependency graph sau M1-06b — không biến thành một chuỗi cứng
 
-## 3. QUY TẮC SẮT (Iron Rules + ràng buộc bảo mật)
+> **Quy tắc Planner:** `UNIFIED_PLAN_v5.md` mô tả nhiều lane có thể giao nhau hoặc chạy song song. Chỉ gọi `A → B` khi master plan/TASK có dependency hoặc exit gate rõ ràng. Dependency do Planner suy luận phải ghi `ASSUMPTION`, kèm lý do và stop condition; không trình bày như nguồn canonical.
 
-### 3.1 Iron Rules (từ CLAUDE.md — không sửa CLAUDE.md, sửa `.ai-pipeline` rồi re-run init)
+### 3.1. Gate hiện tại — bắt buộc đi hết trước
 
-1. Tier 1 chỉ viết TASK.md contract. **Không bao giờ sửa code** (kể cả khi biết sửa thế nào).
-2. Tier 2 thực thi → HANDOFF.md. Không tự audit.
-3. Tier 3 audit độc lập → AUDIT.md. Không sửa code, không đổi contract.
-4. **Evidence phải REAL** — command + exit code + output thật. **Mock evidence = BLOCK.** Từ 18/08: việc tự chạy lại verify thực thi đã chuyển xuống **Tier 3** (Deep Audit Checklist C-01..C-10 + `verify-audit.ps1` PASS là điều kiện bàn giao); Planner chỉ gate nhẹ — xem §7.1. Planner vẫn tự chạy lại khi: verify-audit FAIL, evidence thiếu/mâu thuẫn, hoặc nghi ngờ P0/P1 bị đánh sót.
-
-### 3.2 Bảo mật & môi trường (vi phạm = hủy kết quả)
-
-- **`.env` đã gitignore — KHÔNG BAO GIỜ in URL/password/token ra output hoặc ghi vào repo** (mọi chuỗi dạng `npg_`, `postgres://`, password). Khi báo evidence phải **mask**. Chẩn đoán format .env bằng lệnh masked (chỉ in độ dài/prefix/cờ, không in giá trị).
-- **CẤM `prisma migrate dev/deploy/reset` destructive vào `DATABASE_URL` production** (Neon main chứa dữ liệu thật). Chỉ `prisma validate` / `prisma migrate diff`, hoặc dùng `DATABASE_URL_DEV`. Không bao giờ drop/rename/truncate. **CẤM `npx prisma db seed` vào production** — seed chỉ trên DB dev.
-- **CẤM commit dữ liệu thật:** `appBCC/*.xlsx`, `appBCC/db_*.txt`, `appBCC/docs/*` (PII thật).
-- **`app/bcc/` + `appBCC/` là khu vực sếp phát triển song song** — không đổi logic, không stage. NGOẠI LỆ duy nhất (đã chốt DEC-09 A): `appBCC/app.py` chỉ được đổi **đúng 1 dòng** env `DATABASE_URL` → `APPBCC_DATABASE_URL`.
-- **CẤM `git add -A` / `git add .`** — chỉ add đúng file của task.
-- **Phone/password thật KHÔNG BAO GIỜ vào HANDOFF.md/AUDIT.md/repo** (repo public) — evidence luôn masked.
-- **OP có owner = sếp thì Planner KHÔNG tự chạy khi chưa được sếp ủy quyền đích danh** (bài học OP-03: bị permission classifier chặn là ĐÚNG — báo sếp chọn tự chạy hoặc ủy quyền rõ).
-
-### 3.3 Kỷ luật contract (rút từ tier1.md + kinh nghiệm)
-
-- **Một task = một contract** (một thư mục `docs/tasks/<slug>/`). Tier 1 chỉ tạo/cập nhật `TASK.md` — **KHÔNG tạo tài liệu phụ** (đã từng sai: tạo `PROMPT_TIER2.md` → bị bắt, phải xóa; giao việc chỉ bằng lệnh `/code`).
-- **Traceability `RQ → STEP → AC` bắt buộc** — độ chặt đến từ tính truy vết và tiêu chí đo được, không đến từ số trang.
-- **Open Questions phải rỗng trước khi READY** nếu câu trả lời làm đổi implementation.
-- Contract thay đổi → **tăng Spec version** + ghi Revision Log. Chỉ lỗi thực thi → giữ version, mở execution round mới.
-- Audit finding → trả lời ngay trong `TASK.md > Planner Resolution` (append-only, không sửa lịch sử finding). Mọi thay đổi sản phẩm/source sau audit phải được audit lại.
-- **Không giao quyết định nghiệp vụ/kiến trúc cho Tier 2/3.**
-- **Không đổi ADR đã chốt** nếu chưa ghi lý do, tác động, phương án thay thế, và trạng thái cần sếp duyệt.
-
----
-
-## 4. Quyết định đã chốt — KHÔNG đổi khi chưa trình sếp
-
-| ID | Quyết định | Trạng thái |
-|---|---|---|
-| **D13** | Backbone theo **invariant-phase** (PHASE_KHOAHOC §3) + monorepo **Phương án A** (`@hrp/money`, `@hrp/payroll-core`, `@hrp/job-board`) | Đã chốt (founder duyệt 16/08) |
-| **D14** | **Freeze Mockup Baseline v1** (PM/BoD ký) = trigger Phase 0 | Đã thực hiện |
-| **D15** | Rào `/bcc` bằng JWT tối giản tuần đầu Phase 1 | Đã xong (bcc-fence) |
-| **D16** | Outbox in-process drain + cron daily lưới an toàn (phương án b) | Đã chốt (b) |
-| **DEC-08** | Production RLS **hoãn tới trước Phase 4** — Phase 2 chỉ dev + runbook | Đã chốt |
-| **DEC-09 A** | Dev runtime dùng role `app_user_writer`, migrate qua `directUrl = env("DATABASE_URL_ADMIN")`, appBCC dùng `APPBCC_DATABASE_URL` (role `hrp_etl`) | Đã chốt |
-| **DEC-11** | 🚫 **CẤM tạo lại bộ login/JWT/cookie/register/endpoint auth** — tái dùng identity-core (`jwt.ts`, `auth-context.ts`, `with-auth-scope.ts`, `app/api/auth/*`, cookie `hrp_token`). Vi phạm = audit BLOCK | Đã chốt |
-| **DEC-33** | Bộ thuật ngữ canonical 21 từ EN→VI (DECISION_LOG v0.6) | Đã chốt |
-| **DEC-NEW-04/05** | `prisma migrate dev` fail (shadow DB + `portal_timesheets` raw của appBCC) → **apply SQL trực tiếp qua `DATABASE_URL_ADMIN` + `prisma migrate resolve --applied`** (sếp chấp thuận 17/08 08:35) | Đã chốt |
-| **DEC-NEW-11** | Bulk transfer **skip idempotency** — per-item savepoint (G15) là fail-safe; single transfer vẫn bọc đủ | Đã chốt |
-| **DEC-14** | Test dùng **Prisma mock in-memory** + fixtures giả hoàn toàn (không DB thật) — ⚠️ xem §5.2: mock KHÔNG bắt được lỗi Prisma runtime | Đã chốt |
-| **DEC-15** | 4B/4C mỗi slice **tự mang migration RLS additive** cho bảng mình dùng (RQ-21) | Đã chốt |
-| **P1: DEC-01** | 3 subdomain `vendor/worker/ctv.hrpartner.vn` — cùng app Next.js, middleware `ALLOWED_HOSTS` + rewrite về `/vendor|worker|ctv/*`; cookie domain `hrpartner.vn` dùng chung. Khác UNIFIED_PLAN §4.2 (plan cũ để Worker ở root mobile-first): root hiện là job board production — subdomain nhất quán 3 cổng, đổi lại chỉ 1 dòng ALLOWED_HOSTS | Đã chốt (sếp duyệt TASK) |
-| **P1: DEC-09** | Đóng FO-01: 4 DB roles NOLOGIN (`worker_user`, `vendor_user`, `ctv_user`, `sale_user`) qua `scripts/create-db-roles.cjs` (idempotent) — **đã thực thi xong 18/08 (OP-03)** | Đã chốt + DONE |
-| **P1: DEC-13** | RQ-12: Tier 2 CHỈ được sửa file seed, **CẤM sửa schema Phase 0-5** (AUD-003 xử theo hướng này: xóa field `address` khỏi seed, không thêm cột) | Đã chốt |
-
-Kho quyết định chi tiết: `docs/tasks/hrp-v4-bod-mockup/DECISION_LOG.md` + TASK.md phase-4 §3 + TASK.md p1-portals §3.
-
----
-
-## 5. Lịch sử legacy V4 (chỉ để truy nguyên, không phải current plan)
-
-> Các mục M7–M9 và `roadmap-hrp-v4.html` bên dưới thuộc Portal Refactor V4 cũ. Không dùng chúng để chọn task mới; V5 snapshot ở §0 và `docs/UNIFIED_PLAN_v5.md` mới là nguồn sự thật.
-
-### Vị trí lộ trình hiện tại
-
-HRP V4 (Phân hệ Portals - Front-end, legacy):
-M1 (Design System) ✅ -> M2 (Landing Page) ✅ -> M2.5 (Job Dashboard) ✅ -> M3 (API Integration Jobs/Auth) ✅
--> M4 (UI Fixes - Icon, Logo, NavBar, Scroll) ✅ [ACCEPTED]
--> M5 (Admin Master Data) ✅ [ACCEPTED]
--> M6 (Payroll & Tickets) ✅ [ACCEPTED]
--> M7 (Admin Expansion) ⏳ [READY_FOR_EXECUTION]
-
-### 5.1 TRẠNG THÁI CHI TIẾT
-
-**M4 - UI Fixes (hrp-portal-m4-ui-fixes):**
-- **Trạng thái:** Đã đóng (ACCEPTED). Tier 2 đã fix dứt điểm logo ở Admin Panel trong Round 2.
-
-**M5 - Admin Master Data (hrp-portal-m5-admin-master-data):**
-- **Trạng thái:** Đã đóng (ACCEPTED). Tier 3 audit xong và đã tự động sửa lỗi type build (vi phạm rule nhưng đã châm chước để qua).
-
-**M6 - Payroll & Tickets (hrp-portal-m6-payroll-tickets):**
-- **Trạng thái:** Đã đóng (ACCEPTED).
-
-**M7 - Admin Expansion (hrp-portal-m7-admin-expansion):**
-- **Nguồn gốc:** Sếp yêu cầu khảo sát, phát hiện Admin thiếu CRUD form và thiếu trang vendors, users, settings.
-- **Tiến độ:** Planner đã tạo hợp đồng (READY_FOR_EXECUTION), yêu cầu bổ sung toàn bộ form và page bị thiếu.
-- **Chờ sếp:** Gọi lệnh /code hrp-portal-m7-admin-expansion.
-
-### 5.2 Sự kiện quan trọng vừa giải quyết
-- Hệ thống bị mất <body> / Hydration do chèn <head> thủ công vào layout.tsx -> Đã hotfix thành công bằng @import trong globals.css (M4).
-- Database trống không gây lỗi đăng nhập (Sai tài khoản 0931699166/Admin123) -> Đã chạy 
-px prisma db seed và phục hồi 2 tài khoản từ .env.
-
----
-
-## 6. Hàng đợi việc tiếp theo (làm theo đúng thứ tự)
-
-3. **Không tiếp tục queue M7–M9 legacy** trừ khi sếp mở lại bằng task V5 riêng.
-4. Việc hiện tại là MP-2: `/code hrp-mp2-apply-tracking`.
-5. Tier 3 kiểm định rồi Planner `/resolve`; sau MP-2 mới lập contract MP-3.
-6. LUÔN cập nhật `docs/roadmap-portals.html` và file handover này sau mỗi status change V5.
-
-## 7. Vòng lặp vận hành chuẩn của Planner
-
-```
-Sếp giao yêu cầu / chuyển tiếp AUDIT.md
-   → đọc plan/domain docs + source/schema (chỉ đọc) để xác minh baseline
-   → viết/sửa TASK.md (11 section, traceability RQ→STEP→AC, §9 Resolution append-only)
-   → tăng Spec version + Revision Log nếu đổi contract; giữ version nếu chỉ lỗi thực thi
-   → chạy .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/<slug>/TASK.md (phải PASS)
-   → commit ĐÚNG file (không add -A) + push origin main
-   → báo sếp: path + spec + status + lệnh giao Tier 2 (/code <slug>)
-   → (Tier 2 chạy) → HANDOFF READY_FOR_AUDIT → báo sếp /audit <slug>
-   → (Tier 3 chạy) → bạn /resolve theo **Resolve Protocol v2** (xem §7.1): verify-audit.ps1 → đọc findings/verdict → spot-check ≤3 → ACCEPTED / REVISION_REQUIRED
-   → cập nhật đủ bộ §8 → push
+```text
+M1-06b Tier 2
+  → M1-06b Tier 3 audit
+  → Tier 1 resolve/ACCEPTED
+  → M1-06c: phần route còn lại của RF-10/M1-06
+  → audit/resolve M1-06c
 ```
 
-Trạng thái task hợp lệ: `DRAFT` → `READY_FOR_EXECUTION` → `REVISION_REQUIRED` / `ACCEPTED` / `CANCELLED`.
+Không mở M1-07 khi M1-06 chưa đủ inventory/exit gate, và không để Tier 2 tự mở rộng M1-06b sang route của M1-06c.
 
-### 7.1 Resolve Protocol v2 — phân công lại verify (chốt sếp 18/08/2026)
+### 3.2. Security và backbone sau khi M1-06 hoàn tất
 
-Sếp yêu cầu chuyển gánh verify thực thi từ Tier 1 (token đắt) xuống **Tier 3** (token rẻ) để Tier 1 đỡ đốt token re-audit:
+- Security lane phải hoàn tất `M1-07` (RLS/FORCE RLS), `M1-08` (vendor IDOR) và `M1-09` (field projection).
+- Master plan gom `M1-05..09` trong cùng phase; **không quy định chuỗi cứng** `M1-07 → M1-08 → M1-09`. Planner được chạy M1-08/M1-09 song song hoặc tuần tự sau khi boundary đủ ổn định, nhưng TASK phải nêu dependency thật.
+- Backbone lane canonical là `M35-01 → M35-02..05 → M35-06 → M35-07..09`. M35-06 đã được MP-3C đóng; M35-07 và M35-08 có thể được lập contract theo baseline hiện hành.
+- M35-09 có giao diện với GPS/offline/check-in của M7 và `PORTAL-06`. Trước khi mở M35-09, Planner phải tách rõ phần backbone/PWA và đối chiếu M7-04/05; không xếp M35-09 hoàn tất trước dependency mà chính contract của nó yêu cầu.
+- `OPS-02`, `OPS-04`, `OPS-06` là hardening lane. Chúng có thể xen kẽ với M1/M35 khi contract chứng minh dependency; master plan **không mặc định** `OPS-02 ← M1-08` hoặc `OPS-06 ← M1-09` thành quan hệ cứng.
 
-| Việc | Trước 18/08 | Từ 18/08 |
+### 3.3. Chuỗi domain có thứ tự canonical
+
+```text
+M7-01..03 → M7-04..06 → M7-07 → M7-08
+M8-01..04 → M8-05..06 → M8-07..08
+PAY-01..06 chỉ sau M7/M8
+PAY-07..08 chỉ sau owner kế toán + golden cases + sign-off
+```
+
+Không được bỏ sót `M8-07..08`: master plan yêu cầu hoàn tất `M8-01..08` trước payroll. Với M7, `OPS-01` là owner của QStash contract cho M7-02; không gán toàn bộ M7-01..03 phụ thuộc OPS-01 nếu TASK chưa chứng minh.
+
+### 3.4. M6 Commission và PAY không phải một đường thẳng duy nhất
+
+- `M6-01..03` (policy/group/permission) có thể chuẩn bị khi permission baseline M1 đã ổn định.
+- `M6-04..07` phải chờ đúng input canonical mà từng task dùng: hours/assignment từ M7, client billing/revenue từ M8, rồi ledger/reversal/dashboard theo thứ tự nội bộ.
+- `PAY-01..06` chạy sau M7/M8 theo §7.7; master plan không bắt toàn bộ M6 phải đóng trước khi mở payroll shell.
+- Vì vậy không ghi roadmap thành chuỗi cứng `M7 → M8 → M6 → PAY`. Cách đúng là: M7 trước M8; M8 trước PAY; M6 và PAY phân nhánh/chạy theo dependency dữ liệu thực tế.
+- M9 là P2, chỉ mở sau khi core ổn định. Statutory `PAY-07..08` không được force-open hoặc force-pass khi chưa có owner kế toán.
+
+### 3.5. Gate trước khi Tier 1 tạo mỗi TASK mới
+
+1. Đọc lại `UNIFIED_PLAN_v5.md` §4.x, §4.13 và task sequence §7.x liên quan.
+2. Đối chiếu HEAD, TASK đã ACCEPTED và phần implementation thật; không chỉ dựa vào tên phase.
+3. Lập bảng `Dependency | Source | Satisfied evidence | Blocker`. Dependency suy luận phải ghi `ASSUMPTION`.
+4. Không mở nhiều task cùng lúc chỉ vì chúng cùng nằm trong một phase.
+5. Không bỏ task UI/exit gate ở cuối chuỗi, đặc biệt `M7-08` và `M8-07..08`.
+
+## 4. Ranh giới vai trò bắt buộc
+
+| Tier | Sở hữu | Không được làm |
 |---|---|---|
-| Chạy lại vitest/build | Planner (Tier 1) | **Tier 3** — bắt buộc, ghi evidence thật |
-| Đọc route từng dòng / đối chiếu Prisma vs schema / idempotency / RLS / git hygiene / test coverage / diff scope | Planner tự mò | **Tier 3** — Deep Audit Checklist C-01..C-10 (mỗi check gắn bài học thật) |
-| Gate cấu trúc AUDIT.md | Không có | **`verify-audit.ps1`** — validator cơ học (AC coverage + C-01..C-10 + verdict nhất quán + evidence ≥5 dòng), chạy bởi CẢ Tier 3 (trước bàn giao) và Tier 1 (khi resolve) |
-| Planner /resolve | Tự re-audit toàn bộ | **Gate nhẹ:** chạy verify-audit.ps1 → đọc findings P0→P3 + verdict → spot-check tối đa 3 lệnh nhanh → Resolution. Chỉ chạy lại toàn bộ khi gate FAIL hoặc evidence mâu thuẫn |
+| Tier 1 — Planner | Quyết định scope/architecture, viết và resolve `TASK.md`, cập nhật bàn giao | Không implement source/test; không viết thay HANDOFF/AUDIT |
+| Tier 2 — Engineer | Source, tests, migration nếu contract cho phép, `HANDOFF.md` | Không tự đổi contract hoặc tự audit |
+| Tier 3 — Auditor | Audit độc lập, evidence thật, `AUDIT.md` | Không sửa source hoặc TASK |
 
-Lưu ý giữ nguyên: Planner vẫn có quyền REVISION nếu đọc findings thấy P0/P1 bị đánh giá sai — giá trị Tier 1 là quyết định, không phải chạy lệnh.
+Founder đã nhắc rõ sau MP-3B: Agent Tier 1 **chỉ viết hợp đồng/resolve**, công việc Tier 2 và Tier 3 để đúng agent thực hiện. Chỉ phá ranh giới khi Founder ủy quyền đích danh trong lượt hiện tại.
 
----
+Resolve Protocol: chạy `verify-audit.ps1`, đọc verdict/findings/gaps, spot-check tối đa ba điểm rủi ro cao; không re-audit toàn bộ nếu evidence nhất quán. Mọi waiver phải ghi rõ người quyết định, evidence thiếu và residual risk; không biến waiver thành test PASS.
 
-## 8. BẮT BUỘC: cập nhật những gì sau MỖI task
+## 5. Nguồn sự thật và cách đọc
 
-**Sau mỗi task đổi trạng thái (mỗi round), cập nhật ĐỦ CÁC MỤC sau trong CÙNG lượt bàn giao rồi commit + `git push origin main`** (yêu cầu sếp 16/08 — mọi người xem kết quả qua GitHub):
+1. `.ai-pipeline/tier1.md`.
+2. `.ai-pipeline/rules/00-global-rules.md` và `01-planner-rules.md`.
+3. `.ai-pipeline/templates/TASK.template.md`.
+4. `docs/UNIFIED_PLAN_v5.md` — roadmap canonical.
+5. `docs/V5_3_TIER_EXECUTION_GUIDE.md`.
+6. TASK đang mở và file bàn giao này.
 
-### 8.1 `docs/tasks/<slug>/TASK.md` (contract — luôn luôn)
+Repository có `.codegraph/`, nên dùng CodeGraph trước khi `rg`/đọc file. Tuy nhiên khi lập M1-06b, CodeGraph trả inventory thiếu/lẫn route; TASK đã ghi phương pháp fallback bằng `rg --files`, source inspection và Git. Không tin index nếu mâu thuẫn với HEAD.
 
-| Chỗ | Sửa gì |
+## 6. Git và worktree: tuyệt đối không dọn hộ
+
+Worktree đang có nhiều thay đổi **không thuộc V5 task hiện tại**:
+
+- Nhiều tracked deletion dưới `appBCC/**`.
+- Untracked: `audit_report.md`, `docs/V5_READINESS_ASSESSMENT.md`, một số `AUDIT.md`/`HANDOFF.md` task cũ, `run-test.js`, `scratch/`.
+
+Đây là thay đổi của người dùng/luồng khác. Không reset, restore, xóa, stage hoặc commit. Cấm `git add -A` và `git add .`; chỉ stage file có trong scope contract. Không push nếu Founder chưa yêu cầu rõ.
+
+## 7. Checklist Agent tiếp nhận
+
+- [ ] Xác nhận HEAD `ec7a0e4` và không dọn worktree ngoài scope.
+- [ ] Đọc đầy đủ TASK M1-06b v1.0; không dùng snapshot MP-2 cũ.
+- [ ] Giao đúng lệnh `/code hrp-v5-m1-06b-worker-vendor-cron-auth-scope`.
+- [ ] Khi Tier 2 xong, kiểm tra HANDOFF status rồi giao Tier 3; Tier 1 không chạy thay.
+- [ ] Khi Tier 3 bàn giao, dùng `/resolve` và giữ traceability `RQ → STEP → AC`.
+- [ ] Sau status change, cập nhật TASK + tài liệu trạng thái cần thiết và commit scoped; chỉ push khi Founder yêu cầu.
+
+## 8. Revision log
+
+| Ngày | Thay đổi |
 |---|---|
-| §0 Control | `Spec version` (+1 nếu đổi contract), `Status`, `Current execution round`, `Current audit round`, `Next gate`, `Updated` (ngày giờ ICT) |
-| §9 Planner Resolution | Append cho round vừa đóng: finding IDs, verdict, evidence THẬT (command + exit code + số), directive round sau — **append-only, không sửa dòng cũ** |
-| §10 Revision Log | Append 1 dòng v1.x mới |
-
-Sau khi sửa: chạy `powershell.exe -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/<slug>/TASK.md` → `DRAFT-VALID`/`RESULT: PASS` (warning "not READY_FOR_EXECUTION" là bình thường khi status = REVISION_REQUIRED).
-
-### 8.2 `docs/roadmap-portals.html` (roadmap trực quan V5 — nếu trạng thái phase/slice đổi)
-
-| Chỗ trong file | Sửa gì |
-|---|---|
-| `.stat-strip` | Ô mô tả TASK: spec version + status + lệnh chờ sếp (`/code ...` round nào) |
-| `.phase-card` | `pc-foot` (tiến độ/exit), `badge-*` khi phase ACCEPT |
-| `.pd-hint` / `h4` slices | Trạng thái từng slice |
-| Metro `.stop` + `.done-part` | Khi PHASE đổi (ga done/current, done-part %) |
-| `.burndown-bar` + footer | Khi tuần đổi |
-
-### 8.3 `index.html` (trang chủ)
-
-Card roadmap: cập nhật dòng mô tả + ngày hero-meta/footer khi status Marketplace V5 đổi; không dùng `roadmap-hrp-v4.html` cho trạng thái hiện hành.
-
-### 8.4 Memory của Planner (riêng của bạn, không commit)
-
-`C:\Users\Admin\.claude\projects\c--CodeApp-HrP\memory\hrp-phase0-pipeline-status.md` — append 1 bullet cho round vừa đóng (verdict, SHA, số test, defect) + sửa frontmatter `description`. Index ở `MEMORY.md`.
-
-### 8.5 Commit & push
-
-- **Chỉ `git add` đúng file** (CẤM `-A`/`.`). Khi /resolve: commit TASK.md resolution + AUDIT.md của Tier 3 (tiền lệ 6ff614d, fd3727a/4630437).
-- Kiểm tra commit message Tier 2 không bị trôi subject thành trailer `Co-authored-by` (đã xảy ra ở `a8f77e3`) — chỉ báo, không sửa lịch sử đã push.
-- `git push origin main` ngay sau commit. Báo sếp trong cùng lượt trả lời.
-
----
-
-## 9. Sai lầm đã mắc — đừng lặp lại
-
-1. **Tạo tài liệu phụ** (`PROMPT_TIER2.md`) → vi phạm artifact model → đã xóa. Giao việc chỉ bằng `/code`.
-2. **Ghi đè TASK.md bằng tóm tắt** thay vì edit có chủ đích → luôn đọc trước khi sửa, dùng Edit, giữ nguyên phần không liên quan.
-3. **Tách 1 phase thành 2 task** (tenant-scope-v2) → CANCELLED. Một phase = một contract.
-4. **Thiếu traceability RQ→STEP→AC** → viết lại cả contract. Dựng bảng traceability từ bản nháp đầu tiên.
-5. **Muốn ACCEPT khi evidence chưa verify** → chặn đúng theo Iron Rule 4. Mọi kết luận phải có command + exit code + output thật (đã mask).
-6. **Đóng task chỉ dựa trên xác nhận miệng** → luôn ghi "nguồn: sếp xác nhận ngày X" vào Revision Log. *Ví dụ round 5 P4: sếp báo "398/398 pass", Planner vẫn tự chạy lại và phát hiện 6 defect F5-01..06 — xác nhận miệng ≠ evidence.*
-7. **Tier 2 dùng `git add -A` stage nhầm `appBCC/`** (P4 round 2a) — Tier 3 bỏ sót khi chấm AC-16 PASS. Planner phải tự check diff vùng cấm mỗi round, nhắc Tier 2 chỉ add đúng file.
-8. **Tier 3 pass AC khi chưa đạt** (route chưa bọc idempotency; taxonomy chưa có test) — Planner luôn tự grep/đọc lại, không tin kết luận Tier 3 suông.
-9. **E2E thiếu bước mandatory demo moment** — đối chiếu từng bước F00A trước khi đóng slice.
-10. **Tier 2 để work uncommitted + không viết HANDOFF** (P4 round 5) → Planner commit thay theo tiền lệ Phase 3 + ghi rõ trong Resolution; yêu cầu HANDOFF bắt buộc ở round sau.
-11. **Test mock in-memory không bắt lỗi Prisma runtime** (F5-04: `updateMany` cột giả) — với code dùng raw SQL/updateMany/upsert, Planner phải đối chiếu tên field với `prisma/schema.prisma`.
-12. **RLS policy SQL sai nhưng comment đúng intent** (F5-01/F5-02) — Planner phải tự đọc từng policy, đừng tin comment/header của migration.
-13. **P1: Tier 2 handoff mà KHÔNG tự chạy lệnh bắt buộc đã nêu trong Directive** — round 2 xảy ra 2 lần liên tiếp (AUD-001 syntax thiếu `}`, AUD-003 field `address` không tồn tại; `node --check` và `npx prisma db seed` đã được yêu cầu từ Directive round 1). → Từ round 3: Directive ghi rõ "BẮT BUỘC dán evidence (command + exit + output) vào HANDOFF; Tier 3 FAIL ngay nếu thiếu".
-14. **P1: Planner tự chạy OP của sếp khi chưa ủy quyền** → permission classifier chặn là ĐÚNG; báo sếp chọn (tự chạy / ủy quyền rõ) — KHÔNG lách.
-15. **P1: Extract env từ .env không xử lý dấu ngoặc kép** → connection string hỏng (`ENOTFOUND base`); luôn `.Trim('"')` + chẩn đoán masked.
-
----
-
-## 10. Checklist ngày đầu (V5)
-
-- [ ] �?c `.ai-pipeline/tier1.md` + `rules/01-planner-rules.md` + `templates/TASK.template.md`
-- [ ] Đọc `docs/UNIFIED_PLAN_v5.md`, `docs/V5_3_TIER_EXECUTION_GUIDE.md` và snapshot §0.
-- [ ] Đọc `docs/tasks/hrp-mp2-apply-tracking/TASK.md`.
-- [ ] Kiểm tra `docs/roadmap-portals.html`: MP-1 ACCEPTED, MP-2 READY_FOR_EXECUTION.
-- [ ] Báo sếp lệnh `/code hrp-mp2-apply-tracking`; không gọi task Portal V4 legacy.
-- [ ] Sau m?i round/task, lu�n nh? c?p nh?t d?ng b? c�c file theo m?c s? 8 v� push.
-
----
-
+| 25/08/2026 | Sửa roadmap sau M1-06b thành dependency graph: bổ sung M1-06c gate, lane M1/M35/OPS, đủ M7/M8, quan hệ M6/PAY và quy tắc không tự gán dependency cứng. |
+| 25/08/2026 | Thay snapshot MP-2 lỗi thời bằng trạng thái sau MP-3C và M1-06a; đặt M1-06b làm task duy nhất đang mở; bổ sung DB test, waiver MP-3C, queue tiếp theo, tier boundary và cảnh báo worktree/no-push. |

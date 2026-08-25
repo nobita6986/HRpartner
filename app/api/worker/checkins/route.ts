@@ -1,14 +1,23 @@
 /**
- * POST /api/worker/checkins — P1 Portals STEP-04 (RQ-03, RQ-04).
+ * POST /api/worker/checkins — P1 Portals STEP-04 / V5-M1-06b (RQ-03, RQ-04).
  *
  * DEC-03: GPS evidence + geofence check against Site.radiusMeters.
- * DEC-04: batch idempotent (payloadHash), offline-first.
- * DEC-05: source = GPS.
+ * DEC-04: geofence CHỈ tính Site thuộc assignment ACTIVE của chính worker
+ *   (server-derived `ctx.workerId` — KHÔNG quét toàn bộ Site, KHÔNG nhận từ client);
+ *   read + write nằm trong CÙNG transaction.
+ *
+ * Vì sao attendance INSERT chạy qua `withSystemDb` (elevated, hẹp) thay vì context
+ * WORKER: RLS `attendance_events` (M13 `20260821103500`) WITH CHECK chỉ cho phép
+ * {ADMIN,HR_MANAGER,HR_STAFF} — WORKER KHÔNG thể INSERT self check-in dưới GUC role
+ * WORKER. Ownership vẫn khoá server-side bằng `workerId: ctx.workerId`; geofence read
+ * khoá bằng `where` assignment ACTIVE của chính worker. Xem `with-system-db.ts`.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import type { Prisma } from '@prisma/client';
 import { getAuthContext } from '@/src/shared/auth/auth-context';
 import { getPrisma } from '@/src/lib/db';
+import { SYSTEM_CHECKIN, withSystemDb } from '@/src/shared/auth/with-system-db';
 
 const checkinSchema = z.object({
   workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -29,53 +38,39 @@ function buildPayloadHash(data: z.infer<typeof checkinSchema>): string {
   return `gps_${Math.abs(h).toString(16)}`;
 }
 
+function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Geofence CHỈ trên Site thuộc project có assignment ACTIVE của chính worker
+ * (DEC-04). `workerId` suy ra từ server. Chạy trên `tx` đã set context.
+ */
 async function checkGeofence(
+  tx: Prisma.TransactionClient,
+  workerId: string,
   lat: number,
   lng: number,
-  workerId: string,
-  prisma: ReturnType<typeof getPrisma>,
 ): Promise<'INSIDE' | 'OUTSIDE' | 'NONE'> {
-  try {
-    const worker = await prisma.worker.findUnique({
-      where: { id: workerId },
-      select: { id: true },
-      // In real impl: get worker's project assignment to find Site
-      // For MVP: check if any active Site exists within radius
-    });
-
-    // MVP: check nearest Site with radius (no isActive on Site model)
-    const sites = await prisma.site.findMany({
-      select: { id: true, latitude: true, longitude: true, radiusMeters: true },
-    });
-
-    if (sites.length === 0) return 'NONE';
-
-    // Haversine distance (using plain numbers from Decimal)
-    function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
-      const R = 6371000;
-      const dLat = ((lat2 - lat1) * Math.PI) / 180;
-      const dLng = ((lng2 - lng1) * Math.PI) / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLng / 2) * Math.sin(dLng / 2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
-
-    for (const site of sites) {
-      const distance = haversine(
-        lat, lng,
-        Number(site.latitude),
-        Number(site.longitude),
-      );
-      if (distance <= (site.radiusMeters ?? 200)) {
-        return 'INSIDE';
-      }
-    }
-    return 'OUTSIDE';
-  } catch {
-    return 'NONE';
+  const sites = await tx.site.findMany({
+    where: {
+      project: { assignments: { some: { status: 'ACTIVE', workerId } } },
+    },
+    select: { latitude: true, longitude: true, radiusMeters: true },
+  });
+  if (sites.length === 0) return 'NONE';
+  for (const site of sites) {
+    const distance = haversine(lat, lng, Number(site.latitude), Number(site.longitude));
+    if (distance <= (site.radiusMeters ?? 200)) return 'INSIDE';
   }
+  return 'OUTSIDE';
 }
 
 export async function POST(req: NextRequest) {
@@ -102,49 +97,50 @@ export async function POST(req: NextRequest) {
   if (!ctx.workerId) {
     return NextResponse.json({ error: 'NOT_A_WORKER' }, { status: 403 });
   }
+  const workerId = ctx.workerId;
 
   const prisma = getPrisma();
-
   const payloadHash = buildPayloadHash(data);
-
-  // Check geofence if GPS coordinates provided
-  let geofenceResult: string | undefined;
-  let riskFlag = false;
-  if (data.gpsLatitude != null && data.gpsLongitude != null) {
-    const result = await checkGeofence(data.gpsLatitude, data.gpsLongitude, ctx.workerId, prisma);
-    geofenceResult = result;
-    riskFlag = result === 'OUTSIDE';
-  }
+  const hasGps = data.gpsLatitude != null && data.gpsLongitude != null;
 
   try {
-    const event = await prisma.attendanceEvent.create({
-      data: {
-        externalEventId: payloadHash,
-        source: 'GPS',
-        status: 'APPENDED',
-        workerId: ctx.workerId,
-        workDate: new Date(data.workDate + 'T00:00:00.000Z'),
-        checkInTime: data.checkInTime,
-        checkOutTime: data.checkOutTime,
-        payloadHash,
-        capturedAt: data.capturedAt ? new Date(data.capturedAt) : null,
-        gpsLatitude: data.gpsLatitude ? data.gpsLatitude.toString() : null,
-        gpsLongitude: data.gpsLongitude ? data.gpsLongitude.toString() : null,
-        gpsAccuracyMeters: data.gpsAccuracyMeters ?? null,
-        geofenceResult: geofenceResult ?? null,
-      },
+    // Geofence read (scoped) + attendance INSERT trong CÙNG transaction hệ thống.
+    const { eventId, geofenceResult, riskFlag } = await withSystemDb(prisma, SYSTEM_CHECKIN, async (tx) => {
+      let geofence: 'INSIDE' | 'OUTSIDE' | 'NONE' | undefined;
+      if (hasGps) {
+        geofence = await checkGeofence(tx, workerId, data.gpsLatitude!, data.gpsLongitude!);
+      }
+      const event = await tx.attendanceEvent.create({
+        data: {
+          externalEventId: payloadHash,
+          source: 'GPS',
+          status: 'APPENDED',
+          workerId,
+          workDate: new Date(data.workDate + 'T00:00:00.000Z'),
+          checkInTime: data.checkInTime,
+          checkOutTime: data.checkOutTime,
+          payloadHash,
+          capturedAt: data.capturedAt ? new Date(data.capturedAt) : null,
+          gpsLatitude: data.gpsLatitude != null ? data.gpsLatitude.toString() : null,
+          gpsLongitude: data.gpsLongitude != null ? data.gpsLongitude.toString() : null,
+          gpsAccuracyMeters: data.gpsAccuracyMeters ?? null,
+          geofenceResult: geofence ?? null,
+        },
+        select: { id: true },
+      });
+      return { eventId: event.id, geofenceResult: geofence, riskFlag: geofence === 'OUTSIDE' };
     });
 
     return NextResponse.json({
       ok: true,
-      id: event.id,
+      id: eventId,
       message: riskFlag ? 'Chấm công thành công (cảnh báo: ngoài khu vực)' : 'Chấm công thành công!',
       riskFlag,
       geofenceResult,
     });
   } catch (err: any) {
     if (err?.code === 'P2002') {
-      // Idempotent — already recorded
+      // Idempotent — đã ghi nhận (payloadHash trùng).
       return NextResponse.json({
         ok: true,
         id: null,

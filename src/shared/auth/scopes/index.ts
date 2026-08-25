@@ -27,6 +27,11 @@ import {
   buildUserSelfScope,
 } from './ctv.scope';
 import { buildStaffingOrderScope, buildStaffingOrderSlotScope } from './staffing.scope';
+import {
+  buildTicketScope,
+  buildAttendanceEventScope,
+  buildSiteScope,
+} from './worker-portal.scope';
 
 export type ScopeBuilder = (ctx: AuthContext) => Prisma.Args<unknown, 'findMany'>['where'];
 
@@ -46,6 +51,10 @@ export const SCOPE_REGISTRY: Record<string, ScopeBuilder> = {
   CtvWithdrawalRequest: buildCtvWithdrawalScope,
   CommissionLedger: buildCommissionLedgerScope,
   CommissionDebt: buildCommissionDebtScope,
+  // V5-M1-06b — worker-portal + attendance read scope (RQ-02 / DEC-08).
+  Ticket: buildTicketScope,
+  AttendanceEvent: buildAttendanceEventScope,
+  Site: buildSiteScope,
 };
 
 export {
@@ -59,4 +68,7 @@ export {
   buildCommissionLedgerScope,
   buildCommissionDebtScope,
   buildUserSelfScope,
+  buildTicketScope,
+  buildAttendanceEventScope,
+  buildSiteScope,
 };
