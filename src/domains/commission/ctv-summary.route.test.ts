@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   getAuthContext: vi.fn(),
   getCtvBalance: vi.fn(),
   listLedgerByCtv: vi.fn(),
-  userFindUnique: vi.fn(),
+  userFindFirst: vi.fn(),
   sourceClaimFindMany: vi.fn(),
 }));
 
@@ -14,12 +14,12 @@ vi.mock('@/src/shared/auth/auth-context', () => ({
 }));
 vi.mock('@/src/lib/db', () => ({
   getPrisma: () => ({
-    user: { findUnique: mocks.userFindUnique },
+    user: { findFirst: mocks.userFindFirst },
     sourceClaim: { findMany: mocks.sourceClaimFindMany },
   }),
 }));
-vi.mock('@/src/shared/auth/with-db-context', () => ({
-  withDbContext: async (
+vi.mock('@/src/shared/auth/with-authorized-db', () => ({
+  withAuthorizedDb: async (
     prisma: unknown,
     _ctx: unknown,
     callback: (tx: unknown) => Promise<unknown>,
@@ -38,7 +38,7 @@ describe('GET /api/ctv/summary commission source', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getAuthContext.mockResolvedValue({ userId: 'ctv-1', role: 'CTV' });
-    mocks.userFindUnique.mockResolvedValue({
+    mocks.userFindFirst.mockResolvedValue({
       affCode: 'CTV-SYNTHETIC',
       phone: '0900000000',
     });

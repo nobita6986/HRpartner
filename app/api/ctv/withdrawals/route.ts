@@ -1,10 +1,16 @@
 /**
  * POST /api/ctv/withdrawals — M11 (refactor M9 RQ-02).
  * CTV tạo yêu cầu rút tiền. Lưu vào DB qua Prisma thay vì file JSON.
+ *
+ * V5-M1-06a: mọi DB op đi qua boundary. READ → `withAuthorizedDb` (L1+L2). CREATE
+ * không thể qua L1 (extension inject `where` làm vỡ `create`) nên dùng `withDbContext`
+ * (L2 RLS) + ownership suy ra từ server (`ctx.userId`), CẤM nhận `ctvId` từ body (DEC-03/06).
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
 import { getPrisma } from '@/src/lib/db';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { withAuthorizedDb } from '@/src/shared/auth/with-authorized-db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -52,26 +58,29 @@ export async function POST(req: NextRequest) {
   }
 
   const prisma = getPrisma();
-  const created = await prisma.ctvWithdrawalRequest.create({
-    data: {
-      ctvId: ctx.userId,
-      amountVnd: amountBig,
-      bankAccount: String(bankAccount),
-      bankName: String(bankName),
-      status: 'PENDING',
-    },
-    select: {
-      id: true,
-      ctvId: true,
-      amountVnd: true,
-      bankAccount: true,
-      bankName: true,
-      status: true,
-      createdAt: true,
-    },
-  });
+  const created = await withDbContext(prisma, ctx, (tx) =>
+    tx.ctvWithdrawalRequest.create({
+      data: {
+        ctvId: ctx.userId,
+        amountVnd: amountBig,
+        bankAccount: String(bankAccount),
+        bankName: String(bankName),
+        status: 'PENDING',
+      },
+      select: {
+        id: true,
+        ctvId: true,
+        amountVnd: true,
+        bankAccount: true,
+        bankName: true,
+        status: true,
+        createdAt: true,
+      },
+    }),
+  );
 
-  console.log(`[withdrawals] New withdrawal: ${created.id} for CTV ${ctx.userId}, amount ${created.amountVnd}`);
+  // RQ-06/AC-07: KHÔNG log amount/bank/ctvId (dữ liệu tài chính + PII). Chỉ log id.
+  console.log(`[withdrawals] created ${created.id}`);
 
   return NextResponse.json(
     {
@@ -104,19 +113,21 @@ export async function GET(req: NextRequest) {
   }
 
   const prisma = getPrisma();
-  const records = await prisma.ctvWithdrawalRequest.findMany({
-    where: { ctvId: ctx.userId },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      ctvId: true,
-      amountVnd: true,
-      bankAccount: true,
-      bankName: true,
-      status: true,
-      createdAt: true,
-    },
-  });
+  const records = await withAuthorizedDb(prisma, ctx, (tx) =>
+    tx.ctvWithdrawalRequest.findMany({
+      where: { ctvId: ctx.userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        ctvId: true,
+        amountVnd: true,
+        bankAccount: true,
+        bankName: true,
+        status: true,
+        createdAt: true,
+      },
+    }),
+  );
 
   const items = records.map((r) => ({
     ...r,

@@ -21,6 +21,10 @@ import {
   buildCandidateSubmissionScope,
   buildVendorStatementScope,
   buildCtvSourceClaimScope,
+  buildCtvWithdrawalScope,
+  buildCommissionLedgerScope,
+  buildCommissionDebtScope,
+  buildUserSelfScope,
 } from './ctv.scope';
 import { buildStaffingOrderScope, buildStaffingOrderSlotScope } from './staffing.scope';
 
@@ -37,6 +41,11 @@ export const SCOPE_REGISTRY: Record<string, ScopeBuilder> = {
   // Phase 4 slice 4A — DEC-15 / STEP-02
   StaffingOrder: buildStaffingOrderScope,
   StaffingOrderSlot: buildStaffingOrderSlotScope,
+  // V5-M1-06a — CTV self-scope cho account/finance model (RQ-04 / DEC-06).
+  User: buildUserSelfScope,
+  CtvWithdrawalRequest: buildCtvWithdrawalScope,
+  CommissionLedger: buildCommissionLedgerScope,
+  CommissionDebt: buildCommissionDebtScope,
 };
 
 export {
@@ -46,4 +55,8 @@ export {
   buildCandidateSubmissionScope,
   buildVendorStatementScope,
   buildCtvSourceClaimScope,
+  buildCtvWithdrawalScope,
+  buildCommissionLedgerScope,
+  buildCommissionDebtScope,
+  buildUserSelfScope,
 };

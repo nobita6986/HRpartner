@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` |
 | Planner | Tier 1 — primary agent |
 | Executor | Tier 2 — Coding agent |
 | Auditor | Tier 3 — independent Audit agent |
@@ -17,7 +17,7 @@
 | ADR references | `UNIFIED_PLAN_v5.md` §4.3 `V5-M1-06`, §4.13, §7.2; `V5_3_TIER_EXECUTION_GUIDE.md` §3.1; deny-by-default và L1+L2 hiện hữu |
 | Current execution round | `1` |
 | Current audit round | `1` |
-| Next gate | `verify-task` → `/code` → Tier 2 HANDOFF → Tier 3 audit → Tier 1 resolve |
+| Next gate | Task closed → create one scoped M1-06a commit (no push) → prepare next M1-06 slice |
 | Updated | `2026-08-25 Asia/Bangkok` |
 
 ## 1. Outcome
@@ -168,11 +168,11 @@ Phương pháp evidence: CodeGraph đã được gọi trước nhưng không ch
 
 ## 9. Planner Resolution
 
-Chưa có audit. Dependency MP-3C đã `ACCEPTED` và được commit scoped tại `299614a`; inventory/control được refresh, không còn quyết định mở chặn implementation.
+Audit round 1 đã qua gate cơ học (`verify-audit.ps1: PASS`) với verdict `PASS`, không finding và không coverage gap. Tier 3 xác nhận AC-01..AC-10 cùng Mandatory Checks C-01..C-10 đều PASS; LIVE security lane đạt 228/228 tests trên test DB riêng. Planner chấp nhận kết quả, không re-audit toàn bộ và đóng task `ACCEPTED`.
 
-1. Tier 2 chạy `/code hrp-v5-m1-06a-admin-ctv-auth-scope`, chỉ sửa source/test trong scope và tạo `HANDOFF.md`.
-2. Tier 3 chạy `/audit hrp-v5-m1-06a-admin-ctv-auth-scope round 1`, chỉ sửa `AUDIT.md`.
-3. Tier 1 chạy `/resolve hrp-v5-m1-06a-admin-ctv-auth-scope` và không tự re-audit đại trà.
+| Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
+|---|---|---|---|---|---|
+| `1` | `None` | `ACCEPT_FIX` (no fix required) | Audit verdict PASS; all blocking AC and C-01..C-10 PASS; no gaps. | `None` | Closed by Tier 1 on 2026-08-25. |
 
 ## 10. Revision Log
 
@@ -180,3 +180,4 @@ Chưa có audit. Dependency MP-3C đã `ACCEPTED` và được commit scoped t�
 |---|---|---|---|
 | `v1.0` | `2026-08-25` | Initial M1-06a admin/CTV auth-scope hardening contract. | MP-3C is active; contract prepared in advance per founder request. |
 | `v1.0` | `2026-08-25` | Promoted to `READY_FOR_EXECUTION`; execution baseline set to `299614a`. | MP-3C accepted, audited and committed; dependency closed. |
+| `v1.0` | `2026-08-25` | Marked `ACCEPTED`. | Audit round 1 PASS; no findings or coverage gaps. |

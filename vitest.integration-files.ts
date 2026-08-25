@@ -28,4 +28,5 @@ export const INTEGRATION_TEST_FILES: string[] = [
   'src/domains/applications/security-boundary.mp2.test.ts',
   'src/domains/applications/live-integration.mp3b.test.ts',
   'src/domains/applications/live-integration.mp3c.test.ts',
+  'src/shared/auth/live-auth-scope.m1-06a.test.ts',
 ];

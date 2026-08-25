@@ -34,6 +34,7 @@ export default defineConfig({
       DATABASE_URL_ADMIN_TEST: '',
       MP2_LIVE_SECURITY_CHECK: '',
       MP3B_LIVE_CONVERSION_CHECK: '',
+      M1_06A_LIVE_AUTH_SCOPE: '',
     },
     poolOptions: {
       threads: { maxThreads: 1, minThreads: 1 },

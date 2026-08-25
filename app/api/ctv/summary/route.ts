@@ -1,10 +1,14 @@
 /**
  * GET /api/ctv/summary — portal summary backed by canonical commission ledger.
+ *
+ * V5-M1-06a: đọc qua boundary canonical `withAuthorizedDb` (L1 scope + L2 RLS GUC).
+ * CTV self-scope suy ra từ `ctx.userId` (DEC-06). `user.findFirst` thay `findUnique`
+ * để tương thích L1 (extension bọc where trong AND — findUnique yêu cầu unique ở top-level).
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthContext } from '@/src/shared/auth/auth-context';
 import { getPrisma } from '@/src/lib/db';
-import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { withAuthorizedDb } from '@/src/shared/auth/with-authorized-db';
 import {
   getCtvBalance,
   listLedgerByCtv,
@@ -25,12 +29,12 @@ export async function GET(req: NextRequest) {
   const prisma = getPrisma();
 
   try {
-    const { user, claims, balance, ledgerTotal } = await withDbContext(
+    const { user, claims, balance, ledgerTotal } = await withAuthorizedDb(
       prisma,
       ctx,
       async (tx) => {
         const [userRow, claimRows, availableBalance, ledgerPage] = await Promise.all([
-          tx.user.findUnique({
+          tx.user.findFirst({
             where: { id: ctx.userId },
             select: { affCode: true, phone: true },
           }),
@@ -78,8 +82,9 @@ export async function GET(req: NextRequest) {
       },
       note,
     });
-  } catch (error) {
-    console.error('[api/ctv/summary] query error:', error);
+  } catch {
+    // RQ-06/AC-07: KHÔNG log raw DB error.
+    console.error('[api/ctv/summary] query failed');
     return NextResponse.json({ error: 'INTERNAL' }, { status: 500 });
   }
 }

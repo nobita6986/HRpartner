@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
-import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { withAuthorizedDb } from '@/src/shared/auth/with-authorized-db';
 import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 import {
   getCtvBalance,
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
   const prisma = getPrisma();
 
   try {
-    const [balance, totalDebt, ledgerPage] = await withDbContext(prisma, ctx, async (tx) => {
+    const [balance, totalDebt, ledgerPage] = await withAuthorizedDb(prisma, ctx, async (tx) => {
       const [b, d, l] = await Promise.all([
         getCtvBalance(tx, ctvId),
         getTotalDebt(tx, ctvId),
@@ -66,10 +66,11 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (e) {
+    // RQ-06/AC-07 + DEC-07: 403 generic, KHÔNG lộ scope predicate/model; KHÔNG log raw error.
     if (e instanceof AuthScopeError) {
-      return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
+      return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
     }
-    console.error('[api/ctv/commission/summary GET] error:', e);
+    console.error('[api/ctv/commission/summary GET] query failed');
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed' }, { status: 500 });
   }
 }

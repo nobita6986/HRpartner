@@ -1,9 +1,14 @@
 /**
  * GET /api/admin/users — M7 Admin Users
+ *
+ * V5-M1-06a: query đi qua boundary canonical `withAuthorizedDb` (L1 scope + L2 RLS GUC).
+ * ADMIN là root role → L1 passthrough (không inject WHERE, giữ nguyên filter search);
+ * L2 set GUC app.role=ADMIN để RLS cho phép đọc toàn bộ users. Không đọc raw client.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { withAuthorizedDb } from '@/src/shared/auth/with-authorized-db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -45,19 +50,22 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [rows, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        select: { id: true, name: true, phone: true, role: true, vendorId: true, isActive: true, createdAt: true },
-        orderBy: { createdAt: 'desc' },
-        take,
-        skip,
-      }),
-      prisma.user.count({ where }),
-    ]);
+    const [rows, total] = await withAuthorizedDb(prisma, ctx, async (tx) => {
+      return Promise.all([
+        tx.user.findMany({
+          where,
+          select: { id: true, name: true, phone: true, role: true, vendorId: true, isActive: true, createdAt: true },
+          orderBy: { createdAt: 'desc' },
+          take,
+          skip,
+        }),
+        tx.user.count({ where }),
+      ]);
+    });
     return NextResponse.json({ users: rows, total, take, skip });
-  } catch (err) {
-    console.error('[api/admin/users] error:', err);
+  } catch {
+    // RQ-06/AC-07: KHÔNG log raw DB error (có thể lộ SQL/model/scope predicate).
+    console.error('[api/admin/users] query failed');
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to query users' }, { status: 500 });
   }
 }
