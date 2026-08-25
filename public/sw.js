@@ -9,7 +9,7 @@
  * No new libraries (DEC-04).
  */
 
-const CACHE_NAME = 'hrp-worker-v1';
+const CACHE_NAME = 'hrp-worker-v2';
 const STATIC_ASSETS = [
   '/worker',
   '/manifest.json',
@@ -55,6 +55,24 @@ self.addEventListener('fetch', (event) => {
         status: 503,
         headers: { 'content-type': 'application/json' },
       }))
+    );
+    return;
+  }
+
+  // Navigation/HTML must be network-first so a new deployment is visible
+  // immediately. The previous cache-first rule could pin an old index.html
+  // indefinitely after users had visited the Worker PWA once.
+  if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match('/worker')))
     );
     return;
   }
