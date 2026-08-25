@@ -1,16 +1,38 @@
 'use client';
 
 /**
- * /admin/applications — MP-2 STEP-05 (RQ-05/RQ-06/RQ-07, DEC-05/DEC-06).
+ * /admin/applications — MP-3C STEP-07 (RQ-09).
  *
- * Authenticated HR/Sale application queue + detail + the single MP-2 status
- * action (NEW ↔ NEEDS_INFO, reason required). Consumes the RLS-scoped routes
- * under /api/admin/applications. DEC-06: only ADMIN/HR_MANAGER/DIRECTOR/SALE may
- * read the queue — the server returns 403 for anyone else (incl. HR_STAFF), and
- * this page renders a dedicated no-permission state for that case.
+ * The authenticated HR/Sale queue plus the full MP-3 review drawer: the
+ * screen → qualify → reject → convert (dedup-aware) → placement (preview →
+ * override → activate) pipeline. Every decision (which action a status/role may
+ * take, gating, conflict labels) comes from `placement-ui.ts`; every piece of
+ * markup is a controlled component from `placement-panel.tsx`. This page only
+ * wires state to the RLS-scoped API routes — the server re-checks every gate,
+ * so the UI is a convenience, never the authority (DEC-04).
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActionBar,
+  DedupPicker,
+  PlacementPanel,
+  type DedupCandidateDto,
+  type OverrideValue,
+  type PlacementPreviewDto,
+} from '@/src/domains/applications/placement-panel';
+import {
+  activateGate,
+  availableActions,
+  conflictLabel,
+  newIdempotencyKey,
+  previewSubmitGate,
+  SOURCE_LABELS,
+  STATUS_LABELS,
+  toIsoOrEmpty,
+  type ActionId,
+  type PlacementFormState,
+} from '@/src/domains/applications/placement-ui';
 
 interface Row {
   id: string;
@@ -34,6 +56,15 @@ interface HistoryEntry {
   createdAt: string;
 }
 
+/* MP-3 detail additions (RQ-08) — IDs / codes / counters only, never rate/margin. */
+interface SourceClaimDto { id: string; claimType: string; registrationChannel: string; accepted: boolean }
+interface DedupFactsDto { dedupWorkerId: string | null; mergedWorkerId: string | null; blockCode: string | null; overrideCase: string | null }
+interface AssignmentDto {
+  assignmentId: string; status: string; projectId: string;
+  staffingOrderId: string | null; staffingOrderSlotId: string | null;
+  employeeCode: string; employmentType: string; validFrom: string | null; validTo: string | null;
+}
+
 interface Detail extends Row {
   cccdNumber: string | null;
   dateOfBirth: string | null;
@@ -44,15 +75,15 @@ interface Detail extends Row {
   cvSizeBytes: number | null;
   consentAt: string | null;
   statusHistory: HistoryEntry[];
+  version: number;
+  workerId: string | null;
+  sourceClaim: SourceClaimDto | null;
+  dedup: DedupFactsDto;
+  assignment: AssignmentDto | null;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  NEW: 'Mới', NEEDS_INFO: 'Cần bổ sung', SCREENING: 'Đang xét',
-  QUALIFIED: 'Đạt', REJECTED: 'Từ chối', WITHDRAWN: 'Đã rút', CONVERTED: 'Đã nhận',
-};
-// DEC-05: MP-2 owns ONLY the NEW ↔ NEEDS_INFO pair.
+// DEC-05: MP-2 owns ONLY the NEW ↔ NEEDS_INFO pair; MP-3 actions drive the rest.
 const MP2_TARGET: Record<string, string | null> = { NEW: 'NEEDS_INFO', NEEDS_INFO: 'NEW' };
-const SOURCE_LABELS: Record<string, string> = { PUBLIC: 'Công khai', VENDOR: 'NCC', CTV: 'CTV' };
 
 function fmt(iso: string | null): string {
   if (!iso) return '—';
@@ -60,9 +91,18 @@ function fmt(iso: string | null): string {
   return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('vi-VN');
 }
 
+/* Prefer a server message; otherwise translate the stable error code to Vietnamese. */
+function messageOf(data: unknown): string {
+  const d = (data ?? {}) as { message?: unknown; error?: unknown };
+  if (typeof d.message === 'string' && d.message) return d.message;
+  if (typeof d.error === 'string' && d.error) return conflictLabel(d.error);
+  return 'Có lỗi xảy ra.';
+}
+
 export default function AdminApplicationsPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
+  const [role, setRole] = useState('');
   const [source, setSource] = useState('');
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
@@ -72,6 +112,21 @@ export default function AdminApplicationsPage() {
   const [forbidden, setForbidden] = useState(false);
   const [selected, setSelected] = useState<Detail | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Viewer role — drives which lifecycle actions the drawer offers (the server
+  // is still the authority and re-checks every gate). /api/me returns { role } only.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/me', { cache: 'no-store' });
+        if (cancelled || !res.ok) return;
+        const data = await res.json().catch(() => ({} as Record<string, unknown>));
+        if (typeof data.role === 'string') setRole(data.role);
+      } catch { /* role stays empty → drawer offers no actions until known */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -105,6 +160,10 @@ export default function AdminApplicationsPage() {
     } catch { /* ignore — panel simply will not open */ }
   }
   const refresh = () => setRefreshKey((k) => k + 1);
+  // After any drawer mutation: re-read the detail in place (new status/version/
+  // assignment) and refresh the list counters. The drawer stays open so HR can
+  // continue the pipeline (screen → qualify → convert → placement) uninterrupted.
+  const onChanged = (id: string) => { openDetail(id); refresh(); };
 
   return (
     <div className='p-6'>
@@ -167,72 +226,285 @@ export default function AdminApplicationsPage() {
         </div>
       )}
       {selected && (
-        <DetailPanel detail={selected} onClose={() => setSelected(null)} onDone={() => { refresh(); setSelected(null); }} />
+        <DetailPanel
+          detail={selected}
+          role={role}
+          onClose={() => setSelected(null)}
+          onChanged={() => onChanged(selected.id)}
+        />
       )}
     </div>
   );
 }
 
-function DetailPanel({ detail, onClose, onDone }: { detail: Detail; onClose: () => void; onDone: () => void }) {
-  const target = MP2_TARGET[detail.status] ?? null;
-  const [reason, setReason] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState('');
+function DetailPanel({ detail, role, onClose, onChanged }: {
+  detail: Detail;
+  role: string;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  // Lifecycle actions (screen/qualify/reject/convert) share one reason field.
+  const [pending, setPending] = useState<ActionId | null>(null);
+  const [actionReason, setActionReason] = useState('');
+  const [panelError, setPanelError] = useState('');
+  const [panelSuccess, setPanelSuccess] = useState('');
 
-  async function submit() {
+  // Dedup-aware convert (AC-08): candidates surface when the server asks for review.
+  const [dedup, setDedup] = useState<DedupCandidateDto[] | null>(null);
+  const [dedupSelected, setDedupSelected] = useState<string | null>(null);
+
+  // Placement sub-flow (preview → override → activate).
+  const [showPlacement, setShowPlacement] = useState(false);
+  const [form, setForm] = useState<PlacementFormState>({ employeeCode: '', employmentType: '', validFrom: '', validTo: '', workSetting: '' });
+  const [preview, setPreview] = useState<PlacementPreviewDto | null>(null);
+  const [dirtySincePreview, setDirty] = useState(false);
+  const [placementReason, setPlacementReason] = useState('');
+  const [override, setOverride] = useState<OverrideValue>({ overrideCase: '', reason: '', evidence: '' });
+  const [previewing, setPreviewing] = useState(false);
+  const [activating, setActivating] = useState(false);
+  // One idempotency key per activation attempt; any edit to the payload mints a
+  // fresh one so a retry of the SAME payload replays, a changed payload does not
+  // collide (DEC-08).
+  const idemKey = useRef(newIdempotencyKey());
+
+  const target = MP2_TARGET[detail.status] ?? null;
+  const subject = { status: detail.status, hasAssignment: Boolean(detail.assignment) };
+  const actions = availableActions(subject, role);
+  const needsReason = actions.some((a) => a !== 'placement');
+  // The placement panel only ever renders for ADMIN/HR_MANAGER, so the override
+  // form is offered; the server still enforces CAN_OVERRIDE_REFERRAL_GUARD and
+  // returns OVERRIDE_DENIED if the actor actually lacks it.
+  const canOverride = role === 'ADMIN' || role === 'HR_MANAGER';
+
+  const previewGate = previewSubmitGate(form, previewing);
+  const activateResult = activateGate({
+    preview: preview ? { canActivate: preview.canActivate, conflicts: preview.conflicts } : null,
+    reason: placementReason,
+    pending: activating,
+    dirtySincePreview,
+    override: canOverride ? { overrideCase: override.overrideCase, reason: override.reason } : null,
+    canOverride,
+  });
+
+  const jsonHeaders = { 'Content-Type': 'application/json' };
+
+  async function runAction(action: ActionId) {
+    setPanelError(''); setPanelSuccess('');
+    if (action === 'placement') { setShowPlacement(true); return; }
+    if (!actionReason.trim()) { setPanelError('Vui lòng nhập lý do.'); return; }
+    if (action === 'convert') { await doConvert(); return; }
+    setPending(action);
+    try {
+      const res = await fetch(`/api/admin/applications/${encodeURIComponent(detail.id)}/actions/${action}`, {
+        method: 'POST', headers: jsonHeaders,
+        body: JSON.stringify({ reason: actionReason.trim(), expectedVersion: detail.version }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setPanelError(messageOf(data)); return; }
+      setActionReason(''); setPanelSuccess('Đã cập nhật trạng thái.'); onChanged();
+    } catch { setPanelError('Không thể kết nối máy chủ.'); }
+    finally { setPending(null); }
+  }
+
+  async function doConvert(existingWorkerId?: string) {
+    setPending('convert');
+    try {
+      const res = await fetch(`/api/admin/applications/${encodeURIComponent(detail.id)}/actions/convert`, {
+        method: 'POST', headers: jsonHeaders,
+        body: JSON.stringify({
+          reason: actionReason.trim(), expectedVersion: detail.version,
+          ...(existingWorkerId ? { existingWorkerId } : {}),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setDedup(null); setDedupSelected(null); setActionReason('');
+        setPanelSuccess('Đã nhận vào — tạo Worker.'); onChanged(); return;
+      }
+      if (data?.error === 'DEDUP_REVIEW_REQUIRED' || data?.error === 'DEDUP_SELECTION_INVALID') {
+        setDedup((data?.details?.candidates ?? []) as DedupCandidateDto[]);
+        if (data.error === 'DEDUP_SELECTION_INVALID') setPanelError('Lựa chọn không hợp lệ — chọn lại người trùng.');
+        return;
+      }
+      setPanelError(messageOf(data));
+    } catch { setPanelError('Không thể kết nối máy chủ.'); }
+    finally { setPending(null); }
+  }
+
+  async function submitMp2() {
     if (!target) return;
-    if (!reason.trim()) { setErr('Vui lòng nhập lý do.'); return; }
-    setSaving(true); setErr('');
+    if (!actionReason.trim()) { setPanelError('Vui lòng nhập lý do.'); return; }
+    setPending('screen'); // reuse the busy flag to disable the row
     try {
       const res = await fetch(`/api/admin/applications/${encodeURIComponent(detail.id)}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ toStatus: target, reason: reason.trim() }),
+        method: 'PATCH', headers: jsonHeaders,
+        body: JSON.stringify({ toStatus: target, reason: actionReason.trim() }),
       });
-      const data = await res.json().catch(() => ({} as Record<string, unknown>));
-      if (!res.ok) { setErr(typeof data?.message === 'string' ? data.message : 'Không cập nhật được trạng thái.'); return; }
-      onDone();
-    } catch { setErr('Không thể kết nối máy chủ.'); }
-    finally { setSaving(false); }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setPanelError(messageOf(data)); return; }
+      setActionReason(''); setPanelSuccess('Đã cập nhật trạng thái.'); onChanged();
+    } catch { setPanelError('Không thể kết nối máy chủ.'); }
+    finally { setPending(null); }
+  }
+
+  // Editing any activation input mints a fresh idempotency key and forces a
+  // re-preview so a stale preview can never authorise a write (DEC-03/DEC-08).
+  function editForm(next: PlacementFormState) { setForm(next); setDirty(true); idemKey.current = newIdempotencyKey(); }
+  function editReason(next: string) { setPlacementReason(next); idemKey.current = newIdempotencyKey(); }
+  function editOverride(next: OverrideValue) { setOverride(next); idemKey.current = newIdempotencyKey(); }
+
+  const placementBody = () => ({
+    submissionId: detail.id,
+    employeeCode: form.employeeCode.trim(),
+    employmentType: form.employmentType,
+    workSetting: form.workSetting || null,
+    validFrom: toIsoOrEmpty(form.validFrom),
+    validTo: toIsoOrEmpty(form.validTo) || null,
+  });
+
+  async function doPreview() {
+    setPanelError(''); setPanelSuccess(''); setPreviewing(true);
+    try {
+      const res = await fetch('/api/admin/assignments/preview', {
+        method: 'POST', headers: jsonHeaders, body: JSON.stringify(placementBody()),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setPreview(null); setPanelError(messageOf(data)); return; }
+      setPreview(data.preview as PlacementPreviewDto); setDirty(false);
+    } catch { setPanelError('Không thể kết nối máy chủ.'); }
+    finally { setPreviewing(false); }
+  }
+
+  async function doActivate() {
+    setPanelError(''); setPanelSuccess(''); setActivating(true);
+    try {
+      const res = await fetch('/api/admin/assignments', {
+        method: 'POST',
+        headers: { ...jsonHeaders, 'Idempotency-Key': idemKey.current },
+        body: JSON.stringify({
+          ...placementBody(),
+          reason: placementReason.trim(),
+          override: canOverride && override.overrideCase
+            ? { overrideCase: override.overrideCase, reason: override.reason.trim(), evidence: override.evidence.trim() || undefined }
+            : null,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setPanelError(messageOf(data)); return; }
+      const asg = data.assignment as { assignmentId?: string } | undefined;
+      idemKey.current = newIdempotencyKey(); // next attempt is a new activation
+      setShowPlacement(false); setPreview(null);
+      setPanelSuccess(`Đã xếp việc: ${asg?.assignmentId ?? ''}${data.replayed ? ' (đã ghi trước đó)' : ''}`);
+      onChanged();
+    } catch { setPanelError('Không thể kết nối máy chủ.'); }
+    finally { setActivating(false); }
   }
 
   return (
     <div className='fixed inset-0 z-50 flex justify-end' style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className='w-full max-w-md h-full overflow-y-auto p-6' style={{ backgroundColor: 'var(--surface)' }}>
-        <div className='flex items-center justify-between mb-4'>
+      <div className='w-full max-w-md h-full overflow-y-auto p-6 flex flex-col gap-4' style={{ backgroundColor: 'var(--surface)' }}>
+        <div className='flex items-center justify-between'>
           <h2 className='text-lg font-semibold' style={{ color: 'var(--on-surface)' }}>{detail.fullName}</h2>
           <button onClick={onClose} aria-label='Đóng' className='p-1 rounded hover:bg-black/10' style={{ color: 'var(--on-surface)' }}>✕</button>
         </div>
-        <dl className='text-sm grid grid-cols-3 gap-y-2 mb-6' style={{ color: 'var(--on-surface-variant)' }}>
+
+        <dl className='text-sm grid grid-cols-3 gap-y-2' style={{ color: 'var(--on-surface-variant)' }}>
           <dt>SĐT</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.phone}</dd>
           <dt>CCCD</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.cccdNumber ?? '—'}</dd>
           <dt>Dự án</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.projectName ?? '—'}</dd>
           <dt>Nguồn</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{SOURCE_LABELS[detail.source] ?? detail.source}</dd>
-          <dt>Mã</dt><dd className='col-span-2 font-mono text-xs' style={{ color: 'var(--on-surface)' }}>{detail.publicTrackingCode ?? '—'}</dd>
           <dt>CV</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.cvFileName ?? '—'}</dd>
-          <dt>Trạng thái</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{STATUS_LABELS[detail.status] ?? detail.status}</dd>
+          <dt>Trạng thái</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{STATUS_LABELS[detail.status] ?? detail.status} · v{detail.version}</dd>
+          <dt>Worker</dt><dd className='col-span-2 font-mono text-xs' style={{ color: 'var(--on-surface)' }}>{detail.workerId ?? '—'}</dd>
+          {detail.assignment && (
+            <>
+              <dt>Xếp việc</dt>
+              <dd className='col-span-2 text-xs' data-testid='detail-assignment' style={{ color: 'var(--on-surface)' }}>
+                {detail.assignment.employeeCode} · {STATUS_LABELS[detail.assignment.status] ?? detail.assignment.status} · {detail.assignment.employmentType}
+              </dd>
+            </>
+          )}
         </dl>
-        <h3 className='text-sm font-semibold mb-2' style={{ color: 'var(--on-surface)' }}>Lịch sử trạng thái</h3>
-        <ul className='text-xs mb-6 flex flex-col gap-1' style={{ color: 'var(--on-surface-variant)' }}>
-          {detail.statusHistory.length === 0 && <li>—</li>}
-          {detail.statusHistory.map((h) => (
-            <li key={h.id}>
-              {fmt(h.createdAt)}: {h.fromStatus ? (STATUS_LABELS[h.fromStatus] ?? h.fromStatus) : '∅'} → {STATUS_LABELS[h.toStatus] ?? h.toStatus}{h.reason ? ` — ${h.reason}` : ''}
-            </li>
-          ))}
-        </ul>
-        {target ? (
-          <div className='rounded-lg p-4' style={{ backgroundColor: 'var(--surface-container)' }}>
-            <p className='text-sm mb-2' style={{ color: 'var(--on-surface)' }}>Chuyển sang: <strong>{STATUS_LABELS[target]}</strong></p>
-            <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder='Lý do (bắt buộc)' rows={3} className='w-full px-3 py-2 rounded-lg border mb-2' style={{ borderColor: 'var(--outline)', backgroundColor: 'var(--surface)', color: 'var(--on-surface)' }} />
-            {err && <p className='text-sm mb-2' role='alert' style={{ color: 'var(--error, #dc2626)' }}>{err}</p>}
-            <button onClick={submit} disabled={saving} className='px-4 py-2 rounded-lg font-medium disabled:opacity-50' style={{ backgroundColor: 'var(--primary)', color: 'var(--on-primary, white)' }}>
-              {saving ? 'Đang lưu…' : 'Cập nhật'}
-            </button>
-          </div>
-        ) : (
-          <p className='text-xs' style={{ color: 'var(--on-surface-variant)' }}>Các chuyển trạng thái khác thuộc giai đoạn sau (MP-3).</p>
+
+        <div>
+          <h3 className='text-sm font-semibold mb-2' style={{ color: 'var(--on-surface)' }}>Lịch sử trạng thái</h3>
+          <ul className='text-xs flex flex-col gap-1' style={{ color: 'var(--on-surface-variant)' }}>
+            {detail.statusHistory.length === 0 && <li>—</li>}
+            {detail.statusHistory.map((h) => (
+              <li key={h.id}>
+                {fmt(h.createdAt)}: {h.fromStatus ? (STATUS_LABELS[h.fromStatus] ?? h.fromStatus) : '∅'} → {STATUS_LABELS[h.toStatus] ?? h.toStatus}{h.reason ? ` — ${h.reason}` : ''}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Shared reason — consumed by the lifecycle actions (screen/qualify/reject/
+            convert) and the MP-2 NEW↔NEEDS_INFO toggle. Placement has its own reason. */}
+        {(needsReason || target) && (
+          <textarea
+            data-testid='action-reason'
+            aria-label='Lý do'
+            placeholder='Lý do (bắt buộc)'
+            rows={2}
+            value={actionReason}
+            onChange={(e) => setActionReason(e.target.value)}
+            className='px-3 py-2 rounded-lg border'
+            style={{ borderColor: 'var(--outline)', backgroundColor: 'var(--surface)', color: 'var(--on-surface)' }}
+          />
         )}
+
+        {/* MP-3 lifecycle actions + the MP-2 toggle sit together as the decision row. */}
+        <div className='flex flex-wrap items-center gap-2'>
+          <ActionBar subject={subject} role={role} pending={pending} onAction={runAction} />
+          {target && (
+            <button
+              type='button'
+              data-testid='mp2-toggle'
+              disabled={pending !== null}
+              onClick={submitMp2}
+              className='px-3 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50'
+              style={{ backgroundColor: 'var(--surface-container)', color: 'var(--on-surface)' }}
+            >
+              {target === 'NEEDS_INFO' ? 'Yêu cầu bổ sung' : 'Đưa lại về Mới'}
+            </button>
+          )}
+        </div>
+
+        {/* Dedup review (convert flow, AC-08) — surfaces when the server flags duplicates. */}
+        {dedup !== null && (
+          <DedupPicker
+            candidates={dedup}
+            selected={dedupSelected}
+            onSelect={setDedupSelected}
+            onConfirm={() => { if (dedupSelected) void doConvert(dedupSelected); }}
+            onCancel={() => { setDedup(null); setDedupSelected(null); }}
+            pending={pending === 'convert'}
+          />
+        )}
+
+        {/* Placement sub-flow: preview → (override) → activate. Panel messages route to
+            the shared panelError/panelSuccess below, so its own slots stay empty. */}
+        {showPlacement && (
+          <PlacementPanel
+            form={form}
+            onFormChange={editForm}
+            preview={preview}
+            previewGate={previewGate}
+            activateGateResult={activateResult}
+            reason={placementReason}
+            onReasonChange={editReason}
+            override={override}
+            onOverrideChange={editOverride}
+            canOverride={canOverride}
+            onPreview={doPreview}
+            onActivate={doActivate}
+            error={null}
+            success={null}
+          />
+        )}
+
+        {panelError && <p className='text-sm' role='alert' style={{ color: 'var(--error, #dc2626)' }}>{panelError}</p>}
+        {panelSuccess && <p className='text-sm' role='status' style={{ color: 'var(--primary)' }}>{panelSuccess}</p>}
       </div>
     </div>
   );

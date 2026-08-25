@@ -18,6 +18,9 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, '.') },
   },
+  // Match the app runtime (React 19 automatic JSX). Without this, esbuild uses the
+  // classic runtime and component tests fail with "React is not defined".
+  esbuild: { jsx: 'automatic', jsxImportSource: 'react' },
   test: {
     include: ['src/**/*.test.ts', 'packages/**/*.test.ts'],
     exclude: [...configDefaults.exclude, ...INTEGRATION_TEST_FILES],

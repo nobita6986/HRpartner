@@ -78,6 +78,44 @@ export interface AdminApplicationDetail extends AdminApplicationRow {
   cvSizeBytes: number | null;
   consentAt: Date | null;
   statusHistory: StatusHistoryEntry[];
+  // ── MP-3 additions (RQ-08). IDs / codes / counters only: no rate, no margin,
+  // no internal source evidence. The reader boundary is UNCHANGED (DEC-06).
+  /** Optimistic transition guard — the drawer echoes it back as expectedVersion. */
+  version: number;
+  /** Canonical converted Worker (MP-3B); null until the application is CONVERTED. */
+  workerId: string | null;
+  /** Safe source facts from the accepted SourceClaim (MP-3B). */
+  sourceClaim: SourceClaimSummary | null;
+  /** Safe dedup / guard facts already stored on the submission. */
+  dedup: DedupFacts;
+  /** The MP-3C placement created from this application, when it exists. */
+  assignment: AssignmentSummary | null;
+}
+
+export interface SourceClaimSummary {
+  id: string;
+  claimType: string;
+  registrationChannel: string;
+  accepted: boolean;
+}
+
+export interface DedupFacts {
+  dedupWorkerId: string | null;
+  mergedWorkerId: string | null;
+  blockCode: string | null;
+  overrideCase: string | null;
+}
+
+export interface AssignmentSummary {
+  assignmentId: string;
+  status: string;
+  projectId: string;
+  staffingOrderId: string | null;
+  staffingOrderSlotId: string | null;
+  employeeCode: string;
+  employmentType: string;
+  validFrom: Date;
+  validTo: Date | null;
 }
 
 const MAX_PAGE = 100;
@@ -172,6 +210,19 @@ export async function getApplicationDetail(
     include: {
       project: { select: { name: true } },
       statusHistory: { orderBy: { createdAt: 'asc' } },
+      // MP-3 (RQ-08): safe source + placement facts. Selected explicitly so no
+      // forbidden field can ride along.
+      sourceClaims: {
+        where: { accepted: true },
+        select: { id: true, claimType: true, registrationChannel: true, accepted: true, workerId: true },
+      },
+      assignment: {
+        select: {
+          id: true, status: true, projectId: true, staffingOrderId: true,
+          staffingOrderSlotId: true, employeeCode: true, employmentType: true,
+          validFrom: true, validTo: true,
+        },
+      },
     },
   });
   if (!r) {
@@ -179,6 +230,9 @@ export async function getApplicationDetail(
   }
 
   const history = (r as { statusHistory?: StatusHistoryEntry[] }).statusHistory ?? [];
+  const claims = (r as { sourceClaims?: Array<SourceClaimSummary & { workerId: string }> }).sourceClaims ?? [];
+  const acceptedClaim = claims.find((c) => c.workerId === r.workerId) ?? claims[0] ?? null;
+  const placement = (r as { assignment?: (Omit<AssignmentSummary, 'assignmentId'> & { id: string }) | null }).assignment ?? null;
   return {
     id: r.id,
     fullName: r.fullName,
@@ -206,6 +260,35 @@ export async function getApplicationDetail(
       reason: h.reason ?? null,
       createdAt: h.createdAt,
     })),
+    version: r.version,
+    workerId: r.workerId ?? null,
+    sourceClaim: acceptedClaim
+      ? {
+          id: acceptedClaim.id,
+          claimType: acceptedClaim.claimType,
+          registrationChannel: acceptedClaim.registrationChannel,
+          accepted: acceptedClaim.accepted,
+        }
+      : null,
+    dedup: {
+      dedupWorkerId: r.dedupWorkerId ?? null,
+      mergedWorkerId: r.mergedWorkerId ?? null,
+      blockCode: r.blockCode ?? null,
+      overrideCase: r.overrideCase ?? null,
+    },
+    assignment: placement
+      ? {
+          assignmentId: placement.id,
+          status: placement.status,
+          projectId: placement.projectId,
+          staffingOrderId: placement.staffingOrderId ?? null,
+          staffingOrderSlotId: placement.staffingOrderSlotId ?? null,
+          employeeCode: placement.employeeCode,
+          employmentType: placement.employmentType,
+          validFrom: placement.validFrom,
+          validTo: placement.validTo ?? null,
+        }
+      : null,
   };
 }
 

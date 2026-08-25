@@ -413,6 +413,7 @@ model StaffingOrderSlot {
 
   staffingOrder StaffingOrder @relation(fields: [staffingOrderId], references: [id], onDelete: Cascade)
   submissions   CandidateSubmission[] // MP-2 RQ-01: applications linked to this slot
+  assignments   ProjectAssignment[]   // MP-3C RQ-01: placements filling this slot
 
   @@index([staffingOrderId, validFrom])
   @@map("staffing_order_slots")
@@ -501,6 +502,7 @@ model CandidateSubmission {
   slot          StaffingOrderSlot? @relation(fields: [slotId], references: [id]) // MP-2 RQ-01
   sourceClaims  SourceClaim[]
   statusHistory ApplicationStatusHistory[] // MP-2 RQ-01/RQ-06
+  assignment    ProjectAssignment? // MP-3C RQ-01: at most one initial placement per submission
 
   @@index([vendorId, phone]) // V4.5 G13: bỏ unique để nộp LẠI cùng người cho nhu cầu khác — chống trùng bằng Referral Guard
   @@index([cccdNumber]) // V4.3 G11: Referral Guard tra cứu nhanh theo CCCD
@@ -576,16 +578,24 @@ model ProjectAssignment {
   salaryType     String   @default("DAILY") @map("salary_type") // V4.9 G17 (B3): DAILY | MONTHLY (proration khối văn phòng)
   salaryMonthVnd BigInt?  @map("salary_month_vnd") // V4.9: lương tháng cho MONTHLY
   transferReason String?   @map("transfer_reason")
+  // ── MP-3C Assignment placement (additive, nullable/backfill-safe — DEC-02) ──
+  // Legacy rows (incl. every transfer-created assignment) keep both NULL: only a
+  // Marketplace placement that starts from a CONVERTED submission fills them.
+  submissionId        String? @unique @map("submission_id")          // MP-3C RQ-01: canonical source submission — one initial assignment per submission
+  staffingOrderSlotId String? @map("staffing_order_slot_id")         // MP-3C RQ-01: the slot this assignment fills (slotsFilled projection source)
   createdAt      DateTime  @default(now()) @map("created_at")
 
   worker        Worker        @relation(fields: [workerId], references: [id])
   project       Project       @relation(fields: [projectId], references: [id])
   staffingOrder StaffingOrder? @relation(fields: [staffingOrderId], references: [id])
+  submission        CandidateSubmission? @relation(fields: [submissionId], references: [id])        // MP-3C
+  staffingOrderSlot StaffingOrderSlot?   @relation(fields: [staffingOrderSlotId], references: [id]) // MP-3C
   tickets       Ticket[]
 
   @@unique([projectId, employeeCode])
   @@index([workerId, status])
   @@index([projectId, status]) // G22 — scope PM (relation filter §9.7)
+  @@index([staffingOrderSlotId, status]) // MP-3C: slotsFilled ↔ ACTIVE assignment reconciliation
   @@map("project_assignments")
 }
 

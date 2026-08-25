@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` — Founder waived missing browser evidence for `AC-08` |
 | Planner | Tier 1 — primary agent |
 | Executor | Tier 2 — Coding agent |
 | Auditor | Tier 3 — independent Audit agent |
@@ -17,8 +17,8 @@
 | ADR references | `UNIFIED_PLAN_v5.md` §7.9.3–§7.9.7, §7.10, §8.2; existing G14/O9 assignment invariants |
 | Current execution round | `1` |
 | Current audit round | `1` |
-| Next gate | Tier 2 HANDOFF → Tier 3 independent LIVE/code audit → Tier 1 resolve |
-| Updated | `2026-08-24 Asia/Bangkok` |
+| Next gate | Task closed → Tier 2 creates one scoped MP-3C commit (no push) → Tier 1 promotes M1-06a baseline |
+| Updated | `2026-08-25 Asia/Bangkok` |
 
 ## 1. Outcome
 
@@ -183,16 +183,16 @@ Từ drawer hồ sơ ứng viên, HR đi hết flow `screen → qualify → conv
 
 ## 9. Planner Resolution
 
-No audit round exists yet. Tier 1 must not mark this task `ACCEPTED` until Tier 3 returns an independently verified PASS and all blocking AC rows have real evidence.
+Audit round 1 qua gate cơ học (`verify-audit.ps1: PASS`); migration, unit, build và LIVE integration evidence đều PASS. Browser walkthrough/screenshot của `AC-08` không được thực hiện; AUDIT chỉ có component-test evidence và ghi rõ lỗi Playwright CDN. Ngày 2026-08-25, Founder chọn phương án 2 và đích danh cho phép waive visual evidence. Planner chấp nhận rủi ro này để đóng MP-3C; waiver không được diễn giải thành browser test đã chạy hoặc PASS.
 
-Expected handoff sequence:
-
-1. Tier 2: `/code hrp-v5-mp3c-assignment-placement` → modify code/schema/tests and only `HANDOFF.md`.
-2. Tier 3: `/audit hrp-v5-mp3c-assignment-placement round 1` → independently inspect/run evidence and only `AUDIT.md`.
-3. Tier 1: `/resolve hrp-v5-mp3c-assignment-placement` → resolve findings or accept.
+| Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
+|---|---|---|---|---|---|
+| `1` | `Coverage Gap §5 / AC-08` | `REJECT` as closure blocker | Browser evidence không tồn tại; Founder explicitly waived AC-08 visual evidence on 2026-08-25. Component behavior vẫn có unit evidence. | `None` — acceptance-risk waiver, source/spec giữ `v1.0` | Closed by Founder decision. Manual visual QA vẫn là pre-public-launch residual, không block MP-3C. |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | `2026-08-24` | Initial MP-3C assignment placement and UI completion contract. | MP-3B accepted at `42edc43`; normal Tier separation restored. |
+| `v1.0` | `2026-08-25` | Resolution giữ contract, yêu cầu audit evidence-only cho blocking AC-08. | Audit round 1 Coverage Gap §5 mâu thuẫn verdict PASS; không có source revision. |
+| `v1.0` | `2026-08-25` | Marked `ACCEPTED` under explicit Founder waiver for missing AC-08 browser evidence. | Audit round 1 PASS; Founder selected waiver option 2; no source/spec change. |

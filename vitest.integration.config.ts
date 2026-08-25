@@ -35,6 +35,7 @@ export default defineConfig({
       // MP-2 boundary introspection. Without it, those tests remain ENV_BLOCKED.
       MP2_LIVE_SECURITY_CHECK: TEST_DB_ADMIN ? '1' : '',
       MP3B_LIVE_CONVERSION_CHECK: TEST_DB_ADMIN ? '1' : '',
+      MP3C_LIVE_PLACEMENT_CHECK: TEST_DB_ADMIN ? '1' : '',
     },
     poolOptions: {
       threads: { maxThreads: 1, minThreads: 1 },
