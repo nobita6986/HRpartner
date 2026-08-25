@@ -62,9 +62,15 @@
   .hero-meta b{color:var(--ink)}
   .dot{color:var(--brand)}
 
-  /* cards */
-  .cards{padding:24px 0 72px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+  /* content hub */
+  .cards{padding:18px 0 72px}
+  .content-section + .content-section{margin-top:56px}
+  .section-head{display:grid;grid-template-columns:.8fr 1.2fr;gap:24px;align-items:end;margin-bottom:20px}
+  .section-label{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-strong);margin-bottom:6px}
+  .section-title{font-size:clamp(24px,3vw,34px);line-height:1.15;letter-spacing:-.02em}
+  .section-copy{font-size:14.5px;color:var(--muted);max-width:580px;justify-self:end}
+  .featured-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:18px}
+  .access-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
   .card{
     background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
     padding:24px;display:flex;flex-direction:column;gap:10px;
@@ -77,14 +83,44 @@
   }
   .card h2{font-size:18px;font-weight:700}
   .card p{font-size:14.5px;color:var(--muted);flex:1}
+  .card.featured{min-height:250px;padding:30px}
+  .card.featured h2{font-size:clamp(23px,3vw,31px);line-height:1.15;letter-spacing:-.02em}
+  .card.featured.primary{background:#26211B;border-color:#26211B;color:#FFF}
+  .card.featured.primary p{color:#D8D1C7}
+  .card.featured.primary .ic{background:#3A332B;color:#FFB080}
+  .card.featured.primary .more{color:#FFB080}
+  .card.featured.secondary{background:linear-gradient(145deg,var(--card),var(--brand-soft));border-color:var(--brand)}
+  .card.access{min-height:190px}
+  .card.access .ic{width:38px;height:38px;border-radius:10px;font-size:14px;font-weight:800}
   .tag{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:4px 10px;width:fit-content}
   .tag.ok{background:#E9F7EE;color:#16803A}
   .tag.wip{background:#FFF7E6;color:#B45309}
+  .tag.archive{background:#F0EEEA;color:#6E645A}
   @media (prefers-color-scheme: dark){
     .tag.ok{background:#14351F;color:#7BD79C}
     .tag.wip{background:#33250E;color:#E8B05C}
   }
   .card .more{font-size:14px;font-weight:600;color:var(--brand-strong)}
+  .archive{border-top:1px solid var(--line);padding-top:22px}
+  .archive summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:16px;font-weight:700}
+  .archive summary::-webkit-details-marker{display:none}
+  .archive summary::after{content:"+";width:30px;height:30px;border:1px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--brand-strong)}
+  .archive[open] summary::after{content:"−"}
+  .archive summary span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-top:3px}
+  .archive-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:18px}
+  .archive-link{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+  .archive-link:hover{border-color:var(--brand)}
+  .archive-link b{display:block;font-size:14px}
+  .archive-link span{display:block;font-size:12.5px;color:var(--muted);margin-top:3px}
+  @media (max-width:760px){
+    .hero{padding:52px 0 40px}
+    .section-head{grid-template-columns:1fr;gap:8px}
+    .section-copy{justify-self:start}
+    .featured-grid,.access-grid{grid-template-columns:1fr}
+    .card.featured{min-height:220px}
+    .archive-grid{grid-template-columns:1fr}
+    .nav-links a:nth-child(2){display:none}
+  }
 
   /* footer */
   footer{border-top:1px solid var(--line);padding:28px 0 44px;font-size:13px;color:var(--muted)}
@@ -99,91 +135,77 @@
     <a class="brand" href="index.html">HRP<span>.</span></a>
     <div class="nav-links">
       <a class="on" href="index.html">Trang chủ</a>
-      <a href="ve-hrp.html">Về HRP</a>
+      <a href="docs/hrp-vision-portal-aff.html">Tầm nhìn V6</a>
+      <a href="docs/roadmap-v6-portal-aff.html">Roadmap</a>
+      <a href="/login">Đăng nhập</a>
     </div>
   </div>
 </nav>
 
 <div class="hero">
   <div class="wrap">
-    <div class="kicker">HRP — Hệ thống quản trị cung ứng nhân lực</div>
-    <h1>Một hệ thống cho toàn bộ nghiệp vụ <em>cung ứng nhân sự</em>.</h1>
-    <p class="lede">Từ khách hàng, nhu cầu tuyển, người lao động, chấm công, đối soát — đến trả lương và hoa hồng. Mọi con số đã chốt là không sửa.</p>
+    <div class="kicker">HRPartner · Cổng thông tin chính</div>
+    <h1>Một nền tảng. <em>Một hướng đi rõ ràng.</em></h1>
+    <p class="lede">HRP kết nối nhu cầu tuyển dụng, ứng viên, người lao động, đội ngũ vận hành và đối tác trên cùng một dòng dữ liệu — từ tuyển người đến ghi nhận giá trị.</p>
     <div class="cta-row">
-      <a class="btn" href="docs/tasks/hrp-v4-bod-mockup/mockup/index.html">Xem demo BoD — mockup hi-fi ↗</a>
-      <a class="btn ghost" href="ve-hrp.html">Tìm hiểu về HRP</a>
+      <a class="btn" href="docs/hrp-vision-portal-aff.html">Xem tầm nhìn V6 →</a>
+      <a class="btn ghost" href="docs/roadmap-v6-portal-aff.html">Theo dõi roadmap</a>
     </div>
     <div class="hero-meta">
       <span class="meta-item"><span class="dot">●</span> Phiên bản <b>v6.0</b></span>
-      <span class="meta-item">Demo BoD: <b>36 frame hi-fi</b> · 11 hotspot</span>
+      <span class="meta-item">Portal V5: <b>13/13 task ACCEPTED</b></span>
+      <span class="meta-item">Universal Affiliate: <b>AFF-00 Design Review</b></span>
       <span class="meta-item">Cập nhật <b>25/08/2026</b></span>
     </div>
   </div>
 </div>
 
-<div class="cards">
+<main class="cards">
   <div class="wrap">
-    <div class="grid">
+    <section class="content-section" aria-labelledby="current-title">
+      <div class="section-head">
+        <div><div class="section-label">Định hướng hiện tại</div><h2 class="section-title" id="current-title">Bắt đầu từ V6</h2></div>
+        <p class="section-copy">Hai tài liệu này là điểm vào chính cho lãnh đạo và đội triển khai. Mọi roadmap cũ được chuyển xuống kho lưu trữ.</p>
+      </div>
+      <div class="featured-grid">
+        <a class="card featured primary" href="docs/hrp-vision-portal-aff.html">
+          <div class="ic">◎</div><h2>Tầm nhìn HRP sau Portal + Affiliate</h2>
+          <p>Bức tranh toàn cảnh từ góc nhìn sếp, HR, nhân viên, CTV, vendor, kế toán, ứng viên và người lao động.</p>
+          <div><span class="tag ok">Dành cho lãnh đạo</span></div><div class="more">Xem tầm nhìn →</div>
+        </a>
+        <a class="card featured secondary" href="docs/roadmap-v6-portal-aff.html">
+          <div class="ic">V6</div><h2>Roadmap Portal + Universal Affiliate</h2>
+          <p>Portal V5 đã ACCEPTED; Affiliate đang ở AFF-00 Design Review với đường găng và decision gate rõ ràng.</p>
+          <div><span class="tag wip">Roadmap đang hiệu lực</span></div><div class="more">Theo dõi roadmap →</div>
+        </a>
+      </div>
+    </section>
 
-      <a class="card" href="ve-hrp.html">
-        <div class="ic">HR</div>
-        <h2>Hệ quản trị HRP</h2>
-        <p>Toàn cảnh hệ thống: ba cổng (nội bộ, đối tác, người lao động), chuỗi nghiệp vụ từ bán hàng đến trả lương, nguyên tắc chống tranh chấp và lộ trình triển khai.</p>
-        <div><span class="tag ok">v4.22</span></div>
-        <div class="more">Xem toàn cảnh →</div>
-      </a>
+    <section class="content-section" aria-labelledby="access-title">
+      <div class="section-head">
+        <div><div class="section-label">Vào hệ thống</div><h2 class="section-title" id="access-title">Truy cập theo nhu cầu</h2></div>
+        <p class="section-copy">Các lối vào nghiệp vụ đang hoạt động. Người dùng không cần đi qua tài liệu roadmap để sử dụng HRP.</p>
+      </div>
+      <div class="access-grid">
+        <a class="card access" href="/jobs"><div class="ic">JOB</div><h2>Tìm việc & ứng tuyển</h2><p>Xem các vị trí đang tuyển và gửi hồ sơ trực tuyến trên Job Portal.</p><div class="more">Mở chợ việc làm →</div></a>
+        <a class="card access" href="/login"><div class="ic">ID</div><h2>Đăng nhập hệ thống</h2><p>Điểm vào chung cho Admin, HR, CTV, Worker, Vendor và các vai trò nội bộ.</p><div class="more">Đăng nhập →</div></a>
+        <a class="card access" href="/bcc"><div class="ic">BC</div><h2>Bảng công & phiếu lương</h2><p>Tra cứu dữ liệu cá nhân; hệ thống sẽ yêu cầu đăng nhập trước khi truy cập.</p><div class="more">Mở bảng công →</div></a>
+      </div>
+    </section>
 
-      <a class="card" href="docs/tasks/hrp-v4-bod-mockup/mockup/index.html">
-        <div class="ic">UI</div>
-        <h2>Demo BoD — Mockup</h2>
-        <p>36 frame HTML mở được trên mọi trình duyệt: Control Tower, Staffing, Chấm công, Đối soát, Cổng đối tác — chạy đúng kịch bản khóa kỳ 08/2026 theo 11 hotspot.</p>
-        <div><span class="tag ok">Sẵn sàng demo</span></div>
-        <div class="more">Mở bản đồ frame →</div>
-      </a>
-
-      <a class="card" href="roadmap-hrp-v4.html">
-        <div class="ic">V4</div>
-        <h2>Roadmap V4</h2>
-        <p>Lộ trình trực quan 6 phase + 3 phase mở rộng. Phase 5 ✅ ACCEPTED. P1 Portals ✅ ACCEPTED. P2 Commission ✅ ACCEPTED. Burndown và các mốc UI đến Full V4.</p>
-        <div><span class="tag done">Lộ trình lịch sử</span></div>
-        <div class="more">Xem lộ trình →</div>
-      </a>
-
-      <a class="card" href="docs/roadmap-v6-portal-aff.html" style="border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary), var(--shadow);">
-        <div class="ic">V6</div>
-        <h2>Roadmap V6: Portal + Affiliate</h2>
-        <p>Roadmap hợp nhất ở cấp danh mục: kế thừa Portal V5 đã ACCEPTED và triển khai Universal Affiliate cho mọi User từ link, attribution đến commission.</p>
-        <div><span class="tag wip">Hiện tại: AFF-00 Design Review</span></div>
-        <div class="more">Xem roadmap V6 →</div>
-      </a>
-
-      <a class="card" href="docs/hrp-vision-portal-aff.html">
-        <div class="ic">◎</div>
-        <h2>Tầm nhìn HRP sau Portal + AFF</h2>
-        <p>Bức tranh toàn cảnh theo góc nhìn sếp, HR, nhân viên, CTV, vendor, kế toán, ứng viên và người lao động.</p>
-        <div><span class="tag ok">Bản trình bày lãnh đạo</span></div>
-        <div class="more">Xem tầm nhìn →</div>
-      </a>
-
-      <a class="card" href="roadmap-portals.html">
-        <div class="ic">P</div>
-        <h2>Roadmap: Portal Ecosystem</h2>
-        <p>Lộ trình biến HRP thành Hệ sinh thái All-in-One: Job Market, CTV Hub, BoD Dashboard, Worker & Vendor Workspace.</p>
-        <div><span class="tag done">Portal V5 đã ACCEPTED</span></div>
-        <div class="more">Xem kế hoạch →</div>
-      </a>
-
-      <a class="card" href="bcc">
-        <div class="ic">BC</div>
-        <h2>Tra cứu bảng công</h2>
-        <p>Tra cứu bảng công cá nhân và phiếu lương chi tiết theo mã thẻ — lịch chấm công từng ngày, tổng công, tăng ca, bảng lương A–E.</p>
-        <div><span class="tag ok">Đã triển khai</span></div>
-        <div class="more">Tra cứu ngay →</div>
-      </a>
-
-    </div>
+    <section class="content-section" aria-labelledby="archive-title">
+      <details class="archive">
+        <summary><div><div class="section-label">Kho lưu trữ</div><h2 class="section-title" id="archive-title">Tài liệu các phiên bản trước</h2><span>Giữ để truy nguyên lịch sử; không dùng làm nguồn trạng thái V6 hiện tại.</span></div></summary>
+        <div class="archive-grid">
+          <a class="archive-link" href="ve-hrp.html"><b>Tổng quan hệ thống V4</b><span>Bức tranh sản phẩm và nghiệp vụ ở baseline V4.22.</span></a>
+          <a class="archive-link" href="roadmap-hrp-v4.html"><b>Roadmap V4</b><span>Lộ trình 6 phase và các phase mở rộng lịch sử.</span></a>
+          <a class="archive-link" href="roadmap-portals.html"><b>Roadmap Portal legacy</b><span>Bản theo dõi Portal trước khi hợp nhất ở cấp V6.</span></a>
+          <a class="archive-link" href="docs/tasks/hrp-v4-bod-mockup/mockup/index.html"><b>BoD hi-fi mockup</b><span>36 frame và 11 hotspot dùng cho demo thiết kế cũ.</span></a>
+        </div>
+      </details>
+    </section>
   </div>
-</div>
+</main>
 
 <footer>
   <div class="wrap">
