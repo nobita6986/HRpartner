@@ -58,7 +58,16 @@ export async function POST(req: NextRequest) {
 
   try {
     const prisma = getPrisma();
-    const user = await prisma.user.findFirst({ where: { phone } });
+    // V5-M1-06c / RQ-07: login la pre-auth entry-point — CHUA co AuthContext nen
+    // KHONG the dung withDbContext (doi userId+role). Doc User qua $transaction ro
+    // rang voi GUC elevated transaction-local (mirror getAuthContext), thay vi raw
+    // `prisma.user.findFirst` o route level. set_config is_local=true -> reset sau
+    // commit. verifyPassword + signJwt GIU NGUYEN ngoai transaction (DEC-11: khong
+    // viet lai auth flow, chi bọc DB access).
+    const user = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.role', 'ADMIN', true)`;
+      return tx.user.findFirst({ where: { phone } });
+    });
 
     // Fail-closed: không có user / isActive=false / chưa có passwordHash → từ chối chung
     if (!user || !user.isActive || !user.passwordHash) {

@@ -231,8 +231,28 @@ describe('withAuthScope — deny-by-default for models without builder (DEC-06)'
     expect(r.threw!.code).toBe('DENY_BY_DEFAULT');
   });
 
-  it('WORKER + Ticket.findMany → throw (Ticket chưa có builder Phase 2)', async () => {
+  it('WORKER + Dependent.findMany → throw (Dependent chưa có builder)', async () => {
+    const r = await runOp(CTX_WORKER, 'Dependent', 'findMany');
+    expect(r.threw).toBeInstanceOf(AuthScopeError);
+    expect(r.threw!.code).toBe('DENY_BY_DEFAULT');
+  });
+
+  // V5-M1-06b: Ticket/AttendanceEvent/Site đã được đăng ký builder (worker-portal.scope).
+  // WORKER giờ self-scope (không còn deny-by-default); role ngoài scope vẫn deny.
+  it('WORKER + Ticket.findMany → passthrough (M1-06b: Ticket đã có builder self-scope)', async () => {
     const r = await runOp(CTX_WORKER, 'Ticket', 'findMany');
+    expect(r.threw).toBeNull();
+    expect(r.passthroughCalled).toBe(true);
+  });
+
+  it('WORKER + AttendanceEvent.findMany → passthrough (M1-06b: builder self-scope)', async () => {
+    const r = await runOp(CTX_WORKER, 'AttendanceEvent', 'findMany');
+    expect(r.threw).toBeNull();
+    expect(r.passthroughCalled).toBe(true);
+  });
+
+  it('MKT + AttendanceEvent.findMany → throw (role ngoài scope vẫn deny-by-default)', async () => {
+    const r = await runOp(CTX_MKT, 'AttendanceEvent', 'findMany');
     expect(r.threw).toBeInstanceOf(AuthScopeError);
     expect(r.threw!.code).toBe('DENY_BY_DEFAULT');
   });

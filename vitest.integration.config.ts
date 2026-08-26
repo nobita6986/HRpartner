@@ -37,6 +37,7 @@ export default defineConfig({
       MP3B_LIVE_CONVERSION_CHECK: TEST_DB_ADMIN ? '1' : '',
       MP3C_LIVE_PLACEMENT_CHECK: TEST_DB_ADMIN ? '1' : '',
       M1_06A_LIVE_AUTH_SCOPE: TEST_DB_ADMIN ? '1' : '',
+      M1_06B_LIVE_AUTH_SCOPE: TEST_DB_ADMIN ? '1' : '',
     },
     poolOptions: {
       threads: { maxThreads: 1, minThreads: 1 },

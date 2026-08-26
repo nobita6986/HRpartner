@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAuthContext } from '@/src/shared/auth/auth-context';
 import { getPrisma } from '@/src/lib/db';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { isPushAvailable } from '@/src/shared/feature-flags';
 
 const subscribeSchema = z.object({
@@ -48,19 +49,23 @@ export async function POST(req: NextRequest) {
   const prisma = getPrisma();
 
   try {
-    await prisma.pushSubscription.upsert({
-      where: { userId_endpoint: { userId: ctx.userId, endpoint: parsed.data.endpoint } },
-      create: {
-        userId: ctx.userId,
-        endpoint: parsed.data.endpoint,
-        p256dh: parsed.data.p256dh,
-        auth: parsed.data.auth,
-      },
-      update: {
-        p256dh: parsed.data.p256dh,
-        auth: parsed.data.auth,
-      },
-    });
+    // V5-M1-06c / RQ-06: upsert push subscription qua withDbContext (L2 GUC) —
+    // user-scoped, transaction-local. UNIQUE(userId, endpoint) giu idempotent.
+    await withDbContext(prisma, ctx, (tx) =>
+      tx.pushSubscription.upsert({
+        where: { userId_endpoint: { userId: ctx.userId, endpoint: parsed.data.endpoint } },
+        create: {
+          userId: ctx.userId,
+          endpoint: parsed.data.endpoint,
+          p256dh: parsed.data.p256dh,
+          auth: parsed.data.auth,
+        },
+        update: {
+          p256dh: parsed.data.p256dh,
+          auth: parsed.data.auth,
+        },
+      }),
+    );
 
     return NextResponse.json({ ok: true, enabled: true });
   } catch (err) {

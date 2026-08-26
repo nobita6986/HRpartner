@@ -1,11 +1,23 @@
 /**
  * api-boundary.static.test.ts — V5-M1-06a / RQ-07 / STEP-06 / AC-08
+ *                             — mở rộng V5-M1-06b / RQ-10 / STEP-06
+ *                             — mở rộng V5-M1-06c / RQ-01 / RQ-08 / STEP-01 / AC-01 / AC-08.
  *
- * GATE KIẾN TRÚC TĨNH (chạy THẬT, không cần DB): quét mọi `route.ts` dưới
- * `app/api/admin/**` và `app/api/ctv/**`, chứng minh KHÔNG route nào chạy business
- * model op TRỰC TIẾP trên raw PrismaClient (client lấy từ `getPrisma()`). Mọi truy
- * cập DB phải đi qua boundary (`withAuthorizedDb`/`withDbContext`) — model op chỉ
- * được phép trên `tx` (callback client đã scope), KHÔNG trên raw client.
+ * GATE KIẾN TRÚC TĨNH (chạy THẬT, không cần DB): quét mọi `route.ts` dưới các thư
+ * mục nghiệp vụ (M1-06a: `admin/**`, `ctv/**`; M1-06b: `worker/**`, `workers/**`,
+ * `vendor/**`, `vendors/**`, `cron/**`; M1-06c: `auth/**`, `statements/**`,
+ * `projects/**`, `clients/**`, `payroll/**`, `jobs/**`, `public/**`, `push/**`),
+ * chứng minh KHÔNG route nào chạy business model op TRỰC TIẾP trên raw PrismaClient
+ * (client lấy từ `getPrisma()`). Mọi truy cập DB phải đi qua boundary
+ * (`withAuthorizedDb`/`withDbContext`/`withSystemDb`) — model op chỉ được phép trên
+ * `tx` (callback client đã scope), KHÔNG trên raw client.
+ *
+ * Pattern hệ thống hợp lệ (KHÔNG bị bắt vì raw client chỉ là ĐỐI SỐ, không nhận
+ * model-op): `withSystemDb(prisma, SYSTEM_CRON, cb)`, `drainOutboxOnce(prisma, ...)`,
+ * `probeWorkerDuplicateByPhone(prisma, phone)`, `calculateMargin(tx, ...)`. Route
+ * public (jobs/public) dùng `prisma.$transaction((tx) => svc(tx))` (SECURITY DEFINER /
+ * NO_DB intent) — `$transaction` KHÔNG bị bắt. Login pre-auth dùng
+ * `prisma.$transaction` + `tx.$executeRaw` set GUC (không có AuthContext).
  *
  * Cơ chế phát hiện (fail-closed):
  *   1. Strip block/line comment + string để không match ví dụ trong doc.
@@ -13,7 +25,7 @@
  *   3. Cấm `<rawId>.<model>.<op>(` và `getPrisma().<model>.<op>(` với op ∈ ALL_OPS.
  *      (`<rawId>.$transaction/$extends/$queryRaw` KHÔNG bị cấm — `$` không phải \w.)
  *
- * NEGATIVE FIXTURE (bắt buộc RQ-07): một đoạn code cố tình bypass boundary phải làm
+ * NEGATIVE FIXTURE (bắt buộc RQ-07/RQ-10): đoạn code cố tình bypass boundary phải làm
  * detector trả về vi phạm — chứng minh gate có RĂNG, không phải luôn xanh.
  */
 import { describe, it, expect } from 'vitest';
@@ -21,7 +33,24 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = process.cwd();
-const SCOPE_DIRS = [join(ROOT, 'app/api/admin'), join(ROOT, 'app/api/ctv')];
+const SCOPE_DIRS = [
+  join(ROOT, 'app/api/admin'),
+  join(ROOT, 'app/api/ctv'),
+  join(ROOT, 'app/api/worker'),
+  join(ROOT, 'app/api/workers'),
+  join(ROOT, 'app/api/vendor'),
+  join(ROOT, 'app/api/vendors'),
+  join(ROOT, 'app/api/cron'),
+  // V5-M1-06c / RQ-01 / STEP-01: 8 route root con lai duoc dua qua boundary.
+  join(ROOT, 'app/api/auth'),
+  join(ROOT, 'app/api/statements'),
+  join(ROOT, 'app/api/projects'),
+  join(ROOT, 'app/api/clients'),
+  join(ROOT, 'app/api/payroll'),
+  join(ROOT, 'app/api/jobs'),
+  join(ROOT, 'app/api/public'),
+  join(ROOT, 'app/api/push'),
+];
 
 // Prisma model operations (read + write). Superset an toàn.
 const ALL_OPS = [
@@ -93,10 +122,27 @@ describe('API boundary — STATIC gate (RQ-07 / AC-08)', () => {
   const files = SCOPE_DIRS.flatMap(collectRouteFiles);
 
   it('tìm thấy tập route.ts trong scope (sanity — gate không rỗng)', () => {
-    expect(files.length).toBeGreaterThanOrEqual(10);
+    expect(files.length).toBeGreaterThanOrEqual(15);
   });
 
-  it('KHÔNG route admin/ctv nào chạy business model op trên raw client', () => {
+  // V5-M1-06c / AC-01: chứng minh 8 route root mới THỰC SỰ nằm trong tập quét
+  // (không chỉ khai báo SCOPE_DIRS mà thư mục rỗng/sai path → false-green).
+  it('phủ đủ route root M1-06c (auth/statements/projects/clients/payroll/jobs/public/push)', () => {
+    const rel = files.map((f) => f.replace(ROOT, '').replace(/\\/g, '/'));
+    const mustCover = [
+      '/app/api/auth/login/route.ts',
+      '/app/api/statements/margin/route.ts',
+      '/app/api/projects/route.ts',
+      '/app/api/clients/route.ts',
+      '/app/api/payroll/route.ts',
+      '/app/api/push/subscribe/route.ts',
+    ];
+    for (const p of mustCover) {
+      expect(rel, `static gate phải quét ${p}`).toContain(p);
+    }
+  });
+
+  it('KHÔNG route nghiệp vụ nào chạy business model op trên raw client', () => {
     const offenders: Record<string, string[]> = {};
     for (const f of files) {
       const v = detectRawClientBusinessOps(readFileSync(f, 'utf8'));
@@ -139,6 +185,85 @@ describe('API boundary — STATIC gate (RQ-07 / AC-08)', () => {
       const prisma = getPrisma();
       await withDbContext(prisma, ctx, (tx) => svc(tx));
       await prisma.$transaction(async (tx) => tx.$executeRawUnsafe('SELECT 1'));`;
+    expect(detectRawClientBusinessOps(ok)).toEqual([]);
+  });
+
+  // ── M1-06b: fixtures cho cron + boundary hệ thống (RQ-10) ───────────────────
+  it('NEGATIVE: cron route chạy op raw trên client (getPrisma) bị bắt', () => {
+    const bypass = `
+      import { getPrisma } from '@/src/lib/db';
+      export async function GET() {
+        const prisma = getPrisma();
+        return prisma.vendorStatement.updateMany({ where: { status: 'SENT' }, data: {} });
+      }`;
+    expect(detectRawClientBusinessOps(bypass)).not.toEqual([]);
+  });
+
+  it('POSITIVE: cron truyền raw client cho withSystemDb / drainOutboxOnce KHÔNG bị bắt', () => {
+    const ok = `
+      const prisma = getPrisma();
+      const r = await withSystemDb(prisma, SYSTEM_CRON, (tx) => autoConfirmExpiredStatements(tx, new Date()));
+      const d = await drainOutboxOnce(prisma, handlers, { batchSize: 50 });`;
+    expect(detectRawClientBusinessOps(ok)).toEqual([]);
+  });
+
+  it('POSITIVE: repo dedup đặc quyền nhận raw client làm ĐỐI SỐ KHÔNG bị bắt', () => {
+    const ok = `
+      const prisma = getPrisma();
+      const dedup = await probeWorkerDuplicateByPhone(prisma, parsed.data.phone);`;
+    expect(detectRawClientBusinessOps(ok)).toEqual([]);
+  });
+
+  // ── M1-06c: fixtures cho 8 route root còn lại (RQ-01 / RQ-08 / AC-08) ────────
+  it('NEGATIVE: clients raw `prisma.clientCompany.findMany()` bị bắt', () => {
+    const bypass = `
+      const prisma = getPrisma();
+      const rows = await prisma.clientCompany.findMany({ where: {} });`;
+    expect(detectRawClientBusinessOps(bypass)).not.toEqual([]);
+  });
+
+  it('NEGATIVE: payroll raw `prisma.payrollConfig.findMany()` bị bắt', () => {
+    const bypass = `
+      const prisma = getPrisma();
+      const rows = await prisma.payrollConfig.findMany({ where: {} });`;
+    expect(detectRawClientBusinessOps(bypass)).not.toEqual([]);
+  });
+
+  it('NEGATIVE: push raw `prisma.pushSubscription.upsert()` bị bắt', () => {
+    const bypass = `
+      const prisma = getPrisma();
+      await prisma.pushSubscription.upsert({ where: {}, create: {}, update: {} });`;
+    expect(detectRawClientBusinessOps(bypass)).not.toEqual([]);
+  });
+
+  it('NEGATIVE: auth/login raw `prisma.user.findFirst()` bị bắt', () => {
+    const bypass = `
+      const prisma = getPrisma();
+      const user = await prisma.user.findFirst({ where: { phone } });`;
+    expect(detectRawClientBusinessOps(bypass)).not.toEqual([]);
+  });
+
+  it('NEGATIVE: projects inline `getPrisma().project.create()` bị bắt', () => {
+    const bypass = `export async function POST() {
+      return getPrisma().project.create({ data: {} });
+    }`;
+    expect(detectRawClientBusinessOps(bypass)).not.toEqual([]);
+  });
+
+  it('POSITIVE: login pre-auth `prisma.$transaction` + `tx.user.findFirst` KHÔNG bị bắt', () => {
+    const ok = `
+      const prisma = getPrisma();
+      const user = await prisma.$transaction(async (tx) => {
+        await tx.$executeRaw\`SELECT set_config('app.role', 'ADMIN', true)\`;
+        return tx.user.findFirst({ where: { phone } });
+      });`;
+    expect(detectRawClientBusinessOps(ok)).toEqual([]);
+  });
+
+  it('POSITIVE: margin `withDbContext(prisma, ctx, (tx) => calculateMargin(tx, ...))` KHÔNG bị bắt', () => {
+    const ok = `
+      const prisma = getPrisma();
+      const margin = await withDbContext(prisma, ctx, (tx) => calculateMargin(tx, ctx, month, year));`;
     expect(detectRawClientBusinessOps(ok)).toEqual([]);
   });
 });

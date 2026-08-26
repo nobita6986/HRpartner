@@ -6,6 +6,8 @@ import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
 import { resolveEffectivePermissions } from '@/src/shared/auth/permission-resolver';
 import { projectWorker } from '@/src/shared/auth/worker-projection';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -47,18 +49,30 @@ export async function PUT(
   try {
     const permissions = await resolveEffectivePermissions({ userId: ctx.userId, role: ctx.role });
     const hasSensitivePermission = permissions.has('CAN_VIEW_WORKER_SENSITIVE');
-    const worker = await prisma.worker.update({
-      where: { id },
-      data: {
-        ...(fullName !== undefined && { fullName }),
-        ...(phone !== undefined && { phone }),
-        ...(cccdNumber !== undefined && { cccdNumber }),
-        ...(dateOfBirth !== undefined && { dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null }),
-        ...(gender !== undefined && { gender }),
-      },
-    });
+    // RQ-02/DEC-02: singular update dùng WhereUniqueInput → L1 (inject AND) làm vỡ.
+    // Dùng withDbContext (L2-only) set GUC; workers RLS USING giới hạn row nhìn thấy +
+    // WITH CHECK {ADMIN,HR_MANAGER,DIRECTOR}. Row ngoài scope → update 0 dòng → P2025 → 404
+    // (IDOR: không phân biệt "không tồn tại" vs "ngoài quyền"). id lấy từ URL, không phải owner.
+    const worker = await withDbContext(prisma, ctx, (tx) =>
+      tx.worker.update({
+        where: { id },
+        data: {
+          ...(fullName !== undefined && { fullName }),
+          ...(phone !== undefined && { phone }),
+          ...(cccdNumber !== undefined && { cccdNumber }),
+          ...(dateOfBirth !== undefined && { dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null }),
+          ...(gender !== undefined && { gender }),
+        },
+      }),
+    );
     return NextResponse.json({ worker: projectWorker(worker, hasSensitivePermission) });
   } catch (err: any) {
+    if (err instanceof AuthScopeError) {
+      return NextResponse.json(
+        { error: 'FORBIDDEN', message: 'Role ' + ctx.role + ' khong co quyen sua nhan vien.' },
+        { status: 403 },
+      );
+    }
     if (err.code === 'P2025') {
       return NextResponse.json({ error: 'NOT_FOUND', message: 'Worker not found.' }, { status: 404 });
     }

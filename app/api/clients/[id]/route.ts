@@ -4,11 +4,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const ADMIN_ROLES = new Set(['ADMIN', 'SALE', 'HR_MANAGER']);
+// V5-M1-06c / RQ-04: ClientCompany chua co builder -> chi root (ADMIN/HR_MANAGER/
+// DIRECTOR) sua duoc. Deviation: bo SALE (truoc {ADMIN,SALE,HR_MANAGER}).
+const ADMIN_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'DIRECTOR']);
 
 export async function PUT(
   req: NextRequest,
@@ -43,16 +46,20 @@ export async function PUT(
   const { name, taxCode, industry, companySize, status } = body;
 
   try {
-    const client = await prisma.clientCompany.update({
-      where: { id },
-      data: {
-        ...(name !== undefined && { name }),
-        ...(taxCode !== undefined && { taxCode }),
-        ...(industry !== undefined && { industry }),
-        ...(companySize !== undefined && { companySize }),
-        ...(status !== undefined && { status }),
-      },
-    });
+    // V5-M1-06c / RQ-04: update-by-id -> withDbContext (L2-only). RLS backstop:
+    // client ngoai pham vi -> P2025 -> 404 (cross-client deny).
+    const client = await withDbContext(prisma, ctx, (tx) =>
+      tx.clientCompany.update({
+        where: { id },
+        data: {
+          ...(name !== undefined && { name }),
+          ...(taxCode !== undefined && { taxCode }),
+          ...(industry !== undefined && { industry }),
+          ...(companySize !== undefined && { companySize }),
+          ...(status !== undefined && { status }),
+        },
+      }),
+    );
     return NextResponse.json({ client });
   } catch (err: any) {
     if (err.code === 'P2025') {

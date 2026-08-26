@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -43,19 +44,23 @@ export async function PUT(
   const { name, clientCompanyId, pmUserId, siteAddress, startDate, endDate, status, quota } = body;
 
   try {
-    const project = await prisma.project.update({
-      where: { id },
-      data: {
-        ...(name !== undefined && { name }),
-        ...(clientCompanyId !== undefined && { clientCompanyId }),
-        ...(pmUserId !== undefined && { pmUserId }),
-        ...(siteAddress !== undefined && { siteAddress }),
-        ...(startDate !== undefined && { startDate: new Date(startDate) }),
-        ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
-        ...(status !== undefined && { status }),
-        ...(quota !== undefined && { quota }),
-      },
-    });
+    // V5-M1-06c / RQ-03: update-by-id vo L1 (DEC-03) -> withDbContext (L2-only).
+    // RLS backstop: project ngoai pham vi -> P2025 -> 404 (cross-project deny).
+    const project = await withDbContext(prisma, ctx, (tx) =>
+      tx.project.update({
+        where: { id },
+        data: {
+          ...(name !== undefined && { name }),
+          ...(clientCompanyId !== undefined && { clientCompanyId }),
+          ...(pmUserId !== undefined && { pmUserId }),
+          ...(siteAddress !== undefined && { siteAddress }),
+          ...(startDate !== undefined && { startDate: new Date(startDate) }),
+          ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
+          ...(status !== undefined && { status }),
+          ...(quota !== undefined && { quota }),
+        },
+      }),
+    );
     return NextResponse.json({ project });
   } catch (err: any) {
     if (err.code === 'P2025') {

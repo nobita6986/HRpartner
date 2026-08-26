@@ -1,11 +1,25 @@
 /**
- * GET /api/vendor/submissions — P1 Portals STEP-06 (RQ-06).
+ * GET /api/vendor/submissions — list vendor's candidate submissions (V5-M1-06b RQ-06).
  * POST /api/vendor/submissions — submit candidate for an order.
+ *
+ * Boundary canonical:
+ *   - GET: `withAuthorizedDbReadOnly` (L1 `buildCandidateSubmissionScope` VENDOR→
+ *     `{ vendorId }` + L2 RLS). Response KHÔNG lộ `dedupWorkerId` (DEC-05).
+ *   - POST dedup (DEC-05): probe trùng SĐT qua repo đặc quyền hẹp `SYSTEM_DEDUP`,
+ *     chỉ nhận outcome OPAQUE — KHÔNG trả tên/CCCD/trạng thái worker cho vendor.
+ *   - POST create (DEC-06): re-check order VISIBLE + còn mở (OPEN/CLOSING_SOON) rồi
+ *     create trong CÙNG `withDbContext(VENDOR)` (L2-only; create vỡ L1). RLS `staffing_orders`
+ *     USING `hrp_project_visible_for` khoá order ngoài tầm nhìn; `candidate_submissions`
+ *     WITH CHECK (VENDOR AND vendor_id=session) khoá ghi. Không TOCTOU order.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAuthContext } from '@/src/shared/auth/auth-context';
 import { getPrisma } from '@/src/lib/db';
+import { withAuthorizedDbReadOnly } from '@/src/shared/auth/with-authorized-db';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
+import { probeWorkerDuplicateByPhone } from '@/src/shared/vendor/worker-dedup.repository';
 
 const submitSchema = z.object({
   orderId: z.string(),
@@ -13,6 +27,20 @@ const submitSchema = z.object({
   phone: z.string().regex(/^0[0-9]{9}$/),
   cccdNumber: z.string().min(9).max(20).optional(),
 });
+
+/**
+ * StaffingOrder còn nhận ứng viên khi status ∈ {OPEN, CLOSING_SOON} — đồng bộ với
+ * định nghĩa "publishable/visible" của job-board (publish.service PUBLISHABLE_ORDER_STATUSES,
+ * public.service VISIBLE_ORDER_STATUSES). CLOSED/CANCELLED → không nhận (ORDER_NOT_OPEN).
+ * (StaffingOrder.status enum = OPEN|CLOSING_SOON|CLOSED|CANCELLED — KHÔNG có 'ACTIVE'.)
+ */
+const OPEN_FOR_SUBMISSION = new Set(['OPEN', 'CLOSING_SOON']);
+
+class SubmissionGuardError extends Error {
+  constructor(readonly kind: 'ORDER_NOT_FOUND' | 'ORDER_NOT_OPEN') {
+    super(kind);
+  }
+}
 
 export async function GET(req: NextRequest) {
   let ctx;
@@ -30,14 +58,24 @@ export async function GET(req: NextRequest) {
   }
 
   const prisma = getPrisma();
-  const submissions = await prisma.candidateSubmission.findMany({
-    where: { vendorId: ctx.vendorId },
-    take: 100,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      project: { select: { id: true, name: true } },
-    },
-  });
+
+  let submissions;
+  try {
+    submissions = await withAuthorizedDbReadOnly(prisma, ctx, (tx) =>
+      tx.candidateSubmission.findMany({
+        where: { vendorId: ctx.vendorId },
+        take: 100,
+        orderBy: { createdAt: 'desc' },
+        include: { project: { select: { id: true, name: true } } },
+      }),
+    );
+  } catch (e) {
+    if (e instanceof AuthScopeError) {
+      return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+    }
+    console.error('[api/vendor/submissions] query error:', e);
+    return NextResponse.json({ error: 'INTERNAL' }, { status: 500 });
+  }
 
   return NextResponse.json({
     items: submissions.map((s) => ({
@@ -49,7 +87,7 @@ export async function GET(req: NextRequest) {
       status: s.status,
       blockCode: s.blockCode,
       overrideCase: s.overrideCase,
-      dedupWorkerId: s.dedupWorkerId,
+      // DEC-05: KHÔNG lộ dedupWorkerId.
       createdAt: s.createdAt.toISOString(),
     })),
   });
@@ -57,7 +95,6 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST: vendor submits a candidate for an order.
- * - DEC-07: dedup hint via SĐT, Referral Guard skipped for MVP.
  */
 export async function POST(req: NextRequest) {
   let ctx;
@@ -73,6 +110,7 @@ export async function POST(req: NextRequest) {
   if (!ctx.vendorId) {
     return NextResponse.json({ error: 'NO_VENDOR_CONTEXT' }, { status: 403 });
   }
+  const vendorId = ctx.vendorId;
 
   let body: unknown;
   try {
@@ -88,46 +126,50 @@ export async function POST(req: NextRequest) {
 
   const prisma = getPrisma();
 
-  // Dedup hint: existing worker with same phone
-  let dedupHint: string | null = null;
-  const existingWorker = await prisma.worker.findFirst({
-    where: { phone: parsed.data.phone },
-    select: { id: true, employmentStatus: true, fullName: true },
-  });
-  if (existingWorker) {
-    if (existingWorker.employmentStatus === 'ACTIVE') {
-      return NextResponse.json({
-        error: 'WORKER_ACTIVE',
-        message: 'Ứng viên đang ACTIVE — liên hệ HR.',
-      }, { status: 409 });
+  // Dedup trùng SĐT — outcome OPAQUE (DEC-05). Worker đang ACTIVE → chặn, không lộ danh tính.
+  const dedup = await probeWorkerDuplicateByPhone(prisma, parsed.data.phone);
+  if (dedup.activeConflict) {
+    return NextResponse.json({ error: 'WORKER_ACTIVE', message: 'Ứng viên đang ACTIVE — liên hệ HR.' }, { status: 409 });
+  }
+
+  let submissionId: string;
+  try {
+    submissionId = await withDbContext(prisma, ctx, async (tx) => {
+      // Re-check order trong tầm nhìn (RLS) + còn mở (OPEN/CLOSING_SOON) — cùng tx với create.
+      const order = await tx.staffingOrder.findFirst({
+        where: { id: parsed.data.orderId },
+        select: { id: true, projectId: true, status: true },
+      });
+      if (!order) throw new SubmissionGuardError('ORDER_NOT_FOUND');
+      if (!OPEN_FOR_SUBMISSION.has(order.status)) throw new SubmissionGuardError('ORDER_NOT_OPEN');
+
+      const created = await tx.candidateSubmission.create({
+        data: {
+          vendorId,
+          projectId: order.projectId,
+          fullName: parsed.data.fullName,
+          phone: parsed.data.phone,
+          cccdNumber: parsed.data.cccdNumber,
+          status: 'NEW',
+          // Server-side linkage cho HR queue — KHÔNG trả ra ngoài (DEC-05).
+          dedupWorkerId: dedup.workerId,
+        },
+      });
+      return created.id;
+    });
+  } catch (err) {
+    if (err instanceof SubmissionGuardError) {
+      if (err.kind === 'ORDER_NOT_FOUND') {
+        return NextResponse.json({ error: 'ORDER_NOT_FOUND' }, { status: 404 });
+      }
+      return NextResponse.json({ error: 'ORDER_NOT_OPEN' }, { status: 409 });
     }
-    dedupHint = `Trùng SĐT với worker ${existingWorker.fullName}`;
+    if (err instanceof AuthScopeError) {
+      return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+    }
+    console.error('[api/vendor/submissions POST] error:', err);
+    return NextResponse.json({ error: 'INTERNAL' }, { status: 500 });
   }
 
-  // Get order for projectId
-  const order = await prisma.staffingOrder.findUnique({
-    where: { id: parsed.data.orderId },
-    select: { id: true, projectId: true, code: true },
-  });
-  if (!order) {
-    return NextResponse.json({ error: 'ORDER_NOT_FOUND' }, { status: 404 });
-  }
-
-  const submission = await prisma.candidateSubmission.create({
-    data: {
-      vendorId: ctx.vendorId,
-      projectId: order.projectId,
-      fullName: parsed.data.fullName,
-      phone: parsed.data.phone,
-      cccdNumber: parsed.data.cccdNumber,
-      status: 'NEW',
-      dedupWorkerId: existingWorker?.id ?? null,
-    },
-  });
-
-  return NextResponse.json({
-    ok: true,
-    id: submission.id,
-    dedupHint,
-  });
+  return NextResponse.json({ ok: true, id: submissionId, duplicate: dedup.duplicate });
 }

@@ -6,13 +6,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { withAuthorizedDbReadOnly } from '@/src/shared/auth/with-authorized-db';
+import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const VIEWER_ROLES = new Set([
-  'ADMIN', 'HR_MANAGER', 'ACCOUNTANT', 'DIRECTOR',
-]);
+// V5-M1-06c / RQ-05 / OQ-03 / AC-05: cau hinh luong chi ADMIN/DIRECTOR doc (§7.2).
+// Deviation: bo HR_MANAGER + ACCOUNTANT (truoc {ADMIN,HR_MANAGER,ACCOUNTANT,DIRECTOR}).
+// PayrollConfig chua co builder -> withAuthorizedDbReadOnly chi an toan cho root roles;
+// ADMIN + DIRECTOR deu la ROOT_ROLES -> L1 passthrough + L2 GUC.
+const VIEWER_ROLES = new Set(['ADMIN', 'DIRECTOR']);
 
 export async function GET(req: NextRequest) {
   let ctx;
@@ -53,20 +57,28 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [rows, total] = await Promise.all([
-      prisma.payrollConfig.findMany({
-        where,
-        orderBy: [
-          { isActive: 'desc' },
-          { effectiveFrom: 'desc' },
-        ],
-        take,
-        skip,
-      }),
-      prisma.payrollConfig.count({ where }),
-    ]);
+    const [rows, total] = await withAuthorizedDbReadOnly(prisma, ctx, (tx) =>
+      Promise.all([
+        tx.payrollConfig.findMany({
+          where,
+          orderBy: [
+            { isActive: 'desc' },
+            { effectiveFrom: 'desc' },
+          ],
+          take,
+          skip,
+        }),
+        tx.payrollConfig.count({ where }),
+      ]),
+    );
     return NextResponse.json({ configs: rows, total, take, skip });
   } catch (err) {
+    if (err instanceof AuthScopeError) {
+      return NextResponse.json(
+        { error: 'FORBIDDEN', message: 'Khong co pham vi xem cau hinh luong.' },
+        { status: 403 },
+      );
+    }
     console.error('[api/payroll] query error:', err);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to query payroll configs' }, { status: 500 });
   }

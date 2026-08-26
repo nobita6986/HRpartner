@@ -33,7 +33,7 @@ import { applyRlsContext } from './rls-context';
 import type { DbContextCallback } from './with-db-context';
 
 /** Mục đích của tiến trình hệ thống — chỉ để nhãn/telemetry, không đổi hành vi. */
-export type SystemPurpose = 'CRON' | 'CHECKIN';
+export type SystemPurpose = 'CRON' | 'CHECKIN' | 'DEDUP';
 
 /**
  * Danh tính hệ thống ổn định. `userId` là id `system:*` (KHÔNG phải user thật);
@@ -58,6 +58,18 @@ export const SYSTEM_CHECKIN: SystemPrincipal = {
   userId: 'system:checkin',
   role: 'ADMIN',
   purpose: 'CHECKIN',
+};
+
+/**
+ * Dedup probe — đọc worker trên TOÀN BỘ (vượt tầm nhìn vendor) để phát hiện trùng
+ * SĐT (DEC-05). Kết quả PHẢI opaque ở callsite (không lộ danh tính worker cho
+ * vendor). Đặc quyền ADMIN chỉ để RLS `workers` cho đọc; repo hẹp chỉ trả
+ * `{ duplicate, activeConflict, workerId(server-only) }`.
+ */
+export const SYSTEM_DEDUP: SystemPrincipal = {
+  userId: 'system:dedup',
+  role: 'ADMIN',
+  purpose: 'DEDUP',
 };
 
 /**

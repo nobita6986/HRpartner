@@ -31,6 +31,17 @@ vi.mock('@/src/shared/auth/permission-resolver', () => ({
 vi.mock('@/src/lib/db', () => ({
   getPrisma: () => ({ worker: mocks.worker }),
 }));
+// M1-06b: các route workers giờ đi qua boundary canonical (L1+L2). Ở lane unit (không DB),
+// stub boundary để gọi callback với tx = { worker } — giữ nguyên mọi assertion masking/permission.
+// Row-scope L1 + GUC L2 thực sự đã được chứng minh ở live-vendor-worker-scope.m1-06b (integration).
+vi.mock('@/src/shared/auth/with-authorized-db', () => ({
+  withAuthorizedDbReadOnly: (_prisma: unknown, _ctx: unknown, cb: (tx: unknown) => unknown) =>
+    cb({ worker: mocks.worker }),
+}));
+vi.mock('@/src/shared/auth/with-db-context', () => ({
+  withDbContext: (_prisma: unknown, _ctx: unknown, cb: (tx: unknown) => unknown) =>
+    cb({ worker: mocks.worker }),
+}));
 
 import { GET } from '@/app/api/workers/route';
 import { PUT } from '@/app/api/workers/[id]/route';

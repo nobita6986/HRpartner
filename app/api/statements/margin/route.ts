@@ -7,10 +7,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { calculateMargin, MarginPermissionError } from '@/src/domains/reconciliation/margin.service';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+// V5-M1-06c / RQ-02 / OQ-02: margin la aggregate tai chinh toan cuc (SUM tren
+// moi vendor/client statement cua ky) — chi ACCOUNTANT/ADMIN/DIRECTOR duoc doc
+// (§7.2). Gate role tai route (defense-in-depth); calculateMargin van tu kiem
+// CAN_VIEW_STATEMENT_MARGIN. DB access qua withDbContext (L2 GUC) — KHONG dung
+// withAuthorizedDbReadOnly (L1) vi ClientStatement chua co scope builder va
+// OQ-01 cam tao builder moi o 06c -> L1 se DENY_BY_DEFAULT cho ACCOUNTANT
+// (non-root). Cung pattern voi statements/route.ts + statements/generate.
+const MARGIN_ROLES = new Set(['ADMIN', 'ACCOUNTANT', 'DIRECTOR']);
 
 export async function GET(req: NextRequest) {
   let ctx;
@@ -19,6 +29,13 @@ export async function GET(req: NextRequest) {
   } catch (e) {
     if (e instanceof AuthSessionError) return NextResponse.json({ error: e.code, message: e.message }, { status: 401 });
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to build auth context' }, { status: 500 });
+  }
+
+  if (!MARGIN_ROLES.has(ctx.role)) {
+    return NextResponse.json(
+      { error: 'PERMISSION_DENIED', message: `Role ${ctx.role} khong co quyen xem margin` },
+      { status: 403 },
+    );
   }
 
   const { searchParams } = new URL(req.url);
@@ -31,7 +48,7 @@ export async function GET(req: NextRequest) {
 
   const prisma = getPrisma();
   try {
-    const margin = await calculateMargin(prisma, ctx, month, year);
+    const margin = await withDbContext(prisma, ctx, (tx) => calculateMargin(tx, ctx, month, year));
     return NextResponse.json({
       margin: {
         ...margin,

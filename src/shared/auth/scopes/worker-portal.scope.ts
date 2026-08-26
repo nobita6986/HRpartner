@@ -71,7 +71,11 @@ export function buildAttendanceEventScope(ctx: AuthContext): Prisma.AttendanceEv
       return { workerId: ctx.workerId ?? '__no_worker_ctx__' };
 
     case 'PM':
-      return { project: buildProjectScope(ctx) };
+      // AttendanceEvent là bảng denormalized KHÔNG có relation `project` (chỉ scalar
+      // projectId). L1 không subquery được project-visibility ở đây → áp guard coarse
+      // `projectId != null`; L2 RLS (`hrp_project_visible_for(project_id)`) mới enforce
+      // đúng phạm vi project của PM. Kết quả cuối vẫn ⊆ L2 vì RLS AND ở tầng DB.
+      return { projectId: { not: null } };
 
     default:
       throw new AuthScopeError(

@@ -5,14 +5,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { withAuthorizedDbReadOnly } from '@/src/shared/auth/with-authorized-db';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const VIEWER_ROLES = new Set([
-  'ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'ACCOUNTANT', 'SALE', 'DIRECTOR',
-]);
-const ADMIN_ROLES = new Set(['ADMIN', 'SALE', 'HR_MANAGER']);
+// V5-M1-06c / RQ-04 / AC-04: ClientCompany CHUA co scope builder (OQ-01 cam tao
+// builder moi o 06c). Nen chi ROOT_ROLES (ADMIN/HR_MANAGER/DIRECTOR) doc/ghi duoc:
+// L1 passthrough cho root, non-root -> DENY_BY_DEFAULT. Gate root o route (defense-in
+// -depth + tranh L1 throw cho authz). Deviation ghi HANDOFF: bo SALE/HR_STAFF/PM/
+// ACCOUNTANT khoi view + bo SALE khoi create/update (truoc day ADMIN/SALE/HR_MANAGER).
+const VIEWER_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'DIRECTOR']);
+const ADMIN_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'DIRECTOR']);
 
 export async function GET(req: NextRequest) {
   let ctx;
@@ -49,17 +55,25 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [rows, total] = await Promise.all([
-      prisma.clientCompany.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        take,
-        skip,
-      }),
-      prisma.clientCompany.count({ where }),
-    ]);
+    const [rows, total] = await withAuthorizedDbReadOnly(prisma, ctx, (tx) =>
+      Promise.all([
+        tx.clientCompany.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          take,
+          skip,
+        }),
+        tx.clientCompany.count({ where }),
+      ]),
+    );
     return NextResponse.json({ clients: rows, total, take, skip });
   } catch (err) {
+    if (err instanceof AuthScopeError) {
+      return NextResponse.json(
+        { error: 'FORBIDDEN', message: 'Khong co pham vi xem khach hang.' },
+        { status: 403 },
+      );
+    }
     console.error('[api/clients] query error:', err);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to query clients' }, { status: 500 });
   }
@@ -101,16 +115,18 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const client = await prisma.clientCompany.create({
-      data: {
-        code,
-        name,
-        taxCode: taxCode ?? null,
-        industry: industry ?? null,
-        companySize: companySize ?? null,
-        status: status ?? 'PROSPECT',
-      },
-    });
+    const client = await withDbContext(prisma, ctx, (tx) =>
+      tx.clientCompany.create({
+        data: {
+          code,
+          name,
+          taxCode: taxCode ?? null,
+          industry: industry ?? null,
+          companySize: companySize ?? null,
+          status: status ?? 'PROSPECT',
+        },
+      }),
+    );
     return NextResponse.json({ client }, { status: 201 });
   } catch (err: any) {
     if (err.code === 'P2002') {

@@ -5,12 +5,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { withAuthorizedDbReadOnly } from '@/src/shared/auth/with-authorized-db';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// V5-M1-06c / RQ-03 / AC-03: doc du an qua boundary L1 (buildProjectScope) + L2 GUC.
+// SALE/MKT KHONG duoc xem (AC-03 "SALE/MKT deny") -> bo khoi VIEWER_ROLES (truoc day
+// buildProjectScope tra SALE={} = full, nen phai chan o route TRUOC boundary). PM chi
+// thay du an minh phu trach (L1 {pmUserId}); ADMIN/HR_MANAGER/DIRECTOR/HR_STAFF/
+// ACCOUNTANT passthrough theo scope builder. Create/update-by-id vo L1 (DEC-03 M1-06a)
+// -> dung withDbContext (L2-only); RLS backstop chan cross-project.
 const VIEWER_ROLES = new Set([
-  'ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'ACCOUNTANT', 'SALE', 'DIRECTOR',
+  'ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'ACCOUNTANT', 'DIRECTOR',
 ]);
 const ADMIN_ROLES = new Set(['ADMIN', 'PM', 'HR_MANAGER']);
 
@@ -49,18 +58,26 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [rows, total] = await Promise.all([
-      prisma.project.findMany({
-        where,
-        include: { clientCompany: { select: { id: true, name: true, code: true } } },
-        orderBy: { createdAt: 'desc' },
-        take,
-        skip,
-      }),
-      prisma.project.count({ where }),
-    ]);
+    const [rows, total] = await withAuthorizedDbReadOnly(prisma, ctx, (tx) =>
+      Promise.all([
+        tx.project.findMany({
+          where,
+          include: { clientCompany: { select: { id: true, name: true, code: true } } },
+          orderBy: { createdAt: 'desc' },
+          take,
+          skip,
+        }),
+        tx.project.count({ where }),
+      ]),
+    );
     return NextResponse.json({ projects: rows, total, take, skip });
   } catch (err) {
+    if (err instanceof AuthScopeError) {
+      return NextResponse.json(
+        { error: 'FORBIDDEN', message: 'Khong co pham vi xem du an.' },
+        { status: 403 },
+      );
+    }
     console.error('[api/projects] query error:', err);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to query projects' }, { status: 500 });
   }
@@ -102,19 +119,21 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const project = await prisma.project.create({
-      data: {
-        code,
-        name,
-        clientCompanyId,
-        pmUserId: pmUserId ?? null,
-        siteAddress: siteAddress ?? null,
-        startDate: new Date(startDate),
-        endDate: endDate ? new Date(endDate) : null,
-        status: status ?? 'DRAFT',
-        quota: quota ?? 0,
-      },
-    });
+    const project = await withDbContext(prisma, ctx, (tx) =>
+      tx.project.create({
+        data: {
+          code,
+          name,
+          clientCompanyId,
+          pmUserId: pmUserId ?? null,
+          siteAddress: siteAddress ?? null,
+          startDate: new Date(startDate),
+          endDate: endDate ? new Date(endDate) : null,
+          status: status ?? 'DRAFT',
+          quota: quota ?? 0,
+        },
+      }),
+    );
     return NextResponse.json({ project }, { status: 201 });
   } catch (err: any) {
     if (err.code === 'P2002') {

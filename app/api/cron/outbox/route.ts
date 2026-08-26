@@ -1,31 +1,31 @@
 /**
- * GET /api/cron/outbox — Drain outbox events
+ * GET /api/cron/outbox — Drain outbox events (V5-M1-06b: RQ-09/DEC-09/DEC-10).
  *
- * Phase 5 UAT/Cutover STEP-03 (RQ-05).
- * DEC-02: Vercel Cron Jobs calls this every 5 minutes.
+ * Auth FAIL-CLOSED qua `verifyCronSecret` (secret chưa cấu hình → 503; sai/thiếu
+ * header → 401; so sánh hằng thời gian; không log secret; zero DB khi deny).
  *
- * Idempotent: calling multiple times is safe.
+ * DEC-10 boundary: `outbox_events` KHÔNG bật RLS nên drain không cần GUC; và drain
+ * là tiến trình NHIỀU transaction + có thể I/O trong handler (Phase 6+) → KHÔNG
+ * gói toàn bộ trong 1 transaction (outbox.ts §4.3: cấm I/O khi giữ tx). Vì vậy
+ * route truyền raw client làm ĐỐI SỐ cho `drainOutboxOnce` (service tự quản tx nội
+ * bộ theo từng event) — không có model-op raw nào chạy tại route. Xem HANDOFF EV-10.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
+import { verifyCronSecret } from '@/src/shared/auth/cron-auth';
 import { drainOutboxOnce, type OutboxHandler } from '@/src/shared/integrity/outbox';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// Vercel cron auth: verify secret header if provided
-const CRON_SECRET = process.env.CRON_SECRET ?? '';
-
 const handlers: OutboxHandler[] = [
-  // Phase 5: no email/SMS handlers yet — outbox events are processed
-  // but handlers just return true (acknowledge) until Phase 6+.
-  // Real handlers added in Phase 6+ when channels are wired.
+  // Phase 5: chưa có handler email/SMS — event được PROCESSED (ack) tới Phase 6+.
 ];
 
 export async function GET(req: NextRequest) {
-  // Verify cron secret
-  if (CRON_SECRET && req.headers.get('x-cron-secret') !== CRON_SECRET) {
-    return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+  const auth = verifyCronSecret(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.code }, { status: auth.status });
   }
 
   const prisma = getPrisma();

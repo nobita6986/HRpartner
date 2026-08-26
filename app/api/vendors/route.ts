@@ -1,14 +1,23 @@
 /**
- * GET /api/vendors — M7 Admin Vendors
+ * GET /api/vendors — M7 Admin Vendors (hardened V5-M1-06b: RQ-08/DEC-08).
+ * POST /api/vendors — create vendor.
+ *
+ * DEC-08: PM KHÔNG được xem Vendor master → VIEWER_ROLES bỏ PM.
+ * Boundary canonical: GET qua `withAuthorizedDbReadOnly` (L1 `buildVendorScope`
+ * root/SALE→`{}`; + L2 RLS `vendors`). POST qua `withDbContext` (L2-only, create
+ * vỡ L1 theo DEC-03; RLS WITH CHECK ⊇ {root, ACCOUNTANT, SALE}).
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { withAuthorizedDbReadOnly } from '@/src/shared/auth/with-authorized-db';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const VIEWER_ROLES = new Set(['ADMIN', 'SALE', 'HR_MANAGER', 'PM']);
+const VIEWER_ROLES = new Set(['ADMIN', 'SALE', 'HR_MANAGER']);
 const ADMIN_ROLES = new Set(['ADMIN', 'SALE']);
 
 export async function GET(req: NextRequest) {
@@ -43,12 +52,16 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [rows, total] = await Promise.all([
-      prisma.vendor.findMany({ where, orderBy: { createdAt: 'desc' }, take, skip }),
-      prisma.vendor.count({ where }),
-    ]);
+    const { rows, total } = await withAuthorizedDbReadOnly(prisma, ctx, async (tx) => {
+      const rows = await tx.vendor.findMany({ where, orderBy: { createdAt: 'desc' }, take, skip });
+      const total = await tx.vendor.count({ where });
+      return { rows, total };
+    });
     return NextResponse.json({ vendors: rows, total, take, skip });
   } catch (err) {
+    if (err instanceof AuthScopeError) {
+      return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+    }
     console.error('[api/vendors] error:', err);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to query vendors' }, { status: 500 });
   }
@@ -83,11 +96,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const vendor = await prisma.vendor.create({
-      data: { code, name, taxCode: taxCode ?? null, phone: phone ?? null, email: email ?? null, area: area ?? null, status: status ?? 'ACTIVE' },
-    });
+    const vendor = await withDbContext(prisma, ctx, (tx) =>
+      tx.vendor.create({
+        data: { code, name, taxCode: taxCode ?? null, phone: phone ?? null, email: email ?? null, area: area ?? null, status: status ?? 'ACTIVE' },
+      }),
+    );
     return NextResponse.json({ vendor }, { status: 201 });
   } catch (err: any) {
+    if (err instanceof AuthScopeError) {
+      return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+    }
     if (err.code === 'P2002') return NextResponse.json({ error: 'CONFLICT', message: 'Ma vendor da ton tai.' }, { status: 409 });
     console.error('[api/vendors POST] error:', err);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to create vendor' }, { status: 500 });

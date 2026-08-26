@@ -1,29 +1,34 @@
 /**
- * GET /api/cron/disputes — Auto-confirm expired disputes
+ * GET /api/cron/disputes — Auto-confirm expired statements (V5-M1-06b: RQ-09/DEC-09/DEC-10).
  *
- * Phase 5 UAT/Cutover STEP-03 (RQ-06).
- * DEC-02: Vercel Cron Jobs calls this every 5 minutes.
+ * Auth FAIL-CLOSED qua `verifyCronSecret` (secret chưa cấu hình → 503; sai/thiếu
+ * header → 401; so sánh hằng thời gian; không log secret; zero DB khi deny).
  *
- * Idempotent: calling multiple times is safe (only SENT+expired statements confirmed).
+ * DEC-10 boundary: chạy `autoConfirmExpiredStatements` trong `withSystemDb(SYSTEM_CRON)`
+ * — set L2 GUC role=ADMIN (RLS `vendor_statements`/`client_statements` WITH CHECK ⊇
+ * ADMIN cho phép cập nhật). Danh tính audit ('system:cron'/SYSTEM) tách biệt, ghi ở
+ * service. KHÔNG raw op tại route; toàn bộ read-guard + update + audit trong 1 tx.
+ * Idempotent: chỉ SENT + quá hạn mới CONFIRMED.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
+import { verifyCronSecret } from '@/src/shared/auth/cron-auth';
+import { withSystemDb, SYSTEM_CRON } from '@/src/shared/auth/with-system-db';
 import { autoConfirmExpiredStatements } from '@/src/domains/reconciliation/dispute.service';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const CRON_SECRET = process.env.CRON_SECRET ?? '';
-
 export async function GET(req: NextRequest) {
-  if (CRON_SECRET && req.headers.get('x-cron-secret') !== CRON_SECRET) {
-    return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+  const auth = verifyCronSecret(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.code }, { status: auth.status });
   }
 
   const prisma = getPrisma();
 
   try {
-    const result = await prisma.$transaction(async (tx) =>
+    const result = await withSystemDb(prisma, SYSTEM_CRON, (tx) =>
       autoConfirmExpiredStatements(tx, new Date()),
     );
     return NextResponse.json({

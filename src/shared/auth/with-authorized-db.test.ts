@@ -149,8 +149,9 @@ describe('withAuthorizedDb — composition L1 + L2 (AC-02)', () => {
 
     await expect(
       withAuthorizedDb(prisma, SALE, async (tx) => {
-        // 'Ticket' không có builder → extension phải throw DENY_BY_DEFAULT
-        await (tx as any).ticket.findMany({});
+        // 'Dependent' không có builder → extension phải throw DENY_BY_DEFAULT
+        // (Ticket/AttendanceEvent/Site đã có builder từ M1-06b nên không còn dùng ở đây).
+        await (tx as any).dependent.findMany({});
         return null;
       }),
     ).rejects.toBeInstanceOf(AuthScopeError);
