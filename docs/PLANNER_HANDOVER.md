@@ -13,13 +13,13 @@ current_lane: V5-M1 / M1-07a Ticket RLS prerequisite
 current_task: hrp-v5-m1-07a-ticket-rls-backstop
 task_path: docs/tasks/hrp-v5-m1-07a-ticket-rls-backstop/TASK.md
 spec_version: v1.0
-task_status: READY_FOR_EXECUTION
-current_gate: TIER_2_EXECUTION
+task_status: REVISION_REQUIRED
+current_gate: REVISION_EXECUTION
 next_command: /code hrp-v5-m1-07a-ticket-rls-backstop
 previous_accepted: hrp-v5-m1-06c-remaining-routes-auth-scope (enumerated slice only)
 next_planner_candidate: Return hrp-v5-m1-06d-auth-boundary-closure execution round 2 after M1-07a ACCEPTED
-blocking_owner: none at contract gate; OP provides isolated TEST/ADMIN DB URLs only if executor environment lacks them
-cursor_note: Tier 1 chose option A and rejected withSystemDb for user Ticket routes. M1-06d v1.1 is REVISION_REQUIRED and its round-1 WIP must remain untouched while M1-07a is executed/audited.
+blocking_owner: none — isolated TEST/ADMIN URLs are available in C:\CodeApp\Salary-app\.env.mp2-test.local; never print or commit their values
+cursor_note: M1-07a audit round 1 is REVISION_REQUIRED: ENV_BLOCKED cannot close Must-P0 LIVE ACs; fix PLN-01..03, run real DIRECTOR/ACCOUNTANT/Worker/HR matrix, then re-audit round 2. M1-06d WIP remains paused and untouched.
 ```
 
 <!-- ROADMAP_CURSOR_END -->

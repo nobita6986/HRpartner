@@ -8,16 +8,16 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `REVISION_REQUIRED` |
 | Planner | Tier 1 |
 | Executor | Tier 2 |
 | Auditor | Tier 3 independent context |
 | Baseline | `879db9a0177fa33203f2fe224fe728cd648227a2` — last committed source baseline; uncommitted M1-06d round-1 work remains user-owned WIP and is excluded from this task's diff |
 | Modules | `V5-M1-07a / Ticket RLS prerequisite / M1-06d STEP-05 unblocker` |
 | ADR references | `UNIFIED_PLAN_v5.md` §4.3 M1-07, §7.2, §8.3; M1-06d v1.1 DEC-08/15; DEC-14 test-DB safety |
-| Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `verify-task` → `/code hrp-v5-m1-07a-ticket-rls-backstop` → Tier 3 LIVE audit → Tier 1 resolve |
+| Current execution round | `2` |
+| Current audit round | `1` |
+| Next gate | Tier 2 fixes round-1 evidence/policy gaps and runs LIVE on isolated test DB → HANDOFF → `/audit hrp-v5-m1-07a-ticket-rls-backstop round 2` |
 | Updated | `2026-08-26 Asia/Bangkok` |
 
 ### Dependency and sequencing gate
@@ -177,9 +177,14 @@ Tier 1 append audit decisions; do not rewrite Tier 2 HANDOFF or Tier 3 AUDIT.
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
 | Not started | None | None | Audit has not started | None | Tier 1 after Tier 3 handoff |
+| `1` | `AUD-001` | `ACCEPT_FIX` — reject final acceptance with `ENV_BLOCKED` | RQ-05 and AC-02..AC-06 are Must P0/Blocking; DEC-14 defines safe failure behavior, not a waiver that converts missing LIVE evidence into PASS | None; spec remains `v1.0`, execution round advances to 2 | Tier 2 runs LIVE with explicit isolated TEST/ADMIN URLs; Tier 3 re-audits round 2 |
+| `1` | `PLN-01` | `ACCEPT_FIX` | Planner spot-check found test/contract mismatches: ADMIN test expects INSERT denial although DEC-06 grants ADMIN workflow write; ADMIN cannot represent DIRECTOR; AC-02 lacks positive Worker self create/update and explicit HR_STAFF global queue proof; AC-03 lacks positive ACCOUNTANT finance update proof | None; implementation/test correction only | Tier 2 aligns tests with DEC-05/06 and supplies real role-specific LIVE evidence |
+| `1` | `PLN-02` | `ACCEPT_FIX` | `hrp_ticket_history_insert` omits ACCOUNTANT although canonical ACCOUNTANT approve/reject/pay writes TicketHistory in the same transaction; this can break the finance workflow once RLS is active | None; migration correction within RQ-03/AC-04 | Tier 2 fixes child write authority and proves ACCOUNTANT parent+history atomic success LIVE |
+| `1` | `PLN-03` | `ACCEPT_FIX` | AC-07 requires regression gates pass, but unit command exited 1. “Pre-existing” is not sufficient without reproduction at pinned baseline or a green equivalent mandatory gate | None | Tier 2 provides baseline reproduction or closes the failure, then reruns the exact gate |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | `2026-08-26` | Initial READY contract for Ticket-specific RLS/FORCE RLS migration and LIVE role matrix. | M1-06d round-1 HANDOFF `BLK-01`; Tier 1 chose option A and rejected user-request system elevation. |
+| `v1.0` | `2026-08-26` | Audit round 1 resolved as REVISION_REQUIRED; contract unchanged, execution round 2 opened for LIVE evidence and policy/test alignment. | `AUD-001`, `PLN-01..03`; no security waiver granted. |
