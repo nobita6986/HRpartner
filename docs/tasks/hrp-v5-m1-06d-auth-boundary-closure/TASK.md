@@ -7,17 +7,17 @@
 | Task slug | `hrp-v5-m1-06d-auth-boundary-closure` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Spec version | `v1.1` |
+| Status | `REVISION_REQUIRED` — paused until M1-07a is ACCEPTED |
 | Planner | Tier 1 |
 | Executor | Tier 2 |
 | Auditor | Tier 3 independent context |
 | Baseline | `1036f2c64be7402f2fbd2508d6d66b12d06252a7` — scoped accepted M1-06b/M1-06c baseline; unrelated AFF/scratch/handover files excluded |
 | Modules | `V5-M1-06 / RF-10 / Hardening-1 closure` |
 | ADR references | `UNIFIED_PLAN_v5.md` §4.3 M1-06, §7.2, §8.3; M1-06c Planner Resolution `PLN-01..02`; DEC-14 test DB safety |
-| Current execution round | `1` (planned, chưa mở) |
+| Current execution round | `2` (opens after M1-07a ACCEPTED) |
 | Current audit round | `0` |
-| Next gate | `verify-task` PASS → `/code hrp-v5-m1-06d-auth-boundary-closure` |
+| Next gate | Complete and audit `hrp-v5-m1-07a-ticket-rls-backstop` → return `/code hrp-v5-m1-06d-auth-boundary-closure` round 2 |
 | Updated | `2026-08-26 Asia/Bangkok` |
 
 ### Dependency gate
@@ -28,6 +28,7 @@
 | M1-06b | `docs/tasks/hrp-v5-m1-06b-worker-vendor-cron-auth-scope` | AUDIT PASS + Planner resolution in worktree | Functionally satisfied; must be included in clean baseline SHA |
 | M1-06c | `docs/tasks/hrp-v5-m1-06c-remaining-routes-auth-scope` | AUDIT PASS; TASK status ACCEPTED for enumerated eight-root slice | Satisfied functionally; must be included in clean baseline SHA |
 | `BLK-BASELINE` | Git | Scoped accepted baseline commit `1036f2c64be7402f2fbd2508d6d66b12d06252a7` contains M1-06b/M1-06c deliverables; unrelated AFF/scratch/handover files remain outside commit | **SATISFIED** — Tier 2 must diff and implement from this exact SHA |
+| M1-07a Ticket RLS | `docs/tasks/hrp-v5-m1-07a-ticket-rls-backstop/TASK.md` | Round-1 HANDOFF `BLK-01` proves current Ticket policies conflict with the canonical queue/state machine | **BLOCKING STEP-05/STEP-01** — must be ACCEPTED before M1-06d execution round 2 |
 
 ## 1. Outcome
 
@@ -112,6 +113,7 @@ Sau task này, Tier 1/Tier 3 có thể tái tạo bằng tool rằng toàn bộ 
 | `DEC-12` | CHOSEN | Margin aggregate phải có explicit ClientStatement/ClientStatementLine L1 capability hoặc scoped repository deny-by-default; không kể role gate + L2-only là L1+L2. | EV-14, Tier 1 | Final |
 | `DEC-13` | CHOSEN | Login pre-auth DB access phải đi qua named `PREAUTH_DB` helper/repository với fixed User projection và transaction-local bootstrap context; route-level arbitrary raw transaction/GUC không nằm allowlist. | EV-14, Tier 1 | Final |
 | `DEC-14` | ASSUMPTION | Accepted 06b/06c code behavior giữ nguyên sau scoped commit. | Tier 1/OP | Expires when baseline SHA pinned; mismatch → revise TASK |
+| `DEC-15` | CHOSEN | Resolve execution-round-1 `BLK-01` bằng phương án A: create the scoped M1-07a migration/policy task. Reject phương án B for user-driven Ticket routes: `withSystemDb` would remove the actor-specific DB backstop required by RQ-05/AC-05. | Tier 1 resolution 2026-08-26; HANDOFF round 1 §5 `BLK-01` | Final |
 
 ## 4. Contract
 
@@ -235,6 +237,7 @@ Tier 1 append audit decisions; do not rewrite Tier 2 HANDOFF or Tier 3 AUDIT.
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
 | Not started | None | None | Audit round has not started | None | Tier 1 after Tier 3 handoff |
+| Execution round 1 | `BLK-01` | `ACCEPT_FIX` — choose option A | Current `hrp_ticket_scope` family is incompatible with WORKER/HR_STAFF/ACCOUNTANT state-machine operations; system elevation would contradict RQ-05 | Spec `v1.1`: add DEC-15 and blocking dependency M1-07a; retain RQ-05/AC-05 unchanged | Tier 2 pauses Ticket/static-gate work; resume round 2 only after M1-07a ACCEPTED |
 
 ## 10. Revision Log
 
@@ -242,3 +245,4 @@ Tier 1 append audit decisions; do not rewrite Tier 2 HANDOFF or Tier 3 AUDIT.
 |---|---|---|---|
 | `v1.0` | `2026-08-26` | Initial DRAFT: exact 20-route closure, payslip P0, attendance/staffing/ticket boundaries, recursive API manifest, 06c role/helper/pre-auth residuals và mandatory LIVE evidence. | M1-06c Planner Resolution `PLN-01..02`; Tier 1 technical inventory. |
 | `v1.0` | `2026-08-26` | Promoted to READY_FOR_EXECUTION and closed `BLK-BASELINE` with pinned scoped accepted SHA `1036f2c64be7402f2fbd2508d6d66b12d06252a7`. | M1-06b/M1-06c baseline commit; unrelated AFF/scratch/docs excluded. |
+| `v1.1` | `2026-08-26` | Round-1 resolution chooses M1-07a Ticket RLS policy alignment and rejects `withSystemDb` elevation; M1-06d becomes REVISION_REQUIRED until prerequisite acceptance. | HANDOFF round 1 `BLK-01`, `LIM-02`; RQ-05/AC-05 security invariant retained. |
