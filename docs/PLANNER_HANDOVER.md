@@ -1,150 +1,213 @@
-# BÀN GIAO TIER 1 — PLANNER HRP V5
+# TIER 1 LIVING HANDOFF v2.0 — HRP V5
 
-> Snapshot canonical: **25/08/2026 (Asia/Bangkok)**. Agent tiếp nhận phải dùng mục 0 làm trạng thái hiện tại; không suy ra việc đang mở từ tài liệu/roadmap V4 cũ.
+> Tài liệu này là hợp đồng tiếp quản lâu dài cho **Tier 1 — Planner**. Khi bàn giao cho Agent Tier 1 khác, bình thường **chỉ cập nhật khối `ROADMAP_CURSOR` ở §0**. Không chép tiến độ task vào các section ổn định bên dưới.
 
-## 0. Trạng thái hiện tại và lệnh tiếp tục
+## 0. ROADMAP_CURSOR — phần duy nhất cập nhật theo tiến độ
 
-| Hạng mục | Giá trị |
-|---|---|
-| Branch | `main` |
-| HEAD | `ec7a0e4` — `docs(m1): define worker vendor cron auth scope` |
-| Remote | `main...origin/main [ahead 18]`; **chưa push** |
-| Task duy nhất đang mở | `hrp-v5-m1-06b-worker-vendor-cron-auth-scope` |
-| TASK | `docs/tasks/hrp-v5-m1-06b-worker-vendor-cron-auth-scope/TASK.md` |
-| Spec / status | `v1.0` / `READY_FOR_EXECUTION` |
-| Code baseline | `4bb4464` — M1-06a đã ACCEPTED; commit `ec7a0e4` chỉ thêm contract M1-06b |
-| Việc kế tiếp | Giao Tier 2: `/code hrp-v5-m1-06b-worker-vendor-cron-auth-scope` |
+<!-- ROADMAP_CURSOR_START -->
 
-Không viết lại contract hoặc mở task song song. Tier 2 phải thực thi TASK v1.0, tạo `HANDOFF.md` và dừng ở `READY_FOR_AUDIT`. Sau đó giao Tier 3 bằng `/audit hrp-v5-m1-06b-worker-vendor-cron-auth-scope`; Tier 1 chỉ `/resolve` khi `AUDIT.md` đã hợp lệ.
-
-## 1. Phạm vi contract M1-06b đã khóa
-
-- Đúng **16 route** dưới năm root `worker/**`, `workers/**`, `vendor/**`, `vendors/**`, `cron/**`: 6 Worker, 8 Vendor, 2 cron.
-- Worker self-scope lấy từ `ctx.workerId`; Vendor self-scope lấy từ `ctx.vendorId`. Client không được override owner ID.
-- User route dùng canonical auth boundary của M1-06a (`withAuthorizedDb`/scoped repository), có L1 + L2 cùng transaction; không tạo wrapper cạnh tranh và không raw Prisma fallback.
-- Vendor dedup chỉ trả kết quả opaque, không lộ Worker ID/tên/CCCD/phone hoặc PII nội bộ. Cross-vendor object trả 404 và không có side effect.
-- Cron fail closed: thiếu `CRON_SECRET` → 503, secret/header sai → 401, cả hai phải có **zero DB calls**. DB work dùng system boundary riêng với stable actor `SYSTEM_CRON`; không giả user.
-- Không schema, migration, dependency, session/JWT/OTP, deploy hoặc push. Nếu cần một trong các thay đổi này, Tier 2 phải dừng và trả Planner.
-- Required LIVE evidence phải chạy trên DB test an toàn. Thiếu môi trường là `ENV_BLOCKED`, không được đổi thành PASS hoặc mock.
-
-DB test đã dùng thành công ở các round trước:
-
-- Env ngoài repo: `C:\CodeApp\Salary-app\.env.mp2-test.local`.
-- Biến cần dùng: `DATABASE_URL_TEST`, `DATABASE_URL_ADMIN_TEST`.
-- Writer role: `app_user_writer`; admin role: `neondb_owner`; phải cùng test target và khác repo dev/prod target.
-- Không in connection string, password/token hoặc nội dung `.env` vào terminal evidence, HANDOFF, AUDIT hay repo.
-
-## 2. Các mốc V5 đã đóng
-
-| Chặng | Trạng thái | Commit implementation/resolution chính |
-|---|---|---|
-| Wave 0 RF-01..04 | `ACCEPTED` | `516956a`, `405f913`, `a79e041`, `d8ba10d` |
-| G0 quality/fixtures/migrations/seed/Prisma | `ACCEPTED` | `e6daa27`, `715a58b`, `1982300`, `19100db`, `1b9ed1d` |
-| MP-1 Publish + Public Read | `ACCEPTED` | `7831d56` |
-| MP-2 Apply + Tracking + HR Queue | `ACCEPTED` | `76096b7` |
-| MP-3A Screening | `ACCEPTED` | `58058b2` |
-| MP-3B Convert Worker | `ACCEPTED` | `42edc43` |
-| MP-3C Assignment Placement | `ACCEPTED` | `299614a` |
-| M1-06a Admin/CTV auth scope | `ACCEPTED` | `4bb4464` |
-| M1-06b Worker/Vendor/Cron auth scope | `READY_FOR_EXECUTION` | Contract `ec7a0e4` |
-
-MP-3C lưu ý: audit LIVE đã PASS nhưng browser evidence AC-08 **không được chạy**. Founder đã chọn waiver và Tier 1 ghi rõ trong TASK trước khi ACCEPTED. Không được báo lại rằng browser test đã PASS.
-
-## 3. Dependency graph sau M1-06b — không biến thành một chuỗi cứng
-
-> **Quy tắc Planner:** `UNIFIED_PLAN_v5.md` mô tả nhiều lane có thể giao nhau hoặc chạy song song. Chỉ gọi `A → B` khi master plan/TASK có dependency hoặc exit gate rõ ràng. Dependency do Planner suy luận phải ghi `ASSUMPTION`, kèm lý do và stop condition; không trình bày như nguồn canonical.
-
-### 3.1. Gate hiện tại — bắt buộc đi hết trước
-
-```text
-M1-06b Tier 2
-  → M1-06b Tier 3 audit
-  → Tier 1 resolve/ACCEPTED
-  → M1-06c: phần route còn lại của RF-10/M1-06
-  → audit/resolve M1-06c
+```yaml
+updated_at: 2026-08-26 Asia/Bangkok
+roadmap_source: docs/UNIFIED_PLAN_v5.md
+current_lane: V5-M1 / RF-10 / Hardening-1 closure
+current_task: hrp-v5-m1-06d-auth-boundary-closure
+task_path: docs/tasks/hrp-v5-m1-06d-auth-boundary-closure/TASK.md
+spec_version: v1.0
+task_status: READY_FOR_EXECUTION
+current_gate: TIER_2_EXECUTION
+next_command: /code hrp-v5-m1-06d-auth-boundary-closure
+previous_accepted: hrp-v5-m1-06c-remaining-routes-auth-scope (enumerated slice only)
+next_planner_candidate: V5-M1-07 sau khi M1-06d ACCEPTED và M1-06 exit review PASS
+blocking_owner: none
+cursor_note: M1-06d READY tại baseline 1036f2c64be7402f2fbd2508d6d66b12d06252a7; khóa 20 route ngoài static gate và payslip P0; giao đúng Tier 2 thực thi.
 ```
 
-Không mở M1-07 khi M1-06 chưa đủ inventory/exit gate, và không để Tier 2 tự mở rộng M1-06b sang route của M1-06c.
+<!-- ROADMAP_CURSOR_END -->
 
-### 3.2. Security và backbone sau khi M1-06 hoàn tất
+### Quy tắc của cursor
 
-- Security lane phải hoàn tất `M1-07` (RLS/FORCE RLS), `M1-08` (vendor IDOR) và `M1-09` (field projection).
-- Master plan gom `M1-05..09` trong cùng phase; **không quy định chuỗi cứng** `M1-07 → M1-08 → M1-09`. Planner được chạy M1-08/M1-09 song song hoặc tuần tự sau khi boundary đủ ổn định, nhưng TASK phải nêu dependency thật.
-- Backbone lane canonical là `M35-01 → M35-02..05 → M35-06 → M35-07..09`. M35-06 đã được MP-3C đóng; M35-07 và M35-08 có thể được lập contract theo baseline hiện hành.
-- M35-09 có giao diện với GPS/offline/check-in của M7 và `PORTAL-06`. Trước khi mở M35-09, Planner phải tách rõ phần backbone/PWA và đối chiếu M7-04/05; không xếp M35-09 hoàn tất trước dependency mà chính contract của nó yêu cầu.
-- `OPS-02`, `OPS-04`, `OPS-06` là hardening lane. Chúng có thể xen kẽ với M1/M35 khi contract chứng minh dependency; master plan **không mặc định** `OPS-02 ← M1-08` hoặc `OPS-06 ← M1-09` thành quan hệ cứng.
+- Cursor chỉ trả lời: **đang ở đâu, gate nào, artifact nào, lệnh gì tiếp theo**.
+- `current_task` tối đa một task. Không mở nhiều task chỉ vì chúng cùng phase.
+- Không ghi HEAD, số commit ahead, danh sách file dirty hoặc test count vào cursor; Agent nhận việc phải kiểm tra Git/artifact mới nhất.
+- Chi tiết scope, baseline, dependency, AC và quyết định nằm trong `TASK.md`; không nhân bản vào handoff.
+- Nếu cursor mâu thuẫn với TASK/HANDOFF/AUDIT, dừng và đối chiếu source of truth theo §2 trước khi làm.
 
-### 3.3. Chuỗi domain có thứ tự canonical
+## 1. Vai trò cố định của Tier 1
+
+Tier 1 biến yêu cầu của sếp thành contract đủ chặt để Tier 2 thực thi và Tier 3 audit. Tier 1 sở hữu quyết định product/architecture, scope, acceptance và audit resolution; **không sửa source code**.
+
+| Tier | Artifact sở hữu | Trách nhiệm | Không được làm |
+|---|---|---|---|
+| Tier 1 — Planner | `TASK.md` | Contract, decision, status, resolution | Không implement; không viết thay HANDOFF/AUDIT |
+| Tier 2 — Engineer | `HANDOFF.md` | Implement, test, evidence thực thi | Không đổi contract; không tự audit/ACCEPTED |
+| Tier 3 — Auditor | `AUDIT.md` | Audit độc lập, C-01..C-10, verdict | Không sửa source/TASK/HANDOFF |
+
+Chỉ phá ranh giới khi sếp ủy quyền đích danh trong lượt hiện tại. Sau MP-3B, sếp đã nhắc Tier 1 chỉ viết contract/resolve và để đúng Tier 2/Tier 3 thực hiện phần của họ.
+
+## 2. Source of truth và thứ tự đọc khi nhận bàn giao
+
+1. Khối `ROADMAP_CURSOR` ở §0 để biết điểm vào.
+2. `.ai-pipeline/tier1.md`.
+3. `.ai-pipeline/rules/00-global-rules.md` và `01-planner-rules.md`.
+4. `.ai-pipeline/templates/TASK.template.md`.
+5. `docs/UNIFIED_PLAN_v5.md` — roadmap/domain canonical.
+6. `docs/V5_3_TIER_EXECUTION_GUIDE.md`.
+7. `TASK.md`, rồi `HANDOFF.md`/`AUDIT.md` của task trong cursor nếu tồn tại.
+8. Git và source/schema/test liên quan ở chế độ read-only để xác minh baseline.
+
+Repo có `.codegraph/`: dùng CodeGraph trước khi `rg`/đọc file khi cần hiểu code. Nếu kết quả thiếu hoặc mâu thuẫn HEAD, ghi limitation và fallback sang `rg --files`, source inspection và Git; không bịa evidence.
+
+Không dùng roadmap V4/Portal legacy để chọn task V5 mới. Không dùng file handover này thay TASK hoặc master plan.
+
+## 3. State machine và current gate
+
+Giá trị hợp lệ cho `current_gate`:
+
+| Gate | Điều kiện quan sát | Tier 1 làm gì |
+|---|---|---|
+| `PLANNER_CONTRACT` | Chưa có TASK READY | Khảo sát read-only, viết TASK, verify-task |
+| `TIER_2_EXECUTION` | TASK `READY_FOR_EXECUTION` | Báo đúng `/code <slug>`, không implement thay |
+| `TIER_3_AUDIT` | HANDOFF kết `READY_FOR_AUDIT` | Báo `/audit <slug>`, không audit thay |
+| `TIER_1_RESOLVE` | AUDIT đã bàn giao | Chạy resolve protocol §6 |
+| `REVISION_EXECUTION` | TASK `REVISION_REQUIRED` có directive | Giao lại `/code <slug>` đúng round |
+| `BLOCKED_OWNER` | Cần secret/DB/ADR/quyền OP từ sếp | Ghi owner + điều kiện mở khóa; không force-pass |
+| `PHASE_REVIEW` | Task cuối phase đã ACCEPTED | Review exit gate rồi chọn candidate kế tiếp |
+
+Task status hợp lệ: `DRAFT → READY_FOR_EXECUTION → REVISION_REQUIRED | ACCEPTED | CANCELLED`. `READY_FOR_AUDIT` và verdict PASS/CONDITIONAL/BLOCKED thuộc HANDOFF/AUDIT, không phải Tier 1 tự gán vào TASK.
+
+## 4. Vòng lặp vận hành chuẩn
 
 ```text
-M7-01..03 → M7-04..06 → M7-07 → M7-08
-M8-01..04 → M8-05..06 → M8-07..08
-PAY-01..06 chỉ sau M7/M8
-PAY-07..08 chỉ sau owner kế toán + golden cases + sign-off
+Cursor
+  → đọc artifact tại current gate
+  → thực hiện đúng quyền Tier 1
+  → verify cơ học tương ứng
+  → chuyển đúng tier/gate
+  → chỉ khi gate thay đổi: cập nhật ROADMAP_CURSOR
 ```
 
-Không được bỏ sót `M8-07..08`: master plan yêu cầu hoàn tất `M8-01..08` trước payroll. Với M7, `OPS-01` là owner của QStash contract cho M7-02; không gán toàn bộ M7-01..03 phụ thuộc OPS-01 nếu TASK chưa chứng minh.
+### Khi tạo contract
 
-### 3.4. M6 Commission và PAY không phải một đường thẳng duy nhất
+1. Khảo sát master plan + source/schema/test read-only; khóa baseline và phương pháp evidence.
+2. Viết duy nhất `docs/tasks/<slug>/TASK.md` theo template.
+3. Bắt buộc có `RQ-xx → STEP-xx → AC-xx`, scope/out-of-scope, decision, risk, rollback và stop condition.
+4. Open Question làm đổi implementation phải rỗng trước `READY_FOR_EXECUTION`.
+5. Chạy `verify-task.ps1`; chỉ sau PASS mới đặt cursor thành `TIER_2_EXECUTION`.
 
-- `M6-01..03` (policy/group/permission) có thể chuẩn bị khi permission baseline M1 đã ổn định.
-- `M6-04..07` phải chờ đúng input canonical mà từng task dùng: hours/assignment từ M7, client billing/revenue từ M8, rồi ledger/reversal/dashboard theo thứ tự nội bộ.
-- `PAY-01..06` chạy sau M7/M8 theo §7.7; master plan không bắt toàn bộ M6 phải đóng trước khi mở payroll shell.
-- Vì vậy không ghi roadmap thành chuỗi cứng `M7 → M8 → M6 → PAY`. Cách đúng là: M7 trước M8; M8 trước PAY; M6 và PAY phân nhánh/chạy theo dependency dữ liệu thực tế.
-- M9 là P2, chỉ mở sau khi core ổn định. Statutory `PAY-07..08` không được force-open hoặc force-pass khi chưa có owner kế toán.
+### Khi giao việc
 
-### 3.5. Gate trước khi Tier 1 tạo mỗi TASK mới
+- CODE READY: `/code <task-slug>`.
+- HANDOFF `READY_FOR_AUDIT`: `/audit <task-slug>`.
+- Design dùng Figma Owner và `/audit-design <task-slug>`; không giao `/code`.
+- Mỗi lần báo sếp phải nêu: task path, spec version, status và hành động kế tiếp.
 
-1. Đọc lại `UNIFIED_PLAN_v5.md` §4.x, §4.13 và task sequence §7.x liên quan.
-2. Đối chiếu HEAD, TASK đã ACCEPTED và phần implementation thật; không chỉ dựa vào tên phase.
-3. Lập bảng `Dependency | Source | Satisfied evidence | Blocker`. Dependency suy luận phải ghi `ASSUMPTION`.
-4. Không mở nhiều task cùng lúc chỉ vì chúng cùng nằm trong một phase.
-5. Không bỏ task UI/exit gate ở cuối chuỗi, đặc biệt `M7-08` và `M8-07..08`.
+## 5. Contract quality gate
 
-## 4. Ranh giới vai trò bắt buộc
+TASK chỉ được `READY_FOR_EXECUTION` khi:
 
-| Tier | Sở hữu | Không được làm |
+- Outcome/non-goal và scope đủ rõ; không có quyết định nghiệp vụ bị đẩy cho Tier 2/3.
+- Baseline, dependency và destructive/OP action đã xác định owner.
+- Mọi RQ có STEP và AC đo được; evidence yêu cầu là thật, không mock khi contract yêu cầu LIVE.
+- Interface/data/state/permission/idempotency/concurrency được khóa đúng mức rủi ro.
+- Stop condition buộc Tier 2 dừng nếu cần schema/dependency/secret/quyền ngoài contract.
+- Không vi mô hóa private implementation nếu public contract và invariant đã đủ rõ.
+
+Contract thay đổi thì tăng spec version. Chỉ lỗi implementation thì giữ spec và mở execution round mới. Resolution luôn append-only trong TASK.
+
+## 6. Resolve Protocol — Tier 1 gate nhẹ
+
+1. Chạy `.ai-pipeline/scripts/verify-audit.ps1 -TaskPath docs/tasks/<slug>/TASK.md`.
+2. FAIL: yêu cầu Tier 3 chuẩn hóa/bổ sung AUDIT; không re-audit sâu.
+3. PASS: đọc findings P0→P3, Mandatory Checks và verdict.
+4. Evidence nhất quán + PASS/CONDITIONAL: ghi resolution; spot-check tối đa ba điểm rủi ro cao nếu cần.
+5. Evidence thiếu/mâu thuẫn hoặc P0/P1 chưa đóng: `REVISION_REQUIRED` và directive đo được.
+6. Ghi từng finding bằng `ACCEPT_FIX`, `REJECT`, `DEFER` hoặc `NEED_USER_DECISION`.
+7. Chỉ đặt `ACCEPTED` sau audit hợp lệ và resolution đầy đủ. Source đổi sau audit phải audit lại.
+
+Waiver không phải test PASS. Phải ghi người quyết định, evidence thiếu, residual risk và follow-up. Tiền lệ MP-3C: founder waived browser evidence AC-08; không được kể lại rằng browser test đã chạy PASS.
+
+## 7. Roadmap là dependency graph, không phải chuỗi kể chuyện
+
+### Gate gần hiện tại
+
+`M1-06b → audit/resolve → M1-06c → audit/resolve`. Không mở M1-07 trước khi M1-06 đủ inventory/exit gate.
+
+### Các lane canonical
+
+- M1 security: hoàn tất M1-07, M1-08, M1-09. Master plan gom M1-05..09; không mặc định chuỗi cứng `M1-07 → M1-08 → M1-09` nếu TASK chưa chứng minh.
+- M35 backbone: `M35-01 → M35-02..05 → M35-06 → M35-07..09`.
+- M35-09 giao với GPS/offline/check-in của M7 và PORTAL-06; phải tách dependency trước khi mở.
+- OPS-02/04/06 là hardening lane có thể xen kẽ khi dependency thật cho phép; không tự gán quan hệ cứng với M1.
+- M7: `M7-01..03 → M7-04..06 → M7-07 → M7-08`.
+- M8: `M8-01..04 → M8-05..06 → M8-07..08`.
+- PAY-01..06 chỉ sau M7/M8. PAY-07..08 cần owner kế toán, golden cases và sign-off.
+- M6-01..03 có thể chuẩn bị sau permission baseline; M6-04..07 chờ input canonical từ M7/M8 theo từng task. Không ép thành chuỗi cứng `M7 → M8 → M6 → PAY`.
+- M9 là P2, chỉ mở sau khi core ổn định.
+
+Trước mỗi TASK mới, Tier 1 phải lập trong TASK bảng `Dependency | Source | Satisfied evidence | Blocker`. Dependency suy luận phải ghi `ASSUMPTION`, lý do và stop condition. Không bỏ task UI/exit gate cuối chuỗi, đặc biệt M7-08 và M8-07..08.
+
+## 8. Standing architecture và security facts
+
+- HRP là outsourcing marketplace/platform; CTV là referrer/collaborator, không đồng nghĩa Worker.
+- Auth hiện hữu là identity-core/JWT riêng dùng `jose`, cookie `hrp_token` và `AuthContext`; **không phải NextAuth** và không được viết lại login/JWT/cookie/register (DEC-11).
+- Có 13 `SystemRole`; projection và scope phải test đủ role liên quan, role ngoài scope deny-by-default.
+- Target boundary: verified AuthContext → L1 role/action/scoped repository → L2 RLS transaction-local cùng DB transaction. Không tuyên bố mọi route đã đạt trước khi M1-06/07 đóng.
+- `withAuthorizedDb`/scoped repository là boundary implementation hiện hành từ M1-06a; không tạo wrapper cạnh tranh chỉ vì master plan dùng tên khái niệm `withAuthScope`.
+- Phân biệt **đã triển khai** với **roadmap target**. QStash/R2, EmploymentEpisode và PAY canonical không được mô tả là production-complete nếu TASK tương ứng chưa ACCEPTED.
+- Không log/commit secret, token, password, connection string hoặc PII thật.
+
+DB LIVE test chỉ dùng target an toàn và fail closed. Env từng dùng nằm ngoài repo tại `C:\CodeApp\Salary-app\.env.mp2-test.local`, với `DATABASE_URL_TEST` và `DATABASE_URL_ADMIN_TEST`; không in giá trị. Thiếu target/role hợp lệ là `ENV_BLOCKED`, không mock/force-pass.
+
+## 9. Git, worktree và vùng bảo vệ
+
+- Mỗi Agent nhận việc phải tự chạy read-only `git status --short --branch`, `git log` và kiểm tra diff scope. Không tin snapshot Git trong hội thoại cũ.
+- Thay đổi không thuộc task là của người dùng/luồng khác: không reset, restore, overwrite, xóa, stage hoặc commit.
+- Cấm `git add -A` và `git add .`; chỉ stage path trong scope.
+- Không commit/push/merge nếu sếp hoặc TASK không yêu cầu rõ. Không mặc định push sau resolve.
+- Không chạy migration/seed/destructive action trên production. OP action có owner là sếp cần ủy quyền rõ.
+
+## 10. Cách cập nhật Living Handoff khi chuyển Agent
+
+Trong tiến độ bình thường, chỉ sửa khối `ROADMAP_CURSOR` ở §0, từ marker mở có hậu tố `START` đến marker đóng có hậu tố `END`. Toàn file phải luôn chỉ có đúng một cặp marker thật.
+
+Quy trình cập nhật:
+
+1. Đọc TASK/HANDOFF/AUDIT và xác nhận gate thực tế.
+2. Cập nhật `updated_at`, lane/task/path/spec/status/gate/command, previous accepted, next candidate, blocker và một cursor note ngắn.
+3. Không đưa test count, commit list, chi tiết scope hoặc lịch sử phase vào cursor.
+4. Chạy `git diff --check -- docs/PLANNER_HANDOVER.md`.
+5. Chỉ sửa section ổn định khi pipeline rule, standing ADR hoặc dependency canonical thực sự thay đổi; khi đó tăng Living Handoff version và ghi revision log.
+
+### Mẫu cursor cho lần sau
+
+```yaml
+updated_at: YYYY-MM-DD Asia/Bangkok
+roadmap_source: docs/UNIFIED_PLAN_v5.md
+current_lane: <phase/lane>
+current_task: <slug hoặc none>
+task_path: <path hoặc none>
+spec_version: <vX.Y hoặc n/a>
+task_status: <status hoặc n/a>
+current_gate: <giá trị §3>
+next_command: <lệnh hoặc hành động Planner>
+previous_accepted: <slug gần nhất>
+next_planner_candidate: <ID/slug dự kiến, chưa coi là task đã mở>
+blocking_owner: <none hoặc owner + điều kiện>
+cursor_note: <một câu về exit gate/dependency quan trọng nhất>
+```
+
+## 11. Checklist tiếp quản trong 5 phút
+
+- [ ] Đọc cursor và TASK được trỏ tới.
+- [ ] Xác minh artifact có status khớp cursor.
+- [ ] Kiểm tra Git/worktree mới nhất; bảo vệ thay đổi ngoài scope.
+- [ ] Xác định đúng current gate và chỉ làm quyền Tier 1.
+- [ ] Nếu giao tier khác, dùng đúng lệnh và không làm thay.
+- [ ] Nếu chọn task mới, kiểm tra dependency graph và phase exit gate trước khi viết contract.
+- [ ] Sau khi gate đổi, chỉ cập nhật cursor.
+
+## 12. Revision log của Living Handoff
+
+| Version | Ngày | Thay đổi cấu trúc ổn định |
 |---|---|---|
-| Tier 1 — Planner | Quyết định scope/architecture, viết và resolve `TASK.md`, cập nhật bàn giao | Không implement source/test; không viết thay HANDOFF/AUDIT |
-| Tier 2 — Engineer | Source, tests, migration nếu contract cho phép, `HANDOFF.md` | Không tự đổi contract hoặc tự audit |
-| Tier 3 — Auditor | Audit độc lập, evidence thật, `AUDIT.md` | Không sửa source hoặc TASK |
-
-Founder đã nhắc rõ sau MP-3B: Agent Tier 1 **chỉ viết hợp đồng/resolve**, công việc Tier 2 và Tier 3 để đúng agent thực hiện. Chỉ phá ranh giới khi Founder ủy quyền đích danh trong lượt hiện tại.
-
-Resolve Protocol: chạy `verify-audit.ps1`, đọc verdict/findings/gaps, spot-check tối đa ba điểm rủi ro cao; không re-audit toàn bộ nếu evidence nhất quán. Mọi waiver phải ghi rõ người quyết định, evidence thiếu và residual risk; không biến waiver thành test PASS.
-
-## 5. Nguồn sự thật và cách đọc
-
-1. `.ai-pipeline/tier1.md`.
-2. `.ai-pipeline/rules/00-global-rules.md` và `01-planner-rules.md`.
-3. `.ai-pipeline/templates/TASK.template.md`.
-4. `docs/UNIFIED_PLAN_v5.md` — roadmap canonical.
-5. `docs/V5_3_TIER_EXECUTION_GUIDE.md`.
-6. TASK đang mở và file bàn giao này.
-
-Repository có `.codegraph/`, nên dùng CodeGraph trước khi `rg`/đọc file. Tuy nhiên khi lập M1-06b, CodeGraph trả inventory thiếu/lẫn route; TASK đã ghi phương pháp fallback bằng `rg --files`, source inspection và Git. Không tin index nếu mâu thuẫn với HEAD.
-
-## 6. Git và worktree: tuyệt đối không dọn hộ
-
-Worktree đang có nhiều thay đổi **không thuộc V5 task hiện tại**:
-
-- Nhiều tracked deletion dưới `appBCC/**`.
-- Untracked: `audit_report.md`, `docs/V5_READINESS_ASSESSMENT.md`, một số `AUDIT.md`/`HANDOFF.md` task cũ, `run-test.js`, `scratch/`.
-
-Đây là thay đổi của người dùng/luồng khác. Không reset, restore, xóa, stage hoặc commit. Cấm `git add -A` và `git add .`; chỉ stage file có trong scope contract. Không push nếu Founder chưa yêu cầu rõ.
-
-## 7. Checklist Agent tiếp nhận
-
-- [ ] Xác nhận HEAD `ec7a0e4` và không dọn worktree ngoài scope.
-- [ ] Đọc đầy đủ TASK M1-06b v1.0; không dùng snapshot MP-2 cũ.
-- [ ] Giao đúng lệnh `/code hrp-v5-m1-06b-worker-vendor-cron-auth-scope`.
-- [ ] Khi Tier 2 xong, kiểm tra HANDOFF status rồi giao Tier 3; Tier 1 không chạy thay.
-- [ ] Khi Tier 3 bàn giao, dùng `/resolve` và giữ traceability `RQ → STEP → AC`.
-- [ ] Sau status change, cập nhật TASK + tài liệu trạng thái cần thiết và commit scoped; chỉ push khi Founder yêu cầu.
-
-## 8. Revision log
-
-| Ngày | Thay đổi |
-|---|---|
-| 25/08/2026 | Sửa roadmap sau M1-06b thành dependency graph: bổ sung M1-06c gate, lane M1/M35/OPS, đủ M7/M8, quan hệ M6/PAY và quy tắc không tự gán dependency cứng. |
-| 25/08/2026 | Thay snapshot MP-2 lỗi thời bằng trạng thái sau MP-3C và M1-06a; đặt M1-06b làm task duy nhất đang mở; bổ sung DB test, waiver MP-3C, queue tiếp theo, tier boundary và cảnh báo worktree/no-push. |
+| 2.0 | 25/08/2026 | Chuyển từ snapshot handover sang Living Handoff: một ROADMAP_CURSOR mutable; chuẩn hóa role, state/gate, resolve, dependency graph, standing security, Git safety và protocol tiếp quản. |
