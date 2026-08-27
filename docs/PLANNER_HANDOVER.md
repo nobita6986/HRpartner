@@ -7,19 +7,19 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-08-27 Asia/Bangkok
+updated_at: 2026-08-28 Asia/Bangkok
 roadmap_source: docs/UNIFIED_PLAN_v5.md
-current_lane: V5-M1 / M1-08 vendor object-scope hardening
-current_task: hrp-v5-m1-08-vendor-object-scope
-task_path: docs/tasks/hrp-v5-m1-08-vendor-object-scope/TASK.md
+current_lane: Marketplace go-live / single-domain consolidation
+current_task: hrp-v5-go-live-01-single-domain-consolidation
+task_path: docs/tasks/hrp-v5-go-live-01-single-domain-consolidation/TASK.md
 spec_version: v1.0
 task_status: READY_FOR_EXECUTION
 current_gate: TIER_2_EXECUTION
-next_command: /code hrp-v5-m1-08-vendor-object-scope
-previous_accepted: hrp-v5-m1-07b-rls-runtime-posture-closure
-next_planner_candidate: audit/resolve M1-08, then survey hrp-v5-m1-09-field-level-projection
+next_command: /code hrp-v5-go-live-01-single-domain-consolidation
+previous_accepted: hrp-v5-m1-08-vendor-object-scope
+next_planner_candidate: audit/resolve hrp-v5-go-live-01-single-domain-consolidation, then survey hrp-v5-m1-09-field-level-projection
 blocking_owner: none
-cursor_note: M1-08 v1.0 passed verify-task and locks public/private order semantics, vendor role split, generic reconciliation closure, atomic statement transitions and mandatory two-vendor LIVE IDOR evidence. Only one Tier 2 stream is allowed.
+cursor_note: M1-08 ACCEPTED at 2cd8a55 after independent LIVE 13/13. Single-domain v1.0 is READY_FOR_EXECUTION on that baseline: canonical hrpartner.vn, role landing paths, host-only cookie migration, exact legacy redirect allowlist and mandatory auth/middleware regression gates. Only one Tier 2 stream is allowed; do not start M1-09 concurrently.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
@@ -137,6 +137,7 @@ Waiver không phải test PASS. Phải ghi người quyết định, evidence th
 ### Các lane canonical
 
 - M1 security: hoàn tất M1-07, M1-08, M1-09. Master plan gom M1-05..09; không mặc định chuỗi cứng `M1-07 → M1-08 → M1-09` nếu TASK chưa chứng minh.
+- Owner sequencing override 2026-08-28: sau M1-08, chạy `hrp-v5-go-live-01-single-domain-consolidation` để gom Vendor/Worker/CTV về path trên `hrpartner.vn`; ACCEPT task này rồi mới quay lại M1-09.
 - M35 backbone: `M35-01 → M35-02..05 → M35-06 → M35-07..09`.
 - M35-09 giao với GPS/offline/check-in của M7 và PORTAL-06; phải tách dependency trước khi mở.
 - OPS-02/04/06 là hardening lane có thể xen kẽ khi dependency thật cho phép; không tự gán quan hệ cứng với M1.
