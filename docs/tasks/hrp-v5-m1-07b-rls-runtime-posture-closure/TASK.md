@@ -8,16 +8,16 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `DRAFT — BLK-BASELINE` |
+| Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 |
 | Executor | Tier 2 |
 | Auditor | Tier 3 independent context |
-| Baseline | `TBD` — planning snapshot is `1f68787`; accepted M1-07a and M1-06d implementation is still uncommitted. Tier 1 must pin the scoped implementation commit before promoting this task to `READY_FOR_EXECUTION` |
+| Baseline | `ca5382bc8354d916a2a08b337c886309cad476bf` — scoped implementation commit containing accepted M1-07a + M1-06d source, migration, tests and integration configuration |
 | Modules | `V5-M1-07b / residual RLS + FORCE RLS / runtime posture / truthful LIVE matrix` |
 | ADR references | `UNIFIED_PLAN_v5.md` §4.3 M1-07, §7.2, §8.3; accepted M1-07a DEC-03/08/09/10; DEC-14 isolated test-DB safety |
-| Current execution round | `0` |
+| Current execution round | `1` |
 | Current audit round | `0` |
-| Next gate | Tier 2/OP packages accepted M1-07a + M1-06d implementation into one scoped commit → Tier 1 pins baseline and runs `verify-task` → `/code` |
+| Next gate | `/code hrp-v5-m1-07b-rls-runtime-posture-closure` in a dedicated worktree → `/audit` |
 | Updated | `2026-08-27 Asia/Bangkok` |
 
 ### Dependency and sequencing gate
@@ -26,7 +26,7 @@
 |---|---|---|---|
 | M1-07a Ticket RLS backstop | `docs/tasks/hrp-v5-m1-07a-ticket-rls-backstop/TASK.md` | `ACCEPTED`; Audit round 2 has 32/32 LIVE PASS | Functionally satisfied, but implementation must be committed in M1-07b baseline |
 | M1-06d auth-boundary closure | `docs/tasks/hrp-v5-m1-06d-auth-boundary-closure/TASK.md` | `ACCEPTED`; Audit round 3 has 971/971 unit PASS and Ticket boundary LIVE PASS | Functionally satisfied, but implementation must be committed in M1-07b baseline |
-| Stable source baseline | Git snapshot | Accepted source/migration/tests remain modified or untracked relative to `1f68787` | **BLOCKING:** do not execute M1-07b until Tier 2/OP creates one scoped commit and Tier 1 records its full SHA |
+| Stable source baseline | `ca5382bc8354d916a2a08b337c886309cad476bf` | Accepted M1-07a/M1-06d implementation is committed as one scoped 39-file change; process-docs are archived separately in `ea78ef2` | Satisfied; Tier 2 must use the pinned source SHA for implementation diff and preserve unrelated files |
 | Isolated TEST database | Explicit `DATABASE_URL_TEST` and `DATABASE_URL_ADMIN_TEST` | Prior audit used isolated Neon TEST | Required for LIVE; missing/unsafe target is `ENV_BLOCKED`, never fallback to prod/dev |
 | Migration lineage | TEST catalog and `_prisma_migrations` read-only inspection | Ticket policy exists, but `20260826120000_m1_07a_ticket_rls_backstop` is not registered because raw SQL was used | Prove clean-install and upgraded-branch paths; never fabricate a ledger row |
 
@@ -59,7 +59,7 @@ M1-07b đồng thời thay bằng chứng “matrix xanh giả” bằng LIVE su
 | `EV-05` | Same TEST catalog | `client_companies`, `client_rate_cards`, `vendor_rate_cards`, `ctv_withdrawal_requests`, `worker_deductions` đang RLS OFF | Năm bảng là gap bắt buộc trong migration mới |
 | `EV-06` | TEST role catalog | `app_user`/`app_user_writer`: LOGIN, không SUPER/BYPASS, không owner, không privileged memberships | Biến thành runtime-role invariant tự động |
 | `EV-07` | TEST migration/policy catalog | M1-07a policy tồn tại nhưng ledger không có M1-07a | Test clean DB và raw-applied upgrade DB; không giả ledger |
-| `EV-08` | `src/domains/security/security-matrix.integration.test.ts` | Helper catch mọi query error thành `0`; positive chỉ assert `n <= baseline`; chỉ phủ 8 parent tables | Suite có thể false-green và không đủ evidence M1-07 |
+| `EV-08` | `src/domains/security/security-matrix.integration.test.ts` | Helper catch mọi query error thành `0`; positive chỉ assert số row không vượt baseline; chỉ phủ 8 parent tables | Suite có thể false-green và không đủ evidence M1-07 |
 | `EV-09` | Integration config/preflight files | Lane hiện có explicit TEST preflight | Suite mới đăng ký lane và giữ fail-closed |
 | `EV-10` | `src/shared/auth/auth-context.ts` | Worker bootstrap set `app.role='ADMIN'` trước khi query Worker | Xóa privileged impersonation bằng verified self/narrow bootstrap |
 | `EV-11` | `src/shared/auth/rls-context.ts` | Normal context set bốn GUC bằng `set_config(..., true)` | Giữ transaction-local; cấm session leakage/caller-controlled privilege |
@@ -81,7 +81,7 @@ Evidence method: CodeGraph trước, rồi source/schema/migration/test và cata
 | `DEC-07` | CHOSEN | Direct runtime `DELETE` mặc định deny; ngoại lệ cần accepted contract và Tier 1 revision trước implementation. | Auditability | Final |
 | `DEC-08` | CHOSEN | RLS là row/command backstop, không thay field projection. Không nới row visibility để giải quyết gap thuộc M1-09. | Scope separation | Final |
 | `DEC-09` | CHOSEN | CTV không có direct Worker-PII browse chỉ vì có SourceClaim; AFF/referral attribution và field projection thuộc contract khác. | Master §7.2 | Final |
-| `DEC-10` | CHOSEN | Positive LIVE assert exact IDs/count `> 0`; negative assert exact `0` hoặc expected SQLSTATE. Cấm catch exception thành zero-row success. | EV-08 | Final |
+| `DEC-10` | CHOSEN | Positive LIVE assert exact IDs và count có ít nhất một row; negative assert exact `0` hoặc expected SQLSTATE. Cấm catch exception thành zero-row success. | EV-08 | Final |
 | `DEC-11` | CHOSEN | Admin tạo fixture; mọi actor assertion dùng writer transaction + verified GUC. Fixture unique/run, cleanup exact IDs trong `finally`. | Test isolation | Final |
 | `DEC-12` | CHOSEN | Clean chain phải PASS; upgrade path phải xử lý TEST đã raw-apply M1-07a. Nếu Prisma không reconcile hợp lệ, STOP cho Planner; không insert ledger thủ công. | EV-07 | Final |
 
@@ -121,7 +121,7 @@ Evidence method: CodeGraph trước, rồi source/schema/migration/test và cata
 
 **Expected implementation surfaces:**
 
-- One new `prisma/migrations/<timestamp>_m1_07b_rls_runtime_posture_closure/migration.sql`.
+- One new `prisma/migrations/20260827160000_m1_07b_rls_runtime_posture_closure/migration.sql`.
 - RLS helper SQL only when the exact matrix requires it.
 - `src/shared/auth/auth-context.ts`, `src/shared/auth/rls-context.ts` or one narrow bootstrap helper/test, only for RQ-04.
 - `src/domains/security/security-matrix.integration.test.ts` or replacement M1-07b LIVE suite.
@@ -161,7 +161,7 @@ Evidence method: CodeGraph trước, rồi source/schema/migration/test và cata
 
 | STEP ID | RQ | Target | Change intent/deliverable | Dependency/skill | Verify | Stop condition |
 |---|---|---|---|---|---|---|
-| `STEP-00` | RQ-01 | Git baseline + migrations | Confirm pinned SHA contains accepted M1-07a/M1-06d; inventory migration state before edits | Tier 1-promoted READY | Git/migration read-only checks | Baseline TBD, accepted code missing or overlapping unrelated WIP |
+| `STEP-00` | RQ-01 | Git baseline + migrations | Confirm pinned SHA contains accepted M1-07a/M1-06d; inventory migration state before edits | Tier 1-promoted READY | Git/migration read-only checks | Pinned source missing, accepted code absent or overlapping unrelated WIP |
 | `STEP-01` | RQ-02/03 | Catalog + one migration | Machine-readable 29-table inventory; ENABLE/FORCE/policy/helper/grant gaps and repairs; preserve Ticket | PostgreSQL catalog | SQL review + role/policy catalog assertions | Needs old migration edit, BYPASS/owner, or table outside scope |
 | `STEP-02` | RQ-04 | Auth/RLS bootstrap | Remove ADMIN impersonation; establish Worker self bootstrap and local GUCs without leakage | Existing auth/RLS context | Unit + sequential writer transactions | Safe mapping needs new architecture decision |
 | `STEP-03` | RQ-05 | Worker/Project/Client/Vendor/Submission/Staffing | Parent-derived role × row × command policies; default DELETE deny | Current scopes | LIVE two-actor/two-tenant fixtures | Fix requires M1-08/M1-09 behavior change |
@@ -179,7 +179,7 @@ Evidence method: CodeGraph trước, rồi source/schema/migration/test và cata
 | `AC-02` | RQ-02 | Exactly all 29 tables have RLS enabled+forced and effective policy; Ticket inventory unchanged and LIVE regression passes. | `pg_class`/`pg_policies` + Ticket suite | Table-by-table export and pass count | Yes P0 |
 | `AC-03` | RQ-03 | Runtime roles are non-super/non-BYPASS/non-owner/non-privileged; direct writer identity masked; no broad grants. | LIVE catalog assertions | Flags, membership, owner and grant summary | Yes P0 |
 | `AC-04` | RQ-04 | No privileged bootstrap; four local GUCs do not leak A→B/new transaction; missing/unknown context denies. | Static + unit + LIVE sequential transactions | Diff, cases and exact denial/results | Yes P0 |
-| `AC-05` | RQ-05 | Authorized paths return exact fixture IDs and mutate; cross-worker/client/vendor/project reads empty and mutations/delete fail. | LIVE 13-role matrix via writer | Positive IDs/counts >0; negative zero/SQLSTATE | Yes P0 |
+| `AC-05` | RQ-05 | Authorized paths return exact fixture IDs and mutate; cross-worker/client/vendor/project reads empty and mutations/delete fail. | LIVE 13-role matrix via writer | Positive IDs và count ít nhất một row; negative zero/SQLSTATE | Yes P0 |
 | `AC-06` | RQ-06 | Attendance/Timesheet child/parent scope holds; accepted service path passes; cross-project/locked/direct-child mutation fails. | LIVE SQL + service transactions | Before/after, lock, SQLSTATE, rollback | Yes P0 |
 | `AC-07` | RQ-07 | Statement/rate/deduction/commission/withdrawal exact matrix holds; CTV A self works, CTV A→B denied; sensitive gaps not global. | LIVE writer matrix | Fixture IDs, cases and policy catalog | Yes P0 |
 | `AC-08` | RQ-08 | 13 roles + empty/unknown execute; exceptions never become zero; invalid DB/SQL/missing flag fail non-zero; no silent skip. | Source audit + negative probes + LIVE | Coverage list, failure logs, totals, command | Yes P0 |
@@ -197,8 +197,8 @@ npx vitest run --config vitest.unit.config.ts
 npm run build
 # Run registered M1-07b LIVE lane through scripts/ci/integration-preflight.mjs
 # with explicit TEST writer/admin URLs and explicit enable flag.
-git diff --check -- <declared-M1-07b-paths>
-git diff --name-status <pinned-baseline-sha>
+git diff --check -- prisma/migrations/20260827160000_m1_07b_rls_runtime_posture_closure src/shared/auth src/domains/security vitest.integration-files.ts vitest.integration.config.ts scripts/ci/integration-preflight.mjs docs/tasks/hrp-v5-m1-07b-rls-runtime-posture-closure/HANDOFF.md
+git diff --name-status ca5382bc8354d916a2a08b337c886309cad476bf
 ```
 
 Tier 2 may add commands but may not substitute mock/unit output for LIVE proof. HANDOFF records the exact LIVE command without printing either URL.
@@ -237,7 +237,7 @@ Tier 2 may add commands but may not substitute mock/unit output for LIVE proof. 
 
 | ID | Question | Owner | Due | Blocks execution? |
 |---|---|---|---|---|
-| `Q-01` | Full SHA của scoped commit chứa implementation M1-07a + M1-06d đã ACCEPTED là gì? | Tier 2/OP packages; Tier 1 records/promotes | Before `/code` | **Yes — BLK-BASELINE** |
+| — | None. Baseline blocker closed by `ca5382bc8354d916a2a08b337c886309cad476bf`. | — | — | No |
 
 Không còn product-policy question giao cho Tier 2. Nếu gặp role/action conflict chưa được §4.3 quyết định, Tier 2 dừng và trả concrete route/service evidence cho Tier 1, không tự sáng tác policy.
 
@@ -254,3 +254,4 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | `2026-08-27` | Initial DRAFT for residual M1-07 non-Ticket RLS/FORCE posture, runtime roles, Worker bootstrap, lineage and truthful 13-role LIVE matrix. | M1-07a/M1-06d accepted; survey found five RLS gaps, unregistered raw migration and false-green matrix risk. |
+| `v1.0` | `2026-08-27` | Baseline blocker closed and contract promoted to READY; requirements and acceptance semantics unchanged. | Scoped source commit `ca5382bc`; accepted evidence archived in `ea78ef2`. |

@@ -13,13 +13,13 @@ current_lane: V5-M1 / M1-07 residual RLS and FORCE RLS closure
 current_task: hrp-v5-m1-07b-rls-runtime-posture-closure
 task_path: docs/tasks/hrp-v5-m1-07b-rls-runtime-posture-closure/TASK.md
 spec_version: v1.0
-task_status: DRAFT — BLK-BASELINE
-current_gate: BLOCKED_OWNER
-next_command: Tier 2/OP creates one scoped commit containing the already accepted M1-07a + M1-06d implementation; Tier 1 then pins its full SHA in M1-07b and promotes the contract to READY
+task_status: READY_FOR_EXECUTION
+current_gate: TIER_2_EXECUTION
+next_command: Run /code hrp-v5-m1-07b-rls-runtime-posture-closure for Tier 2-A in a dedicated worktree; Tier 2-B may execute the already READY OPS-04a task in its own worktree
 previous_accepted: hrp-v5-m1-06d-auth-boundary-closure
-next_planner_candidate: promote hrp-v5-m1-07b-rls-runtime-posture-closure after the baseline commit; do not open M1-08 yet
-blocking_owner: Tier 2/OP — package accepted source with explicit path staging and leave unrelated AFF/scratch files untouched
-cursor_note: M1-07b remains the primary blocked security gate. Parallel task hrp-v5-ops-04a-observability-foundation is READY on baseline 3e627e9 for Tier 2-B in a separate worktree; it owns only middleware and src/shared/observability, never M1-07/auth/DB paths.
+next_planner_candidate: audit/resolve M1-07b, then review canonical M1-07 exit gate before opening M1-08
+blocking_owner: none
+cursor_note: M1-07b is READY on source baseline ca5382bc; raw-applied M1-07a ledger drift remains an explicit clean/upgrade acceptance check. Parallel OPS-04a is READY for Tier 2-B and must stay in a separate worktree.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
