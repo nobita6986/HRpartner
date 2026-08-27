@@ -7,17 +7,17 @@
 | Task slug | `hrp-v5-m1-07b-rls-runtime-posture-closure` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Spec version | `v1.1` |
+| Status | `REVISION_REQUIRED` — Audit round 1 PASS rejected by Planner findings `PLN-01..03` |
 | Planner | Tier 1 |
 | Executor | Tier 2 |
 | Auditor | Tier 3 independent context |
 | Baseline | `ca5382bc8354d916a2a08b337c886309cad476bf` — scoped implementation commit containing accepted M1-07a + M1-06d source, migration, tests and integration configuration |
 | Modules | `V5-M1-07b / residual RLS + FORCE RLS / runtime posture / truthful LIVE matrix` |
 | ADR references | `UNIFIED_PLAN_v5.md` §4.3 M1-07, §7.2, §8.3; accepted M1-07a DEC-03/08/09/10; DEC-14 isolated test-DB safety |
-| Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `/code hrp-v5-m1-07b-rls-runtime-posture-closure` in a dedicated worktree → `/audit` |
+| Current execution round | `2` |
+| Current audit round | `1` |
+| Next gate | `/code hrp-v5-m1-07b-rls-runtime-posture-closure` round 2 in the existing dedicated worktree → `/audit` round 2 |
 | Updated | `2026-08-27 Asia/Bangkok` |
 
 ### Dependency and sequencing gate
@@ -125,6 +125,7 @@ Evidence method: CodeGraph trước, rồi source/schema/migration/test và cata
 - RLS helper SQL only when the exact matrix requires it.
 - `src/shared/auth/auth-context.ts`, `src/shared/auth/rls-context.ts` or one narrow bootstrap helper/test, only for RQ-04.
 - `src/domains/security/security-matrix.integration.test.ts` or replacement M1-07b LIVE suite.
+- `src/domains/staffing/4role-staffing.integration.test.ts` — test-only compatibility fix authorized in v1.1 solely to restore the mandatory full LIVE lane; no Staffing production change.
 - Integration config/preflight registration only when required.
 - Directly relevant unit/static tests and Tier 2-owned task `HANDOFF.md`.
 
@@ -132,6 +133,7 @@ Evidence method: CodeGraph trước, rồi source/schema/migration/test và cata
 
 - Tables not listed above unless Tier 2 stops and Tier 1 revises §4.2.
 - Ticket policy changes except minimal regression fix explicitly approved through revision.
+- Staffing production/service/repository behavior; v1.1 only permits the named integration-test mock correction.
 - M1-08 vendor workflow, M1-09 projection, AFF product work, UI/API response/schema/state redesign.
 - Production deployment, secret rotation, destructive business-data cleanup.
 - Old migration edits or manual `_prisma_migrations` mutation.
@@ -197,7 +199,7 @@ npx vitest run --config vitest.unit.config.ts
 npm run build
 # Run registered M1-07b LIVE lane through scripts/ci/integration-preflight.mjs
 # with explicit TEST writer/admin URLs and explicit enable flag.
-git diff --check -- prisma/migrations/20260827160000_m1_07b_rls_runtime_posture_closure src/shared/auth src/domains/security vitest.integration-files.ts vitest.integration.config.ts scripts/ci/integration-preflight.mjs docs/tasks/hrp-v5-m1-07b-rls-runtime-posture-closure/HANDOFF.md
+git diff --check -- prisma/migrations/20260827160000_m1_07b_rls_runtime_posture_closure src/shared/auth src/domains/security src/domains/staffing/4role-staffing.integration.test.ts vitest.integration-files.ts vitest.integration.config.ts scripts/ci/integration-preflight.mjs docs/tasks/hrp-v5-m1-07b-rls-runtime-posture-closure/HANDOFF.md
 git diff --name-status ca5382bc8354d916a2a08b337c886309cad476bf
 ```
 
@@ -247,7 +249,10 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| — | — | — | No audit; task DRAFT pending stable baseline | — | — |
+| `1` | `AUD verdict PASS` | `REJECT` | Audit marked AC-03/08/09 PASS although role posture evidence is incomplete, the unchanged legacy matrix still swallows SQL errors and accepts zero positive rows, and full LIVE lane exited 1 | Spec v1.1 opens only the test compatibility path needed for PLN-03; security requirements remain unchanged | Tier 2-A fixes `PLN-01..03`; Tier 3 re-audits round 2 independently |
+| `1` | `PLN-01` | `ACCEPT_FIX — P0` | `src/domains/security/security-matrix.integration.test.ts` still catches query errors and returns `0`; authorized cases only assert count not above ADMIN baseline. New suite does not enumerate all 13 SystemRole values plus empty/unknown, so RQ-08/AC-08 remains unproven | None; this was an original explicit requirement | Remove every catch-to-zero path; seed exact positive fixtures; assert authorized exact IDs/count at least one row and denied exact zero/SQLSTATE; execute and report all 13 roles plus empty/unknown without silent skip |
+| `1` | `PLN-02` | `ACCEPT_FIX — P0` | M1-07b catalog test checks only `rolbypassrls`; AC-03 also requires non-superuser, non-owner, no privileged membership and no accidental broad grants | None; original AC-03 | Add writer-connection and catalog assertions for current identity, `rolsuper=false`, `rolbypassrls=false`, ownership mismatch across all 29 tables, privileged membership absence and scoped grants summary |
+| `1` | `PLN-03` | `ACCEPT_FIX — P0` | Mandatory full LIVE lane is 300/301 with exit 1. Baseline-identical does not satisfy blocking RQ-09/AC-09 | Spec v1.1 permits only `src/domains/staffing/4role-staffing.integration.test.ts` test-mock compatibility correction | Add the missing `$transaction`-compatible mock behavior without weakening assertions or changing production Staffing code; rerun full lane to exit 0 with every case PASS |
 
 ## 10. Revision Log
 
@@ -255,3 +260,4 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 |---|---|---|---|
 | `v1.0` | `2026-08-27` | Initial DRAFT for residual M1-07 non-Ticket RLS/FORCE posture, runtime roles, Worker bootstrap, lineage and truthful 13-role LIVE matrix. | M1-07a/M1-06d accepted; survey found five RLS gaps, unregistered raw migration and false-green matrix risk. |
 | `v1.0` | `2026-08-27` | Baseline blocker closed and contract promoted to READY; requirements and acceptance semantics unchanged. | Scoped source commit `ca5382bc`; accepted evidence archived in `ea78ef2`. |
+| `v1.1` | `2026-08-27` | Audit round 1 PASS rejected; execution round 2 requires truthful 13-role matrix, complete runtime-role posture and green full LIVE lane. Scope expands by one test-only Staffing mock file; production scope unchanged. | Planner findings `PLN-01..03`. |
