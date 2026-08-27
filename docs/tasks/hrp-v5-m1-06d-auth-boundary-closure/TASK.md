@@ -8,16 +8,16 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.1` |
-| Status | `REVISION_REQUIRED` — execution round 2 active; M1-07a prerequisite accepted |
+| Status | `REVISION_REQUIRED` — Audit round 2 PASS rejected because mandatory unit gate exits 1 |
 | Planner | Tier 1 |
 | Executor | Tier 2 |
 | Auditor | Tier 3 independent context |
 | Baseline | `1036f2c64be7402f2fbd2508d6d66b12d06252a7` — scoped accepted M1-06b/M1-06c baseline; unrelated AFF/scratch/handover files excluded |
 | Modules | `V5-M1-06 / RF-10 / Hardening-1 closure` |
 | ADR references | `UNIFIED_PLAN_v5.md` §4.3 M1-06, §7.2, §8.3; M1-06c Planner Resolution `PLN-01..02`; DEC-14 test DB safety |
-| Current execution round | `2` |
-| Current audit round | `0` |
-| Next gate | `/code hrp-v5-m1-06d-auth-boundary-closure` round 2 → complete STEP-05 and STEP-01, rerun gates/LIVE evidence, update HANDOFF |
+| Current execution round | `3` |
+| Current audit round | `2` |
+| Next gate | `/code hrp-v5-m1-06d-auth-boundary-closure` round 3 → repair the narrative-test transaction harness, rerun full unit gate, update HANDOFF → re-audit round 3 |
 | Updated | `2026-08-27 Asia/Bangkok` |
 
 ### Dependency gate
@@ -239,6 +239,7 @@ Tier 1 append audit decisions; do not rewrite Tier 2 HANDOFF or Tier 3 AUDIT.
 | Not started | None | None | Audit round has not started | None | Tier 1 after Tier 3 handoff |
 | Execution round 1 | `BLK-01` | `ACCEPT_FIX` — choose option A | Current `hrp_ticket_scope` family is incompatible with WORKER/HR_STAFF/ACCOUNTANT state-machine operations; system elevation would contradict RQ-05 | Spec `v1.1`: add DEC-15 and blocking dependency M1-07a; retain RQ-05/AC-05 unchanged | Tier 2 pauses Ticket/static-gate work; resume round 2 only after M1-07a ACCEPTED |
 | Execution round 2 | `BLK-01` | `ACCEPT_FIX — RESOLVED` | M1-07a Audit round 2 passed 32/32 LIVE cases and Tier 1 marked the prerequisite ACCEPTED | None | Tier 2 resumes STEP-05 and STEP-01, then completes the remaining M1-06d evidence |
+| Audit round 2 | `PLN-01` | `REJECT PASS — ACCEPT_FIX` | RQ-10/AC-10 explicitly require the full unit gate to PASS, but both HANDOFF and AUDIT record exit 1. Baseline diff proves M1-06d changed `queryTalentPool` to call `withDbContext`/`$transaction`, while the unchanged narrative test still supplies a transaction-client mock without `$transaction`; therefore the failure is an in-scope regression, not pre-existing debt | No product/security contract change. Round 3 may modify only the affected narrative test/harness in addition to existing declared scope | Tier 2 adds a faithful transaction-capable mock or moves the test to its correct configured lane without weakening assertions; targeted test and full unit command must exit 0; Tier 3 re-audits round 3 |
 
 ## 10. Revision Log
 
@@ -248,3 +249,4 @@ Tier 1 append audit decisions; do not rewrite Tier 2 HANDOFF or Tier 3 AUDIT.
 | `v1.0` | `2026-08-26` | Promoted to READY_FOR_EXECUTION and closed `BLK-BASELINE` with pinned scoped accepted SHA `1036f2c64be7402f2fbd2508d6d66b12d06252a7`. | M1-06b/M1-06c baseline commit; unrelated AFF/scratch/docs excluded. |
 | `v1.1` | `2026-08-26` | Round-1 resolution chooses M1-07a Ticket RLS policy alignment and rejects `withSystemDb` elevation; M1-06d becomes REVISION_REQUIRED until prerequisite acceptance. | HANDOFF round 1 `BLK-01`, `LIM-02`; RQ-05/AC-05 security invariant retained. |
 | `v1.1` | `2026-08-27` | M1-07a prerequisite accepted; execution round 2 reopened without changing the M1-06d contract. | M1-07a Audit round 2 PASS and Tier 1 resolution. |
+| `v1.1` | `2026-08-27` | Audit round 2 verdict PASS rejected; execution round 3 opened for the in-scope narrative-test transaction regression and a green full unit gate. | `PLN-01`; RQ-10/AC-10 mandatory gate remains unchanged. |

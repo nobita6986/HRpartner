@@ -17,9 +17,9 @@ task_status: REVISION_REQUIRED
 current_gate: REVISION_EXECUTION
 next_command: /code hrp-v5-m1-06d-auth-boundary-closure
 previous_accepted: hrp-v5-m1-07a-ticket-rls-backstop
-next_planner_candidate: M1-06d Tier 3 audit after execution round 2 HANDOFF is READY_FOR_AUDIT
+next_planner_candidate: M1-06d Tier 3 audit round 3 after revised HANDOFF is READY_FOR_AUDIT
 blocking_owner: none
-cursor_note: M1-07a is ACCEPTED from Audit round 2 PASS under explicit Owner waiver for PLN-04. Resume M1-06d round 2 only: finish Ticket STEP-05, recursive static gate STEP-01, remaining LIVE evidence, and HANDOFF; preserve existing round-1 WIP.
+cursor_note: M1-06d Audit round 2 PASS is rejected by PLN-01 because full unit exits 1 and baseline diff ties the failure to the in-scope talent-pool transaction refactor. Round 3 is narrow: fix the narrative-test transaction harness, prove targeted and full unit exit 0, preserve security code/evidence, then re-audit.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
