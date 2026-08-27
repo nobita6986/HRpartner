@@ -19,7 +19,7 @@ next_command: Tier 2/OP creates one scoped commit containing the already accepte
 previous_accepted: hrp-v5-m1-06d-auth-boundary-closure
 next_planner_candidate: promote hrp-v5-m1-07b-rls-runtime-posture-closure after the baseline commit; do not open M1-08 yet
 blocking_owner: Tier 2/OP — package accepted source with explicit path staging and leave unrelated AFF/scratch files untouched
-cursor_note: M1-07b contract is DRAFT-VALID. It closes 29 non-Ticket tables, five observed RLS-OFF gaps, runtime-role/GUC posture, migration-ledger drift and the false-green LIVE matrix; canonical M1-07 remains incomplete until this task is audited and accepted.
+cursor_note: M1-07b remains the primary blocked security gate. Parallel task hrp-v5-ops-04a-observability-foundation is READY on baseline 3e627e9 for Tier 2-B in a separate worktree; it owns only middleware and src/shared/observability, never M1-07/auth/DB paths.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
