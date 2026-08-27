@@ -9,17 +9,17 @@
 ```yaml
 updated_at: 2026-08-27 Asia/Bangkok
 roadmap_source: docs/UNIFIED_PLAN_v5.md
-current_lane: V5-M1 / M1-06d Auth boundary closure
-current_task: hrp-v5-m1-06d-auth-boundary-closure
-task_path: docs/tasks/hrp-v5-m1-06d-auth-boundary-closure/TASK.md
-spec_version: v1.1
-task_status: REVISION_REQUIRED
-current_gate: REVISION_EXECUTION
-next_command: /code hrp-v5-m1-06d-auth-boundary-closure
-previous_accepted: hrp-v5-m1-07a-ticket-rls-backstop
-next_planner_candidate: M1-06d Tier 3 audit round 3 after revised HANDOFF is READY_FOR_AUDIT
+current_lane: V5-M1 / M1-07 residual RLS and FORCE RLS review
+current_task: none
+task_path: n/a
+spec_version: n/a
+task_status: n/a
+current_gate: PHASE_REVIEW
+next_command: Tier 1 surveys residual M1-07 coverage after the accepted Ticket-only M1-07a slice, then drafts the next contract
+previous_accepted: hrp-v5-m1-06d-auth-boundary-closure
+next_planner_candidate: V5-M1-07 remaining policy/FORCE RLS slice; slug and boundaries are TBD after source/migration inventory
 blocking_owner: none
-cursor_note: M1-06d Audit round 2 PASS is rejected by PLN-01 because full unit exits 1 and baseline diff ties the failure to the in-scope talent-pool transaction refactor. Round 3 is narrow: fix the narrative-test transaction harness, prove targeted and full unit exit 0, preserve security code/evidence, then re-audit.
+cursor_note: M1-06 auth-boundary closure is ACCEPTED after Audit round 3 and independent 971/971 unit verification. M1-07a covered Ticket only; do not mark canonical M1-07 complete until remaining models, runtime DB role posture, policy coverage and FORCE RLS are inventoried against the master plan.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
