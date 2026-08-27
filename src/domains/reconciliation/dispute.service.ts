@@ -75,11 +75,17 @@ export async function sendStatement(
   const sentAt = new Date();
   const deadline = new Date(sentAt.getTime() + days * 24 * 60 * 60 * 1000);
 
-  const updated = await updateStatement(tx, input.statementKind, input.statementId, {
-    status: 'SENT',
-    sentAt,
-    confirmDeadlineAt: deadline,
-  });
+  // Guarded write (DEC-08): ràng buộc state DRAFT TẠI LÚC WRITE. Concurrent → một winner.
+  const count = await guardedUpdate(
+    tx,
+    input.statementKind,
+    { id: input.statementId, status: 'DRAFT' },
+    { status: 'SENT', sentAt, confirmDeadlineAt: deadline },
+  );
+  if (count === 0) {
+    throw new DisputeServiceError('INVALID_STATE', 'Statement bi thay doi dong thoi (khong con DRAFT)');
+  }
+  const updated = await readStatementOrThrow(tx, input.statementKind, input.statementId);
 
   await writeAuditLog({
     prisma: tx,
@@ -130,10 +136,21 @@ export async function disputeStatement(
     );
   }
 
-  const updated = await updateStatement(tx, input.statementKind, input.statementId, {
-    status: 'DISPUTED',
-    disputeCount: { increment: 1 },
-  });
+  // Guarded write (DEC-08): state∈{SENT,DISPUTED} AND disputeCount<2 TẠI LÚC WRITE.
+  const count = await guardedUpdate(
+    tx,
+    input.statementKind,
+    { id: input.statementId, status: { in: ['SENT', 'DISPUTED'] }, disputeCount: { lt: 2 } },
+    { status: 'DISPUTED', disputeCount: { increment: 1 } },
+  );
+  if (count === 0) {
+    // Loser: phân loại lại trạng thái đã commit (concurrent winner đã đổi state/count).
+    const cur = await loadStatement(tx, input.statementId, input.statementKind);
+    if (!cur) throw new DisputeServiceError('NOT_FOUND', `${input.statementKind}Statement ${input.statementId} khong tim thay`);
+    if (cur.disputeCount >= 2) throw new DisputeServiceError('MAX_DISPUTES', `Statement da dispute ${cur.disputeCount} lan (max 2 vong)`);
+    throw new DisputeServiceError('INVALID_STATE', `Statement ${cur.status} khong the dispute (bi thay doi dong thoi)`);
+  }
+  const updated = await readStatementOrThrow(tx, input.statementKind, input.statementId);
 
   await writeAuditLog({
     prisma: tx,
@@ -142,7 +159,7 @@ export async function disputeStatement(
     entityId: input.statementId,
     action: 'DISPUTE',
     reason: input.reason,
-    diff: { before: { status: stmt.status, disputeCount: stmt.disputeCount }, after: { status: 'DISPUTED', disputeCount: stmt.disputeCount + 1 } },
+    diff: { before: { status: stmt.status, disputeCount: stmt.disputeCount }, after: { status: 'DISPUTED', disputeCount: updated.disputeCount } },
   });
 
   await enqueueOutbox(tx, {
@@ -172,7 +189,17 @@ export async function confirmStatement(
     );
   }
 
-  const updated = await updateStatement(tx, statementKind, statementId, { status: 'CONFIRMED' });
+  // Guarded write (DEC-08): state∈{SENT,DISPUTED} TẠI LÚC WRITE.
+  const count = await guardedUpdate(
+    tx,
+    statementKind,
+    { id: statementId, status: { in: ['SENT', 'DISPUTED'] } },
+    { status: 'CONFIRMED' },
+  );
+  if (count === 0) {
+    throw new DisputeServiceError('INVALID_STATE', 'Statement bi thay doi dong thoi (khong con SENT/DISPUTED)');
+  }
+  const updated = await readStatementOrThrow(tx, statementKind, statementId);
 
   await writeAuditLog({
     prisma: tx,
@@ -211,10 +238,17 @@ export async function lockStatement(
     );
   }
 
-  const updated = await updateStatement(tx, statementKind, statementId, {
-    status: 'LOCKED',
-    lockedAt: new Date(),
-  });
+  // Guarded write (DEC-08): state CONFIRMED TẠI LÚC WRITE.
+  const count = await guardedUpdate(
+    tx,
+    statementKind,
+    { id: statementId, status: 'CONFIRMED' },
+    { status: 'LOCKED', lockedAt: new Date() },
+  );
+  if (count === 0) {
+    throw new DisputeServiceError('INVALID_STATE', 'Statement bi thay doi dong thoi (khong con CONFIRMED)');
+  }
+  const updated = await readStatementOrThrow(tx, statementKind, statementId);
 
   await writeAuditLog({
     prisma: tx,
@@ -260,10 +294,21 @@ export async function forceLockStatement(
     );
   }
 
-  const updated = await updateStatement(tx, statementKind, statementId, {
-    status: 'LOCKED',
-    lockedAt: new Date(),
-  });
+  // Guarded write (DEC-08): state∈{SENT,DISPUTED,CONFIRMED} TẠI LÚC WRITE (bỏ qua CONFIRMED-only).
+  const count = await guardedUpdate(
+    tx,
+    statementKind,
+    { id: statementId, status: { in: ['SENT', 'DISPUTED', 'CONFIRMED'] } },
+    { status: 'LOCKED', lockedAt: new Date() },
+  );
+  if (count === 0) {
+    // Loser: phân loại lại trạng thái đã commit.
+    const cur = await loadStatement(tx, statementId, statementKind);
+    if (!cur) throw new DisputeServiceError('NOT_FOUND', `${statementKind}Statement ${statementId} khong tim thay`);
+    if (cur.status === 'LOCKED' || cur.status === 'PAID') throw new DisputeServiceError('ALREADY_LOCKED', `Statement ${cur.status} da LOCKED roi`);
+    throw new DisputeServiceError('INVALID_STATE', `Statement ${cur.status} khong the FORCE LOCK (bi thay doi dong thoi)`);
+  }
+  const updated = await readStatementOrThrow(tx, statementKind, statementId);
 
   await writeAuditLog({
     prisma: tx,
@@ -312,10 +357,13 @@ export async function autoConfirmExpiredStatements(
 
   let vendorConfirmed = 0;
   for (const v of vendorExpired) {
-    await tx.vendorStatement.update({
-      where: { id: v.id },
+    // Guarded (DEC-08/RQ-07): chỉ SENT mới AUTO-CONFIRMED. Nếu vendor vừa confirm/dispute
+    // (không còn SENT) → count=0, KHÔNG clobber và KHÔNG ghi audit thừa (exactly-once).
+    const res = await tx.vendorStatement.updateMany({
+      where: { id: v.id, status: 'SENT' },
       data: { status: 'CONFIRMED' },
     });
+    if (res.count === 0) continue;
     await writeAuditLog({
       prisma: tx,
       actor: { id: 'system:cron', role: 'SYSTEM' },
@@ -330,10 +378,11 @@ export async function autoConfirmExpiredStatements(
 
   let clientConfirmed = 0;
   for (const c of clientExpired) {
-    await tx.clientStatement.update({
-      where: { id: c.id },
+    const res = await tx.clientStatement.updateMany({
+      where: { id: c.id, status: 'SENT' },
       data: { status: 'CONFIRMED' },
     });
+    if (res.count === 0) continue;
     await writeAuditLog({
       prisma: tx,
       actor: { id: 'system:cron', role: 'SYSTEM' },
@@ -370,14 +419,31 @@ async function loadStatement(
   return s;
 }
 
-async function updateStatement(
+/** Guarded conditional write (DEC-08): số row khớp precondition TẠI LÚC WRITE (0 hoặc 1). */
+async function guardedUpdate(
+  tx: Prisma.TransactionClient,
+  kind: StatementKind,
+  where: Record<string, unknown>,
+  data: Record<string, unknown>,
+): Promise<number> {
+  if (kind === 'VENDOR') {
+    const res = await tx.vendorStatement.updateMany({ where: where as any, data: data as any });
+    return res.count;
+  }
+  const res = await tx.clientStatement.updateMany({ where: where as any, data: data as any });
+  return res.count;
+}
+
+/** Đọc lại full row đã commit trong tx (giữ lock) → response giữ nguyên shape (DEC-10). */
+async function readStatementOrThrow(
   tx: Prisma.TransactionClient,
   kind: StatementKind,
   id: string,
-  data: Record<string, unknown>,
 ) {
-  if (kind === 'VENDOR') {
-    return tx.vendorStatement.update({ where: { id }, data: data as any });
-  }
-  return tx.clientStatement.update({ where: { id }, data: data as any });
+  const row =
+    kind === 'VENDOR'
+      ? await tx.vendorStatement.findUnique({ where: { id } })
+      : await tx.clientStatement.findUnique({ where: { id } });
+  if (!row) throw new DisputeServiceError('NOT_FOUND', `${kind}Statement ${id} khong tim thay`);
+  return row;
 }

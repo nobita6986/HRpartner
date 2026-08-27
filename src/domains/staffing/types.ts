@@ -12,6 +12,22 @@
 export const STAFFING_ORDER_STATUSES = ['OPEN', 'CLOSING_SOON', 'CLOSED', 'CANCELLED'] as const;
 export type StaffingOrderStatus = (typeof STAFFING_ORDER_STATUSES)[number];
 
+/**
+ * Order còn "mở" để LIST và NHẬN submission — chính xác `OPEN|CLOSING_SOON`
+ * (V5-M1-08 DEC-04). `CLOSED|CANCELLED` không list và không nhận submission.
+ *
+ * MỘT nguồn canonical để order list và submission mutation KHÔNG drift, đồng bộ với
+ * `publish.service PUBLISHABLE_ORDER_STATUSES` và `public.service VISIBLE_ORDER_STATUSES`.
+ * Lưu ý: enum StaffingOrder.status KHÔNG có `'ACTIVE'` — dùng constant này thay literal.
+ */
+export const OPEN_ORDER_STATUSES = ['OPEN', 'CLOSING_SOON'] as const;
+export type OpenOrderStatus = (typeof OPEN_ORDER_STATUSES)[number];
+
+/** Predicate canonical: status của order có đang mở nhận hồ sơ không (DEC-04). */
+export function isOpenOrderStatus(status: string): boolean {
+  return (OPEN_ORDER_STATUSES as readonly string[]).includes(status);
+}
+
 /** Slot fill intent — dùng trong transfer (STEP-03). */
 export const FILL_INTENTS = ['NEW_ASSIGNMENT', 'TRANSFER_IN', 'TRANSFER_OUT'] as const;
 export type FillIntent = (typeof FILL_INTENTS)[number];

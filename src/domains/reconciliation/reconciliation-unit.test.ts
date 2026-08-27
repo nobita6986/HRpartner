@@ -29,6 +29,39 @@ import { materializeOperationFixtures } from '@/tests/fixtures/operations';
 
 interface MockRow { id: string; [key: string]: unknown; }
 
+/**
+ * Match Prisma-style where cho statement row (id eq, status eq|{in}, disputeCount {lt}|eq).
+ * Dùng cho updateMany mock — phản ánh guarded conditional write (DEC-08) của dispute.service.
+ */
+function matchStmtWhere(s: MockRow, where: any): boolean {
+  if (!where) return true;
+  if (where.id !== undefined && s.id !== where.id) return false;
+  if (where.status !== undefined) {
+    if (where.status && typeof where.status === 'object' && Array.isArray(where.status.in)) {
+      if (!where.status.in.includes(s.status)) return false;
+    } else if (s.status !== where.status) return false;
+  }
+  if (where.disputeCount !== undefined) {
+    const dc = (s.disputeCount ?? 0) as number;
+    if (where.disputeCount && typeof where.disputeCount === 'object') {
+      if (where.disputeCount.lt !== undefined && !(dc < where.disputeCount.lt)) return false;
+      if (where.disputeCount.gte !== undefined && !(dc >= where.disputeCount.gte)) return false;
+    } else if (dc !== where.disputeCount) return false;
+  }
+  return true;
+}
+
+/** Apply Prisma-style data mutation (scalar set + { increment }) lên row store. */
+function applyStmtData(s: MockRow, data: any): void {
+  for (const [k, v] of Object.entries(data)) {
+    if (v && typeof v === 'object' && 'increment' in (v as any)) {
+      s[k] = ((s[k] ?? 0) as number) + (v as any).increment;
+    } else {
+      s[k] = v as unknown;
+    }
+  }
+}
+
 function makeStore() {
   const tables = new Map<string, Map<string, MockRow>>();
   function table(name: string) {
@@ -178,6 +211,15 @@ function makeMockTx(store: ReturnType<typeof makeStore>): any {
         Object.assign(s, data);
         return Promise.resolve(s);
       },
+      updateMany: ({ where, data }: any) => {
+        let count = 0;
+        for (const s of store.table('vendor_statements').values()) {
+          if (!matchStmtWhere(s, where)) continue;
+          applyStmtData(s, data);
+          count++;
+        }
+        return Promise.resolve({ count });
+      },
     },
     clientStatement: {
       aggregate: ({ where }: any) => {
@@ -232,6 +274,15 @@ function makeMockTx(store: ReturnType<typeof makeStore>): any {
         if (!s) return Promise.reject(new Error('not found'));
         Object.assign(s, data);
         return Promise.resolve(s);
+      },
+      updateMany: ({ where, data }: any) => {
+        let count = 0;
+        for (const s of store.table('client_statements').values()) {
+          if (!matchStmtWhere(s, where)) continue;
+          applyStmtData(s, data);
+          count++;
+        }
+        return Promise.resolve({ count });
       },
     },
     projectAssignment: {

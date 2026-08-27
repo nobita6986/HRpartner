@@ -1,9 +1,14 @@
 /**
  * GET /api/statements -- List VendorStatement + ClientStatement
- * Phase 5 UAT/Cutover STEP-01 (RQ-02).
+ * Phase 5 UAT/Cutover STEP-01 (RQ-02) -- V5-M1-08 STEP-06 (DEC-06).
  *
  * Auth: cookie hrp_token (Phase 1).
- * Roles: ADMIN, HR_MANAGER, ACCOUNTANT, DIRECTOR, VENDOR (vendor sees only their statements).
+ * Roles nội bộ read-only: ADMIN, HR_MANAGER, ACCOUNTANT, DIRECTOR.
+ *
+ * DEC-06: đây là generic alias nội bộ. Vendor KHÔNG dùng surface này — mọi vendor role
+ * (VENDOR_ADMIN/VENDOR_STAFF) → 403 PERMISSION_DENIED TRƯỚC DB (zero business DB call).
+ * Vendor đọc statement của mình qua `/api/vendor/**` canonical (own-scope + RLS). Bỏ nhánh
+ * `where.vendorId` cũ vì không còn vendor role nào tới được query.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
@@ -14,7 +19,7 @@ import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const LIST_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'ACCOUNTANT', 'DIRECTOR', 'VENDOR_ADMIN', 'VENDOR_STAFF'] as const);
+const LIST_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'ACCOUNTANT', 'DIRECTOR'] as const);
 
 export async function GET(req: NextRequest) {
   let ctx;
@@ -41,11 +46,6 @@ export async function GET(req: NextRequest) {
   try {
     const where: Record<string, unknown> = {};
     if (status) where.status = status;
-
-    const isVendor = role === 'VENDOR_ADMIN' || role === 'VENDOR_STAFF';
-    if (isVendor && ctx.vendorId) {
-      where.vendorId = ctx.vendorId;
-    }
 
     const [vendorRows, clientRows, vendorTotal, clientTotal] = await Promise.all([
       withDbContext(prisma, ctx, (tx) =>

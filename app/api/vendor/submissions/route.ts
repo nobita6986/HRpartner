@@ -20,6 +20,7 @@ import { withAuthorizedDbReadOnly } from '@/src/shared/auth/with-authorized-db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 import { probeWorkerDuplicateByPhone } from '@/src/shared/vendor/worker-dedup.repository';
+import { isOpenOrderStatus } from '@/src/domains/staffing/types';
 
 const submitSchema = z.object({
   orderId: z.string(),
@@ -27,14 +28,6 @@ const submitSchema = z.object({
   phone: z.string().regex(/^0[0-9]{9}$/),
   cccdNumber: z.string().min(9).max(20).optional(),
 });
-
-/**
- * StaffingOrder còn nhận ứng viên khi status ∈ {OPEN, CLOSING_SOON} — đồng bộ với
- * định nghĩa "publishable/visible" của job-board (publish.service PUBLISHABLE_ORDER_STATUSES,
- * public.service VISIBLE_ORDER_STATUSES). CLOSED/CANCELLED → không nhận (ORDER_NOT_OPEN).
- * (StaffingOrder.status enum = OPEN|CLOSING_SOON|CLOSED|CANCELLED — KHÔNG có 'ACTIVE'.)
- */
-const OPEN_FOR_SUBMISSION = new Set(['OPEN', 'CLOSING_SOON']);
 
 class SubmissionGuardError extends Error {
   constructor(readonly kind: 'ORDER_NOT_FOUND' | 'ORDER_NOT_OPEN') {
@@ -141,7 +134,7 @@ export async function POST(req: NextRequest) {
         select: { id: true, projectId: true, status: true },
       });
       if (!order) throw new SubmissionGuardError('ORDER_NOT_FOUND');
-      if (!OPEN_FOR_SUBMISSION.has(order.status)) throw new SubmissionGuardError('ORDER_NOT_OPEN');
+      if (!isOpenOrderStatus(order.status)) throw new SubmissionGuardError('ORDER_NOT_OPEN');
 
       const created = await tx.candidateSubmission.create({
         data: {
