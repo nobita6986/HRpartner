@@ -15,6 +15,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/src/shared/auth/user';
+import { getCorrelationId } from '@/src/shared/observability/correlation-id';
 
 // ─── Rate Limiting State (in-memory) ────────────────────────────────────────
 
@@ -136,7 +137,7 @@ function getExpectedDomain(role: string): string {
 }
 
 function redirectToLogin(req: NextRequest): NextResponse {
-  const loginUrl = req.nextUrl.clone();
+  const loginUrl = new URL(req.url);
   loginUrl.pathname = '/login';
   loginUrl.search = `?callback=${encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search)}`;
   return NextResponse.redirect(loginUrl);
@@ -150,7 +151,8 @@ export const config = {
     '/vendor/:path*',       // Vendor portal
     '/worker/:path*',        // Worker PWA (+ rate limit)
     '/ctv/:path*',         // CTV dashboard
-    '/api/vendor/:path*',    // Vendor API
+    '/api/:path*',           // V5-OPS-04a STEP-02: ALL API routes for correlation
+    '/api/vendor/:path*',    // Vendor API (covered by /api/:path* but explicit for readability)
     '/api/worker/:path*',   // Worker API
     '/api/ctv/:path*',      // CTV API
   ],
@@ -159,16 +161,69 @@ export const config = {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // ── V5-OPS-04a STEP-02: Correlation ID (DEC-01/02/08) ──────────────────
+  // Extract at top of function — BEFORE any branch, before await.
+  // Canonical header: x-request-id. Reuse valid inbound; generate UUID if malformed.
+  const requestId = getCorrelationId(req.headers);
+
+  // Helper: build Headers with x-request-id injected. Returns Headers so it can be
+  // used directly in NextResponse options objects.
+  function withRequestId(extra?: Record<string, string>): Headers {
+    const h = extra ? new Headers(extra) : new Headers();
+    h.set('x-request-id', requestId);
+    return h;
+  }
+
+  // PLN-01 (round 3): every continuing next() response MUST set BOTH channels
+  // — the client response header `x-request-id` and the downstream request header
+  // `x-request-id` — so tests asserting each channel separately can fail when one
+  // is removed.
+  function continuingNext(): NextResponse {
+    const resp = NextResponse.next({ request: { headers: withRequestId() } });
+    resp.headers.set('x-request-id', requestId);
+    return resp;
+  }
+
+  function continuingNextWithRateLimit(remaining: number, resetAt: number): NextResponse {
+    const resp = NextResponse.next({ request: { headers: withRequestId() } });
+    resp.headers.set('X-RateLimit-Remaining', String(remaining));
+    resp.headers.set('X-RateLimit-Reset', String(Math.ceil(resetAt / 1000)));
+    resp.headers.set('x-request-id', requestId);
+    return resp;
+  }
+
+  // Helper: clone a redirect URL and append x-request-id as query param.
+  // This propagates correlation ID to the redirect target since redirect response
+  // headers cannot carry custom headers to the client browser.
+  function redirectWithRequestId(redirectUrl: URL): URL {
+    const out = new URL(redirectUrl.href);
+    out.searchParams.set('x-request-id', requestId);
+    return out;
+  }
+
+  // Helper: build the login redirect URL with x-request-id query param.
+  function buildLoginUrl(req: NextRequest): URL {
+    const loginUrl = new URL(req.url);
+    loginUrl.pathname = '/login';
+    loginUrl.search = `?callback=${encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search)}`;
+    return redirectWithRequestId(loginUrl);
+  }
+
   // ── /bcc fence — Phase 1 unchanged ──────────────────────────────────
   if (pathname.startsWith('/bcc')) {
     const user = await getAuthUser(req);
     if (!user) {
       if (pathname.startsWith('/bcc/api/')) {
-        return NextResponse.json({ error: 'UNAUTHORIZED', message: 'Missing or invalid token' }, { status: 401 });
+        return NextResponse.json(
+          { error: 'UNAUTHORIZED', message: 'Missing or invalid token' },
+          { status: 401, headers: withRequestId() },
+        );
       }
-      return redirectToLogin(req);
+      return NextResponse.redirect(buildLoginUrl(req), {
+        headers: withRequestId(),
+      });
     }
-    return NextResponse.next();
+    return continuingNext();
   }
 
   // ── Portal routes (/vendor, /worker, /ctv, /api/vendor, /api/worker, /api/ctv) ──
@@ -177,7 +232,7 @@ export async function middleware(req: NextRequest) {
                     pathname.startsWith('/api/worker') || pathname.startsWith('/api/ctv');;
 
   if (!isPortal) {
-    return NextResponse.next();
+    return continuingNext();
   }
 
   // ── M8: Rate Limit for /worker* routes ─────────────────────────────
@@ -191,30 +246,31 @@ export async function middleware(req: NextRequest) {
 
       return new NextResponse(body, {
         status: 503,
-        headers: {
+        headers: withRequestId({
           'Content-Type': 'text/html; charset=utf-8',
           'Retry-After': String(retryAfterSec),
           'X-RateLimit-Remaining': '0',
           'X-RateLimit-Reset': String(Math.ceil(resetAt / 1000)),
           'Cache-Control': 'no-store',
-        },
+        }),
       });
     }
 
-    // Inject rate limit headers
-    const resp = NextResponse.next();
-    resp.headers.set('X-RateLimit-Remaining', String(remaining));
-    resp.headers.set('X-RateLimit-Reset', String(Math.ceil(resetAt / 1000)));
-    return resp;
+    return continuingNextWithRateLimit(remaining, resetAt);
   }
 
   // No auth → redirect to login
   const user = await getAuthUser(req);
   if (!user) {
     if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'UNAUTHORIZED', message: 'Missing or invalid token' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'UNAUTHORIZED', message: 'Missing or invalid token' },
+        { status: 401, headers: withRequestId() },
+      );
     }
-    return redirectToLogin(req);
+    return NextResponse.redirect(buildLoginUrl(req), {
+      headers: withRequestId(),
+    });
   }
 
   // Determine expected domain for this role
@@ -222,21 +278,23 @@ export async function middleware(req: NextRequest) {
 
   // Admin / internal roles → no domain redirect needed
   if (!expectedDomain || expectedDomain === 'hrpartner.vn') {
-    return NextResponse.next();
+    return continuingNext();
   }
 
   const host = getHost(req);
 
   // Already on correct domain
   if (host === expectedDomain || host === `${expectedDomain}:${req.nextUrl.port || '443'}`) {
-    return NextResponse.next();
+    return continuingNext();
   }
 
   // Wrong domain → redirect to correct domain
-  const redirectUrl = req.nextUrl.clone();
+  const redirectUrl = new URL(req.url);
   redirectUrl.hostname = expectedDomain;
   if (req.nextUrl.port && req.nextUrl.port !== '80' && req.nextUrl.port !== '443') {
     redirectUrl.port = req.nextUrl.port;
   }
-  return NextResponse.redirect(redirectUrl);
+  return NextResponse.redirect(redirectWithRequestId(redirectUrl), {
+    headers: withRequestId(),
+  });
 }
