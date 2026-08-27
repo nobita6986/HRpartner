@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` |
 | Planner | Tier 1 |
 | Executor | Tier 2 — single execution stream |
 | Auditor | Tier 3 independent context |
@@ -16,9 +16,9 @@
 | Modules | `V5-M1-08 / vendor object scope / order-submission-statement IDOR` |
 | ADR references | `UNIFIED_PLAN_v5.md` §4.3 M1-08, §7.2, RF-13; accepted M1-06b DEC-03/05/06/07/11/12; M1-07b L2 posture |
 | Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `/code hrp-v5-m1-08-vendor-object-scope` → HANDOFF → `/audit` |
-| Updated | `2026-08-27 Asia/Bangkok` |
+| Current audit round | `1` |
+| Next gate | `CLOSED — proceed to hrp-v5-go-live-01-single-domain-consolidation` |
+| Updated | `2026-08-28 Asia/Bangkok` |
 
 ### Dependency and sequencing gate
 
@@ -206,14 +206,16 @@ Evidence method: CodeGraph được dùng trước để lần scope builder và
 
 ## 9. Planner Resolution
 
-Chưa có audit. Tier 1 chỉ append quyết định tại đây sau khi Tier 3 bàn giao `AUDIT.md` hợp lệ.
+Tier 1 append quyết định sau audit; không sửa lịch sử evidence của Tier 2/Tier 3.
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
 | `0` | `NONE` | `PENDING_AUDIT` | Task mới sẵn sàng thực thi | None | Tier 2 → Tier 3 → Tier 1 |
+| `1` | `AUD verdict PASS` | `ACCEPT` | `verify-audit.ps1` trả `RESULT: PASS`; AC-01..AC-10 và C-01..C-10 đều PASS; Tier 3 chạy độc lập LIVE IDOR `13/13` trên TEST DB. Tier 1 spot-check canonical OPEN statuses, vendor-bound guarded writes/atomic race và generic-route pre-DB denial; targeted current-worktree tests pass `52/52`. | None | Source closed in `62d42bd`; HANDOFF/AUDIT archived in `fb183f4`; task ACCEPTED. |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | `2026-08-27` | Initial READY contract for vendor order/submission/statement/dispute object scope, role split, generic-alias closure, atomic transitions and focused LIVE IDOR suite. | M1-07b accepted; survey found EV-04/08/09/10 implementation gaps behind RF-13. |
+| `v1.0` | `2026-08-28` | Planner accepted execution round 1 after independent audit PASS and high-risk spot-check. | Audit round 1; no open findings or contract change. |
