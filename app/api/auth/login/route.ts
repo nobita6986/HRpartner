@@ -13,6 +13,7 @@ import { getPrisma } from '@/src/lib/db';
 import { verifyPassword } from '@/src/shared/auth/password';
 import { signJwt, JWT_TTL_SECONDS } from '@/src/shared/auth/jwt';
 import { AUTH_COOKIE_NAME } from '@/src/shared/auth/user';
+import { findUserForLogin } from '@/src/shared/auth/preauth-db';
 
 const loginSchema = z.object({
   phone: z.string().trim().min(1),
@@ -58,16 +59,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const prisma = getPrisma();
-    // V5-M1-06c / RQ-07: login la pre-auth entry-point — CHUA co AuthContext nen
-    // KHONG the dung withDbContext (doi userId+role). Doc User qua $transaction ro
-    // rang voi GUC elevated transaction-local (mirror getAuthContext), thay vi raw
-    // `prisma.user.findFirst` o route level. set_config is_local=true -> reset sau
-    // commit. verifyPassword + signJwt GIU NGUYEN ngoai transaction (DEC-11: khong
-    // viet lai auth flow, chi bọc DB access).
-    const user = await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT set_config('app.role', 'ADMIN', true)`;
-      return tx.user.findFirst({ where: { phone } });
-    });
+    // V5-M1-06d / RQ-08 / DEC-13: login la pre-auth entry-point — CHUA co AuthContext
+    // nen KHONG the dung withDbContext. Doc User qua PREAUTH_DB helper co ten
+    // (findUserForLogin): dong goi $transaction + GUC elevated transaction-local +
+    // projection CO DINH. Route KHONG con raw $transaction/set_config (khong nam
+    // allowlist static gate). verifyPassword + signJwt GIU NGUYEN (DEC-11: khong viet
+    // lai auth flow, chi boc DB access).
+    const user = await findUserForLogin(prisma, phone);
 
     // Fail-closed: không có user / isActive=false / chưa có passwordHash → từ chối chung
     if (!user || !user.isActive || !user.passwordHash) {

@@ -20,22 +20,30 @@ vi.mock('@/src/shared/auth/permission-resolver', () => ({
 type MockFn = ReturnType<typeof vi.fn>;
 
 type MockPrisma = {
+  $executeRawUnsafe: MockFn;
   $queryRawUnsafe: MockFn;
+  $transaction: MockFn;
   worker: {
     findMany: MockFn;
     count: MockFn;
   };
 };
 
+// V5-M1-06d/STEP-04: talent-pool reads giờ chạy trong withDbContext → prisma.$transaction.
+// Mock $transaction gọi callback với chính mock (tx = prisma) và có $executeRawUnsafe cho
+// applyRlsContext (set GUC). Assertions trên prisma.worker.* vẫn đúng vì tx === prisma mock.
 function makeMockPrisma(overrides?: Partial<MockPrisma>): MockPrisma {
-  return {
+  const base = {
+    $executeRawUnsafe: vi.fn().mockResolvedValue(null),
     $queryRawUnsafe: vi.fn().mockResolvedValue([]),
     worker: {
       findMany: vi.fn().mockResolvedValue([]),
       count: vi.fn().mockResolvedValue(0),
     },
     ...overrides,
-  } as unknown as MockPrisma;
+  } as any;
+  base.$transaction = vi.fn().mockImplementation(async (cb: (tx: unknown) => unknown) => cb(base));
+  return base as unknown as MockPrisma;
 }
 
 const HR_CTX = { userId: 'hr-001', role: 'HR_MANAGER' as const };

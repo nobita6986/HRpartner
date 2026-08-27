@@ -1,8 +1,7 @@
 /**
  * POST /api/tickets/[id]/approve
- * Auth (Phase 1 identity-core — RQ-07, DEC-08): JWT + CAN_APPROVE_TICKET_LEVEL2.
- * Không permission → 403 FORBIDDEN.
- * Không JWT → 401.
+ * Auth: JWT + CAN_APPROVE_TICKET_LEVEL2.
+ * RQ-05 / DEC-08: DB ops go through withDbContext to set RLS GUC.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { TicketService } from '@/src/domains/attendance/ticket.service';
@@ -10,6 +9,8 @@ import { requireTicketAuth, ticketsErrorResponse } from '@/src/shared/auth/ticke
 import { getIdempotencyKey } from '@/src/shared/auth/ticket-route-helpers';
 import { getPrisma } from '@/src/lib/db';
 import { withIdempotency } from '@/src/shared/integrity/idempotency';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { getAuthContext } from '@/src/shared/auth/auth-context';
 import { notifyTicketStatusChange } from '@/src/shared/push/trigger';
 
 const service = new TicketService(getPrisma());
@@ -20,21 +21,18 @@ export async function POST(
 ) {
   try {
     const { id } = await ctx.params;
+    const authCtx = await getAuthContext(req);
     const { sessionUser } = await requireTicketAuth(req, 'CAN_APPROVE_TICKET_LEVEL2');
     const idempotencyKey = getIdempotencyKey(req);
     const body = await req.json().catch(() => ({}));
 
-    // V4 (F27): route này CHỈ approve — chi tiền đi qua /pay riêng
-    const input = {
-      ticketId: id,
-      note: body.note,
-      idempotencyKey,
-    };
+    const input = { ticketId: id, note: body.note, idempotencyKey };
 
-    // Phase 3 / RQ-02: wrap handler nếu có key (client retry → replay kết quả cũ).
+    // RQ-05: withDbContext sets RLS GUC before service call
     if (!idempotencyKey) {
-      const ticket = await service.approveTicket(input, sessionUser);
-      // P1 STEP-05: notify worker
+      const ticket = await withDbContext(getPrisma(), authCtx, async (tx) =>
+        service.approveTicket(input, sessionUser, tx),
+      );
       await notifyTicketStatusChange(ticket.workerId, ticket.title, ticket.status).catch(() => {});
       return NextResponse.json({ ticket }, { status: 200 });
     }
@@ -45,12 +43,14 @@ export async function POST(
       actorId: sessionUser.id,
       key: idempotencyKey,
       requestBody: body,
-      handler: async () => {
-        const ticket = await service.approveTicket(input, sessionUser);
-        // P1 STEP-05: notify worker
-        await notifyTicketStatusChange(ticket.workerId, ticket.title, ticket.status).catch(() => {});
-        return { body: { ticket }, statusCode: 200 };
-      },
+      handler: async () => ({
+        body: {
+          ticket: await withDbContext(getPrisma(), authCtx, async (tx) =>
+            service.approveTicket(input, sessionUser, tx),
+          ),
+        },
+        statusCode: 200,
+      }),
     });
 
     return NextResponse.json(result.body, { status: result.statusCode });

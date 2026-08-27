@@ -1,11 +1,8 @@
 /**
- * POST /api/tickets
- * Worker (hoặc HR tạo hộ) tạo ticket mới.
+ * POST /api/tickets + GET /api/tickets
  *
- * Auth (Phase 1 identity-core — RQ-07, DEC-08):
- *  - JWT verify; SystemRole ngoài 6 TicketActorRole → 403.
- *  - GET/POST chỉ cần auth (200 role yếu theo PHASE_KHOAHOC exit criteria).
- *  - Idempotency key giữ nguyên hành vi Phase 3.
+ * RQ-05 / DEC-08: DB operations go through withDbContext to set RLS GUC.
+ * Auth via getTicketAuth (JWT verify + role check).
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { TicketService } from '@/src/domains/attendance/ticket.service';
@@ -13,21 +10,21 @@ import { getTicketAuth, ticketsErrorResponse } from '@/src/shared/auth/ticket-ro
 import { getIdempotencyKey } from '@/src/shared/auth/ticket-route-helpers';
 import { getPrisma } from '@/src/lib/db';
 import { withIdempotency } from '@/src/shared/integrity/idempotency';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { getAuthContext } from '@/src/shared/auth/auth-context';
 
 const service = new TicketService(getPrisma());
 
 export async function POST(req: NextRequest) {
   try {
+    const ctx = await getAuthContext(req);
     const { sessionUser } = await getTicketAuth(req);
     const body = await req.json();
     const idempotencyKey = getIdempotencyKey(req);
 
-    // Body mặc định: worker tự tạo cho mình
+    // Worker tự tạo cho mình; HR tạo hộ worker khác
     if (sessionUser.role === 'WORKER') {
-      // DEC-01: use Worker.id for ticket.workerId
       body.workerId = body.workerId ?? sessionUser.workerId;
-      // F1-01 CRITICAL fix: so sanh Worker.id vs Worker.id (khong phai User.id).
-      // Worker khong the tao ticket cho worker khac.
       if (!sessionUser.workerId || body.workerId !== sessionUser.workerId) {
         return NextResponse.json(
           { error: 'FORBIDDEN', message: 'Worker can only create ticket for self' },
@@ -41,7 +38,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Coerce BigInt và Date
     const input = {
       ...body,
       amountVnd: body.amountVnd !== undefined ? BigInt(body.amountVnd) : undefined,
@@ -52,12 +48,15 @@ export async function POST(req: NextRequest) {
       idempotencyKey,
     };
 
-    // Phase 3 / RQ-02 (DEC-02): wrap handler với withIdempotency nếu có key.
+    // RQ-05: withDbContext sets RLS GUC before service call
     if (!idempotencyKey) {
-      const ticket = await service.createTicket(input, sessionUser);
+      const ticket = await withDbContext(getPrisma(), ctx, async (tx) =>
+        service.createTicket(input, sessionUser, tx),
+      );
       return NextResponse.json({ ticket }, { status: 201 });
     }
 
+    // Idempotent: withIdempotency outer wraps withDbContext inner
     const result = await withIdempotency({
       prisma: getPrisma(),
       route: 'POST:/api/tickets',
@@ -65,7 +64,11 @@ export async function POST(req: NextRequest) {
       key: idempotencyKey,
       requestBody: body,
       handler: async () => ({
-        body: { ticket: await service.createTicket(input, sessionUser) },
+        body: {
+          ticket: await withDbContext(getPrisma(), ctx, async (tx) =>
+            service.createTicket(input, sessionUser, tx),
+          ),
+        },
         statusCode: 201,
       }),
     });
@@ -78,6 +81,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const ctx = await getAuthContext(req);
     const { sessionUser } = await getTicketAuth(req);
     const url = new URL(req.url);
 
@@ -94,7 +98,10 @@ export async function GET(req: NextRequest) {
       orderBy: (url.searchParams.get('orderBy') as any) ?? 'createdAt',
     };
 
-    const result = await service.listTickets(filter, sessionUser);
+    // RQ-05: withDbContext sets RLS GUC before service call
+    const result = await withDbContext(getPrisma(), ctx, async (tx) =>
+      service.listTickets(filter, sessionUser, tx),
+    );
     return NextResponse.json(result, { status: 200 });
   } catch (err) {
     return ticketsErrorResponse(err);

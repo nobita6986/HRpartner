@@ -25,6 +25,7 @@
 import { Prisma } from '@prisma/client';
 import type { PrismaClient } from '@prisma/client';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { enqueueOutbox } from '@/src/shared/integrity/outbox';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -242,7 +243,9 @@ export async function transferWorker(
 /**
  * Bulk transfer -- N worker 1 lệnh.
  * 1 transaction độc lập mỗi worker: nếu 1 người fail, những người khác vẫn thành công (G15).
- * Code dùng $transaction độc lập mỗi người, không phải savepoint.
+ * Mỗi worker đi qua withDbContext → transaction riêng ĐÃ set GUC (L2 RLS) rồi mới transferWorker.
+ * (V5-M1-06d/STEP-04: trước đây dùng prisma.$transaction trần → thiếu applyRlsContext, bulk chạy
+ *  ngoài L2. Chuyển sang withDbContext giữ nguyên per-item isolation + advisory-lock + quota + outbox.)
  */
 export async function bulkTransferWorker(
   prisma: PrismaClient,
@@ -257,9 +260,7 @@ export async function bulkTransferWorker(
 
   for (const input of inputs) {
     try {
-      const result = await prisma.$transaction(async (tx) => {
-        return transferWorker(tx, ctx, input);
-      });
+      const result = await withDbContext(prisma, ctx, (tx) => transferWorker(tx, ctx, input));
       success.push(result);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

@@ -11,8 +11,9 @@
  * L1 scope: Worker scope đã có (Phase 2). Thêm filter: assignment ACTIVE = empty.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { resolveEffectivePermissions } from '@/src/shared/auth/permission-resolver';
 import { SCOPE_REGISTRY } from '@/src/shared/auth/scopes';
 import type { ScopeBuilder } from '@/src/shared/auth/scopes';
@@ -41,9 +42,11 @@ export async function requireTalentPoolAccess(actor: AuthContext): Promise<void>
   }
 }
 
-/** Step 1: get active worker IDs as raw query (returns string[]). */
-async function getActiveWorkerIds(prisma: PrismaClient): Promise<string[]> {
-  const rows = await prisma.$queryRawUnsafe<Array<{ worker_id: string }>>(
+/** Step 1: get active worker IDs as raw query (returns string[]).
+ *  Chạy trên tx đã set GUC (L2) — V5-M1-06d/STEP-04: raw $queryRawUnsafe không được chạy
+ *  ngoài context; RLS trên project_assignments sẽ áp dụng theo app.role. */
+async function getActiveWorkerIds(tx: Prisma.TransactionClient): Promise<string[]> {
+  const rows = await tx.$queryRawUnsafe<Array<{ worker_id: string }>>(
     `SELECT DISTINCT pa.worker_id FROM project_assignments pa WHERE pa.status = 'ACTIVE'`,
   );
   return rows.map(r => r.worker_id);
@@ -73,45 +76,49 @@ export async function queryTalentPool(
   const workerScopeBuilder = SCOPE_REGISTRY['Worker'] as ScopeBuilder | undefined;
   const workerScope = workerScopeBuilder ? workerScopeBuilder(ctx) : {};
 
-  const activeWorkerIds = await getActiveWorkerIds(prisma);
-
   const page = Math.max(1, filters?.page ?? 1);
   const pageSize = Math.min(50, Math.max(1, filters?.pageSize ?? 20));
   const skip = (page - 1) * pageSize;
 
-  // Worker unassigned = NOT IN active IDs
-  const rows = await prisma.worker.findMany({
-    where: {
-      ...workerScope,
-      ...(activeWorkerIds.length > 0 && { id: { notIn: activeWorkerIds } }),
-      // NOTE: skill/vendor filter → join qua assignments/slots → raw SQL
-    },
-    include: {
-      sourceClaims: {
-        where: { accepted: true },
-        select: { id: true, claimType: true },
-        take: 1,
+  // V5-M1-06d/STEP-04: mọi read (raw + model) chạy trong 1 transaction ĐÃ set GUC (L2 RLS).
+  // L1 vẫn áp thủ công qua workerScope (getPrisma trả base client, withDbContext không gắn $extends).
+  return withDbContext(prisma, ctx, async (tx) => {
+    const activeWorkerIds = await getActiveWorkerIds(tx);
+
+    // Worker unassigned = NOT IN active IDs
+    const rows = await tx.worker.findMany({
+      where: {
+        ...workerScope,
+        ...(activeWorkerIds.length > 0 && { id: { notIn: activeWorkerIds } }),
+        // NOTE: skill/vendor filter → join qua assignments/slots → raw SQL
       },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: pageSize,
-    skip,
-  });
+      include: {
+        sourceClaims: {
+          where: { accepted: true },
+          select: { id: true, claimType: true },
+          take: 1,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: pageSize,
+      skip,
+    });
 
-  const total = await prisma.worker.count({
-    where: {
-      ...workerScope,
-      ...(activeWorkerIds.length > 0 && { id: { notIn: activeWorkerIds } }),
-    },
-  });
+    const total = await tx.worker.count({
+      where: {
+        ...workerScope,
+        ...(activeWorkerIds.length > 0 && { id: { notIn: activeWorkerIds } }),
+      },
+    });
 
-  return {
-    rows,
-    total,
-    page,
-    pageSize,
-    totalPages: Math.ceil(total / pageSize),
-  };
+    return {
+      rows,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  });
 }
 
 /** Đếm unassigned workers (cho dashboard counter). */
@@ -124,12 +131,13 @@ export async function countUnassignedWorkers(
   const workerScopeBuilder = SCOPE_REGISTRY['Worker'] as ScopeBuilder | undefined;
   const workerScope = workerScopeBuilder ? workerScopeBuilder(ctx) : {};
 
-  const activeWorkerIds = await getActiveWorkerIds(prisma);
-
-  return prisma.worker.count({
-    where: {
-      ...workerScope,
-      ...(activeWorkerIds.length > 0 && { id: { notIn: activeWorkerIds } }),
-    },
+  return withDbContext(prisma, ctx, async (tx) => {
+    const activeWorkerIds = await getActiveWorkerIds(tx);
+    return tx.worker.count({
+      where: {
+        ...workerScope,
+        ...(activeWorkerIds.length > 0 && { id: { notIn: activeWorkerIds } }),
+      },
+    });
   });
 }

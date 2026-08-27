@@ -1,93 +1,100 @@
 /**
- * statements-margin.route.test.ts — V5-M1-06c / RQ-02 / STEP-02 / AC-02 / OQ-02.
+ * statements-margin.route.test.ts — V5-M1-06d / RQ-07 / STEP-07 / DEC-12 / AC-07.
  *
- * UNIT (no DB): role matrix cho margin (`GET /api/statements/margin`).
- * Margin là aggregate tài chính toàn cục → chỉ {ADMIN, ACCOUNTANT, DIRECTOR} (§7.2).
- * DB access qua withDbContext (L2 GUC) — KHÔNG L1 (ClientStatement chưa có builder,
- * OQ-01 cấm builder mới) → cùng pattern statements/route.ts. calculateMargin được mock.
- *   - viewer + month/year → 200 (string hoá Decimal); non-viewer → 403 KHÔNG tính;
- *     thiếu month/year → 400; MarginPermissionError (defense-in-depth) → 403.
+ * UNIT (auth + DB boundary + service mocked): role matrix cho GET /api/statements/margin.
+ *   - unauth → 401; thiếu month/year → 400.
+ *   - ADMIN/ACCOUNTANT/DIRECTOR → 200 (aggregate qua withAuthorizedDbReadOnly = L1+L2 thật).
+ *   - Role ngoài (kể cả HR_MANAGER) → 403 route gate, KHÔNG chạm DB.
+ *   - MarginPermissionError / AuthScopeError (L1 backstop) → 403, không lộ 500.
+ * Xác nhận DEC-12: route dùng withAuthorizedDbReadOnly (L1), KHÔNG phải withDbContext (L2-only).
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
 const mocks = vi.hoisted(() => ({
   getAuthContext: vi.fn(),
+  withAuthorizedDbReadOnly: vi.fn(),
   calculateMargin: vi.fn(),
-  dbContext: vi.fn(),
 }));
 
 vi.mock('@/src/shared/auth/auth-context', () => ({
   getAuthContext: mocks.getAuthContext,
-  AuthSessionError: class AuthSessionError extends Error {},
+  AuthSessionError: class AuthSessionError extends Error {
+    code = 'UNAUTHENTICATED';
+  },
 }));
-vi.mock('@/src/lib/db', () => ({ getPrisma: () => ({ __raw: true }) }));
-vi.mock('@/src/shared/auth/with-db-context', () => ({
-  withDbContext: (_p: unknown, _c: unknown, cb: (t: unknown) => unknown) => mocks.dbContext(cb),
+vi.mock('@/src/lib/db', () => ({ getPrisma: () => ({}) }));
+vi.mock('@/src/shared/auth/with-authorized-db', () => ({
+  withAuthorizedDbReadOnly: mocks.withAuthorizedDbReadOnly,
 }));
 vi.mock('@/src/domains/reconciliation/margin.service', () => ({
   calculateMargin: mocks.calculateMargin,
   MarginPermissionError: class MarginPermissionError extends Error {
-    code: string;
-    constructor(code: string, message: string) {
-      super(message);
-      this.code = code;
-    }
+    code = 'PERMISSION_DENIED';
   },
 }));
 
 import { GET } from '@/app/api/statements/margin/route';
+import { AuthSessionError } from '@/src/shared/auth/auth-context';
+import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 import { MarginPermissionError } from '@/src/domains/reconciliation/margin.service';
 
-const req = (qs = '?month=6&year=2026') =>
-  new NextRequest('http://localhost/api/statements/margin' + qs);
+const req = (qs = '?month=6&year=2026') => new NextRequest('http://localhost/api/statements/margin' + qs);
+const FAKE_MARGIN = { totalClientReceivable: 100n, totalVendorPayable: 60n, margin: 40n, periodMonth: 6, periodYear: 2026 };
 
-describe('statements margin — role matrix (RQ-02 / AC-02 / OQ-02)', () => {
+const ALLOWED = ['ADMIN', 'ACCOUNTANT', 'DIRECTOR'];
+const DENIED = ['HR_MANAGER', 'HR_STAFF', 'SALE', 'PM', 'MKT', 'VENDOR_ADMIN', 'VENDOR_STAFF', 'CTV', 'WORKER', 'EMPLOYEE'];
+
+describe('GET /api/statements/margin — DEC-12 role matrix + L1 capability', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.calculateMargin.mockResolvedValue({
-      month: 6,
-      year: 2026,
-      totalClientReceivable: 100,
-      totalVendorPayable: 60,
-      margin: 40,
-    });
-    // withDbContext gọi cb với tx đã scope (L2). tx không cần thật vì calculateMargin mock.
-    mocks.dbContext.mockImplementation((cb: (t: unknown) => unknown) => cb({}));
+    // withAuthorizedDbReadOnly thực thi callback (chứng minh route đi qua L1 boundary).
+    mocks.withAuthorizedDbReadOnly.mockImplementation((_p: unknown, _c: unknown, cb: (tx: unknown) => unknown) => cb({}));
+    mocks.calculateMargin.mockResolvedValue(FAKE_MARGIN);
   });
 
-  it.each(['ADMIN', 'ACCOUNTANT', 'DIRECTOR'])('GET: %s → 200, Decimal string hoá', async (role) => {
+  it('unauth (AuthSessionError) → 401, KHÔNG chạm DB', async () => {
+    mocks.getAuthContext.mockRejectedValueOnce(new AuthSessionError('NO_TOKEN', 'no token'));
+    const res = await GET(req());
+    expect(res.status).toBe(401);
+    expect(mocks.withAuthorizedDbReadOnly).not.toHaveBeenCalled();
+  });
+
+  it('thiếu month/year → 400', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ADMIN' });
+    const res = await GET(req('?month=6'));
+    expect(res.status).toBe(400);
+    expect(mocks.withAuthorizedDbReadOnly).not.toHaveBeenCalled();
+  });
+
+  it.each(ALLOWED)('%s → 200, đi qua withAuthorizedDbReadOnly (L1+L2)', async (role) => {
     mocks.getAuthContext.mockResolvedValue({ userId: 'u', role });
     const res = await GET(req());
     expect(res.status).toBe(200);
-    expect(mocks.dbContext).toHaveBeenCalledTimes(1);
-    expect(mocks.calculateMargin).toHaveBeenCalledTimes(1);
-    const json = await res.json();
-    expect(json.margin.totalClientReceivable).toBe('100');
-    expect(json.margin.margin).toBe('40');
+    expect(mocks.withAuthorizedDbReadOnly).toHaveBeenCalledTimes(1);
+    const body = await res.json();
+    expect(body.margin.margin).toBe('40'); // bigint serialized
   });
 
-  it.each(['HR_MANAGER', 'HR_STAFF', 'PM', 'SALE', 'MKT', 'WORKER', 'VENDOR_ADMIN'])(
-    'GET: %s → 403 (không có quyền margin), KHÔNG tính',
-    async (role) => {
-      mocks.getAuthContext.mockResolvedValue({ userId: 'u', role });
-      const res = await GET(req());
-      expect(res.status).toBe(403);
-      expect(mocks.dbContext).not.toHaveBeenCalled();
-      expect(mocks.calculateMargin).not.toHaveBeenCalled();
-    },
-  );
-
-  it('GET: thiếu month/year → 400, KHÔNG tính', async () => {
-    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ADMIN' });
-    const res = await GET(req('?year=2026'));
-    expect(res.status).toBe(400);
-    expect(mocks.calculateMargin).not.toHaveBeenCalled();
+  it.each(DENIED)('%s → 403 route gate, KHÔNG chạm DB', async (role) => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role });
+    const res = await GET(req());
+    expect(res.status).toBe(403);
+    expect(mocks.withAuthorizedDbReadOnly).not.toHaveBeenCalled();
   });
 
-  it('GET: MarginPermissionError (defense-in-depth) → 403', async () => {
+  it('MarginPermissionError → 403', async () => {
     mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ACCOUNTANT' });
     mocks.calculateMargin.mockRejectedValueOnce(new MarginPermissionError('PERMISSION_DENIED', 'denied'));
+    const res = await GET(req());
+    expect(res.status).toBe(403);
+  });
+
+  it('L1 AuthScopeError (backstop) → 403, không lộ 500', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ACCOUNTANT' });
+    mocks.calculateMargin.mockRejectedValueOnce(
+      new AuthScopeError('DENY_BY_DEFAULT', 'no scope', { userId: 'u', role: 'ACCOUNTANT' }),
+    );
     const res = await GET(req());
     expect(res.status).toBe(403);
   });

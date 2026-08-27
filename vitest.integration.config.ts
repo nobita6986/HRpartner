@@ -38,6 +38,8 @@ export default defineConfig({
       MP3C_LIVE_PLACEMENT_CHECK: TEST_DB_ADMIN ? '1' : '',
       M1_06A_LIVE_AUTH_SCOPE: TEST_DB_ADMIN ? '1' : '',
       M1_06B_LIVE_AUTH_SCOPE: TEST_DB_ADMIN ? '1' : '',
+      M1_06D_LIVE_TICKET_BOUNDARY: TEST_DB_ADMIN ? '1' : '',
+      M1_07A_LIVE_TICKET_RLS: TEST_DB_ADMIN ? '1' : '',
     },
     poolOptions: {
       threads: { maxThreads: 1, minThreads: 1 },

@@ -7,19 +7,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
-import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { withAuthorizedDbReadOnly } from '@/src/shared/auth/with-authorized-db';
+import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 import { calculateMargin, MarginPermissionError } from '@/src/domains/reconciliation/margin.service';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// V5-M1-06c / RQ-02 / OQ-02: margin la aggregate tai chinh toan cuc (SUM tren
-// moi vendor/client statement cua ky) — chi ACCOUNTANT/ADMIN/DIRECTOR duoc doc
-// (§7.2). Gate role tai route (defense-in-depth); calculateMargin van tu kiem
-// CAN_VIEW_STATEMENT_MARGIN. DB access qua withDbContext (L2 GUC) — KHONG dung
-// withAuthorizedDbReadOnly (L1) vi ClientStatement chua co scope builder va
-// OQ-01 cam tao builder moi o 06c -> L1 se DENY_BY_DEFAULT cho ACCOUNTANT
-// (non-root). Cung pattern voi statements/route.ts + statements/generate.
+// V5-M1-06d / RQ-07 / DEC-12: margin la aggregate tai chinh toan cuc (SUM tren moi
+// vendor/client statement cua ky) — chi ADMIN/ACCOUNTANT/DIRECTOR duoc doc (§7.2).
+// DEC-12 DAO NGUOC 06c DEV-01: DB access di qua withAuthorizedDbReadOnly (L1+L2 that),
+// KHONG con L2-only. ClientStatement/ClientStatementLine gio co scope builder
+// (finance.scope.ts) → ACCOUNTANT (non-root) doc global {}; role ngoai finance →
+// AuthScopeError DENY_BY_DEFAULT. Gate role tai route (defense-in-depth) + calculateMargin
+// van tu kiem CAN_VIEW_STATEMENT_MARGIN.
 const MARGIN_ROLES = new Set(['ADMIN', 'ACCOUNTANT', 'DIRECTOR']);
 
 export async function GET(req: NextRequest) {
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
 
   const prisma = getPrisma();
   try {
-    const margin = await withDbContext(prisma, ctx, (tx) => calculateMargin(tx, ctx, month, year));
+    const margin = await withAuthorizedDbReadOnly(prisma, ctx, (tx) => calculateMargin(tx, ctx, month, year));
     return NextResponse.json({
       margin: {
         ...margin,
@@ -60,6 +61,9 @@ export async function GET(req: NextRequest) {
   } catch (e) {
     if (e instanceof MarginPermissionError) {
       return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
+    }
+    if (e instanceof AuthScopeError) {
+      return NextResponse.json({ error: 'PERMISSION_DENIED', message: 'Khong co pham vi xem margin' }, { status: 403 });
     }
     console.error('[api/statements/margin GET] error:', e);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to calculate margin' }, { status: 500 });

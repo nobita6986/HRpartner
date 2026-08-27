@@ -1,6 +1,7 @@
 /**
  * POST /api/tickets/[id]/pay
- * Auth (Phase 1 identity-core — RQ-07, DEC-08): JWT + CAN_PROCESS_TICKET.
+ * Auth: JWT + CAN_PROCESS_TICKET.
+ * RQ-05 / DEC-08: DB ops go through withDbContext to set RLS GUC.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { TicketService } from '@/src/domains/attendance/ticket.service';
@@ -8,6 +9,8 @@ import { requireTicketAuth, ticketsErrorResponse } from '@/src/shared/auth/ticke
 import { getIdempotencyKey } from '@/src/shared/auth/ticket-route-helpers';
 import { getPrisma } from '@/src/lib/db';
 import { withIdempotency } from '@/src/shared/integrity/idempotency';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { getAuthContext } from '@/src/shared/auth/auth-context';
 
 const service = new TicketService(getPrisma());
 
@@ -17,6 +20,7 @@ export async function POST(
 ) {
   try {
     const { id } = await ctx.params;
+    const authCtx = await getAuthContext(req);
     const { sessionUser } = await requireTicketAuth(req, 'CAN_PROCESS_TICKET');
     const idempotencyKey = getIdempotencyKey(req);
     const body = await req.json().catch(() => ({}));
@@ -29,9 +33,11 @@ export async function POST(
       ...(body.paidAt && { paidAt: new Date(body.paidAt) }),
     };
 
-    // Phase 3 / RQ-02: wrap handler nếu có key.
+    // RQ-05: withDbContext sets RLS GUC before service call
     if (!idempotencyKey) {
-      const ticket = await service.payAdvance(input, sessionUser);
+      const ticket = await withDbContext(getPrisma(), authCtx, async (tx) =>
+        service.payAdvance(input, sessionUser, tx),
+      );
       return NextResponse.json({ ticket }, { status: 200 });
     }
 
@@ -42,7 +48,11 @@ export async function POST(
       key: idempotencyKey,
       requestBody: body,
       handler: async () => ({
-        body: { ticket: await service.payAdvance(input, sessionUser) },
+        body: {
+          ticket: await withDbContext(getPrisma(), authCtx, async (tx) =>
+            service.payAdvance(input, sessionUser, tx),
+          ),
+        },
         statusCode: 200,
       }),
     });

@@ -1,16 +1,14 @@
 /**
  * GET /api/tickets/[id]
- * Lấy chi tiết ticket + lịch sử transition.
  *
- * Auth (Phase 1 identity-core — RQ-07, DEC-08):
- *  - JWT verify (cookie/Bearer) qua getAuthContext.
- *  - SystemRole ngoài 6 TicketActorRole → 403 FORBIDDEN.
- *  - Service giữ logic cũ (worker chỉ xem ticket của mình).
+ * RQ-05 / DEC-08: DB operations go through withDbContext to set RLS GUC.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { TicketService } from '@/src/domains/attendance/ticket.service';
 import { getTicketAuth, ticketsErrorResponse } from '@/src/shared/auth/ticket-route-helpers';
 import { getPrisma } from '@/src/lib/db';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { getAuthContext } from '@/src/shared/auth/auth-context';
 
 const service = new TicketService(getPrisma());
 
@@ -19,9 +17,14 @@ export async function GET(
   ctx: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = await ctx.params;
+    const authCtx = await getAuthContext(req);
     const { sessionUser } = await getTicketAuth(req);
-    const { ticket, history } = await service.getTicket(id, sessionUser);
+    const { id } = await ctx.params;
+
+    // RQ-05: withDbContext sets RLS GUC before service call
+    const { ticket, history } = await withDbContext(getPrisma(), authCtx, async (tx) =>
+      service.getTicket(id, sessionUser, tx),
+    );
     return NextResponse.json({ ticket, history }, { status: 200 });
   } catch (err) {
     return ticketsErrorResponse(err);

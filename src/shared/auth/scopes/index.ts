@@ -32,6 +32,7 @@ import {
   buildAttendanceEventScope,
   buildSiteScope,
 } from './worker-portal.scope';
+import { buildClientStatementScope, buildPayrollConfigScope } from './finance.scope';
 
 export type ScopeBuilder = (ctx: AuthContext) => Prisma.Args<unknown, 'findMany'>['where'];
 
@@ -55,6 +56,11 @@ export const SCOPE_REGISTRY: Record<string, ScopeBuilder> = {
   Ticket: buildTicketScope,
   AttendanceEvent: buildAttendanceEventScope,
   Site: buildSiteScope,
+  // V5-M1-06d — finance global-read L1 capability (RQ-07 / DEC-11 / DEC-12).
+  // ClientStatement(+Line): margin aggregate cần L1 thật; PayrollConfig: ACCOUNTANT global-read.
+  ClientStatement: buildClientStatementScope,
+  ClientStatementLine: buildClientStatementScope,
+  PayrollConfig: buildPayrollConfigScope,
 };
 
 export {
@@ -71,4 +77,6 @@ export {
   buildTicketScope,
   buildAttendanceEventScope,
   buildSiteScope,
+  buildClientStatementScope,
+  buildPayrollConfigScope,
 };

@@ -25,7 +25,16 @@ import {
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// POST (write) roles — khớp WITH CHECK của hrp_timesheet_adjustment_scope.
 const ADJUST_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM'] as const);
+
+// GET (read) roles — DEC-05 (V5-M1-06d / RQ-03): ADMIN/HR_MANAGER/HR_STAFF/PM/ACCOUNTANT/DIRECTOR.
+// PM/HR_STAFF bị L2 (RLS) thu hẹp về project của mình; cross-project → zero rows.
+// LƯU Ý (M1-07 dependency): USING của hrp_timesheet_adjustment_scope hiện KHÔNG liệt kê
+// ACCOUNTANT/DIRECTOR (khác với timesheet_periods/timesheet_lines đã có). Vì vậy dưới L2,
+// ACCOUNTANT/DIRECTOR sẽ nhận zero rows — fail-safe (không rò rỉ), nhưng under-permissive so
+// với ý định DEC-05. Sửa policy để đồng bộ là việc của M1-07 (ngoài scope 06d — RLS owner).
+const VIEW_ADJUST_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'ACCOUNTANT', 'DIRECTOR'] as const);
 
 function getIdempotencyKey(req: NextRequest): string | undefined {
   return req.headers.get('x-idempotency-key') ?? undefined;
@@ -93,6 +102,18 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  let ctx;
+  try {
+    ctx = await getAuthContext(req);
+  } catch (e) {
+    if (e instanceof AuthSessionError) return NextResponse.json({ error: e.code, message: e.message }, { status: 401 });
+    return NextResponse.json({ error: 'INTERNAL', message: 'Failed to build auth context' }, { status: 500 });
+  }
+
+  if (!VIEW_ADJUST_ROLES.has(ctx.role as typeof VIEW_ADJUST_ROLES extends Set<infer T> ? T : never)) {
+    return NextResponse.json({ error: 'PERMISSION_DENIED', message: `Role ${ctx.role} khong co quyen xem adjustment` }, { status: 403 });
+  }
+
   const { searchParams } = new URL(req.url);
   const periodId = searchParams.get('periodId');
 
@@ -102,9 +123,13 @@ export async function GET(req: NextRequest) {
 
   const prisma = getPrisma();
   try {
-    const adjustments = await listTimesheetAdjustments(prisma, periodId);
+    // L2 (withDbContext): set GUC transaction-local → RLS scope theo project cho PM/HR_STAFF,
+    // cross-project → zero rows. Không dùng L1 (listTimesheetAdjustments đọc TimesheetAdjustment
+    // chưa có scope builder; L2-only tránh DENY_BY_DEFAULT, nhất quán các route attendance khác).
+    const adjustments = await withDbContext(prisma, ctx, (tx) => listTimesheetAdjustments(tx, periodId));
     return NextResponse.json({ adjustments });
   } catch (e) {
+    if (e instanceof AuthScopeError) return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
     console.error('[api/attendance/adjustments GET] error:', e);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to list adjustments' }, { status: 500 });
   }

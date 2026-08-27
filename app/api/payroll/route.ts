@@ -12,11 +12,13 @@ import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// V5-M1-06c / RQ-05 / OQ-03 / AC-05: cau hinh luong chi ADMIN/DIRECTOR doc (§7.2).
-// Deviation: bo HR_MANAGER + ACCOUNTANT (truoc {ADMIN,HR_MANAGER,ACCOUNTANT,DIRECTOR}).
-// PayrollConfig chua co builder -> withAuthorizedDbReadOnly chi an toan cho root roles;
-// ADMIN + DIRECTOR deu la ROOT_ROLES -> L1 passthrough + L2 GUC.
-const VIEWER_ROLES = new Set(['ADMIN', 'DIRECTOR']);
+// V5-M1-06d / RQ-07 / DEC-11: cau hinh luong doc theo canonical matrix §7.2 —
+// ADMIN, HR_MANAGER, DIRECTOR, ACCOUNTANT. DEC-11 DAO NGUOC 06c OQ-03 deviation:
+// PayrollConfig gio co scope builder tuong minh (finance.scope.ts) → ACCOUNTANT
+// (non-root) global-read {}; ADMIN/HR_MANAGER/DIRECTOR la ROOT_ROLES passthrough.
+// KHONG noi mutation (route GET-only). Role ngoai matrix → 403 (route gate) va
+// L1 DENY_BY_DEFAULT (backstop) neu lot qua gate.
+const VIEWER_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'DIRECTOR', 'ACCOUNTANT']);
 
 export async function GET(req: NextRequest) {
   let ctx;

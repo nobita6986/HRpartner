@@ -1,72 +1,73 @@
 /**
- * payroll.route.test.ts — V5-M1-06c / RQ-05 / STEP-05 / AC-05 / OQ-03.
+ * payroll.route.test.ts — V5-M1-06d / RQ-07 / STEP-07 / DEC-11 / AC-07.
  *
- * UNIT (no DB): role matrix cho Payroll config (`GET /api/payroll`).
- * PayrollConfig chưa có builder → chỉ {ADMIN, DIRECTOR} đọc (§7.2, OQ-03).
- * Deviation: bỏ HR_MANAGER + ACCOUNTANT (trước {ADMIN,HR_MANAGER,ACCOUNTANT,DIRECTOR}).
- *   - viewer → 200 qua withAuthorizedDbReadOnly (L1 passthrough vì root); non-viewer
- *     → 403 KHÔNG query; boundary throw AuthScopeError → 403.
+ * UNIT (auth + DB boundary mocked): 13-role matrix cho GET /api/payroll.
+ *   - unauth → 401 (không chạm DB).
+ *   - ADMIN/HR_MANAGER/DIRECTOR/ACCOUNTANT → 200 (canonical matrix §7.2).
+ *   - 9 role còn lại → 403 route gate, KHÔNG gọi DB boundary.
+ *   - AuthScopeError từ L1 (backstop) → 403 (không lộ 500).
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 
 const mocks = vi.hoisted(() => ({
   getAuthContext: vi.fn(),
-  findMany: vi.fn(),
-  count: vi.fn(),
-  authorizedRO: vi.fn(),
+  withAuthorizedDbReadOnly: vi.fn(),
 }));
 
 vi.mock('@/src/shared/auth/auth-context', () => ({
   getAuthContext: mocks.getAuthContext,
-  AuthSessionError: class AuthSessionError extends Error {},
+  AuthSessionError: class AuthSessionError extends Error {
+    code = 'UNAUTHENTICATED';
+  },
 }));
-vi.mock('@/src/lib/db', () => ({ getPrisma: () => ({ __raw: true }) }));
+vi.mock('@/src/lib/db', () => ({ getPrisma: () => ({}) }));
 vi.mock('@/src/shared/auth/with-authorized-db', () => ({
-  withAuthorizedDbReadOnly: (_p: unknown, _c: unknown, cb: (t: unknown) => unknown) =>
-    mocks.authorizedRO(cb),
+  withAuthorizedDbReadOnly: mocks.withAuthorizedDbReadOnly,
 }));
 
 import { GET } from '@/app/api/payroll/route';
+import { AuthSessionError } from '@/src/shared/auth/auth-context';
+import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 
-const tx = () => ({
-  payrollConfig: { findMany: mocks.findMany, count: mocks.count },
-});
+const req = () => new NextRequest('http://localhost/api/payroll?take=10');
 
-const getReq = () => new NextRequest('http://localhost/api/payroll');
+const ALLOWED = ['ADMIN', 'HR_MANAGER', 'DIRECTOR', 'ACCOUNTANT'];
+const DENIED = ['HR_STAFF', 'SALE', 'PM', 'MKT', 'VENDOR_ADMIN', 'VENDOR_STAFF', 'CTV', 'WORKER', 'EMPLOYEE'];
 
-describe('payroll config — role matrix (RQ-05 / AC-05 / OQ-03)', () => {
+describe('GET /api/payroll — DEC-11 role matrix', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.findMany.mockResolvedValue([]);
-    mocks.count.mockResolvedValue(0);
-    mocks.authorizedRO.mockImplementation((cb: (t: unknown) => unknown) => cb(tx()));
+    mocks.withAuthorizedDbReadOnly.mockResolvedValue([[], 0]);
   });
 
-  it.each(['ADMIN', 'DIRECTOR'])('GET: %s → 200 qua boundary', async (role) => {
+  it('unauth (AuthSessionError) → 401, KHÔNG chạm DB', async () => {
+    mocks.getAuthContext.mockRejectedValueOnce(new AuthSessionError('NO_TOKEN', 'no token'));
+    const res = await GET(req());
+    expect(res.status).toBe(401);
+    expect(mocks.withAuthorizedDbReadOnly).not.toHaveBeenCalled();
+  });
+
+  it.each(ALLOWED)('%s → 200 (canonical payroll reader)', async (role) => {
     mocks.getAuthContext.mockResolvedValue({ userId: 'u', role });
-    const res = await GET(getReq());
+    const res = await GET(req());
     expect(res.status).toBe(200);
-    expect(mocks.authorizedRO).toHaveBeenCalledTimes(1);
-    expect(mocks.findMany).toHaveBeenCalledTimes(1);
+    expect(mocks.withAuthorizedDbReadOnly).toHaveBeenCalledTimes(1);
   });
 
-  it.each(['HR_MANAGER', 'ACCOUNTANT', 'HR_STAFF', 'PM', 'SALE', 'MKT', 'WORKER', 'VENDOR_ADMIN'])(
-    'GET: %s → 403 (deviation OQ-03 deny), KHÔNG query',
-    async (role) => {
-      mocks.getAuthContext.mockResolvedValue({ userId: 'u', role });
-      const res = await GET(getReq());
-      expect(res.status).toBe(403);
-      expect(mocks.authorizedRO).not.toHaveBeenCalled();
-      expect(mocks.findMany).not.toHaveBeenCalled();
-    },
-  );
+  it.each(DENIED)('%s → 403 route gate, KHÔNG gọi DB boundary', async (role) => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role });
+    const res = await GET(req());
+    expect(res.status).toBe(403);
+    expect(mocks.withAuthorizedDbReadOnly).not.toHaveBeenCalled();
+  });
 
-  it('GET: boundary throw AuthScopeError → 403', async () => {
-    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ADMIN' });
-    mocks.authorizedRO.mockRejectedValueOnce(new AuthScopeError('DENY_BY_DEFAULT', 'no scope'));
-    const res = await GET(getReq());
+  it('L1 AuthScopeError (backstop) → 403, không lộ 500', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ACCOUNTANT' });
+    mocks.withAuthorizedDbReadOnly.mockRejectedValueOnce(
+      new AuthScopeError('DENY_BY_DEFAULT', 'no scope', { userId: 'u', role: 'ACCOUNTANT' }),
+    );
+    const res = await GET(req());
     expect(res.status).toBe(403);
   });
 });

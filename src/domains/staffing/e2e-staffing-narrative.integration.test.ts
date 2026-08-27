@@ -73,7 +73,7 @@ function makeStore() {
 // ─── Mock Prisma tx ─────────────────────────────────────────────────────────
 
 function makeMockTx(store: ReturnType<typeof makeStore>) {
-  return {
+  const tx: Record<string, any> = {
     ...store,
     $queryRawUnsafe: vi.fn(async (sql: string, ..._params: any[]) => {
       if (sql.includes('SELECT MAX')) return [{ max_num: null }];
@@ -83,6 +83,7 @@ function makeMockTx(store: ReturnType<typeof makeStore>) {
       }
       if (sql.includes('SELECT DISTINCT')) return [];
       if (sql.includes('WHERE merged_worker_id')) return [];
+      if (sql.includes('SELECT set_config')) return [{ set_config: '' }];
       return [];
     }),
     $executeRawUnsafe: vi.fn(async () => 1),
@@ -143,6 +144,12 @@ function makeMockTx(store: ReturnType<typeof makeStore>) {
     contract: { findFirst: vi.fn(async (args: any) => store.findFirst('contracts', args.where ?? {})) },
     vendorRateCard: { findFirst: vi.fn(async (args: any) => store.findFirst('vendor_rate_cards', args.where ?? {})) },
   };
+  // $transaction mock — withDbContext gọi prisma.$transaction(cb) rồi forward tx.
+  // Tại đây tx = chính mock này (auto-reference, gán sau khi object hoàn chỉnh)
+  // nên cb chạy trực tiếp trên mock store và các method đã stub sẵn.
+  // Không tạo wrapper transaction lồng nhau (recursive sẽ loop).
+  tx.$transaction = vi.fn(async (cb: any) => cb(tx));
+  return tx;
 }
 
 // ─── Auth context helper ──────────────────────────────────────────────────────
