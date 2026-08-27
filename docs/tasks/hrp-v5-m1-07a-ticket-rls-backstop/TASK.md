@@ -8,17 +8,17 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `REVISION_REQUIRED` |
+| Status | `REVISION_REQUIRED` — security artifact cleanup and credential rotation required |
 | Planner | Tier 1 |
 | Executor | Tier 2 |
 | Auditor | Tier 3 independent context |
 | Baseline | `879db9a0177fa33203f2fe224fe728cd648227a2` — last committed source baseline; uncommitted M1-06d round-1 work remains user-owned WIP and is excluded from this task's diff |
 | Modules | `V5-M1-07a / Ticket RLS prerequisite / M1-06d STEP-05 unblocker` |
 | ADR references | `UNIFIED_PLAN_v5.md` §4.3 M1-07, §7.2, §8.3; M1-06d v1.1 DEC-08/15; DEC-14 test-DB safety |
-| Current execution round | `2` |
-| Current audit round | `1` |
-| Next gate | Tier 2 fixes round-1 evidence/policy gaps and runs LIVE on isolated test DB → HANDOFF → `/audit hrp-v5-m1-07a-ticket-rls-backstop round 2` |
-| Updated | `2026-08-26 Asia/Bangkok` |
+| Current execution round | `3` |
+| Current audit round | `2` |
+| Next gate | OP rotates exposed TEST admin/writer credentials; Tier 2 redacts HANDOFF and removes temporary debug artifact → `/audit hrp-v5-m1-07a-ticket-rls-backstop round 3` |
+| Updated | `2026-08-27 Asia/Bangkok` |
 
 ### Dependency and sequencing gate
 
@@ -181,6 +181,9 @@ Tier 1 append audit decisions; do not rewrite Tier 2 HANDOFF or Tier 3 AUDIT.
 | `1` | `PLN-01` | `ACCEPT_FIX` | Planner spot-check found test/contract mismatches: ADMIN test expects INSERT denial although DEC-06 grants ADMIN workflow write; ADMIN cannot represent DIRECTOR; AC-02 lacks positive Worker self create/update and explicit HR_STAFF global queue proof; AC-03 lacks positive ACCOUNTANT finance update proof | None; implementation/test correction only | Tier 2 aligns tests with DEC-05/06 and supplies real role-specific LIVE evidence |
 | `1` | `PLN-02` | `ACCEPT_FIX` | `hrp_ticket_history_insert` omits ACCOUNTANT although canonical ACCOUNTANT approve/reject/pay writes TicketHistory in the same transaction; this can break the finance workflow once RLS is active | None; migration correction within RQ-03/AC-04 | Tier 2 fixes child write authority and proves ACCOUNTANT parent+history atomic success LIVE |
 | `1` | `PLN-03` | `ACCEPT_FIX` | AC-07 requires regression gates pass, but unit command exited 1. “Pre-existing” is not sufficient without reproduction at pinned baseline or a green equivalent mandatory gate | None | Tier 2 provides baseline reproduction or closes the failure, then reruns the exact gate |
+| `2` | `AUD-001` | `ACCEPT_FIX — RESOLVED` | Tier 3 independently ran the isolated DB suite: 32/32 LIVE tests PASS; AC-01..AC-06 and the original ENV blocker are closed | None | Closed by Audit round 2 evidence |
+| `2` | `PLN-01..03` | `ACCEPT_FIX — RESOLVED` | Round-2 HANDOFF/AUDIT prove real DIRECTOR, Worker self-write, HR_STAFF global queue, ACCOUNTANT finance/history atomic flow and pinned-baseline unit failure | None | Closed by 32-case LIVE matrix and baseline reproduction |
+| `2` | `PLN-04` | `ACCEPT_FIX — BLOCKING` | Planner spot-check found literal TEST admin and writer credentials recorded in Tier 2 HANDOFF despite the no-secret claim. The artifact cannot be committed and exposed credentials cannot remain valid | None; security cleanup only | Tier 2 redacts values to masked host/role evidence and removes temporary `scripts/debug-parser.mjs`; OP rotates both TEST credentials; Tier 3 verifies no secret remains before PASS round 3 |
 
 ## 10. Revision Log
 
@@ -188,3 +191,4 @@ Tier 1 append audit decisions; do not rewrite Tier 2 HANDOFF or Tier 3 AUDIT.
 |---|---|---|---|
 | `v1.0` | `2026-08-26` | Initial READY contract for Ticket-specific RLS/FORCE RLS migration and LIVE role matrix. | M1-06d round-1 HANDOFF `BLK-01`; Tier 1 chose option A and rejected user-request system elevation. |
 | `v1.0` | `2026-08-26` | Audit round 1 resolved as REVISION_REQUIRED; contract unchanged, execution round 2 opened for LIVE evidence and policy/test alignment. | `AUD-001`, `PLN-01..03`; no security waiver granted. |
+| `v1.0` | `2026-08-27` | Audit round 2 LIVE/security semantics passed, but acceptance remains blocked by plaintext TEST credentials in HANDOFF; execution round 3 is artifact/security cleanup only. | `AUD-001` and `PLN-01..03` resolved; `PLN-04` blocking. |

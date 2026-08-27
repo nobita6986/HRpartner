@@ -7,19 +7,19 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-08-26 Asia/Bangkok
+updated_at: 2026-08-27 Asia/Bangkok
 roadmap_source: docs/UNIFIED_PLAN_v5.md
 current_lane: V5-M1 / M1-07a Ticket RLS prerequisite
 current_task: hrp-v5-m1-07a-ticket-rls-backstop
 task_path: docs/tasks/hrp-v5-m1-07a-ticket-rls-backstop/TASK.md
 spec_version: v1.0
 task_status: REVISION_REQUIRED
-current_gate: REVISION_EXECUTION
-next_command: /code hrp-v5-m1-07a-ticket-rls-backstop
+current_gate: BLOCKED_OWNER
+next_command: OP rotates both isolated TEST DB credentials, then /code hrp-v5-m1-07a-ticket-rls-backstop for execution round 3 artifact cleanup
 previous_accepted: hrp-v5-m1-06c-remaining-routes-auth-scope (enumerated slice only)
 next_planner_candidate: Return hrp-v5-m1-06d-auth-boundary-closure execution round 2 after M1-07a ACCEPTED
-blocking_owner: none — isolated TEST/ADMIN URLs are available in C:\CodeApp\Salary-app\.env.mp2-test.local; never print or commit their values
-cursor_note: M1-07a audit round 1 is REVISION_REQUIRED: ENV_BLOCKED cannot close Must-P0 LIVE ACs; fix PLN-01..03, run real DIRECTOR/ACCOUNTANT/Worker/HR matrix, then re-audit round 2. M1-06d WIP remains paused and untouched.
+blocking_owner: OP — rotate the exposed isolated TEST admin and writer credentials; update the local env file without printing or committing values
+cursor_note: M1-07a audit round 2 proves the RLS semantics, but PLN-04 blocks acceptance until HANDOFF is redacted, the temporary debug script is removed, credentials are rotated, and Tier 3 completes artifact/security audit round 3. M1-06d WIP remains paused and untouched.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
