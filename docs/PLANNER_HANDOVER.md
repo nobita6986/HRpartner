@@ -9,17 +9,17 @@
 ```yaml
 updated_at: 2026-08-27 Asia/Bangkok
 roadmap_source: docs/UNIFIED_PLAN_v5.md
-current_lane: V5-M1 / M1-07 residual RLS and FORCE RLS review
-current_task: none
-task_path: n/a
-spec_version: n/a
-task_status: n/a
-current_gate: PHASE_REVIEW
-next_command: Tier 1 surveys residual M1-07 coverage after the accepted Ticket-only M1-07a slice, then drafts the next contract
+current_lane: V5-M1 / M1-07 residual RLS and FORCE RLS closure
+current_task: hrp-v5-m1-07b-rls-runtime-posture-closure
+task_path: docs/tasks/hrp-v5-m1-07b-rls-runtime-posture-closure/TASK.md
+spec_version: v1.0
+task_status: DRAFT — BLK-BASELINE
+current_gate: BLOCKED_OWNER
+next_command: Tier 2/OP creates one scoped commit containing the already accepted M1-07a + M1-06d implementation; Tier 1 then pins its full SHA in M1-07b and promotes the contract to READY
 previous_accepted: hrp-v5-m1-06d-auth-boundary-closure
-next_planner_candidate: V5-M1-07 remaining policy/FORCE RLS slice; slug and boundaries are TBD after source/migration inventory
-blocking_owner: none
-cursor_note: M1-06 auth-boundary closure is ACCEPTED after Audit round 3 and independent 971/971 unit verification. M1-07a covered Ticket only; do not mark canonical M1-07 complete until remaining models, runtime DB role posture, policy coverage and FORCE RLS are inventoried against the master plan.
+next_planner_candidate: promote hrp-v5-m1-07b-rls-runtime-posture-closure after the baseline commit; do not open M1-08 yet
+blocking_owner: Tier 2/OP — package accepted source with explicit path staging and leave unrelated AFF/scratch files untouched
+cursor_note: M1-07b contract is DRAFT-VALID. It closes 29 non-Ticket tables, five observed RLS-OFF gaps, runtime-role/GUC posture, migration-ledger drift and the false-green LIVE matrix; canonical M1-07 remains incomplete until this task is audited and accepted.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
