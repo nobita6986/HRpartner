@@ -15,6 +15,7 @@ import { SystemRole } from '@prisma/client';
 import { NextRequest } from 'next/server';
 import { getAuthUser } from './user';
 import { getPrisma } from '@/src/lib/db';
+import { withDbContext } from './with-db-context';
 
 export interface AuthContext {
   userId: string;
@@ -78,15 +79,17 @@ export async function getAuthContext(req: NextRequest): Promise<AuthContext> {
 
   // WORKER → lookup Worker.accountUserId
   if (role === 'WORKER') {
-    // SECURITY: Bypass RLS for auth lookup by setting app.role = 'ADMIN' inside a transaction.
-    // Worker table has RLS, so without this, app_user_writer cannot read it.
-    const worker = await prisma.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(`SELECT set_config('app.role', 'ADMIN', true)`);
-      return tx.worker.findUnique({
+    // SECURITY (RQ-04, DEC-05): NO app-driven ADMIN impersonation. Bootstrap the
+    // WORKER's own id under a VERIFIED self-context — set the real transaction-local
+    // GUCs (app.user_id = verified sub, app.role = 'WORKER') via withDbContext, so the
+    // workers RLS WORKER self-branch (account_user_id = hrp_session_user_id()) admits
+    // ONLY the caller's own row. No privilege elevation, no session leak.
+    const worker = await withDbContext(prisma, { userId: user.id, role: 'WORKER' }, (tx) =>
+      tx.worker.findUnique({
         where: { accountUserId: user.id },
         select: { id: true },
-      });
-    });
+      }),
+    );
     if (worker) ctx.workerId = worker.id;
   }
 
@@ -109,13 +112,15 @@ export async function buildAuthContextFromClaims(claims: { sub: string; role: Sy
   const ctx: AuthContext = { userId: user.id, role: user.role as SystemRole };
   if (user.vendorId) ctx.vendorId = user.vendorId;
   if (ctx.role === 'WORKER') {
-    const worker = await prisma.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(`SELECT set_config('app.role', 'ADMIN', true)`);
-      return tx.worker.findUnique({
+    // SECURITY (RQ-04, DEC-05): verified self-context bootstrap — real transaction-local
+    // GUCs (app.user_id + app.role='WORKER'), never ADMIN impersonation. The workers RLS
+    // WORKER self-branch admits only the caller's own row.
+    const worker = await withDbContext(prisma, { userId: user.id, role: 'WORKER' }, (tx) =>
+      tx.worker.findUnique({
         where: { accountUserId: user.id },
         select: { id: true },
-      });
-    });
+      }),
+    );
     if (worker) ctx.workerId = worker.id;
   }
   return ctx;

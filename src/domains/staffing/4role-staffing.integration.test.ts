@@ -82,6 +82,7 @@ type MockTx = {
   [K in keyof ReturnType<typeof makeStore>]: ReturnType<typeof makeStore>[K];
 } & {
   $executeRawUnsafe: ReturnType<typeof vi.fn>;
+  $transaction: ReturnType<typeof vi.fn>;
   outboxEvent: { create: ReturnType<typeof vi.fn> };
   projectAssignment: { findMany: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
   staffingOrder: { findMany: ReturnType<typeof vi.fn>; findUnique: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
@@ -103,7 +104,7 @@ function makeMockTx(store: ReturnType<typeof makeStore>): MockTx {
       [],
   };
 
-  return {
+  const tx: any = {
     ...store,
     $queryRawUnsafe: vi.fn(async (sql: string, ..._args: unknown[]) => {
       for (const [key, val] of Object.entries(rawResults)) {
@@ -177,6 +178,16 @@ function makeMockTx(store: ReturnType<typeof makeStore>): MockTx {
       findFirst: vi.fn(async (args: any) => store.findFirst('vendor_rate_cards', args.where ?? {})),
     },
   } as unknown as MockTx;
+
+  // withDbContext(tx, ctx, cb) calls tx.$transaction(async (inner) => { await applyRlsContext(inner); return cb(inner); }).
+  // Faithful additive mock: run the callback against THIS same mock tx, which already supports
+  // $executeRawUnsafe (applyRlsContext) + $queryRawUnsafe / worker.* (queryTalentPool inner body).
+  // No production Staffing code changes; no assertion weakened; no security behavior mock-passed.
+  (tx as MockTx).$transaction = vi.fn(async (arg: unknown, _opts?: unknown) =>
+    typeof arg === 'function' ? (arg as (t: unknown) => unknown)(tx) : Promise.all(arg as Promise<unknown>[]),
+  );
+
+  return tx as MockTx;
 }
 
 // ─── Auth contexts per role ───────────────────────────────────────────────────
