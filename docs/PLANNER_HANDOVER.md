@@ -9,17 +9,17 @@
 ```yaml
 updated_at: 2026-08-27 Asia/Bangkok
 roadmap_source: docs/UNIFIED_PLAN_v5.md
-current_lane: V5-M1 / M1-08 vendor object-scope hardening planning
-current_task: none
-task_path: none
-spec_version: n/a
-task_status: PLANNING
-current_gate: PLANNER_SURVEY
-next_command: Survey M1-08 against the canonical plan and current routes/schema, then write its TASK contract; do not execute before READY
+current_lane: V5-M1 / M1-08 vendor object-scope hardening
+current_task: hrp-v5-m1-08-vendor-object-scope
+task_path: docs/tasks/hrp-v5-m1-08-vendor-object-scope/TASK.md
+spec_version: v1.0
+task_status: READY_FOR_EXECUTION
+current_gate: TIER_2_EXECUTION
+next_command: /code hrp-v5-m1-08-vendor-object-scope
 previous_accepted: hrp-v5-m1-07b-rls-runtime-posture-closure
-next_planner_candidate: hrp-v5-m1-08-vendor-object-scope
+next_planner_candidate: audit/resolve M1-08, then survey hrp-v5-m1-09-field-level-projection
 blocking_owner: none
-cursor_note: M1-07a and M1-07b are ACCEPTED, so the canonical M1-07 PostgreSQL L2 exit gate is complete. Next is M1-08 vendor object-scope planning; OPS-04a remains accepted and only one Tier 2 stream is allowed.
+cursor_note: M1-08 v1.0 passed verify-task and locks public/private order semantics, vendor role split, generic reconciliation closure, atomic statement transitions and mandatory two-vendor LIVE IDOR evidence. Only one Tier 2 stream is allowed.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
