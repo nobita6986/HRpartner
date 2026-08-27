@@ -1,4 +1,4 @@
-# TIER 1 LIVING HANDOFF v2.0 — HRP V5
+# TIER 1 LIVING HANDOFF v2.1 — HRP V5
 
 > Tài liệu này là hợp đồng tiếp quản lâu dài cho **Tier 1 — Planner**. Khi bàn giao cho Agent Tier 1 khác, bình thường **chỉ cập nhật khối `ROADMAP_CURSOR` ở §0**. Không chép tiến độ task vào các section ổn định bên dưới.
 
@@ -19,7 +19,7 @@ next_command: Run /code hrp-v5-m1-07b-rls-runtime-posture-closure for Tier 2-A i
 previous_accepted: hrp-v5-m1-06d-auth-boundary-closure
 next_planner_candidate: audit/resolve M1-07b, then review canonical M1-07 exit gate before opening M1-08
 blocking_owner: none
-cursor_note: M1-07b is READY on source baseline ca5382bc; raw-applied M1-07a ledger drift remains an explicit clean/upgrade acceptance check. Parallel OPS-04a is READY for Tier 2-B and must stay in a separate worktree.
+cursor_note: M1-07b is READY on source baseline ca5382bc. OPS-04a is the final authorized Tier 2-B parallel task; after its resolve, return permanently to one Tier 2 execution stream unless Owner explicitly reauthorizes parallel execution.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
@@ -43,6 +43,8 @@ Tier 1 biến yêu cầu của sếp thành contract đủ chặt để Tier 2 t
 | Tier 3 — Auditor | `AUDIT.md` | Audit độc lập, C-01..C-10, verdict | Không sửa source/TASK/HANDOFF |
 
 Chỉ phá ranh giới khi sếp ủy quyền đích danh trong lượt hiện tại. Sau MP-3B, sếp đã nhắc Tier 1 chỉ viết contract/resolve và để đúng Tier 2/Tier 3 thực hiện phần của họ.
+
+**Owner process decision 2026-08-27:** `hrp-v5-ops-04a-observability-foundation` là task song song cuối cùng của Tier 2-B. Sau khi task này được audit/resolve, chỉ duy trì **một Tier 2** và một execution stream tại một thời điểm để tránh code rẽ nhánh và đơn giản hóa bàn giao. Tier 1 không tự mở thêm parallel Tier 2/worktree; chỉ được làm lại khi Owner ủy quyền rõ trong một lượt sau.
 
 ## 2. Source of truth và thứ tự đọc khi nhận bàn giao
 
@@ -211,3 +213,4 @@ cursor_note: <một câu về exit gate/dependency quan trọng nhất>
 | Version | Ngày | Thay đổi cấu trúc ổn định |
 |---|---|---|
 | 2.0 | 25/08/2026 | Chuyển từ snapshot handover sang Living Handoff: một ROADMAP_CURSOR mutable; chuẩn hóa role, state/gate, resolve, dependency graph, standing security, Git safety và protocol tiếp quản. |
+| 2.1 | 27/08/2026 | Ghi quyết định của Owner: OPS-04a là task Tier 2-B cuối cùng; sau resolve quay về một Tier 2/một execution stream, không tự mở parallel worktree. |
