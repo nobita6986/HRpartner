@@ -13,13 +13,13 @@ current_lane: V5-M1 / M1-07 residual RLS and FORCE RLS closure
 current_task: hrp-v5-m1-07b-rls-runtime-posture-closure
 task_path: docs/tasks/hrp-v5-m1-07b-rls-runtime-posture-closure/TASK.md
 spec_version: v1.1
-task_status: REVISION_REQUIRED
-current_gate: REVISION_EXECUTION
-next_command: Run /code hrp-v5-m1-07b-rls-runtime-posture-closure round 2 in the existing M1-07b worktree; close PLN-01..03 before audit round 2
+task_status: READY_FOR_AUDIT
+current_gate: TIER_3_AUDIT
+next_command: Run /audit hrp-v5-m1-07b-rls-runtime-posture-closure round 2 in the existing M1-07b worktree; regenerate LIVE evidence and require full lane exit 0
 previous_accepted: hrp-v5-m1-06d-auth-boundary-closure
 next_planner_candidate: audit/resolve M1-07b, then review canonical M1-07 exit gate before opening M1-08
 blocking_owner: none
-cursor_note: M1-07b Audit round 1 PASS was rejected: PLN-01 false-green 13-role matrix, PLN-02 incomplete runtime-role posture and PLN-03 red full LIVE lane remain open in spec v1.1 round 2. OPS-04a is ACCEPTED; Tier 2-B is retired and the pipeline now uses one Tier 2 execution stream.
+cursor_note: M1-07b execution round 2 closed PLN-01..03 statically and is READY_FOR_AUDIT. Tier 3 must rerun the current LIVE matrix/posture/full lane on isolated TEST DB; round-1 LIVE numbers cannot be reused. OPS-04a is ACCEPTED and only one Tier 2 stream remains.
 ```
 
 <!-- ROADMAP_CURSOR_END -->

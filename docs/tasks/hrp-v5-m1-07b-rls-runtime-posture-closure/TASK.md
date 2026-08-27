@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.1` |
-| Status | `REVISION_REQUIRED` — Audit round 1 PASS rejected by Planner findings `PLN-01..03` |
+| Status | `READY_FOR_AUDIT` — Execution round 2 completed `PLN-01..03`; LIVE evidence must be regenerated independently by Tier 3 |
 | Planner | Tier 1 |
 | Executor | Tier 2 |
 | Auditor | Tier 3 independent context |
@@ -17,7 +17,7 @@
 | ADR references | `UNIFIED_PLAN_v5.md` §4.3 M1-07, §7.2, §8.3; accepted M1-07a DEC-03/08/09/10; DEC-14 isolated test-DB safety |
 | Current execution round | `2` |
 | Current audit round | `1` |
-| Next gate | `/code hrp-v5-m1-07b-rls-runtime-posture-closure` round 2 in the existing dedicated worktree → `/audit` round 2 |
+| Next gate | `/audit hrp-v5-m1-07b-rls-runtime-posture-closure` round 2 in the existing dedicated worktree; PASS requires the current full LIVE lane to exit 0 |
 | Updated | `2026-08-27 Asia/Bangkok` |
 
 ### Dependency and sequencing gate
