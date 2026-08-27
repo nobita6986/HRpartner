@@ -8,16 +8,16 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `REVISION_REQUIRED` — Planner spot-check rejected Audit round 1 PASS; `PLN-01..03` must close before re-audit |
 | Planner | Tier 1 |
 | Executor | Tier 2-B — separate Git worktree |
 | Auditor | Tier 3 independent context |
 | Baseline | `3e627e9db2ec8627a3f5be6e58424263510ecbac` — committed source baseline; main worktree's uncommitted M1-07a/M1-06d/AFF changes are excluded |
 | Modules | `V5-OPS-04a / correlation ID / structured safe logger / error-reporter port` |
 | ADR references | `UNIFIED_PLAN_v5.md` §4.11 `V5-OPS-04`; Living Handoff §8–9; DEC-14 no-secret/PII evidence rule |
-| Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `/code hrp-v5-ops-04a-observability-foundation` in a dedicated worktree → `/audit` |
+| Current execution round | `2` |
+| Current audit round | `1` |
+| Next gate | `/code hrp-v5-ops-04a-observability-foundation` round 2 in the existing dedicated worktree → `/audit` round 2 |
 | Updated | `2026-08-27 Asia/Bangkok` |
 
 ### Dependency and parallel-execution gate
@@ -186,10 +186,14 @@ git diff --name-status 3e627e9db2ec8627a3f5be6e58424263510ecbac
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| — | — | — | No audit yet | — | — |
+| `1` | `AUD verdict PASS` | `REJECT` | Audit evidence accepted the test helper's fallback to `x-middleware-request-x-request-id` as proof of a client response header and did not inspect unsanitized reporter `meta`; high-risk spot-check contradicts AC-02/04/05 | None; implementation correction under existing RQ/AC | Tier 2-B fixes `PLN-01..03`; Tier 3 independently re-audits round 2 |
+| `1` | `PLN-01` | `ACCEPT_FIX — P0` | `NextResponse.next({request:{headers}})` propagates an upstream request header but does not itself set the client response header. Other allowed portal branches set only `resp.headers`, so downstream request context is missing. Test helper `getHeader()` treats either channel as one value and creates a false PASS | None; enforce both channels already required by RQ-02/AC-02 | Every continuing branch must set downstream request `x-request-id` and client response `x-request-id`; tests assert the two channels separately. Terminal 401/redirect/503 asserts response only |
+| `1` | `PLN-02` | `ACCEPT_FIX — P0` | `SafeErrorEnvelope.meta?: Record<string, unknown>` and `reportSafe(..., meta)` forward arbitrary unsanitized metadata directly to provider adapter, contradicting the safe-envelope/PII boundary | None; RQ-04/05 already prohibit raw payload | Remove arbitrary `meta` from reporter envelope/API or run it through the same reviewed safe allow-list sanitizer before adapter; adversarial nested secret/PII test must prove provider receives no raw value |
+| `1` | `PLN-03` | `ACCEPT_FIX — P1` | Logger public functions accept `meta?: unknown`, and runtime guard permits nested object values for fields typed as strings, contradicting the typed flat allow-list in DEC-03/05 and RQ-03 | None; tighten existing logger contract | Public API accepts `SafeMeta`; runtime rejects non-number/non-string values for their declared keys. Adversarial tests may cast malformed runtime input but production typing must remain strict |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | `2026-08-27` | Initial READY contract for a provider-neutral, PII-safe observability foundation that can execute parallel to M1-07b. | Owner requested useful work for a second Tier 2; CodeGraph/source survey found no existing foundation. |
+| `v1.0` | `2026-08-27` | Audit round 1 PASS rejected; execution round 2 opened for separate request/response correlation proof and strict PII-safe logger/reporter boundaries. Contract semantics unchanged. | Planner findings `PLN-01..03`. |

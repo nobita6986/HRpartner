@@ -19,7 +19,7 @@ next_command: Run /code hrp-v5-m1-07b-rls-runtime-posture-closure for Tier 2-A i
 previous_accepted: hrp-v5-m1-06d-auth-boundary-closure
 next_planner_candidate: audit/resolve M1-07b, then review canonical M1-07 exit gate before opening M1-08
 blocking_owner: none
-cursor_note: M1-07b is READY on source baseline ca5382bc. OPS-04a is the final authorized Tier 2-B parallel task; after its resolve, return permanently to one Tier 2 execution stream unless Owner explicitly reauthorizes parallel execution.
+cursor_note: M1-07b is READY on source baseline ca5382bc. OPS-04a Audit round 1 PASS was rejected by Planner findings PLN-01..03 and is in revision round 2; Tier 2-B retires only after those fixes pass re-audit/resolve, then the pipeline returns to one Tier 2.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
