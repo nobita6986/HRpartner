@@ -8,17 +8,17 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.1` |
-| Status | `REVISION_REQUIRED` — paused until M1-07a is ACCEPTED |
+| Status | `REVISION_REQUIRED` — execution round 2 active; M1-07a prerequisite accepted |
 | Planner | Tier 1 |
 | Executor | Tier 2 |
 | Auditor | Tier 3 independent context |
 | Baseline | `1036f2c64be7402f2fbd2508d6d66b12d06252a7` — scoped accepted M1-06b/M1-06c baseline; unrelated AFF/scratch/handover files excluded |
 | Modules | `V5-M1-06 / RF-10 / Hardening-1 closure` |
 | ADR references | `UNIFIED_PLAN_v5.md` §4.3 M1-06, §7.2, §8.3; M1-06c Planner Resolution `PLN-01..02`; DEC-14 test DB safety |
-| Current execution round | `2` (opens after M1-07a ACCEPTED) |
+| Current execution round | `2` |
 | Current audit round | `0` |
-| Next gate | Complete and audit `hrp-v5-m1-07a-ticket-rls-backstop` → return `/code hrp-v5-m1-06d-auth-boundary-closure` round 2 |
-| Updated | `2026-08-26 Asia/Bangkok` |
+| Next gate | `/code hrp-v5-m1-06d-auth-boundary-closure` round 2 → complete STEP-05 and STEP-01, rerun gates/LIVE evidence, update HANDOFF |
+| Updated | `2026-08-27 Asia/Bangkok` |
 
 ### Dependency gate
 
@@ -28,7 +28,7 @@
 | M1-06b | `docs/tasks/hrp-v5-m1-06b-worker-vendor-cron-auth-scope` | AUDIT PASS + Planner resolution in worktree | Functionally satisfied; must be included in clean baseline SHA |
 | M1-06c | `docs/tasks/hrp-v5-m1-06c-remaining-routes-auth-scope` | AUDIT PASS; TASK status ACCEPTED for enumerated eight-root slice | Satisfied functionally; must be included in clean baseline SHA |
 | `BLK-BASELINE` | Git | Scoped accepted baseline commit `1036f2c64be7402f2fbd2508d6d66b12d06252a7` contains M1-06b/M1-06c deliverables; unrelated AFF/scratch/handover files remain outside commit | **SATISFIED** — Tier 2 must diff and implement from this exact SHA |
-| M1-07a Ticket RLS | `docs/tasks/hrp-v5-m1-07a-ticket-rls-backstop/TASK.md` | Round-1 HANDOFF `BLK-01` proves current Ticket policies conflict with the canonical queue/state machine | **BLOCKING STEP-05/STEP-01** — must be ACCEPTED before M1-06d execution round 2 |
+| M1-07a Ticket RLS | `docs/tasks/hrp-v5-m1-07a-ticket-rls-backstop/TASK.md` | Audit round 2 PASS: 32/32 LIVE cases; Tier 1 resolution ACCEPTED on 2026-08-27 | **SATISFIED** — execution round 2 may complete STEP-05/STEP-01 against the accepted Ticket RLS boundary |
 
 ## 1. Outcome
 
@@ -238,6 +238,7 @@ Tier 1 append audit decisions; do not rewrite Tier 2 HANDOFF or Tier 3 AUDIT.
 |---|---|---|---|---|---|
 | Not started | None | None | Audit round has not started | None | Tier 1 after Tier 3 handoff |
 | Execution round 1 | `BLK-01` | `ACCEPT_FIX` — choose option A | Current `hrp_ticket_scope` family is incompatible with WORKER/HR_STAFF/ACCOUNTANT state-machine operations; system elevation would contradict RQ-05 | Spec `v1.1`: add DEC-15 and blocking dependency M1-07a; retain RQ-05/AC-05 unchanged | Tier 2 pauses Ticket/static-gate work; resume round 2 only after M1-07a ACCEPTED |
+| Execution round 2 | `BLK-01` | `ACCEPT_FIX — RESOLVED` | M1-07a Audit round 2 passed 32/32 LIVE cases and Tier 1 marked the prerequisite ACCEPTED | None | Tier 2 resumes STEP-05 and STEP-01, then completes the remaining M1-06d evidence |
 
 ## 10. Revision Log
 
@@ -246,3 +247,4 @@ Tier 1 append audit decisions; do not rewrite Tier 2 HANDOFF or Tier 3 AUDIT.
 | `v1.0` | `2026-08-26` | Initial DRAFT: exact 20-route closure, payslip P0, attendance/staffing/ticket boundaries, recursive API manifest, 06c role/helper/pre-auth residuals và mandatory LIVE evidence. | M1-06c Planner Resolution `PLN-01..02`; Tier 1 technical inventory. |
 | `v1.0` | `2026-08-26` | Promoted to READY_FOR_EXECUTION and closed `BLK-BASELINE` with pinned scoped accepted SHA `1036f2c64be7402f2fbd2508d6d66b12d06252a7`. | M1-06b/M1-06c baseline commit; unrelated AFF/scratch/docs excluded. |
 | `v1.1` | `2026-08-26` | Round-1 resolution chooses M1-07a Ticket RLS policy alignment and rejects `withSystemDb` elevation; M1-06d becomes REVISION_REQUIRED until prerequisite acceptance. | HANDOFF round 1 `BLK-01`, `LIM-02`; RQ-05/AC-05 security invariant retained. |
+| `v1.1` | `2026-08-27` | M1-07a prerequisite accepted; execution round 2 reopened without changing the M1-06d contract. | M1-07a Audit round 2 PASS and Tier 1 resolution. |
