@@ -12,14 +12,14 @@ roadmap_source: docs/UNIFIED_PLAN_v5.md
 current_lane: V5-M1 / M1-07 residual RLS and FORCE RLS closure
 current_task: hrp-v5-m1-07b-rls-runtime-posture-closure
 task_path: docs/tasks/hrp-v5-m1-07b-rls-runtime-posture-closure/TASK.md
-spec_version: v1.0
-task_status: READY_FOR_EXECUTION
-current_gate: TIER_2_EXECUTION
-next_command: Run /code hrp-v5-m1-07b-rls-runtime-posture-closure for Tier 2-A in a dedicated worktree; Tier 2-B may execute the already READY OPS-04a task in its own worktree
+spec_version: v1.1
+task_status: REVISION_REQUIRED
+current_gate: REVISION_EXECUTION
+next_command: Run /code hrp-v5-m1-07b-rls-runtime-posture-closure round 2 in the existing M1-07b worktree; close PLN-01..03 before audit round 2
 previous_accepted: hrp-v5-m1-06d-auth-boundary-closure
 next_planner_candidate: audit/resolve M1-07b, then review canonical M1-07 exit gate before opening M1-08
 blocking_owner: none
-cursor_note: M1-07b is READY on source baseline ca5382bc. OPS-04a Audit round 1 PASS was rejected by Planner findings PLN-01..03 and is in revision round 2; Tier 2-B retires only after those fixes pass re-audit/resolve, then the pipeline returns to one Tier 2.
+cursor_note: M1-07b Audit round 1 PASS was rejected: PLN-01 false-green 13-role matrix, PLN-02 incomplete runtime-role posture and PLN-03 red full LIVE lane remain open in spec v1.1 round 2. OPS-04a is ACCEPTED; Tier 2-B is retired and the pipeline now uses one Tier 2 execution stream.
 ```
 
 <!-- ROADMAP_CURSOR_END -->

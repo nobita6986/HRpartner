@@ -8,16 +8,16 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `REVISION_REQUIRED` — Planner spot-check rejected Audit round 1 PASS; `PLN-01..03` must close before re-audit |
+| Status | `ACCEPTED` — Audit round 3 PASS accepted; `PLN-01..03` closed and OPS-04a foundation is complete |
 | Planner | Tier 1 |
 | Executor | Tier 2-B — separate Git worktree |
 | Auditor | Tier 3 independent context |
 | Baseline | `3e627e9db2ec8627a3f5be6e58424263510ecbac` — committed source baseline; main worktree's uncommitted M1-07a/M1-06d/AFF changes are excluded |
 | Modules | `V5-OPS-04a / correlation ID / structured safe logger / error-reporter port` |
 | ADR references | `UNIFIED_PLAN_v5.md` §4.11 `V5-OPS-04`; Living Handoff §8–9; DEC-14 no-secret/PII evidence rule |
-| Current execution round | `2` |
-| Current audit round | `1` |
-| Next gate | `/code hrp-v5-ops-04a-observability-foundation` round 2 in the existing dedicated worktree → `/audit` round 2 |
+| Current execution round | `3` |
+| Current audit round | `3` |
+| Next gate | `CLOSED` — continue the roadmap through the single Tier 2 stream; provider integration and route/job instrumentation remain OPS-04b |
 | Updated | `2026-08-27 Asia/Bangkok` |
 
 ### Dependency and parallel-execution gate
@@ -190,6 +190,12 @@ git diff --name-status 3e627e9db2ec8627a3f5be6e58424263510ecbac
 | `1` | `PLN-01` | `ACCEPT_FIX — P0` | `NextResponse.next({request:{headers}})` propagates an upstream request header but does not itself set the client response header. Other allowed portal branches set only `resp.headers`, so downstream request context is missing. Test helper `getHeader()` treats either channel as one value and creates a false PASS | None; enforce both channels already required by RQ-02/AC-02 | Every continuing branch must set downstream request `x-request-id` and client response `x-request-id`; tests assert the two channels separately. Terminal 401/redirect/503 asserts response only |
 | `1` | `PLN-02` | `ACCEPT_FIX — P0` | `SafeErrorEnvelope.meta?: Record<string, unknown>` and `reportSafe(..., meta)` forward arbitrary unsanitized metadata directly to provider adapter, contradicting the safe-envelope/PII boundary | None; RQ-04/05 already prohibit raw payload | Remove arbitrary `meta` from reporter envelope/API or run it through the same reviewed safe allow-list sanitizer before adapter; adversarial nested secret/PII test must prove provider receives no raw value |
 | `1` | `PLN-03` | `ACCEPT_FIX — P1` | Logger public functions accept `meta?: unknown`, and runtime guard permits nested object values for fields typed as strings, contradicting the typed flat allow-list in DEC-03/05 and RQ-03 | None; tighten existing logger contract | Public API accepts `SafeMeta`; runtime rejects non-number/non-string values for their declared keys. Adversarial tests may cast malformed runtime input but production typing must remain strict |
+| `2` | `AUD verdict PASS` | `REJECT` | Round-2 spot-check of worktree source contradicts the PASS on the remaining P0. `middleware.ts` continuing/next branches (`/bcc` authed L208, non-portal L217, rate-allowed L241-244, admin L266, correct-domain L273) call `NextResponse.next({request:{headers:withRequestId()}})` but none set the **client response** header `x-request-id`; only Next's internal `x-middleware-request-*` downstream channel is populated (stripped before the client). PLN-02/PLN-03 are genuinely fixed; the P0 is not. | None | Tier 2-B fixes PLN-01 residual; Tier 3 re-audits round 3 by reading the source, not counting green tests |
+| `2` | `PLN-01` | `REVISION_REQUIRED — P0 OPEN` | Regression on the client channel: round 1 had some branches call `resp.headers.set('x-request-id')`; round 2 rewrote every continuing branch to downstream-request-only and dropped that. Root cause of the false PASS: `middleware.test.ts` helper `getResponseHeader` (L53-57) still returns `headers.get(name) ?? headers.get('x-middleware-request-'+name)`, so the "response AND downstream" assertions (L131-161) both read the SAME downstream channel — identical mechanism to the round-1 defect. | None; RQ-02/AC-02 already require both channels | Round 3 MUST: (a) every next/continuing branch sets BOTH `next({request:{headers:withRequestId()}})` AND `resp.headers.set('x-request-id', requestId)` on the returned response; (b) fix `getResponseHeader` to read ONLY the real response header (delete the `x-middleware-request-` fallback) and `getDownstreamHeader` to read ONLY `x-middleware-request-x-request-id`; (c) each next-branch test asserts the two channels INDEPENDENTLY so deleting either `set` fails a test. Terminals keep response-only. |
+| `2` | `PLN-02` | `ACCEPT_FIX — P0 CLOSED` | Verified `error-reporter.ts` L64-78: `report()` runs `sanitizeObject(envelope.meta)` before `_adapter`; `reportSafe` routes through `report`. `error-reporter.test.ts` L141-252: 5 adversarial tests capture the adapter's envelope and assert `[REDACTED]` for authorization/password/phone/email/ssn and stripping of non-allow-listed keys. | None | Closed |
+| `2` | `PLN-03` | `ACCEPT_FIX — P1 CLOSED` | Verified `logger.ts`: public `debug/info/warn/error` now take `meta?: SafeMeta` (L234-258); `toSafeMeta` requires `number` for numeric keys, rejects non-string for string keys, and `detail` is the declared `string\|object` overflow container sanitized upstream by `sanitizeObject`. | None | Closed |
+| `3` | `PLN-01` | `ACCEPT_FIX — P0 CLOSED` | Planner source inspection confirms every continuing branch now sets both channels: `NextResponse.next({request:{headers:withRequestId()}})` for downstream and `resp.headers.set('x-request-id', requestId)` for the client. The test readers are strict and independent; deleting either channel breaks the dedicated assertions. | None | Closed by source commit `8aa8968`; 27 middleware tests PASS |
+| `3` | `AUD verdict PASS` | `ACCEPT` | Tier 3 inspected the source and verified the strict two-channel boundary. Tier 1 independently reran the focused lane (`142/142`) and full unit lane (`973/973`), normalized one stale HANDOFF count table, and reran `verify-audit.ps1` with `RESULT: PASS`. | None | Task accepted; evidence archived in `16ba507`; Tier 2-B retired |
 
 ## 10. Revision Log
 
@@ -197,3 +203,5 @@ git diff --name-status 3e627e9db2ec8627a3f5be6e58424263510ecbac
 |---|---|---|---|
 | `v1.0` | `2026-08-27` | Initial READY contract for a provider-neutral, PII-safe observability foundation that can execute parallel to M1-07b. | Owner requested useful work for a second Tier 2; CodeGraph/source survey found no existing foundation. |
 | `v1.0` | `2026-08-27` | Audit round 1 PASS rejected; execution round 2 opened for separate request/response correlation proof and strict PII-safe logger/reporter boundaries. Contract semantics unchanged. | Planner findings `PLN-01..03`. |
+| `v1.0` | `2026-08-27` | Audit round 2 PASS rejected; execution round 3 opened. PLN-02 (reporter meta sanitize) and PLN-03 (strict SafeMeta typing) verified closed; PLN-01 (P0) still open — continuing branches set only Next's downstream request channel and `middleware.test.ts` `getResponseHeader` still conflates the two channels, reproducing the round-1 false PASS. Contract semantics unchanged. | Planner spot-check of round-2 worktree source; PLN-01 residual + test-helper defect. |
+| `v1.0` | `2026-08-27` | Audit round 3 PASS accepted. Closed PLN-01 with independent client/downstream correlation channels and truthful tests; OPS-04a completed without claiming OPS-04b provider/dashboard/instrumentation scope. | Tier 3 `AUDIT.md`; Planner independent test rerun and source inspection. |
