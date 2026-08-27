@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.1` |
-| Status | `READY_FOR_AUDIT` — Execution round 2 completed `PLN-01..03`; LIVE evidence must be regenerated independently by Tier 3 |
+| Status | `ACCEPTED` — Audit round 2 PASS accepted; `PLN-01..03` closed and canonical M1-07 L2 exit gate completed |
 | Planner | Tier 1 |
 | Executor | Tier 2 |
 | Auditor | Tier 3 independent context |
@@ -16,8 +16,8 @@
 | Modules | `V5-M1-07b / residual RLS + FORCE RLS / runtime posture / truthful LIVE matrix` |
 | ADR references | `UNIFIED_PLAN_v5.md` §4.3 M1-07, §7.2, §8.3; accepted M1-07a DEC-03/08/09/10; DEC-14 isolated test-DB safety |
 | Current execution round | `2` |
-| Current audit round | `1` |
-| Next gate | `/audit hrp-v5-m1-07b-rls-runtime-posture-closure` round 2 in the existing dedicated worktree; PASS requires the current full LIVE lane to exit 0 |
+| Current audit round | `2` |
+| Next gate | `CLOSED` — Planner surveys and contracts M1-08 vendor-object scope next |
 | Updated | `2026-08-27 Asia/Bangkok` |
 
 ### Dependency and sequencing gate
@@ -253,6 +253,10 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 | `1` | `PLN-01` | `ACCEPT_FIX — P0` | `src/domains/security/security-matrix.integration.test.ts` still catches query errors and returns `0`; authorized cases only assert count not above ADMIN baseline. New suite does not enumerate all 13 SystemRole values plus empty/unknown, so RQ-08/AC-08 remains unproven | None; this was an original explicit requirement | Remove every catch-to-zero path; seed exact positive fixtures; assert authorized exact IDs/count at least one row and denied exact zero/SQLSTATE; execute and report all 13 roles plus empty/unknown without silent skip |
 | `1` | `PLN-02` | `ACCEPT_FIX — P0` | M1-07b catalog test checks only `rolbypassrls`; AC-03 also requires non-superuser, non-owner, no privileged membership and no accidental broad grants | None; original AC-03 | Add writer-connection and catalog assertions for current identity, `rolsuper=false`, `rolbypassrls=false`, ownership mismatch across all 29 tables, privileged membership absence and scoped grants summary |
 | `1` | `PLN-03` | `ACCEPT_FIX — P0` | Mandatory full LIVE lane is 300/301 with exit 1. Baseline-identical does not satisfy blocking RQ-09/AC-09 | Spec v1.1 permits only `src/domains/staffing/4role-staffing.integration.test.ts` test-mock compatibility correction | Add the missing `$transaction`-compatible mock behavior without weakening assertions or changing production Staffing code; rerun full lane to exit 0 with every case PASS |
+| `2` | `PLN-01` | `ACCEPT_FIX — P0 CLOSED` | Tier 3 independently executed all 15 contexts × 8 tables: authorized paths returned exact fixture IDs, denied paths returned exact zero, and SQL/connectivity errors were not swallowed. | None | Closed by LIVE round-2 evidence; source included in `5aaa1ac` |
+| `2` | `PLN-02` | `ACCEPT_FIX — P0 CLOSED` | LIVE catalog proof confirmed writer identity, `rolsuper=false`, `rolbypassrls=false`, no ownership across 29 tables, no privileged membership, and non-grantable CRUD-only table grants. | None | Closed by LIVE round-2 posture evidence |
+| `2` | `PLN-03` | `ACCEPT_FIX — P0 CLOSED` | Full integration lane passed `301/301` with exit 0; the previous `$transaction` compatibility failure is removed without production Staffing changes or weakened assertions. | None | Closed by LIVE round-2 evidence |
+| `2` | `AUD verdict PASS` | `ACCEPT` | AC-01..AC-10 and C-01..C-10 pass with no coverage gaps. Tier 1 reran the current unit lane (`971/971`) and `verify-audit.ps1` returned `RESULT: PASS`. | None | Task accepted; evidence archived in `48ac6bc`; canonical M1-07 exit gate complete |
 
 ## 10. Revision Log
 
@@ -261,3 +265,4 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 | `v1.0` | `2026-08-27` | Initial DRAFT for residual M1-07 non-Ticket RLS/FORCE posture, runtime roles, Worker bootstrap, lineage and truthful 13-role LIVE matrix. | M1-07a/M1-06d accepted; survey found five RLS gaps, unregistered raw migration and false-green matrix risk. |
 | `v1.0` | `2026-08-27` | Baseline blocker closed and contract promoted to READY; requirements and acceptance semantics unchanged. | Scoped source commit `ca5382bc`; accepted evidence archived in `ea78ef2`. |
 | `v1.1` | `2026-08-27` | Audit round 1 PASS rejected; execution round 2 requires truthful 13-role matrix, complete runtime-role posture and green full LIVE lane. Scope expands by one test-only Staffing mock file; production scope unchanged. | Planner findings `PLN-01..03`. |
+| `v1.1` | `2026-08-27` | Audit round 2 PASS accepted. Closed PLN-01..03 with truthful 120-case matrix, complete runtime-role posture and full LIVE lane exit 0. | Tier 3 `AUDIT.md`; Planner source/unit/verifier checks. |

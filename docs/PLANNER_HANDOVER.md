@@ -9,17 +9,17 @@
 ```yaml
 updated_at: 2026-08-27 Asia/Bangkok
 roadmap_source: docs/UNIFIED_PLAN_v5.md
-current_lane: V5-M1 / M1-07 residual RLS and FORCE RLS closure
-current_task: hrp-v5-m1-07b-rls-runtime-posture-closure
-task_path: docs/tasks/hrp-v5-m1-07b-rls-runtime-posture-closure/TASK.md
-spec_version: v1.1
-task_status: READY_FOR_AUDIT
-current_gate: TIER_3_AUDIT
-next_command: Run /audit hrp-v5-m1-07b-rls-runtime-posture-closure round 2 in the existing M1-07b worktree; regenerate LIVE evidence and require full lane exit 0
-previous_accepted: hrp-v5-m1-06d-auth-boundary-closure
-next_planner_candidate: audit/resolve M1-07b, then review canonical M1-07 exit gate before opening M1-08
+current_lane: V5-M1 / M1-08 vendor object-scope hardening planning
+current_task: none
+task_path: none
+spec_version: n/a
+task_status: PLANNING
+current_gate: PLANNER_SURVEY
+next_command: Survey M1-08 against the canonical plan and current routes/schema, then write its TASK contract; do not execute before READY
+previous_accepted: hrp-v5-m1-07b-rls-runtime-posture-closure
+next_planner_candidate: hrp-v5-m1-08-vendor-object-scope
 blocking_owner: none
-cursor_note: M1-07b execution round 2 closed PLN-01..03 statically and is READY_FOR_AUDIT. Tier 3 must rerun the current LIVE matrix/posture/full lane on isolated TEST DB; round-1 LIVE numbers cannot be reused. OPS-04a is ACCEPTED and only one Tier 2 stream remains.
+cursor_note: M1-07a and M1-07b are ACCEPTED, so the canonical M1-07 PostgreSQL L2 exit gate is complete. Next is M1-08 vendor object-scope planning; OPS-04a remains accepted and only one Tier 2 stream is allowed.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
