@@ -1,8 +1,8 @@
 /**
  * AuthContext — Phase 1 identity-core (RQ-04, DEC-04).
  *
- * Decode JWT thật từ cookie/Bearer (jwt.ts của bcc-fence) → AuthContext chuẩn.
- * Tái sử dụng toàn bộ bộ auth bcc-fence (DEC-01 + lưu ý sếp 16/08):
+ * Decode JWT thật từ cookie/Bearer (jwt.ts) → AuthContext chuẩn.
+ * Tái sử dụng identity-core hiện hành (DEC-01 + lưu ý sếp 16/08):
  *   - jwt.ts (jose HS256)
  *   - user.ts (getAuthUser từ Next.js Request)
  *

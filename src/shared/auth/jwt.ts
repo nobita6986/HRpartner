@@ -1,5 +1,5 @@
 /**
- * JWT helpers (Phase 1 bcc-fence — TASK docs/tasks/hrp-phase1-bcc-fence)
+ * JWT helpers for the shared HRP identity boundary.
  *
  * jose HS256, secret từ ENV `JWT_SECRET` (>= 32 ký tự), exp 8h (DEC-02).
  * Edge-safe: chỉ import jose + process.env — middleware.ts chạy Edge runtime.

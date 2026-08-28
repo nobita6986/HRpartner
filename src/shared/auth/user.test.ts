@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { getTokenFromRequest } from './user';
 
 function makeReq(headers: Record<string, string>): NextRequest {
-  return new NextRequest('https://hrp.local/bcc', { headers });
+  return new NextRequest('https://hrp.local/admin', { headers });
 }
 
 describe('getTokenFromRequest (cookie + Bearer — DEC-03)', () => {

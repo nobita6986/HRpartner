@@ -5,7 +5,7 @@
  * One suite covering the routing-only consolidation to the single canonical origin:
  *   A) middleware legacy-host → canonical 308 (root→landing, path/query preserved),
  *      spoofed Host/x-forwarded-host is NEVER a redirect target, no redirect loop;
- *   B) regression — unauth 401 (/api) / login-redirect (page), /bcc fence, worker
+ *   B) regression — unauth 401 (/api) / login-redirect (page), worker
  *      rate-limit header, x-request-id, and an authenticated portal role on the
  *      canonical origin simply continues (proves the role→subdomain redirect is gone);
  *   C) login POST — relative redirectTo per role, host-only cookie (+ legacy deletion
@@ -143,14 +143,6 @@ describe('B) canonical-origin regression (auth fence unchanged, no role→subdom
     const loc = new URL(res.headers.get('location')!);
     expect(loc.pathname).toBe('/login');
     expect(loc.searchParams.get('callback')).toBe('/vendor/orders');
-  });
-
-  it('/bcc fence preserved: page → login redirect, api → 401', async () => {
-    const page = await middleware(req('http://localhost/bcc'));
-    expect(new URL(page.headers.get('location')!).pathname).toBe('/login');
-
-    const api = await middleware(req('http://localhost/bcc/api/x'));
-    expect(api.status).toBe(401);
   });
 
   it('worker route emits rate-limit headers + x-request-id (both channels)', async () => {

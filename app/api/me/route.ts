@@ -1,5 +1,5 @@
 /**
- * GET /api/me (Phase 1 bcc-fence — RQ-04, DEC-08; DoD PHASE_KHOAHOC §4)
+ * GET /api/me (RQ-04, DEC-08; DoD PHASE_KHOAHOC §4)
  *
  * Không token / token lỗi → 401 JSON (không 500).
  * Token hợp lệ → 200 { userId, role } — TUYỆT ĐỐI không trả thêm trường PII nào.

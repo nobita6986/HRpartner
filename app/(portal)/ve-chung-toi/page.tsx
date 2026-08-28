@@ -49,7 +49,7 @@ const CARDS = [
     desc: 'Tra cứu bảng công cá nhân và phiếu lương chi tiết theo mã thẻ — lịch chấm công từng ngày, tổng công, tăng ca, bảng lương A–E.',
     tag: 'Đã triển khai',
     tagStyle: 'ok',
-    href: '/bcc',
+    href: 'https://www.hrpvietnam.vn/',
     more: 'Tra cứu ngay →',
   },
 ];

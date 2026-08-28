@@ -1,5 +1,5 @@
 /**
- * POST /api/auth/logout (Phase 1 bcc-fence — RQ-08, DEC-03)
+ * POST /api/auth/logout (RQ-08, DEC-03)
  * V5-GO-LIVE-01: xoá cookie phiên HOST-ONLY, đồng thời xoá cookie domain-scoped cũ
  * (.hrpartner.vn) trong giai đoạn chuyển đổi để không còn cookie cũ sót lại.
  *

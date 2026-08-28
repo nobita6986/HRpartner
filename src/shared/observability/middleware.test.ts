@@ -108,21 +108,7 @@ describe('AC-02: x-request-id on all response classes', () => {
     expect(getResponseHeader(resp, 'x-request-id')).toBeTruthy();
   });
 
-  it('/bcc/api/ unauthenticated 401 JSON carries x-request-id in client response header', async () => {
-    const req = makeRequest('/bcc/api/data');
-    const resp = await middleware(req);
-    expect(resp.status).toBe(401);
-    expect(getResponseHeader(resp, 'x-request-id')).toBeTruthy();
-  });
-
   // Redirect — ID lives in the Location query param (channel 3)
-  it('/bcc unauthenticated redirect carries x-request-id via Location query param', async () => {
-    const req = makeRequest('/bcc/dashboard');
-    const resp = await middleware(req);
-    expect([302, 307]).toContain(resp.status);
-    expect(getRedirectRequestId(resp)).toBeTruthy();
-  });
-
   it('portal unauthenticated redirect carries x-request-id via Location query param', async () => {
     const req = makeRequest('/vendor/page');
     const resp = await middleware(req);
@@ -140,17 +126,6 @@ describe('AC-02: x-request-id on all response classes', () => {
     expect(respHdr).toBeTruthy();
     expect(dsHdr).toBeTruthy();
     expect(respHdr).toBe(dsHdr); // same canonical ID on both channels
-  });
-
-  it('authenticated /bcc/ next() carries x-request-id on BOTH channels', async () => {
-    mockGetAuthUser.mockResolvedValue({ userId: 'admin-1', role: 'ADMIN' as const });
-    const req = makeRequest('/bcc/dashboard');
-    const resp = await middleware(req);
-    const respHdr = getResponseHeader(resp, 'x-request-id');
-    const dsHdr = getDownstreamHeader(resp, 'x-request-id');
-    expect(respHdr).toBeTruthy();
-    expect(dsHdr).toBeTruthy();
-    expect(respHdr).toBe(dsHdr);
   });
 
   it('authenticated /worker/ (allowed) next() carries x-request-id on BOTH channels', async () => {
@@ -250,17 +225,6 @@ describe('PLN-01 channel independence — removing either channel breaks its tes
   it('real middleware /worker next() passes only if BOTH channels are set', async () => {
     mockGetAuthUser.mockResolvedValue({ userId: 'u', role: 'VENDOR' as const });
     const req = makeRequest('/worker/page', { 'x-forwarded-for': '10.0.0.1' });
-    const resp = await middleware(req);
-    const respHdr = getResponseHeader(resp, 'x-request-id');
-    const dsHdr = getDownstreamHeader(resp, 'x-request-id');
-    expect(respHdr).not.toBeNull();
-    expect(dsHdr).not.toBeNull();
-    expect(respHdr).toBe(dsHdr);
-  });
-
-  it('real middleware /bcc next() passes only if BOTH channels are set', async () => {
-    mockGetAuthUser.mockResolvedValue({ userId: 'u', role: 'ADMIN' as const });
-    const req = makeRequest('/bcc/dashboard');
     const resp = await middleware(req);
     const respHdr = getResponseHeader(resp, 'x-request-id');
     const dsHdr = getDownstreamHeader(resp, 'x-request-id');

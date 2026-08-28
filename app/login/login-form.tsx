@@ -1,17 +1,20 @@
 'use client';
 
 /**
- * LoginForm (Phase 1 bcc-fence — RQ-02, DEC-07)
+ * LoginForm — shared identity entry point (RQ-02, DEC-07)
  * Client component: form phone + password, submit → POST /api/auth/login,
- * thành công → redirect callback/`/bcc`; thất bại → lỗi chung.
+ * thành công → role landing / callback / internal console; thất bại → lỗi chung.
  */
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { sanitizeCallbackPath } from '@/src/shared/routing/portal-landing';
+import {
+  INTERNAL_FALLBACK_PATH,
+  sanitizeCallbackPath,
+} from '@/src/shared/routing/portal-landing';
 
 export default function LoginForm({ subtitle = 'Đăng nhập hệ thống' }: { subtitle?: string }) {
   const searchParams = useSearchParams();
-  const callback = searchParams.get('callback') ?? '/bcc';
+  const callback = searchParams.get('callback') ?? INTERNAL_FALLBACK_PATH;
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -43,11 +46,11 @@ export default function LoginForm({ subtitle = 'Đăng nhập hệ thống' }: {
       // V5-GO-LIVE-01 (DEC-06): mọi đích đến phải là đường dẫn same-origin bắt đầu bằng
       // đúng một '/'. Ưu tiên redirectTo (landing path theo role do API trả về), rồi tới
       // callback trên URL; cả hai đều đi qua sanitizeCallbackPath (chặn open-redirect:
-      // '//host', scheme URL, backslash, control char). Không hợp lệ → fallback '/bcc'.
+      // '//host', scheme URL, backslash, control char). Không hợp lệ → internal console.
       const target =
         sanitizeCallbackPath(data.redirectTo) ??
         sanitizeCallbackPath(callback) ??
-        '/bcc';
+        INTERNAL_FALLBACK_PATH;
       window.location.href = target;
     } catch {
       setError('Có lỗi xảy ra, vui lòng thử lại sau.');

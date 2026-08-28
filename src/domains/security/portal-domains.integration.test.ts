@@ -64,7 +64,7 @@ describe('V5-GO-LIVE-01 — portal landing (single canonical origin)', () => {
   });
 
   describe('isSafeCallbackPath / sanitizeCallbackPath — open-redirect guard (DEC-06)', () => {
-    const SAFE = ['/bcc', '/vendor', '/worker/checkin', '/ctv/claims?tab=active', '/a/b/c?x=1&y=2'];
+    const SAFE = ['/admin', '/vendor', '/worker/checkin', '/ctv/claims?tab=active', '/a/b/c?x=1&y=2'];
     const HOSTILE = [
       '//evil.com',                 // protocol-relative
       '///evil.com',                // triple slash
@@ -147,7 +147,7 @@ describe('V5-GO-LIVE-01 — portal landing (single canonical origin)', () => {
         .forEach((p) => expect(isPortalPath(p)).toBe(true));
     });
     it('non-portal paths → false', () => {
-      ['/', '/bcc', '/bcc/internal', '/login', '/job-board', '/vendorx', '/workerish']
+      ['/', '/admin', '/admin/settings', '/login', '/job-board', '/vendorx', '/workerish']
         .forEach((p) => expect(isPortalPath(p)).toBe(false));
     });
   });

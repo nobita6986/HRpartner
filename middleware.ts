@@ -13,7 +13,7 @@
  * - Rate limit: 30 req/min per IP for /worker* routes.
  * - If exceeded: show waiting room HTML.
  *
- * Fail-closed: no token → 401 (/api) / redirect to login. Fence /bcc preserved from Phase 1.
+ * Fail-closed: no token → 401 (/api) / redirect to login.
  * V5-OPS-04a: x-request-id correlation on every response (both channels + redirect query).
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -133,7 +133,6 @@ function getHost(req: NextRequest): string {
 export const config = {
   matcher: [
     '/',                     // V5-GO-LIVE-01: bare-root legacy-host 308 redirect
-    '/bcc/:path*',          // Phase 1 fence — unchanged
     '/vendor/:path*',       // Vendor portal
     '/worker/:path*',        // Worker PWA (+ rate limit)
     '/ctv/:path*',         // CTV dashboard
@@ -217,23 +216,6 @@ export async function middleware(req: NextRequest) {
   if (isLegacyPortalHost(host)) {
     const target = buildLegacyCanonicalUrl(host, pathname, req.nextUrl.search);
     return NextResponse.redirect(target, { status: 308, headers: withRequestId() });
-  }
-
-  // ── /bcc fence — Phase 1 unchanged ──────────────────────────────────
-  if (pathname.startsWith('/bcc')) {
-    const user = await getAuthUser(req);
-    if (!user) {
-      if (pathname.startsWith('/bcc/api/')) {
-        return NextResponse.json(
-          { error: 'UNAUTHORIZED', message: 'Missing or invalid token' },
-          { status: 401, headers: withRequestId() },
-        );
-      }
-      return NextResponse.redirect(buildLoginUrl(req), {
-        headers: withRequestId(),
-      });
-    }
-    return continuingNext();
   }
 
   // ── Portal routes (/vendor, /worker, /ctv, /api/vendor, /api/worker, /api/ctv) ──

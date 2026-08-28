@@ -1,5 +1,5 @@
 /**
- * POST /api/auth/login (Phase 1 bcc-fence — RQ-02/07/10, DEC-01/02/03)
+ * POST /api/auth/login (RQ-02/07/10, DEC-01/02/03)
  * V5-GO-LIVE-01: single canonical origin. redirectTo is now a SAME-ORIGIN relative
  * landing path per role (getLandingPath), never an absolute subdomain URL.
  *

@@ -7,7 +7,7 @@
  *
  * Responsibilities:
  *  - getLandingPath(role): the SAME-ORIGIN relative landing path for an account role,
- *    or null when that internal role still relies on callback / legacy '/bcc'.
+ *    or null when that internal role relies on callback / the internal console.
  *  - isSafeCallbackPath / sanitizeCallbackPath: open-redirect guard (DEC-06) — the
  *    ONLY accepted target is a same-origin path beginning with exactly one '/'.
  *  - isLegacyPortalHost / buildLegacyCanonicalUrl: the ONLY place the three legacy
@@ -29,8 +29,8 @@ export const ROLE_LANDING_PATH: Readonly<Record<string, string>> = {
   CTV: '/ctv',
 };
 
-/** Internal roles without an explicit landing still fall back here. */
-export const INTERNAL_FALLBACK_PATH = '/bcc';
+/** Internal roles without an explicit landing use the shared management console. */
+export const INTERNAL_FALLBACK_PATH = '/admin';
 
 /**
  * Landing path for a role after login, or null for roles without an explicit landing
