@@ -9,18 +9,18 @@
 ```yaml
 updated_at: 2026-08-28 Asia/Bangkok
 roadmap_source: docs/UNIFIED_PLAN_v5.md
-current_lane: V5 Marketplace launch gate (§7.9.7)
-current_task: none
-task_path: none
-spec_version: n/a
-task_status: n/a
-current_gate: PHASE_REVIEW
-next_command: Owner review + staging drill `docs/runbooks/marketplace-launch-operations.md`; in parallel planning remains single-stream and the next code contract candidate is OPS-06 (public rate-limit + upload/file policy hardening). Residual OWNER items: authenticated prod smoke, publish one real job, rotate exposed neondb_owner credential.
+current_lane: V5 Marketplace launch gate — OPS-06A public hardening
+current_task: hrp-v5-ops-06a-marketplace-launch-hardening
+task_path: docs/tasks/hrp-v5-ops-06a-marketplace-launch-hardening/TASK.md
+spec_version: v1.0
+task_status: READY_FOR_EXECUTION
+current_gate: TIER_2_EXECUTION
+next_command: /code hrp-v5-ops-06a-marketplace-launch-hardening
 previous_accepted: hrp-v5-m1-09a-current-field-projection
-next_planner_candidate: OPS-06 code contract after Owner reviews/drills the criterion-7 runbook; keep one Tier 2 stream
-blocking_owner: none blocking planning; residual owner ops = STEP 6 HTTP smoke on prod + rotate exposed neondb_owner pwd (see memory hrp-prod-db-drift-seed-blocker)
+next_planner_candidate: audit/resolve hrp-v5-ops-06a-marketplace-launch-hardening, then Owner drill/sign-off + authenticated/apply/tracking smoke + one real job publish
+blocking_owner: Tier 2 unit/static implementation can start; LIVE audit requires isolated Upstash TEST credentials plus existing safe TEST DB. Production still requires rotate exposed neondb_owner credential.
 product_override: /bcc retired; production payroll/payslip belongs to the separate salary app; PAY-01..08 = DEFERRED_FINAL and does not block HRP go-live
-cursor_note: M1-09A ACCEPTED and pushed as a49870e. Marketplace MVP code is audited and prod DB is level with main. Criterion-7 runbook is drafted at docs/runbooks/marketplace-launch-operations.md and truthfully remains READY_FOR_OWNER_REVIEW until staging drill/sign-off. Known limitation: no per-slot lock; CV is optional metadata-only with raw upload disabled for go-live. Preserve the 2026-08-28 /bcc + Payroll override in every future roadmap update.
+cursor_note: OPS-06A v1.0 verify-task PASS. Scope is launch-specific: distributed rate limits for job read/apply/tracking, legacy public writes retired, CV UI/API surface disabled; it does NOT claim full OPS-02/OPS-06. Phone-only Quick Apply remains a separate UX/data slice; do not fabricate placeholder Worker/Application names. Keep one Tier 2 stream. Preserve the 2026-08-28 /bcc + Payroll override.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
