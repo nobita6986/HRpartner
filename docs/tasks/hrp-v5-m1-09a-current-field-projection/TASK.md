@@ -83,6 +83,7 @@ Người dùng quan sát được:
 | `EV-12` | `app/api/payroll/route.ts:61-76` | `payrollConfig.findMany` raw rows được trả thẳng. | Explicit select + DTO, không raw/audit relation ride-along. |
 | `EV-13` | `prisma/schema.prisma` | Không có `Payment`/`PaymentAllocation`; payment-like current surfaces là payslip cache + CTV withdrawal. | Tách M1-09B theo M8-06; M1-09A không tạo schema giả. |
 | `EV-14` | `SystemRole` canonical | 13 role: ADMIN, HR_MANAGER, DIRECTOR, HR_STAFF, SALE, PM, ACCOUNTANT, MKT, VENDOR_ADMIN, VENDOR_STAFF, CTV, WORKER, EMPLOYEE. | Contract test phải enumerate đủ, không dùng subset kể chuyện. |
+| `EV-15` | single-domain HANDOFF §9 + Tier 1 `BLK-01` | Raw default Vitest config thiếu automatic JSX và đọc ambient/repo DB URL; canonical `vitest.unit.config.ts` có automatic JSX và khóa DB tại unreachable sentinel. | M1-09A dùng `npm run test:unit` làm blocking full-unit gate; không lặp default-runner hazard. |
 
 ## 3. Decisions và Assumptions
 
@@ -101,6 +102,7 @@ Người dùng quan sát được:
 | `DEC-11` | `CHOSEN` | CTV withdrawal bank details chỉ visible ở CTV self action hiện hữu; DTO omit `ctvId`. Không mở admin payment surface trong task này. | Tier 1 | Final |
 | `DEC-12` | `CHOSEN` | Payment canonical chưa tồn tại được ghi `SCHEMA_NOT_AVAILABLE`, không mock PASS. M1-09B là dependency child của M8-06. | `EV-13` | Final |
 | `DEC-13` | `CHOSEN` | JSON date/money/decimal phải serialize string/ISO deterministic; không để BigInt/Decimal/Date raw vào `NextResponse.json`. | API boundary correctness | Final |
+| `DEC-14` | `CHOSEN` | Full-unit blocking gate là `npm run test:unit`; raw `npx vitest run` không dùng vì default config không fail-closed DB và đang có baseline JSX parity debt. | `EV-15` | Final |
 
 ## 4. Contract
 
@@ -151,6 +153,7 @@ Người dùng quan sát được:
 **Out of scope / forbidden:**
 
 - `middleware.ts`, login/logout/single-domain files khi task trước chưa commit sạch.
+- `vitest.config.ts`, `vitest.unit.config.ts`, `package.json` và unrelated component tests; test-runner parity thuộc G0-04b.
 - `prisma/**`, migrations, schema, grants, seeds.
 - Statement formula/rate resolver/margin arithmetic, RLS/auth scope, M1-08 transitions.
 - Public apply/tracking, admin application queue, vendor submission data contract.
@@ -227,7 +230,7 @@ powershell -ExecutionPolicy Bypass -File .ai-pipeline/scripts/verify-task.ps1 -T
 npx tsc --noEmit
 npx eslint app/api/workers app/api/statements app/api/vendor/statements app/api/webhook/payslip/route.ts app/api/ctv/withdrawals/route.ts app/api/payroll/route.ts src/shared/auth/worker-projection.ts src/shared/projection src/domains/security
 npx vitest run src/shared/auth/worker-projection.test.ts src/domains/security/workers-projection.contract.test.ts src/shared/auth/webhook-payslip.route.test.ts src/shared/auth/payroll.route.test.ts src/shared/auth/statements-margin.route.test.ts
-npx vitest run
+npm run test:unit
 npm run build
 git diff --check
 git status --short
@@ -291,3 +294,4 @@ Tier 1 append audit decision; không sửa lịch sử finding.
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | `2026-08-28` | Initial M1-09A contract: action-aware DTOs for current Worker, statement, payslip/withdrawal and payroll-config surfaces; explicit M1-09B defer for absent Payment schema. | Owner requested next task prewritten after single-domain; technical survey EV-01..14. |
+| `v1.0` | `2026-08-28` | Canonicalized full-unit gate to fail-closed `npm run test:unit`; excluded unsafe default-runner parity debt. | single-domain `BLK-01`; EV-15/DEC-14. |

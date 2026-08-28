@@ -13,13 +13,13 @@ current_lane: Marketplace go-live / single-domain consolidation
 current_task: hrp-v5-go-live-01-single-domain-consolidation
 task_path: docs/tasks/hrp-v5-go-live-01-single-domain-consolidation/TASK.md
 spec_version: v1.0
-task_status: READY_FOR_EXECUTION
-current_gate: TIER_2_EXECUTION
+task_status: REVISION_REQUIRED
+current_gate: REVISION_EXECUTION
 next_command: /code hrp-v5-go-live-01-single-domain-consolidation
 previous_accepted: hrp-v5-m1-08-vendor-object-scope
 next_planner_candidate: audit/resolve hrp-v5-go-live-01-single-domain-consolidation, then activate prewritten hrp-v5-m1-09a-current-field-projection
 blocking_owner: none
-cursor_note: M1-08 ACCEPTED at 2cd8a55. Single-domain v1.0 is current READY task. Its successor is prewritten DRAFT-VALID at docs/tasks/hrp-v5-m1-09a-current-field-projection/TASK.md; after single-domain ACCEPTED, pin that SHA and activate M1-09A. M1-09B Payment projection is deferred until M8-06 creates real Payment/PaymentAllocation schema/API. Only one Tier 2 stream; no concurrent M1-09.
+cursor_note: Single-domain implementation round 1 is complete but HANDOFF BLOCKED on raw default Vitest runner. Tier 1 resolved BLK-01 in spec v1.1: canonical fail-closed gate is npm run test:unit; default config parity is deferred G0-04b debt, never counted PASS. Tier 2 round 2 only reruns verify-task + canonical unit and updates HANDOFF READY_FOR_AUDIT. Successor M1-09A remains prewritten DRAFT-VALID; no concurrent executor.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
