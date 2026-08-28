@@ -10,7 +10,6 @@
  * lộ tài khoản tồn tại hay không. KHÔNG log password/token dưới mọi hình thức.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { createHash, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { getPrisma } from '@/src/lib/db';
 import { verifyPassword } from '@/src/shared/auth/password';
@@ -29,27 +28,11 @@ const UNAUTHORIZED = {
   status: 401,
 } as const;
 
-// Temporary production diagnostic lock. The bearer token itself is never stored
-// in source; this SHA-256 digest will be removed after the production probe.
-const LOGIN_DIAGNOSTIC_TOKEN_SHA256 =
-  'b282098824db734b037073ed109371d7145549e9ae9a86d50f216ce1cdff2197';
-
-function unauthorizedResponse(req: NextRequest, outcome = 'invalid_request'): NextResponse {
-  const response = NextResponse.json(
+function unauthorizedResponse(): NextResponse {
+  return NextResponse.json(
     { error: 'INVALID_CREDENTIALS', message: 'Sai số điện thoại hoặc mật khẩu' },
     UNAUTHORIZED,
   );
-
-  const diagnosticToken = req.headers.get('x-hrp-login-diagnostic');
-  if (diagnosticToken) {
-    const actual = createHash('sha256').update(diagnosticToken).digest();
-    const expected = Buffer.from(LOGIN_DIAGNOSTIC_TOKEN_SHA256, 'hex');
-    if (actual.length === expected.length && timingSafeEqual(actual, expected)) {
-      response.headers.set('x-hrp-login-outcome', outcome);
-    }
-  }
-
-  return response;
 }
 
 export async function POST(req: NextRequest) {
@@ -57,12 +40,12 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return unauthorizedResponse(req, 'malformed_json');
+    return unauthorizedResponse();
   }
 
   const parsed = loginSchema.safeParse(body);
   if (!parsed.success) {
-    return unauthorizedResponse(req, 'malformed_payload');
+    return unauthorizedResponse();
   }
   const { phone, password } = parsed.data;
 
@@ -86,14 +69,7 @@ export async function POST(req: NextRequest) {
             ? 'user_inactive'
             : 'password_not_configured',
       });
-      return unauthorizedResponse(
-        req,
-        !user
-          ? 'user_not_found'
-          : !user.isActive
-            ? 'user_inactive'
-            : 'password_not_configured',
-      );
+      return unauthorizedResponse();
     }
 
     const passwordOk = await verifyPassword(password, user.passwordHash);
@@ -102,7 +78,7 @@ export async function POST(req: NextRequest) {
         route: '/api/auth/login',
         outcome: 'password_mismatch',
       });
-      return unauthorizedResponse(req, 'password_mismatch');
+      return unauthorizedResponse();
     }
 
     const token = await signJwt(user.id, user.role);
@@ -145,10 +121,6 @@ export async function POST(req: NextRequest) {
           ? String(error.code)
           : 'UNCLASSIFIED',
     });
-    const errorCode =
-      typeof error === 'object' && error !== null && 'code' in error
-        ? String(error.code)
-        : 'UNCLASSIFIED';
-    return unauthorizedResponse(req, `db_or_verify_error:${errorCode}`);
+    return unauthorizedResponse();
   }
 }
