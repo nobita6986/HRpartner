@@ -183,6 +183,20 @@ describe('AC-02: x-request-id on all response classes', () => {
     expect(dsHdr).toBeTruthy();
     expect(respHdr).toBe(dsHdr);
   });
+
+  it('non-portal next() preserves inbound headers for the downstream route', async () => {
+    const req = makeRequest('/api/auth/login', {
+      'content-type': 'application/json',
+      cookie: 'hrp_session=test-session',
+      'x-idempotency-key': 'idem-123',
+    });
+    const resp = await middleware(req);
+
+    expect(getDownstreamHeader(resp, 'content-type')).toBe('application/json');
+    expect(getDownstreamHeader(resp, 'cookie')).toBe('hrp_session=test-session');
+    expect(getDownstreamHeader(resp, 'x-idempotency-key')).toBe('idem-123');
+    expect(getDownstreamHeader(resp, 'x-request-id')).toBeTruthy();
+  });
 });
 
 // ─── PLN-01 channel-independence (round 3) ────────────────────────────────────

@@ -160,18 +160,27 @@ export async function middleware(req: NextRequest) {
     return h;
   }
 
+  // Preserve every inbound request header for the downstream route. Passing a
+  // fresh one-header object to NextResponse.next() silently drops cookies,
+  // content-type, authorization and idempotency headers.
+  function withDownstreamRequestId(): Headers {
+    const h = new Headers(req.headers);
+    h.set('x-request-id', requestId);
+    return h;
+  }
+
   // PLN-01 (round 3): every continuing next() response MUST set BOTH channels
   // — the client response header `x-request-id` and the downstream request header
   // `x-request-id` — so tests asserting each channel separately can fail when one
   // is removed.
   function continuingNext(): NextResponse {
-    const resp = NextResponse.next({ request: { headers: withRequestId() } });
+    const resp = NextResponse.next({ request: { headers: withDownstreamRequestId() } });
     resp.headers.set('x-request-id', requestId);
     return resp;
   }
 
   function continuingNextWithRateLimit(remaining: number, resetAt: number): NextResponse {
-    const resp = NextResponse.next({ request: { headers: withRequestId() } });
+    const resp = NextResponse.next({ request: { headers: withDownstreamRequestId() } });
     resp.headers.set('X-RateLimit-Remaining', String(remaining));
     resp.headers.set('X-RateLimit-Reset', String(Math.ceil(resetAt / 1000)));
     resp.headers.set('x-request-id', requestId);
