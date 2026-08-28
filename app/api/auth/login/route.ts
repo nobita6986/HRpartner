@@ -17,6 +17,7 @@ import { signJwt, JWT_TTL_SECONDS } from '@/src/shared/auth/jwt';
 import { AUTH_COOKIE_NAME } from '@/src/shared/auth/user';
 import { findUserForLogin } from '@/src/shared/auth/preauth-db';
 import { getLandingPath } from '@/src/shared/routing/portal-landing';
+import { error as logError, warn as logWarn } from '@/src/shared/observability/logger';
 
 const loginSchema = z.object({
   phone: z.string().trim().min(1),
@@ -60,11 +61,23 @@ export async function POST(req: NextRequest) {
 
     // Fail-closed: không có user / isActive=false / chưa có passwordHash → từ chối chung
     if (!user || !user.isActive || !user.passwordHash) {
+      logWarn('auth.login.denied', null, {
+        route: '/api/auth/login',
+        outcome: !user
+          ? 'user_not_found'
+          : !user.isActive
+            ? 'user_inactive'
+            : 'password_not_configured',
+      });
       return unauthorizedResponse();
     }
 
     const passwordOk = await verifyPassword(password, user.passwordHash);
     if (!passwordOk) {
+      logWarn('auth.login.denied', null, {
+        route: '/api/auth/login',
+        outcome: 'password_mismatch',
+      });
       return unauthorizedResponse();
     }
 
@@ -100,7 +113,14 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     // Không catch rỗng (00-global-rules §3): log lỗi server nhưng KHÔNG lộ chi tiết
     // cho client — vẫn trả 401 chung (không 500, RQ-02).
-    console.error('[auth/login] DB/verify error:', error);
+    logError('auth.login.error', null, {
+      route: '/api/auth/login',
+      outcome: 'db_or_verify_error',
+      errorCode:
+        typeof error === 'object' && error !== null && 'code' in error
+          ? String(error.code)
+          : 'UNCLASSIFIED',
+    });
     return unauthorizedResponse();
   }
 }
