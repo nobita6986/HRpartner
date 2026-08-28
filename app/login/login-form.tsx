@@ -6,10 +6,10 @@
  * thành công → redirect callback/`/bcc`; thất bại → lỗi chung.
  */
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { sanitizeCallbackPath } from '@/src/shared/routing/portal-landing';
 
 export default function LoginForm({ subtitle = 'Đăng nhập hệ thống' }: { subtitle?: string }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callback = searchParams.get('callback') ?? '/bcc';
 
@@ -39,15 +39,16 @@ export default function LoginForm({ subtitle = 'Đăng nhập hệ thống' }: {
       }
 
       const data = await res.json();
-      
-      // Nếu API trả về URL đích cụ thể cho Role này (VD: https://worker.hrpartner.vn)
-      if (data.redirectTo) {
-        window.location.href = data.redirectTo;
-        return;
-      }
 
-      const safeCallback = callback.startsWith('/') && !callback.startsWith('//') ? callback : '/bcc';
-      window.location.href = safeCallback;
+      // V5-GO-LIVE-01 (DEC-06): mọi đích đến phải là đường dẫn same-origin bắt đầu bằng
+      // đúng một '/'. Ưu tiên redirectTo (landing path theo role do API trả về), rồi tới
+      // callback trên URL; cả hai đều đi qua sanitizeCallbackPath (chặn open-redirect:
+      // '//host', scheme URL, backslash, control char). Không hợp lệ → fallback '/bcc'.
+      const target =
+        sanitizeCallbackPath(data.redirectTo) ??
+        sanitizeCallbackPath(callback) ??
+        '/bcc';
+      window.location.href = target;
     } catch {
       setError('Có lỗi xảy ra, vui lòng thử lại sau.');
     } finally {

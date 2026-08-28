@@ -1,21 +1,25 @@
 /**
- * Middleware — P1 Portals multi-domain (STEP-02, RQ-01).
+ * Middleware — V5-GO-LIVE-01 single canonical origin (RQ-03/04/08, DEC-01/04/05/07).
  *
- * DEC-01: 3 subdomain: vendor.hrpartner.vn, worker.hrpartner.vn, ctv.hrpartner.vn
- * DEC-02: role-domain guard (VENDOR_* → vendor, WORKER → worker, CTV → ctv).
- * DEC-03: Root (hrpartner.vn) keeps job board + admin.
+ * DEC-01: ONE canonical origin — https://hrpartner.vn. Role→subdomain routing is gone;
+ *   hostname is NOT a security boundary (DEC-07) — route guards + JWT + RLS own authz.
+ * RQ-08/DEC-04: the three legacy hosts (vendor./worker./ctv.hrpartner.vn) are allowlisted
+ *   transition redirects → 308 to the canonical origin (bare root → the host's landing
+ *   path; any other path/query preserved). Allowlist lives in src/shared/routing/portal-landing.
+ * DEC-05: an unknown or spoofed Host / x-forwarded-host is NEVER a redirect target — it
+ *   falls through to the normal auth flow; the redirect target origin is a fixed constant.
  *
  * M8 STEP-02: Virtual Waiting Room for /worker* routes.
  * - Rate limit: 30 req/min per IP for /worker* routes.
  * - If exceeded: show waiting room HTML.
  *
- * Fail-closed: no token → 401 / redirect to login.
- * Role-domain guard: wrong domain for role → redirect to correct domain.
- * Fence /bcc preserved from Phase 1.
+ * Fail-closed: no token → 401 (/api) / redirect to login. Fence /bcc preserved from Phase 1.
+ * V5-OPS-04a: x-request-id correlation on every response (both channels + redirect query).
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/src/shared/auth/user';
 import { getCorrelationId } from '@/src/shared/observability/correlation-id';
+import { isLegacyPortalHost, buildLegacyCanonicalUrl } from '@/src/shared/routing/portal-landing';
 
 // ─── Rate Limiting State (in-memory) ────────────────────────────────────────
 
@@ -112,41 +116,23 @@ function waitingRoomHtml(retryAfterSec: number): string {
 </html>`;
 }
 
-// ─── Domain config ───────────────────────────────────────────────────────────
-
-const PORTAL_DOMAINS: Record<string, string> = {
-  VENDOR_ADMIN:  'vendor.hrpartner.vn',
-  VENDOR_STAFF: 'vendor.hrpartner.vn',
-  WORKER:       'worker.hrpartner.vn',
-  CTV:          'ctv.hrpartner.vn',
-};
-
-const INTERNAL_DOMAINS = new Set(['hrpartner.vn', 'localhost']);
+// ─── Host parsing (single canonical origin) ──────────────────────────────────
+// The ONLY host-dependent behavior left is the fixed legacy-host → canonical
+// redirect (allowlist in src/shared/routing/portal-landing). Hostname is NOT a
+// security boundary (DEC-07). Host is lower-cased so the allowlist match is
+// case-insensitive (hostnames are case-insensitive per RFC 3986) — a spoofed
+// mixed-case legacy host still resolves to the same fixed canonical origin.
 
 function getHost(req: NextRequest): string {
   const hostHeader = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '';
-  return hostHeader.split(',')[0].trim().split(':')[0];
-}
-
-function isInternal(host: string): boolean {
-  return INTERNAL_DOMAINS.has(host) || host.endsWith('.hrpartner.vn');
-}
-
-function getExpectedDomain(role: string): string {
-  return PORTAL_DOMAINS[role] ?? 'hrpartner.vn';
-}
-
-function redirectToLogin(req: NextRequest): NextResponse {
-  const loginUrl = new URL(req.url);
-  loginUrl.pathname = '/login';
-  loginUrl.search = `?callback=${encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search)}`;
-  return NextResponse.redirect(loginUrl);
+  return hostHeader.split(',')[0].trim().split(':')[0].toLowerCase();
 }
 
 // ─── Middleware ─────────────────────────────────────────────────────────────
 
 export const config = {
   matcher: [
+    '/',                     // V5-GO-LIVE-01: bare-root legacy-host 308 redirect
     '/bcc/:path*',          // Phase 1 fence — unchanged
     '/vendor/:path*',       // Vendor portal
     '/worker/:path*',        // Worker PWA (+ rate limit)
@@ -207,6 +193,21 @@ export async function middleware(req: NextRequest) {
     loginUrl.pathname = '/login';
     loginUrl.search = `?callback=${encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search)}`;
     return redirectWithRequestId(loginUrl);
+  }
+
+  // ── V5-GO-LIVE-01: legacy portal host → canonical origin (RQ-03/04/08, DEC-04/05) ──
+  // Runs BEFORE any auth/fence/rate-limit branch. ONLY the three exact allowlisted hosts
+  // (vendor./worker./ctv.hrpartner.vn) are 308-redirected to https://hrpartner.vn: bare
+  // root → the host's landing path, any other path preserves pathname + query. An unknown
+  // or spoofed Host / x-forwarded-host is NEVER a redirect target (isLegacyPortalHost is a
+  // strict allowlist) — it falls through to the normal flow below. No loop: the canonical
+  // host is not a legacy host, and the redirect target origin is a fixed constant.
+  // Location is kept CLEAN (no x-request-id query) so the exact path/query is preserved for
+  // RQ-04; the correlation id still rides the response header via withRequestId().
+  const host = getHost(req);
+  if (isLegacyPortalHost(host)) {
+    const target = buildLegacyCanonicalUrl(host, pathname, req.nextUrl.search);
+    return NextResponse.redirect(target, { status: 308, headers: withRequestId() });
   }
 
   // ── /bcc fence — Phase 1 unchanged ──────────────────────────────────
@@ -273,28 +274,9 @@ export async function middleware(req: NextRequest) {
     });
   }
 
-  // Determine expected domain for this role
-  const expectedDomain = getExpectedDomain(user.role);
-
-  // Admin / internal roles → no domain redirect needed
-  if (!expectedDomain || expectedDomain === 'hrpartner.vn') {
-    return continuingNext();
-  }
-
-  const host = getHost(req);
-
-  // Already on correct domain
-  if (host === expectedDomain || host === `${expectedDomain}:${req.nextUrl.port || '443'}`) {
-    return continuingNext();
-  }
-
-  // Wrong domain → redirect to correct domain
-  const redirectUrl = new URL(req.url);
-  redirectUrl.hostname = expectedDomain;
-  if (req.nextUrl.port && req.nextUrl.port !== '80' && req.nextUrl.port !== '443') {
-    redirectUrl.port = req.nextUrl.port;
-  }
-  return NextResponse.redirect(redirectWithRequestId(redirectUrl), {
-    headers: withRequestId(),
-  });
+  // V5-GO-LIVE-01 (DEC-01/07): authenticated portal user on the canonical origin.
+  // Hostname is not a security boundary — route guards + JWT + L1/L2 scope own
+  // authorization. The former role→subdomain redirect is removed (single origin),
+  // so any authenticated portal role simply continues.
+  return continuingNext();
 }

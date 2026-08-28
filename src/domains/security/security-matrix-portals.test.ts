@@ -1,10 +1,12 @@
 /**
- * security-matrix-portals.test.ts — P1 Portals STEP-10 (RQ-11, DEC-10).
+ * security-matrix-portals.test.ts — P1 Portals STEP-10 (RQ-11, DEC-10);
+ * V5-GO-LIVE-01 STEP-05: hostname block replaced by role→landing-path (single origin).
  *
  * Scope-level tests for the 3 portal roles: VENDOR_*, WORKER, CTV.
  * Uses Prisma `withAuthScope` (Phase 5) — verifies rows/403 by role.
  */
 import { describe, it, expect } from 'vitest';
+import { getLandingPath } from '@/src/shared/routing/portal-landing';
 
 describe('P1 Portal security matrix — scope checks', () => {
   describe('VENDOR scope (DEC-10)', () => {
@@ -108,28 +110,30 @@ describe('P1 Portal security matrix — scope checks', () => {
     });
   });
 
-  describe('Hostname test for portals (DEC-02)', () => {
-    function correctDomainFor(role: string): string {
-      const map: Record<string, string> = {
-        VENDOR_ADMIN: 'vendor.hrpartner.vn',
-        VENDOR_STAFF: 'vendor.hrpartner.vn',
-        WORKER: 'worker.hrpartner.vn',
-        CTV: 'ctv.hrpartner.vn',
-      };
-      return map[role] ?? 'hrpartner.vn';
-    }
-
-    it('WORKER → worker.hrpartner.vn', () => {
-      expect(correctDomainFor('WORKER')).toBe('worker.hrpartner.vn');
+  describe('Landing path for portals (V5-GO-LIVE-01, DEC-01/02 — single origin)', () => {
+    // Post-login landing is a SAME-ORIGIN relative path per role — NOT a subdomain.
+    it('WORKER → /worker', () => {
+      expect(getLandingPath('WORKER')).toBe('/worker');
     });
-    it('VENDOR_ADMIN → vendor.hrpartner.vn', () => {
-      expect(correctDomainFor('VENDOR_ADMIN')).toBe('vendor.hrpartner.vn');
+    it('VENDOR_ADMIN → /vendor', () => {
+      expect(getLandingPath('VENDOR_ADMIN')).toBe('/vendor');
     });
-    it('CTV → ctv.hrpartner.vn', () => {
-      expect(correctDomainFor('CTV')).toBe('ctv.hrpartner.vn');
+    it('VENDOR_STAFF → /vendor', () => {
+      expect(getLandingPath('VENDOR_STAFF')).toBe('/vendor');
     });
-    it('ADMIN → hrpartner.vn (internal)', () => {
-      expect(correctDomainFor('ADMIN')).toBe('hrpartner.vn');
+    it('CTV → /ctv', () => {
+      expect(getLandingPath('CTV')).toBe('/ctv');
+    });
+    it('ADMIN (internal) → null (no portal landing)', () => {
+      expect(getLandingPath('ADMIN')).toBeNull();
+    });
+    it('every portal landing path is relative (no absolute subdomain URL)', () => {
+      for (const role of ['WORKER', 'VENDOR_ADMIN', 'VENDOR_STAFF', 'CTV']) {
+        const p = getLandingPath(role)!;
+        expect(p.startsWith('/')).toBe(true);
+        expect(p.startsWith('//')).toBe(false);
+        expect(p).not.toMatch(/^https?:/);
+      }
     });
   });
 });

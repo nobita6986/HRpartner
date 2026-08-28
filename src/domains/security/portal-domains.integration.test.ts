@@ -1,126 +1,162 @@
 /**
- * portal-domains.integration.test.ts — P1 Portals STEP-02 (RQ-01).
+ * portal-domains.integration.test.ts — V5-GO-LIVE-01 STEP-05 (RQ-01/07/08, DEC-01/02/05/06).
  *
- * Tests the pure logic functions used by middleware.
- * Integration aspects (hostname header parsing, redirect URL construction)
- * are tested via the mock-based unit tests below.
+ * REWRITTEN for the single canonical origin. The former version copied the portal→subdomain
+ * mapping locally and asserted subdomains (EV-08 anti-pattern: a test that re-declares the
+ * logic it claims to verify). This version imports and exercises the REAL source-of-truth
+ * helper (src/shared/routing/portal-landing) so the test fails if the shipped logic drifts.
+ *
+ *  - getLandingPath: portal roles → same-origin relative path; internal roles → null.
+ *  - isSafeCallbackPath / sanitizeCallbackPath: open-redirect hostile matrix (DEC-06).
+ *  - isLegacyPortalHost / buildLegacyCanonicalUrl: transition-redirect allowlist (RQ-08).
+ *  - isPortalPath: canonical-origin portal prefixes.
  */
 import { describe, it, expect } from 'vitest';
+import {
+  CANONICAL_ORIGIN,
+  ROLE_LANDING_PATH,
+  LEGACY_PORTAL_HOSTS,
+  getLandingPath,
+  isSafeCallbackPath,
+  sanitizeCallbackPath,
+  isLegacyPortalHost,
+  buildLegacyCanonicalUrl,
+  isPortalPath,
+} from '@/src/shared/routing/portal-landing';
 
-describe('P1 Portal domain logic', () => {
-  describe('PORTAL_DOMAINS mapping', () => {
-    const PORTAL_DOMAINS: Record<string, string> = {
-      VENDOR_ADMIN:  'vendor.hrpartner.vn',
-      VENDOR_STAFF: 'vendor.hrpartner.vn',
-      WORKER:       'worker.hrpartner.vn',
-      CTV:          'ctv.hrpartner.vn',
-    };
+// The 13 SYSTEM_ROLES — portal roles have a landing path, the 9 internal roles do not.
+const PORTAL_ROLES: Array<[string, string]> = [
+  ['VENDOR_ADMIN', '/vendor'],
+  ['VENDOR_STAFF', '/vendor'],
+  ['WORKER', '/worker'],
+  ['CTV', '/ctv'],
+];
+const INTERNAL_ROLES = [
+  'ADMIN', 'HR_MANAGER', 'DIRECTOR', 'HR_STAFF', 'SALE', 'PM', 'ACCOUNTANT', 'MKT', 'EMPLOYEE',
+];
 
-    it('VENDOR_ADMIN maps to vendor.hrpartner.vn', () => {
-      expect(PORTAL_DOMAINS['VENDOR_ADMIN']).toBe('vendor.hrpartner.vn');
+describe('V5-GO-LIVE-01 — portal landing (single canonical origin)', () => {
+  describe('getLandingPath — role → same-origin relative path (RQ-01/DEC-02)', () => {
+    it.each(PORTAL_ROLES)('%s → %s (relative, not absolute)', (role, path) => {
+      const landing = getLandingPath(role);
+      expect(landing).toBe(path);
+      expect(landing!.startsWith('/')).toBe(true);
+      expect(landing!.startsWith('//')).toBe(false);
+      expect(landing).not.toMatch(/^https?:/); // never an absolute subdomain URL
     });
-    it('VENDOR_STAFF maps to vendor.hrpartner.vn', () => {
-      expect(PORTAL_DOMAINS['VENDOR_STAFF']).toBe('vendor.hrpartner.vn');
-    });
-    it('WORKER maps to worker.hrpartner.vn', () => {
-      expect(PORTAL_DOMAINS['WORKER']).toBe('worker.hrpartner.vn');
-    });
-    it('CTV maps to ctv.hrpartner.vn', () => {
-      expect(PORTAL_DOMAINS['CTV']).toBe('ctv.hrpartner.vn');
-    });
-    it('ADMIN not in PORTAL_DOMAINS → undefined', () => {
-      expect(PORTAL_DOMAINS['ADMIN']).toBeUndefined();
-    });
-  });
 
-  describe('getExpectedDomain logic', () => {
-    const PORTAL_DOMAINS: Record<string, string> = {
-      VENDOR_ADMIN:  'vendor.hrpartner.vn',
-      VENDOR_STAFF: 'vendor.hrpartner.vn',
-      WORKER:       'worker.hrpartner.vn',
-      CTV:          'ctv.hrpartner.vn',
-    };
-    function getExpectedDomain(role: string): string {
-      return PORTAL_DOMAINS[role] ?? 'hrpartner.vn';
-    }
+    it.each(INTERNAL_ROLES)('internal role %s → null (no portal landing)', (role) => {
+      expect(getLandingPath(role)).toBeNull();
+    });
 
-    it('VENDOR_ADMIN → vendor domain', () => {
-      expect(getExpectedDomain('VENDOR_ADMIN')).toBe('vendor.hrpartner.vn');
+    it('unknown role → null', () => {
+      expect(getLandingPath('NOPE')).toBeNull();
+      expect(getLandingPath('')).toBeNull();
     });
-    it('WORKER → worker domain', () => {
-      expect(getExpectedDomain('WORKER')).toBe('worker.hrpartner.vn');
-    });
-    it('CTV → ctv domain', () => {
-      expect(getExpectedDomain('CTV')).toBe('ctv.hrpartner.vn');
-    });
-    it('ADMIN → hrpartner.vn (internal)', () => {
-      expect(getExpectedDomain('ADMIN')).toBe('hrpartner.vn');
-    });
-    it('HR_MANAGER → hrpartner.vn (internal)', () => {
-      expect(getExpectedDomain('HR_MANAGER')).toBe('hrpartner.vn');
+
+    it('ROLE_LANDING_PATH carries NO absolute subdomain URLs', () => {
+      for (const v of Object.values(ROLE_LANDING_PATH)) {
+        expect(v.startsWith('/')).toBe(true);
+        expect(v).not.toMatch(/hrpartner\.vn/);
+      }
     });
   });
 
-  describe('isPortalPath logic', () => {
-    function isPortalPath(pathname: string): boolean {
-      return pathname.startsWith('/vendor') || pathname.startsWith('/worker') ||
-             pathname.startsWith('/ctv')    || pathname.startsWith('/api/vendor') ||
-             pathname.startsWith('/api/worker') || pathname.startsWith('/api/ctv');
-    }
+  describe('isSafeCallbackPath / sanitizeCallbackPath — open-redirect guard (DEC-06)', () => {
+    const SAFE = ['/bcc', '/vendor', '/worker/checkin', '/ctv/claims?tab=active', '/a/b/c?x=1&y=2'];
+    const HOSTILE = [
+      '//evil.com',                 // protocol-relative
+      '///evil.com',                // triple slash
+      'https://evil.com',           // absolute scheme URL
+      'http://hrpartner.vn.evil',   // absolute scheme URL
+      'javascript:alert(1)',        // scheme, no leading slash
+      '/\\evil.com',                // backslash after slash → '/' in browsers
+      '\\\\evil.com',               // leading backslashes
+      'vendor',                     // no leading slash
+      '',                           // empty
+      '/bad\r\nSet-Cookie: x=y',    // CR/LF injection
+      '/bad\tpath',                 // TAB control char
+    ];
 
-    it('/vendor/orders → true', () => { expect(isPortalPath('/vendor/orders')).toBe(true); });
-    it('/worker/checkin → true', () => { expect(isPortalPath('/worker/checkin')).toBe(true); });
-    it('/ctv/claims → true', () => { expect(isPortalPath('/ctv/claims')).toBe(true); });
-    it('/api/vendor/submissions → true', () => { expect(isPortalPath('/api/vendor/submissions')).toBe(true); });
-    it('/api/worker/checkins → true', () => { expect(isPortalPath('/api/worker/checkins')).toBe(true); });
-    it('/api/ctv/summary → true', () => { expect(isPortalPath('/api/ctv/summary')).toBe(true); });
-    it('/admin/jobs → false', () => { expect(isPortalPath('/admin/jobs')).toBe(false); });
-    it('/bcc/internal → false', () => { expect(isPortalPath('/bcc/internal')).toBe(false); });
-    it('/job-board → false', () => { expect(isPortalPath('/job-board')).toBe(false); });
-    it('/login → false', () => { expect(isPortalPath('/login')).toBe(false); });
+    it.each(SAFE)('safe: %s', (p) => {
+      expect(isSafeCallbackPath(p)).toBe(true);
+      expect(sanitizeCallbackPath(p)).toBe(p);
+    });
+
+    it.each(HOSTILE)('hostile rejected: %j', (p) => {
+      expect(isSafeCallbackPath(p)).toBe(false);
+      expect(sanitizeCallbackPath(p)).toBeNull();
+    });
+
+    it('non-string input rejected', () => {
+      for (const v of [null, undefined, 123, {}, [], true]) {
+        expect(isSafeCallbackPath(v)).toBe(false);
+        expect(sanitizeCallbackPath(v)).toBeNull();
+      }
+    });
   });
 
-  describe('domain check logic', () => {
-    const INTERNAL_DOMAINS = new Set(['hrpartner.vn', 'localhost']);
+  describe('isLegacyPortalHost — strict allowlist only (DEC-05)', () => {
+    it.each(Object.keys(LEGACY_PORTAL_HOSTS))('legacy host allowlisted: %s', (h) => {
+      expect(isLegacyPortalHost(h)).toBe(true);
+    });
 
-    function isInternalHost(host: string): boolean {
-      return INTERNAL_DOMAINS.has(host) || host.endsWith('.hrpartner.vn');
-    }
-
-    it('hrpartner.vn → internal', () => { expect(isInternalHost('hrpartner.vn')).toBe(true); });
-    it('localhost → internal', () => { expect(isInternalHost('localhost')).toBe(true); });
-    it('vendor.hrpartner.vn → internal', () => { expect(isInternalHost('vendor.hrpartner.vn')).toBe(true); });
-    it('worker.hrpartner.vn → internal', () => { expect(isInternalHost('worker.hrpartner.vn')).toBe(true); });
-    it('ctv.hrpartner.vn → internal', () => { expect(isInternalHost('ctv.hrpartner.vn')).toBe(true); });
-    it('malicious.com → NOT internal', () => { expect(isInternalHost('malicious.com')).toBe(false); });
-    it('vendor.hrpartner.com → NOT internal', () => { expect(isInternalHost('vendor.hrpartner.com')).toBe(false); });
+    it.each([
+      'hrpartner.vn',              // canonical is NOT legacy (no loop)
+      'localhost',
+      'evil.com',
+      'vendor.hrpartner.com',      // look-alike TLD
+      'vendor.hrpartner.vn.evil',  // suffix attack
+      'sub.vendor.hrpartner.vn',   // deeper subdomain not allowlisted
+      'VENDOR.HRPARTNER.VN',       // caller must lower-case; raw mixed-case is not a member
+      '',
+    ])('non-legacy host rejected: %s', (h) => {
+      expect(isLegacyPortalHost(h)).toBe(false);
+    });
   });
 
-  describe('redirect URL construction', () => {
-    function buildRedirectUrl(currentUrl: string, targetHost: string): string {
-      const url = new URL(currentUrl);
-      url.hostname = targetHost;
-      return url.toString();
-    }
-
-    it('worker on vendor → redirects to worker domain', () => {
-      const result = buildRedirectUrl('http://vendor.hrpartner.vn/worker/checkin', 'worker.hrpartner.vn');
-      expect(result).toBe('http://worker.hrpartner.vn/worker/checkin');
+  describe('buildLegacyCanonicalUrl — canonical target, host never reflected (RQ-03/04)', () => {
+    it('bare root → host landing path on canonical origin (query dropped)', () => {
+      expect(buildLegacyCanonicalUrl('vendor.hrpartner.vn', '/', '')).toBe(`${CANONICAL_ORIGIN}/vendor`);
+      expect(buildLegacyCanonicalUrl('worker.hrpartner.vn', '', '')).toBe(`${CANONICAL_ORIGIN}/worker`);
+      expect(buildLegacyCanonicalUrl('ctv.hrpartner.vn', '/', '?x=1')).toBe(`${CANONICAL_ORIGIN}/ctv`);
     });
 
-    it('vendor on worker → redirects to vendor domain', () => {
-      const result = buildRedirectUrl('http://worker.hrpartner.vn/vendor/orders', 'vendor.hrpartner.vn');
-      expect(result).toBe('http://vendor.hrpartner.vn/vendor/orders');
+    it('non-root → preserves pathname + query on canonical origin', () => {
+      expect(buildLegacyCanonicalUrl('vendor.hrpartner.vn', '/vendor/orders', '?tab=active'))
+        .toBe(`${CANONICAL_ORIGIN}/vendor/orders?tab=active`);
+      expect(buildLegacyCanonicalUrl('worker.hrpartner.vn', '/worker/checkin', ''))
+        .toBe(`${CANONICAL_ORIGIN}/worker/checkin`);
+      // Even a cross-portal path is preserved verbatim (path is not host-derived).
+      expect(buildLegacyCanonicalUrl('ctv.hrpartner.vn', '/vendor/x', ''))
+        .toBe(`${CANONICAL_ORIGIN}/vendor/x`);
     });
 
-    it('ctv on root → redirects to ctv domain', () => {
-      const result = buildRedirectUrl('http://hrpartner.vn/ctv/claims', 'ctv.hrpartner.vn');
-      expect(result).toBe('http://ctv.hrpartner.vn/ctv/claims');
+    it('result is ALWAYS the canonical origin — incoming host is never reflected', () => {
+      for (const host of Object.keys(LEGACY_PORTAL_HOSTS)) {
+        expect(buildLegacyCanonicalUrl(host, '/x', '').startsWith(`${CANONICAL_ORIGIN}/`)).toBe(true);
+        expect(new URL(buildLegacyCanonicalUrl(host, '/x', '')).origin).toBe(CANONICAL_ORIGIN);
+      }
     });
+  });
 
-    it('preserves pathname and query', () => {
-      const result = buildRedirectUrl('http://hrpartner.vn/ctv/claims?tab=active', 'ctv.hrpartner.vn');
-      expect(result).toBe('http://ctv.hrpartner.vn/ctv/claims?tab=active');
+  describe('isPortalPath — canonical-origin portal prefixes', () => {
+    it('portal paths → true', () => {
+      ['/vendor', '/vendor/orders', '/worker', '/worker/checkin', '/ctv', '/ctv/claims']
+        .forEach((p) => expect(isPortalPath(p)).toBe(true));
+    });
+    it('non-portal paths → false', () => {
+      ['/', '/bcc', '/bcc/internal', '/login', '/job-board', '/vendorx', '/workerish']
+        .forEach((p) => expect(isPortalPath(p)).toBe(false));
+    });
+  });
+
+  describe('no legacy subdomain literal is used as a live routing target', () => {
+    it('LEGACY_PORTAL_HOSTS values are relative landing paths, not URLs', () => {
+      for (const v of Object.values(LEGACY_PORTAL_HOSTS)) {
+        expect(v.startsWith('/')).toBe(true);
+        expect(v).not.toMatch(/^https?:/);
+      }
     });
   });
 });
