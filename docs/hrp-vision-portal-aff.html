@@ -346,12 +346,12 @@
             <article class="stage active" data-stage="acquire"><span class="stage-no">02</span><h3>Tuyển &amp; giới thiệu</h3><p>Job Portal, link affiliate và nguồn ứng viên.</p></article>
             <article class="stage active" data-stage="place"><span class="stage-no">03</span><h3>Sàng lọc &amp; xếp việc</h3><p>Screening, convert Worker, assignment và quota.</p></article>
             <article class="stage future" data-stage="work"><span class="stage-no">04</span><h3>Đi làm &amp; chấm công</h3><p>Ca làm, evidence, offline queue và timesheet.</p></article>
-            <article class="stage future" data-stage="settle"><span class="stage-no">05</span><h3>Đối soát &amp; chi trả</h3><p>Statement, dispute, payroll và payslip.</p></article>
+            <article class="stage future" data-stage="settle"><span class="stage-no">05</span><h3>Đối soát &amp; chi trả</h3><p>Statement, dispute, commission và kết nối ứng dụng lương riêng.</p></article>
             <article class="stage active" data-stage="reward"><span class="stage-no">06</span><h3>Ghi nhận giới thiệu</h3><p>Attribution, milestone và commission ledger.</p></article>
           </div>
           <div class="legend">
             <span class="now"><i></i><strong>Giá trị được Portal + AFF hoàn thiện</strong></span>
-            <span class="next"><i></i>Chặng được nối tiếp bởi Attendance → Billing → Commission → Payroll</span>
+            <span class="next"><i></i>Chặng được nối tiếp bởi Attendance → Billing → Commission; Payroll vận hành ở ứng dụng riêng</span>
           </div>
         </div>
       </div>
@@ -448,7 +448,7 @@
               <li>Attendance: import, check-in, timesheet và lock.</li>
               <li>Billing: rate card, statement, dispute và lineage.</li>
               <li>Commission: policy, override, reversal và payment.</li>
-              <li>Payroll: snapshot giờ, dry-run, payslip và statutory.</li>
+              <li>Payroll: chỉ giữ contract tích hợp; tính/xem lương production ở ứng dụng riêng.</li>
               <li>Observability, rate limit và security hardening.</li>
               <li>Control tower hoàn chỉnh cho vận hành và tài chính.</li>
             </ul>
@@ -463,7 +463,7 @@
         <div class="decision-points">
           <div><b>Một trải nghiệm theo vai trò</b><span>Đúng người, đúng dữ liệu, đúng hành động.</span></div>
           <div><b>Một vòng tăng trưởng đo lường được</b><span>Không còn tranh cãi ứng viên thuộc về ai.</span></div>
-          <div><b>Một nền cho dòng tiền phía sau</b><span>Từ placement tiến tới công, đối soát, commission và payroll.</span></div>
+          <div><b>Một nền cho dòng tiền phía sau</b><span>Từ placement tiến tới công, đối soát, commission và dữ liệu đầu vào sạch cho ứng dụng lương riêng.</span></div>
         </div>
       </div>
     </section>
@@ -479,10 +479,10 @@
       client: { icon: 'C', title: 'Client / Sale', value: 'Nhu cầu tuyển được biến thành cấu trúc có thể theo dõi, thay vì một lời nhắn không có trạng thái.', stages: ['demand','place','settle'], steps: [['Ghi nhận nhu cầu','Client → Project → Staffing Order → Slot → headcount.'],['Theo dõi đáp ứng','Biết vị trí nào đang thiếu, hồ sơ nào đang xử lý và bao nhiêu người đã được xếp.'],['Nối sang đối soát','Placement và thời gian làm việc trở thành căn cứ cho statement ở chặng kế tiếp.']] },
       vendor: { icon: 'V', title: 'Vendor', value: 'Một portal riêng để cộng tác với HRP mà không nhìn thấy dữ liệu của vendor khác.', stages: ['demand','acquire','place','settle'], steps: [['Xem phần việc','Chỉ thấy đơn tuyển và dữ liệu thuộc vendor trong context.'],['Cung ứng','Gửi ứng viên, theo dõi submission và trạng thái placement.'],['Đối soát','Xem statement, xác nhận hoặc dispute qua workflow có bằng chứng khi Billing hoàn thiện.']] },
       pm: { icon: 'P', title: 'PM hiện trường', value: 'Danh sách người thực tế tại dự án được nối trực tiếp với quyết định placement của HR.', stages: ['place','work'], steps: [['Nhận danh sách','Chỉ thấy dự án, vị trí và worker được giao cho mình.'],['Điều hành ca','Theo dõi hiện diện, bằng chứng check-in và các trường hợp sai lệch.'],['Phản hồi vận hành','Chuyển người, ghi nhận ngoại lệ hoặc yêu cầu xử lý trước khi timesheet bị khóa.']] },
-      worker: { icon: 'W', title: 'Người lao động', value: 'Một cổng cá nhân rõ việc, rõ công, rõ quyền lợi — đồng thời có thể giới thiệu người quen.', stages: ['place','work','settle','reward'], steps: [['Nhận việc','Xem dự án, vị trí, ca và trạng thái assignment của mình.'],['Trong quá trình làm','Check-in, xem công và gửi yêu cầu điều chỉnh khi Attendance hoàn thiện.'],['Nhận quyền lợi','Xem payslip và dùng link cá nhân để giới thiệu ứng viên, nhận ghi nhận khi đủ milestone.']] },
+      worker: { icon: 'W', title: 'Người lao động', value: 'Một cổng cá nhân rõ việc, rõ công, rõ quyền lợi — đồng thời có thể giới thiệu người quen.', stages: ['place','work','settle','reward'], steps: [['Nhận việc','Xem dự án, vị trí, ca và trạng thái assignment của mình.'],['Trong quá trình làm','Check-in, xem công và gửi yêu cầu điều chỉnh khi Attendance hoàn thiện.'],['Nhận quyền lợi','Mở ứng dụng lương riêng để xem phiếu lương; dùng link cá nhân để giới thiệu ứng viên và nhận ghi nhận khi đủ milestone.']] },
       affiliate: { icon: 'A', title: 'Nhân viên / CTV', value: 'Mọi userId có thể trở thành một kênh tuyển dụng với kết quả và quyền lợi đo được.', stages: ['acquire','place','reward'], steps: [['Lấy link','Hệ thống cấp một mã/link duy nhất cho chính tài khoản.'],['Chia sẻ','Đưa ứng viên tới đúng job hoặc job board; first-click được ký và lưu.'],['Theo dõi quyền lợi','Xem referral từ hồ sơ tới placement/milestone và commission ledger của mình.']] },
       candidate: { icon: 'U', title: 'Ứng viên', value: 'Tìm việc và ứng tuyển đơn giản trên điện thoại, không cần hiểu quy trình nội bộ HRP.', stages: ['acquire','place'], steps: [['Tìm việc','Mở job board trực tiếp hoặc từ link người giới thiệu.'],['Ứng tuyển','Chọn vị trí, nhập hồ sơ một lần và nhận tracking code.'],['Theo dõi','Xem trạng thái an toàn; khi đạt điều kiện sẽ được chuyển thành Worker và nhận placement.']] },
-      accountant: { icon: 'K', title: 'Kế toán', value: 'Dòng tiền tương lai được xây trên dữ liệu có lineage thay vì bảng tổng hợp không truy ngược được.', stages: ['work','settle','reward'], steps: [['Nhận căn cứ','Timesheet đã khóa là đầu vào cho statement và payroll.'],['Đối soát','So khớp client/vendor, xử lý revision và dispute có lịch sử.'],['Chi trả','Duyệt commission, payroll và payment theo policy/milestone đã chốt.']] }
+      accountant: { icon: 'K', title: 'Kế toán', value: 'Dòng tiền tương lai được xây trên dữ liệu có lineage thay vì bảng tổng hợp không truy ngược được.', stages: ['work','settle','reward'], steps: [['Nhận căn cứ','Timesheet đã khóa là đầu vào cho statement và contract chuyển sang ứng dụng lương riêng.'],['Đối soát','So khớp client/vendor, xử lý revision và dispute có lịch sử.'],['Chi trả','Duyệt commission/payment trong HRP; vận hành payroll và payslip ở ứng dụng lương riêng.']] }
     };
 
     const buttons = [...document.querySelectorAll('[data-role]')];

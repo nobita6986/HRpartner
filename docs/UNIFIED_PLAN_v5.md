@@ -7,6 +7,8 @@
 
 > **Ưu tiên kinh doanh số 1:** đưa **Chợ giao dịch việc làm HRP** vào vận hành sớm nhất. Marketplace MVP là đường găng trước payroll, billing đầy đủ, commission nâng cao và M9. Mục tiêu tối thiểu là chạy được vòng `Tạo việc → Công khai → Ứng tuyển → Sàng lọc → Tạo Worker → Xếp Assignment → Phản hồi trạng thái` trên dữ liệu thật đã ẩn danh.
 
+> **OWNER OVERRIDE — 2026-08-28:** HRP không còn sở hữu màn tra cứu lương legacy; đường dẫn `/bcc` được retire. Tính lương và xem lương production do một ứng dụng riêng đảm nhiệm. Toàn bộ `V5-PAY-01..08` chuyển thành lane **`DEFERRED_FINAL`**, chỉ xem xét sau khi Marketplace, Affiliate, Attendance, Billing, Commission, HRM core và core UAT/cutover đã ổn định, đồng thời phải có quyết định mở lại của Founder. Payroll không block bất kỳ mốc go-live HRP nào; HRP trước mắt chỉ giữ dữ liệu nguồn cần thiết và contract tích hợp an toàn với ứng dụng lương ngoài.
+
 Rà soát và đối chiếu toàn bộ các tính năng được mô tả trong thư mục mockup tĩnh (`C:\CodeApp\HrP\docs\tasks\hrp-v4-bod-mockup\mockup`) so với hiện trạng codebase hiện tại.
 
 ## User Review Required
@@ -227,9 +229,11 @@ Phần này là danh sách công việc còn dang dở hoặc chưa triển khai
 | V5-M6-06 | Reversal/netting/debt | Reversal ledger, `commission_debt`, carry-forward, settlement report | Reversal không làm âm số dư ngầm; cấn trừ kỳ sau có audit và cap |
 | V5-M6-07 | CTV dashboard/UI | Ledger theo kỳ, pending/approved/paid, policy explanation, override history | Không hiển thị dữ liệu ngoài scope; hardcoded summary bị loại bỏ |
 
-### 4.8. M8 Payroll shell và phase statutory cuối (P0)
+### 4.8. Payroll — `DEFERRED_FINAL`, tách khỏi đường găng HRP
 
-#### 4.8.1. Làm ngay: schema/interface/placeholder, chưa làm engine pháp lý thật
+#### 4.8.1. Backlog thiết kế giữ lại, chưa được mở task thi công
+
+> Không task `V5-PAY-*` nào được mở chỉ vì M7/M8 đã xong. Founder phải xác nhận HRP cần tự sở hữu Payroll thay vì tiếp tục tích hợp với ứng dụng lương riêng. Code/schema Payroll hiện hữu được bảo toàn ở trạng thái compatibility; không mở rộng UI, engine, payslip hay statutory trong các phase core hiện tại.
 
 | ID | Công việc chi tiết | Artefact bắt buộc | Acceptance criteria |
 |---|---|---|---|
@@ -303,8 +307,8 @@ Mỗi task chỉ được chuyển `DONE` khi có đủ 6 artefact:
 2. `V5-M1-01..05` và `V5-M35-01..05` là nền tối thiểu cho Marketplace MVP.
 3. **Marketplace MVP trước:** `V5-PORTAL-01..03` + `V5-M35-06` + các API screening/conversion; không chờ M7/M8/PAY.
 4. Sau khi marketplace chạy được một vòng giao dịch thật, hoàn tất `V5-M1-06..09`, `V5-M35-07..09` và hardening security/observability.
-5. `V5-M7-*` hoàn tất trước `V5-M8-*`; `V5-M8-01..08` hoàn tất trước payroll.
-6. `V5-PAY-01..06` được làm trước, nhưng `V5-PAY-07..08` chỉ nhận sau khi founder/kế toán mở phase compliance.
+5. `V5-M7-*` hoàn tất trước `V5-M8-*`; sau M8 ưu tiên Commission, Affiliate GA, HRM core và core UAT/cutover.
+6. `V5-PAY-01..08` là `DEFERRED_FINAL`; chỉ nhận khi Founder mở lại lane sau core cutover. `V5-PAY-07..08` còn cần thêm owner kế toán, golden cases và sign-off pháp lý.
 7. `V5-M6-*` chỉ bật settlement chính thức sau khi statement/revenue canonical; referral attribution của Marketplace có thể chạy trước settlement.
 8. Mỗi task code phải có `TASK.md` một mục tiêu, `HANDOFF.md` một kết quả; Tier 3 viết `AUDIT.md` và chỉ trả về blockers/quyết định cần Planner.
 
@@ -631,13 +635,13 @@ TimesheetPeriod LOCKED
 
 **Exit gate:** cùng input + cùng policy version cho kết quả replay giống nhau; override hết hạn quay về group default; reversal tạo debt/carry-forward, không âm ngầm.
 
-### 7.7. Phase PAY — Payroll shell trước, statutory engine sau
+### 7.7. Phase PAY — `DEFERRED_FINAL`, ứng dụng lương riêng là production owner
 
-**Mục tiêu:** hợp đồng dữ liệu payroll ổn định mà không đưa logic pháp lý thật vào sớm.
+**Mục tiêu hiện tại:** giữ contract dữ liệu/integration ổn định để Attendance/Billing/Commission của HRP có thể trao đổi an toàn với ứng dụng tính/xem lương riêng; không phát triển Payroll như một module production của HRP trên đường găng core.
 
-**PAY-01..06:** được triển khai sau M7/M8; dùng `DEFERRED`, `MANUAL` hoặc `MOCK` adapter; production không LOCK nếu statutory status không hợp lệ.
+**PAY-01..06:** chưa mở task. Chỉ tái đánh giá sau Marketplace, Affiliate, M7, M8, M6, M9 và core UAT/cutover, khi Founder xác nhận nhu cầu sở hữu Payroll trong HRP.
 
-**PAY-07..08:** chỉ mở khi có owner kế toán, bộ case thật, version luật/config và sign-off. Không gộp vào sprint portal.
+**PAY-07..08:** chỉ mở sau PAY-01..06 và khi có owner kế toán, bộ case thật, version luật/config và sign-off. Không block HRP go-live.
 
 **Exit gate payroll shell:** pay run dry-run/retry/chunk/finalize idempotent; payslip snapshot bất biến; worker chỉ xem payslip của mình; mọi input có `calcInputSnapshot`.
 
@@ -999,4 +1003,3 @@ Nguồn: `docs/V5_READINESS_ASSESSMENT.md`. Nguyên tắc: chỉ nhận finding 
 - **A-03**: route `workers` ĐÃ có auth (getAuthContext + VIEWER_ROLES); vấn đề thật chỉ là **thiếu projection** → RF-02 nhắm DTO theo role, không phải thêm auth.
 - **A-06**: `ctv/summary` đã có `note` disclaimer và đọc `SourceClaim` thật; sửa là bỏ literal `500_000` và fail-closed khi chưa có ledger (RF-04), không phải viết lại toàn bộ.
 - **C-03**: plan §4.6 vocab **đã đúng**; chỉ schema stale → xử lý bằng task migrate (RF-16), không đổi plan.
-

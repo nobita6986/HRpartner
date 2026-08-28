@@ -9,17 +9,18 @@
 ```yaml
 updated_at: 2026-08-28 Asia/Bangkok
 roadmap_source: docs/UNIFIED_PLAN_v5.md
-current_lane: V5-M1 security / current field projection
-current_task: hrp-v5-m1-09a-current-field-projection
-task_path: docs/tasks/hrp-v5-m1-09a-current-field-projection/TASK.md
-spec_version: v1.0
-task_status: READY_FOR_EXECUTION
-current_gate: TIER_2_EXECUTION
-next_command: /code hrp-v5-m1-09a-current-field-projection
-previous_accepted: hrp-v5-go-live-01-single-domain-consolidation
-next_planner_candidate: audit/resolve hrp-v5-m1-09a-current-field-projection, then review marketplace production launch gate and deferred G0-04b
-blocking_owner: none
-cursor_note: Single-domain consolidation is ACCEPTED. M1-09A is activated for the one remaining Tier 2 stream; it closes field projection on current schema/API surfaces, while M1-09B remains deferred until M8-06 creates canonical Payment models.
+current_lane: V5 Marketplace launch gate (§7.9.7)
+current_task: none
+task_path: none
+spec_version: n/a
+task_status: n/a
+current_gate: PHASE_REVIEW
+next_command: Owner review + staging drill `docs/runbooks/marketplace-launch-operations.md`; in parallel planning remains single-stream and the next code contract candidate is OPS-06 (public rate-limit + upload/file policy hardening). Residual OWNER items: authenticated prod smoke, publish one real job, rotate exposed neondb_owner credential.
+previous_accepted: hrp-v5-m1-09a-current-field-projection
+next_planner_candidate: OPS-06 code contract after Owner reviews/drills the criterion-7 runbook; keep one Tier 2 stream
+blocking_owner: none blocking planning; residual owner ops = STEP 6 HTTP smoke on prod + rotate exposed neondb_owner pwd (see memory hrp-prod-db-drift-seed-blocker)
+product_override: /bcc retired; production payroll/payslip belongs to the separate salary app; PAY-01..08 = DEFERRED_FINAL and does not block HRP go-live
+cursor_note: M1-09A ACCEPTED and pushed as a49870e. Marketplace MVP code is audited and prod DB is level with main. Criterion-7 runbook is drafted at docs/runbooks/marketplace-launch-operations.md and truthfully remains READY_FOR_OWNER_REVIEW until staging drill/sign-off. Known limitation: no per-slot lock; CV is optional metadata-only with raw upload disabled for go-live. Preserve the 2026-08-28 /bcc + Payroll override in every future roadmap update.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
@@ -144,7 +145,7 @@ Waiver không phải test PASS. Phải ghi người quyết định, evidence th
 - OPS-02/04/06 là hardening lane có thể xen kẽ khi dependency thật cho phép; không tự gán quan hệ cứng với M1.
 - M7: `M7-01..03 → M7-04..06 → M7-07 → M7-08`.
 - M8: `M8-01..04 → M8-05..06 → M8-07..08`.
-- PAY-01..06 chỉ sau M7/M8. PAY-07..08 cần owner kế toán, golden cases và sign-off.
+- Owner override 2026-08-28: `/bcc` đã retire; production payroll/payslip thuộc ứng dụng lương riêng. `PAY-01..08` là lane `DEFERRED_FINAL`, chỉ tái đánh giá sau Marketplace/Affiliate/M7/M8/M6/M9 và core UAT/cutover khi Founder mở lại. Payroll không block HRP go-live.
 - M6-01..03 có thể chuẩn bị sau permission baseline; M6-04..07 chờ input canonical từ M7/M8 theo từng task. Không ép thành chuỗi cứng `M7 → M8 → M6 → PAY`.
 - M9 là P2, chỉ mở sau khi core ổn định.
 
@@ -158,6 +159,7 @@ Trước mỗi TASK mới, Tier 1 phải lập trong TASK bảng `Dependency | S
 - Target boundary: verified AuthContext → L1 role/action/scoped repository → L2 RLS transaction-local cùng DB transaction. Không tuyên bố mọi route đã đạt trước khi M1-06/07 đóng.
 - `withAuthorizedDb`/scoped repository là boundary implementation hiện hành từ M1-06a; không tạo wrapper cạnh tranh chỉ vì master plan dùng tên khái niệm `withAuthScope`.
 - Phân biệt **đã triển khai** với **roadmap target**. QStash/R2, EmploymentEpisode và PAY canonical không được mô tả là production-complete nếu TASK tương ứng chưa ACCEPTED.
+- Không tạo lại `/bcc`, không dùng `/bcc` làm login fallback và không đưa màn tính/xem lương trở lại HRP nếu chưa có quyết định mới của Founder. HRP chỉ giữ contract tích hợp/dữ liệu nguồn cần thiết cho ứng dụng lương riêng.
 - Không log/commit secret, token, password, connection string hoặc PII thật.
 
 DB LIVE test chỉ dùng target an toàn và fail closed. Env từng dùng nằm ngoài repo tại `C:\CodeApp\Salary-app\.env.mp2-test.local`, với `DATABASE_URL_TEST` và `DATABASE_URL_ADMIN_TEST`; không in giá trị. Thiếu target/role hợp lệ là `ENV_BLOCKED`, không mock/force-pass.
