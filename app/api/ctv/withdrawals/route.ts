@@ -69,7 +69,6 @@ export async function POST(req: NextRequest) {
       },
       select: {
         id: true,
-        ctvId: true,
         amountVnd: true,
         bankAccount: true,
         bankName: true,
@@ -82,11 +81,15 @@ export async function POST(req: NextRequest) {
   // RQ-06/AC-07: KHÔNG log amount/bank/ctvId (dữ liệu tài chính + PII). Chỉ log id.
   console.log(`[withdrawals] created ${created.id}`);
 
+  // DEC-09 (RQ-09): allowlist self DTO — OMIT ctvId (owner suy từ session, KHÔNG lộ ra response).
   return NextResponse.json(
     {
       withdrawal: {
-        ...created,
+        id: created.id,
         amountVnd: created.amountVnd.toString(),
+        bankAccount: created.bankAccount,
+        bankName: created.bankName,
+        status: created.status,
         createdAt: created.createdAt.toISOString(),
       },
     },
@@ -119,7 +122,6 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
-        ctvId: true,
         amountVnd: true,
         bankAccount: true,
         bankName: true,
@@ -129,9 +131,13 @@ export async function GET(req: NextRequest) {
     }),
   );
 
+  // DEC-09 (RQ-09): allowlist self DTO — OMIT ctvId (CTV chỉ thấy withdrawal của chính mình).
   const items = records.map((r) => ({
-    ...r,
+    id: r.id,
     amountVnd: r.amountVnd.toString(),
+    bankAccount: r.bankAccount,
+    bankName: r.bankName,
+    status: r.status,
     createdAt: r.createdAt.toISOString(),
   }));
 

@@ -1,8 +1,8 @@
 /**
- * POST /api/statements/generate -- Generate VendorStatement + ClientStatement
- * GET  /api/statements/margin?month=X&year=Y -- Margin breakdown
+ * POST /api/statements/generate -- Generate VendorStatement + ClientStatement tu timesheet LOCKED.
  *
- * Phase 4 slice 4C STEP-13/14.
+ * V5-M1-09A (DEC-08): response = command-result DTO (id/kind/status/period/version/created).
+ * KHONG lo line/rate/amount cua statement vua tao. Roles: ADMIN/HR_MANAGER/ACCOUNTANT/DIRECTOR.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,7 +15,6 @@ import {
   generateClientStatement,
   StatementServiceError,
 } from '@/src/domains/reconciliation/statement.service';
-import { calculateMargin, MarginPermissionError } from '@/src/domains/reconciliation/margin.service';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -59,9 +58,37 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
+    // DEC-08: response = command-result DTO tối thiểu (id/kind/status/period/version/created).
+    // TUYỆT ĐỐI KHÔNG lộ line/rate/amount/totalAmount của statement vừa tạo. `created=false`
+    // khi statement đã tồn tại (ALREADY_EXISTS → vendor/client = null).
+    interface GenerateResult {
+      kind: 'VENDOR' | 'CLIENT';
+      created: boolean;
+      id?: string;
+      status?: string;
+      periodMonth?: number;
+      periodYear?: number;
+      version?: number;
+    }
+    const toResult = (
+      kind: 'VENDOR' | 'CLIENT',
+      stmt: { id: string; status: string; periodMonth: number; periodYear: number; version: number } | null,
+    ): GenerateResult =>
+      stmt
+        ? {
+            kind,
+            created: true,
+            id: stmt.id,
+            status: stmt.status,
+            periodMonth: stmt.periodMonth,
+            periodYear: stmt.periodYear,
+            version: stmt.version,
+          }
+        : { kind, created: false };
+
     return NextResponse.json({
-      vendorStatement: vendor ?? null,
-      clientStatement: client ?? null,
+      vendorStatement: toResult('VENDOR', vendor),
+      clientStatement: toResult('CLIENT', client),
     }, { status: 201 });
   } catch (e) {
     if (e instanceof AuthScopeError) return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });

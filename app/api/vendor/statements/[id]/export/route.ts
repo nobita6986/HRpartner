@@ -52,14 +52,23 @@ export async function GET(
     return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
   }
 
-  // Build CSV
+  // CSV injection guard (OWASP): trung hoa leading =,+,-,@,tab,CR; quote khi chua delimiter/quote/newline.
+  const csvCell = (value: unknown): string => {
+    let s = value == null ? '' : String(value);
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+    if (/[",\n\r]/.test(s)) s = `"${s.replace(/"/g, '""')}"`;
+    return s;
+  };
+  const csvRow = (cells: unknown[]): string => cells.map(csvCell).join(',');
+
+  // Build CSV — allowlist cot tuong minh (statement own-scope + lines cua chinh statement do).
   const csvLines = [
-    ['Statement ID', 'Period', 'Status', 'Total Amount'].join(','),
-    [stmt.id, `${stmt.periodYear}-${String(stmt.periodMonth).padStart(2, '0')}`, stmt.status, stmt.totalAmount.toString()].join(','),
+    csvRow(['Statement ID', 'Period', 'Status', 'Total Amount']),
+    csvRow([stmt.id, `${stmt.periodYear}-${String(stmt.periodMonth).padStart(2, '0')}`, stmt.status, stmt.totalAmount.toString()]),
     '',
-    ['Line ID', 'Worker ID', 'Assignment ID', 'Total Hours', 'Rate', 'Amount'].join(','),
+    csvRow(['Line ID', 'Worker ID', 'Assignment ID', 'Total Hours', 'Rate', 'Amount']),
     ...stmt.lines.map((l) =>
-      [l.id, l.workerId, l.assignmentId ?? '', l.totalHours.toString(), l.rate.toString(), l.amount.toString()].join(','),
+      csvRow([l.id, l.workerId, l.assignmentId ?? '', l.totalHours.toString(), l.rate.toString(), l.amount.toString()]),
     ),
   ];
   const csv = csvLines.join('\n');

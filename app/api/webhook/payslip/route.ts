@@ -45,6 +45,44 @@ function cacheKeyFor(workerId: string, periodYear: string | number, periodMonth:
   return `payslip:${workerId}:${periodYear}:${String(periodMonth).padStart(2, '0')}`;
 }
 
+// ── V5-M1-09A allowlist projection (RQ-08, DEC-09) ──────────────────────────
+// Payslip là JSON cache (không phải Prisma). DTO strict schema, KHÔNG cho cache-extra đi ké.
+const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+const toFiniteNumber = (v: unknown): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+/** POST: chuẩn hoá payload TRƯỚC khi cache — chỉ giữ field allowlist (loại field lạ). */
+function normalizePayslipForCache(slip: PayslipItem): PayslipItem {
+  return {
+    workerId: String(slip.workerId),
+    periodMonth: toFiniteNumber(slip.periodMonth),
+    periodYear: toFiniteNumber(slip.periodYear),
+    grossSalary: toFiniteNumber(slip.grossSalary),
+    netSalary: toFiniteNumber(slip.netSalary),
+    deductions: isPlainObject(slip.deductions) ? (slip.deductions as Record<string, number>) : {},
+    earned: isPlainObject(slip.earned) ? (slip.earned as Record<string, number>) : {},
+    computedAt: slip.computedAt == null ? '' : String(slip.computedAt),
+  };
+}
+
+/** GET: DTO allowlist — TOLERANT với cache thiếu field (partial). Không bao giờ throw. */
+function projectPayslipForResponse(raw: unknown) {
+  const r = isPlainObject(raw) ? raw : {};
+  return {
+    workerId: r.workerId == null ? null : String(r.workerId),
+    periodMonth: r.periodMonth == null ? null : toFiniteNumber(r.periodMonth),
+    periodYear: r.periodYear == null ? null : toFiniteNumber(r.periodYear),
+    grossSalary: r.grossSalary == null ? null : toFiniteNumber(r.grossSalary),
+    netSalary: r.netSalary == null ? null : toFiniteNumber(r.netSalary),
+    deductions: isPlainObject(r.deductions) ? r.deductions : {},
+    earned: isPlainObject(r.earned) ? r.earned : {},
+    computedAt: r.computedAt == null ? null : String(r.computedAt),
+  };
+}
+
 export async function POST(req: NextRequest) {
   // DEC-03: FAIL-CLOSED trước khi parse body / chạm cache. KHÔNG log secret.
   const auth = verifyInternalApiKey(req);
@@ -74,7 +112,7 @@ export async function POST(req: NextRequest) {
     const cacheKey = cacheKeyFor(slip.workerId, slip.periodYear, slip.periodMonth);
 
     try {
-      await cache.set(cacheKey, slip, { ttlMs: CACHE_TTL_MS });
+      await cache.set(cacheKey, normalizePayslipForCache(slip), { ttlMs: CACHE_TTL_MS });
       results.push({ workerId: slip.workerId, cached: true });
     } catch {
       // DEC-03: KHÔNG log nội dung payslip. Chỉ ghi nhận thất bại theo workerId.
@@ -151,5 +189,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'NOT_FOUND', message: 'Payslip not in cache' }, { status: 404 });
   }
 
-  return NextResponse.json({ payslip, cachedAt: new Date().toISOString() });
+  // DEC-09 (RQ-08): allowlist DTO — KHÔNG trả raw cache object (cache-extra không đi ké).
+  return NextResponse.json({ payslip: projectPayslipForResponse(payslip), cachedAt: new Date().toISOString() });
 }

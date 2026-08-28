@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
       return { rows: r, total: t };
     });
     return NextResponse.json({
-      workers: projectWorkerList(rows, hasSensitivePermission),
+      workers: projectWorkerList(rows, { hasSensitivePermission, action: 'LIST' }),
       total,
       take,
       skip,
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
         },
       }),
     );
-    return NextResponse.json({ worker: projectWorker(worker, hasSensitivePermission) }, { status: 201 });
+    return NextResponse.json({ worker: projectWorker(worker, { hasSensitivePermission, action: 'DETAIL' }) }, { status: 201 });
   } catch (err: any) {
     if (err instanceof AuthScopeError) {
       return NextResponse.json(

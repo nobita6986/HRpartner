@@ -69,11 +69,43 @@ export async function GET(req: NextRequest) {
           ],
           take,
           skip,
+          select: {
+            id: true,
+            key: true,
+            valueJson: true,
+            valueType: true,
+            description: true,
+            legalRef: true,
+            version: true,
+            effectiveFrom: true,
+            effectiveTo: true,
+            isActive: true,
+            createdAt: true,
+            updatedAt: true,
+          },
         }),
         tx.payrollConfig.count({ where }),
       ]),
     );
-    return NextResponse.json({ configs: rows, total, take, skip });
+
+    // DEC-09 (RQ-10): allowlist DTO — build object tường minh, OMIT createdBy + relation audit.
+    // KHÔNG spread raw row. Date → ISO (DEC-13). valueJson là giá trị cấu hình vận hành (giữ).
+    const configs = rows.map((r) => ({
+      id: r.id,
+      key: r.key,
+      valueJson: r.valueJson,
+      valueType: r.valueType,
+      description: r.description,
+      legalRef: r.legalRef,
+      version: r.version,
+      effectiveFrom: r.effectiveFrom.toISOString(),
+      effectiveTo: r.effectiveTo ? r.effectiveTo.toISOString() : null,
+      isActive: r.isActive,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    }));
+
+    return NextResponse.json({ configs, total, take, skip });
   } catch (err) {
     if (err instanceof AuthScopeError) {
       return NextResponse.json(

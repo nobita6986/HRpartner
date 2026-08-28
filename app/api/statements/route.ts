@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { resolveEffectivePermissions } from '@/src/shared/auth/permission-resolver';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 
@@ -47,6 +48,18 @@ export async function GET(req: NextRequest) {
     const where: Record<string, unknown> = {};
     if (status) where.status = status;
 
+    // DEC-06 / RQ-04: CLIENT_COMMERCIAL (client receivable `totalAmount`) CHỈ lộ khi caller có
+    // CAN_VIEW_STATEMENT_MARGIN hiệu lực. Resolve FAIL-CLOSED — mọi lỗi resolver ⇒ coi như KHÔNG
+    // có quyền (ẩn client totalAmount). VENDOR_FINANCIAL (vendor payable) vẫn hiển thị cho internal
+    // reader; thiếu vế client ⇒ RISK-02 không thể suy ra margin.
+    let canViewClientCommercial = false;
+    try {
+      const perms = await resolveEffectivePermissions({ userId: ctx.userId, role: ctx.role });
+      canViewClientCommercial = perms.has('CAN_VIEW_STATEMENT_MARGIN');
+    } catch {
+      canViewClientCommercial = false;
+    }
+
     const [vendorRows, clientRows, vendorTotal, clientTotal] = await Promise.all([
       withDbContext(prisma, ctx, (tx) =>
         tx.vendorStatement.findMany({
@@ -72,40 +85,63 @@ export async function GET(req: NextRequest) {
       ),
     ]);
 
-    const statements = [
-      ...vendorRows.map((r) => ({
-        id: r.id,
-        kind: 'VENDOR' as const,
-        partyId: r.vendorId,
-        partyName: r.vendorId,
-        periodMonth: r.periodMonth,
-        periodYear: r.periodYear,
-        totalAmount: r.totalAmount.toString(),
-        status: r.status,
-        version: r.version,
-        disputeCount: r.disputeCount,
-        confirmDeadlineAt: r.confirmDeadlineAt?.toISOString() ?? null,
-        sentAt: r.sentAt?.toISOString() ?? null,
-        lockedAt: r.lockedAt?.toISOString() ?? null,
-        createdAt: r.createdAt.toISOString(),
-      })),
-      ...clientRows.map((r) => ({
-        id: r.id,
-        kind: 'CLIENT' as const,
-        partyId: r.clientId,
-        partyName: r.clientId,
-        periodMonth: r.periodMonth,
-        periodYear: r.periodYear,
-        totalAmount: r.totalAmount.toString(),
-        status: r.status,
-        version: r.version,
-        disputeCount: r.disputeCount,
-        confirmDeadlineAt: r.confirmDeadlineAt?.toISOString() ?? null,
-        sentAt: r.sentAt?.toISOString() ?? null,
-        lockedAt: r.lockedAt?.toISOString() ?? null,
-        createdAt: r.createdAt.toISOString(),
-      })),
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // Allowlist DTO (DEC-01): xây object mới từ field tường minh, KHÔNG spread raw row.
+    // VENDOR → luôn kèm VENDOR_FINANCIAL totalAmount. CLIENT → chỉ kèm CLIENT_COMMERCIAL
+    // totalAmount khi canViewClientCommercial (else OMIT field, không null-placeholder).
+    interface StatementSummary {
+      id: string;
+      kind: 'VENDOR' | 'CLIENT';
+      partyId: string;
+      partyName: string;
+      periodMonth: number;
+      periodYear: number;
+      totalAmount?: string;
+      status: string;
+      version: number;
+      disputeCount: number;
+      confirmDeadlineAt: string | null;
+      sentAt: string | null;
+      lockedAt: string | null;
+      createdAt: string;
+    }
+
+    const vendorSummaries: StatementSummary[] = vendorRows.map((r) => ({
+      id: r.id,
+      kind: 'VENDOR',
+      partyId: r.vendorId,
+      partyName: r.vendorId,
+      periodMonth: r.periodMonth,
+      periodYear: r.periodYear,
+      totalAmount: r.totalAmount.toString(),
+      status: r.status,
+      version: r.version,
+      disputeCount: r.disputeCount,
+      confirmDeadlineAt: r.confirmDeadlineAt?.toISOString() ?? null,
+      sentAt: r.sentAt?.toISOString() ?? null,
+      lockedAt: r.lockedAt?.toISOString() ?? null,
+      createdAt: r.createdAt.toISOString(),
+    }));
+
+    const clientSummaries: StatementSummary[] = clientRows.map((r) => ({
+      id: r.id,
+      kind: 'CLIENT',
+      partyId: r.clientId,
+      partyName: r.clientId,
+      periodMonth: r.periodMonth,
+      periodYear: r.periodYear,
+      ...(canViewClientCommercial ? { totalAmount: r.totalAmount.toString() } : {}),
+      status: r.status,
+      version: r.version,
+      disputeCount: r.disputeCount,
+      confirmDeadlineAt: r.confirmDeadlineAt?.toISOString() ?? null,
+      sentAt: r.sentAt?.toISOString() ?? null,
+      lockedAt: r.lockedAt?.toISOString() ?? null,
+      createdAt: r.createdAt.toISOString(),
+    }));
+
+    const statements = [...vendorSummaries, ...clientSummaries].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
 
     return NextResponse.json({
       statements,

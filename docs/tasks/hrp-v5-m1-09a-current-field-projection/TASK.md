@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1 / Codex` |
 | Executor | `Tier 2` — một luồng duy nhất |
 | Auditor | `Tier 3 independent context` |
@@ -16,8 +16,8 @@
 | Modules | `V5-M1-09A / current Worker + statement + payment-like + payroll-config response projection` |
 | ADR references | `UNIFIED_PLAN_v5.md §4.3 V5-M1-05/M1-09`; accepted RF-02 Worker projection; accepted M1-06 auth boundary; accepted M1-08 vendor object scope |
 | Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `/code hrp-v5-m1-09a-current-field-projection` |
+| Current audit round | `1` |
+| Next gate | `ACCEPTED — M1-09A đóng. Commit path-scoped chờ chỉ thị sếp (working tree SHARED). M1-09B defer M8-06.` |
 | Updated | `2026-08-28 Asia/Bangkok` |
 
 ### Dependency and sequencing gate
@@ -289,6 +289,7 @@ Tier 1 append audit decision; không sửa lịch sử finding.
 |---|---|---|---|---|---|
 | `0` | `NONE` | `PENDING_DEPENDENCY` | Contract prewritten; single-domain chưa ACCEPTED và baseline chưa pin. | None | Tier 1 activates after dependency gate. |
 | `0` | `Q-01` | `ACTIVATE` | Single-domain audit PASS và Planner ACCEPTED; source/evidence/resolution đã commit; route inventory được recheck tại acceptance HEAD. | Pin baseline, set execution round `1`, status `READY_FOR_EXECUTION`. | Giao một Tier 2 duy nhất bằng `/code hrp-v5-m1-09a-current-field-projection`. |
+| `1` | `NONE` | `ACCEPT` | Tier 3 AUDIT round 1 verdict `PASS`; `verify-audit.ps1` exit 0. Tier 1 KHÔNG rubber-stamp (round trước AUDIT.md từng 0 byte) — tái chạy độc lập: `npx tsc --noEmit` exit 0; `npm run test:unit` = **85 files / 1293 tests passed** exit 0; `npm run build` exit 0; `rg` raw-response leak (app/api) & `model Payment/PaymentAllocation` (schema) đều **No matches**; đọc `response-projection.static.test.ts` (8 negative + 11 positive fixtures → detector CÓ RĂNG, AC-11) và `statements-list.projection.route.test.ts` (margin gate + fail-closed + 13-role zero-call + canary/BigInt absence, AC-04). Evidence nhất quán với HANDOFF. Ghi chú KHÔNG chặn: AUDIT §4 ghi targeted "89 tests" lệch HANDOFF "105"; C-03..C-10 evidence dạng văn xuôi thay vì command+exit — không đổi kết luận vì gate load-bearing đã tự verify. | None (không đổi contract, giữ Spec v1.0). | Tier 1 — task **ACCEPTED**, đóng M1-09A. M1-09B chờ M8-06. |
 
 ## 10. Revision Log
 
@@ -297,3 +298,4 @@ Tier 1 append audit decision; không sửa lịch sử finding.
 | `v1.0` | `2026-08-28` | Initial M1-09A contract: action-aware DTOs for current Worker, statement, payslip/withdrawal and payroll-config surfaces; explicit M1-09B defer for absent Payment schema. | Owner requested next task prewritten after single-domain; technical survey EV-01..14. |
 | `v1.0` | `2026-08-28` | Canonicalized full-unit gate to fail-closed `npm run test:unit`; excluded unsafe default-runner parity debt. | single-domain `BLK-01`; EV-15/DEC-14. |
 | `v1.0` | `2026-08-28` | Mở dependency gate, pin single-domain acceptance SHA và chuyển task sang `READY_FOR_EXECUTION` round 1. | Single-domain audit round 1 PASS; resolution `70f642f`. |
+| `v1.0` | `2026-08-28` | Planner Resolution round 1: `ACCEPT` (finding NONE) → Status `ACCEPTED`. Không đổi contract. | Tier 3 verdict PASS + `verify-audit.ps1` exit 0; Tier 1 tái chạy độc lập `tsc`/`test:unit` (1293)/`build`/leak-greps đều 0/clean. |

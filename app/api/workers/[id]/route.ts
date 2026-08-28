@@ -65,7 +65,7 @@ export async function PUT(
         },
       }),
     );
-    return NextResponse.json({ worker: projectWorker(worker, hasSensitivePermission) });
+    return NextResponse.json({ worker: projectWorker(worker, { hasSensitivePermission, action: 'DETAIL' }) });
   } catch (err: any) {
     if (err instanceof AuthScopeError) {
       return NextResponse.json(

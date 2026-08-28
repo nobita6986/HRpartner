@@ -10,10 +10,9 @@
  * 404: worker không tồn tại (đã tạo user nhưng chưa có worker profile — edge case).
  *
  * L1 + L2 đều pass. Response chỉ chứa CHÍNH MÌNH.
- * Masking: WORKER role mặc định KHÔNG có CAN_VIEW_WORKER_SENSITIVE → mask.
- *   (worker xem hồ sơ mình thường CẦN xem CCCD của mình — Phase 3 sẽ
- *   thêm rule "WORKER luôn có CAN_VIEW_WORKER_SENSITIVE cho chính mình".
- *   Phase 2 giữ logic mask theo perm đơn giản.)
+ * V5-M1-09A (DEC-05): action='SELF_PROFILE' → WORKER LUÔN thấy CCCD/bank của chính mình
+ *   (canSeeSensitive=true, không cần CAN_VIEW_WORKER_SENSITIVE). cccdChipData vẫn LUÔN
+ *   bị omit khỏi HTTP kể cả self. Response đi qua allowlist DTO (projectWorker).
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
@@ -90,10 +89,11 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Resolve permission masking
+  // SELF_PROFILE (DEC-05): WORKER luôn thấy CCCD/bank của CHÍNH MÌNH (canSeeSensitive=true),
+  // KHÔNG phụ thuộc CAN_VIEW_WORKER_SENSITIVE; cccdChipData vẫn LUÔN omit.
   const effPerms = await resolveEffectivePermissions({ userId: ctx.userId, role: ctx.role });
   const hasSensitive = effPerms.has('CAN_VIEW_WORKER_SENSITIVE');
 
-  const projected = projectWorker(row, hasSensitive);
+  const projected = projectWorker(row, { hasSensitivePermission: hasSensitive, action: 'SELF_PROFILE' });
   return NextResponse.json({ worker: projected });
 }
