@@ -6,8 +6,8 @@
  * secret imports — safe to import from client, edge (middleware) and node code alike.
  *
  * Responsibilities:
- *  - getLandingPath(role): the SAME-ORIGIN relative landing path for a portal role,
- *    or null for internal roles (caller falls back to a validated callback / '/bcc').
+ *  - getLandingPath(role): the SAME-ORIGIN relative landing path for an account role,
+ *    or null when that internal role still relies on callback / legacy '/bcc'.
  *  - isSafeCallbackPath / sanitizeCallbackPath: open-redirect guard (DEC-06) — the
  *    ONLY accepted target is a same-origin path beginning with exactly one '/'.
  *  - isLegacyPortalHost / buildLegacyCanonicalUrl: the ONLY place the three legacy
@@ -20,20 +20,21 @@
 export const CANONICAL_ORIGIN = 'https://hrpartner.vn';
 export const CANONICAL_HOST = 'hrpartner.vn';
 
-/** DEC-02: portal role → same-origin landing path. Only the 4 portal roles have one. */
+/** DEC-02: account role → same-origin landing path on the canonical origin. */
 export const ROLE_LANDING_PATH: Readonly<Record<string, string>> = {
+  ADMIN: '/admin',
   VENDOR_ADMIN: '/vendor',
   VENDOR_STAFF: '/vendor',
   WORKER: '/worker',
   CTV: '/ctv',
 };
 
-/** Internal roles have no portal landing; the client falls back here when redirectTo is null. */
+/** Internal roles without an explicit landing still fall back here. */
 export const INTERNAL_FALLBACK_PATH = '/bcc';
 
 /**
- * Landing path for a role after login, or null for internal roles (which fall back to
- * a validated callback or INTERNAL_FALLBACK_PATH at the call site). NEVER returns an
+ * Landing path for a role after login, or null for roles without an explicit landing
+ * (which fall back to a validated callback or INTERNAL_FALLBACK_PATH). NEVER returns an
  * absolute URL — single-origin, relative-only (RQ-01/DEC-02).
  */
 export function getLandingPath(role: string): string | null {

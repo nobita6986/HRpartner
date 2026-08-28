@@ -216,11 +216,11 @@ describe('C) login POST — same-origin landing + host-only cookie', () => {
     expect((await (await loginPOST(loginReq({ phone: '1', password: 'p' }))).json()).redirectTo).toBe('/ctv');
   });
 
-  it('internal role (ADMIN) → NO redirectTo, still host-only cookie', async () => {
+  it('ADMIN root → /admin, still host-only cookie', async () => {
     grantUser('ADMIN');
     const res = await loginPOST(loginReq({ phone: '1', password: 'p' }));
     const body = await res.json();
-    expect(body).toEqual({ ok: true }); // no redirectTo key
+    expect(body).toEqual({ ok: true, redirectTo: '/admin' });
     expect(setCookies(res)).toHaveLength(1);
   });
 

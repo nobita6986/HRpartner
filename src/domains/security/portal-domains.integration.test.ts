@@ -24,15 +24,16 @@ import {
   isPortalPath,
 } from '@/src/shared/routing/portal-landing';
 
-// The 13 SYSTEM_ROLES — portal roles have a landing path, the 9 internal roles do not.
+// Explicit post-login landings. ADMIN owns the root management console.
 const PORTAL_ROLES: Array<[string, string]> = [
+  ['ADMIN', '/admin'],
   ['VENDOR_ADMIN', '/vendor'],
   ['VENDOR_STAFF', '/vendor'],
   ['WORKER', '/worker'],
   ['CTV', '/ctv'],
 ];
 const INTERNAL_ROLES = [
-  'ADMIN', 'HR_MANAGER', 'DIRECTOR', 'HR_STAFF', 'SALE', 'PM', 'ACCOUNTANT', 'MKT', 'EMPLOYEE',
+  'HR_MANAGER', 'DIRECTOR', 'HR_STAFF', 'SALE', 'PM', 'ACCOUNTANT', 'MKT', 'EMPLOYEE',
 ];
 
 describe('V5-GO-LIVE-01 — portal landing (single canonical origin)', () => {

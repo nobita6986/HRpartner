@@ -124,11 +124,11 @@ describe('P1 Portal security matrix — scope checks', () => {
     it('CTV → /ctv', () => {
       expect(getLandingPath('CTV')).toBe('/ctv');
     });
-    it('ADMIN (internal) → null (no portal landing)', () => {
-      expect(getLandingPath('ADMIN')).toBeNull();
+    it('ADMIN root → /admin', () => {
+      expect(getLandingPath('ADMIN')).toBe('/admin');
     });
     it('every portal landing path is relative (no absolute subdomain URL)', () => {
-      for (const role of ['WORKER', 'VENDOR_ADMIN', 'VENDOR_STAFF', 'CTV']) {
+      for (const role of ['ADMIN', 'WORKER', 'VENDOR_ADMIN', 'VENDOR_STAFF', 'CTV']) {
         const p = getLandingPath(role)!;
         expect(p.startsWith('/')).toBe(true);
         expect(p.startsWith('//')).toBe(false);
