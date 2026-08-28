@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.1` |
-| Status | `REVISION_REQUIRED` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1 / Codex` |
 | Executor | `Tier 2` — một luồng duy nhất, bắt đầu sau M1-08 |
 | Auditor | `Tier 3 independent context` |
@@ -16,8 +16,8 @@
 | Modules | `Marketplace go-live / portal shell / authentication routing` |
 | ADR references | `UNIFIED_PLAN_v5.md §7.9 Marketplace-first`; task này thay thế phần domain-routing cũ của Portal DEC-01/02/03/13 bằng quyết định owner ngày 2026-08-28 |
 | Current execution round | `2` |
-| Current audit round | `0` |
-| Next gate | `/code hrp-v5-go-live-01-single-domain-consolidation` round 2 → rerun canonical unit gate → HANDOFF `READY_FOR_AUDIT` → `/audit` |
+| Current audit round | `1` |
+| Next gate | `CLOSED` — task kế tiếp đã mở: `/code hrp-v5-m1-09a-current-field-projection` |
 | Updated | `2026-08-28 Asia/Bangkok` |
 
 ### Dependency and sequencing gate
@@ -249,6 +249,7 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 | — | — | Chưa audit | Task đang chờ M1-08 ACCEPTED | None | Tier 1 activation |
 | `Execution round 1` | `BLK-01` | `ACCEPT_FIX` | In-scope code và canonical unit lane đã xanh `1187/1187`; raw `npx vitest run` chỉ fail baseline `placement-panel.test.ts` do default config thiếu automatic JSX. Quan trọng hơn, default config đọc ambient/repo DB URL, còn canonical unit config fail-closed mọi DB tại unreachable sentinel. Vì vậy raw default lane không phải quality gate an toàn của repo. | Spec `v1.1`: AC-11 và mandatory command dùng `npm run test:unit`; default runner/config giữ ngoài scope. | Tier 2 round 2 rerun `verify-task` + `npm run test:unit`, cập nhật HANDOFF thành `READY_FOR_AUDIT`; không sửa source nếu không có regression. |
 | `Execution round 1` | `PLN-FOLLOWUP-01` | `DEFER` | `npm test`/default `vitest.config.ts` hiện vừa thiếu automatic JSX vừa có khả năng đọc DB URL thật. Đây là G0 test-runner safety/parity debt, không phải routing defect. | None trong task này | Tier 1 mở task G0-04b riêng; không block go-live-01 khi canonical fail-closed lane PASS. |
+| `Audit round 1` | `NONE` | `ACCEPT` | Tier 3 verdict `PASS`; `verify-audit.ps1` trả `RESULT: PASS`; Tier 1 spot-check xác nhận callback same-origin fail-closed, legacy-host redirect dùng exact allowlist + fixed canonical origin, cookie live host-only và expire legacy domain cookie. Tier 1 chạy lại đúng 3 suite in-scope: `3/3` files, `85/85` tests PASS. Số `94/94` tại phần narrative của AUDIT là lỗi ghi số không ảnh hưởng verdict; evidence tái kiểm chứng và HANDOFF đều là `85/85`. | None. Giữ `PLN-FOLLOWUP-01` ở task G0-04b; không biến raw default runner thành PASS. | Source `f968c5a`; evidence `21d30ab`; task `ACCEPTED`, chuyển sang M1-09A. |
 
 ## 10. Revision Log
 
@@ -257,3 +258,4 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 | `v1.0` | `2026-08-28` | Tạo hợp đồng single-domain đầy đủ; canonical `hrpartner.vn`, role landing paths, cookie migration, legacy redirect, regression/audit gates. | Owner yêu cầu bỏ subdomain và chuẩn bị task chạy ngay sau M1-08. |
 | `v1.0` | `2026-08-28` | Mở dependency gate, pin baseline M1-08 ACCEPTED và chuyển sang `READY_FOR_EXECUTION` round 1. | M1-08 audit round 1 PASS; Planner acceptance `2cd8a55`. |
 | `v1.1` | `2026-08-28` | Chốt canonical fail-closed unit gate `npm run test:unit`; raw default runner được phân loại G0 infrastructure debt và không được waiver thành PASS. | Execution round 1 `BLK-01`; HANDOFF §9.1–9.6. |
+| `v1.1` | `2026-08-28` | Planner ACCEPT sau audit round 1 PASS; archive source/evidence và mở successor M1-09A. | Audit round 1; source `f968c5a`; evidence `21d30ab`. |
