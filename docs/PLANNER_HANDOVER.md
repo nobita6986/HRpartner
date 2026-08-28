@@ -9,17 +9,17 @@
 ```yaml
 updated_at: 2026-08-28 Asia/Bangkok
 roadmap_source: docs/UNIFIED_PLAN_v5.md
-current_lane: Marketplace go-live / single-domain consolidation
-current_task: hrp-v5-go-live-01-single-domain-consolidation
-task_path: docs/tasks/hrp-v5-go-live-01-single-domain-consolidation/TASK.md
+current_lane: V5-M1 security / current field projection
+current_task: hrp-v5-m1-09a-current-field-projection
+task_path: docs/tasks/hrp-v5-m1-09a-current-field-projection/TASK.md
 spec_version: v1.0
-task_status: REVISION_REQUIRED
-current_gate: REVISION_EXECUTION
-next_command: /code hrp-v5-go-live-01-single-domain-consolidation
-previous_accepted: hrp-v5-m1-08-vendor-object-scope
-next_planner_candidate: audit/resolve hrp-v5-go-live-01-single-domain-consolidation, then activate prewritten hrp-v5-m1-09a-current-field-projection
+task_status: READY_FOR_EXECUTION
+current_gate: TIER_2_EXECUTION
+next_command: /code hrp-v5-m1-09a-current-field-projection
+previous_accepted: hrp-v5-go-live-01-single-domain-consolidation
+next_planner_candidate: audit/resolve hrp-v5-m1-09a-current-field-projection, then review marketplace production launch gate and deferred G0-04b
 blocking_owner: none
-cursor_note: Single-domain implementation round 1 is complete but HANDOFF BLOCKED on raw default Vitest runner. Tier 1 resolved BLK-01 in spec v1.1: canonical fail-closed gate is npm run test:unit; default config parity is deferred G0-04b debt, never counted PASS. Tier 2 round 2 only reruns verify-task + canonical unit and updates HANDOFF READY_FOR_AUDIT. Successor M1-09A remains prewritten DRAFT-VALID; no concurrent executor.
+cursor_note: Single-domain consolidation is ACCEPTED. M1-09A is activated for the one remaining Tier 2 stream; it closes field projection on current schema/API surfaces, while M1-09B remains deferred until M8-06 creates canonical Payment models.
 ```
 
 <!-- ROADMAP_CURSOR_END -->

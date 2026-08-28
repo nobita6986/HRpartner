@@ -8,26 +8,26 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `DRAFT` — contract hoàn chỉnh, chờ single-domain task được ACCEPTED và pin baseline |
+| Status | `READY_FOR_EXECUTION` |
 | Planner | `Tier 1 / Codex` |
 | Executor | `Tier 2` — một luồng duy nhất |
 | Auditor | `Tier 3 independent context` |
-| Baseline | `TO_BE_PINNED` — commit Planner Resolution ACCEPTED của `hrp-v5-go-live-01-single-domain-consolidation` |
+| Baseline | `70f642f7ebff81d76172851ee727faba6820d8d9` — Planner Resolution ACCEPTED của `hrp-v5-go-live-01-single-domain-consolidation` |
 | Modules | `V5-M1-09A / current Worker + statement + payment-like + payroll-config response projection` |
 | ADR references | `UNIFIED_PLAN_v5.md §4.3 V5-M1-05/M1-09`; accepted RF-02 Worker projection; accepted M1-06 auth boundary; accepted M1-08 vendor object scope |
-| Current execution round | `0` |
+| Current execution round | `1` |
 | Current audit round | `0` |
-| Next gate | `single-domain ACCEPTED → Tier 1 pin baseline + READY_FOR_EXECUTION → verify-task → /code → /audit → /resolve` |
+| Next gate | `/code hrp-v5-m1-09a-current-field-projection` |
 | Updated | `2026-08-28 Asia/Bangkok` |
 
 ### Dependency and sequencing gate
 
-Task được chuẩn bị trước nhưng **không được giao `/code`** cho đến khi:
+Dependency gate đã được Tier 1 mở ngày 2026-08-28:
 
-1. `hrp-v5-go-live-01-single-domain-consolidation` có audit hợp lệ, Planner Resolution `ACCEPT` và `Status = ACCEPTED`.
-2. Source/evidence/resolution của single-domain đã commit; full acceptance SHA được pin vào `Baseline` ở trên.
-3. Tier 1 recheck route inventory sau single-domain, đổi task thành `READY_FOR_EXECUTION`, execution round `1`, rồi chạy `verify-task.ps1` PASS.
-4. Working tree không còn WIP của task trước. Nếu có overlap, Tier 2 dừng `BLOCKED`; không stash/reset/delete/chèn commit của agent khác.
+1. `hrp-v5-go-live-01-single-domain-consolidation` có audit round 1 `PASS`, Planner Resolution `ACCEPT` và `Status = ACCEPTED`.
+2. Source `f968c5a`, evidence `21d30ab` và resolution `70f642f` đã commit; full acceptance SHA được pin vào `Baseline` ở trên.
+3. Tier 1 đã recheck route/projection inventory sau single-domain: các surface M1-09A vẫn hiện hữu, không bị task routing thay đổi; canonical `Payment/PaymentAllocation` vẫn thuộc M1-09B sau M8-06.
+4. Working tree chỉ còn artifact ngoài scope đã được bảo vệ. Tier 2 vẫn phải preflight; nếu có overlap mới, dừng `BLOCKED`, không stash/reset/delete/chèn commit của agent khác.
 
 **Vị trí roadmap:** đây là bước ngay sau single-domain. M1-09A phải ACCEPTED trước khi mở security hardening tiếp theo hoặc marketplace production launch gate. M1-09B cho model `Payment/PaymentAllocation` chỉ mở khi M8-06 tạo schema/API thật.
 
@@ -276,7 +276,7 @@ Tier 2 cập nhật targeted command nếu file test/module mới có tên khác
 
 | ID | Question | Owner | Due | Blocks execution? |
 |---|---|---|---|---|
-| `Q-01` | Full acceptance SHA của single-domain task là gì? | Tier 1 | Khi resolve single-domain | Yes — chỉ block activation |
+| `Q-01` | Resolved: full acceptance SHA của single-domain là `70f642f7ebff81d76172851ee727faba6820d8d9`. | Tier 1 | `2026-08-28` | No |
 | `Q-02` | Canonical Payment model/API khi nào tồn tại? | M8-06 Planner | Khi mở M8-06 | No — deferred M1-09B, không block M1-09A |
 
 Không có policy question nào giao cho Tier 2; field/action decisions đã chốt trong §3–4.
@@ -288,6 +288,7 @@ Tier 1 append audit decision; không sửa lịch sử finding.
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
 | `0` | `NONE` | `PENDING_DEPENDENCY` | Contract prewritten; single-domain chưa ACCEPTED và baseline chưa pin. | None | Tier 1 activates after dependency gate. |
+| `0` | `Q-01` | `ACTIVATE` | Single-domain audit PASS và Planner ACCEPTED; source/evidence/resolution đã commit; route inventory được recheck tại acceptance HEAD. | Pin baseline, set execution round `1`, status `READY_FOR_EXECUTION`. | Giao một Tier 2 duy nhất bằng `/code hrp-v5-m1-09a-current-field-projection`. |
 
 ## 10. Revision Log
 
@@ -295,3 +296,4 @@ Tier 1 append audit decision; không sửa lịch sử finding.
 |---|---|---|---|
 | `v1.0` | `2026-08-28` | Initial M1-09A contract: action-aware DTOs for current Worker, statement, payslip/withdrawal and payroll-config surfaces; explicit M1-09B defer for absent Payment schema. | Owner requested next task prewritten after single-domain; technical survey EV-01..14. |
 | `v1.0` | `2026-08-28` | Canonicalized full-unit gate to fail-closed `npm run test:unit`; excluded unsafe default-runner parity debt. | single-domain `BLK-01`; EV-15/DEC-14. |
+| `v1.0` | `2026-08-28` | Mở dependency gate, pin single-domain acceptance SHA và chuyển task sang `READY_FOR_EXECUTION` round 1. | Single-domain audit round 1 PASS; resolution `70f642f`. |
