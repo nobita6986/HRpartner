@@ -8,7 +8,7 @@
 
 ## 0. Quyết định: diễn tập ngay trên production, trước khi công bố
 
-Runbook §11 viết "trên DB test/staging". Thực tế **không có staging deployment**: chỉ có `www.hrpartner.vn` trỏ Neon branch `dev`; branch `hrp_mp2_test` không có app đứng trước và **hết hạn 31/08**. Dựng staging chỉ để diễn tập một lần là không đáng.
+Runbook §11 viết "trên DB test/staging". Thực tế **không có staging deployment**: chỉ có `www.hrpartner.vn` trỏ Neon branch `hrp-live`; branch `hrp_mp2_test` không có app đứng trước và **hết hạn 31/08**. Dựng staging chỉ để diễn tập một lần là không đáng.
 
 Quyết định của Tier 1: **drill trên production trước khi công bố link**. Lúc này `GET /api/jobs` còn rỗng, chưa ai biết trang, cửa sổ rủi ro gần bằng 0. Đổi lại phải giữ hai điều kiện:
 
