@@ -98,10 +98,8 @@ function JobCard({ job, onApply }: JobCardProps) {
 
 interface ApplyFormProps { job: Job | null; onClose: () => void; onSuccess: (result: ApplyResult) => void; }
 
-// DEC-07: CV is METADATA ONLY in MP-2 (file name / MIME / size). The bytes are
-// never read or uploaded. MIME allow-list PDF/JPEG/PNG, max 5 MiB.
-const CV_MIME_ALLOW = ['application/pdf', 'image/jpeg', 'image/png'];
-const CV_MAX_BYTES = 5 * 1024 * 1024;
+// OPS-06A / RQ-07 / DEC-09: surface CV đã TẮT — không còn file input, không còn
+// CV state và payload không mang field `cv`. API từ chối `cv` non-null (422).
 
 // Friendly copy for the server error codes the canonical apply can return.
 const APPLY_ERRORS: Record<string, string> = {
@@ -112,6 +110,12 @@ const APPLY_ERRORS: Record<string, string> = {
   IDEMPOTENCY_PAYLOAD_MISMATCH: 'Thông tin đã thay đổi so với lần gửi trước, vui lòng gửi lại.',
   IDEMPOTENCY_KEY_REQUIRED: 'Không thể gửi đơn, vui lòng tải lại trang.',
   VALIDATION: 'Vui lòng kiểm tra lại thông tin đã nhập.',
+  INVALID_INPUT: 'Vui lòng kiểm tra lại thông tin đã nhập.',
+  RATE_LIMITED: 'Bạn gửi quá nhiều lần. Vui lòng thử lại sau ít phút.',
+  RATE_LIMIT_UNAVAILABLE: 'Hệ thống đang tạm thời quá tải. Vui lòng thử lại sau ít phút.',
+  PAYLOAD_TOO_LARGE: 'Dữ liệu gửi lên quá lớn. Vui lòng rút ngắn thông tin.',
+  UNSUPPORTED_MEDIA_TYPE: 'Không thể gửi đơn, vui lòng tải lại trang.',
+  CV_UPLOAD_DISABLED: 'Tính năng tải CV hiện đang tắt. Vui lòng gửi hồ sơ không kèm CV.',
 };
 
 function ApplyForm({ job, onClose, onSuccess }: ApplyFormProps) {
@@ -119,8 +123,6 @@ function ApplyForm({ job, onClose, onSuccess }: ApplyFormProps) {
   const [phone, setPhone] = useState('');
   const [cccdNumber, setCccdNumber] = useState('');
   const [consent, setConsent] = useState(false);
-  const [cv, setCv] = useState<{ fileName: string; mimeType: string; sizeBytes: number } | null>(null);
-  const [cvError, setCvError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   // DEC-03/04: one idempotency key per attempt. Regenerated whenever the payload
@@ -129,23 +131,13 @@ function ApplyForm({ job, onClose, onSuccess }: ApplyFormProps) {
   const [idemKey, setIdemKey] = useState(() => crypto.randomUUID());
   useEffect(() => {
     setIdemKey(crypto.randomUUID());
-  }, [fullName, phone, cccdNumber, consent, cv?.fileName, cv?.sizeBytes]);
+  }, [fullName, phone, cccdNumber, consent]);
 
-  function handleCvPick(e: React.ChangeEvent<HTMLInputElement>) {
-    setCvError('');
-    const file = e.target.files?.[0];
-    if (!file) { setCv(null); return; }
-    if (!CV_MIME_ALLOW.includes(file.type)) { setCv(null); setCvError('Chỉ chấp nhận tệp PDF, JPEG hoặc PNG.'); return; }
-    if (file.size > CV_MAX_BYTES) { setCv(null); setCvError('Tệp vượt quá 5 MB.'); return; }
-    // Metadata only — do NOT read the file bytes (DEC-07).
-    setCv({ fileName: file.name, mimeType: file.type, sizeBytes: file.size });
-  }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (!fullName.trim() || !phone.trim()) { setError('Vui lòng điền họ tên và số điện thoại.'); return; }
     if (!consent) { setError('Vui lòng đồng ý cho phép xử lý thông tin trước khi gửi.'); return; }
-    if (cvError) { setError(cvError); return; }
     if (!job) return;
     setLoading(true);
     try {
@@ -159,7 +151,6 @@ function ApplyForm({ job, onClose, onSuccess }: ApplyFormProps) {
           phone: phone.trim(),
           cccdNumber: cccdNumber.trim() || null,
           consent: true,
-          cv,
         }),
       });
       const data = await res.json().catch(() => ({} as Record<string, unknown>));
@@ -202,12 +193,6 @@ function ApplyForm({ job, onClose, onSuccess }: ApplyFormProps) {
             <label className='block text-sm font-medium mb-1' style={{ color: 'var(--on-surface)' }}>Số CCCD (không bắt buộc)</label>
             <input type='text' value={cccdNumber} onChange={(e) => setCccdNumber(e.target.value)} className='w-full px-3 py-2 rounded-lg border' style={{ borderColor: 'var(--outline)', backgroundColor: 'var(--surface)' }} placeholder='123456789012' />
           </div>
-          <div>
-            <label className='block text-sm font-medium mb-1' style={{ color: 'var(--on-surface)' }}>CV (PDF/JPEG/PNG, ≤ 5 MB — không bắt buộc)</label>
-            <input type='file' accept='.pdf,image/jpeg,image/png' onChange={handleCvPick} className='w-full text-sm' />
-            {cv && <p className='text-xs mt-1' style={{ color: 'var(--on-surface-variant)' }}>{cv.fileName} ({Math.ceil(cv.sizeBytes / 1024)} KB)</p>}
-            {cvError && <p className='text-xs mt-1' style={{ color: 'var(--error, #dc2626)' }}>{cvError}</p>}
-          </div>
           <label className='flex items-start gap-2 text-sm' style={{ color: 'var(--on-surface-variant)' }}>
             <input type='checkbox' checked={consent} onChange={(e) => setConsent(e.target.checked)} className='mt-1' />
             <span>Tôi đồng ý cho phép thu thập và xử lý thông tin cá nhân phục vụ mục đích tuyển dụng.</span>
@@ -231,7 +216,12 @@ export default function JobsPage() {
 
   useEffect(() => {
     fetch('/api/jobs')
-      .then((res) => res.json())
+      .then(async (res) => {
+        // OPS-06A / RQ-07: browse có limiter phân tán ⇒ 429/503 hiển thị thân thiện.
+        if (res.status === 429) throw new Error('Bạn tải trang quá nhanh. Vui lòng thử lại sau ít phút.');
+        if (res.status === 503) throw new Error('Hệ thống đang tạm thời quá tải. Vui lòng thử lại sau ít phút.');
+        return res.json();
+      })
       .then((data) => {
         if (data.jobs && Array.isArray(data.jobs)) {
           setJobs(data.jobs);
@@ -239,7 +229,7 @@ export default function JobsPage() {
           setError('Khong the tai danh sach viec lam');
         }
       })
-      .catch((e) => setError(String(e)))
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -257,6 +247,8 @@ export default function JobsPage() {
           <div className='flex justify-center py-20'>
             <div className='animate-spin rounded-full h-12 w-12 border-4' style={{ borderTopColor: 'var(--primary)' }} />
           </div>
+        ) : error ? (
+          <p className='text-center py-20' role='alert' style={{ color: 'var(--error, #dc2626)' }}>{error}</p>
         ) : (
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
             {jobs.map((job) => <JobCard key={job.id} job={job} onApply={handleApply} />)}

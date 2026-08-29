@@ -6,6 +6,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface ApiJob {
   id: string;
+  /** PublicJobDto.slug (= project.code) — khoá của canonical apply endpoint. */
+  slug: string;
   title: string;
   isPublic: boolean;
   availableSlots: number;
@@ -15,6 +17,7 @@ interface ApiJob {
 
 interface EnrichedJob {
   id: string;
+  slug: string;
   title: string;
   company: string;
   icon: string;
@@ -60,6 +63,7 @@ function enrichJob(job: ApiJob): EnrichedJob {
 
   return {
     id: job.id,
+    slug: job.slug ?? job.id,
     title: job.title,
     company: 'HRP Partners',
     icon,
@@ -96,6 +100,22 @@ interface ApplyFormData {
   cccdNumber: string;
 }
 
+// OPS-06A / RQ-07: landing page dùng ĐÚNG canonical apply contract
+// (slug-keyed + idempotency key + consent), không còn gọi legacy POST /api/jobs.
+const APPLY_ERRORS: Record<string, string> = {
+  DUPLICATE_APPLICATION: 'Bạn đã ứng tuyển vị trí này rồi. Hãy dùng mã tra cứu để xem trạng thái.',
+  JOB_NOT_AVAILABLE: 'Vị trí này hiện không còn nhận hồ sơ.',
+  CONSENT_REQUIRED: 'Vui lòng đồng ý cho phép xử lý thông tin.',
+  IDEMPOTENCY_PAYLOAD_MISMATCH: 'Thông tin đã thay đổi so với lần gửi trước, vui lòng gửi lại.',
+  IDEMPOTENCY_KEY_REQUIRED: 'Không thể gửi đơn, vui lòng tải lại trang.',
+  VALIDATION: 'Vui lòng kiểm tra lại thông tin đã nhập.',
+  INVALID_INPUT: 'Vui lòng kiểm tra lại thông tin đã nhập.',
+  RATE_LIMITED: 'Bạn gửi quá nhiều lần. Vui lòng thử lại sau ít phút.',
+  RATE_LIMIT_UNAVAILABLE: 'Hệ thống đang tạm thời quá tải. Vui lòng thử lại sau ít phút.',
+  PAYLOAD_TOO_LARGE: 'Dữ liệu gửi lên quá lớn. Vui lòng rút ngắn thông tin.',
+  APPLY_ENDPOINT_RETIRED: 'Không thể gửi đơn, vui lòng tải lại trang.',
+};
+
 function ApplyModal({
   job,
   onClose,
@@ -106,8 +126,15 @@ function ApplyModal({
   onSuccess: (code: string) => void;
 }) {
   const [form, setForm] = useState<ApplyFormData>({ fullName: '', phone: '', cccdNumber: '' });
+  const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Một idempotency key cho mỗi payload: retry y nguyên sẽ replay server-side,
+  // sửa thông tin rồi gửi lại được coi là đơn mới (MP-2 DEC-03/04).
+  const [idemKey, setIdemKey] = useState(() => crypto.randomUUID());
+  useEffect(() => {
+    setIdemKey(crypto.randomUUID());
+  }, [form.fullName, form.phone, form.cccdNumber, consent]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -116,16 +143,31 @@ function ApplyModal({
       setError('Vui lòng điền đầy đủ thông tin bắt buộc.');
       return;
     }
+    if (!consent) {
+      setError('Vui lòng đồng ý cho phép xử lý thông tin trước khi gửi.');
+      return;
+    }
     setLoading(true);
     try {
-      const res = await fetch('/api/jobs', {
+      const res = await fetch(`/api/public/jobs/${encodeURIComponent(job.slug)}/applications`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId: job.id, ...form }),
+        headers: { 'Content-Type': 'application/json', 'idempotency-key': idemKey },
+        body: JSON.stringify({
+          fullName: form.fullName.trim(),
+          phone: form.phone.trim(),
+          cccdNumber: form.cccdNumber.trim() || null,
+          consent: true,
+        }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || data.error || 'Có lỗi xảy ra');
-      onSuccess(data.submission?.submissionCode ?? job.id);
+      const data = await res.json().catch(() => ({} as Record<string, unknown>));
+      if (!res.ok) {
+        const code = typeof data?.error === 'string' ? data.error : '';
+        throw new Error(
+          APPLY_ERRORS[code] ?? (typeof data?.message === 'string' ? data.message : 'Có lỗi xảy ra'),
+        );
+      }
+      // Chỉ báo thành công sau khi server trả 201 + tracking code.
+      onSuccess(String(data.trackingCode ?? ''));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
     } finally {
@@ -197,8 +239,17 @@ function ApplyModal({
               maxLength={12}
             />
           </div>
+          <label className="flex items-start gap-2 text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="mt-1"
+            />
+            <span>Tôi đồng ý cho phép thu thập và xử lý thông tin cá nhân phục vụ mục đích tuyển dụng.</span>
+          </label>
           {error && (
-            <p className="text-sm" style={{ color: 'var(--color-error)' }}>{error}</p>
+            <p className="text-sm" role="alert" style={{ color: 'var(--color-error)' }}>{error}</p>
           )}
           <button
             type="submit"
@@ -236,11 +287,11 @@ function SuccessModal({ code, onClose }: { code: string; onClose: () => void }) 
         </h3>
         {code && (
           <p className="mb-2" style={{ color: 'var(--color-on-surface-variant)' }}>
-            Mã đơn: <span className="font-mono font-semibold">{code}</span>
+            Mã tra cứu: <span className="font-mono font-semibold select-all">{code}</span>
           </p>
         )}
         <p className="text-sm mb-6" style={{ color: 'var(--color-on-surface-variant)' }}>
-          Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.
+          Vui lòng lưu lại mã này để tra cứu trạng thái hồ sơ. Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.
         </p>
         <button
           onClick={onClose}
@@ -394,6 +445,10 @@ export default function JobsPage() {
     setFetchError('');
     try {
       const res = await fetch('/api/jobs');
+      // OPS-06A / RQ-07: browse cũng có limiter phân tán ⇒ hiển thị trạng thái
+      // thân thiện cho 429/503 thay vì "Lỗi <status>".
+      if (res.status === 429) throw new Error('Bạn tải trang quá nhanh. Vui lòng thử lại sau ít phút.');
+      if (res.status === 503) throw new Error('Hệ thống đang tạm thời quá tải. Vui lòng thử lại sau ít phút.');
       if (!res.ok) throw new Error(`Lỗi ${res.status}`);
       const data = await res.json();
       const apiJobs: ApiJob[] = Array.isArray(data.jobs) ? data.jobs : [];

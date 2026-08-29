@@ -7,20 +7,20 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-08-28 Asia/Bangkok
+updated_at: 2026-08-29 Asia/Bangkok
 roadmap_source: docs/UNIFIED_PLAN_v5.md
 current_lane: V5 Marketplace launch gate — OPS-06A public hardening
 current_task: hrp-v5-ops-06a-marketplace-launch-hardening
 task_path: docs/tasks/hrp-v5-ops-06a-marketplace-launch-hardening/TASK.md
 spec_version: v1.0
-task_status: READY_FOR_EXECUTION
-current_gate: TIER_2_EXECUTION
-next_command: /code hrp-v5-ops-06a-marketplace-launch-hardening
-previous_accepted: hrp-v5-m1-09a-current-field-projection
-next_planner_candidate: audit/resolve hrp-v5-ops-06a-marketplace-launch-hardening, then Owner drill/sign-off + authenticated/apply/tracking smoke + one real job publish
-blocking_owner: Tier 2 unit/static implementation can start; LIVE audit requires isolated Upstash TEST credentials plus existing safe TEST DB. Production still requires rotate exposed neondb_owner credential.
+task_status: ACCEPTED
+current_gate: PHASE_REVIEW
+next_command: Tier 1 atomic scoped commit/push for OPS-06A production + complete test lane, then configure production Redis env and execute Owner runbook drill/smoke before publishing one real job.
+previous_accepted: hrp-v5-ops-06a-marketplace-launch-hardening
+next_planner_candidate: Marketplace production launch operations (env validation, deploy, authenticated/apply/tracking smoke, one real job publish); after launch stabilization return to the V5 roadmap candidate selected from master plan.
+blocking_owner: Before public launch, provision production UPSTASH_REDIS_REST_URL/TOKEN and RATE_LIMIT_HASH_SECRET on Vercel, rotate the previously exposed production neondb_owner credential, sign the runbook and approve one real job publish.
 product_override: /bcc retired; production payroll/payslip belongs to the separate salary app; PAY-01..08 = DEFERRED_FINAL and does not block HRP go-live
-cursor_note: OPS-06A v1.0 verify-task PASS. Scope is launch-specific: distributed rate limits for job read/apply/tracking, legacy public writes retired, CV UI/API surface disabled; it does NOT claim full OPS-02/OPS-06. Phone-only Quick Apply remains a separate UX/data slice; do not fabricate placeholder Worker/Application names. Keep one Tier 2 stream. Preserve the 2026-08-28 /bcc + Payroll override.
+cursor_note: OPS-06A audit round 5 PASS: 6/6 LIVE Redis+DB, 1408/1408 current full lane, PII guards and distributed limiter evidence all green. Task is ACCEPTED. PROCESS-02 requires one atomic scoped commit containing production routes/helpers, src/shared/security, marketplace unit/static/LIVE tests, config/dependencies and OPS-06A docs; exclude layout/aff/scratch/env-local WIP. The next gate is operational go-live, not another code/audit round. Scope remains launch-specific and does not claim full OPS-02/06.
 ```
 
 <!-- ROADMAP_CURSOR_END -->

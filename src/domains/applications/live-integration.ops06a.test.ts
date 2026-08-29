@@ -15,6 +15,13 @@
  * read-scope) KHÔNG được nhân bản ở đây — nó thuộc `live-integration.mp2.test.ts` và
  * `security-boundary.mp2.test.ts`; STEP-05 yêu cầu CHẠY LẠI hai file đó, không viết lại.
  *
+ * ROUND 4 (Tier 2 adopt + sở hữu file này): lane KHÔNG còn dùng `KEYS`/`SCAN`. Cleanup và
+ * assertion dựng ĐÚNG key mà `@upstash/ratelimit` ghi — `${prefix}:${identifier}:${windowIndex}`
+ * — rồi chỉ dùng EXISTS/TTL/DEL. Hệ quả: token TEST chỉ cần EVAL (sliding window bắt buộc chạy
+ * Lua) + EXISTS/TTL/DEL, KHÔNG cần quyền quét toàn keyspace. Thêm PREFLIGHT capability: token
+ * thiếu quyền scripting ⇒ fail bằng câu chữ của Tier 2 và KHÔNG in raw provider error / URL /
+ * token (DEC-12) ⇒ audit phân biệt được provider/config defect với code defect.
+ *
  * ENV_BLOCKED by default. Cần opt-in tường minh:
  *   OPS06A_LIVE_CHECK=1
  *   UPSTASH_REDIS_REST_URL_TEST / UPSTASH_REDIS_REST_TOKEN_TEST / RATE_LIMIT_HASH_SECRET_TEST
@@ -27,8 +34,10 @@ import { NextRequest } from 'next/server';
 
 import { hashRateLimitIdentifier } from '@/src/shared/security/rate-limit-identity';
 import {
+  keyPrefixFor,
   resolveRateLimitConfig,
   type EnvLike,
+  type RateLimitConfig,
   type RateLimitRule,
 } from '@/src/shared/security/rate-limit-port';
 import { createUpstashRateLimitProvider } from '@/src/shared/security/rate-limit-upstash';
@@ -60,24 +69,73 @@ const LIVE_ENV: EnvLike = {
 const RUN_ID = `ops06a-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const RAW_SUBJECT = `203.0.113.${(Date.now() % 200) + 1}-${RUN_ID}`;
 
+/**
+ * Bề mặt Redis TỐI THIỂU mà lane này cần — cố tình KHÔNG khai báo `keys`/`scan` để việc
+ * "không quét keyspace" là bất biến ở mức KIỂU, không phải lời hứa trong comment.
+ * Token TEST chỉ cần đúng 4 quyền: EVAL, EXISTS, TTL, DEL.
+ */
+interface MinimalRedisClient {
+  eval(script: string, keys: string[], args: unknown[]): Promise<unknown>;
+  exists(...keys: string[]): Promise<number>;
+  ttl(key: string): Promise<number>;
+  del(...keys: string[]): Promise<number>;
+}
+
+/**
+ * Dựng lại ĐÚNG key của `@upstash/ratelimit` sliding window (SDK 2.0.8):
+ *   `Ratelimit.getKey` = [prefix, identifier].join(':'), sliding window thêm `:${windowIndex}`
+ *   với windowIndex = floor(now / windowMs).
+ * Trả cả bucket trước/hiện tại/sau ⇒ assertion và cleanup không lệch khi run vắt qua ranh giới.
+ * `subjectPart` nhận digest HOẶC raw subject để chứng minh key raw KHÔNG tồn tại (DEC-05).
+ */
+function exactWindowKeys(
+  config: RateLimitConfig,
+  rule: RateLimitRule,
+  subjectPart: string,
+  nowMs = Date.now(),
+): string[] {
+  const windowMs = rule.windowSec * 1000;
+  const current = Math.floor(nowMs / windowMs);
+  const prefix = keyPrefixFor(config, rule);
+  return [current - 1, current, current + 1].map((w) => `${prefix}:${subjectPart}:${w}`);
+}
+
 describe.skipIf(!REDIS_READY)('AC-01 LIVE — distributed counter trên TEST Redis', () => {
   const rule: RateLimitRule = { surface: 'APPLY_IP', subject: 'ip', limit: 3, windowSec: 60 };
-  let config: any;
+  let config: RateLimitConfig;
   let identifier: string;
-  let redis: { keys(p: string): Promise<string[]>; del(...k: string[]): Promise<number> };
+  let redis: MinimalRedisClient;
 
   beforeAll(async () => {
     config = resolveRateLimitConfig(LIVE_ENV);
     identifier = hashRateLimitIdentifier(rule, RAW_SUBJECT, config.hashSecret);
     const { Redis } = await import('@upstash/redis');
-    redis = new Redis({ url: config.restUrl, token: config.restToken }) as unknown as typeof redis;
+    redis = new Redis({ url: config.restUrl, token: config.restToken }) as unknown as MinimalRedisClient;
+
+    // PREFLIGHT capability (round 4). `@upstash/ratelimit` chạy sliding window bằng Lua
+    // (EVAL/EVALSHA); token thiếu quyền scripting ⇒ NOPERM và MỌI assertion dưới đây vô nghĩa.
+    // Phân loại NGAY tại đây, bằng câu chữ của Tier 2 — KHÔNG in raw error / URL / token (DEC-12).
+    try {
+      await redis.eval('return 1', [], []);
+    } catch (err) {
+      const noperm = /NOPERM|no permissions/i.test(err instanceof Error ? err.message : String(err));
+      throw new Error(
+        noperm
+          ? 'PROVIDER/CONFIG DEFECT — token Redis TEST KHÔNG có quyền scripting (EVAL/EVALSHA), ' +
+            'thứ mà @upstash/ratelimit bắt buộc phải dùng. Cần ghép Standard REST token với REST URL ' +
+            'của CÙNG một Redis TEST cô lập. Đây KHÔNG phải code defect: adapter/route không thể ' +
+            'đổi được kết quả này.'
+          : 'ENV DEFECT — Redis TEST không phản hồi EVAL và lỗi KHÔNG phải NOPERM. Kiểm tra REST URL / ' +
+            'kết nối của Redis TEST trước khi kết luận về code.',
+      );
+    }
   }, 30000);
 
   afterAll(async () => {
-    if (!redis) return;
-    // Dọn namespace của run này — không chạm key của môi trường khác.
-    const keys = await redis.keys(`hrp:rl:v1:ops06a-live:*${identifier}*`);
-    if (keys.length > 0) await redis.del(...keys);
+    if (!redis || !config || !identifier) return;
+    // Cleanup bằng ĐÚNG key đã biết — KHÔNG dùng KEYS/SCAN. Nếu DEL bị từ chối, key vẫn tự hết
+    // hạn: SDK gọi PEXPIRE = window*2 + 1000ms, nên không có key nào sống vĩnh viễn.
+    await redis.del(...exactWindowKeys(config, rule, identifier)).catch(() => 0);
   }, 30000);
 
   it('hai instance ĐỘC LẬP chia SẺ một counter (RAM per-instance thì không thể deny)', async () => {
@@ -98,11 +156,25 @@ describe.skipIf(!REDIS_READY)('AC-01 LIVE — distributed counter trên TEST Red
     expect((await instanceA.limit(rule, identifier)).allowed).toBe(false);
   }, 30000);
 
-  it('DEC-05: Redis key chứa digest, KHÔNG chứa raw subject', async () => {
+  it('DEC-05: key dựng từ digest + có TTL chặn trên; key theo raw subject KHÔNG tồn tại', async () => {
     await createUpstashRateLimitProvider(config).limit(rule, identifier);
-    const keys = await redis.keys('hrp:rl:v1:ops06a-live:APPLY_IP*');
-    expect(keys.some((k) => k.includes(identifier))).toBe(true);
-    for (const key of keys) expect(key).not.toContain(RAW_SUBJECT);
+
+    // Key digest phải tồn tại ở ít nhất một trong ba bucket liền kề (không lệch ranh giới window).
+    const digestKeys = exactWindowKeys(config, rule, identifier);
+    const present: string[] = [];
+    for (const key of digestKeys) if ((await redis.exists(key)) === 1) present.push(key);
+    expect(present.length).toBeGreaterThanOrEqual(1);
+
+    // TTL hữu hạn, chặn trên bởi window*2 + 1s (SDK PEXPIRE) ⇒ counter không sống vĩnh viễn.
+    const ttl = await redis.ttl(present[0]);
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(rule.windowSec * 2 + 1);
+
+    // Cùng công thức key nhưng thay digest bằng RAW subject ⇒ KHÔNG được tồn tại.
+    for (const rawKey of exactWindowKeys(config, rule, RAW_SUBJECT)) {
+      expect(await redis.exists(rawKey)).toBe(0);
+    }
+    for (const key of present) expect(key).not.toContain(RAW_SUBJECT);
   }, 30000);
 });
 describe.skipIf(!DB_READY)('AC-04/05/08 LIVE — chặn ⇒ zero write trên TEST DB thật', () => {

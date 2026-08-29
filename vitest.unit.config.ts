@@ -34,6 +34,7 @@ export default defineConfig({
       DATABASE_URL_ADMIN_TEST: '',
       MP2_LIVE_SECURITY_CHECK: '',
       MP3B_LIVE_CONVERSION_CHECK: '',
+      OPS06A_LIVE_CHECK: '',
       M1_06A_LIVE_AUTH_SCOPE: '',
       M1_06B_LIVE_AUTH_SCOPE: '',
       M1_07A_LIVE_TICKET_RLS: '',

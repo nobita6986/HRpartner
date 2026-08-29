@@ -12,6 +12,9 @@
  *   - 4 files connect via getPrisma() → process.env.DATABASE_URL (RLS-enforcing writer).
  *   - 2 `*.mp2.test.ts` files are LIVE harnesses gated by describe.skipIf(!MP2_LIVE_SECURITY_CHECK);
  *     they self-skip unless that flag is set, so they are safe in this lane and skip otherwise.
+ *   - `live-integration.ops06a.test.ts` (V5-OPS-06A) is gated by describe.skipIf on
+ *     OPS06A_LIVE_CHECK=1 plus TEST-only Upstash/DB inputs; registered here so the unit lane
+ *     never picks it up.
  *
  * Consumers:
  *   - vitest.unit.config.ts       → EXCLUDES these (unit lane must touch NO DB; fail-closed sentinel).
@@ -28,6 +31,7 @@ export const INTEGRATION_TEST_FILES: string[] = [
   'src/domains/applications/security-boundary.mp2.test.ts',
   'src/domains/applications/live-integration.mp3b.test.ts',
   'src/domains/applications/live-integration.mp3c.test.ts',
+  'src/domains/applications/live-integration.ops06a.test.ts',
   'src/shared/auth/live-auth-scope.m1-06a.test.ts',
   'src/shared/auth/live-vendor-worker-scope.m1-06b.test.ts',
   'src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts',

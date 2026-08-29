@@ -1,26 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPublicTracking } from '@/src/domains/applications/application.service';
-import { checkTrackingRateLimit, clientKeyFromHeaders } from '@/src/domains/applications/rate-limit';
 import { getPrisma } from '@/src/lib/db';
+import { getCorrelationId } from '@/src/shared/observability/correlation-id';
+import { clientIpFromHeaders } from '@/src/shared/security/rate-limit-identity';
+import { RATE_LIMIT_RULES } from '@/src/shared/security/rate-limit-port';
+import { enforceRateLimits } from '@/src/shared/security/rate-limit-guard';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 type RouteParams = { params: Promise<{ trackingCode: string }> };
 
-// Public tracking (DEC-02/RQ-04): safe status projection ONLY, via the
-// SECURITY DEFINER function. Unknown/disabled code → generic 404 with no
-// row-existence signal. Rate-limit hook guards code enumeration (RISK-03).
+// Public tracking (MP-2 DEC-02/RQ-04 + OPS-06A RQ-04): safe status projection ONLY,
+// via the SECURITY DEFINER function. Unknown/disabled code → generic 404 with no
+// row-existence signal.
+//
+// OPS-06A: limiter phân tán DUAL BUCKET (IP 20/60s + tracking-code HMAC 10/60s) thay
+// cho Map per-instance cũ — enumeration không còn scale theo số instance. Cả 429 và
+// 503 xảy ra TRƯỚC mọi truy vấn ⇒ zero DB call; raw code/IP không ra khỏi process.
 export async function GET(req: NextRequest, { params }: RouteParams) {
-  const rl = checkTrackingRateLimit(clientKeyFromHeaders(req.headers));
-  if (!rl.allowed) {
-    return NextResponse.json(
-      { error: 'RATE_LIMITED', message: 'Too many requests' },
-      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec), 'Cache-Control': 'no-store' } },
-    );
-  }
-
   const { trackingCode } = await params;
+
+  const denied = await enforceRateLimits({
+    buckets: [
+      { rule: RATE_LIMIT_RULES.TRACKING_IP, value: clientIpFromHeaders(req.headers, process.env) },
+      { rule: RATE_LIMIT_RULES.TRACKING_CODE, value: trackingCode },
+    ],
+    routeClass: 'GET /api/public/applications/[trackingCode]',
+    requestId: getCorrelationId(req.headers),
+  });
+  if (denied) return denied;
+
   const prisma = getPrisma();
   const dto = await prisma.$transaction((tx) => getPublicTracking(tx, trackingCode));
   if (!dto) {

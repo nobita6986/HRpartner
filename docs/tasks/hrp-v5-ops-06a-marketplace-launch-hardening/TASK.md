@@ -8,17 +8,17 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1 / Codex` |
 | Executor | `Tier 2` — một luồng duy nhất |
 | Auditor | `Tier 3 independent context` |
 | Baseline | `d9a1067` — M1-09A đã ACCEPTED/push; Tier 1 launch review + runbook đã commit |
 | Modules | `V5-OPS-06A / V5-OPS-02 marketplace subset / §7.9.7 criteria 1, 2, 8` |
 | ADR references | `UNIFIED_PLAN_v5.md §4.11 OPS-02/OPS-06, §7.9.2, §7.9.4, §7.9.7`; Owner decision 2026-08-28: CV không cần cho tuyển công nhân, raw upload tắt |
-| Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `verify-task → /code hrp-v5-ops-06a-marketplace-launch-hardening → /audit → /resolve` |
-| Updated | `2026-08-28 Asia/Bangkok` |
+| Current execution round | `4` — complete |
+| Current audit round | `5` — verdict `PASS` |
+| Next gate | `PHASE_REVIEW`: atomic scoped commit/push → production env + Owner runbook drill/smoke → publish one real job |
+| Updated | `2026-08-29 Asia/Bangkok` |
 
 ### Dependency và sequencing gate
 
@@ -256,10 +256,23 @@ Rollback business rule: nếu forward fix/rate provider chưa an toàn, **unpubl
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| — | — | — | Chưa audit. | — | — |
+| `1` | `BLOCKED / ENV_BLOCKED` | `DEFER — WAIT_FOR_ENV; không force resolve` | Gate cơ học `verify-audit.ps1` PASS nhưng AC-01/03/04/08/10 là P0 và chưa có runtime evidence: Tier 2 lẫn Tier 3 đều thiếu TEST Redis/DB, integration lane skip đúng fail-closed. Unit/build/static PASS không chứng minh distributed counter hoặc zero-write LIVE. | None; spec v1.0 giữ nguyên, không yêu cầu sửa code trước khi rerun | Owner provision `UPSTASH_REDIS_REST_URL_TEST`, `UPSTASH_REDIS_REST_TOKEN_TEST`, `RATE_LIMIT_HASH_SECRET_TEST` và safe `DATABASE_URL_TEST`/`DATABASE_URL_ADMIN_TEST`; Tier 3 re-audit round 2. Tuyệt đối không dùng prod/dev fallback hoặc in secret vào artifact. |
+| `2` | `FAIL / TEST_REDIS_TOKEN_NOPERM` | `DEFER — ROUND_3_WITH_TEST_TOKEN; không ACCEPT` | Round 2 đã chạy LIVE: DB cases AC-04/05/08 PASS, nhưng Upstash trả `NOPERM` cho `EVALSHA` (và test cleanup `KEYS`), làm AC-01/03/10 FAIL. Đây là credential capability failure trên TEST target; chưa có distributed-counter evidence nên không được force-close. | None; spec v1.0 và implementation giữ nguyên cho lần thử kế tiếp. Nếu Round 3 vẫn fail với token đúng quyền, Tier 1 sẽ phân loại lại thành code/provider defect trước khi cho `/code`. | Owner thay **chỉ** `UPSTASH_REDIS_REST_TOKEN_TEST` bằng token của Redis TEST cô lập có quyền scripting/cleanup cần cho test; không tái sử dụng token production, không ghi/in token. Tier 3 chạy audit round 3 độc lập. |
+| `3` | `FAIL / PROVIDER_CONFIG_DEFECT` | `REVISION_REQUIRED — không ACCEPT, không force-pass` | Round 3 tiếp tục nhận `NOPERM EVALSHA/KEYS`; DB AC-04/05/08 vẫn PASS. Đây là lỗi quyền hoặc cặp URL/token của Redis TEST, chưa phải bằng chứng cho code defect. Đồng thời commit `7ed57a5` thêm cả `AUDIT.md` và `live-integration.ops06a.test.ts`, trong khi AUDIT nói Tier 3 đã sửa bug test; vì vậy tuyên bố `Independence: Confirmed` không thể dùng để khép task. | Spec/product semantics giữ `v1.0`. Mở execution round 4 chỉ để phục hồi ownership và evidence: Tier 2 phải review/adopt hoặc sửa LIVE test, không dùng `KEYS` cho cleanup; dùng namespace duy nhất + exact known keys/TTL, rồi cập nhật HANDOFF. Không yêu cầu viết lại production code nếu review không phát hiện defect. | Tier 2 chạy `/code ...` round 4 và sở hữu toàn bộ thay đổi test/code; Owner ghép **Standard REST token** với REST URL của cùng Redis TEST cô lập, không dùng token production; sau đó một Tier 3 context khác chạy audit round 4, chỉ đọc source/HANDOFF và viết AUDIT. |
+| `pre-audit 4` | `PLN-04 / P0_PII_DEBUG_LOG` | `RETURN_TO_TIER_2 — chưa mở audit` | Working tree có `application.service.ts:145` ghi `fullName`, `phone` và `trackingCode` qua `console.log` trên public apply path. Dòng này không có trong baseline `d9a1067` hoặc HEAD `25b9928`, nhưng nó vi phạm trực tiếp RQ-10/AC-09 và thuộc security boundary của task; không được chuyển thành residual ngoài scope. | Spec v1.0 không đổi. Cùng execution round 4: xóa debug log, thêm/siết regression evidence để public apply service không ghi raw họ tên/số điện thoại/tracking code vào `console.*`, chạy focused + full unit + diff/secret-PII scan, rồi cập nhật HANDOFF. | Tier 2 hiện tại đóng `PLN-04`; giữ nguyên các WIP layout/aff/scratch khác. Chỉ khi HANDOFF mới kết `READY_FOR_AUDIT` và không còn log PII mới giao Tier 3 audit round 4. |
+| `4` | `PLN-04 / P0_PII_DEBUG_LOG` | `EXECUTION_CLOSED — ROUND_5_RECONFIRM` | Source hiện không còn debug log trong `application.service.ts`; HANDOFF round 4 ghi 7 regression tests, mutation check và full unit `1408/1408`. AUDIT round 4 cho AC-09 PASS nhưng vẫn ghi test count cũ `1291`, nên không dùng con số cũ để close cuối. | Không đổi code/contract. Audit round 5 phải chạy lại current focused/full unit lane và xác nhận static/runtime PII guards còn hiệu lực. | Tier 3 round 5; không trả về Tier 2 trừ khi fresh evidence phát hiện regression. |
+| `4` | `FAIL / PROVIDER_CONFIG_DEFECT` | `DEFER — BLOCKED_OWNER; không ACCEPT, không /code` | Capability preflight thật trả `NOPERM EVAL/EVALSHA`; AC-01/03/10 chưa có distributed Redis evidence. AC-04/05/08 LIVE DB và các gate còn lại PASS. Round 4 đã loại `KEYS/SCAN`, nên blocker còn lại chỉ là scripting capability bắt buộc của limiter. | Spec v1.0 và implementation giữ nguyên; không có code revision. Owner phải thay TEST credential/config, không nới production policy và không mock PASS. | Owner copy **Standard REST token** và REST URL từ cùng một Redis TEST cô lập; Tier 3 context độc lập chạy audit round 5. Token không được ghi vào command/artifact. |
+| `5` | `PASS / AC-01..11` | `ACCEPT` | Tier 3 chạy độc lập bằng Redis TEST có scripting và DB TEST cô lập: 6/6 LIVE PASS, distributed sliding-window counter chia sẻ giữa hai instance, digest/TTL/cleanup không `KEYS`, blocked apply zero-write, idempotency giữ nguyên. Full lane hiện tại `1408/1408`, build/type/static/PII checks PASS; không còn coverage gap. | None. Spec v1.0 hoàn thành; task chỉ ACCEPT marketplace launch subset, không tuyên bố full OPS-02/OPS-06. | Tier 1 đóng task, thực hiện `PROCESS-02` atomic scoped commit/push; Owner sau đó provision production Redis env, drill/smoke và publish job theo runbook. |
+| `post-PASS` | `PROCESS-02 / ATOMIC_COMMIT` | `MANDATORY` | Production OPS-06A đang modified trong khi `src/shared/security/**` và ba `marketplace-*.test.ts` còn untracked. Commit thiếu test sẽ làm mất chốt chặn PLN-04 và distributed-limiter regression. | Không đổi contract. Sau audit PASS, commit scoped phải chứa cùng lúc production routes/helpers, dependency/config, LIVE/unit/static tests và process docs OPS-06A; loại trừ layout/aff/scratch WIP không thuộc task. | Tier 1 thực hiện name-status allowlist review trước commit; không partial-stage production mà bỏ test lane. |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | `2026-08-28` | Initial launch-hardening contract: distributed public limits, fail-closed provider, canonical apply only, CV surface disabled and LIVE spam/no-write evidence. | Owner “let go”; §7.9.7 launch gate; CodeGraph/source survey. |
+| `v1.0` | `2026-08-28` | Audit round 1 giữ `BLOCKED_OWNER`; không force-resolve vì năm AC P0 còn `ENV_BLOCKED`. Contract/code semantics không đổi. | Tier 3 AUDIT round 1; Planner resolve protocol. |
+| `v1.0` | `2026-08-28` | Audit round 2 không ACCEPT: LIVE DB đã PASS nhưng TEST Redis token bị `NOPERM EVALSHA/KEYS`; mở audit round 3 bằng token đúng quyền trên target TEST cô lập. Không đổi contract/code. | Tier 3 AUDIT round 2; `TEST_REDIS_TOKEN_NOPERM`. |
+| `v1.0` | `2026-08-28` | Resolve round 3 thành `REVISION_REQUIRED`: phân loại Redis `NOPERM` là provider/config defect; trả test về Tier 2 do auditor đã commit test cùng AUDIT; loại bỏ nhu cầu `KEYS` khỏi cleanup và yêu cầu audit round 4 độc lập. | Tier 3 AUDIT round 3; commit-scope evidence `7ed57a5`. |
+| `v1.0` | `2026-08-28` | Pre-audit round 4 trả về Tier 2 để xóa debug log lộ PII trên public apply path và bổ sung regression evidence; không mở task mới, không đổi product contract. | Planner finding `PLN-04`; working-tree provenance against `d9a1067` và `25b9928`. |
+| `v1.0` | `2026-08-28` | Resolve audit round 4 thành `BLOCKED_OWNER`: code revision đã xong, PLN-04 đã đóng ở execution; Redis TEST token vẫn thiếu `EVAL`, nên mở audit round 5 sau khi sửa config. Ghi thêm atomic-commit gate để test lane không bị bỏ sót. | Tier 3 AUDIT round 4; HANDOFF round 4; Planner `PROCESS-02`. |
+| `v1.0` | `2026-08-29` | Audit round 5 PASS toàn bộ AC-01..11 và LIVE Redis/DB; task chuyển `ACCEPTED`, sang production launch review. | Tier 3 AUDIT round 5; 6/6 LIVE + 1408/1408 full lane. |

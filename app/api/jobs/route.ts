@@ -1,14 +1,25 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { listPublicJobProjection } from '@/src/domains/job-board/public.service';
-import { applyForJob, SubmissionServiceError } from '@/src/domains/staffing/submission.service';
-import { ApplicationServiceError } from '@/src/domains/applications/application.service';
-import { CvValidationError } from '@/src/domains/applications/apply-helpers';
 import { getPrisma } from '@/src/lib/db';
+import { getCorrelationId } from '@/src/shared/observability/correlation-id';
+import { clientIpFromHeaders } from '@/src/shared/security/rate-limit-identity';
+import { RATE_LIMIT_RULES } from '@/src/shared/security/rate-limit-port';
+import { enforceRateLimits } from '@/src/shared/security/rate-limit-guard';
+import { retiredApplyEndpointResponse } from '@/src/shared/security/retired-endpoint';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// OPS-06A / RQ-03: distributed browse limit (JOB_BROWSE, chung bucket với detail)
+// chạy TRƯỚC mọi truy vấn. 429/503 ⇒ zero DB call.
 export async function GET(req: NextRequest) {
+  const denied = await enforceRateLimits({
+    buckets: [{ rule: RATE_LIMIT_RULES.JOB_BROWSE, value: clientIpFromHeaders(req.headers, process.env) }],
+    routeClass: 'GET /api/jobs',
+    requestId: getCorrelationId(req.headers),
+  });
+  if (denied) return denied;
+
   const { searchParams } = new URL(req.url);
   const prisma = getPrisma();
   const projection = await prisma.$transaction((tx) => listPublicJobProjection(tx, {
@@ -21,44 +32,9 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(projection);
 }
 
-export async function POST(req: NextRequest) {
-  let body: { projectId?: string; fullName?: string; phone?: string; cccdNumber?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  if (!body.projectId || !body.fullName || !body.phone) {
-    return NextResponse.json({ error: 'Missing required fields: projectId, fullName, phone' }, { status: 400 });
-  }
-
-  // Legacy public apply: no real auth. MP-2 (DEC-01) delegates to the canonical
-  // SECURITY DEFINER boundary; never creates a Worker/SourceClaim. Prefer
-  // POST /api/public/jobs/:slug/applications for new clients.
-  const ctx = { userId: 'PUBLIC', role: 'WORKER' as const, permissions: [], dbLabel: null };
-  const prisma = getPrisma();
-
-  try {
-    const result = await prisma.$transaction(async (tx) => applyForJob(tx, ctx, {
-      projectId: body.projectId!,
-      fullName: body.fullName!,
-      phone: body.phone!,
-      cccdNumber: body.cccdNumber,
-    }));
-    return NextResponse.json(result, { status: 201 });
-  } catch (e) {
-    if (e instanceof CvValidationError) {
-      return NextResponse.json({ error: e.code, message: e.message }, { status: 422 });
-    }
-    if (e instanceof ApplicationServiceError) {
-      return NextResponse.json({ error: e.code, message: e.message }, { status: e.httpStatus });
-    }
-    if (e instanceof SubmissionServiceError) {
-      const status = e.code === 'PROJECT_NOT_PUBLIC' ? 404 : 400;
-      return NextResponse.json({ error: e.code, message: e.message }, { status });
-    }
-    console.error('applyForJob error:', e);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
+// OPS-06A / RQ-08 / DEC-10: legacy anonymous write đã RETIRE. Deterministic 410,
+// không parse body, không rate-limit call, không Prisma, không service — canonical
+// path là POST /api/public/jobs/{slug}/applications.
+export function POST(): NextResponse {
+  return retiredApplyEndpointResponse();
 }

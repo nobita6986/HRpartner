@@ -36,6 +36,11 @@ export default defineConfig({
       MP2_LIVE_SECURITY_CHECK: TEST_DB_ADMIN ? '1' : '',
       MP3B_LIVE_CONVERSION_CHECK: TEST_DB_ADMIN ? '1' : '',
       MP3C_LIVE_PLACEMENT_CHECK: TEST_DB_ADMIN ? '1' : '',
+      // V5-OPS-06A LIVE lane: DB half needs only the test DB (same rule as the lanes above).
+      // The Redis half additionally requires UPSTASH_REDIS_REST_URL_TEST /
+      // UPSTASH_REDIS_REST_TOKEN_TEST / RATE_LIMIT_HASH_SECRET_TEST, which the file reads
+      // from the ambient process env and self-skips on when absent — never a dev/prod fallback.
+      OPS06A_LIVE_CHECK: TEST_DB_ADMIN ? '1' : '',
       M1_06A_LIVE_AUTH_SCOPE: TEST_DB_ADMIN ? '1' : '',
       M1_06B_LIVE_AUTH_SCOPE: TEST_DB_ADMIN ? '1' : '',
       M1_06D_LIVE_TICKET_BOUNDARY: TEST_DB_ADMIN ? '1' : '',
