@@ -17,8 +17,8 @@
 | ADR references | None |
 | Current execution round | `1` |
 | Current audit round | `1` |
-| Next gate | `Owner push main → deploy → đo AC-02/AC-10/live AC-06 → công bố link` |
-| Updated | `2026-08-29 15:05 Asia/Bangkok` |
+| Next gate | `Đóng — AC-01..AC-10 PASS, đã deploy và đo live 2026-08-29` |
+| Updated | `2026-08-29 15:15 Asia/Bangkok` |
 
 ## 1. Outcome
 
@@ -234,6 +234,19 @@ Hạn chế của audit round 1, ghi để không kể lại sai về sau: `AUDI
 
 Task `ACCEPTED`. Source đổi thêm sau mốc này phải audit lại theo PLANNER_HANDOVER §6.
 
+### Đo live sau deploy — 2026-08-29 15:05..15:12 Asia/Bangkok
+
+Owner uỷ quyền trực tiếp trong lượt hội thoại 2026-08-29 15:05 ("push và deploy đi"), nên Tier 1 thực hiện push + đo live. Push `ad79d72..b401c6b` lên `origin/main` exit 0; Vercel Git integration tự deploy production; title `/` đổi từ `Tra cứu Bảng công HRP` sang `HRPartner` sau ~20 giây, lấy đó làm mốc build mới đã lên.
+
+| AC | Phép đo trên `https://www.hrpartner.vn` | Kết quả |
+|---|---|---|
+| `AC-02` | `/docs/PLANNER_HANDOVER.md`, `/docs/UNIFIED_PLAN_v5.md`, `/docs/runbooks/marketplace-launch-operations.md`, `/docs/tasks/hrp-v5-ops-06a-marketplace-launch-hardening/TASK.md` | **PASS** — cả 4 trả `404` (trước deploy là `200`, `EV-02`) |
+| `AC-02` (mở rộng) | `/docs/UNIFIED_PLAN_v4.md`, `/docs/aff_plan.md`, `/docs/tasks/hrp-v5-go-live-02-public-surface-exposure/TASK.md`, `.../AUDIT.md`, `/docs` | **PASS** — tất cả `404`; `/docs/` chỉ `308` sang `/docs` rồi `404`. Hai file cuối vừa vào git trong chính lần push này nên đây là bằng chứng mạnh nhất: file có trong repo mà không được serve |
+| `AC-10` | title `/` và `/jobs` | **PASS** — `/` = `HRPartner`; `/jobs` = `Việc làm · HRPartner`. Kèm `/track` = `Tra cứu hồ sơ ứng tuyển · HRPartner`, `/login` = `Đăng nhập · HRPartner` |
+| `AC-06` (phần live) | `/ve-chung-toi` | **PASS** — `200`; HTML deploy không còn chuỗi `/docs/`, `ACCEPTED`, `P1 Portals`, `v4.22`, `36 frame`, `hotspot`, `Chờ OP`; có 4 link `/ve-hrp.html` và 1 link `/jobs`. `/ve-hrp.html` = `200`, `/mockup/index.html` = `200` (đúng `DEC-04`) |
+
+`AC-01..AC-10` đóng hết. Không cần purge CDN: hai `/docs/**` trả `x-vercel-cache: HIT` nhưng là 404 được cache, không phải 200 cũ. Title `/admin` vẫn theo `LIM-01` — đo trong lượt admin smoke có đăng nhập của Owner, không phải điều kiện của task này.
+
 
 ## 10. Revision Log
 
@@ -242,3 +255,4 @@ Task `ACCEPTED`. Source đổi thêm sau mốc này phải audit lại theo PLAN
 | v1.0 | 2026-08-29 | Tạo contract từ evidence `EV-01..EV-10`; status `READY_FOR_EXECUTION` |
 | v1.1 | 2026-08-29 | Owner báo title tab vẫn sai trên production. Đo lại (`EV-09`, `EV-11..EV-14`): bản sửa metadata có trong working tree nhưng chưa commit nên chưa deploy, và chỉ 6 file trong `app/**` khai báo metadata nên mọi trang thừa hưởng title gốc. Bỏ non-goal "không đổi metadata title", thêm `RQ-07`/`STEP-07`/`AC-09`/`AC-10`, `DEC-06..DEC-08`, mở scope sang 5 file layout dirty + 2 layout mới cho `/jobs` và `/track` + `app/login/page.tsx`. Không đổi RQ-01..RQ-06 |
 | v1.1 | 2026-08-29 | Audit round 1 `PASS`; Tier 1 đo lại độc lập 8 AC local rồi ghi resolution §9 và đặt `ACCEPTED`. Spec không đổi (chỉ resolution), `AC-02`/`AC-10` còn OPEN thuộc Owner sau deploy |
+| v1.1 | 2026-08-29 | Owner uỷ quyền trực tiếp phần push+deploy. Tier 1 push `ad79d72..b401c6b`, Vercel tự deploy, đo live: `AC-02`, `AC-10` và phần live `AC-06` đều PASS. Task đóng hoàn toàn, spec không đổi |
