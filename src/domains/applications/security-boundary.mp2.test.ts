@@ -91,6 +91,7 @@ describe('MP-2 security boundary â€” STATIC (DEC-08/09, AC-09)', () => {
     const js = read(PROVISION);
     expect(js).toContain('hrp_public_rpc');
     expect(js).toMatch(/NOLOGIN BYPASSRLS/);
+    expect(js).toMatch(/GRANT USAGE ON SCHEMA public TO/);
   });
 
   it('the public apply/tracking path NEVER sets app.role (no impersonation)', () => {
@@ -131,6 +132,21 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)('MP-2 security boundary â€
       expect(r.rowCount).toBe(1);
       expect(r.rows[0].rolcanlogin).toBe(false);
       expect(r.rows[0].rolbypassrls).toBe(true);
+    } finally {
+      await client.end();
+    }
+  });
+
+  it('hrp_public_rpc has schema USAGE required by its pinned search_path', async () => {
+    // @ts-expect-error -- 'pg' ships no types; @types/pg not installed. LIVE block is ENV_BLOCKED (DEC-14).
+    const { Client } = await import('pg');
+    const client = new Client({ connectionString: process.env.DATABASE_URL_ADMIN?.replace('&channel_binding=require', '') });
+    await client.connect();
+    try {
+      const r = await client.query(
+        `SELECT has_schema_privilege('hrp_public_rpc', 'public', 'USAGE') AS has_usage`,
+      );
+      expect(r.rows[0].has_usage).toBe(true);
     } finally {
       await client.end();
     }

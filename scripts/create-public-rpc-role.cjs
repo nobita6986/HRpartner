@@ -81,6 +81,22 @@ async function main() {
       process.exit(1);
     }
 
+    // SECURITY DEFINER resolves its unqualified table names under the pinned
+    // `public, pg_temp` search_path. PostgreSQL intentionally reports
+    // `relation does not exist` when the function owner lacks schema USAGE,
+    // even when table-level grants are present. Keep this grant explicit:
+    // hardened databases may revoke the legacy USAGE grant from PUBLIC.
+    await client.query(`GRANT USAGE ON SCHEMA public TO ${ROLE}`);
+
+    const schemaCheck = await client.query(
+      `SELECT has_schema_privilege($1, 'public', 'USAGE') AS has_usage`,
+      [ROLE],
+    );
+    if (schemaCheck.rows[0]?.has_usage !== true) {
+      console.error(`ERROR: role "${ROLE}" lacks USAGE on schema public.`);
+      process.exit(1);
+    }
+
     console.log(`DONE: role "${ROLE}" ready (owner of MP-2 public RPC boundary)`);
     process.exit(0);
   } catch (err) {
