@@ -73,7 +73,7 @@ X-Idempotency-Key: incident-{incidentId}-unpublish-{projectId}
 ### 4.2 Xác minh sau thao tác
 
 - [ ] API trả `200`; `project.isPublic=false` hoặc `changed=false` nếu trước đó đã ẩn.
-- [ ] Mở cửa sổ ẩn danh: job không còn trong `/viec-lam`.
+- [ ] Mở cửa sổ ẩn danh: job không còn trong danh sách công khai `/jobs` (đường dẫn canonical; `/viec-lam` đã không còn resolve sau khi bỏ catch-all static rewrite trong `vercel.json`, nên không dùng nó để xác minh).
 - [ ] URL detail công khai không còn cung cấp job để ứng tuyển.
 - [ ] Audit log có action `UNPUBLISH`, actor, reason và version trước/sau.
 - [ ] Ghi thời điểm, HTTP status và ID liên quan vào incident; không chụp secret.
