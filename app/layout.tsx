@@ -1,4 +1,5 @@
 import './globals.css';
+import type { Metadata } from 'next';
 import { Be_Vietnam_Pro, Inter } from 'next/font/google';
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -15,9 +16,12 @@ const inter = Inter({
   display: 'swap',
 });
 
-export const metadata = {
-  title: 'Tra cứu Bảng công HRP',
-  description: 'Hệ thống tra cứu bảng công và phiếu lương HRP',
+export const metadata: Metadata = {
+  title: {
+    default: 'HRPartner',
+    template: '%s · HRPartner',
+  },
+  description: 'Nền tảng kết nối và quản lý nhân sự thuê ngoài HRPartner',
   icons: {
     icon: '/favicon.ico',
   },

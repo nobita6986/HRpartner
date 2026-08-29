@@ -12,13 +12,17 @@
  * Stub cho Phase 4 skeleton (DEC-17): UI mount 4 nhóm (Staffing / Chấm công /
  * Đối soát / Job Board) + role-guard. Polish round sau.
  *
- * Out of scope: KHÔNG đụng `appBCC/*`, `app/bcc/*`, `app/job-board/*`,
+ * Out of scope: KHÔNG đụng `app/job-board/*`,
  * `app/api/auth/`, `app/api/me/`, `middleware.ts`, vùng cấm auth core.
  */
 import { redirect } from 'next/navigation';
 import { ADMIN_NAV_PHASE4 } from '@/src/shared/ui/role-guard/role-guard-layout';
 import { isAdminPortalRole, getServerSession } from '@/src/shared/auth/server-session';
 import { AdminShell } from './admin-shell';
+
+export const metadata = {
+  title: 'Quản trị',
+};
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

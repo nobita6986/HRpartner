@@ -6,8 +6,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'HRPartner Worker',
-  description: 'Worker PWA - Check-in, attendance, and tickets',
+  title: 'Người lao động',
+  description: 'Cổng người lao động HRPartner — chấm công, phiếu công việc',
 };
 
 export default function WorkerLayout({ children }: { children: React.ReactNode }) {

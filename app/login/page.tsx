@@ -8,8 +8,13 @@
  * KHÔNG lưu password vào URL/localStorage. Design: Warm Professionalism
  * (globals.css tokens — primary #F26522, background #FAF9F7, Be Vietnam Pro).
  */
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import LoginForm from './login-form';
+
+export const metadata: Metadata = {
+  title: 'Đăng nhập',
+};
 
 export default function LoginPage() {
   return (
