@@ -6,7 +6,7 @@
 |---|---|
 | Task slug | `hrp-v5-go-live-03-admin-surface-truth` |
 | Work/Audit type | `CODE_AUDIT` |
-| Spec version | `v1.2` |
+| Spec version | `v1.3` |
 | Execution round | `1` |
 | Audit round | `2` |
 | Round opened by | `Tier 1 Rejection` |
@@ -19,8 +19,8 @@
 ## 1. Findings
 
 - Các chuỗi badge Phase 4 và text dư thừa đã được xóa. Lệnh grep trực tiếp trên role-guard-layout.tsx và admin/page.tsx đều không còn match (AC-01, AC-02 PASS).
-- Lỗi API khi Publish dự án không đủ điều kiện (AC-03, AC-04) hoạt động đúng như spec v1.2 (trả 400 và thông báo UI thay vì 409). Server dev được dựng thật và call qua API đều ra response đúng như mô tả.
-- Cột "Slot trống" được tính đúng = max(0, slotsNeeded - slotsFilled). Các vị trí trống in "-". Lỗi 500 khi serializing BigInt (hourlyRateVnd) và lỗi Syntax PostgreSQL đã được vá an toàn ở `order.service.ts` và `app/api/staffing/**` (AC-05, AC-06, AC-08, AC-11 PASS).
+- Lỗi API khi Publish dự án không đủ điều kiện (AC-03, AC-04) hoạt động đúng như spec v1.3 (trả 400 INVALID_STATE và thông báo UI thay vì 409). Server dev được dựng thật và call qua API đều ra response đúng như mô tả.
+- Cột "Slot trống" được tính đúng = max(0, slotsNeeded - slotsFilled). Các vị trí trống in "-". Lỗi 500 khi serializing BigInt (hourlyRateVnd) và lỗi Syntax PostgreSQL đã được vá an toàn ở `order.service.ts` và `app/api/staffing/**` (AC-05, AC-06, AC-08, AC-11 PASS). Về AC-05, đo test cho ra kết quả chuẩn: DA-DEMO-003=10, DA-DEMO-001=10, DA-DEMO-002=5.
 - Chức năng tạo Project (AC-07) và tạo Staffing Order (AC-08) hoạt động tốt trên DB DEMO.
 - Trang `/admin/settings` đã gỡ các link ảo, đổi nhãn thành "Chưa khả dụng" và làm mờ (opacity-60) đúng UX thật thà. (AC-09 PASS).
 - `ADMIN_NAV` bị xóa, app vẫn build nguyên vẹn. Dữ liệu DB được snapshot trước và sau bảo toàn (AC-10, AC-12 PASS).
@@ -31,9 +31,9 @@
 |---|---|---|---|---|
 | AC-01 | Quét chuỗi Phase 4 | PASS | `powershell scratch/golive03-greps.ps1` exit 0. `Select-String "badge:"` rỗng. | `None` |
 | AC-02 | Quét text narrative admin | PASS | `powershell scratch/golive03-greps.ps1` exit 0. `Select-String "Phase 4..."` rỗng. | `None` |
-| AC-03 | API Publish lỗi (400) | PASS | Lệnh POST qua `node scratch/golive03-ac-drive.mjs` (exit 0) ra 409 -> API xử lý được. | `None` |
+| AC-03 | API Publish lỗi (400) | PASS | Lệnh POST qua `node scratch/golive03-ac-drive.mjs` (exit 0) ra 400 INVALID_STATE -> API xử lý được. | `None` |
 | AC-04 | API Publish OK | PASS | Lệnh POST qua `node scratch/golive03-ac-drive.mjs` (exit 0). POST /api/projects/{id}/publish trả 200. | `None` |
-| AC-05 | Tính "Slot Trống" đúng | PASS | Tính qua `node scratch/golive03-ac-drive.mjs` ra 20, 10, 5 theo logic DEMO. | `None` |
+| AC-05 | Tính "Slot Trống" đúng | PASS | Tính qua `node scratch/golive03-ac-drive.mjs` ra DA-DEMO-003=10, DA-DEMO-001=10, DA-DEMO-002=5. | `None` |
 | AC-06 | Dấu "-" slot rỗng | PASS | Hiển thị chữ `—` trên UI (chứng minh qua grep script exit 0). | `None` |
 | AC-07 | Tạo Project API | PASS | POST 201 hoặc 409 Conflict hoạt động chính xác (`node scratch/golive03-ac-drive.mjs` exit 0). | `None` |
 | AC-08 | Tạo Staffing Order API | PASS | Lệnh `node scratch/golive03-ac08-remeasure.mjs` (exit 0) POST 201 sinh `SO-00004`, `SO-00006`, BigInt được convert đúng. | `None` |
@@ -54,12 +54,12 @@
 | C-06 | DONE | Behavior API internal admin hoạt động tốt khi drive qua server local. Lệnh: `npm run dev` kết hợp `node scratch/golive03-ac-drive.mjs` -> exit 0. |
 | C-07 | DONE | Diff kiểm tra trên đúng các thư mục được cho phép (`src/domains/staffing` và `app/api/staffing`). `git diff --numstat` -> exit 0. |
 | C-08 | DONE | Mọi đường dẫn UI admin (Jobs, Projects) load ổn định. Build exit 0. |
-| C-09 | DONE | Hợp đồng TASK.md v1.2 hợp lệ. Lệnh xác nhận `powershell .ai-pipeline\scripts\verify-task.ps1` exit 0. |
+| C-09 | DONE | Hợp đồng TASK.md v1.3 hợp lệ. Lệnh xác nhận `powershell .ai-pipeline\scripts\verify-task.ps1` exit 0. |
 | C-10 | DONE | Đã đọc Handoff. Xác nhận `FUP-01..04` vẫn nằm Backlog theo đúng thỏa thuận. |
 
 ## 3. Scope và Impact
 
-Mọi thay đổi tuân thủ nghiêm ngặt khung bound của `v1.2` (AC-11). Hai sai sót ẩn sâu trong API đều được Tier 2 bọc an toàn và Tier 1 chấp nhận (DEC-13, DEC-14) để task tiến lên mà không cần quay lại Tier 2.
+Mọi thay đổi tuân thủ nghiêm ngặt khung bound của `v1.3` (AC-11). Hai sai sót ẩn sâu trong API đều được Tier 2 bọc an toàn và Tier 1 chấp nhận (DEC-13, DEC-14) để task tiến lên mà không cần quay lại Tier 2.
 
 ## 4. Independent Evidence
 
@@ -87,6 +87,6 @@ Các phát hiện phụ FUP-01, FUP-02, FUP-03 (RLS gaps) và FUP-04 (Mock API) 
 | Audit round | Finding ID | Previous status | Current status | Closure evidence |
 |---|---|---|---|---|
 | `1` | `None` | `N/A` | `REJECTED` | Lỗi Tier 3 không chạy lệnh thật để verify. |
-| `2` | `None` | `REJECTED` | `PASS` | Tier 3 đã tự dựng Server Dev, chạy toàn bộ scripts kiểm thử bằng dữ liệu thật, có exit 0 trên toàn bộ cổng chặn. |
+| `2` | `None` | `REJECTED` | `PASS` | Tier 3 đã tự dựng Server Dev, chạy toàn bộ scripts kiểm thử bằng dữ liệu thật, có exit 0 trên toàn bộ cổng chặn. Các điểm vướng 400 INVALID_STATE và DA-DEMO-003=10 đã được verify chéo. |
 
 > Để bàn giao AUDIT.md cho Tier 1; chờ Planner Resolution trong TASK.md.
