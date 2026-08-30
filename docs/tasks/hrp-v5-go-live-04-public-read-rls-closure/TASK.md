@@ -17,7 +17,7 @@
 | ADR references | None |
 | Current execution round | `1` |
 | Current audit round | `0` |
-| Next gate | `verify-task.ps1` PASS rồi Tier 1 giao `/code` sau khi round 03 đóng |
+| Next gate | `verify-task.ps1` PASS; GO-LIVE-03 đã đóng — Tier 1 giao `/code hrp-v5-go-live-04-public-read-rls-closure` |
 | Updated | `2026-08-30 Asia/Bangkok` |
 
 Task này là defect P0: bề mặt việc làm công khai trên live đang CHẾT. Chẩn đoán đã trọn vẹn từ phiên 29/08 và nằm ở §2 — Tier 2 KHÔNG điều tra lại từ đầu.
