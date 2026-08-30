@@ -8,7 +8,7 @@
 | Lane | V5 go-live surface hardening |
 | Work type | DB posture restore — một migration forward mới cộng probe evidence. KHÔNG sửa app code |
 | Spec version | v1.0 |
-| Status | READY_FOR_EXECUTION — xếp hàng sau `hrp-v5-go-live-04-public-read-rls-closure` |
+| Status | READY_FOR_EXECUTION — predecessor `hrp-v5-go-live-04-public-read-rls-closure` đã ACCEPTED |
 | Priority | P0 — 15 bảng DENY-ALL và 3 bảng ticket KHÔNG được bảo vệ trên DB đứng sau www.hrpartner.vn |
 | Baseline | `776a3c1` |
 | Depends on | `hrp-v5-go-live-03-admin-surface-truth` đóng, `hrp-v5-go-live-04-public-read-rls-closure` đóng |

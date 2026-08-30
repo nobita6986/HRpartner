@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — độc lập |
@@ -16,8 +16,8 @@
 | Modules | `app/api/jobs` + `src/shared/auth` (principal đọc công khai) + `src/domains/job-board` |
 | ADR references | None |
 | Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `verify-task.ps1` PASS; GO-LIVE-03 đã đóng — Tier 1 giao `/code hrp-v5-go-live-04-public-read-rls-closure` |
+| Current audit round | `1` |
+| Next gate | `CLOSED` — source `c0fdf76`, Audit Round 1 PASS tại `84ebe66`; mở `hrp-v5-go-live-06-live-rls-matrix-restore` |
 | Updated | `2026-08-30 Asia/Bangkok` |
 
 Task này là defect P0: bề mặt việc làm công khai trên live đang CHẾT. Chẩn đoán đã trọn vẹn từ phiên 29/08 và nằm ở §2 — Tier 2 KHÔNG điều tra lại từ đầu.
@@ -211,6 +211,7 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
 | `0` | None | None | Chưa có audit round nào | None | Tier 1 |
+| `1` | `None` | `ACCEPT` | Tier 3 chạy LIVE trên DB test cô lập: 5/5 PASS, không skip/`ENV_BLOCKED`; chứng minh dự án private bị ẩn, lệnh ghi bị chặn bằng SQLSTATE `25006`, thiếu GUC trả 0 dòng, writer không `rolbypassrls`/`rolsuper`. `verify-audit.ps1` PASS. Tier 1 kiểm tra bổ sung đúng mutation bắt buộc `MKT` → `ADMIN`: 2/12 test ĐỎ; hoàn nguyên: 12/12 XANH; SHA-256 trước/sau cùng `956872766E0F34030EAC590F7FDFFFF9DCEA2278D9711FEFFC185280256917AB`. Source commit `c0fdf76`; audit commit `84ebe66`. | Không đổi contract. Ghi chú: mutation `MKT` → `EMPLOYEE` trong AUDIT là phép thử fail-closed bổ sung, không được dùng thay cho AC-09; căn cứ đóng AC-09 là mutation `ADMIN` của HANDOFF và phép kiểm lại của Planner. | Tier 1 — CLOSED 2026-08-30 |
 
 ## 10. Revision Log
 
