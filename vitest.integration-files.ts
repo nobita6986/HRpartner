@@ -38,4 +38,5 @@ export const INTEGRATION_TEST_FILES: string[] = [
   'src/shared/auth/live-rls-posture.m1-07b.test.ts',
   'src/shared/auth/live-ticket-route-boundary.m1-06d.test.ts',
   'src/shared/auth/live-vendor-idor.m1-08.test.ts',
+  'src/shared/auth/live-public-read-rls.go-live-04.test.ts',
 ];

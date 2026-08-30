@@ -1,13 +1,16 @@
 import { Search, Globe } from 'lucide-react';
 import { getPrisma } from '@/src/lib/db';
 import { listPublicJobProjection } from '@/src/domains/job-board/public.service';
+import { withPublicDb } from '@/src/shared/auth/with-public-db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export default async function JobBoardPage() {
   const prisma = getPrisma();
-  const { jobs } = await prisma.$transaction((tx) => listPublicJobProjection(tx, { limit: 20 }));
+  // go-live-04 / RQ-03: call site hỏng thứ ba — server component nên không lộ ra khi đo
+  // HTTP /api/jobs. Chỉ đổi đường lấy dữ liệu; markup và empty state giữ nguyên.
+  const { jobs } = await withPublicDb(prisma, (tx) => listPublicJobProjection(tx, { limit: 20 }));
 
   return (
     <div className="pub">

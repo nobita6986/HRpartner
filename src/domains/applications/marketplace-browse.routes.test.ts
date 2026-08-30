@@ -1,12 +1,21 @@
 /**
- * marketplace-browse.routes.test.ts — V5-OPS-06A / RQ-03/08 / STEP-02/04 / AC-03/07.
+ * marketplace-browse.routes.test.ts — V5-OPS-06A / RQ-03/08 / STEP-02/04 / AC-03/07,
+ * mở rộng ở V5-go-live-04 / RQ-07 / STEP-08 / AC-11.
  *
  * Chứng minh trên route thật (import handler, không mô phỏng):
  *   - `GET /api/jobs` và `GET /api/jobs/[slug]` chạy limiter TRƯỚC truy vấn:
- *     429/503 ⇒ `$transaction` KHÔNG được gọi (zero DB call).
+ *     429/503 ⇒ đường đọc DB KHÔNG được mở (zero DB call).
  *   - list + detail dùng CHUNG một bucket JOB_BROWSE (DEC-04) — cùng surface, cùng digest.
  *   - `POST /api/jobs` và `POST /api/jobs/apply` đã RETIRE: 410 deterministic,
  *     zero DB, không gọi cả limiter (DEC-10/RQ-08).
+ *
+ * go-live-04 / AC-11 — hai thay đổi có chủ đích, vì bản cũ hợp thức hoá chính defect P0:
+ *   1. Fixture happy path là MỘT job thật, không còn `{ jobs: [], total: 0 }`. Trước đây
+ *      danh sách rỗng vừa là "thành công" của test vừa là triệu chứng của bug ⇒ test xanh
+ *      trong khi bề mặt việc làm chết.
+ *   2. Mốc "zero DB call" đổi từ `$transaction` trần sang helper `withPublicDb`. Route nay
+ *      phải đi qua helper; `$transaction` trần bị assert là KHÔNG BAO GIỜ được gọi, nên nếu
+ *      ai bỏ helper để quay về đường không GUC thì test này ĐỎ chứ không im lặng trả 0 dòng.
  */
 import { NextRequest } from 'next/server';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -21,14 +30,25 @@ import {
 } from '@/src/shared/security/rate-limit-port';
 import { __resetRateLimitRuntime, __setRateLimitRuntime } from '@/src/shared/security/rate-limit-provider';
 import { __resetSink, __captureSink } from '@/src/shared/observability/logger';
+// Type-only ⇒ bị xoá khi biên dịch, không phá `vi.mock` của service. Ràng fixture vào DTO
+// THẬT: thêm/đổi field trong projection công khai mà quên fixture thì tsc đỏ.
+import type { PublicJobDto, PublicJobListResult } from '@/src/domains/job-board/public.service';
 
 const mocks = vi.hoisted(() => ({
   $transaction: vi.fn(),
+  withPublicDb: vi.fn(),
   listPublicJobProjection: vi.fn(),
   getPublicJobProjection: vi.fn(),
 }));
 
 vi.mock('@/src/lib/db', () => ({ getPrisma: () => ({ $transaction: mocks.$transaction }) }));
+// go-live-04 / STEP-08: chỉ thay `withPublicDb` bằng spy, giữ nguyên hằng principal thật
+// (`PUBLIC_READ_PRINCIPAL`, `PUBLIC_READ_ONLY_GUC`) — hành vi GUC/read-only của helper đã có
+// test đơn vị riêng ở `src/shared/auth/with-public-db.test.ts`, đây chỉ đo đường đi của route.
+vi.mock('@/src/shared/auth/with-public-db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/src/shared/auth/with-public-db')>()),
+  withPublicDb: mocks.withPublicDb,
+}));
 vi.mock('@/src/domains/job-board/public.service', () => ({
   listPublicJobProjection: mocks.listPublicJobProjection,
   getPublicJobProjection: mocks.getPublicJobProjection,
@@ -66,13 +86,29 @@ const listReq = () => new NextRequest('http://localhost/api/jobs?limit=20');
 const detailReq = () => new NextRequest('http://localhost/api/jobs/PRJ-001');
 const detailParams = { params: Promise.resolve({ slug: 'PRJ-001' }) };
 
+/** AC-11: job THẬT (đủ field DTO công khai) — fixture không còn là danh sách rỗng. */
+const PUBLISHED_JOB: PublicJobDto = {
+  id: 'prj-1',
+  slug: 'PRJ-001',
+  title: 'Dự án lắp ráp điện tử',
+  position: 'Công nhân sản xuất',
+  shift: '06:00-14:00',
+  location: 'KCN VSIP 1',
+  availableSlots: 12,
+  deadline: '2026-09-30',
+  statusLabel: 'Đang tuyển',
+};
+const LIST_RESULT: PublicJobListResult = { jobs: [PUBLISHED_JOB], nextOffset: null, total: 1 };
+
 beforeEach(() => {
   vi.clearAllMocks();
   __resetRateLimitRuntime();
   __captureSink();
   mocks.$transaction.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}));
-  mocks.listPublicJobProjection.mockResolvedValue({ jobs: [], total: 0 });
-  mocks.getPublicJobProjection.mockResolvedValue({ id: 'j1', slug: 'PRJ-001', title: 'Job' });
+  // Helper thật mở transaction + set GUC; ở lane unit ta chỉ cần nó chuyển tiếp callback.
+  mocks.withPublicDb.mockImplementation(async (_prisma: unknown, cb: (tx: unknown) => unknown) => cb({}));
+  mocks.listPublicJobProjection.mockResolvedValue(LIST_RESULT);
+  mocks.getPublicJobProjection.mockResolvedValue(PUBLISHED_JOB);
 });
 afterEach(() => {
   __resetRateLimitRuntime();
@@ -81,14 +117,18 @@ afterEach(() => {
 });
 
 describe('RQ-03 — GET /api/jobs (list)', () => {
-  it('limiter cho qua ⇒ 200 và truy vấn chạy đúng 1 transaction', async () => {
+  it('limiter cho qua ⇒ 200, trả đúng job đang tuyển và đi qua helper công khai', async () => {
     const { provider, calls } = providerThat('allow');
     __setRateLimitRuntime({ provider });
 
     const res = await GET_LIST(listReq());
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ jobs: [], total: 0 });
-    expect(mocks.$transaction).toHaveBeenCalledTimes(1);
+    expect(await res.json()).toEqual(LIST_RESULT);
+    // Đúng MỘT lượt đọc, và đọc qua principal công khai chứ không phải transaction trần.
+    expect(mocks.withPublicDb).toHaveBeenCalledTimes(1);
+    expect(mocks.withPublicDb.mock.calls[0][1]).toBeTypeOf('function');
+    expect(mocks.$transaction).not.toHaveBeenCalled();
+    expect(mocks.listPublicJobProjection).toHaveBeenCalledTimes(1);
     expect(calls.map((c) => c.rule.surface)).toEqual(['JOB_BROWSE']);
   });
 
@@ -101,7 +141,7 @@ describe('RQ-03 — GET /api/jobs (list)', () => {
     expect(await res.json()).toMatchObject({ error: 'RATE_LIMITED' });
     expect(res.headers.get('retry-after')).toBe('42');
     expect(res.headers.get('cache-control')).toBe('no-store');
-    expect(mocks.$transaction).not.toHaveBeenCalled();
+    expect(mocks.withPublicDb).not.toHaveBeenCalled();
     expect(mocks.listPublicJobProjection).not.toHaveBeenCalled();
   });
 
@@ -113,7 +153,7 @@ describe('RQ-03 — GET /api/jobs (list)', () => {
     expect(res.status).toBe(503);
     expect(await res.json()).toMatchObject({ error: 'RATE_LIMIT_UNAVAILABLE' });
     expect(res.headers.get('retry-after')).toBe('5');
-    expect(mocks.$transaction).not.toHaveBeenCalled();
+    expect(mocks.withPublicDb).not.toHaveBeenCalled();
   });
 
   it('DEC-02 tại route: production + THIẾU env Upstash ⇒ 503 zero DB, KHÔNG RAM fallback', async () => {
@@ -127,7 +167,7 @@ describe('RQ-03 — GET /api/jobs (list)', () => {
 
     expect(res.status).toBe(503);
     expect(await res.json()).toMatchObject({ error: 'RATE_LIMIT_UNAVAILABLE' });
-    expect(mocks.$transaction).not.toHaveBeenCalled();
+    expect(mocks.withPublicDb).not.toHaveBeenCalled();
     expect(mocks.listPublicJobProjection).not.toHaveBeenCalled();
   });
 });
@@ -139,7 +179,9 @@ describe('RQ-03 — GET /api/jobs/[slug] (detail)', () => {
 
     const res = await GET_DETAIL(detailReq(), detailParams);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ job: { id: 'j1', slug: 'PRJ-001', title: 'Job' } });
+    expect(await res.json()).toEqual({ job: PUBLISHED_JOB });
+    expect(mocks.withPublicDb).toHaveBeenCalledTimes(1);
+    expect(mocks.$transaction).not.toHaveBeenCalled();
     expect(calls[0].rule.surface).toBe('JOB_BROWSE');
   });
 
@@ -149,7 +191,7 @@ describe('RQ-03 — GET /api/jobs/[slug] (detail)', () => {
 
     const res = await GET_DETAIL(detailReq(), detailParams);
     expect(res.status).toBe(429);
-    expect(mocks.$transaction).not.toHaveBeenCalled();
+    expect(mocks.withPublicDb).not.toHaveBeenCalled();
     expect(mocks.getPublicJobProjection).not.toHaveBeenCalled();
   });
 
@@ -159,7 +201,7 @@ describe('RQ-03 — GET /api/jobs/[slug] (detail)', () => {
 
     const res = await GET_DETAIL(detailReq(), detailParams);
     expect(res.status).toBe(503);
-    expect(mocks.$transaction).not.toHaveBeenCalled();
+    expect(mocks.withPublicDb).not.toHaveBeenCalled();
   });
 
   it('job không tồn tại ⇒ 404 generic (limiter đã cho qua)', async () => {
@@ -202,7 +244,7 @@ describe('RQ-08/DEC-10 — legacy anonymous writes đã retire', () => {
       canonicalPath: CANONICAL_APPLY_PATH_TEMPLATE,
     });
     expect(res.headers.get('cache-control')).toBe('no-store');
-    expect(mocks.$transaction).not.toHaveBeenCalled();
+    expect(mocks.withPublicDb).not.toHaveBeenCalled();
     // không parse body, không cả gọi limiter ⇒ deterministic 410.
     expect(calls).toHaveLength(0);
   });
@@ -214,7 +256,7 @@ describe('RQ-08/DEC-10 — legacy anonymous writes đã retire', () => {
     const res = await POST_LEGACY_APPLY();
     expect(res.status).toBe(410);
     expect(await res.json()).toMatchObject({ error: 'APPLY_ENDPOINT_RETIRED', canonicalPath: CANONICAL_APPLY_PATH_TEMPLATE });
-    expect(mocks.$transaction).not.toHaveBeenCalled();
+    expect(mocks.withPublicDb).not.toHaveBeenCalled();
     expect(calls).toHaveLength(0);
   });
 

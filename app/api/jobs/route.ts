@@ -6,6 +6,7 @@ import { clientIpFromHeaders } from '@/src/shared/security/rate-limit-identity';
 import { RATE_LIMIT_RULES } from '@/src/shared/security/rate-limit-port';
 import { enforceRateLimits } from '@/src/shared/security/rate-limit-guard';
 import { retiredApplyEndpointResponse } from '@/src/shared/security/retired-endpoint';
+import { withPublicDb } from '@/src/shared/auth/with-public-db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -22,7 +23,9 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const prisma = getPrisma();
-  const projection = await prisma.$transaction((tx) => listPublicJobProjection(tx, {
+  // go-live-04 / RQ-03: principal công khai MKT + transaction read-only. `$transaction`
+  // trần ở đây chính là defect P0 làm bề mặt việc làm trả 0 dòng dưới FORCE RLS.
+  const projection = await withPublicDb(prisma, (tx) => listPublicJobProjection(tx, {
     q: searchParams.get('q') ?? undefined,
     area: searchParams.get('area') ?? undefined,
     shift: searchParams.get('shift') ?? undefined,

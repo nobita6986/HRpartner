@@ -5,6 +5,7 @@ import { getCorrelationId } from '@/src/shared/observability/correlation-id';
 import { clientIpFromHeaders } from '@/src/shared/security/rate-limit-identity';
 import { RATE_LIMIT_RULES } from '@/src/shared/security/rate-limit-port';
 import { enforceRateLimits } from '@/src/shared/security/rate-limit-guard';
+import { withPublicDb } from '@/src/shared/auth/with-public-db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -23,7 +24,9 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
   const { slug } = await params;
   const prisma = getPrisma();
-  const job = await prisma.$transaction((tx) => getPublicJobProjection(tx, slug));
+  // go-live-04 / RQ-03: cùng principal công khai với list. 404 chỉ còn nghĩa "không
+  // publish / không tồn tại", không còn là hệ quả của việc thiếu GUC.
+  const job = await withPublicDb(prisma, (tx) => getPublicJobProjection(tx, slug));
   if (!job) return NextResponse.json({ error: 'NOT_FOUND', message: 'Job not found' }, { status: 404 });
   return NextResponse.json({ job });
 }

@@ -38,6 +38,7 @@ export default defineConfig({
       M1_06A_LIVE_AUTH_SCOPE: '',
       M1_06B_LIVE_AUTH_SCOPE: '',
       M1_07A_LIVE_TICKET_RLS: '',
+      GOLIVE04_LIVE_PUBLIC_READ: '',
     },
     poolOptions: {
       threads: { maxThreads: 1, minThreads: 1 },

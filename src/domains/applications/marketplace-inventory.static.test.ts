@@ -119,13 +119,20 @@ describe('RQ-01/DEC-01 — limiter RAM per-instance đã rời production path',
     expect(code).not.toMatch(/^\s*(const|let)\s+\w*(hits|buckets|counters)\w*\s*=/m);
   });
 
+  // go-live-04 / STEP-07: mốc "chạm DB" đổi từ `$transaction` sang `getPrisma(` — bền với
+  // refactor. Hai route browse nay đi qua `withPublicDb` nên không còn `$transaction` trần,
+  // `indexOf` sẽ trả -1 và assert cũ vỡ. Ý nghĩa giữ nguyên: limiter chạy TRƯỚC khi lấy
+  // client DB, và cả hai chỉ số phải là chỉ số THẬT của cùng một handler.
   it('cả bốn route public đều gọi guard trước khi chạm DB', () => {
     for (const file of [CANONICAL_APPLY, LEGACY_JOBS, TRACKING, join(API_DIR, 'jobs/[slug]/route.ts')]) {
       const code = strip(read(file));
       expect(code, rel(file)).toContain('enforceRateLimits');
       const handler = code.slice(code.search(/export\s+(async\s+)?function\s+GET|export\s+async\s+function\s+POST/));
-      expect(handler.indexOf('enforceRateLimits'), rel(file)).toBeGreaterThanOrEqual(0);
-      expect(handler.indexOf('enforceRateLimits'), rel(file)).toBeLessThan(handler.indexOf('$transaction'));
+      const limiterAt = handler.indexOf('enforceRateLimits');
+      const dbAt = handler.indexOf('getPrisma(');
+      expect(limiterAt, rel(file)).toBeGreaterThanOrEqual(0);
+      expect(dbAt, rel(file)).toBeGreaterThan(0);
+      expect(limiterAt, rel(file)).toBeLessThan(dbAt);
     }
   });
 });

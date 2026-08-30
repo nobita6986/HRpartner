@@ -14,10 +14,19 @@
  *
  * Pattern hệ thống hợp lệ (KHÔNG bị bắt vì raw client chỉ là ĐỐI SỐ, không nhận
  * model-op): `withSystemDb(prisma, SYSTEM_CRON, cb)`, `drainOutboxOnce(prisma, ...)`,
- * `probeWorkerDuplicateByPhone(prisma, phone)`, `calculateMargin(tx, ...)`. Route
- * public (jobs/public) dùng `prisma.$transaction((tx) => svc(tx))` (SECURITY DEFINER /
- * NO_DB intent) — `$transaction` KHÔNG bị bắt. Login pre-auth dùng
- * `prisma.$transaction` + `tx.$executeRaw` set GUC (không có AuthContext).
+ * `probeWorkerDuplicateByPhone(prisma, phone)`, `calculateMargin(tx, ...)`. Login
+ * pre-auth dùng `prisma.$transaction` + `tx.$executeRaw` set GUC (không có AuthContext).
+ *
+ * Route public — HAI đường KHÁC NHAU, đừng gộp (V5-go-live-04 / DEC-08):
+ *   - Ghi/tra cứu qua RPC (`public/jobs/[slug]/applications`, `public/applications/
+ *     [trackingCode]`): `prisma.$transaction((tx) => svc(tx))` trần là ĐÚNG và bắt buộc —
+ *     SECURITY DEFINER tự kiểm quyền, thêm GUC vào đây là vi phạm gate MP-2.
+ *   - Đọc browse (`GET /api/jobs`, `GET /api/jobs/[slug]`, `app/job-board/page.tsx`):
+ *     `prisma.$transaction` trần từng là DEFECT P0 — không GUC `app.role` ⇒ mọi nhánh
+ *     `hrp_project_visible_for` so sánh với NULL ⇒ 3 bảng FORCE RLS trả 0 dòng, im lặng.
+ *     Nay bắt buộc đi qua `withPublicDb` (principal MKT + transaction read-only).
+ * Cả hai trường hợp `$transaction` đều KHÔNG bị detector NÀY bắt (mechanism dưới đây
+ * không đổi); lệnh cấm cho đường đọc browse nằm ở `src/shared/auth/public-read-guc.static.test.ts`.
  *
  * Cơ chế phát hiện (fail-closed):
  *   1. Strip block/line comment + string để không match ví dụ trong doc.
