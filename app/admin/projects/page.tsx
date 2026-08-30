@@ -11,6 +11,9 @@ interface ProjectRow {
   clientCompanyId: string;
   startDate: string;
   createdAt: string;
+  /** Chỉ tiêu nhân sự. Quota 0 sẽ chặn lần chuyển ứng viên đầu tiên. */
+  quota?: number | null;
+  siteAddress?: string | null;
 }
 
 interface ProjectsResponse {
@@ -42,6 +45,10 @@ function Modal({ onClose, onSuccess, editData, clientCompanies }: {
   const [clientCompanyId, setClientCompanyId] = useState(editData?.clientCompanyId ?? '');
   const [startDate, setStartDate] = useState(editData?.startDate?.slice(0, 10) ?? '');
   const [status, setStatus] = useState<string>(editData?.status ?? 'DRAFT');
+  const [quota, setQuota] = useState(
+    editData?.quota === null || editData?.quota === undefined ? '' : String(editData.quota),
+  );
+  const [siteAddress, setSiteAddress] = useState(editData?.siteAddress ?? '');
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState('');
   const isEdit = !!editData;
@@ -56,17 +63,26 @@ function Modal({ onClose, onSuccess, editData, clientCompanies }: {
       setErr('Điền đầy đủ các trường bắt buộc.');
       return;
     }
+    const quotaText = quota.trim();
+    const quotaNumber = quotaText === '' ? null : Number(quotaText);
+    if (quotaNumber !== null && (!Number.isInteger(quotaNumber) || quotaNumber < 0)) {
+      setErr('Chỉ tiêu nhân sự phải là số nguyên không âm.');
+      return;
+    }
     setSubmitting(true);
     setErr('');
     try {
       const url = isEdit ? `/api/projects/${editData.id}` : '/api/projects';
       const method = isEdit ? 'PUT' : 'POST';
-      const body: Record<string, string> = {};
+      const body: Record<string, string | number> = {};
       if (!isEdit) body.code = code.trim();
       body.name = name.trim();
       body.clientCompanyId = clientCompanyId;
       body.startDate = startDate;
       body.status = status;
+      // Để trống thì không gửi: tạo mới API mặc định 0, sửa thì giữ giá trị cũ.
+      if (quotaNumber !== null) body.quota = quotaNumber;
+      if (siteAddress.trim()) body.siteAddress = siteAddress.trim();
 
       const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!r.ok) { const d = await r.json(); setErr(d.message ?? `Lỗi ${r.status}`); return; }
@@ -119,6 +135,19 @@ function Modal({ onClose, onSuccess, editData, clientCompanies }: {
                 </select>
               </div>
             )}
+          </div>
+          <div>
+            <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Chỉ tiêu nhân sự (quota)</label>
+            <input type="number" min={0} step={1} value={quota} onChange={e => setQuota(e.target.value)} placeholder="VD: 20"
+              style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }} className="w-full rounded border px-3 py-2 text-sm" />
+            <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+              Để trống nghĩa là 0. Quota 0 sẽ chặn lần chuyển ứng viên đầu tiên vào dự án.
+            </p>
+          </div>
+          <div>
+            <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Địa chỉ công trường</label>
+            <input value={siteAddress} onChange={e => setSiteAddress(e.target.value)} placeholder="VD: KCN Yên Phong, Bắc Ninh"
+              style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }} className="w-full rounded border px-3 py-2 text-sm" />
           </div>
           {err && <p style={{ color: 'var(--error)' }} className="text-sm">{err}</p>}
           <div className="flex justify-end gap-3 pt-2">

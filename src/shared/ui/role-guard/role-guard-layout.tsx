@@ -57,7 +57,6 @@ export interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   /** Roles được phép thấy item này */
   roles: Role[];
-  badge?: string;
 }
 
 export interface RoleGuardLayoutProps {
@@ -67,23 +66,11 @@ export interface RoleGuardLayoutProps {
   navItems: NavItem[];
   user?: { name: string; avatarUrl?: string };
   brandTitle?: string;
-  brandSubtitle?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DEFAULT NAV PER PORTAL
 // ═══════════════════════════════════════════════════════════════════════════
-
-export const ADMIN_NAV: NavItem[] = [
-  { href: '/admin', label: 'Tổng quan', icon: LayoutDashboard, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT'] },
-  { href: '/admin/workers', label: 'Nhân sự', icon: Users, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'] },
-  { href: '/admin/projects', label: 'Dự án', icon: Briefcase, roles: ['ADMIN', 'PM', 'HR_MANAGER'] },
-  { href: '/admin/clients', label: 'Khách hàng', icon: Building2, roles: ['ADMIN', 'PM'] },
-  { href: '/admin/tickets', label: 'Phản ánh / Tạm ứng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'ACCOUNTANT'], badge: 'M7' },
-  { href: '/admin/payroll', label: 'Tính lương', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'] },
-  { href: '/admin/statements', label: 'Đối soát', icon: FileText, roles: ['ADMIN', 'ACCOUNTANT', 'PM'] },
-  { href: '/admin/settings', label: 'Cài đặt', icon: Settings, roles: ['ADMIN'] },
-];
 
 export const WORKER_NAV: NavItem[] = [
   { href: '/m', label: 'Trang chủ', icon: LayoutDashboard, roles: ['WORKER'] },
@@ -101,30 +88,28 @@ export const VENDOR_NAV: NavItem[] = [
 ];
 
 /**
- * Phase 4 nav (4 nhóm slice 4A–4D) — DEC-17 UI skeleton round 1.
- * Items 4B/4C/4D mount nhưng chỉ render placeholder skeleton tới round 2.
+ * Nav của portal điều hành (/admin).
  *
- * - /admin — Control Tower (S01 tổng quan)
- * - /admin/staffing — Staffing (S02 + S02A + S02B: Guided Transfer + Referral Guard)
- * - /admin/attendance — Chấm công (S03 + S03A + S03B, slice 4B)
- * - /admin/reconciliation — Đối soát (S04 + S04A + S04B, slice 4C)
- * - /admin/jobs — Job Board admin (S05, slice 4D)
- * - /admin/workers, /admin/projects, /admin/clients — Phase 0/1 giữ nguyên
- * - /admin/tickets — Phase 3 ACCEPTED, slice khác
- * - /admin/payroll — Phase 4 async (M9 P2)
- * - /admin/statements — Phase 4 slice 4C mount
- * - /admin/settings — Phase 1 giữ
+ * - /admin — Tổng quan
+ * - /admin/staffing — Đơn tuyển dụng & điều phối nhân sự
+ * - /admin/attendance — Chấm công
+ * - /admin/reconciliation — Đối soát
+ * - /admin/jobs — Tin tuyển dụng công khai
+ * - /admin/workers, /admin/projects, /admin/clients — Dữ liệu nền
+ * - /admin/tickets — Phản ánh / Tạm ứng
+ * - /admin/payroll — Tính lương
+ * - /admin/settings — Cài đặt
  */
 export const ADMIN_NAV_PHASE4: NavItem[] = [
   { href: '/admin', label: 'Tổng quan', icon: LayoutDashboard, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT', 'SALE', 'DIRECTOR'] },
-  { href: '/admin/staffing', label: 'Staffing', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'], badge: 'M3' },
-  { href: '/admin/attendance', label: 'Chấm công', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT'], badge: 'M7' },
-  { href: '/admin/reconciliation', label: 'Đối soát', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], badge: 'M4' },
-  { href: '/admin/jobs', label: 'Job Board', icon: Briefcase, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'], badge: 'M2' },
+  { href: '/admin/staffing', label: 'Staffing', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'] },
+  { href: '/admin/attendance', label: 'Chấm công', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT'] },
+  { href: '/admin/reconciliation', label: 'Đối soát', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'] },
+  { href: '/admin/jobs', label: 'Job Board', icon: Briefcase, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'] },
   { href: '/admin/workers', label: 'Nhân sự', icon: Users, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'] },
   { href: '/admin/projects', label: 'Dự án', icon: Briefcase, roles: ['ADMIN', 'PM', 'HR_MANAGER'] },
   { href: '/admin/clients', label: 'Khách hàng', icon: Building2, roles: ['ADMIN', 'PM'] },
-  { href: '/admin/tickets', label: 'Phản ánh / Tạm ứng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'ACCOUNTANT'], badge: 'M7' },
+  { href: '/admin/tickets', label: 'Phản ánh / Tạm ứng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'ACCOUNTANT'] },
   { href: '/admin/payroll', label: 'Tính lương', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'] },
   { href: '/admin/settings', label: 'Cài đặt', icon: Settings, roles: ['ADMIN'] },
 ];
@@ -140,7 +125,6 @@ export function RoleGuardLayout({
   navItems,
   user,
   brandTitle = 'HRP',
-  brandSubtitle,
 }: RoleGuardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -167,7 +151,7 @@ export function RoleGuardLayout({
             portal === 'admin' ? 'md:col-span-1' : 'md:col-span-1',
           )}
         >
-          <SidebarHeader title={brandTitle} subtitle={brandSubtitle} portal={portal} />
+          <SidebarHeader title={brandTitle} portal={portal} />
           <nav className="flex flex-col gap-0.5 p-3" aria-label="Menu chính">
             {visibleNav.map((item) => {
               const active =
@@ -191,11 +175,6 @@ export function RoleGuardLayout({
                     )}
                   />
                   <span className="flex-1 truncate">{item.label}</span>
-                  {item.badge && (
-                    <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700">
-                      {item.badge}
-                    </span>
-                  )}
                 </Link>
               );
             })}
@@ -244,12 +223,10 @@ export function RoleGuardLayout({
 
 function SidebarHeader({
   title,
-  subtitle,
   portal,
   logoSrc = '/logo.png',
 }: {
   title: string;
-  subtitle?: string;
   portal: 'admin' | 'worker' | 'vendor';
   logoSrc?: string;
 }) {
@@ -263,9 +240,6 @@ function SidebarHeader({
         />
         <div className="min-w-0">
           <div className="truncate text-base font-bold text-slate-900">{title}</div>
-          {subtitle && (
-            <div className="truncate text-xs text-slate-500">{subtitle}</div>
-          )}
         </div>
       </div>
       <div className="mt-2 text-[10px] uppercase tracking-wide text-slate-400">

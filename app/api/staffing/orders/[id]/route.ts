@@ -32,6 +32,15 @@ function getIdempotencyKey(req: NextRequest): string | undefined {
   return req.headers.get('x-idempotency-key') ?? undefined;
 }
 
+/**
+ * slot.hourlyRateVnd là BigInt trong Prisma và JSON.stringify không serialize được
+ * BigInt ⇒ trả nguyên object là 500. Mọi đơn có lương giờ (kể cả dữ liệu seed cũ)
+ * đều không đọc được cho tới khi đổi BigInt sang number.
+ */
+function bigintSafe<T>(value: T): unknown {
+  return JSON.parse(JSON.stringify(value, (_k, v) => (typeof v === 'bigint' ? Number(v) : v)));
+}
+
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, { params }: RouteParams) {
@@ -55,7 +64,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       withDbContext(prisma, ctx, (tx) => getStaffingOrder(tx, ctx, id)),
       withDbContext(prisma, ctx, (tx) => listStaffingOrderSlots(tx, ctx, id)),
     ]);
-    return NextResponse.json({ order, slots });
+    return NextResponse.json(bigintSafe({ order, slots }));
   } catch (e) {
     if (e instanceof StaffingOrderServiceError) {
       return NextResponse.json({ error: e.code, message: e.message }, { status: e.code === 'NOT_FOUND' ? 404 : 400 });

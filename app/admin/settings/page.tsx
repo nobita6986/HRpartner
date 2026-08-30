@@ -2,43 +2,48 @@
 
 import * as React from 'react';
 
+/**
+ * /admin/settings — hiện tại là bản phác thảo: liệt kê những nhóm cấu hình sẽ có,
+ * chưa nhóm nào bấm được. Vì vậy mỗi nhóm gắn nhãn "Chưa khả dụng" và các dòng
+ * KHÔNG phải link — thà nói thật còn hơn để link `#` giả vờ bấm được.
+ */
 const SETTINGS_GROUPS = [
   {
     title: 'Cài đặt chung',
     items: [
-      { label: 'Thông tin tổ chức', description: 'Tên công ty, logo, múi giờ', href: '#' },
-      { label: 'Ngôn ngữ & vùng', description: 'Ngôn ngữ giao diện, định dạng ngày/tháng', href: '#' },
+      { label: 'Thông tin tổ chức', description: 'Tên công ty, logo, múi giờ' },
+      { label: 'Ngôn ngữ & vùng', description: 'Ngôn ngữ giao diện, định dạng ngày/tháng' },
     ],
   },
   {
     title: 'Bảo mật',
     items: [
-      { label: 'Đổi mật khẩu', description: 'Thay đổi mật khẩu tài khoản', href: '#' },
-      { label: 'Xác thực hai yếu tố (2FA)', description: 'Bật/tắt xác thực 2 lớp', href: '#' },
-      { label: 'Lịch sử đăng nhập', description: 'Xem các phiên đăng nhập gần đây', href: '#' },
+      { label: 'Đổi mật khẩu', description: 'Thay đổi mật khẩu tài khoản' },
+      { label: 'Xác thực hai yếu tố (2FA)', description: 'Bật/tắt xác thực 2 lớp' },
+      { label: 'Lịch sử đăng nhập', description: 'Xem các phiên đăng nhập gần đây' },
     ],
   },
   {
     title: 'Thông báo',
     items: [
-      { label: 'Email thông báo', description: 'Cấu hình email nhận thông báo', href: '#' },
-      { label: 'SMS / Zalo', description: 'Cấu hình kênh SMS và Zalo OA', href: '#' },
-      { label: 'App Push', description: 'Bật/tắt thông báo trên ứng dụng', href: '#' },
+      { label: 'Email thông báo', description: 'Cấu hình email nhận thông báo' },
+      { label: 'SMS / Zalo', description: 'Cấu hình kênh SMS và Zalo OA' },
+      { label: 'App Push', description: 'Bật/tắt thông báo trên ứng dụng' },
     ],
   },
   {
     title: 'Tích hợp',
     items: [
-      { label: 'API Keys', description: 'Quản lý API keys cho bên thứ ba', href: '#' },
-      { label: 'Webhook', description: 'Cấu hình webhook nhận sự kiện', href: '#' },
-      { label: 'Single Sign-On (SSO)', description: 'Kết nối LDAP / SAML / OAuth', href: '#' },
+      { label: 'API Keys', description: 'Quản lý API keys cho bên thứ ba' },
+      { label: 'Webhook', description: 'Cấu hình webhook nhận sự kiện' },
+      { label: 'Single Sign-On (SSO)', description: 'Kết nối LDAP / SAML / OAuth' },
     ],
   },
   {
     title: 'Nhật ký hệ thống',
     items: [
-      { label: 'Audit Log', description: 'Xem lịch sử thay đổi quan trọng', href: '#' },
-      { label: 'Error Log', description: 'Các lỗi hệ thống gần đây', href: '#' },
+      { label: 'Audit Log', description: 'Xem lịch sử thay đổi quan trọng' },
+      { label: 'Error Log', description: 'Các lỗi hệ thống gần đây' },
     ],
   },
 ];
@@ -49,7 +54,7 @@ export default function SettingsPage() {
       <div className="mb-6">
         <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">Cài đặt</h1>
         <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">
-          Module M7 — Cấu hình hệ thống
+          Cấu hình hệ thống — các nhóm dưới đây chưa mở, đang liệt kê để biết sẽ có gì.
         </p>
       </div>
 
@@ -62,20 +67,22 @@ export default function SettingsPage() {
           >
             <div
               style={{ background: 'var(--surface-container)', borderBottom: '1px solid var(--outline-variant)' }}
-              className="px-4 py-3"
+              className="flex items-center justify-between gap-3 px-4 py-3"
             >
               <h2 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">{group.title}</h2>
+              <span
+                style={{ background: 'var(--surface-container-highest)', color: 'var(--on-surface-variant)' }}
+                className="rounded-full px-2 py-0.5 text-xs font-medium"
+              >
+                Chưa khả dụng
+              </span>
             </div>
             <div className="divide-y divide-solid" style={{ borderColor: 'var(--outline-variant)' }}>
               {group.items.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="block px-4 py-3 transition-colors hover:opacity-80"
-                >
+                <div key={item.label} className="block px-4 py-3 opacity-60">
                   <div style={{ color: 'var(--on-surface)' }} className="text-sm font-medium">{item.label}</div>
                   <div style={{ color: 'var(--on-surface-variant)' }} className="text-xs mt-0.5">{item.description}</div>
-                </a>
+                </div>
               ))}
             </div>
           </div>

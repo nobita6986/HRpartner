@@ -48,36 +48,83 @@ function SlotChip({ needed, filled }: { needed: number; filled: number }) {
   );
 }
 
+interface ProjectOption {
+  id: string;
+  code: string;
+  name: string;
+}
+
 function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [title, setTitle] = useState('');
   const [projectId, setProjectId] = useState('');
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
+  const [projectsError, setProjectsError] = useState('');
+  const [positionCode, setPositionCode] = useState('GEN');
   const [positionTitle, setPositionTitle] = useState('');
   const [slotsNeeded, setSlotsNeeded] = useState('1');
+  const [hourlyRateVnd, setHourlyRateVnd] = useState('');
+  const [shiftStart, setShiftStart] = useState('');
+  const [shiftEnd, setShiftEnd] = useState('');
+  const [workLocation, setWorkLocation] = useState('');
+  const [deadlineDate, setDeadlineDate] = useState('');
+  const [validTo, setValidTo] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState('');
 
+  // Dự án nạp từ API để khỏi phải dán UUID bằng tay.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch('/api/projects?take=50');
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.message ?? `Lỗi ${r.status}`);
+        if (!cancelled) setProjects(Array.isArray(d.projects) ? d.projects : []);
+      } catch (e) {
+        if (!cancelled) setProjectsError(e instanceof Error ? e.message : 'Không tải được danh sách dự án.');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !projectId.trim() || !positionTitle.trim()) {
+    if (!title.trim() || !projectId || !positionTitle.trim() || !positionCode.trim()) {
       setErr('Điền đầy đủ các trường bắt buộc.');
+      return;
+    }
+    const rate = hourlyRateVnd.trim() === '' ? null : Number(hourlyRateVnd);
+    if (rate !== null && (!Number.isInteger(rate) || rate < 0)) {
+      setErr('Lương giờ phải là số nguyên không âm (VND).');
       return;
     }
     setSubmitting(true);
     setErr('');
     try {
+      // Field để trống thì không gửi — tránh ghi chuỗi rỗng vào DB.
+      const slot: Record<string, string | number> = {
+        positionCode: positionCode.trim(),
+        positionTitle: positionTitle.trim(),
+        slotsNeeded: parseInt(slotsNeeded, 10) || 1,
+        validFrom: new Date().toISOString().slice(0, 10),
+      };
+      if (rate !== null) slot.hourlyRateVnd = rate;
+      if (shiftStart) slot.shiftStart = shiftStart;
+      if (shiftEnd) slot.shiftEnd = shiftEnd;
+      if (workLocation.trim()) slot.workLocation = workLocation.trim();
+      if (validTo) slot.validTo = validTo;
+
+      const body: Record<string, unknown> = {
+        projectId,
+        title: title.trim(),
+        slots: [slot],
+      };
+      if (deadlineDate) body.deadlineDate = deadlineDate;
+
       const r = await fetch('/api/staffing/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectId: projectId.trim(),
-          title: title.trim(),
-          slots: [{
-            positionCode: 'GEN',
-            positionTitle: positionTitle.trim(),
-            slotsNeeded: parseInt(slotsNeeded, 10) || 1,
-            validFrom: new Date().toISOString().slice(0, 10),
-          }],
-        }),
+        body: JSON.stringify(body),
       });
       if (!r.ok) {
         const d = await r.json();
@@ -101,11 +148,11 @@ function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
     >
       <div
         style={{ background: 'var(--surface-container-lowest)' }}
-        className="w-full max-w-md rounded-lg border p-6 shadow-xl"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border p-6 shadow-xl"
         onClick={ev => ev.stopPropagation()}
       >
         <h2 style={{ color: 'var(--on-surface)' }} className="mb-4 text-lg font-semibold">
-          Tạo Staffing Order
+          Tạo đơn tuyển dụng
         </h2>
         <form onSubmit={submit} className="space-y-4">
           <div>
@@ -119,14 +166,25 @@ function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
             />
           </div>
           <div>
-            <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Project ID *</label>
-            <input
+            <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Dự án *</label>
+            <select
               value={projectId} onChange={e => setProjectId(e.target.value)}
-              placeholder="VD: seed-prj-ap-qm-1048"
               style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
-              className="w-full rounded border px-3 py-2 text-sm font-mono"
+              className="w-full rounded border px-3 py-2 text-sm"
               required
-            />
+            >
+              <option value="">-- Chọn dự án --</option>
+              {projects.map(p => (
+                <option key={p.id} value={p.id}>{p.code} — {p.name}</option>
+              ))}
+            </select>
+            {projectsError ? (
+              <p style={{ color: 'var(--error)' }} className="mt-1 text-xs">{projectsError}</p>
+            ) : projects.length === 0 ? (
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Đang tải danh sách dự án…
+              </p>
+            ) : null}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -140,6 +198,18 @@ function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
               />
             </div>
             <div>
+              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Mã vị trí *</label>
+              <input
+                value={positionCode} onChange={e => setPositionCode(e.target.value)}
+                placeholder="VD: DIEN"
+                style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
+                className="w-full rounded border px-3 py-2 text-sm font-mono"
+                required
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Số lượng</label>
               <input
                 type="number" min="1"
@@ -148,7 +218,69 @@ function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
                 className="w-full rounded border px-3 py-2 text-sm"
               />
             </div>
+            <div>
+              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Lương giờ (VND)</label>
+              <input
+                type="number" min={0} step={1000}
+                value={hourlyRateVnd} onChange={e => setHourlyRateVnd(e.target.value)}
+                placeholder="VD: 35000"
+                style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
+                className="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Giờ vào</label>
+              <input
+                type="time"
+                value={shiftStart} onChange={e => setShiftStart(e.target.value)}
+                style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
+                className="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Giờ ra</label>
+              <input
+                type="time"
+                value={shiftEnd} onChange={e => setShiftEnd(e.target.value)}
+                style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
+                className="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+          <div>
+            <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Nơi làm việc</label>
+            <input
+              value={workLocation} onChange={e => setWorkLocation(e.target.value)}
+              placeholder="VD: KCN Yên Phong, Bắc Ninh"
+              style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
+              className="w-full rounded border px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Hạn nhận hồ sơ</label>
+              <input
+                type="date"
+                value={deadlineDate} onChange={e => setDeadlineDate(e.target.value)}
+                style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
+                className="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Vị trí tuyển đến ngày</label>
+              <input
+                type="date"
+                value={validTo} onChange={e => setValidTo(e.target.value)}
+                style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
+                className="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+          <p style={{ color: 'var(--on-surface-variant)' }} className="text-xs">
+            Quá hạn nhận hồ sơ hoặc quá ngày tuyển, slot không còn được tính là trống nên tin sẽ không đăng được.
+          </p>
           {err && <p style={{ color: 'var(--error)' }} className="text-sm">{err}</p>}
           <div className="flex justify-end gap-3 pt-2">
             <button
@@ -163,7 +295,7 @@ function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
               style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
               className="rounded px-4 py-2 text-sm font-semibold disabled:opacity-50"
             >
-              {submitting ? 'Đang tạo…' : 'Tạo Order'}
+              {submitting ? 'Đang tạo…' : 'Tạo đơn'}
             </button>
           </div>
         </form>

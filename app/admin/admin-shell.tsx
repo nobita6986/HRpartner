@@ -3,10 +3,8 @@
 /**
  * AdminShell — Client wrapper quanh `RoleGuardLayout` (shared/ui).
  *
- * Phase 4 slice 4A (STEP-01): dùng nav `ADMIN_NAV_PHASE4` (4 nhóm Staffing / Chấm công /
- * Đối soát / Job Board) — export từ role-guard-layout.
- *
- * DEC-17 (UI skeleton round 1): render đủ narrative F00A — không cần design polish.
+ * Nav lấy từ `ADMIN_NAV_PHASE4` (export từ role-guard-layout), lọc theo role
+ * người đăng nhập.
  */
 
 import * as React from 'react';
@@ -53,7 +51,6 @@ export function AdminShell({ role, userId, navItems, children }: AdminShellProps
       navItems={navItems}
       user={{ name: userId, avatarUrl: undefined }}
       brandTitle="HRP Admin"
-      brandSubtitle="Nội bộ — Phase 4"
     >
       {children}
     </RoleGuardLayout>

@@ -61,7 +61,7 @@ async function generateOrderCode(tx: Prisma.TransactionClient): Promise<string> 
   // deu phai cho de lay lock nay truoc khi SELECT MAX+1.
   await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext('staffing_order_code'))`);
   const rows = await tx.$queryRawUnsafe<Array<{ max_num: bigint | null }>>(
-    `SELECT MAX(SUBSTRING(code FROM 4)::bigint AS max_num FROM staffing_orders WHERE code ~ '^SO-[0-9]+$'`,
+    `SELECT MAX(SUBSTRING(code FROM 4)::bigint) AS max_num FROM staffing_orders WHERE code ~ '^SO-[0-9]+$'`,
   );
   const next = Number(rows[0]?.max_num ?? 0n) + 1;
   return `SO-${String(next).padStart(5, '0')}`;
@@ -151,7 +151,7 @@ export async function listStaffingOrders(
       where,
       include: {
         project: { select: { id: true, name: true, code: true } },
-        slots: { select: { id: true, positionTitle: true, slotsNeeded: true, slotsFilled: true } },
+        slots: { select: { id: true, positionTitle: true, slotsNeeded: true, slotsFilled: true, validTo: true } },
         _count: { select: { assignments: true } },
       },
       orderBy: { createdAt: 'desc' },

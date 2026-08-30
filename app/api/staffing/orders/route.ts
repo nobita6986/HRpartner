@@ -32,6 +32,16 @@ export const runtime = 'nodejs';
 const LIST_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'SALE', 'DIRECTOR', 'ACCOUNTANT'] as const);
 const CREATE_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'SALE'] as const);
 
+/**
+ * slot.hourlyRateVnd là BigInt trong Prisma, mà JSON.stringify không serialize được
+ * BigInt ⇒ NextResponse.json(order) ném TypeError và route trả 500 SAU KHI đơn đã
+ * commit (người dùng thấy lỗi, bấm lại, tạo trùng đơn). Đổi BigInt sang number —
+ * VND nguyên nên còn rất xa Number.MAX_SAFE_INTEGER.
+ */
+function bigintSafe<T>(value: T): unknown {
+  return JSON.parse(JSON.stringify(value, (_k, v) => (typeof v === 'bigint' ? Number(v) : v)));
+}
+
 function getIdempotencyKey(req: NextRequest): string | undefined {
   return req.headers.get('x-idempotency-key') ?? undefined;
 }
@@ -122,7 +132,7 @@ export async function POST(req: NextRequest) {
   if (!idempotencyKey) {
     try {
       const order = await withDbContext(prisma, ctx, (tx) => createStaffingOrder(tx, ctx, body));
-      return NextResponse.json({ order }, { status: 201 });
+      return NextResponse.json(bigintSafe({ order }), { status: 201 });
     } catch (e) {
       if (e instanceof AuthScopeError) return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
       if (e instanceof StaffingOrderServiceError) return NextResponse.json({ error: e.code, message: e.message }, { status: 400 });
@@ -143,7 +153,7 @@ export async function POST(req: NextRequest) {
         return { body: { order }, statusCode: 201 };
       },
     });
-    return NextResponse.json(result.body, { status: result.statusCode });
+    return NextResponse.json(bigintSafe(result.body), { status: result.statusCode });
   } catch (e) {
     if (e instanceof AuthScopeError) return NextResponse.json({ error: e.code, message: e.message }, { status: 403 });
     if (e instanceof StaffingOrderServiceError) return NextResponse.json({ error: e.code, message: e.message }, { status: 400 });
