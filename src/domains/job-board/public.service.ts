@@ -88,10 +88,6 @@ function toDto(project: {
   code: string;
   name: string;
   siteAddress: string | null;
-  // Quan hệ bắt buộc ở mức kiểu Prisma, nhưng dưới FORCE RLS thì principal công khai `MKT`
-  // không đọc được `client_companies` nên Prisma trả `null` lúc runtime. Kiểu phải nói thật,
-  // nếu không `tsc` sẽ tiếp tục xanh trong khi đường đọc công khai ném TypeError.
-  clientCompany: { industry: string | null } | null;
   staffingOrders: Array<{
     status: string;
     title: string;
@@ -128,7 +124,7 @@ function toDto(project: {
     position: first.positionTitle,
     shift,
     location: first.workLocation ?? project.siteAddress,
-    industry: inferIndustry(searchableText, project.clientCompany?.industry ?? null),
+    industry: inferIndustry(searchableText, null),
     shiftType: classifyShift(slots),
     jobType: classifyJobType(searchableText, slots),
     availableSlots,
@@ -137,12 +133,15 @@ function toDto(project: {
   };
 }
 
+// Chỉ scalar của `Project` cộng nhánh `staffingOrders`. CẤM select quan hệ bắt buộc trên bảng
+// mà principal công khai `MKT` không đọc được (`client_companies`): query engine của Prisma phải
+// materialize dòng liên quan cho mọi dòng trả về, không thấy thì ném `Inconsistent query result`
+// trước khi `toDto` chạy, và mock `findMany` không tái lập được. Hàng rào: `public-select.static.test.ts`.
 const publicSelect = Prisma.validator<Prisma.ProjectSelect>()({
   id: true,
   code: true,
   name: true,
   siteAddress: true,
-  clientCompany: { select: { industry: true } },
   staffingOrders: {
     where: { status: { in: VISIBLE_ORDER_STATUSES } },
     select: {
