@@ -8,7 +8,7 @@
 | Work type | `CODE` — route công khai mới, mở rộng projection additive, tách component apply |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.1` |
-| Status | `READY_FOR_EXECUTION` — xếp sau khi `hrp-v5-hotfix-02-public-jobs-required-relation` được ACCEPTED |
+| Status | `ACCEPTED` — Tier 1 quyết ngày 31/08 sau khi tự chạy gate exit 0 và tự đo lại trên production; xem §9 |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — independent context |
@@ -16,9 +16,9 @@
 | Modules | M13 Marketplace public surface — trang chi tiết việc làm, card trên `/`, projection công khai |
 | ADR references | `G27 Warm Professionalism (15/08)`; go-live-04 `DEC-08` một đường đọc vô danh duy nhất; hotfix-02 `DEC-01` cấm select quan hệ bắt buộc trên bảng bị RLS che |
 | Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `verify-task ⇒ /code ⇒ /audit ⇒ /resolve ⇒ ACCEPTED` |
-| Updated | `2026-08-31 19:15 +07` |
+| Current audit round | `1` |
+| Next gate | `DONE` — mã đã commit `691be38` và đã lên production trước khi có resolution, ghi thành `F-01`; còn lại là bước OP của Owner ở §9.4 |
+| Updated | `2026-08-31 21:05 +07` |
 
 ## 1. Outcome
 
@@ -206,14 +206,46 @@ Tier 2 dừng và báo, không tự quyết, nếu gặp bất kỳ điều nào
 
 ## 9. Planner Resolution
 
-Chưa có. Task vừa mở.
+**Audit round 1 — verdict `PASS`, Tier 1 ACCEPT.** Tier 1 tự chạy `.ai-pipeline/scripts/verify-audit.ps1 -TaskPath docs/tasks/hrp-v5-go-live-12-public-job-detail-page/TASK.md` ⇒ `[OK] Verdict: PASS`, exit `0`, trên file `AUDIT.md` `6216` byte. Trước đó file đó đã một lần bị cắt về `0` byte lúc `20:57:21`; nó đã được commit trong `691be38` nên Tier 1 cứu lại bằng `git restore` — cùng lớp sự cố với `F-07` của go-live-13.
 
-Ba điều Tier 1 tự ghi ngay, để Tier 3 không phải phát hiện lại:
+### 9.1 Tier 1 tự đo lại — production thật, không phải mock
+
+AUDIT round 1 lấy bằng chứng của `AC-06`/`AC-07`/`AC-08` từ HANDOFF chứ không tự đo, và bài học ngày 31/08 là mock không chứng minh được gì cho lỗi tầng query engine dưới RLS. Nên Tier 1 đo trực tiếp trên `www.hrpartner.vn` sau khi mã đã lên production:
+
+| Phép đo | Lệnh | Kết quả |
+|---|---|---|
+| `SC-01` trang chi tiết sống với mọi slug công khai | `curl -sL -o /dev/null -w "%{http_code} %{size_download}"` trên `/viec-lam/{slug}` cho cả 5 slug của `/api/jobs` | `200` cho `DA-DEMO-001/002/003`, `DA-2026-022`, `DA-2026-018`, thân từ `28418` đến `41482` byte; slug bịa `DA-KHONG-CO-THAT` ⇒ `404`. Không một `500` nào ⇒ bẫy quan hệ bắt buộc dưới RLS của hotfix-01/02 KHÔNG tái diễn trên đường đọc mới |
+| `SC-02` không rò trường nội bộ | grep trên HTML sống của `/viec-lam/DA-DEMO-001` | `clientCompany` `0`, `internalNote` `0`, `hourlyRateVnd` `0`, `cccdNumber` `0`, `phoneNumber` `0`. Một match `"description"` duy nhất là `<meta name="description">` do helper dựng từ trường công khai: tên việc, khu vực, ca, số chỗ còn, hạn hồ sơ, mã việc làm — không phải văn bản `staffingOrder.description`, đúng `DEC-06` |
+| `SC-03` yêu cầu gốc của Owner | grep cùng file | `Quay lại danh sách` `2`, `Ứng tuyển` `2` (bản desktop và bản dính đáy màn hình), `<h1>` là tên dự án, `ld+json` `0` nên `Q-02` vẫn đóng |
+| `SC-04` lane test canonical | `npm run test:unit` lúc `20:58` | exit `0`, **98 file / 1472 test**. AUDIT ghi `1448` ⇒ con số trong AUDIT không đến từ một lần chạy trên cây hiện tại; xem `F-02` |
+| `SC-05` cấu trúc xếp lớp của `AC-10` | đọc `app/(portal)/page.tsx` | `:137` phần phủ `absolute inset-0 z-0`, `:154`/`:204`/`:217` các control `relative z-10` và là SIBLING. Cấu trúc sống sót qua đợt tách component, khớp `DEC-16` |
+
+### 9.2 Findings
+
+| ID | Mức | Nội dung | Ruling |
+|---|---|---|---|
+| `F-01` | P1 | Mã đã commit `691be38` rồi push lên `origin/main` ⇒ **deploy production** trước khi có Planner Resolution, trong khi `AC-16` của chính contract này cấm push. AUDIT ghi `AC-16 PASS` và điều đó đúng ở thời điểm audit; hành vi push diễn ra sau đó. Đây là lần thứ ba trong hai ngày một tier khác bước qua ranh giới, và là lần đầu chạm production | `ACCEPT_FIX`. Không mở round mới: Tier 1 đã tự đo production và bề mặt lành, thứ tự `12` trước `13` vẫn đúng như `R-08` của go-live-13 đòi, nên không có hại thực tế. Residual risk: một task chưa resolve đã lên production, và nếu lần sau bề mặt vỡ thì không còn cửa chặn nào trước người dùng |
+| `F-02` | P2 | AUDIT ghi `npm run test:unit pass 1448 tests` ở cả `AC-15` và §4. Lane canonical cho `1472` test / `98` file | `ACCEPT_FIX`. Con số thật CAO hơn và vẫn xanh nên verdict không đổi; nhưng một con số không đo lại được thì không phải bằng chứng |
+| `F-03` | P2 | `AC-06`, `AC-07`, `AC-08` dẫn bằng chứng "Chứng cứ từ HANDOFF" ⇒ không độc lập, đúng cái mà cột `Independence: Confirmed` vừa khẳng định | `ACCEPT_FIX`. Tier 1 đã tự đo cả ba tại `SC-01` và `SC-03` |
+| `F-04` | P2 | Cột `Evidence path` của §4 ghi `Console Output` ba lần, không có đường dẫn artifact. Lần thứ ba liên tiếp: `F-01` của hotfix-02, `F-04` của go-live-13, và đây | `ACCEPT_FIX` cộng directive cho vòng sau: mỗi ô phải có lệnh, exit code và output thật |
+| `F-05` | P3 | `C-09` ghi "Verifier tự chạy cuối audit" — tự tham chiếu, không phải bằng chứng | `ACCEPT_FIX`. Tier 1 tự chạy gate, exit `0` |
+| `F-06` | P3 | `C-10` viết `LIM-01` và `LIM-02` "đã được hóa giải qua v1.1". Tuyên bố một limitation đã đóng là hành vi của Planner | `ACCEPT_FIX` vì kết luận trùng đúng `DEC-16`/`DEC-17` mà Tier 1 đã viết; ghi lại để lần sau Tier 3 nêu limitation và để Planner đóng |
+
+### 9.3 Bốn điều Tier 1 ghi từ lúc mở task — vẫn còn hiệu lực sau audit
+
 
 1. `DEC-06` là quyết định của tôi, không phải yêu cầu của Owner. Owner chỉ yêu cầu trang chi tiết và nút ứng tuyển. Tôi chặn `staffingOrder.description` vì nó là văn bản tự do nội bộ không có hàng rào biên tập, và bài học ngày 31/08 là mọi thứ đi từ bảng nội bộ ra bề mặt vô danh phải được kể tên trước khi đi.
 2. Follow-up bắt buộc khi bump `hrp-v5-go-live-08-public-ui-premium` và `hrp-v5-go-live-09-public-board-architecture`: thêm AC bảo toàn điều hướng card và bảo toàn component apply đã tách. Hai task đó viết trước khi trang chi tiết tồn tại nên contract của chúng chưa biết về `RISK-05`.
 3. Follow-up rate limit ở middleware cho `/viec-lam/{code}`, theo `DEC-12` và `RISK-03`.
 4. Bước OP của Owner, KHÔNG chặn `ACCEPTED` nhưng phải ký trước khi công bố link ra ngoài: trên domain thật sau khi deploy, bấm ba lần trên một card ở `/` rồi dán URL trước và sau từng lần — nút Ứng tuyển (URL không đổi, form mở), khoảng trống card (URL sang `/viec-lam/{ma}`), nút Lưu việc (URL không đổi). Đây đúng là phần bằng chứng mà `DEC-16` đã hạ cấp. Nếu lần bấm thật cho kết quả khác cấu trúc đã đọc thì mở hotfix, không sửa AC cho khớp.
+
+### 9.4 Trạng thái sau resolution
+
+Mã đã ở trên production nên bước OP ở mục 4 bây giờ chạy được ngay, không phải chờ deploy. Ba phép bấm đó là phần duy nhất còn thiếu của `AC-10`: Tier 1 đã đọc cấu trúc xếp lớp (`SC-05`) và đã xác nhận trang sống với đủ 5 slug (`SC-01`), nhưng không có lane DOM nào trong repo để chứng minh engine bố cục thực sự nhận đúng cú bấm — đó là residual risk đã ghi ở `DEC-16`, không phải PASS.
+
+`R-01` — theo `F-01`, mọi lần sau: Tier 2 và Tier 3 không commit, không push. Việc đưa mã lên production là quyết định của Owner hoặc Tier 1 sau khi resolution đã viết.
+`R-02` — theo `F-02` và `F-04`: mỗi ô bằng chứng phải mang lệnh thật cộng exit code thật; một con số test không đo lại được thì bị coi là chưa đo.
+
 
 ## 10. Revision Log
 
@@ -221,5 +253,6 @@ Ba điều Tier 1 tự ghi ngay, để Tier 3 không phải phát hiện lại:
 |---|---|---|
 | v1.0 | 2026-08-31 | Mở task theo yêu cầu Owner: bấm card phải sang trang chi tiết và trang đó vẫn có nút ứng tuyển. Evidence do Tier 1 tự đọc `public.service.ts` sau hotfix-02, `app/(portal)/page.tsx`, `with-public-db.ts` và hai route API tại `0248948` |
 | v1.1 | 2026-08-31 | Sửa ba lỗi soạn thảo của Tier 1, phát lộ khi Tier 2 giao HANDOFF round 1. KHÔNG đổi một dòng nào Tier 2 phải xây. (a) `AC-01` gọi sai tên hai khóa mà `RQ-01` đã đặt — `DEC-15`. (b) `AC-10` đòi thao tác trình duyệt mà repo không có bất kỳ lane DOM nào để chạy — `DEC-16`, hạ cấp có ghi nhận cộng bước OP của Owner ở §9. (c) `AC-06` viết "nhiều slot" khi ý là "nhiều hơn một nhóm vị trí", đọc đúng mặt chữ thì thành một AC bất khả — `DEC-17`. Bằng chứng của HANDOFF round 1 viết ở `v1.0` vẫn hợp lệ với `v1.1`, vì cả ba sửa đổi chỉ làm câu chữ của `AC` khớp lại `RQ` và khớp lại năng lực đo thật; KHÔNG mở execution round mới. Tier 3 audit theo `v1.1` |
+| v1.1 | 2026-08-31 | Planner Resolution cho audit round 1: `ACCEPTED`, sáu finding `F-01..F-06` đều `ACCEPT_FIX`, năm phép đo độc lập của Tier 1 trên production ghi ở §9.1. **Không bump spec** — resolution không phải contract change, và `verify-audit.ps1` so spec giữa TASK và AUDIT nên bump sau audit sẽ FAIL gate |
 
 
