@@ -9,18 +9,18 @@
 ```yaml
 updated_at: 2026-08-31 Asia/Bangkok
 roadmap_source: docs/UNIFIED_PLAN_v5.md
-current_lane: V5 go-live surface hardening — làm sạch bề mặt công khai/admin trước khi công bố link
-current_task: hrp-v5-go-live-06-live-rls-matrix-restore
-task_path: docs/tasks/hrp-v5-go-live-06-live-rls-matrix-restore/TASK.md
-spec_version: v1.1
-task_status: READY_FOR_EXECUTION — Execution Round 2
+current_lane: V5 go-live surface hardening — P0 production đang hỏng, ưu tiên khôi phục dịch vụ trước mọi việc UI
+current_task: hrp-v5-hotfix-01-public-jobs-500
+task_path: docs/tasks/hrp-v5-hotfix-01-public-jobs-500/TASK.md
+spec_version: v1.0
+task_status: READY_FOR_EXECUTION — contract mới viết 31/08, verify-task PASS exit 0, chưa giao Tier 2
 current_gate: TIER_2_CODE
-next_command: /code hrp-v5-go-live-06-live-rls-matrix-restore — Round 2: đọc TASK v1.1 + HANDOFF Round 1; tiếp nhận EV-14/EV-15 của Planner, cập nhật runbook/pending allowlist và HANDOFF thành READY_FOR_AUDIT; không chạy STEP-07..09, không ghi hrp-live trước audit PASS.
-previous_accepted: hrp-v5-go-live-04-public-read-rls-closure — Audit Round 1 PASS; source c0fdf76; audit 84ebe66; Planner đã kiểm lại mutation MKT → ADMIN ĐỎ rồi hoàn nguyên XANH với SHA-256 trùng tuyệt đối.
-next_planner_candidate: hrp-v5-go-live-05-public-card-truth — contract v1.0 đã verify-task PASS; chỉ giao /code sau khi GO-LIVE-06 ACCEPTED. Sau đó là GO-LIVE-07 marketplace launch proof. Chuỗi còn lại: 06 → 05 → 07.
-blocking_owner: Không còn blocker Owner. Ngày 31/08 Owner đã duyệt đúng allowlist hai migration pending: 20260829093000_mp2_public_rpc_schema_usage và 20260830214139_m14_rls_matrix_repair. Nếu pre-deploy xuất hiện migration thứ ba thì quyền này hết hiệu lực và phải DỪNG.
+next_command: Giao /code hrp-v5-hotfix-01-public-jobs-500. Đây là P0 khôi phục dịch vụ, chặn mọi task UI. Nguyên nhân đã chứng minh tĩnh 100%, không cần DB thật và không cần credential live, nên ENV_BLOCKED không phải kết cục hợp lệ cho bất kỳ AC nào. Bắt buộc có bằng chứng RED-trước-GREEN cho case clientCompany null.
+previous_accepted: hrp-v5-go-live-06-live-rls-matrix-restore — ACCEPTED 2026-08-31, Audit Round 3 PASS; Tier 1 tự chạy verify-audit.ps1 exit 0, tự đọc AUDIT.md, tự phán quyết ngoại lệ legacy wrapper hrp_worker_visible từ nguồn repo (wrapper chỉ gọi hrp_worker_visible_for(wid), không đổi đối số), và tự đối chiếu hash hai hàm *_visible_for. Hai giới hạn đã công bố trong resolution, không giấu.
+next_planner_candidate: Sau hotfix là hrp-v5-go-live-05-public-card-truth (phải rebase EV/RQ tại d4928af trước khi giao; task 09 có thể hấp thu phần lớn 05 nên Tier 1 phải quyết gộp hay giữ), rồi hrp-v5-go-live-08-public-ui-premium (v1.1, verify-task PASS), rồi hrp-v5-go-live-09-public-board-architecture (v1.0, verify-task PASS, viết 31/08), rồi GO-LIVE-07. Chuỗi còn lại: hotfix-01 → 05 → 08 → 09 → 07. Thứ tự 08 trước 09 là ràng buộc kỹ thuật, không phải sở thích: 09 dựng phần tử mới trên bộ token của 08 và sửa cùng hàm toDto mà hotfix sửa.
+blocking_owner: Hai điểm cần Owner quyết. (1) Chọn hotfix hay revert d4928af — nếu Owner chọn revert thì hotfix-01 chuyển CANCELLED, không thực thi song song. (2) Stop condition migration ĐÃ BỊ VƯỢT: allowlist ngày 31/08 gồm đúng hai migration, nhưng 20260831103000_marketplace_search_tracking_profile là cái thứ ba, đã commit và đã push; nó cũng để lại quyền tồn dư vì re-grant WITH SET FALSE chứ không REVOKE.
 product_override: /bcc retired; production payroll/payslip belongs to the separate salary app; PAY-01..08 = DEFERRED_FINAL and does not block HRP go-live
-cursor_note: GO-LIVE-06 Round 1 đã hoàn tất lane hrp_mp2_test nhưng HANDOFF BLOCKED do phiên Tier 2 cũ không được đọc live. Tier 1 đã gỡ blocker bằng Neon CLI: Prisma xác nhận đúng 2 pending allowlisted; RED live = RLS enabled 31, permissive enabled-only 22, permissive all-public 30, EV02 policy 0/15, ticket RLS off; writer SELECT 0/15 và INSERT 42501 15/15; sáu hàm đủ, hai hash m13 đã khóa; mọi INSERT rollback, chưa ghi live. TASK v1.1 sửa AC-08 theo table GRANT và AC-11 theo hai cơ sở đếm. Tier 2 Round 2 chỉ cập nhật HANDOFF để Tier 3 audit; sau PASS mới snapshot pre-rls-repair-2026-08-31 và deploy đúng hai migration. Sau 06: GO-LIVE-05 rồi GO-LIVE-07. /bcc retired; PAY defer cuối.
+cursor_note: P0 phát hiện 31/08 sau khi push d4928af — /api/jobs và /api/jobs/{slug} trả 500 body rỗng, trang / hiện hộp lỗi. Nguyên nhân đã chốt tĩnh: join client_companies mới thêm ở d4928af cộng deref không guard trong toDto, dưới principal MKT không có policy SELECT nào trên bảng đó nên Prisma trả null cho một quan hệ mà kiểu khai là non-null. Vì vậy typecheck xanh và 1416 unit test xanh vẫn để lọt P0 — lớp lỗi này tsc không bao giờ bắt được, và fixture duy nhất của lane test luôn có object quan hệ. GO-LIVE-03 vẫn chờ Tier 3 audit round 2 và không được resolve trên AUDIT round 1. Task 08 và 09 đều mới chỉ là contract, chưa giao.
 ```
 
 <!-- ROADMAP_CURSOR_END -->

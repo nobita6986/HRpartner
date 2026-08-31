@@ -8,10 +8,10 @@
 | Lane | V5 go-live surface hardening |
 | Work type | DB posture restore — một migration forward mới cộng probe evidence. KHÔNG sửa app code |
 | Spec version | v1.2 |
-| Status | READY_FOR_AUDIT — Execution Round 4 đã hoàn tất `STEP-07..09` trên `hrp-live` theo allowlist; chờ Tier 3 audit LIVE evidence |
+| Status | ACCEPTED — Audit Round 3 `PASS`; Tier 1 tự chạy `verify-audit.ps1` exit 0, tự đọc `AUDIT.md`, tự phán quyết ngoại lệ legacy wrapper từ nguồn repo, và tự đối chiếu hash hai hàm `*_visible_for` (§9) |
 | Current execution round | 4 |
-| Current audit round | 2 |
-| Next gate | `/audit hrp-v5-go-live-06-live-rls-matrix-restore` Round 3 — kiểm độc lập snapshot, migration state, GREEN matrix và schema diff |
+| Current audit round | 3 |
+| Next gate | Không còn. Task đóng 2026-08-31 |
 | Priority | P0 — 15 bảng DENY-ALL và 3 bảng ticket KHÔNG được bảo vệ trên DB đứng sau www.hrpartner.vn |
 | Baseline | `776a3c1` |
 | Depends on | `hrp-v5-go-live-03-admin-surface-truth` đóng, `hrp-v5-go-live-04-public-read-rls-closure` đóng |
@@ -200,6 +200,21 @@ Tier 2 chạy STEP-01 tới STEP-06 và STEP-10 trên `hrp_mp2_test`. STEP-07 t�
 - Execution Round 4 đã chạy đúng runbook: tạo snapshot không expiry trước khi ghi, kiểm lại tập pending, deploy hai migration theo đúng thứ tự, rồi chạy owner/writer probe và schema diff. Evidence không chứa connection string, token, password hay PII được ghi ở HANDOFF §9.
 - Chưa `ACCEPT` task tại đây. Tier 3 phải audit độc lập LIVE evidence của `AC-07..AC-12`, đặc biệt ngoại lệ schema diff liên quan legacy wrapper quanh `hrp_worker_visible_for`, trước khi Planner đóng task.
 
+### Audit Round 3 `PASS` → `ACCEPTED` (2026-08-31)
+
+Tier 1 không resolve trên lời kể. Bốn việc tự làm trước khi đóng:
+
+1. **Gate audit chạy lại độc lập:** `verify-audit.ps1 -TaskPath docs/tasks/hrp-v5-go-live-06-live-rls-matrix-restore/TASK.md` → `[OK] Verdict: PASS`, `RESULT: PASS`, exit `0`.
+2. **Tự đọc `AUDIT.md`:** file 85 dòng, có `## 6. Verdict và Planner Questions` với `Verdict: PASS`, 15/15 hàng AC đều `PASS`, cột finding rỗng, `## 7. Re-audit Trace` ghi đủ ba round `BLOCKED → PASS → PASS`.
+3. **Tự phán quyết điểm Tier 2 đã từ chối tự waive** (`HANDOFF` §9.4 — diff còn mention `hrp_worker_visible_for`). Đọc thẳng nguồn trong repo: `prisma/migrations/20260816210000_s1_rls_worker/migration.sql:224-227` định nghĩa `hrp_worker_visible(wid text)` là wrapper một dòng `SELECT hrp_worker_visible_for(wid);`, `LANGUAGE sql STABLE SECURITY DEFINER`. Wrapper KHÔNG chứa logic quyền nào của riêng nó, nên khác biệt văn bản trên nó không thể đổi hành vi RLS khi thân hàm được uỷ quyền giữ nguyên. Kết luận `PASS` của Tier 3 cho `AC-09`/`AC-10` là đúng bản chất, không phải waive cho tiện.
+4. **Kiểm chính cái bẫy đã ghi trong rủi ro của task** (chạy lại migration RLS cũ có thể `CREATE OR REPLACE` hạ cấp hai hàm `*_visible_for` về bản không có sub-PM, mất quyền sub-PM trong im lặng): `HANDOFF` §9.3 ghi full sha256 và length của CẢ HAI hàm sau deploy — `hrp_project_visible_for` `1ac767ba…a9b7` length `1248`, `hrp_worker_visible_for` `ce6d738d…2110` length `1266` — kèm `sub_pm_user_id_1=true`, `sub_pm_user_id_2=true` cho từng hàm, và `m14` có `0` câu lệnh function. Bẫy đã đóng bằng số đo, không bằng lập luận.
+
+**Kết quả LIVE nhận làm evidence** (`HANDOFF` §9.1-9.4, probe sau deploy exit `0`): bảng bật RLS `31 → 34`; permissive policy trên bảng đã bật RLS `22 → 45`; 15 bảng `EV-02` từ `0/15` lên `15/15` có policy permissive; ticket family `0/3 → 3/3` enable+force; writer probe `app_user_writer` trong `BEGIN`/`ROLLBACK` cho 15/15 SELECT thoát deny-all và 15/15 INSERT không còn `42501`, lỗi `23503` được phân loại đúng là đã qua cổng RLS; `candidate_submissions` phân tách theo role `ADMIN/HR_MANAGER/DIRECTOR/SALE = 4` và `HR_STAFF = 0`, tất cả `sqlstate=00000`. Snapshot trước khi ghi: `pre-rls-repair-2026-08-31`, id `br-purple-fog-azju2qpy`, không expiry. Không có connection string, token, password hay PII trong evidence.
+
+**Hạn chế ghi vào biên bản, không giấu:** phần LIVE lane do Owner probe thực hiện — Tier 3 đánh giá lại con số chứ không tự nối `hrp-live` (chỉ Owner có credential prod). Ngoài ra `AUDIT.md` round 3 viết `C-02`, `C-05`, `C-08` và §4 bằng lời văn, thiếu cặp lệnh + exit + output cho từng dòng. Đây là **khuyết điểm chất lượng biên bản**, không phải khuyết điểm bằng chứng: số đo thật nằm ở `HANDOFF` §9 và Tier 1 đã tự đối chiếu ở bốn bước trên. Ghi lại để round sau của Tier 3 không lặp lại kiểu chép nhận định.
+
+**Verdict Tier 1: `ACCEPTED`.** Task đóng. Hai follow-up `FUP-03`/`FUP-04` giữ ở backlog, không mở lại task này. Bước OP "nộp một đơn thật rồi xem queue HR" nay đã được unblock về phía RLS.
+
 ## 10. Revision Log
 
 | Version | Date | Change |
@@ -207,3 +222,4 @@ Tier 2 chạy STEP-01 tới STEP-06 và STEP-10 trên `hrp_mp2_test`. STEP-07 t�
 | v1.0 | 2026-08-30 | Contract khởi tạo. Root cause đã xác định trọn: 6 migration thời s1 và p2 không có hiệu lực trên `hrp-live` (`EV-04`), và `m1_07b` ngày 27/08 bật `ENABLE` cộng `FORCE` cho 29 bảng chính là thứ biến chỗ thiếu policy thành DENY-ALL (`EV-06`), nên 15 bảng vỡ từ 27/08 chứ không phải từ giữa tháng 8. Ghi rõ bẫy `EV-07`: cách sửa hiển nhiên là chạy lại 6 migration cũ, và nó sẽ `CREATE OR REPLACE` hai hàm về bản không có sub-PM, cắt quyền sub-PM trên live mà không phát ra lỗi nào. Vì vậy `DEC-01` chốt một migration forward mới duy nhất và `DEC-02` cấm tuyệt đối mọi câu lệnh function, đo được bằng `AC-03` cộng `AC-10`. `DEC-08` chốt thứ tự `hrp_mp2_test` trước, live sau audit PASS. `RISK-06` chặn tình huống `migrate deploy` cuốn theo chính 6 migration cũ. Bổ sung trước khi dispatch: `EV-12` kiểm dependency cho thấy 15 policy chỉ dùng 6 hàm và cả 6 đã có trên live nên không có `42883`; `EV-13` phát hiện `hrp_mp2_test` giữ một hàm `hrp_ticket_notification_visible(text, text)` không thuộc migration nào trong repo, dẫn tới `DEC-13` giới hạn parity ở tầng policy và `RISK-10` chặn Tier 3 fail oan vì diff hàm |
 | v1.1 | 2026-08-31 | Planner chạy preflight production, ghi `EV-14`/`EV-15`: đúng hai migration pending, posture RED `31/22`, EV02 0/15 policy, ticket RLS off, writer 15/15 SELECT zero và INSERT `42501`, sáu dependency đủ và hash m13 khóa. Owner duyệt allowlist hai migration (`EV-16`, `DEC-15`). Sửa phép đo role theo table GRANT (`DEC-16`, `RQ-07`, `AC-08`), sửa hai cơ sở đếm policy (`DEC-17`, `AC-11`), đổi snapshot sang ngày 31/08, mở Execution Round 2 để cập nhật HANDOFF và audit lane test; vẫn cấm ghi live trước audit PASS |
 | v1.2 | 2026-08-31 | Nhận audit round 2 `PASS`, đóng `BLK-02`, mở LIVE lane. Execution Round 4 tạo snapshot `pre-rls-repair-2026-08-31`, deploy đúng allowlist hai migration và đo GREEN trên `hrp-live`; chuyển sang Tier 3 audit round 3, chưa tự `ACCEPT` |
+| v1.3 | 2026-08-31 | `ACCEPTED`. Audit round 3 verdict `PASS`, `verify-audit.ps1` exit 0. Tier 1 tự đọc `AUDIT.md`, tự phán quyết ngoại lệ schema diff bằng nguồn repo (`s1_rls_worker/migration.sql:224-227`: `hrp_worker_visible` là wrapper một dòng gọi `hrp_worker_visible_for`, không giữ logic quyền), và tự đối chiếu bẫy `EV-07` bằng full sha256 cộng length cộng cờ sub-PM của cả hai hàm `*_visible_for` sau deploy. Ghi vào biên bản hai hạn chế: LIVE probe do Owner chạy vì chỉ Owner có credential prod, và `AUDIT.md` round 3 viết `C-02`/`C-05`/`C-08` cùng §4 bằng lời văn thiếu cặp lệnh + exit + output |
