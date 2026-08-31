@@ -109,7 +109,23 @@
 }
 
 /* ==========================================================================
-   Material Symbols Outlined — display class for icons to render
+   LỚP TƯƠNG THÍCH (compatibility layer) — go-live-10 / RQ-01, RQ-02
+
+   Vì sao cần: khối @theme phía trên khai token CHỈ dưới dạng có tiền tố
+   (--color-surface), vì Tailwind v4 sinh utility class từ tiền tố đó. Nhưng
+   hàng trăm điểm gọi inline trong app/admin và các portal dùng chung lại gọi
+   tên KHÔNG tiền tố (var(--surface)). Theo chuẩn CSS, var() trỏ tới custom
+   property không tồn tại làm CẢ khai báo trở thành
+   invalid-at-computed-value-time: background-color rơi về initial là TRONG
+   SUỐT, còn shorthand border-bottom rơi về none là MẤT VẠCH KẺ. Một nguyên
+   nhân đó giải thích cả popup trong suốt, bảng phẳng và nút trắng-trên-trắng.
+
+   Mọi giá trị dưới đây là var(--color-...), KHÔNG sao chép mã màu: giữ đúng
+   MỘT nguồn sự thật để lần đổi brand sau không lệch âm thầm.
+
+   Hướng dọn dài hạn: chuyển từng điểm gọi sang tên CÓ tiền tố, rồi xoá trọn
+   khối này. Xoá khối là cách revert duy nhất cần thiết.
+   ========================================================================== */
 :root {
   --primary: var(--color-primary);
   --primary-dark: var(--color-primary-dark);
@@ -134,6 +150,9 @@
   --warning: var(--color-warning);
   --info: var(--color-secondary);
 }
+
+/* ==========================================================================
+   Material Symbols Outlined — display class for icons to render
    ========================================================================== */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
@@ -330,5 +349,12 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Huỷ ĐÚNG cú nhấc 1 px của mục điều hướng, không hơn. Cấm reset transform cho
+     dấu sao: nhiều overlay tự căn giữa bằng translate, reset trắng sẽ làm hộp
+     thoại lệch tâm. Đây là quy tắc đã mất trong lần dán lệch của round 1. */
+  .nav-item-lift:hover {
+    transform: none !important;
   }
 }

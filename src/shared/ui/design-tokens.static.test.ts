@@ -150,3 +150,70 @@ describe('RQ-11/RQ-12/AC-12/AC-13 — focus ring và reduced-motion', () => {
     expect(rmAt).toBeGreaterThan(CSS.indexOf('@theme'));
   });
 });
+
+/**
+ * Round 2 (`R2-04`) — hai case này tồn tại vì đúng hai thứ dưới đây ĐÃ TỪNG BIẾN MẤT khỏi
+ * `app/globals.css` sau khi round 1 được audit, và không gate nào bắt được: 41 dòng bị hụt,
+ * phát hiện thủ công bằng `git diff --stat` ngay trước lúc push (`F-07`). Từ nay mất là FAIL.
+ */
+describe('R2-01/R2-02 — phần đã từng bị mất phải luôn có mặt', () => {
+  /** Thân khối reduced-motion: từ vị trí khối tới hết file, khối này nằm cuối. */
+  const rmBody = CSS.slice(CSS.indexOf('@media (prefers-reduced-motion: reduce)'));
+  /** Các cặp `selector { body }` ở một tầng lồng bên trong khối media. */
+  const innerRules = [...rmBody.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({
+    selector: m[1].replace(/@media[^{]*\{/, '').trim(),
+    body: m[2],
+  }));
+
+  it('R2-01: khối alias có comment tài liệu ĐI KÈM ngay trước nó', () => {
+    const aliasAt = CSS.indexOf('\n:root');
+    expect(aliasAt).toBeGreaterThan(0);
+    const before = CSS.slice(0, aliasAt);
+    const commentAt = before.lastIndexOf('/*');
+    const commentEnd = before.lastIndexOf('*/');
+    expect(commentAt).toBeGreaterThan(0);
+    expect(commentEnd).toBeGreaterThan(commentAt);
+    // Kề sát, không phải một comment nào đó ở tít trên file.
+    expect(aliasAt - commentEnd).toBeLessThan(8);
+    const comment = before.slice(commentAt, commentEnd);
+    // Ba điều RQ-01 đòi comment phải nói: task nào, nguyên nhân gốc, hướng dọn dài hạn.
+    expect(comment).toContain('go-live-10');
+    expect(comment).toMatch(/invalid-at-computed-value-time/);
+    expect(comment).toMatch(/tiền tố/);
+  });
+
+  it('R2-02: reduced-motion huỷ transform bằng selector CỤ THỂ, không phải dấu sao', () => {
+    const cancels = innerRules.filter((r) => /transform:\s*none/.test(r.body));
+    expect(cancels.length).toBeGreaterThanOrEqual(1);
+    for (const r of cancels) {
+      expect(r.selector).not.toBe('*');
+      expect(r.selector).toMatch(/[.[:]/);
+      expect(r.body).toMatch(/transform:\s*none\s*!important/);
+    }
+  });
+
+  it('R2-02: KHÔNG được reset transform cho dấu sao — overlay căn giữa bằng translate sẽ lệch tâm', () => {
+    const star = innerRules.filter((r) => r.selector === '*');
+    for (const r of star) expect(r.body).not.toMatch(/transform\s*:/);
+  });
+
+  // Case QUYẾT ĐỊNH của round 2. F-07 hoá ra không phải "mất 41 dòng" mà nặng hơn: khối alias
+  // bị dán lệch MỘT dòng, vào giữa comment của Material Symbols, nên toàn bộ 22 alias nằm
+  // TRONG một comment CSS và không sinh ra một byte nào trong bundle. Mọi gate cũ vẫn xanh vì
+  // regex không hiểu comment, và `collectCssDeclaredNames` cố ý quét cả comment. Từ nay: bóc
+  // comment trước, rồi mới đòi khối alias phải còn đó.
+  it('R2-04: khối alias phải SỐNG, tức vẫn còn sau khi bóc mọi comment CSS', () => {
+    const stripped = CSS.replace(/\/\*[\s\S]*?\*\//g, '');
+    const live = [...stripped.matchAll(/:root\s*\{([^}]*)\}/g)];
+    expect(live).toHaveLength(1);
+    const decls = live[0][1]
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l.startsWith('--'));
+    expect(decls).toHaveLength(22);
+    // Khối reduced-motion và focus ring cũng phải sống, cùng một lý do.
+    expect(stripped).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(stripped).toContain(':focus-visible');
+    expect(stripped).toMatch(/transform:\s*none\s*!important/);
+  });
+});

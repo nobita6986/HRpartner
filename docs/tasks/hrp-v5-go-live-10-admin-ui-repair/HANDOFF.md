@@ -177,5 +177,102 @@ Bằng chứng nằm ở `%TEMP%` là log chạy, cố ý **không** đưa vào 
 | Round | Spec | Kết quả | Ghi chú |
 |---|---|---|---|
 | 1 | `v1.0` | `READY_FOR_AUDIT` | STEP-01..STEP-13 xong. RED→GREEN có exit code thật. Gate cuối: typecheck `0`, test `0` (1472), build `0`. Không commit. 7 deviation/side-effect + 2 limitation đã bộc lộ ở §5; `D-03` là hồi quy tương phản ngoài allowlist cần Tier 1 xử. |
+| 2 | `v1.0` | `READY_FOR_AUDIT` | §11 `R2-01..R2-08`. Phát hiện nguyên nhân thật của `F-07`, nặng hơn hẳn mô tả ban đầu — xem phần round 2 dưới đây. |
+
+# ROUND 2 — §11 `R2-01..R2-08`
+
+## R2.0 Control
+
+| Field | Value |
+|---|---|
+| Task slug | `hrp-v5-go-live-10-admin-ui-repair` |
+| Spec version | `v1.0` (không bump; §11 là scope round 2) |
+| Execution round | `2` |
+| Baseline | `79b05b3` |
+| Người thi hành | Owner chỉ định phiên Tier 1 kiêm luôn vai Tier 2 cho đúng round này. **Vì vậy round này KHÔNG được tự audit:** Tier 3 phải audit độc lập, và người viết mã không được viết verdict. |
+| Không commit / không push | Đúng, tại thời điểm viết: `git rev-list --count origin/main..HEAD` = `0` |
+
+## R2.1 Outcome — `F-07` không phải "mất 41 dòng", mà là lớp alias BỊ VÔ HIỆU HOÀN TOÀN
+
+Đây là điểm quan trọng nhất của cả task và nó đảo ngược kết luận của round 1.
+
+Khối alias 22 dòng **bị dán lệch đúng MỘT dòng**: nó rơi vào **giữa comment** của Material Symbols. Bản trước round 1 (`e9b27ff`) có comment ba dòng `111` mở, `112` nội dung, `113` đóng `*/`. Round 1 chèn khối vào **dòng 113**, tức trước dấu đóng, nên cấu trúc thành:
+
+```
+111: /* =====
+112:    Material Symbols Outlined ...
+113: :root {            <- 22 alias nằm TRONG comment
+136: }
+137:    ===== */
+```
+
+Hệ quả: **cả 22 alias là comment CSS, sinh ra ZERO byte trong bundle.** Bản đã deploy `474f3dc` là một **no-op** — production vẫn hỏng đúng như hai ảnh Owner gửi. Đo trên bundle live `/_next/static/css/d3f6d0d25f5c04fc.css` (69242 B): `--surface:var(--color-surface)` = `0`, `nav-item-lift` = `0`.
+
+**Vì sao mọi hàng rào đều xanh** — cần ghi lại vì đây là lớp lỗi, không phải sự cố lẻ:
+
+1. Gate tĩnh round 1 khớp `:root` bằng **regex**, mà regex không hiểu comment CSS.
+2. `collectCssDeclaredNames` **cố ý quét cả comment** (fail-closed cho tên biến chết) — nhưng chính lựa chọn đó làm nó **fail-OPEN** cho khai báo bị comment.
+3. `typecheck`, `test:unit`, `build` đều không đọc nghĩa CSS.
+4. Chín phép đo `SC-01..SC-09` của Tier 1 ở §9.1 đếm "22 dòng `var(--color-` trong khoảng 113..136" — **đúng về mặt văn bản, vô giá trị về mặt CSS.** Đếm dòng trong một comment.
+
+Round 2 sửa cả defect và cả lỗ hổng của hàng rào.
+
+## R2.2 Execution Trace
+
+| ID | Đã làm | File |
+|---|---|---|
+| `R2-01` | Đóng lại comment Material Symbols về đúng ba dòng như `e9b27ff`, chuyển nó xuống ngay trước `.material-symbols-outlined`, và viết comment tài liệu 18 dòng cho lớp alias: nêu task, nêu vì sao `@theme` chỉ khai tên có tiền tố, nêu `invalid-at-computed-value-time` với hai hệ quả trong suốt và mất vạch kẻ, nêu quy tắc không sao chép mã màu, nêu hướng dọn dài hạn là chuyển điểm gọi sang tên có tiền tố rồi xoá trọn khối | `app/globals.css` |
+| `R2-02` | Thêm `.nav-item-lift:hover { transform: none !important; }` **bên trong** khối `@media (prefers-reduced-motion: reduce)` đang có, kèm comment nêu vì sao không reset cho dấu sao | `app/globals.css` |
+| `R2-03` | **Chọn phương án (a), dạng "hook".** Không định nghĩa quy tắc nhấc cho `.nav-item-lift` trong CSS, vì cú nhấc đã do utility Tailwind `hover:[transform:translateY(-1px)]` ở chính điểm gọi đảm nhiệm; class tồn tại để làm **điểm neo** cho câu huỷ ở `R2-02`. Đây đúng là thiết kế mà HANDOFF round 1 mô tả (khối ở 204, override ở 213). Nên **không chạm** `role-guard-layout.tsx`, và `R2-07` giữ allowlist hai file | — |
+| `R2-04` | Thêm bốn case vào gate tĩnh: comment tài liệu phải kề sát khối alias và phải chứa ba khái niệm bắt buộc; câu huỷ transform phải nhắm selector cụ thể; cấm reset transform cho dấu sao; và **case quyết định** — bóc mọi comment CSS rồi đòi khối alias vẫn còn với đúng 22 khai báo, cộng focus ring, khối reduced-motion và câu huỷ transform đều phải sống | `src/shared/ui/design-tokens.static.test.ts` |
+| `R2-05` | Gate: `npx tsc --noEmit` và `npm run test:unit`, đọc `LASTEXITCODE` ngay, không qua pipe | — |
+| `R2-06` | Không commit, không push, không deploy | — |
+| `R2-07` | Chỉ hai file trong allowlist bị sửa | — |
+| `R2-08` | Dán `git diff --numstat -- app/globals.css` trước và sau | — |
+
+## R2.3 Acceptance Evidence
+
+| ID | Lệnh | Exit | Output thật |
+|---|---|---|---|
+| `R2-08` trước | `git diff --numstat -- app/globals.css` | `0` | **Rỗng** — round 1 đã nằm trong HEAD `474f3dc`, nên mốc của round 2 là cây sạch |
+| `R2-04` RED | `npx vitest run --config vitest.unit.config.ts src/shared/ui/design-tokens.static.test.ts` | **`1`** | `Tests  3 failed \| 9 passed (12)`. Case quyết định báo `expected [] to have a length of 1 but got +0` — **sau khi bóc comment thì KHÔNG CÒN khối `:root` nào**, đúng là bằng chứng máy cho việc lớp alias bị vô hiệu. Hai case kia: `expected 3434 to be greater than 3510` (không có comment tài liệu kề khối) và `expected 0 to be greater than or equal to 1` (không có câu huỷ transform) |
+| `R2-04` GREEN | cùng lệnh trên, sau khi sửa CSS | `0` | `Test Files  1 passed (1)` · `Tests  12 passed (12)` |
+| `R2-01`/`R2-02` đo trực tiếp | bóc comment bằng regex rồi đếm trên `app/globals.css` | `0` | alias sống = `22`; khối `:root` sống = `1`; `transform: none !important` sống = `1`; `--surface: var(--color-surface)` sống = `1` |
+| `R2-05` | `npx tsc --noEmit` | `0` | Không output |
+| `R2-05` | `npm run test:unit` | `0` | `Test Files  99 passed (99)` · `Tests  1480 passed (1480)` — cao hơn ngưỡng `1476` của `R2-05`, tăng đúng 4 case mới |
+| Bằng chứng cuối cùng, mạnh nhất | `npm run build` sạch cache rồi đếm trên bundle sinh ra | `0` | `✓ Compiled successfully in 16.8s`. Bundle `dd8f4bdd933daeed.css` 89512 B: `alias=1`, `nav-item-lift=1`, `prefers-reduced-motion=2`. **So với bundle đang chạy production `d3f6d0d25f5c04fc.css` 69242 B: `alias=0`, `nav-item-lift=0`.** Đây là chứng minh cuối: trước sửa lớp alias không tới bundle, sau sửa thì tới |
+| `R2-06` | `git rev-list --count origin/main..HEAD` | `0` | Không commit, không push |
+| `R2-08` sau | `git diff --numstat` trên hai file | `0` | `27  1  app/globals.css` · `69  0  src/shared/ui/design-tokens.static.test.ts` |
+
+## R2.4 Changed Deliverables
+
+| File | Thay đổi |
+|---|---|
+| `app/globals.css` | `27` dòng thêm, `1` dòng xoá. Dòng bị xoá là dấu đóng comment đặt sai chỗ ở cuối khối alias. Thêm: comment tài liệu 18 dòng cho lớp alias, comment Material Symbols dựng lại đúng ba dòng ở vị trí đúng, và bốn dòng huỷ transform trong khối reduced-motion |
+| `src/shared/ui/design-tokens.static.test.ts` | `69` dòng thêm, `0` xoá. Một `describe` mới với bốn case. Tổng gate tĩnh: `12` case |
+
+Không file nào khác bị chạm. `role-guard-layout.tsx` **không** bị sửa ở round này, theo lựa chọn `R2-03`.
+
+## R2.5 Deviations / Limitations / Blockers
+
+| ID | Nội dung |
+|---|---|
+| `D2-01` | **Lần build đầu trả exit `1` mà KHÔNG do thay đổi này.** Lỗi là `TypeError: Cannot read properties of undefined (reading 'call')` khi prerender `/(portal)/page`, kèm `Could not find files for /_error in .next/build-manifest.json`, và "Compiled successfully in 7.3s" tức build tăng tiến. Xoá `.next` rồi build lại: exit `0`, `16.8s`. Nguyên nhân là cache `.next` cũ lệch chunk, không phải CSS. Ghi lại vì con số exit `1` đó nếu đọc rời sẽ bị hiểu thành hồi quy |
+| `D2-02` | Utility Tailwind `hover:[transform:translateY(-1px)]` vẫn nằm ở điểm gọi trong `role-guard-layout.tsx`. Đó là nguồn duy nhất của cú nhấc, và `R2-02` huỷ nó bằng `!important` trong media query nên vẫn thắng. Không hợp nhất hai chỗ vì việc đó chạm file ngoài allowlist của round này |
+| `L2-01` | Vẫn **không có lane DOM** trong repo, nên round này cũng không chứng minh được bằng máy rằng trình duyệt vẽ đúng. Nhưng khác round 1: giờ có bằng chứng ở tầng bundle — chuỗi alias thật sự có mặt trong CSS đã biên dịch, chứ không chỉ có mặt trong file nguồn |
+| `L2-02` | Round 2 **chưa lên production**. Bản `474f3dc` đang chạy là no-op, nên production vẫn hỏng cho tới khi Owner cho phép push lần nữa |
+| `B2-01` | Không có blocker mở |
+
+## R2.6 Evidence Index
+
+| Nguồn | Nội dung |
+|---|---|
+| `%TEMP%\hrp-red2.txt` | Log RED đầy đủ, 3 failed / 9 passed |
+| `%TEMP%\hrp-green.txt` | Log GREEN, 12 passed |
+| `%TEMP%\hrp-u2.txt` | Log `npm run test:unit`, 99 file / 1480 test |
+| `%TEMP%\hrp-b2.txt`, `%TEMP%\hrp-b3.txt` | Build lần đầu exit 1 do cache, và build sạch exit 0 |
+| `src/shared/ui/design-tokens.static.test.ts` | Gate sống trong repo, 12 case, chạy trong lane canonical |
+
+Log ở `%TEMP%` cố ý không đưa vào repo. Mọi lệnh ở `R2.3` chạy lại được từ cây hiện tại và cho cùng con số.
 
 > Handoff status: READY_FOR_AUDIT
