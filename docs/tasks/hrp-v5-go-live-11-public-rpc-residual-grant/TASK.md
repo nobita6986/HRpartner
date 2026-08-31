@@ -8,7 +8,7 @@
 | Work type | `CODE` — một migration forward-only cộng một test tĩnh chống tái diễn |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.2` |
-| Status | `CODE_ACCEPTED` — Tier 1 quyết ngày 2026-09-01 trên spec `v1.2`. Lane mã đã đạt và đã được Tier 1 tự đo lại năm điểm `PLN-06..PLN-10`. Bốn tiêu chí `AC-03`, `AC-05`, `AC-08` và nửa sau `AC-09` là `OWNER_PENDING` theo waiver ở §9, không phải FAIL |
+| Status | `ACCEPTED` — Tier 1 quyết ngày 2026-09-01 trên spec `v1.2`. **Toàn bộ `AC-01..AC-11` PASS.** Lane mã do Tier 1 tự đo lại năm điểm `PLN-06..PLN-10`; bốn tiêu chí phụ thuộc DB production đã đóng bằng bằng chứng thật do Owner áp trên `hrp-live`, không phải bằng miễn trừ |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — independent context |
@@ -17,7 +17,7 @@
 | ADR references | MP-2 `DEC-08` DEFINER public RPC boundary; quy tắc least-privilege của M1-07B |
 | Current execution round | `2` |
 | Current audit round | `2` — đang mở. `AUDIT.md` của round 1 là 0 byte VÀ untracked nên mất hẳn; không chặn vì round 1 đã `REVISION_REQUIRED` |
-| Next gate | `OWNER_OP` — **gần đóng.** Owner đã áp `migration.sql` trên `hrp-live` ngày 2026-09-01: inventory trước khớp `PLN-01` từng trường, thu hồi đúng một record self-grant, bốn số sau khi áp ra chính xác `1 / 0 / 0 / 1`. `AC-05`, `AC-08`, `AC-09` đều PASS. Còn **duy nhất `AC-03`**: chạy lại `migration.sql` lần thứ hai trong cùng session Console để chứng minh idempotent |
+| Next gate | `PUSH_PENDING_OWNER` — nội dung hợp đồng đã đóng hết. Còn đúng một việc thuộc quyền Owner: cho phép commit và push ba file của Tier 2 (`migration.sql`, test tĩnh, và `include` của `vitest.unit.config.ts`). Lý do phải xin: `RQ-10` của chính contract này ghi "task này không có uỷ quyền deploy". Lưu ý về hướng lệch pha: migration **đã áp trên DB** nhưng **chưa có trong Git**, tức DB đi trước mã — hướng vô hại; hướng nguy hiểm là mã đi trước DB. Và `_prisma_migrations` vẫn chưa có dòng cho migration áp tay này, đúng `RISK-04` và `Q-01`, là follow-up riêng chứ không sửa ở đây |
 | Updated | `2026-09-01 02:05 +07` |
 
 ## 1. Outcome
@@ -234,7 +234,10 @@ total=1 | residual_self_grant=0 | inheritable=0 | safe_admin=1
 | `AC-05` | **PASS** | Bốn số ra **chính xác** `1 / 0 / 0 / 1`, và dòng còn lại đúng `grantor=cloud_admin, member=neondb_owner, ADMIN=t, INHERIT=f, SET=f` — đúng ngưỡng contract đặt |
 | `AC-08` | **PASS** | Output Console được dán nguyên văn, kèm dấu thời gian trên giao diện. Không chỉ nói "đã áp" |
 | `AC-09` | **PASS đầy đủ** | Tier 1 tự đo lại **sau** khi áp: mã tra cứu bịa `404`, `/api/jobs` `200` với `total: 5`, endpoint retired `410`, và **cả năm slug công khai** đều `200` ở cả `/api/jobs/{slug}` lẫn trang `/viec-lam/{slug}`. **Zero `500`** ⇒ thu hồi membership **không** làm chết hai hàm SECURITY DEFINER, đúng như dự đoán: hàm chạy dưới owner của nó chứ không dưới quyền người gọi |
-| `AC-03` | **CÒN MỞ** | Cần chạy `migration.sql` **lần thứ hai** trong cùng session Console. Kỳ vọng: không raise, không thu hồi gì, bốn số vẫn `1 / 0 / 0 / 1`. Đây là tiêu chí duy nhất còn lại của cả task |
+| `AC-03` | **PASS** | Owner bấm `Run` lần thứ hai trong cùng session, 2026-09-01. Output: `TRUOC | total=1 \| residual_self_grant=0 \| inheritable=0 \| safe_admin=1` ngay từ đầu, chỉ **một** dòng `TRUOC` record, **không có dòng `THU HOI` nào**, không exception, `Statement executed successfully`, và `SAU` giữ nguyên `grantor=cloud_admin, admin=t, inherit=f, set=f`. Đúng định nghĩa idempotent của `DEC-04`: chạy lần hai thành công và **không đổi gì** |
+
+Toàn bộ `AC-01..AC-11` đã PASS. Waiver ở trên **đã đóng bằng bằng chứng thật**, không phải bằng miễn trừ — điểm này quan trọng: một waiver tốt là waiver có đường đóng, và đường đó đã được đi hết trong cùng ngày.
+
 
 Ghi nhận một điều đáng giá hơn cả kết quả: **`RQ-03` fail-closed đã không phải nổ**, vì hình dạng thật đúng bằng hình dạng đã đặc tả. Nhưng nếu nó nổ thì đó vẫn là hành vi đúng — điểm đó giữ nguyên cho mọi lần áp sau.
 
