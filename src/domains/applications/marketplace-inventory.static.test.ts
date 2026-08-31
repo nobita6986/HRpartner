@@ -29,6 +29,7 @@ const LOGOUT = join(API_DIR, 'auth/logout/route.ts');
 const LEGACY_JOBS_PAGE = join(ROOT, 'app/(jobs)/jobs/page.tsx');
 const LEGACY_JOB_BOARD_PAGE = join(ROOT, 'app/job-board/page.tsx');
 const PORTAL_PAGE = join(ROOT, 'app/(portal)/page.tsx');
+const ADMIN_NAV = join(ROOT, 'src/shared/ui/role-guard/role-guard-layout.tsx');
 const BODY_HELPER = join(ROOT, 'src/shared/security/request-body.ts');
 const UPSTASH = join(ROOT, 'src/shared/security/rate-limit-upstash.ts');
 const GUARD = join(ROOT, 'src/shared/security/rate-limit-guard.ts');
@@ -199,6 +200,30 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
       expect(code, rel(file)).not.toContain('getPrisma');
       expect(code, rel(file)).not.toContain('submitPublicApplication');
     }
+  });
+
+  it('success modal cho sao chép riêng mã và URL tra cứu, không đưa mã vào URL', () => {
+    const code = strip(read(PORTAL_PAGE));
+    expect(code).toContain("const TRACKING_URL = `${CANONICAL_ORIGIN}/track`");
+    expect(code).toContain("handleCopy('code', code)");
+    expect(code).toContain("handleCopy('url', TRACKING_URL)");
+    expect(code).toContain('aria-live="polite"');
+    expect(code).not.toMatch(/\/track\?(?:code|trackingCode)=/);
+  });
+
+  it('admin sidebar có Đơn ứng tuyển với đúng các role được queue cho phép', () => {
+    const code = strip(read(ADMIN_NAV));
+    expect(code).toMatch(
+      /href:\s*['"]\/admin\/applications['"],\s*label:\s*['"]Đơn ứng tuyển['"],[\s\S]*?roles:\s*\[['"]ADMIN['"],\s*['"]HR_MANAGER['"],\s*['"]SALE['"],\s*['"]DIRECTOR['"]\]/,
+    );
+  });
+
+  it('job card không dựng lương giả từ số slot và dùng location/shift thật từ API', () => {
+    const code = strip(read(PORTAL_PAGE));
+    expect(code).not.toContain('job.salary');
+    expect(code).not.toContain('availableSlots * 1.5');
+    expect(code).toContain("location: job.location?.trim() || 'Địa điểm đang cập nhật'");
+    expect(code).toContain("schedule: job.shift?.trim() || 'Thời gian đang cập nhật'");
   });
 });
 

@@ -30,6 +30,7 @@ import {
   LayoutDashboard,
   LogOut,
   Settings,
+  UserRoundCheck,
   Users,
   Wallet,
 } from 'lucide-react';
@@ -95,6 +96,7 @@ export const VENDOR_NAV: NavItem[] = [
  * - /admin/attendance — Chấm công
  * - /admin/reconciliation — Đối soát
  * - /admin/jobs — Tin tuyển dụng công khai
+ * - /admin/applications — Hàng chờ đơn ứng tuyển
  * - /admin/workers, /admin/projects, /admin/clients — Dữ liệu nền
  * - /admin/tickets — Phản ánh / Tạm ứng
  * - /admin/payroll — Tính lương
@@ -106,6 +108,7 @@ export const ADMIN_NAV_PHASE4: NavItem[] = [
   { href: '/admin/attendance', label: 'Chấm công', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT'] },
   { href: '/admin/reconciliation', label: 'Đối soát', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'] },
   { href: '/admin/jobs', label: 'Job Board', icon: Briefcase, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'] },
+  { href: '/admin/applications', label: 'Đơn ứng tuyển', icon: UserRoundCheck, roles: ['ADMIN', 'HR_MANAGER', 'SALE', 'DIRECTOR'] },
   { href: '/admin/workers', label: 'Nhân sự', icon: Users, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'] },
   { href: '/admin/projects', label: 'Dự án', icon: Briefcase, roles: ['ADMIN', 'PM', 'HR_MANAGER'] },
   { href: '/admin/clients', label: 'Khách hàng', icon: Building2, roles: ['ADMIN', 'PM'] },
