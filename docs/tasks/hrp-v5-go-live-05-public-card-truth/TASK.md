@@ -7,18 +7,18 @@
 | Task slug | `hrp-v5-go-live-05-public-card-truth` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` — xếp hàng sau GO-LIVE-04 và GO-LIVE-06 |
+| Spec version | `v1.1` |
+| Status | `READY_FOR_EXECUTION` — tiền đề đã đủ: GO-LIVE-04 `ACCEPTED` và GO-LIVE-06 `ACCEPTED` (đóng 31/08). Tier 2 đang thi hành round 1. **Bump v1.1 giữa lượt: phải đọc lại §2.1 trước khi viết HANDOFF** |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — independent context |
-| Baseline | Planning anchor `6680011`; Tier 2 phải khóa lại SHA thật sau khi GO-LIVE-04 và GO-LIVE-06 đã `ACCEPTED` |
+| Baseline | `fb993a7` — Tier 1 khoá ở v1.1. Anchor cũ `6680011` **đã lỗi**: sáu commit đã chạm ba file mục tiêu kể từ đó, xem §2.1. Việc khoá baseline là ô của Tier 1, không phải của Tier 2 — v1.0 giao sai việc vì Tier 2 bị cấm ghi vào `TASK.md` |
 | Modules | Marketplace public projection + landing `/` + browse `/api/jobs` |
 | ADR references | `UNIFIED_PLAN_v5.md §7.9.7`; MP-1 projection contract; M1-09 field projection |
 | Current execution round | `1` |
 | Current audit round | `0` |
-| Next gate | Chỉ giao `/code hrp-v5-go-live-05-public-card-truth` sau khi GO-LIVE-04 và GO-LIVE-06 đóng |
-| Updated | `2026-08-30 Asia/Bangkok` |
+| Next gate | `/audit` sau khi Tier 2 giao HANDOFF trên spec **v1.1** |
+| Updated | `2026-09-01 02:35 +07` |
 
 Task này đóng khoảng cách cuối cùng giữa dữ liệu tuyển dụng thật và nội dung ứng viên nhìn thấy. Nó không mở rộng schema hay quy trình apply; nó loại dữ liệu bịa, nối các bộ lọc vào API thật và làm cho phân trang/kết quả hiển thị phản ánh đúng projection công khai.
 
@@ -67,6 +67,21 @@ Task này đóng khoảng cách cuối cùng giữa dữ liệu tuyển dụng t
 | `EV-12` | GO-LIVE-04 contract | Ba public read call site được chuyển sang principal RLS cố định, read-only, test LIVE trên `hrp_mp2_test` | Task 05 kế thừa boundary này; cấm quay lại `$transaction` trần |
 | `EV-13` | GO-LIVE-06 contract | Live đang thiếu RLS matrix cho 15 bảng và ticket posture; task 06 phục hồi trước launch proof | Task 05 xếp sau 06 để audit trên posture đích |
 
+### 2.1 Evidence đo lại tại baseline `fb993a7` — thêm ở v1.1, ĐỌC TRƯỚC KHI VIẾT HANDOFF
+
+Anchor cũ `6680011` đã lỗi. Kể từ nó, **sáu commit** đã chạm đúng ba file mục tiêu: `691be38` (go-live-12 trang chi tiết việc làm), `0248948` và `e0a70f7` (hotfix bỏ quan hệ bắt buộc khỏi `select`), `d4928af`, `c32acf9`, `c0fdf76` (go-live-04). Hiện `app/(portal)/page.tsx` dài `617` dòng, `src/domains/job-board/public.service.ts` dài `329` dòng. **Mọi số dòng ở §2 là của anchor cũ; phải tự dẫn lại trên file hiện tại, đừng tin số cũ.**
+
+| ID | Trạng thái v1.1 | Phép đo của Tier 1 tại `fb993a7` |
+|---|---|---|
+| `EV-01` | **ĐÃ LỖI — defect không còn** | Grep `availableSlots \* 1.5`, `7 - 12`, `Triệu` trên `app/(portal)/page.tsx` → **zero match**. Phép tính lương bịa đã bị xoá bởi một lượt trước đó. ⇒ Phần "xoá lương bịa" **không còn là việc phải làm**, và bất kỳ AC nào đo "grep trả rỗng" sẽ **xanh mà không cần ai làm gì**. Xem `RQ-16` |
+| `EV-02` | **Thu hẹp** | Chỉ còn **một** chuỗi hardcode là card data: `company: 'HRP Partners'` tại `:79`. Chuỗi `'Miền Bắc Việt Nam'` đã **không còn**. Chuỗi `'Toàn thời gian'` tại `:100` là **nhãn của một lựa chọn filter**, đó là UI hợp lệ, **không phải** dữ liệu card bịa — cấm xoá nó rồi ghi là đã sửa `EV-02` |
+| `EV-04` | **Còn, và nguyên nhân xấu hơn mô tả cũ** | `page.tsx:273` có `setHasMore(false); // API doesn't support pagination yet`. Nhưng `app/api/jobs/route.ts:29-36` **đã parse** `q`, `area`, `shift`, `shiftType` (getAll), `offset`, `limit`. Nên đây không phải "API thiếu phân trang" mà là **client tự tắt phân trang dựa trên một niềm tin sai về API**. Sửa comment sai đó là phần bắt buộc của việc sửa |
+| `EV-05` | **Xác nhận, và rộng hơn** | Route parse thêm `shiftType` dạng `getAll` ngoài bốn tham số đã ghi ⇒ có sẵn đường multi-select, không cần thêm tham số mới |
+| `EV-06`..`EV-08` | **Số dòng đã lỗi** | `public.service.ts` đã đổi **bốn** lần sau anchor, trong đó `0248948` **đổi chính tập field mà `select` lấy** — tức đúng chủ đề của task này. Phải đọc lại projection hiện tại rồi mới kết luận, không dẫn lại `:3-13`, `:27-61`, `:90-102` |
+| `EV-14` | **MỚI — phải bảo toàn** | `page.tsx` đã mang điều hướng của go-live-12: thẻ `Link` của Next tại `:133` và `:152`, `router.push` tại `:118` với comment nêu rõ giữ được middle-click và ctrl-click, và `ApplyModal` đã tách sang `src/domains/job-board/components/apply-modal` rồi dùng lại tại `:604`. Đây là mã đã ACCEPTED và đã chạy production |
+| `EV-15` | **MỚI** | `/api/jobs` đã có rate limit `JOB_BROWSE` dùng chung bucket với trang chi tiết (`route.ts:14-20`) ⇒ nối filter vào API **không** được vô tình mở thêm đường gọi không qua guard đó |
+
+
 ## 3. Decisions và Assumptions
 
 | ID | Type | Decision/Assumption | Source/Owner | Status/Expiry |
@@ -104,6 +119,9 @@ Task này đóng khoảng cách cuối cùng giữa dữ liệu tuyển dụng t
 | `RQ-12` | Test khóa mọi hardcode/salary math/decorative filter và test projection nhiều slot/hết hạn/null | Must | All decisions | Không có regression test → BLOCK |
 | `RQ-13` | Full gates và LIVE test trên `hrp_mp2_test` PASS; không fallback `hrp-live`, không mock-pass | Must | Pipeline | ENV thiếu → `ENV_BLOCKED`, không PASS |
 | `RQ-14` | HANDOFF ghi residual Quick Apply và performance của facet scan; không kể task này là Affiliate hoặc full search engine | Must | `DEC-11/12` | False completion → BLOCK |
+| `RQ-15` | **Bảo toàn mã đã ACCEPTED của go-live-12.** Không xoá và không nhúng lại: thẻ `Link` của Next cùng `router.push` dẫn từ card sang trang chi tiết việc làm, và `ApplyModal` phải tiếp tục được import từ `src/domains/job-board/components/apply-modal`. Nối filter và phân trang là thêm hành vi, KHÔNG được viết lại card thành phiên bản trước go-live-12 | Must | `EV-14` | Hồi quy bề mặt đang chạy production → BLOCK |
+| `RQ-16` | **Không được tính trạng thái đã đạt sẵn thành việc đã làm.** Với mỗi AC mà baseline `fb993a7` đã thoả, HANDOFF phải ghi `ĐÃ ĐẠT SẴN` kèm phép đo. Tối thiểu: `EV-01` — phép tính lương bịa đã không còn ở baseline, nên AC nào đo "grep trả rỗng" sẽ xanh mà không cần ai làm gì | Must | `EV-01`, §2.1 | Báo xanh trên tiền đề sai → BLOCK |
+| `RQ-17` | Xoá comment sai ở `page.tsx` khẳng định API chưa hỗ trợ phân trang, và tính `hasMore` từ response thật. `app/api/jobs/route.ts` đã parse `offset` và `limit`, nên niềm tin đó là sai từ trước | Must | `EV-04`, `EV-05` | Giữ lại một khẳng định sai trong mã → BLOCK |
 
 ### 4.2 Scope boundaries
 
@@ -171,6 +189,9 @@ Task này đóng khoảng cách cuối cùng giữa dữ liệu tuyển dụng t
 | `AC-12` | `RQ-13` | LIVE test DB chứng minh list/detail/filter/pagination bằng dữ liệu thật và cleanup | Integration opt-in | Command + exit + masked output | Yes |
 | `AC-13` | `RQ-13` | Prisma validate, typecheck, lint, full unit, build, diff-check đều exit 0 | Mandatory gates | Command tails | Yes |
 | `AC-14` | `RQ-14` | HANDOFF nói rõ Quick Apply chưa làm và facet performance còn cần OPS-07 đo tải | Document review | Exact section | Yes |
+| `AC-15` | `RQ-15` | Điều hướng của go-live-12 còn nguyên: `app/(portal)/page.tsx` vẫn có thẻ `Link` của Next tới đường chi tiết việc làm **và** `router.push`, và `ApplyModal` vẫn được import từ `src/domains/job-board/components/apply-modal` chứ không bị nhúng lại vào trang | Grep cộng `git diff` | Ba lượt grep có match, cộng khẳng định diff không xoá chúng | Yes |
+| `AC-16` | `RQ-16` | Với **mỗi** AC mà trạng thái "trước" đã đạt sẵn tại baseline `fb993a7`, HANDOFF ghi rõ **ĐÃ ĐẠT SẴN** kèm phép đo, thay vì tính nó thành việc đã làm. Tối thiểu phải nêu `EV-01` | Document review cộng grep | Bảng liệt kê từng AC dạng đã-đạt-sẵn | Yes |
+| `AC-17` | `RQ-17` | `page.tsx` không còn comment khẳng định API thiếu phân trang, và `hasMore` được suy từ response thật chứ không gán cứng `false` | Grep cộng đọc code | Grep chuỗi comment cũ trả rỗng; chỉ ra dòng tính `hasMore` mới | Yes |
 
 ### Traceability
 
@@ -190,6 +211,9 @@ Task này đóng khoảng cách cuối cùng giữa dữ liệu tuyển dụng t
 | `RQ-12` | `STEP-07` | `AC-11` |
 | `RQ-13` | `STEP-01`, `STEP-08`, `STEP-09` | `AC-12`, `AC-13` |
 | `RQ-14` | `STEP-10` | `AC-14` |
+| `RQ-15` | `STEP-01`, `STEP-10` | `AC-15` |
+| `RQ-16` | `STEP-10` | `AC-16` |
+| `RQ-17` | `STEP-07` | `AC-17` |
 
 ## 7. Risk và Rollback
 
@@ -220,3 +244,4 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding.
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | `2026-08-30` | Contract ban đầu; chốt truthful DTO/card/filter/pagination, cấm lương suy đoán và dữ liệu Client | Khảo sát code + roadmap GO-LIVE-04→06→05 |
+| `v1.1` | `2026-09-01` | **Bump giữa lúc Tier 2 đang thi hành round 1 — bằng chứng đã làm vẫn hợp lệ, KHÔNG mở round mới.** Bốn nhóm thay đổi: (1) khoá baseline về SHA thật `fb993a7` và sửa lỗi giao việc của v1.0, vì nó bảo Tier 2 tự khoá baseline trong khi Tier 2 bị cấm ghi vào `TASK.md`; (2) thêm §2.1 đo lại toàn bộ evidence tại baseline mới — `EV-01` **đã lỗi** vì phép tính lương bịa không còn, `EV-02` thu hẹp về đúng một chuỗi tại `:79` và cấm xoá nhãn filter ở `:100` rồi kể là đã sửa, `EV-04` còn nhưng nguyên nhân là client tự tắt phân trang dựa trên niềm tin sai về API, `EV-06..EV-08` mất hiệu lực số dòng vì `public.service.ts` đã đổi bốn lần trong đó `0248948` đổi chính tập field của `select`; (3) `RQ-15`/`AC-15` bảo toàn điều hướng card và `ApplyModal` đã tách của go-live-12, là mã đã ACCEPTED và đang chạy production; (4) `RQ-16`/`AC-16` cấm tính trạng thái đã-đạt-sẵn thành việc đã làm, và `RQ-17`/`AC-17` buộc xoá comment sai trong mã | Tier 2 bắt đầu round 1 khi contract còn v1.0. Tier 1 đo lại và thấy anchor `6680011` đã lỗi: **sáu commit** chạm ba file mục tiêu kể từ đó, gồm go-live-12 và hai hotfix đường đọc công khai. Không bump thì Tier 2 sẽ sửa thứ đã được sửa, và một AC sẽ báo xanh mà không ai làm gì |
