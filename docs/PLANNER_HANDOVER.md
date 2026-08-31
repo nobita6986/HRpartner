@@ -7,20 +7,20 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-08-30 Asia/Bangkok
+updated_at: 2026-08-31 Asia/Bangkok
 roadmap_source: docs/UNIFIED_PLAN_v5.md
 current_lane: V5 go-live surface hardening — làm sạch bề mặt công khai/admin trước khi công bố link
 current_task: hrp-v5-go-live-06-live-rls-matrix-restore
 task_path: docs/tasks/hrp-v5-go-live-06-live-rls-matrix-restore/TASK.md
-spec_version: v1.0
-task_status: READY_FOR_EXECUTION
+spec_version: v1.1
+task_status: READY_FOR_EXECUTION — Execution Round 2
 current_gate: TIER_2_CODE
-next_command: /code hrp-v5-go-live-06-live-rls-matrix-restore — contract v1.0 đã verify-task PASS; chỉ phục hồi DB posture theo đúng 18 đối tượng được Owner uỷ quyền; áp hrp_mp2_test trước, audit PASS rồi mới được ghi hrp-live; tuyệt đối không sửa app code.
+next_command: /code hrp-v5-go-live-06-live-rls-matrix-restore — Round 2: đọc TASK v1.1 + HANDOFF Round 1; tiếp nhận EV-14/EV-15 của Planner, cập nhật runbook/pending allowlist và HANDOFF thành READY_FOR_AUDIT; không chạy STEP-07..09, không ghi hrp-live trước audit PASS.
 previous_accepted: hrp-v5-go-live-04-public-read-rls-closure — Audit Round 1 PASS; source c0fdf76; audit 84ebe66; Planner đã kiểm lại mutation MKT → ADMIN ĐỎ rồi hoàn nguyên XANH với SHA-256 trùng tuyệt đối.
 next_planner_candidate: hrp-v5-go-live-05-public-card-truth — contract v1.0 đã verify-task PASS; chỉ giao /code sau khi GO-LIVE-06 ACCEPTED. Sau đó là GO-LIVE-07 marketplace launch proof. Chuỗi còn lại: 06 → 05 → 07.
-blocking_owner: Không có blocker mới cho Tier 2. Owner đã uỷ quyền đúng phạm vi DB của task 06. Khi làm phải áp và chứng minh trên hrp_mp2_test trước; chỉ sau Audit PASS mới được ghi hrp-live. Việc OP dọn dữ liệu DEMO, ký launch drill và smoke production vẫn để sau các gate code/audit tương ứng.
+blocking_owner: Không còn blocker Owner. Ngày 31/08 Owner đã duyệt đúng allowlist hai migration pending: 20260829093000_mp2_public_rpc_schema_usage và 20260830214139_m14_rls_matrix_repair. Nếu pre-deploy xuất hiện migration thứ ba thì quyền này hết hiệu lực và phải DỪNG.
 product_override: /bcc retired; production payroll/payslip belongs to the separate salary app; PAY-01..08 = DEFERRED_FINAL and does not block HRP go-live
-cursor_note: GO-LIVE-04 đã đóng defect public browse bằng withPublicDb (MKT + 4 GUC transaction-local + Postgres read-only), LIVE 5/5 PASS. GO-LIVE-06 là DB-only posture restore: kiểm tra migration pending và DỪNG nếu deploy có thể cuốn migration ngoài phạm vi; chụp snapshot live ngay trước khi ghi; phục hồi đúng 15 policy cộng ENABLE/FORCE cho 3 bảng ticket; không sửa app code, không đổi function RLS, không mở rộng quyền. Sau 06 lần lượt làm GO-LIVE-05 card truth và GO-LIVE-07 launch proof. Giữ nguyên product override: /bcc retired; payroll/payslip thuộc app lương riêng và PAY-01..08 defer cuối.
+cursor_note: GO-LIVE-06 Round 1 đã hoàn tất lane hrp_mp2_test nhưng HANDOFF BLOCKED do phiên Tier 2 cũ không được đọc live. Tier 1 đã gỡ blocker bằng Neon CLI: Prisma xác nhận đúng 2 pending allowlisted; RED live = RLS enabled 31, permissive enabled-only 22, permissive all-public 30, EV02 policy 0/15, ticket RLS off; writer SELECT 0/15 và INSERT 42501 15/15; sáu hàm đủ, hai hash m13 đã khóa; mọi INSERT rollback, chưa ghi live. TASK v1.1 sửa AC-08 theo table GRANT và AC-11 theo hai cơ sở đếm. Tier 2 Round 2 chỉ cập nhật HANDOFF để Tier 3 audit; sau PASS mới snapshot pre-rls-repair-2026-08-31 và deploy đúng hai migration. Sau 06: GO-LIVE-05 rồi GO-LIVE-07. /bcc retired; PAY defer cuối.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
