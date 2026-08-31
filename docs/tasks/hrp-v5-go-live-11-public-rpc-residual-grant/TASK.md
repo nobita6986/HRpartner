@@ -161,9 +161,16 @@ Tier 1 không chấp nhận migration Round 1 và **cấm áp bản 103 dòng hi
 
 Lưu ý trách nhiệm: idiom `WITH SET FALSE` có từ contract MP-2, không phải lỗi riêng của Tier 2. Nhưng sau `F-01/F-02`, Tier 1 có trách nhiệm sửa contract trước khi cho phép tác động production. Cú pháp `REVOKE { INHERIT } OPTION FOR` và `GRANTED BY` được PostgreSQL 18 hỗ trợ; v1.1 chọn `REVOKE` đúng self-grant để dọn hẳn row dư, đồng thời bảo toàn auto-admin grant của Neon.
 
+`PLN-05` — **Tier 1 phiên 01/09 tái xác nhận quyền sở hữu resolution này, kèm một giới hạn phải nói thẳng.** Khối `PLN-01..PLN-04` không do phiên này viết; nó xuất hiện trong worktree ở trạng thái chưa commit. Tôi đã đọc lại toàn bộ và **giữ nguyên nội dung**, vì lập luận đứng vững độc lập với phép đo: hai record cùng member nhưng khác grantor đúng là hình dạng của Neon, trong đó `cloud_admin` cấp auto-admin mang `ADMIN TRUE, INHERIT FALSE`, còn idiom `WITH SET FALSE` ở hai migration MP-2 sinh ra self-grant mang `INHERIT TRUE` — chỉ record thứ hai mới là quyền tồn dư. Thu hồi toàn bộ membership như v1.0 yêu cầu sẽ lấy luôn đường quản trị role, nên v1.0 thực sự sai và bản thu hẹp của v1.1 thực sự đúng.
+
+Nhưng **`PLN-01` không được dùng làm bằng chứng load-bearing**: phiên Tier 1 này KHÔNG tái lập được nó, vì harness chặn mọi lệnh nối DB production, nên tôi không tự đọc được `pg_auth_members` trên `hrp-live`. Hệ quả bắt buộc: bộ số `1 / 0 / 0 / 1` ở `RQ-05` và `AC-05` là **tiên đoán cần xác nhận tại thời điểm áp**, không phải sự thật đã kiểm. Contract vẫn an toàn vì `RQ-03` bắt migration fail-closed theo hình dạng record: nếu thực tế khác hình dạng đã ghi, migration phải dừng và trả `REVISION_REQUIRED` thay vì thu hồi mù. Tier 2 phải dán nguyên văn inventory trước và sau khi áp; nếu inventory trước không khớp `PLN-01` thì đó là dữ kiện mới của contract, không phải cớ để bỏ qua.
+
+Bổ sung cho `PLN-04`: `AUDIT.md` của round 1 vừa **0 byte và untracked** (`git ls-files` trả rỗng) ⇒ **không cứu được bằng `git restore`**, nội dung mất hẳn. Đây là lần thứ năm hiện tượng này xảy ra trong hai ngày. Vì round 1 đã `REVISION_REQUIRED`, việc mất file đó **không chặn tiến độ**: bước kế tiếp là `/code` round 2, không phải audit lại round 1.
+
 ## 10. Revision Log
 
 | Version | Ngày | Thay đổi |
 |---|---|---|
 | v1.0 | 2026-08-31 | Mở task. Nguồn: Tier 1 tự đọc hai file migration sau khi Owner chất vấn cách tôi trình bày "điểm chờ Owner"; quyền tồn dư là phần duy nhất trong đó là defect thật |
 | v1.1 | 2026-08-31 | Round 1 `REVISION_REQUIRED`: bằng chứng live có hai record cùng member nhưng khác grantor/options. Thu hẹp migration sang self-grant do member tự cấp; giữ nguyên auto-admin grant của Neon; sửa phép đo apply canonical và yêu cầu Tier 3 tạo lại AUDIT bị 0 byte |
+| v1.1 | 2026-09-01 | **Không bump version** — chỉ thêm `PLN-05` vào §9. Tier 1 phiên 01/09 tái xác nhận sở hữu resolution do một luồng Planner khác viết trong worktree, giữ nguyên nội dung, nhưng hạ `PLN-01` xuống mức tiên đoán cần xác nhận vì phiên này không nối được DB production, và ghi rằng AUDIT round 1 là untracked nên mất hẳn |
