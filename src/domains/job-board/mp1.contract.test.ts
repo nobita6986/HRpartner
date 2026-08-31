@@ -31,6 +31,24 @@ function publishTx(row = project()) {
   } as any;
 }
 
+/**
+ * Đúng hình dạng dòng mà `publicSelect` trả về. `clientCompany` do caller truyền vì đó là
+ * biến duy nhất giữa hai trạng thái dữ liệu mà đường đọc công khai phải chịu được: quan hệ
+ * bị RLS che (`null` lúc runtime dù kiểu Prisma khai non-null) và quan hệ đọc được.
+ */
+function publicProjectionTx(clientCompany: { industry: string | null } | null) {
+  return {
+    project: {
+      findMany: vi.fn().mockResolvedValue([{
+        id: 'project-9', code: 'PRJ-009', name: 'Lap rap bang mach', siteAddress: 'Bac Ninh',
+        clientCompany,
+        staffingOrders: [{ status: 'OPEN', title: 'Cong nhan lap rap', description: null, deadlineDate: null, slots: [{ positionCode: 'ASSY', positionTitle: 'Cong nhan lap rap', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A' }] }],
+      }]),
+      count: vi.fn().mockResolvedValue(1),
+    },
+  } as any;
+}
+
 describe('MP-1 publish and public job contracts', () => {
   it('publishes an active project with available slots and writes audit', async () => {
     const tx = publishTx();
@@ -93,5 +111,31 @@ describe('MP-1 publish and public job contracts', () => {
     expect(result.jobs[0]).not.toHaveProperty('clientCompanyId');
     expect(result.jobs[0]).not.toHaveProperty('hourlyRateVnd');
     expect(result.jobs[0]).not.toHaveProperty('internalNotes');
+  });
+
+  // `client_companies` ở posture FORCE RLS và principal công khai `MKT` không có policy SELECT
+  // nào trên bảng đó, nên Prisma trả `clientCompany: null` — đây là trạng thái THẬT của
+  // production, không phải trạng thái lỗi. Kiểu Prisma khai quan hệ non-null nên `tsc` không
+  // bắt được lớp lỗi này; phép đo phải nằm ở lane test.
+  it('projects a public job when the client company relation is hidden by RLS', async () => {
+    const tx = publicProjectionTx(null);
+
+    const result = await listPublicJobProjection(tx, {});
+
+    expect(result.total).toBe(1);
+    expect(typeof result.jobs[0].industry).toBe('string');
+    expect(result.jobs[0].industry).toBe('Công nghiệp chế tạo');
+  });
+
+  // Nhánh đối xứng: mọi principal nội bộ vẫn đọc được quan hệ, và fix không được làm mất
+  // ngành khai báo khi nó có mặt.
+  it('still uses the client company industry when the relation is readable', async () => {
+    const tx = publicProjectionTx({ industry: 'Điện tử' });
+
+    const result = await listPublicJobProjection(tx, {});
+
+    expect(result.total).toBe(1);
+    expect(typeof result.jobs[0].industry).toBe('string');
+    expect(result.jobs[0].industry).toBe('Điện tử');
   });
 });

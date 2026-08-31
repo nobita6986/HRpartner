@@ -88,7 +88,10 @@ function toDto(project: {
   code: string;
   name: string;
   siteAddress: string | null;
-  clientCompany: { industry: string | null };
+  // Quan hệ bắt buộc ở mức kiểu Prisma, nhưng dưới FORCE RLS thì principal công khai `MKT`
+  // không đọc được `client_companies` nên Prisma trả `null` lúc runtime. Kiểu phải nói thật,
+  // nếu không `tsc` sẽ tiếp tục xanh trong khi đường đọc công khai ném TypeError.
+  clientCompany: { industry: string | null } | null;
   staffingOrders: Array<{
     status: string;
     title: string;
@@ -125,7 +128,7 @@ function toDto(project: {
     position: first.positionTitle,
     shift,
     location: first.workLocation ?? project.siteAddress,
-    industry: inferIndustry(searchableText, project.clientCompany.industry),
+    industry: inferIndustry(searchableText, project.clientCompany?.industry ?? null),
     shiftType: classifyShift(slots),
     jobType: classifyJobType(searchableText, slots),
     availableSlots,
