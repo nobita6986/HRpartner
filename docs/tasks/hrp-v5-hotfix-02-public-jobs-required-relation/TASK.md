@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.1` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1` |
 | Executor | `Tier 2` |
 | Auditor | `Tier 3 independent context` |
@@ -16,8 +16,8 @@
 | Modules | `M13 Marketplace public read` |
 | ADR references | `go-live-04 DEC-01/DEC-02/DEC-08 (with-public-db); hotfix-01 DEC-01 bị bác bỏ tại đây` |
 | Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `verify-task rồi /code rồi /audit rồi /resolve` |
+| Current audit round | `1` |
+| Next gate | `DONE` |
 | Updated | `2026-08-31 14:18 +07` |
 
 ## 1. Outcome
@@ -192,7 +192,33 @@ Không còn câu hỏi mở làm đổi implementation, và không còn câu h�
 
 ## 9. Planner Resolution
 
-Chưa có. Mục này append-only, Tier 1 ghi sau khi đọc `AUDIT.md`.
+**Resolution 2026-08-31 17:05 +07 — Tier 1 ghi, sau khi tự đo.** Verdict `PASS` của Audit Round 1 được chấp nhận. Status `ACCEPTED`.
+
+Gate bắt buộc: `.ai-pipeline\scripts\verify-audit.ps1 -TaskPath docs\tasks\hrp-v5-hotfix-02-public-jobs-required-relation\TASK.md` cho `RESULT: PASS`, `EXIT=0`.
+
+Tôi không nhận verdict bằng lời văn. Ba điểm rủi ro cao nhất tôi tự chạy lại, đúng hạn mức spot-check của Living Handoff §6:
+
+| Điểm tôi tự đo | Lệnh | Kết quả |
+|---|---|---|
+| Phạm vi commit | `git show --stat --format="%H %ci" 0248948` | `0248948...` lúc `2026-08-31 14:51:48 +0700`, đúng 3 file, cả 3 dưới `src/domains/job-board/`, gồm `public-select.static.test.ts` 67 dòng mới |
+| Không force/amend/rebase, đã lên remote | `git reflog main -8`; `git rev-list --count origin/main..0248948` | reflog chỉ có mục `commit:`; count `0` |
+| Thứ tự bằng chứng mà `AC-12` đòi | Đọc `HANDOFF.md` | Bảng gate tĩnh ở §3 nằm ở dòng 281, phần commit-và-push ở §4 nằm ở dòng 301. Hàng rào tĩnh nằm bên trong chính commit đó nên nó ra đời trước lúc push |
+
+### Findings
+
+| ID | Nội dung | Quyết định |
+|---|---|---|
+| `F-01` | Cột bằng chứng của `AUDIT.md` §2 và §4 phần lớn là lời kể, không có exit code và không có output dán nguyên văn. Ô §4 nào cũng ghi "Console Output". Iron Rule 4 đòi command cộng exit code cộng output | `ACCEPT_FIX` ở mức quy trình, KHÔNG mở audit round 2. Lý do: ba bound rủi ro cao nhất tôi đã tự đo lại và cả ba đều đúng, nên khiếm khuyết nằm ở cách báo cáo chứ không ở verdict. Khác hẳn go-live-03 round 1, nơi lời văn che một khẳng định SAI về mặt sự thật. Bắt Tier 3 đánh máy lại những exit code tôi đang cầm trong tay là đốt một round để lấy zero thông tin mới |
+| `F-02` | Ô `AC-12` của `AUDIT.md` chỉ nói tới phạm vi commit, `origin/main..HEAD` rỗng và không force push. Nó bỏ trống đúng cái bound mà `v1.1` viết lại `AC-12` để đo: gate tĩnh phải xanh và đã nằm trong `HANDOFF.md` TRƯỚC lúc push | `ACCEPT_FIX`. Tôi tự đo và bound đó thoả, xem bảng trên. Verdict giữ nguyên |
+| `F-03` | Ô `AC-03` của `AUDIT.md` dùng chữ "mock", đúng thứ mà `DEC-06` cấm làm bằng chứng RED | `REJECT` phần chữ, giữ phần thực chất. §1 của `AUDIT.md` và §10 của `HANDOFF.md` cho thấy phương pháp thật là `git stash push -- src/domains/job-board/public.service.ts` rồi chạy test tĩnh trên mã nguồn thật, ra `Tests 3 failed (3)` exit 1, `stash pop` thì exit 0. Đó là test tĩnh đọc mã nguồn, không phải mock `findMany`. `DEC-06` thoả. Chữ "mock" ở đây là dùng sai từ, không phải dùng sai phương pháp |
+| `F-04` | `TASK.md` bị tier khác sửa: `Status` thành `ACCEPTED`, `Next gate` thành `DONE`, `Current audit round` thành `1`, và §9 có một Planner Resolution không do Tier 1 viết, không kèm dòng Revision Log | `ACCEPT_FIX`. Vi phạm Iron Rule 3 và Living Handoff §1: quyền viết contract, status và resolution là độc quyền Tier 1. Nội dung cũ đã được thay bằng resolution này. Ba giá trị ở §0 thì đúng về đích đến nhưng sai về người ghi, nên tôi giữ giá trị và nhận trách nhiệm. Directive từ đây: Tier 3 chỉ viết `AUDIT.md`, dừng ở dòng bàn giao, không chạm `TASK.md` |
+| `F-05` | `LIM-04` cùng §5 Coverage Gaps của `AUDIT.md`: hàng rào tĩnh chỉ bảo vệ `public.service.ts`, chưa có phép quét nào tìm service khác đang select quan hệ bắt buộc trên bảng bị RLS che | `DEFER`. Là `RISK-02` cộng `Q-02` đã ghi từ trước, không phải phát hiện mới và không chặn task này. Tier 1 mở task quét riêng |
+
+### Điều được đóng và điều không
+
+Đóng: nguyên nhân gốc là query engine của Prisma bắt buộc phải giải quyết quan hệ không nullable ngay trong `findMany`, nên nó throw trước mọi mapper; bỏ quan hệ khỏi `publicSelect` là cách sửa đúng tầng. `/api/jobs` và `/api/jobs/DA-DEMO-001` đo được 200 trên production.
+
+Không đóng, và không được kể lại thành đã đóng: uỷ quyền deploy ở `DEC-10` chỉ dành cho đúng task này, ghi ngày 31/08, không thành tiền lệ; mục 9.1 của `UNIFIED_PLAN` vẫn cấm task tự deploy. `F-05` vẫn mở.
 
 Ghi nhận trước cho minh bạch trách nhiệm: `DEC-01` của `hrp-v5-hotfix-01-public-jobs-500` là quyết định của Tier 1 và nó SAI. Nó cấm bỏ join, dựa trên giả định rằng exception là `TypeError` của JavaScript trong `toDto`. Log production ở `EV-01` chứng minh exception nằm trong query engine của Prisma, trước `toDto`. `DEC-05` của task đó viết rằng nếu sau fix mà `/api/jobs` còn 500 thì giả định SAI; phép đo ở `EV-03` đã trả kết quả đó. Tier 2 và Tier 3 của hotfix-01 làm đúng contract được giao; contract mới là chỗ hỏng.
 
@@ -202,3 +228,4 @@ Ghi nhận trước cho minh bạch trách nhiệm: `DEC-01` của `hrp-v5-hotfi
 |---|---|---|
 | `v1.0` | 2026-08-31 | Tạo contract từ log runtime production. Bác bỏ `DEC-01` của hotfix-01. Chốt phương án bỏ quan hệ khỏi `publicSelect`, cấm mock làm bằng chứng RED, và đưa ba tiêu chí LIVE sau deploy thành điều kiện đóng task |
 | `v1.1` | 2026-08-31 | Owner uỷ quyền push và deploy cho đúng task này. Đóng `Q-01`, thêm `DEC-10`, thêm `RQ-11` với bốn bound của uỷ quyền, viết lại `STEP-07` thành trình tự gate-tĩnh-trước-push, viết lại `AC-12` từ "không được tịnh tiến HEAD" thành bốn phép đo về phạm vi commit cùng thứ tự bằng chứng, cập nhật `RISK-04`, thêm hai stop condition về push |
+| `v1.1` | 2026-08-31 | Không đổi contract, nên KHÔNG bump spec. Ghi lại hai việc: Tier 1 viết Planner Resolution ở §9 và đặt `Status` thành `ACCEPTED` sau khi tự chạy gate audit cùng ba phép đo Git độc lập; và trước đó §0 cùng §9 đã bị một tier khác sửa, ghi thành `F-04` để lịch sử Git không đọc thành Tier 1 tự ghi từ đầu |
