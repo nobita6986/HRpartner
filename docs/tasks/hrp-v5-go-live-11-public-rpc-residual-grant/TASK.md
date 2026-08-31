@@ -8,7 +8,7 @@
 | Work type | `CODE` — một migration forward-only cộng một test tĩnh chống tái diễn |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.2` |
-| Status | `READY_FOR_AUDIT` — execution round 2 đã giao HANDOFF 35507 byte, dòng cuối `READY_FOR_AUDIT`. Contract bump v1.1 ⇒ v1.2 để sửa hai defect do chính Tier 1 gây ra, KHÔNG mở execution round mới: bằng chứng round 2 vẫn hợp lệ nguyên vẹn |
+| Status | `CODE_ACCEPTED` — Tier 1 quyết ngày 2026-09-01 trên spec `v1.2`. Lane mã đã đạt và đã được Tier 1 tự đo lại năm điểm `PLN-06..PLN-10`. Bốn tiêu chí `AC-03`, `AC-05`, `AC-08` và nửa sau `AC-09` là `OWNER_PENDING` theo waiver ở §9, không phải FAIL |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — independent context |
@@ -17,8 +17,8 @@
 | ADR references | MP-2 `DEC-08` DEFINER public RPC boundary; quy tắc least-privilege của M1-07B |
 | Current execution round | `2` |
 | Current audit round | `2` — đang mở. `AUDIT.md` của round 1 là 0 byte VÀ untracked nên mất hẳn; không chặn vì round 1 đã `REVISION_REQUIRED` |
-| Next gate | `/audit round 2` trên spec **v1.2** ⇒ `/resolve`. Bước áp DB là OP của Owner, không đi qua Git |
-| Updated | `2026-09-01 01:50 +07` |
+| Next gate | `OWNER_OP` — Owner dán `migration.sql` nguyên văn trong Neon Console SQL Editor trên branch `hrp-live`, rồi gửi lại khối `NOTICE TRUOC`, bảng bốn số, và khối `NOTICE SAU`. Xem waiver ở §9. Mã của Tier 2 **cố ý chưa commit** để `AC-10` còn đo được; commit và push sau khi Owner đóng bước OP |
+| Updated | `2026-09-01 02:05 +07` |
 
 ## 1. Outcome
 
@@ -169,6 +169,41 @@ Nhưng **`PLN-01` không được dùng làm bằng chứng load-bearing**: phi�
 
 Bổ sung cho `PLN-04`: `AUDIT.md` của round 1 vừa **0 byte và untracked** (`git ls-files` trả rỗng) ⇒ **không cứu được bằng `git restore`**, nội dung mất hẳn. Đây là lần thứ năm hiện tượng này xảy ra trong hai ngày. Vì round 1 đã `REVISION_REQUIRED`, việc mất file đó **không chặn tiến độ**: bước kế tiếp là `/code` round 2, không phải audit lại round 1.
 
+### Round 2 — `CODE_ACCEPTED`, bốn AC còn lại `OWNER_PENDING`
+
+Tier 1 quyết ngày 2026-09-01 trên spec `v1.2`. Verdict của Tier 3 là `BLOCKED` và **đó là verdict đúng**, không phải thất bại: bốn tiêu chí còn lại đo hiệu ứng trên DB production, mà cả Tier 2, Tier 3 và Tier 1 đều bị harness chặn khỏi đó. Vì vậy tôi **không** chờ verdict `PASS` — tôi chốt lane mã là đạt, và chuyển bốn tiêu chí kia thành một bước OP có chủ sở hữu rõ ràng.
+
+Gate do Tier 1 chạy: `verify-audit.ps1` với cả hai tham số ⇒ `[OK] Verdict: BLOCKED` rồi `RESULT: PASS`, exit `0`, trên file `6148` byte (báo cáo ghi 6147, lệch một byte do ký tự cuối dòng — không đáng kể). Ranh giới đo trước khi đọc nội dung: `TASK.md` khớp HEAD nên Tier 3 không ghi vào ô Planner; `git rev-list --count origin/main..HEAD` = `0`; và mã của Tier 2 **vẫn chưa commit**, đúng chủ ý, vì `AC-10` đo chính điều đó. `AUDIT.md` đã commit `046a8aa` **trước khi** resolution này được viết.
+
+#### Phép đo độc lập của Tier 1 cho round 2
+
+| ID | Điều cần chứng minh | Phép đo | Kết quả |
+|---|---|---|---|
+| `PLN-06` | `AC-04` sau khi sửa ở v1.2 | `Select-String -CaseSensitive` trên `migration.sql`, hai pattern | `\bGRANT\b` → **0 match**. Pattern DDL/DML còn lại → **0 match**. Còn pattern **cũ** của v1.1, cũng case-sensitive, trả đúng **1 match tại dòng 143**, chính là câu `REVOKE ... GRANTED BY` — tức defect contract là thật, và bản sửa v1.2 là đúng ranh giới |
+| `PLN-07` | Vòng thu hồi nhắm hình dạng record, không nhắm số đếm | Đọc `migration.sql:128-143` | `WHERE r_role.rolname = 'hrp_public_rpc' AND r_grantor.rolname = r_member.rolname AND m.inherit_option AND NOT m.admin_option AND NOT m.set_option`. Chính vị từ `grantor = member` là thứ loại record `cloud_admin → neondb_owner` ra khỏi tập thu hồi. Câu lệnh dùng `format(... %I ... %I ...)` nên tên role lạ không chèn được lệnh |
+| `PLN-08` | Hai chốt fail-closed có thật | Đọc `migration.sql:118` và `:122` | Hai `RAISE EXCEPTION` riêng biệt trên `v_unexpected` và `v_residual`, cả hai **không thu hồi gì** rồi dừng. Đây đúng là chỗ round 1 vỡ: round 1 raise trên số đếm thô khi thấy `2` |
+| `PLN-09` | `RQ-07` và `RQ-11` thật sự có hiệu lực | `git diff -- vitest.unit.config.ts`; rồi `npm run test:unit` | Config thêm đúng `'prisma/**/*.test.ts'` vào `include`, không chạm khoá nào khác. Lane canonical liệt kê `prisma/migrations-permission-hygiene.static.test.ts (4 tests)`, exit `0`, `99` file, `1480` test — vượt ngưỡng `1421` của `AC-07` |
+| `PLN-10` | Ngưỡng chặn thật của `AC-09`, phần đo được trước khi áp | `curl` ba đường trên production | Mã tra cứu bịa → `404`. Endpoint retired → `410`. **Zero `500`** trên cả ba. Đường apply canonical trả `400 INVALID_INPUT` với body của tôi vì validator loại khoá lạ **trước** khi xét slug, nên tôi **KHÔNG** tái lập được mã `404 JOB_NOT_AVAILABLE` và đã dừng chứ không POST thêm vào production để mò schema. Ghi thành hạn chế, không ghi thành PASS |
+
+#### Findings round 2
+
+| ID | Mức | Nội dung | Xử lý |
+|---|---|---|---|
+| `PLN-11` | P2 | `§7 Re-audit Trace` ghi round 1 là `BLOCKED`. **Sai.** Round 1 là `REVISION_REQUIRED` vì migration có **defect thật** — nó thu hồi mọi membership dựa trên tiền đề "tập thành viên đúng là tập rỗng", tiền đề đó sai, và nó còn tự dừng vì đếm thô ra `2`. Ghi thành `BLOCKED` biến một lỗi thi công thành một giới hạn môi trường | `ACCEPT_FIX`, phải đính chính trong biên bản. Hai chẩn đoán đó dẫn tới hai hành động trái ngược: `BLOCKED` thì chờ Owner, `REVISION_REQUIRED` thì phải viết lại mã — và thực tế đã phải viết lại |
+| `PLN-12` | P2 | `§5 Coverage Gaps` ghi "Không có" trong khi chính verdict là `BLOCKED` và bốn AC chưa đo. Hai câu đó phủ định nhau | `ACCEPT_FIX`. Coverage gap thật và phải nói thẳng: **toàn bộ nửa hiệu ứng-DB của contract chưa được đo**, và bộ số `1/0/0/1` vẫn là tiên đoán theo `PLN-05`, chưa ai đọc `pg_auth_members` trên `hrp-live` |
+| `PLN-13` | P3 | `AC-01` và `AC-02` được đo bằng lời văn "kiểm tra git status" và "đọc file migration", không kèm output | `ACCEPT_FIX`. Tier 1 đã tự đo lại cả hai ở `PLN-07` và `PLN-08` và cả hai đều đúng, nên verdict đứng vững |
+
+#### Waiver cho bốn AC còn lại
+
+| Trường | Nội dung |
+|---|---|
+| Được miễn cái gì | `AC-03` (áp lần hai, idempotent), `AC-05` (output inventory sau khi áp), `AC-08` (output Console nguyên văn), và **nửa sau** của `AC-09` (đo lại HTTP sau khi áp) |
+| Vì sao | Bốn tiêu chí này đo hiệu ứng trên DB production. Harness chặn mọi lệnh nối DB production, với **cả ba tầng**, không riêng Tier 3. Không tầng nào có thể đạt chúng, nên giữ chúng là điều kiện chặn sẽ khoá task vĩnh viễn thay vì bảo vệ được gì |
+| Ai sở hữu | **Owner.** Dán `migration.sql` nguyên văn trong Neon Console SQL Editor, branch `hrp-live` — KHÔNG phải branch mặc định `snapshot-rls-off-dont-use` (RLS tắt) |
+| Đóng bằng cách nào | Owner gửi lại ba thứ: khối `NOTICE TRUOC` nguyên văn, bảng bốn số cuối cùng, và khối `NOTICE SAU`. Nếu bốn số ra đúng `total=1, residual_self_grant=0, inheritable=0, safe_admin=1` thì task `ACCEPTED` hoàn toàn. Nếu migration **dừng bằng exception** thì đó là `RQ-03` fail-closed hoạt động đúng, **không phải lỗi** — gửi khối `NOTICE TRUOC` về, contract sẽ được sửa theo hình dạng thật rồi mở round mới. Đường lùi ở `DEC-10` là một câu lệnh |
+
+
+
 ## 10. Revision Log
 
 | Version | Ngày | Thay đổi |
@@ -177,3 +212,4 @@ Bổ sung cho `PLN-04`: `AUDIT.md` của round 1 vừa **0 byte và untracked** 
 | v1.1 | 2026-08-31 | Round 1 `REVISION_REQUIRED`: bằng chứng live có hai record cùng member nhưng khác grantor/options. Thu hẹp migration sang self-grant do member tự cấp; giữ nguyên auto-admin grant của Neon; sửa phép đo apply canonical và yêu cầu Tier 3 tạo lại AUDIT bị 0 byte |
 | v1.1 | 2026-09-01 | **Không bump version** — chỉ thêm `PLN-05` vào §9. Tier 1 phiên 01/09 tái xác nhận sở hữu resolution do một luồng Planner khác viết trong worktree, giữ nguyên nội dung, nhưng hạ `PLN-01` xuống mức tiên đoán cần xác nhận vì phiên này không nối được DB production, và ghi rằng AUDIT round 1 là untracked nên mất hẳn |
 | v1.2 | 2026-09-01 | **Bump để sửa hai defect của chính Tier 1, KHÔNG mở execution round mới — bằng chứng round 2 vẫn hợp lệ nguyên vẹn.** (1) `AC-04` cũ cấm chuỗi con `GRANT`, trong khi `RQ-02` và `AC-02` **bắt buộc** literal `GRANTED BY`, mà `GRANTED BY` chứa `GRANT` ⇒ hai tiêu chí tự phủ định nhau, không cách nào cùng đạt. Ranh giới đúng là **token** `\bGRANT\b`, và `GRANTED` là token khác nên không khớp. Tier 1 tự tái lập: grep nguyên văn của `AC-04` cũ, **case-sensitive**, trả đúng `1` match ở dòng `143` là chính câu `REVOKE ... GRANTED BY`; còn `\bGRANT\b` trả `0`. (2) Thêm `RQ-11` hợp thức hoá việc sửa `vitest.unit.config.ts`, điều mà `RQ-07` đã hàm ý nhưng allowlist chưa nêu, chỉ cho phép chạm mảng `include` | Tier 2 phát hiện và **không** đổi literal để làm xanh gate, thay vào đó dán cả phép đo giữ đúng ý định rồi đề nghị Tier 1 sửa contract. Đó là cách xử đúng: gate sai thì sửa gate, không bẻ mã cho khớp gate |
+| v1.2 | 2026-09-01 | Planner Resolution cho audit round 2: `CODE_ACCEPTED`, bốn AC còn lại `OWNER_PENDING` theo waiver bốn trường ở §9. **Không bump** — resolution không phải contract change. Verdict `BLOCKED` của Tier 3 được **chấp nhận là verdict đúng**, không phải thất bại: bốn tiêu chí đó đo hiệu ứng DB production mà cả ba tầng đều bị harness chặn, nên giữ chúng làm điều kiện chặn sẽ khoá task vĩnh viễn thay vì bảo vệ được gì. Ba finding `PLN-11..PLN-13` đều `ACCEPT_FIX`, năm phép đo `PLN-06..PLN-10` của Tier 1 ở §9 | Tier 1 tự đo lại: `\bGRANT\b` zero match nên bản sửa v1.2 đúng ranh giới; vòng thu hồi nhắm hình dạng record với vị từ `grantor = member` là thứ bảo toàn đường quản trị của Neon; hai chốt fail-closed có thật ở dòng 118 và 122; lane canonical bắt được test mới với 1480 test exit 0; và zero 500 trên ba đường công khai đo trước khi áp |
