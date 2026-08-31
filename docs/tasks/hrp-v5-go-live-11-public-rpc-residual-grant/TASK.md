@@ -7,18 +7,18 @@
 | Task slug | `hrp-v5-go-live-11-public-rpc-residual-grant` |
 | Work type | `CODE` — một migration forward-only cộng một test tĩnh chống tái diễn |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Spec version | `v1.1` |
+| Status | `READY_FOR_EXECUTION` — Round 2 contract v1.1; Round 1 migration is forbidden on production |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — independent context |
 | Baseline | `0248948` |
 | Modules | DB permission boundary — role `hrp_public_rpc`, hai hàm SECURITY DEFINER công khai |
 | ADR references | MP-2 `DEC-08` DEFINER public RPC boundary; quy tắc least-privilege của M1-07B |
-| Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `verify-task ⇒ /code ⇒ /audit ⇒ /resolve ⇒ ACCEPTED` |
-| Updated | `2026-08-31 15:40 +07` |
+| Current execution round | `2` |
+| Current audit round | `1` (invalid deliverable: `AUDIT.md` is currently 0 byte) |
+| Next gate | `verify-task ⇒ /code round 2 ⇒ /audit round 2 ⇒ /resolve` |
+| Updated | `2026-08-31 23:59 +07` |
 
 ## 1. Outcome
 
@@ -28,7 +28,7 @@ Không có. Bề mặt người dùng không đổi một pixel, không đổi m
 
 ### Operator-visible outcome
 
-Role `hrp_public_rpc` không còn thành viên nào. Trước task này, role đăng nhập đã chạy hai migration MP-2 vẫn là thành viên của `hrp_public_rpc`, nên nó **thừa hưởng** toàn bộ quyền của role đó: `SELECT, INSERT` trên `candidate_submissions` và `application_status_history`, `SELECT` trên ba bảng marketplace, cộng `USAGE ON SCHEMA public`. Membership đó không cần thiết cho bất cứ đường chạy nào ở runtime; nó chỉ cần trong đúng vài mili giây lúc chuyển quyền sở hữu hàm.
+Role `hrp_public_rpc` không còn **self-grant mang `INHERIT TRUE`** do hai migration MP-2 để lại. Membership quản trị do Neon (`cloud_admin`) cấp cho `neondb_owner`, mang `ADMIN TRUE, INHERIT FALSE, SET FALSE`, phải được giữ nguyên để còn đường quản trị role, rollback và chuyển owner cho migration tương lai. Chỉ record do `neondb_owner` tự cấp (`grantor=neondb_owner`, `ADMIN FALSE, INHERIT TRUE, SET FALSE`) mới là quyền tồn dư cần thu hồi.
 
 Hai hàm SECURITY DEFINER vẫn thuộc `hrp_public_rpc` và vẫn chạy: nộp đơn công khai và tra cứu công khai không đổi hành vi.
 
@@ -62,7 +62,7 @@ Mọi dòng dưới đây do Tier 1 đọc trực tiếp tại `0248948`.
 
 | ID | Decision | Lý do |
 |---|---|---|
-| `DEC-01` | Thu hồi **mọi** thành viên của `hrp_public_rpc` bằng vòng lặp trên `pg_auth_members`, KHÔNG chỉ `REVOKE ... FROM session_user` | Role chạy migration sửa lỗi có thể khác role đã chạy migration gây lỗi. `EV-03` chứng minh không thành viên nào được cấp có chủ đích, nên "về 0" là trạng thái đúng |
+| `DEC-01` | Thu hồi đúng self-grant dư bằng mẫu động `REVOKE hrp_public_rpc FROM %I GRANTED BY %I` cho record có `grantor = member`, `inherit_option = true`, `admin_option = false`, `set_option = false`; KHÔNG thu hồi record do `cloud_admin` cấp | Phép đo production `PLN-EV-01` cho thấy cùng `neondb_owner` có hai record độc lập. Thu hồi mọi membership sẽ lấy luôn `ADMIN OPTION` hợp lệ; migration Round 1 còn tự dừng vì đếm nhầm hai record thành hai thành viên lạ |
 | `DEC-02` | Không sửa hai file migration cũ, dù chúng chính là nguồn lỗi | Lịch sử migration append-only. Sửa file đã áp làm lệch checksum của `_prisma_migrations` và làm mọi `prisma migrate` sau này vỡ |
 | `DEC-03` | Migration này KHÔNG được chứa lệnh nào tác động tới thân hàm, tới policy, tới bảng, hay tới dữ liệu. Chỉ `REVOKE` membership cộng câu xác minh | Cùng bài học của go-live-06: chạy lại migration cũ để "sửa" một chỗ đã hạ cấp `hrp_project_visible_for` trong im lặng. Giữ bán kính bằng đúng một khái niệm |
 | `DEC-04` | Idempotent bắt buộc: chạy lần thứ hai phải thành công và không đổi gì | Bước áp là thủ công trong Console. Người vận hành có thể dán hai lần |
@@ -78,10 +78,10 @@ Mọi dòng dưới đây do Tier 1 đọc trực tiếp tại `0248948`.
 | ID | Requirement |
 |---|---|
 | `RQ-01` | Tạo đúng một thư mục migration mới `prisma/migrations/20260831160000_public_rpc_residual_grant_revoke/` chứa đúng một file `migration.sql`. Không sửa, không xoá, không đổi tên migration nào đang có |
-| `RQ-02` | `migration.sql` thu hồi membership của `hrp_public_rpc` khỏi mọi role đang là thành viên, bằng một khối `DO` lặp trên `pg_auth_members` và `pg_roles`, dùng `format('REVOKE hrp_public_rpc FROM %I', ...)` để trích dẫn định danh an toàn |
-| `RQ-03` | `migration.sql` bọc toàn bộ trong `IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'hrp_public_rpc')` để chạy được trên môi trường chưa có role đó, và idempotent theo `DEC-04` |
+| `RQ-02` | `migration.sql` chỉ thu hồi self-grant dư của `hrp_public_rpc`: join `pg_auth_members` với role/member/grantor, chọn đúng record `grantor = member`, `inherit_option = true`, `admin_option = false`, `set_option = false`, rồi dùng `format('REVOKE hrp_public_rpc FROM %I GRANTED BY %I', member, grantor)` để trích dẫn an toàn. Cấm `REVOKE` record do grantor khác member cấp |
+| `RQ-03` | `migration.sql` bọc toàn bộ trong `IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'hrp_public_rpc')`, idempotent theo `DEC-04`, fail-closed nếu có hơn một self-grant dư hoặc có record mang `INHERIT TRUE` nhưng không khớp hình dạng đã đo |
 | `RQ-04` | `migration.sql` KHÔNG chứa các token sau: `CREATE OR REPLACE FUNCTION`, `ALTER FUNCTION`, `CREATE POLICY`, `DROP`, `ALTER TABLE`, `INSERT`, `UPDATE`, `DELETE`, `GRANT` |
-| `RQ-05` | `migration.sql` kết bằng một câu `SELECT` đếm số thành viên còn lại của `hrp_public_rpc`, có alias cột rõ nghĩa, để người vận hành đọc được kết quả ngay trong Console |
+| `RQ-05` | `migration.sql` kết bằng một câu `SELECT` tổng hợp bốn số có alias rõ nghĩa: tổng membership record, self-grant dư, record còn `INHERIT TRUE`, và record quản trị an toàn (`ADMIN TRUE, INHERIT FALSE, SET FALSE`). Trên `hrp-live`, ngưỡng sau áp là `1 / 0 / 0 / 1` |
 | `RQ-06` | Thêm test tĩnh `prisma/migrations-permission-hygiene.static.test.ts` đọc mọi `prisma/migrations/**/migration.sql` bằng filesystem thật; với mỗi file có chuỗi `WITH SET FALSE`, test FAIL trừ khi tên file nằm trong allowlist hằng của `DEC-06`, hoặc cùng file có `REVOKE` role tương ứng. Test cũng FAIL nếu allowlist chứa tên file không còn tồn tại |
 | `RQ-07` | Test ở `RQ-06` phải nằm trong lane canonical `npm run test:unit`; nếu lane đó không tự bắt file, đăng ký đúng chỗ pattern của `vitest.unit.config.ts` yêu cầu |
 | `RQ-08` | Áp `migration.sql` lên branch `hrp-live` theo `DEC-07`, dán nguyên văn, và ghi lại output của câu `SELECT` ở `RQ-05` vào HANDOFF |
@@ -107,10 +107,10 @@ Mọi dòng dưới đây do Tier 1 đọc trực tiếp tại `0248948`.
 
 | STEP | Nội dung |
 |---|---|
-| `STEP-01` | Viết `prisma/migrations/20260831160000_public_rpc_residual_grant_revoke/migration.sql` theo `RQ-01..RQ-05`. Header comment ghi: nguồn lỗi là idiom `WITH SET FALSE` ở hai migration MP-2, và lý do "về 0 thành viên" là trạng thái đúng |
+| `STEP-01` | Viết lại `migration.sql` theo `RQ-01..RQ-05`. Header phải phân biệt hai record cùng member theo `grantor`; xoá luận điểm sai "về 0 thành viên". Migration phải giữ record `cloud_admin → neondb_owner` và chỉ xoá record `neondb_owner → neondb_owner` |
 | `STEP-02` | Viết test tĩnh `RQ-06`, chạy RED trước GREEN: trước khi thêm allowlist, test phải FAIL và in đúng tên hai file vi phạm; sau khi thêm allowlist, PASS. Dán cả hai output vào HANDOFF |
 | `STEP-03` | Chạy `npm run typecheck` rồi `npm run test:unit`, đọc `$LASTEXITCODE` ngay sau mỗi lệnh, không pipe. Rồi áp migration theo `DEC-07`: mở Neon Console, chọn branch `hrp-live`, dán nguyên văn `migration.sql`, chạy, chụp output câu `SELECT` |
-| `STEP-04` | Đo lại hai đường công khai: `curl` tới `https://www.hrpartner.vn/api/public/applications/HRP-KHONG-TON-TAI-000` phải trả `404`; và đường nộp đơn `POST` tới `/api/jobs/apply` với payload thiếu trường bắt buộc phải trả mã lỗi 4xx của validator, KHÔNG phải `500`. Nếu bất kỳ đường nào trả `500` thì thi hành `DEC-10` |
+| `STEP-04` | Đo lại hai đường công khai thật: tracking `GET /api/public/applications/{trackingCode-không-tồn-tại}` phải `404`; apply canonical `POST /api/public/jobs/{slug-không-tồn-tại}/applications` phải vào service/RPC và trả `404 JOB_NOT_AVAILABLE`, không phải `500`. Endpoint retired `/api/jobs/apply` chỉ là phép đo phụ `410`, không được dùng làm bằng chứng RPC |
 | `STEP-05` | Viết HANDOFF: bảng AC-01..AC-10 kèm lệnh, exit code và output nguyên văn; `git status --short -- prisma/` để chứng minh chỉ hai file mới; không commit, không push |
 
 ## 6. Acceptance
@@ -118,14 +118,14 @@ Mọi dòng dưới đây do Tier 1 đọc trực tiếp tại `0248948`.
 | AC | Cách đo | Ngưỡng PASS |
 |---|---|---|
 | `AC-01` | `git status --short -- prisma/` cộng `git diff --stat -- prisma/migrations` | Đúng hai đường dẫn mới xuất hiện: thư mục migration mới và file test tĩnh. **Không** file migration cũ nào ở trạng thái `M` |
-| `AC-02` | Đọc `migration.sql` | Có khối `DO` lặp trên `pg_auth_members` join `pg_roles`, và có `format('REVOKE hrp_public_rpc FROM %I'` |
-| `AC-03` | Áp lần thứ hai trong cùng session Console | Lần hai chạy thành công, câu `SELECT` cuối vẫn trả `0` |
+| `AC-02` | Đọc `migration.sql` | Có khối `DO` phân biệt `member` và `grantor`, match đúng self-grant dư, và có `format('REVOKE hrp_public_rpc FROM %I GRANTED BY %I'` |
+| `AC-03` | Áp lần thứ hai trong cùng session Console | Lần hai chạy thành công; bảng cuối vẫn là `total=1, residual_self_grant=0, inheritable=0, safe_admin=1` |
 | `AC-04` | `grep -nE 'CREATE OR REPLACE FUNCTION|ALTER FUNCTION|CREATE POLICY|DROP|ALTER TABLE|INSERT|UPDATE|DELETE|GRANT' migration.sql` | Zero match. Dán nguyên văn kết quả rỗng cộng exit code của grep |
-| `AC-05` | Output câu `SELECT` cuối của `migration.sql` khi chạy trên `hrp-live` | Số thành viên còn lại = `0` |
+| `AC-05` | Output câu `SELECT` cuối của `migration.sql` khi chạy trên `hrp-live` | Chính xác `total=1, residual_self_grant=0, inheritable=0, safe_admin=1`; dòng còn lại có `grantor=cloud_admin`, `member=neondb_owner`, `ADMIN=true, INHERIT=false, SET=false` |
 | `AC-06` | Chạy test tĩnh hai lần quanh `STEP-02`: `npx vitest run --config vitest.unit.config.ts prisma/migrations-permission-hygiene.static.test.ts` | RED `LASTEXITCODE=1` với message nêu đúng hai tên file `20260823101500_mp2_apply_tracking` và `20260831103000_marketplace_search_tracking_profile`; GREEN `LASTEXITCODE=0` |
 | `AC-07` | `npm run test:unit` | Exit 0; tổng số test **không thấp hơn 1421**; file test mới xuất hiện trong danh sách `Test Files` |
 | `AC-08` | Output nguyên văn của Console sau khi dán, kèm timestamp | Lệnh chạy không lỗi, và output câu `SELECT` được dán. Chỉ nói "đã áp" mà không có output là FAIL |
-| `AC-09` | `curl.exe -s -o /dev/null -w "%{http_code}"` trên hai đường của `STEP-04` | Tra cứu = `404`. Nộp đơn thiếu trường = mã 4xx. Bất kỳ `500` nào = FAIL cả task |
+| `AC-09` | `curl.exe` trên hai đường canonical của `STEP-04` | Tracking = `404`; apply canonical = `404 JOB_NOT_AVAILABLE`; retired endpoint = `410` chỉ để inventory. Bất kỳ `500` nào = FAIL cả task |
 | `AC-10` | `git log origin/main..HEAD` cộng `git log -1 --stat` | `git log origin/main..HEAD` rỗng và không có commit mới nào do Tier 2 tạo. Tự commit là FAIL |
 | `AC-11` | `npm run typecheck` | Exit 0 |
 
@@ -137,7 +137,7 @@ Mọi dòng dưới đây do Tier 1 đọc trực tiếp tại `0248948`.
 | `RISK-02` | Người vận hành dán vào branch sai | Thấp | `DEC-07` chỉ đích danh branch `hrp-live`. Nhắc lại: branch default tên `snapshot-rls-off-dont-use` có RLS tắt, KHÔNG được dán vào đó |
 | `RISK-03` | Test tĩnh của `RQ-06` bị viết theo hướng match lỏng rồi FAIL oan trên migration tương lai hợp lệ | Thấp | Điều kiện thoát thứ hai của `RQ-06` (cùng file có `REVOKE`) cho phép migration tương lai dùng đúng idiom mà không cần allowlist |
 | `RISK-04` | `_prisma_migrations` không có dòng cho ba migration đã áp thủ công, nên `prisma migrate` sau này coi chúng là pending | Trung bình | Ngoài tầm task này. Ghi thành follow-up ở §9 chứ không tự sửa: sửa bảng ledger là hành động nguy hiểm hơn chính lỗi |
-| `RISK-05` | Có thành viên thứ hai của `hrp_public_rpc` do ai đó cấp tay ngoài migration, và role đó đang thực sự cần | Thấp | `AC-05` in số lượng trước và sau. Nếu số trước lớn hơn 1, Tier 2 dừng và báo, không tự thu hồi mù |
+| `RISK-05` | Có record khác ngoài đúng hai record production đã đo, hoặc có record `INHERIT TRUE` do grantor khác member | Thấp | Migration fail-closed theo hình dạng record, không đếm thô. Không đụng bất kỳ record lạ nào; in inventory và trả `REVISION_REQUIRED` |
 
 ## 8. Open Questions
 
@@ -148,12 +148,22 @@ Mọi dòng dưới đây do Tier 1 đọc trực tiếp tại `0248948`.
 
 ## 9. Planner Resolution
 
-Chưa có. Task vừa mở.
+### Round 1 — `REVISION_REQUIRED`
 
-Phát hiện thuộc trách nhiệm Tier 1 cần ghi ngay: idiom `WITH SET FALSE` không phải lỗi của Tier 2. Nó có từ migration MP-2 ngày 23/08 và được copy sang migration 31/08. Contract MP-2 do Tier 1 viết không hề nêu yêu cầu thu hồi membership sau khi chuyển quyền sở hữu, nên không tier nào vi phạm contract. Đây là lỗ trong contract, và `RQ-06` tồn tại để lỗ đó không mở lại lần thứ ba.
+Tier 1 không chấp nhận migration Round 1 và **cấm áp bản 103 dòng hiện tại lên production**.
+
+| Finding | Evidence độc lập của Tier 1 | Quyết định |
+|---|---|---|
+| `PLN-01` — target membership sai | Đo trực tiếp `hrp-live` bằng admin connection ngày 31/08: PostgreSQL `18.6`; hai record cùng member `neondb_owner`: `(grantor=cloud_admin, admin=t, inherit=f, set=f)` và `(grantor=neondb_owner, admin=f, inherit=t, set=f)` | Giữ record thứ nhất; chỉ thu hồi record thứ hai bằng `GRANTED BY`. Sửa `DEC-01`, `RQ-02`, `RQ-05`, `AC-02/03/05` theo v1.1 |
+| `PLN-02` — migration Round 1 không chạy được | `v_before` đếm row và nhận `2`, sau đó `RAISE EXCEPTION` vì `v_before > 1` | Tier 2 viết lại preflight theo hình dạng record, không đếm thô |
+| `PLN-03` — AC-09 đo endpoint retired | `/api/jobs/apply` trả `410` cố định và không chạm RPC | Dùng canonical `/api/public/jobs/{slug}/applications` làm bằng chứng blocking |
+| `PLN-04` — audit deliverable không tồn tại | `AUDIT.md` trong workspace có kích thước `0` byte lúc Tier 1 đo, trái báo cáo 6.449 byte | Tier 3 phải tạo lại `AUDIT.md` Round 2 và chạy `verify-audit`; không reuse verdict Round 1 |
+
+Lưu ý trách nhiệm: idiom `WITH SET FALSE` có từ contract MP-2, không phải lỗi riêng của Tier 2. Nhưng sau `F-01/F-02`, Tier 1 có trách nhiệm sửa contract trước khi cho phép tác động production. Cú pháp `REVOKE { INHERIT } OPTION FOR` và `GRANTED BY` được PostgreSQL 18 hỗ trợ; v1.1 chọn `REVOKE` đúng self-grant để dọn hẳn row dư, đồng thời bảo toàn auto-admin grant của Neon.
 
 ## 10. Revision Log
 
 | Version | Ngày | Thay đổi |
 |---|---|---|
 | v1.0 | 2026-08-31 | Mở task. Nguồn: Tier 1 tự đọc hai file migration sau khi Owner chất vấn cách tôi trình bày "điểm chờ Owner"; quyền tồn dư là phần duy nhất trong đó là defect thật |
+| v1.1 | 2026-08-31 | Round 1 `REVISION_REQUIRED`: bằng chứng live có hai record cùng member nhưng khác grantor/options. Thu hẹp migration sang self-grant do member tự cấp; giữ nguyên auto-admin grant của Neon; sửa phép đo apply canonical và yêu cầu Tier 3 tạo lại AUDIT bị 0 byte |
