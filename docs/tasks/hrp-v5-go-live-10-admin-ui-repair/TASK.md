@@ -8,16 +8,16 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `ACCEPTED` — Tier 1 quyết ngày 2026-09-01 sau khi tự chạy gate exit 0, tự đọc toàn văn AUDIT.md và tự đo lại chín điểm ở §9.1; sáu finding đều `ACCEPT_FIX` |
+| Status | `ACCEPTED` cho round 1 — Tier 1 quyết ngày 2026-09-01 sau khi tự chạy gate exit 0, tự đọc toàn văn AUDIT.md và tự đo lại chín điểm ở §9.1. **Execution round 2 đang MỞ** theo `F-07`: cây mã bị hụt 41 dòng so với bản giao, xem §11 |
 | Planner | `Tier 1` |
 | Executor | `Tier 2` |
 | Auditor | `Tier 3 independent context` |
 | Baseline | `708506f` |
 | Modules | `Admin portal UI, shared role-guard shell, design token layer` |
 | ADR references | `G27 Warm Professionalism token set — app/globals.css khối @theme, chốt 15/08/2026` |
-| Current execution round | `1` |
+| Current execution round | `2` |
 | Current audit round | `1` |
-| Next gate | `DEPLOY_PENDING_OWNER` — mã vẫn nằm trong working tree, `rev-list origin/main..HEAD` bằng 0; push nhánh chính chính là deploy production nên cần đúng một câu cho phép của Owner, xem `R-01` ở §9.4 |
+| Next gate | `/code round 2` theo §11 — round 1 đã ACCEPTED và ĐÃ DEPLOY tại `474f3dc` với Owner cho phép rõ ràng; round 2 chỉ dựng lại 41 dòng bị mất, không mở thêm yêu cầu mới |
 | Updated | `2026-09-01 01:05 +07` |
 
 ## 1. Outcome
@@ -267,6 +267,7 @@ Kết luận: **mọi khẳng định lời văn của Tier 3 mà tôi kiểm đ
 | `F-04` | P1 | `AUDIT.md` và `HANDOFF.md` bị để **untracked** khoảng ba tiếng, trong đúng repo mà một tác nhân chưa xác định đã cắt file tên `AUDIT.md` về 0 byte **năm lần trong hai ngày**; file untracked bị cắt là mất hẳn, không `git restore` được | `ACCEPT_FIX`. Tier 1 đã commit cả hai ở `92e1fd7` **trước khi** viết resolution này. Luật mới ghi ở `R-02` |
 | `F-05` | P2 | Cách tái lập RED là **xoá khối `:root` khỏi working tree rồi khôi phục**. Đúng tinh thần và cho bằng chứng thật, nhưng Tier 3 bị cấm sửa mã, lại làm trên cây dùng chung đang bẩn của nhiều luồng, không có bản lưu | `ACCEPT_FIX`. Lần sau tái lập RED bằng bản sao tạm hoặc bằng chuỗi fixture trong test, không sửa file thật. Rủi ro tồn dư: nếu quá trình đó bị ngắt giữa lượt thì lớp alias biến mất trong im lặng — hiện `SC-02` xác nhận nó đã về đúng chỗ với đúng 22 dòng |
 | `F-06` | P3 | Khối reduced-motion vô hiệu `animation-duration` và `transition-duration` nhưng không chạm `transform`, nên cú nhấc mục sidebar trở thành tức thời chứ không mất đi | Không phải vi phạm: `RQ-12` chỉ đòi khối đó đứng sau các quy tắc nó phủ định, không đòi xoá transform. Ghi lại để task giao diện kế tiếp quyết |
+| `F-07` | **P1** | **Cây mã bị hụt 41 dòng so với bản Tier 2 giao, phát hiện lúc chuẩn bị deploy.** `git diff --stat` trên scope ra `60` insertions, trong khi HANDOFF và phép đo đầu của Tier 1 đều là `101`; toàn bộ chênh lệch nằm trong `app/globals.css` (`78` dòng thêm rơi xuống `37`). Mất hai thứ: comment tài liệu của lớp alias mà `RQ-01` đòi, và quy tắc `.nav-item-lift:hover { transform: none !important; }` — thứ làm cho `prefers-reduced-motion` thật sự **huỷ** cú nhấc 1 px thay vì chỉ làm nó tức thời. `git grep` cho thấy `nav-item-lift` chỉ còn trong HANDOFF và trong `role-guard-layout.tsx`, **không có dòng CSS nào định nghĩa** ⇒ class chết trong mã đã deploy. Hai số của `AC-11` trong HANDOFF (khối ở dòng 204, override ở 213) không tái lập được: khối hiện ở 327. Nguyên nhân khả dĩ nhất là `F-05` — Tier 3 xoá khối `:root` rồi khôi phục bằng bản dựng lại chứ không phải bản gốc | Mở **execution round 2** ở §11. **Kéo theo một đính chính về §9.1:** `SC-02` và `SC-04` của tôi chạy trên chính bản đã hụt mà tôi chưa biết, nên hai dòng đó đúng về con số nhưng **không** chứng minh bản giao còn nguyên; `RQ-01` phần comment và `RQ-12` phần huỷ transform hiện KHÔNG đạt. Ba gate và các phép đo còn lại không bị ảnh hưởng vì chúng chạy trên đúng cây đã deploy |
 
 #### 9.3 Đính chính của Tier 1 với một điều Tier 2 tự khai sai
 
@@ -297,3 +298,19 @@ Hai điểm Tier 1 công bố thẳng, không giấu trong evidence:
 |---|---|---|---|
 | `v1.0` | 2026-08-31 | Lập contract sửa hiển thị và tương tác cho Admin portal. 19 evidence, 16 decision, 15 requirement, 13 step, 19 acceptance criterion, 15 risk, 4 open question. Nguyên nhân chốt: `app/globals.css` định nghĩa token CHỈ dưới dạng có tiền tố họ trong khối `@theme` của Tailwind v4, trong khi 21 file `.tsx` gọi cùng những tên đó KHÔNG có tiền tố; các tên không tiền tố không được định nghĩa ở đâu cả, nên mỗi khai báo dùng chúng trở thành không hợp lệ tại thời điểm tính giá trị và rơi về giá trị khởi tạo. Với `background-color` giá trị khởi tạo là trong suốt, nên popup mất nền; với `border-bottom` dạng viết gộp thì cả quy tắc biến mất, nên bảng mất vạch kẻ. Phép sửa nhỏ nhất là một khối `:root` gồm 22 alias, không xoá dòng nào, revert bằng cách xoá đúng một khối | Sếp gửi ba ảnh chụp Admin panel ngày 31/08 và yêu cầu sửa popup trong suốt cộng tăng cường hover/active. Điều tra tĩnh cho thấy popup chỉ là một trong nhiều triệu chứng của cùng một nguyên nhân, nên contract sửa nguyên nhân trước rồi mới làm phần tương tác được yêu cầu |
 | `v1.0` | 2026-09-01 | Planner Resolution cho audit round 1: `ACCEPTED`, sáu finding `F-01..F-06` đều `ACCEPT_FIX`, chín phép đo độc lập của Tier 1 ghi ở §9.1, năm ràng buộc còn lại ghi ở §9.4. **Không bump spec** — resolution không phải contract change, và `verify-audit.ps1` so spec version giữa TASK và AUDIT nên bump sau audit sẽ làm FAIL gate | Tier 3 giao `AUDIT.md` verdict `PASS` nhưng chín tiêu chí chỉ có lời văn; Tier 1 tự đo lại toàn bộ, thấy mọi khẳng định đều đúng, nên accept verdict và hạ phần lời văn thành finding mức quy trình thay vì đốt một round |
+| `v1.0` | 2026-09-01 | Mở execution round 2 ở §11 và thêm `F-07`. **Không bump spec** — round 2 KHÔNG thêm yêu cầu mới, nó chỉ dựng lại phần nội dung mà `RQ-01` và `RQ-12` đã đặc tả sẵn nhưng đã biến mất khỏi cây sau khi audit chạy; bump sẽ làm `verify-audit.ps1` so lệch spec với AUDIT round 1 rồi in FAIL, nhìn giống "chưa từng audit" | Phát hiện lúc chuẩn bị deploy: scope còn 60 insertions thay vì 101, `app/globals.css` còn 37 dòng thêm thay vì 78, và `.nav-item-lift` không còn định nghĩa CSS nào |
+
+## 11. Execution Round 2 — dựng lại phần bị mất
+
+Phạm vi hẹp, một file. **KHÔNG mở yêu cầu mới, KHÔNG sửa gì khác, KHÔNG chạm 12 file còn lại của round 1.**
+
+| ID | Nội dung |
+|---|---|
+| `R2-01` | Trong `app/globals.css`, thêm lại comment tài liệu ngay TRƯỚC khối `:root` alias, theo `RQ-01`: nêu đây là lớp tương thích của go-live-10, nêu nguyên nhân gốc là `var()` trỏ tới custom property không tồn tại làm cả khai báo trở thành invalid-at-computed-value-time, và nêu hướng dọn dài hạn là chuyển các điểm gọi sang tên có tiền tố rồi xoá lớp này |
+| `R2-02` | Thêm lại quy tắc huỷ chuyển động đúng mục tiêu, BÊN TRONG khối `@media (prefers-reduced-motion: reduce)` đang có: một selector chỉ nhắm cú nhấc của mục điều hướng và đặt `transform: none !important`. **Cấm** dùng `transform: none` cho `*` — nhiều overlay căn giữa bằng `translate`, reset trắng sẽ làm hộp thoại lệch tâm; chính HANDOFF round 1 đã ghi rõ lý do này |
+| `R2-03` | Class `nav-item-lift` hiện được `role-guard-layout.tsx` gắn nhưng không có định nghĩa CSS nào. Chọn MỘT trong hai và ghi rõ lựa chọn vào HANDOFF: (a) định nghĩa lại quy tắc cho class đó trong `app/globals.css`, hoặc (b) bỏ class khỏi `role-guard-layout.tsx` nếu cú nhấc đã do utility Tailwind ở cùng điểm gọi đảm nhiệm — nhưng nếu chọn (b) thì `R2-02` phải nhắm đúng selector còn lại, không được để `prefers-reduced-motion` mất tác dụng |
+| `R2-04` | Bổ sung case vào `src/shared/ui/design-tokens.static.test.ts` để lần sau mất là gate bắt được: khẳng định khối alias có comment đi kèm, và khẳng định khối `prefers-reduced-motion` có chứa một quy tắc `transform: none` nhắm selector cụ thể chứ không phải `*`. Chạy RED trước GREEN, dán cả hai output |
+| `R2-05` | Gate: `npx tsc --noEmit` exit 0; `npm run test:unit` exit 0 với tổng không thấp hơn `1476`. Đọc `LASTEXITCODE` ngay sau mỗi lệnh, KHÔNG qua pipe |
+| `R2-06` | KHÔNG commit, KHÔNG push, KHÔNG deploy. Round 1 đã lên production; round 2 lên sau khi có audit và resolution, hoặc khi Owner cho phép rõ ràng như lần này |
+| `R2-07` | Allowlist tuyệt đối: `app/globals.css` và `src/shared/ui/design-tokens.static.test.ts`. Nếu chọn phương án (b) của `R2-03` thì thêm `src/shared/ui/role-guard/role-guard-layout.tsx`, chỉ ở chuỗi class của mục điều hướng. Mọi file khác là vi phạm |
+| `R2-08` | Trước khi bắt đầu, chạy `git diff --numstat -- app/globals.css` và dán kết quả vào HANDOFF làm mốc. Sau khi xong, chạy lại và dán. Hai con số đó là bằng chứng chống lại chính lỗi đã gây ra round này |
