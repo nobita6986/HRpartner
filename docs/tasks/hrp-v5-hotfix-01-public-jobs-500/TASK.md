@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1` |
 | Executor | `Tier 2` |
 | Auditor | `Tier 3 independent context` |
@@ -16,8 +16,8 @@
 | Modules | `M13 Marketplace public read` |
 | ADR references | `go-live-04 DEC-01/DEC-02/DEC-08 (with-public-db), m1_07b section 2.2` |
 | Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `verify-task → /code → /audit → /resolve → ACCEPTED` |
+| Current audit round | `1` |
+| Next gate | `DONE` |
 | Updated | `2026-08-31 12:40 +07` |
 
 ## 1. Outcome
@@ -160,9 +160,28 @@ Trang `/` hiện lại danh sách việc làm thay vì hộp lỗi `Lỗi 500`. 
 
 ## 9. Planner Resolution
 
-Chưa có. Task vừa lập, chờ `/code` round 1.
+Chấp nhận `PASS` từ Tier 3 Audit Round 1.
+- Evidence hợp lệ, không mock, đo đạc trực tiếp trên file và CLI.
+- Các AC-04 (gate tĩnh) và AC-06, AC-07 (giới hạn sửa đổi, quyền) thoả mãn.
+- AC-08 không tịnh tiến HEAD hợp lý vì Owner sẽ chịu trách nhiệm deploy.
 
-Điều kiện tiên quyết Tier 1 xác nhận: task này KHÔNG cần DB thật, KHÔNG cần migration, KHÔNG cần credential live. Nguyên nhân đã được chứng minh hoàn toàn bằng bằng chứng tĩnh trong repo (`EV-02` đến `EV-09`), nên `ENV_BLOCKED` không phải kết cục hợp lệ cho bất kỳ AC nào ở đây.
+Task chuyển trạng thái `ACCEPTED`.
+
+### Bổ chính 2026-08-31 — trạng thái deploy và trình tự thật
+
+Append-only. Đoạn trên viết trước lúc push và có một câu không còn đúng: `AC-08` KHÔNG còn thoả. `HEAD` đã tịnh tiến và code đã lên production.
+
+Trình tự thật, ghi đúng thứ tự để sau này truy vết được:
+
+1. Tier 2 bàn giao `HANDOFF.md` với bằng chứng RED-trước-GREEN: `LASTEXITCODE=1` và `1416 passed (1417)` một fail ở trạng thái chưa sửa, rồi `1418 passed` sau khi sửa.
+2. `AUDIT.md` từng tồn tại với verdict `PASS` và Tier 1 đọc toàn văn lúc 12:39, nhưng đến 12:48 bị truncate về 0 byte. Suốt 44 phút sau đó `verify-audit.ps1` trả `exit 2` với `ArgumentNullException`, nên Tier 1 TỪ CHỐI resolve trên artifact rỗng và không tự viết hộ Tier 3.
+3. Tier 1 tự đo độc lập, không dựa vào relay: `npm run typecheck` exit 0; `npm run test:unit` exit 0 với `1418 passed (1418)` trên 92 file; `git diff --stat` đúng 2 file `49+/2-`; grep `CREATE POLICY|GRANT|ALTER TABLE|set_config` trên diff trả 0; và tự đọc toàn bộ diff của cả hai file.
+4. Owner chỉ thị khôi phục dịch vụ trước, đóng artifact sau. Tier 1 commit path-scoped đúng 2 file và push `708506f..e0a70f7` lên `main`, tức deploy production. Đây là ngoại lệ do Owner quyết, không phải Tier 2 vượt rào.
+5. Tier 3 phát lại `AUDIT.md` sau đó. Tier 1 chạy lại `verify-audit.ps1` và lần này `exit 0` với `[OK] Verdict: PASS`, nên `ACCEPTED` ở trên là hợp lệ tại thời điểm này.
+
+Waiver được ghi đúng bản chất: người quyết định là Owner; evidence từng thiếu là `AUDIT.md` trên đĩa, nay đã có; tiêu chí bị vượt là `AC-08` và chỉ `AC-08`; residual risk là bản audit hiện tại được phát lại SAU khi code đã lên production, nên nó không còn là phép đo tiền-deploy. Không được kể lại rằng task này ACCEPTED trước khi push.
+
+Điều kiện tiên quyết Tier 1 xác nhận từ đầu và vẫn đúng: task này KHÔNG cần DB thật, KHÔNG cần migration, KHÔNG cần credential live, nên `ENV_BLOCKED` chưa bao giờ là kết cục hợp lệ ở đây.
 
 ## 10. Revision Log
 
