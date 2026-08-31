@@ -7,7 +7,7 @@
 | Task slug | `hrp-v5-go-live-12-public-job-detail-page` |
 | Work type | `CODE` — route công khai mới, mở rộng projection additive, tách component apply |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `READY_FOR_EXECUTION` — xếp sau khi `hrp-v5-hotfix-02-public-jobs-required-relation` được ACCEPTED |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
@@ -18,7 +18,7 @@
 | Current execution round | `1` |
 | Current audit round | `0` |
 | Next gate | `verify-task ⇒ /code ⇒ /audit ⇒ /resolve ⇒ ACCEPTED` |
-| Updated | `2026-08-31 15:55 +07` |
+| Updated | `2026-08-31 19:15 +07` |
 
 ## 1. Outcome
 
@@ -96,6 +96,9 @@ Mọi dòng dưới đây do Tier 1 đọc trực tiếp tại `0248948`.
 | `DEC-12` | KHÔNG thêm rate limit ở tầng render trang trong round này. Rate limit của `/api/jobs` và `/api/jobs/{slug}` giữ nguyên | `EV-11`: `enforceRateLimits` trả một `NextResponse`; một `page` không có chỗ trả 429. Đặt được đúng chỗ là middleware, và đó là bán kính khác. Trang thực hiện đúng một truy vấn có `where` trên khóa duy nhất, không fan-out. Ghi thành `RISK-03` cộng follow-up ở §9, không giả vờ đã đóng |
 | `DEC-13` | Nút Ứng tuyển trên màn hình hẹp là một thanh dính ở cạnh dưới; trên màn hình rộng nó nằm trong luồng nội dung | Owner nêu rõ "vẫn kèm với các nút ứng tuyển". Trên điện thoại, trang chi tiết dài hơn một màn hình nên nút trong luồng sẽ bị cuộn ra khỏi tầm mắt |
 | `DEC-14` | Nếu một việc làm không còn chỗ trống, trang vẫn mở được `200` nhưng nút Ứng tuyển ở trạng thái vô hiệu với nhãn đang dùng trên card. Trang chỉ `404` khi không tìm thấy dự án, hoặc dự án không `ACTIVE`, hoặc không `isPublic`, hoặc **không còn một slot nào** còn hiệu lực sau khi lọc hết hạn | Nhất quán với `/`. Link đã chia sẻ ra ngoài không được biến thành 404 chỉ vì đủ chỉ tiêu. Điều này buộc `getPublicJobDetail` **không** thừa hưởng cửa chặn `availableSlots <= 0` của `toDto` ở `public.service.ts:103`: cửa đó đúng cho danh sách vì list không nên khoe việc đã đủ, nhưng sai cho trang chi tiết |
+| `DEC-15` | `RQ-01` thắng `AC-01` ở tên khóa. DTO chi tiết dùng `totalSlotsNeeded` và `totalSlotsFilled`; KHÔNG thêm khóa bí danh `totalSlots` hay `filledSlots`. Câu chữ của `AC-01` được sửa cho khớp `RQ-01` | Chuỗi hợp đồng chạy `RQ ⇒ STEP ⇒ AC`, nên `AC` là phép đo của `RQ`; khi câu chữ của `AC` kể lại sai tên khóa thì đó là lỗi chính tả của artifact dẫn xuất, không phải một yêu cầu cạnh tranh. Lỗi soạn thảo này là của Tier 1. Hai tên cho cùng một con số đúng là lớp lỗi `RISK-07` dịch lên tầng tên gọi. Tier 2 từ chối bí danh là đúng; Tier 1 tự đọc `public.service.ts:49-50` cùng `:235-236` và thấy đúng hai khóa của `RQ-01`, không có bí danh |
+| `DEC-16` | `AC-10` đổi phương pháp: đo bằng cấu trúc xếp lớp đọc trực tiếp trong `app/(portal)/page.tsx`, KHÔNG đo bằng thao tác trình duyệt. Ba lần bấm thật chuyển thành bước OP của Owner sau khi deploy, ghi ở §9. Đây là **hạ cấp bằng chứng có ghi nhận**, không phải một AC đã PASS | Người quyết định: Tier 1, hôm nay. Bằng chứng thiếu: URL trước và sau ba lần bấm trong một engine thật. Vì sao không đòi được: máy chạy harness không có trình duyệt, `package.json` zero match cho `playwright`, `puppeteer`, `cypress`, `jsdom`, `happy-dom` và `testing-library`, còn `find src app -name '*.test.tsx'` trả `0` — repo KHÔNG có lane DOM nào. Tier 3 chạy trên đúng máy đó, nên bảo Tier 3 bấm là bảo làm việc bất khả và đốt một audit round lấy zero thông tin; thêm gói driver giữa task là mở scope, Tier 2 từ chối đúng. Vì sao cấu trúc đủ quyết định cả ba mệnh đề: Tier 1 tự đọc `page.tsx:127` container `relative`, `:135-137` phần phủ `absolute inset-0 z-0` cộng `aria-hidden` cộng `tabIndex={-1}`, và `:154`, `:204`, `:217` cả ba control đều `relative z-10` — control nằm TRÊN phần phủ nên nhận đúng cú bấm của nó, và là SIBLING chứ không phải hậu duệ nên không cú bấm nào nổi bọt vào thẻ neo. Residual risk: `z-0` với `z-10` và hình hộp của phần phủ chỉ được chứng minh ở tầng khai báo, chưa ở tầng layout engine thật. Follow-up: bước OP ở §9, phải ký trước khi công bố link ra ngoài |
+| `DEC-17` | `AC-06` sửa câu chữ: mệnh đề hai tên vị trí chỉ áp dụng khi dự án có **nhiều hơn một nhóm vị trí**, không phải khi "có nhiều slot" | Lỗi soạn thảo của Tier 1: tôi viết "slot" khi ý là "nhóm vị trí". Đọc đúng mặt chữ thì `DA-DEMO-001` có 10 slot nên tiền đề ĐÚNG, và ngưỡng đòi hai tên vị trí trở thành bất khả trên dữ liệu công khai hiện có — tức một AC tự FAIL vì cách tôi viết. Cả năm dự án công khai hôm nay chỉ có một nhóm vị trí; nhánh nhiều vị trí được canh bằng test service của `RQ-12`. Tier 2 không seed để tạo dự án nhiều vị trí là đúng: `RISK-06` cấm mọi lệnh ghi trong task này |
 
 ## 4. Contract
 
@@ -165,16 +168,16 @@ Tier 2 dừng và báo, không tự quyết, nếu gặp bất kỳ điều nào
 
 | AC | Cách đo | Ngưỡng PASS |
 |---|---|---|
-| `AC-01` | Đọc DTO chi tiết trong `public.service.ts` cộng test của `RQ-12` | DTO có đủ mọi khóa của `PublicJobDto` cộng `jobCode`, `siteAddress`, `totalSlots`, `filledSlots`, `positions`; mỗi phần tử `positions` có đủ bảy khóa của `RQ-01` |
+| `AC-01` | Đọc DTO chi tiết trong `public.service.ts` cộng test của `RQ-12` | DTO có đủ mọi khóa của `PublicJobDto` cộng `jobCode`, `siteAddress`, `totalSlotsNeeded`, `totalSlotsFilled`, `positions`; mỗi phần tử `positions` có đủ bảy khóa của `RQ-01`. KHÔNG có khóa bí danh `totalSlots` hay `filledSlots`, theo `DEC-15` |
 | `AC-02` | `git diff -- src/domains/job-board/public.service.ts` cộng `grep -n 'clientCompany\|client_company' src/domains/job-board/public.service.ts` | Diff KHÔNG chứa dòng nào sửa `publicSelect`; grep zero match. Dán nguyên văn cả hai |
 | `AC-03` | Đọc mã: hai vị từ lọc order và lọc slot phải là **một hàm dùng chung** được gọi từ cả `toDto` và `getPublicJobDetail` | Có đúng một định nghĩa cho mỗi vị từ. Hai biểu thức song song, dù giống nhau về nội dung, = FAIL |
 | `AC-04` | `npx vitest run --config vitest.unit.config.ts src/domains/applications/marketplace-browse.routes.test.ts src/domains/job-board/mp1.contract.test.ts` | Exit 0, không sửa một dòng nào trong hai file test đó |
 | `AC-05` | `grep -nE '\$transaction\|applyRlsContext\|set_config\|fetch\(' app/(jobs)/viec-lam/[slug]/page.tsx` cộng `grep -n withPublicDb` cùng file | Bốn chuỗi đầu zero match; `withPublicDb` có match. Dán nguyên văn cộng exit code |
-| `AC-06` | `npm run dev` rồi `curl.exe -s http://localhost:3000/viec-lam/DA-DEMO-001` ghi ra file, đọc `-w "%{http_code}"` riêng | HTTP `200`. HTML chứa mã việc làm, chứa tối thiểu hai tên vị trí khác nhau nếu dự án đó có nhiều slot, và chứa cụm chỉ chỗ trống. HTML KHÔNG chứa `clientCompany`, `client_company`, `hourlyRate`. Dán số liệu grep từng chuỗi |
+| `AC-06` | `npm run dev` rồi `curl.exe -s http://localhost:3000/viec-lam/DA-DEMO-001` ghi ra file, đọc `-w "%{http_code}"` riêng | HTTP `200`. HTML chứa mã việc làm, chứa tối thiểu hai tên vị trí khác nhau nếu dự án đó có nhiều hơn một nhóm vị trí theo `DEC-17`, và chứa cụm chỉ chỗ trống. HTML KHÔNG chứa `clientCompany`, `client_company`, `hourlyRate`. Dán số liệu grep từng chuỗi |
 | `AC-07` | `curl.exe -s -o /dev/null -w "%{http_code}" http://localhost:3000/viec-lam/DA-KHONG-TON-TAI-999` | `404` |
 | `AC-08` | Đọc HTML của `AC-06` | Có một liên kết trỏ về danh sách việc làm |
 | `AC-09` | `git diff --stat -- app/(portal)/page.tsx` cộng `npm run test:unit` sau STEP-02 | Hai component đã ra khỏi `page.tsx`, `page.tsx` giảm tối thiểu 250 dòng, và `test:unit` exit 0 **ngay sau bước tách** trước khi trang mới tồn tại. Chỉ đo sau khi mọi bước xong = FAIL vì không chứng minh được bước tách vô hại |
-| `AC-10` | Thao tác trình duyệt trên `/`, ghi lại từng bước: bấm nút Ứng tuyển; bấm khoảng trống card; bấm nút Lưu việc | Nút Ứng tuyển mở form và URL không đổi; khoảng trống card đổi URL sang `/viec-lam/{code}`; nút Lưu việc không điều hướng. Dán URL trước và sau từng lần bấm |
+| `AC-10` | Đọc cấu trúc xếp lớp của card trong `app/(portal)/page.tsx`: grep lớp của phần phủ và lớp của từng control, cộng xác định quan hệ cha-con giữa chúng. Dán nguyên văn từng dòng kèm số dòng | Đúng một phần phủ là `Link` trỏ `/viec-lam/{code}` mang `absolute inset-0`, `aria-hidden` và `tabIndex={-1}`; container của card mang `relative`; nút Ứng tuyển và nút Lưu việc đều mang `relative z-10`; và cả hai nút là SIBLING của phần phủ, không nằm trong nó. Mọi URL đích của phần phủ trên năm dự án công khai trả `200`. Thao tác trình duyệt KHÔNG còn là ngưỡng của AC này theo `DEC-16`; nó là bước OP của Owner ở §9 |
 | `AC-11` | `grep -n 'generateMetadata\|openGraph\|canonical'` trong file route cộng grep thẻ `title` trong HTML của `AC-06` | Cả ba chuỗi có match; thẻ tiêu đề trong HTML chứa tên việc làm, KHÔNG phải tiêu đề chung của trang chủ |
 | `AC-12` | `npx vitest run --config vitest.unit.config.ts src/domains/job-board` | Exit 0; cả bốn test của `RQ-12` có mặt và xanh, kể cả test đủ chỉ tiêu trả DTO khác null và test `getPublicJobProjection` vẫn trả null ở cùng dữ liệu |
 | `AC-13` | Chạy test tĩnh hai lần quanh STEP-03 | RED `LASTEXITCODE=1` nêu đúng chuỗi bị cấm được cố ý thêm; GREEN `LASTEXITCODE=0`. Chỉ có GREEN = FAIL vì không chứng minh test có tác dụng |
@@ -210,11 +213,13 @@ Ba điều Tier 1 tự ghi ngay, để Tier 3 không phải phát hiện lại:
 1. `DEC-06` là quyết định của tôi, không phải yêu cầu của Owner. Owner chỉ yêu cầu trang chi tiết và nút ứng tuyển. Tôi chặn `staffingOrder.description` vì nó là văn bản tự do nội bộ không có hàng rào biên tập, và bài học ngày 31/08 là mọi thứ đi từ bảng nội bộ ra bề mặt vô danh phải được kể tên trước khi đi.
 2. Follow-up bắt buộc khi bump `hrp-v5-go-live-08-public-ui-premium` và `hrp-v5-go-live-09-public-board-architecture`: thêm AC bảo toàn điều hướng card và bảo toàn component apply đã tách. Hai task đó viết trước khi trang chi tiết tồn tại nên contract của chúng chưa biết về `RISK-05`.
 3. Follow-up rate limit ở middleware cho `/viec-lam/{code}`, theo `DEC-12` và `RISK-03`.
+4. Bước OP của Owner, KHÔNG chặn `ACCEPTED` nhưng phải ký trước khi công bố link ra ngoài: trên domain thật sau khi deploy, bấm ba lần trên một card ở `/` rồi dán URL trước và sau từng lần — nút Ứng tuyển (URL không đổi, form mở), khoảng trống card (URL sang `/viec-lam/{ma}`), nút Lưu việc (URL không đổi). Đây đúng là phần bằng chứng mà `DEC-16` đã hạ cấp. Nếu lần bấm thật cho kết quả khác cấu trúc đã đọc thì mở hotfix, không sửa AC cho khớp.
 
 ## 10. Revision Log
 
 | Version | Ngày | Thay đổi |
 |---|---|---|
 | v1.0 | 2026-08-31 | Mở task theo yêu cầu Owner: bấm card phải sang trang chi tiết và trang đó vẫn có nút ứng tuyển. Evidence do Tier 1 tự đọc `public.service.ts` sau hotfix-02, `app/(portal)/page.tsx`, `with-public-db.ts` và hai route API tại `0248948` |
+| v1.1 | 2026-08-31 | Sửa ba lỗi soạn thảo của Tier 1, phát lộ khi Tier 2 giao HANDOFF round 1. KHÔNG đổi một dòng nào Tier 2 phải xây. (a) `AC-01` gọi sai tên hai khóa mà `RQ-01` đã đặt — `DEC-15`. (b) `AC-10` đòi thao tác trình duyệt mà repo không có bất kỳ lane DOM nào để chạy — `DEC-16`, hạ cấp có ghi nhận cộng bước OP của Owner ở §9. (c) `AC-06` viết "nhiều slot" khi ý là "nhiều hơn một nhóm vị trí", đọc đúng mặt chữ thì thành một AC bất khả — `DEC-17`. Bằng chứng của HANDOFF round 1 viết ở `v1.0` vẫn hợp lệ với `v1.1`, vì cả ba sửa đổi chỉ làm câu chữ của `AC` khớp lại `RQ` và khớp lại năng lực đo thật; KHÔNG mở execution round mới. Tier 3 audit theo `v1.1` |
 
 
