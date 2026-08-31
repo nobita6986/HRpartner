@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `ACCEPTED` cho round 1 — Tier 1 quyết ngày 2026-09-01 sau khi tự chạy gate exit 0, tự đọc toàn văn AUDIT.md và tự đo lại chín điểm ở §9.1. **Execution round 2 đang MỞ** theo `F-07`: cây mã bị hụt 41 dòng so với bản giao, xem §11 |
+| Status | `ACCEPTED` — round 1 và round 2 đều đã audit và đã resolve; Tier 1 quyết round 2 ngày 2026-09-01 sau khi tự chạy gate exit 0 và tự đo lại sáu điểm ở §9.5, trong đó có phép đo trên bundle CSS đang chạy production. Mã đã DEPLOY tại `1af4eff` và xác nhận SỐNG |
 | Planner | `Tier 1` |
 | Executor | `Tier 2` |
 | Auditor | `Tier 3 independent context` |
@@ -16,8 +16,8 @@
 | Modules | `Admin portal UI, shared role-guard shell, design token layer` |
 | ADR references | `G27 Warm Professionalism token set — app/globals.css khối @theme, chốt 15/08/2026` |
 | Current execution round | `2` |
-| Current audit round | `1` |
-| Next gate | `/code round 2` theo §11 — round 1 đã ACCEPTED và ĐÃ DEPLOY tại `474f3dc` với Owner cho phép rõ ràng; round 2 chỉ dựng lại 41 dòng bị mất, không mở thêm yêu cầu mới |
+| Current audit round | `2` |
+| Next gate | `CLOSED` — còn đúng một bước OP của Owner ở `R-06`: mở ba trang admin xác nhận bằng mắt. Bốn điểm ngoài allowlist ở `R-04` và phần đơn điệu ở `R-05` thuộc contract giao diện kế tiếp |
 | Updated | `2026-09-01 01:05 +07` |
 
 ## 1. Outcome
@@ -291,6 +291,40 @@ Hai điểm Tier 1 công bố thẳng, không giấu trong evidence:
 
 `R-05` — Phần "đơn điệu" mà sếp nêu **không** thuộc task này và không phải defect của round này: `RQ-14` giới hạn task ở hiển thị và tương tác. Đo được: 49 chỗ mã màu thập lục cứng trên 11 trang admin, thuộc bảng màu lạnh, và trước khi có lớp alias thì đó là thứ DUY NHẤT hiện được, nên bảng màu ấm của thương hiệu không lên một pixel nào. Sau deploy mới đánh giá được phần dư, rồi mới viết contract giao diện kế tiếp.
 
+### Audit round 2 — `ACCEPTED`
+
+Tier 1 quyết ngày 2026-09-01. Gate do Tier 1 chạy: `verify-audit.ps1` với cả hai tham số ⇒ `[OK] Verdict: PASS`, exit `0`, trên file `9089` byte. Ranh giới đo trước khi đọc nội dung: `TASK.md` **byte-identical** với HEAD nên Tier 3 không ghi vào ô của Planner, và `git rev-list --count origin/main..HEAD` = `0` nên Tier 3 không commit không push. `AUDIT.md` đã commit ở `5d11c49` **trước khi** resolution này được viết, theo `R-02`.
+
+#### 9.5 Phép đo độc lập của Tier 1 cho round 2 — lần này đo trên bản BIÊN DỊCH
+
+| ID | Điều cần chứng minh | Phép đo | Kết quả |
+|---|---|---|---|
+| `SC-10` | Lớp alias thật sự SỐNG, không phải chỉ có mặt trong file nguồn | Bóc mọi comment CSS khỏi `app/globals.css` bằng regex rồi mới đếm | alias sống `22`; khối `:root` sống `1`; `transform: none !important` sống `1`. Ở round 1 phép đo tương đương cho ra **`0` khối `:root`** |
+| `SC-11` | Lớp alias tới được **production**, không chỉ tới được `.next` trên máy | `curl` bundle CSS đang được serve trước và sau khi deploy | Trước, `d3f6d0d25f5c04fc.css` `69242` byte: `--surface:var(--color-surface)` = `0`, `nav-item-lift` = `0`. Sau, `71260eaaf56163fe.css` `70265` byte: alias sống `27` lượt, `transform:none !important` `1`, `nav-item-lift` `1` |
+| `SC-12` | Bằng chứng không thể bị comment qua mặt | Đếm chuỗi comment `Material Symbols Outlined` trong bundle live | `0` — minifier bóc sạch comment. Vì vậy việc alias **có mặt** trong bundle là bằng chứng máy rằng nó là CSS SỐNG. Đây là phép đo duy nhất trong cả task mà lỗi comment không thể lọt qua |
+| `SC-13` | `RQ-12` thật sự đạt sau round 2 | Vị trí khối reduced-motion trong nguồn đã bóc comment | Khối ở ký tự `13378` trên tổng `13680` ⇒ đúng là khối cuối, nên nó đè được các quy tắc phía trên |
+| `SC-14` | Allowlist `R2-07` | `git show --stat 1af4eff` | Đúng ba đường: `app/globals.css`, `src/shared/ui/design-tokens.static.test.ts`, và `HANDOFF.md` là artifact bắt buộc chứ không phải mã. `role-guard-layout.tsx` KHÔNG bị chạm |
+| `SC-15` | Gate của `R2-05` | `npx tsc --noEmit`; `npm run test:unit`; `npm run build` sau khi xoá `.next` | exit `0` / exit `0` với `99` file và `1480` test / exit `0` với `Compiled successfully in 16.8s` |
+
+Mọi số trong `§4 Independent Evidence` của `AUDIT.md` **khớp khít** với phép đo của tôi, gồm cả chuỗi RED quyết định `expected [] to have a length of 1 but got +0`. Verdict `PASS` đứng vững.
+
+#### 9.6 Findings round 2 — đều `ACCEPT_FIX`, không finding nào chặn
+
+| ID | Mức | Nội dung | Xử lý |
+|---|---|---|---|
+| `F-08` | P1 | **Tier 3 đo `R2-01` và `R2-02` bằng cách "Đọc `globals.css`"** — đúng phương pháp đã thất bại ở round 1, vì đọc nguồn thô không phân biệt được khai báo sống với khai báo bị comment | `ACCEPT_FIX`, không mở round 3. Lý do: phép bóc comment giờ **nằm trong chính bộ test**, và Tier 3 đã chạy nó thấy RED rồi GREEN, nên máy đã làm phép đo đó thay cho mắt người. Luật từ nay: với defect tầng CSS hoặc asset, bằng chứng chỉ hợp lệ nếu (a) bóc comment rồi mới đếm trên nguồn, hoặc (b) đếm trên artifact đã biên dịch. "Đọc file" không phải bằng chứng |
+| `F-09` | P2 | `AC-16` ghi build "ra file tĩnh với kích thước lớn hơn rõ rệt (89512 bytes)" — **đúng con số trong HANDOFF của người thi công**, và **không có exit code** | `ACCEPT_FIX`. Cùng lớp với `F-02` của round 1. Tier 1 tự chạy build sạch cache ra exit `0`, và đi xa hơn HANDOFF một bước bằng `SC-11`: đo bundle **trên production**, thứ mà không gate nào trong repo phủ |
+| `F-10` | P2 | `§7 Re-audit Trace` ghi round 1 là `FAIL` và ghi "Tier 2 tạo Round 2". **Cả hai đều sai.** Verdict audit round 1 là `PASS` và Tier 1 đã `ACCEPTED` nó; round 2 do **Tier 1 mở**, không phải Tier 2 | `ACCEPT_FIX` nhưng phải đính chính trong biên bản, vì đây là khác biệt giữa "hàng rào đã bắt được lỗi" và "hàng rào đã bỏ lọt lỗi". Sự thật là **bỏ lọt**: một verdict `PASS` đã bao trùm một bản no-op, và đó chính là lý do bốn case mới tồn tại |
+| `F-11` | P2 | **Tính độc lập của round 2 chỉ là một phần.** Owner chỉ định phiên Tier 1 kiêm luôn vai Tier 2, nên Tier 3 đang audit mã do Tier 1 viết | `ACCEPT_FIX`. Ghi thẳng ở đây để sau này không ai dẫn round này ra làm bằng chứng rằng ba tầng vẫn tách. Điều giữ được giá trị là: người viết mã **không** viết verdict, và người viết mã tự công bố hạn chế này trong HANDOFF trước khi audit chạy |
+
+#### 9.7 Còn lại
+
+`R-06` — **Bản sửa đã SỐNG trên production**, xác nhận bằng `SC-11` và `SC-12`. Bước cuối không ai thay được vì repo không có lane DOM: Owner mở `/admin/applications`, `/admin/jobs`, `/admin/staffing` và xác nhận bốn thứ — panel chi tiết đục, header bảng có nền phân tầng, nút thêm mới là nút đặc chứ không phải chữ trơn, và pill đang được chọn sáng lên khác hẳn pill không chọn. Nếu ba trong bốn đúng mà một sai, đó là điểm còn lại thật, không còn là lỗi tầng token. Cấm chụp hoặc dán giá trị SĐT, CCCD thật vào bất kỳ artifact nào theo §4.3.
+
+`R-07` — Task này **ĐÓNG**. Bốn điểm ngoài allowlist ở `R-04` và phần "đơn điệu" ở `R-05` thuộc contract giao diện kế tiếp, viết sau khi Owner xem bản đang chạy.
+
+
+
 
 ## 10. Revision Log
 
@@ -299,6 +333,7 @@ Hai điểm Tier 1 công bố thẳng, không giấu trong evidence:
 | `v1.0` | 2026-08-31 | Lập contract sửa hiển thị và tương tác cho Admin portal. 19 evidence, 16 decision, 15 requirement, 13 step, 19 acceptance criterion, 15 risk, 4 open question. Nguyên nhân chốt: `app/globals.css` định nghĩa token CHỈ dưới dạng có tiền tố họ trong khối `@theme` của Tailwind v4, trong khi 21 file `.tsx` gọi cùng những tên đó KHÔNG có tiền tố; các tên không tiền tố không được định nghĩa ở đâu cả, nên mỗi khai báo dùng chúng trở thành không hợp lệ tại thời điểm tính giá trị và rơi về giá trị khởi tạo. Với `background-color` giá trị khởi tạo là trong suốt, nên popup mất nền; với `border-bottom` dạng viết gộp thì cả quy tắc biến mất, nên bảng mất vạch kẻ. Phép sửa nhỏ nhất là một khối `:root` gồm 22 alias, không xoá dòng nào, revert bằng cách xoá đúng một khối | Sếp gửi ba ảnh chụp Admin panel ngày 31/08 và yêu cầu sửa popup trong suốt cộng tăng cường hover/active. Điều tra tĩnh cho thấy popup chỉ là một trong nhiều triệu chứng của cùng một nguyên nhân, nên contract sửa nguyên nhân trước rồi mới làm phần tương tác được yêu cầu |
 | `v1.0` | 2026-09-01 | Planner Resolution cho audit round 1: `ACCEPTED`, sáu finding `F-01..F-06` đều `ACCEPT_FIX`, chín phép đo độc lập của Tier 1 ghi ở §9.1, năm ràng buộc còn lại ghi ở §9.4. **Không bump spec** — resolution không phải contract change, và `verify-audit.ps1` so spec version giữa TASK và AUDIT nên bump sau audit sẽ làm FAIL gate | Tier 3 giao `AUDIT.md` verdict `PASS` nhưng chín tiêu chí chỉ có lời văn; Tier 1 tự đo lại toàn bộ, thấy mọi khẳng định đều đúng, nên accept verdict và hạ phần lời văn thành finding mức quy trình thay vì đốt một round |
 | `v1.0` | 2026-09-01 | Mở execution round 2 ở §11 và thêm `F-07`. **Không bump spec** — round 2 KHÔNG thêm yêu cầu mới, nó chỉ dựng lại phần nội dung mà `RQ-01` và `RQ-12` đã đặc tả sẵn nhưng đã biến mất khỏi cây sau khi audit chạy; bump sẽ làm `verify-audit.ps1` so lệch spec với AUDIT round 1 rồi in FAIL, nhìn giống "chưa từng audit" | Phát hiện lúc chuẩn bị deploy: scope còn 60 insertions thay vì 101, `app/globals.css` còn 37 dòng thêm thay vì 78, và `.nav-item-lift` không còn định nghĩa CSS nào |
+| `v1.0` | 2026-09-01 | Planner Resolution cho audit round 2: `ACCEPTED`, task `CLOSED`. Bốn finding `F-08..F-11` đều `ACCEPT_FIX`, sáu phép đo `SC-10..SC-15` ở §9.5, hai ràng buộc còn lại ở §9.7. **Không bump spec.** `F-07` được chốt lại đúng bản chất: không phải "mất 41 dòng" mà lớp alias bị dán lệch một dòng vào giữa comment nên cả 22 alias là comment CSS và bản deploy `474f3dc` là no-op hoàn toàn | Bằng chứng mạnh nhất của cả task nằm ở `SC-11` và `SC-12`: bundle CSS đang serve trước deploy có `0` lượt alias, sau deploy có `27`, và chuỗi comment trong bundle bằng `0` vì minifier bóc sạch comment — nên alias có mặt trong bundle là bằng chứng máy rằng nó là CSS sống |
 
 ## 11. Execution Round 2 — dựng lại phần bị mất
 
