@@ -22,7 +22,9 @@ export default defineConfig({
   // classic runtime and component tests fail with "React is not defined".
   esbuild: { jsx: 'automatic', jsxImportSource: 'react' },
   test: {
-    include: ['src/**/*.test.ts', 'packages/**/*.test.ts'],
+    // `prisma/**` chỉ chứa test TĨNH đọc file migration bằng filesystem (go-live-11 RQ-07);
+    // không file nào trong đó mở kết nối DB, nên nó thuộc đúng lane unit này.
+    include: ['src/**/*.test.ts', 'packages/**/*.test.ts', 'prisma/**/*.test.ts'],
     exclude: [...configDefaults.exclude, ...INTEGRATION_TEST_FILES],
     env: {
       // FORCE unreachable — do NOT read the ambient DATABASE_URL (fail-closed, RQ-05/RQ-06).
