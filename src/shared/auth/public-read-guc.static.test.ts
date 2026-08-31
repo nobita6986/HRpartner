@@ -6,7 +6,7 @@
  * `hrp_project_visible_for` so sánh với NULL, và 3 bảng FORCE RLS trả 0 dòng — im lặng,
  * không lỗi, gate vẫn xanh.
  *
- * Ba đường dẫn viết CỨNG (DEC-08 + RISK-07): thêm một call site vô danh mới thì phải
+ * Hai đường dẫn viết CỨNG (DEC-08 + RISK-07): thêm một call site vô danh mới thì phải
  * sửa test này một cách có ý thức, không thể vô tình bỏ sót.
  */
 import { readFileSync } from 'node:fs';
@@ -19,7 +19,6 @@ const HELPER = 'src/shared/auth/with-public-db.ts';
 const PUBLIC_READ_CALL_SITES = [
   'app/api/jobs/route.ts',
   'app/api/jobs/[slug]/route.ts',
-  'app/job-board/page.tsx',
 ];
 
 const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
@@ -27,7 +26,7 @@ const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
 const strip = (code: string) => code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
 describe('public read path — GUC principal (RQ-03/RQ-04/RQ-05)', () => {
-  it('cả BA call site vô danh không còn $transaction trần', () => {
+  it('cả HAI call site vô danh không còn $transaction trần', () => {
     for (const file of PUBLIC_READ_CALL_SITES) {
       const code = strip(read(file));
       expect(code, file).not.toContain('$transaction');
@@ -35,7 +34,7 @@ describe('public read path — GUC principal (RQ-03/RQ-04/RQ-05)', () => {
     }
   });
 
-  it('cả BA call site đều đi qua đúng helper công khai', () => {
+  it('cả HAI call site đều đi qua đúng helper công khai', () => {
     for (const file of PUBLIC_READ_CALL_SITES) {
       const code = strip(read(file));
       expect(code, file).toContain("from '@/src/shared/auth/with-public-db'");
@@ -59,7 +58,7 @@ describe('public read path — GUC principal (RQ-03/RQ-04/RQ-05)', () => {
     expect(code).not.toMatch(/\bcatch\b/);
   });
 
-  it('không có set_config lẻ ngoài helper trên ba call site (DEC-08)', () => {
+  it('không có set_config lẻ ngoài helper trên hai call site (DEC-08)', () => {
     for (const file of PUBLIC_READ_CALL_SITES) {
       const code = strip(read(file));
       expect(code, file).not.toContain('set_config');

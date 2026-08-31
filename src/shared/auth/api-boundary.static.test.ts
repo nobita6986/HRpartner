@@ -21,7 +21,7 @@
  *   - Ghi/tra cứu qua RPC (`public/jobs/[slug]/applications`, `public/applications/
  *     [trackingCode]`): `prisma.$transaction((tx) => svc(tx))` trần là ĐÚNG và bắt buộc —
  *     SECURITY DEFINER tự kiểm quyền, thêm GUC vào đây là vi phạm gate MP-2.
- *   - Đọc browse (`GET /api/jobs`, `GET /api/jobs/[slug]`, `app/job-board/page.tsx`):
+ *   - Đọc browse (`GET /api/jobs`, `GET /api/jobs/[slug]`):
  *     `prisma.$transaction` trần từng là DEFECT P0 — không GUC `app.role` ⇒ mọi nhánh
  *     `hrp_project_visible_for` so sánh với NULL ⇒ 3 bảng FORCE RLS trả 0 dòng, im lặng.
  *     Nay bắt buộc đi qua `withPublicDb` (principal MKT + transaction read-only).

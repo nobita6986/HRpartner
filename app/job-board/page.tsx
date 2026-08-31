@@ -1,44 +1,9 @@
-import { Search, Globe } from 'lucide-react';
-import { getPrisma } from '@/src/lib/db';
-import { listPublicJobProjection } from '@/src/domains/job-board/public.service';
-import { withPublicDb } from '@/src/shared/auth/with-public-db';
+import { permanentRedirect } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
-export default async function JobBoardPage() {
-  const prisma = getPrisma();
-  // go-live-04 / RQ-03: call site hỏng thứ ba — server component nên không lộ ra khi đo
-  // HTTP /api/jobs. Chỉ đổi đường lấy dữ liệu; markup và empty state giữ nguyên.
-  const { jobs } = await withPublicDb(prisma, (tx) => listPublicJobProjection(tx, { limit: 20 }));
-
-  return (
-    <div className="pub">
-      <header className="pub-header">
-        <span className="logo">HR<em>P</em></span>
-        <nav className="pub-nav"><span className="on">Việc làm</span><span>Về HRP</span><span>Liên hệ</span></nav>
-        <div className="pub-auth"><button className="pub-btn-ghost" type="button">Đăng nhập</button><button className="pub-btn-primary" type="button">Đăng ký</button></div>
-      </header>
-      <main className="pub-main">
-        <div className="hero">
-          <h1>Tìm việc tại các nhà máy, kho vận khu công nghiệp</h1>
-          <p className="sub">Các vị trí đang tuyển được HRP công khai theo dự án, ca làm và địa điểm.</p>
-          <div className="search-bar"><Search size={20} aria-hidden="true" /><span>Tìm theo vị trí, địa điểm</span></div>
-        </div>
-        <section className="job-grid" aria-label="Việc làm đang tuyển">
-          {jobs.length === 0 ? <p>Hiện chưa có việc làm đang tuyển.</p> : jobs.map((job) => (
-            <article key={job.id} className="job-card">
-              <div className="job-top"><span className="badge badge-neutral">{job.statusLabel}</span><span className="job-code">{job.slug}</span></div>
-              <div className="job-name">{job.title}</div>
-              <div className="job-meta">{job.location ?? 'Liên hệ HRP để biết địa điểm'}</div>
-              <div className="job-shifts">{job.position}{job.shift ? ` · ${job.shift}` : ''}</div>
-              <div className="job-counts"><div className="count miss"><b>{job.availableSlots}</b><span>Vị trí còn trống</span></div></div>
-              <a className="apply-btn" href={`/api/jobs/${encodeURIComponent(job.slug)}`}>Xem chi tiết</a>
-            </article>
-          ))}
-        </section>
-      </main>
-      <footer className="pub-foot"><Globe size={15} aria-hidden="true" /><span>Trang tìm việc công khai của HRP.</span><span className="push-right">© 2026 HRP</span></footer>
-    </div>
-  );
+/**
+ * Compatibility route for the original MP-1 job board URL.
+ * The canonical public job marketplace lives at `/`.
+ */
+export default function LegacyJobBoardPage(): never {
+  permanentRedirect('/');
 }

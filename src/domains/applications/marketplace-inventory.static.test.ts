@@ -10,6 +10,7 @@
  *     không còn file nào tham chiếu; tracking route dùng `enforceRateLimits`.
  *   - RQ-07/DEC-09: hai UI apply không còn surface CV và POST đúng canonical contract
  *     (idempotency key + consent).
+ *   - DEC-11: `/` là UI marketplace duy nhất; `/jobs` và `/job-board` chỉ redirect.
  *   - DEC-06: adapter Upstash tắt analytics/protection. DEC-12/PLN-04: không `console.` trong
  *     guard/identity NÊN CẢ trong service apply; canonical route chỉ còn đúng một marker lỗi
  *     cố định (không nội suy PII của request).
@@ -25,7 +26,8 @@ const LEGACY_JOBS = join(API_DIR, 'jobs/route.ts');
 const LEGACY_APPLY = join(API_DIR, 'jobs/apply/route.ts');
 const TRACKING = join(API_DIR, 'public/applications/[trackingCode]/route.ts');
 const LOGOUT = join(API_DIR, 'auth/logout/route.ts');
-const JOBS_PAGE = join(ROOT, 'app/(jobs)/jobs/page.tsx');
+const LEGACY_JOBS_PAGE = join(ROOT, 'app/(jobs)/jobs/page.tsx');
+const LEGACY_JOB_BOARD_PAGE = join(ROOT, 'app/job-board/page.tsx');
 const PORTAL_PAGE = join(ROOT, 'app/(portal)/page.tsx');
 const BODY_HELPER = join(ROOT, 'src/shared/security/request-body.ts');
 const UPSTASH = join(ROOT, 'src/shared/security/rate-limit-upstash.ts');
@@ -162,36 +164,42 @@ describe('RQ-06/07/DEC-09 — canonical apply: trần body, media gate, CV tắt
     expect(code).toMatch(/cv:\s*null/);
   });
 });
-describe('RQ-07/DEC-11 — hai UI apply: CV tắt, POST đúng canonical contract', () => {
+describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect', () => {
   const CANONICAL_FETCH = '/api/public/jobs/${encodeURIComponent(job.slug)}/applications';
 
-  for (const [label, file] of [
-    ['app/(jobs)/jobs/page.tsx', JOBS_PAGE],
-    ['app/(portal)/page.tsx', PORTAL_PAGE],
-  ] as const) {
-    it(`${label}: không còn surface CV nào`, () => {
-      const code = strip(read(file));
-      expect(code).not.toMatch(/type=['"]file['"]/);
-      expect(code).not.toContain('CV_MIME');
-      // Chỉ chặn API multipart THẬT. `ApplyFormData` là tên kiểu state của form —
-      // `\b` không khớp `ApplyFormData(` nên detector không tự đánh lừa bằng tên kiểu.
-      expect(code).not.toMatch(/new\s+FormData\b/);
-      expect(code).not.toMatch(/\bFormData\s*\(/);
-      expect(code).not.toContain('multipart');
-      expect(code).not.toMatch(/\bcv\s*:/);
-      expect(code).not.toMatch(/setCv|cvFile|cvMimeType|cvSizeBytes/);
-    });
+  it('app/(portal)/page.tsx không còn surface CV nào', () => {
+    const code = strip(read(PORTAL_PAGE));
+    expect(code).not.toMatch(/type=['"]file['"]/);
+    expect(code).not.toContain('CV_MIME');
+    // Chỉ chặn API multipart THẬT. `ApplyFormData` là tên kiểu state của form —
+    // `\b` không khớp `ApplyFormData(` nên detector không tự đánh lừa bằng tên kiểu.
+    expect(code).not.toMatch(/new\s+FormData\b/);
+    expect(code).not.toMatch(/\bFormData\s*\(/);
+    expect(code).not.toContain('multipart');
+    expect(code).not.toMatch(/\bcv\s*:/);
+    expect(code).not.toMatch(/setCv|cvFile|cvMimeType|cvSizeBytes/);
+  });
 
-    it(`${label}: POST canonical path + idempotency key + consent, không còn legacy write`, () => {
+  it('app/(portal)/page.tsx POST canonical path + idempotency key + consent', () => {
+    const code = strip(read(PORTAL_PAGE));
+    expect(code).toContain(CANONICAL_FETCH);
+    expect(code).toContain("'idempotency-key'");
+    expect(code).toMatch(/consent:\s*true/);
+    // GET /api/jobs (list) vẫn được; POST tới /api/jobs hoặc /api/jobs/apply thì không.
+    expect(code).not.toMatch(/fetch\(\s*'\/api\/jobs'\s*,/);
+    expect(code).not.toContain('/api/jobs/apply');
+  });
+
+  it('/jobs và /job-board redirect vĩnh viễn về /, không giữ UI/query/apply riêng', () => {
+    for (const file of [LEGACY_JOBS_PAGE, LEGACY_JOB_BOARD_PAGE]) {
       const code = strip(read(file));
-      expect(code).toContain(CANONICAL_FETCH);
-      expect(code).toContain("'idempotency-key'");
-      expect(code).toMatch(/consent:\s*true/);
-      // GET /api/jobs (list) vẫn được; POST tới /api/jobs hoặc /api/jobs/apply thì không.
-      expect(code).not.toMatch(/fetch\(\s*'\/api\/jobs'\s*,/);
-      expect(code).not.toContain('/api/jobs/apply');
-    });
-  }
+      expect(code, rel(file)).toContain("from 'next/navigation'");
+      expect(code, rel(file)).toContain("permanentRedirect('/')");
+      expect(code, rel(file)).not.toContain('/api/jobs');
+      expect(code, rel(file)).not.toContain('getPrisma');
+      expect(code, rel(file)).not.toContain('submitPublicApplication');
+    }
+  });
 });
 
 describe('DEC-06/DEC-12 — adapter kín và không log identifier', () => {

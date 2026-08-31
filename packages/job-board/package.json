@@ -1,8 +1,0 @@
-{
-  "name": "@hrp/job-board",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Public job board (read-only, ISR, no auth) - HRP A-04",
-  "main": "src/index.ts",
-  "types": "src/index.ts"
-}

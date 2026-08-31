@@ -27,9 +27,6 @@
       ],
       "@hrp/payroll-core": [
         "packages/payroll-core/src/index.ts"
-      ],
-      "@hrp/job-board": [
-        "packages/job-board/src/index.ts"
       ]
     },
     "plugins": [
