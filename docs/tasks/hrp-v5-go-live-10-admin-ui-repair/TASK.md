@@ -17,7 +17,7 @@
 | ADR references | `G27 Warm Professionalism token set — app/globals.css khối @theme, chốt 15/08/2026` |
 | Current execution round | `2` |
 | Current audit round | `2` |
-| Next gate | `CLOSED` — còn đúng một bước OP của Owner ở `R-06`: mở ba trang admin xác nhận bằng mắt. Bốn điểm ngoài allowlist ở `R-04` và phần đơn điệu ở `R-05` thuộc contract giao diện kế tiếp |
+| Next gate | `DONE` — task đóng hoàn toàn ngày 2026-09-01. Cả hai round audit PASS và đã resolve, mã deploy `1af4eff` và xác nhận SỐNG trên bundle production, và bước OP `R-06` đã được Owner xác nhận bằng mắt là đạt. Bốn điểm ngoài allowlist ở `R-04` và phần đơn điệu ở `R-05` thuộc contract giao diện kế tiếp |
 | Updated | `2026-09-01 01:05 +07` |
 
 ## 1. Outcome
@@ -319,7 +319,7 @@ Mọi số trong `§4 Independent Evidence` của `AUDIT.md` **khớp khít** v�
 
 #### 9.7 Còn lại
 
-`R-06` — **Bản sửa đã SỐNG trên production**, xác nhận bằng `SC-11` và `SC-12`. Bước cuối không ai thay được vì repo không có lane DOM: Owner mở `/admin/applications`, `/admin/jobs`, `/admin/staffing` và xác nhận bốn thứ — panel chi tiết đục, header bảng có nền phân tầng, nút thêm mới là nút đặc chứ không phải chữ trơn, và pill đang được chọn sáng lên khác hẳn pill không chọn. Nếu ba trong bốn đúng mà một sai, đó là điểm còn lại thật, không còn là lỗi tầng token. Cấm chụp hoặc dán giá trị SĐT, CCCD thật vào bất kỳ artifact nào theo §4.3.
+`R-06` — **ĐÃ ĐÓNG 2026-09-01: Owner xác nhận bằng mắt là đạt.** Bản sửa đã SỐNG trên production, xác nhận bằng `SC-11` và `SC-12`. Bước cuối không ai thay được vì repo không có lane DOM: Owner mở `/admin/applications`, `/admin/jobs`, `/admin/staffing` và xác nhận bốn thứ — panel chi tiết đục, header bảng có nền phân tầng, nút thêm mới là nút đặc chứ không phải chữ trơn, và pill đang được chọn sáng lên khác hẳn pill không chọn. Owner trả lời "ok rồi" ⇒ chuỗi bằng chứng của task này giờ **đủ ba tầng**: gate tĩnh xanh, bundle production mang alias sống, và mắt người xác nhận pixel. Cấm chụp hoặc dán giá trị SĐT, CCCD thật vào bất kỳ artifact nào theo §4.3.
 
 `R-07` — Task này **ĐÓNG**. Bốn điểm ngoài allowlist ở `R-04` và phần "đơn điệu" ở `R-05` thuộc contract giao diện kế tiếp, viết sau khi Owner xem bản đang chạy.
 

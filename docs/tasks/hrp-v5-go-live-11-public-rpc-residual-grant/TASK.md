@@ -17,7 +17,7 @@
 | ADR references | MP-2 `DEC-08` DEFINER public RPC boundary; quy tắc least-privilege của M1-07B |
 | Current execution round | `2` |
 | Current audit round | `2` — đang mở. `AUDIT.md` của round 1 là 0 byte VÀ untracked nên mất hẳn; không chặn vì round 1 đã `REVISION_REQUIRED` |
-| Next gate | `OWNER_OP` — Owner dán `migration.sql` nguyên văn trong Neon Console SQL Editor trên branch `hrp-live`, rồi gửi lại khối `NOTICE TRUOC`, bảng bốn số, và khối `NOTICE SAU`. Xem waiver ở §9. Mã của Tier 2 **cố ý chưa commit** để `AC-10` còn đo được; commit và push sau khi Owner đóng bước OP |
+| Next gate | `OWNER_OP` — **gần đóng.** Owner đã áp `migration.sql` trên `hrp-live` ngày 2026-09-01: inventory trước khớp `PLN-01` từng trường, thu hồi đúng một record self-grant, bốn số sau khi áp ra chính xác `1 / 0 / 0 / 1`. `AC-05`, `AC-08`, `AC-09` đều PASS. Còn **duy nhất `AC-03`**: chạy lại `migration.sql` lần thứ hai trong cùng session Console để chứng minh idempotent |
 | Updated | `2026-09-01 02:05 +07` |
 
 ## 1. Outcome
@@ -201,6 +201,43 @@ Gate do Tier 1 chạy: `verify-audit.ps1` với cả hai tham số ⇒ `[OK] Ver
 | Vì sao | Bốn tiêu chí này đo hiệu ứng trên DB production. Harness chặn mọi lệnh nối DB production, với **cả ba tầng**, không riêng Tier 3. Không tầng nào có thể đạt chúng, nên giữ chúng là điều kiện chặn sẽ khoá task vĩnh viễn thay vì bảo vệ được gì |
 | Ai sở hữu | **Owner.** Dán `migration.sql` nguyên văn trong Neon Console SQL Editor, branch `hrp-live` — KHÔNG phải branch mặc định `snapshot-rls-off-dont-use` (RLS tắt) |
 | Đóng bằng cách nào | Owner gửi lại ba thứ: khối `NOTICE TRUOC` nguyên văn, bảng bốn số cuối cùng, và khối `NOTICE SAU`. Nếu bốn số ra đúng `total=1, residual_self_grant=0, inheritable=0, safe_admin=1` thì task `ACCEPTED` hoàn toàn. Nếu migration **dừng bằng exception** thì đó là `RQ-03` fail-closed hoạt động đúng, **không phải lỗi** — gửi khối `NOTICE TRUOC` về, contract sẽ được sửa theo hình dạng thật rồi mở round mới. Đường lùi ở `DEC-10` là một câu lệnh |
+
+#### Bước OP của Owner — ĐÃ THỰC HIỆN 2026-09-01, và `PLN-01` giờ ĐÃ ĐƯỢC XÁC NHẬN
+
+Owner dán `migration.sql` trong Neon Console trên `hrp-live` và gửi lại output. Đây là lần đầu tiên trong cả task có người thật đọc `pg_auth_members` trên production.
+
+**Inventory TRƯỚC** — khớp `PLN-01` **từng trường**, nên tiên đoán ở `PLN-05` không còn là tiên đoán:
+
+```
+Hrp_public_rpc: session = "neondb_owner"
+TRUOC | member=neondb_owner | grantor=cloud_admin   | admin_option=t | inherit_option=f | set_option=f
+TRUOC | member=neondb_owner | grantor=neondb_owner  | admin_option=f | inherit_option=t | set_option=f
+TRUOC | total=2 | residual_self_grant=1 | inheritable=1 | safe_admin=1
+```
+
+**Hành động** — thu hồi đúng một record, đúng record self-grant:
+
+```
+THU HOI | member=neondb_owner | grantor=neondb_owner
+Statement executed successfully
+```
+
+**Inventory SAU** — chỉ còn đường quản trị của Neon, đúng như thiết kế:
+
+```
+SAU | member=neondb_owner | grantor=cloud_admin | admin_option=t | inherit_option=f | set_option=f
+total=1 | residual_self_grant=0 | inheritable=0 | safe_admin=1
+```
+
+| AC | Trạng thái mới | Bằng chứng |
+|---|---|---|
+| `AC-05` | **PASS** | Bốn số ra **chính xác** `1 / 0 / 0 / 1`, và dòng còn lại đúng `grantor=cloud_admin, member=neondb_owner, ADMIN=t, INHERIT=f, SET=f` — đúng ngưỡng contract đặt |
+| `AC-08` | **PASS** | Output Console được dán nguyên văn, kèm dấu thời gian trên giao diện. Không chỉ nói "đã áp" |
+| `AC-09` | **PASS đầy đủ** | Tier 1 tự đo lại **sau** khi áp: mã tra cứu bịa `404`, `/api/jobs` `200` với `total: 5`, endpoint retired `410`, và **cả năm slug công khai** đều `200` ở cả `/api/jobs/{slug}` lẫn trang `/viec-lam/{slug}`. **Zero `500`** ⇒ thu hồi membership **không** làm chết hai hàm SECURITY DEFINER, đúng như dự đoán: hàm chạy dưới owner của nó chứ không dưới quyền người gọi |
+| `AC-03` | **CÒN MỞ** | Cần chạy `migration.sql` **lần thứ hai** trong cùng session Console. Kỳ vọng: không raise, không thu hồi gì, bốn số vẫn `1 / 0 / 0 / 1`. Đây là tiêu chí duy nhất còn lại của cả task |
+
+Ghi nhận một điều đáng giá hơn cả kết quả: **`RQ-03` fail-closed đã không phải nổ**, vì hình dạng thật đúng bằng hình dạng đã đặc tả. Nhưng nếu nó nổ thì đó vẫn là hành vi đúng — điểm đó giữ nguyên cho mọi lần áp sau.
+
 
 
 
