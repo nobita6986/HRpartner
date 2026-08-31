@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { CANONICAL_ORIGIN } from '@/src/shared/routing/portal-landing';
+import Link from 'next/link';
+// go-live-12 / RQ-09: hai modal đã ra khỏi file này để `/viec-lam/{code}` dùng lại đúng một bản.
+// `CANONICAL_ORIGIN` đi theo `SuccessModal` — trang này không còn tham chiếu nào.
+import { ApplyModal } from '@/src/domains/job-board/components/apply-modal';
+import { SuccessModal } from '@/src/domains/job-board/components/success-modal';
+// go-live-12 / RQ-10 / DEC-01: đường dẫn trang chi tiết lấy từ ĐÚNG một nguồn, không nội suy tay.
+import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
 
 // ─── API Types ───────────────────────────────────────────────────────────────
 
@@ -96,314 +102,6 @@ const JOB_TYPES = [
   { id: 'thoi_vu', label: 'Thời vụ' },
 ];
 
-// ─── Apply modal ─────────────────────────────────────────────────────────────
-
-interface ApplyFormData {
-  fullName: string;
-  phone: string;
-  cccdNumber: string;
-}
-
-// OPS-06A / RQ-07: landing page dùng ĐÚNG canonical apply contract
-// (slug-keyed + idempotency key + consent), không còn gọi legacy POST /api/jobs.
-const APPLY_ERRORS: Record<string, string> = {
-  DUPLICATE_APPLICATION: 'Bạn đã ứng tuyển vị trí này rồi. Hãy dùng mã tra cứu để xem trạng thái.',
-  JOB_NOT_AVAILABLE: 'Vị trí này hiện không còn nhận hồ sơ.',
-  CONSENT_REQUIRED: 'Vui lòng đồng ý cho phép xử lý thông tin.',
-  IDEMPOTENCY_PAYLOAD_MISMATCH: 'Thông tin đã thay đổi so với lần gửi trước, vui lòng gửi lại.',
-  IDEMPOTENCY_KEY_REQUIRED: 'Không thể gửi đơn, vui lòng tải lại trang.',
-  VALIDATION: 'Vui lòng kiểm tra lại thông tin đã nhập.',
-  INVALID_INPUT: 'Vui lòng kiểm tra lại thông tin đã nhập.',
-  RATE_LIMITED: 'Bạn gửi quá nhiều lần. Vui lòng thử lại sau ít phút.',
-  RATE_LIMIT_UNAVAILABLE: 'Hệ thống đang tạm thời quá tải. Vui lòng thử lại sau ít phút.',
-  PAYLOAD_TOO_LARGE: 'Dữ liệu gửi lên quá lớn. Vui lòng rút ngắn thông tin.',
-  APPLY_ENDPOINT_RETIRED: 'Không thể gửi đơn, vui lòng tải lại trang.',
-};
-
-function ApplyModal({
-  job,
-  onClose,
-  onSuccess,
-}: {
-  job: ReturnType<typeof enrichJob>;
-  onClose: () => void;
-  onSuccess: (code: string) => void;
-}) {
-  const [form, setForm] = useState<ApplyFormData>({ fullName: '', phone: '', cccdNumber: '' });
-  const [consent, setConsent] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  // Một idempotency key cho mỗi payload: retry y nguyên sẽ replay server-side,
-  // sửa thông tin rồi gửi lại được coi là đơn mới (MP-2 DEC-03/04).
-  const [idemKey, setIdemKey] = useState(() => crypto.randomUUID());
-  useEffect(() => {
-    setIdemKey(crypto.randomUUID());
-  }, [form.fullName, form.phone, form.cccdNumber, consent]);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    if (!form.fullName.trim() || !form.phone.trim()) {
-      setError('Vui lòng điền đầy đủ thông tin bắt buộc.');
-      return;
-    }
-    if (!consent) {
-      setError('Vui lòng đồng ý cho phép xử lý thông tin trước khi gửi.');
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/public/jobs/${encodeURIComponent(job.slug)}/applications`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'idempotency-key': idemKey },
-        body: JSON.stringify({
-          fullName: form.fullName.trim(),
-          phone: form.phone.trim(),
-          cccdNumber: form.cccdNumber.trim() || null,
-          consent: true,
-        }),
-      });
-      const data = await res.json().catch(() => ({} as Record<string, unknown>));
-      if (!res.ok) {
-        const code = typeof data?.error === 'string' ? data.error : '';
-        throw new Error(
-          APPLY_ERRORS[code] ?? (typeof data?.message === 'string' ? data.message : 'Có lỗi xảy ra'),
-        );
-      }
-      // Chỉ báo thành công sau khi server trả 201 + tracking code.
-      onSuccess(String(data.trackingCode ?? ''));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="w-full max-w-md rounded-xl p-6" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold" style={{ color: 'var(--color-on-surface)' }}>
-            Ứng tuyển: {job.title}
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-1 rounded hover:bg-black/10"
-            aria-label="Đóng"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-              Họ và tên <span className="text-error">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.fullName}
-              onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
-              className="w-full px-3 py-2.5 rounded-lg border"
-              style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}
-              placeholder="Nguyễn Văn A"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-              Số điện thoại <span className="text-error">*</span>
-            </label>
-            <input
-              type="tel"
-              value={form.phone}
-              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-              className="w-full px-3 py-2.5 rounded-lg border"
-              style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}
-              placeholder="0912345678"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-              Số CCCD
-            </label>
-            <input
-              type="text"
-              value={form.cccdNumber}
-              onChange={(e) => setForm((f) => ({ ...f, cccdNumber: e.target.value }))}
-              className="w-full px-3 py-2.5 rounded-lg border"
-              style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}
-              placeholder="123456789012"
-              maxLength={12}
-            />
-          </div>
-          <label className="flex items-start gap-2 text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
-              className="mt-1"
-            />
-            <span>Tôi đồng ý cho phép thu thập và xử lý thông tin cá nhân phục vụ mục đích tuyển dụng.</span>
-          </label>
-          {error && (
-            <p className="text-sm" role="alert" style={{ color: 'var(--color-error)' }}>{error}</p>
-          )}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-lg font-semibold transition-colors disabled:opacity-60"
-            style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
-          >
-            {loading ? 'Đang gửi...' : 'Gửi đơn ứng tuyển'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// ─── Success modal ────────────────────────────────────────────────────────────
-
-const TRACKING_URL = `${CANONICAL_ORIGIN}/track`;
-
-async function copyTextToClipboard(text: string): Promise<void> {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-
-  // Fallback cho WebView/trình duyệt cũ chưa hỗ trợ Clipboard API.
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.setAttribute('readonly', '');
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
-  document.body.appendChild(textarea);
-  textarea.select();
-  const copied = document.execCommand('copy');
-  document.body.removeChild(textarea);
-  if (!copied) throw new Error('Clipboard unavailable');
-}
-
-function SuccessModal({ code, onClose }: { code: string; onClose: () => void }) {
-  const [copied, setCopied] = useState<'code' | 'url' | null>(null);
-  const [copyError, setCopyError] = useState(false);
-
-  async function handleCopy(target: 'code' | 'url', value: string) {
-    try {
-      await copyTextToClipboard(value);
-      setCopied(target);
-      setCopyError(false);
-    } catch {
-      setCopied(null);
-      setCopyError(true);
-    }
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-    >
-      <div className="w-full max-w-sm rounded-xl p-6 text-center" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
-        <div
-          className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: 'var(--color-success-soft)' }}
-        >
-          <svg className="w-8 h-8" style={{ color: 'var(--color-success)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
-          Đơn ứng tuyển đã được gửi!
-        </h3>
-        <p className="text-sm mb-4" style={{ color: 'var(--color-on-surface-variant)' }}>
-          Vui lòng lưu lại mã này để tra cứu trạng thái hồ sơ. Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.
-        </p>
-
-        <div
-          className="mb-5 space-y-3 rounded-xl p-3 text-left"
-          style={{ backgroundColor: 'var(--color-surface-variant)', border: '1px solid var(--color-outline-variant)' }}
-        >
-          {code && (
-            <div>
-              <p className="mb-1 text-xs font-medium" style={{ color: 'var(--color-on-surface-variant)' }}>
-                Mã tra cứu
-              </p>
-              <div className="flex items-center gap-2">
-                <code className="min-w-0 flex-1 break-all text-sm font-semibold select-all" style={{ color: 'var(--color-on-surface)' }}>
-                  {code}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => handleCopy('code', code)}
-                  className="shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                  style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
-                  aria-label="Sao chép mã tra cứu"
-                >
-                  {copied === 'code' ? 'Đã sao chép' : 'Sao chép mã'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div>
-            <p className="mb-1 text-xs font-medium" style={{ color: 'var(--color-on-surface-variant)' }}>
-              Trang tra cứu
-            </p>
-            <div className="flex items-center gap-2">
-              <a
-                href="/track"
-                target="_blank"
-                rel="noreferrer"
-                className="min-w-0 flex-1 break-all text-sm underline underline-offset-2"
-                style={{ color: 'var(--color-primary)' }}
-              >
-                {TRACKING_URL}
-              </a>
-              <button
-                type="button"
-                onClick={() => handleCopy('url', TRACKING_URL)}
-                className="shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
-                aria-label="Sao chép đường dẫn tra cứu"
-              >
-                {copied === 'url' ? 'Đã sao chép' : 'Sao chép link'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <p className="min-h-5 text-xs" role="status" aria-live="polite" style={{ color: copyError ? 'var(--color-error)' : 'var(--color-success)' }}>
-          {copyError
-            ? 'Không thể tự động sao chép. Vui lòng nhấn giữ nội dung để sao chép.'
-            : copied === 'code'
-              ? 'Đã sao chép mã tra cứu.'
-              : copied === 'url'
-                ? 'Đã sao chép đường dẫn tra cứu.'
-                : ''}
-        </p>
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-2 px-6 py-2.5 rounded-lg font-semibold"
-          style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
-        >
-          Đóng
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ─── Job Card ─────────────────────────────────────────────────────────────────
 
 function JobCard({
@@ -416,6 +114,13 @@ function JobCard({
   isApplied: boolean;
 }) {
   const isFull = job.badgeType === 'full';
+  // go-live-12 / RQ-10 / DEC-03: card điều hướng tới trang chi tiết bằng LINK THẬT, không bằng
+  // `onClick` + `router.push`: giữ được middle-click, ctrl-click, "mở tab mới" và crawler đọc được.
+  // Tiêu đề là link có thể focus (đường dùng bàn phím), phần phủ `absolute inset-0` chỉ mở rộng
+  // vùng bấm bằng chuột nên bị ẩn khỏi cây trợ năng để không đọc trùng cùng một đích. Hai nút được
+  // nâng `relative z-10` lên trên phần phủ — chúng là SIBLING của phần phủ, không lồng trong nó,
+  // nên bấm nút không bao giờ chạm link, và không cần `stopPropagation` để chặn điều hướng.
+  const detailHref = publicJobDetailPath(job.slug);
 
   return (
     <div
@@ -424,6 +129,12 @@ function JobCard({
       <div
         className="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
         style={{ backgroundColor: 'var(--color-primary-container)' }}
+      />
+      <Link
+        href={detailHref}
+        aria-hidden="true"
+        tabIndex={-1}
+        className="absolute inset-0 z-0 rounded-xl"
       />
 
       <div className="flex items-start gap-4 pt-2">
@@ -438,7 +149,12 @@ function JobCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <h3 className="text-base font-bold" style={{ color: 'var(--color-on-surface)' }}>
-              {job.title}
+              <Link
+                href={detailHref}
+                className="relative z-10 rounded hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                {job.title}
+              </Link>
             </h3>
             {job.badge && (
               <span
@@ -485,7 +201,7 @@ function JobCard({
         <button
           onClick={() => onApply(job)}
           disabled={isApplied || isFull}
-          className="font-semibold px-6 py-2 rounded-lg transition-colors"
+          className="relative z-10 font-semibold px-6 py-2 rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
           style={
             isFull
               ? { backgroundColor: 'var(--color-surface-container)', color: 'var(--color-on-surface-variant)', cursor: 'not-allowed' }
@@ -498,7 +214,7 @@ function JobCard({
         </button>
         <button
           aria-label="Lưu việc"
-          className="w-9 h-9 rounded-full border border-outline-variant flex items-center justify-center transition-colors hover:border-error"
+          className="relative z-10 w-9 h-9 rounded-full border border-outline-variant flex items-center justify-center transition-colors hover:border-error focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
           style={{ color: 'var(--color-on-surface-variant)' }}
         >
           <span className="material-symbols-outlined text-[18px]">favorite</span>

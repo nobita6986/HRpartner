@@ -1,0 +1,187 @@
+/**
+ * page.tsx — go-live-12 / RQ-05, RQ-06, RQ-07, RQ-08, RQ-11 / DEC-01, DEC-02, DEC-06..DEC-11,
+ * DEC-13, DEC-14.
+ *
+ * Trang chi tiết việc làm công khai `/viec-lam/{code}`, với `{code}` là `PublicJobDto.slug`
+ * (= `project.code`), theo `DEC-01`.
+ *
+ * Server Component đọc DB qua ĐÚNG `withPublicDb` (`DEC-02`, `RQ-05`): principal `MKT`,
+ * transaction read-only, ba GUC đặt bên trong chính hàm đó. Trang KHÔNG mở transaction trần và
+ * KHÔNG đặt GUC lẻ — đó đúng là cách defect "bề mặt công khai trả 0 dòng" của go-live-04 phát
+ * sinh. Trang cũng không tự gọi API nội bộ của chính ứng dụng: thêm một chặng mạng, mất context
+ * request, và làm metadata phụ thuộc base URL runtime.
+ *
+ * `dynamic = 'force-dynamic'` (`DEC-11`): số chỗ trống đổi theo từng đơn nộp, bản cache sẽ khoe
+ * chỗ đã hết rồi người dùng nộp xong mới nhận lỗi đủ chỉ tiêu.
+ *
+ * `notFound()` cho 404 THẬT (`DEC-09`). Việc đã đủ chỉ tiêu vẫn mở `200` (`DEC-14`) — link đã chia
+ * sẻ ra ngoài không được biến thành 404 chỉ vì hết chỗ.
+ *
+ * Bề mặt dữ liệu (`RQ-06`, `DEC-06`, `DEC-07`): CHỈ các khóa của `PublicJobDetailDto`. Không mức
+ * lương, không tên/mã/logo khách hàng, không nhãn đơn vị tuyển dụng, không văn bản tự do của đơn
+ * tuyển dụng. `RQ-13` canh bằng test tĩnh đọc chính file này THÔ, không strip comment: kể cả chú
+ * thích cũng không được mang sáu chuỗi bị cấm. Vì thế cặp văn bản của metadata sinh ở
+ * `src/domains/job-board/public-detail.meta.ts` — lý do đầy đủ ở docblock module đó và HANDOFF §5.
+ *
+ * Nút Ứng tuyển (`RQ-07`, `DEC-13`) là đảo client duy nhất của trang, ở
+ * `src/domains/job-board/components/detail-apply-cta.tsx`. Nó dùng lại đúng `ApplyModal` đã tách,
+ * nên trang này không tự gọi mạng và không tự dựng form thứ hai.
+ */
+import { cache } from 'react';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { getPrisma } from '@/src/lib/db';
+import { withPublicDb } from '@/src/shared/auth/with-public-db';
+import { getPublicJobDetail } from '@/src/domains/job-board/public.service';
+import { DetailApplyCta } from '@/src/domains/job-board/components/detail-apply-cta';
+import { CANONICAL_ORIGIN } from '@/src/shared/routing/portal-landing';
+import {
+  JOB_TYPE_LABELS,
+  PUBLIC_JOB_NOT_FOUND_TITLE,
+  formatDeadlineDate,
+  publicJobDetailPath,
+  publicJobMetaText,
+} from '@/src/domains/job-board/public-detail.meta';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+type PageProps = { params: Promise<{ slug: string }> };
+
+/**
+ * `cache` của React gộp hai lần gọi trong CÙNG một request render (metadata và thân trang) thành
+ * một truy vấn. Đây không phải cache giữa các request nên `force-dynamic` giữ nguyên hiệu lực.
+ */
+const loadJob = cache(async (slug: string) =>
+  withPublicDb(getPrisma(), (tx) => getPublicJobDetail(tx, slug)),
+);
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const job = await loadJob(slug);
+  if (!job) return { title: PUBLIC_JOB_NOT_FOUND_TITLE };
+
+  const text = publicJobMetaText(job);
+  return {
+    ...text,
+    openGraph: { ...text },
+    alternates: { canonical: `${CANONICAL_ORIGIN}${publicJobDetailPath(job.slug)}` },
+  };
+}
+
+/** Chip đúng lớp, đúng token và đúng khoảng cách của chip trên card ở `/` (`DEC-08`). */
+function Chip({ icon, label }: { icon: string; label: string }) {
+  return (
+    <span
+      className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+      style={{ color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container)' }}
+    >
+      <span className="material-symbols-outlined text-[14px]" aria-hidden="true">{icon}</span>
+      {label}
+    </span>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>{label}</dt>
+      <dd className="text-sm font-semibold" style={{ color: 'var(--color-on-surface)' }}>{value}</dd>
+    </div>
+  );
+}
+
+export default async function PublicJobDetailPage({ params }: PageProps) {
+  const { slug } = await params;
+  const job = await loadJob(slug);
+  if (!job) notFound();
+
+  const isFull = job.availableSlots === 0;
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <Link
+        href="/"
+        className="inline-flex items-center gap-1 text-sm font-medium rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+        style={{ color: 'var(--color-primary)' }}
+      >
+        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
+        Quay lại danh sách việc làm
+      </Link>
+
+      <article
+        className="mt-4 rounded-xl border p-5 sm:p-6"
+        style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-on-surface)' }}>{job.title}</h1>
+          <span
+            className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+            style={
+              isFull
+                ? { color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container-high)' }
+                : { color: 'var(--color-primary)', backgroundColor: 'var(--color-primary-soft)' }
+            }
+          >
+            {job.statusLabel}
+          </span>
+        </div>
+        <p className="mt-1 text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
+          Mã việc làm: <span className="font-semibold">{job.jobCode}</span>
+        </p>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Chip icon="location_on" label={job.location?.trim() || 'Địa điểm đang cập nhật'} />
+          <Chip icon="schedule" label={job.shift?.trim() || 'Thời gian đang cập nhật'} />
+          <Chip icon="work" label={JOB_TYPE_LABELS[job.jobType]} />
+          <Chip icon="factory" label={job.industry} />
+        </div>
+
+        <dl className="mt-5 grid gap-3 sm:grid-cols-3">
+          <Fact
+            label="Chỗ trống"
+            value={isFull ? job.statusLabel : `Còn ${job.availableSlots} chỗ trống`}
+          />
+          <Fact label="Chỉ tiêu đã tuyển" value={`${job.totalSlotsFilled}/${job.totalSlotsNeeded}`} />
+          {job.deadline && <Fact label="Hạn nhận hồ sơ" value={formatDeadlineDate(job.deadline)} />}
+        </dl>
+
+        <div className="mt-6">
+          <DetailApplyCta job={{ slug: job.slug, title: job.title }} isFull={isFull} />
+        </div>
+
+        <section className="mt-6">
+          <h2 className="text-base font-semibold" style={{ color: 'var(--color-on-surface)' }}>
+            Vị trí tuyển dụng ({job.positions.length})
+          </h2>
+          <ul className="mt-3 flex flex-col gap-3">
+            {job.positions.map((position, index) => (
+              <li
+                key={`${position.positionCode}-${index}`}
+                className="rounded-lg border p-3"
+                style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface-container-low)' }}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold" style={{ color: 'var(--color-on-surface)' }}>
+                    {position.positionTitle}
+                  </h3>
+                  <span
+                    className="text-xs font-semibold whitespace-nowrap"
+                    style={{ color: position.available > 0 ? 'var(--color-primary)' : 'var(--color-on-surface-variant)' }}
+                  >
+                    {position.available > 0 ? `Còn ${position.available} chỗ trống` : 'Đã đủ chỉ tiêu'}
+                  </span>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Chip icon="schedule" label={position.shift?.trim() || 'Thời gian đang cập nhật'} />
+                  <Chip icon="location_on" label={position.workLocation?.trim() || 'Địa điểm đang cập nhật'} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </article>
+    </div>
+  );
+}

@@ -10,6 +10,12 @@
  *     không còn file nào tham chiếu; tracking route dùng `enforceRateLimits`.
  *   - RQ-07/DEC-09: hai UI apply không còn surface CV và POST đúng canonical contract
  *     (idempotency key + consent).
+ *
+ * go-live-12 / RQ-09 / STEP-02: `ApplyModal` và `SuccessModal` đã tách sang
+ * `src/domains/job-board/components/`. Ba `it` của khối `RQ-07/DEC-11` nay đọc chính file chứa mã
+ * thay vì `app/(portal)/page.tsx`, và các khẳng định phủ định quét cả bốn bề mặt apply
+ * (`APPLY_UI_FILES`, gồm cả đảo client của trang chi tiết) để việc dời mã không để lại kẽ hở ở vị
+ * trí mới. Ngưỡng không đổi một chữ.
  *   - DEC-11: `/` là UI marketplace duy nhất; `/jobs` và `/job-board` chỉ redirect.
  *   - DEC-06: adapter Upstash tắt analytics/protection. DEC-12/PLN-04: không `console.` trong
  *     guard/identity NÊN CẢ trong service apply; canonical route chỉ còn đúng một marker lỗi
@@ -29,6 +35,17 @@ const LOGOUT = join(API_DIR, 'auth/logout/route.ts');
 const LEGACY_JOBS_PAGE = join(ROOT, 'app/(jobs)/jobs/page.tsx');
 const LEGACY_JOB_BOARD_PAGE = join(ROOT, 'app/job-board/page.tsx');
 const PORTAL_PAGE = join(ROOT, 'app/(portal)/page.tsx');
+// go-live-12 / RQ-09: hai modal apply/success đã rời `app/(portal)/page.tsx` sang thư mục dùng
+// chung để trang chi tiết `/viec-lam/{code}` dùng lại đúng một bản. Detector đi theo mã, không
+// nới lỏng: mọi khẳng định cũ trên `PORTAL_PAGE` giờ chạy trên chính file chứa mã, và các khẳng
+// định phủ định chạy trên HỢP của cả ba file để không mở kẽ hở ở vị trí mới.
+const APPLY_MODAL = join(ROOT, 'src/domains/job-board/components/apply-modal.tsx');
+const SUCCESS_MODAL = join(ROOT, 'src/domains/job-board/components/success-modal.tsx');
+// go-live-12 / RQ-07: trang chi tiết `/viec-lam/{code}` mở form qua đảo client này. Nó là bề mặt
+// apply THỨ TƯ, nên phải nằm trong hợp `APPLY_UI_FILES`; để ngoài là chừa đúng một chỗ cho CV hay
+// endpoint legacy quay lại mà không detector nào thấy.
+const DETAIL_APPLY_CTA = join(ROOT, 'src/domains/job-board/components/detail-apply-cta.tsx');
+const APPLY_UI_FILES = [PORTAL_PAGE, APPLY_MODAL, SUCCESS_MODAL, DETAIL_APPLY_CTA];
 const TRACK_PAGE = join(ROOT, 'app/(jobs)/track/page.tsx');
 const ADMIN_NAV = join(ROOT, 'src/shared/ui/role-guard/role-guard-layout.tsx');
 const PUBLIC_JOB_SERVICE = join(ROOT, 'src/domains/job-board/public.service.ts');
@@ -170,27 +187,32 @@ describe('RQ-06/07/DEC-09 — canonical apply: trần body, media gate, CV tắt
 describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect', () => {
   const CANONICAL_FETCH = '/api/public/jobs/${encodeURIComponent(job.slug)}/applications';
 
-  it('app/(portal)/page.tsx không còn surface CV nào', () => {
-    const code = strip(read(PORTAL_PAGE));
-    expect(code).not.toMatch(/type=['"]file['"]/);
-    expect(code).not.toContain('CV_MIME');
-    // Chỉ chặn API multipart THẬT. `ApplyFormData` là tên kiểu state của form —
-    // `\b` không khớp `ApplyFormData(` nên detector không tự đánh lừa bằng tên kiểu.
-    expect(code).not.toMatch(/new\s+FormData\b/);
-    expect(code).not.toMatch(/\bFormData\s*\(/);
-    expect(code).not.toContain('multipart');
-    expect(code).not.toMatch(/\bcv\s*:/);
-    expect(code).not.toMatch(/setCv|cvFile|cvMimeType|cvSizeBytes/);
+  it('UI apply (trang + hai modal đã tách + đảo client trang chi tiết) không còn surface CV nào', () => {
+    for (const file of APPLY_UI_FILES) {
+      const code = strip(read(file));
+      expect(code, rel(file)).not.toMatch(/type=['"]file['"]/);
+      expect(code, rel(file)).not.toContain('CV_MIME');
+      // Chỉ chặn API multipart THẬT. `ApplyFormData` là tên kiểu state của form —
+      // `\b` không khớp `ApplyFormData(` nên detector không tự đánh lừa bằng tên kiểu.
+      expect(code, rel(file)).not.toMatch(/new\s+FormData\b/);
+      expect(code, rel(file)).not.toMatch(/\bFormData\s*\(/);
+      expect(code, rel(file)).not.toContain('multipart');
+      expect(code, rel(file)).not.toMatch(/\bcv\s*:/);
+      expect(code, rel(file)).not.toMatch(/setCv|cvFile|cvMimeType|cvSizeBytes/);
+    }
   });
 
-  it('app/(portal)/page.tsx POST canonical path + idempotency key + consent', () => {
-    const code = strip(read(PORTAL_PAGE));
+  it('UI apply POST canonical path + idempotency key + consent', () => {
+    const code = strip(read(APPLY_MODAL));
     expect(code).toContain(CANONICAL_FETCH);
     expect(code).toContain("'idempotency-key'");
     expect(code).toMatch(/consent:\s*true/);
     // GET /api/jobs (list) vẫn được; POST tới /api/jobs hoặc /api/jobs/apply thì không.
-    expect(code).not.toMatch(/fetch\(\s*'\/api\/jobs'\s*,/);
-    expect(code).not.toContain('/api/jobs/apply');
+    for (const file of APPLY_UI_FILES) {
+      const ui = strip(read(file));
+      expect(ui, rel(file)).not.toMatch(/fetch\(\s*'\/api\/jobs'\s*,/);
+      expect(ui, rel(file)).not.toContain('/api/jobs/apply');
+    }
   });
 
   it('/jobs và /job-board redirect vĩnh viễn về /, không giữ UI/query/apply riêng', () => {
@@ -205,12 +227,14 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
   });
 
   it('success modal cho sao chép riêng mã và URL tra cứu, không đưa mã vào URL', () => {
-    const code = strip(read(PORTAL_PAGE));
+    const code = strip(read(SUCCESS_MODAL));
     expect(code).toContain("const TRACKING_URL = `${CANONICAL_ORIGIN}/track`");
     expect(code).toContain("handleCopy('code', code)");
     expect(code).toContain("handleCopy('url', TRACKING_URL)");
     expect(code).toContain('aria-live="polite"');
-    expect(code).not.toMatch(/\/track\?(?:code|trackingCode)=/);
+    for (const file of APPLY_UI_FILES) {
+      expect(strip(read(file)), rel(file)).not.toMatch(/\/track\?(?:code|trackingCode)=/);
+    }
   });
 
   it('admin sidebar có Đơn ứng tuyển với đúng các role được queue cho phép', () => {
@@ -249,8 +273,8 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
     expect(code).toContain("backgroundColor: 'var(--color-primary)'");
     expect(code).toContain("{loading ? 'Đang tra...' : 'Tra cứu'}");
     expect(code).toContain('{result.fullName}');
-    expect(code).toContain('{result.phone}');
-    expect(code).toContain("{result.cccdNumber || 'Không cung cấp'}");
+    expect(code).toContain("{result.phoneMasked || 'Không cung cấp'}");
+    expect(code).toContain("{result.cccdMasked || 'Không cung cấp'}");
   });
 });
 

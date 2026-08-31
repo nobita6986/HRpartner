@@ -21,6 +21,36 @@ export interface PublicJobListResult {
   total: number;
 }
 
+/**
+ * Một vị trí tuyển dụng trên trang chi tiết (go-live-12 / RQ-01). Đúng bảy khóa, mọi khóa có
+ * nguồn thật trong `staffing_order_slots`; `available` là số chỗ còn trống của CHÍNH vị trí đó.
+ */
+export interface PublicJobPositionDto {
+  positionCode: string;
+  positionTitle: string;
+  shift: string | null;
+  workLocation: string | null;
+  slotsNeeded: number;
+  slotsFilled: number;
+  available: number;
+}
+
+/**
+ * DTO của trang chi tiết (go-live-12 / RQ-01, DEC-05). `extends PublicJobDto` là cách bắt chính
+ * compiler canh điều kiện "chứa MỌI khóa của `PublicJobDto` với đúng kiểu đang có": xóa một khóa
+ * hay đổi kiểu nó ở trên thì `npm run typecheck` đỏ, không cần test nào canh hộ.
+ *
+ * Additive theo `DEC-05`: `getPublicJobProjection` và hình dạng `{ job }` của `/api/jobs/{slug}`
+ * KHÔNG đổi một khóa nào (RQ-04).
+ */
+export interface PublicJobDetailDto extends PublicJobDto {
+  jobCode: string;
+  siteAddress: string | null;
+  totalSlotsNeeded: number;
+  totalSlotsFilled: number;
+  positions: PublicJobPositionDto[];
+}
+
 const VISIBLE_ORDER_STATUSES = ['OPEN', 'CLOSING_SOON'];
 
 type ShiftType = NonNullable<PublicJobDto['shiftType']>;
@@ -83,28 +113,42 @@ function isExpired(date: Date | null, now: Date): boolean {
   return Boolean(date && date < now);
 }
 
-function toDto(project: {
-  id: string;
-  code: string;
-  name: string;
-  siteAddress: string | null;
-  staffingOrders: Array<{
-    status: string;
-    title: string;
-    description: string | null;
-    deadlineDate: Date | null;
-    slots: Array<{ positionCode: string; positionTitle: string; slotsNeeded: number; slotsFilled: number; shiftStart: string | null; shiftEnd: string | null; validTo: Date | null; workLocation: string | null }>;
-  }>;
-}, now: Date): PublicJobDto | null {
-  const slots = project.staffingOrders
-    .filter((order) => VISIBLE_ORDER_STATUSES.includes(order.status) && !isExpired(order.deadlineDate, now))
-    .flatMap((order) => order.slots.filter((slot) => !isExpired(slot.validTo, now)));
-  const availableSlots = slots.reduce((sum, slot) => sum + Math.max(0, slot.slotsNeeded - slot.slotsFilled), 0);
-  if (availableSlots <= 0 || slots.length === 0) return null;
+/** Hình dạng dòng mà `publicSelect` trả về. Đặt tên để `toDto` và `toDetailDto` dùng đúng một kiểu. */
+type PublicSlotRow = { positionCode: string; positionTitle: string; slotsNeeded: number; slotsFilled: number; shiftStart: string | null; shiftEnd: string | null; validTo: Date | null; workLocation: string | null };
+type PublicOrderRow = { status: string; title: string; description: string | null; deadlineDate: Date | null; slots: PublicSlotRow[] };
+type PublicProjectRow = { id: string; code: string; name: string; siteAddress: string | null; staffingOrders: PublicOrderRow[] };
 
-  const first = slots[0];
-  const shift = first.shiftStart && first.shiftEnd ? `${first.shiftStart}-${first.shiftEnd}` : first.shiftStart;
-  const searchableText = [
+// RQ-03 / AC-03 / RISK-07: ĐÚNG MỘT định nghĩa cho mỗi vị từ lọc, gọi từ cả đường danh sách và
+// đường chi tiết. Hai biểu thức song song — dù hôm nay giống nhau từng ký tự — sẽ lệch ở lần sửa
+// đầu tiên, và khi đó số chỗ trống trên card khác số trên trang chi tiết trong im lặng.
+function isOrderVisible(order: Pick<PublicOrderRow, 'status' | 'deadlineDate'>, now: Date): boolean {
+  return VISIBLE_ORDER_STATUSES.includes(order.status) && !isExpired(order.deadlineDate, now);
+}
+
+function isSlotLive(slot: Pick<PublicSlotRow, 'validTo'>, now: Date): boolean {
+  return !isExpired(slot.validTo, now);
+}
+
+/** Slot còn hiệu lực của một dự án theo đúng hai vị từ trên. Nguồn duy nhất cho cả hai đường. */
+function visibleSlots(orders: PublicOrderRow[], now: Date): PublicSlotRow[] {
+  return orders
+    .filter((order) => isOrderVisible(order, now))
+    .flatMap((order) => order.slots.filter((slot) => isSlotLive(slot, now)));
+}
+
+/** Số chỗ còn trống của một slot. Công thức duy nhất, dùng cho cả tổng của card và `available`. */
+function slotAvailable(slot: Pick<PublicSlotRow, 'slotsNeeded' | 'slotsFilled'>): number {
+  return Math.max(0, slot.slotsNeeded - slot.slotsFilled);
+}
+
+/** Nhãn ca làm của một slot; giữ đúng biểu thức `toDto` đang dùng, kể cả nhánh chỉ có giờ vào. */
+function slotShiftLabel(slot: Pick<PublicSlotRow, 'shiftStart' | 'shiftEnd'>): string | null {
+  return slot.shiftStart && slot.shiftEnd ? `${slot.shiftStart}-${slot.shiftEnd}` : slot.shiftStart;
+}
+
+/** Text để suy `industry` và `jobType`. Gộp mọi trường text đã select; KHÔNG in ra bề mặt nào. */
+function searchableTextOf(project: PublicProjectRow): string {
+  return [
     project.name,
     ...project.staffingOrders.flatMap((order) => [
       order.title,
@@ -112,10 +156,25 @@ function toDto(project: {
       ...order.slots.flatMap((slot) => [slot.positionCode, slot.positionTitle]),
     ]),
   ].join(' ');
-  const deadline = project.staffingOrders
+}
+
+/** Hạn nhận hồ sơ sớm nhất trong các đơn của dự án. */
+function earliestDeadline(orders: PublicOrderRow[]): Date | null {
+  return orders
     .map((order) => order.deadlineDate)
     .filter((date): date is Date => Boolean(date))
     .sort((a, b) => a.getTime() - b.getTime())[0] ?? null;
+}
+
+function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
+  const slots = visibleSlots(project.staffingOrders, now);
+  const availableSlots = slots.reduce((sum, slot) => sum + slotAvailable(slot), 0);
+  if (availableSlots <= 0 || slots.length === 0) return null;
+
+  const first = slots[0];
+  const shift = slotShiftLabel(first);
+  const searchableText = searchableTextOf(project);
+  const deadline = earliestDeadline(project.staffingOrders);
 
   return {
     id: project.id,
@@ -130,6 +189,54 @@ function toDto(project: {
     availableSlots,
     deadline: deadline?.toISOString() ?? null,
     statusLabel: 'Đang tuyển',
+  };
+}
+
+/**
+ * Projection của trang chi tiết (go-live-12 / RQ-01, RQ-03, DEC-14).
+ *
+ * KHÔNG thừa hưởng cửa chặn `availableSlots <= 0` của `toDto`: một việc đã đủ chỉ tiêu vẫn phải mở
+ * được `200` vì link đã chia sẻ ra ngoài không được biến thành 404, và nút Ứng tuyển sẽ ở trạng thái
+ * vô hiệu. Chỉ khi không còn slot nào còn hiệu lực thì mới trả null để trang `404`. Cửa của `toDto`
+ * đúng cho danh sách — list không nên khoe việc đã đủ — và sai cho trang chi tiết.
+ */
+function toDetailDto(project: PublicProjectRow, now: Date): PublicJobDetailDto | null {
+  const slots = visibleSlots(project.staffingOrders, now);
+  if (slots.length === 0) return null;
+
+  const positions: PublicJobPositionDto[] = slots.map((slot) => ({
+    positionCode: slot.positionCode,
+    positionTitle: slot.positionTitle,
+    shift: slotShiftLabel(slot),
+    workLocation: slot.workLocation ?? project.siteAddress,
+    slotsNeeded: slot.slotsNeeded,
+    slotsFilled: slot.slotsFilled,
+    available: slotAvailable(slot),
+  }));
+  const availableSlots = positions.reduce((sum, position) => sum + position.available, 0);
+
+  const first = slots[0];
+  const searchableText = searchableTextOf(project);
+  const deadline = earliestDeadline(project.staffingOrders);
+
+  return {
+    id: project.id,
+    slug: project.code,
+    jobCode: project.code,
+    title: project.name,
+    position: first.positionTitle,
+    shift: slotShiftLabel(first),
+    location: first.workLocation ?? project.siteAddress,
+    siteAddress: project.siteAddress,
+    industry: inferIndustry(searchableText, null),
+    shiftType: classifyShift(slots),
+    jobType: classifyJobType(searchableText, slots),
+    availableSlots,
+    totalSlotsNeeded: positions.reduce((sum, position) => sum + position.slotsNeeded, 0),
+    totalSlotsFilled: positions.reduce((sum, position) => sum + position.slotsFilled, 0),
+    positions,
+    deadline: deadline?.toISOString() ?? null,
+    statusLabel: availableSlots > 0 ? 'Đang tuyển' : 'Đã đủ chỉ tiêu',
   };
 }
 
@@ -209,4 +316,14 @@ export async function listPublicJobProjection(
 export async function getPublicJobProjection(tx: Prisma.TransactionClient, slug: string): Promise<PublicJobDto | null> {
   const project = await tx.project.findFirst({ where: { OR: [{ code: slug }, { id: slug }], status: 'ACTIVE', isPublic: true }, select: publicSelect });
   return project ? toDto(project, new Date()) : null;
+}
+
+/**
+ * go-live-12 / RQ-01, RQ-02: dùng ĐÚNG hằng `publicSelect` đang có và ĐÚNG ba điều kiện `where`
+ * của `getPublicJobProjection`. Không `select` thứ hai, không thêm khóa quan hệ nào — đó là điều
+ * kiện để query engine không phải materialize bảng bị RLS che (xem comment của `publicSelect`).
+ */
+export async function getPublicJobDetail(tx: Prisma.TransactionClient, slug: string): Promise<PublicJobDetailDto | null> {
+  const project = await tx.project.findFirst({ where: { OR: [{ code: slug }, { id: slug }], status: 'ACTIVE', isPublic: true }, select: publicSelect });
+  return project ? toDetailDto(project, new Date()) : null;
 }
