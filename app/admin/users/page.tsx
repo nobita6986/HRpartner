@@ -112,7 +112,7 @@ export default function UsersPage() {
             </thead>
             <tbody>
               {users.map((u, i) => (
-                <tr key={u.id} className="transition-colors hover:opacity-90" style={{ borderBottom: i < users.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}>
+                <tr key={u.id} className="transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]" style={{ borderBottom: i < users.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}>
                   <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">{u.id}</td>
                   <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">{u.name ?? '—'}</td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{u.phone ?? '—'}</td>

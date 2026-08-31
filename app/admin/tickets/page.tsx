@@ -178,7 +178,7 @@ export default function TicketsPage() {
               {tickets.map((t, i) => (
                 <tr
                   key={t.id}
-                  className="transition-colors hover:opacity-90 cursor-pointer"
+                  className="transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)] cursor-pointer"
                   style={{ borderBottom: i < tickets.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}
                 >
                   <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">{t.id.slice(0, 8)}</td>

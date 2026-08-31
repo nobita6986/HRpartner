@@ -189,7 +189,7 @@ export default function ClientsPage() {
             </thead>
             <tbody>
               {clients.map((c, i) => (
-                <tr key={c.id} className="transition-colors hover:opacity-90" style={{ borderBottom: i < clients.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}>
+                <tr key={c.id} className="transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]" style={{ borderBottom: i < clients.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}>
                   <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">{c.code}</td>
                   <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">{c.name}</td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{c.taxCode ?? '—'}</td>

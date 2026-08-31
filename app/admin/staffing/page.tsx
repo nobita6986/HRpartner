@@ -341,9 +341,6 @@ export default function StaffingPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">Staffing Orders</h1>
-          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">
-            Module M3 — slice 4A (moment 02:10–03:10)
-          </p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
@@ -402,7 +399,7 @@ export default function StaffingPage() {
               {orders.map((o, i) => (
                 <tr
                   key={o.id}
-                  className="transition-colors hover:opacity-90"
+                  className="transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]"
                   style={{ borderBottom: i < orders.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}
                 >
                   <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">{o.code}</td>

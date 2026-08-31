@@ -200,7 +200,7 @@ export default function VendorsPage() {
             </thead>
             <tbody>
               {vendors.map((v, i) => (
-                <tr key={v.id} className="transition-colors hover:opacity-90" style={{ borderBottom: i < vendors.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}>
+                <tr key={v.id} className="transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]" style={{ borderBottom: i < vendors.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}>
                   <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">{v.code}</td>
                   <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">{v.name}</td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{v.taxCode ?? '—'}</td>

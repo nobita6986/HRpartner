@@ -211,7 +211,7 @@ export default function AdminApplicationsPage() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} onClick={() => openDetail(r.id)} className='cursor-pointer border-t hover:bg-black/5' style={{ borderColor: 'var(--outline)' }}>
+                <tr key={r.id} onClick={() => openDetail(r.id)} className='cursor-pointer border-t transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]' style={{ borderColor: 'var(--outline)' }}>
                   <td className='px-3 py-2'>{r.fullName}</td>
                   <td className='px-3 py-2'>{r.phone}</td>
                   <td className='px-3 py-2'>{r.projectName ?? '—'}</td>
@@ -402,10 +402,10 @@ function DetailPanel({ detail, role, onClose, onChanged }: {
 
   return (
     <div className='fixed inset-0 z-50 flex justify-end' style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className='w-full max-w-md h-full overflow-y-auto p-6 flex flex-col gap-4' style={{ backgroundColor: 'var(--surface)' }}>
+      <div className='w-full max-w-md h-full overflow-y-auto p-6 flex flex-col gap-4 shadow-2xl' style={{ backgroundColor: 'var(--surface)' }}>
         <div className='flex items-center justify-between'>
           <h2 className='text-lg font-semibold' style={{ color: 'var(--on-surface)' }}>{detail.fullName}</h2>
-          <button onClick={onClose} aria-label='Đóng' className='p-1 rounded hover:bg-black/10' style={{ color: 'var(--on-surface)' }}>✕</button>
+          <button onClick={onClose} aria-label='Đóng' className='flex h-11 w-11 shrink-0 items-center justify-center rounded transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]' style={{ color: 'var(--on-surface)' }}>✕</button>
         </div>
 
         <dl className='text-sm grid grid-cols-3 gap-y-2' style={{ color: 'var(--on-surface-variant)' }}>

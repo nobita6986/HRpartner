@@ -379,7 +379,7 @@ export default function AdminJobsPage() {
                     const knownFree = freeSlots?.get(job.id);
                     const blockPublish = !job.isPublic && knownFree === 0;
                     return (
-                    <tr key={job.id} style={{ borderTop: idx > 0 ? '1px solid var(--outline)' : 'none' }}>
+                    <tr key={job.id} className='transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]' style={{ borderTop: idx > 0 ? '1px solid var(--outline)' : 'none' }}>
                       <td className='px-4 py-3' style={{ color: 'var(--on-surface)' }}>{job.title}</td>
                       <td className='px-4 py-3 font-mono text-sm' style={{ color: 'var(--on-surface-variant)' }}>{job.projectCode}</td>
                       <td
@@ -437,7 +437,7 @@ export default function AdminJobsPage() {
                   <tr><td colSpan={6} className='px-4 py-8 text-center text-sm' style={{ color: 'var(--on-surface-variant)' }}>Chua co don ung tuyen nao.</td></tr>
                 ) : (
                   submissions.map((sub, idx) => (
-                    <tr key={sub.id} style={{ borderTop: idx > 0 ? '1px solid var(--outline)' : 'none' }}>
+                    <tr key={sub.id} className='transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]' style={{ borderTop: idx > 0 ? '1px solid var(--outline)' : 'none' }}>
                       <td className='px-4 py-3 font-mono text-sm' style={{ color: 'var(--on-surface)' }}>{sub.code ?? sub.id}</td>
                       <td className='px-4 py-3' style={{ color: 'var(--on-surface)' }}>{sub.fullName}</td>
                       <td className='px-4 py-3' style={{ color: 'var(--on-surface-variant)' }}>{sub.phone}</td>
@@ -478,7 +478,7 @@ export default function AdminJobsPage() {
                   <tr><td colSpan={5} className='px-4 py-8 text-center text-sm' style={{ color: 'var(--on-surface-variant)' }}>Chua co claim nao.</td></tr>
                 ) : (
                   claims.map((claim, idx) => (
-                    <tr key={claim.id} style={{ borderTop: idx > 0 ? '1px solid var(--outline)' : 'none' }}>
+                    <tr key={claim.id} className='transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]' style={{ borderTop: idx > 0 ? '1px solid var(--outline)' : 'none' }}>
                       <td className='px-4 py-3' style={{ color: 'var(--on-surface)' }}>{claim.workerName ?? claim.workerId}</td>
                       <td className='px-4 py-3' style={{ color: 'var(--on-surface-variant)' }}>{claim.claimType}</td>
                       <td className='px-4 py-3 text-center'>

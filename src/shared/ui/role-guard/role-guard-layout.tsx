@@ -165,16 +165,20 @@ export function RoleGuardLayout({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors',
+                    'nav-item-lift group flex min-h-10 items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium',
+                    'transition-[background-color,color,box-shadow,transform] duration-150 ease-out',
+                    'hover:[transform:translateY(-1px)]',
                     active
-                      ? 'bg-orange-50 text-orange-800'
-                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900',
+                      ? 'bg-[var(--color-primary-container)] text-[var(--color-on-primary-container)] shadow-[inset_3px_0_0_var(--color-primary)]'
+                      : 'text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container)]',
                   )}
                 >
                   <item.icon
                     className={cn(
                       'h-4 w-4',
-                      active ? 'text-orange-700' : 'text-slate-500 group-hover:text-slate-700',
+                      active
+                        ? 'text-[var(--color-on-primary-container)]'
+                        : 'text-[var(--color-on-surface-variant)] group-hover:text-[var(--color-on-surface)]',
                     )}
                   />
                   <span className="flex-1 truncate">{item.label}</span>
@@ -279,7 +283,7 @@ function UserFooter({
           type="button"
           onClick={onLogout}
           aria-label="Đăng xuất"
-          className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[var(--color-on-surface-variant)] transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)] hover:text-[var(--color-on-surface)]"
         >
           <LogOut className="h-4 w-4" />
         </button>

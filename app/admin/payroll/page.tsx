@@ -193,7 +193,7 @@ export default function PayrollPage() {
               {configs.map((c, i) => (
                 <tr
                   key={c.id}
-                  className="transition-colors hover:opacity-90"
+                  className="transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]"
                   style={{ borderBottom: i < configs.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}
                 >
                   <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">{c.key}</td>

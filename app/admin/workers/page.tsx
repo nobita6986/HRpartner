@@ -236,7 +236,7 @@ export default function WorkersPage() {
             </thead>
             <tbody>
               {workers.map((w, i) => (
-                <tr key={w.id} className="transition-colors hover:opacity-90"
+                <tr key={w.id} className="transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]"
                   style={{ borderBottom: i < workers.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}>
                   <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">{w.userId}</td>
                   <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">{w.fullName}</td>
