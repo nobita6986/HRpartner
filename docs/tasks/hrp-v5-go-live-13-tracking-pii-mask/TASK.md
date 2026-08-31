@@ -8,7 +8,7 @@
 | Work type | `CODE` — đổi projection công khai, thêm một module mask dùng chung, sửa ba comment ghi quyết định cũ |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` — do Tier 1 quyết ngày 31/08 sau khi tự chạy gate và tự đo lại ba điểm rủi ro cao nhất; xem §9. Hai dòng `Status`/`Current audit round` từng bị một tier khác ghi trước đó, đã ghi thành `F-01` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — independent context |
@@ -16,9 +16,9 @@
 | Modules | M13 Marketplace public surface — trang tra cứu hồ sơ, projection tra cứu công khai |
 | ADR references | MP-2 `RQ-04` tra cứu bằng mã bearer; go-live-04 `DEC-08` đường đọc vô danh; `Owner decision 2026-08-31 (b)` thay thế `Owner decision 2026-08-31 (a)` |
 | Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `verify-task ⇒ /code ⇒ /audit ⇒ /resolve ⇒ ACCEPTED` |
-| Updated | `2026-08-31 16:10 +07` |
+| Current audit round | `1` |
+| Next gate | `DONE` — không còn round nào. Việc commit mã của round này bị chặn có điều kiện sau `hrp-v5-go-live-12-public-job-detail-page`, lý do đo được ở §9 mục `R-08` |
+| Updated | `2026-08-31 20:30 +07` |
 
 ## 1. Outcome
 
@@ -204,15 +204,71 @@ Tier 2 DỪNG và báo, không tự quyết, nếu gặp bất kỳ điều nào
 
 ## 9. Planner Resolution
 
-Chưa có. Task vừa mở.
+**Audit round 1 — verdict `PASS` được CHẤP NHẬN. Task `ACCEPTED` ngày 31/08/2026. Spec giữ `v1.0`: mọi điều dưới đây là resolution append-only, không phải sửa contract.**
 
-Hai điều thuộc trách nhiệm Tier 1 cần ghi ngay, để không ai phải suy đoán về sau:
+### 9.1 Ba điểm Tier 1 tự đo lại (không lấy lời của HANDOFF hay AUDIT)
 
-1. Hành vi hiện tại KHÔNG phải defect. Nó là quyết định (a) của Owner, ghi rõ trong ba comment tại `EV-07`. Task này tồn tại vì Owner đổi ý trong cùng ngày, và quyết định (b) thắng. Ai đọc lịch sử Git sau này đừng kết luận có ai đó đã làm sai.
-2. Follow-up bắt buộc, không được để rơi: che ngay trong `hrp_public_tracking_profile` bằng một migration forward-only, để phòng ngự nhiều lớp theo `RISK-06`. Tier 1 mở task riêng sau khi trần migration được Owner mở lại; `DEC-16` là lý do nó không nằm trong round này.
+Chọn đúng ba chỗ mà `AUDIT.md` để trống hoặc chỉ ghi lời văn, theo hạn mức spot-check của Living Handoff §6.
+
+| ID | Lệnh Tier 1 tự chạy | Kết quả thật | Kết luận |
+|---|---|---|---|
+| `SC-01` | `npm run test:unit` (lane canonical, đọc exit code ngay, không pipe) | exit `0`; ` Test Files  97 passed (97)`; `      Tests  1464 passed (1464)`; Duration 21.90s | Khớp từng số với HANDOFF (`+16` so với 1448). `AUDIT.md` chỉ ghi lời văn cho chỗ này |
+| `SC-02` | Đọc `src/domains/applications/application.service.ts` | `:67-68` DTO chỉ còn `phoneMasked: string \| null` và `cccdMasked: string \| null`; `:233-234` mapper gọi `maskPhone(row.phone)` / `maskCccd(row.cccd_number)`; `:214-215` kiểu hàng SQL thô chỉ tồn tại trong lòng service | Che xảy ra **ở server, trước khi dựng DTO**. Không còn khóa nguyên bản nào trong DTO công khai |
+| `SC-03` | Đọc `app/(jobs)/track/page.tsx` và `app/api/public/applications/[trackingCode]/route.ts` | Trang: `:27-28` `TrackingDto` cục bộ đã đổi sang hai khóa đã che; `:121` và `:125` render `result.phoneMasked \|\| 'Không cung cấp'` / `result.cccdMasked \|\| 'Không cung cấp'`. Route: **zero match** `phone\|cccd\|select` | Trang không còn nhận chuỗi gốc nên devtools không có gì để mở ngược. Route chỉ chuyển tiếp DTO. Đúng yêu cầu gốc của Owner |
+
+Kết luận: yêu cầu "che an toàn, tránh dùng tool trình duyệt mở ngược" **đã đạt ở tầng đúng** — dữ liệu gốc không vào thân JSON, chứ không phải bị che bằng CSS hay bằng ký tự thay thế phía client.
+
+### 9.2 Findings
+
+| ID | Mức | Nội dung | Disposition |
+|---|---|---|---|
+| `F-01` | P1 quy trình | Một tier khác đã ghi thẳng vào `TASK.md`: `Status` `READY_FOR_EXECUTION`→`ACCEPTED` và `Current audit round` `0`→`1` (đo bằng `git diff`: đúng 2 insertion / 2 deletion, không kèm resolution nào). Đây là vi phạm Iron Rule 3 và Living Handoff §1 — `Status` và resolution là độc quyền Tier 1. **Đây là lần thứ hai**, sau cùng một vi phạm ở `hrp-v5-hotfix-02-public-jobs-required-relation` | `ACCEPT_FIX` — Tier 1 giành lại quyền sở hữu: nội dung `Status` hiện tại do Tier 1 viết và nêu lý do. Không revert về `READY_FOR_EXECUTION` vì trạng thái cuối đó **đúng** sau khi Tier 1 tự đo; cái sai là **bàn tay ghi**, và nó được ghi lại ở đây thay vì bị xoá dấu |
+| `F-02` | P1 báo cáo | `AUDIT.md` ghi `None` cho **mọi** finding, trong khi `HANDOFF.md` §5 nêu tám mục cần Planner chốt (`DEV-01..DEV-05`, `BLK-01..BLK-03`), năm trong số đó kết bằng một câu hỏi trực tiếp cho Tier 1. Audit không nhắc tới bảy trong tám mục | `ACCEPT_FIX` — KHÔNG mở audit round 2, vì tám mục đó là **quyết định của Tier 1**, Tier 3 không sinh ra được câu trả lời nào cho chúng; bắt audit lại là đốt một round lấy zero thông tin. Tier 1 chốt cả tám ở §9.3 |
+| `F-03` | P2 báo cáo | `AC-06` và `AC-14` bị dán nhãn `PASS` trong khi trạng thái đúng là **waiver chờ Tier 1**: `AC-06` có nửa runtime không đo được, `AC-14` có bán kính file rộng hơn allowlist. `AUDIT.md` viết "Chấp thuận `BLK-01`" và "theo `BLK-02`" — Tier 3 không có quyền chấp thuận limitation | `ACCEPT_FIX` — nhãn được sửa tại §9.3: `AC-06` là `PASS có waiver` với đủ bốn trường, `AC-14` là `PASS theo cách đọc quy thuộc từng file` do Tier 1 chốt. Waiver không phải test PASS, và câu ấy phải do Tier 1 viết |
+| `F-04` | P2 báo cáo | §4 Independent Evidence chỉ có ba dòng, cột evidence path ghi `Console Output` (không lệnh đầy đủ, không output) — **đúng cùng một khiếm khuyết** đã ghi thành `F-01` của hotfix-02; và hai dòng test dùng `npx vitest run`, tức lane **không canonical**: lane đó đọc `DATABASE_URL` từ `.env` (production) và từng cho kết quả sai lệch | `ACCEPT_FIX` — chấp nhận verdict vì `SC-01` đã bù đúng chỗ thiếu bằng lane canonical. Yêu cầu bắt buộc cho các audit sau: đo bằng `npm run test:unit`, dán exit code thật, không ghi `Console Output` làm evidence path |
+| `F-05` | P3 | `C-09` tự dẫn chính mình: "Script xác nhận file `AUDIT` chạy `PASS`" được kể như một mandatory check của chính bản audit đó | `ACCEPT_FIX` — gate là điều kiện nộp bài, không phải bằng chứng kỹ thuật. Không đòi sửa lại file |
+| `F-07` | **P1 hạ tầng — quan trọng hơn mọi finding còn lại** | `AUDIT.md` của task này **đã bị cắt về 0 byte** sau khi được ghi. Chuỗi thời gian đo được: `20:10` file có `5457` byte; `20:14` Tier 1 đọc **toàn văn 86 dòng**; `20:15` gate `verify-audit.ps1` chạy trên file thật ⇒ `[OK] Verdict: PASS`, exit `0`; `20:15:16` file bị cắt về `0` byte; ba lần probe lúc `20:27` đều cho `0` byte với mtime đứng yên. Cùng hiện tượng đã xảy ra với `AUDIT.md` của `hrp-v5-go-live-12-public-job-detail-page` lúc `20:05:38` (file đó **chưa bao giờ** có nội dung). Đây là lần thứ ba trong tuần cùng một chữ lỗi `Value cannot be null. Parameter name: input` do file rỗng, sau `hrp-v5-m1-09a-current-field-projection` ngày 28/08 | `NEED_USER_DECISION` về nguyên nhân hạ tầng, nhưng **KHÔNG chặn** `ACCEPTED` của task này. Lý do: resolution này KHÔNG dựa vào trạng thái hiện tại của file trên đĩa mà dựa vào (a) bản gate chạy `PASS` exit `0` lúc `20:15` trên file thật, (b) toàn văn audit Tier 1 đã đọc và đã trích ở `F-02..F-05`, (c) ba phép đo độc lập ở §9.1. Việc phải làm ngay, không phải audit lại: Tier 3 **ghi lại** `AUDIT.md` cho cả task 12 và task 13, và sau khi ghi phải tự đọc **số byte** của file rồi mới báo hoàn thành — báo "đã hoàn tất audit" khi file `0` byte đã xảy ra ba lần |
+
+### 9.3 Chốt tám mục HANDOFF §5 nêu — mỗi mục một quyết định, không mục nào để mở
+
+| Mục | Quyết định của Tier 1 |
+|---|---|
+| `DEV-01` | **Chấp nhận, và đây là phát hiện có giá trị nhất của round.** `EV-04` do tôi viết là **sai sự thật**: ở repo này `tsc` KHÔNG phải hàng rào cho việc đổi tên khóa của một DTO công khai, vì `app/(jobs)/track/page.tsx` tự khai `interface TrackingDto` riêng rồi ép kiểu từ `res.json()` (kiểu `any`), nên không có liên kết cấu trúc nào để trình biên dịch bắt; hai file test lại dùng `toMatchObject`/`Record<string, unknown>`. Tier 2 tìm consumer bằng cách **chạy test**, đúng cách. `EV-04` bị **phủ nhận bằng resolution này** — ai đọc lại contract phải đọc kèm dòng này, và không được dùng `EV-04` làm cơ sở cho task sau. Đưa vào bài học chung: cùng họ với "gate xanh không phải pass" và "mock che đúng lớp mà chỉ thật mới kiểm được" |
+| `DEV-02` | **Giữ `string \| null` theo `RQ-03`; `DEC-02` là lỗi soạn thảo của tôi.** Luật phân xử đã dùng ở task 12 áp lại nguyên vẹn: chuỗi hợp đồng chạy `RQ → STEP → AC/DEC`, nên khi một `DEC` kể lại kiểu khác với `RQ` thì `RQ` thắng. Lý do đo được đứng về phía `RQ-03`: `maskPhone('-- ()')` trả `null` thật và có test cho nó, nên khai `string` sẽ buộc phải nói dối kiểu hoặc dùng non-null assertion. **Không** sửa chính sách điện thoại trắng. Nhánh dự phòng `\|\| 'Không cung cấp'` là đúng `RQ-06` |
+| `DEV-03` | **Chấp nhận cách làm; mở follow-up, không mở round.** Consumer thứ ba (`marketplace-inventory.static.test.ts`) là thật và `tsc` không bao giờ bắt được vì nó **so khớp chuỗi mã nguồn**. Tier 2 đổi đúng hai literal, đếm khẳng định `79 → 79`, và **cố ý không** thêm khẳng định phủ định mới — đúng, vì làm vậy là tự mở scope test ngoài contract. Câu hỏi "có thêm khẳng định phủ định không": **có**, nhưng ở task riêng cùng lượt với `F-06` bên dưới, không nhét vào round này |
+| `DEV-04` | **Chấp nhận, không cần làm gì thêm.** Hai biến thể RED là **nhiều** bằng chứng hơn `STEP-04` đòi, không ít hơn; RED-B (khóa mới + giá trị gốc vẫn đỏ) là bằng chứng trực tiếp cho `RISK-02`. Đây là mẫu đáng nhân bản cho các task đổi tên khóa sau |
+| `DEV-05` | **Chấp nhận cách xử lý.** Lần `typecheck` đầu đỏ vì test mới thiếu `retryAfterSec`, đã sửa theo đúng quy ước file test cùng loại rồi đo lại exit `0`. Khai báo minh bạch một lần đỏ do chính mình gây ra là hành vi đúng, không phải khiếm khuyết. Nó cũng chứng minh lại rằng "vitest xanh" một mình không thay được cổng `typecheck` |
+| `BLK-01` | **Waiver, đủ bốn trường, ghi ở §9.4. Đồng thời phải nói thẳng: `AC-06` là AC bất khả đo do tôi viết, không phải môi trường thiếu.** Cửa thoát tôi viết trong `AC-06` là "nếu `npm run dev` không lên được" — nhưng dev server **đã lên** (`✓ Ready in 3s`, `GET /track` = `200`, `BYTES=22017`, 0 lỗi biên dịch), nên cửa đó không áp dụng. Cái bất khả là chính ngưỡng: tôi đòi "tra một **mã tổng hợp** rồi xem giá trị đã che", mà mã tổng hợp thì không có hàng trong DB nên chỉ trả `404` — **không bao giờ** hiện được giá trị đã che. Muốn thấy giá trị đã che thì phải dùng mã thật của người thật, mà `RQ-12` và `AC-12` cấm tuyệt đối. Tier 2 từ chối tra và từ chối seed là **đúng**; lý do thứ hai của họ cũng đúng và độc lập: `.env.local` không khai `DATABASE_URL` nên URL hiệu lực đến từ `.env`, tức production, và một lần tra là một lần nối vào production |
+| `BLK-02` | **Chốt cách đọc `AC-14`: đo theo quy thuộc từng file, đúng như Tier 2 đã ghi.** Tier 1 tự đo lại: `git log origin/main..HEAD` rỗng, `STAGED_COUNT=0`, và toàn bộ thay đổi của round này nằm trọn trong allowlist. Phần ngoài allowlist (`app/(portal)/page.tsx`, `src/domains/job-board/**`, phần lớn diff của `marketplace-inventory.static.test.ts`) là vòng go-live-12 **chưa commit** — không phải rác của luồng khác và **không được dọn**, vì dọn là xoá vòng đang được audit. **Không** yêu cầu commit go-live-12 trước để làm sạch phép đo: xem `R-08` |
+| `BLK-03` | **Xác nhận, và trả lời câu hỏi cuối: chưa nhận lại việc.** HEAD di chuyển vì commit của tôi (`835f893`) chỉ chạm hai file tài liệu, giao với tám file của Tier 2 bằng **0**, nên không ảnh hưởng round này. Về go-live-12: Tier 2 đọc đúng — HANDOFF của nó đo theo `v1.0` còn contract giờ là `v1.1`. Nhưng `v1.1` **chỉ sửa câu chữ ba AC cho khớp lại `RQ` và khớp lại năng lực đo của máy**, và §10 của task đó đã ghi rằng bằng chứng round 1 vẫn hợp lệ ⇒ **không mở execution round mới**, cổng của nó là Tier 3 audit theo `v1.1`. Tier 2 không phải làm lại gì cho go-live-12 |
+
+### 9.4 Waiver cho nửa runtime của `AC-06` — bốn trường bắt buộc
+
+Waiver **không phải** test PASS. Ghi đủ theo Living Handoff §6:
+
+1. **Người quyết định:** Tier 1 — Planner, 31/08/2026. Tiền lệ cùng loại: MP-3C (Founder waive bằng chứng trình duyệt) và go-live-12 `DEC-16`.
+2. **Bằng chứng còn thiếu:** một lần tra cứu thật trên môi trường có DB hợp lệ để **mắt người** thấy chuỗi đã che trên trang. Không ai được kể lại rằng bước này đã chạy PASS.
+3. **Residual risk:** đã chứng minh tới tầng thân phản hồi và tầng mã trang, **chưa** chứng minh tới pixel. Cụ thể: `AC-09` đo đúng thân phản hồi mà trang nhận (RED chỉ ra chuỗi số gốc có trong thân, rồi GREEN), diff trang chỉ gồm kiểu và hai chỗ render, `SC-03` xác nhận hai chỗ render đọc khóa đã che. Khoảng trống còn lại đúng bằng "mắt người xem pixel".
+4. **Follow-up:** bước OP của Owner ở `R-07`. **KHÔNG chặn `ACCEPTED`**, nhưng phải ký trước khi công bố đường tra cứu ra ngoài.
+
+Trả lời câu hỏi của `BLK-01` "ai xác nhận bằng mắt": **Owner, sau khi deploy, bằng một mã tra cứu thật của chính mình** — không phải Tier 3 trên branch test. Lý do: dựng dữ liệu thật trên branch test đòi seed hồ sơ có điện thoại/CCCD, tức tạo PII để đi kiểm tra việc che PII, đúng cái `RISK-08` cấm.
+
+
+### 9.5 Ghi để không ai phải suy đoán về sau
+
+| ID | Nội dung |
+|---|---|
+| `R-01` | Hành vi cũ KHÔNG phải defect. Nó là quyết định (a) của Owner, ghi rõ trong ba comment tại `EV-07`. Task này tồn tại vì Owner đổi ý trong cùng ngày, và quyết định (b) thắng. Ai đọc lịch sử Git sau này đừng kết luận có ai đó đã làm sai |
+| `R-02` | Follow-up bắt buộc, không được để rơi: che ngay trong `hrp_public_tracking_profile` bằng một migration forward-only, để phòng ngự nhiều lớp theo `RISK-06`. Tier 1 mở task riêng sau khi trần migration được Owner mở lại; `DEC-16` là lý do nó không nằm trong round này. `Q-02` ở §8 đóng vào đúng task đó |
+| `R-03` | `Q-01` (có che họ tên không) vẫn **mở và không chặn**. `DEC-07` giữ nguyên văn theo đúng phạm vi Owner nêu. Chỉ đổi khi Owner quyết |
+| `R-07` | **Bước OP của Owner** — không chặn `ACCEPTED`, nhưng phải ký trước khi công bố đường tra cứu: sau khi deploy, mở `/track`, tra bằng một mã tra cứu thật của chính Owner, rồi xác nhận hai điều bằng mắt — điện thoại hiện dạng giữ 3 ký tự đầu và 3 ký tự cuối, CCCD hiện dạng chỉ giữ 4 số cuối; và mở devtools tab Network xem thân phản hồi để chắc rằng **không** có khóa `phone` hay `cccdNumber` nguyên bản. Nếu thân phản hồi có chuỗi gốc thì mở hotfix, không sửa AC cho khớp |
+| `R-08` | **Chặn commit có điều kiện, và đây là phép đo chứ không phải lo xa.** `src/domains/applications/marketplace-inventory.static.test.ts` mang thay đổi của **cả hai** task: `git diff --stat` cho `43 insertion / 19 deletion`, phần lớn là refactor go-live-12 (thêm `APPLY_MODAL`, `SUCCESS_MODAL`, `DETAIL_APPLY_CTA`, hợp `APPLY_UI_FILES`), cộng hai literal đã che của round này. Hệ quả: commit riêng go-live-13 mà **bỏ** file đó sẽ để HEAD ở trạng thái trang render khóa đã che trong khi test tĩnh vẫn đòi literal cũ ⇒ **lane canonical đỏ ngay tại HEAD**; còn kéo cả file vào thì commit của go-live-13 mang theo mã của một task đang được audit. Vì vậy: **không commit round này cho tới khi go-live-12 có audit thật và được resolve**, rồi commit theo thứ tự 12 trước, 13 sau. Đây là quyết định của Tier 1, không phải khiếm khuyết của Tier 2 |
+| `F-06` | Follow-up mở cùng lượt với `R-02`: thêm khẳng định phủ định chống hồi quy vào `marketplace-inventory.static.test.ts` cho hai literal cũ (`DEV-03`), và soát các consumer khác đọc DTO công khai bằng cách so khớp chuỗi mã nguồn — đó là lớp mà `tsc` mù theo đúng `DEV-01` |
+
 
 ## 10. Revision Log
 
 | Version | Ngày | Thay đổi |
 |---|---|---|
 | v1.0 | 2026-08-31 | Mở task. Nguồn: yêu cầu của Owner chiều 31/08 về `/track`. Evidence do Tier 1 tự đọc bốn file thật cộng bốn lượt grep tại `0248948`; xác nhận bề mặt rò rỉ công khai là đúng một dòng |
+| v1.0 | 2026-08-31 | **Không bump spec** — resolution không phải contract change. Ghi Planner Resolution round 1: chấp nhận verdict `PASS` sau ba phép đo độc lập của Tier 1, chốt tám mục `DEV-01..DEV-05`/`BLK-01..BLK-03`, waiver bốn trường cho nửa runtime của `AC-06`, và sáu finding `F-01..F-06`. `Status` `ACCEPTED`. Hai chỗ contract bị resolution **phủ nhận** và không được viện dẫn nữa: `EV-04` (sai sự thật — `tsc` không bắt được đổi tên khóa DTO ở repo này) và kiểu trong `DEC-02` (`RQ-03` thắng, giữ `string \| null`). Không mở round nào |
