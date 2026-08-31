@@ -11,9 +11,13 @@ export const runtime = 'nodejs';
 
 type RouteParams = { params: Promise<{ trackingCode: string }> };
 
-// Public tracking (MP-2 RQ-04 + owner decision 2026-08-31): the 120-bit tracking
-// code is a bearer secret. Its holder may re-read the submitted name/phone/CCCD
-// for reconciliation, but no normalized/internal review fields. Unknown code →
+// Public tracking (MP-2 RQ-04 + Owner decision (b) of 2026-08-31, which SUPERSEDES
+// decision (a) of the same day — go-live-13, RQ-11/DEC-15): the 120-bit tracking
+// code is a bearer secret. Its holder sees the submitted full name plus the
+// PARTIALLY MASKED phone and CCCD (`phoneMasked`, `cccdMasked`) — never the raw
+// values. Masking happens inside `getPublicTracking` (DEC-01), so the originals are
+// never part of this response body; this route must not add any key, header or
+// attribute carrying them. No normalized/internal review fields. Unknown code →
 // generic 404 with no row-existence signal.
 //
 // OPS-06A: limiter phân tán DUAL BUCKET (IP 20/60s + tracking-code HMAC 10/60s) thay

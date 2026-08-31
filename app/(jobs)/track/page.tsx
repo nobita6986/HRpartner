@@ -1,11 +1,16 @@
 'use client';
 
-// MP-2 STEP-05 (RQ-04/RQ-07): applicant self-service tracking. Looks up a safe
-// status projection by tracking code via GET /api/public/applications/:code.
-// Owner decision 2026-08-31: the holder of the high-entropy bearer code may
-// re-read name/phone/CCCD submitted with that application for reconciliation.
-// Unknown code → generic "not found" (no existence signal); 429 → rate-limit
-// notice. The code is entered by the applicant and is NOT put in the URL.
+// MP-2 STEP-05 (RQ-04/RQ-07) + go-live-13 (RQ-11/DEC-15): applicant self-service
+// tracking. Looks up a safe status projection by tracking code via
+// GET /api/public/applications/:code.
+// Owner decision (b) of 2026-08-31 SUPERSEDES decision (a) of the same day: the
+// phone and the CCCD are partially masked ON THE SERVER (phone keeps 3 leading +
+// 3 trailing characters, CCCD keeps only the last 4), so the raw values are never
+// part of the HTTP response and cannot be recovered with browser devtools. This
+// page renders the masked strings exactly as received; it never receives the
+// originals, and it must never try to reconstruct them. Full name stays verbatim
+// (DEC-07). Unknown code → generic "not found" (no existence signal); 429 →
+// rate-limit notice. The code is entered by the applicant and is NOT put in the URL.
 
 import { useState } from 'react';
 
@@ -19,8 +24,8 @@ interface TrackingDto {
   jobCode: string | null;
   positionTitle: string | null;
   fullName: string;
-  phone: string;
-  cccdNumber: string | null;
+  phoneMasked: string | null;
+  cccdMasked: string | null;
 }
 
 const STATUS_TONE: Record<string, string> = {
@@ -113,11 +118,11 @@ export default function TrackPage() {
                 </div>
                 <div>
                   <dt style={{ color: 'var(--color-on-surface-variant)' }}>Số điện thoại</dt>
-                  <dd className='mt-0.5 font-semibold' style={{ color: 'var(--color-on-surface)' }}>{result.phone}</dd>
+                  <dd className='mt-0.5 font-semibold' style={{ color: 'var(--color-on-surface)' }}>{result.phoneMasked || 'Không cung cấp'}</dd>
                 </div>
                 <div className='sm:col-span-2'>
                   <dt style={{ color: 'var(--color-on-surface-variant)' }}>Số CCCD</dt>
-                  <dd className='mt-0.5 font-semibold' style={{ color: 'var(--color-on-surface)' }}>{result.cccdNumber || 'Không cung cấp'}</dd>
+                  <dd className='mt-0.5 font-semibold' style={{ color: 'var(--color-on-surface)' }}>{result.cccdMasked || 'Không cung cấp'}</dd>
                 </div>
               </dl>
             </section>

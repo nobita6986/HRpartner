@@ -392,12 +392,12 @@ describe('RQ-04 — tracking dual bucket + 404 generic', () => {
     expect(res.headers.get('cache-control')).toBe('no-store');
     const json = (await res.json()) as { application: Record<string, unknown> };
     expect(Object.keys(json.application).sort()).toEqual([
-      'cccdNumber',
+      'cccdMasked',
       'fullName',
       'jobCode',
       'jobTitle',
       'nextStep',
-      'phone',
+      'phoneMasked',
       'positionTitle',
       'status',
       'statusLabel',
@@ -406,8 +406,8 @@ describe('RQ-04 — tracking dual bucket + 404 generic', () => {
     ]);
     expect(json.application).toMatchObject({
       fullName: 'Nguyễn Văn Kiểm Thử',
-      phone: '0909123456',
-      cccdNumber: '012345678901',
+      phoneMasked: '090****456',
+      cccdMasked: '********8901',
     });
     expect(JSON.stringify(json)).not.toContain(PII_CANARY);
   });

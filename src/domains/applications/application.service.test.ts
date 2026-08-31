@@ -118,8 +118,8 @@ describe('getPublicTracking', () => {
     expect(dto!.nextStep).toBeTruthy();
     expect(dto).toMatchObject({
       fullName: 'Nguyễn Văn A',
-      phone: '0909123456',
-      cccdNumber: '012345678901',
+      phoneMasked: '090****456',
+      cccdMasked: '********8901',
     });
     expect(db.$queryRawUnsafe.mock.calls[0][0]).toContain('hrp_public_tracking_profile');
     // Only the three owner-approved identity fields are added; internal fields stay out.

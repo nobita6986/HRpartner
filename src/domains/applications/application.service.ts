@@ -21,6 +21,7 @@ import {
   CvValidationError,
   type CvMetaInput,
 } from './apply-helpers';
+import { maskCccd, maskPhone } from '@/src/shared/privacy/mask';
 
 export type DbClient = PrismaClient | Prisma.TransactionClient;
 
@@ -46,8 +47,12 @@ export interface PublicApplyResult {
 
 /**
  * Tracking projection for the holder of the 120-bit bearer tracking code.
- * Owner decision 2026-08-31: echo the three identity fields submitted by the
- * applicant for visual reconciliation; internal/normalized fields stay omitted.
+ * Owner decision (b) of 2026-08-31 SUPERSEDES decision (a) of the same day
+ * (go-live-13, RQ-11/DEC-15): the phone and the CCCD leave this process PARTIALLY
+ * MASKED as `phoneMasked` / `cccdMasked`, so the raw values are never part of the
+ * HTTP response and cannot be recovered with browser devtools. Masking happens
+ * here, at the DTO boundary (DEC-01) — not in the route, not in the client. Full
+ * name stays verbatim (DEC-07); internal/normalized fields stay omitted.
  */
 export interface PublicTrackingDto {
   trackingCode: string;
@@ -59,8 +64,8 @@ export interface PublicTrackingDto {
   jobCode: string | null;
   positionTitle: string | null;
   fullName: string;
-  phone: string;
-  cccdNumber: string | null;
+  phoneMasked: string | null;
+  cccdMasked: string | null;
 }
 
 export class ApplicationServiceError extends Error {
@@ -225,8 +230,8 @@ export async function getPublicTracking(
     jobCode: row.job_code,
     positionTitle: row.position_title,
     fullName: row.full_name,
-    phone: row.phone,
-    cccdNumber: row.cccd_number,
+    phoneMasked: maskPhone(row.phone),
+    cccdMasked: maskCccd(row.cccd_number),
   };
 }
 
