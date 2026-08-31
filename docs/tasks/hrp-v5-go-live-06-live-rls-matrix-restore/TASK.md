@@ -7,11 +7,11 @@
 | Task slug | `hrp-v5-go-live-06-live-rls-matrix-restore` |
 | Lane | V5 go-live surface hardening |
 | Work type | DB posture restore — một migration forward mới cộng probe evidence. KHÔNG sửa app code |
-| Spec version | v1.1 |
-| Status | READY_FOR_EXECUTION — Execution Round 2: tiếp nhận Planner preflight, hoàn thiện HANDOFF để audit lane test; chưa ghi `hrp-live` |
-| Current execution round | 2 |
-| Current audit round | 0 |
-| Next gate | `/code hrp-v5-go-live-06-live-rls-matrix-restore` Round 2 → Tier 3 audit lane test; chỉ sau audit PASS mới mở STEP-07..09 |
+| Spec version | v1.2 |
+| Status | READY_FOR_AUDIT — Execution Round 4 đã hoàn tất `STEP-07..09` trên `hrp-live` theo allowlist; chờ Tier 3 audit LIVE evidence |
+| Current execution round | 4 |
+| Current audit round | 2 |
+| Next gate | `/audit hrp-v5-go-live-06-live-rls-matrix-restore` Round 3 — kiểm độc lập snapshot, migration state, GREEN matrix và schema diff |
 | Priority | P0 — 15 bảng DENY-ALL và 3 bảng ticket KHÔNG được bảo vệ trên DB đứng sau www.hrpartner.vn |
 | Baseline | `776a3c1` |
 | Depends on | `hrp-v5-go-live-03-admin-surface-truth` đóng, `hrp-v5-go-live-04-public-read-rls-closure` đóng |
@@ -193,9 +193,17 @@ Tier 2 chạy STEP-01 tới STEP-06 và STEP-10 trên `hrp_mp2_test`. STEP-07 t�
 - `FUP-03` và `FUP-04` được ghi backlog, không sửa trong task này. Không thay đổi nội dung `m14`.
 - Round 2 chỉ yêu cầu Tier 2 cập nhật HANDOFF/runbook theo v1.1, chạy lại verifier/gates cần thiết nếu có chỉnh probe, rồi bàn giao Tier 3 audit lane test. `DEC-08` vẫn chặn mọi ghi live trước audit PASS.
 
+### Audit Round 2 `PASS` → mở và hoàn tất LIVE lane
+
+- Chấp nhận verdict `PASS` của `AUDIT.md` round 2 tại commit `22c51df`; điều kiện `DEC-08` để mở `STEP-07..09` đã được thoả. `BLK-02` của Execution Round 3 được đóng bằng resolution này; round 3 chỉ là preflight bị chặn bởi contract cũ và không có thao tác DB.
+- Giữ nguyên uỷ quyền Owner đã ghi ở §0 và `DEC-15`: chỉ được deploy đúng hai migration pending `20260829093000_mp2_public_rpc_schema_usage` và `20260830214139_m14_rls_matrix_repair`; xuất hiện migration thứ ba thì dừng.
+- Execution Round 4 đã chạy đúng runbook: tạo snapshot không expiry trước khi ghi, kiểm lại tập pending, deploy hai migration theo đúng thứ tự, rồi chạy owner/writer probe và schema diff. Evidence không chứa connection string, token, password hay PII được ghi ở HANDOFF §9.
+- Chưa `ACCEPT` task tại đây. Tier 3 phải audit độc lập LIVE evidence của `AC-07..AC-12`, đặc biệt ngoại lệ schema diff liên quan legacy wrapper quanh `hrp_worker_visible_for`, trước khi Planner đóng task.
+
 ## 10. Revision Log
 
 | Version | Date | Change |
 |---|---|---|
 | v1.0 | 2026-08-30 | Contract khởi tạo. Root cause đã xác định trọn: 6 migration thời s1 và p2 không có hiệu lực trên `hrp-live` (`EV-04`), và `m1_07b` ngày 27/08 bật `ENABLE` cộng `FORCE` cho 29 bảng chính là thứ biến chỗ thiếu policy thành DENY-ALL (`EV-06`), nên 15 bảng vỡ từ 27/08 chứ không phải từ giữa tháng 8. Ghi rõ bẫy `EV-07`: cách sửa hiển nhiên là chạy lại 6 migration cũ, và nó sẽ `CREATE OR REPLACE` hai hàm về bản không có sub-PM, cắt quyền sub-PM trên live mà không phát ra lỗi nào. Vì vậy `DEC-01` chốt một migration forward mới duy nhất và `DEC-02` cấm tuyệt đối mọi câu lệnh function, đo được bằng `AC-03` cộng `AC-10`. `DEC-08` chốt thứ tự `hrp_mp2_test` trước, live sau audit PASS. `RISK-06` chặn tình huống `migrate deploy` cuốn theo chính 6 migration cũ. Bổ sung trước khi dispatch: `EV-12` kiểm dependency cho thấy 15 policy chỉ dùng 6 hàm và cả 6 đã có trên live nên không có `42883`; `EV-13` phát hiện `hrp_mp2_test` giữ một hàm `hrp_ticket_notification_visible(text, text)` không thuộc migration nào trong repo, dẫn tới `DEC-13` giới hạn parity ở tầng policy và `RISK-10` chặn Tier 3 fail oan vì diff hàm |
 | v1.1 | 2026-08-31 | Planner chạy preflight production, ghi `EV-14`/`EV-15`: đúng hai migration pending, posture RED `31/22`, EV02 0/15 policy, ticket RLS off, writer 15/15 SELECT zero và INSERT `42501`, sáu dependency đủ và hash m13 khóa. Owner duyệt allowlist hai migration (`EV-16`, `DEC-15`). Sửa phép đo role theo table GRANT (`DEC-16`, `RQ-07`, `AC-08`), sửa hai cơ sở đếm policy (`DEC-17`, `AC-11`), đổi snapshot sang ngày 31/08, mở Execution Round 2 để cập nhật HANDOFF và audit lane test; vẫn cấm ghi live trước audit PASS |
+| v1.2 | 2026-08-31 | Nhận audit round 2 `PASS`, đóng `BLK-02`, mở LIVE lane. Execution Round 4 tạo snapshot `pre-rls-repair-2026-08-31`, deploy đúng allowlist hai migration và đo GREEN trên `hrp-live`; chuyển sang Tier 3 audit round 3, chưa tự `ACCEPT` |
