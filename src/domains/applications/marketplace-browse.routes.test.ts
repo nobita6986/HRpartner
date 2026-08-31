@@ -94,6 +94,9 @@ const PUBLISHED_JOB: PublicJobDto = {
   position: 'Công nhân sản xuất',
   shift: '06:00-14:00',
   location: 'KCN VSIP 1',
+  industry: 'Điện tử',
+  shiftType: 'ca_ngay',
+  jobType: 'toan_thoi_gian',
   availableSlots: 12,
   deadline: '2026-09-30',
   statusLabel: 'Đang tuyển',
@@ -130,6 +133,26 @@ describe('RQ-03 — GET /api/jobs (list)', () => {
     expect(mocks.$transaction).not.toHaveBeenCalled();
     expect(mocks.listPublicJobProjection).toHaveBeenCalledTimes(1);
     expect(calls.map((c) => c.rule.surface)).toEqual(['JOB_BROWSE']);
+  });
+
+  it('chuyển đủ bộ lọc thật từ query string xuống service', async () => {
+    const { provider } = providerThat('allow');
+    __setRateLimitRuntime({ provider });
+
+    await GET_LIST(new NextRequest(
+      'http://localhost/api/jobs?q=th%E1%BB%A3+%C4%91i%E1%BB%87n&area=B%E1%BA%AFc+Ninh&industry=%C4%90i%E1%BB%87n+t%E1%BB%AD&shiftType=ca_ngay&shiftType=xoay_ca&jobType=toan_thoi_gian&limit=50',
+    ));
+
+    expect(mocks.listPublicJobProjection).toHaveBeenCalledWith(expect.anything(), {
+      q: 'thợ điện',
+      area: 'Bắc Ninh',
+      industry: 'Điện tử',
+      shift: undefined,
+      shiftTypes: ['ca_ngay', 'xoay_ca'],
+      jobTypes: ['toan_thoi_gian'],
+      offset: 0,
+      limit: 50,
+    });
   });
 
   it('429 ⇒ zero DB call', async () => {

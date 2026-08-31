@@ -7,7 +7,7 @@
  *     APPLY_PHONE chặn TRƯỚC transaction ⇒ không có history/idempotency row;
  *   - trần 16 KiB (413), media-type gate (415), shape chặt (400), `cv` non-null (422);
  *   - tracking: dual bucket IP + tracking-code, 404 generic không tiết lộ tồn tại;
- *   - projection chỉ chứa field allow-list (canary PII trong row KHÔNG lọt ra ngoài).
+ *   - projection trả đúng ba identity field Owner duyệt; canary internal field không lọt ra ngoài.
  */
 import { inspect } from 'node:util';
 
@@ -318,9 +318,12 @@ describe('RQ-04 — tracking dual bucket + 404 generic', () => {
     job_title: 'Công nhân sản xuất',
     job_code: 'PRJ-CANARY-001',
     position_title: 'CN',
-    // Hostile fixture: cột PII "rơi" vào row phải bị projection allow-list loại bỏ.
-    phone: PII_CANARY,
-    cccd_number: PII_CANARY,
+    full_name: 'Nguyễn Văn Kiểm Thử',
+    phone: '0909123456',
+    cccd_number: '012345678901',
+    // Hostile internal fields must still be dropped by the DTO allow-list.
+    normalized_phone: PII_CANARY,
+    review_note: PII_CANARY,
   };
 
   it('gọi ĐÚNG hai bucket theo thứ tự IP → tracking-code, digest không chứa raw code', async () => {
@@ -380,7 +383,7 @@ describe('RQ-04 — tracking dual bucket + 404 generic', () => {
     expect(await res.json()).toEqual({ error: 'NOT_FOUND', message: 'Application not found' });
   });
 
-  it('mã hợp lệ ⇒ projection allow-list, no-store, PII canary KHÔNG lọt ra', async () => {
+  it('mã hợp lệ ⇒ trả identity đã nộp, no-store, internal canary KHÔNG lọt ra', async () => {
     const { provider } = providerFor();
     __setRateLimitRuntime({ provider });
     mocks.queryRawUnsafe.mockResolvedValue([trackingRow]);
@@ -389,15 +392,23 @@ describe('RQ-04 — tracking dual bucket + 404 generic', () => {
     expect(res.headers.get('cache-control')).toBe('no-store');
     const json = (await res.json()) as { application: Record<string, unknown> };
     expect(Object.keys(json.application).sort()).toEqual([
+      'cccdNumber',
+      'fullName',
       'jobCode',
       'jobTitle',
       'nextStep',
+      'phone',
       'positionTitle',
       'status',
       'statusLabel',
       'submittedAt',
       'trackingCode',
     ]);
+    expect(json.application).toMatchObject({
+      fullName: 'Nguyễn Văn Kiểm Thử',
+      phone: '0909123456',
+      cccdNumber: '012345678901',
+    });
     expect(JSON.stringify(json)).not.toContain(PII_CANARY);
   });
 

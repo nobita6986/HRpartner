@@ -109,14 +109,21 @@ describe('getPublicTracking', () => {
       tracking_code: 'APP-ABC', status: 'NEW',
       submitted_at: new Date('2026-08-23T10:00:00Z'),
       job_title: 'Cong ty A', job_code: 'ACME', position_title: 'Cong nhan',
+      full_name: 'Nguyễn Văn A', phone: '0909123456', cccd_number: '012345678901',
     }]);
     const dto = await getPublicTracking(db as never, 'APP-ABC');
     expect(dto).not.toBeNull();
     expect(dto!.trackingCode).toBe('APP-ABC');
     expect(dto!.statusLabel).toBeTruthy();
     expect(dto!.nextStep).toBeTruthy();
-    // Forbidden fields must not appear on the DTO.
-    for (const forbidden of ['phone', 'cccdNumber', 'cvStorageKey', 'reviewNote', 'vendorId', 'ctvId']) {
+    expect(dto).toMatchObject({
+      fullName: 'Nguyễn Văn A',
+      phone: '0909123456',
+      cccdNumber: '012345678901',
+    });
+    expect(db.$queryRawUnsafe.mock.calls[0][0]).toContain('hrp_public_tracking_profile');
+    // Only the three owner-approved identity fields are added; internal fields stay out.
+    for (const forbidden of ['normalizedPhone', 'cvStorageKey', 'reviewNote', 'vendorId', 'ctvId']) {
       expect(Object.prototype.hasOwnProperty.call(dto, forbidden)).toBe(false);
     }
   });

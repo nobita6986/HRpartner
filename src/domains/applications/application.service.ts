@@ -4,7 +4,7 @@
  * The canonical public apply + tracking path. The anonymous write and the
  * public tracking read execute EXCLUSIVELY through the `hrp_public_rpc`-owned
  * SECURITY DEFINER functions `hrp_public_apply_submission(...)` /
- * `hrp_public_tracking_projection(code)` (DEC-08). This service NEVER touches
+ * `hrp_public_tracking_profile(code)` (DEC-08 + Owner decision 2026-08-31). This service NEVER touches
  * RLS context: it calls the functions via the app's normal connection
  * (`app_user_writer`) using `$queryRawUnsafe` with positional bind params, and
  * it MUST NOT set `app.role` to an authenticated role. No Worker/SourceClaim is
@@ -44,7 +44,11 @@ export interface PublicApplyResult {
   status: string;
 }
 
-/** Safe public tracking projection (DEC-02 allow-list; no PII). */
+/**
+ * Tracking projection for the holder of the 120-bit bearer tracking code.
+ * Owner decision 2026-08-31: echo the three identity fields submitted by the
+ * applicant for visual reconciliation; internal/normalized fields stay omitted.
+ */
 export interface PublicTrackingDto {
   trackingCode: string;
   status: string;
@@ -54,6 +58,9 @@ export interface PublicTrackingDto {
   jobTitle: string | null;
   jobCode: string | null;
   positionTitle: string | null;
+  fullName: string;
+  phone: string;
+  cccdNumber: string | null;
 }
 
 export class ApplicationServiceError extends Error {
@@ -198,9 +205,13 @@ export async function getPublicTracking(
       job_title: string | null;
       job_code: string | null;
       position_title: string | null;
+      full_name: string;
+      phone: string;
+      cccd_number: string | null;
     }>
-  >(`SELECT tracking_code, status, submitted_at, job_title, job_code, position_title
-       FROM hrp_public_tracking_projection($1)`, code);
+  >(`SELECT tracking_code, status, submitted_at, job_title, job_code, position_title,
+            full_name, phone, cccd_number
+       FROM hrp_public_tracking_profile($1)`, code);
   const row = rows[0];
   if (!row) return null;
   const { label, nextStep } = labelFor(row.status);
@@ -213,6 +224,9 @@ export async function getPublicTracking(
     jobTitle: row.job_title,
     jobCode: row.job_code,
     positionTitle: row.position_title,
+    fullName: row.full_name,
+    phone: row.phone,
+    cccdNumber: row.cccd_number,
   };
 }
 

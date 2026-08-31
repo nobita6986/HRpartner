@@ -71,14 +71,25 @@ describe('MP-1 publish and public job contracts', () => {
       project: {
         findMany: vi.fn().mockResolvedValue([{
           id: 'project-1', code: 'PRJ-001', name: 'Warehouse Operators', siteAddress: 'Bac Ninh',
-          staffingOrders: [{ status: 'OPEN', deadlineDate: null, slots: [{ positionTitle: 'Picker', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A' }] }],
+          clientCompany: { industry: null },
+          staffingOrders: [{ status: 'OPEN', title: 'Warehouse picker', description: null, deadlineDate: null, slots: [{ positionCode: 'PICKER', positionTitle: 'Picker', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A' }] }],
         }]),
         count: vi.fn().mockResolvedValue(1),
       },
     } as any;
 
-    const result = await listPublicJobProjection(tx, { q: 'Warehouse', area: 'Bac Ninh', shift: '07:00' });
-    expect(result.jobs).toEqual([expect.objectContaining({ id: 'project-1', slug: 'PRJ-001', availableSlots: 3, position: 'Picker' })]);
+    const result = await listPublicJobProjection(tx, {
+      q: 'Warehouse',
+      area: 'Bac Ninh',
+      industry: 'Kho vận',
+      shift: '07:00',
+      shiftTypes: ['ca_ngay'],
+      jobTypes: ['toan_thoi_gian'],
+    });
+    expect(result.jobs).toEqual([expect.objectContaining({
+      id: 'project-1', slug: 'PRJ-001', availableSlots: 3, position: 'Picker',
+      industry: 'Kho vận', shiftType: 'ca_ngay', jobType: 'toan_thoi_gian',
+    })]);
     expect(result.jobs[0]).not.toHaveProperty('clientCompanyId');
     expect(result.jobs[0]).not.toHaveProperty('hourlyRateVnd');
     expect(result.jobs[0]).not.toHaveProperty('internalNotes');

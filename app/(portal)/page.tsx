@@ -14,6 +14,17 @@ interface ApiJob {
   availableSlots: number;
   location?: string | null;
   shift?: string | null;
+  industry?: string;
+  shiftType?: string | null;
+  jobType?: string;
+}
+
+interface JobSearchFilters {
+  keyword: string;
+  location: string;
+  industry: string;
+  workTypes: string[];
+  jobTypes: string[];
 }
 
 // ─── UI-adapter: enrich API shape → full card props ─────────────────────────
@@ -522,11 +533,19 @@ export default function JobsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const fetchJobs = useCallback(async () => {
+  const fetchJobs = useCallback(async (filters?: JobSearchFilters) => {
     setLoading(true);
     setFetchError('');
     try {
-      const res = await fetch('/api/jobs');
+      const params = new URLSearchParams({ limit: '50' });
+      const q = filters?.keyword.trim();
+      if (q) params.set('q', q);
+      if (filters?.location && filters.location !== LOCATIONS[0]) params.set('area', filters.location);
+      if (filters?.industry && filters.industry !== INDUSTRIES[0]) params.set('industry', filters.industry);
+      for (const shiftType of filters?.workTypes ?? []) params.append('shiftType', shiftType);
+      for (const jobType of filters?.jobTypes ?? []) params.append('jobType', jobType);
+
+      const res = await fetch(`/api/jobs?${params.toString()}`, { cache: 'no-store' });
       // OPS-06A / RQ-07: browse cũng có limiter phân tán ⇒ hiển thị trạng thái
       // thân thiện cho 429/503 thay vì "Lỗi <status>".
       if (res.status === 429) throw new Error('Bạn tải trang quá nhanh. Vui lòng thử lại sau ít phút.');
@@ -576,10 +595,14 @@ export default function JobsPage() {
     );
   };
 
-  function handleSearch(e: React.FormEvent) {
+  async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setSearching(true);
-    setTimeout(() => setSearching(false), 300);
+    try {
+      await fetchJobs({ keyword, location, industry, workTypes, jobTypes });
+    } finally {
+      setSearching(false);
+    }
   }
 
   function handleApply(job: ReturnType<typeof enrichJob>) {
@@ -592,17 +615,6 @@ export default function JobsPage() {
     setApplyJob(null);
     setSuccessCode(code);
   }
-
-  // Filter jobs client-side by keyword
-  const filteredJobs = jobs.filter((job) => {
-    if (!keyword.trim()) return true;
-    const kw = keyword.toLowerCase();
-    return (
-      job.title.toLowerCase().includes(kw) ||
-      job.company.toLowerCase().includes(kw) ||
-      job.location.toLowerCase().includes(kw)
-    );
-  });
 
   return (
     <div className="w-full max-w-[1600px] mx-auto px-6 md:px-[5%] py-8 flex flex-col lg:flex-row gap-8">
@@ -741,7 +753,9 @@ export default function JobsPage() {
           <div className="pt-4 mt-2 border-t border-outline-variant/50">
             <button
               type="submit"
-              className="w-full py-3 rounded-lg font-semibold transition-colors flex justify-center items-center gap-2"
+              disabled={searching}
+              aria-busy={searching}
+              className="w-full py-3 rounded-lg font-semibold transition-colors flex justify-center items-center gap-2 disabled:cursor-wait disabled:opacity-70"
               style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
             >
               {searching ? (
@@ -767,7 +781,7 @@ export default function JobsPage() {
           </h1>
           {!loading && (
             <span className="text-sm whitespace-nowrap" style={{ color: 'var(--color-on-surface-variant)' }}>
-              Tìm thấy {filteredJobs.length} kết quả
+              Tìm thấy {jobs.length} kết quả
             </span>
           )}
         </div>
@@ -782,7 +796,7 @@ export default function JobsPage() {
               {fetchError}
             </p>
             <button
-              onClick={fetchJobs}
+              onClick={() => void fetchJobs({ keyword, location, industry, workTypes, jobTypes })}
               className="px-4 py-2 rounded-lg font-medium transition-colors"
               style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
             >
@@ -820,7 +834,7 @@ export default function JobsPage() {
         {/* Job Grid */}
         {!loading && !fetchError && (
           <>
-            {filteredJobs.length === 0 ? (
+            {jobs.length === 0 ? (
               <div className="rounded-xl p-12 text-center" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
                 <span className="material-symbols-outlined text-5xl mb-4 block" style={{ color: 'var(--color-outline)' }}>
                   work_off
@@ -834,7 +848,7 @@ export default function JobsPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {filteredJobs.map((job) => (
+                {jobs.map((job) => (
                   <JobCard
                     key={job.id}
                     job={job}
@@ -846,7 +860,7 @@ export default function JobsPage() {
             )}
 
             {/* Load more / end state */}
-            {!loading && !fetchError && filteredJobs.length > 0 && (
+            {!loading && !fetchError && jobs.length > 0 && (
               <div className="flex flex-col items-center justify-center py-6 gap-3 w-full" ref={sentinelRef}>
                 {loadingMore ? (
                   <>

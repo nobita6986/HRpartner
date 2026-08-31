@@ -28,7 +28,10 @@ export async function GET(req: NextRequest) {
   const projection = await withPublicDb(prisma, (tx) => listPublicJobProjection(tx, {
     q: searchParams.get('q') ?? undefined,
     area: searchParams.get('area') ?? undefined,
+    industry: searchParams.get('industry') ?? undefined,
     shift: searchParams.get('shift') ?? undefined,
+    shiftTypes: searchParams.getAll('shiftType'),
+    jobTypes: searchParams.getAll('jobType'),
     offset: Number(searchParams.get('offset') ?? 0),
     limit: Number(searchParams.get('limit') ?? 20),
   }));

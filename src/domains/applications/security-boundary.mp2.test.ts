@@ -40,6 +40,7 @@ if (existsSync(join(ROOT, '.env'))) {
 }
 
 const MIGRATION = join(ROOT, 'prisma/migrations/20260823101500_mp2_apply_tracking/migration.sql');
+const TRACK_PROFILE_MIGRATION = join(ROOT, 'prisma/migrations/20260831103000_marketplace_search_tracking_profile/migration.sql');
 const PROVISION = join(ROOT, 'scripts/create-public-rpc-role.cjs');
 const PUBLIC_APPLY_ROUTE = join(ROOT, 'app/api/public/jobs/[slug]/applications/route.ts');
 const PUBLIC_TRACK_ROUTE = join(ROOT, 'app/api/public/applications/[trackingCode]/route.ts');
@@ -48,32 +49,33 @@ const APPLY_SERVICE = join(ROOT, 'src/domains/applications/application.service.t
 const read = (p: string) => readFileSync(p, 'utf8');
 
 const APPLY_FN = 'hrp_public_apply_submission';
-const TRACK_FN = 'hrp_public_tracking_projection';
+const TRACK_FN = 'hrp_public_tracking_profile';
 
 describe('MP-2 security boundary — STATIC (DEC-08/09, AC-09)', () => {
   const sql = read(MIGRATION);
+  const boundarySql = `${sql}\n${read(TRACK_PROFILE_MIGRATION)}`;
   // Executable DDL only — the migration header/inline comments legitimately
   // reference BYPASSRLS when documenting the OP-01 assumption (DEC-09).
-  const sqlCode = sql.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--.*$/gm, '');
+  const sqlCode = boundarySql.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--.*$/gm, '');
 
   it('both public functions are SECURITY DEFINER with a pinned search_path', () => {
     // Two CREATE ... FUNCTION blocks, each SECURITY DEFINER + SET search_path.
-    expect((sql.match(/SECURITY DEFINER/g) ?? []).length).toBeGreaterThanOrEqual(2);
-    expect((sql.match(/SET search_path = public, pg_temp/g) ?? []).length).toBeGreaterThanOrEqual(2);
-    expect(sql).toContain(`CREATE OR REPLACE FUNCTION ${APPLY_FN}`);
-    expect(sql).toContain(`CREATE OR REPLACE FUNCTION ${TRACK_FN}`);
+    expect((boundarySql.match(/SECURITY DEFINER/g) ?? []).length).toBeGreaterThanOrEqual(3);
+    expect((boundarySql.match(/SET search_path = public, pg_temp/g) ?? []).length).toBeGreaterThanOrEqual(3);
+    expect(boundarySql).toContain(`CREATE OR REPLACE FUNCTION ${APPLY_FN}`);
+    expect(boundarySql).toContain(`CREATE OR REPLACE FUNCTION ${TRACK_FN}`);
   });
 
   it('both functions are owned by hrp_public_rpc', () => {
-    expect(sql).toMatch(new RegExp(`ALTER FUNCTION ${APPLY_FN}\\([^)]*\\) OWNER TO hrp_public_rpc`));
-    expect(sql).toMatch(new RegExp(`ALTER FUNCTION ${TRACK_FN}\\([^)]*\\) OWNER TO hrp_public_rpc`));
+    expect(boundarySql).toMatch(new RegExp(`ALTER FUNCTION ${APPLY_FN}\\([^)]*\\) OWNER TO hrp_public_rpc`));
+    expect(boundarySql).toMatch(new RegExp(`ALTER FUNCTION ${TRACK_FN}\\([^)]*\\) OWNER TO hrp_public_rpc`));
   });
 
   it('EXECUTE is revoked from PUBLIC and granted only to app roles', () => {
-    expect(sql).toMatch(new RegExp(`REVOKE ALL ON FUNCTION ${APPLY_FN}\\([^)]*\\) FROM PUBLIC`));
-    expect(sql).toMatch(new RegExp(`REVOKE ALL ON FUNCTION ${TRACK_FN}\\([^)]*\\) FROM PUBLIC`));
-    expect(sql).toMatch(new RegExp(`GRANT EXECUTE ON FUNCTION ${APPLY_FN}\\([^)]*\\) TO app_user_writer, app_user`));
-    expect(sql).toMatch(new RegExp(`GRANT EXECUTE ON FUNCTION ${TRACK_FN}\\([^)]*\\) TO app_user_writer, app_user`));
+    expect(boundarySql).toMatch(new RegExp(`REVOKE ALL ON FUNCTION ${APPLY_FN}\\([^)]*\\) FROM PUBLIC`));
+    expect(boundarySql).toMatch(new RegExp(`REVOKE ALL ON FUNCTION ${TRACK_FN}\\([^)]*\\) FROM PUBLIC`));
+    expect(boundarySql).toMatch(new RegExp(`GRANT EXECUTE ON FUNCTION ${APPLY_FN}\\([^)]*\\) TO app_user_writer, app_user`));
+    expect(boundarySql).toMatch(new RegExp(`GRANT EXECUTE ON FUNCTION ${TRACK_FN}\\([^)]*\\) TO app_user_writer, app_user`));
   });
 
   it('the migration does NOT create/alter the BYPASSRLS role (DEC-09)', () => {

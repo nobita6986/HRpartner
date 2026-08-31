@@ -11,9 +11,10 @@ export const runtime = 'nodejs';
 
 type RouteParams = { params: Promise<{ trackingCode: string }> };
 
-// Public tracking (MP-2 DEC-02/RQ-04 + OPS-06A RQ-04): safe status projection ONLY,
-// via the SECURITY DEFINER function. Unknown/disabled code → generic 404 with no
-// row-existence signal.
+// Public tracking (MP-2 RQ-04 + owner decision 2026-08-31): the 120-bit tracking
+// code is a bearer secret. Its holder may re-read the submitted name/phone/CCCD
+// for reconciliation, but no normalized/internal review fields. Unknown code →
+// generic 404 with no row-existence signal.
 //
 // OPS-06A: limiter phân tán DUAL BUCKET (IP 20/60s + tracking-code HMAC 10/60s) thay
 // cho Map per-instance cũ — enumeration không còn scale theo số instance. Cả 429 và

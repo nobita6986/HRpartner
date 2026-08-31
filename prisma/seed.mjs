@@ -90,15 +90,15 @@ const ROLE_SCENARIOS = [
 // only see staffing_orders when project.is_public=true). Public visibility for
 // job board demo is opt-in per project — none by default for safety.
 const CLIENT_SCENARIOS = [
-  { id: 'seed-client-hrp-demo-1', code: 'CC-SEED-001', name: 'Khach hang mau Bac Ninh', taxCode: '08****001' },
-  { id: 'seed-client-hrp-demo-2', code: 'CC-SEED-002', name: 'Khach hang mau Bac Giang', taxCode: '08****002' },
+  { id: 'seed-client-hrp-demo-1', code: 'CC-SEED-001', name: 'Khách hàng mẫu Bắc Ninh', taxCode: '08****001', industry: 'Điện tử' },
+  { id: 'seed-client-hrp-demo-2', code: 'CC-SEED-002', name: 'Khách hàng mẫu Bắc Giang', taxCode: '08****002', industry: 'Công nghiệp chế tạo' },
 ];
 
 const PROJECT_SCENARIOS = [
-  { code: 'DA-2026-018', clientCode: 'CC-SEED-001', name: 'Nha may Dien tu An Phat',          site: 'Bac Ninh',                  quota: 50, filled: 47, isPublic: false },
-  { code: 'DA-2026-022', clientCode: 'CC-SEED-001', name: 'Kho van Yen Phong',                site: 'KCN Yen Phong, Bac Ninh',   quota: 80, filled: 80, isPublic: false },
-  { code: 'PRJ-SV-014',  clientCode: 'CC-SEED-002', name: 'Nha may Sao Viet',                 site: 'KCN Quang Chau, Bac Giang', quota: 35, filled: 32, isPublic: false },
-  { code: 'PRJ-INTERNAL',clientCode: 'CC-SEED-002', name: 'Du an noi bo HRP (khong public)', site: 'Ha Noi',                    quota: 5,  filled: 2,  isPublic: false },
+  { code: 'DA-2026-018', clientCode: 'CC-SEED-001', name: 'Nhà máy Điện tử An Phát',          site: 'KCN Chợ An, Bắc Ninh',       quota: 50, filled: 47, isPublic: false },
+  { code: 'DA-2026-022', clientCode: 'CC-SEED-001', name: 'Kho vận Yên Phong',                site: 'KCN Yên Phong, Bắc Ninh',    quota: 80, filled: 80, isPublic: false },
+  { code: 'PRJ-SV-014',  clientCode: 'CC-SEED-002', name: 'Nhà máy Sao Việt',                 site: 'KCN Quang Châu, Bắc Giang',  quota: 35, filled: 32, isPublic: false },
+  { code: 'PRJ-INTERNAL',clientCode: 'CC-SEED-002', name: 'Dự án nội bộ HRP (không công khai)', site: 'Hà Nội',                   quota: 5,  filled: 2,  isPublic: false },
 ];
 
 const WORKER_SCENARIOS = [
@@ -164,7 +164,7 @@ async function seedProjects() {
   for (const c of CLIENT_SCENARIOS) {
     const client = await prisma.clientCompany.upsert({
       where: { code: c.code },
-      update: { name: c.name, taxCode: c.taxCode, status: 'ACTIVE' },
+      update: { name: c.name, taxCode: c.taxCode, industry: c.industry, status: 'ACTIVE' },
       create: { ...c, status: 'ACTIVE' },
     });
     clients.set(c.code, client);
@@ -293,8 +293,8 @@ async function seedVendorStatement() {
 // P1 Portals STEP-11 (DEC-12 + RQ-12): seed ≥2 staffing orders OPEN
 // StaffingOrder.status = 'OPEN' (not 'ACTIVE' — see schema StaffingOrder model)
 const STAFFING_ORDER_SEED = [
-  { code: 'SO-VND001-001', title: 'Tuyen 5 dien cong Cho an',         projectCode: 'DA-2026-018', slotsNeeded: 5, positionCode: 'ELECTRICIAN', positionTitle: 'Điện công',     shiftStart: '07:00', shiftEnd: '16:00', workLocation: 'KCN Cho An, Bac Ninh' },
-  { code: 'SO-VND001-002', title: 'Tuyen 3 han sy Khu cong nghiep',   projectCode: 'DA-2026-022', slotsNeeded: 3, positionCode: 'WELDER',      positionTitle: 'Hàn sợi',        shiftStart: '08:00', shiftEnd: '17:00', workLocation: 'KCN Bac Ninh II' },
+  { code: 'SO-VND001-001', title: 'Tuyển 5 công nhân điện tử An Phát', projectCode: 'DA-2026-018', slotsNeeded: 5, positionCode: 'ELECTRICIAN', positionTitle: 'Công nhân điện tử', shiftStart: '07:00', shiftEnd: '16:00', workLocation: 'KCN Chợ An, Bắc Ninh' },
+  { code: 'SO-VND001-002', title: 'Tuyển 3 nhân viên kho Yên Phong',   projectCode: 'DA-2026-022', slotsNeeded: 3, positionCode: 'WAREHOUSE',   positionTitle: 'Nhân viên kho',      shiftStart: '08:00', shiftEnd: '17:00', workLocation: 'KCN Yên Phong, Bắc Ninh' },
 ];
 
 async function seedStaffingOrders() {
@@ -308,7 +308,7 @@ async function seedStaffingOrders() {
 
     const order = await prisma.staffingOrder.upsert({
       where: { id: `seed-order-${s.code}` },
-      update: { status: 'OPEN' },
+      update: { title: s.title, status: 'OPEN' },
       create: {
         id: `seed-order-${s.code}`,
         code: s.code,
@@ -321,7 +321,16 @@ async function seedStaffingOrders() {
 
     await prisma.staffingOrderSlot.upsert({
       where: { id: `seed-slot-${s.code}` },
-      update: { slotsNeeded: s.slotsNeeded },
+      update: {
+        positionCode: s.positionCode,
+        positionTitle: s.positionTitle,
+        slotsNeeded: s.slotsNeeded,
+        shiftStart: s.shiftStart,
+        shiftEnd: s.shiftEnd,
+        validFrom,
+        validTo,
+        workLocation: s.workLocation,
+      },
       create: {
         id: `seed-slot-${s.code}`,
         staffingOrderId: order.id,

@@ -29,7 +29,9 @@ const LOGOUT = join(API_DIR, 'auth/logout/route.ts');
 const LEGACY_JOBS_PAGE = join(ROOT, 'app/(jobs)/jobs/page.tsx');
 const LEGACY_JOB_BOARD_PAGE = join(ROOT, 'app/job-board/page.tsx');
 const PORTAL_PAGE = join(ROOT, 'app/(portal)/page.tsx');
+const TRACK_PAGE = join(ROOT, 'app/(jobs)/track/page.tsx');
 const ADMIN_NAV = join(ROOT, 'src/shared/ui/role-guard/role-guard-layout.tsx');
+const PUBLIC_JOB_SERVICE = join(ROOT, 'src/domains/job-board/public.service.ts');
 const BODY_HELPER = join(ROOT, 'src/shared/security/request-body.ts');
 const UPSTASH = join(ROOT, 'src/shared/security/rate-limit-upstash.ts');
 const GUARD = join(ROOT, 'src/shared/security/rate-limit-guard.ts');
@@ -224,6 +226,31 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
     expect(code).not.toContain('availableSlots * 1.5');
     expect(code).toContain("location: job.location?.trim() || 'Địa điểm đang cập nhật'");
     expect(code).toContain("schedule: job.shift?.trim() || 'Thời gian đang cập nhật'");
+  });
+
+  it('nút Tìm kiếm chuyển đủ năm nhóm filter vào API, không còn spinner giả 300 ms', () => {
+    const page = strip(read(PORTAL_PAGE));
+    const route = strip(read(LEGACY_JOBS));
+    const service = strip(read(PUBLIC_JOB_SERVICE));
+    expect(page).toContain("params.set('q', q)");
+    expect(page).toContain("params.set('area', filters.location)");
+    expect(page).toContain("params.set('industry', filters.industry)");
+    expect(page).toContain("params.append('shiftType', shiftType)");
+    expect(page).toContain("params.append('jobType', jobType)");
+    expect(page).not.toMatch(/setTimeout\(\(\)\s*=>\s*setSearching/);
+    expect(route).toContain("searchParams.getAll('shiftType')");
+    expect(route).toContain("searchParams.getAll('jobType')");
+    expect(service).toContain('opts.shiftTypes.includes(job.shiftType)');
+    expect(service).toContain('opts.jobTypes.includes(job.jobType)');
+  });
+
+  it('trang track có nút Tra cứu nhìn thấy được và render ba field đối chiếu', () => {
+    const code = strip(read(TRACK_PAGE));
+    expect(code).toContain("backgroundColor: 'var(--color-primary)'");
+    expect(code).toContain("{loading ? 'Đang tra...' : 'Tra cứu'}");
+    expect(code).toContain('{result.fullName}');
+    expect(code).toContain('{result.phone}');
+    expect(code).toContain("{result.cccdNumber || 'Không cung cấp'}");
   });
 });
 
