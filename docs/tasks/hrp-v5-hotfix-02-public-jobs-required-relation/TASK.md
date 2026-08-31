@@ -7,7 +7,7 @@
 | Task slug | `hrp-v5-hotfix-02-public-jobs-required-relation` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | `Tier 1` |
 | Executor | `Tier 2` |
@@ -18,7 +18,7 @@
 | Current execution round | `1` |
 | Current audit round | `0` |
 | Next gate | `verify-task rồi /code rồi /audit rồi /resolve` |
-| Updated | `2026-08-31 13:55 +07` |
+| Updated | `2026-08-31 14:18 +07` |
 
 ## 1. Outcome
 
@@ -72,6 +72,7 @@
 | `DEC-07` | Tiêu chí đóng task là phép đo LIVE sau deploy, không phải gate tĩnh | Bài học đắt của hotfix-01: 1418 test xanh cộng `tsc` exit 0 tồn tại song song với 500 cứng trên production | `AC-08` tới `AC-10` là bắt buộc, không được ghi `ENV_BLOCKED`, không được thay bằng suy luận |
 | `DEC-08` | Rò rỉ danh tính khách hàng cuối là lý do độc lập để bỏ join | Kể cả nếu RLS mở, phơi `client_companies` cho khách vô danh là lộ thông tin thương mại. Bỏ join là đúng cả về bảo mật, không chỉ về sửa lỗi | Không mở đường vòng nào để lấy `industry` thật từ bảng khách hàng trong task này |
 | `DEC-09` | Nhãn `industry` hiển thị có thể sai nội dung so với ngành thật của khách hàng, và ta chấp nhận trong hotfix | `LIM-03` của hotfix-01 đã ghi nhận. Ưu tiên P0 là dịch vụ sống lại | Ghi vào `HANDOFF.md` như limitation, không tự mở scope để sửa nhãn |
+| `DEC-10` | Owner uỷ quyền trước cho Tier 2 tự commit path-scoped và push `main` của đúng task này, tức tự deploy production, để đo được `AC-08` tới `AC-10` trong cùng một lượt. Uỷ quyền cấp 31/08 14:18 +07, chỉ cho task này, không tạo tiền lệ chung | Đây là P0, dịch vụ công khai đang chết. Nếu tách push sang lượt khác thì lặp lại đúng thất bại của hotfix-01: bằng chứng phát ra SAU khi code đã lên production, không còn là phép đo trước deploy. `UNIFIED_PLAN` mục 9.1 cấm task tự deploy, và ngoại lệ này là quyết định của Owner ghi tại đây, không phải Tier 2 vượt rào | Uỷ quyền có bốn bound cứng ở `RQ-11`. Vượt bất kỳ bound nào thì uỷ quyền mất hiệu lực và Tier 2 phải dừng theo stop condition |
 
 ## 4. Contract
 
@@ -89,6 +90,7 @@
 | `RQ-08` | Sau khi push và deploy xong, `GET /api/jobs/{slug}` trên production trả 200 hoặc 404 theo dữ liệu thật, KHÔNG trả 500 |
 | `RQ-09` | Log runtime của deployment production mới, đọc bằng `vercel logs`, có ZERO lần xuất hiện chuỗi `Inconsistent query result` kể từ mốc thời gian deployment đó `Ready` |
 | `RQ-10` | Diff chỉ gồm `src/domains/job-board/public.service.ts`, `src/domains/job-board/mp1.contract.test.ts` và tối đa một file test tĩnh mới dưới `src/domains/job-board/` |
+| `RQ-11` | Push production theo uỷ quyền `DEC-10` phải thoả cả bốn bound: (a) chỉ push SAU khi `AC-01` tới `AC-07` và `AC-11` đều PASS và đã ghi output vào `HANDOFF.md`; (b) commit được push chứa ĐÚNG tập file của `AC-07`, không một path nào khác, và cấm `git add -A` cùng `git add .`; (c) đúng một commit và đúng một lần push lên `main`, không force, không rebase, không amend, không chạm nhánh khác; (d) `HANDOFF.md` ghi lại dải push dạng `e0a70f7..` cộng hash mới, cộng URL deployment đã đo |
 
 ### Interface và data
 
@@ -111,6 +113,7 @@
 | RQ-08 | STEP-07 | AC-09 |
 | RQ-09 | STEP-08 | AC-10 |
 | RQ-10 | STEP-06 | AC-07 |
+| RQ-11 | STEP-07 | AC-12 |
 
 ## 5. Execution Plan
 
@@ -122,7 +125,7 @@
 | `STEP-04` | Cập nhật hai case hotfix-01 | Bỏ field `clientCompany` khỏi fixture của hai case đó cho khớp kiểu mới. Giữ nguyên hai assertion về `typeof` và về `Công nghiệp chế tạo`. Không xoá case, không đổi tên case, không nới assertion |
 | `STEP-05` | Gate tĩnh và gate cấm | `npm run typecheck` và `npm run test:unit` phải exit 0, đo bằng `$LASTEXITCODE` không qua pipe. Chạy grep trên diff cho `CREATE POLICY`, `GRANT`, `REVOKE`, `ALTER TABLE`, `set_config` và grep `try`, `catch`, `.catch(` trên bốn file ở `RQ-06`, ghi số đếm |
 | `STEP-06` | Kiểm phạm vi diff | `git status --short` và `git diff --stat`. Không stage bất kỳ path ngoài `src/domains/job-board/`. Cấm `git add -A` và `git add .`. Các file bẩn khác trong worktree là của luồng khác, không chạm |
-| `STEP-07` | Đề nghị deploy rồi đo live | Tier 2 KHÔNG tự push. Bàn giao `HANDOFF.md` ở trạng thái `READY_FOR_AUDIT` kèm đúng một dòng đề nghị Owner cho phép push. Sau khi Owner cho phép và deployment mới `Ready`, đo `/api/jobs` và `/api/jobs/{slug}` bằng lệnh HTTP thật, dán status code và body cắt ngắn vào `HANDOFF.md` |
+| `STEP-07` | Commit, push và đo live theo uỷ quyền `DEC-10` | Owner ĐÃ uỷ quyền, Tier 2 không phải chờ thêm. Trình tự bắt buộc, không đảo: (1) hoàn tất `STEP-05` và `STEP-06`, dán đủ output của `AC-01` tới `AC-07` và `AC-11` vào `HANDOFF.md` TRƯỚC khi commit; (2) `git add` liệt kê tường minh từng path trong scope, cấm `git add -A` và `git add .`; (3) đúng một commit, thông điệp mở đầu `fix(marketplace):`, không force, không amend, không rebase; (4) `git push origin main`, ghi lại dải push; (5) chờ deployment production mới `Ready`, kiểm bằng `vercel ls`; (6) gọi HTTP thật tới `/api/jobs` và `/api/jobs/DA-DEMO-001`, dán status code cùng body cắt ngắn vào `HANDOFF.md`. Nếu bất kỳ AC tĩnh nào FAIL thì KHÔNG được push, dừng theo stop condition |
 | `STEP-08` | Đọc log runtime sau deploy | `vercel ls` để lấy URL deployment production trẻ nhất `Ready`, rồi `vercel logs` trên URL đó trong lúc gọi lại `/api/jobs`. Đếm số lần xuất hiện `Inconsistent query result`. Trước khi dán bất cứ output nào vào `HANDOFF.md` phải lọc bỏ chuỗi khớp `postgres://`, `token`, `password`, `secret` |
 | `STEP-09` | Chốt limitation | Ghi vào `HANDOFF.md`: nhãn `industry` giờ là suy luận từ text chứ không phải ngành thật của khách hàng; ba migration đang chờ trong repo không được task này áp; và test tĩnh chỉ bảo vệ đúng file `public.service.ts` chứ không phát hiện quan hệ bắt buộc ở các service khác |
 
@@ -134,6 +137,8 @@ Tier 2 DỪNG và ghi vào `HANDOFF.md`, không sửa mò tiếp, khi gặp bấ
 - Cần đổi `prisma/schema.prisma`, cần migration, cần `GRANT` hay cần đổi RLS để đạt bất kỳ AC nào.
 - Log sau deploy xuất hiện một exception KHÁC `Inconsistent query result` trên cùng đường đọc.
 - `npm run test:unit` fail ở một test không thuộc `src/domains/job-board/`.
+- Bất kỳ AC tĩnh nào trong `AC-01` tới `AC-07` hoặc `AC-11` FAIL. Khi đó KHÔNG được push: uỷ quyền `DEC-10` chỉ có hiệu lực trên một commit đã xanh hết gate tĩnh.
+- Cần push lần thứ hai vì lần đầu sai. Uỷ quyền là một commit một push; sai thì dừng, ghi vào `HANDOFF.md` và chờ Owner quyết, không tự sửa rồi push tiếp.
 
 ## 6. Acceptance
 
@@ -150,7 +155,7 @@ Tier 2 DỪNG và ghi vào `HANDOFF.md`, không sửa mò tiếp, khi gặp bấ
 | `AC-09` | Gọi HTTP thật tới `https://www.hrpartner.vn/api/jobs/DA-DEMO-001` | Status thuộc tập 200 hoặc 404. 500 là FAIL |
 | `AC-10` | `vercel logs` trên deployment production trẻ nhất `Ready`, sampled trong lúc gọi lại `/api/jobs` | ZERO dòng chứa `Inconsistent query result`. Output đã lọc secret trước khi dán |
 | `AC-11` | `npm run typecheck` rồi `npm run test:unit`, đo `$LASTEXITCODE`, không pipe | Cả hai exit 0. Số test không giảm so với 1418 của baseline |
-| `AC-12` | `git log origin/main..HEAD` tại thời điểm bàn giao `HANDOFF.md` | Rỗng. Tier 2 không tự push; quyền deploy thuộc Owner |
+| `AC-12` | Trên commit đã push: `git show --stat` của đúng commit đó; `git log origin/main..HEAD` sau push; `git reflog` của `main`; và thứ tự thời gian giữa phần gate tĩnh và phần push trong `HANDOFF.md` | Bốn điều kiện cùng lúc: tập file của commit đó trùng khít tập file của `AC-07`; `git log origin/main..HEAD` rỗng sau push, tức đúng một commit đã lên `origin/main`; không có dấu vết force, amend hay rebase trong `reflog`; và `HANDOFF.md` chứa output của `AC-01` tới `AC-07` và `AC-11` ĐỨNG TRƯỚC phần push. Push khi còn một AC tĩnh FAIL là FAIL cả task dù production có trả 200 |
 
 ### Quy tắc bằng chứng
 
@@ -166,7 +171,7 @@ Tier 2 DỪNG và ghi vào `HANDOFF.md`, không sửa mò tiếp, khi gặp bấ
 | `RISK-01` | Bỏ join làm `industry` sai nội dung với một số dự án | Trung bình | Đã chấp nhận ở `DEC-09`. Nhãn vẫn là chuỗi hợp lệ nên UI không vỡ. Sửa nhãn thuộc task nghiệp vụ khác |
 | `RISK-02` | Còn service khác cũng select quan hệ bắt buộc trên bảng bị RLS che, và sẽ sập tương tự ở bề mặt khác | Cao | Không mở rộng scope trong hotfix. `STEP-09` bắt ghi thành limitation để Tier 1 mở task quét toàn bộ. Test tĩnh của `RQ-03` chỉ bảo vệ một file |
 | `RISK-03` | Test tĩnh dựa trên chuỗi nên dễ bị lách bằng cách đổi cách viết | Thấp | Chấp nhận. Hàng rào rẻ vẫn hơn không có, và `AC-08` mới là phép đo thật |
-| `RISK-04` | Deploy để đo `AC-08` là hành động production, vượt quyền task theo `UNIFIED_PLAN` mục 9.1 | Cao | `STEP-07` cấm Tier 2 tự push. Owner là người cho phép. `AC-12` đo rằng Tier 2 đã không tự push |
+| `RISK-04` | Deploy để đo `AC-08` là hành động production, và `UNIFIED_PLAN` mục 9.1 cấm task tự deploy | Cao | Owner đã uỷ quyền đích danh cho task này tại `DEC-10`, ghi ngày và ghi rõ không tạo tiền lệ. Uỷ quyền bị chặn bởi bốn bound của `RQ-11` và đo lại được bằng `AC-12`: đúng tập file, đúng một commit một push, không force, và gate tĩnh phải xanh TRƯỚC khi push |
 | `RISK-05` | Ba migration đang chờ trong repo chưa rõ đã áp lên `hrp-live` hay chưa | Trung bình | Ngoài phạm vi. Task này không gọi hàm DB mới nào nên không phụ thuộc trạng thái đó |
 | `RISK-06` | Sau fix, endpoint trả 200 nhưng `total` bằng 0 vì lý do RLS khác | Trung bình | `AC-08` chỉ đòi 200 và `total` kiểu số, không đòi lớn hơn 0. Nếu `total` bằng 0 thì đó là defect đọc dữ liệu riêng, ghi vào `HANDOFF.md` để Tier 1 mở task, không sửa trong hotfix này |
 
@@ -178,12 +183,12 @@ Tier 2 DỪNG và ghi vào `HANDOFF.md`, không sửa mò tiếp, khi gặp bấ
 
 ## 8. Open Questions
 
-Không còn câu hỏi mở làm đổi implementation. Hai điểm dưới đây là quyết định của Owner về vận hành, không chặn Tier 2 bắt đầu code:
+Không còn câu hỏi mở làm đổi implementation, và không còn câu hỏi nào chặn Tier 2.
 
-| ID | Câu hỏi | Owner | Ảnh hưởng |
+| ID | Câu hỏi | Owner | Trạng thái |
 |---|---|---|---|
-| `Q-01` | Cho phép push commit của task này để deploy và đo `AC-08` tới `AC-10` vào lúc nào | Sếp | Không chặn `STEP-01` tới `STEP-06`. Chỉ chặn ba AC live |
-| `Q-02` | Có mở task riêng để quét mọi service khác đang select quan hệ bắt buộc trên bảng bị RLS che hay không | Sếp | Không ảnh hưởng task này. Là follow-up của `RISK-02` |
+| `Q-01` | Cho phép push commit của task này để deploy và đo `AC-08` tới `AC-10` vào lúc nào | Sếp | ĐÓNG 31/08 14:18 +07. Owner trả lời "ok đồng ý". Uỷ quyền ghi thành `DEC-10`, bound thành `RQ-11`, đo lại bằng `AC-12` |
+| `Q-02` | Có mở task riêng để quét mọi service khác đang select quan hệ bắt buộc trên bảng bị RLS che hay không | Sếp | MỞ. Không ảnh hưởng task này. Là follow-up của `RISK-02` |
 
 ## 9. Planner Resolution
 
@@ -196,3 +201,4 @@ Ghi nhận trước cho minh bạch trách nhiệm: `DEC-01` của `hrp-v5-hotfi
 | Version | Ngày | Thay đổi |
 |---|---|---|
 | `v1.0` | 2026-08-31 | Tạo contract từ log runtime production. Bác bỏ `DEC-01` của hotfix-01. Chốt phương án bỏ quan hệ khỏi `publicSelect`, cấm mock làm bằng chứng RED, và đưa ba tiêu chí LIVE sau deploy thành điều kiện đóng task |
+| `v1.1` | 2026-08-31 | Owner uỷ quyền push và deploy cho đúng task này. Đóng `Q-01`, thêm `DEC-10`, thêm `RQ-11` với bốn bound của uỷ quyền, viết lại `STEP-07` thành trình tự gate-tĩnh-trước-push, viết lại `AC-12` từ "không được tịnh tiến HEAD" thành bốn phép đo về phạm vi commit cùng thứ tự bằng chứng, cập nhật `RISK-04`, thêm hai stop condition về push |
