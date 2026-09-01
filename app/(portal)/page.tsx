@@ -140,7 +140,7 @@ function JobCard({
 
   return (
     <div
-      className="bg-surface border border-outline-variant/50 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4 relative h-full p-4"
+      className="hrp-card nav-item-lift border border-outline-variant/50 rounded-xl flex flex-col gap-4 relative h-full"
     >
       <div
         className="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
@@ -158,16 +158,16 @@ function JobCard({
           className="w-12 h-12 rounded-lg border border-outline-variant/30 flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: 'var(--color-surface-container-low)' }}
         >
-          <span className="material-symbols-outlined text-2xl" style={{ color: 'var(--color-primary-container)' }}>
+          <span aria-hidden="true" className="material-symbols-outlined text-2xl" style={{ color: 'var(--color-primary-container)' }}>
             {job.icon}
           </span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h3 className="text-base font-bold" style={{ color: 'var(--color-on-surface)' }}>
+            <h3 className="text-lg font-bold" style={{ color: 'var(--color-on-surface)' }}>
               <Link
                 href={detailHref}
-                className="relative z-10 rounded hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="relative z-10 hrp-focus rounded hover:underline"
               >
                 {job.title}
               </Link>
@@ -197,25 +197,16 @@ function JobCard({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span
-          className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
-          style={{ color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container)' }}
-        >
-          <span className="material-symbols-outlined text-[14px]">badge</span>
+        <span className="hrp-pill flex items-center gap-1 text-xs px-2 py-0.5 rounded-full">
+          <span aria-hidden="true" className="material-symbols-outlined text-[14px]">badge</span>
           {summaryLabel(job.positions, 'Vị trí đang cập nhật')}
         </span>
-        <span
-          className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
-          style={{ color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container)' }}
-        >
-          <span className="material-symbols-outlined text-[14px]">location_on</span>
+        <span className="hrp-pill-location flex items-center gap-1 text-xs px-2 py-0.5 rounded-full">
+          <span aria-hidden="true" className="material-symbols-outlined text-[14px]">location_on</span>
           {summaryLabel(job.locations, 'Địa điểm đang cập nhật')}
         </span>
-        <span
-          className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
-          style={{ color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container)' }}
-        >
-          <span className="material-symbols-outlined text-[14px]">schedule</span>
+        <span className="hrp-pill flex items-center gap-1 text-xs px-2 py-0.5 rounded-full">
+          <span aria-hidden="true" className="material-symbols-outlined text-[14px]">schedule</span>
           {summaryLabel(job.shifts, 'Thời gian đang cập nhật')}
         </span>
       </div>
@@ -224,23 +215,19 @@ function JobCard({
         <button
           onClick={() => onApply(job)}
           disabled={isApplied || isFull}
-          className="relative z-10 font-semibold px-6 py-2 rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-          style={
-            isFull
-              ? { backgroundColor: 'var(--color-surface-container)', color: 'var(--color-on-surface-variant)', cursor: 'not-allowed' }
-              : isApplied
-                ? { backgroundColor: 'var(--color-success-soft)', color: 'var(--color-success)', cursor: 'default' }
-                : { backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }
+          className={
+            'relative z-10 hrp-focus font-semibold px-6 min-h-11 rounded-lg ' +
+            (isFull ? 'hrp-btn-muted' : isApplied ? 'hrp-btn-done' : 'hrp-btn-primary nav-item-lift')
           }
         >
           {isFull ? 'Đã đủ chỉ tiêu' : isApplied ? 'Đã ứng tuyển' : 'Ứng tuyển'}
         </button>
         <button
           aria-label="Lưu việc"
-          className="relative z-10 w-9 h-9 rounded-full border border-outline-variant flex items-center justify-center transition-colors hover:border-error focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="relative z-10 hrp-focus w-11 h-11 rounded-full border border-outline-variant flex items-center justify-center cursor-pointer transition-[border-color] hover:border-error"
           style={{ color: 'var(--color-on-surface-variant)' }}
         >
-          <span className="material-symbols-outlined text-[18px]">favorite</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-[18px]">favorite</span>
         </button>
       </div>
     </div>
@@ -276,7 +263,7 @@ function FacetSelect({
   return (
     <div>
       <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-on-surface)' }}>
-        <span className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary)' }}>{icon}</span>
+        <span aria-hidden="true" className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary-dark)' }}>{icon}</span>
         {heading}
       </h3>
       <div className="relative">
@@ -284,15 +271,14 @@ function FacetSelect({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           aria-label={heading}
-          className="w-full appearance-none border border-outline-variant py-2.5 pl-4 pr-10 rounded-lg transition-colors cursor-pointer"
-          style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}
+          className="hrp-field hrp-focus w-full appearance-none border border-outline-variant min-h-11 py-2.5 pl-4 pr-10 rounded-lg cursor-pointer"
         >
           <option value="">{allLabel}</option>
           {options.map((option) => (
             <option key={option} value={option}>{option}</option>
           ))}
         </select>
-        <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-xl pointer-events-none" style={{ color: 'var(--color-on-surface-variant)' }}>
+        <span aria-hidden="true" className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-xl pointer-events-none" style={{ color: 'var(--color-on-surface-variant)' }}>
           expand_more
         </span>
       </div>
@@ -435,13 +421,13 @@ export default function JobsPage() {
   const showEmptyState = !loading && !fetchError && jobs.length === 0;
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto px-6 md:px-[5%] py-8 flex flex-col lg:flex-row gap-8">
+    <div id="hrp-main" tabIndex={-1} className="w-full max-w-[1600px] mx-auto px-6 md:px-[5%] py-8 flex flex-col lg:flex-row gap-8">
 
       {/* Left Sidebar */}
       <aside className="w-full lg:w-80 flex-shrink-0">
         <form
           onSubmit={handleSearch}
-          className="bg-surface rounded-xl border border-outline-variant/50 shadow-sm flex flex-col p-6 space-y-5"
+          className="hrp-panel rounded-xl border border-outline-variant/50 shadow-sm flex flex-col p-6 space-y-5"
         >
           <div className="mb-2">
             <h2 className="text-xl font-semibold" style={{ color: 'var(--color-on-surface)' }}>
@@ -453,22 +439,24 @@ export default function JobsPage() {
           </div>
 
           {/* Search Input */}
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-xl" style={{ color: 'var(--color-on-surface-variant)' }}>
-              search
-            </span>
+          <div>
+            <label
+              htmlFor="hrp-keyword"
+              className="text-sm font-semibold mb-2 flex items-center gap-2"
+              style={{ color: 'var(--color-on-surface)' }}
+            >
+              <span aria-hidden="true" className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary-dark)' }}>
+                search
+              </span>
+              Từ khóa tìm kiếm
+            </label>
             <input
-              type="text"
+              id="hrp-keyword"
+              type="search"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="Tên công việc, vị trí..."
-              aria-label="Từ khóa tìm kiếm"
-              className="w-full pl-10 pr-4 py-3 rounded-lg border transition-colors"
-              style={{
-                borderColor: 'var(--color-outline-variant)',
-                backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-on-surface)',
-              }}
+              className="hrp-field hrp-focus w-full px-4 py-3 min-h-11 rounded-lg border"
             />
           </div>
 
@@ -497,8 +485,7 @@ export default function JobsPage() {
               type="submit"
               disabled={searching}
               aria-busy={searching}
-              className="w-full py-3 rounded-lg font-semibold transition-colors flex justify-center items-center gap-2 disabled:cursor-wait disabled:opacity-70"
-              style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+              className="hrp-btn-primary hrp-focus nav-item-lift w-full py-3 min-h-11 rounded-lg font-semibold flex justify-center items-center gap-2 disabled:cursor-wait disabled:opacity-70"
             >
               {searching ? (
                 <>
@@ -545,8 +532,7 @@ export default function JobsPage() {
                 const { filters, offset, mode } = lastAttemptRef.current;
                 void runQuery(filters, offset, mode);
               }}
-              className="px-4 py-2 rounded-lg font-medium transition-colors"
-              style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+              className="hrp-btn-primary hrp-focus nav-item-lift px-4 min-h-11 rounded-lg font-medium"
             >
               Thử lại
             </button>
@@ -582,7 +568,7 @@ export default function JobsPage() {
         {/* Empty state */}
         {showEmptyState && (
           <div className="rounded-xl p-12 text-center" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
-            <span className="material-symbols-outlined text-5xl mb-4 block" style={{ color: 'var(--color-outline)' }}>
+            <span aria-hidden="true" className="material-symbols-outlined text-5xl mb-4 block" style={{ color: 'var(--color-outline)' }}>
               work_off
             </span>
             <p className="text-lg font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
@@ -630,8 +616,7 @@ export default function JobsPage() {
                 <button
                   type="button"
                   onClick={loadMore}
-                  className="px-5 py-2.5 rounded-lg font-semibold border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                  style={{ borderColor: 'var(--color-outline-variant)', color: 'var(--color-primary)' }}
+                  className="hrp-btn-ghost hrp-focus px-5 min-h-11 rounded-lg font-semibold border"
                 >
                   Xem thêm việc làm
                 </button>

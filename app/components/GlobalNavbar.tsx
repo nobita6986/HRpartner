@@ -82,7 +82,16 @@ export function GlobalNavbar() {
       className="bg-surface shadow-sm sticky top-0 z-50"
       style={{ borderBottom: '1px solid var(--color-line)' }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* go-live-08 / RQ-18: phần tử nhận tiêu điểm đầu tiên của mọi trang portal.
+          Dùng <a> chứ không dùng <Link>: đây là mỏ neo trong cùng trang, trình
+          duyệt tự chuyển tiêu điểm tới đích có tabIndex={-1}, không cần định
+          tuyến phía client. */}
+      <a className="hrp-skip" href="#hrp-main">
+        Bỏ qua điều hướng, tới nội dung chính
+      </a>
+      {/* go-live-08 / RQ-20: chuỗi class này PHẢI trùng chuỗi container của
+          `app/(portal)/page.tsx` để hai mép trái trùng nhau ở mọi breakpoint. */}
+      <div className="w-full max-w-[1600px] mx-auto px-6 md:px-[5%]">
         <div className="flex justify-between items-center h-20">
 
           {/* Logo */}
@@ -188,22 +197,13 @@ export function GlobalNavbar() {
               <>
                 <Link
                   href="/login"
-                  className="font-medium px-4 py-2 border rounded-lg transition-colors"
-                  style={{
-                    color: 'var(--color-primary)',
-                    borderColor: 'var(--color-outline-variant)',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-primary-soft)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  className="hrp-btn-outline hrp-focus font-medium px-4 min-h-11 inline-flex items-center border rounded-lg"
                 >
                   Đăng nhập
                 </Link>
                 <Link
                   href="/register"
-                  className="font-semibold px-5 py-2 rounded-lg transition-colors"
-                  style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
+                  className="hrp-btn-primary hrp-focus nav-item-lift font-semibold px-5 min-h-11 inline-flex items-center rounded-lg"
                 >
                   Đăng ký
                 </Link>
@@ -287,16 +287,14 @@ export function GlobalNavbar() {
                 <>
                   <Link
                     href="/login"
-                    className="block text-center px-4 py-2.5 font-medium border rounded-lg"
-                    style={{ borderColor: 'var(--color-outline-variant)', color: 'var(--color-primary)' }}
+                    className="hrp-btn-outline hrp-focus flex items-center justify-center px-4 min-h-11 font-medium border rounded-lg"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Đăng nhập
                   </Link>
                   <Link
                     href="/register"
-                    className="block text-center px-4 py-2.5 font-semibold rounded-lg"
-                    style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+                    className="hrp-btn-primary hrp-focus nav-item-lift flex items-center justify-center px-4 min-h-11 font-semibold rounded-lg"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Đăng ký

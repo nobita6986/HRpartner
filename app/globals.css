@@ -106,6 +106,25 @@
   /* Motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --t-fast: 150ms;
+
+  /* go-live-08/RQ-01 — nhóm 1/3: bậc bóng cho trạng thái hover của card.
+     Cùng cấu trúc hai lớp như --shadow-card, chỉ tăng độ lan và độ đậm; hue
+     giữ nguyên (26,28,27 trung tính + 242,101,34 là cam chủ đạo) để không
+     sinh ra một bản sắc thứ hai. */
+  --shadow-card-hover: 0 2px 6px rgba(26, 28, 27, 0.06), 0 14px 32px rgba(242, 101, 34, 0.14);
+
+  /* go-live-08/RQ-01 — nhóm 2/3: màu vòng focus. Trỏ tới token đã có, KHÔNG
+     sao chép mã màu, theo đúng quy ước "một nguồn sự thật" mà lớp tương thích
+     phía dưới đã đặt ra. Vì sao không dùng --color-primary: nó chỉ đạt
+     2.997:1 với --color-background nên thiếu ngưỡng 3:1 của một chỉ báo trạng
+     thái, còn --color-primary-dark đạt 5.83–6.47:1 trên cả bốn nền của bề mặt
+     này (số đo ở HANDOFF §AC-13). */
+  --color-focus-ring: var(--color-primary-dark);
+
+  /* go-live-08/RQ-01 — nhóm 3/3: thời lượng chuyển động thứ hai, dùng cho
+     chiều VÀO. --t-fast 150ms trở thành chiều RA: 150/220 = 68.2% ≤ 70%
+     (RQ-23, rule exit-faster-than-enter). */
+  --t-medium: 220ms;
 }
 
 /* ==========================================================================
@@ -178,6 +197,250 @@ body {
   color: var(--color-on-surface);
   background: var(--color-background);
   -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   GO-LIVE-08 — LỚP TRÌNH BÀY CHO BỀ MẶT CÔNG KHAI ĐANG SỐNG
+
+   Khối .pub-* NGAY DƯỚI đây là CSS ĐÃ CHẾT (không một .tsx nào dùng tới) và
+   RQ-12 khoá nguyên văn cả vùng đó. Mọi class trong khối này phục vụ trang
+   landing ĐANG SỐNG, nên nó tách hẳn ra và nằm TRƯỚC vùng bị khoá.
+
+   Vì sao TRƯỚC chứ không phải cuối tệp: hàng rào R2-02 của
+   src/shared/ui/design-tokens.static.test.ts cắt CSS từ vị trí khối @media
+   giảm chuyển động tới HẾT TỆP rồi đòi mọi quy tắc trong dải đó huỷ transform
+   bằng !important — tiền đề của nó là khối hàng rào NẰM CUỐI tệp (baseline
+   :360 = EOF). Dán khối này ra sau hàng rào thì mọi "transform: none" của
+   :active và của media cảm ứng bị đọc như quy tắc giảm chuyển động ⇒ gate đỏ.
+   Đặt trước thì vùng khoá RQ-12 vẫn liền một dải và băm nguyên văn không đổi.
+
+   Vì sao là CSS viết tay chứ không phải utility sinh tự động: quy tắc của dự
+   án là ĐO TRÊN BẢN BIÊN DỊCH. Chuỗi CSS viết tay có mặt nguyên văn trong
+   thư mục .next/static/css nên chứng minh được nó SỐNG; một class chỉ tồn tại
+   trong chuỗi className thì không. Nó cũng cho phép AC-11 và AC-23 kiểm được
+   bằng một lần grep vì toàn bộ CSS của round này nằm liền một dải.
+
+   Ghi chú thứ tự lớp (quan trọng khi đọc độ đặc hiệu): khối này KHÔNG nằm
+   trong @layer nào, còn utility của Tailwind v4 nằm trong @layer utilities.
+   Theo cascade layers, khai báo KHÔNG lớp thắng khai báo CÓ lớp bất kể độ đặc
+   hiệu — nên các quy tắc dưới đây không cần !important để thắng utility. Dù
+   vậy mọi utility xung đột đã được BỎ khỏi className thay vì để chồng lên
+   nhau, để diff đọc được bằng mắt.
+
+   Trần chuyển động (RQ-23): đúng HAI nhóm phần tử mang transform là .hrp-card
+   và .hrp-btn-primary. Panel, pill, field và skip link KHÔNG có transform.
+   Mọi khai báo transition dưới đây chỉ liệt kê transform, box-shadow,
+   border-color, background-color. Chiều vào 220ms (--t-medium, khai ở
+   :hover), chiều ra 150ms (--t-fast, khai ở quy tắc gốc) = 68.2% ≤ 70%.
+
+   Quy ước màu cho ĐƯỜNG VIỀN và VÒNG FOCUS (RQ-07/RQ-13): mọi đường biên và
+   chỉ báo trạng thái mới đều dùng --color-primary-dark hoặc --color-outline,
+   KHÔNG dùng --color-primary. Lý do là số: --color-primary chỉ đạt 2.997:1
+   với nền body và 2.84:1 với nền panel, tức dưới ngưỡng 3:1 cho thành phần
+   giao diện. --color-primary vẫn được dùng làm NỀN của nút chính, vì ở đó nó
+   là mảng màu chứ không phải đường biên. Bảng số đầy đủ ở HANDOFF §AC-13.
+
+   Hàng rào giảm chuyển động (RQ-10/DEC-19): KHÔNG thêm khối
+   guard giảm chuyển động thứ hai. Mọi phần tử mang transform đều được
+   gắn thêm class .nav-item-lift trong TSX, để quy tắc đã có sẵn
+   ".nav-item-lift:hover { transform: none !important }" phủ lên chúng. Vì đó
+   là khai báo !important nên nó thắng mọi khai báo thường ở đây bất kể thứ tự
+   hay độ đặc hiệu. KHÔNG đặt transform ở :active — hàng rào chỉ phủ :hover,
+   nên nhấn bằng bàn phím hoặc cảm ứng sẽ lọt ra ngoài hàng rào.
+   ========================================================================== */
+
+/* --- Card việc làm — RQ-02, RQ-03, RQ-04 -------------------------------- */
+.hrp-card {
+  padding: var(--spacing-card-padding);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  transition-property: transform, box-shadow, border-color;
+  transition-duration: var(--t-fast);
+  transition-timing-function: var(--ease-out);
+}
+
+/* Ba hiệu ứng nằm trong CÙNG một quy tắc để AC-03 đọc được bằng một lần grep:
+   nâng dọc 2px, bóng lên bậc hai, viền chuyển cam.
+
+   Vì sao viền hover là --color-primary-dark chứ không phải --color-primary:
+   card nằm trên nền body --color-background #faf9f7, nên mép NGOÀI của viền kề
+   #faf9f7. --color-primary đạt 2.997:1 với nền đó — thiếu ngưỡng 3:1 của
+   RQ-13 đúng 0.003. --color-primary-dark cùng họ cam (hue 21) và đạt 6.147:1
+   với #faf9f7, 6.468:1 với nền card, nên hợp lệ trên MỌI nền của bề mặt này.
+   Sắc cam chủ đạo vẫn hiện diện trong bóng hover (rgba(242,101,34,0.14)).
+   Đây là đúng đường mà STEP-07 chỉ định: chọn token khác, không hạ ngưỡng. */
+.hrp-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--color-primary-dark);
+  transition-duration: var(--t-medium);
+}
+
+/* --- Pill trong card — RQ-05 -------------------------------------------- */
+.hrp-pill {
+  background-color: var(--color-surface-container);
+  color: var(--color-on-surface-variant);
+}
+.hrp-pill-location {
+  background-color: var(--color-primary-soft);
+  color: var(--color-on-surface-variant);
+}
+
+/* --- Panel bộ lọc — RQ-06 ----------------------------------------------- */
+/* Giá trị nền panel (--color-surface-container-low #f4f3f1) KHÁC giá trị nền
+   card (--color-surface #ffffff). Ô từ khoá bên trong giữ nền trắng nên nó
+   nổi lên trên nền panel xám — đó là cơ chế làm nó nổi bật nhất (RQ-22). */
+.hrp-panel {
+  background-color: var(--color-surface-container-low);
+}
+
+/* --- Vòng focus — RQ-07 ------------------------------------------------- */
+/* Quy tắc :focus-visible toàn cục KHÔNG bị sửa một ký tự (DEC-19); lớp này
+   chỉ thay MÀU vòng cho các control của bề mặt công khai, vì màu toàn cục
+   (--color-primary) chỉ đạt 2.997:1 với --color-background. Độ đặc hiệu
+   (0,2,0) > (0,1,0) và cùng không-lớp nên không cần !important. */
+.hrp-focus:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* --- Nút — RQ-09 -------------------------------------------------------- */
+.hrp-btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  cursor: pointer;
+  transition-property: transform, box-shadow, background-color, border-color;
+  transition-duration: var(--t-fast);
+  transition-timing-function: var(--ease-out);
+}
+.hrp-btn-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  transform: scale(1.02);
+  box-shadow: var(--shadow-card);
+  transition-duration: var(--t-medium);
+}
+/* Nhấn: nền giữ mức đậm, bóng phẳng lại và bỏ phần nâng — ba dấu hiệu đủ để
+   phân biệt với hover mà không phải thêm một chuyển động mới nào. */
+.hrp-btn-primary:active:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  transform: none;
+  box-shadow: none;
+}
+
+.hrp-btn-outline {
+  background-color: transparent;
+  color: var(--color-primary-dark);
+  border-color: var(--color-outline-variant);
+  cursor: pointer;
+  transition-property: background-color, border-color;
+  transition-duration: var(--t-fast);
+  transition-timing-function: var(--ease-out);
+}
+.hrp-btn-outline:hover {
+  background-color: var(--color-primary-soft);
+  border-color: var(--color-primary-dark);
+  transition-duration: var(--t-medium);
+}
+.hrp-btn-outline:active {
+  background-color: var(--color-primary-fixed);
+  border-color: var(--color-primary-dark);
+}
+
+.hrp-btn-ghost {
+  background-color: var(--color-surface);
+  color: var(--color-primary-dark);
+  border-color: var(--color-outline-variant);
+  cursor: pointer;
+  transition-property: background-color, border-color;
+  transition-duration: var(--t-fast);
+  transition-timing-function: var(--ease-out);
+}
+.hrp-btn-ghost:hover:not(:disabled) {
+  background-color: var(--color-primary-soft);
+  border-color: var(--color-primary-dark);
+  transition-duration: var(--t-medium);
+}
+.hrp-btn-ghost:active:not(:disabled) {
+  background-color: var(--color-primary-fixed);
+  border-color: var(--color-primary-dark);
+}
+
+/* Hai trạng thái KHÔNG bấm được của nút Ứng tuyển: không :hover, không
+   transform, con trỏ nói rõ là không tương tác. */
+.hrp-btn-muted {
+  background-color: var(--color-surface-container);
+  color: var(--color-on-surface-variant);
+  cursor: not-allowed;
+}
+.hrp-btn-done {
+  background-color: var(--color-success-soft);
+  color: var(--color-success);
+  cursor: default;
+}
+
+/* --- Ô từ khoá và select — RQ-08, RQ-22 --------------------------------- */
+/* hover và focus cho hai giá trị border-color KHÁC nhau, cộng vòng focus 2px
+   ở trên: ba trạng thái phân biệt được bằng máy.
+
+   Thang ba bậc, chọn theo tương phản đo được chứ không theo cảm tính. Ô nhập
+   nằm TRONG .hrp-panel nên mép ngoài của viền kề #f4f3f1, mép trong kề nền
+   trắng của chính ô — cả hai mép đều phải đạt 3:1:
+     nghỉ  --color-outline-variant #e1bfb3  (1.71:1 trắng / 1.54:1 panel — kế
+                                              thừa nguyên từ baseline, xem HANDOFF §5)
+     hover --color-outline        #8d7166  (4.48:1 trắng / 4.04:1 panel)
+     focus --color-primary-dark   #a63b00  (6.47:1 trắng / 5.83:1 panel)
+   --color-primary bị loại ở bậc hover vì chỉ đạt 2.84:1 trên nền panel. */
+.hrp-field {
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  border-color: var(--color-outline-variant);
+  transition-property: border-color, background-color;
+  transition-duration: var(--t-fast);
+  transition-timing-function: var(--ease-out);
+}
+.hrp-field:hover {
+  border-color: var(--color-outline);
+  transition-duration: var(--t-medium);
+}
+.hrp-field:focus-visible {
+  border-color: var(--color-primary-dark);
+}
+
+/* --- Skip link — RQ-18 -------------------------------------------------- */
+/* Đưa ra ngoài khung nhìn thay vì display:none, vì display:none sẽ loại nó
+   khỏi luồng bàn phím. Đổi vị trí là tức thời, KHÔNG khai transition, nên
+   không vi phạm lệnh cấm transition thuộc tính gây reflow (RQ-23). Neo tuyệt
+   đối vào <header> — header đã là sticky nên nó là phần tử định vị. */
+.hrp-skip {
+  position: absolute;
+  top: 0;
+  left: -9999px;
+  z-index: 100;
+  padding: 12px 20px;
+  background-color: var(--color-surface);
+  color: var(--color-primary-dark);
+  border: 1px solid var(--color-primary-dark);
+  border-radius: var(--radius-DEFAULT);
+  box-shadow: var(--shadow-card);
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+}
+.hrp-skip:focus {
+  top: 16px;
+  left: 16px;
+}
+
+/* --- RISK-05: thiết bị cảm ứng giữ :hover dính sau khi chạm ------------- */
+/* Chỉ trung hoà phần BIẾN HÌNH; đổi màu vẫn giữ để phản hồi chạm không mất.
+   Đây KHÔNG phải khối guard giảm chuyển động thứ hai — phép đếm của AC-10 vẫn
+   bằng 1. */
+@media (hover: none), (pointer: coarse) {
+  .hrp-card:hover,
+  .hrp-btn-primary:hover:not(:disabled) {
+    transform: none;
+  }
 }
 
 /* ==========================================================================
