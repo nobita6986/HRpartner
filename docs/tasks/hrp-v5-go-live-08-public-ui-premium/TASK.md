@@ -8,7 +8,7 @@
 | Work type | `CODE` — presentation layer, không chạm dữ liệu |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.3` |
-| Status | `CODE_ACCEPTED` — lane mã **đạt** ở round 1 (§9: không P0, không P1, P2 duy nhất bị bác sau khi Tier 1 tự đo lại). Nửa **trực quan** của mười hai AC còn `OWNER_PENDING` theo waiver §9, đóng bằng ba phép nhìn mắt của Owner. GO-LIVE-05 đã **ĐÓNG** (`ACCEPTED`, push `e0c14ca` + `c6256e7`) nên điều kiện xếp hàng của `DEC-08` đã hết vai trò |
+| Status | `ACCEPTED` — **đóng hẳn ngày 2026-09-01**. Lane mã đạt ở round 1 (§9: không P0, không P1, P2 duy nhất bị bác sau khi Tier 1 tự đo lại), đã push `81c86e0` cộng `c0d2d87` ⇒ deploy production. Ba phép nhìn mắt của Owner trả **đạt** (`PLN-11`) nên nửa **trực quan** của mười hai AC hết `OWNER_PENDING` ⇒ cả hai mươi sáu AC đọc là PASS. GO-LIVE-05 đã **ĐÓNG** (`ACCEPTED`, push `e0c14ca` + `c6256e7`) nên điều kiện xếp hàng của `DEC-08` đã hết vai trò |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — independent context |
@@ -18,8 +18,8 @@
 | Design standard | Skill `ui-ux-pro-max` — `C:\Users\Admin\.agents\skills\ui-ux-pro-max\.claude\skills\ui-ux-pro-max\SKILL.md`; runtime nạp skill báo base dir `C:\Users\Admin\.claude\skills\ui-ux-pro-max`. Rule ID của skill là ngôn ngữ acceptance của task này, xem `DEC-07` |
 | Current execution round | `1` |
 | Current audit round | `1` — verdict `CONDITIONAL`, sáu finding `AUD-001`..`AUD-006` (một P2, năm P3), đã xử hết ở §9 |
-| Next gate | **Bước OP của Owner** — ba phép nhìn mắt trong waiver §9, chạy sau khi lane mã được deploy. Không còn gate `/code` nào cho round 2 trừ khi một phép nhìn mắt trả về **không đạt** |
-| Updated | `2026-09-01 23:40 +07` |
+| Next gate | **Không còn gate nào cho task này** — waiver §9 đã đóng bằng `PLN-11`. Việc kế của Tier 1 nằm ở task khác: relock baseline cho go-live-09 và go-live-07 rồi thêm `DEC-17` vào cả hai trước khi giao. Hai món nợ mở là **task UI nhỏ thứ sáu** (hai cặp tương phản kế thừa cộng ba icon navbar) và **hạ tầng test trình duyệt** |
+| Updated | `2026-09-01 23:58 +07` |
 
 Task này nâng chất lượng trình bày của bề mặt công khai lên mức Modern/Clean/Premium bằng **chính hệ token đã chốt**, không đổi một dòng dữ liệu nào. Nó cũng đóng một lỗi tiếp cận thật: bề mặt công khai hiện không có trạng thái focus nhìn thấy được.
 
@@ -361,6 +361,22 @@ Ba trong bốn là defect có thể **lây** sang contract khác vì chúng là 
 | `RQ-16` và `AC-16` | Đòi "giá trị computed đọc từ trình duyệt" với fail-condition `BLOCK`, trong repo không có runner trình duyệt ⇒ bất khả đo | Ghi rõ nửa tĩnh là điều kiện của lane mã, nửa trực quan là bước OP của Owner theo waiver ở trên |
 | `AC-21` | Đòi `12` icon trang trí có `aria-hidden` trong khi §4.2 chỉ mở `9` | Ghi rõ phạm vi đo là `page.tsx`; `3` icon navbar chuyển sang task UI nhỏ thứ sáu |
 
+#### `PLN-11` — kết quả bước OP của Owner: **ĐẠT**, waiver đóng
+
+Owner trả lời **“ok đạt nhé”** ngày `2026-09-01`, sau khi lane mã đã deploy production (`81c86e0` cộng `c0d2d87`, push `5c9b88f..c0d2d87`). Đó là **một lời xác nhận gộp cho cả ba phép**, không phải ba báo cáo rời, và hình thức bằng chứng là **lời của Owner trong hội thoại** — không ảnh chụp, không giá trị `getComputedStyle`. Ghi rõ như vậy để người đọc sau biết chính xác mức bằng chứng đang đứng ở đâu.
+
+Mức đó **hợp lệ và đủ**, vì chính waiver đặt Owner làm chủ sở hữu và đặt “Owner trả lời đạt hoặc không đạt” làm điều kiện đóng. Với một phép nhìn mắt thì phán quyết của người nhìn **chính là** bằng chứng; không có artifact nào cao hơn để đòi. Điều Tier 1 **không** được làm là suy diễn thêm: lời xác nhận này phủ đúng ba phép mà `LIM-03` đã liệt, không phủ bất cứ AC nào ngoài danh sách mười hai AC dưới đây.
+
+| Phép | Nội dung | Kết quả |
+|---|---|---|
+| `1` | Hover một card việc làm và một nút Ứng tuyển — nâng cộng bóng cộng đổi nền | **ĐẠT** |
+| `2` | `Tab` từ đầu trang — skip link hiện ra trước tiên, vòng focus chạy đủ chín control | **ĐẠT** |
+| `3` | Panel bộ lọc ở `1024` và `1440` — hiện đầy đủ, không cần mở gì | **ĐẠT** |
+
+Hệ quả: nửa trực quan của `AC-02`, `AC-03`, `AC-04`, `AC-05`, `AC-07`, `AC-08`, `AC-09`, `AC-14`, `AC-17`, `AC-18`, `AC-22`, `AC-25` chuyển từ `OWNER_PENDING` sang **PASS**, cộng mệnh đề “computed từ trình duyệt” của `RQ-16` và `AC-16`. Cộng với nửa tĩnh đã đo ở §2 của `AUDIT.md` và chín phép đo `PLN-01`..`PLN-09`, **cả hai mươi sáu AC nay đọc là PASS** ⇒ Status chuyển `CODE_ACCEPTED` sang **`ACCEPTED`**.
+
+Hai món nợ dưới đây **không** bị lời xác nhận này đóng, và cố ý giữ mở ở nơi khác: nợ tương phản **hai cặp kế thừa** (`3.153` nút CTA chính, `4.435` nút đã-ứng-tuyển) cộng **ba icon trang trí** của `GlobalNavbar.tsx` → **task UI nhỏ thứ sáu**; **hạ tầng test trình duyệt** → task riêng trong backlog. Cả hai đã ghi ở `AUD-001`, `AUD-004` và `AUD-006`, và việc đóng task này **không** xoá chúng.
+
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
@@ -370,6 +386,7 @@ Ba trong bốn là defect có thể **lây** sang contract khác vì chúng là 
 | `v1.2` | `2026-09-01` | **Relock baseline `d4928af` → `c6256e7` và rút những AC đo một trạng thái không còn tồn tại.** Rewrite: 5 ô Control (`Spec version`, `Status`, `Baseline`, `Current execution round`, `Updated`), `EV-27`, `RQ-07`/`08`/`10`/`12`/`14`/`17`, `AC-07`/`08`/`10`/`12`/`17`. Thêm: `EV-28`..`EV-34`, `DEC-16`..`DEC-19`, `RQ-24`..`RQ-26`, `STEP-12`, `AC-24`..`AC-26`, `RISK-13`, ba dòng traceability. **Không** xoá mã ID nào và **không** tạo mã phái sinh bằng hậu tố chữ | Ba nguyên nhân, tất cả do Tier 1 tự đo tại `c6256e7`: (1) `474f3dc` đã thêm `:focus-visible` và `prefers-reduced-motion` toàn cục ⇒ mọi AC dạng "before = 0" của 08 đã chết; (2) GO-LIVE-05 rút bộ lọc ngành nghề ⇒ `type="checkbox"` = `0` nên `AC-08` đòi việc trên phần tử không tồn tại — bẫy "AC bất khả đo"; (3) `page.tsx` co 901 → 659 dòng và khối CSS chết dịch từ `140`–`297` sang `189`–`360` ⇒ mọi trích dẫn dòng của `v1.1` đều lạc. Bằng chứng round trước: **không có** — `v1.1` chưa từng được thực thi, `Current execution round` vẫn là `1` |
 | `v1.3` | `2026-09-01` | **Tách baseline mã khỏi HEAD.** Rewrite 4 ô: `Spec version`, `Baseline`, `Updated`, `STEP-12`. Thêm `DEC-20`. Không thêm hay xoá `RQ`, `AC`, `EV`, `RISK`, traceability nào; **không** tạo mã phái sinh | Lỗi tự thân của `v1.2`, Tier 1 tự phát hiện khi chuẩn bị giao: hai commit docs-only mà chính Tier 1 push (`ed9c8f7` contract, `e7c1037` cursor) đẩy HEAD khỏi `c6256e7`, làm điều kiện dừng của `STEP-12` bắn ngay lệnh đầu tiên cho một thay đổi 0 dòng mã. Bằng chứng round trước: **không có** — `v1.2` chưa từng được thực thi, `Current execution round` vẫn là `1`, `Current audit round` vẫn là `0` |
 | `v1.3` | `2026-09-01` | **Planner Resolution round 1 — không bump.** Ghi §9: bảng `PLN-01`..`PLN-09` phép đo độc lập của Tier 1, xử sáu finding, waiver bốn trường cho nửa trực quan của mười hai AC, và `PLN-10` liệt bốn defect văn bản của contract. Rewrite 4 ô Control (`Status` sang `CODE_ACCEPTED`, `Current audit round` `0` sang `1`, `Next gate` sang bước OP của Owner, `Updated`). **Đính chính tại chỗ**, chỉ thêm câu chứ không viết lại thân điều khoản: §4.2 hai dòng (điểm chèn CSS, phạm vi navbar), `RQ-13`, `RQ-15`, `RQ-16`, `AC-13`, `AC-15`, `AC-16`, `AC-21`. Không thêm, không xoá, không đổi tên một mã `RQ`, `AC`, `EV`, `DEC`, `STEP`, `RISK` nào; **không** tạo mã phái sinh bằng hậu tố chữ | **Không bump** — resolution không phải contract change, và `verify-audit.ps1` so phiên bản spec của TASK với AUDIT nên bump lúc ghi resolution sẽ tự làm đỏ gate. Bằng chứng round 1 vẫn **hợp lệ nguyên vẹn**: bốn đính chính đều **nới** hoặc **làm rõ** điều khoản theo đúng hướng Tier 2 đã thi công, không một đính chính nào đòi thêm việc. Nguồn: `AUDIT.md` round 1 verdict `CONDITIONAL` cộng chín phép đo Tier 1 tự chạy tại `PLN-01`..`PLN-09` |
+| `v1.3` | `2026-09-01` | **Kết quả bước OP của Owner — không bump.** Thêm `PLN-11` vào §9: ba phép nhìn mắt trả **đạt**, waiver bốn trường đóng, nửa trực quan của mười hai AC cộng mệnh đề trình duyệt của `RQ-16` và `AC-16` chuyển sang PASS. Rewrite 3 ô Control (`Status` sang `ACCEPTED`, `Next gate` sang không-còn-gate, `Updated`). Không thêm, không xoá, không đổi tên một mã `RQ`, `AC`, `EV`, `DEC`, `STEP`, `RISK` nào; không đính chính thêm điều khoản nào; **không** sửa lịch sử ở §9 — tiêu đề round 1 và ruling `AUD-006` giữ nguyên văn | **Không bump** — cùng lý do dòng trên: `verify-audit.ps1` so phiên bản spec của TASK với AUDIT. Đây là **ghi nhận một sự kiện bên ngoài** chứ không phải thay đổi yêu cầu, nên bằng chứng round 1 không bị chạm tới. Nguồn: Owner xác nhận “ok đạt nhé” trong hội thoại ngày 2026-09-01, sau deploy `81c86e0`+`c0d2d87`; mức bằng chứng đã ghi rõ ở `PLN-11` là lời Owner, không ảnh chụp |
 
 
 
