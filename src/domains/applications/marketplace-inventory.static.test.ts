@@ -244,28 +244,100 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
     );
   });
 
-  it('job card không dựng lương giả từ số slot và dùng location/shift thật từ API', () => {
+  it('job card không dựng dữ liệu giả và đọc summary thật từ projection công khai', () => {
     const code = strip(read(PORTAL_PAGE));
     expect(code).not.toContain('job.salary');
     expect(code).not.toContain('availableSlots * 1.5');
-    expect(code).toContain("location: job.location?.trim() || 'Địa điểm đang cập nhật'");
-    expect(code).toContain("schedule: job.shift?.trim() || 'Thời gian đang cập nhật'");
+    // go-live-05 / RQ-03, DEC-02: `'HRP Partners'` là tên một công ty không tồn tại, đặt đúng vào chỗ
+    // tên nhà tuyển dụng — ứng viên đọc card không có cách nào biết đó là chữ bịa. Nhãn thay thế nói
+    // đúng vai của HRPartner và vẫn không tiết lộ danh tính Client.
+    expect(code).not.toContain('HRP Partners');
+    expect(code).toContain("recruiter: 'Tuyển dụng qua HRPartner'");
+    // go-live-05 / RQ-02, RQ-04: ba trường mô tả của card đến từ ba mảng summary do service tính trên
+    // TẤT CẢ slot còn hiệu lực, không từ `slots[0]` theo thứ tự DB.
+    expect(code).toContain('positions: job.positionTitles');
+    expect(code).toContain('locations: job.locations');
+    expect(code).toContain('shifts: job.shifts');
+    // DEC-04: rỗng thì nói "đang cập nhật" — nhãn trung tính, không phải một giá trị bịa.
+    expect(code).toContain("summaryLabel(job.locations, 'Địa điểm đang cập nhật')");
+    expect(code).toContain("summaryLabel(job.shifts, 'Thời gian đang cập nhật')");
   });
 
-  it('nút Tìm kiếm chuyển đủ năm nhóm filter vào API, không còn spinner giả 300 ms', () => {
+  it('nút Tìm kiếm chuyển ba bộ lọc thật vào API, không còn control trang trí', () => {
     const page = strip(read(PORTAL_PAGE));
     const route = strip(read(LEGACY_JOBS));
     const service = strip(read(PUBLIC_JOB_SERVICE));
     expect(page).toContain("params.set('q', q)");
-    expect(page).toContain("params.set('area', filters.location)");
-    expect(page).toContain("params.set('industry', filters.industry)");
-    expect(page).toContain("params.append('shiftType', shiftType)");
-    expect(page).toContain("params.append('jobType', jobType)");
+    expect(page).toContain("params.set('area', filters.area)");
+    expect(page).toContain("params.set('shift', filters.shift)");
     expect(page).not.toMatch(/setTimeout\(\(\)\s*=>\s*setSearching/);
+    // go-live-05 / RQ-07, DEC-07: hai nhóm checkbox `shiftType`/`jobType` đã bị loại khỏi UI. Chúng
+    // gửi giá trị SUY DIỄN (`jobType` suy từ độ dài ca) và một giá trị không còn tồn tại (`xoay_ca`),
+    // nên là control không có dữ liệu canonical chống lưng. Route vẫn parse chúng (out of scope) và
+    // service vẫn lọc được — chỉ UI thôi không chào ra thứ nó không chứng minh được.
+    expect(page).not.toMatch(/params\.append\('(?:shiftType|jobType)'/);
+    expect(page).not.toContain('xoay_ca');
+    expect(page).not.toMatch(/type="checkbox"/);
+    // DEC-08: không còn danh sách tỉnh/ngành/ca gắn cứng trong UI.
+    expect(page).not.toMatch(/const\s+(?:LOCATIONS|INDUSTRIES|WORK_TYPES|JOB_TYPES)\s*=/);
+    expect(page).toContain('options={facets.areas}');
+    expect(page).toContain('options={facets.shifts}');
     expect(route).toContain("searchParams.getAll('shiftType')");
     expect(route).toContain("searchParams.getAll('jobType')");
     expect(service).toContain('opts.shiftTypes.includes(job.shiftType)');
     expect(service).toContain('opts.jobTypes.includes(job.jobType)');
+  });
+
+  // go-live-05 v1.2 / DEC-13, RQ-18, AC-18 — control ngành nghề bị BỎ ở cả ba lớp (UI, route,
+  // service). Lý do không phải thẩm mỹ: nó không có cột canonical đứng sau. `ClientCompany.industry`
+  // có thật, nhưng `client_companies` bị FORCE RLS và principal công khai không có policy đọc
+  // (`EV-09`), nên giá trị duy nhất từng chào ra dropdown là nhãn do một hàm regex suy ra từ văn bản
+  // tự do. Khối này FAIL nếu bất kỳ lớp nào nối lại, kể cả bằng một facet suy diễn mang tên khác.
+  it('không lớp nào chào ra facet/param ngành nghề, và không facet nào dựng từ hàm suy diễn', () => {
+    const page = strip(read(PORTAL_PAGE));
+    const route = strip(read(LEGACY_JOBS));
+    const service = strip(read(PUBLIC_JOB_SERVICE));
+    // Lớp UI: không dropdown, không state, không tham số gửi lên.
+    expect(page).not.toMatch(/heading="Ngành nghề"/);
+    expect(page).not.toMatch(/facets\.industries/);
+    expect(page).not.toMatch(/industry/i);
+    // Lớp route: không parse tham số đó nữa ⇒ không còn đường nào chuyển nó xuống service.
+    expect(route).not.toMatch(/industry/i);
+    // Lớp service: không khóa facet, không nhánh lọc theo tham số đó.
+    expect(service).not.toMatch(/industries/);
+    expect(service).not.toMatch(/opts\.industry\b/);
+    // Payload facets phải mang ĐÚNG hai khóa, cả hai `summarize` từ mảng của DTO. Nối thêm một khóa
+    // thứ ba — dù tên gì — là vỡ cả interface lẫn phép đếm dưới đây.
+    expect(service).toMatch(/export interface PublicJobFacets \{\s*areas: string\[\];\s*shifts: string\[\];\s*\}/);
+    const fromFacets = service.slice(service.indexOf('const facets: PublicJobFacets = {'));
+    const facetsObject = fromFacets.slice(0, fromFacets.indexOf('};') + 2);
+    expect(facetsObject).toContain('areas: summarize(eligible.flatMap(({ job }) => job.locations))');
+    expect(facetsObject).toContain('shifts: summarize(eligible.flatMap(({ job }) => job.shifts))');
+    expect(facetsObject.match(/\w+: summarize\(/g)).toHaveLength(2);
+    // Hàng rào thật của `RQ-18`: không facet nào được dựng từ một hàm `infer*`.
+    expect(facetsObject).not.toMatch(/infer/i);
+    // Ranh giới cứng theo hướng NGƯỢC LẠI: `inferIndustry` và khóa DTO `industry` VẪN PHẢI CÒN. Trang
+    // chi tiết của go-live-12 đọc chúng và là Out of scope; xoá đi là vỡ compile ở file không được
+    // chạm. Defect "nhãn ngành suy diễn" chuyển task tiếp nối (`EV-16`), không xoá lén ở đây.
+    expect(service).toContain('function inferIndustry(');
+    expect(service).toContain('industry: inferIndustry(searchableText, null)');
+  });
+
+  it('phân trang của trang việc làm đọc `nextOffset` thật, không có spinner hẹn giờ', () => {
+    const page = strip(read(PORTAL_PAGE));
+    // go-live-05 / RQ-17: khẳng định sai "API doesn't support pagination yet" đã bị xoá — `route.ts`
+    // parse `offset`/`limit` từ trước, nên niềm tin đó sai ngay lúc được viết ra.
+    expect(page).not.toMatch(/API doesn't support pagination/i);
+    expect(page).not.toMatch(/setHasMore\(false\)/);
+    // RQ-08: spinner cũ chỉ là `setTimeout(…, 800)` rồi tự tắt, không tải thêm một dòng nào.
+    expect(page).not.toMatch(/setTimeout\(\(\)\s*=>\s*setLoadingMore/);
+    expect(page).toContain("void runQuery(appliedFilters, nextOffset, 'append')");
+    expect(page).toContain('dedupeById([...prev, ...incoming])');
+    expect(page).toContain('nextOffset === null');
+    // DEC-09: hai lớp chống race, và `total` in ra là số của API.
+    expect(page).toContain('new AbortController()');
+    expect(page).toContain('generation !== generationRef.current');
+    expect(page).toMatch(/Tìm thấy \$\{total\} kết quả/);
   });
 
   it('trang track có nút Tra cứu nhìn thấy được và render ba field đối chiếu', () => {

@@ -48,6 +48,7 @@ export default defineConfig({
       M1_07B_LIVE_RLS_POSTURE: TEST_DB_ADMIN ? '1' : '',
       M1_08_LIVE_VENDOR_IDOR: TEST_DB_ADMIN ? '1' : '',
       GOLIVE04_LIVE_PUBLIC_READ: TEST_DB_ADMIN ? '1' : '',
+      GOLIVE05_LIVE_CARD_TRUTH: TEST_DB_ADMIN ? '1' : '',
     },
     poolOptions: {
       threads: { maxThreads: 1, minThreads: 1 },

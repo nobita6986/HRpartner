@@ -100,8 +100,22 @@ const PUBLISHED_JOB: PublicJobDto = {
   availableSlots: 12,
   deadline: '2026-09-30',
   statusLabel: 'Đang tuyển',
+  // go-live-05 / RQ-02: ba field đơn ở trên là PHẦN TỬ ĐẦU của ba mảng này, không phải giá trị rời.
+  // Fixture giữ đúng quan hệ đó để nó vẫn là hình dạng mà service thật có thể sinh ra.
+  positionTitles: ['Công nhân sản xuất', 'Nhân viên kho'],
+  locations: ['KCN VSIP 1', 'KCN Yên Phong'],
+  shifts: ['06:00-14:00', '14:00-22:00'],
 };
-const LIST_RESULT: PublicJobListResult = { jobs: [PUBLISHED_JOB], nextOffset: null, total: 1 };
+/** go-live-05 / RQ-06: route phải chuyển tiếp CẢ `facets`, nên fixture phải mang facets thật. */
+const LIST_RESULT: PublicJobListResult = {
+  jobs: [PUBLISHED_JOB],
+  nextOffset: null,
+  total: 1,
+  facets: {
+    areas: ['KCN VSIP 1', 'KCN Yên Phong'],
+    shifts: ['06:00-14:00', '14:00-22:00'],
+  },
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -135,24 +149,34 @@ describe('RQ-03 — GET /api/jobs (list)', () => {
     expect(calls.map((c) => c.rule.surface)).toEqual(['JOB_BROWSE']);
   });
 
-  it('chuyển đủ bộ lọc thật từ query string xuống service', async () => {
+  it('chuyển đủ bộ lọc thật từ query string xuống service, và BỎ tham số ngành đã bị loại', async () => {
     const { provider } = providerThat('allow');
     __setRateLimitRuntime({ provider });
 
     await GET_LIST(new NextRequest(
-      'http://localhost/api/jobs?q=th%E1%BB%A3+%C4%91i%E1%BB%87n&area=B%E1%BA%AFc+Ninh&industry=%C4%90i%E1%BB%87n+t%E1%BB%AD&shiftType=ca_ngay&shiftType=xoay_ca&jobType=toan_thoi_gian&limit=50',
+      // go-live-05 / DEC-07: giá trị thứ hai đổi từ `xoay_ca` sang `ca_dem`. `xoay_ca` không còn là
+      // giá trị mà DTO công khai có thể sinh ra, nên một query string đòi nó chỉ chứng minh được
+      // rằng route chuyển tiếp rác. `ca_dem` giữ nguyên điều cần chứng minh — `getAll` gom được
+      // NHIỀU giá trị cùng khóa — trên một từ vựng còn thật.
+      //
+      // go-live-05 v1.2 / DEC-13: `industry=` VẪN nằm trong URL một cách CỐ Ý. Tham số đó đã bị bỏ
+      // khỏi route, nên thứ phải chứng minh không phải "URL không mang nó" — người ngoài vẫn gửi
+      // được bất cứ gì — mà là route KHÔNG chuyển nó xuống service nữa.
+      'http://localhost/api/jobs?q=th%E1%BB%A3+%C4%91i%E1%BB%87n&area=B%E1%BA%AFc+Ninh&industry=%C4%90i%E1%BB%87n+t%E1%BB%AD&shiftType=ca_ngay&shiftType=ca_dem&jobType=toan_thoi_gian&limit=50',
     ));
 
+    // `toHaveBeenCalledWith` so khớp CHÍNH XÁC cả object ⇒ một khóa `industry` lọt lại là FAIL ngay.
     expect(mocks.listPublicJobProjection).toHaveBeenCalledWith(expect.anything(), {
       q: 'thợ điện',
       area: 'Bắc Ninh',
-      industry: 'Điện tử',
       shift: undefined,
-      shiftTypes: ['ca_ngay', 'xoay_ca'],
+      shiftTypes: ['ca_ngay', 'ca_dem'],
       jobTypes: ['toan_thoi_gian'],
       offset: 0,
       limit: 50,
     });
+    // Và không có đường vòng nào: opts gửi xuống service không mang khóa tên `industry`.
+    expect(Object.keys(mocks.listPublicJobProjection.mock.calls[0][1] ?? {})).not.toContain('industry');
   });
 
   it('429 ⇒ zero DB call', async () => {

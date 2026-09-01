@@ -9,43 +9,46 @@ import { SuccessModal } from '@/src/domains/job-board/components/success-modal';
 // go-live-12 / RQ-10 / DEC-01: đường dẫn trang chi tiết lấy từ ĐÚNG một nguồn, không nội suy tay.
 import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
 
-// ─── API Types ───────────────────────────────────────────────────────────────
+// ─── UI-adapter: projection công khai → props của card ───────────────────────
 
-interface ApiJob {
-  id: string;
-  /** PublicJobDto.slug (= project.code) — khoá của canonical apply endpoint. */
-  slug: string;
-  title: string;
-  isPublic: boolean;
-  availableSlots: number;
-  location?: string | null;
-  shift?: string | null;
-  industry?: string;
-  shiftType?: string | null;
-  jobType?: string;
-}
+/**
+ * go-live-05 / RQ-02, RQ-11 — card đọc ĐÚNG kiểu DTO của service, không đọc một `interface ApiJob`
+ * tự khai cục bộ.
+ *
+ * Trước đây file này khai `interface ApiJob` riêng rồi cast `res.json()` vào đó, nên đổi tên hay bỏ
+ * một khóa trong projection công khai vẫn typecheck xanh và chỉ vỡ trên trình duyệt (bài học
+ * `hrp-tsc-not-a-barrier-dto-rename`). Buộc vào kiểu thật thì tsc trở thành hàng rào.
+ *
+ * `import type` bị xoá hoàn toàn ở bước transpile, nên ràng buộc này KHÔNG kéo Prisma vào bundle
+ * client — điều đó được đo lại bằng grep trên `.next/static/chunks/*.js` ở STEP-09.
+ */
+import type { PublicJobDto, PublicJobFacets, PublicJobListResult } from '@/src/domains/job-board/public.service';
 
+/** go-live-05 / DEC-09 — ba bộ lọc CÓ cột canonical đứng sau. Không nhóm nào là trang trí. */
 interface JobSearchFilters {
   keyword: string;
-  location: string;
-  industry: string;
-  workTypes: string[];
-  jobTypes: string[];
+  area: string;
+  shift: string;
 }
 
-// ─── UI-adapter: enrich API shape → full card props ─────────────────────────
+const EMPTY_FILTERS: JobSearchFilters = { keyword: '', area: '', shift: '' };
+const EMPTY_FACETS: PublicJobFacets = { areas: [], shifts: [] };
+
+/** Nhỏ hơn `total` thường gặp để load-more là đường đi THẬT, không phải nhánh chết. */
+const PAGE_SIZE = 12;
 
 interface EnrichedJob {
   id: string;
   slug: string;
   title: string;
-  company: string;
+  /** DEC-02/RQ-03: HRPartner là bên tuyển dụng; danh tính Client KHÔNG công khai ở task này. */
+  recruiter: string;
   icon: string;
-  location: string;
-  schedule: string;
+  positions: string[];
+  locations: string[];
+  shifts: string[];
   badge: string | null;
   badgeType: string | null;
-  filled: string | null;
   remaining: number;
 }
 
@@ -62,7 +65,17 @@ const ICONS_BY_KEYWORD: Array<{ keywords: string[]; icon: string }> = [
   { keywords: ['đóng gói', 'packaging', 'gói'], icon: 'package_2' },
 ];
 
-function enrichJob(job: ApiJob): EnrichedJob {
+/** DEC-04: card in tối đa ba giá trị rồi `+N`. Rỗng thì nói "đang cập nhật", không bịa một giá trị. */
+const CARD_SUMMARY_LIMIT = 3;
+
+function summaryLabel(values: string[], fallback: string): string {
+  const shown = values.slice(0, CARD_SUMMARY_LIMIT);
+  if (shown.length === 0) return fallback;
+  const rest = values.length - shown.length;
+  return rest > 0 ? `${shown.join(' · ')} +${rest}` : shown.join(' · ');
+}
+
+function enrichJob(job: PublicJobDto): EnrichedJob {
   const lowerTitle = job.title.toLowerCase();
   const matched = ICONS_BY_KEYWORD.find(({ keywords }) =>
     keywords.some((kw) => lowerTitle.includes(kw)),
@@ -76,31 +89,34 @@ function enrichJob(job: ApiJob): EnrichedJob {
     id: job.id,
     slug: job.slug ?? job.id,
     title: job.title,
-    company: 'HRP Partners',
+    recruiter: 'Tuyển dụng qua HRPartner',
     icon,
-    location: job.location?.trim() || 'Địa điểm đang cập nhật',
-    schedule: job.shift?.trim() || 'Thời gian đang cập nhật',
+    // RQ-02/RQ-04: ba mảng này là summary THẬT của các slot còn hiệu lực, do service tính. Card
+    // không suy ra gì thêm và không đắp giá trị mặc định nào lên chỗ dữ liệu trống.
+    positions: job.positionTitles,
+    locations: job.locations,
+    shifts: job.shifts,
     badge: isFull ? 'Đã tuyển đủ' : isUrgent ? 'Tuyển gấp' : null,
     badgeType: isFull ? 'full' : isUrgent ? 'urgent' : null,
-    filled: null,
     remaining: job.availableSlots,
   };
 }
 
-// ─── Static filter options ────────────────────────────────────────────────────
+/** RQ-08: append phải khử trùng theo `job.id` — retry hoặc trang chồng nhau không được nhân bản card. */
+function dedupeById(list: EnrichedJob[]): EnrichedJob[] {
+  const seen = new Set<string>();
+  return list.filter((job) => (seen.has(job.id) ? false : (seen.add(job.id), true)));
+}
 
-const LOCATIONS = ['Tất cả tỉnh/thành', 'Bắc Ninh', 'Bắc Giang', 'Hà Nội', 'Hải Phòng', 'Hưng Yên', 'Vĩnh Phúc'];
-const INDUSTRIES = ['Tất cả ngành nghề', 'Công nghiệp chế tạo', 'May mặc', 'Kho vận', 'Điện tử', 'Thực phẩm'];
-const WORK_TYPES = [
-  { id: 'ca_ngay', label: 'Ca ngày' },
-  { id: 'ca_dem', label: 'Ca đêm' },
-  { id: 'xoay_ca', label: 'Xoay ca' },
-];
-const JOB_TYPES = [
-  { id: 'toan_thoi_gian', label: 'Toàn thời gian' },
-  { id: 'ban_thoi_gian', label: 'Bán thời gian' },
-  { id: 'thoi_vu', label: 'Thời vụ' },
-];
+/** DEC-09: query dựng bằng `URLSearchParams`; `offset` luôn tường minh nên submit reset về 0. */
+function buildQuery(filters: JobSearchFilters, offset: number): string {
+  const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
+  const q = filters.keyword.trim();
+  if (q) params.set('q', q);
+  if (filters.area) params.set('area', filters.area);
+  if (filters.shift) params.set('shift', filters.shift);
+  return params.toString();
+}
 
 // ─── Job Card ─────────────────────────────────────────────────────────────────
 
@@ -170,7 +186,7 @@ function JobCard({
             )}
           </div>
           <p className="text-xs truncate" style={{ color: 'var(--color-on-surface-variant)' }}>
-            {job.company}
+            {job.recruiter}
           </p>
           {job.remaining > 0 && (
             <p className="text-xs mt-0.5" style={{ color: 'var(--color-on-surface-variant)' }}>
@@ -185,15 +201,22 @@ function JobCard({
           className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
           style={{ color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container)' }}
         >
+          <span className="material-symbols-outlined text-[14px]">badge</span>
+          {summaryLabel(job.positions, 'Vị trí đang cập nhật')}
+        </span>
+        <span
+          className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+          style={{ color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container)' }}
+        >
           <span className="material-symbols-outlined text-[14px]">location_on</span>
-          {job.location}
+          {summaryLabel(job.locations, 'Địa điểm đang cập nhật')}
         </span>
         <span
           className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
           style={{ color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container)' }}
         >
           <span className="material-symbols-outlined text-[14px]">schedule</span>
-          {job.schedule}
+          {summaryLabel(job.shifts, 'Thời gian đang cập nhật')}
         </span>
       </div>
 
@@ -224,6 +247,59 @@ function JobCard({
   );
 }
 
+// ─── Facet-backed filter control ─────────────────────────────────────────────
+
+/**
+ * go-live-05 / RQ-07, DEC-08 — một nhóm filter CHỈ được vẽ khi facet của nó có dữ liệu.
+ *
+ * `options` đến từ `facets` của API, vốn tính trên toàn tập public hợp lệ TRƯỚC khi áp bộ lọc của
+ * người dùng, nên danh sách không co lại theo chính lựa chọn vừa rồi. `value=''` là "tất cả": nó
+ * không phải một giá trị dữ liệu, nên không có nhãn nào trong DOM hứa một thứ mà DB không có.
+ */
+function FacetSelect({
+  icon,
+  heading,
+  allLabel,
+  value,
+  options,
+  onChange,
+}: {
+  icon: string;
+  heading: string;
+  allLabel: string;
+  value: string;
+  options: string[];
+  onChange: (next: string) => void;
+}) {
+  if (options.length === 0) return null;
+
+  return (
+    <div>
+      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-on-surface)' }}>
+        <span className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary)' }}>{icon}</span>
+        {heading}
+      </h3>
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label={heading}
+          className="w-full appearance-none border border-outline-variant py-2.5 pl-4 pr-10 rounded-lg transition-colors cursor-pointer"
+          style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}
+        >
+          <option value="">{allLabel}</option>
+          {options.map((option) => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+        <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-xl pointer-events-none" style={{ color: 'var(--color-on-surface-variant)' }}>
+          expand_more
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function JobsPage() {
@@ -232,90 +308,109 @@ export default function JobsPage() {
   const [fetchError, setFetchError] = useState('');
   const [searching, setSearching] = useState(false);
 
-  // Filter state
+  // Filter state — giá trị `''` nghĩa là "không lọc", nên không tồn tại giá trị giả nào trong DOM.
   const [keyword, setKeyword] = useState('');
-  const [location, setLocation] = useState(LOCATIONS[0]);
-  const [industry, setIndustry] = useState(INDUSTRIES[0]);
-  const [workTypes, setWorkTypes] = useState<string[]>([]);
-  const [jobTypes, setJobTypes] = useState<string[]>([]);
+  const [area, setArea] = useState('');
+  const [shift, setShift] = useState('');
+  // RQ-08: load-more phải dùng ĐÚNG bộ lọc của trang đang xem, không đọc state đang gõ dở.
+  const [appliedFilters, setAppliedFilters] = useState<JobSearchFilters>(EMPTY_FILTERS);
+
+  // DEC-08: nguồn duy nhất của dropdown là facets từ API, tính trên toàn tập public hợp lệ.
+  const [facets, setFacets] = useState<PublicJobFacets>(EMPTY_FACETS);
+  const [total, setTotal] = useState(0);
 
   // Apply state
   const [applyJob, setApplyJob] = useState<EnrichedJob | null>(null);
   const [appliedIds, setAppliedIds] = useState<string[]>([]);
   const [successCode, setSuccessCode] = useState('');
 
-  // Infinite scroll state
-  const [hasMore, setHasMore] = useState(true);
+  // Pagination state — `nextOffset` từ response THẬT; `null` nghĩa là hết dòng (RQ-08/RQ-17).
+  const [nextOffset, setNextOffset] = useState<number | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  // DEC-09: hai lớp chống race. `generationRef` để response cũ về muộn không ghi đè kết quả mới;
+  // `AbortController` để huỷ luôn request cũ thay vì để nó chạy hết rồi mới bỏ.
+  const generationRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+  // Nút "Thử lại" phải lặp lại ĐÚNG lần gọi vừa thất bại, kể cả khi đó là một lần load-more.
+  const lastAttemptRef = useRef<{ filters: JobSearchFilters; offset: number; mode: 'replace' | 'append' }>({
+    filters: EMPTY_FILTERS,
+    offset: 0,
+    mode: 'replace',
+  });
 
-  const fetchJobs = useCallback(async (filters?: JobSearchFilters) => {
-    setLoading(true);
+  const runQuery = useCallback(async (filters: JobSearchFilters, offset: number, mode: 'replace' | 'append') => {
+    const generation = ++generationRef.current;
+    lastAttemptRef.current = { filters, offset, mode };
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    if (mode === 'append') setLoadingMore(true);
+    else setLoading(true);
     setFetchError('');
     try {
-      const params = new URLSearchParams({ limit: '50' });
-      const q = filters?.keyword.trim();
-      if (q) params.set('q', q);
-      if (filters?.location && filters.location !== LOCATIONS[0]) params.set('area', filters.location);
-      if (filters?.industry && filters.industry !== INDUSTRIES[0]) params.set('industry', filters.industry);
-      for (const shiftType of filters?.workTypes ?? []) params.append('shiftType', shiftType);
-      for (const jobType of filters?.jobTypes ?? []) params.append('jobType', jobType);
-
-      const res = await fetch(`/api/jobs?${params.toString()}`, { cache: 'no-store' });
+      const res = await fetch(`/api/jobs?${buildQuery(filters, offset)}`, { cache: 'no-store', signal: controller.signal });
       // OPS-06A / RQ-07: browse cũng có limiter phân tán ⇒ hiển thị trạng thái
       // thân thiện cho 429/503 thay vì "Lỗi <status>".
       if (res.status === 429) throw new Error('Bạn tải trang quá nhanh. Vui lòng thử lại sau ít phút.');
       if (res.status === 503) throw new Error('Hệ thống đang tạm thời quá tải. Vui lòng thử lại sau ít phút.');
       if (!res.ok) throw new Error(`Lỗi ${res.status}`);
-      const data = await res.json();
-      const apiJobs: ApiJob[] = Array.isArray(data.jobs) ? data.jobs : [];
-      setJobs(apiJobs.map(enrichJob));
-      setHasMore(false); // API doesn't support pagination yet
+      const data = (await res.json()) as PublicJobListResult;
+      if (generation !== generationRef.current) return;
+      const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
+      setJobs((prev) => (mode === 'append' ? dedupeById([...prev, ...incoming]) : incoming));
+      setFacets(data.facets ?? EMPTY_FACETS);
+      setTotal(typeof data.total === 'number' ? data.total : incoming.length);
+      setNextOffset(typeof data.nextOffset === 'number' ? data.nextOffset : null);
+      setAppliedFilters(filters);
     } catch (e) {
+      // Request bị chính ta huỷ không phải lỗi của người dùng, và không được ghi gì lên UI.
+      if (controller.signal.aborted || (e instanceof DOMException && e.name === 'AbortError')) return;
+      if (generation !== generationRef.current) return;
+      // RQ-09: KHÔNG xoá `jobs`. Refetch lỗi thì kết quả đang xem vẫn còn, kèm băng lỗi và nút thử lại.
       setFetchError(e instanceof Error ? e.message : 'Không thể tải danh sách việc làm');
     } finally {
-      setLoading(false);
+      if (generation === generationRef.current) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+    void runQuery(EMPTY_FILTERS, 0, 'replace');
+  }, [runQuery]);
 
-  // IntersectionObserver for infinite scroll
+  const loadMore = useCallback(() => {
+    if (nextOffset === null || loadingMore || loading) return;
+    void runQuery(appliedFilters, nextOffset, 'append');
+  }, [appliedFilters, loading, loadingMore, nextOffset, runQuery]);
+
+  // RQ-08/RQ-17: sentinel gọi ĐÚNG một request thật với `nextOffset` của response trước, thay cho
+  // `setTimeout(…, 800)` chỉ tắt spinner rồi không tải gì.
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && hasMore && !loadingMore && !loading) {
-          setLoadingMore(true);
-          setTimeout(() => setLoadingMore(false), 800);
-        }
+        if (entries[0]?.isIntersecting) loadMore();
       },
       { rootMargin: '200px' },
     );
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loadingMore, loading]);
+  }, [loadMore]);
 
-  const toggleCheckbox = (
-    value: string,
-    current: string[],
-    setter: React.Dispatch<React.SetStateAction<string[]>>,
-  ) => {
-    setter((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
-    );
-  };
+  const currentFilters = (): JobSearchFilters => ({ keyword, area, shift });
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setSearching(true);
     try {
-      await fetchJobs({ keyword, location, industry, workTypes, jobTypes });
+      // DEC-09: submit luôn quay về `offset = 0` — trang 3 của bộ lọc cũ không được trộn vào kết quả mới.
+      await runQuery(currentFilters(), 0, 'replace');
     } finally {
       setSearching(false);
     }
@@ -331,6 +426,13 @@ export default function JobsPage() {
     setApplyJob(null);
     setSuccessCode(code);
   }
+
+  // RQ-09 — ba trạng thái tách rời nhau, không nhóm nào che nhóm nào:
+  //   * skeleton chỉ ở lần tải ĐẦU (chưa có gì trên màn hình), không ở mỗi lần refetch;
+  //   * empty state chỉ khi đã đọc được API và tập kết quả thật sự rỗng;
+  //   * lưới còn dữ liệu thì luôn hiển thị, kể cả khi lần gọi mới nhất lỗi.
+  const showSkeleton = loading && jobs.length === 0 && !fetchError;
+  const showEmptyState = !loading && !fetchError && jobs.length === 0;
 
   return (
     <div className="w-full max-w-[1600px] mx-auto px-6 md:px-[5%] py-8 flex flex-col lg:flex-row gap-8">
@@ -370,101 +472,25 @@ export default function JobsPage() {
             />
           </div>
 
-          {/* Vị trí */}
-          <div>
-            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-on-surface)' }}>
-              <span className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary)' }}>location_on</span>
-              Vị trí
-            </h3>
-            <div className="relative">
-              <select
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                aria-label="Tỉnh/thành"
-                className="w-full appearance-none border border-outline-variant text-on-surface py-2.5 pl-4 pr-10 rounded-lg transition-colors cursor-pointer"
-                style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}
-              >
-                {LOCATIONS.map((l) => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
-              </select>
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-xl pointer-events-none" style={{ color: 'var(--color-on-surface-variant)' }}>
-                expand_more
-              </span>
-            </div>
-          </div>
+          {/* Hai nhóm còn lại lấy hết lựa chọn từ `facets` — không còn danh sách tỉnh/ca gắn cứng.
+              Hai nhóm control cũ đã bị loại vì không có cột canonical chống lưng (DEC-07, DEC-13). */}
+          <FacetSelect
+            icon="location_on"
+            heading="Vị trí"
+            allLabel="Tất cả tỉnh/thành"
+            value={area}
+            options={facets.areas}
+            onChange={setArea}
+          />
 
-          {/* Ngành nghề */}
-          <div>
-            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-on-surface)' }}>
-              <span className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary)' }}>work</span>
-              Ngành nghề
-            </h3>
-            <div className="relative">
-              <select
-                value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
-                aria-label="Ngành nghề"
-                className="w-full appearance-none border border-outline-variant py-2.5 pl-4 pr-10 rounded-lg transition-colors cursor-pointer"
-                style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}
-              >
-                {INDUSTRIES.map((i) => (
-                  <option key={i} value={i}>{i}</option>
-                ))}
-              </select>
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-xl pointer-events-none" style={{ color: 'var(--color-on-surface-variant)' }}>
-                expand_more
-              </span>
-            </div>
-          </div>
-
-          {/* Ca làm việc */}
-          <div>
-            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-on-surface)' }}>
-              <span className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary)' }}>schedule</span>
-              Ca làm việc
-            </h3>
-            <div className="space-y-2">
-              {WORK_TYPES.map((wt) => (
-                <label key={wt.id} className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={workTypes.includes(wt.id)}
-                    onChange={() => toggleCheckbox(wt.id, workTypes, setWorkTypes)}
-                    className="w-5 h-5 rounded border-outline-variant transition-colors cursor-pointer"
-                    style={{ accentColor: 'var(--color-primary)' }}
-                  />
-                  <span className="text-sm transition-colors" style={{ color: 'var(--color-on-surface-variant)' }}>
-                    {wt.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Loại công việc */}
-          <div>
-            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-on-surface)' }}>
-              <span className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary)' }}>category</span>
-              Loại công việc
-            </h3>
-            <div className="space-y-2">
-              {JOB_TYPES.map((jt) => (
-                <label key={jt.id} className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={jobTypes.includes(jt.id)}
-                    onChange={() => toggleCheckbox(jt.id, jobTypes, setJobTypes)}
-                    className="w-5 h-5 rounded border-outline-variant transition-colors cursor-pointer"
-                    style={{ accentColor: 'var(--color-primary)' }}
-                  />
-                  <span className="text-sm transition-colors" style={{ color: 'var(--color-on-surface-variant)' }}>
-                    {jt.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
+          <FacetSelect
+            icon="schedule"
+            heading="Ca làm việc"
+            allLabel="Tất cả ca làm việc"
+            value={shift}
+            options={facets.shifts}
+            onChange={setShift}
+          />
 
           <div className="pt-4 mt-2 border-t border-outline-variant/50">
             <button
@@ -497,7 +523,10 @@ export default function JobsPage() {
           </h1>
           {!loading && (
             <span className="text-sm whitespace-nowrap" style={{ color: 'var(--color-on-surface-variant)' }}>
-              Tìm thấy {jobs.length} kết quả
+              {/* RQ-05: `total` là số của API sau lifecycle và sau filter, không phải độ dài trang đang xem. */}
+              {jobs.length < total
+                ? `Đang xem ${jobs.length} trong ${total} kết quả`
+                : `Tìm thấy ${total} kết quả`}
             </span>
           )}
         </div>
@@ -512,7 +541,10 @@ export default function JobsPage() {
               {fetchError}
             </p>
             <button
-              onClick={() => void fetchJobs({ keyword, location, industry, workTypes, jobTypes })}
+              onClick={() => {
+                const { filters, offset, mode } = lastAttemptRef.current;
+                void runQuery(filters, offset, mode);
+              }}
               className="px-4 py-2 rounded-lg font-medium transition-colors"
               style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
             >
@@ -522,7 +554,7 @@ export default function JobsPage() {
         )}
 
         {/* Loading skeleton */}
-        {loading && !fetchError && (
+        {showSkeleton && (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
@@ -547,54 +579,64 @@ export default function JobsPage() {
           </div>
         )}
 
-        {/* Job Grid */}
-        {!loading && !fetchError && (
-          <>
-            {jobs.length === 0 ? (
-              <div className="rounded-xl p-12 text-center" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
-                <span className="material-symbols-outlined text-5xl mb-4 block" style={{ color: 'var(--color-outline)' }}>
-                  work_off
-                </span>
-                <p className="text-lg font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
-                  Không tìm thấy việc làm phù hợp
-                </p>
-                <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-                  Thử thay đổi từ khóa hoặc bộ lọc
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {jobs.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    onApply={handleApply}
-                    isApplied={appliedIds.includes(job.id)}
-                  />
-                ))}
-              </div>
-            )}
+        {/* Empty state */}
+        {showEmptyState && (
+          <div className="rounded-xl p-12 text-center" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
+            <span className="material-symbols-outlined text-5xl mb-4 block" style={{ color: 'var(--color-outline)' }}>
+              work_off
+            </span>
+            <p className="text-lg font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
+              Không tìm thấy việc làm phù hợp
+            </p>
+            <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+              Thử thay đổi từ khóa hoặc bộ lọc
+            </p>
+          </div>
+        )}
 
-            {/* Load more / end state */}
-            {!loading && !fetchError && jobs.length > 0 && (
-              <div className="flex flex-col items-center justify-center py-6 gap-3 w-full" ref={sentinelRef}>
-                {loadingMore ? (
-                  <>
-                    <div
-                      className="w-8 h-8 border-4 rounded-full animate-spin"
-                      style={{ borderColor: 'rgba(242, 101, 34, 0.3)', borderTopColor: 'var(--color-primary)' }}
-                    />
-                    <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-                      Đang tải thêm việc làm...
-                    </p>
-                  </>
-                ) : !hasMore ? (
+        {/* Job Grid */}
+        {jobs.length > 0 && (
+          <>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {jobs.map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  onApply={handleApply}
+                  isApplied={appliedIds.includes(job.id)}
+                />
+              ))}
+            </div>
+
+            {/* Load more / end state — RQ-08/RQ-17: mọi nhánh ở đây phản ánh `nextOffset` THẬT của
+                response. Sentinel tự tải khi cuộn tới, và nút bên dưới là đường dùng bàn phím cho
+                cùng một hành động — người dùng không có chuột không bị chặn khỏi trang sau. */}
+            <div className="flex flex-col items-center justify-center py-6 gap-3 w-full" ref={sentinelRef}>
+              {loadingMore ? (
+                <>
+                  <div
+                    className="w-8 h-8 border-4 rounded-full animate-spin"
+                    style={{ borderColor: 'rgba(242, 101, 34, 0.3)', borderTopColor: 'var(--color-primary)' }}
+                  />
                   <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-                    Đã xem toàn bộ danh sách
+                    Đang tải thêm việc làm...
                   </p>
-                ) : null}
-              </div>
-            )}
+                </>
+              ) : nextOffset === null ? (
+                <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+                  Đã xem toàn bộ danh sách
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  className="px-5 py-2.5 rounded-lg font-semibold border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                  style={{ borderColor: 'var(--color-outline-variant)', color: 'var(--color-primary)' }}
+                >
+                  Xem thêm việc làm
+                </button>
+              )}
+            </div>
           </>
         )}
       </div>

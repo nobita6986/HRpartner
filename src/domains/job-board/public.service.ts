@@ -1,5 +1,14 @@
 import { Prisma } from '@prisma/client';
 
+/**
+ * Projection công khai của một việc làm — allow-list, deny-by-default (go-live-05 / RQ-10, DEC-10).
+ * Mọi khóa ở đây có nguồn thật trong `projects` / `staffing_orders` / `staffing_order_slots`. KHÔNG
+ * có `clientCompanyId`, `hourlyRateVnd`, `internalNotes`, và không có `bigint` nào (`RISK-07`:
+ * `JSON.stringify` ném trên BigInt, nên một khóa như vậy làm chết cả route chứ không chỉ rò rỉ).
+ *
+ * `shiftType` chỉ còn `'ca_ngay' | 'ca_dem' | null` — `'xoay_ca'` đã bị bỏ theo `DEC-07`, xem
+ * `classifyShift`.
+ */
 export interface PublicJobDto {
   id: string;
   slug: string;
@@ -8,17 +17,50 @@ export interface PublicJobDto {
   shift: string | null;
   location: string | null;
   industry: string;
-  shiftType: 'ca_ngay' | 'ca_dem' | 'xoay_ca' | null;
+  shiftType: 'ca_ngay' | 'ca_dem' | null;
   jobType: 'toan_thoi_gian' | 'ban_thoi_gian' | 'thoi_vu';
   availableSlots: number;
   deadline: string | null;
   statusLabel: string;
+  /**
+   * go-live-05 / RQ-04, DEC-03/DEC-04 — TẤT CẢ giá trị của các slot còn hiệu lực, unique, bỏ rỗng,
+   * sort ổn định. Ba field đơn `position`/`shift`/`location` ở trên là phần tử đầu của đúng ba mảng
+   * này, nên card không còn cộng tổng chỗ trống của mọi slot rồi mô tả bằng chữ của một slot.
+   *
+   * ĐỘ LỆCH CÓ Ý THỨC so với `DEC-03`: contract đặt tên mảng vị trí là `positions`, nhưng
+   * `PublicJobDetailDto extends PublicJobDto` (go-live-12) đã có `positions: PublicJobPositionDto[]`
+   * với kiểu khác; trùng tên là lỗi compiler, và `RQ-15` cấm sửa mã go-live-12. Tên dùng ở đây là
+   * `positionTitles`. Ghi trong HANDOFF.
+   */
+  positionTitles: string[];
+  locations: string[];
+  shifts: string[];
+}
+
+/**
+ * go-live-05 / RQ-06, DEC-08 — nguồn dữ liệu cho các control lọc của UI.
+ *
+ * Derive từ TOÀN TẬP public hợp lệ (sau lifecycle `DEC-05`, TRƯỚC filter của người dùng). Hai hệ quả
+ * cố ý: (1) UI không được hardcode danh sách tỉnh hay ca nào nữa — mọi option đến từ dữ liệu thật,
+ * nên không còn option nào lọc ra 0 kết quả; (2) dropdown KHÔNG co lại theo chính lựa chọn vừa rồi,
+ * vì facet không đọc bộ lọc đang áp.
+ *
+ * `DEC-13`/`RQ-18` — KHÔNG có facet ngành nghề, và không được thêm lại. Nhãn ngành là giá trị SUY
+ * DIỄN từ văn bản tự do (`inferIndustry`), không phải cột canonical; cột `ClientCompany.industry` có
+ * thật nhưng `client_companies` bị FORCE RLS và principal công khai `MKT` không có policy đọc nó
+ * (`EV-09`). Một facet mới chỉ hợp lệ khi truy nguyên được về một cột canonical đọc được từ đường
+ * công khai — `areas` về địa điểm slot, `shifts` về nhãn ca của slot.
+ */
+export interface PublicJobFacets {
+  areas: string[];
+  shifts: string[];
 }
 
 export interface PublicJobListResult {
   jobs: PublicJobDto[];
   nextOffset: number | null;
   total: number;
+  facets: PublicJobFacets;
 }
 
 /**
@@ -69,14 +111,31 @@ function minutesOfDay(value: string | null): number | null {
   return hours * 60 + minutes;
 }
 
+/**
+ * go-live-05 / RQ-07, DEC-07 — `'xoay_ca'` KHÔNG được suy từ giờ bắt đầu/kết thúc.
+ *
+ * Idiom cũ (`new Set(ranges).size > 1 → 'xoay_ca'`) đọc "dự án có nhiều ca khác nhau" thành "một
+ * người phải xoay ca", hai chuyện khác nhau: một dự án hai kíp cố định không phải việc xoay ca, và
+ * ứng viên lọc theo "Xoay ca" sẽ nhận đúng những việc KHÔNG xoay ca. Không có field canonical nào
+ * nói ca có xoay hay không, nên nhãn đó bị bỏ khỏi cả DTO lẫn UI.
+ *
+ * Còn lại là hai hạng đo được từ giờ thật. Xét TẤT CẢ slot còn hiệu lực (không phải `slots[0]`, vì
+ * DB không hứa thứ tự nào): các slot cùng một hạng thì trả hạng đó; không cùng hạng thì trả `null` —
+ * "không biết" là câu trả lời trung thực, và `null` bị loại khỏi filter `shiftType` thay vì mang một
+ * nhãn bịa.
+ */
 function classifyShift(slots: Array<{ shiftStart: string | null; shiftEnd: string | null }>): ShiftType | null {
-  const ranges = slots
-    .filter((slot) => slot.shiftStart || slot.shiftEnd)
-    .map((slot) => `${slot.shiftStart ?? ''}-${slot.shiftEnd ?? ''}`);
-  if (new Set(ranges).size > 1) return 'xoay_ca';
+  const classes = new Set<ShiftType>();
+  for (const slot of slots) {
+    const single = classifyOneShift(slot);
+    if (single) classes.add(single);
+  }
+  return classes.size === 1 ? [...classes][0] : null;
+}
 
-  const start = minutesOfDay(slots[0]?.shiftStart ?? null);
-  const end = minutesOfDay(slots[0]?.shiftEnd ?? null);
+function classifyOneShift(slot: { shiftStart: string | null; shiftEnd: string | null }): ShiftType | null {
+  const start = minutesOfDay(slot.shiftStart);
+  const end = minutesOfDay(slot.shiftEnd);
   if (start === null && end === null) return null;
   if ((start !== null && start >= 18 * 60) || (end !== null && end <= 6 * 60) || (start !== null && end !== null && end <= start)) {
     return 'ca_dem';
@@ -146,6 +205,55 @@ function slotShiftLabel(slot: Pick<PublicSlotRow, 'shiftStart' | 'shiftEnd'>): s
   return slot.shiftStart && slot.shiftEnd ? `${slot.shiftStart}-${slot.shiftEnd}` : slot.shiftStart;
 }
 
+/**
+ * go-live-05 / DEC-04 — thứ tự ổn định cho MỌI danh sách bề mặt công khai.
+ *
+ * So sánh trên dạng đã fold dấu (nên "Đà Nẵng" đứng cạnh "Da Nang", không bị đẩy về cuối bảng mã),
+ * tie-break bằng chuỗi thô để quan hệ là thứ tự toàn phần ⇒ kết quả sort không phụ thuộc thuật toán
+ * sort của engine. Cố ý KHÔNG dùng `localeCompare('vi')`: nó phụ thuộc bản ICU của Node, tức cùng mã
+ * nguồn có thể ra hai thứ tự trên hai máy, và đó là loại khác biệt không ai đo.
+ */
+function compareLabel(a: string, b: string): number {
+  const foldedA = foldVietnamese(a);
+  const foldedB = foldVietnamese(b);
+  if (foldedA !== foldedB) return foldedA < foldedB ? -1 : 1;
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
+/** DEC-04: unique, bỏ chuỗi rỗng/chỉ có khoảng trắng, sort ổn định. Dùng cho cả card và facet. */
+function summarize(values: Array<string | null | undefined>): string[] {
+  const unique = new Set<string>();
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) unique.add(trimmed);
+  }
+  return [...unique].sort(compareLabel);
+}
+
+/**
+ * Thứ tự slot ổn định. `findMany` KHÔNG hứa thứ tự của nhánh quan hệ, nên mọi phép suy diễn đọc
+ * "slot đầu tiên" (`classifyJobType`) phải đọc cùng một slot ở mọi lần chạy, nếu không cùng một dòng
+ * dữ liệu có thể sinh hai DTO khác nhau và không phép đo nào giải thích được vì sao.
+ */
+function sortSlots(slots: PublicSlotRow[]): PublicSlotRow[] {
+  const key = (slot: PublicSlotRow) =>
+    [slot.positionTitle, slotShiftLabel(slot) ?? '', slot.workLocation ?? '', slot.positionCode].join('\u0000');
+  return [...slots].sort((a, b) => compareLabel(key(a), key(b)));
+}
+
+/** DEC-03/DEC-04 — summary của MỘT việc làm, tính từ đúng tập slot còn hiệu lực. */
+function summarizeSlots(slots: PublicSlotRow[], project: PublicProjectRow) {
+  return {
+    positionTitles: summarize(slots.map((slot) => slot.positionTitle)),
+    // `?? ` một mình thì `workLocation: '   '` là "có giá trị" ⇒ không fallback, rồi `summarize`
+    // trim thành rỗng và bỏ luôn ⇒ card nói "Địa điểm đang cập nhật" trong khi `siteAddress` thật
+    // đang nằm ngay đó. `trim() ||` làm chuỗi trắng đi cùng đường với NULL, đúng chữ "fallback".
+    locations: summarize(slots.map((slot) => slot.workLocation?.trim() || project.siteAddress)),
+    shifts: summarize(slots.map((slot) => slotShiftLabel(slot))),
+  };
+}
+
 /** Text để suy `industry` và `jobType`. Gộp mọi trường text đã select; KHÔNG in ra bề mặt nào. */
 function searchableTextOf(project: PublicProjectRow): string {
   return [
@@ -167,12 +275,24 @@ function earliestDeadline(orders: PublicOrderRow[]): Date | null {
 }
 
 function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
-  const slots = visibleSlots(project.staffingOrders, now);
-  const availableSlots = slots.reduce((sum, slot) => sum + slotAvailable(slot), 0);
-  if (availableSlots <= 0 || slots.length === 0) return null;
+  const live = sortSlots(visibleSlots(project.staffingOrders, now));
+  const availableSlots = live.reduce((sum, slot) => sum + slotAvailable(slot), 0);
+  if (availableSlots <= 0 || live.length === 0) return null;
 
-  const first = slots[0];
-  const shift = slotShiftLabel(first);
+  /**
+   * go-live-05 / RQ-04, DEC-05 — card CHỈ mô tả những slot còn nhận người.
+   *
+   * `isSlotLive` không nói gì về chỗ trống, nên một slot đã đủ chỉ tiêu vẫn nằm trong `live`. Để nó
+   * trong tập derive thì card quảng cáo một vị trí không thể ứng tuyển được (`RQ-04` gọi đúng ca đó
+   * là FAIL), và tệ hơn: `classifyShift` thấy một kíp đêm ĐÃ ĐỦ NGƯỜI sẽ trả `null`, làm cả việc
+   * rơi khỏi bộ lọc "ca ngày" dù kíp ngày của nó vẫn đang tuyển.
+   *
+   * `availableSlots` KHÔNG đổi vì slot đủ chỉ tiêu góp đúng 0. Trang chi tiết cố ý KHÔNG dùng cửa
+   * này — xem đoạn tương ứng trong `toDetailDto`.
+   */
+  const slots = live.filter((slot) => slotAvailable(slot) > 0);
+
+  const summary = summarizeSlots(slots, project);
   const searchableText = searchableTextOf(project);
   const deadline = earliestDeadline(project.staffingOrders);
 
@@ -180,15 +300,20 @@ function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
     id: project.id,
     slug: project.code,
     title: project.name,
-    position: first.positionTitle,
-    shift,
-    location: first.workLocation ?? project.siteAddress,
+    // DEC-03: field đơn là phần tử ĐẦU của chính mảng summary đã sort, không phải chữ của một slot
+    // ngẫu nhiên. Nhánh `??` chỉ đỡ trường hợp dữ liệu rỗng — `summarize` đã bỏ chuỗi trắng.
+    position: summary.positionTitles[0] ?? slots[0].positionTitle,
+    shift: summary.shifts[0] ?? null,
+    location: summary.locations[0] ?? null,
     industry: inferIndustry(searchableText, null),
     shiftType: classifyShift(slots),
     jobType: classifyJobType(searchableText, slots),
     availableSlots,
     deadline: deadline?.toISOString() ?? null,
     statusLabel: 'Đang tuyển',
+    positionTitles: summary.positionTitles,
+    locations: summary.locations,
+    shifts: summary.shifts,
   };
 }
 
@@ -201,7 +326,7 @@ function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
  * đúng cho danh sách — list không nên khoe việc đã đủ — và sai cho trang chi tiết.
  */
 function toDetailDto(project: PublicProjectRow, now: Date): PublicJobDetailDto | null {
-  const slots = visibleSlots(project.staffingOrders, now);
+  const slots = sortSlots(visibleSlots(project.staffingOrders, now));
   if (slots.length === 0) return null;
 
   const positions: PublicJobPositionDto[] = slots.map((slot) => ({
@@ -215,7 +340,7 @@ function toDetailDto(project: PublicProjectRow, now: Date): PublicJobDetailDto |
   }));
   const availableSlots = positions.reduce((sum, position) => sum + position.available, 0);
 
-  const first = slots[0];
+  const summary = summarizeSlots(slots, project);
   const searchableText = searchableTextOf(project);
   const deadline = earliestDeadline(project.staffingOrders);
 
@@ -224,9 +349,16 @@ function toDetailDto(project: PublicProjectRow, now: Date): PublicJobDetailDto |
     slug: project.code,
     jobCode: project.code,
     title: project.name,
-    position: first.positionTitle,
-    shift: slotShiftLabel(first),
-    location: first.workLocation ?? project.siteAddress,
+    // go-live-05 / RQ-11: cùng một PHÉP derive với card (`summarizeSlots` trên tập đã `sortSlots`),
+    // nhưng cố ý trên tập slot RỘNG HƠN. Trước đây cả hai bề mặt đọc `slots[0]` theo thứ tự DB nên
+    // có thể mô tả cùng một việc bằng hai ca khác nhau; nay thứ tự đã ổn định ở cả hai.
+    // ĐỘ LỆCH CÓ Ý THỨC: `toDto` lọc thêm `slotAvailable > 0`, `toDetailDto` thì không, vì `DEC-14`
+    // buộc trang chi tiết vẫn liệt kê MỌI vị trí của một việc đã đủ chỉ tiêu (`available: 0`) —
+    // lọc ở đây sẽ làm `positionTitles`/`shift`/`location` của chính việc đó rỗng đi. Hệ quả đo
+    // được: card kể những vị trí còn nhận người, trang chi tiết kể tất cả. Ghi trong HANDOFF.
+    position: summary.positionTitles[0] ?? slots[0].positionTitle,
+    shift: summary.shifts[0] ?? null,
+    location: summary.locations[0] ?? null,
     siteAddress: project.siteAddress,
     industry: inferIndustry(searchableText, null),
     shiftType: classifyShift(slots),
@@ -237,6 +369,9 @@ function toDetailDto(project: PublicProjectRow, now: Date): PublicJobDetailDto |
     positions,
     deadline: deadline?.toISOString() ?? null,
     statusLabel: availableSlots > 0 ? 'Đang tuyển' : 'Đã đủ chỉ tiêu',
+    positionTitles: summary.positionTitles,
+    locations: summary.locations,
+    shifts: summary.shifts,
   };
 }
 
@@ -263,59 +398,92 @@ const publicSelect = Prisma.validator<Prisma.ProjectSelect>()({
   },
 });
 
+/**
+ * go-live-05 / RQ-06, DEC-08 — chuỗi để khớp `q` trong bộ nhớ.
+ *
+ * ĐÚNG tập field mà predicate SQL cũ quét, không rộng hơn: tên và mã dự án, địa chỉ site, tiêu đề đơn
+ * còn hiệu lực, tên vị trí và địa điểm của các slot còn hiệu lực. Cố ý KHÔNG gộp `order.description`
+ * (SQL cũ cũng không) — khớp vào một đoạn văn không hề in trên card thì ứng viên không giải thích
+ * được vì sao kết quả đó xuất hiện.
+ *
+ * Khác biệt duy nhất so với `contains … mode: 'insensitive'` cũ: hai bên đều fold dấu, nên "bac ninh"
+ * tìm ra "Bắc Ninh". Đó là mở rộng có chủ ý, và nó cho `q` với `area` cùng một quy tắc so khớp —
+ * so khớp có gập dấu KHÔNG phải một khẳng định in ra cho người dùng (`RQ-18`).
+ */
+function keywordHaystack(row: PublicProjectRow, job: PublicJobDto, now: Date): string {
+  return foldVietnamese([
+    job.title,
+    job.slug,
+    row.siteAddress ?? '',
+    ...row.staffingOrders.filter((order) => isOrderVisible(order, now)).map((order) => order.title),
+    ...job.positionTitles,
+    ...job.locations,
+  ].join(' '));
+}
+
+/** Chuỗi để khớp `area`: `siteAddress` của dự án cộng địa điểm slot — đúng hai nhánh của SQL cũ. */
+function areaHaystack(row: PublicProjectRow, job: PublicJobDto): string {
+  return foldVietnamese([row.siteAddress ?? '', ...job.locations].join(' '));
+}
+
 export async function listPublicJobProjection(
   tx: Prisma.TransactionClient,
-  opts: { q?: string; area?: string; industry?: string; shift?: string; shiftTypes?: string[]; jobTypes?: string[]; offset?: number; limit?: number } = {},
+  opts: { q?: string; area?: string; shift?: string; shiftTypes?: string[]; jobTypes?: string[]; offset?: number; limit?: number } = {},
 ): Promise<PublicJobListResult> {
   const offset = Math.max(0, opts.offset ?? 0);
   const limit = Math.min(50, Math.max(1, opts.limit ?? 20));
-  const search = opts.q?.trim();
-  const filters: Prisma.ProjectWhereInput[] = [];
-  if (search) {
-    filters.push({
-      OR: [
-        { name: { contains: search, mode: 'insensitive' } },
-        { code: { contains: search, mode: 'insensitive' } },
-        { siteAddress: { contains: search, mode: 'insensitive' } },
-        { staffingOrders: { some: { OR: [
-          { title: { contains: search, mode: 'insensitive' } },
-          { slots: { some: { OR: [
-            { positionTitle: { contains: search, mode: 'insensitive' } },
-            { workLocation: { contains: search, mode: 'insensitive' } },
-          ] } } },
-        ] } } },
-      ],
-    });
-  }
-  if (opts.area) {
-    filters.push({
-      OR: [
-        { siteAddress: { contains: opts.area, mode: 'insensitive' } },
-        { staffingOrders: { some: { slots: { some: { workLocation: { contains: opts.area, mode: 'insensitive' } } } } } },
-      ],
-    });
-  }
+  // §4.3: MỘT `now` cho cả request. Trước đây `new Date()` được gọi lại bên trong `.map`, nên hai dự
+  // án được xét trên hai mốc thời gian khác nhau; một slot hết hạn giữa vòng lặp là đủ để `total`
+  // không còn khớp trang trả về, và không log nào ghi lại chuyện đó.
+  const now = new Date();
+  // DEC-08: `where` CHỈ mang cửa chặn public + lifecycle, KHÔNG mang `q`/`area`. Nếu hai bộ lọc đó
+  // nằm trong SQL thì facet bên dưới chỉ còn là facet của tập ĐÃ bị lọc — dropdown co lại theo chính
+  // lựa chọn vừa rồi, và người dùng không quay lại được. Đổi lại, `q`/`area` khớp trong bộ nhớ; ngân
+  // sách của việc này đo bằng fixture lớn và ghi ở HANDOFF theo `DEC-12`/`RISK-03`.
   const where: Prisma.ProjectWhereInput = {
     status: 'ACTIVE',
     isPublic: true,
     staffingOrders: { some: { status: { in: [...VISIBLE_ORDER_STATUSES] }, slots: { some: { slotsNeeded: { gt: 0 } } } } },
-    ...(filters.length ? { AND: filters } : {}),
   };
   const projects = await tx.project.findMany({ where, select: publicSelect, orderBy: { createdAt: 'desc' } });
-  const jobs = projects
-    .map((project) => toDto(project, new Date()))
-    .filter((job): job is PublicJobDto => Boolean(job))
-    .filter((job) => !opts.shift || job.shift?.includes(opts.shift))
-    .filter((job) => !opts.industry || foldVietnamese(job.industry) === foldVietnamese(opts.industry))
-    .filter((job) => !opts.shiftTypes?.length || (job.shiftType !== null && opts.shiftTypes.includes(job.shiftType)))
-    .filter((job) => !opts.jobTypes?.length || opts.jobTypes.includes(job.jobType));
+
+  // Giữ dòng gốc bên cạnh DTO: `q`/`area` cần `siteAddress` và tiêu đề đơn, hai thứ KHÔNG có trong
+  // DTO công khai và không được thêm vào (allow-list `DEC-10`).
+  const eligible: Array<{ row: PublicProjectRow; job: PublicJobDto }> = [];
+  for (const project of projects) {
+    const job = toDto(project, now);
+    if (job) eligible.push({ row: project, job });
+  }
+
+  // DEC-08 — facet tính TRƯỚC filter, trên toàn tập hợp lệ.
+  const facets: PublicJobFacets = {
+    areas: summarize(eligible.flatMap(({ job }) => job.locations)),
+    shifts: summarize(eligible.flatMap(({ job }) => job.shifts)),
+  };
+
+  const search = opts.q?.trim();
+  const area = opts.area?.trim();
+  const shift = opts.shift?.trim();
+  const matched = eligible
+    .filter(({ row, job }) => !search || keywordHaystack(row, job, now).includes(foldVietnamese(search)))
+    .filter(({ row, job }) => !area || areaHaystack(row, job).includes(foldVietnamese(area)))
+    // Khớp trên CẢ mảng `shifts`: một việc hai kíp phải tìm ra được bằng kíp thứ hai, không chỉ bằng
+    // kíp đứng đầu. Đây là chính giá trị mà facet `shifts` chào ra cho UI.
+    .filter(({ job }) => !shift || job.shifts.some((label) => label.includes(shift)))
+    .filter(({ job }) => !opts.shiftTypes?.length || (job.shiftType !== null && opts.shiftTypes.includes(job.shiftType)))
+    .filter(({ job }) => !opts.jobTypes?.length || opts.jobTypes.includes(job.jobType));
+
+  // DEC-06: `total` là số việc THẬT sau lifecycle và sau filter; `nextOffset` chỉ khác null khi còn
+  // dòng phía sau. Cả trang và tổng đều tính từ cùng một mảng, nên không thể lệch nhau.
+  const jobs = matched.map(({ job }) => job);
   const page = jobs.slice(offset, offset + limit);
-  return { jobs: page, nextOffset: offset + limit < jobs.length ? offset + limit : null, total: jobs.length };
+  return { jobs: page, nextOffset: offset + limit < jobs.length ? offset + limit : null, total: jobs.length, facets };
 }
 
 export async function getPublicJobProjection(tx: Prisma.TransactionClient, slug: string): Promise<PublicJobDto | null> {
+  const now = new Date();
   const project = await tx.project.findFirst({ where: { OR: [{ code: slug }, { id: slug }], status: 'ACTIVE', isPublic: true }, select: publicSelect });
-  return project ? toDto(project, new Date()) : null;
+  return project ? toDto(project, now) : null;
 }
 
 /**
@@ -324,6 +492,7 @@ export async function getPublicJobProjection(tx: Prisma.TransactionClient, slug:
  * kiện để query engine không phải materialize bảng bị RLS che (xem comment của `publicSelect`).
  */
 export async function getPublicJobDetail(tx: Prisma.TransactionClient, slug: string): Promise<PublicJobDetailDto | null> {
+  const now = new Date();
   const project = await tx.project.findFirst({ where: { OR: [{ code: slug }, { id: slug }], status: 'ACTIVE', isPublic: true }, select: publicSelect });
-  return project ? toDetailDto(project, new Date()) : null;
+  return project ? toDetailDto(project, now) : null;
 }

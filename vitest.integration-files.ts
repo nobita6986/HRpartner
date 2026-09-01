@@ -39,4 +39,6 @@ export const INTEGRATION_TEST_FILES: string[] = [
   'src/shared/auth/live-ticket-route-boundary.m1-06d.test.ts',
   'src/shared/auth/live-vendor-idor.m1-08.test.ts',
   'src/shared/auth/live-public-read-rls.go-live-04.test.ts',
+  // go-live-05 / RQ-13 / STEP-08: LIVE evidence cho projection card (seed thật + cleanup thật).
+  'src/domains/job-board/public-card-truth.integration.test.ts',
 ];

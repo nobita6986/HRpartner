@@ -99,7 +99,8 @@ describe('MP-1 publish and public job contracts', () => {
     const result = await listPublicJobProjection(tx, {
       q: 'Warehouse',
       area: 'Bac Ninh',
-      industry: 'Kho vận',
+      // go-live-05 v1.2 / DEC-13: opts không còn khóa ngành. Nhãn ở assertion dưới vẫn là
+      // 'Kho vận' vì nó do văn bản của fixture suy ra, không do bộ lọc.
       shift: '07:00',
       shiftTypes: ['ca_ngay'],
       jobTypes: ['toan_thoi_gian'],
