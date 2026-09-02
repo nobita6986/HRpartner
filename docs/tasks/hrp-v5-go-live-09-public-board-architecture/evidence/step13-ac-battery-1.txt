@@ -1,0 +1,71 @@
+############ AC-02 ############
+$ git diff --unified=0 -- src/domains/job-board/public.service.ts | grep -E "^\+" | grep -nE "hourlyRateVnd|createdAt: true"
+warning: in the working copy of 'src/domains/job-board/public.service.ts', LF will be replaced by CRLF the next time Git touches it
+9:+   * `StaffingOrderSlot.hourlyRateVnd` của ĐÚNG tập slot còn nhận người. Hai điều cố ý:
+11:+   *   1. Tên khóa công khai là `salaryMinVnd`/`salaryMaxVnd`, KHÔNG phải `hourlyRateVnd`. Chuỗi tên
+65:+type PublicSlotRow = { positionCode: string; positionTitle: string; slotsNeeded: number; slotsFilled: number; shiftStart: string | null; shiftEnd: string | null; validTo: Date | null; workLocation: string | null; hourlyRateVnd: bigint | null };
+111:+    .map((slot) => slot.hourlyRateVnd)
+146:+      createdAt: true,
+147:+        select: { positionCode: true, positionTitle: true, slotsNeeded: true, slotsFilled: true, shiftStart: true, shiftEnd: true, validTo: true, workLocation: true, hourlyRateVnd: true },
+warning: in the working copy of 'src/domains/job-board/public.service.ts', LF will be replaced by CRLF the next time Git touches it
+AC02_ADDED_hourlyRateVnd_in_publicSelect=1
+warning: in the working copy of 'src/domains/job-board/public.service.ts', LF will be replaced by CRLF the next time Git touches it
+AC02_ADDED_createdAt_true=1
+$ git diff -- <scope> | grep "^+" | grep -c "clientCompany"
+warning: in the working copy of 'src/domains/job-board/public.service.ts', LF will be replaced by CRLF the next time Git touches it
+AC02_ADDED_clientCompany_LINES=0
+
+############ AC-05 ############
+$ grep -n "availableSlots" src/domains/job-board/public.service.ts
+28:  availableSlots: number;
+54:   * chỗ trống. Không một nhánh nào của phép tính này đọc `availableSlots`: một đơn 200 chỗ vừa mở
+413:  const availableSlots = live.reduce((sum, slot) => sum + slotAvailable(slot), 0);
+414:  if (availableSlots <= 0 || live.length === 0) return null;
+424:   * `availableSlots` KHÔNG đổi vì slot đủ chỉ tiêu góp đúng 0. Trang chi tiết cố ý KHÔNG dùng cửa
+446:    availableSlots,
+448:    // go-live-09 / RQ-04: nhãn theo `urgency`, KHÔNG theo `availableSlots`. Nhãn cũ là hằng
+461: * KHÔNG thừa hưởng cửa chặn `availableSlots <= 0` của `toDto`: một việc đã đủ chỉ tiêu vẫn phải mở
+479:  const availableSlots = positions.reduce((sum, position) => sum + position.available, 0);
+503:    availableSlots,
+512:    statusLabel: availableSlots > 0 ? 'Đang tuyển' : 'Đã đủ chỉ tiêu',
+640:      slots: eligible.reduce((sum, { job }) => sum + job.availableSlots, 0),
+--- than ham tinh urgency:
+sed: -e expression #1, char 1: unknown command: `,'
+sed: -e expression #1, char 1: unknown command: `,'
+AC05_availableSlots_trong_ham_urgency=0
+
+############ AC-06 ############
+$ grep -rnE "availableSlots\s*.=\s*5" app/ src/
+AC06_HITS=0  (grep exit 1 = khong dong nao)
+
+############ AC-09 ############
+$ grep -rn "Lương thương lượng" app/ src/
+app/(portal)/page.tsx:96: * `"Lương thương lượng"` là mô tả đúng trạng thái "đơn chưa công bố lương". Hai đầu bằng nhau thì in
+app/(portal)/page.tsx:102:  if (min === null) return 'Lương thương lượng';
+app/(portal)/page.tsx:290:              màu accent bằng token. Nhánh không có lương in đúng `Lương thương lượng` ở CÙNG vị trí,
+src/domains/job-board/public.service.ts:47:   * `null` khi không slot nào còn nhận người có lương — UI in `"Lương thương lượng"`, KHÔNG in
+src/domains/job-board/public.service.ts:655:    // lương bị loại hẳn: một card `"Lương thương lượng"` đứng trong dải lương cao nhất là nói sai.
+AC09_HITS=5  (AC doi >= 1)
+
+############ AC-13 ############
+$ grep -rn "clientCompany\|client_companies" "app/(portal)/" src/domains/job-board/
+src/domains/job-board/mp1.contract.test.ts:121:    expect(result.jobs[0]).not.toHaveProperty('clientCompanyId');
+src/domains/job-board/mp1.contract.test.ts:130:  // `client_companies` ở posture FORCE RLS và principal công khai `MKT` không có policy SELECT
+src/domains/job-board/public-board-route-json.test.ts:132:    for (const forbidden of ['hourlyRateVnd', 'clientCompanyId', 'budgetVnd', 'internalNotes', 'rateCard', 'billing', 'margin', 'industry']) {
+src/domains/job-board/public-card-truth.integration.test.ts:86:        id: p.id, code: p.code, name: opts.name, clientCompanyId: ccId, status: 'ACTIVE',
+src/domains/job-board/public-card-truth.integration.test.ts:108:    await admin.clientCompany.deleteMany({ where: { id: ccId } }).catch(() => {});
+src/domains/job-board/public-card-truth.integration.test.ts:117:    await admin.clientCompany.create({ data: { id: ccId, code: `CC-${RUN}`, name: `Client ${RUN}` } });
+src/domains/job-board/public-card-truth.integration.test.ts:288:    for (const forbidden of ['hourlyRateVnd', 'clientCompanyId', ccId, 'budgetVnd', 'internalNotes', 'rateCard', 'price', 'billing', 'margin']) {
+src/domains/job-board/public-card-truth.integration.test.ts:347:    for (const forbidden of ['hourlyRateVnd', 'clientCompanyId', ccId, 'budgetVnd', 'internalNotes', 'rateCard', 'price', 'billing', 'margin']) {
+src/domains/job-board/public-card-truth.test.ts:436:      clientCompanyId: 'client-9',
+src/domains/job-board/public-card-truth.test.ts:446:    for (const forbidden of ['clientCompanyId', 'hourlyRateVnd', 'internalNotes', 'budgetVnd', 'margin']) {
+src/domains/job-board/public-detail.static.test.ts:39:  'clientCompany',
+src/domains/job-board/public-select.static.test.ts:7: *   `Inconsistent query result: Field clientCompany is required to return data, got null instead`
+src/domains/job-board/public-select.static.test.ts:53:  it('khối publicSelect không chứa khoá quan hệ clientCompany', () => {
+src/domains/job-board/public-select.static.test.ts:54:    expect(publicSelectBlock()).not.toContain('clientCompany');
+src/domains/job-board/public-select.static.test.ts:64:    expect(code).not.toContain('clientCompany');
+src/domains/job-board/public.service.ts:6: * có `clientCompanyId`, `hourlyRateVnd`, `internalNotes`, và không có `bigint` nào (`RISK-07`:
+src/domains/job-board/public.service.ts:15: * Cột `ClientCompany.industry` có thật và do người nhập, nhưng `client_companies` ở posture FORCE
+src/domains/job-board/public.service.ts:86: * `client_companies` bị FORCE RLS và principal công khai `MKT` không có policy đọc nó (`EV-09`).
+src/domains/job-board/public.service.ts:521:// mà principal công khai `MKT` không đọc được (`client_companies`): query engine của Prisma phải
+AC13_HITS=19

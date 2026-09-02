@@ -1,0 +1,12 @@
+=== EV-25 / AC-16 — vung khoa cua app/globals.css: .pub-header { -> EOF ===
+--- (a) git co thay bat ky thay doi nao tren file nay so voi baseline 8ca2ee1?
+GIT_DIFF_VS_BASELINE_EXIT=0  (khong co dong nao o tren = KHONG mot byte nao doi)
+--- (b) file co nam trong git status khong?
+IN_STATUS_LINES=0   (0 = khong bi sua)
+--- (c) sha256 cua vung khoa, do tren CA hai ban, chuan hoa ve LF truoc khi bam
+BASELINE_REGION_SHA256 = b000fb06f5e752462b1f86233ab4f272577eaaea4cb3fb968c143f9633aebd57
+WORKTREE_REGION_SHA256 = b000fb06f5e752462b1f86233ab4f272577eaaea4cb3fb968c143f9633aebd57
+EQUAL                  = True
+REGION_BYTES(LF)       = 9324 / 9324
+CRLF trong worktree    = 0   <= vi sao chuan hoa: bay core.autocrlf lam phep so byte tho VO HIEU
+HASH_EXIT=0

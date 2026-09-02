@@ -1,0 +1,38 @@
+############ AC-15 — phan tu tuong tac MOI: vung cham, khoang cach, focus, motion ############
+$ dem CHINH XAC: chi dong mo element THAT (loai dong comment va dong chi nhac ten trong van)
+  so dong mo element THAT = 11 -> ['322:button', '332:button', '394:select', '463:button', '502:button', '784:input', '818:button', '893:input', '924:button', '976:button', '1078:button']
+  THIEU vung cham >=44px : 0 []
+  THIEU hrp-focus        : 0 []
+  --- vi sao ban dem tho o step10-controls.txt bao "1 thieu": no dem ca chuoi "<select>" trong VAN comment
+    dong 356 (comment, khong phai element): * khi `value` gửi đi vẫn là con số thô. Nhờ vậy trang không cần thêm một `<select>` thứ hai, và phép
+
+$ khoang cach toi thieu 8px giua cac control moi (grep class gap tren container cua Hero + panel)
+  dong 840: <section className="w-full grid grid-cols-1 sm:grid-cols-3 gap-4">
+  dong 885: className="text-sm font-semibold mb-2 flex items-center gap-2"
+  dong 928: className="hrp-btn-primary hrp-focus nav-item-lift w-full py-3 min-h-11 rounded-lg font-semibold flex justify-center items-center 
+  dong 944: <div className="flex-1 min-w-0 flex flex-col gap-6 w-full">
+  dong 947: <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+  dong 990: <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+  dong 997: <div className="flex items-start gap-4 mb-4">
+
+$ MOTION: chuyen dong moi dung class nao, va class do co nhanh prefers-reduced-motion chua
+  page.tsx: prefers-reduced-motion = 0 ; transition- = 1
+  globals.css: prefers-reduced-motion = 1 (file NAY khong bi sua trong task, xem EV-25)
+  page.tsx dung "nav-item-lift" tren 7 dong
+  page.tsx dung "hrp-card" tren 2 dong
+  page.tsx dung "hrp-btn-primary" tren 5 dong
+  --- globals.css dong 609:
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      
+        /* Huỷ ĐÚNG cú nhấc 1 px của mục điều hướng, không hơn. Cấm reset transform cho
+           dấu sao: nhiều overlay tự căn giữa bằng translate, reset trắng sẽ làm hộp
+           thoại lệch tâm. Đây là quy tắc đã mất trong lần dán lệch của round 1. */
+        .nav-item-lift:hover {
+          transform: none !important;
+       

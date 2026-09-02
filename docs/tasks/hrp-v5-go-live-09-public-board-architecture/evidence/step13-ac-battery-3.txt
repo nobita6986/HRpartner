@@ -1,0 +1,129 @@
+############ AC-21 — overview tinh TRUOC filter va TRUOC cat trang ############
+$ grep -n "eligible\|facets\|overview\|\.filter(\|\.slice(\|nextOffset\|const total" src/domains/job-board/public.service.ts | sed -n "/listPublicJobProjection/,\$p"
+  dong 563:     ...row.staffingOrders.filter((order) => isOrderVisible(order, now)).map((order) => order.title),
+  dong 574: export async function listPublicJobProjection(
+  dong 597:   const eligible: Array<{ row: PublicProjectRow; job: PublicJobDto }> = [];
+  dong 629:       .map((value) => ({ value, count: eligible.filter((entry) => matches(entry, value)).length }))
+  dong 632:       .filter((entry) => entry.count > 0)
+  dong 652:       .slice(0, overviewStripSize)
+  dong 657:       .filter(({ job }) => job.salaryMinVnd !== null)
+  dong 659:       .slice(0, overviewStripSize)
+  dong 667:     .filter(({ row, job }) => !search || keywordHaystack(row, job, now).includes(foldVietnamese(search)))
+  dong 668:     .filter(({ row, job }) => !area || areaHaystack(row, job).includes(foldVietnamese(area)))
+  dong 671:     .filter(({ job }) => !shift || job.shifts.some((label) => label.includes(shift)))
+  dong 672:     .filter(({ job }) => !opts.shiftTypes?.length || (job.shiftType !== null && opts.shiftTypes.includes(job.shiftType)))
+  dong 673:     .filter(({ job }) => !opts.jobTypes?.length || opts.jobTypes.includes(job.jobType));
+  dong 675:   // DEC-06: `total` là số việc THẬT sau lifecycle và sau filter; `nextOffset` chỉ khác null khi còn
+  dong 678:   const page = jobs.slice(offset, offset + limit);
+  dong 679:   return { jobs: page, nextOffset: offset + limit < jobs.length ? offset + limit : null, total: jobs.length, facets, overview };
+
+--- than tra ve cua listPublicJobProjection (nguyen van):
+8:  // án được xét trên hai mốc thời gian khác nhau; một slot hết hạn giữa vòng lặp là đủ để `total`
+24:  const eligible: Array<{ row: PublicProjectRow; job: PublicJobDto }> = [];
+27:    if (job) eligible.push({ row: project, job });
+30:  // DEC-08 — facet tính TRƯỚC filter, trên toàn tập hợp lệ.
+31:  const facets: PublicJobFacets = {
+32:    areas: summarize(eligible.flatMap(({ job }) => job.locations)),
+33:    shifts: summarize(eligible.flatMap(({ job }) => job.shifts)),
+37:   * go-live-09 / RQ-21, DEC-18 — `overview` sinh Ở ĐÂY, cạnh `facets`, trên cùng tập `eligible`, tức
+48:   * chỉ service có nó. Bất biến đo được: số trên tag bằng `total` của lần gọi lại với `area` đó.
+50:  const overviewStripSize = 6;
+56:      .map((value) => ({ value, count: eligible.filter((entry) => matches(entry, value)).length }))
+59:      .filter((entry) => entry.count > 0)
+62:  const areaCounts = countBy(facets.areas, ({ row, job }, value) => areaHaystack(row, job).includes(foldVietnamese(value)));
+63:  const shiftCounts = countBy(facets.shifts, ({ job }, value) => job.shifts.some((label) => label.includes(value)));
+64:  const overview: PublicJobOverview = {
+65:    totals: {
+66:      jobs: eligible.length,
+67:      slots: eligible.reduce((sum, { job }) => sum + job.availableSlots, 0),
+73:    newest: [...eligible]
+77:        return left === right ? 0 : left < right ? 1 : -1;
+79:      .slice(0, overviewStripSize)
+83:    topPaid: eligible
+84:      .filter(({ job }) => job.salaryMinVnd !== null)
+86:      .slice(0, overviewStripSize)
+
+--- hinh dang overview tai HEAD:
+export interface PublicJobOverviewEntry {
+  value: string;
+  count: number;
+}
+export interface PublicJobOverview {
+  totals: { jobs: number; slots: number; areas: number };
+  areaCounts: PublicJobOverviewEntry[];
+  shiftCounts: PublicJobOverviewEntry[];
+  newest: PublicJobDto[];
+  topPaid: PublicJobDto[];
+}
+--- gioi han 6 phan tu:
+652:      .slice(0, overviewStripSize)
+659:      .slice(0, overviewStripSize)
+
+############ AC-17 — khong SQL, khong migration, khong doi quyen ############
+warning: in the working copy of 'app/(portal)/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/applications/marketplace-browse.routes.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/mp1.contract.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.integration.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-detail.service.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-ui-premium.static.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public.service.ts', LF will be replaced by CRLF the next time Git touches it
+  dong THEM co "CREATE POLICY" = 0
+warning: in the working copy of 'app/(portal)/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/applications/marketplace-browse.routes.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/mp1.contract.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.integration.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-detail.service.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-ui-premium.static.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public.service.ts', LF will be replaced by CRLF the next time Git touches it
+  dong THEM co "GRANT" = 0
+warning: in the working copy of 'app/(portal)/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/applications/marketplace-browse.routes.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/mp1.contract.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.integration.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-detail.service.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-ui-premium.static.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public.service.ts', LF will be replaced by CRLF the next time Git touches it
+  dong THEM co "ALTER TABLE" = 0
+warning: in the working copy of 'app/(portal)/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/applications/marketplace-browse.routes.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/mp1.contract.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.integration.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-detail.service.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-ui-premium.static.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public.service.ts', LF will be replaced by CRLF the next time Git touches it
+  dong THEM co "set_config" = 0
+warning: in the working copy of 'app/(portal)/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/applications/marketplace-browse.routes.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/mp1.contract.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.integration.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-detail.service.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-ui-premium.static.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public.service.ts', LF will be replaced by CRLF the next time Git touches it
+  doi chung DUONG: so dong THEM trong toan bo git diff = 981
+$ git status --short | grep prisma/
+  PRISMA_FILES_IN_STATUS=0
+
+############ AC-20 — khong commit, khong push ############
+$ git log origin/main..HEAD --oneline
+  COMMITS_AHEAD_OF_ORIGIN=0
+$ git rev-parse HEAD origin/main
+da724931adb8ff6fdd67bd26982044044a41193f
+da724931adb8ff6fdd67bd26982044044a41193f
+
+############ AC-24 — trang chi tiet: duong dan THAT va khong bi cham ############
+$ find app -path "*viec-lam*"
+app/(jobs)/viec-lam
+app/(jobs)/viec-lam/layout.tsx
+app/(jobs)/viec-lam/[slug]
+app/(jobs)/viec-lam/[slug]/page.tsx
+$ git status --short -- "app/(jobs)/viec-lam/"
+  DIRTY_LINES_UNDER_viec-lam=0
+$ git status --short -- "app/(jobs)/"
+  DIRTY_LINES_UNDER_(jobs)=0
+$ git status --short -- app/api/jobs/
+  DIRTY_LINES_UNDER_api_jobs=0

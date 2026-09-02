@@ -1,0 +1,23 @@
+=== dong THEM co min-h-11 ===
+warning: in the working copy of 'app/(portal)/page.tsx', LF will be replaced by CRLF the next time Git touches it
++          'hrp-focus font-semibold px-6 min-h-11 rounded-lg self-start ' +
++            className="hrp-btn-ghost hrp-focus border px-4 min-h-11 rounded-lg text-sm font-medium"
++                className="hrp-field hrp-focus w-full px-4 py-3 min-h-11 rounded-lg border"
++              className="hrp-btn-primary hrp-focus nav-item-lift px-6 min-h-11 rounded-lg font-semibold whitespace-nowrap disabled:cursor-wait disabled:opacity-70"
+
+=== dong THEM co hrp-focus ===
+warning: in the working copy of 'app/(portal)/page.tsx', LF will be replaced by CRLF the next time Git touches it
++          'hrp-focus font-semibold px-6 min-h-11 rounded-lg self-start ' +
++            className="hrp-btn-ghost hrp-focus border px-4 min-h-11 rounded-lg text-sm font-medium"
++                className="hrp-field hrp-focus w-full px-4 py-3 min-h-11 rounded-lg border"
++              className="hrp-btn-primary hrp-focus nav-item-lift px-6 min-h-11 rounded-lg font-semibold whitespace-nowrap disabled:cursor-wait disabled:opacity-70"
+
+=== dong THEM co <FacetSelect / <button / <input / <select ===
+warning: in the working copy of 'app/(portal)/page.tsx', LF will be replaced by CRLF the next time Git touches it
++ * khi `value` gửi đi vẫn là con số thô. Nhờ vậy trang không cần thêm một `<select>` thứ hai, và phép
++      <button
++          <button
++              <input
++              <FacetSelect
++              <FacetSelect
++            <button

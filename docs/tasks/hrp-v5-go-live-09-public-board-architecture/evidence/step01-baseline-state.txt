@@ -1,0 +1,36 @@
+PHEP DO TRANG THAI DAU VAO — moi con so lay tu blob cua baseline 8ca2ee1, khong tu ky uc
+
+=== PHEP 1 — PublicJobDto tai baseline ===
+so khoa = 14
+['id', 'slug', 'title', 'position', 'shift', 'location', 'shiftType', 'jobType', 'availableSlots', 'deadline', 'statusLabel', 'positionTitles', 'locations', 'shifts']
+co khoa 'industry'? -> False
+so khoa tai HEAD (sau STEP-04) = 18
+bon khoa THEM = ['salaryMinVnd', 'salaryMaxVnd', 'urgency', 'postedAt']
+
+=== PHEP 2 — publicSelect tai baseline ===
+so lan xuat hien hourlyRateVnd = 0   <= 0 nghia la luong gio KHONG duoc select
+so lan xuat hien createdAt     = 0   <= 0 nghia la postedAt KHONG co nguon
+slots.select co 8 field -> ['positionCode', 'positionTitle', 'slotsNeeded', 'slotsFilled', 'shiftStart', 'shiftEnd', 'validTo', 'workLocation']
+staffingOrders.select (truoc nhanh slots) -> ['status', 'title', 'description', 'deadlineDate']
+--- tai HEAD: hourlyRateVnd = 1 / createdAt = 1
+
+=== PHEP 3 — PublicJobListResult va vi tu loc area tai baseline ===
+so khoa = 4 -> ['jobs', 'nextOffset', 'total', 'facets']
+so khoa tai HEAD = 5 -> ['jobs', 'nextOffset', 'total', 'facets', 'overview']
+khoa THEM = ['overview']
+ham areaHaystack co siteAddress? -> True
+function areaHaystack(row: PublicProjectRow, job: PublicJobDto): string {
+  return foldVietnamese([row.siteAddress ?? '', ...job.locations].join(' '));
+}
+
+=== PHEP 4 — page.tsx tai baseline ===
+PAGE_SIZE -> ['const PAGE_SIZE = 12']
+so vi tri fetch('/api/jobs (nhay don)  = 0
+so vi tri fetch(`/api/jobs (backtick)  = 1
+HOP tat ca dang fetch(<quote>/api/jobs = 1  <= AC-08/AC-23 doi dung 1
+
+=== PHEP 5 — vung sha256 cua app/globals.css ===
+dong bat dau .pub-header {  -> [452]
+tong so dong cua file        -> 624
+vung [.pub-header -> EOF] ket thuc dung o EOF? -> True
+file nay co nam trong git status (bi sua)? -> xem step12-scope.txt: KHONG

@@ -1,0 +1,445 @@
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v2.1.9 C:/CodeApp/HrP-gl09-baseline
+
+ ✓ src/domains/job-board/public-ui-premium.static.test.ts (62 tests) 42ms
+ ✓ src/domains/staffing/assignment-placement.service.test.ts (65 tests) 41ms
+ ✓ src/domains/applications/marketplace-apply.routes.test.ts (31 tests) 69ms
+ ✓ src/domains/commission/golden.test.ts (10 tests) 20ms
+ ✓ src/shared/auth/vendor-object-scope.m1-08.route.test.ts (36 tests) 58ms
+ ✓ src/domains/applications/marketplace-inventory.static.test.ts (25 tests) 265ms
+ ✓ src/domains/job-board/public-card-truth.test.ts (23 tests) 21ms
+ ✓ src/domains/reconciliation/reconciliation-unit.test.ts (16 tests) 14ms
+ ✓ src/domains/attendance/ticket.service.test.ts (16 tests) 41ms
+ ✓ src/shared/auth/api-boundary.static.test.ts (27 tests) 72ms
+stdout | src/shared/observability/logger.test.ts > Schema — AC-03 > sink can be reset to default without throwing
+{"schemaVersion":"1.0","timestamp":"2026-09-02T11:17:26.982Z","level":"info","event":"after_reset","requestId":"req","meta":{}}
+
+ ✓ src/shared/observability/logger.test.ts (73 tests) 20ms
+ ✓ src/domains/staffing/submission.service.test.ts (15 tests) 22ms
+ ❯ src/domains/job-board/public-board-architecture.test.ts (17 tests | 17 failed) 28ms
+   × go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt > mọi slot không có lương ⇒ salaryMinVnd và salaryMaxVnd đều null, không phải 0 9ms
+     → expected undefined to be null
+   × go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt > nhiều slot có lương ⇒ min/max là number thật, slot không lương không kéo min về 0 2ms
+     → expected undefined to be 30000 // Object.is equality
+   × go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt > JSON.stringify trên DTO có lương không ném — đúng bẫy BigInt của NextResponse.json 4ms
+     → expected '{"id":"prj-1","slug":"DA-2026-001","t…' to contain '45000'
+   × go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > đơn OPEN chỉ còn 1 chỗ ⇒ NONE, statusLabel vẫn là Đang tuyển 1ms
+     → expected undefined to be 'NONE' // Object.is equality
+   × go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > CLOSING_SOON cộng hạn còn 3 ngày ⇒ URGENT và statusLabel đổi theo 2ms
+     → expected undefined to be 'URGENT' // Object.is equality
+   × go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > CLOSING_SOON mà deadline null ⇒ CLOSING, không phải NONE và không phải URGENT 1ms
+     → expected undefined to be 'CLOSING' // Object.is equality
+   × go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > CLOSING_SOON mà hạn còn 30 ngày ⇒ CLOSING — ngưỡng 7 ngày có ý nghĩa thật 1ms
+     → expected undefined to be 'CLOSING' // Object.is equality
+   × go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > postedAt là ISO của createdAt ĐƠN, không phải của project 1ms
+     → expected undefined to be '2026-02-03T04:05:06.000Z' // Object.is equality
+   × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > overview.totals.jobs bằng total khi gọi không bộ lọc, và ba số đúng phép tính ở service 1ms
+     → Cannot read properties of undefined (reading 'totals')
+   × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > areaCounts đếm bằng ĐÚNG vị từ của bộ lọc area, không bằng job.locations 0ms
+     → Cannot read properties of undefined (reading 'areaCounts')
+   × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > số của một mục areaCounts bằng total của lần gọi lại cùng service với đúng area đó 0ms
+     → Cannot read properties of undefined (reading 'areaCounts')
+   × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > areaCounts và shiftCounts không chứa mục count bằng 0 và đã sắp giảm dần 0ms
+     → Cannot read properties of undefined (reading 'areaCounts')
+   × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > topPaid không chứa việc không có lương, sắp giảm dần, tối đa 6 phần tử 0ms
+     → Cannot read properties of undefined (reading 'topPaid')
+   × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > newest sắp theo postedAt giảm dần và mang DTO đầy đủ, không chỉ slug 0ms
+     → Cannot read properties of undefined (reading 'newest')
+   × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > overview không đổi khi phân trang: trang 2 vẫn thấy đúng ba con số toàn cục 1ms
+     → Cannot read properties of undefined (reading 'totals')
+   × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > bốn khoá cũ của PublicJobListResult không đổi, overview là khoá thứ năm THUẦN CỘNG 2ms
+     → expected [ Array(4) ] to deeply equal [ Array(5) ]
+   × go-live-09 / RQ-24, DEC-21 — hai mapper nói cùng một sự thật > bốn field mới của toDetailDto bằng đúng bốn field của toDto trên cùng một hàng 1ms
+     → expected undefined to be 30000 // Object.is equality
+ ✓ src/domains/applications/marketplace-browse.routes.test.ts (13 tests) 24ms
+ ✓ src/domains/staffing/e2e-staffing-narrative.integration.test.ts (5 tests) 16ms
+ ✓ src/shared/observability/middleware.test.ts (24 tests) 36ms
+ ✓ src/domains/applications/placement-panel.test.ts (26 tests) 53ms
+ ✓ src/shared/auth/permission-resolver.test.ts (82 tests) 31ms
+ ✓ src/domains/staffing/assignment-placement.routes.test.ts (38 tests) 42ms
+stderr | src/domains/security/single-domain-consolidation.test.ts > C) login POST — same-origin landing + host-only cookie > bad credentials / locked / malformed → 401 INVALID_CREDENTIALS and NO cookie
+{"schemaVersion":"1.0","timestamp":"2026-09-02T11:17:30.593Z","level":"warn","event":"auth.login.denied","requestId":null,"meta":{"route":"/api/auth/login","outcome":"user_not_found"}}
+{"schemaVersion":"1.0","timestamp":"2026-09-02T11:17:30.595Z","level":"warn","event":"auth.login.denied","requestId":null,"meta":{"route":"/api/auth/login","outcome":"password_mismatch"}}
+
+ ✓ src/domains/security/single-domain-consolidation.test.ts (17 tests) 26ms
+ ✓ src/shared/security/rate-limit-guard.test.ts (13 tests) 16ms
+ ✓ src/domains/staffing/4role-jobboard.integration.test.ts (9 tests) 10ms
+ ✓ src/shared/security/rate-limit-config.test.ts (23 tests) 11ms
+ ✓ src/domains/attendance/4role-attendance.integration.test.ts (12 tests) 8ms
+ ✓ src/shared/auth/with-auth-scope.test.ts (39 tests) 10ms
+ ✓ src/domains/job-board/public-detail.static.test.ts (23 tests) 13ms
+ ✓ src/domains/staffing/referral-guard.canonical.test.ts (23 tests) 16ms
+ ✓ src/shared/ui/design-tokens.static.test.ts (12 tests) 57ms
+ ✓ src/domains/applications/application-queue.service.test.ts (22 tests) 23ms
+ ✓ src/domains/attendance/e2e-attendance-narrative.integration.test.ts (7 tests) 11ms
+ ✓ src/shared/observability/error-reporter.test.ts (14 tests) 15ms
+ ✓ src/domains/staffing/order.service.test.ts (11 tests) 17ms
+ ✓ src/shared/auth/vendor-submissions.route.test.ts (11 tests) 29ms
+ ✓ src/shared/observability/correlation-id.test.ts (28 tests) 12ms
+ ✓ src/domains/security/statements-list.projection.route.test.ts (17 tests) 31ms
+ ✓ src/shared/security/request-body.test.ts (13 tests) 24ms
+ ✓ src/shared/security/rate-limit-adapters.test.ts (9 tests) 12ms
+ ✓ src/domains/job-board/mp1.contract.test.ts (6 tests) 13ms
+ ✓ src/domains/applications/conversion.service.test.ts (9 tests) 13ms
+ ✓ src/shared/integrity/idempotency.test.ts (6 tests) 35ms
+ ✓ src/domains/security/response-projection.static.test.ts (20 tests) 14ms
+ ✓ src/domains/staffing/transfer.service.test.ts (7 tests) 10ms
+ ✓ src/domains/security/portal-domains.integration.test.ts (49 tests) 15ms
+ ✓ src/shared/integrity/outbox.test.ts (7 tests) 5ms
+ ✓ src/domains/payroll/calculateVietnameseTaxes.test.ts (16 tests) 11ms
+ ✓ src/shared/auth/worker-projection.test.ts (15 tests) 9ms
+ ✓ src/shared/projection/manifest.test.ts (8 tests) 12ms
+ ✓ src/shared/auth/with-authorized-db.test.ts (4 tests) 7ms
+ ✓ src/shared/auth/webhook-payslip.route.test.ts (21 tests) 22ms
+ ✓ src/shared/auth/attendance-adjustments.route.test.ts (25 tests) 21ms
+ ✓ src/domains/applications/tracking-mask.routes.test.ts (4 tests) 16ms
+ ✓ prisma/migrations-permission-hygiene.static.test.ts (4 tests) 5ms
+ ✓ src/domains/security/statements-generate.projection.route.test.ts (16 tests) 26ms
+ ✓ src/domains/applications/application.service.test.ts (9 tests) 10ms
+ ✓ src/shared/auth/projects-master.route.test.ts (22 tests) 25ms
+ ✓ src/shared/privacy/mask.test.ts (12 tests) 5ms
+ ✓ src/domains/security/security-matrix-portals.test.ts (18 tests) 7ms
+ ✓ src/shared/auth/worker-portal.route.test.ts (7 tests) 22ms
+ ✓ src/domains/security/workers-me.projection.route.test.ts (17 tests) 23ms
+ ✓ src/domains/applications/application-detail-mp3.test.ts (16 tests) 12ms
+ ✓ src/shared/auth/disputes.route.test.ts (7 tests) 16ms
+stdout | src/domains/security/ctv-withdrawals.projection.route.test.ts > POST /api/ctv/withdrawals — self DTO omit ctvId (AC-08) > CTV → 201, DTO omit ctvId; owner = session (KHÔNG nhận ctvId từ body)
+[withdrawals] created wd-1
+
+ ✓ src/domains/security/ctv-withdrawals.projection.route.test.ts (27 tests) 42ms
+ ✓ src/domains/job-board/public-detail.service.test.ts (4 tests) 16ms
+ ✓ src/domains/applications/screening.service.test.ts (9 tests) 22ms
+ ✓ src/shared/auth/clients-master.route.test.ts (16 tests) 23ms
+ ✓ src/shared/integrity/state-machine.test.ts (6 tests) 6ms
+ ✓ src/shared/auth/with-public-db.test.ts (7 tests) 9ms
+ ✓ src/domains/applications/apply-helpers.test.ts (12 tests) 85ms
+ ✓ src/shared/auth/statements-margin.route.test.ts (17 tests) 23ms
+ ✓ src/domains/attendance/taxonomy-unit.test.ts (14 tests) 8ms
+ ✓ src/domains/security/workers-projection.contract.test.ts (4 tests) 11ms
+ ✓ src/shared/auth/auth-context.test.ts (8 tests) 8ms
+ ✓ src/domains/job-board/public-select.static.test.ts (3 tests) 4ms
+ ✓ src/shared/auth/cron-routes.route.test.ts (5 tests) 13ms
+ ✓ src/shared/auth/vendors-master.route.test.ts (12 tests) 16ms
+ ✓ src/shared/integrity/audit.test.ts (3 tests) 5ms
+ ✓ src/domains/staffing/talent-pool.repo.test.ts (4 tests) 9ms
+ ✓ src/shared/auth/projects-clients-master.route.test.ts (27 tests) 17ms
+ ✓ src/shared/auth/push-subscribe.route.test.ts (4 tests) 12ms
+ ✓ src/shared/auth/scopes/ctv-account-scope.test.ts (13 tests) 8ms
+ ✓ src/domains/applications/conversion.routes.test.ts (4 tests) 18ms
+ ✓ src/domains/applications/screening.routes.test.ts (4 tests) 14ms
+ ✓ src/domains/commission/ctv-summary.route.test.ts (4 tests) 9ms
+stderr | src/shared/auth/require-permission.test.ts > requirePermission (RQ-05, DEC-05) > WORKER thiếu CAN_APPROVE_PAYROLL → throw AuthError PERMISSION_DENIED
+{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+
+stderr | src/shared/auth/require-permission.test.ts > requireAnyPermission > không code nào pass → throw PERMISSION_DENIED
+{"evt":"permission_denied_any","userId":"u-w-1","role":"WORKER","requiredCodes":["CAN_APPROVE_PAYROLL","CAN_EDIT_CONTRACT"]}
+
+ ✓ src/shared/auth/require-permission.test.ts (6 tests) 6ms
+ ✓ src/shared/auth/public-read-guc.static.test.ts (5 tests) 10ms
+ ✓ src/shared/auth/finance-scope.test.ts (27 tests) 8ms
+ ✓ src/shared/auth/payroll.route.test.ts (15 tests) 16ms
+ ✓ src/domains/applications/status-machine.test.ts (7 tests) 5ms
+ ✓ src/shared/auth/jwt.test.ts (7 tests) 22ms
+ ✓ src/shared/auth/cron-auth.test.ts (6 tests) 6ms
+ ✓ src/shared/auth/preauth-db.test.ts (2 tests) 6ms
+ ✓ src/shared/auth/permission-catalog.test.ts (8 tests) 8ms
+ ✓ src/shared/auth/internal-webhook-auth.test.ts (6 tests) 14ms
+ ✓ src/shared/auth/session-adapter.test.ts (30 tests) 7ms
+ ✓ src/shared/auth/debug.route.test.ts (4 tests) 12ms
+ ✓ src/domains/staffing/referral-guard.service.test.ts (4 tests) 4ms
+ ✓ src/domains/security/debug-route.contract.test.ts (4 tests) 14ms
+ ✓ src/shared/auth/me.route.test.ts (2 tests) 11ms
+ ✓ src/shared/auth/user.test.ts (5 tests) 7ms
+ ✓ src/lib/db.test.ts (1 test) 2ms
+ ✓ src/shared/utils/money.test.ts (4 tests) 3ms
+ ✓ src/shared/auth/password.test.ts (2 tests) 360ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 17 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt > mọi slot không có lương ⇒ salaryMinVnd và salaryMaxVnd đều null, không phải 0
+AssertionError: expected undefined to be null
+
+- Expected: 
+null
+
++ Received: 
+undefined
+
+ ❯ src/domains/job-board/public-board-architecture.test.ts:126:30
+    124|     // DEC-03: nhánh `null` là nhánh PHỔ BIẾN ở dev nên nó là thiết kế…
+    125|     // "0 đ/giờ" trên card — một khẳng định SAI về tiền, và không test…
+    126|     expect(job.salaryMinVnd).toBeNull();
+       |                              ^
+    127|     expect(job.salaryMaxVnd).toBeNull();
+    128|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt > nhiều slot có lương ⇒ min/max là number thật, slot không lương không kéo min về 0
+AssertionError: expected undefined to be 30000 // Object.is equality
+
+- Expected: 
+30000
+
++ Received: 
+undefined
+
+ ❯ src/domains/job-board/public-board-architecture.test.ts:143:30
+    141|     ]);
+    142| 
+    143|     expect(job.salaryMinVnd).toBe(30_000);
+       |                              ^
+    144|     expect(job.salaryMaxVnd).toBe(45_000);
+    145|     expect(typeof job.salaryMinVnd).toBe('number');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt > JSON.stringify trên DTO có lương không ném — đúng bẫy BigInt của NextResponse.json
+AssertionError: expected '{"id":"prj-1","slug":"DA-2026-001","t…' to contain '45000'
+
+Expected: "45000"
+Received: "{"id":"prj-1","slug":"DA-2026-001","title":"Lắp ráp điện tử Bắc Ninh","position":"Công nhân lắp ráp","shift":"07:00-16:00","location":"KCN VSIP 1","shiftType":"ca_ngay","jobType":"toan_thoi_gian","availableSlots":4,"deadline":null,"statusLabel":"Đang tuyển","positionTitles":["Công nhân lắp ráp"],"locations":["KCN VSIP 1"],"shifts":["07:00-16:00"]}"
+
+ ❯ src/domains/job-board/public-board-architecture.test.ts:156:33
+    154|     // `not.toThrow()` thì test này xanh cả trên baseline (baseline kh…
+    155|     // tức nó không khoá gì — đúng loại AC "đúng mặt chữ mà vô giá trị…
+    156|     expect(JSON.stringify(job)).toContain('45000');
+       |                                 ^
+    157|     // `DEC-19`: tên cột nội bộ vẫn bị cấm trong payload; khoá công kh…
+    158|     expect(JSON.stringify(job)).not.toContain('hourlyRateVnd');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > đơn OPEN chỉ còn 1 chỗ ⇒ NONE, statusLabel vẫn là Đang tuyển
+AssertionError: expected undefined to be 'NONE' // Object.is equality
+
+- Expected: 
+"NONE"
+
++ Received: 
+undefined
+
+ ❯ src/domains/job-board/public-board-architecture.test.ts:169:25
+    167|     // số chỗ trống, và nó nói sai về cả hai đầu: đơn 200 chỗ vừa mở c…
+    168|     expect(job.availableSlots).toBe(1);
+    169|     expect(job.urgency).toBe('NONE');
+       |                         ^
+    170|     expect(job.statusLabel).toBe('Đang tuyển');
+    171|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > CLOSING_SOON cộng hạn còn 3 ngày ⇒ URGENT và statusLabel đổi theo
+AssertionError: expected undefined to be 'URGENT' // Object.is equality
+
+- Expected: 
+"URGENT"
+
++ Received: 
+undefined
+
+ ❯ src/domains/job-board/public-board-architecture.test.ts:178:25
+    176|     ]);
+    177| 
+    178|     expect(job.urgency).toBe('URGENT');
+       |                         ^
+    179|     expect(job.statusLabel).toBe('Sắp hết hạn');
+    180|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > CLOSING_SOON mà deadline null ⇒ CLOSING, không phải NONE và không phải URGENT
+AssertionError: expected undefined to be 'CLOSING' // Object.is equality
+
+- Expected: 
+"CLOSING"
+
++ Received: 
+undefined
+
+ ❯ src/domains/job-board/public-board-architecture.test.ts:188:25
+    186| 
+    187|     expect(job.deadline).toBeNull();
+    188|     expect(job.urgency).toBe('CLOSING');
+       |                         ^
+    189|   });
+    190| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > CLOSING_SOON mà hạn còn 30 ngày ⇒ CLOSING — ngưỡng 7 ngày có ý nghĩa thật
+AssertionError: expected undefined to be 'CLOSING' // Object.is equality
+
+- Expected: 
+"CLOSING"
+
++ Received: 
+undefined
+
+ ❯ src/domains/job-board/public-board-architecture.test.ts:196:25
+    194|     ]);
+    195| 
+    196|     expect(job.urgency).toBe('CLOSING');
+       |                         ^
+    197|   });
+    198| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > postedAt là ISO của createdAt ĐƠN, không phải của project
+AssertionError: expected undefined to be '2026-02-03T04:05:06.000Z' // Object.is equality
+
+- Expected: 
+"2026-02-03T04:05:06.000Z"
+
++ Received: 
+undefined
+
+ ❯ src/domains/job-board/public-board-architecture.test.ts:204:26
+    202|     ]);
+    203| 
+    204|     expect(job.postedAt).toBe('2026-02-03T04:05:06.000Z');
+       |                          ^
+    205|   });
+    206| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > overview.totals.jobs bằng total khi gọi không bộ lọc, và ba số đúng phép tính ở service
+TypeError: Cannot read properties of undefined (reading 'totals')
+ ❯ src/domains/job-board/public-board-architecture.test.ts:254:28
+    252| 
+    253|     expect(result.total).toBe(3);
+    254|     expect(result.overview.totals.jobs).toBe(result.total);
+       |                            ^
+    255|     // 4 + 3 + 2 — tổng chỗ còn tuyển của TOÀN tập hợp lệ, không phải …
+    256|     expect(result.overview.totals.slots).toBe(9);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > areaCounts đếm bằng ĐÚNG vị từ của bộ lọc area, không bằng job.locations
+TypeError: Cannot read properties of undefined (reading 'areaCounts')
+ ❯ src/domains/job-board/public-board-architecture.test.ts:264:37
+    262|     const result = await listPublicJobProjection(tx, {});
+    263| 
+    264|     const bacNinh = result.overview.areaCounts.find((entry) => entry.v…
+       |                                     ^
+    265|     expect(bacNinh).toBeDefined();
+    266|     // `prj-b` không có `Bắc Ninh` trong `locations` nhưng bộ lọc vẫn …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > số của một mục areaCounts bằng total của lần gọi lại cùng service với đúng area đó
+TypeError: Cannot read properties of undefined (reading 'areaCounts')
+ ❯ src/domains/job-board/public-board-architecture.test.ts:273:34
+    271|     const rows = boardRows();
+    272|     const first = await listPublicJobProjection(listTx(rows).tx, {});
+    273|     const entry = first.overview.areaCounts.find((item) => item.value …
+       |                                  ^
+    274|     expect(entry).toBeDefined();
+    275| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > areaCounts và shiftCounts không chứa mục count bằng 0 và đã sắp giảm dần
+TypeError: Cannot read properties of undefined (reading 'areaCounts')
+ ❯ src/domains/job-board/public-board-architecture.test.ts:286:45
+    284|     const result = await listPublicJobProjection(tx, {});
+    285| 
+    286|     for (const entry of [...result.overview.areaCounts, ...result.over…
+       |                                             ^
+    287|       // Tag "Bắc Giang (0)" là mời người dùng bấm vào một trang trống…
+    288|       expect(entry.count).toBeGreaterThan(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > topPaid không chứa việc không có lương, sắp giảm dần, tối đa 6 phần tử
+TypeError: Cannot read properties of undefined (reading 'topPaid')
+ ❯ src/domains/job-board/public-board-architecture.test.ts:300:28
+    298|     const result = await listPublicJobProjection(tx, {});
+    299| 
+    300|     expect(result.overview.topPaid.length).toBeLessThanOrEqual(6);
+       |                            ^
+    301|     // `prj-a` hợp lệ và có mặt trong `jobs`, nhưng KHÔNG được có mặt …
+    302|     expect(result.overview.topPaid.map((job) => job.id)).toEqual(['prj…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > newest sắp theo postedAt giảm dần và mang DTO đầy đủ, không chỉ slug
+TypeError: Cannot read properties of undefined (reading 'newest')
+ ❯ src/domains/job-board/public-board-architecture.test.ts:312:28
+    310|     const result = await listPublicJobProjection(tx, {});
+    311| 
+    312|     expect(result.overview.newest.map((job) => job.id)).toEqual(['prj-…
+       |                            ^
+    313|     expect(result.overview.newest.length).toBeLessThanOrEqual(6);
+    314|     // `DEC-18`: dải phải render được kể cả khi phần tử KHÔNG nằm tron…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > overview không đổi khi phân trang: trang 2 vẫn thấy đúng ba con số toàn cục
+TypeError: Cannot read properties of undefined (reading 'totals')
+ ❯ src/domains/job-board/public-board-architecture.test.ts:326:27
+    324|     expect(page1.jobs).toHaveLength(1);
+    325|     expect(page2.jobs).toHaveLength(1);
+    326|     expect(page2.overview.totals).toEqual(page1.overview.totals);
+       |                           ^
+    327|     expect(page2.overview.areaCounts).toEqual(page1.overview.areaCount…
+    328|     expect(page1.overview.totals.jobs).toBe(3);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > bốn khoá cũ của PublicJobListResult không đổi, overview là khoá thứ năm THUẦN CỘNG
+AssertionError: expected [ Array(4) ] to deeply equal [ Array(5) ]
+
+- Expected
++ Received
+
+  Array [
+    "facets",
+    "jobs",
+    "nextOffset",
+-   "overview",
+    "total",
+  ]
+
+ ❯ src/domains/job-board/public-board-architecture.test.ts:335:40
+    333|     const result = await listPublicJobProjection(tx, {});
+    334| 
+    335|     expect(Object.keys(result).sort()).toEqual(['facets', 'jobs', 'nex…
+       |                                        ^
+    336|     expect(Object.keys(result.overview).sort()).toEqual(['areaCounts',…
+    337|     expect(() => JSON.stringify(result)).not.toThrow();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/17]⎯
+
+ FAIL  src/domains/job-board/public-board-architecture.test.ts > go-live-09 / RQ-24, DEC-21 — hai mapper nói cùng một sự thật > bốn field mới của toDetailDto bằng đúng bốn field của toDto trên cùng một hàng
+AssertionError: expected undefined to be 30000 // Object.is equality
+
+- Expected: 
+30000
+
++ Received: 
+undefined
+
+ ❯ src/domains/job-board/public-board-architecture.test.ts:359:33
+    357|     // Bốn giá trị được ghim CỤ THỂ trước khi so hai mapper. Nếu chỉ s…
+    358|     // `undefined === undefined` làm test xanh trên baseline, tức bất …
+    359|     expect(listed.salaryMinVnd).toBe(30_000);
+       |                                 ^
+    360|     expect(listed.salaryMaxVnd).toBe(45_000);
+    361|     expect(listed.urgency).toBe('URGENT');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/17]⎯
+
+ Test Files  1 failed | 101 passed (102)
+      Tests  17 failed | 1567 passed (1584)
+   Start at  18:17:21
+   Duration  38.05s (transform 2.31s, setup 0ms, collect 7.83s, tests 2.51s, environment 24ms, prepare 9.53s)
+

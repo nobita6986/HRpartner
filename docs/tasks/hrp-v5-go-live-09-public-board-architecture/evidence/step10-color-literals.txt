@@ -1,0 +1,3 @@
+added lines quet = 1414
+literal mau tim thay = 0
+positive control = 3 / 3 (phai bang nhau, chung minh regex bat duoc that)

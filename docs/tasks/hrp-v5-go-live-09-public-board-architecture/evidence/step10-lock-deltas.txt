@@ -1,0 +1,25 @@
+=== dem o BASELINE 8ca2ee1 vs HEAD worktree ===
+hrp-focus              baseline=8    hien tai=12   delta=+4
+min-h-11               baseline=6    hien tai=10   delta=+4
+<FacetSelect           baseline=2    hien tai=4    delta=+2
+aria-hidden="true"     baseline=10   hien tai=11   delta=+1
+outline-none           baseline=0    hien tai=0    delta=+0
+w-11 h-11              baseline=1    hien tai=1    delta=+0
+
+=== bon cho goi FacetSelect ===
+798:              <FacetSelect
+799-                icon="location_on"
+800-                heading="Khu vực"
+808:              <FacetSelect
+809-                icon="payments"
+810-                heading="Lương tối thiểu"
+905:          <FacetSelect
+906-            icon="location_on"
+907-            heading="Vị trí"
+914:          <FacetSelect
+915-            icon="schedule"
+916-            heading="Ca làm việc"
+
+=== so dong file ===
+644
+1120

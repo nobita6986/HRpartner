@@ -1,0 +1,402 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [31m❯[39m src/domains/job-board/public-board-architecture.test.ts [2m([22m[2m17 tests[22m[2m | [22m[31m17 failed[39m[2m)[22m[90m 20[2mms[22m[39m
+[31m   [31m×[31m go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt[2m > [22mmọi slot không có lương ⇒ salaryMinVnd và salaryMaxVnd đều null, không phải 0[90m 7[2mms[22m[31m[39m
+[31m     → expected undefined to be null[39m
+[31m   [31m×[31m go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt[2m > [22mnhiều slot có lương ⇒ min/max là number thật, slot không lương không kéo min về 0[90m 1[2mms[22m[31m[39m
+[31m     → expected undefined to be 30000 // Object.is equality[39m
+[31m   [31m×[31m go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt[2m > [22mJSON.stringify trên DTO có lương không ném — đúng bẫy BigInt của NextResponse.json[90m 3[2mms[22m[31m[39m
+[31m     → expected '{"id":"prj-1","slug":"DA-2026-001","t…' to contain '45000'[39m
+[31m   [31m×[31m go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật[2m > [22mđơn OPEN chỉ còn 1 chỗ ⇒ NONE, statusLabel vẫn là Đang tuyển[90m 1[2mms[22m[31m[39m
+[31m     → expected undefined to be 'NONE' // Object.is equality[39m
+[31m   [31m×[31m go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật[2m > [22mCLOSING_SOON cộng hạn còn 3 ngày ⇒ URGENT và statusLabel đổi theo[90m 1[2mms[22m[31m[39m
+[31m     → expected undefined to be 'URGENT' // Object.is equality[39m
+[31m   [31m×[31m go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật[2m > [22mCLOSING_SOON mà deadline null ⇒ CLOSING, không phải NONE và không phải URGENT[90m 0[2mms[22m[31m[39m
+[31m     → expected undefined to be 'CLOSING' // Object.is equality[39m
+[31m   [31m×[31m go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật[2m > [22mCLOSING_SOON mà hạn còn 30 ngày ⇒ CLOSING — ngưỡng 7 ngày có ý nghĩa thật[90m 0[2mms[22m[31m[39m
+[31m     → expected undefined to be 'CLOSING' // Object.is equality[39m
+[31m   [31m×[31m go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật[2m > [22mpostedAt là ISO của createdAt ĐƠN, không phải của project[90m 0[2mms[22m[31m[39m
+[31m     → expected undefined to be '2026-02-03T04:05:06.000Z' // Object.is equality[39m
+[31m   [31m×[31m go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22moverview.totals.jobs bằng total khi gọi không bộ lọc, và ba số đúng phép tính ở service[90m 1[2mms[22m[31m[39m
+[31m     → Cannot read properties of undefined (reading 'totals')[39m
+[31m   [31m×[31m go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22mareaCounts đếm bằng ĐÚNG vị từ của bộ lọc area, không bằng job.locations[90m 0[2mms[22m[31m[39m
+[31m     → Cannot read properties of undefined (reading 'areaCounts')[39m
+[31m   [31m×[31m go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22msố của một mục areaCounts bằng total của lần gọi lại cùng service với đúng area đó[90m 0[2mms[22m[31m[39m
+[31m     → Cannot read properties of undefined (reading 'areaCounts')[39m
+[31m   [31m×[31m go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22mareaCounts và shiftCounts không chứa mục count bằng 0 và đã sắp giảm dần[90m 0[2mms[22m[31m[39m
+[31m     → Cannot read properties of undefined (reading 'areaCounts')[39m
+[31m   [31m×[31m go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22mtopPaid không chứa việc không có lương, sắp giảm dần, tối đa 6 phần tử[90m 0[2mms[22m[31m[39m
+[31m     → Cannot read properties of undefined (reading 'topPaid')[39m
+[31m   [31m×[31m go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22mnewest sắp theo postedAt giảm dần và mang DTO đầy đủ, không chỉ slug[90m 0[2mms[22m[31m[39m
+[31m     → Cannot read properties of undefined (reading 'newest')[39m
+[31m   [31m×[31m go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22moverview không đổi khi phân trang: trang 2 vẫn thấy đúng ba con số toàn cục[90m 1[2mms[22m[31m[39m
+[31m     → Cannot read properties of undefined (reading 'totals')[39m
+[31m   [31m×[31m go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22mbốn khoá cũ của PublicJobListResult không đổi, overview là khoá thứ năm THUẦN CỘNG[90m 2[2mms[22m[31m[39m
+[31m     → expected [ Array(4) ] to deeply equal [ Array(5) ][39m
+[31m   [31m×[31m go-live-09 / RQ-24, DEC-21 — hai mapper nói cùng một sự thật[2m > [22mbốn field mới của toDetailDto bằng đúng bốn field của toDto trên cùng một hàng[90m 1[2mms[22m[31m[39m
+[31m     → expected undefined to be 30000 // Object.is equality[39m
+ [31m❯[39m src/domains/job-board/public-board-route-json.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[90m 19[2mms[22m[39m
+[31m   [31m×[31m go-live-09 / AC-04 — response THẬT của GET /api/jobs mang lương là number[2m > [22m200 và salaryMinVnd trong JSON là number, không phải string, không ném BigInt[90m 13[2mms[22m[31m[39m
+[31m     → expected 'undefined' to be 'number' // Object.is equality[39m
+[31m   [31m×[31m go-live-09 / AC-04 — response THẬT của GET /api/jobs mang lương là number[2m > [22mpayload công khai không mang tên cột nội bộ, không mang khách hàng, không mang nhãn ngành[90m 2[2mms[22m[31m[39m
+[31m     → expected '{"jobs":[{"id":"prj-a","slug":"DA-A",…' to contain '70000'[39m
+[31m   [31m×[31m go-live-09 / AC-11, AC-12 — cặp response chứng minh số trên tag là số THẬT[2m > [22mcount của một mục areaCounts bằng total của lần gọi lại với đúng area đó[90m 1[2mms[22m[31m[39m
+[31m     → Cannot read properties of undefined (reading 'areaCounts')[39m
+[31m   [31m×[31m go-live-09 / AC-11, AC-12 — cặp response chứng minh số trên tag là số THẬT[2m > [22mkhông mục areaCounts nào có count bằng 0, và overview.totals.jobs bằng total[90m 1[2mms[22m[31m[39m
+[31m     → Cannot read properties of undefined (reading 'areaCounts')[39m
+[31m   [31m×[31m go-live-09 / AC-11, AC-12 — cặp response chứng minh số trên tag là số THẬT[2m > [22mba con số toàn cục KHÔNG đổi giữa trang 1 và trang 2 — phép duy nhất phân biệt số trang[90m 2[2mms[22m[31m[39m
+[31m     → Cannot read properties of undefined (reading 'totals')[39m
+
+[31m⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 22 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt[2m > [22mmọi slot không có lương ⇒ salaryMinVnd và salaryMaxVnd đều null, không phải 0
+[31m[1mAssertionError[22m: expected undefined to be null[39m
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m126:30[22m[39m
+    [90m124| [39m    [90m// DEC-03: nhánh `null` là nhánh PHỔ BIẾN ở dev nên nó là thiết kế[39m…
+    [90m125| [39m    [90m// "0 đ/giờ" trên card — một khẳng định SAI về tiền, và không test[39m…
+    [90m126| [39m    [34mexpect[39m(job[33m.[39msalaryMinVnd)[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   | [39m                             [31m^[39m
+    [90m127| [39m    [34mexpect[39m(job[33m.[39msalaryMaxVnd)[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m128| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt[2m > [22mnhiều slot có lương ⇒ min/max là number thật, slot không lương không kéo min về 0
+[31m[1mAssertionError[22m: expected undefined to be 30000 // Object.is equality[39m
+
+[32m- Expected:[39m 
+30000
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m143:30[22m[39m
+    [90m141| [39m    ])[33m;[39m
+    [90m142| [39m
+    [90m143| [39m    [34mexpect[39m(job[33m.[39msalaryMinVnd)[33m.[39m[34mtoBe[39m([34m30_000[39m)[33m;[39m
+    [90m   | [39m                             [31m^[39m
+    [90m144| [39m    [34mexpect[39m(job[33m.[39msalaryMaxVnd)[33m.[39m[34mtoBe[39m([34m45_000[39m)[33m;[39m
+    [90m145| [39m    [34mexpect[39m([35mtypeof[39m job[33m.[39msalaryMinVnd)[33m.[39m[34mtoBe[39m([32m'number'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt[2m > [22mJSON.stringify trên DTO có lương không ném — đúng bẫy BigInt của NextResponse.json
+[31m[1mAssertionError[22m: expected '{"id":"prj-1","slug":"DA-2026-001","t…' to contain '45000'[39m
+
+Expected: [32m"45000"[39m
+Received: [31m"{"id":"prj-1","slug":"DA-2026-001","title":"Lắp ráp điện tử Bắc Ninh","position":"Công nhân lắp ráp","shift":"07:00-16:00","location":"KCN VSIP 1","shiftType":"ca_ngay","jobType":"toan_thoi_gian","availableSlots":4,"deadline":null,"statusLabel":"Đang tuyển","positionTitles":["Công nhân lắp ráp"],"locations":["KCN VSIP 1"],"shifts":["07:00-16:00"]}"[39m
+
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m156:33[22m[39m
+    [90m154| [39m    [90m// `not.toThrow()` thì test này xanh cả trên baseline (baseline kh[39m…
+    [90m155| [39m    [90m// tức nó không khoá gì — đúng loại AC "đúng mặt chữ mà vô giá trị[39m…
+    [90m156| [39m    [34mexpect[39m([33mJSON[39m[33m.[39m[34mstringify[39m(job))[33m.[39m[34mtoContain[39m([32m'45000'[39m)[33m;[39m
+    [90m   | [39m                                [31m^[39m
+    [90m157| [39m    [90m// `DEC-19`: tên cột nội bộ vẫn bị cấm trong payload; khoá công kh[39m…
+    [90m158| [39m    [34mexpect[39m([33mJSON[39m[33m.[39m[34mstringify[39m(job))[33m.[39mnot[33m.[39m[34mtoContain[39m([32m'hourlyRateVnd'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật[2m > [22mđơn OPEN chỉ còn 1 chỗ ⇒ NONE, statusLabel vẫn là Đang tuyển
+[31m[1mAssertionError[22m: expected undefined to be 'NONE' // Object.is equality[39m
+
+[32m- Expected:[39m 
+"NONE"
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m169:25[22m[39m
+    [90m167| [39m    [90m// số chỗ trống, và nó nói sai về cả hai đầu: đơn 200 chỗ vừa mở c[39m…
+    [90m168| [39m    [34mexpect[39m(job[33m.[39mavailableSlots)[33m.[39m[34mtoBe[39m([34m1[39m)[33m;[39m
+    [90m169| [39m    [34mexpect[39m(job[33m.[39murgency)[33m.[39m[34mtoBe[39m([32m'NONE'[39m)[33m;[39m
+    [90m   | [39m                        [31m^[39m
+    [90m170| [39m    [34mexpect[39m(job[33m.[39mstatusLabel)[33m.[39m[34mtoBe[39m([32m'Đang tuyển'[39m)[33m;[39m
+    [90m171| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật[2m > [22mCLOSING_SOON cộng hạn còn 3 ngày ⇒ URGENT và statusLabel đổi theo
+[31m[1mAssertionError[22m: expected undefined to be 'URGENT' // Object.is equality[39m
+
+[32m- Expected:[39m 
+"URGENT"
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m178:25[22m[39m
+    [90m176| [39m    ])[33m;[39m
+    [90m177| [39m
+    [90m178| [39m    [34mexpect[39m(job[33m.[39murgency)[33m.[39m[34mtoBe[39m([32m'URGENT'[39m)[33m;[39m
+    [90m   | [39m                        [31m^[39m
+    [90m179| [39m    [34mexpect[39m(job[33m.[39mstatusLabel)[33m.[39m[34mtoBe[39m([32m'Sắp hết hạn'[39m)[33m;[39m
+    [90m180| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật[2m > [22mCLOSING_SOON mà deadline null ⇒ CLOSING, không phải NONE và không phải URGENT
+[31m[1mAssertionError[22m: expected undefined to be 'CLOSING' // Object.is equality[39m
+
+[32m- Expected:[39m 
+"CLOSING"
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m188:25[22m[39m
+    [90m186| [39m
+    [90m187| [39m    [34mexpect[39m(job[33m.[39mdeadline)[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m188| [39m    [34mexpect[39m(job[33m.[39murgency)[33m.[39m[34mtoBe[39m([32m'CLOSING'[39m)[33m;[39m
+    [90m   | [39m                        [31m^[39m
+    [90m189| [39m  })[33m;[39m
+    [90m190| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật[2m > [22mCLOSING_SOON mà hạn còn 30 ngày ⇒ CLOSING — ngưỡng 7 ngày có ý nghĩa thật
+[31m[1mAssertionError[22m: expected undefined to be 'CLOSING' // Object.is equality[39m
+
+[32m- Expected:[39m 
+"CLOSING"
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m196:25[22m[39m
+    [90m194| [39m    ])[33m;[39m
+    [90m195| [39m
+    [90m196| [39m    [34mexpect[39m(job[33m.[39murgency)[33m.[39m[34mtoBe[39m([32m'CLOSING'[39m)[33m;[39m
+    [90m   | [39m                        [31m^[39m
+    [90m197| [39m  })[33m;[39m
+    [90m198| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật[2m > [22mpostedAt là ISO của createdAt ĐƠN, không phải của project
+[31m[1mAssertionError[22m: expected undefined to be '2026-02-03T04:05:06.000Z' // Object.is equality[39m
+
+[32m- Expected:[39m 
+"2026-02-03T04:05:06.000Z"
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m204:26[22m[39m
+    [90m202| [39m    ])[33m;[39m
+    [90m203| [39m
+    [90m204| [39m    [34mexpect[39m(job[33m.[39mpostedAt)[33m.[39m[34mtoBe[39m([32m'2026-02-03T04:05:06.000Z'[39m)[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m205| [39m  })[33m;[39m
+    [90m206| [39m})[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22moverview.totals.jobs bằng total khi gọi không bộ lọc, và ba số đúng phép tính ở service
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'totals')[39m
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m254:28[22m[39m
+    [90m252| [39m
+    [90m253| [39m    [34mexpect[39m(result[33m.[39mtotal)[33m.[39m[34mtoBe[39m([34m3[39m)[33m;[39m
+    [90m254| [39m    [34mexpect[39m(result[33m.[39moverview[33m.[39mtotals[33m.[39mjobs)[33m.[39m[34mtoBe[39m(result[33m.[39mtotal)[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m255| [39m    [90m// 4 + 3 + 2 — tổng chỗ còn tuyển của TOÀN tập hợp lệ, không phải [39m…
+    [90m256| [39m    [34mexpect[39m(result[33m.[39moverview[33m.[39mtotals[33m.[39mslots)[33m.[39m[34mtoBe[39m([34m9[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22mareaCounts đếm bằng ĐÚNG vị từ của bộ lọc area, không bằng job.locations
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'areaCounts')[39m
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m264:37[22m[39m
+    [90m262| [39m    [35mconst[39m result [33m=[39m [35mawait[39m [34mlistPublicJobProjection[39m(tx[33m,[39m {})[33m;[39m
+    [90m263| [39m
+    [90m264| [39m    [35mconst[39m bacNinh [33m=[39m result[33m.[39moverview[33m.[39mareaCounts[33m.[39m[34mfind[39m((entry) [33m=>[39m entry[33m.[39mv…
+    [90m   | [39m                                    [31m^[39m
+    [90m265| [39m    [34mexpect[39m(bacNinh)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m266| [39m    [90m// `prj-b` không có `Bắc Ninh` trong `locations` nhưng bộ lọc vẫn [39m…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22msố của một mục areaCounts bằng total của lần gọi lại cùng service với đúng area đó
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'areaCounts')[39m
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m273:34[22m[39m
+    [90m271| [39m    [35mconst[39m rows [33m=[39m [34mboardRows[39m()[33m;[39m
+    [90m272| [39m    [35mconst[39m first [33m=[39m [35mawait[39m [34mlistPublicJobProjection[39m([34mlistTx[39m(rows)[33m.[39mtx[33m,[39m {})[33m;[39m
+    [90m273| [39m    [35mconst[39m entry [33m=[39m first[33m.[39moverview[33m.[39mareaCounts[33m.[39m[34mfind[39m((item) [33m=>[39m item[33m.[39mvalue …
+    [90m   | [39m                                 [31m^[39m
+    [90m274| [39m    [34mexpect[39m(entry)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m275| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22mareaCounts và shiftCounts không chứa mục count bằng 0 và đã sắp giảm dần
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'areaCounts')[39m
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m286:45[22m[39m
+    [90m284| [39m    [35mconst[39m result [33m=[39m [35mawait[39m [34mlistPublicJobProjection[39m(tx[33m,[39m {})[33m;[39m
+    [90m285| [39m
+    [90m286| [39m    [35mfor[39m ([35mconst[39m entry [35mof[39m [[33m...[39mresult[33m.[39moverview[33m.[39mareaCounts[33m,[39m [33m...[39mresult[33m.[39mover…
+    [90m   | [39m                                            [31m^[39m
+    [90m287| [39m      [90m// Tag "Bắc Giang (0)" là mời người dùng bấm vào một trang trống[39m…
+    [90m288| [39m      [34mexpect[39m(entry[33m.[39mcount)[33m.[39m[34mtoBeGreaterThan[39m([34m0[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22mtopPaid không chứa việc không có lương, sắp giảm dần, tối đa 6 phần tử
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'topPaid')[39m
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m300:28[22m[39m
+    [90m298| [39m    [35mconst[39m result [33m=[39m [35mawait[39m [34mlistPublicJobProjection[39m(tx[33m,[39m {})[33m;[39m
+    [90m299| [39m
+    [90m300| [39m    [34mexpect[39m(result[33m.[39moverview[33m.[39mtopPaid[33m.[39mlength)[33m.[39m[34mtoBeLessThanOrEqual[39m([34m6[39m)[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m301| [39m    [90m// `prj-a` hợp lệ và có mặt trong `jobs`, nhưng KHÔNG được có mặt [39m…
+    [90m302| [39m    [34mexpect[39m(result[33m.[39moverview[33m.[39mtopPaid[33m.[39m[34mmap[39m((job) [33m=>[39m job[33m.[39mid))[33m.[39m[34mtoEqual[39m([[32m'prj[39m…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22mnewest sắp theo postedAt giảm dần và mang DTO đầy đủ, không chỉ slug
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'newest')[39m
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m312:28[22m[39m
+    [90m310| [39m    [35mconst[39m result [33m=[39m [35mawait[39m [34mlistPublicJobProjection[39m(tx[33m,[39m {})[33m;[39m
+    [90m311| [39m
+    [90m312| [39m    [34mexpect[39m(result[33m.[39moverview[33m.[39mnewest[33m.[39m[34mmap[39m((job) [33m=>[39m job[33m.[39mid))[33m.[39m[34mtoEqual[39m([[32m'prj-[39m…
+    [90m   | [39m                           [31m^[39m
+    [90m313| [39m    [34mexpect[39m(result[33m.[39moverview[33m.[39mnewest[33m.[39mlength)[33m.[39m[34mtoBeLessThanOrEqual[39m([34m6[39m)[33m;[39m
+    [90m314| [39m    [90m// `DEC-18`: dải phải render được kể cả khi phần tử KHÔNG nằm tron[39m…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22moverview không đổi khi phân trang: trang 2 vẫn thấy đúng ba con số toàn cục
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'totals')[39m
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m326:27[22m[39m
+    [90m324| [39m    [34mexpect[39m(page1[33m.[39mjobs)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m325| [39m    [34mexpect[39m(page2[33m.[39mjobs)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m326| [39m    [34mexpect[39m(page2[33m.[39moverview[33m.[39mtotals)[33m.[39m[34mtoEqual[39m(page1[33m.[39moverview[33m.[39mtotals)[33m;[39m
+    [90m   | [39m                          [31m^[39m
+    [90m327| [39m    [34mexpect[39m(page2[33m.[39moverview[33m.[39mareaCounts)[33m.[39m[34mtoEqual[39m(page1[33m.[39moverview[33m.[39mareaCount…
+    [90m328| [39m    [34mexpect[39m(page1[33m.[39moverview[33m.[39mtotals[33m.[39mjobs)[33m.[39m[34mtoBe[39m([34m3[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang[2m > [22mbốn khoá cũ của PublicJobListResult không đổi, overview là khoá thứ năm THUẦN CỘNG
+[31m[1mAssertionError[22m: expected [ Array(4) ] to deeply equal [ Array(5) ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  Array [[22m
+[2m    "facets",[22m
+[2m    "jobs",[22m
+[2m    "nextOffset",[22m
+[32m-   "overview",[39m
+[2m    "total",[22m
+[2m  ][22m
+
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m335:40[22m[39m
+    [90m333| [39m    [35mconst[39m result [33m=[39m [35mawait[39m [34mlistPublicJobProjection[39m(tx[33m,[39m {})[33m;[39m
+    [90m334| [39m
+    [90m335| [39m    [34mexpect[39m([33mObject[39m[33m.[39m[34mkeys[39m(result)[33m.[39m[34msort[39m())[33m.[39m[34mtoEqual[39m([[32m'facets'[39m[33m,[39m [32m'jobs'[39m[33m,[39m [32m'nex[39m…
+    [90m   | [39m                                       [31m^[39m
+    [90m336| [39m    [34mexpect[39m([33mObject[39m[33m.[39m[34mkeys[39m(result[33m.[39moverview)[33m.[39m[34msort[39m())[33m.[39m[34mtoEqual[39m([[32m'areaCounts'[39m[33m,[39m…
+    [90m337| [39m    [34mexpect[39m(() [33m=>[39m [33mJSON[39m[33m.[39m[34mstringify[39m(result))[33m.[39mnot[33m.[39m[34mtoThrow[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-architecture.test.ts[2m > [22mgo-live-09 / RQ-24, DEC-21 — hai mapper nói cùng một sự thật[2m > [22mbốn field mới của toDetailDto bằng đúng bốn field của toDto trên cùng một hàng
+[31m[1mAssertionError[22m: expected undefined to be 30000 // Object.is equality[39m
+
+[32m- Expected:[39m 
+30000
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m src/domains/job-board/public-board-architecture.test.ts:[2m359:33[22m[39m
+    [90m357| [39m    [90m// Bốn giá trị được ghim CỤ THỂ trước khi so hai mapper. Nếu chỉ s[39m…
+    [90m358| [39m    [90m// `undefined === undefined` làm test xanh trên baseline, tức bất [39m…
+    [90m359| [39m    [34mexpect[39m(listed[33m.[39msalaryMinVnd)[33m.[39m[34mtoBe[39m([34m30_000[39m)[33m;[39m
+    [90m   | [39m                                [31m^[39m
+    [90m360| [39m    [34mexpect[39m(listed[33m.[39msalaryMaxVnd)[33m.[39m[34mtoBe[39m([34m45_000[39m)[33m;[39m
+    [90m361| [39m    [34mexpect[39m(listed[33m.[39murgency)[33m.[39m[34mtoBe[39m([32m'URGENT'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-route-json.test.ts[2m > [22mgo-live-09 / AC-04 — response THẬT của GET /api/jobs mang lương là number[2m > [22m200 và salaryMinVnd trong JSON là number, không phải string, không ném BigInt
+[31m[1mAssertionError[22m: expected 'undefined' to be 'number' // Object.is equality[39m
+
+Expected: [32m"number"[39m
+Received: [31m"undefined"[39m
+
+[36m [2m❯[22m src/domains/job-board/public-board-route-json.test.ts:[2m122:38[22m[39m
+    [90m120| [39m    [35mconst[39m job [33m=[39m body[33m.[39mjobs[33m.[39m[34mfind[39m((j) [33m=>[39m j[33m.[39mid [33m===[39m [32m'prj-c'[39m)[33m;[39m
+    [90m121| [39m    [34mexpect[39m(job)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m122| [39m    [34mexpect[39m([35mtypeof[39m job[33m![39m[33m.[39msalaryMinVnd)[33m.[39m[34mtoBe[39m([32m'number'[39m)[33m;[39m
+    [90m   | [39m                                     [31m^[39m
+    [90m123| [39m    [34mexpect[39m(job[33m![39m[33m.[39msalaryMinVnd)[33m.[39m[34mtoBe[39m([34m70_000[39m)[33m;[39m
+    [90m124| [39m    [34mexpect[39m(job[33m![39m[33m.[39msalaryMaxVnd)[33m.[39m[34mtoBe[39m([34m70_000[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-route-json.test.ts[2m > [22mgo-live-09 / AC-04 — response THẬT của GET /api/jobs mang lương là number[2m > [22mpayload công khai không mang tên cột nội bộ, không mang khách hàng, không mang nhãn ngành
+[31m[1mAssertionError[22m: expected '{"jobs":[{"id":"prj-a","slug":"DA-A",…' to contain '70000'[39m
+
+Expected: [32m"70000"[39m
+Received: [31m"{"jobs":[{"id":"prj-a","slug":"DA-A","title":"Lắp ráp điện tử","position":"Công nhân lắp ráp","shift":"07:00-16:00","location":"Bắc Ninh","shiftType":"ca_ngay","jobType":"toan_thoi_gian","availableSlots":4,"deadline":null,"statusLabel":"Đang tuyển","positionTitles":["Công nhân lắp ráp"],"locations":["Bắc Ninh"],"shifts":["07:00-16:00"]},{"id":"prj-b","slug":"DA-B","title":"Đóng gói","position":"Nhân viên đóng gói","shift":"07:00-16:00","location":"KCN VSIP 1","shiftType":"ca_ngay","jobType":"toan_thoi_gian","availableSlots":4,"deadline":null,"statusLabel":"Đang tuyển","positionTitles":["Nhân viên đóng gói"],"locations":["KCN VSIP 1"],"shifts":["07:00-16:00"]},{"id":"prj-c","slug":"DA-C","title":"Kiểm hàng","position":"Nhân viên QC","shift":"07:00-16:00","location":"KCN Thăng Long","shiftType":"ca_ngay","jobType":"toan_thoi_gian","availableSlots":4,"deadline":null,"statusLabel":"Đang tuyển","positionTitles":["Nhân viên QC"],"locations":["KCN Thăng Long"],"shifts":["07:00-16:00"]}],"nextOffset":null,"total":3,"facets":{"areas":["Bắc Ninh","KCN Thăng Long","KCN VSIP 1"],"shifts":["07:00-16:00"]}}"[39m
+
+[36m [2m❯[22m src/domains/job-board/public-board-route-json.test.ts:[2m131:24[22m[39m
+    [90m129| [39m    [35mconst[39m serialized [33m=[39m [33mJSON[39m[33m.[39m[34mstringify[39m(body)[33m;[39m
+    [90m130| [39m
+    [90m131| [39m    [34mexpect[39m(serialized)[33m.[39m[34mtoContain[39m([32m'70000'[39m)[33m;[39m
+    [90m   | [39m                       [31m^[39m
+    [90m132| [39m    [35mfor[39m ([35mconst[39m forbidden [35mof[39m [[32m'hourlyRateVnd'[39m[33m,[39m [32m'clientCompanyId'[39m[33m,[39m [32m'budg[39m…
+    [90m133| [39m      [34mexpect[39m(serialized[33m,[39m forbidden)[33m.[39mnot[33m.[39m[34mtoContain[39m(forbidden)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-route-json.test.ts[2m > [22mgo-live-09 / AC-11, AC-12 — cặp response chứng minh số trên tag là số THẬT[2m > [22mcount của một mục areaCounts bằng total của lần gọi lại với đúng area đó
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'areaCounts')[39m
+[36m [2m❯[22m src/domains/job-board/public-board-route-json.test.ts:[2m140:39[22m[39m
+    [90m138| [39m  [34mit[39m([32m'count của một mục areaCounts bằng total của lần gọi lại với đúng[39m…
+    [90m139| [39m    [35mconst[39m first [33m=[39m [35mawait[39m [34mgetJobs[39m()[33m;[39m
+    [90m140| [39m    [35mconst[39m entry [33m=[39m first[33m.[39mbody[33m.[39moverview[33m.[39mareaCounts[33m.[39m[34mfind[39m((e) [33m=>[39m e[33m.[39mvalue [33m=[39m…
+    [90m   | [39m                                      [31m^[39m
+    [90m141| [39m    [34mexpect[39m(entry)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m142| [39m    [90m// `prj-b` không có `Bắc Ninh` trong `locations` nhưng vị từ `area[39m…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-route-json.test.ts[2m > [22mgo-live-09 / AC-11, AC-12 — cặp response chứng minh số trên tag là số THẬT[2m > [22mkhông mục areaCounts nào có count bằng 0, và overview.totals.jobs bằng total
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'areaCounts')[39m
+[36m [2m❯[22m src/domains/job-board/public-board-route-json.test.ts:[2m154:43[22m[39m
+    [90m152| [39m    [35mconst[39m { body } [33m=[39m [35mawait[39m [34mgetJobs[39m()[33m;[39m
+    [90m153| [39m
+    [90m154| [39m    [35mfor[39m ([35mconst[39m entry [35mof[39m [[33m...[39mbody[33m.[39moverview[33m.[39mareaCounts[33m,[39m [33m...[39mbody[33m.[39moverview…
+    [90m   | [39m                                          [31m^[39m
+    [90m155| [39m      [34mexpect[39m(entry[33m.[39mcount)[33m.[39m[34mtoBeGreaterThan[39m([34m0[39m)[33m;[39m
+    [90m156| [39m    }
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/22]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-board-route-json.test.ts[2m > [22mgo-live-09 / AC-11, AC-12 — cặp response chứng minh số trên tag là số THẬT[2m > [22mba con số toàn cục KHÔNG đổi giữa trang 1 và trang 2 — phép duy nhất phân biệt số trang
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'totals')[39m
+[36m [2m❯[22m src/domains/job-board/public-board-route-json.test.ts:[2m167:32[22m[39m
+    [90m165| [39m    [34mexpect[39m(page1[33m.[39mbody[33m.[39mjobs)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m166| [39m    [34mexpect[39m(page2[33m.[39mbody[33m.[39mjobs)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m167| [39m    [34mexpect[39m(page2[33m.[39mbody[33m.[39moverview[33m.[39mtotals)[33m.[39m[34mtoEqual[39m(page1[33m.[39mbody[33m.[39moverview[33m.[39mtot…
+    [90m   | [39m                               [31m^[39m
+    [90m168| [39m    [34mexpect[39m(page2[33m.[39mbody[33m.[39moverview[33m.[39mareaCounts)[33m.[39m[34mtoEqual[39m(page1[33m.[39mbody[33m.[39moverview…
+    [90m169| [39m    [90m// Số nguyên thuần, không phải chuỗi kiểu "3+": kiểu sai làm phép [39m…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/22]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m22 failed[39m[22m[90m (22)[39m
+[2m   Start at [22m 18:57:08
+[2m   Duration [22m 691ms[2m (transform 99ms, setup 0ms, collect 222ms, tests 39ms, environment 0ms, prepare 114ms)[22m
+

@@ -1,0 +1,112 @@
+<stdin>:9: SyntaxWarning: "\|" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\|"? A raw string is also an option.
+<stdin>:31: SyntaxWarning: "\|" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\|"? A raw string is also an option.
+<stdin>:35: SyntaxWarning: "\|" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\|"? A raw string is also an option.
+<stdin>:50: SyntaxWarning: "\." is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\."? A raw string is also an option.
+############ AC-03 — bon field moi: TEN va KIEU doc tu HEAD ############
+$ grep -n "salaryMinVnd\|salaryMaxVnd\|urgency:\|postedAt" tren khoi interface PublicJobDto
+  dong 31: * go-live-09 / RQ-04, DEC-04 — thôi là hằng: `'Sắp hết hạn'` khi `urgency` khác `'NONE'`,
+  dong 40: *   1. Tên khóa công khai là `salaryMinVnd`/`salaryMaxVnd`, KHÔNG phải `hourlyRateVnd`. Chuỗi tên
+  dong 50: salaryMinVnd: number | null;
+  dong 51: salaryMaxVnd: number | null;
+  dong 57: urgency: 'NONE' | 'CLOSING' | 'URGENT';
+  dong 59: postedAt: string | null;
+--- khoi PublicJobDetailDto (RQ-24 lan bon field sang day):
+  dong 158: export interface PublicJobDetailDto extends PublicJobDto {
+
+############ AC-12 — phep tinh cua ba con so tai HEAD (nguyen van) ############
+  dong 118:  */
+  dong 119: export interface PublicJobOverview {
+  dong 120:   totals: { jobs: number; slots: number; areas: number };
+  dong 121:   areaCounts: PublicJobOverviewEntry[];
+  dong 122:   shiftCounts: PublicJobOverviewEntry[];
+  dong 123:   newest: PublicJobDto[];
+  dong 124:   topPaid: PublicJobDto[];
+  dong 125: }
+  dong 126: 
+
+############ AC-07 — nhan nhin thay duoc noi bang htmlFor / bao trong label ############
+$ grep -n "htmlFor\|<label" "app/(portal)/page.tsx"
+  dong 377: * go-live-09 / RQ-05, AC-07 — nhãn của một `select` phải là `<label htmlFor>`, không phải `<h3>`.
+  dong 379: * được trùng), và `aria-label` bị BỎ vì `<label>` đã đặt tên cho control — để cả hai thì thuộc tính
+  dong 381: * nhà đã ACCEPTED ở ô từ khoá của panel: có `htmlFor` thì không giữ `aria-label` cùng chuỗi.
+  dong 389: <label htmlFor={selectId} className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-on-surface)' }}>
+  dong 777: <label
+  dong 778: htmlFor="hrp-hero-keyword"
+  dong 883: <label
+  dong 884: htmlFor="hrp-keyword"
+$ grep -n "useId\|const selectId" "app/(portal)/page.tsx"
+  dong 3: import { useState, useEffect, useCallback, useRef, useId } from 'react';
+  dong 378: * Hai điều đổi cùng lượt: `useId` sinh id duy nhất cho từng chỗ dùng (bốn chỗ trên trang, id không
+  dong 383: const selectId = useId();
+  dong 389: <label htmlFor={selectId} className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-on-surface)' }}>
+  dong 395: id={selectId}
+$ so lan aria-label con lai (AC-07 doi nhan NHIN THAY, khong phai nhan chi doc bang trinh doc):
+  aria-label = 1
+
+############ AC-09 — khoi luong tren card: co chu, font-weight, token mau ############
+  dong 95: * `null` không được in thành `0`: `"0 đ/giờ"` là một khẳng định SAI về tiền, còn
+  dong 96: * `"Lương thương lượng"` là mô tả đúng trạng thái "đơn chưa công bố lương". Hai đầu bằng nhau thì in
+  dong 101: function salaryLabel(min: number | null, max: number | null): string {
+  dong 102: if (min === null) return 'Lương thương lượng';
+  dong 104: if (max !== null && max !== min) return `${from} – ${VND_FORMAT.format(max)} đ/giờ`;
+  dong 105: return `${from} đ/giờ`;
+  dong 119: return `Từ ${VND_FORMAT.format(Number(step))} đ/giờ`;
+  dong 290: màu accent bằng token. Nhánh không có lương in đúng `Lương thương lượng` ở CÙNG vị trí,
+  dong 293: {salaryLabel(salaryMinVnd, salaryMaxVnd)}
+  dong 355: * nguyên hành vi từng ký tự. Nó tồn tại để ô "mức lương tối thiểu" hiển thị `Từ 30.000 đ/giờ` trong
+  dong 450: {salaryLabel(salaryMinVnd, salaryMaxVnd)}
+  dong 554: {salaryLabel(salaryMinVnd, salaryMaxVnd)}
+  dong 1051: {jobs.length} việc đã tải chưa có việc nào từ {VND_FORMAT.format(Number(minSalary))} đ/giờ
+
+############ AC-23 — moi con so cua bon dai doc TU overview, khong tu mang dang render ############
+$ grep -n "overview\." "app/(portal)/page.tsx"
+  dong 414: * go-live-09 / RQ-08, DEC-14 — thẻ việc nổi bật ở nửa phải Hero. Nguồn là `overview.topPaid[0]`, dự
+  dong 415: * phòng `overview.newest[0]` — cả hai do service tính trên TOÀN tập hợp lệ, nên thẻ này không phải
+  dong 479: * go-live-09 / RQ-13, RQ-14, DEC-18 — một dải tag. `entries` là `overview.areaCounts` hoặc
+  dong 480: * `overview.shiftCounts` NGUYÊN VĂN từ response: con số in ra không qua một phép đếm nào ở client, nên
+  dong 744: const featuredSource = overview.topPaid[0] ?? overview.newest[0] ?? null;
+  dong 764: {overview.totals.jobs > 0
+  dong 765: ? `Đang tuyển ${overview.totals.jobs} việc làm tại ${overview.totals.areas} khu vực. Ứng tuyển không cần tài khoản.`
+  dong 837: {/* go-live-09 / RQ-15, DEC-11 — ba con số của `overview.totals`, nhãn nói rõ nguồn. Không dấu
+  dong 842: { key: 'jobs', value: overview.totals.jobs, label: 'việc làm đang tuyển' },
+  dong 843: { key: 'slots', value: overview.totals.slots, label: 'chỗ còn tuyển' },
+  dong 844: { key: 'areas', value: overview.totals.areas, label: 'khu vực đang có việc' },
+  dong 863: <TagStrip heading="Việc làm theo khu vực" entries={overview.areaCounts} onPick={applyArea} />
+  dong 864: <TagStrip heading="Việc làm theo ca làm" entries={overview.shiftCounts} onPick={applyShift} />
+  dong 1091: {/* go-live-09 / RQ-12, DEC-18 — hai dải cuối đọc `overview.newest` và `overview.topPaid` NGUYÊN
+  dong 1097: entries={overview.newest}
+  dong 1102: entries={overview.topPaid}
+$ dem phep tu dem lai tren mang dang render (phai la 0):
+  jobs.length            = 8  ['730', '731', '741', '959', '960', '961', '1030', '1051']
+  .sort(                 = 0  []
+  .reduce(               = 0  []
+  filteredJobs.length    = 0  []
+
+############ AC-23 (tiep) — phan loai TUNG hit cua `jobs.length`: khong hit nao la con so TONG ############
+  dong 730: const showSkeleton = loading && jobs.length === 0 && !fetchError;
+  dong 731: const showEmptyState = !loading && !fetchError && jobs.length === 0;
+  dong 741: const showSalaryEmpty = !loading && !fetchError && jobs.length > 0 && visibleJobs.length === 0;
+  dong 959: ? `Đang xem ${visibleJobs.length} việc đạt mức lương, trong ${jobs.length} việc đã tải`
+  dong 960: : jobs.length < total
+  dong 961: ? `Đang xem ${jobs.length} trong ${total} kết quả`
+  dong 1030: {jobs.length > 0 && (
+  dong 1051: {jobs.length} việc đã tải chưa có việc nào từ {VND_FORMAT.format(Number(minSalary))} đ/giờ
+
+############ AC-12 — phep tinh THAT cua ba con so (than listPublicJobProjection, khong phai interface) ############
+  dong 637:   const overview: PublicJobOverview = {
+  dong 638:     totals: {
+  dong 639:       jobs: eligible.length,
+  dong 640:       slots: eligible.reduce((sum, { job }) => sum + job.availableSlots, 0),
+  dong 641:       areas: areaCounts.length,
+  dong 642:     },
+  dong 643:     areaCounts,
+  dong 644:     shiftCounts,
+  dong 645:     // `postedAt` là ISO cùng một khuôn nên so chuỗi trực tiếp là so thời gian; không cần `Date.parse`.
+  dong 646:     newest: [...eligible]
+  dong 647:       .sort((a, b) => {
+  dong 648:         const left = a.job.postedAt ?? '';
+
+############ AC-12 — hai dong dinh nghia areaCounts / shiftCounts (vi tu dem) ############
+  dong 624:   const countBy = (
+  dong 635:   const areaCounts = countBy(facets.areas, ({ row, job }, value) => areaHaystack(row, job).includes(foldVietnamese(value)));
+  dong 636:   const shiftCounts = countBy(facets.shifts, ({ job }, value) => job.shifts.some((label) => label.includes(value)));

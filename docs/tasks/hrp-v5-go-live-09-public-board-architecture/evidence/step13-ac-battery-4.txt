@@ -1,0 +1,119 @@
+############ AC-08 — mot nguon su that cho bo loc ############
+$ grep -c "useState" tai baseline va HEAD
+baseline useState = 16
+HEAD     useState = 18
+--- liet ke tung khai bao o baseline:
+  B 3:import { useState, useEffect, useCallback, useRef } from 'react';
+  B 292:  const [jobs, setJobs] = useState<EnrichedJob[]>([]);
+  B 293:  const [loading, setLoading] = useState(true);
+  B 294:  const [fetchError, setFetchError] = useState('');
+  B 295:  const [searching, setSearching] = useState(false);
+  B 298:  const [keyword, setKeyword] = useState('');
+  B 299:  const [area, setArea] = useState('');
+  B 300:  const [shift, setShift] = useState('');
+  B 302:  const [appliedFilters, setAppliedFilters] = useState<JobSearchFilters>(EMPTY_FILTERS);
+  B 305:  const [facets, setFacets] = useState<PublicJobFacets>(EMPTY_FACETS);
+  B 306:  const [total, setTotal] = useState(0);
+  B 309:  const [applyJob, setApplyJob] = useState<EnrichedJob | null>(null);
+  B 310:  const [appliedIds, setAppliedIds] = useState<string[]>([]);
+  B 311:  const [successCode, setSuccessCode] = useState('');
+  B 314:  const [nextOffset, setNextOffset] = useState<number | null>(null);
+  B 315:  const [loadingMore, setLoadingMore] = useState(false);
+--- liet ke tung khai bao o HEAD:
+  H 3:import { useState, useEffect, useCallback, useRef, useId } from 'react';
+  H 577:  const [jobs, setJobs] = useState<EnrichedJob[]>([]);
+  H 578:  const [loading, setLoading] = useState(true);
+  H 579:  const [fetchError, setFetchError] = useState('');
+  H 580:  const [searching, setSearching] = useState(false);
+  H 583:  const [keyword, setKeyword] = useState('');
+  H 584:  const [area, setArea] = useState('');
+  H 585:  const [shift, setShift] = useState('');
+  H 587:  const [appliedFilters, setAppliedFilters] = useState<JobSearchFilters>(EMPTY_FILTERS);
+  H 592:  const [minSalary, setMinSalary] = useState('');
+  H 595:  const [facets, setFacets] = useState<PublicJobFacets>(EMPTY_FACETS);
+  H 596:  const [total, setTotal] = useState(0);
+  H 599:  const [overview, setOverview] = useState<PublicJobOverview>(EMPTY_OVERVIEW);
+  H 602:  const [applyJob, setApplyJob] = useState<EnrichedJob | null>(null);
+  H 603:  const [appliedIds, setAppliedIds] = useState<string[]>([]);
+  H 604:  const [successCode, setSuccessCode] = useState('');
+  H 607:  const [nextOffset, setNextOffset] = useState<number | null>(null);
+  H 608:  const [loadingMore, setLoadingMore] = useState(false);
+
+--- kieu bo loc (nguon su that duy nhat) o CA HAI ban:
+baseline:
+interface JobSearchFilters {
+  keyword: string;
+  area: string;
+  shift: string;
+}
+HEAD:
+interface JobSearchFilters {
+  keyword: string;
+  area: string;
+  shift: string;
+}
+--- buildQuery o HEAD:
+function buildQuery(filters: JobSearchFilters, offset: number): string {
+  const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
+  const q = filters.keyword.trim();
+  if (q) params.set('q', q);
+  if (filters.area) params.set('area', filters.area);
+  if (filters.shift) params.set('shift', filters.shift);
+  return params.toString();
+}
+
+--- so vi tri fetch tai HEAD:
+631:      const res = await fetch(`/api/jobs?${buildQuery(filters, offset)}`, { cache: 'no-store', signal: controller.signal });
+
+############ AC-07 — ba o Hero kem nhan nhin thay + mot nut ############
+                style={{ color: 'var(--color-on-surface)' }}
+              >
+                Từ khóa
+              </label>
+              <input
+                id="hrp-hero-keyword"
+                type="search"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="Tên công việc, vị trí..."
+                className="hrp-field hrp-focus w-full px-4 py-3 min-h-11 rounded-lg border"
+              />
+            </div>
+            {/* RQ-06: hai ô này ghi vào CHÍNH `area` và `minSalary`, nên gõ ở Hero rồi kéo xuống panel
+                lọc thì thấy đúng giá trị đó. `FacetSelect` tự ẩn khi chưa có lựa chọn nào — dropdown
+                khu vực chỉ hiện khi `facets.areas` đã về, đúng luật "không chào ra control rỗng" của
+                `DEC-08`; ô mức lương có thang cố định nên luôn hiện. */}
+            <div className="flex-1 min-w-0">
+              <FacetSelect
+                icon="location_on"
+                heading="Khu vực"
+                allLabel="Tất cả khu vực"
+                value={area}
+                options={facets.areas}
+                onChange={setArea}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <FacetSelect
+                icon="payments"
+                heading="Lương tối thiểu"
+                allLabel="Mọi mức lương"
+                value={minSalary}
+                options={SALARY_STEPS}
+                onChange={setMinSalary}
+                labelOf={salaryStepLabel}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={searching}
+              aria-busy={searching}
+              className="hrp-btn-primary hrp-focus nav-item-lift px-6 min-h-11 rounded-lg font-semibold whitespace-nowrap disabled:cursor-wait disabled:opacity-70"
+            >
+              {searching ? 'Đang tìm...' : 'Tìm việc'}
+            </button>
+          </form>
+        </div>
+        {/* RQ-08/DEC-14: không có việc nổi bật thì nửa phải KHÔNG render. Nửa trái là `flex-1` nên nó
+            tự chiếm trọn chiều ngang, không để lại khoảng trắng giữ chỗ. */}
+        {featured && (

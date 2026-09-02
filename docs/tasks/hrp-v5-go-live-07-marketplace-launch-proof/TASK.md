@@ -7,7 +7,7 @@
 | Task slug | `hrp-v5-go-live-07-marketplace-launch-proof` |
 | Work type | `INFRA` |
 | Audit mode (Tier 3 đọc) | `INFRA_AUDIT` |
-| Spec version | `v1.1` |
+| Spec version | `v1.2` |
 | Status | `READY_FOR_EXECUTION` — ba dependency của `v1.0` (GO-LIVE-04, GO-LIVE-06, GO-LIVE-05) đều đã `ACCEPTED`. Điều kiện xếp hàng còn lại duy nhất là `hrp-v5-go-live-09-public-board-architecture`, và nó KHÔNG chặn toàn bộ task: xem `DEC-14` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — operator/evidence recorder dưới quyền Owner |
@@ -18,7 +18,7 @@
 | Current execution round | `1` |
 | Current audit round | `0` |
 | Next gate | Giao `/code hrp-v5-go-live-07-marketplace-launch-proof` khi `go-live-09` đã `ACCEPTED`, push và deploy. Owner có quyền giao SỚM HƠN theo `DEC-14`, đổi lại report phải mang ghi chú phạm vi và một nghĩa vụ đo lại phần bề mặt |
-| Updated | `2026-09-02 Asia/Bangkok` |
+| Updated | `2026-09-02 16:40 Asia/Bangkok` |
 
 Đây là task chứng minh go-live, không phải task “viết thêm code cho đủ đẹp”. Nó đóng khoảng cách giữa gate/test xanh và hành vi thật trên `www.hrpartner.vn`, tạo một gói evidence để Owner ký quyết định công bố Marketplace.
 
@@ -48,7 +48,7 @@ Kết quả Planner cuối cùng chỉ có ba trạng thái:
 - Không tự push/deploy commit mới để chữa lỗi phát hiện trong drill; lỗi code phải mở task/round mới.
 - Không test phá hoại, không fuzz production, không cố làm cạn rate limit.
 - Không dùng SQL `DELETE` để dọn dấu vết drill.
-- Không dùng thông tin cá nhân giả của người thứ ba; số điện thoại/họ tên drill phải do Owner cho phép.
+- Không dùng dữ liệu cá nhân của bất kỳ người thứ ba nào. Identity drill là dữ liệu TỔNG HỢP do contract cố định ở `DEC-19`, sau khi Owner uỷ quyền Tier 1 tự sinh ngày 02/09; Tier 2 KHÔNG được thay bằng số hay tên của một người thật, kể cả của chính mình.
 - Không tuyên bố phone-only Quick Apply đã có. Launch proof dùng full application hiện hành (`fullName + phone + consent`).
 - Không mở Affiliate, Attendance, Billing, Commission hoặc Payroll.
 - Không coi Vercel deployment thành công là evidence nghiệp vụ.
@@ -75,7 +75,8 @@ Kết quả Planner cuối cùng chỉ có ba trạng thái:
 | `EV-16` | `app/api/public/applications/[trackingCode]/route.ts` cộng `src/domains/applications/application.service.ts` | Response 200 là object bọc `{ application: dto }`; DTO có đúng 11 khoá và số điện thoại cùng CCCD chỉ ra dưới dạng `phoneMasked`/`cccdMasked` theo GO-LIVE-13, còn `fullName` để nguyên văn theo quyết định Owner. `Cache-Control: no-store` chỉ có ở nhánh 200, KHÔNG có ở nhánh 404 | `RQ-07` phải kiểm khoá bọc cộng allow-list 11 khoá. Đòi `no-store` ở 404 là đòi một thứ mã không làm và task này không được sửa mã: xem `DEC-18` |
 | `EV-17` | `find app -name page.tsx` (đo 02/09) | URL công khai thật: `/` là trang browse (`app/(portal)/page.tsx`), `/jobs`, `/viec-lam/[slug]` là trang chi tiết (`app/(jobs)/viec-lam/[slug]/page.tsx`), `/track` là trang tra cứu. Thư mục `app/bcc` KHÔNG tồn tại | AC phải nêu URL thật thay vì nói "list/detail" chung chung; `RQ-11` về `/bcc` đo bằng sự vắng mặt của thư mục cộng một lần gọi HTTP |
 | `EV-18` | `ls docs/reports/` | Chỉ có `tier1-status-2026-08-28.md`. `docs/reports/marketplace-launch-proof.md` CHƯA tồn tại | `STEP-09` là tạo file mới, không phải cập nhật file có sẵn |
-| `EV-19` | `docs/tasks/hrp-v5-go-live-09-public-board-architecture/TASK.md` ở `v1.2` | `go-live-09` là task go-live DUY NHẤT còn mở. Nó viết lại chính trang browse mà `RQ-04` chứng nhận và công bố lương giờ lên card lần đầu (`DEC-19` của nó thay điều kiện cấm của GO-LIVE-05) | Chứng nhận phải tách làm hai phần: phần HÀNH TRÌNH không phụ thuộc 09, phần BỀ MẶT thì phụ thuộc. Xem `DEC-14` và `RQ-18`/`RQ-19` |
+| `EV-19` | `docs/tasks/hrp-v5-go-live-09-public-board-architecture/TASK.md` ở `v1.2` | `go-live-09` là task go-live DUY NHẤT còn mở. Nó viết lại chính trang browse mà `RQ-04` chứng nhận và công bố lương giờ lên card lần đầu (`DEC-19` của TASK 09 thay điều kiện cấm của GO-LIVE-05) | Chứng nhận phải tách làm hai phần: phần HÀNH TRÌNH không phụ thuộc 09, phần BỀ MẶT thì phụ thuộc. Xem `DEC-14` và `RQ-18`/`RQ-19` |
+| `EV-20` | `src/domains/applications/application.service.ts` dòng 126-129; `prisma/migrations/20260823101500_mp2_apply_tracking/migration.sql` dòng 97-102; `app/api/public/jobs/[slug]/applications/route.ts` dòng 103-135; grep sáu từ khoá gửi tin trong `app/api/public/jobs/` ra 0 dòng; `src/shared/integrity/outbox.ts` dòng 14 (đo 02/09) | KHÔNG có phép kiểm ĐỊNH DẠNG số điện thoại ở bất kỳ tầng nào: Node chỉ đòi `normalizePhone` ra chuỗi không rỗng, definer chỉ đòi `length` lớn hơn 0 — không kiểm độ dài, không kiểm đầu số. Bucket `APPLY_PHONE` khoá trên `normalizedPhone` nên hai số khác nhau là hai ngân sách khác nhau, còn `APPLY_IP` 10 lượt mỗi 600 giây khoá trên IP nên MỌI lượt apply dùng CHUNG một ngân sách bất kể số nào. Đường apply không gọi kênh gửi tin nào; kênh thật email/SMS/Zalo còn ở Phase 4 | Drill KHÔNG cần số của người thật và cũng không nhắn tin cho ai, nên `DEC-19` cố định hai số TỔNG HỢP thay vì chờ Owner cấp. Đổi lại, sổ lượt gọi của `RQ-16` phải đếm THÊM ngân sách IP, thứ mà việc chia hai số không nới ra |
 
 ## 3. Decisions và Assumptions
 
@@ -83,7 +84,7 @@ Kết quả Planner cuối cùng chỉ có ba trạng thái:
 |---|---|---|---|---|
 | `DEC-01` | `CHOSEN` | Drill chạy trên production deployment pre-announcement vì không có staging app; dữ liệu drill phải nhận diện rõ và kết thúc bằng nghiệp vụ | Existing drill decision | Final cho round này |
 | `DEC-02` | `CHOSEN` | Dùng một Project/Order drill riêng; code/title có prefix `DRILL-MKT`; không dùng order tuyển thật cho bước đóng trạng thái một chiều | Tier 1 safety | Final |
-| `DEC-03` | `CHOSEN` | Applicant drill dùng identity do Owner sở hữu/cho phép; evidence công khai chỉ mask phone/tracking, không ghi fullName/CCCD | Privacy | Final |
+| `DEC-03` | `CHOSEN` | Applicant drill dùng identity TỔNG HỢP theo `DEC-19` — Owner uỷ quyền Tier 1 sinh giá trị ngày 02/09, thay cho phương án dùng identity của Owner. Evidence luôn che tracking code; vì identity là tổng hợp nên không còn giá trị cá nhân nào phải che, và tuyệt đối không đưa CCCD của người thật vào drill | Privacy | Final |
 | `DEC-04` | `CHOSEN` | Không cleanup bằng SQL. Submission kết thúc `REJECTED` với reason drill hoặc `CONVERTED`; project drill kết thúc unpublished; order drill có thể `CLOSED` | Runbook invariant | Final |
 | `DEC-05` | `CHOSEN` | Mỗi mutation ghi `X-Request-Id`, HTTP status, timestamp và business code; không chép raw body/header/cookie/token | Observability/privacy | Final |
 | `DEC-06` | `CHOSEN` | Deployment SHA phải chứa commit đã ACCEPTED của 04/06/05. Alias thành công nhưng SHA cũ → BLOCK | Tier 1 | Final |
@@ -95,10 +96,11 @@ Kết quả Planner cuối cùng chỉ có ba trạng thái:
 | `DEC-12` | `CHOSEN` | Owner là người ký `GO_LIVE_APPROVED`; Tier 1 chỉ resolve task sau chữ ký và Tier 3 PASS | Governance | Final |
 | `DEC-13` | `CHOSEN` | Khi một AC cần bề mặt hoặc phiên đăng nhập mà môi trường không cấp được, kết cục là `ENV_BLOCKED` — nhưng `ENV_BLOCKED` KHÔNG nằm trong từ vựng verdict của `verify-audit.ps1`. Ô verdict phải ghi `BLOCKED` hoặc `PARTIAL`, còn chữ `ENV_BLOCKED` nằm ở ô evidence kèm lý do. Cấm mock, cấm force-pass, cấm suy diễn từ gate xanh | Tier 1, luật `verify-audit` | Final |
 | `DEC-14` | `CHOSEN` | Task này KHÔNG bị chặn cứng sau `go-live-09`. Chứng nhận tách hai phần: phần **hành trình** (`RQ-05`..`RQ-11`) đo hành vi mà 09 không chạm nên có giá trị bất kể 09 đã land hay chưa; phần **bề mặt** (`RQ-04` và `RQ-19`) chỉ có giá trị trên bề mặt sẽ THẬT SỰ công khai. Nếu Owner chọn chạy trước 09 thì report phải mang ghi chú phạm vi và một nghĩa vụ đo lại phần bề mặt sau khi 09 deploy — một lần đo READ-ONLY, không phải một drill mutation thứ hai | Tier 1, `EV-19` | Tới khi 09 `ACCEPTED` |
-| `DEC-15` | `CHOSEN` | Trước lần apply đầu tiên, Tier 2 phải viết một **sổ lượt gọi**: liệt kê từng lần apply dự kiến, số điện thoại dùng, idempotency key dùng và kết quả mong đợi. Ba lượt đầu (first, replay, duplicate-new-key) BUỘC dùng cùng số điện thoại A vì duplicate guard khoá trên số điện thoại. Hai lượt trạng thái âm (sau unpublish, sau close order) dùng số điện thoại B do Owner cấp riêng | Tier 1, `EV-15` | Final |
+| `DEC-15` | `CHOSEN` | Trước lần apply đầu tiên, Tier 2 phải viết một **sổ lượt gọi**: liệt kê từng lần apply dự kiến, số điện thoại dùng, idempotency key dùng và kết quả mong đợi. Ba lượt đầu (first, replay, duplicate-new-key) BUỘC dùng cùng số điện thoại A vì duplicate guard khoá trên số điện thoại. Hai lượt trạng thái âm (sau unpublish, sau close order) dùng số điện thoại B của `DEC-19`. Sổ còn phải đếm CẢ ngân sách IP: `APPLY_IP` là 10 lượt mỗi 600 giây trên MỘT IP và việc chia hai số KHÔNG nới ngân sách đó | Tier 1, `EV-15`, `EV-20` | Final |
 | `DEC-16` | `CHOSEN` | Mọi lượt apply sau khi đổi trạng thái job hoặc order BUỘC dùng idempotency key MỚI. Dùng lại key cũ trả `201` đã lưu vì replay chặn trước khi kiểm job, và đó là hành vi đúng của hệ thống, không phải lỗi | Tier 1, `EV-14` | Final |
 | `DEC-17` | `CHOSEN` | `AC-01` có hai chân độc lập. Chân MÃ: deployment SHA chứa các commit đã `ACCEPTED`. Chân DB: bằng chứng RLS matrix đã CHẠY trên `hrp-live`, đo bằng hành vi thật ở `RQ-08` (HR queue thấy đúng hồ sơ) hoặc bằng `_prisma_migrations` nếu Owner cấp target an toàn. Một file migration có trong SHA KHÔNG phải bằng chứng nó đã chạy | Tier 1, `EV-05` | Final |
 | `DEC-18` | `CHOSEN` | `no-store` chỉ bắt buộc ở nhánh 200 của tracking. Nhánh 404 hiện không có header đó; việc này được ghi làm **residual finding** trong report, không phải blocker, vì task này cấm sửa source | Tier 1, `EV-16` | Tới task hardening kế tiếp |
+| `DEC-19` | `CHOSEN` | Identity drill là dữ liệu TỔNG HỢP cố định trong contract, KHÔNG phải của người thật. Số A là `090000000001`, số B là `090000000002`: 12 chữ số, dài hơn mọi số điện thoại Việt Nam nên không thể trùng thuê bao của ai, mà vẫn qua được cả hai tầng kiểm theo `EV-20`. Hai số cho hai dạng che khác nhau, `090******001` và `090******002`, nên evidence phân biệt được A với B. Họ tên là `DRILL-MKT UNG VIEN A` và `DRILL-MKT UNG VIEN B`, giữ prefix `DRILL-MKT` của mục 4.3. Drill KHÔNG gửi CCCD: `cccdNumber` để null nên `cccdMasked` trả null, và đó là kết quả MONG ĐỢI của `RQ-07` chứ không phải thiếu bằng chứng, vì phép che CCCD đã đóng bằng unit test ở GO-LIVE-13. Vì hai identity này không thuộc về ai, chúng ĐƯỢC ghi nguyên văn vào sổ lượt gọi và report — chỉ tracking code là vẫn phải che. Nếu một bề mặt nào từ chối chúng thì đó là FINDING phải ghi, KHÔNG được thay bằng số thật; số 12 chữ số hiển thị lệch định dạng trong panel admin là mong đợi, không phải defect | Tier 1, `EV-20`, uỷ quyền Owner 02/09 | Final |
 
 ## 4. Contract
 
@@ -117,11 +119,11 @@ Kết quả Planner cuối cùng chỉ có ba trạng thái:
 | `RQ-09` | HR xử lý record drill tới trạng thái cuối hợp lệ; dedup branch được ghi đúng PASS hoặc DEFERRED theo runbook | Must | MP-3 | Record treo `NEW` → BLOCK |
 | `RQ-10` | Sau unpublish: job biến mất khỏi `/` và `/jobs`, `/viec-lam/[slug]` không còn công khai, và apply bằng **idempotency key MỚI** trả `404` với `error` bằng `JOB_NOT_AVAILABLE`. Republish khôi phục. Close order drill chặn apply. Dùng lại key cũ ở bước này là sai phương pháp và làm kết luận vô giá trị | Must | `EV-14`, `DEC-16`, `EV-17` | State mismatch → BLOCK; dùng key cũ → phép đo bị loại |
 | `RQ-11` | Admin assignment/commission smoke có session không trả 500; `/bcc` không được tái xuất hiện như payroll portal | Must | Living Handoff | 500 hoặc bcc regression → BLOCK |
-| `RQ-12` | Report mask PII/secret, có request-id/status/timestamp/SHA và before-after state. Riêng `fullName`: API trả nguyên văn theo quyết định Owner, nhưng report và HANDOFF KHÔNG được dán giá trị đó — ghi "khớp" hoặc dạng đã che. Tracking code chỉ ghi dạng che | Must | `DEC-03`, `DEC-05`, `EV-16` | Secret/PII leak → revoke artifact + BLOCK |
+| `RQ-12` | Report mask PII/secret, có request-id/status/timestamp/SHA và before-after state. Riêng `fullName`: API trả nguyên văn, và vì giá trị đó là tên TỔNG HỢP của `DEC-19` nên ghi nguyên văn để tái lập được; điều bị cấm là dán tên hoặc số của một người THẬT. Tracking code vẫn chỉ ghi dạng che vì nó là bearer secret | Must | `DEC-03`, `DEC-05`, `DEC-19`, `EV-16` | Secret/PII leak → revoke artifact + BLOCK |
 | `RQ-13` | Runbook operations và drill được cập nhật kết quả thật, Owner ký rõ PASS/FAIL/deferred rows | Must | `EV-02/03`, `DEC-12` | Không chữ ký → không APPROVED |
 | `RQ-14` | Tier 3 chạy independent live verification và `verify-audit.ps1` PASS | Must | Pipeline | Không audit → BLOCK |
 | `RQ-15` | Commit chỉ gồm report/runbook/HANDOFF/AUDIT/TASK resolution; không gom WIP ngoài scope | Must | `EV-10` | Scope leak → reject commit |
-| `RQ-16` | Trước lượt apply ĐẦU TIÊN, HANDOFF phải có sổ lượt gọi: từng lượt apply dự kiến kèm số điện thoại, idempotency key và kết quả mong đợi; ba lượt đầu trên số A, hai lượt trạng thái âm trên số B. Tổng số lượt trên mỗi số không quá 4 để còn dư một lượt | Must | `EV-15`, `DEC-15` | Không có sổ trước khi gọi → dừng; vượt ngân sách rồi gặp `429` → ghi trung thực, KHÔNG chờ hết window để lách |
+| `RQ-16` | Trước lượt apply ĐẦU TIÊN, HANDOFF phải có sổ lượt gọi: từng lượt apply dự kiến kèm số điện thoại, idempotency key và kết quả mong đợi; ba lượt đầu trên số A, hai lượt trạng thái âm trên số B. Tổng số lượt trên mỗi số không quá 4 để còn dư một lượt, và sổ phải có thêm một dòng tổng số lượt apply trên MỘT IP đối chiếu ngân sách 10 lượt mỗi 600 giây. Ô số điện thoại của mọi dòng bằng đúng một trong hai giá trị của `DEC-19` | Must | `EV-15`, `EV-20`, `DEC-15`, `DEC-19` | Không có sổ trước khi gọi → dừng; vượt ngân sách rồi gặp `429` → ghi trung thực, KHÔNG chờ hết window để lách; dùng một số thứ ba → dừng và báo Owner |
 | `RQ-17` | Chân DB của `DEC-17` phải có bằng chứng riêng: RLS matrix đã chạy trên `hrp-live`, chứng minh bằng hành vi thật của `RQ-08` hoặc bằng `_prisma_migrations` nếu Owner cấp target an toàn | Must | `EV-05`, `DEC-17` | Chỉ có bằng chứng SHA → `AC-01` chưa đạt, không được suy diễn |
 | `RQ-18` | Nếu `go-live-09` chưa deploy tại thời điểm drill, report phải có một mục **phạm vi** nói rõ phần bề mặt được chứng nhận trên bề mặt TRƯỚC 09, kèm nghĩa vụ đo lại `RQ-04` và `RQ-19` sau khi 09 deploy | Must | `DEC-14`, `EV-19` | Thiếu mục phạm vi → report mô tả sai thứ sẽ công khai → BLOCK |
 | `RQ-19` | Nếu `go-live-09` ĐÃ deploy: xác nhận con số lương trên card và trong `/api/jobs` là lương giờ của người lao động, không phải giá bán cho khách, và response công khai không có khoá nào về client, budget, margin hay billing | Must | `EV-19`, GO-LIVE-05 `DEC-10` | Lộ giá bán hoặc margin → ROLLBACK_REQUIRED |
@@ -142,7 +144,7 @@ Kết quả Planner cuối cùng chỉ có ba trạng thái:
 - Read production deployment metadata.
 - Dùng UI/API production đúng nghiệp vụ theo runbook.
 - Tạo và chuyển trạng thái record prefix `DRILL-MKT`.
-- Dùng HAI số điện thoại do Owner cấp: số A cho ba lượt apply đầu, số B cho hai lượt trạng thái âm (`DEC-15`).
+- Dùng HAI số điện thoại TỔNG HỢP mà `DEC-19` cố định: số A `090000000001` cho ba lượt apply đầu, số B `090000000002` cho hai lượt trạng thái âm (`DEC-15`). Không thay bằng số của người thật.
 - Unpublish/republish Project drill, close Order drill.
 
 **Out of scope:**
@@ -158,7 +160,7 @@ Kết quả Planner cuối cùng chỉ có ba trạng thái:
 
 ### 4.3 Data, State, Permission và Interface Rules
 
-- **Data:** record drill có prefix `DRILL-MKT`; applicant là người được Owner cho phép; report mask mọi identifier cá nhân. `fullName` được API trả nguyên văn theo quyết định Owner, nhưng KHÔNG được dán vào report hay HANDOFF.
+- **Data:** record drill có prefix `DRILL-MKT`; applicant là identity TỔNG HỢP của `DEC-19`, không phải người thật. `fullName` được API trả nguyên văn và vì nó là tên tổng hợp nên ghi được nguyên văn; tracking code thì luôn che, và không một giá trị nào của người thật được dán vào report hay HANDOFF.
 - **State:** mutation theo state machine thật. Không reopen order `CLOSED`; nếu cần republish thì dùng project còn order mở hoặc tạo order drill mới.
 - **Permission/data scope:** anonymous chỉ public projection/apply/tracking; HR queue dùng role đã cấp; negative role dùng account riêng không có quyền.
 - **Interface:** canonical hosts là `https://www.hrpartner.vn`; apex redirect có thể đo riêng nhưng không thay host trong evidence.
@@ -194,7 +196,7 @@ Kết quả Planner cuối cùng chỉ có ba trạng thái:
 | `AC-09` | `RQ-09` | Record drill kết thúc REJECTED hoặc CONVERTED; dedup ghi đúng trạng thái thật | State history | Final state | Yes |
 | `AC-10` | `RQ-10` | Sau unpublish, apply bằng key MỚI trả `404` với `error` bằng `JOB_NOT_AVAILABLE`; republish khôi phục; close order chặn apply | HTTP sequence | Exact codes cộng sổ key chứng minh mỗi lượt dùng key mới | Yes |
 | `AC-11` | `RQ-11` | Assignment/commission không 500; `/bcc` không trở lại làm payroll surface | Browser/HTTP | Status/title | Yes |
-| `AC-12` | `RQ-12` | Report có đủ SHA/timestamp/request-id/state nhưng không có secret/PII, và không có `fullName` nguyên văn dù API trả nó | Scan cộng review | Zero forbidden patterns, cộng phép grep chứng minh tên thật không có trong artifact | Yes |
+| `AC-12` | `RQ-12` | Report có đủ SHA/timestamp/request-id/state, không có secret, không có tracking code thô, và không có giá trị cá nhân nào ngoài hai identity tổng hợp của `DEC-19` | Scan cộng review | Zero forbidden patterns, cộng phép grep chứng minh mọi tên và số trong artifact đều thuộc `DEC-19` | Yes |
 | `AC-13` | `RQ-13` | Owner ký runbook và kết luận PASS/FAIL rõ | Document review | Signed section | Yes |
 | `AC-14` | `RQ-14` | Tier 3 independent audit PASS và verifier exit 0 | Audit command | AUDIT + output | Yes |
 | `AC-15` | `RQ-15` | Commit chỉ có artifact cho launch proof/runbook | Git scope check | Name-only diff | Yes |
@@ -202,6 +204,7 @@ Kết quả Planner cuối cùng chỉ có ba trạng thái:
 | `AC-17` | `RQ-17` | Chân DB có bằng chứng riêng, không suy diễn từ SHA | Behavioural hoặc `_prisma_migrations` | Output thật | Yes |
 | `AC-18` | `RQ-18` | Nếu 09 chưa deploy, report có mục phạm vi và nghĩa vụ đo lại `RQ-04`/`RQ-19`; nếu 09 đã deploy thì ghi rõ điều đó và mục phạm vi không cần | Document review | Mục phạm vi hoặc dòng ghi 09 đã deploy | Yes |
 | `AC-19` | `RQ-19` | Con số lương công khai là lương giờ của người lao động; response `/api/jobs` không có khoá nào về client, budget, margin, billing | HTTP cộng đối chiếu nguồn | Danh sách khoá thật của response | Yes nếu 09 đã deploy; `DEFERRED` có căn cứ nếu chưa |
+| `AC-20` | `RQ-16` | Mọi ô số điện thoại và họ tên trong sổ lượt gọi cùng trong report bằng đúng các giá trị của `DEC-19`, không có giá trị thứ ba; và sổ có dòng đối chiếu ngân sách IP | Grep cộng đối chiếu sổ | Sổ lượt gọi cộng output grep | Yes |
 
 ### Traceability
 
@@ -222,7 +225,7 @@ Kết quả Planner cuối cùng chỉ có ba trạng thái:
 | `RQ-13` | `STEP-09` | `AC-13` |
 | `RQ-14` | `STEP-10` | `AC-14` |
 | `RQ-15` | `STEP-10` | `AC-15` |
-| `RQ-16` | `STEP-01` | `AC-16` |
+| `RQ-16` | `STEP-01` | `AC-16`, `AC-20` |
 | `RQ-17` | `STEP-01`, `STEP-06` | `AC-01`, `AC-17` |
 | `RQ-18` | `STEP-09` | `AC-18` |
 | `RQ-19` | `STEP-03` | `AC-19` |
@@ -240,11 +243,11 @@ Kết quả Planner cuối cùng chỉ có ba trạng thái:
 | `RISK-07` | Queue rỗng vì RLS drift | Apply 201 nhưng HR thấy 0 | Dependency GO-LIVE-06 + queue proof | Unpublish, mở DB posture task; không apply thêm |
 | `RISK-08` | Rate limit làm sai kết luận | 429 sau thao tác lặp | Ngân sách runbook, không spam | Chờ window rồi chạy đúng một lần; ghi 429 trung thực |
 | `RISK-09` | Tier 2 sửa code trong infra task | Working tree source đổi | Scope check đầu/cuối | Reject round, tách code task |
-| `RISK-10` | Ngân sách `APPLY_PHONE` cạn giữa drill, Tier 2 gặp `429` và bỏ dở với một record nửa vời trên production | Kịch bản cần đúng 5 lượt trên một số mà ngân sách đúng 5 lượt mỗi giờ; một lần bấm sai là hết | `EV-15` đo ngân sách thật; `RQ-16` buộc viết sổ lượt gọi TRƯỚC lượt đầu và chia hai số điện thoại; `AC-16` kiểm timestamp của sổ | Chờ hết window rồi tiếp tục ĐÚNG bước còn thiếu, ghi `429` trung thực; không xoá record, không SQL |
+| `RISK-10` | Ngân sách `APPLY_PHONE` cạn giữa drill, Tier 2 gặp `429` và bỏ dở với một record nửa vời trên production | Kịch bản cần đúng 5 lượt trên một số mà ngân sách đúng 5 lượt mỗi giờ; một lần bấm sai là hết | `EV-15` đo ngân sách thật; `RQ-16` buộc viết sổ lượt gọi TRƯỚC lượt đầu và chia hai số điện thoại; sổ còn phải đếm ngân sách `APPLY_IP` 10 lượt mỗi 600 giây mà việc chia số KHÔNG nới ra; `AC-16` kiểm timestamp của sổ | Chờ hết window rồi tiếp tục ĐÚNG bước còn thiếu, ghi `429` trung thực; không xoá record, không SQL |
 | `RISK-11` | Gọi lại apply bằng idempotency key CŨ sau unpublish, nhận `201` đã lưu, rồi kết luận SAI là unpublish không chặn apply — sinh verdict `ROLLBACK_REQUIRED` oan trên một hệ thống lành | Replay chặn trước khi kiểm job trong definer (`EV-14`) | `DEC-16` buộc key mới; `RQ-10` và `AC-10` đòi sổ key chứng minh từng lượt dùng key mới | Đo lại đúng một lượt bằng key mới trước khi kết luận bất cứ điều gì |
 | `RISK-12` | Ký `GO_LIVE_APPROVED` cho một bề mặt sắp đổi vì `go-live-09` chưa land; hoặc ngược lại, chạy lại CẢ drill mutation lần hai chỉ để đo lại phần bề mặt | 09 là task go-live duy nhất còn mở và nó viết lại trang browse | `DEC-14` tách chứng nhận thành phần hành trình và phần bề mặt; `RQ-18` buộc report mang mục phạm vi; phần đo lại là READ-ONLY | Đo lại `RQ-04` và `RQ-19` sau khi 09 deploy, không tạo record drill mới |
 | `RISK-13` | Suy diễn chân DB từ SHA: thấy file migration trong deployment SHA rồi kết luận RLS đã áp trên `hrp-live`, trong khi migration chưa chạy | Sản phẩm của GO-LIVE-06 là một file trong repo (`EV-05`) | `DEC-17` chia `AC-01` thành hai chân độc lập; `AC-17` đòi bằng chứng DB riêng | Dừng trước mọi mutation, nhờ Owner áp migration, đo lại chân DB |
-| `RISK-14` | Dán `fullName` thật vào report vì API trả nguyên văn nên tưởng là đã an toàn | Quyết định Owner cho `fullName` không che ở API | `RQ-12` cấm dán tên vào artifact dù API trả nó; `AC-12` đòi một phép grep chứng minh | Xoá artifact khỏi index và viết lại report; không rewrite history nếu chưa push |
+| `RISK-14` | Tier 2 thay số tổng hợp bằng số của một người thật — của chính mình hoặc của đồng nghiệp — vì thấy 12 chữ số trông như sai, thế là ghi PII thật vào một record production | Số của `DEC-19` dài 12 chữ số nên trông lạ, mà không tầng nào chặn một số 10 chữ số hợp lệ (`EV-20`) | `DEC-19` cấm thay thế và nói rõ vì sao 12 chữ số là CHỦ Ý; `AC-20` đòi grep chứng minh sổ chỉ chứa hai giá trị đó | Dừng drill và báo Owner; record đã tạo bằng số thật thì xử theo runbook, không xoá bằng SQL |
 
 ## 8. Open Questions
 
@@ -258,6 +261,8 @@ Tier 1 append quyết định sau audit. `GO_LIVE_APPROVED` chỉ được ghi k
 
 Contract đã được **neo lại ở `v1.1`** ngày 02/09 trước khi giao `/code`. Lý do: anchor `6680011` của `v1.0` cách mã hiện tại **69 commit**, và trong khoảng đó ba dependency của nó cùng năm task khác đã đóng, nên ba dòng evidence `EV-04`/`EV-05`/`EV-06` mô tả các task đang chờ fix như thể còn chờ. Ngoài việc làm mới trạng thái, bốn lỗi ĐO đã được sửa bằng cách đọc mã: **một**, ngân sách `APPLY_PHONE` là 5 lượt mỗi giờ trong khi kịch bản cần đúng 5 lượt trên một số điện thoại, tức không còn dư một lượt nào cho lỗi bấm. **Hai**, trong definer function replay chặn TRƯỚC khi kiểm job, nên apply lại bằng key cũ sau unpublish trả `201` đã lưu và sẽ bị đọc thành "unpublish không chặn apply". **Ba**, sản phẩm của GO-LIVE-06 là một file migration trong repo, nên `AC-01` cũ chứng minh được mã mà không chứng minh được DB. **Bốn**, có HAI mã `409` khác nghĩa nhau nên ghi con số 409 trơn không phân biệt được duplicate với payload mismatch. Cùng lượt, `RQ-07` đổi từ "safe DTO" chung chung sang allow-list 11 khoá thật cộng khoá bọc `application`, và `no-store` được thu về đúng nhánh 200 vì nhánh 404 không có header đó và task này cấm sửa mã.
 
+Neo tiếp ở **`v1.2`** cùng ngày, sau khi Owner uỷ quyền Tier 1 tự sinh hai số điện thoại drill thay vì tự cấp. Việc uỷ quyền buộc phải ĐO trước khi sinh số, và phép đo đổi luôn thiết kế: không tầng nào kiểm định dạng số điện thoại — Node chỉ đòi chuỗi không rỗng, definer chỉ đòi độ dài lớn hơn 0 — mà đường apply cũng không gửi tin nhắn nào, vì kênh thật còn ở Phase 4. Hai điều đó cho phép chọn hai số 12 chữ số KHÔNG THỂ là số của ai, thay vì sinh hai số 10 chữ số trông thật mà rất có thể đang là thuê bao của một người lạ — người lạ đó sẽ nằm trong một record production, và một nhân sự mở panel admin thì rất có thể sẽ gọi. Cùng lượt đo, một khoảng trống của `v1.1` lộ ra: `v1.1` chia hai số điện thoại để cứu ngân sách `APPLY_PHONE`, nhưng `APPLY_IP` là 10 lượt mỗi 600 giây và khoá trên IP, nên việc chia số KHÔNG nới nó ra chút nào; sổ lượt gọi của `RQ-16` giờ phải đếm cả ngân sách đó. Vì identity đã thành dữ liệu tổng hợp, ba chỗ nói ngược nhau được sửa cùng lúc: `DEC-03` bỏ điều kiện dùng identity của Owner, còn `RQ-12` và mục 4.3 thôi cấm ghi `fullName` nguyên văn — cấm một cái tên TỔNG HỢP thì sổ lượt gọi không thể viết ra được, mà thứ đáng cấm là tên hoặc số của người THẬT. Tracking code thì vẫn che, vì nó là bearer secret chứ không phải PII.
+
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
 
@@ -265,5 +270,6 @@ Contract đã được **neo lại ở `v1.1`** ngày 02/09 trước khi giao `/
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
+| `v1.2` | `2026-09-02` | Identity drill chuyển sang dữ liệu TỔNG HỢP: thêm `EV-20` và `DEC-19` cố định số A `090000000001`, số B `090000000002` cùng hai họ tên prefix `DRILL-MKT`, và cố định `cccdNumber` là null; viết lại `DEC-03`, `RQ-12`, `AC-12`, một non-goal của mục 3, mục 4.2 và mục 4.3 cho hết ngược nhau; mở rộng `DEC-15` cùng `RQ-16` sang ngân sách `APPLY_IP`; thêm `AC-20`; viết lại `RISK-14` và mitigation của `RISK-10` | Owner uỷ quyền Tier 1 tự sinh số ngày 02/09. Đo trước khi sinh cho thấy không tầng nào kiểm định dạng và đường apply không gửi tin, nên chọn được số không thể trùng thuê bao thật thay vì số 10 chữ số trông thật; cùng lượt lộ ra `APPLY_IP` khoá trên IP nên việc chia hai số của `v1.1` không nới ngân sách đó |
 | `v1.1` | `2026-09-02` | Neo lại contract sau 69 commit: `EV-02` đo lại, `EV-04`/`EV-05`/`EV-06`/`EV-07`/`EV-10` viết lại, thêm `EV-13`..`EV-19`; thêm `DEC-13`..`DEC-18`; viết lại `RQ-01`, `RQ-04`, `RQ-05`, `RQ-06`, `RQ-07`, `RQ-10`, `RQ-12` và thêm `RQ-16`..`RQ-19`; mở rộng năm STEP; viết lại `AC-01`, `AC-05`, `AC-06`, `AC-07`, `AC-10`, `AC-12` và thêm `AC-16`..`AC-19`; thêm `RISK-10`..`RISK-14`. Bốn lỗi đo được sửa bằng cách đọc mã: ngân sách `APPLY_PHONE` 5 lượt mỗi giờ so với kịch bản cần đúng 5 lượt; replay chặn trước khi kiểm job nên key cũ sau unpublish trả `201`; sản phẩm của GO-LIVE-06 là file migration nên SHA không chứng minh được DB; và hai mã `409` khác nghĩa nhau | Ba dependency của `v1.0` đều `ACCEPTED` nên phần trạng thái đã sai; bốn lỗi đo sẽ sinh verdict oan hoặc bỏ dở drill giữa production |
 | `v1.0` | `2026-08-30` | Contract launch proof ban đầu; tách mutation drill khỏi code tasks, khóa privacy/scope/rollback/sign-off | Chuỗi GO-LIVE-04→06→05→07 |

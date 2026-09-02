@@ -1,0 +1,62 @@
+############ AC-14 — RED co the TAI LAP: doi rieng public.service.ts ve blob baseline 8ca2ee1
+$ SHA_BEFORE (sha256 16 ky tu dau, file worktree) = 3a9b59056fb25ad5
+$ cp src/domains/job-board/public.service.ts scratch/gl09-svc-head.bak   # sao luu ban HEAD ra ngoai git
+$ git show 8ca2ee1:src/domains/job-board/public.service.ts > src/domains/job-board/public.service.ts   (exit 0, 26282 bytes)
+$ npm run test:unit -- src/domains/job-board/public-board-architecture.test.ts src/domains/job-board/public-board-route-json.test.ts
+RED_EXIT=1   (khac 0 = DO thuc su)
+--- trich xuat (ten test DO + tong ket):
+     × go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt > mọi slot không có lương ⇒ salaryMinVnd và salaryMaxVnd đều null, không phải 0 7ms
+       → expected undefined to be null
+     × go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt > nhiều slot có lương ⇒ min/max là number thật, slot không lương không kéo min về 0 2ms
+       → expected undefined to be 30000 // Object.is equality
+     × go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không còn BigInt > JSON.stringify trên DTO có lương không ném — đúng bẫy BigInt của NextResponse.json 4ms
+       → expected '{"id":"prj-1","slug":"DA-2026-001","t…' to contain '45000'
+     × go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > đơn OPEN chỉ còn 1 chỗ ⇒ NONE, statusLabel vẫn là Đang tuyển 1ms
+       → expected undefined to be 'NONE' // Object.is equality
+     × go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > CLOSING_SOON cộng hạn còn 3 ngày ⇒ URGENT và statusLabel đổi theo 1ms
+       → expected undefined to be 'URGENT' // Object.is equality
+     × go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > CLOSING_SOON mà deadline null ⇒ CLOSING, không phải NONE và không phải URGENT 1ms
+       → expected undefined to be 'CLOSING' // Object.is equality
+     × go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > CLOSING_SOON mà hạn còn 30 ngày ⇒ CLOSING — ngưỡng 7 ngày có ý nghĩa thật 1ms
+       → expected undefined to be 'CLOSING' // Object.is equality
+     × go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng thái thật > postedAt là ISO của createdAt ĐƠN, không phải của project 1ms
+       → expected undefined to be '2026-02-03T04:05:06.000Z' // Object.is equality
+     × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > overview.totals.jobs bằng total khi gọi không bộ lọc, và ba số đúng phép tính ở service 1ms
+       → Cannot read properties of undefined (reading 'totals')
+     × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > areaCounts đếm bằng ĐÚNG vị từ của bộ lọc area, không bằng job.locations 1ms
+       → Cannot read properties of undefined (reading 'areaCounts')
+     × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > số của một mục areaCounts bằng total của lần gọi lại cùng service với đúng area đó 0ms
+       → Cannot read properties of undefined (reading 'areaCounts')
+     × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > areaCounts và shiftCounts không chứa mục count bằng 0 và đã sắp giảm dần 0ms
+       → Cannot read properties of undefined (reading 'areaCounts')
+     × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > topPaid không chứa việc không có lương, sắp giảm dần, tối đa 6 phần tử 1ms
+       → Cannot read properties of undefined (reading 'topPaid')
+     × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > newest sắp theo postedAt giảm dần và mang DTO đầy đủ, không chỉ slug 0ms
+       → Cannot read properties of undefined (reading 'newest')
+     × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > overview không đổi khi phân trang: trang 2 vẫn thấy đúng ba con số toàn cục 1ms
+       → Cannot read properties of undefined (reading 'totals')
+     × go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tính trước lọc và trước phân trang > bốn khoá cũ của PublicJobListResult không đổi, overview là khoá thứ năm THUẦN CỘNG 2ms
+       → expected [ Array(4) ] to deeply equal [ Array(5) ]
+     × go-live-09 / RQ-24, DEC-21 — hai mapper nói cùng một sự thật > bốn field mới của toDetailDto bằng đúng bốn field của toDto trên cùng một hàng 1ms
+       → expected undefined to be 30000 // Object.is equality
+     × go-live-09 / AC-04 — response THẬT của GET /api/jobs mang lương là number > 200 và salaryMinVnd trong JSON là number, không phải string, không ném BigInt 13ms
+       → expected 'undefined' to be 'number' // Object.is equality
+     × go-live-09 / AC-04 — response THẬT của GET /api/jobs mang lương là number > payload công khai không mang tên cột nội bộ, không mang khách hàng, không mang nhãn ngành 2ms
+       → expected '{"jobs":[{"id":"prj-a","slug":"DA-A",…' to contain '70000'
+     × go-live-09 / AC-11, AC-12 — cặp response chứng minh số trên tag là số THẬT > count của một mục areaCounts bằng total của lần gọi lại với đúng area đó 1ms
+       → Cannot read properties of undefined (reading 'areaCounts')
+     × go-live-09 / AC-11, AC-12 — cặp response chứng minh số trên tag là số THẬT > không mục areaCounts nào có count bằng 0, và overview.totals.jobs bằng total 1ms
+       → Cannot read properties of undefined (reading 'areaCounts')
+     × go-live-09 / AC-11, AC-12 — cặp response chứng minh số trên tag là số THẬT > ba con số toàn cục KHÔNG đổi giữa trang 1 và trang 2 — phép duy nhất phân biệt số trang 2ms
+       → Cannot read properties of undefined (reading 'totals')
+   Test Files  2 failed (2)
+     Duration  723ms (transform 105ms, setup 0ms, collect 242ms, tests 44ms, environment 0ms, prepare 116ms)
+$ cp scratch/gl09-svc-head.bak src/domains/job-board/public.service.ts && rm scratch/gl09-svc-head.bak   # phuc hoi
+$ SHA_AFTER = 3a9b59056fb25ad5   ;  SHA_BEFORE == SHA_AFTER -> True  (True = phuc hoi dung tung byte)
+$ chay lai CUNG hai file tren ban HEAD:
+GREEN_EXIT=0
+   Test Files  2 passed (2)
+     Duration  695ms (transform 107ms, setup 0ms, collect 233ms, tests 28ms, environment 0ms, prepare 114ms)
+
+--- dem lai tu chinh listing tren: so CASE do = 22 tren 2 file (dong "Tests" bi bo loc cua driver an mat,
+    nen con so nay lay bang cach dem dong co dau × trong chinh output da luu o tren).

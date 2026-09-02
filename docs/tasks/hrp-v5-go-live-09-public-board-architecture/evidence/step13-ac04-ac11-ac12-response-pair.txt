@@ -1,0 +1,74 @@
+############ AC-04 / AC-11 / AC-12 — RESPONSE THAT cua GET /api/jobs (route handler thuc, DB bi thay bang tx gia)
+$ GET /api/jobs        -> HTTP 200
+--- body.total = 3
+--- typeof body.jobs[0].salaryMinVnd = number  gia tri = 45000
+--- body.overview (nguyen van):
+{"jobs":3,"slots":12,"areas":3}
+areaCounts  = [{"value":"Bac Ninh","count":2},{"value":"KCN Thang Long","count":1},{"value":"KCN VSIP 1","count":1}]
+shiftCounts = [{"value":"07:00-16:00","count":3}]
+newest[].id  = ["prj-a","prj-b","prj-c"]
+topPaid[].id = ["prj-c","prj-a","prj-b"]
+--- MOT job day du trong response (chung minh khong con BigInt va khong co ten cot noi bo):
+{
+  "id": "prj-c",
+  "slug": "DA-C",
+  "title": "Kiem hang",
+  "position": "Nhan vien QC",
+  "shift": "07:00-16:00",
+  "location": "KCN Thang Long",
+  "shiftType": "ca_ngay",
+  "jobType": "toan_thoi_gian",
+  "availableSlots": 4,
+  "deadline": null,
+  "statusLabel": "Đang tuyển",
+  "salaryMinVnd": 70000,
+  "salaryMaxVnd": 70000,
+  "urgency": "NONE",
+  "postedAt": "2026-01-15T00:00:00.000Z",
+  "positionTitles": [
+    "Nhan vien QC"
+  ],
+  "locations": [
+    "KCN Thang Long"
+  ],
+  "shifts": [
+    "07:00-16:00"
+  ]
+}
+
+$ doc so tren tag: overview.areaCounts["Bac Ninh"].count = 2
+$ GET /api/jobs?area=Bac%20Ninh -> HTTP 200   body.total = 2
+  BANG NHAU? true   (AC-11: so tren tag = so viec cu bam se thay)
+  jobs[].id cua lan goi co loc = ["prj-a","prj-b"]
+  co muc nao count = 0 khong? []
+
+$ GET /api/jobs?limit=1&offset=0 -> jobs.length = 1  overview.totals = {"jobs":3,"slots":12,"areas":3}
+$ GET /api/jobs?limit=1&offset=1 -> jobs.length = 1  overview.totals = {"jobs":3,"slots":12,"areas":3}
+  ba con so KHONG doi giua hai trang? true
+  areaCounts KHONG doi giua hai trang? true
+  overview.totals.jobs = 3 == body.total cua lan goi khong loc = 3
+  co dau "+" trong ba con so? false
+  kieu cua ba con so = number, number, number
+
+############ AC-12 dang CHU — 14 viec hop le (> PAGE_SIZE = 12), do dung cu "tai them"
+$ GET /api/jobs?limit=12&offset=0 -> HTTP 200
+  jobs.length = 12   total = 14   nextOffset = 12
+  overview.totals = {"jobs":14,"slots":56,"areas":2}
+  areaCounts = [{"value":"KCN Thang Long","count":7},{"value":"KCN VSIP 1","count":7}]
+$ GET /api/jobs?limit=12&offset=12  (dung dung nextOffset o tren = cu bam "Tai them")
+  jobs.length = 2   total = 14   nextOffset = null
+  overview.totals = {"jobs":14,"slots":56,"areas":2}
+  areaCounts = [{"value":"KCN Thang Long","count":7},{"value":"KCN VSIP 1","count":7}]
+  --- BA CON SO KHONG DOI? true
+  --- areaCounts KHONG DOI? true
+  --- overview.totals.jobs (14) == total (14)? true
+  --- so card THAY tren trang 1 = 12 , NHO HON con so tin cay 14 => dung cho phep do cu cua v1.0 bat kha thi
+  --- newest do dai = 6 (<= 6), topPaid do dai = 6 (<= 6)
+  --- topPaid[].salaryMaxVnd = [43000,42000,41000,40000,39000,38000]  (phai giam dan)
+  --- kieu ba con so = number, number, number ; co dau "+"? false
+
+$ AC-11 tren tap 14: lay MUC DAU cua areaCounts (khong ghim ten tay) -> {"value":"KCN Thang Long","count":7}
+$ GET /api/jobs?limit=12&offset=0&area=KCN%20Thang%20Long -> HTTP 200  total = 7
+  BANG count tren tag? true
+  jobs tra ve (trang dau) = 7 card, nextOffset = null
+  muc nao co count = 0? []

@@ -1,0 +1,159 @@
+=== git status --short (toàn cây) ===
+ M app/(portal)/page.tsx
+ M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+ M public/index.html
+ M src/domains/applications/marketplace-browse.routes.test.ts
+ M src/domains/job-board/mp1.contract.test.ts
+ M src/domains/job-board/public-card-truth.integration.test.ts
+ M src/domains/job-board/public-card-truth.test.ts
+ M src/domains/job-board/public-detail.service.test.ts
+ M src/domains/job-board/public-ui-premium.static.test.ts
+ M src/domains/job-board/public.service.ts
+?? .claude/
+?? .neon
+?? "docs/aff_plan - Copy.md"
+?? docs/tasks/hrp-v5-go-live-09-public-board-architecture/evidence/
+?? fix.patch
+?? patch_test.ps1
+?? patch_test2.ps1
+?? patch_test3.ps1
+?? rls-probe-insert.txt
+?? rls-probe-output.txt
+?? scratch/bump-gl14-v11.py
+?? scratch/check-rpc-schema-usage.mjs
+?? scratch/commit-aff-plan.txt
+?? scratch/commit-gl05-handoff.txt
+?? scratch/commit-gl09-relock.txt
+?? scratch/commit-gl14-accepted.txt
+?? scratch/commit-gl14-audit-artifact.txt
+?? scratch/commit-gl14-cursor.txt
+?? scratch/commit-gl14-r3.txt
+?? scratch/commit-gl14-v11.txt
+?? scratch/commit-golive14.txt
+?? scratch/cursor-2026-09-02-gl07-prose.py
+?? scratch/cursor-2026-09-02-gl07-relock.py
+?? scratch/cursor-commit-msg.txt
+?? scratch/cursor-gl14-accepted.py
+?? scratch/cursor-gl14-audit.py
+?? scratch/cursor-golive14.py
+?? scratch/db-state-check.mjs
+?? scratch/fix-gl09-detail-path.py
+?? scratch/g-base-audit.css
+?? scratch/g-base-nav.tsx
+?? scratch/g-base-page.tsx
+?? scratch/gl05-cursor-closed.py
+?? scratch/gl05-cursor-v13.py
+?? scratch/gl05-cursor-v14.py
+?? scratch/gl05-facet-perf.cjs
+?? scratch/gl05-facet-perf.ts
+?? scratch/gl05-industry-check.cjs
+?? scratch/gl05-industry-check.ts
+?? scratch/gl05-resolve.py
+?? scratch/gl05-stripped-grep.mjs
+?? scratch/gl05-table-check.py
+?? scratch/gl05-v14.py
+?? scratch/gl07-relock-commit-msg.txt
+?? scratch/gl08-accepted-commit-msg.txt
+?? scratch/gl08-bump-v12.py
+?? scratch/gl08-bump-v13.py
+?? scratch/gl08-cursor-accepted.py
+?? scratch/gl08-cursor-commit-msg.txt
+?? scratch/gl08-cursor-resolved.py
+?? scratch/gl08-cursor-v12.py
+?? scratch/gl08-cursor-v13.py
+?? scratch/gl08-owner-op-accepted.py
+?? scratch/gl08-page.diff
+?? scratch/golive03-ac-drive.mjs
+?? scratch/golive03-ac08-remeasure.mjs
+?? scratch/golive03-bigint-probe.mjs
+?? scratch/golive03-db-probe.mjs
+?? scratch/golive03-greps.ps1
+?? scratch/golive03-migr-check.mjs
+?? scratch/golive03-rls-gaps.mjs
+?? scratch/golive03-seed.mjs
+?? scratch/golive11-sql-balance.mjs
+?? scratch/handover-s13.py
+?? scratch/md-table-check.py
+?? scratch/mock-upstash.js
+?? scratch/neon-schemadiff-live-vs-mp2test.txt
+?? scratch/neon-schemadiff-snapshot-vs-live.txt
+?? scratch/relock-gl07-a.py
+?? scratch/relock-gl07-b.py
+?? scratch/relock-gl07-c.py
+?? scratch/relock-gl07-d.py
+?? scratch/relock-gl07-e.py
+?? scratch/relock-gl07-f.py
+?? scratch/relock-gl09-a.py
+?? scratch/relock-gl09-b.py
+?? scratch/relock-gl09-c.py
+?? scratch/relock-gl09-d.py
+?? scratch/relock-gl09-e1.py
+?? scratch/relock-gl09-e2.py
+?? scratch/relock-gl09-e3.py
+?? scratch/relock-gl09-e4.py
+?? scratch/relock-gl09-f.py
+?? scratch/resolve-gl14.py
+?? scratch/run_m1_06b_audit.ps1
+?? scratch/run_m1_06c_audit.ps1
+?? scratch/seed-hrp-live-demo.sql
+?? scratch/seed-mkt-cleanup-probe.mjs
+?? scratch/seed-mkt-probe.mjs
+?? scratch/test-db.js
+?? scratch/test-func.js
+?? scratch/test-rpc.js
+?? scratch/test-sql.js
+?? scratch/test-writer.js
+?? scripts/debug-parser.mjs
+?? src/domains/job-board/public-board-architecture.test.ts
+?? src/domains/job-board/public-board-route-json.test.ts
+?? temp.diff
+
+=== git diff --stat (tracked, chua stage) ===
+warning: in the working copy of 'app/(portal)/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/applications/marketplace-browse.routes.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/mp1.contract.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.integration.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-detail.service.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-ui-premium.static.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public.service.ts', LF will be replaced by CRLF the next time Git touches it
+ app/(portal)/page.tsx                              | 598 ++++++++++++++++++---
+ .../AUDIT.md                                       |   1 +
+ .../AUDIT.md                                       |   1 +
+ .../hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md   |   1 +
+ public/index.html                                  | 156 ++++--
+ .../applications/marketplace-browse.routes.test.ts |  24 +
+ src/domains/job-board/mp1.contract.test.ts         |  11 +-
+ .../public-card-truth.integration.test.ts          |  48 +-
+ src/domains/job-board/public-card-truth.test.ts    |  19 +-
+ .../job-board/public-detail.service.test.ts        |   3 +-
+ .../job-board/public-ui-premium.static.test.ts     |  46 +-
+ src/domains/job-board/public.service.ts            | 206 ++++++-
+ 12 files changed, 969 insertions(+), 145 deletions(-)
+
+=== git diff --numstat (tracked) ===
+warning: in the working copy of 'app/(portal)/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/applications/marketplace-browse.routes.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/mp1.contract.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.integration.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-card-truth.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-detail.service.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-ui-premium.static.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public.service.ts', LF will be replaced by CRLF the next time Git touches it
+537	61	app/(portal)/page.tsx
+1	0	docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+1	0	docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+1	0	docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+97	59	public/index.html
+24	0	src/domains/applications/marketplace-browse.routes.test.ts
+9	2	src/domains/job-board/mp1.contract.test.ts
+44	4	src/domains/job-board/public-card-truth.integration.test.ts
+16	3	src/domains/job-board/public-card-truth.test.ts
+2	1	src/domains/job-board/public-detail.service.test.ts
+36	10	src/domains/job-board/public-ui-premium.static.test.ts
+201	5	src/domains/job-board/public.service.ts
+
+=== HEAD ===
+da72493

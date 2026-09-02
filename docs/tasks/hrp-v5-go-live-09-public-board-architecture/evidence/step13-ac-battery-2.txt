@@ -1,0 +1,93 @@
+############ AC-05 — than ham tinh urgency ############
+$ sed -n "345,410p" src/domains/job-board/public.service.ts
+/** go-live-09 / RQ-03 — ngưỡng "hạn kề" của `urgency`. Một con số, đặt một chỗ. */
+const URGENT_WITHIN_DAYS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Thứ tự nặng dần của `urgency`, để gộp nhiều đơn của cùng một dự án về một giá trị. */
+const URGENCY_RANK: Record<PublicJobDto['urgency'], number> = { NONE: 0, CLOSING: 1, URGENT: 2 };
+
+/**
+ * `urgency` của MỘT đơn, đúng ba nhánh của `RQ-03`.
+ *
+ * Nhánh `deadlineDate === null` trả `'CLOSING'` chứ không `'NONE'`: đơn đã được người vận hành đánh
+ * dấu `CLOSING_SOON` là một sự thật do con người khẳng định, và việc thiếu ngày hạn không xoá sự thật
+ * đó — nó chỉ làm ta không biết còn bao lâu, nên nói "sắp đóng" mà không nói "gấp".
+ */
+function orderUrgency(order: Pick<PublicOrderRow, 'status' | 'deadlineDate'>, now: Date): PublicJobDto['urgency'] {
+  if (order.status !== 'CLOSING_SOON') return 'NONE';
+  if (!order.deadlineDate) return 'CLOSING';
+  return order.deadlineDate.getTime() - now.getTime() < URGENT_WITHIN_DAYS * DAY_MS ? 'URGENT' : 'CLOSING';
+}
+
+/**
+ * go-live-09 / RQ-02, RQ-03, RQ-24, DEC-21 — bốn field mới sinh ở ĐÚNG MỘT chỗ.
+ *
+ * Cả `toDto` và `toDetailDto` gọi hàm này với cùng `project.staffingOrders`, nên bất biến "hai mapper
+ * nói cùng một sự thật" của `RQ-24` đúng do CẤU TẠO, không phải do fixture may mắn. Nếu mỗi mapper tự
+ * derive lương từ tập slot riêng của nó thì bất biến chỉ xanh trên những hàng hai tập tình cờ trùng
+ * nhau — đúng loại "AC đúng mặt chữ mà vô giá trị".
+ *
+ * Tập lấy lương là slot còn hiệu lực CÒN NHẬN NGƯỜI (`slotAvailable > 0`), cố ý hẹp hơn tập của
+ * `toDetailDto`: một mức lương của vị trí đã đủ chỉ tiêu không phải thứ ứng viên còn ứng được, nên
+ * để nó vào dải "Lương cao nhất" là quảng cáo một con số không mua được.
+ *
+ * `Number(rate)` là chỗ `BigInt` chết: cột là `BigInt?`, và `NextResponse.json` ném
+ * `TypeError: Do not know how to serialize a BigInt` nếu giá trị thô đi tới response. Lương giờ tối
+ * đa cỡ vài trăm nghìn nên không có rủi ro mất chính xác ở `Number`.
+ */
+function jobHeadline(
+  orders: PublicOrderRow[],
+  now: Date,
+): Pick<PublicJobDto, 'salaryMinVnd' | 'salaryMaxVnd' | 'urgency' | 'postedAt'> {
+  const visible = orders.filter((order) => isOrderVisible(order, now));
+
+  const rates = visibleSlots(orders, now)
+    .filter((slot) => slotAvailable(slot) > 0)
+    .map((slot) => slot.hourlyRateVnd)
+    .filter((rate): rate is bigint => rate !== null)
+    .map((rate) => Number(rate));
+
+  let urgency: PublicJobDto['urgency'] = 'NONE';
+  for (const order of visible) {
+    const candidate = orderUrgency(order, now);
+    if (URGENCY_RANK[candidate] > URGENCY_RANK[urgency]) urgency = candidate;
+  }
+
+  // `postedAt` là `createdAt` MỚI NHẤT trong các đơn còn hiệu lực: một dự án cũ vừa mở thêm đơn thì
+  // đúng là vừa có việc mới, và `orderBy` của `Project` (cấm chạm) không nói được điều đó.
+  const postedMs = visible.map((order) => order.createdAt.getTime());
+
+  return {
+    salaryMinVnd: rates.length > 0 ? Math.min(...rates) : null,
+    salaryMaxVnd: rates.length > 0 ? Math.max(...rates) : null,
+    urgency,
+    postedAt: postedMs.length > 0 ? new Date(Math.max(...postedMs)).toISOString() : null,
+  };
+}
+
+--- phep dem:
+AC05_availableSlots_trong_orderUrgency_va_headline[345-410]=0
+AC05_slotsNeeded_hoac_slotsFilled_trong_[345-410]=0
+  (0 = urgency khong doc so cho trong duoi bat ky ten nao)
+--- doi chung DUONG: bien do CO xuat hien o cho khac trong file:
+AC05_control_availableSlots_toan_file=12  (>0 = phep grep con hoat dong)
+
+############ AC-10 — bon grep nhan khong truy duoc nguon ############
+$ grep -rn "tốt nhất" "app/(portal)/"
+HITS[tốt nhất]=0
+$ grep -rn "Đã tuyển đủ" "app/(portal)/"
+HITS[Đã tuyển đủ]=0
+$ grep -rn "Top công ty" app/
+HITS[Top công ty]=0
+$ grep -rn "Người lao động\|Doanh nghiệp đồng hành" "app/(portal)/page.tsx"
+HITS[hai nhan]=0
+--- doi chung DUONG cho ca bon phep tren: cung lenh, mot chuoi CO THAT
+CONTROL[Đang tuyển]=1  (>0 = grep doc duoc UTF-8 trong dung file nay)
+
+############ AC-13 — phan loai 19 hit ############
+trong app/(portal)/ : 0
+trong file *.test.ts : 15
+trong public.service.ts, dong KHONG phai comment:
+SO_DONG_MA_THAT_TRONG_SERVICE=0
+publicSelect co chua clientCompany? -> 0  (0 = khong select quan he do)

@@ -1,0 +1,7 @@
+
+> hrp@0.1.0 test:integration
+> node scripts/ci/integration-preflight.mjs
+
+ENV_BLOCKED
+[integration-preflight] DATABASE_URL_TEST is not set. A dedicated test database is required for the integration lane.
+[integration-preflight] Integration lane NOT run — this is a BLOCKED state, not a PASS.

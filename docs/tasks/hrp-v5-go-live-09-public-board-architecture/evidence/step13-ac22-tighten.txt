@@ -1,0 +1,71 @@
+<stdin>:27: SyntaxWarning: "\(" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\("? A raw string is also an option.
+=== AC-22 � bon file test da ACCEPTED: chi SIET, khong NOI ===
+
+--- (a) so `expect(` cu -> moi (AC doi: KHONG giam o file nao)
+public-card-truth.test.ts                     baseline=  81  HEAD=  83  delta=+2  OK
+public-card-truth.integration.test.ts         baseline=  67  HEAD=  75  delta=+8  OK
+public-ui-premium.static.test.ts              baseline= 196  HEAD= 198  delta=+2  OK
+marketplace-browse.routes.test.ts             baseline=  56  HEAD=  56  delta=+0  OK
+TONG                                          baseline= 400  HEAD= 412  delta=+12
+
+--- (b) kiem co hoc tren phan DIFF cua bon file
+so dong BO   co toEqual            = 0
+so dong THEM co toContain          = 9
+so dong BO   co toBe\(              = 3
+so dong THEM co toBeGreaterThan    = 0
+so dong THEM co .skip              = 0
+so dong BO   co .skip              = 0
+
+--- (c) ba phep dem bang 0 cua EV-24 va dong bam sha256 KHONG duoc xuat hien trong diff
+  outline-none         dong BO=0  dong THEM=0  -> OK (khong xuat hien)
+  transition-colors    dong BO=0  dong THEM=0  -> OK (khong xuat hien)
+  type="checkbox"      dong BO=0  dong THEM=0  -> OK (khong xuat hien)
+  sha256               dong BO=0  dong THEM=0  -> OK (khong xuat hien)
+
+--- (d) doi chung DUONG: phep quet diff nay CO nhin thay chu (khong phai diff rong)
+  so dong THEM trong diff bon file  = 120
+  so dong BO   trong diff bon file  = 17
+  so dong THEM co chua chu "expect" = 18
+
+--- (e) DEC-19: hai chuoi `salary` va `45000` roi vong cam, va khang dinh moi them cung luot
+  dong BO co salary/45000:
+   - for (const forbidden of ['hourlyRateVnd', '45000', 'clientCompanyId', ccId, 'budgetVnd', 'internalNotes', 'salary']) {
+   - expect(JSON.stringify(detail)).not.toContain('45000');
+  dong THEM co khang dinh moi ve salary/45000:
+   + expect(job.salaryMinVnd).toBe(Number(raw?.hourlyRateVnd));
+   + expect(job.salaryMaxVnd).toBe(Number(raw?.hourlyRateVnd));
+   + expect(serialized).toContain('45000');
+   + expect(detail?.salaryMinVnd).toBe(card.salaryMinVnd);
+   + expect(detail?.salaryMaxVnd).toBe(card.salaryMaxVnd);
+   + expect(detailJson).toContain('45000');
+   + expect(job.salaryMinVnd).toBe(45_000);
+   + expect(serialized).toContain('45000');
+
+--- (f) ba dong BO co `toBe(`: AC-22 chi cam DOI toBe -> toBeGreaterThan; ca ba deu la SIET so dem
+  [public-ui-premium.static.test.ts]  -expect(count(page, 'hrp-focus')).toBe(8);
+  [public-ui-premium.static.test.ts]  -expect(count(page, '<FacetSelect')).toBe(2);
+  [public-ui-premium.static.test.ts]  -expect(count(page, 'min-h-11')).toBe(6);
+
+--- (g) dong THEM co `toBe(` — ba so dem moi cua RQ-22 nam trong day
+  [public-card-truth.integration.test.ts]  +expect(job.salaryMinVnd).toBe(Number(raw?.hourlyRateVnd));
+  [public-card-truth.integration.test.ts]  +expect(job.salaryMaxVnd).toBe(Number(raw?.hourlyRateVnd));
+  [public-card-truth.integration.test.ts]  +expect(detail?.salaryMinVnd).toBe(card.salaryMinVnd);
+  [public-card-truth.integration.test.ts]  +expect(detail?.salaryMaxVnd).toBe(card.salaryMaxVnd);
+  [public-card-truth.integration.test.ts]  +expect(detail?.urgency).toBe(card.urgency);
+  [public-card-truth.integration.test.ts]  +expect(detail?.postedAt).toBe(card.postedAt);
+  [public-card-truth.test.ts]  +expect(job.salaryMinVnd).toBe(45_000);
+  [public-ui-premium.static.test.ts]  +expect(count(page, 'hrp-focus')).toBe(12);
+  [public-ui-premium.static.test.ts]  +expect(count(page, '<FacetSelect')).toBe(4);
+  [public-ui-premium.static.test.ts]  +expect(count(page, 'min-h-11')).toBe(10);
+
+--- (h) chin dong THEM co `toContain`: khong dong nao thay cho mot `toEqual` bi bo (so dong BO co toEqual = 0)
+  [public-card-truth.integration.test.ts]  +expect(serialized).toContain('45000');
+  [public-card-truth.integration.test.ts]  +expect(detailJson).toContain('45000');
+  [public-card-truth.integration.test.ts]  +expect(detailJson, forbidden).not.toContain(forbidden);
+  [public-card-truth.test.ts]  +expect(serialized).toContain('45000');
+  [public-ui-premium.static.test.ts]  +// được SIẾT, không nới: một `toContain` cũ thành HAI khẳng định. Vế dưới là vế mạnh hơn — nó cấm
+  [public-ui-premium.static.test.ts]  +expect(page).toContain("isApplied ? 'hrp-btn-done' : 'hrp-btn-primary nav-item-lift'");
+  [public-ui-premium.static.test.ts]  +expect(page).not.toContain('hrp-btn-muted');
+  [public-ui-premium.static.test.ts]  +expect(apply).toContain("isApplied ? 'hrp-btn-done' : 'hrp-btn-primary nav-item-lift'");
+  [public-ui-premium.static.test.ts]  +expect(apply).not.toContain('hrp-btn-muted');
+

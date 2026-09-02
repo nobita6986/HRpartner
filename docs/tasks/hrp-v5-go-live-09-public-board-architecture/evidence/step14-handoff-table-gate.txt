@@ -1,0 +1,6 @@
+MALFORMED ROWS: 0
+AC    rows=24 max=24 gaps=none
+STEP  rows=13 max=13 gaps=none
+traceability rows = 0
+derived AC codes  = none
+GATE_EXIT=0

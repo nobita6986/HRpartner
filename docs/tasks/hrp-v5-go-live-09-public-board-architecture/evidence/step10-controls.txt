@@ -1,0 +1,31 @@
+=== dem tho tren toan file ===
+<button                    8
+<select                    2
+<input                     2
+<textarea                  0
+min-h-11                   10
+w-11 h-11                  1
+hrp-focus                  12
+outline-none               0
+aria-hidden="true"         11
+prefers-reduced-motion     0
+transition-                1
+material-symbols-outlined  9
+
+=== tung control tuong tac: dong + co cao toi thieu + focus ring ===
+line 322   button    cao=min-h-11   focus=hrp-focus
+line 332   button    cao=w-11 h-11  focus=hrp-focus
+line 356   select    cao=KHONG      focus=KHONG
+line 394   select    cao=min-h-11   focus=hrp-focus
+line 463   button    cao=min-h-11   focus=hrp-focus
+line 502   button    cao=min-h-11   focus=hrp-focus
+line 784   input     cao=min-h-11   focus=hrp-focus
+line 818   button    cao=min-h-11   focus=hrp-focus
+line 893   input     cao=min-h-11   focus=hrp-focus
+line 924   button    cao=min-h-11   focus=hrp-focus
+line 976   button    cao=min-h-11   focus=hrp-focus
+line 1078  button    cao=min-h-11   focus=hrp-focus
+
+so control tuong tac = 12
+so control THIEU cao 44px = 1
+so control THIEU hrp-focus = 1
