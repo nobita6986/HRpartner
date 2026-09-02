@@ -7,7 +7,7 @@
 | Task slug | `hrp-v5-go-live-14-industry-label-truth` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
@@ -78,6 +78,7 @@ Cụ thể sau task này:
 | `DEC-08` | `CHOSEN` | RED trước GREEN là bắt buộc và phải đo trên assertion MỚI, không phải trên assertion cũ | Doctrine sẵn có | Final |
 | `DEC-09` | `CHOSEN` | Tier 2 KHÔNG commit, KHÔNG push, KHÔNG deploy. Quyền đó thuộc Owner và Tier 1 | Rule `R-01` | Final |
 | `DEC-10` | `ASSUMED` | Không có consumer ngoài repo đang đọc khoá `industry` của API công khai, vì Marketplace chưa công bố | Tier 1 | Đúng tới khi Marketplace public |
+| `DEC-11` | `CHOSEN` | `AC-01` và `AC-03` của `v1.0` do chính Tier 1 viết SAI mặt chữ. `AC-01` đòi "còn đúng một chip" trong khi trang có năm chip và chỉ một trong số đó là chip ngành. `AC-03` đòi grep `inferIndustry` trả 0, nhưng `DEC-05` lại buộc ghi lại điều đã bị bỏ, nên chuỗi đó BẮT BUỘC còn trong comment — hai câu của tôi tự chống nhau. Sửa lời văn hai AC ở `v1.1` và KHÔNG thêm một việc mã nào | Tier 1, tự đo lại 02/09 | Final |
 
 ## 4. Contract
 
@@ -144,9 +145,9 @@ Cụ thể sau task này:
 
 | AC ID | RQ | Pass condition | Verification method | Required evidence | Blocking? |
 |---|---|---|---|---|---|
-| `AC-01` | `RQ-01` | Nguồn trang chi tiết còn đúng một chip; grep chuỗi `job.industry` trong `app` trả 0 | grep + đọc diff | Lệnh và output | Yes |
+| `AC-01` | `RQ-01` | Bốn phép cùng lúc trên nguồn trang chi tiết: grep `job.industry` trong `app` trả 0; grep `icon="factory"` trả 0; chip loại hình `icon="work"` với nhãn `JOB_TYPE_LABELS[job.jobType]` CÒN NGUYÊN nguyên văn; và phép đếm chip phải CÓ PHẠM VI trên hàng chip đầu trang, không đếm toàn file — trang còn chip ở danh sách vị trí phía dưới nên đếm toàn file không phân biệt được "bỏ chip ngành" với "bỏ một chip vị trí" | grep + đọc diff | Lệnh và output của cả bốn phép | Yes |
 | `AC-02` | `RQ-02` | `PublicJobDto` không còn khoá `industry`; grep `industry:` trong service trả 0 | grep + `tsc` | Lệnh và exit code | Yes |
-| `AC-03` | `RQ-03` | grep `inferIndustry` trong `src` và `app` trả 0 | grep | Output rỗng | Yes |
+| `AC-03` | `RQ-03` | Không còn ĐỊNH NGHĨA hàm nào suy nhãn ngành: grep `function inferIndustry` trong `src` và `app` trả 0, và nguồn service sau khi BÓC COMMENT không khớp `/infer/i`, không khớp `/industry/i`, không khớp regex từ khoá cũ, không khớp năm nhãn cứng cũ. Chuỗi `inferIndustry` ĐƯỢC PHÉP còn trong COMMENT của test, vì `DEC-05` buộc ghi lại điều đã bị bỏ | grep trên nguồn đã bóc comment | Lệnh và output | Yes |
 | `AC-04` | `RQ-04` | Bảy file test đã sửa; không file test nào ngoài `§4.2` bị đổi | `git diff --name-only` | Danh sách file | Yes |
 | `AC-05` | `RQ-05` | Cả hai allow-list không còn `industry`; tồn tại assertion phủ định chặn `inferIndustry` | Đọc test | Trích dẫn hai chỗ | Yes |
 | `AC-06` | `RQ-06` | Có output ĐỎ trên cây chưa sửa mã, và output XANH sau khi sửa | Hai lần chạy `test:unit` | Cả hai output kèm exit code | Yes |
@@ -199,6 +200,7 @@ Tier 1 append quyết định sau khi Tier 3 audit. Không ghi trước.
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
+| `v1.1` | `2026-09-02` | Sửa lời văn `AC-01` và `AC-03` cho đo được, thêm `DEC-11`. Không đổi RQ nào, không đổi `§4.2`, không thêm việc mã — hai AC cũ mô tả sai chính ý định của chúng | Tier 1 tự đo lại chín file của execution round 1 và thấy cả hai AC cũ bất khả thoả trong khi ý định của chúng đã ĐẠT. Bump nằm SAU khi Tier 2 GREEN nhưng TRƯỚC khi có audit nào — đó là cửa sổ duy nhất bump được, vì `verify-audit.ps1` so spec giữa TASK và AUDIT |
 | `v1.0` | `2026-09-02` | Contract ban đầu. Bỏ nhãn ngành nghề suy diễn khỏi toàn bộ bề mặt công khai, tới tận khoá DTO, kèm uỷ quyền sửa đúng bảy file test đang khoá defect và hàng rào phủ định chống tái xuất | Tàn dư của go-live-05; `next_planner_candidate` của `PLANNER_HANDOVER.md` §0 |
 
 
