@@ -240,7 +240,7 @@ describe.skipIf(!enabled)('V5-go-live-05 LIVE — card việc làm trên dữ li
     expect(job.shifts).not.toContain('18:00-02:00');
   }, 30_000);
 
-  it('AC-01/RISK-01/RISK-07 — hourlyRateVnd là BigInt THẬT nhưng DTO chỉ có 14 khóa allow-list', async () => {
+  it('AC-01/RISK-01/RISK-07 — hourlyRateVnd là BigInt THẬT nhưng DTO chỉ có 18 khóa allow-list', async () => {
     // Bằng chứng cột thật: đọc bằng admin để chắc con số nằm trên ĐÚNG slot mà card đọc.
     const raw = await admin.staffingOrderSlot.findFirst({
       where: { staffingOrderId: ELEC.orderId, positionTitle: 'Công nhân lắp ráp' },
@@ -255,12 +255,37 @@ describe.skipIf(!enabled)('V5-go-live-05 LIVE — card việc làm trên dữ li
     const serialized = JSON.stringify(job);
     // go-live-14 / RQ-02, RQ-05: 15 khóa xuống 14. Đây là allow-list khóa DTO thứ NHẤT trong hai bản;
     // bản thứ hai ở `public-card-truth.test.ts`. Sót một bản là hàng rào hở.
+    // go-live-09 / RQ-02, RQ-22: 14 lên 18 — thêm ĐÚNG bốn tên của `RQ-02`, `toEqual` giữ nguyên nên
+    // phép so vẫn là so tập khóa CHÍNH XÁC trên DB THẬT.
     expect(Object.keys(job).sort()).toEqual(
       ['availableSlots', 'deadline', 'id', 'jobType', 'location', 'locations', 'position',
-        'positionTitles', 'shift', 'shiftType', 'shifts', 'slug', 'statusLabel', 'title'].sort(),
+        'positionTitles', 'postedAt', 'salaryMaxVnd', 'salaryMinVnd', 'shift', 'shiftType',
+        'shifts', 'slug', 'statusLabel', 'title', 'urgency'].sort(),
     );
     expect(job).not.toHaveProperty('industry');
-    for (const forbidden of ['hourlyRateVnd', '45000', 'clientCompanyId', ccId, 'budgetVnd', 'internalNotes', 'salary']) {
+    /**
+     * go-live-09 / DEC-19 — hai chuỗi `'45000'` và `'salary'` RA KHỎI vòng cấm, và ĐÚNG LƯỢT NÀY hai
+     * khẳng định mạnh hơn vào thay. Lý do bỏ hẹp và có căn cứ: chúng cấm chính con số nay đã được công
+     * bố có cơ sở (`EV-03`/`EV-04`: `hourlyRateVnd` là lương giờ của NGƯỜI LAO ĐỘNG, còn giá bán cho
+     * khách nằm ở `client_rate_cards`), và `'salary'` là tiền tố của chính tên khoá công khai mới.
+     *
+     * Siết thứ nhất: con số công bố bằng ĐÚNG giá trị cột vừa đọc bằng admin ở trên. Vòng cấm cũ chỉ
+     * nói "không có 45000 ở đâu cả" — một bản cài đặt trả `null` cho mọi mức lương cũng thoả nó. Hai
+     * dòng dưới thì không thể thoả bằng dữ liệu vắng.
+     */
+    expect(job.salaryMinVnd).toBe(Number(raw?.hourlyRateVnd));
+    expect(job.salaryMaxVnd).toBe(Number(raw?.hourlyRateVnd));
+    expect(serialized).toContain('45000');
+    /**
+     * Siết thứ hai: vòng cấm giữ nguyên bốn tên nội bộ cũ và THÊM bốn tên của bề mặt thương mại, tức
+     * mọi cái tên mà một giá `client_rate_cards` có thể mượn để đi ra ngoài. Cùng với `toEqual` 18 khoá
+     * ở trên, một con số giá bán không còn chỗ nào để nằm: hoặc nó mang một trong các tên này (bị vòng
+     * dưới bắt), hoặc nó là khoá thứ 19 (bị `toEqual` bắt).
+     * GIỚI HẠN PHÉP ĐO, ghi trong HANDOFF: seed của file này không tạo dòng `client_rate_cards` nào,
+     * nên lằn ranh "không giá bán nào lọt ra" được canh bằng TÊN cộng tập khoá chính xác, chứ không
+     * bằng một giá trị đã seed.
+     */
+    for (const forbidden of ['hourlyRateVnd', 'clientCompanyId', ccId, 'budgetVnd', 'internalNotes', 'rateCard', 'price', 'billing', 'margin']) {
       expect(serialized, forbidden).not.toContain(forbidden);
     }
   }, 30_000);
@@ -306,7 +331,22 @@ describe.skipIf(!enabled)('V5-go-live-05 LIVE — card việc làm trên dữ li
     expect(detail?.shiftType).toBeNull();
     expect(card.shiftType).toBe('ca_ngay');
     expect(detail?.statusLabel).toBe('Đang tuyển');
-    expect(JSON.stringify(detail)).not.toContain('45000');
+    /**
+     * go-live-09 / RQ-24, DEC-19 — lần xuất hiện THỨ BA của `'45000'`, đúng chỗ `EV-21` đã dự liệu.
+     * `RQ-24` buộc `toDetailDto` sinh đủ bốn field của `RQ-02`, nên con số này nay CÓ MẶT trong payload
+     * chi tiết một cách có căn cứ và khẳng định phủ định cũ trở thành bất khả thoả. Đổi lại là phép đo
+     * MẠNH HƠN: đo trên DB THẬT rằng hai mapper nói CÙNG một sự thật — thứ mà lane unit chỉ đo được
+     * trên mock — cộng vòng cấm tên nội bộ và danh tính Client vẫn còn nguyên trên payload chi tiết.
+     */
+    const detailJson = JSON.stringify(detail);
+    expect(detail?.salaryMinVnd).toBe(card.salaryMinVnd);
+    expect(detail?.salaryMaxVnd).toBe(card.salaryMaxVnd);
+    expect(detail?.urgency).toBe(card.urgency);
+    expect(detail?.postedAt).toBe(card.postedAt);
+    expect(detailJson).toContain('45000');
+    for (const forbidden of ['hourlyRateVnd', 'clientCompanyId', ccId, 'budgetVnd', 'internalNotes', 'rateCard', 'price', 'billing', 'margin']) {
+      expect(detailJson, forbidden).not.toContain(forbidden);
+    }
   }, 30_000);
 
   it('AC-12 — dự án nội bộ không có card, không facet, và trang chi tiết trả null', async () => {

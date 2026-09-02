@@ -38,7 +38,8 @@ function detailRow(slots: Array<ReturnType<typeof slot>>) {
     name: 'Lap rap dien tu Bac Ninh',
     siteAddress: 'Bac Ninh',
     staffingOrders: [
-      { status: 'OPEN', title: 'Tuyen cong nhan lap rap', description: null, deadlineDate: null, slots },
+      // go-live-09 / RQ-01: `createdAt` của đơn nay nằm trong `publicSelect`, nên payload thật có nó.
+      { status: 'OPEN', title: 'Tuyen cong nhan lap rap', description: null, deadlineDate: null, createdAt: new Date('2026-01-15T00:00:00.000Z'), slots },
     ],
   };
 }

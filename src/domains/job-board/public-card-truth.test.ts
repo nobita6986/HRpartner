@@ -50,10 +50,12 @@ function slot(overrides: Partial<Slot> = {}): Slot {
   };
 }
 
-type Order = { status: string; title: string; description: string | null; deadlineDate: Date | null; slots: Slot[] };
+type Order = { status: string; title: string; description: string | null; deadlineDate: Date | null; createdAt: Date; slots: Slot[] };
 
 function order(slots: Slot[], overrides: Partial<Order> = {}): Order {
-  return { status: 'OPEN', title: 'Tuyển công nhân lắp ráp', description: null, deadlineDate: null, slots, ...overrides };
+  // go-live-09 / RQ-01: `publicSelect` nay select cả `createdAt` của đơn, nên fixture phải mang nó
+  // để còn là hình dạng dòng THẬT. Mốc cố định để kết quả không đổi theo ngày chạy.
+  return { status: 'OPEN', title: 'Tuyển công nhân lắp ráp', description: null, deadlineDate: null, createdAt: new Date('2026-01-15T00:00:00.000Z'), slots, ...overrides };
 }
 
 type Row = { id: string; code: string; name: string; siteAddress: string | null; staffingOrders: Order[] };
@@ -405,9 +407,14 @@ describe('AC-05/RQ-06 — q/area/shift khớp trên dữ liệu thật, bỏ d�
 describe('AC-01/AC-03, DEC-10/RISK-01/RISK-07 — DTO đúng allow-list, JSON an toàn', () => {
   // go-live-14 / RQ-02, RQ-05 — 15 khóa xuống 14: `industry` đã bị bỏ khỏi allow-list công khai vì
   // nó là khóa duy nhất không truy nguyên được về một cột canonical nào.
+  // go-live-09 / RQ-02, RQ-22 — 14 khóa lên 18: thêm ĐÚNG bốn tên của `RQ-02`. `toEqual` giữ nguyên,
+  // nên đây vẫn là phép so tập khóa CHÍNH XÁC: một khóa thứ 19 lọt vào mapper là FAIL, và bốn tên này
+  // là bốn tên duy nhất được thêm. Tên cột nội bộ `hourlyRateVnd` KHÔNG có mặt và vẫn bị cấm ở vòng
+  // dưới — thứ được công bố là con số, không phải cột.
   const PUBLIC_KEYS = [
     'availableSlots', 'deadline', 'id', 'jobType', 'location', 'locations',
-    'position', 'positionTitles', 'shift', 'shiftType', 'shifts', 'slug', 'statusLabel', 'title',
+    'position', 'positionTitles', 'postedAt', 'salaryMaxVnd', 'salaryMinVnd',
+    'shift', 'shiftType', 'shifts', 'slug', 'statusLabel', 'title', 'urgency',
   ];
 
   it('card DTO có ĐÚNG tập khóa công khai, không thừa một khóa nào', async () => {
@@ -443,6 +450,12 @@ describe('AC-01/AC-03, DEC-10/RISK-01/RISK-07 — DTO đúng allow-list, JSON an
     // RISK-07: `JSON.stringify` NÉM trên BigInt, nên một khóa như vậy làm chết cả route chứ không
     // chỉ rò rỉ. Serialize được nghĩa là không BigInt nào đi vào DTO.
     expect(() => JSON.stringify(job)).not.toThrow();
+    // go-live-09 / DEC-19, RQ-22 — SIẾT: dòng thô trên mang `hourlyRateVnd: 45_000n`, nên từ nay
+    // không đủ nếu DTO chỉ "không có tên cột". Con số CÔNG BỐ phải bằng đúng giá trị cột, đúng kiểu
+    // `number`, và đi tới được JSON. Không có hai dòng này thì một bản cài đặt trả `null` cho mọi
+    // mức lương vẫn xanh cả vòng cấm ở trên — đúng loại AC đúng mặt chữ mà vô giá trị.
+    expect(job.salaryMinVnd).toBe(45_000);
+    expect(serialized).toContain('45000');
   });
 
   it('không có con số lương nào được suy ra từ số chỗ trống', async () => {

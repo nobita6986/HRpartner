@@ -4,6 +4,13 @@ import { listPublicJobProjection } from './public.service';
 
 const ADMIN = { userId: 'admin-1', role: 'ADMIN' as const };
 
+/**
+ * go-live-09 / RQ-01 — `publicSelect` nay select cả `staffingOrders.createdAt`, nên fixture của
+ * đường đọc công khai phải mang field đó để còn là hình dạng dòng THẬT. Mốc cố định, không
+ * `new Date()`: fixture phải cho cùng một kết quả ở mọi lần chạy và mọi múi giờ.
+ */
+const SEEDED_AT = new Date('2026-01-15T00:00:00.000Z');
+
 function project(overrides: Record<string, unknown> = {}) {
   return {
     id: 'project-1',
@@ -44,7 +51,7 @@ function publicProjectionTx(projectName: string) {
     project: {
       findMany: vi.fn().mockResolvedValue([{
         id: 'project-9', code: 'PRJ-009', name: projectName, siteAddress: 'Bac Ninh',
-        staffingOrders: [{ status: 'OPEN', title: 'Cong nhan lap rap', description: null, deadlineDate: null, slots: [{ positionCode: 'ASSY', positionTitle: 'Cong nhan lap rap', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A' }] }],
+        staffingOrders: [{ status: 'OPEN', title: 'Cong nhan lap rap', description: null, deadlineDate: null, createdAt: SEEDED_AT, slots: [{ positionCode: 'ASSY', positionTitle: 'Cong nhan lap rap', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A' }] }],
       }]),
       count: vi.fn().mockResolvedValue(1),
     },
@@ -91,7 +98,7 @@ describe('MP-1 publish and public job contracts', () => {
       project: {
         findMany: vi.fn().mockResolvedValue([{
           id: 'project-1', code: 'PRJ-001', name: 'Warehouse Operators', siteAddress: 'Bac Ninh',
-          staffingOrders: [{ status: 'OPEN', title: 'Warehouse picker', description: null, deadlineDate: null, slots: [{ positionCode: 'PICKER', positionTitle: 'Picker', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A' }] }],
+          staffingOrders: [{ status: 'OPEN', title: 'Warehouse picker', description: null, deadlineDate: null, createdAt: SEEDED_AT, slots: [{ positionCode: 'PICKER', positionTitle: 'Picker', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A' }] }],
         }]),
         count: vi.fn().mockResolvedValue(1),
       },

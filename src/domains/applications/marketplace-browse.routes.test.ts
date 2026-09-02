@@ -102,6 +102,14 @@ const PUBLISHED_JOB: PublicJobDto = {
   availableSlots: 12,
   deadline: '2026-09-30',
   statusLabel: 'Đang tuyển',
+  // go-live-09 / RQ-22: bốn field của `RQ-02` vào fixture. Cùng lý do như comment trên — object
+  // literal khai kiểu tường minh là một trong rất ít chỗ `tsc` thật sự chặn, nên thiếu bốn field này
+  // thì file không biên dịch. Giá trị chọn có lương THẬT để route trả về được kiểm là số, không phải
+  // `BigInt`, và `urgency: 'NONE'` khớp `statusLabel: 'Đang tuyển'` theo `RQ-04`.
+  salaryMinVnd: 32000,
+  salaryMaxVnd: 45000,
+  urgency: 'NONE',
+  postedAt: '2026-09-01T00:00:00.000Z',
   // go-live-05 / RQ-02: ba field đơn ở trên là PHẦN TỬ ĐẦU của ba mảng này, không phải giá trị rời.
   // Fixture giữ đúng quan hệ đó để nó vẫn là hình dạng mà service thật có thể sinh ra.
   positionTitles: ['Công nhân sản xuất', 'Nhân viên kho'],
@@ -116,6 +124,22 @@ const LIST_RESULT: PublicJobListResult = {
   facets: {
     areas: ['KCN VSIP 1', 'KCN Yên Phong'],
     shifts: ['06:00-14:00', '14:00-22:00'],
+  },
+  // go-live-09 / RQ-22, RQ-20: khóa thứ năm THUẦN CỘNG. Route chỉ `NextResponse.json(projection)`
+  // nên fixture này là chỗ duy nhất khẳng định được rằng `overview` đi qua route mà không cần sửa
+  // route. Số ở đây nhất quán với `LIST_RESULT`: một việc, 12 chỗ, hai khu vực.
+  overview: {
+    totals: { jobs: 1, slots: 12, areas: 2 },
+    areaCounts: [
+      { value: 'KCN VSIP 1', count: 1 },
+      { value: 'KCN Yên Phong', count: 1 },
+    ],
+    shiftCounts: [
+      { value: '06:00-14:00', count: 1 },
+      { value: '14:00-22:00', count: 1 },
+    ],
+    newest: [PUBLISHED_JOB],
+    topPaid: [PUBLISHED_JOB],
   },
 };
 

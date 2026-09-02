@@ -228,10 +228,24 @@ describe('go-live-08 / RQ-07 — vòng focus phủ đủ mọi control', () => {
     expect(count(css, 'outline: none')).toBe(0);
   });
 
-  it('cả 9 control tương tác của trang landing đều mang lớp vòng focus', () => {
-    // 8 lần xuất hiện trong nguồn = 9 control khi render: FacetSelect được dùng hai lần.
-    expect(count(page, 'hrp-focus')).toBe(8);
-    expect(count(page, '<FacetSelect')).toBe(2);
+  it('cả 15 control tương tác của trang landing đều mang lớp vòng focus', () => {
+    // go-live-09 / RQ-22 — hai phép đếm dưới đây được NÂNG, kèm itemise từng control mới.
+    //
+    // `hrp-focus` 8 → 12. Tám của go-live-08 còn nguyên: tiêu đề card, Ứng tuyển, Lưu việc, thân
+    // `FacetSelect`, ô từ khoá của panel, Tìm kiếm, Thử lại, Xem thêm. Bốn control MỚI của 09:
+    //   1. `page:459`  nút `Ứng tuyển ngay` của card nổi bật nửa phải Hero (`RQ-08`)
+    //   2. `page:497`  nút tag của hai dải theo trục — khu vực và ca làm (`RQ-13`, `RQ-14`)
+    //   3. `page:781`  ô từ khoá của Hero (`RQ-05`) — id riêng, KHÔNG phải ô của panel
+    //   4. `page:813`  nút `Tìm việc` của Hero (`RQ-05`)
+    //
+    // `<FacetSelect` 2 → 4: Hero thêm ô khu vực và ô mức lương tối thiểu (`RQ-05`, `RQ-07`,
+    // `DEC-12`). Cả hai dùng LẠI đúng component này thay vì dựng `<select>` thứ hai, nên phép đếm
+    // element native ở `RQ-08` không bị chạm.
+    //
+    // Số control khi render: 12 lần xuất hiện trong nguồn, trong đó thân `FacetSelect` được dùng
+    // bốn lần ⇒ 12 - 1 + 4 = 15.
+    expect(count(page, 'hrp-focus')).toBe(12);
+    expect(count(page, '<FacetSelect')).toBe(4);
     expect(count(nav, 'hrp-focus')).toBe(4);
   });
 });
@@ -311,10 +325,16 @@ describe('go-live-08 / RQ-09 — trạng thái nút', () => {
     expect(nav).toContain('hrp-btn-outline hrp-focus');
   });
 
-  it('hai trạng thái không bấm được của nút Ứng tuyển nói rõ bằng con trỏ', () => {
+  it('trạng thái không bấm được của nút Ứng tuyển nói rõ bằng con trỏ, và nhánh chết đã đi', () => {
+    // Hai quy tắc CSS giữ NGUYÊN phép đo: `app/globals.css` không bị task 09 chạm một byte.
     expect(block(cssCode, '.hrp-btn-muted {')).toContain('cursor: not-allowed;');
     expect(block(cssCode, '.hrp-btn-done {')).toContain('cursor: default;');
-    expect(page).toContain("isFull ? 'hrp-btn-muted' : isApplied ? 'hrp-btn-done' : 'hrp-btn-primary nav-item-lift'");
+    // go-live-09 / RQ-23 — mặt chữ được ghim ở đây ĐỔI vì `isFull` là nhánh không bao giờ chạy được:
+    // `toDto` chỉ trả việc CÒN chỗ (`EV-09`), nên `availableSlots === 0` không tới được UI. Phép đo
+    // được SIẾT, không nới: một `toContain` cũ thành HAI khẳng định. Vế dưới là vế mạnh hơn — nó cấm
+    // lớp của nhánh chết quay lại trang, điều bản cũ không cấm được vì bản cũ ĐÒI chuỗi đó có mặt.
+    expect(page).toContain("isApplied ? 'hrp-btn-done' : 'hrp-btn-primary nav-item-lift'");
+    expect(page).not.toContain('hrp-btn-muted');
   });
 });
 
@@ -620,9 +640,12 @@ describe('go-live-08 / RQ-17 — vùng chạm 44px', () => {
     expect(page).not.toContain('w-9 h-9 rounded-full border border-outline-variant');
   });
 
-  it('sáu control còn lại mang sàn chiều cao 44px', () => {
-    // Ứng tuyển, select bộ lọc, Tìm kiếm, Thử lại, Xem thêm, ô từ khoá.
-    expect(count(page, 'min-h-11')).toBe(6);
+  it('mười control còn lại mang sàn chiều cao 44px', () => {
+    // Sáu của go-live-08: Ứng tuyển, select bộ lọc, Tìm kiếm, Thử lại, Xem thêm, ô từ khoá.
+    // go-live-09 / RQ-17, RQ-22 — nâng 6 → 10, bốn control MỚI, cùng bốn vị trí của phép đếm vòng
+    // focus ở trên: `Ứng tuyển ngay` của card nổi bật, nút tag của hai dải theo trục, ô từ khoá của
+    // Hero, nút `Tìm việc` của Hero. Không control mới nào nằm ngoài danh sách đó.
+    expect(count(page, 'min-h-11')).toBe(10);
     // Đăng nhập và Đăng ký, cả bản desktop và bản mobile.
     expect(count(nav, 'min-h-11')).toBe(4);
   });
@@ -732,7 +755,10 @@ describe('go-live-08 / RQ-24 — điều hướng card của GO-LIVE-12 còn ngu
     const apply = element(page, 'onClick={() => onApply(job)}', '</button>');
     expect(page).toContain("'relative z-10 hrp-focus font-semibold px-6 min-h-11 rounded-lg '");
     expect(apply).toContain('relative z-10 hrp-focus font-semibold');
-    expect(apply).toContain("isFull ? 'hrp-btn-muted' : isApplied ? 'hrp-btn-done' : 'hrp-btn-primary nav-item-lift'");
+    // go-live-09 / RQ-23 — cùng một phép SIẾT như khối con trỏ ở trên, đo trên chính khối nút
+    // Ứng tuyển đã cắt ra: mặt chữ còn sống được ghim, và lớp của nhánh chết bị cấm trong khối đó.
+    expect(apply).toContain("isApplied ? 'hrp-btn-done' : 'hrp-btn-primary nav-item-lift'");
+    expect(apply).not.toContain('hrp-btn-muted');
     const save = element(page, 'aria-label="Lưu việc"', '</button>');
     expect(save).toContain('className="relative z-10 hrp-focus w-11 h-11');
     expect(count(page, 'className="relative z-10')).toBe(2);

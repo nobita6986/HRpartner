@@ -27,7 +27,36 @@ export interface PublicJobDto {
   jobType: 'toan_thoi_gian' | 'ban_thoi_gian' | 'thoi_vu';
   availableSlots: number;
   deadline: string | null;
+  /**
+   * go-live-09 / RQ-04, DEC-04 — thôi là hằng: `'Sắp hết hạn'` khi `urgency` khác `'NONE'`,
+   * `'Đang tuyển'` khi `'NONE'`. Khóa KHÔNG bị xóa vì cả card, trang chi tiết và
+   * `public-detail.meta.ts` đang đọc nó.
+   */
   statusLabel: string;
+  /**
+   * go-live-09 / RQ-02, DEC-01/DEC-03 — lương GIỜ của người lao động, đọc từ
+   * `StaffingOrderSlot.hourlyRateVnd` của ĐÚNG tập slot còn nhận người. Hai điều cố ý:
+   *
+   *   1. Tên khóa công khai là `salaryMinVnd`/`salaryMaxVnd`, KHÔNG phải `hourlyRateVnd`. Chuỗi tên
+   *      cột nội bộ vẫn bị cấm xuất hiện trong payload (`DEC-19`), và giá bán cho khách nằm ở
+   *      `client_rate_cards` nên công bố con số này không lộ margin.
+   *   2. Kiểu là `number`, không phải `bigint`. Cột là `BigInt?` trong Prisma; trả thẳng ra thì
+   *      `NextResponse.json` ném `TypeError: Do not know how to serialize a BigInt` lúc chạy thật
+   *      trong khi mọi gate tĩnh vẫn xanh.
+   *
+   * `null` khi không slot nào còn nhận người có lương — UI in `"Lương thương lượng"`, KHÔNG in
+   * `"0 đ"` (`DEC-03`). Nhánh `null` là nhánh phổ biến ở dev nên nó là thiết kế bậc một.
+   */
+  salaryMinVnd: number | null;
+  salaryMaxVnd: number | null;
+  /**
+   * go-live-09 / RQ-03, DEC-04 — mức khẩn chạy bằng TRẠNG THÁI THẬT của đơn, không bằng ngưỡng số
+   * chỗ trống. Không một nhánh nào của phép tính này đọc `availableSlots`: một đơn 200 chỗ vừa mở
+   * không phải "gấp", và một đơn 3 chỗ mở từ tháng trước cũng không phải "gấp".
+   */
+  urgency: 'NONE' | 'CLOSING' | 'URGENT';
+  /** go-live-09 / RQ-02 — ISO của `createdAt` ĐƠN còn hiệu lực mới nhất; trục sắp của `overview.newest`. */
+  postedAt: string | null;
   /**
    * go-live-05 / RQ-04, DEC-03/DEC-04 — TẤT CẢ giá trị của các slot còn hiệu lực, unique, bỏ rỗng,
    * sort ổn định. Ba field đơn `position`/`shift`/`location` ở trên là phần tử đầu của đúng ba mảng
@@ -63,11 +92,45 @@ export interface PublicJobFacets {
   shifts: string[];
 }
 
+/** Một cặp `{ tên, số việc }` của `overview`. Mục có `count === 0` KHÔNG bao giờ được trả về. */
+export interface PublicJobOverviewEntry {
+  value: string;
+  count: number;
+}
+
+/**
+ * go-live-09 / RQ-21, DEC-18 — MỌI con số toàn cục của bề mặt công khai sinh ở đây.
+ *
+ * Tính trên tập eligible **trước bộ lọc và trước phân trang**, cùng chỗ với `facets`. Lý do là
+ * `EV-18`: trang chỉ tải `PAGE_SIZE = 12` dòng, nên mọi phép đếm, phép tổng hay phép xếp hạng chạy
+ * trên mảng đang render là sự thật của MỘT TRANG, và nó nói sai đúng vào lúc dữ liệu nhiều lên —
+ * một dải tên "Lương cao nhất" mà chỉ cao nhất trong 12 dòng đầu là một khẳng định sai.
+ *
+ * `areaCounts` đếm bằng ĐÚNG vị từ mà bộ lọc `area` dùng (`areaHaystack`, đã fold dấu, gồm cả
+ * `siteAddress`), nên số trên tag bằng đúng `total` của lần gọi lại với `area` đó. Client KHÔNG thể
+ * tự tính con số này: `siteAddress` không có trong DTO. `shiftCounts` đếm bằng đúng vị từ
+ * `job.shifts.some` với so khớp chuỗi con KHÔNG fold dấu — cũng đúng vị từ của bộ lọc `shift`.
+ *
+ * `newest` và `topPaid` mang `PublicJobDto` ĐẦY ĐỦ chứ không chỉ `slug`: một `slug` không nằm trong
+ * trang đang tải thì trang không có gì để render, và nếu client chỉ render các slug tình cờ đã tải
+ * thì dải bị cắt ngắn trong im lặng. Giá phải trả là tối đa 12 DTO thêm trong response, và chúng đi
+ * qua đúng `toDto` nên chịu đúng allow-list của card.
+ */
+export interface PublicJobOverview {
+  totals: { jobs: number; slots: number; areas: number };
+  areaCounts: PublicJobOverviewEntry[];
+  shiftCounts: PublicJobOverviewEntry[];
+  newest: PublicJobDto[];
+  topPaid: PublicJobDto[];
+}
+
 export interface PublicJobListResult {
   jobs: PublicJobDto[];
   nextOffset: number | null;
   total: number;
   facets: PublicJobFacets;
+  /** go-live-09 / RQ-21 — khóa THUẦN CỘNG thứ năm; bốn khóa trên không đổi tên, kiểu hay cách tính. */
+  overview: PublicJobOverview;
 }
 
 /**
@@ -171,8 +234,8 @@ function isExpired(date: Date | null, now: Date): boolean {
 }
 
 /** Hình dạng dòng mà `publicSelect` trả về. Đặt tên để `toDto` và `toDetailDto` dùng đúng một kiểu. */
-type PublicSlotRow = { positionCode: string; positionTitle: string; slotsNeeded: number; slotsFilled: number; shiftStart: string | null; shiftEnd: string | null; validTo: Date | null; workLocation: string | null };
-type PublicOrderRow = { status: string; title: string; description: string | null; deadlineDate: Date | null; slots: PublicSlotRow[] };
+type PublicSlotRow = { positionCode: string; positionTitle: string; slotsNeeded: number; slotsFilled: number; shiftStart: string | null; shiftEnd: string | null; validTo: Date | null; workLocation: string | null; hourlyRateVnd: bigint | null };
+type PublicOrderRow = { status: string; title: string; description: string | null; deadlineDate: Date | null; createdAt: Date; slots: PublicSlotRow[] };
 type PublicProjectRow = { id: string; code: string; name: string; siteAddress: string | null; staffingOrders: PublicOrderRow[] };
 
 // RQ-03 / AC-03 / RISK-07: ĐÚNG MỘT định nghĩa cho mỗi vị từ lọc, gọi từ cả đường danh sách và
@@ -279,6 +342,72 @@ function earliestDeadline(orders: PublicOrderRow[]): Date | null {
     .sort((a, b) => a.getTime() - b.getTime())[0] ?? null;
 }
 
+/** go-live-09 / RQ-03 — ngưỡng "hạn kề" của `urgency`. Một con số, đặt một chỗ. */
+const URGENT_WITHIN_DAYS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Thứ tự nặng dần của `urgency`, để gộp nhiều đơn của cùng một dự án về một giá trị. */
+const URGENCY_RANK: Record<PublicJobDto['urgency'], number> = { NONE: 0, CLOSING: 1, URGENT: 2 };
+
+/**
+ * `urgency` của MỘT đơn, đúng ba nhánh của `RQ-03`.
+ *
+ * Nhánh `deadlineDate === null` trả `'CLOSING'` chứ không `'NONE'`: đơn đã được người vận hành đánh
+ * dấu `CLOSING_SOON` là một sự thật do con người khẳng định, và việc thiếu ngày hạn không xoá sự thật
+ * đó — nó chỉ làm ta không biết còn bao lâu, nên nói "sắp đóng" mà không nói "gấp".
+ */
+function orderUrgency(order: Pick<PublicOrderRow, 'status' | 'deadlineDate'>, now: Date): PublicJobDto['urgency'] {
+  if (order.status !== 'CLOSING_SOON') return 'NONE';
+  if (!order.deadlineDate) return 'CLOSING';
+  return order.deadlineDate.getTime() - now.getTime() < URGENT_WITHIN_DAYS * DAY_MS ? 'URGENT' : 'CLOSING';
+}
+
+/**
+ * go-live-09 / RQ-02, RQ-03, RQ-24, DEC-21 — bốn field mới sinh ở ĐÚNG MỘT chỗ.
+ *
+ * Cả `toDto` và `toDetailDto` gọi hàm này với cùng `project.staffingOrders`, nên bất biến "hai mapper
+ * nói cùng một sự thật" của `RQ-24` đúng do CẤU TẠO, không phải do fixture may mắn. Nếu mỗi mapper tự
+ * derive lương từ tập slot riêng của nó thì bất biến chỉ xanh trên những hàng hai tập tình cờ trùng
+ * nhau — đúng loại "AC đúng mặt chữ mà vô giá trị".
+ *
+ * Tập lấy lương là slot còn hiệu lực CÒN NHẬN NGƯỜI (`slotAvailable > 0`), cố ý hẹp hơn tập của
+ * `toDetailDto`: một mức lương của vị trí đã đủ chỉ tiêu không phải thứ ứng viên còn ứng được, nên
+ * để nó vào dải "Lương cao nhất" là quảng cáo một con số không mua được.
+ *
+ * `Number(rate)` là chỗ `BigInt` chết: cột là `BigInt?`, và `NextResponse.json` ném
+ * `TypeError: Do not know how to serialize a BigInt` nếu giá trị thô đi tới response. Lương giờ tối
+ * đa cỡ vài trăm nghìn nên không có rủi ro mất chính xác ở `Number`.
+ */
+function jobHeadline(
+  orders: PublicOrderRow[],
+  now: Date,
+): Pick<PublicJobDto, 'salaryMinVnd' | 'salaryMaxVnd' | 'urgency' | 'postedAt'> {
+  const visible = orders.filter((order) => isOrderVisible(order, now));
+
+  const rates = visibleSlots(orders, now)
+    .filter((slot) => slotAvailable(slot) > 0)
+    .map((slot) => slot.hourlyRateVnd)
+    .filter((rate): rate is bigint => rate !== null)
+    .map((rate) => Number(rate));
+
+  let urgency: PublicJobDto['urgency'] = 'NONE';
+  for (const order of visible) {
+    const candidate = orderUrgency(order, now);
+    if (URGENCY_RANK[candidate] > URGENCY_RANK[urgency]) urgency = candidate;
+  }
+
+  // `postedAt` là `createdAt` MỚI NHẤT trong các đơn còn hiệu lực: một dự án cũ vừa mở thêm đơn thì
+  // đúng là vừa có việc mới, và `orderBy` của `Project` (cấm chạm) không nói được điều đó.
+  const postedMs = visible.map((order) => order.createdAt.getTime());
+
+  return {
+    salaryMinVnd: rates.length > 0 ? Math.min(...rates) : null,
+    salaryMaxVnd: rates.length > 0 ? Math.max(...rates) : null,
+    urgency,
+    postedAt: postedMs.length > 0 ? new Date(Math.max(...postedMs)).toISOString() : null,
+  };
+}
+
 function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
   const live = sortSlots(visibleSlots(project.staffingOrders, now));
   const availableSlots = live.reduce((sum, slot) => sum + slotAvailable(slot), 0);
@@ -300,6 +429,8 @@ function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
   const summary = summarizeSlots(slots, project);
   const searchableText = searchableTextOf(project);
   const deadline = earliestDeadline(project.staffingOrders);
+  // go-live-09 / RQ-24: MỘT lời gọi, dùng chung với `toDetailDto`. Xem `jobHeadline`.
+  const headline = jobHeadline(project.staffingOrders, now);
 
   return {
     id: project.id,
@@ -314,7 +445,10 @@ function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
     jobType: classifyJobType(searchableText, slots),
     availableSlots,
     deadline: deadline?.toISOString() ?? null,
-    statusLabel: 'Đang tuyển',
+    // go-live-09 / RQ-04: nhãn theo `urgency`, KHÔNG theo `availableSlots`. Nhãn cũ là hằng
+    // `'Đang tuyển'` nên nó nói y một câu cho cả đơn còn 45 ngày và đơn còn 2 ngày.
+    statusLabel: headline.urgency === 'NONE' ? 'Đang tuyển' : 'Sắp hết hạn',
+    ...headline,
     positionTitles: summary.positionTitles,
     locations: summary.locations,
     shifts: summary.shifts,
@@ -371,7 +505,12 @@ function toDetailDto(project: PublicProjectRow, now: Date): PublicJobDetailDto |
     totalSlotsFilled: positions.reduce((sum, position) => sum + position.slotsFilled, 0),
     positions,
     deadline: deadline?.toISOString() ?? null,
+    // go-live-09 / RQ-24 CÓ Ý KHÔNG chạm nhãn này. `RQ-04` nói về hằng `'Đang tuyển'` của `toDto`;
+    // nhãn ở đây đã động từ `go-live-12` và mang một sự thật KHÁC mà `DEC-14` buộc trang chi tiết
+    // phải nói: một việc đã đủ chỉ tiêu vẫn mở được `200` và phải tự khai `'Đã đủ chỉ tiêu'`. Ghi
+    // `'Sắp hết hạn'` lên đó sẽ xoá đúng câu đó. Bốn field của `RQ-02` thì bằng đúng `toDto`.
     statusLabel: availableSlots > 0 ? 'Đang tuyển' : 'Đã đủ chỉ tiêu',
+    ...jobHeadline(project.staffingOrders, now),
     positionTitles: summary.positionTitles,
     locations: summary.locations,
     shifts: summary.shifts,
@@ -394,8 +533,11 @@ const publicSelect = Prisma.validator<Prisma.ProjectSelect>()({
       title: true,
       description: true,
       deadlineDate: true,
+      // go-live-09 / RQ-01: nguồn DUY NHẤT của `postedAt`. Cột `Project` không có ngày mở đơn, và
+      // `orderBy` của `Project` (cấm chạm) không nói được "dự án cũ vừa mở thêm đơn".
+      createdAt: true,
       slots: {
-        select: { positionCode: true, positionTitle: true, slotsNeeded: true, slotsFilled: true, shiftStart: true, shiftEnd: true, validTo: true, workLocation: true },
+        select: { positionCode: true, positionTitle: true, slotsNeeded: true, slotsFilled: true, shiftStart: true, shiftEnd: true, validTo: true, workLocation: true, hourlyRateVnd: true },
       },
     },
   },
@@ -464,6 +606,60 @@ export async function listPublicJobProjection(
     shifts: summarize(eligible.flatMap(({ job }) => job.shifts)),
   };
 
+  /**
+   * go-live-09 / RQ-21, DEC-18 — `overview` sinh Ở ĐÂY, cạnh `facets`, trên cùng tập `eligible`, tức
+   * TRƯỚC bộ lọc và TRƯỚC phân trang.
+   *
+   * Vì sao không để client tính: theo `EV-18` trang chỉ tải `PAGE_SIZE = 12` dòng, nên mọi phép đếm
+   * hay xếp hạng chạy trên mảng đang render là sự thật của MỘT TRANG. Nó nói đúng lúc dữ liệu ít và
+   * nói sai đúng vào lúc dữ liệu nhiều lên — loại lỗi không có test nào bắt được vì fixture nhỏ.
+   *
+   * Và với `areaCounts` thì client không chỉ sai, client KHÔNG THỂ đúng: vị từ của bộ lọc `area` so
+   * trên `areaHaystack`, chuỗi có cả `row.siteAddress` — thứ cố ý không có trong DTO (`DEC-10`). Một
+   * dự án ở Bắc Ninh nhưng `workLocation` ghi tên khu công nghiệp sẽ KHỚP `area=Bắc Ninh` mà
+   * `job.locations` của nó không chứa chữ đó. Nên số duy nhất đúng là số đếm bằng CHÍNH vị từ ấy, và
+   * chỉ service có nó. Bất biến đo được: số trên tag bằng `total` của lần gọi lại với `area` đó.
+   */
+  const overviewStripSize = 6;
+  const countBy = (
+    values: string[],
+    matches: (entry: { row: PublicProjectRow; job: PublicJobDto }, value: string) => boolean,
+  ): PublicJobOverviewEntry[] =>
+    values
+      .map((value) => ({ value, count: eligible.filter((entry) => matches(entry, value)).length }))
+      // Tag `"Bắc Giang (0)"` là mời người dùng bấm vào một trang trống. Bỏ ở service để không lớp
+      // nào phải nhớ lọc lại.
+      .filter((entry) => entry.count > 0)
+      .sort((a, b) => b.count - a.count || compareLabel(a.value, b.value));
+
+  const areaCounts = countBy(facets.areas, ({ row, job }, value) => areaHaystack(row, job).includes(foldVietnamese(value)));
+  const shiftCounts = countBy(facets.shifts, ({ job }, value) => job.shifts.some((label) => label.includes(value)));
+  const overview: PublicJobOverview = {
+    totals: {
+      jobs: eligible.length,
+      slots: eligible.reduce((sum, { job }) => sum + job.availableSlots, 0),
+      areas: areaCounts.length,
+    },
+    areaCounts,
+    shiftCounts,
+    // `postedAt` là ISO cùng một khuôn nên so chuỗi trực tiếp là so thời gian; không cần `Date.parse`.
+    newest: [...eligible]
+      .sort((a, b) => {
+        const left = a.job.postedAt ?? '';
+        const right = b.job.postedAt ?? '';
+        return left === right ? 0 : left < right ? 1 : -1;
+      })
+      .slice(0, overviewStripSize)
+      .map(({ job }) => job),
+    // Dải `"Lương cao nhất"` sắp theo TRẦN lương (`salaryMaxVnd`), tie-break bằng sàn. Việc không có
+    // lương bị loại hẳn: một card `"Lương thương lượng"` đứng trong dải lương cao nhất là nói sai.
+    topPaid: eligible
+      .filter(({ job }) => job.salaryMinVnd !== null)
+      .sort((a, b) => (b.job.salaryMaxVnd ?? 0) - (a.job.salaryMaxVnd ?? 0) || (b.job.salaryMinVnd ?? 0) - (a.job.salaryMinVnd ?? 0))
+      .slice(0, overviewStripSize)
+      .map(({ job }) => job),
+  };
+
   const search = opts.q?.trim();
   const area = opts.area?.trim();
   const shift = opts.shift?.trim();
@@ -480,7 +676,7 @@ export async function listPublicJobProjection(
   // dòng phía sau. Cả trang và tổng đều tính từ cùng một mảng, nên không thể lệch nhau.
   const jobs = matched.map(({ job }) => job);
   const page = jobs.slice(offset, offset + limit);
-  return { jobs: page, nextOffset: offset + limit < jobs.length ? offset + limit : null, total: jobs.length, facets };
+  return { jobs: page, nextOffset: offset + limit < jobs.length ? offset + limit : null, total: jobs.length, facets, overview };
 }
 
 export async function getPublicJobProjection(tx: Prisma.TransactionClient, slug: string): Promise<PublicJobDto | null> {
