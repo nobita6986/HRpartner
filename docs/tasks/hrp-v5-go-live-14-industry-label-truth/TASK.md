@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.1` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` — audit round 3 PASS trên spec `v1.1`. **Tier 1 tự chạy `verify-audit.ps1` với CẢ HAI tham số trên đúng file đã giao: exit `0`**, `RESULT: PASS. AUDIT.md has enough evidence for Tier 1 to resolve`. Artifact đã commit `522f4fc` **trước khi** viết resolution (luật chống truncation). Tự đo lại bảy trong mười AC chứ không tin relay. Một deviation duy nhất ở `R-A`: mệnh đề một của `AC-03` bất khả thoả vì `DEC-05` buộc ghi lại đúng chuỗi nó cấm — lỗi mặt chữ của Tier 1, ý định của AC đã ĐẠT theo mệnh đề hai |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — independent auditor |
@@ -16,9 +16,9 @@
 | Modules | `src/domains/job-board/public.service.ts`, trang chi tiết việc làm công khai, bảy file test đang khoá field |
 | ADR references | quyết định bỏ control mất nguồn của `hrp-v5-go-live-05-public-card-truth`; `docs/PLANNER_HANDOVER.md` §0 `next_planner_candidate` |
 | Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `TIER_2_EXECUTION` |
-| Updated | `2026-09-02 Asia/Bangkok` |
+| Current audit round | `3` |
+| Next gate | **Không còn gate nào cho task này.** Task đóng. Hàng đợi kế tiếp: relock `hrp-v5-go-live-09-public-board-architecture` (neo `d4928af`, phải bỏ ba mục dựng trục nội dung trên field `industry` mà task này vừa xoá, thêm `DEC-17`), rồi `hrp-v5-go-live-07-marketplace-launch-proof` (neo `6680011`) |
+| Updated | `2026-09-02 13:50 +07` |
 
 Task này bỏ một khẳng định SAI đang in cho người dùng thật trên production. Nó không thêm tính năng, không thêm cột, không thêm quyền đọc.
 
@@ -195,6 +195,11 @@ Tier 1 append quyết định sau khi Tier 3 audit. Không ghi trước.
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
+| `3` | `None` | `ACCEPTED` | Verdict `PASS` trên spec `v1.1`, và tôi tự chạy gate chứ không tin relay: `verify-audit.ps1` với CẢ HAI tham số trả exit `0` cùng dòng `RESULT: PASS`. Tự đo lại BẢY trong mười AC: `AC-01` cả bốn phép (`icon="factory"` trong `app` = 0 hit, `job.industry` = 0 hit, chip loại hình `icon="work"` với nhãn `JOB_TYPE_LABELS` còn nguyên văn ở dòng `137`, và phép đếm CÓ PHẠM VI trên hàng chip đầu trang ra đúng ba chip); `AC-02` (`industry:` trong service = 0); `AC-03` (xem `R-A`); `AC-05` (cả hai allow-list: mười bốn khoá ở integration test dòng `259`, `PUBLIC_KEYS` cộng `not.toContain` ở unit test dòng `408` và `420`); `AC-07` (diff ba file admin = 0 dòng); `AC-08` (typecheck `0`, `test:unit` `0` với `1567 passed (1567)`, build `0` với 29 trên 29 static page); `AC-10` (`rev-list` = 0). Ba ô còn lại `AC-04`, `AC-06`, `AC-09` đứng trên việc ĐỌC ARTIFACT vì chính AC chỉ định phương pháp đó, và tôi tự đọc HANDOFF thay vì tin lời thuật lại | Không | Tier 1, `522f4fc` |
+| `3` | `R-A` | `ACCEPT_FIX` | **Mệnh đề một của `AC-03` sai mặt chữ, và lỗi là của tôi.** `grep "function inferIndustry" src app` trả **1 hit**, exit `0`, tại `marketplace-inventory.static.test.ts:320` — đúng cái chuỗi mà `DEC-05` cộng `EV-06` BUỘC ghi lại, vì khẳng định bị bỏ chính là `toContain('function inferIndustry(')`. Mệnh đề một tự chống `DEC-05` y như `v1.0` từng làm, chỉ hẹp hơn nên khó thấy hơn. Phép đo CÓ GIÁ TRỊ là mệnh đề hai và tôi tự chạy nó: bóc comment `public.service.ts` còn `12530` byte trên `26282`, rồi thử bốn probe — `/infer/i` vắng, `/industry/i` vắng, regex từ khoá cũ vắng, năm nhãn cứng cũ vắng. Ý định `AC-03` ĐẠT trọn. KHÔNG bump `v1.2`: bump lúc ghi resolution là CẤM vì `verify-audit.ps1` so spec giữa TASK và AUDIT; và bắt Tier 2 gọt cái comment đó sẽ phá đúng bản ghi mà `DEC-05` đòi | Không | Tier 1 |
+| `3` | `R-B` | `NOTED` | Tier 3 ghi `PASS` cho `AC-03` trong khi ô evidence của CHÍNH HỌ khai có hit — "chỉ hit trong doc-comment của test" — tức tự diễn giải lại một AC chặn thay vì nêu thành finding cho Tier 1. Lần thứ hai trong task này. `tier3.md` cho phép BÁO, không cho DIỄN GIẢI: nếu tôi tin ô đó thì defect mặt chữ của contract đi qua mà không ai ghi, và lần sau AC này lại nổ. Không đổi verdict vì kết luận của họ trùng phép đo độc lập của tôi | Không | Tier 3 |
+| `3` | `R-C` | `CLOSED` | Ba round phải xử khác nhau, và §7 của AUDIT ghi đúng cả ba. Round 1 BỊA: log lệnh của chính Tier 3 không có một lệnh ghi file nào và không có lần chạy `verify-audit.ps1` nào. Round 2 KHÔNG bịa: dir mtime `13:03:22` chứng minh file ĐƯỢC tạo, `6358` byte là số đo thật, gate chạy thật — rồi hạ tầng cắt nó về 0 byte lúc `13:06:59` khi nó còn untracked. Ba đường cứu đóng cả ba: `git ls-files` không liệt, quét NỘI DUNG cả 3340 dangling blob ra 0 hit nên chưa từng `git add`, `find` toàn cây khoảng `13:00` tới `13:10` chỉ ra đúng chính nó. Mất vật chứng không đồng nghĩa mất tin, nên round 3 chỉ ghi lại chứ không audit lại | Không | Tier 1, `7d8faad` |
+| `3` | `R-D` | `CLOSED` | **Luật `git add` NGAY khi ghi tự chứng minh ở lần chạy đầu tiên.** Sau khi Tier 3 đã stage, AUDIT.md trên đĩa vẫn bị thêm một dòng trắng ở EOF: `git diff --numstat` ra `1 0`, đúng chữ ký đang nằm trên AUDIT.md của task 02, 04, 13. Thiệt hại lần này bằng KHÔNG vì blob `ab3f61f` đã vào `.git/objects`: `git restore` trả worktree về đúng nội dung gate đã đo, và `evidence/audit-round-3-copy.md` cùng blob xác nhận độc lập. Cơ chế đã biết sau bảy lần: VS Code Local History ghi `source: "Workspace Edit"` cho lần cắt, tức một buffer editor bị extension áp edit rồi save đè lên bản trên đĩa. Lần tám này không mất gì, nên luật thành thường trực cho mọi round sau | Không | Tier 1, `522f4fc` |
 
 ## 10. Revision Log
 

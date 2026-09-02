@@ -35,8 +35,9 @@ function publishTx(row = project()) {
  * Đúng hình dạng dòng mà `publicSelect` trả về SAU hotfix-02: chỉ scalar của `Project` cộng
  * nhánh `staffingOrders`, KHÔNG field quan hệ nào. Đó là điều kiện để query engine của Prisma
  * không phải materialize bảng bị RLS che và không ném `Inconsistent query result`.
- * Biến duy nhất giữa hai case là TEXT của dự án, vì sau khi bỏ quan hệ thì `industry` chỉ còn
- * đường suy ra từ text với fallback `null`.
+ * Biến duy nhất giữa hai case là TEXT của dự án. go-live-14: chính vì đó là biến duy nhất mà hai
+ * case phải cho CÙNG một tập khóa công khai — nhãn ngành từng là thứ duy nhất đổi theo chữ, và nó
+ * đã bị bỏ khỏi DTO.
  */
 function publicProjectionTx(projectName: string) {
   return {
@@ -99,45 +100,59 @@ describe('MP-1 publish and public job contracts', () => {
     const result = await listPublicJobProjection(tx, {
       q: 'Warehouse',
       area: 'Bac Ninh',
-      // go-live-05 v1.2 / DEC-13: opts không còn khóa ngành. Nhãn ở assertion dưới vẫn là
-      // 'Kho vận' vì nó do văn bản của fixture suy ra, không do bộ lọc.
+      // go-live-05 v1.2 / DEC-13: opts không còn khóa ngành. go-live-14: và nhãn 'Kho vận' mà
+      // assertion dưới từng chờ cũng không còn — nó do regex đọc chữ 'Warehouse' trong tên dự án
+      // fixture mà suy ra, không có cột nào đứng sau.
       shift: '07:00',
       shiftTypes: ['ca_ngay'],
       jobTypes: ['toan_thoi_gian'],
     });
     expect(result.jobs).toEqual([expect.objectContaining({
       id: 'project-1', slug: 'PRJ-001', availableSlots: 3, position: 'Picker',
-      industry: 'Kho vận', shiftType: 'ca_ngay', jobType: 'toan_thoi_gian',
+      shiftType: 'ca_ngay', jobType: 'toan_thoi_gian',
     })]);
     expect(result.jobs[0]).not.toHaveProperty('clientCompanyId');
     expect(result.jobs[0]).not.toHaveProperty('hourlyRateVnd');
     expect(result.jobs[0]).not.toHaveProperty('internalNotes');
+    // go-live-14 / RQ-02, DEC-05 — khóa industry trong `objectContaining` ở trên đã bị bỏ và ĐỔI DẤU
+    // thành phủ định dưới đây. `objectContaining` không bắt được khóa THỪA, nên nếu thiếu dòng này
+    // thì khóa đó quay lại mà case vẫn xanh.
+    expect(result.jobs[0]).not.toHaveProperty('industry');
   });
 
   // `client_companies` ở posture FORCE RLS và principal công khai `MKT` không có policy SELECT
   // nào trên bảng đó. Hotfix-02 xử lý bằng cách KHÔNG select quan hệ đó nữa, nên trạng thái
-  // "quan hệ bị che" không còn đường nào làm sập truy vấn. Case này giữ nguyên tên và assertion
-  // của hotfix-01 để chốt rằng đường fallback vẫn trả `industry` là string hợp lệ.
+  // "quan hệ bị che" không còn đường nào làm sập truy vấn. go-live-14 bỏ luôn phần "đường fallback
+  // vẫn trả nhãn là string hợp lệ": khi quan hệ bị che thì đúng hơn là KHÔNG có nhãn nào, chứ không
+  // phải bù vào một nhãn mặc định do hàm suy diễn đặt ra.
   it('projects a public job when the client company relation is hidden by RLS', async () => {
     const tx = publicProjectionTx('Lap rap bang mach');
 
     const result = await listPublicJobProjection(tx, {});
 
     expect(result.total).toBe(1);
-    expect(typeof result.jobs[0].industry).toBe('string');
-    expect(result.jobs[0].industry).toBe('Công nghiệp chế tạo');
+    // go-live-14 / RQ-02, DEC-05 — hai khẳng định cũ (typeof là string, và nhãn mặc định
+    // 'Cong nghiep che tao') đã ĐỔI DẤU thành phủ định dưới đây.
+    expect(result.jobs[0]).not.toHaveProperty('industry');
   });
 
-  // Nhánh đối xứng. Sau hotfix-02, ngành KHÔNG còn đến từ bảng khách hàng; nguồn duy nhất là
-  // keyword trong text của dự án. Tên case giữ nguyên theo yêu cầu contract (STEP-04) dù cơ chế
-  // đã đổi — xem limitation trong HANDOFF. Giá trị khẳng định vẫn là `Điện tử`, không nới.
-  it('still uses the client company industry when the relation is readable', async () => {
+  // go-live-14 / EV-11 — tên cũ của case này là "still uses the client company industry when the
+  // relation is readable", và đó là một BẢN KHAI SAI: sau hotfix-02 quan hệ khách hàng không còn được
+  // select, nên nhãn không hề đến từ bảng khách hàng; nguồn duy nhất là keyword trong text của dự án.
+  // Nay cả nhãn cũng không còn, nên case đổi tên theo đúng thứ nó đo.
+  it('gives the same public key set for two different project texts, with no industry label', async () => {
     const tx = publicProjectionTx('Lap rap bang mach dien tu');
 
     const result = await listPublicJobProjection(tx, {});
 
     expect(result.total).toBe(1);
-    expect(typeof result.jobs[0].industry).toBe('string');
-    expect(result.jobs[0].industry).toBe('Điện tử');
+    // go-live-14 / RQ-02, RQ-03, DEC-05 — ba khẳng định cũ (typeof là string, và nhãn 'Dien tu') đã
+    // ĐỔI DẤU. Hàng rào thay thế: HAI văn bản dự án khác nhau — một mang keyword ngành, một không —
+    // phải cho ĐÚNG một tập khóa công khai, và tập đó không mang khóa nhãn ngành. Chỉ phép so tập
+    // khóa giữa hai văn bản mới chứng minh được nhãn không còn suy ra từ chữ.
+    const plain = await listPublicJobProjection(publicProjectionTx('Lap rap bang mach'), {});
+    expect(Object.keys(result.jobs[0]).sort()).toEqual(Object.keys(plain.jobs[0]).sort());
+    expect(result.jobs[0]).not.toHaveProperty('industry');
+    expect(plain.jobs[0]).not.toHaveProperty('industry');
   });
 });

@@ -8,6 +8,13 @@ import { Prisma } from '@prisma/client';
  *
  * `shiftType` chỉ còn `'ca_ngay' | 'ca_dem' | null` — `'xoay_ca'` đã bị bỏ theo `DEC-07`, xem
  * `classifyShift`.
+ *
+ * go-live-14 / RQ-02: khoá `industry` ĐÃ BỊ BỎ khỏi allow-list này. Nó là khoá duy nhất không truy
+ * nguyên được về một cột canonical: giá trị do một hàm regex đọc văn bản tự do của dự án và của đơn
+ * (kể cả `description` nội bộ của HR) rồi đặt ra một nhãn ngành, mặc định `'Công nghiệp chế tạo'`.
+ * Cột `ClientCompany.industry` có thật và do người nhập, nhưng `client_companies` ở posture FORCE
+ * RLS và principal công khai `MKT` không có policy đọc nó, nên nó KHÔNG phải nguồn của khoá này.
+ * Muốn trả nhãn ngành ra bề mặt công khai thì phải có cột đọc được từ đường công khai trước.
  */
 export interface PublicJobDto {
   id: string;
@@ -16,7 +23,6 @@ export interface PublicJobDto {
   position: string;
   shift: string | null;
   location: string | null;
-  industry: string;
   shiftType: 'ca_ngay' | 'ca_dem' | null;
   jobType: 'toan_thoi_gian' | 'ban_thoi_gian' | 'thoi_vu';
   availableSlots: number;
@@ -45,11 +51,12 @@ export interface PublicJobDto {
  * nên không còn option nào lọc ra 0 kết quả; (2) dropdown KHÔNG co lại theo chính lựa chọn vừa rồi,
  * vì facet không đọc bộ lọc đang áp.
  *
- * `DEC-13`/`RQ-18` — KHÔNG có facet ngành nghề, và không được thêm lại. Nhãn ngành là giá trị SUY
- * DIỄN từ văn bản tự do (`inferIndustry`), không phải cột canonical; cột `ClientCompany.industry` có
- * thật nhưng `client_companies` bị FORCE RLS và principal công khai `MKT` không có policy đọc nó
- * (`EV-09`). Một facet mới chỉ hợp lệ khi truy nguyên được về một cột canonical đọc được từ đường
- * công khai — `areas` về địa điểm slot, `shifts` về nhãn ca của slot.
+ * `DEC-13`/`RQ-18` — KHÔNG có facet ngành nghề, và không được thêm lại. go-live-14 đã đi hết một
+ * bước nữa: hàm suy diễn nhãn ngành và cả khoá DTO đọc nó đều đã bị bỏ, nên giờ không còn giá trị
+ * nào để dựng facet đó lên kể cả khi ai muốn. Cột `ClientCompany.industry` có thật nhưng
+ * `client_companies` bị FORCE RLS và principal công khai `MKT` không có policy đọc nó (`EV-09`).
+ * Một facet mới chỉ hợp lệ khi truy nguyên được về một cột canonical đọc được từ đường công khai —
+ * `areas` về địa điểm slot, `shifts` về nhãn ca của slot.
  */
 export interface PublicJobFacets {
   areas: string[];
@@ -159,15 +166,6 @@ function classifyJobType(
   return 'toan_thoi_gian';
 }
 
-function inferIndustry(text: string, fallback: string | null): string {
-  const folded = foldVietnamese(`${text} ${fallback ?? ''}`);
-  if (/kho|van tai|logistic|warehouse/.test(folded)) return 'Kho vận';
-  if (/may mac|may cong nghiep|garment|sewing/.test(folded)) return 'May mặc';
-  if (/thuc pham|food/.test(folded)) return 'Thực phẩm';
-  if (/dien|dien tu|electronic|electric/.test(folded)) return 'Điện tử';
-  return fallback?.trim() || 'Công nghiệp chế tạo';
-}
-
 function isExpired(date: Date | null, now: Date): boolean {
   return Boolean(date && date < now);
 }
@@ -254,7 +252,14 @@ function summarizeSlots(slots: PublicSlotRow[], project: PublicProjectRow) {
   };
 }
 
-/** Text để suy `industry` và `jobType`. Gộp mọi trường text đã select; KHÔNG in ra bề mặt nào. */
+/**
+ * Text để suy `jobType`. Gộp mọi trường text đã select; KHÔNG in ra bề mặt nào.
+ *
+ * go-live-14: text này TỪNG nuôi cả nhãn ngành, và đó là lỗi — `order.description` là văn HR nội bộ,
+ * nên một lượt sửa mô tả đổi lặng lẽ một nhãn đang in cho khách ẩn danh. Nay nó chỉ còn nuôi
+ * `classifyJobType`, thứ trả về một enum đóng (`toan_thoi_gian`/`ban_thoi_gian`/`thoi_vu`) chứ không
+ * phải một nhãn tự do in nguyên văn ra bề mặt.
+ */
 function searchableTextOf(project: PublicProjectRow): string {
   return [
     project.name,
@@ -305,7 +310,6 @@ function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
     position: summary.positionTitles[0] ?? slots[0].positionTitle,
     shift: summary.shifts[0] ?? null,
     location: summary.locations[0] ?? null,
-    industry: inferIndustry(searchableText, null),
     shiftType: classifyShift(slots),
     jobType: classifyJobType(searchableText, slots),
     availableSlots,
@@ -360,7 +364,6 @@ function toDetailDto(project: PublicProjectRow, now: Date): PublicJobDetailDto |
     shift: summary.shifts[0] ?? null,
     location: summary.locations[0] ?? null,
     siteAddress: project.siteAddress,
-    industry: inferIndustry(searchableText, null),
     shiftType: classifyShift(slots),
     jobType: classifyJobType(searchableText, slots),
     availableSlots,

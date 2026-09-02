@@ -316,11 +316,16 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
     expect(facetsObject.match(/\w+: summarize\(/g)).toHaveLength(2);
     // Hàng rào thật của `RQ-18`: không facet nào được dựng từ một hàm `infer*`.
     expect(facetsObject).not.toMatch(/infer/i);
-    // Ranh giới cứng theo hướng NGƯỢC LẠI: `inferIndustry` và khóa DTO `industry` VẪN PHẢI CÒN. Trang
-    // chi tiết của go-live-12 đọc chúng và là Out of scope; xoá đi là vỡ compile ở file không được
-    // chạm. Defect "nhãn ngành suy diễn" chuyển task tiếp nối (`EV-16`), không xoá lén ở đây.
-    expect(service).toContain('function inferIndustry(');
-    expect(service).toContain('industry: inferIndustry(searchableText, null)');
+    // go-live-14 / RQ-02, RQ-03, DEC-05 — ranh giới ĐỔI DẤU. Hai dòng cũ ở đây khẳng định
+    // `function inferIndustry(` và `industry: inferIndustry(searchableText, null)` VẪN PHẢI CÒN, tức
+    // chúng khoá chính defect vào chỗ; chúng đã được thay bằng bốn phủ định dưới đây, không xoá trắng.
+    // Hai dòng cuối là hàng rào chống-đổi-tên của `RQ-03`: một hàm `inferSector` trả nguyên năm nhãn
+    // cũ vẫn FAIL, vì bằng chứng là sự VẮNG MẶT của regex từ khoá và của năm nhãn cứng, không phải
+    // sự vắng mặt của một cái tên. `service` đã bỏ comment nên chú thích không đổi được kết luận.
+    expect(service).not.toMatch(/industry/i);
+    expect(service).not.toMatch(/infer/i);
+    expect(service).not.toMatch(/may mac|thuc pham|van tai|logistic|warehouse|garment|sewing/);
+    expect(service).not.toMatch(/Kho vận|May mặc|Thực phẩm|Điện tử|Công nghiệp chế tạo/);
   });
 
   it('phân trang của trang việc làm đọc `nextOffset` thật, không có spinner hẹn giờ', () => {

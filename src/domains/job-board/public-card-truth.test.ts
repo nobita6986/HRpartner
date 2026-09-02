@@ -403,8 +403,10 @@ describe('AC-05/RQ-06 — q/area/shift khớp trên dữ liệu thật, bỏ d�
 });
 
 describe('AC-01/AC-03, DEC-10/RISK-01/RISK-07 — DTO đúng allow-list, JSON an toàn', () => {
+  // go-live-14 / RQ-02, RQ-05 — 15 khóa xuống 14: `industry` đã bị bỏ khỏi allow-list công khai vì
+  // nó là khóa duy nhất không truy nguyên được về một cột canonical nào.
   const PUBLIC_KEYS = [
-    'availableSlots', 'deadline', 'id', 'industry', 'jobType', 'location', 'locations',
+    'availableSlots', 'deadline', 'id', 'jobType', 'location', 'locations',
     'position', 'positionTitles', 'shift', 'shiftType', 'shifts', 'slug', 'statusLabel', 'title',
   ];
 
@@ -412,6 +414,11 @@ describe('AC-01/AC-03, DEC-10/RISK-01/RISK-07 — DTO đúng allow-list, JSON an
     const job = await onlyJob([row({ staffingOrders: [order([slot(), slot(QC_SLOT)])] })]);
 
     expect(Object.keys(job).sort()).toEqual(PUBLIC_KEYS);
+    // go-live-14 / RQ-05, DEC-05 — đây là allow-list khóa DTO thứ HAI trong hai bản; bản thứ nhất ở
+    // `public-card-truth.integration.test.ts`. Sót một bản là hàng rào hở, nên hai dòng dưới canh cả
+    // hằng số lẫn object thật: sửa lại `PUBLIC_KEYS` mà quên mapper (hoặc ngược lại) đều FAIL.
+    expect(PUBLIC_KEYS).not.toContain('industry');
+    expect(job).not.toHaveProperty('industry');
   });
 
   it('không có field thương mại/nội bộ nào, kể cả khi dòng thô mang chúng', async () => {

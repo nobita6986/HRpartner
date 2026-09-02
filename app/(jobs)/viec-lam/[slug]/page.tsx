@@ -135,7 +135,6 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
           <Chip icon="location_on" label={job.location?.trim() || 'Địa điểm đang cập nhật'} />
           <Chip icon="schedule" label={job.shift?.trim() || 'Thời gian đang cập nhật'} />
           <Chip icon="work" label={JOB_TYPE_LABELS[job.jobType]} />
-          <Chip icon="factory" label={job.industry} />
         </div>
 
         <dl className="mt-5 grid gap-3 sm:grid-cols-3">

@@ -94,7 +94,9 @@ const PUBLISHED_JOB: PublicJobDto = {
   position: 'Công nhân sản xuất',
   shift: '06:00-14:00',
   location: 'KCN VSIP 1',
-  industry: 'Điện tử',
+  // go-live-14 / RQ-02: khóa nhãn ngành đã bị bỏ khỏi fixture. `PUBLISHED_JOB` được khai kiểu
+  // `PublicJobDto` nên đây là một trong rất ít chỗ `tsc` THẬT SỰ chặn: khóa thừa trên object literal
+  // có kiểu tường minh là lỗi biên dịch, không phải cảnh báo.
   shiftType: 'ca_ngay',
   jobType: 'toan_thoi_gian',
   availableSlots: 12,
@@ -140,7 +142,14 @@ describe('RQ-03 — GET /api/jobs (list)', () => {
 
     const res = await GET_LIST(listReq());
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual(LIST_RESULT);
+    const body = await res.json();
+    expect(body).toEqual(LIST_RESULT);
+    // go-live-14 / RQ-02 — đo trên chính RESPONSE mà khách ẩn danh nhận được, không phải trên nguồn.
+    // Đây là hàng rào cho dòng Tier 1 cần để relock go-live-09: hình dạng response công khai của
+    // `GET /api/jobs` MẤT một khóa. Phép quét chuỗi JSON bắt cả trường hợp khóa đó nằm lồng trong
+    // `facets` hay trong một job khác, không chỉ ở khóa mức một của job đầu tiên.
+    expect(Object.keys(body.jobs[0])).not.toContain('industry');
+    expect(JSON.stringify(body)).not.toContain('industry');
     // Đúng MỘT lượt đọc, và đọc qua principal công khai chứ không phải transaction trần.
     expect(mocks.withPublicDb).toHaveBeenCalledTimes(1);
     expect(mocks.withPublicDb.mock.calls[0][1]).toBeTypeOf('function');
@@ -226,7 +235,12 @@ describe('RQ-03 — GET /api/jobs/[slug] (detail)', () => {
 
     const res = await GET_DETAIL(detailReq(), detailParams);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ job: PUBLISHED_JOB });
+    const body = await res.json();
+    expect(body).toEqual({ job: PUBLISHED_JOB });
+    // go-live-14 / RQ-02 — cùng phép đo trên response của đường CHI TIẾT. Cả hai đường công khai
+    // (`/api/jobs` và `/api/jobs/[slug]`) đều phải mất khóa, không chỉ đường list.
+    expect(Object.keys(body.job)).not.toContain('industry');
+    expect(JSON.stringify(body)).not.toContain('industry');
     expect(mocks.withPublicDb).toHaveBeenCalledTimes(1);
     expect(mocks.$transaction).not.toHaveBeenCalled();
     expect(calls[0].rule.surface).toBe('JOB_BROWSE');

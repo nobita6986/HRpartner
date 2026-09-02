@@ -60,8 +60,13 @@ describe('public job projection — không select quan hệ bắt buộc bị RL
     ]);
   });
 
-  it('toDto không deref quan hệ khách hàng, industry suy từ text với fallback null', () => {
+  it('toDto không deref quan hệ khách hàng và không suy nhãn ngành từ text nữa', () => {
     expect(code).not.toContain('clientCompany');
-    expect(code).toContain('inferIndustry(searchableText, null)');
+    // go-live-14 / RQ-02, DEC-05, DEC-07 — khẳng định cũ `toContain('inferIndustry(searchableText,
+    // null)')` đã ĐỔI DẤU thành phủ định dưới đây. Dòng khẳng định DƯƠNG kèm theo là cố ý:
+    // `searchableText` phải còn sống cho `classifyJobType`, nhờ đó "bỏ nhãn suy diễn" phân biệt được
+    // với "bỏ luôn đường text" — hai kết cục rất khác nhau mà một mình phủ định không tách nổi.
+    expect(code).not.toMatch(/industry/i);
+    expect(code).toContain('classifyJobType(searchableText, slots)');
   });
 });

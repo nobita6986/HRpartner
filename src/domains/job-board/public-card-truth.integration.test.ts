@@ -16,8 +16,9 @@
  *
  * ISOLATION: `hrp_mp2_test` có dòng của các lane khác, nên mọi phép đo GLOBAL (facet) chỉ khẳng
  * định `toContain`/`not.toContain` trên chuỗi CÓ MANG `RUN`, và mọi phép đo chính xác đều bị kẹp
- * bằng `q: RUN`. `RUN` chỉ gồm `gl05` + chữ số nên không thể chứa ngẫu nhiên một từ khoá ngành
- * (`kho`, `may`, `dien`…) và làm `inferIndustry` trả nhãn khác.
+ * bằng `q: RUN`. `RUN` chỉ gồm `gl05` + chữ số. Ràng buộc đó SINH RA vì hàm suy nhãn ngành từng đọc
+ * cả `RUN`; go-live-14 đã bỏ hàm đó nên ràng buộc thành LỊCH SỬ, nhưng giữ nguyên vì nó vẫn là hình
+ * dạng token an toàn nhất cho các phép đo `toContain` ở dưới.
  *
  * Seed/teardown qua `DATABASE_URL_ADMIN` (bypass RLS); mọi phép đo hành vi CHỈ qua `DATABASE_URL`
  * (app_user_writer) và CHỈ trong `withPublicDb`. Thiếu env ⇒ self-skip, preflight in `ENV_BLOCKED`
@@ -41,7 +42,7 @@ describe.skipIf(!enabled)('V5-go-live-05 LIVE — card việc làm trên dữ li
   const admin = new PrismaClient({ datasourceUrl: ADMIN_URL });
   const writer = new PrismaClient({ datasourceUrl: WRITER_URL });
 
-  /** Chỉ `gl05` + chữ số: không ký tự ngẫu nhiên nào có thể chạm từ khoá của `inferIndustry`. */
+  /** Chỉ `gl05` + chữ số: không ký tự ngẫu nhiên nào chạm được từ khóa của phép đo nào ở dưới. */
   const RUN = `gl05-${Date.now()}-${Math.floor(Math.random() * 1_000_000_000)}`;
   const ccId = `cc-${RUN}`;
   const ELEC = { id: `prj-elec-${RUN}`, code: `GL05-ELEC-${RUN}`, orderId: `so-elec-${RUN}`, closedOrderId: `so-closed-${RUN}` };
@@ -122,11 +123,12 @@ describe.skipIf(!enabled)('V5-go-live-05 LIVE — card việc làm trên dữ li
       // `q` KHÔNG được khớp vào đây (`keywordHaystack` cố ý không gộp `description`). Token này chỉ
       // tồn tại trong description ⇒ tìm nó mà ra dòng nào là bằng chứng ngược.
       //
-      // Câu mô tả CỐ Ý không dấu và không chứa từ khoá ngành nào: `searchableTextOf` GỘP
-      // `order.description` vào văn bản mà `inferIndustry` đọc, và nhánh ĐẦU TIÊN của nó khớp
-      // `kho`. Một câu tiếng Việt tự nhiên như "không in trên card" gập thành "khong" ⊃ "kho" ⇒
-      // việc điện tử này thành `'Kho vận'` và khẳng định `job.industry` vỡ vì FIXTURE chứ
-      // không vì mã. Tránh mọi chuỗi `kho`/`van tai`/`may mac`/`thuc pham` ở đây.
+      // go-live-14 — LÝ DO LỊCH SỬ của câu mô tả không dấu này, giữ lại vì nó chính là bằng chứng
+      // `EV-04`: `searchableTextOf` GỘP `order.description` (văn HR nội bộ) vào văn bản mà hàm suy
+      // nhãn ngành đọc, và nhánh ĐẦU TIÊN của hàm đó khớp `kho`. Một câu tiếng Việt tự nhiên như
+      // "không in trên card" gập thành "khong" ⊃ "kho", nên một việc điện tử bị dán nhãn 'Kho vận'
+      // — tức một lượt sửa mô tả nội bộ đổi lặng lẽ nhãn đang in cho khách ẩn danh. Hàm đó đã bị bỏ;
+      // ràng buộc "tránh mọi chuỗi kho/van tai/may mac/thuc pham" nay không còn bắt buộc.
       orderDescription: `mota${RUN} chi tiet noi bo cho HR`,
       slots: [
         // BigInt THẬT trên đúng slot mà card đọc — đòn đo duy nhất cho RISK-01/RISK-07.
@@ -201,7 +203,7 @@ describe.skipIf(!enabled)('V5-go-live-05 LIVE — card việc làm trên dữ li
     const job = await cardOf(ELEC.code);
     console.log(
       `[gl05 card ${job.slug}] positionTitles=${JSON.stringify(job.positionTitles)} locations=${JSON.stringify(job.locations)}` +
-        ` shifts=${JSON.stringify(job.shifts)} availableSlots=${job.availableSlots} shiftType=${job.shiftType} industry=${job.industry}`,
+        ` shifts=${JSON.stringify(job.shifts)} availableSlots=${job.availableSlots} shiftType=${job.shiftType}`,
     );
     expect(job.positionTitles).toEqual(['Công nhân lắp ráp', 'Kiểm tra chất lượng']);
     expect(job.locations).toEqual([AT_VSIP, AT_YEN_PHONG]);
@@ -212,7 +214,12 @@ describe.skipIf(!enabled)('V5-go-live-05 LIVE — card việc làm trên dữ li
     expect(job.position).toBe(job.positionTitles[0]);
     expect(job.shift).toBe(job.shifts[0]);
     expect(job.location).toBe(job.locations[0]);
-    expect(job.industry).toBe('Điện tử');
+    // go-live-14 / RQ-02, DEC-05 — khẳng định cũ (nhãn 'Dien tu' trên dòng thật) đã ĐỔI DẤU thành
+    // phủ định dưới đây, và đoạn nội suy nhãn đó trong `console.log` phía trên cũng đã bỏ. GIỚI HẠN
+    // PHÉP ĐO: file này nằm trong `INTEGRATION_TEST_FILES` nên KHÔNG chạy ở lane `npm run test:unit`
+    // — nó không xuất hiện trong con số ĐỎ/XANH nào của lane đó, chỉ được typecheck. Ghi rõ trong
+    // HANDOFF để Tier 3 không đọc con số của lane unit như thể đã bao phủ file này.
+    expect(job).not.toHaveProperty('industry');
     expect(job.shiftType).toBe('ca_ngay');
     expect(job.jobType).toBe('toan_thoi_gian');
     expect(job.statusLabel).toBe('Đang tuyển');
@@ -233,7 +240,7 @@ describe.skipIf(!enabled)('V5-go-live-05 LIVE — card việc làm trên dữ li
     expect(job.shifts).not.toContain('18:00-02:00');
   }, 30_000);
 
-  it('AC-01/RISK-01/RISK-07 — hourlyRateVnd là BigInt THẬT nhưng DTO chỉ có 15 khóa allow-list', async () => {
+  it('AC-01/RISK-01/RISK-07 — hourlyRateVnd là BigInt THẬT nhưng DTO chỉ có 14 khóa allow-list', async () => {
     // Bằng chứng cột thật: đọc bằng admin để chắc con số nằm trên ĐÚNG slot mà card đọc.
     const raw = await admin.staffingOrderSlot.findFirst({
       where: { staffingOrderId: ELEC.orderId, positionTitle: 'Công nhân lắp ráp' },
@@ -246,10 +253,13 @@ describe.skipIf(!enabled)('V5-go-live-05 LIVE — card việc làm trên dữ li
     const job = await cardOf(ELEC.code);
     // RISK-07: một khóa BigInt lọt vào DTO làm `JSON.stringify` NÉM ⇒ chết cả route, không chỉ rò rỉ.
     const serialized = JSON.stringify(job);
+    // go-live-14 / RQ-02, RQ-05: 15 khóa xuống 14. Đây là allow-list khóa DTO thứ NHẤT trong hai bản;
+    // bản thứ hai ở `public-card-truth.test.ts`. Sót một bản là hàng rào hở.
     expect(Object.keys(job).sort()).toEqual(
-      ['availableSlots', 'deadline', 'id', 'industry', 'jobType', 'location', 'locations', 'position',
+      ['availableSlots', 'deadline', 'id', 'jobType', 'location', 'locations', 'position',
         'positionTitles', 'shift', 'shiftType', 'shifts', 'slug', 'statusLabel', 'title'].sort(),
     );
+    expect(job).not.toHaveProperty('industry');
     for (const forbidden of ['hourlyRateVnd', '45000', 'clientCompanyId', ccId, 'budgetVnd', 'internalNotes', 'salary']) {
       expect(serialized, forbidden).not.toContain(forbidden);
     }

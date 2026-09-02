@@ -102,13 +102,12 @@ describe('RQ-11/DEC-10 — metadata sinh trong chính file route', () => {
 });
 
 describe('RQ-06/RQ-08 — bề mặt hiển thị đúng phạm vi DTO công khai', () => {
-  it('in mã việc làm, bốn chip, tổng chỉ tiêu và hạn nhận hồ sơ', () => {
+  it('in mã việc làm, ba chip, tổng chỉ tiêu và hạn nhận hồ sơ', () => {
     for (const needle of [
       'job.jobCode',
       'job.location',
       'job.shift',
       'JOB_TYPE_LABELS[job.jobType]',
-      'job.industry',
       'job.availableSlots',
       'job.totalSlotsFilled',
       'job.totalSlotsNeeded',
@@ -116,6 +115,21 @@ describe('RQ-06/RQ-08 — bề mặt hiển thị đúng phạm vi DTO công kha
     ]) {
       expect(page, needle).toContain(needle);
     }
+    // go-live-14 / RQ-01, DEC-05 — needle `'job.industry'` đã bị bỏ khỏi danh sách trên và ĐỔI DẤU
+    // thành hai phủ định dưới đây. File này đọc trang THÔ (`raw`) theo doctrine "chú thích cũng là
+    // nội dung file", nên token đó phải vắng mặt kể cả trong comment của trang.
+    expect(page).not.toMatch(/industry/i);
+    expect(page).not.toContain('icon="factory"');
+    // RQ-01 / AC-01 đo trên HÀNG CHIP ĐẦU TRANG, không trên cả file: trang có 6 `<Chip ` (4 ở hàng
+    // đầu, 2 trong danh sách vị trí ở dưới), nên một phép đếm toàn file không phân biệt được "bỏ chip
+    // ngành" với "bỏ một chip của vị trí". Hàng đầu xuống ĐÚNG 3, tổng cả trang xuống ĐÚNG 5, và
+    // chip loại hình công việc phải còn NGUYÊN VĂN cả icon lẫn nhãn (RQ-01) — đây là chỗ dễ đọc lệch
+    // thành "xoá ba chip" nhất, xem mục AC-01 trong HANDOFF.
+    const fromChipRow = page.slice(page.indexOf('<div className="mt-4 flex flex-wrap items-center gap-2">'));
+    const chipRow = fromChipRow.slice(0, fromChipRow.indexOf('</div>'));
+    expect(chipRow.split('<Chip ').length - 1).toBe(3);
+    expect(chipRow).toContain('<Chip icon="work" label={JOB_TYPE_LABELS[job.jobType]} />');
+    expect(page.split('<Chip ').length - 1).toBe(5);
   });
 
   it('mỗi vị trí in tên, ca làm, địa điểm và số chỗ còn trống của CHÍNH vị trí đó', () => {
