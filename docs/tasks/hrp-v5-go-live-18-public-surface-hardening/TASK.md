@@ -7,24 +7,25 @@
 | Task slug | `hrp-v5-go-live-18-public-surface-hardening` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — independent auditor |
 | Baseline | `80f6933` |
-| Modules | `src/shared/security/rate-limit-guard.ts`, `app/(jobs)/viec-lam/[slug]/page.tsx`, `app/api/public/applications/[trackingCode]/route.ts`, `src/domains/applications/marketplace-inventory.static.test.ts`, `src/shared/security/public-surface-limiter.static.test.ts` |
+| Modules | `src/shared/security/rate-limit-guard.ts`, `app/(jobs)/viec-lam/[slug]/page.tsx`, `app/api/public/applications/[trackingCode]/route.ts`, `src/domains/applications/marketplace-inventory.static.test.ts`, `src/shared/security/public-surface-limiter.static.test.ts`, `src/domains/applications/tracking-pii-containment.static.test.ts` |
 | ADR references | `hrp-v5-go-live-07-marketplace-launch-proof` `DEC-18` — nhánh `404` của tracking thiếu `no-store`, dư nợ mà task này nhận; `hrp-v5-go-live-13-tracking-pii-mask` `F-06` — assertion phủ định chống hồi quy, chuyển sang task này kèm lý do ở `DEC-07`; `hrp-v5-ops-06a-launch-hardening` — nguồn của limiter phân tán và của bài học limiter theo instance |
 | Current execution round | `0` |
 | Current audit round | `0` |
 | Next gate | `/code` giao được ngay. Không phụ thuộc DB, không migration, không cần Owner quyết gì |
-| Updated | `2026-09-03 15:10 Asia/Bangkok` |
+| Updated | `2026-09-03 18:05 Asia/Bangkok` |
 
-Task này bịt ba lỗ trên bề mặt công khai, cả ba đã được đo chứ không phỏng đoán:
+Task này bịt bốn lỗ trên bề mặt công khai, cả bốn đã được đo chứ không phỏng đoán:
 
 1. Trang chi tiết việc `app/(jobs)/viec-lam/[slug]/page.tsx` là Server Component `force-dynamic` đọc DB TRỰC TIẾP và **không đi qua limiter nào**. Nó là consumer duy nhất của `withPublicDb` không có limiter, trong khi ba consumer còn lại đều có (`EV-02`).
 2. Nhánh `404` của route tracking thiếu `Cache-Control: no-store`, trong khi nhánh `200` ngay dưới nó có (`EV-07`). Đây là `DEC-18` của contract 07.
 3. Hai literal ở `marketplace-inventory.static.test.ts` chỉ khẳng định KHẲNG ĐỊNH rằng khoá đã che được in, không có một assertion PHỦ ĐỊNH nào chặn ai đó in lại khoá thô (`EV-08`). Đây là `F-06` của task 13.
+4. Quy ước "đường tra cứu công khai không được để giá trị thô ra khỏi service" hiện KHÔNG có hàng rào nào. Nó đúng ở đúng một tệp và đúng nhờ hai lệnh gọi che viết tay, không nhờ một phép kiểm (`EV-12` tới `EV-14`). Đây là phương án `Q-03` của `hrp-v5-go-live-19-tracking-pii-db-mask`, Owner chọn ngày `03/09` thay cho việc che ở tầng SQL ngay lượt này.
 
 Và task này **bác bỏ** một món trong hàng đợi. Câu hỏi `Q-01` cũ ghi *"probe tìm kiếm đang phơi `staffingOrder.description`"*. Đo lại trên baseline: **sai**. `go-live-05` đã cố ý loại `order.description` khỏi chuỗi khớp `q` và ghi rõ lý do trong chính mã. Chi tiết ở `EV-09` và `EV-10`. Không có gì để sửa ở đó, và task này không sửa.
 
@@ -37,6 +38,7 @@ Và task này **bác bỏ** một món trong hàng đợi. Câu hỏi `Q-01` cũ
 3. Một mã tra cứu sai không còn để lại bản cache ở bất kỳ tầng trung gian nào.
 4. Một hàng rào tĩnh mới khẳng định: **mọi** consumer của `withPublicDb` đều tham chiếu limiter. Thêm một bề mặt công khai đọc DB mà quên limiter thì test ĐỎ ngay, không cần ai nhớ.
 5. Hai assertion phủ định chặn việc in lại số điện thoại thô và CCCD thô lên trang tra cứu.
+6. Một hàng rào tĩnh thứ hai khẳng định giá trị THÔ của số điện thoại và CCCD không ra khỏi service trên đường tra cứu công khai. Một caller tương lai quên gọi phép che thì test ĐỎ ngay, không cần chờ ai nhìn thấy.
 
 ### Non-goals
 
@@ -63,6 +65,11 @@ Mọi phép đo dưới đây chạy trên baseline ghi ở `0. Control` bằng 
 | `EV-08` | `src/domains/applications/marketplace-inventory.static.test.ts:353` và `:354` | Hai assertion KHẲNG ĐỊNH rằng `result.phoneMasked` và `result.cccdMasked` được in. Không có assertion PHỦ ĐỊNH nào trên khoá thô. Assertion phủ định duy nhất trong tệp, ở `:384`, chỉ soi các lệnh `console` | Một hàng rào chỉ khẳng định cái ĐÚNG đang có mặt thì không chặn ai đó THÊM cái sai bên cạnh. Cả hai dòng vẫn xanh nếu ai đó in thêm `result.phone` ngay dưới |
 | `EV-09` | `src/domains/job-board/public.service.ts:550` và `:558` | Hàm `keywordHaystack` ở `:558` là chuỗi khớp `q`. Comment ở `:550` ghi nguyên văn rằng nó **cố ý KHÔNG gộp** `order.description`. Tập field của nó là tiêu đề việc, slug, `siteAddress`, tiêu đề đơn còn hiệu lực, tên vị trí và địa điểm slot | `Q-01` cũ nói probe tìm kiếm phơi `description`. Sai. `go-live-05` đã đóng nó, và có comment giải thích tại chỗ. Không sửa gì ở đây |
 | `EV-10` | `src/domains/job-board/public.service.ts:326`, `:331`, `:445`, `:502` | Consumer còn lại DUY NHẤT của `order.description` là `searchableTextOf` ở `:326`, và output của nó chỉ chảy vào `classifyJobType` ở `:445` và `:502`. Hàm đó trả một enum ĐÓNG ba giá trị | Kênh còn lại là một nhãn ba giá trị, không phải một oracle tra cứu: khách ẩn danh không nhập được đầu vào để hỏi "description có chứa X không". Cắt kênh này sẽ đổi nhãn của bản ghi đang in đúng — chính lớp lỗi của `go-live-14` — nên đây là dư nợ ĐƯỢC CHẤP NHẬN, không phải một bản sửa |
+| `EV-11` | `grep -rn hrp_public_tracking_profile` trên `src` và `app`, bỏ tệp test | Đúng **một** tệp không phải test tham chiếu hàm đó: `src/domains/applications/application.service.ts`, một lần trong docblock ở `:7` và một lần trong truy vấn ở `:219` | Con số một làm bất biến của hàng rào chặt và rẻ: đúng một tệp được phép đọc hàm ấy, và tệp đó phải che cả hai trường. Một tệp thứ hai xuất hiện là một dòng đỏ |
+| `EV-12` | `src/domains/applications/application.service.ts:233` và `:234` | `row.phone` xuất hiện ĐÚNG một lần trong cả tệp, và nó nằm trong `maskPhone(...)`. `row.cccd_number` xuất hiện ĐÚNG một lần, nằm trong `maskCccd(...)` | Bất biến đo được mà không cần chạy gì: mỗi lần đọc cột thô đều bị bọc bởi phép che. Hai con số một là điều làm assertion không cần biết trước hình dạng mã, chỉ cần đếm |
+| `EV-13` | `src/domains/applications/application.service.ts:57` tới `:69` | `PublicTrackingDto` khai đúng `11` khoá. Hai khoá liên quan PII là `phoneMasked` và `cccdMasked`, cả hai `string` hoặc `null`. KHÔNG có khoá `phone`, `cccdNumber`, `cccd_number` hay `normalizedPhone` | Kiểu là nơi rẻ nhất để chặn hồi quy: thêm một khoá thô vào DTO là một dòng, và không test nào hiện nay bắt được. `tsc` cũng không, vì consumer tự khai interface cục bộ — bài học đã ghi của repo này |
+| `EV-14` | Cùng tệp, `:126`, `:146`, `:166` | `normalizedPhone` tồn tại thật trong tệp nhưng thuộc đường NỘP HỒ SƠ, không thuộc đường tra cứu | Đây là bẫy của hàng rào: một assertion phủ định viết rộng thành "không có `normalizedPhone` trong tệp này" sẽ ĐỎ trên mã đúng. Bất biến phải neo vào `row.phone` và `row.cccd_number`, tức vào kết quả của chính hàm tra cứu |
+| `EV-15` | `hrp-v5-go-live-19-tracking-pii-db-mask` §8 | Owner quyết ngày `03/09`: chọn phương án `Q-03` cho lượt này, tức giữ phép che ở Node cộng một hàng rào tĩnh, và dịch việc che ở tầng SQL sang SAU RA MẮT với điều kiện `DATABASE_URL_TEST` phải tồn tại trước | Đây là nguồn của `RQ-11` và `RQ-12`. Ghi ra để không ai đọc thành `R-02` của task 13 bị bỏ: nó vẫn mở, ở contract 19, chỉ đổi thứ tự |
 
 ## 3. Decisions và Assumptions
 
@@ -77,6 +84,10 @@ Mọi phép đo dưới đây chạy trên baseline ghi ở `0. Control` bằng 
 | `DEC-07` | `F-06` của task 13 nằm trong task NÀY, không nằm trong task che PII ở tầng SQL. Lý do: `F-06` là ba assertion tĩnh, không cần migration, và nó canh một lỗ PII trên bề mặt công khai TRƯỚC lúc ra mắt. Ghép nó vào một task đang chờ Owner mở trần migration là khoá một hàng rào rẻ sau một cổng đắt | Task 13 §9 ghi `F-06` mở "cùng lượt" với `R-02`. Đó là hướng dẫn về thứ tự, không phải một ràng buộc kỹ thuật, và giữ nguyên nó ở đây sẽ để một lỗ PII mở lâu hơn cần thiết. Quyết định này ghi rõ để không ai đọc thành `F-06` bị rơi |
 | `DEC-08` | Assertion phủ định của `F-06` khẳng định trên NGUỒN của trang tra cứu: không xuất hiện `result.phone` ngoài dạng `result.phoneMasked`, và không xuất hiện `result.cccdNumber` dưới mọi dạng. Hai literal khẳng định ở `:353` và `:354` giữ nguyên | Phủ định trên khoá THÔ là thứ chặn một dòng thêm vào bên cạnh. Xoá hai literal khẳng định sẽ mất phần bảo vệ hiện có, nên cộng chứ không thay |
 | `DEC-09` | Nhánh `404` của route tracking nhận CÙNG khoá `headers` với nhánh `200`, không nhận thêm header nào khác, và thân response `404` không đổi một byte | `DEC-18` của contract 07 chỉ nói về cache. Thêm bất cứ gì khác vào thân `404` là mở lại kênh báo tồn tại của bản ghi, đúng thứ route này được viết ra để đóng |
+| `DEC-10` | Hàng rào giữ PII là một tệp THỨ BA, mới: `src/domains/applications/tracking-pii-containment.static.test.ts`. Nó **không** nhập vào `marketplace-inventory.static.test.ts` | Hai bất biến khác nhau: tệp inventory canh những gì trang IN RA, tệp mới canh những gì service ĐỌC RA. Tách ra còn để contract 19 sau này mở rộng đúng một tệp khi phép che chuyển xuống SQL, không phải sửa một tệp dùng chung |
+| `DEC-11` | Bất biến của hàng rào mới gồm ba mệnh đề, cả ba đếm được: một, tập tệp không phải test tham chiếu `hrp_public_tracking_profile` có đúng `1` phần tử; hai, trong tệp đó `row.phone` xuất hiện đúng `1` lần và nằm trong `maskPhone(`, `row.cccd_number` xuất hiện đúng `1` lần và nằm trong `maskCccd(`; ba, thân `PublicTrackingDto` không có khoá nào khớp `phone` hay `cccd` ngoài `phoneMasked` và `cccdMasked` | Ba mệnh đề đếm được thì không cần biết trước hình dạng mã, và cả ba đỏ ngay khi ai đó thêm một đường đọc thô. Mệnh đề ba chặn đúng lớp mà `tsc` mù, vì consumer của repo này tự khai interface cục bộ rồi cast |
+| `DEC-12` | Assertion phủ định của hàng rào mới neo vào `row.phone` và `row.cccd_number`, KHÔNG neo vào chuỗi `phone` hay `normalizedPhone` trần | `EV-14`: `normalizedPhone` tồn tại thật ở đường nộp hồ sơ trong cùng tệp. Một assertion rộng sẽ ĐỎ trên mã đúng, và đó là cách nhanh nhất để một hàng rào bị ai đó tắt đi |
+| `DEC-13` | Hàng rào mới mang một FIXTURE ÂM: một chuỗi nguồn giả trong đó `row.phone` được dùng TRẦN không qua `maskPhone`, và test khẳng định detector BẮT được nó | Không có fixture âm thì một detector luôn trả rỗng cũng xanh. Đây là cùng một bài học với `TEXT_PAIRS` của `go-live-08` |
 
 ## 4. Contract
 
@@ -94,16 +105,18 @@ Mọi phép đo dưới đây chạy trên baseline ghi ở `0. Control` bằng 
 | `RQ-08` | Thêm hai assertion PHỦ ĐỊNH vào `src/domains/applications/marketplace-inventory.static.test.ts` theo `DEC-08`. Hai assertion khẳng định ở `:353` và `:354` giữ nguyên | Must | `DEC-08`, `EV-08` | Không có assertion phủ định; hoặc hai literal cũ bị xoá hay bị sửa; hoặc assertion phủ định viết rộng tới mức bắt luôn `phoneMasked` và làm lane đỏ |
 | `RQ-09` | Không đổi `keywordHaystack`, `searchableTextOf`, `classifyJobType`, `order.description`, và không đổi giá trị nào trong `RATE_LIMIT_RULES` | Must | `EV-09`, `EV-10`, `DEC-02` | Bất kỳ dòng nào trong bốn thứ đó đổi; hoặc một rule đổi `limit` hay `windowSec` |
 | `RQ-10` | `npm run test:unit` và `npm run typecheck` đều exit `0`. Số test PASS không nhỏ hơn mốc mà `STEP-01` ghi | Must | `EV-04` | Một lane exit khác `0`; hoặc số test PASS tụt mà `HANDOFF` không phân loại từng dòng đỏ thành hồi quy hay test cũ chưa đảo |
+| `RQ-11` | Tạo `src/domains/applications/tracking-pii-containment.static.test.ts` thoả cả ba mệnh đề của `DEC-11`. Tập tệp tham chiếu hàm phải do mã TỰ SUY bằng cách quét `src/` và `app/`, không ghim cứng | Must | `DEC-10`, `DEC-11`, `EV-11`, `EV-12`, `EV-13` | Thiếu một trong ba mệnh đề; hoặc đường dẫn service bị ghim thành một hằng rồi so với chính nó; hoặc phép quét bỏ `app/`; hoặc assertion nhập vào `marketplace-inventory.static.test.ts` thay vì tệp mới |
+| `RQ-12` | Cùng hàng rào neo assertion phủ định vào `row.phone` và `row.cccd_number` theo `DEC-12`, và mang fixture ÂM theo `DEC-13` | Must | `DEC-12`, `DEC-13`, `EV-14` | Assertion neo vào chuỗi `phone` trần nên đỏ trên mã đúng; hoặc không có fixture âm |
 
 ### 4.2 Scope boundaries
 
 Được chạm, và chỉ ba nhóm sau:
 
 1. Bốn tệp mã liệt kê ở `Modules` không phải tệp hàng rào mới.
-2. Tệp hàng rào mới `src/shared/security/public-surface-limiter.static.test.ts`.
+2. Hai tệp hàng rào mới: `src/shared/security/public-surface-limiter.static.test.ts` và `src/domains/applications/tracking-pii-containment.static.test.ts`.
 3. Artifact của chính task: `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md` cộng mọi tệp dưới `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/`.
 
-Cấm chạm: `middleware.ts`, `src/shared/security/rate-limit-port.ts`, `src/shared/security/rate-limit-identity.ts`, `src/shared/security/rate-limit-provider.ts`, bốn tệp route ở `EV-04` trừ đúng tệp tracking, `src/domains/job-board/public.service.ts`, `prisma/`, `app/globals.css`, `package.json`, mọi cấu hình vitest. Xuất hiện một nhóm thứ tư là FAIL.
+Cấm chạm: `middleware.ts`, `src/shared/security/rate-limit-port.ts`, `src/shared/security/rate-limit-identity.ts`, `src/shared/security/rate-limit-provider.ts`, `src/domains/applications/application.service.ts`, `src/shared/privacy/mask.ts`, bốn tệp route ở `EV-04` trừ đúng tệp tracking, `src/domains/job-board/public.service.ts`, `prisma/`, `app/globals.css`, `package.json`, mọi cấu hình vitest. Xuất hiện một nhóm thứ tư là FAIL.
 
 ### 4.3 Data, State, Permission và Interface Rules
 
@@ -127,6 +140,8 @@ Cấm chạm: `middleware.ts`, `src/shared/security/rate-limit-port.ts`, `src/sh
 | `STEP-07` | Viết `src/shared/security/public-surface-limiter.static.test.ts` theo `RQ-05` và `RQ-06`, rồi chạy `npx vitest run --config vitest.unit.config.ts src/shared/security/public-surface-limiter.static.test.ts` | Tệp hàng rào cộng output kèm mã thoát. Hàng rào phải XANH sau `STEP-05`, và phải ĐỎ nếu chạy trên cây trước `STEP-05` — Tier 2 chứng minh điều thứ hai bằng cách chạy hàng rào một lần trên bản `git stash` hoặc trên nội dung baseline của trang |
 | `STEP-08` | Thêm hai assertion phủ định vào `src/domains/applications/marketplace-inventory.static.test.ts` theo `RQ-08`, rồi chạy `npx vitest run --config vitest.unit.config.ts src/domains/applications/marketplace-inventory.static.test.ts` | Diff cộng output kèm mã thoát |
 | `STEP-09` | Kiểm `RQ-09`: `git status --porcelain src/domains/job-board/public.service.ts src/shared/security/rate-limit-port.ts middleware.ts` | Output RỖNG cho cả ba đường dẫn |
+| `STEP-11` | Đo lại `EV-11` tới `EV-14` bằng `grep -rn hrp_public_tracking_profile` trên `src` và `app` bỏ test, cộng `grep -c "row.phone"` và `grep -c "row.cccd_number"` trên `src/domains/applications/application.service.ts`, cộng đọc thân `PublicTrackingDto` | Bốn con số thật: `1` tệp, `1` lần `row.phone`, `1` lần `row.cccd_number`, `11` khoá DTO không có khoá thô. Lệch thì ghi thành finding, không im lặng |
+| `STEP-12` | Viết `src/domains/applications/tracking-pii-containment.static.test.ts` theo `RQ-11` và `RQ-12`, rồi chạy `npx vitest run --config vitest.unit.config.ts src/domains/applications/tracking-pii-containment.static.test.ts` | Tệp hàng rào mới cộng output kèm mã thoát. Hàng rào XANH trên cây hiện tại, và fixture âm chứng minh nó bắt được vi phạm |
 | `STEP-10` | Chạy lại `npm run test:unit` và `npm run typecheck`, so số test PASS với mốc của `STEP-01`. Kiểm phạm vi bằng `git status --porcelain` cộng `git diff --cached --numstat`. Ghi `HANDOFF.md` cộng `evidence/`, trong đó có dòng giới hạn CÓ TÊN của `RQ-04`, rồi `git add` NGAY. **KHÔNG commit, KHÔNG push, KHÔNG deploy** | Hai output kèm mã thoát, danh sách path đầy đủ phân đúng ba nhóm của `4.2`, và `HANDOFF.md` với mọi lệnh, mã thoát, output thật |
 
 ## 6. Acceptance Criteria
@@ -147,7 +162,10 @@ Cấm chạm: `middleware.ts`, `src/shared/security/rate-limit-port.ts`, `src/sh
 | `AC-12` | `git diff --cached -- src/domains/applications/marketplace-inventory.static.test.ts` cộng output của `STEP-08` | Có ít nhất hai assertion phủ định mới theo `DEC-08`. Hai dòng `:353` và `:354` còn nguyên trong bản mới. Lane con exit `0`, tức assertion phủ định không viết rộng tới mức bắt luôn khoá đã che |
 | `AC-13` | `git status --porcelain src/domains/job-board/public.service.ts middleware.ts src/shared/security/rate-limit-identity.ts` cộng `git diff --cached --name-only -- prisma/` | Cả bốn RỖNG. Một dòng thuộc `public.service.ts`, `middleware.ts` hay `prisma/` là FAIL toàn task |
 | `AC-14` | `npm run test:unit` rồi `npm run typecheck`, lấy mã thoát bằng redirect chứ không sau ống | Cả hai exit `0`. Số test PASS không nhỏ hơn mốc của `STEP-01`. Mọi dòng đỏ, nếu có, được phân loại từng dòng thành hồi quy hay test cũ chưa đảo |
-| `AC-15` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm | Mọi path thuộc đúng một trong ba nhóm của `4.2`: bốn tệp mã ở `Modules`, tệp hàng rào mới, và `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/**`. Xuất hiện nhóm thứ tư là FAIL. Không có commit mới nào so với baseline |
+| `AC-15` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm | Mọi path thuộc đúng một trong ba nhóm của `4.2`: bốn tệp mã ở `Modules`, hai tệp hàng rào mới, và `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/**`. Xuất hiện nhóm thứ tư là FAIL. Không có commit mới nào so với baseline |
+| `AC-16` | `ls src/domains/applications/tracking-pii-containment.static.test.ts` cộng `npx vitest run --config vitest.unit.config.ts src/domains/applications/tracking-pii-containment.static.test.ts` | Tệp tồn tại, lane con exit `0` |
+| `AC-17` | Đọc mã hàng rào mới, cộng `grep -c "application.service" src/domains/applications/tracking-pii-containment.static.test.ts` | Cả ba mệnh đề của `DEC-11` có mặt: đếm tệp tham chiếu bằng `1`, đếm `row.phone` bằng `1` và bị bọc bởi `maskPhone(`, đếm `row.cccd_number` bằng `1` và bị bọc bởi `maskCccd(`, và thân `PublicTrackingDto` không có khoá thô. Tập tệp do mã TỰ SUY bằng cách quét cây; đường dẫn service xuất hiện dưới dạng literal nhiều nhất `1` lần và chỉ để đối chiếu kết quả quét, không thay cho phép quét. Phép quét phủ cả `src/` và `app/` |
+| `AC-18` | Đọc mã hàng rào mới tìm assertion phủ định và fixture âm, cộng output của `STEP-12` | Assertion phủ định neo vào `row.phone` và `row.cccd_number`, KHÔNG neo vào chuỗi `phone` hay `normalizedPhone` trần. Có ít nhất một `it(` chạy detector trên chuỗi nguồn giả dùng `row.phone` TRẦN và khẳng định detector BẮT được nó. Lane con exit `0`, tức assertion không viết rộng tới mức đỏ trên đường nộp hồ sơ |
 
 ### 6.1 Traceability
 
@@ -163,6 +181,8 @@ Cấm chạm: `middleware.ts`, `src/shared/security/rate-limit-port.ts`, `src/sh
 | `RQ-08` | `STEP-08` | `AC-12` |
 | `RQ-09` | `STEP-09` | `AC-05`, `AC-13` |
 | `RQ-10` | `STEP-01`, `STEP-10` | `AC-14`, `AC-15` |
+| `RQ-11` | `STEP-11`, `STEP-12` | `AC-16`, `AC-17` |
+| `RQ-12` | `STEP-12` | `AC-18` |
 
 ## 7. Risk và Rollback
 
@@ -176,6 +196,9 @@ Cấm chạm: `middleware.ts`, `src/shared/security/rate-limit-port.ts`, `src/sh
 | `RISK-06` | **Fail-open khi limiter chết.** Server Component dễ bị viết theo lối "lỗi limiter thì cứ render", biến một sự cố Upstash thành cửa quét không giới hạn | Trung bình | `4.3` ghi rõ fail-closed. Nhánh limiter không khả dụng phải xử như bốn route đang xử, và `AC-04` đòi không có đường nào tới `withPublicDb` mà không qua limiter |
 | `RISK-07` | **Chạy `npx vitest run` trần.** Lệnh đó đọc `DATABASE_URL` từ `.env`, tức PRODUCTION, và fail oan `24` test component | Trung bình | Mọi lệnh vitest trong `5.` bắt buộc mang `--config vitest.unit.config.ts`. Lane canonical là `npm run test:unit` |
 | `RISK-08` | **Tier 2 đi sửa `Q-01` cũ.** Hàng đợi cũ có một dòng nói probe tìm kiếm phơi `description`; ai đọc hàng đợi mà không đọc `EV-09` sẽ đi cắt `order.description` và đổi nhãn `jobType` của bản ghi đang in đúng | Trung bình | `EV-09`, `EV-10` và `RQ-09` nói thẳng điều đó là SAI và cấm chạm. `AC-13` đo `public.service.ts` không đổi một byte |
+| `RISK-09` | **Hàng rào PII viết quá rộng.** Cách tự nhiên nhất để chặn khoá thô là một regex trên chuỗi `phone`, và nó sẽ bắt luôn `normalizedPhone` ở đường nộp hồ sơ cùng `phoneMasked` ở DTO, tức ĐỎ trên mã đúng. Người tiếp theo sẽ tắt hàng rào thay vì sửa nó | Cao | `EV-14` gọi tên trước ba chuỗi dễ bắt oan. `DEC-12` buộc neo vào `row.phone` và `row.cccd_number`. `AC-18` đòi lane con exit `0`, tức chính phép chạy là hàng rào cho độ rộng của assertion |
+| `RISK-10` | **Hàng rào PII ghim đường dẫn service rồi so với chính nó.** Khi đó `AC-16` xanh mà bất biến rỗng, và một tệp thứ hai đọc hàm tra cứu trong tương lai vẫn vô hình — đúng điểm mù của `TEXT_PAIRS` ở `go-live-08` | Cao | `AC-17` đếm số lần đường dẫn xuất hiện dưới dạng literal và đòi phép quét thật phủ cả `src/` và `app/`. `AC-18` đòi fixture âm, thứ một detector giả không vượt được |
+| `RISK-11` | **`R-02` của task 13 bị đọc thành đã đóng.** Task này chỉ làm phương án `Q-03`; việc che ở tầng SQL vẫn còn nợ | Trung bình | `EV-15` ghi rõ quyết định của Owner và ghi rõ `R-02` vẫn mở ở contract 19. `Q-04` của task này giữ con nợ đó nhìn thấy được |
 
 Rollback: bản giao gồm bốn tệp mã cộng một tệp test mới. Không migration, không đổi schema, không đổi cấu hình, không đổi biến môi trường. Hoàn tác bằng `git restore` trên đúng tập path ở `AC-15`, hoặc `git rm` tệp hàng rào nếu chưa commit. Không có trạng thái DB hay trạng thái Upstash nào cần hoàn: limiter chỉ ĐỌC ngân sách theo IP, và mọi bucket tự hết hạn sau `60` giây.
 
@@ -186,6 +209,7 @@ Rollback: bản giao gồm bốn tệp mã cộng một tệp test mới. Không
 | `Q-01` | Có nên nâng nhánh từ chối của trang chi tiết lên mã `429` thật? Cửa duy nhất là middleware chạy Node runtime, thứ Next `15.1` chưa có ổn định (`EV-05`) | Không chặn thi hành. `DEC-03` đã ghi giới hạn thành một dòng có tên, và điều quan trọng — zero truy vấn DB — đã đạt | Tier 1, khi repo nâng Next lên bản có middleware Node runtime |
 | `Q-02` | Limiter `Map` trong bộ nhớ ở `middleware.ts:31` cho đường `/worker` vẫn là limiter theo instance, đúng khuyết điểm mà `ops-06a` đã thay cho bề mặt công khai. Có chuyển nó sang limiter phân tán không? | Không chặn thi hành và KHÔNG thuộc task này: `/worker` là bề mặt sau đăng nhập, không phải bề mặt ẩn danh. Ghi thành dư nợ | Tier 1, ở một contract hardening nội bộ sau ra mắt |
 | `Q-03` | Kênh còn lại của `order.description` là một nhãn enum ba giá trị (`EV-10`). Có cắt hẳn không? | Không chặn. `EV-10` giải thích vì sao cắt là có hại: nó đổi nhãn của bản ghi đang in đúng, đúng lớp lỗi `go-live-14`. Đây là dư nợ ĐƯỢC CHẤP NHẬN, ghi ra để không ai mở lại bằng phản xạ | Tier 1, chỉ nếu về sau có yêu cầu privacy đòi cắt |
+| `Q-04` | Việc che PII ngay trong `hrp_public_tracking_profile` vẫn còn nợ. Task này chỉ dựng hàng rào ở tầng Node theo quyết định `03/09` của Owner (`EV-15`) | Không chặn task này. Con nợ nằm ở `hrp-v5-go-live-19-tracking-pii-db-mask`, giữ `DRAFT`, và điều kiện thi hành là `DATABASE_URL_TEST` phải tồn tại trước để phép chứng minh tương đương chạy được trên Postgres thật | Owner, cùng lúc quyết credential cho lane integration |
 
 ## 9. Planner Resolution
 
@@ -196,3 +220,4 @@ Chưa có. Task chưa được thi hành.
 | Version | Ngày | Đổi gì |
 |---|---|---|
 | `v1.0` | 2026-09-03 | Bản đầu. Gộp ba món đã đo: limiter cho trang chi tiết SSR (`EV-01`, `EV-02`), `no-store` cho nhánh `404` của tracking tức `DEC-18` của contract 07 (`EV-07`), và `F-06` của task 13 chuyển sang đây kèm lý do ở `DEC-07` (`EV-08`). Bác bỏ `Q-01` cũ của hàng đợi bằng `EV-09` và `EV-10`: `go-live-05` đã loại `order.description` khỏi chuỗi khớp `q` và có comment giải thích tại chỗ, nên không có gì để sửa. Đóng cửa phương án middleware bằng một dữ kiện cơ học ở `EV-05` |
+| `v1.1` | 2026-09-03 | **Cộng món thứ tư theo quyết định `03/09` của Owner** (`EV-15`): phương án `Q-03` của contract 19 — giữ phép che ở Node cộng một hàng rào tĩnh giữ PII — vào task này, thay cho việc che ở tầng SQL ngay lượt này. Thêm `EV-11` tới `EV-15`, `DEC-10` tới `DEC-13`, `RQ-11` và `RQ-12`, `STEP-11` và `STEP-12`, `AC-16` tới `AC-18`, `RISK-09` tới `RISK-11`, và `Q-04`. Thêm một tệp hàng rào mới vào `Modules` và vào nhóm hai của `§4.2`, cộng `application.service.ts` và `mask.ts` vào cột Cấm chạm vì hàng rào ĐỌC chúng chứ không sửa. KHÔNG đổi phạm vi của mười yêu cầu cũ. Cửa sổ bump còn mở vì cả hai round đếm bằng `0` |

@@ -7,7 +7,7 @@
 | Task slug | `hrp-v5-go-live-19-tracking-pii-db-mask` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `DRAFT` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
@@ -17,8 +17,8 @@
 | ADR references | `hrp-v5-go-live-13-tracking-pii-mask` `R-02` và `Q-02` — hai món mà task này đóng, cộng `DEC-16` là lý do chúng không nằm trong round đó; `hrp-v5-go-live-18-public-surface-hardening` `DEC-07` — nơi `F-06` được chuyển đi và vì sao |
 | Current execution round | `0` |
 | Current audit round | `0` |
-| Next gate | CHẶN bởi Owner. Task này cần một migration mới, và trần migration của repo đang đóng theo `DEC-16` của task 13. Chỉ đổi `Status` sang `READY_FOR_EXECUTION` sau khi Owner mở trần và trả lời `Q-01` |
-| Updated | `2026-09-03 15:35 Asia/Bangkok` |
+| Next gate | **HOÃN SANG SAU RA MẮT theo quyết định `03/09` của Owner.** Giữ `DRAFT`. Ba điều kiện phải đủ trước khi đổi sang `READY_FOR_EXECUTION`: một, `DATABASE_URL_TEST` tồn tại để phép chứng minh tương đương chạy được trên Postgres THẬT chứ không chỉ tĩnh; hai, trần migration được Owner mở; ba, ra mắt đã xong. Phần rẻ của `Q-03` đã được giao đi và đang chạy ở `hrp-v5-go-live-18-public-surface-hardening` bản `v1.1` |
+| Updated | `2026-09-03 18:20 Asia/Bangkok` |
 
 Task này đóng `R-02` của `hrp-v5-go-live-13-tracking-pii-mask`: che số điện thoại và CCCD **ngay trong** hàm `hrp_public_tracking_profile`, để giá trị thô không còn ra khỏi database trên đường tra cứu công khai. `Q-02` ở §8 của task 13 đóng cùng lượt.
 
@@ -178,9 +178,10 @@ Rollback: sản phẩm là một tệp migration MỚI cộng hai tệp test. Ch
 
 | ID | Câu hỏi | Ảnh hưởng | Ai trả lời |
 |---|---|---|---|
-| `Q-01` | Trần migration có được mở cho task này chưa? `DEC-16` của task 13 ghi trần đang đóng vì repo khoá số migration chờ. Đây là điều kiện duy nhất chặn task | CHẶN. `Status` giữ `DRAFT` tới khi có câu trả lời. Không có phương án đi đường khác: che ở tầng SQL bắt buộc cần một migration | Owner — `NEED_USER_DECISION` |
-| `Q-02` | Có cần chứng minh phép tương đương trên một Postgres THẬT không? `DEC-07` chỉ chứng minh tĩnh cộng in-process, nên nó bắt được lệch thuật toán nhưng không bắt được lệch do chính Postgres đánh giá khác | Không chặn thi hành, nhưng nó là giới hạn CÓ TÊN của kết quả. Nếu Owner muốn phép chứng minh mạnh hơn thì cần `DATABASE_URL_TEST`, thứ `EV-10` cho thấy chưa từng có | Owner, cùng lúc quyết credential cho lane integration |
-| `Q-03` | Có một phương án RẺ HƠN mà bỏ hẳn migration: giữ nguyên che ở Node, và thay vào đó thêm một hàng rào tĩnh khẳng định caller duy nhất của `hrp_public_tracking_profile` luôn che cả hai trường, cộng một assertion rằng DTO công khai không có khoá thô. Phương án đó không cần trần migration, làm được ngay, nhưng KHÔNG bịt kênh raw ở tầng database nên nó không thoả `RISK-06` của task 13 | Nếu Owner chọn phương án này thì task này chuyển `CANCELLED` và phần hàng rào nhập vào contract 18. Nếu Owner chọn che ở SQL thì task này chạy như đã viết | Owner — `NEED_USER_DECISION` |
+| `Q-01` | Trần migration có được mở cho task này chưa? `DEC-16` của task 13 ghi trần đang đóng vì repo khoá số migration chờ | **ĐÃ TRẢ LỜI `03/09`: chưa mở, và không cần mở bây giờ.** Owner chọn hoãn task này sang sau ra mắt, nên câu hỏi này mở lại đúng lúc mở lại task. `Status` giữ `DRAFT` | Owner — đã trả lời |
+| `Q-02` | Có cần chứng minh phép tương đương trên một Postgres THẬT không? `DEC-07` chỉ chứng minh tĩnh cộng in-process, nên nó bắt được lệch thuật toán nhưng không bắt được lệch do chính Postgres đánh giá khác | **ĐÃ TRẢ LỜI `03/09`: CÓ, và nó thành ĐIỀU KIỆN thi hành.** Đây chính là lý do task hoãn: `RISK-01` cho thấy một chỗ lệch nhỏ giữa SQL và Node sẽ đổi chuỗi in ra cho người dùng mà không lỗi nào được ném, nên một phép chứng minh chỉ tĩnh là không đủ cho một bản sao thứ hai của thuật toán che. `DATABASE_URL_TEST` phải tồn tại trước | Owner — đã trả lời |
+| `Q-03` | Có một phương án RẺ HƠN mà bỏ hẳn migration: giữ nguyên che ở Node, và thay vào đó thêm một hàng rào tĩnh khẳng định caller duy nhất của `hrp_public_tracking_profile` luôn che cả hai trường, cộng một assertion rằng DTO công khai không có khoá thô | **ĐÃ TRẢ LỜI `03/09`: Owner CHỌN phương án này cho lượt trước ra mắt.** Nó đã được giao đi: `hrp-v5-go-live-18-public-surface-hardening` bản `v1.1` mang nó thành hai yêu cầu mới cuối bảng, hàng rào là `src/domains/applications/tracking-pii-containment.static.test.ts`. Task này KHÔNG bị huỷ: nó giữ phần mà phương án kia không làm được, tức bịt kênh raw ở ranh giới database | Owner — đã trả lời |
+| `Q-04` | Sau khi hàng rào tĩnh của contract 18 đã chạy, phần còn lại của task này còn đáng làm không? | Còn, nhưng giá trị đã giảm và phải đo lại lúc mở. Hàng rào tĩnh chặn được lớp lỗi "một caller tương lai quên che"; nó KHÔNG chặn được đường nào đọc thẳng bảng bằng SQL thô hay bằng một quyền mới. Đó là phần còn lại của `RISK-06` task 13 | Tier 1, lúc mở lại task, sau ra mắt |
 
 ## 9. Planner Resolution
 
@@ -191,3 +192,4 @@ Chưa có. Task chưa được thi hành và đang `DRAFT`.
 | Version | Ngày | Đổi gì |
 |---|---|---|
 | `v1.0` | 2026-09-03 | Bản đầu, `DRAFT`. Đóng `R-02` và `Q-02` của `hrp-v5-go-live-13-tracking-pii-mask`. Hai phát hiện làm bản sửa rẻ hơn dự kiến: chữ ký hàm không cần đổi nên `CREATE OR REPLACE` hợp lệ và không cần hàm thứ hai (`EV-02`, `DEC-01`), và phép che của `mask.ts` là luỹ đẳng nên mã ứng dụng đứng ngoài phạm vi (`EV-05`, `DEC-02`). Bẫy chính được ghi tên trước: `\s` của JavaScript là Unicode còn lớp POSIX của Postgres là ASCII, nên `DEC-04` cấm regex và buộc `translate` với danh sách tường minh (`EV-06`). `F-06` của task 13 KHÔNG nằm ở đây, nó đã chuyển sang contract 18 kèm lý do |
+| `v1.1` | 2026-09-03 | **Ghi quyết định `03/09` của Owner: HOÃN task sang sau ra mắt.** Không đổi một requirement nào, không đổi phạm vi, không huỷ task. Ba việc: `Next gate` ghi ba điều kiện phải đủ trước khi đổi `Status`, trong đó điều kiện MỚI và quan trọng nhất là `DATABASE_URL_TEST` phải tồn tại — vì `RISK-01` cho thấy một chỗ lệch nhỏ giữa SQL và Node đổi chuỗi in ra cho người dùng mà không lỗi nào được ném, nên một phép chứng minh chỉ tĩnh là không đủ cho một bản sao thứ hai của thuật toán che; `Q-01`, `Q-02`, `Q-03` được đánh dấu ĐÃ TRẢ LỜI kèm nội dung câu trả lời; và thêm `Q-04` hỏi lại giá trị còn lại sau khi hàng rào tĩnh đã chạy. Phần rẻ của `Q-03` đã giao đi và đang chạy ở `hrp-v5-go-live-18-public-surface-hardening` bản `v1.1` thành hai yêu cầu mới cuối bảng của contract đó |
