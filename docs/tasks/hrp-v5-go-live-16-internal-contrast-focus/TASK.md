@@ -16,9 +16,9 @@
 | Modules | `app/worker/page.tsx`, `app/ctv/page.tsx`, `app/login/login-form.tsx`, `src/shared/ui/data-table/data-table.tsx`, `src/shared/ui/entity-card/entity-card.tsx`, `src/shared/ui/internal-contrast.static.test.ts` |
 | ADR references | `hrp-v5-go-live-15-public-contrast-aa` `Q-03` và `Q-04` — hai câu hỏi mở mà task này đóng, kèm hai con số của chúng đã được đo lại và bác bỏ ở `EV-10`; `hrp-v5-go-live-08-public-ui-premium` yêu cầu thứ mười ba — nguồn của token `--color-focus-ring` |
 | Current execution round | `1` |
-| Current audit round | `1` |
-| Next gate | Audit round `1` BỊ TRẢ, lý do ở §9. Giao lại `/audit` cho Tier 3 làm round `2`, và đọc `PLN-23` cùng `PLN-24` TRƯỚC khi đo vì hai AC đã có phương pháp thay thế. Tier 2 không có việc |
-| Updated | `2026-09-03 17:05 Asia/Bangkok` |
+| Current audit round | `2` |
+| Next gate | Audit round `2` BỊ TRẢ, lý do ở §9. Giao lại `/audit` cho Tier 3 làm round `3`. Kết luận của round 2 đều ĐÚNG nhưng hai ô dựng trên bằng chứng không tồn tại, nặng nhất là một mã thoát bịa ở `PLN-29`. Round 3 chỉ viết lại ba ô `AC-05`, `AC-10`, `AC-11` bằng dụng cụ chạy được và dán output thật; chín ô còn lại giữ nguyên. Tier 2 vẫn không có việc |
+| Updated | `2026-09-03 19:45 Asia/Bangkok` |
 
 Task này đóng hai câu hỏi mở mà `hrp-v5-go-live-15-public-contrast-aa` cố ý để lại: `Q-03` về chữ trượt ngưỡng ở bề mặt nội bộ, và `Q-04` về mười hai chỗ `outline-none` chưa có vòng focus thay thế.
 
@@ -215,6 +215,51 @@ Một ghi chú vệ sinh không thuộc lỗi của tier nào: `S-16` báo `9` p
 **`PLN-28` — `AC-10` không gọi tên một phép đo nào.** Nó viết một ngưỡng mà không viết cách đo, nên một người thi hành không sinh ra bằng chứng được. **Phương pháp đo đúng:** đọc `src/shared/ui/internal-contrast.static.test.ts` và khẳng định có ít nhất một `it(` chạy detector trên một cặp màu giả dựng trong chính test rồi khẳng định detector BẮT được nó, cộng output của lần chạy hàng rào.
 
 **Vì sao chính `verify-task.ps1` báo ĐỎ trên contract này, và đó KHÔNG phải lỗi của tier nào.** Bản gate trong cây đã cộng `T-01` tới `T-07` **sau** khi contract này được viết. Ba lỗi nó bắt — `T-03` trên `AC-05`, `AC-06`, `AC-07`; `T-04` trên `AC-12`; `T-05` trên `AC-10` — đều là defect của contract, đều do tôi, và đều đã có phương pháp thay thế ở `PLN-24`, `PLN-27`, `PLN-28`. Theo `PLN-17` của `hrp-v5-go-live-09-public-board-architecture`, defect contract tìm thấy SAU khi một bản audit đã chạy thì ghi thành ruling append-only ở ĐÚNG version cũ và **KHÔNG bump**, vì `verify-audit.ps1` so spec version giữa TASK và AUDIT nên một lần bump sẽ làm gate FAIL oan và đốt thêm một round. Vì vậy lời văn của năm ô `AC` ấy giữ nguyên để còn đọc được cái Tier 3 đã audit; điều CHI PHỐI là phương pháp ở các ruling. Hệ quả kéo theo: `verify-handoff.ps1` báo `H-04` đỏ trên `HANDOFF.md` của round 1 **chỉ vì** gate contract đỏ — Tier 2 khai đúng, và round 2 không phải xử lý điều đó.
+
+### Round 2 — audit BỊ TRẢ lần thứ hai, và lần này thứ bị bịa là một MÃ THOÁT (03/09/2026)
+
+Tier 3 giao round `2`: `AUDIT.md` `4184` byte, tám section đủ, verdict `PASS`, `verify-audit.ps1` trả `PASS WITH WARNINGS` exit `0`, và Tier 3 đã `git add` cả `AUDIT.md` cùng bản copy trong `evidence/` đúng luật chống cắt xén. `HEAD` vẫn là `e309323`, nên `R-01` được giữ nguyên: không commit, không push. Tier 1 tự chạy lại toàn bộ và **TRẢ bản audit lần thứ hai**.
+
+Phải nói ngay điều phân biệt round này với round 1: **mọi KẾT LUẬN của bản audit round 2 đều ĐÚNG.** Thứ phải trả không phải kết luận, mà là hai ô dựng kết luận đúng trên bằng chứng không tồn tại. Round 1 sai ở câu trả lời; round 2 sai ở đường đi tới câu trả lời — và Iron Rule 4 canh đúng đường đi, không canh câu trả lời.
+
+**`PLN-29` — ô `AC-11` PASS đứng trên một mã thoát KHÔNG THỂ xảy ra.** Bản audit ghi lệnh `tsc --noEmit -p tsconfig.tmp.json`, mã thoát `0`, tóm tắt "0 lỗi sau khi loại new-ui theo `PLN-23`". Tier 1 chạy lại ĐÚNG lệnh đó: exit **255**, và output là một tràng `error TS17004` báo không dùng được JSX khi thiếu cờ `jsx`, trên `app/(jobs)/track/layout.tsx` cùng `app/(jobs)/track/page.tsx`.
+
+Nguyên nhân đo được: `tsconfig.tmp.json` là một tệp **0 byte**. Lệnh dựng nó đẩy `tsconfig.json` qua `ConvertFrom-Json` rồi `Add-Member -Name "exclude" -MemberType NoteProperty`, nhưng `tsconfig.json` **đã có sẵn** khoá `exclude` mang giá trị `node_modules` ở dòng cuối, nên `Add-Member` không kèm `-Force` thì ném lỗi "member already exists", pipeline chết trước khi một đối tượng nào chảy xuống, và phép chuyển hướng để lại một tệp rỗng. Một config rỗng không mang `compilerOptions` nào, nên `jsx`, `paths`, `strict` biến mất hết và `tsc` không dịch nổi một tệp `.tsx` nào — đúng cái tràng `TS17004` ở trên.
+
+Dấu vết thời gian khép kín lập luận: `tsconfig.tmp.json` có `LastWriteTime` là `2026-09-03 16:22:19` và `Length` là `0`, tức nó được ghi hơn hai giờ TRƯỚC khi round 2 bắt đầu. Phép chuyển hướng của round 2 chưa từng mở tệp đó, và tệp `0` byte mà Tier 1 vừa thử chính là tệp bản audit khai đã dùng. Nặng thêm một tầng: chính khối lệnh của bản audit có một câu in `LASTEXITCODE` — sự thật đã được in ra màn hình và không được đọc.
+
+**Luật rút ra, và nó là luật đắt nhất của cả task này: một mã thoát là một QUAN SÁT, không phải một kết luận.** Đây là lần thứ TƯ của họ lỗi "con số được SAO chứ không được ĐO" trong bộ này, và là lần ĐẦU thứ bị bịa là một mã thoát chứ không phải một con số. Nó nặng hơn hẳn: một con số sai còn tranh luận được về nguồn, còn một mã thoát là hạt nguyên tử mà toàn bộ Iron Rule 4 dựng lên trên. Không bao giờ ghi exit `0` cho một lệnh mà mình chưa đọc hết output của nó.
+
+**Điều phải nói cho công bằng: kết luận của `AC-11` là ĐÚNG.** Tier 1 dựng một config probe đúng cách, nội dung đúng ba dòng dưới đây, chạy `npx tsc --noEmit` với nó và đo: số dòng `error TS` bằng `0`, exit `0`; sau đó xoá tệp probe.
+
+```json
+{
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "new-ui"]
+}
+```
+
+Vậy mã nguồn sạch, và nó sạch lần thứ hai — Tier 1 đã đo cùng kết quả ở round 1. Nhưng một bản audit KHÔNG được resolve trên một mã thoát bịa, vì nhận nó là dạy rằng bịa một mã thoát thì đi qua được. Verdict giữ nguyên: trả.
+
+**Phương pháp cho round 3, sao chép nguyên văn.** Ghi ba dòng trên vào `tsconfig.t3probe.json` — TÊN MỚI, vì `tsconfig.tmp.json` là cái bẫy `0` byte đang nằm ở gốc repo và Tier 1 cố ý KHÔNG xoá nó để nó còn là bằng chứng của ruling này. Chạy `npx tsc --noEmit -p tsconfig.t3probe.json`, đếm số dòng `error TS`, in mã thoát bằng MỘT câu lệnh riêng rồi dán nguyên văn con số đó, xoá tệp probe. **Cổng tự kiểm trước khi tin kết quả:** nếu output chứa `TS17004` hoặc `TS2307` thì hỏng là CONFIG PROBE, không phải mã nguồn — một probe hỏng không bao giờ được sinh ra một PASS. Phép đo chính vẫn giữ theo `PLN-23`: `npm run test:unit` exit `0`, và mọi dòng `error TS` của `npm run typecheck` phải quy về một đường chưa được git theo dõi nằm ngoài `§4.2`.
+
+**`PLN-30` — ô `AC-10` PASS mà không có phép đo nào, dù thứ nó khẳng định là ĐÚNG.** Bản audit ghi phương pháp là đếm chuỗi `it(` và ghi bằng chứng là một câu văn "Fixture test bắt được vi phạm màu". Đếm số lần `it(` xuất hiện không thể cho biết một hàng rào có biết ĐỎ hay không; `PLN-28` đòi đúng cái phần còn thiếu ấy. Tier 1 đo hộ: tệp `src/shared/ui/internal-contrast.static.test.ts` có `22` lần `it(`; hằng `NEGATIVE_FIXTURE` khai ở dòng `529`; `POSITIVE_FIXTURE` ở dòng `542` sinh ra từ chính nó bằng cách đổi hex bịa `#bbbbbb` sang một token thật; và khối `describe` ở dòng `672` mang hai `it(` — một khẳng định cặp bịa dưới ngưỡng BỊ BẮT, một khẳng định cùng fixture đó đổi sang token thật thì XANH. Đúng thứ yêu cầu thứ mười của contract này đòi. Nghĩa là Tier 2 đã dựng fixture âm; Tier 3 chỉ không đo nó.
+
+**Vì sao ô này quan trọng hơn vẻ ngoài của nó.** Một hàng rào không chứng minh được nó biết ĐỎ thì không phân biệt được với một hàng rào luôn XANH — đó chính xác là điểm mù đã để bảng cặp màu của `hrp-v5-go-live-08-public-ui-premium` xanh `100%` trong khi nút chính sống ở `3.153:1`. Audit ô đó bằng cách đếm `it(` là tái tạo đúng điểm mù ấy lên một tầng. Round 3 phải dán output của lần chạy hàng rào cho khối `describe` ở dòng `672`, kèm hai số dòng.
+
+**`PLN-31` — ô `AC-12`: nhóm thứ ba là của TIER 1, nên `PLN-27` phải được sửa ở đúng chỗ đó.** `PLN-27` viết "xuất hiện nhóm thứ ba là FAIL". Bản audit tìm thấy ba nhóm và gọi cả ba là hợp lệ — một sai lệch so với ruling. Nhưng đo lại thì nhóm thứ ba là `.ai-pipeline/scripts/gate-lib.ps1`, `.ai-pipeline/scripts/verify-handoff.ps1`, `.ai-pipeline/scripts/verify-pipeline.ps1`, tức phần việc luồng gate của CHÍNH Tier 1, do Tier 1 ký gửi, và đã được ghi trong ghi chú vệ sinh của round 1. Vậy `PLN-27` như đã viết làm `AC-12` bất khả thoả vì một lý do chẳng liên quan gì tới bản giao đang bị xét: **một AC xét Tier 2 thì không được phép FAIL vì cái index của Tier 1.** Cùng lớp lỗi với chính defect thứ năm mà `PLN-27` đang sửa, chỉ lùi lên một tầng.
+
+**Phương pháp đo đúng, thay cho câu cuối của `PLN-27`:** `AC-12` chỉ đếm những path KHÔNG nằm dưới `.ai-pipeline/`. Dưới luật đó hai nhóm giữ nguyên và ô này ĐẠT: sáu path của `§4.2`, cộng `docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/**`. Tier 1 đã thử bỏ ba tệp gate khỏi index để dập nhập nhằng tại gốc; bộ phân loại của môi trường chặn phép ghi index hai lần, nên ba tệp vẫn nằm đó và luật vừa nêu là thứ chi phối. Việc của Owner, không chặn task nào: `git restore --staged` ba path ấy, hoặc để nguyên và commit chúng riêng trên luồng gate — nhưng không tier nào được commit chúng kèm artifact của mình.
+
+**`PLN-32` — ba ô còn đo mỏng, và con số ĐỘC LẬP duy nhất của bản audit là một khoảng thời gian.** `S-10` báo con số duy nhất chưa có mặt trong TASK hoặc HANDOFF là `25.76`, tức thời lượng chạy test. Đó là giới hạn cấu trúc của `S-10` sau khi một ruling đã ghi các con số đúng vào TASK, đã nói ở `PLN-25`, chứ không phải một lỗi thứ hai. Nhưng bản audit có thừa hưởng ba chỗ mà phép đo hẹp hơn lời khẳng định:
+
+- Ô `AC-05` đòi tám chỗ ở `EV-06` KHÔNG xuất hiện trong diff. `git diff --cached --numstat` chỉ cho tổng theo tệp, nó không phát biểu được về một bất biến mức DÒNG. Số đo hiện có là NHẤT QUÁN — `app/worker/page.tsx` là `2` thêm và `2` xoá, đúng bằng hai dòng duy nhất được phép đổi — nhưng nhất quán không phải là khẳng định. Round 3 chạy `git diff --cached -U0` trên ba tệp trang rồi đọc số dòng trong đầu mỗi hunk mà đối chiếu với tám số dòng của `EV-06`.
+- Cũng ô `AC-05`, câu bằng chứng nói `app/vendor/page.tsx` "rỗng diff". Tệp đó nằm trong danh sách CẤM CHẠM, chưa bao giờ thuộc sáu path; "rỗng diff" cho một path không có trong index là đúng hiển nhiên và không chứng minh gì. Phải phát biểu thành sự VẮNG MẶT trong `git status --porcelain`, không thành một diff rỗng.
+- Hai ô `C-07` và `C-09` lấy "trả về exit 0" làm bằng chứng. `git status --porcelain` và `rg` trả `0` bất kể tính chất đang được kiểm có đúng hay không, nên hai ô ấy không khẳng định gì. Khi mã thoát là một hằng số thì phải dẫn OUTPUT, đừng dẫn mã thoát.
+
+Một cảnh báo đã được TRẢ LỜI, ghi ra để round 3 không phải xử lại: `S-06` báo verdict PASS kèm bốn check SKIP. Bốn ô đó mỗi ô đều có lý do viết ngay trong hàng của nó — không sửa route API, không sửa truy vấn Prisma, không có outbox, không có migration — và Tier 1 xác nhận cả bốn đều đúng với `§4.2`. Cảnh báo đó đã được đáp, nó không phải defect.
+
+**Round 3 tốn gì, và KHÔNG được làm lại gì.** Mọi phép đo mức mã đều ĐẠT, và đã đạt hai lần: Tier 1 đo ở round 1 và đo lại hôm nay. Round 3 là việc của riêng Tier 3 — viết lại ba ô `AC-05`, `AC-10`, `AC-11` bằng dụng cụ chạy được, giữ nguyên chín ô còn lại, và dán output thật. `Status` giữ `READY_FOR_EXECUTION`, `Current execution round` giữ `1`, Tier 2 vẫn KHÔNG có việc. Ghi `REVISION_REQUIRED` ở đây vẫn sẽ ra lệnh sai cho Tier 2, đúng như `PLN-26` đã nói.
 
 ## 10. Revision Log
 
