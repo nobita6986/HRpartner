@@ -1,0 +1,61 @@
+﻿### STEP-02 - baseline that va tien de EV-01..EV-05 doc tu ban GOC o HEAD
+
+## A) Baseline: contract ghi e4d18fe, HEAD hien tai khac
+$ git rev-parse --short HEAD
+  80f6933
+$ git log --oneline -1 e4d18fe
+  e4d18fe docs(planner): dịch cursor sang TIER_2_EXECUTION — contract 15 giao được ngay, 07 lên v1.5
+$ git merge-base --is-ancestor e4d18fe HEAD ; echo $LASTEXITCODE
+  exit=0  (0 = e4d18fe la to tien cua HEAD)
+$ git rev-list --count e4d18fe..HEAD
+  5 commit
+$ git log --oneline e4d18fe..HEAD
+  80f6933 docs(planner): dich cursor sang 16 — 15 ACCEPTED va da land ae6e615
+  ae6e615 fix(a11y): dua tuong phan be mat cong khai len WCAG AA (go-live-15)
+  51936a7 docs(go-live-15): bump v1.2 — AC-15 bất khả thoả với mọi bản giao đúng quy trình
+  663053c docs(go-live-15): bump v1.1 — sửa ba lỗi contract do Tier 1 tự đo lại phát hiện
+  846ba0e docs(go-live-16): contract tương phản và vòng focus cho bề mặt nội bộ
+
+$ git diff --stat e4d18fe HEAD -- <5 tep muc tieu>
+  <RONG - nam tep muc tieu giong tung byte giua e4d18fe va HEAD>
+
+$ git diff --stat e4d18fe HEAD -- app/globals.css
+   app/globals.css | 12 +++++++++++-
+   1 file changed, 11 insertions(+), 1 deletion(-)
+  -> chenh lech nam TRON trong .hrp-btn-primary (viec cua go-live-15), KHONG cham khoi @theme.
+     Ba token ma round nay dung van dung gia tri EV-08, kiem duoi day.
+
+$ git show HEAD:app/globals.css | Select-String '--color-(on-surface-variant|error|focus-ring|primary-dark|surface-tint):'
+  --color-primary-dark: #a63b00;
+  --color-on-surface-variant: #594138;
+  --color-surface-tint: #a63b00;
+  --color-error: #ba1a1a;
+  --color-focus-ring: var(--color-primary-dark);
+
+## B) Tien de EV-01..EV-05 doc tu ban GOC (git show HEAD:) - truoc khi round nay sua
+
+--- EV-01 : git show HEAD:app/worker/page.tsx
+   295:             <p className="text-center py-8" style={{ color: 'var(--on-surface-variant, #94a3b8)' }}>Chưa có lịch sử chấm công</p>
+   335:             <div key={i} className="rounded-lg p-4 shadow-sm" style={{ background: 'white', border: '1px solid #f1f5f9' }}>
+   341:                   <p className="text-xs" style={{ color: '#94a3b8' }}>
+   358:                     <p className="text-xs font-medium mb-1" style={{ color: '#94a3b8' }}>Khấu trừ</p>
+
+--- EV-02 : git show HEAD:app/ctv/page.tsx
+   271:             <div className="rounded-lg p-3" style={{ background: '#fef2f2', border: '1px solid #fecaca' }}>
+   273:               <p className="font-bold text-lg" style={{ color: '#dc2626' }}>{formatVnd(commission.totalDebt)} ₫</p>
+   288:         <div className="mb-4 p-3 rounded-lg text-sm" style={{
+   290:           color: msg.type === 'ok' ? '#15803d' : '#dc2626',
+
+--- EV-03 : git show HEAD:app/login/login-form.tsx
+    94:             className="block w-full rounded-xl px-4 py-3 text-sm outline-none"
+    96:               border: '1px solid var(--color-outline-variant)',
+    97:               background: 'var(--color-surface-container-low)',
+   116:             className="block w-full rounded-xl px-4 py-3 text-sm outline-none"
+
+--- EV-04/EV-05 : git show HEAD:src/shared/ui/data-table/data-table.tsx
+   121:                 'h-9 w-[200px] rounded-md border border-slate-200 bg-white pl-8 pr-3 text-sm',
+   123:                 'focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200',
+   334:           className="ml-2 h-8 rounded-md border border-slate-200 bg-white px-2 text-sm focus:border-orange-400 focus:outline-none"
+
+--- EV-05 : git show HEAD:src/shared/ui/entity-card/entity-card.tsx
+   223:         className="block w-full text-left focus:outline-none"

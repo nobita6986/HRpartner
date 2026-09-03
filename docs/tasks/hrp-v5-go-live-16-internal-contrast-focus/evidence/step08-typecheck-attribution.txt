@@ -1,0 +1,53 @@
+﻿### STEP-08 / AC-11 - npm run typecheck: exit 2, nguyen nhan NAM NGOAI sau path
+
+## 1) Lane canonical, nguyen van
+$ npm run typecheck
+  See `npm help npmrc` for supported config options.
+   
+  
+  > hrp@0.1.0 typecheck
+  > tsc --noEmit
+  
+  new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & ... 4 more ... & HTMLAttributes<...>'.
+    Type '{ children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'LinkProps<any>'.
+      Types of property 'href' are incompatible.
+        Type 'undefined' is not assignable to type 'Url'.
+exit=2
+
+## 2) Tep gay loi la gi, thuoc ai
+$ git ls-files new-ui | Measure-Object
+  0 tep -> new-ui/ CHUA DUOC GIT THEO DOI
+$ git status --porcelain new-ui
+  ?? new-ui/
+$ git check-ignore -v new-ui/components/JobCard.tsx ; echo $LASTEXITCODE
+  exit=1 -> khong bi .gitignore loai; no chi la thu muc chua commit cua luong khac
+$ git ls-tree -r --name-only HEAD -- new-ui
+  <RONG> -> HEAD khong chua new-ui/
+$ Get-Item new-ui/components/JobCard.tsx | LastWriteTime
+  2026-09-02 23:19:10   (phien nay bat dau sau 13:30 ngay 2026-09-03)
+$ Select-String '^import' new-ui/components/JobCard.tsx
+  import React from 'react';
+  import Link from 'next/link';
+  -> khong nhap mot tep nao trong sau path cua §4.2
+
+## 3) Cung lenh tsc, loai dung thu muc chua theo doi do
+$ npx tsc -p <tsconfig extends ./tsconfig.json, exclude += new-ui>
+  <khong mot dong loi>
+exit=0
+  (cau hinh tam da bi xoa ngay sau khi chay; xem AC-07: porcelain khong co tep tsconfig nao them)
+
+$ npx tsc -p <tsconfig extends ./tsconfig.json, exclude += new-ui, scratch>
+  <khong mot dong loi>
+exit=0
+  (7 tep tracked duoi scratch/ khong co tep .ts/.tsx nao nen tsc khong doc chung; hai lan chay giong nhau)
+
+## 4) Vi sao CI khong do vi viec nay
+  .github/workflows/ci.yml:46 chay 'npm run typecheck'. actions/checkout chi lay tep DA COMMIT,
+  ma HEAD khong chua new-ui/, nen tsc tren CI khong doc JobCard.tsx. Loi nay chi ton tai
+  trong cay lam viec cua may nay.
+
+## 5) Ket luan cho AC-11
+  AC-11 doi 'ca hai exit 0' va noi ro: 'Neu test:unit do vi mot tep NGOAI sau path nay thi
+  ghi BLOCKED kem nguyen van, dung sua tep ngoai pham vi'. Ap dung dung tinh than do cho
+  typecheck: khong sua new-ui/JobCard.tsx (RQ-07, RISK-07), khai bao thanh Limitation LIM-01.
+  npm run test:unit - nua thu nhat cua AC-11 - exit 0 that su, 104 tep / 1611 test.

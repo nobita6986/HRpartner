@@ -1,0 +1,15 @@
+﻿### STEP-01 - cong chan cua RISK-01. Phai RONG truoc khi lam bat cu gi.
+
+$ git status --porcelain app/globals.css
+<KHONG CO DONG NAO - RONG>
+$ echo exit=$LASTEXITCODE
+exit=0
+
+$ git diff --stat app/globals.css
+<RONG>
+exit=0
+
+Ket luan: cong MO. Ban sua @theme chua commit mo ta o RISK-01 (49 insertions/112 deletions,
+xoa 28 token, 106 tham chieu var() chet, 9 test do) khong con trong cay lam viec.
+Bang chung doc lap: public-ui-premium.static.test.ts XANH 63/63 trong lane o STEP-08 -
+dung bo test ma RISK-01 do la '9 failed, 53 passed'.

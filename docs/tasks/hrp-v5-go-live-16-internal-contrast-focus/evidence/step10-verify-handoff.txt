@@ -1,0 +1,30 @@
+﻿### STEP-10 - cong kiem HANDOFF chay tren chinh ban giao cua round nay
+
+$ powershell -File .\.ai-pipeline\scripts\verify-handoff.ps1 -TaskPath .\docs\tasks\hrp-v5-go-live-16-internal-contrast-focus\TASK.md -HandoffPath .\docs\tasks\hrp-v5-go-live-16-internal-contrast-focus\HANDOFF.md
+
+HANDOFF SUBSTANCE GATE
+  subject: .\docs\tasks\hrp-v5-go-live-16-internal-contrast-focus\HANDOFF.md (against .\docs\tasks\hrp-v5-go-live-16-internal-contrast-focus\TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 31549 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.0 matches TASK.
+  [FAIL] H-04 the verify-task.ps1 row does not record 'RESULT: PASS' in its result column. A round must not be executed against a contract that fails its own gate.
+  [OK]   H-05 all 12 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 18 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 10 STEP appear in the execution trace.
+  [OK]   H-13 8 deviation(s) in section 2, 13 declared in section 5.
+  [OK]   H-14 section 7 records round 1.
+  [OK]   H-15 TASK.md control fields untouched by this round.
+
+RESULT: FAIL (1 error(s), 0 warning(s)).
+Do NOT write "Handoff status: READY_FOR_AUDIT" until these fail items are fixed.
+
+exit=2
+
+## Doc ket qua: loi duy nhat la H-04, va H-04 do vi gate cua CONTRACT do (RESULT: FAIL, 3 error).
+## Tier 2 khong the lam no xanh ma khong bia bang chung (Rule 4) hoac sua TASK.md (Iron Rule 2).
+## Xem DEV-01, DEV-02, DEV-03, DEV-10 trong HANDOFF §5.

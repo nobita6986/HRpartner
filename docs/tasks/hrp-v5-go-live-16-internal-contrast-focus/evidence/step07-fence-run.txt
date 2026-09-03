@@ -1,0 +1,35 @@
+﻿### STEP-07 / AC-08..AC-10 - hang rao moi chay rieng trong lane canonical
+
+$ npx vitest run --config vitest.unit.config.ts src/shared/ui/internal-contrast.static.test.ts
+
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-09 — tập nền đọc từ @theme, không ghim trong test > khối @theme có thật và đủ token nền để đo
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-09 — tập nền đọc từ @theme, không ghim trong test > --color-surface-tint bị loại khỏi tập nền, và lý do loại là đo được
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-09 — tập nền đọc từ @theme, không ghim trong test > ASM-01 — @theme không khai báo khóa --text-* nào, nên cỡ chữ Tailwind mặc định còn đúng
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-09 — tập nền đọc từ @theme, không ghim trong test > ba token thay thế của round này phân giải đúng giá trị EV-08
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-09 — tập nền đọc từ @theme, không ghim trong test > EV-09 — --color-outline đạt 3:1 nhưng KHÔNG đạt 4.5:1, nên cấm dùng làm màu chữ
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-08 — hàng rào phủ cả ba bề mặt theo cặp chữ-nền > trích được cặp ở CẢ BA tệp, không chỉ ở tệp vừa sửa
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-08 — hàng rào phủ cả ba bề mặt theo cặp chữ-nền > số cặp đo được lớn hơn nhiều so với ba dòng mà round này sửa
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-08 — hàng rào phủ cả ba bề mặt theo cặp chữ-nền > có đo những chỗ round này KHÔNG chạm — nền thật, không phải nền ghim
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-08 — hàng rào phủ cả ba bề mặt theo cặp chữ-nền > RQ-01 — hai dòng chữ mờ ở worker đã lên 9.383:1 trên thẻ trắng
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-08 — hàng rào phủ cả ba bề mặt theo cặp chữ-nền > RQ-02 — số nợ hoa hồng ở ctv đã lên 5.906:1 trên panel #fef2f2
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-08 — hàng rào phủ cả ba bề mặt theo cặp chữ-nền > mọi cặp chữ-nền của ba bề mặt đạt ngưỡng của cỡ chữ đó
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-08 — ngoại lệ phải được KHAI, và không được mục > tập vi phạm còn mở KHỚP CHÍNH XÁC bảng đã khai, không thừa không thiếu
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-08 — ngoại lệ phải được KHAI, và không được mục > sáu ngoại lệ, năm trong đó cùng một nguyên nhân --primary trên bề mặt nội bộ
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-08 — ngoại lệ phải được KHAI, và không được mục > mọi ngoại lệ nằm NGOÀI ba dòng mà §4.2 mở cho round này
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-10 — fixture âm chứng minh hàng rào biết ĐỎ > cặp bịa dưới ngưỡng bị bắt
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-10 — fixture âm chứng minh hàng rào biết ĐỎ > cùng fixture đó, đổi sang token thật thì XANH
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-10 — fixture âm chứng minh hàng rào biết ĐỎ > EV-07 — var(--x, hex) với --x có khai báo KHÔNG bị báo lỗi
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-10 — fixture âm chứng minh hàng rào biết ĐỎ > nhánh ba ngôi ghép theo chỉ số, không ghép chéo thành cặp không tồn tại
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-03, RQ-04 — vòng focus 2px màu var(--color-focus-ring) > hai ô nhập trang đăng nhập đều có vòng focus, không còn outline-none trần
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-03, RQ-04 — vòng focus 2px màu var(--color-focus-ring) > ba chỗ focus trong hai primitive dùng cùng token, và ba mẫu cam cũ đã đi
+ ✓ src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-03, RQ-04 — vòng focus 2px màu var(--color-focus-ring) > màu vòng focus đạt ngưỡng thành phần 3:1 trên MỌI nền của hệ
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  13:55:25
+   Duration  402ms (transform 67ms, setup 0ms, collect 100ms, tests 13ms, environment 0ms, prepare 93ms)
+
+exit=0

@@ -1,0 +1,51 @@
+﻿### AC-01..AC-04, AC-12 - lenh nguyen van va ma thoat
+
+## AC-01  rg -n "94a3b8" app/worker/page.tsx
+  (rg co san: False)
+$ git grep -n "94a3b8" -- app/worker/page.tsx   # phep do tuong duong, khong phu thuoc rg
+  app/worker/page.tsx:295:            <p className="text-center py-8" style={{ color: 'var(--on-surface-variant, #94a3b8)' }}>Chưa có lịch sử chấm công</p>
+  app/worker/page.tsx:376:            <p className="text-center py-8" style={{ color: 'var(--on-surface-variant, #94a3b8)' }}>Chưa có phiếu nào</p>
+  exit=0
+  -> HAI dong con lai la var(--on-surface-variant, #94a3b8): token CHINH co khai bao
+     (globals.css:162 --on-surface-variant: var(--color-on-surface-variant) = #594138),
+     nen nhanh du phong KHONG BAO GIO chay. Chinh EV-07 dat ra quy tac nay.
+     Hai dong :341 va :358 - dung hai dong ma §4.2 mo - khong con #94a3b8.
+$ git grep -n "94a3b8" -- app/worker/page.tsx | awk cot dong = 341 hoac 358
+  <RONG - dung nhu RQ-01 doi>
+
+## AC-03  chi bao focus tren hai o nhap dang nhap
+$ git grep -n "focus-visible:ring-2 focus-visible:ring\[var(--color-focus-ring)\]" -- app/login/login-form.tsx
+  app/login/login-form.tsx:94:            className="block w-full rounded-xl px-4 py-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+  app/login/login-form.tsx:116:            className="block w-full rounded-xl px-4 py-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+  exit=0
+$ git grep -cE "outline-none" -- app/login/login-form.tsx
+  app/login/login-form.tsx:2
+  -> hai dong van co outline-none NHUNG khong con TRAN: ca hai co focus-visible:ring-2 bu vao.
+
+## AC-04  ba cho ring trong hai primitive
+$ git grep -nF "ring-\[var(--color-focus-ring)\]" -- src/shared/ui/
+  src/shared/ui/data-table/data-table.tsx:123:                'focus-visible:border-[var(--color-focus-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+  src/shared/ui/data-table/data-table.tsx:334:          className="ml-2 h-8 rounded-md border border-slate-200 bg-white px-2 text-sm focus-visible:border-[var(--color-focus-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+  src/shared/ui/entity-card/entity-card.tsx:223:        className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+  src/shared/ui/internal-contrast.static.test.ts:710:  const RING = 'focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
+  exit=0
+$ git grep -nE "focus:(border-orange-400|ring-orange-200)" -- src/shared/ui/
+  src/shared/ui/internal-contrast.static.test.ts:729:    expect(table).not.toContain('focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200');
+  src/shared/ui/internal-contrast.static.test.ts:730:    expect(table).not.toContain('focus:border-orange-400 focus:outline-none"');
+  exit=0  (exit 1 = khong con mau cam nao o trang thai focus)
+
+## AC-12  HEAD khong doi, sau path chua commit
+$ git log --oneline -1
+  80f6933 docs(planner): dich cursor sang 16 — 15 ACCEPTED va da land ae6e615
+$ git rev-parse --short HEAD
+  80f6933
+$ git status --porcelain -- <6 path>
+  M  app/ctv/page.tsx
+  M  app/login/login-form.tsx
+  M  app/worker/page.tsx
+  M  src/shared/ui/data-table/data-table.tsx
+  M  src/shared/ui/entity-card/entity-card.tsx
+  A  src/shared/ui/internal-contrast.static.test.ts
+  -> cot 1 = M/A (da stage chong cat tep), cot 2 = trong => CHUA COMMIT. Khong co commit moi.
+$ git reflog -1
+  80f6933 HEAD@{0}: commit: docs(planner): dich cursor sang 16 — 15 ACCEPTED va da land ae6e615

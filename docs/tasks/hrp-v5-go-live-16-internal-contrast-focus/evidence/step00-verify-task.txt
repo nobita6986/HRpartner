@@ -1,0 +1,23 @@
+﻿### STEP-00 / hang rao contract - chay gate cua Tier 1 tren chinh TASK.md cua round nay
+
+$ powershell -File .\.ai-pipeline\scripts\verify-task.ps1 -TaskPath .\docs\tasks\hrp-v5-go-live-16-internal-contrast-focus\TASK.md
+
+TASK CONTRACT GATE
+  subject: .\docs\tasks\hrp-v5-go-live-16-internal-contrast-focus\TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+  [OK]   A-05 12 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 2 referenced npm script(s) all exist.
+  [OK]   T-02 6 file:line reference(s) resolve.
+  [WARN] T-03 AC-06 measures scope with 'git diff --stat', which is blind to untracked files (go-live-09 PLN-21: 8 tracked vs 10 real).
+  [WARN] T-03 AC-07 measures scope with 'git diff --stat', which is blind to untracked files (go-live-09 PLN-21: 8 tracked vs 10 real).
+  [FAIL] T-03 AC AC-05, AC-06, AC-07 proves scope with a bare 'git diff'. Use --cached, HEAD, or git status --porcelain.
+  [FAIL] T-04 AC AC-12 constrain the changed-file set but the contract never allows docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/** - unsatisfiable, because the pipeline forces HANDOFF and evidence to live there.
+  [FAIL] T-05 AC AC-10 name neither a command nor an explicit manual method - an executor cannot produce evidence for them.
+  [OK]   T-06 no plaintext secret in TASK.md.
+  [OK]   T-07 control fields unchanged against HEAD.
+
+RESULT: FAIL (3 error(s), 2 warning(s)).
+
+exit=2

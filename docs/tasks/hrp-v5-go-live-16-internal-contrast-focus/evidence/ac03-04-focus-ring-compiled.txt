@@ -1,0 +1,54 @@
+﻿### AC-03 / AC-04 - vong focus co THAT sau khi Tailwind bien dich, khong chi la chuoi trong nguon
+
+Vi sao can buoc nay: EV-04 la loai loi 'vong focus CO trong ma nhung mat khong thay'.
+Doc chuoi className chi chung minh chuoi ton tai. Buoc duoi day bien dich THAT bang
+@tailwindcss/postcss cua chinh repo roi doc quy tac CSS sinh ra.
+
+$ node --input-type=module -e "postcss([tw({base:'C:/CodeApp/HrP'})]).process(read('app/globals.css'))"
+  compiled bytes=119195
+exit=0
+
+## Bon quy tac sinh ra tu cac className cua round nay
+  .focus-visible\:ring-2:focus-visible {
+    --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  .focus-visible\:ring-\[var\(--color-focus-ring\)\]:focus-visible {
+    --tw-ring-color: var(--color-focus-ring);
+  }
+
+  .focus-visible\:border-\[var\(--color-focus-ring\)\]:focus-visible {
+    border-color: var(--color-focus-ring);
+  }
+
+  .focus-visible\:outline-none:focus-visible {
+    --tw-outline-style: none;
+    outline-style: none;
+  }
+
+Doc ra:
+  - ring-2 sinh 'calc(2px + var(--tw-ring-offset-width))' -> day DUNG 2px, dat nguong day cua RQ-03.
+  - ring-[var(--color-focus-ring)] sinh '--tw-ring-color: var(--color-focus-ring)' -> mau la TOKEN,
+    khong phai mot hex moi. --color-focus-ring o globals.css:122 nam TRONG khoi @theme.
+  - vong focus ve bang box-shadow, nen 'outline-none' con lai tren cung className KHONG xoa no.
+    Day la ly do RQ-03 doi 'khong con outline-none TRAN' chu khong doi xoa outline-none.
+
+## Ti so cua vong focus tren nen THAT cua tung o (WCAG 1.4.11, nguong 3:1)
+  --color-focus-ring = var(--color-primary-dark) = #a63b00
+
+  | Nen                                                          | Ti so   | Ket |
+  |--------------------------------------------------------------|---------|-----|
+  | #f4f3f1  --color-surface-container-low (nen hai o nhap login)| 5.832:1 | DAT |
+  | #ffffff  bg-white (o tim + select cua data-table)             | 6.468:1 | DAT |
+  | #faf9f7  --color-background (nen trang)                       | 6.147:1 | DAT |
+  | #dadad8  --color-surface-dim (nen TOI NHAT cua he)            | 4.620:1 | DAT |
+
+  San tren MOI nen trong @theme = 4.620:1, du 1.620 so voi nguong 3:1. Trung so EV-08 ghi.
+  Hang rao tu tinh lai san nay moi lan chay: test 'mau vong focus dat nguong thanh phan 3:1
+  tren MOI nen cua he' trong internal-contrast.static.test.ts, khong phai so chep tay.
+
+## Doi chieu tien le trong repo cho dang -[var(--x)]
+$ git grep -nF -- "-[var(--" -- app src | Measure-Object
+  24 dong. Phan lon o app/admin/*/page.tsx dang hover:bg-[var(--color-surface-container)].
+  Dang viet nay khong phai do Tier 2 tu nghi ra.

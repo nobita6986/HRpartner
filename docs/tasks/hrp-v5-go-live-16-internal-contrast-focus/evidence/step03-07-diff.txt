@@ -1,0 +1,116 @@
+﻿### STEP-03..STEP-07 - dien van git diff cua nam tep da sua + mot tep moi
+
+Luu y cho Tier 3: sau khi Tier 2 chay 'git add' (chong cat tep ve 0 byte theo lenh Owner),
+'git diff' TRAN se RONG vi thay doi nam trong index. Dung 'git diff HEAD' hoac 'git diff --cached'.
+
+$ git diff HEAD --stat -- <6 path §4.2>
+   app/ctv/page.tsx                               |   2 +-
+   app/login/login-form.tsx                       |   4 +-
+   app/worker/page.tsx                            |   4 +-
+   src/shared/ui/data-table/data-table.tsx        |   4 +-
+   src/shared/ui/entity-card/entity-card.tsx      |   2 +-
+   src/shared/ui/internal-contrast.static.test.ts | 744 +++++++++++++++++++++++++
+   6 files changed, 752 insertions(+), 8 deletions(-)
+exit=0
+
+$ git diff HEAD -- app/worker/page.tsx app/ctv/page.tsx app/login/login-form.tsx src/shared/ui/data-table/data-table.tsx src/shared/ui/entity-card/entity-card.tsx
+diff --git a/app/ctv/page.tsx b/app/ctv/page.tsx
+index 3e23850..d953bf9 100644
+--- a/app/ctv/page.tsx
++++ b/app/ctv/page.tsx
+@@ -270,7 +270,7 @@ export default function CtvPage() {
+             </div>
+             <div className="rounded-lg p-3" style={{ background: '#fef2f2', border: '1px solid #fecaca' }}>
+               <p className="text-xs" style={{ color: '#991b1b' }}>Nợ hoa hồng</p>
+-              <p className="font-bold text-lg" style={{ color: '#dc2626' }}>{formatVnd(commission.totalDebt)} ₫</p>
++              <p className="font-bold text-lg" style={{ color: 'var(--color-error)' }}>{formatVnd(commission.totalDebt)} ₫</p>
+             </div>
+           </div>
+           {/* Bar chart */}
+diff --git a/app/login/login-form.tsx b/app/login/login-form.tsx
+index 81d8421..8e0e1ec 100644
+--- a/app/login/login-form.tsx
++++ b/app/login/login-form.tsx
+@@ -91,7 +91,7 @@ export default function LoginForm({ subtitle = 'Đăng nhập hệ thống' }: {
+             autoComplete="username"
+             value={phone}
+             onChange={(e) => setPhone(e.target.value)}
+-            className="block w-full rounded-xl px-4 py-3 text-sm outline-none"
++            className="block w-full rounded-xl px-4 py-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+             style={{
+               border: '1px solid var(--color-outline-variant)',
+               background: 'var(--color-surface-container-low)',
+@@ -113,7 +113,7 @@ export default function LoginForm({ subtitle = 'Đăng nhập hệ thống' }: {
+             autoComplete="current-password"
+             value={password}
+             onChange={(e) => setPassword(e.target.value)}
+-            className="block w-full rounded-xl px-4 py-3 text-sm outline-none"
++            className="block w-full rounded-xl px-4 py-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+             style={{
+               border: '1px solid var(--color-outline-variant)',
+               background: 'var(--color-surface-container-low)',
+diff --git a/app/worker/page.tsx b/app/worker/page.tsx
+index 32a19a8..7c2b144 100644
+--- a/app/worker/page.tsx
++++ b/app/worker/page.tsx
+@@ -338,7 +338,7 @@ export default function WorkerPage() {
+                   <p className="font-semibold" style={{ color: '#1e293b' }}>
+                     Tháng {p.periodMonth}/{p.periodYear}
+                   </p>
+-                  <p className="text-xs" style={{ color: '#94a3b8' }}>
++                  <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
+                     Tính lúc: {new Date(p.computedAt).toLocaleString('vi-VN')}
+                   </p>
+                 </div>
+@@ -355,7 +355,7 @@ export default function WorkerPage() {
+                 </div>
+                 {Object.keys(p.deductions ?? {}).length > 0 && (
+                   <div className="pt-1 mt-1" style={{ borderTop: '1px dashed #e2e8f0' }}>
+-                    <p className="text-xs font-medium mb-1" style={{ color: '#94a3b8' }}>Khấu trừ</p>
++                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-on-surface-variant)' }}>Khấu trừ</p>
+                     {Object.entries(p.deductions).map(([k, v]) => (
+                       <div key={k} className="flex justify-between">
+                         <span style={{ color: '#64748b' }}>{k}</span>
+diff --git a/src/shared/ui/data-table/data-table.tsx b/src/shared/ui/data-table/data-table.tsx
+index fb8f1a3..700eabc 100644
+--- a/src/shared/ui/data-table/data-table.tsx
++++ b/src/shared/ui/data-table/data-table.tsx
+@@ -120,7 +120,7 @@ function DataTableToolbar<TData>({
+               className={cn(
+                 'h-9 w-[200px] rounded-md border border-slate-200 bg-white pl-8 pr-3 text-sm',
+                 'placeholder:text-slate-400',
+-                'focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200',
++                'focus-visible:border-[var(--color-focus-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+               )}
+             />
+           </div>
+@@ -331,7 +331,7 @@ function DataTablePagination<TData>({ table, totalRows }: PaginationProps<TData>
+         <select
+           value={pageSize}
+           onChange={(e) => table.setPageSize(Number(e.target.value))}
+-          className="ml-2 h-8 rounded-md border border-slate-200 bg-white px-2 text-sm focus:border-orange-400 focus:outline-none"
++          className="ml-2 h-8 rounded-md border border-slate-200 bg-white px-2 text-sm focus-visible:border-[var(--color-focus-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+         >
+           {[10, 20, 50, 100].map((s) => (
+             <option key={s} value={s}>
+diff --git a/src/shared/ui/entity-card/entity-card.tsx b/src/shared/ui/entity-card/entity-card.tsx
+index 99f1109..e0458e5 100644
+--- a/src/shared/ui/entity-card/entity-card.tsx
++++ b/src/shared/ui/entity-card/entity-card.tsx
+@@ -220,7 +220,7 @@ export function EntityCard({
+       <button
+         type="button"
+         onClick={onClick}
+-        className="block w-full text-left focus:outline-none"
++        className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+       >
+         {content}
+       </button>
+exit=0
+
+## Tep MOI cua STEP-07 khong hien noi dung trong diff o tren vi no la tep them moi.
+$ git diff HEAD --stat -- src/shared/ui/internal-contrast.static.test.ts
+   src/shared/ui/internal-contrast.static.test.ts | 744 +++++++++++++++++++++++++
+   1 file changed, 744 insertions(+)
+$ Get-Content src/shared/ui/internal-contrast.static.test.ts | Measure-Object -Line
+  744 dong, 30772 byte

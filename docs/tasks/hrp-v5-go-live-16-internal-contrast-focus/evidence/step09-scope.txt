@@ -1,0 +1,95 @@
+﻿### STEP-09 / AC-06 / AC-07 - pham vi thay doi, do bang BA phep doc lap
+
+Vi sao khong dung 'git diff --stat' tran nhu AC-06/AC-07 viet: xem DEV-01 trong HANDOFF §5.
+Phep do o day manh hon theo hai chieu - thay ca tep chua theo doi, va khong bi rong sau 'git add'.
+
+## 1) git diff HEAD --stat loc theo dung sau path §4.2
+$ git diff HEAD --stat -- <6 path>
+   app/ctv/page.tsx                               |   2 +-
+   app/login/login-form.tsx                       |   4 +-
+   app/worker/page.tsx                            |   4 +-
+   src/shared/ui/data-table/data-table.tsx        |   4 +-
+   src/shared/ui/entity-card/entity-card.tsx      |   2 +-
+   src/shared/ui/internal-contrast.static.test.ts | 744 +++++++++++++++++++++++++
+   6 files changed, 752 insertions(+), 8 deletions(-)
+exit=0
+
+## 2) git status --porcelain toan cay, chi giu dong DA THAY DOI (cot 1 hoac 2 khac trong)
+$ git status --porcelain
+   M .ai-pipeline/scripts/verify-audit.ps1
+   M .ai-pipeline/scripts/verify-pipeline.ps1
+   M .ai-pipeline/scripts/verify-task.ps1
+   M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+   M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+   M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+  AD docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step03-06-diff.txt
+   M public/index.html
+
+   Trong danh sach tren, thuoc round nay (6 path §4.2 + HANDOFF/evidence):
+     M  app/ctv/page.tsx
+     M  app/login/login-form.tsx
+     M  app/worker/page.tsx
+     A  docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/ac05-ev06-eight-spots.txt
+     A  docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/q02-importers.txt
+     A  docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step01-globals-gate.txt
+     A  docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step02-baseline-and-preconditions.txt
+     AD docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step03-06-diff.txt
+     A  docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step07-contrast-table.txt
+     A  docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step07-fence-run.txt
+     A  docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step08-test-unit.txt
+     A  docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step08-typecheck-minus-newui.txt
+     A  docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step08-typecheck-tracked-only.txt
+     A  docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step08-typecheck.txt
+     A  docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step09-scope.txt
+     M  src/shared/ui/data-table/data-table.tsx
+     M  src/shared/ui/entity-card/entity-card.tsx
+     A  src/shared/ui/internal-contrast.static.test.ts
+     ?? docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/ac01-04-12-commands.txt
+     ?? docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/ac03-04-focus-ring-compiled.txt
+     ?? docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step00-verify-task.txt
+     ?? docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step03-07-diff.txt
+     ?? docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/step08-typecheck-attribution.txt
+
+   KHONG thuoc round nay - da doi TRUOC khi round nay bat dau:
+     .ai-pipeline/scripts/verify-audit.ps1     M   viec Owner giao rieng ('chi cham .ai-pipeline/scripts/*')
+     .ai-pipeline/scripts/verify-pipeline.ps1  M   cung viec do
+     .ai-pipeline/scripts/verify-task.ps1      M   cung viec do
+     docs/tasks/hrp-v5-go-live-02-.../AUDIT.md M   sua chua commit cua luong khac, 2026-08-31 21:44:32
+     docs/tasks/hrp-v5-go-live-04-.../AUDIT.md M   nhu tren
+     docs/tasks/hrp-v5-go-live-13-.../AUDIT.md M   nhu tren
+     public/index.html                         M   nhu tren
+   Ca bay deu KHONG nam trong Modules cua contract 16 va KHONG nam trong Modules cua contract 15.
+
+## 3) app/globals.css - AC-06, do ba lan bang ba lenh khac nhau
+$ git diff --stat app/globals.css
+  <RONG>
+exit=0
+$ git diff HEAD --stat app/globals.css
+  <RONG>
+exit=0
+$ git status --porcelain app/globals.css
+  <RONG>
+exit=0
+  -> khong mot byte. RQ-06 va DEC-05 duoc ton trong; khong token nao trong @theme bi doi gia tri.
+
+## 4) Cac path bi CAM cham (§4.2, RQ-07) - kiem tung path
+  app/globals.css                                            SACH
+  app/(portal)/page.tsx                                      SACH
+  app/components/GlobalNavbar.tsx                            SACH
+  app/(jobs)/track/page.tsx                                  SACH
+  app/vendor/page.tsx                                        SACH
+  app/admin                                                  SACH
+  src/domains/job-board/public-ui-premium.static.test.ts     SACH
+
+## 5) new-ui/ khong xuat hien trong pham vi cua round nay (AC-07)
+$ git status --porcelain new-ui
+  ?? new-ui/
+  -> '??' = chua theo doi, co truoc round nay (LastWriteTime 2026-09-02 23:19:10), Tier 2 khong cham.
+
+## 6) AC-12 - HEAD khong doi, khong co commit moi
+$ git log --oneline -1
+  80f6933 docs(planner): dich cursor sang 16 — 15 ACCEPTED va da land ae6e615
+$ git reflog -1 --date=iso --format='%h %gd %gs'
+  80f6933 HEAD@{2026-09-03 11:47:00 +0700} commit: docs(planner): dich cursor sang 16 — 15 ACCEPTED va da land ae6e615
+  -> HEAD@{...} moi nhat la commit 11:47:00 cua Tier 1, TRUOC khi round nay bat dau (13:38).
+     Tier 2 khong tao commit, khong push, khong deploy.

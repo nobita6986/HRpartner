@@ -1,0 +1,72 @@
+### DEV-10 - H-04 cua verify-handoff.ps1 tung MO SAI, da bit lai
+
+Boi canh: HANDOFF nay trich cau "template doi dong nay RESULT: PASS" vao o Limitation
+cua chinh hang verify-task.ps1, trong khi o Exit/result ghi that la "RESULT: FAIL".
+H-04 ban dau ghep MOI o cua hang lai roi moi do khop "RESULT: PASS", nen no khop vao
+cau van xuoi va bao [OK] cho mot round co gate contract DO.
+
+## 1) Lan chay dau tien - bang chung H-04 mo sai
+
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+
+  ... trong khi cung tep do, o Exit/result ghi 'RESULT: FAIL (3 error(s), 2 warning(s))'.
+
+## 2) Do lai hai cach tren dung hinh dang hang cua HANDOFF nay
+
+$ powershell -File <probe>   # nap gate-lib.ps1, dung Get-MarkdownTables cua chinh no
+
+  cot ket qua = index 2  (Exit/result)
+  o ket qua   = 'RESULT: FAIL (3 error(s))'
+  o limitation= template doi dong nay 'RESULT: PASS' nhung gate cua contract do
+  CACH CU  (-join toan hang, -match 'RESULT: PASS') = True     [mo sai]
+  CACH MOI (Test-GateRowPassed)                     = False    [dung]
+exit=0
+
+## 3) Ban sua
+
+  gate-lib.ps1        them Test-GateRowPassed - doc RIENG cot ket qua, va chan truoc
+                      neu cot do chua 'RESULT: FAIL'. Khi bang khong co cot ket qua
+                      nhan dang duoc thi moi lui ve ghep ca hang.
+  verify-handoff.ps1  H-04 goi Test-GateRowPassed thay vi ghep toan hang; them bien
+                      $resCol lay tu header cua bang.
+
+## 4) Lan chay sau khi sua - tren chinh HANDOFF nay
+
+$ powershell -File .\.ai-pipeline\scripts\verify-handoff.ps1 -TaskPath ...TASK.md -HandoffPath ...HANDOFF.md
+
+  [FAIL] H-04 the verify-task.ps1 row does not record 'RESULT: PASS' in its result column.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  RESULT: FAIL (1 error(s), 0 warning(s)).
+exit=2
+
+## 5) Hoi quy: selftest cua ca bo gate sau khi sua
+
+$ powershell -File .\.ai-pipeline\scripts\verify-gates.selftest.ps1
+
+  [  ok  ] handoff FAIL H-04 dong dau §3 khong phai verify-task.ps1
+  cases: 33 total (3 green, 30 red), failures: 0
+  RESULT: PASS. Every gate rejects the historical defect it was written for,
+                and still accepts a clean artifact.
+exit=0
+
+## 6) Vi sao Tier 2 khong the lam H-04 XANH cho round nay
+
+  Chi co hai duong:
+   (a) ghi PASS gia vao o ket qua - la bang chung bia, Rule 4 cua CLAUDE.md cam;
+   (b) sua TASK.md cho gate contract xanh - Iron Rule 2 cam Tier 2 cham contract.
+  Nen H-04 DO la ket qua DUNG. No do vi CONTRACT, khong vi ban giao. Xem DEV-01..DEV-03.
+
+## 7) Ghi chu ky thuat - ma hoa tep
+
+  Ban sua dau tien lam mat BOM UTF-8 cua gate-lib.ps1 va verify-handoff.ps1;
+  PowerShell 5.1 doc tep khong BOM theo ANSI nen bao ParseException tai ky tu Viet
+  ("Unexpected token 'Ã£'"). Da ghi lai ca hai bang UTF8Encoding($true) va chay lai
+  sach. verify-pipeline.ps1 cung duoc dat BOM cho dong bo (tep do khong co byte
+  non-ASCII nen truoc do khong loi).
+
+## 8) Pham vi
+
+  Hai tep nay thuoc viec Owner giao rieng ('chi cham .ai-pipeline/scripts/*'),
+  KHONG thuoc sau path cua §4.2 contract 16. Chung da o trang thai chua commit
+  truoc khi round nay bat dau. Sua o day vi mot cong MO SAI con te hon khong co cong,
+  va vi chinh no vua cham vao ban giao cua round nay.

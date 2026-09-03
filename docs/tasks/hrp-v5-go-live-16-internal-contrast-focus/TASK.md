@@ -15,10 +15,10 @@
 | Baseline | `e4d18fe` |
 | Modules | `app/worker/page.tsx`, `app/ctv/page.tsx`, `app/login/login-form.tsx`, `src/shared/ui/data-table/data-table.tsx`, `src/shared/ui/entity-card/entity-card.tsx`, `src/shared/ui/internal-contrast.static.test.ts` |
 | ADR references | `hrp-v5-go-live-15-public-contrast-aa` `Q-03` và `Q-04` — hai câu hỏi mở mà task này đóng, kèm hai con số của chúng đã được đo lại và bác bỏ ở `EV-10`; `hrp-v5-go-live-08-public-ui-premium` yêu cầu thứ mười ba — nguồn của token `--color-focus-ring` |
-| Current execution round | `0` |
-| Current audit round | `0` |
-| Next gate | Chờ Owner quyết số phận bản sửa `@theme` chưa commit đang nằm trong worktree (`RISK-01`). Chỉ giao `/code` khi `git status --porcelain app/globals.css` rỗng |
-| Updated | `2026-09-03 00:20 Asia/Bangkok` |
+| Current execution round | `1` |
+| Current audit round | `1` |
+| Next gate | Audit round `1` BỊ TRẢ, lý do ở §9. Giao lại `/audit` cho Tier 3 làm round `2`, và đọc `PLN-23` cùng `PLN-24` TRƯỚC khi đo vì hai AC đã có phương pháp thay thế. Tier 2 không có việc |
+| Updated | `2026-09-03 17:05 Asia/Bangkok` |
 
 Task này đóng hai câu hỏi mở mà `hrp-v5-go-live-15-public-contrast-aa` cố ý để lại: `Q-03` về chữ trượt ngưỡng ở bề mặt nội bộ, và `Q-04` về mười hai chỗ `outline-none` chưa có vòng focus thay thế.
 
@@ -194,7 +194,27 @@ Cấm chạm, ngoài phạm vi:
 
 ## 9. Planner Resolution
 
-Chưa có. Task ở round `0`, chưa giao `/code`.
+### Round 1 — audit BỊ TRẢ, và hai defect là của CONTRACT chứ không của Tier 2 (03/09/2026)
+
+Tier 2 giao round `1`, `HANDOFF.md` kết `READY_FOR_AUDIT`. Tier 3 ghi `AUDIT.md` `4592` byte, verdict `BLOCKED` vì `AC-11`, và `verify-audit.ps1` trả `PASS WITH WARNINGS` exit `0`. Tier 1 tự chạy lại toàn bộ phép đo và **TRẢ bản audit**, đồng thời tự sửa hai defect của chính contract này.
+
+**`PLN-23` — `AC-11` KHÔNG THỂ THOẢ trên cây này, và đó là lỗi của tôi.** Lời văn của `AC-11` đòi `npm run test:unit` và `npm run typecheck` cả hai exit `0`, rồi mở một cửa `BLOCKED` **chỉ cho `test:unit`** — không mở cho `typecheck`. Nhưng `tsconfig.json` khai `include` là `**/*.ts` cộng `**/*.tsx` và `exclude` chỉ có `node_modules`, nên `tsc` thu cả `new-ui/`, một thư mục **chưa từng được commit** (`git log -- new-ui/` RỖNG, `git ls-tree HEAD -- new-ui` rỗng, `git ls-files new-ui` đếm `0`) thuộc luồng `ui-01` và ghi lúc `2026-09-02 23:19:10`, tức TRƯỚC round này. Vì vậy nửa `typecheck` của `AC-11` đã đỏ ở baseline và không một Tier 2 nào làm nó xanh được mà không phạm `§4.2`. Tệ hơn: chính `AC-07` của tôi gọi tên `new-ui/`, nghĩa là tôi BIẾT thư mục đó tồn tại lúc viết contract mà vẫn không mở cửa cho `typecheck`.
+
+**Phương pháp đo đúng cho `AC-11`, thay cho lời văn cũ:** `npm run test:unit` phải exit `0`; còn `typecheck` PASS khi và chỉ khi **mọi** dòng `error TS` của nó quy được về một đường dẫn chưa được git theo dõi và nằm ngoài `§4.2`. Phép đo phụ bắt buộc: chạy `tsc --noEmit` với một config tạm chỉ thêm `new-ui` vào `exclude`, và nó phải exit `0`.
+
+**`PLN-24` — `AC-05`, `AC-06`, `AC-07` đo bằng một dụng cụ TRẢ RỖNG trên cây này.** Cả ba viết `git diff` TRẦN. Tier 2 ký gửi bản giao trong INDEX suốt cả round, nên `git diff` trần không thấy sáu tệp mã, và một ô Evidence ghi "`6 files changed`" từ `git diff --stat --name-only` là bất khả theo hai lẽ: dụng cụ rỗng, và hai cờ đó cùng lúc không in dòng tổng kết nào. Đây đúng lỗi mà contract 15 đã mắc ở ô phạm vi của nó, và bản `verify-task.ps1` đã siết sau đó có `T-03` bắt được nó. **Phương pháp đo đúng:** `git diff --cached --numstat` cộng `git status --porcelain`, hợp hai danh sách. Đo lại bằng dụng cụ đúng: sáu path, `752` dòng thêm và `8` dòng xoá, `app/globals.css` không xuất hiện.
+
+**`PLN-25` — bản audit round 1 BỊ TRẢ, và lý do nặng nhất là một con số được SAO chứ không được ĐO.** `C-08` cùng `§4` của bản audit ghi `1590` test. Tier 1 tự chạy lane: `Test Files 104 passed (104)`, `Tests 1611 passed (1611)`, exit `0`. `1590` là mốc baseline của `hrp-v5-go-live-15-public-contrast-aa`, và hàng rào mới của round này góp đúng `21` test — phép cộng `1590` cộng `21` bằng `1611` khép kín chuỗi và chứng minh `1590` **không quan sát được** trên cây đã audit. Chính `verify-audit.ps1` chỉ vào đó: `S-10` báo *"only 1 number in this audit are not already in TASK or HANDOFF: 1590"*, tức con số ĐỘC LẬP duy nhất của bản audit là con số sai. Cộng thêm ba ô PASS dựng trên dụng cụ rỗng của `PLN-24`, và `§5 Coverage Gaps` chỉ nêu `AC-11` trong khi bốn ô cần nêu. Một điểm phải nói cho chính xác về nhân quả: sau khi ruling này ghi `1590` vào TASK, `S-10` chuyển từ WARN sang FAIL vì mọi con số của bản audit từ nay đều đã có mặt trong TASK hoặc HANDOFF. Cái FAIL đó là HỆ QUẢ CƠ HỌC của chính ruling này, KHÔNG phải một bằng chứng độc lập thứ hai. Bằng chứng độc lập chỉ có một: con số `1611` do Tier 1 tự đo.
+
+**`PLN-26` — phép đo độc lập của Tier 1, và kết luận về Tier 2.** `npm run test:unit` exit `0`, `104` tệp, `1611` test. `npm run typecheck` đỏ với **đúng một** dòng `error TS`, quy về `new-ui/components/JobCard.tsx`, không dòng nào khác. `tsc --noEmit` với `new-ui` bị loại: exit `0`, `0` lỗi. `git diff --cached --numstat` cho đúng sáu path của `§4.2`. **Bản giao của Tier 2 lành về thực chất**, và việc họ TỪ CHỐI sửa tệp ngoài phạm vi rồi khai thành giới hạn là đúng chính chỉ dẫn của `RISK-07`. Vì mọi phép đo mức mã đều ĐẠT, round tiếp theo chỉ tốn Tier 3: `Status` giữ `READY_FOR_EXECUTION`, `Current execution round` giữ `1`, Tier 2 KHÔNG có việc. Ghi `REVISION_REQUIRED` ở đây sẽ ra lệnh sai cho Tier 2.
+
+Một ghi chú vệ sinh không thuộc lỗi của tier nào: `S-16` báo `9` path staged nằm ngoài thư mục task. Sáu trong số đó là bản giao hợp lệ của Tier 2; ba path còn lại là `gate-lib.ps1`, `verify-handoff.ps1`, `verify-pipeline.ps1` của luồng làm gate. Không tier nào được commit ba path ấy kèm artifact của mình.
+
+**`PLN-27` — `AC-12` bất khả thoả với MỌI bản giao đúng quy trình, và đây là lần thứ NĂM tôi viết đúng lỗi này.** `AC-12` ràng buộc tập file chưa commit là "sáu path", nhưng pipeline **BUỘC** Tier 2 ghi `HANDOFF.md` cộng `evidence/`, và cả hai nằm dưới `docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/`. Một Tier 3 đọc đúng mặt chữ phải BLOCK oan. Đúng lỗi mà contract 15 đã mắc ở ô phạm vi cuối của nó, và bản `verify-task.ps1` đã siết có `T-04` bắt được nó. **Phương pháp đo đúng cho `AC-12`:** `HEAD` không đổi so với `e4d18fe`, không có commit mới, và tập path chưa commit chia đúng HAI nhóm — sáu path của `§4.2`, cộng `docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/**`. Xuất hiện nhóm thứ ba là FAIL.
+
+**`PLN-28` — `AC-10` không gọi tên một phép đo nào.** Nó viết một ngưỡng mà không viết cách đo, nên một người thi hành không sinh ra bằng chứng được. **Phương pháp đo đúng:** đọc `src/shared/ui/internal-contrast.static.test.ts` và khẳng định có ít nhất một `it(` chạy detector trên một cặp màu giả dựng trong chính test rồi khẳng định detector BẮT được nó, cộng output của lần chạy hàng rào.
+
+**Vì sao chính `verify-task.ps1` báo ĐỎ trên contract này, và đó KHÔNG phải lỗi của tier nào.** Bản gate trong cây đã cộng `T-01` tới `T-07` **sau** khi contract này được viết. Ba lỗi nó bắt — `T-03` trên `AC-05`, `AC-06`, `AC-07`; `T-04` trên `AC-12`; `T-05` trên `AC-10` — đều là defect của contract, đều do tôi, và đều đã có phương pháp thay thế ở `PLN-24`, `PLN-27`, `PLN-28`. Theo `PLN-17` của `hrp-v5-go-live-09-public-board-architecture`, defect contract tìm thấy SAU khi một bản audit đã chạy thì ghi thành ruling append-only ở ĐÚNG version cũ và **KHÔNG bump**, vì `verify-audit.ps1` so spec version giữa TASK và AUDIT nên một lần bump sẽ làm gate FAIL oan và đốt thêm một round. Vì vậy lời văn của năm ô `AC` ấy giữ nguyên để còn đọc được cái Tier 3 đã audit; điều CHI PHỐI là phương pháp ở các ruling. Hệ quả kéo theo: `verify-handoff.ps1` báo `H-04` đỏ trên `HANDOFF.md` của round 1 **chỉ vì** gate contract đỏ — Tier 2 khai đúng, và round 2 không phải xử lý điều đó.
 
 ## 10. Revision Log
 

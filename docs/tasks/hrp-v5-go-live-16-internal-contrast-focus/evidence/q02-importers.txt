@@ -1,0 +1,45 @@
+﻿### Q-02 - DEM so noi nhap src/shared/ui/data-table/ va src/shared/ui/entity-card/
+### Tier 2 CHI DO, khong xoa gi. Contract giao cau nay cho Owner/Tier 1.
+
+## 1) Chay lai dung phep grep ma EV-11 dan
+$ git grep -n "from '.*shared/ui" -- app src packages
+  app/admin/admin-shell.tsx:11:import { RoleGuardLayout } from '@/src/shared/ui/role-guard/role-guard-layout';
+  app/admin/admin-shell.tsx:12:import type { NavItem, Role } from '@/src/shared/ui/role-guard/role-guard-layout';
+  app/admin/layout.tsx:19:import { ADMIN_NAV_PHASE4 } from '@/src/shared/ui/role-guard/role-guard-layout';
+exit=0
+  -> KHONG rong. EV-11 ghi 'Tra ve RONG' la ghi sai KET QUA phep grep;
+     ba dong tren la role-guard-layout. Nhung KET LUAN cua EV-11 van dung:
+     khong dong nao tro vao data-table hay entity-card.
+     Ba dong nay dong thoi la doi chung cho thay phep do BIET tim ra nguoi nhap khi co.
+
+## 2) Moi cach viet duong dan khac: alias @/, tuong doi, require(), import()
+$ git grep -nE "(from|require\(|import\()\s*['\"][^'\"]*(data-table|entity-card)" -- app src packages
+exit=1   (exit 1 = KHONG CO dong nao)
+
+## 3) Ten export xuat hien o dau trong cay
+$ git grep -nE "\b(DataTable|EntityCard|EntityCardGrid)\b" -- app src packages
+  src/shared/ui/data-table/data-table.tsx:4: * DataTable — Reusable TanStack Table wrapper cho HRP.
+  src/shared/ui/data-table/data-table.tsx:16: *   - Bulk selection tích hợp `EntityCard` selection state (cho ViewToggle)
+  src/shared/ui/data-table/data-table.tsx:351:export function DataTable<TData>({
+  src/shared/ui/entity-card/entity-card.tsx:4: * EntityCard — Reusable card component cho directory-style list.
+  src/shared/ui/entity-card/entity-card.tsx:8: *   (những cái đó dùng DataTable).
+  src/shared/ui/entity-card/entity-card.tsx:84:export function EntityCard({
+  src/shared/ui/entity-card/entity-card.tsx:250:export function EntityCardGrid({ children, className, cols }: EntityCardGridProps) {
+exit=0
+  -> moi dong deu nam TRONG chinh hai tep do (dinh nghia + comment). 0 noi goi.
+
+## 4) src/shared/ui co index.ts khong, va cay do gom nhung gi
+$ git ls-files src/shared/ui
+  src/shared/ui/data-table/data-table.tsx
+  src/shared/ui/data-table/use-table-url-state.ts
+  src/shared/ui/design-tokens.static.test.ts
+  src/shared/ui/entity-card/entity-card.tsx
+  src/shared/ui/role-guard/role-guard-layout.tsx
+  src/shared/ui/sheet/slide-out-drawer.tsx
+  src/shared/ui/view-toggle/view-toggle.tsx
+  -> khong co index.ts, nen khong the co duong nhap gian tiep qua barrel.
+
+## 5) SO DO DUOC
+  src/shared/ui/data-table/   : 0 noi nhap  (data-table.tsx 505 dong, use-table-url-state.ts kem theo)
+  src/shared/ui/entity-card/  : 0 noi nhap  (entity-card.tsx 275 dong, 2 export: EntityCard, EntityCardGrid)
+  Doi chung duong tinh       : src/shared/ui/role-guard/ = 3 noi nhap trong app/admin/

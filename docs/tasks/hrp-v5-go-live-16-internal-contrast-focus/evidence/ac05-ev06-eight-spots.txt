@@ -1,0 +1,52 @@
+﻿### AC-05 / RQ-05 - tam cho DA DAT o EV-06 giu nguyen tung byte
+
+## 1) app/vendor/page.tsx - khong co diff nao
+$ git status --porcelain app/vendor/page.tsx
+  <RONG>
+$ git diff --stat app/vendor/page.tsx
+  <RONG - khong mot byte>
+exit=0
+
+## 2) Tam cho: dong hien tai trong cay lam viec, doi chieu voi ban goc o HEAD
+   (dong nao khac ban goc thi cot 'giong HEAD' se ghi KHAC)
+
+  app/worker/page.tsx:302  [GIONG HEAD]
+      <p className="text-sm" style={{ color: '#64748b' }}>
+  app/worker/page.tsx:331  [GIONG HEAD]
+      <p className="text-sm mt-1" style={{ color: '#64748b' }}>Phiếu lương sẽ xuất hiện sau khi app Python tính lương và đẩy dữ liệu lên.</p>
+  app/worker/page.tsx:349  [GIONG HEAD]
+      <span style={{ color: '#64748b' }}>Lương gross</span>
+  app/worker/page.tsx:353  [GIONG HEAD]
+      <span style={{ color: '#64748b' }}>Lương net</span>
+  app/worker/page.tsx:361  [GIONG HEAD]
+      <span style={{ color: '#64748b' }}>{k}</span>
+  app/worker/page.tsx:362  [GIONG HEAD]
+      <span style={{ color: '#dc2626' }}>-{formatVnd(v)}</span>
+  app/worker/page.tsx:383  [GIONG HEAD]
+      <p className="text-sm" style={{ color: '#64748b' }}>{t.type} · {t.createdAt}</p>
+  app/vendor/page.tsx:245  [GIONG HEAD]
+      <p className="text-xs mt-2" style={{ color: '#dc2626' }}>Block: {s.blockCode}</p>
+
+## 3) Tam ti so, DO LAI bang WCAG 2.x tren nen THAT cua tung cho
+   (bay so dau doc tu bang do day du o step07-contrast-table.txt; vendor:245 do rieng)
+
+  | # | Cho              | Mau chu | Nen THAT                                          | Ti so   | Nguong        | Ket |
+  |---|------------------|---------|---------------------------------------------------|---------|---------------|-----|
+  | 1 | worker:302       | #64748b | #ffffff  (card :298, literal 'white')             | 4.759:1 | 4.5 (14px)    | DAT |
+  | 2 | worker:331       | #64748b | #faf9f7  (body -> var(--color-background))        | 4.523:1 | 4.5 (14px)    | DAT |
+  | 3 | worker:349       | #64748b | #ffffff  (card :335, literal 'white')             | 4.759:1 | 4.5 (14px)    | DAT |
+  | 4 | worker:353       | #64748b | #ffffff  (card :335)                              | 4.759:1 | 4.5 (14px)    | DAT |
+  | 5 | worker:361       | #64748b | #ffffff  (card :335)                              | 4.759:1 | 4.5 (14px)    | DAT |
+  | 6 | worker:362       | #dc2626 | #ffffff  (card :335)                              | 4.829:1 | 4.5 (14px)    | DAT |
+  | 7 | worker:383       | #64748b | #ffffff  (card :379, literal 'white')             | 4.759:1 | 4.5 (14px)    | DAT |
+  | 8 | vendor:245       | #dc2626 | #ffffff  (card :228 -> --color-surface-container-lowest) | 4.829:1 | 4.5 (12px) | DAT |
+
+  Bay dong dau (worker) do bang chinh hang rao moi, xem step07-contrast-table.txt.
+  Dong 8 (vendor) do rieng: vendor/page.tsx KHONG thuoc ba be mat cua RQ-08.
+  To tien cua vendor:245 la card o :228 style={{ background: 'var(--surface-container-lowest)' }},
+  lop tuong thich phan giai --color-surface-container-lowest = #ffffff, dung nhu EV-06 mo ta.
+
+  MOT SO CAN SUA TRONG EV-06: EV-06 xep worker:331 vao nhom "#64748b tren #ffffff = 4.759:1".
+  Nen that cua :331 khong phai card trang ma la nen TRANG (#faf9f7) vi doan "Chua co phieu luong"
+  nam ngoai moi the co nen. Ti so that la 4.523:1. Van DAT nguong 4.5, du 0.023 - biên mỏng nhất
+  trong tam cho. Ket luan cua EV-06 (ca tam DAT) dung; mot ĐỊA CHỈ NỀN trong EV-06 sai.
