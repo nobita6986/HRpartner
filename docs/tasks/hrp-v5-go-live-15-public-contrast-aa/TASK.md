@@ -7,7 +7,7 @@
 | Task slug | `hrp-v5-go-live-15-public-contrast-aa` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.1` |
+| Spec version | `v1.2` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
@@ -184,7 +184,7 @@ Số tham chiếu dùng chung cho mọi AC bên dưới, đã đo bằng `scratc
 | `AC-12` | Đọc `src/domains/job-board/public-ui-premium.static.test.ts:611` cộng ba phép đếm ở `:302-308`, rồi chạy lane test | Mảng của `expect(movers).toEqual` giữ nguyên hai phần tử cũ, nguyên văn. Ba phép đếm trên nguồn navbar xanh. Nếu Tier 2 đổi cơ chế hover thì ba con số được cập nhật trong cùng commit VÀ HANDOFF giải thích vì sao. Sửa `movers` để test xanh là BLOCK |
 | `AC-13` | `npm run test:unit` | Exit code `0`, và HANDOFF dán nguyên văn dòng tổng kết. Bằng chứng từ `npx vitest run` trần bị loại. Được phép đạt exit `0` bằng đúng một dòng sửa mà `DEC-21` mở; mọi cách khác để làm lane xanh là FAIL |
 | `AC-14` | Đọc bảng trước-sau trong HANDOFF | Bảng có đủ bảy cột: tệp, dòng, hex nền, hex chữ, tỉ số cũ, tỉ số mới, ngưỡng áp dụng kèm lý do cỡ chữ. Thiếu cột ngưỡng là FAIL |
-| `AC-15` | `git status --porcelain` và `git log --oneline -1` | Không có commit mới của Tier 2. Danh sách file thay đổi là tập con của §4.2 CỘNG đúng một tệp mà `DEC-21` mở. Ba tệp `AUDIT.md` của lane khác và `public/index.html` KHÔNG bị stage, không bị sửa, không bị restore |
+| `AC-15` | `git status --porcelain` và `git log --oneline -1` | Không có commit mới của Tier 2. Danh sách file thay đổi gồm ĐÚNG BA nhóm và không có nhóm thứ tư: một, tập con của tám tệp mã ở §4.2; hai, đúng một tệp mà `DEC-21` mở; ba, `docs/tasks/hrp-v5-go-live-15-public-contrast-aa/**` tức HANDOFF và evidence của chính task này. Xuất hiện bất kỳ path nào ngoài ba nhóm đó là FAIL. Ba tệp `AUDIT.md` của lane khác và `public/index.html` KHÔNG bị stage, không bị sửa, không bị restore |
 
 ### 6.1 Traceability
 
@@ -244,3 +244,4 @@ Chưa có. Task ở `Current execution round: 0`, chưa có HANDOFF và chưa c�
 |---|---|---|
 | `v1.0` | 2026-09-02 | Bản đầu. Sinh ra từ một lượt quét tương phản do Tier 1 tự chạy trên `app` và `src`, cộng hai quyết định của Owner: hướng sửa nút chính là nền `#a63b00` chữ trắng, và phạm vi cắt còn bề mặt công khai cộng `GlobalNavbar`. Ghi nguyên nhân gốc ở `EV-14`: bảng đo tương phản của go-live-08 chỉ chứa các cặp mà chính 08 tạo ra, nên cặp ở trạng thái nghỉ của nút chính chưa bao giờ được đo |
 | `v1.1` | 2026-09-03 | Sửa BA lỗi của chính contract, phát hiện khi Tier 1 tự đo lại HANDOFF vòng 1. Một: `AC-13` và `AC-15` không thể cùng thoả vì một dòng test ngoài phạm vi ghim mặt chữ tên token của cái nút `RQ-03` buộc đổi — mở bằng `DEC-21`, hẹp đúng một dòng, đã quét xác nhận không còn chỗ nào khác như vậy. Hai: `EV-09` đo viền nút "Sao chép link" trên `#ffffff` của panel ngoài trong khi nó nằm trong hộp `#e3e2e0`, nên hiện trạng là `2.436:1` ĐÃ trượt chứ không phải `3.153:1` đạt; câu "không được ghi viền thành lỗi" là một chỉ thị bỏ qua lỗi thật, đã bỏ. Ba: `AC-10` dùng `git diff` trần, trả RỖNG khi Tier 2 đã stage nên xanh oan, và đọc phải bảng token của lane khác trong worktree; đổi sang đo INDEX. Không thay đổi phạm vi công việc, không thêm requirement |
+| `v1.2` | 2026-09-03 | Sửa lỗi thứ tư của contract, phát hiện khi Tier 1 tự đếm INDEX sau vòng 2. `AC-15` đòi "danh sách file thay đổi là tập con của §4.2", nhưng pipeline BUỘC Tier 2 ghi HANDOFF cộng evidence, mà `docs/tasks/hrp-v5-go-live-15-public-contrast-aa/**` không nằm trong §4.2 — nên AC này bất khả thoả với mọi bản giao đúng quy trình, và một Tier 3 đọc đúng mặt chữ phải BLOCK oan. Đo được: index vòng 2 có `42` path = `9` mã cộng `33` văn bản của chính task. Sửa thành ba nhóm tường minh, thêm điều kiện chặn nhóm thứ tư nên vẫn không nới quyền chạm tệp lạ. Không đổi phạm vi, không thêm requirement |
