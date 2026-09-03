@@ -1,0 +1,691 @@
+{
+ "models": {
+  "User": "users",
+  "Permission": "permissions",
+  "RolePermission": "role_permissions",
+  "UserPermissionGrant": "user_permission_grants",
+  "Worker": "workers",
+  "Dependent": "dependents",
+  "ClientCompany": "client_companies",
+  "CrmLead": "crm_leads",
+  "Project": "outsourcing_projects",
+  "StaffingOrder": "staffing_orders",
+  "StaffingOrderSlot": "staffing_order_slots",
+  "Site": "sites",
+  "Vendor": "vendors",
+  "CandidateSubmission": "candidate_submissions",
+  "ApplicationStatusHistory": "application_status_history",
+  "SourceClaim": "source_claims",
+  "ProjectAssignment": "project_assignments",
+  "AttendanceImportBatch": "attendance_import_batches",
+  "AttendanceImportRow": "attendance_import_rows",
+  "ImportTemplate": "import_templates",
+  "Holiday": "holidays",
+  "WorkerDeduction": "worker_deductions",
+  "AttendanceEvent": "attendance_events",
+  "TimesheetPeriod": "timesheet_periods",
+  "TimesheetLine": "timesheet_lines",
+  "TimesheetAdjustment": "timesheet_adjustments",
+  "Contract": "contracts",
+  "ContractParty": "contract_parties",
+  "VendorRateCard": "vendor_rate_cards",
+  "ClientRateCard": "client_rate_cards",
+  "VendorStatement": "vendor_statements",
+  "VendorStatementLine": "vendor_statement_lines",
+  "ClientStatement": "client_statements",
+  "ClientStatementLine": "client_statement_lines",
+  "PayrollConfig": "payroll_config",
+  "TaxBracket": "tax_brackets",
+  "Ticket": "tickets",
+  "TicketHistory": "ticket_history",
+  "TicketComment": "ticket_comments",
+  "TicketNotification": "ticket_notifications",
+  "AuditLog": "audit_logs",
+  "CommissionPolicy": "commission_policies",
+  "CommissionLedger": "commission_ledger",
+  "CommissionDebt": "commission_debts",
+  "CtvWithdrawalRequest": "ctv_withdrawal_requests",
+  "IdempotencyKey": "idempotency_keys",
+  "OutboxEvent": "outbox_events",
+  "PortalTimesheet": "portal_timesheets",
+  "PushSubscription": "push_subscriptions"
+ },
+ "rel": {
+  "User": [
+   {
+    "field": "candidateSubmissions",
+    "target": "CandidateSubmission",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "sourceClaims",
+    "target": "SourceClaim",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "payrollConfigs",
+    "target": "PayrollConfig",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "permissionGrants",
+    "target": "UserPermissionGrant",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "ownedWorkers",
+    "target": "Worker",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "assignedWorkers",
+    "target": "Worker",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "workerAccount",
+    "target": "Worker",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "managedProjects",
+    "target": "Project",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "subManagedProjects1",
+    "target": "Project",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "subManagedProjects2",
+    "target": "Project",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "managingWorkers",
+    "target": "Worker",
+    "req": false,
+    "list": true
+   }
+  ],
+  "Permission": [
+   {
+    "field": "rolePermissions",
+    "target": "RolePermission",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "userGrants",
+    "target": "UserPermissionGrant",
+    "req": false,
+    "list": true
+   }
+  ],
+  "RolePermission": [
+   {
+    "field": "permission",
+    "target": "Permission",
+    "req": true,
+    "list": false
+   }
+  ],
+  "UserPermissionGrant": [
+   {
+    "field": "permission",
+    "target": "Permission",
+    "req": true,
+    "list": false
+   },
+   {
+    "field": "user",
+    "target": "User",
+    "req": true,
+    "list": false
+   }
+  ],
+  "Worker": [
+   {
+    "field": "dependents",
+    "target": "Dependent",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "tickets",
+    "target": "Ticket",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "assignments",
+    "target": "ProjectAssignment",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "sourceClaims",
+    "target": "SourceClaim",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "submissions",
+    "target": "CandidateSubmission",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "mergedSubmissions",
+    "target": "CandidateSubmission",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "owner",
+    "target": "User",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "assignedTo",
+    "target": "User",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "account",
+    "target": "User",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "manager",
+    "target": "User",
+    "req": false,
+    "list": false
+   }
+  ],
+  "Dependent": [
+   {
+    "field": "worker",
+    "target": "Worker",
+    "req": true,
+    "list": false
+   }
+  ],
+  "ClientCompany": [
+   {
+    "field": "projects",
+    "target": "Project",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "leads",
+    "target": "CrmLead",
+    "req": false,
+    "list": true
+   }
+  ],
+  "CrmLead": [
+   {
+    "field": "clientCompany",
+    "target": "ClientCompany",
+    "req": false,
+    "list": false
+   }
+  ],
+  "Project": [
+   {
+    "field": "clientCompany",
+    "target": "ClientCompany",
+    "req": true,
+    "list": false
+   },
+   {
+    "field": "assignments",
+    "target": "ProjectAssignment",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "staffingOrders",
+    "target": "StaffingOrder",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "submissions",
+    "target": "CandidateSubmission",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "sites",
+    "target": "Site",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "pmUser",
+    "target": "User",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "subPm1",
+    "target": "User",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "subPm2",
+    "target": "User",
+    "req": false,
+    "list": false
+   }
+  ],
+  "StaffingOrder": [
+   {
+    "field": "project",
+    "target": "Project",
+    "req": true,
+    "list": false
+   },
+   {
+    "field": "slots",
+    "target": "StaffingOrderSlot",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "assignments",
+    "target": "ProjectAssignment",
+    "req": false,
+    "list": true
+   }
+  ],
+  "StaffingOrderSlot": [
+   {
+    "field": "staffingOrder",
+    "target": "StaffingOrder",
+    "req": true,
+    "list": false
+   },
+   {
+    "field": "submissions",
+    "target": "CandidateSubmission",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "assignments",
+    "target": "ProjectAssignment",
+    "req": false,
+    "list": true
+   }
+  ],
+  "Site": [
+   {
+    "field": "project",
+    "target": "Project",
+    "req": true,
+    "list": false
+   }
+  ],
+  "Vendor": [
+   {
+    "field": "submissions",
+    "target": "CandidateSubmission",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "sourceClaims",
+    "target": "SourceClaim",
+    "req": false,
+    "list": true
+   }
+  ],
+  "CandidateSubmission": [
+   {
+    "field": "vendor",
+    "target": "Vendor",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "ctv",
+    "target": "User",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "project",
+    "target": "Project",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "worker",
+    "target": "Worker",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "mergedWorker",
+    "target": "Worker",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "slot",
+    "target": "StaffingOrderSlot",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "sourceClaims",
+    "target": "SourceClaim",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "statusHistory",
+    "target": "ApplicationStatusHistory",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "assignment",
+    "target": "ProjectAssignment",
+    "req": false,
+    "list": false
+   }
+  ],
+  "ApplicationStatusHistory": [
+   {
+    "field": "submission",
+    "target": "CandidateSubmission",
+    "req": true,
+    "list": false
+   }
+  ],
+  "SourceClaim": [
+   {
+    "field": "worker",
+    "target": "Worker",
+    "req": true,
+    "list": false
+   },
+   {
+    "field": "vendor",
+    "target": "Vendor",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "ctv",
+    "target": "User",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "submission",
+    "target": "CandidateSubmission",
+    "req": false,
+    "list": false
+   }
+  ],
+  "ProjectAssignment": [
+   {
+    "field": "worker",
+    "target": "Worker",
+    "req": true,
+    "list": false
+   },
+   {
+    "field": "project",
+    "target": "Project",
+    "req": true,
+    "list": false
+   },
+   {
+    "field": "staffingOrder",
+    "target": "StaffingOrder",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "submission",
+    "target": "CandidateSubmission",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "staffingOrderSlot",
+    "target": "StaffingOrderSlot",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "tickets",
+    "target": "Ticket",
+    "req": false,
+    "list": true
+   }
+  ],
+  "AttendanceImportBatch": [
+   {
+    "field": "rawRows",
+    "target": "AttendanceImportRow",
+    "req": false,
+    "list": true
+   }
+  ],
+  "AttendanceImportRow": [
+   {
+    "field": "batch",
+    "target": "AttendanceImportBatch",
+    "req": true,
+    "list": false
+   }
+  ],
+  "TimesheetPeriod": [
+   {
+    "field": "lines",
+    "target": "TimesheetLine",
+    "req": false,
+    "list": true
+   }
+  ],
+  "TimesheetLine": [
+   {
+    "field": "period",
+    "target": "TimesheetPeriod",
+    "req": true,
+    "list": false
+   }
+  ],
+  "Contract": [
+   {
+    "field": "parties",
+    "target": "ContractParty",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "vendorRates",
+    "target": "VendorRateCard",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "clientRates",
+    "target": "ClientRateCard",
+    "req": false,
+    "list": true
+   }
+  ],
+  "ContractParty": [
+   {
+    "field": "contract",
+    "target": "Contract",
+    "req": true,
+    "list": false
+   }
+  ],
+  "VendorRateCard": [
+   {
+    "field": "contract",
+    "target": "Contract",
+    "req": true,
+    "list": false
+   }
+  ],
+  "ClientRateCard": [
+   {
+    "field": "contract",
+    "target": "Contract",
+    "req": true,
+    "list": false
+   }
+  ],
+  "VendorStatement": [
+   {
+    "field": "lines",
+    "target": "VendorStatementLine",
+    "req": false,
+    "list": true
+   }
+  ],
+  "VendorStatementLine": [
+   {
+    "field": "statement",
+    "target": "VendorStatement",
+    "req": true,
+    "list": false
+   }
+  ],
+  "ClientStatement": [
+   {
+    "field": "lines",
+    "target": "ClientStatementLine",
+    "req": false,
+    "list": true
+   }
+  ],
+  "ClientStatementLine": [
+   {
+    "field": "statement",
+    "target": "ClientStatement",
+    "req": true,
+    "list": false
+   }
+  ],
+  "PayrollConfig": [
+   {
+    "field": "createdByUser",
+    "target": "User",
+    "req": false,
+    "list": false
+   }
+  ],
+  "Ticket": [
+   {
+    "field": "worker",
+    "target": "Worker",
+    "req": true,
+    "list": false
+   },
+   {
+    "field": "assignment",
+    "target": "ProjectAssignment",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "history",
+    "target": "TicketHistory",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "comments",
+    "target": "TicketComment",
+    "req": false,
+    "list": true
+   },
+   {
+    "field": "notifications",
+    "target": "TicketNotification",
+    "req": false,
+    "list": true
+   }
+  ],
+  "TicketHistory": [
+   {
+    "field": "ticket",
+    "target": "Ticket",
+    "req": true,
+    "list": false
+   }
+  ],
+  "TicketComment": [
+   {
+    "field": "ticket",
+    "target": "Ticket",
+    "req": true,
+    "list": false
+   }
+  ],
+  "TicketNotification": [
+   {
+    "field": "ticket",
+    "target": "Ticket",
+    "req": true,
+    "list": false
+   }
+  ],
+  "CommissionPolicy": [
+   {
+    "field": "ledgerEntries",
+    "target": "CommissionLedger",
+    "req": false,
+    "list": true
+   }
+  ],
+  "CommissionLedger": [
+   {
+    "field": "policy",
+    "target": "CommissionPolicy",
+    "req": true,
+    "list": false
+   },
+   {
+    "field": "reversalOf",
+    "target": "CommissionLedger",
+    "req": false,
+    "list": false
+   },
+   {
+    "field": "reversals",
+    "target": "CommissionLedger",
+    "req": false,
+    "list": true
+   }
+  ]
+ }
+}

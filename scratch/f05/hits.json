@@ -1,0 +1,78 @@
+{
+ "app/api/projects/route.ts": [
+  [
+   65,
+   "clientCompany",
+   "include: { clientCompany: { select: { id: true, name: true, code: true } } },"
+  ]
+ ],
+ "app/api/vendor/orders/route.ts": [
+  [
+   44,
+   "project",
+   "project: { select: { id: true, name: true, code: true } },"
+  ]
+ ],
+ "app/api/vendor/submissions/route.ts": [
+  [
+   62,
+   "project",
+   "include: { project: { select: { id: true, name: true } } },"
+  ]
+ ],
+ "src/domains/applications/application-queue.service.ts": [
+  [
+   178,
+   "project",
+   "include: { project: { select: { name: true } } },"
+  ],
+  [
+   211,
+   "project",
+   "project: { select: { name: true } },"
+  ]
+ ],
+ "src/domains/reconciliation/margin.service.ts": [
+  [
+   167,
+   "worker",
+   "include: { worker: { select: { id: true, fullName: true } } },"
+  ]
+ ],
+ "src/domains/reconciliation/statement.service.ts": [
+  [
+   403,
+   "worker",
+   "include: { worker: { select: { id: true, fullName: true } } },"
+  ],
+  [
+   434,
+   "worker",
+   "include: { worker: { select: { id: true, fullName: true } } },"
+  ]
+ ],
+ "src/domains/staffing/order.service.ts": [
+  [
+   153,
+   "project",
+   "project: { select: { id: true, name: true, code: true } },"
+  ],
+  [
+   179,
+   "project",
+   "project: { select: { id: true, name: true, code: true, quota: true, filled: true } },"
+  ]
+ ],
+ "src/domains/staffing/submission.service.ts": [
+  [
+   204,
+   "project",
+   "include: { project: { select: { name: true } }, vendor: { select: { name: true } } },"
+  ],
+  [
+   248,
+   "worker",
+   "worker: { select: { fullName: true } },"
+  ]
+ ]
+}

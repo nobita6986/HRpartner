@@ -1,0 +1,147 @@
+{
+ "Dependent": [
+  [
+   "worker",
+   "Worker",
+   "workers"
+  ]
+ ],
+ "Project": [
+  [
+   "clientCompany",
+   "ClientCompany",
+   "client_companies"
+  ]
+ ],
+ "StaffingOrder": [
+  [
+   "project",
+   "Project",
+   "outsourcing_projects"
+  ]
+ ],
+ "StaffingOrderSlot": [
+  [
+   "staffingOrder",
+   "StaffingOrder",
+   "staffing_orders"
+  ]
+ ],
+ "Site": [
+  [
+   "project",
+   "Project",
+   "outsourcing_projects"
+  ]
+ ],
+ "ApplicationStatusHistory": [
+  [
+   "submission",
+   "CandidateSubmission",
+   "candidate_submissions"
+  ]
+ ],
+ "SourceClaim": [
+  [
+   "worker",
+   "Worker",
+   "workers"
+  ]
+ ],
+ "ProjectAssignment": [
+  [
+   "worker",
+   "Worker",
+   "workers"
+  ],
+  [
+   "project",
+   "Project",
+   "outsourcing_projects"
+  ]
+ ],
+ "AttendanceImportRow": [
+  [
+   "batch",
+   "AttendanceImportBatch",
+   "attendance_import_batches"
+  ]
+ ],
+ "TimesheetLine": [
+  [
+   "period",
+   "TimesheetPeriod",
+   "timesheet_periods"
+  ]
+ ],
+ "ContractParty": [
+  [
+   "contract",
+   "Contract",
+   "contracts"
+  ]
+ ],
+ "VendorRateCard": [
+  [
+   "contract",
+   "Contract",
+   "contracts"
+  ]
+ ],
+ "ClientRateCard": [
+  [
+   "contract",
+   "Contract",
+   "contracts"
+  ]
+ ],
+ "VendorStatementLine": [
+  [
+   "statement",
+   "VendorStatement",
+   "vendor_statements"
+  ]
+ ],
+ "ClientStatementLine": [
+  [
+   "statement",
+   "ClientStatement",
+   "client_statements"
+  ]
+ ],
+ "Ticket": [
+  [
+   "worker",
+   "Worker",
+   "workers"
+  ]
+ ],
+ "TicketHistory": [
+  [
+   "ticket",
+   "Ticket",
+   "tickets"
+  ]
+ ],
+ "TicketComment": [
+  [
+   "ticket",
+   "Ticket",
+   "tickets"
+  ]
+ ],
+ "TicketNotification": [
+  [
+   "ticket",
+   "Ticket",
+   "tickets"
+  ]
+ ],
+ "CommissionLedger": [
+  [
+   "policy",
+   "CommissionPolicy",
+   "commission_policies"
+  ]
+ ]
+}
