@@ -7,7 +7,7 @@
 | Task slug | `hrp-v5-go-live-15-public-contrast-aa` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
@@ -64,7 +64,7 @@ Mọi tỉ số trong bảng này do Tier 1 tự tính bằng công thức tươ
 | `EV-06` | `app/components/GlobalNavbar.tsx:161` và `:264` | Pill vai trò: chữ `12px` màu `var(--color-primary)` trên nền `var(--color-primary-soft)` `#fdf1ec` = `2.848:1`. Hai chỗ là bản desktop và bản mobile của cùng một pill | Phải sửa cả hai, sửa một là để lại lỗi trên nửa số thiết bị |
 | `EV-07` | `app/components/GlobalNavbar.tsx:112` | Hover của nav link đặt `color` sang `var(--color-primary)` bằng handler JS. Trên nền header sáng đo được `3.153:1` | Trạng thái hover của điều hướng là chữ thật, ngưỡng `4.5:1` |
 | `EV-08` | `app/(jobs)/viec-lam/[slug]/page.tsx:102-108` | Link "Quay lại danh sách việc làm", chữ `14px` medium, màu `var(--color-primary)` | Link công khai trên trang chi tiết — đúng trang mà drill 07 mở |
-| `EV-09` | `src/domains/job-board/components/success-modal.tsx:104-108` và `:112-118` | Link tra cứu `14px` và chữ nút "Sao chép link" `12px`, cả hai màu `var(--color-primary)`. Riêng VIỀN của nút đó cùng màu, đo `3.153:1`, đạt ngưỡng thành phần `3:1` | Chỉ chữ trượt. Không được ghi viền thành lỗi |
+| `EV-09` | `src/domains/job-board/components/success-modal.tsx:104-108` và `:112-118`, cộng hộp bao quanh ở `:73` | Link tra cứu `14px` và chữ nút "Sao chép link" `12px`, cả hai màu `var(--color-primary)`. VIỀN của nút đó cùng màu. Hộp bao quanh cả khối dùng `--color-surface-variant` tức `#e3e2e0`, KHÔNG phải `#ffffff` của panel ngoài ở `:55`, nên viền đo `2.436:1` và ĐÃ trượt ngưỡng thành phần `3:1`. Sau khi đổi sang `--color-primary-dark` viền đạt `4.996:1` trên `#e3e2e0` | Cả chữ lẫn viền đều trượt. Ghi viền là "đạt" là ghi sai hiện trạng |
 | `EV-10` | `app/(portal)/ve-chung-toi/page.tsx:57-66`, nền lấy từ `:42` | Phần tử `em` trong `h1` cỡ `text-4xl md:text-5xl` extrabold, tức `36px`/`48px`, màu `var(--color-primary)` trên nền `var(--color-background)` `#faf9f7`. Đây là CHỮ LỚN nên ngưỡng là `3:1`, và đo được `2.997:1` | Trượt đúng `0.003`. Vẫn là lỗi, nhưng phải ghi bằng ngưỡng `3:1`, không được ghi bằng `4.5:1` |
 | `EV-11` | `app/(jobs)/track/page.tsx:88` và `:95` | Cả ô nhập và nút đặt `outlineColor` inline bằng `var(--color-primary)`, đo `2.997:1` trên nền body, dưới ngưỡng thành phần `3:1`. Trong khi hệ thống đã có `--color-focus-ring: var(--color-primary-dark)` ở `app/globals.css:115` và lớp `.hrp-focus` ở `:302-305` | Trang này tự dựng vòng focus và ghi đè đúng token mà 08 tạo ra để tránh lỗi này |
 | `EV-12` | Tự tính từ `app/globals.css:11` | `#a63b00` làm CHỮ đạt `6.468:1` trên `#ffffff`, `6.147:1` trên `#faf9f7`, `5.832:1` trên `#f4f3f1`, `5.578:1` trên `#efeeec`, `5.842:1` trên `#fdf1ec`. Làm NỀN với chữ trắng đạt `6.468:1` | Một màu duy nhất đủ cho MỌI chỗ trong phạm vi, ở cả hai vai chữ và nền |
@@ -91,6 +91,7 @@ Mọi tỉ số trong bảng này do Tier 1 tự tính bằng công thức tươ
 | `DEC-07` | `Avatar` ở `app/components/GlobalNavbar.tsx:26-36` chỉ được ĐỔI MÀU NỀN, KHÔNG được gán lớp `.hrp-btn-primary` | Avatar không phải nút. Ngoài ra `src/domains/job-board/public-ui-premium.static.test.ts:617-627` bắt buộc MỌI chỗ mang chuỗi `hrp-btn-primary` trong hai file `app/(portal)/page.tsx` và `app/components/GlobalNavbar.tsx` phải mang kèm `nav-item-lift`. Gán lớp cho Avatar sẽ làm test đó ĐỎ, hoặc tệ hơn là kéo một chuyển động vào một phần tử không tương tác |
 | `DEC-08` | KHÔNG được đổi cỡ chữ hay độ đậm để hạ ngưỡng | Phương án phóng nhãn lên `18.66px` đậm để hưởng ngưỡng `3:1` đã bị Owner loại: biên an toàn chỉ còn `0.153` nên một lần chỉnh màu nhỏ là trượt lại, và nút `text-xs` như "Sao chép mã" không phóng được mà không phá bố cục |
 | `DEC-09` | Với 4 nút inline ngoài `Avatar`, Tier 2 được TỰ CHỌN giữa hai đường: chuyển sang lớp `.hrp-btn-primary`, hoặc đổi màu tại chỗ. Cả hai đều hợp lệ nếu số đo đạt | Bốn nút đó nằm trong `app/(jobs)/track/page.tsx` và hai file `src/domains/job-board/components/*`, ngoài tầm phép đếm `nav-item-lift` của `EV-17` nên không có rào cơ học. Chuyển sang lớp là đường sạch hơn về lâu dài vì được hover, active và con trỏ miễn phí, nhưng nó đổi nhiều dòng hơn — đó là đánh đổi của Tier 2, không phải của Tier 1 |
+| `DEC-21` | Mở đúng MỘT dòng ngoài §4.2: `src/domains/applications/marketplace-inventory.static.test.ts:350`, đổi chuỗi mong đợi từ `var(--color-primary)` sang `var(--color-primary-dark)`. Không sửa dòng nào khác trong tệp đó, không thêm test, không xoá test, không đổi tên test | Lỗi contract của Tier 1, không phải của Tier 2. Dòng đó ghim MẶT CHỮ tên token trên đúng cái nút mà `RQ-03` buộc đổi, nên `AC-13` (lane exit `0`) và `AC-15` (chỉ sửa trong §4.2) không thể cùng thoả: làm `RQ-03` thì lane đỏ, không làm thì `RQ-03` trượt, sửa test thì phạm §4.2. Ý định thật của assertion là "nút có nền đặc"; tên token chỉ là proxy đã cũ, nên đổi proxy giữ nguyên ý định. Một lượt quét mọi tệp test cho thấy đây là chỗ DUY NHẤT ghim mặt chữ các token mà task này đổi, nên chỗ mở này là hẹp nhất có thể và không mở rộng thành giấy phép sửa test |
 
 ## 4. Contract
 
@@ -133,7 +134,8 @@ Ngoài phạm vi:
 - Tám trang admin, `app/ctv`, `app/vendor`, `app/worker`. Khoảng `41` chỗ trượt ngưỡng ở đó là contract kế tiếp.
 - Mười hai chỗ dùng `outline-none`.
 - `app/(portal)/page.tsx:1017` — xem `EV-18`, không phải lỗi.
-- `prisma/**`, `middleware.ts`, `vercel.json`, mọi route API, mọi service, mọi test khác ngoài tệp số 8.
+- `prisma/**`, `middleware.ts`, `vercel.json`, mọi route API, mọi service, mọi test khác ngoài tệp số 8 — TRỪ đúng một dòng được `DEC-21` mở, xem §4.2 mục kế tiếp.
+- Ngoại lệ DUY NHẤT do `DEC-21` mở: `src/domains/applications/marketplace-inventory.static.test.ts` — chỉ dòng `350`, chỉ đổi tên token trong chuỗi mong đợi. Sửa quá một dòng trong tệp đó là `AC-15` FAIL.
 - Các lớp `.hrp-btn-outline`, `.hrp-btn-ghost`, `.hrp-btn-muted`, `.hrp-btn-done`, `.hrp-card`, `.hrp-pill-location`, `.hrp-field`, `.hrp-skip`, `.hrp-panel` — đều đã có dòng trong bảng đo của go-live-08 và đều đạt. Không chạm.
 - Ba tệp `AUDIT.md` đang dirty của lane khác, và `public/index.html`. Không stage, không sửa, không restore.
 
@@ -177,12 +179,12 @@ Số tham chiếu dùng chung cho mọi AC bên dưới, đã đo bằng `scratc
 | `AC-07` | `rg -n "outlineColor" app/(jobs)/track/page.tsx` rồi đo vòng focus của hai control | Không dòng nào còn `var(--color-primary)`. Vòng focus của cả hai không dưới `3:1`; `--color-primary-dark` cho `6.468:1` trên `#ffffff` và `6.147:1` trên `#faf9f7`. Hiện trạng `2.997:1` |
 | `AC-08` | `rg -n "material-symbols-outlined" app/components/GlobalNavbar.tsx` rồi đọc ba phần tử ở `:143`, `:179`, `:189` | Cả ba mang `aria-hidden="true"`. Hiện trạng là `0` trên `3` |
 | `AC-09` | `rg -n "aria-current" app/components/GlobalNavbar.tsx` rồi đọc cả nhánh desktop và nhánh mobile | `aria-current="page"` đặt trên đúng một link ở MỖI nhánh, suy từ đường dẫn hiện tại chứ không hard-code. Kèm ít nhất một tín hiệu thị giác KHÔNG phải màu, ví dụ gạch chân hoặc đổi độ đậm hoặc thanh chỉ dấu. Chỉ đổi màu là FAIL |
-| `AC-10` | `git diff app/globals.css` cộng `rg -n -- "--color-primary:" app/globals.css` | Không dòng nào trong khối `@theme` đổi giá trị. `--color-primary` vẫn là `#f26522`. Không có tên token màu mới ở bất kỳ tệp nào trong §4.2. Một dòng token đổi giá trị là BLOCK toàn task |
+| `AC-10` | `git diff --cached app/globals.css` cộng `git diff HEAD -- app/globals.css` cộng `rg -n -- "--color-primary:" app/globals.css` | Đo trên INDEX, KHÔNG dùng `git diff` trần: nếu Tier 2 đã stage thì `git diff` trần trả RỖNG và AC này xanh oan. Không dòng nào trong khối `@theme` đổi giá trị. `--color-primary` vẫn là `#f26522`. Không có tên token màu mới ở bất kỳ tệp nào trong §4.2. Một dòng token đổi giá trị là BLOCK toàn task. Nếu worktree chứa một bảng token khác mà INDEX thì không, đó là lane khác: ghi nhận, không tính vào task này |
 | `AC-11` | Đọc `TEXT_PAIRS` và `UI_PAIRS` trong `src/domains/job-board/public-ui-premium.static.test.ts` | `TEXT_PAIRS` có một dòng MỚI cho trạng thái NGHỈ của nút chính. Dòng `UI_PAIRS` đang ghim nền nút là `--color-primary` đã đổi sang token thật sau khi sửa. Cả hai bảng mô tả đúng CSS hiện hành |
 | `AC-12` | Đọc `src/domains/job-board/public-ui-premium.static.test.ts:611` cộng ba phép đếm ở `:302-308`, rồi chạy lane test | Mảng của `expect(movers).toEqual` giữ nguyên hai phần tử cũ, nguyên văn. Ba phép đếm trên nguồn navbar xanh. Nếu Tier 2 đổi cơ chế hover thì ba con số được cập nhật trong cùng commit VÀ HANDOFF giải thích vì sao. Sửa `movers` để test xanh là BLOCK |
-| `AC-13` | `npm run test:unit` | Exit code `0`, và HANDOFF dán nguyên văn dòng tổng kết. Bằng chứng từ `npx vitest run` trần bị loại |
+| `AC-13` | `npm run test:unit` | Exit code `0`, và HANDOFF dán nguyên văn dòng tổng kết. Bằng chứng từ `npx vitest run` trần bị loại. Được phép đạt exit `0` bằng đúng một dòng sửa mà `DEC-21` mở; mọi cách khác để làm lane xanh là FAIL |
 | `AC-14` | Đọc bảng trước-sau trong HANDOFF | Bảng có đủ bảy cột: tệp, dòng, hex nền, hex chữ, tỉ số cũ, tỉ số mới, ngưỡng áp dụng kèm lý do cỡ chữ. Thiếu cột ngưỡng là FAIL |
-| `AC-15` | `git status --porcelain` và `git log --oneline -1` | Không có commit mới của Tier 2. Danh sách file thay đổi là tập con của §4.2. Ba tệp `AUDIT.md` của lane khác và `public/index.html` KHÔNG bị stage, không bị sửa, không bị restore |
+| `AC-15` | `git status --porcelain` và `git log --oneline -1` | Không có commit mới của Tier 2. Danh sách file thay đổi là tập con của §4.2 CỘNG đúng một tệp mà `DEC-21` mở. Ba tệp `AUDIT.md` của lane khác và `public/index.html` KHÔNG bị stage, không bị sửa, không bị restore |
 
 ### 6.1 Traceability
 
@@ -241,3 +243,4 @@ Chưa có. Task ở `Current execution round: 0`, chưa có HANDOFF và chưa c�
 | Version | Ngày | Thay đổi |
 |---|---|---|
 | `v1.0` | 2026-09-02 | Bản đầu. Sinh ra từ một lượt quét tương phản do Tier 1 tự chạy trên `app` và `src`, cộng hai quyết định của Owner: hướng sửa nút chính là nền `#a63b00` chữ trắng, và phạm vi cắt còn bề mặt công khai cộng `GlobalNavbar`. Ghi nguyên nhân gốc ở `EV-14`: bảng đo tương phản của go-live-08 chỉ chứa các cặp mà chính 08 tạo ra, nên cặp ở trạng thái nghỉ của nút chính chưa bao giờ được đo |
+| `v1.1` | 2026-09-03 | Sửa BA lỗi của chính contract, phát hiện khi Tier 1 tự đo lại HANDOFF vòng 1. Một: `AC-13` và `AC-15` không thể cùng thoả vì một dòng test ngoài phạm vi ghim mặt chữ tên token của cái nút `RQ-03` buộc đổi — mở bằng `DEC-21`, hẹp đúng một dòng, đã quét xác nhận không còn chỗ nào khác như vậy. Hai: `EV-09` đo viền nút "Sao chép link" trên `#ffffff` của panel ngoài trong khi nó nằm trong hộp `#e3e2e0`, nên hiện trạng là `2.436:1` ĐÃ trượt chứ không phải `3.153:1` đạt; câu "không được ghi viền thành lỗi" là một chỉ thị bỏ qua lỗi thật, đã bỏ. Ba: `AC-10` dùng `git diff` trần, trả RỖNG khi Tier 2 đã stage nên xanh oan, và đọc phải bảng token của lane khác trong worktree; đổi sang đo INDEX. Không thay đổi phạm vi công việc, không thêm requirement |
