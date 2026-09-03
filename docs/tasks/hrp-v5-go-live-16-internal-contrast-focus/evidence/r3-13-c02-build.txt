@@ -1,0 +1,36 @@
+
+> hrp@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.23
+   - Environments: .env.production.local, .env.local, .env.production, .env
+
+   Creating an optimized production build ...
+Found 1 warning while optimizing generated CSS:
+
+[2m│   }[22m
+[2m│ }[22m
+[2m│[22m @import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
+[2m┆[22m        [33m[2m^--[22m @import rules must precede all rules aside from @charset and @layer statements[39m
+[2m┆[22m
+[2m│ :root {[22m
+[2m│   --primary: var(--color-primary);[22m
+
+ ✓ Compiled successfully in 12.8s
+   Linting and checking validity of types ...
+Failed to compile.
+
+./new-ui/components/JobCard.tsx:18:6
+Type error: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & ClassAttributes<HTMLDivElement> & HTMLAttributes<HTMLDivElement> & Omit<...> & LinkProps<...> & { ...; } & RefAttributes<...>'.
+  Type '{ children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'LinkProps<any>'.
+    Types of property 'href' are incompatible.
+      Type 'undefined' is not assignable to type 'Url'.
+
+[0m [90m 16 |[39m
+ [90m 17 |[39m   [36mreturn[39m (
+[31m[1m>[22m[39m[90m 18 |[39m     [33m<[39m[33mCardWrapper[39m {[33m...[39mwrapperProps} className[33m=[39m[32m"bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant p-5 hover:shadow-md transition-shadow relative overflow-hidden group block"[39m[33m>[39m
+ [90m    |[39m      [31m[1m^[22m[39m
+ [90m 19 |[39m       {isUrgent [33m&&[39m (
+ [90m 20 |[39m         [33m<[39m[33mdiv[39m className[33m=[39m[32m"absolute top-0 right-0 bg-primary-container text-white px-3 py-1 rounded-bl-lg flex items-center gap-1 z-10 shadow-sm"[39m[33m>[39m
+ [90m 21 |[39m           [33m<[39m[33mspan[39m className[33m=[39m[32m"material-symbols-outlined text-[14px]"[39m[33m>[39mlocal_fire_department[33m<[39m[33m/[39m[33mspan[39m[33m>[39m[0m
+Next.js build worker exited with code: 1 and signal: null

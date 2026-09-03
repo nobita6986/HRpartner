@@ -1,0 +1,41 @@
+### R3-03 AC-05 — bat bien muc DONG
+$ git diff --cached -U0 -- app/worker/page.tsx app/ctv/page.tsx app/vendor/page.tsx
+diff --git a/app/ctv/page.tsx b/app/ctv/page.tsx
+index 3e23850..d953bf9 100644
+--- a/app/ctv/page.tsx
++++ b/app/ctv/page.tsx
+@@ -273 +273 @@ export default function CtvPage() {
+-              <p className="font-bold text-lg" style={{ color: '#dc2626' }}>{formatVnd(commission.totalDebt)} ₫</p>
++              <p className="font-bold text-lg" style={{ color: 'var(--color-error)' }}>{formatVnd(commission.totalDebt)} ₫</p>
+diff --git a/app/worker/page.tsx b/app/worker/page.tsx
+index 32a19a8..7c2b144 100644
+--- a/app/worker/page.tsx
++++ b/app/worker/page.tsx
+@@ -341 +341 @@ export default function WorkerPage() {
+-                  <p className="text-xs" style={{ color: '#94a3b8' }}>
++                  <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
+@@ -358 +358 @@ export default function WorkerPage() {
+-                    <p className="text-xs font-medium mb-1" style={{ color: '#94a3b8' }}>Khấu trừ</p>
++                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-on-surface-variant)' }}>Khấu trừ</p>
+EXIT=0
+
+--- chi cac dong dau hunk (@@) ---
+--- a/app/ctv/page.tsx
++++ b/app/ctv/page.tsx
+@@ -273 +273 @@ export default function CtvPage() {
+--- a/app/worker/page.tsx
++++ b/app/worker/page.tsx
+@@ -341 +341 @@ export default function WorkerPage() {
+@@ -358 +358 @@ export default function WorkerPage() {
+EXIT=0
+
+$ git status --porcelain app/vendor/page.tsx   # AC-05: VANG MAT
+EXIT=0 (khong in dong nao = vang mat khoi tap thay doi)
+
+$ git status --porcelain | grep -c 'vendor'
+0
+EXIT=1 (grep -c tra 1 khi dem = 0 dong khop)
+
+$ git ls-files --error-unmatch app/vendor/page.tsx  # tep CO trong repo, nen 'vang mat' khong phai vi khong ton tai
+app/vendor/page.tsx
+EXIT=0

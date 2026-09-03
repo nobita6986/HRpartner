@@ -1,0 +1,28 @@
+### R3-17 EV-06 noi 'Tam cho' nhung chi liet ke BAY so dong — truy cho thu tam
+$ so dong liet ke trong EV-06:
+worker:302,349,353,361,383
+worker:362
+vendor:245
+-> worker:302,349,353,361,383 (5) + worker:362 (1) + vendor:245 (1) = 7 so dong
+
+--- ctv duoc goi ten o cot Source cua EV-06 nhung KHONG co so dong nao. Do ctv tren BASELINE e4d18fe: ---
+$ git show e4d18fe:app/ctv/page.tsx | grep -nE '#64748b|#dc2626'
+273:              <p className="font-bold text-lg" style={{ color: '#dc2626' }}>{formatVnd(commission.totalDebt)} ₫</p>
+290:          color: msg.type === 'ok' ? '#15803d' : '#dc2626',
+
+--- loai cac dong dung var() (EV-07 mien) va dong 273 (dong duy nhat duoc sua) ---
+$ git show e4d18fe:app/ctv/page.tsx | grep -nE '#64748b|#dc2626' | grep -v 'var(' 
+273:              <p className="font-bold text-lg" style={{ color: '#dc2626' }}>{formatVnd(commission.totalDebt)} ₫</p>
+290:          color: msg.type === 'ok' ? '#15803d' : '#dc2626',
+
+### R3-18 so dong hai fixture + hai cach dem it(
+$ grep -n 'NEGATIVE_FIXTURE =\|POSITIVE_FIXTURE ='
+532:const NEGATIVE_FIXTURE = `
+542:const POSITIVE_FIXTURE = NEGATIVE_FIXTURE.replace("'#bbbbbb'", "'var(--color-on-surface-variant)'");
+$ grep -c 'it(' (moi lan xuat hien, ke ca trong van/chuoi)
+22
+$ grep -c '^  it(' (dung mot test o cap describe)
+21
+$ lan xuat hien 'it(' KHONG phai mot test:
+324:    for (const tok of cls.split(/\s+/)) {
+-> lan chay that dem 21 test (dong 'Tests ... (21)' o r3-07). Dem chuoi cho 22 => dem chuoi khong phai phep do.

@@ -1,0 +1,13 @@
+### R3-10 don probe + chung minh tsconfig.tmp.json khong bi cham
+$ ls -l tsconfig*.json tsconfig*.tsbuildinfo 2>&1
+-rw-r--r-- 1 Admin 197121    817 Aug 31 09:21 tsconfig.json
+-rw-r--r-- 1 Admin 197121 196798 Sep  3 15:57 tsconfig.t1probe.tsbuildinfo
+-rw-r--r-- 1 Admin 197121      0 Sep  3 16:22 tsconfig.tmp.json
+-rw-r--r-- 1 Admin 197121 241484 Sep  3 13:49 tsconfig.tsbuildinfo
+$ test -e tsconfig.t3probe.json; echo $?   (1 = da xoa)
+1
+$ wc -c < tsconfig.tmp.json   (phai con 0)
+0
+$ git status --porcelain -- 'tsconfig*'
+?? tsconfig.tmp.json
+^ chi con ?? tsconfig.tmp.json => probe khong bao gio vao index

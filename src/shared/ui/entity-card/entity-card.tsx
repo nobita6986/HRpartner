@@ -220,7 +220,7 @@ export function EntityCard({
       <button
         type="button"
         onClick={onClick}
-        className="block w-full text-left focus:outline-none"
+        className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
       >
         {content}
       </button>

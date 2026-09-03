@@ -1,0 +1,14 @@
+### R3-28 dong duoc them vao ba AUDIT.md kia la gi (mau: go-live-02)
+$ git diff -- $P | cat -A | tail -8
+index 89c37cd..111a304 100644$
+--- a/docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md$
++++ b/docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md$
+@@ -84,3 +84,4 @@$
+ | `1` | `None` | `N/A` | `PASS` | MM-aM-;M-^Mi Acceptance Criteria cM-aM-;M-%c bM-aM-;M-^Y M-DM-^QM-aM-;M-^Au thM-aM-;M-^Oa mM-CM-#n. |$
+ $
+ > M-DM-^PM-aM-;M-^C bM-CM- n giao AUDIT.md cho Tier 1; chM-aM-;M-^] Planner Resolution trong TASK.md.$
++$
+
+$ git config core.autocrlf; echo EXIT=$?
+true
+EXIT=0

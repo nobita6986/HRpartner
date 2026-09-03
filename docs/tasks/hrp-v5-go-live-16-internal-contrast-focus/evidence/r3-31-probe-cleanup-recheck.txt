@@ -1,0 +1,11 @@
+﻿== Test-Path tsconfig.t3probe.json ==
+False
+TESTPATH_PROBE_EXIT=
+== Test-Path tsconfig.tmp.json ==
+True
+== Get-Content tsconfig.tmp.json count + Length ==
+GET_CONTENT_LINES=0
+FILE_LENGTH_BYTES=0
+== git status --porcelain -- tsconfig.tmp.json tsconfig.t3probe.json ==
+?? tsconfig.tmp.json
+GIT_STATUS_EXIT=0

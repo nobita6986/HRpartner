@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — independent auditor |
@@ -16,9 +16,9 @@
 | Modules | `app/worker/page.tsx`, `app/ctv/page.tsx`, `app/login/login-form.tsx`, `src/shared/ui/data-table/data-table.tsx`, `src/shared/ui/entity-card/entity-card.tsx`, `src/shared/ui/internal-contrast.static.test.ts` |
 | ADR references | `hrp-v5-go-live-15-public-contrast-aa` `Q-03` và `Q-04` — hai câu hỏi mở mà task này đóng, kèm hai con số của chúng đã được đo lại và bác bỏ ở `EV-10`; `hrp-v5-go-live-08-public-ui-premium` yêu cầu thứ mười ba — nguồn của token `--color-focus-ring` |
 | Current execution round | `1` |
-| Current audit round | `2` |
-| Next gate | Audit round `2` BỊ TRẢ, lý do ở §9. Giao lại `/audit` cho Tier 3 làm round `3`. Kết luận của round 2 đều ĐÚNG nhưng hai ô dựng trên bằng chứng không tồn tại, nặng nhất là một mã thoát bịa ở `PLN-29`. Round 3 chỉ viết lại ba ô `AC-05`, `AC-10`, `AC-11` bằng dụng cụ chạy được và dán output thật; chín ô còn lại giữ nguyên. Tier 2 vẫn không có việc |
-| Updated | `2026-09-03 19:45 Asia/Bangkok` |
+| Current audit round | `3` |
+| Next gate | ĐÓNG. Audit round `3` được NHẬN và task `ACCEPTED` ở `v1.0` — không round 4, không execution round. `12` trên `12` AC đạt về thực chất, hai vết đỏ waive bằng phép đo ở `PLN-33` và `PLN-34`. Nợ chuyển đi: `TS2322` của `new-ui/` sang luồng `ui-01`; bốn lỗi lời văn của `EV-06`, `EV-07` và ô method sang hợp đồng sau của cùng vùng, ghi ở `PLN-34` cùng `PLN-36` |
+| Updated | `2026-09-03 21:30 Asia/Bangkok` |
 
 Task này đóng hai câu hỏi mở mà `hrp-v5-go-live-15-public-contrast-aa` cố ý để lại: `Q-03` về chữ trượt ngưỡng ở bề mặt nội bộ, và `Q-04` về mười hai chỗ `outline-none` chưa có vòng focus thay thế.
 
@@ -261,8 +261,41 @@ Một cảnh báo đã được TRẢ LỜI, ghi ra để round 3 không phải 
 
 **Round 3 tốn gì, và KHÔNG được làm lại gì.** Mọi phép đo mức mã đều ĐẠT, và đã đạt hai lần: Tier 1 đo ở round 1 và đo lại hôm nay. Round 3 là việc của riêng Tier 3 — viết lại ba ô `AC-05`, `AC-10`, `AC-11` bằng dụng cụ chạy được, giữ nguyên chín ô còn lại, và dán output thật. `Status` giữ `READY_FOR_EXECUTION`, `Current execution round` giữ `1`, Tier 2 vẫn KHÔNG có việc. Ghi `REVISION_REQUIRED` ở đây vẫn sẽ ra lệnh sai cho Tier 2, đúng như `PLN-26` đã nói.
 
+### Round 3 — audit ĐƯỢC NHẬN, task ACCEPTED, và đây là round ĐẦU TIÊN không có bằng chứng bịa (03/09/2026)
+
+Tier 3 giao round `3`: `AUDIT.md` `26575` byte, tám section, verdict `FAIL`, tám finding `AUD-001` tới `AUD-008`. Tier 1 tự chạy lại toàn bộ và **NHẬN bản audit này**. Phân biệt với hai round trước, vì nó là điều đáng ghi nhất: round 1 sai ở câu trả lời, round 2 sai ở đường đi tới câu trả lời, còn round 3 **mọi con số Tier 1 đo lại đều KHỚP**. Không một mã thoát nào bịa. Con số duy nhất lệch là thời lượng build, `4.1s` so với `12.8s`, tức cache — không phải bất biến.
+
+Đã đo lại và khớp: baseline `e4d18fe`; khoảng `e4d18fe` tới `46ea2dc` đúng `9` commit; log trên sáu path bàn giao `0` dòng, tức Tier 2 không commit; `git diff --cached -U0` ra đúng ba hunk `1` dòng đổi `1` dòng ở `ctv:273`, `worker:341`, `worker:358` và không số dòng nào của `EV-06` nằm trong hunk; `app/vendor/page.tsx` vắng trong `git status --porcelain` nhưng `git ls-files --error-unmatch` in ra, tức không diff vì không ai chạm; probe typecheck riêng của Tier 1 exit `0` với `0` dòng `error TS`; typecheck toàn cây exit `1` với đúng `1` lỗi và `0` lỗi ngoài `new-ui/`; build exit `1`, lỗi duy nhất ở `new-ui/components/JobCard.tsx` dòng `18`, giữa `472` dòng cảnh báo.
+
+Và hai cổng chạy lại trên đúng `26575` byte đã bàn giao — Tier 3 chạy cổng trên bản nháp `25906` byte nên số của nó lệch: `verify-audit.ps1` trả `PASS WITH WARNINGS` exit `0`, cảnh báo duy nhất là `S-16`; `S-10` lên `21` giá trị mới thay vì `18`; `S-09` xác nhận section 4 KHÁC bản round 2 đã commit, tức lệnh mới thật sự chạy. Ghi để lần sau khỏi mất một lượt: **cổng phải là thứ chạy CUỐI CÙNG, sau khi artifact đã ở dạng bàn giao.**
+
+**`PLN-33` — waive `C-02`, và waive trên một PHÉP ĐO chứ không trên phán xét.** `npm run build` exit `1` là thật. Nhưng `git ls-tree -r HEAD --name-only` giới hạn ở `new-ui` trả **`0` dòng**, và `git check-ignore new-ui` trả rỗng: thư mục ấy chưa được git theo dõi, cũng không bị ignore. Vercel build từ checkout của `main`, mà cây `HEAD` KHÔNG chứa tệp gây lỗi — nên `C-02` là điều kiện chỉ tồn tại trong worktree và **không thể chạm tới production**. Đây là chỗ Tier 3 tự ghi là khoảng trống của nó, và phép đo trên khép nó lại: một suy diễn thành một số đo. Thêm nữa `§4.2` CẤM Tier 2 chạm `new-ui/`, nên đây không phải nợ của bản giao này. Nợ `TS2322` giao cho luồng `ui-01`, và `ui-01` không được mở khi `new-ui/` còn chưa dựng xong.
+
+**`PLN-34` — waive `C-09`, vì cả bốn khoản của nó là lỗi lời văn của CHÍNH Tier 1 và dụng cụ báo chúng KHÔNG tồn tại ở `HEAD`.** `verify-task.ps1` trả `FAIL` exit `2` trên `T-03` với ba ô và `T-05` với một ô. Ba điều làm nó thành waive chứ thành round mới:
+
+- Cả hai mã kiểm đó nằm trong bộ cổng của một luồng SONG SONG và còn chưa commit. Đếm ở `HEAD` ra `0`. Mở một round execution để làm xanh một dụng cụ chưa phát hành là phán xét bằng thước chưa in vạch.
+- Phần NỘI DUNG mà hai mã kiểm ấy đòi thì đã được đáp NGAY TRONG round này: `PLN-24` đổi phép đo scope từ diff trần sang `--cached` cộng `--porcelain`, và Tier 3 chạy đúng thế, ra `9` path staged cộng `203` dòng chưa theo dõi. `PLN-28` cấp lệnh cho ô `AC-10` và Tier 3 dán output thật. Nghĩa là cổng đỏ vì Ô VĂN, không vì phép đo thiếu.
+- Sửa ô văn đòi bump `v1.1`, mà bump lúc này làm `A-02` so lệch spec giữa TASK và AUDIT rồi FAIL oan cả bản audit vừa nhận. **Spec giữ `v1.0`.** Cửa sổ bump đã đóng đúng lúc bản audit này được nhận, và nợ ô văn chuyển sang hợp đồng SAU của cùng vùng, không sửa hồi tố.
+
+**`PLN-35` — ba con số của `PLN-30` là SAI, và lỗi ấy của Tier 1, cùng đúng họ lỗi Tier 1 đã trả Tier 3 hai lần.** `AUD-006` đúng cả ba điểm. Số đúng: tệp `src/shared/ui/internal-contrast.static.test.ts` có `21` test, không phải `22`; `NEGATIVE_FIXTURE` khai ở dòng `532`, không phải `529`; khối `describe` ở dòng `672` mang **`4`** lần `it(` ở `673`, `682`, `689`, `696`, không phải hai. **Luật rút ra: đếm một CHUỖI CON không phải đếm một token.** `grep -o` với `it(` trả `22` vì lần thứ hai mươi hai là `cls.split(` ở dòng `324`. Runner đếm `21`. Khi con số dùng để khẳng định một cấu trúc mã, phải lấy từ thứ HIỂU cấu trúc đó — ở đây là chính runner.
+
+**`PLN-36` — `EV-06` và `EV-07` đều sai, và chỗ sai của `EV-06` là chỗ NGUY HIỂM NHẤT của cả contract.** `AUD-003` và `AUD-004` đúng.
+
+- `EV-06` viết "Tám chỗ ĐẠT" nhưng liệt kê **bảy** số dòng: `worker` `302`, `349`, `353`, `361`, `383`, `362`, và `vendor` `245`. Chỗ thứ tám là `worker:331`.
+- Nền của `worker:331` phải ĐO, không được đoán: dòng `331` nằm trong một thẻ ở `329` và một thẻ ở `324`, **cả hai không khai nền**, nên nó thừa hưởng nền body `--color-background` bằng `#faf9f7`. Thẻ card liền sau ở `335` khai nền trắng TƯỜNG MINH, chứng minh nền trắng ở vùng này là chọn-vào chứ không mặc định. Vậy `#64748b` trên `#faf9f7` bằng **`4.523:1`**, dư **`0.023`** — không phải `4.759:1` dư `0.259` như bảy chỗ kia. Một phần hai mươi biên độ.
+- `EV-07` khai `worker:331` là một `var()` có dự phòng. Đo tại baseline: dòng `331` là một hex TRẦN. Lập luận của `EV-07` vẫn đúng, nhưng nó thuộc SÁU dòng khác: `218`, `235`, `286`, `295`, `326`, `376`. Số dòng của `EV-07` sai, không phải lập luận.
+- Vì sao chỗ này nguy hiểm: người đọc `EV-06` tin cả tám chỗ dư `0.259`, nên sẽ tưởng làm nền tối thêm một chút là vô hại. Thực tế một chỗ dư `0.023`. Điều LÀM DỊU nó, và đã đo: hàng rào KHÔNG ghim nền trắng — nó leo chuỗi thẻ bao quanh rồi mới lùi về `PAGE_BACKGROUND` bằng `var(--color-background)`, nên nền tối thêm sẽ làm hàng rào ĐỎ thật. Nợ còn lại là nợ TÀI LIỆU, không phải nợ hàng rào.
+
+**`PLN-37` — `AC-12` chỉ đếm path do Tier 2 TẠO hoặc SỬA. Câu này thay câu cuối của `PLN-27` và toàn bộ `PLN-31`.** `AUD-005` đúng: lời văn "HEAD không đổi" của ô ấy là sai mặt chữ, vì `9` commit đã land giữa baseline và lúc audit, tất cả của luồng khác. Sau khi loại `.ai-pipeline/` còn bốn path dư, và không path nào của Tier 2: ba `AUDIT.md` của ba task khác ở dạng `1 0`, cộng `public/index.html` ở `97/59` do `copy-static.mjs` sinh khi build. Xử lý: **KHÔNG dọn ba chữ ký `1 0`** — đó là dấu vết của cơ chế cắt xén artifact, giữ để còn đọc được; `public/index.html` là rác build của Owner, `git restore` được lúc nào cũng được. Không tier nào commit chúng kèm artifact của mình. Và luật tổng quát, lần thứ ba phải ghi: **một AC xét Tier 2 không bao giờ được FAIL vì index của một luồng KHÁC** — không riêng Tier 1, mà bất kỳ luồng song song nào.
+
+**`PLN-38` — nhận hai ô Tier 3 sửa lời, và ghi rằng LỆNH của Tier 1 mới là thứ có lỗi.** `AUD-008` báo nó viết lại lời hai ô ngoài ba ô được phép, verdict không đổi, bảy ô còn lại giữ giống từng byte. Lệnh round 3 của Tier 1 đòi giữ nguyên chín ô — nhưng trong chín ô ấy có hai mệnh đề mà Tier 3 vừa đo được là SAI: chuyện `var()` ở `worker:331`, và chuyện `HEAD` không đổi. **Một lệnh giữ nguyên lời văn không bao giờ ép được người audit in lại một mệnh đề họ đo được là sai.** Lời Tier 3 là luật đúng, và Tier 1 nhận: lệnh sai, không phải bản giao sai. Từ nay lệnh giữ-nguyên phải kèm câu miễn trừ này.
+
+**`PLN-39` — hai lệch nhỏ, ghi để không ai đọc thành lỗ.** `AUD-007` đúng: HANDOFF khai typecheck exit `2`, đo được `1`. Kết luận không đổi vì cả hai đều khác `0`, nhưng đây là một con số được SAO. Và một điều Tier 1 phát hiện khi đo lại, quan trọng hơn: ô `AC-10` dán `4 passed | 17 skipped (21)`. Con `17` đó là hệ quả của việc LỌC theo tên khi chạy, không phải một hố. Chạy cả tệp hàng rào không lọc: **`21 passed`, `0` skipped, exit `0`.** Ghi rõ ở đây vì một dòng "17 skipped" bỏ trong artifact sẽ thành một defect bóng ba round nữa.
+
+**Kết luận round 3.** `12` trên `12` AC ĐẠT về THỰC CHẤT, đã kiểm độc lập. Hai vết đỏ đều ngoài quyền Tier 2, và cả hai được waive bằng phép đo ở `PLN-33` cùng `PLN-34`. Verdict `FAIL` của Tier 3 là token ĐÚNG theo luật `A-05` của nó — nó không được phép ghi khác khi còn check đỏ, và nó đã tự nói round 4 sẽ lên `PASS` mà Tier 2 không sửa một dòng. Vậy round 4 sẽ tốn một lượt để đổi một chữ. **KHÔNG mở round 4, KHÔNG mở execution round.** Quyết định ACCEPTED này đứng trên phép đo độc lập của Tier 1 CỘNG bản audit round 3, khác go-live-15 là nơi nó chỉ đứng trên phép đo của Tier 1.
+
 ## 10. Revision Log
 
 | Version | Ngày | Thay đổi |
 |---|---|---|
-| `v1.0` | 2026-09-03 | Bản đầu. Đóng `Q-03` và `Q-04` của contract 15, và BÁC hai con số của chúng bằng phép đo lại trên baseline `e4d18fe`: `41` chỗ thành `3`, `12` chỗ thành `5`, và `0` chỗ ở `app/admin/`. Nguyên nhân ghi ở `EV-10`: máy quét là một cái sàng cố ý báo thừa, đo mọi màu chữ với nền tối nhất trong bốn nền ghim sẵn thay vì nền thật. Tám chỗ mà `Q-03` gọi là trượt thì trên nền thật đều đạt, ghi ở `EV-06` để không ai mở lại. Ghi `RISK-01` làm cửa chặn: worktree đang có bản sửa `@theme` chưa commit của luồng khác, xóa `28` token và sinh `106` tham chiếu `var()` chết, làm `npm run test:unit` đỏ `9` test |
+| `v1.0` | 2026-09-03 | ACCEPTED sau audit round `3`. Spec KHÔNG bump: `A-02` so spec giữa TASK và AUDIT nên một lần bump làm FAIL oan chính bản audit vừa nhận. Mười bảy ruling `PLN-23` tới `PLN-39` ghi append-only ở §9 — ba round audit, hai bị trả vì bằng chứng bịa, round 3 sạch. Bản đầu. Đóng `Q-03` và `Q-04` của contract 15, và BÁC hai con số của chúng bằng phép đo lại trên baseline `e4d18fe`: `41` chỗ thành `3`, `12` chỗ thành `5`, và `0` chỗ ở `app/admin/`. Nguyên nhân ghi ở `EV-10`: máy quét là một cái sàng cố ý báo thừa, đo mọi màu chữ với nền tối nhất trong bốn nền ghim sẵn thay vì nền thật. Tám chỗ mà `Q-03` gọi là trượt thì trên nền thật đều đạt, ghi ở `EV-06` để không ai mở lại. Ghi `RISK-01` làm cửa chặn: worktree đang có bản sửa `@theme` chưa commit của luồng khác, xóa `28` token và sinh `106` tham chiếu `var()` chết, làm `npm run test:unit` đỏ `9` test |

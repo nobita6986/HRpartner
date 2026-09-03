@@ -1,0 +1,76 @@
+### R3-14 C-07 git hygiene — DAN OUTPUT (PLN-32: ma thoat hang so khong chung minh gi)
+$ git rev-parse --short HEAD
+46ea2dc
+
+$ git diff --cached --name-only   => day du danh sach index
+.ai-pipeline/scripts/gate-lib.ps1
+.ai-pipeline/scripts/verify-handoff.ps1
+.ai-pipeline/scripts/verify-pipeline.ps1
+app/ctv/page.tsx
+app/login/login-form.tsx
+app/worker/page.tsx
+src/shared/ui/data-table/data-table.tsx
+src/shared/ui/entity-card/entity-card.tsx
+src/shared/ui/internal-contrast.static.test.ts
+so path trong index =
+9
+
+$ git diff --cached --numstat
+434	0	.ai-pipeline/scripts/gate-lib.ps1
+341	0	.ai-pipeline/scripts/verify-handoff.ps1
+12	2	.ai-pipeline/scripts/verify-pipeline.ps1
+1	1	app/ctv/page.tsx
+2	2	app/login/login-form.tsx
+2	2	app/worker/page.tsx
+2	2	src/shared/ui/data-table/data-table.tsx
+1	1	src/shared/ui/entity-card/entity-card.tsx
+744	0	src/shared/ui/internal-contrast.static.test.ts
+
+$ git diff --cached --shortstat
+ 9 files changed, 1539 insertions(+), 10 deletions(-)
+
+--- doi chieu voi 6 path §4.2: path nao trong index KHONG thuoc §4.2 ---
+.ai-pipeline/scripts/gate-lib.ps1
+.ai-pipeline/scripts/verify-handoff.ps1
+.ai-pipeline/scripts/verify-pipeline.ps1
+app/login/login-form.tsx
+^ rong = khong co path la
+
+--- chung minh KHONG co 'git add -A': cac tep chua theo doi VAN chua theo doi ---
+$ git status --porcelain | grep -c '^??'
+203
+$ git status --porcelain | grep '^??' | head -8
+?? .ai-pipeline/scripts/verify-gates.selftest.ps1
+?? .claude/
+?? .neon
+?? "docs/aff_plan - Copy.md"
+?? docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/r3-01-readiness.txt
+?? docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/r3-02-baseline-scope.txt
+?? docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/r3-03-ac05-hunks.txt
+?? docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/r3-04-ev06-count.txt
+
+--- vung cam: co file nao cua sep/scratch/new-ui bi stage ---
+3
+^ 0 = vung cam sach
+
+### R3-15 C-10 dien diff so voi baseline e4d18fe
+$ git diff --name-only e4d18fe..HEAD -- app src packages prisma
+app/(jobs)/track/page.tsx
+app/(jobs)/viec-lam/[slug]/page.tsx
+app/(portal)/ve-chung-toi/page.tsx
+app/components/GlobalNavbar.tsx
+app/globals.css
+src/domains/applications/marketplace-inventory.static.test.ts
+src/domains/job-board/components/apply-modal.tsx
+src/domains/job-board/components/success-modal.tsx
+src/domains/job-board/public-ui-premium.static.test.ts
+^ danh sach file MA NGUON da doi giua baseline va HEAD (khong tinh docs/.ai-pipeline)
+
+### R3-16 C-03/C-04/C-05/C-06 co ap dung khong — do bang diff, khong suy dien
+$ git diff --cached --name-only -- 'app/api/**'  (route handler)
+^ rong = khong co route handler nao trong round nay => C-03/C-05 SKIP
+$ git diff --cached -U0 -- app src | grep -c -iE 'prisma|\|db\.'
+0
+^ 0 = khong co query moi/sua => C-04 SKIP
+$ git diff --cached --name-only -- prisma  (migration/RLS)
+^ rong = khong co migration => C-06 SKIP

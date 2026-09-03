@@ -1,0 +1,43 @@
+### R3-02 baseline vs HEAD, globals.css, six-path history
+$ git status --porcelain app/globals.css
+EXIT=0 (rong = STEP-01 thoa)
+
+$ git diff --stat e4d18fe..HEAD -- app/globals.css
+ app/globals.css | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+EXIT=0
+
+$ git log --oneline e4d18fe..HEAD
+46ea2dc docs(go-live-16): tra audit round 2 — mot MA THOAT bi bia, ghi PLN-29..PLN-32
+e309323 docs(go-live-18,19): quyet dinh Owner 03/09 — tach phan re khoi phan dat cua che PII
+48234d9 docs(go-live-16): tra audit round 1, ghi PLN-23..PLN-28 — nam defect contract la cua Tier 1
+d017d61 docs(planner): viet bon contract cuoi hang doi go-live, bac bo hai mon da chet
+80f6933 docs(planner): dich cursor sang 16 — 15 ACCEPTED va da land ae6e615
+ae6e615 fix(a11y): dua tuong phan be mat cong khai len WCAG AA (go-live-15)
+51936a7 docs(go-live-15): bump v1.2 — AC-15 bất khả thoả với mọi bản giao đúng quy trình
+663053c docs(go-live-15): bump v1.1 — sửa ba lỗi contract do Tier 1 tự đo lại phát hiện
+846ba0e docs(go-live-16): contract tương phản và vòng focus cho bề mặt nội bộ
+EXIT=0
+
+$ git log --oneline e4d18fe..HEAD -- $SIX
+EXIT=0 (rong = khong commit nao cham 6 path)
+
+$ git diff --stat e4d18fe..HEAD -- $SIX
+EXIT=0
+
+$ git diff --cached --numstat -- $SIX
+1	1	app/ctv/page.tsx
+2	2	app/login/login-form.tsx
+2	2	app/worker/page.tsx
+2	2	src/shared/ui/data-table/data-table.tsx
+1	1	src/shared/ui/entity-card/entity-card.tsx
+744	0	src/shared/ui/internal-contrast.static.test.ts
+EXIT=0
+
+$ grep -n 'Status\|READY_FOR' docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/HANDOFF.md | head -8
+26:| Status | `READY_FOR_AUDIT` |
+113:**Về `verify-handoff.ps1` báo `RESULT: FAIL (1 error(s))` trên tài liệu này:** lỗi duy nhất là `H-04`, và `H-04` chỉ phản chiếu đúng một sự thật — gate của contract đỏ. `13` mục còn lại `OK`, gồm `H-05` (`12/12` AC có hàng bằng chứng), `H-06` (mọi hàng có lệnh chạy lại được), `H-07` (`16` tệp evidence tồn tại thật), `H-13` (`8` deviation ở `§2`, `12` khai ở `§5`), `H-15` (`TASK.md` không bị round này chạm). Tier 2 nộp `READY_FOR_AUDIT` chứ không `BLOCKED`: không có gì chặn việc thi hành, và bịa một dòng `PASS` để mở cổng là đúng loại bằng chứng giả mà Rule 4 cấm. Nguyên văn: `evidence/step10-verify-handoff.txt`.
+139:| Round | Spec version | Status | Summary |
+141:| `1` | `v1.0` | `READY_FOR_AUDIT` | Sáu path `§4.2` đã sửa: `2.564→9.383`, `4.415→5.906`, ba chỗ focus từ không-có thành `2px` token. Hàng rào mới `744` dòng / `21` test đo `68` cặp trên `3` bề mặt, phát hiện `6` vi phạm ngoài phạm vi và khai vào bảng khoá cứng. `test:unit` exit `0` (`1611` test). `typecheck` exit `2` do `new-ui/` của luồng khác — `LIM-01`. `verify-handoff.ps1` báo `H-04` đỏ vì gate contract đỏ; `13` mục khác `OK`. Mười deviation, ba limitation, không blocker. Không commit. |
+143:> Handoff status: `READY_FOR_AUDIT`
+EXIT=0

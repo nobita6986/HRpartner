@@ -1,0 +1,19 @@
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts src/shared/ui/internal-contrast.static.test.ts --reporter=verbose -t RQ-10
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [32m✓[39m src/shared/ui/internal-contrast.static.test.ts[2m > [22mgo-live-16 / RQ-10 — fixture âm chứng minh hàng rào biết ĐỎ[2m > [22mcặp bịa dưới ngưỡng bị bắt
+ [32m✓[39m src/shared/ui/internal-contrast.static.test.ts[2m > [22mgo-live-16 / RQ-10 — fixture âm chứng minh hàng rào biết ĐỎ[2m > [22mcùng fixture đó, đổi sang token thật thì XANH
+ [32m✓[39m src/shared/ui/internal-contrast.static.test.ts[2m > [22mgo-live-16 / RQ-10 — fixture âm chứng minh hàng rào biết ĐỎ[2m > [22mEV-07 — var(--x, hex) với --x có khai báo KHÔNG bị báo lỗi
+ [32m✓[39m src/shared/ui/internal-contrast.static.test.ts[2m > [22mgo-live-16 / RQ-10 — fixture âm chứng minh hàng rào biết ĐỎ[2m > [22mnhánh ba ngôi ghép theo chỉ số, không ghép chéo thành cặp không tồn tại
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m4 passed[39m[22m[2m | [22m[33m17 skipped[39m[90m (21)[39m
+[2m   Start at [22m 20:56:32
+[2m   Duration [22m 1.05s[2m (transform 82ms, setup 0ms, collect 85ms, tests 7ms, environment 0ms, prepare 587ms)[22m
+
+FENCE_RQ10_EXIT=0

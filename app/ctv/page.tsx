@@ -270,7 +270,7 @@ export default function CtvPage() {
             </div>
             <div className="rounded-lg p-3" style={{ background: '#fef2f2', border: '1px solid #fecaca' }}>
               <p className="text-xs" style={{ color: '#991b1b' }}>Nợ hoa hồng</p>
-              <p className="font-bold text-lg" style={{ color: '#dc2626' }}>{formatVnd(commission.totalDebt)} ₫</p>
+              <p className="font-bold text-lg" style={{ color: 'var(--color-error)' }}>{formatVnd(commission.totalDebt)} ₫</p>
             </div>
           </div>
           {/* Bar chart */}

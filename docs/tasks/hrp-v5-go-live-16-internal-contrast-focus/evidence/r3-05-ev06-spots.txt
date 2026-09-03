@@ -1,0 +1,43 @@
+### R3-05 bay cho EV-06 giu nguyen noi dung + truy tim 'cho thu tam'
+$ for n in 302 349 353 361 362 383; do sed -n "${n}p" app/worker/page.tsx; done
+worker:302	<p className="text-sm" style={{ color: '#64748b' }}>
+worker:349	<span style={{ color: '#64748b' }}>Lương gross</span>
+worker:353	<span style={{ color: '#64748b' }}>Lương net</span>
+worker:361	<span style={{ color: '#64748b' }}>{k}</span>
+worker:362	<span style={{ color: '#dc2626' }}>-{formatVnd(v)}</span>
+worker:383	<p className="text-sm" style={{ color: '#64748b' }}>{t.type} · {t.createdAt}</p>
+EXIT=0
+
+vendor:245	<p className="text-xs mt-2" style={{ color: '#dc2626' }}>Block: {s.blockCode}</p>
+EXIT=0
+
+--- so lan #64748b va #dc2626 con lai trong ba tep trang (worktree = index) ---
+$ grep -c '#64748b' app/worker/page.tsx app/ctv/page.tsx app/vendor/page.tsx
+app/worker/page.tsx:10
+app/ctv/page.tsx:0
+app/vendor/page.tsx:0
+EXIT=0
+$ grep -c '#dc2626' app/worker/page.tsx app/ctv/page.tsx app/vendor/page.tsx
+app/worker/page.tsx:1
+app/ctv/page.tsx:1
+app/vendor/page.tsx:4
+EXIT=0
+
+--- vi tri tung lan xuat hien (ung vien cho 'cho thu tam') ---
+app/worker/page.tsx:218: <p className="text-sm" style={{ color: 'var(--on-surface-variant, #64748b)' }}>Chấm công &amp; theo dõi</p>
+app/worker/page.tsx:235: color: tab === t ? 'var(--primary, #2563eb)' : 'var(--on-surface-variant, #64748b)',
+app/worker/page.tsx:286: <p className="text-center text-sm" style={{ color: 'var(--on-surface-variant, #64748b)' }}>
+app/worker/page.tsx:302: <p className="text-sm" style={{ color: '#64748b' }}>
+app/worker/page.tsx:326: <p className="text-center py-8" style={{ color: 'var(--on-surface-variant, #64748b)' }}>Đang tải phiếu lương…</p>
+app/worker/page.tsx:331: <p className="text-sm mt-1" style={{ color: '#64748b' }}>Phiếu lương sẽ xuất hiện sau khi app Python tính lương và đẩy dữ liệu lên.</p>
+app/worker/page.tsx:349: <span style={{ color: '#64748b' }}>Lương gross</span>
+app/worker/page.tsx:353: <span style={{ color: '#64748b' }}>Lương net</span>
+app/worker/page.tsx:361: <span style={{ color: '#64748b' }}>{k}</span>
+app/worker/page.tsx:362: <span style={{ color: '#dc2626' }}>-{formatVnd(v)}</span>
+app/worker/page.tsx:383: <p className="text-sm" style={{ color: '#64748b' }}>{t.type} · {t.createdAt}</p>
+app/ctv/page.tsx:290: color: msg.type === 'ok' ? '#15803d' : '#dc2626',
+app/vendor/page.tsx:53: REJECTED:   { bg: '#fee2e2', text: '#dc2626' },
+app/vendor/page.tsx:58: DISPUTED:   { bg: '#fee2e2', text: '#dc2626' },
+app/vendor/page.tsx:167: color: msg.type === 'ok' ? '#15803d' : '#dc2626',
+app/vendor/page.tsx:245: <p className="text-xs mt-2" style={{ color: '#dc2626' }}>Block: {s.blockCode}</p>
+EXIT=0

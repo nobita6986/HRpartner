@@ -1,0 +1,29 @@
+### R3-08 AC-11 probe theo PLN-29
+$ cat tsconfig.t3probe.json
+{
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "new-ui"]
+}
+
+$ npx tsc --noEmit -p tsconfig.t3probe.json  (output nguyen van, dan o duoi)
+PROBE_EXIT=0   <- doc bang mot cau lenh rieng: echo $?
+
+--- so dong output ---
+0
+--- so dong 'error TS' ---
+0
+--- cong tu kiem: TS17004 / TS2307 ---
+0
+--- noi dung output (rong = khong co dong nao) ---
+--- CHONG RONG: probe co that su nap 6 path §4.2 khong ---
+$ npx tsc -p tsconfig.t3probe.json --listFiles --noEmit | wc -l  => tong file trong program
+1144
+$ grep -E 'app/(worker|ctv|vendor)/page.tsx|internal-contrast.static.test.ts|data-table.tsx|entity-card.tsx' (loc theo duoi duong dan)
+C:/CodeApp/HrP/src/shared/ui/internal-contrast.static.test.ts
+C:/CodeApp/HrP/app/ctv/page.tsx
+C:/CodeApp/HrP/app/vendor/page.tsx
+C:/CodeApp/HrP/app/worker/page.tsx
+C:/CodeApp/HrP/src/shared/ui/data-table/data-table.tsx
+C:/CodeApp/HrP/src/shared/ui/entity-card/entity-card.tsx
+$ so file new-ui/ con lai trong program (phai la 0)
+0

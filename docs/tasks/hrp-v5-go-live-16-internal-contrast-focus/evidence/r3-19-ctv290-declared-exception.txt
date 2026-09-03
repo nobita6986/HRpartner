@@ -1,0 +1,61 @@
+### R3-19 ctv:290 la NGOAI LE DA KHAI, khong phai 'cho DAT' thu tam
+$ awk '/^const DECLARED_EXCEPTIONS/,/^\];/' src/shared/ui/internal-contrast.static.test.ts
+const DECLARED_EXCEPTIONS: DeclaredException[] = [
+  {
+    file: 'app/worker/page.tsx',
+    line: 229,
+    fg: '#f26522',
+    bg: '#ffffff',
+    ratio: '3.153',
+    note: 'Nhãn tab ĐANG chọn: var(--primary) trên nền white của chính nút, 14px. Sửa đúng: --primary-dark.',
+  },
+  {
+    file: 'app/ctv/page.tsx',
+    line: 150,
+    fg: '#ffffff',
+    bg: '#f26522',
+    ratio: '3.153',
+    note: 'Nút "Gửi yêu cầu" trong modal rút tiền: var(--on-primary) trên var(--primary), 14px đậm.',
+  },
+  {
+    file: 'app/ctv/page.tsx',
+    line: 234,
+    fg: '#f26522',
+    bg: '#efeeec',
+    ratio: '2.719',
+    note: 'Mã giới thiệu <code>: var(--primary) trên var(--surface-container). Biên độ trượt lớn nhất trong sáu chỗ.',
+  },
+  {
+    file: 'app/ctv/page.tsx',
+    line: 237,
+    fg: '#f26522',
+    bg: '#ffffff',
+    ratio: '3.153',
+    note: 'Nút Copy: var(--primary) trên nền card var(--surface-container-lowest), 12px.',
+  },
+  {
+    file: 'app/ctv/page.tsx',
+    line: 278,
+    fg: '#ffffff',
+    bg: '#f26522',
+    ratio: '3.153',
+    note: 'Nút "Rút tiền" ở nhánh còn số dư: var(--on-primary) trên var(--primary), 14px đậm.',
+  },
+  {
+    file: 'app/ctv/page.tsx',
+    line: 288,
+    fg: '#dc2626',
+    bg: '#fef2f2',
+    ratio: '4.415',
+    note: 'Nhánh lỗi của hộp thông báo — đúng cặp màu EV-02 ở 14px. Sửa đúng: var(--color-error).',
+  },
+];
+
+--- nen cua ctv:290 tren baseline ---
+      {/* Message */}
+      {msg && (
+        <div className="mb-4 p-3 rounded-lg text-sm" style={{
+          background: msg.type === 'ok' ? '#f0fdf4' : '#fef2f2',
+          color: msg.type === 'ok' ? '#15803d' : '#dc2626',
+          border: `1px solid ${msg.type === 'ok' ? '#bbf7d0' : '#fecaca'}`,
+        }}>

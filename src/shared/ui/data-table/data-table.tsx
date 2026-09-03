@@ -120,7 +120,7 @@ function DataTableToolbar<TData>({
               className={cn(
                 'h-9 w-[200px] rounded-md border border-slate-200 bg-white pl-8 pr-3 text-sm',
                 'placeholder:text-slate-400',
-                'focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200',
+                'focus-visible:border-[var(--color-focus-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
               )}
             />
           </div>
@@ -331,7 +331,7 @@ function DataTablePagination<TData>({ table, totalRows }: PaginationProps<TData>
         <select
           value={pageSize}
           onChange={(e) => table.setPageSize(Number(e.target.value))}
-          className="ml-2 h-8 rounded-md border border-slate-200 bg-white px-2 text-sm focus:border-orange-400 focus:outline-none"
+          className="ml-2 h-8 rounded-md border border-slate-200 bg-white px-2 text-sm focus-visible:border-[var(--color-focus-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         >
           {[10, 20, 50, 100].map((s) => (
             <option key={s} value={s}>

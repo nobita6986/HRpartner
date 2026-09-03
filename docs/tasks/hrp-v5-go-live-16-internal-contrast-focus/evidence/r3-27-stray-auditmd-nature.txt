@@ -1,0 +1,12 @@
+### R3-27 SUA LAI ket luan cua chinh toi o R3-23: chu ky la '1 0', KHONG phai cat xen
+Ba AUDIT.md cua task khac: them 1 dong, xoa 0, va byte tren dia LON HON HEAD
+=> khong phai dau vet cat-xen-ve-0-byte. Noi dung dong duoc them:
+--- docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+  ky tu cuoi tep tren dia: 0000000 273 235       P   l   a   n   n   e   r       R   e   s   o   l
+0000020   u   t   i   o   n       t   r   o   n   g       T   A   S   K
+--- docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+  ky tu cuoi tep tren dia: 0000000 273 235       P   l   a   n   n   e   r       R   e   s   o   l
+0000020   u   t   i   o   n       t   r   o   n   g       T   A   S   K
+--- docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+  ky tu cuoi tep tren dia: 0000000 273 235       P   l   a   n   n   e   r       R   e   s   o   l
+0000020   u   t   i   o   n       t   r   o   n   g       T   A   S   K

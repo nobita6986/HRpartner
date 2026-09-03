@@ -1,0 +1,25 @@
+### R3-09 npm run typecheck (config goc, KHONG loai new-ui)
+TYPECHECK_EXIT=1   <- doc bang echo $? ngay sau lenh
+--- tong so dong 'error TS' ---
+1
+--- phan bo theo tien to duong dan (cot 1 = so dong loi) ---
+      1 new-ui
+      1   Type '{ children: 
+--- so dong loi thuoc new-ui/ ---
+1
+--- so dong loi KHONG thuoc new-ui/ (phai la 0) ---
+0
+--- neu co, day la nhung dong do ---
+--- new-ui/ co nam trong git khong (phai la untracked) ---
+?? new-ui/
+0
+^ 0 = new-ui/ khong duoc git theo doi => ngoai §4.2
+--- 12 dong dau output that ---
+
+> hrp@0.1.0 typecheck
+> tsc --noEmit
+
+new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & ... 4 more ... & HTMLAttributes<...>'.
+  Type '{ children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'LinkProps<any>'.
+    Types of property 'href' are incompatible.
+      Type 'undefined' is not assignable to type 'Url'.

@@ -91,7 +91,7 @@ export default function LoginForm({ subtitle = 'Đăng nhập hệ thống' }: {
             autoComplete="username"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="block w-full rounded-xl px-4 py-3 text-sm outline-none"
+            className="block w-full rounded-xl px-4 py-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
             style={{
               border: '1px solid var(--color-outline-variant)',
               background: 'var(--color-surface-container-low)',
@@ -113,7 +113,7 @@ export default function LoginForm({ subtitle = 'Đăng nhập hệ thống' }: {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="block w-full rounded-xl px-4 py-3 text-sm outline-none"
+            className="block w-full rounded-xl px-4 py-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
             style={{
               border: '1px solid var(--color-outline-variant)',
               background: 'var(--color-surface-container-low)',

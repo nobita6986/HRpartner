@@ -1,0 +1,23 @@
+### R3-06 doi chieu EV-07 voi baseline e4d18fe (khong doc worktree)
+$ git show e4d18fe:app/worker/page.tsx | sed -n '331p'
+              <p className="text-sm mt-1" style={{ color: '#64748b' }}>Phiếu lương sẽ xuất hiện sau khi app Python tính lương và đẩy dữ liệu lên.</p>
+EXIT=0
+
+$ git show e4d18fe:app/worker/page.tsx | grep -n 'on-surface-variant'
+218:        <p className="text-sm" style={{ color: 'var(--on-surface-variant, #64748b)' }}>Chấm công &amp; theo dõi</p>
+235:              color: tab === t ? 'var(--primary, #2563eb)' : 'var(--on-surface-variant, #64748b)',
+286:          <p className="text-center text-sm" style={{ color: 'var(--on-surface-variant, #64748b)' }}>
+295:            <p className="text-center py-8" style={{ color: 'var(--on-surface-variant, #94a3b8)' }}>Chưa có lịch sử chấm công</p>
+326:            <p className="text-center py-8" style={{ color: 'var(--on-surface-variant, #64748b)' }}>Đang tải phiếu lương…</p>
+376:            <p className="text-center py-8" style={{ color: 'var(--on-surface-variant, #94a3b8)' }}>Chưa có phiếu nào</p>
+EXIT=0
+
+--- nen cua worker:331 tren baseline (the bao quanh) ---
+          {history.length === 0 && (
+            <p className="text-center py-8" style={{ color: 'var(--on-surface-variant, #94a3b8)' }}>Chưa có lịch sử chấm công</p>
+          )}
+          {history.map((h) => (
+            <div key={h.id} className="rounded-lg p-4 shadow-sm" style={{ background: 'white', border: '1px solid #f1f5f9' }}>
+              <div className="flex justify-between items-start">
+                <div>
+EXIT=0

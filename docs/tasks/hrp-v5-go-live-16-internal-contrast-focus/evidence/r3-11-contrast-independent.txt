@@ -1,0 +1,5 @@
+#bbbbbb   tren #ffffff = 1.920:1 | fixture am RQ-10
+#594138   tren #ffffff = 9.383:1 | token that (fixture duong)
+#64748b   tren #ffffff = 4.759:1 | EV-06 cot 1
+#dc2626   tren #ffffff = 4.829:1 | EV-06 cot 2
+#f26522   tren #ffffff = 3.153:1 | primary brand

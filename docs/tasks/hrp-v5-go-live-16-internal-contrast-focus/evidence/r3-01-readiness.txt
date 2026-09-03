@@ -1,0 +1,218 @@
+### R3-01 readiness + tree state
+$ git rev-parse HEAD
+46ea2dc5e6a2b64f0c56ab641ded702386f16dca
+EXIT=0
+
+$ git log --oneline -1
+46ea2dc docs(go-live-16): tra audit round 2 — mot MA THOAT bi bia, ghi PLN-29..PLN-32
+EXIT=0
+
+$ git rev-parse --short e4d18fe
+e4d18fe
+EXIT=0
+
+$ git status --porcelain
+A  .ai-pipeline/scripts/gate-lib.ps1
+ M .ai-pipeline/scripts/verify-audit.ps1
+A  .ai-pipeline/scripts/verify-handoff.ps1
+M  .ai-pipeline/scripts/verify-pipeline.ps1
+ M .ai-pipeline/scripts/verify-task.ps1
+M  app/ctv/page.tsx
+M  app/login/login-form.tsx
+M  app/worker/page.tsx
+ M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+ M public/index.html
+M  src/shared/ui/data-table/data-table.tsx
+M  src/shared/ui/entity-card/entity-card.tsx
+A  src/shared/ui/internal-contrast.static.test.ts
+?? .ai-pipeline/scripts/verify-gates.selftest.ps1
+?? .claude/
+?? .neon
+?? "docs/aff_plan - Copy.md"
+?? docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/evidence/r3-01-readiness.txt
+?? fix.patch
+?? new-ui.md
+?? new-ui/
+?? patch_test.ps1
+?? patch_test2.ps1
+?? patch_test3.ps1
+?? rls-probe-insert.txt
+?? rls-probe-output.txt
+?? scratch/_add.txt
+?? scratch/_audit_idx.md
+?? scratch/_del.txt
+?? scratch/_gone.txt
+?? scratch/_idx.txt
+?? scratch/_t2_head.txt
+?? scratch/_t2_idx.txt
+?? scratch/_theme_head.txt
+?? scratch/_theme_idx.txt
+?? scratch/bump-gl14-v11.py
+?? scratch/check-rpc-schema-usage.mjs
+?? scratch/commit-aff-plan.txt
+?? scratch/commit-gl05-handoff.txt
+?? scratch/commit-gl09-relock.txt
+?? scratch/commit-gl14-accepted.txt
+?? scratch/commit-gl14-audit-artifact.txt
+?? scratch/commit-gl14-cursor.txt
+?? scratch/commit-gl14-r3.txt
+?? scratch/commit-gl14-v11.txt
+?? scratch/commit-golive14.txt
+?? scratch/cursor-2026-09-02-gl07-prose.py
+?? scratch/cursor-2026-09-02-gl07-relock.py
+?? scratch/cursor-commit-msg.txt
+?? scratch/cursor-gl07-v13.py
+?? scratch/cursor-gl07-v14.py
+?? scratch/cursor-gl09-accepted.py
+?? scratch/cursor-gl09-audit-r2.py
+?? scratch/cursor-gl09-deployed.py
+?? scratch/cursor-gl14-accepted.py
+?? scratch/cursor-gl14-audit.py
+?? scratch/cursor-golive14.py
+?? scratch/db-state-check.mjs
+?? scratch/fix-gl09-detail-path.py
+?? scratch/g-base-audit.css
+?? scratch/g-base-nav.tsx
+?? scratch/g-base-page.tsx
+?? scratch/gl05-cursor-closed.py
+?? scratch/gl05-cursor-v13.py
+?? scratch/gl05-cursor-v14.py
+?? scratch/gl05-facet-perf.cjs
+?? scratch/gl05-facet-perf.ts
+?? scratch/gl05-industry-check.cjs
+?? scratch/gl05-industry-check.ts
+?? scratch/gl05-resolve.py
+?? scratch/gl05-stripped-grep.mjs
+?? scratch/gl05-table-check.py
+?? scratch/gl05-v14.py
+?? scratch/gl07-bump-v15.py
+?? scratch/gl07-relock-commit-msg.txt
+?? scratch/gl07-revlog-v15.py
+?? scratch/gl07-v13-dec17-db-leg.py
+?? scratch/gl07-v14-fix-ledger-alarm.py
+?? scratch/gl08-accepted-commit-msg.txt
+?? scratch/gl08-bump-v12.py
+?? scratch/gl08-bump-v13.py
+?? scratch/gl08-cursor-accepted.py
+?? scratch/gl08-cursor-commit-msg.txt
+?? scratch/gl08-cursor-resolved.py
+?? scratch/gl08-cursor-v12.py
+?? scratch/gl08-cursor-v13.py
+?? scratch/gl08-owner-op-accepted.py
+?? scratch/gl08-page.diff
+?? scratch/gl09-audit-r1-ruling.py
+?? scratch/gl09-handoff-count.py
+?? scratch/gl09-handoff-fixrefs.py
+?? scratch/gl09-handoff-note03.py
+?? scratch/gl09-handoff-s3.py
+?? scratch/gl09-handoff-s31.py
+?? scratch/gl09-handoff-s33.py
+?? scratch/gl09-handoff-s45.py
+?? scratch/gl09-handoff-s67.py
+?? scratch/gl09-handoff-s6note.py
+?? scratch/gl09-resolution-accept.py
+?? scratch/gl15-cursor-apply.py
+?? scratch/gl15-cursor-note-append.txt
+?? scratch/gl15-cursor.yaml
+?? scratch/gl15-deadvars-head.mjs
+?? scratch/gl15-deadvars.mjs
+?? scratch/gl15-delivered-vs-head.py
+?? scratch/gl15-enc-test.txt
+?? scratch/gl15-handoff-scope-numbers.py
+?? scratch/gl15-linemap.py
+?? scratch/gl15-md-table-check.py
+?? scratch/gl15-mytests-head-tokens.mjs
+?? scratch/gl15-numbers.py
+?? scratch/gl15-r2-patch1.py
+?? scratch/gl15-r2-patch2.py
+?? scratch/gl15-r2-patch3.py
+?? scratch/gl15-r2-patch4.py
+?? scratch/gl15-r2-patch5.py
+?? scratch/gl15-r2-patch6.py
+?? scratch/gl15-r2-patch7.py
+?? scratch/gl15-r2-scope.sh
+?? scratch/gl15-step02-css.py
+?? scratch/gl15-step03-nav.py
+?? scratch/gl15-step04.py
+?? scratch/gl15-step05-test.py
+?? scratch/gl15-step05b-hover.py
+?? scratch/gl15-step06-fixlabels.py
+?? scratch/gl15-step06-measure.py
+?? scratch/gl15-truth.py
+?? scratch/gl16-head.py
+?? scratch/gl16-numbers.py
+?? scratch/gl16-remeasure.py
+?? scratch/gl16-scan.txt
+?? scratch/golive03-ac-drive.mjs
+?? scratch/golive03-ac08-remeasure.mjs
+?? scratch/golive03-bigint-probe.mjs
+?? scratch/golive03-db-probe.mjs
+?? scratch/golive03-greps.ps1
+?? scratch/golive03-migr-check.mjs
+?? scratch/golive03-rls-gaps.mjs
+?? scratch/golive03-seed.mjs
+?? scratch/golive11-sql-balance.mjs
+?? scratch/handover-s13.py
+?? scratch/head-globals.css
+?? scratch/lj-all.json
+?? scratch/lj-area.json
+?? scratch/lj-portal.html
+?? scratch/md-table-check.py
+?? scratch/mem-15-fix.py
+?? scratch/mem-baseline-trap.py
+?? scratch/mem-gate-trap3.py
+?? scratch/mem-idx.py
+?? scratch/mem-idx2.py
+?? scratch/mem-index-update.py
+?? scratch/mem-render-mode.py
+?? scratch/mock-upstash.js
+?? scratch/neon-schemadiff-live-vs-mp2test.txt
+?? scratch/neon-schemadiff-snapshot-vs-live.txt
+?? scratch/relock-gl07-a.py
+?? scratch/relock-gl07-b.py
+?? scratch/relock-gl07-c.py
+?? scratch/relock-gl07-d.py
+?? scratch/relock-gl07-e.py
+?? scratch/relock-gl07-f.py
+?? scratch/relock-gl07-v12.py
+?? scratch/relock-gl07-v12b.py
+?? scratch/relock-gl09-a.py
+?? scratch/relock-gl09-b.py
+?? scratch/relock-gl09-c.py
+?? scratch/relock-gl09-d.py
+?? scratch/relock-gl09-e1.py
+?? scratch/relock-gl09-e2.py
+?? scratch/relock-gl09-e3.py
+?? scratch/relock-gl09-e4.py
+?? scratch/relock-gl09-f.py
+?? scratch/resolve-gl14.py
+?? scratch/run_m1_06b_audit.ps1
+?? scratch/run_m1_06c_audit.ps1
+?? scratch/seed-hrp-live-demo.sql
+?? scratch/seed-mkt-cleanup-probe.mjs
+?? scratch/seed-mkt-probe.mjs
+?? scratch/stash-globals.diff
+?? scratch/t1-lane-audit-r4.txt
+?? scratch/t1-lane-verify.txt
+?? scratch/t1r4/
+?? scratch/t1r5/
+?? scratch/t1r6-test-unit.txt
+?? scratch/t1r6-typecheck-no-newui.txt
+?? scratch/t1r6-typecheck.txt
+?? scratch/t1r6/
+?? scratch/t1r7/
+?? scratch/t1r8/
+?? scratch/test-db.js
+?? scratch/test-func.js
+?? scratch/test-rpc.js
+?? scratch/test-sql.js
+?? scratch/test-writer.js
+?? scratch/ui-contrast-out.txt
+?? scratch/ui-contrast-scan.py
+?? scripts/debug-parser.mjs
+?? temp.diff
+?? tsconfig.tmp.json
+?? update_globals.js
+EXIT=0

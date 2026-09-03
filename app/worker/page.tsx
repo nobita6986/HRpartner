@@ -338,7 +338,7 @@ export default function WorkerPage() {
                   <p className="font-semibold" style={{ color: '#1e293b' }}>
                     Tháng {p.periodMonth}/{p.periodYear}
                   </p>
-                  <p className="text-xs" style={{ color: '#94a3b8' }}>
+                  <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
                     Tính lúc: {new Date(p.computedAt).toLocaleString('vi-VN')}
                   </p>
                 </div>
@@ -355,7 +355,7 @@ export default function WorkerPage() {
                 </div>
                 {Object.keys(p.deductions ?? {}).length > 0 && (
                   <div className="pt-1 mt-1" style={{ borderTop: '1px dashed #e2e8f0' }}>
-                    <p className="text-xs font-medium mb-1" style={{ color: '#94a3b8' }}>Khấu trừ</p>
+                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-on-surface-variant)' }}>Khấu trừ</p>
                     {Object.entries(p.deductions).map(([k, v]) => (
                       <div key={k} className="flex justify-between">
                         <span style={{ color: '#64748b' }}>{k}</span>

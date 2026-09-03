@@ -1,0 +1,29 @@
+﻿AUDIT SUBSTANCE GATE
+  subject: docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/AUDIT.md (against 
+docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/TASK.md)
+
+  [OK]   S-01 AUDIT.md size 25906 bytes.
+  [OK]   S-01 AUDIT.md is tracked by git (recoverable).
+  [OK]   A-01 all 8 required sections present.
+  [OK]   A-02 spec version v1.0 matches TASK.
+  [OK]   A-03 12 AC all carry a result row.
+  [OK]   S-02 every measured AC row carries a command and a value.
+  [OK]   S-17 no measured value is reused across three or more AC.
+  [OK]   A-05 verdict: FAIL
+  [OK]   S-07 section 5 is consistent with the AC table.
+  [OK]   S-08 no AC passed over a HANDOFF ENV_BLOCKED declaration.
+  [OK]   A-06 section 4 has 12 evidence rows.
+  [OK]   S-02 section 4 rows all carry command + result.
+  [OK]   S-09 section 4 differs from round 2's committed version.
+  [OK]   S-10 18 measured values are new relative to TASK/HANDOFF.
+  [OK]   S-13 section 7 round numbering is within 1..3.
+  [OK]   S-14 no plaintext secret in AUDIT.md.
+  [OK]   S-15 27 referenced artifact path(s) exist.
+  [WARN] S-16 9 staged path(s) lie outside docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/ (e.g. 
+.ai-pipeline/scripts/gate-lib.ps1, .ai-pipeline/scripts/verify-handoff.ps1, .ai-pipeline/scripts/verify-pipeline.ps1). 
+Tier 3 must never commit source or test files with its audit.
+  [OK]   A-07 closing handoff line present.
+
+RESULT: PASS WITH WARNINGS (1 warning(s)).
+AUDIT.md carries measured evidence; Tier 1 may resolve on it.
+VERIFY_AUDIT_EXIT=0

@@ -1,0 +1,9 @@
+#bbbbbb tren #ffffff = 1.920:1  | fixture am RQ-10
+#594138 tren #ffffff = 9.383:1  | token that (fixture duong)
+#64748b tren #ffffff = 4.759:1  | EV-06 cot 1
+#dc2626 tren #ffffff = 4.829:1  | EV-06 cot 2
+#f26522 tren #ffffff = 3.153:1  | nut primary
+#dc2626 tren #fef2f2 = 4.415:1  | ctv:288
+#f26522 tren #efeeec = 2.719:1  | ctv:234
+#64748b tren #faf9f7 = 4.523:1  | worker:331 nen body
+WCAG_RECOMPUTE_EXIT=0

@@ -1,0 +1,80 @@
+### R3-20 AC-12 theo phuong phap PLN-27+PLN-31 (chi dem path NGOAI .ai-pipeline/)
+$ git rev-parse --short HEAD
+46ea2dc
+$ git log --oneline -1
+46ea2dc docs(go-live-16): tra audit round 2 — mot MA THOAT bi bia, ghi PLN-29..PLN-32
+
+--- CHAT: sau path §4.2 co bi commit chua? ---
+$ git log --oneline e4d18fe..HEAD -- app/worker/page.tsx app/ctv/page.tsx app/login/login-form.tsx src/shared/ui/data-table/data-table.tsx src/shared/ui/entity-card/entity-card.tsx src/shared/ui/internal-contrast.static.test.ts
+^ RONG = khong mot commit nao giua baseline va HEAD cham sau path bang giao
+$ git log --oneline e4d18fe..HEAD | wc -l  => so commit da chen vao
+9
+$ git log --oneline e4d18fe..HEAD
+46ea2dc docs(go-live-16): tra audit round 2 — mot MA THOAT bi bia, ghi PLN-29..PLN-32
+e309323 docs(go-live-18,19): quyet dinh Owner 03/09 — tach phan re khoi phan dat cua che PII
+48234d9 docs(go-live-16): tra audit round 1, ghi PLN-23..PLN-28 — nam defect contract la cua Tier 1
+d017d61 docs(planner): viet bon contract cuoi hang doi go-live, bac bo hai mon da chet
+80f6933 docs(planner): dich cursor sang 16 — 15 ACCEPTED va da land ae6e615
+ae6e615 fix(a11y): dua tuong phan be mat cong khai len WCAG AA (go-live-15)
+51936a7 docs(go-live-15): bump v1.2 — AC-15 bất khả thoả với mọi bản giao đúng quy trình
+663053c docs(go-live-15): bump v1.1 — sửa ba lỗi contract do Tier 1 tự đo lại phát hiện
+846ba0e docs(go-live-16): contract tương phản và vòng focus cho bề mặt nội bộ
+
+--- phan nhom tap path CHUA COMMIT co theo doi (bo qua ?? untracked cua Owner) ---
+$ git status --porcelain | grep -v '^??'
+A  .ai-pipeline/scripts/gate-lib.ps1
+ M .ai-pipeline/scripts/verify-audit.ps1
+A  .ai-pipeline/scripts/verify-handoff.ps1
+M  .ai-pipeline/scripts/verify-pipeline.ps1
+ M .ai-pipeline/scripts/verify-task.ps1
+M  app/ctv/page.tsx
+M  app/login/login-form.tsx
+M  app/worker/page.tsx
+ M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+ M public/index.html
+M  src/shared/ui/data-table/data-table.tsx
+M  src/shared/ui/entity-card/entity-card.tsx
+A  src/shared/ui/internal-contrast.static.test.ts
+
+$ ... | grep -v '.ai-pipeline/'  => tap ma AC-12 dem theo PLN-31
+M  app/ctv/page.tsx
+M  app/login/login-form.tsx
+M  app/worker/page.tsx
+ M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+ M public/index.html
+M  src/shared/ui/data-table/data-table.tsx
+M  src/shared/ui/entity-card/entity-card.tsx
+A  src/shared/ui/internal-contrast.static.test.ts
+
+--- nhom 1: sau path §4.2 | nhom 2: docs/tasks/<slug>/** | nhom 3 (phai rong sau khi tru .ai-pipeline) ---
+ M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+ M public/index.html
+^ dong nao con lai o day la NHOM THU BA thuc su
+
+### R3-21 AC-05 (b): HANDOFF co bang tam ti so khong
+$ grep -n ':1' $H | head -20
+33:- `app/worker/page.tsx:341` và `:358` — `#94a3b8` → `var(--color-on-surface-variant)`. Đo `2.564:1` → **`9.383:1`** trên nền `#ffffff` của card.
+34:- `app/ctv/page.tsx:273` — `#dc2626` → `var(--color-error)`. Đo `4.415:1` → **`5.906:1`** trên panel `#fef2f2`. Nền panel không đổi.
+35:- `app/login/login-form.tsx:94` và `:116` — thêm `focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]`. Từ **không có chỉ báo focus nào** thành vòng `2px` màu token, đo **`5.832:1`** trên nền `#f4f3f1` của chính ô nhập.
+36:- `src/shared/ui/data-table/data-table.tsx:123`, `:334` và `src/shared/ui/entity-card/entity-card.tsx:223` — ba chỗ nhận cùng mẫu ring. `orange-200`/`orange-400` đã đi. Đo `1.034:1`/`1.617:1` → **`6.468:1`** trên `bg-white`.
+39:`npm run test:unit`: **`104` tệp / `1611` test, exit `0`**. `npm run typecheck`: exit `2` vì **một** lỗi duy nhất trong `new-ui/components/JobCard.tsx` — thư mục **chưa được git theo dõi** của luồng khác, ghi lúc `2026-09-02 23:19:10`, chỉ nhập `react` và `next/link`. Cùng lệnh `tsc` với thư mục đó bị loại: **exit `0`**. Không sửa nó (`RQ-07`, `RISK-07`); khai thành `LIM-01`.
+41:Hàng rào không phải bảng liệt kê tay. Nó đọc `@theme` từ `app/globals.css`, dựng cây JSX bằng ngăn xếp thẻ, và tự đo **`68` cặp chữ-nền** trên ba bề mặt. Kết quả đo phát hiện **`6` cặp dưới ngưỡng mà contract không nêu**, năm trong đó cùng một nguyên nhân: bề mặt nội bộ vẫn dùng `--primary` (`#f26522`) — đúng token mà go-live-08 đã đo `3.153:1` và go-live-15 đã thay bằng `--primary-dark` **chỉ cho bề mặt công khai**. Cả sáu nằm ngoài `§4.2` nên Tier 2 **khai** chứ không tự sửa: `DEV-06`, và bảng `DECLARED_EXCEPTIONS` bị khoá cứng trong hàng rào.
+55:| `STEP-05` | `RQ-03` | `app/login/login-form.tsx:94`, `:116` | `DONE` | Dùng tiền tố `focus-visible:` thay vì `focus:` của mẫu `DEC-03`, và `ring-2` thay `ring-1` vì `RQ-03` đòi tối thiểu `2px`. Xem `DEV-08`. |
+56:| `STEP-06` | `RQ-04` | `data-table.tsx:123`, `:334`; `entity-card.tsx:223` | `DONE` | `RQ-04` là `Should` và đã LÀM, không bỏ, nên `DEC-04` không phải viện đến. Ba chỗ dùng cùng một mẫu ring. |
+71:| `AC-01` | `git grep -n "94a3b8" -- app/worker/page.tsx` | exit `0`, còn `2` dòng: `:295`, `:376` | `evidence/ac01-04-12-commands.txt`. Hai dòng còn lại là `var(--on-surface-variant, #94a3b8)`; token chính khai báo ở `globals.css:162` → `#594138`, nên nhánh dự phòng không bao giờ chạy — đúng quy tắc `EV-07`. Lọc theo dòng `341`/`358`: **RỖNG**. Hàng rào đo `9.383:1` cho cả hai, `12px`. | `rg` không có trên máy này (`Get-Command rg` → không tìm thấy), dùng `git grep -n` tương đương. Ngưỡng "không dòng nào còn `#94a3b8`" như viết là **bất khả thoả** trong phạm vi `§4.2` — xem `DEV-02`. |
+72:| `AC-02` | `git diff HEAD -- app/ctv/page.tsx` + hàng rào đo `ctv:273` | `5.906:1` ≥ `4.5:1`, exit `0` | `evidence/step03-07-diff.txt`, `evidence/step07-contrast-table.txt` dòng `app/ctv/page.tsx:273  #ba1a1a / #fef2f2 = 5.906:1 (ngưỡng 4.5, 18px đậm)`. Nền vẫn `#fef2f2`. Hàng rào tự khẳng định ngưỡng là `4.5` chứ không phải `3` (18px đậm chưa phải chữ lớn). | `None` |
+73:| `AC-03` | `git grep -nF "focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]" -- app/login/login-form.tsx` + biên dịch Tailwind thật | `2/2` ô nhập, exit `0`; ring `2px`, `5.832:1` | `evidence/ac03-04-focus-ring-compiled.txt`: `@tailwindcss/postcss` của chính repo biên dịch `globals.css` (`119195` byte) và sinh `.focus-visible\:ring-2:focus-visible { --tw-ring-shadow: … calc(2px + …) }` cùng `--tw-ring-color: var(--color-focus-ring)`. Vòng vẽ bằng `box-shadow` nên `outline-none` còn lại không xoá nó. | `None`. Không có runner trình duyệt trong repo nên không bấm Tab thật được; bù bằng CSS đã biên dịch chứ không bằng lời. |
+74:| `AC-04` | `git grep -nF "ring-[var(--color-focus-ring)]" -- src/shared/ui/` và `git grep -nE "focus:(border-orange-400\|ring-orange-200)"` trên hai primitive | `3/3` chỗ; `0` chỗ còn cam ở trạng thái focus | `evidence/ac01-04-12-commands.txt`. Ba chỗ: `data-table.tsx:123`, `:334`, `entity-card.tsx:223`. Hàng rào khẳng định `data-table` có đúng `2` lần và `entity-card` đúng `1` lần. Sàn `4.620:1` trên nền tối nhất của hệ. | `RQ-04` là `Should` và đã làm — không cần đoạn lý do của `DEC-04`. Các lớp cam khác trong hai tệp (`ring-orange-500` của checkbox, `focus-within:ring-orange-300`) **ngoài `§4.2`**, giữ nguyên. |
+75:| `AC-05` | `git diff HEAD -- app/worker/page.tsx app/ctv/page.tsx app/vendor/page.tsx` + đối chiếu từng dòng với `git show HEAD:` | Tám chỗ `GIỐNG HEAD`; `app/vendor/page.tsx` **không có diff** | `evidence/ac05-ev06-eight-spots.txt` — bảng tám tỉ số, cả tám ĐẠT: `4.759` ×5, `4.829` ×2, `4.523` ×1. | Một địa chỉ nền trong `EV-06` sai: `worker:331` không nằm trên card trắng mà trên nền trang `#faf9f7`, nên tỉ số thật là `4.523:1` chứ không phải `4.759:1`. Vẫn ĐẠT, dư `0.023`. `DEV-05`. |
+80:| `AC-10` | `npx vitest run --config vitest.unit.config.ts src/shared/ui/internal-contrast.static.test.ts` — nhóm `RQ-10 — fixture âm chứng minh hàng rào biết ĐỎ` | `21 passed`, exit `0`; fixture âm bị bắt đúng `1` vi phạm | `evidence/step07-fence-run.txt`. Fixture âm `#bbbbbb` trên `#ffffff` (`< 2:1`) → hàng rào báo `1` vi phạm; đổi sang `var(--color-on-surface-variant)` → `0` vi phạm; thêm một test nữa chứng minh nhánh ba ngôi ghép theo chỉ số, không sinh cặp không tồn tại. | `AC-10` không nêu lệnh nào (`T-05`). Tier 2 tự chọn phép kiểm chạy được: fixture âm là dữ liệu **trong** tệp test, chạy qua đúng hàm đo của hàng rào, nên "bật lên" = chạy hàng rào. `DEV-03`. |
+101:| `DEV-05` | `Deviation` | `EV-06` xếp `worker:331` vào nhóm "`#64748b` trên `#ffffff` = `4.759:1`". Nền thật của dòng đó là nền TRANG `#faf9f7` (đoạn "Chưa có phiếu lương" không nằm trong thẻ nào có nền), nên tỉ số thật là `4.523:1`. `EV-01`/`EV-02` cũng ghi lệch số dòng của nền (`:296` thay `:335`; `:266` thay `:271`). | Kết luận của `EV-06` (cả tám ĐẠT) vẫn đúng. Nhưng `4.523` chỉ dư `0.023` — mỏng nhất trong tám chỗ, và một lần đổi `--color-background` sẽ đánh sập nó mà không ai để ý. | Sửa địa chỉ nền trong `EV-06`, hoặc ghi thêm rằng `worker:331` là chỗ mỏng nhất. Hàng rào đã đo nó mỗi lần chạy nên nó không thể trượt lặng lẽ. |
+102:| `DEV-06` | `Deviation` | Hàng rào đo được **6** cặp dưới ngưỡng nằm NGOÀI `§4.2`, khai trong `DECLARED_EXCEPTIONS`: `worker:229` `#f26522/#ffffff` `3.153` (nhãn tab đang chọn); `ctv:150` `#ffffff/#f26522` `3.153` (nút "Gửi yêu cầu"); `ctv:234` `#f26522/#efeeec` **`2.719`** (mã giới thiệu `<code>`, trượt nặng nhất); `ctv:237` `#f26522/#ffffff` `3.153` (nút Copy); `ctv:278` `#ffffff/#f26522` `3.153` (nút "Rút tiền"); `ctv:288` `#dc2626/#fef2f2` `4.415` (nhánh lỗi hộp thông báo — đúng cặp màu `EV-02`, `14px`). | Năm chỗ đầu là **cùng một nguyên nhân**: bề mặt nội bộ vẫn dùng `--primary` `#f26522`, token mà go-live-08 đã đo `3.153:1` và go-live-15 đã thay bằng `--primary-dark` chỉ cho bề mặt công khai. Máy quét ở `EV-10` không thấy vì chúng viết bằng `var()`, không phải hex. Con số "`3` chỗ trượt" của contract 16 đúng trong phạm vi hex literal, thiếu trong phạm vi `var()`. | Giao một round sửa `--primary` → `--primary-dark` cho `worker` và `ctv` (5 chỗ), cộng `ctv:288` → `var(--color-error)`. Sáu chỗ, mỗi chỗ một dòng. Bảng ngoại lệ **khoá theo cả tỉ số**: sửa xong mà quên xoá dòng là ĐỎ, xuất hiện vi phạm thứ bảy cũng ĐỎ. |
+107:| `LIM-01` | `Limitation` | `npm run typecheck` exit `2`, lỗi duy nhất: `new-ui/components/JobCard.tsx(18,6): error TS2322` (`href?: undefined` không gán được cho `LinkProps.href`). `git ls-files new-ui` = `0`; `git ls-tree -r HEAD -- new-ui` = rỗng; `git check-ignore` exit `1`; `LastWriteTime 2026-09-02 23:19:10`; tệp chỉ nhập `react` và `next/link`. `tsc` cùng cấu hình với `exclude += new-ui` → exit `0`. | Nửa `typecheck` của `AC-11` không đạt exit `0`, và Tier 2 không được sửa (`RQ-07` cấm chạm ngoài `§4.2`; `RISK-07` gọi đúng bẫy "làm xanh bằng cách sửa việc của luồng khác"). CI không đỏ vì `actions/checkout` chỉ lấy tệp đã commit. | Owner quyết số phận `new-ui/`: commit cho đúng, hay xoá khỏi worktree. Đây là `RISK-01` lặp lại với một thư mục khác. |
+$ grep -c '4.759\|4.829' $H
+2

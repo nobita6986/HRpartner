@@ -1,0 +1,3 @@
+#64748b tren #faf9f7 = 4.523:1  (nen TRANG, khong phai card)
+#64748b tren #ffffff = 4.759:1  (nen card)
+#594138 tren #faf9f7 = 8.918:1  (neu token that chay)
