@@ -1,0 +1,36 @@
+=== R2-STEP-00 — kiem tra tien de cua Owner: 'app/globals.css trong worktree dang co bang token cua lane khac' ===
+
+-- hash ba ben --
+   worktree = 7857401624944e0bc801f69843ce45778c6f50b7
+   index    = 7857401624944e0bc801f69843ce45778c6f50b7
+   HEAD     = 9b9d63f8a2db678779e153744dd504a16c0ae897
+
+-- gia tri bon token khoa, doc tu WORKTREE --
+   10:  --color-primary: #f26522;
+   11:  --color-primary-dark: #a63b00;
+   16:  --color-background: #faf9f7;
+   17:  --color-surface: #ffffff;
+
+-- cung bon token, doc tu INDEX --
+   10:  --color-primary: #f26522;
+   11:  --color-primary-dark: #a63b00;
+   16:  --color-background: #faf9f7;
+   17:  --color-surface: #ffffff;
+
+-- cung bon token, doc tu HEAD --
+   10:  --color-primary: #f26522;
+   11:  --color-primary-dark: #a63b00;
+   16:  --color-background: #faf9f7;
+   17:  --color-surface: #ffffff;
+
+-- bang mau AM cua lane khac co dau hieu nao khong: tim #fff8f6 / #fff1ec / #ffe9e2 trong worktree --
+   so dong khop = 0
+
+-- so token trong khoi @theme, ba ben --
+   worktree = 76 token
+   index = 76 token
+   head = 76 token
+
+=== KET LUAN ===
+   worktree TRUNG index: bang token cua lane khac KHONG con trong worktree o thoi diem nay.
+   Tien de cua Owner khong dung o thoi diem do (co the dung luc Owner viet).

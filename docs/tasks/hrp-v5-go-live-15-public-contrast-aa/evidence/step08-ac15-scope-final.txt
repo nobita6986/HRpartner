@@ -1,0 +1,57 @@
+=== STEP-08 / AC-15 — pham vi CUOI CUNG sau khi ap luat chong cat file ===
+(chay lai lan cuoi, SAU khi HANDOFF.md va ban copy da duoc git add)
+
+-- git diff --cached HEAD --name-only: tong so path = 30 --
+
+-- nhom A: ma san pham va test — phai la dung 8 path cua §4.2 --
+   app/(jobs)/track/page.tsx
+   app/(jobs)/viec-lam/[slug]/page.tsx
+   app/(portal)/ve-chung-toi/page.tsx
+   app/components/GlobalNavbar.tsx
+   app/globals.css
+   src/domains/job-board/components/apply-modal.tsx
+   src/domains/job-board/components/success-modal.tsx
+   src/domains/job-board/public-ui-premium.static.test.ts
+   SO PATH NHOM A = 8
+
+-- nhom B: van ban cua chinh task nay, do STEP-08 buoc tao --
+   SO PATH NHOM B = 22
+   HANDOFF.md
+   evidence/copy-globals-css-round1.css
+   evidence/copy-handoff-round1.md
+   evidence/copy-public-ui-premium-static-test-round1.ts
+   evidence/step00-preexisting-red-probe.txt
+   evidence/step00b-preexisting-lane-full.txt
+   evidence/step00c-dead-vars.txt
+   evidence/step06-contrast-table.txt
+   evidence/step07-deadvars-enumerated.txt
+   evidence/step07-lane-run1.txt
+   evidence/step07-lane-run2.txt
+   evidence/step07-lane-run3.txt
+   evidence/step07-my-assertions-under-head-tokens.txt
+   evidence/step08-ac02-ac10-battery.txt
+   evidence/step08-ac0709-battery.txt
+   evidence/step08-ac15-scope-final.txt
+   evidence/step08-ac15-scope.txt
+   evidence/step08-antitruncation-stage.txt
+   evidence/step08-delivered-vs-head.txt
+   evidence/step08-globals-diff-verbatim.txt
+   evidence/step08-linemap.txt
+   evidence/step08-verify-task.txt
+
+-- nhom C: path nao KHONG thuoc hai nhom tren --
+   SO PATH NHOM C = 0 neu khong co dong '!! PATH LA' nao o tren
+
+=== bon tep cua luong khac — phai in ' M', tuc da sua nhung CHUA stage ===
+   [ M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md]
+   [ M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md]
+   [ M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md]
+   [ M public/index.html]
+
+=== commit moi do Tier 2 ===
+   HEAD = 846ba0e docs(go-live-16): contract tương phản và vòng focus cho bề mặt nội bộ
+   SO COMMIT DO TIER 2 TAO = 0
+
+   HANDOFF.md            f0270683f2d030dba552735712554c79c3047242
+   copy-handoff-round1.md f0270683f2d030dba552735712554c79c3047242
+   => GIONG TUNG BYTE (luat chong cat file da thoa)

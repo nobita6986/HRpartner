@@ -104,7 +104,7 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
       <Link
         href="/"
         className="inline-flex items-center gap-1 text-sm font-medium rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{ color: 'var(--color-primary)' }}
+        style={{ color: 'var(--color-primary-dark)' }}
       >
         <span className="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
         Quay lại danh sách việc làm
@@ -121,7 +121,7 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
             style={
               isFull
                 ? { color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container-high)' }
-                : { color: 'var(--color-primary)', backgroundColor: 'var(--color-primary-soft)' }
+                : { color: 'var(--color-primary-dark)', backgroundColor: 'var(--color-primary-soft)' }
             }
           >
             {job.statusLabel}
@@ -167,7 +167,7 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
                   </h3>
                   <span
                     className="text-xs font-semibold whitespace-nowrap"
-                    style={{ color: position.available > 0 ? 'var(--color-primary)' : 'var(--color-on-surface-variant)' }}
+                    style={{ color: position.available > 0 ? 'var(--color-primary-dark)' : 'var(--color-on-surface-variant)' }}
                   >
                     {position.available > 0 ? `Còn ${position.available} chỗ trống` : 'Đã đủ chỉ tiêu'}
                   </span>

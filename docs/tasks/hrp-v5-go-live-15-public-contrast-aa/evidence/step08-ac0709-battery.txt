@@ -1,0 +1,40 @@
+=== AC-07 — track/page.tsx: khong con outlineColor tro --color-primary ===
+-- moi dong co outlineColor --
+   (0 dong — da bo hoan toan, chuyen sang class .hrp-focus)
+-- so control mang .hrp-focus --
+2
+-- .hrp-focus dinh nghia vong focus bang token nao --
+.hrp-focus:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+=== AC-08 — ba icon material-symbols mang aria-hidden ===
+   176:                    className="material-symbols-outlined text-base"
+   215:                      <span className="material-symbols-outlined text-base" aria-hidden="true">dashboard</span>
+   225:                      <span className="material-symbols-outlined text-base" aria-hidden="true">logout</span>
+-- so lan aria-hidden="true" trong navbar --
+3
+-- doi chung AM: co icon nao THIEU aria-hidden? kiem tung khoi --
+   the tai offset 6228: aria-hidden=True
+   the tai offset 8365: aria-hidden=True
+   the tai offset 9014: aria-hidden=True
+   SO ICON THIEU aria-hidden = 0
+
+=== AC-09 — aria-current suy tu pathname, dung MOT link moi nhanh ===
+   4:import { usePathname } from 'next/navigation';
+   29: * `usePathname()` chu khong hard-code. Bon href cua `navLinks` khong long nhau
+   31: * chi co the co dung MOT link mang `aria-current="page"`.
+   33:function activeNavHref(pathname: string | null): string | null {
+   57:  const activeHref = activeNavHref(usePathname());
+   126:              // chan - di kem `aria-current="page"`. Co che hover giu nguyen (RQ-12),
+   136:                  aria-current={isActive ? 'page' : undefined}
+   282:                  aria-current={isActive ? 'page' : undefined}
+-- tin hieu thi giac KHONG phai mau (gach chan / do dam / thanh chi dau) --
+   101:      style={{ borderBottom: '1px solid var(--color-line)' }}
+   139:                      ? 'font-semibold underline underline-offset-8 decoration-2'
+   192:                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-on-surface)' }}>
+   242:                  className="hrp-btn-primary hrp-focus nav-item-lift font-semibold px-5 min-h-11 inline-flex items-center rounded-lg"
+   285:                      ? 'font-semibold underline underline-offset-4 decoration-2'
+   308:                      <p className="text-sm font-semibold" style={{ color: 'var(--color-on-surface)' }}>
+   346:                    className="hrp-btn-primary hrp-focus nav-item-lift flex items-center justify-center px-4 min-h-11 font-semibold rounded-lg"

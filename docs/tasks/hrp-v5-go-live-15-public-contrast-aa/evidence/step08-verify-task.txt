@@ -1,0 +1,4 @@
+﻿TASK CONTRACT CHECK: docs/tasks/hrp-v5-go-live-15-public-contrast-aa/TASK.md
+
+RESULT: PASS. TASK contract is ready for execution.
+VERIFY_TASK_EXIT=0

@@ -181,7 +181,7 @@ export function ApplyModal({
             type="submit"
             disabled={loading}
             className="w-full py-3 rounded-lg font-semibold transition-colors disabled:opacity-60"
-            style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+            style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
           >
             {loading ? 'Đang gửi...' : 'Gửi đơn ứng tuyển'}
           </button>

@@ -1,0 +1,191 @@
+=== STEP-00 / BLOCKER PROBE: trang thai worktree TRUOC khi task 15 cham bat ky file nao ===
+--- date ---
+2026-09-02 23:46:15 +0700
+--- git rev-parse HEAD ---
+e4d18fe47dc33c5d0f90c69abb7783f0c1b3cfec
+--- git status --short (tracked only) ---
+ M app/globals.css
+ M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+ M public/index.html
+--- git diff --stat -- app/globals.css ---
+ app/globals.css | 161 +++++++++++++++++---------------------------------------
+ 1 file changed, 49 insertions(+), 112 deletions(-)
+
+=== Lane canonical tren dung file test trong pham vi, TRUOC moi sua doi cua task 15 ===
+COMMAND: npm run test:unit -- src/domains/job-board/public-ui-premium.static.test.ts
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts src/domains/job-board/public-ui-premium.static.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [31m❯[39m src/domains/job-board/public-ui-premium.static.test.ts [2m([22m[2m62 tests[22m[2m | [22m[31m9 failed[39m[2m)[22m[90m 38[2mms[22m[39m
+[31m   [31m×[31m go-live-08 / RQ-01 — token mới cộng bảo toàn token cũ[2m > [22mthêm đúng ba nhóm token: bậc bóng hover, màu vòng focus, thời lượng thứ hai[90m 6[2mms[22m[31m[39m
+[31m     → app/globals.css: không tìm thấy token --shadow-card-hover: expected null not to be null[39m
+[31m   [31m×[31m go-live-08 / RQ-01 — token mới cộng bảo toàn token cũ[2m > [22mmọi token cũ mà round này dựa vào vẫn giữ nguyên giá trị[90m 1[2mms[22m[31m[39m
+[31m     → app/globals.css: không tìm thấy token --t-fast: expected null not to be null[39m
+[31m   [31m×[31m go-live-08 / RQ-01 — token mới cộng bảo toàn token cũ[2m > [22mmọi biến mà dải CSS mới tham chiếu đều được khai báo — không var() chết[90m 4[2mms[22m[31m[39m
+[31m     → expected [ '--spacing-card-padding', …(11) ] to deeply equal [][39m
+[31m   [31m×[31m go-live-08 / RQ-02, RQ-03, RQ-04 — card việc làm[2m > [22mtransition phủ đủ ba thuộc tính và thời lượng vào tối đa 250ms[90m 1[2mms[22m[31m[39m
+[31m     → app/globals.css: không tìm thấy token --t-medium: expected null not to be null[39m
+[31m   [31m×[31m go-live-08 / RQ-05, RQ-06 — phân hoá nền[2m > [22mpill địa điểm dùng nền cam rất nhạt, pill ca làm giữ nền trung tính[90m 1[2mms[22m[31m[39m
+[31m     → app/globals.css: không tìm thấy token --color-primary-soft: expected null not to be null[39m
+[31m   [31m×[31m go-live-08 / RQ-13 — tương phản của mọi cặp màu MỚI[2m > [22mmọi cặp chữ trên nền mới đạt tối thiểu 4.5:1[90m 1[2mms[22m[31m[39m
+[31m     → app/globals.css: không tìm thấy token --color-primary-soft: expected null not to be null[39m
+[31m   [31m×[31m go-live-08 / RQ-13 — tương phản của mọi cặp màu MỚI[2m > [22mmọi thành phần giao diện mới đạt tối thiểu 3:1 trên CẢ HAI mép[90m 1[2mms[22m[31m[39m
+[31m     → app/globals.css: không tìm thấy token --color-focus-ring: expected null not to be null[39m
+[31m   [31m×[31m go-live-08 / RQ-13 — tương phản của mọi cặp màu MỚI[2m > [22m--color-primary bị loại khỏi mọi đường viền mới, có lý do bằng số[90m 1[2mms[22m[31m[39m
+[31m     → expected 6.1625571595367425 to be less than 3[39m
+[31m   [31m×[31m go-live-08 / RQ-13 — tương phản của mọi cặp màu MỚI[2m > [22mhai cặp DƯỚI ngưỡng đều là giá trị kế thừa, khoá lại để không trôi[90m 1[2mms[22m[31m[39m
+[31m     → expected 6.467540221248345 to be less than 4.5[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 9 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-ui-premium.static.test.ts[2m > [22mgo-live-08 / RQ-01 — token mới cộng bảo toàn token cũ[2m > [22mthêm đúng ba nhóm token: bậc bóng hover, màu vòng focus, thời lượng thứ hai
+[31m[1mAssertionError[22m: app/globals.css: không tìm thấy token --shadow-card-hover: expected null not to be null[39m
+[36m [2m❯[22m token src/domains/job-board/public-ui-premium.static.test.ts:[2m98:57[22m[39m
+    [90m 96| [39m[35mfunction[39m [34mtoken[39m(name[33m:[39m string)[33m:[39m string {
+    [90m 97| [39m  [35mconst[39m m [33m=[39m cssCode[33m.[39m[34mmatch[39m([35mnew[39m [33mRegExp[39m([32m`^\\s*[39m[36m${[39mname[36m}[39m[32m\\s*:\\s*([^;]+);`[39m[33m,[39m …
+    [90m 98| [39m  [34mexpect[39m(m[33m,[39m [32m`[39m[36m${[39m[33mCSS[39m[36m}[39m[32m: không tìm thấy token [39m[36m${[39mname[36m}[39m[32m`[39m)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   | [39m                                                        [31m^[39m
+    [90m 99| [39m  [35mreturn[39m m[33m![39m[[34m1[39m][33m.[39m[34mtrim[39m()[33m;[39m
+    [90m100| [39m}
+[90m [2m❯[22m src/domains/job-board/public-ui-premium.static.test.ts:[2m104:12[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-ui-premium.static.test.ts[2m > [22mgo-live-08 / RQ-01 — token mới cộng bảo toàn token cũ[2m > [22mmọi token cũ mà round này dựa vào vẫn giữ nguyên giá trị
+[31m[1mAssertionError[22m: app/globals.css: không tìm thấy token --t-fast: expected null not to be null[39m
+[36m [2m❯[22m token src/domains/job-board/public-ui-premium.static.test.ts:[2m98:57[22m[39m
+    [90m 96| [39m[35mfunction[39m [34mtoken[39m(name[33m:[39m string)[33m:[39m string {
+    [90m 97| [39m  [35mconst[39m m [33m=[39m cssCode[33m.[39m[34mmatch[39m([35mnew[39m [33mRegExp[39m([32m`^\\s*[39m[36m${[39mname[36m}[39m[32m\\s*:\\s*([^;]+);`[39m[33m,[39m …
+    [90m 98| [39m  [34mexpect[39m(m[33m,[39m [32m`[39m[36m${[39m[33mCSS[39m[36m}[39m[32m: không tìm thấy token [39m[36m${[39mname[36m}[39m[32m`[39m)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   | [39m                                                        [31m^[39m
+    [90m 99| [39m  [35mreturn[39m m[33m![39m[[34m1[39m][33m.[39m[34mtrim[39m()[33m;[39m
+    [90m100| [39m}
+[90m [2m❯[22m src/domains/job-board/public-ui-premium.static.test.ts:[2m112:12[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-ui-premium.static.test.ts[2m > [22mgo-live-08 / RQ-01 — token mới cộng bảo toàn token cũ[2m > [22mmọi biến mà dải CSS mới tham chiếu đều được khai báo — không var() chết
+[31m[1mAssertionError[22m: expected [ '--spacing-card-padding', …(11) ] to deeply equal [][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- Array [][39m
+[31m+ Array [[39m
+[31m+   "--spacing-card-padding",[39m
+[31m+   "--shadow-card",[39m
+[31m+   "--t-fast",[39m
+[31m+   "--ease-out",[39m
+[31m+   "--shadow-card-hover",[39m
+[31m+   "--t-medium",[39m
+[31m+   "--color-primary-soft",[39m
+[31m+   "--color-focus-ring",[39m
+[31m+   "--color-success-soft",[39m
+[31m+   "--color-success",[39m
+[31m+   "--radius-DEFAULT",[39m
+[31m+   "--font-label",[39m
+[31m+ ][39m
+
+[36m [2m❯[22m src/domains/job-board/public-ui-premium.static.test.ts:[2m130:64[22m[39m
+    [90m128| [39m    [34mexpect[39m(used[33m.[39mlength)[33m.[39m[34mtoBeGreaterThanOrEqual[39m([34m20[39m)[33m;[39m
+    [90m129| [39m    [35mconst[39m declared [33m=[39m [35mnew[39m [33mSet[39m([[33m...[39mcssCode[33m.[39m[34mmatchAll[39m([36m/^\s*(--[a-zA-Z0-9-][39m…
+    [90m130| [39m    [34mexpect[39m([[33m...[39m[35mnew[39m [33mSet[39m(used)][33m.[39m[34mfilter[39m((v) [33m=>[39m [33m![39mdeclared[33m.[39m[34mhas[39m(v)))[33m.[39m[34mtoEqual[39m…
+    [90m   | [39m                                                               [31m^[39m
+    [90m131| [39m  })[33m;[39m
+    [90m132| [39m})[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-ui-premium.static.test.ts[2m > [22mgo-live-08 / RQ-02, RQ-03, RQ-04 — card việc làm[2m > [22mtransition phủ đủ ba thuộc tính và thời lượng vào tối đa 250ms
+[31m[1mAssertionError[22m: app/globals.css: không tìm thấy token --t-medium: expected null not to be null[39m
+[36m [2m❯[22m token src/domains/job-board/public-ui-premium.static.test.ts:[2m98:57[22m[39m
+    [90m 96| [39m[35mfunction[39m [34mtoken[39m(name[33m:[39m string)[33m:[39m string {
+    [90m 97| [39m  [35mconst[39m m [33m=[39m cssCode[33m.[39m[34mmatch[39m([35mnew[39m [33mRegExp[39m([32m`^\\s*[39m[36m${[39mname[36m}[39m[32m\\s*:\\s*([^;]+);`[39m[33m,[39m …
+    [90m 98| [39m  [34mexpect[39m(m[33m,[39m [32m`[39m[36m${[39m[33mCSS[39m[36m}[39m[32m: không tìm thấy token [39m[36m${[39mname[36m}[39m[32m`[39m)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   | [39m                                                        [31m^[39m
+    [90m 99| [39m  [35mreturn[39m m[33m![39m[[34m1[39m][33m.[39m[34mtrim[39m()[33m;[39m
+    [90m100| [39m}
+[90m [2m❯[22m src/domains/job-board/public-ui-premium.static.test.ts:[2m172:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-ui-premium.static.test.ts[2m > [22mgo-live-08 / RQ-05, RQ-06 — phân hoá nền[2m > [22mpill địa điểm dùng nền cam rất nhạt, pill ca làm giữ nền trung tính
+[31m[1mAssertionError[22m: app/globals.css: không tìm thấy token --color-primary-soft: expected null not to be null[39m
+[36m [2m❯[22m token src/domains/job-board/public-ui-premium.static.test.ts:[2m98:57[22m[39m
+    [90m 96| [39m[35mfunction[39m [34mtoken[39m(name[33m:[39m string)[33m:[39m string {
+    [90m 97| [39m  [35mconst[39m m [33m=[39m cssCode[33m.[39m[34mmatch[39m([35mnew[39m [33mRegExp[39m([32m`^\\s*[39m[36m${[39mname[36m}[39m[32m\\s*:\\s*([^;]+);`[39m[33m,[39m …
+    [90m 98| [39m  [34mexpect[39m(m[33m,[39m [32m`[39m[36m${[39m[33mCSS[39m[36m}[39m[32m: không tìm thấy token [39m[36m${[39mname[36m}[39m[32m`[39m)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   | [39m                                                        [31m^[39m
+    [90m 99| [39m  [35mreturn[39m m[33m![39m[[34m1[39m][33m.[39m[34mtrim[39m()[33m;[39m
+    [90m100| [39m}
+[90m [2m❯[22m src/domains/job-board/public-ui-premium.static.test.ts:[2m188:12[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-ui-premium.static.test.ts[2m > [22mgo-live-08 / RQ-13 — tương phản của mọi cặp màu MỚI[2m > [22mmọi cặp chữ trên nền mới đạt tối thiểu 4.5:1
+[31m[1mAssertionError[22m: app/globals.css: không tìm thấy token --color-primary-soft: expected null not to be null[39m
+[36m [2m❯[22m token src/domains/job-board/public-ui-premium.static.test.ts:[2m98:57[22m[39m
+    [90m 96| [39m[35mfunction[39m [34mtoken[39m(name[33m:[39m string)[33m:[39m string {
+    [90m 97| [39m  [35mconst[39m m [33m=[39m cssCode[33m.[39m[34mmatch[39m([35mnew[39m [33mRegExp[39m([32m`^\\s*[39m[36m${[39mname[36m}[39m[32m\\s*:\\s*([^;]+);`[39m[33m,[39m …
+    [90m 98| [39m  [34mexpect[39m(m[33m,[39m [32m`[39m[36m${[39m[33mCSS[39m[36m}[39m[32m: không tìm thấy token [39m[36m${[39mname[36m}[39m[32m`[39m)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   | [39m                                                        [31m^[39m
+    [90m 99| [39m  [35mreturn[39m m[33m![39m[[34m1[39m][33m.[39m[34mtrim[39m()[33m;[39m
+    [90m100| [39m}
+[90m [2m❯[22m hexOf src/domains/job-board/public-ui-premium.static.test.ts:[2m415:13[22m[39m
+[90m [2m❯[22m ratio src/domains/job-board/public-ui-premium.static.test.ts:[2m421:52[22m[39m
+[90m [2m❯[22m src/domains/job-board/public-ui-premium.static.test.ts:[2m461:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-ui-premium.static.test.ts[2m > [22mgo-live-08 / RQ-13 — tương phản của mọi cặp màu MỚI[2m > [22mmọi thành phần giao diện mới đạt tối thiểu 3:1 trên CẢ HAI mép
+[31m[1mAssertionError[22m: app/globals.css: không tìm thấy token --color-focus-ring: expected null not to be null[39m
+[36m [2m❯[22m token src/domains/job-board/public-ui-premium.static.test.ts:[2m98:57[22m[39m
+    [90m 96| [39m[35mfunction[39m [34mtoken[39m(name[33m:[39m string)[33m:[39m string {
+    [90m 97| [39m  [35mconst[39m m [33m=[39m cssCode[33m.[39m[34mmatch[39m([35mnew[39m [33mRegExp[39m([32m`^\\s*[39m[36m${[39mname[36m}[39m[32m\\s*:\\s*([^;]+);`[39m[33m,[39m …
+    [90m 98| [39m  [34mexpect[39m(m[33m,[39m [32m`[39m[36m${[39m[33mCSS[39m[36m}[39m[32m: không tìm thấy token [39m[36m${[39mname[36m}[39m[32m`[39m)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   | [39m                                                        [31m^[39m
+    [90m 99| [39m  [35mreturn[39m m[33m![39m[[34m1[39m][33m.[39m[34mtrim[39m()[33m;[39m
+    [90m100| [39m}
+[90m [2m❯[22m hexOf src/domains/job-board/public-ui-premium.static.test.ts:[2m415:13[22m[39m
+[90m [2m❯[22m ratio src/domains/job-board/public-ui-premium.static.test.ts:[2m421:31[22m[39m
+[90m [2m❯[22m src/domains/job-board/public-ui-premium.static.test.ts:[2m467:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-ui-premium.static.test.ts[2m > [22mgo-live-08 / RQ-13 — tương phản của mọi cặp màu MỚI[2m > [22m--color-primary bị loại khỏi mọi đường viền mới, có lý do bằng số
+[31m[1mAssertionError[22m: expected 6.1625571595367425 to be less than 3[39m
+[36m [2m❯[22m src/domains/job-board/public-ui-premium.static.test.ts:[2m474:60[22m[39m
+    [90m472| [39m    [90m// Ba số này LÀ lý do. Nếu một ngày token đổi và chúng vượt 3:1 th[39m…
+    [90m473| [39m    [90m// đỏ, và lúc đó chọn lại token là quyết định có căn cứ, không phả[39m…
+    [90m474| [39m    [34mexpect[39m([34mratio[39m([32m'--color-primary'[39m[33m,[39m [32m'--color-background'[39m))[33m.[39m[34mtoBeLessTha[39m…
+    [90m   | [39m                                                           [31m^[39m
+    [90m475| [39m    [34mexpect[39m([34mratio[39m([32m'--color-primary'[39m[33m,[39m [32m'--color-surface-container-low'[39m))[33m.[39m…
+    [90m476| [39m    [34mexpect[39m([34mratio[39m([32m'--color-primary'[39m[33m,[39m [32m'--color-primary-soft'[39m))[33m.[39m[34mtoBeLessT[39m…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-ui-premium.static.test.ts[2m > [22mgo-live-08 / RQ-13 — tương phản của mọi cặp màu MỚI[2m > [22mhai cặp DƯỚI ngưỡng đều là giá trị kế thừa, khoá lại để không trôi
+[31m[1mAssertionError[22m: expected 6.467540221248345 to be less than 4.5[39m
+[36m [2m❯[22m src/domains/job-board/public-ui-premium.static.test.ts:[2m492:60[22m[39m
+    [90m490| [39m    [90m// là sai; ghi số ra đây để Tier 1 quyết.[39m
+    [90m491| [39m    [34mexpect[39m([34mratio[39m([32m'--color-on-primary'[39m[33m,[39m [32m'--color-primary'[39m))[33m.[39m[34mtoBeGreater[39m…
+    [90m492| [39m    [34mexpect[39m([34mratio[39m([32m'--color-on-primary'[39m[33m,[39m [32m'--color-primary'[39m))[33m.[39m[34mtoBeLessTha[39m…
+    [90m   | [39m                                                           [31m^[39m
+    [90m493| [39m    [90m// Nút Ứng tuyển ở trạng thái ĐÃ NỘP: cũng là cặp của baseline.[39m
+    [90m494| [39m    [34mexpect[39m([34mratio[39m([32m'--color-success'[39m[33m,[39m [32m'--color-success-soft'[39m))[33m.[39m[34mtoBeGreat[39m…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m9 failed[39m[22m[2m | [22m[1m[32m53 passed[39m[22m[90m (62)[39m
+[2m   Start at [22m 23:46:18
+[2m   Duration [22m 962ms[2m (transform 59ms, setup 0ms, collect 70ms, tests 38ms, environment 0ms, prepare 547ms)[22m
+
+PROBE_EXIT=1

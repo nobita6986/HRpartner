@@ -1,0 +1,53 @@
+=== R2-STEP-03 — HEAD da tien len 663053c: cac blob toi do co con giong nhau? ===
+
+Contract ghi Baseline = 397b026. HEAD luc bao cao vong 1 = 846ba0e. HEAD bay gio = 663053c.
+Cau hoi: moi phep do 'so voi HEAD' trong HANDOFF con dung khi doi chieu voi Baseline khong?
+
+-- app/globals.css --
+   397b026 : 9b9d63f8a2db678779e153744dd504a16c0ae897
+   f911cd3 : 9b9d63f8a2db678779e153744dd504a16c0ae897
+   846ba0e : 9b9d63f8a2db678779e153744dd504a16c0ae897
+   663053c : 9b9d63f8a2db678779e153744dd504a16c0ae897
+   INDEX   : 7857401624944e0bc801f69843ce45778c6f50b7
+
+-- src/domains/job-board/public-ui-premium.static.test.ts --
+   397b026 : 10b7dea94d4c9d208d4490971e4418bbb1da29eb
+   f911cd3 : 98eadf437db33ce97e39836cebc87ac6fc97051e
+   846ba0e : 10b7dea94d4c9d208d4490971e4418bbb1da29eb
+   663053c : 10b7dea94d4c9d208d4490971e4418bbb1da29eb
+   INDEX   : 0a67b8d3aa25efb10fb0eaf2838fd05fdff0fe4c
+
+-- src/domains/applications/marketplace-inventory.static.test.ts --
+   397b026 : a0e5c43f8436aab24d470d20ac0ae0e30f9518a8
+   f911cd3 : 84b7019a11645fe467be8a39217f885421a20912
+   846ba0e : a0e5c43f8436aab24d470d20ac0ae0e30f9518a8
+   663053c : a0e5c43f8436aab24d470d20ac0ae0e30f9518a8
+   INDEX   : cb0a6c6460d6a761ef4b4a3c65e278a063db201e
+
+-- 663053c cham vao nhung path nao? --
+   663053c docs(go-live-15): bump v1.1 — sửa ba lỗi contract do Tier 1 tự đo lại phát hiện
+    docs/tasks/hrp-v5-go-live-15-public-contrast-aa/TASK.md | 15 +++++++++------
+    1 file changed, 9 insertions(+), 6 deletions(-)
+
+-- ket luan --
+   663053c chi sua TASK.md cua chinh task nay; khong path ma nao doi.
+   => moi so do 'so voi HEAD' van dung khi doi chieu Baseline 397b026.
+
+=== SUA MOT SO SAI TRONG DEV-10 CUA VONG 1 ===
+
+DEV-10 vong 1 viet: "blob cua ca hai tep toi do theo HEAD giong TUNG BYTE qua ca
+397b026, f911cd3 va 846ba0e (app/globals.css = 9b9d63f8..., tep test = 10b7dea9...)".
+
+Do lai o tren cho thay menh de ay SAI mot nua:
+  - app/globals.css : 9b9d63f8 o CA BON commit  => phan nay DUNG
+  - public-ui-premium.static.test.ts : o f911cd3 la 98eadf43, KHONG phai 10b7dea9
+    => phan nay SAI
+
+Ly do: f911cd3 la commit 2026-09-02 11:19, tuc TRUOC Baseline 397b026 (21:56 cung
+ngay) — no la to tien cua Baseline, khong phai mot commit tren duong Baseline -> HEAD.
+Giua f911cd3 va 397b026 co cac task khac sua tep test do.
+
+Menh de thuc su can cho HANDOFF la "Baseline == HEAD", va menh de ay DUNG:
+  397b026 == 846ba0e == 663053c  cho ca ba tep, tung byte.
+Toi ghi ra cho sai nay thay vi de nguyen, vi DEV-10 la thu Tier 3 se dung de
+khoi phai tu chung minh lai.

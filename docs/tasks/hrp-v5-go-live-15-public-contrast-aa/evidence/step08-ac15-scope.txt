@@ -1,0 +1,78 @@
+=== A. HEAD hien tai va chuoi commit tu Baseline 397b026 ===
+846ba0efe674c5c1e0eb1b5f89635e03724d44f3
+846ba0e | Nguyễn Đức Thuận | 09-03 00:12 | docs(go-live-16): contract tương phản và vòng focus cho bề mặt nội bộ
+e4d18fe | Nguyễn Đức Thuận | 09-02 23:24 | docs(planner): dịch cursor sang TIER_2_EXECUTION — contract 15 giao được ngay, 07 lên v1.5
+7043c68 | Nguyễn Đức Thuận | 09-02 23:10 | docs(go-live-07): bump v1.5 — gán phương pháp đo cho từng URL của RQ-04
+a5ff853 | Nguyễn Đức Thuận | 09-02 23:01 | docs(go-live-15): contract v1.0 sửa tương phản WCAG AA cho bề mặt công khai
+
+--- file bi cham boi cac commit do (co file nao trong pham vi cua toi khong?) ---
+ docs/PLANNER_HANDOVER.md                           |  24 +-
+ .../TASK.md                                        |  14 +-
+ .../hrp-v5-go-live-15-public-contrast-aa/TASK.md   | 243 +++++++++++++++++++++
+ .../TASK.md                                        | 203 +++++++++++++++++
+ 4 files changed, 467 insertions(+), 17 deletions(-)
+
+=== B. Tier 2 CO commit nao khong? (AC-15) ===
+so commit co author khac Tier 1 trong khoang tren:
+Nguyễn Đức Thuận
+cong viec cua toi con nam o worktree (chua commit) — dem file dirty:
+166
+
+=== C. Dung 8 file trong §4.2 bi toi sua ===
+warning: in the working copy of 'app/(jobs)/track/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(jobs)/viec-lam/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(portal)/ve-chung-toi/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/components/GlobalNavbar.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/globals.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/components/apply-modal.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/components/success-modal.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-ui-premium.static.test.ts', LF will be replaced by CRLF the next time Git touches it
+app/(jobs)/track/page.tsx
+app/(jobs)/viec-lam/[slug]/page.tsx
+app/(portal)/ve-chung-toi/page.tsx
+app/components/GlobalNavbar.tsx
+app/globals.css
+docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+public/index.html
+src/domains/job-board/components/apply-modal.tsx
+src/domains/job-board/components/success-modal.tsx
+src/domains/job-board/public-ui-premium.static.test.ts
+--- so file dirty tracked ---
+warning: in the working copy of 'app/(jobs)/track/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(jobs)/viec-lam/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(portal)/ve-chung-toi/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/components/GlobalNavbar.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/globals.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/components/apply-modal.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/components/success-modal.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/domains/job-board/public-ui-premium.static.test.ts', LF will be replaced by CRLF the next time Git touches it
+12
+
+=== D. Bon file CUA LUONG KHAC: van dirty, KHONG bi toi cham, KHONG bi stage ===
+docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+    mtime 08-31 21:44
+docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+    mtime 08-31 21:44
+docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+    mtime 08-31 21:44
+public/index.html
+ M public/index.html
+    mtime 08-31 21:44
+
+--- mtime cua 8 file cua toi (de doi chieu: moi hon han) ---
+09-03 00:12 app/(jobs)/track/page.tsx
+09-03 00:12 app/(jobs)/viec-lam/[slug]/page.tsx
+09-03 00:12 app/(portal)/ve-chung-toi/page.tsx
+09-03 00:07 app/components/GlobalNavbar.tsx
+09-03 00:04 app/globals.css
+09-03 00:12 src/domains/job-board/components/apply-modal.tsx
+09-03 00:12 src/domains/job-board/components/success-modal.tsx
+09-03 00:19 src/domains/job-board/public-ui-premium.static.test.ts
+
+=== E. Vung staging: PHAI rong (khong git add gi ngoai HANDOFF sau nay) ===
+so file da stage = 0

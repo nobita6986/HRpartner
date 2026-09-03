@@ -1,0 +1,59 @@
+=== R2-STEP-10 - pham vi INDEX, ban CUOI cua round 2 (AC-15) ===
+sinh luc: 2026-09-03 09:46:36 +0700
+
+--- 1. git log --oneline -1  (Tier 2 co tao commit nao khong?) ---
+   663053c docs(go-live-15): bump v1.1 — sửa ba lỗi contract do Tier 1 tự đo lại phát hiện
+   => day la commit cua Tier 1 (ban bump v1.1). SO COMMIT DO TIER 2 TAO = 0
+
+--- 2. git diff --cached HEAD --name-only, phan loai tung path ---
+   TONG = 42 path
+
+   nhom A - ma va test TRONG §4.2 (8 path contract cho phep):
+      app/(jobs)/track/page.tsx
+      app/(jobs)/viec-lam/[slug]/page.tsx
+      app/(portal)/ve-chung-toi/page.tsx
+      app/components/GlobalNavbar.tsx
+      app/globals.css
+      src/domains/job-board/components/apply-modal.tsx
+      src/domains/job-board/components/success-modal.tsx
+      src/domains/job-board/public-ui-premium.static.test.ts
+      so path = 8
+
+   nhom A2 - mot tep NGOAI §4.2 do DEC-21 mo:
+      src/domains/applications/marketplace-inventory.static.test.ts
+      so path = 1
+      numstat  = 1 1 src/domains/applications/marketplace-inventory.static.test.ts
+
+   nhom B - van ban cua CHINH task nay:
+      HANDOFF.md  = 1
+      evidence/   = 32
+      so path     = 33
+
+   nhom thu tu (khong thuoc ba nhom tren) = 0
+
+--- 3. AC-15 doi: tep doi ⊆ §4.2 CONG dung mot tep DEC-21 mo ---
+   8 + 1 + 33 = 42  => khop
+
+--- 4. bon tep cua LUONG KHAC: con nguyen trang ' M' (sua nhung CHUA stage) khong? ---
+   [ M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md]
+   [ M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md]
+   [ M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md]
+   [ M public/index.html]
+   => KHONG bi toi stage, sua hay restore. Dau cach roi M = worktree doi, INDEX sach.
+
+--- 5. TASK.md: toi co cham vao khong? ---
+   git status --porcelain -- TASK.md = []  (rong = khong cham)
+
+--- 6. luat chong cat file: ban copy co giong ban song tung byte? ---
+   HANDOFF.md               = b26982c6d00eb43f6df03d7c79cb31b98fde61ed
+   copy-handoff-round2.md   = b26982c6d00eb43f6df03d7c79cb31b98fde61ed
+   GIONG TUNG BYTE
+   marketplace-inventory... = cb0a6c6460d6a761ef4b4a3c65e278a063db201e
+   copy-...-round2.ts       = cb0a6c6460d6a761ef4b4a3c65e278a063db201e
+   GIONG TUNG BYTE
+
+--- 7. so file trong evidence/ ---
+   tren dia = 32
+   trong INDEX = 32
+   round 1 (khong co tien to r2-, khong phai copy round2) = 21
+   round 2 = 11

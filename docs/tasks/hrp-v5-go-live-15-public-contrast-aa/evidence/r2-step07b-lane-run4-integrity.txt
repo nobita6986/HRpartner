@@ -1,0 +1,38 @@
+=== R2-STEP-07b — kiem tra tinh toan ven cua phep do lane run 4 ===
+
+-- 1. hash TRUOC va SAU khi chay co giong nhau? (khong co lane khac ghi de giua luc do) --
+   GIONG TUNG DONG => noi dung do duoc khong doi trong 23.69s chay
+
+-- 2. worktree hash == INDEX hash cho ca 9 tep? (lane doc dung thu da stage) --
+   OK   w=785740162494 i=785740162494  app/globals.css
+   OK   w=e1280c5e8d65 i=e1280c5e8d65  app/components/GlobalNavbar.tsx
+   OK   w=98795af77541 i=98795af77541  app/(jobs)/track/page.tsx
+   OK   w=3023b37b0048 i=3023b37b0048  app/(jobs)/viec-lam/[slug]/page.tsx
+   OK   w=fbff9efa4bb9 i=fbff9efa4bb9  app/(portal)/ve-chung-toi/page.tsx
+   OK   w=6f63a6e1a408 i=6f63a6e1a408  src/domains/job-board/components/apply-modal.tsx
+   OK   w=5e0a76a89578 i=5e0a76a89578  src/domains/job-board/components/success-modal.tsx
+   OK   w=0a67b8d3aa25 i=0a67b8d3aa25  src/domains/job-board/public-ui-premium.static.test.ts
+   OK   w=cb0a6c6460d6 i=cb0a6c6460d6  src/domains/applications/marketplace-inventory.static.test.ts
+   ket luan: moi tep worktree == INDEX
+
+-- 3. dong tong ket NGUYEN VAN (da boc ma mau ANSI) --
+    Test Files  103 passed (103)
+         Tests  1590 passed (1590)
+      Start at  09:26:42
+      Duration  23.69s (transform 1.29s, setup 0ms, collect 6.15s, tests 1.30s, environment 13ms, prepare 5.44s)
+
+-- 4. exit code lay bang REDIRECT roi echo $? (khong qua pipe) --
+   152:LANE_EXIT=0
+
+-- 5. so hoc bon lan chay --
+   baseline HEAD (step00b) : Tests  10 failed | 1579 passed (1589)
+   run 1                   : Tests  11 failed | 1579 passed (1590)
+   run 2                   : (do tren globals.css bi lane khac ghi lai — chi giu lam vet)
+   run 3                   : Tests   1 failed | 1589 passed (1590)   LANE_EXIT=1
+   run 4  <= vong nay      : Tests  1590 passed (1590)   LANE_EXIT=0
+                             (dong tong ket cua vitest KHONG co doan 'failed' khi khong co do —
+                              nguyen van o muc 3 va o r2-step07-lane-run4.txt dong 149-150)
+
+   tong test 1590 = 1590 giua run 3 va run 4 => DEC-21 khong them, khong xoa test
+   1 do duy nhat cua run 3 la marketplace-inventory.static.test.ts:350, nay xanh
+   103/103 test FILE xanh (run 3 la 1 failed | 102 passed)

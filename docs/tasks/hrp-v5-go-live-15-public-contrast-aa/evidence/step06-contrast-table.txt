@@ -1,0 +1,158 @@
+STEP-06 / RQ-14 - BANG SO DO TRUOC & SAU (nguon token: HEAD:app/globals.css)
+
+== 0. DOI CHUNG: cong thuc cua toi khop cac so §6 cua contract hay khong ==
+  trang tren --color-primary-dark  toi=6.468  contract=6.468  lech=0.000 OK
+  -dark tren #ffffff               toi=6.468  contract=6.468  lech=0.000 OK
+  -dark tren #faf9f7               toi=6.147  contract=6.147  lech=0.000 OK
+  -dark tren #fdf1ec               toi=5.842  contract=5.842  lech=0.000 OK
+  -dark tren #f4f3f1               toi=5.832  contract=5.832  lech=0.000 OK
+  -dark tren #efeeec               toi=5.578  contract=5.578  lech=0.000 OK
+  trang tren #ad4b14 phu 8%        toi=5.536  contract=5.536  lech=0.000 OK
+  trang tren #af4f1a phu 10%       toi=5.308  contract=5.308  lech=0.000 OK
+  trang tren #b1531f phu 12%       toi=5.089  contract=5.089  lech=0.000 OK
+  trang tren --color-primary cu    toi=3.153  contract=3.153  lech=0.000 OK
+  --color-primary tren #faf9f7     toi=2.997  contract=2.997  lech=0.000 OK
+  lech lon nhat = 0.0000  => cong thuc KHOP
+
+== 0b. Hex hop thanh cua lop trang thai hover ==
+  alpha=0.08 -> #ad4b14  (trang tren do = 5.536:1)
+  alpha=0.10 -> #af4f1a  (trang tren do = 5.308:1)
+  alpha=0.12 -> #b1531f  (trang tren do = 5.089:1)
+  Da chon alpha = 0.10 -> #af4f1a
+
+== 0c. Hai nen KHONG co trong §6, toi tu do ==
+  --color-surface-variant = #e3e2e0
+  -dark tren #e3e2e0 = 4.996:1  | --color-primary tren #e3e2e0 = 2.436:1
+  --color-surface-container-high = #e9e8e6
+  -dark tren #e9e8e6 = 5.282:1
+
+== 1. BAY COT: tep | dong | hex nen | hex chu | ti so cu | ti so moi | nguong + ly do ==
+
+app/globals.css : 245 .hrp-btn-primary nghi
+   nen   cu=#f26522   moi=#a63b00
+   chu   cu=#ffffff   moi=#ffffff
+   ti so cu=3.153:1  moi=6.468:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: nen nut; chu = --color-on-primary; class khong dat font-size nen la chu THUONG
+
+app/globals.css : 253 .hrp-btn-primary:hover
+   nen   cu=#a63b00   moi=#af4f1a
+   chu   cu=#ffffff   moi=#ffffff
+   ti so cu=6.468:1  moi=5.308:1  nguong=5.089:1 -> DAT (truoc do da DAT)
+   ly do nguong: nen HOP THANH; san 5.089 do chinh AC-02 an dinh (bien 12% cua DEC-02)
+
+app/globals.css : 268 .hrp-btn-primary:active
+   nen   cu=#a63b00   moi=#a63b00
+   chu   cu=#ffffff   moi=#ffffff
+   ti so cu=6.468:1  moi=6.468:1  nguong=4.500:1 -> DAT (truoc do da DAT)
+   ly do nguong: lop trang thai bi bo -> nen dac tro lai; chu thuong
+
+app/components/GlobalNavbar.tsx : 48 avatar chu cai
+   nen   cu=#f26522   moi=#a63b00
+   chu   cu=#ffffff   moi=#ffffff
+   ti so cu=3.153:1  moi=6.468:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: 14px BOLD < 18.66px nen KHONG phai chu lon (EV-05)
+
+app/components/GlobalNavbar.tsx : 143 hover link desktop
+   nen   cu=#ffffff   moi=#ffffff
+   chu   cu=#f26522   moi=#a63b00
+   ti so cu=3.153:1  moi=6.468:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: chu 14px thuong tren nen header THAT = --color-surface (do o STEP-03)
+
+app/components/GlobalNavbar.tsx : 130 + 290 link DANG O (trang thai MOI)
+   nen   cu=#ffffff   moi=#ffffff
+   chu   cu=#594138   moi=#a63b00
+   ti so cu=9.383:1  moi=6.468:1  nguong=4.500:1 -> DAT (truoc do da DAT)
+   ly do nguong: chu 14px semibold; truoc day khong co trang thai active nen cot cu la mau nghi
+
+app/components/GlobalNavbar.tsx : 197 pill vai tro desktop
+   nen   cu=#fdf1ec   moi=#fdf1ec
+   chu   cu=#f26522   moi=#a63b00
+   ti so cu=2.848:1  moi=5.842:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: chu 12px thuong tren --color-primary-soft
+
+app/components/GlobalNavbar.tsx : 313 pill vai tro mobile
+   nen   cu=#fdf1ec   moi=#fdf1ec
+   chu   cu=#f26522   moi=#a63b00
+   ti so cu=2.848:1  moi=5.842:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: chu 12px thuong tren --color-primary-soft
+
+app/(jobs)/track/page.tsx : 95 nen nut Tra cuu
+   nen   cu=#f26522   moi=#a63b00
+   chu   cu=#ffffff   moi=#ffffff
+   ti so cu=3.153:1  moi=6.468:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: nen nut, chu trang 16px semibold
+
+app/(jobs)/track/page.tsx : 88 vong focus o nhap (.hrp-focus)
+   nen   cu=#ffffff   moi=#ffffff
+   chu   cu=#f26522   moi=#a63b00
+   ti so cu=3.153:1  moi=6.468:1  nguong=3.000:1 -> DAT (truoc do da DAT)
+   ly do nguong: VONG FOCUS = thanh phan giao dien, khong phai chu; ke nen --color-surface
+
+app/(jobs)/viec-lam/[slug]/page.tsx : 107 link Quay lai
+   nen   cu=#faf9f7   moi=#faf9f7
+   chu   cu=#f26522   moi=#a63b00
+   ti so cu=2.997:1  moi=6.147:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: chu 14px thuong tren nen body --color-background
+
+app/(jobs)/viec-lam/[slug]/page.tsx : 124 pill trang thai
+   nen   cu=#fdf1ec   moi=#fdf1ec
+   chu   cu=#f26522   moi=#a63b00
+   ti so cu=2.848:1  moi=5.842:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: chu 12px semibold tren --color-primary-soft
+
+app/(jobs)/viec-lam/[slug]/page.tsx : 170 so con tuyen
+   nen   cu=#f4f3f1   moi=#f4f3f1
+   chu   cu=#f26522   moi=#a63b00
+   ti so cu=2.843:1  moi=5.832:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: chu 14px semibold tren --color-surface-container-low
+
+app/(portal)/ve-chung-toi/page.tsx : 62 <em> trong tieu de
+   nen   cu=#faf9f7   moi=#faf9f7
+   chu   cu=#f26522   moi=#a63b00
+   ti so cu=2.997:1  moi=6.147:1  nguong=3.000:1 -> DAT (truoc do TRUOT)
+   ly do nguong: 36px/48px extrabold => CHU LON (>=18.66px bold) nen nguong 3:1, KHONG phai 4.5
+
+app/(portal)/ve-chung-toi/page.tsx : 82 nen CTA
+   nen   cu=#f26522   moi=#a63b00
+   chu   cu=#ffffff   moi=#ffffff
+   ti so cu=3.153:1  moi=6.468:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: nen nut, chu trang 16px semibold
+
+src/domains/job-board/components/apply-modal.tsx : 184 nen nut Gui
+   nen   cu=#f26522   moi=#a63b00
+   chu   cu=#ffffff   moi=#ffffff
+   ti so cu=3.153:1  moi=6.468:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: nen nut, chu trang tren panel --color-surface
+
+src/domains/job-board/components/success-modal.tsx : 88 nen nut Sao chep ma
+   nen   cu=#f26522   moi=#a63b00
+   chu   cu=#ffffff   moi=#ffffff
+   ti so cu=3.153:1  moi=6.468:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: nen nut, chu trang 12px semibold, nam trong hop #e3e2e0
+
+src/domains/job-board/components/success-modal.tsx : 107 link TRACKING_URL
+   nen   cu=#e3e2e0   moi=#e3e2e0
+   chu   cu=#f26522   moi=#a63b00
+   ti so cu=2.436:1  moi=4.996:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: chu 14px mono tren HOP TRONG --color-surface-variant, KHONG phai #ffffff
+
+src/domains/job-board/components/success-modal.tsx : 115 chu Sao chep link
+   nen   cu=#e3e2e0   moi=#e3e2e0
+   chu   cu=#f26522   moi=#a63b00
+   ti so cu=2.436:1  moi=4.996:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: chu 12px semibold tren --color-surface-variant
+
+src/domains/job-board/components/success-modal.tsx : 115 VIEN Sao chep link
+   nen   cu=#e3e2e0   moi=#e3e2e0
+   chu   cu=#f26522   moi=#a63b00
+   ti so cu=2.436:1  moi=4.996:1  nguong=3.000:1 -> DAT (truoc do TRUOT)
+   ly do nguong: vien = thanh phan giao dien, nguong 3:1. DO LAI TREN NEN THAT: EV-09 ghi 3.153:1 vi tinh tren #ffffff cua panel NGOAI, nhung nut nay nam trong hop #e3e2e0 -> 2.436:1, tuc vien DA TRUOT 3:1
+
+src/domains/job-board/components/success-modal.tsx : 138 nen nut Dong (tren panel #ffffff)
+   nen   cu=#f26522   moi=#a63b00
+   chu   cu=#ffffff   moi=#ffffff
+   ti so cu=3.153:1  moi=6.468:1  nguong=4.500:1 -> DAT (truoc do TRUOT)
+   ly do nguong: nen nut, chu trang tren panel --color-surface
+
+So dong = 21.  Dong TRUOT truoc khi sua = 17.  Dong da DAT tu truoc (doi de dong bo) = 4.
+Dong con TRUOT SAU khi sua = 0

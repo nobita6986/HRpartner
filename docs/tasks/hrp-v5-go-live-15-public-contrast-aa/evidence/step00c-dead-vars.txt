@@ -1,0 +1,72 @@
+=== STEP-00c / DANH SACH var() CHET do khoi @theme dirty gay ra ===
+(trich tu step00b, file OUT OF SCOPE: src/shared/ui/design-tokens.static.test.ts)
+COMMAND: npm run test:unit -- src/shared/ui/design-tokens.static.test.ts --reporter=verbose
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts src/shared/ui/design-tokens.static.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [31m❯[39m src/shared/ui/design-tokens.static.test.ts [2m([22m[2m12 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[90m 21[2mms[22m[39m
+[31m   [31m×[31m RQ-04/AC-03 — mọi biến CSS mà .tsx gọi đều phân giải được[2m > [22mkhông còn lượt var(--ten) nào trỏ tới custom property không tồn tại[90m 16[2mms[22m[31m[39m
+[31m     → expected [ …(29) ] to deeply equal [][39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 1 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/shared/ui/design-tokens.static.test.ts[2m > [22mRQ-04/AC-03 — mọi biến CSS mà .tsx gọi đều phân giải được[2m > [22mkhông còn lượt var(--ten) nào trỏ tới custom property không tồn tại
+[31m[1mAssertionError[22m: expected [ …(29) ] to deeply equal [][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- Array [][39m
+[31m+ Array [[39m
+[31m+   "app/(jobs)/viec-lam/[slug]/page.tsx:124 var(--color-primary-soft)",[39m
+[31m+   "app/(portal)/ctv-portal/page.tsx:39 var(--color-primary-soft)",[39m
+[31m+   "app/(portal)/home/page.tsx:67 var(--color-primary-soft)",[39m
+[31m+   "app/(portal)/page.tsx:281 var(--color-primary-soft)",[39m
+[31m+   "app/(portal)/ve-chung-toi/page.tsx:49 var(--color-primary-soft)",[39m
+[31m+   "app/(portal)/ve-chung-toi/page.tsx:104 var(--color-primary-soft)",[39m
+[31m+   "app/(portal)/ve-chung-toi/page.tsx:125 var(--color-success-soft)",[39m
+[31m+   "app/(portal)/ve-chung-toi/page.tsx:125 var(--color-success)",[39m
+[31m+   "app/(portal)/ve-chung-toi/page.tsx:126 var(--color-warning-soft)",[39m
+[31m+   "app/(portal)/ve-chung-toi/page.tsx:126 var(--color-warning)",[39m
+[31m+   "app/(portal)/ve-chung-toi/page.tsx:144 var(--color-line)",[39m
+[31m+   "app/components/GlobalNavbar.tsx:83 var(--color-line)",[39m
+[31m+   "app/components/GlobalNavbar.tsx:161 var(--color-primary-soft)",[39m
+[31m+   "app/components/GlobalNavbar.tsx:237 var(--color-line)",[39m
+[31m+   "app/components/GlobalNavbar.tsx:252 var(--color-line)",[39m
+[31m+   "app/components/GlobalNavbar.tsx:264 var(--color-primary-soft)",[39m
+[31m+   "app/login/login-form.tsx:67 var(--color-line)",[39m
+[31m+   "app/login/login-form.tsx:68 var(--shadow-card)",[39m
+[31m+   "app/login/login-form.tsx:69 var(--radius-md)",[39m
+[31m+   "app/login/login-form.tsx:99 var(--radius-DEFAULT)",[39m
+[31m+   "app/login/login-form.tsx:121 var(--radius-DEFAULT)",[39m
+[31m+   "app/login/login-form.tsx:128 var(--color-warning-soft)",[39m
+[31m+   "app/login/login-form.tsx:128 var(--color-warning)",[39m
+[31m+   "app/login/login-form.tsx:137 var(--radius-DEFAULT)",[39m
+[31m+   "src/domains/job-board/components/detail-apply-cta.tsx:49 var(--color-success-soft)",[39m
+[31m+   "src/domains/job-board/components/detail-apply-cta.tsx:49 var(--color-success)",[39m
+[31m+   "src/domains/job-board/components/success-modal.tsx:58 var(--color-success-soft)",[39m
+[31m+   "src/domains/job-board/components/success-modal.tsx:60 var(--color-success)",[39m
+[31m+   "src/domains/job-board/components/success-modal.tsx:124 var(--color-success)",[39m
+[31m+ ][39m
+
+[36m [2m❯[22m src/shared/ui/design-tokens.static.test.ts:[2m86:24[22m[39m
+    [90m 84| [39m      )[33m,[39m
+    [90m 85| [39m    )[33m;[39m
+    [90m 86| [39m    [34mexpect[39m(violations)[33m.[39m[34mtoEqual[39m([])[33m;[39m
+    [90m   | [39m                       [31m^[39m
+    [90m 87| [39m  })[33m;[39m
+    [90m 88| [39m})[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m11 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 23:52:07
+[2m   Duration [22m 336ms[2m (transform 30ms, setup 0ms, collect 48ms, tests 21ms, environment 0ms, prepare 61ms)[22m
+
+EXIT=1

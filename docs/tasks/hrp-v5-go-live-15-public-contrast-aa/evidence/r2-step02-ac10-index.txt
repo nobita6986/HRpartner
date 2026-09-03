@@ -1,0 +1,69 @@
+=== R2-STEP-02 — AC-10 do lai bang DUNG BA LENH ma v1.1 chi dinh ===
+
+AC-10 (v1.1) yeu cau: git diff --cached app/globals.css  +  git diff HEAD -- app/globals.css
+                      +  rg -n -- "--color-primary:" app/globals.css
+va can dan: "Do tren INDEX, KHONG dung git diff tran".
+
+--- LENH 1: git diff --cached app/globals.css  (INDEX so voi HEAD) ---
+exit=0
+so dong output = 37
+   diff --git a/app/globals.css b/app/globals.css
+   index 9b9d63f..7857401 100644
+   --- a/app/globals.css
+   +++ b/app/globals.css
+   @@ -306,7 +306,7 @@ body {
+    
+    /* --- Nút — RQ-09 -------------------------------------------------------- */
+    .hrp-btn-primary {
+   -  background-color: var(--color-primary);
+   +  background-color: var(--color-primary-dark);
+      color: var(--color-on-primary);
+      cursor: pointer;
+      transition-property: transform, box-shadow, background-color, border-color;
+   @@ -315,6 +315,13 @@ body {
+    }
+    .hrp-btn-primary:hover:not(:disabled) {
+      background-color: var(--color-primary-dark);
+   +  /* go-live-15 / RQ-02 - DEC-02: nen NGHI nay da la --color-primary-dark, nen hover
+   +     phai khac bang thu khac. Lop trang thai TRANG 10% (giua dai 8%-12% cua DEC-02):
+   +     hop thanh tren #a63b00 ra #af4f1a, chu trang tren do = 5.308:1, tren nguong
+   +     5.089:1 cua AC-02. Dung background-image nen KHONG them token nao va KHONG
+   +     phai cham transition-property (background-image khong nam trong allowlist
+   +     RQ-23 cua go-live-08). Hai dau hieu hover cu - scale va bong - giu nguyen. */
+   +  background-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1));
+      transform: scale(1.02);
+      box-shadow: var(--shadow-card);
+      transition-duration: var(--t-medium);
+   @@ -323,6 +330,9 @@ body {
+       phân biệt với hover mà không phải thêm một chuyển động mới nào. */
+    .hrp-btn-primary:active:not(:disabled) {
+      background-color: var(--color-primary-dark);
+   +  /* Nhan: bo lop trang thai de nen tro lai muc dam dac - dau hieu thu ba, canh
+   +     bong phang lai va bo phan nang. */
+   +  background-image: none;
+      transform: none;
+      box-shadow: none;
+    }
+
+--- LENH 2: git diff HEAD -- app/globals.css  (WORKTREE so voi HEAD) ---
+exit=0
+so dong output = 37
+   (giong lenh 1 tung dong? GIONG)
+
+--- LENH 3: rg -n -- "--color-primary:" app/globals.css  (gia tri token TREN WORKTREE) ---
+10:  --color-primary: #f26522;
+118:     phía dưới đã đặt ra. Vì sao không dùng --color-primary: nó chỉ đạt
+265:   Vì sao viền hover là --color-primary-dark chứ không phải --color-primary:
+exit=0
+
+--- doi chung: cung dong ay o INDEX va o HEAD ---
+   INDEX : 10:  --color-primary: #f26522; 118:     phía dưới đã đặt ra. Vì sao không dùng --color-primary: nó chỉ đạt 265:   Vì sao viền hover là --color-primary-dark chứ không phải --color-primary: 
+   HEAD  : 10:  --color-primary: #f26522; 118:     phía dưới đã đặt ra. Vì sao không dùng --color-primary: nó chỉ đạt 265:   Vì sao viền hover là --color-primary-dark chứ không phải --color-primary: 
+
+--- cai bay ma v1.1 canh bao: git diff TRAN co ra RONG khong? ---
+   so dong cua 'git diff -- app/globals.css' = 0   (RONG = 0 dong, dung nhu v1.1 du bao)
+
+--- ket luan AC-10 ---
+   INDEX co dung 3 hunk, +11/-1, khong hunk nao trong @theme
+   worktree == INDEX ( git diff tran = 0 dong ) => KHONG co bang token cua lane khac o thoi diem nay
+   --color-primary van la #f26522 tren CA BA ben

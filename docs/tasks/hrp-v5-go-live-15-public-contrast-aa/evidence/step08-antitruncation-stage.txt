@@ -1,0 +1,26 @@
+=== LUAT CHONG-CAT-FILE ap cho CA MA SAN PHAM, khong chi HANDOFF ===
+Ly do: 00:39:16 mot luong khac restore app/globals.css va public-ui-premium.static.test.ts
+ve dung noi dung HEAD, xoa sach ban sua cua go-live-15 trong hai tep do.
+
+--- index sau khi git add dung 8 path cua §4.2 (khong -A, khong .) ---
+4	4	app/(jobs)/track/page.tsx
+3	3	app/(jobs)/viec-lam/[slug]/page.tsx
+2	2	app/(portal)/ve-chung-toi/page.tsx
+78	29	app/components/GlobalNavbar.tsx
+11	1	app/globals.css
+1	1	src/domains/job-board/components/apply-modal.tsx
+4	4	src/domains/job-board/components/success-modal.tsx
+63	11	src/domains/job-board/public-ui-premium.static.test.ts
+
+--- worktree vs index: phai RONG (hai ban trung nhau) ---
+(rong = khop)
+
+--- bon tep cua luong khac: KHONG duoc stage ---
+ M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+ M public/index.html
+
+--- van KHONG co commit nao cua Tier 2 ---
+846ba0e docs(go-live-16): contract tương phản và vòng focus cho bề mặt nội bộ
+0

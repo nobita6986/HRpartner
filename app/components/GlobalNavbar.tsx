@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 
 interface AuthUser {
@@ -23,12 +24,28 @@ const navLinks = [
   { href: '/lien-he', label: 'Liên hệ' },
 ];
 
+/**
+ * go-live-15 / RQ-09 - muc dieu huong ung voi duong dan hien tai, SUY tu
+ * `usePathname()` chu khong hard-code. Bon href cua `navLinks` khong long nhau
+ * va `/` chi khop tuyet doi, nen ham nay tra ve NHIEU NHAT mot href: moi nhanh
+ * chi co the co dung MOT link mang `aria-current="page"`.
+ */
+function activeNavHref(pathname: string | null): string | null {
+  if (!pathname) return null;
+  const hit = navLinks.find((link) =>
+    link.href === '/'
+      ? pathname === '/'
+      : pathname === link.href || pathname.startsWith(`${link.href}/`),
+  );
+  return hit ? hit.href : null;
+}
+
 function Avatar({ userId }: { userId: string }) {
   const initials = userId.slice(0, 2).toUpperCase();
   return (
     <div
       className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold select-none"
-      style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+      style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
       title={userId}
     >
       {initials}
@@ -37,6 +54,7 @@ function Avatar({ userId }: { userId: string }) {
 }
 
 export function GlobalNavbar() {
+  const activeHref = activeNavHref(usePathname());
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -103,18 +121,32 @@ export function GlobalNavbar() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="font-medium transition-colors"
-                style={{ color: 'var(--color-on-surface-variant)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-primary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-on-surface-variant)')}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              // go-live-15 / RQ-09: dau hieu KHONG dua vao mau - chu dam hon cong gach
+              // chan - di kem `aria-current="page"`. Co che hover giu nguyen (RQ-12),
+              // chi GIA TRI mau doi: --color-primary -> --color-primary-dark (RQ-05).
+              const isActive = link.href === activeHref;
+              const restColor = isActive
+                ? 'var(--color-primary-dark)'
+                : 'var(--color-on-surface-variant)';
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`${
+                    isActive
+                      ? 'font-semibold underline underline-offset-8 decoration-2'
+                      : 'font-medium'
+                  } transition-colors`}
+                  style={{ color: restColor }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-primary-dark)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = restColor)}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Desktop Auth Area */}
@@ -140,7 +172,11 @@ export function GlobalNavbar() {
                   >
                     {user.userId}
                   </span>
-                  <span className="material-symbols-outlined text-base" style={{ color: 'var(--color-on-surface-variant)' }}>
+                  <span
+                    className="material-symbols-outlined text-base"
+                    style={{ color: 'var(--color-on-surface-variant)' }}
+                    aria-hidden="true"
+                  >
                     expand_more
                   </span>
                 </button>
@@ -158,7 +194,7 @@ export function GlobalNavbar() {
                       </p>
                       <span
                         className="inline-block mt-0.5 text-xs px-2 py-0.5 rounded-full font-medium"
-                        style={{ backgroundColor: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}
+                        style={{ backgroundColor: 'var(--color-primary-soft)', color: 'var(--color-primary-dark)' }}
                       >
                         {user.role}
                       </span>
@@ -176,7 +212,7 @@ export function GlobalNavbar() {
                         e.currentTarget.style.color = 'var(--color-on-surface-variant)';
                       }}
                     >
-                      <span className="material-symbols-outlined text-base">dashboard</span>
+                      <span className="material-symbols-outlined text-base" aria-hidden="true">dashboard</span>
                       Bảng điều khiển
                     </Link>
                     <button
@@ -186,7 +222,7 @@ export function GlobalNavbar() {
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-error-container)')}
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
-                      <span className="material-symbols-outlined text-base">logout</span>
+                      <span className="material-symbols-outlined text-base" aria-hidden="true">logout</span>
                       Đăng xuất
                     </button>
                   </div>
@@ -236,17 +272,30 @@ export function GlobalNavbar() {
             className="md:hidden py-4 space-y-1"
             style={{ borderTop: '1px solid var(--color-line)' }}
           >
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block px-2 py-2.5 font-medium"
-                style={{ color: 'var(--color-on-surface-variant)' }}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              // Nhanh mobile mang CUNG hai dau hieu khong-mau nhu nhanh desktop (RQ-09).
+              const isActive = link.href === activeHref;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`block px-2 py-2.5 ${
+                    isActive
+                      ? 'font-semibold underline underline-offset-4 decoration-2'
+                      : 'font-medium'
+                  }`}
+                  style={{
+                    color: isActive
+                      ? 'var(--color-primary-dark)'
+                      : 'var(--color-on-surface-variant)',
+                  }}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             <div
               className="pt-4 flex flex-col gap-2 mt-2"
               style={{ borderTop: '1px solid var(--color-line)' }}
@@ -261,7 +310,7 @@ export function GlobalNavbar() {
                       </p>
                       <span
                         className="text-xs px-2 py-0.5 rounded-full font-medium"
-                        style={{ backgroundColor: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}
+                        style={{ backgroundColor: 'var(--color-primary-soft)', color: 'var(--color-primary-dark)' }}
                       >
                         {user.role}
                       </span>

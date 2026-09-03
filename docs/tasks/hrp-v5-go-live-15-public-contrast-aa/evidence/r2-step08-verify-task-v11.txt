@@ -1,0 +1,12 @@
+=== R2-STEP-08 - gate cau truc contract v1.1 (cho C-09 cua Tier 3) ===
+
+lenh: & ".ai-pipeline/scripts/verify-task.ps1" -TaskPath "docs/tasks/hrp-v5-go-live-15-public-contrast-aa/TASK.md"
+chay lai vi contract da bump v1.0 -> v1.1 (663053c). Vong 1 chay tren v1.0.
+exit code lay bang $LASTEXITCODE ngay sau lenh; output bat bang *>&1 vi script dung
+Write-Host (stream 6), khong phai stream 1.
+
+--- output nguyen van ---
+TASK CONTRACT CHECK: docs/tasks/hrp-v5-go-live-15-public-contrast-aa/TASK.md
+
+RESULT: PASS. TASK contract is ready for execution.
+VERIFY_TASK_EXIT=0

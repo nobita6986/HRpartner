@@ -85,7 +85,7 @@ export function SuccessModal({ code, onClose }: { code: string; onClose: () => v
                   type="button"
                   onClick={() => handleCopy('code', code)}
                   className="shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                  style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+                  style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
                   aria-label="Sao chép mã tra cứu"
                 >
                   {copied === 'code' ? 'Đã sao chép' : 'Sao chép mã'}
@@ -104,7 +104,7 @@ export function SuccessModal({ code, onClose }: { code: string; onClose: () => v
                 target="_blank"
                 rel="noreferrer"
                 className="min-w-0 flex-1 break-all text-sm underline underline-offset-2"
-                style={{ color: 'var(--color-primary)' }}
+                style={{ color: 'var(--color-primary-dark)' }}
               >
                 {TRACKING_URL}
               </a>
@@ -112,7 +112,7 @@ export function SuccessModal({ code, onClose }: { code: string; onClose: () => v
                 type="button"
                 onClick={() => handleCopy('url', TRACKING_URL)}
                 className="shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
+                style={{ borderColor: 'var(--color-primary-dark)', color: 'var(--color-primary-dark)' }}
                 aria-label="Sao chép đường dẫn tra cứu"
               >
                 {copied === 'url' ? 'Đã sao chép' : 'Sao chép link'}
@@ -135,7 +135,7 @@ export function SuccessModal({ code, onClose }: { code: string; onClose: () => v
           type="button"
           onClick={onClose}
           className="mt-2 px-6 py-2.5 rounded-lg font-semibold"
-          style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+          style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
         >
           Đóng
         </button>

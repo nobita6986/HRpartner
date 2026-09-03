@@ -1,0 +1,60 @@
+TONG SO VI PHAM = 29
+
+-- theo TEN token --
+  --color-line  x5
+  --color-primary-soft  x8
+  --color-success  x4
+  --color-success-soft  x3
+  --color-warning  x2
+  --color-warning-soft  x2
+  --radius-DEFAULT  x3
+  --radius-md  x1
+  --shadow-card  x1
+
+-- tung dong --
+  TRONG-PHAM-VI §4.2  app/(jobs)/viec-lam/[slug]/page.tsx:124 var(--color-primary-soft)
+  ngoai pham vi       app/(portal)/ctv-portal/page.tsx:39 var(--color-primary-soft)
+  ngoai pham vi       app/(portal)/home/page.tsx:67 var(--color-primary-soft)
+  ngoai pham vi       app/(portal)/page.tsx:281 var(--color-primary-soft)
+  TRONG-PHAM-VI §4.2  app/(portal)/ve-chung-toi/page.tsx:49 var(--color-primary-soft)
+  TRONG-PHAM-VI §4.2  app/(portal)/ve-chung-toi/page.tsx:104 var(--color-primary-soft)
+  TRONG-PHAM-VI §4.2  app/(portal)/ve-chung-toi/page.tsx:125 var(--color-success-soft)
+  TRONG-PHAM-VI §4.2  app/(portal)/ve-chung-toi/page.tsx:125 var(--color-success)
+  TRONG-PHAM-VI §4.2  app/(portal)/ve-chung-toi/page.tsx:126 var(--color-warning-soft)
+  TRONG-PHAM-VI §4.2  app/(portal)/ve-chung-toi/page.tsx:126 var(--color-warning)
+  TRONG-PHAM-VI §4.2  app/(portal)/ve-chung-toi/page.tsx:144 var(--color-line)
+  TRONG-PHAM-VI §4.2  app/components/GlobalNavbar.tsx:101 var(--color-line)
+  TRONG-PHAM-VI §4.2  app/components/GlobalNavbar.tsx:197 var(--color-primary-soft)
+  TRONG-PHAM-VI §4.2  app/components/GlobalNavbar.tsx:273 var(--color-line)
+  TRONG-PHAM-VI §4.2  app/components/GlobalNavbar.tsx:301 var(--color-line)
+  TRONG-PHAM-VI §4.2  app/components/GlobalNavbar.tsx:313 var(--color-primary-soft)
+  ngoai pham vi       app/login/login-form.tsx:67 var(--color-line)
+  ngoai pham vi       app/login/login-form.tsx:68 var(--shadow-card)
+  ngoai pham vi       app/login/login-form.tsx:69 var(--radius-md)
+  ngoai pham vi       app/login/login-form.tsx:99 var(--radius-DEFAULT)
+  ngoai pham vi       app/login/login-form.tsx:121 var(--radius-DEFAULT)
+  ngoai pham vi       app/login/login-form.tsx:128 var(--color-warning-soft)
+  ngoai pham vi       app/login/login-form.tsx:128 var(--color-warning)
+  ngoai pham vi       app/login/login-form.tsx:137 var(--radius-DEFAULT)
+  ngoai pham vi       src/domains/job-board/components/detail-apply-cta.tsx:49 var(--color-success-soft)
+  ngoai pham vi       src/domains/job-board/components/detail-apply-cta.tsx:49 var(--color-success)
+  TRONG-PHAM-VI §4.2  src/domains/job-board/components/success-modal.tsx:58 var(--color-success-soft)
+  TRONG-PHAM-VI §4.2  src/domains/job-board/components/success-modal.tsx:60 var(--color-success)
+  TRONG-PHAM-VI §4.2  src/domains/job-board/components/success-modal.tsx:124 var(--color-success)
+
+SO VI PHAM THUOC 8 TEP CUA §4.2 = 16
+SO VI PHAM THUOC TEP KHAC        = 13
+
+-- token bi XOA khoi @theme cua worktree (goc cua ca cum) --
+  --color-line: co trong worktree CSS? KHONG
+  --color-primary-soft: co trong worktree CSS? KHONG
+  --color-success: co trong worktree CSS? KHONG
+  --color-success-soft: co trong worktree CSS? KHONG
+  --color-warning: co trong worktree CSS? KHONG
+  --color-warning-soft: co trong worktree CSS? KHONG
+  --radius-DEFAULT: co trong worktree CSS? KHONG
+  --radius-md: co trong worktree CSS? KHONG
+  --shadow-card: co trong worktree CSS? KHONG
+Tap token DINH NGHIA lay tu HEAD:app/globals.css; tep .tsx lay tu WORKTREE (da co ban sua cua toi).
+SO VI PHAM = 0
+KET LUAN: 29 vi pham cua lane KHONG do 8 tep §4.2 — chung tat ca do hunk @theme cua luong khac xoa token.

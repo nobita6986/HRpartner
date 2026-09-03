@@ -1,0 +1,314 @@
+=== TRUOC khi chay: nhan dang noi dung tep dang do ===
+gio bat dau = 00:51:29
+hash-object worktree app/globals.css = 7857401624944e0bc801f69843ce45778c6f50b7
+hash-object INDEX  app/globals.css = 7857401624944e0bc801f69843ce45778c6f50b7
+hash-object HEAD   app/globals.css = 9b9d63f8a2db678779e153744dd504a16c0ae897
+hash-object worktree test file     = 0a67b8d3aa25efb10fb0eaf2838fd05fdff0fe4c
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [32m✓[39m src/domains/job-board/public-ui-premium.static.test.ts [2m([22m[2m63 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/assignment-placement.service.test.ts [2m([22m[2m65 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m src/domains/applications/marketplace-apply.routes.test.ts [2m([22m[2m31 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m src/shared/auth/vendor-object-scope.m1-08.route.test.ts [2m([22m[2m36 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m src/domains/commission/golden.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [31m❯[39m src/domains/applications/marketplace-inventory.static.test.ts [2m([22m[2m25 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[90m 54[2mms[22m[39m
+[31m   [31m×[31m RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect[2m > [22mtrang track có nút Tra cứu nhìn thấy được và render ba field đối chiếu[90m 10[2mms[22m[31m[39m
+[31m     → expected '\'use client\';\n\n\n\n\n\n\n\n\n\n\n…' to contain 'backgroundColor: \'var(--color-primar…'[39m
+ [32m✓[39m src/domains/job-board/public-card-truth.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/domains/reconciliation/reconciliation-unit.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/ticket.service.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+[90mstdout[2m | src/shared/observability/logger.test.ts[2m > [22m[2mSchema — AC-03[2m > [22m[2msink can be reset to default without throwing
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-09-02T17:51:32.815Z","level":"info","event":"after_reset","requestId":"req","meta":{}}
+
+ [32m✓[39m src/shared/observability/logger.test.ts [2m([22m[2m73 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/shared/auth/api-boundary.static.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/submission.service.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-board-architecture.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/applications/marketplace-browse.routes.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/e2e-staffing-narrative.integration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/observability/middleware.test.ts [2m([22m[2m24 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/domains/applications/placement-panel.test.ts [2m([22m[2m26 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m src/shared/auth/permission-resolver.test.ts [2m([22m[2m82 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/assignment-placement.routes.test.ts [2m([22m[2m38 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+[90mstderr[2m | src/domains/security/single-domain-consolidation.test.ts[2m > [22m[2mC) login POST — same-origin landing + host-only cookie[2m > [22m[2mbad credentials / locked / malformed → 401 INVALID_CREDENTIALS and NO cookie
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-09-02T17:51:35.133Z","level":"warn","event":"auth.login.denied","requestId":null,"meta":{"route":"/api/auth/login","outcome":"user_not_found"}}
+{"schemaVersion":"1.0","timestamp":"2026-09-02T17:51:35.135Z","level":"warn","event":"auth.login.denied","requestId":null,"meta":{"route":"/api/auth/login","outcome":"password_mismatch"}}
+
+ [32m✓[39m src/domains/security/single-domain-consolidation.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/shared/security/rate-limit-guard.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/4role-jobboard.integration.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/security/rate-limit-config.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/4role-attendance.integration.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/auth/with-auth-scope.test.ts [2m([22m[2m39 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-detail.static.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/referral-guard.canonical.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/ui/design-tokens.static.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/applications/application-queue.service.test.ts [2m([22m[2m22 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/e2e-attendance-narrative.integration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/observability/error-reporter.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/auth/vendor-submissions.route.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/order.service.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/shared/observability/correlation-id.test.ts [2m([22m[2m28 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/mp1.contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/domains/security/statements-list.projection.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-board-route-json.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/shared/security/request-body.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/shared/security/rate-limit-adapters.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/domains/applications/conversion.service.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/idempotency.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 38[2mms[22m[39m
+ [32m✓[39m src/domains/security/response-projection.static.test.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/security/portal-domains.integration.test.ts [2m([22m[2m49 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/transfer.service.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/outbox.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/domains/payroll/calculateVietnameseTaxes.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-projection.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/projection/manifest.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/auth/with-authorized-db.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/shared/auth/webhook-payslip.route.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/shared/auth/attendance-adjustments.route.test.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/domains/applications/tracking-mask.routes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m prisma/migrations-permission-hygiene.static.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/domains/security/statements-generate.projection.route.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/domains/applications/application.service.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/privacy/mask.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/auth/projects-master.route.test.ts [2m([22m[2m22 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/domains/security/security-matrix-portals.test.ts [2m([22m[2m18 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-portal.route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-detail.service.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/security/workers-me.projection.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/applications/application-detail-mp3.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/auth/disputes.route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+[90mstdout[2m | src/domains/security/ctv-withdrawals.projection.route.test.ts[2m > [22m[2mPOST /api/ctv/withdrawals — self DTO omit ctvId (AC-08)[2m > [22m[2mCTV → 201, DTO omit ctvId; owner = session (KHÔNG nhận ctvId từ body)
+[22m[39m[withdrawals] created wd-1
+
+ [32m✓[39m src/domains/security/ctv-withdrawals.projection.route.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/domains/applications/screening.service.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/auth/clients-master.route.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/state-machine.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/auth/with-public-db.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/domains/applications/apply-helpers.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 48[2mms[22m[39m
+ [32m✓[39m src/shared/auth/statements-margin.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/taxonomy-unit.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/domains/security/workers-projection.contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/shared/auth/auth-context.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-select.static.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/shared/auth/cron-routes.route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/talent-pool.repo.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/auth/vendors-master.route.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/shared/auth/projects-clients-master.route.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/audit.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/shared/auth/push-subscribe.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/domains/applications/conversion.routes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/auth/scopes/ctv-account-scope.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/domains/applications/screening.routes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/domains/commission/ctv-summary.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+[90mstderr[2m | src/shared/auth/require-permission.test.ts[2m > [22m[2mrequirePermission (RQ-05, DEC-05)[2m > [22m[2mWORKER thiếu CAN_APPROVE_PAYROLL → throw AuthError PERMISSION_DENIED
+[22m[39m{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+
+ [32m✓[39m src/shared/auth/require-permission.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+[90mstderr[2m | src/shared/auth/require-permission.test.ts[2m > [22m[2mrequireAnyPermission[2m > [22m[2mkhông code nào pass → throw PERMISSION_DENIED
+[22m[39m{"evt":"permission_denied_any","userId":"u-w-1","role":"WORKER","requiredCodes":["CAN_APPROVE_PAYROLL","CAN_EDIT_CONTRACT"]}
+
+ [32m✓[39m src/shared/auth/payroll.route.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/auth/public-read-guc.static.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/auth/finance-scope.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/domains/applications/status-machine.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/shared/auth/jwt.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/shared/auth/cron-auth.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/shared/auth/preauth-db.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/auth/permission-catalog.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/auth/internal-webhook-auth.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/auth/session-adapter.test.ts [2m([22m[2m30 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/auth/debug.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/referral-guard.service.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/domains/security/debug-route.contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/auth/me.route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/auth/user.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/lib/db.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 2[2mms[22m[39m
+ [32m✓[39m src/shared/utils/money.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/shared/auth/password.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 238[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 1 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/applications/marketplace-inventory.static.test.ts[2m > [22mRQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect[2m > [22mtrang track có nút Tra cứu nhìn thấy được và render ba field đối chiếu
+[31m[1mAssertionError[22m: expected '\'use client\';\n\n\n\n\n\n\n\n\n\n\n…' to contain 'backgroundColor: \'var(--color-primar…'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- backgroundColor: 'var(--color-primary)'[39m
+[31m+ 'use client';[39m
+[31m+[39m
+[31m+[39m
+[31m+[39m
+[31m+[39m
+[31m+[39m
+[31m+[39m
+[31m+[39m
+[31m+[39m
+[31m+[39m
+[31m+[39m
+[31m+[39m
+[31m+[39m
+[31m+[39m
+[31m+ import { useState } from 'react';[39m
+[31m+[39m
+[31m+ interface TrackingDto {[39m
+[31m+   trackingCode: string;[39m
+[31m+   status: string;[39m
+[31m+   statusLabel: string;[39m
+[31m+   nextStep: string;[39m
+[31m+   submittedAt: string | null;[39m
+[31m+   jobTitle: string | null;[39m
+[31m+   jobCode: string | null;[39m
+[31m+   positionTitle: string | null;[39m
+[31m+   fullName: string;[39m
+[31m+   phoneMasked: string | null;[39m
+[31m+   cccdMasked: string | null;[39m
+[31m+ }[39m
+[31m+[39m
+[31m+ const STATUS_TONE: Record<string, string> = {[39m
+[31m+   NEW: 'badge-neutral',[39m
+[31m+   NEEDS_INFO: 'badge-warning',[39m
+[31m+   SCREENING: 'badge-neutral',[39m
+[31m+   QUALIFIED: 'badge-success',[39m
+[31m+   REJECTED: 'badge-neutral',[39m
+[31m+   WITHDRAWN: 'badge-neutral',[39m
+[31m+   CONVERTED: 'badge-success',[39m
+[31m+ };[39m
+[31m+[39m
+[31m+ function formatDate(iso: string | null): string {[39m
+[31m+   if (!iso) return '—';[39m
+[31m+   const d = new Date(iso);[39m
+[31m+   return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('vi-VN');[39m
+[31m+ }[39m
+[31m+[39m
+[31m+ export default function TrackPage() {[39m
+[31m+   const [code, setCode] = useState('');[39m
+[31m+   const [result, setResult] = useState<TrackingDto | null>(null);[39m
+[31m+   const [error, setError] = useState('');[39m
+[31m+   const [loading, setLoading] = useState(false);[39m
+[31m+[39m
+[31m+   const handleSubmit = async (e: React.FormEvent) => {[39m
+[31m+     e.preventDefault();[39m
+[31m+     const c = code.trim();[39m
+[31m+     if (!c) { setError('Vui lòng nhập mã tra cứu.'); return; }[39m
+[31m+     setLoading(true); setError(''); setResult(null);[39m
+[31m+     try {[39m
+[31m+       const res = await fetch(`/api/public/applications/${encodeURIComponent(c)}`, { cache: 'no-store' });[39m
+[31m+       if (res.status === 404) { setError('Không tìm thấy hồ sơ với mã này. Vui lòng kiểm tra lại.'); return; }[39m
+[31m+       if (res.status === 429) { setError('Bạn tra cứu quá nhiều lần. Vui lòng thử lại sau ít phút.'); return; }[39m
+[31m+       const data = await res.json().catch(() => ({} as Record<string, unknown>));[39m
+[31m+       if (!res.ok) { setError(typeof data?.message === 'string' ? data.message : 'Có lỗi xảy ra, vui lòng thử lại.'); return; }[39m
+[31m+       setResult(data.application as TrackingDto);[39m
+[31m+     } catch {[39m
+[31m+       setError('Không thể kết nối máy chủ, vui lòng thử lại.');[39m
+[31m+     } finally {[39m
+[31m+       setLoading(false);[39m
+[31m+     }[39m
+[31m+   };[39m
+[31m+[39m
+[31m+   return ([39m
+[31m+     <div className='min-h-screen px-4 py-10 sm:py-14' style={{ backgroundColor: 'var(--color-surface)' }}>[39m
+[31m+       <div className='mx-auto max-w-2xl'>[39m
+[31m+         <header className='mb-8 text-center'>[39m
+[31m+           <h1 className='mb-2 text-3xl font-bold' style={{ color: 'var(--color-on-surface)' }}>Tra cứu hồ sơ</h1>[39m
+[31m+           <p style={{ color: 'var(--color-on-surface-variant)' }}>Nhập mã tra cứu bạn nhận được khi nộp đơn.</p>[39m
+[31m+         </header>[39m
+[31m+         <form onSubmit={handleSubmit} className='mb-6 flex flex-col gap-3 sm:flex-row'>[39m
+[31m+           <input[39m
+[31m+             type='text'[39m
+[31m+             value={code}[39m
+[31m+             onChange={(e) => setCode(e.target.value)}[39m
+[31m+             placeholder='VD: APP-XXXX-XXXX'[39m
+[31m+             autoComplete='off'[39m
+[31m+             spellCheck={false}[39m
+[31m+             className='hrp-focus min-w-0 flex-1 rounded-xl border px-4 py-3 font-mono'[39m
+[31m+             style={{ borderColor: 'var(--color-outline)', backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}[39m
+[31m+             aria-label='Mã tra cứu'[39m
+[31m+           />[39m
+[31m+           <button[39m
+[31m+             type='submit'[39m
+[31m+             disabled={loading || !code.trim()}[39m
+[31m+             className='hrp-focus min-w-32 rounded-xl px-6 py-3 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50'[39m
+[31m+             style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}[39m
+[31m+           >[39m
+[31m+             {loading ? 'Đang tra...' : 'Tra cứu'}[39m
+[31m+           </button>[39m
+[31m+         </form>[39m
+[31m+[39m
+[31m+         {error && ([39m
+[31m+           <p className='text-center text-sm' role='alert' style={{ color: 'var(--color-error, #dc2626)' }}>{error}</p>[39m
+[31m+         )}[39m
+[31m+[39m
+[31m+         {result && ([39m
+[31m+           <article className='flex flex-col gap-5 rounded-2xl border p-5 shadow-sm sm:p-7' style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}>[39m
+[31m+             <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>[39m
+[31m+               <span className='break-all font-mono text-sm' style={{ color: 'var(--color-on-surface-variant)' }}>{result.trackingCode}</span>[39m
+[31m+               <span className={'badge ' + (STATUS_TONE[result.status] ?? 'badge-neutral')}>{result.statusLabel}</span>[39m
+[31m+             </div>[39m
+[31m+[39m
+[31m+             <section className='rounded-xl p-4' style={{ backgroundColor: 'var(--color-surface-container-low)' }}>[39m
+[31m+               <h2 className='mb-3 text-base font-semibold' style={{ color: 'var(--color-on-surface)' }}>Thông tin hồ sơ đã nộp</h2>[39m
+[31m+               <dl className='grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2'>[39m
+[31m+                 <div>[39m
+[31m+                   <dt style={{ color: 'var(--color-on-surface-variant)' }}>Họ và tên</dt>[39m
+[31m+                   <dd className='mt-0.5 font-semibold' style={{ color: 'var(--color-on-surface)' }}>{result.fullName}</dd>[39m
+[31m+                 </div>[39m
+[31m+                 <div>[39m
+[31m+                   <dt style={{ color: 'var(--color-on-surface-variant)' }}>Số điện thoại</dt>[39m
+[31m+                   <dd className='mt-0.5 font-semibold' style={{ color: 'var(--color-on-surface)' }}>{result.phoneMasked || 'Không cung cấp'}</dd>[39m
+[31m+                 </div>[39m
+[31m+                 <div className='sm:col-span-2'>[39m
+[31m+                   <dt style={{ color: 'var(--color-on-surface-variant)' }}>Số CCCD</dt>[39m
+[31m+                   <dd className='mt-0.5 font-semibold' style={{ color: 'var(--color-on-surface)' }}>{result.cccdMasked || 'Không cung cấp'}</dd>[39m
+[31m+                 </div>[39m
+[31m+               </dl>[39m
+[31m+             </section>[39m
+[31m+[39m
+[31m+             {(result.jobTitle || result.positionTitle) && ([39m
+[31m+               <div>[39m
+[31m+                 <p className='font-semibold' style={{ color: 'var(--color-on-surface)' }}>{result.jobTitle ?? result.positionTitle}</p>[39m
+[31m+                 {result.positionTitle && result.jobTitle && ([39m
+[31m+                   <p className='text-sm' style={{ color: 'var(--color-on-surface-variant)' }}>{result.positionTitle}</p>[39m
+[31m+                 )}[39m
+[31m+                 {result.jobCode && <p className='mt-1 text-xs font-mono' style={{ color: 'var(--color-on-surface-variant)' }}>{result.jobCode}</p>}[39m
+[31m+               </div>[39m
+[31m+             )}[39m
+[31m+             <p className='text-sm' style={{ color: 'var(--color-on-surface-variant)' }}>{result.nextStep}</p>[39m
+[31m+             <p className='text-xs' style={{ color: 'var(--color-on-surface-variant)' }}>Ngày nộp: {formatDate(result.submittedAt)}</p>[39m
+[31m+           </article>[39m
+[31m+         )}[39m
+[31m+       </div>[39m
+[31m+     </div>[39m
+[31m+   );[39m
+[31m+ }[39m
+[31m+[39m
+
+[36m [2m❯[22m src/domains/applications/marketplace-inventory.static.test.ts:[2m350:18[22m[39m
+    [90m348| [39m  [34mit[39m([32m'trang track có nút Tra cứu nhìn thấy được và render ba field đối[39m…
+    [90m349| [39m    [35mconst[39m code [33m=[39m [34mstrip[39m([34mread[39m([33mTRACK_PAGE[39m))[33m;[39m
+    [90m350| [39m    [34mexpect[39m(code)[33m.[39m[34mtoContain[39m([32m"backgroundColor: 'var(--color-primary)'"[39m)[33m;[39m
+    [90m   | [39m                 [31m^[39m
+    [90m351| [39m    [34mexpect[39m(code)[33m.[39m[34mtoContain[39m([32m"{loading ? 'Đang tra...' : 'Tra cứu'}"[39m)[33m;[39m
+    [90m352| [39m    [34mexpect[39m(code)[33m.[39m[34mtoContain[39m([32m'{result.fullName}'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m102 passed[39m[22m[90m (103)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1589 passed[39m[22m[90m (1590)[39m
+[2m   Start at [22m 00:51:30
+[2m   Duration [22m 21.71s[2m (transform 1.15s, setup 0ms, collect 4.38s, tests 1.37s, environment 14ms, prepare 5.19s)[22m
+
+LANE_EXIT=1
+=== SAU khi chay: co bi ghi de giua luc chay khong? ===
+gio ket thuc = 00:51:51
+hash-object worktree app/globals.css = 7857401624944e0bc801f69843ce45778c6f50b7
+hash-object worktree test file     = 0a67b8d3aa25efb10fb0eaf2838fd05fdff0fe4c

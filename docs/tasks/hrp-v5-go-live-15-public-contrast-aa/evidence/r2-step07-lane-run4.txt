@@ -1,0 +1,164 @@
+=== R2-STEP-07 / LANE RUN 4 (sau khi ap DEC-21) — AC-13 ===
+lane canonical : npm run test:unit   ( = vitest run --config vitest.unit.config.ts )
+KHONG dung npx vitest run tran (doc DATABASE_URL tu .env = PRODUCTION, RQ-13 / RISK-07)
+thoi diem bat dau : 2026-09-03 09:26:39 +0700
+
+--- HASH TRUOC KHI CHAY (dinh danh chinh xac noi dung ma lane doc) ---
+  7857401624944e0bc801f69843ce45778c6f50b7  app/globals.css
+  e1280c5e8d65c7fa19cfc3db9cc5f21435b90ade  app/components/GlobalNavbar.tsx
+  98795af77541c04852e9cc032889be34a1bca288  app/(jobs)/track/page.tsx
+  3023b37b00484fda58be180761ee3f1b1bbdcc94  app/(jobs)/viec-lam/[slug]/page.tsx
+  fbff9efa4bb9437f33a3e6c785d01fa8ef79dd5f  app/(portal)/ve-chung-toi/page.tsx
+  6f63a6e1a4089ae2d369959926b82f482c6ed790  src/domains/job-board/components/apply-modal.tsx
+  5e0a76a89578c407af4538c4077cd380e333f3ee  src/domains/job-board/components/success-modal.tsx
+  0a67b8d3aa25efb10fb0eaf2838fd05fdff0fe4c  src/domains/job-board/public-ui-premium.static.test.ts
+  cb0a6c6460d6a761ef4b4a3c65e278a063db201e  src/domains/applications/marketplace-inventory.static.test.ts
+
+--- OUTPUT NGUYEN VAN ---
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [32m✓[39m src/domains/job-board/public-ui-premium.static.test.ts [2m([22m[2m63 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/assignment-placement.service.test.ts [2m([22m[2m65 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/domains/applications/marketplace-apply.routes.test.ts [2m([22m[2m31 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m src/shared/auth/vendor-object-scope.m1-08.route.test.ts [2m([22m[2m36 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m src/domains/commission/golden.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/domains/applications/marketplace-inventory.static.test.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 44[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-card-truth.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/domains/reconciliation/reconciliation-unit.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/ticket.service.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+[90mstdout[2m | src/shared/observability/logger.test.ts[2m > [22m[2mSchema — AC-03[2m > [22m[2msink can be reset to default without throwing
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-09-03T02:26:47.999Z","level":"info","event":"after_reset","requestId":"req","meta":{}}
+
+ [32m✓[39m src/shared/observability/logger.test.ts [2m([22m[2m73 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/shared/auth/api-boundary.static.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/submission.service.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-board-architecture.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/applications/marketplace-browse.routes.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/e2e-staffing-narrative.integration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/observability/middleware.test.ts [2m([22m[2m24 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/domains/applications/placement-panel.test.ts [2m([22m[2m26 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/shared/auth/permission-resolver.test.ts [2m([22m[2m82 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/assignment-placement.routes.test.ts [2m([22m[2m38 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+[90mstderr[2m | src/domains/security/single-domain-consolidation.test.ts[2m > [22m[2mC) login POST — same-origin landing + host-only cookie[2m > [22m[2mbad credentials / locked / malformed → 401 INVALID_CREDENTIALS and NO cookie
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-09-03T02:26:50.901Z","level":"warn","event":"auth.login.denied","requestId":null,"meta":{"route":"/api/auth/login","outcome":"user_not_found"}}
+{"schemaVersion":"1.0","timestamp":"2026-09-03T02:26:50.903Z","level":"warn","event":"auth.login.denied","requestId":null,"meta":{"route":"/api/auth/login","outcome":"password_mismatch"}}
+
+ [32m✓[39m src/domains/security/single-domain-consolidation.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m src/shared/security/rate-limit-guard.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/4role-jobboard.integration.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/security/rate-limit-config.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/4role-attendance.integration.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/auth/with-auth-scope.test.ts [2m([22m[2m39 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-detail.static.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/referral-guard.canonical.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/ui/design-tokens.static.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/applications/application-queue.service.test.ts [2m([22m[2m22 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/e2e-attendance-narrative.integration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/observability/error-reporter.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/auth/vendor-submissions.route.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/order.service.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/shared/observability/correlation-id.test.ts [2m([22m[2m28 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/mp1.contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/domains/security/statements-list.projection.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-board-route-json.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/shared/security/request-body.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/shared/security/rate-limit-adapters.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/domains/applications/conversion.service.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/idempotency.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 36[2mms[22m[39m
+ [32m✓[39m src/domains/security/response-projection.static.test.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/security/portal-domains.integration.test.ts [2m([22m[2m49 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/transfer.service.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/outbox.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/domains/payroll/calculateVietnameseTaxes.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-projection.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/shared/projection/manifest.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/shared/auth/with-authorized-db.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/shared/auth/webhook-payslip.route.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/shared/auth/attendance-adjustments.route.test.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/domains/applications/tracking-mask.routes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m prisma/migrations-permission-hygiene.static.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/domains/security/statements-generate.projection.route.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/applications/application.service.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/privacy/mask.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/auth/projects-master.route.test.ts [2m([22m[2m22 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/domains/security/security-matrix-portals.test.ts [2m([22m[2m18 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-portal.route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-detail.service.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/domains/security/workers-me.projection.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/applications/application-detail-mp3.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/auth/disputes.route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+[90mstdout[2m | src/domains/security/ctv-withdrawals.projection.route.test.ts[2m > [22m[2mPOST /api/ctv/withdrawals — self DTO omit ctvId (AC-08)[2m > [22m[2mCTV → 201, DTO omit ctvId; owner = session (KHÔNG nhận ctvId từ body)
+[22m[39m[withdrawals] created wd-1
+
+ [32m✓[39m src/domains/security/ctv-withdrawals.projection.route.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/domains/applications/screening.service.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/auth/clients-master.route.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/state-machine.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/auth/with-public-db.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/domains/applications/apply-helpers.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 45[2mms[22m[39m
+ [32m✓[39m src/shared/auth/statements-margin.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/taxonomy-unit.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/domains/security/workers-projection.contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/shared/auth/auth-context.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-select.static.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/shared/auth/cron-routes.route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/talent-pool.repo.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/shared/auth/vendors-master.route.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/auth/projects-clients-master.route.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/audit.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/shared/auth/push-subscribe.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/domains/applications/conversion.routes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/shared/auth/scopes/ctv-account-scope.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/domains/applications/screening.routes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/domains/commission/ctv-summary.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+[90mstderr[2m | src/shared/auth/require-permission.test.ts[2m > [22m[2mrequirePermission (RQ-05, DEC-05)[2m > [22m[2mWORKER thiếu CAN_APPROVE_PAYROLL → throw AuthError PERMISSION_DENIED
+[22m[39m{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+
+ [32m✓[39m src/shared/auth/require-permission.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+[90mstderr[2m | src/shared/auth/require-permission.test.ts[2m > [22m[2mrequireAnyPermission[2m > [22m[2mkhông code nào pass → throw PERMISSION_DENIED
+[22m[39m{"evt":"permission_denied_any","userId":"u-w-1","role":"WORKER","requiredCodes":["CAN_APPROVE_PAYROLL","CAN_EDIT_CONTRACT"]}
+
+ [32m✓[39m src/shared/auth/payroll.route.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/auth/public-read-guc.static.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/auth/finance-scope.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/domains/applications/status-machine.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/shared/auth/jwt.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/shared/auth/cron-auth.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/shared/auth/preauth-db.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/shared/auth/permission-catalog.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/auth/internal-webhook-auth.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/auth/session-adapter.test.ts [2m([22m[2m30 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/shared/auth/debug.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/referral-guard.service.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/domains/security/debug-route.contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/auth/me.route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/auth/user.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/lib/db.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 2[2mms[22m[39m
+ [32m✓[39m src/shared/utils/money.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/shared/auth/password.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 230[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m103 passed[39m[22m[90m (103)[39m
+[2m      Tests [22m [1m[32m1590 passed[39m[22m[90m (1590)[39m
+[2m   Start at [22m 09:26:42
+[2m   Duration [22m 23.69s[2m (transform 1.29s, setup 0ms, collect 6.15s, tests 1.30s, environment 13ms, prepare 5.44s)[22m
+
+LANE_EXIT=0
+
+--- HASH SAU KHI CHAY (chung minh khong tep nao bi ghi de giua luc do) ---
+  7857401624944e0bc801f69843ce45778c6f50b7  app/globals.css
+  e1280c5e8d65c7fa19cfc3db9cc5f21435b90ade  app/components/GlobalNavbar.tsx
+  98795af77541c04852e9cc032889be34a1bca288  app/(jobs)/track/page.tsx
+  3023b37b00484fda58be180761ee3f1b1bbdcc94  app/(jobs)/viec-lam/[slug]/page.tsx
+  fbff9efa4bb9437f33a3e6c785d01fa8ef79dd5f  app/(portal)/ve-chung-toi/page.tsx
+  6f63a6e1a4089ae2d369959926b82f482c6ed790  src/domains/job-board/components/apply-modal.tsx
+  5e0a76a89578c407af4538c4077cd380e333f3ee  src/domains/job-board/components/success-modal.tsx
+  0a67b8d3aa25efb10fb0eaf2838fd05fdff0fe4c  src/domains/job-board/public-ui-premium.static.test.ts
+  cb0a6c6460d6a761ef4b4a3c65e278a063db201e  src/domains/applications/marketplace-inventory.static.test.ts
+thoi diem ket thuc : 2026-09-03 09:27:07 +0700

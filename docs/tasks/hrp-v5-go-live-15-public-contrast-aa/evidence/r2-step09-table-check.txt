@@ -1,0 +1,56 @@
+=== R2-STEP-09 - kiem so cot moi bang markdown trong HANDOFF.md ===
+
+Ly do phai kiem: mot dau ong TRAN trong o bang pha so cot ma khong gate nao bao.
+Script dem dau ong bang cach quet tung ky tu va bo qua dau ong da escape,
+chu KHONG dung regex lookbehind.
+
+lenh: python scratch/gl15-md-table-check.py docs/tasks/hrp-v5-go-live-15-public-contrast-aa/HANDOFF.md
+
+--- output nguyen van ---
+so bang = 10
+  bang o dong 5      so dong=13   so ong header=3
+  bang o dong 25     so dong=5    so ong header=4
+  bang o dong 54     so dong=17   so ong header=4
+  bang o dong 79     so dong=18   so ong header=6
+  bang o dong 100    so dong=23   so ong header=8
+  bang o dong 130    so dong=7    so ong header=5
+  bang o dong 146    so dong=11   so ong header=5
+  bang o dong 187    so dong=13   so ong header=6
+  bang o dong 217    so dong=32   so ong header=4
+  bang o dong 252    so dong=4    so ong header=5
+SO LOI BANG = 0
+TABLE_CHECK_EXIT=0
+
+--- bat bien cua HANDOFF.md luc kiem ---
+  so dong = 257
+  so byte = 54282
+  hash    = 2d72713193969289f8e4aa84e582cadfc63af0dc
+  moi ma DEV xuat hien dung mot lan trong cot ID?
+    DEV-01 : 1 lan mo dong bang
+    DEV-02 : 1 lan mo dong bang
+    DEV-03 : 1 lan mo dong bang
+    DEV-04 : 1 lan mo dong bang
+    DEV-05 : 1 lan mo dong bang
+    DEV-06 : 1 lan mo dong bang
+    DEV-07 : 1 lan mo dong bang
+    DEV-08 : 1 lan mo dong bang
+    DEV-09 : 1 lan mo dong bang
+    DEV-10 : 1 lan mo dong bang
+    DEV-11 : 1 lan mo dong bang
+  moi ma AC xuat hien dung mot lan trong bang §3?
+    AC-01 : 1 lan mo dong bang
+    AC-02 : 1 lan mo dong bang
+    AC-03 : 1 lan mo dong bang
+    AC-04 : 1 lan mo dong bang
+    AC-05 : 1 lan mo dong bang
+    AC-06 : 1 lan mo dong bang
+    AC-07 : 1 lan mo dong bang
+    AC-08 : 1 lan mo dong bang
+    AC-09 : 1 lan mo dong bang
+    AC-10 : 1 lan mo dong bang
+    AC-11 : 1 lan mo dong bang
+    AC-12 : 1 lan mo dong bang
+    AC-13 : 1 lan mo dong bang
+    AC-14 : 1 lan mo dong bang
+    AC-15 : 1 lan mo dong bang
+  dong ket thuc = [> Handoff status: READY_FOR_AUDIT]

@@ -1,0 +1,78 @@
+== 1. KHOI @theme: byte-for-byte ==
+  HEAD  = 4133 ky tu
+  INDEX = 4133 ky tu   giong HEAD? True   <-- AC-10 cua go-live-15
+  WORKTREE = 2176 ky tu   giong HEAD? False   <-- hunk cua luong khac
+  so token: HEAD=76  INDEX=76  WORKTREE=56
+  token BIEN MAT o worktree so voi HEAD (29):
+     - --color-brand-dark
+     - --color-brand-red
+     - --color-focus-ring
+     - --color-line
+     - --color-primary-soft
+     - --color-success
+     - --color-success-soft
+     - --color-warning
+     - --color-warning-soft
+     - --ease-out
+     - --font-body
+     - --font-head
+     - --font-label
+     - --font-mono
+     - --radius-DEFAULT
+     - --radius-full
+     - --radius-lg
+     - --radius-md
+     - --radius-sm
+     - --radius-xl
+     - --shadow-card
+     - --shadow-card-hover
+     - --spacing-base
+     - --spacing-card-padding
+     - --spacing-container-margin
+     - --spacing-gutter
+     - --spacing-section-gap
+     - --t-fast
+     - --t-medium
+  token BIEN MAT o INDEX so voi HEAD: KHONG CO
+  token MOI o INDEX: KHONG CO
+  --color-primary:  HEAD=#f26522 | INDEX=#f26522 | WORKTREE=#a63b00
+  --color-background: HEAD=#faf9f7 | INDEX=#faf9f7 | WORKTREE=#fff8f6
+
+== 2. Sai khac INDEX vs HEAD: co nam GON trong ba khoi .hrp-btn-primary? ==
+  so dong THEM = 11   so dong BO = 1
+  hunk: @@ -309 +309 @@ body {
+  hunk: @@ -317,0 +318,7 @@ body {
+  hunk: @@ -325,0 +333,3 @@ body {
+  dong THEM khong nam trong ba khoi do = 0
+  dong BO: ['background-color: var(--color-primary);']
+
+== 3. Ba khoi trong ban GIAO (INDEX) ==
+  ----------------------------------------------------------------------
+   .hrp-btn-primary {
+     background-color: var(--color-primary-dark);
+     color: var(--color-on-primary);
+     cursor: pointer;
+     transition-property: transform, box-shadow, background-color, border-color;
+     transition-duration: var(--t-fast);
+     transition-timing-function: var(--ease-out);
+   }
+  ----------------------------------------------------------------------
+   .hrp-btn-primary:hover:not(:disabled) {
+     background-color: var(--color-primary-dark);
+        phai khac bang thu khac. Lop trang thai TRANG 10% (giua dai 8%-12% cua DEC-02):
+        hop thanh tren #a63b00 ra #af4f1a, chu trang tren do = 5.308:1, tren nguong
+        5.089:1 cua AC-02. Dung background-image nen KHONG them token nao va KHONG
+        phai cham transition-property (background-image khong nam trong allowlist
+     background-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1));
+     transform: scale(1.02);
+     box-shadow: var(--shadow-card);
+     transition-duration: var(--t-medium);
+   }
+  ----------------------------------------------------------------------
+   .hrp-btn-primary:active:not(:disabled) {
+     background-color: var(--color-primary-dark);
+     background-image: none;
+     transform: none;
+     box-shadow: none;
+   }
+DELIVERED_EXIT=0

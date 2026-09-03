@@ -1,0 +1,73 @@
+==============================================================================
+AC-03 avatar  |  app/components/GlobalNavbar.tsx
+-- BASELINE 397b026, dong contract trich dan --
+    26| function Avatar({ userId }: { userId: string }) {
+    27|   const initials = userId.slice(0, 2).toUpperCase();
+    28|   return (
+    29|     <div
+    30|       className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold select-none"
+    31|       style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+    32|       title={userId}
+    33|     >
+    34|       {initials}
+    35|     </div>
+    36|   );
+-- WORKTREE hien tai, dong tuong ung --
+    45|   return (
+    46|     <div
+    47|       className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold select-none"
+    48|       style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
+    49|       title={userId}
+==============================================================================
+AC-04 pill desktop  |  app/components/GlobalNavbar.tsx
+-- BASELINE 397b026, dong contract trich dan --
+   161|                         style={{ backgroundColor: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}
+-- WORKTREE hien tai, dong tuong ung --
+   197|                         style={{ backgroundColor: 'var(--color-primary-soft)', color: 'var(--color-primary-dark)' }}
+==============================================================================
+AC-04 pill mobile  |  app/components/GlobalNavbar.tsx
+-- BASELINE 397b026, dong contract trich dan --
+   264|                         style={{ backgroundColor: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}
+-- WORKTREE hien tai, dong tuong ung --
+   313|                         style={{ backgroundColor: 'var(--color-primary-soft)', color: 'var(--color-primary-dark)' }}
+==============================================================================
+AC-05 handler hover  |  app/components/GlobalNavbar.tsx
+-- BASELINE 397b026, dong contract trich dan --
+   112|                 onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-primary)')}
+-- WORKTREE hien tai, dong tuong ung --
+   143|                   onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-primary-dark)')}
+==============================================================================
+AC-08 ba icon  |  app/components/GlobalNavbar.tsx
+-- BASELINE 397b026, dong contract trich dan --
+   143|                   <span className="material-symbols-outlined text-base" style={{ color: 'var(--color-on-surface-variant)' }}>
+   179|                       <span className="material-symbols-outlined text-base">dashboard</span>
+   189|                       <span className="material-symbols-outlined text-base">logout</span>
+-- WORKTREE hien tai, dong tuong ung --
+   178|                     aria-hidden="true"
+   215|                       <span className="material-symbols-outlined text-base" aria-hidden="true">dashboard</span>
+   225|                       <span className="material-symbols-outlined text-base" aria-hidden="true">logout</span>
+==============================================================================
+AC-12 movers  |  src/domains/job-board/public-ui-premium.static.test.ts
+-- BASELINE 397b026, dong contract trich dan --
+   611|     expect(movers).toEqual(['.hrp-card:hover', '.hrp-btn-primary:hover:not(:disabled)']);
+-- WORKTREE hien tai, dong tuong ung --
+   663|   });
+==============================================================================
+AC-12 ba phep dem navbar  |  src/domains/job-board/public-ui-premium.static.test.ts
+-- BASELINE 397b026, dong contract trich dan --
+   302|     expect(count(nav, 'onMouseEnter')).toBe(3);
+   303|     expect(count(nav, 'currentTarget.style.backgroundColor')).toBe(4);
+   304|     // `transition-colors` 6 → 4: bỏ đúng hai cái trên nút xác thực (transition-colors
+   305|     // của Tailwind gồm cả `color`, ngoài allowlist RQ-23). Bốn cái còn lại nằm trên
+   306|     // nav link + menu người dùng — ngoài phạm vi, không được chạm.
+   307|     expect(count(nav, 'transition-colors')).toBe(4);
+   308|     expect(count(page, 'transition-colors')).toBe(0);
+-- WORKTREE hien tai, dong tuong ung --
+   302|     expect(count(nav, 'onMouseEnter')).toBe(3);
+   303|     expect(count(nav, 'currentTarget.style.backgroundColor')).toBe(4);
+   304|     // `transition-colors` 6 → 4: bỏ đúng hai cái trên nút xác thực (transition-colors
+   305|     // của Tailwind gồm cả `color`, ngoài allowlist RQ-23). Bốn cái còn lại nằm trên
+   306|     // nav link + menu người dùng — ngoài phạm vi, không được chạm.
+   307|     expect(count(nav, 'transition-colors')).toBe(4);
+   308|     expect(count(page, 'transition-colors')).toBe(0);
+LINEMAP_EXIT=0

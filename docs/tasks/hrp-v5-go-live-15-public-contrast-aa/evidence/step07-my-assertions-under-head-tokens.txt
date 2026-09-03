@@ -1,0 +1,26 @@
+do dai dai CSS cua round = 4036 ky tu
+== TEXT_PAIRS: hai dong go-live-15 them (nguong 4.5) ==
+  [PASS] '.hrp-btn-primary nghi': 6.468 >= 4.5
+  [PASS] ':hover nen duoi lop trang thai': 6.468 >= 4.5
+== UI_PAIRS: hai dong go-live-15 sua/them (nguong 3) ==
+  [PASS] 'nen nut / nen card': 6.468 >= 3
+  [PASS] 'nen nut / nen body': 6.147 >= 3
+== Phep dem SIET cua RQ-01 ==
+  [PASS] count(newCssCode,'var(--color-primary)'): 0.000 === 0
+  [PASS] newCssCode co 'background-color: var(--color-primary);': false === false
+  [PASS] newCssCode co 'background-color: var(--color-primary-dark);': true === true
+== Khang dinh MOI: nen HOP THANH cua hover (AC-02) ==
+  [PASS] tim thay lop trang thai trang: true === true
+  [PASS] alpha >= 0.08: 0.100 >= 0.08
+  [PASS] alpha <= 0.12: 0.100 <= 0.12
+  nen hop thanh THAT = #af4f1a
+  [PASS] chu trang tren nen hop thanh: 5.308 >= 5.089
+  [PASS] ':active' co 'background-image: none;': true === true
+== Ba hang rao cu PHAI GIU: RQ-10 va RQ-12 ==
+  [PASS] hexOf('--color-primary') van la #f26522: #f26522 === #f26522
+  [PASS] ratio(on-primary, primary) < 4.5 (cap ke thua): true === true
+  movers do lai = [".hrp-card:hover",".hrp-btn-primary:hover:not(:disabled)"]
+  [PASS] movers van dung hai phan tu: [".hrp-card:hover",".hrp-btn-primary:hover:not(:disabled)"] === [".hrp-card:hover",".hrp-btn-primary:hover:not(:disabled)"]
+
+SO KHANG DINH FAIL = 0
+MY_ASSERT_EXIT=0

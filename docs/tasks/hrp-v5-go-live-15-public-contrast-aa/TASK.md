@@ -8,17 +8,17 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.2` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` — Tier 1 quyết ngày 2026-09-03 trên spec `v1.2`, toàn bộ `AC-01`..`AC-15` PASS. **Bản `AUDIT.md` của Tier 3 bị TRẢ hai vòng và KHÔNG phải cơ sở của quyết định**: vòng một ghi `13` trên `15` AC bằng một mã checklist thay cho lệnh, vòng hai dán số sàn `5.578:1` của §6 cho bốn nền khác nhau trong khi §4 giống hệt từng byte, tức không lệnh mới nào chạy. Phép đo dựng nên resolution do Tier 1 tự chạy trên INDEX, script trong `evidence/`, xem §9.2 |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — independent auditor |
 | Baseline | `397b026` |
 | Modules | `app/globals.css`, `app/components/GlobalNavbar.tsx`, `app/(jobs)/track/page.tsx`, `app/(jobs)/viec-lam/[slug]/page.tsx`, `app/(portal)/ve-chung-toi/page.tsx`, `src/domains/job-board/components/apply-modal.tsx`, `src/domains/job-board/components/success-modal.tsx`, `src/domains/job-board/public-ui-premium.static.test.ts` |
 | ADR references | `hrp-v5-go-live-08-public-ui-premium` `RQ-09`/`RQ-13` — bảng cặp màu của 08 và lý do nó bỏ sót cặp nền nút; `docs/PLANNER_HANDOVER.md` §0 `next_command` |
-| Current execution round | `0` |
-| Current audit round | `0` |
-| Next gate | Giao `/code hrp-v5-go-live-15-public-contrast-aa`. Không có cửa chặn nào phía trước. Task này phải land TRƯỚC drill của `hrp-v5-go-live-07-marketplace-launch-proof`, vì 07 chứng nhận đúng những bề mặt mà task này sửa |
-| Updated | `2026-09-02 22:45 Asia/Bangkok` |
+| Current execution round | `2` |
+| Current audit round | `2` — Tier 3 tự đánh số `3` và `4` vì nó đếm tiếp hai vòng THỰC THI |
+| Next gate | Không còn cửa nào của task này. Tier 1 commit bản giao cùng artifact rồi push `main`. Sau khi 15 land: `hrp-v5-go-live-16-internal-contrast-focus` mở `STEP-01`, và drill của `hrp-v5-go-live-07-marketplace-launch-proof` chạy được trên bề mặt đã sửa |
+| Updated | `2026-09-03 11:40 Asia/Bangkok` |
 
 Task này sửa một lỗi tiếp cận đang in cho khách vô danh trên production: chữ trên nút chính và một số nhãn màu cam không đạt ngưỡng tương phản WCAG AA. Nó không thêm tính năng, không thêm token màu, không đổi bất kỳ khoá DTO hay đường dữ liệu nào.
 
@@ -236,7 +236,65 @@ Không câu nào chặn thực thi.
 
 ## 9. Planner Resolution
 
-Chưa có. Task ở `Current execution round: 0`, chưa có HANDOFF và chưa có AUDIT. Mục này do Tier 1 ghi sau khi đọc AUDIT.md thật của Tier 3, không phải sau khi nghe relay.
+**Verdict: `ACCEPTED` trên spec `v1.2`. Toàn bộ `AC-01`..`AC-15` PASS.**
+
+Bản giao của Tier 2 đạt. Nhưng bản `AUDIT.md` của Tier 3 KHÔNG phải cơ sở của quyết định này: nó bị TRẢ hai vòng liền, và phép đo dựng nên resolution này do Tier 1 tự chạy. Ghi rõ để người đọc sau không tưởng đây là một dây chuyền ba tier đủ khâu.
+
+### 9.1 Vì sao bản audit bị trả
+
+Vòng audit thứ nhất (Tier 3 tự đánh số `3`): `13` trên `15` AC ghi cột evidence là `C-10`, mà `C-10` là một ô trong checklist ở §7 chứ không phải một lệnh có output. Cả tài liệu chỉ có hai lệnh thật. Một hợp đồng về tỉ số tương phản mà không có một tỉ số nào.
+
+Vòng audit thứ hai (`4`): con số xuất hiện, nhưng `diff` giữa hai bản cho thấy §4 Independent Evidence GIỐNG HỆT từng byte — không lệnh mới nào được chạy. Bốn AC nằm trên bốn nền khác nhau đều nhận đúng một số `5.578:1`, tức số SÀN mà §6 của contract công bố sẵn, dán cho cả bốn. Riêng `AC-04` thì chính §6 đã ghi cặp ấy là `5.842:1`, nên số `5.578` không phải một phép đo lệch mà là một số copy sai chỗ. Đây đúng chữ ký "con số được SAO chứ không được ĐO" của `PLN-18`. Kèm một khẳng định sai về chính artifact của mình: báo cáo nói đã bỏ mâu thuẫn §5 với §7, trong khi §5 vẫn ghi không có coverage gap và §7 vẫn để `C-03`..`C-06` là SKIP.
+
+`verify-audit.ps1` trả `RESULT: PASS` exit `0` trên CẢ HAI bản. Một lần nữa: gate ấy kiểm cấu trúc, không kiểm phép đo.
+
+### 9.2 Phép đo độc lập của Tier 1
+
+Đo trên INDEX (`git show :path`), không đo worktree, không đọc lại HANDOFF. Script và output: `evidence/t1-round4-independent-measurement.txt`.
+
+| AC | Điểm đo trên INDEX | Cặp màu thật | Tỉ số | Ngưỡng | KL |
+|---|---|---|---|---|---|
+| `AC-01` | `.hrp-btn-primary` nghỉ, `globals.css:308-315` | `#ffffff` trên `#a63b00` | `6.468` | `4.5` | PASS |
+| `AC-02` | hover, lớp trắng `0.10` hợp thành ra `#af4f1a` | `#ffffff` trên `#af4f1a` | `5.308` | `5.089` | PASS |
+| `AC-03` | `track:95`, `apply-modal:184`, `success-modal:88` và `:138`, `GlobalNavbar:48` | `#ffffff` trên `#a63b00`, cả năm | `6.468` | `4.5` | PASS |
+| `AC-04` | pill vai trò `GlobalNavbar:197` và `:313`, cả hai nhánh | `#a63b00` trên `#fdf1ec` | `5.842` | `4.5` | PASS |
+| `AC-05` | handler hover `:143`, nền header là class `bg-surface` | `#a63b00` trên `#ffffff` | `6.468` | `4.5` | PASS |
+| `AC-06` | `viec-lam/[slug]:107` trên nền body | `#a63b00` trên `#faf9f7` | `6.147` | `4.5` | PASS |
+| `AC-06` | `success-modal:107` và `:115`, trong hộp `:73` | `#a63b00` trên `#e3e2e0` | `4.996` | `4.5` | PASS |
+| `AC-06` | `ve-chung-toi:62`, chữ `36px`/`48px` extrabold | `#a63b00` trên `#faf9f7` | `6.147` | `3` | PASS |
+| `AC-07` | hai control `track:87` và `:94`, vòng focus vẽ bằng `--color-focus-ring` | `#a63b00` kề `#ffffff` | `6.468` | `3` | PASS |
+
+Bảy AC còn lại không phải phép đo màu, đo bằng lệnh:
+
+| AC | Lệnh của Tier 1 | Số đo được | KL |
+|---|---|---|---|
+| `AC-08` | đọc ba phần tử `material-symbols-outlined` ở `:176`, `:215`, `:225` của bản INDEX | `3` trên `3` mang `aria-hidden="true"`. Ở phần tử thứ nhất thuộc tính nằm ở DÒNG RIÊNG `:178`, nên `grep` vào dòng class sẽ tưởng thiếu | PASS |
+| `AC-09` | đọc `aria-current` ở nhánh desktop `:136` và nhánh mobile `:282` | đúng một link mỗi nhánh, suy từ `usePathname()` qua `activeNavHref`, không hard-code. Dấu hiệu phi màu: `font-semibold underline underline-offset-8 decoration-2` và bản mobile tương ứng | PASS |
+| `AC-10` | tách khối `@theme` khỏi HEAD và khỏi INDEX bằng `awk` rồi `diff` | `121` dòng mỗi bên, `diff` rỗng exit `0`. `--color-primary` vẫn `#f26522`. Quét `--color-*:` trên dòng THÊM của cả tám tệp §4.2: không token mới nào | PASS |
+| `AC-11` | đọc `git diff --cached` của tệp test | `TEXT_PAIRS` có dòng MỚI cho trạng thái nghỉ; dòng `UI_PAIRS` ghim nền nút đã chuyển sang `--color-primary-dark`; phép đếm `var(--color-primary)` siết từ `1` xuống `0` | PASS |
+| `AC-12` | đọc `expect(movers).toEqual` và ba phép đếm navbar ở cả hai phía | `movers` ở `:663` nguyên văn hai phần tử cũ; ba phép đếm `3`/`4`/`4` không nằm trong hunk nào của diff | PASS |
+| `AC-13` | `npm run test:unit`, exit lấy bằng redirect | `103 passed (103)` tệp, `1590 passed (1590)` test, `LANE_EXIT=0`. Đây là lần chạy thứ hai của riêng Tier 1, không dùng log của tầng dưới | PASS |
+| `AC-14` | đọc bảng trước-sau trong HANDOFF của INDEX | `21` dòng, `7` cột, mỗi dòng có ngưỡng riêng kèm lý do cỡ chữ; dòng `ve-chung-toi:62` ghi rõ `3:1` và lý do chữ lớn | PASS |
+| `AC-15` | `git diff --cached --name-only`, `git status --porcelain`, `git log --oneline -1` | `45` path lúc Tier 2 giao = `8` tệp §4.2 cộng `1` tệp `DEC-21` mở cộng `36` tệp thuộc `docs/tasks/hrp-v5-go-live-15-public-contrast-aa/`. Thành `47` sau khi Tier 1 thêm chính `TASK.md` này và `evidence/t1-round4-independent-measurement.txt`, vẫn trong nhóm ba. Không nhóm thứ tư. Ba `AUDIT.md` của lane khác và `public/index.html` vẫn in `M` ở cột thứ hai, chưa từng bị stage. Commit của tầng dưới `= 0` | PASS |
+
+### 9.3 Tier 1 kiêm Tier 3 thì phải tự bác lại chính mình
+
+Resolution này tự-audit một contract do chính Tier 1 viết. Bốn chỗ đã cố ý đi tìm lỗi của mình thay vì xác nhận:
+
+- `AC-04` khẳng định hiện trạng pill là `2.848:1`. Đo lại trên HEAD: `:161` và `:264` đều là `--color-primary` trên `--color-primary-soft` = `2.848:1`. Contract đúng, và đây là một lỗi AA thật chứ không phải một con số trang trí.
+- `--color-focus-ring` có thể là token MỚI, tức vi phạm `AC-10` do chính Tier 2 gây. Đo: nó nằm trong khối `@theme` mà `diff` với HEAD rỗng, nên nó là token của baseline `go-live-08`, không phải hàng mới.
+- Nền của `viec-lam/[slug]:107` được suy chứ không được đọc. Đã kiểm: `app/(jobs)/layout.tsx` không tồn tại, `app/layout.tsx` để `body` trần, `globals.css:198` cho `background: var(--color-background)` = `#faf9f7`. Nền là số đã dùng.
+- `#e3e2e0` KHÔNG nằm trong năm nền sáng mà §6 công bố. Đó chính là ô mà một bản audit đi copy số của contract không thể ra đúng — và là lý do `4.996:1` là bằng chứng chứ `5.578:1` thì không.
+
+### 9.4 Deviation của Tier 2 — nhận cả ba
+
+- `DEV-03`: §6 gợi ý đo `success-modal:107` và `:115` trên nền panel ngoài, trong khi hai chỗ ấy nằm trong hộp `--color-surface-variant`. Tier 2 đo trên `#e3e2e0` và ghi rõ. Nhận: đúng, và `v1.1` đã sửa đúng lỗi ấy ở `EV-09` nhưng chưa mở rộng phần đầu §6.
+- `DEV-11`: tiền đề của lệnh vòng 2 về bảng token lạ trong worktree là SAI. Nhận: Tier 1 đã tự xác nhận bằng hash, nguyên nhân là không chạy `git stash list` trước khi mô tả cây làm việc cho tầng dưới.
+- `DEV-09`: bản giao nằm ở INDEX nên `git diff` trần in rỗng. Nhận: đây đúng là lỗ mà `v1.1` bịt ở `AC-10`.
+
+### 9.5 Điều khoản còn treo, không chặn task này
+
+Cặp `--color-on-primary` trên `--color-primary` ở `3.153:1` vẫn còn người dùng NGOÀI §4.2: `src/domains/job-board/components/detail-apply-cta.tsx`, `app/(auth)/login/login-form.tsx`, và dải CSS `.pub-*` đã chết. Hai khẳng định khoá giá trị token trong tệp test giữ nguyên vì `RQ-10` cấm đổi giá trị token. Đây là phạm vi của một contract sau, không phải nợ của task này.
 
 ## 10. Revision Log
 
@@ -245,3 +303,4 @@ Chưa có. Task ở `Current execution round: 0`, chưa có HANDOFF và chưa c�
 | `v1.0` | 2026-09-02 | Bản đầu. Sinh ra từ một lượt quét tương phản do Tier 1 tự chạy trên `app` và `src`, cộng hai quyết định của Owner: hướng sửa nút chính là nền `#a63b00` chữ trắng, và phạm vi cắt còn bề mặt công khai cộng `GlobalNavbar`. Ghi nguyên nhân gốc ở `EV-14`: bảng đo tương phản của go-live-08 chỉ chứa các cặp mà chính 08 tạo ra, nên cặp ở trạng thái nghỉ của nút chính chưa bao giờ được đo |
 | `v1.1` | 2026-09-03 | Sửa BA lỗi của chính contract, phát hiện khi Tier 1 tự đo lại HANDOFF vòng 1. Một: `AC-13` và `AC-15` không thể cùng thoả vì một dòng test ngoài phạm vi ghim mặt chữ tên token của cái nút `RQ-03` buộc đổi — mở bằng `DEC-21`, hẹp đúng một dòng, đã quét xác nhận không còn chỗ nào khác như vậy. Hai: `EV-09` đo viền nút "Sao chép link" trên `#ffffff` của panel ngoài trong khi nó nằm trong hộp `#e3e2e0`, nên hiện trạng là `2.436:1` ĐÃ trượt chứ không phải `3.153:1` đạt; câu "không được ghi viền thành lỗi" là một chỉ thị bỏ qua lỗi thật, đã bỏ. Ba: `AC-10` dùng `git diff` trần, trả RỖNG khi Tier 2 đã stage nên xanh oan, và đọc phải bảng token của lane khác trong worktree; đổi sang đo INDEX. Không thay đổi phạm vi công việc, không thêm requirement |
 | `v1.2` | 2026-09-03 | Sửa lỗi thứ tư của contract, phát hiện khi Tier 1 tự đếm INDEX sau vòng 2. `AC-15` đòi "danh sách file thay đổi là tập con của §4.2", nhưng pipeline BUỘC Tier 2 ghi HANDOFF cộng evidence, mà `docs/tasks/hrp-v5-go-live-15-public-contrast-aa/**` không nằm trong §4.2 — nên AC này bất khả thoả với mọi bản giao đúng quy trình, và một Tier 3 đọc đúng mặt chữ phải BLOCK oan. Đo được: index vòng 2 có `42` path = `9` mã cộng `33` văn bản của chính task. Sửa thành ba nhóm tường minh, thêm điều kiện chặn nhóm thứ tư nên vẫn không nới quyền chạm tệp lạ. Không đổi phạm vi, không thêm requirement |
+| `v1.2` | 2026-09-03 | ĐÓNG. Tier 1 ghi §9 Planner Resolution: `ACCEPTED`, `AC-01`..`AC-15` PASS, đo độc lập trên INDEX. Spec KHÔNG bump ở lượt này — resolution không phải một thay đổi hợp đồng, và bump lúc ghi resolution là cấm theo `DEC-17` của go-live-05. Hai vòng `AUDIT.md` của Tier 3 bị trả, lý do và chữ ký "số được SAO chứ không được ĐO" ghi ở §9.1 |

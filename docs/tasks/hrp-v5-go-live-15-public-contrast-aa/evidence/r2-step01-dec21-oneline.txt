@@ -1,0 +1,43 @@
+=== R2-STEP-01 / DEC-21 — sua dung MOT dong ngoai §4.2 ===
+
+-- tep --
+   src/domains/applications/marketplace-inventory.static.test.ts
+
+-- bat bien truoc va sau --
+   so dong        : 393 -> 393
+   so byte        : 24026 -> 24031  (+5 = do dai chuoi '-dark')
+   so 'it('       : 26 -> 26   (khong them, khong xoa, khong doi ten test)
+   so 'describe(' : 5 -> 5
+   blob           : a0e5c43 -> cb0a6c6
+
+-- numstat --
+   1	1	src/domains/applications/marketplace-inventory.static.test.ts
+
+-- diff nguyen van (mot hunk, mot dong) --
+   diff --git a/src/domains/applications/marketplace-inventory.static.test.ts b/src/domains/applications/marketplace-inventory.static.test.ts
+   index a0e5c43..cb0a6c6 100644
+   --- a/src/domains/applications/marketplace-inventory.static.test.ts
+   +++ b/src/domains/applications/marketplace-inventory.static.test.ts
+   @@ -347,7 +347,7 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
+    
+      it('trang track có nút Tra cứu nhìn thấy được và render ba field đối chiếu', () => {
+        const code = strip(read(TRACK_PAGE));
+   -    expect(code).toContain("backgroundColor: 'var(--color-primary)'");
+   +    expect(code).toContain("backgroundColor: 'var(--color-primary-dark)'");
+        expect(code).toContain("{loading ? 'Đang tra...' : 'Tra cứu'}");
+        expect(code).toContain('{result.fullName}');
+        expect(code).toContain("{result.phoneMasked || 'Không cung cấp'}");
+
+-- chuoi var(--color-primary) TRAN con lai trong tep --
+   so lan = 0   (ky vong 0)
+-- chuoi var(--color-primary-dark) --
+   350:    expect(code).toContain("backgroundColor: 'var(--color-primary-dark)'");
+
+=== pham vi INDEX sau khi add ===
+   tong so path = 32
+   nhom A (ma trong §4.2)              = 8
+   nhom A2 (mot tep do DEC-21 mo)      = 1
+   nhom B (van ban cua chinh task)     = 23
+
+-- tep nhom A2 la dung mot tep ma DEC-21 neu ten? --
+   src/domains/applications/marketplace-inventory.static.test.ts

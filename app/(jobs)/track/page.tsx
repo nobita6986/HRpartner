@@ -84,15 +84,15 @@ export default function TrackPage() {
             placeholder='VD: APP-XXXX-XXXX'
             autoComplete='off'
             spellCheck={false}
-            className='min-w-0 flex-1 rounded-xl border px-4 py-3 font-mono focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
-            style={{ borderColor: 'var(--color-outline)', backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)', outlineColor: 'var(--color-primary)' }}
+            className='hrp-focus min-w-0 flex-1 rounded-xl border px-4 py-3 font-mono'
+            style={{ borderColor: 'var(--color-outline)', backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}
             aria-label='Mã tra cứu'
           />
           <button
             type='submit'
             disabled={loading || !code.trim()}
-            className='min-w-32 rounded-xl px-6 py-3 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
-            style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)', outlineColor: 'var(--color-primary)' }}
+            className='hrp-focus min-w-32 rounded-xl px-6 py-3 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+            style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
           >
             {loading ? 'Đang tra...' : 'Tra cứu'}
           </button>

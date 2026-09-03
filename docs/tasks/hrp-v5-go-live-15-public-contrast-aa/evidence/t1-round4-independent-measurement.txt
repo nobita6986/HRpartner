@@ -1,0 +1,91 @@
+=== t1-round4-independent-measurement ===
+Tier 1 tu do lai contract 15, KHONG dung AUDIT.md cua Tier 3.
+Nguon so lieu: INDEX (git show :path), khong phai worktree.
+Ngay: 2026-09-03  |  HEAD: 51936a7
+
+--- [1] script: scratch/t1r4/measure.py (nguyen van) ---
+def lum(h):
+    h = h.lstrip('#')
+    c = [int(h[i:i+2], 16)/255 for i in (0, 2, 4)]
+    c = [x/12.92 if x <= 0.03928 else ((x+0.055)/1.055)**2.4 for x in c]
+    return 0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2]
+
+def ratio(a, b):
+    la, lb = lum(a), lum(b)
+    return (max(la, lb)+0.05)/(min(la, lb)+0.05)
+
+def composite(layer, alpha, base):
+    p = lambda h, i: int(h.lstrip('#')[i:i+2], 16)
+    out = [round(p(layer, i)*alpha + p(base, i)*(1-alpha)) for i in (0, 2, 4)]
+    return '#' + ''.join(f'{v:02x}' for v in out)
+
+PD, W, SOFT, SURF, BG, SVAR = '#a63b00', '#ffffff', '#fdf1ec', '#ffffff', '#faf9f7', '#e3e2e0'
+hov = composite(W, 0.10, PD)
+
+rows = [
+    ('AC-01', 'nen NGHI .hrp-btn-primary', 'W on #a63b00', ratio(W, PD), 4.5),
+    ('AC-02', f'hover hop thanh {hov}', f'W on {hov}', ratio(W, hov), 5.089),
+    ('AC-03a', 'track/page.tsx:95', 'W on #a63b00', ratio(W, PD), 4.5),
+    ('AC-03b', 'apply-modal.tsx:184', 'W on #a63b00', ratio(W, PD), 4.5),
+    ('AC-03c', 'success-modal.tsx:88', 'W on #a63b00', ratio(W, PD), 4.5),
+    ('AC-03d', 'success-modal.tsx:138', 'W on #a63b00', ratio(W, PD), 4.5),
+    ('AC-03e', 'GlobalNavbar avatar :48', 'W on #a63b00', ratio(W, PD), 4.5),
+    ('AC-04a', 'pill desktop :197', '#a63b00 on #fdf1ec', ratio(PD, SOFT), 4.5),
+    ('AC-04b', 'pill mobile :313', '#a63b00 on #fdf1ec', ratio(PD, SOFT), 4.5),
+    ('AC-05', 'header hover :143 tren bg-surface', '#a63b00 on #ffffff', ratio(PD, SURF), 4.5),
+    ('AC-06a', 'viec-lam/[slug]:107 tren body bg', '#a63b00 on #faf9f7', ratio(PD, BG), 4.5),
+    ('AC-06b', 'success-modal:107 trong hop :73', '#a63b00 on #e3e2e0', ratio(PD, SVAR), 4.5),
+    ('AC-06c', 'success-modal:115 trong hop :73', '#a63b00 on #e3e2e0', ratio(PD, SVAR), 4.5),
+    ('AC-06d', 've-chung-toi:62 chu 36-48px extrabold', '#a63b00 on #faf9f7', ratio(PD, BG), 3.0),
+    ('AC-07a', 'track input :87 hrp-focus', 'ring #a63b00 on #ffffff', ratio(PD, SURF), 3.0),
+    ('AC-07b', 'track button :94 hrp-focus', 'ring #a63b00 on #ffffff', ratio(PD, SURF), 3.0),
+]
+print(f"{'AC':8} {'diem do':42} {'cap mau':26} {'ti so':>8} {'nguong':>7}  KL")
+for ac, where, pair, r, thr in rows:
+    print(f"{ac:8} {where:42} {pair:26} {r:8.3f} {thr:7.3f}  {'PASS' if r >= thr else 'FAIL'}")
+print()
+print('doi chieu hien trang baseline:')
+for lbl, a, b in [('nut chinh cu W/#f26522', W, '#f26522'),
+                  ('pill cu on-surface-variant/#fdf1ec', '#594138', SOFT),
+                  ('vong focus cu #f26522/#faf9f7', '#f26522', BG)]:
+    print(f'  {lbl:38} {ratio(a, b):.3f}:1')
+
+--- [2] output: PYTHONIOENCODING=utf-8 python scratch/t1r4/measure.py ---
+AC       diem do                                    cap mau                       ti so  nguong  KL
+AC-01    nen NGHI .hrp-btn-primary                  W on #a63b00                  6.468   4.500  PASS
+AC-02    hover hop thanh #af4f1a                    W on #af4f1a                  5.308   5.089  PASS
+AC-03a   track/page.tsx:95                          W on #a63b00                  6.468   4.500  PASS
+AC-03b   apply-modal.tsx:184                        W on #a63b00                  6.468   4.500  PASS
+AC-03c   success-modal.tsx:88                       W on #a63b00                  6.468   4.500  PASS
+AC-03d   success-modal.tsx:138                      W on #a63b00                  6.468   4.500  PASS
+AC-03e   GlobalNavbar avatar :48                    W on #a63b00                  6.468   4.500  PASS
+AC-04a   pill desktop :197                          #a63b00 on #fdf1ec            5.842   4.500  PASS
+AC-04b   pill mobile :313                           #a63b00 on #fdf1ec            5.842   4.500  PASS
+AC-05    header hover :143 tren bg-surface          #a63b00 on #ffffff            6.468   4.500  PASS
+AC-06a   viec-lam/[slug]:107 tren body bg           #a63b00 on #faf9f7            6.147   4.500  PASS
+AC-06b   success-modal:107 trong hop :73            #a63b00 on #e3e2e0            4.996   4.500  PASS
+AC-06c   success-modal:115 trong hop :73            #a63b00 on #e3e2e0            4.996   4.500  PASS
+AC-06d   ve-chung-toi:62 chu 36-48px extrabold      #a63b00 on #faf9f7            6.147   3.000  PASS
+AC-07a   track input :87 hrp-focus                  ring #a63b00 on #ffffff       6.468   3.000  PASS
+AC-07b   track button :94 hrp-focus                 ring #a63b00 on #ffffff       6.468   3.000  PASS
+
+doi chieu hien trang baseline:
+  nut chinh cu W/#f26522                 3.153:1
+  pill cu on-surface-variant/#fdf1ec     8.476:1
+  vong focus cu #f26522/#faf9f7          2.997:1
+EXIT=0
+
+--- [3] doi chieu HIEN TRANG tren baseline 397b026 (chung minh defect co that) ---
+hien trang HEAD 397b026, cap bi contract to la trươt:
+  pill vai tro GlobalNavbar:161/:264     #f26522 / #fdf1ec  2.848:1  nguong 4.5  FAIL
+  nen nghi .hrp-btn-primary              #ffffff / #f26522  3.153:1  nguong 4.5  FAIL
+  vong focus inline track/page           #f26522 / #faf9f7  2.997:1  nguong 3.0  FAIL
+  vien Sao chep link trong hop #e3e2e0   #f26522 / #e3e2e0  2.436:1  nguong 3.0  FAIL
+EXIT=0
+
+--- [4] AC-13 lane canonical do lai boi Tier 1 (khong doc HANDOFF) ---
+ Test Files  103 passed (103)
+LANE_EXIT=0
+  Tests: 1590 passed (1590)
+
+=== het ===

@@ -59,7 +59,7 @@ export default function VeChungToiPage() {
             style={{ letterSpacing: '-0.02em', color: 'var(--color-on-surface)', maxWidth: '760px' }}
           >
             Một hệ thống cho toàn bộ nghiệp vụ{' '}
-            <em className="not-italic" style={{ color: 'var(--color-primary)' }}>
+            <em className="not-italic" style={{ color: 'var(--color-primary-dark)' }}>
               cung ứng nhân sự
             </em>
             .
@@ -79,7 +79,7 @@ export default function VeChungToiPage() {
             <a
               href="/ve-hrp.html"
               className="inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-xl text-white transition-all hover:-translate-y-0.5 hover:shadow-md"
-              style={{ backgroundColor: 'var(--color-primary)' }}
+              style={{ backgroundColor: 'var(--color-primary-dark)' }}
             >
               Tìm hiểu về HRP
             </a>

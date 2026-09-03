@@ -1,0 +1,48 @@
+=== git diff --cached HEAD -- app/globals.css  (nguyen van) ===
+diff --git a/app/globals.css b/app/globals.css
+index 9b9d63f..7857401 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -306,7 +306,7 @@ body {
+ 
+ /* --- Nút — RQ-09 -------------------------------------------------------- */
+ .hrp-btn-primary {
+-  background-color: var(--color-primary);
++  background-color: var(--color-primary-dark);
+   color: var(--color-on-primary);
+   cursor: pointer;
+   transition-property: transform, box-shadow, background-color, border-color;
+@@ -315,6 +315,13 @@ body {
+ }
+ .hrp-btn-primary:hover:not(:disabled) {
+   background-color: var(--color-primary-dark);
++  /* go-live-15 / RQ-02 - DEC-02: nen NGHI nay da la --color-primary-dark, nen hover
++     phai khac bang thu khac. Lop trang thai TRANG 10% (giua dai 8%-12% cua DEC-02):
++     hop thanh tren #a63b00 ra #af4f1a, chu trang tren do = 5.308:1, tren nguong
++     5.089:1 cua AC-02. Dung background-image nen KHONG them token nao va KHONG
++     phai cham transition-property (background-image khong nam trong allowlist
++     RQ-23 cua go-live-08). Hai dau hieu hover cu - scale va bong - giu nguyen. */
++  background-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1));
+   transform: scale(1.02);
+   box-shadow: var(--shadow-card);
+   transition-duration: var(--t-medium);
+@@ -323,6 +330,9 @@ body {
+    phân biệt với hover mà không phải thêm một chuyển động mới nào. */
+ .hrp-btn-primary:active:not(:disabled) {
+   background-color: var(--color-primary-dark);
++  /* Nhan: bo lop trang thai de nen tro lai muc dam dac - dau hieu thu ba, canh
++     bong phang lai va bo phan nang. */
++  background-image: none;
+   transform: none;
+   box-shadow: none;
+ }
+
+=== numstat ===
+11	1	app/globals.css
+
+=== dem lai cho ro rang: dong THEM khai bao custom property ===
+   so dong them dang '--ten:' = 0
+=== dong THEM chua chu transform ===
+   = 0
+=== dong THEM mo selector moi (ket thuc bang { ) ===
+   = 0

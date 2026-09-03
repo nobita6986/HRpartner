@@ -1,0 +1,13 @@
+=== AC-02 / AC-10 — dong THEM co khai bao ten token MOI nao khong? ===
+-- moi dong THEM cua ca 8 tep co dang '--ten:' (khai bao custom property) --
+
+-- dong THEM co tao selector MOI chua transform? --
+   so dong them chua chu transform = 0
+
+=== canh bao 2 cua Owner — Avatar KHONG duoc nhan .hrp-btn-primary ===
+so lan 'hrp-btn-primary' trong navbar:  HEAD = 2   ban giao = 2
+-- khoi Avatar trong ban giao: co chu hrp-btn-primary khong? --
+   so lan = 0
+
+=== cap 'hrp-btn-primary + nav-item-lift' ma test :617-627 ghim ===
+   so lan hai class di cung nhau = 2
