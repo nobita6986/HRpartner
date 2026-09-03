@@ -7,7 +7,7 @@
 | Task slug | `hrp-v5-go-live-18-public-surface-hardening` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.1` |
+| Spec version | `v1.2` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
@@ -17,8 +17,8 @@
 | ADR references | `hrp-v5-go-live-07-marketplace-launch-proof` `DEC-18` — nhánh `404` của tracking thiếu `no-store`, dư nợ mà task này nhận; `hrp-v5-go-live-13-tracking-pii-mask` `F-06` — assertion phủ định chống hồi quy, chuyển sang task này kèm lý do ở `DEC-07`; `hrp-v5-ops-06a-launch-hardening` — nguồn của limiter phân tán và của bài học limiter theo instance |
 | Current execution round | `0` |
 | Current audit round | `0` |
-| Next gate | `/code` giao được ngay. Không phụ thuộc DB, không migration, không cần Owner quyết gì |
-| Updated | `2026-09-03 18:05 Asia/Bangkok` |
+| Next gate | `/code` giao GỘP một lượt cùng 17 và test-01 theo quyết định `03/09` của Owner, và task này chạy TRƯỚC hai contract kia trong lô. Không phụ thuộc DB, không migration, không cần Owner quyết gì |
+| Updated | `2026-09-03 22:35 Asia/Bangkok` |
 
 Task này bịt bốn lỗ trên bề mặt công khai, cả bốn đã được đo chứ không phỏng đoán:
 
@@ -110,13 +110,14 @@ Mọi phép đo dưới đây chạy trên baseline ghi ở `0. Control` bằng 
 
 ### 4.2 Scope boundaries
 
-Được chạm, và chỉ ba nhóm sau:
+Được chạm, và chỉ bốn nhóm sau:
 
 1. Bốn tệp mã liệt kê ở `Modules` không phải tệp hàng rào mới.
 2. Hai tệp hàng rào mới: `src/shared/security/public-surface-limiter.static.test.ts` và `src/domains/applications/tracking-pii-containment.static.test.ts`.
 3. Artifact của chính task: `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md` cộng mọi tệp dưới `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/`.
+4. Path đã khai ở `Modules` hoặc ở mục phạm vi của hai contract CÙNG LÔ: `hrp-v5-go-live-17-rls-required-relation-sweep` và `hrp-v5-test-01-browser-lane`. Nhóm này CÓ MẶT trong cây làm việc vì Owner giao ba contract trong MỘT lượt theo quyết định `03/09`, nhưng nó KHÔNG thuộc bản giao của task này: Tier 2 không được sửa chúng khi đang làm task này, và `HANDOFF.md` của task này không được kể chúng là công của mình.
 
-Cấm chạm: `middleware.ts`, `src/shared/security/rate-limit-port.ts`, `src/shared/security/rate-limit-identity.ts`, `src/shared/security/rate-limit-provider.ts`, `src/domains/applications/application.service.ts`, `src/shared/privacy/mask.ts`, bốn tệp route ở `EV-04` trừ đúng tệp tracking, `src/domains/job-board/public.service.ts`, `prisma/`, `app/globals.css`, `package.json`, mọi cấu hình vitest. Xuất hiện một nhóm thứ tư là FAIL.
+Cấm chạm: `middleware.ts`, `src/shared/security/rate-limit-port.ts`, `src/shared/security/rate-limit-identity.ts`, `src/shared/security/rate-limit-provider.ts`, `src/domains/applications/application.service.ts`, `src/shared/privacy/mask.ts`, bốn tệp route ở `EV-04` trừ đúng tệp tracking, `src/domains/job-board/public.service.ts`, `prisma/`, `app/globals.css`, mọi cấu hình vitest. Xuất hiện một path ngoài bốn nhóm trên là FAIL. `package.json` cộng `package-lock.json` thuộc quyền của `hrp-v5-test-01-browser-lane` trong cùng lô: task này vẫn KHÔNG được sửa hai tệp đó, nhưng sự có mặt của chúng trong cây làm việc KHÔNG phải defect của task này.
 
 ### 4.3 Data, State, Permission và Interface Rules
 
@@ -142,7 +143,7 @@ Cấm chạm: `middleware.ts`, `src/shared/security/rate-limit-port.ts`, `src/sh
 | `STEP-09` | Kiểm `RQ-09`: `git status --porcelain src/domains/job-board/public.service.ts src/shared/security/rate-limit-port.ts middleware.ts` | Output RỖNG cho cả ba đường dẫn |
 | `STEP-11` | Đo lại `EV-11` tới `EV-14` bằng `grep -rn hrp_public_tracking_profile` trên `src` và `app` bỏ test, cộng `grep -c "row.phone"` và `grep -c "row.cccd_number"` trên `src/domains/applications/application.service.ts`, cộng đọc thân `PublicTrackingDto` | Bốn con số thật: `1` tệp, `1` lần `row.phone`, `1` lần `row.cccd_number`, `11` khoá DTO không có khoá thô. Lệch thì ghi thành finding, không im lặng |
 | `STEP-12` | Viết `src/domains/applications/tracking-pii-containment.static.test.ts` theo `RQ-11` và `RQ-12`, rồi chạy `npx vitest run --config vitest.unit.config.ts src/domains/applications/tracking-pii-containment.static.test.ts` | Tệp hàng rào mới cộng output kèm mã thoát. Hàng rào XANH trên cây hiện tại, và fixture âm chứng minh nó bắt được vi phạm |
-| `STEP-10` | Chạy lại `npm run test:unit` và `npm run typecheck`, so số test PASS với mốc của `STEP-01`. Kiểm phạm vi bằng `git status --porcelain` cộng `git diff --cached --numstat`. Ghi `HANDOFF.md` cộng `evidence/`, trong đó có dòng giới hạn CÓ TÊN của `RQ-04`, rồi `git add` NGAY. **KHÔNG commit, KHÔNG push, KHÔNG deploy** | Hai output kèm mã thoát, danh sách path đầy đủ phân đúng ba nhóm của `4.2`, và `HANDOFF.md` với mọi lệnh, mã thoát, output thật |
+| `STEP-10` | Chạy lại `npm run test:unit` và `npm run typecheck`, so số test PASS với mốc của `STEP-01`. Kiểm phạm vi bằng `git status --porcelain` cộng `git diff --cached --numstat`. Ghi `HANDOFF.md` cộng `evidence/`, trong đó có dòng giới hạn CÓ TÊN của `RQ-04`, rồi `git add` NGAY. **KHÔNG commit, KHÔNG push, KHÔNG deploy** | Hai output kèm mã thoát, danh sách path đầy đủ phân đúng bốn nhóm của `4.2`, và `HANDOFF.md` với mọi lệnh, mã thoát, output thật |
 
 ## 6. Acceptance Criteria
 
@@ -161,8 +162,8 @@ Cấm chạm: `middleware.ts`, `src/shared/security/rate-limit-port.ts`, `src/sh
 | `AC-11` | `git diff --cached -- app/api/public/applications/[trackingCode]/route.ts` cộng `git diff --cached --numstat -- app/api/public/applications/[trackingCode]/route.ts` | Nhánh `404` có `Cache-Control: no-store`. Diff không thêm khoá nào vào thân `404`, không sửa nhánh `200`, và tổng số dòng đổi không vượt `4` |
 | `AC-12` | `git diff --cached -- src/domains/applications/marketplace-inventory.static.test.ts` cộng output của `STEP-08` | Có ít nhất hai assertion phủ định mới theo `DEC-08`. Hai dòng `:353` và `:354` còn nguyên trong bản mới. Lane con exit `0`, tức assertion phủ định không viết rộng tới mức bắt luôn khoá đã che |
 | `AC-13` | `git status --porcelain src/domains/job-board/public.service.ts middleware.ts src/shared/security/rate-limit-identity.ts` cộng `git diff --cached --name-only -- prisma/` | Cả bốn RỖNG. Một dòng thuộc `public.service.ts`, `middleware.ts` hay `prisma/` là FAIL toàn task |
-| `AC-14` | `npm run test:unit` rồi `npm run typecheck`, lấy mã thoát bằng redirect chứ không sau ống | Cả hai exit `0`. Số test PASS không nhỏ hơn mốc của `STEP-01`. Mọi dòng đỏ, nếu có, được phân loại từng dòng thành hồi quy hay test cũ chưa đảo |
-| `AC-15` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm | Mọi path thuộc đúng một trong ba nhóm của `4.2`: bốn tệp mã ở `Modules`, hai tệp hàng rào mới, và `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/**`. Xuất hiện nhóm thứ tư là FAIL. Không có commit mới nào so với baseline |
+| `AC-14` | `npm run test:unit` rồi `npm run typecheck`, lấy mã thoát bằng redirect chứ không sau ống | Cả hai exit `0`. Số test PASS không nhỏ hơn mốc của `STEP-01`. Mọi dòng đỏ, nếu có, được phân loại từng dòng thành hồi quy hay test cũ chưa đảo. Nếu một dòng đỏ nằm ở path đã khai của một contract cùng lô thì đó là defect của contract ấy, không phải của task này, và `HANDOFF.md` phải nói rõ contract nào |
+| `AC-15` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm theo `4.2`. Cộng `git status --porcelain` chạy riêng trên từng đường dẫn ở cột cấm chạm. Cộng `git log --oneline -1` | Mọi path thuộc đúng một trong bốn nhóm của `4.2`, và nhóm bốn KHÔNG chứa tệp nào của nhóm một hay nhóm hai. Mọi đường dẫn cấm chạm cho output RỖNG. `HEAD` bằng baseline, tức không có commit mới nào so với baseline |
 | `AC-16` | `ls src/domains/applications/tracking-pii-containment.static.test.ts` cộng `npx vitest run --config vitest.unit.config.ts src/domains/applications/tracking-pii-containment.static.test.ts` | Tệp tồn tại, lane con exit `0` |
 | `AC-17` | Đọc mã hàng rào mới, cộng `grep -c "application.service" src/domains/applications/tracking-pii-containment.static.test.ts` | Cả ba mệnh đề của `DEC-11` có mặt: đếm tệp tham chiếu bằng `1`, đếm `row.phone` bằng `1` và bị bọc bởi `maskPhone(`, đếm `row.cccd_number` bằng `1` và bị bọc bởi `maskCccd(`, và thân `PublicTrackingDto` không có khoá thô. Tập tệp do mã TỰ SUY bằng cách quét cây; đường dẫn service xuất hiện dưới dạng literal nhiều nhất `1` lần và chỉ để đối chiếu kết quả quét, không thay cho phép quét. Phép quét phủ cả `src/` và `app/` |
 | `AC-18` | Đọc mã hàng rào mới tìm assertion phủ định và fixture âm, cộng output của `STEP-12` | Assertion phủ định neo vào `row.phone` và `row.cccd_number`, KHÔNG neo vào chuỗi `phone` hay `normalizedPhone` trần. Có ít nhất một `it(` chạy detector trên chuỗi nguồn giả dùng `row.phone` TRẦN và khẳng định detector BẮT được nó. Lane con exit `0`, tức assertion không viết rộng tới mức đỏ trên đường nộp hồ sơ |
@@ -221,3 +222,4 @@ Chưa có. Task chưa được thi hành.
 |---|---|---|
 | `v1.0` | 2026-09-03 | Bản đầu. Gộp ba món đã đo: limiter cho trang chi tiết SSR (`EV-01`, `EV-02`), `no-store` cho nhánh `404` của tracking tức `DEC-18` của contract 07 (`EV-07`), và `F-06` của task 13 chuyển sang đây kèm lý do ở `DEC-07` (`EV-08`). Bác bỏ `Q-01` cũ của hàng đợi bằng `EV-09` và `EV-10`: `go-live-05` đã loại `order.description` khỏi chuỗi khớp `q` và có comment giải thích tại chỗ, nên không có gì để sửa. Đóng cửa phương án middleware bằng một dữ kiện cơ học ở `EV-05` |
 | `v1.1` | 2026-09-03 | **Cộng món thứ tư theo quyết định `03/09` của Owner** (`EV-15`): phương án `Q-03` của contract 19 — giữ phép che ở Node cộng một hàng rào tĩnh giữ PII — vào task này, thay cho việc che ở tầng SQL ngay lượt này. Thêm `EV-11` tới `EV-15`, `DEC-10` tới `DEC-13`, `RQ-11` và `RQ-12`, `STEP-11` và `STEP-12`, `AC-16` tới `AC-18`, `RISK-09` tới `RISK-11`, và `Q-04`. Thêm một tệp hàng rào mới vào `Modules` và vào nhóm hai của `§4.2`, cộng `application.service.ts` và `mask.ts` vào cột Cấm chạm vì hàng rào ĐỌC chúng chứ không sửa. KHÔNG đổi phạm vi của mười yêu cầu cũ. Cửa sổ bump còn mở vì cả hai round đếm bằng `0` |
+| `v1.2` | 2026-09-03 | **Mở đường cho lô gộp ba contract theo quyết định `03/09` của Owner.** `AC-15` cũ buộc MỌI path trong index thuộc ba nhóm của riêng task này, nên nó BẤT KHẢ THOẢ khi 17 và test-01 cùng dirty trong một index dùng chung — lỗi ở văn của Tier 1, không ở bản giao. Bản này thêm nhóm bốn vào `4.2` cho path đã khai của hai contract cùng lô, đổi `AC-15` từ phép đếm CẢ INDEX sang phép đếm ATTRIBUTION cộng một phép kiểm danh sách cấm chạm phải sạch, trả `package.json` cộng `package-lock.json` về quyền của test-01, và thêm vào `AC-14` luật quy trách một dòng test đỏ cho đúng contract. KHÔNG đổi phạm vi mã, KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào. Cửa sổ bump còn mở vì cả hai round vẫn đếm bằng `0` |

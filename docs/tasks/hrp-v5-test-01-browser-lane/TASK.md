@@ -7,7 +7,7 @@
 | Task slug | `hrp-v5-test-01-browser-lane` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
@@ -17,8 +17,8 @@
 | ADR references | `hrp-v5-go-live-07-marketplace-launch-proof` `DEC-20` — nơi ghi rằng URL gốc đo được bằng DOM sau hydrate HOẶC bằng response của API, tức lane trình duyệt là TUỲ CHỌN cho ra mắt; `hrp-v5-go-live-08-public-ui-premium` — round mà mười hai AC đòi giá trị tính bởi trình duyệt trong một repo không có trình chạy nào |
 | Current execution round | `0` |
 | Current audit round | `0` |
-| Next gate | `/code` giao được ngay về mặt kỹ thuật. Nhưng đây là món SAU RA MẮT: nó không chặn go-live và nên xếp sau contract 07. Thứ tự là quyết định của Owner |
-| Updated | `2026-09-03 16:00 Asia/Bangkok` |
+| Next gate | `/code` giao GỘP một lượt cùng 18 và 17 theo quyết định `03/09` của Owner, và task này chạy CUỐI trong lô vì nó là món duy nhất sửa `package.json`. Phần khẳng định của lane vẫn là món SAU RA MẮT: nó không chặn go-live |
+| Updated | `2026-09-03 22:35 Asia/Bangkok` |
 
 Repo hiện KHÔNG có trình chạy test trên trình duyệt: `devDependencies` không có Playwright, không Puppeteer, không jsdom, không `@testing-library`. Đó là lý do `go-live-08` từng có mười hai AC đòi giá trị tính bởi trình duyệt mà không ai đo được, và là lý do mọi hàng rào giao diện từ đó tới nay đều là hàng rào TĨNH đọc mã nguồn.
 
@@ -96,13 +96,14 @@ Mọi phép đo dưới đây chạy trên baseline ghi ở `0. Control` bằng 
 
 ### 4.2 Scope boundaries
 
-Được chạm, và chỉ ba nhóm sau:
+Được chạm, và chỉ bốn nhóm sau:
 
 1. Bốn tệp liệt kê ở `Modules`: `playwright.config.ts` mới, `tests/browser/public-home.spec.ts` mới, `package.json`, `.gitignore`.
 2. `package-lock.json`, vì bước cài gói bắt buộc đổi nó.
 3. Artifact của chính task: `docs/tasks/hrp-v5-test-01-browser-lane/HANDOFF.md` cộng mọi tệp dưới `docs/tasks/hrp-v5-test-01-browser-lane/evidence/`.
+4. Path đã khai ở `Modules` hoặc ở mục phạm vi của hai contract CÙNG LÔ: `hrp-v5-go-live-18-public-surface-hardening` và `hrp-v5-go-live-17-rls-required-relation-sweep`. Nhóm này CÓ MẶT trong cây làm việc vì Owner giao ba contract trong MỘT lượt theo quyết định `03/09`, nhưng nó KHÔNG thuộc bản giao của task này: Tier 2 không được sửa chúng khi đang làm task này, và `HANDOFF.md` của task này không được kể chúng là công của mình.
 
-Cấm chạm: mọi tệp dưới `app/` và `src/`, `vitest.unit.config.ts`, `vitest.integration-files.ts`, `next.config.*`, `tsconfig.json`, `eslint.config.*`, `prisma/`, `middleware.ts`, mọi tệp `.env`. Xuất hiện một nhóm thứ tư là FAIL.
+Cấm chạm: mọi tệp dưới `app/` và `src/`, `vitest.unit.config.ts`, `vitest.integration-files.ts`, `next.config.*`, `tsconfig.json`, `eslint.config.*`, `prisma/`, `middleware.ts`, mọi tệp `.env`. Task này KHÔNG sửa một dòng nào dưới `app/` và `src/`, kể cả khi hai contract cùng lô đang có tệp dirty ở hai cây đó. Xuất hiện một path ngoài bốn nhóm trên là FAIL.
 
 ### 4.3 Data, State, Permission và Interface Rules
 
@@ -127,7 +128,7 @@ Cấm chạm: mọi tệp dưới `app/` và `src/`, `vitest.unit.config.ts`, `v
 | `STEP-08` | Chạy spec lần hai qua script mới, đo thời gian, ghi mã thoát. Hai lần phải cùng kết quả | Output thứ hai kèm mã thoát và thời gian chạy. Đây là chân đo chống chập chờn |
 | `STEP-09` | Chứng minh spec ĐỎ khi hydrate không xảy ra: đổi TẠM fixture thành một mảng rỗng, chạy lại, ghi lại lần đỏ, rồi HOÀN NGUYÊN fixture và chạy lại cho xanh | Ba output: lần đỏ, lệnh hoàn nguyên, lần xanh sau hoàn nguyên. Đây là fixture âm của cả task |
 | `STEP-10` | Kiểm `RQ-10`: `git status --porcelain app/ src/ vitest.unit.config.ts`, rồi chạy lại `npm run test:unit` và `npm run typecheck` | Output RỖNG cho ba đường dẫn đầu. Hai lane exit `0`, số test PASS không nhỏ hơn mốc `STEP-01` |
-| `STEP-11` | Kiểm phạm vi bằng `git status --porcelain` cộng `git diff --cached --numstat`. Ghi `HANDOFF.md` cộng `evidence/`, trong đó có dòng giới hạn CÓ TÊN của `RQ-08`, rồi `git add` NGAY. **KHÔNG commit, KHÔNG push, KHÔNG deploy** | Danh sách path đầy đủ phân đúng ba nhóm của `4.2`, và `HANDOFF.md` với mọi lệnh, mã thoát, output thật |
+| `STEP-11` | Kiểm phạm vi bằng `git status --porcelain` cộng `git diff --cached --numstat`. Ghi `HANDOFF.md` cộng `evidence/`, trong đó có dòng giới hạn CÓ TÊN của `RQ-08`, rồi `git add` NGAY. **KHÔNG commit, KHÔNG push, KHÔNG deploy** | Danh sách path đầy đủ phân đúng bốn nhóm của `4.2`, và `HANDOFF.md` với mọi lệnh, mã thoát, output thật |
 
 ## 6. Acceptance Criteria
 
@@ -143,8 +144,8 @@ Cấm chạm: mọi tệp dưới `app/` và `src/`, `vitest.unit.config.ts`, `v
 | `AC-08` | Đọc output của `STEP-07` và `STEP-08` | Hai lần chạy, cả hai exit `0`, cùng số test pass. `HANDOFF` ghi thời gian chạy của từng lần. Spec không chứa `test.skip` và không chứa `test.fixme` |
 | `AC-09` | Đọc ba output của `STEP-09` | Lần chạy với fixture rỗng exit KHÁC `0`, tức spec thật sự đo DOM chứ không luôn xanh. Lần chạy sau hoàn nguyên exit `0`. Có lệnh hoàn nguyên trong bằng chứng, và `git status --porcelain tests/browser/public-home.spec.ts` sau đó cho thấy fixture đã về đúng bản giao |
 | `AC-10` | Đọc `HANDOFF.md` mục giới hạn | Có dòng ghi rõ spec KHÔNG chứng minh gì về database, RLS hay tính đúng của dữ liệu, và điều nó chứng minh là trang chủ hydrate cùng vẽ dữ liệu API ra DOM. Không có dòng nào khẳng định lane này chứng minh bề mặt công khai đầu-cuối |
-| `AC-11` | `git status --porcelain app/ src/ vitest.unit.config.ts vitest.integration-files.ts prisma/ middleware.ts` cộng `npm run test:unit` rồi `npm run typecheck`, lấy mã thoát bằng redirect chứ không sau ống | Output `git` RỖNG cho cả sáu đường dẫn. Hai lane exit `0`. Số test PASS của lane unit không nhỏ hơn mốc `STEP-01` |
-| `AC-12` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm. Cộng `git log --oneline -1` | Mọi path thuộc đúng một trong ba nhóm của `4.2`: bốn tệp ở `Modules`, `package-lock.json`, và `docs/tasks/hrp-v5-test-01-browser-lane/**`. Xuất hiện nhóm thứ tư là FAIL. `HEAD` bằng baseline |
+| `AC-11` | `git status --porcelain vitest.unit.config.ts vitest.integration-files.ts prisma/ middleware.ts` cộng `git status --porcelain app/ src/` cộng `npm run test:unit` rồi `npm run typecheck`, lấy mã thoát bằng redirect chứ không sau ống | Output `git` RỖNG cho cả bốn đường dẫn đầu. Output `git` của `app/` cộng `src/` chỉ chứa path đã khai của hai contract cùng lô và không một path nào khác. Hai lane exit `0`. Số test PASS của lane unit không nhỏ hơn mốc `STEP-01`. Nếu một dòng đỏ nằm ở path đã khai của một contract cùng lô thì đó là defect của contract ấy, không phải của task này, và `HANDOFF.md` phải nói rõ contract nào |
+| `AC-12` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm theo `4.2`. Cộng `git status --porcelain` chạy riêng trên từng đường dẫn ở cột cấm chạm. Cộng `git log --oneline -1` | Mọi path thuộc đúng một trong bốn nhóm của `4.2`, và nhóm bốn KHÔNG chứa tệp nào của nhóm một hay nhóm hai. Mọi đường dẫn cấm chạm cho output RỖNG. `HEAD` bằng baseline, tức không có commit mới nào so với baseline |
 
 ### 6.1 Traceability
 
@@ -193,3 +194,4 @@ Chưa có. Task chưa được thi hành.
 | Version | Ngày | Đổi gì |
 |---|---|---|
 | `v1.0` | 2026-09-03 | Bản đầu. Dựng lane trình duyệt với phạm vi hẹp nhất còn có ích: một trình chạy, một cấu hình, một spec khói, một script. Hai quyết định giữ nó an toàn và chạy được ở mọi máy: `DEC-03` ép `DATABASE_URL` về sentinel không tới được vì `.env` là production (`EV-07`), và `DEC-04` chặn `/api/jobs` bằng fixture nên không cần database nào. Phạm vi khẳng định được ghi tên ở `DEC-05` để lane này không bị đọc rộng hơn thật, và `STEP-09` là fixture âm chứng minh spec không phải một test luôn xanh |
+| `v1.1` | 2026-09-03 | **Mở đường cho lô gộp ba contract theo quyết định `03/09` của Owner.** Hai tiêu chí cũ BẤT KHẢ THOẢ khi 18 và 17 cùng dirty trong một index dùng chung — lỗi ở văn của Tier 1, không ở bản giao: `AC-11` đòi `git status` RỖNG trên `app/` cùng `src/` mà hai contract kia đều ghi vào đó, và `AC-12` đòi mọi path trong index thuộc ba nhóm của riêng task này. Bản này thêm nhóm bốn vào `4.2` cho path đã khai của hai contract cùng lô, tách phép kiểm của `AC-11` thành bốn đường dẫn phải RỖNG cộng `app/` với `src/` chỉ được chứa path đã khai của hai contract kia, đổi `AC-12` sang phép đếm ATTRIBUTION, và ghi luật quy trách một dòng test đỏ cho đúng contract. `AC-01`, `AC-06`, `AC-07` KHÔNG đổi vì `package.json`, `package-lock.json` và `.gitignore` là đất của chính task này. KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào. Cửa sổ bump còn mở vì cả hai round vẫn đếm bằng `0` |

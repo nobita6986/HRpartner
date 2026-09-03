@@ -7,7 +7,7 @@
 | Task slug | `hrp-v5-go-live-17-rls-required-relation-sweep` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
@@ -17,8 +17,8 @@
 | ADR references | `hrp-v5-hotfix-02-public-detail-required-relation` `F-05` — câu hỏi mở mà task này đóng; `hrp-v5-hotfix-01` — sự cố `500` gốc; `hrp-v5-go-live-08-public-ui-premium` — nguồn của bài học "hàng rào chỉ liệt kê cái tác giả vừa thêm" |
 | Current execution round | `0` |
 | Current audit round | `0` |
-| Next gate | `/code` giao được ngay. Không phụ thuộc contract nào đang mở, không phụ thuộc DB, không cần Owner quyết gì |
-| Updated | `2026-09-03 14:45 Asia/Bangkok` |
+| Next gate | `/code` giao GỘP một lượt cùng 18 và test-01 theo quyết định `03/09` của Owner, và task này chạy SAU 18, TRƯỚC test-01 trong lô. Không phụ thuộc DB, không cần Owner quyết gì |
+| Updated | `2026-09-03 22:35 Asia/Bangkok` |
 
 Task này đóng `F-05` của `hrp-v5-hotfix-02-public-detail-required-relation`. `F-05` viết là *"quét mọi service khác đang select quan hệ KHÔNG nullable trên bảng bị RLS che"*. Phạm vi thật của phép quét đó đã được đo, không phải phỏng đoán: **34** bảng bật RLS, **21** trường quan hệ bắt buộc trên **20** model trỏ vào các bảng ấy, và **12** vị trí gọi thật trong **8** tệp nguồn. Số liệu ở `EV-01` tới `EV-03`.
 
@@ -92,13 +92,14 @@ Mọi con số dưới đây đo trên baseline ghi ở `0. Control`, bằng `gi
 
 ### 4.2 Scope boundaries
 
-Được chạm, và chỉ ba nhóm sau:
+Được chạm, và chỉ bốn nhóm sau:
 
 1. Tệp hàng rào mới: `src/shared/security/required-relation-sweep.static.test.ts`.
 2. Tối đa tám tệp mã ứng dụng liệt kê ở `Modules`, và CHỈ những tệp có vị trí phân loại RỦI RO.
 3. Artifact của chính task: `docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/HANDOFF.md` cộng mọi tệp dưới `docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/`.
+4. Path đã khai ở `Modules` hoặc ở mục phạm vi của hai contract CÙNG LÔ: `hrp-v5-go-live-18-public-surface-hardening` và `hrp-v5-test-01-browser-lane`. Nhóm này CÓ MẶT trong cây làm việc vì Owner giao ba contract trong MỘT lượt theo quyết định `03/09`, nhưng nó KHÔNG thuộc bản giao của task này: Tier 2 không được sửa chúng khi đang làm task này, và `HANDOFF.md` của task này không được kể chúng là công của mình.
 
-Cấm chạm: `prisma/schema.prisma`, mọi tệp dưới `prisma/migrations/`, `src/domains/job-board/public-select.static.test.ts`, `app/globals.css`, sáu tệp thuộc phạm vi contract 16, `package.json`, mọi tệp cấu hình vitest, và mọi test khác ngoài tệp hàng rào mới. Xuất hiện một nhóm thứ tư ngoài ba nhóm trên là FAIL.
+Cấm chạm: `prisma/schema.prisma`, mọi tệp dưới `prisma/migrations/`, `src/domains/job-board/public-select.static.test.ts`, `app/globals.css`, sáu tệp thuộc phạm vi contract 16, mọi tệp cấu hình vitest, và mọi test khác ngoài tệp hàng rào mới cùng những tệp test đã khai ở `Modules` của hai contract cùng lô. Xuất hiện một path ngoài bốn nhóm trên là FAIL. `package.json` cộng `package-lock.json` thuộc quyền của `hrp-v5-test-01-browser-lane` trong cùng lô: task này vẫn KHÔNG được sửa hai tệp đó, nhưng sự có mặt của chúng trong cây làm việc KHÔNG phải defect của task này.
 
 ### 4.3 Data, State, Permission và Interface Rules
 
@@ -121,7 +122,7 @@ Cấm chạm: `prisma/schema.prisma`, mọi tệp dưới `prisma/migrations/`, 
 | `STEP-07` | Cập nhật hàng rào nếu `STEP-06` đã sửa: tập vị trí đúng phải giảm đúng bằng số vị trí đã sửa, và hàng rào khẳng định tập MỚI. Nếu `STEP-06` không sửa gì thì hàng rào không đổi | Hàng rào và cây nguồn nhất quán, không tệp nào đỏ |
 | `STEP-08` | Kiểm `src/domains/job-board/public-select.static.test.ts` không đổi một byte | Output của `git status --porcelain` trên đúng đường dẫn đó, phải RỖNG |
 | `STEP-09` | Chạy lại `npm run test:unit` và `npm run typecheck` | Hai output kèm mã thoát, cả hai `0`. So số test PASS với mốc của `STEP-01` |
-| `STEP-10` | Kiểm phạm vi bằng `git status --porcelain` cộng `git diff --cached --numstat`, rồi ghi `HANDOFF.md` và `evidence/`, `git add` NGAY sau khi ghi. **KHÔNG commit, KHÔNG push, KHÔNG deploy** | Danh sách path đầy đủ, phân đúng ba nhóm của `4.2`. `HANDOFF.md` với mọi lệnh, mã thoát và output thật |
+| `STEP-10` | Kiểm phạm vi bằng `git status --porcelain` cộng `git diff --cached --numstat`, rồi ghi `HANDOFF.md` và `evidence/`, `git add` NGAY sau khi ghi. **KHÔNG commit, KHÔNG push, KHÔNG deploy** | Danh sách path đầy đủ, phân đúng bốn nhóm của `4.2`. `HANDOFF.md` với mọi lệnh, mã thoát và output thật |
 
 ## 6. Acceptance Criteria
 
@@ -137,8 +138,8 @@ Cấm chạm: `prisma/schema.prisma`, mọi tệp dưới `prisma/migrations/`, 
 | `AC-08` | Đối chiếu tập vị trí đã sửa trong diff với tập vị trí kết luận RỦI RO ở `AC-07`, bằng `git diff --cached --numstat` cộng đọc từng hunk | Hai tập TRÙNG KHÍT. Sửa một vị trí AN TOÀN là FAIL. Bỏ sót một vị trí RỦI RO là FAIL. Tập rỗng cả hai bên là ĐẠT theo `DEC-06` |
 | `AC-09` | `git status --porcelain src/domains/job-board/public-select.static.test.ts` | Output RỖNG |
 | `AC-10` | `git status --porcelain prisma/` cộng `git diff --cached --name-only -- prisma/` | Cả hai RỖNG. Một dòng thuộc `prisma/` là FAIL toàn task |
-| `AC-11` | `npm run test:unit` rồi `npm run typecheck`, lấy mã thoát bằng redirect chứ không sau ống | Cả hai exit `0`. Số test PASS không nhỏ hơn mốc của `STEP-01`. Mọi dòng đỏ, nếu có, được phân loại từng dòng thành hồi quy hay test cũ chưa đảo |
-| `AC-12` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm | Mọi path thuộc đúng một trong ba nhóm của `4.2`: tệp hàng rào, tối đa tám tệp mã đã liệt kê ở `Modules`, và `docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/**`. Xuất hiện nhóm thứ tư là FAIL. Không có commit mới nào so với baseline |
+| `AC-11` | `npm run test:unit` rồi `npm run typecheck`, lấy mã thoát bằng redirect chứ không sau ống | Cả hai exit `0`. Số test PASS không nhỏ hơn mốc của `STEP-01`. Mọi dòng đỏ, nếu có, được phân loại từng dòng thành hồi quy hay test cũ chưa đảo. Nếu một dòng đỏ nằm ở path đã khai của một contract cùng lô thì đó là defect của contract ấy, không phải của task này, và `HANDOFF.md` phải nói rõ contract nào |
+| `AC-12` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm theo `4.2`. Cộng `git status --porcelain` chạy riêng trên từng đường dẫn ở cột cấm chạm. Cộng `git log --oneline -1` | Mọi path thuộc đúng một trong bốn nhóm của `4.2`, và nhóm bốn KHÔNG chứa tệp nào của nhóm một hay nhóm hai. Mọi đường dẫn cấm chạm cho output RỖNG. `HEAD` bằng baseline, tức không có commit mới nào so với baseline |
 
 ### 6.1 Traceability
 
@@ -183,3 +184,4 @@ Chưa có. Task chưa được thi hành.
 | Version | Ngày | Đổi gì |
 |---|---|---|
 | `v1.0` | 2026-09-03 | Bản đầu. Đóng `F-05` của `hrp-v5-hotfix-02-public-detail-required-relation` với phạm vi đã ĐO chứ không phỏng đoán: `34` bảng RLS, `21` trường quan hệ bắt buộc, `12` vị trí gọi trong `8` tệp. Phép phân loại tĩnh hai nhánh ở `DEC-03` để không cần DB, vì `EV-09` cho thấy lane integration chưa từng chạy được |
+| `v1.1` | 2026-09-03 | **Mở đường cho lô gộp ba contract theo quyết định `03/09` của Owner.** `AC-12` cũ buộc MỌI path trong index thuộc ba nhóm của riêng task này, nên nó BẤT KHẢ THOẢ khi 18 và test-01 cùng dirty trong một index dùng chung — lỗi ở văn của Tier 1, không ở bản giao. Bản này thêm nhóm bốn vào `4.2` cho path đã khai của hai contract cùng lô, đổi `AC-12` sang phép đếm ATTRIBUTION cộng một phép kiểm danh sách cấm chạm phải sạch, trả `package.json` cộng `package-lock.json` về quyền của test-01, mở cột cấm chạm cho những tệp test đã khai của hai contract cùng lô, và thêm vào `AC-11` luật quy trách một dòng test đỏ cho đúng contract. KHÔNG đổi phạm vi mã, KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào. Cửa sổ bump còn mở vì cả hai round vẫn đếm bằng `0` |
