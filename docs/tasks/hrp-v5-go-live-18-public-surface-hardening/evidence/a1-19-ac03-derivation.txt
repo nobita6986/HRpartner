@@ -1,0 +1,30 @@
+MEASURED_AT_UTC=2026-09-04T01:52:11Z
+=== A: internal consistency of the three lane artifacts (counts+exit lines only) ===
+--- s01-unit.txt
+ Test Files  104 passed (104)
+      Tests  1611 passed (1611)
+--- s04-unit.txt
+ Test Files  104 passed (104)
+      Tests  1611 passed (1611)
+--- s10-unit.txt
+ Test Files  106 passed (106)
+      Tests  1631 passed (1631)
+
+=== B: does ANY pre-existing test depend on the two fixed surfaces? ===
+-- tests referencing the detail page path or its module:
+   src/domains/applications/marketplace-inventory.static.test.ts
+   src/domains/job-board/public-detail.static.test.ts
+PAGE_TEST_REFS=2
+-- tests referencing the tracking route module:
+   src/domains/applications/live-integration.ops06a.test.ts
+   src/domains/applications/marketplace-apply.routes.test.ts
+   src/domains/applications/marketplace-inventory.static.test.ts
+   src/domains/applications/security-boundary.mp2.test.ts
+   src/domains/applications/tracking-mask.routes.test.ts
+   src/shared/auth/api-boundary.static.test.ts
+   src/shared/security/rate-limit-guard.test.ts
+TRACK_TEST_REFS=7
+
+-- were the two new fences tracked at baseline 80f6933? (expect: both absent)
+FENCE1_AT_BASELINE_EXIT=128
+FENCE2_AT_BASELINE_EXIT=128

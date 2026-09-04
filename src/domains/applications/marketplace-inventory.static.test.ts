@@ -352,6 +352,13 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
     expect(code).toContain('{result.fullName}');
     expect(code).toContain("{result.phoneMasked || 'Không cung cấp'}");
     expect(code).toContain("{result.cccdMasked || 'Không cung cấp'}");
+    // go-live-18 / RQ-08 / DEC-08 — `F-06` của task 13. Hai dòng trên chỉ khẳng định rằng khoá ĐÃ
+    // CHE được in; chúng không chặn ai đó thêm một dòng in khoá THÔ ngay bên cạnh. Hai phủ định
+    // dưới đây chặn đúng việc ấy, và cộng vào chứ không thay: mất hai dòng trên là mất phần bảo vệ
+    // đang có. Lookahead giữ assertion HẸP — `not.toMatch(/result\.phone/)` sẽ đỏ trên chính
+    // `phoneMasked` ở trên, tức đỏ trên mã ĐÚNG, và đó là cách nhanh nhất để hàng rào bị tắt.
+    expect(code).not.toMatch(/result\.phone(?!Masked)/);
+    expect(code).not.toMatch(/result\.cccd(?!Masked)/i);
   });
 });
 

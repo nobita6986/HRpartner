@@ -1,0 +1,39 @@
+=== a1-36: doi chieu so numstat cua page.tsx — 28 3 hay 91 5 ===
+MEASURED_AT_UTC=2026-09-04T02:42:55Z
+
+--- command: git diff --cached --numstat -- <page> ---
+91	5	app/(jobs)/viec-lam/[slug]/page.tsx
+--- command: git diff --numstat -- <page>   (worktree vs index) ---
+--- command: git diff HEAD --numstat -- <page> ---
+91	5	app/(jobs)/viec-lam/[slug]/page.tsx
+--- command: git diff 80f6933 --numstat -- <page> ---
+91	5	app/(jobs)/viec-lam/[slug]/page.tsx
+
+--- so dong tung ban ---
+worktree: 272 dong
+index   : 272 dong
+HEAD    : 186 dong
+baseline: 186 dong
+
+--- so 28 3 co the den tu dau? thu lai tren route.ts va tren tep khac ---
+1	1	app/api/public/applications/[trackingCode]/route.ts
+38	9	src/shared/security/rate-limit-guard.ts
+
+--- a1-13-diffs.txt da ghi gi ve page.tsx ---
+25:1	1	app/api/public/applications/[trackingCode]/route.ts
+47:7	0	src/domains/applications/marketplace-inventory.static.test.ts
+
+--- HANDOFF khai so nao cho page.tsx ---
+16:03 23
+16:04 01
+24:1 1
+26:7 0
+38:38 9
+40:91 5
+41:1 1
+43:7 0
+44:0 0
+55:0 0
+64:| `AC-11` | `git diff --cached -- app/api/public/applications/[trackingCode]/route.ts` cộng `git diff --cached --numstat` trên đúng tệp đó | Diff `1 1`, tổng `2` dòng đổi, dưới ngưỡng `4`. Nhánh `404` nhận đúng một khoá `Cache-Control` | evidence/s10-ac11-route.diff — thân `404` không nhận khoá nào khác, nhánh `200` không đổi một byte | None |
+75:Sáu path mã, phân đúng hai nhóm đầu của `4.2`. Đo bằng `git diff --cached --numstat`.
+77:| Path | Nhóm `4.2` | numstat | Vai trò |

@@ -1,0 +1,29 @@
+=== a1-38: dau tay dung cu LAN DOC THU SAU (cuoi vong) + quet ton tai artifact ===
+2026-09-04T09:56:40+0700
+
+--- command: git hash-object <bon tep gate>  +  git rev-parse HEAD:<path> ---
+gate-lib.ps1 worktree=4caa5fd5 (exit=0) head=ABSENT_AT_HEAD (exit=128)
+verify-task.ps1 worktree=e36b83df (exit=0) head=f9014b7f4bbb47 (exit=0)
+verify-handoff.ps1 worktree=3997dd4f (exit=0) head=ABSENT_AT_HEAD (exit=128)
+verify-audit.ps1 worktree=2520a48d (exit=0) head=b5390297ef9c18 (exit=0)
+
+KET LUAN: bon gia tri worktree = 4caa5fd5 / e36b83df / 3997dd4f / 2520a48d, y HET nam lan doc truoc.
+
+--- command: grep -n 'Spec version' TASK.md + AUDIT.md (kiem contract chua dich lan ba) ---
+10:| Spec version | `v1.4` |
+9:| Spec version | `v1.4` |
+SPEC_CHECK_EXIT=0
+
+--- command: git status --porcelain -- <TASK.md> + git diff --cached --numstat -- <TASK.md> ---
+M  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+5	3	docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+TASK_NUMSTAT_EXIT=0
+
+--- command: python quet moi path artifact duoc AUDIT.md trich dan, theo dung regex cua S-15 ---
+REFS_TOTAL=42
+MISSING_TOTAL=0
+
+--- command: git log --oneline -1  +  git status -sb | head -1 ---
+e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+## main...origin/main [ahead 1]
+HEAD_CHECK_EXIT=0

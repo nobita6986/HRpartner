@@ -1,0 +1,39 @@
+MEASURED_AT_UTC=2026-09-04T01:55:05Z
+=== PII FENCE RED PROBE (fence 2) — I revert the guarantee, not read Tier 2's file ===
+PRE_STATUS_SRC_LINES=8
+M  src/domains/applications/marketplace-inventory.static.test.ts
+A  src/domains/applications/tracking-pii-containment.static.test.ts
+M  src/domains/reconciliation/margin.service.ts
+M  src/domains/reconciliation/statement.service.ts
+M  src/domains/staffing/submission.service.ts
+A  src/shared/security/public-surface-limiter.static.test.ts
+M  src/shared/security/rate-limit-guard.ts
+A  src/shared/security/required-relation-sweep.static.test.ts
+
+PROBE_CREATED=yes  PROBE_PATH=src/domains/applications/__a1probe_leak.service.ts
+PROBE_STATUS: ?? src/domains/applications/__a1probe_leak.service.ts
+
+--- RED run: npx vitest run --config vitest.unit.config.ts <fence2>
+RED2_EXIT=1
+[31m   [31m×[31m đường tra cứu công khai: giá trị PII thô không ra khỏi service[2m > [22mmệnh đề MỘT: đúng một tệp không phải test gọi hàm SQL tra cứu (EV-11)[90m 6[2mms[22m[31m[39m
+[31m     → expected [ …(2) ] to have a length of 1 but got 2[39m
+[31m[1m[7m FAIL [27m[22m[39m src/domains/applications/tracking-pii-containment.static.test.ts[2m > [22mđường tra cứu công khai: giá trị PII thô không ra khỏi service[2m > [22mmệnh đề MỘT: đúng một tệp không phải test gọi hàm SQL tra cứu (EV-11)
+[31m[1mAssertionError[22m: expected [ …(2) ] to have a length of 1 but got 2[39m
+[32m- Expected[39m
+[31m+ Received[39m
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+
+PROBE_DELETED=yes
+POST_STATUS_SRC_LINES=8
+M  src/domains/applications/marketplace-inventory.static.test.ts
+A  src/domains/applications/tracking-pii-containment.static.test.ts
+M  src/domains/reconciliation/margin.service.ts
+M  src/domains/reconciliation/statement.service.ts
+M  src/domains/staffing/submission.service.ts
+A  src/shared/security/public-surface-limiter.static.test.ts
+M  src/shared/security/rate-limit-guard.ts
+A  src/shared/security/required-relation-sweep.static.test.ts
+
+--- GREEN re-run after deletion
+GREEN2_EXIT=0
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m

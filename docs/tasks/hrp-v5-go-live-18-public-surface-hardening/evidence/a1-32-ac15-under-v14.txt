@@ -1,0 +1,44 @@
+=== a1-32: do lai AC-15 theo cau chu MOI cua v1.4 ===
+MEASURED_AT_UTC=2026-09-04T02:39:02Z
+
+### menh de MOI: 'git log --oneline -1 o cuoi task bang DUNG gia tri ma STEP-01 da ghi'
+--- [a] STEP-01 co ghi mot gia tri git log nao khong? ---
+command: grep -n -E 'git log|oneline|[0-9a-f]{7}' tren moi tep evidence/s01-*
+  FILE: docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-gate18.txt
+  FILE: docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-tsc.txt
+  FILE: docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-unit.txt
+S01_GITLOG_HITS=0
+
+--- [b] HEAD hien tai, va co commit nao sinh ra TRONG luc task chay khong ---
+command: git log --oneline -1
+e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+command: git rev-parse --short HEAD
+e58a6c0
+command: git rev-list --count e58a6c0..HEAD
+0
+command: git rev-list --count 80f6933..HEAD
+9
+
+--- [c] e58a6c0 la commit NAO, va no co TRUOC luc Tier 2 bat dau khong ---
+command: git show -s --format='%h %ad %s' --date=iso e58a6c0
+e58a6c0 2026-09-03 23:30:28 +0700 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+command: git show -s --format='%h %ad' --date=iso 80f6933
+80f6933 2026-09-03 11:47:00 +0700
+moc thoi gian evidence som nhat cua Tier 2 (STEP-01):
+    2026-09-03 23:44:11.164906600 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-gate18.txt
+    2026-09-03 23:45:27.785085500 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-tsc.txt
+    2026-09-03 23:45:08.627079500 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-unit.txt
+
+=> Neu e58a6c0 la chinh commit PHAT HANH ba contract, va rev-list e58a6c0..HEAD = 0,
+   thi menh de 'task nay khong tao them commit nao' DUNG, do duoc, khong can STEP-01 ghi gi.
+
+### menh de MOT: phan nhom lai 5 path OUTSIDE theo cau chu v1.4
+--- command: git diff --cached --name-only | phan loai lai ---
+INDEX_TOTAL=134
+  .ai-pipeline/scripts/gate-lib.ps1                              NGOAI MOI NHOM -- ha tang gate, Agent khac cua Owner
+  .ai-pipeline/scripts/verify-handoff.ps1                        NGOAI MOI NHOM -- ha tang gate, Agent khac cua Owner
+  .ai-pipeline/scripts/verify-pipeline.ps1                       NGOAI MOI NHOM -- ha tang gate, Agent khac cua Owner
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/AUDIT.md NHOM4 (contract cung lo)
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md  NGOAI MOI NHOM -- TASK.md cua CHINH task nay, nhom 3 chi ke HANDOFF.md va evidence/
+OUTSIDE_UNDER_V14=4
+  (5 truoc day tru 1: AUDIT.md cua lane 17 nay thuoc nhom 4 vi la artifact trong pham vi contract cung lo)

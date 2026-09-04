@@ -1,0 +1,74 @@
+=== s10-scope-groups — phan 205 duong dan cua hop porcelain+cached vao BON NHOM cua 4.2 ===
+2026-09-04 01:01:06 +0700
+
+--- toan bo index (git diff --cached --name-only) = 9 path ---
+.ai-pipeline/scripts/gate-lib.ps1
+.ai-pipeline/scripts/verify-handoff.ps1
+.ai-pipeline/scripts/verify-pipeline.ps1
+app/(jobs)/viec-lam/[slug]/page.tsx
+app/api/public/applications/[trackingCode]/route.ts
+src/domains/applications/marketplace-inventory.static.test.ts
+src/domains/applications/tracking-pii-containment.static.test.ts
+src/shared/security/public-surface-limiter.static.test.ts
+src/shared/security/rate-limit-guard.ts
+CACHED_COUNT=9
+
+--- NHOM 1: bon tep Modules khong-phai-hang-rao ---
+M  app/(jobs)/viec-lam/[slug]/page.tsx
+M  app/api/public/applications/[trackingCode]/route.ts
+M  src/domains/applications/marketplace-inventory.static.test.ts
+M  src/shared/security/rate-limit-guard.ts
+
+--- NHOM 2: hai tep hang rao moi ---
+A  src/domains/applications/tracking-pii-containment.static.test.ts
+A  src/shared/security/public-surface-limiter.static.test.ts
+
+--- NHOM 3: HANDOFF.md cong evidence/ cua task 18 ---
+?? docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/
+so path nhom 3 (truoc khi git add): 1
+
+--- NHOM 4: 14 path da khai cua hai contract cung lo ---
+0 src/shared/security/required-relation-sweep.static.test.ts
+0 app/api/projects/route.ts
+0 app/api/vendor/orders/route.ts
+0 app/api/vendor/submissions/route.ts
+0 src/domains/applications/application-queue.service.ts
+0 src/domains/reconciliation/margin.service.ts
+0 src/domains/reconciliation/statement.service.ts
+0 src/domains/staffing/order.service.ts
+0 src/domains/staffing/submission.service.ts
+0 playwright.config.ts
+warning: could not open directory 'tests/browser/': No such file or directory
+0 tests/browser/public-home.spec.ts
+0 package.json
+0 package-lock.json
+0 .gitignore
+GROUP4_TOTAL=0
+
+--- NGOAI BON NHOM: 3 tep gate staged cua luong Agent khac cua Owner ---
+434	0	.ai-pipeline/scripts/gate-lib.ps1
+341	0	.ai-pipeline/scripts/verify-handoff.ps1
+12	2	.ai-pipeline/scripts/verify-pipeline.ps1
+
+--- NGOAI BON NHOM: dem path la con lai theo tien to ---
+    173 scratch
+      6 .ai-pipeline
+      4 src
+      4 docs
+      2 app
+      1 update_globals.js
+      1 tsconfig.tmp.json
+      1 temp.diff
+      1 scripts
+      1 rls-probe-output.txt
+      1 rls-probe-insert.txt
+      1 public
+      1 patch_test3.ps1
+      1 patch_test2.ps1
+      1 patch_test.ps1
+      1 new-ui.md
+      1 new-ui
+      1 fix.patch
+      1 .neon
+      1 .claude
+      1 "docs

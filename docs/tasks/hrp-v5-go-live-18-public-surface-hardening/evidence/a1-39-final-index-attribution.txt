@@ -1,0 +1,42 @@
+=== a1-39: trang thai index luc DONG VONG, quy chu tung nhom, va giai thich delta ===
+2026-09-04T10:00:29+0700
+
+--- command: git diff --cached --name-only | wc -l ---
+IDX_EXIT=0
+INDEX_TOTAL_CLOSE=142
+TASKDIR_TOTAL=78
+FOREIGN_TOTAL=64
+
+--- quy chu 64 path NGOAI thu muc task (command: grep -c tren cung danh sach) ---
+GATE_SCRIPTS=3
+DOCS_LANE17_TEST01_PLANNER=46
+CODE_AND_TEST=10
+REPO_ROOT_AND_BROWSER=5
+.gitignore
+package-lock.json
+package.json
+playwright.config.ts
+tests/browser/public-home.spec.ts
+
+--- 10 path ma/test ngoai thu muc task: 6 la ban giao dang audit, 4 la ban giao lane 17 ---
+app/(jobs)/viec-lam/[slug]/page.tsx
+app/api/public/applications/[trackingCode]/route.ts
+src/domains/applications/marketplace-inventory.static.test.ts
+src/domains/applications/tracking-pii-containment.static.test.ts
+src/domains/reconciliation/margin.service.ts
+src/domains/reconciliation/statement.service.ts
+src/domains/staffing/submission.service.ts
+src/shared/security/public-surface-limiter.static.test.ts
+src/shared/security/rate-limit-guard.ts
+src/shared/security/required-relation-sweep.static.test.ts
+
+--- quy chu 78 path TRONG thu muc task ---
+A1_FILES_TIER3=39
+S_FILES_TIER2=36
+THREE_DOCS=3
+
+--- GIAI THICH DELTA: 09:48 doc 134 tong voi 70 trong thu muc task; bay gio 142 voi 78 ---
+DELTA_TASKDIR=8 ; do chinh Tier 3 stage a1-31..a1-38 SAU lan doc 09:48
+command: git diff --cached --name-only -- <evidence> | grep -cE '/a1-3[1-9]'
+8
+FOREIGN KHONG DOI: 64 truoc va 64 sau, tuc khong ai ngoai stage them gi trong khoang ay

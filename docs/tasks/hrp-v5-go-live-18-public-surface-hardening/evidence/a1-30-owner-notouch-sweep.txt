@@ -1,0 +1,55 @@
+=== a1-30: quet danh sach KHONG CHAM cua Owner (rang buoc 7), khac han danh sach 4.2 cua contract ===
+MEASURED_AT_UTC=2026-09-04T02:35:02Z
+
+PHAN BIET: FORBID_TOTAL=0 o a1-17/a1-27 do tren 16 path trong muc 4.2 CUA CONTRACT.
+Danh sach duoi day la 7 vung Owner cam Tier 3 cham. Chung KHONG rong, va day la ly do.
+
+--- command: git status --porcelain -- <path> ---
+OWNER_NOTOUCH .ai-pipeline/scripts/gate-lib.ps1                          lines=1
+    A  .ai-pipeline/scripts/gate-lib.ps1
+OWNER_NOTOUCH .ai-pipeline/scripts/verify-task.ps1                       lines=1
+     M .ai-pipeline/scripts/verify-task.ps1
+OWNER_NOTOUCH .ai-pipeline/scripts/verify-handoff.ps1                    lines=1
+    A  .ai-pipeline/scripts/verify-handoff.ps1
+OWNER_NOTOUCH .ai-pipeline/scripts/verify-audit.ps1                      lines=1
+     M .ai-pipeline/scripts/verify-audit.ps1
+OWNER_NOTOUCH new-ui                                                     lines=1
+    ?? new-ui/
+OWNER_NOTOUCH new-ui.md                                                  lines=1
+    ?? new-ui.md
+OWNER_NOTOUCH public/index.html                                          lines=1
+     M public/index.html
+OWNER_NOTOUCH scratch                                                    lines=175
+    ?? scratch/_add.txt
+    ?? scratch/_audit_idx.md
+    ?? scratch/_del.txt
+OWNER_NOTOUCH docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep   lines=22
+    A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/AUDIT.md
+    A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/HANDOFF.md
+    M  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+OWNER_NOTOUCH docs/tasks/hrp-v5-test-01                                  lines=0
+OWNER_NOTOUCH_TOTAL_LINES=204
+
+--- quy chu tung vung: cua ai, va Tier 3 vong nay co gop dong nao khong ---
+gate-lib.ps1 + verify-handoff.ps1  : 'A ' = Agent khac cua Owner da stage; ABSENT o HEAD; hash bat bien qua 4 lan doc
+verify-task.ps1 + verify-audit.ps1 : ' M' = Agent khac sua chua stage; hash bat bien qua 4 lan doc
+new-ui/ + new-ui.md                : '??' untracked co truoc vong nay; git log --all -- new-ui/ in 0 dong
+public/index.html                  : ' M' do scripts/copy-static.mjs, ban chat da biet tu go-live-02
+scratch/                           : '??' vung nhap, khong thuoc bat ky lane nao
+lane 17 + test-01                  : artifact lane khac, do Tier 1/Tier 3 lane ay stage
+
+--- BANG CHUNG Tier 3 vong nay khong gop dong nao vao 7 vung ay ---
+command: git diff --cached --numstat -- <cac vung ay>  (numstat cua index, so voi HEAD)
+434	0	.ai-pipeline/scripts/gate-lib.ps1
+341	0	.ai-pipeline/scripts/verify-handoff.ps1
+=> moi dong tren, neu co, la cua luong khac; Tier 3 chi ghi AUDIT.md va evidence/ cua task nay.
+
+command: git hash-object bon tep gate, lan doc thu NAM
+gate-lib.ps1           4caa5fd51e09fd9a066612729dc6f7888f551403
+verify-task.ps1        e36b83dfbf7c860e320d5409535b82001cab574e
+verify-handoff.ps1     3997dd4ff896ea9f7cebdf40a247bcb269ab23e5
+verify-audit.ps1       2520a48dd7893f5cf9674357fd6a36e58772bcbd
+
+command: sha256sum tren tep ma duy nhat Tier 3 tung hoan nguyen roi phuc hoi
+8e706a2cc1fd5ddac1bbf9b313cabe907b042db034c59ca31ec6ec1ad83eddb7 *app/(jobs)/viec-lam/[slug]/page.tsx
+EXPECTED_SHA256=8e706a2cc1fd5ddac1bbf9b313cabe907b042db034c59ca31ec6ec1ad83eddb7

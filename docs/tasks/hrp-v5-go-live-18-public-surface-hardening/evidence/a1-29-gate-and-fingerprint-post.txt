@@ -1,0 +1,60 @@
+=== a1-29: dau tay bo gate SAU khi verify-audit.ps1 chay + ket qua cong ===
+UTC=2026-09-04T02:31:46Z
+
+--- [1] git hash-object lan thu TU (sau vong, sau khi cong chay) ---
+gate-lib.ps1           worktree=4caa5fd51e09fd9a066612729dc6f7888f551403
+verify-task.ps1        worktree=e36b83dfbf7c860e320d5409535b82001cab574e
+verify-handoff.ps1     worktree=3997dd4ff896ea9f7cebdf40a247bcb269ab23e5
+verify-audit.ps1       worktree=2520a48dd7893f5cf9674357fd6a36e58772bcbd
+
+--- [2] cac blob ay co o HEAD khong ---
+gate-lib.ps1           HEAD=ABSENT
+verify-task.ps1        HEAD=f9014b7f4bbb479a1544eddebbe9a26b4424ce62
+verify-handoff.ps1     HEAD=ABSENT
+verify-audit.ps1       HEAD=b5390297ef9c18e486eb7e21abfb4d9b9771414c
+
+--- [3] ket qua cong verify-audit.ps1 (ca hai tham so) ---
+CMD: powershell -NoProfile -File .ai-pipeline/scripts/verify-audit.ps1 -TaskPath <TASK> -HandoffPath <HANDOFF>
+AUDIT SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-go-live-18-public-surface-hardening\AUDIT.md (against docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md)
+
+  [OK]   S-01 AUDIT.md size 35065 bytes.
+  [OK]   S-01 AUDIT.md is tracked by git (recoverable).
+  [OK]   A-01 all 8 required sections present.
+  [OK]   A-02 spec version v1.3 matches TASK.
+  [OK]   A-03 18 AC all carry a result row.
+  [OK]   S-02 every measured AC row carries a command and a value.
+  [OK]   S-17 no measured value is reused across three or more AC.
+  [OK]   A-05 verdict: CONDITIONAL
+  [OK]   S-07 section 5 is consistent with the AC table.
+  [OK]   S-08 no AC passed over a HANDOFF ENV_BLOCKED declaration.
+  [OK]   A-06 section 4 has 10 evidence rows.
+  [OK]   S-02 section 4 rows all carry command + result.
+  [OK]   S-10 24 measured values are new relative to TASK/HANDOFF.
+  [OK]   S-13 section 7 round numbering is within 1..1.
+  [OK]   S-14 no plaintext secret in AUDIT.md.
+  [OK]   S-15 35 referenced artifact path(s) exist.
+  [WARN] S-16 63 staged path(s) lie outside docs/tasks/hrp-v5-go-live-18-public-surface-hardening/ (e.g. .ai-pipeline/scripts/gate-lib.ps1, .ai-pipeline/scripts/verify-handoff.ps1, .ai-pipeline/scripts/verify-pipeline.ps1). Tier 3 must never commit source or test files with its audit.
+  [OK]   A-07 closing handoff line present.
+
+RESULT: PASS WITH WARNINGS (1 warning(s)).
+AUDIT.md carries measured evidence; Tier 1 may resolve on it.
+VA_EXIT=0   (doc bang cau lenh rieng sau redirect, khong dung sau ong)
+
+--- [4] cong KHONG he khang dinh bang checklist C-01..C-10 ---
+grep -c 'A-04' tren output cong:
+0
+grep -c 'C-01' tren output cong:
+0
+=> Tier 3 tu kiem cau truc bang checklist:
+so hang C-xx:
+10
+phan bo so cot cua cac hang ay (awk -F'|' NF):
+     10 6
+phan bo status token:
+      6 DONE
+      4 SKIP
+
+--- [5] md5 cap AUDIT.md va ban copy trong evidence ---
+9bd62ca9c15e56f5b470a89728b38488 *docs/tasks/hrp-v5-go-live-18-public-surface-hardening/AUDIT.md
+9bd62ca9c15e56f5b470a89728b38488 *docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-28-audit-md-copy.md

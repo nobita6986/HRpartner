@@ -1,0 +1,11 @@
+=== lenh: npm run typecheck (bash, redirect chu khong sau ong) ===
+2026-09-04 00:51:43 +0700
+
+> hrp@0.1.0 typecheck
+> tsc --noEmit
+
+new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & ... 4 more ... & HTMLAttributes<...>'.
+  Type '{ children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'LinkProps<any>'.
+    Types of property 'href' are incompatible.
+      Type 'undefined' is not assignable to type 'Url'.
+TSC_EXIT=1

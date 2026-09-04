@@ -1,0 +1,38 @@
+=== a1-40: soat ve sinh DONG VONG (khong commit, khong push, khong sua ma) ===
+2026-09-04T10:02:49+0700
+
+--- command: git log --oneline -1  +  git status -sb | head -1 ---
+e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+## main...origin/main [ahead 1]
+
+--- command: git hash-object <bon tep gate> (lan doc thu BAY) ---
+gate-lib.ps1=4caa5fd5
+verify-task.ps1=e36b83df
+verify-handoff.ps1=3997dd4f
+verify-audit.ps1=2520a48d
+KY VONG: 4caa5fd5 / e36b83df / 3997dd4f / 2520a48d
+
+--- command: sha256sum trang chi tiet (Tier 3 KHONG sua mot byte) ---
+8e706a2cc1fd5ddac1bbf9b313cabe907b042db034c59ca31ec6ec1ad83eddb7 *app/(jobs)/viec-lam/[slug]/page.tsx
+KY VONG: 8e706a2cc1fd5ddac1bbf9b313cabe907b042db034c59ca31ec6ec1ad83eddb7
+
+--- command: git status --porcelain -- <hai tep probe cua toi> (phai RONG) ---
+PROBE_STATUS_LINES=0
+command: git status --porcelain | grep -c 'tier3-probe'
+0
+
+--- command: grep 'Spec version' TASK.md (kiem contract khong dich lan ba) ---
+10:| Spec version | `v1.4` |
+
+--- command: powershell verify-audit.ps1 -TaskPath -HandoffPath (luot cuoi, ca hai tham so) ---
+VA_EXIT=0 ; RESULT: PASS WITH WARNINGS (1 warning(s)) ; canh bao duy nhat la S-16 tren 64 path ngoai thu muc task
+
+--- command: md5sum AUDIT.md va ban copy trong evidence ---
+e9606f8c7ce9b329d12cc486461a26d0 *docs/tasks/hrp-v5-go-live-18-public-surface-hardening/AUDIT.md
+e9606f8c7ce9b329d12cc486461a26d0 *docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-28-audit-md-copy.md
+CMP_EXIT=0
+
+--- POST-PATCH: md5sum lai sau lan sua cuoi cua AUDIT.md ---
+2424b53478311ebefe78e67a9d3b56e9 *docs/tasks/hrp-v5-go-live-18-public-surface-hardening/AUDIT.md
+2424b53478311ebefe78e67a9d3b56e9 *docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-28-audit-md-copy.md
+CMP_EXIT_FINAL=0

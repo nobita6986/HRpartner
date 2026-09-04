@@ -1,0 +1,19 @@
+=== A1-09 Tier 3 self-run RED probe: revert the barrier subject and watch it bite ===
+PRE_SHA=8e706a2cc1fd5ddac1bbf9b313cabe907b042db034c59ca31ec6ec1ad83eddb7
+PRE_STATUS=M  app/(jobs)/viec-lam/[slug]/page.tsx
+### PROBE 1 - fence public-surface-limiter vs the BASELINE page (no limiter)
+GITSHOW_EXIT=0
+REVERTED_SHA=f05f3c881397b598977c51a6f5fa775c79d9c026d7123ad20517181b0217356e
+REVERTED_LIMITER_HITS=0
+RED1_EXIT=1
+9:[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 1 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+11:[31m[1m[7m FAIL [27m[22m[39m src/shared/security/public-surface-limiter.static.test.ts[2m > [22mbề mặt công khai: mọi consumer của withPublicDb phải đi qua limiter[2m > [22mMỖI consumer tham chiếu limiter, không chỉ một tệp nào đó
+12:[31m[1mAssertionError[22m: expected [ Array(1) ] to deeply equal [][39m
+19:[31m+   "app/(jobs)/viec-lam/[slug]/page.tsx",[39m
+32:[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+33:[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m8 passed[39m[22m[90m (9)[39m
+RESTORED_SHA=8e706a2cc1fd5ddac1bbf9b313cabe907b042db034c59ca31ec6ec1ad83eddb7
+RESTORED_STATUS=M  app/(jobs)/viec-lam/[slug]/page.tsx
+GREEN1_EXIT=0
+7:[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+8:[2m      Tests [22m [1m[32m9 passed[39m[22m[90m (9)[39m

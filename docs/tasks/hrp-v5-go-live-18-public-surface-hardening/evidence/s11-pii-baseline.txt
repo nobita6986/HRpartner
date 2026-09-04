@@ -1,0 +1,43 @@
+=== STEP-11 — do lai EV-11 toi EV-14 ===
+2026-09-04 00:53:45 +0700
+
+--- EV-11: tep khong-phai-test tham chieu hrp_public_tracking_profile ---
+src/domains/applications/application.service.ts
+so tep:
+1
+
+--- EV-12 va EV-13: dem row.phone va row.cccd_number trong service ---
+1
+1
+hai lan dung do nam trong ham che nao:
+233:    phoneMasked: maskPhone(row.phone),
+234:    cccdMasked: maskCccd(row.cccd_number),
+
+--- EV-13: than PublicTrackingDto ---
+export interface PublicTrackingDto {
+  trackingCode: string;
+  status: string;
+  statusLabel: string;
+  nextStep: string;
+  submittedAt: string | null;
+  jobTitle: string | null;
+  jobCode: string | null;
+  positionTitle: string | null;
+  fullName: string;
+  phoneMasked: string | null;
+  cccdMasked: string | null;
+}
+
+
+so khoa cua DTO (dem bang chinh phep parse cua hang rao):
+11 trackingCode status statusLabel nextStep submittedAt jobTitle jobCode positionTitle fullName phoneMasked cccdMasked
+
+--- EV-14: ba chuoi de bat oan, do TRUOC khi viet assertion ---
+52: * MASKED as `phoneMasked` / `cccdMasked`, so the raw values are never part of the
+67:  phoneMasked: string | null;
+68:  cccdMasked: string | null;
+126:  const normalizedPhone = normalizePhone(input.phone);
+127:  if (!slug || !fullName || !normalizedPhone) {
+146:    normalizedPhone,
+166:      normalizedPhone,
+233:    phoneMasked: maskPhone(row.phone),

@@ -1,0 +1,14 @@
+diff --git a/app/api/public/applications/[trackingCode]/route.ts b/app/api/public/applications/[trackingCode]/route.ts
+index 01cecef..fdd47ca 100644
+--- a/app/api/public/applications/[trackingCode]/route.ts
++++ b/app/api/public/applications/[trackingCode]/route.ts
+@@ -39,7 +39,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
+   const prisma = getPrisma();
+   const dto = await prisma.$transaction((tx) => getPublicTracking(tx, trackingCode));
+   if (!dto) {
+-    return NextResponse.json({ error: 'NOT_FOUND', message: 'Application not found' }, { status: 404 });
++    return NextResponse.json({ error: 'NOT_FOUND', message: 'Application not found' }, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+   }
+   return NextResponse.json({ application: dto }, { headers: { 'Cache-Control': 'no-store' } });
+ }
+1	1	app/api/public/applications/[trackingCode]/route.ts

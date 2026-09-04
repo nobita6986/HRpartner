@@ -1,0 +1,54 @@
+=== a1-31: contract DICH LAN THU HAI giua vong audit: v1.3 -> v1.4 ===
+MEASURED_AT_UTC=2026-09-04T02:37:32Z
+
+PHAT HIEN: ban v1.4 da nam TRONG INDEX. 'git diff -- TASK.md' rong, nghia la worktree khop index.
+So do dich: 'git diff --cached --numstat' tu 3 2 (luc v1.3) thanh 5 3 (v1.4).
+
+--- command: git status --porcelain -- <TASK.md> ---
+M  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+
+--- command: git diff --cached --numstat -- <TASK.md> ---
+5	3	docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+
+--- command: git diff --cached -U1 -- <TASK.md>  (toan bo dich so voi HEAD, tuc gom ca v1.3 va v1.4) ---
+diff --git a/docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md b/docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+index af5bd23..23bf26a 100644
+--- a/docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
++++ b/docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+@@ -9,3 +9,3 @@
+ | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
+-| Spec version | `v1.2` |
++| Spec version | `v1.4` |
+ | Status | `READY_FOR_EXECUTION` |
+@@ -117,3 +117,3 @@ Mọi phép đo dưới đây chạy trên baseline ghi ở `0. Control` bằng
+ 3. Artifact của chính task: `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md` cộng mọi tệp dưới `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/`.
+-4. Path đã khai ở `Modules` hoặc ở mục phạm vi của hai contract CÙNG LÔ: `hrp-v5-go-live-17-rls-required-relation-sweep` và `hrp-v5-test-01-browser-lane`. Nhóm này CÓ MẶT trong cây làm việc vì Owner giao ba contract trong MỘT lượt theo quyết định `03/09`, nhưng nó KHÔNG thuộc bản giao của task này: Tier 2 không được sửa chúng khi đang làm task này, và `HANDOFF.md` của task này không được kể chúng là công của mình.
++4. Path đã khai ở `Modules` hoặc ở mục phạm vi của hai contract CÙNG LÔ: `hrp-v5-go-live-17-rls-required-relation-sweep` và `hrp-v5-test-01-browser-lane`. Nhóm này CÓ MẶT trong cây làm việc vì Owner giao ba contract trong MỘT lượt theo quyết định `03/09`, nhưng nó KHÔNG thuộc bản giao của task này: Tier 2 không được sửa chúng khi đang làm task này, và `HANDOFF.md` của task này không được kể chúng là công của mình. Cùng hạng ấy: mọi tệp `TASK.md` dưới `docs/tasks/` của một slug KHÁC là contract do Tier 1 viết, tức tài sản của Tier 1, không bao giờ là công và cũng không bao giờ là lỗi của Tier 2 — sự có mặt của nó trong cây làm việc hay trong index KHÔNG phải defect của task này.
+ 
+@@ -165,3 +165,3 @@ Cấm chạm: `middleware.ts`, `src/shared/security/rate-limit-port.ts`, `src/sh
+ | `AC-14` | `npm run test:unit` rồi `npm run typecheck`, lấy mã thoát bằng redirect chứ không sau ống | Cả hai exit `0`. Số test PASS không nhỏ hơn mốc của `STEP-01`. Mọi dòng đỏ, nếu có, được phân loại từng dòng thành hồi quy hay test cũ chưa đảo. Nếu một dòng đỏ nằm ở path đã khai của một contract cùng lô thì đó là defect của contract ấy, không phải của task này, và `HANDOFF.md` phải nói rõ contract nào |
+-| `AC-15` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm theo `4.2`. Cộng `git status --porcelain` chạy riêng trên từng đường dẫn ở cột cấm chạm. Cộng `git log --oneline -1` | Mọi path thuộc đúng một trong bốn nhóm của `4.2`, và nhóm bốn KHÔNG chứa tệp nào của nhóm một hay nhóm hai. Mọi đường dẫn cấm chạm cho output RỖNG. `HEAD` bằng baseline, tức không có commit mới nào so với baseline |
++| `AC-15` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm theo `4.2`. Cộng `git status --porcelain` chạy riêng trên từng đường dẫn ở cột cấm chạm. Cộng `git log --oneline -1` | Mọi path thuộc đúng một trong bốn nhóm của `4.2`, và nhóm bốn KHÔNG chứa tệp nào của nhóm một hay nhóm hai. Mọi đường dẫn cấm chạm cho output RỖNG. `git log --oneline -1` ở cuối task bằng ĐÚNG giá trị mà `STEP-01` đã ghi trên cây chưa sửa, tức task này không tạo thêm một commit nào. Phép so với field `Baseline` KHÔNG dùng ở đây, vì `Baseline` là ảnh của cây TRƯỚC khi contract này tồn tại nên `HEAD` đã hợp lệ khi lệch nó |
+ | `AC-16` | `ls src/domains/applications/tracking-pii-containment.static.test.ts` cộng `npx vitest run --config vitest.unit.config.ts src/domains/applications/tracking-pii-containment.static.test.ts` | Tệp tồn tại, lane con exit `0` |
+@@ -225 +225,3 @@ Chưa có. Task chưa được thi hành.
+ | `v1.2` | 2026-09-03 | **Mở đường cho lô gộp ba contract theo quyết định `03/09` của Owner.** `AC-15` cũ buộc MỌI path trong index thuộc ba nhóm của riêng task này, nên nó BẤT KHẢ THOẢ khi 17 và test-01 cùng dirty trong một index dùng chung — lỗi ở văn của Tier 1, không ở bản giao. Bản này thêm nhóm bốn vào `4.2` cho path đã khai của hai contract cùng lô, đổi `AC-15` từ phép đếm CẢ INDEX sang phép đếm ATTRIBUTION cộng một phép kiểm danh sách cấm chạm phải sạch, trả `package.json` cộng `package-lock.json` về quyền của test-01, và thêm vào `AC-14` luật quy trách một dòng test đỏ cho đúng contract. KHÔNG đổi phạm vi mã, KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào. Cửa sổ bump còn mở vì cả hai round vẫn đếm bằng `0` |
++| `v1.3` | 2026-09-04 | **Chặn một FAIL oan trước khi Tier 3 ghi audit.** Tier 1 vừa thêm `docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md` vào index dùng chung, và câu chốt của `4.2` — xuất hiện một path ngoài bốn nhóm là FAIL — khiến `AC-15` đỏ vì việc của TIER 1, đúng lớp lỗi đã ghi ở bản `v1.2`. Bản này chỉ NỚI nhóm bốn: một tệp `TASK.md` của slug khác là tài sản của Tier 1. KHÔNG đổi số nhóm nên `STEP-10` cùng `AC-15` giữ nguyên chữ bốn nhóm, KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào, KHÔNG chạm phạm vi mã. Cửa sổ bump còn mở vì `Current audit round` vẫn đếm bằng `0` và chưa có `AUDIT.md` cho task này |
++| `v1.4` | 2026-09-04 | **Sửa một AC BẤT KHẢ THOẢ do Tier 1 viết, cùng lớp lỗi với `AUD-004` bên 17.** `AC-15` cũ đòi `HEAD` bằng field `Baseline`. Phép đo `git merge-base --is-ancestor 80f6933 d017d61` cho kết quả ĐÚNG, nghĩa là baseline `80f6933` có TRƯỚC cả commit sinh ra contract này, và `HEAD` đã lệch `9` commit từ lúc contract được viết. Một AC như thế không bao giờ xanh được, dù bản giao đúng tới đâu. Bản này đổi sang phép so `git log --oneline -1` ở cuối task với giá trị mà `STEP-01` đã ghi — cùng công thức đã dùng ở `hrp-v5-rf-05-tsc-program-boundary`. KHÔNG đổi phạm vi mã, KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào. Cửa sổ bump còn mở vì `Current audit round` vẫn đếm bằng `0` và chưa có `AUDIT.md` cho task này |
+
+--- AC id va nguong co dich khong? ---
+command: git diff --cached -- <TASK.md> loc hang AC
+-| `AC-15` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm theo `4.2`. Cộng `git status --porcelain` chạy riêng trên từng đường dẫn ở cột cấm chạm. Cộng `git log --oneline -1` | Mọi path thuộc đúng một trong bốn nhóm của `4.2`, và nhóm bốn KHÔNG chứa tệp nào của nhóm một hay nhóm hai. Mọi đường dẫn cấm chạm cho output RỖNG. `HEAD` bằng baseline, tức không có commit mới nào so với baseline |
++| `AC-15` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm theo `4.2`. Cộng `git status --porcelain` chạy riêng trên từng đường dẫn ở cột cấm chạm. Cộng `git log --oneline -1` | Mọi path thuộc đúng một trong bốn nhóm của `4.2`, và nhóm bốn KHÔNG chứa tệp nào của nhóm một hay nhóm hai. Mọi đường dẫn cấm chạm cho output RỖNG. `git log --oneline -1` ở cuối task bằng ĐÚNG giá trị mà `STEP-01` đã ghi trên cây chưa sửa, tức task này không tạo thêm một commit nào. Phép so với field `Baseline` KHÔNG dùng ở đây, vì `Baseline` là ảnh của cây TRƯỚC khi contract này tồn tại nên `HEAD` đã hợp lệ khi lệch nó |
++| `v1.3` | 2026-09-04 | **Chặn một FAIL oan trước khi Tier 3 ghi audit.** Tier 1 vừa thêm `docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md` vào index dùng chung, và câu chốt của `4.2` — xuất hiện một path ngoài bốn nhóm là FAIL — khiến `AC-15` đỏ vì việc của TIER 1, đúng lớp lỗi đã ghi ở bản `v1.2`. Bản này chỉ NỚI nhóm bốn: một tệp `TASK.md` của slug khác là tài sản của Tier 1. KHÔNG đổi số nhóm nên `STEP-10` cùng `AC-15` giữ nguyên chữ bốn nhóm, KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào, KHÔNG chạm phạm vi mã. Cửa sổ bump còn mở vì `Current audit round` vẫn đếm bằng `0` và chưa có `AUDIT.md` cho task này |
++| `v1.4` | 2026-09-04 | **Sửa một AC BẤT KHẢ THOẢ do Tier 1 viết, cùng lớp lỗi với `AUD-004` bên 17.** `AC-15` cũ đòi `HEAD` bằng field `Baseline`. Phép đo `git merge-base --is-ancestor 80f6933 d017d61` cho kết quả ĐÚNG, nghĩa là baseline `80f6933` có TRƯỚC cả commit sinh ra contract này, và `HEAD` đã lệch `9` commit từ lúc contract được viết. Một AC như thế không bao giờ xanh được, dù bản giao đúng tới đâu. Bản này đổi sang phép so `git log --oneline -1` ở cuối task với giá trị mà `STEP-01` đã ghi — cùng công thức đã dùng ở `hrp-v5-rf-05-tsc-program-boundary`. KHÔNG đổi phạm vi mã, KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào. Cửa sổ bump còn mở vì `Current audit round` vẫn đếm bằng `0` và chưa có `AUDIT.md` cho task này |
+AC_DIFF_LINES=4
+
+--- 18 AC hien tai trong contract, doc lai tu worktree ---
+18
+
+--- control field hien tai ---
+10:| Spec version | `v1.4` |
+11:| Status | `READY_FOR_EXECUTION` |
+15:| Baseline | `80f6933` |
+19:| Current audit round | `0` |
+20:| Next gate | `/code` giao GỘP một lượt cùng 17 và test-01 theo quyết định `03/09` của Owner, và task này chạy TRƯỚC hai contract kia trong lô. Không phụ thuộc DB, không migration, không cần Owner quyết gì |

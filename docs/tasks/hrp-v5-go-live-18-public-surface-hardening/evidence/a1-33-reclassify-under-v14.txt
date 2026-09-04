@@ -1,0 +1,41 @@
+=== a1-33: phan nhom LAI toan bo index theo v1.4, va giai thich index tang tu 100 len 134 ===
+MEASURED_AT_UTC=2026-09-04T02:40:02Z
+
+--- command: git diff --cached --name-only ---
+INDEX_TOTAL=134
+
+G1_CODE=2
+G2_TEST=4
+G3_OWN_ARTIFACT=69
+G4_SAME_BATCH_OR_FOREIGN_TASKMD=47
+GX_OUTSIDE_ALL_GROUPS=12
+SUM_CHECK=134  (phai bang INDEX_TOTAL=134)
+
+--- cac path NGOAI moi nhom, liet ke het ---
+  GX: .ai-pipeline/scripts/gate-lib.ps1
+  GX: .ai-pipeline/scripts/verify-handoff.ps1
+  GX: .ai-pipeline/scripts/verify-pipeline.ps1
+  GX: .gitignore
+  GX: package-lock.json
+  GX: package.json
+  GX: playwright.config.ts
+  GX: src/domains/reconciliation/margin.service.ts
+  GX: src/domains/reconciliation/statement.service.ts
+  GX: src/domains/staffing/submission.service.ts
+  GX: src/shared/security/rate-limit-guard.ts
+  GX: tests/browser/public-home.spec.ts
+
+--- vi sao 100 -> 134: chinh Tier 3 da stage artifact cua minh ---
+command: git diff --cached --name-only -- <evidence cua task nay> | grep -c '/a1-'
+31
+=> so tep a1-* trong index. Truoc 02:15 chung con UNTRACKED nen khong duoc dem;
+   luat chong cat tep buoc Tier 3 phai git add chung, va chung roi vao NHOM 3.
+command: git diff --cached --name-only | grep -vc 'go-live-18'
+64
+
+--- danh sach cam sua cua contract van sach ---
+command: git status --porcelain -- <tung path>  (16 path)
+FORBID_TOTAL=0
+
+--- overlap: nhom 4 co chua tep nao cua nhom 1 hay nhom 2? ---
+OVERLAP_HITS=0

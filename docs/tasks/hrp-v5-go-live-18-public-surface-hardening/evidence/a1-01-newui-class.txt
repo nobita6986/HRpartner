@@ -1,0 +1,23 @@
+=== A1-01 AC-14 third-class probe: is new-ui/ known to git at all? ===
+--- git ls-files new-ui | wc -l
+LSFILES_EXIT=0
+LSFILES_COUNT=0
+--- git log --all -- new-ui/  (line count of output)
+GITLOG_EXIT=0
+GITLOG_LINES=0
+--- git log --all -- new-ui.md
+GITLOG_MD_EXIT=0
+GITLOG_MD_LINES=0
+--- does the directory exist on disk?
+DIR_EXISTS=yes
+FILE_COUNT_ON_DISK=14
+TSX_ON_DISK=11
+--- git check-ignore -v new-ui (why is it not tracked?)
+CHECKIGNORE_EXIT=1
+--- git status --porcelain new-ui new-ui.md
+STATUS_EXIT=0
+STATUS_LINES=2
+?? new-ui.md
+?? new-ui/
+--- .gitignore entries mentioning new-ui
+GREP_GITIGNORE_EXIT=1

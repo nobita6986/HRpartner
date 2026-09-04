@@ -1,0 +1,86 @@
+=== A1-27 final state of the audit target, measured AFTER the contract moved to v1.3 ===
+MEASURED_AT_UTC=2026-09-04T02:15:29Z
+
+### 1. HEAD and the baseline clause of AC-15
+--- command: git log --oneline -1
+e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+LOG_EXIT=0
+--- command: git rev-list --count 80f6933..HEAD  (git log used as the recognised probe)
+REVLIST_EXIT=0
+COMMITS_SINCE_BASELINE=9
+--- command: git log --format='%h %an %s' 80f6933..HEAD
+e58a6c0 Nguyễn Đức Thuận docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+2941bbb Nguyễn Đức Thuận docs(planner): dich cursor sang 18 -- 16 ACCEPTED va bon mon con lai da gate PASS
+7165ad1 Nguyễn Đức Thuận ﻿docs(go-live-16): hau kiem PLN-34 -- C-09 tu dong khi Status thanh ACCEPTED
+99d6f16 Nguyễn Đức Thuận fix(a11y): tuong phan va vong focus be mat noi bo len WCAG AA (go-live-16)
+fbc8af6 Nguyễn Đức Thuận docs(cursor): sua quy thuoc luong gate + ghi canh bao DUNG CU CHUA PHAT HANH
+46ea2dc Nguyễn Đức Thuận docs(go-live-16): tra audit round 2 — mot MA THOAT bi bia, ghi PLN-29..PLN-32
+e309323 Nguyễn Đức Thuận docs(go-live-18,19): quyet dinh Owner 03/09 — tach phan re khoi phan dat cua che PII
+48234d9 Nguyễn Đức Thuận docs(go-live-16): tra audit round 1, ghi PLN-23..PLN-28 — nam defect contract la cua Tier 1
+d017d61 Nguyễn Đức Thuận docs(planner): viet bon contract cuoi hang doi go-live, bac bo hai mon da chet
+LOGRANGE_EXIT=0
+--- command: git diff --name-only 80f6933..HEAD -- <the six Modules paths of task 18>
+DRIFT_EXIT=0
+DRIFT_LINES=0
+
+### 2. AC-15 attribution re-run under the v1.3 wording of 4.2 group four
+--- command: git diff --cached --name-only
+INDEX_EXIT=0
+INDEX_TOTAL=100
+     42 G4-artifact
+     37 G3
+      5 G4-mod01
+      4 GX
+      4 G4-mod17
+      4 G1
+      2 G2
+      1 GX-own-contract
+      1 G4-v13-othertask
+--- paths in NO group of 4.2, verbatim, with owner
+OUTSIDE_ALL_GROUPS: ABSENT-AT-HEAD  <- .ai-pipeline/scripts/gate-lib.ps1
+OUTSIDE_ALL_GROUPS: ABSENT-AT-HEAD  <- .ai-pipeline/scripts/verify-handoff.ps1
+OUTSIDE_ALL_GROUPS: 781335e unknown  <- .ai-pipeline/scripts/verify-pipeline.ps1
+OUTSIDE_ALL_GROUPS: ABSENT-AT-HEAD  <- docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/AUDIT.md
+OUTSIDE_ALL_GROUPS: e58a6c0 Nguyễn Đức Thuận  <- docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+OUTSIDE_TOTAL=5
+
+### 3. forbidden list of 4.2 must be clean
+FORBIDDEN middleware.ts                                            lines=0 <EMPTY>
+FORBIDDEN src/shared/security/rate-limit-port.ts                   lines=0 <EMPTY>
+FORBIDDEN src/shared/security/rate-limit-identity.ts               lines=0 <EMPTY>
+FORBIDDEN src/shared/security/rate-limit-provider.ts               lines=0 <EMPTY>
+FORBIDDEN src/domains/applications/application.service.ts          lines=0 <EMPTY>
+FORBIDDEN src/shared/privacy/mask.ts                               lines=0 <EMPTY>
+FORBIDDEN app/api/jobs/route.ts                                    lines=0 <EMPTY>
+FORBIDDEN app/api/jobs/[slug]/route.ts                             lines=0 <EMPTY>
+FORBIDDEN app/api/public/jobs/[slug]/applications/route.ts         lines=0 <EMPTY>
+FORBIDDEN src/domains/job-board/public.service.ts                  lines=0 <EMPTY>
+FORBIDDEN prisma                                                   lines=0 <EMPTY>
+FORBIDDEN app/globals.css                                          lines=0 <EMPTY>
+FORBIDDEN vitest.unit.config.ts                                    lines=0 <EMPTY>
+FORBIDDEN vitest.config.ts                                         lines=0 <EMPTY>
+FORBIDDEN vitest.integration.config.ts                             lines=0 <EMPTY>
+FORBIDDEN vitest.integration-files.ts                              lines=0 <EMPTY>
+FORBID_TOTAL=0
+
+### 4. did MY probes leave residue in the code tree?
+--- command: git status --porcelain -- src app
+M  app/(jobs)/viec-lam/[slug]/page.tsx
+M  app/api/public/applications/[trackingCode]/route.ts
+M  src/domains/applications/marketplace-inventory.static.test.ts
+A  src/domains/applications/tracking-pii-containment.static.test.ts
+M  src/domains/reconciliation/margin.service.ts
+M  src/domains/reconciliation/statement.service.ts
+M  src/domains/staffing/submission.service.ts
+A  src/shared/security/public-surface-limiter.static.test.ts
+M  src/shared/security/rate-limit-guard.ts
+A  src/shared/security/required-relation-sweep.static.test.ts
+POST_STATUS_SRC_LINES=10
+--- command: sha256sum on the page I reverted and restored during the RED probe
+8e706a2cc1fd5ddac1bbf9b313cabe907b042db034c59ca31ec6ec1ad83eddb7 *app/(jobs)/viec-lam/[slug]/page.tsx
+
+### 5. gate fingerprints, third reading (constraint 4)
+FINGERPRINT gate-lib.ps1 worktree=4caa5fd51e09fd9a066612729dc6f7888f551403 head=ABSENT-AT-HEAD
+FINGERPRINT verify-task.ps1 worktree=e36b83dfbf7c860e320d5409535b82001cab574e head=f9014b7f4bbb479a1544eddebbe9a26b4424ce62
+FINGERPRINT verify-handoff.ps1 worktree=3997dd4ff896ea9f7cebdf40a247bcb269ab23e5 head=ABSENT-AT-HEAD
+FINGERPRINT verify-audit.ps1 worktree=2520a48dd7893f5cf9674357fd6a36e58772bcbd head=b5390297ef9c18e486eb7e21abfb4d9b9771414c

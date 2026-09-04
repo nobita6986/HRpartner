@@ -1,0 +1,22 @@
+MEASURED_AT_UTC=2026-09-04T01:50:19Z
+=== 18's own 4.2 group-4 + forbidden sentence, verbatim ===
+### 4.2 Scope boundaries
+
+Được chạm, và chỉ bốn nhóm sau:
+
+1. Bốn tệp mã liệt kê ở `Modules` không phải tệp hàng rào mới.
+2. Hai tệp hàng rào mới: `src/shared/security/public-surface-limiter.static.test.ts` và `src/domains/applications/tracking-pii-containment.static.test.ts`.
+3. Artifact của chính task: `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md` cộng mọi tệp dưới `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/`.
+4. Path đã khai ở `Modules` hoặc ở mục phạm vi của hai contract CÙNG LÔ: `hrp-v5-go-live-17-rls-required-relation-sweep` và `hrp-v5-test-01-browser-lane`. Nhóm này CÓ MẶT trong cây làm việc vì Owner giao ba contract trong MỘT lượt theo quyết định `03/09`, nhưng nó KHÔNG thuộc bản giao của task này: Tier 2 không được sửa chúng khi đang làm task này, và `HANDOFF.md` của task này không được kể chúng là công của mình.
+
+Cấm chạm: `middleware.ts`, `src/shared/security/rate-limit-port.ts`, `src/shared/security/rate-limit-identity.ts`, `src/shared/security/rate-limit-provider.ts`, `src/domains/applications/application.service.ts`, `src/shared/privacy/mask.ts`, bốn tệp route ở `EV-04` trừ đúng tệp tracking, `src/domains/job-board/public.service.ts`, `prisma/`, `app/globals.css`, mọi cấu hình vitest. Xuất hiện một path ngoài bốn nhóm trên là FAIL. `package.json` cộng `package-lock.json` thuộc quyền của `hrp-v5-test-01-browser-lane` trong cùng lô: task này vẫn KHÔNG được sửa hai tệp đó, nhưng sự có mặt của chúng trong cây làm việc KHÔNG phải defect của task này.
+
+### 4.3 Data, State, Permission và Interface Rules
+
+=== partition check: do siblings declare any of 18's six own paths? ===
+OVERLAP_HITS=0  <- app/(jobs)/viec-lam/[slug]/page.tsx
+OVERLAP_HITS=0  <- src/shared/security/rate-limit-guard.ts
+OVERLAP_HITS=0  <- app/api/public/applications/[trackingCode]/route.ts
+OVERLAP_HITS=0  <- src/domains/applications/marketplace-inventory.static.test.ts
+OVERLAP_HITS=0  <- src/shared/security/public-surface-limiter.static.test.ts
+OVERLAP_HITS=0  <- src/domains/applications/tracking-pii-containment.static.test.ts

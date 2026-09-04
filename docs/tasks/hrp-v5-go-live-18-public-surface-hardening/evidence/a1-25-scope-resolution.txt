@@ -1,0 +1,31 @@
+=== A1-25 AC-15 attribution, resolution of the 7 UNCLASSIFIED left by a1-14 ===
+MEASURED_AT_UTC=2026-09-04T02:09:08Z
+--- command: git diff --cached --name-only
+INDEX_EXIT=0
+INDEX_TOTAL=100
+
+--- classifier: G1/G2/G3 = task 18; G4 = Modules or 4.2 scope of the two same-batch contracts; GX = declared by NO group
+     42 G4-artifact
+     37 G3
+      6 GX
+      5 G4-mod01
+      4 G4-mod17
+      4 G1
+      2 G2
+
+--- every GX path verbatim, with owner attribution ---
+GX .ai-pipeline/scripts/gate-lib.ps1
+GX .ai-pipeline/scripts/verify-handoff.ps1
+GX .ai-pipeline/scripts/verify-pipeline.ps1
+GX docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/AUDIT.md
+GX docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+GX docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+GX_TOTAL=6
+
+--- who last wrote each GX path? (git log on the path, or ABSENT-AT-HEAD) ---
+ABSENT-AT-HEAD  <- .ai-pipeline/scripts/gate-lib.ps1
+ABSENT-AT-HEAD  <- .ai-pipeline/scripts/verify-handoff.ps1
+781335e unknown  <- .ai-pipeline/scripts/verify-pipeline.ps1
+ABSENT-AT-HEAD  <- docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/AUDIT.md
+e58a6c0 Nguyễn Đức Thuận  <- docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+ABSENT-AT-HEAD  <- docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md

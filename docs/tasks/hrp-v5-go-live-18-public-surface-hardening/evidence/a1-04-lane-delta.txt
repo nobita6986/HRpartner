@@ -1,0 +1,63 @@
+=== A1-04 lane delta probe: my 107/1642 vs HANDOFF 106/1631 ===
+--- vitest.unit.config.ts include/exclude
+5: * unreachable sentinel here (hardcoded, ignoring the ambient environment), so that if any test
+7: * reaching a real dev/prod database. The DB-touching files are additionally excluded by path via
+27:    include: ['src/**/*.test.ts', 'packages/**/*.test.ts', 'prisma/**/*.test.ts'],
+28:    exclude: [...configDefaults.exclude, ...INTEGRATION_TEST_FILES],
+GREP_CFG_EXIT=0
+--- count of test files under the include roots
+123
+--- untracked (??) test files anywhere
+?? .ai-pipeline/scripts/verify-gates.selftest.ps1
+?? patch_test.ps1
+?? patch_test2.ps1
+?? patch_test3.ps1
+?? scratch/gl15-enc-test.txt
+?? scratch/gl15-mytests-head-tokens.mjs
+?? scratch/gl15-step05-test.py
+?? scratch/neon-schemadiff-live-vs-mp2test.txt
+?? scratch/t1r6-test-unit.txt
+?? scratch/test-db.js
+?? scratch/test-func.js
+?? scratch/test-rpc.js
+?? scratch/test-sql.js
+?? scratch/test-writer.js
+GREP_UNTRACKED_TEST_EXIT=0
+--- test files modified/created after 2026-09-04 00:00 (after Tier 2 window)
+1788456260.2973755000 2026-09-04 00:24 src/shared/security/public-surface-limiter.static.test.ts
+1788456537.5432492000 2026-09-04 00:28 src/domains/applications/marketplace-inventory.static.test.ts
+1788456731.0844614000 2026-09-04 00:32 src/domains/applications/tracking-pii-containment.static.test.ts
+1788462674.8651413000 2026-09-04 02:11 src/shared/security/required-relation-sweep.static.test.ts
+--- staged/index test files
+docs/tasks/hrp-v5-test-01-browser-lane/HANDOFF.md
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-gate.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-newui-attribution.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-typecheck.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-unit.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s02-browser.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s02-install.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s02-version.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s03-gitignore.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s04-nextenv-override.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s06-script.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s07-blocker-attribution.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s07-diag-green.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s07-run1.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s08-run2.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s09-negative-fixture.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10-relane.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10-scope.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10b-lane-recheck.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10c-attribution-app-src.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s11-gate-handoff.txt
+docs/tasks/hrp-v5-test-01-browser-lane/evidence/s11-scope-and-baseline.txt
+src/domains/applications/marketplace-inventory.static.test.ts
+src/domains/applications/tracking-pii-containment.static.test.ts
+src/shared/security/public-surface-limiter.static.test.ts
+src/shared/security/required-relation-sweep.static.test.ts
+tests/browser/public-home.spec.ts
+GREP_STAGED_TEST_EXIT=0
+--- git status --porcelain on the two new fences
+A  src/domains/applications/tracking-pii-containment.static.test.ts
+A  src/shared/security/public-surface-limiter.static.test.ts
+STATUS_FENCE_EXIT=0

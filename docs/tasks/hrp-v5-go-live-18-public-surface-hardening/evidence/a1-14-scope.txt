@@ -1,0 +1,132 @@
+=== A1-14 AC-15 scope attribution, measured at Tier 3 time ===
+MEASURED_AT_UTC=2026-09-04T01:46:14Z
+--- git log --oneline -1
+e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+LOG_EXIT=0
+--- git rev-list --count 80f6933..HEAD
+9
+REVLIST_EXIT=0
+--- did the commit that bumped this contract to v1.2 also move HEAD off the baseline?
+e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+e309323 docs(go-live-18,19): quyet dinh Owner 03/09 — tach phan re khoi phan dat cua che PII
+d017d61 docs(planner): viet bon contract cuoi hang doi go-live, bac bo hai mon da chet
+LOG_TASKMD_EXIT=0
+--- do any of those 9 commits touch a Modules path of this task?
+DRIFT_EXIT=0
+DRIFT_LINES=0
+--- INDEX contents now (git diff --cached --name-only)
+INDEX_EXIT=0
+INDEX_TOTAL=98
+--- classification of the index
+      4 G1
+      2 G2
+     37 G3
+     45 G4
+      3 GX-gatestream
+      7 UNCLASSIFIED
+--- per-group totals
+GROUP=G1 DISTINCT_PATHS=4
+GROUP=G2 DISTINCT_PATHS=2
+GROUP=G3 DISTINCT_PATHS=37
+GROUP=G4 DISTINCT_PATHS=45
+GROUP=GX-gatestream DISTINCT_PATHS=3
+GROUP=UNCLASSIFIED DISTINCT_PATHS=7
+--- the non-G1/G2/G3 index paths verbatim
+G1 app/(jobs)/viec-lam/[slug]/page.tsx
+G1 app/api/public/applications/[trackingCode]/route.ts
+G1 src/domains/applications/marketplace-inventory.static.test.ts
+G1 src/shared/security/rate-limit-guard.ts
+G2 src/domains/applications/tracking-pii-containment.static.test.ts
+G2 src/shared/security/public-surface-limiter.static.test.ts
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-gate18.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-tsc.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-unit.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s02-surface-inventory.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s03-guard.py
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s04-unit.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-guard.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-page.py
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-tsc-pwsh.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-tsc.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s06-route.py
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-green.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-green2.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-page-current.bak
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-page-sha.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-red.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s08-inventory.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s08-regex-probe.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s09-forbidden-verified.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s09-forbidden.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-ac-recheck.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-ac11-route.diff
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-ac12-inventory.diff
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-gate-handoff.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-gate-task-rerun.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-gate-task.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-handoff-denycode.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-scope-groups.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-scope-raw.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc-bash.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc-diff.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc-exit.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-unit.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s11-pii-baseline.txt
+G3 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s12-pii.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/AUDIT.md
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/HANDOFF.md
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-gate17.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-tsc.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-unit.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s02-barrier-structure.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s02-remeasure.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s04-green.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s05-policy-classification.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s06-fix.py
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-green.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-red.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier.py
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s08-untouched.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-typecheck.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-unit.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-baseline.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-gate-h15-artifact.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-handoff-gate.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-newui-attribution.txt
+G4 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-scope.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/HANDOFF.md
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-gate.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-newui-attribution.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-typecheck.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-unit.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s02-browser.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s02-install.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s02-version.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s03-gitignore.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s04-nextenv-override.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s06-script.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s07-blocker-attribution.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s07-diag-green.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s07-run1.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s08-run2.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s09-negative-fixture.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10-relane.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10-scope.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10b-lane-recheck.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10c-attribution-app-src.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s11-gate-handoff.txt
+G4 docs/tasks/hrp-v5-test-01-browser-lane/evidence/s11-scope-and-baseline.txt
+G4 src/shared/security/required-relation-sweep.static.test.ts
+G4 tests/browser/public-home.spec.ts
+GX-gatestream .ai-pipeline/scripts/gate-lib.ps1
+GX-gatestream .ai-pipeline/scripts/verify-handoff.ps1
+GX-gatestream .ai-pipeline/scripts/verify-pipeline.ps1
+UNCLASSIFIED .gitignore
+UNCLASSIFIED package-lock.json
+UNCLASSIFIED package.json
+UNCLASSIFIED playwright.config.ts
+UNCLASSIFIED src/domains/reconciliation/margin.service.ts
+UNCLASSIFIED src/domains/reconciliation/statement.service.ts
+UNCLASSIFIED src/domains/staffing/submission.service.ts

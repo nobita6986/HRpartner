@@ -1,0 +1,4 @@
+BAD phone bat duoc = true
+BAD cccd  bat duoc = true
+OK  phone khong oan = false
+OK  cccd  khong oan = false

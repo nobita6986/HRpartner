@@ -1,0 +1,28 @@
+MEASURED_AT_UTC=2026-09-04T01:50:34Z
+=== EV-04 call sites (enforceRateLimits) — to resolve 'bon tep route o EV-04 tru dung tep tracking' ===
+app/api/jobs/[slug]/route.ts
+app/api/jobs/route.ts
+app/api/public/applications/[trackingCode]/route.ts
+app/api/public/jobs/[slug]/applications/route.ts
+src/shared/security/public-surface-limiter.static.test.ts
+src/shared/security/rate-limit-guard.test.ts
+src/shared/security/rate-limit-guard.ts
+
+=== per-path forbidden sweep: git status --porcelain -- <path>; EMPTY required ===
+n=0  middleware.ts  <EMPTY>
+n=0  src/shared/security/rate-limit-port.ts  <EMPTY>
+n=0  src/shared/security/rate-limit-identity.ts  <EMPTY>
+n=0  src/shared/security/rate-limit-provider.ts  <EMPTY>
+n=0  src/domains/applications/application.service.ts  <EMPTY>
+n=0  src/shared/privacy/mask.ts  <EMPTY>
+n=0  src/domains/job-board/public.service.ts  <EMPTY>
+n=0  prisma  <EMPTY>
+n=0  app/globals.css  <EMPTY>
+n=0  vitest.unit.config.ts  <EMPTY>
+n=0  vitest.config.ts  <EMPTY>
+n=0  vitest.integration.config.ts  <EMPTY>
+n=0  vitest.integration-files.ts  <EMPTY>
+n=0  EV04 app/api/jobs/[slug]/route.ts  <EMPTY>
+n=0  EV04 app/api/jobs/route.ts  <EMPTY>
+n=0  EV04 app/api/public/jobs/[slug]/applications/route.ts  <EMPTY>
+FORBID_TOTAL=0

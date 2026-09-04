@@ -1,0 +1,30 @@
+=== s09-forbidden-verified — git status --porcelain chay RIENG tren TUNG duong dan cam cham ===
+2026-09-04 00:59:15 +0700
+ly do co tep nay: s09-forbidden.txt la 0 byte. Mot tep rong KHONG phan biet duoc 'khong vi pham' voi 'lenh chua tung chay'.
+cach doc: moi dong = <so dong output> <ma thoat> <duong dan>. Dat = '0 0'.
+
+0 0 middleware.ts
+0 0 src/shared/security/rate-limit-port.ts
+0 0 src/shared/security/rate-limit-identity.ts
+0 0 src/shared/security/rate-limit-provider.ts
+0 0 src/domains/applications/application.service.ts
+0 0 src/shared/privacy/mask.ts
+0 0 app/api/jobs/route.ts
+0 0 app/api/jobs/[slug]/route.ts
+0 0 app/api/public/jobs/[slug]/applications/route.ts
+0 0 src/domains/job-board/public.service.ts
+0 0 prisma/
+0 0 app/globals.css
+0 0 vitest.unit.config.ts
+0 0 vitest.config.ts
+0 0 vitest.integration.config.ts
+0 0 package.json
+0 0 package-lock.json
+
+TONG so dong output tren toan bo danh sach cam cham = 0
+FORBID_TOTAL=0
+
+--- doi chieu: cung phep do o dang git diff --cached --name-only tren cung danh sach ---
+CACHED_EXIT=0
+so dong o tren:
+0

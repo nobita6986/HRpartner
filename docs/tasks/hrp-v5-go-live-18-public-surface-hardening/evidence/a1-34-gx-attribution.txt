@@ -1,0 +1,79 @@
+=== a1-34: quy chu tung path GX bang cach TIM no trong TASK.md cua hai contract cung lo ===
+MEASURED_AT_UTC=2026-09-04T02:40:44Z
+T17=docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+T01=docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+ls -1 T17 T01:
+docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+
+--- command: grep -c -F '<path>' tren tung TASK.md cung lo ---
+/usr/bin/bash: line 20: [: 0
+0: integer expected
+/usr/bin/bash: line 20: [: 0
+0: integer expected
+  .ai-pipeline/scripts/gate-lib.ps1                    NGOAI MOI NHOM (17=0
+0 test01=0
+0 18=0
+0)
+/usr/bin/bash: line 20: [: 0
+0: integer expected
+/usr/bin/bash: line 20: [: 0
+0: integer expected
+  .ai-pipeline/scripts/verify-handoff.ps1              NGOAI MOI NHOM (17=0
+0 test01=0
+0 18=0
+0)
+/usr/bin/bash: line 20: [: 0
+0: integer expected
+/usr/bin/bash: line 20: [: 0
+0: integer expected
+  .ai-pipeline/scripts/verify-pipeline.ps1             NGOAI MOI NHOM (17=0
+0 test01=0
+0 18=0
+0)
+/usr/bin/bash: line 20: [: 0
+0: integer expected
+  .gitignore                                           NHOM4 (khai o contract cung lo: 17=0
+0 test01=10)
+  package-lock.json                                    NHOM4 (khai o contract cung lo: 17=2 test01=4)
+  package.json                                         NHOM4 (khai o contract cung lo: 17=3 test01=14)
+/usr/bin/bash: line 20: [: 0
+0: integer expected
+  playwright.config.ts                                 NHOM4 (khai o contract cung lo: 17=0
+0 test01=7)
+  src/domains/reconciliation/margin.service.ts         NHOM4 (khai o contract cung lo: 17=2 test01=0
+0)
+  src/domains/reconciliation/statement.service.ts      NHOM4 (khai o contract cung lo: 17=2 test01=0
+0)
+  src/domains/staffing/submission.service.ts           NHOM4 (khai o contract cung lo: 17=2 test01=0
+0)
+/usr/bin/bash: line 20: [: 0
+0: integer expected
+/usr/bin/bash: line 20: [: 0
+0: integer expected
+  src/shared/security/rate-limit-guard.ts              NGOAI MOI NHOM (17=0
+0 test01=0
+0 18=5)
+/usr/bin/bash: line 20: [: 0
+0: integer expected
+  tests/browser/public-home.spec.ts                    NHOM4 (khai o contract cung lo: 17=0
+0 test01=6)
+
+GX_ABSORBED_INTO_GROUP4=8
+GX_TRULY_OUTSIDE=4
+--- danh sach that su ngoai moi nhom ---
+  OUT: .ai-pipeline/scripts/gate-lib.ps1
+  OUT: .ai-pipeline/scripts/verify-handoff.ps1
+  OUT: .ai-pipeline/scripts/verify-pipeline.ps1
+  OUT: src/shared/security/rate-limit-guard.ts
+
+--- quy chu tung path con lai: cua ai ---
+  .ai-pipeline/scripts/gate-lib.ps1                    status=A   last-commit=
+  .ai-pipeline/scripts/verify-handoff.ps1              status=A   last-commit=
+  .ai-pipeline/scripts/verify-pipeline.ps1             status=M   last-commit=781335e chore(pipeline): Phase 3 cleanup and consolidation - .ai-pipeline/ is the sole source of truth
+  src/shared/security/rate-limit-guard.ts              status=M   last-commit=3f2d2ef feat(ops): harden marketplace launch boundary
+
+--- TASK.md cua CHINH task nay: no o dau trong bon nhom ---
+command: grep -n 'Artifact của chính task' docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+117:3. Artifact của chính task: `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md` cộng mọi tệp dưới `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/`.
+=> nhom 3 chi ke HANDOFF.md va evidence/, KHONG ke TASK.md, nen TASK.md cua chinh task van ngoai bon nhom.

@@ -1,0 +1,35 @@
+MEASURED_AT_UTC=2026-09-04T02:01:27Z
+=== C-09: verify-task.ps1 on the contract under audit ===
+VT_EXIT=0
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+  [OK]   A-05 12 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 2 referenced npm script(s) all exist.
+  [OK]   T-02 14 file:line reference(s) resolve.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-go-live-18-public-surface-hardening/**.
+  [OK]   T-05 all 18 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+  [OK]   T-07 control fields unchanged against HEAD.
+
+RESULT: PASS. TASK contract is ready for execution.
+
+=== companion: verify-handoff.ps1 on the HANDOFF under audit ===
+VH_EXIT=0
+  [OK]   H-03 spec version v1.2 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 18 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 28 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 12 STEP appear in the execution trace.
+  [OK]   H-13 2 deviation(s) in section 2, 4 declared in section 5.
+  [OK]   H-14 section 7 records round 1.
+  [WARN] H-15 TASK.md control field(s) differ from HEAD: Next gate. If Tier 2 changed them, revert - those fields belong to Tier 1.
+
+RESULT: PASS WITH WARNINGS (1 warning(s)).
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.

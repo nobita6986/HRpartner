@@ -1,0 +1,15 @@
+MEASURED_AT_UTC=2026-09-04T02:00:10Z
+gate-lib.ps1  worktree=4caa5fd51e09fd9a066612729dc6f7888f551403
+verify-task.ps1  worktree=e36b83dfbf7c860e320d5409535b82001cab574e
+verify-handoff.ps1  worktree=3997dd4ff896ea9f7cebdf40a247bcb269ab23e5
+verify-audit.ps1  worktree=2520a48dd7893f5cf9674357fd6a36e58772bcbd
+-- presence at HEAD:
+gate-lib.ps1 AT_HEAD=ABSENT
+verify-task.ps1 AT_HEAD=f9014b7f4bbb479a1544eddebbe9a26b4424ce62
+verify-handoff.ps1 AT_HEAD=ABSENT
+verify-audit.ps1 AT_HEAD=b5390297ef9c18e486eb7e21abfb4d9b9771414c
+-- index status of the four:
+A  .ai-pipeline/scripts/gate-lib.ps1
+ M .ai-pipeline/scripts/verify-audit.ps1
+A  .ai-pipeline/scripts/verify-handoff.ps1
+ M .ai-pipeline/scripts/verify-task.ps1

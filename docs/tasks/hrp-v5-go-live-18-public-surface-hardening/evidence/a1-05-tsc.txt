@@ -1,0 +1,20 @@
+=== A1-05 Tier 3 independent typecheck (exit by redirect, NOT after a pipe) ===
+CMD=npm run typecheck
+START_UTC=2026-09-04T01:34:58Z
+TSC_EXIT=1
+
+> hrp@0.1.0 typecheck
+> tsc --noEmit
+
+new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & ClassAttributes<HTMLDivElement> & HTMLAttributes<HTMLDivElement> & Omit<...> & LinkProps<...> & { ...; } & RefAttributes<...>'.
+  Type '{ children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'LinkProps<any>'.
+    Types of property 'href' are incompatible.
+      Type 'undefined' is not assignable to type 'Url'.
+--- red line inventory (lines containing 'error TS')
+1
+GREP_COUNT_EXIT=0
+--- the red lines verbatim
+5:new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & ClassAttributes<HTMLDivElement> & HTMLAttributes<HTMLDivElement> & Omit<...> & LinkProps<...> & { ...; } & RefAttributes<...>'.
+--- red lines NOT under new-ui/
+GREP_NONNEWUI_EXIT=1
+END_UTC=2026-09-04T01:35:02Z

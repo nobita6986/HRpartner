@@ -1,0 +1,53 @@
+=== A1-13 AC-01/AC-02/AC-11/AC-12/AC-13: diffs and forbidden paths, measured by me ===
+--- baseline signature of enforceRateLimits vs now
+BASE: 103:export async function enforceRateLimits(input: EnforceRateLimitsInput): Promise<NextResponse | null> {
+NOW : 164:export async function enforceRateLimits(input: EnforceRateLimitsInput): Promise<NextResponse | null> {
+--- does consumeRateLimit exist anywhere in the repo?
+GREP_CONSUME_EXIT=1
+--- AC-02: three EV-04 routes must be byte-clean
+AC02_EXIT=0
+AC02_LINES=0
+--- AC-11: tracking route diff, verbatim
+diff --git a/app/api/public/applications/[trackingCode]/route.ts b/app/api/public/applications/[trackingCode]/route.ts
+index 01cecef..fdd47ca 100644
+--- a/app/api/public/applications/[trackingCode]/route.ts
++++ b/app/api/public/applications/[trackingCode]/route.ts
+@@ -39,7 +39,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
+   const prisma = getPrisma();
+   const dto = await prisma.$transaction((tx) => getPublicTracking(tx, trackingCode));
+   if (!dto) {
+-    return NextResponse.json({ error: 'NOT_FOUND', message: 'Application not found' }, { status: 404 });
++    return NextResponse.json({ error: 'NOT_FOUND', message: 'Application not found' }, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+   }
+   return NextResponse.json({ application: dto }, { headers: { 'Cache-Control': 'no-store' } });
+ }
+AC11_DIFF_EXIT=0
+1	1	app/api/public/applications/[trackingCode]/route.ts
+AC11_NUMSTAT_EXIT=0
+--- AC-12: inventory diff, verbatim
+diff --git a/src/domains/applications/marketplace-inventory.static.test.ts b/src/domains/applications/marketplace-inventory.static.test.ts
+index cb0a6c6..e5bee46 100644
+--- a/src/domains/applications/marketplace-inventory.static.test.ts
++++ b/src/domains/applications/marketplace-inventory.static.test.ts
+@@ -352,6 +352,13 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
+     expect(code).toContain('{result.fullName}');
+     expect(code).toContain("{result.phoneMasked || 'Không cung cấp'}");
+     expect(code).toContain("{result.cccdMasked || 'Không cung cấp'}");
++    // go-live-18 / RQ-08 / DEC-08 — `F-06` của task 13. Hai dòng trên chỉ khẳng định rằng khoá ĐÃ
++    // CHE được in; chúng không chặn ai đó thêm một dòng in khoá THÔ ngay bên cạnh. Hai phủ định
++    // dưới đây chặn đúng việc ấy, và cộng vào chứ không thay: mất hai dòng trên là mất phần bảo vệ
++    // đang có. Lookahead giữ assertion HẸP — `not.toMatch(/result\.phone/)` sẽ đỏ trên chính
++    // `phoneMasked` ở trên, tức đỏ trên mã ĐÚNG, và đó là cách nhanh nhất để hàng rào bị tắt.
++    expect(code).not.toMatch(/result\.phone(?!Masked)/);
++    expect(code).not.toMatch(/result\.cccd(?!Masked)/i);
+   });
+ });
+ 
+AC12_DIFF_EXIT=0
+7	0	src/domains/applications/marketplace-inventory.static.test.ts
+--- AC-12: lines 353 and 354 in the NEW file
+    expect(code).toContain("{result.phoneMasked || 'Không cung cấp'}");
+    expect(code).toContain("{result.cccdMasked || 'Không cung cấp'}");
+--- same two lines at BASELINE
+    expect(code).toContain("{result.phoneMasked || 'Không cung cấp'}");
+    expect(code).toContain("{result.cccdMasked || 'Không cung cấp'}");

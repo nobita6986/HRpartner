@@ -1,0 +1,30 @@
+=== A1-02 why does the worktree typecheck see an unversioned tree? ===
+--- package.json scripts: typecheck + test:unit
+7:    "build": "next build",
+8:    "typecheck": "tsc --noEmit",
+12:    "test:unit": "vitest run --config vitest.unit.config.ts",
+GREP_PKG_EXIT=0
+--- tsconfig.json include/exclude
+38:  "include": [
+39:    "**/*.ts",
+40:    "**/*.tsx",
+41:    ".next/types/**/*.ts"
+43:  "exclude": [
+GREP_TSCONFIG_EXIT=0
+--- full include/exclude blocks verbatim
+include = ['**/*.ts', '**/*.tsx', '.next/types/**/*.ts']
+exclude = ['node_modules']
+PY_TSCONFIG_EXIT=0
+--- git ls-tree 80f6933 -- new-ui  (does the BASELINE COMMIT contain it?)
+LSTREE_EXIT=0
+LSTREE_BASELINE_LINES=0
+--- git ls-tree HEAD -- new-ui
+LSTREE_HEAD_EXIT=0
+LSTREE_HEAD_LINES=0
+--- grep -c new-ui across the three batch TASK.md
+TASK=hrp-v5-go-live-18-public-surface-hardening new-ui_count=0
+TASK=hrp-v5-go-live-17-rls-required-relation-sweep new-ui_count=0
+TASK=hrp-v5-test-01-public-surface-e2e-smoke MISSING
+--- all TASK.md in repo mentioning new-ui
+GREP_ALLTASK_EXIT=0
+TASKS_MENTIONING_NEWUI=1

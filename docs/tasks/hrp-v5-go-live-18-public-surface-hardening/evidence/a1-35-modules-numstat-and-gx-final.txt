@@ -1,0 +1,34 @@
+=== a1-35: numstat SAU CUNG tren sau path Modules, va tap GX dung sau khi sua loi phan loai cua chinh toi ===
+MEASURED_AT_UTC=2026-09-04T02:42:08Z
+
+TU SUA: bo phan loai nhanh o a1-33 chi liet ke 2 path ma o nhom mot, nen no day
+src/shared/security/rate-limit-guard.ts ra GX. Sai. Path ay NAM TRONG Modules cua
+chinh contract nay (dong 16) va la doi tuong cua RQ-01 cung AC-01, tuc nhom MOT.
+
+--- command: grep -n 'Modules' TASK.md ---
+16:| Modules | `src/shared/security/rate-limit-guard.ts`, `app/(jobs)/viec-lam/[slug]/page.tsx`, `app/api/public/applications/[trackingCode]/route.ts`, `src/domains/applications/marketplace-inventory.static.test.ts`, `src/shared/security/public-surface-limiter.static.test.ts`, `src/domains/applications/tracking-pii-containment.static.test.ts` |
+
+--- command: git diff --cached --numstat -- <tung path Modules> ---
+  38	9	src/shared/security/rate-limit-guard.ts
+  91	5	app/(jobs)/viec-lam/[slug]/page.tsx
+  1	1	app/api/public/applications/[trackingCode]/route.ts
+  7	0	src/domains/applications/marketplace-inventory.static.test.ts
+  187	0	src/shared/security/public-surface-limiter.static.test.ts
+  196	0	src/domains/applications/tracking-pii-containment.static.test.ts
+
+--- command: git diff --name-only 80f6933..HEAD -- <sau path Modules> ---
+DRIFT_LINES=0
+
+--- tap GX DUNG duoi v1.4 ---
+  GX: .ai-pipeline/scripts/gate-lib.ps1                  <- Agent khac cua Owner, ABSENT o HEAD
+  GX: .ai-pipeline/scripts/verify-handoff.ps1            <- Agent khac cua Owner, ABSENT o HEAD
+  GX: .ai-pipeline/scripts/verify-pipeline.ps1           <- Agent khac cua Owner, commit 781335e
+  GX: docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md  <- Tier 1, chinh ban bump v1.3+v1.4 da stage no
+GX_FINAL_TOTAL=4
+  (a1-25 dem 5 duoi v1.3; v1.4 hut AUDIT.md cua lane 17 vao nhom bon nen con 4)
+
+--- nhom ba phinh ra la do CHINH Tier 3 ---
+command: git diff --cached --name-only -- <evidence task nay> | wc -l
+67
+command: git diff --cached --name-only -- <evidence task nay> | grep -c '/a1-'
+31

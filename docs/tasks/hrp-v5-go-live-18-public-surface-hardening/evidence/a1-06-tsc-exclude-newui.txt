@@ -1,0 +1,17 @@
+=== A1-06 decisive probe: is the DELIVERY type-clean once the unversioned tree is excluded? ===
+probe config written at repo root, to be deleted at the end of this block
+{
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "new-ui"]
+}
+--- npx tsc --noEmit -p tsconfig.a1probe.json  (exit by redirect)
+TSC_PROBE_EXIT=0
+--- probe output verbatim (empty means no diagnostics)
+PROBE_OUTPUT_LINES=0
+--- cleanup
+CLEANUP_STATUS_LINES=0
+0
+GREP_PROBE_LEFTOVER_EXIT=1
+--- pre-existing residue from ANOTHER round (not mine, left in place on purpose)
+?? tsconfig.tmp.json
+GREP_TSCONFIG_RESIDUE_EXIT=0

@@ -1,0 +1,31 @@
+=== A1-07 closing the arithmetic: 106->107 files, 1631->1642 tests ===
+--- lane-17 fence run alone (read-only execution of a file I do NOT own)
+L17_EXIT=0
+7:[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+8:[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+--- arithmetic
+HANDOFF_CLAIM_FILES=106  MY_FILES=107  DELTA=1
+HANDOFF_CLAIM_TESTS=1631 MY_TESTS=1642 DELTA=11
+--- when was that file written, and is it staged?
+2026-09-04 02:11:14.8651413000 src/shared/security/required-relation-sweep.static.test.ts
+A  src/shared/security/required-relation-sweep.static.test.ts
+STATUS_EXIT=0
+--- which contract declares it?
+docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+GREP_OWNER_EXIT=0
+--- Tier 2 (go-live-18) measurement window, from their own artifact mtimes
+2026-09-03 23:58:24.0862272000 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s04-unit.txt
+2026-09-04 00:13:13.0622281000 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-page.py
+2026-09-04 00:27:23.4128115000 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-red.txt
+2026-09-04 01:01:08.1834455000 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-scope-groups.txt
+2026-09-04 00:51:45.6012126000 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc-exit.txt
+2026-09-04 00:34:13.4639022000 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-unit.txt
+--- mtime of the six delivered code paths
+2026-09-03 23:56:58.4705972000 src/shared/security/rate-limit-guard.ts
+2026-09-04 00:27:23.4433153000 app/(jobs)/viec-lam/[slug]/page.tsx
+2026-09-04 00:16:46.7824412000 app/api/public/applications/[trackingCode]/route.ts
+2026-09-04 00:28:57.5432492000 src/domains/applications/marketplace-inventory.static.test.ts
+2026-09-04 00:24:20.2973755000 src/shared/security/public-surface-limiter.static.test.ts
+2026-09-04 00:32:11.0844614000 src/domains/applications/tracking-pii-containment.static.test.ts

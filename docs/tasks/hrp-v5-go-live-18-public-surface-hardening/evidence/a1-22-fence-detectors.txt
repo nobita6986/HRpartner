@@ -1,0 +1,36 @@
+MEASURED_AT_UTC=2026-09-04T01:56:03Z
+=== go-live-08 blind-spot test: do the fixtures route through the SAME detector as the real tree? ===
+-- fence1: occurrences of detector name 'consumersMissingLimiter'
+7
+87:function consumersMissingLimiter(entries: readonly SourceEntry[]): string[] {
+125:    expect(consumersMissingLimiter(scanned)).toEqual([]);
+161:    expect(consumersMissingLimiter([bad])).toEqual([BAD_PATH]);
+165:    expect(consumersMissingLimiter([good])).toEqual([]);
+169:    expect(consumersMissingLimiter([good, bad])).toEqual([BAD_PATH]);
+177:    expect(consumersMissingLimiter([commented])).toEqual([BAD_PATH]);
+185:    expect(consumersMissingLimiter([definition])).toEqual([]);
+-- fence2: occurrences of detector name 'rawPiiEscapes'
+8
+102:function rawPiiEscapes(source: string): string[] {
+148:    expect(rawPiiEscapes(source)).toEqual([]);
+169:    expect(rawPiiEscapes('return { phone: row.phone };')).toEqual(['row.phone']);
+173:    expect(rawPiiEscapes('return { cccd: row.cccd_number };')).toEqual(['row.cccd_number']);
+177:    expect(rawPiiEscapes(wrapped)).toEqual([]);
+181:    expect(rawPiiEscapes(`${wrapped}\n  debugPhone: row.phone,`)).toEqual(['row.phone']);
+186:    expect(rawPiiEscapes(`${wrapped}\n${applyPath}`)).toEqual([]);
+190:    expect(rawPiiEscapes(`// row.phone không bao giờ được in trần\n${wrapped}`)).toEqual([]);
+
+=== runner-authoritative test counts for the two fences (NOT substring-counted) ===
+F1_EXIT=0
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+F2_EXIT=0
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+
+=== AC-12 evasion surface (coverage note, not a defect): the two anchors added ===
++    // go-live-18 / RQ-08 / DEC-08 — `F-06` của task 13. Hai dòng trên chỉ khẳng định rằng khoá ĐÃ
++    // CHE được in; chúng không chặn ai đó thêm một dòng in khoá THÔ ngay bên cạnh. Hai phủ định
++    // dưới đây chặn đúng việc ấy, và cộng vào chứ không thay: mất hai dòng trên là mất phần bảo vệ
++    // đang có. Lookahead giữ assertion HẸP — `not.toMatch(/result\.phone/)` sẽ đỏ trên chính
++    // `phoneMasked` ở trên, tức đỏ trên mã ĐÚNG, và đó là cách nhanh nhất để hàng rào bị tắt.
++    expect(code).not.toMatch(/result\.phone(?!Masked)/);
++    expect(code).not.toMatch(/result\.cccd(?!Masked)/i);

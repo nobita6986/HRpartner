@@ -1,0 +1,39 @@
+MEASURED_AT_UTC=2026-09-04T01:53:12Z
+=== C: is s04 a DISTINCT run or a copy of s01? (copy = fabrication signature) ===
+5ff219b079c1d7cf40b2bfcbe7b5d2c3 *docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-unit.txt
+7d1311507a2a961a73e58e938f919cba *docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s04-unit.txt
+10d6257d1b622b273926b98c44de33a9 *docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-unit.txt
+-- differing lines between s01 and s04 (count):
+DIFF_LINES_S01_S04=200
+<  ✓ src/domains/job-board/public-ui-premium.static.test.ts (63 tests) 29ms
+<  ✓ src/shared/ui/internal-contrast.static.test.ts (21 tests) 20ms
+<  ✓ src/domains/staffing/assignment-placement.service.test.ts (65 tests) 70ms
+<  ✓ src/domains/applications/marketplace-apply.routes.test.ts (31 tests) 67ms
+<  ✓ src/shared/auth/vendor-object-scope.m1-08.route.test.ts (36 tests) 54ms
+<  ✓ src/domains/commission/golden.test.ts (10 tests) 19ms
+<  ✓ src/domains/applications/marketplace-inventory.static.test.ts (25 tests) 102ms
+<  ✓ src/domains/job-board/public-card-truth.test.ts (23 tests) 32ms
+
+=== D: could the page fix or the tracking fix be MASKING a guard regression? ===
+-- D1: baseline version of the only non-Modules page-referencing test: limiter assertions?
+SHOW_EXIT=0
+PD_BASE_LINES=202
+PD_BASE_LIMITER_HITS=0
+-- D2: baseline versions of the 7 tracking-route tests: any Cache-Control / no-store assertion?
+   n=1  src/domains/applications/live-integration.ops06a.test.ts
+   n=2  src/domains/applications/marketplace-apply.routes.test.ts
+   n=0  src/domains/applications/marketplace-inventory.static.test.ts
+   n=0  src/domains/applications/security-boundary.mp2.test.ts
+   n=0  src/domains/applications/tracking-mask.routes.test.ts
+   n=0  src/shared/auth/api-boundary.static.test.ts
+   n=3  src/shared/security/rate-limit-guard.test.ts
+NOSTORE_TOTAL=6
+-- D3: same question over the ENTIRE baseline test corpus:
+BASELINE_TEST_FILES=120
+   HIT n=1 src/domains/applications/live-integration.ops06a.test.ts
+   HIT n=2 src/domains/applications/marketplace-apply.routes.test.ts
+   HIT n=2 src/domains/applications/marketplace-browse.routes.test.ts
+   HIT n=1 src/domains/job-board/public-ui-premium.static.test.ts
+   HIT n=3 src/shared/security/rate-limit-guard.test.ts
+   HIT n=1 src/shared/security/request-body.test.ts
+CORPUS_NOSTORE_TOTAL=10

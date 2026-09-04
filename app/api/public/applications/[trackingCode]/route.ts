@@ -39,7 +39,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
   const prisma = getPrisma();
   const dto = await prisma.$transaction((tx) => getPublicTracking(tx, trackingCode));
   if (!dto) {
-    return NextResponse.json({ error: 'NOT_FOUND', message: 'Application not found' }, { status: 404 });
+    return NextResponse.json({ error: 'NOT_FOUND', message: 'Application not found' }, { status: 404, headers: { 'Cache-Control': 'no-store' } });
   }
   return NextResponse.json({ application: dto }, { headers: { 'Cache-Control': 'no-store' } });
 }

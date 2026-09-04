@@ -1,0 +1,60 @@
+﻿=== s10-gate-handoff — cong H-01..H-15 tren HANDOFF.md ===
+2026-09-04 01:07:42 +07:00
+lenh: powershell -NoProfile -File .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+
+HANDOFF SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-go-live-18-public-surface-hardening\HANDOFF.md (against docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 25192 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.2 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [FAIL] H-05 7 AC have no evidence row: AC-12, AC-13, AC-14, AC-15, AC-16, AC-17, AC-18.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 27 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 12 STEP appear in the execution trace.
+  [OK]   H-13 2 deviation(s) in section 2, 4 declared in section 5.
+  [OK]   H-14 section 7 records round 1.
+  [OK]   H-15 TASK.md control fields untouched by this round.
+
+RESULT: FAIL (1 error(s), 0 warning(s)).
+Do NOT write "Handoff status: READY_FOR_AUDIT" until these fail items are fixed.
+
+HANDOFF_GATE_EXIT = 2
+
+--- SUA: bang Section 3 bi mot DONG TRANG cat lam hai ---
+Bay hang AC-12..AC-18 nam o bang thu hai khong co dong tieu de => parser khong dem.
+Phep sua: xoa dung mot dong trang (dong 65). Khong mot o nao doi noi dung.
+diff --git a/docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md b/docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md index f51aa21..b4717d8 100644 --- a/docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md +++ b/docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md @@ -62,7 +62,6 @@ Lane canonical `npm run test:unit` đi từ `104` tệp `1611` test lên `106` t  | `AC-09` | Đọc mã hàng rào cộng `grep -c "viec-lam" src/shared/security/public-surface-limiter.static.test.ts` | Đếm `0`, dưới ngưỡng `1`. Tập consumer TỰ SUY bằng `readdirSync` đệ quy trên `SCAN_ROOTS`, không một mảng literal nào | evidence/s10-ac-recheck.txt cộng [src/shared/security/public-surface-limiter.static.test.ts:30](src/shared/security/public-surface-limiter.static.test.ts#L30) — `SCAN_ROOTS` phủ cả `src` và `app`, và có assertion đòi CẢ HAI cây có tệp tham chiếu | None |  | `AC-10` | Đọc mã tìm fixture âm cộng chạy hàng rào trên nội dung trang TRƯỚC bản sửa bằng `npx vitest run --config vitest.unit.config.ts` | `5` case fixture âm. Trên nội dung baseline: `Tests 1 failed, 8 passed (9)`, `RED_EXIT=1` | evidence/s07-red.txt cộng evidence/s07-page-sha.txt — trang đã phục hồi về `sha256 8e706a2c` sau phép thử ĐỎ | None |  | `AC-11` | `git diff --cached -- app/api/public/applications/[trackingCode]/route.ts` cộng `git diff --cached --numstat` trên đúng tệp đó | Diff `1 1`, tổng `2` dòng đổi, dưới ngưỡng `4`. Nhánh `404` nhận đúng một khoá `Cache-Control` | evidence/s10-ac11-route.diff — thân `404` không nhận khoá nào khác, nhánh `200` không đổi một byte | None | -  | `AC-12` | `git diff --cached -- src/domains/applications/marketplace-inventory.static.test.ts` cộng output `STEP-08` bằng `npx vitest run --config vitest.unit.config.ts` | Cộng `7 0`. Hai assertion phủ định mới. Lane con `25 passed`, `S08_EXIT=0` | evidence/s10-ac12-inventory.diff cộng evidence/s08-inventory.txt — hai dòng khẳng định cũ ở `:353` và `:354` còn nguyên byte, assertion phủ định dùng lookahead nên KHÔNG bắt luôn khoá đã che, chứng minh ở evidence/s08-regex-probe.txt | None |  | `AC-13` | `git status --porcelain src/domains/job-board/public.service.ts middleware.ts src/shared/security/rate-limit-identity.ts` cộng `git diff --cached --name-only -- prisma/` | `AC13_A_EXIT=0` và `AC13_B_EXIT=0`, cả bốn cho `0 dòng` | evidence/s10-ac-recheck.txt cộng evidence/s09-forbidden-verified.txt — `17` đường dẫn cấm chạm chạy RIÊNG từng path, mỗi path đếm `0 0`, `FORBID_TOTAL=0` | None |  | `AC-14` | `npm run test:unit` rồi `npm run typecheck`, lấy mã thoát bằng redirect chứ không sau ống. Cộng `diff` giữa tập dòng đỏ của `STEP-10` và của `STEP-01` | Lane exit `0` với `106 passed (106)` tệp và `1631 passed (1631)` test, cao hơn mốc `104` và `1611`. Typecheck `TSC_EXIT=1` với ĐÚNG `1` dòng đỏ `new-ui/components/JobCard.tsx(18,6): error TS2322`. `DIFF_EXIT=0`, tập dòng đỏ giống byte với mốc đo trên baseline `80f6933` bằng cùng lệnh `npm run typecheck` | evidence/s10-unit.txt, evidence/s10-tsc-exit.txt, evidence/s10-tsc-diff.txt, evidence/s01-tsc.txt — `new-ui/` là cây UI chưa có contract, `grep -c "new-ui"` đếm `0` trong CẢ BA TASK.md của lô nên không quy được cho contract nào; chi tiết ở `DEV-01` | Typecheck không exit `0`. Dòng đỏ không thuộc path đã khai của contract nào, xem `DEV-01` | @@ -116,11 +115,13 @@ Nhóm 3 là `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md` c  | Chạy lại từng AC | evidence/s10-ac-recheck.txt | Từng phép kiểm AC chạy lại ở `STEP-10` kèm mã thoát |  | Phạm vi | evidence/s10-scope-groups.txt cộng evidence/s10-scope-raw.txt | `205` path hợp, `9` path index, phân đúng bốn nhóm `4.2`, `GROUP4_TOTAL=0` |  | Giới hạn `RQ-04` | evidence/s10-handoff-denycode.txt | Chuỗi mã từ chối HTTP đếm `0` dòng trong `HANDOFF.md` | +| Cổng HANDOFF | evidence/s10-gate-handoff.txt | Hai lượt chạy `verify-handoff.ps1`: lượt một `RESULT: FAIL` `HANDOFF_GATE_EXIT = 2` ở `H-05`, lượt hai `RESULT: PASS` `HANDOFF_GATE_EXIT = 0` với `14` mã kiểm OK |    Hai ghi chú về chính bộ artifact, ghi ra để Tier 3 không phải tự phát hiện:    - `evidence/s01-gate18.txt` là **`0` byte**. Nó là lần chạy cổng đầu tiên và đã bị thay bằng hai tệp có nội dung ở dòng đầu bảng trên. Một tệp rỗng không phân biệt được "không có gì để in" với "lệnh chưa từng chạy", nên đừng dùng nó làm bằng chứng.  - `evidence/s09-forbidden.txt` cũng là `0` byte, và ở đó `0` byte đúng là kết quả mong đợi vì `git status --porcelain` trả rỗng. Vì cùng lý do trên, tôi viết thêm `evidence/s09-forbidden-verified.txt` in kèm lệnh, số dòng và mã thoát cho từng path. Tệp `0` byte gốc giữ nguyên, không bị ghi đè. +- Cổng HANDOFF lượt một FAIL vì một dòng trắng giữa bảng `§3` cắt bảng làm hai, nên bảy hàng `AC-12`..`AC-18` nằm ở một bảng thứ hai không có dòng tiêu đề và KHÔNG được đếm. Đây là biến thể thứ tư của bẫy ô bảng đã ghi trong TASK: không chỉ dấu ống trần phá số cột, một dòng TRẮNG cũng phá cả bảng mà mắt thường không thấy. Sửa bằng cách xoá đúng một dòng trắng, `25192` byte thành `25191`; không một ô nào đổi nội dung.    ## 7. Execution Round History  
+^ khoi tren la `git diff` DAY DU cua HANDOFF.md tai thoi diem sua (khong phai numstat),
+  gom ca hang Section 6 ghi lai chinh lan chay nay. Numstat cua cung pham vi:
+  2	1	docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md  (them / bot / path)
+
+--- LUOT HAI: chay lai cung mot chuoi ky tu ---
+2026-09-04 01:14:37 +07:00
+lenh: powershell -NoProfile -File .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+HANDOFF SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-go-live-18-public-surface-hardening\HANDOFF.md (against docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 25977 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.2 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 18 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 28 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 12 STEP appear in the execution trace.
+  [OK]   H-13 2 deviation(s) in section 2, 4 declared in section 5.
+  [OK]   H-14 section 7 records round 1.
+  [OK]   H-15 TASK.md control fields untouched by this round.
+
+RESULT: PASS.
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+
+HANDOFF_GATE_EXIT = 0

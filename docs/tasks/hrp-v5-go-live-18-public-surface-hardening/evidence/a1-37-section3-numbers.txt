@@ -1,0 +1,58 @@
+=== a1-37: tu do lai MOI con so vua ghi vao section 3 va C-03 ===
+2026-09-04T09:48:40+0700
+
+--- command: git diff --cached --numstat -- src/shared/security/rate-limit-guard.ts ---
+38	9	src/shared/security/rate-limit-guard.ts
+NUMSTAT_GUARD_EXIT=0
+
+--- command: git diff --cached --numstat -- (ba tep test) ---
+7	0	src/domains/applications/marketplace-inventory.static.test.ts
+196	0	src/domains/applications/tracking-pii-containment.static.test.ts
+187	0	src/shared/security/public-surface-limiter.static.test.ts
+NUMSTAT_TESTS_EXIT=0
+
+--- command: grep -n "evaluateRateLimits|enforceRateLimits|catch" rate-limit-guard.ts ---
+119:export async function evaluateRateLimits(input: EnforceRateLimitsInput): Promise<RateLimitOutcome> {
+126:  } catch (err) {
+139:    } catch (err) {
+164:export async function enforceRateLimits(input: EnforceRateLimitsInput): Promise<NextResponse | null> {
+GREP_GUARD_EXIT=0
+
+--- command: sed -n 164,172p rate-limit-guard.ts (than enforceRateLimits) ---
+export async function enforceRateLimits(input: EnforceRateLimitsInput): Promise<NextResponse | null> {
+  const outcome = await evaluateRateLimits(input);
+  if (outcome.kind === 'rate-limited') return tooManyRequests(outcome.decision);
+  if (outcome.kind === 'unavailable') return unavailable();
+  return null;
+}
+
+/** DEC-12: chỉ reason code, KHÔNG raw provider error/URL/token. */
+function logUnavailable(
+
+--- command: grep -rln enforceRateLimits app src --include=*.ts --include=*.tsx ---
+app/api/jobs/route.ts
+app/api/jobs/[slug]/route.ts
+app/api/public/applications/[trackingCode]/route.ts
+app/api/public/jobs/[slug]/applications/route.ts
+src/domains/applications/marketplace-inventory.static.test.ts
+src/shared/security/public-surface-limiter.static.test.ts
+src/shared/security/rate-limit-guard.test.ts
+src/shared/security/rate-limit-guard.ts
+CALLERS_EXIT=0
+
+--- command: git status --porcelain -- <tung route goi enforceRateLimits> ---
+route=app/api/jobs/route.ts status=[CLEAN]
+route=app/api/jobs/[slug]/route.ts status=[CLEAN]
+route=app/api/public/applications/[trackingCode]/route.ts status=[M  app/api/public/applications/[trackingCode]/route.ts]
+route=app/api/public/jobs/[slug]/applications/route.ts status=[CLEAN]
+ROUTE_STATUS_EXIT=0
+
+--- command: git diff --cached --numstat -- <bon route> | wc -l ---
+R3_EXIT=0
+R3_CHANGED_LINES=0
+
+--- command: git diff --cached --name-only | wc -l  (index total, doc lai) ---
+IDX_EXIT=0
+INDEX_TOTAL_NOW=134
+TASK18_PATHS=70
+OUTSIDE_TASK18=64

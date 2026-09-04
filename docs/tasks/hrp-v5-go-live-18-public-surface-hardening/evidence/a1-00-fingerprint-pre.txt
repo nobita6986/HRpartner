@@ -1,0 +1,14 @@
+=== A1-00 Tier 3 round 1 readiness / tool fingerprint (PRE) ===
+TIMESTAMP_UTC=2026-09-04T01:30:58Z
+--- git log --oneline -1
+e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+HEAD_EXIT=0
+--- git rev-parse HEAD
+e58a6c0c84683fdf9da4adf2dec173549d184510
+--- pre-round gate fingerprints (worktree vs HEAD)
+gate-lib.ps1 worktree=4caa5fd51e09fd9a066612729dc6f7888f551403 head=HEAD:.ai-pipeline/scripts/gate-lib.ps1
+absent
+verify-task.ps1 worktree=e36b83dfbf7c860e320d5409535b82001cab574e head=f9014b7f4bbb479a1544eddebbe9a26b4424ce62
+verify-handoff.ps1 worktree=3997dd4ff896ea9f7cebdf40a247bcb269ab23e5 head=HEAD:.ai-pipeline/scripts/verify-handoff.ps1
+absent
+verify-audit.ps1 worktree=2520a48dd7893f5cf9674357fd6a36e58772bcbd head=b5390297ef9c18e486eb7e21abfb4d9b9771414c

@@ -1,0 +1,30 @@
+=== A1-08 page.tsx: line order of limiter vs DB, and the reject branch ===
+--- git status --porcelain (pre-probe state)
+M  app/(jobs)/viec-lam/[slug]/page.tsx
+STATUS_EXIT=0
+--- sha256 of worktree bytes
+8e706a2cc1fd5ddac1bbf9b313cabe907b042db034c59ca31ec6ec1ad83eddb7 *app/(jobs)/viec-lam/[slug]/page.tsx
+--- CRLF present?
+app/(jobs)/viec-lam/[slug]/page.tsx: JavaScript source, Unicode text, UTF-8 text
+--- grep -n limiter entries, withPublicDb, getPublicJobDetail, notFound
+8: * Server Component đọc DB qua ĐÚNG `withPublicDb` (`DEC-02`, `RQ-05`): principal `MKT`,
+17: * `notFound()` cho 404 THẬT (`DEC-09`). Việc đã đủ chỉ tiêu vẫn mở `200` (`DEC-14`) — link đã chia
+31: * khi chạm DB. Limiter nằm TRONG `loadJob`, phía trên `withPublicDb`, vì `loadJob` là đường duy
+46:import { withPublicDb } from '@/src/shared/auth/with-public-db';
+47:import { getPublicJobDetail } from '@/src/domains/job-board/public.service';
+49:import { evaluateRateLimits, RATE_LIMITED_MESSAGE } from '@/src/shared/security/rate-limit-guard';
+51:import { RATE_LIMIT_RULES } from '@/src/shared/security/rate-limit-port';
+74:type LoadedJob = NonNullable<Awaited<ReturnType<typeof getPublicJobDetail>>>;
+87: * lượt (`RQ-02`). Dùng `evaluateRateLimits` — điểm vào chỉ-trả-quyết-định của `DEC-01` — vì một
+92:  const outcome = await evaluateRateLimits({
+94:      { rule: RATE_LIMIT_RULES.JOB_BROWSE, value: clientIpFromHeaders(requestHeaders, process.env) },
+102:  const job = await withPublicDb(getPrisma(), (tx) => getPublicJobDetail(tx, slug));
+147: * slug, IP hay bất kỳ giá trị request nào lọt lên màn hình. Cũng KHÔNG gọi `notFound()`: nói rằng
+184:  if (!job) notFound();
+GREP_ORDER_EXIT=0
+--- numstat of the staged change
+91	5	app/(jobs)/viec-lam/[slug]/page.tsx
+NUMSTAT_EXIT=0
+--- total lines now vs baseline
+NOW_LINES=272
+BASE_LINES=186

@@ -1,0 +1,43 @@
+=== A1-11 read-only AC measurements by Tier 3 ===
+--- EV-02: files referencing withPublicDb (non-test), the fence's own premise
+app/(jobs)/viec-lam/[slug]/page.tsx
+app/api/jobs/[slug]/route.ts
+app/api/jobs/route.ts
+src/shared/auth/with-public-db.ts
+EV02_TOTAL=4
+--- EV-04: enforceRateLimits call sites (non-test)
+app/api/jobs/[slug]/route.ts:18:  const denied = await enforceRateLimits({
+app/api/jobs/route.ts:17:  const denied = await enforceRateLimits({
+app/api/public/applications/[trackingCode]/route.ts:29:  const denied = await enforceRateLimits({
+app/api/public/jobs/[slug]/applications/route.ts:103:  const ipDenied = await enforceRateLimits({
+app/api/public/jobs/[slug]/applications/route.ts:128:    const phoneDenied = await enforceRateLimits({
+src/shared/security/rate-limit-guard.ts:164:export async function enforceRateLimits(input: EnforceRateLimitsInput): Promise<NextResponse | null> {
+src/shared/security/rate-limit-guard.ts:9: *   - `enforceRateLimits()` là vỏ mỏng HTTP của route, nguyên tên và nguyên tham số:
+--- AC-09 grep -c viec-lam in limiter fence
+0
+AC09_GREP_EXIT=1
+--- AC-17 grep -c application.service in PII fence
+1
+AC17_GREP_EXIT=0
+--- AC-17 three counts, measured by me on the service
+1
+1
+233:    phoneMasked: maskPhone(row.phone),
+234:    cccdMasked: maskCccd(row.cccd_number),
+--- readers of the SQL function (non-test)
+src/domains/applications/application.service.ts
+READERS_TOTAL=1
+--- PublicTrackingDto keys, counted by me
+export interface PublicTrackingDto {
+  trackingCode: string;
+  status: string;
+  statusLabel: string;
+  nextStep: string;
+  submittedAt: string | null;
+  jobTitle: string | null;
+  jobCode: string | null;
+  positionTitle: string | null;
+  fullName: string;
+  phoneMasked: string | null;
+  cccdMasked: string | null;
+}

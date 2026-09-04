@@ -1,0 +1,63 @@
+=== A1-26 the contract MOVED mid-round: re-run of both upstream gates, plus the mechanism of H-15 ===
+MEASURED_AT_UTC=2026-09-04T02:13:56Z
+
+### 1. the Next gate ROW is byte-identical between worktree and HEAD
+--- command: md5sum on the extracted row
+bcb951595c34688736fb356d78588dd5 */tmp/ng_wt.txt
+bcb951595c34688736fb356d78588dd5 */tmp/ng_head.txt
+ROW_BYTES_WT=244 ROW_BYTES_HEAD=244
+--- command: cmp /tmp/ng_wt.txt /tmp/ng_head.txt
+CMP_EXIT=0
+
+### 2. yet H-15's own comparator reports DIFFER — reproduced with the gate's exact two read paths
+--- worktree side  = Get-Content -Raw -Encoding UTF8   (verify-handoff.ps1:66)
+--- HEAD side      = Invoke-GitLines 'git show HEAD:<path>', no encoding pinned (gate-lib.ps1:119-124)
+--- command: powershell -NoProfile -File a1_cf2.ps1
+FIELD=[Status] SAME  WT_LEN=19 HEAD_LEN=19  WT_charset=ascii-only
+FIELD=[Current audit round] SAME  WT_LEN=1 HEAD_LEN=1  WT_charset=ascii-only
+FIELD=[Next gate] DIFFER  WT_LEN=187 HEAD_LEN=223  WT_charset=has-non-ascii
+FIELD=[Spec version] DIFFER  WT_LEN=4 HEAD_LEN=4  WT_charset=ascii-only
+CF2_EXIT=0
+
+### 3. verify-task.ps1 on the contract AS IT NOW STANDS
+--- command: powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+  [OK]   A-05 12 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 2 referenced npm script(s) all exist.
+  [OK]   T-02 14 file:line reference(s) resolve.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-go-live-18-public-surface-hardening/**.
+  [OK]   T-05 all 18 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+  [OK]   T-07 control field change (Spec version) is accompanied by a section 9/10 entry.
+
+RESULT: PASS. TASK contract is ready for execution.
+VT_EXIT=0
+
+### 4. verify-handoff.ps1 with BOTH parameters
+--- command: powershell -NoProfile -File .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath ...TASK.md -HandoffPath ...HANDOFF.md
+HANDOFF SUBSTANCE GATE
+  subject: docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md (against docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 25977 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [FAIL] H-03 spec version mismatch: TASK=v1.3 vs HANDOFF=v1.2. A round executed against a stale contract cannot be audited.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 18 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 28 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 12 STEP appear in the execution trace.
+  [OK]   H-13 2 deviation(s) in section 2, 4 declared in section 5.
+  [OK]   H-14 section 7 records round 1.
+  [WARN] H-15 TASK.md control field(s) differ from HEAD: Next gate, Spec version. If Tier 2 changed them, revert - those fields belong to Tier 1.
+
+RESULT: FAIL (1 error(s), 1 warning(s)).
+Do NOT write "Handoff status: READY_FOR_AUDIT" until these fail items are fixed.
+VH_EXIT=2

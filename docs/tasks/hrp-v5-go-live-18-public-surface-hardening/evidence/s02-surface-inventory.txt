@@ -1,0 +1,34 @@
+=== STEP-02 — do lai EV-02 va EV-04, ca tren BASELINE 80f6933 va tren cay hien tai ===
+2026-09-04 00:53:14 +0700
+
+--- EV-02 tren BASELINE: tep tham chieu withPublicDb (bo tep test) ---
+80f6933:app/(jobs)/viec-lam/[slug]/page.tsx
+80f6933:app/api/jobs/[slug]/route.ts
+80f6933:app/api/jobs/route.ts
+80f6933:src/shared/auth/with-public-db.ts
+
+--- trong so do, tep NAO co limiter tren BASELINE ---
+0 app/(jobs)/viec-lam/[slug]/page.tsx
+2 app/api/jobs/[slug]/route.ts
+2 app/api/jobs/route.ts
+0 src/shared/auth/with-public-db.ts
+
+^ so 0 = consumer THIEU limiter tren baseline. Chinh la EV-02: dung MOT tep.
+
+--- EV-04 tren BASELINE: vi tri goi enforceRateLimits ---
+80f6933:app/api/jobs/[slug]/route.ts:7:import { enforceRateLimits } from '@/src/shared/security/rate-limit-guard';
+80f6933:app/api/jobs/[slug]/route.ts:18:  const denied = await enforceRateLimits({
+80f6933:app/api/jobs/route.ts:7:import { enforceRateLimits } from '@/src/shared/security/rate-limit-guard';
+80f6933:app/api/jobs/route.ts:17:  const denied = await enforceRateLimits({
+80f6933:app/api/public/applications/[trackingCode]/route.ts:7:import { enforceRateLimits } from '@/src/shared/security/rate-limit-guard';
+80f6933:app/api/public/applications/[trackingCode]/route.ts:29:  const denied = await enforceRateLimits({
+80f6933:app/api/public/jobs/[slug]/applications/route.ts:11:import { enforceRateLimits } from '@/src/shared/security/rate-limit-guard';
+80f6933:app/api/public/jobs/[slug]/applications/route.ts:103:  const ipDenied = await enforceRateLimits({
+80f6933:app/api/public/jobs/[slug]/applications/route.ts:128:    const phoneDenied = await enforceRateLimits({
+
+--- cay HIEN TAI: con consumer nao thieu limiter khong ---
+0 src/shared/auth/with-public-db.ts
+3 app/(jobs)/viec-lam/[slug]/page.tsx
+2 app/api/jobs/route.ts
+2 app/api/jobs/[slug]/route.ts
+^ tep dinh nghia src/shared/auth/with-public-db.ts dem 0 la DUNG: no la noi dinh nghia, khong phai consumer

@@ -1,0 +1,22 @@
+MEASURED_AT_UTC=2026-09-04T01:53:45Z
+=== D4: the 10 baseline no-store lines, verbatim — does ANY bind no-store to the tracking route 404? ===
+--- src/domains/applications/live-integration.ops06a.test.ts
+350:    expect(res.headers.get('cache-control')).toBe('no-store');
+--- src/domains/applications/marketplace-apply.routes.test.ts
+386:  it('mã hợp lệ ⇒ trả identity đã nộp, no-store, internal canary KHÔNG lọt ra', async () => {
+392:    expect(res.headers.get('cache-control')).toBe('no-store');
+--- src/domains/applications/marketplace-browse.routes.test.ts
+223:    expect(res.headers.get('cache-control')).toBe('no-store');
+331:    expect(res.headers.get('cache-control')).toBe('no-store');
+--- src/domains/job-board/public-ui-premium.static.test.ts
+363:    expect(page).toContain("{ cache: 'no-store', signal: controller.signal }");
+--- src/shared/security/rate-limit-guard.test.ts
+132:  it('deny ⇒ 429, error code chung, Retry-After, no-store, header không chứa identifier', async () => {
+147:    expect(res!.headers.get('cache-control')).toBe('no-store');
+195:    expect(res!.headers.get('cache-control')).toBe('no-store');
+--- src/shared/security/request-body.test.ts
+82:    expect(result.response.headers.get('cache-control')).toBe('no-store');
+
+=== D5: baseline tracking-route 404 line — did it carry a header before the fix? ===
+42:    return NextResponse.json({ error: 'NOT_FOUND', message: 'Application not found' }, { status: 404 });
+SHOW_EXIT=0

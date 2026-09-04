@@ -1,0 +1,111 @@
+=== A1-12 AC-01: one decision-only entry point, no duplicated logic ===
+--- exported symbols and function starts
+38:export interface RateLimitBucket {
+43:export interface EnforceRateLimitsInput {
+55:export type RateLimitOutcome =
+60:export const RATE_LIMITED_MESSAGE = 'Bạn thao tác quá nhanh. Vui lòng thử lại sau ít phút.';
+61:export const RATE_LIMIT_UNAVAILABLE_MESSAGE =
+65:function canonicalValueFor(rule: RateLimitRule, rawValue: string): string {
+71:function effectiveRule(rule: RateLimitRule, canonicalValue: string): RateLimitRule {
+79:function rateLimitHeaders(decision: RateLimitDecision): Record<string, string> {
+88:function tooManyRequests(decision: RateLimitDecision): NextResponse {
+98:function unavailable(): NextResponse {
+119:export async function evaluateRateLimits(input: EnforceRateLimitsInput): Promise<RateLimitOutcome> {
+126:  } catch (err) {
+139:    } catch (err) {
+164:export async function enforceRateLimits(input: EnforceRateLimitsInput): Promise<NextResponse | null> {
+172:function logUnavailable(
+--- single-copy check: how many times does each critical operation appear?
+PATTERN=canonicalValueFor COUNT=2
+PATTERN=hashRateLimitIdentifier COUNT=2
+PATTERN=consumeRateLimit( COUNT=0
+PATTERN=logUnavailable COUNT=3
+PATTERN=NextResponse COUNT=9
+PATTERN=rateLimitedResponse COUNT=0
+--- evaluateRateLimits + enforceRateLimits bodies verbatim
+100	    { error: 'RATE_LIMIT_UNAVAILABLE', message: RATE_LIMIT_UNAVAILABLE_MESSAGE },
+101	    {
+102	      status: 503,
+103	      headers: {
+104	        'Cache-Control': 'no-store',
+105	        'Retry-After': String(RATE_LIMIT_UNAVAILABLE_RETRY_AFTER_SEC),
+106	      },
+107	    },
+108	  );
+109	}
+110	
+111	/**
+112	 * Đánh giá TUẦN TỰ từng bucket; bucket đầu tiên deny thắng và các bucket sau
+113	 * KHÔNG được đếm (không phóng đại counter cho subject vô can).
+114	 *
+115	 * Điểm vào CHỈ-TRẢ-QUYẾT-ĐỊNH (DEC-01): không dựng `NextResponse`, nên gọi được từ
+116	 * Server Component. KHÔNG throw: mọi lỗi limiter thành `unavailable`. Đây là bản DUY
+117	 * NHẤT của canonicalize + HMAC + fail-closed + log trong tệp này.
+118	 */
+119	export async function evaluateRateLimits(input: EnforceRateLimitsInput): Promise<RateLimitOutcome> {
+120	  const env = input.env ?? process.env;
+121	  const requestId = input.requestId ?? null;
+122	
+123	  let runtime: ReturnType<typeof getRateLimitRuntime>;
+124	  try {
+125	    runtime = getRateLimitRuntime(env);
+126	  } catch (err) {
+127	    logUnavailable(input.routeClass, requestId, err);
+128	    return { kind: 'unavailable' };
+129	  }
+130	
+131	  for (const bucket of input.buckets) {
+132	    const canonical = canonicalValueFor(bucket.rule, bucket.value);
+133	    const rule = effectiveRule(bucket.rule, canonical);
+134	    const identifier = hashRateLimitIdentifier(rule, canonical, runtime.hashSecret);
+135	
+136	    let decision: RateLimitDecision;
+137	    try {
+138	      decision = await runtime.provider.limit(rule, identifier);
+139	    } catch (err) {
+140	      logUnavailable(input.routeClass, requestId, err, rule.surface);
+141	      return { kind: 'unavailable' };
+142	    }
+143	
+144	    if (!decision.allowed) {
+145	      warn('rate_limit.denied', requestId, {
+146	        route: input.routeClass,
+147	        status: 429,
+148	        outcome: 'rate_limited',
+149	        detail: { surface: rule.surface, retryAfterSec: decision.retryAfterSec },
+150	      });
+151	      return { kind: 'rate-limited', decision };
+152	    }
+153	  }
+154	
+155	  return { kind: 'allowed' };
+156	}
+157	
+158	/**
+159	 * Điểm vào của ROUTE, giữ nguyên tên và nguyên danh sách tham số. Vỏ mỏng: dịch
+160	 * quyết định của `evaluateRateLimits` sang HTTP, không lặp lại một dòng logic nào.
+161	 *
+162	 * Trả `null` khi mọi bucket cho qua. KHÔNG throw: mọi lỗi limiter thành 503.
+163	 */
+164	export async function enforceRateLimits(input: EnforceRateLimitsInput): Promise<NextResponse | null> {
+165	  const outcome = await evaluateRateLimits(input);
+166	  if (outcome.kind === 'rate-limited') return tooManyRequests(outcome.decision);
+167	  if (outcome.kind === 'unavailable') return unavailable();
+168	  return null;
+169	}
+170	
+171	/** DEC-12: chỉ reason code, KHÔNG raw provider error/URL/token. */
+172	function logUnavailable(
+173	  routeClass: string,
+174	  requestId: string | null,
+175	  err: unknown,
+176	  surface?: string,
+177	): void {
+178	  const reason = err instanceof RateLimitUnavailableError ? err.reason : 'PROVIDER_ERROR';
+179	  warn('rate_limit.unavailable', requestId, {
+180	    route: routeClass,
+181	    status: 503,
+182	    outcome: 'fail_closed',
+183	    errorCode: 'RATE_LIMIT_UNAVAILABLE',
+184	    detail: { reason, retryAfterSec: RATE_LIMIT_UNAVAILABLE_RETRY_AFTER_SEC, ...(surface ? { surface } : {}) },
+185	  });

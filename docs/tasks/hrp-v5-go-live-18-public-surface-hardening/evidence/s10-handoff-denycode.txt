@@ -1,0 +1,20 @@
+=== s10-handoff-denycode — AC-07: dem chuoi ma tu choi HTTP trong HANDOFF.md ===
+2026-09-04 01:06:54 +0700
+lenh: grep -c "$CODE" docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md   voi CODE = ma HTTP ho 4xx cho truong hop vuot ngan sach
+
+so DONG chua chuoi do:
+0
+GREP_C_EXIT=1
+
+moi dong khop, neu co (rong = dat):
+GREP_N_EXIT=1 (1 = khong tim thay = DAT)
+
+--- doi chieu: dong gioi han CO TEN cua RQ-04 co that trong tep khong ---
+30:**Giới hạn CÓ TÊN của `RQ-04`, ghi đúng chỗ `AC-07` đòi:** khi bị từ chối, trang chi tiết trả HTTP **`200`** kèm một thông báo, vì một Server Component của Next 15.1 KHÔNG đặt được status code. Thứ được bảo đảm là **ZERO truy vấn DB**: nhánh từ chối `return` ở dòng `100`, trước mọi lệnh gọi `withPublicDb` ở dòng `102`. Mã HTTP của họ `4xx` cho trường hợp vượt ngân sách KHÔNG xuất hiện một lần nào trong tài liệu này — chuỗi ba chữ số ấy đếm `0` lần bằng `grep -c`, đo ở `AC-07`, nên không có dòng nào khẳng định trang trả mã đó.
+60:| `AC-07` | `grep -c` chuỗi ba chữ số của mã từ chối HTTP trên `docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md`, cộng đọc mục giới hạn ở §1 và `LIM-01` | Chuỗi ấy đếm `0` dòng. Dòng giới hạn có mặt ở §1 và ở `LIM-01`, ghi rõ trang trả `200` vì Server Component không đặt được status, và điều được bảo đảm là ZERO truy vấn DB | evidence/s10-handoff-denycode.txt — phép đếm chạy trên chính tệp này | None |
+93:| `LIM-01` | Giới hạn CÓ TÊN của `RQ-04`, contract đã biết trước | evidence/s10-ac-recheck.txt — nhánh từ chối `return` ở `:100`, `withPublicDb` ở `:102` | Trang trả HTTP `200` khi bị từ chối, KHÔNG đặt được status code, vì Next 15.1 không cho một Server Component làm việc đó. Thứ được bảo đảm là ZERO truy vấn DB, và đó đúng là thứ chặn máy quét | Không cần. `DEC-03` đã quyết, `AC-07` chỉ đòi ghi rõ |
+so dong khop:
+3
+
+--- va dong ay co ghi ma 200 khong ---
+1

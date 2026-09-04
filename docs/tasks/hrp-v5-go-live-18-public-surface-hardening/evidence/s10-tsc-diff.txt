@@ -1,0 +1,23 @@
+=== so TAP LOI giua moc STEP-01 va lan chay STEP-10 ===
+phep do: loc dong 'error TS' cua hai artifact roi diff. Ma thoat cua tsc KHONG on dinh theo hinh thuc goi (xem LIM-01), nen chan do that la TAP LOI.
+
+--- STEP-01 (cay CHUA sua) ---
+new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & ... 4 more ... & HTMLAttributes<...>'.
+
+--- STEP-10 (cay DA sua) ---
+new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & ... 4 more ... & HTMLAttributes<...>'.
+
+--- diff ---
+DIFF_EXIT=0 (0 = hai tap loi GIONG NHAU tung byte, tuc 0 hoi quy)
+
+--- new-ui/ thuoc contract nao trong lo? ---
+Modules cua 17:
+Modules | `src/shared/security/required-relation-sweep.static.test.ts`, `app/api/projects/route.ts`, `app/api/vendor/orders/route.ts`, `app/api/vendor/submissions/route.ts`, `src/domains/applications/application-queue.service.ts`, `src/domains/reconciliation/margin.service.ts`, `src/domains/reconciliation/statement.service.ts`, `src/domains/staffing/order.service.ts`, `src/domains/staffing/submission.service.ts` 
+
+Modules cua test-01:
+Modules | `playwright.config.ts`, `tests/browser/public-home.spec.ts`, `package.json`, `.gitignore` 
+
+grep new-ui trong ba TASK.md cua lo:
+docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md:0
+docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md:0
+docs/tasks/hrp-v5-test-01-browser-lane/TASK.md:0

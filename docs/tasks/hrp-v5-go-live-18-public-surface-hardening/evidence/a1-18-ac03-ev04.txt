@@ -1,0 +1,54 @@
+MEASURED_AT_UTC=2026-09-04T01:51:15Z
+=== AC-03 row verbatim ===
+154:| `AC-03` | Đọc output của `STEP-04` | Lane exit `0` ngay sau bước refactor, TRƯỚC khi trang được sửa. Đây là chân đo độc lập của tính tương thích ngược |
+175:| `RQ-01` | `STEP-03`, `STEP-04` | `AC-01`, `AC-02`, `AC-03` |
+192:| `RISK-01` | **Bản refactor làm đổi hành vi bốn route đang chạy.** `enforceRateLimits` là điểm vào duy nhất của mọi bề mặt công khai; một thay đổi chữ ký hay một nhánh fail-closed bị đổi làm rò cả bốn route cùng lúc | Cao | `AC-02` đòi ba route không đổi một byte. `AC-03` đòi lane xanh NGAY sau bước refactor, trước khi trang được sửa. `STEP-03` và `STEP-05` là hai bước riêng đúng để có được chân đo đó |
+
+=== EV-04 row verbatim ===
+61:| `EV-04` | `app/api/jobs/route.ts:17`, `app/api/jobs/[slug]/route.ts:18`, `app/api/public/applications/[trackingCode]/route.ts:29`, `app/api/public/jobs/[slug]/applications/route.ts:103` và `:128` | `enforceRateLimits` được gọi ở đúng bốn tệp route, năm vị trí. Không tệp nào dưới `app/(jobs)/` hay `app/(portal)/` gọi nó | Bốn tệp này KHÔNG được đổi hành vi. Chúng là phép thử hồi quy sống cho bản refactor của `RQ-01` |
+78:| `DEC-01` | Tách một điểm vào CHỈ TRẢ QUYẾT ĐỊNH ra khỏi `enforceRateLimits` trong `src/shared/security/rate-limit-guard.ts`. Hàm mới nhận cùng input, trả một giá trị mô tả kết quả — cho phép đi tiếp, vượt limit, hoặc limiter không khả dụng — mà KHÔNG dựng `NextResponse`. `enforceRateLimits` giữ nguyên chữ ký, nguyên hành vi, và trở thành lớp bọc mỏng quanh hàm mới | Server Component không dùng được `NextResponse` làm giá trị trả. Bọc lại thay vì nhân bản logic là cách duy nhất giữ MỘT nguồn sự thật cho canonicalize, HMAC, fail-closed và log. Bốn route ở `EV-04` không đổi một dòng gọi nào |
+98:| `RQ-01` | Trong `src/shared/security/rate-limit-guard.ts`, tách một điểm vào chỉ-trả-quyết-định theo `DEC-01`. `enforceRateLimits` giữ nguyên tên, nguyên chữ ký, nguyên hành vi và gọi vào điểm vào mới | Must | `DEC-01`, `EV-04` | Chữ ký của `enforceRateLimits` đổi; hoặc logic canonicalize, HMAC, fail-closed hay log bị nhân bản thành hai bản; hoặc bốn tệp route ở `EV-04` phải sửa |
+107:| `RQ-10` | `npm run test:unit` và `npm run typecheck` đều exit `0`. Số test PASS không nhỏ hơn mốc mà `STEP-01` ghi | Must | `EV-04` | Một lane exit khác `0`; hoặc số test PASS tụt mà `HANDOFF` không phân loại từng dòng đỏ thành hồi quy hay test cũ chưa đảo |
+120:Cấm chạm: `middleware.ts`, `src/shared/security/rate-limit-port.ts`, `src/shared/security/rate-limit-identity.ts`, `src/shared/security/rate-limit-provider.ts`, `src/domains/applications/application.service.ts`, `src/shared/privacy/mask.ts`, bốn tệp route ở `EV-04` trừ đúng tệp tracking, `src/domains/job-board/public.service.ts`, `prisma/`, `app/globals.css`, mọi cấu hình vitest. Xuất hiện một path ngoài bốn nhóm trên là FAIL. `package.json` cộng `package-lock.json` thuộc quyền của `hrp-v5-test-01-browser-lane` trong cùng lô: task này vẫn KHÔNG được sửa hai tệp đó, nhưng sự có mặt của chúng trong cây làm việc KHÔNG phải defect của task này.
+136:| `STEP-02` | Đo lại `EV-02` bằng `grep -rl withPublicDb` trên `src` và `app` bỏ tệp test, và đo lại `EV-04` bằng `grep -rn enforceRateLimits` trên `src` và `app` | Hai danh sách thật. Lệch với `4` tệp và `5` vị trí thì ghi thành finding, không im lặng |
+
+=== EV-04 measured two ways ===
+route FILES containing enforceRateLimits( under app/:
+   app/api/jobs/[slug]/route.ts
+   app/api/jobs/route.ts
+   app/api/public/applications/[trackingCode]/route.ts
+   app/api/public/jobs/[slug]/applications/route.ts
+ROUTE_FILES=4
+OCCURRENCES=5
+
+=== AC-03 auditable trace: mtime order of Tier 2 evidence (UTC) ===
+2026-09-03T16:44:11Z  s01-gate18.txt  0B
+2026-09-03T16:45:08Z  s01-unit.txt  9663B
+2026-09-03T16:45:27Z  s01-tsc.txt  672B
+2026-09-03T16:58:24Z  s04-unit.txt  9653B
+2026-09-03T17:13:51Z  s05-guard.txt  642B
+2026-09-03T17:14:04Z  s05-tsc.txt  665B
+2026-09-03T17:14:50Z  s05-tsc-pwsh.txt  672B
+2026-09-03T17:24:41Z  s07-green.txt  646B
+2026-09-03T17:26:48Z  s07-page-sha.txt  102B
+2026-09-03T17:27:23Z  s07-red.txt  2222B
+2026-09-03T17:28:02Z  s07-green2.txt  646B
+2026-09-03T17:29:20Z  s08-inventory.txt  666B
+2026-09-03T17:29:44Z  s08-regex-probe.txt  108B
+2026-09-03T17:29:54Z  s09-forbidden.txt  0B
+2026-09-03T17:32:38Z  s12-pii.txt  667B
+2026-09-03T17:34:13Z  s10-unit.txt  9792B
+2026-09-03T17:34:16Z  s10-tsc.txt  672B
+2026-09-03T17:34:51Z  s10-tsc-bash.txt  665B
+2026-09-03T17:38:11Z  s10-gate-task.txt  763B
+2026-09-03T17:39:55Z  s10-scope-raw.txt  6877B
+2026-09-03T17:50:00Z  s10-ac-recheck.txt  5890B
+2026-09-03T17:51:45Z  s10-tsc-exit.txt  769B
+2026-09-03T17:52:06Z  s10-tsc-diff.txt  1931B
+2026-09-03T17:53:15Z  s02-surface-inventory.txt  1937B
+2026-09-03T17:53:45Z  s11-pii-baseline.txt  1365B
+2026-09-03T17:59:16Z  s09-forbidden-verified.txt  1063B
+2026-09-03T18:01:08Z  s10-scope-groups.txt  2528B
+2026-09-03T18:02:08Z  s10-gate-task-rerun.txt  1144B
+2026-09-03T18:06:54Z  s10-handoff-denycode.txt  2195B
+2026-09-03T18:15:24Z  s10-gate-handoff.txt  8972B
