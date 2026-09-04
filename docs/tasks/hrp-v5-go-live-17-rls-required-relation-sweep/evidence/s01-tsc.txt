@@ -1,0 +1,38 @@
+=== STEP-01c: moc lane typecheck TRUOC khi sua (task 17) ===
+2026-09-04 01:18:51 +0700
+lenh: npm run typecheck  (redirect, khong ong)
+
+
+> hrp@0.1.0 typecheck
+> tsc --noEmit
+
+new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & ... 4 more ... & HTMLAttributes<...>'.
+  Type '{ children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'LinkProps<any>'.
+    Types of property 'href' are incompatible.
+      Type 'undefined' is not assignable to type 'Url'.
+S01_TSC_EXIT = 1
+
+so dong 'error TS' = 1
+tap dong do:
+so dong 'error TS' = 2
+tap dong do (moc de so o STEP-09):
+new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & ... 4 more ... & HTMLAttributes<...>'.
+so dong 'error TS' = 1
+
+path cua dong do: new-ui/  -- KHONG thuoc Modules cua bat ky contract nao trong lo.
+phep kiem quy trach (AC-11): dem 'new-ui' trong ba TASK.md cua lo
+0 new-ui trong hrp-v5-go-live-18-public-surface-hardening
+0 new-ui trong hrp-v5-go-live-17-rls-required-relation-sweep
+0 new-ui trong hrp-v5-test-01-browser-lane
+
+=== HIEU DINH do CHINH Tier 2 tu phat hien o STEP-09 (khong sua dong nao ben tren) ===
+2026-09-04 02:17:14 +0700
+Ba dong 15..20 cua tep nay ghi ba con so mau thuan — 'so dong error TS' = 1, roi = 2, roi = 1 —
+va mot dong 'tap dong do:' BO TRONG. Nguyen nhan: lenh grep -c luc do chay tren CHINH tep dang
+duoc ghi, nen lan thu hai no dem ca dong vua duoc chep vao artifact (mot artifact tu trich lai
+minh). Con so DUNG la 1, va do lai o STEP-09 bang cach dem tren output tsc thuc, khong dem tren
+artifact: xem evidence/s09-typecheck.txt muc (1). Day la mot defect bang chung do Tier 2 tu khai.
+
+Dong 13 ('S01_TSC_EXIT = 1') thi KHONG sai. Ma thoat cua lane nay dao giua 1 va 2 tuy tsc co
+ghi lai tsconfig.tsbuildinfo hay khong (tsconfig.json:19 bat incremental). Phep chung minh nam
+o evidence/s09-typecheck.txt muc 'BAY DO LUONG'. Ca hai lan doc deu that.

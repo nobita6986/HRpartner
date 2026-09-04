@@ -1,0 +1,114 @@
+=== STEP-04: hang rao moi tren cay CHUA sua ma ung dung ===
+2026-09-04 01:35:01 +0700
+lenh: npx vitest run --config vitest.unit.config.ts src/shared/security/required-relation-sweep.static.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [31m❯[39m src/shared/security/required-relation-sweep.static.test.ts [2m([22m[2m11 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 461[2mms[22m[39m
+[31m   [31m×[31m quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG[2m > [22mphép quét phủ cả app/, chứng minh bằng chính bốn dòng app/api trong kết quả (AC-04)[90m 213[2mms[22m[31m[39m
+[31m     → expected [ …(3) ] to have a length of 4 but got 3[39m
+[31m   [31m×[31m fixture âm: ba detector phải BẮT được nguồn giả[2m > [22mdetector BA KHÔNG tính một vị trí nằm trong comment dòng, và số dòng không lệch (RQ-05)[90m 2[2mms[22m[31m[39m
+[31m     → expected [ 'fake/child.service.ts:6 vault' ] to deeply equal [ 'fake/child.service.ts:7 vault' ][39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 2 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/shared/security/required-relation-sweep.static.test.ts[2m > [22mquan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG[2m > [22mphép quét phủ cả app/, chứng minh bằng chính bốn dòng app/api trong kết quả (AC-04)
+[31m[1mAssertionError[22m: expected [ …(3) ] to have a length of 4 but got 3[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 4[39m
+[31m+ 3[39m
+
+[36m [2m❯[22m src/shared/security/required-relation-sweep.static.test.ts:[2m241:62[22m[39m
+    [90m239| [39m  [34mit[39m([32m'phép quét phủ cả app/, chứng minh bằng chính bốn dòng app/api tr[39m…
+    [90m240| [39m    [35mconst[39m hits [33m=[39m [34msweep[39m(scanned[33m,[39m fields)[33m;[39m
+    [90m241| [39m    [34mexpect[39m(hits[33m.[39m[34mfilter[39m((hit) [33m=>[39m hit[33m.[39m[34mstartsWith[39m([32m'app/api/'[39m)))[33m.[39m[34mtoHaveLen[39m…
+    [90m   | [39m                                                             [31m^[39m
+    [90m242| [39m    [34mexpect[39m(hits[33m.[39m[34mfilter[39m((hit) [33m=>[39m hit[33m.[39m[34mstartsWith[39m([32m'src/'[39m)))[33m.[39m[34mtoHaveLength[39m(…
+    [90m243| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/shared/security/required-relation-sweep.static.test.ts[2m > [22mfixture âm: ba detector phải BẮT được nguồn giả[2m > [22mdetector BA KHÔNG tính một vị trí nằm trong comment dòng, và số dòng không lệch (RQ-05)
+[31m[1mAssertionError[22m: expected [ 'fake/child.service.ts:6 vault' ] to deeply equal [ 'fake/child.service.ts:7 vault' ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  Array [[22m
+[32m-   "fake/child.service.ts:7 vault",[39m
+[31m+   "fake/child.service.ts:6 vault",[39m
+[2m  ][22m
+
+[36m [2m❯[22m src/shared/security/required-relation-sweep.static.test.ts:[2m300:78[22m[39m
+    [90m298| [39m    [34mexpect[39m([34mselectHits[39m([32m'fake/child.service.ts'[39m[33m,[39m commented[33m,[39m [35mnew[39m [33mSet[39m([[32m'va[39m…
+    [90m299| [39m    [35mconst[39m shifted [33m=[39m [32m`/* [39m[36m${[39m[32m'x\n'[39m[33m.[39m[34mrepeat[39m([34m3[39m)[36m}[39m[32m */\n[39m[36m${[39m[33mFAKE_HIT[39m[36m}[39m[32m`[39m[33m;[39m
+    [90m300| [39m    [34mexpect[39m([34mselectHits[39m([32m'fake/child.service.ts'[39m[33m,[39m shifted[33m,[39m [35mnew[39m [33mSet[39m([[32m'vaul[39m…
+    [90m   | [39m                                                                             [31m^[39m
+    [90m301| [39m      [32m'fake/child.service.ts:7 vault'[39m[33m,[39m
+    [90m302| [39m    ])[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m9 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 01:35:02
+[2m   Duration [22m 959ms[2m (transform 44ms, setup 0ms, collect 109ms, tests 461ms, environment 0ms, prepare 89ms)[22m
+
+S04_EXIT = 1
+
+
+=== s04-green — LUOT HAI, sau khi sua hai KY VONG cua test (STEP-04) ===
+2026-09-04 01:41:10 +0700
+
+Hai sua doi, ca hai deu sua KY VONG cua test, KHONG sua detector:
+
+1) Fixture dich dong: ':7' -> ':6'.
+   Chuoi mo dau `/* ${'x\n'.repeat(3)} */\n` chiem DUNG bon dong: 1='/* x', 2='x', 3='x', 4=' */'.
+   Nen dong 'include:' cua FAKE_HIT nam o dong 6, khong phai 7. Gia tri NHAN duoc la dung; ky vong cu
+   la mot loi so hoc cua toi. Menh de ma test nay canh KHONG doi: neu strip comment XOA dong nhu hang
+   rao cu (public-select.static.test.ts:23) thi ket qua se la ':2', khong phai ':6'. So 6 chinh la bang
+   chung rang strip cua toi pad bang khoang trang va giu nguyen so dong.
+
+2) Phep dem theo cay: toHaveLength(4)/toHaveLength(8) -> toHaveLength(3)/toHaveLength(9).
+   Loi van AC-04 (TASK.md:134) doi: "chung minh bang chinh su co mat cua bon dong thuoc app/api/".
+   Danh sach DONG cua DEC-04 (TASK.md:70) chi liet ke BA duong dan duoi app/api/.
+
+   Phep do lai, tren chinh van ban contract:
+     $ grep -n "app/api/|src/domains/" TASK.md | grep -c "app/api/"
+     3
+     ^ ba, khong phai bon. Ba duong dan do: app/api/projects/route.ts:65 (clientCompany),
+       app/api/vendor/orders/route.ts:44 (project), app/api/vendor/submissions/route.ts:62 (project).
+     Cong chin dong duoi src/ = 12, dung con so cua EV-03 va cua chinh DEC-04.
+
+   Phep do lai lan hai, doc lap, bang chinh script cua Tier 1 (scratch/f05/usage.py):
+     $ python scratch/f05/usage.py | grep -c "^--- app/api/"   # so TEP duoi app/api/
+     3
+     $ python scratch/f05/usage.py | grep -c "^   :"           # so VI TRI tren ca hai cay
+     12
+
+   Moi tep duoi app/api/ chi co DUNG mot vi tri, nen 3 tep = 3 vi tri; 12 - 3 = 9 duoi src/.
+   Vi vay assertion khang dinh SO DO (3 + 9), khong khang dinh con so cua loi van AC-04. Do lech
+   giua "bon dong" cua AC-04 va ba dong cua DEC-04 duoc ghi thanh FINDING trong HANDOFF, khong
+   duoc lam im lang: DEC-04 tu no da ra lenh "neu phep quet cua Tier 2 ra mot con so khac 12 thi
+   do la mot finding phai ghi vao HANDOFF" — o day con so tong VAN la 12, chi rieng phep phan bo
+   theo cay la lech, va nguon lech nam trong loi van cua contract chu khong nam trong ma.
+
+--- lenh chay lai (STEP-04, luot hai) ---
+$ npx vitest run --config vitest.unit.config.ts src/shared/security/required-relation-sweep.static.test.ts
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [32m✓[39m src/shared/security/required-relation-sweep.static.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 392[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 01:40:21
+[2m   Duration [22m 774ms[2m (transform 50ms, setup 0ms, collect 93ms, tests 392ms, environment 0ms, prepare 93ms)[22m
+
+S04_EXIT = 0

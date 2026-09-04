@@ -1,0 +1,307 @@
+=== s05-policy-classification — STEP-05 cua hrp-v5-go-live-17 (RQ-06, AC-07) ===
+2026-09-04 01:57:54 +0700
+
+Moi phep do duoi day la TINH (dieu 4.3: KHONG ket noi DB). Khong mot lenh nao doc DATABASE_URL.
+
+--- A. Quan he BAT BUOC hay NULLABLE — quyet dinh mot vi tri co the NEM hay khong ---
+$ grep -nE '^  (project|worker|clientCompany) +[A-Za-z]+\??' prisma/schema.prisma
+298:  worker Worker @relation("WorkerDependents", fields: [workerId], references: [id], onDelete: Cascade)
+339:  clientCompany ClientCompany? @relation(fields: [clientCompanyId], references: [id])
+365:  clientCompany  ClientCompany   @relation(fields: [clientCompanyId], references: [id])
+391:  project     Project             @relation(fields: [projectId], references: [id])
+436:  project Project @relation(fields: [projectId], references: [id])
+499:  project       Project? @relation(fields: [projectId], references: [id])
+500:  worker        Worker?  @relation("ConvertedWorkerSubmissions", fields: [workerId], references: [id])
+548:  worker     Worker              @relation(fields: [workerId], references: [id])
+588:  worker        Worker        @relation(fields: [workerId], references: [id])
+589:  project       Project       @relation(fields: [projectId], references: [id])
+969:  worker          Worker          @relation(fields: [workerId], references: [id])
+1268:  project        String
+
+$ grep -n '^model (Project|Worker|StaffingOrder|CandidateSubmission|SourceClaim|ProjectAssignment|ClientCompany) ' -E prisma/schema.prisma
+221:model Worker {
+308:model ClientCompany {
+345:model Project {
+381:model StaffingOrder {
+463:model CandidateSubmission {
+534:model SourceClaim {
+563:model ProjectAssignment {
+
+$ grep -n '@@map("outsourcing_projects")|@@map("workers")|@@map("client_companies")|@@map("staffing_orders")|@@map("candidate_submissions")|@@map("source_claims")|@@map("project_assignments")' -E prisma/schema.prisma
+280:  @@map("workers")
+321:  @@map("client_companies")
+378:  @@map("outsourcing_projects") // ERD DDL dùng tên này; plan §9 SQL mẫu dùng "projects" — DB thật là outsourcing_projects
+396:  @@map("staffing_orders")
+512:  @@map("candidate_submissions")
+556:  @@map("source_claims")
+599:  @@map("project_assignments")
+
+--- B. Dinh nghia CO HIEU LUC cua hai predicate (bat buoc: quote ban CUOI CUNG, khong quote ban da bi thay) ---
+$ grep -rn 'FUNCTION hrp_project_visible_for' prisma/migrations | sort
+prisma/migrations/20260816211000_s1_rls_project/migration.sql:11:CREATE OR REPLACE FUNCTION hrp_project_visible_for(pid text) RETURNS boolean
+prisma/migrations/20260821103500_m13_restore_rls_matrix/migration.sql:6:CREATE OR REPLACE FUNCTION hrp_project_visible_for(pid text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
+$ grep -rn 'FUNCTION hrp_worker_visible_for' prisma/migrations | sort
+prisma/migrations/20260816210000_s1_rls_worker/migration.sql:45:CREATE OR REPLACE FUNCTION hrp_worker_visible_for(wid text) RETURNS boolean
+prisma/migrations/20260821103500_m13_restore_rls_matrix/migration.sql:15:CREATE OR REPLACE FUNCTION hrp_worker_visible_for(wid text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
+
+=> ban cuoi cung cua CA HAI nam o m13 (20260821103500). m14 (20260830214139) chi CREATE POLICY,
+   khong dinh nghia lai mot function nao — do bang chinh so lan xuat hien:
+$ grep -c 'CREATE OR REPLACE FUNCTION' $M14
+0
+
+$ sed -n '6,13p' prisma/migrations/20260821103500_m13_restore_rls_matrix/migration.sql   # hrp_project_visible_for, NGUYEN VAN
+CREATE OR REPLACE FUNCTION hrp_project_visible_for(pid text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
+ SELECT hrp_session_role() IN ('ADMIN','HR_MANAGER','DIRECTOR','SALE')
+ OR (hrp_session_role()='PM' AND EXISTS (SELECT 1 FROM outsourcing_projects p WHERE p.id=pid AND (p.pm_user_id=hrp_session_user_id() OR p.sub_pm_user_id_1=hrp_session_user_id() OR p.sub_pm_user_id_2=hrp_session_user_id())))
+ OR (hrp_session_role()='WORKER' AND EXISTS (SELECT 1 FROM outsourcing_projects p WHERE p.id=pid AND (p.is_public OR EXISTS (SELECT 1 FROM project_assignments a JOIN workers w ON w.id=a.worker_id WHERE a.project_id=p.id AND a.status='ACTIVE' AND w.account_user_id=hrp_session_user_id()))))
+ OR (hrp_session_role()='MKT' AND EXISTS (SELECT 1 FROM outsourcing_projects p WHERE p.id=pid AND p.is_public))
+ OR (hrp_session_role() IN ('VENDOR_ADMIN','VENDOR_STAFF') AND hrp_session_vendor_id()<>'' AND EXISTS (SELECT 1 FROM outsourcing_projects p WHERE p.id=pid AND (p.is_public OR EXISTS (SELECT 1 FROM candidate_submissions s WHERE s.project_id=p.id AND s.vendor_id=hrp_session_vendor_id()))))
+ OR (hrp_session_role()='CTV' AND EXISTS (SELECT 1 FROM outsourcing_projects p WHERE p.id=pid AND p.is_public));
+$$;
+
+$ sed -n '15,23p' prisma/migrations/20260821103500_m13_restore_rls_matrix/migration.sql   # hrp_worker_visible_for, NGUYEN VAN
+CREATE OR REPLACE FUNCTION hrp_worker_visible_for(wid text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
+ SELECT hrp_session_role() IN ('ADMIN','HR_MANAGER','DIRECTOR')
+ OR (hrp_session_role()='HR_STAFF' AND EXISTS (SELECT 1 FROM workers w WHERE w.id=wid AND w.assigned_to_id=hrp_session_user_id()))
+ OR (hrp_session_role()='SALE' AND EXISTS (SELECT 1 FROM workers w WHERE w.id=wid AND (w.owner_id=hrp_session_user_id() OR w.assigned_to_id=hrp_session_user_id())))
+ OR (hrp_session_role()='PM' AND EXISTS (SELECT 1 FROM project_assignments a JOIN outsourcing_projects p ON p.id=a.project_id WHERE a.worker_id=wid AND a.status='ACTIVE' AND (p.pm_user_id=hrp_session_user_id() OR p.sub_pm_user_id_1=hrp_session_user_id() OR p.sub_pm_user_id_2=hrp_session_user_id())))
+ OR (hrp_session_role() IN ('VENDOR_ADMIN','VENDOR_STAFF') AND EXISTS (SELECT 1 FROM source_claims s WHERE s.worker_id=wid AND s.accepted AND s.vendor_id=hrp_session_vendor_id()))
+ OR (hrp_session_role()='CTV' AND EXISTS (SELECT 1 FROM source_claims s WHERE s.worker_id=wid AND s.accepted AND s.ctv_id=hrp_session_user_id()))
+ OR (hrp_session_role()='WORKER' AND EXISTS (SELECT 1 FROM workers w WHERE w.id=wid AND w.account_user_id=hrp_session_user_id()));
+$$;
+
+--- C. Policy cua tung bang trong 12 vi tri, NGUYEN VAN kem tep va so dong ---
+
+C1. client_companies (bang CHA cua vi tri 1) — prisma/migrations/20260827160000_m1_07b_rls_runtime_posture_closure/migration.sql:133
+$ sed -n '130,135p' prisma/migrations/20260827160000_m1_07b_rls_runtime_posture_closure/migration.sql
+DROP POLICY IF EXISTS hrp_client_company_select ON client_companies;
+DROP POLICY IF EXISTS hrp_client_company_insert ON client_companies;
+DROP POLICY IF EXISTS hrp_client_company_update ON client_companies;
+CREATE POLICY hrp_client_company_select ON client_companies
+  AS PERMISSIVE FOR SELECT TO app_user_writer, app_user
+  USING (hrp_session_role() IN ('ADMIN','HR_MANAGER','DIRECTOR','ACCOUNTANT','SALE','HR_STAFF','PM'));
+
+C2. outsourcing_projects (bang CHA cua vi tri 2,3,4,5,9,10,11) — prisma/migrations/20260821103500_m13_restore_rls_matrix/migration.sql:33
+$ sed -n '30,34p' prisma/migrations/20260821103500_m13_restore_rls_matrix/migration.sql
+ IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='outsourcing_projects') THEN
+  ALTER TABLE outsourcing_projects ENABLE ROW LEVEL SECURITY; ALTER TABLE outsourcing_projects FORCE ROW LEVEL SECURITY;
+  DROP POLICY IF EXISTS hrp_project_scope ON outsourcing_projects;
+  CREATE POLICY hrp_project_scope ON outsourcing_projects AS PERMISSIVE FOR ALL TO app_user_writer,app_user USING (hrp_project_visible_for(id)) WITH CHECK (hrp_project_writable(id));
+ END IF;
+
+C3. workers (bang CHA cua vi tri 6,7,8,12) — prisma/migrations/20260821103500_m13_restore_rls_matrix/migration.sql:28
+$ sed -n '25,29p' prisma/migrations/20260821103500_m13_restore_rls_matrix/migration.sql
+ IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='workers') THEN
+  ALTER TABLE workers ENABLE ROW LEVEL SECURITY; ALTER TABLE workers FORCE ROW LEVEL SECURITY;
+  DROP POLICY IF EXISTS hrp_worker_scope ON workers;
+  CREATE POLICY hrp_worker_scope ON workers AS PERMISSIVE FOR ALL TO app_user_writer,app_user USING (hrp_worker_visible_for(id)) WITH CHECK (hrp_session_role() IN ('ADMIN','HR_MANAGER','DIRECTOR') OR (hrp_session_role()='SALE' AND owner_id=hrp_session_user_id()) OR (hrp_session_role()='WORKER' AND account_user_id=hrp_session_user_id()));
+ END IF;
+
+C4. staffing_orders (bang CON cua vi tri 2,9,10) — prisma/migrations/20260821103500_m13_restore_rls_matrix/migration.sql:38
+$ sed -n '35,39p' prisma/migrations/20260821103500_m13_restore_rls_matrix/migration.sql
+ IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='staffing_orders') THEN
+  ALTER TABLE staffing_orders ENABLE ROW LEVEL SECURITY; ALTER TABLE staffing_orders FORCE ROW LEVEL SECURITY;
+  DROP POLICY IF EXISTS hrp_staffing_order_scope ON staffing_orders;
+  CREATE POLICY hrp_staffing_order_scope ON staffing_orders AS PERMISSIVE FOR ALL TO app_user_writer,app_user USING (hrp_project_visible_for(project_id)) WITH CHECK (hrp_project_writable(project_id));
+ END IF;
+
+C5. source_claims (bang CON cua vi tri 12) — prisma/migrations/20260830214139_m14_rls_matrix_repair/migration.sql:45
+$ sed -n '43,58p' prisma/migrations/20260830214139_m14_rls_matrix_repair/migration.sql
+-- source_claims — 20260816210000_s1_rls_worker, dòng 110-124
+DROP POLICY IF EXISTS hrp_source_claim_scope ON source_claims;
+CREATE POLICY hrp_source_claim_scope ON source_claims
+  AS PERMISSIVE FOR ALL
+  TO app_user_writer, app_user
+  USING (
+    hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'DIRECTOR')
+    OR (hrp_session_role() IN ('VENDOR_ADMIN', 'VENDOR_STAFF') AND vendor_id = hrp_session_vendor_id())
+    OR (hrp_session_role() = 'CTV' AND ctv_id = hrp_session_user_id())
+    OR hrp_worker_visible_for(worker_id)
+  )
+  WITH CHECK (
+    hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'DIRECTOR')
+    OR (hrp_session_role() IN ('VENDOR_ADMIN', 'VENDOR_STAFF') AND vendor_id = hrp_session_vendor_id())
+    OR (hrp_session_role() = 'CTV' AND ctv_id = hrp_session_user_id())
+  );
+
+C6. project_assignments (bang CON cua vi tri 6,7,8) — prisma/migrations/20260830214139_m14_rls_matrix_repair/migration.sql:62
+$ sed -n '60,88p' prisma/migrations/20260830214139_m14_rls_matrix_repair/migration.sql
+-- project_assignments — 20260816210000_s1_rls_worker, dòng 132-159
+DROP POLICY IF EXISTS hrp_project_assignment_scope ON project_assignments;
+CREATE POLICY hrp_project_assignment_scope ON project_assignments
+  AS PERMISSIVE FOR ALL
+  TO app_user_writer, app_user
+  USING (
+    hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'DIRECTOR')
+    -- PM: thấy assignment thuộc dự án mình quản lý (G14: cả ACTIVE + lịch sử)
+    OR (hrp_session_role() = 'PM' AND EXISTS (
+      SELECT 1 FROM outsourcing_projects p
+      WHERE p.id = project_assignments.project_id AND p.pm_user_id = hrp_session_user_id()
+    ))
+    -- Worker thấy assignment của mình
+    OR (hrp_session_role() = 'WORKER' AND EXISTS (
+      SELECT 1 FROM workers w WHERE w.id = project_assignments.worker_id
+      AND w.account_user_id = hrp_session_user_id()
+    ))
+    -- HR_STAFF/SALE: qua worker ownership
+    OR EXISTS (
+      SELECT 1 FROM workers w WHERE w.id = project_assignments.worker_id
+      AND (
+        (hrp_session_role() = 'HR_STAFF' AND w.assigned_to_id = hrp_session_user_id())
+        OR (hrp_session_role() = 'SALE' AND (w.owner_id = hrp_session_user_id() OR w.assigned_to_id = hrp_session_user_id()))
+      )
+    )
+  )
+  WITH CHECK (
+    hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'DIRECTOR')
+  );
+
+C7. candidate_submissions (bang CON cua vi tri 3,4,5,11) — prisma/migrations/20260830214139_m14_rls_matrix_repair/migration.sql:126
+$ sed -n '124,143p' prisma/migrations/20260830214139_m14_rls_matrix_repair/migration.sql
+-- candidate_submissions — 20260816212000_s1_rls_vendor, dòng 35-53
+DROP POLICY IF EXISTS hrp_candidate_submission_scope ON candidate_submissions;
+CREATE POLICY hrp_candidate_submission_scope ON candidate_submissions
+  AS PERMISSIVE FOR ALL
+  TO app_user_writer, app_user
+  USING (
+    hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'DIRECTOR', 'ACCOUNTANT', 'SALE')
+    OR (hrp_session_role() IN ('VENDOR_ADMIN', 'VENDOR_STAFF') AND vendor_id = hrp_session_vendor_id())
+    OR (hrp_session_role() = 'CTV' AND ctv_id = hrp_session_user_id())
+    -- PM: submissions cho project mình quản lý
+    OR (hrp_session_role() = 'PM' AND EXISTS (
+      SELECT 1 FROM outsourcing_projects p
+      WHERE p.id = candidate_submissions.project_id AND p.pm_user_id = hrp_session_user_id()
+    ))
+  )
+  WITH CHECK (
+    hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'DIRECTOR', 'ACCOUNTANT', 'SALE')
+    OR (hrp_session_role() IN ('VENDOR_ADMIN', 'VENDOR_STAFF') AND vendor_id = hrp_session_vendor_id())
+    OR (hrp_session_role() = 'CTV' AND ctv_id = hrp_session_user_id())
+  );
+
+--- D. Cua chan vai tro va kha nang VOI TAY (quyet dinh mot khoang trong co the NO hay khong) ---
+
+D1. app/api/projects/route.ts — sau vai tro, tat ca deu nam trong bay vai tro cua policy C1
+$ grep -n 'VIEWER_ROLES' -A 3 app/api/projects/route.ts
+16:// SALE/MKT KHONG duoc xem (AC-03 "SALE/MKT deny") -> bo khoi VIEWER_ROLES (truoc day
+17-// buildProjectScope tra SALE={} = full, nen phai chan o route TRUOC boundary). PM chi
+18-// thay du an minh phu trach (L1 {pmUserId}); ADMIN/HR_MANAGER/DIRECTOR/HR_STAFF/
+19-// ACCOUNTANT passthrough theo scope builder. Create/update-by-id vo L1 (DEC-03 M1-06a)
+--
+21:const VIEWER_ROLES = new Set([
+22-  'ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'ACCOUNTANT', 'DIRECTOR',
+23-]);
+24-const ADMIN_ROLES = new Set(['ADMIN', 'PM', 'HR_MANAGER']);
+--
+37:  if (!VIEWER_ROLES.has(ctx.role)) {
+38-    return NextResponse.json(
+39-      { error: 'FORBIDDEN', message: 'Role ' + ctx.role + ' khong co quyen xem du an.' },
+40-      { status: 403 },
+
+D2. app/api/vendor/orders/route.ts + app/api/vendor/submissions/route.ts — chi VENDOR_*
+$ grep -n "VENDOR_ADMIN" app/api/vendor/orders/route.ts app/api/vendor/submissions/route.ts
+app/api/vendor/orders/route.ts:27:  if (ctx.role !== 'VENDOR_ADMIN' && ctx.role !== 'VENDOR_STAFF') {
+app/api/vendor/submissions/route.ts:46:  if (ctx.role !== 'VENDOR_ADMIN' && ctx.role !== 'VENDOR_STAFF') {
+app/api/vendor/submissions/route.ts:100:  if (ctx.role !== 'VENDOR_ADMIN' && ctx.role !== 'VENDOR_STAFF') {
+
+D3. source_claims: cua chan cua listClaims CO VENDOR_ADMIN va VENDOR_STAFF
+$ grep -n 'SUBMISSION_ADMIN_ROLES' -A 3 src/domains/staffing/submission.service.ts
+81:const SUBMISSION_ADMIN_ROLES = new Set([
+82-  'ADMIN', 'HR_MANAGER', 'HR_STAFF', 'VENDOR_ADMIN', 'VENDOR_STAFF',
+83-]);
+84-
+--
+86:  if (!SUBMISSION_ADMIN_ROLES.has(ctx.role)) {
+87-    throw new SubmissionServiceError('FORBIDDEN', `Role ${ctx.role} cannot manage submissions`);
+88-  }
+89-}
+
+D4. listClaims CO nguoi goi that o route, va la nhanh MAC DINH khi thieu tham so tab
+$ grep -rn 'listClaims' --include=*.ts --include=*.tsx app | grep -v test
+app/api/jobs/submissions/route.ts:18:  listClaims,
+app/api/jobs/submissions/route.ts:59:        listClaims(tx, ctx, { take, skip, accepted: accepted === 'true' ? true : accepted === 'false' ? false : undefined }),
+$ grep -n "tab === 'claims'" -A 5 app/api/jobs/submissions/route.ts
+56:    if (tab === 'claims' || !tab) {
+57-      // Default to claims tab for the claims page
+58-      const { rows, total } = await withDbContext(prisma, ctx, (tx) =>
+59-        listClaims(tx, ctx, { take, skip, accepted: accepted === 'true' ? true : accepted === 'false' ? false : undefined }),
+60-      );
+61-      return NextResponse.json({ rows, total, take, skip });
+$ grep -n 'LIST_ROLES = ' app/api/jobs/submissions/route.ts
+25:const LIST_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF', 'VENDOR_ADMIN', 'VENDOR_STAFF'] as const);
+
+=> chuoi voi tay DAY DU cua vi tri 12: GET /api/jobs/submissions (khong tab, cookie VENDOR_*)
+   -> LIST_ROLES cho qua -> listClaims -> checkSubmissionRole cho qua -> tx.sourceClaim.findMany
+   voi include worker. Policy C5 mo hang claim theo vendor_id KHONG can accepted; predicate cha
+   (B, hrp_worker_visible_for) doi s.accepted cho dung hai vai tro ay. Hang con doc duoc, hang cha
+   khong doc duoc, quan he BAT BUOC => Inconsistent query result TRUOC mapper. Day la 500 THAT,
+   goi duoc hom nay, dung lop loi cua hrp-v5-hotfix-02.
+
+D5. project_assignments: ba vi tri 6,7,8 nam trong ham KHONG co nguoi goi
+$ grep -rn 'vendorPreviewStatement' --include=*.ts --include=*.tsx app src | grep -v '\.test\.'
+src/domains/reconciliation/margin.service.ts:132:export async function vendorPreviewStatement(
+$ grep -rn 'getVendorStatementLineage' --include=*.ts --include=*.tsx app src | grep -v '\.test\.'
+src/domains/reconciliation/statement.service.ts:388:export async function getVendorStatementLineage(
+$ grep -rn 'getClientStatementLineage' --include=*.ts --include=*.tsx app src | grep -v '\.test\.'
+src/domains/reconciliation/statement.service.ts:420:export async function getClientStatementLineage(
+
+--- E. Ap phep cua DEC-03 cho tung dong, ket luan ---
+
+Ba cau hoi ap theo dung thu tu nay cho moi dong:
+  (i)  quan he do BAT BUOC hay NULLABLE? nullable thi invariant KHONG THE no (muc A).
+  (ii) policy CHA la danh sach vai tro thuan (nhanh A) hay co predicate theo hang (nhanh B)?
+  (iii) nhanh A: moi vai tro toi duoc duong ma co nam trong danh sach khong?
+        nhanh B: policy CON co dung DUNG predicate ay tren DUNG FK ay khong?
+
+1  app/api/projects/route.ts:65        clientCompany  outsourcing_projects -> client_companies
+   (i) BAT BUOC (schema.prisma:365).  (ii) nhanh A (C1 la danh sach bay vai tro).
+   (iii) cua chan D1 co sau vai tro ADMIN/HR_MANAGER/HR_STAFF/PM/ACCOUNTANT/DIRECTOR,
+        ca sau deu nam trong bay vai tro cua C1 (thua SALE). => AN TOAN.
+
+2  app/api/vendor/orders/route.ts:44   project  staffing_orders -> outsourcing_projects
+9  src/domains/staffing/order.service.ts:153   project  staffing_orders -> outsourcing_projects
+10 src/domains/staffing/order.service.ts:179   project  staffing_orders -> outsourcing_projects
+   (i) BAT BUOC (schema.prisma:391).  (ii) nhanh B (C2 dung hrp_project_visible_for(id)).
+   (iii) C4 dung DUNG predicate ay tren DUNG FK: hrp_project_visible_for(project_id).
+        Hang con doc duoc <=> hang cha doc duoc, khong con khoang trong nao. => AN TOAN (EV-12).
+
+3  app/api/vendor/submissions/route.ts:62               project  candidate_submissions -> outsourcing_projects
+4  src/domains/applications/application-queue.service.ts:178  project  candidate_submissions -> outsourcing_projects
+5  src/domains/applications/application-queue.service.ts:211  project  candidate_submissions -> outsourcing_projects
+11 src/domains/staffing/submission.service.ts:204            project  candidate_submissions -> outsourcing_projects
+   (i) NULLABLE: schema.prisma:499 'project Project? @relation(...)'. Quan he nullable thi
+       Prisma tra null chu khong nem, nen invariant cua EV-07 KHONG THE no o bon dong nay.
+       => AN TOAN, va ly do la SCHEMA, khong phai policy.
+   (ii)(iii) van do policy, vi cau tra loi doi neu ai do bo dau hoi di: (ii) nhanh B (C2).
+       C7 KHONG dung hrp_project_visible_for(project_id): no mo hang cho ACCOUNTANT (C7 dong 129)
+       trong khi hrp_project_visible_for KHONG co ACCOUNTANT (B, dong 7 chi co ADMIN/HR_MANAGER/
+       DIRECTOR/SALE). Vay neu quan he nay bi doi thanh BAT BUOC, bon dong nay thanh 500 ngay
+       voi vai tro ACCOUNTANT. Day la BAY NGU, ghi vao HANDOFF, khong sua trong task nay.
+
+6  src/domains/reconciliation/margin.service.ts:167      worker  project_assignments -> workers
+7  src/domains/reconciliation/statement.service.ts:403   worker  project_assignments -> workers
+8  src/domains/reconciliation/statement.service.ts:434   worker  project_assignments -> workers
+   (i) BAT BUOC (schema.prisma:588).  (ii) nhanh B (C3 dung hrp_worker_visible_for(id)).
+   (iii) C6 KHONG he goi hrp_worker_visible_for(worker_id) — do bang chinh phep dem duoi day.
+        Khoang trong CU THE: C6 cho PM thay assignment thuoc du an minh quan ly KHONG loc
+        status (comment ngay tren no viet 'ca ACTIVE + lich su'), con B dong 19 chi cho PM
+        thay worker qua mot assignment co a.status='ACTIVE'. Mot assignment da ket thuc cua
+        du an cua PM: hang con doc duoc, hang cha khong => Inconsistent query result. => RUI RO.
+   Ghi chu voi tay (D5): ba ham nay KHONG co nguoi goi, nen hom nay chua co 500 nao lo ra.
+   DEC-03 khong lay kha nang voi tay lam dieu kien, va RQ-07 buoc sua DUNG cho ket luan RUI RO.
+
+12 src/domains/staffing/submission.service.ts:248        worker  source_claims -> workers
+   (i) BAT BUOC (schema.prisma:548).  (ii) nhanh B (C3).
+   (iii) C5 CO nhac hrp_worker_visible_for(worker_id), nhung la MOT MENH DE HOAC thu tu, khong
+        phai dieu kien duy nhat: hai menh de truoc no mo hang theo vendor_id va ctv_id ma
+        KHONG doi accepted, con B dong 20-21 doi dung s.accepted cho ba vai tro ay.
+        Mot claim chua accepted cua chinh vendor minh: hang con doc duoc, hang cha khong. => RUI RO.
+   Ghi chu voi tay (D4): duong nay CO nguoi goi that va la nhanh MAC DINH cua route. 500 THAT.
+
+Phep dem cho menh de (iii) cua dong 6,7,8:
+$ sed -n '61,88p' prisma/migrations/20260830214139_m14_rls_matrix_repair/migration.sql | grep -c hrp_worker_visible_for
+0
+$ sed -n '44,58p' prisma/migrations/20260830214139_m14_rls_matrix_repair/migration.sql | grep -c hrp_worker_visible_for
+1
+
+TONG: 8 AN TOAN (1,2,3,4,5,9,10,11) + 4 RUI RO (6,7,8,12).

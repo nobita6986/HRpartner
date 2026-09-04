@@ -1,0 +1,68 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [31m❯[39m src/shared/security/required-relation-sweep.static.test.ts [2m([22m[2m11 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 427[2mms[22m[39m
+[31m   [31m×[31m quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG[2m > [22mmệnh đề BA: tập vị trí select KHỚP CHÍNH XÁC danh sách DEC-04 (EV-03, AC-04)[90m 219[2mms[22m[31m[39m
+[31m     → expected [ …(8) ] to deeply equal [ …(12) ][39m
+[31m   [31m×[31m quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG[2m > [22mphép quét phủ cả app/, chứng minh bằng chính ba dòng app/api trong kết quả (AC-04)[90m 189[2mms[22m[31m[39m
+[31m     → expected [ …(5) ] to have a length of 9 but got 5[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 2 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/shared/security/required-relation-sweep.static.test.ts[2m > [22mquan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG[2m > [22mmệnh đề BA: tập vị trí select KHỚP CHÍNH XÁC danh sách DEC-04 (EV-03, AC-04)
+[31m[1mAssertionError[22m: expected [ …(8) ] to deeply equal [ …(12) ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  Array [[22m
+[2m    "app/api/projects/route.ts:65 clientCompany",[22m
+[2m    "app/api/vendor/orders/route.ts:44 project",[22m
+[2m    "app/api/vendor/submissions/route.ts:62 project",[22m
+[2m    "src/domains/applications/application-queue.service.ts:178 project",[22m
+[2m    "src/domains/applications/application-queue.service.ts:211 project",[22m
+[32m-   "src/domains/reconciliation/margin.service.ts:167 worker",[39m
+[32m-   "src/domains/reconciliation/statement.service.ts:403 worker",[39m
+[32m-   "src/domains/reconciliation/statement.service.ts:434 worker",[39m
+[2m    "src/domains/staffing/order.service.ts:153 project",[22m
+[2m    "src/domains/staffing/order.service.ts:179 project",[22m
+[2m    "src/domains/staffing/submission.service.ts:204 project",[22m
+[32m-   "src/domains/staffing/submission.service.ts:248 worker",[39m
+[2m  ][22m
+
+[36m [2m❯[22m src/shared/security/required-relation-sweep.static.test.ts:[2m236:36[22m[39m
+    [90m234| [39m
+    [90m235| [39m  [34mit[39m([32m'mệnh đề BA: tập vị trí select KHỚP CHÍNH XÁC danh sách DEC-04 (E[39m…
+    [90m236| [39m    [34mexpect[39m([34msweep[39m(scanned[33m,[39m fields))[33m.[39m[34mtoEqual[39m([[33m...[39m[33mEXPECTED_HITS[39m][33m.[39m[34msort[39m())[33m;[39m
+    [90m   | [39m                                   [31m^[39m
+    [90m237| [39m  })[33m;[39m
+    [90m238| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/shared/security/required-relation-sweep.static.test.ts[2m > [22mquan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG[2m > [22mphép quét phủ cả app/, chứng minh bằng chính ba dòng app/api trong kết quả (AC-04)
+[31m[1mAssertionError[22m: expected [ …(5) ] to have a length of 9 but got 5[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 9[39m
+[31m+ 5[39m
+
+[36m [2m❯[22m src/shared/security/required-relation-sweep.static.test.ts:[2m249:58[22m[39m
+    [90m247| [39m    [35mconst[39m hits [33m=[39m [34msweep[39m(scanned[33m,[39m fields)[33m;[39m
+    [90m248| [39m    [34mexpect[39m(hits[33m.[39m[34mfilter[39m((hit) [33m=>[39m hit[33m.[39m[34mstartsWith[39m([32m'app/api/'[39m)))[33m.[39m[34mtoHaveLen[39m…
+    [90m249| [39m    [34mexpect[39m(hits[33m.[39m[34mfilter[39m((hit) [33m=>[39m hit[33m.[39m[34mstartsWith[39m([32m'src/'[39m)))[33m.[39m[34mtoHaveLength[39m(…
+    [90m   | [39m                                                         [31m^[39m
+    [90m250| [39m  })[33m;[39m
+    [90m251| [39m})[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m9 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 02:09:27
+[2m   Duration [22m 857ms[2m (transform 54ms, setup 0ms, collect 95ms, tests 427ms, environment 0ms, prepare 95ms)[22m
+
+EXIT=1

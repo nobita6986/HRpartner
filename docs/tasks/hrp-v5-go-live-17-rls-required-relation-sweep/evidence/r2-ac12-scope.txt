@@ -1,0 +1,362 @@
+AC-12 round 2 -- pham vi path, do tren ban contract DANG THI HANH (v1.4)
+Ban contract dang thi hanh: v1.4. Lan chay dau cua bo phan nhom nay dung ban v1.3 va cho
+KHONG PHAN DUOC = 2, dung hai tep TASK.md cung AUDIT.md cua CHINH slug nay: TASK.md dang
+'M ' vi Tier 1 bump v1.3, AUDIT.md dang 'A ' vi Tier 3 staged luc ghi. Ca hai la thu ma
+luat sat cua CLAUDE.md cam Tier 2 cham, nen AC-12 o v1.3 bat kha thoa lan nua. Bump v1.4
+noi hang tai san mot cau de phu ca hai, roi bo phan nhom chay lai: con so o duoi la ban
+chay lai ay. Ghi lai chu khong xoa.
+
+Dung ba lenh ma AC-12 doi, khong them khong bot:
+  (1) git status --porcelain  hop voi  git diff --cached --name-only, roi phan nhom theo 4.2
+  (2) git status --porcelain chay RIENG tren tung duong dan cot cam cham
+  (3) git log --oneline -1
+Luu y do luong: (1) quet CA cay untracked nen con so tho luon lon. Phep do that la phan nhom.
+
+--- (1) HOP HAI DANH SACH ---
+$ git status --porcelain   -> 417 dong
+$ git diff --cached --name-only    -> 219 dong
+  HOP, khu trung                   = 417 path
+
+--- (2) PHAN NHOM theo dieu 4.2 ban v1.3, giu nguyen o v1.4 ---
+  G1   nhom 1: hang rao cua task nay                            : 1
+  G2   nhom 2: tep ma ung dung co vi tri RUI RO                 : 3
+  G2X  nhom 2 loai tru: tep Modules KHONG co vi tri RUI RO      : 0
+  G3   nhom 3: artifact cua chinh task                          : 23
+  G4   nhom 4: ban giao ba contract cung lo                     : 184
+  FA1  hang tai san: TASK.md/AUDIT.md cua slug KHAC             : 9
+  FA2  hang tai san: nam tep gate .ai-pipeline/scripts/         : 5
+  FA3  hang tai san: cay dirty co TRUOC round nay, muc (D)      : 195
+
+  TRONG BON NHOM                                   : 211
+  NGOAI bon nhom, TRONG hang tai san luong khac     : 206
+  KHONG phan duoc vao dau ca                        : 0
+  Kiem tong: 211 cong 206 cong 0 bang 417, so voi HOP 417 : KHOP
+
+--- (3) LIET KE day du phan TRONG BON NHOM ---
+  M   G4    .gitignore
+  M   G4    app/(jobs)/viec-lam/[slug]/page.tsx
+  M   G4    app/api/public/applications/[trackingCode]/route.ts
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/HANDOFF.md
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/r2-ac04-hitset.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/r2-ac11-lane.txt
+  ??  G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/r2-ac12-scope.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-gate17.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-tsc.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-unit.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s02-barrier-structure.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s02-remeasure.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s04-green.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s05-policy-classification.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s06-fix.py
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-green.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-red.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier.py
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s08-untouched.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-typecheck.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-unit.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-baseline.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-gate-h15-artifact.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-handoff-gate.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-newui-attribution.txt
+  A   G3    docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-scope.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-00-fingerprint-pre.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-01-newui-class.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-02-newui-origin.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-03-unit.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-04-lane-delta.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-05-tsc.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-06-tsc-exclude-newui.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-07-lane-arithmetic.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-08-page-order.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-09-red-probe.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-10-red-probe-pii.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-11-ac-measure.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-12-guard.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-13-diffs.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-14-scope.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-15-sibling-scope.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-16-group4-and-forbidden.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-17-forbidden-sweep.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-18-ac03-ev04.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-19-ac03-derivation.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-20-ac03-masking.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-21-nostore-lines.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-22-fence-detectors.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-23-fingerprint-post.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-24-gates-task-handoff.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-25-scope-resolution.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-26-gates-rerun.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-27-final-state.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-28-audit-md-copy.md
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-29-gate-and-fingerprint-post.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-30-owner-notouch-sweep.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-31-contract-bump-v14.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-32-ac15-under-v14.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-33-reclassify-under-v14.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-34-gx-attribution.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-35-modules-numstat-and-gx-final.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-36-page-numstat-recheck.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-37-section3-numbers.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-38-final-fingerprint-and-citations.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-39-final-index-attribution.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-40-closing-hygiene.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-gate18.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-tsc.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-unit.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s02-surface-inventory.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s03-guard.py
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s04-unit.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-guard.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-page.py
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-tsc-pwsh.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-tsc.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s06-route.py
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-green.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-green2.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-page-current.bak
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-page-sha.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-red.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s08-inventory.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s08-regex-probe.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s09-forbidden-verified.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s09-forbidden.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-ac-recheck.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-ac11-route.diff
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-ac12-inventory.diff
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-gate-handoff.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-gate-task-rerun.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-gate-task.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-handoff-denycode.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-scope-groups.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-scope-raw.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc-bash.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc-diff.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc-exit.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-unit.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s11-pii-baseline.txt
+  A   G4    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s12-pii.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/HANDOFF.md
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s01-gate.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s01-head.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s01-status-before.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s01-typecheck.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s01-unit.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-count-by-root-after.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-count-by-root-before.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-count-by-root.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-listfiles-after.err
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-listfiles-after.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-listfiles-before.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-outside-src-app.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-program-after.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-program-before.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-summary-before.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-tracked-classification.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s03-include-parsed.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s03-tsconfig-diff.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s04-departed.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s04-entered.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s05-typecheck.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s06-barrier.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s07-barrier-green.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s07-barrier-red.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s07-hashes.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s08-barrier-green.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s08-barrier-red.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s08-cleanup.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-count-by-root-final.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-departed-final.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-entered-final.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-listfiles-final.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-program-final.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-setdiff.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-typecheck.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-unit.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac01-cached.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac03-coverage.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac11-delivery.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac11-final.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac12-limitation.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac12-patterns.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac12.ps1
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac14-crossref.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-attribution.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-barrier-ignored.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-barrier-single.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-barrier-structure.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-contract-bump-v12.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-contract-table-shape.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-count-by-root-after-move.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-delta-vs-mark.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-departed.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-entered.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-gate-handoff.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-gate-pipeline.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-gate-task-v12.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-groups.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ignore-sweep.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-listfiles-after-move.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-lost-paths.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-move-barrier.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-new-paths.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-program-after-move.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-scope-forbidden.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-status-final.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-task-index-vs-worktree.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-typecheck.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-unit.txt
+  A   G4    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-untouched-and-head.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/HANDOFF.md
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-gate.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-newui-attribution.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-typecheck.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-unit.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s02-browser.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s02-install.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s02-version.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s03-gitignore.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s04-nextenv-override.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s06-script.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s07-blocker-attribution.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s07-diag-green.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s07-run1.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s08-run2.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s09-negative-fixture.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10-relane.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10-scope.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10b-lane-recheck.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10c-attribution-app-src.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s11-gate-handoff.txt
+  A   G4    docs/tasks/hrp-v5-test-01-browser-lane/evidence/s11-scope-and-baseline.txt
+  M   G4    package-lock.json
+  M   G4    package.json
+  A   G4    playwright.config.ts
+  M   G4    src/domains/applications/marketplace-inventory.static.test.ts
+  A   G4    src/domains/applications/tracking-pii-containment.static.test.ts
+  M   G2    src/domains/reconciliation/margin.service.ts
+  M   G2    src/domains/reconciliation/statement.service.ts
+  M   G2    src/domains/staffing/submission.service.ts
+  A   G4    src/shared/security/public-surface-limiter.static.test.ts
+  M   G4    src/shared/security/rate-limit-guard.ts
+  A   G1    src/shared/security/required-relation-sweep.static.test.ts
+  A   G4    src/shared/toolchain/tsc-program-boundary.static.test.ts
+  A   G4    tests/browser/public-home.spec.ts
+  M   G4    tsconfig.json
+
+--- (4) MOT PATH THUOC DUNG MOT NHOM ? ---
+  so path thuoc HAI nhom tro len : 0
+  nhom bon giao nhom mot hoac nhom hai : 0   (AC doi 0)
+  so tep Modules khong co vi tri RUI RO ma bi cham : 0   (AC doi 0)
+
+--- (5) PHAN NGOAI BON NHOM, chia theo LUONG SO HUU ---
+  FA1  TASK.md / AUDIT.md cua slug khac -- Tier 1 va Tier 3 : 9
+       M  docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+       M  docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+       M  docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+      A   docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/AUDIT.md
+      MM  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+      A   docs/tasks/hrp-v5-go-live-18-public-surface-hardening/AUDIT.md
+      M   docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+      AM  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+      M   docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+  FA2  nam tep gate -- Agent khac, Owner xac nhan 03/09 : 5
+      A   .ai-pipeline/scripts/gate-lib.ps1
+       M  .ai-pipeline/scripts/verify-audit.ps1
+      A   .ai-pipeline/scripts/verify-handoff.ps1
+      M   .ai-pipeline/scripts/verify-pipeline.ps1
+       M  .ai-pipeline/scripts/verify-task.ps1
+  FA3  cay dirty co truoc round nay -- s10-scope.txt muc (D) : 195
+      ??  .ai-pipeline/scripts/verify-gates.selftest.ps1
+      ??  .claude/
+      ??  .neon
+      ??  docs/aff_plan - Copy.md
+       M  docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+       M  docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+       M  docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+      ??  fix.patch
+      ??  new-ui.md
+      ??  new-ui/
+      ??  patch_test.ps1
+      ??  patch_test2.ps1
+      ??  patch_test3.ps1
+       M  public/index.html
+      ... con 181 path nua cung hang
+
+--- (6) PHAN KHONG PHAN DUOC -- AC-12 doi con so nay bang 0 ---
+  RONG
+
+KET_QUA_MUC_1_DEN_6: UNCLASSIFIED=0  DUPE=0  G4_GIAO_G1G2=0  G2X=0
+--- (7) LENH THU HAI cua AC-12: git status --porcelain tren TUNG duong dan cot cam cham ---
+Cot cam cham cua 4.2 gom bon path ten rieng, moi tep duoi prisma/migrations/, moi tep cau
+hinh vitest, va sau tep thuoc pham vi contract 16. Ngoac vuong RONG = khong mot byte nao doi.
+  prisma/schema.prisma                                 []
+  prisma/migrations                                    []
+  src/domains/job-board/public-select.static.test.ts   []
+  app/globals.css                                      []
+  vitest.config.ts                                     []
+  vitest.unit.config.ts                                []
+  src/shared/ui/data-table/data-table.tsx              []
+  src/shared/ui/entity-card/entity-card.tsx            []
+  src/shared/ui/internal-contrast.static.test.ts       []
+  app/ctv/page.tsx                                     []
+  app/worker/page.tsx                                  []
+  app/login/login-form.tsx                             []
+  so duong dan da do : 12
+  so duong dan KHONG rong : 0   (AC doi 0)
+
+--- (8) BA TEP CAU HINH thuoc luong khac trong CUNG LO ---
+Dieu 4.2 tu ban v1.3 noi ro: tsconfig.json thuoc nhom bon (ban giao rf-05); package.json cong
+package-lock.json thuoc quyen test-01, task nay KHONG duoc sua nhung su co mat cua chung
+trong cay lam viec KHONG phai defect cua task nay. Vi vay muc nay do TAC GIA chu khong do
+do sach: phai chung minh noi dung diff la cua contract kia.
+  tsconfig.json        status [M  tsconfig.json]  diffstat: 1 file changed, 12 insertions(+), 2 deletions(-)
+  package.json         status [M  package.json]  diffstat: 1 file changed, 2 insertions(+)
+  package-lock.json    status [M  package-lock.json]  diffstat: 1 file changed, 63 insertions(+)
+  noi dung diff staged cua tsconfig.json, 6 dong dau:
+      -    "**/*.ts",
+      -    "**/*.tsx",
+      +    "next-env.d.ts",
+      +    "middleware.ts",
+      +    "*.config.ts",
+      +    "vitest.integration-files.ts",
+  => day la allow-list include/exclude cua hrp-v5-rf-05-tsc-program-boundary, khong mot dong
+     nao lien quan quan he bat buoc duoi RLS. Task 17 khong ghi mot byte nao vao ba tep nay.
+
+--- (9) LENH THU BA cua AC-12: git log --oneline -1 ---
+$ git log --oneline -1
+  e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+  gia tri STEP-01 da ghi o evidence/s10-baseline.txt dong 5 : e58a6c0
+  gia tri bay gio                                          : e58a6c0
+  so voi nhau : KHOP
+  so commit moi giua hai moc : 0   (AC doi 0, tuc Tier 2 khong tao commit nao)
+  Phep so voi field Baseline KHONG dung o day, dung nhu AC-12 ban v1.2 tro di da ghi:
+  Baseline 80f6933 la anh cua cay TRUOC khi contract nay ton tai.
+
+--- (10) PHEP KIEM DO BEN: doi cong tac untracked cua chinh lenh (1) ---
+git status --porcelain mac dinh GOP mot thu muc untracked thanh MOT dong. Ban --untracked-files=all
+no ra tung tep. Neu ket luan phan nhom doi theo cong tac ay thi phep do la do dung cu chu khong
+phai do cay lam viec. Chay lai y nguyen bo phan nhom voi --untracked-files=all, ghi ra
+docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/r2-ac12-scope-uall.txt :
+  ban mac dinh : HOP, khu trung                   = 417 path
+  ban -uall    : HOP, khu trung                   = 633 path
+  ban mac dinh : TRONG BON NHOM                                   : 211
+  ban -uall    : TRONG BON NHOM                                   : 211
+  ban mac dinh : KHONG phan duoc vao dau ca                        : 0
+  ban -uall    : KHONG phan duoc vao dau ca                        : 0
+  => so path TRONG BON NHOM giong nhau o hai ban, va so KHONG PHAN DUOC bang 0 o ca hai.
+     Toan bo chenh lech nam trong hang tai san cua luong khac, tuc cac thu muc untracked
+     co san duoc no ra. Ket luan khong phu thuoc cong tac.
+  Doi chieu voi con so ghi o changelog v1.3: bang ay ghi 630 path vi do bang -uall luc ay;
+  ban mac dinh cho 417. Hai con so do HAI lenh khac nhau, khong phai mot con so bi lech.
+
+--- (11) KET LUAN AC-12 round 2 ---
+  lenh 1: KHONG phan duoc vao dau ca                        : 0 ; path thuoc hai nhom tro len: 0 ;
+          nhom bon giao nhom mot/hai: 0 ;
+          tep Modules khong RUI RO bi cham: 0
+  lenh 2: 12 duong dan cot cam cham, 0 duong dan khong rong
+  lenh 3: HEAD e58a6c0 bang dung gia tri STEP-01, 0 commit moi
+  Ba lenh cua AC-12 deu dat nguong. AC-12 round 2: PASS.
+  LIM-01 cua round 1 (HEAD khac Baseline nen bat kha thoa) DONG: ban v1.2 cua contract da doi
+  phep so sang STEP-01, va muc (9) o tren do dung phep so ay.

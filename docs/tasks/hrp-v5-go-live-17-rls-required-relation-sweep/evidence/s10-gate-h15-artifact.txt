@@ -1,0 +1,103 @@
+s10-gate-h15-artifact.txt — hrp-v5-go-live-17 / STEP-10 / nen cua FND-06
+Cau hoi: verify-handoff.ps1 bao [WARN] H-15 "TASK.md control field(s) differ from HEAD: Next gate."
+         Toi CO cham field ay khong?
+
+==============================================================================
+(A) TASK.md cua contract 17 co bi sua trong worktree khong?
+==============================================================================
+$ git status --porcelain -- docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+  [het output — 0 dong]
+
+$ git diff HEAD -- docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+  [het output — 0 dong]
+
+$ git diff HEAD --numstat -- docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+  [het output — 0 dong]
+
+=> Tep GIONG HEAD tung byte. Toi khong cham no.
+
+==============================================================================
+(B) Dong 20 doc tu worktree va doc tu blob HEAD
+==============================================================================
+$ grep -n 'Next gate' docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+20:| Next gate | `/code` giao GỘP một lượt cùng 18 và test-01 theo quyết định `03/09` của Owner, và task này chạy SAU 18, TRƯỚC test-01 trong lô. Không phụ thuộc DB, không cần Owner quyết gì |
+
+$ git show HEAD:docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md | grep -n 'Next gate'
+20:| Next gate | `/code` giao GỘP một lượt cùng 18 và test-01 theo quyết định `03/09` của Owner, và task này chạy SAU 18, TRƯỚC test-01 trong lô. Không phụ thuộc DB, không cần Owner quyết gì |
+
+=> Hai dong GIONG NHAU.
+
+==============================================================================
+(C) Loai bo gia thuyet CRLF (bay da ghi trong memory: dưới core.autocrlf thi
+    so byte giua worktree va blob la VO HIEU)
+==============================================================================
+$ git config --get core.autocrlf
+true
+$ grep -c $'\r' docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md                       # so dong co CR trong worktree
+0
+$ git show HEAD:docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md | grep -c $'\r'        # so dong co CR trong blob
+0
+
+=> Ca hai deu 0. CRLF KHONG phai nguyen nhan.
+
+==============================================================================
+(D) Nguyen nhan THAT — do CHINH hai ham cua gate-lib.ps1, chay truc tiep
+==============================================================================
+Ham bi do (KHONG sua — tep cua luong khac):
+  gate-lib.ps1:119  Get-GitFileAtHead  -> Invoke-GitLines 'git show HEAD:<path>'
+  gate-lib.ps1:238  Get-ControlField
+  verify-handoff.ps1:323  so sanh 4 field: Status, Current audit round, Next gate, Spec version
+
+Script probe (ghi ra /tmp/h15probe.ps1, doc cung mot gate-lib ma cong dung):
+    $ErrorActionPreference = 'Stop'
+    . .ai-pipeline/scripts/gate-lib.ps1
+    $rel = 'docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md'
+    $task = Get-Content -Raw -Path $rel
+    $head = Get-GitFileAtHead -RepoRoot (Get-Location).Path -RelPath $rel
+    foreach ($f in @('Status','Current audit round','Next gate','Spec version')) {
+      $a = Get-ControlField -Text $task -FieldName $f
+      $b = Get-ControlField -Text $head -FieldName $f
+      Write-Output ("FIELD  {0}`n  WORKTREE len={1}  {2}`n  HEADBLOB len={3}  {4}`n  EQUAL={5}" -f $f, $a.Length, $a, $b.Length, $b, ($a -eq $b))
+    }
+
+$ powershell -NoProfile -File /tmp/h15probe.ps1
+FIELD  Status
+  WORKTREE len=19  READY_FOR_EXECUTION
+  HEADBLOB len=19  READY_FOR_EXECUTION
+  EQUAL=True
+FIELD  Current audit round
+  WORKTREE len=1  0
+  HEADBLOB len=1  0
+  EQUAL=True
+FIELD  Next gate
+  WORKTREE len=204  /code giao G��~P m��Tt l�����t cA1ng 18 vA� test-01 theo quy���t �`��<nh 03/09 c��a Owner, vA� task nA�y ch���y SAU 18, TR�_��sC test-01 trong lA'. KhA'ng ph��� thu��Tc DB, khA'ng c��n Owner quy���t gA�
+  HEADBLOB len=204  /code giao GỘP một lượt cùng 18 và test-01 theo quyết định 03/09 của Owner, và task này chạy SAU 18, TRƯỚC test-01 trong lô. Không phụ thuộc DB, không cần Owner quyết gì
+  EQUAL=False
+FIELD  Spec version
+  WORKTREE len=4  v1.1
+  HEADBLOB len=4  v1.1
+  EQUAL=True
+PROBE_EXIT=0
+
+==============================================================================
+(E) Ket luan
+==============================================================================
+Ba field THUAN ASCII  -> EQUAL=True.
+Mot field co dau tieng Viet -> EQUAL=False, dai BANG NHAU (204 = 204).
+
+Do dai bang nhau ma noi dung lech nghia la khong mot ky tu nao bi THEM hay MAT:
+chi rieng phep GIAI MA lech. Nhanh doc worktree cua cong dung Get-Content -Raw
+duoi Windows PowerShell 5.1, ma o day mac dinh codepage ANSI/OEM chu KHONG phai
+UTF-8, nen moi ky tu nhieu byte bi doc sai; nhanh 'git show' tra ve dung.
+
+=> [WARN] H-15 la MOT DINH DANH GIA cua dung cu, khong phai mot lan Tier 2 ghi
+   vao field cua Tier 1. Vet do se lap lai voi BAT KY task nao co du tieng Viet
+   trong bon field ay — tuc gan nhu moi task cua repo nay.
+
+De xuat (KHONG tu sua: verify-handoff.ps1 va gate-lib.ps1 la tep cua luong khac,
+dieu 4.3 cam cham; day la mot finding gui Tier 1):
+   doc worktree bang -Encoding UTF8, hoac so sanh bang git hash-object thay vi
+   so sanh chuoi da giai ma.
+
+sha256 cua chinh tep bang chung nay luc do:
+  e29400121d8b502f4bffcd4ff8c576459948dbfd79fb16d9531e1b4d1608fe3b

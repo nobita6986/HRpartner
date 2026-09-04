@@ -1,0 +1,53 @@
+=== s10-newui-attribution — QUY TRACH dong tsc DO duy nhat (AC-11, LIM-02) ===
+2026-09-04 02:42:13 +0700
+
+--- (1) Dong do duy nhat, nguyen van tu lan chay STEP-09 ---
+  10:new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & ... 4 more ... & HTMLAttributes<...>'.
+  20:    new-ui/components/JobCard.tsx(18,6): error TS2322
+  22:    new-ui/components/JobCard.tsx(18,6): error TS2322
+  30:(3) bon tep task 17 dung den: KHONG mot dong error TS nao mang ten chung
+
+--- (2) Cung dong ay DA CO o moc STEP-01, TRUOC khi toi sua mot byte nao ---
+  9:new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & ... 4 more ... & HTMLAttributes<...>'.
+  15:so dong 'error TS' = 1
+  17:so dong 'error TS' = 2
+  19:new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & ... 4 more ... & HTMLAttributes<...>'.
+  20:so dong 'error TS' = 1
+  30:Ba dong 15..20 cua tep nay ghi ba con so mau thuan — 'so dong error TS' = 1, roi = 2, roi = 1 —
+
+--- (3) new-ui/ CHUA TUNG duoc commit boi bat ky ai: git log --oneline --all -- new-ui/ ---
+  so dong: 0
+  => thu muc ay untracked hoan toan, nen no KHONG nam trong cay baseline 80f6933
+     va cung KHONG nam trong cay HEAD e58a6c0. Kiem lai bang git ls-tree:
+  git ls-tree -r --name-only 80f6933 -- new-ui/ | wc -l  -> 0
+  git ls-tree -r --name-only e58a6c0 -- new-ui/ | wc -l  -> 0
+
+--- (4) new-ui/ KHONG nam trong bat ky nhom nao cua dieu 4.2, va toi khong stage no ---
+  git diff --cached --name-only -- new-ui/ | wc -l  -> 0
+  git status --porcelain new-ui/ | head -3:
+    ?? new-ui/
+
+--- (5) tsconfig.json co loai new-ui/ ra khong ---
+  $ sed -n '36,48p' tsconfig.json
+      ]
+    },
+    "include": [
+      "**/*.ts",
+      "**/*.tsx",
+      ".next/types/**/*.ts"
+    ],
+    "exclude": [
+      "node_modules"
+    ]
+  }
+  
+  => hai mang ay KHONG chua chuoi 'new-ui': grep -c 'new-ui' tsconfig.json -> 0
+     "include" phu "**/*.ts"/"**/*.tsx" tu goc, nen tsc quet vao new-ui/. Them mot dong vao
+     "exclude" la SUA tsconfig.json — dieu 4.2 xep tep ay vao cot CAM CHAM — nen day la mot
+     LIM chu khong phai mot ban sua cua task 17.
+
+--- KET LUAN ---
+  Dong do duy nhat DA DO TU TRUOC: no co mat trong s01-tsc.txt (moc, chay luc 01:17-02:17)
+  va trong s09-typecheck.txt (sau khi sua, 02:16) voi CUNG mot dinh danh. No nam trong new-ui/,
+  thu muc chua tung duoc commit (muc 3) va khong thuoc bon nhom cua dieu 4.2 (muc 4).
+  AC-11 doi 'ca hai exit 0'; tsc exit 1. Ghi thanh LIM-02, KHONG khai PASS.

@@ -397,13 +397,24 @@ export async function getVendorStatementLineage(
 
   // Trace line -> assignment -> timesheet -> event
   const assignmentIds = statement.lines.map(l => l.assignmentId).filter((x): x is string => !!x);
+  // KHONG select quan he `worker`: quan he BAT BUOC + policy con khong dung predicate cua policy cha
+  // => `Inconsistent query result` TRUOC mapper (xem ghi chu day du o margin.service.ts, DEC-05).
+  // Hang assignment van doc day du truong vo huong nen HINH DANG response khong doi; chi nguon cua
+  // khoa `worker` doi, va khoa ay thanh `null` khi hang cha khong doc duoc — khoa VAN CON.
   const assignments = assignmentIds.length
-    ? await tx.projectAssignment.findMany({
-        where: { id: { in: assignmentIds } },
-        include: { worker: { select: { id: true, fullName: true } } },
+    ? await tx.projectAssignment.findMany({ where: { id: { in: assignmentIds } } })
+    : [];
+  const lineageWorkerIds = [...new Set(assignments.map(a => a.workerId))];
+  const lineageWorkers = lineageWorkerIds.length
+    ? await tx.worker.findMany({
+        where: { id: { in: lineageWorkerIds } },
+        select: { id: true, fullName: true },
       })
     : [];
-  const assignmentMap = new Map(assignments.map(a => [a.id, a]));
+  const workerById = new Map(lineageWorkers.map(w => [w.id, w]));
+  const assignmentMap = new Map(
+    assignments.map(a => [a.id, { ...a, worker: workerById.get(a.workerId) ?? null }]),
+  );
 
   return {
     statement,
@@ -428,13 +439,24 @@ export async function getClientStatementLineage(
   if (!statement) return null;
 
   const assignmentIds = statement.lines.map(l => l.assignmentId).filter((x): x is string => !!x);
+  // KHONG select quan he `worker`: quan he BAT BUOC + policy con khong dung predicate cua policy cha
+  // => `Inconsistent query result` TRUOC mapper (xem ghi chu day du o margin.service.ts, DEC-05).
+  // Hang assignment van doc day du truong vo huong nen HINH DANG response khong doi; chi nguon cua
+  // khoa `worker` doi, va khoa ay thanh `null` khi hang cha khong doc duoc — khoa VAN CON.
   const assignments = assignmentIds.length
-    ? await tx.projectAssignment.findMany({
-        where: { id: { in: assignmentIds } },
-        include: { worker: { select: { id: true, fullName: true } } },
+    ? await tx.projectAssignment.findMany({ where: { id: { in: assignmentIds } } })
+    : [];
+  const lineageWorkerIds = [...new Set(assignments.map(a => a.workerId))];
+  const lineageWorkers = lineageWorkerIds.length
+    ? await tx.worker.findMany({
+        where: { id: { in: lineageWorkerIds } },
+        select: { id: true, fullName: true },
       })
     : [];
-  const assignmentMap = new Map(assignments.map(a => [a.id, a]));
+  const workerById = new Map(lineageWorkers.map(w => [w.id, w]));
+  const assignmentMap = new Map(
+    assignments.map(a => [a.id, { ...a, worker: workerById.get(a.workerId) ?? null }]),
+  );
 
   return {
     statement,

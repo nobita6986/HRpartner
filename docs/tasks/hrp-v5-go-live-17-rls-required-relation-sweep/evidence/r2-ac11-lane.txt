@@ -1,0 +1,51 @@
+=== r2-ac11-lane — do lai AC-11 o round 2, sau khi hrp-v5-rf-05-tsc-program-boundary da thi hanh ===
+2026-09-04 11:56:42 +0700
+
+LUU Y DUNG CU: output cua vitest mang ma mau ANSI ngay dau dong, nen moi phep grep duoi day
+deu di qua mot buoc loc ANSI. Mot lan chay TRUOC do da tra RONG o dung ba muc vi thieu buoc nay,
+va so lieu bi thieu chinh la thu duoc ghi lai o day thay vi bo di.
+
+--- (1) lane unit, ma thoat lay bang REDIRECT chu khong sau ong ---
+$ npm run test:unit > /tmp/r2-unit.txt 2>&1; echo "R2_UNIT_EXIT = $?"
+  R2_UNIT_EXIT = 0
+   Test Files  108 passed (108)
+        Tests  1654 passed (1654)
+     Duration  22.96s (transform 1.38s, setup 0ms, collect 4.74s, tests 1.66s, environment 14ms, prepare 5.25s)
+  so dong khop 'FAIL' hoac 'failed' : 0
+
+--- (2) typecheck, cung cach lay ma thoat ---
+$ npm run typecheck > /tmp/r2-tsc.txt 2>&1; echo "R2_TSC_EXIT = $?"
+  R2_TSC_EXIT = 0
+  so dong khop 'error TS' : 0
+  moi dong khop, nguyen van (khong dong nao ben duoi nghia la so tren bang 0):
+
+--- (3) doi chieu voi moc ma STEP-01 da ghi, va voi so cua round 1 ---
+  moc STEP-01 (s01-unit.txt) : Test Files 106   Tests 1631
+  round 1     (s09-unit.txt) : Test Files 107   Tests 1642
+  round 2     (luot nay)     : Test Files 108   Tests 1654
+  1654 khong nho hon 1631 : CO
+  chenh so tep  = 108 tru 106 = 2
+  chenh so test = 1654 tru 1631 = 23
+
+--- (4) quy thuoc phan CHENH cho tung hang rao, do rieng tung tep ---
+  hang rao cua task NAY  src/shared/security/required-relation-sweep.static.test.ts : exit=0  Tests=11
+  hang rao cua rf-05     src/shared/toolchain/tsc-program-boundary.static.test.ts   : exit=0  Tests=12
+  11 cong 12 bang 23; phan chenh test la 23; khop: CO
+  hai hang rao la hai tep; phan chenh tep la 2; khop: CO
+  Khong con dong chenh nao chua quy duoc, nen khong co test nao cua luong khac lot vao lane.
+
+--- (5) LIM-02 cua round 1 da dong hay chua ---
+  LIM-02 round 1: typecheck exit 1 vi DUNG MOT dong do o new-ui/components/JobCard.tsx(18,6) TS2322.
+  round 2, so dong khop 'JobCard.tsx' trong output typecheck : 0
+  round 2, so dong khop 'TS2322'                             : 0
+  => hai so bang 0 va R2_TSC_EXIT bang 0: LIM-02 DONG. Nguyen nhan la ban giao cua rf-05
+     dong bien chuong trinh tsc, dung thu ma AUD-001 cua round 1 chuyen sang cho rf-05.
+
+--- (6) LIM-03 cua round 1: ma thoat tsc co on dinh giua hai luot lien nhau ---
+  luot hai: R2_TSC_EXIT_LAN2 = 0, so dong 'error TS' = 0
+  Hai luot cung 0, nen o round 2 LIM-03 khong con anh huong ket luan.
+
+--- KET LUAN AC-11 ---
+  Ca hai exit 0: unit 0, tsc 0.
+  So test PASS 1654 khong nho hon moc STEP-01 1631.
+  Khong mot dong do nao, nen menh de phan loai tung dong do khong con doi tuong.

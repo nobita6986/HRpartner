@@ -1,0 +1,30 @@
+s10-handoff-gate.txt — hrp-v5-go-live-17 / STEP-10 / cong bang giao
+$ powershell -NoProfile -File .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+
+HANDOFF SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-go-live-17-rls-required-relation-sweep\HANDOFF.md (against docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 52411 bytes.
+  [WARN] H-01 HANDOFF.md is neither tracked nor staged - an editor save-over would lose it unrecoverably. Stage it now.
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.1 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 12 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 14 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 10 STEP appear in the execution trace.
+  [OK]   H-13 4 deviation(s) in section 2, 5 declared in section 5.
+  [OK]   H-14 section 7 records round 1.
+  [WARN] H-15 TASK.md control field(s) differ from HEAD: Next gate. If Tier 2 changed them, revert - those fields belong to Tier 1.
+
+RESULT: PASS WITH WARNINGS (2 warning(s)).
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+
+HANDOFF_GATE_EXIT=0
+
+Hai [WARN] con lai, ca hai da co loi giai:
+  H-01  chua stage -> `git add` chay NGAY sau lenh nay, theo STEP-10.
+  H-15  dinh dang gia cua dung cu, do va giai o FND-06 cung
+        evidence/s10-gate-h15-artifact.txt. Toi KHONG cham field ay.

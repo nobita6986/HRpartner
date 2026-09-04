@@ -1,0 +1,300 @@
+=== s10-scope — phep kiem PHAM VI theo dieu 4.2 (STEP-10, AC-07/AC-08/AC-09) ===
+2026-09-04 02:21:32 +0700
+
+--- (A) toan bo tap thay doi, nguyen van: git status --porcelain ---
+(loc bo ~200 dong '??' cua scratch/ va cac thu muc untracked co san — dan nguyen o muc (D))
+A  .ai-pipeline/scripts/gate-lib.ps1
+ M .ai-pipeline/scripts/verify-audit.ps1
+A  .ai-pipeline/scripts/verify-handoff.ps1
+M  .ai-pipeline/scripts/verify-pipeline.ps1
+ M .ai-pipeline/scripts/verify-task.ps1
+M  app/(jobs)/viec-lam/[slug]/page.tsx
+M  app/api/public/applications/[trackingCode]/route.ts
+ M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+ M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-gate17.txt
+A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-tsc.txt
+A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-unit.txt
+A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s02-remeasure.txt
+A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s04-green.txt
+A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s05-policy-classification.txt
+A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s06-fix.py
+A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-green.txt
+A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-red.txt
+A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier.py
+A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s08-untouched.txt
+A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-typecheck.txt
+A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-unit.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-gate18.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-tsc.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-unit.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s02-surface-inventory.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s03-guard.py
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s04-unit.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-guard.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-page.py
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-tsc-pwsh.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-tsc.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s06-route.py
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-green.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-green2.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-page-current.bak
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-page-sha.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-red.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s08-inventory.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s08-regex-probe.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s09-forbidden-verified.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s09-forbidden.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-ac-recheck.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-ac11-route.diff
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-ac12-inventory.diff
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-gate-handoff.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-gate-task-rerun.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-gate-task.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-handoff-denycode.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-scope-groups.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-scope-raw.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc-bash.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc-diff.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc-exit.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-unit.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s11-pii-baseline.txt
+A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s12-pii.txt
+ M public/index.html
+M  src/domains/applications/marketplace-inventory.static.test.ts
+A  src/domains/applications/tracking-pii-containment.static.test.ts
+M  src/domains/reconciliation/margin.service.ts
+M  src/domains/reconciliation/statement.service.ts
+M  src/domains/staffing/submission.service.ts
+A  src/shared/security/public-surface-limiter.static.test.ts
+M  src/shared/security/rate-limit-guard.ts
+A  src/shared/security/required-relation-sweep.static.test.ts
+?? "docs/aff_plan - Copy.md"
+?? docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-scope.txt
+?? fix.patch
+?? new-ui.md
+?? new-ui/
+?? patch_test.ps1
+?? patch_test2.ps1
+?? patch_test3.ps1
+?? rls-probe-insert.txt
+?? rls-probe-output.txt
+?? scripts/debug-parser.mjs
+?? temp.diff
+?? tsconfig.tmp.json
+?? update_globals.js
+
+--- (B) numstat cua PHAN STAGED thuoc task 17 ---
+22	0	docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-gate17.txt
+38	0	docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-tsc.txt
+143	0	docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-unit.txt
+90	0	docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s02-remeasure.txt
+114	0	docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s04-green.txt
+307	0	docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s05-policy-classification.txt
+168	0	docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s06-fix.py
+12	0	docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-green.txt
+68	0	docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-red.txt
+122	0	docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier.py
+18	0	docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s08-untouched.txt
+47	0	docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-typecheck.txt
+140	0	docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-unit.txt
+25	4	src/domains/reconciliation/margin.service.ts
+30	8	src/domains/reconciliation/statement.service.ts
+23	2	src/domains/staffing/submission.service.ts
+328	0	src/shared/security/required-relation-sweep.static.test.ts
+
+--- (C) PHAN NHOM theo bon nhom cua dieu 4.2 ---
+
+NHOM 1 — tep hang rao MOI (dung MOT tep):
+  src/shared/security/required-relation-sweep.static.test.ts
+  so tep nhom 1 = 1   (dieu 4.2 cho phep: 1)
+
+NHOM 2 — tep ung dung trong Modules CO vi tri RUI RO (toi da 8):
+  src/domains/reconciliation/margin.service.ts
+  src/domains/reconciliation/statement.service.ts
+  src/domains/staffing/submission.service.ts
+  so tep nhom 2 = 3   (dieu 4.2 cho phep: <= 8)
+  bon vi tri RUI RO nam trong ba tep nay: margin:167, statement:403, statement:434, submission:248.
+  Tam vi tri AN TOAN nam trong nam tep KHAC — nam tep ay KHONG co trong danh sach tren (AC-08):
+    app/api/projects/route.ts                                git status -> []
+    app/api/vendor/orders/route.ts                           git status -> []
+    app/api/vendor/submissions/route.ts                      git status -> []
+    src/domains/applications/application-queue.service.ts    git status -> []
+    src/domains/staffing/order.service.ts                    git status -> []
+    (ngoac vuong RONG = khong mot byte nao doi => khong mot vi tri AN TOAN nao bi sua)
+
+NHOM 3 — HANDOFF.md + evidence/ cua chinh task 17:
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-gate17.txt
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-tsc.txt
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-unit.txt
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s02-remeasure.txt
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s04-green.txt
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s05-policy-classification.txt
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s06-fix.py
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-green.txt
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-red.txt
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier.py
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s08-untouched.txt
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-typecheck.txt
+  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-unit.txt
+
+NHOM 4 — path thuoc HAI contract cung lo (co trong cay, khong phai viec cua task 17):
+  app/(jobs)/viec-lam/[slug]/page.tsx
+  app/api/public/applications/[trackingCode]/route.ts
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-gate18.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-tsc.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s01-unit.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s02-surface-inventory.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s03-guard.py
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s04-unit.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-guard.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-page.py
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-tsc-pwsh.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s05-tsc.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s06-route.py
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-green.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-green2.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-page-current.bak
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-page-sha.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s07-red.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s08-inventory.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s08-regex-probe.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s09-forbidden-verified.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s09-forbidden.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-ac-recheck.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-ac11-route.diff
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-ac12-inventory.diff
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-gate-handoff.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-gate-task-rerun.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-gate-task.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-handoff-denycode.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-scope-groups.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-scope-raw.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc-bash.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc-diff.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc-exit.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-tsc.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s10-unit.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s11-pii-baseline.txt
+  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/s12-pii.txt
+  src/domains/applications/marketplace-inventory.static.test.ts
+  src/domains/applications/tracking-pii-containment.static.test.ts
+  src/shared/security/public-surface-limiter.static.test.ts
+  src/shared/security/rate-limit-guard.ts
+  (= toan bo phan giao cua contract 18, da staged tu truoc buoc nay)
+
+--- (D) PHAN KHONG THUOC BON NHOM: cua luong khac, tuyet doi khong cham ---
+
+D1. Nam tep gate cua .ai-pipeline/scripts/ — ba trong so do DA STAGED SAN trong index
+    dung chung, TRUOC khi Tier 2 bat dau lo nay. Tier 2 khong ghi, khong unstage, khong commit.
+    A  .ai-pipeline/scripts/gate-lib.ps1
+     M .ai-pipeline/scripts/verify-audit.ps1
+    A  .ai-pipeline/scripts/verify-handoff.ps1
+    M  .ai-pipeline/scripts/verify-pipeline.ps1
+     M .ai-pipeline/scripts/verify-task.ps1
+    ?? .ai-pipeline/scripts/verify-gates.selftest.ps1
+    phep chung minh khong phai cua Tier 2: tac gia cuoi cham vao chung
+      .ai-pipeline/scripts/gate-lib.ps1              mtime 2026-09-03 15:12:15
+      .ai-pipeline/scripts/verify-handoff.ps1        mtime 2026-09-03 15:12:15
+      .ai-pipeline/scripts/verify-pipeline.ps1       mtime 2026-09-03 15:12:15
+      (Owner da xac nhan 03/09: 'ba tep gate do anh sai thang Agent khac sua')
+
+D2. Ba AUDIT.md cua lane khac dang ' M' — la vet cua luong Tier 3, khong phai cua task 17:
+     M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+     M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+     M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+
+D3. public/index.html dang ' M' — vet co san cua copy-static.mjs, khong phai cua task 17:
+     M public/index.html
+
+D4. Cac path untracked co san (khong mot cai nao duoc git add trong buoc nay):
+    ?? scratch/*            : 175 duong dan
+    ?? .ai-pipeline/scripts/verify-gates.selftest.ps1
+    ?? .claude/
+    ?? .neon
+    ?? "docs/aff_plan - Copy.md"
+    ?? fix.patch
+    ?? new-ui.md
+    ?? new-ui/
+    ?? patch_test.ps1
+    ?? patch_test2.ps1
+    ?? patch_test3.ps1
+    ?? rls-probe-insert.txt
+    ?? rls-probe-output.txt
+    ?? scripts/debug-parser.mjs
+    ?? temp.diff
+    ?? tsconfig.tmp.json
+    ?? update_globals.js
+
+    Trong so nay co hai script vet cua CHINH task 17: scratch/gl17-step06-fix.py va
+    scratch/gl17-step07-barrier.py. Chung KHONG duoc stage — ban duoc giao nam trong
+    evidence/s06-fix.py va evidence/s07-barrier.py, dung le cua task 18 (evidence/*.py).
+
+--- (E) BA LENH CAM CHAM cua dieu 4.2: do bang git status, phai RONG het ---
+  prisma/schema.prisma                                 []
+  prisma/migrations                                    []
+  src/domains/job-board/public-select.static.test.ts   []
+  app/globals.css                                      []
+  package.json                                         []
+  package-lock.json                                    []
+  vitest.unit.config.ts                                []
+  vitest.config.ts                                     []
+  tsconfig.json                                        []
+  (moi ngoac vuong RONG = khong mot byte nao doi)
+
+  Sau tep cua contract 16 (dieu 4.2 cam cham) — do lai luc 02:23:03:
+    src/shared/ui/data-table/data-table.tsx              []
+    src/shared/ui/entity-card/entity-card.tsx            []
+    src/shared/ui/internal-contrast.static.test.ts       []
+    app/ctv/page.tsx                                     []
+    app/worker/page.tsx                                  []
+    app/login/login-form.tsx                             []
+    Ca sau RONG. Anh chup git status o dau session con thay chung dang 'M ' (staged), nhung
+    phan giao cua contract 16 da duoc commit trong 99d6f16 va 7165ad1 TRUOC khi Tier 2 nhan lo
+    nay, nen bay gio chung sach hoan toan. Phep chung minh chung thuoc commit cu, khong phai
+    thuoc cua so lam viec nay:
+      src/shared/ui/data-table/data-table.tsx        commit cuoi 99d6f16 2026-09-03 22:24
+      app/worker/page.tsx                            commit cuoi 99d6f16 2026-09-03 22:24
+
+--- (F) MOI tep bi GHI trong cua so lam viec cua task 17 (find -newermt '2026-09-04 01:18') ---
+tr: warning: an unescaped backslash at end of string is not portable
+  src/domains/reconciliation/margin.service.ts
+  src/domains/reconciliation/statement.service.ts
+  src/domains/staffing/submission.service.ts
+  src/shared/security/required-relation-sweep.static.test.ts
+  (cong toan bo evidence/ cua chinh task 17 — 15 tep — va hai script
+   trong scratch/ khong duoc stage)
+
+  Bon tep nguon tren la DUNG bon tep cua nhom 1 va nhom 2. Khong mot tep nao duoi prisma/,
+  khong mot tep test nao khac, khong mot tep cau hinh nao.
+
+--- KET LUAN PHAM VI ---
+Nhom 1: 1 tep (hang rao moi). Nhom 2: 3 tep (<= 8, va la dung ba tep chua bon vi tri RUI RO).
+Nhom 3: 14 tep (HANDOFF + evidence). Nhom 4: phan giao contract 18, staged tu truoc.
+Ngoai bon nhom: khong mot path nao bi Tier 2 ghi hay stage trong cua so nay.
+
+--- CHINH LAI HAI CON SO CUA KHOI KET LUAN (Tier 2 tu khai, 02:26:40) ---
+1. Dong 'tr: warning: an unescaped backslash' trong khoi (F) la canh bao cua chinh cong cu
+   'tr', khong phai mot phep do that bai: 'find' tren nen nay da tra ve dau '/' san. Danh
+   sach bon tep ben duoi canh bao ay la ket qua DAY DU cua lenh.
+2. 'Nhom 3: 14 tep' la con so viet TRUOC khi HANDOFF ton tai. Do lai ngay bay gio:
+     A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-gate17.txt
+     A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-tsc.txt
+     A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-unit.txt
+     A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s02-remeasure.txt
+     A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s04-green.txt
+     A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s05-policy-classification.txt
+     A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s06-fix.py
+     A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-green.txt
+     A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-red.txt
+     A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier.py
+     A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s08-untouched.txt
+     A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-typecheck.txt
+     A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-unit.txt
+     ?? docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-scope.txt
+     => tong 14 path duoi thu muc task, trong do
+        14 tep evidence.

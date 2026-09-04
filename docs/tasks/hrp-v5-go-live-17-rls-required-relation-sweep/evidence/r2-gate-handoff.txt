@@ -1,0 +1,46 @@
+=== CHU KY 1 -- cong chay tren ban HANDOFF TRUOC khi khoa muc 5.1 / 6 / 7 ===
+# Muc dich: lay OUTPUT THAT de muc 3.2 va 5.1 dan, thay vi ghi lai bang loi van.
+
+--- 1a. cong hop dong tren TASK.md ban v1.4 ---
+$ powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_AUDIT).
+  [WARN] A-04 status is 'READY_FOR_AUDIT' - placeholder and dry-run checks are non-blocking.
+  [OK]   A-05 9 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 2 referenced npm script(s) all exist.
+  [OK]   T-02 14 file:line reference(s) resolve.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/**.
+  [OK]   T-05 all 12 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+  [OK]   T-07 control field change (Status, Current execution round, Current audit round, Spec version) is accompanied by a section 9/10 entry.
+
+RESULT: DRAFT-VALID (1 warning(s)).
+TASK_GATE_EXIT = 0
+
+--- 1b. cong ban giao tren HANDOFF.md round 2 ---
+$ powershell -NoProfile -File .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md -HandoffPath docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/HANDOFF.md
+HANDOFF SUBSTANCE GATE
+  subject: docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/HANDOFF.md (against docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 73653 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.4 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 12 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 22 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 10 STEP appear in the execution trace.
+  [OK]   H-13 8 deviation(s) in section 2, 12 declared in section 5.
+  [OK]   H-14 section 7 records round 2.
+  [WARN] H-15 TASK.md control field(s) differ from HEAD: Status, Current audit round, Next gate, Spec version. If Tier 2 changed them, revert - those fields belong to Tier 1.
+
+RESULT: PASS WITH WARNINGS (1 warning(s)).
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+HANDOFF_GATE_EXIT = 0

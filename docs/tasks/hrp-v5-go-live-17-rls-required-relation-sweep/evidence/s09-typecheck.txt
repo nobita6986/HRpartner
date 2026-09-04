@@ -1,0 +1,47 @@
+=== s09-typecheck — lane typecheck SAU khi sua (STEP-09, AC-06) ===
+2026-09-04 02:16:07 +0700
+
+lenh: npm run typecheck   (redirect ra tep, KHONG ong — de $? la cua npm)
+--- output nguyen van ---
+
+> hrp@0.1.0 typecheck
+> tsc --noEmit
+
+new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & ... 4 more ... & HTMLAttributes<...>'.
+  Type '{ children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'LinkProps<any>'.
+    Types of property 'href' are incompatible.
+      Type 'undefined' is not assignable to type 'Url'.
+S09_TSC_EXIT = 1
+
+--- MA THOAT KHAC 0 nay KHONG do STEP-06. Ba phep do quy trach: ---
+
+(1) TAP DINH DANH LOI (khong dem chuoi con tren mot artifact tu trich lai minh):
+  s09 — do tu output tsc thuc:
+    new-ui/components/JobCard.tsx(18,6): error TS2322
+  s01 — moc TRUOC khi sua, doc lai tu evidence/s01-tsc.txt:
+    new-ui/components/JobCard.tsx(18,6): error TS2322
+  => hai tap GIONG NHAU, va deu chi co MOT phan tu.
+
+(2) new-ui/ la thu muc UNTRACKED cua luong khac:
+  git ls-files new-ui  -> 0 dong (0 = chua bao gio duoc theo doi)
+  git status --porcelain new-ui -> ?? new-ui/
+  s01-tsc.txt:23-26 da do san: chuoi 'new-ui' xuat hien 0 lan trong CA BA TASK.md cua lo.
+
+(3) bon tep task 17 dung den: KHONG mot dong error TS nao mang ten chung
+  src/domains/reconciliation/margin.service.ts                   0 dong error
+  src/domains/reconciliation/statement.service.ts                0 dong error
+  src/domains/staffing/submission.service.ts                     0 dong error
+  src/shared/security/required-relation-sweep.static.test.ts     0 dong error
+
+--- BAY DO LUONG: ma thoat cua lane nay KHONG on dinh (1 hay 2) ---
+tsconfig.json:19 bat "incremental": true, nen tsc VAN ghi tsconfig.tsbuildinfo du co --noEmit.
+Theo bang ExitStatus cua tsc: 1 = co loi + KHONG sinh output, 2 = co loi + DA sinh output.
+Lan chay dau tien sau khi noi dung nguon doi phai ghi lai buildinfo => 2; cac lan sau => 1.
+Do do o dung mot trang thai ma (mot loi trong new-ui/) van doc duoc CA 1 LAN 2. Bang chung:
+  -rw-r--r-- 1 Admin 197121 241100 2026-09-04_02:12:19 tsconfig.tsbuildinfo
+  (mtime 02:12:19 = dung lan chay bao 2; moi lan chay sau do bao 1)
+  chay lai ngay bay gio (buildinfo da moi): 1
+
+So do ON DINH cua lane nay la TAP DINH DANH LOI o muc (1), khong phai con so ma thoat.
+KET LUAN: vet do tien ton, nam ngoai moi path cua task 17. Ghi thanh LIM trong HANDOFF.
+KHONG tu sua new-ui/JobCard.tsx: do la thay doi cua luong khac (dieu 4.2 — ngoai scope).

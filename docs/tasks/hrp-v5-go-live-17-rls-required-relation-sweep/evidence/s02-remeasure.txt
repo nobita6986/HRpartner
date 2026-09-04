@@ -1,0 +1,90 @@
+=== STEP-02: chay lai bon script do cua Tier 1, doi chieu ba con so ===
+2026-09-04 01:28:30 +0700
+Python 3.14.7
+
+--- dau tay bon tep JSON cua Tier 1 TRUOC khi chay lai (script tu ghi de cac tep nay) ---
+79e76d86d81b0dd829822e605c42c9e34a4a0cc9d41c8c3cd517bc75103121d7 *scratch/f05/rls.json
+ac623b1822f90e12dc619bc5d746c346e738f09d9c0ccc458ef49676ba83c4ef *scratch/f05/schema.json
+19a5bde264d6040310010a8ce1972a9446690555a3a3680f13c321ddc1f85fb9 *scratch/f05/danger.json
+0e50d472effbad2f52038bc0c15b9ff3bda1e30cf169f7116236b3d2931e4d82 *scratch/f05/hits.json
+
+--- lenh: python scratch/f05/rls.py ---
+34 bang bi RLS
+application_status_history attendance_events attendance_import_batches attendance_import_rows candidate_submissions client_companies client_rate_cards client_statement_lines client_statements commission_debts commission_ledger commission_policies contracts ctv_withdrawal_requests dependents outsourcing_projects project_assignments sites source_claims staffing_order_slots staffing_orders ticket_comments ticket_history ticket_notifications tickets timesheet_adjustments timesheet_lines timesheet_periods vendor_rate_cards vendor_statement_lines vendor_statements vendors worker_deductions workers
+EXIT_rls = 0
+
+--- lenh: python scratch/f05/scan.py ---
+MODELS 49 with-relations 36
+EXIT_scan = 0
+
+--- lenh: python scratch/f05/cross.py ---
+=== QUAN HE BAT BUOC tro tay bang bi RLS (theo model chu) ===
+  ApplicationStatusHistory   owner_table=application_status_history submission->CandidateSubmission(candidate_submissions)
+  AttendanceImportRow        owner_table=attendance_import_rows   batch->AttendanceImportBatch(attendance_import_batches)
+  ClientRateCard             owner_table=client_rate_cards        contract->Contract(contracts)
+  ClientStatementLine        owner_table=client_statement_lines   statement->ClientStatement(client_statements)
+  CommissionLedger           owner_table=commission_ledger        policy->CommissionPolicy(commission_policies)
+  ContractParty              owner_table=contract_parties         contract->Contract(contracts)
+  Dependent                  owner_table=dependents               worker->Worker(workers)
+  Project                    owner_table=outsourcing_projects     clientCompany->ClientCompany(client_companies)
+  ProjectAssignment          owner_table=project_assignments      worker->Worker(workers), project->Project(outsourcing_projects)
+  Site                       owner_table=sites                    project->Project(outsourcing_projects)
+  SourceClaim                owner_table=source_claims            worker->Worker(workers)
+  StaffingOrder              owner_table=staffing_orders          project->Project(outsourcing_projects)
+  StaffingOrderSlot          owner_table=staffing_order_slots     staffingOrder->StaffingOrder(staffing_orders)
+  Ticket                     owner_table=tickets                  worker->Worker(workers)
+  TicketComment              owner_table=ticket_comments          ticket->Ticket(tickets)
+  TicketHistory              owner_table=ticket_history           ticket->Ticket(tickets)
+  TicketNotification         owner_table=ticket_notifications     ticket->Ticket(tickets)
+  TimesheetLine              owner_table=timesheet_lines          period->TimesheetPeriod(timesheet_periods)
+  VendorRateCard             owner_table=vendor_rate_cards        contract->Contract(contracts)
+  VendorStatementLine        owner_table=vendor_statement_lines   statement->VendorStatement(vendor_statements)
+TONG 21 truong tren 20 model
+EXIT_cross = 0
+
+--- lenh: python scratch/f05/usage.py ---
+quet 212 tep nguon (bo test)
+
+--- app/api/projects/route.ts
+   :65    clientCompany    include: { clientCompany: { select: { id: true, name: true, code: true } } },
+
+--- app/api/vendor/orders/route.ts
+   :44    project          project: { select: { id: true, name: true, code: true } },
+
+--- app/api/vendor/submissions/route.ts
+   :62    project          include: { project: { select: { id: true, name: true } } },
+
+--- src/domains/applications/application-queue.service.ts
+   :178   project          include: { project: { select: { name: true } } },
+   :211   project          project: { select: { name: true } },
+
+--- src/domains/reconciliation/margin.service.ts
+   :167   worker           include: { worker: { select: { id: true, fullName: true } } },
+
+--- src/domains/reconciliation/statement.service.ts
+   :403   worker           include: { worker: { select: { id: true, fullName: true } } },
+   :434   worker           include: { worker: { select: { id: true, fullName: true } } },
+
+--- src/domains/staffing/order.service.ts
+   :153   project          project: { select: { id: true, name: true, code: true } },
+   :179   project          project: { select: { id: true, name: true, code: true, quota: true, filled: true } },
+
+--- src/domains/staffing/submission.service.ts
+   :204   project          include: { project: { select: { name: true } }, vendor: { select: { name: true } } },
+   :248   worker           worker: { select: { fullName: true } },
+
+TONG 12 diem tren 8 tep
+EXIT_usage = 0
+
+--- dau tay bon tep JSON SAU khi chay lai ---
+79e76d86d81b0dd829822e605c42c9e34a4a0cc9d41c8c3cd517bc75103121d7 *scratch/f05/rls.json
+ac623b1822f90e12dc619bc5d746c346e738f09d9c0ccc458ef49676ba83c4ef *scratch/f05/schema.json
+19a5bde264d6040310010a8ce1972a9446690555a3a3680f13c321ddc1f85fb9 *scratch/f05/danger.json
+0e50d472effbad2f52038bc0c15b9ff3bda1e30cf169f7116236b3d2931e4d82 *scratch/f05/hits.json
+
+--- DOI CHIEU ---
+34 bang RLS  vs EV-01 = 34  => KHOP
+21 truong quan he bat buoc tren 20 model  vs EV-02 = 21 tren 20  => KHOP
+12 vi tri tren 8 tep  vs EV-03 = 12 tren 8  => KHOP
+bon tep JSON: sha256 TRUOC == sha256 SAU cho ca bon => phep do tai lap duoc va artifact cua Tier 1 khong bi xao tron
+khong co lech nao => khong co finding nao o STEP-02

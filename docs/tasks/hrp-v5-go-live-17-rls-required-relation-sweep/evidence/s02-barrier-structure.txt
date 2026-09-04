@@ -1,0 +1,51 @@
+=== s02-barrier-structure — do CAU TRUC cua hang rao (AC-02, AC-05, AC-06) ===
+2026-09-04 02:49:09 +0700
+tep do: src/shared/security/required-relation-sweep.static.test.ts
+sha256 luc do: c48c438599af3db0db3a9c9ec2df178b392765623fa1feec8a7cba67113cab91 *src/shared/security/required-relation-sweep.static.test.ts
+
+--- (A) AC-02 phan 1: BAY ten bang RLS THAT xuat hien bao nhieu lan trong tep test ---
+  (tran AC cho phep la 1; ky vong la 0 — hang rao TU SUY tap bang, khong ghim ten)
+  $ grep -c "outsourcing_projects" src/shared/security/required-relation-sweep.static.test.ts  -> 0
+  $ grep -c "client_companies" src/shared/security/required-relation-sweep.static.test.ts  -> 0
+  $ grep -c "workers" src/shared/security/required-relation-sweep.static.test.ts  -> 0
+  $ grep -c "project_assignments" src/shared/security/required-relation-sweep.static.test.ts  -> 0
+  $ grep -c "source_claims" src/shared/security/required-relation-sweep.static.test.ts  -> 0
+  $ grep -c "candidate_submissions" src/shared/security/required-relation-sweep.static.test.ts  -> 0
+  $ grep -c "staffing_orders" src/shared/security/required-relation-sweep.static.test.ts  -> 0
+
+--- (B) AC-02 phan 2: tap bang do tu DIA, khong tu mot mang literal ---
+  $ grep -n -e MIGRATIONS_DIR -e SCHEMA_PATH -e readdirSync -e readFileSync src/shared/security/required-relation-sweep.static.test.ts
+    29:import { readdirSync, readFileSync } from 'node:fs';
+    34:const MIGRATIONS_DIR = 'prisma/migrations';
+    35:const SCHEMA_PATH = 'prisma/schema.prisma';
+    108:  for (const entry of readdirSync(join(process.cwd(), dir), { withFileTypes: true })) {
+    112:      out.push(readFileSync(file, 'utf8'));
+    180:    for (const entry of readdirSync(join(process.cwd(), dir), { withFileTypes: true })) {
+    187:      out.push({ path: rel, source: readFileSync(join(process.cwd(), rel), 'utf8') });
+    220:  const rlsTables = rlsTablesFrom(readMigrationSql(MIGRATIONS_DIR));
+    221:  const schema = readFileSync(join(process.cwd(), SCHEMA_PATH), 'utf8');
+
+--- (C) AC-06: bo comment TRUOC khi dem, ca hai mau ---
+  $ grep -n -e 'function stripComments' -e 'function stripSqlComments' -e 'stripComments(' -e 'stripSqlComments(' src/shared/security/required-relation-sweep.static.test.ts
+    100:function stripComments(source: string): string {
+    125:function stripSqlComments(sql: string): string {
+    138:    for (const m of stripSqlComments(sql).matchAll(re)) tables.add(m[1]);
+    147:  for (const m of stripComments(schema).matchAll(/^model\s+(\w+)\s*\{([\s\S]*?)^\}/gm)) {
+    202:  const lines = stripComments(source).split('\n');
+
+--- (D) AC-05: ten bang BIA cua fixture am — khong mot ten THAT nao ---
+  $ grep -n -e fake_vault -e fake_audit -e fake_children -e fake_disabled src/shared/security/required-relation-sweep.static.test.ts
+    273:    'ALTER TABLE "fake_vault" ENABLE ROW LEVEL SECURITY;',
+    274:    'ALTER TABLE ONLY public."fake_audit" FORCE ROW LEVEL SECURITY;',
+    275:    '-- ALTER TABLE "fake_disabled" ENABLE ROW LEVEL SECURITY;',
+    281:    '  @@map("fake_vault")',
+    288:    '  @@map("fake_children")',
+    296:    expect([...tables].sort()).toEqual(['fake_audit', 'fake_vault']);
+    300:    const found = requiredRelationFields(FAKE_SCHEMA, new Set(['fake_vault']));
+
+--- (E) BAY DEM: so dong chua 'it(' KHAC so test ma runner bao ---
+  $ grep -c 'it(' src/shared/security/required-relation-sweep.static.test.ts  -> 14
+  runner bao (evidence/s07-barrier-green.txt):
+    7:[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+    8:[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+  => con so khang dinh mot CAU TRUC ma phai lay tu runner, khong lay tu grep -c.

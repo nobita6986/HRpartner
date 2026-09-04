@@ -1,0 +1,140 @@
+=== s09-unit — lane unit canonical SAU khi sua (STEP-09, AC-06) ===
+2026-09-04 02:19:58 +0700
+
+lenh: npm run test:unit   (= vitest run --config vitest.unit.config.ts; redirect, KHONG ong)
+S09_UNIT_EXIT=0
+
+--- ba dong ket qua nguyen van ---
+ Test Files  107 passed (107)
+      Tests  1642 passed (1642)
+   Duration  34.89s (transform 1.94s, setup 0ms, collect 6.95s, tests 2.36s, environment 19ms, prepare 8.58s)
+
+Ghi chu do luong: lane nay duoc chay HAI lan (02:17 va 02:19), ca hai lan ra dung
+107 tep / 1642 test / exit 0. Lan hai duoc giu lai vi lan mot bi xoa raw truoc khi kip
+trich danh sach tep. Con so khong doi giua hai lan, va do la mot lane tinh — khong DB.
+
+--- SO SANH voi moc STEP-01 (evidence/s01-unit.txt) ---
+  moc  STEP-01 : Test Files 106 passed (106) | Tests 1631 passed (1631)
+  sau  STEP-09 : Test Files 107 passed (107) | Tests 1642 passed (1642)
+  chenh lech: +1 tep, +11 test — dung bang hang rao moi
+  src/shared/security/required-relation-sweep.static.test.ts (11 test, xem s07-barrier-green.txt).
+  KHONG mot test nao chuyen tu passed sang failed, va tong passed TANG chu khong giam.
+
+--- hai fake CAM CHAM van xanh: day la phep kiem that su cua STEP-06 ---
+STEP-06 doi ba service ma dieu 4.2 cam sua tep test cua chung. Hai fake nay khong tai lap duoc
+loi RLS (EV-07) nhung chung TAI LAP duoc hinh dang loi goi: mot delegate thieu se nem TypeError.
+   ✓ src/domains/reconciliation/reconciliation-unit.test.ts (16 tests) 25ms
+   ✓ src/domains/staffing/submission.service.test.ts (15 tests) 15ms
+   ✓ src/shared/auth/statements-margin.route.test.ts (17 tests) 17ms
+  => margin/statement dung tx.worker.findMany theo lo (fake reconciliation khong bao gio sinh
+     hang assignment nen nhanh thu hai khong bi cham toi), con listClaims buoc phai dung
+     tx.worker.findUnique vi fake o submission.service.test.ts:114 chi phoi ra findUnique.
+
+--- danh sach day du 107 tep, de Tier 3 doi chieu ---
+ ✓ src/domains/job-board/public-ui-premium.static.test.ts (63 tests) 30ms
+ ✓ src/shared/ui/internal-contrast.static.test.ts (21 tests) 17ms
+ ✓ src/domains/staffing/assignment-placement.service.test.ts (65 tests) 43ms
+ ✓ src/domains/applications/marketplace-inventory.static.test.ts (25 tests) 62ms
+ ✓ src/domains/applications/marketplace-apply.routes.test.ts (31 tests) 55ms
+ ✓ src/shared/auth/vendor-object-scope.m1-08.route.test.ts (36 tests) 37ms
+ ✓ src/domains/commission/golden.test.ts (10 tests) 15ms
+ ✓ src/domains/job-board/public-card-truth.test.ts (23 tests) 24ms
+ ✓ src/domains/reconciliation/reconciliation-unit.test.ts (16 tests) 25ms
+ ✓ src/domains/attendance/ticket.service.test.ts (16 tests) 30ms
+ ✓ src/shared/observability/logger.test.ts (73 tests) 27ms
+ ✓ src/shared/auth/api-boundary.static.test.ts (27 tests) 20ms
+ ✓ src/domains/staffing/submission.service.test.ts (15 tests) 15ms
+ ✓ src/domains/job-board/public-board-architecture.test.ts (17 tests) 15ms
+ ✓ src/domains/applications/marketplace-browse.routes.test.ts (13 tests) 25ms
+ ✓ src/shared/security/required-relation-sweep.static.test.ts (11 tests) 426ms
+ ✓ src/domains/staffing/e2e-staffing-narrative.integration.test.ts (5 tests) 13ms
+ ✓ src/shared/observability/middleware.test.ts (24 tests) 25ms
+ ✓ src/domains/applications/placement-panel.test.ts (26 tests) 38ms
+ ✓ src/shared/auth/permission-resolver.test.ts (82 tests) 21ms
+ ✓ src/domains/staffing/assignment-placement.routes.test.ts (38 tests) 38ms
+ ✓ src/domains/security/single-domain-consolidation.test.ts (17 tests) 34ms
+ ✓ src/shared/security/rate-limit-guard.test.ts (13 tests) 16ms
+ ✓ src/domains/staffing/4role-jobboard.integration.test.ts (9 tests) 12ms
+ ✓ src/shared/security/rate-limit-config.test.ts (23 tests) 10ms
+ ✓ src/domains/attendance/4role-attendance.integration.test.ts (12 tests) 7ms
+ ✓ src/shared/auth/with-auth-scope.test.ts (39 tests) 10ms
+ ✓ src/domains/job-board/public-detail.static.test.ts (23 tests) 9ms
+ ✓ src/domains/staffing/referral-guard.canonical.test.ts (23 tests) 15ms
+ ✓ src/shared/ui/design-tokens.static.test.ts (12 tests) 23ms
+ ✓ src/domains/applications/application-queue.service.test.ts (22 tests) 19ms
+ ✓ src/domains/attendance/e2e-attendance-narrative.integration.test.ts (7 tests) 5ms
+ ✓ src/shared/observability/error-reporter.test.ts (14 tests) 9ms
+ ✓ src/shared/auth/vendor-submissions.route.test.ts (11 tests) 20ms
+ ✓ src/domains/staffing/order.service.test.ts (11 tests) 12ms
+ ✓ src/shared/observability/correlation-id.test.ts (28 tests) 13ms
+ ✓ src/domains/applications/tracking-pii-containment.static.test.ts (11 tests) 10ms
+ ✓ src/domains/job-board/mp1.contract.test.ts (6 tests) 15ms
+ ✓ src/domains/security/statements-list.projection.route.test.ts (17 tests) 20ms
+ ✓ src/domains/job-board/public-board-route-json.test.ts (5 tests) 22ms
+ ✓ src/shared/security/request-body.test.ts (13 tests) 30ms
+ ✓ src/shared/security/public-surface-limiter.static.test.ts (9 tests) 8ms
+ ✓ src/shared/security/rate-limit-adapters.test.ts (9 tests) 7ms
+ ✓ src/domains/applications/conversion.service.test.ts (9 tests) 21ms
+ ✓ src/shared/integrity/idempotency.test.ts (6 tests) 30ms
+ ✓ src/domains/security/response-projection.static.test.ts (20 tests) 8ms
+ ✓ src/domains/security/portal-domains.integration.test.ts (49 tests) 10ms
+ ✓ src/domains/staffing/transfer.service.test.ts (7 tests) 10ms
+ ✓ src/shared/integrity/outbox.test.ts (7 tests) 6ms
+ ✓ src/domains/payroll/calculateVietnameseTaxes.test.ts (16 tests) 6ms
+ ✓ src/shared/auth/worker-projection.test.ts (15 tests) 9ms
+ ✓ src/shared/projection/manifest.test.ts (8 tests) 12ms
+ ✓ src/shared/auth/with-authorized-db.test.ts (4 tests) 7ms
+ ✓ src/shared/auth/webhook-payslip.route.test.ts (21 tests) 21ms
+ ✓ src/shared/auth/attendance-adjustments.route.test.ts (25 tests) 23ms
+ ✓ src/domains/applications/tracking-mask.routes.test.ts (4 tests) 13ms
+ ✓ prisma/migrations-permission-hygiene.static.test.ts (4 tests) 4ms
+ ✓ src/domains/security/statements-generate.projection.route.test.ts (16 tests) 26ms
+ ✓ src/domains/applications/application.service.test.ts (9 tests) 10ms
+ ✓ src/shared/privacy/mask.test.ts (12 tests) 6ms
+ ✓ src/shared/auth/projects-master.route.test.ts (22 tests) 19ms
+ ✓ src/domains/security/security-matrix-portals.test.ts (18 tests) 5ms
+ ✓ src/shared/auth/worker-portal.route.test.ts (7 tests) 15ms
+ ✓ src/domains/job-board/public-detail.service.test.ts (4 tests) 11ms
+ ✓ src/domains/security/workers-me.projection.route.test.ts (17 tests) 15ms
+ ✓ src/domains/applications/application-detail-mp3.test.ts (16 tests) 9ms
+ ✓ src/shared/auth/disputes.route.test.ts (7 tests) 18ms
+ ✓ src/domains/security/ctv-withdrawals.projection.route.test.ts (27 tests) 22ms
+ ✓ src/domains/applications/screening.service.test.ts (9 tests) 13ms
+ ✓ src/shared/auth/clients-master.route.test.ts (16 tests) 16ms
+ ✓ src/shared/integrity/state-machine.test.ts (6 tests) 5ms
+ ✓ src/shared/auth/with-public-db.test.ts (7 tests) 10ms
+ ✓ src/domains/applications/apply-helpers.test.ts (12 tests) 79ms
+ ✓ src/shared/auth/statements-margin.route.test.ts (17 tests) 17ms
+ ✓ src/domains/attendance/taxonomy-unit.test.ts (14 tests) 8ms
+ ✓ src/domains/security/workers-projection.contract.test.ts (4 tests) 12ms
+ ✓ src/shared/auth/auth-context.test.ts (8 tests) 8ms
+ ✓ src/domains/job-board/public-select.static.test.ts (3 tests) 5ms
+ ✓ src/shared/auth/cron-routes.route.test.ts (5 tests) 12ms
+ ✓ src/domains/staffing/talent-pool.repo.test.ts (4 tests) 6ms
+ ✓ src/shared/auth/vendors-master.route.test.ts (12 tests) 14ms
+ ✓ src/shared/auth/projects-clients-master.route.test.ts (27 tests) 17ms
+ ✓ src/shared/integrity/audit.test.ts (3 tests) 5ms
+ ✓ src/shared/auth/push-subscribe.route.test.ts (4 tests) 12ms
+ ✓ src/domains/applications/conversion.routes.test.ts (4 tests) 20ms
+ ✓ src/shared/auth/scopes/ctv-account-scope.test.ts (13 tests) 7ms
+ ✓ src/domains/applications/screening.routes.test.ts (4 tests) 13ms
+ ✓ src/domains/commission/ctv-summary.route.test.ts (4 tests) 11ms
+ ✓ src/shared/auth/require-permission.test.ts (6 tests) 7ms
+ ✓ src/shared/auth/payroll.route.test.ts (15 tests) 14ms
+ ✓ src/shared/auth/public-read-guc.static.test.ts (5 tests) 7ms
+ ✓ src/shared/auth/finance-scope.test.ts (27 tests) 6ms
+ ✓ src/domains/applications/status-machine.test.ts (7 tests) 4ms
+ ✓ src/shared/auth/jwt.test.ts (7 tests) 13ms
+ ✓ src/shared/auth/cron-auth.test.ts (6 tests) 5ms
+ ✓ src/shared/auth/preauth-db.test.ts (2 tests) 4ms
+ ✓ src/shared/auth/permission-catalog.test.ts (8 tests) 8ms
+ ✓ src/shared/auth/internal-webhook-auth.test.ts (6 tests) 8ms
+ ✓ src/shared/auth/session-adapter.test.ts (30 tests) 7ms
+ ✓ src/shared/auth/debug.route.test.ts (4 tests) 9ms
+ ✓ src/domains/staffing/referral-guard.service.test.ts (4 tests) 6ms
+ ✓ src/domains/security/debug-route.contract.test.ts (4 tests) 13ms
+ ✓ src/shared/auth/me.route.test.ts (2 tests) 10ms
+ ✓ src/shared/auth/user.test.ts (5 tests) 6ms
+ ✓ src/lib/db.test.ts (1 test) 2ms
+ ✓ src/shared/utils/money.test.ts (4 tests) 3ms
+ ✓ src/shared/auth/password.test.ts (2 tests) 279ms

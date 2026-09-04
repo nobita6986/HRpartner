@@ -238,6 +238,14 @@ export async function listClaims(
   if (opts?.accepted !== undefined) where.accepted = opts.accepted;
   if (opts?.workerId) where.workerId = opts.workerId;
 
+  // KHONG select quan he `worker` o day. Quan he ay BAT BUOC (schema.prisma:548), policy cua
+  // `source_claims` (m14_rls_matrix_repair:45) mo hang theo `vendor_id`/`ctv_id` ma KHONG doi
+  // `accepted`, con `hrp_worker_visible_for` (m13_restore_rls_matrix:20-21) chi mo `workers` cho
+  // VENDOR_*/CTV qua mot claim DA `accepted`. Mot claim chua accepted cua chinh vendor minh: hang
+  // con doc duoc, hang cha khong doc duoc, va quan he BAT BUOC lam `findMany` NEM `Inconsistent
+  // query result` TRUOC mapper (hrp-v5-hotfix-02 / go-live-17 DEC-05). Duong nay VOI TAY duoc:
+  // `LIST_ROLES` cua app/api/jobs/submissions/route.ts:25 co VENDOR_ADMIN va VENDOR_STAFF, va
+  // nhanh claims la nhanh MAC DINH khi thieu tham so `tab`. `vendor` la quan he NULLABLE nen giu.
   const [rows, total] = await Promise.all([
     tx.sourceClaim.findMany({
       where,
@@ -245,18 +253,31 @@ export async function listClaims(
       take: opts?.take ?? 50,
       skip: opts?.skip ?? 0,
       include: {
-        worker: { select: { fullName: true } },
         vendor: { select: { name: true } },
       },
     }),
     tx.sourceClaim.count({ where }),
   ]);
 
+  // Tra ten bang mot luot tra cuu thu hai theo khoa chinh. `findUnique` chu khong `findMany` la CO
+  // Y: fake `tx.worker` cua src/domains/staffing/submission.service.test.ts:114 chi phoi ra
+  // `findUnique`, va dieu 4.2 cua contract CAM task nay cham vao tep test do. Trang admin nay co
+  // `take` toi da 50 nen so luot tra cuu bi chan tren; finding va de xuat go bo nam trong HANDOFF.
+  const claimWorkerIds = [...new Set(rows.map((r) => r.workerId))];
+  const claimWorkers = await Promise.all(
+    claimWorkerIds.map((id) =>
+      tx.worker.findUnique({ where: { id }, select: { id: true, fullName: true } }),
+    ),
+  );
+  const claimWorkerName = new Map(
+    claimWorkers.filter((w): w is { id: string; fullName: string } => w !== null).map((w) => [w.id, w.fullName]),
+  );
+
   return {
     rows: rows.map((r) => ({
       id: r.id,
       workerId: r.workerId,
-      workerName: r.worker?.fullName ?? null,
+      workerName: claimWorkerName.get(r.workerId) ?? null,
       claimType: r.claimType,
       vendorId: r.vendorId,
       vendorName: r.vendor?.name ?? null,

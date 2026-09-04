@@ -159,15 +159,36 @@ export async function vendorPreviewStatement(
     );
   }
 
-  // Lineage: line.assignmentId -> assignment.worker
+  // Lineage: line.assignmentId -> assignment.workerId -> worker.fullName.
+  //
+  // KHONG select quan he `worker` o day. Quan he ay BAT BUOC (schema.prisma:588) va policy cua
+  // `project_assignments` (m14_rls_matrix_repair:62) KHONG he goi `hrp_worker_visible_for(worker_id)`
+  // nhu policy cua `workers` (m13_restore_rls_matrix:28): PM thay ca assignment LICH SU, con
+  // predicate cha chi mo worker qua mot assignment `status='ACTIVE'`. Hang con doc duoc ma hang cha
+  // khong doc duoc thi `findMany` NEM `Inconsistent query result` TRUOC mapper, va khong mot
+  // optional-chaining nao do duoc (hrp-v5-hotfix-02 / go-live-17 DEC-05). Doc khoa ngoai vo huong
+  // roi tra ten bang mot truy van thu hai: ten thieu vi cha khong doc duoc la `null`, khong la loi.
   const assignmentIds = statement.lines.map(l => l.assignmentId).filter((x): x is string => !!x);
   const assignments = assignmentIds.length
     ? await tx.projectAssignment.findMany({
         where: { id: { in: assignmentIds } },
-        include: { worker: { select: { id: true, fullName: true } } },
+        select: { id: true, workerId: true },
       })
     : [];
-  const assignmentMap = new Map(assignments.map(a => [a.id, a]));
+  const workerIdByAssignment = new Map(assignments.map(a => [a.id, a.workerId]));
+  const lineageWorkerIds = [...new Set(assignments.map(a => a.workerId))];
+  const lineageWorkers = lineageWorkerIds.length
+    ? await tx.worker.findMany({
+        where: { id: { in: lineageWorkerIds } },
+        select: { id: true, fullName: true },
+      })
+    : [];
+  const workerNameById = new Map(lineageWorkers.map(w => [w.id, w.fullName]));
+  const workerNameOfAssignment = (assignmentId: string | null): string | null => {
+    if (!assignmentId) return null;
+    const workerId = workerIdByAssignment.get(assignmentId);
+    return workerId ? workerNameById.get(workerId) ?? null : null;
+  };
 
   return {
     id: statement.id,
@@ -182,7 +203,7 @@ export async function vendorPreviewStatement(
     lines: statement.lines.map(l => ({
       id: l.id,
       workerId: l.workerId,
-      workerName: l.assignmentId ? assignmentMap.get(l.assignmentId)?.worker?.fullName ?? null : null,
+      workerName: workerNameOfAssignment(l.assignmentId),
       assignmentId: l.assignmentId,
       totalHours: Number(l.totalHours),
       rate: l.rate,

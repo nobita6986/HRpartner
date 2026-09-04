@@ -1,0 +1,18 @@
+=== s08-untouched — chung minh hang rao cu KHONG doi mot byte (STEP-08, AC-05) ===
+2026-09-04 02:11:53 +0700
+
+--- (1) git status --porcelain tren dung tep ay: phai RONG ---
+S08_STATUS_EXIT=0 (output tren day phai RONG)
+
+--- (2) git diff (worktree vs index) va git diff --cached (index vs HEAD): ca hai RONG ---
+S08_DIFF_EXIT=0
+S08_CACHED_EXIT=0
+
+--- (3) dau tay noi dung: blob cua HEAD vs bam cua tep tren dia ---
+HEAD  : a8cda720ac6737e4f1869f6be36faa8160dc8428
+worktree: a8cda720ac6737e4f1869f6be36faa8160dc8428
+
+--- (4) hai assertion cua go-live-14 con nguyen trong tep ay (EV-05) ---
+53:  it('khối publicSelect không chứa khoá quan hệ clientCompany', () => {
+57:  it('publicSelect chỉ gồm scalar của Project cộng đúng một quan hệ staffingOrders', () => {
+63:  it('toDto không deref quan hệ khách hàng và không suy nhãn ngành từ text nữa', () => {

@@ -1,0 +1,39 @@
+=== s10-baseline — QUY TRACH: HEAD lech baseline vi chin commit KHONG cua Tier 2 (STEP-10, AC-12, LIM-01) ===
+2026-09-04 02:36:39 +0700
+
+--- (1) HEAD hien tai vs Baseline ma TASK.md khai ---
+  HEAD     : e58a6c0
+  Baseline : 80f6933
+  so commit HEAD di truoc baseline (git rev-list --count 80f6933..HEAD): 9
+
+--- (2) CHIN commit ay la cua ai: git log --format='%h %an %s' 80f6933..HEAD ---
+  e58a6c0  Nguyễn Đức Thuận  docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+  2941bbb  Nguyễn Đức Thuận  docs(planner): dich cursor sang 18 -- 16 ACCEPTED va bon mon con lai da gate PASS
+  7165ad1  Nguyễn Đức Thuận  ﻿docs(go-live-16): hau kiem PLN-34 -- C-09 tu dong khi Status thanh ACCEPTED
+  99d6f16  Nguyễn Đức Thuận  fix(a11y): tuong phan va vong focus be mat noi bo len WCAG AA (go-live-16)
+  fbc8af6  Nguyễn Đức Thuận  docs(cursor): sua quy thuoc luong gate + ghi canh bao DUNG CU CHUA PHAT HANH
+  46ea2dc  Nguyễn Đức Thuận  docs(go-live-16): tra audit round 2 — mot MA THOAT bi bia, ghi PLN-29..PLN-32
+  e309323  Nguyễn Đức Thuận  docs(go-live-18,19): quyet dinh Owner 03/09 — tach phan re khoi phan dat cua che PII
+  48234d9  Nguyễn Đức Thuận  docs(go-live-16): tra audit round 1, ghi PLN-23..PLN-28 — nam defect contract la cua Tier 1
+  d017d61  Nguyễn Đức Thuận  docs(planner): viet bon contract cuoi hang doi go-live, bac bo hai mon da chet
+
+--- (3) Commit nao TAO ra TASK.md cua chinh task nay: git log --oneline --diff-filter=A ---
+  d017d61 docs(planner): viet bon contract cuoi hang doi go-live, bac bo hai mon da chet
+
+--- (4) Bang chung tu mau thuan: cay o baseline KHONG chua thu muc task nay ---
+  git ls-tree -r --name-only 80f6933 -- docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/
+  so dong: 0
+
+--- (5) So commit do CHINH Tier 2 tao ra trong cua so nay: phai la 0 ---
+  git log --format='%h' 80f6933..HEAD --author='Tier 2' | wc -l  -> 0
+  (mo rong: khong mot commit nao trong chin commit tren mang tep nguon cua task 17)
+    git log 80f6933..HEAD -- src/shared/security/required-relation-sweep.static.test.ts -> 0 commit
+    git log 80f6933..HEAD -- src/domains/reconciliation/margin.service.ts               -> 0 commit
+    git log 80f6933..HEAD -- src/domains/reconciliation/statement.service.ts            -> 0 commit
+    git log 80f6933..HEAD -- src/domains/staffing/submission.service.ts                 -> 0 commit
+
+--- KET LUAN ---
+  Menh de cuoi cua AC-12 ('HEAD bang baseline') KHONG THE thoa duoc boi bat ky Tier 2 nao:
+  baseline 80f6933 CO TRUOC d017d61 la commit TAO ra TASK.md nay, nen 'rewind ve baseline'
+  la rewind ve mot cay KHONG co hop dong. Phan quy trach — thu ma ban v1.1 noi la y cua no —
+  do bang muc (5): Tier 2 tao 0 commit. Ghi thanh LIM-01, khong ghi thanh PASS.

@@ -1,0 +1,148 @@
+=== CHU KY 2 -- cong chay tren DUNG NHUNG BYTE CUOI CUNG cua HANDOFF.md round 2 ===
+# Nen cua DEV-06. Tep nay sinh SAU ban kiem ke path va da duoc tien dang ky o
+# r2-ac12-scope-final.txt muc (14e) va (14h), voi con so du doan U = 422.
+# Phan duoi day duoc ghi bang chinh lan chay cong cuoi cung.
+
+--- 2a. cong hop dong, chu ky 2 ---
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_AUDIT).
+  [WARN] A-04 status is 'READY_FOR_AUDIT' - placeholder and dry-run checks are non-blocking.
+  [OK]   A-05 9 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 2 referenced npm script(s) all exist.
+  [OK]   T-02 14 file:line reference(s) resolve.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/**.
+  [OK]   T-05 all 12 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+  [OK]   T-07 control field change (Status, Current execution round, Current audit round, Spec version) is accompanied by a section 9/10 entry.
+
+RESULT: DRAFT-VALID (1 warning(s)).
+TASK_GATE_EXIT = 0
+
+--- 2b. cong ban giao, chu ky 2, tren dung nhung byte cuoi cung ---
+sha1 HANDOFF.md truoc khi chay = d26db8e30f958084
+HANDOFF SUBSTANCE GATE
+  subject: docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/HANDOFF.md (against docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 73904 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.4 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 12 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 22 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 10 STEP appear in the execution trace.
+  [OK]   H-13 8 deviation(s) in section 2, 12 declared in section 5.
+  [OK]   H-14 section 7 records round 2.
+  [WARN] H-15 TASK.md control field(s) differ from HEAD: Status, Current audit round, Next gate, Spec version. If Tier 2 changed them, revert - those fields belong to Tier 1.
+
+RESULT: PASS WITH WARNINGS (1 warning(s)).
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+HANDOFF_GATE_EXIT = 0
+sha1 HANDOFF.md sau khi chay  = d26db8e30f958084
+
+--- 2c. kiem lai con so U da TIEN DANG KY o muc (14e)/(14h): du doan 422 ---
+$ { git status --porcelain | sed 's/^..[ ]//' ; git diff --cached --name-only ; } | sed 's/^.* -> //' | sed 's/^"//;s/"$//' | sort -u | wc -l
+U DO DUOC = 422
+U DU DOAN  = 422   (420 tai census + 2 tep cong tien dang ky)
+KHOP = YES
+
+hai path tien dang ky co mat trong tap:
+25:docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/r2-gate-final.txt
+26:docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/r2-gate-handoff.txt
+
+delta so voi census: do bang sha1 o muc 2d duoi day, khong khai bang loi van
+so path r2-gate trong tap = 2
+422 - 420 = 2
+
+--- 2d. DELTA do bang sha1: bo hai path gate ra thi tap phai bang tap cua census ---
+$ grep -v -E 'r2-gate-(handoff|final)\.txt$' u422.txt > u420.txt ; sha1sum u420.txt
+so path sau khi bo hai tep gate = 420
+sha1 do duoc                    = 042e9efc3a0aef57
+sha1 muc (8) cua census da ghi   = 042e9efc3a0aef57
+KHOP = YES -- tap path KHONG doi ngoai dung hai tep cong da tien dang ky
+
+--- 2e. KET LUAN CHU KY 2 ---
+verify-task.ps1    : RESULT DRAFT-VALID (1 warning A-04), exit 0
+verify-handoff.ps1 : RESULT PASS WITH WARNINGS (1 warning H-15), exit 0, 13 [OK]
+sha1 HANDOFF.md truoc = sau, nen cong da chay tren dung nhung byte cuoi cung
+U = 422 dung bang con so tien dang ky truoc khi hai tep nay ton tai
+
+--- 2f. GHI CHU cho Tier 3: cau cuoi cua muc (8) trong r2-ac12-scope-final.txt ---
+Muc (8) ket bang cau: "Vay khong con mot path nao duoc them SAU ban kiem ke nay."
+Cau ay dung voi HANDOFF.md (da nam trong tap tu round 1) nhung KHONG dung voi hai tep
+cong. Muc (14e) va (14h) CUA CHINH TEP AY, dung sau muc (8), sua lai va tien dang ky hai
+path r2-gate-handoff.txt cung r2-gate-final.txt voi con so du doan U = 422. Muc 2c va 2d
+o tren do lai: U = 422, va bo hai path ay ra thi sha1 tro ve dung 042e9efc3a0aef57 cua
+muc (8). Vay hai muc khong mau thuan; muc sau sua muc truoc, va ca hai deu do duoc.
+Khai bao tuong ung o HANDOFF.md la DEV-06.
+
+=== CHU KY 3 -- chay lai sau khi sua MOT con so sai o muc 4 ===
+# Ly do co chu ky 3: muc 4 viet 'so tep evidence tang tu 19 len 25'. So DO DUOC la 27
+# (ls | wc -l = 27). Mot con so sai trong ban giao la dung lop defect ma cong sinh ra de
+# bat (go-live-08 AUD-005), nen no phai sua, va sua thi cong phai chay lai tren byte moi.
+$ ls docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence | wc -l
+27
+sha1 HANDOFF.md truoc khi chay = df6c4d04a64cc9fa
+
+--- 3a. cong hop dong ---
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_AUDIT).
+  [WARN] A-04 status is 'READY_FOR_AUDIT' - placeholder and dry-run checks are non-blocking.
+  [OK]   A-05 9 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 2 referenced npm script(s) all exist.
+  [OK]   T-02 14 file:line reference(s) resolve.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/**.
+  [OK]   T-05 all 12 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+  [OK]   T-07 control field change (Status, Current execution round, Current audit round, Spec version) is accompanied by a section 9/10 entry.
+
+RESULT: DRAFT-VALID (1 warning(s)).
+TASK_GATE_EXIT = 0
+
+--- 3b. cong ban giao, tren dung nhung byte cuoi cung ---
+HANDOFF SUBSTANCE GATE
+  subject: docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/HANDOFF.md (against docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 74193 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.4 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 12 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 22 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 10 STEP appear in the execution trace.
+  [OK]   H-13 8 deviation(s) in section 2, 12 declared in section 5.
+  [OK]   H-14 section 7 records round 2.
+  [WARN] H-15 TASK.md control field(s) differ from HEAD: Status, Current audit round, Next gate, Spec version. If Tier 2 changed them, revert - those fields belong to Tier 1.
+
+RESULT: PASS WITH WARNINGS (1 warning(s)).
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+HANDOFF_GATE_EXIT = 0
+sha1 HANDOFF.md sau khi chay  = df6c4d04a64cc9fa
+
+--- 3c. U sau chu ky 3: khong tep moi nao sinh ra, du doan van 422 ---
+U DO DUOC = 422
+bo hai tep gate ra: 420 path, sha1 = 042e9efc3a0aef57
+sha1 muc (8) cua census    = 042e9efc3a0aef57
+KHOP = YES
+
+--- 3d. KET LUAN CUOI CUNG CUA ROUND 2 ---
+verify-task.ps1    : DRAFT-VALID (1 warning A-04), exit 0
+verify-handoff.ps1 : PASS WITH WARNINGS (1 warning H-15), exit 0, 13 [OK]
+sha1 HANDOFF.md truoc = sau trong CA chu ky 2 va chu ky 3
+U = 422 = 420 tai census + 2 tep cong tien dang ky, sha1 cua 420 path tro ve dung ban cu
+Ba AC do lai deu DAT. Khong commit, khong push, khong deploy.

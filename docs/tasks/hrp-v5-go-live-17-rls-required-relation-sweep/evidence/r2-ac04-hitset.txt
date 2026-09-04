@@ -1,0 +1,162 @@
+=== r2-ac04-hitset — do lai AC-04 o round 2 tren cay ban giao, hai luot doc rieng ===
+2026-09-04 11:57:22 +0700
+
+--- (1) LUOT DOC THU NHAT: output cua STEP-04, tuc tap 12 dong cua DEC-04 TRUOC khi sua ma ---
+$ grep -nE 'Tests|12|app/api' docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s04-green.txt
+  10:   × quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG > phép quét phủ cả app/, chứng minh bằng chính bốn dòng app/api trong kết quả (AC-04) 213ms
+  17: FAIL  src/shared/security/required-relation-sweep.static.test.ts > quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG > phép quét phủ cả app/, chứng minh bằng chính bốn dòng app/api trong kết quả (AC-04)
+  27:    239|   it('phép quét phủ cả app/, chứng minh bằng chính bốn dòng app/api tr…
+  29:    241|     expect(hits.filter((hit) => hit.startsWith('app/api/'))).toHaveLen…
+  57: Test Files  1 failed (1)
+  58:      Tests  2 failed | 9 passed (11)
+  78:   Loi van AC-04 (TASK.md:134) doi: "chung minh bang chinh su co mat cua bon dong thuoc app/api/".
+  79:   Danh sach DONG cua DEC-04 (TASK.md:70) chi liet ke BA duong dan duoi app/api/.
+  82:     $ grep -n "app/api/|src/domains/" TASK.md | grep -c "app/api/"
+  84:     ^ ba, khong phai bon. Ba duong dan do: app/api/projects/route.ts:65 (clientCompany),
+  85:       app/api/vendor/orders/route.ts:44 (project), app/api/vendor/submissions/route.ts:62 (project).
+  89:     $ python scratch/f05/usage.py | grep -c "^--- app/api/"   # so TEP duoi app/api/
+
+--- (2) LUOT DOC THU HAI: output cua STEP-07, tuc tap 8 dong AN TOAN o ban giao ---
+$ grep -nE 'Tests|8 dong|8 vi tri' docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-green.txt
+  7: Test Files  1 passed (1)
+  8:      Tests  11 passed (11)
+
+--- (3) CHAY LAI hang rao o round 2, ma thoat lay bang redirect ---
+$ npx vitest run --config vitest.unit.config.ts src/shared/security/required-relation-sweep.static.test.ts > /tmp/r2-ac04.txt 2>&1; echo $?
+  R2_AC04_EXIT = 0
+   Test Files  1 passed (1)
+        Tests  11 passed (11)
+
+--- (4) EXPECTED_HITS nguyen van, day la tap DONG cua ban giao ---
+  const EXPECTED_HITS = [
+    'app/api/projects/route.ts:65 clientCompany',
+    'app/api/vendor/orders/route.ts:44 project',
+    'app/api/vendor/submissions/route.ts:62 project',
+    'src/domains/applications/application-queue.service.ts:178 project',
+    'src/domains/applications/application-queue.service.ts:211 project',
+    'src/domains/staffing/order.service.ts:153 project',
+    'src/domains/staffing/order.service.ts:179 project',
+    'src/domains/staffing/submission.service.ts:204 project',
+  ] as const;
+
+  so phan tu     : 8
+  thuoc app/api/ : 3
+  thuoc src/     : 5
+  3 cong 5 bang 8; bang so phan tu 8: CO
+  12 tru 4 dong RUI RO bang 8; so phan tu la 8: KHOP
+  Phu ca hai cay: app/api/ khac 0 VA src/ khac 0, chung minh bang chinh hai so tren.
+
+--- (5) Menh de chan cua AC-04: khong assertion nao duoc doi 4 dong app/api/ ---
+$ grep -n "startsWith('app/api/')" src/shared/security/required-relation-sweep.static.test.ts
+  261:    expect(hits.filter((hit) => hit.startsWith('app/api/'))).toHaveLength(3);
+$ grep -n "startsWith('src/')" src/shared/security/required-relation-sweep.static.test.ts
+  262:    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(5);
+  so assertion doi toHaveLength(4) tren nhanh app/api/ : 0
+  Con so thuc su duoc doi nam nguyen van o hai dong tren: 3 cho app/api/ va 5 cho src/.
+
+--- (6) FND-01 cua round 1 da dong hay chua ---
+  FND-01 round 1: loi van AC-04 ban v1.1 doi "bon dong app/api/", DEC-04 chi liet ke 3.
+  Ban v1.3 cua TASK.md giu nguyen cach dien cua v1.2, tuc noi thang: mot assertion doi 4 la FAIL.
+$ grep -c 'Mot assertion doi' TASK.md  (do tren ban dang thi hanh)
+  so dong TASK.md chua menh de chan ay: 1
+  => AC-04 o round 2 khong con menh de bat kha thoa; ca hai luot doc deu khop.
+
+--- (7) PHEP TRU TAP, do lai o round 2 tu chinh DEC-04 chu khong tu log round 1 ---
+Ghi chu dung cu: lan chay dau cua muc nay cho ca HAI phep tru deu tra ve DAY DU tap nguon,
+tuc khong mot dong nao khop. Nguyen nhan khong phai du lieu: python `print` tren Windows dich
+`\n` thanh CRLF nen tep DEC-04 co CR o cuoi dong con tep hang rao lay bang grep thi khong,
+va `comm` so tung byte. Ban nay ghi tep bang `io.open(..., newline="\n")`. Ghi lai chu khong xoa.
+Mot phep thu phu cung SAI theo huong nguoc lai da bi loai: `grep -c $'\r'` dem 12 va 8, nhung
+trong BRE `\r` la chu CAI r, va ca 20 dong deu chua chu r. Phep thu dung la `awk index($0,"\r")`,
+cho 0 va 0.
+
+$ tach moi 'path:dong' tu dong 70 cua docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md, tuc bang DEC-04
+     1. app/api/projects/route.ts:65
+     2. app/api/vendor/orders/route.ts:44
+     3. app/api/vendor/submissions/route.ts:62
+     4. src/domains/applications/application-queue.service.ts:178
+     5. src/domains/applications/application-queue.service.ts:211
+     6. src/domains/reconciliation/margin.service.ts:167
+     7. src/domains/reconciliation/statement.service.ts:403
+     8. src/domains/reconciliation/statement.service.ts:434
+     9. src/domains/staffing/order.service.ts:153
+    10. src/domains/staffing/order.service.ts:179
+    11. src/domains/staffing/submission.service.ts:204
+    12. src/domains/staffing/submission.service.ts:248
+  SO_VI_TRI_DEC04 = 12
+
+$ tach moi 'path:dong' tu EXPECTED_HITS cua src/shared/security/required-relation-sweep.static.test.ts
+     1. app/api/projects/route.ts:65
+     2. app/api/vendor/orders/route.ts:44
+     3. app/api/vendor/submissions/route.ts:62
+     4. src/domains/applications/application-queue.service.ts:178
+     5. src/domains/applications/application-queue.service.ts:211
+     6. src/domains/staffing/order.service.ts:153
+     7. src/domains/staffing/order.service.ts:179
+     8. src/domains/staffing/submission.service.ts:204
+  SO_VI_TRI_HANG_RAO = 8
+
+$ comm -23 : DEC-04 tru EXPECTED_HITS, tuc cac dong DEC-04 co ma hang rao KHONG con doi
+    src/domains/reconciliation/margin.service.ts:167
+    src/domains/reconciliation/statement.service.ts:403
+    src/domains/reconciliation/statement.service.ts:434
+    src/domains/staffing/submission.service.ts:248
+  SO_DONG_DA_SUA = 4
+
+$ comm -13 : EXPECTED_HITS tru DEC-04, tuc dong hang rao TU them ngoai DEC-04
+  SO_DONG_TU_THEM = 0   => KHONG mot dong nao
+
+$ comm -12 : phan chung
+  SO_DONG_CHUNG = 8
+
+  Phep tinh: SO_VI_TRI_HANG_RAO 8 cong SO_DONG_DA_SUA 4 bang 12, so voi SO_VI_TRI_DEC04 12 : KHOP
+  Ba con so ay dung bang cap so cua RQ-03 o dong 85 cua contract: tap dong mo 12, tap dong sau STEP-06 la 8.
+
+
+--- (8) TRUONG QUAN HE cua tung vi tri, cung doc tu dong 70, de kiem lat cat co dung nghia ---
+Muc (7) chung minh so luong. Muc nay chung minh LAT CAT: bon dong bi go ra khoi tap dong
+phai la bon dong cung mot loai quan he, khong phai bon dong chon bua.
+
+$ ghep moi vi tri voi ten truong dung sau no o dong 70 (mot ten truong co the phu HAI vi tri
+  lien nhau, vd `:178` va `:211` dung chung mot `project`; ban do dau chi ghep duoc 9 cap vi
+  bo mat cap dau cua moi doi, da sua va ghi lai o day)
+     1. app/api/projects/route.ts:65 clientCompany
+     2. app/api/vendor/orders/route.ts:44 project
+     3. app/api/vendor/submissions/route.ts:62 project
+     4. src/domains/applications/application-queue.service.ts:178 project
+     5. src/domains/applications/application-queue.service.ts:211 project
+     6. src/domains/reconciliation/margin.service.ts:167 worker
+     7. src/domains/reconciliation/statement.service.ts:403 worker
+     8. src/domains/reconciliation/statement.service.ts:434 worker
+     9. src/domains/staffing/order.service.ts:153 project
+    10. src/domains/staffing/order.service.ts:179 project
+    11. src/domains/staffing/submission.service.ts:204 project
+    12. src/domains/staffing/submission.service.ts:248 worker
+  SO_CAP = 12
+
+$ truong cua bon dong DA SUA (giao voi ket qua comm -23 o muc 7)
+    src/domains/reconciliation/margin.service.ts:167 worker
+    src/domains/reconciliation/statement.service.ts:403 worker
+    src/domains/reconciliation/statement.service.ts:434 worker
+    src/domains/staffing/submission.service.ts:248 worker
+  so dong co truong worker : 4 / 4   => TOAN BO la truong worker
+
+$ truong cua tam dong CON LAI (giao voi EXPECTED_HITS)
+    app/api/projects/route.ts:65 clientCompany
+    app/api/vendor/orders/route.ts:44 project
+    app/api/vendor/submissions/route.ts:62 project
+    src/domains/applications/application-queue.service.ts:178 project
+    src/domains/applications/application-queue.service.ts:211 project
+    src/domains/staffing/order.service.ts:153 project
+    src/domains/staffing/order.service.ts:179 project
+    src/domains/staffing/submission.service.ts:204 project
+  so dong co truong worker : 0 / 8   => KHONG con dong nao mang truong worker
+
+$ pho truong tren ca 12 vi tri
+          7 project
+          4 worker
+          1 clientCompany
+
+  KET LUAN muc (8): lat cat sach. Bon dong bi go la TOAN BO truong worker, va sau STEP-06 thi
+  tap dong KHONG con dong nao truong ay. Cac truong con lai la project va clientCompany, dung hai truong ma
+  DEC-04 xep vao dien GIU LAI. AC-04 vi vay xanh o ca hai luot doc: dung so 8, va dung lat cat.
