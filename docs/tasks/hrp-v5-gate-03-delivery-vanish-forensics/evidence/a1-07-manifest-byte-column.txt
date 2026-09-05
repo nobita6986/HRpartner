@@ -1,0 +1,31 @@
+# a1-07 | Tier 3 tu bat loi CHINH PHEP DO cua minh: regex \s\d{2,}\s bo sot 16 dong, hoa ra la tep 0 byte
+# thoi diem: 2026-09-05 15:18:39
+so dong dau tay hex40 : 40
+dong co cot byte la SO (regex \s+\d+\s+, khong ep >=2 chu so): 40
+dong KHONG parse duoc cot byte                              : 0
+dong co cot byte = 0                                        : 16
+dong co cot byte 1 chu so                                   : 16
+dong co dau tay dai dung 40                                 : 40
+tong cot byte                                               : 9832973
+
+--- 16 dong bi regex \s\d{2,}\s bo qua, in nguyen van cot byte ---
+   L14  bytes=[0]  20260904T080100/window1/output_20260904T080102/agentSessionsOutput.log
+   L17  bytes=[0]  20260904T080100/window2/output_20260904T080102/agentSessionsOutput.log
+   L20  bytes=[0]  20260904T184639/window1/output_20260904T184641/agentSessionsOutput.log
+   L23  bytes=[0]  20260904T184639/window2/output_20260904T184657/agentSessionsOutput.log
+   L26  bytes=[0]  20260904T184723/window1/output_20260904T184725/agentSessionsOutput.log
+   L29  bytes=[0]  20260904T184723/window2/output_20260904T184725/agentSessionsOutput.log
+   L30  bytes=[0]  20260904T184723/window2/output_20260904T184737/agentSessionsOutput.log
+   L33  bytes=[0]  20260904T184723/window3/output_20260904T185010/agentSessionsOutput.log
+   L34  bytes=[0]  20260904T184723/window3/output_20260904T185013/agentSessionsOutput.log
+   L37  bytes=[0]  20260904T184723/window4/output_20260904T201628/agentSessionsOutput.log
+   L38  bytes=[0]  20260904T184723/window4/output_20260904T201642/agentSessionsOutput.log
+   L41  bytes=[0]  20260904T234313/window1/output_20260904T234315/agentSessionsOutput.log
+   L44  bytes=[0]  20260904T234313/window2/output_20260904T234326/agentSessionsOutput.log
+   L45  bytes=[0]  20260904T234313/window2/output_20260904T234333/agentSessionsOutput.log
+   L48  bytes=[0]  20260905T075944/window1/output_20260905T075947/agentSessionsOutput.log
+   L51  bytes=[0]  20260905T075944/window2/output_20260905T075947/agentSessionsOutput.log
+
+--- dau tay hex40 co trung nhau khong (tep rong thi hash giong nhau) ---
+   hash e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 xuat hien 16 lan
+M3_EXIT=0

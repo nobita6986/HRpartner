@@ -1,0 +1,72 @@
+AC-05 / RQ-01 - cong audit tren ban audit round 1 cua rf-06 KHONG in token S-11
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+Do tren byte cuoi: verify-audit.ps1 = e1edaebac456da16cb618dca2607e7f46b1c4358,
+                   gate-lib.ps1     = 6daa689a33604f873f2e9f2181a741bfe4a55a9f
+
+Doi tuong do la ban audit THAT cua rf-06, blob 1212bae740578cd10005e4c508b37d8c37afcdb0. Toi khong
+sua mot byte cua no - do lai o phan E.
+
+=== A. LAN CHAY, NGUYEN VAN LENH CUA AC-05 ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-audit.ps1 -TaskPath docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/TASK.md
+EXIT=2
+--- CMD: grep -c "S-11" tren ban capture
+0        <-- KHONG dong nao chua chuoi S-11, ke ca dong [OK]
+Hai dong cuoi cua ban capture:
+  RESULT: FAIL (11 error(s), 1 warning(s)).
+  Tier 1 MUST NOT resolve on this AUDIT.md - send it back to Tier 3.
+
+Exit 2 la vi 11 loi KHAC, thuoc muoi ma kiem khac. AC-05 chi hoi mot cau: co token `S-11` hay khong.
+Cau tra loi do duoc la 0. Toi KHONG suy ra tu exit code, vi exit code o day khong noi gi ve S-11.
+
+=== B. NEU DOC "KHONG IN S-11" THEO MAT CHU TUYET DOI ===
+Con so 0 o tren la 0 tren CA ban capture, khong phai 0 sau khi loc dong xanh. Nghia la cong khong
+in ca dong `[OK] S-11` nao. Ly do co the doc tu ma: `S-11` chi ghi khi predicate tra `$true`; nhanh
+xanh cua no khong co dong `Add-GateOk` nao. Doi chieu voi `S-18` cua gate-01 - mach ay CO in dong
+`[OK]` khi sach, nen cach doc "khong in" phai xet tung ma kiem. Voi `S-11` thi hai cach doc trung
+nhau, nen AC-05 khong con cho tranh chap.
+
+=== C. RED-TRUOC: BAN CONG LUC MO ROUND, TREN CUNG MOT TEP ===
+Ban truoc round la ban o thoi diem gate-02 mo: verify-audit.ps1 = b6854802e329b391a70475eef8920255f0b7d639
+(ban giao cua gate-01) cong gate-lib.ps1 = 43ada847f9bd84494f80114de01f9f0b1b05c816 (= EV-06).
+Boc bang `git cat-file -p <SHA>` ra thu muc tam, KHONG bang `git show :path`.
+--- CMD: powershell -NoProfile -File "C:\Users\Admin\AppData\Local\Temp\glx\gate02\open\verify-audit.ps1" -TaskPath docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/TASK.md -RepoRoot "C:\CodeApp\HrP"
+EXIT=2
+--- CMD: grep -c "S-11" tren ban capture
+0        <-- CUNG bang 0 TRUOC round
+  RESULT: FAIL (11 error(s), 1 warning(s)).
+--- CMD: diff <capture truoc> <capture sau> | grep -c "^[<>]"
+0        <-- hai ban capture GIONG TUNG BYTE
+
+=== D. DOC THANG: AC-05 KHONG PHAI PHEP DO CUA PHEP SUA ===
+`S-11` da im TRUOC round tren tep nay. Nen AC-05 do mot menh de KHAC menh de "phep sua co hieu luc":
+no do rang phep sua KHONG lam sinh vet do moi tren mot ban audit that. Do la mot phep do co gia tri,
+nhung phai goi dung ten. Menh de "phep sua co hieu luc" duoc do o harness - `step07-regression.txt`
+phan A ghi dong `[FAIL] S-11` nguyen van cua ban truoc round tren fixture.
+
+Ly do `S-11` im tren rf-06 doc duoc tu ma, khong phai doan:
+  - verify-audit.ps1 site 1 (dong 208) chi doc o cua HANG AC o muc 2. Mot hang o muc 4 khong bao gio
+    di vao bien `$joined`, nen lane tran nam o muc 4 khong bi xet.
+  - verify-audit.ps1 site 2 (dong 401) nam BEN TRONG nhanh `'^DONE'` cua `switch -regex ($status)`.
+    Mot hang checklist trang thai `FAIL` khong vao nhanh ay, nen khong bao gio bi xet.
+  - nhung cho con lai nhac lane tran deu co `--config` tren cung dong, tuc thoat o dong 361.
+Day la mot GIOI HAN CO SAN cua `S-11`, khong phai viec round nay lam ra. Ghi thanh `LIM` trong ban
+giao de Tier 3 biet: neu Tier 3 muon do "S-11 con hieu luc tren artifact that", rf-06 khong phai
+tep chung minh duoc dieu do.
+
+=== E. BAN AUDIT KHONG BI CHAM ===
+--- CMD: git hash-object docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md
+1212bae740578cd10005e4c508b37d8c37afcdb0   (giong con so do dau vong o step07-regression.txt phan E)
+Cong audit la lenh DOC. Bon lan chay o tren khong ghi vao tep nao trong thu muc slug rf-06.
+
+=== F. GIOI HAN ===
+- Mot bay do TOI TU GAY va da bat duoc, ghi lai vi no de bi doc thanh hoi quy: lan dau toi go
+  `-RepoRoot C:\CodeApp\HrP` KHONG dat trong ngoac kep tu bash. Bash an dau gach cheo nguoc, tham
+  so thanh `C:CodeAppHrP`, va ban capture co THEM 21 dong loi `Push-Location : Cannot find path`.
+  Con so `diff | grep -c '^[<>]'` luc ay la 21, khong phai 0. Do la loi trich dan cua toi, khong
+  phai khac biet cua cong: ca hai lan van ra `RESULT: FAIL (11 error(s), 1 warning(s))` va `S-11` = 0.
+  Do lai voi duong dan trong ngoac kep thi ra 0 dong khac, va ban capture ay giong tung byte ban
+  do luc mo round o `step07-regression.txt`. Ai do lai phai QUOTE duong dan.
+- Ban capture cua phan C do bang ban COPY dat ngoai cay, nen phai truyen `-RepoRoot`. Neu khong
+  truyen, `Get-RepoRoot -ScriptRoot $PSScriptRoot` giai ra thu muc tam va cong se do mot cay khac.
+- AC-05 do MOT slug. Hai slug khac (`go-live-18`, `go-live-17`) do o `step07-regression.txt` phan C,
+  cung ket qua: 0 dong khac giua hai ban cong.

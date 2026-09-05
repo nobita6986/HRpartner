@@ -1,0 +1,26 @@
+AUDIT SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-gate-01-audit-row-identity\AUDIT.md (against docs/tasks/hrp-v5-gate-01-audit-row-identity/TASK.md)
+
+  [OK]   S-01 AUDIT.md size 15252 bytes.
+  [OK]   S-01 AUDIT.md is tracked by git (recoverable).
+  [OK]   A-01 all 8 required sections present.
+  [OK]   A-02 spec version v1.2 matches TASK.
+  [OK]   A-03 11 AC all carry a result row.
+  [OK]   S-02 every measured AC row carries a command and a value.
+  [OK]   S-17 no measured value is reused across three or more AC.
+  [OK]   S-18 11 AC rows are pairwise distinct.
+  [OK]   A-05 verdict: CONDITIONAL
+  [OK]   S-07 section 5 is consistent with the AC table.
+  [OK]   S-08 no AC passed over a HANDOFF ENV_BLOCKED declaration.
+  [OK]   A-06 section 4 has 7 evidence rows.
+  [OK]   S-02 section 4 rows all carry command + result.
+  [OK]   S-10 17 measured values are new relative to TASK/HANDOFF.
+  [OK]   S-13 section 7 round numbering is within 1..1.
+  [OK]   S-14 no plaintext secret in AUDIT.md.
+  [OK]   S-15 15 referenced artifact path(s) exist.
+  [WARN] S-16 327 staged path(s) lie outside docs/tasks/hrp-v5-gate-01-audit-row-identity/ (e.g. .ai-pipeline/scripts/gate-lib.ps1, .ai-pipeline/scripts/verify-audit.ps1, .ai-pipeline/scripts/verify-delivery-presence.ps1). Tier 3 must never commit source or test files with its audit.
+  [OK]   A-07 closing handoff line present.
+
+RESULT: PASS WITH WARNINGS (1 warning(s)).
+AUDIT.md carries measured evidence; Tier 1 may resolve on it.
+VERIFY_AUDIT_EXIT=0

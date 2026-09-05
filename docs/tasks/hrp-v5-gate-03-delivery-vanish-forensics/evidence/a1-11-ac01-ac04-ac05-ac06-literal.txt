@@ -1,0 +1,63 @@
+== TIER 3 DO LAI AC-01/04/05/06 BANG DUNG DUNG CU CONTRACT GHI ==
+CMD: powershell -NoProfile -File $env:TEMP\glx\gate03-audit\m4-ac0405.ps1
+TIME: 2026-09-05 15:43:49 SEAST
+
+== AC-01: git cat-file -t chay HAI lan (Tier 3 tu chay) ==
+RUN1_TYPE=blob RUN1_EXIT=0
+RUN2_TYPE=blob RUN2_EXIT=0
+SIZE=1052 SIZE_EXIT=0
+
+== AC-04: dung DUNG lenh contract ghi ==
+byte_cut_lines=5
+byte_cut_lines_that_are_NOT_a_=====_header=0
+  L9 :: ===== 20260904T080100/window2/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 648106
+  L85 :: ===== 20260904T184723/window2/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 649952
+  L780 :: ===== 20260904T184723/window3/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 203567
+  L797 :: ===== 20260904T184723/window4/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 208239
+  L1599 :: ===== 20260905T075944/window2/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 396540
+no_timestamp_parsing_LITERAL_lines=0
+no_timestamp_parsing_ACROSS_LINEBREAK=1
+  L4=[        causes to be logged lands past the cut and cannot appear below. No timestamp]
+  L5=[        parsing is used anywhere - byte offsets are exact, timestamps are not.]
+manifest_2082393_lines=1
+finding_limit_of_the_method_lines=1
+
+== AC-05: dung DUNG lenh contract ghi, roi dang co dau phay ==
+finding_9832973_NOCOMMA=0
+finding_28634384_NOCOMMA=0
+finding_9,832,973_COMMA=1
+finding_28,634,384_COMMA=1
+finding_ANSWER_NO=1
+finding_KHONG_XAC_LAP_DUOC=2
+slices_deleteFile=0
+slices_willDelete=0
+slices_didDelete=0
+slices_renameFile=0
+
+== AC-06 ==
+finding_FILES_IN_THIS_SNAPSHOT=1
+finding_must_not_be_sent=1
+M4_EXIT=0
+
+== PHU LUC 1: nam dong tieu de 'byte cut' IN DAY DU (khong bi cat 96 ky tu) ==
+CMD: grep -n 'byte cut' docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/evidence/logfreeze-02-slices.txt
+9:===== 20260904T080100/window2/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 648106, 7329 lines) =====
+85:===== 20260904T184723/window2/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 649952, 7123 lines) =====
+780:===== 20260904T184723/window3/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 2035676, 20938 lines) =====
+797:===== 20260904T184723/window4/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 2082393, 21512 lines) =====
+1599:===== 20260905T075944/window2/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 396540, 4319 lines) =====
+
+== PHU LUC 2: AC-09 kiem PHUONG PHAP -- vong nay co tao tep 0 byte trong repo khong? ==
+CMD: git diff --cached --name-only | while read p; do git cat-file -s :$p; done  (dem so path co size 0)
+  ZERO_IN_INDEX: docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac02-entered.txt
+  ZERO_IN_INDEX: docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s02-listfiles-before.err
+  ZERO_IN_INDEX: docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s04-listfiles-after.err
+  ZERO_IN_INDEX: docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-listfiles-after.err
+  ZERO_IN_INDEX: docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s04-entered.txt
+staged_paths_total=321  staged_paths_with_index_size_0=5
+
+CMD: find <task-dir> -type f -size 0  (tep 0 byte ngay trong vung cua task nay)
+  (het danh sach)
+
+CMD: git status --porcelain | wc -l  ; so path 0 byte tren dia trong toan repo do vong nay gay ra
+559

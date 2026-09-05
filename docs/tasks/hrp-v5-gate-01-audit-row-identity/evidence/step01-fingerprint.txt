@@ -1,0 +1,38 @@
+STEP-01 / RQ-05 / AC-01 — dau tay nam tep gate truoc khi sua
+Task: hrp-v5-gate-01-audit-row-identity, spec v1.2, execution round 1
+Do luc: 2026-09-05 09:09:20 +0700 (Asia/Bangkok host clock)
+
+--- CMD: git log --oneline -1
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+EXIT=0
+
+--- CMD: git status --porcelain -- .ai-pipeline/scripts/
+A  .ai-pipeline/scripts/gate-lib.ps1
+ M .ai-pipeline/scripts/verify-audit.ps1
+A  .ai-pipeline/scripts/verify-handoff.ps1
+M  .ai-pipeline/scripts/verify-pipeline.ps1
+ M .ai-pipeline/scripts/verify-task.ps1
+?? .ai-pipeline/scripts/verify-gates.selftest.ps1
+EXIT=0
+
+--- CMD: git hash-object .ai-pipeline/scripts/<f>  (nam tep)
+gate-lib.ps1           43ada847f9bd84494f80114de01f9f0b1b05c816
+verify-audit.ps1       2520a48dd7893f5cf9674357fd6a36e58772bcbd
+verify-handoff.ps1     3997dd4ff896ea9f7cebdf40a247bcb269ab23e5
+verify-task.ps1        e36b83dfbf7c860e320d5409535b82001cab574e
+verify-pipeline.ps1    1348bffe2adf3a5c247ecc1f3ed2525233b41db9
+EXIT=0
+
+--- SO SANH voi EV-06 (spec v1.2) ---
+gate-lib.ps1        EV-06=43ada847f9bd84494f80114de01f9f0b1b05c816  DO=43ada847f9bd84494f80114de01f9f0b1b05c816         KHOP
+verify-audit.ps1    EV-06=2520a48dd7893f5cf9674357fd6a36e58772bcbd  DO=2520a48dd7893f5cf9674357fd6a36e58772bcbd     KHOP
+verify-handoff.ps1  EV-06=3997dd4ff896ea9f7cebdf40a247bcb269ab23e5  DO=3997dd4ff896ea9f7cebdf40a247bcb269ab23e5   KHOP
+verify-task.ps1     EV-06=e36b83dfbf7c860e320d5409535b82001cab574e  DO=e36b83dfbf7c860e320d5409535b82001cab574e      KHOP
+verify-pipeline.ps1 EV-06=1348bffe2adf3a5c247ecc1f3ed2525233b41db9  DO=1348bffe2adf3a5c247ecc1f3ed2525233b41db9  KHOP
+
+Trang thai git khop EV-06: gate-lib 'A ', verify-audit ' M', verify-handoff 'A ', verify-task ' M', verify-pipeline 'M '.
+verify-gates.selftest.ps1 = '??' (untracked, trong scope Modules cua task nay).
+
+KET LUAN AC-01: NHANH MOT cua AC-01 — verify-audit.ps1 va gate-lib.ps1 deu BANG gia tri EV-06.
+Khong co lech nao => khong phai nguyen nhan A, khong phai nguyen nhan B cua DEC-08. Chay tiep.
+gate-01 chay DAU LO nen moc selftest la EV-07: 'cases: 33 total (3 green, 30 red), failures: 0' (do lai o AC-06).

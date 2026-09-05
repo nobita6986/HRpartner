@@ -1,0 +1,4 @@
+config exists: True
+lock pattern matches: True
+predicate on bare-lane cell WITH real config (expect False=forgive): False
+predicate on bare-lane cell with EMPTY root=missing file (expect True=block): True

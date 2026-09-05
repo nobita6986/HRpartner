@@ -1,0 +1,49 @@
+AC-03 / RQ-02 — S-19 do RED tren AUDIT.md that cua rf-06
+Task: hrp-v5-gate-01-audit-row-identity, spec v1.2, execution round 1
+Fixture: docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md, blob 1212bae740578cd10005e4c508b37d8c37afcdb0
+
+=== A. COT RESULT DUOC XAC DINH BANG DUNG CACH S-02 XAC DINH COT EVIDENCE ===
+--- CMD: powershell -NoProfile -Command '. gate-lib.ps1; ... Get-ColumnIndex -Header $t.Header -Pattern <rx>'
+header: AC | Independent method | Result | Evidence | Finding
+resultCol=2
+evidenceCol=3
+rows=9
+EXIT=0
+=> S-19 doc O DUNG cot 2 (nhan "Result"), khong quet bua cac o. Nhanh du phong cua STEP-03
+   (khong xac dinh duoc cot => quet moi o + ghi LIM) KHONG kich hoat o day.
+
+=== B. LAN CHAY GATE ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-audit.ps1
+           -TaskPath docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/TASK.md -RepoRoot .
+EXIT=2
+RESULT: FAIL (11 error(s), 1 warning(s)).
+So dong S-19 = 9 (dung 9 hang AC cua muc 2; rows=9 do o phan A).
+Lan chay nay la lan chay LAI tren byte cuoi cua cong (blob verify-audit.ps1 =
+b6854802e329b391a70475eef8920255f0b7d639, sau phep siet cua STEP-06): cung 9 dong S-19, cung
+RESULT, cung EXIT. Phep siet khong lam mat vet do cua rf-06.
+
+Dong S-19 nguyen van cho AC-01 (tam dong con lai giong het, chi khac ma AC):
+  [FAIL] S-19 AC-01 uses the verdict word 'BLOCKED' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-09 uses the verdict word 'BLOCKED' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+
+=== C. DOI CHIEU AC-03 ===
+- Dong S-19 trich dung chuoi trong o Result: 'BLOCKED' (co dau nhay don, lay tu chinh o cot 2). DAT.
+- Muc do: ket loi "[FAIL]" => ERROR, du de harness selftest bat bang token. DAT.
+- Hang that trong AUDIT.md rf-06 (nguyen van, hang AC-01):
+  | `AC-01` | `Get-Content docs\tasks\hrp-v5-rf-06-vitest-default-lane-safety\HANDOFF.md` | `BLOCKED` | 1 status read | `AUD-001` |
+  NAM dieu kien giai cuu cua DEC-05 deu KHONG thoa:
+    hasExit     = False (khong co "exit <so>", khong co "RESULT: PASS|FAIL", khong co "0 dong")
+    hasValue    = False (Get-NumericLiterals rong: "AUD-001" va "rf-06" bi strip theo luat id,
+                         so "1" trong "1 status read" la MOT chu so nen khong tinh la tri do)
+    hasRatio    = False
+    hasArtifact = False (o Evidence cot 3 = "1 status read", khong co duong dan)
+    hasEmptyOut = False (hang co lenh Get-Content, nhung khong khai output rong: khong co chu
+                         rong/trong/empty/no match/no output/khong co dong nao. Dieu kien thu nam
+                         nay duoc CONG THEM o phep siet cua STEP-06, xem ac09-no-false-positive.txt
+                         phan D; no khong giai cuu bat ky hang nao cua rf-06)
+  => do. Neu bat ky mot trong nam dieu la True thi S-19 im lang (DEC-05: co so do hoac co ma thoat thi khong do).
+
+=== D. GIOI HAN ===
+- S-19 KHONG do o hang co ma thoat/tri do, ke ca khi o Result chi la mot tu verdict: do la
+  chu dich cua DEC-05, khong phai lo hong bo qua. Lo hong con lai (Test-CellHasNumber nhan
+  MOT chu so vo nghia o hang PASS) la no ghi lai theo RISK-03/Q-01, khong dong trong round nay.

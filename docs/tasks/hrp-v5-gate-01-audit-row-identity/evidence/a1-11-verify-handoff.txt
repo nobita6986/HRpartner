@@ -1,0 +1,20 @@
+HANDOFF SUBSTANCE GATE
+  subject: docs/tasks/hrp-v5-gate-01-audit-row-identity/HANDOFF.md (against docs/tasks/hrp-v5-gate-01-audit-row-identity/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 17927 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.2 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 11 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 11 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 7 STEP appear in the execution trace.
+  [OK]   H-13 3 deviation(s) in section 2, 12 declared in section 5.
+  [OK]   H-14 section 7 records round 1.
+
+RESULT: PASS.
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+VERIFY_HANDOFF_EXIT=0

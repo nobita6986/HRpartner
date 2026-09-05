@@ -1,0 +1,100 @@
+STEP-04 / RQ-04 - viet lai chuoi thong diep cua H-08 va cua S-11 theo DEC-05: khong con khang
+dinh vo dieu kien ve tep env, va moi chuoi neu ten vitest.config.ts. Chi doi CHUOI.
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+
+Lo thong diep la BA, khong phai hai: verify-handoff.ps1 co mot lo H-08, verify-audit.ps1 co HAI
+lo S-11 (hang AC va hang checklist). Dem o phan D. Toi viet lai ca ba.
+
+=== A. BA CAP DONG, NGUYEN VAN, TRICH TU git diff -U1 ===
+--- CMD: git diff -U1 -- .ai-pipeline/scripts/verify-handoff.ps1 .ai-pipeline/scripts/verify-audit.ps1
+EXIT=0, 29 dong.
+
+[1] verify-audit.ps1, hang AC (dong 209):
+- Add-GateError $ctx 'S-11' "$acId used a bare 'npx vitest run'. That lane reads DATABASE_URL from .env (production) - use 'npm run test:unit' or pass --config."
++ Add-GateError $ctx 'S-11' "$acId used a bare 'npx vitest run' while vitest.config.ts at the repo root does not pin the DB variable to a fixed value, so that lane can still reach a live database - use 'npm run test:unit', pass --config, or lock the DB variable in vitest.config.ts."
+
+[2] verify-audit.ps1, hang checklist (dong 402):
+- Add-GateError $ctx 'S-11' "$checkId used a bare 'npx vitest run' - use the canonical lane."
++ Add-GateError $ctx 'S-11' "$checkId used a bare 'npx vitest run' and vitest.config.ts at the repo root does not pin the DB variable - use the canonical lane or lock that variable."
+
+[3] verify-handoff.ps1, hang AC (dong 203):
+- Add-GateError $ctx 'H-08' "$acId ran a bare 'npx vitest run'. That lane lacks the unit config and reads DATABASE_URL from .env (production). Use 'npm run test:unit'."
++ Add-GateError $ctx 'H-08' "$acId ran a bare 'npx vitest run' while vitest.config.ts at the repo root does not pin the DB variable to a fixed value, so that lane can still reach a live database. Fix either side: use 'npm run test:unit', pass --config, or lock the DB variable in vitest.config.ts."
+
+Doc ra ba dieu:
+1. Ban cu khang dinh VO DIEU KIEN: "That lane reads DATABASE_URL from .env (production)". Do dung
+   la menh de ma rf-06 da bac (EV-04, EV-05 cua hop dong). Ban moi khang dinh CO DIEU KIEN va
+   dieu kien ay la chinh cai predicate vua do: "while vitest.config.ts at the repo root does not
+   pin the DB variable to a fixed value". Nguoi doc bay gio biet cong da doc gi de ket luan.
+2. Ban moi noi ro cach sua o CA HAI phia: doi lane, HOAC khoa bien trong cau hinh mac dinh. Ban
+   cu chi cho mot duong.
+3. Chuoi thu ba (hang checklist) truoc round KHONG he neu ly do, chi noi "use the canonical lane".
+   No cung duoc viet lai vi AC-06 doi MOI chuoi neu ten vitest.config.ts.
+
+=== B. "CHI DOI CHUOI, KHONG DOI MUC NANG" - DO CHU KHONG KHAI ===
+--- CMD: dem loi goi theo muc nang, INDEX so voi WORKTREE
+  verify-handoff.ps1   Add-GateError: index=25  worktree=25   Add-GateWarning: index=0  worktree=0
+  verify-audit.ps1     Add-GateError: index=43  worktree=43   Add-GateWarning: index=0  worktree=0
+Khong loi goi nao doi ham, khong loi goi nao doi so luong. Ba thong diep van do bang Add-GateError
+voi dung ma kiem cu ('H-08', 'S-11', 'S-11').
+--- CMD: tach dong NGU CANH khoi dong DOI trong diff, loc theo 'problems++'
+  dong ngu canh (dau cach): 2
+  dong them     (dau +):    0
+  dong bo       (dau -):    0
+Hai dong tang bo dem ($problems++ va $substanceProblems++) xuat hien trong diff nhung o vi tri
+NGU CANH, tuc chung khong bi cham. Neu toi ha mot mach kiem xuong warning thi mot trong hai dong
+ay phai bien mat khoi phan '+' - no khong bien mat vi no khong nam trong phan '+'.
+
+=== C. DEM CHUOI TREN BYTE CUOI CUA STEP-04 ===
+--- CMD: grep -c / grep -o | wc -l tren tung tep
+                        "reads DATABASE_URL from"   ".env"   "(production)"   "vitest.config.ts"
+  verify-handoff.ps1              0                   0            0                 2
+  verify-audit.ps1                0                   0            0                 3
+Moc truoc round (ghi o step01-fingerprint.txt): moi tep co dung 1 lan "reads DATABASE_URL from",
+1 lan ".env", va 0 lan "vitest.config.ts". Ba cot dau ve 0 la nua THU NHAT cua AC-06; cot cuoi
+khac 0 la nua THU HAI.
+Con so 2 va 3 chu khong phai 1 va 2 vi hai chuoi dai neu ten tep HAI lan (mot lan trong menh de
+dieu kien, mot lan trong loi khuyen sua). Chuoi thu ba neu mot lan.
+
+=== D. BA LO, DEM DE KHONG AI PHAI DOAN ===
+--- CMD: grep -c "'H-08'" .ai-pipeline/scripts/verify-handoff.ps1   -> 1
+--- CMD: grep -c "'S-11'" .ai-pipeline/scripts/verify-audit.ps1     -> 2
+Neu ai chi doc mot lo S-11 thi se ket luan sai ve pham vi STEP-04. Ca hai lo deu doi.
+
+=== E. TONG DONG DOI CUA HAI TEP SAU CA STEP-03 VA STEP-04 ===
+--- CMD: git diff --numstat -- verify-handoff.ps1 verify-audit.ps1
+  4  4  .ai-pipeline/scripts/verify-audit.ps1
+  2  2  .ai-pipeline/scripts/verify-handoff.ps1
+--- CMD: dem dong '+' va '-' (bo hai dong header)
+  '+' = 6, '-' = 6
+Sau dong ay chia dung nhu sau: ba dong la lo goi predicate cua STEP-03 (do o
+step03-predicate-diff.txt phan F), ba dong la thong diep cua STEP-04 (phan A tren). 3 + 3 = 6,
+khong dong nao thua. Nghia la hai STEP nay khong cham dong nao khac cua hai tep cong.
+
+=== F. TEP CON PHAN TICH DUOC VA GIU NGUYEN MA HOA ===
+--- CMD: [PSParser]::Tokenize (phan tich cu phap, KHONG chay)
+  verify-handoff.ps1  2113 token, EXIT=0
+  verify-audit.ps1    4023 token, EXIT=0
+Cung so token nhu truoc STEP-04: doi noi dung mot chuoi khong doi so token. Do la dau hieu phu
+cho "chi doi chuoi".
+--- CMD: do byte bang Python 'rb'
+  verify-handoff.ps1  18079 byte, BOM=True, CR=0, LF=341
+  verify-audit.ps1    36095 byte, BOM=True, CR=0, LF=636
+So dong LF khong doi (341 va 636): khong dong nao them, khong dong nao bot.
+--- CMD: git hash-object (dau tay worktree sau STEP-04)
+  gate-lib.ps1        6daa689a33604f873f2e9f2181a741bfe4a55a9f
+  verify-handoff.ps1  e1af8549b9dd73d8c569d66493b6e527fae021f5
+  verify-audit.ps1    e1edaebac456da16cb618dca2607e7f46b1c4358
+
+=== G. GIOI HAN ===
+- Ba chuoi moi dai hon ba chuoi cu. Chung se lam dong output cua cong dai hon mot dong terminal
+  80 cot. Toi khong biet cach vua neu ten tep vua giu do dai cu.
+- Thong diep la LOI VAN cho nguoi doc. No khong duoc kiem lai o dau: neu mai nay predicate doi
+  cach do ma ai quen sua chuoi thi ba chuoi nay lai day sai nguoi doc, dung nhu cai vua xay ra.
+  Cach chan duy nhat toi thay duoc la mot ca selftest khang dinh noi dung chuoi - AC-06 do bang
+  git diff, khong bang mot ca. Toi khong tu them AC.
+- Con so cua phan E la so voi INDEX. Ca hai tep dang staged boi luong khac (verify-handoff la
+  `A `, verify-audit la `M `), nen so voi HEAD se lan viec cua ho.
+- AC-06 do bang `git diff --cached`, tuc phai chay SAU `git add`. Phep do ay nam o
+  ac06-messages.txt, khong nam o tep nay; tep nay do bang `git diff` (worktree so voi index) ngay
+  sau khi sua.

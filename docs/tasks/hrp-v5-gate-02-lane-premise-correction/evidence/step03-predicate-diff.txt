@@ -1,0 +1,175 @@
+STEP-03 / RQ-01, RQ-02 - sua predicate Test-CellUsesNonCanonicalLane: doc cau hinh lane mac
+dinh o goc repo, tha lane tran khi cau hinh ay KHOA bien DB, fail-closed moi truong hop khac
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+
+Moc do (index luc bat dau STEP-03, chinh la con so o step01-fingerprint.txt):
+  gate-lib.ps1       43ada847f9bd84494f80114de01f9f0b1b05c816   = EV-06
+  verify-handoff.ps1 3997dd4ff896ea9f7cebdf40a247bcb269ab23e5   = EV-06
+  verify-audit.ps1   b6854802e329b391a70475eef8920255f0b7d639   = ban giao cua gate-01, lech
+                                                                  EV-06 co y, nguyen nhan A
+
+=== A. GATE-LIB.PS1: DONG BI BO, KE DU SAU DONG ===
+--- CMD: git diff -- .ai-pipeline/scripts/gate-lib.ps1
+EXIT=0, 56 dong. Sau dong '-' (khong tinh dong '---' cua header):
+  -# go-live-01 BLK-01 and go-live-13 F-04: bare `npx vitest run` reads DATABASE_URL
+  -# from .env (production) and fails component tests wrongly. Canonical lane is
+  -# `npm run test:unit`, or vitest with an explicit --config.
+  -    param([string]$Cell)
+  -    if (-not [regex]::IsMatch($Cell, 'npx\s+vitest\s+run', 'IgnoreCase')) { return $false }
+  -    return (-not [regex]::IsMatch($Cell, '--config', 'IgnoreCase'))
+Ba dong dau la comment tien de cu - dung cai RQ-02 doi viet lai. Ba dong sau la than ham cu.
+Hai dong KHONG bi bo: dong `function Test-CellUsesNonCanonicalLane {` va dau `}` dong ham.
+--- CMD: git diff --numstat
+  38   6   .ai-pipeline/scripts/gate-lib.ps1
+  Sau dong bi bo dung bang sau dong ke tren: khong dong nao khac cua tep bi cham.
+
+=== B. NHANH CU DUOC GIU NGUYEN NGHIA (RQ-01 doi "giu nhanh co config") ===
+Ham moi giu dung hai nhanh cu, chi doi cho: hai bieu thuc chinh quy chuyen vao hai hang so
+$script:Gate* dat ngay tren ham, dung quy uoc san co cua chinh tep nay
+($script:GateFakePathPattern o dong 324, $script:GateCommandPattern). Chuoi bieu thuc GIONG
+NGUYEN VAN chuoi cu:
+    $script:GateBareLanePattern        = 'npx\s+vitest\s+run'
+    $script:GateLaneConfigFlagPattern  = '--config'
+Hai nhanh dau cua ham moi:
+    if (-not [regex]::IsMatch($Cell, $script:GateBareLanePattern, 'IgnoreCase')) { return $false }
+    if ([regex]::IsMatch($Cell, $script:GateLaneConfigFlagPattern, 'IgnoreCase')) { return $false }
+Ban cu viet nhanh thu hai bang `return (-not IsMatch(...))`; ban moi viet bang `if (...) return
+$false` roi di tiep. Cung mot menh de, chi khac o cho ban cu KET THUC o day con ban moi con
+nhanh thu ba. Cot co --config van la $false o ca hai ban - do o phan D, hang thu hai.
+
+=== C. NHANH MOI VA DEC-03 (FAIL-CLOSED), NGUYEN VAN THAN HAM ===
+gate-lib.ps1 dong 358-370, doc lai tu tep sau khi sua:
+    function Test-CellUsesNonCanonicalLane {
+        param([string]$Cell, [string]$RepoRoot = '')
+        if (-not [regex]::IsMatch($Cell, $script:GateBareLanePattern, 'IgnoreCase')) { return $false }
+        if ([regex]::IsMatch($Cell, $script:GateLaneConfigFlagPattern, 'IgnoreCase')) { return $false }
+        $root = $RepoRoot
+        if ([string]::IsNullOrWhiteSpace($root)) { $root = Get-RepoRoot -ScriptRoot $PSScriptRoot }
+        $configPath = Join-Path $root $script:GateDefaultLaneConfigFile
+        if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) { return $true }
+        $configText = ''
+        try { $configText = Get-Content -LiteralPath $configPath -Raw -ErrorAction Stop } catch { return $true }
+        if ([string]::IsNullOrWhiteSpace($configText)) { return $true }
+        return (-not [regex]::IsMatch($configText, $script:GateDefaultLaneLockPattern))
+    }
+Bon nhanh tra $true cua DEC-03, ke ro: VANG tep, DOC LOI (bat trong catch), tep RONG hoac chi
+khoang trang, va CO tep nhung KHONG khop dau hieu khoa. Khong nhanh nao trong bon nhanh ay tra
+$false. Nghia la khi khong biet, cong VAN DO - do la chieu fail-closed ma DEC-03 doi.
+
+=== D. PHEP DO HANH VI TREN BYTE CUOI, CHIN CA ===
+Chay lai SAU lan sua tep cuoi cua STEP-03. Kich ban nap chinh gate-lib.ps1 that bang dot-source
+roi goi ham truc tiep; khong mock, khong sua tep gate nao.
+--- CMD: powershell -NoProfile -File %TEMP%\glx\gate02\probe2.ps1
+EXIT=0
+  A. cot khong co lane tran (moi truong hop phai la False):
+    cell lane canonical, root that                 False
+    cell lane tran + --config, root that           False
+  B. cot CO lane tran, doi theo cau hinh o goc duoc truyen:
+    root that cua repo (vitest.config.ts co khoa)  False
+    root tam, cau hinh KHONG khoa                  True
+    root tam, cau hinh CO khoa                     False
+    root tam, cau hinh RONG 0 byte (fail-closed)   True
+    root tam, VANG cau hinh (fail-closed)          True
+    root tro vao thu muc khong ton tai             True
+  C. khong truyen RepoRoot -> tu giai bang Get-RepoRoot:
+    goi 1 tham so, cell lane tran                  False
+
+Doc ra:
+- Hang 3 va hang 5 la NUT cua ca hop dong: cung MOT o bang chung co lane tran, doi ket luan chi
+  vi cau hinh o goc khac nhau. Do la RQ-01.
+- Hang 4: cau hinh giao bien DB cho mot tra cuu moi truong ambient => VAN DO. Phep siet khong
+  bien thanh phep tha ca.
+- Hang 6, 7, 8: ba nhanh fail-closed cua DEC-03 do duoc bang ba tinh huong that, khong bang loi van.
+- Hang 9: goi mot tham so nhu ban cu van chay, va tu giai duoc goc repo that. Nghia la lo goi cu
+  o bat cu noi nao khac trong bo cong khong bi vo.
+Hai cau hinh fixture cua hang 4 va hang 5 do TOI sinh trong thu muc tam va xoa sau khi chay. Toi
+KHONG doc va KHONG in gia tri sentinel that o vitest.config.ts (R-02): fixture khoa cua toi dung
+mot hang so ten BLOCKED voi mot chuoi vo hai do toi tu dat.
+
+=== E. AC-08 - DEM BON CHUOI BI CAM, HAI CACH DOC ===
+AC-08 viet "trong khoang than ham predicate sau round". Than ham = dong 358-370, dung 13 dong,
+la dung khoi o phan C.
+--- CMD: dem chuoi con tren dung khoang dong 358-370
+  .env                 0
+  Invoke-WebRequest    0
+  npx                  0
+  npm                  0   <- bon con so cua AC-08, ca bon bang 0
+--- CMD: dem lai tren CA KHOI THAY THE (dong 331-370: comment + bon hang so + ham)
+  .env                 0
+  Invoke-WebRequest    0
+  npx                  1   <- chinh hang so $script:GateBareLanePattern
+  npm                  0
+Con so 1 ay la BAT BUOC: RQ-01 doi predicate VAN bat lane tran, nen bieu thuc phai co chuoi ay o
+dau do trong tep. Toi dat no ngoai than ham, trong hang so, dung quy uoc $script:Gate*Pattern
+da co san cua chinh gate-lib.ps1 - khong phai de lach phep dem, ma vi day la cach tep nay von
+giu chuoi khoi than ham. Ca hai con so deu o day; ai doc AC-08 theo nghia rong hon xin doc bang
+thu hai. Comment tien de moi cung khong chua bon chuoi ay (con so .env=0 o bang thu hai la cua
+CA comment): no goi cai cu la "the ambient DATABASE_URL" va "an environment file".
+
+=== F. BA LO GOI: TRUYEN $repoRoot ===
+Harness selftest chay cong THAT tren mot repo fixture o %TEMP% va truyen -RepoRoot $root. Neu
+predicate tu giai goc bang Get-RepoRoot -ScriptRoot $PSScriptRoot thi no se doc vitest.config.ts
+cua CHINH repo HRP nay chu khong phai cua fixture, va AC-03 cung AC-04 tro thanh bat kha do. Nen
+ba lo goi truyen goc xuong. $repoRoot co san trong pham vi o ca ba cho (verify-audit.ps1 dong 42,
+verify-handoff.ps1 dong 42) va la BIEN CUA CHINH hai tep ay, khong phai bien moi.
+--- CMD: git diff -- verify-handoff.ps1 verify-audit.ps1  (phan cua STEP-03, chay TRUOC STEP-04)
+  verify-audit.ps1   @@ -205,7 +205,7 @@
+    -        if (Test-CellUsesNonCanonicalLane $joined) {
+    +        if (Test-CellUsesNonCanonicalLane $joined $repoRoot) {
+  verify-audit.ps1   @@ -398,7 +398,7 @@
+    -                if (Test-CellUsesNonCanonicalLane $evidence) {
+    +                if (Test-CellUsesNonCanonicalLane $evidence $repoRoot) {
+  verify-handoff.ps1 @@ -199,7 +199,7 @@
+    -        if (Test-CellUsesNonCanonicalLane $joined) {
+    +        if (Test-CellUsesNonCanonicalLane $joined $repoRoot) {
+--- CMD: git diff --numstat (chi phan STEP-03 cua hai tep nay)
+  2  2  .ai-pipeline/scripts/verify-audit.ps1
+  1  1  .ai-pipeline/scripts/verify-handoff.ps1
+Ba dong doi, ba dong them. Khong dong nao khac. Ba lo goi la BA, khong phai hai: verify-audit.ps1
+co HAI lo (hang AC o dong 208 va hang checklist o dong 401) - dem o phan G.
+Day la phan VUOT so voi cau chu cua §4.2 (chi noi "chuoi thong bao"); toi khai no thanh mot hang
+DEV trong HANDOFF chu khong im lang, va khong sua hop dong.
+
+=== G. HAI LO S-11, DEM RA DE KHONG AI PHAI DOAN ===
+--- CMD: grep -c "Test-CellUsesNonCanonicalLane" tren tung tep
+  gate-lib.ps1        1   (dinh nghia)
+  verify-audit.ps1    2
+  verify-handoff.ps1  1
+Tong ba lo goi. STEP-04 se viet lai CA HAI chuoi thong bao S-11, khong chi mot.
+
+=== H. TEP CON PHAN TICH DUOC VA GIU NGUYEN MA HOA ===
+--- CMD: [PSParser]::Tokenize tren tung tep (phan tich cu phap, KHONG chay)
+  gate-lib.ps1        2856 token, EXIT=0
+  verify-handoff.ps1  2113 token, EXIT=0
+  verify-audit.ps1    4023 token, EXIT=0
+--- CMD: do byte bang Python mo che do 'rb'
+  gate-lib.ps1        20302 byte, BOM=True, CR=0, LF=469
+  verify-handoff.ps1  17949 byte, BOM=True, CR=0, LF=341
+  verify-audit.ps1    35884 byte, BOM=True, CR=0, LF=636
+Ca ba giu UTF-8-co-BOM va LF thuan nhu truoc round. Moi phep sua la thay the o muc BYTE co khang
+dinh so lan xuat hien, khong dung sed va khong dung cong cu tu doi dong ket thuc.
+
+=== I. MOT LOI TOI TU BAT DUOC, GHI LAI VI NO LA VET ===
+Ban ghi DAU TIEN cua hang so khoa co mot byte 0x08 (backspace) o cho dinh viet hai ky tu \b:
+Python coi \b trong chuoi bytes khong-raw la mot escape. Cong hau qua: bieu thuc se doi mot ky tu
+backspace THAT thay vi mot ranh gioi tu, nen KHONG cau hinh nao khop, nen MOI lane tran deu bi
+bao do - dung chieu fail-closed, nen khong the lo ra bang mot ca xanh.
+--- CMD: dem byte 0x08 trong tep
+  truoc khi sua: 1
+  sau khi sua:   0
+[PSParser]::Tokenize KHONG bao gi ve loi nay (2856 token, EXIT=0 o ca hai ban): phan tich cu phap
+khong doc noi dung ben trong mot chuoi. Thu bat duoc no la phep do hanh vi o phan D (hang 3 va
+hang 5 phai KHAC nhau) cong voi viec doc lai NGUYEN VAN byte cua dong vua ghi. Ghi vao day de
+vong sau khong tin mot lan parse thay cho mot lan chay.
+
+=== J. GIOI HAN ===
+- Dau hieu khoa co Y siet hep, la mon no Q-01 cung RISK-02 cua chinh hop dong: mot cau hinh khoa
+  bang cach KHAC (vi du hang so viet camelCase, hoac khoa o mot tep duoc import vao) se bi coi la
+  KHONG khoa, tuc bi do oan. Chieu oan ay la chieu AN TOAN theo DEC-03; chieu nguoc lai moi nguy.
+- Predicate doc TEP, khong chay lane. No khong the biet lane thuc su ket noi dau. No chi ket luan
+  duoc rang cau hinh mac dinh CO gan bien DB vao mot tri khong-ambient.
+- Ba con so dau tay o dau tep nay la moc luc BAT DAU STEP-03. Byte cuoi cua vong nam o
+  step08-scope-gates.txt, do sau lan `git add` cuoi.
+- Con so 38/6 va 2/2 va 1/1 la so voi INDEX, khong so voi HEAD: ca ba tep dang staged (gate-lib
+  va verify-handoff la `A `, verify-audit la `M `) boi cac luong khac. So voi HEAD se lan viec
+  cua ho.

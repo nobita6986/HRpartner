@@ -1,0 +1,111 @@
+AC-02, AC-04, AC-05, AC-06 - Tier 2 XAC NHAN phan Tier 1 da lam, do lai bang dung dung cu AC ghi
+Task: hrp-v5-gate-03-delivery-vanish-forensics, spec v1.2, execution round 1
+
+STEP-02, STEP-03 va STEP-04 ghi ro "DA XONG boi Tier 1", "Executor chi ... xac nhan",
+"KHONG chup lai kho log", "KHONG chay lai phep tim". Nen tep NAY la ban xac nhan, khong phai
+ban thay the. Bon tep logfreeze-* KHONG bi sua mot byte; dau tay o phan F chung minh.
+Dung cu: Select-String, dung chuoi ky tu ma tung AC ghi.
+--- CMD: powershell -NoProfile -File <tmp>/ac02-06.ps1
+EXIT=0
+
+=== A. AC-02: ban ke 40 path, cot byte, dau tay 40 hex, dong tong 9832973 ===
+--- CMD: Select-String -Pattern "[0-9a-f]{40}" logfreeze-01-manifest.txt   ->  40
+    contract cho 40   DAT
+    dong dau:  line 12  20260904T080100/window1/.../Claude VSCode.log  2691970  2026-09-04 17:10:19  aecb85d1...
+    dong cuoi: line 51  20260905T075944/window2/output_.../agentSessionsOutput.log  0  2026-09-05 07:59:47  e69de29b...
+    (dau tay e69de29b la blob RONG cua git, dung cho mot tep log dai 0 byte. Ban ke ghi ca
+     nhung tep 0 byte, khong loc bot.)
+--- CMD: Get-Content logfreeze-01-manifest.txt | Measure-Object -Line   ->  52
+--- CMD: Select-String -Pattern "9832973" logfreeze-01-manifest.txt     ->  1
+    line 54: total bytes: 9832973
+    contract cho 9832973   DAT
+
+Ba con so 40, 52 va 54 khong xung dot, chung dem ba thu khac nhau:
+--- CMD: python dem dong tren ban doc 'rb'
+    tong dong = 54,  dong trong = 2,  dong co chu = 52
+Measure-Object -Line dem dong CO CHU nen ra 52; tep dai 54 dong vi co 2 dong trong; 40 la so
+dong mang dau tay, tuc so path. Ai doc 52 roi ket luan "khong phai 40 path" la dem sai cot.
+
+=== B. AC-04: tieu chi tach la LAT CAT BYTE, khong phai moc thoi gian ===
+--- CMD: Select-String -Pattern "byte cut" logfreeze-02-slices.txt   ->  5
+    contract cho 5   DAT.  Ca NAM deu la tieu de tep (dong bat dau bang "====="):
+    line    9: ===== 20260904T080100/window2/.../Claude VSCode.log  (byte cut 648106, 7329 lines) =====
+    line   85: ===== 20260904T184723/window2/.../Claude VSCode.log  (byte cut 649952, 7123 lines) =====
+    line  780: ===== 20260904T184723/window3/.../Claude VSCode.log  (byte cut 2035676, 20938 lines) =====
+    line  797: ===== 20260904T184723/window4/.../Claude VSCode.log  (byte cut 2082393, 21512 lines) =====
+    line 1599: ===== 20260905T075944/window2/.../Claude VSCode.log  (byte cut 396540, 4319 lines) =====
+    Nam tren nam la tieu de, khong dong nao la loi van giua bai. AC doi dung dieu do.
+--- CMD: Select-String -Pattern "2082393" logfreeze-01-manifest.txt   ->  1
+    line 35: 20260904T184723/window4/.../Claude VSCode.log  2082393  2026-09-04 23:42:30  0275e527...
+    Tieu de window4 ghi "byte cut 2082393" va ban ke ghi cot byte 2082393 cho DUNG path ay.
+    Hai con so bang nhau tren hai tep doc lap: lat cat da di het tep, khong dung o giua.
+--- CMD: Select-String -Pattern "limit of the method" logfreeze-04-finding.txt   ->  1
+    contract cho 1   DAT (DEC-10)
+
+--- CMD: Select-String -Pattern "No timestamp parsing" logfreeze-02-slices.txt   ->  0
+    contract cho 1.   LECH.  Nguyen nhan da DO, khong phai doan:
+    Cum tu ay bi NGAT DONG trong tieu de cua ban trich. Select-String la cong cu theo DONG,
+    nen mot cum bat qua dau xuong dong thi no khong bao gio thay:
+      slices line 4, 40 ky tu cuoi : ...ut and cannot appear below. No timestamp
+      slices line 5, 40 ky tu dau  :         parsing is used anywhere - byte ...
+    Phep do bu, tren CUNG tep, doc toan van thay vi tung dong:
+--- CMD: regex "No timestamp\s+parsing" tren toan van logfreeze-02-slices.txt   ->  1
+--- CMD: Select-String -Pattern "No timestamp parsing" logfreeze-04-finding.txt ->  1
+    Nen menh de VE NOI DUNG cua AC-04 ("khong dung moc thoi gian") duoc thoa: cau ay CO trong
+    ban trich (1 lan, bi ngat dong) va CO trong ban ket luan (1 lan, lien mach).
+    Cai lech nam o DUNG CU ma AC chi dinh, khong o su that duoc khang dinh. Khai o LIM-01.
+    Toi KHONG sua logfreeze-02-slices.txt de dap con so nay, va KHONG sua AC-04.
+
+=== C. AC-05: ANSWER: NO, hai ly do doc lap, moi ly do co so do ===
+--- CMD: Select-String -Pattern "ANSWER: NO" logfreeze-04-finding.txt           ->  1   DAT
+--- CMD: Select-String -Pattern "KHONG XAC LAP DUOC" logfreeze-04-finding.txt   ->  2   DAT
+    (AC doi "chua chuoi"; 2 lan la thoa, khong phai lech.)
+--- CMD: Select-String -Pattern "9832973" logfreeze-04-finding.txt    ->  0   contract cho co
+--- CMD: Select-String -Pattern "28634384" logfreeze-04-finding.txt   ->  0   contract cho co
+    LECH.  Nguyen nhan da DO: ban ket luan viet hai so ay co DAU PHAY nghin.
+--- CMD: Select-String -Pattern "9,832,973" logfreeze-04-finding.txt    ->  1
+--- CMD: Select-String -Pattern "28,634,384" logfreeze-04-finding.txt   ->  1
+    Hai gia tri ay CO mat, chi khac cach viet. Ban khong-dau-phay cua 9832973 nam o
+    logfreeze-01-manifest.txt line 54 (phan A), tuc hai tep khop nhau ve TRI DO.
+    Khai o LIM-02. Toi KHONG sua logfreeze-04-finding.txt va KHONG sua AC-05.
+--- CMD: bon tu khoa tren logfreeze-02-slices.txt
+    deleteFile   ->  0        willDelete   ->  0
+    didDelete    ->  0        renameFile   ->  0
+    contract cho bon so 0, va cho biet chung TAI LAP DUOC vi bon tu ay khong xuat hien trong
+    ban trich. Bon phep do tra dung 0.   DAT
+    Y nghia: khong co dau vet API xoa hay doi ten tep nao trong phan kho log da chup. Do la
+    NUA THU HAI cua ket luan "khong xac lap duoc", va no la mot phep do, khong phai mot loi.
+
+=== D. AC-06: nguon da tim va gioi han cua tung nguon ===
+--- CMD: Select-String -Pattern "FILES IN THIS SNAPSHOT" logfreeze-04-finding.txt   ->  1   DAT
+--- CMD: Select-String -Pattern "limit of the method"    logfreeze-04-finding.txt   ->  1   DAT
+--- CMD: Select-String -Pattern "must not be sent"       logfreeze-04-finding.txt   ->  1   DAT
+--- CMD: Select-String -Pattern "logfreeze-0"            logfreeze-04-finding.txt   ->  7
+    line 73: logfreeze-01-manifest.txt   40 paths, byte-exact sizes, mtimes, git hash-object
+    line 74: logfreeze-02-slices.txt     1,509 kept lines, 1 redacted (NEON_PW), 3 lines of context
+    line 75: logfreeze-03-index.txt      per-file kept/redacted counts and the method line
+    line 76: logfreeze-04-finding.txt    this file
+    Bon dong 73-76 la muc FILES IN THIS SNAPSHOT: ke DU bon tep, dung nhu AC-06 doi.
+    Cau o line 87 cam executor di tim lai co che trong kho nay - do la cau "must not be sent".
+    Toi tuan cau ay: KHONG mo lai kho log VS Code trong vong nay.
+
+=== E. AC-05 VA AC-06 KHONG DOI MOT CO CHE ===
+AC-05 viet "AC PASS tren nhanh nay va KHONG doi mot co che". AC-06 viet "AC PASS o ca hai ket cuc".
+Ket cuc that la KHONG XAC LAP DUOC. Toi ghi nhan ket cuc ay va KHONG di tim thay Tier 1, vi ca
+hai AC cho phep, va vi line 87 cam. Day la mot ket cuc, khong phai mot that bai.
+
+=== F. BON TEP CUA TIER 1 KHONG BI SUA MOT BYTE ===
+Bon dau tay do o cuoi vong bang git hash-object, cong git status --porcelain, nam o
+step07-scope.txt phan C: bon con so khop dung so index dang giu, va khong dong nao co chu M o
+cot thu hai. Nen bon tep giao cho Tier 3 dung la bon tep Tier 1 da chup.
+
+=== G. GIOI HAN ===
+- Toi xac nhan HINH THUC va CON SO cua bon tep, khong xac nhan tinh dung cua ket luan dieu tra.
+  Ket luan ay la cua Tier 1; danh gia no thuoc Tier 3.
+- Hai cho lech (No timestamp parsing = 0, hai so khong-dau-phay = 0) la lech cua DUNG CU ma AC chi
+  dinh so voi cach viet cua tep. Toi bao cao dung con so dung cu tra ve, cong phep do tuong duong,
+  cong hai muc LIM-01 va LIM-02 trong HANDOFF. Toi khong tu chinh AC va khong tu sua tep Tier 1;
+  ca hai viec ay deu ngoai quyen Tier 2.
+- Con so 381 cua chuoi "token" o ac03-secret-scan.txt cho thay kho log ghi lai nguyen van lenh
+  cua chinh nguoi di tim. Nen moi con so dem tu-khoa tren kho ay deu co nguy co TU NHIEM. Bon so 0
+  cua AC-05 khong bi anh huong vi chung la so 0: tu nhiem chi lam so TANG, khong lam giam.

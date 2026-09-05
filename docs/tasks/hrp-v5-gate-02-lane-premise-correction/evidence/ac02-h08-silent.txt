@@ -1,0 +1,74 @@
+AC-02 / RQ-01 - cong ban giao chay tren CHINH ban HANDOFF nay: hang AC-02 mang lane tran ma
+KHONG co dong H-08 nao
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+Do sau lan `git add` cuoi cua bon tep gate va cua 18 path duoi slug.
+
+=== A. O BI DO CHINH LA O NAY: HANG AC-02 CUA MUC 3 ===
+--- CMD: awk -F'|' '/^\| `AC-02`/{print $3}' HANDOFF.md
+ `powershell -NoProfile -File ./.ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-v5-gate-02-lane-premise-correction/TASK.md` chay tren CHINH ban HANDOFF nay, ma o ngay day nhac lane tran `npx vitest run` khong kem co nao
+--- CMD: awk -F'|' '/^\| `AC-02`/{print}' HANDOFF.md | grep -c -- '--config'
+0        <-- CA HANG khong co chuoi '--config' o bat ky o nao
+Diem nay quan trong: predicate co hai nhanh thoat som. Neu hang nay co '--config' thi phep do se
+di qua nhanh CO CO va khong chung minh duoc gi ve nhanh doc cau hinh. Hang nay co dung lane tran,
+nen nhanh duy nhat co the lam H-08 im lang la nhanh "vitest.config.ts co khoa bien DB".
+
+=== B. RED-TRUOC: BAN GATE PRE-ROUND, CHINH TEP HANDOFF NAY ===
+--- CMD: powershell -NoProfile -File C:\Users\Admin\AppData\Local\Temp\glx\gate02\open\verify-handoff.ps1 -TaskPath docs/tasks/hrp-v5-gate-02-lane-premise-correction/TASK.md -RepoRoot "C:\CodeApp\HrP"
+EXIT=2
+HANDOFF SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-gate-02-lane-premise-correction\HANDOFF.md (against docs/tasks/hrp-v5-gate-02-lane-premise-correction/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 24712 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.2 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 11 AC have an evidence row.
+  [FAIL] H-08 AC-02 ran a bare 'npx vitest run'. That lane lacks the unit config and reads DATABASE_URL from .env (production). Use 'npm run test:unit'.
+  [OK]   H-07 16 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 8 STEP appear in the execution trace.
+  [OK]   H-13 6 deviation(s) in section 2, 16 declared in section 5.
+  [OK]   H-14 section 7 records round 1.
+
+RESULT: FAIL (1 error(s), 0 warning(s)).
+Do NOT write "Handoff status: READY_FOR_AUDIT" until these fail items are fixed.
+
+Ban pre-round nay la ban gate-01 giao (gate-lib.ps1 43ada847..., verify-handoff.ps1 3997dd4f...),
+duoc coppy ra thu muc tam TRUOC khi toi sua mot byte. Duong dan -RepoRoot phai co ngoac kep, neu
+khong shell an dau gach cheo nguoc va gate se in mot loat dong khong tim thay duong dan.
+DUNG MOT loi: H-08. Tuc ban pre-round khong tim thay bat cu van de nao khac o HANDOFF nay - moi
+khac biet giua hai lan chay o phan C deu quy ve mot mach kiem.
+
+=== C. GREEN-SAU: CONG THAT TRONG CAY, CHAY CUOI CUNG ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-v5-gate-02-lane-premise-correction/TASK.md
+EXIT=0
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  ... (17 dong con lai giong het ban tren, xem nguyen van o ac11-gates.txt phan B)
+RESULT: PASS.
+--- CMD: grep -c 'H-08' tren hai ban capture
+  ban pre-round: 1
+  ban that:      0        <-- AC-02 doi so 0 nay
+--- CMD: diff <ban pre-round> <ban that>
+exit 1, DUNG BA cap dong doi tren 19 dong:
+  dong 10: [FAIL] H-08 ...            ->  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  dong 18: RESULT: FAIL (1 error(s))  ->  RESULT: PASS.
+  dong 19: cau "Do NOT write ..."     ->  cau "HANDOFF.md is re-runnable; ..."
+16 tren 19 dong GIONG HET. Dong 10 doi cho vi trong ban pre-round, H-08 tang bien dem loi nen
+dong [OK] H-06 bi chan; go H-08 di thi H-06 in ra. Ba cap dong ay la toan bo he qua cua phep sua.
+
+=== D. DOI CHIEU AC-02 ===
+- Cong ban giao chay tren mot HANDOFF co hang AC-02 mang lane tran, doi chieu voi vitest.config.ts
+  THAT o goc repo:  0 dong H-08.                                                          DAT
+- RED-truoc tren cung tep, cung tham so, chi doi ban gate:  1 dong [FAIL] H-08.            DAT
+- Ca hai lan la lenh THAT, khong fixture, khong mock.
+
+=== E. GIOI HAN ===
+- Phep do nay dua vao trang thai HIEN TAI cua vitest.config.ts o goc repo. Neu ai bo khoa bien DB
+  trong tep ay thi H-08 se do lai - va do la dung thiet ke fail-closed (DEC-03), khong phai hoi quy.
+  Ca "cau hinh khong khoa" duoc do rieng o ac03-h08-still-red.txt, ca "cau hinh vang" o
+  ac04-fail-closed.txt.
+- Tep nay duoc ghi SAU hai lan chay ay, cung ly do da khai o LIM-10: khong the vua chay cong vua
+  ghi ket qua vao tep ma cong da doc. H-07b chi kiem SU TON TAI cua duong dan evidence/, va tep
+  nay da ton tai truoc ca hai lan chay (dong 'A' trong step08-scope-gates.txt phan B).

@@ -1,0 +1,69 @@
+# a1-08 | AC-10: TU DO dau chan cua Tier 2 va TU QUY THUOC tung path ngoai vung
+# thoi diem: 2026-09-05 15:32:43
+
+## A. Hop cua hai lenh, phan theo vung (script python cua Tier 3, doc git bang -z nen path co dau cach khong bi cat)
+$ git status --porcelain -z  +  git diff --cached --name-only -z
+porcelain entries : 556
+cached names      : 321
+union paths       : 556
+  A module        : 1
+  B task dir      : 25
+  C ngoai hai vung: 530
+
+
+## B. Cua so ghi (mtime tung tep, do bang os.stat)
+   Tier 2 gate-03: 2026-09-05 14:00:26 (module verify-delivery-presence.ps1) -> 14:58:15 (evidence/step08-gates.txt)
+   Bon tep logfreeze-01..04 mtime 08:16:30..08:27:25 KHONG phai cua Tier 2: o Baseline cua TASK.md khai chung la ban chup Tier 1 da lay.
+   Tier 3 (chinh toi, tien to a1-*): 15:01:53 -> 15:18:39
+
+## C. mtime LON NHAT trong toan bo vung C (ngoai module va ngoai thu muc task)
+   so path vung C doc duoc mtime: 529 / 530
+   2026-09-05 13:44:36  docs/tasks/hrp-v5-gate-02-lane-premise-correction/evidence/step08-scope-gates.txt
+   2026-09-05 13:43:29  docs/tasks/hrp-v5-gate-02-lane-premise-correction/evidence/ac11-gates.txt
+   2026-09-05 13:42:50  docs/tasks/hrp-v5-gate-02-lane-premise-correction/evidence/ac02-h08-silent.txt
+   2026-09-05 13:39:16  docs/tasks/hrp-v5-gate-02-lane-premise-correction/evidence/ac09-no-sentinel.txt
+   2026-09-05 13:32:57  docs/tasks/hrp-v5-gate-02-lane-premise-correction/HANDOFF.md
+   KET LUAN: mtime lon nhat cua ca vung C nam TRUOC 14:00:26. Trong cua so thuc thi cua Tier 2 gate-03
+             (14:00:26 -> 14:58:15) khong mot path nao ngoai hai vung duoc phep bi ghi.
+
+## D. Quy thuoc theo NOI DUNG: bon tep gate cua vung C thuoc contract nao
+--- .ai-pipeline/scripts/gate-lib.ps1
+    git diff --cached --numstat : 469 0 .ai-pipeline/scripts/gate-lib.ps1
+    dong THEM noi ve gate-01 (S-18/S-19/row identity) : 0
+    dong THEM noi ve gate-02 (H-08/lane/Q-03)          : 10
+    dong THEM noi ve gate-03 (delivery presence/D-0x)  : 0
+--- .ai-pipeline/scripts/verify-handoff.ps1
+    git diff --cached --numstat : 341 0 .ai-pipeline/scripts/verify-handoff.ps1
+    dong THEM noi ve gate-01 (S-18/S-19/row identity) : 0
+    dong THEM noi ve gate-02 (H-08/lane/Q-03)          : 3
+    dong THEM noi ve gate-03 (delivery presence/D-0x)  : 0
+--- .ai-pipeline/scripts/verify-audit.ps1
+    git diff --cached --numstat : 568 95 .ai-pipeline/scripts/verify-audit.ps1
+    dong THEM noi ve gate-01 (S-18/S-19/row identity) : 10
+    dong THEM noi ve gate-02 (H-08/lane/Q-03)          : 2
+    dong THEM noi ve gate-03 (delivery presence/D-0x)  : 0
+--- .ai-pipeline/scripts/verify-gates.selftest.ps1
+    git diff --cached --numstat : 675 0 .ai-pipeline/scripts/verify-gates.selftest.ps1
+    dong THEM noi ve gate-01 (S-18/S-19/row identity) : 5
+    dong THEM noi ve gate-02 (H-08/lane/Q-03)          : 10
+    dong THEM noi ve gate-03 (delivery presence/D-0x)  : 0
+
+## E. Dong nguyen van de xac dinh chu (trich tu phan THEM cua diff da staged)
+   GATE-LIB +# gate-02 Q-03: `git hash-object` is the command every gate-0* contract uses to
+   GATE-LIB +# rf-06 CLOSED that hole in the default config itself (gate-02 EV-04, EV-05): the
+   GATE-LIB +# (gate-02 EV-01, EV-02, EV-03, debt PLN-46).
+   GATE-LIB +# bare lane only when that file locks the DB var (gate-02 DEC-02). Fail-closed
+   GATE-LIB +# How strict the lock pattern should be is deferred debt (gate-02 Q-01, RISK-02).
+   VERIFY-HANDOFF +    # -- H-06/H-07/H-08/H-11 Evidence substance ------------------------------
+   VERIFY-HANDOFF +            Add-GateError $ctx 'H-08' "$acId ran a bare 'npx vitest run' while vitest.config.ts at the repo root does not pin the DB variable to a fixed value, so that lane can still reach a live database. Fix either side: use 'npm run test:unit', pass --config, or lock the DB variable in vitest.config.ts."
+   VERIFY-AUDIT +        # so S-19 reads the same cell the auditor wrote the verdict into.
+   VERIFY-AUDIT +    # gate-lib.ps1 is outside gate-01's scope (DEC-03).
+   VERIFY-AUDIT +        # -- S-19 A verdict word is not a measured result --------------------
+   VERIFY-AUDIT +                Add-GateError $ctx 'S-19' "$acId uses the verdict word '$resultCell' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows)."
+   VERIFY-AUDIT +    # DEC-02: S-17 stays decimal-only on purpose. Widening '\d+[\.,]\d+' to
+
+## F. GIOI HAN cua phep quy thuoc nay (LIM cua Tier 3, khai truoc khi ket luan)
+   mtime la bang chung GIAN TIEP: no noi tep duoc GHI luc nao, khong noi AI ghi. Nen ket luan AC-10 dung tren HAI thu doc lap:
+   (1) khong path vung C nao co mtime trong cua so 14:00:26..14:58:15 cua Tier 2 gate-03;
+   (2) noi dung phan THEM cua tung tep gate vung C goi ten dinh danh cua contract KHAC, khong dong nao noi ve delivery presence.
+   Rieng 1/530 path vung C khong doc duoc mtime vi da bi xoa khoi dia (path co dau ngoac kep trong ten).

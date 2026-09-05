@@ -1,0 +1,14 @@
+=== total staged (git diff --cached --name-only) ===
+343
+=== slug-dir paths staged for gate-02 ===
+18
+=== the 4 shared gate files: which carry a gate-02 content marker? ===
+gate-lib.ps1 Test-CellUsesNonCanonicalLane defn: 1
+verify-handoff.ps1 H-08 vitest.config.ts msg   : 1
+verify-audit.ps1 S-11 vitest.config.ts msg     : 2
+verify-gates.selftest.ps1 lane-premise cases   : 6
+=== gate-01-only marker in verify-audit (S-18/S-19) — shared module, NOT gate-02's content ===
+verify-audit S-18 tokens: 3
+verify-audit S-19 tokens: 1
+=== any staged src/app/prisma path (must be 0 for gate-02) ===
+2

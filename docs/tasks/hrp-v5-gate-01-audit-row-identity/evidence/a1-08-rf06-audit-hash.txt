@@ -1,0 +1,6 @@
+--- git hash-object rf-06/AUDIT.md (RUN1) ---
+1212bae740578cd10005e4c508b37d8c37afcdb0
+--- (RUN2) ---
+1212bae740578cd10005e4c508b37d8c37afcdb0
+--- git status --porcelain (that path) ---
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md

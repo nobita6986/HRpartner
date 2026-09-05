@@ -1,0 +1,100 @@
+STEP-08 / AC-10 - do lai dau tay EV-06 cuoi vong, do pham vi, `git add`, roi hai cong CUOI CUNG
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+Do luc: 2026-09-05 13:2x - 13:4x (Asia/Bangkok, gio host)
+
+=== A. DAU TAY SAU CUNG CUA SAU TEP GATE ===
+--- CMD: git hash-object .ai-pipeline/scripts/<ten tep>   (kem python getsize)
+  gate-lib.ps1               6daa689a33604f873f2e9f2181a741bfe4a55a9f   20302 byte  <- CUA TOI (Modules 1/2)
+  verify-gates.selftest.ps1  a6a7faeaf65dc490b0f597d21877230f4a8fc45e   33127 byte  <- CUA TOI (Modules 2/2)
+  verify-handoff.ps1         e1af8549b9dd73d8c569d66493b6e527fae021f5   18079 byte  <- CUA TOI (tep thong diep 1/2)
+  verify-audit.ps1           e1edaebac456da16cb618dca2607e7f46b1c4358   36095 byte  <- CUA TOI (tep thong diep 2/2)
+  verify-pipeline.ps1        1348bffe2adf3a5c247ecc1f3ed2525233b41db9    5120 byte  <- KHONG phai cua toi
+  verify-task.ps1            e36b83dfbf7c860e320d5409535b82001cab574e   15494 byte  <- KHONG phai cua toi
+
+Doi chieu voi STEP-01 (evidence/step01-fingerprint.txt):
+- Bon tep DAU: dau tay LECH so voi luc mo vong, dung y muon - do la ban giao cua vong nay.
+  Dau tay luc mo vong: gate-lib 43ada847..., selftest 9e1feb05..., verify-handoff 3997dd4f...,
+  verify-audit b6854802... (ban lech nguyen nhan A, xem LIM-01).
+- Hai tep CUOI: dau tay GIONG BYTE con so ma STEP-01 do luc mo vong VA giong con so EV-06 ma
+  hop dong anh em gate-01 da ghi trong step07-scope.txt cua no. Toi khong cham vao chung; chung
+  co trong porcelain vi luong Tier 1 khac de o do TRUOC khi vong nay bat dau.
+--- CMD: git log --oneline -1
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+  (dung HEAD ghi o truong Baseline cua hop dong va o step01-fingerprint.txt)
+
+=== B. PHAM VI TRUOC KHI `git add` ===
+--- CMD: git status --porcelain            EXIT=0, 520 dong (ca cay, ba luong)
+--- CMD: git diff --cached --name-only     EXIT=0, 292 dong (ca cay, ba luong)
+Loc hai lenh ay bang dung mot bieu thuc: bon tep gate cua toi HOAC tien to
+docs/tasks/hrp-v5-gate-02-lane-premise-correction/
+  porcelain -> 7 dong:
+    AM .ai-pipeline/scripts/gate-lib.ps1
+    MM .ai-pipeline/scripts/verify-audit.ps1
+    AM .ai-pipeline/scripts/verify-gates.selftest.ps1
+    AM .ai-pipeline/scripts/verify-handoff.ps1
+    A  docs/tasks/hrp-v5-gate-02-lane-premise-correction/TASK.md        <- cua Tier 1, toi khong sua
+    ?? docs/tasks/hrp-v5-gate-02-lane-premise-correction/HANDOFF.md
+    ?? docs/tasks/hrp-v5-gate-02-lane-premise-correction/evidence/      <- git gom thu muc untracked
+  cached -> 5 dong: bon tep gate (ban cua gate-01 dang nam trong index) cong TASK.md cua Tier 1.
+--- CMD: git status --porcelain -uall -- docs/tasks/hrp-v5-gate-02-lane-premise-correction
+18 dong: TASK.md (A, cua Tier 1) + HANDOFF.md + 16 tep evidence/*.txt (deu ??, cua toi).
+  Con so 16 khop dung so hang cua muc 6 Evidence Index trong HANDOFF.md.
+
+=== C. numstat WORKTREE so voi INDEX, bon tep cua toi ===
+--- CMD: git diff --numstat -- <bon tep gate>
+  38   6  .ai-pipeline/scripts/gate-lib.ps1
+   4   4  .ai-pipeline/scripts/verify-audit.ps1
+  53   5  .ai-pipeline/scripts/verify-gates.selftest.ps1
+   2   2  .ai-pipeline/scripts/verify-handoff.ps1
+Bon cap so nay la DELTA CUA VONG NAY, do bang cach so voi index (tuc voi ban giao cua gate-01),
+khong phai so voi HEAD. So voi HEAD thi con so se gom ca viec cua gate-01 - do la LIM-02.
+Git in bon canh bao "LF will be replaced by CRLF": core.autocrlf dang bat, nen o day khong dung
+`wc -c` de so voi kich thuoc blob. Kich thuoc byte o phan A do bang python che do 'rb'.
+
+=== D. SAU `git add`: PHAM VI CUOI, VA THU TU HAI CONG ===
+--- CMD: git add .ai-pipeline/scripts/gate-lib.ps1 .ai-pipeline/scripts/verify-handoff.ps1 .ai-pipeline/scripts/verify-audit.ps1 .ai-pipeline/scripts/verify-gates.selftest.ps1
+--- CMD: git add docs/tasks/hrp-v5-gate-02-lane-premise-correction
+Hai lenh, deu co pathspec. KHONG dung `git add -A`, KHONG dung `git add .` (R-01).
+--- CMD: git status --porcelain -uall -- docs/tasks/hrp-v5-gate-02-lane-premise-correction
+18 dong, TAT CA la 'A ' (cot thu hai trong) => worktree GIONG index o ca 18 path.
+--- CMD: git ls-files -s -- <bon tep gate>
+  6daa689a33604f873f2e9f2181a741bfe4a55a9f  gate-lib.ps1
+  e1edaebac456da16cb618dca2607e7f46b1c4358  verify-audit.ps1
+  a6a7faeaf65dc490b0f597d21877230f4a8fc45e  verify-gates.selftest.ps1
+  e1af8549b9dd73d8c569d66493b6e527fae021f5  verify-handoff.ps1
+Bon SHA nay GIONG bon SHA o phan A => byte toi giao chinh la byte da staged, khong phai ban khac.
+--- CMD: git diff --cached --name-only | wc -l
+309      (292 truoc vong nay + 17 path moi cua toi: HANDOFF.md va 16 tep evidence)
+--- CMD: loc 309 dong ay theo scope Tier 2
+22 dong = 4 tep gate + 18 path duoi slug. Dung bang tap ma AC-10 cho phep.
+--- CMD: trong 309 dong, dem path .ai-pipeline NGOAI scope cua toi
+1: .ai-pipeline/scripts/verify-pipeline.ps1
+   Dau tay 1348bffe2adf3a5c247ecc1f3ed2525233b41db9 = con so EV-06, giong het luc mo vong. Path ay
+   do luong Tier 1 khac stage TRUOC khi vong nay bat dau; toi khong cham vao. Dau tay la phep do
+   manh hon loi khai: sua mot byte thi hash phai lech.
+   (verify-task.ps1 dang la ' M' - sua o worktree, KHONG staged, cung khong phai cua toi:
+    e36b83dfbf7c860e320d5409535b82001cab574e = con so EV-06.)
+Con 287 path cached con lai thuoc cac luong khac (rf-05, test-01, rf-06, gate-01, gate-03, mot so
+tep goc cay). Khong dong nao trong so do do lenh cua toi tao ra: moi `git add` cua toi deu co
+pathspec la bon tep gate hoac tien to slug nay.
+
+=== E. HAI CONG CHAY CUOI CUNG ===
+Thu tu that, khong co lan sua tep nao chen giua:
+  1) sua tep cuoi: evidence/ac09-no-sentinel.txt
+  2) `git add` (hai lenh o phan D)
+  3) ban gate PRE-ROUND chay tren HANDOFF nay de lay RED-truoc cho AC-02 - lenh DOC, khong sua gi
+  4) powershell -NoProfile -File ./.ai-pipeline/scripts/verify-task.ps1     -> EXIT 0, RESULT: PASS
+  5) powershell -NoProfile -File ./.ai-pipeline/scripts/verify-handoff.ps1  -> EXIT 0, RESULT: PASS
+Nguyen van hai output o ac11-gates.txt; doi chieu buoc 3 voi buoc 5 o ac02-h08-silent.txt.
+R-04 duoc giu: ca hai cong goi bang `powershell -NoProfile -File`, khong dung pwsh, khong dung co
+ha execution policy.
+
+=== F. GIOI HAN ===
+- Day la anh chup mot thoi diem. Sau khi ghi phan D, E, F nay con dung MOT lan `git add` nua cho
+  ba tep: chinh tep nay, evidence/ac02-h08-silent.txt va evidence/ac11-gates.txt - ca ba duoi
+  docs/tasks/hrp-v5-gate-02-lane-premise-correction/** (LIM-10 cua HANDOFF).
+- `git add` verify-audit.ps1 lam index cua path ay cong don viec cua HAI vong (gate-01 va gate-02).
+  Ai commit sau nay phai dung `git commit -- <pathspec>` va doc diffstat cua chinh commit do
+  truoc khi push (LIM-02).
+- Con so 520 va 292 o phan B la cua CA CAY, gom viec cua nhieu luong. Chung khong phai phep do ve
+  toi; phep do ve toi la con so 22 o phan D.

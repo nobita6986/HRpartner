@@ -1,0 +1,10 @@
+# AC-09 - evidence/ carries no Postgres connection-string sentinel (R-02)
+# pattern used (regex form, does not self-match): postgres(ql)?://
+
+$ git diff --cached --name-only | grep -c '^docs/tasks/hrp-v5-gate-02-lane-premise-correction/evidence/'
+16
+
+$ grep -rEc 'postgres(ql)?'://' evidence/   (count of real connection-string hits)
+0
+
+RESULT: 0 real connection-string occurrence(s) under evidence/. 0 = clean, R-02 honoured.

@@ -1,0 +1,62 @@
+AC-03 / RQ-02 - fixture vitest.config.ts KHONG khoa bien DB thi CUNG o lane tran ay VAN lam do H-08
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+
+Phuong phap ma AC-03 ghi: "Case selftest nhanh chan, doc dong cua case do trong output".
+Case do la `verify-gates.selftest.ps1:574`. Do tren byte cuoi: selftest blob
+a6a7faeaf65dc490b0f597d21877230f4a8fc45e, gate-lib blob 6daa689a33604f873f2e9f2181a741bfe4a55a9f.
+
+=== A. CASE, NGUYEN VAN (dong 574-578) ===
+  Add-Case -Name 'H-08 lane tran + vitest.config.ts KHONG khoa bien DB thi VAN DO' -Gate handoff -Expect FAIL -Token 'H-08' `
+      -Why 'gate-02 RQ-02, RISK-02: nua con lai cua mach kiem. Phep tha phai CO DIEU KIEN, neu khong thi mach kiem mat han hieu luc' `
+      -Mutate { param($c)
+          $c.Handoff = $c.Handoff.Replace('| `AC-01` | `npm run test:unit` |', '| `AC-01` | `npx vitest run` |')
+          $c.VitestConfig = $vitestConfigUnlocked }
+
+Fixture KHONG khoa, nguyen van (noi dung here-string, dong 316-322):
+  export default {
+    test: {
+      environment: 'node',
+      env: { DATABASE_URL: process.env.DATABASE_URL },
+    },
+  };
+
+=== B. DONG CUA CASE DO TRONG OUTPUT ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1
+EXIT=0
+  cases: 39 total (7 green, 32 red), failures: 0
+Dong ket qua cua case, nguyen van:
+  [  ok  ] handoff FAIL H-08 lane tran + vitest.config.ts KHONG khoa bien DB thi VAN DO
+
+Doc dong nay ra hai dieu:
+  - chu `FAIL` la KY VONG cua case: cong PHAI do.
+  - `[  ok  ]` la KET QUA khang dinh: actual == Expect, VA `-Token 'H-08'` da thay trong output.
+    Harness chi bao `ok` khi ca hai dung, nen dong nay khong the xanh bang cach cong do vi mot
+    mach kiem KHAC.
+
+=== C. DONG [FAIL] H-08 NGUYEN VAN, BOC TU BAN -Verbose2 ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1 -Verbose2
+EXIT=0
+Khoi cua case nay bat dau o dong 757 (dong `[  ok  ]`) va output cong cua no nam NGAY DUOI:
+  761: [OK]   H-01 HANDOFF.md size 1828 bytes.
+  767: [FAIL] H-08 AC-01 ran a bare 'npx vitest run' while vitest.config.ts at the repo root does not pin the DB variable to a fixed value, so that lane can still reach a live database. Fix either side: use 'npm run test:unit', pass --config, or lock the DB variable in vitest.config.ts.
+  775: RESULT: FAIL (1 error(s), 0 warning(s)).
+
+DUNG MOT loi trong ca lan chay, va loi ay la `H-08`. Khong mach kiem nao khac do keo theo.
+
+=== D. PHEP DOI CHIEU QUYET DINH: CUNG ARTIFACT, KHAC CAU HINH ===
+Ba case handoff lane deu bao `H-01 HANDOFF.md size 1828 bytes` - cung mot ban giao, cung so byte:
+  case 570 (cau hinh KHOA)      -> RESULT: PASS.                          khong dong [FAIL] H-08
+  case 574 (cau hinh KHONG khoa)-> RESULT: FAIL (1 error(s), 0 warning(s)). co dong [FAIL] H-08
+  case 580 (VANG tep cau hinh)  -> RESULT: FAIL (1 error(s), 0 warning(s)). co dong [FAIL] H-08
+Thu duy nhat doi giua ba lan la tep `vitest.config.ts` o goc repo fixture. Do dung la menh de ma
+RQ-01 va RQ-02 doi: phep tha CO DIEU KIEN, khong phai phep tha vo dieu kien.
+
+=== E. GIOI HAN ===
+- Case nay do NHANH CHAN qua cong ban giao (`H-08`). Nhanh chan qua cong audit (`S-11`) khong co
+  case rieng: STEP-05 chi doi mot case `H-08` va them hai case `H-08`. Hai site `S-11` dung CHUNG
+  mot ham voi `H-08` (do duoc: `grep -c 'Test-CellUsesNonCanonicalLane'` = 1 o gate-lib - dong DINH
+  NGHIA ham, khong phai loi goi - 2 loi goi o verify-audit, 1 loi goi o verify-handoff), nen nhanh
+  chan cua `S-11` di qua dung khoi lenh ay. Day la
+  suy luan tu duong goi, khong phai mot phep do rieng - ghi thanh `LIM` trong ban giao.
+- Chuoi trong fixture khong khoa la `process.env.DATABASE_URL`, mot bieu thuc, khong phai gia tri
+  that. Khong connection string, khong host, khong password (R-02).

@@ -1,0 +1,71 @@
+STEP-02 - moc TRUOC round cua bo selftest, chay TRUOC khi sua mot byte nao
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+Do luc: 2026-09-05 11:36:47 (Asia/Bangkok, gio host) - dau thoi gian nam trong chinh output.
+
+Tep nay duoc GHI muon, sau STEP-07. Do la mot gioi han that va no o phan F. Nhung con so trong
+tep khong phai loi khai: no boc lai duoc bang HAI duong doc lap, ca hai o duoi.
+
+=== A. LAN CHAY THAT CUA STEP-02, TREN BYTE TRUOC KHI TOI SUA ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1
+Ba dong dau, nguyen van:
+  GATE SELF-TEST
+    fixture repo: C:\Users\Admin\AppData\Local\Temp\hrp-gate-selftest-20260905-113647-25161
+  (dong trong)
+Ba dong cuoi, nguyen van:
+  cases: 37 total (5 green, 32 red), failures: 0
+    fixture repo removed.
+  RESULT: PASS. Every gate rejects the historical defect it was written for, and still accepts a clean artifact.
+
+37 dong `[  ok  ]`, 0 dong `[ MISS ]`. Dau tay bon tep gate LUC AY (= trang thai cay luc gate-02
+mo, xem STEP-01 va step07-regression.txt phan dau):
+  gate-lib.ps1               43ada847f9bd84494f80114de01f9f0b1b05c816   = EV-06
+  verify-handoff.ps1         3997dd4ff896ea9f7cebdf40a247bcb269ab23e5   = EV-06
+  verify-audit.ps1           b6854802e329b391a70475eef8920255f0b7d639   = ban GIAO cua gate-01
+  verify-gates.selftest.ps1  9e1feb05377cc35dbff9793c502234dcbef4f266   = ban GIAO cua gate-01
+
+=== B. HAI DONG LANE O MOC NAY DEU DO, NGUYEN VAN ===
+  [  ok  ] audit   FAIL S-11 d?ng lane npx vitest run tr?n
+  [  ok  ] handoff FAIL H-08 HANDOFF d?ng lane npx vitest run tr?n
+Hai dong nay la KY VONG FAIL cua ban gate cu, tuc luc ay hai mach kiem con do tren fixture ay.
+Dau `?` la ban capture console lam mo dau tieng Viet (`dung`, `tran`), khong phai ky tu trong ma
+nguon; ten case nguyen van co dau nam trong verify-gates.selftest.ps1.
+
+=== C. DOI CHIEU EV-07: MOC GHI TRONG CONTRACT DA HET HIEU LUC ===
+  EV-07 ghi:  cases: 33 total (3 green, 30 red), failures: 0
+  do duoc:    cases: 37 total (5 green, 32 red), failures: 0
+  lech:       tong +4, green +2, red +2
+Nguyen nhan do duoc, khong phai suy dien: hop dong ANH EM cung lo la
+hrp-v5-gate-01-audit-row-identity da dong TRUOC mon nay va scope cua no gom chinh
+verify-gates.selftest.ps1; HANDOFF.md cua no muc 1 ghi `cases: 33 ... len cases: 37 ...`, va dau
+tay selftest o phan A dung bang ban giao cua no (`9e1feb05`).
+Day dung la nhanh thu hai cua AC-07: "Neu hop dong anh em da dong truoc theo DEC-09 thi moc la
+dong `cases:` do CHINH STEP-02 do". Moc cua vong nay vi vay la 37, khong phai 33.
+
+=== D. BOC LAI DUOC - DUONG DOC LAP THU HAI ===
+Ban copy nguyen trang thai cay luc gate-02 mo duoc giu o $env:TEMP\glx\gate02\open (bon dau tay
+o phan A), va chay lai o STEP-07:
+--- CMD: powershell -NoProfile -File $env:TEMP\glx\gate02\open\verify-gates.selftest.ps1 -Verbose2
+EXIT=0
+  dong 865 cua ban capture 868 dong: cases: 37 total (5 green, 32 red), failures: 0
+Cung ba con so 37/5/32. Tuc moc nay do lai duoc tu byte da ghim dau tay, khong phu thuoc vao tep
+capture cua lan chay 11:36:47.
+Trong cung ban capture ay, hai dong DO nguyen van cua tien de cu:
+  295: [FAIL] S-11 AC-01 used a bare 'npx vitest run'. That lane reads DATABASE_URL from .env (production) - use 'npm run test:unit' or pass --config.
+  746: [FAIL] H-08 AC-01 ran a bare 'npx vitest run'. That lane lacks the unit config and reads DATABASE_URL from .env (production). Use 'npm run test:unit'.
+
+=== E. DOI CHIEU MOC NAY VOI CON SO SAU ROUND ===
+  truoc round (day):        cases: 37 total (5 green, 32 red), failures: 0
+  sau round (STEP-06):      cases: 39 total (7 green, 32 red), failures: 0
+  delta:                    tong +2, green +2, red 0
+Dieu kien cua AC-07 nhanh DEC-09 la tong tang it nhat 2: 39 - 37 = +2, DAT dung bang nguong.
+
+=== F. GIOI HAN ===
+- Tep nay ghi SAU STEP-03 den STEP-07. Ai kiem nen doi xu voi phan A nhu mot ban capture ghi lai,
+  con phan D moi la phep do LAP LAI DUOC. Hai duong cho cung ba con so 37/5/32, va hai tep
+  step06-selftest-after.txt cung step07-regression.txt da dan con so ay TRUOC khi tep nay ton tai
+  (chung cung ghi ro no den tu step02) - nen day khong phai con so duoc dat nguoc lai cho khop.
+- Ban capture o phan A khong co dong `EXIT=` rieng; bang chung ve ma thoat cua no la dong
+  `RESULT: PASS` cong `failures: 0`, tuc nhanh exit 0 cua Close-GateContext. Ma thoat `0` do TRUC
+  TIEP thi nam o phan D (`EXIT=0`) va o STEP-06.
+- `failures: 0` chi noi actual == Expect o moi case; no khong noi ly le cua tung case la dung.
+- Harness ghi fixture duoi $env:TEMP roi xoa, khong ghi gi trong repo (dung Note cua EV-07).

@@ -1,0 +1,72 @@
+AC-09 / RQ-05 - detector bao dong cho mot tep TRACKED dai 0 byte, chung minh bang fixture duoi tam
+Task: hrp-v5-gate-03-delivery-vanish-forensics, spec v1.2, execution round 1
+Detector: verify-delivery-presence.ps1 = aaab5c2c63a641eee2bcf7ce3f692dd304d7da68, 13916 byte.
+
+Lop su co nay co that va co lich su trong du an: mot AUDIT.md bi ghi de bang mot buffer editor
+rong nen con 0 byte, trong khi moi cong van xanh vi tep VAN TON TAI. Mot cong chi kiem su ton
+tai se khong bao gio thay. Nen D-03 doc them so BYTE.
+
+=== A. DUNG FIXTURE, KHONG TAO TEP RONG TRONG REPO ===
+AC-09 viet: "Chung minh bang mot fixture duoi thu muc tam, KHONG bang cach tao tep rong trong repo".
+--- CMD: mkdir -p <tmp>/glx/gate03/fx/docs/tasks/fx-zero  <tmp>/glx/gate03/fx/src/empty
+--- CMD: cd <fx> ; git init -q .
+EXIT=0
+--- CMD: git rev-parse --show-toplevel   -> C:/Users/Admin/AppData/Local/Temp/glx/gate03/fx
+--- CMD: git rev-parse --git-dir         -> .git
+Fixture la mot repo git DOC LAP, khong phai mot thu muc con cua repo that.
+--- CMD: python kiem tien to duong dan
+    fixture : C:\Users\Admin\AppData\Local\Temp\glx\gate03\fx
+    repo    : C:\CodeApp\HrP
+    fixture nam trong repo? False
+
+Chung minh KHONG tao tep rong nao trong repo that:
+--- CMD: find docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics -type f -size 0 | wc -l   -> 0
+--- CMD: find .ai-pipeline/scripts -type f -size 0 | wc -l                                 -> 0
+Hai vung duy nhat toi ghi vao deu khong co mot tep 0 byte nao.
+
+=== B. DUNG TEP 0 BYTE TRONG FIXTURE, VA LAM CHO NO TRACKED ===
+--- CMD: : > src/empty/zero-byte-deliverable.ts        (tao tep dai 0 byte)
+--- CMD: git add src/empty/zero-byte-deliverable.ts
+EXIT=0
+--- CMD: git status --porcelain
+A  src/empty/zero-byte-deliverable.ts
+?? docs/
+?? src/ondisk/
+--- CMD: python os.path.getsize('src/empty/zero-byte-deliverable.ts')  -> 0 byte
+--- CMD: git cat-file -s :src/empty/zero-byte-deliverable.ts           -> 0
+Hai phep do doc lap: 0 byte tren dia VA 0 byte trong index. Chu "A " o cot mot nghia la tep da
+duoc theo doi. Day dung la ca AC-09 doi: TRACKED va dai 0 byte, khong phai untracked.
+
+Contract fixture khai dung path ay o muc Modules:
+| Modules | `src/empty/zero-byte-deliverable.ts` |
+
+=== C. CHAY DETECTOR ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-delivery-presence.ps1 -TaskPath <fx>\docs\tasks\fx-zero\TASK.md -RepoRoot <fx>
+EXIT=2
+DELIVERY PRESENCE GATE
+  subject: docs/tasks/fx-zero/TASK.md
+  repo   : C:\Users\Admin\AppData\Local\Temp\glx\gate03\fx
+  source : control field (Modules/Deliverables)
+
+  [OK]   D-01 contract declares 1 deliverable path(s) (1 from the control field).
+  [FAIL] D-03 src/empty/zero-byte-deliverable.ts EMPTY: worktree 0 byte(s), index 0 byte(s). A tracked path that is 0 bytes is the shape a delivery takes when an empty editor buffer is saved over it.
+
+RESULT: FAIL (1 error(s), 0 warning(s)).
+A path this contract declares as delivered is missing or empty.
+
+=== D. DOI CHIEU AC-09 ===
+  detector bao dong cho tep tracked dai 0 byte                    DAT  (dong D-03, exit 2)
+  chung minh bang fixture duoi thu muc tam                        DAT  (repo git rieng duoi $TEMP)
+  KHONG tao tep rong trong repo                                   DAT  (hai lenh find tra 0)
+Nhan la EMPTY, mot chuoi RIENG, khac ca MISSING_BOTH khac ca MISSING_INDEX. Ma kiem cung rieng:
+D-03, khong phai D-02. Nen mot nguoi doc log phan biet duoc "khong co" voi "co ma rong".
+
+=== E. GIOI HAN ===
+- Nguong la 0 byte, khong phai "nho bat thuong". Mot tep bi cat con 3 byte se doc la PRESENT.
+  Do la co y: mot nguong doan (vi du "duoi 100 byte") se bao dong oan tren nhieu tep hop le.
+  Lop su co da tung xay ra trong du an la 0 byte, dung con so ay.
+- Detector khong doc noi dung nen khong biet 1108 byte kia la tsconfig dung hay rac.
+- Fixture bi xoa hay khong khong anh huong den ket luan: ai muon do lai chi can dung ba lenh
+  o phan A va B roi chay lai lenh o phan C. Ba lenh ay khong cham vao repo that.
+- `git add` trong fixture KHONG can `user.email` vi khong commit. Toi khong commit o dau ca,
+  ke ca trong fixture (R-01 chi noi ve repo that, nhung khong commit thi khong phai suy nghi).

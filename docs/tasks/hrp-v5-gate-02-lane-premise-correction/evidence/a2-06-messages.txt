@@ -1,0 +1,7 @@
+--- H-08 (verify-handoff.ps1) + S-11 x2 (verify-audit.ps1): required/forbidden substrings ---
+verify-handoff H-08 'vitest.config.ts' count: 1
+verify-audit  S-11 'vitest.config.ts' count: 2  (per-line below)
+2
+FORBIDDEN old-premise across all three messages:
+  'reads DATABASE_URL from' : 0
+  '.env (production)'       : 0

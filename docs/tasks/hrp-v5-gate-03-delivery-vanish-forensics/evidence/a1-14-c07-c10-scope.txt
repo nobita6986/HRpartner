@@ -1,0 +1,36 @@
+== C-07/C-10: PHAM VI + VUNG CAM (Tier 3 tu do) ==
+TIME: 2026-09-05 15:47:35 SEAST
+
+CMD: git rev-parse HEAD ; git log --oneline 31625c4..HEAD
+31625c4bb4ced393661684c2c8cb96f1e42bf054
+commits_since_baseline=[0]
+
+CMD: git diff --name-only 31625c4..HEAD  (C-10 nguyen van)
+files_baseline_to_HEAD=[0]
+
+CMD: git status --porcelain ; git diff --cached --name-only  -- loc VUNG CAM
+  zone=[new-ui/] dirty_lines=1 staged_lines=0
+  zone=[new-ui.md] dirty_lines=1 staged_lines=0
+  zone=[public/index.html] dirty_lines=1 staged_lines=0
+  zone=[scratch/] dirty_lines=188 staged_lines=0
+
+CMD: git diff --cached --name-only | grep -c '^\.ai-pipeline/'
+staged_under_ai_pipeline=6
+    .ai-pipeline/scripts/gate-lib.ps1
+    .ai-pipeline/scripts/verify-audit.ps1
+    .ai-pipeline/scripts/verify-delivery-presence.ps1
+    .ai-pipeline/scripts/verify-gates.selftest.ps1
+    .ai-pipeline/scripts/verify-handoff.ps1
+    .ai-pipeline/scripts/verify-pipeline.ps1
+
+CMD: git diff --cached --name-only | grep -c '^docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/'
+staged_under_gate03=16
+
+CMD: git diff --cached --name-only -- '*.ts' '*.tsx' | wc -l  (bao nhieu tep TS trong footprint gate-03?)
+staged_ts_under_gate03=0
+staged_prisma_migrations_in_footprint=0
+staged_app_routes_in_footprint=0
+
+CMD: grep -cE 'prisma|PrismaClient|withIdempotency|enqueueOutbox' .ai-pipeline/scripts/verify-delivery-presence.ps1
+0
+0

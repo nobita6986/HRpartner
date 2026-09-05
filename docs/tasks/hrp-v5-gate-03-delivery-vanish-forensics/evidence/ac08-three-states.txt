@@ -1,0 +1,101 @@
+AC-08 / RQ-06 - BA trang thai, ba dong in ra, ba nhan khac nhau theo mat chu
+Task: hrp-v5-gate-03-delivery-vanish-forensics, spec v1.2, execution round 1
+Detector: verify-delivery-presence.ps1 = aaab5c2c63a641eee2bcf7ce3f692dd304d7da68, 13916 byte.
+
+=== A. CA MOT: contract rf-05 THAT, tsconfig.json DU o ca hai noi, exit 0 ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-delivery-presence.ps1 -TaskPath docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+EXIT=0
+DELIVERY PRESENCE GATE
+  subject: docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+  repo   : C:\CodeApp\HrP
+  source : control field (Modules/Deliverables)
+
+  [OK]   D-01 contract declares 2 deliverable path(s) (2 from the control field).
+  [OK]   D-02 tsconfig.json PRESENT in worktree AND index (worktree 1108 B, index 1052 B).
+  [OK]   D-02 src/shared/toolchain/tsc-program-boundary.static.test.ts PRESENT in worktree AND index (worktree 13206 B, index 13206 B).
+
+RESULT: PASS.
+Every path this contract declares as delivered is present in the working tree and in the index.
+
+DONG CHUNG MINH CA MOT (nguyen van):
+  [OK]   D-02 tsconfig.json PRESENT in worktree AND index (worktree 1108 B, index 1052 B).
+Chu PRESENT, hai chu "worktree AND index", hai so byte khac 0. Khong bao dong oan. Day dung la
+dieu EV-13 doi sau khi ban giao tro lai: KHONG duoc bao VANG.
+
+Doi chieu voi ba con so cua EV-13, do lai ngay trong lan nay:
+--- CMD: git hash-object tsconfig.json                  -> 53cc484886ddf4164f0741739af42e75ad913528
+--- CMD: git diff --cached --numstat -- tsconfig.json   -> 12   2   tsconfig.json
+--- CMD: git status --porcelain -- tsconfig.json        -> "M  tsconfig.json"  (staged, cot hai TRONG)
+--- CMD: git cat-file -s 53cc484886ddf4164f0741739af42e75ad913528  -> 1052
+Con so 1052 ma detector in ra o cot index BANG DUNG so byte cua blob ma EV-13 ghim. Nen no doc
+dung doi tuong ay, khong phai mot ban khac. Con 1108 la ban tren dia: lech 56 byte vi
+core.autocrlf, dung bang so dong cua tep. Cong nay KHONG doi hai so bang nhau, chi doi khac 0.
+
+TOI KHONG CHAM rf-05, chung minh bang dau tay chu khong bang loi khai:
+--- CMD: git hash-object docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+    do TRUOC lan chay:  362195b96737f81f676a81fa68e72233c6621c13
+    do SAU  lan chay:  362195b96737f81f676a81fa68e72233c6621c13     giong het
+--- CMD: git status --porcelain -- docs/tasks/hrp-v5-rf-05-tsc-program-boundary/
+    193 dong, va 0 dong nao co chu M o COT THU HAI, tuc worktree == index o ca 193 path.
+--- CMD: git status --porcelain -- src/shared/toolchain/
+    A  src/shared/toolchain/tsc-program-boundary.static.test.ts
+    A  src/shared/toolchain/vitest-default-lane.static.test.ts
+Hai hang rao van staged. Toi khong restore, khong stage, khong xoa, khong ghi mot byte nao vao
+vung cua rf-05. Ba lenh tren deu la lenh DOC.
+
+=== B. CA HAI: mot path KHONG ton tai o dau ca -> vang o CA HAI noi ===
+Fixture: C:\Users\Admin\AppData\Local\Temp\glx\gate03\fx\docs\tasks\fx-missing\TASK.md
+Repo fixture rieng, dung `git init` duoi thu muc tam. Khong dinh gi den repo that.
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-delivery-presence.ps1 -TaskPath <fx>\docs\tasks\fx-missing\TASK.md -RepoRoot <fx>
+EXIT=2
+  [OK]   D-01 contract declares 2 deliverable path(s) (2 from the control field).
+  [FAIL] D-02 src/ghost/never-delivered.ts MISSING_BOTH: absent from the working tree AND absent from the index. The contract declares it delivered; nothing at this path is delivered.
+  [FAIL] D-02 src/ondisk/staged-never.ts MISSING_INDEX: present in the working tree but absent from the index. Nothing looks wrong on disk, so this is the loss no one sees; 'git add' the path or drop it from the declaration.
+  RESULT: FAIL (2 error(s), 0 warning(s)).
+
+DONG CHUNG MINH CA HAI (nguyen van):
+  [FAIL] D-02 src/ghost/never-delivered.ts MISSING_BOTH: absent from the working tree AND absent from the index.
+Do TRUOC lan chay de khong phai tin loi khai:
+--- CMD: python os.path.exists('src/ghost/never-delivered.ts')  -> False
+    (thu muc src/ghost cung khong duoc tao. Path nay khong ton tai o dau ca.)
+
+=== C. CA BA: path CO trong cay lam viec nhung CHUA vao index -> vang O INDEX ===
+DONG CHUNG MINH CA BA (nguyen van, cung lan chay o phan B):
+  [FAIL] D-02 src/ondisk/staged-never.ts MISSING_INDEX: present in the working tree but absent from the index.
+Do TRUOC lan chay:
+--- CMD: python os.path.getsize('src/ondisk/staged-never.ts')  -> 25 byte   (CO tren dia)
+--- CMD: git status --porcelain  (trong fixture)  -> "?? src/ondisk/"       (chua vao index)
+
+Ca ba do THEM MOT LAN NUA tren mot path cua REPO THAT, bang dung chuoi lenh AC ghi va KHONG
+co tham so -RepoRoot:
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-delivery-presence.ps1 -TaskPath C:\Users\Admin\AppData\Local\Temp\glx\gate03\fx-mainrepo-TASK.md
+EXIT=2
+  [FAIL] D-02 docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/evidence/never-was-delivered.ts MISSING_BOTH: ...
+  [FAIL] D-02 docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/evidence/step05-detector-src.txt MISSING_INDEX: ...
+Do TRUOC lan chay: step05-detector-src.txt la "??" trong `git status --porcelain`, `git ls-files`
+tra 0 dong, va `test -e` noi CO tren dia. Ba phep do do dung dinh nghia cua ca ba.
+(Path ay duoc `git add` o STEP-07 nen lan chay nay khong tai lap duoc nua sau do; day la ly do
+ no duoc do TRUOC, va la ly do phan B con giu ban fixture tai lap duoc bat ky luc nao.)
+
+=== D. HAI NHAN KHAC NHAU THEO MAT CHU ===
+  ca hai:  MISSING_BOTH    12 ky tu
+  ca ba :  MISSING_INDEX   13 ky tu
+  bang nhau? False
+Khac ca do dai va khac ca ky tu. AC-08 doi dung dieu nay: mot nguoi doc ban in phai phan biet
+duoc "chua bao gio duoc giao" voi "co tren dia nhung khong vao index". Nhan thu ba MISSING_WORKTREE
+va nhan thu tu EMPTY cung la hai chuoi rieng; xem step05-detector-src.txt phan C.
+
+=== E. DOI CHIEU AC-08 ===
+  ca mot  rf-05 that, tsconfig.json doc la DU o ca hai noi, exit 0     DAT
+  ca hai  path khong ton tai o dau ca, doc la vang o CA HAI            DAT
+  ca ba   path co tren dia chua vao index, doc la vang O INDEX         DAT
+  nhan ca ba KHAC nhan ca hai theo mat chu                             DAT
+Ba dong in ra o phan A, B, C deu la ban sao nguyen van tu console, khong phai loi tom tat.
+
+=== F. GIOI HAN ===
+- Ca hai va ca ba dung fixture chu khong dung mot su co song, vi EV-13 da dong BLK-02: trong
+  repo nay khong con ca vang mat nao. Do la dieu DEC-05 va EV-13 noi truoc, khong phai toi tranh.
+- Ca mot doc index dung chung voi hai luong khac. Neu ai bo staged tsconfig.json thi lan chay
+  nay se ra MISSING_INDEX - va do se la mot bao dong DUNG, khong phai loi cua detector.
+- Detector khong biet noi dung. tsconfig.json doc la PRESENT vi no dai 1108 byte, khong vi no
+  dung. Tinh dung sai cua ban giao rf-05 thuoc audit cua rf-05, khong thuoc cong nay.

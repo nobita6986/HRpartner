@@ -1,0 +1,35 @@
+LOG CORPUS FREEZE - index (Step 3)
+taken : 2026-09-05 08:26:28 Asia/Bangkok
+
+relative path                                                            cut bytes   lines   kept redact redaction ids          has tsconfig
+------------------------------------------------------------------------ --------- ------- ------ ------ ---------------------- ------------
+20260904T080100/window1/exthost/Anthropic.claude-code/Claude VSCode.log    2691970   29732      0      0 -                      no
+20260904T080100/window1/exthost/vscode.git/Git.log                           74939     612      0      0 -                      no
+20260904T080100/window2/exthost/Anthropic.claude-code/Claude VSCode.log     648106    7329     66      0 -                      yes
+20260904T080100/window2/exthost/vscode.git/Git.log                           92109     749      0      0 -                      no
+20260904T184639/window1/exthost/Anthropic.claude-code/Claude VSCode.log      54198     420      0      0 -                      no
+20260904T184639/window1/exthost/vscode.git/Git.log                            5991      58      0      0 -                      no
+20260904T184639/window2/exthost/Anthropic.claude-code/Claude VSCode.log        207       4      0      0 -                      no
+20260904T184639/window2/exthost/vscode.git/Git.log                             532       6      0      0 -                      no
+20260904T184723/window1/exthost/Anthropic.claude-code/Claude VSCode.log      52387     385      0      0 -                      no
+20260904T184723/window1/exthost/vscode.git/Git.log                            6263      60      0      0 -                      no
+20260904T184723/window2/exthost/Anthropic.claude-code/Claude VSCode.log     649952    7123    620      0 -                      yes
+20260904T184723/window2/exthost/vscode.git/Git.log                           25314     214      0      0 -                      no
+20260904T184723/window3/exthost/Anthropic.claude-code/Claude VSCode.log    2035676   20938     14      0 -                      no
+20260904T184723/window3/exthost/vscode.git/Git.log                           30988     259      0      0 -                      no
+20260904T184723/window4/exthost/Anthropic.claude-code/Claude VSCode.log    2082393   21512    701      1 NEON_PW=1              yes
+20260904T184723/window4/exthost/vscode.git/Git.log                           73755     602      0      0 -                      no
+20260904T234313/window1/exthost/Anthropic.claude-code/Claude VSCode.log     201977    1704      0      0 -                      no
+20260904T234313/window1/exthost/vscode.git/Git.log                            6913      66      0      0 -                      no
+20260904T234313/window2/exthost/Anthropic.claude-code/Claude VSCode.log     193154    1813      0      0 -                      no
+20260904T234313/window2/exthost/vscode.git/Git.log                            6790      65      0      0 -                      no
+20260905T075944/window1/exthost/Anthropic.claude-code/Claude VSCode.log     487162    5187      0      0 -                      no
+20260905T075944/window1/exthost/vscode.git/Git.log                            8154      76      0      0 -                      no
+20260905T075944/window2/exthost/Anthropic.claude-code/Claude VSCode.log     396540    4319    108      0 -                      no
+20260905T075944/window2/exthost/vscode.git/Git.log                            7503      70      0      0 -                      no
+
+files with content : 24
+total lines kept   : 1509
+total lines redacted: 1
+
+method: byte cut at the size recorded in Step 1; extraction is open(p,"rb").read(N).

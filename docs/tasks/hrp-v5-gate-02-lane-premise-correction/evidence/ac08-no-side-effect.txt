@@ -1,0 +1,124 @@
+AC-08 / RQ-06 - than ham predicate: bon chuoi .env, Invoke-WebRequest, npx, npm deu bang 0
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+Do tren byte cuoi: gate-lib.ps1 = 6daa689a33604f873f2e9f2181a741bfe4a55a9f
+
+=== A. KHOANG DO, DINH NGHIA TRUOC KHI DEM ===
+"Than ham predicate" o day la ham `Test-CellUsesNonCanonicalLane` sau round: gate-lib.ps1 dong
+358 (`function ...`) den dong 370 (dau `}` dong ham). 13 dong, 842 byte.
+--- CMD: sed -n '358,370p' .ai-pipeline/scripts/gate-lib.ps1 > body.txt
+--- CMD: grep -c '' body.txt   -> 13
+Nguyen van khoang do:
+  function Test-CellUsesNonCanonicalLane {
+      param([string]$Cell, [string]$RepoRoot = '')
+      if (-not [regex]::IsMatch($Cell, $script:GateBareLanePattern, 'IgnoreCase')) { return $false }
+      if ([regex]::IsMatch($Cell, $script:GateLaneConfigFlagPattern, 'IgnoreCase')) { return $false }
+      $root = $RepoRoot
+      if ([string]::IsNullOrWhiteSpace($root)) { $root = Get-RepoRoot -ScriptRoot $PSScriptRoot }
+      $configPath = Join-Path $root $script:GateDefaultLaneConfigFile
+      if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) { return $true }
+      $configText = ''
+      try { $configText = Get-Content -LiteralPath $configPath -Raw -ErrorAction Stop } catch { return $true }
+      if ([string]::IsNullOrWhiteSpace($configText)) { return $true }
+      return (-not [regex]::IsMatch($configText, $script:GateDefaultLaneLockPattern))
+  }
+
+=== B. BON PHEP DEM TREN DUNG KHOANG DO ===
+Dem bang FIXED string (`grep -F`), khong bang regex - ly do o phan G.
+  chuoi              so DONG khop    so LAN xuat hien
+  .env                     0                0
+  Invoke-WebRequest        0                0
+  npx                      0                0
+  npm                      0                0
+Bon con so bang 0 theo CA HAI cach dem. AC-08 viet "so lan xuat hien", nen cot phai la cot thu hai;
+cot thu nhat de nguoi do lai bang chinh `grep -c` ma phuong phap cua AC ghi cung ra cung ket luan.
+
+=== C. KHAI THANG: CHUOI `npx` KHONG BIEN MAT, NO CHUYEN CHO ===
+Neu mo rong khoang len 353-370, tuc gom bon hang so dat ten dat NGAY TREN ham:
+  chuoi              so DONG khop    so LAN xuat hien
+  .env                     0                0
+  Invoke-WebRequest        0                0
+  npx                      1                1     <-- dong 353
+  npm                      0                0
+Dong 353 nguyen van:
+  $script:GateBareLanePattern        = 'npx\s+vitest\s+run'
+Do la MAU nhan dang lane, va no phai ton tai - neu khong thi mach kiem khong con bat duoc gi. AC-08
+gioi han khoang do o THAN HAM, va sau round mau ay nam ngoai than ham vi da duoc dat ten thanh hang
+so. Toi ghi ro dieu nay de khong ai doc con so 0 thanh "predicate khong con nhan ra lane tran".
+Bang chung nguoc lai, do o `ac03-h08-still-red.txt` va `ac04-fail-closed.txt`: predicate VAN do.
+
+=== D. TRUOC ROUND: CHINH BON CHUOI AY, TREN BAN EV-06 ===
+Ban truoc round la gate-lib.ps1 blob 43ada847f9bd84494f80114de01f9f0b1b05c816 (= EV-06), boc ra thu
+muc tam bang `git cat-file -p`. Ham cu nam o dong 334-338, 5 dong, nguyen van:
+  function Test-CellUsesNonCanonicalLane {
+      param([string]$Cell)
+      if (-not [regex]::IsMatch($Cell, 'npx\s+vitest\s+run', 'IgnoreCase')) { return $false }
+      return (-not [regex]::IsMatch($Cell, '--config', 'IgnoreCase'))
+  }
+Bon phep dem tren khoang 334-338 (than ham CU):
+  .env 0    Invoke-WebRequest 0    npx 1    npm 0
+Tuc TRUOC round, than ham co chuoi `npx` (mau viet inline). SAU round no bang 0 vi mau da ra hang so.
+
+Va day la con so dang doc nhat cua ca AC nay - ba dong comment CU, dong 331-333 cua ban EV-06,
+nguyen van:
+  # go-live-01 BLK-01 and go-live-13 F-04: bare `npx vitest run` reads DATABASE_URL
+  # from .env (production) and fails component tests wrongly. Canonical lane is
+  # `npm run test:unit`, or vitest with an explicit --config.
+Bon phep dem tren khoang 331-338 (comment CU cong than ham CU):
+  .env 1    Invoke-WebRequest 0    npx 2    npm 1
+Ba dong ay la chinh TIEN DE SAI ma gate-02 sua: chung khang dinh vo dieu kien rang lane tran doc
+DATABASE_URL tu tep env san xuat. Round nay thay chung bang 22 dong comment o 331-352, khong dong nao
+con khang dinh nhu vay.
+--- CMD: grep -oF '.env' tren CA tep, dem so lan
+  ban EV-06 : 2 lan  (dong 332 - comment tien de sai; dong 386 - mau bien tap bi mat)
+  ban sau   : 1 lan  (dong 418 - dung mau bien tap bi mat ay, da dich cho vi 32 dong them vao)
+Nghia la lan xuat hien duy nhat bi go la lan o comment tien de. Lan con lai KHONG phai cua toi:
+no la `process\.env` trong `$redacted` cua mach kiem bi mat, co san tu truoc round.
+
+=== E. PHEP DO MANH HON DEM CHUOI: KE DU MOI LOI GOI CUA THAN HAM ===
+--- CMD: grep -oE '\b(Get|Set|New|Remove|Test|Join|Invoke|Start|Out|Write|Add|Copy|Move|Push|Pop|Import|Export|Select|Where|ForEach)-[A-Za-z]+' body.txt | sort | uniq -c
+  1 Get-Content
+  1 Get-RepoRoot
+  1 Join-Path
+  1 Test-CellUsesNonCanonicalLane      <- chinh dong `function`, khong phai loi goi
+  1 Test-Path
+--- CMD: grep -oE '\[[A-Za-z0-9.]+\]::[A-Za-z]+' body.txt | sort | uniq -c
+  3 [regex]::IsMatch
+  2 [string]::IsNullOrWhiteSpace
+Het. Khong `Invoke-*`, khong `Start-Process`, khong `&`, khong `.` dot-sourcing, khong `Set-Content`,
+khong `Remove-Item`. Dem chuoi tra loi cau hoi "co chua chu ay khong"; danh sach nay tra loi cau hoi
+manh hon: "than ham LAM duoc nhung gi". Cau tra loi la ba viec doc (`Test-Path`, `Get-Content`,
+`Join-Path`) cong khop mau, va DUNG MOT tep duoc mo: `vitest.config.ts` o goc repo, mo bang
+`Get-Content -Raw`, khong co tham so ghi.
+
+=== F. PHEP CHAY: 50 LAN GOI PREDICATE, TEP CAU HINH KHONG DOI MOT BYTE ===
+--- CMD: powershell -NoProfile -File <thu muc tam>\probe-ac08.ps1
+EXIT=0
+  config BEFORE: LastWriteTime=2026-09-04T16:24:07.2285337+07:00 Length=2953
+  config AFTER : LastWriteTime=2026-09-04T16:24:07.2285337+07:00 Length=2953
+  unchanged    : True
+  env var DATABASE_URL present in this process: True
+Probe dot-source gate-lib.ps1 roi goi predicate 50 lan tren mot o co lane tran. Sau 50 lan, ca
+`LastWriteTime` va `Length` cua `vitest.config.ts` giong het truoc: predicate DOC tep ay, khong ghi.
+Dong cuoi la doi chieu dang gia: bien `DATABASE_URL` CO trong moi truong tien trinh, the ma predicate
+khong he tham chieu no - trong 13 dong o phan A khong co `$env:` nao. Toi in DUY NHAT gia tri boolean
+"co hay khong", KHONG in gia tri (R-02).
+
+=== G. GIOI HAN ===
+- Dem bang `grep -F` (fixed) chu khong `grep` thuong, va day khong phai chi tiet vun: voi regex thi
+  dau `.` trong `.env` la KY TU BAT KY, nen `grep -c '.env'` se khop ca `$env:` hay `Xenv`. Tren
+  chinh khoang 358-370 hai cach cho cung ket qua 0, nhung tren ca tep chung khac nhau, va con so
+  duoc dan trong AC phai la con so cua phep dem CHUOI. Do la chinh bay "dem chuoi con khac dem token".
+- Lan `.env` con lai o dong 418 nam trong `$redacted = '(...|process\.env|...)'`, tuc mot MAU dung de
+  phat hien secret bi bien tap. No khong o trong pham vi ham nao cua round nay va co san trong EV-06
+  (o dong 386 cua ban ay). Toi khong sua dong do.
+- Phep chay o phan F chung minh predicate khong ghi vao DUNG mot tep no mo. No khong chung minh
+  "khong co tac dung le nao tren doi": `Get-Content` van co the doi thoi diem truy cap cua tep tren
+  he thong tep co bat atime. Menh de toi dam nhan la: khong ghi, khong goi mang, khong sinh tien trinh.
+- So byte cua tep cau hinh doc ra hai con so khac nhau tuy phep do: 2953 byte tren dia (9 byte
+  non-ASCII, CR 0, khong BOM), con `Get-Content -Raw` roi dem lai bang UTF-8 ra 2968 - vi PowerShell
+  5.1 giai ma mac dinh khong phai UTF-8. Chenh lech ay KHONG the doi ket qua khop mau, vi mau khoa
+  (`$script:GateDefaultLaneLockPattern`) thuan ASCII. Do lai: predicate tra `$false` tren o lane tran
+  voi cau hinh THAT cua repo, tuc mau co khop - so do o `ac02-h08-silent.txt`.
+- Toi KHONG doc va KHONG in noi dung tep `vitest.config.ts`, khong doc dong 25 cua no, khong sao gia
+  tri sentinel di dau (R-02). Nhung gi toi do tren tep ay: su ton tai, so byte, so byte non-ASCII, so
+  CR/LF, va mot gia tri boolean "mau khoa co khop hay khong".

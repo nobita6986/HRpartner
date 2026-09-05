@@ -1,0 +1,90 @@
+STEP-05 / RQ-05 - viet .ai-pipeline/scripts/verify-delivery-presence.ps1
+Task: hrp-v5-gate-03-delivery-vanish-forensics, spec v1.2, execution round 1
+Tep MOI, dung ten CHINH cua muc Modules. DEC-06 khong duoc dung (do o step01-preflight.txt phan B).
+
+=== A. DAU TAY BAN GIAO ===
+--- CMD: git hash-object .ai-pipeline/scripts/verify-delivery-presence.ps1
+aaab5c2c63a641eee2bcf7ce3f692dd304d7da68
+--- CMD: python -c "doc bang 'rb'"
+bytes=13916  lines=332  BOM=True  CR=0
+Do bang Python che do 'rb' chu khong bang wc -c: repo dat core.autocrlf nen so byte cua
+worktree va so byte cua blob khong bang nhau tren tep co CRLF, wc -c se noi doi.
+BOM=True va CR=0 la dung quy uoc cua bon tep gate co san (gate-lib.ps1, verify-task.ps1,
+verify-handoff.ps1, verify-audit.ps1 deu UTF-8 CO BOM va thuan LF).
+
+--- CMD: [System.Management.Automation.Language.Parser]::ParseFile(...)
+PARSE errors = 0
+EXIT=0
+Phep do nay tra loi cau hoi "tep co phai PowerShell hop le" doc lap voi viec chay no.
+
+=== B. KHUNG XUONG: MUOI HAM, KHONG DOT-SOURCE ===
+--- CMD: grep -n '^function ' .ai-pipeline/scripts/verify-delivery-presence.ps1
+   57 Add-Err          in "  [FAIL] "
+   63 Add-Warn         in "  [WARN] "
+   69 Add-Ok           in "  [OK]   "
+   74 Clear-Decoration bo dau ngoac don nguoc va **
+   89 Get-ControlValues     doc o gia tri cua hang control ten Modules/Deliverables
+  105 Get-StepOutputValues  doc cot Output cua bang ke hoach, TIM BANG TIEU DE khong bang so muc
+  129 Get-PathTokens        boc path trong dau ngoac don nguoc, loai glob, loai so phien ban
+  152 Invoke-Git       goi git -C <root>, bat ma thoat vao $script:GitExit
+  166 Test-InIndex     git ls-files --error-unmatch --   (co trong index hay khong)
+  175 Get-IndexSize    git cat-file -s ":<rel>"          (so byte cua blob trong index)
+
+--- CMD: grep -n '^\s*\.\s' .ai-pipeline/scripts/verify-delivery-presence.ps1
+0 dong. Tep KHONG dot-source bat cu tep nao, ke ca gate-lib.ps1.
+--- CMD: grep -n 'gate-lib' .ai-pipeline/scripts/verify-delivery-presence.ps1
+38: ... does not dot-source gate-lib.ps1 ...
+41: ... gate-lib.ps1 assumes does not hold.
+Hai lan nhac deu trong khoi comment giai thich LY DO khong dung, khong phai loi goi.
+
+Ba ly do doc lap cho quyet dinh ay, ghi de Tier 3 khoi phai doan:
+  1. DEC-07 cam noi tep nay vao verify-pipeline.ps1. Tinh than la khong lam bo gate hien co
+     phu thuoc vao mot manh moi chua qua audit; dot-source la mot dang phu thuoc nguoc.
+  2. gate-lib.ps1 dang la 'A ' trong index va KHONG co o HEAD. Mot tep phu thuoc vao no se
+     chet neu ai commit tep nay ma khong commit gate-lib.
+  3. gate-lib.ps1 co ham Get-RepoRoot gia dinh duong dan la <repo>/.ai-pipeline/scripts.
+     Gia dinh ay SAI voi repo fixture duoi thu muc tam, chinh la thu AC-07 AC-08 AC-09 doi.
+Bu lai, tep nay MO PHONG dung tu vung in ra cua gate-lib: "  [OK]   ", "  [WARN] ",
+"  [FAIL] ", "RESULT: PASS.", "RESULT: FAIL (N error(s), M warning(s)).", de moi bieu thuc
+va moi con mat da quen bo gate cu van doc duoc ket qua.
+
+=== C. BON MA KIEM ===
+--- CMD: grep -n "Add-Err '\|Add-Warn '\|Add-Ok '" ...
+  265 D-01 (fail)   contract khong khai path ban giao nao  -> fail CLOSED
+  267 D-01 (ok)     contract khai N path, M tu truong control
+  291 D-02 (warn)   path tro vao mot THU MUC
+  297 D-03 (fail)   co o ca hai noi nhung MOT trong hai dai 0 byte
+  299 D-02 (ok)     PRESENT in worktree AND index
+  305 D-02 (fail)   MISSING_BOTH
+  310 D-02 (fail)   MISSING_INDEX
+  314 D-02 (fail)   MISSING_WORKTREE
+Bon nhan MISSING_BOTH, MISSING_INDEX, MISSING_WORKTREE va EMPTY la BON chuoi khac nhau theo
+mat chu. AC-08 doi nhan cua ca ba KHAC nhan cua ca hai; dieu ay dung o muc chuoi ky tu.
+
+=== D. HAI THAM SO TUY CHON, VA VI SAO ===
+  -RepoRoot <duong dan>   doi goc repo can do. Mac dinh la <thu muc script>/../..
+      Ly do ton tai: AC-07 AC-08 AC-09 doi mot repo FIXTURE duoi thu muc tam. Khong co tham
+      so nay thi khong the do nhanh MISSING_INDEX ma khong lam ban repo that.
+  -IncludeStepOutputs     ngoai truong control, doc them cot Output cua bang ke hoach.
+      Ly do ton tai: DEC-05 cho phep doc cot Deliverables HOAC Output. Mac dinh TAT vi cot
+      Output cua mot contract dang chay con la loi hua chua den han - bat mac dinh se bao
+      dong oan moi contract dang thuc thi. Bat co y thi thanh mot phep kiem ban giao du.
+
+=== E. BA MA THOAT ===
+  0  RESULT: PASS  hoac  PASS WITH WARNINGS
+  2  RESULT: FAIL             co it nhat mot D-* do
+  3  RESULT: FAIL (unreadable repository / unreadable contract)
+     Tach 3 ra khoi 2 de phan biet "do duoc va thay thieu" voi "khong do duoc". Mot cong tra
+     2 vi khong tim thay contract la mot cong noi doi ve thu no chua he kiem.
+
+=== F. GIOI HAN ===
+- Cong nay chi kiem SU CO MAT va so byte KHAC 0. No khong doc noi dung, khong biet mot tep
+  co dung hay khong. Mot tep 1 byte rac van doc la PRESENT.
+- No chi thay path duoc KHAI trong contract. Mot ban giao bi mat ma contract khong he khai
+  thi cong nay khong biet gi. Do la gioi han cua ca lop ma kiem doc-tu-hop-dong.
+- Get-PathTokens chi nhan token trong dau ngoac don nguoc. Mot contract viet path tran trong
+  loi van se khong duoc dem. Do la co y: nhan bua bai thi moi cau tieng Viet co dau cham
+  cung thanh mot path.
+- So sanh worktree va index bang so byte se KHAC nhau tren tep CRLF (vi du tsconfig.json:
+  1108 tren dia, 1052 trong index). Cong nay KHONG doi hai so bang nhau, no chi doi ca hai
+  KHAC 0; nen core.autocrlf khong lam no bao dong oan.

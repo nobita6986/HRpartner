@@ -1,0 +1,39 @@
+== AC-11 INDEPENDENT RE-RUN (Tier 3, audit round 1) ==
+utc_now=2026-09-05T15:39:56+0700
+
+--- CMD1: verify-task.ps1 ---
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+  [OK]   A-05 8 requirement(s) traceable to STEP and AC.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/**.
+  [OK]   T-05 all 11 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+
+RESULT: PASS. TASK contract is ready for execution.
+VERIFY_TASK_EXIT=0
+
+--- CMD2: verify-handoff.ps1 ---
+HANDOFF SUBSTANCE GATE
+  subject: docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/HANDOFF.md (against docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 24724 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.2 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 11 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 13 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 8 STEP appear in the execution trace.
+  [OK]   H-13 8 deviation(s) in section 2, 12 declared in section 5.
+  [OK]   H-14 section 7 records round 1.
+
+RESULT: PASS.
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+VERIFY_HANDOFF_EXIT=0

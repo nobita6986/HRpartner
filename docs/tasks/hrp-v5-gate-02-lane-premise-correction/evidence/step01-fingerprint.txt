@@ -1,0 +1,94 @@
+AC-01 / RQ-07 - dau tay ba tep gate luc MO round, va phan loai theo DEC-09
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+Do luc: 2026-09-05 11:2x-11:33 (Asia/Bangkok, gio host). HEAD = 31625c4 (dung truong Baseline).
+
+=== A. LENH CUA AC-01, CHAY NGUYEN VAN ===
+--- CMD: git hash-object .ai-pipeline/scripts/gate-lib.ps1 .ai-pipeline/scripts/verify-handoff.ps1 .ai-pipeline/scripts/verify-audit.ps1
+EXIT=0
+43ada847f9bd84494f80114de01f9f0b1b05c816    gate-lib.ps1
+3997dd4ff896ea9f7cebdf40a247bcb269ab23e5    verify-handoff.ps1
+b6854802e329b391a70475eef8920255f0b7d639    verify-audit.ps1
+
+Doi chieu EV-06:
+  gate-lib.ps1        EV-06 = 43ada847f9bd84494f80114de01f9f0b1b05c816   KHOP
+  verify-handoff.ps1  EV-06 = 3997dd4ff896ea9f7cebdf40a247bcb269ab23e5   KHOP
+  verify-audit.ps1    EV-06 = 2520a48dd7893f5cf9674357fd6a36e58772bcbd   LECH
+
+--- CMD: git status --porcelain -- <ba tep tren>
+A  .ai-pipeline/scripts/gate-lib.ps1
+M  .ai-pipeline/scripts/verify-audit.ps1
+A  .ai-pipeline/scripts/verify-handoff.ps1
+
+=> KET LUAN BA NHANH cua AC-01: khong phai nhanh MOT (khong du ba gia tri khop). Xet DEC-09.
+   Nhanh HAI - nguyen nhan A - vi tep lech dung la tep nam trong Modules cua hop dong anh em
+   cung lo: hrp-v5-gate-01-audit-row-identity. Ba khoan phai tra nam o phan B, C, D NGAY DUOI,
+   trong CUNG o bang chung nay.
+
+=== B. KHOAN 1/3 - HANDOFF.md CUA HOP DONG ANH EM CO THAT ===
+--- CMD: git hash-object docs/tasks/hrp-v5-gate-01-audit-row-identity/HANDOFF.md
+0959c235444f1df7a43cee1bbbe933a04012615b
+--- CMD: python -c "import os;print(os.path.getsize(...))"   -> 17927 byte
+--- CMD: git status --porcelain -- docs/tasks/hrp-v5-gate-01-audit-row-identity/HANDOFF.md
+A  docs/tasks/hrp-v5-gate-01-audit-row-identity/HANDOFF.md
+=> Tep co that, khong rong, da tracked va da staged. Vong 1 cua anh em da dong voi hai cong
+   RESULT: PASS exit 0 (bang chung cua no: docs/tasks/hrp-v5-gate-01-audit-row-identity/
+   evidence/ac11-gates.txt).
+
+=== C. KHOAN 2/3 - DIFF CUA TEP LECH CHI CHAM VUNG THUOC SCOPE CUA ANH EM ===
+Boc ban EV-06 bang SHA, KHONG dung `git show :path` (lenh ay giai ra index BAY GIO):
+--- CMD: git cat-file -p 2520a48dd7893f5cf9674357fd6a36e58772bcbd > <TEMP>/verify-audit.ev06.ps1
+--- CMD: git hash-object <TEMP>/verify-audit.ev06.ps1
+2520a48dd7893f5cf9674357fd6a36e58772bcbd   <-- dung byte cua EV-06, khong phai mot ban khac
+
+--- CMD: diff -U0 <TEMP>/verify-audit.ev06.ps1 .ai-pipeline/scripts/verify-audit.ps1
+EXIT=1 (co khac biet). SAU hunk:
+  @@ -121,0 +122   @@      1 dong
+  @@ -124,0 +126,4 @@      4 dong
+  @@ -159,0 +165,3 @@      3 dong
+  @@ -207,0 +216,48 @@    48 dong
+  @@ -212,0 +269,8 @@     8 dong
+  @@ -236,0 +301,34 @@    34 dong
+
+--- CMD: grep -c '^+[^+]' ; grep -cx '+' ; grep -c '^-[^-]' ; grep -cx '-'   (tren ban capture diff)
+  dong '+' co noi dung: 96      dong '+' rong: 2      tong THEM = 98
+  dong '-' co noi dung: 0       dong '-' rong: 0      tong BOT  = 0
+=> Diff la THUAN CHEN THEM. Khong mot dong nao cua EV-06 bi xoa hay sua, va thu tu cua chung
+   giu nguyen. Day la phep do manh nhat co the: ban EV-06 la mot day con lien thu tu cua ban moi.
+
+Danh tinh tung hunk, doc bang NOI DUNG chu khong bang khoang cach toi banner:
+  +122,1   `$acResultCol = -1`                     - bien cot Result, S-19 dung
+  +126,4   comment cong `Get-ColumnIndex ... Pattern '(?i)^(pass\s*/\s*fail|result|verdict|...)'`
+           comment cua chinh no viet: "so S-19 reads the same cell the auditor wrote the verdict
+           into"                                    - S-19
+  +165,3   comment cong `$verdictOnlyPattern = '^(PASS|FAIL|PARTIAL|BLOCKED|...)$'`; comment cua
+           chinh no viet: "gate-lib.ps1 is outside gate-01's scope (DEC-03)"   - S-19
+  +216,48  banner `# -- S-19 A verdict word is not a measured result ---`      - khoi S-19
+  +269,8   tam dong comment mo dau `# DEC-02: S-17 stays decimal-only on purpose.`  - comment
+           DEC-02 cua S-17, dung tam dong ma HANDOFF anh em khai o STEP-04
+  +301,34  banner `# -- S-18 Three AC rows cannot be one row copied ---`       - khoi S-18
+Ba vung: S-17 (chi comment), S-18, S-19 cong ba dong ho tro cua S-19. Dung ba vung ma muc 4.2
+cua hop dong anh em ghi la trong scope. Khong hunk nao o ngoai.
+
+Vung TOI se sua o STEP-04 (thong diep S-11) chua bi anh em cham:
+--- CMD: sed -n '200,203p' <EV-06 copy> > a ; sed -n '208,211p' <ban moi> > b ; diff a b
+EXIT=0, khong in gi  => bon dong ay giong het nhau, chi truot vi tri 8 dong.
+
+=== D. KHOAN 3/3 - DAU TAY MOI DUOC GHI LAI ===
+  .ai-pipeline/scripts/verify-audit.ps1  =  b6854802e329b391a70475eef8920255f0b7d639
+  (35864 byte, `git diff --cached --numstat` = 568 95 - con so cua luong anh em, khong phai cua toi)
+Hai tep con lai giu nguyen dau tay EV-06 nhu phan A. gate-lib.ps1 va verify-handoff.ps1 la hai
+tep TOI sap sua; ca hai vao round o dung byte EV-06.
+
+=== E. XU LY ===
+Du ba khoan cua DEC-09 => nguyen nhan A => GHI MOT HANG LIM TRONG HANDOFF ROI TIEP TUC.
+Khong dung. Khong merge. Khong revert. Khong overwrite ban cua luong khac (R-05).
+
+=== F. GIOI HAN ===
+- Phep do nay noi verify-audit.ps1 lech DUNG BANG viec cua anh em. No khong noi gi ve dung sai
+  cua chinh viec ay; do la phan cua Tier 3 khi audit gate-01.
+- Sau round nay chinh toi se lam verify-audit.ps1 lech tiep (STEP-04 doi chuoi thong diep S-11).
+  Luc do dau tay b6854802... khong con la byte cua worktree. Ai audit gate-01 phai boc ban giao
+  cua no bang `git cat-file -p b6854802e329b391a70475eef8920255f0b7d639`. Se ghi thanh mot hang
+  LIM trong HANDOFF cua round nay.
+- Dau tay chi chung minh NOI DUNG TEP. No khong chung minh ai gay ra, va khong the. Bang chung
+  ve nguoi gay ra la HANDOFF.md o phan B cong danh tinh sau hunk o phan C.

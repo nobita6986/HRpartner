@@ -1,0 +1,54 @@
+LOG CORPUS FREEZE - manifest (Step 1, taken BEFORE any search)
+root  : C:/Users/Admin/AppData/Roaming/Code/logs
+scope : Claude VSCode.log, Git.log, agentSessionsOutput.log
+method: size = Python open(p,"rb") then seek(0,2).tell(); NOT wc -c, NOT ls -l
+why   : the corpus records every classified Bash command verbatim, so every search
+        injects its own term into the substrate. These byte sizes are the CUT: all
+        later extraction reads only the first <bytes> bytes of each file.
+taken : 2026-09-05 08:16:30 Asia/Bangkok
+
+relative path                                                                 bytes  last write           git hash-object
+-----------------------------------------------------------------------  ----------  -------------------  ----------------------------------------
+20260904T080100/window1/exthost/Anthropic.claude-code/Claude VSCode.log     2691970  2026-09-04 17:10:19  aecb85d1a7693534770f3588175f24f73cbbfd06
+20260904T080100/window1/exthost/vscode.git/Git.log                            74939  2026-09-04 17:09:58  63c3dad1e8f319a9b7fa65c2c0e33ad35ec9b708
+20260904T080100/window1/output_20260904T080102/agentSessionsOutput.log            0  2026-09-04 08:01:02  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260904T080100/window2/exthost/Anthropic.claude-code/Claude VSCode.log      648106  2026-09-04 17:04:33  1dc1763864ac80b7b462483b4a09b1b2c3111f1c
+20260904T080100/window2/exthost/vscode.git/Git.log                            92109  2026-09-04 17:01:17  d5d987e798597b0d0a97d5cfd756a6678a801f7f
+20260904T080100/window2/output_20260904T080102/agentSessionsOutput.log            0  2026-09-04 08:01:02  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260904T184639/window1/exthost/Anthropic.claude-code/Claude VSCode.log       54198  2026-09-04 18:47:05  8fc128aca21414b0e6af3d65a860d7227f28915b
+20260904T184639/window1/exthost/vscode.git/Git.log                             5991  2026-09-04 18:47:21  73659e1eaf810ac15066f0bc633188e1d87effbe
+20260904T184639/window1/output_20260904T184641/agentSessionsOutput.log            0  2026-09-04 18:46:41  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260904T184639/window2/exthost/Anthropic.claude-code/Claude VSCode.log         207  2026-09-04 18:47:02  59db735fedeeaab37086c2396e0deb002d8ebcd3
+20260904T184639/window2/exthost/vscode.git/Git.log                              532  2026-09-04 18:46:58  f0f4ecf9e4f36f2916f81e4bf40c937cfdce9b42
+20260904T184639/window2/output_20260904T184657/agentSessionsOutput.log            0  2026-09-04 18:46:57  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260904T184723/window1/exthost/Anthropic.claude-code/Claude VSCode.log       52387  2026-09-04 18:48:34  e03acc8d1eb7ab5a3de34117d235aa60fd914924
+20260904T184723/window1/exthost/vscode.git/Git.log                             6263  2026-09-04 18:47:44  c039dd9b7c2b94cf783e6f8011650ec661ab90f7
+20260904T184723/window1/output_20260904T184725/agentSessionsOutput.log            0  2026-09-04 18:47:25  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260904T184723/window2/exthost/Anthropic.claude-code/Claude VSCode.log      649952  2026-09-04 20:08:41  808adb2a2c59b085be25e39f474c80055db7603d
+20260904T184723/window2/exthost/vscode.git/Git.log                            25314  2026-09-04 20:16:09  509cba1809b5ff7ae664116e24904571c3d44dbb
+20260904T184723/window2/output_20260904T184725/agentSessionsOutput.log            0  2026-09-04 18:47:26  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260904T184723/window2/output_20260904T184737/agentSessionsOutput.log            0  2026-09-04 18:47:37  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260904T184723/window3/exthost/Anthropic.claude-code/Claude VSCode.log     2035676  2026-09-04 23:42:49  327623c7412ebe1743bd6b7867c07199c2b8a407
+20260904T184723/window3/exthost/vscode.git/Git.log                            30988  2026-09-04 23:21:13  87fa1a7e32dc457258390084ab0c26ab7e37eebc
+20260904T184723/window3/output_20260904T185010/agentSessionsOutput.log            0  2026-09-04 18:50:10  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260904T184723/window3/output_20260904T185013/agentSessionsOutput.log            0  2026-09-04 18:50:13  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260904T184723/window4/exthost/Anthropic.claude-code/Claude VSCode.log     2082393  2026-09-04 23:42:30  0275e527fbd6440cbca61c494489de8cd8c913d2
+20260904T184723/window4/exthost/vscode.git/Git.log                            73755  2026-09-04 23:33:41  06785479a66a2292f22397166f43c563ce1d62aa
+20260904T184723/window4/output_20260904T201628/agentSessionsOutput.log            0  2026-09-04 20:16:29  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260904T184723/window4/output_20260904T201642/agentSessionsOutput.log            0  2026-09-04 20:16:42  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260904T234313/window1/exthost/Anthropic.claude-code/Claude VSCode.log      201977  2026-09-04 23:48:09  a2e0261ce99b1d580ec2c89337450eb8c3170e50
+20260904T234313/window1/exthost/vscode.git/Git.log                             6913  2026-09-04 23:43:54  4e17840037bff04a8e54bf05dfe5a905d0a18fdb
+20260904T234313/window1/output_20260904T234315/agentSessionsOutput.log            0  2026-09-04 23:43:15  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260904T234313/window2/exthost/Anthropic.claude-code/Claude VSCode.log      193154  2026-09-04 23:48:09  f2fa77e786b608031d599b281a5ed2d2c6a4f200
+20260904T234313/window2/exthost/vscode.git/Git.log                             6790  2026-09-04 23:43:56  c5cc2e5cecd7a1ebc9c8e4d74157120d85265fe1
+20260904T234313/window2/output_20260904T234326/agentSessionsOutput.log            0  2026-09-04 23:43:26  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260904T234313/window2/output_20260904T234333/agentSessionsOutput.log            0  2026-09-04 23:43:33  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260905T075944/window1/exthost/Anthropic.claude-code/Claude VSCode.log      487162  2026-09-05 08:16:30  5b0d3fd9f5f2815526453c0fe767945f09bcc146
+20260905T075944/window1/exthost/vscode.git/Git.log                             8154  2026-09-05 08:05:23  732e130b13c6ba6b2e8e38e19dcba030ec474656
+20260905T075944/window1/output_20260905T075947/agentSessionsOutput.log            0  2026-09-05 07:59:47  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+20260905T075944/window2/exthost/Anthropic.claude-code/Claude VSCode.log      396540  2026-09-05 08:16:28  4fa62869ca90cf4ff20d8e9f8421173a7b648139
+20260905T075944/window2/exthost/vscode.git/Git.log                             7503  2026-09-05 08:12:36  8a50bc955cbc05dfef5a3c194fe5d7d7fe61a0c9
+20260905T075944/window2/output_20260905T075947/agentSessionsOutput.log            0  2026-09-05 07:59:47  e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+
+files      : 40
+total bytes: 9832973

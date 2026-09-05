@@ -1,0 +1,109 @@
+STEP-06 / AC-07 - chay lai bo selftest sau khi sua: cases >= 35, failures 0, exit 0, tang >= 2
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+
+Do tren byte cuoi cua bon tep trong pham vi:
+  gate-lib.ps1               6daa689a33604f873f2e9f2181a741bfe4a55a9f
+  verify-handoff.ps1         e1af8549b9dd73d8c569d66493b6e527fae021f5
+  verify-audit.ps1           e1edaebac456da16cb618dca2607e7f46b1c4358
+  verify-gates.selftest.ps1  a6a7faeaf65dc490b0f597d21877230f4a8fc45e
+
+=== A. LAN CHAY, NGUYEN VAN DAU VA DUOI ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1
+EXIT=0
+
+  GATE SELF-TEST
+    fixture repo: C:\Users\Admin\AppData\Local\Temp\hrp-gate-selftest-20260905-120644-17513
+  ...
+  cases: 39 total (7 green, 32 red), failures: 0
+    fixture repo removed.
+
+  RESULT: PASS. Every gate rejects the historical defect it was written for, and still accepts a clean artifact.
+
+--- CMD: grep -c '^\[  ok  \]'   ->  39
+--- CMD: grep -c '^\[ MISS \]'   ->  0
+39 case, 39 dong `[  ok  ]`, 0 dong `[ MISS ]`: khong case nao lech ky vong.
+
+=== B. DOI CHIEU AC-07, CA HAI NHANH ===
+AC-07 viet hai nhanh. Ca hai deu do duoc va ca hai deu dat.
+
+  nhanh tuyet doi:  cases >= 35        ->  39 >= 35        DAT
+                    failures = 0       ->  failures: 0     DAT
+                    exit code = 0      ->  EXIT=0          DAT
+
+  nhanh DEC-09:     moc la dong `cases:` do BOI CHINH STEP-02 cua vong nay, khong phai con so
+                    trong EV-07. Moc ay la:
+                      cases: 37 total (5 green, 32 red), failures: 0   (evidence/step02-selftest-before.txt)
+                    dieu kien: tong tang it nhat 2  ->  39 - 37 = +2   DAT (dung bang 2, khong du)
+
+So hoc ba cot, khop voi phan D cua step05-selftest-cases.txt:
+  tong   37 -> 39   (+2: hai case FAIL moi)
+  green   5 ->  7   (+2: hai case cu chuyen FAIL -> PASS)
+  red    32 -> 32   ( 0: -2 do chuyen di, +2 do them vao)
+Cot `red` KHONG giam la con so dang doc nhat o day: mot phep "sua tien de" lam sai co the lam
+`red` tut xuong (go mach kiem di). O day khong tut, vi moi phep tha deu duoc dat lai bang mot
+phep chan CO DIEU KIEN.
+
+=== C. TINH LAP LAI - HAI LAN CHAY LIEN TIEP CUNG MOT CHUOI KY TU LENH ===
+--- CMD (lan 1): powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1
+EXIT=0 ; cases: 39 total (7 green, 32 red), failures: 0
+--- CMD (lan 2): powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1
+EXIT=0 ; cases: 39 total (7 green, 32 red), failures: 0
+
+--- CMD: diff after1.txt after2.txt
+exit 1 (co khac biet), DUNG MOT cap dong doi, la dong thu 2:
+  2c2
+  <   fixture repo: C:\Users\Admin\AppData\Local\Temp\hrp-gate-selftest-20260905-120644-17513
+  ---
+  >   fixture repo: C:\Users\Admin\AppData\Local\Temp\hrp-gate-selftest-20260905-120722-45269
+--- CMD: diff after1.txt after2.txt | grep -c '^[<>]'   ->  2
+--- CMD: wc -l after1.txt ; wc -l after2.txt            ->  47 va 47
+46/47 dong giong het nhau. Dong thu 2 BAT BUOC khac vi harness dat repo fixture o
+$env:TEMP\hrp-gate-selftest-<yyyyMMdd-HHmmss>-<random> roi xoa sau khi chay; do la thiet ke co
+san cua harness, khong phai bat on dinh cua so do.
+
+=== D. BON DONG CASE LANE, NGUYEN VAN, TU BAN CHAY -Verbose2 ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1 -Verbose2
+EXIT=0 ; cases: 39 total (7 green, 32 red), failures: 0  (dong 907 cua ban capture)
+
+  286: [  ok  ] audit   PASS S-11 lane tran duoc THA khi vitest.config.ts khoa bien DB
+  736: [  ok  ] handoff PASS H-08 lane tran duoc THA khi vitest.config.ts khoa bien DB
+  757: [  ok  ] handoff FAIL H-08 lane tran + vitest.config.ts KHONG khoa bien DB thi VAN DO
+  778: [  ok  ] handoff FAIL H-08 lane tran + VANG tep vitest.config.ts thi VAN DO (fail-closed)
+
+Bon dong deu `[  ok  ]`, tuc actual == Expect o ca bon. Hai dong tren la phep THA (AC-02 do o
+tam repo THAT o ac02-h08-silent.txt va ac05-s11-silent.txt); hai dong duoi la phep CHAN con song
+(AC-03 va AC-04).
+
+--- CMD: grep -n 'S-11' tren toan ban verbose
+  286: [  ok  ] audit   PASS S-11 lane tran duoc THA khi vitest.config.ts khoa bien DB
+DUY NHAT mot dong. Trong 910 dong output cua 39 case, khong dong nao la `[FAIL] S-11`. Truoc
+round, chinh fixture ay sinh ra mot dong `[FAIL] S-11`.
+
+=== E. THU TU KHOI TRONG BAN VERBOSE - DE AI DOC LAI KHONG GAN SAI KHOI ===
+Harness in dong `[  ok  ]` cua case TRUOC, roi in output cong cua chinh case ay. Doc theo chieu
+nguoc lai se gan khoi cho case ben tren va ket luan sai. Kiem chung tren ba case handoff lane:
+
+  736: [  ok  ] handoff PASS H-08 ... khoa bien DB
+       -> khoi cua no: 741 `[OK] H-01 HANDOFF.md size 1828 bytes.` ... 754 `RESULT: PASS.`
+          KHONG co dong `[FAIL] H-08` nao trong khoi nay.
+  757: [  ok  ] handoff FAIL H-08 ... KHONG khoa bien DB
+       -> khoi cua no: 761 `[OK] H-01 HANDOFF.md size 1828 bytes.` ... 767 `[FAIL] H-08 ...`
+          ... 775 `RESULT: FAIL (1 error(s), 0 warning(s)).`
+  778: [  ok  ] handoff FAIL H-08 ... VANG tep
+       -> khoi cua no: 782 `[OK] H-01 HANDOFF.md size 1828 bytes.` ... 788 `[FAIL] H-08 ...`
+          ... 796 `RESULT: FAIL (1 error(s), 0 warning(s)).`
+
+Ba khoi deu bao `H-01 HANDOFF.md size 1828 bytes` - cung mot artifact, cung so byte. Va o hai
+khoi do, `RESULT: FAIL (1 error(s), ...)` la DUNG MOT loi: chinh `H-08`, khong keo theo mach kiem
+nao khac do oan.
+
+=== F. GIOI HAN ===
+- Bo selftest do CONG tren repo fixture, khong do tren cay THAT. Hai phep do tren cay that la
+  ac02-h08-silent.txt (cong ban giao tren HANDOFF.md that cua chinh mon nay) va ac05-s11-silent.txt
+  (cong audit tren AUDIT.md that cua rf-06); phep do khong-hoi-quy o step07-regression.txt.
+- Con so 39/7/32 la con so cua BYTE CUOI. Mot lan chay giua vong, truoc khi hai case moi duoc
+  them, cho `cases: 37` - do la con so cua ban gate luc ay, khong phai con so bao cao.
+- `failures: 0` chi noi actual == Expect o moi case. No KHONG noi rang `-Why` cua tung case la
+  dung; viec ay thuoc Tier 3.
+- Dong thu 2 cua output se khac o moi lan chay (duong dan repo tam co dau thoi gian). Ai do lai
+  nen so tu dong 3 tro xuong, hoac loc dong co chu `fixture repo`.

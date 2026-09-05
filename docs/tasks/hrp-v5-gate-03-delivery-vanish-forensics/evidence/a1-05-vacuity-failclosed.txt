@@ -1,0 +1,30 @@
+# a1-05 | Tier 3 kiem VACUITY: neu contract khong khai path nao thi exit 0 co bi mua re khong?
+# day la phep thu quyet dinh cho AC-07: mot detector 'khong tim thay gi nen PASS' se cho exit 0 o day.
+--- fixture contract khong co hang Modules/Deliverables ---
+# TASK: tier3-probe-3 (contract khong khai deliverable)
+
+## 0. Control
+
+| Field | Value |
+|---|---|
+| Task slug | `tier3-probe-3` |
+| Work type | `CODE` |
+$ powershell -NoProfile -File .ai-pipeline/scripts/verify-delivery-presence.ps1 -TaskPath "...\probe3-TASK.md"
+DELIVERY PRESENCE GATE
+  subject: C:\Users\Admin\AppData\Local\Temp\glx\gate03-audit\probe3-TASK.md
+  repo   : C:\CodeApp\HrP
+  source : control field (Modules/Deliverables)
+
+  [FAIL] D-01 the contract declares no deliverable path. Nothing can be verified, so this gate fails closed: give the control table a Modules or Deliverables row naming each delivered path in backticks.
+
+RESULT: FAIL (1 error(s), 0 warning(s)).
+A path this contract declares as delivered is missing or empty.
+PROBE3_EXIT=2
+
+# va phep thu thu hai: contract tro tro toi mot duong dan KHONG DOC DUOC
+$ powershell -NoProfile -File .ai-pipeline/scripts/verify-delivery-presence.ps1 -TaskPath "/c/Users/Admin/AppData/Local/Temp/glx/gate03-audit/khong-he-co-tep-nay.md"
+DELIVERY PRESENCE GATE
+  contract not found: C:\Users\Admin\AppData\Local\Temp\glx\gate03-audit\khong-he-co-tep-nay.md
+
+RESULT: FAIL (unreadable contract).
+PROBE4_EXIT=3

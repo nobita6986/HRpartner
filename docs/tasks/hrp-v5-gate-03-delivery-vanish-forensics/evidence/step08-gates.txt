@@ -1,0 +1,71 @@
+AC-11 / RQ-08 / STEP-08 - hai cong chay CUOI CUNG, ca hai RESULT: PASS voi exit 0
+Task: hrp-v5-gate-03-delivery-vanish-forensics, spec v1.2, execution round 1
+
+Thu tu that: ghi tep cuoi (sections I/J cua step07-scope.txt) -> `git add` ba pathspec viet ro ten
+-> chay hai cong. Khong co lan sua tep nao GIUA hai lan chay. Goi bang `powershell -NoProfile
+-File`; KHONG dung pwsh, KHONG dung -ExecutionPolicy Bypass (R-04).
+
+=== A. CONG CONTRACT ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md
+EXIT=0
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+  [OK]   A-05 8 requirement(s) traceable to STEP and AC.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/**.
+  [OK]   T-05 all 11 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+
+RESULT: PASS. TASK contract is ready for execution.
+
+Bay dong [OK], 0 dong [WARN], 0 dong [FAIL]. Dong ket qua la dung chu "RESULT: PASS", khong phai
+"PASS WITH WARNINGS" va khong phai "DRAFT-VALID". Status con la READY_FOR_EXECUTION vi Tier 2
+khong ghi section 0 cua TASK.md - do la contract cua Tier 1, ngoai quyen Tier 2.
+
+=== B. CONG BAN GIAO ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md
+EXIT=0
+HANDOFF SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-gate-03-delivery-vanish-forensics\HANDOFF.md (against docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 24724 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.2 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 11 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 13 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 8 STEP appear in the execution trace.
+  [OK]   H-13 8 deviation(s) in section 2, 12 declared in section 5.
+  [OK]   H-14 section 7 records round 1.
+
+RESULT: PASS.
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+
+Muoi ba dong [OK], 0 dong [WARN], 0 dong [FAIL]. H-15 khong in dong nao vi TASK.md chua co o HEAD
+(no la tep MOI cua Tier 1, `A ` trong porcelain) nen khong co ban HEAD de so - do la nhanh bo qua
+cua chinh mach kiem ay, khong phai loi.
+
+=== C. DOI CHIEU AC-11 ===
+  cong contract:  RESULT: PASS, exit 0     DAT
+  cong ban giao:  RESULT: PASS, exit 0     DAT
+  ca hai chay SAU lan sua tep cuoi va sau `git add`  DAT
+
+=== D. GIOI HAN (LIM-07) ===
+- Chinh tep NAY duoc ghi SAU hai lan chay tren: khong the vua chay cong vua ghi ket qua cua no vao
+  tep ma cong da doc. Vet do neu ai muon kiem: KHONG mach kiem nao trong verify-handoff.ps1 DOC
+  noi dung cua evidence/step08-gates.txt. H-07 chi kiem SU TON TAI cua moi duong dan evidence duoc
+  nhac trong HANDOFF, khong doc byte ben trong (xem verify-handoff.ps1, khoi H-07b). Tep nay da
+  ton tai TRUOC hai lan chay (ban placeholder, da staged), nen ghi noi dung that vao day sau do
+  khong the lam doi ket qua vua do. Ai muon do lai chi can chay lai dung hai chuoi ky tu lenh o
+  phan A va B.
+- Sau khi ghi tep nay con dung MOT lan `git add` cho chinh no. Lan add ay khong keo path nao khac
+  vi pathspec viet ro ten tep. Day la buoc cuoi cung cua vong.
+- Hai cong nay kiem CAU TRUC va CO the chay lai. Chung KHONG ket luan ve dung sai cua noi dung bang
+  chung dieu tra; viec ay thuoc Tier 3.

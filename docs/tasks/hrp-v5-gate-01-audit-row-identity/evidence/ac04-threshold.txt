@@ -1,0 +1,61 @@
+AC-04 / RQ-01 - dung HAI hang AC giong nhau thi S-18 ra WARN, KHONG ra ERROR
+Task: hrp-v5-gate-01-audit-row-identity, spec v1.2, execution round 1
+Do lai tren byte cuoi cua ca hai tep trong pham vi:
+  verify-audit.ps1          blob b6854802e329b391a70475eef8920255f0b7d639
+  verify-gates.selftest.ps1 blob 9e1feb05377cc35dbff9793c502234dcbef4f266
+
+AC-04 doi chung minh bang MOT CASE FIXTURE trong selftest, khong bang loi van. Duoi day la case
+do, dong ket qua cua no, va dong nguyen van do chinh cong audit in ra ben trong case ay.
+
+=== A. CASE FIXTURE (verify-gates.selftest.ps1:471) ===
+Add-Case -Name 'S-18 nguong: dung HAI hang giong nhau thi WARN chu khong ERROR' -Gate audit -Expect PASS -WarnToken 'S-18'
+  -Mutate: thay hang AC-02 cua ban audit fixture bang mot ban sao y het hang AC-01
+           (cung method, cung Result, cung Evidence, cung Finding) => dung HAI hang trung.
+(Ten case nguyen van co dau nam o dong 471; o day ghi khong dau vi ban capture console lam mo
+tieng Viet.)
+
+=== B. LAN CHAY ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1
+EXIT=0
+Dong ket qua cua case nguong (run4.txt:23):
+  [  ok  ] audit   PASS S-18 nguong: dung HAI hang giong nhau thi WARN chu khong ERROR
+                   ^^^^ actual=PASS, tuc cong audit tra exit 0 tren fixture ay: KHONG co ERROR nao.
+
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1 -Verbose2
+EXIT=0
+Dong nguyen van cong audit in ra TRONG case nguong (v2.txt:508):
+  [WARN] S-18 AC-01, AC-02 carry an identical row, cell for cell (1 such pair(s)). Two AC may share one command, but each still needs its own measured value.
+
+Doi chieu voi case ba hang - cung mot check, chi khac SO hang trung (v2.txt:482):
+  [FAIL] S-18 these AC share one row, identical cell for cell: AC-01, AC-02, AC-03, AC-04 (1 such group(s) in section 2). One row copied over several AC measures none of them.
+
+=> Cung mot du lieu vao, chi khac SO hang trung: 2 hang -> [WARN] va exit 0; bon hang -> [FAIL]
+   va exit 2. Dung nguong DEC-04.
+
+=== C. PHEP KHANG DINH NAM TRONG HARNESS, KHONG PHAI TRONG LOI VAN CUA TOI ===
+verify-gates.selftest.ps1:584-594, nguyen van:
+    $tokenSeen = $true
+    if ($case.Token -ne '') {
+        $tokenSeen = ($run.Output -match ('\[FAIL\]\s+' + [regex]::Escape($case.Token)))
+    }
+    $warnSeen = $true
+    if ($case.WarnToken -ne '') {
+        $warnAsWarn  = ($run.Output -match ('\[WARN\]\s+' + [regex]::Escape($case.WarnToken)))
+        $warnAsError = ($run.Output -match ('\[FAIL\]\s+' + [regex]::Escape($case.WarnToken)))
+        $warnSeen = ($warnAsWarn -and -not $warnAsError)
+    }
+    $ok = (($actual -eq $case.Expect) -and $tokenSeen -and $warnSeen)
+
+Doc ra hai dieu:
+1. Case nguong chi bao ok khi CA HAI nua dung: co dong [WARN] S-18, VA khong co dong [FAIL] S-18.
+   Do dung hai nua cua menh de AC-04. Case bao ok => ca hai nua da do duoc. Truoc round nay harness
+   chi assert duoc token o muc ERROR (-Token), nen mot check CO Y la WARNING khong the assert.
+2. -WarnToken la CONG THEM: $warnSeen mac dinh $true va chi bi kiem khi $case.WarnToken khac chuoi
+   rong. 36 loi goi Add-Case con lai khong truyen -WarnToken nen khong doi hanh vi mot chut nao.
+
+=== D. GIOI HAN ===
+- Hai dong [WARN] va [FAIL] tren duoc loc tu output cua lan chay -Verbose2; ban khong verbose chi
+  in dong ket qua tung case, khong in output cong ben trong. Hai lan chay cung EXIT=0 va cung dong
+  cases:.
+- Case nay do NGUONG (2 hang -> WARN). Nguong ba hang -> ERROR duoc do o case ke tren no va o
+  ac02-s18-rf06.txt tren AUDIT.md that cua rf-06 (mot nhom chin ma AC).

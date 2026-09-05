@@ -1,0 +1,41 @@
+AC-08 — AUDIT.md cua rf-06 khong bi sua mot byte
+Task: hrp-v5-gate-01-audit-row-identity, spec v1.2, execution round 1
+Doi tuong: docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md
+Gia tri ghim trong AC-08: 1212bae740578cd10005e4c508b37d8c37afcdb0
+
+--- CMD: git hash-object docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md   (TRUOC khi chay gate)
+1212bae740578cd10005e4c508b37d8c37afcdb0
+EXIT=0
+
+--- CMD: git hash-object docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md   (SAU khi chay gate)
+1212bae740578cd10005e4c508b37d8c37afcdb0
+EXIT=0
+=> truoc = sau = gia tri ghim. Cong audit chi DOC, khong ghi.
+
+--- CMD: git diff --numstat -- docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/
+(khong co dong nao)
+EXIT=0
+=> 0 file lech giua worktree va index trong ca thu muc rf-06.
+
+--- CMD: git status --porcelain -- docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/HANDOFF.md
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/TASK.md
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/... (15 tep)
+EXIT=0
+=> tat ca deu 'A ' (staged, chua commit) va cot thu hai la khoang trang => worktree KHOP index.
+   Khong co dau ' M' nao => khong co lan ghi nao vao thu muc rf-06 trong round nay.
+
+--- CMD: python -c "len(open(...,'rb').read())"
+4781 bytes    <-- trung voi so byte cong audit tu bao: "[OK] S-01 AUDIT.md size 4781 bytes."
+
+--- DO LAI O CUOI ROUND (sau phep siet S-19 cua STEP-06 va sau khi chay lai cong tren nam slug) ---
+--- CMD: git hash-object docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md
+1212bae740578cd10005e4c508b37d8c37afcdb0      <-- van la gia tri ghim
+--- CMD: git status --porcelain -- docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/
+18 dong, tat ca deu 'A ' (cot thu hai la khoang trang), khong mot dong ' M'
+EXIT=0
+=> Ba lan chay cong audit tren fixture nay trong round (mot lan RED truoc, hai lan tren ban da sua)
+   deu khong doi mot byte. Cung phep do da lam cho bon AUDIT.md khac o ac09-no-false-positive.txt.
+
+KET LUAN AC-08: DAT. Fixture hoi quy giu nguyen; vet do S-18/S-19 den tu bo kiem, khong tu viec sua fixture.

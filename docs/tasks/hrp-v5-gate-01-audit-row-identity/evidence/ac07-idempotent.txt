@@ -1,0 +1,63 @@
+AC-07 / RQ-04 - hai lan chay lien tiep ra cung dong cases: va cung exit code
+Task: hrp-v5-gate-01-audit-row-identity, spec v1.2, execution round 1
+Do lai tren byte cuoi: verify-audit.ps1 = b6854802..., verify-gates.selftest.ps1 = 9e1feb05...
+
+Hai lan chay DUNG cung mot chuoi ky tu lenh, lien tiep, trong cung mot shell, moi lan ghi ra mot
+tep rieng de so duoc tung dong.
+
+--- CMD (lan 1): powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1
+EXIT=0
+cases: 37 total (5 green, 32 red), failures: 0
+
+--- CMD (lan 2): powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1
+EXIT=0
+cases: 37 total (5 green, 32 red), failures: 0
+
+=== A. SO TUNG DONG HAI OUTPUT, KHONG LOC GI ===
+--- CMD: diff run4.txt run5.txt
+exit 1 (co khac biet), DUNG MOT cap dong doi, la dong thu 2:
+2c2
+<   fixture repo: C:\Users\Admin\AppData\Local\Temp\hrp-gate-selftest-20260905-103846-3770
+---
+>   fixture repo: C:\Users\Admin\AppData\Local\Temp\hrp-gate-selftest-20260905-103923-1836
+--- CMD: diff run4.txt run5.txt | grep -c "^[<>]"
+2        <-- dung mot dong ben trai va mot dong ben phai, khong con cap nao khac
+--- CMD: wc -l run4.txt run5.txt
+45 va 45 => 44/45 dong giong het nhau.
+
+Dong thu 2 BAT BUOC khac: harness dat repo fixture o
+$env:TEMP\hrp-gate-selftest-<yyyyMMdd-HHmmss>-<random> roi xoa sau khi chay. Do la thiet ke cua
+harness (moi lan mot repo tam rieng), khong phai bat on dinh cua ket qua do.
+
+=== B. SO SAU KHI LOC HAI DONG CO CHU "fixture repo" ===
+--- CMD: grep -v "fixture repo" run4.txt > l4.txt ; grep -v "fixture repo" run5.txt > l5.txt
+--- CMD: wc -l l4.txt l5.txt
+43 va 43
+--- CMD: diff -q l4.txt l5.txt
+exit 0, khong in gi (hai tep giong nhau)
+--- CMD: diff l4.txt l5.txt | wc -l
+0
+--- CMD: grep -c "MISS" run4.txt ; grep -c "MISS" run5.txt
+0 va 0   (khong case nao lech ky vong o ca hai lan)
+
+=== C. NAM DONG GREEN CUA CA HAI LAN (dong ket qua nguyen van, lan 1) ===
+  [  ok  ] task    PASS green: clean TASK
+  [  ok  ] handoff PASS green: clean HANDOFF
+  [  ok  ] audit   PASS green: clean AUDIT
+  [  ok  ] audit   PASS S-18 nguong: dung HAI hang giong nhau thi WARN chu khong ERROR
+  [  ok  ] audit   PASS S-19 lenh co that khai output rong thi KHONG bi coi la verdict-only
+(Hai dong cuoi la hai case moi cua round nay; ban capture console lam mo dau tieng Viet nen o
+day ghi lai khong dau, ten case nguyen van co dau nam o verify-gates.selftest.ps1:471 va :490.)
+
+=== D. DOI CHIEU AC-07 ===
+- Cung dong cases: "cases: 37 total (5 green, 32 red), failures: 0"   DAT
+- Cung exit code: 0 va 0                                              DAT
+- Manh hon yeu cau: 44/45 dong giong het nhau, dong duy nhat khac la duong dan repo tam.
+
+=== E. GIOI HAN ===
+- Hai lan chay o day la lan thu 4 va thu 5 cua round. Hai lan dau (truoc phep siet S-19 cua
+  STEP-06) do "cases: 36 total (4 green, 32 red), failures: 0" - con so cua ban gate luc ay,
+  khong phai cua byte cuoi. Con so 37 la con so cua BYTE CUOI, dung theo §4.3 cua hop dong:
+  cong phai chay cuoi cung, sau lan sua tep cuoi.
+- AC-07 chi do tinh lap lai cua harness. Tinh lap lai cua CONG audit tren AUDIT.md that duoc do
+  rieng o ac09-no-false-positive.txt (moi slug chay lai sau phep siet, blob AUDIT.md truoc = sau).

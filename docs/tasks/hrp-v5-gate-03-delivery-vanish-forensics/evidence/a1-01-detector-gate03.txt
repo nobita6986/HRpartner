@@ -1,0 +1,15 @@
+# a1-01 | Tier 3 chay DETECTOR tren contract gate-03 (doc lap, khong doc lai output cua Tier 2)
+# thoi diem: 2026-09-05 15:11:32
+# dau tay detector luc chay: git hash-object = aaab5c2c63a641eee2bcf7ce3f692dd304d7da68 | byte tren dia = 13916
+$ powershell -NoProfile -File .ai-pipeline/scripts/verify-delivery-presence.ps1 -TaskPath "docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md"
+DELIVERY PRESENCE GATE
+  subject: docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md
+  repo   : C:\CodeApp\HrP
+  source : control field (Modules/Deliverables)
+
+  [OK]   D-01 contract declares 1 deliverable path(s) (1 from the control field).
+  [OK]   D-02 .ai-pipeline/scripts/verify-delivery-presence.ps1 PRESENT in worktree AND index (worktree 13916 B, index 13916 B).
+
+RESULT: PASS.
+Every path this contract declares as delivered is present in the working tree and in the index.
+DETECTOR_GATE03_EXIT=0

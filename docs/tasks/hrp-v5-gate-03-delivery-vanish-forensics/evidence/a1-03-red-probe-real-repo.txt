@@ -1,0 +1,28 @@
+# a1-03 | Tier 3 TU DUNG FIXTURE de bat detector keu DO tren REPO THAT (khong doc lai chung cu Tier 2)
+# fixture contract: /c/Users/Admin/AppData/Local/Temp/glx/gate03-audit/probe1-TASK.md (nam NGOAI repo, khong stage)
+# ba path khai bao: (1) script da staged  (2) tep co tren dia nhung UNTRACKED  (3) path khong ton tai
+--- noi dung fixture ---
+# TASK: tier3-probe-1 (fixture contract, khong thuoc pipeline)
+
+## 0. Control
+
+| Field | Value |
+|---|---|
+| Task slug | `tier3-probe-1` |
+| Deliverables | `.ai-pipeline/scripts/verify-delivery-presence.ps1`, `docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/evidence/a1-90-red-probe-untracked.txt`, `docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/evidence/khong-ton-tai-o-dau-ca.txt` |
+--- trang thai path (2) truoc khi chay: git status --porcelain ---
+?? docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/evidence/a1-90-red-probe-untracked.txt
+$ powershell -NoProfile -File .ai-pipeline/scripts/verify-delivery-presence.ps1 -TaskPath "C:\Users\Admin\AppData\Local\Temp\glx\gate03-audit\probe1-TASK.md"
+DELIVERY PRESENCE GATE
+  subject: C:\Users\Admin\AppData\Local\Temp\glx\gate03-audit\probe1-TASK.md
+  repo   : C:\CodeApp\HrP
+  source : control field (Modules/Deliverables)
+
+  [OK]   D-01 contract declares 3 deliverable path(s) (3 from the control field).
+  [OK]   D-02 .ai-pipeline/scripts/verify-delivery-presence.ps1 PRESENT in worktree AND index (worktree 13916 B, index 13916 B).
+  [FAIL] D-02 docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/evidence/a1-90-red-probe-untracked.txt MISSING_INDEX: present in the working tree but absent from the index. Nothing looks wrong on disk, so this is the loss no one sees; 'git add' the path or drop it from the declaration.
+  [FAIL] D-02 docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/evidence/khong-ton-tai-o-dau-ca.txt MISSING_BOTH: absent from the working tree AND absent from the index. The contract declares it delivered; nothing at this path is delivered.
+
+RESULT: FAIL (2 error(s), 0 warning(s)).
+A path this contract declares as delivered is missing or empty.
+PROBE1_EXIT=2

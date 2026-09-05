@@ -1,0 +1,102 @@
+== TIER 3 tu chay cong cham chinh ban AUDIT.md nay -- verify-audit.ps1 voi CA HAI tham so ==
+TIME: 2026-09-05 16:06:24
+CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-audit.ps1 -TaskPath docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md -HandoffPath docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/HANDOFF.md
+
+===== RUN 1 (DO -- cong bat duoc chinh Tier 3) =====
+AUDIT SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-gate-03-delivery-vanish-forensics\AUDIT.md (against docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md)
+
+  [OK]   S-01 AUDIT.md size 31066 bytes.
+  [OK]   S-01 AUDIT.md is tracked by git (recoverable).
+  [OK]   A-01 all 8 required sections present.
+  [OK]   A-02 spec version v1.2 matches TASK.
+  [OK]   A-03 11 AC all carry a result row.
+  [OK]   S-02 every measured AC row carries a command and a value.
+  [OK]   S-17 no measured value is reused across three or more AC.
+  [OK]   S-18 11 AC rows are pairwise distinct.
+  [OK]   A-05 verdict: CONDITIONAL
+  [OK]   S-07 section 5 is consistent with the AC table.
+  [OK]   S-08 no AC passed over a HANDOFF ENV_BLOCKED declaration.
+  [OK]   A-06 section 4 has 16 evidence rows.
+  [FAIL] S-02 section 4 row names no command: | Ba probe D? trong repo th?t: contract fixture khai path khìng t?n t?i, vÖ m?t t?p untracked th?t | exit `2` m?i probe | Nh†nh `MISSING_BOTH` vÖ nh†nh `MISSING_INDEX` in ra hai nhan KHAC nhau; tìi ph† hÖng rÖo d? th?y D? ch? khìng d?c l?i evidence c?a Tier 2 | `evidence/a1-03-red-probe-real-repo.txt` c?ng `evidence/a1-90-red-probe-untracked.txt` |
+  [FAIL] S-02 section 4 row names no command: | Repo git riàng du?i thu m?c t?m, m?t t?p tracked `0` byte, c?ng m?t path ch? c¢ trong index | exit `2` | `D-03` in `EMPTY: worktree 0 byte(s), index 0 byte(s)`; `MISSING_WORKTREE` in käm `index blob 33 byte(s)` d? ngu?i d?c bi?t cïn c?u du?c | `evidence/a1-04-red-probe-temp-repo.txt` |
+  [FAIL] S-02 section 4 row names no command: | Hai probe fail-closed: contract thi?u hÖng Modules, vÖ contract khìng d?c du?c | exit `2` r?i exit `3` | HÖng rÖo KHONG r?ng ru?t: thi?u khai b†o thç `[FAIL] D-01 ... fails closed`, contract v?ng m?t thç `3`. DÉy lÖ cÉu tr? l?i cho cÉu h?i hÖng rÖo c¢ bao gi? xanh vç khìng do gç hay khìng | `evidence/a1-05-vacuity-failclosed.txt` |
+  [OK]   S-10 28 measured values are new relative to TASK/HANDOFF.
+  [OK]   S-13 section 7 round numbering is within 1..1.
+  [OK]   S-14 no plaintext secret in AUDIT.md.
+  [OK]   S-15 23 referenced artifact path(s) exist.
+  [WARN] S-16 305 staged path(s) lie outside docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/ (e.g. .ai-pipeline/scripts/gate-lib.ps1, .ai-pipeline/scripts/verify-audit.ps1, .ai-pipeline/scripts/verify-delivery-presence.ps1). Tier 3 must never commit source or test files with its audit.
+  [OK]   A-07 closing handoff line present.
+
+RESULT: FAIL (3 error(s), 1 warning(s)).
+Tier 1 MUST NOT resolve on this AUDIT.md - send it back to Tier 3.
+VERIFY_AUDIT_EXIT_RUN1=2
+
+===== RUN 2 (sau khi ba hang muc 4 duoc n√™u ten lenh) =====
+AUDIT SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-gate-03-delivery-vanish-forensics\AUDIT.md (against docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md)
+
+  [OK]   S-01 AUDIT.md size 31385 bytes.
+  [OK]   S-01 AUDIT.md is tracked by git (recoverable).
+  [OK]   A-01 all 8 required sections present.
+  [OK]   A-02 spec version v1.2 matches TASK.
+  [OK]   A-03 11 AC all carry a result row.
+  [OK]   S-02 every measured AC row carries a command and a value.
+  [OK]   S-17 no measured value is reused across three or more AC.
+  [OK]   S-18 11 AC rows are pairwise distinct.
+  [OK]   A-05 verdict: CONDITIONAL
+  [OK]   S-07 section 5 is consistent with the AC table.
+  [OK]   S-08 no AC passed over a HANDOFF ENV_BLOCKED declaration.
+  [OK]   A-06 section 4 has 16 evidence rows.
+  [OK]   S-02 section 4 rows all carry command + result.
+  [OK]   S-10 28 measured values are new relative to TASK/HANDOFF.
+  [OK]   S-13 section 7 round numbering is within 1..1.
+  [OK]   S-14 no plaintext secret in AUDIT.md.
+  [OK]   S-15 23 referenced artifact path(s) exist.
+  [WARN] S-16 305 staged path(s) lie outside docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/ (e.g. .ai-pipeline/scripts/gate-lib.ps1, .ai-pipeline/scripts/verify-audit.ps1, .ai-pipeline/scripts/verify-delivery-presence.ps1). Tier 3 must never commit source or test files with its audit.
+  [OK]   A-07 closing handoff line present.
+
+RESULT: PASS WITH WARNINGS (1 warning(s)).
+AUDIT.md carries measured evidence; Tier 1 may resolve on it.
+VERIFY_AUDIT_EXIT_RUN2=0
+
+===== DAU TAY DUNG CU LUC DONG ROUND (lan thu ba) =====
+gate-lib worktree=6daa689a33604f873f2e9f2181a741bfe4a55a9f index=6daa689a33604f873f2e9f2181a741bfe4a55a9f
+verify-task worktree=e36b83dfbf7c860e320d5409535b82001cab574e index=f9014b7f4bbb479a1544eddebbe9a26b4424ce62
+verify-handoff worktree=e1af8549b9dd73d8c569d66493b6e527fae021f5 index=e1af8549b9dd73d8c569d66493b6e527fae021f5
+verify-audit worktree=e1edaebac456da16cb618dca2607e7f46b1c4358 index=e1edaebac456da16cb618dca2607e7f46b1c4358
+verify-pipeline worktree=1348bffe2adf3a5c247ecc1f3ed2525233b41db9 index=1348bffe2adf3a5c247ecc1f3ed2525233b41db9
+CMD: git hash-object docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md ; grep Spec version cua TASK (chan A-02 drift)
+task_worktree_hash=3c22c6dc00d33c7e27f9e9853c54bfc1379c0966
+10:| Spec version | `v1.2` |
+180:| Spec version | Date | Change | Reason/Audit refs |
+audit_hash=2dbfdb8a1dd467240478e5666fd401d19e216619  copy_hash=2dbfdb8a1dd467240478e5666fd401d19e216619
+delivery_hash=aaab5c2c63a641eee2bcf7ce3f692dd304d7da68 delivery_index=aaab5c2c63a641eee2bcf7ce3f692dd304d7da68
+
+===== RUN 3 (lan chay CUOI CUNG cua round) =====
+AUDIT SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-gate-03-delivery-vanish-forensics\AUDIT.md (against docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md)
+
+  [OK]   S-01 AUDIT.md size 32348 bytes.
+  [OK]   S-01 AUDIT.md is tracked by git (recoverable).
+  [OK]   A-01 all 8 required sections present.
+  [OK]   A-02 spec version v1.2 matches TASK.
+  [OK]   A-03 11 AC all carry a result row.
+  [OK]   S-02 every measured AC row carries a command and a value.
+  [OK]   S-17 no measured value is reused across three or more AC.
+  [OK]   S-18 11 AC rows are pairwise distinct.
+  [OK]   A-05 verdict: CONDITIONAL
+  [OK]   S-07 section 5 is consistent with the AC table.
+  [OK]   S-08 no AC passed over a HANDOFF ENV_BLOCKED declaration.
+  [OK]   A-06 section 4 has 16 evidence rows.
+  [OK]   S-02 section 4 rows all carry command + result.
+  [OK]   S-10 28 measured values are new relative to TASK/HANDOFF.
+  [OK]   S-13 section 7 round numbering is within 1..1.
+  [OK]   S-14 no plaintext secret in AUDIT.md.
+  [OK]   S-15 23 referenced artifact path(s) exist.
+  [WARN] S-16 305 staged path(s) lie outside docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/ (e.g. .ai-pipeline/scripts/gate-lib.ps1, .ai-pipeline/scripts/verify-audit.ps1, .ai-pipeline/scripts/verify-delivery-presence.ps1). Tier 3 must never commit source or test files with its audit.
+  [OK]   A-07 closing handoff line present.
+
+RESULT: PASS WITH WARNINGS (1 warning(s)).
+AUDIT.md carries measured evidence; Tier 1 may resolve on it.
+VERIFY_AUDIT_EXIT_RUN3=0

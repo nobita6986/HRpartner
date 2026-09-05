@@ -1,0 +1,13 @@
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v5-gate-02-lane-premise-correction/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+  [OK]   A-05 8 requirement(s) traceable to STEP and AC.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-gate-02-lane-premise-correction/**.
+  [OK]   T-05 all 11 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+
+RESULT: PASS. TASK contract is ready for execution.
+VERIFY_TASK_EXIT=0

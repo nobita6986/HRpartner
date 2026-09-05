@@ -1,0 +1,84 @@
+# a1-06 | Tier 3 do LAI cau truc bang chung dieu tra (AC-02, AC-04, AC-05, AC-06) bang chinh dung cu contract goi ten
+# thoi diem: 2026-09-05 15:18:01
+$ powershell -NoProfile -File <temp>/m1-ac02-ac06.ps1
+=== AC-02: ban ke ===
+40-hex fingerprint lines      : 40
+Measure-Object -Line          : 52
+Get-Content .Count (mang)     : 54
+9832973 (Select-String)       : 1
+=== AC-03: quet secret tren BON tep ===
+postgres     matching lines : 0
+npg_         matching lines : 0
+password     matching lines : 0
+secret       matching lines : 0
+eyJ          matching lines : 0
+AKIA         matching lines : 0
+bearer       matching lines : 0
+token matching lines          : 381
+token total occurrences       : 4
+token assignment-form         : 0
+[REDACTED: NEON_PW]           : 1
+total lines redacted          : 1
+=== AC-04 ===
+byte cut (slices)             : 5
+No timestamp parsing (line)   : 0
+No timestamp\s+parsing (raw)  : 1
+2082393 (manifest)            : 1
+limit of the method (finding) : 1
+=== AC-05 ===
+ANSWER: NO (finding)          : 1
+KHONG XAC LAP DUOC (finding)  : 2
+9832973 no-comma (finding)    : 0
+28634384 no-comma (finding)   : 0
+9,832,973 comma (finding)     : 1
+28,634,384 comma (finding)    : 1
+deleteFile   in slices      : 0
+willDelete   in slices      : 0
+didDelete    in slices      : 0
+renameFile   in slices      : 0
+=== AC-06 ===
+FILES IN THIS SNAPSHOT        : 1
+must not be sent              : 1
+logfreeze-0 (finding)         : 7
+M1_EXIT=0
+
+$ powershell -NoProfile -File <temp>/m2-structure.ps1
+=== AC-02 cau truc tung dong dau tay ===
+so dong co dau tay hex40            : 40
+trong do KHONG co cot byte >=2 chu so: 16
+dong tong 'total bytes'             :
+   total bytes: 9832973
+tong cot byte tu 40 dong (tu cong lai): 9832973
+
+=== AC-04 nam dong 'byte cut' co phai TIEU DE ca nam ===
+so dong             : 5
+trong do la tieu de : 5
+   L9: ===== 20260904T080100/window2/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 648106, 7329 lines) =====
+   L85: ===== 20260904T184723/window2/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 649952, 7123 lines) =====
+   L780: ===== 20260904T184723/window3/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 2035676, 20938 lines) =====
+   L797: ===== 20260904T184723/window4/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 2082393, 21512 lines) =====
+   L1599: ===== 20260905T075944/window2/exthost/Anthropic.claude-code/Claude VSCode.log   (byte cut 396540, 4319 lines) =====
+
+=== AC-04 doi chieu 2082393 giua tieu de va ban ke ===
+   MANIFEST L35: 20260904T184723/window4/exthost/Anthropic.claude-code/Claude VSCode.log     2082393  2026-09-04 23:42:30  0275e527fbd6440cbca61c494489de8cd8c913d2
+
+=== AC-05 hai ly do doc lap, co cau truc danh so khong ===
+   L14: REASON 1 - the window that matters has been pruned by VS Code itself
+   L39: REASON 2 - within the surviving window there is no file-operation record at all
+
+=== AC-06 muc FILES IN THIS SNAPSHOT liet ke du bon tep khong ===
+   bat dau tai dong: 71
+   | FILES IN THIS SNAPSHOT
+   | ----------------------
+   |   logfreeze-01-manifest.txt   40 paths, byte-exact sizes, mtimes, git hash-object
+   |   logfreeze-02-slices.txt     1,509 kept lines, 1 redacted (NEON_PW), 3 lines of context
+   |   logfreeze-03-index.txt      per-file kept/redacted counts and the method line
+   |   logfreeze-04-finding.txt    this file
+   | 
+   | One line was redacted under pattern id NEON_PW. Redaction is line-granular and
+   | unconditional: losing a forensic line costs nothing, writing a credential into the repo
+   | is not recoverable.
+
+=== AC-06 muc gioi han cua phuong phap ===
+   L58: METHOD, and the limit of the method
+M2_EXIT=0

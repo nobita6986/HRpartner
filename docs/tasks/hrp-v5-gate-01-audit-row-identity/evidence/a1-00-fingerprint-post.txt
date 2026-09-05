@@ -1,0 +1,9 @@
+--- CMD: git hash-object <gate files> @ 2026-09-05T11:34:59Z ---
+gate-lib.ps1             6daa689a33604f873f2e9f2181a741bfe4a55a9f  469 lines
+verify-task.ps1          e36b83dfbf7c860e320d5409535b82001cab574e  302 lines
+verify-handoff.ps1       e1af8549b9dd73d8c569d66493b6e527fae021f5  341 lines
+verify-audit.ps1         e1edaebac456da16cb618dca2607e7f46b1c4358  636 lines
+verify-pipeline.ps1      1348bffe2adf3a5c247ecc1f3ed2525233b41db9  106 lines
+--- index blobs (git rev-parse :path) ---
+verify-audit.ps1             :e1edaebac456da16cb618dca2607e7f46b1c4358
+verify-gates.selftest.ps1    :a6a7faeaf65dc490b0f597d21877230f4a8fc45e

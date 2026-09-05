@@ -1,0 +1,83 @@
+STEP-06 / AC-07 - chay detector: exit 0 khi ban giao du, exit khac 0 khi khai mot path khong ton tai
+Task: hrp-v5-gate-03-delivery-vanish-forensics, spec v1.2, execution round 1
+Byte duoc do: verify-delivery-presence.ps1 = aaab5c2c63a641eee2bcf7ce3f692dd304d7da68, 13916 byte.
+
+=== A. AC-07 NUA MOT: exit 0 tren contract ma moi path ban giao deu du ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-delivery-presence.ps1 -TaskPath docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md
+EXIT=0
+DELIVERY PRESENCE GATE
+  subject: docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md
+  repo   : C:\CodeApp\HrP
+  source : control field (Modules/Deliverables)
+
+  [OK]   D-01 contract declares 1 deliverable path(s) (1 from the control field).
+  [OK]   D-02 .ai-pipeline/scripts/verify-delivery-presence.ps1 PRESENT in worktree AND index (worktree 13916 B, index 13916 B).
+
+RESULT: PASS.
+Every path this contract declares as delivered is present in the working tree and in the index.
+
+Day la contract cua CHINH task nay; muc Modules cua no khai dung mot path la tep script moi.
+Chay duoc exit 0 nghia la sau `git add`, ban giao cua toi du o CA HAI noi.
+
+=== B. STEP-06 cung doi chay tren contract rf-05 ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-delivery-presence.ps1 -TaskPath docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+EXIT=0
+  [OK]   D-01 contract declares 2 deliverable path(s) (2 from the control field).
+  [OK]   D-02 tsconfig.json PRESENT in worktree AND index (worktree 1108 B, index 1052 B).
+  [OK]   D-02 src/shared/toolchain/tsc-program-boundary.static.test.ts PRESENT in worktree AND index (worktree 13206 B, index 13206 B).
+RESULT: PASS.
+Ban day du cua lan chay nay, cong phep do chung minh KHONG cham vao rf-05, o ac08-three-states.txt
+phan A. Ghi lai o day vi STEP-06 ke ca hai lan chay trong cung mot buoc.
+
+=== C. AC-07 NUA HAI: exit khac 0 tren contract fixture duoi thu muc tam ===
+Fixture: C:\Users\Admin\AppData\Local\Temp\glx\gate03\fx-mainrepo-TASK.md
+Muc Modules cua no khai HAI path, path thu nhat KHONG ton tai o dau ca:
+  docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/evidence/never-was-delivered.ts
+--- CMD (do TRUOC khi chay, de khong phai tin loi khai):
+    test -e docs/.../evidence/never-was-delivered.ts   ->  khong co tren dia
+    git ls-files docs/.../evidence/never-was-delivered.ts  ->  0 dong
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-delivery-presence.ps1 -TaskPath C:\Users\Admin\AppData\Local\Temp\glx\gate03\fx-mainrepo-TASK.md
+EXIT=2
+DELIVERY PRESENCE GATE
+  subject: C:\Users\Admin\AppData\Local\Temp\glx\gate03\fx-mainrepo-TASK.md
+  repo   : C:\CodeApp\HrP
+  source : control field (Modules/Deliverables)
+
+  [OK]   D-01 contract declares 2 deliverable path(s) (2 from the control field).
+  [FAIL] D-02 docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/evidence/never-was-delivered.ts MISSING_BOTH: absent from the working tree AND absent from the index. The contract declares it delivered; nothing at this path is delivered.
+  [FAIL] D-02 docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/evidence/step05-detector-src.txt MISSING_INDEX: present in the working tree but absent from the index. Nothing looks wrong on disk, so this is the loss no one sees; 'git add' the path or drop it from the declaration.
+
+RESULT: FAIL (2 error(s), 0 warning(s)).
+A path this contract declares as delivered is missing or empty.
+
+Chu y: lan chay nay dung DUNG chuoi ky tu lenh ma AC-07 ghi, khong them tham so nao. Contract
+fixture nam duoi thu muc tam, path ben trong no doc theo goc repo THAT.
+
+=== D. DOI CHIEU AC-07 ===
+  script moi ton tai                                          DAT  (13916 byte, hash aaab5c2c)
+  exit 0 tren contract ma moi path ban giao du                 DAT  (phan A, exit 0)
+  exit khac 0 tren contract fixture duoi thu muc tam khai
+  mot path ban giao khong ton tai o dau ca                     DAT  (phan C, exit 2)
+Ba menh de, ba phep do rieng. Con so 2 KHAC 0, dung "khac 0" ma AC ghi chu khong phai mot
+ma thoat cu the nao khac.
+
+=== E. MOT LAN CHAY DO DUOC MA KHONG TAI LAP DUOC NUA ===
+Truoc khi `git add` tep script, toi chay dung lenh o phan A. Luc ay no ra:
+  [FAIL] D-02 .ai-pipeline/scripts/verify-delivery-presence.ps1 MISSING_INDEX: present in the
+         working tree but absent from the index. ...
+  RESULT: FAIL (1 error(s), 0 warning(s)).   EXIT=2
+Do la nhanh MISSING_INDEX doi tren mot path THAT trong repo that, khong phai fixture: tep co
+tren dia, mat thuong khong thay gi bat thuong, chi index la thieu. Sau `git add` lan chay ay
+KHONG tai lap duoc nua, nen toi khong dua no lam bang chung cua AC nao; ghi lai vi no la lan
+duy nhat trong vong nay lop su co cua DEC-05 xuat hien tren mot path that.
+
+=== F. GIOI HAN ===
+- Hai lan chay o phan A va B doc INDEX cua cay lam viec dung chung voi hai luong khac. Neu ai
+  do `git add` hay bo staged mot trong nhung path ay giua hai lan do, ket qua se doi. Anh chup
+  la 2026-09-05 14:0x.
+- Con so worktree 1108 va index 1052 cua tsconfig.json KHAC nhau. Do la CRLF duoi core.autocrlf,
+  khong phai hai ban khac nhau: 1052 dung bang `git cat-file -s 53cc484...` o step01-preflight.txt.
+  Cong nay khong doi hai so bang nhau, chi doi ca hai khac 0.
+- Fixture o phan C khai mot path THU HAI cot y (step05-detector-src.txt) de dong thoi chung minh
+  nhanh MISSING_INDEX; xem ac08-three-states.txt phan C. Neu chi muon doc AC-07 thi chi can dong
+  MISSING_BOTH la du.

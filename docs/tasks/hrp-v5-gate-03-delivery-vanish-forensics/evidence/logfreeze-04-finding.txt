@@ -1,0 +1,90 @@
+LOG CORPUS FREEZE - finding (Step 4)
+taken : 2026-09-05 08:28 Asia/Bangkok
+by    : Tier 1 (Planner), under the Owner's explicit instruction to handle the two
+        findings directly. This is a PRESERVATION snapshot, not an audit.
+
+QUESTION
+--------
+Can the VS Code log corpus establish HOW the delivered file `tsconfig.json` of task
+`hrp-v5-rf-05-tsc-program-boundary` (blob 53cc484886ddf4164f0741739af42e75ad913528)
+left BOTH the working tree and the git index partway through a later round?
+
+ANSWER: NO - KHONG XAC LAP DUOC (cannot be established). Two independent reasons.
+
+REASON 1 - the window that matters has been pruned by VS Code itself
+--------------------------------------------------------------------
+Session directories present in C:/Users/Admin/AppData/Roaming/Code/logs at snapshot time:
+
+  20260903T174307      <- EXISTS but holds ZERO files (0 files, 0 bytes)
+  20260904T080100      <- earliest surviving CONTENT
+  20260904T184639
+  20260904T184655      <- 0 files
+  20260904T184723
+  20260904T185009      <- 0 files
+  20260904T201626      <- 0 files
+  20260904T234313
+  20260904T234324      <- 0 files
+  20260905T075944
+
+Earlier in the same working conversation, on 2026-09-04, this corpus was measured at
+28,634,384 bytes and its session directories ran from 20260831T173707 onward. It now
+holds 9,832,973 bytes across the files listed in logfreeze-01-manifest.txt, and the
+oldest file with any content is dated 2026-09-04 08:01. In particular the file then
+measured at 20260903T173805/window2 - 4,573,340 bytes, and one of the six that then
+mentioned `tsconfig` - no longer exists.
+
+rf-05's delivery and its disappearance fall inside the pruned range. The substrate is
+gone; no method applied to what remains can recover it.
+
+REASON 2 - within the surviving window there is no file-operation record at all
+------------------------------------------------------------------------------
+Event counts across all 24 surviving files with content, inside the byte cut:
+
+  deleteFile      0
+  willDelete      0
+  didDelete       0
+  renameFile      0
+  Workspace Edit  4
+
+All four `Workspace Edit` hits are SELF-CONTAMINATION, not events: two are the verbatim
+text of Bash commands this very investigation ran (logged by [auto-mode] "new action
+being classified"), and two are the verbatim text of conversation messages that quoted
+the phrase. Their path:line anchors are 20260904T184723/window4 lines 9680, 9871, 13735
+and 16168; the first two are visibly `grep` invocations naming the log root.
+
+This is the contamination mechanism recorded as gate-03 DEC-02, observed a second time
+and now quantified: the phrase's ONLY appearances in the corpus are the searches for it.
+
+METHOD, and the limit of the method
+-----------------------------------
+The byte cut works: every file was read as open(path,'rb').read(N) where N is the size
+recorded in logfreeze-01-manifest.txt BEFORE any search ran, so nothing this extraction
+caused to be logged can appear in the slices. Byte offsets are exact; timestamps are not,
+which is why no timestamp parsing is used anywhere.
+
+The cut does NOT clean what was already there. Searches run earlier in this same
+conversation - before the manifest was taken - are inside the cut and are indistinguishable
+from real events by keyword alone. Therefore a keyword hit in logfreeze-02-slices.txt is
+NOT by itself evidence of a file operation; the line must be read, and a line of the form
+`[auto-mode] new action being classified: {"Bash": ...}` is a command echo, not an event.
+
+FILES IN THIS SNAPSHOT
+----------------------
+  logfreeze-01-manifest.txt   40 paths, byte-exact sizes, mtimes, git hash-object
+  logfreeze-02-slices.txt     1,509 kept lines, 1 redacted (NEON_PW), 3 lines of context
+  logfreeze-03-index.txt      per-file kept/redacted counts and the method line
+  logfreeze-04-finding.txt    this file
+
+One line was redacted under pattern id NEON_PW. Redaction is line-granular and
+unconditional: losing a forensic line costs nothing, writing a credential into the repo
+is not recoverable.
+
+CONSEQUENCE FOR THE CONTRACT
+----------------------------
+gate-03 DEC-01 already makes "KHONG XAC LAP DUOC" a valid PASS. This snapshot is the
+measurement that reaches it, and it reaches it for a reason stronger than absence of
+evidence: the record itself no longer exists, and what remains contains only the
+investigation's own footprints. An executor must not be sent to look for a mechanism in
+this corpus. What CAN still be measured about the delivery is the blob: it survives as
+53cc484886ddf4164f0741739af42e75ad913528, reachable by `git cat-file`, and no `git gc`,
+`git reflog expire`, `git stash drop` or `git prune` may be run while that is true.

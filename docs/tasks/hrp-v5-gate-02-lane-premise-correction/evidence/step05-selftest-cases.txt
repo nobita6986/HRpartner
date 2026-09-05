@@ -1,0 +1,169 @@
+STEP-05 / RQ-02, RQ-03 - ba thay doi trong harness: doi ky vong hai case cu, them hai case moi
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+
+Ban TRUOC round boc tu blob 9e1feb05377cc35dbff9793c502234dcbef4f266 - do la ban GIAO cua
+gate-01, mon anh em cung Modules theo DEC-09, khong phai ban o HEAD. Boc bang
+`git cat-file -p <SHA>` chu KHONG bang `git show :<path>`: lenh thu hai giai ra index BAY GIO,
+ma index nay da dich mot lan vi gate-01 vua giao vao do.
+
+  ban truoc: 30752 byte, BOM True, CR 0, LF 627, 37 loi goi `Add-Case`
+  ban sau  : 33127 byte, BOM True, CR 0, LF 675, 39 loi goi `Add-Case`
+--- CMD: git diff --numstat -- .ai-pipeline/scripts/verify-gates.selftest.ps1
+53   5   .ai-pipeline/scripts/verify-gates.selftest.ps1
+
+Ba thay doi, ke theo thu tu chung nam trong tep.
+
+=== A. THAY DOI 1/3 - FIXTURE CO THEM MOT vitest.config.ts (dong 296-325) ===
+Vi sao can: sau STEP-03, phep do lane DOC tep cau hinh test mac dinh o goc repo. Harness chay
+cong THAT tren mot repo fixture o $env:TEMP va truyen `-RepoRoot $root`, nen neu goc ay khong co
+tep cau hinh thi moi case lane se roi vao nhanh fail-closed va khong con do duoc dieu gi.
+
+Nguyen van, dong 296-325 cua ban sau:
+
+  # gate-02 RQ-01/RQ-02/RQ-03: the lane predicate now READS the default test config
+  # at the repo root, so the fixture needs one. Two shapes are kept here: the LOCKED
+  # shape rf-06 introduced in the real repo (DB variable pinned to a fixed value), and
+  # the UNLOCKED shape the check must still redden (DB variable left on the ambient
+  # value). A case can also set VitestConfig to '' to delete the file, which is the
+  # fail-closed branch of DEC-03. Both strings are fixture text invented here; neither
+  # carries a real credential.
+  $vitestConfigFile = Join-Path $root 'vitest.config.ts'
+
+  $vitestConfigLocked = @'
+  const BLOCKED_DB_URL = 'gate-selftest-blocked-unreachable-value';
+  export default {
+    test: {
+      environment: 'node',
+      env: { DATABASE_URL: BLOCKED_DB_URL, DATABASE_URL_ADMIN: '' },
+    },
+  };
+  '@
+
+  $vitestConfigUnlocked = @'
+  export default {
+    test: {
+      environment: 'node',
+      env: { DATABASE_URL: process.env.DATABASE_URL },
+    },
+  };
+  '@
+
+  $baseVitestConfig = $vitestConfigLocked
+  $baseVitestConfig | Set-Content -LiteralPath $vitestConfigFile -Encoding UTF8
+
+Hai chuoi tren la van fixture do TOI bia ra trong tep harness, dat trong repo tam o $env:TEMP.
+Khong chuoi nao la gia tri that: chuoi trong ban LOCKED la
+`gate-selftest-blocked-unreachable-value`, khong phai connection string, khong host, khong
+password (R-02). Ban UNLOCKED co y de gia tri roi vao bien moi truong xung quanh - do dung la
+hinh dang ma mach kiem PHAI con lam do.
+
+=== B. THAY DOI 2/3 - RUNNER GHI LAI TEP CAU HINH MOI VONG LAP (dong 613, 623-627) ===
+Nguyen van:
+
+  613:     $c = @{ Task = $baseTask; Handoff = $baseHandoff; Audit = $baseAudit; VitestConfig = $baseVitestConfig }
+  ...
+  623:     if ($c.VitestConfig -eq '') {
+  624:         if (Test-Path -LiteralPath $vitestConfigFile) { Remove-Item -LiteralPath $vitestConfigFile -Force }
+  625:     } else {
+  626:         $c.VitestConfig | Set-Content -LiteralPath $vitestConfigFile -Encoding UTF8 -NoNewline
+  627:     }
+
+Doc ra hai dieu, ca hai deu la dieu kien de phep do dung:
+1. Dong 613 dat lai `VitestConfig` ve `$baseVitestConfig` o DAU moi vong lap, truoc khi
+   `-Mutate` chay. Nen case dat cau hinh KHONG khoa hoac xoa tep KHONG ro ri sang case sau:
+   case ke tiep bat dau lai tu ban LOCKED. Day la cung mot khuon ma ba khoa `Task`, `Handoff`,
+   `Audit` da dung tu truoc round; toi chi them khoa thu tu vao dung khuon ay.
+2. Nhanh `''` XOA tep chu khong ghi tep rong. Phai xoa that, vi nhanh fail-closed cua DEC-03 ma
+   AC-04 do la nhanh "tep VANG", khong phai nhanh "tep rong". Nhanh tep rong la mot nhanh KHAC
+   trong cung phep do (kiem `IsNullOrWhiteSpace` tren noi dung doc duoc) va khong co case rieng
+   - ghi lai o phan gioi han cua step03-predicate-diff.txt.
+
+=== C. THAY DOI 3/3 - BON DONG Add-Case ===
+
+--- C.1 Hai case CU doi ky vong tu FAIL sang PASS ---
+
+TRUOC (blob 9e1feb05, dong 427-429):
+  Add-Case -Name 'S-11 dùng lane npx vitest run trần' -Gate audit -Expect FAIL -Token 'S-11' `
+      -Why 'go-live-01 BLK-01, go-live-13 F-04: lane trần đọc DATABASE_URL từ .env (production)' `
+      -Mutate { param($c) $c.Audit = $c.Audit.Replace('| `AC-01` | `npm run test:unit` |', '| `AC-01` | `npx vitest run` |') }
+
+SAU (worktree, dong 458-460):
+  Add-Case -Name 'S-11 lane tran duoc THA khi vitest.config.ts khoa bien DB' -Gate audit -Expect PASS `
+      -Why 'gate-02 RQ-01, DEC-04: rf-06 da khoa bien DB trong cau hinh mac dinh, nen lane tran khong con voi tay troi DB that; giu ky vong FAIL o day la khoa cung mot tien de da bi bac' `
+      -Mutate { param($c) $c.Audit = $c.Audit.Replace('| `AC-01` | `npm run test:unit` |', '| `AC-01` | `npx vitest run` |') }
+
+TRUOC (blob 9e1feb05, dong 539-541):
+  Add-Case -Name 'H-08 HANDOFF dùng lane npx vitest run trần' -Gate handoff -Expect FAIL -Token 'H-08' `
+      -Why 'go-live-01 BLK-01: lane trần thiếu JSX config và đọc DB thật' `
+      -Mutate { param($c) $c.Handoff = $c.Handoff.Replace('| `AC-01` | `npm run test:unit` |', '| `AC-01` | `npx vitest run` |') }
+
+SAU (worktree, dong 570-572):
+  Add-Case -Name 'H-08 lane tran duoc THA khi vitest.config.ts khoa bien DB' -Gate handoff -Expect PASS `
+      -Why 'gate-02 RQ-01, EV-08, DEC-04: case nay truoc round khoa cung tien de cu; ban giao nhac lane tran ma cau hinh mac dinh da khoa thi khong con la vet do' `
+      -Mutate { param($c) $c.Handoff = $c.Handoff.Replace('| `AC-01` | `npm run test:unit` |', '| `AC-01` | `npx vitest run` |') }
+
+--- C.2 Phep do manh nhat cua ca STEP nay: dong -Mutate GIONG BYTE truoc va sau ---
+--- CMD: doc dong 429 cua blob 9e1feb05 va dong 460 cua worktree, so byte
+  S-11: pre:429 (124 byte) vs post:460 (124 byte)  ->  GIONG BYTE
+  H-08: pre:541 (128 byte) vs post:572 (128 byte)  ->  GIONG BYTE
+
+Y nghia: DAU VAO cua hai case khong doi mot byte. Chi KY VONG doi. Tuc cung mot ban fixture co o
+lane tran, truoc round harness doi cong lam do, sau round harness doi cong tha. Do la dinh nghia
+cua "sua tien de", khong phai "noi mach kiem": neu toi noi mach kiem thi dau vao phai duoc lam
+nhe di, ma o day dau vao GIU NGUYEN.
+Hai dong `-Token` bi go: mot case ky vong PASS thi khong con token do nao de khang dinh.
+
+--- C.3 Hai case MOI, ca hai ky vong FAIL ---
+
+Worktree dong 574-578:
+  Add-Case -Name 'H-08 lane tran + vitest.config.ts KHONG khoa bien DB thi VAN DO' -Gate handoff -Expect FAIL -Token 'H-08' `
+      -Why 'gate-02 RQ-02, RISK-02: nua con lai cua mach kiem. Phep tha phai CO DIEU KIEN, neu khong thi mach kiem mat han hieu luc' `
+      -Mutate { param($c)
+          $c.Handoff = $c.Handoff.Replace('| `AC-01` | `npm run test:unit` |', '| `AC-01` | `npx vitest run` |')
+          $c.VitestConfig = $vitestConfigUnlocked }
+
+Worktree dong 580-584:
+  Add-Case -Name 'H-08 lane tran + VANG tep vitest.config.ts thi VAN DO (fail-closed)' -Gate handoff -Expect FAIL -Token 'H-08' `
+      -Why 'gate-02 RQ-03, DEC-03: khong doc duoc cau hinh thi nghieng ve phia CHAN, khong nghieng ve phia tha' `
+      -Mutate { param($c)
+          $c.Handoff = $c.Handoff.Replace('| `AC-01` | `npm run test:unit` |', '| `AC-01` | `npx vitest run` |')
+          $c.VitestConfig = '' }
+
+Ca hai case moi dung DUNG dong Replace giong hai case cu, roi doi THEM mot thu duy nhat la tep
+cau hinh o goc. Nen ba case handoff (570, 574, 580) tao ra CUNG MOT HANDOFF.md - viec nay do
+duoc, xem phan D duoi day - va chi khac nhau o cau hinh. Bien doi lap la mot bien.
+
+=== D. SO HOC SO CASE ===
+--- CMD: dem `Add-Case -Name` va dem theo `-Expect`, tren ca hai ban
+                       ban truoc (9e1feb05)   ban sau (worktree)
+  tong Add-Case               37                    39
+  -Expect PASS                 5                     7
+  -Expect FAIL                32                    32
+
+Kiem lai bang tay: hai case chuyen FAIL -> PASS (32 - 2 = 30), hai case FAIL moi them vao
+(30 + 2 = 32). Nen cot FAIL tra ve dung 32, cot PASS len 5 + 2 = 7, tong len 37 + 2 = 39.
+Ba con so khop voi dong `cases:` do o STEP-06.
+
+Luu y cho ai doc lai: `39 = 37 + 2` la con so cua AC-07 duoi nhanh DEC-09 (tang it nhat 2 so voi
+moc do BOI CHINH STEP-02). Con so 39 cung >= 35 la nguong tuyet doi cua AC-07. Ca hai nhanh cua
+AC-07 deu dat, khong can chon nhanh nao.
+
+=== E. BA CASE HANDOFF DUNG CUNG MOT ARTIFACT - PHEP DO ===
+Trong ban chay `-Verbose2`, moi case in ra dong `H-01 HANDOFF.md size <N> bytes` cua chinh lan
+chay ay. Ba case lane handoff deu bao:
+  case 570 (tha):        [OK]   H-01 HANDOFF.md size 1828 bytes.
+  case 574 (khong khoa): [OK]   H-01 HANDOFF.md size 1828 bytes.
+  case 580 (vang tep):   [OK]   H-01 HANDOFF.md size 1828 bytes.
+Cung 1828 byte ca ba lan. Nen ket luan doi chieu duoc: thu duy nhat lam doi verdict la tep cau
+hinh o goc repo fixture, khong phai noi dung ban giao. Day dung la menh de cua RQ-01.
+
+=== F. GIOI HAN ===
+- STEP-05 chi ghi lai THAY DOI trong harness. Ket qua chay nam o step06-selftest-after.txt; hai
+  dong cua case moi nam o ac03-h08-still-red.txt va ac04-fail-closed.txt.
+- Ten case duoc viet KHONG DAU. Ly do: ban capture console cp1252 lam mo tieng Viet co dau, va
+  hai case cu vi co dau nen khong trich lai duoc nguyen van vao evidence ma khong bi mo. Ten
+  moi khong dau thi doc lai duoc o moi noi. Doi ten khong doi hanh vi: harness khong so khop
+  ten, no so khop `-Token` va `-Expect`.
+- Harness van tu sinh tien trinh cong con bang co ha execution policy o dong noi bo cua no
+  (co san truoc round, xem LIM cua HANDOFF). Moi lenh TOI go tay deu la `powershell -NoProfile
+  -File ...`.

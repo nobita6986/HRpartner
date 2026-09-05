@@ -1,0 +1,32 @@
+AUDIT SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-rf-06-vitest-default-lane-safety\AUDIT.md (against docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/TASK.md)
+
+  [OK]   S-01 AUDIT.md size 4781 bytes.
+  [OK]   S-01 AUDIT.md is tracked by git (recoverable).
+  [OK]   A-01 all 8 required sections present.
+  [OK]   A-02 spec version v1.0 matches TASK.
+  [OK]   A-03 9 AC all carry a result row.
+  [FAIL] S-19 AC-01 uses the verdict word 'BLOCKED' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-02 uses the verdict word 'BLOCKED' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-03 uses the verdict word 'BLOCKED' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-04 uses the verdict word 'BLOCKED' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-05 uses the verdict word 'BLOCKED' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-06 uses the verdict word 'BLOCKED' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-07 uses the verdict word 'BLOCKED' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-08 uses the verdict word 'BLOCKED' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-09 uses the verdict word 'BLOCKED' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [OK]   S-17 no measured value is reused across three or more AC.
+  [FAIL] S-18 these AC share one row, identical cell for cell: AC-01, AC-02, AC-03, AC-04, AC-05, AC-06, AC-07, AC-08, AC-09 (1 such group(s) in section 2). One row copied over several AC measures none of them.
+  [OK]   A-05 verdict: BLOCKED
+  [OK]   S-07 section 5 is consistent with the AC table.
+  [OK]   S-08 no AC passed over a HANDOFF ENV_BLOCKED declaration.
+  [OK]   A-06 section 4 has 5 evidence rows.
+  [OK]   S-02 section 4 rows all carry command + result.
+  [FAIL] S-10 every number in sections 2 and 4 already appears in TASK.md or HANDOFF.md - the audit copied values instead of measuring them (go-live-15 signature: 'numbers were COPIED, not MEASURED').
+  [OK]   S-13 section 7 round numbering is within 1..1.
+  [OK]   S-14 no plaintext secret in AUDIT.md.
+  [WARN] S-16 323 staged path(s) lie outside docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/ (e.g. .ai-pipeline/scripts/gate-lib.ps1, .ai-pipeline/scripts/verify-audit.ps1, .ai-pipeline/scripts/verify-delivery-presence.ps1). Tier 3 must never commit source or test files with its audit.
+  [OK]   A-07 closing handoff line present.
+
+RESULT: FAIL (11 error(s), 1 warning(s)).
+Tier 1 MUST NOT resolve on this AUDIT.md - send it back to Tier 3.

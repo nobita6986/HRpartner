@@ -1,0 +1,35 @@
+# a1-04 | Tier 3 TU DUNG REPO GIT TAM de bat hai nhanh con lai: EMPTY (tep 0 byte DUOC TRACK) va MISSING_WORKTREE
+# AC-09 buoc chung minh bang fixture duoi thu muc tam, KHONG bang cach tao tep rong trong repo HrP -- day la repo rieng: C:\Users\Admin\AppData\Local\Temp\glx\gate03-audit\probe2-repo
+--- dung repo tam ---
+$ git -C <tmp> init  &&  tao empty-tracked.ts (0 byte), gone-from-worktree.md, normal.txt  &&  git add ca ba  &&  rm gone-from-worktree.md
+$ git -C <tmp> status --porcelain
+A  empty-tracked.ts
+AD gone-from-worktree.md
+A  normal.txt
+STATUS_EXIT=0
+# doc lap: byte cua empty-tracked.ts
+$ python -c "import os;print(os.path.getsize(...))"  -> 0 byte tren dia
+$ git -C <tmp> cat-file -s ':empty-tracked.ts'        -> 0 byte trong index
+--- noi dung fixture contract ---
+# TASK: tier3-probe-2 (fixture contract tren repo git tam)
+
+## 0. Control
+
+| Field | Value |
+|---|---|
+| Task slug | `tier3-probe-2` |
+| Modules | `empty-tracked.ts`, `gone-from-worktree.md`, `normal.txt` |
+$ powershell -NoProfile -File .ai-pipeline/scripts/verify-delivery-presence.ps1 -TaskPath "...\probe2-TASK.md" -RepoRoot "C:\Users\Admin\AppData\Local\Temp\glx\gate03-audit\probe2-repo"
+DELIVERY PRESENCE GATE
+  subject: C:\Users\Admin\AppData\Local\Temp\glx\gate03-audit\probe2-TASK.md
+  repo   : C:\Users\Admin\AppData\Local\Temp\glx\gate03-audit\probe2-repo
+  source : control field (Modules/Deliverables)
+
+  [OK]   D-01 contract declares 3 deliverable path(s) (3 from the control field).
+  [FAIL] D-03 empty-tracked.ts EMPTY: worktree 0 byte(s), index 0 byte(s). A tracked path that is 0 bytes is the shape a delivery takes when an empty editor buffer is saved over it.
+  [FAIL] D-02 gone-from-worktree.md MISSING_WORKTREE: present in the index but absent from the working tree (index blob 33 byte(s)). The staged bytes still exist, so recover with 'git checkout -- gone-from-worktree.md' before anything prunes them.
+  [OK]   D-02 normal.txt PRESENT in worktree AND index (worktree 12 B, index 12 B).
+
+RESULT: FAIL (2 error(s), 0 warning(s)).
+A path this contract declares as delivered is missing or empty.
+PROBE2_EXIT=2

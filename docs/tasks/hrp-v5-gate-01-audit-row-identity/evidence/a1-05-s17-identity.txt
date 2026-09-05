@@ -1,0 +1,22 @@
+=== AC-05 core: gate-01's delivery to verify-audit is ADDITIVE-ONLY (baseline EV-06 blob -> Tier2 blob) ===
+git diff --numstat 2520a48d(base) b6854802(t2): 98	0	2520a48dd7893f5cf9674357fd6a36e58772bcbd => b6854802e329b391a70475eef8920255f0b7d639
+==> deletions = 0  (0 deletions => NO pre-existing line was modified or removed; S-17 executable logic is untouched by construction)
+
+=== the DEC-02 comment block gate-01 INSERTED ahead of S-17 (8 comment lines), present in t2, absent in base ===
+count of 'DEC-02: S-17 stays decimal-only' in base blob : 0
+count of 'DEC-02: S-17 stays decimal-only' in t2   blob : 1
+--- the inserted block (from t2 blob) ---
+        # DEC-02: S-17 stays decimal-only on purpose. Widening '\d+[\.,]\d+' to
+        # bare integers would fire on nearly every row of nearly every audit,
+        # because the exit codes 0 and 1 are integers legitimately repeated across
+        # all AC - "mot cong keu o moi hang thi khong ai doc nua". The whole-row
+        # duplicate case is covered by S-18 below instead, without moving this
+        # threshold. The residual hole - Test-CellHasNumber accepting one
+        # meaningless digit (gate-lib.ps1 291-294) - is deferred debt, gate-01
+        # RISK-03 / Q-01, and DEC-03 forbids changing that helper from here.
+
+=== S-17 executable body is character-identical across base and t2 (extract the Add-GateWarn/Ok S-17 statements) ===
+base S-17 emit lines:       base:234:        Add-GateWarn $ctx 'S-17' "one value is presented as the measurement of three or more different AC: $($reused -join '; '). Each AC measures a different surface, so each needs its own number."
+      base:236:        Add-GateOk $ctx 'S-17' "no measured value is reused across three or more AC."
+t2   S-17 emit lines:       t2:298:        Add-GateWarn $ctx 'S-17' "one value is presented as the measurement of three or more different AC: $($reused -join '; '). Each AC measures a different surface, so each needs its own number."
+      t2:300:        Add-GateOk $ctx 'S-17' "no measured value is reused across three or more AC."

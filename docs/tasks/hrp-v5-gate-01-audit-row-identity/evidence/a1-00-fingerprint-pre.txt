@@ -1,0 +1,20 @@
+== TIER 3 gate-01 AUDIT round 1: DAU TAY DUNG CU LUC MO ROUND ==
+TIME: 2026-09-05 18:11:09
+HEAD: 31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+
+-- 5 gate files: worktree hash | index hash | lines --
+gate-lib               worktree=6daa689a33604f873f2e9f2181a741bfe4a55a9f index=6daa689a33604f873f2e9f2181a741bfe4a55a9f lines=469 porcelain=[A ]
+verify-task            worktree=e36b83dfbf7c860e320d5409535b82001cab574e index=f9014b7f4bbb479a1544eddebbe9a26b4424ce62 lines=302 porcelain=[ M]
+verify-handoff         worktree=e1af8549b9dd73d8c569d66493b6e527fae021f5 index=e1af8549b9dd73d8c569d66493b6e527fae021f5 lines=341 porcelain=[A ]
+verify-audit           worktree=e1edaebac456da16cb618dca2607e7f46b1c4358 index=e1edaebac456da16cb618dca2607e7f46b1c4358 lines=636 porcelain=[M ]
+verify-pipeline        worktree=1348bffe2adf3a5c247ecc1f3ed2525233b41db9 index=1348bffe2adf3a5c247ecc1f3ed2525233b41db9 lines=106 porcelain=[M ]
+verify-gates.selftest  worktree=a6a7faeaf65dc490b0f597d21877230f4a8fc45e index=a6a7faeaf65dc490b0f597d21877230f4a8fc45e lines=675 porcelain=[A ]
+
+-- gate-01 delivery baselines named in AC-01/EV-06 --
+verify-audit pre-delivery 2520a48d type=blob
+gate-lib   pre-delivery 43ada847 type=blob
+
+-- WHAT gate-01 DELIVERED into verify-audit.ps1 (baseline 2520a48d -> worktree) --
+diff_lines=116  added(+)=102  removed(<)=4
+added lines mentioning S-18/S-19/S-17:
+9

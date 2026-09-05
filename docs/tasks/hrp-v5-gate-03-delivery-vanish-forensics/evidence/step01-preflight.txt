@@ -1,0 +1,52 @@
+STEP-01 / RQ-07 - tien kiem: blob 53cc484 con song, ten tep ma kiem moi con trong
+Task: hrp-v5-gate-03-delivery-vanish-forensics, spec v1.2, execution round 1
+Moc mo round: 2026-09-05 14:07 (Asia/Bangkok, gio host). Baseline HEAD = 31625c4.
+
+=== A. AC-01, DO LAN MOT: blob con song ===
+--- CMD: git cat-file -t 53cc484886ddf4164f0741739af42e75ad913528
+EXIT=0
+blob
+--- CMD: git cat-file -s 53cc484886ddf4164f0741739af42e75ad913528
+EXIT=0
+1052
+
+Chuoi tra ve la dung mot tu "blob", khong phai "tree", khong phai "commit". Tuc doi tuong
+EV-13 ghim VAN CON trong object store va chua bi thu gom. Lan do THU HAI o cuoi vong nam
+trong step07-scope.txt, dung nguyen van chuoi ky tu lenh nay.
+
+Con so 1052 co gia tri doi chieu o AC-08 ca mot: detector in "index 1052 B" cho
+tsconfig.json, tuc no doc DUNG blob ma EV-13 ghim, khong phai mot ban khac.
+
+=== B. EV-08: ten .ai-pipeline/scripts/verify-delivery-presence.ps1 ===
+--- CMD: git ls-tree HEAD -- .ai-pipeline/scripts/verify-delivery-presence.ps1
+EXIT=0, 0 dong
+--- CMD: git ls-tree 31625c4 -- .ai-pipeline/scripts/verify-delivery-presence.ps1
+EXIT=0, 0 dong
+--- CMD: git log --all --oneline -- .ai-pipeline/scripts/verify-delivery-presence.ps1
+EXIT=0, 0 dong
+
+Ba phep do doc lap deu rong: ten nay chua tung duoc commit tren BAT KY nhanh nao trong lich
+su, khong co o HEAD, khong co o chinh commit Baseline. Nen ten con TRONG va toi dung ten
+CHINH. DEC-06 (ten du phong verify-delivery-inventory.ps1) KHONG duoc dung.
+
+--- CMD: git ls-files .ai-pipeline/scripts/verify-delivery-inventory.ps1
+EXIT=0, 0 dong
+--- CMD: test -e .ai-pipeline/scripts/verify-delivery-inventory.ps1
+khong co tren dia
+Ghi ca phep do nay de ai doc sau khong phai doan: ten du phong cung trong, tuc viec toi
+dung ten chinh la vi ten chinh con trong, khong phai vi het duong.
+
+=== C. RISK-05 DOI CHIEU ===
+RISK-05 canh bao ten script moi xung dot voi luong Tier 1 khac. Tin hieu cua no la EV-08
+thay ten da bi chiem. Ba phep do o phan B deu 0 dong, nen tin hieu ay KHONG bat. Khong doi
+ten, khong ghi DEC-06 vao HANDOFF nhu mot su thay the.
+
+=== D. GIOI HAN ===
+- EV-08 viet phep do la "git ls-files <path> rong VA tep khong co tren dia". Nua thu hai
+  KHONG con tai lap duoc sau STEP-05, vi STEP-05 chinh la buoc TAO tep ay tren dia. Toi
+  khong the vua tao tep vua chung minh no chua ton tai o cung mot thoi diem.
+  Ba phep do o phan B la ba thay the TAI LAP DUOC bat ky luc nao: chung do o HEAD va trong
+  lich su --all, tuc do o dung noi ma cau hoi "ten nay co bi luong khac chiem chua" duoc
+  tra loi. Mot luong khac chiem ten thi dau vet phai nam o commit hoac o index cua ho.
+- `git ls-files` sau STEP-05 se KHONG rong nua vi chinh toi da `git add` tep ay o STEP-07.
+  Do la ket qua cua viec giao hang, khong phai bang chung ten bi chiem.

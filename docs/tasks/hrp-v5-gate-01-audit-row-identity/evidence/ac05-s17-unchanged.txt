@@ -1,0 +1,92 @@
+AC-05 / RQ-03 -- khoi S-17: 0 dong LENH doi, 8 dong COMMENT them
+Task: hrp-v5-gate-01-audit-row-identity, spec v1.2, execution round 1
+
+=== A. PHUONG PHAP CHU CUA AC-05 BI NHIEM, VA DAY LA PHEP DO CHUNG MINH ===
+AC-05 ghi phuong phap la `git diff --cached -- .ai-pipeline/scripts/verify-audit.ps1`.
+`--cached` so index voi HEAD. Nhung khoi S-17 KHONG TON TAI o HEAD: no la cong viec chua
+commit cua luong Tier 1 khac, da co san trong ban truoc round (blob EV-06).
+
+--- CMD: git diff --cached -- .ai-pipeline/scripts/verify-audit.ps1   (sau khi git add)
+exit 0; toan bo hunk: 734 dong, 568 dong '+', 95 dong '-'
+  dong '+' co chu S-17 : 4
+  dong '-' co chu S-17 : 0     <-- HEAD khong co MOT dong S-17 nao de ma xoa
+Cua so 25 dong '+' bat dau tu dong banner '# -- S-17 One measurement ...':
+  21 dong LENH, 4 dong comment
+=> Doc theo mat chu, AC-05 se ra "21 dong lenh them" va FAIL. Nhung 21 dong ay la cua
+   luong khac, khong phai cua toi: chung da nam nguyen van trong blob EV-06 truoc khi toi
+   go mot chu nao (chung minh o phan C: doan ay giong BYTE voi ban truoc round).
+
+Ba so lien quan, do o STEP-01 va do lai o day:
+  HEAD  verify-audit.ps1 = b5390297ef9c18e486eb7e21abfb4d9b9771414c
+  EV-06 (moc truoc round) = 2520a48dd7893f5cf9674357fd6a36e58772bcbd
+  worktree (byte cuoi cua round) = b6854802e329b391a70475eef8920255f0b7d639
+  so dong lech HEAD vs EV-06 = 569 ; so lan chu 'S-17' xuat hien: HEAD 0, EV-06 3, worktree 4
+  ('+' co chu S-19 trong cung hunk = 3, la phep siet cua STEP-06, nam NGOAI khoang S-17)
+
+=== B. VI SAO LAY EV-06 LAM MOC LA THEO CHINH HOP DONG, KHONG PHAI TOI TU CHON ===
+Truong Baseline cua TASK.md nay viet: nam tep gate deu LECH HEAD va hai tep KHONG co o
+HEAD, "nen baseline that cua chung la dau tay blob ghi o EV-06, khong phai mot commit".
+Vay moc dung cho phep do nay la blob EV-06, va `--cached` o phan A la nhieu DEC-08.
+
+--- CMD: git cat-file -p 2520a48dd7893f5cf9674357fd6a36e58772bcbd > $TEMP\glx\gate01\verify-audit.before.ps1
+--- CMD: python -c "hashlib... " / git hash-object verify-audit.before.ps1
+ban copy hash lai = 2520a48dd7893f5cf9674357fd6a36e58772bcbd  (dung blob EV-06, khong phai
+`git show :path` -- lenh ay giai ra index BAY GIO, tuc ban da bi dich)
+
+=== C. PHEP DO CACH LY: EV-06 vs WORKTREE, GIOI HAN TRONG KHOANG S-17 ===
+Khoang khoi S-17 (tu dong banner den dau dong `}` dong cua if/elseif cua S-17):
+  o ban EV-06 : dong 213..237  = 25 dong
+  o worktree  : dong 269..301  = 33 dong
+  Khoang o worktree DICH 9 dong xuong so voi lan do dau round (260..292): phep siet S-19 cua
+  STEP-06 chen 9 dong VAO KHOI S-19, tuc phia TREN khoang nay. Toan bo phan C duoi day da do
+  LAI tren byte cuoi (blob b6854802), khong phai ket qua cu doi so dong.
+
+--- CMD: diff -u s17.before.txt s17.after.txt      (hai khoang tren, tach ra hai tep)
+exit 1 (co khac biet), DUNG MOT hunk:
+@@ -1,3 +1,11 @@
++    # DEC-02: S-17 stays decimal-only on purpose. Widening '\d+[\.,]\d+' to
++    # bare integers would fire on nearly every row of nearly every audit,
++    # because the exit codes 0 and 1 are integers legitimately repeated across
++    # all AC - "mot cong keu o moi hang thi khong ai doc nua". The whole-row
++    # duplicate case is covered by S-18 below instead, without moving this
++    # threshold. The residual hole - Test-CellHasNumber accepting one
++    # meaningless digit (gate-lib.ps1 291-294) - is deferred debt, gate-01
++    # RISK-03 / Q-01, and DEC-03 forbids changing that helper from here.
+     # -- S-17 One measurement cannot prove several different AC --------------
+     # go-live-15: the ratio 5.578:1 was presented as the result for AC-04, AC-05,
+     # AC-06 and AC-07 - four different surfaces on four different backgrounds.
+Khong co hunk thu hai. Khong co dong '-' nao.
+
+--- CMD: python (phan loai tung dong, comment = dong trim bat dau bang '#')
+BEFORE range 213..237 lines: 25
+AFTER  range 269..301 lines: 33
+AFTER tail 277..301 == BEFORE 213..237 byte for byte: True
+AFTER head 269..276 (the added block): 8 lines
+classification of the 8 added lines: Counter({'comment': 8})
+added command lines in range : 0
+added comment lines in range : 8
+command lines BEFORE / AFTER : 21 / 21
+command lines identical & in same order: True
+ndiff on command lines only -> differing entries: 0
+
+Dong manh nhat la dong thu ba: 25 dong lenh+comment cu con nguyen VEN BYTE o vi tri moi.
+Toi chi chen mot khoi 8 dong comment NGAY TRUOC banner, khong sua gi ben trong.
+
+=== D. DOI CHIEU AC-05 ===
+  "So dong LENH them hoac bot trong khoang cua khoi S-17 bang 0"   -> 0        DAT
+  "so dong comment them lon hon 0"                                 -> 8 > 0    DAT
+Ca hai nua do tren moc ma chinh truong Baseline cua hop dong chi dinh (blob EV-06).
+
+=== E. GIOI HAN ===
+- LIM: con so cua phuong phap ghi trong AC-05 (`git diff --cached`) la 21 dong lenh, KHONG
+  phai 0. Toi khong che con so ay: no o phan A. No do HEAD, va HEAD khong co khoi S-17,
+  nen no dang do cong viec cua luong Tier 1 khac cong voi cong viec cua toi tron lam mot.
+  Toi khong sua AC va khong sua hop dong; toi giao ca hai con so va noi ro con nao tra loi
+  dung menh de cua AC-05.
+- Viec `git add` verify-audit.ps1 keo theo ca 569 dong lech cua luong khac VAO index cua
+  cay nay. Khong tranh duoc: git stage nguyen tep. Toi khong commit (R-01), nen index chi
+  la trang thai tam; ai commit sau nay phai dung `git commit -- <pathspec>` va doc diffstat
+  cua chinh commit do truoc khi push.
+- Ranh gioi khoang S-17 do toi chon (banner -> dau dong `}` cua if/elseif S-17). Chon rong
+  hon ve phia truoc se an vao khoi S-02 cua luong khac; chon hep hon se cat mat chinh ba
+  dong banner. Ca hai dau khoang deu in nguyen van o phan C de kiem lai duoc.

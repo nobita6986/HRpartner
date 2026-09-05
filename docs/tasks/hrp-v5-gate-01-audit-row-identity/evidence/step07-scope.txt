@@ -1,0 +1,95 @@
+AC-10 / RQ-08 - pham vi Tier 2: dung HAI tep Modules cong path duoi slug nay
+Task: hrp-v5-gate-01-audit-row-identity, spec v1.2, execution round 1
+STEP-07. Do LAI o cuoi vong, sau lan sua tep cuoi va sau `git add`.
+Byte cuoi: verify-audit.ps1 = b6854802..., verify-gates.selftest.ps1 = 9e1feb05...
+
+=== A. HAI LENH CUA AC-10, CHAY NGUYEN VAN ===
+--- CMD: git status --porcelain
+EXIT=0, 518 dong (219 dong la '??' untracked cua nhieu luong)
+--- CMD: git diff --cached --name-only
+EXIT=0, 292 dong
+--- CMD: git log --oneline -1
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+  (dung HEAD ghi o truong Baseline cua hop dong va o step01-fingerprint.txt)
+
+=== B. PHAN CUA TIER 2: 15 PATH, KE DU, KHONG LOC BOT ===
+Loc hai lenh tren bang dung mot bieu thuc: hai tep Modules HOAC tien to
+docs/tasks/hrp-v5-gate-01-audit-row-identity/
+  git status --porcelain  -> 15 dong
+  git diff --cached --name-only -> 15 dong  (khop nhau)
+
+  M  .ai-pipeline/scripts/verify-audit.ps1                 <- Modules 1/2
+  A  .ai-pipeline/scripts/verify-gates.selftest.ps1        <- Modules 2/2
+  A  docs/tasks/hrp-v5-gate-01-audit-row-identity/HANDOFF.md
+  A  docs/tasks/hrp-v5-gate-01-audit-row-identity/TASK.md               <- cua Tier 1, toi khong sua
+  A  docs/tasks/.../evidence/ac02-s18-rf06.txt
+  A  docs/tasks/.../evidence/ac03-s19-rf06.txt
+  A  docs/tasks/.../evidence/ac04-threshold.txt
+  A  docs/tasks/.../evidence/ac05-s17-unchanged.txt
+  A  docs/tasks/.../evidence/ac06-selftest.txt
+  A  docs/tasks/.../evidence/ac07-idempotent.txt
+  A  docs/tasks/.../evidence/ac08-audit-untouched.txt
+  A  docs/tasks/.../evidence/ac09-no-false-positive.txt
+  A  docs/tasks/.../evidence/ac11-gates.txt
+  A  docs/tasks/.../evidence/step01-fingerprint.txt
+  A  docs/tasks/.../evidence/step07-scope.txt
+  (13 dong duoi slug + 2 tep Modules = 15. Ba dau '...' o tren la viet gon cua chinh tien to
+   docs/tasks/hrp-v5-gate-01-audit-row-identity, khong phai path khac.)
+
+--- CMD: grep -cE '^.M ' tren ban capture porcelain, gioi han trong 15 path ay
+0        <-- khong path nao cua Tier 2 co cot thu hai la M, tuc worktree == index o ca 15.
+             Byte toi giao chinh la byte da staged, khong phai mot ban khac.
+--- CMD: git diff --cached --numstat -- <hai tep Modules>
+568  95  .ai-pipeline/scripts/verify-audit.ps1
+627   0  .ai-pipeline/scripts/verify-gates.selftest.ps1
+
+=== C. BON PATH .ai-pipeline KHAC: KHONG PHAI CUA TOI, CHUNG MINH BANG DAU TAY ===
+--- CMD: grep '\.ai-pipeline' tren ban capture porcelain -> 6 dong, khong phai 2:
+  A  .ai-pipeline/scripts/gate-lib.ps1          43ada847f9bd84494f80114de01f9f0b1b05c816 = EV-06
+  M  .ai-pipeline/scripts/verify-audit.ps1      b6854802... (CUA TOI, lech EV-06 co y)
+  A  .ai-pipeline/scripts/verify-gates.selftest.ps1  9e1feb05... (CUA TOI, lech EV-06 co y)
+  A  .ai-pipeline/scripts/verify-handoff.ps1    3997dd4ff896ea9f7cebdf40a247bcb269ab23e5 = EV-06
+  M  .ai-pipeline/scripts/verify-pipeline.ps1   1348bffe2adf3a5c247ecc1f3ed2525233b41db9 = EV-06
+   M .ai-pipeline/scripts/verify-task.ps1       e36b83dfbf7c860e320d5409535b82001cab574e = EV-06
+
+Bon tep ngoai Modules deu GIONG BYTE moc EV-06 do o STEP-01 (git hash-object chay lai o cuoi
+vong, so voi con so da ghi trong step01-fingerprint.txt). Chung o trong porcelain vi luong
+Tier 1 khac de chung do TRUOC khi vong nay bat dau, khong phai vi toi cham vao. Dau tay la
+phep do manh hon loi khai: neu toi sua mot byte thi hash phai lech.
+
+=== D. 277 PATH CACHED CON LAI: THUOC AI ===
+AC-10 viet: "Path cua luong khac va cua Tier 1 khong tinh vao AC nay". Ke ra de doi chieu duoc:
+--- CMD: git diff --cached --name-only, bo 15 path cua Tier 2, gom theo ba muc dau
+  193  docs/tasks/hrp-v5-rf-05-tsc-program-boundary       <- Tier 3 dang audit tren cay nay
+   45  docs/tasks/hrp-v5-test-01-browser-lane
+   18  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety
+    5  docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics <- Tier 1 vua dat, mon thu ba cua lo
+    2  src/shared/toolchain
+    1  vitest.config.ts / tsconfig.json / playwright.config.ts / package.json / package-lock.json
+    1  tests/browser/public-home.spec.ts
+    1  docs/tasks/hrp-v5-ui-01-new-ui-home-integration
+  (con lai la duoi cac muc tren, tong 277)
+Khong dong nao trong so 277 do lenh cua toi tao ra. Toi chi chay `git add` voi pathspec co tien
+to slug nay va hai tep Modules; khong lan nao dung `git add -A` hay `git add .`.
+
+=== E. tsconfig.json CUA rf-05: CHI DOC, KHONG CHAM ===
+--- CMD: git status --porcelain -- tsconfig.json   ->  M  tsconfig.json
+--- CMD: git hash-object tsconfig.json            ->  53cc484886ddf4164f0741739af42e75ad913528
+--- CMD: git diff --cached --numstat -- tsconfig.json -> 12   2
+Dung ba con so ma Tier 1 da do khi dong BLK-02. Toi khong restore, khong stage, khong xoa. Ba
+lenh tren deu la lenh DOC.
+
+=== F. DOI CHIEU AC-10 ===
+- Hop hai lenh, phan do Tier 2 gay ra = 15 path = 2 tep Modules + 13 path duoi
+  docs/tasks/hrp-v5-gate-01-audit-row-identity/**.  DAT, khong path nao ra ngoai.
+- Bon tep .ai-pipeline khac trong porcelain: chung minh khong phai cua toi bang dau tay
+  giong byte EV-06.
+- Khong dung `git add -A`, khong dung `git add .`, khong commit, khong push (R-01).
+
+=== G. GIOI HAN ===
+- Day la anh chup mot thoi diem. Sau khi ghi tep nay con dung HAI lan `git add` nua: chinh
+  tep nay va evidence/ac11-gates.txt, ca hai duoi slug nay (LIM-07 cua HANDOFF).
+- `git add` verify-audit.ps1 keo theo 568/95 dong cua luong Tier 1 khac vao index (LIM-02).
+  Ai commit sau nay phai dung `git commit -- <pathspec>`.
+- Con so 518 va 292 la cua CA CAY, gom viec cua ba luong. Chung khong phai phep do ve toi;
+  phep do ve toi la con so 15 o phan B.

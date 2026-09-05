@@ -1,0 +1,124 @@
+AC-09 / RQ-07 - chong duong tinh gia: bon AUDIT.md khac, hai slug cua AC-09 sach, hai slug con lai
+Task: hrp-v5-gate-01-audit-row-identity, spec v1.2, execution round 1
+
+AC-09 doi HAI slug da ACCEPTED. STEP-06 doi BON AUDIT.md co that. Toi chay bon, va hai slug
+ngoai AC-09 la noi tim ra duong tinh gia THAT. Vet do ay da duoc SIET (khong ha nguong), do
+lai o phan D.
+
+=== A. HAI SLUG CUA AC-09: KHONG in S-18, KHONG in S-19 ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-audit.ps1 -TaskPath docs/tasks/hrp-v5-go-live-16-internal-contrast-focus/TASK.md
+EXIT=0
+  [OK]   S-18 12 AC rows are pairwise distinct.
+  RESULT: PASS WITH WARNINGS (1 warning(s)).
+  grep -cE "S-19" -> 0 (khong co dong nao)
+  git hash-object AUDIT.md truoc = fe87513eb3286386c4c8857b30eaf02bcf712f17
+  git hash-object AUDIT.md sau   = fe87513eb3286386c4c8857b30eaf02bcf712f17  (BANG NHAU)
+
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-audit.ps1 -TaskPath docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+EXIT=0
+  [OK]   S-18 18 AC rows are pairwise distinct.
+  RESULT: PASS WITH WARNINGS (1 warning(s)).
+  grep -cE "S-19" -> 0 (khong co dong nao)
+  git hash-object AUDIT.md truoc = 875503958745527b64f8a79177b957e8bed23af4
+  git hash-object AUDIT.md sau   = 875503958745527b64f8a79177b957e8bed23af4  (BANG NHAU)
+
+=> Dung yeu cau chu cua AC-09 tren ca hai slug: khong S-18, khong S-19.
+   Ca hai van co 1 warning, la mot check KHAC (khong phai S-18/S-19), va exit code 0.
+
+=== B. HAI SLUG THU BA VA THU TU (STEP-06 doi bon ban audit) ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-audit.ps1 -TaskPath docs/tasks/hrp-v5-go-live-05-public-card-truth/TASK.md
+EXIT=2
+  [FAIL] S-19 AC-01 uses the verdict word 'PASS' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-03 uses the verdict word 'PASS' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-09 uses the verdict word 'PASS' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [OK]   S-18 19 AC rows are pairwise distinct.
+  RESULT: FAIL (23 error(s), 3 warning(s)).
+  git hash-object AUDIT.md truoc = d22f314b3d16c3892cbe0760f32cb10124b2359a
+  git hash-object AUDIT.md sau   = d22f314b3d16c3892cbe0760f32cb10124b2359a  (BANG NHAU)
+
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-audit.ps1 -TaskPath docs/tasks/hrp-v5-go-live-14-industry-label-truth/TASK.md
+EXIT=2
+  [FAIL] S-19 AC-06 uses the verdict word 'PASS' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [OK]   S-18 10 AC rows are pairwise distinct.
+  RESULT: FAIL (10 error(s), 2 warning(s)).
+  git hash-object AUDIT.md truoc = ab3f61f893124e7857e88b51cbe5b75dd2999213
+  git hash-object AUDIT.md sau   = ab3f61f893124e7857e88b51cbe5b75dd2999213  (BANG NHAU)
+
+
+=== C. BA HANG DUONG TINH GIA - da SIET, gio khong con do (RQ-07, STEP-06 stop condition) ===
+Truoc khi siet, cong in NAM dong S-19 o go-live-05 (AC-01, AC-03, AC-05, AC-09, AC-18) va HAI
+dong o go-live-14 (AC-06, AC-07). Ba trong bay dong ay OAN. Ba hang ay, nguyen van:
+
+  hrp-v5-go-live-05-public-card-truth
+  AUDIT.md:35
+  | AC-05 | Bỏ industry filter | PASS | `industry` đã rút khỏi form search ở v1.2/v1.3 (lệnh grep rỗng). | Áp dụng đúng `DEC-13`. |
+
+  hrp-v5-go-live-05-public-card-truth
+  AUDIT.md:48
+  | AC-18 | 4 Phép đo scope out/in | PASS | Thuộc tính của `PublicJobDto` còn nguyên; `git diff --numstat` các file out-of-scope rỗng. | Đạt tuyệt đối. |
+
+  hrp-v5-go-live-14-industry-label-truth
+  AUDIT.md:36
+  | AC-07 | Bảo vệ admin files | PASS | `git diff --numstat` trên `app/admin/clients` và `app/api/clients` rỗng. | Scope admin được bảo vệ. |
+
+Chung mot chu ky: hang NEU MOT LENH CO THAT, roi khai lenh ay tra ve KHONG CO GI. Do la mot
+phep do. gate-lib.ps1 da coi "0 dong" va "0 rows" la mot ma ket qua ($script:GateExitPattern),
+nen chu "rong" chinh la cau ay viet bang chu, khong phai mot loi van thay cho phep do.
+
+=== D. PHEP SIET, va so DELTA truoc/sau ===
+Sua trong verify-audit.ps1, khoi S-19, CONG THEM mot dieu kien giai cuu thu nam:
+  $emptyOutPattern = '(?i)(rong|trong|empty|no match|no output|khong co dong nao)'   <- ban that co dau
+  $hasEmptyOut = ((Test-CellHasCommand $strippedRow) -and [regex]::IsMatch($strippedRow, $emptyOutPattern))
+  if (-not ($hasExit -or $hasValue -or $hasRatio -or $hasArtifact -or $hasEmptyOut)) {
+Hai nua BAT BUOC cung dung: co lenh, VA khai output rong. Chi liet ke cach viet CO DAU, co y:
+"rong" va "trong" khong dau la tu Viet thong thuong, se giai cuu gan het moi hang.
+Nguong ba hang cua S-18 KHONG bi cham. Khong dieu kien nao dang co bi noi long.
+
+--- CMD: cung mot lenh cong audit, chay lai sau khi siet
+  go-live-05: RESULT: FAIL (25 error(s), 3 warning(s))  ->  RESULT: FAIL (23 error(s), 3 warning(s))
+              dong S-19: AC-01,AC-03,AC-05,AC-09,AC-18  ->  AC-01,AC-03,AC-09      (-2)
+  go-live-14: RESULT: FAIL (11 error(s), 2 warning(s))  ->  RESULT: FAIL (10 error(s), 2 warning(s))
+              dong S-19: AC-06,AC-07                    ->  AC-06                  (-1)
+  Delta error dung bang delta so dong S-19: -2 va -1. Khong check nao khac doi.
+
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-audit.ps1 -TaskPath docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/TASK.md
+  EXIT=2, so dong S-19 = 9 (chin hang cua rf-06 KHONG duoc giai cuu: khong hang nao co chu rong/trong/empty)
+  RESULT: FAIL (11 error(s), 1 warning(s)).
+
+=== E. BON HANG CON DO LA DUNG TINH - trich nguyen van, cong mot mach kiem DOC LAP ===
+AC-09 doi: "neu co in thi phai trich ra chinh cac hang trung de chung minh khong oan".
+Duoi day la bon hang, va o moi hang, dong cua MOT MA KIEM KHAC (S-02) tren CUNG hang ay trong
+CUNG lan chay - S-02 khong nam trong pham vi sua cua round nay (pham vi la S-17, S-18, S-19).
+
+  hrp-v5-go-live-05-public-card-truth  AUDIT.md:31
+  | AC-01 | Kiểm tra DTO / static tests | PASS | `npm run test:unit` cover các thuộc tính lương, DTO không chứa `hourlyRateVnd`. | `None` |
+    cung lan chay: [FAIL] S-02 AC-01 evidence contains no measured value at all.
+    => lenh co that (npm run test:unit) nhung khong khai KET CUC cua no: khong exit code, khong so test, khong artifact
+
+  hrp-v5-go-live-05-public-card-truth  AUDIT.md:33
+  | AC-03 | Quét file tĩnh label recruiter | PASS | Xác minh file static không lọt `client.name`. | `None` |
+    cung lan chay: [FAIL] S-02 AC-03 concluded without naming a command. An independent method must be a runnable command, not prose.
+    cung lan chay: [FAIL] S-02 AC-03 evidence contains no measured value at all.
+    => khong nêu lenh nao ("Xac minh file static"), va khong tri so
+
+  hrp-v5-go-live-05-public-card-truth  AUDIT.md:39
+  | AC-09 | Limiter & Security Context | PASS | MD5 change là hợp pháp do bỏ 1 thuộc tính, thứ tự execution guard không đổi. | MD5 change hợp pháp |
+    cung lan chay: [FAIL] S-02 AC-09 concluded without naming a command. An independent method must be a runnable command, not prose.
+    => khong nêu lenh nao, chi mot lap luan; "1 thuoc tinh" la mot chu so don, khong phai phep do
+
+  hrp-v5-go-live-14-industry-label-truth  AUDIT.md:35
+  | AC-06 | Chứng minh RED trước GREEN | PASS | HANDOFF đã ghi nhận kết quả 2 lần chạy RED/GREEN, xác nhận bằng assertion mới. | Phù hợp logic kiểm định. |
+    cung lan chay: [FAIL] S-02 AC-06 concluded without naming a command. An independent method must be a runnable command, not prose.
+    => khong nêu lenh nao; dan lai HANDOFF chu khong tu do
+
+Bon hang deu khong co lenh + ket cuc, hoac khong co lenh nao. Ba hang o phan C thi co. Do dung
+la duong phan chia ma DEC-05 ve ra. Ket luan cuoi cung ve bon hang nay thuoc Tier 3, khong phai toi.
+
+=== F. GIOI HAN ===
+- go-live-05 va go-live-14 do FAIL tong the vi nhieu ma kiem khac (23 va 10 loi). Round nay chi
+  chiu trach nhiem ve so dong S-18/S-19; toi khong sua AUDIT.md cua ho (hai blob bang nhau).
+- go-live-14 AC-07 duoc S-19 giai cuu nhung VAN do o S-02 ("evidence contains no measured value
+  at all") vi S-02 doi mot chu so bat ky. Do la mot ma kiem khac voi mot doi hoi khac, ngoai
+  pham vi RQ-02; toi khong cham S-02.
+- Hai slug o phan A moi la hai slug AC-09 chi dinh. Hai slug o phan B la phan MO RONG theo
+  STEP-06 (bon ban audit), khong phai thay the.

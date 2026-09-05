@@ -1,0 +1,15 @@
+--- CMD: git status --porcelain | wc -l ---
+581
+--- CMD: git diff --cached --name-only | wc -l (staged total) ---
+341
+--- staged paths under gate-01's OWN slug dir ---
+14
+--- gate-01's TWO declared Modules (the only .ai-pipeline files attributable to gate-01 Tier 2) ---
+verify-audit.ps1  content marker (gate-01 owns S-18/S-19/DEC-02):
+5
+--- the OTHER staged .ai-pipeline scripts belong to sibling streams (attribution by content) ---
+  gate-lib.ps1                 gate-02 lane markers=5  delivery-presence markers=0
+  verify-handoff.ps1           gate-02 lane markers=1  delivery-presence markers=0
+  verify-pipeline.ps1          gate-02 lane markers=0  delivery-presence markers=0
+  verify-delivery-presence.ps1 gate-02 lane markers=0  delivery-presence markers=15
+--- conclusion: gate-01 Tier2 footprint = {verify-audit.ps1, verify-gates.selftest.ps1, own slug dir}; all other staged paths excluded by AC-10 wording ---

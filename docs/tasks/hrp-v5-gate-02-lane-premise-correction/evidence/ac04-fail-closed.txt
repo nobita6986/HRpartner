@@ -1,0 +1,85 @@
+AC-04 / RQ-03 - VANG tep vitest.config.ts thi lane tran VAN do: mach kiem nghieng ve phia CHAN
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+
+Phuong phap ma AC-04 ghi: "Case selftest nhanh vang tep, doc dong cua case do".
+Case do la `verify-gates.selftest.ps1:580`. Do tren byte cuoi: selftest blob
+a6a7faeaf65dc490b0f597d21877230f4a8fc45e, gate-lib blob 6daa689a33604f873f2e9f2181a741bfe4a55a9f.
+
+=== A. CASE, NGUYEN VAN (dong 580-584) ===
+  Add-Case -Name 'H-08 lane tran + VANG tep vitest.config.ts thi VAN DO (fail-closed)' -Gate handoff -Expect FAIL -Token 'H-08' `
+      -Why 'gate-02 RQ-03, DEC-03: khong doc duoc cau hinh thi nghieng ve phia CHAN, khong nghieng ve phia tha' `
+      -Mutate { param($c)
+          $c.Handoff = $c.Handoff.Replace('| `AC-01` | `npm run test:unit` |', '| `AC-01` | `npx vitest run` |')
+          $c.VitestConfig = '' }
+
+`$c.VitestConfig = ''` la nhanh VANG TEP, khong phai nhanh tep rong. Chung minh bang chinh runner
+(dong 623-627, nguyen van):
+      if ($c.VitestConfig -eq '') {
+          if (Test-Path -LiteralPath $vitestConfigFile) { Remove-Item -LiteralPath $vitestConfigFile -Force }
+      } else {
+          $c.VitestConfig | Set-Content -LiteralPath $vitestConfigFile -Encoding UTF8 -NoNewline
+      }
+Chuoi rong khien runner XOA tep. Muon do nhanh tep rong thi phai truyen mot chuoi trang khac rong.
+Hai nhanh ay la hai `return $true` KHAC NHAU trong ham (dong 365 va 368) - xem phan C.
+
+=== B. DONG CUA CASE DO TRONG OUTPUT ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1
+EXIT=0
+  cases: 39 total (7 green, 32 red), failures: 0
+Dong ket qua cua case, nguyen van:
+  [  ok  ] handoff FAIL H-08 lane tran + VANG tep vitest.config.ts thi VAN DO (fail-closed)
+
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1 -Verbose2
+EXIT=0
+Khoi cua case nay bat dau o dong 778 (dong `[  ok  ]`), output cong cua no nam NGAY DUOI:
+  782: [OK]   H-01 HANDOFF.md size 1828 bytes.
+  788: [FAIL] H-08 AC-01 ran a bare 'npx vitest run' while vitest.config.ts at the repo root does not pin the DB variable to a fixed value, so that lane can still reach a live database. Fix either side: use 'npm run test:unit', pass --config, or lock the DB variable in vitest.config.ts.
+  796: RESULT: FAIL (1 error(s), 0 warning(s)).
+
+DUNG MOT loi, va loi ay la `H-08`.
+
+=== C. HUONG AN TOAN NAM TRONG MA, KHONG NAM TRONG LOI VAN ===
+gate-lib.ps1:358-370, nguyen van:
+  function Test-CellUsesNonCanonicalLane {
+      param([string]$Cell, [string]$RepoRoot = '')
+      if (-not [regex]::IsMatch($Cell, $script:GateBareLanePattern, 'IgnoreCase')) { return $false }
+      if ([regex]::IsMatch($Cell, $script:GateLaneConfigFlagPattern, 'IgnoreCase')) { return $false }
+      $root = $RepoRoot
+      if ([string]::IsNullOrWhiteSpace($root)) { $root = Get-RepoRoot -ScriptRoot $PSScriptRoot }
+      $configPath = Join-Path $root $script:GateDefaultLaneConfigFile
+      if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) { return $true }
+      $configText = ''
+      try { $configText = Get-Content -LiteralPath $configPath -Raw -ErrorAction Stop } catch { return $true }
+      if ([string]::IsNullOrWhiteSpace($configText)) { return $true }
+      return (-not [regex]::IsMatch($configText, $script:GateDefaultLaneLockPattern))
+  }
+
+Bon duong ra `$true` (tuc CHAN) va hai duong ra `$false` (tuc THA). Ke du:
+  THA  dong 360  o trong o khong co lane tran           -> khong phai viec cua mach kiem nay
+  THA  dong 361  o co `--config`                        -> nguoi viet da tu chi cau hinh
+  CHAN dong 365  KHONG co tep vitest.config.ts          <- DUNG NHANH CUA AC-04
+  CHAN dong 367  doc tep NEM loi (quyen, khoa, hong)    <- cung huong, `catch { return $true }`
+  CHAN dong 368  tep co ma noi dung trang               <- nhanh tep rong, khac nhanh 365
+  CHAN dong 369  doc duoc ma KHONG khop mau khoa        <- nhanh cua AC-03
+
+Ba tinh huong "khong biet" (vang tep, doc loi, noi dung trang) deu ra CHAN. Khong tinh huong nao
+trong so ay ra THA. Do la huong an toan ma `DEC-03` doi: mach kiem chi noi long khi DOC DUOC bang
+chung rang cau hinh da khoa, chu khong noi long vi thieu bang chung.
+
+=== D. HAI NUA CUA MENH DE, DO TREN CUNG MOT BAN GIAO ===
+Ba case handoff lane deu bao `H-01 HANDOFF.md size 1828 bytes` - cung ban giao, cung so byte, cung
+mot o AC-01 ghi `npx vitest run`. Chi tep cau hinh o goc repo fixture doi:
+  case 570  cau hinh KHOA        -> dong 754  RESULT: PASS.                           0 dong [FAIL] H-08
+  case 574  cau hinh KHONG khoa  -> dong 775  RESULT: FAIL (1 error(s), 0 warning(s)). 1 dong [FAIL] H-08
+  case 580  VANG tep cau hinh    -> dong 796  RESULT: FAIL (1 error(s), 0 warning(s)). 1 dong [FAIL] H-08
+
+=== E. GIOI HAN ===
+- Nhanh `catch` o dong 367 KHONG co case nao do. Dung mot tep khong doc duoc trong repo fixture doi
+  quyen he thong tep, ngoai pham vi round nay. Ghi thanh `LIM` trong ban giao: huong an toan cua
+  nhanh ay doc duoc tu ma nhung chua co phep chay chung minh.
+- Nhanh tep rong (dong 368) cung khong co case, va ly do khac: runner coi chuoi rong la lenh XOA
+  nen khong dung duong nay dat duoc trang thai ay. Muon do phai them mot co rieng cho harness -
+  ngoai pham vi `RQ-03`.
+- Case nay do qua cong ban giao (`H-08`). Nhanh vang tep qua cong audit (`S-11`) khong co case rieng;
+  hai site `S-11` goi cung ham nay nen di qua dung khoi lenh ay - suy luan tu duong goi, khong phai
+  phep chay. Cung ghi thanh `LIM`.

@@ -1,0 +1,23 @@
+DAU TAY CONG TRUOC VONG (audit round 1 cua gate-03)
+CMD: git hash-object .ai-pipeline/scripts/<f>.ps1 ; grep -c '' <f>.ps1 ; ls -l --time-style=full-iso
+TIME: 2026-09-05 15:01:51 SEAST
+--- hash + so dong ---
+gate-lib         6daa689a33604f873f2e9f2181a741bfe4a55a9f  lines=469
+verify-task      e36b83dfbf7c860e320d5409535b82001cab574e  lines=302
+verify-handoff   e1af8549b9dd73d8c569d66493b6e527fae021f5  lines=341
+verify-audit     e1edaebac456da16cb618dca2607e7f46b1c4358  lines=636
+verify-pipeline  1348bffe2adf3a5c247ecc1f3ed2525233b41db9  lines=106
+--- mtime ---
+2026-09-05 11:49:49.286617800 .ai-pipeline/scripts/gate-lib.ps1
+2026-09-05 11:56:13.274872400 .ai-pipeline/scripts/verify-audit.ps1
+2026-09-05 11:56:13.244412700 .ai-pipeline/scripts/verify-handoff.ps1
+2026-09-03 15:12:15.493663000 .ai-pipeline/scripts/verify-pipeline.ps1
+2026-09-03 12:57:28.500165000 .ai-pipeline/scripts/verify-task.ps1
+--- index blob (de biet ban nao da staged) ---
+gate-lib         index=6daa689a33604f873f2e9f2181a741bfe4a55a9f
+verify-task      index=f9014b7f4bbb479a1544eddebbe9a26b4424ce62
+verify-handoff   index=e1af8549b9dd73d8c569d66493b6e527fae021f5
+verify-audit     index=e1edaebac456da16cb618dca2607e7f46b1c4358
+verify-pipeline  index=1348bffe2adf3a5c247ecc1f3ed2525233b41db9
+--- HEAD ---
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit

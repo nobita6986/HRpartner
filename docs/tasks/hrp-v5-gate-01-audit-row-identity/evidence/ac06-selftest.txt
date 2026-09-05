@@ -1,0 +1,76 @@
+AC-06 / RQ-04 - selftest sau round: cases 37, green 5, failures 0, exit 0
+Task: hrp-v5-gate-01-audit-row-identity, spec v1.2, execution round 1
+Do lai tren byte cuoi: verify-audit.ps1 = b6854802..., verify-gates.selftest.ps1 = 9e1feb05...
+
+Vi tri trong lo: gate-01 chay DAU LO. STEP-01 do nam dau tay tep gate deu TRUNG EV-06, tuc nhanh
+nguyen nhan A cua DEC-08 khong kich hoat o mon nay. Vay moc ap dung dung theo cau chu cua AC-06:
+EV-07 = "cases: 33 total (3 green, 30 red), failures: 0".
+
+=== A. MOC TRUOC ROUND: LAY TU EV-07, VA VI SAO KHONG BOC LAI DUOC BANG SHA ===
+step01-fingerprint.txt ghi nguyen van: verify-gates.selftest.ps1 = '??' (untracked, trong scope
+Modules cua task nay). Tep chua tung nam trong HEAD va STEP-01 KHONG ghi dau tay blob cua rieng no
+(EV-06 chi ke nam tep gate). Nen khong co SHA nao de `git cat-file -p` boc lai byte truoc round:
+moc 33 la con so cua hop dong (EV-07), khong phai mot lan chay toi tu do truoc khi sua.
+
+Bu lai, round nay do duoc mot day so DUNG LAI moc ay tu ba phia (phan B, C).
+
+=== B. HAI LAN CHAY GIUA ROUND, KHI CHI MOI CO BA TRONG BON CASE MOI ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1   (lan 1, lan 2)
+cases: 36 total (4 green, 32 red), failures: 0        (ca hai lan, run1.txt:41 va run2.txt:41)
+
+Tru ba case toi da them tinh den luc do (mot green: nguong hai hang cua AC-04; hai red: ba hang
+copy va o Result la tu verdict):
+  total 36 - 3 = 33      green 4 - 1 = 3      red 32 - 2 = 30
+=> DUNG ca BA con so cua EV-07. Moc 33 (3 green, 30 red) duoc dung lai bang so do, khong phai
+   bang loi tin.
+
+=== C. BYTE CUOI ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1
+EXIT=0
+cases: 37 total (5 green, 32 red), failures: 0
+RESULT: PASS. Every gate rejects the historical defect it was written for, and still accepts a clean artifact.
+
+--- CMD: grep -c "Add-Case -Name" .ai-pipeline/scripts/verify-gates.selftest.ps1
+37       <-- dem tinh KHOP dong cases: cua lan chay => cach dem "mot loi goi Add-Case = mot case"
+             la hop le (harness lap mot vong cho moi case va in $rows.Count)
+
+Phep siet cua STEP-06 chi cong THEM mot case green: 36 (4 green, 32 red) -> 37 (5 green, 32 red),
+tuc +1 green va +0 red. Khong case do nao mat di.
+
+=== D. DOI CHIEU AC-06 ===
+  cases      = 37  >= 35   DAT
+  green      = 5   >= 3    DAT (tang 2 so voi moc, khong giam)
+  failures   = 0   = 0     DAT
+  exit code  = 0           DAT
+  delta so voi moc: 33 -> 37 = +4 case, ke ra du bon:
+    1. -Gate audit -Expect FAIL -Token 'S-18'      ba hang AC la mot hang copy (RQ-01)
+    2. -Gate audit -Expect PASS -WarnToken 'S-18'  nguong dung hai hang (AC-04)
+    3. -Gate audit -Expect FAIL -Token 'S-19'      o Result la mot tu verdict (RQ-02)
+    4. -Gate audit -Expect PASS                    lenh co that khai output rong: phep siet cua
+                                                   STEP-06, do tren go-live-05 AC-05/AC-18 va
+                                                   go-live-14 AC-07 (RQ-07)
+  red: 30 -> 32 (+2), green: 3 -> 5 (+2).
+
+=== E. VET DO PHU CUA S-19 TRONG HARNESS: BA CASE CU, DUNG TINH, DA DO LAI ===
+Trong lan chay -Verbose2, dong [FAIL] S-19 xuat hien BON lan (v2.txt:110, 164, 190, 532), thuoc
+bon case: S-02, S-04, S-07 va chinh case S-19. Ba case dau khong phai san pham cua round nay:
+  v2.txt:110  case S-02 (AC ket luan bang van xuoi)  -> hang | AC-02 | Da kiem tra bang mat | PASS | Dung nhu HANDOFF mo ta | None |
+  v2.txt:164  case S-04 (AC lay C-10 lam bang chung) -> hang | AC-02 | C-10 | PASS | C-10 | None |
+  v2.txt:190  case S-07 (muc 5 noi None trong khi co AC BLOCKED) -> mutation ghi o Result thanh
+              BLOCKED va o Evidence thanh "khong chay duoc" (selftest.ps1:399)
+Ca ba hang that su khong co ma thoat, khong co tri do, khong co duong dan artifact, va khong khai
+output rong - dung dinh nghia S-19 sau phep siet. Do la dung tinh, khong phai oan. Ba case ay van
+bao ok vi harness assert token rieng cua chung (S-02, S-04, S-07) va ca ba van FAIL nhu ky vong.
+
+--- CMD: dem dong "[FAIL] S-19" tren lan chay -Verbose2 TRUOC phep siet va tren lan SAU phep siet
+  truoc = 4 (S-02, S-04, S-07, S-19), tai dong 110, 164, 190, 532
+  sau   = 4 (dung bon case ay),       tai dong 110, 164, 190, 532
+=> Phep siet khong tao vet do moi va khong xoa vet do nao trong harness; failures = 0 o ca hai lan.
+
+=== F. GIOI HAN ===
+- Moc 33 khong duoc do lai tu byte goc (ly do o phan A). Neu Tier 3 muon mot moc do lai duoc, no
+  phai la dau tay blob cua selftest ghi truoc round sau - round nay khong con cach nao.
+- Khong the chay mot BAN COPY cua harness dat ngoai .ai-pipeline/scripts/: harness giai duong dan
+  cong bang $PSScriptRoot; con dat mot tep thu hai VAO trong do se pha tap path ma AC-10 dang do.
+- Phan E noi ve vet do BEN TRONG harness (S-19 keu o fixture cua case khac). Duong tinh gia tren
+  AUDIT.md THAT la phep do khac, o ac09-no-false-positive.txt.

@@ -1,0 +1,46 @@
+AC-02 / RQ-06 — S-18 do RED tren AUDIT.md that cua rf-06
+Task: hrp-v5-gate-01-audit-row-identity, spec v1.2, execution round 1
+Do luc: 2026-09-05 (Asia/Bangkok host clock)
+Fixture: docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md (EV-05)
+  blob = 1212bae740578cd10005e4c508b37d8c37afcdb0, 4781 bytes, KHONG sua 1 byte (xem ac08-audit-untouched.txt)
+
+=== A. RED TRUOC (ban gate CHUA sua, boc bang SHA da ghi o STEP-01) ===
+--- CMD: git cat-file -p 2520a48dd7893f5cf9674357fd6a36e58772bcbd > <temp>/verify-audit.before.ps1
+--- CMD: git hash-object <temp>/verify-audit.before.ps1
+2520a48dd7893f5cf9674357fd6a36e58772bcbd      <-- KHOP dau tay EV-06/STEP-01
+--- CMD: git hash-object <temp>/gate-lib.ps1   (ban copy dung cho lan chay before)
+43ada847f9bd84494f80114de01f9f0b1b05c816      <-- KHOP EV-06
+--- CMD: powershell -NoProfile -File <temp>/verify-audit.before.ps1
+           -TaskPath docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/TASK.md -RepoRoot .
+EXIT=2
+RESULT: FAIL (1 error(s), 1 warning(s)).
+--- CMD: grep -c "FAIL]" => 1        (loi duy nhat la S-10, khong lien quan hai check moi)
+--- CMD: grep -n "S-18|S-19" => 0 dong
+
+=== B. GREEN SAU (ban gate DA sua) ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-audit.ps1
+           -TaskPath docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/TASK.md -RepoRoot .
+EXIT=2
+RESULT: FAIL (11 error(s), 1 warning(s)).
+
+Dong S-18 nguyen van (1 dong duy nhat, ket loi):
+  [FAIL] S-18 these AC share one row, identical cell for cell: AC-01, AC-02, AC-03, AC-04, AC-05, AC-06, AC-07, AC-08, AC-09 (1 such group(s) in section 2). One row copied over several AC measures none of them.
+
+Lan chay o phan B da chay LAI tren byte cuoi cua cong sau phep siet S-19 cua STEP-06
+(blob verify-audit.ps1 = b6854802e329b391a70475eef8920255f0b7d639): van dung MOT dong S-18 voi
+du chin ma AC, van RESULT: FAIL (11 error(s), 1 warning(s)), van EXIT=2. Phep siet chi cham
+nhanh giai cuu cua S-19, khong cham nguong cua S-18.
+
+=== C. DOI CHIEU AC-02 ===
+- Muc do: ket loi (tien to "[FAIL]") => S-18 la ERROR o nguong >= 3 hang trung (DEC-04). DAT.
+- Neu du chin ma AC-01..AC-09 trong CUNG mot dong: AC-01 AC-02 AC-03 AC-04 AC-05 AC-06 AC-07 AC-08 AC-09
+  dem = 9/9 co mat. DAT (RQ-01: thong bao phai neu du danh sach ma AC trong nhom).
+- So nhom: "1 such group(s) in section 2" => thong bao neu ca SO NHOM. DAT (RQ-01).
+- Delta do duoc: 1 error -> 11 error; S-18 di tu 0 dong len 1 dong. Vet do la DO check moi,
+  khong phai do fixture doi (blob rf-06 truoc = sau = 1212bae7).
+
+=== D. GIOI HAN ===
+- S-10 do o CA hai lan chay: no la check cu, doc so trong muc 2+4 so voi TASK/HANDOFF.
+  Khong phai san pham cua round nay, va khong dung de ket luan AC-02.
+- S-16 canh bao 257 path staged ngoai pham vi slug rf-06: do la index cua chinh Tier 2 khi
+  dang lam lo gate, khong phai Tier 3 tron file vao audit rf-06.

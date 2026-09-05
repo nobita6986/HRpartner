@@ -1,0 +1,40 @@
+== TIER 3: BAN GIAO CO TAC DUNG PHU KHONG, VA DEC-07 CO DUNG KHONG ==
+TIME: 2026-09-05 15:51:34 SEAST
+
+CMD: grep -c 'verify-delivery-presence' .ai-pipeline/scripts/verify-pipeline.ps1   (DEC-07: co y CHUA noi vao)
+0
+0
+CMD: grep -rc 'verify-delivery-presence' .ai-pipeline/scripts/verify-gates.selftest.ps1
+0
+0
+
+CMD: grep -nE 'Set-Content|Out-File|Add-Content|Remove-Item|New-Item|git add|git commit|git checkout|git reset' $S   (lenh GHI trong ban giao)
+310:        Add-Err 'D-02' "$rel MISSING_INDEX: present in the working tree but absent from the index. Nothing looks wrong on disk, so this is the loss no one sees; 'git add' the path or drop it from the declaration$note."
+314:    Add-Err 'D-02' "$rel MISSING_WORKTREE: present in the index but absent from the working tree (index blob $idxSize byte(s)). The staged bytes still exist, so recover with 'git checkout -- $rel' before anything prunes them$note."
+write_command_lines=2
+
+CMD: grep -nE 'DATABASE_URL|\.env|Invoke-WebRequest|Invoke-RestMethod|curl|psql|prisma' $S   (ban giao co cham DB/mang khong)
+  (0 dong)
+
+CMD: grep -cE 'MISSING_INDEX|MISSING_WORKTREE|MISSING_BOTH|EMPTY' $S ; grep -nE '^\s*exit ' $S
+5
+198:    exit 3
+206:    exit 3
+220:    exit 3
+323:    exit 2
+328:    exit 0
+332:exit 0
+
+CMD: git hash-object $S ; grep -c '' $S
+delivery_hash=aaab5c2c63a641eee2bcf7ce3f692dd304d7da68  lines=332
+
+== TINH CHINH: HAI DONG 310/314 LA CHUOI THONG BAO, KHONG PHAI LENH ==
+CMD: sed -n '310p;314p' $S | grep -c "Add-Err"   (ca hai dong nam trong doi so cua Add-Err)
+2
+CMD: grep -nE "^[[:space:]]*(Set-Content|Out-File|Add-Content|Remove-Item|New-Item|git)" $S   (lenh GHI o dau dong)
+  (0 dong -- khong co lenh ghi nao duoc THUC THI)
+executed_write_commands=0
+
+== DOI CHIEU: git status --porcelain TRUOC va SAU khi chay detector (tac dung phu tren cay) ==
+DETECTOR_RERUN_EXIT=0
+porcelain_lines_before=563 porcelain_lines_after=563 delta=0

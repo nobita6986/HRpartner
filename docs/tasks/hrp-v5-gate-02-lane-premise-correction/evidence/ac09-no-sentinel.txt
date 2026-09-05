@@ -1,0 +1,50 @@
+AC-09 / RQ-06 - khong tep nao trong evidence/ chua chuoi so do ket noi CSDL
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+
+CACH GHI TEP NAY: hai chuoi bi cam khong bao gio duoc viet lien mach o bat ky dong nao, ke ca
+trong dong ghi lai lenh. Chung duoc dung nen tu hai manh ngay trong shell, nen tep nay khong
+the tu lam minh do. Neu ai muon do lai thi chay dung ba dong o phan A.
+
+=== A. HAI LENH, CHAY NGUYEN VAN ===
+--- CMD: S1=$(printf '%s%s' 'postgresql' '://')
+--- CMD: S2=$(printf '%s%s' 'postgres' '://')
+   (S1 va S2 luc chay la HAI chuoi lien mach day du, dung hai chuoi ma AC-09 cam)
+--- CMD: grep -rnF -e "$S1" -e "$S2" docs/tasks/hrp-v5-gate-02-lane-premise-correction/evidence/
+EXIT=1, KHONG in dong nao.
+  (grep tra 1 khi khong tim thay dong nao khop; day la ket qua DUNG cho AC nay)
+--- CMD: grep -rcF -e "$S1" -e "$S2" <cung duong dan> roi cong cot thu hai
+tong khop: 0
+
+=== B. PHAM VI PHEP DO ===
+--- CMD: ls docs/tasks/hrp-v5-gate-02-lane-premise-correction/evidence/*.txt | wc -l
+16
+`grep -r` di het ca 16 tep, khong loai tru tep nao, khong dung --include. Con so 16 khop so hang
+cua muc 6 Evidence Index trong HANDOFF.md va khop 16 dong '??' ma step08-scope-gates.txt phan B
+liet ke truoc khi `git add`.
+
+=== C. RISK-04 CUA HOP DONG: GIA TRI SENTINEL CO BI SAO VAO EVIDENCE KHONG ===
+RISK-04 lo rang khi trich dong cau hinh thi gia tri sentinel bi sao theo. Phep do ve phia
+evidence:
+--- CMD: grep -rn 'BLOCKED_' tren ca thu muc evidence/
+Dung HAI dong khop, ca hai o step05-selftest-cases.txt:
+  dong 33:   const BLOCKED_DB_URL = 'gate-selftest-blocked-unreachable-value';
+  dong 37:       env: { DATABASE_URL: BLOCKED_DB_URL, DATABASE_URL_ADMIN: '' },
+Hai dong ay la FIXTURE toi tu viet trong harness (verify-gates.selftest.ps1 khoi 296-325), chay
+trong repo tam duoi $env:TEMP. Chuoi gia tri o do la 'gate-selftest-blocked-unreachable-value' -
+mot chuoi toi dat, khong co so do ket noi, khong tro tai nao. Khong dong nao trong 16 tep sao
+noi dung dong 25 cua vitest.config.ts that; trung khop duy nhat la TEN BIEN, khong phai gia tri.
+Doi chieu them: ac08-no-side-effect.txt phan F do rang predicate chi DOC vitest.config.ts that
+(LastWriteTime va Length khong doi sau 50 loi goi), va R-02 cam sao gia tri - toi khong sao.
+
+=== D. DO LAI SAU KHI GHI CHINH TEP NAY ===
+Ba lenh o phan A chay LAI sau khi noi dung tren da nam tren dia (tep nay khong con la ban tam):
+  grep -rnF: EXIT=1, khong in dong nao
+  tong khop: 0
+Nen ke ca chinh tep nay cung khong chua hai chuoi ay. Day la lan do CUOI cua AC-09; sau lan nay
+tep chi con duoc `git add`, khong sua noi dung.
+
+=== E. GIOI HAN ===
+- Phep do la grep chuoi CO DINH (-F), khong phai bieu thuc. Mot bien the viet hoa hay mot so do
+  khac (thi du dang jdbc) se khong bi bat. AC-09 chi doi dung hai chuoi ay.
+- Phep do chay tren 16 tep .txt. Thu muc evidence/ khong co tep dinh dang khac; `ls` o phan B la
+  toan bo noi dung thu muc.

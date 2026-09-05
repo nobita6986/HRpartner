@@ -1,13 +1,19 @@
-<#
+﻿<#
 .SYNOPSIS
 Checks required files for the three-tier AI pipeline on Windows.
 #>
 [CmdletBinding()]
 param(
-    [string]$PipelineRoot = (Split-Path $PSScriptRoot -Parent)
+    [string]$PipelineRoot = ""
 )
 
 $ErrorActionPreference = "Stop"
+# $PSScriptRoot is not populated while parameter defaults are evaluated under
+# `powershell.exe -File`, which made this script abort on line 7 before printing
+# a single check. Resolve the default in the body instead.
+if ([string]::IsNullOrWhiteSpace($PipelineRoot)) {
+    $PipelineRoot = Split-Path $PSScriptRoot -Parent
+}
 $failCount = 0
 
 function Test-RequiredFolder {
@@ -71,7 +77,11 @@ try {
     Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "templates\TASK.template.md") -Name "TASK template"
     Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "templates\HANDOFF.template.md") -Name "HANDOFF template"
     Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "templates\AUDIT.template.md") -Name "AUDIT template"
+    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "scripts\gate-lib.ps1") -Name "Gate shared library"
     Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "scripts\verify-task.ps1") -Name "TASK contract validator"
+    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "scripts\verify-handoff.ps1") -Name "HANDOFF substance validator"
+    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "scripts\verify-audit.ps1") -Name "AUDIT substance validator"
+    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "scripts\verify-gates.selftest.ps1") -Name "Gate red/green self-test"
     Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "scripts\init-project.ps1") -Name "Bootstrap wrapper generator"
 
     Write-Host ""

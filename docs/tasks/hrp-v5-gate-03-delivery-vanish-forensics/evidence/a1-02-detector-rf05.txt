@@ -1,0 +1,20 @@
+# a1-02 | Tier 3 chay DETECTOR tren contract rf-05 = ca KHONG-BAO-DONG-OAN (AC-08 case 1)
+# thoi diem: 2026-09-05 15:11:33
+$ powershell -NoProfile -File .ai-pipeline/scripts/verify-delivery-presence.ps1 -TaskPath "docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md"
+DELIVERY PRESENCE GATE
+  subject: docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+  repo   : C:\CodeApp\HrP
+  source : control field (Modules/Deliverables)
+
+  [OK]   D-01 contract declares 2 deliverable path(s) (2 from the control field).
+  [OK]   D-02 tsconfig.json PRESENT in worktree AND index (worktree 1108 B, index 1052 B).
+  [OK]   D-02 src/shared/toolchain/tsc-program-boundary.static.test.ts PRESENT in worktree AND index (worktree 13206 B, index 13206 B).
+
+RESULT: PASS.
+Every path this contract declares as delivered is present in the working tree and in the index.
+DETECTOR_RF05_EXIT=0
+
+# doi chieu doc lap: so byte index cua tsconfig.json ma detector in ra PHAI trung git cat-file -s blob 53cc484
+$ git cat-file -s 53cc484886ddf4164f0741739af42e75ad913528
+1052
+CATFILE_S_EXIT=0

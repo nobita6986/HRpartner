@@ -1,0 +1,71 @@
+AC-06 / RQ-04 - ba chuoi thong diep khong con khang dinh vo dieu kien ve tep env, va moi chuoi
+neu ten vitest.config.ts
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+Do sau khi `git add` bon tep gate. Byte cuoi: verify-handoff.ps1 = e1af8549..., verify-audit.ps1
+= e1edaeba... (index GIONG worktree, xem step08-scope-gates.txt phan A va B).
+
+=== A. LENH CUA AC-06, CHAY NGUYEN VAN ===
+--- CMD: git diff --cached -- .ai-pipeline/scripts/verify-handoff.ps1 .ai-pipeline/scripts/verify-audit.ps1
+EXIT=0, 1080 dong; 869 dong '+', 89 dong '-'
+Trong so 869 dong '+' ay:
+  - 3 dong chua chuoi 'vitest.config.ts'  <- ba chuoi thong diep moi, trich nguyen van o phan B
+  - 0 dong nao la CHUOI THONG DIEP nhac '.env', 'DATABASE_URL' hay '(production)'
+  - 1 dong nhac DATABASE_URL, nhung khong phai chuoi thong diep: do la dong 18 trong khoi
+    comment dau tep verify-handoff.ps1, co san TRUOC round nay. Xem phan E.
+
+GIOI HAN CUA CHINH LENH NAY: `git diff --cached` so index voi HEAD. O HEAD, verify-handoff.ps1
+KHONG TON TAI (porcelain doc no la 'A'), nen toan bo tep hien ra la dong '+' va phia '-' RONG.
+Vi vay lenh nay KHONG the trung ra ba chuoi CU bi go. Con so 869 la cua ca hai vong gate-01 va
+gate-02 cong lai, khong phai delta cua vong nay (delta cua vong nay la 2 2 va 4 4, o
+step08-scope-gates.txt phan C). Phep do cach ly ba chuoi cu nam o phan C duoi day.
+
+=== B. BA CHUOI MOI, NGUYEN VAN, KEM SO DONG ===
+verify-handoff.ps1:203
+  Add-GateError $ctx 'H-08' "$acId ran a bare 'npx vitest run' while vitest.config.ts at the repo root does not pin the DB variable to a fixed value, so that lane can still reach a live database. Fix either side: use 'npm run test:unit', pass --config, or lock the DB variable in vitest.config.ts."
+verify-audit.ps1:209
+  Add-GateError $ctx 'S-11' "$acId used a bare 'npx vitest run' while vitest.config.ts at the repo root does not pin the DB variable to a fixed value, so that lane can still reach a live database - use 'npm run test:unit', pass --config, or lock the DB variable in vitest.config.ts."
+verify-audit.ps1:402
+  Add-GateError $ctx 'S-11' "$checkId used a bare 'npx vitest run' and vitest.config.ts at the repo root does not pin the DB variable - use the canonical lane or lock that variable."
+
+Ba chuoi deu noi DIEU KIEN ("while ... does not pin", "and ... does not pin") va noi kha nang
+("can still reach"), khong con khang dinh mot su that ve mot tep cu the.
+
+=== C. BA CHUOI CU, BOC CACH LY BANG SHA CUA BAN GATE-01 ===
+--- CMD: git cat-file -p 3997dd4ff896ea9f7cebdf40a247bcb269ab23e5 > <tam>/vh-old.ps1
+--- CMD: git cat-file -p b6854802e329b391a70475eef8920255f0b7d639 > <tam>/va-old.ps1
+  (hai SHA nay do STEP-01 ghi, khong dung `git show :<path>` vi lenh ay giai ra index BAY GIO,
+   ma index bay gio da la ban cua toi - xem LIM-02 cua HANDOFF)
+vh-old.ps1:203
+  Add-GateError $ctx 'H-08' "$acId ran a bare 'npx vitest run'. That lane lacks the unit config and reads DATABASE_URL from .env (production). Use 'npm run test:unit'."
+va-old.ps1:209
+  Add-GateError $ctx 'S-11' "$acId used a bare 'npx vitest run'. That lane reads DATABASE_URL from .env (production) - use 'npm run test:unit' or pass --config."
+va-old.ps1:402
+  Add-GateError $ctx 'S-11' "$checkId used a bare 'npx vitest run' - use the canonical lane."
+
+=== D. DEM TREN DUNG BA DONG THONG DIEP, HAI BEN ===
+chuoi tim              tren 3 chuoi MOI   tren 3 chuoi CU
+'.env'                        0                  2
+'DATABASE_URL'                0                  2
+'(production)'                0                  2
+'vitest.config.ts'            3                  0
+Menh de cua AC-06 co hai nua: "khong con khop mau khang dinh vo dieu kien ve tep env" = ba con
+so 0 o cot trai; "moi chuoi co neu ten vitest.config.ts" = con so 3 o cot trai, dung bang so
+chuoi. Ca hai nua DAT.
+
+=== E. MOT DONG COMMENT CON SOT LAI, TOI TU KHAI ===
+--- CMD: grep -n 'DATABASE_URL' tren ba tep gate lien quan
+  verify-handoff.ps1:18   non-canonical test lane that reads production DATABASE_URL (go-live-01 BLK-01).
+  gate-lib.ps1:332        # land on a default config that fell back to the ambient DATABASE_URL, so the lane
+  gate-lib.ps1:356        $script:GateDefaultLaneLockPattern = 'env\s*:\s*\{[^}]*\bDATABASE_URL...'
+- Dong 18 la COMMENT dau tep (khoi .SYNOPSIS), khong phai chuoi thong diep, va co san TRUOC
+  round nay: no nam trong blob 3997dd4f... ma gate-01 giao. AC-06 va STEP-04 chi noi ve chuoi
+  thong diep, nen toi khong sua no. Toi khai ra o LIM-11 de Tier 3 khong phai tu tim.
+- gate-lib.ps1:332 la comment CUA TOI, no ke lai co che that (cau hinh mac dinh roi ve bien moi
+  truong san co) chu khong khang dinh mot tep nao. gate-lib.ps1:356 la MAU KHOA, ten bien nam
+  trong mau la bat buoc.
+
+=== F. GIOI HAN ===
+- Ba chuoi tren la LOI VAN. Khong case harness nao khang dinh noi dung cua chung; harness chi
+  khang dinh token 'H-08' va 'S-11'. Do la LIM-04 cua HANDOFF.
+- Phep do o phan D chay tren dong LENH lay tu tep, khong phai tren output cua cong. Output that
+  cua ba chuoi ay nam trong ac03-h08-still-red.txt, ac04-fail-closed.txt va step07-regression.txt.

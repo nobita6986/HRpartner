@@ -1,0 +1,171 @@
+AC-10 / RQ-08 - pham vi Tier 2: dung MOT tep script moi cong path duoi slug nay
+AC-01 / RQ-07 - phep do THU HAI cua blob 53cc484..., chay o cuoi vong
+Task: hrp-v5-gate-03-delivery-vanish-forensics, spec v1.2, execution round 1
+STEP-07. Do LAI o cuoi vong, sau lan sua tep cuoi va sau `git add`.
+
+=== A. AC-01 NUA THU HAI: BLOB CON SONG, DO LAI O CUOI VONG ===
+--- CMD: git cat-file -t 53cc484886ddf4164f0741739af42e75ad913528
+EXIT=0
+blob            <-- dung chuoi "blob", giong het phep do o STEP-01 (step01-preflight.txt phan A)
+--- CMD: git cat-file -s 53cc484886ddf4164f0741739af42e75ad913528
+EXIT=0
+1052            <-- cung con so 1052 nhu STEP-01, va la con so detector doc duoc o AC-08 ca mot
+--- CMD: git log --oneline -1
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+  (dung HEAD ghi o truong Baseline cua hop dong va o step01-preflight.txt cua STEP-01)
+AC-01 doi "dung chuoi blob o ca STEP-01 va STEP-07". Hai lan deu tra `blob`, exit 0.   DAT
+
+=== B. PHAN CUA TIER 2 TRONG VONG NAY: 13 PATH, KE DU, KHONG LOC BOT ===
+--- CMD: git status --porcelain            EXIT=0, 543 dong (ca cay, ba bon luong)
+--- CMD: git diff --cached --name-only     EXIT=0, 317 dong (ca cay)
+Loc hai lenh tren bang dung mot bieu thuc: tep script moi HOAC tien to
+docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/
+  git status --porcelain            -> 13 dong
+  git diff --cached --name-only     -> 13 dong   (khop nhau)
+
+  A  .ai-pipeline/scripts/verify-delivery-presence.ps1        <- Modules, tep MOI, 1/1
+  A  docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/TASK.md            <- cua Tier 1, toi khong sua
+  A  .../evidence/logfreeze-01-manifest.txt                   <- cua Tier 1, toi khong sua
+  A  .../evidence/logfreeze-02-slices.txt                     <- cua Tier 1, toi khong sua
+  A  .../evidence/logfreeze-03-index.txt                      <- cua Tier 1, toi khong sua
+  A  .../evidence/logfreeze-04-finding.txt                     <- cua Tier 1, toi khong sua
+  A  .../evidence/step01-preflight.txt
+  A  .../evidence/ac02-ac06-confirm.txt
+  A  .../evidence/ac03-secret-scan.txt
+  A  .../evidence/step05-detector-src.txt
+  A  .../evidence/step06-detector-run.txt
+  A  .../evidence/ac08-three-states.txt
+  A  .../evidence/ac09-zero-byte.txt
+  (12 dong duoi slug + 1 tep Modules = 13. Ba dau '...' la viet gon cua chinh tien to
+   docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics, khong phai path khac.)
+
+--- CMD: loc 13 path ay roi `grep -cE '^.M '`
+0        <-- khong path nao co cot thu HAI la M, tuc worktree == index o ca 13.
+             Byte toi giao chinh la byte da staged, khong phai mot ban khac.
+--- CMD: git diff --cached --numstat -- .ai-pipeline/scripts/verify-delivery-presence.ps1
+332  0  .ai-pipeline/scripts/verify-delivery-presence.ps1
+--- CMD: git hash-object <tep script>  va  git rev-parse :<tep script>
+aaab5c2c63a641eee2bcf7ce3f692dd304d7da68   va   aaab5c2c63a641eee2bcf7ce3f692dd304d7da68
+  Hai gia tri BANG NHAU: ban tren dia va ban trong index la cung mot byte.
+--- CMD: git cat-file -s aaab5c2c...   ->  13916
+--- CMD: python doc 'rb' tren ban tren dia -> bytes=13916 lines=332 BOM=True CR=0
+  13916 bang nhau o hai phia vi tep khong co CR nao: khong co gi cho autocrlf doi.
+  (Doi chieu: tsconfig.json co CR nen 1108 tren dia va 1052 trong index - xem ac08 phan A.)
+
+=== C. BON TEP CUA TIER 1 KHONG BI TOI SUA: CHUNG MINH BANG DAU TAY ===
+--- CMD: git hash-object <tep>  va  git rev-parse :<tep>  cho tung tep
+  logfreeze-01-manifest.txt  1ead1fff326ae9ed56a1e6e9a06b64fd5fceae45  index size 6720    giong nhau
+  logfreeze-02-slices.txt    dd2eb203b86f6275c7788366c8f01d41e6f5f406  index size 289204  giong nhau
+  logfreeze-03-index.txt     558b12e9792f2b7b075da46c84a3a3676b30b476  index size 3667    giong nhau
+  logfreeze-04-finding.txt   41bc19d14c71bfeb588794380148b0329f54a8a2  index size 4707    giong nhau
+Bon cap dau tay bang nhau tung doi, va o phan B khong dong nao trong 13 path co chu M o cot hai.
+Nen bon tep bang chung dieu tra giao cho Tier 3 dung la bon tep Tier 1 da chup, khong phai ban toi
+viet lai. STEP-02 den STEP-04 la XAC NHAN, va phep do nay la chung cu cua chu "xac nhan".
+
+=== D. NAM TEP .ai-pipeline KHAC: KHONG PHAI CUA VONG NAY, CHUNG MINH BANG DAU TAY ===
+--- CMD: git status --porcelain | grep '\.ai-pipeline'  -> 7 dong, khong phai 1:
+  A  gate-lib.ps1                 6daa689a33604f873f2e9f2181a741bfe4a55a9f
+  M  verify-audit.ps1             e1edaebac456da16cb618dca2607e7f46b1c4358
+  A  verify-delivery-presence.ps1 aaab5c2c63a641eee2bcf7ce3f692dd304d7da68   <- CUA VONG NAY, 1/1
+  A  verify-gates.selftest.ps1    a6a7faeaf65dc490b0f597d21877230f4a8fc45e
+  A  verify-handoff.ps1           e1af8549b9dd73d8c569d66493b6e527fae021f5
+  M  verify-pipeline.ps1          1348bffe2adf3a5c247ecc1f3ed2525233b41db9
+   M verify-task.ps1              e36b83dfbf7c860e320d5409535b82001cab574e
+
+Bon dau tay dau (gate-lib, verify-audit, verify-gates.selftest, verify-handoff) GIONG TUNG BYTE
+bon "blob cuoi" ma HANDOFF cua hop dong hrp-v5-gate-02-lane-premise-correction khai o muc 4:
+6daa689a, e1edaeba, a6a7faea, e1af8549. Do la mon THU HAI cua chinh lo ba hop dong nay, da ban
+giao xong truoc khi gate-03 mo. Vong nay khong cham vao chung: neu toi sua mot byte thi hash lech.
+Hai dau tay con lai (verify-pipeline 1348bffe, verify-task e36b83df) giong moc EV-06 cua luong
+Tier 1 khac. Nen so tep .ai-pipeline vong NAY tao ra la dung 1.
+--- CMD: grep -c 'verify-delivery-presence' .ai-pipeline/scripts/verify-pipeline.ps1
+0        <-- DEC-07 doi KHONG mac vao verify-pipeline.ps1. Tra 0, tuc khong mac.
+--- CMD: git diff --cached --numstat -- .ai-pipeline/scripts/verify-pipeline.ps1
+12  2    <-- 12/2 dong ay la cua luong Tier 1 khac, nam trong blob 1348bffe = EV-06 tu truoc.
+
+=== E. 304 PATH CACHED CON LAI: THUOC AI ===
+AC-10 viet: "Path cua luong khac va cua Tier 1 khong tinh vao AC nay". Ke ra de doi chieu duoc.
+--- CMD: git diff --cached --name-only, bo 13 path cua vong nay, gom theo muc dau
+  193  docs/tasks/hrp-v5-rf-05-tsc-program-boundary       <- Tier 3 dang audit tren cay nay
+   45  docs/tasks/hrp-v5-test-01-browser-lane
+   18  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety
+   18  docs/tasks/hrp-v5-gate-02-lane-premise-correction  <- mon 2/3 cua lo, da ban giao
+   13  docs/tasks/hrp-v5-gate-01-audit-row-identity       <- mon 1/3 cua lo, da ban giao
+    5  .ai-pipeline (bon tep cua gate-02 cong verify-pipeline.ps1 cua luong Tier 1)
+    2  src/shared/toolchain
+    1  moi path: vitest.config.ts, tsconfig.json, playwright.config.ts, package.json,
+       package-lock.json, .gitignore, tests/browser, docs/PLANNER_HANDOVER.md,
+       docs/V6/v6-roadmap.html, docs/tasks/hrp-v5-ui-01-new-ui-home-integration
+  Tong 304; 304 + 13 = 317, dung con so cached o phan B.
+Khong dong nao trong 304 do lenh cua VONG NAY tao ra. Toi chi chay `git add` voi pathspec ghi ro
+tung tep: mot tep script cong bay tep evidence. Khong lan nao dung `git add -A` hay `git add .`.
+
+=== F. rf-05: CHI DOC, KHONG CHAM MOT PATH NAO ===
+--- CMD: git hash-object docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+362195b96737f81f676a81fa68e72233c6621c13   <- giong het gia tri do o dau vong (STEP-06/AC-08 ca mot)
+--- CMD: git status --porcelain -- tsconfig.json          ->  M  tsconfig.json
+--- CMD: git hash-object tsconfig.json                    ->  53cc484886ddf4164f0741739af42e75ad913528
+--- CMD: git diff --cached --numstat -- tsconfig.json     ->  12   2
+  Dung ba con so ma EV-13 ghi. Toi khong restore, khong stage, khong xoa, khong sua.
+--- CMD: git status --porcelain | grep -c 'hrp-v5-rf-05-tsc-program-boundary'   -> 193
+--- CMD: cung tap 193 dong ay | grep -cE '^.M '                                -> 0
+  Khong path nao cua rf-05 co worktree lech index. Ba lenh tren deu la lenh DOC.
+  Chi thi cam cham path cua rf-05; toi doc TASK.md cua no vi AC-08 ca MOT bat buoc chay detector
+  tren chinh contract ay. Doc khong lam doi byte, va dau tay tren la chung.
+
+=== G. DOI CHIEU AC-10 ===
+- Hop hai lenh, phan do vong nay gay ra = 13 path = 1 tep script moi + 12 path duoi
+  docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/**.  DAT, khong path nao ra ngoai.
+- Nam tep .ai-pipeline khac trong porcelain: chung minh khong phai cua vong nay bang dau tay,
+  bon cai khop blob cuoi cua gate-02 va hai cai khop moc EV-06.
+- Khong dung `git add -A`, khong dung `git add .`, khong commit, khong push (R-01).
+- Khong `git gc`, khong `git prune`, khong `git reflog expire`, khong `git stash drop` (R-02).
+
+=== H. GIOI HAN ===
+- Day la anh chup mot thoi diem. Sau khi ghi tep nay con dung BA path duoc `git add` nua, ca ba
+  deu trong pham vi AC-10 cho phep: chinh tep nay, evidence/step08-gates.txt va HANDOFF.md.
+- `git add` mot tep khong the chi stage mot phan; nhung tep script cua vong nay la tep MOI nen
+  numstat 332/0 khong keo theo dong nao cua luong khac. Day la cho khac gate-01: o mon ay
+  `git add verify-audit.ps1` keo theo 568/95 dong cua luong Tier 1 vao index.
+- Con so 543 va 317 la cua CA CAY, gom viec cua nhieu luong. Chung khong phai phep do ve vong nay;
+  phep do ve vong nay la con so 13 o phan B.
+- `git cat-file -t` doi hoi blob con trong kho object. No con vi khong ai chay lenh prune;
+  DEC-08 cam, va R-02 cam. Neu ai chay `git gc --prune=now` sau nay thi phep do nay mat, va do
+  la mot ly do cua chinh contract nay.
+
+=== I. DO LAI SAU LAN `git add` CUOI: TAP PATH DA DONG O 16 ===
+Phan B do luc con 13 path. Sau khi ghi HANDOFF.md xong, ba path duoc `git add` dung nhu phan H
+bao truoc: chinh tep NAY, evidence/step08-gates.txt va HANDOFF.md. Do lai:
+--- CMD: git add <ba pathspec viet ro tung ten>              EXIT=0
+  Khong dung `git add -A`, khong dung `git add .`. Git in ba dong warning "LF will be replaced by
+  CRLF": do la `core.autocrlf` dang bat, khong phai loi; xem ac08 phan A ve he qua cua no.
+--- CMD: git status --porcelain        | loc pham vi vong nay  -> 16
+--- CMD: git diff --cached --name-only | loc pham vi vong nay  -> 16   (khop nhau)
+  16 = 1 tep script moi + 15 path duoi docs/tasks/hrp-v5-gate-03-delivery-vanish-forensics/
+  Ba path moi them deu duoi slug ay, nen menh de cua AC-10 khong doi: khong path nao ra ngoai.
+--- CMD: cung tap 16 dong ay | grep -cE '^.M '   -> 0
+  Byte tren dia bang byte trong index o CA 16. Dau tay ba tep vua them:
+    step07-scope.txt  dd7cee096d7d02df685372f1ae0a84387bc89f66   dia == index
+    step08-gates.txt  a5d091034169a1e63682b3acbda6062091563419   dia == index
+    HANDOFF.md        d1bbc739c25f1ac214253ed793368089d62e861b   dia == index
+  Ba cap bang nhau tung doi. Dau tay dd7cee09 la cua ban step07-scope.txt TRUOC khi muc I nay
+  duoc viet; sau khi viet, tep doi byte va duoc `git add` mot lan nua - xem doan ngay duoi.
+--- CMD: git status --porcelain            (ca cay)  -> 546 dong
+--- CMD: git diff --cached --name-only     (ca cay)  -> 320 dong
+--- CMD: cached, bo 16 path cua vong nay             -> 304
+  304 + 16 = 320. Con so 304 KHONG DOI so voi phan E: ba path them vao deu la path cua vong nay,
+  khong cai nao roi vao vung cua luong khac. Do la phep kiem cua chinh AC-10.
+
+TAP DA DONG - vi sao phep do nay khong lui vo han:
+Sau muc I con dung HAI lan ghi nua: `git add` chinh tep nay, roi - sau khi hai cong chay - ghi noi
+dung that vao evidence/step08-gates.txt va `git add` no. CA HAI path ay DA la thanh vien cua tap
+16. Them mot path da co san khong lam tap lon hon. Nen 16 la con so CUOI, khong phai mot anh chup
+se cu lech mai. Cai con doi la BYTE cua hai tep ay, con AC-10 noi ve TAP PATH.
+
+=== J. rf-05 VAN KHONG BI CHAM, DO LAN THU BA ===
+--- CMD: git hash-object docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+362195b96737f81f676a81fa68e72233c6621c13   <- bang lan do o STEP-06 va o phan F
+--- CMD: git hash-object tsconfig.json     -> 53cc484886ddf4164f0741739af42e75ad913528
+--- CMD: git status --porcelain | grep -c 'hrp-v5-rf-05-tsc-program-boundary'   -> 193
+--- CMD: cung tap 193 dong ay | grep -cE '^.M '                                -> 0
+  Lan `git add` cuoi khong keo theo path nao cua rf-05, vi ba pathspec deu viet ro ten tep.

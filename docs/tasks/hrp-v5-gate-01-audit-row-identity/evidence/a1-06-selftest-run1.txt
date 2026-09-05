@@ -1,0 +1,48 @@
+GATE SELF-TEST
+  fixture repo: C:\Users\Admin\AppData\Local\Temp\hrp-gate-selftest-20260905-183538-59158
+
+[  ok  ] task    PASS green: clean TASK
+[  ok  ] handoff PASS green: clean HANDOFF
+[  ok  ] audit   PASS green: clean AUDIT
+[  ok  ] audit   FAIL S-01 AUDIT.md b? c?t v? 0 byte
+[  ok  ] audit   FAIL S-02 ì AC k?t lu?n b?ng van xuìi
+[  ok  ] audit   FAIL S-03 du?ng d?n evidence ghi "Console Output"
+[  ok  ] audit   FAIL S-04 ì AC l?y C-10 lÖm b?ng ch?ng
+[  ok  ] audit   FAIL S-07 5 n¢i None trong khi c¢ AC BLOCKED
+[  ok  ] audit   FAIL S-08 AC PASS trong khi HANDOFF khai ENV_BLOCKED
+[  ok  ] audit   FAIL S-09 4 gi?ng h?t byte vïng tru?c
+[  ok  ] audit   FAIL S-10 m?i con s? d?u copy t? TASK/HANDOFF
+[  ok  ] audit   PASS S-11 lane tran duoc THA khi vitest.config.ts khoa bien DB
+[  ok  ] audit   FAIL S-12 vi?n c? pre-existing khìng ghim baseline
+[  ok  ] audit   FAIL S-13 7 b?a m?t audit round chua t?ng c¢
+[  ok  ] audit   FAIL S-14 credential th?t n?m trong AUDIT.md
+[  ok  ] audit   FAIL S-15 d?n evidence file khìng t?n t?i
+[  ok  ] audit   FAIL A-05 verdict PASS trong khi m?t C-check FAIL
+[  ok  ] audit   FAIL S-05 C-check DONE nhung khìng c¢ l?nh
+[  ok  ] audit   FAIL S-18 ba hÖng AC lÖ m?t hÖng copy
+[  ok  ] audit   PASS S-18 ngu?ng: d£ng HAI hÖng gi?ng nhau thç WARN ch? khìng ERROR
+[  ok  ] audit   FAIL S-19 ì Result lÖ m?t t? verdict, khìng ph?i phÇp do
+[  ok  ] audit   PASS S-19 l?nh c¢ th?t khai output r?ng thç KHONG b? coi lÖ verdict-only
+[  ok  ] task    FAIL T-01 contract g?i npm script khìng t?n t?i
+[  ok  ] task    FAIL T-02 contract d?n file:line khìng t?n t?i
+[  ok  ] task    FAIL T-03 AC ch?ng minh ph?m vi b?ng git diff tr?n
+[  ok  ] task    FAIL T-04 AC gi?i h?n t?p file mÖ khìng cho phÇp artifact c?a ch°nh task
+[  ok  ] task    FAIL T-05 AC khìng nàu phuong ph†p do nÖo
+[  ok  ] task    FAIL T-06 credential th?t n?m trong TASK.md
+[  ok  ] task    FAIL T-07 t?ng kh†c s?a Status c?a TASK.md
+[  ok  ] handoff FAIL H-04 dïng d?u 3 khìng ph?i verify-task.ps1
+[  ok  ] handoff FAIL H-06 ì AC khìng c¢ l?nh ch?y l?i du?c
+[  ok  ] handoff PASS H-08 lane tran duoc THA khi vitest.config.ts khoa bien DB
+[  ok  ] handoff FAIL H-08 lane tran + vitest.config.ts KHONG khoa bien DB thi VAN DO
+[  ok  ] handoff FAIL H-08 lane tran + VANG tep vitest.config.ts thi VAN DO (fail-closed)
+[  ok  ] handoff FAIL H-09 credential th?t n?m trong HANDOFF.md
+[  ok  ] handoff FAIL H-10 thi?u dïng Handoff status cu?i file
+[  ok  ] handoff FAIL H-13 2 c¢ deviation nhung 5 khai None
+[  ok  ] handoff FAIL H-14 7 b?a m?t execution round
+[  ok  ] handoff FAIL H-03 spec version l?ch TASK
+
+cases: 39 total (7 green, 32 red), failures: 0
+  fixture repo removed.
+
+RESULT: PASS. Every gate rejects the historical defect it was written for, and still accepts a clean artifact.
+SELFTEST_RUN1_EXIT=0

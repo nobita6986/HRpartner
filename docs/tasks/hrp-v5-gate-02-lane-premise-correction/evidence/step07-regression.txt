@@ -1,0 +1,129 @@
+STEP-07 - khong hoi quy: cong audit tren ban audit round 1 cua rf-06 va hai slug ACCEPTED
+Task: hrp-v5-gate-02-lane-premise-correction, spec v1.2, execution round 1
+
+Ba slug do:
+  hrp-v5-rf-06-vitest-default-lane-safety        (audit round 1, dang mo - STEP-07 goi ten no)
+  hrp-v5-go-live-18-public-surface-hardening     (ACCEPTED)
+  hrp-v5-go-live-17-rls-required-relation-sweep  (ACCEPTED)
+Chon hai slug ACCEPTED nay vi AUDIT.md cua CA HAI co nhac chuoi `npx vitest run`: go-live-18 ba
+lan, go-live-17 tam lan. Mot slug khong nhac lane thi khong noi duoc dieu gi ve mach kiem lane.
+
+Hai ban gate duoc chay, dau tay day du:
+  BAN "OPEN" = trang thai cay DUNG LUC gate-02 mo (dat o $env:TEMP\glx\gate02\open)
+    gate-lib.ps1        43ada847f9bd84494f80114de01f9f0b1b05c816   = EV-06
+    verify-handoff.ps1  3997dd4ff896ea9f7cebdf40a247bcb269ab23e5   = EV-06
+    verify-audit.ps1    b6854802e329b391a70475eef8920255f0b7d639   = ban GIAO cua gate-01
+    selftest            9e1feb05377cc35dbff9793c502234dcbef4f266   = ban GIAO cua gate-01
+  BAN "AFTER" = worktree sau STEP-03 den STEP-05
+    gate-lib.ps1        6daa689a33604f873f2e9f2181a741bfe4a55a9f
+    verify-handoff.ps1  e1af8549b9dd73d8c569d66493b6e527fae021f5
+    verify-audit.ps1    e1edaebac456da16cb618dca2607e7f46b1c4358
+    selftest            a6a7faeaf65dc490b0f597d21877230f4a8fc45e
+
+Vi sao ban OPEN phai lay `verify-audit.ps1` la `b6854802` chu khong phai `2520a48d` cua EV-06:
+neu lay `2520a48d` thi ban doi chieu con THIEU ca `S-18` va `S-19` do gate-01 vua them, va moi
+delta so loi se lan ba nguyen nhan vao nhau. Lay `b6854802` thi khac biet DUY NHAT giua hai ban
+la viec cua chinh vong nay: phep do lane o `gate-lib.ps1` cong ba chuoi thong diep. Ban `pre/`
+theo EV-06 van con tren dia va duoc dung o cho khac, khong dung o day.
+
+=== A. RED-TRUOC - CHAY HARNESS BAN OPEN, CHE DO VERBOSE ===
+--- CMD: powershell -NoProfile -File $env:TEMP\glx\gate02\open\verify-gates.selftest.ps1 -Verbose2
+EXIT=0
+  865: cases: 37 total (5 green, 32 red), failures: 0
+
+Con so 37/5/32 nay do LAI tu ban gate cu, va no khop DUNG dong `cases:` ma STEP-02 da do trong
+step02-selftest-before.txt. Tuc moc truoc round khong phai loi khai, no boc lai duoc tu SHA.
+
+Hai dong do, NGUYEN VAN, tren cung fixture ma ban sau tha:
+  295: [FAIL] S-11 AC-01 used a bare 'npx vitest run'. That lane reads DATABASE_URL from .env (production) - use 'npm run test:unit' or pass --config.
+  746: [FAIL] H-08 AC-01 ran a bare 'npx vitest run'. That lane lacks the unit config and reads DATABASE_URL from .env (production). Use 'npm run test:unit'.
+
+Hai dong ket qua case tuong ung:
+  286: [  ok  ] audit   FAIL S-11 dung lane npx vitest run tran
+  736: [  ok  ] handoff FAIL H-08 HANDOFF dung lane npx vitest run tran
+
+Day la RED-TRUOC that: khong phai toi mo ta mach kiem cu no do, ma toi CHAY no va nhan hai dong
+do voi nguyen van tien de sai ("reads DATABASE_URL from .env (production)").
+
+=== B. GREEN-SAU - CUNG FIXTURE, BAN AFTER ===
+--- CMD: powershell -NoProfile -File ./.ai-pipeline/scripts/verify-gates.selftest.ps1 -Verbose2
+EXIT=0
+  907: cases: 39 total (7 green, 32 red), failures: 0
+--- CMD: grep -n 'S-11' tren ban capture (910 dong)
+  286: [  ok  ] audit   PASS S-11 lane tran duoc THA khi vitest.config.ts khoa bien DB
+DUY NHAT mot dong, va no la dong ket qua case, KHONG phai dong `[FAIL]`. Trong 910 dong output
+cua 39 case, 0 dong `[FAIL] S-11`.
+
+Doi chieu hai phan A va B: cung mot dong `-Mutate` (do duoc la GIONG BYTE, xem
+step05-selftest-cases.txt phan C.2), ban truoc in `[FAIL] S-11`, ban sau khong in. Cung mot dong
+`[  ok  ]` o dong 286 ca hai lan, chi khac chu FAIL thanh PASS.
+
+=== C. TREN CAY THAT - BA SLUG, HAI BAN GATE, SO TUNG DONG ===
+Lenh ban OPEN (them `-RepoRoot` vi ban copy nam ngoai cay, neu khong thi `Get-RepoRoot` se do
+goc tu $PSScriptRoot trong $env:TEMP va tim khong ra TASK.md):
+  powershell -NoProfile -File $env:TEMP\glx\gate02\open\verify-audit.ps1 -TaskPath docs/tasks/<slug>/TASK.md -RepoRoot C:\CodeApp\HrP
+Lenh ban AFTER (chay nguyen van nhu AC-05 ghi, khong them tham so nao):
+  powershell -NoProfile -File ./.ai-pipeline/scripts/verify-audit.ps1 -TaskPath docs/tasks/<slug>/TASK.md
+
+  slug                                            ban     exit  so dong 'S-11'  RESULT
+  rf-06-vitest-default-lane-safety                OPEN     2         0          FAIL (11 error(s), 1 warning(s))
+  rf-06-vitest-default-lane-safety                AFTER    2         0          FAIL (11 error(s), 1 warning(s))
+  go-live-18-public-surface-hardening             OPEN     0         0          PASS WITH WARNINGS (1 warning(s))
+  go-live-18-public-surface-hardening             AFTER    0         0          PASS WITH WARNINGS (1 warning(s))
+  go-live-17-rls-required-relation-sweep          OPEN     2         0          FAIL (1 error(s), 1 warning(s))
+  go-live-17-rls-required-relation-sweep          AFTER    2         0          FAIL (1 error(s), 1 warning(s))
+
+--- CMD: diff <ban OPEN> <ban AFTER> | grep -c '^[<>]'   tren tung slug
+  rf-06        0
+  go-live-18   0
+  go-live-17   0
+
+BA SO KHONG. Output cua cong GIONG TUNG DONG truoc va sau, tren ca ba slug. Do la dang manh nhat
+cua menh de khong-hoi-quy: khong phai "so loi khong tang", ma "khong mot dong nao doi". Neu phep
+sua cua toi lam do oan hay tha oan mot mach kiem nao khac thi mot trong ba con so nay phai khac 0.
+
+=== D. PHAN PHAI NOI THANG: S-11 DA IM TREN BA SLUG NAY TU TRUOC ===
+Cot "so dong S-11" bang 0 o CA hai ban. Nen tren ba slug that nay, phep do KHONG chung minh
+"mot vet do oan da mat" - no chung minh "khong vet do moi nao xuat hien va khong gi khac doi".
+Vet do oan mat di duoc do o phan A va B, tren fixture cua harness.
+
+Vi sao S-11 da im tu truoc, do bang ma nguon chu khong doan:
+1. Site AC-row cua S-11 chi doc hang AC cua muc `## 2`, qua bien `$joined`
+   (verify-audit.ps1:208). Cua go-live-17, chuoi lane tran nam o dong 107, thuoc muc
+   `## 4. Independent Evidence` - bang ay khong phai bang AC nen khong vao `$joined`.
+2. Site checklist cua S-11 nam BEN TRONG nhanh `'^DONE'` cua `switch -regex ($status)`
+   (verify-audit.ps1:401, trong khoi bat dau o :380). Cua go-live-17, hang `C-01` o dong 78 co
+   lane tran that, nhung `Status` cua no la `FAIL`, nen nhanh `DONE` khong bao gio chay va S-11
+   khong duoc goi tren hang ay.
+--- CMD: doc nguyen van hai dong ay cua docs/tasks/hrp-v5-go-live-17-.../AUDIT.md
+  78: | `C-01` Regression (`npx vitest run`) | `FAIL` | Exit `1`; 4 file/40 test fail, 106 file/1633 test pass, 13 file/319 test skip. Unit lane rieng PASS 1642/1642; xem `AUD-003` |
+       -> ca dong KHONG chua '--config'; Status = FAIL
+  107: | `npx vitest run` | `1` | 4 files/40 tests failed; 106 files/1633 passed; 13 files/319 skipped | Env LIVE bi xoa; DB URL loopback bat kha ket noi de khong cham DB that |
+       -> ca dong KHONG chua '--config'; nam trong muc `## 4`
+3. Nam cho con lai cua go-live-17 (dong 61, 64, 102, 103, 105) va hai cho cua go-live-18 (227,
+   235) deu co `--config` tren cung dong, nen roi vao nhanh THA da co tu truoc round - nhanh ay
+   toi giu nguyen, khong sua.
+
+Hai dieu 1 va 2 la pham vi CO SAN cua S-11 tu truoc vong nay; toi khong noi va khong siet chung.
+Chung duoc ghi lai o day de Tier 3 doc duoc gioi han that cua mach kiem, va se thanh mot hang
+`LIM` trong ban giao.
+
+=== E. BA AUDIT.md CUA SLUG KHAC: KHONG CHAM MOT BYTE ===
+--- CMD: git hash-object docs/tasks/<slug>/AUDIT.md, do TRUOC va SAU sau khi chay het cac lenh tren
+  rf-06        1212bae740578cd10005e4c508b37d8c37afcdb0   (khop con so STEP-01 da ghi)
+  go-live-18   875503958745527b64f8a79177b957e8bed23af4
+  go-live-17   0b708c053568203a1a7e0e1ba04925fc6480b805
+Cong audit la lenh DOC. Ba con so nay giong o dau va cuoi phan do. Toi khong sua, khong stage,
+khong xoa AUDIT.md hay TASK.md cua slug nao khac (chi thi cua sep, va R-05 cua hop dong).
+
+=== F. GIOI HAN ===
+- Ban OPEN chay tu $env:TEMP nen phai truyen `-RepoRoot`. Tham so ay chi noi cho gate biet goc
+  cay; no khong doi mach kiem nao. Ban AFTER chay khong tham so ay, dung nguyen van lenh cua
+  AC-05, va ra cung ket qua - nen viec truyen tham so o ban doi chieu khong lam lech phep so.
+- Phep so o phan C la so OUTPUT cua cong, khong phai so hanh vi cua cong tren moi dau vao co the
+  co. Ba slug la ba diem, khong phai ca khong gian.
+- `S-11` van co the do tren hang AC cua mot ban audit khac chua ai chay tren no; phep do o day
+  khong noi gi ve nhung ban audit chua duoc do.
+- rf-06 con 11 loi va 1 canh bao o CA hai ban. Chung khong lien quan den lane: neu lien quan thi
+  con so phai doi giua hai ban. Viec ket luan 11 loi ay la do that hay do oan thuoc Tier 3, va
+  thuoc vong audit cua rf-06, khong thuoc mon nay.
