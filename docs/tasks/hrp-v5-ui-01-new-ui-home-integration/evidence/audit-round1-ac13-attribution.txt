@@ -1,0 +1,86 @@
+=== CMD: git cat-file -e b68d25b:src/shared/toolchain/tsc-program-boundary.static.test.ts
+fatal: path 'src/shared/toolchain/tsc-program-boundary.static.test.ts' exists on disk, but not in 'b68d25b'
+exit=128
+
+=== CMD: git log --oneline -- src/shared/toolchain/tsc-program-boundary.static.test.ts
+exit=0
+
+=== CMD: git status --porcelain -- src/shared/toolchain/tsc-program-boundary.static.test.ts
+A  src/shared/toolchain/tsc-program-boundary.static.test.ts
+exit=0
+
+=== CMD: git worktree list --porcelain
+worktree C:/CodeApp/HrP
+HEAD b68d25b051d45cbe2497a7cf45c8b0deabb60ba2
+branch refs/heads/main
+
+worktree C:/CodeApp/HrP/.claude/worktrees/gl20
+HEAD b68d25b051d45cbe2497a7cf45c8b0deabb60ba2
+branch refs/heads/worktree-gl20
+
+exit=0
+
+=== CMD: python census of .ts/.tsx under .claude (names only)
+
+=== CMD: git check-ignore -v .claude
+exit=1
+
+=== CMD: grep -n -A 12 '"include"' tsconfig.json
+38:  "include": [
+39-    "next-env.d.ts",
+40-    "middleware.ts",
+41-    "*.config.ts",
+42-    "vitest.integration-files.ts",
+43-    "app/**/*.ts",
+44-    "app/**/*.tsx",
+45-    "src/**/*.ts",
+46-    "src/**/*.tsx",
+47-    "packages/**/*.ts",
+48-    "packages/**/*.tsx",
+49-    "prisma/**/*.ts",
+50-    "tests/**/*.ts",
+=== CMD: python census of .ts/.tsx names under .claude (names only, no content read)
+CLAUDE_TS_TOTAL=3715
+CLAUDE_TS_INSIDE_WORKTREES=3715
+CLAUDE_TS_OUTSIDE_WORKTREES=0
+=== CMD: git status --porcelain -- .claude | wc -l
+1
+=== CMD: sed -n '38,56p' tsconfig.json
+  "include": [
+    "next-env.d.ts",
+    "middleware.ts",
+    "*.config.ts",
+    "vitest.integration-files.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "packages/**/*.ts",
+    "packages/**/*.tsx",
+    "prisma/**/*.ts",
+    "tests/**/*.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
+=== CMD: git status --porcelain -- .claude
+?? .claude/
+=== CMD: python replication of the hangar's classification (read-only, two hypotheses)
+PROGRAM_ROOTS_FROM_TSCONFIG=.next,app,packages,prisma,src,tests
+ROOT_DIRS_WITH_TS=.claude,.next,app,docs,new-ui,packages,prisma,scratch,src,tests
+UNCLASSIFIED_H1_AS_SHIPPED=[".claude"]
+UNCLASSIFIED_H2_WITH_CLAUDE_CLASSIFIED=[]
+UI01_DELIVERABLE_ROOTS=app,src
+UI01_ROOTS_ALL_IN_PROGRAM_ROOTS=True
+=== CMD: which collected test files are absent at baseline b68d25b
+ABSENT_AT_BASELINE src/domains/job-board/public-ui-token-parity.static.test.ts
+ABSENT_AT_BASELINE src/shared/toolchain/tsc-program-boundary.static.test.ts
+ABSENT_AT_BASELINE src/shared/toolchain/vitest-default-lane.static.test.ts
+=== CMD: timeline stat (metadata only) - worktree admin dir vs STEP-02 artifact
+gl20_admin_dir_mtime=2026-09-06 02:04:13.963313600
+step02_artifact_mtime=2026-09-05 21:37:51.623009600
+step08_artifact_mtime=2026-09-06 02:24:46.723409700
+=== CMD: git log -1 --format=%cI b68d25b
+2026-09-05T20:52:26+07:00

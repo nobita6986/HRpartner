@@ -1,0 +1,193 @@
+=== CMD: npm run test:unit  (Tier 3 audit round 1, independent re-run)
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [32m✓[39m src/domains/job-board/public-ui-premium.static.test.ts [2m([22m[2m63 tests[22m[2m)[22m[90m 47[2mms[22m[39m
+ [32m✓[39m src/shared/ui/internal-contrast.static.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/assignment-placement.service.test.ts [2m([22m[2m65 tests[22m[2m)[22m[90m 58[2mms[22m[39m
+ [32m✓[39m src/domains/applications/marketplace-inventory.static.test.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 81[2mms[22m[39m
+ [32m✓[39m src/domains/applications/marketplace-apply.routes.test.ts [2m([22m[2m31 tests[22m[2m)[22m[90m 63[2mms[22m[39m
+ [32m✓[39m src/shared/auth/vendor-object-scope.m1-08.route.test.ts [2m([22m[2m36 tests[22m[2m)[22m[90m 47[2mms[22m[39m
+ [32m✓[39m src/domains/commission/golden.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-card-truth.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m src/domains/reconciliation/reconciliation-unit.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m src/shared/toolchain/vitest-default-lane.static.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/ticket.service.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 43[2mms[22m[39m
+[90mstdout[2m | src/shared/observability/logger.test.ts[2m > [22m[2mSchema — AC-03[2m > [22m[2msink can be reset to default without throwing
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-09-05T20:22:04.953Z","level":"info","event":"after_reset","requestId":"req","meta":{}}
+
+ [32m✓[39m src/shared/observability/logger.test.ts [2m([22m[2m73 tests[22m[2m)[22m[90m 34[2mms[22m[39m
+ [32m✓[39m src/shared/auth/api-boundary.static.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/submission.service.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-board-architecture.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m src/domains/applications/marketplace-browse.routes.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 40[2mms[22m[39m
+ [32m✓[39m src/shared/security/required-relation-sweep.static.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 652[2mms[22m[39m
+   [33m[2m✓[22m[39m quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG[2m > [22mmệnh đề BA: tập vị trí select KHỚP CHÍNH XÁC tám dòng còn lại sau STEP-06 (EV-03, AC-04) [33m325[2mms[22m[39m
+   [33m[2m✓[22m[39m quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG[2m > [22mphép quét phủ cả app/, chứng minh bằng chính ba dòng app/api trong kết quả (AC-04) [33m301[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-ui-token-parity.static.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/e2e-staffing-narrative.integration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/shared/observability/middleware.test.ts [2m([22m[2m24 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m src/domains/applications/placement-panel.test.ts [2m([22m[2m26 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m src/shared/auth/permission-resolver.test.ts [2m([22m[2m82 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/assignment-placement.routes.test.ts [2m([22m[2m38 tests[22m[2m)[22m[90m 56[2mms[22m[39m
+[90mstderr[2m | src/domains/security/single-domain-consolidation.test.ts[2m > [22m[2mC) login POST — same-origin landing + host-only cookie[2m > [22m[2mbad credentials / locked / malformed → 401 INVALID_CREDENTIALS and NO cookie
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-09-05T20:22:11.179Z","level":"warn","event":"auth.login.denied","requestId":null,"meta":{"route":"/api/auth/login","outcome":"user_not_found"}}
+{"schemaVersion":"1.0","timestamp":"2026-09-05T20:22:11.182Z","level":"warn","event":"auth.login.denied","requestId":null,"meta":{"route":"/api/auth/login","outcome":"password_mismatch"}}
+
+ [32m✓[39m src/domains/security/single-domain-consolidation.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 36[2mms[22m[39m
+ [31m❯[39m src/shared/toolchain/tsc-program-boundary.static.test.ts [2m([22m[2m12 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[90m 17[2mms[22m[39m
+[31m   [31m×[31m tsc program boundary — phân loại ĐÓNG[2m > [22mmỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do[90m 10[2mms[22m[31m[39m
+[31m     → expected [ '.claude' ] to deeply equal [][39m
+[31m   [31m×[31m tsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA[2m > [22mmột gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ[90m 1[2mms[22m[31m[39m
+[31m     → expected [ '.claude', 'zzz-unclassified-fake' ] to deeply equal [ 'zzz-unclassified-fake' ][39m
+ [32m✓[39m src/shared/security/rate-limit-guard.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/4role-jobboard.integration.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m src/shared/security/rate-limit-config.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/4role-attendance.integration.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/shared/auth/with-auth-scope.test.ts [2m([22m[2m39 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-detail.static.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/referral-guard.canonical.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/shared/ui/design-tokens.static.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 34[2mms[22m[39m
+ [32m✓[39m src/domains/applications/application-queue.service.test.ts [2m([22m[2m22 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/e2e-attendance-narrative.integration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/observability/error-reporter.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/shared/auth/vendor-submissions.route.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/order.service.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m src/shared/observability/correlation-id.test.ts [2m([22m[2m28 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m src/domains/applications/tracking-pii-containment.static.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/mp1.contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/domains/security/statements-list.projection.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 39[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-board-route-json.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 34[2mms[22m[39m
+ [32m✓[39m src/shared/security/request-body.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 31[2mms[22m[39m
+ [32m✓[39m src/shared/security/public-surface-limiter.static.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/security/rate-limit-adapters.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/domains/applications/conversion.service.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/idempotency.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 44[2mms[22m[39m
+ [32m✓[39m src/domains/security/response-projection.static.test.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/security/portal-domains.integration.test.ts [2m([22m[2m49 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/transfer.service.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/outbox.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/domains/payroll/calculateVietnameseTaxes.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-projection.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/projection/manifest.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/shared/auth/with-authorized-db.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/auth/webhook-payslip.route.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/shared/auth/attendance-adjustments.route.test.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 43[2mms[22m[39m
+ [32m✓[39m src/domains/applications/tracking-mask.routes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m prisma/migrations-permission-hygiene.static.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/security/statements-generate.projection.route.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/domains/applications/application.service.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m src/shared/privacy/mask.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/shared/auth/projects-master.route.test.ts [2m([22m[2m22 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/domains/security/security-matrix-portals.test.ts [2m([22m[2m18 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-portal.route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-detail.service.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/security/workers-me.projection.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/domains/applications/application-detail-mp3.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m src/shared/auth/disputes.route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+[90mstdout[2m | src/domains/security/ctv-withdrawals.projection.route.test.ts[2m > [22m[2mPOST /api/ctv/withdrawals — self DTO omit ctvId (AC-08)[2m > [22m[2mCTV → 201, DTO omit ctvId; owner = session (KHÔNG nhận ctvId từ body)
+[22m[39m[withdrawals] created wd-1
+
+ [32m✓[39m src/domains/security/ctv-withdrawals.projection.route.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 33[2mms[22m[39m
+ [32m✓[39m src/domains/applications/screening.service.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/shared/auth/clients-master.route.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/state-machine.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/auth/with-public-db.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domains/applications/apply-helpers.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 113[2mms[22m[39m
+ [32m✓[39m src/shared/auth/statements-margin.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/taxonomy-unit.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/security/workers-projection.contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/shared/auth/auth-context.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-select.static.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/shared/auth/cron-routes.route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/talent-pool.repo.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/shared/auth/vendors-master.route.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/shared/auth/projects-clients-master.route.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 36[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/audit.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/auth/push-subscribe.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/domains/applications/conversion.routes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m src/shared/auth/scopes/ctv-account-scope.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m src/domains/applications/screening.routes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m src/domains/commission/ctv-summary.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+[90mstderr[2m | src/shared/auth/require-permission.test.ts[2m > [22m[2mrequirePermission (RQ-05, DEC-05)[2m > [22m[2mWORKER thiếu CAN_APPROVE_PAYROLL → throw AuthError PERMISSION_DENIED
+[22m[39m{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+
+[90mstderr[2m | src/shared/auth/require-permission.test.ts[2m > [22m[2mrequireAnyPermission[2m > [22m[2mkhông code nào pass → throw PERMISSION_DENIED
+[22m[39m{"evt":"permission_denied_any","userId":"u-w-1","role":"WORKER","requiredCodes":["CAN_APPROVE_PAYROLL","CAN_EDIT_CONTRACT"]}
+
+ [32m✓[39m src/shared/auth/require-permission.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/auth/payroll.route.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/shared/auth/public-read-guc.static.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/shared/auth/finance-scope.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domains/applications/status-machine.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/auth/jwt.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m src/shared/auth/cron-auth.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/auth/preauth-db.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/auth/permission-catalog.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/shared/auth/internal-webhook-auth.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m src/shared/auth/session-adapter.test.ts [2m([22m[2m30 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m src/shared/auth/debug.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/referral-guard.service.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/domains/security/debug-route.contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/shared/auth/me.route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/shared/auth/user.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/lib/db.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/shared/utils/money.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/shared/auth/password.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 349[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 2 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — phân loại ĐÓNG[2m > [22mmỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do
+[31m[1mAssertionError[22m: expected [ '.claude' ] to deeply equal [][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- Array [][39m
+[31m+ Array [[39m
+[31m+   ".claude",[39m
+[31m+ ][39m
+
+[36m [2m❯[22m src/shared/toolchain/tsc-program-boundary.static.test.ts:[2m247:26[22m[39m
+    [90m245| [39m        [33m![39m[33mObject[39m[33m.[39mprototype[33m.[39mhasOwnProperty[33m.[39m[34mcall[39m([33mOUTSIDE_PROGRAM[39m[33m,[39m name)[33m,[39m
+    [90m246| [39m    )[33m;[39m
+    [90m247| [39m    [34mexpect[39m(unclassified)[33m.[39m[34mtoEqual[39m([])[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m248| [39m  })[33m;[39m
+    [90m249| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA[2m > [22mmột gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ
+[31m[1mAssertionError[22m: expected [ '.claude', 'zzz-unclassified-fake' ] to deeply equal [ 'zzz-unclassified-fake' ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  Array [[22m
+[31m+   ".claude",[39m
+[2m    "zzz-unclassified-fake",[22m
+[2m  ][22m
+
+[36m [2m❯[22m src/shared/toolchain/tsc-program-boundary.static.test.ts:[2m318:26[22m[39m
+    [90m316| [39m        [33m![39m[33mObject[39m[33m.[39mprototype[33m.[39mhasOwnProperty[33m.[39m[34mcall[39m([33mOUTSIDE_PROGRAM[39m[33m,[39m name)[33m,[39m
+    [90m317| [39m    )[33m;[39m
+    [90m318| [39m    [34mexpect[39m(unclassified)[33m.[39m[34mtoEqual[39m([[32m'zzz-unclassified-fake'[39m])[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m319| [39m  })[33m;[39m
+    [90m320| [39m})[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m109 passed[39m[22m[90m (110)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m1681 passed[39m[22m[90m (1683)[39m
+[2m   Start at [22m 03:21:58
+[2m   Duration [22m 48.63s[2m (transform 2.61s, setup 0ms, collect 9.88s, tests 3.37s, environment 29ms, prepare 12.16s)[22m
+
+LANE_EXIT=1

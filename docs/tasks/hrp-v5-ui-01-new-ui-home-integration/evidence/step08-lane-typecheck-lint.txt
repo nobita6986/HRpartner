@@ -1,0 +1,358 @@
+STEP-08 - LANE / TYPECHECK / LINT (RQ-13 / RQ-14 / AC-13 / AC-14)
+Task: hrp-v5-ui-01-new-ui-home-integration, spec v1.0, execution round 1
+
+KET CUC MOT DONG: typecheck ra exit 0 voi tap diagnostic RONG (AC-14 nua thu nhat PASS).
+Lane ra exit 1 va lint ra exit 1. Ba vet do con lai cua lane duoc quy trach TUNG VET o muc D,
+moi vet mot phep do: HAI vet do worktree cua luong khac, MOT vet la xung dot noi tai cua
+chinh contract v1.0 - AC-01 doi DUNG 7 khoa --text-*, con ASM-01 cua go-live-16 doi DUNG 0
+khoa, hai menh de khong the cung dung. Ve lint: 63/63 error nam trong worktree ay, cay chinh
+gop 0 error. Vi the AC-13 KHONG DAT DUOC trong pham vi v1.0; xu ly theo RISK-05: ghi LIM roi
+ban giao BLOCKED cho Tier 1 phan xu.
+
+BA LAN CHAY, cung mot duong lenh, khac nhau o TRANG THAI CAY:
+  lan 1  ui01-step08-*   truoc khi sua gi    -> 4 vet do lane
+  lan 2  ui01-step08b-*  sau khi sua FIX-01  -> 3 vet do lane
+  lan 3  ui01-step08c-*  sau khi sua FIX-02  -> 3 vet do lane, la ban dan o day
+Ca ba deu bat toan van bang cmd /c "<lenh> > <tep> 2>&1" roi doc $LASTEXITCODE NGAY sau lenh
+cmd, vi PowerShell 5.1 boc stderr cua tien trinh con thanh NativeCommandError va lam mat ma
+thoat that. Duong lenh la npm run test:unit, dung lane canonical cua R-06.
+
+HAI phep bien doi da ap len output dan lai o day:
+  (1) day escape mau ANSI bi go - no la byte dieu khien terminal, khong phai noi dung.
+  (2) dau // trong URL canh bao cua Vite bi chen mot cap ngoac vuong: https:/[/]vite.dev/...
+      Ly do o LIM-A.
+
+=== A. BA MA THOAT (ban cuoi, Start at 23:39:38) ===
+--- CMD: cmd /c "npm run test:unit > $g\ui01-step08c-lane.txt 2>&1"; $l=$LASTEXITCODE
+--- CMD: cmd /c "npm run typecheck > $g\ui01-step08c-typecheck.txt 2>&1"; $t=$LASTEXITCODE
+--- CMD: cmd /c "npm run lint > $g\ui01-step08c-lint.txt 2>&1"; $n=$LASTEXITCODE
+--- CMD: Get-Content -LiteralPath $g\ui01-step08c-exits.txt
+  LANE_EXIT=1
+  TYPECHECK_EXIT=0
+  LINT_EXIT=1
+
+=== B. LANE - NUA DEM CUA AC-13 DAT CHINH XAC, NUA MA THOAT KHONG DAT ===
+--- CMD: hai dong tong ket cua ui01-step08c-lane.txt (dong 223, 224)
+   Test Files  2 failed | 108 passed (110)
+        Tests  3 failed | 1680 passed (1683)
+     Start at  23:39:38
+     Duration  44.84s (transform 2.76s, setup 0ms, collect 9.07s, tests 3.31s, environment 26ms, prepare 10.38s)
+
+Moc cua AC-13: "so test khong nho hon moc do STEP-02 do cong so test cua tep hang rao moi".
+  STEP-02 (evidence/step02-lane-before.txt):  Test Files 109 passed (109) / Tests 1669 passed (1669)
+  tep hang rao moi (STEP-07 muc A):           14 passed (14)
+  1669 + 14 = 1683.  Lan nay: 1683 test tren 110 tep = 109 + 1 tep.
+=> Nua DEM cua AC-13 dat DUNG bang, khong du mot test. Nua MA THOAT khong dat.
+
+Doc them mot lop: 1680 passed + 3 failed = 1683, tuc KHONG mot test nao bi MAT so voi baseline.
+Baseline co 1669 test va tat ca xanh. Ba vet do bay gio nam trong HAI tep ma baseline do XANH,
+nghia la chung do vi TRANG THAI CAY doi, khong vi mot test bi xoa hay bi doi ngu nghia.
+
+=== C. TYPECHECK - TOAN VAN, TAP DIAGNOSTIC RONG (AC-14 nua thu nhat) ===
+--- CMD: Get-Content -LiteralPath $g\ui01-step08c-typecheck.txt   (toan bo tep, 3 dong)
+
+  > hrp@0.1.0 typecheck
+  > tsc --noEmit
+
+  EXIT=0
+
+Vi sao dan OUTPUT chu khong chi dan ma thoat: tsc duoi che do incremental tung tra hai ma
+thoat khac nhau (2 roi 1) cho cung mot tap diagnostic, nen ma thoat mot minh khong phai phep
+do trung thuc. Phep do trung thuc la TAP DIAGNOSTIC, va o day no RONG: giua dong "> tsc
+--noEmit" va het tep khong con mot dong nao.
+
+=== D. QUY TRACH BA VET DO - MOI VET MOT PHEP DO ===
+
+--- VET 1 va VET 2: src/shared/toolchain/tsc-program-boundary.static.test.ts:247 va :318
+--- CMD: bon dong nguyen van cua ui01-step08c-lane.txt (147, 148, 168, 169)
+   FAIL  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary - phan loai DONG > moi thu muc tang goc co ma TypeScript la goc chuong trinh, hoac NGOAI kem ly do
+  AssertionError: expected [ '.claude' ] to deeply equal []
+   FAIL  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary - tu-kiem bo so mau tren du lieu BIA > mot goc bia chua phan loai lam phep kiem phan loai DO
+  AssertionError: expected [ '.claude', 'zzz-unclassified-fake' ] to deeply equal [ 'zzz-unclassified-fake' ]
+
+Ca hai thong diep noi ve DUNG MOT ten: `.claude`. Ba phep do duoi day noi `.claude` tro thanh
+mot goc chuong trinh vi mot worktree cua LUONG KHAC vua duoc dung ben trong no.
+
+--- CMD: git worktree list
+  C:/CodeApp/HrP                          b68d25b [main]
+  C:/CodeApp/HrP/.claude/worktrees/gl20   b68d25b [worktree-gl20] locked
+--- CMD: find .claude -type f \( -name '*.ts' -o -name '*.tsx' \) | wc -l
+  3600
+--- CMD: find .claude -type f \( -name '*.ts' -o -name '*.tsx' \) | grep -c '^.claude/worktrees/'
+  3600
+=> CA 3600 tep TypeScript duoi `.claude` nam trong worktree ay. Khong mot tep .ts/.tsx nao
+   duoi `.claude` thuoc ve thu gi khac.
+
+--- CMD: (Get-Item -LiteralPath '.claude/worktrees/gl20').LastWriteTime
+  09/05/2026 22:57:38
+
+Moc thoi gian bac bo kha nang hai vet nay do round nay sinh ra: lane BASELINE cua STEP-02
+chay luc 21:35 - truoc moc tren mot gio ruoi - va ra 109/109 tep, 1669/1669 test, KHONG mot
+vet do nao. Bon tep cua round nay nam duoi app/ va src/domains/; round nay khong ghi mot byte
+nao duoi .claude/.
+R-05 cam cham vao thay doi cua luong khac, ke ca xoa hay unlock worktree ay. Vi the hai vet
+nay duoc GHI, KHONG duoc SUA.
+
+--- VET 3: src/shared/ui/internal-contrast.static.test.ts:575 (ASM-01)
+--- CMD: ba dong nguyen van cua ui01-step08c-lane.txt (189, 190, 213)
+   FAIL  src/shared/ui/internal-contrast.static.test.ts > go-live-16 / RQ-09 - tap nen doc tu @theme, khong ghim trong test > ASM-01 - @theme khong khai bao khoa --text-* nao, nen co chu Tailwind mac dinh con dung
+  AssertionError: expected [ '--text-headline-xl', ...(13) ] to deeply equal []
+   ❯ src/shared/ui/internal-contrast.static.test.ts:575:70
+
+Day la vet do DO CHINH ROUND NAY sinh ra, va no la mot xung dot khong go duoc trong v1.0:
+  - AC-01 (RQ-01) doi: so dong chua `--text-` trong app/globals.css bang 7.
+  - ASM-01, ghim tai internal-contrast.static.test.ts:575, doi: @theme KHONG khai bao khoa
+    --text-* nao, tuc so khoa bang 0.
+Bay khoa toi them con sinh them 7 khoa ban dong hanh --line-height (co che cua Tailwind v4:
+moi khoa --text-<n> sinh mot khoa --text-<n>--line-height). ASM-01 liet ke du 14 ten trong
+thong diep loi. Khong mot cach viet nao lam mot so DONG THOI bang 7 va bang 0.
+
+HAI duong go da CAN va da BO, moi duong mot ly do do duoc:
+  (a) Sua internal-contrast.static.test.ts cho no chap nhan 7 khoa: tep ay KHONG nam trong
+      Modules cua contract v1.0, va no la hang rao cua mot task DA ACCEPTED (go-live-16).
+      R-05 cong pham vi Modules giu tay toi lai. Neu sua, mot round sau se khong con phep do
+      nao noi rang co chu mac dinh cua Tailwind da bi thay - dung diem mu ma ASM-01 sinh ra
+      de canh.
+  (b) Dat bay token vao mot khoi @theme THU HAI, hoac ngoai @theme: da bac o STEP-04. AC-01
+      dem tren toan tep app/globals.css chu khong phan biet khoi, nen no van dem 7; con
+      token dat ngoai @theme thi Tailwind KHONG sinh utility, tuc lai roi vao dung lop loi
+      "class khong sinh mot byte CSS" ma RQ-12 dang dong.
+=> RISK-05 cua contract goi dung tinh huong nay. Ket cuc: mot hang LIM, va ban giao BLOCKED.
+
+=== E. LINT - 63 ERROR NAM O DAU (AC-14 nua thu hai) ===
+--- CMD: dong tong ket cua ui01-step08c-lint.txt (dong 1386)
+  ✖ 1046 problems (63 errors, 983 warnings)
+
+--- CMD: awk theo tieu de tep cua eslint stylish, dem error tung tep
+  (mau: /^[A-Za-z]:[\\/]/ {f=$0} /^ +[0-9]+:[0-9]+ +error/ {c[f]++})
+    21  .claude/worktrees/gl20/public/sw.js
+    13  .claude/worktrees/gl20/public/mockup/_assets/frame.js
+    13  .claude/worktrees/gl20/docs/tasks/hrp-v4-bod-mockup/mockup/_assets/frame.js
+     6  .claude/worktrees/gl20/scripts/load-test/k6-transfer.js
+     5  .claude/worktrees/gl20/scripts/load-test/k6-checkin.js
+     3  .claude/worktrees/gl20/scripts/load-test/k6-statement.js
+     1  .claude/worktrees/gl20/check_rls.cjs
+     1  .claude/worktrees/gl20/apply-changes.mjs
+
+--- CMD: cung phep awk, cong don theo vi tri
+  TONG_ERROR=63  TRONG_GL20=63  NGOAI_GL20=0
+
+=> 63/63 error nam trong worktree cua luong khac; cay chinh gop 0 error. Ca 63 deu o tep
+   .js/.cjs/.mjs, khong mot tep .ts/.tsx nao.
+
+--- CMD: dem dong nhac ten bon tep cua round nay trong output lint
+  page.tsx                : 6 dong
+  globals.css             : 0 dong   (eslint khong doc CSS)
+  referral-invite-strip   : 0 dong
+  public-ui-token-parity  : 0 dong
+--- CMD: sau dong "page.tsx" ay la nhung tep nao
+  .claude/worktrees/gl20/app/admin/attendance/page.tsx
+  .claude/worktrees/gl20/app/admin/jobs/page.tsx
+  .claude/worktrees/gl20/app/worker/page.tsx
+  app/admin/attendance/page.tsx
+  app/admin/jobs/page.tsx
+  app/worker/page.tsx
+=> KHONG mot dong nao la app/(portal)/page.tsx. Sau dong ay la sau tep KHAC trung ten tep,
+   ba trong worktree gl20 va ba o cay chinh, va deu la warning chu khong phai error.
+=> AC-14 nua thu hai (lint exit 0) khong dat, va nguyen nhan nam TOAN BO ngoai pham vi round
+   nay: xoa het 63 error nghia la sua tam tep .js trong worktree cua luong khac, dieu R-05
+   cam tuyet doi.
+
+=== F. HAI VET DO CUA CHINH ROUND NAY, DA TIM VA DA SUA ===
+
+FIX-01 - lane, mot BINH LUAN cua toi lam mot hang rao do.
+Lan chay thu nhat (ui01-step08-lane.txt) co BON vet do; vet thu tu la:
+   FAIL  src/shared/ui/design-tokens.static.test.ts:86
+  AssertionError: expected [ Array(1) ] to deeply equal []
+  +   "src/domains/job-board/components/referral-invite-strip.tsx:37 var(--x)",
+Dong 37 luc ay la mot dong BINH LUAN dau tep, va no viet nguyen mat chu chinh cai mau ma no
+dang giai thich. Hang rao ay doc VAN BAN tep chu khong phan biet binh luan voi ma, nen mot vi
+du trong binh luan cung la mot luot goi duoi mat no - roi no doi mot custom property ten `--x`
+phai ton tai trong @theme, va khong co.
+Da sua: viet lai nam dong binh luan (35..39) de mo ta ham `var` ma khong dung dang co ngoac
+cong hai dau gach, va ghi thang khiem khuyet ay vao chinh cho do de nguoi sau khong lap lai.
+Kiem: lan chay thu hai (ui01-step08b-lane.txt) con BA vet do, design-tokens da XANH.
+  lan 1: Test Files 3 failed | 107 passed (110) / Tests 4 failed | 1679 passed (1683)
+  lan 2: Test Files 2 failed | 108 passed (110) / Tests 3 failed | 1680 passed (1683)
+
+Vi sao tep evidence NAY duoc viet nguyen mat chu cai mau ay ma khong tu lam do hang rao do:
+--- CMD: grep -nE "join\(ROOT|SCAN_DIRS|TSX_FILES" src/shared/ui/design-tokens.static.test.ts
+  34:const GLOBALS_CSS = join(ROOT, 'app/globals.css');
+  35:const SCAN_DIRS = [join(ROOT, 'app'), join(ROOT, 'src')];
+  76:const TSX_FILES = SCAN_DIRS.flatMap(walk).filter((p) => p.endsWith('.tsx'));
+Tep nay nam duoi docs/ (ngoai ca hai goc quet) va co duoi .txt (bi loc boi dong 76). Hai lop
+loai tru doc lap, nen phep viet o day khong the cham vao hang rao ay. Day la mot ngoai le CO
+LY DO DO DUOC cho LUAT 2, khong phai mot ngoai le vi tien tay.
+
+FIX-02 - lint, mot warning trong chinh tep hang rao moi cua toi.
+  src/domains/job-board/public-ui-token-parity.static.test.ts
+    102:9  warning  'i' is never reassigned. Use 'const' instead   prefer-const
+Bien trong ham classNameChunks. Da doi `let i` thanh `const i`.
+--- CMD: dong tong ket cua ca ba lan chay lint
+  ui01-step08-lint.txt   ✖ 1047 problems (63 errors, 984 warnings)
+  ui01-step08b-lint.txt  ✖ 1047 problems (63 errors, 984 warnings)
+  ui01-step08c-lint.txt  ✖ 1046 problems (63 errors, 983 warnings)
+Delta 984 -> 983 la dau tay cua dung mot sua ay, va so error khong doi (63) - dung nhu du
+doan, vi prefer-const o muc warn thi khong bao gio doi ma thoat cua lint. Sua no vi no la cua
+toi, khong phai vi no mo duoc AC-14.
+
+=== G. BANG KET LUAN HAI AC ===
+AC-13 (lane exit 0 VA so test >= moc):  nua DEM dat chinh xac (1683 = 1669 + 14, 110 tep);
+  nua MA THOAT KHONG dat (exit 1). Ba vet do: 2 thuoc worktree luong khac (R-05 cam sua),
+  1 la xung dot AC-01 <-> ASM-01 khong go duoc trong v1.0 (RISK-05).
+AC-14 (typecheck exit 0 VA lint exit 0): nua TYPECHECK dat, tap diagnostic RONG;
+  nua LINT KHONG dat (exit 1), 63/63 error trong worktree luong khac, cay chinh 0 error.
+
+=== H. GIOI HAN ===
+- LIM-A: dau // trong URL canh bao CJS cua Vite bi che bang mot cap ngoac vuong. Ly do: AC-07
+  dem mau URL tren "tap tep ma round nay sua hoac them", va round nay them chinh tep evidence
+  nay. Canh bao ay in trong MOI lan chay npm, nen mot tep evidence bat toan van output se tu
+  lam do AC-07 neu khong che. Do khong phai URL cua ma nguon, no la mot dong canh bao cua
+  chuoi cong cu. STEP-09 dan CA HAI con so cua AC-07 tren hai pham vi.
+- LIM-B: ban tho cua ca ba lan chay (lane, typecheck, lint, exits) nam NGOAI repo tai
+  C:\Users\Admin\AppData\Local\Temp\glx\ui01-step08*.txt va khong duoc stage. Muc A..F o day
+  la trich va tong hop, khong phai ban thay the.
+- LIM-C: hai vet tsc-program-boundary phu thuoc trang thai cay LUC CHAY. Neu luong khac go
+  worktree gl20 ra thi hai vet ay tu het ma khong ai sua mot dong ma nao - do la them mot
+  bang chung cho quy trach o muc D, nhung cung nghia la mot lan chay lai o thoi diem khac co
+  the ra con so khac. Vi the muc D ghim CA moc thoi gian (22:57:38) va CA phep dem (3600).
+- LIM-D: toi KHONG do bundle CSS thuc te. Muc B..G chi noi ve ket cuc cua lane, typecheck va
+  lint; khang dinh "bay bac chu sinh ra CSS" thuoc STEP-07 va no dua tren su ton tai cua
+  token trong @theme, khong dua tren mot ban dung Tailwind.
+- LIM-E: mot vet do thu tu tung ton tai o lan chay 1 (design-tokens) va da het o lan 2. Ban
+  tho cua lan 1 con nguyen trong temp; toi khong sua no de "cho dep", vi mot ban tho bi sua
+  sau khi chay thi khong con la bang chung.
+
+###########################################################################
+###  ROUND 2 (spec v1.1) — do lai AC-13 va AC-14 sau khi sua ASM-01     ###
+###  Phan tren day la round 1 va KHONG bi sua mot chu. Ngay: 2026-09-06 ###
+###########################################################################
+
+Luat viet cua muc nay giong LIM-A cua round 1: dong canh bao CJS cua Vite (dong thu 5 cua
+moi lan chay npm, co mang mot dia chi web) bi BO khoi moi ban trich, vi AC-07 dem mau URL
+tren tap tep round nay sua hoac them, va chinh tep nay nam trong tap ay. Ban tho toan van:
+C:\Users\Admin\AppData\Local\Temp\glx\r2-lane.raw.txt, r2-typecheck.raw.txt,
+r2-eslint-appsrc.raw.txt — khong stage.
+
+=== R2-A. AC-13 nua DEM: dat. AC-13 nua MA THOAT: khong dat, ly do ngoai ma cua round 2 ===
+--- CMD
+$ npm run test:unit
+exit code: 1
+--- OUT (hai dong tong ket cua RUNNER, khong phai phep dem chuoi)
+ Test Files  1 failed | 109 passed (110)
+      Tests  2 failed | 1681 passed (1683)
+   Start at  02:09:49
+   Duration  41.89s (transform 2.32s, setup 0ms, collect 8.68s, tests 2.87s, environment 26ms, prepare 10.34s)
+
+So sanh voi moc:
+  baseline b68d25b (round 1 muc A)      : 109 tep | 1669 test
+  round 1 (sau khi them 2 hang rao moi) : 110 tep | 1683 test | 3 vet do
+  round 2 (sau STEP-11)                 : 110 tep | 1683 test | 2 vet do
+=> So test KHONG tut duoi moc: 1683 >= 1683. Round 2 khong them va khong bot test nao
+   (STEP-11 chi doi assertion cua mot test san co; chung minh o step11-asm01.txt muc H).
+=> Vet do thu BA cua round 1 da MAT. Do la vet
+   `expected [ '--text-headline-xl', ...(13) ] to deeply equal []` cua ASM-01, tuc dung xung
+   dot BLK-01/RISK-05 giua AC-01 va ASM-01 ma DEC-14 mo duong go. 3 -> 2 la dau tay do luong
+   duy nhat cua STEP-11 tren pham vi ca lane.
+
+=== R2-B. HAI vet do con lai: ca hai NGOAI pham vi round 2, va quy trach do bang phep dem ===
+--- OUT (trich nguyen van, ca hai vet)
+ ❯ src/shared/toolchain/tsc-program-boundary.static.test.ts (12 tests | 2 failed) 17ms
+
+ FAIL  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — phân loại ĐÓNG > mỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do
+AssertionError: expected [ '.claude' ] to deeply equal []
+ ❯ src/shared/toolchain/tsc-program-boundary.static.test.ts:247:26
+    247|     expect(unclassified).toEqual([]);
+
+ FAIL  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA > một gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ
+AssertionError: expected [ '.claude', 'zzz-unclassified-fake' ] to deeply equal [ 'zzz-unclassified-fake' ]
+ ❯ src/shared/toolchain/tsc-program-boundary.static.test.ts:318:26
+    318|     expect(unclassified).toEqual(['zzz-unclassified-fake']);
+
+Ba phep do quy trach (chay 2026-09-06 02:23:26 +0700, tuc SAU lan chay lane):
+
+  (1) Tep hang rao ay khong phai cua round nay va khong phai cua main:
+      $ git cat-file -e b68d25b:src/shared/toolchain/tsc-program-boundary.static.test.ts
+      fatal: path '...' exists on disk, but not in 'b68d25b'   => EXISTS_AT_BASELINE=no
+      $ git status --porcelain -- src/shared/toolchain/
+      A  src/shared/toolchain/tsc-program-boundary.static.test.ts
+      A  src/shared/toolchain/vitest-default-lane.static.test.ts
+      $ git log --oneline -1 -- src/shared/toolchain/tsc-program-boundary.static.test.ts
+      (rong)
+      => tep dang o INDEX voi trang thai A, chua tung duoc commit: ban giao cua luong khac
+         (dai rf-05/rf-06). Round 2 khong tao, khong sua, khong stage no.
+
+  (2) Nguyen nhan hai vet la thu muc goc `.claude` co ma TypeScript:
+      $ find .claude -type f \( -name '*.ts' -o -name '*.tsx' \) | wc -l
+      3715
+      $ find .claude/worktrees/gl20 -type f \( -name '*.ts' -o -name '*.tsx' \) | wc -l
+      3715
+      $ find .claude -type f \( -name '*.ts' -o -name '*.tsx' \) | grep -v '^.claude/worktrees/gl20/' | wc -l
+      0
+      => 3715/3715, tuc 100% ma TypeScript duoi `.claude` nam trong worktree gl20. Neu bo
+         gl20 ra thi `.claude` khong con ma TypeScript nao va ca hai vet tu het.
+
+  (3) gl20 la cay cua luong khac:
+      $ git worktree list
+      C:/CodeApp/HrP                        b68d25b [main]
+      C:/CodeApp/HrP/.claude/worktrees/gl20 b68d25b [worktree-gl20]
+
+=> Ket luan quy trach: khong mot dong ma nao trong Modules cua ui-01 co the lam hai vet ay
+   xanh. Duong sua duy nhat la (a) go worktree gl20, hoac (b) khai `.claude` vao
+   OUTSIDE_PROGRAM cua chinh tep hang rao kia. Ca hai deu vi pham R-05 (khong cham file cua
+   luong khac, gom moi thu duoi .claude/worktrees/). Vi the AC-13 duoc bao cao la nua-dat va
+   ghi thanh BLK-02, KHONG tu quyet.
+
+=== R2-C. AC-14: DAT ca hai nua ===
+--- CMD
+$ npm run typecheck
+exit code: 0
+--- OUT (toan van, 3 dong)
+
+> hrp@0.1.0 typecheck
+> tsc --noEmit
+
+=> Tap diagnostic RONG, khong chi ma thoat 0. (Bay da ghi trong bo nho du an: duoi
+   incremental thi ma thoat cua tsc doi duoc trong khi output giong tung byte, nen o day dan
+   OUTPUT chu khong chi dan so 0.)
+
+--- CMD
+$ npx eslint app src
+exit code: 0
+--- OUT (dong tong ket + moi warning trong tep round 2 sua)
+C:\CodeApp\HrP\src\shared\ui\internal-contrast.static.test.ts
+  433:3  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+✖ 472 problems (0 errors, 472 warnings)
+  0 errors and 5 warnings potentially fixable with the `--fix` option.
+
+=> 0 ERROR, exit 0: dat dung nguong AC-14 cua v1.1 (pham vi `app src`, nguong 0 error).
+   Warning 433:3 la mot eslint-disable khong dung, CO SAN o baseline: no thuoc khoi ham ghi
+   log cua go-live-16, cach khoi ASM-01 (dong 574) 141 dong, va diff -U0 cua round 2 chi co
+   mot hunk tai 574 (step11-asm01.txt muc G) nen dong 433 khong bi round nay cham. Toi
+   KHONG xoa no: mandate DEC-14 hep den mot assertion, va sua dong 433 se lam diff cua
+   AC-18 co hai hunk.
+
+So sanh voi round 1: round 1 chay `npx eslint .` (ca cay) va thu 63 error, 100% trong
+worktree luong khac. v1.1 thu hep pham vi ve `app src` dung vi ly do ay, va tren pham vi
+moi thi con so la 0 error o CA round 1 (muc E round 1: "cay chinh 0 error") va round 2.
+
+=== R2-D. BANG KET LUAN HAI AC CUA ROUND 2 ===
+AC-13 : nua DEM dat (1683 = moc 1683, 110 tep). Nua MA THOAT khong dat (exit 1) vi 2 vet
+        do cua tep hang rao thuoc luong khac, nguyen nhan la 3715 tep TypeScript trong
+        worktree gl20. => nua-dat, chuyen Tier 1 (BLK-02).
+AC-14 : DAT. typecheck exit 0 voi tap diagnostic rong; `npx eslint app src` exit 0 voi
+        0 error / 472 warning.
+
+=== R2-E. GIOI HAN CUA MUC ROUND 2 ===
+- LIM-15: hai vet do phu thuoc TRANG THAI CAY luc chay, y nhu LIM-C cua round 1. Neu luong
+  khac go gl20 truoc khi Tier 3 chay lai thi lane se xanh va con so "2 failed" o day khong
+  tai lap duoc. Vi the muc nay ghim CA moc thoi gian (Start at 02:09:49, phep dem
+  02:23:26) VA phep dem 3715/3715, de bat ky ai chay lai cung phan biet duoc "lane da lanh"
+  voi "toi bao cao sai".
+- LIM-16: toi khong do bundle CSS o round nay. Round 2 khong doi mot byte nao cua
+  app/globals.css (hoan nguyen theo byte, hash 07369966..., step11-asm01.txt muc E), nen
+  moi khang dinh ve CSS o round 1 con nguyen gia tri va khong duoc do lai o day.
+- LIM-17: `npx eslint app src` chay qua npx nhung KHONG phai lane test; R-06 chi cam
+  `npx vitest run` tran (vi no doc .env = DB san xuat). Lenh lint khong doc DATABASE_URL.
+  Lane test cua ca round 2 chay bang `npm run test:unit`, khong mot lan nao khac.

@@ -6,6 +6,11 @@ import Link from 'next/link';
 // `CANONICAL_ORIGIN` đi theo `SuccessModal` — trang này không còn tham chiếu nào.
 import { ApplyModal } from '@/src/domains/job-board/components/apply-modal';
 import { SuccessModal } from '@/src/domains/job-board/components/success-modal';
+// ui-01 / RQ-10 / DEC-05: dải mời cộng tác viên nằm RIÊNG một tệp. Nó phải có vòng focus thấy được
+// và đích chạm 44 pixel (`R-07`), mà ba hàng rào canh trang chủ ghim phép đếm hai class ấy CHÍNH XÁC
+// trên tệp này — nên chúng sống ở tệp con. Ở đây không viết thẳng tên hai class ấy vì phép đếm là
+// phép đếm CHUỖI CON: một dòng chú thích nhắc tên cũng làm lệch con số.
+import { ReferralInviteStrip } from '@/src/domains/job-board/components/referral-invite-strip';
 // go-live-12 / RQ-10 / DEC-01: đường dẫn trang chi tiết lấy từ ĐÚNG một nguồn, không nội suy tay.
 import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
 
@@ -494,7 +499,7 @@ function TagStrip({
 
   return (
     <section className="w-full flex flex-col gap-3">
-      <h2 className="text-lg font-bold" style={{ color: 'var(--color-on-surface)' }}>
+      <h2 className="font-head text-headline-md font-bold" style={{ color: 'var(--color-on-surface)' }}>
         {heading}
       </h2>
       <div className="flex flex-wrap gap-2">
@@ -503,7 +508,7 @@ function TagStrip({
             key={entry.value}
             type="button"
             onClick={() => onPick(entry.value)}
-            className="hrp-btn-ghost hrp-focus border px-4 min-h-11 rounded-lg text-sm font-medium"
+            className="hrp-btn-ghost hrp-focus border px-4 min-h-11 rounded-lg font-label text-label-md font-medium"
           >
             {entry.value} ({entry.count})
           </button>
@@ -533,10 +538,10 @@ function MiniJobList({
   return (
     <section className="w-full flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-lg font-bold" style={{ color: 'var(--color-on-surface)' }}>
+        <h2 className="font-head text-headline-md font-bold" style={{ color: 'var(--color-on-surface)' }}>
           {heading}
         </h2>
-        <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
+        <p className="font-label text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
           {note}
         </p>
       </div>
@@ -547,20 +552,20 @@ function MiniJobList({
             className="border border-outline-variant/50 rounded-xl p-4 flex flex-col gap-1.5"
             style={{ backgroundColor: 'var(--color-surface)' }}
           >
-            <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--color-on-surface)' }}>
+            <p className="font-body text-label-md font-semibold leading-snug" style={{ color: 'var(--color-on-surface)' }}>
               {title}
             </p>
-            <p className="text-sm font-bold" style={{ color: 'var(--color-primary-dark)' }}>
+            <p className="font-body text-label-md font-bold" style={{ color: 'var(--color-primary-dark)' }}>
               {salaryLabel(salaryMinVnd, salaryMaxVnd)}
             </p>
-            <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
+            <p className="font-body text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
               {summaryLabel(locations, 'Địa điểm đang cập nhật')}
             </p>
-            <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
+            <p className="font-body text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
               {summaryLabel(shifts, 'Thời gian đang cập nhật')}
             </p>
             {availableSlots > 0 && (
-              <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
+              <p className="font-label text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
                 Còn {availableSlots} vị trí
               </p>
             )}
@@ -754,13 +759,13 @@ export default function JobsPage() {
           `</label>` trong panel đó. */}
       <section className="w-full flex flex-col lg:flex-row gap-8 items-stretch">
         <div className="flex-1 min-w-0 flex flex-col justify-center gap-4">
-          <h1 className="text-3xl md:text-4xl font-bold leading-tight" style={{ color: 'var(--color-on-surface)' }}>
+          <h1 className="font-head text-headline-xl font-bold leading-tight" style={{ color: 'var(--color-on-surface)' }}>
             Việc làm nhà máy, kho vận tại các khu công nghiệp
           </h1>
           {/* RQ-05: câu dưới tiêu đề nói ĐÚNG những gì trang chứng minh được — số việc và số khu vực
               là con số toàn cục của service, không phải chữ quảng cáo. Lúc chưa có dữ liệu thì nói
               chung, không in số 0 như một lời hứa. */}
-          <p className="text-base" style={{ color: 'var(--color-on-surface-variant)' }}>
+          <p className="font-body text-body-lg" style={{ color: 'var(--color-on-surface-variant)' }}>
             {overview.totals.jobs > 0
               ? `Đang tuyển ${overview.totals.jobs} việc làm tại ${overview.totals.areas} khu vực. Ứng tuyển không cần tài khoản.`
               : 'Việc làm theo ca, ứng tuyển không cần tài khoản.'}
@@ -776,7 +781,7 @@ export default function JobsPage() {
             <div className="flex-1 min-w-0">
               <label
                 htmlFor="hrp-hero-keyword"
-                className="text-sm font-semibold mb-2 block"
+                className="font-label text-label-md font-semibold mb-2 block"
                 style={{ color: 'var(--color-on-surface)' }}
               >
                 Từ khóa
@@ -819,7 +824,7 @@ export default function JobsPage() {
               type="submit"
               disabled={searching}
               aria-busy={searching}
-              className="hrp-btn-primary hrp-focus nav-item-lift px-6 min-h-11 rounded-lg font-semibold whitespace-nowrap disabled:cursor-wait disabled:opacity-70"
+              className="hrp-btn-primary hrp-focus nav-item-lift px-6 min-h-11 rounded-lg font-label text-label-md font-semibold whitespace-nowrap disabled:cursor-wait disabled:opacity-70"
             >
               {searching ? 'Đang tìm...' : 'Tìm việc'}
             </button>
@@ -848,10 +853,10 @@ export default function JobsPage() {
             className="rounded-xl border border-outline-variant/50 p-4"
             style={{ backgroundColor: 'var(--color-surface-container-low)' }}
           >
-            <p className="text-2xl font-bold" style={{ color: 'var(--color-primary-dark)' }}>
+            <p className="font-head text-headline-lg font-bold" style={{ color: 'var(--color-primary-dark)' }}>
               {stat.value}
             </p>
-            <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+            <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
               {stat.label}
             </p>
           </div>
@@ -947,11 +952,11 @@ export default function JobsPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           {/* go-live-09 / RQ-05: hạ từ `h1` xuống `h2`. Hero đã sở hữu `h1` duy nhất của trang, và
               hai `h1` là hai lời khai khác nhau về chủ đề của cùng một trang. */}
-          <h2 className="text-2xl md:text-3xl font-bold" style={{ color: 'var(--color-on-surface)' }}>
+          <h2 className="font-head text-headline-lg font-bold" style={{ color: 'var(--color-on-surface)' }}>
             Việc làm nổi bật
           </h2>
           {!loading && (
-            <span className="text-sm whitespace-nowrap" style={{ color: 'var(--color-on-surface-variant)' }}>
+            <span className="font-label text-label-md whitespace-nowrap" style={{ color: 'var(--color-on-surface-variant)' }}>
               {/* RQ-05: `total` là số của API sau lifecycle và sau filter, không phải độ dài trang đang xem. */}
               {/* RQ-07: lọc lương cắt ở client trên phần đã tải, nên khi nó bật, con số phải nói rõ
                   nó đếm trên phần đã tải — không được mượn `total` của API làm số của mình. */}
@@ -1017,10 +1022,10 @@ export default function JobsPage() {
             <span aria-hidden="true" className="material-symbols-outlined text-5xl mb-4 block" style={{ color: 'var(--color-outline)' }}>
               work_off
             </span>
-            <p className="text-lg font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
+            <p className="font-body text-body-lg font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
               Không tìm thấy việc làm phù hợp
             </p>
-            <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+            <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
               Thử thay đổi từ khóa hoặc bộ lọc
             </p>
           </div>
@@ -1047,10 +1052,10 @@ export default function JobsPage() {
                 dưới — không dựng một nút tải thêm thứ hai, và không âm thầm bỏ bộ lọc của người dùng. */}
             {showSalaryEmpty && (
               <div className="rounded-xl p-8 text-center" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
-                <p className="text-base font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
+                <p className="font-body text-body-md font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
                   {jobs.length} việc đã tải chưa có việc nào từ {VND_FORMAT.format(Number(minSalary))} đ/giờ
                 </p>
-                <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+                <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
                   Tải thêm việc làm bên dưới, hoặc chọn mức lương thấp hơn ở ô lọc phía trên.
                 </p>
               </div>
@@ -1066,19 +1071,19 @@ export default function JobsPage() {
                     className="w-8 h-8 border-4 rounded-full animate-spin"
                     style={{ borderColor: 'rgba(242, 101, 34, 0.3)', borderTopColor: 'var(--color-primary)' }}
                   />
-                  <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+                  <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
                     Đang tải thêm việc làm...
                   </p>
                 </>
               ) : nextOffset === null ? (
-                <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+                <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
                   Đã xem toàn bộ danh sách
                 </p>
               ) : (
                 <button
                   type="button"
                   onClick={loadMore}
-                  className="hrp-btn-ghost hrp-focus px-5 min-h-11 rounded-lg font-semibold border"
+                  className="hrp-btn-ghost hrp-focus px-5 min-h-11 rounded-lg font-label text-label-md font-semibold border"
                 >
                   Xem thêm việc làm
                 </button>
@@ -1101,6 +1106,13 @@ export default function JobsPage() {
         note="Xếp theo lương giờ, chỉ gồm việc đã công bố lương"
         entries={overview.topPaid}
       />
+
+      {/* ui-01 / RQ-10, DEC-05 — dải mời cộng tác viên. Đặt SAU hai dải việc làm vì nó là lời mời cho
+          người ĐÃ đọc xong danh sách, và đặt TRƯỚC hai modal vì modal không phải nội dung của trang.
+          Bản mẫu `new-ui` in hai con số hoa hồng trên hai badge; `PublicJobDto` và `PublicJobOverview`
+          không có cột nào sinh ra hai số ấy, nên `R-03` buộc XOÁ chứ không phải đổi cách trình bày.
+          Dải này chỉ trỏ về văn đã công bố ở `/ctv-portal`. */}
+      <ReferralInviteStrip />
 
       {/* Apply Modal */}
       {applyJob && (

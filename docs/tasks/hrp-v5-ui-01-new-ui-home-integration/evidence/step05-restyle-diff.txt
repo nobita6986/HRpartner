@@ -1,0 +1,340 @@
+﻿STEP-05 - Bay hinh thuc new-ui vao cac dai DANG SONG cua trang chu (RQ-02 / RQ-03 / DEC-03 / DEC-04 / AC-02 / AC-03)
+Task: hrp-v5-ui-01-new-ui-home-integration, spec v1.0, execution round 1
+
+Nguyen tac chon diem sua: retype DUNG nhung phan tu co doi ung trong new-ui, va chi nhung phan tu
+KHONG bi ba hang rao trang chu ghim. Bang chung cho hai nua ay o muc D va muc E.
+
+=== A. DIFF app/(portal)/page.tsx ===
+--- CMD: git diff -- "app/(portal)/page.tsx"
+diff --git a/app/(portal)/page.tsx b/app/(portal)/page.tsx
+index 614f7d5..8dc71c9 100644
+--- a/app/(portal)/page.tsx
++++ b/app/(portal)/page.tsx
+@@ -6,6 +6,11 @@ import Link from 'next/link';
+ // `CANONICAL_ORIGIN` đi theo `SuccessModal` — trang này không còn tham chiếu nào.
+ import { ApplyModal } from '@/src/domains/job-board/components/apply-modal';
+ import { SuccessModal } from '@/src/domains/job-board/components/success-modal';
++// ui-01 / RQ-10 / DEC-05: dải mời cộng tác viên nằm RIÊNG một tệp. Nó phải có vòng focus thấy được
++// và đích chạm 44 pixel (`R-07`), mà ba hàng rào canh trang chủ ghim phép đếm hai class ấy CHÍNH XÁC
++// trên tệp này — nên chúng sống ở tệp con. Ở đây không viết thẳng tên hai class ấy vì phép đếm là
++// phép đếm CHUỖI CON: một dòng chú thích nhắc tên cũng làm lệch con số.
++import { ReferralInviteStrip } from '@/src/domains/job-board/components/referral-invite-strip';
+ // go-live-12 / RQ-10 / DEC-01: đường dẫn trang chi tiết lấy từ ĐÚNG một nguồn, không nội suy tay.
+ import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
+ 
+@@ -494,7 +499,7 @@ function TagStrip({
+ 
+   return (
+     <section className="w-full flex flex-col gap-3">
+-      <h2 className="text-lg font-bold" style={{ color: 'var(--color-on-surface)' }}>
++      <h2 className="font-head text-headline-md font-bold" style={{ color: 'var(--color-on-surface)' }}>
+         {heading}
+       </h2>
+       <div className="flex flex-wrap gap-2">
+@@ -503,7 +508,7 @@ function TagStrip({
+             key={entry.value}
+             type="button"
+             onClick={() => onPick(entry.value)}
+-            className="hrp-btn-ghost hrp-focus border px-4 min-h-11 rounded-lg text-sm font-medium"
++            className="hrp-btn-ghost hrp-focus border px-4 min-h-11 rounded-lg font-label text-label-md font-medium"
+           >
+             {entry.value} ({entry.count})
+           </button>
+@@ -533,10 +538,10 @@ function MiniJobList({
+   return (
+     <section className="w-full flex flex-col gap-3">
+       <div className="flex flex-wrap items-baseline justify-between gap-2">
+-        <h2 className="text-lg font-bold" style={{ color: 'var(--color-on-surface)' }}>
++        <h2 className="font-head text-headline-md font-bold" style={{ color: 'var(--color-on-surface)' }}>
+           {heading}
+         </h2>
+-        <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
++        <p className="font-label text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+           {note}
+         </p>
+       </div>
+@@ -547,20 +552,20 @@ function MiniJobList({
+             className="border border-outline-variant/50 rounded-xl p-4 flex flex-col gap-1.5"
+             style={{ backgroundColor: 'var(--color-surface)' }}
+           >
+-            <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--color-on-surface)' }}>
++            <p className="font-body text-label-md font-semibold leading-snug" style={{ color: 'var(--color-on-surface)' }}>
+               {title}
+             </p>
+-            <p className="text-sm font-bold" style={{ color: 'var(--color-primary-dark)' }}>
++            <p className="font-body text-label-md font-bold" style={{ color: 'var(--color-primary-dark)' }}>
+               {salaryLabel(salaryMinVnd, salaryMaxVnd)}
+             </p>
+-            <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
++            <p className="font-body text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+               {summaryLabel(locations, 'Địa điểm đang cập nhật')}
+             </p>
+-            <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
++            <p className="font-body text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+               {summaryLabel(shifts, 'Thời gian đang cập nhật')}
+             </p>
+             {availableSlots > 0 && (
+-              <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
++              <p className="font-label text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+                 Còn {availableSlots} vị trí
+               </p>
+             )}
+@@ -754,13 +759,13 @@ export default function JobsPage() {
+           `</label>` trong panel đó. */}
+       <section className="w-full flex flex-col lg:flex-row gap-8 items-stretch">
+         <div className="flex-1 min-w-0 flex flex-col justify-center gap-4">
+-          <h1 className="text-3xl md:text-4xl font-bold leading-tight" style={{ color: 'var(--color-on-surface)' }}>
++          <h1 className="font-head text-headline-xl font-bold leading-tight" style={{ color: 'var(--color-on-surface)' }}>
+             Việc làm nhà máy, kho vận tại các khu công nghiệp
+           </h1>
+           {/* RQ-05: câu dưới tiêu đề nói ĐÚNG những gì trang chứng minh được — số việc và số khu vực
+               là con số toàn cục của service, không phải chữ quảng cáo. Lúc chưa có dữ liệu thì nói
+               chung, không in số 0 như một lời hứa. */}
+-          <p className="text-base" style={{ color: 'var(--color-on-surface-variant)' }}>
++          <p className="font-body text-body-lg" style={{ color: 'var(--color-on-surface-variant)' }}>
+             {overview.totals.jobs > 0
+               ? `Đang tuyển ${overview.totals.jobs} việc làm tại ${overview.totals.areas} khu vực. Ứng tuyển không cần tài khoản.`
+               : 'Việc làm theo ca, ứng tuyển không cần tài khoản.'}
+@@ -776,7 +781,7 @@ export default function JobsPage() {
+             <div className="flex-1 min-w-0">
+               <label
+                 htmlFor="hrp-hero-keyword"
+-                className="text-sm font-semibold mb-2 block"
++                className="font-label text-label-md font-semibold mb-2 block"
+                 style={{ color: 'var(--color-on-surface)' }}
+               >
+                 Từ khóa
+@@ -819,7 +824,7 @@ export default function JobsPage() {
+               type="submit"
+               disabled={searching}
+               aria-busy={searching}
+-              className="hrp-btn-primary hrp-focus nav-item-lift px-6 min-h-11 rounded-lg font-semibold whitespace-nowrap disabled:cursor-wait disabled:opacity-70"
++              className="hrp-btn-primary hrp-focus nav-item-lift px-6 min-h-11 rounded-lg font-label text-label-md font-semibold whitespace-nowrap disabled:cursor-wait disabled:opacity-70"
+             >
+               {searching ? 'Đang tìm...' : 'Tìm việc'}
+             </button>
+@@ -848,10 +853,10 @@ export default function JobsPage() {
+             className="rounded-xl border border-outline-variant/50 p-4"
+             style={{ backgroundColor: 'var(--color-surface-container-low)' }}
+           >
+-            <p className="text-2xl font-bold" style={{ color: 'var(--color-primary-dark)' }}>
++            <p className="font-head text-headline-lg font-bold" style={{ color: 'var(--color-primary-dark)' }}>
+               {stat.value}
+             </p>
+-            <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
++            <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
+               {stat.label}
+             </p>
+           </div>
+@@ -947,11 +952,11 @@ export default function JobsPage() {
+         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+           {/* go-live-09 / RQ-05: hạ từ `h1` xuống `h2`. Hero đã sở hữu `h1` duy nhất của trang, và
+               hai `h1` là hai lời khai khác nhau về chủ đề của cùng một trang. */}
+-          <h2 className="text-2xl md:text-3xl font-bold" style={{ color: 'var(--color-on-surface)' }}>
++          <h2 className="font-head text-headline-lg font-bold" style={{ color: 'var(--color-on-surface)' }}>
+             Việc làm nổi bật
+           </h2>
+           {!loading && (
+-            <span className="text-sm whitespace-nowrap" style={{ color: 'var(--color-on-surface-variant)' }}>
++            <span className="font-label text-label-md whitespace-nowrap" style={{ color: 'var(--color-on-surface-variant)' }}>
+               {/* RQ-05: `total` là số của API sau lifecycle và sau filter, không phải độ dài trang đang xem. */}
+               {/* RQ-07: lọc lương cắt ở client trên phần đã tải, nên khi nó bật, con số phải nói rõ
+                   nó đếm trên phần đã tải — không được mượn `total` của API làm số của mình. */}
+@@ -1017,10 +1022,10 @@ export default function JobsPage() {
+             <span aria-hidden="true" className="material-symbols-outlined text-5xl mb-4 block" style={{ color: 'var(--color-outline)' }}>
+               work_off
+             </span>
+-            <p className="text-lg font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
++            <p className="font-body text-body-lg font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
+               Không tìm thấy việc làm phù hợp
+             </p>
+-            <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
++            <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
+               Thử thay đổi từ khóa hoặc bộ lọc
+             </p>
+           </div>
+@@ -1047,10 +1052,10 @@ export default function JobsPage() {
+                 dưới — không dựng một nút tải thêm thứ hai, và không âm thầm bỏ bộ lọc của người dùng. */}
+             {showSalaryEmpty && (
+               <div className="rounded-xl p-8 text-center" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
+-                <p className="text-base font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
++                <p className="font-body text-body-md font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
+                   {jobs.length} việc đã tải chưa có việc nào từ {VND_FORMAT.format(Number(minSalary))} đ/giờ
+                 </p>
+-                <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
++                <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
+                   Tải thêm việc làm bên dưới, hoặc chọn mức lương thấp hơn ở ô lọc phía trên.
+                 </p>
+               </div>
+@@ -1066,19 +1071,19 @@ export default function JobsPage() {
+                     className="w-8 h-8 border-4 rounded-full animate-spin"
+                     style={{ borderColor: 'rgba(242, 101, 34, 0.3)', borderTopColor: 'var(--color-primary)' }}
+                   />
+-                  <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
++                  <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
+                     Đang tải thêm việc làm...
+                   </p>
+                 </>
+               ) : nextOffset === null ? (
+-                <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
++                <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
+                   Đã xem toàn bộ danh sách
+                 </p>
+               ) : (
+                 <button
+                   type="button"
+                   onClick={loadMore}
+-                  className="hrp-btn-ghost hrp-focus px-5 min-h-11 rounded-lg font-semibold border"
++                  className="hrp-btn-ghost hrp-focus px-5 min-h-11 rounded-lg font-label text-label-md font-semibold border"
+                 >
+                   Xem thêm việc làm
+                 </button>
+@@ -1102,6 +1107,13 @@ export default function JobsPage() {
+         entries={overview.topPaid}
+       />
+ 
++      {/* ui-01 / RQ-10, DEC-05 — dải mời cộng tác viên. Đặt SAU hai dải việc làm vì nó là lời mời cho
++          người ĐÃ đọc xong danh sách, và đặt TRƯỚC hai modal vì modal không phải nội dung của trang.
++          Bản mẫu `new-ui` in hai con số hoa hồng trên hai badge; `PublicJobDto` và `PublicJobOverview`
++          không có cột nào sinh ra hai số ấy, nên `R-03` buộc XOÁ chứ không phải đổi cách trình bày.
++          Dải này chỉ trỏ về văn đã công bố ở `/ctv-portal`. */}
++      <ReferralInviteStrip />
++
+       {/* Apply Modal */}
+       {applyJob && (
+         <ApplyModal
+EXIT=0
+
+--- CMD: git diff --numstat -- "app/(portal)/page.tsx"
+36	24	app/(portal)/page.tsx
+EXIT=0
+
+=== B. TEP MOI CUA DAI CTV (chua tracked o buoc nay, STEP-10 moi stage) ===
+--- CMD: git status --porcelain -- src/domains/job-board/components/referral-invite-strip.tsx
+?? src/domains/job-board/components/referral-invite-strip.tsx
+--- CMD: git hash-object src/domains/job-board/components/referral-invite-strip.tsx
+9cd9bc310d227be2f07520f7204bc46c2d384f1a
+So dong (dem ky tu xuong dong + 1): 99
+So chu so 0..9 trong ca tep: 133 - va DAY LA MOT SO KHONG CHUNG MINH DIEU GI. Phep dem chu so
+tron lan hinh hoc SVG ("M9 11a3.5 3.5 0 1 0 0-7"), hai class "w-11 h-11", va nhung con so ma
+chinh chu thich dau tep trich cua ba hang rao. Phep do dung cho AC-10 la dem HAI CHUOI TIEN:
+  0  10.000.00[0]
+  0  50.000.00[0]
+  0  VN[D]
+  0  VN[Đ]
+  2  /ctv-porta[l]   <= mot o chu thich dau tep, mot o thuoc tinh href
+Ban dau toi ghi "tep khong chua mot chu so nao" o chu thich dau tep VA o day; phep dem tra 133
+nen ca hai cho da duoc sua lai thanh "khong chua mot con so TIEN nao". Hash tren la hash SAU khi
+sua chu thich; hash 4e8448d5a78294811ec178cb0dc9976615e37640 la ban truoc do, ghi lai o day de
+ai doc lai lich su khong nghi co hai tep khac nhau.
+
+=== C. AC-02 - BAY TEN BAC HO font-*-* KHONG SINH CSS, TREN TAP TEP TOI SUA ===
+Mau viet TACH NGOAC de tep evidence nay khong tu khop chinh phep quet (xem LIM-A).
+  0  font-headline-x[l]
+  0  font-headline-l[g]
+  0  font-headline-m[d]
+  0  font-body-l[g]
+  0  font-body-m[d]
+  0  font-label-m[d]
+  0  font-label-s[m]
+
+=== D. AC-03 - HAI CLASS GOI TOKEN KHONG TON TAI ===
+  0  text-on-backgroun[d]
+  0  bg-surface-war[m]
+
+=== E. MOI PHEP DEM MA BA HANG RAO GHIM TREN app/(portal)/page.tsx, DO LAI SAU KHI SUA ===
+Cot phai la con so hang rao doi. Do bang [regex]::Matches nen la phep dem CHUOI CON, cung
+cach count() cua hang rao dem, khong phai dem DONG.
+ 12 / 12  KHOP  hrp-focus
+ 10 / 10  KHOP  min-h-11
+  4 / 4   KHOP  relative z-10
+  2 / 2   KHOP  className="relative z-10
+  1 / 1   KHOP  className="absolute inset-0
+  9 / 9   KHOP  material-symbols-outlined
+  1 / 1   KHOP  <h3 className="text-lg font-bold"
+  0 / 0   KHOP  <h3 className="text-base font-bold"
+  1 / 1   KHOP  appearance-none
+  0 / 0   KHOP  outline-none
+  0 / 0   KHOP  transition-colors
+  0 / 0   KHOP  type="text"
+  0 / 0   KHOP  type="checkbox"
+  3 / 3   KHOP  summaryLabel(job.
+  2 / 2   KHOP  href={detailHref}
+  2 / 2   KHOP  publicJobDetailPath
+  4 / 4   KHOP  <FacetSelect
+  2 / 2   KHOP  hrp-card nav-item-lift
+  1 / 1   KHOP  text-xs truncate
+
+Hai con so nay TUNG LECH mot lan trong chinh buoc nay: hrp-focus ra 13 va min-h-11 ra 11.
+Nguyen nhan khong phai mot class moi - la dong CHU THICH toi viet canh import, no nhac ten
+hai class ay de giai thich vi sao dai CTV nam o tep khac. Phep dem la dem chuoi con nen
+chu thich cung bi dem. Da viet lai chu thich theo loi mo ta vai tro, va hai con so ve dung.
+
+=== F. BANG BAY DIEM SUA -> BAC THANG CHU (DEC-03 / DEC-04 / DEC-13) ===
+Cot "px" la co chu TRUOC -> SAU. "=" nghia la doi ten bac ma khong doi mot pixel nao.
+Phan tu                                     class cu                      class moi                                px
+h1 Hero                                     text-3xl md:text-4xl          font-head text-headline-xl               30/36 -> 32  DOI Y
+p duoi h1 Hero                              text-base                     font-body text-body-lg                   16 -> 18     DOI Y
+label "Tu khoa" Hero                        text-sm                       font-label text-label-md                 14 = 14
+button "Tim viec" Hero                      (khong co co)                 font-label text-label-md                 16 -> 14     DOI Y
+so lieu Stats (3 o)                         text-2xl                      font-head text-headline-lg               24 = 24
+nhan Stats (3 o)                            text-sm                       font-label text-label-md                 14 = 14
+h2 TagStrip (2 dai)                         text-lg                       font-head text-headline-md               18 -> 20     DOI Y
+button tag                                  text-sm                       font-label text-label-md                 14 = 14
+h2 MiniJobList (2 dai)                      text-lg                       font-head text-headline-md               18 -> 20     DOI Y
+note MiniJobList                            text-xs                       font-label text-label-sm                 12 = 12
+title item MiniJobList                      text-sm                       font-body text-label-md                  14 = 14
+luong item MiniJobList                      text-sm                       font-body text-label-md                  14 = 14
+3 dong meta item MiniJobList                text-xs                       font-body/label text-label-sm            12 = 12
+h2 "Viec lam noi bat"                       text-2xl md:text-3xl          font-head text-headline-lg               24/30 -> 24  DOI Y
+span dem ket qua                            text-sm                       font-label text-label-md                 14 = 14
+empty state: dong dau / dong sau            text-lg / text-sm             font-body text-body-lg / label-md         18=18 / 14=14
+salary-empty: dong dau / dong sau           text-base / text-sm           font-body text-body-md / label-md         16=16 / 14=14
+3 nhanh load-more                           text-sm                       font-label text-label-md                 14 = 14
+button "Xem them viec lam"                  (khong co co)                 font-label text-label-md                 16 -> 14     DOI Y
+
+Luat chon ho font: font-head cho moi tieu de, font-body cho chu DU LIEU, font-label cho chu
+CHUC NANG (nhan o, chu tren nut, dong dem, dong trang thai). --font-head va --font-body deu
+tro ve --font-bvp nen font-head/font-body KHONG doi mot pixel nao; chi font-label doi sang
+Inter, va do la doi Y: new-ui dung ho label cho dung nhung cho ay.
+
+DEC-04 - hai class goi token khong ton tai: chung khong bao gio vao cay vi diem BAY da dung
+ban thay the: text-on-surface thay cho class goi --color-on-background, va
+bg-surface-container-low thay cho class goi --color-surface-warm. Muc D do lai: ca hai bang 0.
+
+=== G. BON VUNG TOI CO Y KHONG SUA, VA PHEP DO BIEN HO CHO TUNG VUNG ===
+
+G1. JobCard (dong 267..307). Bon dong chu cua no: h3 267, luong 297, recruiter 300, con-lai 304.
+   Hai trong bon dong ay LA chuoi bi ghim: dong 267 la NGUON DUY NHAT cua ghim
+   <h3 className="text-lg font-bold" (muc E do dung 1, va dong 450 KHONG khop vi sau font-bold
+   con leading-snug truoc dau ngoac kep), con dong 300 la ghim text-xs truncate. Neu retype hai
+   dong con lai thi component tu chia lam hai loi viet: hai dong theo bac, hai dong theo co tho.
+   Trang thai ay xau hon trang thai hien tai. Them nua, khoi chu thich 293..296 la LOI LE DA
+   DUOC AUDIT cua go-live-09: no lap luan bang chinh ten class ("text-lg (18px) so voi body
+   text-xs (12px) cua card"). Retype ma khong sua chu thich thi chu thich noi sai; sua chu thich
+   la viet lai bien ho cua mot task khac, khong nam trong hop dong nay.
+G2. FeaturedJobCard (dong ~443..453). Khong bi ghim, nhung title cua no dang 18px giong het title
+   cua JobCard. Doi ten bac cho MOT trong hai the ay ra bac 18px se KHONG doi mot pixel nao ma
+   lam hai the cung co chu mang hai loi viet khac nhau. De nguyen cung JobCard.
+G3. Panel bo loc <aside> (dong ~871..945). new-ui KHONG co panel bo loc nao, nen khong co "hinh
+   thuc new-ui" de bay vao day. Ngoai ra hai the chu cua no dang 20px va 14px - dung bang
+   text-headline-md va text-label-md - nen de nguyen khong lech thang chu.
+G4. text-[11px] o hai cho (badge dong 282, eyebrow FeaturedJobCard). Do la co TUY Y, khong phai
+   ten bac ho, va DEC-11 khoa dung bay bac nen khong co bac 11px de bay vao. Ghi lai o LIM-D.
+
+--- CMD: dem lai hai chuoi ghim cua JobCard de chac chan chung con nguyen
+  1  <h3 className="text-lg font-bold"
+  1  text-xs truncate
+  2  text-[11px]
+
+=== H. GIOI HAN ===
+- LIM-A: bay mau o muc C va hai mau o muc D duoc viet TACH NGOAC (font-headline-x[l], ...) de
+  chinh tep evidence nay khong bi dem khi ai do quet ca cay docs. Chuoi that duoc dung trong
+  phep dem la chuoi LIEN, dung nhu AC-02/AC-03 viet.
+- LIM-B: moi phep do o day chay tren cay lam viec CHUA staged. Ban staged do lai o STEP-10.
+- LIM-C: hai vung G1/G2 giu co tho la mot LUA CHON, khong phai mot thieu sot. AC-02 va AC-03
+  khong doi chung doi, va chin class khong-token ma RQ-02 nham vao deu nam o cac dai da retype.
+- LIM-D: ngoai chin class ay, cay con hai co TUY Y text-[11px] va mot class px-margin-desktop
+  ben new-ui goi --spacing-margin-desktop khong ton tai. Ca ba deu ngoai pham vi hop dong v1.0.
+- LIM-E: git in canh bao "LF will be replaced by CRLF" hai lan khi chay git diff trong buoc nay.
+  Do la canh bao autocrlf cua repo, khong phai loi cua phep do, va no khong doi noi dung diff.

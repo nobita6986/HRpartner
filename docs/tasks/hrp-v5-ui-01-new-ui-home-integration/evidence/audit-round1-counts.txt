@@ -1,0 +1,125 @@
+=== AC-01: grep -cE '^\s*--text-' app/globals.css
+7
+=== AC-01: sed -n '/^@theme {/,/^}/p' app/globals.css | grep -coE '^\s*--[a-z0-9-]+:'
+82
+=== AC-01 supplementary: declarations (not lines) in the @theme block
+90
+=== AC-02: per-name occurrence count over the five ui-01 files (7 names of RQ-02)
+font-headline-xl=0
+font-headline-lg=0
+font-headline-md=0
+font-body-lg=0
+font-body-md=0
+font-label-md=0
+font-label-sm=0
+=== AC-03: two forbidden classes over the five files
+text-on-background=0
+bg-surface-warm=0
+=== AC-05: three greps on app/globals.css
+prefers-color-scheme=0
+dot-dark=0
+prefers-reduced-motion=1
+=== AC-07: external URL lines, worktree vs baseline b68d25b, per file
+app/globals.css worktree=1 baseline=1 delta=0
+app/(portal)/page.tsx worktree=0 baseline=0 delta=0
+src/domains/job-board/components/referral-invite-strip.tsx worktree=0 baseline=0 delta=0
+src/domains/job-board/public-ui-token-parity.static.test.ts worktree=0 baseline=0 delta=0
+src/shared/ui/internal-contrast.static.test.ts worktree=0 baseline=0 delta=0
+AC07_TOTAL_DELTA=0
+=== AC-08: seven anchored raw-colour families over the five files
+[^a-zA-Z]green-[0-9]=0
+[^a-zA-Z]blue-[0-9]=0
+[^a-zA-Z]slate-[0-9]=0
+[^a-zA-Z]gray-[0-9]=0
+[^a-zA-Z]zinc-[0-9]=0
+[^a-zA-Z]amber-[0-9]=0
+[^a-zA-Z]yellow-[0-9]=0
+=== AC-01 supplementary: distinct declaration NAMES inside @theme
+89
+=== AC-01 supplementary: lines inside @theme carrying 2+ declarations (line number in file + text)
+112:  --text-headline-xl: 32px; --text-headline-xl--line-height: 1.2;
+113:  --text-headline-lg: 24px; --text-headline-lg--line-height: 1.25;
+114:  --text-headline-md: 20px; --text-headline-md--line-height: 1.3;
+115:  --text-body-lg: 18px; --text-body-lg--line-height: 1.6;
+116:  --text-body-md: 16px; --text-body-md--line-height: 1.6;
+117:  --text-label-md: 14px; --text-label-md--line-height: 1.4;
+118:  --text-label-sm: 12px; --text-label-sm--line-height: 1.4;
+=== AC-01 cross-check: @theme declaration LINES at baseline b68d25b
+75
+=== AC-01 supplementary: duplicated declaration name inside @theme (occurrences>1)
+      2 --color-primary:
+=== AC-09: canonical salary string on the home page
+canonical=3
+=== AC-09: two forbidden salary strings, worktree vs baseline (page.tsx)
+[Thoả thuận] worktree=0 baseline=0 delta=0
+[0 đ] worktree=2 baseline=2 delta=0
+=== AC-10: three greps over the five ui-01 files
+[10.000.000]=0
+[50.000.000]=0
+[/ctv-portal]=5
+real-href-ctv-portal=1
+=== AC-11: three greps on app/(portal)/page.tsx
+[ApplyModal]=2
+[SuccessModal]=3
+[/api/jobs]=1
+=== AC-18: anchored it( count, worktree vs baseline
+worktree=21
+baseline=21
+=== AC-18: git diff HEAD -U0 -- internal-contrast.static.test.ts (hunk headers + numstat)
+@@ -574,2 +574,16 @@ describe('go-live-16 / RQ-09 — tập nền đọc từ @theme, không ghim tro
+16	2	src/shared/ui/internal-contrast.static.test.ts
+=== AC-04: git diff --cached -U0 -- app/globals.css (hunk headers + numstat)
+@@ -105,0 +106,14 @@
+14	0	app/globals.css
+=== AC-15: new-ui scope
+?? new-ui/
+staged-new-ui-lines=0
+=== AC-12 RED-half, independent replication (read-only): --text- declaration lines in globals.css at baseline
+0
+=== AC-12: does the parity hangar assert on --text-* keys? (occurrences in the test file)
+11
+38:import { describe, expect, it } from 'vitest';
+255:    expect(HOME_FILES.map(rel)).toContain('app/(portal)/page.tsx');
+256:    expect(HOME_FILES.length).toBeGreaterThanOrEqual(SURFACE_FILE_FLOOR);
+260:    expect(CHUNK_COUNT).toBeGreaterThanOrEqual(CLASSNAME_CHUNK_FLOOR);
+261:    expect(TOKEN_FILES.size).toBeGreaterThanOrEqual(TOKEN_COUNT_FLOOR);
+265:    expect(THEME.size).toBeGreaterThanOrEqual(THEME_DECL_FLOOR);
+266:    expect(THEME.has('--font-head')).toBe(true);
+267:    expect(THEME.has('--color-on-surface')).toBe(true);
+278:    expect(actual).toEqual(EXPECTED_SCALE.map((row) => [...row]));
+282:    expect(SCALE_KEYS).toEqual([...SCALE_SUFFIXES].map((s) => `--text-${s}`).sort());
+289:    expect(companions).toHaveLength(SCALE_SUFFIXES.length);
+290:    expect(SCALE_KEYS.some((k) => k.endsWith('--line-height'))).toBe(false);
+=== AC-13 baseline marker: Tier 2 STEP-02 artifact test count
+--- docs/tasks/hrp-v5-ui-01-new-ui-home-integration/evidence/step02-tests-before.txt
+ Test Files  3 passed (3)
+      Tests  111 passed (111)
+EXIT=0
+ Test Files  109 passed (109)
+      Tests  1669 passed (1669)
+EXIT=0
+--- docs/tasks/hrp-v5-ui-01-new-ui-home-integration/evidence/step03-hangar-red.txt
+ Test Files  1 failed (1)
+      Tests  4 failed | 10 passed (14)
+EXIT=1
+- LIM-F: lan chay dau tien tra EXIT=-4058 vi shell dang o C:\Users\Admin\AppData\Local\Temp\glx
+=== AC-16: porcelain lines under the ui-01 task dir
+22
+=== AC-16: porcelain lines for the five ui-01 Module paths
+M  app/(portal)/page.tsx
+M  app/globals.css
+A  src/domains/job-board/components/referral-invite-strip.tsx
+A  src/domains/job-board/public-ui-token-parity.static.test.ts
+M  src/shared/ui/internal-contrast.static.test.ts
+=== AC-16: dirty paths inside app/ and src/ that are NOT ui-01 Modules
+A  src/shared/toolchain/tsc-program-boundary.static.test.ts
+A  src/shared/toolchain/vitest-default-lane.static.test.ts
+ M src/shared/ui/role-guard/role-guard-layout.tsx
+=== C-03/C-05: dirty paths under app/api
+0
+=== C-04/C-06: dirty paths under prisma
+0
+=== C-04/C-06: dirty paths under prisma/migrations
+0
+=== C-07: HEAD at audit time
+b68d25b051d45cbe2497a7cf45c8b0deabb60ba2

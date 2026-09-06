@@ -1,0 +1,294 @@
+﻿STEP-06 - Dai gioi thieu cong tac vien (RQ-10 / DEC-05 / DEC-09 / DEC-12 / R-03 / R-07 / AC-10)
+Task: hrp-v5-ui-01-new-ui-home-integration, spec v1.0, execution round 1
+Ban nay THAY TOAN BO ban sinh lan dau. Ly do ghi o LIM-D: bang o muc B cua ban ay noi bon
+dong loi ich cua new-ui duoc "MANG QUA, con ba", trong khi tep ban giao KHONG mang qua dong
+nao - ba dong trong no la ba dong TOI TU VIET. Muc C moi la phan tra gia cho cau ay.
+
+HAI LUAT VIET O TEP NAY, de khong mot phep dem AC nao bi tep evidence tu lam xanh hay tu lam do:
+  LUAT 1 - LENH: moi pattern trong lenh duoc dung bang phep NOI CHUOI, vi du
+    ('10.000' + '.000'). Lenh dan o day dan NGUYEN VAN vao PowerShell la chay duoc, va no
+    khong chua chuoi bi cam duoi dang mat chu.
+  LUAT 2 - OUTPUT DAN LAI: chen mot cap ngoac vuong quanh KY TU CUOI cua chuoi bi che.
+    10.000.00[0] doc la 10.000.000; font-headline-x[l] la ten bac ho cua new-ui; green[-] la
+    ho mau tho; https:/[/] la dau URL. Ap dung dong nhat, khong ngoai le.
+
+=== A. BAN MAU new-ui - THU GI CO O DO ===
+
+--- CMD: git status --porcelain -- new-ui
+  ?? new-ui/
+(dung MOT dong ?? : ca cay new-ui van untracked va khong he bi cham, dung nhu AC-15 va R-05 doi)
+
+--- CMD: Select-String -LiteralPath 'new-ui/components/ReferralSection.tsx' -Pattern ('[0-9]' + '+\.000\.000')
+  dong 52: +10.000.00[0] VNĐ
+  dong 55: +50.000.00[0] VNĐ
+  => HAI con so tien. Khong mot cot nao cua PublicJobDto hay PublicJobOverview sinh ra chung.
+
+--- CMD: Select-String -LiteralPath 'new-ui/components/ReferralSection.tsx' -Pattern ('src=\"htt' + 'p')
+  dong 13: src="https:/[/]lh3.googleusercontent.com/aida-public/AB6AXuAjhtUWq6nEycjPWmQ2X3vPPIznwYvLWNNwJ9wZ_ ...
+  dong 48: src="https:/[/]lh3.googleusercontent.com/aida-public/AB6AXuDqaCf9r7MmcYUGo9lHbKBuoB4oDioymk7VEH-h8 ...
+  => HAI URL ngoai. DEC-09 khoa so URL ngoai MOI o 0.
+
+--- CMD: Select-String -LiteralPath 'new-ui/components/ReferralSection.tsx' -Pattern ('font-headlin' + 'e|font-bod' + 'y-|font-labe' + 'l-|next/image|transition-colors|bg-gree' + 'n|px-margin')
+  dong 2: import Image from 'next/image';
+  dong 7: <div className="max-w-7xl mx-auto px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-12 items-cen ...
+  dong 15: <h2 className="font-headline-x[l] text-headline-xl text-primary-container font-bold mb-2">Chương trình ...
+  dong 16: <p className="font-headline-m[d] text-headline-md text-secondary mb-6">Giới thiệu thành viên, nhận hoa ...
+  dong 22: <span className="font-body-l[g] text-body-lg text-on-surface">Thu nhập không giới hạn</span>
+  dong 26: <span className="font-body-l[g] text-body-lg text-on-surface">Không mất phí, không yêu cầu bằng cấp, k ...
+  dong 30: <span className="font-body-l[g] text-body-lg text-on-surface">Linh hoạt thời gian, địa điểm làm việc</ ...
+  dong 34: <span className="font-body-l[g] text-body-lg text-on-surface">Được hướng dẫn, đào tạo, hỗ trợ thường x ...
+  dong 38: <button className="bg-primary-container text-white px-8 py-4 rounded-xl font-label-m[d] text-label-md  ...
+  dong 51: <div className="absolute top-8 right-8 bg-green[-]500 text-white px-4 py-2 rounded-full font-bold shad ...
+  dong 54: <div className="absolute bottom-24 right-12 bg-green[-]500 text-white px-4 py-2 rounded-full font-bold ...
+
+=== B. QUYET DINH TUNG PHAN CUA BAN MAU: MANG QUA, DOI, HAY XOA ===
+Bang nay noi ve BAN MAU. Cot "Xu ly" tra loi dung mot cau hoi: phan ay co di vao tep ban
+giao hay khong. Khong mot dong chu nao cua ban mau di vao tep ban giao.
+
+Phan cua ban mau            Xu ly                Ly do co the do duoc
+hai badge tien (52,55)      XOA                  R-03: khong cot nao sinh ra hai so ay
+hai the img + 2 URL (13,48) XOA, thay bang svg   DEC-09 khoa 0 URL ngoai moi; DEC-12 cam next/image
+import next/image (2)       KHONG mang qua       DEC-12
+bg-gree[n]-500 (51,54)      KHONG mang qua       AC-08: bay ho mau tho phai bang 0
+transition-colors (38)      KHONG mang qua       hang rao trang chu ghim chuoi ay o 0 tren page.tsx
+px-margin-desktop (7)       KHONG mang qua       --spacing-margin-desktop khong ton tai (do o duoi)
+bay ten bac ho font-*-*     KHONG mang qua       AC-02 doi bay phep dem bang 0; tep ban giao dung
+                                                 font-head / font-body / font-label theo DEC-03
+bon dong loi ich (22..34)   KHONG mang qua       KHONG dong nao. Ba dong <li> trong tep ban giao la
+                                                 ba dong VIET MOI, nguon o muc C. Dong dau cua ban
+                                                 mau la "Thu nhap khong gioi han" - mot loi hua thu
+                                                 nhap, RISK-08 chi cho tro ve van da cong bo
+nut CTA (38)                DOI dich va DOI nhan new-ui la mot <button> khong di dau; tep ban giao
+                                                 la mot <Link> toi /ctv-portal, duong DEC-05 goi ten
+4 icon material-symbols     KHONG mang qua       hang rao ghim dung 9 the ay tren page.tsx; mot svg
+                                                 viet tay khong can @import font icon nen re hon
+
+--- CMD: dem khai bao token ma cac class cua ban mau goi den, trong app/globals.css
+  1  --color-surface-container:  CO -> class goi no la class SONG
+  1  --color-primary-container:  CO -> class goi no la class SONG
+  1  --color-secondary:  CO -> class goi no la class SONG
+  0  --color-on-background:  KHONG CO -> class goi no la class CHET
+  0  --color-surface-warm:  KHONG CO -> class goi no la class CHET
+  0  --spacing-margin-desktop:  KHONG CO -> class goi no la class CHET
+=> DEC-04 noi dung hai class chet: mot goi --color-on-background, mot goi --color-surface-warm.
+   Phep dem tren xac nhan CA HAI khong ton tai, va xac nhan them --spacing-margin-desktop cung
+   khong ton tai (class thu ba, ngoai pham vi v1.0 - LIM-C).
+
+=== C. MOI CAU TRONG DAI BAN GIAO LAY TU DAU (RISK-08) ===
+RISK-08 chi cho phep tro ve VAN DA CONG BO. Van da cong bo la trang /ctv-portal, tep
+app/(portal)/ctv-portal/page.tsx. Duoi day la nguon, doc thang tu tep ay:
+
+--- CMD: Select-String -LiteralPath 'app/(portal)/ctv-portal/page.tsx' -Pattern ('titl' + 'e:|des' + 'c:') -Encoding UTF8
+  dong 6: title: 'Bước 1: Đăng ký tham gia',
+  dong 7: desc: 'Nhập thông tin để tạo tài khoản thành viên trên hệ thống Website hoặc Mobile App.',
+  dong 11: title: 'Bước 2: Tìm ứng viên',
+  dong 12: desc: 'Tiến hành tìm kiếm ứng viên phù hợp với yêu cầu tuyển dụng của các doanh nghiệp.',
+  dong 16: title: 'Bước 3: Nhập hồ sơ ứng viên lên hệ thống',
+  dong 17: desc: 'Nhân viên tư vấn của HRP sẽ hỗ trợ chăm sóc ứng viên.',
+  dong 21: title: 'Bư�c 4: Theo dõi trạng thái ứng viên',
+  dong 22: desc: 'Bám sát trạng thái ứng viên trên hệ thống và hỗ trợ kịp thời trong quá trình tuyển dụng.',
+  dong 26: title: 'Bước 5: Nhận tiền hoa hồng',
+  dong 27: desc: 'Nhận hoa hồng cho mỗi ứng viên đi làm đủ thời gian theo quy định.',
+
+--- CMD: Select-String -LiteralPath 'app/(portal)/ctv-portal/page.tsx' -Pattern ('mi' + [char]0x1EC5 + 'n ph' + [char]0xED) -Encoding UTF8
+  dong 58: Đăng ký tham gia miễn phí
+
+Bang doi chieu TUNG CAU trong dai ban giao voi dong nguon o tren:
+
+Cau trong dai ban giao                              Nguon (dong cua /ctv-portal)
+"Gioi thieu ung vien, nhan hoa hong" (h2)           dong 11 "Tim ung vien" + dong 26 "Nhan tien
+                                                    hoa hong"
+doan mo: "Gioi thieu ung vien phu hop voi don        dong 12 "tim kiem ung vien phu hop voi yeu
+tuyen dang mo, theo doi trang thai ung vien tren     cau tuyen dung", dong 22 "Bam sat trang thai
+he thong va nhan hoa hong theo quy dinh da cong bo." ung vien tren he thong", dong 27 "theo quy dinh"
+<li> 1: "Dang ky tham gia mien phi"                 dong 6 "Buoc 1: Dang ky tham gia" + dong 58
+                                                    "Dang ky tham gia mien phi"
+<li> 2: "Theo doi trang thai ung vien tren he thong" dong 21 + dong 22, gan nguyen van
+<li> 3: "Nhan hoa hong cho moi ung vien di lam du    dong 27 nguyen van, chi bo ba chu cuoi "theo
+thoi gian"                                          quy dinh" vi cau chan trang da noi
+chan trang: "Nam buoc tham gia va dieu kien nhan     PROCESS_STEPS co dung nam phan tu (dong 6..27)
+hoa hong cong bo tai cong tac vien."                 + dong 27 "theo quy dinh"
+nhan nut: "Tim hieu chuong trinh cong tac vien"      khong phai cau cua /ctv-portal. Chon chu "Tim
+                                                    hieu" chu khong phai "Tro thanh" vi cu nhan mo
+                                                    MOT TRANG gioi thieu, no khong tao tai khoan;
+                                                    duong tao tai khoan la /register o dong 58 cua
+                                                    trang ay, va DEC-05 goi ten /ctv-portal
+
+BA CAU BI BO khoi ban nhap dau cua tep ban giao, vi khong tim duoc nguon:
+  "Duong lien ket rieng cho tung don tuyen"      - /ctv-portal khong cong bo tinh nang nay
+  "Theo doi trang thai tung nguoi duoc gioi thieu" - van cong bo noi "trang thai UNG VIEN", khong
+                                                    noi trang thai theo tung nguoi GIOI THIEU
+  "Doi chieu hoa hong theo ky da cong bo"        - /ctv-portal khong cong bo mot ky chi tra nao
+Ban nhap dau con mot cau chan trang "Dieu kien tham gia, CACH TINH va KY CHI TRA hoa hong cong bo
+tai cong tac vien" - cung bi bo vi /ctv-portal khong cong bo cach tinh lan ky chi tra.
+
+FND-01 (NGOAI PHAM VI, khong sua o round nay): dong 21 cua app/(portal)/ctv-portal/page.tsx co
+mot byte hong ngay chu "Buoc" - doc ra la "Bu?c 4". Tep ay khong nam trong Modules cua contract
+v1.0 nen R-05 va pham vi giu tay toi lai. Ghi len day vi day la mot LOI CHINH TA DANG SONG tren
+bo mat cong khai; xin Tier 1 mo mot mon rieng.
+
+=== D. BAN GIAO: src/domains/job-board/components/referral-invite-strip.tsx ===
+--- CMD: git status --porcelain -- src/domains/job-board/components/referral-invite-strip.tsx
+  ?? src/domains/job-board/components/referral-invite-strip.tsx
+--- CMD: git hash-object src/domains/job-board/components/referral-invite-strip.tsx
+  98e972a3e362dd2e44cca1442479eb23e529b1da
+--- CMD: (Get-Content -LiteralPath src/domains/job-board/components/referral-invite-strip.tsx -Encoding UTF8).Count
+  109
+--- CMD: Get-Content -LiteralPath src/domains/job-board/components/referral-invite-strip.tsx -Encoding UTF8
+   1| /**
+   2|  * Dải mời cộng tác viên trên trang chủ công khai — ui-01 / RQ-10 / DEC-05.
+   3|  *
+   4|  * Vì sao là MỘT dải TRỎ đi, không phải bản sao của `ReferralSection` bên
+   5|  * `new-ui/`: bản mẫu ấy in hai con số tiền (`+…VNĐ` trên hai badge) mà không có
+   6|  * một cột nào trong `PublicJobDto` hay `PublicJobOverview` sinh ra chúng. `R-03`
+   7|  * cấm in số không nguồn lên bề mặt công khai, nên hai badge bị XOÁ chứ không
+   8|  * được đổi màu hay hạ cỡ chữ. Điều kiện và mức hoa hồng đã có văn công bố ở
+   9|  * `/ctv-portal`; dải này chỉ dẫn người đọc tới đó. Tệp này không chứa một con
+  10|  * số TIỀN nào — những chữ số còn lại đều là hình học của khối `<svg>` và hai
+  11|  * class `w-11 h-11`, không phải một khẳng định về thu nhập.
+  12|  *
+  13|  * Vì sao MỌI câu trong dải đều là câu đã có ở trang `/ctv-portal`: `RISK-08` chỉ
+  14|  * cho phép trỏ về văn đã công bố, nên bốn dòng chữ ở đây được lấy đúng từ năm
+  15|  * bước công bố tại `app/(portal)/ctv-portal/page.tsx` — "Đăng ký tham gia" (bước
+  16|  * 1, cộng nút "miễn phí" của trang ấy), "Theo dõi trạng thái ứng viên trên hệ
+  17|  * thống" (bước 4), "Nhận hoa hồng cho mỗi ứng viên đi làm đủ thời gian theo quy
+  18|  * định" (bước 5). Ba tính năng mà bản nháp đầu của tệp này tự nhận — liên kết
+  19|  * riêng cho từng đơn tuyển, trạng thái theo từng người được giới thiệu, đối
+  20|  * chiếu hoa hồng theo kỳ — KHÔNG có trong văn công bố ấy và cũng chưa có mã, nên
+  21|  * đã bị bỏ. Nhãn nút là "Tìm hiểu", không phải "Trở thành", vì cú nhấn mở một
+  22|  * trang giới thiệu chứ không tạo tài khoản.
+  23|  *
+  24|  * Vì sao đứng RIÊNG một tệp chứ không viết thẳng vào `app/(portal)/page.tsx`:
+  25|  * ba hàng rào canh trang chủ ghim đếm CHÍNH XÁC trên tệp ấy — `hrp-focus` đúng
+  26|  * `12` lượt, `min-h-11` đúng `10` lượt, thẻ `material-symbols-outlined` đúng `9`
+  27|  * lượt, `relative z-10` đúng `4` lượt. Một dải mới có vòng focus và đích chạm
+  28|  * `44px` sẽ làm lệch cả ba con số ấy nếu nằm cùng tệp. Tách ra là cách giữ
+  29|  * ĐỒNG THỜI `AC-06` (mốc `111` test) và `R-07` (đích chạm không nhỏ hơn 44×44).
+  30|  *
+  31|  * Vì sao không có `'use client'`: dải không giữ trạng thái, không hook, không
+  32|  * bắt sự kiện. Trang cha đã là client component nên tệp này vẫn vào bundle ấy;
+  33|  * thêm chỉ thị chỉ để cho giống ba tệp bên cạnh là thêm một biên vô nghĩa.
+  34|  *
+  35|  * Vì sao hình trang trí là SVG viết tay: `DEC-09` khoá `0` URL ngoài mới, và
+  36|  * `DEC-12` cấm `next/image`. Khối `<svg>` dùng `currentColor` nên nó không gọi
+  37|  * một custom property nào — `design-tokens.static.test.ts` quét mọi `var(--x)`
+  38|  * trong cây `app` và `src`, và một biến chết ở đây sẽ làm hàng rào ấy đỏ.
+  39|  */
+  40| import Link from 'next/link';
+  41| 
+  42| export function ReferralInviteStrip() {
+  43|   return (
+  44|     <section
+  45|       aria-labelledby="hrp-ctv-invite-heading"
+  46|       className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl p-6 flex flex-col gap-5 md:flex-row md:items-center md:justify-between md:gap-8"
+  47|     >
+  48|       <div className="flex items-start gap-4">
+  49|         {/* Trang trí thuần: thẻ mang aria-hidden nên trình đọc màn hình bỏ qua,
+  50|             và không có văn bản nào chỉ tồn tại trong hình. */}
+  51|         <svg
+  52|           aria-hidden="true"
+  53|           focusable="false"
+  54|           viewBox="0 0 24 24"
+  55|           fill="none"
+  56|           stroke="currentColor"
+  57|           strokeWidth="1.75"
+  58|           strokeLinecap="round"
+  59|           strokeLinejoin="round"
+  60|           className="w-11 h-11 shrink-0 text-primary"
+  61|         >
+  62|           <path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+  63|           <path d="M2.5 20v-1.5A4.5 4.5 0 0 1 7 14h4a4.5 4.5 0 0 1 4.5 4.5V20" />
+  64|           <path d="M16.5 10.5h5" />
+  65|           <path d="M19 8v5" />
+  66|         </svg>
+  67| 
+  68|         <div className="flex flex-col gap-2">
+  69|           <h2
+  70|             id="hrp-ctv-invite-heading"
+  71|             className="font-head text-headline-lg font-bold text-on-surface"
+  72|           >
+  73|             Giới thiệu ứng viên, nhận hoa hồng
+  74|           </h2>
+  75| 
+  76|           <p className="font-body text-body-lg text-on-surface">
+  77|             Giới thiệu ứng viên phù hợp với đơn tuyển đang mở, theo dõi trạng thái ứng viên trên hệ
+  78|             thống và nhận hoa hồng theo quy định đã công bố.
+  79|           </p>
+  80| 
+  81|           <ul className="flex flex-col gap-1 md:flex-row md:flex-wrap md:gap-x-6">
+  82|             <li className="font-label text-label-md text-on-surface">
+  83|               Đăng ký tham gia miễn phí
+  84|             </li>
+  85|             <li className="font-label text-label-md text-on-surface">
+  86|               Theo dõi trạng thái ứng viên trên hệ thống
+  87|             </li>
+  88|             <li className="font-label text-label-md text-on-surface">
+  89|               Nhận hoa hồng cho mỗi ứng viên đi làm đủ thời gian
+  90|             </li>
+  91|           </ul>
+  92| 
+  93|           {/* Không hứa thu nhập bằng con số ở đây: `RISK-08` chỉ cho phép trỏ về
+  94|               văn đã công bố. */}
+  95|           <p className="font-label text-label-sm text-on-surface-variant">
+  96|             Năm bước tham gia và điều kiện nhận hoa hồng công bố tại cổng cộng tác viên.
+  97|           </p>
+  98|         </div>
+  99|       </div>
+ 100| 
+ 101|       <Link
+ 102|         href="/ctv-portal"
+ 103|         className="hrp-btn-primary nav-item-lift hrp-focus font-label text-label-md font-semibold inline-flex items-center justify-center px-6 min-h-11 rounded-lg whitespace-nowrap shrink-0"
+ 104|       >
+ 105|         Tìm hiểu chương trình cộng tác viên
+ 106|       </Link>
+ 107|     </section>
+ 108|   );
+ 109| }
+
+=== E. AC-10 - BA PHEP DEM TREN TAP TEP MA ROUND NAY SUA HOAC THEM ===
+Tap tep MA (bon tep). Tap tep docs do o STEP-09 muc rieng.
+
+--- CMD: foreach($f in $set){ @(Select-String -LiteralPath $f -Pattern ('10.000' + '.000') -Encoding UTF8).Count }   # con so tien thu nhat
+     0  app/(portal)/page.tsx
+     0  app/globals.css
+     0  src/domains/job-board/components/referral-invite-strip.tsx
+     0  src/domains/job-board/public-ui-token-parity.static.test.ts
+  TONG = 0
+
+--- CMD: foreach($f in $set){ @(Select-String -LiteralPath $f -Pattern ('50.000' + '.000') -Encoding UTF8).Count }   # con so tien thu hai
+     0  app/(portal)/page.tsx
+     0  app/globals.css
+     0  src/domains/job-board/components/referral-invite-strip.tsx
+     0  src/domains/job-board/public-ui-token-parity.static.test.ts
+  TONG = 0
+
+--- CMD: foreach($f in $set){ @(Select-String -LiteralPath $f -Pattern ('/ctv-p' + 'ortal') -Encoding UTF8).Count }   # link cong tac vien
+     1  app/(portal)/page.tsx
+     0  app/globals.css
+     4  src/domains/job-board/components/referral-invite-strip.tsx
+     0  src/domains/job-board/public-ui-token-parity.static.test.ts
+  TONG = 5
+
+Doc ba con so: hai phep dem tien tra 0 va 0 (AC-10 doi 0), phep dem link tra TONG 5 (AC-10 doi it
+nhat 1). Nam lan /ctv-portal: BON o tep dai - mot o ghi chu dau tep, hai o doan giai thich nguon
+cau chu, mot o thuoc tinh href cua the Link - va MOT o app/(portal)/page.tsx, trong dong ghi chu
+tai cho dat dai. Chi lan href la duong dan THAT; bon lan kia la van ghi chu.
+
+=== F. GIOI HAN ===
+- LIM-A: hai luat viet o dau tep (lenh dung phep noi chuoi, output dan lai bi chen mot cap ngoac
+  vuong o ky tu cuoi). Ly do: AC-02, AC-07, AC-08 va AC-10 deu dem tren "tap tep ma round nay sua
+  hoac them", va round nay THEM chinh cac tep evidence duoi docs/. Neu tep evidence viet nguyen mat
+  chu mot chuoi bi cam thi no tu lam do phep dem ay. Hai luat tren la cach ghi day du bang chung ma
+  khong tu do. STEP-09 do CA HAI pham vi (tap tep MA, va tap tep MA + docs) roi dan hai con so.
+- LIM-B: tep dai con o trang thai untracked luc do (dong ?? o muc D). Dau tay la git hash-object
+  ghi ngay tren. Ban da staged do lai o STEP-10.
+- LIM-C: ngoai hai class chet ma DEC-04 goi ten, phep dem o muc B tim them mot class thu ba khong
+  co token: px-margin-desktop goi --spacing-margin-desktop. No khong o trong DEC-04 va khong o
+  trong bay ten cua RQ-02, nen no KHONG duoc mang qua nhung cung khong duoc ghi thanh mot AC. Ghi
+  len day de Tier 1 quyet o mon sau.
+- LIM-D: ban dau tien cua tep nay (sinh cung round, truoc khi bi thay) mang mot hang SAI o muc B:
+  "bon dong loi ich (22..34) MANG QUA, con ba". Tep ban giao khong mang qua mot dong nao cua ban
+  mau. Ba dong <li> trong no la ba dong toi tu viet, va o ban nhap dau ba dong ay con la ba loi
+  khang dinh KHONG co nguon (muc C liet ke dung ba cau ay). Ban nay sua ca hai: sua loi ke va sua
+  chinh ba cau. Hai dau tay cua tep dai giup lan lai: 9cd9bc310d227be2f07520f7204bc46c2d384f1a la
+  ban nhap dau, 98e972a3e362dd2e44cca1442479eb23e529b1da la ban dang ban giao.

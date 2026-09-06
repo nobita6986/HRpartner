@@ -1,0 +1,65 @@
+===== verify-task.ps1 (-TaskPath TASK.md) =====
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: ACCEPTED).
+  [OK]   A-05 18 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 3 referenced npm script(s) all exist.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-ui-01-new-ui-home-integration/**.
+  [OK]   T-05 all 18 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+
+RESULT: PASS. TASK contract is ready for execution.
+verify-task EXIT=0
+
+===== verify-handoff.ps1 (-TaskPath TASK.md) =====
+HANDOFF SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-ui-01-new-ui-home-integration\HANDOFF.md (against docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 52546 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.1 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 18 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 14 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status BLOCKED is consistent between section 0 and the closing line.
+  [OK]   H-12 all 11 STEP appear in the execution trace.
+  [OK]   H-14 section 7 records round 2.
+
+RESULT: PASS.
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+verify-handoff EXIT=0
+
+===== verify-audit.ps1 (-TaskPath TASK.md) =====
+AUDIT SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-ui-01-new-ui-home-integration\AUDIT.md (against docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md)
+
+  [OK]   S-01 AUDIT.md size 23352 bytes.
+  [OK]   S-01 AUDIT.md is tracked by git (recoverable).
+  [OK]   A-01 all 8 required sections present.
+  [OK]   A-02 spec version v1.1 matches TASK.
+  [OK]   A-03 18 AC all carry a result row.
+  [OK]   S-02 every measured AC row carries a command and a value.
+  [OK]   S-17 no measured value is reused across three or more AC.
+  [OK]   S-18 18 AC rows are pairwise distinct.
+  [OK]   A-05 verdict: CONDITIONAL
+  [OK]   S-07 section 5 is consistent with the AC table.
+  [OK]   S-08 no AC passed over a HANDOFF ENV_BLOCKED declaration.
+  [OK]   A-06 section 4 has 10 evidence rows.
+  [OK]   S-02 section 4 rows all carry command + result.
+  [OK]   S-10 4 measured values are new relative to TASK/HANDOFF.
+  [OK]   S-13 section 7 round numbering is within 1..1.
+  [OK]   S-14 no plaintext secret in AUDIT.md.
+  [OK]   S-15 16 referenced artifact path(s) exist.
+  [WARN] S-16 272 staged path(s) lie outside docs/tasks/hrp-v5-ui-01-new-ui-home-integration/ (e.g. .gitignore, app/(portal)/page.tsx, app/globals.css). Tier 3 must never commit source or test files with its audit.
+  [OK]   A-07 closing handoff line present.
+
+RESULT: PASS WITH WARNINGS (1 warning(s)).
+AUDIT.md carries measured evidence; Tier 1 may resolve on it.
+verify-audit EXIT=0
+

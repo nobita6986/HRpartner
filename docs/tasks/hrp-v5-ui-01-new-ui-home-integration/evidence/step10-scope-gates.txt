@@ -1,0 +1,563 @@
+STEP-10 - DAU TAY, PHAM VI, HAI CONG (AC-15, AC-16, AC-17)
+Task: hrp-v5-ui-01-new-ui-home-integration, spec v1.0, execution round 1
+
+=== 0. LUAT VIET AP O TEP NAY ===
+Tep nay nam duoi evidence/ nen no VAO pham vi "tap tep round nay sua hoac them" ma bay AC dem
+cua STEP-09 do tren. Vi the no ap LUAT 1 va LUAT 2 cua STEP-09 muc 0: khong mot ten bac ho cua
+new-ui, khong mot ho mau tho, khong mot mau URL, khong mot chuoi luong bi cam nao duoc viet ra
+mat chu o day. STEP-09 LIM-F khai truoc rang tep nay chua ton tai luc phep dem ay chay; muc nay
+la nua con lai cua loi khai ay - tep nay khong them mot khop nao vao bay phep dem do.
+
+=== A. NAM DAU TAY CUOI VONG, VA HAI PHEP SO VOI STEP-01 ===
+--- CMD: git rev-parse HEAD
+  b68d25b051d45cbe2497a7cf45c8b0deabb60ba2      (= truong Baseline cua contract, khop)
+--- CMD: git hash-object <tung tep trong bon tep MA>
+  app/globals.css                                               07369966cd2be669beba8d8f5032226cc34b5c5c
+  app/(portal)/page.tsx                                         8dc71c9720ed2d849428b8b76ab1b790c41f7ba4
+  src/domains/job-board/components/referral-invite-strip.tsx     2621f0729fdc0a57a9e772b2d3f98d737be66ddb
+  src/domains/job-board/public-ui-token-parity.static.test.ts    2e1a3f99b44d7e48d3603486cb7634c4ddef4c0f
+--- CMD: git rev-parse HEAD:app/globals.css
+  7857401624944e0bc801f69843ce45778c6f50b7
+--- CMD: git rev-parse HEAD:'app/(portal)/page.tsx'
+  614f7d53f71fe3ed5d926b73476920e2b4dd7ae9
+
+Hai gia tri HEAD tren GIONG TUNG BYTE hai dau tay ma STEP-01 da ghi luc mo vong. Doc dung:
+khong mot luong nao khac dich hai tep ay o HEAD trong suot vong nay, nen moi so do cua round
+nay van dung mot nen (RISK-05). Hai dau tay WORKTREE thi KHAC chung - do la thay doi co chu
+dinh cua round nay, va no duoc do bang numstat o STEP-07 muc D chu khong bang phep so hash.
+Hai tep con lai khong co dau tay HEAD de so: chung la tep MOI, va `git cat-file -e` tren
+HEAD:<duong dan> tra ma thoat khac 0 dung nhu du doan cho mot path chua ton tai o HEAD.
+
+=== B. AC-15 - new-ui/ PHAI CON NGUYEN TRANG UNTRACKED ===
+--- CMD: git status --porcelain -- new-ui
+  ?? new-ui/
+  SO DONG=1
+--- CMD: git diff --cached --name-only -- new-ui
+  (rong)
+  SO DONG=0
+AC-15 doi dung mot dong bat dau bang hai dau hoi, va 0 dong cached. Ca hai con so khop.
+Doc sau con so: `?? new-ui/` la MOT dong cho ca cay thu muc, tuc git chua theo doi mot tep nao
+ben trong - no khong phai "mot tep untracked" ma la "ca thu muc ngoai tam theo doi". Dong nay
+GIONG y dong ma STEP-01 do luc mo vong. R-05 cam cham vao thay doi cua luong khac, va new-ui/
+la ban mau cua luong khac; round nay DOC no de lay hinh thuc, khong GHI vao no va khong stage
+no. Bon tep MA o muc A la noi hinh thuc ay duoc dung lai, khong phai mot ban sao thu muc.
+
+=== C. AC-16 - TACH VUNG, TRUOC KHI STAGE ===
+Toan bo `git status --porcelain` co 499 dong luc do. Con so ay KHONG phai pham vi cua round
+nay: no la trang thai cong don cua ca cay, gom ca luong khac. AC-16 viet ro "Path cua Tier 1 va
+cua luong khac khong tinh vao AC nay", nen phep do dung la TACH VUNG roi quy trach tung dong.
+
+--- CMD: git status --porcelain -- app src
+   M app/(portal)/page.tsx
+  M  app/globals.css
+  A  src/shared/toolchain/tsc-program-boundary.static.test.ts
+  A  src/shared/toolchain/vitest-default-lane.static.test.ts
+   M src/shared/ui/role-guard/role-guard-layout.tsx
+  ?? src/domains/job-board/components/referral-invite-strip.tsx
+  ?? src/domains/job-board/public-ui-token-parity.static.test.ts
+  SO DONG=7
+
+BON dong la cua round nay, va ca bon nam trong Modules cua contract:
+  app/(portal)/page.tsx                                        (Modules: tep trang chu)
+  app/globals.css                                              (Modules: chi khoi @theme)
+  src/domains/job-board/components/referral-invite-strip.tsx   (Modules: thu muc components/)
+  src/domains/job-board/public-ui-token-parity.static.test.ts  (Modules: mot tep hang ra moi)
+
+BA dong con lai KHONG phai cua round nay, va moi dong mot phep quy trach:
+--- CMD: git diff --cached --numstat -- src/shared/toolchain
+  320  0  src/shared/toolchain/tsc-program-boundary.static.test.ts
+  424  0  src/shared/toolchain/vitest-default-lane.static.test.ts
+--- CMD: grep -l <ten tep> docs/tasks/hrp-v5-rf-05-*/TASK.md docs/tasks/hrp-v5-rf-06-*/TASK.md
+  tsc-program-boundary.static.test.ts   -> co ten trong TASK.md cua rf-05 VA cua rf-06
+  vitest-default-lane.static.test.ts    -> co ten trong TASK.md cua rf-06
+=> Hai tep ay la ban giao cua rf-05 va rf-06, DA duoc luong khac stage truoc khi vong nay mo.
+   Chung la nguon cua VET 1 va VET 2 o STEP-08 muc D (tep thu nhat do vi worktree gl20), va
+   R-05 cam toi unstage hay sua chung. Toi khong cham vao mot byte nao cua chung.
+
+--- CMD: git diff --numstat -- src/shared/ui/role-guard/role-guard-layout.tsx
+  78  33  src/shared/ui/role-guard/role-guard-layout.tsx
+--- CMD: git diff -- <tep ay> | loc dong +/- (bon dong dau)
+  +  ChevronDown,
+  +  Construction,
+  +  /** Nhom dieu huong thu cap. Khong khai bao = menu cap 1. */
+  +  section?: 'development';
+=> Day la mot dot doi menu ADMIN: them mot khoa `section` va gan nhan `'development'` cho cac
+   muc admin. Trang chu cong khai khong render mot muc nao trong danh sach ay. Round nay khong
+   mo tep nay mot lan nao, va bon tep MA o muc A khong import no. Do la drift cua luong khac
+   (lane V6 Admin), va R-05 cam toi restore hay stage no.
+
+--- CMD: git status --porcelain -- docs/tasks/hrp-v5-ui-01-new-ui-home-integration
+  A  docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md
+  ?? docs/tasks/hrp-v5-ui-01-new-ui-home-integration/evidence/
+  SO DONG=2
+Dong thu nhat la contract cua Tier 1, DA duoc chinh Tier 1 stage: `A ` nghia la them-va-da-stage
+o index, va Tier 2 khong co quyen tao hay sua TASK.md (tier2.md dong 12). Dong thu hai la thu
+muc evidence cua round nay - vung DUY NHAT ngoai Modules ma AC-16 cho phep.
+
+--- CMD: git status --porcelain -- . ':!app' ':!src' ':!docs/tasks/hrp-v5-ui-01-new-ui-home-integration'
+  ~490 dong con lai. Bang tan so theo tien to duong dan (awk + sort + uniq -c):
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/       193
+    docs/tasks/hrp-v5-test-01-.../                       55
+    docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/  18
+    scratch/ , docs/V6/ , .claude/ , new-ui/ , tep cau hinh goc      con lai
+=> Khong mot dong nao trong so ay la tep MA hay tep evidence cua round nay: ba thu muc dau la
+   evidence cua rf-05, test-01 va rf-06 (luong khac), scratch/ va .claude/ khong duoc round nay
+   ghi mot byte, docs/V6/ la tep cua Tier 1, va new-ui/ da do rieng o muc B.
+
+=== D. SAU KHI STAGE - DO LAI PHAM VI, DAU TAY VA HAI CON SO CUA AC-04 ===
+Lenh stage, viet nguyen van, KHONG dung -A va KHONG dung dau cham:
+--- CMD: git add -- 'app/(portal)/page.tsx' 'app/globals.css'
+         'src/domains/job-board/components/referral-invite-strip.tsx'
+         'src/domains/job-board/public-ui-token-parity.static.test.ts'
+         'docs/tasks/hrp-v5-ui-01-new-ui-home-integration/evidence'
+         'docs/tasks/hrp-v5-ui-01-new-ui-home-integration/HANDOFF.md'
+  ADD_EXIT=0
+  Git in 12 dong canh bao dang "LF will be replaced by CRLF" - do la core.autocrlf cua may nay,
+  khong phai loi. He qua da biet: so sanh `wc -c` giua worktree va blob la VO HIEU duoi co che
+  ay, nen moi phep so o tep nay dung `git hash-object` chu khong dung so byte.
+
+--- CMD: git status --porcelain -- app src        (SAU khi stage)
+  M  app/(portal)/page.tsx
+  M  app/globals.css
+  A  src/domains/job-board/components/referral-invite-strip.tsx
+  A  src/domains/job-board/public-ui-token-parity.static.test.ts
+  A  src/shared/toolchain/tsc-program-boundary.static.test.ts
+  A  src/shared/toolchain/vitest-default-lane.static.test.ts
+   M src/shared/ui/role-guard/role-guard-layout.tsx
+  SO DONG=7
+Van DUNG 7 dong, va doc theo cot dau thi ranh gioi hien ro: bon dong dau la bon tep MA cua round
+nay, bay gio o cot index (M va A) thay vi cot worktree. Ba dong cua luong khac KHONG doi trang
+thai mot ky tu nao so voi muc C: hai tep toolchain van `A ` dung nhu khi vong nay mo, va
+role-guard van ` M` tuc chua staged. Toi khong stage, khong unstage va khong restore chung.
+
+--- CMD: git status --porcelain -- docs/tasks/hrp-v5-ui-01-new-ui-home-integration
+  A  .../HANDOFF.md
+  A  .../TASK.md
+  A  .../evidence/_raw-step02-hangars.txt
+  A  .../evidence/step01-baseline.txt
+  A  .../evidence/step02-lane-before-full.txt
+  A  .../evidence/step02-tests-before.txt
+  A  .../evidence/step03-hangar-red-full.txt
+  A  .../evidence/step03-hangar-red.txt
+  A  .../evidence/step04-theme-diff.txt
+  A  .../evidence/step05-restyle-diff.txt
+  A  .../evidence/step06-referral-diff.txt
+  A  .../evidence/step07-hangar-green.txt
+  A  .../evidence/step08-lane-typecheck-lint.txt
+  A  .../evidence/step09-counts.txt
+  A  .../evidence/step10-scope-gates.txt
+  SO DONG=15
+Muc C do thu muc nay ra 2 dong vi luc ay evidence/ con la MOT dong `??` cho ca thu muc; sau khi
+stage, git bung no thanh tung tep. 15 = 1 HANDOFF.md + 13 tep evidence + 1 TASK.md. 14 dong dau
+la cua round nay; TASK.md la cua Tier 1 va da `A ` san tu truoc khi vong nay mo (muc C).
+=> AC-16 dat: hop cua hai phep do do round nay gay ra chi gom path trong Modules va path duoi
+   docs/tasks/hrp-v5-ui-01-new-ui-home-integration/.
+
+--- CMD: git status --porcelain -- new-ui   va   git diff --cached --name-only -- new-ui
+  ?? new-ui/     SO DONG=1
+  CACHED=0
+=> AC-15 do LAI sau khi stage: van dung mot dong hai dau hoi, va van 0 dong cached. Phep stage
+   o tren khong lam ro ri mot byte nao cua new-ui/ vao index.
+
+--- CMD: git hash-object <tung tep trong bon tep MA>   (SAU khi stage)
+  app/globals.css                                               07369966cd2be669beba8d8f5032226cc34b5c5c
+  app/(portal)/page.tsx                                         8dc71c9720ed2d849428b8b76ab1b790c41f7ba4
+  src/domains/job-board/components/referral-invite-strip.tsx     2621f0729fdc0a57a9e772b2d3f98d737be66ddb
+  src/domains/job-board/public-ui-token-parity.static.test.ts    2e1a3f99b44d7e48d3603486cb7634c4ddef4c0f
+Bon dau tay GIONG TUNG BYTE bon dau tay o muc A, tuc phep stage khong dich mot byte nao va cung
+khong co luong nao khac ghi vao bon tep ay trong khoang giua hai phep do.
+
+--- CMD: git diff --cached --numstat -- <4 tep MA>
+  36   24   app/(portal)/page.tsx
+  14    0   app/globals.css
+  112   0   src/domains/job-board/components/referral-invite-strip.tsx
+  350   0   src/domains/job-board/public-ui-token-parity.static.test.ts
+Bon hang nay la nguon cua bang muc 4 trong HANDOFF. Hai tep moi co phia tru bang 0 dung nhu du
+doan cho mot path chua ton tai o HEAD.
+
+--- CMD: git diff --cached -U0 -- app/globals.css | grep '^@@'
+  @@ -105,0 +106,14 @@
+=> Nua thu hai cua AC-04 do LAI tren INDEX: DUNG mot hunk, dong dich 106 < 462. Lat CSS dong bang
+   tu dong 462 tro di khong nhan mot byte nao. STEP-07 muc D da do cung con so nay truoc khi
+   stage; hai lan do tren hai trang thai khac nhau cho cung mot ket qua.
+
+=== E. HAI CONG, CHAY CUOI CUNG (AC-17, R-08) ===
+Thu tu thuc te, khong dao: ghi muc A toi D -> `git add` thu muc evidence -> cong contract ->
+cong ban giao -> ghi muc E nay -> `git add` LAI thu muc evidence. Do dung la trinh tu ma LIM-07
+cua HANDOFF muc 5 da cam ket TRUOC khi chay, va no la hanh dong DUY NHAT sau cong.
+
+--- CMD: git add -- 'docs/tasks/hrp-v5-ui-01-new-ui-home-integration/evidence'
+  ADD2_EXIT=0
+--- CMD: git hash-object <step10>   va   git rev-parse :<step10>
+  worktree: eb8f1cd23bff8a6c16646e5a08abe83b83b54e55
+  index   : eb8f1cd23bff8a6c16646e5a08abe83b83b54e55
+Hai dau tay GIONG NHAU, tuc luc hai cong chay thi ban tren dia va ban trong index la MOT. Do la
+dau tay cua tep NAY o trang thai co muc A..D va CHUA co muc E.
+
+--- CMD: cmd /c "powershell -NoProfile -File .\.ai-pipeline\scripts\verify-task.ps1 -TaskPath docs\tasks\hrp-v5-ui-01-new-ui-home-integration\TASK.md > <ngoai repo> 2>&1"
+  GATE_TASK_EXIT=0
+--- Toan van output, dan nguyen:
+    subject: docs\tasks\hrp-v5-ui-01-new-ui-home-integration\TASK.md
+
+    [OK]   A-01 all 11 required sections present.
+    [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+    [OK]   A-05 17 requirement(s) traceable to STEP and AC.
+    [OK]   T-01 3 referenced npm script(s) all exist.
+    [OK]   T-03 no AC proves scope with a bare 'git diff'.
+    [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-ui-01-new-ui-home-integration/**.
+    [OK]   T-05 all 17 AC row(s) name a measurable method.
+    [OK]   T-06 no plaintext secret in TASK.md.
+
+  RESULT: PASS. TASK contract is ready for execution.
+
+--- CMD: cmd /c "powershell -NoProfile -File .\.ai-pipeline\scripts\verify-handoff.ps1 -TaskPath docs\tasks\hrp-v5-ui-01-new-ui-home-integration\TASK.md > <ngoai repo> 2>&1"
+  GATE_HANDOFF_EXIT=0
+--- Toan van output, dan nguyen:
+  HANDOFF SUBSTANCE GATE
+    subject: docs\tasks\hrp-v5-ui-01-new-ui-home-integration\HANDOFF.md (against docs\tasks\hrp-v5-ui-01-new-ui-home-integration\TASK.md)
+
+    [OK]   H-01 HANDOFF.md size 33204 bytes.
+    [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+    [OK]   H-02 all 8 required sections present.
+    [OK]   H-03 spec version v1.0 matches TASK.
+    [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+    [OK]   H-05 all 17 AC have an evidence row.
+    [OK]   H-06 every AC row carries a re-runnable command and a result.
+    [OK]   H-07 13 referenced evidence file(s) exist.
+    [OK]   H-09 no plaintext secret in HANDOFF.md.
+    [OK]   H-10 status BLOCKED is consistent between section 0 and the closing line.
+    [OK]   H-12 all 10 STEP appear in the execution trace.
+    [OK]   H-14 section 7 records round 1.
+
+  RESULT: PASS.
+  HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+
+--- DOC HAI DONG KET: VI SAO DANG "PASS" TRAN MOI LA DIEU AC-17 DOI
+Ca hai dong ket la `RESULT: PASS` TRAN, khong kem menh de nao sau chu PASS. Do khong phai chi
+tiet trang tri: ham dong ngu canh cua gate-lib in mot trong BA dang, va dang no chon phu thuoc
+so warning chu khong chi so error - co error thi FAIL exit 2, khong error nhung con it nhat mot
+warning thi in "PASS WITH WARNINGS (N warning(s))" van exit 0, va sach ca hai thi moi in PASS
+tran. Vi the mot vong co warning van ra exit 0 nhung KHONG con thoa mat chu "RESULT: PASS" ma
+AC-17 doi. Dem tren output tren: cong contract 8 dong OK va 0 dong warning; cong ban giao 12
+dong OK va 0 dong warning. Hai lan sach ca hai loai, nen hai dong ket la dang PASS tran.
+=> AC-17 DAT ca hai nua: hai dong `RESULT: PASS` va hai ma thoat 0, do sau khi moi thay doi da
+   staged (muc D do lai phep stage ay).
+
+--- BON MA KIEM KHONG IN MOT DONG NAO, VA CO CHE CUA TUNG MA
+Doc mot ban gate trung thuc phai ke ca cai KHONG in ra. Bon ma vang mat, hai co che khac han:
+  (1) H-08 va H-11 la loai CHI-BAO-LOI: trong verify-handoff.ps1, moi ma nay chi xuat hien mot
+      lan duy nhat va deu o dang them LOI (dong 203 va dong 207), khong co nhanh OK. Im lang o
+      hai ma nay nghia la khong bat duoc gi, khong nghia la da xac nhan dieu gi.
+  (2) H-13 va H-15 CO ca nhanh OK (dong 294 va dong 329) ma van khong in - tuc ca hai bi mot
+      dieu kien BAO NGOAI chan truoc khi vao nhanh:
+      - H-13: dong 281 tim cot "sai lech" trong bang muc 2 bang mot mau cua chinh no; dong 282
+        thoat neu khong thay cot ay. Bang muc 2 cua HANDOFF co DUNG 4 cot - STEP, Action, Result,
+        Evidence - va toi da chay lai chinh mau ay tren dong tieu de: ket qua False. Vi the bo
+        dem sai-lech dung o 0, va ca hai nhanh H-13 (dong 291 va 293) deu doi bo dem > 0.
+        HE QUA PHAI GHI RO: cong KHONG he doi chieu muc 5 voi muc 2. Im lang cua H-13 khong
+        chung nhan muc 5 la du. Phep do doc lap cho cho ay: muc 5 co 17 hang, va 10 trong 17 ma
+        duoc mot hang AC cua muc 3 trich ten; 7 ma con lai la khai o muc VONG chu khong gan vao
+        mot AC nao (TASK.md khong cham, ba vung hinh thuc ngoai v1.0, canh bao chuoi cong cu,
+        duong go da bac, cho dat ban tho, hai sua cua chinh toi, va mot khiem khuyet ngoai
+        Modules). Do la CHU DINH, khong phai thieu sot.
+      - H-15: dong 321 doi ban TASK.md o HEAD phai khac rong. TASK.md khong ton tai o HEAD - muc
+        C va muc D do no la `A ` tuc them-va-da-stage boi Tier 1 - nen ham lay ban HEAD tra rong
+        va ca khoi bi bo qua, khong warn cung khong OK.
+        HE QUA PHAI GHI RO: cong KHONG kiem duoc rang Tier 2 de nguyen bon truong dieu khien cua
+        TASK.md. Bang chung cho dieu do la phep do o muc C va muc D - TASK.md giu dung trang thai
+        `A ` tu truoc khi vong nay mo den sau khi vong nay stage - cong voi LIM-06 cua HANDOFF.
+
+--- GIOI HAN CUA CHINH MUC E
+- LIM-G: hai cong chay TRUOC khi muc E nay ton tai. Vi the H-07 da xac nhan tep step10 CO MAT
+  (voi muc A..D), khong xac nhan noi dung muc E. Day la mot vong lap khong the pha: mot muc ghi
+  ket qua cong thi bao gio cung ra doi sau cong. Dau tay `eb8f1cd2...` o dau muc E ghim dung
+  trang thai ma hai cong da doc.
+- LIM-H: dau tay SAU khi them muc E khong the viet vao trong chinh tep nay - viet vao la doi no.
+  No duoc bao trong tin ban giao va do lai bat cu luc nao bang `git rev-parse :<duong dan>`.
+- LIM-I: ban tho output cua ca hai cong nam NGOAI repo tai
+  C:\Users\Admin\AppData\Local\Temp\glx\ui01-step10-gate-task.txt va ...-gate-handoff.txt.
+  Hai khoi dan tren la nguyen van, chi lui vao them hai dau cach cho de doc.
+- LIM-J: sau muc E chi con DUNG mot hanh dong: `git add` thu muc evidence. Khong mot byte nao
+  cua bon tep MA, cua HANDOFF.md hay cua TASK.md doi sau khi cong chay - neu doi thi hai dong
+  `RESULT: PASS` tren khong con noi ve trang thai duoc ban giao nua.
+
+===========================================================================
+===========================================================================
+ROUND 2 (spec v1.1) - PHAM VI VA HAI CONG, DO LAI
+Ngay: 2026-09-06 Asia/Bangkok | Baseline: b68d25b051d45cbe2497a7cf45c8b0deabb60ba2
+===========================================================================
+
+=== R2-A. DAU TAY: BON BAN GIAO CUA ROUND 1 CO DOI HAY KHONG ===
+$ git rev-parse HEAD
+b68d25b051d45cbe2497a7cf45c8b0deabb60ba2      <- bang truong Baseline cua TASK
+
+$ for f in app/globals.css "app/(portal)/page.tsx" src/domains/job-board/components/referral-invite-strip.tsx src/domains/job-board/public-ui-token-parity.static.test.ts src/shared/ui/internal-contrast.static.test.ts; do printf '%s  ' "$(git hash-object "$f")"; echo "$f"; done
+07369966cd2be669beba8d8f5032226cc34b5c5c  app/globals.css
+8dc71c9720ed2d849428b8b76ab1b790c41f7ba4  app/(portal)/page.tsx
+2621f0729fdc0a57a9e772b2d3f98d737be66ddb  src/domains/job-board/components/referral-invite-strip.tsx
+2e1a3f99b44d7e48d3603486cb7634c4ddef4c0f  src/domains/job-board/public-ui-token-parity.static.test.ts
+d47eaf247f45a882834bded80b5c11fe166b4e3f  src/shared/ui/internal-contrast.static.test.ts
+
+So voi bon dau tay ma muc 4 cua HANDOFF round 1 da ghi: BON DONG DAU KHOP TUNG KY TU.
+Dong thu nam la ban giao MOI cua round 2; ban o baseline cua no la
+
+$ git rev-parse b68d25b:src/shared/ui/internal-contrast.static.test.ts
+f15b5ad10967389561d1faf0e9a2282da77a6725
+
+tuc round 2 doi dung mot tep ma, va bon tep round 1 KHONG bi cham mot byte nao.
+
+=== R2-B. AC-15: new-ui VAN NGOAI CAY VA NGOAI INDEX ===
+$ git status --porcelain -- new-ui
+?? new-ui/
+
+$ git diff --cached --name-only -- new-ui
+(khong in gi)
+so dong cached = 0
+
+=> Dung mot dong `??`, dung khong dong cached, y het STEP-01 va y het muc B cua round 1.
+   Round 2 khong doc, khong stage, khong xoa mot byte nao duoi new-ui (R-05).
+
+=== R2-C. AC-16: QUY TRACH TUNG DONG TRONG app VA src ===
+$ git status --porcelain -- app src
+M  app/(portal)/page.tsx                                        <- round 1, trong Modules
+M  app/globals.css                                              <- round 1, trong Modules
+A  src/domains/job-board/components/referral-invite-strip.tsx    <- round 1, trong Modules
+A  src/domains/job-board/public-ui-token-parity.static.test.ts   <- round 1, trong Modules
+A  src/shared/toolchain/tsc-program-boundary.static.test.ts      <- LUONG KHAC (rf-06)
+A  src/shared/toolchain/vitest-default-lane.static.test.ts       <- LUONG KHAC (rf-05/rf-06)
+ M src/shared/ui/internal-contrast.static.test.ts                <- ROUND 2, trong Modules v1.1
+ M src/shared/ui/role-guard/role-guard-layout.tsx                <- LUONG KHAC (LIM-10)
+
+TAM dong. Nam dong la cua vong nay va CA NAM nam trong Modules; ba dong con lai la cua
+luong khac, moi dong da co mot phep quy trach o muc C cua round 1 va o R2-B cua
+step08-lane-typecheck-lint.txt. Cot trang thai cua dong round 2 la ` M` tuc CHUA stage
+o lan do nay; muc R2-E duoi day la lan stage, va do lai.
+
+$ git diff --numstat -- src/shared/ui/internal-contrast.static.test.ts
+16      2       src/shared/ui/internal-contrast.static.test.ts
+
+Ba tep noi bo ma LIM-14 nhac den, do RIENG:
+$ git status --porcelain -- app/worker/page.tsx app/ctv/page.tsx app/login/login-form.tsx
+(khong in gi)
+so dong = 0      <- diem mu cua TEXT_SIZE_PX hom nay RONG, dung nhu LIM-14 khai
+
+=== R2-D. AC-16: PHAN CON LAI CUA CAY, QUY TRACH BANG BANG TAN SO ===
+$ git status --porcelain | wc -l
+514
+
+$ git status --porcelain | sed 's/^...//' | sed 's|/.*||' | sort | uniq -c | sort -rn
+    292 docs
+    188 scratch
+      6 src
+      4 "docs
+      2 app
+      1 vitest.config.ts
+      1 update_globals.js
+      1 tsconfig.tmp.json
+      1 tsconfig.json
+      1 tests
+      1 temp.diff
+      1 scripts
+      1 rls-probe-output.txt
+      1 rls-probe-insert.txt
+      1 public
+      1 playwright.config.ts
+      1 patch_test3.ps1
+      1 patch_test2.ps1
+      1 patch_test.ps1
+      1 package.json
+      1 package-lock.json
+      1 new-ui.md
+      1 new-ui
+      1 fix.patch
+      1 .neon
+      1 .gitignore
+      1 .claude
+
+$ git status --porcelain | grep -c "hrp-v5-ui-01-new-ui-home-integration"
+16
+
+$ git status --porcelain | grep -cE "app/globals.css|app/\(portal\)/page.tsx|referral-invite-strip.tsx|public-ui-token-parity.static.test.ts|internal-contrast.static.test.ts"
+5
+
+=> 514 dong, trong do 16 thuoc thu muc task nay (14 tep evidence, HANDOFF.md, va TASK.md
+   cua Tier 1) va 5 la nam ban giao ma. So dong con lai la 493, va KHONG mot dong nao
+   trong so ay la tep ma round nao cua vong nay ghi: hai phep grep tren dem HET tep cua
+   vong nay va tong cua chung la 21.
+
+$ git worktree list
+C:/CodeApp/HrP                        b68d25b [main]
+C:/CodeApp/HrP/.claude/worktrees/gl20 b68d25b [worktree-gl20]
+
+Mot dong `.claude` trong bang tan so tren la worktree ay. R-05 cam cham, va round 2
+khong chay mot lenh ghi nao vao no.
+
+=== R2-E. AC-17: HAI CONG CUA ROUND 2, CHAY CUOI CUNG SAU KHI DA STAGE ===
+Thu tu THAT, ghi nguyen: (1) viet muc R2-A..R2-D o tren; (2) chay lan dem cuoi cua
+step09 muc R2-F va sua mot vet do that no bat duoc; (3) `git add --` DUNG sau duong dan
+trong scope, khong `-A`, khong `.`; (4) chay cong contract; (5) chay cong ban giao;
+(6) viet muc R2-E nay va muc R2-E1; (7) `git add --` LAI DUNG tep step10 nay.
+
+$ git add -- src/shared/ui/internal-contrast.static.test.ts \
+    docs/tasks/hrp-v5-ui-01-new-ui-home-integration/HANDOFF.md \
+    docs/tasks/.../evidence/step08-lane-typecheck-lint.txt \
+    docs/tasks/.../evidence/step09-counts.txt \
+    docs/tasks/.../evidence/step10-scope-gates.txt \
+    docs/tasks/.../evidence/step11-asm01.txt
+ADD_EXIT=0
+(sau khi stage, sau duong dan; `git status --porcelain` cho `A ` cho nam tep tai lieu va
+ `M ` cho tep test. Dau tay staged cua tep test: `git rev-parse :<duong dan>` tra
+ d47eaf247f45a882834bded80b5c11fe166b4e3f, bang dau tay worktree o muc R2-A.)
+
+--- CONG 1
+$ powershell -NoProfile -File ./.ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md
+exit code: 0
+
+  TASK CONTRACT GATE
+    subject: docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md
+
+    [OK]   A-01 all 11 required sections present.
+    [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+    [OK]   A-05 18 requirement(s) traceable to STEP and AC.
+    [OK]   T-01 3 referenced npm script(s) all exist.
+    [OK]   T-03 no AC proves scope with a bare 'git diff'.
+    [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-ui-01-new-ui-home-integration/**.
+    [OK]   T-05 all 18 AC row(s) name a measurable method.
+    [OK]   T-06 no plaintext secret in TASK.md.
+
+  RESULT: PASS. TASK contract is ready for execution.
+
+--- CONG 2
+$ powershell -NoProfile -File ./.ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md -HandoffPath docs/tasks/hrp-v5-ui-01-new-ui-home-integration/HANDOFF.md
+exit code: 0
+
+  HANDOFF SUBSTANCE GATE
+    subject: docs/tasks/hrp-v5-ui-01-new-ui-home-integration/HANDOFF.md (against docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md)
+
+    [OK]   H-01 HANDOFF.md size 51456 bytes.
+    [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+    [OK]   H-02 all 8 required sections present.
+    [OK]   H-03 spec version v1.1 matches TASK.
+    [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+    [OK]   H-05 all 18 AC have an evidence row.
+    [OK]   H-06 every AC row carries a re-runnable command and a result.
+    [OK]   H-07 14 referenced evidence file(s) exist.
+    [OK]   H-09 no plaintext secret in HANDOFF.md.
+    [OK]   H-10 status BLOCKED is consistent between section 0 and the closing line.
+    [OK]   H-12 all 11 STEP appear in the execution trace.
+    [OK]   H-14 section 7 records round 2.
+
+  RESULT: PASS.
+  HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+
+--- BON MA KIEM IM LANG, va vi sao chung im
+- H-08 va H-11 chi in khi bi pham: H-08 canh lane test tran (van ban HANDOFF cua round 2
+  dem duoc 0 lan chuoi ay), H-11 canh mot o vien "co san tu truoc" ma khong tra gia bang
+  SHA cong lenh trong CUNG o (o AC-14 tra bang `git show b68d25b:...` cong md5 dong 433).
+- H-13 doi mot cot "sai lech" o §2; bang §2 la bang chuan bon cot nen khoi ay khong chay.
+  HE QUA: cong KHONG doi chieu tung buoc voi ke hoach; viec ay con lai cho Tier 3.
+- H-15 doi ban TASK.md o HEAD phai khac rong. TASK.md la `AM` tuc chua co o HEAD, nen ham
+  lay ban HEAD tra rong va ca khoi bi bo qua, y nhu round 1 da ghi.
+  HE QUA: cong KHONG kiem duoc rang Tier 2 de nguyen bon truong dieu khien cua TASK.md.
+  Bang chung thay the: muc R2-C tren cho `AM` o TASK.md TRUOC khi round 2 stage va sau khi
+  round 2 stage, tuc round nay khong ghi mot byte nao vao do; cong LIM-06 cua HANDOFF.
+
+=== R2-E1. DEM LAI SAU KHI KHOI KET QUA CONG DA NAM TRONG TEP NAY ===
+Vi sao co muc nay: LIM-21 cua HANDOFF. Khoi R2-E o tren la van ban DUY NHAT duoc ghi vao
+sau lan dem cuoi cua step09 muc R2-F, nen no phai duoc dem lai, neu khong thi bay phep
+dem cua round 2 ket luan tren mot ban van ma no chua tung doc.
+
+$ node C:/Users/Admin/AppData/Local/Temp/glx/r2-counts-final.mjs
+exit code: 0
+(cung script, cung sau tep, chay SAU khi muc R2-E da nam tren dia)
+
+  AC-07  sau dong hieu, moi dong `worktree=0 baseline=0 hieu=0`, TONG_HIEU=0
+  AC-08  bay ho mau, TONG=0
+  AC-02  bay ten bac ho, TONG=0
+  AC-03  hai class chet, TONG=0
+  AC-09  chuoi cam 1 hieu=0, chuoi cam 2 hieu=0, canonical=3 (nguong >= 1)
+  AC-05  0 / 0 / dung 1, va 7 dong khai bao
+  AC-18  baseline 21, worktree 21
+
+=> Khoi ket qua cong khong mang mot khop nao: output cua hai script la chu ASCII, khong
+   chua mot mau URL, mot ho mau tho, mot ten bac ho hay mot chuoi luong bi cam nao.
+
+--- GIOI HAN CUA MUC R2-E1
+- LIM-K: muc R2-E1 nay la van ban CUOI CUNG cua round 2, va ban than no khong duoc dem
+  boi lan chay dan o tren (mot phep do khong bao gio doc duoc dong ket luan cua chinh no).
+  Cach cat vong lap: muc nay chi chua chu so, ten AC va nhan da che, khong mot chuoi cam
+  nao co the sinh ra tu do; va lan dem THU TU chay sau khi muc nay da ghi duoc bao trong
+  tin ban giao cho Tier 1, ban tho o
+  C:\Users\Admin\AppData\Local\Temp\glx\r2-counts-postgate2.out.txt.
+- LIM-L: hai cong da chay MOT LAN o muc R2-E, khi tep nay chua co muc R2-E va R2-E1. Sau
+  khi ghi hai muc ay, tep duoc `git add` lai va HAI CONG CHAY LAN THU HAI tren dung trang
+  thai cuoi cung; ket qua lan hai duoc bao trong tin ban giao, ban tho o
+  C:\Users\Admin\AppData\Local\Temp\glx\r2-gate-task2.txt va ...-gate-handoff2.txt.
+  Day la nua duoc go cua LIM-07 round 1: round 1 chi chay cong mot lan.
+- LIM-M: khong mot byte nao cua tep test, cua HANDOFF.md hay cua TASK.md doi sau lan chay
+  cong thu nhat. Chi tep step10 nay doi, va no chi them hai muc BAO CAO.
+
+================================================================================
+R2-F. PHAT HIEN VE TASK.md -- BAN INDEX VA BAN WORKTREE KHONG CUNG PHIEN BAN
+================================================================================
+Muc nay la bang chung cho hang FND-02 cua HANDOFF.md muc 5. Round 2 KHONG sua va
+KHONG `git add` TASK.md: AC-16 xep no vao vung cua Tier 1, va LIM-06 da ghi dieu ay
+tu round 1. Day chi la mot phep DO, bao len de Tier 1 khong mat ban bump khi commit.
+
+--- LENH 1
+$ git status --porcelain -- docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md
+AM docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md
+EXIT=0
+Doc hai ky tu: cot thu nhat `A` la INDEX so voi HEAD, cot thu hai `M` la WORKTREE so
+voi INDEX. Tuc co HAI ban khac nhau cua cung mot tep dang ton tai.
+
+--- LENH 2
+$ git diff --numstat -- docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md
+warning: in the working copy of 'docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md', LF will be replaced by CRLF the next time Git touches it
+14      8       docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md
+EXIT=0
+`14` dong them va `8` dong bot, do la khoang cach giua ban tren dia va ban trong index.
+
+--- LENH 3
+$ git diff --numstat --cached -- docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md
+219     0       docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md
+EXIT=0
+
+--- LENH 4
+$ git show b68d25b:docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md | grep -n "Spec version"
+fatal: path 'docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md' exists on disk, but not in 'b68d25b'
+EXIT=1
+Ket hop LENH 3 va LENH 4: ca TASK.md la tep MOI so voi baseline, index dang giu mot ban
+`219` dong, chua tung co commit nao chua no.
+
+--- LENH 5 (ban INDEX)
+$ git show :docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md | grep -n "Spec version"
+10:| Spec version | `v1.0` |
+217:| Spec version | Date | Change | Reason/Audit refs |
+EXIT=0
+
+--- LENH 6 (ban WORKTREE)
+$ grep -n "Spec version" docs/tasks/hrp-v5-ui-01-new-ui-home-integration/TASK.md
+10:| Spec version | `v1.1` |
+222:| Spec version | Date | Change | Reason/Audit refs |
+EXIT=0
+
+--- KET LUAN CUA R2-F
+1. Truong phien bien o dong `10` doc `v1.0` tren ban INDEX va `v1.1` tren ban WORKTREE.
+   Dong tieu de cua bang lich su cung doi cho, tu `217` xuong `222`, dung bang `14 - 8`
+   cua LENH 2. Hai phep do khop nhau nen day khong phai mot vet doc sai.
+2. HAI CONG DOC BAN WORKTREE, khong doc ban index. Chung cu la H-03 cua cong ban giao
+   ket luan phien ban khop `v1.1` (xem muc R2-E). Nghia la moi ket qua cong cua round 2
+   noi ve contract `v1.1`, dung cai contract ma round 2 thuc thi.
+3. Rui ro nam o LUOT COMMIT, khong nam o round 2: neu Tier 1 chay `git commit -- <cac
+   pathspec>` NGAY LUC NAY thi thu di vao commit la ban INDEX, tuc ban `v1.0`. Ca dot
+   bump DEC-14 va RQ-18 se khong co trong commit du no dang nam tren dia. Nut mo la
+   Tier 1 tu `git add` TASK.md truoc khi commit, roi doc diffstat cua chinh commit ay.
+4. Tier 2 KHONG lam viec do. Stage mot tep cua Tier 1 la vuot vung theo AC-16, va
+   round 1 da ghi LIM-06 dung y ay. Sau muc R2-F nay tep step10 duoc `git add` lai va
+   HAI CONG CHAY LAN THU BA tren trang thai cuoi cung; ket qua lan ba bao trong tin ban
+   giao cho Tier 1, ban tho o C:\Users\Admin\AppData\Local\Temp\glx\r2-gate-task3.txt
+   va ...-gate-handoff3.txt, con lan dem thu NAM o ...\r2-counts-postgate3.out.txt.
+   Cach cat vong lap giong LIM-K: muc nay chi chua chu so, ten lenh va duong dan, khong
+   mot chuoi cam nao co the sinh ra tu do.
+

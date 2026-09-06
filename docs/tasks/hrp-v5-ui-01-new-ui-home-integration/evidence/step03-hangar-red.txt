@@ -1,0 +1,65 @@
+STEP-03 - Hang rao token<->class MOI, chay lan dau de no DO (DEC-08 / AC-12 / RISK-06)
+Task: hrp-v5-ui-01-new-ui-home-integration, spec v1.0, execution round 1
+
+=== A. TEP MOI ===
+src/domains/job-board/public-ui-token-parity.static.test.ts
+--- CMD: git hash-object src/domains/job-board/public-ui-token-parity.static.test.ts
+(ghi o STEP-10 cung dau tay cua hai tep con lai)
+
+Tep nay KHONG phai bang chep tay. Tap tep bi soi = app/(portal)/page.tsx cong phep quet
+readdirSync tren src/domains/job-board/components/. Tap "da khai" = phan tich khoi @theme cua
+app/globals.css SAU khi boc comment. Vi the no khong lap lai diem mu TEXT_PAIRS cua go-live-08.
+
+=== B. LAN CHAY DO ===
+--- CMD: npm run test:unit -- src/domains/job-board/public-ui-token-parity.static.test.ts
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ x src/domains/job-board/public-ui-token-parity.static.test.ts (14 tests | 4 failed) 27ms
+   x T-01 - bay bac co mat trong @theme voi DUNG co va DUNG line-height
+     -> expected [ ...(7) ] to deeply equal [ ...(7) ]
+        moi bac tra ve "THIEU" / "THIEU" thay vi 32px/1.2 ... 12px/1.4
+   x T-02 - DUNG bay khoa co chu, khong nhieu hon
+     -> expected [] to deeply equal [ '--text-body-lg', ...(6) ]
+   x T-03 - khoa --line-height la khoa BAN DONG HANH
+     -> expected [] to have a length of 7 but got +0
+   x T-04 - moi bac duoc DUNG it nhat mot lan tren be mat trang chu
+     -> expected [ 'headline-xl', 'headline-lg', ...(5) ] to deeply equal []
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 10 passed (14)
+   Start at  22:20:47
+   Duration  597ms
+
+EXIT=1
+
+Khop AC-12 nua dau: tep ton tai, >= 1 test failed (that ra 4), exit khac 0 (that ra 1).
+Toan van output ANSI nam o evidence/step03-hangar-red-full.txt (5965 bytes, 178 dong).
+
+=== C. VI SAO DO NAY LA DO THAT, KHONG PHAI DO DO SAN QUET ===
+10 test XANH ngay o lan chay dau, va do la dieu quan trong hon 4 test do:
+- S-01 XANH: tap tep quet duoc co page.tsx va >= 4 tep.
+- S-02 XANH: so khoi className boc duoc >= 100 va so token phan biet >= 15.
+- S-03 XANH: khoi @theme phan tich duoc, >= 60 khai bao, co --font-head va --color-on-surface.
+- P-01 XANH: 20 token text-/font-/bg- dang dung tren trang chu HIEN TAI deu phan giai duoc.
+- P-02, N-01..N-05 XANH: rang cua hang rao hoat dong (bac font-<bac>, bac hai class mau khong
+  token, bac text-red-500, nhan utility co san + gia tri tuy y + tien to bien the, va khong tinh
+  token dan lot vao comment).
+Nghia la: phep quet DA THAY be mat, va bon vet do la KHANG DINH THAT ve trang thai @theme truoc
+STEP-04 (khong co mot khoa --text-* nao). Neu san quet sai duong dan thi S-01/S-02 se do truoc.
+
+=== D. GIOI HAN CO TEN ===
+- LIM-A: hang rao boc class tu gia tri thuoc tinh className. Class dung bang noi suy chuoi
+  (text-${size}) khong bi soi. San S-02 chan trang thai "boc duoc gan nhu khong co gi", con noi
+  suy thi duoc ghi nhan la gioi han, khong phai diem mu im lang.
+- LIM-B: phan loai DONG. Mot utility Tailwind hop le ma bang chua biet cung lam DO. Day la chi phi
+  co chu dinh; thong diep loi neu dung ten class va ten tep de mo rong bang.
+- LIM-C: khong dung Tailwind, khong doc bundle. No khang dinh SU TON TAI cua token, khong khang
+  dinh gia tri hien thi cuoi cung sau cascade.
+- LIM-D: dong dau moi lan chay npm co canh bao "The CJS build of Vite's Node API is deprecated"
+  bi PowerShell boc thanh NativeCommandError. Canh bao cua Vite 2.1.9, KHONG phai loi test.
+- LIM-E: ban ghi o muc B duoc chuyen ve ASCII (x thay cho dau nhan cua vitest, dau ba cham thay
+  cho ky tu ellipsis, bo ma mau ANSI) va cat bot khoi diff dai. Ban day du giu nguyen byte o
+  step03-hangar-red-full.txt.
+- LIM-F: lan chay dau tien tra EXIT=-4058 vi shell dang o C:\Users\Admin\AppData\Local\Temp\glx
+  (thu muc probe ngoai repo), npm khong tim thay package.json. Da Set-Location ve C:\CodeApp\HrP
+  roi chay lai. Con so ban giao lay tu lan chay trong repo.

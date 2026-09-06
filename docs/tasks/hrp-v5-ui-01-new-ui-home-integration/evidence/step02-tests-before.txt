@@ -1,0 +1,47 @@
+STEP-02 - Moc test TRUOC khi sua (lane toan bo + ba tep hang rao canh trang chu)
+Task: hrp-v5-ui-01-new-ui-home-integration, spec v1.0, execution round 1
+
+=== A. BA TEP HANG RAO CANH TRANG CHU (moc EV-07) ===
+--- CMD: npm run test:unit -- src/domains/job-board/public-ui-premium.static.test.ts src/domains/job-board/public-detail.static.test.ts src/domains/applications/marketplace-inventory.static.test.ts
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ + src/domains/job-board/public-ui-premium.static.test.ts (63 tests) 20ms
+ + src/domains/applications/marketplace-inventory.static.test.ts (25 tests) 48ms
+ + src/domains/job-board/public-detail.static.test.ts (23 tests) 7ms
+
+ Test Files  3 passed (3)
+      Tests  111 passed (111)
+   Start at  21:35:07
+   Duration  748ms
+
+EXIT=0
+
+Khop TUNG con so cua EV-07: public-ui-premium 63, marketplace-inventory 25, public-detail 23,
+tong 111, Test Files 3 passed, exit 0.
+
+LUU Y VE DUONG DAN (khong phai lech so, la lech thu muc): lan chay dau tien toi go
+"src/domains/job-board/marketplace-inventory.static.test.ts" theo cach EV-07 viet ten tep o cot
+Evidence, va vitest chi thu 2 tep / 86 test vi tep KHONG nam trong job-board. Duong dan dung la
+"src/domains/applications/marketplace-inventory.static.test.ts", dung nhu cot Verification method
+cua AC-06 ghi. Dung duong dan ay thi ra dung 3 tep / 111 test.
+
+=== B. TOAN LANE CANONICAL (moc AC-13) ===
+--- CMD: npm run test:unit
+ Test Files  109 passed (109)
+      Tests  1669 passed (1669)
+   Start at  21:35:22
+   Duration  27.96s
+
+EXIT=0
+
+Day la hai con so moc cua AC-13: sau round, toan lane phai exit 0 va so test KHONG nho hon
+1669 cong so test cua tep hang rao moi (STEP-03). Toan van output nam o
+evidence/step02-lane-before-full.txt.
+
+=== C. GIOI HAN ===
+- LIM: dong dau moi lan chay co mot canh bao cua Node/PowerShell ("The CJS build of Vite's Node
+  API is deprecated" duoc PowerShell boc thanh NativeCommandError). Day la canh bao cua Vite 2.1.9
+  tren moi lenh, KHONG phai loi test: ca hai lan deu ket thuc exit 0. Toi loc dong ay khoi ban ghi
+  o muc A cho de doc, ban day du giu o step02-lane-before-full.txt.
+- Ky tu "+" thay cho dau tick xanh cua vitest, va cac dong tien trinh mau ANSI bi bo, de tep
+  evidence nay thuan ASCII.

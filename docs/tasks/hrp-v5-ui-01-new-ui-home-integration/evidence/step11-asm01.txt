@@ -1,0 +1,234 @@
+STEP-11 / RQ-18 / AC-18 — sua assertion ASM-01 cua go-live-16 theo DEC-13 + DEC-14
+Task: hrp-v5-ui-01-new-ui-home-integration | Spec v1.1 | Execution round 2
+Baseline: b68d25b051d45cbe2497a7cf45c8b0deabb60ba2
+Ngay: 2026-09-06 Asia/Bangkok
+
+===========================================================================
+MUC 0 — LUAT VIET CUA TEP NAY (vi sao khong co mot URL nao trong ban trich)
+===========================================================================
+AC-07 do HIEU so dong khop mau URL giua worktree va baseline; tep evidence la
+tep MOI so voi b68d25b nen baseline cua no = 0, tuc no phai chua DUNG 0 dong
+khop. Moi lan chay `npm` in mot dong canh bao CJS cua Vite co mang mot dia chi
+web (round 1 da ghi o LIM-11). Vi the:
+
+  LUAT 1 — ban trich duoi day BO dong canh bao CJS cua Vite (luon la dong thu 5
+           cua moi lan chay `npm run test:unit`). Moi dong khac giu nguyen mat chu.
+  LUAT 2 — moi mau bi cam khi phai dan lai thi duoc chen MOT cap ngoac vuong VAO
+           GIUA, khong che o duoi: chuoi cam nam LONG trong chuoi dai hon thi
+           che duoi khong pha duoc khop (round 1 LIM-05, luat 2b).
+  LUAT 3 — ban tho toan van cua bon lan chay nam NGOAI repo tai
+           C:\Users\Admin\AppData\Local\Temp\glx\r2-asm01*.raw.txt, khong stage.
+
+Phep do dong loai luat nay: muc J duoi day, chay SAU khi tep nay da ghi.
+
+===========================================================================
+MUC A — DAU TAY MO ROUND 2
+===========================================================================
+$ git rev-parse HEAD
+b68d25b051d45cbe2497a7cf45c8b0deabb60ba2
+
+$ git hash-object src/shared/ui/internal-contrast.static.test.ts   (TRUOC khi sua)
+f15b5ad10967389561d1faf0e9a2282da77a6725      <- bang blob o b68d25b, tuc tep sach
+
+$ git hash-object app/globals.css                                   (TRUOC probe)
+07369966cd2be669beba8d8f5032226cc34b5c5c      <- khop dau tay round 1 ghi o HANDOFF §4
+
+$ git status --porcelain -- new-ui
+?? new-ui/
+
+$ git worktree list
+C:/CodeApp/HrP                        b68d25b [main]
+C:/CodeApp/HrP/.claude/worktrees/gl20 b68d25b [worktree-gl20]
+
+===========================================================================
+MUC B — THAY DOI DUY NHAT: assertion cua ASM-01
+===========================================================================
+Truoc  (dong 574-576): mo ta "khong khai bao khoa --text-* nao" + .toEqual([])
+Sau    (dong 574-590): mo ta "khai bao DUNG 14 khoa --text-* cua DEC-13" va so
+                       TAP khoa da SORT hai ve, nen phep so KHONG phu thuoc thu tu.
+
+Cach viet lay tu idiom cua src/domains/job-board/public-ui-token-parity.static.test.ts
+(dong 202-206 SCALE_SUFFIXES, dong 249-251 va 282 loc/so khoa): bay hau to dung
+rieng, moi hau to sinh CAP `--text-<hau to>` va `--text-<hau to>--line-height`
+bang template, nen khong tep nao phai viet san muoi bon ten.
+
+  const SCALE = ['headline-xl','headline-lg','headline-md','body-lg','body-md','label-md','label-sm'];
+  const expected = SCALE.flatMap((s) => [`--text-${s}`, `--text-${s}--line-height`]).sort();
+  const actual = [...THEME.keys()].filter((k) => k.startsWith('--text-')).sort();
+  expect(actual).toEqual(expected);
+  expect(actual).toHaveLength(14);
+
+KHONG mot `it()` nao khac trong tep bi cham (chung minh o muc G va muc H).
+
+===========================================================================
+MUC C — PROBE DO 1/2: mot khoa --text-* NGOAI DEC-13 lot vao => hang rao DO
+===========================================================================
+Thao tac: them TAM `--text-probe-r2: 99px;` vao khoi @theme cua app/globals.css
+(ngay sau bay dong thang chu, dong 119), tuc khoa thu 15.
+
+$ npm run test:unit -- src/shared/ui/internal-contrast.static.test.ts
+exit code: 1
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ ❯ src/shared/ui/internal-contrast.static.test.ts (21 tests | 1 failed) 25ms
+   × go-live-16 / RQ-09 — tập nền đọc từ @theme, không ghim trong test > ASM-01 — @theme khai báo ĐÚNG 14 khóa --text-* của DEC-13, không dư không thiếu 12ms
+     → expected [ '--text-body-lg', …(14) ] to deeply equal [ '--text-body-lg', …(13) ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+AssertionError: expected [ '--text-body-lg', …(14) ] to deeply equal [ '--text-body-lg', …(13) ]
+
+- Expected
++ Received
+
+  Array [
+    "--text-body-lg",
+    "--text-body-lg--line-height",
+    "--text-body-md",
+    "--text-body-md--line-height",
+    "--text-headline-lg",
+    "--text-headline-lg--line-height",
+    "--text-headline-md",
+    "--text-headline-md--line-height",
+    "--text-headline-xl",
+    "--text-headline-xl--line-height",
+    "--text-label-md",
+    "--text-label-md--line-height",
+    "--text-label-sm",
+    "--text-label-sm--line-height",
++   "--text-probe-r2",
+  ]
+
+ ❯ src/shared/ui/internal-contrast.static.test.ts:588:20
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+
+=> Chieu "du mot khoa" DO. Mang Received cung la ban liet ke DAY DU muoi bon
+   khoa ma @theme dang khai, doc tu chinh app/globals.css chu khong ghim trong test.
+
+===========================================================================
+MUC D — PROBE DO 2/2: thieu MOT khoa cua DEC-13 => hang rao DO
+===========================================================================
+Thao tac: xoa TAM nua dau cua dong thang chu cuoi (bo cap `12px` cua bac nho
+nhat), con 13 khoa.
+
+$ npm run test:unit -- src/shared/ui/internal-contrast.static.test.ts
+exit code: 1
+
+ ❯ src/shared/ui/internal-contrast.static.test.ts (21 tests | 1 failed) 23ms
+   × ... > ASM-01 — @theme khai báo ĐÚNG 14 khóa --text-* của DEC-13, không dư không thiếu 10ms
+     → expected [ '--text-body-lg', …(12) ] to deeply equal [ '--text-body-lg', …(13) ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+
+=> Chieu "thieu mot khoa" cung DO. Tripwire dong ca hai chieu, dung yeu cau
+   RQ-18: khoa la thi DO, khoa mat thi cung DO.
+
+===========================================================================
+MUC E — HOAN NGUYEN app/globals.css THEO BYTE (bang chung, khong bang loi)
+===========================================================================
+$ git hash-object app/globals.css        (SAU khi thao ca hai probe)
+07369966cd2be669beba8d8f5032226cc34b5c5c
+so voi dau tay o MUC A: RESTORE=BYTE_EXACT
+
+$ git status --porcelain -- app/globals.css
+M  app/globals.css        <- chi co cot INDEX, cot worktree la khoang trang, tuc
+                             worktree == index: probe khong de lai mot byte nao
+                             va khong lam ban index cua round 1.
+
+$ git diff --cached -U0 -- app/globals.css | (loc dong @@)
+@@ -105,0 +106,14 @@        <- DUNG mot hunk, dong dich 106 < 462 (AC-04 con nguyen)
+
+===========================================================================
+MUC F — XANH: chinh tep hang rao sau khi hoan nguyen
+===========================================================================
+$ npm run test:unit -- src/shared/ui/internal-contrast.static.test.ts
+exit code: 0
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ ✓ src/shared/ui/internal-contrast.static.test.ts (21 tests) 12ms
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+
+=> AC-18 nua CHAY: 21 passed, 0 failed, exit 0. Con so 21 lay tu RUNNER.
+
+===========================================================================
+MUC G — DIFF -U0: chi cham vung ASM-01
+===========================================================================
+$ git diff HEAD -U0 -- src/shared/ui/internal-contrast.static.test.ts
+diff --git a/src/shared/ui/internal-contrast.static.test.ts b/src/shared/ui/internal-contrast.static.test.ts
+index f15b5ad..d47eaf2 100644
+--- a/src/shared/ui/internal-contrast.static.test.ts
++++ b/src/shared/ui/internal-contrast.static.test.ts
+@@ -574,2 +574,16 @@ describe('go-live-16 / RQ-09 — tập nền đọc từ @theme, không ghim tro
+-  it('ASM-01 — @theme không khai báo khóa --text-* nào, nên cỡ chữ Tailwind mặc định còn đúng', () => {
+-    expect([...THEME.keys()].filter((k) => k.startsWith('--text-'))).toEqual([]);
++  it('ASM-01 — @theme khai báo ĐÚNG 14 khóa --text-* của DEC-13, không dư không thiếu', () => {
++    // ui-01 / DEC-14: go-live-16 chốt tập này ở RỖNG vì lúc đó repo chưa có thang
++    // chữ nào. ui-01 mang bảy bậc DEC-13 vào `@theme`, và cú pháp cỡ-chữ-kèm-
++    // line-height của Tailwind v4 sinh mỗi bậc thành HAI custom property, nên
++    // bảy bậc là mười bốn khóa. Tripwire đổi từ "cấm mọi cỡ chữ" sang "ghim đúng
++    // bộ đã duyệt": một khóa lạ lọt vào, hoặc một khóa DEC-13 mất đi, đều ĐỎ.
++    // Hậu tố dựng riêng nên không tệp nào phải viết sẵn mười bốn tên.
++    const SCALE = [
++      'headline-xl', 'headline-lg', 'headline-md',
++      'body-lg', 'body-md',
++      'label-md', 'label-sm',
++    ];
++    const expected = SCALE.flatMap((s) => [`--text-${s}`, `--text-${s}--line-height`]).sort();
++    const actual = [...THEME.keys()].filter((k) => k.startsWith('--text-')).sort();
++    expect(actual).toEqual(expected);
++    expect(actual).toHaveLength(14);
+
+$ git diff HEAD --numstat -- src/shared/ui/internal-contrast.static.test.ts
+16      2       src/shared/ui/internal-contrast.static.test.ts
+
+=> DUNG MOT hunk, va no bat dau o dong 574 tuc dung khoi ASM-01. Hai dong bi
+   xoa la dung hai dong assertion cu. Khong mot vung nao khac cua tep bi cham.
+
+$ git hash-object src/shared/ui/internal-contrast.static.test.ts   (SAU khi sua)
+d47eaf247f45a882834bded80b5c11fe166b4e3f
+
+===========================================================================
+MUC H — SO it( KHONG DOI (nua thu hai cua AC-18)
+===========================================================================
+Do bang RUNNER (con so co gia tri, xem bay "dem chuoi con khac dem token"):
+  baseline b68d25b : 21 tests   (ban ghi cua go-live-16 HANDOFF: "744 dong, 21 test")
+  worktree round 2 : 21 tests   (MUC F, dong `Tests  21 passed (21)`)
+
+Do bang cau truc, mau `(^|[^a-zA-Z0-9_$.])it\s*\(` tren CA HAI ban:
+  baseline b68d25b | so it( = 21
+  worktree         | so it( = 21
+
+=> Round nay khong them va khong bot mot test nao; chi doi assertion cua mot test.
+
+===========================================================================
+MUC I — DONG LAI: dieu ma DEC-14 doi va dieu tep nay thuc su khang dinh
+===========================================================================
+1. Tap khoa --text-* trong @theme = DUNG 14 ten sinh tu bay hau to DEC-13.
+2. So khoa = 14, va phep so la so TAP da sort nen thu tu khai bao trong CSS doi
+   thi test van XANH; ten doi thi DO.
+3. Bay bac chinh no (px va line-height tung bac) van do o hang rao T-01 cua
+   public-ui-token-parity.static.test.ts, khong do lai o day, nen hai hang rao
+   khong chong len nhau: mot cai ghim TAP TEN, mot cai ghim GIA TRI.
+
+===========================================================================
+MUC J — TU KIEM LUAT VIET (chay SAU khi tep nay da ghi)
+===========================================================================
+Xem evidence/step09-counts.txt muc R2-A: dong khop mau URL cua tep nay = 0, va
+HIEU so voi baseline = 0. Bay ho mau tho = 0. Bay ten class ho-chu-theo-bac = 0.
+
+===========================================================================
+LIM CUA STEP-11
+===========================================================================
+LIM-14 — TEXT_SIZE_PX o dong 299 cua chinh tep hang rao chi biet ten co chu DUNG
+  SAN cua Tailwind (text-xs..text-9xl). Round nay KHONG mo rong bang do, vi mandate
+  cua DEC-14 hep: chi assertion ASM-01. Hau qua do duoc: neu mot ngay nao do ba be
+  mat noi bo (app/worker/page.tsx, app/ctv/page.tsx, app/login/login-form.tsx) dung
+  mot class co chu theo thang DEC-13 thi bo doc co chu se khong nhan ra no va cap mau
+  ay roi khoi phep do. Ba tep ay KHONG bi round nay cham (bang chung: git status o
+  muc A cua evidence/step10-scope-gates.txt), nen hom nay diem mu ay rong. Day la
+  mot mon cho Tier 1 can, khong phai mot khiem khuyet cua round 2.

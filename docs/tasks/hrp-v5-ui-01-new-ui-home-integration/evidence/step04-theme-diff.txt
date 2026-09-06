@@ -1,0 +1,106 @@
+STEP-04 - Bay token thang chu vao khoi @theme (RQ-01 / DEC-13 / DEC-02 / DEC-07 / AC-01)
+Task: hrp-v5-ui-01-new-ui-home-integration, spec v1.0, execution round 1
+
+=== A. DIFF (chua stage o buoc nay) ===
+--- CMD: git diff -- app/globals.css
+diff --git a/app/globals.css b/app/globals.css
+index 7857401..0736996 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -103,6 +103,20 @@
+   --font-label: var(--font-inter), var(--font-bvp), sans-serif;
+   --font-mono: ui-monospace, monospace;
+
++  /* ui-01/RQ-02 + DEC-13 - thang chu. Bay bac, ghim cung px va line-height.
++     Vi sao MOT dong vat ly cho moi bac: co va line-height cua cung mot bac la
++     mot quyet dinh duy nhat, doc roi nhau thi de sua lech mot nua. Vi sao
++     KHONG co bac thu tam: DEC-11 khoa dung bay, thu tam phai di qua Tier 1.
++     Vi sao dat O DAY chu khong o cuoi tep: DEC-07 - lat tu dong 462 toi het
++     tep bi design-tokens.static.test.ts dong bang theo sha256. */
++  --text-headline-xl: 32px; --text-headline-xl--line-height: 1.2;
++  --text-headline-lg: 24px; --text-headline-lg--line-height: 1.25;
++  --text-headline-md: 20px; --text-headline-md--line-height: 1.3;
++  --text-body-lg: 18px; --text-body-lg--line-height: 1.6;
++  --text-body-md: 16px; --text-body-md--line-height: 1.6;
++  --text-label-md: 14px; --text-label-md--line-height: 1.4;
++  --text-label-sm: 12px; --text-label-sm--line-height: 1.4;
++
+   /* Motion */
+   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+   --t-fast: 150ms;
+
+--- CMD: git diff --numstat -- app/globals.css
+14	0	app/globals.css
+
+Bay bac khop TUNG cap so cua DEC-13: 32px/1.2, 24px/1.25, 20px/1.3, 18px/1.6, 16px/1.6,
+14px/1.4, 12px/1.4. Diem chen: ngay sau --font-mono, con trong khoi @theme (dong 8..128 theo
+4.2 In scope). Ban goc dong 105 la dong trong, nen 14 dong duoc THEM va 0 dong bi xoa.
+
+=== B. AC-01 - HAI PHEP DEM ===
+--- CMD: grep -cE '^\s*--text-' app/globals.css
+7
+--- CMD: sed -n '/^@theme {/,/^}/p' app/globals.css | grep -coE '^\s*--[a-z0-9-]+:'
+82
+Dung 7 va dung 82 = 75 cu + 7 moi.
+
+Vi sao MOT dong vat ly cho moi bac chu khong hai dong: ca hai phep dem cua AC-01 dem DONG
+(-c thang -o). DEC-13 doi CA co CA line-height. Neu tach hai dong thi phep dem thu nhat ra 14
+va AC-01 do; neu bo line-height thi DEC-13 do. Mot dong cho moi bac la cach dung duy nhat thoa
+DONG THOI DEC-13, AC-01 va gioi han Modules. Dong comment mo dau KHONG khop
+'^\s*--[a-z0-9-]+:' nen khong lam lech con so 82.
+
+=== C. AC-04 nua thu hai - HUNK NAM O DAU ===
+--- CMD: git diff -U0 -- app/globals.css | grep '^@@'
+@@ -105,0 +106,14 @@
+Dung MOT hunk, dong dich 106 < 462. Lat dong bang khong bi cham. Phep do tren ban da staged
+lay lai o STEP-10.
+
+=== D. VET DO PHU - ASM-01 (day la BLOCKER cua AC-13, khong phai loi cua buoc nay) ===
+--- CMD: npm run test:unit -- src/shared/ui/internal-contrast.static.test.ts src/domains/job-board/public-ui-premium.static.test.ts src/shared/ui/design-tokens.static.test.ts
+ x src/shared/ui/internal-contrast.static.test.ts (21 tests | 1 failed) 44ms
+   x go-live-16 / RQ-09 - tap nen doc tu @theme, khong ghim trong test
+     > ASM-01 - @theme khong khai bao khoa --text-* nao, nen co chu Tailwind mac dinh con dung
+AssertionError: expected [ '--text-headline-xl', ...(13) ] to deeply equal []
+ -> src/shared/ui/internal-contrast.static.test.ts:575:70
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 95 passed (96)
+
+EXIT=1
+
+Doc con so: 95 passed = 63 cua public-ui-premium + 12 cua design-tokens + 20/21 cua
+internal-contrast. Nghia la HAI hang rao kia VAN XANH nguyen sau khi them token, gom ca hang rao
+lat dong bang 63 test ma AC-04 ghim. Chi mot assertion do, va no do vi mot ly do co cau:
+
+  internal-contrast.static.test.ts:574-575 (da ship o go-live-16, o cot Out of scope cua 4.2)
+    it('ASM-01 - @theme khong khai bao khoa --text-* nao, ...', () => {
+      expect([...THEME.keys()].filter((k) => k.startsWith('--text-'))).toEqual([]);
+    });
+
+AC-01 doi DUNG 7 khoa --text-*; ASM-01 doi DUNG 0 khoa. Hai menh de nay khong the cung dung.
+So 14 trong thong diep loi = 7 khoa co + 7 khoa --line-height ban dong hanh: declarationsIn cua
+tep ay phan tich theo KHAI BAO (/(--[a-zA-Z0-9-]+)\s*:\s*([^;{}]+);/g), khong theo dong, nen cach
+viet mot dong vat ly cho moi bac KHONG ne duoc no - va toi khong tim cach ne no.
+
+Da can nhac va TU CHOI mot duong lach: mot khoi @theme THU HAI dat sau dong 128 se thoat khoi
+balancedBlock(cssCode, '@theme') (ham do tra ve khoi DAU TIEN) trong khi hai grep cua AC-01 van
+ra 7 va 82. Do la lam xanh mot hang rao da ship bang cach lam no nhin cho khac, khong phai lam
+dung viec. Ghi lai o day de Tier 1 thay duong ay ton tai va thay no bi bo.
+
+Ba duong con lai deu khong hop le voi contract nay:
+- Sua internal-contrast.static.test.ts: tep khong nam trong Modules va 4.2 xep no ngoai pham vi.
+- Doi ten token ra ngoai khong gian --text-*: AC-01 va DEC-02/DEC-13 do.
+- Bo bay token: RQ-01 do.
+Vi the AC-13 (toan lane exit 0) KHONG DAT DUOC trong pham vi contract v1.0. Xu ly theo RISK-05:
+ghi mot hang LIM roi ban giao BLOCKED cho Tier 1 phan xu. Cac AC con lai van duoc thi hanh du.
+
+Ghi chu ky thuat, khong phai bien ho: ly do ma ASM-01 tu neu ("nen co chu Tailwind mac dinh con
+dung") rong hon su that. Trong Tailwind v4, THEM khoa moi vao khong gian --text-* khong xoa dai
+co san xs..9xl; chi `--text-*: initial` moi xoa. Bang chung trong chinh round nay: hang rao moi
+o STEP-03 co N-04 khang dinh text-sm van phan giai duoc, va no XANH ca truoc ca sau STEP-04.
+
+=== E. GIOI HAN ===
+- LIM-A: muc D ghi ban ASCII rut gon; ba dong dau moi lan chay npm co canh bao CJS cua Vite bi
+  PowerShell boc thanh NativeCommandError. Toan van o
+  C:\Users\Admin\AppData\Local\Temp\glx\ui01-step04-css-hangars.txt (ngoai repo, khong stage).
+- LIM-B: phep do o muc A/B/C do tren cay lam viec CHUA staged. Ban staged do lai o STEP-10.

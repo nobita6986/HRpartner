@@ -1,0 +1,494 @@
+STEP-09 - BAY PHEP DEM AC (AC-02, AC-03, AC-05, AC-07, AC-08, AC-09, AC-11)
+Task: hrp-v5-ui-01-new-ui-home-integration, spec v1.0, execution round 1
+
+=== 0. BA LUAT VIET VA HAI PHAM VI ===
+LUAT 1 - LENH: moi mau trong lenh duoc dung bang phep NOI CHUOI. Ban PowerShell viet
+  ('font-headlin' + 'e-xl'); ban bash viet 'slat''e-' (hai literal ke nhau trong sh la MOT
+  chuoi). Ca hai dan NGUYEN VAN vao shell tuong ung deu chay duoc.
+LUAT 2 - OUTPUT DAN LAI: chen mot cap ngoac vuong quanh KY TU CUOI cua chuoi bi che.
+  font-headline-x[l] la ten bac ho cua new-ui; text-on-backgroun[d] la class chet;
+  green[-] la ho mau tho; Thoa thua[n] va 0 [d] la chuoi bi cam; https:/[/] la dau URL.
+LUAT 2b - KHI CHE DUOI KHONG DU: neu chuoi bi cam nam LONG trong mot chuoi dai hon thi cap
+  ngoac dat o KY TU CUOI roi vao phan SAU cua chuoi dai, con chuoi bi cam nam o phan TRUOC va
+  van con nguyen ven - tuc LUAT 2 khong pha duoc khop. Khi ay cap ngoac duoc chen VAO GIUA.
+  Vi du duy nhat o tep nay: class dich chuyen cua Tailwind, che thanh '-tran[s]late-y-1/2', vi
+  mat chu cua no chua tron ho mau thu ba cua bang AC-08 o muc E. Ban than dong nay cung khong
+  viet mot bien the nao cua hai chuoi ay ra mat chu, vi ly do o LIM-A.
+Ly do ba luat: bay AC duoi day dem tren "tap tep ma round nay sua hoac them", va round nay
+THEM chinh tep evidence nay. Viet nguyen mat chu mot chuoi bi cam la tu lam do phep dem cua
+chinh minh. AC-05 la ngoai le duy nhat va co ly do o muc C.
+
+HAI PHAM VI, moi AC ghi CA HAI con so:
+  MA  = bon tep MA round nay sua hoac them
+          app/(portal)/page.tsx                                          (sua)
+          app/globals.css                                                (sua)
+          src/domains/job-board/components/referral-invite-strip.tsx      (them)
+          src/domains/job-board/public-ui-token-parity.static.test.ts     (them)
+  TAT = bon tep tren CONG cac tep round nay them duoi
+          docs/tasks/hrp-v5-ui-01-new-ui-home-integration/evidence/
+        TASK.md KHONG tinh: no la tep cua Tier 1, round nay khong sua no. AC-16 noi ro
+        "Path cua Tier 1 va cua luong khac khong tinh vao AC nay", va nguyen tac ay duoc
+        ap dong nhat o day.
+
+--- CMD: hai ham dem dung cho moi muc PowerShell duoi day
+  function C1($f,$p){ return @(Select-String -LiteralPath $f -Pattern ([regex]::Escape($p)) -Encoding UTF8).Count }
+  function CS($fs,$p){ $t=0; foreach($f in $fs){ $t += (C1 $f $p) }; return $t }
+  # C1 dem SO DONG khop, dung ngu nghia cua grep -c ma cot Method cua contract viet.
+  # Mau di qua [regex]::Escape() nen dau - va dau . khong bi doc thanh cu phap regex.
+  # KHONG dung -SimpleMatch: duoi co ay .Matches khong duoc dien, nen moi phep dem
+  # dua vao .Matches se tra 0 mot cach im lang.
+
+=== A. AC-02 - BAY TEN BAC HO CUA new-ui PHAI BANG 0 ===
+Bay ten duoc dung bang phep noi chuoi trong chinh lenh:
+--- CMD: $n=@(('font-headlin'+'e-xl'),('font-headlin'+'e-lg'),('font-headlin'+'e-md'),('font-bod'+'y-lg'),('font-bod'+'y-md'),('font-labe'+'l-md'),('font-labe'+'l-sm')); foreach($x in $n){ (CS $MA $x), (CS $TAT $x) }
+  ten (che theo LUAT 2)      MA   TAT
+  font-headline-x[l]          0     0
+  font-headline-l[g]          0     0
+  font-headline-m[d]          0     0
+  font-body-l[g]              0     0
+  font-body-m[d]              0     0
+  font-label-m[d]             0     0
+  font-label-s[m]             0     0
+  TONG                        0     0
+=> AC-02 doi tong bang 0. Hai pham vi cho CUNG mot so 0, tuc tep evidence khong tu lam do.
+   Tep ban giao dung font-head / font-body / font-label theo DEC-03, khong dung bay ten tren.
+
+=== B. AC-03 - HAI CLASS CHET PHAI BANG 0 ===
+--- CMD: Row ('text-on-backgroun' + 'd') va Row ('bg-surface-war' + 'm')
+  class (che theo LUAT 2)     MA   TAT
+  text-on-backgroun[d]         0     0
+  bg-surface-war[m]            0     0
+=> Hai class ma DEC-04 goi ten khong xuat hien o mot byte nao. STEP-06 muc B da do doc lap
+   rang hai custom property tuong ung (--color-on-background, --color-surface-warm) KHONG ton
+   tai trong app/globals.css, nen neu mot class nhu vay lot vao thi no sinh 0 byte CSS.
+
+=== C. AC-05 - BA PHEP DEM TREN CHINH app/globals.css ===
+AC-05 la NGOAI LE duy nhat khong ap LUAT 2. Ly do do duoc: pham vi cua no la MOT tep cu the
+(app/globals.css), khong phai "tap tep round nay sua hoac them", nen mot chuoi viet trong tep
+evidence nay khong the vao pham vi dem cua no.
+--- CMD: grep -c 'prefers-color-scheme' app/globals.css
+  0
+--- CMD: grep -cE '\.dark' app/globals.css
+  0
+--- CMD: grep -c 'prefers-reduced-motion' app/globals.css
+  1
+=> AC-05 doi 0 / 0 / dung 1. Ba con so khop. Khoi reduced-motion duy nhat con nguyen, va no
+   la moc duoi cua lat dong bang ma R2-02 cua design-tokens.static.test.ts cat tu day tro di.
+
+=== D. AC-07 - MAU URL, DO BANG DUNG PHUONG PHAP CUA CONTRACT ===
+Phuong phap trong cot Method: grep -rohE 'https?://[a-z0-9.-]+' roi sort -u roi dem dong. Do
+la phep dem SO HOST RIENG BIET, khong phai so dong khop. Mau nay KHONG tu khop chinh no (sau
+"https" trong mat chu la dau hoi chu khong phai dau hai cham), nen dan mau nguyen van vao day
+la an toan va khong can che.
+
+--- CMD: grep -rohE 'https?://[a-z0-9.-]+' <4 tep MA> | sort -u
+  https:/[/]fonts.googleapis.com
+  SO DONG DISTINCT = 1
+--- CMD: cung lenh, pham vi MA + evidence/
+  https:/[/]fonts.googleapis.com
+  https:/[/]vite.dev
+  SO DONG DISTINCT = 2
+--- CMD: grep -rnoE cung mau, liet ke TUNG lan xuat hien (pham vi TAT)
+  app/globals.css:2:https:/[/]fonts.googleapis.com
+  evidence/step02-lane-before-full.txt:9:https:/[/]vite.dev
+  evidence/step03-hangar-red-full.txt:6:https:/[/]vite.dev
+  evidence/_raw-step02-hangars.txt:6:https:/[/]vite.dev
+
+AC-07 doi con so bang 0. Ca hai pham vi deu KHONG bang 0, va hai nguyen nhan khac han nhau:
+
+NGUYEN NHAN 1 - host fonts.googleapis.com o app/globals.css:2. Day la URL CO SAN TU TRUOC, va
+ba phep do noi no khong phai thu round nay them:
+--- CMD: git show b68d25b:app/globals.css | sed -n '2p' | wc -c   /   sed -n '2p' app/globals.css | wc -c
+  baseline bytes: 120
+  worktree bytes: 120
+--- CMD: diff <(git show b68d25b:app/globals.css | sed -n '2p') <(sed -n '2p' app/globals.css)
+  diff: RONG (giong tung byte)
+--- CMD: sed -n '2p' app/globals.css   (che theo LUAT 2)
+  @import url("https:/[/]fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap")
+Dong ay CHO font icon Material Symbols, va trang chu dang ghim DUNG 9 the
+material-symbols-outlined (EV-07). Xoa dong 2 la giet ca 9 glyph ay. Con app/globals.css thi
+BUOC phai nam trong tap tep round nay sua, vi RQ-01 doi them bay token vao chinh no. Vi the
+tap tep round nay sua khong bao gio co the KHONG chua dong 2 ay.
+=> Doc dung: so URL ngoai MOI ma round nay them = 0 (DEC-09 dat nguong o day, va nguong ay
+   dat). So dong khop theo mat chu cua AC-07 = 1. Hai cach doc cho hai ket cuc khac nhau; toi
+   ghi CA HAI va khong tu chon. LIM-B.
+
+NGUYEN NHAN 2 - host vite.dev, mang boi DUNG BA tep bat toan van output npm. Canh bao
+"The CJS build of Vite's Node API is deprecated" in trong MOI lan chay npm cua repo nay, nen
+mot tep bat toan van output se mang URL ay. Ba tep tren la ba ban THO co chu duoc giu nguyen
+byte. Toi KHONG sua chung: mot ban tho bi sua sau khi chay thi khong con la bang chung. Bay
+tep evidence con lai deu ap LUAT 2 va vi the khong mang mot URL nao - do la ly do con so TAT
+la 2 chu khong phai 9. LIM-A va LIM-B.
+
+=== E. AC-08 - BAY HO MAU THO PHAI BANG 0 ===
+--- CMD: Row cho tung tien to, dung bang phep noi chuoi
+  ho mau (che theo LUAT 2)    MA   TAT
+  gree[n]-                     0     0
+  blu[e]-                      0     0
+  slat[e]-                     1     1
+  gra[y]-                      0     0
+  zin[c]-                      0     0
+  ambe[r]-                     0     0
+  yello[w]-                    0     0
+
+Sau tren bay con so bang 0. Con so thu ba KHONG phai mot ho mau: no la mot phep TRUNG CHUOI
+CON. Dong khop va ly do:
+--- CMD: Lines ('slat' + 'e-')
+  app/(portal)/page.tsx:410
+--- CMD: sed -n '410p' app/(portal)/page.tsx   (cat con 120 ky tu)
+  <span aria-hidden="true" className="material-symbols-outlined absolute right-3 top-1/2 -tran[s]late-y-1/2 text-xl ...
+Chuoi bi bat nam GIUA class -tran[s]late-y-1/2: "-tran" + "slat" + "e-" + "y-1/2". Khong mot
+class mau tho nao o day; day la utility dich chuyen cua Tailwind, va no la thu KHONG THE doi
+ten.
+
+Phep do bac bo kha nang round nay them no vao:
+--- CMD: git show b68d25b:'app/(portal)/page.tsx' | grep -c 'slat''e-'
+  1
+--- CMD: git show b68d25b:'app/(portal)/page.tsx' | grep -n 'slat''e-'
+  405:        <span aria-hidden="true" cla...
+--- CMD: grep -c 'slat''e-' 'app/(portal)/page.tsx'   (worktree)
+  1
+Baseline 1, worktree 1: khong doi. Dong 405 cua baseline la dong 410 cua worktree (lech 5
+dong, dung bang so dong round nay them vao dau tep). Round nay khong them va khong bo mot
+lan xuat hien nao.
+=> Doc dung: so lan xuat hien mot HO MAU THO = 0. So dong khop theo mat chu cua AC-08 = 1,
+   vi mau 'slat' + 'e-' bat CA trong long '-tran[s]late-'. LIM-C.
+
+=== F. AC-09 - CHUOI LUONG ===
+--- CMD: Row cho ba chuoi, dung bang [char]<ma> nen script van thuan ASCII
+  chuoi                        MA   TAT
+  Luong thuong luong (canonical) 3     3
+  Thoa thua[n]                  0     0
+  0 [d]                         2     2
+  30.000 [d]                    1     1
+Ghi chu ve cach che o muc nay: chu cai co dau bi thay bang chu ASCII goc dat trong ngoac
+vuong (d thay cho chu d co gach ngang). Do la mot phep bien doi CO KHAI, va no pha khop dung
+nhu LUAT 2 doi.
+
+Ba con so dau: canonical dat 3 lan (AC-09 doi it nhat 1), chuoi bi cam thu nhat dat 0 (AC-09
+doi 0). Con so thu ba KHONG bang 0, va con so thu tu giai thich mot nua cua no:
+--- CMD: Lines ('0 ' + [char]0x0111)
+  app/(portal)/page.tsx:100
+  app/(portal)/page.tsx:360
+--- CMD: Lines ('30.000 ' + [char]0x0111)
+  app/(portal)/page.tsx:360
+Hai dong, va CA HAI la BINH LUAN, khong phai nhan trong DOM:
+  dong 100:  * `null` khong duoc in thanh `0`: `"0 [d]/gio"` la mot khang dinh SAI ve tien, con
+  dong 360:  * nguyen hanh vi tung ky tu. No ton tai de o "muc luong toi thieu" hien thi `Tu 30.000 [d]/gio` trong
+Dong 100 la cau van GIAI THICH rang ma KHONG in chuoi ay - no la mot lenh cam duoc viet ra,
+khong phai mot lan in. Dong 360 khong he chua chuoi ay: no chua "30.000 [d]", va mau cua
+AC-09 bat phan duoi cua chuoi do (so 0 cuoi cua 30.000, dau cach, roi chu d).
+
+Phep do bac bo kha nang round nay them hai dong ay:
+--- CMD: git show b68d25b:'app/(portal)/page.tsx' | grep -c $'0 \xc4\x91'
+  2
+--- CMD: git show b68d25b:'app/(portal)/page.tsx' | grep -n $'0 \xc4\x91'   (hai dong dau)
+  95: * `null` khong duoc in thanh `0`: `"0 [d]/gio"` l...
+  355: * nguyen hanh vi tung ky tu. No ton tai d...
+--- CMD: git show b68d25b:'app/(portal)/page.tsx' | grep -c $'30.000 \xc4\x91'
+  1
+Baseline 2, worktree 2; baseline 1, worktree 1. Dong 95 -> 100 va 355 -> 360, cung do lech 5
+dong. Khong mot lan xuat hien nao la cua round nay.
+=> Doc dung: so NHAN TIEN sai tren be mat cong khai = 0, va ham salaryLabel o dong 106..109
+   chung minh dieu do bang ma: min === null thi tra ve chuoi canonical, khong tra ve so 0.
+   So dong khop theo mat chu cua AC-09 = 2. LIM-D.
+
+=== G. AC-11 - BA NEO PHAI CON SONG, VA HANG RAO TON KHO ===
+--- CMD: grep -c tren app/(portal)/page.tsx
+  ApplyModal      2
+  SuccessModal    3
+  /api/jobs       1
+--- CMD: grep -nE 'ApplyModal|SuccessModal|/api/jobs' app/(portal)/page.tsx
+  6:// `CANONICAL_ORIGIN` di theo `SuccessModal` - trang nay khong con tham chieu nao.
+  7:import { ApplyModal } from '@/src/domains/job-board/components/apply-modal';
+  8:import { SuccessModal } from '@/src/domains/job-board/components/success-modal';
+  636:      const res = await fetch(`/api/jobs?${buildQuery(filters, offset)}`, { cache: 'no-store...
+  1119:        <ApplyModal
+  1128:        <SuccessModal code={successCode} onClose={() => setSuccessCode('')} />
+Doc sau con so: moi neo co CA mot dong import VA mot dong dung thuc su (1119, 1128), con
+/api/jobs la lan goi fetch that o dong 636. Tuc ba neo khong chi "con ten trong tep" ma con
+CON DUOC DUNG. AC-11 doi it nhat 1 cho moi neo.
+
+--- CMD: npm run test:unit -- src/domains/applications/marketplace-inventory.static.test.ts
+  > hrp@0.1.0 test:unit
+  > vitest run --config vitest.unit.config.ts src/domains/applications/marketplace-inventory.static.test.ts
+  The CJS build of Vite's Node API is deprecated. See https:/[/]vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+   RUN  v2.1.9 C:/CodeApp/HrP
+   ✓ src/domains/applications/marketplace-inventory.static.test.ts (25 tests) 68ms
+   Test Files  1 passed (1)
+        Tests  25 passed (25)
+     Start at  23:17:53
+     Duration  605ms (transform 87ms, setup 0ms, collect 102ms, tests 68ms, environment 0ms, prepare 143ms)
+  EXIT=0
+=> AC-11 dat ca hai nua: ba phep dem deu >= 1, va hang rao ton kho ra dung 25 passed exit 0.
+
+=== H. BANG KET LUAN BAY AC ===
+AC     doi                                     do duoc                      ket cuc
+AC-02  bay phep dem = 0                        7 x 0 (ca hai pham vi)       DAT
+AC-03  hai phep dem = 0                        0 va 0 (ca hai pham vi)      DAT
+AC-05  0 / 0 / dung 1                          0 / 0 / 1                    DAT
+AC-07  so host distinct = 0                    1 (MA) va 2 (TAT)            KHONG DAT theo mat
+       chu; ca hai nguyen nhan la co san tu truoc hoac la canh bao chuoi cong cu. LIM-B.
+AC-08  bay phep dem = 0                        6 x 0, va slat[e]- = 1       KHONG DAT theo mat
+       chu; con so thu ba la chuoi con cua '-tran[s]late-', co san o baseline. LIM-C.
+AC-09  canonical >= 1, hai chuoi cam = 0       3, va 0, va 2                KHONG DAT theo mat
+       chu; hai dong khop la BINH LUAN, co san o baseline, va mot trong hai chi khop vi
+       "30.000 [d]". LIM-D.
+AC-11  ba phep dem >= 1, hang rao 25 passed    2 / 3 / 1, va 25 passed      DAT
+Bon AC DAT, ba AC khong dat theo mat chu va ca ba deu KHONG do round nay gay ra. Toi khong tu
+xu ba con so ay: quyen phan xu la cua Tier 1 (RISK-05).
+
+=== I. GIOI HAN ===
+- LIM-A: ba luat viet o muc 0. Chung ton tai vi bay AC nay dem tren "tap tep round nay sua
+  hoac them" va round nay THEM chinh tep evidence nay. Bang chung rang chung CO TAC DUNG: moi
+  hang o muc A, B, E, F co con so MA va con so TAT BANG NHAU. Neu tep evidence tu lam do thi
+  hai cot ay se lech. Chi AC-11 lech, va lech LEN: ApplyModa[l] 2 -> 8, SuccessModa[l]
+  3 -> 10, /api/job[s] 1 -> 5. Ba ten ay duoc che theo LUAT 2 tai DUNG cho nay va chi o day,
+  de sau con so vua dan khong tu dich them mot bac. Do la huong DUNG: AC-11 doi it nhat 1,
+  nen mot con so lon hon khong the lam no do, va phep do cua no chay tren MOT tep chu khong
+  tren tap tep.
+  LUAT 2b khong phai suy dien ly thuyet - no ra doi vi mot lan TU LAM DO THAT. Sau khi viet
+  xong muc B..I, toi chay lai Report de tu kiem, va cot TAT cua hang slat[e]- ra 7 chu khong
+  ra 1. Sau dong van cua CHINH TOI - o muc E va o LIM-C - da viet nguyen mat chu class dich
+  chuyen cua Tailwind cung ba bien the cua mau AC-08. Che duoi theo LUAT 2 khong pha duoc mot
+  khop nao trong sau dong ay, vi chuoi bi cam nam LONG giua mot chuoi dai hon. Da che lai ca
+  sau bang LUAT 2b roi chay lai Report: cot TAT tro ve 1, bang cot MA. Phep tu kiem ay la thu
+  duy nhat bat duoc no - khong mot cong nao trong repo dem tren tep evidence.
+- LIM-B: AC-07 co HAI cach doc. Cach mot: dem so dong khop theo dung mat chu cot Method, ra 1
+  (MA) va 2 (TAT). Cach hai: dem so URL ngoai MOI ma round nay them, ra 0 - va do moi la
+  nguong DEC-09 dat ra. Toi ghi ca hai va khong chon giup Tier 1. Ba ban tho mang URL vite.dev
+  duoc giu nguyen byte co chu dinh.
+- LIM-C: 'slat' + 'e-' la tien to khong the tach khoi '-tran[s]late-'. Neu Tier 1 muon AC-08
+  do dung y dinh cua no thi mau can neo bien, vi du '\bslat[e]-' hoac 'bg-slat[e]-'. Day la
+  mot y kien ve DUNG CU DO, khong phai mot yeu cau doi contract.
+- LIM-D: '0 d' (voi chu d co gach ngang) la chuoi con cua moi so tien tan cung bang 0 roi den
+  don vi, vi du '30.000 d'. Mau neo bien nhu '`"0 d' hoac '^0 d' se tach duoc hai truong hop.
+  Ngoai ra ca hai dong khop deu nam trong BINH LUAN; neu Tier 1 muon AC nay do DOM thi phep do
+  phai boc comment truoc, dung nhu tep hang rao moi cua RQ-12 dang lam voi CSS.
+- LIM-E: moi con so o day do tren TRANG THAI CUOI cua worktree, sau ca hai sua ghi o STEP-08
+  muc F. Script dem nam ngoai repo tai C:\Users\Admin\AppData\Local\Temp\glx\ui01-step09-count.ps1
+  (dot-source roi goi Report va Lines), nen no khong them mot path untracked nao vao pham vi
+  round. Tep script thuan ASCII: moi mau co dau duoc dung bang [char]<ma>.
+- LIM-F: pham vi TAT tinh 12 tep evidence, la so tep co mat luc chay. Tep step10 chua ton tai
+  luc ay. STEP-10 do lai pham vi staged mot luot, va no khong ap dat lai bay phep dem nay.
+
+###########################################################################
+###  ROUND 2 (spec v1.1) — do lai AC-07, AC-08, AC-09 (+ AC-02, AC-03,   ###
+###  AC-05, AC-18) tren TAP TEP MA ROUND 2 SUA HOAC THEM.                ###
+###  Phan tren day la round 1 va KHONG bi sua mot chu. Ngay: 2026-09-06  ###
+###########################################################################
+
+=== R2-0. PHUONG PHAP, va vi sao con so cua round 2 khac con so cua round 1 ===
+Round 1 do tren tap tep cua round 1 (11 tep ma + 12 tep evidence) va bao ba con so KHONG DAT
+theo mat chu, ca ba do nguyen nhan co san o baseline. Round 2 do tren TAP TEP CUA ROUND 2,
+la nam tep:
+  1. src/shared/ui/internal-contrast.static.test.ts        (sua: dung assertion ASM-01)
+  2. docs/.../evidence/step11-asm01.txt                    (them)
+  3. docs/.../evidence/step08-lane-typecheck-lint.txt      (sua: them muc ROUND 2)
+  4. docs/.../evidence/step09-counts.txt                   (sua: chinh muc nay)
+  5. docs/.../HANDOFF.md                                   (sua: them muc round 2)
+Round 2 KHONG cham app/globals.css, KHONG cham app/(portal)/page.tsx, KHONG cham mot
+component nao. Vi the ba nguyen nhan co san ma round 1 phai khai bao (chuoi '-tran[s]late-'
+trong class dich chuyen, hai dong BINH LUAN cua page.tsx) khong nam trong tap do cua round 2,
+va ba con so ay ve 0 mot cach tu nhien chu khong vi ai che mat chung.
+
+AC-07 duoc do dung phuong phap DELTA: HIEU giua so dong khop cua worktree va so dong khop cua
+`git show b68d25b:<path>`. Tep khong ton tai o baseline thi baseline = 0. Mau xay bang phep
+noi chuoi: `[^]http` + `s?` + `://`.
+
+Script dem: C:\Users\Admin\AppData\Local\Temp\glx\r2-counts.mjs — NGOAI repo, nen no khong
+them mot path untracked nao vao pham vi round. Ba tinh chat cua script, ke thua LIM-A round 1:
+  - moi mau bi cam duoc xay bang phep noi chuoi hoac String.fromCharCode, khong viet mat chu;
+  - moi nhan in ra deu qua mask() chen mot cap ngoac vuong VAO GIUA (LUAT 2b), khong che duoi;
+  - stderr cua `git show` bi bo (stdio ignore), vi tep khong co o baseline lam git in `fatal:`
+    va mot dong `fatal:` lot vao output se lam ban chinh phep dem.
+
+=== R2-A. LAN CHAY THU NHAT (02:14, truoc khi viet xong evidence) ===
+--- CMD
+$ node C:/Users/Admin/AppData/Local/Temp/glx/r2-counts.mjs
+exit code: 0
+--- OUT (toan van)
+=== [AC-07] URL host ngoai — HIEU worktree tru baseline b68d25b (dem DONG khop mau)
+mau: [^]http + s? + :// ; tep khong co o baseline thi baseline = 0
+  src/shared/ui/internal-contrast.static.test.ts | worktree=0 | baseline=0 | hieu=0
+  docs/tasks/hrp-v5-ui-01-new-ui-home-integration/evidence/step11-asm01.txt | worktree=0 | baseline=0 | hieu=0
+  docs/tasks/hrp-v5-ui-01-new-ui-home-integration/evidence/step08-lane-typecheck-lint.txt | worktree=0 | baseline=0 | hieu=0
+  docs/tasks/hrp-v5-ui-01-new-ui-home-integration/evidence/step09-counts.txt | worktree=0 | baseline=0 | hieu=0
+  docs/tasks/hrp-v5-ui-01-new-ui-home-integration/HANDOFF.md | worktree=0 | baseline=0 | hieu=0
+  TONG_HIEU=0
+
+=== [AC-08] bay ho mau tho tren tap tep round 2 (dem SO LAN khop, kieu grep -roE)
+  mau [^a-zA-Z]green-[0-9] | so lan = 0
+  mau [^a-zA-Z]blue-[0-9] | so lan = 0
+  mau [^a-zA-Z]slate-[0-9] | so lan = 0
+  mau [^a-zA-Z]gray-[0-9] | so lan = 0
+  mau [^a-zA-Z]zinc-[0-9] | so lan = 0
+  mau [^a-zA-Z]amber-[0-9] | so lan = 0
+  mau [^a-zA-Z]yellow-[0-9] | so lan = 0
+  TONG=0
+
+=== [AC-02] bay ten class ho-chu-theo-bac (RQ-02) tren tap tep round 2 (dem DONG)
+  f[o]nt-headline-xl | so dong = 0
+  f[o]nt-headline-lg | so dong = 0
+  f[o]nt-headline-md | so dong = 0
+  f[o]nt-body-lg | so dong = 0
+  f[o]nt-body-md | so dong = 0
+  f[o]nt-label-md | so dong = 0
+  f[o]nt-label-sm | so dong = 0
+  TONG=0
+
+=== [AC-03] hai class khong co token (DEC-04) tren tap tep round 2 (dem DONG)
+  t[e]xt-on-background | so dong = 0
+  b[g]-surface-warm | so dong = 0
+  TONG=0
+
+=== [AC-09] chuoi luong canonical va hai chuoi cam
+  canonical tren app/(portal)/page.tsx | so dong = 3 (nguong: >= 1)
+  chuoi cam 1 T[h]oả thuận | worktree=0 | baseline=0 | hieu=0
+  chuoi cam 2 0[ ]đ | worktree=0 | baseline=0 | hieu=0
+
+=== [AC-05] ba phep dem toan tep tren app/globals.css (bat bien sau khi hoan nguyen probe)
+  prefers-color-scheme = 0 (nguong 0)
+  .dark = 0 (nguong 0)
+  prefers-reduced-motion = 1 (nguong dung 1)
+  so dong khai bao --text- = 7 (nguong 7 dong vat ly, 14 khoa)
+
+=== [AC-18] so it( cua tep hang rao noi bo: baseline vs worktree
+  baseline b68d25b | so it( = 21
+  worktree        | so it( = 21
+  so khoa --text- ma test ghim = 14 (7 bac DEC-13 x 2)
+
+=== R2-B. HAI LOI CUA CHINH SCRIPT, bat duoc truoc khi con so nao duoc dan ===
+Ghi lai vi mot con so 0 co the la 0 THAT hoac la 0 DO DUNG CU HONG, va hai truong hop ay
+trong nhu nhau tren giay.
+
+  BUG-1 — mau chuoi cam 1 xay sai mot ma diem: dung 0x1ea5 nen ra 'Thoả thuấn' thay vi
+    'T[h]oả thuận' (0x1ead, dan theo LUAT 2b). Con so in ra van la 0, nhung la 0 cua mot
+    chuoi KHONG AI viet.
+    Phat hien bang cach doc lai chuoi da giai ma va so voi DEC cua contract. Da sua.
+  BUG-2 — mask() ban dau chen ngoac o CUOI, nen `mask('0 d')` in ra chuoi con nguyen ven roi
+    moi den ngoac: dong nhan ay TU chua chuoi bi cam, va tep evidence nay se tu lam do AC-09
+    cua chinh no. Do dung LUAT 2b cua round 1. Da sua thanh chen VAO GIUA: hai nhan bay gio
+    in la `T[h]oả thuận` va `0[ ]đ`, khong mot khop nao con lai.
+  Ca hai ban tho truoc khi sua khong duoc giu, vi chung la ban tho cua mot DUNG CU HONG chu
+  khong phai cua mot phep do; ban duoc dan o R2-A la lan chay sau khi sua.
+
+=== R2-C. HAI CON SO KHONG PHAI 0, va ca hai dung nhu vay ===
+  canonical 'Lương thương lượng' tren app/(portal)/page.tsx = 3 dong (nguong >= 1).
+    Round 2 khong sua page.tsx: `git status --porcelain` cho `M ` (chi cot INDEX, cot worktree
+    la khoang trang) tuc worktree == index == ban giao round 1, khong mot byte moi. Con so 3
+    nay la ban giao round 1 con nguyen, khong phai thanh tich round 2. Dan lai vi AC-09 doi
+    mot phep do, khong doi mot loi hua.
+  prefers-reduced-motion = 1 (nguong DUNG 1) tren app/globals.css, va so dong khai bao
+    --text- = 7. Ca hai la bat bien cua round 1 va duoc do LAI o round 2 chi de chung minh
+    hai probe DO cua STEP-11 khong de lai byte nao trong globals.css. Bang chung manh hon la
+    hash: 07369966cd2be669beba8d8f5032226cc34b5c5c, khop dau tay truoc probe (step11 muc E).
+
+=== R2-D. BANG KET LUAN ===
+AC     doi                                      do duoc tren tap tep round 2   ket cuc
+AC-02  bay phep dem = 0                         7 x 0                          DAT
+AC-03  hai phep dem = 0                         0 va 0                         DAT
+AC-05  0 / 0 / dung 1                           0 / 0 / 1                      DAT
+AC-07  tong HIEU = 0                            TONG_HIEU=0 (5/5 tep hieu 0)   DAT
+AC-08  bay phep dem = 0                         7 x 0                          DAT
+AC-09  canonical >= 1, hai chuoi cam khong tang 3, va hieu 0, va hieu 0         DAT
+AC-18  so it( khong doi                         21 = 21                        DAT
+Bay AC DAT. Ba con so "khong dat theo mat chu" cua round 1 khong tai xuat hien, va ly do la
+pham vi: chung nam o tep ma round 2 khong cham, khong phai o mot phep che moi.
+
+=== R2-E. GIOI HAN ===
+- LIM-18: bay phep dem nay do tren TAP TEP CUA ROUND 2. Chung KHONG bai bo va KHONG thay the
+  ba con so round 1 bao KHONG DAT (AC-07 host = 1/2, AC-08 slat[e]- = 1, AC-09 chuoi cam = 2).
+  Quyen phan xu ba con so ay van thuoc Tier 1 (RISK-05 cua round 1), va round 2 khong tu xu.
+- LIM-19: pham vi do gom nam tep. Neu Tier 1 hoac Tier 3 tinh them mot tep khac vao "tap tep
+  round 2 sua hoac them" thi phep dem phai chay lai voi tep ay trong danh sach. Lan chay
+  CUOI CUNG o muc R2-F duoi day tinh CA step10-scope-gates.txt, vi muc round 2 cua step10
+  duoc viet sau lan chay R2-A.
+- LIM-20: phep dem AC-18 o day dem CHUOI CON theo mau `(^|[^a-zA-Z0-9_$.])it\s*\(`, khong
+  phai dem test bang runner. Hai cach phai khop nhau moi dang tin, va o day chung khop: cau
+  truc cho 21/21, runner cung cho 21 (step11-asm01.txt muc F va muc H). Bay "dem chuoi con
+  khac dem token" da tung tra 22 cho chinh tep nay khi mau khong neo bien.
+
+===========================================================================
+R2-F. LAN DEM CUOI CUNG — SAU KHI MOI TEP EVIDENCE CUA ROUND 2 DA GHI
+===========================================================================
+Vi sao co muc nay: LIM-19. Lan chay R2-A dem tren NAM tep, nhung muc ROUND 2 cua
+step10-scope-gates.txt ra doi SAU do, va ca muc R2-B..R2-E cua chinh tep nay cung vay.
+Mot phep dem tu soi vao tep chua no thi phai chay LAI sau khi tep da ghi xong, neu khong
+con so duoc dan la con so cua mot ban van da chet.
+
+$ node C:/Users/Admin/AppData/Local/Temp/glx/r2-counts-final.mjs
+exit code: 0
+(khac r2-counts.mjs o DUNG mot dong: them step10-scope-gates.txt vao danh sach, tuc SAU tep)
+
+=== [AC-07] URL host ngoai — HIEU worktree tru baseline b68d25b (dem DONG khop mau)
+mau: [^]http + s? + :// ; tep khong co o baseline thi baseline = 0
+  src/shared/ui/internal-contrast.static.test.ts | worktree=0 | baseline=0 | hieu=0
+  docs/tasks/hrp-v5-ui-01-new-ui-home-integration/evidence/step11-asm01.txt | worktree=0 | baseline=0 | hieu=0
+  docs/tasks/hrp-v5-ui-01-new-ui-home-integration/evidence/step08-lane-typecheck-lint.txt | worktree=0 | baseline=0 | hieu=0
+  docs/tasks/hrp-v5-ui-01-new-ui-home-integration/evidence/step09-counts.txt | worktree=0 | baseline=0 | hieu=0
+  docs/tasks/hrp-v5-ui-01-new-ui-home-integration/evidence/step10-scope-gates.txt | worktree=0 | baseline=0 | hieu=0
+  docs/tasks/hrp-v5-ui-01-new-ui-home-integration/HANDOFF.md | worktree=0 | baseline=0 | hieu=0
+  TONG_HIEU=0
+
+=== [AC-08] bay ho mau tho tren tap tep round 2 (dem SO LAN khop, kieu grep -roE)
+  mau [^a-zA-Z]green-[0-9] | so lan = 0
+  mau [^a-zA-Z]blue-[0-9] | so lan = 0
+  mau [^a-zA-Z]slate-[0-9] | so lan = 0
+  mau [^a-zA-Z]gray-[0-9] | so lan = 0
+  mau [^a-zA-Z]zinc-[0-9] | so lan = 0
+  mau [^a-zA-Z]amber-[0-9] | so lan = 0
+  mau [^a-zA-Z]yellow-[0-9] | so lan = 0
+  TONG=0
+
+=== [AC-02] bay ten class ho-chu-theo-bac (RQ-02) tren tap tep round 2 (dem DONG)
+  f[o]nt-headline-xl | so dong = 0
+  f[o]nt-headline-lg | so dong = 0
+  f[o]nt-headline-md | so dong = 0
+  f[o]nt-body-lg | so dong = 0
+  f[o]nt-body-md | so dong = 0
+  f[o]nt-label-md | so dong = 0
+  f[o]nt-label-sm | so dong = 0
+  TONG=0
+
+=== [AC-03] hai class khong co token (DEC-04) tren tap tep round 2 (dem DONG)
+  t[e]xt-on-background | so dong = 0
+  b[g]-surface-warm | so dong = 0
+  TONG=0
+
+=== [AC-09] chuoi luong canonical va hai chuoi cam
+  canonical tren app/(portal)/page.tsx | so dong = 3 (nguong: >= 1)
+  chuoi cam 1 T[h]oả thuận | worktree=0 | baseline=0 | hieu=0
+  chuoi cam 2 0[ ]đ | worktree=0 | baseline=0 | hieu=0
+
+=== [AC-05] ba phep dem toan tep tren app/globals.css (bat bien sau khi hoan nguyen probe)
+  prefers-color-scheme = 0 (nguong 0)
+  .dark = 0 (nguong 0)
+  prefers-reduced-motion = 1 (nguong dung 1)
+  so dong khai bao --text- = 7 (nguong 7 dong vat ly, 14 khoa)
+
+=== [AC-18] so it( cua tep hang rao noi bo: baseline vs worktree
+  baseline b68d25b | so it( = 21
+  worktree        | so it( = 21
+  so khoa --text- ma test ghim = 14 (7 bac DEC-13 x 2)
+
+---------------------------------------------------------------------------
+R2-F1. MOT VET DO THAT MA LAN DEM NAY BAT DUOC, VA CACH SUA
+---------------------------------------------------------------------------
+Lan chay dau cua muc nay KHONG ra toan 0. Nguyen van dong do:
+
+  chuoi cam 1 T[h]oả thuận | worktree=1 | baseline=0 | hieu=1
+
+Truy ra: dong 366 cua CHINH tep nay, trong muc R2-B, ke lai BUG-1 va khi ke thi viet
+nguyen mat chu chuoi dang bi cam. Tuc muc ke ve mot cai bay da roi vao dung cai bay ay.
+Sua bang LUAT 2b: chen cap ngoac VAO GIUA, thanh `T[h]oả thuận`, giong dung cach ma
+dong 371 ben canh da lam. Chay lai: hieu=0.
+
+Day la lan thu HAI trong round 2 va lan thu BA tinh ca round 1 ma lop bay nay lo ra. Vi
+the con so dan o R2-A KHONG duoc dung lam ket luan cho AC-07, AC-02, AC-03, AC-09 nua;
+ket luan lay o CHINH muc R2-F nay, vi day la lan chay tren ban van CUOI CUNG cua sau tep.
+
+Ba tep evidence duoc ghi SAU lan chay nay: KHONG co. Muc ROUND 2 cua step10 chi con
+DUNG mot khoi se them sau day — ket qua hai cong — va no la output cua hai script
+PowerShell in chu ASCII, khong mot mau nao trong bay mau tren xuat hien trong do; phep
+kiem ay ghi o LIM-21.

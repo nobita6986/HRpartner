@@ -1,0 +1,78 @@
+
+=== AC-04 frozen-slice hangar
+=== CMD: npm run test:unit -- src/domains/job-board/public-ui-premium.static.test.ts
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts src/domains/job-board/public-ui-premium.static.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [32m✓[39m src/domains/job-board/public-ui-premium.static.test.ts [2m([22m[2m63 tests[22m[2m)[22m[90m 45[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m63 passed[39m[22m[90m (63)[39m
+[2m   Start at [22m 03:28:40
+[2m   Duration [22m 630ms[2m (transform 88ms, setup 0ms, collect 98ms, tests 45ms, environment 0ms, prepare 108ms)[22m
+
+EXIT=0
+
+=== AC-06 three home-page hangars
+=== CMD: npm run test:unit -- src/domains/job-board/public-ui-premium.static.test.ts src/domains/job-board/public-detail.static.test.ts src/domains/applications/marketplace-inventory.static.test.ts
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts src/domains/job-board/public-ui-premium.static.test.ts src/domains/job-board/public-detail.static.test.ts src/domains/applications/marketplace-inventory.static.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [32m✓[39m src/domains/job-board/public-ui-premium.static.test.ts [2m([22m[2m63 tests[22m[2m)[22m[90m 36[2mms[22m[39m
+ [32m✓[39m src/domains/applications/marketplace-inventory.static.test.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 82[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-detail.static.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[32m111 passed[39m[22m[90m (111)[39m
+[2m   Start at [22m 03:28:42
+[2m   Duration [22m 1.39s[2m (transform 142ms, setup 0ms, collect 208ms, tests 135ms, environment 1ms, prepare 330ms)[22m
+
+EXIT=0
+
+=== AC-11 inventory hangar
+=== CMD: npm run test:unit -- src/domains/applications/marketplace-inventory.static.test.ts
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts src/domains/applications/marketplace-inventory.static.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [32m✓[39m src/domains/applications/marketplace-inventory.static.test.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 87[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m25 passed[39m[22m[90m (25)[39m
+[2m   Start at [22m 03:28:45
+[2m   Duration [22m 601ms[2m (transform 79ms, setup 0ms, collect 92ms, tests 87ms, environment 0ms, prepare 142ms)[22m
+
+EXIT=0
+
+=== AC-12 token-parity hangar (green half)
+=== CMD: npm run test:unit -- src/domains/job-board/public-ui-token-parity.static.test.ts
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts src/domains/job-board/public-ui-token-parity.static.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [32m✓[39m src/domains/job-board/public-ui-token-parity.static.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m14 passed[39m[22m[90m (14)[39m
+[2m   Start at [22m 03:28:48
+[2m   Duration [22m 441ms[2m (transform 71ms, setup 0ms, collect 71ms, tests 6ms, environment 0ms, prepare 112ms)[22m
+
+EXIT=0

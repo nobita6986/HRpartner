@@ -1,0 +1,24 @@
+﻿
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts src/domains/job-board/public-ui-premium.static.test.ts src/domains/job-board/marketplace-inventory.static.test.ts src/domains/job-board/public-detail.static.test.ts
+
+node.exe : [33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ ✓ src/domains/job-board/public-ui-premium.static.test.ts (63 tests) 20ms
+ ✓ src/domains/job-board/public-detail.static.test.ts (23 tests) 8ms
+
+ Test Files  2 passed (2)
+      Tests  86 passed (86)
+   Start at  21:34:38
+   Duration  550ms (transform 59ms, setup 0ms, collect 80ms, tests 28ms, environment 0ms, prepare 124ms)
+
+EXIT=0

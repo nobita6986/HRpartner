@@ -1,0 +1,82 @@
+﻿STEP-07 - Hang rao XANH sau khi va (RQ-06 / RQ-12 / RQ-04 / AC-04 / AC-06 / AC-12)
+Task: hrp-v5-ui-01-new-ui-home-integration, spec v1.0, execution round 1
+
+Ba lan chay duoi day deu qua lane canonical `npm run test:unit -- <path>` (R-06). Moi lan duoc
+bat toan van bang `cmd /c "<lenh> > <tep> 2>&1"` roi doc lai, vi PowerShell 5.1 boc stderr cua
+tien trinh con thanh NativeCommandError va lam mat ma thoat that. Ma thoat doc tu $LASTEXITCODE
+ngay sau lenh cmd, ghi o dong EXIT= duoi moi khoi.
+
+HAI phep bien doi da ap len output dan lai o day, ca hai deu khai o muc E:
+  (1) day escape mau ANSI bi go, vi no la byte dieu khien terminal chu khong phai noi dung.
+  (2) dau // trong URL canh bao cua Vite bi chen mot cap ngoac vuong: https:/[/]vite.dev/...
+      Ly do o LIM-B. Lenh in ngay tren moi khoi la lenh THO, chay lai ra ban khong che.
+
+=== A. AC-12 nua thu hai - hang rao token/class MOI phai XANH ===
+--- CMD: npm run test:unit -- src/domains/job-board/public-ui-token-parity.static.test.ts
+  > hrp@0.1.0 test:unit
+  > vitest run --config vitest.unit.config.ts src/domains/job-board/public-ui-token-parity.static.test.ts
+  The CJS build of Vite's Node API is deprecated. See https:/[/]vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+   RUN  v2.1.9 C:/CodeApp/HrP
+   ✓ src/domains/job-board/public-ui-token-parity.static.test.ts (14 tests) 10ms
+   Test Files  1 passed (1)
+        Tests  14 passed (14)
+     Start at  23:16:52
+     Duration  630ms (transform 82ms, setup 0ms, collect 88ms, tests 10ms, environment 0ms, prepare 166ms)
+  EXIT=0
+
+=== B. AC-04 nua thu nhat - hang rao lat dong bang phai PASS 63 test ===
+--- CMD: npm run test:unit -- src/domains/job-board/public-ui-premium.static.test.ts
+  > hrp@0.1.0 test:unit
+  > vitest run --config vitest.unit.config.ts src/domains/job-board/public-ui-premium.static.test.ts
+  The CJS build of Vite's Node API is deprecated. See https:/[/]vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+   RUN  v2.1.9 C:/CodeApp/HrP
+   ✓ src/domains/job-board/public-ui-premium.static.test.ts (63 tests) 48ms
+   Test Files  1 passed (1)
+        Tests  63 passed (63)
+     Start at  23:17:09
+     Duration  688ms (transform 98ms, setup 0ms, collect 106ms, tests 48ms, environment 0ms, prepare 136ms)
+  EXIT=0
+
+=== C. AC-06 - ba tep hang rao canh trang chu phai ra 111 test ===
+--- CMD: npm run test:unit -- src/domains/job-board/public-ui-premium.static.test.ts src/domains/job-board/public-detail.static.test.ts src/domains/applications/marketplace-inventory.static.test.ts
+  > hrp@0.1.0 test:unit
+  > vitest run --config vitest.unit.config.ts src/domains/job-board/public-ui-premium.static.test.ts src/domains/job-board/public-detail.static.test.ts src/domains/applications/marketplace-inventory.static.test.ts
+  The CJS build of Vite's Node API is deprecated. See https:/[/]vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+   RUN  v2.1.9 C:/CodeApp/HrP
+   ✓ src/domains/job-board/public-ui-premium.static.test.ts (63 tests) 65ms
+   ✓ src/domains/applications/marketplace-inventory.static.test.ts (25 tests) 94ms
+   ✓ src/domains/job-board/public-detail.static.test.ts (23 tests) 24ms
+   Test Files  3 passed (3)
+        Tests  111 passed (111)
+     Start at  23:17:29
+     Duration  1.69s (transform 144ms, setup 0ms, collect 202ms, tests 182ms, environment 1ms, prepare 373ms)
+  EXIT=0
+
+=== D. AC-04 nua thu hai - MOI hunk cua globals.css co dong dich nho hon 462 ===
+--- CMD: git add -- app/globals.css
+  EXIT=0
+--- CMD: git status --porcelain -- app/globals.css
+  M  app/globals.css
+--- CMD: git diff --cached -U0 -- app/globals.css | Select-String -Pattern ('^' + '@@')
+  @@ -105,0 +106,14 @@
+--- CMD: git diff --cached --numstat -- app/globals.css
+  14	0	app/globals.css
+
+So hunk = 1. Dong dich cua hunk duy nhat la 106, va 106 < 462, nen lat tu dong 462 toi het
+tep khong bi cham mot byte. Muc B o tren la phep do doc lap cho cung menh de: hang rao lat dong
+bang so sanh sha256 cua chinh lat ay va no PASS 63 test. Hai phep do doc lap cung ket luan.
+
+=== E. GIOI HAN ===
+- LIM-A: hai phep bien doi output (go ANSI, che dau // cua URL canh bao) khai o dau tep. Ban tho
+  cua ca ba lan chay con nam ngoai repo tai C:\Users\Admin\AppData\Local\Temp\glx\ui01-step07-*.txt
+  va khong duoc stage.
+- LIM-B: vi sao phai che URL canh bao: AC-07 dem mau URL tren "tap tep ma round nay sua hoac them",
+  va round nay them chinh tep evidence nay. Canh bao CJS cua Vite in mot URL vite.dev trong MOI lan
+  chay npm, tuc moi tep evidence bat toan van output se tu lam do AC-07 neu khong che. Day khong
+  phai mot URL cua ma nguon, no la mot dong canh bao cua chuoi cong cu.
+- LIM-C: muc D do tren ban DA staged cua rieng app/globals.css. Ba tep con lai cua round duoc stage
+  o STEP-10, va STEP-10 do lai toan bo pham vi staged mot luot.
+- LIM-D: AC-12 doi HAI lan chay nguoc ket cuc. Lan DO nam o evidence/step03-hangar-red.txt (chay
+  truoc khi them token: dong 29 cua tep ay ghi "Tests  4 failed | 10 passed (14)", dong 33 ghi
+  EXIT=1). Muc A la lan XANH: 14 passed, EXIT=0. Hai lan cung mot duong lenh, chi khac o cho @theme
+  da co bay token hay chua.

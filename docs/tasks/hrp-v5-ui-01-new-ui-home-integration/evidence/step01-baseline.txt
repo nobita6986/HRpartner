@@ -1,0 +1,37 @@
+STEP-01 - Doc lai TASK.md, chot dau tay hai tep se sua, chot trang thai new-ui
+Task: hrp-v5-ui-01-new-ui-home-integration, spec v1.0, execution round 1
+
+=== A. BASELINE HEAD ===
+--- CMD: git rev-parse HEAD
+b68d25b051d45cbe2497a7cf45c8b0deabb60ba2
+Khop dung truong Baseline cua TASK.md: HEAD b68d25b (bump tu 31625c4).
+
+=== B. DAU TAY HAI TEP SE SUA (truoc round) ===
+--- CMD: git hash-object app/globals.css
+7857401624944e0bc801f69843ce45778c6f50b7
+--- CMD: git hash-object "app/(portal)/page.tsx"
+614f7d53f71fe3ed5d926b73476920e2b4dd7ae9
+Hai gia tri nay la moc de STEP-10 doi chieu: sau round chung PHAI doi (vi da sua),
+va moi thay doi phai nam trong pham vi Modules.
+
+=== C. TRANG THAI new-ui (moc cua RQ-15 / AC-15) ===
+--- CMD: git status --porcelain -- new-ui
+?? new-ui/
+So dong = 1, bat dau bang hai dau hoi = untracked. Day la moc: cuoi round phai van la
+dung mot dong "?? new-ui/", va git diff --cached --name-only -- new-ui phai tra 0 dong.
+--- CMD: wc -l new-ui/components/*.tsx
+11 tep .tsx, tong 478 dong (khop EV-12). Thu muc cua luong khac: doc va sao noi dung
+duoc, KHONG stage, KHONG sua, KHONG xoa (R-05).
+
+=== D. LANE TEST CANONICAL (R-06) ===
+--- CMD: grep test:unit package.json (chi doc, khong sua)
+test:unit = vitest run --config vitest.unit.config.ts
+typecheck = tsc --noEmit
+lint      = eslint .
+Lane canonical la vitest voi --config vitest.unit.config.ts, KHONG phai lane tran
+(lane tran doc DATABASE_URL tu .env = production). Khong dung lane tran de lay so ban giao.
+
+=== E. GIOI HAN ===
+- Day la anh chup dau round. Cay lam viec dang co nhieu path staged/untracked cua luong khac
+  (rf-05, test-01, ...): AC-16 ghi ro "Path cua Tier 1 va cua luong khac khong tinh vao AC nay",
+  nen scope cua round nay chi tinh tren dau tay hai tep tren cong tep MOI toi tao.

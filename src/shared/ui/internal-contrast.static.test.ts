@@ -571,8 +571,22 @@ describe('go-live-16 / RQ-09 — tập nền đọc từ @theme, không ghim tro
     expect(Math.min(floorAcrossSurfaces(ring as string), ratioHex(ring as string, tint as string))).toBeCloseTo(1, 3);
   });
 
-  it('ASM-01 — @theme không khai báo khóa --text-* nào, nên cỡ chữ Tailwind mặc định còn đúng', () => {
-    expect([...THEME.keys()].filter((k) => k.startsWith('--text-'))).toEqual([]);
+  it('ASM-01 — @theme khai báo ĐÚNG 14 khóa --text-* của DEC-13, không dư không thiếu', () => {
+    // ui-01 / DEC-14: go-live-16 chốt tập này ở RỖNG vì lúc đó repo chưa có thang
+    // chữ nào. ui-01 mang bảy bậc DEC-13 vào `@theme`, và cú pháp cỡ-chữ-kèm-
+    // line-height của Tailwind v4 sinh mỗi bậc thành HAI custom property, nên
+    // bảy bậc là mười bốn khóa. Tripwire đổi từ "cấm mọi cỡ chữ" sang "ghim đúng
+    // bộ đã duyệt": một khóa lạ lọt vào, hoặc một khóa DEC-13 mất đi, đều ĐỎ.
+    // Hậu tố dựng riêng nên không tệp nào phải viết sẵn mười bốn tên.
+    const SCALE = [
+      'headline-xl', 'headline-lg', 'headline-md',
+      'body-lg', 'body-md',
+      'label-md', 'label-sm',
+    ];
+    const expected = SCALE.flatMap((s) => [`--text-${s}`, `--text-${s}--line-height`]).sort();
+    const actual = [...THEME.keys()].filter((k) => k.startsWith('--text-')).sort();
+    expect(actual).toEqual(expected);
+    expect(actual).toHaveLength(14);
   });
 
   it('ba token thay thế của round này phân giải đúng giá trị EV-08', () => {
