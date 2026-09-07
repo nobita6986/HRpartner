@@ -82,3 +82,6 @@ tsconfig.tmp.json
 # Playwright browser lane (hrp-v5-test-01) — artifact sinh ra moi luot chay, khong commit
 test-results/
 playwright-report/
+
+# Cursor/Claude agent dev artifacts (skills + worktrees) — khong phai source code project
+.claude/
