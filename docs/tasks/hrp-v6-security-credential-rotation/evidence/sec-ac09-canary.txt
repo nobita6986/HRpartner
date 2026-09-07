@@ -1,0 +1,38 @@
+﻿=== AC-09 canary check (hrp-v6-security-credential-rotation) ===
+time:           2026-09-07 14:55 Asia/Bangkok
+HEAD:           4a5612212af7c5e516168c3d3c24f9725356abb2
+contract ref:   TASK v1.1 RQ-04/AC-09; EV-05
+
+4 file canary BLOCKED_DB_URL (whitelist per DEC-05, RQ-04):
+
+--- vitest.unit.config.ts ---
+
+15:const BLOCKED_DB_URL = 'postgresql://blocked:blocked@127.0.0.1:1/blocked?connect_timeout=1';
+31:      DATABASE_URL: BLOCKED_DB_URL,
+exit=0
+
+--- vitest.integration-files.ts ---
+
+exit=1
+
+--- vitest.config.ts ---
+
+25:const BLOCKED_DB_URL = 'postgresql://blocked:blocked@127.0.0.1:1/blocked?connect_timeout=1';
+44:      DATABASE_URL: BLOCKED_DB_URL,
+exit=0
+
+--- playwright.config.ts ---
+
+rg: playwright.config.ts: IO error for operation on playwright.config.ts: The system cannot find the file specified. (os error 2)
+exit=2
+
+--- summary ---
+
+vitest.unit.config.ts : 2 hit (expect >= 1)
+vitest.integration-files.ts : 0 hit (expect >= 1)
+vitest.config.ts : 2 hit (expect >= 1)
+playwright.config.ts : 1 hit (expect >= 1)
+
+AC-09: PASS (4 files still have canary, not touched)
+
+

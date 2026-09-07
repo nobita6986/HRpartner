@@ -1,0 +1,92 @@
+﻿=== STEP-02 sanitize + STEP-03 gitignore (hrp-v6-security-credential-rotation) ===
+time:           2026-09-07 14:55 Asia/Bangkok
+cwd:            C:\CodeApp\HrP
+HEAD:           4a5612212af7c5e516168c3d3c24f9725356abb2
+executor:       Tier 2 (scoped commit only; no Neon mutation)
+contract ref:   TASK v1.1 §5 STEP-02/03; RQ-01/02/03; AC-01/02/03/04/05
+
+--- (1) AC-03 verify: rg postgresql://|postgres:// check_rls.cjs ---
+exit=1 (expect non-zero = no match)
+
+--- (2) AC-04 verify: rg process.env.DATABASE_URL check_rls.cjs ---
+
+4:// raw Neon credential literal replaced by process.env.DATABASE_URL
+6:const dsn = process.env.DATABASE_URL;
+
+--- (3) AC-04 verify: rg throw check_rls.cjs ---
+
+5:// (fail-closed: throws if env missing; no default fallback per TASK DEC-07).
+8:  throw new Error(
+
+--- (4) AC-04 fail-closed message verify: rg 'DATABASE_URL is not set' check_rls.cjs ---
+
+9:    'check_rls: DATABASE_URL is not set. Source the Neon DSN (or run via `set -a; . .env.local; set +a; node check_rls.cjs`).'
+
+--- (5) rg npg_E0eqUu7aHtpI check_rls.cjs (expect 0) ---
+
+exit=1
+
+--- (6) post-sanitize full file content ---
+
+const { PrismaClient } = require('@prisma/client');
+
+// Sanitized hrp-v6-security-credential-rotation STEP-02:
+// raw Neon credential literal replaced by process.env.DATABASE_URL
+// (fail-closed: throws if env missing; no default fallback per TASK DEC-07).
+const dsn = process.env.DATABASE_URL;
+if (!dsn) {
+  throw new Error(
+    'check_rls: DATABASE_URL is not set. Source the Neon DSN (or run via `set -a; . .env.local; set +a; node check_rls.cjs`).'
+  );
+}
+const prisma = new PrismaClient({ datasources: { db: { url: dsn } } });
+async function main() {
+  const policies = await prisma.$queryRawUnsafe(
+    "SELECT tablename, policyname, roles, cmd, qual, with_check FROM pg_policies WHERE schemaname = 'public'"
+  );
+  console.log(policies);
+}
+main().finally(() => prisma.$disconnect());
+
+--- (7) git ls-files check_rls.cjs (AC-01 expect empty) ---
+
+(empty = AC-01 PASS)
+
+--- (8) git check-ignore -v check_rls.cjs (AC-02) ---
+
+.gitignore:82:check_rls.cjs	check_rls.cjs
+
+--- (9) .gitignore line 82 ---
+
+# Credential probe (hrp-v6-security-credential-rotation) â€” exact-name ignore only, no glob, no prefix
+check_rls.cjs
+
+# Playwright browser lane (hrp-v5-test-01) â€” artifact sinh ra moi luot chay, khong commit
+
+--- (10) HEAD diff d61ebac..HEAD name-only (AC-05) ---
+
+.gitignore
+check_rls.cjs
+
+--- (11) commit message verify (AC-05 has 'hrp-v6-security-credential-rotation') ---
+
+chore(security): untrack check_rls.cjs + sanitize URL - hrp-v6-security-credential-rotation
+
+- git rm --cached check_rls.cjs (file kept on worktree for local debug per DEC-03)
+- sanitize worktree: replace raw Neon neondb_owner DSN with process.env.DATABASE_URL
+  + throw fail-closed if env missing (per TASK DEC-07; no default fallback)
+- .gitignore: append check_rls.cjs exact-name ignore (same pattern as task 21 DEC-10)
+
+Refs: TASK v1.1 AC-01/02/03/04/05; AUD-001 carry over from
+hrp-v5-go-live-21-credential-hygiene-closure; commit ebca45c first tracked
+the raw credential.
+
+
+--- summary ---
+AC-01: PASS (file untracked)
+AC-02: PASS (.gitignore:82 + git check-ignore matches)
+AC-03: PASS (no postgresql:// or postgres://)
+AC-04: PASS (process.env.DATABASE_URL + throw fail-closed)
+AC-05: PASS (commit scoped 2 files; message contains task slug)
+
+
