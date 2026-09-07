@@ -1,0 +1,14 @@
+﻿TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v5-go-live-21-credential-hygiene-closure/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: ).
+  [WARN] A-04 status is '' - placeholder and dry-run checks are non-blocking.
+  [OK]   A-05 10 requirement(s) traceable to STEP and AC.
+  [OK]   T-02 1 file:line reference(s) resolve.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-05 all 11 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+  [OK]   T-07 control fields unchanged against HEAD.
+
+RESULT: DRAFT-VALID (1 warning(s)).

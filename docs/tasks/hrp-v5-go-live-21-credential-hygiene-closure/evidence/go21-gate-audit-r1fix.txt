@@ -1,0 +1,24 @@
+﻿AUDIT SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-go-live-21-credential-hygiene-closure\AUDIT.md (against docs/tasks/hrp-v5-go-live-21-credential-hygiene-closure/TASK.md)
+
+  [OK]   S-01 AUDIT.md size 14122 bytes.
+  [OK]   S-01 AUDIT.md is tracked by git (recoverable).
+  [OK]   A-01 all 8 required sections present.
+  [FAIL] A-02 spec version mismatch: TASK=v1.2 vs AUDIT=v1.1.
+  [OK]   A-03 11 AC all carry a result row.
+  [OK]   S-02 every measured AC row carries a command and a value.
+  [OK]   S-17 no measured value is reused across three or more AC.
+  [OK]   S-18 11 AC rows are pairwise distinct.
+  [OK]   A-05 verdict: FAIL
+  [OK]   S-07 section 5 is consistent with the AC table.
+  [OK]   S-08 no AC passed over a HANDOFF ENV_BLOCKED declaration.
+  [OK]   A-06 section 4 has 17 evidence rows.
+  [OK]   S-02 section 4 rows all carry command + result.
+  [OK]   S-10 16 measured values are new relative to TASK/HANDOFF.
+  [OK]   S-13 section 7 round numbering is within 1..1.
+  [OK]   S-14 no plaintext secret in AUDIT.md.
+  [OK]   S-15 24 referenced artifact path(s) exist.
+  [OK]   A-07 closing handoff line present.
+
+RESULT: FAIL (1 error(s), 0 warning(s)).
+Tier 1 MUST NOT resolve on this AUDIT.md - send it back to Tier 3.

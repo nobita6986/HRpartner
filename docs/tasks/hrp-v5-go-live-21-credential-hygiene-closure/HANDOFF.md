@@ -75,6 +75,15 @@
 | `AC-10` | Unit, typecheck, prod smoke | **PARTIAL** cho unit (5 PASS + 1740 vitest tests từ Tier 3); typecheck + prod smoke CHƯA ĐO | `evidence/go21-s02-test-green.txt`; Tier 3 evidence: build exit 0 | Typecheck + prod smoke cần OP execution |
 | `AC-11` | Tier 3 independent secret scan | **PARTIAL (r1-FIX)** — HEAD sau r1-FIX vẫn còn `check_rls.cjs:2` hit (1 raw Neon credential). AUD-001 ESCALATE_NEW_TASK. Ngoài phạm vi task 21 | Tier 3 evidence: `evidence/go21-s00-secret-scan.txt` | Cần task security riêng |
 
+**Gate results (r1-FIX):**
+
+| Gate | Exit | Result | Evidence |
+|---|---|---|---|
+| `verify-task.ps1` | 0 | `DRAFT-VALID (1 warning)` — warning A-04 do Planner bump TASK.md v1.2 có malformed status line (line 10 thiếu closing pipe `\|`); gate KHÔNG block, chỉ flag để Tier 1 review | `evidence/go21-gate-task-r1fix.txt` |
+| `verify-audit.ps1` | 2 | `FAIL (1 error)` — A-02 spec version mismatch: TASK=v1.2 vs AUDIT=v1.1 (AUDIT do Tier 3 viết với TASK v1.1; Planner bump TASK → v1.2 sau khi audit xong). Gate block | `evidence/go21-gate-audit-r1fix.txt` |
+
+**Tier 2 không thể tự fix hai gate issue trên** vì (a) malformed TASK.md là Planner-side edit, (b) AUDIT.md là Tier 3 deliverable. Đợi Tier 1 review.
+
 ## 4. Changed Deliverables (r1-FIX commit `41ab22b`)
 
 | Path | Trạng thái | Bytes thay đổi | Mục đích |
@@ -103,14 +112,17 @@
 | `DEV-21-04` | Seed `seed.mjs` literal được đổi sang `process.env.PORTAL_DEMO_PASSWORD` với SKIP+warn khi ENV thiếu. Test cũ đảm bảo không reset `passwordHash` cho user đã tồn tại. Không có fail-fast nếu ENV thiếu | DEC-12 doctrine |
 | `DEV-21-05` (r1-FIX) | `AUD-001` (`check_rls.cjs` raw credential) ESCALATE_NEW_TASK — KHÔNG xử lý ở task này | Planner Resolution v1.2 §9: task security riêng |
 | `DEV-21-06` (r1-FIX) | HANDOFF.md viết lại để thay thế round-1 "READY_FOR_AUDIT" status bằng r1-FIX status. Round-1 execution trace được GIỮ trong §2 với cột `Round 1`; chỉ thêm cột `r1-FIX` | TASK v1.2 yêu cầu r1-FIX không xóa lịch sử execution round trước |
+| `DEV-21-07` (r1-FIX) | `verify-task.ps1` exit 0 nhưng result `DRAFT-VALID` (1 warning A-04) do TASK.md v1.2 có status line malformed (thiếu trailing pipe). Tier 2 không sửa TASK.md (Planner-owned per CLAUDE.md) | Planner cần patch 1 char hoặc note trong §10 Revision Log |
+| `DEV-21-08` (r1-FIX) | `verify-audit.ps1` exit 2 với `FAIL (1 error)` do A-02 spec version mismatch (AUDIT v1.1 vs TASK v1.2). AUDIT.md là Tier 3 deliverable | Tier 3 sẽ re-audit round 2 với spec v1.2 và viết AUDIT.md mới |
 
 ## 6. Evidence Index
 
 | File | Purpose |
 |---|---|
-| `evidence/go21-gate-task.txt` | `verify-task.ps1 -TaskPath TASK.md`: `RESULT: PASS`, exit 0 |
-| `evidence/go21-gate-task-final.txt` | verify-task re-run sau khi TASK.md dirty (TASK v1.2) |
-| `evidence/go21-gate-handoff.txt` | `verify-audit.ps1` round 0 (expect AUDIT missing) |
+| `evidence/go21-gate-task.txt` | round 1: `verify-task.ps1` với TASK v1.1: `RESULT: PASS`, exit 0 |
+| `evidence/go21-gate-task-final.txt` | round 1: `verify-task.ps1` re-run sau khi TASK.md dirty |
+| `evidence/go21-gate-task-r1fix.txt` | **r1-FIX**: `verify-task.ps1` với TASK v1.2 — `RESULT: DRAFT-VALID (1 warning)` do malformed status line (Planner-side) |
+| `evidence/go21-gate-audit-r1fix.txt` | **r1-FIX**: `verify-audit.ps1` — `RESULT: FAIL` do spec version mismatch AUDIT v1.1 vs TASK v1.2 (Planner bump) |
 | `evidence/go21-s00-baseline.txt` | STEP-00 baseline + scratch/root enumeration |
 | `evidence/go21-s00-env-status.txt` | STEP-00 env file value status (key-only) |
 | `evidence/go21-s00-check-rls-status.txt` | Tier 3 audit AUD-001 evidence: `check_rls.cjs` tracked, line 2 raw credential |
@@ -173,12 +185,19 @@ Sau khi Owner trả lời 4 Q, chạy theo `docs/runbooks/credential-hygiene-cut
 
 ## 9. Next Step for Planner/Tier 3
 
-Tier 3 đã hoàn tất audit round 1 (FAIL). Sau r1-FIX commit `41ab22b`:
+**Status hiện tại của r1-FIX**: AUD-002 + AUD-003 đã closed bằng commit `41ab22b` + `c5a5fbd`. AUD-001 ESCALATE_NEW_TASK ngoài scope.
 
-1. Tier 3 chạy lại `git ls-files '.env*'` trên HEAD `41ab22b` → mong đợi chỉ `.env.example`
-2. Tier 3 reproduce `apply` fail-closed với exit 2 + DB gate FAIL → mong đợi khớp `evidence/go21-s05-apply-blocked.txt`
-3. Tier 3 audit `git diff 7dd576e..HEAD` chỉ thấy 4 path ngoài evidence (`prisma/seed.mjs`, `prisma/seed-portal-demo-password.static.test.ts`, `docs/runbooks/credential-hygiene-cutover.md`, `scripts/ops/demo-cleanup.mjs`) + 3 env untrack + `.gitignore`
+**Gate situation (Tier 2 không tự fix được):**
+
+1. `verify-task.ps1` exit 0 với `DRAFT-VALID (1 warning)` — A-04 warning do TASK.md v1.2 status line thiếu trailing `|`. Tier 2 không sửa TASK.md (Planner-owned). Cần Planner patch 1 char hoặc note vào `§10 Revision Log` để giải thích intentional.
+2. `verify-audit.ps1` exit 2 với `FAIL (1 error)` — A-02 spec version mismatch (AUDIT v1.1 vs TASK v1.2). AUDIT.md là Tier 3 deliverable. Tier 3 sẽ re-audit round 2 và viết AUDIT.md mới với spec v1.2.
+
+Tier 3 sau khi nhận r1-FIX commits sẽ:
+
+1. Chạy lại `git ls-files '.env*'` trên HEAD `c5a5fbd` → mong đợi chỉ `.env.example` (đã verify bằng `evidence/go21-s01-r1fix-post-commit.txt`)
+2. Reproduce `apply` fail-closed với exit 2 + DB gate FAIL → mong đợi khớp `evidence/go21-s05-apply-blocked.txt` (đã verify bằng Tier 3 evidence `go21-s05-apply-audit.txt`)
+3. Audit `git diff 7dd576e..HEAD` chỉ thấy 4 path ngoài evidence (`prisma/seed.mjs`, `prisma/seed-portal-demo-password.static.test.ts`, `docs/runbooks/credential-hygiene-cutover.md`, `scripts/ops/demo-cleanup.mjs`) + 3 env untrack + `.gitignore` + `HANDOFF.md` + AUDIT.md round 1
 4. AUD-001 vẫn OPEN — đợi task security riêng
 5. Sau khi audit round 2 PASS → AC-11 PASS với điều kiện không còn hit `check_rls.cjs` (xử lý ở task khác)
 
-Handoff status: READY_FOR_AUDIT (re-audit round 2; AUD-002 + AUD-003 closed by commit 41ab22b; AUD-001 ESCALATE_NEW_TASK); OP execution OWNER_BLOCKED until Q-01..Q-04 answered
+Handoff status: READY_FOR_AUDIT (re-audit round 2; AUD-002 + AUD-003 closed by commit 41ab22b; AUD-001 ESCALATE_NEW_TASK; 2 gate issue Planner-side cần review); OP execution OWNER_BLOCKED until Q-01..Q-04 answered
