@@ -7,39 +7,22 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-07 Asia/Bangkok — post-TEST-01 ACCEPTED, GO-LIVE-21 bumped v1.1 READY, dang o Phase 7
+updated_at: 2026-09-07 Asia/Bangkok — post-TEST-01 queue locked
 roadmap_source: docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/UNIFIED_PLAN_v5.md chi con la nguon cho V5/go-live debt
-PHASE_MAP: |
-  Phase 7: Post-Launch Debt (Hien tai)
-    -> GO-LIVE-21 Credential Hygiene (now)  <- Tier 2 prep STEP-00..06 bat dau duoc
-    -> GO-LIVE-07 Launch Proof (sau Owner ky GO_LIVE_APPROVED + AC-09/AC-14 bump)
-    -> GO-LIVE-19 PII DB mask (sau TEST DB + migration window)
-  Phase 8: V6 Admin Rebuild (block boi Phase 7)
-    -> V6-ADMIN-00 Foundation (role-guard WIP, schema prep)
-    -> V6 Phase 1A LaborProfile schema + job-posting split
-    -> V6 Phase 1B /viec-lam public listing
-    -> V6 Phase 1C new-ui hoan chinh
-    -> V6 Phase 2/3/4/5 Workbench + Placement + Marketplace
-  Phase 9: AFF Affiliate (sau V6 Phase 1 co data foundation)
-    -> AFF-00..04 + AFF-05A
-  Phase 10: Milestone M7, M8
-  Phase 11: M6 policy + AFF-05B..07
-  Phase 12: M6-04..07
-  Phase 13: PAY (cuoi cung)
-current_lane: Phase 7 — Credential Hygiene. Mot Tier 2 chay tuan tu; khong mo parallel stream.
-current_task: hrp-v5-go-live-21-credential-hygiene-closure
-task_path: docs/tasks/hrp-v5-go-live-21-credential-hygiene-closure/TASK.md
-spec_version: v1.1 (bumped 2026-09-07 10:56)
-task_status: READY_FOR_EXECUTION; execution round 1 MONG (Tier 2 prep STEP-00..06); OP execution (STEP-07..11) OWNER_BLOCKED
-current_gate: PLANNER_CONTRACT -> Tier 2 co the duoc giao ngay
-next_command: Tier 1 da bump spec v1.1; verify-task.ps1 PASS; co the giao /code hrp-v5-go-live-21-credential-hygiene-closure ngay; Tier 2 chay STEP-00..06; OP (STEP-07..11) van cho Owner tra loi Q-01..Q-04
-previous_closed: TEST-01 ACCEPTED spec_version v1.5 (audit round 2 PASS WITH WARNINGS, BLK-02/BLK-03/AUD-001 closed); RF-06 commit 8f3839d; RF-05 commit bb223dd; go-live-20 commit f9c7bca
-held_draft: go-live-19 PII mask con DRAFT (can TEST DB + migration window); go-live-07 Launch Proof da co spec v1.5 nhung AC-09/AC-14 can bump truoc khi mo execution round
-next: GO-LIVE-21 (now Tier 2 prep) -> GO-LIVE-07 (sau AC-09/AC-14 bump + Owner sign-off) -> GO-LIVE-19 (sau migration window) -> V6-ADMIN-00 -> V6 Phase 1A/1B/1C -> V6 Phase 2/3/4/5 -> AFF-00..04 + AFF-05A -> M7 -> M8 -> M6-01..03 policy -> AFF-05B..07 -> M6-04..07 -> PAY
+current_lane: TEST-01 Browser Lane closure. RF-06, RF-05 va go-live-20 da duoc commit scoped tren main; nested worktree gl20 da remove. Khong mo parallel Tier 2 stream.
+current_task: hrp-v5-test-01-browser-lane
+task_path: docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+spec_version: v1.5
+task_status: READY_FOR_EXECUTION; execution round 4 MONG; audit round hien tai 1
+current_gate: TIER_2_EXECUTION
+next_command: /code hrp-v5-test-01-browser-lane -- chi STEP-08, STEP-09, STEP-10, STEP-11; npm run test:browser; fixture-empty RED -> restore -> GREEN; do rieng HEAD/index/worktree hash cua tsconfig.json; khong config chan doan; khong commit/push/deploy
+previous_closed: RF-06 commit 8f3839d; RF-05 commit bb223dd; go-live-20 ACCEPTED va integrated commit f9c7bca; old hrp-portal-m11-affiliate-db-migration CANCELLED, khong duoc giao code
+held_draft: hrp-v5-go-live-19-tracking-pii-db-mask van DRAFT dung quyet dinh Owner; hrp-v5-go-live-21-credential-hygiene-closure DRAFT cho den khi TEST-01 ACCEPTED vi hai task cung cham .gitignore
+next_after_test01: GO-LIVE-21 Credential Hygiene -> GO-LIVE-07 final Launch Proof/Owner sign-off -> GO-LIVE-19 post-launch PII DB mask khi du gate -> V6-ADMIN-00 -> V6 Phase 1A/1B/1C -> V6 Phase 2/3/4/5 -> AFF-00..04 + AFF-05A -> M7 -> M8 -> M6-01..03 policy -> AFF-05B..07 -> M6-04..07; PAY de cuoi
 queue_authority: Chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md. Mot Tier 2 chay tuan tu; AFF-03 khong mo truoc LaborProfileHandlingAssignment; AFF-05B khong mo truoc M6 policy; khong co hai migration stream cung sua prisma/schema.prisma.
-blocking_owner: GO-LIVE-21 OP execution (STEP-07..11) can Owner tra loi Q-01..Q-04. GO-LIVE-07 can Owner ky GO_LIVE_APPROVED. GO-LIVE-19 can TEST DB + migration window.
+blocking_owner: GO-LIVE-21 can Owner xac nhan Vercel project, KEEP/DELETE cho ba file .env*.local, provider scope can rotate va maintenance window DEMO cleanup. GO-LIVE-07 can Owner ky GO_LIVE_APPROVED. GO-LIVE-19 can TEST DB + migration window. Cac diem nay khong chan TEST-01.
 product_override: /bcc retired; payroll/payslip de cuoi va thuoc app luong rieng; V6 tap trung Marketplace, Affiliate va Admin information architecture
-cursor_note: TEST-01 ACCEPTED da commit scoped. Vitest 1735/1735, typecheck exit 0, tsconfig.json on dinh 3 tang 53cc4848. GO-LIVE-21 bumped v1.1 READY_FOR_EXECUTION 07/09 10:56. Tier 2 prep STEP-00..06 bat dau duoc ngay khi /code duoc giao. OP STEP-07..11 cho Owner tra loi Q-01..Q-04. src/shared/ui/role-guard/role-guard-layout.tsx WIP chua commit = candidate V6-ADMIN-00. Khong in secret vao handover.
+cursor_note: Full default Vitest sau khi remove nested worktree dat 1683/1683; typecheck exit 0. Credential scan chi in key/path cho thay ba tracked env ngoai .env.example can untrack/rotate, con .env.test.local da vang. src/shared/ui/role-guard/role-guard-layout.tsx hien co WIP chua commit gom bon menu vao Dang phat trien; day la candidate cho V6-ADMIN-00, khong duoc goi DONE hay commit kem TEST-01 khi chua co contract/audit. Khong in secret vao handover.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
