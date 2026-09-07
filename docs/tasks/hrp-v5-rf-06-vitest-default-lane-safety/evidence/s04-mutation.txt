@@ -1,0 +1,62 @@
+# STEP-04 / AC-06 -- phep mutation THAT tren dia: DO -> hoan nguyen -> XANH, kem hash tung buoc
+# Ngay do: 2026-09-04 16:25:01 SEAST
+# Lenh chay hang rao (giong nhau ca ba luot, khong doi mot ky tu):
+#   npx vitest run --config vitest.unit.config.ts src/shared/toolchain/vitest-default-lane.static.test.ts
+# Hai mutation, moi cai mot hunk, thuc hien byte-level bang script fail-closed:
+#   A = xoa dong  esbuild: { jsx: 'automatic', jsxImportSource: 'react' },   (59 byte)
+#   B = xoa doan  , ...INTEGRATION_TEST_FILES                               (27 byte)
+# Ban sao truoc mutation nam ngoai repo, va moi lan hoan nguyen la copy tu ban sao ay.
+
+## Bang hash, do bang: git hash-object vitest.config.ts
+H_BEFORE      = d6ca408c5c6f89c15faf296ae2fd8a010d157caf
+H_MUT_A       = 1dbb74c9067897c3f9f6186239212cb101838dd7   (khac H_BEFORE => mutation THAT su cham dia)
+H_RESTORE_A   = d6ca408c5c6f89c15faf296ae2fd8a010d157caf   (== H_BEFORE)
+H_MUT_B       = 763fd5fcb9493fd625319ec124f2f1a62cd06005   (khac H_BEFORE)
+H_RESTORE_B   = d6ca408c5c6f89c15faf296ae2fd8a010d157caf   (== H_BEFORE)
+H_NOW         = d6ca408c5c6f89c15faf296ae2fd8a010d157caf   (do lai luc ghi tep nay)
+
+## Ma thoat
+GREEN_TRUOC_MUTATION = 0   (ghi o s03-guard-green.txt, 15 passed (15))
+RED_A_EXIT           = 1
+RED_B_EXIT           = 1
+GREEN_SAU_MUTATION   = 0
+
+## Mutation A lam DO nhung test nao (output nguyen van, da bo ma mau)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shared/toolchain/vitest-default-lane.static.test.ts > vitest.config.ts — default lane fail-closed (RF-06) > AC-01 / RQ-01: khai automatic JSX y het unit lane
+AssertionError: khong trich duoc esbuild.jsx cua default config: expected null not to be null
+ FAIL  src/shared/toolchain/vitest-default-lane.static.test.ts > rang cua hang rao — phep am tren config BIA (AC-06) > mo phong DUNG phep mutation cua STEP-04 tren ban sao trong bo nho
+AssertionError: phep xoa khong doi gi — regex mutation sai: expected '/**\n * vitest.config.ts — DEFAULT la…' not to be '/**\n * vitest.config.ts — DEFAULT la…' // Object.is equality
+ Test Files  1 failed (1)
+      Tests  2 failed | 13 passed (15)
+
+## Mutation B lam DO nhung test nao
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shared/toolchain/vitest-default-lane.static.test.ts > vitest.config.ts — exclusion va include (RF-06) > AC-04 / RQ-04: import va spread INTEGRATION_TEST_FILES, khong chep list
+AssertionError: exclude khong spread INTEGRATION_TEST_FILES: expected false to be true // Object.is equality
+ FAIL  src/shared/toolchain/vitest-default-lane.static.test.ts > rang cua hang rao — phep am tren config BIA (AC-06) > mo phong DUNG phep mutation cua STEP-04 tren ban sao trong bo nho
+AssertionError: expected '/**\n * vitest.config.ts — DEFAULT la…' not to be '/**\n * vitest.config.ts — DEFAULT la…' // Object.is equality
+ Test Files  1 failed (1)
+      Tests  2 failed | 13 passed (15)
+
+## Doc them ve hang rao thu HAI cung do o ca hai luot
+Hang 'mo phong DUNG phep mutation cua STEP-04' do o ca A va B, va do la HANH VI DUNG:
+no xoa dong esbuild (hoac spread) tren BAN SAO TRONG BO NHO roi doi ket qua phai KHAC ban goc.
+Khi dong ay da bi xoa tren dia thi phep xoa trong bo nho khong doi gi nua, nen assertion
+'phep xoa khong doi gi' do dung. No la mot phep tu-kiem cua chinh hang rao, khong phai mot
+assertion ve cau hinh, nen no khong lam nhoe ket luan: hang AC-01 (mutation A) va hang AC-04
+(mutation B) moi la hang do theo dung dieu bi pha.
+
+## Luot XANH cuoi cung, output nguyen van
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ ✓ src/shared/toolchain/vitest-default-lane.static.test.ts (15 tests) 7ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  16:25:00
+   Duration  294ms (transform 37ms, setup 0ms, collect 45ms, tests 7ms, environment 0ms, prepare 55ms)
+
+GREEN_EXIT=0

@@ -1,0 +1,28 @@
+# STEP-01b -- quan he giua Baseline cua TASK (e58a6c0) va HEAD that (31625c4)
+--- CMD: git merge-base --is-ancestor e58a6c0 HEAD ; echo exit ---
+exit=0 (0 = e58a6c0 la TO TIEN cua HEAD)
+--- CMD: git log --oneline -8 ---
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+ccf90ec feat(go-live-18): dong ran be mat cong khai -- ACCEPTED, 18/18 AC PASS
+e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+2941bbb docs(planner): dich cursor sang 18 -- 16 ACCEPTED va bon mon con lai da gate PASS
+7165ad1 ﻿docs(go-live-16): hau kiem PLN-34 -- C-09 tu dong khi Status thanh ACCEPTED
+99d6f16 fix(a11y): tuong phan va vong focus be mat noi bo len WCAG AA (go-live-16)
+fbc8af6 docs(cursor): sua quy thuoc luong gate + ghi canh bao DUNG CU CHUA PHAT HANH
+46ea2dc docs(go-live-16): tra audit round 2 — mot MA THOAT bi bia, ghi PLN-29..PLN-32
+--- CMD: git log --oneline e58a6c0..HEAD ---
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+ccf90ec feat(go-live-18): dong ran be mat cong khai -- ACCEPTED, 18/18 AC PASS
+--- CMD: git log -1 --format=%H%n%ci%n%s 31625c4 ---
+31625c4bb4ced393661684c2c8cb96f1e42bf054
+2026-09-04 14:31:39 +0700
+fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+--- CMD: git log -1 --format=%H%n%ci%n%s e58a6c0 ---
+e58a6c0c84683fdf9da4adf2dec173549d184510
+2026-09-03 23:30:28 +0700
+docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+--- Hai deliverable cua rf-06 tai HEAD va tai Baseline ---
+vitest.config.ts @HEAD:      1cc6c71b2e003b3745bbdbd6862978af594babf1
+vitest.config.ts @e58a6c0:   1cc6c71b2e003b3745bbdbd6862978af594babf1
+vitest.config.ts worktree:   1cc6c71b2e003b3745bbdbd6862978af594babf1
+guard moi ton tai chua: ls: cannot access 'src/shared/toolchain/vitest-default-lane.static.test.ts': No such file or directory

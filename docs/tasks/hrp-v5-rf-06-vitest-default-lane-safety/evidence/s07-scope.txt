@@ -1,0 +1,250 @@
+# STEP-07 / AC-09 -- kiem cot cam, attribution tung path, va tap path RF-06 stage
+# Ngay do: 2026-09-04 16:32:52 SEAST
+
+## A. Cot cam: do LAI cung mot cach nhu STEP-01 roi so tung dong
+# (dong TRUOC lay tu evidence/s01-baseline.txt muc 'COT CAM')
+vitest.unit.config.ts -> [] hash=c6b6a51ac2c95a2998c528efc2913ae8a28e4134  vs STEP-01 hash=c6b6a51ac2c95a2998c528efc2913ae8a28e4134  => KHOP
+vitest.integration.config.ts -> [] hash=f4c4bd4abfbdbfe8743b0ed2e13a7f5003300f88  vs STEP-01 hash=f4c4bd4abfbdbfe8743b0ed2e13a7f5003300f88  => KHOP
+vitest.integration-files.ts -> [] hash=fdc2d4673d087e3240407565cedad6d1b3e7fe6a  vs STEP-01 hash=fdc2d4673d087e3240407565cedad6d1b3e7fe6a  => KHOP
+src/domains/applications/placement-panel.tsx -> [] hash=1debe3513e0963a2f4a4f25fe0f63c9d380132af  vs STEP-01 hash=1debe3513e0963a2f4a4f25fe0f63c9d380132af  => KHOP
+src/domains/applications/placement-panel.test.ts -> [] hash=6707d0d742e76c2bc341803d79ec56c373b88b6a  vs STEP-01 hash=n/a  => KHONG_CO_O_STEP01
+package.json -> [M  package.json] hash=0048cc11567e6d2a4e6f3756f371fa0ffb88d450  vs STEP-01 hash=0048cc11567e6d2a4e6f3756f371fa0ffb88d450  => KHOP
+package-lock.json -> [M  package-lock.json] hash=e218c7fc81bc9ec9b0e8bc4d2fc6c894bacb6c63  vs STEP-01 hash=e218c7fc81bc9ec9b0e8bc4d2fc6c894bacb6c63  => KHOP
+tsconfig.json -> [] hash=f0c8e7b425330dd47e92243f18a9cc1d4d1f0c3a  vs STEP-01 hash=f0c8e7b425330dd47e92243f18a9cc1d4d1f0c3a  => KHOP
+.gitignore -> [M  .gitignore] hash=a638065308864cc44bef3056ef1c48d3392d48af  vs STEP-01 hash=a638065308864cc44bef3056ef1c48d3392d48af  => KHOP
+
+## B. Trang thai hai deliverable cua RF-06
+ M vitest.config.ts
+?? src/shared/toolchain/vitest-default-lane.static.test.ts
+vitest.config.ts hash=d6ca408c5c6f89c15faf296ae2fd8a010d157caf  (HEAD=1cc6c71b2e003b3745bbdbd6862978af594babf1)
+hang rao hash=6834c1094a5d6bcc2cba646a2c4d02dd26d251fa
+
+## C. Toan cay: phan loai tung path thay doi theo CHU
+--- CMD: git status --porcelain --untracked-files=all  (dem theo nhom) ---
+TONG_SO_DONG=594
+RF06_OWN=17
+--- tung dong thuoc RF-06 ---
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/TASK.md
+ M vitest.config.ts
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-baseline-vs-head.txt
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-baseline.txt
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-gate-task.txt
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.meta.txt
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.raw.txt
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.meta.txt
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.raw.txt
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s02-config-diff.txt
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.raw.txt
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.txt
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s04-mutation.txt
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s05-bare-lane.txt
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s06-regression.txt
+?? docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s07-scope.txt
+?? src/shared/toolchain/vitest-default-lane.static.test.ts
+
+## D. Attribution theo NHOM CHU -- tong phai bang 594, unknown phai bang 0
+# Moi nhom la mot bieu thuc chinh quy chay tren cung tep path, nen tong la phep dem
+# chu khong phai loi ke. Cot cuoi la nguoi chiu trach nhiem cho nhom ay.
+
+G1  RF-06 (viec nay)        = 17
+G2  RF-05 (luong khac)      = 88
+G3  TEST-01 (luong khac)    = 57
+G4  AUDIT.md go-live khac   = 3
+G5  Gate scripts (Agent khac cua sep) = 6
+G6  .claude/skills (muc nguoi dung)   = 172
+G7  scratch/ (Q-01 chua gitignore)    = 220
+G8  new-ui (chang ke tiep)            = 15
+G9  rac goc repo co san tu truoc      = 16
+
+TONG_CHIN_NHOM=594
+TONG_GIT_STATUS=594
+UNKNOWN=0  (chin nhom phu kin, khong path nao khong co chu)
+
+## E. Phep do MANH NHAT: hieu tap hop giua BASELINE (STEP-01) va BAY GIO
+# Nhom D noi 'cai nay khong phai cua toi'. Nhom E chung minh dieu ay bang cach
+# lay chinh anh chup luc mo vong: s01-baseline.txt dong 11..578 la 568 dong
+# git status --porcelain --untracked-files=all. Bat cu path nao XUAT HIEN sau do
+# ma khong thuoc RF-06 la mot luong khac da ghi trong khi toi dang chay.
+
+BASELINE_PATHS=568   NOW_PATHS=594
+
+--- MOI XUAT HIEN (594 - 568 = 26 path), phan loai tung dong ---
+[RF-06 evidence   ] docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-baseline-vs-head.txt
+[RF-06 evidence   ] docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-gate-task.txt
+[RF-06 evidence   ] docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.meta.txt
+[RF-06 evidence   ] docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.raw.txt
+[RF-06 evidence   ] docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.meta.txt
+[RF-06 evidence   ] docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.raw.txt
+[RF-06 evidence   ] docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s02-config-diff.txt
+[RF-06 evidence   ] docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.raw.txt
+[RF-06 evidence   ] docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.txt
+[RF-06 evidence   ] docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s04-mutation.txt
+[RF-06 evidence   ] docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s05-bare-lane.txt
+[RF-06 evidence   ] docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s06-regression.txt
+[RF-06 evidence   ] docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s07-scope.txt
+[LUONG KHAC       ] docs/tasks/hrp-v5-test-01-browser-lane/AUDIT.md
+[LUONG KHAC       ] docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac01-package.txt
+[LUONG KHAC       ] docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac02-config.txt
+[LUONG KHAC       ] docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac04-spec.txt
+[LUONG KHAC       ] docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac07-gitignore.txt
+[LUONG KHAC       ] docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac07-status.txt
+[LUONG KHAC       ] docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac11-status1.txt
+[LUONG KHAC       ] docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac11-status2.txt
+[LUONG KHAC       ] docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac12-staged.txt
+[LUONG KHAC       ] docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-c09-verify-task.txt
+[LUONG KHAC       ] docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-verify-audit.txt
+[RF-06 deliverable] src/shared/toolchain/vitest-default-lane.static.test.ts
+[RF-06 deliverable] vitest.config.ts
+
+RF06_DELIVERABLE_MOI=2
+RF06_EVIDENCE_MOI=13
+LUONG_KHAC_MOI=11
+
+# 11 path LUONG KHAC deu thuoc docs/tasks/hrp-v5-test-01-browser-lane/: mot AUDIT.md
+# cong 10 tep evidence/a2-*. Do la Tier 3 dang audit TEST-01 round 2 trong cung cay,
+# dung nhu sep giao. RF-06 KHONG doc, KHONG sua, KHONG stage bat cu path nao trong so do.
+
+--- BIEN MAT (baseline minus now) ---
+SO_LUONG_BIEN_MAT=0
+# 0 = RF-06 khong reset/stash/xoa mot dirty path nao cua luong khac.
+# Luu y: s07-scope.txt tu nam trong danh sach 26 vi no duoc tao truoc khi muc C do.
+
+## F. Tap path RF-06 se stage (chi ba pathspec, khong git add -A)
+  1) vitest.config.ts
+  2) src/shared/toolchain/vitest-default-lane.static.test.ts
+  3) docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/
+# TASK.md trong pathspec 3 da staged tu truoc boi Tier 1; RF-06 khong sua noi dung no
+# (hash duoi day so voi HEAD chung minh dieu ay).
+TASK_MD_WORKTREE=fe7492c898e7882edaee37aa6a83a92c022cbb26
+TASK_MD_INDEX=fe7492c898e7882edaee37aa6a83a92c022cbb26
+# TASK.md la untracked-in-HEAD (Tier 1 vua them), nen so sanh dung la worktree vs INDEX.
+
+## A-bis. Bu lo hong cua muc A: placement-panel.test.ts khong co trong bang STEP-01
+# STEP-01 ghi 8 path cot cam; placement-panel.test.ts bi thieu. Vi vay khong the so
+# 'truoc/sau'. Phep do thay the manh HON: so voi HEAD, vi mot tep clean thi
+#   worktree == index == HEAD, va HEAD la hang so khong phu thuoc luot chay nao.
+--- CMD: git status --porcelain -- src/domains/applications/placement-panel.test.ts ---
+exit=0 (rong = clean)
+WORKTREE=6707d0d742e76c2bc341803d79ec56c373b88b6a
+HEAD    =6707d0d742e76c2bc341803d79ec56c373b88b6a
+INDEX   =6707d0d742e76c2bc341803d79ec56c373b88b6a
+--- CMD: git log -1 --format='%h %ad %s' --date=short -- src/domains/applications/placement-panel.test.ts ---
+299614a 2026-08-25 feat(mp3): place converted workers with guarded assignments
+# Commit cuoi cham vao tep nay khong phai commit nao cua RF-06 (RF-06 chua commit gi).
+
+## G. Ket luan AC-09
+  - 9/9 path cot cam: hash BAY GIO == hash STEP-01 (8 path) hoac == HEAD (1 path bu o A-bis).
+  - Ba path ' M' trong cot cam (package.json, package-lock.json, .gitignore) da ' M' TU BASELINE
+    voi dung hash ay; RF-06 khong tao ra va khong lam thay doi chung.
+  - Tong 594 dirty path duoc phu kin boi 9 nhom chu; unknown = 0.
+  - RF-06 tao dung 15 path moi: 2 deliverable + 13 evidence. Khong mot path nao ngoai scope.
+  - 0 path cua luong khac bien mat.
+
+## H. Tap staged SAU khi stage -- do bang lenh, khong khai bang loi
+# Ngay do: 2026-09-04 16:56:47 SEAST
+
+--- Bon pathspec rf-06 da stage (tung lenh rieng, KHONG dung git add -A / git add .) ---
+git add -- vitest.config.ts                                              exit=0
+git add -- src/shared/toolchain/vitest-default-lane.static.test.ts       exit=0
+git add -- docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/HANDOFF.md exit=0
+git add -- docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/  exit=0
+# CO Y khong stage TASK.md: no da la 'A ' tu truoc, do Tier 1 stage, worktree=index=
+# fe7492c898e7882edaee37aa6a83a92c022cbb26. TASK.md la vung cua Tier 1.
+
+--- CMD: git diff --cached --name-only  (INDEX la tai san CHUNG cua ca cay) ---
+STAGED_NOW=146
+# Con so 146 nay KHONG phai cua rf-06. Index da co 128 path staged NGAY TU DAU vong,
+# do RF-05, TEST-01, cac tep gate va package.json cua luong khac. Phep do dung cho
+# AC-09 la HIEU TAP HOP, khong phai tong so.
+
+--- CMD: comm -13 staged_base staged_now   (staged MOI xuat hien trong vong nay) ---
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/HANDOFF.md
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-baseline-vs-head.txt
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-baseline.txt
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-gate-task.txt
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.meta.txt
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.raw.txt
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.meta.txt
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.raw.txt
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s02-config-diff.txt
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.raw.txt
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.txt
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s04-mutation.txt
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s05-bare-lane.txt
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s06-regression.txt
+docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s07-scope.txt
+docs/tasks/hrp-v5-test-01-browser-lane/AUDIT.md
+src/shared/toolchain/vitest-default-lane.static.test.ts
+vitest.config.ts
+STAGED_MOI=18
+
+Quy chu 18 path staged moi:
+  RF06 = 17  (vitest.config.ts, hang rao, HANDOFF.md, 14 tep evidence)
+  LUONG_KHAC = 1  (docs/tasks/hrp-v5-test-01-browser-lane/AUDIT.md)
+# Chung minh path cua luong khac KHONG do toi stage: bon lenh git add o tren deu co
+# pathspec TUONG MINH, va git add voi pathspec khong the cham path ngoai pathspec do.
+# Khong mot pathspec nao cua toi tro vao docs/tasks/hrp-v5-test-01-browser-lane/.
+# Tier 3 dang audit TEST-01 round 2 va vua stage AUDIT.md cua ho -- dung luat chong
+# truncation. Toi khong doc, khong sua, khong unstage no.
+
+--- CMD: comm -23 staged_base staged_now   (staged BIEN MAT) ---
+SO_STAGED_BIENMAT=0
+=> 0. Khong path staged nao cua luong khac bi rf-06 unstage, reset hay xoa.
+
+--- CMD: git status --porcelain -- <17 path rf-06>  (moi path phai la A hoac M da staged) ---
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/HANDOFF.md
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-baseline-vs-head.txt
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-baseline.txt
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-gate-task.txt
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.meta.txt
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.raw.txt
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.meta.txt
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.raw.txt
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s02-config-diff.txt
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.raw.txt
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.txt
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s04-mutation.txt
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s05-bare-lane.txt
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s06-regression.txt
+AM docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s07-scope.txt
+A  src/shared/toolchain/vitest-default-lane.static.test.ts
+M  vitest.config.ts
+exit=0
+
+--- CMD: git log --oneline -1   (KHONG commit, KHONG push) ---
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+exit=0
+
+## H-bis. Do lai tap staged SAU khi them tep bang chung cua cong ban giao
+# Ngay do: 2026-09-04 16:59:56 SEAST
+STAGED_FINAL_TONG=147   (index la tai san CHUNG)
+STAGED_MOI=19
+SO_STAGED_BIENMAT=0
+
+Quy chu tung path staged moi:
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/HANDOFF.md
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-baseline-vs-head.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-baseline.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-gate-task.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.meta.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.raw.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.meta.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.raw.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s02-config-diff.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.raw.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s04-mutation.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s05-bare-lane.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s06-regression.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s07-gate-handoff.txt
+  RF06        docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s07-scope.txt
+  LUONG_KHAC  docs/tasks/hrp-v5-test-01-browser-lane/AUDIT.md
+  RF06        src/shared/toolchain/vitest-default-lane.static.test.ts
+  RF06        vitest.config.ts
+
+RF06_STAGED=18
+LUONG_KHAC_STAGED=1
+
+--- CMD: git log --oneline -1   (chot lai: KHONG commit, KHONG push) ---
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+exit=0

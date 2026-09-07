@@ -1,0 +1,143 @@
+# STEP-02 -- vitest.config.ts: dong DB fallback + automatic JSX + exclusion source
+# Ngay do: 2026-09-04 16:14:05 SEAST
+
+--- CMD: git hash-object vitest.config.ts   (TRUOC = HEAD blob, SAU = worktree) ---
+TRUOC(HEAD) = 1cc6c71b2e003b3745bbdbd6862978af594babf1
+SAU(worktree) = d6ca408c5c6f89c15faf296ae2fd8a010d157caf
+
+--- CMD: git diff --numstat -- vitest.config.ts ---
+warning: in the working copy of 'vitest.config.ts', LF will be replaced by CRLF the next time Git touches it
+48	31	vitest.config.ts
+exit=0
+
+--- CMD: grep -n -c -E "process\.env\.DATABASE_URL|readFileSync|node:fs|require\(|'\.env'|\"\.env\"" vitest.config.ts   (AC-02 forbidden count) ---
+0
+FORBIDDEN_COUNT_EXIT=1   (grep -c tra 1 khi dem = 0, do la KET QUA MONG DOI)
+
+--- CMD: grep -n -E "jsx|BLOCKED_DB_URL|INTEGRATION_TEST_FILES|configDefaults|include:|fileParallelism" vitest.config.ts ---
+13: *   - DB-touching files excluded through the shared INTEGRATION_TEST_FILES inventory (RQ-04)
+20:import { defineConfig, configDefaults } from 'vitest/config';
+22:import { INTEGRATION_TEST_FILES } from './vitest.integration-files';
+25:const BLOCKED_DB_URL = 'postgresql://blocked:blocked@127.0.0.1:1/blocked?connect_timeout=1';
+36:  esbuild: { jsx: 'automatic', jsxImportSource: 'react' },
+40:    include: ['src/**/*.test.ts', 'packages/**/*.test.ts', 'prisma/**/*.test.ts'],
+41:    exclude: [...configDefaults.exclude, ...INTEGRATION_TEST_FILES],
+44:      DATABASE_URL: BLOCKED_DB_URL,
+63:    fileParallelism: false,
+
+--- CMD: git diff -- vitest.config.ts   (diff day du, tung hunk) ---
+warning: in the working copy of 'vitest.config.ts', LF will be replaced by CRLF the next time Git touches it
+diff --git a/vitest.config.ts b/vitest.config.ts
+index 1cc6c71..d6ca408 100644
+--- a/vitest.config.ts
++++ b/vitest.config.ts
+@@ -1,5 +1,28 @@
+-import { defineConfig } from 'vitest/config';
++/**
++ * vitest.config.ts — DEFAULT lane (RF-06 / RQ-01..RQ-05).
++ *
++ * `npm test` and a bare `npx vitest run` land here. Before RF-06 this config read the repo
++ * `.env` and fell back to the ambient DATABASE_URL, so a bare run could silently open a
++ * connection to the DEV/PROD database (RF-05 audit round 1, AUD-001), and component tests died
++ * with "React is not defined" because esbuild used the classic JSX runtime.
++ *
++ * The default lane is now the same fail-closed collection as the unit lane:
++ *   - automatic JSX, matching the app runtime (RQ-01)
++ *   - DATABASE_URL FORCED to an unreachable sentinel; ambient value ignored, `.env` never read (RQ-02)
++ *   - every admin/test/LIVE opt-in var blanked (RQ-03)
++ *   - DB-touching files excluded through the shared INTEGRATION_TEST_FILES inventory (RQ-04)
++ *   - the same three include globs as the unit lane (RQ-05)
++ *
++ * DB tests keep their own lane: `npm run test:integration`, with TEST credentials passed in
++ * explicitly. Drift between this file and vitest.unit.config.ts is caught by
++ * src/shared/toolchain/vitest-default-lane.static.test.ts.
++ */
++import { defineConfig, configDefaults } from 'vitest/config';
+ import path from 'path';
++import { INTEGRATION_TEST_FILES } from './vitest.integration-files';
++
++// Unassignable port → immediate connection refusal. Never a real host.
++const BLOCKED_DB_URL = 'postgresql://blocked:blocked@127.0.0.1:1/blocked?connect_timeout=1';
+ 
+ export default defineConfig({
+   resolve: {
+@@ -8,40 +31,34 @@ export default defineConfig({
+       '@': path.resolve(__dirname, '.'),
+     },
+   },
++  // Match the app runtime (React 19 automatic JSX). Without this, esbuild uses the
++  // classic runtime and component tests fail with "React is not defined".
++  esbuild: { jsx: 'automatic', jsxImportSource: 'react' },
+   test: {
+-    include: ['src/**/*.test.ts', 'packages/**/*.test.ts'],
+-    // Load .env so DATABASE_URL (app_user_writer) is used in tests — ensures
+-    // RLS policies are enforced. Without this, DATABASE_URL may be unset and
+-    // Prisma falls back to whatever is in the shell, often the admin user
+-    // (neondb_owner) which has BYPASSRLS — making L2 tests useless.
++    // `prisma/**` holds only STATIC tests that read migration files from disk (go-live-11 RQ-07);
++    // nothing in there opens a DB connection, so it belongs in this collection.
++    include: ['src/**/*.test.ts', 'packages/**/*.test.ts', 'prisma/**/*.test.ts'],
++    exclude: [...configDefaults.exclude, ...INTEGRATION_TEST_FILES],
+     env: {
+-      // Prefer a DATABASE_URL already present in the environment (e.g. a LIVE
+-      // runner pointing at a SAFE, provisioned test DB). Only fall back to repo
+-      // .env's DATABASE_URL (app_user_writer, RLS-enforcing) when nothing was
+-      // passed, so ordinary test runs behave exactly as before. This stops a
+-      // deliberately-passed test URL from being silently overridden with the
+-      // repo .env (prod) URL — which would otherwise point LIVE tests at prod.
+-      DATABASE_URL: process.env.DATABASE_URL ?? (() => {
+-        // Read .env DATABASE_URL at config-load time so RLS-enforcing user is used.
+-        try {
+-          const fs = require('node:fs');
+-          const env = fs.readFileSync(path.resolve(__dirname, '.env'), 'utf8');
+-          const m = env.match(/^DATABASE_URL="?([^"\n]+)"?/m);
+-          return m ? m[1] : undefined;
+-        } catch {
+-          return undefined;
+-        }
+-      })(),
++      // FORCE unreachable — do NOT read the ambient DATABASE_URL, and never read `.env`.
++      DATABASE_URL: BLOCKED_DB_URL,
++      // Blank every real-DB / live-gate var so nothing in this lane can connect or go LIVE.
++      DATABASE_URL_ADMIN: '',
++      DATABASE_URL_WRITER: '',
++      DATABASE_URL_TEST: '',
++      DATABASE_URL_ADMIN_TEST: '',
++      MP2_LIVE_SECURITY_CHECK: '',
++      MP3B_LIVE_CONVERSION_CHECK: '',
++      OPS06A_LIVE_CHECK: '',
++      M1_06A_LIVE_AUTH_SCOPE: '',
++      M1_06B_LIVE_AUTH_SCOPE: '',
++      M1_07A_LIVE_TICKET_RLS: '',
++      GOLIVE04_LIVE_PUBLIC_READ: '',
++      GOLIVE05_LIVE_CARD_TRUTH: '',
+     },
+     poolOptions: {
+-      threads: {
+-        maxThreads: 1,
+-        minThreads: 1,
+-      },
+-      forks: {
+-        maxForks: 1,
+-        minForks: 1,
+-      },
++      threads: { maxThreads: 1, minThreads: 1 },
++      forks: { maxForks: 1, minForks: 1 },
+     },
+     fileParallelism: false,
+   },
+DIFF_EXIT=0
+
+--- CMD: grep -n -c -E -e "process\.env\.DATABASE_URL" -e readFileSync -e "node:fs" -e "require\(" -e "'\.env'" -e '"\.env"' vitest.config.ts   (AC-02: DANG KHONG CO DAU ONG, cho HANDOFF) ---
+# Ly do co block nay: o bang markdown cua HANDOFF, dau ong TRAN trong mot o pha so cot
+# va \| KHONG cuu duoc (bay da ghi trong memory). Dang -e nay khong chua dau ong nao,
+# chay ra CUNG con so voi dang alternation o dong 13, nen HANDOFF trich dang nay.
+0
+FORBIDDEN_COUNT_E_FORM_EXIT=1   (grep -c tra 1 khi dem = 0, giong dong 15)
+
+--- CMD: grep -n -E -e INTEGRATION_TEST_FILES -e configDefaults vitest.config.ts   (AC-04: dang khong dau ong) ---
+13: *   - DB-touching files excluded through the shared INTEGRATION_TEST_FILES inventory (RQ-04)
+20:import { defineConfig, configDefaults } from 'vitest/config';
+22:import { INTEGRATION_TEST_FILES } from './vitest.integration-files';
+41:    exclude: [...configDefaults.exclude, ...INTEGRATION_TEST_FILES],
+AC04_E_FORM_EXIT=0

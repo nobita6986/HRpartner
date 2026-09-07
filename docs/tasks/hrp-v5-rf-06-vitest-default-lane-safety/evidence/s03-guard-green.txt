@@ -1,0 +1,30 @@
+# STEP-03 -- hang rao tinh moi, chay bang UNIT config (dung phuong phap AC-03)
+# Ngay do: 2026-09-04 16:21:40 SEAST
+# LENH NGUYEN VAN:
+#   npx vitest run --config vitest.unit.config.ts src/shared/toolchain/vitest-default-lane.static.test.ts
+# Vong chay DAU cua STEP-03 do 11/15, khong phai vi config sai ma vi chinh hang rao sai:
+# hai ham slice dung new RegExp tu template literal, mat mot bac backslash nen mau thanh
+#   /excludes*:s*[/  => SyntaxError: Unterminated character class.
+# Da thay bang mot bo quet ky tu KHONG dung RegExp (khong co bac escape nao de mat), va
+# ly do ay duoc ghi lai trong doc comment cua chinh ham do.
+# DEV-01 nay la mot bay do luong: heredoc trong moi truong nay lam sut mot bac backslash,
+# nen mot mau dung backslash kep khong bao gio den duoc dia nguyen ven.
+
+GUARD_FILE_LINES=424
+GUARD_FILE_BYTES=21627
+GUARD_HASH=6834c1094a5d6bcc2cba646a2c4d02dd26d251fa
+CONFIG_HASH=d6ca408c5c6f89c15faf296ae2fd8a010d157caf
+
+--- OUTPUT NGUYEN VAN (da bo ma mau ANSI) ---
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ ✓ src/shared/toolchain/vitest-default-lane.static.test.ts (15 tests) 7ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  16:20:49
+   Duration  253ms (transform 44ms, setup 0ms, collect 52ms, tests 7ms, environment 0ms, prepare 58ms)
+
+GUARD_EXIT=0
