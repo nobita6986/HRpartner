@@ -1,0 +1,26 @@
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v6-security-credential-rotation/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+  [FAIL] A-04 READY_FOR_EXECUTION contract still contains placeholders / TBD / TODO.
+  [FAIL] A-05 requirement RQ-09 has no direct RQ -> STEP -> AC traceability row.
+  [OK]   T-01 1 referenced npm script(s) all exist.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v6-security-credential-rotation/**.
+  [OK]   T-05 all 13 AC row(s) name a measurable method.
+  [FAIL] T-06 possible secret in TASK.md: kind=DB_URL_WITH_PASSWORD sample=[postgresql:/...(cut)]. Global rules section 3 forbids it; redact and rotate.
+  [FAIL] T-06 possible secret in TASK.md: kind=NEON_PASSWORD sample=[npg_E0eqUu7aHtpI]. Global rules section 3 forbids it; redact and rotate.
+  [OK]   T-07 control field change (Status, Current execution round, Current audit round) is accompanied by a section 9/10 entry.
+
+RESULT: FAIL (4 error(s), 0 warning(s)).
+stderr: (empty)
+
+=== summary ===
+exit: 2
+RESULT: FAIL (4 errors)
+DEV-22-04: A-04/T-06/T-06 (4 errors) are Planner-side; Tier 2 cannot fix.
+A-05 (RQ-09 traceability) is Planner-side.
+T-06 flags EV-01/02 credential references in TASK.md as secrets - these are documented evidence, not actual credentials in task artifacts.
+Tier 2: cannot fix; requires Planner patch to TASK.md.
+
