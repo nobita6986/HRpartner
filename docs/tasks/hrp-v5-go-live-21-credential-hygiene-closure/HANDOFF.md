@@ -7,28 +7,26 @@
 | Task slug | `hrp-v5-go-live-21-credential-hygiene-closure` |
 | Work type | `INFRA` |
 | Audit mode (phải khớp TASK) | `INFRA_AUDIT` |
-| Spec version | `v1.2` |
-| Execution round | `1` r1-FIX — Tier 2 re-open để đóng AUD-002 (P1) và AUD-003 (P3) |
-| Current audit round | `1` (Tier 3 FAIL; chờ re-audit round 2) |
-| Executor (round này) | Tier 2 — repo hygiene fix + evidence rewrite |
-| OP execution | `OWNER_BLOCKED` — `STEP-07..11` chờ Owner trả lời `Q-01..Q-04` |
+| Spec version | `v1.3` (audit round 2 PASS WITH FINDINGS) |
+| Execution round | `2` OP-prep — Tier 2 prep scaffolding for STEP-07..11 (read-only, no production mutate) |
+| Current audit round | `2` (Tier 3 PASS WITH FINDINGS; AUD-001/002/003 RESOLVED, AUD-001 carry over to security task) |
+| Executor (round này) | Tier 2 — OP evidence scaffolding + AC-09 re-confirm + HANDOFF update |
+| OP execution | `OWNER_BLOCKED` (Tier 2 prep scaffolding done; Owner runs STEP-07..11 in window **2026-09-08 09:00-09:30 Asia/Bangkok**) |
 | Baseline (TASK v1.0) | `7dd576e` |
-| Pre-FIX HEAD | `485a36c` (Planner bump v1.1 + v1.2) |
-| Post-FIX HEAD | `5fc3469` (7 commits added by Tier 2 r1-FIX) |
-| Status | `READY_FOR_AUDIT` cho re-audit round 2 — AUD-002 + AUD-003 đã đóng tại commit; AUD-001 (P0) `ESCALATE_NEW_TASK` ngoài scope |
-| Started/updated | Round 1 2026-09-07 10:55 → 11:04; r1-FIX 2026-09-07 12:10 → 12:25 Asia/Bangkok |
+| Pre-r2 HEAD | `2f7baf0` (Planner bump v1.3) |
+| Post-r2 HEAD | `91ba2ce` (Tier 2 r2 OP-prep commit) |
+| Status | `READY_FOR_OWNER_EXECUTION` (Tier 2 scaffolding READY; Owner triggers STEP-07..11 in window) |
+| Started/updated | Round 1 2026-09-07 10:55 → 11:04; r1-FIX 2026-09-07 12:10 → 12:25; **OP-prep r2 2026-09-07 14:00 → 14:30 Asia/Bangkok** |
 
-## 1. Outcome Summary (Tier 2 prep + r1-FIX)
+## 1. Outcome Summary (Tier 2 prep + r1-FIX + r2 OP-prep)
 
 **Round 1 đã hoàn tất 6 bước Tier 2 prep** (`STEP-00..06`). Sau đó Tier 3 audit round 1 FAIL với 3 finding:
 
-| Finding | Severity | Status trước r1-FIX | Status sau r1-FIX |
-|---|---|---|---|
-| `AUD-001` (`check_rls.cjs` raw Neon credential) | P0 | OPEN | OPEN — ESCALATE_NEW_TASK (ngoài scope 21); task security riêng `hrp-v6-security-credential-rotation` đã được Planner tạo task dir (xem porcelain untracked) |
-| `AUD-002` (`git rm --cached` không persist vào HEAD) | P1 | OPEN | **CLOSED** — committed at `41ab22b` |
-| `AUD-003` (evidence file `go21-s05-apply-blocked.txt` corrupted) | P3 | OPEN | **CLOSED** — rewritten with clean stderr capture at `41ab22b` |
-
-**Tier 2 cũng phát hiện round-1 đã để worktree chứa 3 deliverables chưa commit** (`prisma/seed.mjs` literal fix, `prisma/seed-portal-demo-password.static.test.ts`, `docs/runbooks/credential-hygiene-cutover.md`, `scripts/ops/demo-cleanup.mjs`). Đã commit toàn bộ trong r1-FIX (`f01ddca`, `6213788`).
+| Finding | Severity | Status trước r1-FIX | Status sau r1-FIX | Status sau audit round 2 |
+|---|---|---|---|---|
+| `AUD-001` (`check_rls.cjs` raw Neon credential) | P0 | OPEN | OPEN — ESCALATE_NEW_TASK | **CARRY OVER** to `hrp-v6-security-credential-rotation` v1.1 READY (task security song song trong window 09:00-09:30) |
+| `AUD-002` (`git rm --cached` không persist vào HEAD) | P1 | OPEN | **CLOSED** at `41ab22b` | **RESOLVED** (Tier 3 verify HEAD `5fc3469` đã persist) |
+| `AUD-003` (evidence file `go21-s05-apply-blocked.txt` corrupted) | P3 | OPEN | **CLOSED** at `41ab22b` | **RESOLVED** (file exists, exit 2 + message đúng) |
 
 **Tier 2 prep round 1 đã đạt bốn điều kiện:**
 
@@ -39,7 +37,18 @@
 | Hai dòng Browser Lane KHÔNG bị đụng | ĐẠT | `.gitignore` Playwright section vẫn còn (lines 83-84) |
 | Seed không còn literal password cứng | ĐẠT | `prisma/seed-portal-demo-password.static.test.ts` 5/5 PASS |
 
-**OP execution vẫn `OWNER_BLOCKED`** vì `Q-01..Q-04` chưa Owner trả lời. `AUD-001` P0 sẽ được xử lý ở task security riêng (`hrp-v6-security-credential-rotation`) theo Planner Resolution v1.2 §9.
+**Tier 2 round 2 OP-prep (read-only scaffolding):**
+
+| Deliverable | Status | Bằng chứng |
+|---|---|---|
+| AC-09 dry-run idempotency re-confirm (localhost) | ĐẠT | `evidence/go21-op-prep-ac09-localhost.txt` (hash `3fb0d3cc...` cả 2 lần) |
+| AC-09 apply fail-closed (Neon non-local) | ĐẠT | Tier 3 evidence round 2 (`go21-s05-apply-audit-r2.txt`) |
+| AC-09 apply localhost stub | ĐẠT | Tier 3 evidence round 2 (`go21-s05-apply-localhost-r2.txt`) |
+| OP evidence scaffolding templates (5 step) | ĐẠT | `evidence/op-prep-step{07..11}-template.md` |
+| OP prep index | ĐẠT | `evidence/op-prep-index.md` |
+| HANDOFF update cho OP-prep | ĐẠT | tài liệu này |
+
+**OP execution vẫn `OWNER_BLOCKED`** cho STEP-07..11. Owner trigger window **2026-09-08 09:00-09:30 Asia/Bangkok**; CLEANUP-PLAN C-14..C-31 + C-49 Tier 2 owns per CLEANUP-PLAN §4, nhưng KHÔNG chạy trước window.
 
 ## 2. Execution Trace
 
@@ -52,8 +61,8 @@
 | `STEP-04` | CHẠY | — | Viết `evidence/go21-s04-disposition.md` — bảng KEEP/DELETE/UNKNOWN cho 3 local env + 5 root artifact + 8 scratch subdir + mỗi top-level scratch file (path-by-path). Cột Owner disposition CHƯA ĐIỀN vì chờ Q-02 | `evidence/go21-s04-disposition.md` |
 | `STEP-05` | CHẠY | r1-FIX: apply evidence rewrite | Viết `evidence/go21-s05-demo-manifest.json` (allowlist exact ID + FK order + post-check invariants). Viết `scripts/ops/demo-cleanup.mjs` (dry-run default, apply fail-closed; hash-pinned). dry-run × 2: exit 0 cả hai, output cùng manifest hash. **r1-FIX**: `apply` evidence rewritten clean — exit 2, stderr `[demo-cleanup] DB gate FAIL: apply would touch non-local DB; set DEMO_CLEANUP_FORCE_LIVE=1 to override (OWNER ONLY)`, captured via `Start-Process -RedirectStandardError` để không bị PS error noise | `evidence/go21-s05-{manifest,dry-run-1,dry-run-2,apply-blocked,apply-audit}.txt` |
 | `STEP-06` | CHẠY | r1-FIX: HANDOFF rewrite | HANDOFF.md này | n/a |
-| `STEP-07..11` | KHÔNG chạy | — | `OWNER_BLOCKED` cho tới khi Owner trả lời Q-01..Q-04 | runbook đã sẵn ở `docs/runbooks/credential-hygiene-cutover.md` |
-| `STEP-12` | KHÔNG chạy | — | Tier 3 độc lập sau khi OP execution có evidence | chưa audit |
+| `STEP-07..11` | KHÔNG chạy | r1-FIX: vẫn `OWNER_BLOCKED` (chờ Q-01..Q-04) | **r2 OP-prep**: scaffolding templates + index; **OP execution OWNER_BLOCKED** đến 09:00 08/09 | `evidence/op-prep-step{07..11}-template.md` + `evidence/op-prep-index.md` |
+| `STEP-12` | KHÔNG chạy | — | Tier 3 độc lập sau khi OP execution có evidence | audit round 2 PASS WITH FINDINGS (AUD-001 carry over) |
 
 **Hai phép đo cuối r1-FIX để chứng minh Tier 2 KHÔNG vượt phạm vi:**
 
@@ -77,14 +86,20 @@
 | `AC-10` | Unit, typecheck, prod smoke | **PARTIAL** cho unit (5 PASS + 1740 vitest tests từ Tier 3); typecheck + prod smoke CHƯA ĐO | `evidence/go21-s02-test-green.txt`; Tier 3 evidence: build exit 0 | Typecheck + prod smoke cần OP execution |
 | `AC-11` | Tier 3 independent secret scan | **PARTIAL (r1-FIX)** — HEAD sau r1-FIX vẫn còn `check_rls.cjs:2` hit (1 raw Neon credential). AUD-001 ESCALATE_NEW_TASK. Ngoài phạm vi task 21 | Tier 3 evidence: `evidence/go21-s00-secret-scan.txt` | Cần task security riêng |
 
-**Gate results (r1-FIX):**
+**Gate results (r1-FIX + r2 OP-prep):**
 
 | Gate | Exit | Result | Evidence |
 |---|---|---|---|
-| `verify-task.ps1` | 0 | `DRAFT-VALID (1 warning)` — warning A-04 do Planner bump TASK.md v1.2 có malformed status line (line 10 thiếu closing pipe `\|`); gate KHÔNG block, chỉ flag để Tier 1 review | `evidence/go21-gate-task-r1fix.txt` |
-| `verify-audit.ps1` | 2 | `FAIL (1 error)` — A-02 spec version mismatch: TASK=v1.2 vs AUDIT=v1.1 (AUDIT do Tier 3 viết với TASK v1.1; Planner bump TASK → v1.2 sau khi audit xong). Gate block | `evidence/go21-gate-audit-r1fix.txt` |
+| `verify-task.ps1` (r1-FIX) | 0 | `DRAFT-VALID (1 warning)` — warning A-04 do Planner bump TASK.md v1.2 có malformed status line (line 10 thiếu closing pipe `\|`); gate KHÔNG block, chỉ flag để Tier 1 review | `evidence/go21-gate-task-r1fix.txt` |
+| `verify-audit.ps1` (r1-FIX) | 2 | `FAIL (1 error)` — A-02 spec version mismatch: TASK=v1.2 vs AUDIT=v1.1 (AUDIT do Tier 3 viết với TASK v1.1; Planner bump TASK → v1.2 sau khi audit xong). Gate block | `evidence/go21-gate-audit-r1fix.txt` |
+| `verify-task.ps1` (audit round 2) | 0 | `PASS` — Tier 3 confirm TASK v1.2 + AUDIT v1.2 match sau audit round 2 | `evidence/go21-gate-task-r2.txt` (Tier 3 file) |
+| `verify-audit.ps1` (audit round 2) | 0 | `PASS` — Tier 3 verify tất cả gates; verdict PASS WITH FINDINGS | `evidence/go21-s10-log.txt` (Tier 3 file) |
+| `verify-task.ps1` (r2 OP-prep) | TBD | TBD | r2 commit |
+| `verify-audit.ps1` (r2 OP-prep) | TBD | TBD | r2 commit |
 
-**Tier 2 không thể tự fix hai gate issue trên** vì (a) malformed TASK.md là Planner-side edit, (b) AUDIT.md là Tier 3 deliverable. Đợi Tier 1 review.
+**Tier 2 không thể tự fix hai gate issue r1-FIX trên** vì (a) malformed TASK.md là Planner-side edit, (b) AUDIT.md là Tier 3 deliverable. Đợi Tier 1 review.
+
+**r2 OP-prep gate chạy** sau khi Tier 2 commit template files. Kết quả đợi.
 
 ## 4. Changed Deliverables (r1-FIX commits `41ab22b` + `c5a5fbd` + `66c6440` + `f01ddca` + `6213788` + `c45de0c` + `5fc3469`)
 
@@ -106,7 +121,7 @@
 | `evidence/go21-gate-task-r1fix.txt` | `A` (r1-FIX) | mới | gate result evidence | `66c6440` |
 | `evidence/go21-gate-audit-r1fix.txt` | `A` (r1-FIX) | mới | gate result evidence | `66c6440` |
 
-`git log 7dd576e..HEAD` = 10 commits: 3 Planner + 7 Tier 2 r1-FIX (`41ab22b`, `c5a5fbd`, `66c6440`, `f01ddca`, `6213788`, `c45de0c`, `5fc3469`).
+`git log 7dd576e..HEAD` (trước r2 OP-prep) = 10 commits: 3 Planner + 7 Tier 2 r1-FIX (`41ab22b`, `c5a5fbd`, `66c6440`, `f01ddca`, `6213788`, `c45de0c`, `5fc3469`). r2 OP-prep sẽ thêm evidence templates + HANDOFF update (no code/logic change).
 
 ## 5. Deviations
 
@@ -121,6 +136,9 @@
 | `DEV-21-07` (r1-FIX) | `verify-task.ps1` exit 0 nhưng result `DRAFT-VALID` (1 warning A-04) do TASK.md v1.2 có status line malformed (thiếu trailing pipe). Tier 2 không sửa TASK.md (Planner-owned per CLAUDE.md) | Planner cần patch 1 char hoặc note trong §10 Revision Log |
 | `DEV-21-08` (r1-FIX) | `verify-audit.ps1` exit 2 với `FAIL (1 error)` do A-02 spec version mismatch (AUDIT v1.1 vs TASK v1.2). AUDIT.md là Tier 3 deliverable | Tier 3 sẽ re-audit round 2 với spec v1.2 và viết AUDIT.md mới |
 | `DEV-21-09` (r1-FIX) | Round-1 deliverables `prisma/seed.mjs` + `prisma/seed-portal-demo-password.static.test.ts` + `docs/runbooks/credential-hygiene-cutover.md` + `scripts/ops/demo-cleanup.mjs` ở trạng thái worktree-only (chưa commit). Round-1 HANDOFF §4 liệt kê chúng như deliverables nhưng thực tế không persist | Đã commit trong r1-FIX (`f01ddca`, `6213788`) |
+| `DEV-21-10` (r2 OP-prep) | User instruction `/code ... — OP execution STEP-07..11 + CLEANUP-PLAN C-14..C-31` được Tier 2 diễn giải thành **prep-only**: Tier 2 KHÔNG mutate Neon/Vercel/production (CLAUDE.md); CLEANUP-PLAN C-14..C-31 chưa chạy vì window 09:00-09:30 08/09 chưa bắt đầu | User chọn option "Prep-only (Recommended)"; Iron Rules giữ nguyên |
+| `DEV-21-11` (r2 OP-prep) | HANDOFF.md viết lại để phản ánh r2 OP-prep status. Spec version update từ v1.2 → v1.3 (audit round 2 PASS WITH FINDINGS + Q-01..Q-04 RESOLVED) | Planner-owned TASK.md bump |
+| `DEV-21-12` (r2 OP-prep) | `verify-audit.ps1` exit 2 với `FAIL (1 error)` A-07: AUDIT.md round 2 thiếu closing line `... AUDIT.md cho Tier 1 ...`. AUDIT.md là Tier 3 deliverable; Tier 2 không sửa | Cần Tier 3 thêm closing line trong AUDIT.md round 2 (bump AUDIT v1.2 → v1.3 để match TASK v1.3) hoặc Tier 3 re-audit round 3 sẽ tạo AUDIT.md mới với closing line chuẩn |
 
 ## 6. Evidence Index
 
@@ -161,23 +179,32 @@
 | `evidence/v11-ev06-dbtoken-scan.txt` | rebase evidence: `DB_DIAG_TOKEN` scan (1 hit ở PLANNER_HANDOVER) |
 | `evidence/v11-ev09-scratch.txt` | rebase evidence: scratch/ enumeration |
 | `evidence/v11-evidence-summary.md` | rebase evidence summary |
+| `evidence/op-prep-index.md` | **r2 OP-prep**: index of 5 step templates + AC-09 re-confirm + runbook status |
+| `evidence/op-prep-step07-template.md` | **r2 OP-prep**: STEP-07 evidence template for Owner (Neon rotate 3 roles) |
+| `evidence/op-prep-step08-template.md` | **r2 OP-prep**: STEP-08 evidence template for Owner (Vercel redeploy + smoke) |
+| `evidence/op-prep-step09-template.md` | **r2 OP-prep**: STEP-09 evidence template for Owner (revoke old credentials) |
+| `evidence/op-prep-step10-template.md` | **r2 OP-prep**: STEP-10 evidence template for Owner (local files + scratch + Neon branch + CLEANUP-PLAN C-14..C-31) |
+| `evidence/op-prep-step11-template.md` | **r2 OP-prep**: STEP-11 evidence template for Owner (DEMO cleanup) |
+| `evidence/go21-op-prep-ac09-localhost.txt` | **r2 OP-prep**: AC-09 dry-run × 2 idempotency + apply localhost stub re-confirm |
 
-## 7. Owner Action List (BLOCKED by Q-01..Q-04)
+## 7. Owner Action List (BLOCKED by Q-01..Q-04 — RESOLVED 2026-09-07 13:42)
 
-| Q | Question | Owner action needed |
-|---|---|---|
-| `Q-01` | Vercel project duy nhất cho `hrpartner.vn`? | Trả lời: tên project + production env name |
-| `Q-02` | KEEP/DELETE cho `.env.local`, `.env.ops06a-test.local`, `.env.production.local`? | Điền cột Owner disposition trong `evidence/go21-s04-disposition.md` |
-| `Q-03` | Tracked `.env.dev`/Vercel-generated còn hiệu lực ở provider ngoài Neon/Vercel? | Trả lời: list providers khác nếu có |
-| `Q-04` | Maintenance window + PITR restore point cho DEMO cleanup? | Cung cấp timestamp UTC |
+**Q-01..Q-04 đã được Owner trả lời** trong TASK.md §8 (v1.2.2 → v1.3):
 
-Sau khi Owner trả lời 4 Q, chạy theo `docs/runbooks/credential-hygiene-cutover.md` STEP-07..11.
+| Q | Question | Owner Answer | Tier 2 status |
+|---|---|---|---|
+| `Q-01` | Vercel project duy nhất cho `hrpartner.vn`? | `Project: hrp-prod; Production env: Production; Domain: hrpartner.vn` | **RESOLVED** — STEP-08 dùng đúng |
+| `Q-02` | KEEP/DELETE cho `.env.local`, `.env.ops06a-test.local`, `.env.production.local`? | `.env.local=KEEP; .env.ops06a-test.local=DELETE; .env.production.local=DELETE` | **RESOLVED** — STEP-10 áp dụng |
+| `Q-03` | Tracked `.env.dev`/Vercel-generated còn hiệu lực ở provider ngoài Neon/Vercel? | `Neon only — no external reuse` | **RESOLVED** — không mở task rotate bổ sung |
+| `Q-04` | Maintenance window + PITR restore point cho DEMO cleanup? | `Window: 2026-09-08 09:00-09:30; PITR: 7 days; DEMO data: KEEP (backup to scratch/)` | **RESOLVED** — STEP-11 chạy trong window |
+
+Sau khi Owner trả lời 4 Q, **chạy theo `docs/runbooks/credential-hygiene-cutover.md` STEP-07..11** trong window **2026-09-08 09:00-09:30 Asia/Bangkok**.
 
 **Bổ sung từ AUD-001 (P0, ESCALATE_NEW_TASK):**
 
 | ESCALATE | Owner action needed |
 |---|---|
-| `AUD-001` | (a) Verify `check_rls.cjs` raw Neon credential còn active hay không. (b) Nếu còn active → rotate ngay. (c) Move credential to ENV. (d) Mở task security riêng `hrp-v6-security-credential-rotation` để xử lý. KHÔNG thuộc task 21 |
+| `AUD-001` | (a) Verify `check_rls.cjs` raw Neon credential còn active hay không. (b) Nếu còn active → rotate ngay. (c) Move credential to ENV. (d) Mở task security riêng `hrp-v6-security-credential-rotation` (đã tạo) để xử lý. Task security chạy song song trong cùng window 09:00-09:30 08/09 |
 
 ## 8. Risk Index (inherited from TASK §7)
 
@@ -207,4 +234,4 @@ Tier 3 sau khi nhận r1-FIX commits sẽ:
 4. AUD-001 vẫn OPEN — đợi task security riêng (Planner đã mở `docs/tasks/hrp-v6-security-credential-rotation/`)
 5. Sau khi audit round 2 PASS → AC-11 PASS với điều kiện không còn hit `check_rls.cjs` (xử lý ở task khác)
 
-Handoff status: READY_FOR_AUDIT (re-audit round 2; AUD-002 + AUD-003 closed by commits 41ab22b..5fc3469; AUD-001 ESCALATE_NEW_TASK; 2 gate issue Planner-side cần review); OP execution OWNER_BLOCKED until Q-01..Q-04 answered
+Handoff status: READY_FOR_OWNER_EXECUTION (r2 OP-prep scaffolding done; OP execution STEP-07..11 OWNER triggers in window **2026-09-08 09:00-09:30 Asia/Bangkok**); CLEANUP-PLAN C-14..C-31 + C-49 Tier 2 owns per CLEANUP-PLAN §4 nhưng KHÔNG chạy trước window; task security `hrp-v6-security-credential-rotation` song song trong cùng window
