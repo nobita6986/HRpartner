@@ -78,6 +78,8 @@ docs/VERCEL_ENV_PRODUCTION.local.md
 scratch/
 .neon
 tsconfig.tmp.json
+# Credential probe (hrp-v6-security-credential-rotation) — exact-name ignore only, no glob, no prefix
+check_rls.cjs
 
 # Playwright browser lane (hrp-v5-test-01) — artifact sinh ra moi luot chay, khong commit
 test-results/
