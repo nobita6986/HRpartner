@@ -7,7 +7,7 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-07 Asia/Bangkok
+updated_at: 2026-09-07 Asia/Bangkok — post-TEST-01 queue locked
 roadmap_source: docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/UNIFIED_PLAN_v5.md chi con la nguon cho V5/go-live debt
 current_lane: TEST-01 Browser Lane closure. RF-06, RF-05 va go-live-20 da duoc commit scoped tren main; nested worktree gl20 da remove. Khong mo parallel Tier 2 stream.
 current_task: hrp-v5-test-01-browser-lane
@@ -18,10 +18,11 @@ current_gate: TIER_2_EXECUTION
 next_command: /code hrp-v5-test-01-browser-lane -- chi STEP-08, STEP-09, STEP-10, STEP-11; npm run test:browser; fixture-empty RED -> restore -> GREEN; do rieng HEAD/index/worktree hash cua tsconfig.json; khong config chan doan; khong commit/push/deploy
 previous_closed: RF-06 commit 8f3839d; RF-05 commit bb223dd; go-live-20 ACCEPTED va integrated commit f9c7bca; old hrp-portal-m11-affiliate-db-migration CANCELLED, khong duoc giao code
 held_draft: hrp-v5-go-live-19-tracking-pii-db-mask van DRAFT dung quyet dinh Owner; hrp-v5-go-live-21-credential-hygiene-closure DRAFT cho den khi TEST-01 ACCEPTED vi hai task cung cham .gitignore
-next_after_test01: Tier 1 commit TEST-01 neu audit PASS; rebase/mở go-live-21 repo-hygiene + Owner OP window; sau do moi quay lai V6 Admin Rebuild/Marketplace architecture
-blocking_owner: go-live-21 can Owner xac nhan Vercel project, KEEP/DELETE cho ba file .env*.local, provider scope can rotate va maintenance window DEMO cleanup. Cac diem nay khong chan TEST-01.
+next_after_test01: GO-LIVE-21 Credential Hygiene -> GO-LIVE-07 final Launch Proof/Owner sign-off -> GO-LIVE-19 post-launch PII DB mask khi du gate -> V6-ADMIN-00 -> V6 Phase 1A/1B/1C -> V6 Phase 2/3/4/5 -> AFF-00..07 -> M7 -> M8 -> M6; PAY de cuoi
+queue_authority: Chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md. Mot Tier 2 chay tuan tu; AFF-03 khong mo truoc LaborProfileHandlingAssignment; khong co hai migration stream cung sua prisma/schema.prisma.
+blocking_owner: GO-LIVE-21 can Owner xac nhan Vercel project, KEEP/DELETE cho ba file .env*.local, provider scope can rotate va maintenance window DEMO cleanup. GO-LIVE-07 can Owner ky GO_LIVE_APPROVED. GO-LIVE-19 can TEST DB + migration window. Cac diem nay khong chan TEST-01.
 product_override: /bcc retired; payroll/payslip de cuoi va thuoc app luong rieng; V6 tap trung Marketplace, Affiliate va Admin information architecture
-cursor_note: Full default Vitest sau khi remove nested worktree dat 1683/1683; typecheck exit 0. Credential scan chi in key/path cho thay ba tracked env ngoai .env.example can untrack/rotate, con .env.test.local da vang. Khong in secret vao handover.
+cursor_note: Full default Vitest sau khi remove nested worktree dat 1683/1683; typecheck exit 0. Credential scan chi in key/path cho thay ba tracked env ngoai .env.example can untrack/rotate, con .env.test.local da vang. src/shared/ui/role-guard/role-guard-layout.tsx hien co WIP chua commit gom bon menu vao Dang phat trien; day la candidate cho V6-ADMIN-00, khong duoc goi DONE hay commit kem TEST-01 khi chua co contract/audit. Khong in secret vao handover.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
