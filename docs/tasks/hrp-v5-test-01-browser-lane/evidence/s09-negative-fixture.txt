@@ -1,0 +1,108 @@
+s09-negative-fixture.txt — STEP-09 / fixture AM: spec THAT SU do DOM, khong luon xanh
+
+CANH BAO PHAM VI: hai luot duoi day chay qua CAU HINH CHAN DOAN
+(`playwright-report/test01-diag.config.ts`, `next dev` cong port 3101), KHONG qua ban giao
+`playwright.config.ts`. Ly do o BLK-01: `next build` cua ban giao dang do vi mot thu muc
+UNTRACKED cua luong khac. Vi vay day la bang chung cho NOI DUNG cua RQ-05 (spec do DOM that),
+KHONG phai bang chung thoa dung THU TUC cua AC-09 — thu tuc ay can ban giao chay duoc.
+
+── 1. Lam RONG fixture (dong 71-76 cua spec) ────────────────────────────────
+hash spec truoc khi doi : eb9576be1e6b283a1a69882e8f3e08127a7dd123
+hash spec sau khi lam rong: 85f87f74eb78af76bdd44491c78b6c8f394bf645
+$ git diff -- tests/browser/public-home.spec.ts   (luc fixture con rong)
+  (diff da bi hoan nguyen truoc khi ghi tep nay; noi dung doi la:)
+    -  jobs: [ fakeJob(...A...), fakeJob(...B...) ],   ->  +  jobs: [],
+    -  total: 2,                                        ->  +  total: 0,
+
+── 2. Lan chay DO ───────────────────────────────────────────────────────────
+$ npx --no-install playwright test --config playwright-report/test01-diag.config.ts
+exit=1   thoi gian=60s
+[WebServer]    ▲ Next.js 15.5.23
+[WebServer]    - Local:        http://localhost:3101
+[WebServer]    - Network:      http://192.168.5.95:3101
+[WebServer]    - Environments: .env.local, .env
+[WebServer] 
+[WebServer]  ✓ Starting...
+[WebServer]  ✓ Ready in 5.9s
+[WebServer]  ○ Compiling /middleware ...
+[WebServer]  ✓ Compiled /middleware in 847ms (173 modules)
+[WebServer]  ○ Compiling / ...
+[WebServer]  ✓ Compiled / in 5.4s (649 modules)
+
+Running 1 test using 1 worker
+
+[WebServer]  GET / 200 in 7264ms
+[WebServer]  GET / 200 in 424ms
+[WebServer]  ⚠ Cross origin request detected from 127.0.0.1 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+[WebServer] Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+[WebServer]  ○ Compiling /api/me ...
+[WebServer]  ✓ Compiled /api/me in 2.8s (725 modules)
+[WebServer]  GET /api/me 401 in 3983ms
+[WebServer]  GET / 200 in 371ms
+  x  1 [chromium] › tests\browser\public-home.spec.ts:85:7 › trang chủ công khai: hydrate và vẽ dữ liệu /api/jobs ra DOM › hai tiêu đề của fixture và tổng số của fixture có mặt trong DOM sau hydrate (30.1s)
+
+
+  1) [chromium] › tests\browser\public-home.spec.ts:85:7 › trang chủ công khai: hydrate và vẽ dữ liệu /api/jobs ra DOM › hai tiêu đề của fixture và tổng số của fixture có mặt trong DOM sau hydrate 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Bốc xếp kho lạnh TEST-01-ALPHA', level: 3 })
+    Expected: visible
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 60000ms
+      - waiting for getByRole('heading', { name: 'Bốc xếp kho lạnh TEST-01-ALPHA', level: 3 })
+      - Test timeout of 30000ms exceeded.
+
+
+      104 |     const headingA = page.getByRole('heading', { level: 3, name: TITLE_A });
+      105 |     const headingB = page.getByRole('heading', { level: 3, name: TITLE_B });
+    > 106 |     await expect(headingA).toBeVisible();
+          |                            ^
+      107 |     await expect(headingB).toBeVisible();
+      108 |     await expect(headingA).toHaveCount(1);
+      109 |     await expect(headingB).toHaveCount(1);
+        at C:\CodeApp\HrP\tests\browser\public-home.spec.ts:106:28
+
+    Error Context: test-results\diag\public-home-trang-chủ-công-dad9d-ó-mặt-trong-DOM-sau-hydrate-chromium\error-context.md
+
+  1 failed
+    [chromium] › tests\browser\public-home.spec.ts:85:7 › trang chủ công khai: hydrate và vẽ dữ liệu /api/jobs ra DOM › hai tiêu đề của fixture và tổng số của fixture có mặt trong DOM sau hydrate 
+
+── 3. Lenh HOAN NGUYEN (nguyen van) ─────────────────────────────────────────
+$ git checkout -- tests/browser/public-home.spec.ts
+hash spec sau hoan nguyen: eb9576be1e6b283a1a69882e8f3e08127a7dd123
+-> GIONG hash truoc khi doi: fixture ve DUNG ban giao, tung byte.
+$ git status --porcelain tests/browser/public-home.spec.ts
+A  tests/browser/public-home.spec.ts
+-> `A ` (khong co `M` o cot hai) = noi dung tren dia KHOP index, tuc dung ban da git add.
+
+── 4. Lan chay XANH sau hoan nguyen ─────────────────────────────────────────
+exit=0   thoi gian=32s
+[WebServer]    ▲ Next.js 15.5.23
+[WebServer]    - Local:        http://localhost:3101
+[WebServer]    - Network:      http://192.168.5.95:3101
+[WebServer]    - Environments: .env.local, .env
+[WebServer] 
+[WebServer]  ✓ Starting...
+[WebServer]  ✓ Ready in 5.6s
+[WebServer]  ○ Compiling /middleware ...
+[WebServer]  ✓ Compiled /middleware in 809ms (173 modules)
+[WebServer]  ○ Compiling / ...
+[WebServer]  ✓ Compiled / in 6s (649 modules)
+
+Running 1 test using 1 worker
+
+[WebServer]  GET / 200 in 7906ms
+[WebServer]  GET / 200 in 443ms
+[WebServer]  ⚠ Cross origin request detected from 127.0.0.1 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+[WebServer] Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+  ok 1 [chromium] › tests\browser\public-home.spec.ts:88:7 › trang chủ công khai: hydrate và vẽ dữ liệu /api/jobs ra DOM › hai tiêu đề của fixture và tổng số của fixture có mặt trong DOM sau hydrate (2.9s)
+[WebServer]  ○ Compiling /api/me ...
+
+  1 passed (26.3s)
+
+KET LUAN: fixture rong => exit=1 (KHAC 0). Hoan nguyen => exit=0. Spec do DOM that.

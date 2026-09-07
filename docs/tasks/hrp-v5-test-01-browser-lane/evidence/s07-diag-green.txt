@@ -1,0 +1,81 @@
+s07-diag-green.txt — luot chay CHAN DOAN, KHONG phai luot chay cua ban giao
+
+MUC DICH DUY NHAT cua tep nay: chung minh rang `tests/browser/public-home.spec.ts` — ban spec
+DUOC GIAO — that su HYDRATE trang chu va DOC duoc du lieu fixture ra DOM. Nghia la BLK-01
+(`next build` do vi thu muc untracked `new-ui/`) KHONG che mat cau hoi "spec cua Tier 2 co
+dung khong": no dung, va da do duoc.
+
+DIEU TEP NAY KHONG CHUNG MINH: `AC-02`/`DEC-07` doi lane cua ban giao chay `next build` roi
+`next start`. Luot duoi day chay `next dev`. Vi vay `AC-08` (hai luot cua LANE ban giao, ca hai
+exit 0) van la BLOCKED, khong duoc coi la PASS bang tep nay.
+
+── Cau hinh chan doan (da XOA sau khi do) ─────────────────────────────────────────────
+Duong dan: `playwright-report/test01-diag.config.ts`
+Vi sao dat o day: `.gitignore:76` da bo qua `playwright-report/`, nen tep khong bao gio vao
+index; va khong chon `test-results/` vi Playwright XOA SACH `outputDir` moi luot chay.
+Vi sao khong dat o `$TEMP`: mot cau hinh Playwright ngoai goc repo khong resolve duoc
+`@playwright/test` (MODULE_NOT_FOUND).
+
+Khac ban giao dung BON diem, va chi bon diem:
+  1. `command: 'npx --no-install next dev --port 3101'`   (ban giao: `npm run build && next start --port 3100`)
+  2. `cwd: '..'`                                          (Playwright resolve `cwd` theo thu muc CUA CAU HINH)
+  3. `baseURL: 'http://127.0.0.1:3101'`                   (port khac de khong dam vao lane ban giao)
+  4. `expect.timeout: 60_000`, `navigationTimeout: 180_000` (dev-mode compile lan dau cham)
+Giong ban giao o diem QUAN TRONG NHAT: `env: { DATABASE_URL: <sentinel 127.0.0.1:1 blocked> }`
+— trinh chay VAN khong toi mot database nao (§4.3).
+
+── Luot chay ──────────────────────────────────────────────────────────────────────────
+$ npx --no-install playwright test --config playwright-report/test01-diag.config.ts
+exit=0   thoi gian tong=48s   thoi gian cua test=5.8s
+
+    23:    cwd: '..',
+    exit=0 duration=48s
+    [WebServer]    - Local:        http://localhost:3101
+    [WebServer]    - Environments: .env.local, .env
+    [WebServer]  v Starting...
+    [WebServer]  v Ready in 6s
+    [WebServer]  o Compiling /middleware ...
+    [WebServer]  v Compiled /middleware in 2.4s (173 modules)
+    [WebServer]  o Compiling / ...
+    [WebServer]  v Compiled / in 13.4s (667 modules)
+
+    Running 1 test using 1 worker
+
+    [WebServer]  GET / 200 in 15554ms
+    [WebServer]  v Compiled in 2.9s (250 modules)
+    [WebServer]  GET / 200 in 500ms
+      ok 1 [chromium] > tests\browser\public-home.spec.ts:88:7 > trang chu cong khai: hydrate
+         va ve du lieu /api/jobs ra DOM > hai tieu de cua fixture va tong so cua fixture co mat
+         trong DOM sau hydrate (5.8s)
+
+      1 passed (42.1s)
+
+── Doc gi tu luot nay ─────────────────────────────────────────────────────────────────
+`ok 1` nghia la BON khang dinh cua spec deu dung tren DOM THAT:
+  - `Bốc xếp kho lạnh TEST-01-ALPHA`   visible va toHaveCount(1)
+  - `Vận hành máy dán nhãn TEST-01-BETA` visible va toHaveCount(1)
+  - `Tìm thấy 2 kết quả` (con so lay tu `FIXTURE.total`, khong viet cung)
+  - `intercepted >= 1` — luot chan `/api/jobs` THAT SU xay ra, trang khong di ra mang that
+
+Dong `- Environments: .env.local, .env` dang chu y: `.env` CO duoc doc, nhung sentinel
+`DATABASE_URL` van thang, dung nhu co che da do o `s04-nextenv-override.txt`. Do la ly do lane
+nay fail-closed voi database chu khong phai vi may man.
+
+── Don dep ────────────────────────────────────────────────────────────────────────────
+$ rm -f playwright-report/test01-diag.config.ts
+$ rm -rf test-results/diag
+$ git status --porcelain test-results playwright-report
+  (0 dong — hai thu muc ton tai tren dia nhung khong dong gi vao index)
+
+$ git status --porcelain new-ui new-ui.md   (de doi chieu: BLK-01 la cua luong khac)
+?? new-ui.md
+?? new-ui/
+  (0 dong)
+$ rm -rf playwright-report/.next        # rac cua luot chan doan DAU TIEN, luc chua co cwd: '..'
+$ rm -rf test-results/diag              # artifact cua luot DO o s09
+$ ls -A playwright-report | wc -l  ->  0
+$ ls -A test-results | wc -l       ->  1
+
+KHONG mot tep nao cua luot chan doan con lai tren dia, va khong mot tep nao trong so do
+tung vao index. Ban giao duy nhat cua lane la `playwright.config.ts` cong
+`tests/browser/public-home.spec.ts`.

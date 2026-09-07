@@ -1,0 +1,111 @@
+﻿=== Round 3 pre-evidence ===
+HEAD:
+475880934b7dbe88cf7ce1d44909bc9da6ea668d
+INDEX_TSCONFIG (git ls-files -s):
+100644 53cc484886ddf4164f0741739af42e75ad913528 0	tsconfig.json
+WORKTREE_TSCONFIG (git hash-object):
+53cc484886ddf4164f0741739af42e75ad913528
+HEAD_TSCONFIG (git rev-parse HEAD:tsconfig.json):
+f0c8e7b425330dd47e92243f18a9cc1d4d1f0c3a
+STATUS_TSCONFIG (git status --porcelain):
+M  tsconfig.json
+NUMSTAT_TSCONFIG (git diff --cached --numstat):
+12	2	tsconfig.json
+NUMSTAT_TSCONFIG_STAT (git diff --cached --stat):
+ tsconfig.json | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+PORCELAIN TOTAL:
+502
+
+=== WORKTREES ===
+C:/CodeApp/HrP                        4758809 [main]
+C:/CodeApp/HrP/.claude/worktrees/gl20 b68d25b [worktree-gl20]
+
+=== git log --all --grep=rf-06 ===
+(empty = 0 commits)
+
+=== git log --all --grep=rf-05 ===
+3b15bde feat(ui-01): trang chu mang hinh thuc new-ui -- ACCEPTED v1.1, audit round 1 CONDITIONAL
+(empty = 0 commits)
+
+=== RF-06 AUDIT.md verdict line ===
+
+| Round closes when | `verdict PASS + Planner Resolution ACCEPTED` |
+## 6. Verdict vÃ  Planner Questions
+- **Verdict:** `BLOCKED`
+
+
+
+=== RF-05 AUDIT.md verdict line ===
+
+## 6. Verdict
+**Verdict:** CONDITIONAL
+| Round | Verdict | Finding má»Ÿ á»Ÿ round Ä‘Ã³ | Tráº¡ng thÃ¡i sau round 2 | PhÃ©p Ä‘o Ä‘Ã³ng hoáº·c má»Ÿ |
+
+
+
+=== TEST-01 TASK.md control field ===
+# TASK: hrp-v5-test-01-browser-lane
+
+## 0. Control
+
+| Field | Value |
+|---|---|
+| Task slug | `hrp-v5-test-01-browser-lane` |
+| Work type | `CODE` |
+| Audit mode (Tier 3 Ä‘á»c) | `CODE_AUDIT` |
+| Spec version | `v1.4` |
+| Status | `REVISION_REQUIRED` |
+| Planner | Tier 1 â€” Planner |
+| Executor | Tier 2 â€” Engineer |
+| Auditor | Tier 3 â€” independent auditor |
+| Baseline | `80f6933` |
+| Modules | `playwright.config.ts`, `tests/browser/public-home.spec.ts`, `package.json`, `.gitignore` |
+| ADR references | `hrp-v5-go-live-07-marketplace-launch-proof` `DEC-20` â€” nÆ¡i ghi ráº±ng URL gá»‘c Ä‘o Ä‘Æ°á»£c báº±ng DOM sau hydrate HOáº¶C báº±ng response cá»§a API, tá»©c lane trÃ¬nh duyá»‡t lÃ  TUá»² CHá»ŒN cho ra máº¯t; `hrp-v5-go-live-08-public-ui-premium` â€” round mÃ  mÆ°á»i hai AC Ä‘Ã²i giÃ¡ trá»‹ tÃ­nh bá»Ÿi trÃ¬nh duyá»‡t trong má»™t repo khÃ´ng cÃ³ trÃ¬nh cháº¡y nÃ o |
+| Current execution round | `2` |
+| Current audit round | `1` |
+| Next gate | Chá» RF-06 audit PASS, rá»“i RF-05 execution/audit round 2 vÃ  commit scoped Ä‘á»ƒ `tsconfig.json` trá»Ÿ thÃ nh baseline á»•n Ä‘á»‹nh. Sau Ä‘Ã³ Tier 1 má»Ÿ TEST-01 execution round `3` Má»ŽNG: cháº¡y láº¡i `STEP-08`, `STEP-09`, `STEP-10`, `STEP-11`, Ä‘o hash HEAD/worktree trÆ°á»›c-sau vÃ  audit round `2`. KhÃ´ng giao Tier 2 cháº¡y TEST-01 trÆ°á»›c hai dependency nÃ y |
+| Updated | `2026-09-04 16:12 Asia/Bangkok` |
+
+
+=== done ===
+
+=== STRICT GREP (commit title starts with rf-05/rf-06 slug) ===
+git log --all --grep=^rf-05 --oneline:
+git log --all --grep=^rf-06 --oneline:
+
+=== COMMITS TOUCHING tsconfig.json (last 10) ===
+a489da8 Agent host session 82424b19-4c0e-4938-8db9-a93007401d14 - baseline checkpoint
+71fb23a refactor(marketplace): consolidate public job routes
+7f1ceb8 feat(job-board): @hrp/job-board + route /job-board ISR public theo S05 (A-04, khong auth)
+8558054 feat(pkgs): tach @hrp/money + @hrp/payroll-core sang packages/ (workspaces + tsconfig paths)
+92a544e feat(bcc): quan ly module BCC (chi ma nguon, khong venv/output/xlsx) + dong bo working tree (app bcc, prisma migrations, seeds, docs)
+451ea28 chore: setup project (package.json + tsconfig + vitest + prisma + gitignore)
+(none of the above is the rf-05 allow-list commit; rf-05 is staged but NEVER committed)
+
+=== END ===
+
+=== TEST-01 AUDIT.md verdict ===
+
+| Round closes when | verdict PASS + Planner Resolution ACCEPTED |
+## 6. Verdict và Planner Questions
+- **Verdict:** BLOCKED
+
+
+LastWriteTime AUDIT.md:
+
+Friday, September 4, 2026 4:10:54 PM
+
+
+LastWriteTime TASK.md:
+
+Friday, September 4, 2026 4:13:39 PM
+
+
+LastWriteTime HANDOFF.md (round 2 close):
+
+Monday, September 7, 2026 9:09:25 AM
+
+
+
+=== END ===

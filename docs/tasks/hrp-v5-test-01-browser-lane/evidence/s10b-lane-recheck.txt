@@ -1,0 +1,74 @@
+s10b-lane-recheck.txt — STEP-10 do LAI, sau khi phat hien hai lech so voi moc STEP-01
+
+VI SAO CO TEP NAY: luot STEP-10 dau (`s10-relane.txt`) chay NGAY SAU luot `next build` do cua
+STEP-08 trong cung mot script. `tsconfig.json` co `.next/types/**/*.ts` trong `include`, nen
+mot ban build do dang CO THE doi tap tep cua chuong trinh tsc. Luot nay chay DOC LAP.
+
+── 1. Lane typecheck, chay doc lap ─────────────────────────────────────────────────
+$ npm run typecheck
+exit=1      (moc STEP-01: `TSC_BASELINE_EXIT=1`)
+
+so dong `error TS`            : 1
+so dong `error TS` o new-ui/  : 1
+so dong `error TS` NGOAI new-ui: 0
+co dong nao noi `tests/browser` hay `playwright.config`? -> 0
+
+toan bo output cua tsc, nguyen van:
+  
+  > hrp@0.1.0 typecheck
+  > tsc --noEmit
+  
+  new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & ClassAttributes<HTMLDivElement> & HTMLAttributes<HTMLDivElement> & Omit<...> & LinkProps<...> & { ...; } & RefAttributes<...>'.
+    Type '{ children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'LinkProps<any>'.
+      Types of property 'href' are incompatible.
+        Type 'undefined' is not assignable to type 'Url'.
+
+── 2. Gia thuyet `.next/types` — DA BI CHINH PHEP DO NAY BAC ──────────────────────
+  total 69
+  drwxr-xr-x 1 Admin 197121     0 Sep  4 03:59 .
+  drwxr-xr-x 1 Admin 197121     0 Sep  4 03:59 ..
+  drwxr-xr-x 1 Admin 197121     0 Sep  4 03:59 app
+  -rw-r--r-- 1 Admin 197121  5863 Sep  4 03:59 cache-life.d.ts
+  -rw-r--r-- 1 Admin 197121    18 Sep  4 03:59 package.json
+  -rw-r--r-- 1 Admin 197121  8019 Sep  4 03:59 routes.d.ts
+  -rw-r--r-- 1 Admin 197121 36943 Sep  4 03:59 validator.ts
+  so tep .ts duoi .next/types: 112
+
+  KET QUA BAC GIA THUYET: `.next/types` VAN o day (112 tep .ts, ghi luc 03:59 boi luot build do
+  cua STEP-08), va luot doc lap nay VAN exit=1. Vay su co mat cua `.next/types` KHONG phai nguyen
+  nhan cua ma thoat `2`. Toi ghi nhan minh da doan sai va bo gia thuyet.
+
+  DIEU TOI DO DUOC, ba luot cung mot lenh:
+    - STEP-01 (cay chua sua, `s01-typecheck.txt`)          -> exit=1
+    - STEP-10 luot dau (`s10-relane.txt`, chay trong cung
+      mot script voi lane unit)                            -> exit=2
+    - STEP-10 luot nay (chay doc lap, khong gi khac truoc)  -> exit=1
+  Ca BA luot: dung MOT dong loi, dung MOT tep, va tep ay la `new-ui/components/JobCard.tsx` dong
+  `18` ma `TS2322`. Khong luot nao co mot dong loi NGOAI `new-ui/`, va khong luot nao noi ten
+  `tests/browser/*` hay `playwright.config.ts`.
+
+  DIEU TOI KHONG DO DUOC: nguyen nhan cua ma thoat `2` o luot giua. Toi KHONG suy dien no va
+  KHONG dan no vao ket luan nao. Phep thu re nhat cho ai muon dong no: chay `npm run build`
+  cho no do, roi chay `npm run typecheck` NGAY sau do trong cung mot shell, va so ma thoat. Toi
+  khong chay phep thu ay vi `AC-11` khong doi no, va vi ket luan cua `AC-11` da on dinh: tap dong
+  loi khong chua mot path nao cua task nay.
+
+  Doi chieu `LastWriteTime` cua chinh tep bi buoc toi, de chac no khong bi luong khac sua:
+  new-ui/components/JobCard.tsx  2443 bytes  mtime=2026-09-02 23:19:10.276458400 +0700
+  -> mtime 02/09, tuc CU hon ca luot STEP-01 cua toi (03:13 ngay 04/09). Tep khong he doi.
+
+── 3. Lane unit, chay doc lap ──────────────────────────────────────────────────────
+$ npm run test:unit
+exit=0
+   Test Files  107 passed (107)
+        Tests  1642 passed (1642)
+     Start at  04:05:42
+     Duration  104.20s (transform 5.60s, setup 0ms, collect 20.45s, tests 8.44s, environment 69ms, prepare 26.65s)
+
+  moc STEP-01 (`s01-unit.txt`):
+    Test Files  107 passed (107)
+    Tests       1642 passed (1642)
+
+  so tep test .ts moi cua task nay trong lane unit: 0 — lane unit doc `vitest.unit.config.ts`,
+  con spec cua task nay nam duoi `tests/browser/` va do Playwright chay. Vi vay so PASS phai
+  BANG moc, khong phai lon hon moc, va `AC-11` doi "khong nho hon moc".

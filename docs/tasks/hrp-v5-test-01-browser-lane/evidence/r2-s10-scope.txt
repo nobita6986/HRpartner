@@ -1,0 +1,172 @@
+r2-s10-scope.txt -- STEP-10 va STEP-11 phep do pham vi, execution round 2
+Task: hrp-v5-test-01-browser-lane  Spec: v1.4  Round: 2
+Ghi luc: 2026-09-04T08:28:38Z UTC
+Moi khoi duoi day la lenh THAT chay tai thoi diem tren, khong dan tay.
+
+=== A. AC-11 [1] bon duong dan phai RONG ===
+
+$ git status --porcelain vitest.unit.config.ts vitest.integration-files.ts prisma/ middleware.ts
+[exit=0]
+
+$ git status --porcelain vitest.unit.config.ts vitest.integration-files.ts prisma/ middleware.ts | wc -l
+0
+[exit=0]
+
+=== B. AC-11 [2] app/ cong src/ ===
+
+$ git status --porcelain app/ src/
+A  src/shared/toolchain/tsc-program-boundary.static.test.ts
+[exit=0]
+
+$ git status --porcelain app/ src/ | wc -l
+1
+[exit=0]
+
+=== C. AC-12 [2] tung duong dan o cot CAM CHAM, chay RIENG ===
+
+$ git status --porcelain -- app/ | wc -l
+0
+[exit=0]
+
+$ git status --porcelain -- src/ | wc -l
+1
+[exit=0]
+
+$ git status --porcelain -- vitest.unit.config.ts | wc -l
+0
+[exit=0]
+
+$ git status --porcelain -- vitest.integration-files.ts | wc -l
+0
+[exit=0]
+
+$ git status --porcelain -- tsconfig.json | wc -l
+0
+[exit=0]
+
+$ git status --porcelain -- eslint.config.mjs | wc -l
+0
+[exit=0]
+
+$ git status --porcelain -- prisma/ | wc -l
+0
+[exit=0]
+
+$ git status --porcelain -- middleware.ts | wc -l
+0
+[exit=0]
+
+$ git status --porcelain -- .env | wc -l
+0
+[exit=0]
+
+$ git ls-files next.config.mjs next.config.js next.config.ts | wc -l
+0
+[exit=0]
+
+=== D. AC-12 [3] HEAD cuoi task, so voi gia tri STEP-01 da ghi (31625c4) ===
+
+$ git log --oneline -1
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+[exit=0]
+
+=== E. AC-12 [1] kiem ke HOP hai danh sach, roi phan nhom theo 4.2 ===
+
+$ git status --porcelain | wc -l
+345
+[exit=0]
+
+$ git diff --cached --name-only | wc -l
+106
+[exit=0]
+
+$ cat /c/Users/Admin/AppData/Local/Temp/glx/cen_union.txt | wc -l
+344
+[exit=0]
+
+--- Nhom 1: bon te p o Modules ---
+
+$ grep -xE '(playwright\.config\.ts|tests/browser/public-home\.spec\.ts|package\.json|\.gitignore)' /c/Users/Admin/AppData/Local/Temp/glx/cen_union.txt
+.gitignore
+package.json
+playwright.config.ts
+tests/browser/public-home.spec.ts
+[exit=0]
+
+--- Nhom 2: package-lock.json ---
+
+$ grep -xE 'package-lock\.json' /c/Users/Admin/AppData/Local/Temp/glx/cen_union.txt
+package-lock.json
+[exit=0]
+
+--- Nhom 3: artifact cua chinh task (dem, khong liet ke het) ---
+
+$ grep -cE '^docs/tasks/hrp-v5-test-01-browser-lane/' /c/Users/Admin/AppData/Local/Temp/glx/cen_union.txt
+38
+[exit=0]
+
+--- Nhom 4: path da khai cua BA contract cung lo ---
+
+$ grep -xE '(tsconfig\.json|src/shared/toolchain/tsc-program-boundary\.static\.test\.ts)' /c/Users/Admin/AppData/Local/Temp/glx/cen_union.txt
+src/shared/toolchain/tsc-program-boundary.static.test.ts
+[exit=0]
+
+$ grep -cE '^docs/tasks/(hrp-v5-go-live-18-public-surface-hardening|hrp-v5-go-live-17-rls-required-relation-sweep|hrp-v5-rf-05-tsc-program-boundary)/' /c/Users/Admin/AppData/Local/Temp/glx/cen_union.txt
+87
+[exit=0]
+
+--- DU: path NGOAI bon nhom, tach theo trang thai git ---
+
+$ wc -l < /c/Users/Admin/AppData/Local/Temp/glx/cen_residual.txt
+213
+[exit=0]
+
+$ comm -12 /c/Users/Admin/AppData/Local/Temp/glx/cen_residual.txt /c/Users/Admin/AppData/Local/Temp/glx/cen_staged.txt
+.ai-pipeline/scripts/gate-lib.ps1
+.ai-pipeline/scripts/verify-handoff.ps1
+.ai-pipeline/scripts/verify-pipeline.ps1
+[exit=0]
+
+$ git status --porcelain | sed -e 's/^\(..\) /\1\t/' | tr -d '"' | awk -F'\t' 'NR==FNR{r[$0]=1;next} ($2 in r) && $1!="??" {printf "%s|%s\n",$1,$2}' /c/Users/Admin/AppData/Local/Temp/glx/cen_residual.txt -
+A |.ai-pipeline/scripts/gate-lib.ps1
+ M|.ai-pipeline/scripts/verify-audit.ps1
+A |.ai-pipeline/scripts/verify-handoff.ps1
+M |.ai-pipeline/scripts/verify-pipeline.ps1
+ M|.ai-pipeline/scripts/verify-task.ps1
+ M|docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+ M|docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+ M|docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+ M|public/index.html
+[exit=0]
+
+$ git status --porcelain | sed -e 's/^\(..\) /\1\t/' | tr -d '"' | awk -F'\t' 'NR==FNR{r[$0]=1;next} ($2 in r) {print $1}' /c/Users/Admin/AppData/Local/Temp/glx/cen_residual.txt - | sort | uniq -c
+      6  M
+    204 ??
+      2 A 
+      1 M 
+[exit=0]
+
+=== F. DEC-20 dieu kien 4 ===
+
+$ git diff --cached --numstat -- tsconfig.json | wc -l
+0
+[exit=0]
+
+$ git diff --cached --numstat -- tsconfig.json
+[exit=0]
+
+$ git diff --cached --name-only | grep -c "^\.next/"
+0
+[exit=1]
+
+$ git hash-object tsconfig.json
+f0c8e7b425330dd47e92243f18a9cc1d4d1f0c3a
+[exit=0]
+
+$ git rev-parse HEAD:tsconfig.json
+f0c8e7b425330dd47e92243f18a9cc1d4d1f0c3a
+[exit=0]
+
+$ git ls-files -s tsconfig.json
+100644 f0c8e7b425330dd47e92243f18a9cc1d4d1f0c3a 0	tsconfig.json
+[exit=0]

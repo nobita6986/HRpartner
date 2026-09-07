@@ -1,0 +1,11 @@
+﻿r2-s08-hygiene.txt -- AC-08 menh de thu hai, do lai o round 2
+Ghi luc: 2026-09-04T08:32:49Z UTC
+blob da stage cua spec: eb9576be1e6b283a1a69882e8f3e08127a7dd123
+
+count 'test.skip' = 0
+count 'test.fixme' = 0
+count 'test.only' = 0
+count 'describe.skip' = 0
+count 'describe.only' = 0
+
+Phep dem chay tren chuoi THAT cua tep, khong qua grep, nen khong bi bay dem chuoi con.

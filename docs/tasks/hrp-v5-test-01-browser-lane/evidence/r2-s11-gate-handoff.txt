@@ -1,0 +1,57 @@
+# STEP-11 round 2 -- CONG BAN GIAO, chay CUOI CUNG sau khi git add
+# DEV-02: pwsh khong co tren PATH may nay, nen chay Windows PowerShell 5.1.
+# Lenh nguyen van, dung dau gach cheo XUOI:
+#   powershell -NoProfile -File ./.ai-pipeline/scripts/verify-handoff.ps1 -TaskPath ./docs/tasks/hrp-v5-test-01-browser-lane/TASK.md -HandoffPath ./docs/tasks/hrp-v5-test-01-browser-lane/HANDOFF.md
+# DEV-04: ban dau lenh nay viet bang gach cheo NGUOC. MSYS bash gop mat dau \,
+# path toi doi so -File thanh ".ai-pipelinescriptsverify-handoff.ps1", GATE_EXIT=127.
+# Doi sang gach cheo xuoi thi chay dung. Lenh o tren la lenh THAT SU da chay.
+# Tep nay duoc TAO TRUOC luot chay, chi voi phan tieu de, vi H-07 kiem su ton tai
+# cua moi tep evidence ma HANDOFF tro toi -- ke ca tep giu ket qua cua chinh luot
+# chay ay. Output that duoc ghi noi tiep ben duoi.
+#
+# CO HAI LUOT CHAY va day la ly do:
+#   LUOT 1 bat H-11 DO: hang AC-11 vien mot vet do la "co san tu truoc" ma khong
+#          ghim commit nen cung lenh tai lap trong CUNG mot hang. Sau do o Limitation
+#          cua AC-11 duoc ghim commit 80f6933, lenh npm run typecheck, va artifact
+#          evidence/s01-typecheck.txt voi TSC_BASELINE_EXIT=1.
+#   LUOT CUOI chay SAU khi sua, SAU khi dien so dong cua chinh tep nay vao muc 6,
+#          va SAU khi git add lai -- dung thu tu STEP-11 doi.
+#
+# TRUNG THUC VE PHAM VI: output DAY DU chi co cho LUOT CUOI. Luot 1 chay truoc khi
+# tep nay co phan noi tiep, nen o duoi chi ghi ba dieu doc duoc tu console luot ay:
+# ma thoat, dong RESULT, va nguyen van dong loi duy nhat. Khong dung lai output day
+# du cua luot 1 vi toi khong luu no ra tep -- va khong bia lai.
+#
+# MOT SO DUY NHAT trong tep nay la anh chup chu khong phai trang thai cuoi: dong
+# "H-01 HANDOFF.md size" la so byte tai dung thoi diem luot ay chay. Chinh viec dien
+# so dong cua tep nay vao muc 6 lam HANDOFF.md doi byte, nen so ay se khac neu ai do
+# chay lai cong sau nay. Do la dieu DUNG PHAI xay ra, khong phai mau thuan. Con so
+# ma muc 6 khai cho tep nay la so dong CUOI CUNG, do sau lan ghi noi tiep cuoi.
+
+== LUOT 1 -- ghi tu console, khong phai output day du ==
+GATE_EXIT=2
+RESULT: FAIL (1 error(s), 1 warning(s)).
+  [FAIL] H-11 AC-11 excuses a failure as pre-existing without pinning a baseline commit AND the command that reproduced it there.
+
+== LUOT CUOI -- chay sau khi sua H-11, dien so dong muc 6, va git add ==
+GATE_EXIT=0
+HANDOFF SUBSTANCE GATE
+  subject: ./docs/tasks/hrp-v5-test-01-browser-lane/HANDOFF.md (against ./docs/tasks/hrp-v5-test-01-browser-lane/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 41241 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.4 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 12 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 28 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status BLOCKED is consistent between section 0 and the closing line.
+  [OK]   H-12 all 11 STEP appear in the execution trace.
+  [OK]   H-13 11 deviation(s) in section 2, 13 declared in section 5.
+  [OK]   H-14 section 7 records round 2.
+  [WARN] H-15 TASK.md control field(s) differ from HEAD: Next gate, Spec version. If Tier 2 changed them, revert - those fields belong to Tier 1.
+
+RESULT: PASS WITH WARNINGS (1 warning(s)).
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.

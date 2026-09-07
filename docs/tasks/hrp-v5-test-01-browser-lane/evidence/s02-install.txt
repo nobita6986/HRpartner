@@ -1,0 +1,24 @@
+s02-install.txt — STEP-02 / cai @playwright/test ghim TUYET DOI
+$ npm install --save-dev --save-exact @playwright/test
+
+
+added 3 packages, and audited 250 packages in 5s
+
+71 packages are looking for funding
+  run `npm fund` for details
+
+8 vulnerabilities (3 moderate, 4 high, 1 critical)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+npm warn allow-scripts 5 packages have install scripts not yet covered by allowScripts:
+npm warn allow-scripts   @prisma/client@5.22.0 (postinstall: node scripts/postinstall.js)
+npm warn allow-scripts   @prisma/engines@5.22.0 (postinstall: node scripts/postinstall.js)
+npm warn allow-scripts   esbuild@0.21.5 (postinstall: node install.js)
+npm warn allow-scripts   prisma@5.22.0 (preinstall: node scripts/preinstall-entry.js)
+npm warn allow-scripts   sharp@0.34.5 (install: node install/check.js || npm run build)
+npm warn allow-scripts
+npm warn allow-scripts Run `npm approve-scripts --allow-scripts-pending` to review, or `npm approve-scripts <pkg>` to allow.
+NPM_INSTALL_EXIT=0

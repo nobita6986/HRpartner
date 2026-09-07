@@ -1,0 +1,39 @@
+s06-script.txt — STEP-06 / dung MOT script moi, muoi mot script cu khong doi
+
+$ git diff -- package.json
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+diff --git a/package.json b/package.json
+index 4f5ba53..0048cc1 100644
+--- a/package.json
++++ b/package.json
+@@ -10,6 +10,7 @@
+     "test": "vitest run",
+     "test:watch": "vitest",
+     "test:unit": "vitest run --config vitest.unit.config.ts",
++    "test:browser": "playwright test",
+     "test:integration": "node scripts/ci/integration-preflight.mjs",
+     "test:connection": "node scripts/ci/prisma-connection-gate.mjs && vitest run src/lib/db.test.ts --config vitest.unit.config.ts",
+     "prisma:generate": "prisma generate",
+@@ -38,6 +39,7 @@
+   },
+   "devDependencies": {
+     "@eslint/js": "^9.39.5",
++    "@playwright/test": "1.62.1",
+     "@tailwindcss/postcss": "^4.3.3",
+     "@types/node": "^22.10.2",
+     "@types/react": "^19.0.2",
+
+$ node -p "Object.keys(require('./package.json').scripts).length"   (11 cu + 1 moi = 12)
+12
+
+$ node -p "Object.keys(require('./package.json').scripts).join(' ')"
+dev build typecheck lint test test:watch test:unit test:browser test:integration test:connection prisma:generate prisma:migrate
+
+So sanh khoi scripts voi HEAD bang chinh node, khong bang mat (AC-06):
+script o HEAD      : 11
+script o worktree  : 12
+THEM               : ["test:browser"]
+XOA                : []
+DOI NOI DUNG       : []
+KET LUAN           : DUNG mot script moi ten test:browser; 11 script cu nguyen ten va nguyen noi dung
+playwright o dependencies?: KHONG - dung, chi o devDependencies

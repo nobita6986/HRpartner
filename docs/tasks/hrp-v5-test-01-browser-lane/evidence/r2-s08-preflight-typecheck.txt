@@ -1,0 +1,29 @@
+=== ROUND 2 / tien kiem TRUOC khi tra gia cho mot luot next build ===
+Ly do: muc 9 khai BLK-01 chet o PHA KIEM KIEU. Mot luot build ton hang phut, con phep kiem nay
+vai giay, va no la dung cai phan chet lan truoc. Day cung la mot nua phep do cua STEP-10.
+UTC: 2026-09-04T07:59:26Z
+
+LUAT DO CUA TEP NAY: output tho nam RIENG o r2-s08-preflight-typecheck.raw.txt.
+Moi phep dem chay tren tep THO ay, KHONG chay tren tep nay, vi tep nay chua chinh chuoi
+can tim trong tieu de lenh -- lan dau toi dem sai vi le do, va con so bi o nhiem la 1.
+
+--- CMD: npm run typecheck > r2-s08-preflight-typecheck.raw.txt 2>&1 ---
+EXIT=0
+DURATION_SECONDS=6
+
+--- output tho, nguyen van ---
+
+> hrp@0.1.0 typecheck
+> tsc --noEmit
+
+--- het output tho ---
+
+--- CMD: grep -c 'error TS' r2-s08-preflight-typecheck.raw.txt ---
+0
+--- CMD: grep -c 'new-ui' r2-s08-preflight-typecheck.raw.txt ---
+0
+--- CMD: wc -l r2-s08-preflight-typecheck.raw.txt ---
+4
+
+KET LUAN: exit 0, 0 dong 'error TS', 0 dong nhac 'new-ui'. Nguyen nhan cua BLK-01 da mat
+tren cay nay. Bien chuong trinh tsc do rf-05 dong bang allow-list o khoa include.

@@ -1,0 +1,32 @@
+s03-gitignore.txt — STEP-03 / hai muc artifact cua Playwright vao .gitignore
+
+$ git diff -- .gitignore
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+diff --git a/.gitignore b/.gitignore
+index 98c2329..a638065 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -70,3 +70,7 @@ docs/VERCEL_ENV_PRODUCTION.local.md
+ .ai-pipeline/admin-token.txt
+ .ai-pipeline/manager-token.txt
+ .ai-pipeline/role_secrets.txt
++
++# Playwright browser lane (hrp-v5-test-01) — artifact sinh ra moi luot chay, khong commit
++test-results/
++playwright-report/
+
+$ grep -n -E '^(test-results|playwright-report)/$' .gitignore
+75:test-results/
+76:playwright-report/
+
+$ grep -c -E '^(test-results|playwright-report)/$' .gitignore   (phai la 2 — RQ-07)
+2
+
+Kiem tra hieu luc THAT bang chinh git check-ignore, khong bang mat:
+$ git check-ignore -v test-results/_probe.txt playwright-report/_probe.txt
+.gitignore:75:test-results/	test-results/_probe.txt
+.gitignore:76:playwright-report/	playwright-report/_probe.txt
+CHECK_IGNORE_EXIT=0  (0 => CA HAI duong dan da bi ignore)
+
+$ git status --porcelain | grep -E 'test-results|playwright-report' ; (rong => khong lot vao git)
+(rong)

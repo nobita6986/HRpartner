@@ -1,0 +1,43 @@
+s08-run2.txt — STEP-08 / luot chay THU HAI cua LANE BAN GIAO (chan do chong chap chon)
+
+$ npm run test:browser
+bat dau=03:58:52  ket thuc=04:00:19  thoi gian=87s  exit=1
+
+MENH DE cua tep nay: BLK-01 la mot vet DO XAC DINH, khong phai mot su co chap chon.
+Luot MOT (`s07-run1.txt`) va luot HAI duoi day do o CUNG mot dong, cung mot tep, cung
+mot thong diep kieu. Mot moi truong chap chon khong lam duoc dieu do hai lan lien.
+
+── So sanh hai luot ────────────────────────────────────────────────────────
+luot 1: exit=1  33s  chet tai: ./new-ui/components/JobCard.tsx:18:6
+luot 2: exit=1  87s  chet tai: ./new-ui/components/JobCard.tsx:18:6
+
+so dong `Type error:` cua luot 2 : 1
+so dong lint `Error:` cua luot 2 : 0
+
+── Duoi cua luot 2, nguyen van ─────────────────────────────────────────────
+[WebServer] 
+[WebServer] info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+[WebServer] Failed to compile.
+[WebServer] 
+[WebServer] ./new-ui/components/JobCard.tsx:18:6
+[WebServer] Type error: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & ClassAttributes<HTMLDivElement> & HTMLAttributes<HTMLDivElement> & Omit<...> & LinkProps<...> & { ...; } & RefAttributes<...>'.
+[WebServer]   Type '{ children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'LinkProps<any>'.
+[WebServer]     Types of property 'href' are incompatible.
+[WebServer]       Type 'undefined' is not assignable to type 'Url'.
+[WebServer] 
+[WebServer]   16 |
+[WebServer]   17 |   return (
+[WebServer] > 18 |     <CardWrapper {...wrapperProps} className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant p-5 hover:shadow-md transition-shadow relative overflow-hidden group block">
+[WebServer]      |      ^
+[WebServer]   19 |       {isUrgent && (
+[WebServer]   20 |         <div className="absolute top-0 right-0 bg-primary-container text-white px-3 py-1 rounded-bl-lg flex items-center gap-1 z-10 shadow-sm">
+[WebServer]   21 |           <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
+[WebServer] Next.js build worker exited with code: 1 and signal: null
+Error: Process from config.webServer was not able to start. Exit code: 1
+
+
+── Doc gi tu day ───────────────────────────────────────────────────────────
+`AC-08` doi HAI luot ban giao cung exit `0`. Ca hai luot exit `1`, nen `AC-08` la BLOCKED.
+Nhung phan CHONG CHAP CHON cua STEP-08 thi da do duoc, va no do ra ket qua ON DINH: cung
+mot nguyen nhan, hai lan. Ket qua on dinh cua SPEC thi nam o `s07-diag-green.txt` cong
+muc 4 cua `s09-negative-fixture.txt`: hai luot xanh doc lap, exit `0` ca hai.

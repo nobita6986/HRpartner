@@ -1,0 +1,17 @@
+s01-newui-attribution.txt — STEP-01 / vet do tsc KHONG thuoc test-01
+
+$ git status --porcelain new-ui/ | head -5
+?? new-ui/
+
+$ git log --oneline --all -- new-ui/   (rong => chua tung duoc commit o BAT KY nhanh nao)
+(het)
+
+$ git log --oneline --all -- new-ui/components/JobCard.tsx
+(het)
+
+$ git ls-files new-ui/ | wc -l   (0 => khong mot tep nao duoc theo doi)
+0
+
+KET LUAN: new-ui/ la thu muc UNTRACKED cua mot luong khac (xem new-ui.md).
+Vet do TS2322 o new-ui/components/JobCard.tsx:18 DA DO TRUOC khi test-01 bat dau,
+va test-01 khong sua mot byte nao trong new-ui/. Ghi thanh LIM trong HANDOFF.

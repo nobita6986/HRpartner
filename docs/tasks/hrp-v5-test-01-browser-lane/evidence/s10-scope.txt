@@ -1,0 +1,58 @@
+s10-scope.txt — STEP-10 / RQ-10: lane nay KHONG cham vao ung dung
+
+$ git status --porcelain app/ src/ vitest.unit.config.ts
+M  app/(jobs)/viec-lam/[slug]/page.tsx
+M  app/api/public/applications/[trackingCode]/route.ts
+M  src/domains/applications/marketplace-inventory.static.test.ts
+A  src/domains/applications/tracking-pii-containment.static.test.ts
+M  src/domains/reconciliation/margin.service.ts
+M  src/domains/reconciliation/statement.service.ts
+M  src/domains/staffing/submission.service.ts
+A  src/shared/security/public-surface-limiter.static.test.ts
+M  src/shared/security/rate-limit-guard.ts
+A  src/shared/security/required-relation-sweep.static.test.ts
+(het output tren; moi dong duoi day la cua toi giai thich)
+-> Cac dong o app/ va src/ la path DA KHAI cua HAI contract cung lo (18 va 17), khong phai
+   cua task nay. Dieu nay dung theo AC-11: mot dong o path da khai cua contract cung lo thuoc
+   contract ay. Phan bo cu the:
+
+$ git status --porcelain app/ src/ | sed 's/^/    /'
+    M  app/(jobs)/viec-lam/[slug]/page.tsx
+    M  app/api/public/applications/[trackingCode]/route.ts
+    M  src/domains/applications/marketplace-inventory.static.test.ts
+    A  src/domains/applications/tracking-pii-containment.static.test.ts
+    M  src/domains/reconciliation/margin.service.ts
+    M  src/domains/reconciliation/statement.service.ts
+    M  src/domains/staffing/submission.service.ts
+    A  src/shared/security/public-surface-limiter.static.test.ts
+    M  src/shared/security/rate-limit-guard.ts
+    A  src/shared/security/required-relation-sweep.static.test.ts
+
+$ git status --porcelain vitest.unit.config.ts vitest.integration-files.ts prisma/ middleware.ts
+(RONG = ba duong cam cham cua 4.2 khong bi cham)
+
+── Tung duong CAM CHAM chay RIENG (AC-12) ──────────────────────────────────
+  vitest.unit.config.ts        0 dong
+  vitest.integration-files.ts  0 dong
+  next.config.ts               0 dong
+  tsconfig.json                0 dong
+  eslint.config.mjs            0 dong
+  prisma                       0 dong
+  middleware.ts                0 dong
+  .env                         0 dong
+
+── Path cua RIENG task nay (nhom 1 + 2 cua 4.2) ────────────────────────────
+$ git status --porcelain playwright.config.ts tests/ package.json package-lock.json .gitignore
+ M .gitignore
+ M package-lock.json
+ M package.json
+?? playwright.config.ts
+?? tests/browser/
+
+── test-results/ va playwright-report/ KHONG duoc xuat hien (AC-07) ────────
+$ git status --porcelain test-results playwright-report | wc -l
+0
+$ ls -d test-results playwright-report 2>/dev/null    (co ton tai tren dia)
+playwright-report
+test-results
+-> ton tai tren dia ma 0 dong trong git status = .gitignore dang lam viec.

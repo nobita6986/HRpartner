@@ -1,0 +1,20 @@
+﻿HANDOFF SUBSTANCE GATE
+  subject: docs/tasks/hrp-v5-test-01-browser-lane/HANDOFF.md (against docs/tasks/hrp-v5-test-01-browser-lane/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 37159 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.1 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 12 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 21 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status BLOCKED is consistent between section 0 and the closing line.
+  [OK]   H-12 all 11 STEP appear in the execution trace.
+  [OK]   H-14 section 7 records round 1.
+  [OK]   H-15 TASK.md control fields untouched by this round.
+
+RESULT: PASS.
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+GATE_HANDOFF_EXIT=0

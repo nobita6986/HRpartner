@@ -1,0 +1,15 @@
+s02-browser.txt — STEP-02 / tai binary Chromium (hanh dong MANG)
+$ npx playwright install chromium
+
+(GHI CHU: 40 dong progress-bar thuan da bi loc khoi tep nay cho de doc.
+ Khong mot dong ket qua nao bi loc. Ma thoat o cuoi tep la ma thoat THAT.)
+
+Downloading Chrome for Testing 151.0.7922.34 (playwright chromium v1234)[2m from https://cdn.playwright.dev/builds/cft/151.0.7922.34/win64/chrome-win64.zip[22m
+Chrome for Testing 151.0.7922.34 (playwright chromium v1234) downloaded to C:\Users\Admin\AppData\Local\ms-playwright\chromium-1234
+Downloading FFmpeg (playwright ffmpeg v1011)[2m from https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-win64.zip[22m
+FFmpeg (playwright ffmpeg v1011) downloaded to C:\Users\Admin\AppData\Local\ms-playwright\ffmpeg-1011
+Downloading Chrome Headless Shell 151.0.7922.34 (playwright chromium-headless-shell v1234)[2m from https://cdn.playwright.dev/builds/cft/151.0.7922.34/win64/chrome-headless-shell-win64.zip[22m
+Chrome Headless Shell 151.0.7922.34 (playwright chromium-headless-shell v1234) downloaded to C:\Users\Admin\AppData\Local\ms-playwright\chromium_headless_shell-1234
+Downloading Winldd (playwright winldd v1007)[2m from https://cdn.playwright.dev/dbazure/download/playwright/builds/winldd/1007/winldd-win64.zip[22m
+Winldd (playwright winldd v1007) downloaded to C:\Users\Admin\AppData\Local\ms-playwright\winldd-1007
+PW_BROWSER_INSTALL_EXIT=0

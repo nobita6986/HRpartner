@@ -1,0 +1,178 @@
+﻿=== Round 4 pre-evidence ===
+
+--- HEAD ---
+35236b052c4fcb8a82b9e49de123c53a5cdefc18
+--- HEAD oneline ---
+35236b0 docs(go-live-20): sync accepted audit ledger
+
+--- TSCONFIG three-tier hash (pre-build) ---
+WORKTREE: 53cc484886ddf4164f0741739af42e75ad913528
+INDEX:    53cc484886ddf4164f0741739af42e75ad913528
+HEAD:     53cc484886ddf4164f0741739af42e75ad913528
+STATUS_TS: 
+NUMSTAT:  
+
+--- PORCELAIN TOTAL ---
+291
+
+--- FOUR DELIVERABLES ---
+playwright.config.ts: A  playwright.config.ts
+tests/browser/public-home.spec.ts: A  tests/browser/public-home.spec.ts
+package.json: M  package.json
+.gitignore: M  .gitignore
+
+--- node_modules ---
+
+--- package.json test:browser script ---
+
+    "test:browser": "playwright test",
+
+
+
+--- playwright.config.ts head ---
+/**
+ * playwright.config.ts â€” hrp-v5-test-01 / RQ-02, RQ-03 / DEC-01, DEC-03, DEC-07.
+ *
+ * Lane TRÃŒNH DUYá»†T. NÃ³ tá»“n táº¡i vÃ¬ trang chá»§ lÃ  `'use client'` (`app/(portal)/page.tsx:1`): má»™t
+ * `curl` khÃ´ng bao giá» tháº¥y tÃªn viá»‡c lÃ m, nÃªn má»i hÃ ng rÃ o tÄ©nh hiá»‡n cÃ³ KHÃ”NG chá»©ng minh Ä‘Æ°á»£c ráº±ng
+ * trang hydrate vÃ  váº½ dá»¯ liá»‡u API ra DOM. Lane nÃ y chá»©ng minh Ä‘Ãºng Ä‘iá»u Ä‘Ã³, vÃ  khÃ´ng hÆ¡n â€” pháº¡m vi
+ * kháº³ng Ä‘á»‹nh ghi thÃ nh má»™t giá»›i háº¡n CÃ“ TÃŠN á»Ÿ `DEC-05`.
+ *
+ * BA ÄIá»€U AN TOÃ€N, theo thá»© tá»± quan trá»ng:
+ *
+ *   1. `webServer.env.DATABASE_URL` bá»‹ Ã‰P vá» sentinel khÃ´ng tá»›i Ä‘Æ°á»£c dÆ°á»›i Ä‘Ã¢y. `.env` cá»§a repo trá»
+ *      vÃ o database PRODUCTION (`EV-07`), vÃ  cÃ¡ch viáº¿t `webServer` tá»± nhiÃªn nháº¥t lÃ  Ä‘á»ƒ tiáº¿n trÃ¬nh
+ *      con thá»«a hÆ°á»Ÿng mÃ´i trÆ°á»ng cá»§a shell â€” lÃ m váº­y thÃ¬ má»—i lÆ°á»£t cháº¡y test lÃ  má»™t vÃ²ng truy váº¥n
+ *      production. Ã‰p biáº¿n lÃ  má»™t CÆ  CHáº¾; má»™t lá»i nháº¯c thÃ¬ khÃ´ng (`DEC-03`).
+ *   2. Chuá»—i sentinel GIá»NG Há»†T chuá»—i `BLOCKED_DB_URL` cá»§a `vitest.unit.config.ts:15`. CÃ¹ng má»™t
+ *      cá»•ng khÃ´ng gÃ¡n Ä‘Æ°á»£c `127.0.0.1:1`, nÃªn má»i Ä‘Æ°á»ng cá»‘ má»Ÿ káº¿t ná»‘i Ä‘á»u cháº¿t á»’N Ã€O thay vÃ¬ im
+ *      láº·ng tá»›i Ä‘Æ°á»£c má»™t database tháº­t (`AC-03` so chÃ­nh hai chuá»—i nÃ y).
+ *   3. `reuseExistingServer: false`. Náº¿u Ä‘á»ƒ `true`, má»™t `next dev` mÃ  ai Ä‘Ã³ bá» quÃªn á»Ÿ cá»•ng 3000 sáº½
+ *      Ä‘Æ°á»£c dÃ¹ng láº¡i trong im láº·ng, vÃ  lane nÃ y cháº¡y trÃªn cháº¿ Ä‘á»™ dev Ä‘Ãºng cÃ¡i mÃ  `DEC-07` cáº¥m â€”
+ *      cáº¥u hÃ¬nh váº«n "trÃ´ng" Ä‘Ãºng trong khi lÆ°á»£t cháº¡y thÃ¬ sai.
+ *
+ * KhÃ´ng tá»‡p `.env` nÃ o bá»‹ Ä‘á»c, táº¡o hay sá»­a. KhÃ´ng nhá»‹ phÃ¢n trÃ¬nh duyá»‡t nÃ o náº±m trong repo.
+ */
+import { defineConfig, devices } from '@playwright/test';
+
+/**
+ * COPY NGUYÃŠN VÄ‚N tá»« `BLOCKED_DB_URL` á»Ÿ `vitest.unit.config.ts:15`. Cá»•ng `1` khÃ´ng gÃ¡n Ä‘Æ°á»£c cho
+ * dá»‹ch vá»¥ nÃ o nÃªn káº¿t ná»‘i bá»‹ tá»« chá»‘i ngay. KHÃ”NG Ä‘á»•i thÃ nh má»™t Ä‘á»‹a chá»‰ tá»›i Ä‘Æ°á»£c.
+ */
+const BLOCKED_DB_URL = 'postgresql://blocked:blocked@127.0.0.1:1/blocked?connect_timeout=1';
+
+--- spec head ---
+/**
+ * public-home.spec.ts â€” hrp-v5-test-01 / RQ-04, RQ-05 / DEC-04, DEC-05, DEC-06.
+ *
+ * ÄIá»€U DUY NHáº¤T spec nÃ y chá»©ng minh: trang chá»§ HYDRATE vÃ  Váº¼ dá»¯ liá»‡u cá»§a `/api/jobs` ra DOM tháº­t.
+ *
+ * NÃ³ cÃ³ giÃ¡ trá»‹ vÃ¬ trang chá»§ lÃ  `'use client'` (`app/(portal)/page.tsx:1`) vÃ  danh sÃ¡ch viá»‡c lÃ m Ä‘áº¿n
+ * tá»« má»™t `fetch` cháº¡y trong `useEffect` (`app/(portal)/page.tsx:631`): má»™t `curl` trÃªn `/` KHÃ”NG BAO
+ * GIá»œ tháº¥y má»™t tÃªn viá»‡c lÃ m nÃ o, nÃªn má»i hÃ ng rÃ o tÄ©nh cá»§a repo nÃ y Ä‘á»u mÃ¹ vá»›i lá»›p lá»—i "bundle táº£i
+ * Ä‘Æ°á»£c nhÆ°ng React khÃ´ng hydrate" hoáº·c "hydrate xong nhÆ°ng khÃ´ng render máº£ng jobs".
+ *
+ * GIá»šI Háº N CÃ“ TÃŠN (`DEC-05`) â€” Ä‘á»c trÆ°á»›c khi viá»‡n dáº«n lÆ°á»£t cháº¡y xanh nÃ y á»Ÿ báº¥t ká»³ Ä‘Ã¢u: vÃ¬
+ * `/api/jobs` bá»‹ cháº·n á»Ÿ táº§ng máº¡ng vÃ  tráº£ má»™t fixture dá»±ng ngay trong tá»‡p nÃ y, spec KHÃ”NG chá»©ng minh
+ * gÃ¬ vá» database, vá» RLS, hay vá» tÃ­nh Ä‘Ãºng cá»§a dá»¯ liá»‡u. NÃ³ chá»©ng minh Ä‘Ãºng má»™t Ä‘iá»u: trang chá»§
+ * hydrate vÃ  in dá»¯ liá»‡u API ra DOM.
+ *
+ * Ba lá»±a chá»n lÃ m assertion KHÃ”NG THá»‚ xanh giáº£ (`DEC-06`):
+ *
+ *   1. HAI job, khÃ´ng pháº£i má»™t â€” má»™t báº£n render chá»‰ váº½ pháº§n tá»­ Ä‘áº§u cá»§a máº£ng váº«n sáº½ Ä‘á».
+ *   2. TiÃªu Ä‘á» mang háº­u tá»‘ `TEST-01-â€¦` nÃªn KHÃ”NG trÃ¹ng báº¥t ká»³ chuá»—i tÄ©nh nÃ o cá»§a trang. Náº¿u hydrate
+ *      tháº¥t báº¡i, pháº§n vá» váº«n in ra vÃ  má»™t tiÃªu Ä‘á» trÃ¹ng chuá»—i tÄ©nh sáº½ lÃ m assertion xanh oan.
+ *   3. Con sá»‘ cá»§a `TÃ¬m tháº¥y` láº¥y tá»« `FIXTURE.total`, khÃ´ng viáº¿t cá»©ng â€” trang in má»™t sá»‘ cá»©ng sáº½ Ä‘á».
+ *
+ * Dá»¯ liá»‡u á»Ÿ Ä‘Ã¢y lÃ  dá»¯ liá»‡u Bá»ŠA hoÃ n toÃ n: khÃ´ng tÃªn ngÆ°á»i, khÃ´ng sá»‘ Ä‘iá»‡n thoáº¡i, khÃ´ng CCCD, khÃ´ng
+ * mÃ£ tra cá»©u, khÃ´ng má»™t dÃ²ng nÃ o láº¥y tá»« database (`4.3`).
+ */
+import { expect, test } from '@playwright/test';
+
+import type { PublicJobDto, PublicJobListResult } from '@/src/domains/job-board/public.service';
+
+/**
+
+--- .gitignore relevant block ---
+
+test-results/
+playwright-report/
+
+
+
+=== done ===
+node_modules: EXISTS
+@playwright/test: INSTALLED
+
+--- package.json test:browser script ---
+    "test:browser": "playwright test",
+
+--- playwright.config.ts head ---
+/**
+ * playwright.config.ts â€” hrp-v5-test-01 / RQ-02, RQ-03 / DEC-01, DEC-03, DEC-07.
+ *
+ * Lane TRÃŒNH DUYá»†T. NÃ³ tá»“n táº¡i vÃ¬ trang chá»§ lÃ  `'use client'` (`app/(portal)/page.tsx:1`): má»™t
+ * `curl` khÃ´ng bao giá» tháº¥y tÃªn viá»‡c lÃ m, nÃªn má»i hÃ ng rÃ o tÄ©nh hiá»‡n cÃ³ KHÃ”NG chá»©ng minh Ä‘Æ°á»£c ráº±ng
+ * trang hydrate vÃ  váº½ dá»¯ liá»‡u API ra DOM. Lane nÃ y chá»©ng minh Ä‘Ãºng Ä‘iá»u Ä‘Ã³, vÃ  khÃ´ng hÆ¡n â€” pháº¡m vi
+ * kháº³ng Ä‘á»‹nh ghi thÃ nh má»™t giá»›i háº¡n CÃ“ TÃŠN á»Ÿ `DEC-05`.
+ *
+ * BA ÄIá»€U AN TOÃ€N, theo thá»© tá»± quan trá»ng:
+ *
+ *   1. `webServer.env.DATABASE_URL` bá»‹ Ã‰P vá» sentinel khÃ´ng tá»›i Ä‘Æ°á»£c dÆ°á»›i Ä‘Ã¢y. `.env` cá»§a repo trá»
+ *      vÃ o database PRODUCTION (`EV-07`), vÃ  cÃ¡ch viáº¿t `webServer` tá»± nhiÃªn nháº¥t lÃ  Ä‘á»ƒ tiáº¿n trÃ¬nh
+ *      con thá»«a hÆ°á»Ÿng mÃ´i trÆ°á»ng cá»§a shell â€” lÃ m váº­y thÃ¬ má»—i lÆ°á»£t cháº¡y test lÃ  má»™t vÃ²ng truy váº¥n
+ *      production. Ã‰p biáº¿n lÃ  má»™t CÆ  CHáº¾; má»™t lá»i nháº¯c thÃ¬ khÃ´ng (`DEC-03`).
+ *   2. Chuá»—i sentinel GIá»NG Há»†T chuá»—i `BLOCKED_DB_URL` cá»§a `vitest.unit.config.ts:15`. CÃ¹ng má»™t
+ *      cá»•ng khÃ´ng gÃ¡n Ä‘Æ°á»£c `127.0.0.1:1`, nÃªn má»i Ä‘Æ°á»ng cá»‘ má»Ÿ káº¿t ná»‘i Ä‘á»u cháº¿t á»’N Ã€O thay vÃ¬ im
+ *      láº·ng tá»›i Ä‘Æ°á»£c má»™t database tháº­t (`AC-03` so chÃ­nh hai chuá»—i nÃ y).
+ *   3. `reuseExistingServer: false`. Náº¿u Ä‘á»ƒ `true`, má»™t `next dev` mÃ  ai Ä‘Ã³ bá» quÃªn á»Ÿ cá»•ng 3000 sáº½
+ *      Ä‘Æ°á»£c dÃ¹ng láº¡i trong im láº·ng, vÃ  lane nÃ y cháº¡y trÃªn cháº¿ Ä‘á»™ dev Ä‘Ãºng cÃ¡i mÃ  `DEC-07` cáº¥m â€”
+ *      cáº¥u hÃ¬nh váº«n "trÃ´ng" Ä‘Ãºng trong khi lÆ°á»£t cháº¡y thÃ¬ sai.
+ *
+ * KhÃ´ng tá»‡p `.env` nÃ o bá»‹ Ä‘á»c, táº¡o hay sá»­a. KhÃ´ng nhá»‹ phÃ¢n trÃ¬nh duyá»‡t nÃ o náº±m trong repo.
+ */
+import { defineConfig, devices } from '@playwright/test';
+
+/**
+ * COPY NGUYÃŠN VÄ‚N tá»« `BLOCKED_DB_URL` á»Ÿ `vitest.unit.config.ts:15`. Cá»•ng `1` khÃ´ng gÃ¡n Ä‘Æ°á»£c cho
+ * dá»‹ch vá»¥ nÃ o nÃªn káº¿t ná»‘i bá»‹ tá»« chá»‘i ngay. KHÃ”NG Ä‘á»•i thÃ nh má»™t Ä‘á»‹a chá»‰ tá»›i Ä‘Æ°á»£c.
+ */
+const BLOCKED_DB_URL = 'postgresql://blocked:blocked@127.0.0.1:1/blocked?connect_timeout=1';
+
+--- spec head ---
+/**
+ * public-home.spec.ts â€” hrp-v5-test-01 / RQ-04, RQ-05 / DEC-04, DEC-05, DEC-06.
+ *
+ * ÄIá»€U DUY NHáº¤T spec nÃ y chá»©ng minh: trang chá»§ HYDRATE vÃ  Váº¼ dá»¯ liá»‡u cá»§a `/api/jobs` ra DOM tháº­t.
+ *
+ * NÃ³ cÃ³ giÃ¡ trá»‹ vÃ¬ trang chá»§ lÃ  `'use client'` (`app/(portal)/page.tsx:1`) vÃ  danh sÃ¡ch viá»‡c lÃ m Ä‘áº¿n
+ * tá»« má»™t `fetch` cháº¡y trong `useEffect` (`app/(portal)/page.tsx:631`): má»™t `curl` trÃªn `/` KHÃ”NG BAO
+ * GIá»œ tháº¥y má»™t tÃªn viá»‡c lÃ m nÃ o, nÃªn má»i hÃ ng rÃ o tÄ©nh cá»§a repo nÃ y Ä‘á»u mÃ¹ vá»›i lá»›p lá»—i "bundle táº£i
+ * Ä‘Æ°á»£c nhÆ°ng React khÃ´ng hydrate" hoáº·c "hydrate xong nhÆ°ng khÃ´ng render máº£ng jobs".
+ *
+ * GIá»šI Háº N CÃ“ TÃŠN (`DEC-05`) â€” Ä‘á»c trÆ°á»›c khi viá»‡n dáº«n lÆ°á»£t cháº¡y xanh nÃ y á»Ÿ báº¥t ká»³ Ä‘Ã¢u: vÃ¬
+ * `/api/jobs` bá»‹ cháº·n á»Ÿ táº§ng máº¡ng vÃ  tráº£ má»™t fixture dá»±ng ngay trong tá»‡p nÃ y, spec KHÃ”NG chá»©ng minh
+ * gÃ¬ vá» database, vá» RLS, hay vá» tÃ­nh Ä‘Ãºng cá»§a dá»¯ liá»‡u. NÃ³ chá»©ng minh Ä‘Ãºng má»™t Ä‘iá»u: trang chá»§
+ * hydrate vÃ  in dá»¯ liá»‡u API ra DOM.
+ *
+ * Ba lá»±a chá»n lÃ m assertion KHÃ”NG THá»‚ xanh giáº£ (`DEC-06`):
+ *
+ *   1. HAI job, khÃ´ng pháº£i má»™t â€” má»™t báº£n render chá»‰ váº½ pháº§n tá»­ Ä‘áº§u cá»§a máº£ng váº«n sáº½ Ä‘á».
+ *   2. TiÃªu Ä‘á» mang háº­u tá»‘ `TEST-01-â€¦` nÃªn KHÃ”NG trÃ¹ng báº¥t ká»³ chuá»—i tÄ©nh nÃ o cá»§a trang. Náº¿u hydrate
+ *      tháº¥t báº¡i, pháº§n vá» váº«n in ra vÃ  má»™t tiÃªu Ä‘á» trÃ¹ng chuá»—i tÄ©nh sáº½ lÃ m assertion xanh oan.
+ *   3. Con sá»‘ cá»§a `TÃ¬m tháº¥y` láº¥y tá»« `FIXTURE.total`, khÃ´ng viáº¿t cá»©ng â€” trang in má»™t sá»‘ cá»©ng sáº½ Ä‘á».
+ *
+ * Dá»¯ liá»‡u á»Ÿ Ä‘Ã¢y lÃ  dá»¯ liá»‡u Bá»ŠA hoÃ n toÃ n: khÃ´ng tÃªn ngÆ°á»i, khÃ´ng sá»‘ Ä‘iá»‡n thoáº¡i, khÃ´ng CCCD, khÃ´ng
+ * mÃ£ tra cá»©u, khÃ´ng má»™t dÃ²ng nÃ o láº¥y tá»« database (`4.3`).
+ */
+import { expect, test } from '@playwright/test';
+
+import type { PublicJobDto, PublicJobListResult } from '@/src/domains/job-board/public.service';
+
+/**
+
+--- .gitignore relevant block ---
+test-results/
+playwright-report/
+
+=== end ===

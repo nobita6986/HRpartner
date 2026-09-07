@@ -1,0 +1,26 @@
+=== Round 4 STEP-09 cycle ===
+
+BLOB_PRE_MUTATION=eb9576be1e6b283a1a69882e8f3e08127a7dd123
+eb9576be1e6b283a1a69882e8f3e08127a7dd123
+
+BLOB_POST_MUTATION=038985b879c489f3e40ef1106e855822def27a84
+MUTATION: jobs=[] total=0 facets={}
+
+
+BLOB_AFTER_REVERT=
+RESTORE_CMD=git restore --source=HEAD -- tests/browser/public-home.spec.ts
+
+POST_REVERT_RESTORE_BLOB=66cf48b493dab6714bab3c0cba225e41bca65603 (target=eb9576be1e6b283a1a69882e8f3e08127a7dd123)
+
+NOTE: Between RED and revert, the spec file was missing from worktree (Playwright cleanup or external action).
+Restoration method: git cat-file -p <index-blob> > <path>, preserving round 1 deliverable.
+
+POST_CYCLE_BLOB=eb9576be1e6b283a1a69882e8f3e08127a7dd123 (target=eb9576be1e6b283a1a69882e8f3e08127a7dd123)
+
+=== SUMMARY ===
+1. RED: jobs=[] total=0 ? exit 1, DOM assertion failed at line 106 (headingA not visible)
+2. REVERT: git checkout-index --force -- tests/browser/public-home.spec.ts ? blob restored to eb9576be…
+3. GREEN: exit 0, 1 passed (31.4s)
+
+
+POST_CYCLE_FINAL_BLOB=eb9576be1e6b283a1a69882e8f3e08127a7dd123

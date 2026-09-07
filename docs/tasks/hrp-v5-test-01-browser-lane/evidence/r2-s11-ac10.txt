@@ -1,0 +1,42 @@
+# AC-10 round 2 -- phep do chay tren chinh HANDOFF.md cua round 2
+# Lenh tuong duong: grep -n "<chuoi>" HANDOFF.md cong grep -o de dem so lan,
+# voi <chuoi> la tu ghep co dau nghia "end-to-end". Chuoi ay chi xuat hien trong
+# tep nay BEN TRONG cac dong trich nguyen van o duoi, va khong o dau khac: phep dem
+# chay tren HANDOFF.md chu khong chay tren tep nay, nen tep nay khong the lam o
+# nhiem con so. Day dung la bay ma round 1 da ghi lai: "mot lan la chinh chuoi tim
+# kiem trong o nay".
+#
+# PHAN LOAI BA BUOC -- vi phep dem chay tren chinh tai lieu no xet:
+#   SELF  = nam trong o lenh hoac o ket qua cua CHINH hang AC-10, tu sinh ra
+#   META  = mot hang chi GOI TEN tep bang chung o muc 6
+#   PROSE = cau van thuc su cua ban giao -- day moi la thu AC-10 xet
+#
+# DO LAI 2026-09-04 sau khi sua H-11 o hang AC-11: con so khong doi, nhung SO DONG
+# da dich (104 -> 106, 143 -> 145) vi cac lan ghi sau da chen dong vao muc 4 va
+# muc 5. Tep nay trich lai theo trang thai HIEN TAI cua HANDOFF.md.
+
+MATCHED_LINES=3
+TOTAL_OCCURRENCES=5
+SELF_OCCURRENCES=3
+META_OCCURRENCES=1
+PROSE_OCCURRENCES=1
+
+## Tung dong khop, nguyen van, kem so dong va phan loai
+
+[line 71] [SELF] [3 lan] -- nam trong o lenh va o ket qua cua CHINH hang AC-10, tu sinh ra
+| `AC-10` | Đọc mục `LIM-01` của `§5` tệp này và so từng chữ với `DEC-05` dòng `73` của TASK. Cộng `grep -c "đầu-cuối"` cùng `grep -o` trên chính tệp này | Giới hạn CÓ TÊN nằm NGUYÊN VĂN ở `LIM-01`, khớp từng chữ với `DEC-05` và với `LIM-01` của round `1`. Chuỗi `đầu-cuối` khớp `3` dòng và `5` lần xuất hiện. Phân loại ba bậc: `3` lần TỰ SINH trong chính ô lệnh cùng ô kết quả của hàng này, `1` lần là hàng `§6` gọi TÊN chuỗi tìm kiếm, và đúng `1` lần là câu văn thật của bản giao — câu ấy ở dòng `106` và nó là câu PHỦ ĐỊNH. `0` dòng nào của bản giao khẳng định lane này chứng minh bề mặt công khai đầu-cuối | `evidence/r2-s11-ac10.txt` — dẫn TỪNG dòng khớp kèm số dòng, để người kiểm đọc được ngữ cảnh phủ định chứ chỉ thấy con số | Phép đếm này chạy trên chính tài liệu nó xét, nên ô lệnh của hàng này tự tạo ra vài lần khớp. Tệp bằng chứng tách rõ số khớp TỰ SINH khỏi số khớp trong văn |
+
+[line 106] [PROSE] [1 lan] -- cau van thuc su cua ban giao -- day moi la thu AC-10 xet
+| `LIM-01` | Giới hạn CÓ TÊN — `RQ-08`, `AC-10` | Nguyên văn `DEC-05`: **Giới hạn CÓ TÊN:** vì `/api/jobs` bị chặn, spec này KHÔNG chứng minh gì về database, về RLS, hay về tính đúng của dữ liệu. Nó chứng minh đúng một điều: trang chủ hydrate và in dữ liệu API ra DOM. | KHÔNG đổi ở round `2`, và round `2` làm nó ĐẮT HƠN chứ không rẻ hơn: hai lượt XANH của `AC-08` là hai lượt có `page.route` chặn `/api/jobs`, nên hai exit `0` ấy vẫn không nói gì về database hay RLS. Cấm viện dẫn lane này như bằng chứng bề mặt công khai đầu-cuối, ở AUDIT hay ở bất kỳ đâu |
+
+[line 145] [META] [1 lan] -- hang muc 6 chi GOI TEN tep bang chung, khong khang dinh dieu gi
+| `evidence/r2-s11-ac10.txt` | `42` | Phép đo `AC-10` chạy trên chính tài liệu này: từng dòng khớp `đầu-cuối` kèm số dòng, tách rõ số khớp TỰ SINH trong ô lệnh khỏi số khớp trong văn |
+
+## Ket luan
+Dung 1 lan xuat hien la cau van thuc su cua ban giao, o dong 106, va no la cau
+PHU DINH: no CAM vien dan lane nay lam bang chung be mat cong khai end-to-end,
+ke ca o AUDIT.
+4 lan con lai la tu sinh (3 trong hang AC-10) va goi ten tep bang chung (1 o muc 6).
+KHONG mot dong nao cua ban giao khang dinh lane nay chung minh be mat cong khai
+end-to-end. Gioi han CO TEN cua RQ-08 nam nguyen van o LIM-01 muc 5, khop tung chu
+voi DEC-05 dong 73 cua TASK.md va voi LIM-01 cua round 1.

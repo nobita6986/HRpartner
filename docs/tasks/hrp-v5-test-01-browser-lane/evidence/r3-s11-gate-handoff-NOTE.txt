@@ -1,0 +1,1 @@
+﻿NOTE: Round 3 did NOT modify AUDIT.md. The S-19 errors here are pre-existing in the round 2 AUDIT.md (last modified 2026-09-04). They reflect the BLOCKED verdict of round 1 audit round. Tier 2 cannot edit AUDIT.md (Tier 3 owns it). The gate FAIL is therefore expected and propagated, not caused by round 3.

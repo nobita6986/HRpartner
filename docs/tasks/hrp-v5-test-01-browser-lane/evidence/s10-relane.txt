@@ -1,0 +1,50 @@
+s10-relane.txt — STEP-10 / hai lane chay lai sau khi lane browser da vao cay
+
+── 1. Ba duong dan phai RONG (RQ-10) ───────────────────────────────────────
+$ git status --porcelain vitest.unit.config.ts
+  -> 0 dong
+
+$ git status --porcelain app/ src/
+M  app/(jobs)/viec-lam/[slug]/page.tsx
+M  app/api/public/applications/[trackingCode]/route.ts
+M  src/domains/applications/marketplace-inventory.static.test.ts
+A  src/domains/applications/tracking-pii-containment.static.test.ts
+M  src/domains/reconciliation/margin.service.ts
+M  src/domains/reconciliation/statement.service.ts
+M  src/domains/staffing/submission.service.ts
+A  src/shared/security/public-surface-limiter.static.test.ts
+M  src/shared/security/rate-limit-guard.ts
+A  src/shared/security/required-relation-sweep.static.test.ts
+  -> 10 dong.
+  CANH BAO CACH DOC: contract doi "output RONG" cho ba duong dan. `app/` va `src/` KHONG
+  rong, va do la DUNG: muoi dong tren la path DA KHAI cua HAI contract cung lo (18 va 17),
+  khong mot dong nao do task nay sinh ra. Phan quy thuoc tung dong nam o `s10-scope.txt`.
+  `AC-11` da tien luong dung tinh huong nay: "Neu mot dong do nam o path da khai cua mot
+  contract cung lo thi do la defect cua contract ay, khong phai cua task nay".
+
+── 2. Lane unit ────────────────────────────────────────────────────────────
+$ npm run test:unit
+exit=0  thoi gian=113s
+
+moc cua STEP-01 (`s01-unit.txt`):
+
+── 3. Lane typecheck ───────────────────────────────────────────────────────
+$ npm run typecheck
+exit=2  thoi gian=39s
+
+so dong loi cua luot nay      : 1
+so dong loi thuoc `new-ui/`   : 1
+so dong loi NGOAI `new-ui/`   : 0
+
+toan bo dong loi, nguyen van:
+  new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & ClassAttributes<HTMLDivElement> & HTMLAttributes<HTMLDivElement> & Omit<...> & LinkProps<...> & { ...; } & RefAttributes<...>'.
+
+doi chieu moc STEP-01 (`s01-typecheck.txt`), tuc cay CHUA co lane browser:
+  new-ui/components/JobCard.tsx(18,6): error TS2322: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & ... 4 more ... & HTMLAttributes<...>'.
+
+── 4. Ket luan ─────────────────────────────────────────────────────────────
+lane unit     : exit=0
+lane typecheck: exit=2
+Vet do cua typecheck DA CO TU TRUOC task nay (moc STEP-01 do y nguyen no), va no nam
+tron trong `new-ui/` — mot thu muc `git ls-files` tra 0 dong. Khong mot tep nao cua task
+nay gop mot dong loi kieu nao. Ghi thanh LIM, khong phai defect cua lane browser.

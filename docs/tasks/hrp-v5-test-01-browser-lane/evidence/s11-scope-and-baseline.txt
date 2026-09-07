@@ -1,0 +1,106 @@
+s11-scope-and-baseline.txt — STEP-11 / phan nhom path theo §4.2, va menh de `HEAD` cua AC-12
+
+── 1. `git log --oneline -1` ────────────────────────────────────────────────────────
+e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+
+── 2. Baseline cua contract vs HEAD — menh de nay FAIL, va ly do khong o Tier 2 ─────
+Baseline ghi o §0 cua TASK.md: `80f6933`
+$ git log --oneline 80f6933..HEAD
+  e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+  2941bbb docs(planner): dich cursor sang 18 -- 16 ACCEPTED va bon mon con lai da gate PASS
+  7165ad1 ﻿docs(go-live-16): hau kiem PLN-34 -- C-09 tu dong khi Status thanh ACCEPTED
+  99d6f16 fix(a11y): tuong phan va vong focus be mat noi bo len WCAG AA (go-live-16)
+  fbc8af6 docs(cursor): sua quy thuoc luong gate + ghi canh bao DUNG CU CHUA PHAT HANH
+  46ea2dc docs(go-live-16): tra audit round 2 — mot MA THOAT bi bia, ghi PLN-29..PLN-32
+  e309323 docs(go-live-18,19): quyet dinh Owner 03/09 — tach phan re khoi phan dat cua che PII
+  48234d9 docs(go-live-16): tra audit round 1, ghi PLN-23..PLN-28 — nam defect contract la cua Tier 1
+  d017d61 docs(planner): viet bon contract cuoi hang doi go-live, bac bo hai mon da chet
+  -> 9 commit
+
+`AC-12` doi "`HEAD` bang baseline, tuc khong co commit moi nao so voi baseline". Tren cay nay
+HEAD di TRUOC baseline 9 commit, nen menh de ay FAIL. Ba dieu phai noi cho dung:
+
+  (a) KHONG mot commit nao trong so do la commit cua Tier 2 trong lo nay. So path bi cham ma
+      giao voi ban giao cua lane browser: 0.
+      $ git diff --name-only 80f6933..HEAD | grep -E '^(playwright[.]config[.]ts|tests/browser/|package(-lock)?[.]json|[.]gitignore)$'
+      -> (rong)
+
+  (b) 6 path duoi `app/` hay `src/` CO bi cham trong khoang ay, va do la commit CO THAT cua
+      luong khac, khong phai cua toi:
+        app/ctv/page.tsx
+        app/login/login-form.tsx
+        app/worker/page.tsx
+        src/shared/ui/data-table/data-table.tsx
+        src/shared/ui/entity-card/entity-card.tsx
+        src/shared/ui/internal-contrast.static.test.ts
+      $ git log --oneline 80f6933..HEAD -- app/ src/
+        99d6f16 fix(a11y): tuong phan va vong focus be mat noi bo len WCAG AA (go-live-16)
+      Do la ban sua da ACCEPTED cua `hrp-v5-go-live-16-internal-contrast-focus`. So commit chi
+      cham `docs/`, `.ai-pipeline/`, `scratch/`: 8.
+
+  (c) Con so nay DICH trong luc toi dang lam viec. Anh chup luc mo phien ghi HEAD la `e309323`,
+      tuc khoang cach ba commit; do lai luc viet HANDOFF thi HEAD la `e58a6c0` va khoang cach 9.
+      Nghia la luong Tier 1 song song van dang commit tren cung cay lam viec. Vi vay `AC-12`
+      KHONG THE thoa bang bat ky hanh dong nao cua Tier 2 — chi Tier 1 doi duoc `Baseline` cua
+      chinh contract. Ghi thanh `LIM-02`, khong phai defect cua ban giao.
+
+── 3. Moi duong dan CAM CHAM, chay RIENG tung duong (AC-12) ─────────────────────────
+  git status --porcelain app                          -> 2 dong
+  git status --porcelain src                          -> 8 dong
+  git status --porcelain vitest.unit.config.ts        -> 0 dong
+  git status --porcelain vitest.integration-files.ts  -> 0 dong
+  git status --porcelain next.config.ts               -> 0 dong
+  git status --porcelain tsconfig.json                -> 0 dong
+  git status --porcelain eslint.config.mjs            -> 0 dong
+  git status --porcelain prisma                       -> 0 dong
+  git status --porcelain middleware.ts                -> 0 dong
+  git status --porcelain .env                         -> 0 dong
+  git status --porcelain .env.local                   -> 0 dong
+  git status --porcelain .env.production              -> 0 dong
+
+  CACH DOC: `app` va `src` KHONG ra 0. Muoi dong ay la nhom BON cua §4.2 — path da khai cua 18
+  va 17. Contract viet ro nhom bon "CO MAT trong cay lam viec" va Tier 2 chi bi cam SUA chung.
+  Phan quy tung dong nam o `s10-scope.txt`. Khong mot dong nao la cua task nay.
+
+── 4. Phan nhom TOAN BO tap staged theo bon nhom cua §4.2 ───────────────────────────
+  tong path staged: 75
+  nhom 1:   4 path
+  nhom 2:   1 path
+  nhom 3:   0 path
+  nhom 4:  67 path
+  nhom 5:   3 path
+
+  nhom 1 — bon tep o `Modules`:
+    .gitignore
+    package.json
+    playwright.config.ts
+    tests/browser/public-home.spec.ts
+
+  nhom 2 — lock:
+    package-lock.json
+
+  NGOAI bon nhom:
+    .ai-pipeline/scripts/gate-lib.ps1
+    .ai-pipeline/scripts/verify-handoff.ps1
+    .ai-pipeline/scripts/verify-pipeline.ps1
+
+  nhom 3 (artifact cua chinh task nay): 0 path
+  nhom 4 (hai contract cung lo): 67 path — 37 duoi `...18/`, 20 duoi `...17/`, 10 duoi `app/`+`src/`
+
+  BA PATH NGOAI BON NHOM, va toi KHONG dong vao chung. `AC-12` viet "Xuat hien mot path ngoai
+  bon nhom tren la FAIL", nen dung nghia mat chu thi `AC-12` FAIL o day nua. Ba path ay:
+    - da nam SAN trong index TRUOC lenh dau tien cua toi. Anh chup git luc mo phien ghi ro
+      `A  .ai-pipeline/scripts/gate-lib.ps1`, `A  .ai-pipeline/scripts/verify-handoff.ps1`,
+      `M  .ai-pipeline/scripts/verify-pipeline.ps1`.
+    - la bo GATE, do mot Agent khac cua Owner sua, theo dung loi Owner ngay 03/09.
+    - go chung ra khoi index la SUA viec cua luong khac, dieu luat thuong tru cam.
+  Ghi thanh `LIM-03`. Quyet dinh thuoc Tier 1: hoac chap nhan mot ngoai le CO TEN, hoac Tier 1
+  tu unstage vung cua minh truoc khi audit.
+
+── 5. `git diff --cached --numstat` cho dung nam path cua task nay ──────────────────
+4	0	.gitignore
+63	0	package-lock.json
+2	0	package.json
+85	0	playwright.config.ts
+120	0	tests/browser/public-home.spec.ts
+  Khong mot dong XOA nao o ca nam path.

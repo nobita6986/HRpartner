@@ -1,0 +1,47 @@
+﻿=== Round 4 POST-evidence ===
+
+--- HEAD ---
+f31d2035df3b84f4439d3d69bbfb8fb6e45381a5
+f31d203 docs(planner): encode affiliate commission dependency
+
+--- TSCONFIG three-tier hash (POST) ---
+WORKTREE: 53cc484886ddf4164f0741739af42e75ad913528
+INDEX:    53cc484886ddf4164f0741739af42e75ad913528
+HEAD:     53cc484886ddf4164f0741739af42e75ad913528
+STATUS_TS: 
+NUMSTAT:   
+
+--- PORCELAIN TOTAL ---
+314
+
+--- FOUR DELIVERABLES ---
+playwright.config.ts: A  playwright.config.ts
+tests/browser/public-home.spec.ts: A  tests/browser/public-home.spec.ts
+package.json: M  package.json
+.gitignore: M  .gitignore
+
+--- STAGED .next/ ? ---
+git diff --cached --name-only -- .next/:
+(empty = none staged)
+
+--- SPEC BLOB (round 1 delivery) ---
+spec blob: eb9576be1e6b283a1a69882e8f3e08127a7dd123
+(target: eb9576be1e6b283a1a69882e8f3e08127a7dd123)
+
+--- FORBIDDEN PATHS scope check ---
+app/:
+src/:
+ M src/shared/ui/role-guard/role-guard-layout.tsx
+middleware.ts:
+vitest.unit.config.ts:
+prisma/:
+
+=== end ===
+test-results count: 0
+playwright-report count: 0
+
+--- status --porcelain for .next/, test-results/, playwright-report/ ---
+.next/ porcelain: 0 lines
+test-results/ porcelain: 0 lines
+playwright-report/ porcelain: 0 lines
+(all three are gitignored and untracked, never staged)

@@ -1,0 +1,33 @@
+# BLK-02 -- DEC-20 dieu kien 3 DA NO.
+# Ban giao tsconfig.json cua hrp-v5-rf-05-tsc-program-boundary bi XOA khoi CA worktree
+# LAN index, GIUA vong chay cua task nay, boi mot tac nhan KHONG phai task nay.
+
+## A. Hai gia tri cua dieu kien 2, do bang git hash-object
+TRUOC lan chay dau  (ghi o r2-s00-baseline.txt): 53cc484886ddf4164f0741739af42e75ad913528
+$ git hash-object tsconfig.json   # SAU lan chay do
+f0c8e7b425330dd47e92243f18a9cc1d4d1f0c3a
+exit=0
+=> HAI GIA TRI LECH. Dieu kien 3 buoc: DUNG, khai mot blocker moi, KHONG hoan nguyen,
+   KHONG stage, KHONG xoa, vi day la ban giao CHUA DUOC AUDIT cua mot luong khac.
+
+## B. Muc do: khong chi worktree, ma CA index
+$ git rev-parse HEAD:tsconfig.json
+f0c8e7b425330dd47e92243f18a9cc1d4d1f0c3a
+$ git ls-files -s tsconfig.json   # cot 2 = blob trong INDEX
+100644 f0c8e7b425330dd47e92243f18a9cc1d4d1f0c3a 0	tsconfig.json
+$ git diff --cached --numstat -- tsconfig.json
+exit=0 (RONG = index BANG HEAD, tuc thay doi da staged cua rf-05 KHONG con)
+$ git status --porcelain -- tsconfig.json
+exit=0 (RONG = worktree = index = HEAD)
+
+So sanh voi so do luc mo vong, ghi o r2-s00-baseline.txt:
+9:--- CMD: git hash-object tsconfig.json   (DEC-20 dieu kien 2: dau tay TRUOC luot chay dau) ---
+13:--- CMD: git diff --cached --numstat -- tsconfig.json   (DEC-20 dieu kien 4: phai la 12 2) ---
+14:12	2	tsconfig.json
+71:A  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s03-tsconfig-diff.txt
+153:M  tsconfig.json
+350:?? tsconfig.tmp.json
+
+12  2 la dau tay khong the nham: HEAD co include 3 muc, rf-05 doi thanh 13 muc,
+tuc XOA 2 dong (**/*.ts va **/*.tsx) va THEM 12 dong. Con so ay chi ton tai khi
+INDEX khac HEAD. Bay gio numstat RONG, nen index da bi dat lai ve HEAD.

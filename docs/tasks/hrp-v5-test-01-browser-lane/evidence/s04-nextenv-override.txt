@@ -1,0 +1,26 @@
+s04-nextenv-override.txt — do NGU NGHIA ghi de cua @next/env (chan do co hoc cua RQ-03)
+
+Van de: RQ-03 doi `webServer.env` EP `DATABASE_URL` ve sentinel. Nhung Next TU doc `.env`.
+Neu `.env` GHI DE bien da co trong process.env thi ca co che fail-closed VO HIEU va lane test
+se noi thang tai PRODUCTION (`.env` `neondb` = production). Duoi day do bang HAI cach.
+
+── Cach 1: doc chinh nguon @next/env (tinh) ─────────────────────────────────
+$ grep -o 'typeof [a-z]\[[a-z]\]==="undefined"&&typeof [a-z]\[[a-z]\]==="undefined"' node_modules/@next/env/dist/index.js
+typeof u[t]==="undefined"&&typeof l[t]==="undefined"
+-> mot khoa cua .env CHI duoc thu ve khi khoa ay CHUA co trong snapshot cua process.env.
+
+── Cach 2: chay thuc, tren mot thu muc GIA voi mot .env GIA ─────────────────
+KHONG doc `.env` cua repo (dieu 4.3 cam). `.env` gia dat trong TEMP, noi dung:
+    DATABASE_URL=postgresql://FAKE_MUST_NOT_WIN@127.0.0.1:5432/fake
+    FIXTURE_ONLY_KEY=picked-up-from-dotenv
+
+$ node probe.js <repo>/node_modules/@next/env     (cwd = thu muc temp)
+cwd cua probe            : C:\Users\Admin\AppData\Local\Temp\test01-nextenv-probe
+DATABASE_URL == sentinel : true
+DATABASE_URL bi .env de  : false
+khoa CHUA duoc dat truoc : true (chung minh loadEnvConfig THAT SU da doc .env gia)
+exit=0
+
+KET LUAN: bien da co trong process.env SONG SOT qua loadEnvConfig, con khoa chua co thi duoc
+nhan tu .env — nen `webServer.env.DATABASE_URL` cua playwright.config.ts THAT SU thang `.env`.
+Khong mot gia tri that nao cua `.env` repo bi in ra tep nay.

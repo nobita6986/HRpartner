@@ -1,0 +1,658 @@
+
+> hrp@0.1.0 test:browser
+> playwright test
+
+[WebServer] 
+[WebServer] > hrp@0.1.0 build
+[WebServer] > next build
+[WebServer] 
+[WebServer]    ▲ Next.js 15.5.23
+[WebServer]    - Environments: .env.production.local, .env.local, .env.production, .env
+[WebServer] 
+[WebServer]    Creating an optimized production build ...
+[WebServer] Found 1 warning while optimizing generated CSS:
+[WebServer] 
+[WebServer] │   }
+[WebServer] │ }
+[WebServer] │ @import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
+[WebServer] ┆        ^-- @import rules must precede all rules aside from @charset and @layer statements
+[WebServer] ┆
+[WebServer] │ :root {
+[WebServer] │   --primary: var(--color-primary);
+[WebServer] 
+[WebServer]  ✓ Compiled successfully in 8.4s
+[WebServer]    Linting and checking validity of types ...
+[WebServer] 
+[WebServer]  ⚠ The Next.js plugin was not detected in your ESLint configuration. See https://nextjs.org/docs/app/api-reference/config/eslint#migrating-existing-config
+[WebServer] 
+[WebServer] ./app/admin/attendance/page.tsx
+[WebServer] 251:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 274:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 300:63  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/admin/jobs/page.tsx
+[WebServer] 151:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/admin/commission-ledger/[id]/[action]/route.ts
+[WebServer] 18:3  Warning: 'applyReversal' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 29:6  Warning: 'Action' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 
+[WebServer] ./app/api/attendance/import/route.ts
+[WebServer] 104:66  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/attendance/timesheets/route.ts
+[WebServer] 49:69  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/attendance/timesheets/[id]/route.ts
+[WebServer] 76:61  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/clients/route.ts
+[WebServer] 131:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/clients/[id]/route.ts
+[WebServer] 64:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/disputes/route.ts
+[WebServer] 109:69  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 109:80  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/projects/route.ts
+[WebServer] 138:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/projects/[id]/route.ts
+[WebServer] 65:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/staffing/orders/route.ts
+[WebServer] 24:3  Warning: 'updateStaffingOrderStatus' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 73:66  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/staffing/orders/[id]/route.ts
+[WebServer] 117:63  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 139:65  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/tickets/route.ts
+[WebServer] 89:61  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 93:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 98:52  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/vendors/route.ts
+[WebServer] 105:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/vendors/[id]/route.ts
+[WebServer] 62:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/worker/checkins/route.ts
+[WebServer] 141:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/workers/route.ts
+[WebServer] 142:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/api/workers/[id]/route.ts
+[WebServer] 69:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./app/components/GlobalNavbar.tsx
+[WebServer] 58:10  Warning: 'mobileOpen' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 58:22  Warning: 'setMobileOpen' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 
+[WebServer] ./app/worker/page.tsx
+[WebServer] 202:63  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/applications/application-queue.service.test.ts
+[WebServer] 16:3  Warning: 'AdminApplicationError' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 31:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 32:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 33:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 42:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 51:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 64:61  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 105:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 115:45  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 116:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 117:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 131:53  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 146:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 156:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 164:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 173:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 185:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 194:55  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 214:59  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 233:59  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 242:43  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 253:43  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 262:43  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/applications/apply-helpers.ts
+[WebServer] 22:38  Warning: Unnecessary escape character: \-.  no-useless-escape
+[WebServer] 
+[WebServer] ./src/domains/applications/conversion.service.test.ts
+[WebServer] 47:51  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 77:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 86:43  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 97:51  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 110:43  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 121:43  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 133:51  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 143:43  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 148:48  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 150:48  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 152:97  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 154:48  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 156:64  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/applications/live-integration.mp2.test.ts
+[WebServer] 57:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 76:27  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 104:48  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 108:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 115:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 116:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 117:14  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 260:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 283:14  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 284:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 299:79  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 328:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/applications/screening.service.test.ts
+[WebServer] 4:83  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 27:55  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 33:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 56:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 59:52  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 61:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 67:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 69:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 75:55  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 84:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 89:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 96:69  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/attendance/4role-attendance.integration.test.ts
+[WebServer] 102:59  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 104:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 108:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 117:24  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 137:22  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 141:22  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 152:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 153:22  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 156:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/attendance/e2e-attendance-narrative.integration.test.ts
+[WebServer] 89:59  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 91:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 95:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 103:22  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 107:22  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 120:22  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 131:24  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 144:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 159:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 163:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/attendance/import.service.ts
+[WebServer] 30:23  Warning: 'PrismaClient' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 
+[WebServer] ./src/domains/attendance/ticket.service.test.ts
+[WebServer] 40:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 41:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 42:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 45:14  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 52:13  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 69:12  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 79:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 82:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 84:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 92:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 94:42  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 97:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 107:43  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 110:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 115:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 119:83  Warning: Irregular whitespace not allowed.  no-irregular-whitespace
+[WebServer] 129:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 139:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 148:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 153:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 160:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 174:43  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 178:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 199:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 250:27  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 261:24  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 261:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 563:61  Warning: Irregular whitespace not allowed.  no-irregular-whitespace
+[WebServer] 565:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/attendance/timesheet.service.ts
+[WebServer] 147:69  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 157:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/commission/golden.test.ts
+[WebServer] 58:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 63:13  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 80:42  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 95:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 102:43  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 103:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 129:45  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 137:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 144:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 159:45  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 170:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 200:11  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/job-board/mp1.contract.test.ts
+[WebServer] 38:8  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 58:8  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 105:10  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/reconciliation/dispute.service.ts
+[WebServer] 430:71  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 430:90  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 433:69  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 433:88  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/reconciliation/reconciliation-unit.test.ts
+[WebServer] 18:27  Warning: 'MarginPermissionError' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 22:3  Warning: 'confirmStatement' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 36:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 55:42  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 57:60  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 58:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 71:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 97:59  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 100:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 103:29  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 113:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 113:97  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 116:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 127:83  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 145:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 154:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 163:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 175:29  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 187:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 197:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 204:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 214:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 225:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 234:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 243:29  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 255:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 265:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 272:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 278:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 289:29  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 297:29  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 303:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 311:10  Warning: 'accountantCtx' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 446:24  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/staffing/4role-jobboard.integration.test.ts
+[WebServer] 10:3  Warning: 'listPublicJobs' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 43:67  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 44:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 76:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 77:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 80:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 81:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 82:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 83:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 92:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 93:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 94:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 95:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 96:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 97:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 106:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 111:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 150:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 175:42  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 183:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 194:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 205:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 207:66  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 219:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 221:66  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 234:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 246:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 248:72  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 260:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/staffing/4role-staffing.integration.test.ts
+[WebServer] 13:32  Warning: 'beforeEach' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 14:15  Warning: 'Prisma' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 19:51  Warning: 'getStaffingOrder' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 20:26  Warning: 'TransferServiceError' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 23:10  Warning: 'enqueueOutbox' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 107:13  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 117:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 124:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 125:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 126:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 135:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 136:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 137:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 138:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 145:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 148:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 151:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 152:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 153:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 162:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 166:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 172:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 175:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 178:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 267:51  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 277:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 298:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 309:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 319:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 332:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 350:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 366:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 380:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 398:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 407:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 407:75  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 420:54  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 420:66  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/staffing/e2e-staffing-narrative.integration.test.ts
+[WebServer] 18:32  Warning: 'beforeEach' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 20:10  Warning: 'createStaffingOrder' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 20:51  Warning: 'getStaffingOrder' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 22:10  Warning: 'evaluateReferralGuard' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 76:28  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 78:60  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 91:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 98:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 99:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 100:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 109:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 110:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 111:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 112:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 119:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 122:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 125:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 126:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 127:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 136:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 140:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 143:58  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 144:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 145:53  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 151:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 236:60  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 239:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 257:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 274:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 278:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 294:71  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 295:71  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 299:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 314:93  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 354:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/staffing/order.service.test.ts
+[WebServer] 15:15  Warning: 'Prisma' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 54:7  Warning: 'PM_CTX' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 107:54  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 142:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 145:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 168:13  Warning: 'result' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 168:60  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 183:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 190:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 209:62  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 216:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 232:43  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 252:51  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/staffing/order.service.ts
+[WebServer] 24:10  Warning: 'SCOPE_REGISTRY' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 29:3  Warning: 'CreateSlotInput' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 
+[WebServer] ./src/domains/staffing/referral-guard.service.test.ts
+[WebServer] 24:15  Warning: 'evaluateReferralGuard' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 
+[WebServer] ./src/domains/staffing/submission.service.test.ts
+[WebServer] 44:67  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 46:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 64:73  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 66:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 84:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 85:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 88:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 89:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 90:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 91:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 92:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 101:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 102:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 103:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 104:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 105:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 106:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 115:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 120:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 138:10  Warning: 'vendorCtx' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 171:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 180:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 200:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 227:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 233:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 256:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 277:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 279:66  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 283:72  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 296:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 310:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 322:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 338:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 340:66  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 343:72  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 356:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 372:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 382:42  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 398:45  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 408:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/staffing/submission.service.ts
+[WebServer] 117:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 121:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/staffing/talent-pool.repo.test.ts
+[WebServer] 44:8  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 71:52  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 86:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 98:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 110:58  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/staffing/transfer.service.test.ts
+[WebServer] 79:56  Warning: 'data' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 79:64  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 87:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 108:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 126:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 138:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 150:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 167:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 200:61  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 203:12  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/domains/staffing/transfer.service.ts
+[WebServer] 173:9  Warning: 'fromProject' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 181:9  Warning: 'positionCode' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 182:9  Warning: 'positionTitle' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 
+[WebServer] ./src/lib/db.ts
+[WebServer] 4:3  Warning: Unused eslint-disable directive (no problems were reported from 'no-var').
+[WebServer] 
+[WebServer] ./src/lib/services/bod.service.ts
+[WebServer] 215:11  Warning: 'filled' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 389:26  Warning: 'pipeline' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 
+[WebServer] ./src/shared/auth/auth-context.test.ts
+[WebServer] 9:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 10:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 15:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 19:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 26:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 30:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/shared/auth/live-rls-posture.m1-07b.test.ts
+[WebServer] 263:7  Warning: Unused eslint-disable directive (no problems were reported from 'no-console').
+[WebServer] 
+[WebServer] ./src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts
+[WebServer] 56:9  Warning: 'tAdvBHcpId' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 857:59  Warning: Unnecessary escape character: \[.  no-useless-escape
+[WebServer] 
+[WebServer] ./src/shared/auth/live-ticket-route-boundary.m1-06d.test.ts
+[WebServer] 112:53  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 117:52  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 143:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 193:53  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/shared/auth/matrix-scope.test.ts
+[WebServer] 42:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 44:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 56:7  Warning: 'baselineCounts' is never reassigned. Use 'const' instead.  prefer-const
+[WebServer] 129:52  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/shared/auth/permission-resolver.test.ts
+[WebServer] 33:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 37:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 52:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 220:92  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 221:15  Warning: 'effFiltered' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 
+[WebServer] ./src/shared/auth/require-permission.test.ts
+[WebServer] 14:51  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/shared/auth/rls-context.test.ts
+[WebServer] 66:62  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/shared/auth/session-adapter.test.ts
+[WebServer] 17:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no[WebServer] -explicit-any
+[WebServer] 23:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 24:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/shared/auth/with-auth-scope.test.ts
+[WebServer] 77:45  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 85:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 92:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 94:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 100:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 132:92  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 134:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 136:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 142:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 160:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 169:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 176:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 183:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 190:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 197:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 204:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 211:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/shared/auth/with-auth-scope.ts
+[WebServer] 58:65  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 59:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/shared/auth/with-authorized-db.test.ts
+[WebServer] 23:52  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 29:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 34:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 36:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 45:53  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 52:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 57:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 72:8  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 88:20  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 118:20  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 127:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 128:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 154:22  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/shared/integrity/audit.test.ts
+[WebServer] 20:9  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 21:13  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 32:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 107:65  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/shared/integrity/idempotency.test.ts
+[WebServer] 30:13  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 43:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 49:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 53:18  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 186:11  Warning: 'winnerKey' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 
+[WebServer] ./src/shared/integrity/idempotency.ts
+[WebServer] 29:37  Warning: 'TBody' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 
+[WebServer] ./src/shared/integrity/outbox.test.ts
+[WebServer] 20:12  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 33:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 51:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 64:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 80:70  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 110:54  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 129:54  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 152:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 159:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 175:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 187:54  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 206:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/shared/integrity/state-machine.test.ts
+[WebServer] 25:6  Warning: 'TicketType' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 
+[WebServer] ./src/shared/observability/correlation-id.test.ts
+[WebServer] 14:32  Warning: 'vi' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 14:36  Warning: 'beforeEach' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 
+[WebServer] ./src/shared/observability/logger.test.ts
+[WebServer] 4:32  Warning: 'beforeEach' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 178:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 184:61  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 398:51  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 404:57  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 410:55  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 416:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/shared/push/trigger.ts
+[WebServer] 48:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+[WebServer] 
+[WebServer] ./src/shared/ui/data-table/data-table.tsx
+[WebServer] 33:8  Warning: 'ColumnFiltersState' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 47:62  Warning: 'NavigateFn' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+[WebServer] 411:5  Warning: Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps').
+[WebServer] 
+[WebServer] ./src/shared/ui/internal-contrast.static.test.ts
+[WebServer] 433:3  Warning: Unused eslint-disable directive (no problems were reported from 'no-console').
+[WebServer] 
+[WebServer] info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+[WebServer] Failed to compile.
+[WebServer] 
+[WebServer] ./new-ui/components/JobCard.tsx:18:6
+[WebServer] Type error: Type '{ children: (false | Element | undefined)[]; className: string; href: string; } | { children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'IntrinsicAttributes & ClassAttributes<HTMLDivElement> & HTMLAttributes<HTMLDivElement> & Omit<...> & LinkProps<...> & { ...; } & RefAttributes<...>'.
+[WebServer]   Type '{ children: (false | Element | undefined)[]; className: string; href?: undefined; }' is not assignable to type 'LinkProps<any>'.
+[WebServer]     Types of property 'href' are incompatible.
+[WebServer]       Type 'undefined' is not assignable to type 'Url'.
+[WebServer] 
+[WebServer]   16 |
+[WebServer]   17 |   return (
+[WebServer] > 18 |     <CardWrapper {...wrapperProps} className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant p-5 hover:shadow-md transition-shadow relative overflow-hidden group block">
+[WebServer]      |      ^
+[WebServer]   19 |       {isUrgent && (
+[WebServer]   20 |         <div className="absolute top-0 right-0 bg-primary-container text-white px-3 py-1 rounded-bl-lg flex items-center gap-1 z-10 shadow-sm">
+[WebServer]   21 |           <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
+[WebServer] Next.js build worker exited with code: 1 and signal: null
+Error: Process from config.webServer was not able to start. Exit code: 1
+

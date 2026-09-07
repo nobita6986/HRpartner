@@ -1,0 +1,79 @@
+# STEP-09 round 2 -- chu trinh DO -> HOAN NGUYEN -> XANH qua lane BAN GIAO
+# Lane: npm run test:browser (playwright.config.ts ban giao, webServer = next build && next start:3100)
+# Round 1 lam chu trinh nay qua config CHAN DOAN (DEV-01, next dev:3101); TASK Sec.9 buoc lam lai.
+
+## [1] Truoc khi rong hoa -- dau tay tep spec
+$ git hash-object tests/browser/public-home.spec.ts
+eb9576be1e6b283a1a69882e8f3e08127a7dd123
+exit=0
+$ git status --porcelain -- tests/browser/public-home.spec.ts
+A  tests/browser/public-home.spec.ts
+exit=0
+$ python -c byte-level measure
+bytes=5797 CRLF=120 LF_total=120 CR_bare=0
+exit=0
+$ git config --get core.autocrlf
+true
+exit=0
+
+## [2] Rong hoa FIXTURE.jobs -> [] (script fail-closed, byte-level)
+$ python /c/Users/Admin/AppData/Local/Temp/glx/t01_empty_fixture.py
+OK NL=b'\r\n' bytes_before=5797 bytes_after=5684
+exit=0
+$ git diff --numstat -- tests/browser/public-home.spec.ts
+1	4	tests/browser/public-home.spec.ts
+exit=0
+$ git status --porcelain -- tests/browser/public-home.spec.ts
+AM tests/browser/public-home.spec.ts
+exit=0
+$ sed -n '69,76p' tests/browser/public-home.spec.ts
+ */
+const FIXTURE: PublicJobListResult = {
+  jobs: [],
+  nextOffset: null,
+  total: 2,
+  facets: { areas: ['Khu công nghiệp BỊA'], shifts: ['Ca ngày'] },
+  overview: {
+    totals: { jobs: 2, slots: 8, areas: 1 },
+exit=0
+
+## [3] Lan chay VOI FIXTURE RONG -- exit KHAC 0, NHUNG DO SAI NGUYEN NHAN
+$ cat docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s09-red.meta.txt
+START_UTC=2026-09-04T08:14:10Z
+CMD=npm run test:browser
+EXIT=1
+DURATION_SECONDS=36
+END_UTC=2026-09-04T08:14:46Z
+
+Bon dong quyet dinh cua output (raw: r2-s09-red.raw.txt):
+641:[WebServer] Failed to compile.
+643:[WebServer] ./new-ui/components/JobCard.tsx:18:6
+656:[WebServer] Next.js build worker exited with code: 1 and signal: null
+657:Error: Process from config.webServer was not able to start. Exit code: 1
+
+KET LUAN: lan chay nay exit 1 vi webServer KHONG BAO GIO KHOI DONG -- next build
+chet o pha kiem kieu tren new-ui/components/JobCard.tsx(18,6). Khong mot test nao
+duoc chay. Vi vay no KHONG chung minh dieu AC-09 doi (spec that su do DOM).
+Day la BLK-02, khong phai bang chung cho AC-09.
+
+## [4] Hoan nguyen MUTATION CUA CHINH TASK NAY tren spec (STEP-09 doi)
+$ git checkout -- tests/browser/public-home.spec.ts
+exit=0
+$ git hash-object tests/browser/public-home.spec.ts
+eb9576be1e6b283a1a69882e8f3e08127a7dd123
+exit=0
+(gia tri phai bang eb9576be1e6b283a1a69882e8f3e08127a7dd123 = blob ban giao)
+$ git status --porcelain -- tests/browser/public-home.spec.ts
+A  tests/browser/public-home.spec.ts
+exit=0
+$ git diff --numstat -- tests/browser/public-home.spec.ts
+exit=0 (RONG = worktree bang index)
+$ sed -n '69,76p' tests/browser/public-home.spec.ts
+ */
+const FIXTURE: PublicJobListResult = {
+  jobs: [
+    fakeJob('test01-job-a', TITLE_A, 'test01-alpha'),
+    fakeJob('test01-job-b', TITLE_B, 'test01-beta'),
+  ],
+  nextOffset: null,
+  total: 2,

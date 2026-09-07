@@ -1,0 +1,32 @@
+s02-version.txt — STEP-02 / phien ban DA GIAI QUYET, ghim tuyet doi
+
+$ git diff -- package.json
+diff --git a/package.json b/package.json
+index 4f5ba53..7a94788 100644
+--- a/package.json
++++ b/package.json
+@@ -38,6 +38,7 @@
+   },
+   "devDependencies": {
+     "@eslint/js": "^9.39.5",
++    "@playwright/test": "1.62.1",
+     "@tailwindcss/postcss": "^4.3.3",
+     "@types/node": "^22.10.2",
+     "@types/react": "^19.0.2",
+
+$ grep -n playwright package.json
+41:    "@playwright/test": "1.62.1",
+
+$ node -p "require('./package.json').devDependencies['@playwright/test']"
+1.62.1
+
+$ node -p "require('./node_modules/@playwright/test/package.json').version"
+1.62.1
+
+$ npx playwright --version
+Version 1.62.1
+
+$ grep -c '"@playwright/test"' package-lock.json
+3
+
+KHONG co dau ^ hay ~ truoc phien ban => ghim TUYET DOI (RQ-01).

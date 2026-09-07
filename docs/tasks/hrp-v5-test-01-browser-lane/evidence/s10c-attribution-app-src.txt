@@ -1,0 +1,62 @@
+s10c-attribution-app-src.txt — quy trach TUNG dong `app/ src/` cho dung mot contract cung lo
+
+MENH DE CUA `AC-11`: "Output `git` cua `app/` cong `src/` chi chua path da khai cua hai
+contract cung lo va khong mot path nao khac." Day la mot phep DOI CHIEU HAI CHIEU, khong phai
+mot cau nhan xet. Duoi day la ca hai chieu, do bang may.
+
+── A. Danh sach thuc te ────────────────────────────────────────────────────────────
+$ git status --porcelain app/ src/
+  M  app/(jobs)/viec-lam/[slug]/page.tsx
+  M  app/api/public/applications/[trackingCode]/route.ts
+  M  src/domains/applications/marketplace-inventory.static.test.ts
+  A  src/domains/applications/tracking-pii-containment.static.test.ts
+  M  src/domains/reconciliation/margin.service.ts
+  M  src/domains/reconciliation/statement.service.ts
+  M  src/domains/staffing/submission.service.ts
+  A  src/shared/security/public-surface-limiter.static.test.ts
+  M  src/shared/security/rate-limit-guard.ts
+  A  src/shared/security/required-relation-sweep.static.test.ts
+  so dong: 10
+
+── B. Path da khai o `Modules` cua 18 ──────────────────────────────────────────────
+  src/shared/security/rate-limit-guard.ts
+  app/(jobs)/viec-lam/[slug]/page.tsx
+  app/api/public/applications/[trackingCode]/route.ts
+  src/domains/applications/marketplace-inventory.static.test.ts
+  src/shared/security/public-surface-limiter.static.test.ts
+  src/domains/applications/tracking-pii-containment.static.test.ts
+
+── C. Path da khai o `Modules` cua 17 ──────────────────────────────────────────────
+  src/shared/security/required-relation-sweep.static.test.ts
+  app/api/projects/route.ts
+  app/api/vendor/orders/route.ts
+  app/api/vendor/submissions/route.ts
+  src/domains/applications/application-queue.service.ts
+  src/domains/reconciliation/margin.service.ts
+  src/domains/reconciliation/statement.service.ts
+  src/domains/staffing/order.service.ts
+  src/domains/staffing/submission.service.ts
+
+── D. Doi chieu, tung dong mot ─────────────────────────────────────────────────────
+  contract 18      app/(jobs)/viec-lam/[slug]/page.tsx
+  contract 18      app/api/public/applications/[trackingCode]/route.ts
+  contract 18      src/domains/applications/marketplace-inventory.static.test.ts
+  contract 18      src/domains/applications/tracking-pii-containment.static.test.ts
+  contract 17      src/domains/reconciliation/margin.service.ts
+  contract 17      src/domains/reconciliation/statement.service.ts
+  contract 17      src/domains/staffing/submission.service.ts
+  contract 18      src/shared/security/public-surface-limiter.static.test.ts
+  contract 18      src/shared/security/rate-limit-guard.ts
+  contract 17      src/shared/security/required-relation-sweep.static.test.ts
+
+  Chieu nguoc: path da khai cua 18 hay 17 KHONG dirty (do la binh thuong, mot contract
+  duoc phep khai mot tep roi chi DOC no):
+    sach  app/api/projects/route.ts
+    sach  app/api/vendor/orders/route.ts
+    sach  app/api/vendor/submissions/route.ts
+    sach  src/domains/applications/application-queue.service.ts
+    sach  src/domains/staffing/order.service.ts
+
+── E. KET LUAN ─────────────────────────────────────────────────────────────────────
+  Muoi dong, muoi lan quy trach duoc, KHONG dong nao roi ra ngoai. Sau dong thuoc 18 va bon
+  dong thuoc 17. Task nay KHONG sua mot dong nao duoi `app/` hay `src/`, dung theo `4.2`.

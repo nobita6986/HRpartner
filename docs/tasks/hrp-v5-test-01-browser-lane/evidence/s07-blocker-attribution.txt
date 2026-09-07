@@ -1,0 +1,67 @@
+s07-blocker-attribution.txt — STEP-07 do DO: quy tuoc nhan qua cho `next build`
+
+Lan chay MOT (s07-run1.txt) exit=1 sau 33s. Nguyen nhan KHONG phai DATABASE_URL, KHONG phai
+cau hinh cua toi, va KHONG phai spec: webpack da "Compiled successfully", roi buoc TYPE CHECK
+cua `next build` do o mot thu muc UNTRACKED cua luong khac. Duoi day la phep do.
+
+── 1. Moi nguyen nhan lam build do, doc tu chinh output cua lan chay ─────────
+$ grep -n 'Failed to compile' -A2 s07-run1.txt
+650:[WebServer] Failed to compile.
+651-[WebServer] 
+652-[WebServer] ./new-ui/components/JobCard.tsx:18:6
+
+$ grep -c 'Type error:' s07-run1.txt          (so loi TYPE — cai lam build do)
+1
+$ grep -B2 'Type error:' s07-run1.txt | grep -o './[^ :]*' | sort -u   (loi type nam o TEP nao)
+./new-ui/components/JobCard.tsx
+
+$ grep -cE '^\[WebServer\] +[0-9]+:[0-9]+ +Error: ' s07-run1.txt    (loi LINT — 0 = khong co)
+0
+$ grep -cE '^\[WebServer\] +[0-9]+:[0-9]+ +Warning: ' s07-run1.txt  (canh bao LINT — khong lam do build)
+472
+
+-> DUY NHAT mot loi type, va no o ./new-ui/components/JobCard.tsx. Bay do luong: `grep -o '\./tep'`
+   tren toan output dem ra 70 tep, nhung 70 ay la tieu de tep cua ESLint cho CANH BAO, khong phai
+   loi; phep dem dung phai neo vao chinh chu `Error:`/`Type error:`. Ghi ra day de khong ai
+   doc lai con so 70 nhu mot con so loi.
+
+── 2. new-ui/ la cua ai ─────────────────────────────────────────────────────
+$ git status --porcelain new-ui | head -3
+?? new-ui/
+$ git ls-files new-ui | wc -l          (0 = chua bao gio duoc theo doi)
+0
+$ git log --all --oneline -- new-ui | wc -l   (0 = khong commit nao trong MOI nhanh cham vao)
+0
+$ git log --all --oneline -- 'new-ui.md' | wc -l
+0
+-> new-ui/ va new-ui.md la ban mau UI cua sep/luong khac, dat vao cay lam viec, chua vao git.
+   Luat thuong tru: thay doi cua luong khac thi KHONG reset, restore, overwrite, xoa, stage.
+
+── 3. Vi sao mot thu muc ngoai app lai lam `next build` do ──────────────────
+$ sed -n '38,45p' tsconfig.json
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+-> `**/*.tsx` keo CA new-ui/ vao tap type-check cua du an. tsconfig.json nam trong cot CAM CHAM
+   cua dieu 4.2 nen toi khong duoc them exclude.
+
+── 4. Trong pham vi cua toi co lever nao khong? Da do het, khong con ────────
+$ npx --no-install next build --help | grep -c 'typecheck\|type-check\|no-typecheck'
+0
+-> 0 co: `next build` KHONG co co tat type-check. Chi co `--no-lint` (tat lint, khong tat type).
+$ grep -o 'process\.env\.[A-Za-z_]*' node_modules/next/dist/build/type-check.js | sort -u | wc -l
+0
+-> 0 bien moi truong: khong the tat bang env. Duong duy nhat la `typescript.ignoreBuildErrors`
+   trong `next.config.*` — cung nam trong cot CAM CHAM cua 4.2, va no se HA MOT HANG RAO.
+$ node -p "require('next/package.json').version"
+15.5.23
+
+KET LUAN: lane khong the chay tren cay lam viec HIEN TAI. Do la mot chan moi truong, khong phai
+mot defect cua ban giao. Ba cach mo chan — ca ba deu NGOAI pham vi task nay, ghi o BLK-01 cua
+HANDOFF.md: (a) luong new-ui sua `JobCard.tsx:18`; (b) them `new-ui` vao `exclude` cua
+tsconfig.json; (c) dua new-ui/ ra ngoai goc repo. Toi KHONG tu lam mot cach nao.

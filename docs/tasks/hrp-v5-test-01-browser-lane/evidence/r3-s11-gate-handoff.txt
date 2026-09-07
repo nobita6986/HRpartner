@@ -1,0 +1,30 @@
+﻿AUDIT SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-test-01-browser-lane\AUDIT.md (against docs/tasks/hrp-v5-test-01-browser-lane/TASK.md)
+
+  [OK]   S-01 AUDIT.md size 6397 bytes.
+  [OK]   S-01 AUDIT.md is tracked by git (recoverable).
+  [OK]   A-01 all 8 required sections present.
+  [OK]   A-02 spec version v1.4 matches TASK.
+  [OK]   A-03 12 AC all carry a result row.
+  [FAIL] S-19 AC-02 uses the verdict word 'PASS' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-04 uses the verdict word 'PASS' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-05 uses the verdict word 'PASS' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-06 uses the verdict word 'PASS' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-07 uses the verdict word 'PASS' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [FAIL] S-19 AC-10 uses the verdict word 'PASS' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows).
+  [OK]   S-17 no measured value is reused across three or more AC.
+  [OK]   S-18 12 AC rows are pairwise distinct.
+  [OK]   A-05 verdict: BLOCKED
+  [OK]   S-07 section 5 is consistent with the AC table.
+  [OK]   S-08 no AC passed over a HANDOFF ENV_BLOCKED declaration.
+  [OK]   A-06 section 4 has 5 evidence rows.
+  [OK]   S-02 section 4 rows all carry command + result.
+  [WARN] S-10 only 1 number(s) in this audit are not already in TASK/HANDOFF: 24. Independence is thin.
+  [OK]   S-13 section 7 round numbering is within 1..1.
+  [OK]   S-14 no plaintext secret in AUDIT.md.
+  [OK]   S-15 9 referenced artifact path(s) exist.
+  [WARN] S-16 220 staged path(s) lie outside docs/tasks/hrp-v5-test-01-browser-lane/ (e.g. .gitignore, docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md, docs/tasks/hrp-v5-rf-05-tsc-program-boundary/HANDOFF.md). Tier 3 must never commit source or test files with its audit.
+  [OK]   A-07 closing handoff line present.
+
+RESULT: FAIL (6 error(s), 2 warning(s)).
+Tier 1 MUST NOT resolve on this AUDIT.md - send it back to Tier 3.
