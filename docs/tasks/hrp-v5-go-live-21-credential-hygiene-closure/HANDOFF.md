@@ -14,9 +14,9 @@
 | OP execution | `OWNER_BLOCKED` — `STEP-07..11` chờ Owner trả lời `Q-01..Q-04` |
 | Baseline (TASK v1.0) | `7dd576e` |
 | Pre-FIX HEAD | `485a36c` (Planner bump v1.1 + v1.2) |
-| Post-FIX HEAD | `41ab22b` (this commit) |
+| Post-FIX HEAD | `6213788` (5 commits added by Tier 2 r1-FIX) |
 | Status | `READY_FOR_AUDIT` cho re-audit round 2 — AUD-002 + AUD-003 đã đóng tại commit; AUD-001 (P0) `ESCALATE_NEW_TASK` ngoài scope |
-| Started/updated | Round 1 2026-09-07 10:55 → 11:04; r1-FIX 2026-09-07 12:10 → 12:15 Asia/Bangkok |
+| Started/updated | Round 1 2026-09-07 10:55 → 11:04; r1-FIX 2026-09-07 12:10 → 12:20 Asia/Bangkok |
 
 ## 1. Outcome Summary (Tier 2 prep + r1-FIX)
 
@@ -24,9 +24,11 @@
 
 | Finding | Severity | Status trước r1-FIX | Status sau r1-FIX |
 |---|---|---|---|
-| `AUD-001` (`check_rls.cjs` raw Neon credential) | P0 | OPEN | OPEN — ESCALATE_NEW_TASK (ngoài scope 21) |
+| `AUD-001` (`check_rls.cjs` raw Neon credential) | P0 | OPEN | OPEN — ESCALATE_NEW_TASK (ngoài scope 21); task security riêng `hrp-v6-security-credential-rotation` đã được Planner tạo task dir (xem porcelain untracked) |
 | `AUD-002` (`git rm --cached` không persist vào HEAD) | P1 | OPEN | **CLOSED** — committed at `41ab22b` |
-| `AUD-003` (evidence file `go21-s05-apply-blocked.txt` corrupted) | P3 | OPEN | **CLOSED** — rewritten with clean stderr capture |
+| `AUD-003` (evidence file `go21-s05-apply-blocked.txt` corrupted) | P3 | OPEN | **CLOSED** — rewritten with clean stderr capture at `41ab22b` |
+
+**Tier 2 cũng phát hiện round-1 đã để worktree chứa 3 deliverables chưa commit** (`prisma/seed.mjs` literal fix, `prisma/seed-portal-demo-password.static.test.ts`, `docs/runbooks/credential-hygiene-cutover.md`, `scripts/ops/demo-cleanup.mjs`). Đã commit toàn bộ trong r1-FIX (`f01ddca`, `6213788`).
 
 **Tier 2 prep round 1 đã đạt bốn điều kiện:**
 
@@ -84,23 +86,27 @@
 
 **Tier 2 không thể tự fix hai gate issue trên** vì (a) malformed TASK.md là Planner-side edit, (b) AUDIT.md là Tier 3 deliverable. Đợi Tier 1 review.
 
-## 4. Changed Deliverables (r1-FIX commit `41ab22b`)
+## 4. Changed Deliverables (r1-FIX commits `41ab22b` + `c5a5fbd` + `66c6440` + `f01ddca` + `6213788`)
 
-| Path | Trạng thái | Bytes thay đổi | Mục đích |
-|---|---|---|---|
-| `.env.dev` | `D` (untrack) | tracked → untracked | `DEC-02`; AUD-002 |
-| `.env.preview` | `D` (untrack) | tracked → untracked | `DEC-02`; AUD-002 |
-| `.env.prod.test` | `D` (untrack) | tracked → untracked | `DEC-02`; AUD-002 |
-| `.gitignore` | `M` | +12 dòng (section credential hygiene trước Browser Lane) | `DEC-10` |
-| `prisma/seed.mjs` | `M` (round 1) | sửa 1 literal → ENV lookup với guard | `RQ-03` |
-| `prisma/seed-portal-demo-password.static.test.ts` | `A` (round 1) | +120 dòng | `AC-03` static test |
-| `docs/runbooks/credential-hygiene-cutover.md` | `A` (round 1) | mới | `RQ-04` runbook |
-| `scripts/ops/demo-cleanup.mjs` | `A` (round 1) | mới | `RQ-09` ops script |
-| `docs/tasks/.../AUDIT.md` | `A` (r1-FIX) | mới | Tier 3 round 1 audit |
-| `docs/tasks/.../HANDOFF.md` | `A` (r1-FIX) | mới | tài liệu này |
-| `docs/tasks/.../evidence/go21-s05-apply-blocked.txt` | `A` (r1-FIX) | rewritten clean | AUD-003 |
+| Path | Trạng thái | Bytes thay đổi | Mục đích | Commit |
+|---|---|---|---|---|
+| `.env.dev` | `D` (untrack) | tracked → untracked | `DEC-02`; AUD-002 | `41ab22b` |
+| `.env.preview` | `D` (untrack) | tracked → untracked | `DEC-02`; AUD-002 | `41ab22b` |
+| `.env.prod.test` | `D` (untrack) | tracked → untracked | `DEC-02`; AUD-002 | `41ab22b` |
+| `.gitignore` | `M` | +12 dòng (section credential hygiene trước Browser Lane) | `DEC-10` | `41ab22b` |
+| `prisma/seed.mjs` | `M` (round 1) | sửa 1 literal → ENV lookup với guard | `RQ-03` | `f01ddca` |
+| `prisma/seed-portal-demo-password.static.test.ts` | `A` (round 1) | +115 dòng | `AC-03` static test | `f01ddca` |
+| `docs/runbooks/credential-hygiene-cutover.md` | `A` (round 1) | +108 dòng | `RQ-04` runbook | `f01ddca` |
+| `scripts/ops/demo-cleanup.mjs` | `A` (round 1) | +143 dòng | `RQ-09` ops script | `6213788` |
+| `docs/tasks/.../TASK.md` | `M` (r1-FIX) | Planner bump to v1.2 picked up | Tier 1 owned | `c5a5fbd` |
+| `docs/tasks/.../AUDIT.md` | `A` (r1-FIX) | mới | Tier 3 round 1 audit | `41ab22b` |
+| `docs/tasks/.../HANDOFF.md` | `A` (r1-FIX) | mới | tài liệu này | `c5a5fbd` |
+| `evidence/go21-s01-r1fix-post-commit.txt` | `A` (r1-FIX) | mới | AC-02 post-commit verify | `c5a5fbd` |
+| `evidence/go21-s05-apply-blocked.txt` | `A` (r1-FIX) | rewritten clean | AUD-003 closure | `41ab22b` |
+| `evidence/go21-gate-task-r1fix.txt` | `A` (r1-FIX) | mới | gate result evidence | `66c6440` |
+| `evidence/go21-gate-audit-r1fix.txt` | `A` (r1-FIX) | mới | gate result evidence | `66c6440` |
 
-`git log 7dd576e..HEAD` = 4 commits: 3 Planner + 1 Tier 2 r1-FIX (`41ab22b`).
+`git log 7dd576e..HEAD` = 8 commits: 3 Planner + 5 Tier 2 r1-FIX (`41ab22b`, `c5a5fbd`, `66c6440`, `f01ddca`, `6213788`).
 
 ## 5. Deviations
 
@@ -114,6 +120,7 @@
 | `DEV-21-06` (r1-FIX) | HANDOFF.md viết lại để thay thế round-1 "READY_FOR_AUDIT" status bằng r1-FIX status. Round-1 execution trace được GIỮ trong §2 với cột `Round 1`; chỉ thêm cột `r1-FIX` | TASK v1.2 yêu cầu r1-FIX không xóa lịch sử execution round trước |
 | `DEV-21-07` (r1-FIX) | `verify-task.ps1` exit 0 nhưng result `DRAFT-VALID` (1 warning A-04) do TASK.md v1.2 có status line malformed (thiếu trailing pipe). Tier 2 không sửa TASK.md (Planner-owned per CLAUDE.md) | Planner cần patch 1 char hoặc note trong §10 Revision Log |
 | `DEV-21-08` (r1-FIX) | `verify-audit.ps1` exit 2 với `FAIL (1 error)` do A-02 spec version mismatch (AUDIT v1.1 vs TASK v1.2). AUDIT.md là Tier 3 deliverable | Tier 3 sẽ re-audit round 2 với spec v1.2 và viết AUDIT.md mới |
+| `DEV-21-09` (r1-FIX) | Round-1 deliverables `prisma/seed.mjs` + `prisma/seed-portal-demo-password.static.test.ts` + `docs/runbooks/credential-hygiene-cutover.md` + `scripts/ops/demo-cleanup.mjs` ở trạng thái worktree-only (chưa commit). Round-1 HANDOFF §4 liệt kê chúng như deliverables nhưng thực tế không persist | Đã commit trong r1-FIX (`f01ddca`, `6213788`) |
 
 ## 6. Evidence Index
 
@@ -185,7 +192,7 @@ Sau khi Owner trả lời 4 Q, chạy theo `docs/runbooks/credential-hygiene-cut
 
 ## 9. Next Step for Planner/Tier 3
 
-**Status hiện tại của r1-FIX**: AUD-002 + AUD-003 đã closed bằng commit `41ab22b` + `c5a5fbd`. AUD-001 ESCALATE_NEW_TASK ngoài scope.
+**Status hiện tại của r1-FIX**: AUD-002 + AUD-003 đã closed bằng 5 commits (`41ab22b` → `6213788`). AUD-001 ESCALATE_NEW_TASK ngoài scope (Planner đã tạo task dir `docs/tasks/hrp-v6-security-credential-rotation/`).
 
 **Gate situation (Tier 2 không tự fix được):**
 
@@ -194,10 +201,10 @@ Sau khi Owner trả lời 4 Q, chạy theo `docs/runbooks/credential-hygiene-cut
 
 Tier 3 sau khi nhận r1-FIX commits sẽ:
 
-1. Chạy lại `git ls-files '.env*'` trên HEAD `c5a5fbd` → mong đợi chỉ `.env.example` (đã verify bằng `evidence/go21-s01-r1fix-post-commit.txt`)
+1. Chạy lại `git ls-files '.env*'` trên HEAD `6213788` → mong đợi chỉ `.env.example` (đã verify bằng `evidence/go21-s01-r1fix-post-commit.txt`)
 2. Reproduce `apply` fail-closed với exit 2 + DB gate FAIL → mong đợi khớp `evidence/go21-s05-apply-blocked.txt` (đã verify bằng Tier 3 evidence `go21-s05-apply-audit.txt`)
-3. Audit `git diff 7dd576e..HEAD` chỉ thấy 4 path ngoài evidence (`prisma/seed.mjs`, `prisma/seed-portal-demo-password.static.test.ts`, `docs/runbooks/credential-hygiene-cutover.md`, `scripts/ops/demo-cleanup.mjs`) + 3 env untrack + `.gitignore` + `HANDOFF.md` + AUDIT.md round 1
-4. AUD-001 vẫn OPEN — đợi task security riêng
+3. Audit `git diff 7dd576e..HEAD` chỉ thấy path tier-2-owned (`prisma/seed.mjs`, `prisma/seed-portal-demo-password.static.test.ts`, `docs/runbooks/credential-hygiene-cutover.md`, `scripts/ops/demo-cleanup.mjs`) + 3 env untrack + `.gitignore` + HANDOFF.md + AUDIT.md round 1 + evidence files
+4. AUD-001 vẫn OPEN — đợi task security riêng (Planner đã mở `docs/tasks/hrp-v6-security-credential-rotation/`)
 5. Sau khi audit round 2 PASS → AC-11 PASS với điều kiện không còn hit `check_rls.cjs` (xử lý ở task khác)
 
-Handoff status: READY_FOR_AUDIT (re-audit round 2; AUD-002 + AUD-003 closed by commit 41ab22b; AUD-001 ESCALATE_NEW_TASK; 2 gate issue Planner-side cần review); OP execution OWNER_BLOCKED until Q-01..Q-04 answered
+Handoff status: READY_FOR_AUDIT (re-audit round 2; AUD-002 + AUD-003 closed by commits 41ab22b..6213788; AUD-001 ESCALATE_NEW_TASK; 2 gate issue Planner-side cần review); OP execution OWNER_BLOCKED until Q-01..Q-04 answered
