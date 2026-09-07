@@ -1,4 +1,4 @@
-# TIER 1 LIVING HANDOFF v2.3 — HRP V5/V6
+﻿# TIER 1 LIVING HANDOFF v2.3 — HRP V5/V6
 
 > Tài liệu này là hợp đồng tiếp quản lâu dài cho **Tier 1 — Planner**. Khi bàn giao cho Agent Tier 1 khác, bình thường **chỉ cập nhật khối `ROADMAP_CURSOR` ở §0**. Không chép tiến độ task vào các section ổn định bên dưới.
 
@@ -7,7 +7,8 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-07 Asia/Bangkok — post-TEST-01 ACCEPTED, GO-LIVE-21 bumped v1.1 READY, dang o Phase 7
+updated_at: 2026-09-07 13:42 Asia/Bangkok — Tier 1 da patch DEV-21-07 (TASK.md v1.2.1 trailing pipe 13:33) va Owner tra loi Q-01..Q-04 cua task 21 (Vercel hrp-prod/Production/hrpartner.vn; .env.local KEEP + 2 file DELETE; Neon-only; window 2026-09-08 09:00-09:30 + PITR 7 days + DEMO KEEP) — TASK task 21 bump v1.2.1 -> v1.2.2 RESOLVE OP block; Tier 1 cung da bump task security v1.0 DRAFT -> v1.1 READY_FOR_EXECUTION (Owner tra loi Q-01 ACTIVE rotate window 09:00, Q-02 KEEP sanitize, Q-03 window 09:00-09:30 PITR 7). 4 Q block OP cua task 21 da RESOLVE; Tier 3 re-audit round 2 van doc lap; Tier 2 cho Tier 3 audit round 2 PASS roi moi mo /code; ROADMAP_CURSOR cap nhat, archive 06/09 giu nguyen CLEANUP-PLAN tao tai docs/cleanup/CLEANUP-PLAN.md (49 items, commit 1444956), gom P0 untrack/sanitize check_rls.cjs (C-01) + 4 open questions cho Tier 1 truoc 09:00 window (role-guard-layout.tsx commit/revert, package.json playwright, update_globals.js, .claude gitignore).
+ CLEANUP-PLAN tao tai docs/cleanup/CLEANUP-PLAN.md (49 items, commit 1444956), gom P0 untrack/sanitize check_rls.cjs (C-01) + 4 open questions cho Tier 1 truoc 09:00 window (C-13 package.json, C-26 update_globals.js, C-48 .claude gitignore, C-13 role-guard-layout.tsx commit/revert).
 roadmap_source: docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/UNIFIED_PLAN_v5.md chi con la nguon cho V5/go-live debt
 PHASE_MAP: |
   Phase 7: Post-Launch Debt (Hien tai)
@@ -18,7 +19,7 @@ PHASE_MAP: |
     -> V6-ADMIN-00 Foundation
     -> V6 Phase 1A LaborProfile schema + job-posting split
     -> V6 Phase 1B /viec-lam public listing
-    -> V6 Phase 1C new-ui hoan chinh
+    -> V6 Phase 1C new-ui hoan chinh (contract DRAFT 07/09, mo execution sau 1A + 1B ACCEPTED)
     -> V6 Phase 2/3/4/5 Workbench + Placement + Marketplace
   Phase 9: AFF Affiliate (sau V6 Phase 1)
     -> AFF-00..04 + AFF-05A
@@ -26,20 +27,20 @@ PHASE_MAP: |
   Phase 11: M6 policy + AFF-05B..07
   Phase 12: M6-04..07
   Phase 13: PAY (cuoi cung)
-current_lane: Phase 7 — Credential Hygiene. Mot Tier 2 chay tuan tu; khong mo parallel stream.
+current_lane: Phase 7 — Credential Hygiene. Tier 2 re-open execution round 1 r1-FIX cho GO-LIVE-21 (STEP-01 fix AUD-002/003); Tier 1 viet xong task security `hrp-v6-security-credential-rotation` o status DRAFT (cho Owner tra loi Q-01..Q-03).
 current_task: hrp-v5-go-live-21-credential-hygiene-closure
 task_path: docs/tasks/hrp-v5-go-live-21-credential-hygiene-closure/TASK.md
-spec_version: v1.1 (bumped 2026-09-07 10:56)
-task_status: READY_FOR_EXECUTION; execution round 1 MONG (Tier 2 prep STEP-00..06); OP execution (STEP-07..11) OWNER_BLOCKED
+spec_version: v1.2 (bumped 2026-09-07 11:55)
+task_status: REVISION_REQUIRED; execution round 1 r1-FIX (Tier 2 fix AUD-002/003); Tier 1 viet task security cho AUD-001; OP execution (STEP-07..11) van OWNER_BLOCKED
 current_gate: PLANNER_CONTRACT -> Tier 2 co the duoc giao ngay
-next_command: Tier 1 da bump spec v1.1; verify-task.ps1 PASS; co the giao /code hrp-v5-go-live-21-credential-hygiene-closure ngay; Tier 2 chay STEP-00..06; OP (STEP-07..11) van cho Owner tra loi Q-01..Q-04
+next_command: Tier 1 da bump GO-LIVE-21 spec v1.2.1 -> v1.2.2 (RESOLVE 4 Q block OP) va task security v1.0 DRAFT -> v1.1 READY_FOR_EXECUTION (RESOLVE 3 Q). 7 Q Owner block da het. Tier 3 re-audit round 2 task 21 dang chay doc lap (khong can them input). CLEANUP-PLAN da tao tai docs/cleanup/CLEANUP-PLAN.md (49 items, commit 1444956). 4 open questions can Tier 1 tra loi truoc 09:00 (role-guard-layout.tsx commit/revert, package.json playwright, update_globals.js scope, .claude gitignore). Tier 2 cho Tier 3 audit round 2 PASS roi moi mo /code. BA DONG CHAY SONG SONG SAU AUDIT ROUND 2: (1) Tier 2 /code hrp-v5-go-live-21-credential-hygiene-closure OP execution STEP-07..11 (window 2026-09-08 09:00-09:30) + CLEANUP-PLAN C-14..C-31; (2) Tier 2 /code hrp-v6-security-credential-rotation execution round 1 (STEP-01..03 CLEANUP-PLAN C-01 untrack/sanitize check_rls.cjs, STEP-04..06); (3) Phase 1C DRAFT cho 1A+1B ACCEPTED. SEP da chon Huong B cho new-ui ngay 07/09.
 previous_closed: TEST-01 ACCEPTED spec_version v1.5 (audit round 2 PASS WITH WARNINGS, BLK-02/BLK-03/AUD-001 closed); RF-06 commit 8f3839d; RF-05 commit bb223dd; go-live-20 commit f9c7bca
-held_draft: go-live-19 PII mask con DRAFT (can TEST DB + migration window); go-live-07 Launch Proof da co spec v1.5 nhung AC-09/AC-14 can bump truoc khi mo execution round
-next: GO-LIVE-21 (now Tier 2 prep) -> GO-LIVE-07 (sau AC-09/AC-14 bump + Owner sign-off) -> GO-LIVE-19 (sau migration window) -> V6-ADMIN-00 -> V6 Phase 1A/1B/1C -> V6 Phase 2/3/4/5 -> AFF-00..04 + AFF-05A -> M7 -> M8 -> M6-01..03 policy -> AFF-05B..07 -> M6-04..07 -> PAY
-queue_authority: Chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md. Mot Tier 2 chay tuan tu; AFF-03 khong mo truoc LaborProfileHandlingAssignment; AFF-05B khong mo truoc M6 policy; khong co hai migration stream cung sua prisma/schema.prisma.
-blocking_owner: GO-LIVE-21 OP execution (STEP-07..11) can Owner tra loi Q-01..Q-04. GO-LIVE-07 can Owner ky GO_LIVE_APPROVED. GO-LIVE-19 can TEST DB + migration window.
+held_draft: go-live-19 PII mask con DRAFT (can TEST DB + migration window); go-live-07 Launch Proof da co spec v1.5 nhung AC-09/AC-14 can bump truoc khi mo execution round; `hrp-v6-p1c-new-ui-restyling` v1.0 DRAFT (07/09 11:20, baseline `485a36c`, cho Phase 1A + 1B ACCEPTED); `hrp-v6-security-credential-rotation` v1.0 DRAFT (07/09 12:05, baseline `485a36c`, cho Owner tra loi Q-01/Q-02/Q-03)
+next: GO-LIVE-21 REVISION_REQUIRED r1-FIX (Tier 2 fix AUD-002/003 + Tier 1 task security AUD-001 viet xong DRAFT) -> GO-LIVE-07 (sau AC-09/AC-14 bump + Owner sign-off) -> GO-LIVE-19 (sau migration window) -> V6-ADMIN-00 -> V6 Phase 1A (READY) -> V6 Phase 1B (READY) -> V6 Phase 1C (DRAFT 07/09, bump v1.1 sau 1A+1B ACCEPTED) -> V6 Phase 2/3/4/5 -> AFF-00..04 + AFF-05A -> M7 -> M8 -> M6-01..03 policy -> AFF-05B..07 -> M6-04..07 -> PAY
+queue_authority: Chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md. Mot Tier 2 chay tuan tu; AFF-03 khong mo truoc LaborProfileHandlingAssignment; AFF-05B khong mo truoc M6 policy; khong co hai migration stream cung sua prisma/schema.prisma. Phase 1C KHONG mo execution round cho toi khi Phase 1A + 1B ACCEPTED (DEC-01 cua `hrp-v6-p1c-new-ui-restyling`). Phase 1C ship 4 section (Hero + BestJobs + Areas + Search), KHONG ship TopCompaniesSection/CompanyCard vi cot `ClientCompany.publicName` chua thuoc contract Phase 1A (DEC-04 + EV-08).
+blocking_owner: GO-LIVE-21 OP execution (STEP-07..11) can Owner tra loi Q-01..Q-04. GO-LIVE-07 can Owner ky GO_LIVE_APPROVED. GO-LIVE-19 can TEST DB + migration window. Phase 1C Q-01 (cot `ClientCompany.publicName` cho CompanyCard) can Owner truoc khi Phase 1A execution mo; Q-02 (H1 copy) can Owner truoc STEP-04; Q-03/Q-04 khong chan execution.
 product_override: /bcc retired; payroll/payslip de cuoi va thuoc app luong rieng; V6 tap trung Marketplace, Affiliate va Admin information architecture
-cursor_note: TEST-01 ACCEPTED da commit scoped. Vitest 1735/1735, typecheck exit 0, tsconfig.json on dinh 3 tang 53cc4848. GO-LIVE-21 bumped v1.1 READY_FOR_EXECUTION 07/09 10:56. Tier 2 prep STEP-00..06 bat dau duoc ngay khi /code duoc giao. OP STEP-07..11 cho Owner tra loi Q-01..Q-04. src/shared/ui/role-guard/role-guard-layout.tsx WIP chua commit = candidate V6-ADMIN-00. Khong in secret vao handover.
+cursor_note: TEST-01 ACCEPTED da commit scoped. Vitest 1735/1735, typecheck exit 0, tsconfig.json on dinh 3 tang 53cc4848. GO-LIVE-21 audit round 1 FAIL 07/09 11:55: AUD-001 P0 (`check_rls.cjs` neon credential), AUD-002 P1 (env files chua commit), AUD-003 P3 (evidence file thieu). spec -> v1.2 REVISION_REQUIRED. Tier 1 viet xong `hrp-v6-security-credential-rotation` v1.0 DRAFT 07/09 12:05 (ESCALATE_NEW_TASK tu AUD-001), baseline `485a36c`, baseline credential `npg_E0eqUu7aHtpI` + host `ep-shy-tree-az32as2c-pooler` + role `neondb_owner`, 4 file canary `BLOCKED_DB_URL` whitelist, Q-01 (credential con active?) + Q-02 (KEEP/DELETE) + Q-03 (window) mo. Tier 2 re-open execution round 1 r1-FIX. SEP chon Huong B cho new-ui 07/09 11:15: Phase 1C DRAFT, baseline `485a36c`. Khong in secret vao handover.
 ```
 
 <!-- ROADMAP_CURSOR_END -->
