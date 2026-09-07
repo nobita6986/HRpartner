@@ -7,18 +7,18 @@
 | Task slug | `hrp-v5-go-live-21-credential-hygiene-closure` |
 | Work type | `INFRA` |
 | Audit mode (Tier 3 đọc) | `INFRA_AUDIT` |
-| Spec version | `v1.0` |
-| Status | `DRAFT` — đã viết đủ contract nhưng chưa giao `/code` khi TEST-01 còn sở hữu `.gitignore` trong index |
+| Spec version | `v1.2` |
+| Status | `REVISION_REQUIRED` — execution round `1` r1-FIX; P0 AUD-001 (ESCALATE_NEW_TASK) + P1 AUD-002 + P3 AUD-003 (FIX_REQUIRED); Tier 2 re-run STEP-01; mở task security riêng cho `check_rls.cjs`
 | Planner | `Tier 1 / Codex` |
-| Executor | `Tier 2` cho repo hygiene; `Owner/OP` cho Neon và Vercel |
+| Executor | `Tier 2` cho repo hygiene (STEP-00..06); `Owner/OP` cho Neon và Vercel (STEP-07..11) |
 | Auditor | `Tier 3 independent context` |
-| Baseline | `7dd576e` |
-| Modules | `Go-live security hygiene; Prisma seed; Vercel; Neon; repository artifacts` |
-| ADR references | `PLANNER_HANDOVER.md §13`; fail-closed LIVE DB convention; one Tier 2 stream |
-| Current execution round | `0` |
-| Current audit round | `0` |
-| Next gate | TEST-01 phải `ACCEPTED` và commit scoped trước. Sau đó Tier 1 rebase evidence, bump sang `READY_FOR_EXECUTION`, giao `/code hrp-v5-go-live-21-credential-hygiene-closure`; Owner chỉ mở OP window sau khi Tier 2 bàn giao dry-run và rollback |
-| Updated | `2026-09-07 Asia/Bangkok` |
+| Baseline | `7dd576e` — ảnh gốc tại v1.0. STEP-00 ghi `HEAD` mới nhất và xác nhận evidence không lệch |
+| Modules | `Go-live security hygiene; Prisma seed; Vercel; Neon; repository artifacts; .gitignore; scratch/` |
+| ADR references | `PLANNER_HANDOVER.md §13`; fail-closed LIVE DB convention; one Tier 2 stream; tier1.md §6 Resolve Protocol |
+| Current execution round | `1` |
+| Current audit round | `1` |
+| Next gate | AUDIT ROUND 1 FAIL — P0 AUD-001 (ESCALATE_NEW_TASK: mở task security riêng cho `check_rls.cjs`); P1 AUD-002 + P3 AUD-003 (FIX_REQUIRED: Tier 2 re-open execution round 1 r1-FIX, chạy lại `STEP-01` + thêm evidence file). Sau khi fix → Tier 3 re-audit round 2. |
+| Updated | `2026-09-07 10:43 Asia/Bangkok` |
 
 ## 1. Outcome
 
@@ -42,14 +42,16 @@ HRPartner tiếp tục đăng nhập, đọc việc làm, ứng tuyển và qu�
 | Evidence ID | Source | Observed fact | Planning impact |
 |---|---|---|---|
 | `EV-01` | `docs/PLANNER_HANDOVER.md §13` | Sổ nợ có 11 mục: rotate ba DB role, cập nhật Vercel, bỏ `DB_DIAG_TOKEN`, xử lý seed password, local env, scratch, một Neon branch và DEMO data | Contract gom thành một cửa duy nhất, nhưng tách rõ Tier 2 với Owner/OP |
-| `EV-02` | `git ls-files '.env*'`, đo 2026-09-07 | Bốn tệp env đang tracked: `.env.dev`, `.env.example`, `.env.preview`, `.env.prod.test` | Chỉ `.env.example` được phép tiếp tục tracked; ba tệp còn lại phải được untrack sau khi có mẫu thay thế cần thiết |
-| `EV-03` | Key-only scan 2026-09-07, không in value | `.env.dev` có các khóa DB/JWT/account ở trạng thái SET; `.env.preview` và `.env.prod.test` có Vercel/OIDC-shaped values SET | Coi toàn bộ là secret cho đến khi Owner chứng minh không còn hiệu lực; add/delete file không thay thế rotation |
-| `EV-04` | `Get-ChildItem -Force -Filter '.env*.local'`, đo 2026-09-07 | Có `.env.local`, `.env.ops06a-test.local`, `.env.production.local`; không còn `.env.test.local` | Không lặp yêu cầu xoá file đã vắng. Ba file hiện hữu phải được Owner phân loại KEEP/DELETE; Tier 2 không đọc hoặc chép value vào evidence |
-| `EV-05` | `prisma/seed.mjs:28-62,383-389` | Hai account đầu đã đọc phone/password từ env và skip khi thiếu; một worker demo vẫn hash một password literal | Chỉ sửa residual literal; không viết lại logic seed đã fail-closed |
-| `EV-06` | `rg DB_DIAG_TOKEN` ngoài scratch, đo 2026-09-07 | Chỉ còn ghi chú trong Planner handover; không thấy production source reference | Công việc là xoá biến trên Vercel và chứng minh app không phụ thuộc, không phát minh code mới |
+| `EV-02` | `git ls-files '.env*'` (key-only), đo 2026-09-07 10:43 | Bốn tệp env đang tracked: `.env.dev`, `.env.example`, `.env.preview`, `.env.prod.test`. Chỉ `.env.example` được phép tiếp tục tracked; ba tệp còn lại phải được untrack sau khi có mẫu thay thế cần thiết. Bằng chứng: `evidence/v11-ev02-tracked-env.txt` | RQ-02 phải untrack ba env, giữ `.env.example` empty/placeholder, thêm ignore exact paths mà KHÔNG làm mất hai dòng Browser Lane ở `.gitignore:75..76` |
+| `EV-03` | `rg --files-with-matches` (key-only), đo 2026-09-07 | `.env.dev`/`.env.preview`/`.env.prod.test` đều có khóa SET — coi toàn bộ là secret cho tới khi Owner chứng minh không còn hiệu lực. Bằng chứng: `evidence/v11-ev02-tracked-env.txt` (cùng phép đo, output chỉ gồm path) | Add/delete file không thay thế rotation; RQ-04 + RQ-05 vẫn bắt buộc |
+| `EV-04` | `Get-ChildItem -Force -Filter '.env*.local'`, đo 2026-09-07 10:43 | Ba file: `.env.local` (1364 B, 28/08), `.env.ops06a-test.local` (411 B, 29/08), `.env.production.local` (1924 B, 16/08). `.env.test.local` không có mặt — xác nhận đã vắng. Bằng chứng: `evidence/v11-ev02-tracked-env.txt` | RQ-06 cần Owner KEEP/DELETE; Tier 2 không đọc value vào evidence |
+| `EV-05` | `rg -n 'password\|hash\|passwordHash\|bcrypt\|argon' prisma/seed.mjs`, đo 2026-09-07 10:43 | File 591 dòng. Hai account ADMIN/HR_MANAGER đã fail-closed (lines 28-62). Một worker demo ở line 385 vẫn hash password literal `'demo-portal-2026'`. KHÔNG log phone/password/hash ở bất kỳ chỗ nào. Bằng chứng: `evidence/v11-ev05-seed-scan.txt` | RQ-03 chỉ sửa residual literal; không viết lại logic seed đã fail-closed |
+| `EV-06` | `rg -n 'DB_DIAG_TOKEN' --glob '!scratch/**' --glob '!docs/tasks/**' --glob '!node_modules/**'`, đo 2026-09-07 10:43 | Một hit duy nhất ngoài scratch: `docs/PLANNER_HANDOVER.md:262` (mục §13 dòng 6). KHÔNG có hit trong source code. Bằng chứng: `evidence/v11-ev06-dbtoken-scan.txt` | RQ-05 là xoá biến trên Vercel và chứng minh app không phụ thuộc; KHÔNG phát minh code mới |
 | `EV-07` | `docs/PLANNER_HANDOVER.md §13` | Nhánh cần xoá là chính xác `pre-mp2-remediation-2026-08-28`; `hrp_mp2_test` phải giữ | Runbook bắt buộc allowlist exact-name và post-check nhánh test vẫn tồn tại |
 | `EV-08` | `docs/PLANNER_HANDOVER.md §13` | Có job public DEMO không mang tiền tố `DEMO` | Dọn bằng exact primary keys/slugs và FK-aware plan; cấm `LIKE '%DEMO%'` làm tiêu chí duy nhất |
-| `EV-09` | Worktree snapshot 2026-09-07 | `scratch/` có nhiều artifact của nhiều task/agent, còn `.gitignore` đang thuộc TEST-01 chưa ACCEPTED | Không giao task này trước TEST-01; cleanup phải có attribution manifest, không blanket delete |
+| `EV-09` | `Get-ChildItem -Force -Recurse scratch` + root top-level scan, đo 2026-09-07 | `scratch/` chứa nhiều artifact theo task (`f05/`, `t1r4/`..`t1r10/`, file rời, `__pycache__/`); `scratch/` chưa được gitignore. Root one-shot files có `.neon` (untracked, 38 B), `tsconfig.tmp.json` (untracked, 0 B), `tsconfig.{a1,t1,t1r9}probe.tsbuildinfo` (không tracked, không porcelain), nhiều `check_*`/`fix_*`/`update_*`/`write_*`/`mark_handover_*`/`_m3_msg.txt`/`audit_report.md`/`extract_css.txt`/`build.log`/`lint.log`/`temp.diff`/… Bằng chứng: `evidence/v11-ev09-scratch.txt` | RQ-07 attribution manifest; STEP-01 thêm ignore exact `scratch/`; STEP-04 phân nhóm KEEP/DELETE/UNKNOWN path-by-path, KHÔNG blanket delete |
+| `EV-10` | So sánh v1.0 vs rebase 2026-09-07 10:43 | (a) `.env.production` không còn ở root (sạch so với 01/09). (b) `.neon` untracked — cần ignore/KEEP. (c) `tsconfig.tmp.json` untracked — ignore exact. (d) `scratch/` chưa gitignore. (e) ba `tsconfig.*probe.tsbuildinfo` không tracked, không porcelain — xác minh ignore | Bổ sung vào RQ-02 ignore exact, RQ-07 attribution; STEP-01 mở rộng `.gitignore` thêm các path mới phát hiện; STEP-04 phân loại `.neon` và `tsconfig.tmp.json` |
+| `EV-11` | Baseline v1.0 `7dd576e` + `git status --porcelain` lúc rebase | STEP-00 sẽ ghi `HEAD` thật của `main` worktree và đếm porcelain; baseline v1.1 giữ `7dd576e` cho traceability. Bằng chứng sẽ là `evidence/v11-step00-baseline.txt` | STEP-00 mở đầu execution round `1`; mọi STEP phải đo baseline mới và ghi rõ trong evidence |
 
 ## 3. Decisions và Assumptions
 
@@ -63,6 +65,8 @@ HRPartner tiếp tục đăng nhập, đọc việc làm, ứng tuyển và qu�
 | `DEC-06` | CHOSEN | Dữ liệu DEMO chỉ được xoá bằng manifest exact-ID có preview counts, FK order, transaction và post-check. Mismatch count hoặc ID ngoài allowlist thì rollback/dừng | EV-08 | Final |
 | `DEC-07` | CHOSEN | Không rewrite Git history trong task này. Tier 3 scan HEAD/index/worktree; phát hiện secret còn hiệu lực trong history là finding riêng và Owner quyết định history rewrite | Risk containment | Final |
 | `DEC-08` | ASSUMPTION | Vercel project đích duy nhất là project đang phục vụ `hrpartner.vn` | Owner phải xác nhận trong OP preflight | Hết hạn trước `OP-02` |
+| `DEC-09` | CHOSEN | Mở execution round `1` MỎNG chỉ cho dải Tier 2 prep (`STEP-00..06`); dải OP (`STEP-07..11`) vẫn `OWNER_BLOCKED` cho tới khi `Q-01..Q-04` được Owner trả lời. Hai lane không đồng thời; Tier 3 audit chỉ đo khi cả hai lane có evidence | tier1.md §3 state machine; DEC-01 | Final |
+| `DEC-10` | CHOSEN | `STEP-01` mở rộng `.gitignore` bằng cách THÊM các dòng ignore exact path (không sửa dòng cũ), trong đó KHÔNG đụng hai dòng Browser Lane (lines 75-76). Mỗi ignore exact được khai trong evidence kèm `git check-ignore -v` post-check | EV-04b/EV-09/EV-10; DEC-02 | Final |
 
 ## 4. Contract
 
@@ -171,21 +175,30 @@ HRPartner tiếp tục đăng nhập, đọc việc làm, ứng tuyển và qu�
 
 | ID | Question | Owner | Due | Blocks execution? |
 |---|---|---|---|---|
-| `Q-01` | Xác nhận Vercel project duy nhất phục vụ `hrpartner.vn` và môi trường Production đích | Owner | Trước OP-02 | Yes |
-| `Q-02` | Owner disposition KEEP/DELETE cho `.env.local`, `.env.ops06a-test.local`, `.env.production.local` | Owner | Trước OP-04 | Yes cho AC-06, không chặn Tier 2 prep |
-| `Q-03` | Secret trong tracked `.env.dev`/Vercel-generated files còn hiệu lực ở hệ thống nào ngoài Neon/Vercel không? | Owner | Trước OP-01 | Yes nếu có thêm provider cần rotate |
-| `Q-04` | Maintenance window và restore point/PITR cho DEMO cleanup là khi nào? | Owner | Trước OP-05 | Yes |
+Mỗi Q ghi rõ scope chặn: Tier 2 prep (`STEP-00..06`) hay OP execution (`STEP-07..11`). v1.1 mở dải Tier 2 prep vì nó không phụ thuộc Q-01..Q-04; OP execution vẫn `OWNER_BLOCKED`.
+
+| ID | Question | Owner | Due | Blocks Tier 2 prep? | Blocks OP execution? |
+|---|---|---|---|---|---|
+| `Q-01` | Xác nhận Vercel project duy nhất phục vụ `hrpartner.vn` và môi trường Production đích | Owner | Trước OP-02 | No — Tier 2 prep chỉ ghi runbook tên project, không kết nối | Yes — `STEP-08` cần đúng project |
+| `Q-02` | Owner disposition KEEP/DELETE cho `.env.local`, `.env.ops06a-test.local`, `.env.production.local` | Owner | Trước OP-04 | No — Tier 2 prep chỉ sinh manifest path-only, không xoá file | Yes cho AC-06 (`STEP-10`) |
+| `Q-03` | Secret trong tracked `.env.dev`/Vercel-generated files còn hiệu lực ở hệ thống nào ngoài Neon/Vercel không? | Owner | Trước OP-01 | No — Tier 2 prep chỉ untrack, không rotate | Yes nếu có thêm provider cần rotate |
+| `Q-04` | Maintenance window và restore point/PITR cho DEMO cleanup là khi nào? | Owner | Trước OP-05 | No — Tier 2 prep chỉ dry-run inventory | Yes — `STEP-11` cần window + restore point |
 
 ## 9. Planner Resolution
 
-Chưa audit. Tier 1 giữ task ở `DRAFT` vì TEST-01 hiện còn sở hữu `.gitignore` và các Browser artifacts trong shared index. Việc duy nhất được phép trước khi dependency đóng là review contract và trả lời `Q-01..Q-04`; không executor nào được tự chạy OP steps từ tài liệu này.
+Tier 1 append quyết định sau audit; không sửa lịch sử finding. v1.1 là bản rebase evidence (không audit), bump từ v1.0 để mở `READY_FOR_EXECUTION`.
 
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| N/A | N/A | N/A | Chưa giao execution | None | Tier 1 mở sau TEST-01 ACCEPTED |
+| `0` (rebase) | N/A | `ACCEPT_FIX` | Rebase evidence thật 07/09: EV-02..06/09 đo lại, thêm EV-10/11 phát hiện mới, sửa EV-09 phạm vi để tách Tier 2 prep khỏi TEST-01 (đã ACCEPTED). Không đổi RQ/STEP/AC/traceability; DEC-09/DEC-10 bổ sung để tách dải Tier 2 prep (`STEP-00..06`) khỏi OP execution (`STEP-07..11`). Q-01..Q-04 tách rõ: Tier 2 prep KHÔNG bị chặn bởi bất kỳ Q nào; OP execution vẫn `OWNER_BLOCKED`. | §0 Status → READY; §2 EV-02..06/09/10/11 rebase; §3 DEC-09/10; §8 Q-01..Q-04 tách rõ | Tier 1 |
+| `1` | `AUD-001` (P0) | `ESCALATE_NEW_TASK` | `check_rls.cjs` (tracked, commit `ebca45c`) chứa raw Neon `neondb_owner` credential ở line 2. Tài liệu nằm NGOÀI phạm vi task 21 (artifact của V6-ADMIN-00 hoặc task security riêng). Credential cần rotation ngay. Tier 3 xác nhận file tracked và `rg` scan đúng 1 hit. | §0 spec → v1.2; mở task `hrp-v6-security-credential-rotation`; task 21 tiếp tục với AC-02/11 fix | Owner xác nhận credential còn active → rotate. Tier 1 viết contract task security. Closure: task security ACCEPTED |
+| `1` | `AUD-002` (P1) | `FIX_REQUIRED` | `git ls-files '.env*'` trả 4 file thay vì 1; `git ls-files --stage .env.dev` cho hash đúng HEAD. Tier 2 đã chạy `git rm --cached` nhưng chưa commit. `git diff --cached` rỗng. Bằng chứng: `evidence/go21-s01-after-lsfiles.txt`, `evidence/go21-s01-index-status.txt`, `evidence/go21-s01-no-staged.txt`. | §0 spec → v1.2; Tier 2 re-run `STEP-01`: `git rm --cached .env.dev .env.preview .env.prod.test && git commit` rồi chạy lại AC-02. Tier 3 re-audit round 2. | Tier 2 — re-open execution round 1 r1-FIX. Closure: audit round 2 PASS |
+| `1` | `AUD-003` (P3) | `FIX_REQUIRED` | `evidence/go21-s05-apply-blocked.txt` không tồn tại. Tier 3 reproduce được apply fail-closed (exit 2, "DB gate FAIL") nhưng evidence file bị thiếu. | §0 spec → v1.2; Tier 2 thêm file với output đúng (exit 2 + message). Cùng lượt fix với AUD-002. | Tier 2 — thêm file trong lượt fix STEP-01. Closure: file tồn tại |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
-| `v1.0` | 2026-09-07 | Tạo contract một cửa cho repo hygiene, atomic DB/Vercel rotation, exact branch/artifact cleanup, DEMO cleanup và independent closure. Cập nhật evidence hiện tại: `.env.test.local` đã vắng; ba tracked env ngoài `.env.example` và một residual seed password literal mới là điểm phải xử lý. | Owner yêu cầu thực thi danh sách việc trước mắt; `PLANNER_HANDOVER.md §13`; scan key/path-only 2026-09-07 |
+| `v1.0` | `2026-09-07` | Tạo contract một cửa cho repo hygiene, atomic DB/Vercel rotation, exact branch/artifact cleanup, DEMO cleanup và independent closure. | Owner yêu cầu thực thi; `PLANNER_HANDOVER.md §13`; scan key/path-only 2026-09-07 |
+| `v1.1` | `2026-09-07 10:43` | Rebase evidence: EV-02..06/09 đo lại với file:line thật; thêm EV-10/11 phát hiện mới. DEC-09 tách dải Tier 2 prep khỏi OP execution. Q-01..Q-04 tách rõ. Status → `READY_FOR_EXECUTION`, execution round → `1`, audit round → `0`. | Evidence rebase 2026-09-07; TEST-01 ACCEPTED; `PLANNER_HANDOVER.md §13` |
+| `v1.2` | `2026-09-07 11:55` | Audit round 1 FAIL: P0 AUD-001 (ESCALATE_NEW_TASK: `check_rls.cjs` → task security riêng), P1 AUD-002 (FIX_REQUIRED: `git rm --cached` chưa commit), P3 AUD-003 (FIX_REQUIRED: evidence file thiếu). Status → `REVISION_REQUIRED`, execution round → `1` r1-FIX, audit round → `1`. | AUDIT.md round 1 2026-09-07; Tier 3 findings AUD-001/002/003 |

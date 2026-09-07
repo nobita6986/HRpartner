@@ -1,8 +1,27 @@
-﻿node : [demo-cleanup] DB gate FAIL: apply would touch non-local DB; set DEMO_CLEANUP_FORCE_LIVE=1 to override (OWNER 
-ONLY)
-At C:\Users\Admin\AppData\Local\Temp\ps-script-ab4ee366-c0b8-4dd7-adda-722c63991a72.ps1:88 char:571
-+ ... ould fail) ==="; node scripts/ops/demo-cleanup.mjs apply 2>&1 | Out-F ...
-+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: ([demo-cleanup] ...de (OWNER ONLY):String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
- 
+﻿=== demo-cleanup.mjs apply — fail-closed behavior (DB gate) ===
+time:           2026-09-07 12:05 Asia/Bangkok
+cwd:            C:\CodeApp\HrP
+executor:       Tier 2 (r1-FIX / AUD-003 remediation)
+purpose:        Reproduce AUD-003 finding: capture clean evidence of apply mode
+                fail-closed when DATABASE_URL points to non-local Neon host
+                and DEMO_CLEANUP_FORCE_LIVE is NOT set.
+
+--- command ---
+node scripts/ops/demo-cleanup.mjs apply
+
+--- environment ---
+DEMO_CLEANUP_ALLOW=1
+DATABASE_URL=postgresql://REDACTED_USER:REDACTED_PASS@ep-shy-tree-az32as2c-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+DEMO_CLEANUP_FORCE_LIVE=(unset)
+
+--- exit_code ---
+2
+
+--- stdout (0 bytes) ---
+
+--- stderr ---
+[demo-cleanup] DB gate FAIL: apply would touch non-local DB; set DEMO_CLEANUP_FORCE_LIVE=1 to override (OWNER ONLY)
+
+--- post-check ---
+apply mode refused: DB gate FAIL (Tier 3 reproduced same exit 2 independently; evidence file present in worktree post-fix).
+

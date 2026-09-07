@@ -1,0 +1,46 @@
+﻿=== r1-FIX POST-COMMIT EVIDENCE (AUD-002 closure) ===
+time:           2026-09-07 12:05 Asia/Bangkok
+cwd:            C:\CodeApp\HrP
+executor:       Tier 2 (r1-FIX / AUD-002 remediation)
+purpose:        Verify AC-02 after committing the staged git rm --cached for
+                .env.dev, .env.preview, .env.prod.test and the .gitignore update.
+baseline_HEAD:  485a36c (Planner v1.1)
+fix_HEAD:       41ab22bb212993298ef948463aede66346a5c27a (infra(go-live-21): r1-FIX — untrack env files + commit AUDIT + evidence)
+fix_short:      41ab22b
+
+--- command: git rev-parse HEAD ---
+41ab22bb212993298ef948463aede66346a5c27a
+
+--- command: git ls-files '.env*' ---
+.env.example
+
+
+--- command: git ls-files --stage .env.dev ---
+
+
+--- command: git ls-files --stage .env.preview ---
+
+
+--- command: git ls-files --stage .env.prod.test ---
+
+
+--- command: git check-ignore -v .env.dev ---
+.gitignore:75:.env.dev	.env.dev
+
+--- command: git check-ignore -v .env.preview ---
+.gitignore:76:.env.preview	.env.preview
+
+--- command: git check-ignore -v .env.prod.test ---
+.gitignore:77:.env.prod.test	.env.prod.test
+
+--- command: git status --porcelain -- '.env*' ---
+
+
+--- command: git log --stat -1 41ab22b (env-related lines) ---
+commit 41ab22bb212993298ef948463aede66346a5c27a Author: Nguyß╗àn ─Éß╗⌐c Thuß║¡n <nobita6986@gmail.com> Date:   Mon Sep 7 12:10:01 2026 +0700      ∩╗┐infra(go-live-21): r1-FIX ΓÇö untrack env files + commit AUDIT + evidence          AUDIT round 1 (v1.2) reported:     - AUD-002 (P1): git rm --cached did not persist to HEAD (staged but uncommitted)     - AUD-003 (P3): evidence/go21-s05-apply-blocked.txt existed but with corrupted       PowerShell stderr content from earlier redirect failure          This commit fixes both:     - Persists untrack of .env.dev, .env.preview, .env.prod.test into HEAD       (AC-02 will now show git ls-files '.env*' = .env.example only)     - Stages .gitignore additions for credential hygiene (exact-path ignore only,       no glob, no prefix; preserves Browser Lane lines 75-76)     - Adds clean evidence/go21-s05-apply-blocked.txt with exit 2 + DB gate FAIL       message captured via Start-Process -RedirectStandardError (no PS errors)     - Adds AUDIT.md round 1 from Tier 3 independent context          AUD-001 (P0, ESCALATE_NEW_TASK for check_rls.cjs) is out of scope for r1-FIX;     will be addressed in separate security task per Planner Resolution v1.2 ┬º9.          Co-authored-by: Cursor <cursoragent@cursor.com>   .env.dev       | 34 ----------------------------------  .env.preview   | 25 -------------------------  .env.prod.test | 30 ------------------------------  .gitignore     | 12 ++++++++++++  4 files changed, 12 insertions(+), 89 deletions(-)
+
+--- AC-02 verdict ---
+PASS — git ls-files '.env*' returns exactly one path: .env.example
+       .env.example contains only empty placeholders (DEC-02).
+       The three formerly-tracked env files are now untracked and ignored.
+
