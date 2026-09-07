@@ -1,0 +1,5 @@
+﻿node scripts/ops/demo-cleanup.mjs dry-run
+---
+exit: 0
+[demo-cleanup] 4 allowlist queries prepared.
+manifest hash: 3fb0d3cc0f6fcb85dc3f3b978a71819f05bc011f8a5d4cad141222a14cfde47e

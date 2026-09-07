@@ -1,0 +1,84 @@
+{
+  "_meta": {
+    "task": "hrp-v5-go-live-21-credential-hygiene-closure",
+    "purpose": "DEMO cleanup allowlist — exact primary keys, exact tables, expected counts",
+    "policy": "DEC-06 + EV-08: exact-ID only; cấm prefix/pattern delete",
+    "tier": "2 (prep only); OP execution thuộc STEP-11",
+    "scope": "dữ liệu DEMO public jobs được dựng bởi seed + migration marketplace_search_tracking_profile",
+    "owner_approval_required": true
+  },
+  "allowlist": {
+    "vendor": {
+      "table": "vendor",
+      "key": "code",
+      "expected_count_seed": 1,
+      "expected_count_migration": 3,
+      "expected_count_total": 4,
+      "exact_ids": [
+        "VND-001",
+        "DA-DEMO-001",
+        "DA-DEMO-002",
+        "DA-DEMO-003"
+      ]
+    },
+    "worker": {
+      "table": "user",
+      "key": "phone",
+      "expected_count": 1,
+      "exact_ids": [
+        "0910000002"
+      ]
+    },
+    "vendor_admin": {
+      "table": "user",
+      "key": "phone",
+      "expected_count": 1,
+      "exact_ids": [
+        "0910000001"
+      ]
+    },
+    "ctv": {
+      "table": "user",
+      "key": "phone",
+      "expected_count": 1,
+      "exact_ids": [
+        "0910000003"
+      ]
+    }
+  },
+  "non_demo_sentinel": {
+    "purpose": "post-check rằng cleanup không chạm vào non-DEMO rows",
+    "examples": [
+      "vendor.code = 'VND-NON-DEMO-001' (nếu có, KHÔNG được xoá)",
+      "user.phone = '0900000099' (nếu có, KHÔNG được xoá)"
+    ],
+    "expected_count_change": 0
+  },
+  "fk_order": [
+    {"table": "job_application", "fk": "workerId → user.id(0910000002)", "strategy": "delete children first"},
+    {"table": "job_posting", "fk": "vendorId → vendor.id(VND-001/DA-DEMO-*)", "strategy": "delete children first"},
+    {"table": "vendor", "fk": "code IN allowlist", "strategy": "delete after children"},
+    {"table": "user", "fk": "phone IN allowlist", "strategy": "delete after children"}
+  ],
+  "transaction": {
+    "type": "single transaction",
+    "guard": "advisory lock key DEMO_CLEANUP_LOCK or equivalent single-run guard",
+    "rollback_on_count_drift": true,
+    "rollback_on_extra_ids": true
+  },
+  "dry_run_invariants": {
+    "must_run_twice_same_counts": true,
+    "queries_must_use_allowlist_only": true,
+    "no_like_pattern_for_demo": true
+  },
+  "post_check_invariants": {
+    "allowlist_count_after_apply_zero": true,
+    "non_demo_sentinel_count_unchanged": true,
+    "manifest_hash_unchanged_throughout": true
+  },
+  "placeholder_counts": {
+    "_note": "Số liệu cụ thể sẽ được Owner confirm ở OP execution; Tier 2 prep chỉ khóa cấu trúc manifest. Đếm thật qua dry-run hai lần.",
+    "expected_seed_phone_count": 3,
+    "expected_demo_vendor_count": 4
+  }
+}

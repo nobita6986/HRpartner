@@ -1,0 +1,8 @@
+﻿git ls-files --stage .env.dev .env.preview .env.prod.test .env.example
+---
+exit: 0
+output:
+100644 c2e267cf2cba88e93381f73dcabe37f3491d2d90 0 .env.dev
+100644 b777129f2fb7043bd188d04dbdd98a34de6a6543 0 .env.example
+100644 177026935246bb5eaa42ea61dbe22f3d0e0f1ac 0 .env.preview
+100644 1c04a274ce0589083174cc97431739e25ae15bd9 0 .env.prod.test

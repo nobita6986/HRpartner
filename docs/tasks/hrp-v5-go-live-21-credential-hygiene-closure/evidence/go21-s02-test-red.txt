@@ -1,0 +1,1338 @@
+﻿node.exe : [33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ Γ¥» prisma/seed-portal-demo-password.static.test.ts (5 tests | 2 failed) 16ms
+   ├ù hrp-v5-go-live-21 / RQ-03: prisma/seed.mjs kh├┤ng chß╗⌐a password literal > AC-03.2: portal demo password chß╗ë tß╗½ process.env.PORTAL_DEMO_PASSWORD 10ms
+     ΓåÆ expected '/**\r\n * prisma/seed.mjs - Phase 0 fΓÇª' to contain 'process.env.PORTAL_DEMO_PASSWORD'
+   ├ù hrp-v5-go-live-21 / RQ-03: prisma/seed.mjs kh├┤ng chß╗⌐a password literal > AC-03.3: kh├┤ng c├│ literal "demo-portal-2026" c├▓n s├│t trong seed.mjs 2ms
+     ΓåÆ expected '/**\r\n * prisma/seed.mjs - Phase 0 fΓÇª' not to match /demo-portal-2026/
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 2 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  prisma/seed-portal-demo-password.static.test.ts > hrp-v5-go-live-21 / RQ-03: prisma/seed.mjs kh├┤ng chß╗⌐a 
+password literal > AC-03.2: portal demo password chß╗ë tß╗½ process.env.PORTAL_DEMO_PASSWORD
+AssertionError: expected '/**\r\n * prisma/seed.mjs - Phase 0 fΓÇª' to contain 'process.env.PORTAL_DEMO_PASSWORD'
+
+- Expected
++ Received
+
+- process.env.PORTAL_DEMO_PASSWORD
++ /**
++  * prisma/seed.mjs - Phase 0 fixtures (idempotent upsert)
++  *
++  * Uses DATABASE_URL_ADMIN if set (bypasses RLS for seed).
++  * Falls back to DATABASE_URL otherwise.
++  *
++  * Phase 5: extended with 2 vendors, timesheet LOCKED, vendor statement SENT.
++  */
++ import { PrismaClient } from '@prisma/client';
++ import bcrypt from 'bcryptjs';
++ 
++ // Use DATABASE_URL_ADMIN if set (bypasses RLS for seed), else DATABASE_URL.
++ const adminUrl = process.env.DATABASE_URL_ADMIN ?? process.env.DATABASE_URL;
++ if (!adminUrl) { console.error('[seed] No DATABASE_URL or DATABASE_URL_ADMIN'); process.exit(1); }
++ const seedUrl = new URL(adminUrl);
++ seedUrl.searchParams.set('connection_limit', '1');
++ const prisma = new PrismaClient({ datasources: { db: { url: seedUrl.toString() } } });
++ 
++ // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++ // Phase 1 bcc-fence (TASK hrp-phase1-bcc-fence, RQ-05 / DEC-05):
++ // 2 t├ái khoß║ún auth tß╗½ ENV (ADMIN + HR_MANAGER). Upsert theo phone (User.phone
++ // KH├öNG unique trong schema ΓåÆ findFirst + update/create). T├ái khoß║ún ─æ├ú tß╗ôn tß║íi
++ // ΓåÆ KH├öNG reset passwordHash. Thiß║┐u ENV ΓåÆ skip + cß║únh b├ío (kh├┤ng crash).
++ // Chß╗ë chß║ím bß║úng `users` ΓÇö kh├┤ng ─æß╗Ñng bß║úng kh├íc, kh├┤ng x├│a row (EV-06, RISK-02).
++ // KH├öNG log phone/password/hash d╞░ß╗¢i mß╗ìi h├¼nh thß╗⌐c.
++ // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++ const AUTH_ACCOUNTS = [
++   { role: 'ADMIN', phoneEnv: 'ADMIN_PHONE', passwordEnv: 'ADMIN_PASSWORD', name: 'Admin HRP (bcc-fence)' },
++   { role: 'HR_MANAGER', phoneEnv: 'HR_PHONE', passwordEnv: 'HR_PASSWORD', name: 'HR Manager (bcc-fence)' },
++ ];
++ 
++ async function seedAuthAccounts() {
++   let created = 0;
++   let updated = 0;
++   let skipped = 0;
++ 
++   for (const acc of AUTH_ACCOUNTS) {
++     const phone = process.env[acc.phoneEnv];
++     const password = process.env[acc.passwordEnv];
++ 
++     if (!phone || !password) {
++       console.warn(`[seed.mjs] SKIP ${acc.role}: thieu ENV ${acc.phoneEnv} hoac ${acc.passwordEnv}`);
++       skipped++;
++       continue;
++     }
++ 
++     const existing = await prisma.user.findFirst({ where: { phone } });
++ 
++     if (existing) {
++       // ─É├ú tß╗ôn tß║íi ΓåÆ chß╗ë cß║¡p nhß║¡t role/isActive/name, GIß╗« NGUY├èN passwordHash
++       await prisma.user.update({
++         where: { id: existing.id },
++         data: { name: acc.name, role: acc.role, isActive: true },
++       });
++       if (!existing.passwordHash) {
++         console.warn(`[seed.mjs] WARN ${acc.role}: user da ton tai nhung chua co passwordHash ΓÇö giu nguyen, dang 
+nhap chua kha dung`);
++       }
++       updated++;
++     } else {
++       const passwordHash = await bcrypt.hash(password, 10);
++       await prisma.user.create({
++         data: { phone, passwordHash, name: acc.name, role: acc.role, isActive: true },
++       });
++       created++;
++     }
++   }
++ 
++   return { created, updated, skipped };
++ }
++ 
++ const ROLE_SCENARIOS = [
++   // 13 SystemRole ├ù minimum 1 synthetic user per role.
++   { code: 'ADMIN',        name: 'Founder Minh (admin)',         phone: '090****001' },
++   { code: 'HR_MANAGER',   name: 'Nguyen Van A (HR Manager)',    phone: '091****002' },
++   { code: 'DIRECTOR',     name: 'BGD Tran Thi B (Director)',    phone: '092****003' },
++   { code: 'HR_STAFF',     name: 'Le Van C (HR Staff)',          phone: '093****004' },
++   { code: 'SALE',         name: 'Pham Thi D (Sale)',            phone: '094****005' },
++   { code: 'PM',           name: 'Hoang Van E (PM)',             phone: '095****006' },
++   { code: 'ACCOUNTANT',   name: 'Vu Thi F (Accountant)',        phone: '096****007' },
++   { code: 'MKT',          name: 'Dao Van G (MKT)',              phone: '097****008' },
++   { code: 'VENDOR_ADMIN', name: 'Bui Thi H (Vendor Admin)',     phone: '098****009' },
++   { code: 'VENDOR_STAFF', name: 'Do Van I (Vendor Staff)',      phone: '089****010' },
++   { code: 'CTV',          name: 'Ly Van K (CTV)',               phone: '088****011' },
++   { code: 'WORKER',       name: 'Tran Van L (Worker)',          phone: '087****012' },
++   { code: 'EMPLOYEE',     name: 'Nhan vien M (Employee)',       phone: '086****013' },
++ ];
++ 
++ // SECURITY (AUD-004 P1): All seed projects MUST default to isPublic=false to
++ // prevent `staffing_orders` leak via `hrp_project_visible_for` (MKT/CTV/WORKER
++ // only see staffing_orders when project.is_public=true). Public visibility for
++ // job board demo is opt-in per project ΓÇö none by default for safety.
++ const CLIENT_SCENARIOS = [
++   { id: 'seed-client-hrp-demo-1', code: 'CC-SEED-001', name: 'Kh├ích h├áng mß║½u Bß║»c Ninh', taxCode: '08****001', 
+industry: '─Éiß╗çn tß╗¡' },
++   { id: 'seed-client-hrp-demo-2', code: 'CC-SEED-002', name: 'Kh├ích h├áng mß║½u Bß║»c Giang', taxCode: '08****002', 
+industry: 'C├┤ng nghiß╗çp chß║┐ tß║ío' },
++ ];
++ 
++ const PROJECT_SCENARIOS = [
++   { code: 'DA-2026-018', clientCode: 'CC-SEED-001', name: 'Nh├á m├íy ─Éiß╗çn tß╗¡ An Ph├ít',          site: 'KCN 
+Chß╗ú An, Bß║»c Ninh',       quota: 50, filled: 47, isPublic: false },
++   { code: 'DA-2026-022', clientCode: 'CC-SEED-001', name: 'Kho vß║¡n Y├¬n Phong',                site: 'KCN Y├¬n 
+Phong, Bß║»c Ninh',    quota: 80, filled: 80, isPublic: false },
++   { code: 'PRJ-SV-014',  clientCode: 'CC-SEED-002', name: 'Nh├á m├íy Sao Viß╗çt',                 site: 'KCN Quang 
+Ch├óu, Bß║»c Giang',  quota: 35, filled: 32, isPublic: false },
++   { code: 'PRJ-INTERNAL',clientCode: 'CC-SEED-002', name: 'Dß╗▒ ├ín nß╗Öi bß╗Ö HRP (kh├┤ng c├┤ng khai)', site: 'H├á 
+Nß╗Öi',                   quota: 5,  filled: 2,  isPublic: false },
++ ];
++ 
++ const WORKER_SCENARIOS = [
++   // Phase 0: 3 workers
++   { empCode: 'EMP-001', fullName: 'Nguyen Van Worker A',  cccd: '084****1234' },
++   { empCode: 'EMP-002', fullName: 'Tran Thi Worker B',    cccd: '085****2345' },
++   { empCode: 'EMP-003', fullName: 'Le Van Worker C',      cccd: '086****3456' },
++   // Phase 5: +2 workers for F00A demo (total 5)
++   { empCode: 'EMP-004', fullName: 'Pham Thi Worker D',    cccd: '087****4567' },
++   { empCode: 'EMP-005', fullName: 'Hoang Van Worker E',  cccd: '088****5678' },
++   ...Array.from({ length: 15 }, (_, index) => {
++     const number = index + 6;
++     const padded = String(number).padStart(3, '0');
++     return {
++       empCode: `EMP-${padded}`,
++       fullName: `Worker An Danh ${padded}`,
++       cccd: `09${String(number).padStart(2, '0')}****${String(6000 + number)}`,
++     };
++   }),
++ ];
++ 
++ // ΓöÇΓöÇΓöÇ Phase 5: Vendors (2) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++ const VENDOR_SCENARIOS = [
++   { code: 'VND-001', name: 'Cong ty TNHH Nhan su Vien Dong',  taxCode: '09****001', area: 'Bac Ninh',   status: 
+'ACTIVE' },
++   { code: 'VND-002', name: 'Cong ty TNHH Tu Van Nhan luc',    taxCode: '09****002', area: 'Bac Giang', status: 
+'ACTIVE' },
++ ];
++ 
++ // ΓöÇΓöÇΓöÇ Phase 5: Timesheet period LOCKED (for F00A moment 09:30) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++ const TIMESHEET_PERIOD_SEEDS = [
++   { id: 'seed-period-2026-07', month: 7, year: 2026, projectCode: 'DA-2026-018', status: 'LOCKED', lockedAt: new 
+Date('2026-08-15T08:30:00Z') },
++   { id: 'seed-period-2026-08', month: 8, year: 2026, projectCode: 'DA-2026-022', status: 'LOCKED', lockedAt: new 
+Date('2026-09-15T08:30:00Z') },
++ ];
++ 
++ // ΓöÇΓöÇΓöÇ Phase 5: VendorStatement SENT (for F00A moment 11:30) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++ const STATEMENT_SEED = {
++   periodMonth: 7,
++   periodYear: 2026,
++   vendorCode: 'VND-001',
++   status: 'SENT',
++ };
++ 
++ async function seedUsers() {
++   let count = 0;
++   for (const u of ROLE_SCENARIOS) {
++     await prisma.user.upsert({
++       where: { id: `seed-user-${u.code.toLowerCase()}` },
++       update: { name: u.name, phone: u.phone, role: u.code, isActive: true },
++       create: {
++         id: `seed-user-${u.code.toLowerCase()}`,
++         name: u.name,
++         phone: u.phone,
++         role: u.code,
++         isActive: true,
++       },
++     });
++     count++;
++   }
++   return count;
++ }
++ 
++ async function seedProjects() {
++   const clients = new Map();
++   for (const c of CLIENT_SCENARIOS) {
++     const client = await prisma.clientCompany.upsert({
++       where: { code: c.code },
++       update: { name: c.name, taxCode: c.taxCode, industry: c.industry, status: 'ACTIVE' },
++       create: { ...c, status: 'ACTIVE' },
++     });
++     clients.set(c.code, client);
++   }
++ 
++   let projectCount = 0;
++   for (const p of PROJECT_SCENARIOS) {
++     const client = clients.get(p.clientCode);
++     if (!client) throw new Error(`[seed] missing client fixture ${p.clientCode}`);
++     await prisma.project.upsert({
++       where: { code: p.code },
++       update: { clientCompanyId: client.id, name: p.name, quota: p.quota, filled: p.filled, isPublic: p.isPublic, 
+siteAddress: p.site },
++       create: {
++         id: `seed-proj-${p.code}`,
++         code: p.code,
++         name: p.name,
++         clientCompanyId: client.id,
++         quota: p.quota,
++         filled: p.filled,
++         isPublic: p.isPublic,
++         siteAddress: p.site,
++         startDate: new Date('2026-01-01'),
++         status: 'ACTIVE',
++         version: 1,
++       },
++     });
++     projectCount++;
++   }
++   return { clientCount: clients.size, projectCount };
++ }
++ 
++ async function seedWorkers() {
++   let count = 0;
++   for (const w of WORKER_SCENARIOS) {
++     await prisma.worker.upsert({
++       where: { id: `seed-worker-${w.empCode}` },
++       update: { fullName: w.fullName },
++       create: {
++         id: `seed-worker-${w.empCode}`,
++         userId: `USR-${w.empCode}`,
++         fullName: w.fullName,
++         cccdNumber: w.cccd,
++         profileStatus: 'VERIFIED',
++         employmentStatus: 'ACTIVE',
++         riskStatus: 'NORMAL',
++       },
++     });
++     count++;
++   }
++   return count;
++ }
++ 
++ // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++ // Phase 5 UAT/Cutover STEP-05 (RQ-08):
++ // Seed 2 vendors + timesheet period LOCKED + vendor statement SENT (F00A demo).
++ // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++ 
++ async function seedVendors() {
++   let count = 0;
++   for (const v of VENDOR_SCENARIOS) {
++     await prisma.vendor.upsert({
++       where: { id: `seed-vendor-${v.code}` },
++       update: { name: v.name, taxCode: v.taxCode, area: v.area, status: v.status },
++       create: {
++         id: `seed-vendor-${v.code}`,
++         code: v.code,
++         name: v.name,
++         taxCode: v.taxCode,
++         area: v.area,
++         status: v.status,
++       },
++     });
++     count++;
++   }
++   return count;
++ }
++ 
++ async function seedTimesheetPeriod() {
++   let count = 0;
++   for (const period of TIMESHEET_PERIOD_SEEDS) {
++     const project = await prisma.project.findUnique({ where: { code: period.projectCode } });
++     if (!project) throw new Error(`[seed] project fixture not found: ${period.projectCode}`);
++     await prisma.timesheetPeriod.upsert({
++       where: { id: period.id },
++       update: { status: period.status, projectId: project.id, lockedAt: period.lockedAt },
++       create: {
++         id: period.id,
++         projectId: project.id,
++         month: period.month,
++         year: period.year,
++         status: period.status,
++         lockedAt: period.lockedAt,
++         version: 1,
++       },
++     });
++     count++;
++   }
++   return count;
++ }
++ 
++ async function seedVendorStatement() {
++   const vendor = await prisma.vendor.findUnique({ where: { id: 'seed-vendor-VND-001' } });
++   const period = await prisma.timesheetPeriod.findUnique({ where: { id: 'seed-period-2026-07' } });
++   if (!vendor || !period) { console.warn('[seed] vendor/period not found, skipping statement'); return 0; }
++ 
++   await prisma.vendorStatement.upsert({
++     where: { id: 'seed-vs-2026-07-vnd001' },
++     update: { status: 'SENT' },
++     create: {
++       id: 'seed-vs-2026-07-vnd001',
++       vendorId: vendor.id,
++       periodMonth: STATEMENT_SEED.periodMonth,
++       periodYear: STATEMENT_SEED.periodYear,
++       totalAmount: BigInt(15000000),
++       status: 'SENT',
++       sentAt: new Date('2026-08-15T11:30:00Z'),
++       confirmDeadlineAt: new Date('2026-08-18T08:00:00Z'),
++       disputeCount: 0,
++       version: 1,
++     },
++   });
++   return 1;
++ }
++ 
++ // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++ // P1 Portals STEP-11 (DEC-12 + RQ-12): seed ΓëÑ2 staffing orders OPEN
++ // StaffingOrder.status = 'OPEN' (not 'ACTIVE' ΓÇö see schema StaffingOrder model)
++ const STAFFING_ORDER_SEED = [
++   { code: 'SO-VND001-001', title: 'Tuyß╗ân 5 c├┤ng nh├ón ─æiß╗çn tß╗¡ An Ph├ít', projectCode: 'DA-2026-018', 
+slotsNeeded: 5, positionCode: 'ELECTRICIAN', positionTitle: 'C├┤ng nh├ón ─æiß╗çn tß╗¡', shiftStart: '07:00', shiftEnd: 
+'16:00', workLocation: 'KCN Chß╗ú An, Bß║»c Ninh' },
++   { code: 'SO-VND001-002', title: 'Tuyß╗ân 3 nh├ón vi├¬n kho Y├¬n Phong',   projectCode: 'DA-2026-022', slotsNeeded: 
+3, positionCode: 'WAREHOUSE',   positionTitle: 'Nh├ón vi├¬n kho',      shiftStart: '08:00', shiftEnd: '17:00', 
+workLocation: 'KCN Y├¬n Phong, Bß║»c Ninh' },
++ ];
++ 
++ async function seedStaffingOrders() {
++   let count = 0;
++   for (const s of STAFFING_ORDER_SEED) {
++     const project = await prisma.project.findUnique({ where: { code: s.projectCode } });
++     if (!project) { console.warn(`[seed] project ${s.projectCode} not found, skipping order`); continue; }
++ 
++     const validFrom = new Date('2026-08-01');
++     const validTo   = new Date('2026-12-31');
++ 
++     const order = await prisma.staffingOrder.upsert({
++       where: { id: `seed-order-${s.code}` },
++       update: { title: s.title, status: 'OPEN' },
++       create: {
++         id: `seed-order-${s.code}`,
++         code: s.code,
++         title: s.title,
++         projectId: project.id,
++         status: 'OPEN',
++         deadlineDate: validTo,
++       },
++     });
++ 
++     await prisma.staffingOrderSlot.upsert({
++       where: { id: `seed-slot-${s.code}` },
++       update: {
++         positionCode: s.positionCode,
++         positionTitle: s.positionTitle,
++         slotsNeeded: s.slotsNeeded,
++         shiftStart: s.shiftStart,
++         shiftEnd: s.shiftEnd,
++         validFrom,
++         validTo,
++         workLocation: s.workLocation,
++       },
++       create: {
++         id: `seed-slot-${s.code}`,
++         staffingOrderId: order.id,
++         positionCode: s.positionCode,
++         positionTitle: s.positionTitle,
++         slotsNeeded: s.slotsNeeded,
++         slotsFilled: 0,
++         shiftStart: s.shiftStart,
++         shiftEnd: s.shiftEnd,
++         validFrom,
++         validTo,
++         workLocation: s.workLocation,
++       },
++     });
++     count++;
++   }
++   return count;
++ }
++ 
++ // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
++ // P1 Portals STEP-11 (DEC-12): seed users + worker profile + claims + submissions
++ // 3 cß╗òng: vendor.hrpartner.vn, worker.hrpartner.vn, ctv.hrpartner.vn
++ // Phone masked 09x****xxx (DEC-12). All upsert (idempotent).
++ // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
++ const PORTAL_USERS_SEED = [
++   { phone: '0910000001', role: 'VENDOR_ADMIN', vendorCode: 'VND-001', affCode: null, name: 'Vendor Admin Demo' },
++   { phone: '0910000002', role: 'WORKER', vendorCode: null, affCode: null, name: 'Worker Demo' },
++   { phone: '0910000003', role: 'CTV', vendorCode: null, affCode: 'CTV-DEMO-001', name: 'CTV Demo' },
++ ];
++ 
++ async function seedPortalUsers() {
++   let count = 0;
++   for (const u of PORTAL_USERS_SEED) {
++     const existing = await prisma.user.findFirst({ where: { phone: u.phone } });
++     const data = {
++       role: u.role,
++       isActive: true,
++       name: u.name,
++       affCode: u.affCode,
++     };
++ 
++     if (u.vendorCode) {
++       const vendor = await prisma.vendor.findUnique({ where: { code: u.vendorCode } });
++       if (vendor) data.vendorId = vendor.id;
++     }
++ 
++     if (existing) {
++       await prisma.user.update({ where: { id: existing.id }, data });
++     } else {
++       // GO-LIVE-21 RQ-03: portal demo password from explicit ENV only.
++       // Missing ENV ΓåÆ SKIP (fail-closed); never use a fixed literal.
++       // RED marker: temporarily reintroduce literal to prove test detects it
++       const demoPassword = 'demo-portal-2026';
++       if (!demoPassword) {
++         console.warn('[seed.mjs] SKIP portal demo user: PORTAL_DEMO_PASSWORD env missing');
++         continue;
++       }
++       const passwordHash = await bcrypt.hash(demoPassword, 10);
++       await prisma.user.create({
++         data: {
++           phone: u.phone,
++           passwordHash,
++           ...data,
++         },
++       });
++     }
++     count++;
++   }
++   return count;
++ }
++ 
++ async function seedWorkerProfile() {
++   // Find worker demo user
++   const workerUser = await prisma.user.findFirst({ where: { phone: '0910000002' } });
++   if (!workerUser) { console.warn('[seed] worker user not found, skipping profile'); return 0; }
++ 
++   // Check if Worker profile exists
++   let worker = await prisma.worker.findUnique({ where: { userId: workerUser.id } });
++   if (!worker) {
++     worker = await prisma.worker.create({
++       data: {
++         userId: workerUser.id,
++         accountUserId: workerUser.id,
++         fullName: workerUser.name ?? 'Worker Demo',
++         phone: workerUser.phone,
++         employmentStatus: 'NONE',
++         profileStatus: 'INCOMPLETE',
++         riskStatus: 'NORMAL',
++       },
++     });
++   } else if (!worker.accountUserId) {
++     // Sß╗¡a lß╗ùi nß║íp thiß║┐u accountUserId tr╞░ß╗¢c ─æ├óy
++     await prisma.worker.update({
++       where: { id: worker.id },
++       data: { accountUserId: workerUser.id },
++     });
++   }
++   return worker ? 1 : 0;
++ }
++ 
++ async function seedSourceClaims() {
++   const ctvUser = await prisma.user.findFirst({ where: { phone: '0910000003' } });
++   if (!ctvUser) { console.warn('[seed] ctv user not found, skipping claims'); return 0; }
++ 
++   // Find any worker to claim
++   const worker = await prisma.worker.findFirst();
++   if (!worker) { console.warn('[seed] no worker, skipping claims'); return 0; }
++ 
++   let count = 0;
++   for (const claimType of ['HRP_DIRECT', 'CTV_REFERRAL']) {
++     const id = `seed-claim-${ctvUser.id}-${claimType}`;
++     await prisma.sourceClaim.upsert({
++       where: { id },
++       update: { accepted: claimType === 'CTV_REFERRAL' },
++       create: {
++         id,
++         workerId: worker.id,
++         claimType,
++         ctvId: ctvUser.id,
++         accepted: claimType === 'CTV_REFERRAL',
++       },
++     });
++     count++;
++   }
++   return count;
++ }
++ 
++ async function seedCandidateSubmissionForVendor() {
++   const vendor = await prisma.vendor.findUnique({ where: { code: 'VND-001' } });
++   if (!vendor) { console.warn('[seed] vendor not found, skipping submission'); return 0; }
++ 
++   // Find a project
++   const project = await prisma.project.findFirst();
++   if (!project) { console.warn('[seed] no project, skipping submission'); return 0; }
++ 
++   await prisma.candidateSubmission.upsert({
++     where: { id: 'seed-cs-vnd001-01' },
++     update: { status: 'NEW' },
++     create: {
++       id: 'seed-cs-vnd001-01',
++       vendorId: vendor.id,
++       projectId: project.id,
++       fullName: 'ß╗¿ng vi├¬n demo',
++       phone: '0987654321',
++       status: 'NEW',
++     },
++   });
++   return 1;
++ }
++ 
++ // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++ // Phase 1 identity-core (TASK hrp-phase1-identity-core, RQ-08 + DEC-07):
++ // Seed Permission catalog + RolePermission matrix idempotent.
++ // - Upsert Permission (code + group + description) ΓÇö kh├┤ng reset.
++ // - Upsert RolePermission (role + permissionCode) ΓÇö kh├┤ng reset.
++ // - KH├öNG ─æß╗Ñng UserPermissionGrant (giß╗» nguy├¬n grant manual ΓÇö DEC-07).
++ // - KH├öNG reset password user (─æß║úm bß║úo idempotent).
++ // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++ const PERMISSION_SEED = [
++   { code: 'CAN_MANAGE_PERMISSIONS',     group: 'SYSTEM',    description: 'Cß║Ñp/thu quyß╗ün cho user kh├íc (chß╗ë 
+root cß║Ñp ─æ╞░ß╗úc ΓÇö G22).' },
++   { code: 'CAN_CREATE_WORKER',          group: 'WORKER',    description: 'Tß║ío hß╗ô s╞í worker mß╗¢i (Sale/HR tß║ío 
+nguß╗ôn).' },
++   { code: 'CAN_VIEW_UNASSIGNED_POOL',   group: 'WORKER',    description: 'Xem pool worker ch╞░a ph├ón c├┤ng 
+(assignedToId = null).' },
++   { code: 'CAN_VIEW_WORKER_SENSITIVE',  group: 'WORKER',    description: 'Xem tr╞░ß╗¥ng nhß║íy cß║úm (CCCD, 
+bankAccount, selfie) ΓÇö Phase 2 masking.' },
++   { code: 'CAN_APPROVE_PAYROLL',        group: 'PAYROLL',   description: 'Duyß╗çt bß║úng l╞░╞íng (HR_MANAGER + 
+ACCOUNTANT).' },
++   { code: 'CAN_FORCE_LOCK_STATEMENT',   group: 'STATEMENT', description: 'Kh├│a statement c╞░ß╗íng bß╗⌐c 
+(reconciliation cuß╗æi kß╗│).' },
++   { code: 'CAN_OVERRIDE_REFERRAL_GUARD',group: 'REFERRAL',  description: 'Bß╗Å qua referral guard (SOP S1/S2/S3 
+┬º9.3.1).' },
++   { code: 'CAN_APPROVE_TICKET_LEVEL2',  group: 'TICKET',    description: 'Duyß╗çt ticket level 2 (duyß╗çt 2 chß╗» 
+k├╜ cho ADVANCE_SALARY).' },
++   { code: 'CAN_PROCESS_TICKET',         group: 'TICKET',   description: 'Xß╗¡ l├╜ ticket (cancel/pay/reject ΓÇö 
+Planner bß╗ò sung nh├│m TICKET).' },
++   { code: 'CAN_PUBLISH_JOB',            group: 'PROJECT',  description: 'Publish hoß║╖c unpublish job tr├¬n public 
+job board trong Project scope.' },
++   { code: 'CAN_EDIT_CONTRACT',          group: 'CONTRACT', description: 'Sß╗¡a hß╗úp ─æß╗ông worker (HR_MANAGER).' },
++ ];
++ 
++ // Role ΓåÆ tß║¡p permission codes (theo data-scope-security ┬º4.2 seed mß║½u + DEC-02 bß╗ò sung).
++ // ADMIN short-circuit n├¬n kh├┤ng cß║ºn row (resolver trß║ú ALL).
++ const ROLE_PERMISSION_SEED = [
++   // HR_MANAGER ΓÇö ─æa quyß╗ün nhß║Ñt (trß╗½ MANAGE root + VIEW_WORKER_SENSITIVE giai ─æoß║ín ─æß║ºu)
++   { role: 'HR_MANAGER', code: 'CAN_CREATE_WORKER' },
++   { role: 'HR_MANAGER', code: 'CAN_VIEW_UNASSIGNED_POOL' },
++   { role: 'HR_MANAGER', code: 'CAN_APPROVE_PAYROLL' },
++   { role: 'HR_MANAGER', code: 'CAN_FORCE_LOCK_STATEMENT' },
++   { role: 'HR_MANAGER', code: 'CAN_OVERRIDE_REFERRAL_GUARD' },
++   { role: 'HR_MANAGER', code: 'CAN_APPROVE_TICKET_LEVEL2' },
++   { role: 'HR_MANAGER', code: 'CAN_PROCESS_TICKET' },
++   { role: 'HR_MANAGER', code: 'CAN_EDIT_CONTRACT' },
++   { role: 'HR_MANAGER', code: 'CAN_VIEW_WORKER_SENSITIVE' },
++   { role: 'HR_MANAGER', code: 'CAN_PUBLISH_JOB' },
++ 
++   // HR_STAFF ΓÇö tß║ío worker, xß╗¡ l├╜ ticket
++   { role: 'HR_STAFF', code: 'CAN_CREATE_WORKER' },
++   { role: 'HR_STAFF', code: 'CAN_PROCESS_TICKET' },
++ 
++   // SALE ΓÇö tß║ío worker v├á publish job trong Project scope
++   { role: 'SALE', code: 'CAN_CREATE_WORKER' },
++   { role: 'SALE', code: 'CAN_PUBLISH_JOB' },
++ 
++   // ACCOUNTANT ΓÇö duyß╗çt payroll
++   { role: 'ACCOUNTANT', code: 'CAN_APPROVE_PAYROLL' },
++ ];
++ 
++ async function seedPermissions() {
++   let permCount = 0;
++   let rpCount = 0;
++ 
++   // 1. Upsert Permission catalog
++   for (const p of PERMISSION_SEED) {
++     await prisma.permission.upsert({
++       where: { code: p.code },
++       update: { group: p.group, description: p.description },
++       create: { code: p.code, group: p.group, description: p.description },
++     });
++     permCount++;
++   }
++ 
++   // 2. Upsert RolePermission matrix
++   for (const rp of ROLE_PERMISSION_SEED) {
++     await prisma.rolePermission.upsert({
++       where: { role_permissionCode: { role: rp.role, permissionCode: rp.code } },
++       update: {},
++       create: { role: rp.role, permissionCode: rp.code, grantedBy: 'root' },
++     });
++     rpCount++;
++   }
++ 
++   // 3. KH├öNG ─æß╗Ñng UserPermissionGrant (theo DEC-07 ΓÇö giß╗» nguy├¬n grant manual).
++   return { permCount, rpCount };
++ }
++ 
++ async function main() {
++   console.log('[seed.mjs] Phase 0 fixtures + Phase 1 identity-core permissions - idempotent upsert');
++   console.log('[seed.mjs] CANONICAL MOCK ONLY - no real PII');
++   await prisma.$executeRawUnsafe(
++     "SELECT set_config('app.user_id', 'g0-seed-admin', false), set_config('app.role', 'ADMIN', false)",
++   );
++ 
++   const users = await seedUsers();
++   const projects = await seedProjects();
++   const workers = await seedWorkers();
++   const vendors = await seedVendors();
++   const periods = await seedTimesheetPeriod();
++   const statements = await seedVendorStatement();
++   const staffingOrders = await seedStaffingOrders();
++   const portalUsers = await seedPortalUsers();
++   const workerProfile = await seedWorkerProfile();
++   const claims = await seedSourceClaims();
++   const submissions = await seedCandidateSubmissionForVendor();
++   const auth = await seedAuthAccounts();
++   const perms = await seedPermissions();
++ 
++   console.log(`[seed.mjs] Upserted: ${users} users, ${projects.clientCount} clients, ${projects.projectCount} 
+projects, ${workers} workers, ${vendors} vendors`);
++   console.log(`[seed.mjs] Phase 5: ${periods} timesheet period (LOCKED), ${statements} vendor statement (SENT), 
+${staffingOrders} staffing orders (OPEN)`);
++   console.log(`[seed.mjs] P1 Portals: ${portalUsers} users, ${workerProfile} worker profile, ${claims} source 
+claims, ${submissions} candidate submissions`);
++   console.log(`[seed.mjs] Auth accounts (ENV): ${auth.created} created, ${auth.updated} updated, ${auth.skipped} 
+skipped`);
++   console.log(`[seed.mjs] Permissions: ${perms.permCount} catalog, ${perms.rpCount} role-permissions`);
++   console.log(`[seed.mjs] G0-02 ready: 13 roles, 2 clients, 4 projects, 2 vendors, 20 workers, 2 periods LOCKED`);
++ }
++ 
++ main()
++   .catch((e) => {
++     console.error('[seed.mjs] FAILED:', e);
++     process.exit(1);
++   })
++   .finally(async () => {
++     await prisma.$disconnect();
++   });
++
+
+ Γ¥» prisma/seed-portal-demo-password.static.test.ts:51:17
+     49|     const src = readSeed();
+     50|     // Phß║úi c├│ mß╗Öt lookup ENV ─æ├║ng t├¬n.
+     51|     expect(src).toContain('process.env.PORTAL_DEMO_PASSWORD');
+       |                 ^
+     52|     // Phß║úi c├│ guard fail-closed khi ENV thiß║┐u.
+     53|     expect(src).toMatch(/PORTAL_DEMO_PASSWORD[\s\S]{0,200}!demoPassworΓÇª
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/2]ΓÄ»
+
+ FAIL  prisma/seed-portal-demo-password.static.test.ts > hrp-v5-go-live-21 / RQ-03: prisma/seed.mjs kh├┤ng chß╗⌐a 
+password literal > AC-03.3: kh├┤ng c├│ literal "demo-portal-2026" c├▓n s├│t trong seed.mjs
+AssertionError: expected '/**\r\n * prisma/seed.mjs - Phase 0 fΓÇª' not to match /demo-portal-2026/
+
+- Expected: 
+/demo-portal-2026/
+
++ Received: 
+"/**
+ * prisma/seed.mjs - Phase 0 fixtures (idempotent upsert)
+ *
+ * Uses DATABASE_URL_ADMIN if set (bypasses RLS for seed).
+ * Falls back to DATABASE_URL otherwise.
+ *
+ * Phase 5: extended with 2 vendors, timesheet LOCKED, vendor statement SENT.
+ */
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+
+// Use DATABASE_URL_ADMIN if set (bypasses RLS for seed), else DATABASE_URL.
+const adminUrl = process.env.DATABASE_URL_ADMIN ?? process.env.DATABASE_URL;
+if (!adminUrl) { console.error('[seed] No DATABASE_URL or DATABASE_URL_ADMIN'); process.exit(1); }
+const seedUrl = new URL(adminUrl);
+seedUrl.searchParams.set('connection_limit', '1');
+const prisma = new PrismaClient({ datasources: { db: { url: seedUrl.toString() } } });
+
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// Phase 1 bcc-fence (TASK hrp-phase1-bcc-fence, RQ-05 / DEC-05):
+// 2 t├ái khoß║ún auth tß╗½ ENV (ADMIN + HR_MANAGER). Upsert theo phone (User.phone
+// KH├öNG unique trong schema ΓåÆ findFirst + update/create). T├ái khoß║ún ─æ├ú tß╗ôn tß║íi
+// ΓåÆ KH├öNG reset passwordHash. Thiß║┐u ENV ΓåÆ skip + cß║únh b├ío (kh├┤ng crash).
+// Chß╗ë chß║ím bß║úng `users` ΓÇö kh├┤ng ─æß╗Ñng bß║úng kh├íc, kh├┤ng x├│a row (EV-06, RISK-02).
+// KH├öNG log phone/password/hash d╞░ß╗¢i mß╗ìi h├¼nh thß╗⌐c.
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+const AUTH_ACCOUNTS = [
+  { role: 'ADMIN', phoneEnv: 'ADMIN_PHONE', passwordEnv: 'ADMIN_PASSWORD', name: 'Admin HRP (bcc-fence)' },
+  { role: 'HR_MANAGER', phoneEnv: 'HR_PHONE', passwordEnv: 'HR_PASSWORD', name: 'HR Manager (bcc-fence)' },
+];
+
+async function seedAuthAccounts() {
+  let created = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (const acc of AUTH_ACCOUNTS) {
+    const phone = process.env[acc.phoneEnv];
+    const password = process.env[acc.passwordEnv];
+
+    if (!phone || !password) {
+      console.warn(`[seed.mjs] SKIP ${acc.role}: thieu ENV ${acc.phoneEnv} hoac ${acc.passwordEnv}`);
+      skipped++;
+      continue;
+    }
+
+    const existing = await prisma.user.findFirst({ where: { phone } });
+
+    if (existing) {
+      // ─É├ú tß╗ôn tß║íi ΓåÆ chß╗ë cß║¡p nhß║¡t role/isActive/name, GIß╗« NGUY├èN passwordHash
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { name: acc.name, role: acc.role, isActive: true },
+      });
+      if (!existing.passwordHash) {
+        console.warn(`[seed.mjs] WARN ${acc.role}: user da ton tai nhung chua co passwordHash ΓÇö giu nguyen, dang 
+nhap chua kha dung`);
+      }
+      updated++;
+    } else {
+      const passwordHash = await bcrypt.hash(password, 10);
+      await prisma.user.create({
+        data: { phone, passwordHash, name: acc.name, role: acc.role, isActive: true },
+      });
+      created++;
+    }
+  }
+
+  return { created, updated, skipped };
+}
+
+const ROLE_SCENARIOS = [
+  // 13 SystemRole ├ù minimum 1 synthetic user per role.
+  { code: 'ADMIN',        name: 'Founder Minh (admin)',         phone: '090****001' },
+  { code: 'HR_MANAGER',   name: 'Nguyen Van A (HR Manager)',    phone: '091****002' },
+  { code: 'DIRECTOR',     name: 'BGD Tran Thi B (Director)',    phone: '092****003' },
+  { code: 'HR_STAFF',     name: 'Le Van C (HR Staff)',          phone: '093****004' },
+  { code: 'SALE',         name: 'Pham Thi D (Sale)',            phone: '094****005' },
+  { code: 'PM',           name: 'Hoang Van E (PM)',             phone: '095****006' },
+  { code: 'ACCOUNTANT',   name: 'Vu Thi F (Accountant)',        phone: '096****007' },
+  { code: 'MKT',          name: 'Dao Van G (MKT)',              phone: '097****008' },
+  { code: 'VENDOR_ADMIN', name: 'Bui Thi H (Vendor Admin)',     phone: '098****009' },
+  { code: 'VENDOR_STAFF', name: 'Do Van I (Vendor Staff)',      phone: '089****010' },
+  { code: 'CTV',          name: 'Ly Van K (CTV)',               phone: '088****011' },
+  { code: 'WORKER',       name: 'Tran Van L (Worker)',          phone: '087****012' },
+  { code: 'EMPLOYEE',     name: 'Nhan vien M (Employee)',       phone: '086****013' },
+];
+
+// SECURITY (AUD-004 P1): All seed projects MUST default to isPublic=false to
+// prevent `staffing_orders` leak via `hrp_project_visible_for` (MKT/CTV/WORKER
+// only see staffing_orders when project.is_public=true). Public visibility for
+// job board demo is opt-in per project ΓÇö none by default for safety.
+const CLIENT_SCENARIOS = [
+  { id: 'seed-client-hrp-demo-1', code: 'CC-SEED-001', name: 'Kh├ích h├áng mß║½u Bß║»c Ninh', taxCode: '08****001', 
+industry: '─Éiß╗çn tß╗¡' },
+  { id: 'seed-client-hrp-demo-2', code: 'CC-SEED-002', name: 'Kh├ích h├áng mß║½u Bß║»c Giang', taxCode: '08****002', 
+industry: 'C├┤ng nghiß╗çp chß║┐ tß║ío' },
+];
+
+const PROJECT_SCENARIOS = [
+  { code: 'DA-2026-018', clientCode: 'CC-SEED-001', name: 'Nh├á m├íy ─Éiß╗çn tß╗¡ An Ph├ít',          site: 'KCN Chß╗ú 
+An, Bß║»c Ninh',       quota: 50, filled: 47, isPublic: false },
+  { code: 'DA-2026-022', clientCode: 'CC-SEED-001', name: 'Kho vß║¡n Y├¬n Phong',                site: 'KCN Y├¬n 
+Phong, Bß║»c Ninh',    quota: 80, filled: 80, isPublic: false },
+  { code: 'PRJ-SV-014',  clientCode: 'CC-SEED-002', name: 'Nh├á m├íy Sao Viß╗çt',                 site: 'KCN Quang 
+Ch├óu, Bß║»c Giang',  quota: 35, filled: 32, isPublic: false },
+  { code: 'PRJ-INTERNAL',clientCode: 'CC-SEED-002', name: 'Dß╗▒ ├ín nß╗Öi bß╗Ö HRP (kh├┤ng c├┤ng khai)', site: 'H├á 
+Nß╗Öi',                   quota: 5,  filled: 2,  isPublic: false },
+];
+
+const WORKER_SCENARIOS = [
+  // Phase 0: 3 workers
+  { empCode: 'EMP-001', fullName: 'Nguyen Van Worker A',  cccd: '084****1234' },
+  { empCode: 'EMP-002', fullName: 'Tran Thi Worker B',    cccd: '085****2345' },
+  { empCode: 'EMP-003', fullName: 'Le Van Worker C',      cccd: '086****3456' },
+  // Phase 5: +2 workers for F00A demo (total 5)
+  { empCode: 'EMP-004', fullName: 'Pham Thi Worker D',    cccd: '087****4567' },
+  { empCode: 'EMP-005', fullName: 'Hoang Van Worker E',  cccd: '088****5678' },
+  ...Array.from({ length: 15 }, (_, index) => {
+    const number = index + 6;
+    const padded = String(number).padStart(3, '0');
+    return {
+      empCode: `EMP-${padded}`,
+      fullName: `Worker An Danh ${padded}`,
+      cccd: `09${String(number).padStart(2, '0')}****${String(6000 + number)}`,
+    };
+  }),
+];
+
+// ΓöÇΓöÇΓöÇ Phase 5: Vendors (2) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓ
+öÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+const VENDOR_SCENARIOS = [
+  { code: 'VND-001', name: 'Cong ty TNHH Nhan su Vien Dong',  taxCode: '09****001', area: 'Bac Ninh',   status: 
+'ACTIVE' },
+  { code: 'VND-002', name: 'Cong ty TNHH Tu Van Nhan luc',    taxCode: '09****002', area: 'Bac Giang', status: 
+'ACTIVE' },
+];
+
+// ΓöÇΓöÇΓöÇ Phase 5: Timesheet period LOCKED (for F00A moment 09:30) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+const TIMESHEET_PERIOD_SEEDS = [
+  { id: 'seed-period-2026-07', month: 7, year: 2026, projectCode: 'DA-2026-018', status: 'LOCKED', lockedAt: new 
+Date('2026-08-15T08:30:00Z') },
+  { id: 'seed-period-2026-08', month: 8, year: 2026, projectCode: 'DA-2026-022', status: 'LOCKED', lockedAt: new 
+Date('2026-09-15T08:30:00Z') },
+];
+
+// ΓöÇΓöÇΓöÇ Phase 5: VendorStatement SENT (for F00A moment 11:30) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+const STATEMENT_SEED = {
+  periodMonth: 7,
+  periodYear: 2026,
+  vendorCode: 'VND-001',
+  status: 'SENT',
+};
+
+async function seedUsers() {
+  let count = 0;
+  for (const u of ROLE_SCENARIOS) {
+    await prisma.user.upsert({
+      where: { id: `seed-user-${u.code.toLowerCase()}` },
+      update: { name: u.name, phone: u.phone, role: u.code, isActive: true },
+      create: {
+        id: `seed-user-${u.code.toLowerCase()}`,
+        name: u.name,
+        phone: u.phone,
+        role: u.code,
+        isActive: true,
+      },
+    });
+    count++;
+  }
+  return count;
+}
+
+async function seedProjects() {
+  const clients = new Map();
+  for (const c of CLIENT_SCENARIOS) {
+    const client = await prisma.clientCompany.upsert({
+      where: { code: c.code },
+      update: { name: c.name, taxCode: c.taxCode, industry: c.industry, status: 'ACTIVE' },
+      create: { ...c, status: 'ACTIVE' },
+    });
+    clients.set(c.code, client);
+  }
+
+  let projectCount = 0;
+  for (const p of PROJECT_SCENARIOS) {
+    const client = clients.get(p.clientCode);
+    if (!client) throw new Error(`[seed] missing client fixture ${p.clientCode}`);
+    await prisma.project.upsert({
+      where: { code: p.code },
+      update: { clientCompanyId: client.id, name: p.name, quota: p.quota, filled: p.filled, isPublic: p.isPublic, 
+siteAddress: p.site },
+      create: {
+        id: `seed-proj-${p.code}`,
+        code: p.code,
+        name: p.name,
+        clientCompanyId: client.id,
+        quota: p.quota,
+        filled: p.filled,
+        isPublic: p.isPublic,
+        siteAddress: p.site,
+        startDate: new Date('2026-01-01'),
+        status: 'ACTIVE',
+        version: 1,
+      },
+    });
+    projectCount++;
+  }
+  return { clientCount: clients.size, projectCount };
+}
+
+async function seedWorkers() {
+  let count = 0;
+  for (const w of WORKER_SCENARIOS) {
+    await prisma.worker.upsert({
+      where: { id: `seed-worker-${w.empCode}` },
+      update: { fullName: w.fullName },
+      create: {
+        id: `seed-worker-${w.empCode}`,
+        userId: `USR-${w.empCode}`,
+        fullName: w.fullName,
+        cccdNumber: w.cccd,
+        profileStatus: 'VERIFIED',
+        employmentStatus: 'ACTIVE',
+        riskStatus: 'NORMAL',
+      },
+    });
+    count++;
+  }
+  return count;
+}
+
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// Phase 5 UAT/Cutover STEP-05 (RQ-08):
+// Seed 2 vendors + timesheet period LOCKED + vendor statement SENT (F00A demo).
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+async function seedVendors() {
+  let count = 0;
+  for (const v of VENDOR_SCENARIOS) {
+    await prisma.vendor.upsert({
+      where: { id: `seed-vendor-${v.code}` },
+      update: { name: v.name, taxCode: v.taxCode, area: v.area, status: v.status },
+      create: {
+        id: `seed-vendor-${v.code}`,
+        code: v.code,
+        name: v.name,
+        taxCode: v.taxCode,
+        area: v.area,
+        status: v.status,
+      },
+    });
+    count++;
+  }
+  return count;
+}
+
+async function seedTimesheetPeriod() {
+  let count = 0;
+  for (const period of TIMESHEET_PERIOD_SEEDS) {
+    const project = await prisma.project.findUnique({ where: { code: period.projectCode } });
+    if (!project) throw new Error(`[seed] project fixture not found: ${period.projectCode}`);
+    await prisma.timesheetPeriod.upsert({
+      where: { id: period.id },
+      update: { status: period.status, projectId: project.id, lockedAt: period.lockedAt },
+      create: {
+        id: period.id,
+        projectId: project.id,
+        month: period.month,
+        year: period.year,
+        status: period.status,
+        lockedAt: period.lockedAt,
+        version: 1,
+      },
+    });
+    count++;
+  }
+  return count;
+}
+
+async function seedVendorStatement() {
+  const vendor = await prisma.vendor.findUnique({ where: { id: 'seed-vendor-VND-001' } });
+  const period = await prisma.timesheetPeriod.findUnique({ where: { id: 'seed-period-2026-07' } });
+  if (!vendor || !period) { console.warn('[seed] vendor/period not found, skipping statement'); return 0; }
+
+  await prisma.vendorStatement.upsert({
+    where: { id: 'seed-vs-2026-07-vnd001' },
+    update: { status: 'SENT' },
+    create: {
+      id: 'seed-vs-2026-07-vnd001',
+      vendorId: vendor.id,
+      periodMonth: STATEMENT_SEED.periodMonth,
+      periodYear: STATEMENT_SEED.periodYear,
+      totalAmount: BigInt(15000000),
+      status: 'SENT',
+      sentAt: new Date('2026-08-15T11:30:00Z'),
+      confirmDeadlineAt: new Date('2026-08-18T08:00:00Z'),
+      disputeCount: 0,
+      version: 1,
+    },
+  });
+  return 1;
+}
+
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// P1 Portals STEP-11 (DEC-12 + RQ-12): seed ΓëÑ2 staffing orders OPEN
+// StaffingOrder.status = 'OPEN' (not 'ACTIVE' ΓÇö see schema StaffingOrder model)
+const STAFFING_ORDER_SEED = [
+  { code: 'SO-VND001-001', title: 'Tuyß╗ân 5 c├┤ng nh├ón ─æiß╗çn tß╗¡ An Ph├ít', projectCode: 'DA-2026-018', 
+slotsNeeded: 5, positionCode: 'ELECTRICIAN', positionTitle: 'C├┤ng nh├ón ─æiß╗çn tß╗¡', shiftStart: '07:00', shiftEnd: 
+'16:00', workLocation: 'KCN Chß╗ú An, Bß║»c Ninh' },
+  { code: 'SO-VND001-002', title: 'Tuyß╗ân 3 nh├ón vi├¬n kho Y├¬n Phong',   projectCode: 'DA-2026-022', slotsNeeded: 
+3, positionCode: 'WAREHOUSE',   positionTitle: 'Nh├ón vi├¬n kho',      shiftStart: '08:00', shiftEnd: '17:00', 
+workLocation: 'KCN Y├¬n Phong, Bß║»c Ninh' },
+];
+
+async function seedStaffingOrders() {
+  let count = 0;
+  for (const s of STAFFING_ORDER_SEED) {
+    const project = await prisma.project.findUnique({ where: { code: s.projectCode } });
+    if (!project) { console.warn(`[seed] project ${s.projectCode} not found, skipping order`); continue; }
+
+    const validFrom = new Date('2026-08-01');
+    const validTo   = new Date('2026-12-31');
+
+    const order = await prisma.staffingOrder.upsert({
+      where: { id: `seed-order-${s.code}` },
+      update: { title: s.title, status: 'OPEN' },
+      create: {
+        id: `seed-order-${s.code}`,
+        code: s.code,
+        title: s.title,
+        projectId: project.id,
+        status: 'OPEN',
+        deadlineDate: validTo,
+      },
+    });
+
+    await prisma.staffingOrderSlot.upsert({
+      where: { id: `seed-slot-${s.code}` },
+      update: {
+        positionCode: s.positionCode,
+        positionTitle: s.positionTitle,
+        slotsNeeded: s.slotsNeeded,
+        shiftStart: s.shiftStart,
+        shiftEnd: s.shiftEnd,
+        validFrom,
+        validTo,
+        workLocation: s.workLocation,
+      },
+      create: {
+        id: `seed-slot-${s.code}`,
+        staffingOrderId: order.id,
+        positionCode: s.positionCode,
+        positionTitle: s.positionTitle,
+        slotsNeeded: s.slotsNeeded,
+        slotsFilled: 0,
+        shiftStart: s.shiftStart,
+        shiftEnd: s.shiftEnd,
+        validFrom,
+        validTo,
+        workLocation: s.workLocation,
+      },
+    });
+    count++;
+  }
+  return count;
+}
+
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓò
+ÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// P1 Portals STEP-11 (DEC-12): seed users + worker profile + claims + submissions
+// 3 cß╗òng: vendor.hrpartner.vn, worker.hrpartner.vn, ctv.hrpartner.vn
+// Phone masked 09x****xxx (DEC-12). All upsert (idempotent).
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓò
+ÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+const PORTAL_USERS_SEED = [
+  { phone: '0910000001', role: 'VENDOR_ADMIN', vendorCode: 'VND-001', affCode: null, name: 'Vendor Admin Demo' },
+  { phone: '0910000002', role: 'WORKER', vendorCode: null, affCode: null, name: 'Worker Demo' },
+  { phone: '0910000003', role: 'CTV', vendorCode: null, affCode: 'CTV-DEMO-001', name: 'CTV Demo' },
+];
+
+async function seedPortalUsers() {
+  let count = 0;
+  for (const u of PORTAL_USERS_SEED) {
+    const existing = await prisma.user.findFirst({ where: { phone: u.phone } });
+    const data = {
+      role: u.role,
+      isActive: true,
+      name: u.name,
+      affCode: u.affCode,
+    };
+
+    if (u.vendorCode) {
+      const vendor = await prisma.vendor.findUnique({ where: { code: u.vendorCode } });
+      if (vendor) data.vendorId = vendor.id;
+    }
+
+    if (existing) {
+      await prisma.user.update({ where: { id: existing.id }, data });
+    } else {
+      // GO-LIVE-21 RQ-03: portal demo password from explicit ENV only.
+      // Missing ENV ΓåÆ SKIP (fail-closed); never use a fixed literal.
+      // RED marker: temporarily reintroduce literal to prove test detects it
+      const demoPassword = 'demo-portal-2026';
+      if (!demoPassword) {
+        console.warn('[seed.mjs] SKIP portal demo user: PORTAL_DEMO_PASSWORD env missing');
+        continue;
+      }
+      const passwordHash = await bcrypt.hash(demoPassword, 10);
+      await prisma.user.create({
+        data: {
+          phone: u.phone,
+          passwordHash,
+          ...data,
+        },
+      });
+    }
+    count++;
+  }
+  return count;
+}
+
+async function seedWorkerProfile() {
+  // Find worker demo user
+  const workerUser = await prisma.user.findFirst({ where: { phone: '0910000002' } });
+  if (!workerUser) { console.warn('[seed] worker user not found, skipping profile'); return 0; }
+
+  // Check if Worker profile exists
+  let worker = await prisma.worker.findUnique({ where: { userId: workerUser.id } });
+  if (!worker) {
+    worker = await prisma.worker.create({
+      data: {
+        userId: workerUser.id,
+        accountUserId: workerUser.id,
+        fullName: workerUser.name ?? 'Worker Demo',
+        phone: workerUser.phone,
+        employmentStatus: 'NONE',
+        profileStatus: 'INCOMPLETE',
+        riskStatus: 'NORMAL',
+      },
+    });
+  } else if (!worker.accountUserId) {
+    // Sß╗¡a lß╗ùi nß║íp thiß║┐u accountUserId tr╞░ß╗¢c ─æ├óy
+    await prisma.worker.update({
+      where: { id: worker.id },
+      data: { accountUserId: workerUser.id },
+    });
+  }
+  return worker ? 1 : 0;
+}
+
+async function seedSourceClaims() {
+  const ctvUser = await prisma.user.findFirst({ where: { phone: '0910000003' } });
+  if (!ctvUser) { console.warn('[seed] ctv user not found, skipping claims'); return 0; }
+
+  // Find any worker to claim
+  const worker = await prisma.worker.findFirst();
+  if (!worker) { console.warn('[seed] no worker, skipping claims'); return 0; }
+
+  let count = 0;
+  for (const claimType of ['HRP_DIRECT', 'CTV_REFERRAL']) {
+    const id = `seed-claim-${ctvUser.id}-${claimType}`;
+    await prisma.sourceClaim.upsert({
+      where: { id },
+      update: { accepted: claimType === 'CTV_REFERRAL' },
+      create: {
+        id,
+        workerId: worker.id,
+        claimType,
+        ctvId: ctvUser.id,
+        accepted: claimType === 'CTV_REFERRAL',
+      },
+    });
+    count++;
+  }
+  return count;
+}
+
+async function seedCandidateSubmissionForVendor() {
+  const vendor = await prisma.vendor.findUnique({ where: { code: 'VND-001' } });
+  if (!vendor) { console.warn('[seed] vendor not found, skipping submission'); return 0; }
+
+  // Find a project
+  const project = await prisma.project.findFirst();
+  if (!project) { console.warn('[seed] no project, skipping submission'); return 0; }
+
+  await prisma.candidateSubmission.upsert({
+    where: { id: 'seed-cs-vnd001-01' },
+    update: { status: 'NEW' },
+    create: {
+      id: 'seed-cs-vnd001-01',
+      vendorId: vendor.id,
+      projectId: project.id,
+      fullName: 'ß╗¿ng vi├¬n demo',
+      phone: '0987654321',
+      status: 'NEW',
+    },
+  });
+  return 1;
+}
+
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// Phase 1 identity-core (TASK hrp-phase1-identity-core, RQ-08 + DEC-07):
+// Seed Permission catalog + RolePermission matrix idempotent.
+// - Upsert Permission (code + group + description) ΓÇö kh├┤ng reset.
+// - Upsert RolePermission (role + permissionCode) ΓÇö kh├┤ng reset.
+// - KH├öNG ─æß╗Ñng UserPermissionGrant (giß╗» nguy├¬n grant manual ΓÇö DEC-07).
+// - KH├öNG reset password user (─æß║úm bß║úo idempotent).
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+const PERMISSION_SEED = [
+  { code: 'CAN_MANAGE_PERMISSIONS',     group: 'SYSTEM',    description: 'Cß║Ñp/thu quyß╗ün cho user kh├íc (chß╗ë root 
+cß║Ñp ─æ╞░ß╗úc ΓÇö G22).' },
+  { code: 'CAN_CREATE_WORKER',          group: 'WORKER',    description: 'Tß║ío hß╗ô s╞í worker mß╗¢i (Sale/HR tß║ío 
+nguß╗ôn).' },
+  { code: 'CAN_VIEW_UNASSIGNED_POOL',   group: 'WORKER',    description: 'Xem pool worker ch╞░a ph├ón c├┤ng 
+(assignedToId = null).' },
+  { code: 'CAN_VIEW_WORKER_SENSITIVE',  group: 'WORKER',    description: 'Xem tr╞░ß╗¥ng nhß║íy cß║úm (CCCD, 
+bankAccount, selfie) ΓÇö Phase 2 masking.' },
+  { code: 'CAN_APPROVE_PAYROLL',        group: 'PAYROLL',   description: 'Duyß╗çt bß║úng l╞░╞íng (HR_MANAGER + 
+ACCOUNTANT).' },
+  { code: 'CAN_FORCE_LOCK_STATEMENT',   group: 'STATEMENT', description: 'Kh├│a statement c╞░ß╗íng bß╗⌐c 
+(reconciliation cuß╗æi kß╗│).' },
+  { code: 'CAN_OVERRIDE_REFERRAL_GUARD',group: 'REFERRAL',  description: 'Bß╗Å qua referral guard (SOP S1/S2/S3 
+┬º9.3.1).' },
+  { code: 'CAN_APPROVE_TICKET_LEVEL2',  group: 'TICKET',    description: 'Duyß╗çt ticket level 2 (duyß╗çt 2 chß╗» k├╜ 
+cho ADVANCE_SALARY).' },
+  { code: 'CAN_PROCESS_TICKET',         group: 'TICKET',   description: 'Xß╗¡ l├╜ ticket (cancel/pay/reject ΓÇö 
+Planner bß╗ò sung nh├│m TICKET).' },
+  { code: 'CAN_PUBLISH_JOB',            group: 'PROJECT',  description: 'Publish hoß║╖c unpublish job tr├¬n public job 
+board trong Project scope.' },
+  { code: 'CAN_EDIT_CONTRACT',          group: 'CONTRACT', description: 'Sß╗¡a hß╗úp ─æß╗ông worker (HR_MANAGER).' },
+];
+
+// Role ΓåÆ tß║¡p permission codes (theo data-scope-security ┬º4.2 seed mß║½u + DEC-02 bß╗ò sung).
+// ADMIN short-circuit n├¬n kh├┤ng cß║ºn row (resolver trß║ú ALL).
+const ROLE_PERMISSION_SEED = [
+  // HR_MANAGER ΓÇö ─æa quyß╗ün nhß║Ñt (trß╗½ MANAGE root + VIEW_WORKER_SENSITIVE giai ─æoß║ín ─æß║ºu)
+  { role: 'HR_MANAGER', code: 'CAN_CREATE_WORKER' },
+  { role: 'HR_MANAGER', code: 'CAN_VIEW_UNASSIGNED_POOL' },
+  { role: 'HR_MANAGER', code: 'CAN_APPROVE_PAYROLL' },
+  { role: 'HR_MANAGER', code: 'CAN_FORCE_LOCK_STATEMENT' },
+  { role: 'HR_MANAGER', code: 'CAN_OVERRIDE_REFERRAL_GUARD' },
+  { role: 'HR_MANAGER', code: 'CAN_APPROVE_TICKET_LEVEL2' },
+  { role: 'HR_MANAGER', code: 'CAN_PROCESS_TICKET' },
+  { role: 'HR_MANAGER', code: 'CAN_EDIT_CONTRACT' },
+  { role: 'HR_MANAGER', code: 'CAN_VIEW_WORKER_SENSITIVE' },
+  { role: 'HR_MANAGER', code: 'CAN_PUBLISH_JOB' },
+
+  // HR_STAFF ΓÇö tß║ío worker, xß╗¡ l├╜ ticket
+  { role: 'HR_STAFF', code: 'CAN_CREATE_WORKER' },
+  { role: 'HR_STAFF', code: 'CAN_PROCESS_TICKET' },
+
+  // SALE ΓÇö tß║ío worker v├á publish job trong Project scope
+  { role: 'SALE', code: 'CAN_CREATE_WORKER' },
+ Test Files  1 failed (1)
+  { role: 'SALE', code: 'CAN_PUBLISH_JOB' },
+
+  // ACCOUNTANT ΓÇö duyß╗çt payroll
+  { role: 'ACCOUNTANT', code: 'CAN_APPROVE_PAYROLL' },
+];
+
+async function seedPermissions() {
+  let permCount = 0;
+  let rpCount = 0;
+
+  // 1. Upsert Permission catalog
+  for (const p of PERMISSION_SEED) {
+    await prisma.permission.upsert({
+      where: { code: p.code },
+      update: { group: p.group, description: p.description },
+      create: { code: p.code, group: p.group, description: p.description },
+    });
+    permCount++;
+  }
+
+  // 2. Upsert RolePermission matrix
+  for (const rp of ROLE_PERMISSION_SEED) {
+    await prisma.rolePermission.upsert({
+      where: { role_permissionCode: { role: rp.role, permissionCode: rp.code } },
+      update: {},
+      create: { role: rp.role, permissionCode: rp.code, grantedBy: 'root' },
+    });
+    rpCount++;
+  }
+
+  // 3. KH├öNG ─æß╗Ñng UserPermissionGrant (theo DEC-07 ΓÇö giß╗» nguy├¬n grant manual).
+  return { permCount, rpCount };
+}
+
+async function main() {
+  console.log('[seed.mjs] Phase 0 fixtures + Phase 1 identity-core permissions - idempotent upsert');
+  console.log('[seed.mjs] CANONICAL MOCK ONLY - no real PII');
+  await prisma.$executeRawUnsafe(
+    \"SELECT set_config('app.user_id', 'g0-seed-admin', false), set_config('app.role', 'ADMIN', false)\",
+  );
+
+  const users = await seedUsers();
+  const projects = await seedProjects();
+  const workers = await seedWorkers();
+  const vendors = await seedVendors();
+  const periods = await seedTimesheetPeriod();
+  const statements = await seedVendorStatement();
+  const staffingOrders = await seedStaffingOrders();
+  const portalUsers = await seedPortalUsers();
+  const workerProfile = await seedWorkerProfile();
+  const claims = await seedSourceClaims();
+  const submissions = await seedCandidateSubmissionForVendor();
+  const auth = await seedAuthAccounts();
+  const perms = await seedPermissions();
+
+  console.log(`[seed.mjs] Upserted: ${users} users, ${projects.clientCount} clients, ${projects.projectCount} 
+projects, ${workers} workers, ${vendors} vendors`);
+  console.log(`[seed.mjs] Phase 5: ${periods} timesheet period (LOCKED), ${statements} vendor statement (SENT), 
+${staffingOrders} staffing orders (OPEN)`);
+  console.log(`[seed.mjs] P1 Portals: ${portalUsers} users, ${workerProfile} worker profile, ${claims} source claims, 
+${submissions} candidate submissions`);
+  console.log(`[seed.mjs] Auth accounts (ENV): ${auth.created} created, ${auth.updated} updated, ${auth.skipped} 
+skipped`);
+  console.log(`[seed.mjs] Permissions: ${perms.permCount} catalog, ${perms.rpCount} role-permissions`);
+  console.log(`[seed.mjs] G0-02 ready: 13 roles, 2 clients, 4 projects, 2 vendors, 20 workers, 2 periods LOCKED`);
+}
+
+main()
+  .catch((e) => {
+    console.error('[seed.mjs] FAILED:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+"
+
+ Γ¥» prisma/seed-portal-demo-password.static.test.ts:60:21
+     58|   it('AC-03.3: kh├┤ng c├│ literal "demo-portal-2026" c├▓n s├│t trong seed.ΓÇª
+     59|     const src = readSeed();
+     60|     expect(src).not.toMatch(/demo-portal-2026/);
+       |                     ^
+     61|     // Bß║Ñt kß╗│ chuß╗ùi n├áo c├│ vß║╗ mß║¡t khß║⌐u (>=8 k├╜ tß╗▒, c├│ chß╗»-sß╗æ) c┼⌐ng kh├┤ΓÇª
+     62|     // hash() ngo├ái ENV ΓÇö ß╗ƒ ─æ├óy kiß╗âm tra bß║▒ng c├ích duyß╗çt tß╗½ng d├▓ng chß╗⌐ΓÇª
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/2]ΓÄ»
+
+      Tests  2 failed | 3 passed (5)
+   Start at  11:03:24
+   Duration  481ms (transform 40ms, setup 0ms, collect 38ms, tests 16ms, environment 0ms, prepare 95ms)
+

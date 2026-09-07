@@ -1,0 +1,12 @@
+﻿Select-String -Path 'docs/runbooks/credential-hygiene-cutover.md' -Pattern 'Smoke matrix'
+---
+exit: 0
+Line 65: | Route | Method | Pass condition |
+Line 66: |---|---|---|
+Line 67: | / (public job board) | GET | 200, có job title từ DB |
+Line 68: | /api/jobs | GET | 200, JSON có jobs length > 0 |
+Line 69: | /login | POST (masked credentials) | 200 hoặc 302 đến dashboard |
+Line 70: | /api/admin/jobs (admin only) | GET | 200, JSON |
+Line 71: | /api/worker/apply (worker) | POST | 200 hoặc 4xx có message |
+Line 72: | /track (tracking) | GET | 200, không lộ PII |
+Line 73: |

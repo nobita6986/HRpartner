@@ -1,0 +1,30 @@
+﻿[demo-cleanup] 4 allowlist queries prepared.
+[demo-cleanup] DRY-RUN (DB read-only)
+=== DEMO CLEANUP MANIFEST ===
+manifest hash: 3fb0d3cc0f6fcb85dc3f3b978a71819f05bc011f8a5d4cad141222a14cfde47e
+
+[vendor] table=vendor key=code expected_count=4
+  - VND-001
+  - DA-DEMO-001
+  - DA-DEMO-002
+  - DA-DEMO-003
+[worker] table=user key=phone expected_count=1
+  - 0910000002
+[vendor_admin] table=user key=phone expected_count=1
+  - 0910000001
+[ctv] table=user key=phone expected_count=1
+  - 0910000003
+
+--- FK ORDER ---
+  delete children first: workerId ΓåÆ user.id(0910000002)
+  delete children first: vendorId ΓåÆ vendor.id(VND-001/DA-DEMO-*)
+  delete after children: code IN allowlist
+  delete after children: phone IN allowlist
+
+--- POST-CHECK INVARIANTS ---
+  allowlist_count_after_apply_zero: true
+  non_demo_sentinel_count_unchanged: true
+  manifest_hash_unchanged_throughout: true
+
+NOTE: DB query execution requires Prisma client. Tier 2 prep chß╗ë in manifest;
+      Tier 2 prep sß║╜ chß║íy dry-run count thß║¡t khi Owner cung cß║Ñp DB safe-read target.

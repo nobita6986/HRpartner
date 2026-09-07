@@ -1,0 +1,8 @@
+﻿git ls-files check_rls.cjs
+git log --oneline -3 -- check_rls.cjs
+git status --porcelain check_rls.cjs
+---
+exit: 0
+check_rls.cjs (tracked)
+ebca45c feat(portal): audit M7 Admin Expansion pass (commit with secret)
+porcelain: clean (no modifications)

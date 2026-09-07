@@ -70,3 +70,15 @@ docs/VERCEL_ENV_PRODUCTION.local.md
 .ai-pipeline/admin-token.txt
 .ai-pipeline/manager-token.txt
 .ai-pipeline/role_secrets.txt
+
+# Credential hygiene (hrp-v5-go-live-21) — exact-name ignore only, no glob, no prefix
+.env.dev
+.env.preview
+.env.prod.test
+scratch/
+.neon
+tsconfig.tmp.json
+
+# Playwright browser lane (hrp-v5-test-01) — artifact sinh ra moi luot chay, khong commit
+test-results/
+playwright-report/

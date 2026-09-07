@@ -1,0 +1,343 @@
+﻿=== STEP-00: GO-LIVE-21 CREDENTIAL HYGIENE CLOSURE — REPO SNAPSHOT ===
+
+--- HEAD ---
+f31d2035df3b84f4439d3d69bbfb8fb6e45381a5
+f31d203 docs(planner): encode affiliate commission dependency
+
+--- PORCELAIN ---
+330
+
+--- TRACKED .env* files (key-only, no values) ---
+.env.dev
+.env.example
+.env.preview
+.env.prod.test
+
+--- LOCAL .env* files (path-only) ---
+C:\CodeApp\HrP\.env.local 1364B
+C:\CodeApp\HrP\.env.ops06a-test.local 411B
+C:\CodeApp\HrP\.env.production.local 1924B
+No .env.local files:
+C:\CodeApp\HrP\.env.local
+
+--- SEED SCAN (key-only) ---
+10:import bcrypt[REDACTED] from 'bcrypt[REDACTED]';
+23:// ΓåÆ KH├öNG reset password[REDACTED]. Thiß║┐u ENV ΓåÆ skip + cß║únh b├ío (kh├┤ng crash).
+25:// KH├öNG log phone/password[REDACTED] d╞░ß╗¢i mß╗ìi h├¼nh thß╗⌐c.
+28:  { role: 'ADMIN', phoneEnv: 'ADMIN_PHONE', password[REDACTED] 'ADMIN_PASSWORD[REDACTED]', name: 'Admin HRP (bcc-fence)' },
+29:  { role: 'HR_MANAGER', phoneEnv: 'HR_PHONE', password[REDACTED] 'HR_PASSWORD[REDACTED]', name: 'HR Manager (bcc-fence)' },
+39:    const password[REDACTED] = process.env[acc.password[REDACTED]];
+41:    if (!phone || !password[REDACTED]) {
+42:      console.warn(`[seed.mjs] SKIP ${acc.role}: thieu ENV ${acc.phoneEnv} hoac ${acc.password[REDACTED]}`);
+50:      // ─É├ú tß╗ôn tß║íi ΓåÆ chß╗ë cß║¡p nhß║¡t role/isActive/name, GIß╗« NGUY├èN password[REDACTED]
+55:      if (!existing.password[REDACTED]) {
+56:        console.warn(`[seed.mjs] WARN ${acc.role}: user da ton tai nhung chua co password[REDACTED] ΓÇö giu nguyen, dang nhap chua kha dung`);
+60:      const password[REDACTED] = await bcrypt[REDACTED].hash[REDACTED](password[REDACTED], 10);
+62:        data: { phone, password[REDACTED], name: acc.name, role: acc.role, isActive: true },
+383:      // No password[REDACTED] ΓÇö user must be created via admin in production (DEC-12 note).
+384:      // Seed gives a dev password[REDACTED] so test login works.
+385:      const password[REDACTED] = await bcrypt[REDACTED].hash[REDACTED]('demo-portal-2026', 10);
+389:          password[REDACTED],
+484:// - KH├öNG reset password[REDACTED] user (─æß║úm bß║úo idempotent).
+
+--- SCRATCH DIR (path-only) ---
+C:\CodeApp\HrP\scratch\f05
+C:\CodeApp\HrP\scratch\t1r10
+C:\CodeApp\HrP\scratch\t1r4
+C:\CodeApp\HrP\scratch\t1r5
+C:\CodeApp\HrP\scratch\t1r6
+C:\CodeApp\HrP\scratch\t1r7
+C:\CodeApp\HrP\scratch\t1r8
+C:\CodeApp\HrP\scratch\t1r9
+C:\CodeApp\HrP\scratch\__pycache__
+C:\CodeApp\HrP\scratch\apply-migration.log
+C:\CodeApp\HrP\scratch\bump-gl14-v11.py
+C:\CodeApp\HrP\scratch\check-rpc-schema-usage.mjs
+C:\CodeApp\HrP\scratch\commit-aff-plan.txt
+C:\CodeApp\HrP\scratch\commit-gl05-handoff.txt
+C:\CodeApp\HrP\scratch\commit-gl09-relock.txt
+C:\CodeApp\HrP\scratch\commit-gl14-accepted.txt
+C:\CodeApp\HrP\scratch\commit-gl14-audit-artifact.txt
+C:\CodeApp\HrP\scratch\commit-gl14-cursor.txt
+C:\CodeApp\HrP\scratch\commit-gl14-r3.txt
+C:\CodeApp\HrP\scratch\commit-gl14-v11.txt
+C:\CodeApp\HrP\scratch\commit-golive14.txt
+C:\CodeApp\HrP\scratch\cursor-2026-09-02-gl07-prose.py
+C:\CodeApp\HrP\scratch\cursor-2026-09-02-gl07-relock.py
+C:\CodeApp\HrP\scratch\cursor-commit-msg.txt
+C:\CodeApp\HrP\scratch\cursor-gl07-v13.py
+C:\CodeApp\HrP\scratch\cursor-gl07-v14.py
+C:\CodeApp\HrP\scratch\cursor-gl09-accepted.py
+C:\CodeApp\HrP\scratch\cursor-gl09-audit-r2.py
+C:\CodeApp\HrP\scratch\cursor-gl09-deployed.py
+C:\CodeApp\HrP\scratch\cursor-gl14-accepted.py
+C:\CodeApp\HrP\scratch\cursor-gl14-audit.py
+C:\CodeApp\HrP\scratch\cursor-golive14.py
+C:\CodeApp\HrP\scratch\db-state-check.mjs
+C:\CodeApp\HrP\scratch\fix-gl09-detail-path.py
+C:\CodeApp\HrP\scratch\g-base-audit.css
+C:\CodeApp\HrP\scratch\g-base-nav.tsx
+C:\CodeApp\HrP\scratch\g-base-page.tsx
+C:\CodeApp\HrP\scratch\git_status_after.txt
+C:\CodeApp\HrP\scratch\git_status_before.txt
+C:\CodeApp\HrP\scratch\git_status_final.txt
+C:\CodeApp\HrP\scratch\gl05-cursor-closed.py
+C:\CodeApp\HrP\scratch\gl05-cursor-v13.py
+C:\CodeApp\HrP\scratch\gl05-cursor-v14.py
+C:\CodeApp\HrP\scratch\gl05-facet-perf.cjs
+C:\CodeApp\HrP\scratch\gl05-facet-perf.ts
+C:\CodeApp\HrP\scratch\gl05-industry-check.cjs
+C:\CodeApp\HrP\scratch\gl05-industry-check.ts
+C:\CodeApp\HrP\scratch\gl05-resolve.py
+C:\CodeApp\HrP\scratch\gl05-stripped-grep.mjs
+C:\CodeApp\HrP\scratch\gl05-table-check.py
+C:\CodeApp\HrP\scratch\gl05-v14.py
+C:\CodeApp\HrP\scratch\gl07-bump-v15.py
+C:\CodeApp\HrP\scratch\gl07-relock-commit-msg.txt
+C:\CodeApp\HrP\scratch\gl07-revlog-v15.py
+C:\CodeApp\HrP\scratch\gl07-v13-dec17-db-leg.py
+C:\CodeApp\HrP\scratch\gl07-v14-fix-ledger-alarm.py
+C:\CodeApp\HrP\scratch\gl08-accepted-commit-msg.txt
+C:\CodeApp\HrP\scratch\gl08-bump-v12.py
+C:\CodeApp\HrP\scratch\gl08-bump-v13.py
+C:\CodeApp\HrP\scratch\gl08-cursor-accepted.py
+C:\CodeApp\HrP\scratch\gl08-cursor-commit-msg.txt
+C:\CodeApp\HrP\scratch\gl08-cursor-resolved.py
+C:\CodeApp\HrP\scratch\gl08-cursor-v12.py
+C:\CodeApp\HrP\scratch\gl08-cursor-v13.py
+C:\CodeApp\HrP\scratch\gl08-owner-op-accepted.py
+C:\CodeApp\HrP\scratch\gl08-page.diff
+C:\CodeApp\HrP\scratch\gl09-audit-r1-ruling.py
+C:\CodeApp\HrP\scratch\gl09-handoff-count.py
+C:\CodeApp\HrP\scratch\gl09-handoff-fixrefs.py
+C:\CodeApp\HrP\scratch\gl09-handoff-note03.py
+C:\CodeApp\HrP\scratch\gl09-handoff-s3.py
+C:\CodeApp\HrP\scratch\gl09-handoff-s31.py
+C:\CodeApp\HrP\scratch\gl09-handoff-s33.py
+C:\CodeApp\HrP\scratch\gl09-handoff-s45.py
+C:\CodeApp\HrP\scratch\gl09-handoff-s67.py
+C:\CodeApp\HrP\scratch\gl09-handoff-s6note.py
+C:\CodeApp\HrP\scratch\gl09-r2-targeted.log
+C:\CodeApp\HrP\scratch\gl09-resolution-accept.py
+C:\CodeApp\HrP\scratch\gl15-cursor-apply.py
+C:\CodeApp\HrP\scratch\gl15-cursor-note-append.txt
+C:\CodeApp\HrP\scratch\gl15-cursor.yaml
+C:\CodeApp\HrP\scratch\gl15-deadvars-head.mjs
+C:\CodeApp\HrP\scratch\gl15-deadvars.mjs
+C:\CodeApp\HrP\scratch\gl15-delivered-vs-head.py
+C:\CodeApp\HrP\scratch\gl15-enc-test.txt
+C:\CodeApp\HrP\scratch\gl15-handoff-scope-numbers.py
+C:\CodeApp\HrP\scratch\gl15-linemap.py
+C:\CodeApp\HrP\scratch\gl15-md-table-check.py
+C:\CodeApp\HrP\scratch\gl15-mytests-head-tokens.mjs
+C:\CodeApp\HrP\scratch\gl15-numbers.py
+C:\CodeApp\HrP\scratch\gl15-r2-patch1.py
+C:\CodeApp\HrP\scratch\gl15-r2-patch2.py
+C:\CodeApp\HrP\scratch\gl15-r2-patch3.py
+C:\CodeApp\HrP\scratch\gl15-r2-patch4.py
+C:\CodeApp\HrP\scratch\gl15-r2-patch5.py
+C:\CodeApp\HrP\scratch\gl15-r2-patch6.py
+C:\CodeApp\HrP\scratch\gl15-r2-patch7.py
+C:\CodeApp\HrP\scratch\gl15-r2-scope.sh
+C:\CodeApp\HrP\scratch\gl15-step02-css.py
+C:\CodeApp\HrP\scratch\gl15-step03-nav.py
+C:\CodeApp\HrP\scratch\gl15-step04.py
+C:\CodeApp\HrP\scratch\gl15-step05-test.py
+C:\CodeApp\HrP\scratch\gl15-step05b-hover.py
+C:\CodeApp\HrP\scratch\gl15-step06-fixlabels.py
+C:\CodeApp\HrP\scratch\gl15-step06-measure.py
+C:\CodeApp\HrP\scratch\gl15-truth.py
+C:\CodeApp\HrP\scratch\gl16-head.py
+C:\CodeApp\HrP\scratch\gl16-numbers.py
+C:\CodeApp\HrP\scratch\gl16-remeasure.py
+C:\CodeApp\HrP\scratch\gl16-scan.txt
+C:\CodeApp\HrP\scratch\gl17-step06-fix.py
+C:\CodeApp\HrP\scratch\gl17-step07-barrier.py
+C:\CodeApp\HrP\scratch\golive03-ac-drive.mjs
+C:\CodeApp\HrP\scratch\golive03-ac08-remeasure.mjs
+C:\CodeApp\HrP\scratch\golive03-bigint-probe.mjs
+C:\CodeApp\HrP\scratch\golive03-db-probe.mjs
+C:\CodeApp\HrP\scratch\golive03-dev.log
+C:\CodeApp\HrP\scratch\golive03-greps.ps1
+C:\CodeApp\HrP\scratch\golive03-migr-check.mjs
+C:\CodeApp\HrP\scratch\golive03-rls-gaps.mjs
+C:\CodeApp\HrP\scratch\golive03-seed.mjs
+C:\CodeApp\HrP\scratch\golive06-migrstate.mjs
+C:\CodeApp\HrP\scratch\golive06-rls-probe.mjs
+C:\CodeApp\HrP\scratch\golive11-sql-balance.mjs
+C:\CodeApp\HrP\scratch\handover-s13.py
+C:\CodeApp\HrP\scratch\head-globals.css
+C:\CodeApp\HrP\scratch\live-test-final.log
+C:\CodeApp\HrP\scratch\live-test-full.log
+C:\CodeApp\HrP\scratch\live-test-output.log
+C:\CodeApp\HrP\scratch\live-test-r3.log
+C:\CodeApp\HrP\scratch\live-test-r3b.log
+C:\CodeApp\HrP\scratch\live-test-r3c.log
+C:\CodeApp\HrP\scratch\live-test-r3d.log
+C:\CodeApp\HrP\scratch\live-test-r3e.log
+C:\CodeApp\HrP\scratch\lj-all.json
+C:\CodeApp\HrP\scratch\lj-area.json
+C:\CodeApp\HrP\scratch\lj-portal.html
+C:\CodeApp\HrP\scratch\marketplace-profile-probe.mjs
+C:\CodeApp\HrP\scratch\md-table-check.py
+C:\CodeApp\HrP\scratch\mem-15-fix.py
+C:\CodeApp\HrP\scratch\mem-baseline-trap.py
+C:\CodeApp\HrP\scratch\mem-gate-trap3.py
+C:\CodeApp\HrP\scratch\mem-idx.py
+C:\CodeApp\HrP\scratch\mem-idx2.py
+C:\CodeApp\HrP\scratch\mem-index-update.py
+C:\CodeApp\HrP\scratch\mem-render-mode.py
+C:\CodeApp\HrP\scratch\migrate_test.ps1
+C:\CodeApp\HrP\scratch\mock-upstash.js
+C:\CodeApp\HrP\scratch\neon-schemadiff-live-vs-mp2test.txt
+C:\CodeApp\HrP\scratch\neon-schemadiff-snapshot-vs-live.txt
+C:\CodeApp\HrP\scratch\r4-test-browser.txt
+C:\CodeApp\HrP\scratch\r4-vitest.txt
+C:\CodeApp\HrP\scratch\relock-gl07-a.py
+C:\CodeApp\HrP\scratch\relock-gl07-b.py
+C:\CodeApp\HrP\scratch\relock-gl07-c.py
+C:\CodeApp\HrP\scratch\relock-gl07-d.py
+C:\CodeApp\HrP\scratch\relock-gl07-e.py
+C:\CodeApp\HrP\scratch\relock-gl07-f.py
+C:\CodeApp\HrP\scratch\relock-gl07-v12.py
+C:\CodeApp\HrP\scratch\relock-gl07-v12b.py
+C:\CodeApp\HrP\scratch\relock-gl09-a.py
+C:\CodeApp\HrP\scratch\relock-gl09-b.py
+C:\CodeApp\HrP\scratch\relock-gl09-c.py
+C:\CodeApp\HrP\scratch\relock-gl09-d.py
+C:\CodeApp\HrP\scratch\relock-gl09-e1.py
+C:\CodeApp\HrP\scratch\relock-gl09-e2.py
+C:\CodeApp\HrP\scratch\relock-gl09-e3.py
+C:\CodeApp\HrP\scratch\relock-gl09-e4.py
+C:\CodeApp\HrP\scratch\relock-gl09-f.py
+C:\CodeApp\HrP\scratch\resolve-gl14.py
+C:\CodeApp\HrP\scratch\run_integration.ps1
+C:\CodeApp\HrP\scratch\run_m1_06a_audit.ps1
+C:\CodeApp\HrP\scratch\run_m1_06b_audit.ps1
+C:\CodeApp\HrP\scratch\run_m1_06c_audit.ps1
+C:\CodeApp\HrP\scratch\seed-hrp-live-demo.sql
+C:\CodeApp\HrP\scratch\seed-mkt-cleanup-probe.mjs
+C:\CodeApp\HrP\scratch\seed-mkt-probe.mjs
+C:\CodeApp\HrP\scratch\stash-globals.diff
+C:\CodeApp\HrP\scratch\t1-lane-audit-r4.txt
+C:\CodeApp\HrP\scratch\t1-lane-verify.txt
+C:\CodeApp\HrP\scratch\t1r6-test-unit.txt
+C:\CodeApp\HrP\scratch\t1r6-typecheck-no-newui.txt
+C:\CodeApp\HrP\scratch\t1r6-typecheck.txt
+C:\CodeApp\HrP\scratch\test-db.js
+C:\CodeApp\HrP\scratch\test-func.js
+C:\CodeApp\HrP\scratch\test-rpc.js
+C:\CodeApp\HrP\scratch\test-sql.js
+C:\CodeApp\HrP\scratch\test-writer.js
+C:\CodeApp\HrP\scratch\test_output.txt
+C:\CodeApp\HrP\scratch\tsc-diff.txt
+C:\CodeApp\HrP\scratch\tsc-files.txt
+C:\CodeApp\HrP\scratch\tsc-new-roots.txt
+C:\CodeApp\HrP\scratch\tsc-new.tmp
+C:\CodeApp\HrP\scratch\tsc-new.txt
+C:\CodeApp\HrP\scratch\tsc-old-roots.txt
+C:\CodeApp\HrP\scratch\tsc-old.txt
+C:\CodeApp\HrP\scratch\ui-contrast-out.txt
+C:\CodeApp\HrP\scratch\ui-contrast-scan.py
+C:\CodeApp\HrP\scratch\unit-test-output.log
+C:\CodeApp\HrP\scratch\va-gl09-r2.log
+C:\CodeApp\HrP\scratch\vitest-raw.txt
+C:\CodeApp\HrP\scratch\vt-gl07-v13.log
+C:\CodeApp\HrP\scratch\vt-gl09-accept.log
+C:\CodeApp\HrP\scratch\vt_out.txt
+C:\CodeApp\HrP\scratch\write_plan.py
+C:\CodeApp\HrP\scratch\_add.txt
+C:\CodeApp\HrP\scratch\_audit_idx.md
+C:\CodeApp\HrP\scratch\_del.txt
+C:\CodeApp\HrP\scratch\_gone.txt
+C:\CodeApp\HrP\scratch\_idx.txt
+C:\CodeApp\HrP\scratch\_t2_head.txt
+C:\CodeApp\HrP\scratch\_t2_idx.txt
+C:\CodeApp\HrP\scratch\_theme_head.txt
+C:\CodeApp\HrP\scratch\_theme_idx.txt
+C:\CodeApp\HrP\scratch\f05\cross.py
+C:\CodeApp\HrP\scratch\f05\danger.json
+C:\CodeApp\HrP\scratch\f05\hits.json
+C:\CodeApp\HrP\scratch\f05\rls.json
+C:\CodeApp\HrP\scratch\f05\rls.py
+C:\CodeApp\HrP\scratch\f05\scan.py
+C:\CodeApp\HrP\scratch\f05\schema.json
+C:\CodeApp\HrP\scratch\f05\usage.py
+C:\CodeApp\HrP\scratch\t1r10\bump.py
+C:\CodeApp\HrP\scratch\t1r10\commit-msg.txt
+C:\CodeApp\HrP\scratch\t1r4\ac15.py
+C:\CodeApp\HrP\scratch\t1r4\app_(jobs)_track_page.tsx
+C:\CodeApp\HrP\scratch\t1r4\app_(jobs)_viec-lam__slug__page.tsx
+C:\CodeApp\HrP\scratch\t1r4\app_(portal)_ve-chung-toi_page.tsx
+C:\CodeApp\HrP\scratch\t1r4\app_components_GlobalNavbar.tsx
+C:\CodeApp\HrP\scratch\t1r4\app_globals.css
+C:\CodeApp\HrP\scratch\t1r4\base.py
+C:\CodeApp\HrP\scratch\t1r4\cursor-fields.md
+C:\CodeApp\HrP\scratch\t1r4\cursor.py
+C:\CodeApp\HrP\scratch\t1r4\fix0.py
+C:\CodeApp\HrP\scratch\t1r4\measure.py
+C:\CodeApp\HrP\scratch\t1r4\rev.py
+C:\CodeApp\HrP\scratch\t1r4\sec9.md
+C:\CodeApp\HrP\scratch\t1r4\splice.py
+C:\CodeApp\HrP\scratch\t1r4\src_domains_job-board_components_apply-modal.tsx
+C:\CodeApp\HrP\scratch\t1r4\src_domains_job-board_components_success-modal.tsx
+C:\CodeApp\HrP\scratch\t1r4\src_domains_job-board_public-ui-premium.static.test.ts
+C:\CodeApp\HrP\scratch\t1r4\theme-head.txt
+C:\CodeApp\HrP\scratch\t1r4\theme-index.txt
+C:\CodeApp\HrP\scratch\t1r5\cursor-fields.md
+C:\CodeApp\HrP\scratch\t1r5\cursor.py
+C:\CodeApp\HrP\scratch\t1r6\cursor-fields.md
+C:\CodeApp\HrP\scratch\t1r6\cursor.py
+C:\CodeApp\HrP\scratch\t1r7\cursor-fields.md
+C:\CodeApp\HrP\scratch\t1r7\cursor.py
+C:\CodeApp\HrP\scratch\t1r8\apply.py
+C:\CodeApp\HrP\scratch\t1r8\bo-add.py
+C:\CodeApp\HrP\scratch\t1r8\bo-fix.py
+C:\CodeApp\HrP\scratch\t1r8\cursor-fields.md
+C:\CodeApp\HrP\scratch\t1r8\cursor.py
+C:\CodeApp\HrP\scratch\t1r8\round2-block.md
+C:\CodeApp\HrP\scratch\t1r9\apply.py
+C:\CodeApp\HrP\scratch\t1r9\commit-msg.txt
+C:\CodeApp\HrP\scratch\t1r9\commit-msg2.txt
+C:\CodeApp\HrP\scratch\t1r9\commit-msg3.txt
+C:\CodeApp\HrP\scratch\t1r9\cursor.py
+C:\CodeApp\HrP\scratch\t1r9\round3-block.md
+C:\CodeApp\HrP\scratch\__pycache__\cursor-gl09-accepted.cpython-314.pyc
+C:\CodeApp\HrP\scratch\__pycache__\cursor-gl09-audit-r2.cpython-314.pyc
+C:\CodeApp\HrP\scratch\__pycache__\gl07-v13-dec17-db-leg.cpython-314.pyc
+C:\CodeApp\HrP\scratch\__pycache__\gl09-audit-r1-ruling.cpython-314.pyc
+C:\CodeApp\HrP\scratch\__pycache__\gl09-resolution-accept.cpython-314.pyc
+
+--- ROOT ONE-SHOT ARTIFACTS ---
+C:\CodeApp\HrP\.neon 38B
+C:\CodeApp\HrP\tsconfig.a1probe.tsbuildinfo 198867B
+C:\CodeApp\HrP\tsconfig.t1probe.tsbuildinfo 196798B
+C:\CodeApp\HrP\tsconfig.t1r9probe.tsbuildinfo 196798B
+C:\CodeApp\HrP\tsconfig.tmp.json 0B
+
+--- .gitignore lines 70-80 ---
+.ai-pipeline/admin-token.txt
+.ai-pipeline/manager-token.txt
+.ai-pipeline/role_secrets.txt
+
+# Playwright browser lane (hrp-v5-test-01) â€” artifact sinh ra moi luot chay, khong commit
+test-results/
+playwright-report/
+
+--- .gitignore gitignore check ---
+scratch/: NOT gitignored
+.neon: NOT gitignored
+tsconfig.tmp.json: NOT gitignored
+tsconfig.a1probe.tsbuildinfo: gitignored (line 11: *.tsbuildinfo)
+tsconfig.t1probe.tsbuildinfo: gitignored (line 11)
+tsconfig.t1r9probe.tsbuildinfo: gitignored (line 11)
+
+--- RQ-02 STATUS ---
+Four tracked .env*: .env.dev (SET), .env.example (empty, placeholder), .env.preview (SET), .env.prod.test (SET)
+Three .env*.local: .env.local (1364B), .env.ops06a-test.local (411B), .env.production.local (1924B)
+.env.test.local: NOT PRESENT (already removed)
+
+--- RQ-03 STATUS ---
+Seed line 385: literal password 'demo-portal-2026' (NEEDS FIX)
+Seed line 383-389: worker demo account with hardcoded literal
+

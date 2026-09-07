@@ -1,0 +1,4 @@
+﻿node scripts/ops/demo-cleanup.mjs apply
+---
+exit: 2
+[demo-cleanup] DB gate FAIL: apply would touch non-local DB; set DEMO_CLEANUP_FORCE_LIVE=1 to override (OWNER ONLY)

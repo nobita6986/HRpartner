@@ -1,0 +1,7 @@
+﻿Test-Path .env.local, .env.ops06a-test.local, .env.production.local
+---
+exit: 0
+True
+True
+True
+(3 files exist)

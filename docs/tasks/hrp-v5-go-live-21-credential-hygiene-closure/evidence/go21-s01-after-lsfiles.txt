@@ -1,0 +1,8 @@
+﻿git ls-files '.env*'
+---
+exit: 0
+output:
+.env.dev
+.env.example
+.env.preview
+.env.prod.test

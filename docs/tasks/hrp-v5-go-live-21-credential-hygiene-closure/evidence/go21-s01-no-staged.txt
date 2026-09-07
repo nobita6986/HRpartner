@@ -1,0 +1,4 @@
+﻿git diff --cached --numstat --name-only
+---
+exit: 0
+(count=0 — no staged changes)

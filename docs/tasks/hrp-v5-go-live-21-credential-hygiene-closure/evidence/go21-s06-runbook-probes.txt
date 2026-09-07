@@ -1,0 +1,5 @@
+﻿Select-String -Path 'docs/runbooks/credential-hygiene-cutover.md' -Pattern 'STEP-07'
+---
+exit: 0
+Line 3: ## 2. STEP-07 — Rotate 3 Neon role (masked)
+Line 27: | STEP-07 | RQ-04 | Neon roles — Owner/OP | Owner tạo và verify ba credential mới bằng masked identity/posture | Approved maintenance window | role/user/posture checks | Sai role, BYPASSRLS hoặc owner posture thì rollback |

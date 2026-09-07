@@ -1,0 +1,7 @@
+﻿AUDIT SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-go-live-21-credential-hygiene-closure\AUDIT.md (against docs/tasks/hrp-v5-go-live-21-credential-hygiene-closure/TASK.md)
+
+  [FAIL] S-01 AUDIT file not found: docs\tasks\hrp-v5-go-live-21-credential-hygiene-closure\AUDIT.md
+
+RESULT: FAIL (1 error(s), 0 warning(s)).
+Tier 1 MUST NOT resolve without AUDIT.md.

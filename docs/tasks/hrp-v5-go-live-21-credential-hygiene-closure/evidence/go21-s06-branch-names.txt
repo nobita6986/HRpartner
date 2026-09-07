@@ -1,0 +1,6 @@
+﻿Select-String -Path 'docs/runbooks/credential-hygiene-cutover.md' -Pattern 'pre-mp2-remediation'
+---
+exit: 0
+Line 13: - **Branch Neon cần xoá exact:** pre-mp2-remediation-2026-08-28.
+Line 100: | pre-mp2-remediation-2026-08-28 (Neon branch) | DROP BRANCH pre-mp2-remediation-2026-08-28 |
+Line 105: | hrp_mp2_test (Neon branch) | KHÔNG chạm; verify connection test vẫn xanh |

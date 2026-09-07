@@ -1,0 +1,7 @@
+﻿git check-ignore -v .env.dev .env.preview .env.prod.test .neon tsconfig.tmp.json
+---
+exit: 1 (no match for .env.dev/.env.preview/.env.prod.test)
+exit: 0 (match for .neon and tsconfig.tmp.json)
+.neon: gitignore:79
+tsconfig.tmp.json: gitignore:80
+(exit 1 = not all ignored; but .neon + tsconfig.tmp.json ARE ignored)

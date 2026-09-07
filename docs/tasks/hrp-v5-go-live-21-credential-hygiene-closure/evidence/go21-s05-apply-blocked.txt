@@ -1,0 +1,8 @@
+﻿node : [demo-cleanup] DB gate FAIL: apply would touch non-local DB; set DEMO_CLEANUP_FORCE_LIVE=1 to override (OWNER 
+ONLY)
+At C:\Users\Admin\AppData\Local\Temp\ps-script-ab4ee366-c0b8-4dd7-adda-722c63991a72.ps1:88 char:571
++ ... ould fail) ==="; node scripts/ops/demo-cleanup.mjs apply 2>&1 | Out-F ...
++                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([demo-cleanup] ...de (OWNER ONLY):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
