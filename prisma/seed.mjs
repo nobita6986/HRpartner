@@ -380,9 +380,14 @@ async function seedPortalUsers() {
     if (existing) {
       await prisma.user.update({ where: { id: existing.id }, data });
     } else {
-      // No passwordHash — user must be created via admin in production (DEC-12 note).
-      // Seed gives a dev password so test login works.
-      const passwordHash = await bcrypt.hash('demo-portal-2026', 10);
+      // GO-LIVE-21 RQ-03: portal demo password from explicit ENV only.
+      // Missing ENV → SKIP (fail-closed); never use a fixed literal.
+      const demoPassword = process.env.PORTAL_DEMO_PASSWORD;
+      if (!demoPassword) {
+        console.warn('[seed.mjs] SKIP portal demo user: PORTAL_DEMO_PASSWORD env missing');
+        continue;
+      }
+      const passwordHash = await bcrypt.hash(demoPassword, 10);
       await prisma.user.create({
         data: {
           phone: u.phone,
