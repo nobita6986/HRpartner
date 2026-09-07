@@ -7,7 +7,7 @@
 | Task slug | `hrp-v5-go-live-20-public-job-listing-index` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.5` |
+| Spec version | `v1.6` |
 | Status | `ACCEPTED` — Tier 3 audit round 1 verdict `PASS`; 21/21 AC đạt, C-01..C-10 `DONE`, không có P0/P1/P2 mở |
 | Planner | Tier 1, phiên 05/09/2026 |
 | Executor | Tier 2 |
@@ -16,9 +16,9 @@
 | Modules | `app/(jobs)/viec-lam/page.tsx` tạo mới, `src/domains/job-board/public-listing.params.ts` và `src/domains/job-board/public-listing.labels.ts` tạo mới, hai tệp test mới dưới `src/domains/job-board/`, `app/components/GlobalNavbar.tsx`, và `app/(jobs)/viec-lam/[slug]/page.tsx` chỉ đích của hai link quay lại |
 | ADR references | None |
 | Current execution round | `1` |
-| Current audit round | `0` |
+| Current audit round | `1` |
 | Next gate | Đã đóng. Theo dõi R-06/Q-02 parity nhãn lương sau các thay đổi public UI tiếp theo |
-| Updated | `2026-09-05 23:55 Asia/Bangkok` |
+| Updated | `2026-09-07 Asia/Bangkok` |
 
 ## 1. Outcome
 
@@ -291,3 +291,4 @@ Một hướng sửa bị loại thẳng: sửa `.ai-pipeline/scripts/verify-tas
 | v1.2 | 2026-09-05 | Sửa `EV-16` sau khi đo lại chính khối `it(` nó trích: hàng rào cũ GHIM đích link về `/` nên `STEP-06` làm nó đỏ. Mở đúng một khối `it(` của `src/domains/job-board/public-detail.static.test.ts` ở mục 4.1 và bỏ tệp đó khỏi mục 4.2 kèm luật siết-không-nới; mở rộng `RQ-15`, `STEP-06` cộng numstat `3 2`, và `AC-17` cộng hai tệp evidence mới cho cửa sổ đỏ và xanh của hàng rào; thêm `R-07`. Sửa `EV-14` từ bảy số thành tám và `AC-16` theo cùng. Số AC không đổi | Ruling `PLN-68` tự bác `v1.1`: `RQ-15`, `RQ-17` và mục 4.2 của `v1.1` không cùng đúng được, nên đó là hợp đồng không thi hành được — bump spec trước khi chạy `STEP-01`, không để Tier 2 gặp bế tắc giữa round |
 | v1.3 | 2026-09-05 | Sửa điều kiện dừng của `STEP-05` từ "bảy số của `EV-14`" thành TÁM số. Không đổi một phép đo nào khác | `v1.2` sửa `EV-14`, `AC-16` và `R-05` sang tám số nhưng bỏ sót đúng ô này, nên `STEP-05` trỏ vào một tập không tồn tại. Sửa lời văn TRƯỚC khi chạy `STEP-01` vì lúc chưa có bản audit nào thì bump là miễn phí, còn để lại thì `STEP-05` cho Tier 2 một chỉ tiêu thấp hơn hàng rào thật |
 | v1.5 | 2026-09-05 | Đổi ô phương pháp của `AC-21` và ô kiểm chứng của `STEP-06B` từ `git diff -U0` sang `git diff --cached -U0` kèm đường dẫn tệp, cộng câu nói vì sao phải là dạng ấy. Dời `STEP-06B` trong hàng truy vết của `RQ-17` vào ghi chú trong ngoặc và ghi hạn chế dụng cụ ngay dưới bảng 6.1. Không thêm, không bớt, không đổi một AC nào — tổng vẫn 21 | Ruling `PLN-70`: cổng hợp đồng chạy cuối cùng trên `v1.4` trả FAIL mã thoát `2` với `A-05` cộng `T-03`. `A-05` là hạn chế văn phạm của `.ai-pipeline/scripts/verify-task.ps1:115`; `T-03` thì nhắm ĐÚNG lỗi này ngay từ khi được viết — bình luận ở `.ai-pipeline/scripts/verify-task.ps1:185` dẫn tiền lệ `go-live-15 AC-10` và nói thẳng một `git diff` trần in ra rỗng sau khi Tier 2 đã stage. Sau khi `STEP-08` stage tệp hàng rào thì dạng không `--cached` trả RỖNG, nên `AC-21` bất khả đo tại đúng thời điểm nó được gọi. Phép đo thật đã bắt bẫy này trước cổng và phụ lục vào `evidence/ac21-single-hunk.txt`, nên bump chỉ là kéo lời văn theo bằng chứng |
+| v1.6 | 2026-09-07 | Đồng bộ control ledger sau khi artifact audit round 1 đã được tích hợp: `Current audit round` từ `0` thành `1`, không đổi RQ/STEP/AC hoặc verdict. | TASK đã `ACCEPTED` theo Planner Resolution §9.1 và AUDIT ghi round `1`; counter cũ là metadata trễ, không phản ánh artifact đã commit. |
