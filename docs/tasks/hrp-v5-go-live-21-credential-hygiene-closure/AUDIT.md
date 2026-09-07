@@ -6,7 +6,7 @@
 |---|---|
 | Task slug | `hrp-v5-go-live-21-credential-hygiene-closure` |
 | Work/Audit type | `INFRA / INFRA_AUDIT` |
-| Spec version | 1.3 |
+| Spec version | 1.4 |
 | Execution round | `1` (Tier 2 prep STEP-00..06 DONE; OP execution STEP-07..11 pending window 2026-09-08 09:00-09:30) |
 | Audit round | `3` |
 | Round opened by | Planner Resolution at `5d88cbc` — "audit round 3 pending" |
@@ -79,7 +79,7 @@ Tier 3 self-measured mỗi AC tại HEAD `199cdab`. Method = command Tier 3 ch�
 | `AC-05` | `rg -c 'Smoke matrix' docs/runbooks/credential-hygiene-cutover.md`; `rg '^\|\s+\d+\.' docs/runbooks/credential-hygiene-cutover.md` | **BLOCKED** | 1 match for "Smoke matrix"; 6 smoke routes defined in runbook §3 (job-board, /api/jobs, /login, /api/admin/jobs, /api/worker/apply, /track); OP execution STEP-08 thuộc Owner/OP | None (by design) |
 | `AC-06` | `Test-Path .env.local .env.ops06a-test.local .env.production.local`; `Get-Content .gitignore` lines 15, 18, 66 | **BLOCKED** | 3 local env files exist; all have ignore rules (line 15 `.env.local`, line 18 `.env.*.local`, line 66 `.env.production.local`); Owner disposition RESOLVED (Q-02: DELETE for 2 files, KEEP for 1); STEP-10 thuộc Owner/OP | None (by design) |
 | `AC-07` | `Get-Content evidence/go21-s04-disposition.md | Measure-Object -Line`; `git ls-files scratch/` | **BLOCKED** | disposition manifest 68 lines; 13+ paths needing Owner disposition; `git ls-files scratch/` = 15 tracked files; Owner disposition RESOLVED; STEP-10 thuộc Owner/OP | None (by design) |
-| `AC-08` | `rg -c 'pre-mp2-remediation' docs/runbooks/credential-hygiene-cutover.md`; `rg -c 'hrp_mp2_test' docs/runbooks/credential-hygiene-cutover.md` → `evidence/go21-s06-branch-names.txt` | **BLOCKED** | 2+ matches for exact branch names; runbook §5 có exact-name target `pre-mp2-remediation-2026-08-28` + negative guard `hrp_mp2_test`; STEP-10 thuộc Owner/OP | None (by design) |
+| `AC-08` | `rg -c 'pre-mp2-remediation' docs/runbooks/credential-hygiene-cutover.md`; `rg -c 'hrp_mp2_test' docs/runbooks/credential-hygiene-cutover.md` | **BLOCKED** | `evidence/go21-s06-branch-names.txt` (2+ matches for exact branch names; runbook §5 exact-name target + negative guard `hrp_mp2_test`); STEP-10 thuộc Owner/OP | None (by design) |
 | `AC-09` | `node scripts/ops/demo-cleanup.mjs dry-run` × 1; `node scripts/ops/demo-cleanup.mjs apply` | **PASS** | dry-run exit 0, hash `3fb0d3cc...` (khớp round 2); apply exit 0 với stub note "APPLY chưa được hiện thực hoá"; evidence `go21-s05-r3-dryrun.txt`, `go21-s05-r3-apply.txt` | AUD-003 RESOLVED |
 | `AC-10` | `npx vitest run`; `npm run build` | **PASS** | vitest: 113 files, 1740 tests passed, exit 0; build: exit 0; evidence `go21-s10-vitest-r3.txt`, `go21-s10-build-r3.txt` | None |
 | `AC-11` | `rg -nP 'postgresql://|postgres://' check_rls.cjs` | **FAIL** | `check_rls.cjs:2` raw Neon credential tồn tại tại HEAD; escalation to `hrp-v6-security-credential-rotation` v1.1 READY_FOR_EXECUTION; evidence `go21-s00-r3-scan.txt` | AUD-001 ESCALATE_NEW_TASK |
