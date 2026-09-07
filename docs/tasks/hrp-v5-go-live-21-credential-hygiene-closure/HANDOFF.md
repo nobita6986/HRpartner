@@ -14,9 +14,9 @@
 | OP execution | `OWNER_BLOCKED` — `STEP-07..11` chờ Owner trả lời `Q-01..Q-04` |
 | Baseline (TASK v1.0) | `7dd576e` |
 | Pre-FIX HEAD | `485a36c` (Planner bump v1.1 + v1.2) |
-| Post-FIX HEAD | `6213788` (5 commits added by Tier 2 r1-FIX) |
+| Post-FIX HEAD | `c45de0c` (6 commits added by Tier 2 r1-FIX) |
 | Status | `READY_FOR_AUDIT` cho re-audit round 2 — AUD-002 + AUD-003 đã đóng tại commit; AUD-001 (P0) `ESCALATE_NEW_TASK` ngoài scope |
-| Started/updated | Round 1 2026-09-07 10:55 → 11:04; r1-FIX 2026-09-07 12:10 → 12:20 Asia/Bangkok |
+| Started/updated | Round 1 2026-09-07 10:55 → 11:04; r1-FIX 2026-09-07 12:10 → 12:25 Asia/Bangkok |
 
 ## 1. Outcome Summary (Tier 2 prep + r1-FIX)
 
@@ -86,7 +86,7 @@
 
 **Tier 2 không thể tự fix hai gate issue trên** vì (a) malformed TASK.md là Planner-side edit, (b) AUDIT.md là Tier 3 deliverable. Đợi Tier 1 review.
 
-## 4. Changed Deliverables (r1-FIX commits `41ab22b` + `c5a5fbd` + `66c6440` + `f01ddca` + `6213788`)
+## 4. Changed Deliverables (r1-FIX commits `41ab22b` + `c5a5fbd` + `66c6440` + `f01ddca` + `6213788` + `c45de0c`)
 
 | Path | Trạng thái | Bytes thay đổi | Mục đích | Commit |
 |---|---|---|---|---|
@@ -106,7 +106,7 @@
 | `evidence/go21-gate-task-r1fix.txt` | `A` (r1-FIX) | mới | gate result evidence | `66c6440` |
 | `evidence/go21-gate-audit-r1fix.txt` | `A` (r1-FIX) | mới | gate result evidence | `66c6440` |
 
-`git log 7dd576e..HEAD` = 8 commits: 3 Planner + 5 Tier 2 r1-FIX (`41ab22b`, `c5a5fbd`, `66c6440`, `f01ddca`, `6213788`).
+`git log 7dd576e..HEAD` = 9 commits: 3 Planner + 6 Tier 2 r1-FIX (`41ab22b`, `c5a5fbd`, `66c6440`, `f01ddca`, `6213788`, `c45de0c`).
 
 ## 5. Deviations
 
@@ -192,7 +192,7 @@ Sau khi Owner trả lời 4 Q, chạy theo `docs/runbooks/credential-hygiene-cut
 
 ## 9. Next Step for Planner/Tier 3
 
-**Status hiện tại của r1-FIX**: AUD-002 + AUD-003 đã closed bằng 5 commits (`41ab22b` → `6213788`). AUD-001 ESCALATE_NEW_TASK ngoài scope (Planner đã tạo task dir `docs/tasks/hrp-v6-security-credential-rotation/`).
+**Status hiện tại của r1-FIX**: AUD-002 + AUD-003 đã closed bằng 6 commits (`41ab22b` → `c45de0c`). AUD-001 ESCALATE_NEW_TASK ngoài scope (Planner đã tạo task dir `docs/tasks/hrp-v6-security-credential-rotation/`).
 
 **Gate situation (Tier 2 không tự fix được):**
 
@@ -201,10 +201,10 @@ Sau khi Owner trả lời 4 Q, chạy theo `docs/runbooks/credential-hygiene-cut
 
 Tier 3 sau khi nhận r1-FIX commits sẽ:
 
-1. Chạy lại `git ls-files '.env*'` trên HEAD `6213788` → mong đợi chỉ `.env.example` (đã verify bằng `evidence/go21-s01-r1fix-post-commit.txt`)
+1. Chạy lại `git ls-files '.env*'` trên HEAD `c45de0c` → mong đợi chỉ `.env.example` (đã verify bằng `evidence/go21-s01-r1fix-post-commit.txt`)
 2. Reproduce `apply` fail-closed với exit 2 + DB gate FAIL → mong đợi khớp `evidence/go21-s05-apply-blocked.txt` (đã verify bằng Tier 3 evidence `go21-s05-apply-audit.txt`)
 3. Audit `git diff 7dd576e..HEAD` chỉ thấy path tier-2-owned (`prisma/seed.mjs`, `prisma/seed-portal-demo-password.static.test.ts`, `docs/runbooks/credential-hygiene-cutover.md`, `scripts/ops/demo-cleanup.mjs`) + 3 env untrack + `.gitignore` + HANDOFF.md + AUDIT.md round 1 + evidence files
 4. AUD-001 vẫn OPEN — đợi task security riêng (Planner đã mở `docs/tasks/hrp-v6-security-credential-rotation/`)
 5. Sau khi audit round 2 PASS → AC-11 PASS với điều kiện không còn hit `check_rls.cjs` (xử lý ở task khác)
 
-Handoff status: READY_FOR_AUDIT (re-audit round 2; AUD-002 + AUD-003 closed by commits 41ab22b..6213788; AUD-001 ESCALATE_NEW_TASK; 2 gate issue Planner-side cần review); OP execution OWNER_BLOCKED until Q-01..Q-04 answered
+Handoff status: READY_FOR_AUDIT (re-audit round 2; AUD-002 + AUD-003 closed by commits 41ab22b..c45de0c; AUD-001 ESCALATE_NEW_TASK; 2 gate issue Planner-side cần review); OP execution OWNER_BLOCKED until Q-01..Q-04 answered
