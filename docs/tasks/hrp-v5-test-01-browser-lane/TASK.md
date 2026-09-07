@@ -7,18 +7,18 @@
 | Task slug | `hrp-v5-test-01-browser-lane` |
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
-| Spec version | `v1.1` |
+| Spec version | `v1.5` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — independent auditor |
-| Baseline | `80f6933` |
+| Baseline | `f9c7bca` |
 | Modules | `playwright.config.ts`, `tests/browser/public-home.spec.ts`, `package.json`, `.gitignore` |
 | ADR references | `hrp-v5-go-live-07-marketplace-launch-proof` `DEC-20` — nơi ghi rằng URL gốc đo được bằng DOM sau hydrate HOẶC bằng response của API, tức lane trình duyệt là TUỲ CHỌN cho ra mắt; `hrp-v5-go-live-08-public-ui-premium` — round mà mười hai AC đòi giá trị tính bởi trình duyệt trong một repo không có trình chạy nào |
-| Current execution round | `0` |
-| Current audit round | `0` |
-| Next gate | `/code` giao GỘP một lượt cùng 18 và 17 theo quyết định `03/09` của Owner, và task này chạy CUỐI trong lô vì nó là món duy nhất sửa `package.json`. Phần khẳng định của lane vẫn là món SAU RA MẮT: nó không chặn go-live |
-| Updated | `2026-09-03 22:35 Asia/Bangkok` |
+| Current execution round | `4` |
+| Current audit round | `1` |
+| Next gate | `/code hrp-v5-test-01-browser-lane` — execution round `4` MỎNG trên baseline `f9c7bca`: chỉ chạy lại `STEP-08`, `STEP-09`, `STEP-10`, `STEP-11`, đo hash HEAD/worktree của `tsconfig.json` trước-sau, không dùng config chẩn đoán và không mở rộng deliverable |
+| Updated | `2026-09-07 Asia/Bangkok` |
 
 Repo hiện KHÔNG có trình chạy test trên trình duyệt: `devDependencies` không có Playwright, không Puppeteer, không jsdom, không `@testing-library`. Đó là lý do `go-live-08` từng có mười hai AC đòi giá trị tính bởi trình duyệt mà không ai đo được, và là lý do mọi hàng rào giao diện từ đó tới nay đều là hàng rào TĨNH đọc mã nguồn.
 
@@ -101,9 +101,9 @@ Mọi phép đo dưới đây chạy trên baseline ghi ở `0. Control` bằng 
 1. Bốn tệp liệt kê ở `Modules`: `playwright.config.ts` mới, `tests/browser/public-home.spec.ts` mới, `package.json`, `.gitignore`.
 2. `package-lock.json`, vì bước cài gói bắt buộc đổi nó.
 3. Artifact của chính task: `docs/tasks/hrp-v5-test-01-browser-lane/HANDOFF.md` cộng mọi tệp dưới `docs/tasks/hrp-v5-test-01-browser-lane/evidence/`.
-4. Path đã khai ở `Modules` hoặc ở mục phạm vi của hai contract CÙNG LÔ: `hrp-v5-go-live-18-public-surface-hardening` và `hrp-v5-go-live-17-rls-required-relation-sweep`. Nhóm này CÓ MẶT trong cây làm việc vì Owner giao ba contract trong MỘT lượt theo quyết định `03/09`, nhưng nó KHÔNG thuộc bản giao của task này: Tier 2 không được sửa chúng khi đang làm task này, và `HANDOFF.md` của task này không được kể chúng là công của mình.
+4. Path đã khai ở `Modules` hoặc ở mục phạm vi của BA contract CÙNG LÔ: `hrp-v5-go-live-18-public-surface-hardening`, `hrp-v5-go-live-17-rls-required-relation-sweep` và `hrp-v5-rf-05-tsc-program-boundary`. Nhóm này vì vậy CHỨA `tsconfig.json` cùng `src/shared/toolchain/tsc-program-boundary.static.test.ts`, hai path thuộc bản giao của `rf-05`. Nhóm này CÓ MẶT trong cây làm việc vì Owner giao ba contract trong MỘT lượt theo quyết định `03/09`, nhưng nó KHÔNG thuộc bản giao của task này: Tier 2 không được sửa chúng khi đang làm task này, và `HANDOFF.md` của task này không được kể chúng là công của mình.
 
-Cấm chạm: mọi tệp dưới `app/` và `src/`, `vitest.unit.config.ts`, `vitest.integration-files.ts`, `next.config.*`, `tsconfig.json`, `eslint.config.*`, `prisma/`, `middleware.ts`, mọi tệp `.env`. Task này KHÔNG sửa một dòng nào dưới `app/` và `src/`, kể cả khi hai contract cùng lô đang có tệp dirty ở hai cây đó. Xuất hiện một path ngoài bốn nhóm trên là FAIL.
+Cấm chạm: mọi tệp dưới `app/` và `src/`, `vitest.unit.config.ts`, `vitest.integration-files.ts`, `next.config.*`, `tsconfig.json`, `eslint.config.*`, `prisma/`, `middleware.ts`, mọi tệp `.env`. Task này KHÔNG sửa một dòng nào dưới `app/` và `src/`, kể cả khi các contract cùng lô đang có tệp dirty ở hai cây đó. `tsconfig.json` nằm ở cột cấm chạm ĐỐI VỚI task này, nhưng nó là bản giao của `hrp-v5-rf-05-tsc-program-boundary` nên sự có mặt của nó trong cây làm việc thuộc nhóm bốn, KHÔNG phải defect của task này; phép kiểm đúng là `git diff --cached -- tsconfig.json` không chứa một dòng nào do task này ghi. Xuất hiện một path ngoài bốn nhóm trên là FAIL.
 
 ### 4.3 Data, State, Permission và Interface Rules
 
@@ -145,7 +145,7 @@ Cấm chạm: mọi tệp dưới `app/` và `src/`, `vitest.unit.config.ts`, `v
 | `AC-09` | Đọc ba output của `STEP-09` | Lần chạy với fixture rỗng exit KHÁC `0`, tức spec thật sự đo DOM chứ không luôn xanh. Lần chạy sau hoàn nguyên exit `0`. Có lệnh hoàn nguyên trong bằng chứng, và `git status --porcelain tests/browser/public-home.spec.ts` sau đó cho thấy fixture đã về đúng bản giao |
 | `AC-10` | Đọc `HANDOFF.md` mục giới hạn | Có dòng ghi rõ spec KHÔNG chứng minh gì về database, RLS hay tính đúng của dữ liệu, và điều nó chứng minh là trang chủ hydrate cùng vẽ dữ liệu API ra DOM. Không có dòng nào khẳng định lane này chứng minh bề mặt công khai đầu-cuối |
 | `AC-11` | `git status --porcelain vitest.unit.config.ts vitest.integration-files.ts prisma/ middleware.ts` cộng `git status --porcelain app/ src/` cộng `npm run test:unit` rồi `npm run typecheck`, lấy mã thoát bằng redirect chứ không sau ống | Output `git` RỖNG cho cả bốn đường dẫn đầu. Output `git` của `app/` cộng `src/` chỉ chứa path đã khai của hai contract cùng lô và không một path nào khác. Hai lane exit `0`. Số test PASS của lane unit không nhỏ hơn mốc `STEP-01`. Nếu một dòng đỏ nằm ở path đã khai của một contract cùng lô thì đó là defect của contract ấy, không phải của task này, và `HANDOFF.md` phải nói rõ contract nào |
-| `AC-12` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm theo `4.2`. Cộng `git status --porcelain` chạy riêng trên từng đường dẫn ở cột cấm chạm. Cộng `git log --oneline -1` | Mọi path thuộc đúng một trong bốn nhóm của `4.2`, và nhóm bốn KHÔNG chứa tệp nào của nhóm một hay nhóm hai. Mọi đường dẫn cấm chạm cho output RỖNG. `HEAD` bằng baseline, tức không có commit mới nào so với baseline |
+| `AC-12` | `git status --porcelain` cộng `git diff --cached --name-only`, hợp hai danh sách rồi phân nhóm theo `4.2`. Cộng `git status --porcelain` chạy riêng trên từng đường dẫn ở cột cấm chạm. Cộng `git log --oneline -1` | Mọi path thuộc đúng một trong bốn nhóm của `4.2`, và nhóm bốn KHÔNG chứa tệp nào của nhóm một hay nhóm hai. Mọi đường dẫn cấm chạm cho output RỖNG. `git log --oneline -1` ở cuối task bằng ĐÚNG giá trị mà `STEP-01` đã ghi trên cây chưa sửa, tức task này không tạo thêm một commit nào. Phép so với field `Baseline` KHÔNG dùng ở đây, vì `Baseline` là ảnh của cây TRƯỚC khi contract này tồn tại nên `HEAD` đã hợp lệ khi lệch nó |
 
 ### 6.1 Traceability
 
@@ -187,7 +187,63 @@ Rollback: bản giao gồm hai tệp mới cộng ba tệp bị thêm dòng. Ho�
 
 ## 9. Planner Resolution
 
-Chưa có. Task chưa được thi hành.
+**Round `1` — báo cáo `BLOCKED` của Tier 2: NHẬN. Nguyên nhân chặn nằm ngoài task này và ĐÃ được một contract khác đóng, nên tôi mở execution round `2` MỎNG đúng HAI bước. KHÔNG audit round nào cho round `1`.**
+
+`Current execution round` nâng từ `0` lên `2`, đóng một field trễ hai bậc. Nó trễ vì Tier 2 không có quyền sửa nó, đúng luật, và vì round `1` dừng ở `BLOCKED` nên chưa từng có lệnh nâng.
+
+| Mục round `1` | Trạng thái CUỐI | Căn cứ Tier 1 tự đo |
+|---|---|---|
+| `BLK-01` | Nguyên nhân ĐÓNG, nhưng bằng chứng cuối chỉ có khi lane chạy | `next build` chết ở pha kiểm kiểu vì cấu hình biên dịch hút cây `new-ui` vào chương trình. `hrp-v5-rf-05-tsc-program-boundary` đã đóng biên ấy bằng một allow-list ở khoá `include`, và tôi đo lại `npm run typecheck` nhận exit `0` với `0` dòng `error TS`. Hai lane đọc CÙNG một tệp cấu hình, nên nguyên nhân đã mất. Tôi KHÔNG khẳng định `next build` sẽ xanh: pha kiểm kiểu là pha ĐẦU, và `LIM-05` bên dưới còn nguyên |
+| `LIM-04` | ĐÓNG | Cùng phép đo trên: exit `0`, `0` dòng `error TS`. Giới hạn này sinh ra từ đúng một dòng đỏ ở `new-ui/`, và dòng ấy không còn trong chương trình |
+| `LIM-05` | CÒN MỞ, chưa ai đo | Không ai biết `next build` có sống qua pha sinh trang tĩnh hay không, vì round `1` chết TRƯỚC pha ấy. Round `2` là lần đầu câu hỏi này đo được. Nếu nó chết ở pha sinh trang thì đó là một BLOCKER MỚI, không phải `BLK-01` tái phát, và phải khai tên khác |
+| `DEV-01` | PHẢI LÀM LẠI ở round `2` | Round `1` chạy vòng đỏ-rồi-xanh của fixture âm qua một cấu hình CHẨN ĐOÁN vì lane bàn giao không khởi động được. `AC-09` đòi lane BÀN GIAO. Round `2` chạy lại `STEP-09` qua lane bàn giao, không qua cấu hình chẩn đoán |
+
+**Phạm vi round `2`: đúng hai bước.** `STEP-08` và `STEP-09`, cả hai qua lane BÀN GIAO. Không chạy lại `STEP-01` tới `STEP-07`. `STEP-10` và `STEP-11` chạy lại vì chúng là bước đo phạm vi và bước ghi bàn giao, và một round không có hai bước ấy thì không kiểm được. Ba AC được đo lại: `AC-08`, `AC-09`, cộng `AC-11` vì mốc test đã dịch.
+
+**`DEC-20` — cho phép `next build`, ĐÚNG một lối, kèm bốn điều kiện.** Đây là quyết định liên contract, không phải việc Tier 2 tự chọn. Mục `4.3` của `hrp-v5-rf-05-tsc-program-boundary` CẤM `npm run build`, vì `.env` của repo trỏ vào database PRODUCTION và vì `next build` có thể GHI LẠI tệp cấu hình biên dịch — mà tệp ấy chính là bản giao của `rf-05`, đang nằm trong index và CHƯA được audit. Lệnh cấm ấy giữ nguyên cho mọi luồng khác. Task này là ngoại lệ DUY NHẤT, dưới bốn điều kiện, thiếu một điều kiện nào thì lượt chạy ấy KHÔNG dùng làm bằng chứng:
+
+1. `next build` chỉ được gọi qua khoá `webServer` của `playwright.config.ts` đã bàn giao, tức qua `npm run test:browser`. Khoá ấy ÉP biến DB về sentinel không tới được và làm rỗng bốn biến DB thật, nên tiến trình build không có đường tới production. CẤM chạy `npm run build` trần trong một shell, và CẤM `next dev`.
+2. `git hash-object tsconfig.json` phải được ghi TRƯỚC lượt chạy đầu và SAU lượt chạy cuối. Cả hai giá trị vào `HANDOFF.md` thành một dòng giới hạn CÓ TÊN.
+3. Hai giá trị ấy LỆCH nhau thì Tier 2 DỪNG ngay và khai một blocker mới. KHÔNG hoàn nguyên, KHÔNG stage, KHÔNG xoá tệp ấy: nó là bản giao chưa audit của luồng khác, và hoàn nguyên tài sản của luồng khác là việc của Tier 1.
+4. Ở cuối round, `git diff --cached --numstat -- tsconfig.json` phải vẫn cho `12 2`, đúng con số bản giao của `rf-05`, và không một path nào dưới `.next/` được stage.
+
+**Một vết đỏ CƠ HỌC đã biết trước.** `HANDOFF.md` của round `1` khai `Spec version` bằng `v1.1` còn contract sau bản này ở `v1.4`, nên `H-03` của cổng bàn giao sẽ đỏ khi ai đó chạy nó trên tài liệu round `1`. Vết ấy ĐÚNG sổ sách: round `1` thật sự thi hành bản `v1.1`. Bàn giao của round `2` phải khai `v1.4`, và không ai được sửa tài liệu round `1` để dập vết đỏ ấy. Cùng lớp với `H-03` bên `hrp-v5-go-live-18-public-surface-hardening`.
+
+### Audit round `1` — execution round `2`
+
+| Item | Planner decision |
+|---|---|
+| Audit gate | `verify-audit.ps1`: `PASS WITH WARNINGS`; verdict `BLOCKED` |
+| `AUD-001` | `ACCEPT_FIX`, hạ severity từ `P0` xuống `P2`. Đây là defect test-toolchain, không phải mất dữ liệu, vượt quyền hay production outage. Owner là task `hrp-v5-rf-06-vitest-default-lane-safety` |
+| `BLK-02` observed state | `ACCEPT`: staged delivery `tsconfig.json` của RF-05 thực sự biến mất giữa round; TEST-01 phải dừng vì AC-09 không còn đo đúng nguyên nhân |
+| `BLK-02` causal claim | `REJECT`: Next không thể tự sửa Git index. Việc worktree và index cùng trở về đúng blob HEAD chứng minh có thao tác Git/agent đồng thời; chưa đủ evidence quy trách cho `next build` |
+| `C-02` audit classification | Auditor ghi `SKIP` theo lệnh cấm cũ, nhưng v1.4 `DEC-20` đã cho phép build qua `npm run test:browser`, và hai lượt đầu đã build thành công. Tier 1 ghi nhận evidence build gián tiếp này; không coi SKIP là bằng chứng Next gây mất index |
+| Resolution | Không rollback TEST-01 và không sửa bốn deliverable của nó. Đóng execution round 2 ở `REVISION_REQUIRED`; chờ RF-06, rồi khôi phục/audit/commit RF-05, sau đó mới mở TEST-01 round 3 |
+| Closure | Round 3 phải có hai lượt browser GREEN, fixture-empty RED vì assertion DOM, restore GREEN, hash `tsconfig.json` trước/sau ổn định và không có staged `.next/` |
+
+### Planner Resolution — execution round `3` bị chặn ở preflight
+
+Tier 1 **NHẬN** `BLK-03` trong `HANDOFF.md`: tại thời điểm Tier 2 kiểm tra, hai dependency RF-06/RF-05 chưa có commit ổn định trên `main`, field control chưa được nâng round và worktree được nêu trong lệnh giao việc không tồn tại. Tier 2 dừng trước khi sửa code là đúng phạm vi. Round này không có audit độc lập và không được đổi tên thành một round thành công.
+
+Các điều kiện chặn nay đã được đóng bằng bằng chứng mới:
+
+| Điều kiện | Trạng thái | Bằng chứng khóa |
+|---|---|---|
+| RF-06 trở thành baseline | ĐÓNG | Commit `8f3839d` — default Vitest lane dùng JSX automatic và có guard tĩnh |
+| RF-05 trở thành baseline | ĐÓNG | Commit `bb223dd` — `tsconfig.json` và guard TypeScript program boundary đã commit scoped |
+| Nested worktree làm RF-05 guard thấy root `.claude` ngoài chương trình | ĐÓNG | Worktree `gl20` đã tích hợp và được remove; `npx vitest run` sau đó đạt `110 files`, `1683/1683` tests |
+| Go-live-20 còn ở worktree tách biệt | ĐÓNG | Commit tích hợp trên `main`: `f9c7bca` |
+| TypeScript baseline | ĐÓNG | `npm run typecheck` exit `0` trên `f9c7bca` |
+
+**Mở execution round `4` MỎNG.** Tier 2 làm việc ngay trên shared `main` worktree hiện tại; không tạo thêm nested worktree dưới `.claude/`. Bốn deliverable của TEST-01 đang nằm trong index và tiếp tục thuộc task này. Round 4 chỉ được:
+
+1. chạy `STEP-08` hai lần qua đúng `npm run test:browser`;
+2. chạy vòng fixture-empty RED → hoàn nguyên → GREEN của `STEP-09` qua đúng lane bàn giao;
+3. chạy lại `STEP-10` và `STEP-11` để đo regression, attribution và ghi bàn giao;
+4. ghi cả hash blob HEAD, index và worktree của `tsconfig.json` trước/sau; ba lớp không được bị diễn giải lẫn nhau;
+5. giữ lịch sử round 3 trong `HANDOFF.md`; không xóa evidence cũ, không dùng config chẩn đoán, không commit/push/deploy.
+
+Nếu `npm run test:browser` vẫn đỏ, Tier 2 phải ghi defect mới với pha lỗi và path cụ thể. Không được quy nguyên nhân cho `next build` nếu chỉ quan sát thấy index thay đổi mà chưa có bằng chứng tác nhân Git.
 
 ## 10. Revision Log
 
@@ -195,3 +251,7 @@ Chưa có. Task chưa được thi hành.
 |---|---|---|
 | `v1.0` | 2026-09-03 | Bản đầu. Dựng lane trình duyệt với phạm vi hẹp nhất còn có ích: một trình chạy, một cấu hình, một spec khói, một script. Hai quyết định giữ nó an toàn và chạy được ở mọi máy: `DEC-03` ép `DATABASE_URL` về sentinel không tới được vì `.env` là production (`EV-07`), và `DEC-04` chặn `/api/jobs` bằng fixture nên không cần database nào. Phạm vi khẳng định được ghi tên ở `DEC-05` để lane này không bị đọc rộng hơn thật, và `STEP-09` là fixture âm chứng minh spec không phải một test luôn xanh |
 | `v1.1` | 2026-09-03 | **Mở đường cho lô gộp ba contract theo quyết định `03/09` của Owner.** Hai tiêu chí cũ BẤT KHẢ THOẢ khi 18 và 17 cùng dirty trong một index dùng chung — lỗi ở văn của Tier 1, không ở bản giao: `AC-11` đòi `git status` RỖNG trên `app/` cùng `src/` mà hai contract kia đều ghi vào đó, và `AC-12` đòi mọi path trong index thuộc ba nhóm của riêng task này. Bản này thêm nhóm bốn vào `4.2` cho path đã khai của hai contract cùng lô, tách phép kiểm của `AC-11` thành bốn đường dẫn phải RỖNG cộng `app/` với `src/` chỉ được chứa path đã khai của hai contract kia, đổi `AC-12` sang phép đếm ATTRIBUTION, và ghi luật quy trách một dòng test đỏ cho đúng contract. `AC-01`, `AC-06`, `AC-07` KHÔNG đổi vì `package.json`, `package-lock.json` và `.gitignore` là đất của chính task này. KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào. Cửa sổ bump còn mở vì cả hai round vẫn đếm bằng `0` |
+| `v1.2` | 2026-09-04 | **Sửa cùng một AC BẤT KHẢ THOẢ, và nhận `tsconfig.json` của `rf-05` vào nhóm bốn.** Nửa thứ nhất giống `v1.4` của 18: `AC-12` cũ đòi `HEAD` bằng field `Baseline`, mà `80f6933` có TRƯỚC cả commit sinh ra contract này nên AC ấy bất khả thoả từ lúc viết; bản này đổi sang phép so `git log --oneline -1` với giá trị `STEP-01` đã ghi. Nửa thứ hai: `hrp-v5-rf-05-tsc-program-boundary` chạy TRƯỚC task này và nó sửa `tsconfig.json`, một path đang ở cột cấm chạm của task này, nên nếu không nới thì `AC-12` FAIL oan vì việc của contract khác. Bản này đưa `rf-05` vào nhóm bốn và ghi rõ phép kiểm đúng là diff staged của task này không chứa dòng nào của `tsconfig.json`. KHÔNG đổi phạm vi mã, KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào. Cửa sổ bump còn mở vì cả hai round vẫn đếm bằng `0` |
+| `v1.3` | 2026-09-04 | **Sửa một path CHẾT mà chính bản `v1.2` vừa đưa vào.** Nhóm bốn ở `v1.2` khai `src/shared/build/tsc-program-boundary.static.test.ts`, nhưng sau đó `rf-05` bump lên `v1.2` của nó và CHUYỂN tệp ấy sang `src/shared/toolchain/` vì `.gitignore` có mẫu `build/` ở dòng `10` nên path cũ bị git BỎ QUA và `git add` không bao giờ nhận. Hệ quả nếu để nguyên: nhóm bốn của task này khai một path KHÔNG tồn tại trong cây, còn tệp thật thì rơi ra ngoài mọi nhóm và `AC-12` FAIL oan. Bản này đổi đúng một chuỗi path, `1` chỗ trong văn. KHÔNG đổi phạm vi, KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào. Cửa sổ bump còn mở vì cả hai round vẫn đếm bằng `0` |
+| `v1.4` | 2026-09-04 | **Mở execution round `2` MỎNG và cấp phép `next build` đúng một lối, kèm bốn điều kiện.** Round `1` dừng ở `BLOCKED` vì `next build` chết ở pha kiểm kiểu, và `hrp-v5-rf-05-tsc-program-boundary` đã đóng nguyên nhân ấy: `npm run typecheck` giờ exit `0` với `0` dòng `error TS`. Bản này KHÔNG thêm, KHÔNG bớt một `RQ`, một `STEP` hay một `AC` nào; nó giữa nguyên mặt chữ của mười một bước và ghi phạm vi round `2` cùng `DEC-20` vào mục `9`, vì mục `4.3` của `rf-05` CẤM `npm run build` và muốn chạy lane bàn giao thì phải gỡ lệnh cấm ấy đúng một lối có điều kiện đo được. Cửa sổ bump còn MỞ vì task này chưa có `AUDIT.md` và `Current audit round` đếm bằng `0` |
+| `v1.5` | 2026-09-07 | **Nhận execution round `3` bị chặn đúng ở preflight và mở round `4` MỎNG trên baseline thật.** RF-06 (`8f3839d`), RF-05 (`bb223dd`) và go-live-20 (`f9c7bca`) đã nằm trên `main`; nested worktree `gl20` đã được remove; default Vitest đạt `1683/1683` và typecheck exit `0`. Không đổi RQ/STEP/AC hay deliverable; chỉ cập nhật control fields, khóa cách đo ba lớp HEAD/index/worktree và cấm lặp lại causal claim thiếu bằng chứng về `next build` |
