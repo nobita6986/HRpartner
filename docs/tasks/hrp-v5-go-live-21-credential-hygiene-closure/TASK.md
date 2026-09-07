@@ -7,8 +7,8 @@
 | Task slug | `hrp-v5-go-live-21-credential-hygiene-closure` |
 | Work type | `INFRA` |
 | Audit mode (Tier 3 đọc) | `INFRA_AUDIT` |
-| Spec version | 1.3 |
-| Status | READY_FOR_EXECUTION — execution round 1; audit round 2 **PASS WITH FINDINGS**; Tier 2 /code OP execution STEP-07..11 (window 2026-09-08 09:00-09:30); task security chạy song song (STEP-01..06 trong cùng window)
+| Spec version | 1.4 |
+| Status | CLOSED — execution round 1 Tier 2 prep DONE; audit round 3 **ACCEPTED** (verdict CONDITIONAL; AUD-001 carry over to task security v1.1 READY; AUD-002/003/004 RESOLVED; CLEANUP-PLAN C-14..C-49 DONE); OP execution STEP-07..11 pending window 2026-09-08 09:00-09:30
 | Planner | `Tier 1 / Codex` |
 | Executor | `Tier 2` cho repo hygiene (STEP-00..06); `Owner/OP` cho Neon và Vercel (STEP-07..11) |
 | Auditor | `Tier 3 independent context` |
@@ -16,10 +16,9 @@
 | Modules | `Go-live security hygiene; Prisma seed; Vercel; Neon; repository artifacts; .gitignore; scratch/` |
 | ADR references | `PLANNER_HANDOVER.md §13`; fail-closed LIVE DB convention; one Tier 2 stream; tier1.md §6 Resolve Protocol |
 | Current execution round | `1` |
-| Current audit round | `1` |
-| Current audit round | 2 |
-| Next gate | **AUDIT ROUND 2 VERDICT: PASS WITH FINDINGS** — all findings RESOLVED (AUD-001 ESCALATE_NEW_TASK → hrp-v6-security-credential-rotation v1.1 READY; AUD-002 FIX_REQUIRED → committed 8 commits 41ab22b..5978065; AUD-003 FIX_REQUIRED → evidence file added). Owner Q-01..Q-04 RESOLVED. Tier 2 /code hrp-v5-go-live-21-credential-hygiene-closure OP execution STEP-07..11 + CLEANUP-PLAN C-14..C-31.
-| Updated | 2026-09-07 13:54 Asia/Bangkok — Tier 3 audit round 2 verdict PASS WITH FINDINGS; all findings RESOLVED; bump v1.2.2 → v1.3 READY_FOR_EXECUTION
+| Current audit round | `3` |
+| Next gate | **CLOSED** — audit round 3 ACCEPTED (verdict CONDITIONAL); AUD-001 ESCALATE_NEW_TASK -> task security hrp-v6-security-credential-rotation v1.1 READY; CLEANUP-PLAN C-14..C-49 DONE (commit 1dba647 + 8b062d0); OP execution STEP-07..11 pending window 09:00-09:30
+| Updated | 2026-09-07 14:55 Asia/Bangkok — Tier 3 audit round 3 ACCEPTED (verdict CONDITIONAL); CLEANUP-PLAN C-14..C-49 DONE; bump v1.3 -> v1.4 CLOSED; PLANNER_HANDOVER update
 ## 1. Outcome
 
 ### User-visible outcome
@@ -195,8 +194,11 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding. v1.1 
 | `1` | `AUD-002` (P1) | `FIX_REQUIRED` | `git ls-files '.env*'` trả 4 file thay vì 1; `git ls-files --stage .env.dev` cho hash đúng HEAD. Tier 2 đã chạy `git rm --cached` nhưng chưa commit. `git diff --cached` rỗng. Bằng chứng: `evidence/go21-s01-after-lsfiles.txt`, `evidence/go21-s01-index-status.txt`, `evidence/go21-s01-no-staged.txt`. | §0 spec → v1.2; Tier 2 re-run `STEP-01`: `git rm --cached .env.dev .env.preview .env.prod.test && git commit` rồi chạy lại AC-02. Tier 3 re-audit round 2. | Tier 2 — re-open execution round 1 r1-FIX. Closure: audit round 2 PASS |
 | `1` | `AUD-003` (P3) | `FIX_REQUIRED` | `evidence/go21-s05-apply-blocked.txt` không tồn tại. Tier 3 reproduce được apply fail-closed (exit 2, "DB gate FAIL") nhưng evidence file bị thiếu. | §0 spec → v1.2; Tier 2 thêm file với output đúng (exit 2 + message). Cùng lượt fix với AUD-002. | Tier 2 — thêm file trong lượt fix STEP-01. Closure: file tồn tại |
 
-| 2 | AUD-002 (P1) | RESOLVED | Tier 2 committed 8 commits 41ab22b..5978065; git ls-files '.env*' = .env.example only (1 file); evidence/go21-s05-apply-blocked.txt tồn tại; verify-task.ps1 PASS exit 0. | §0 spec → v1.3; Status → READY_FOR_EXECUTION; audit round → 2 | Tier 2 r1-FIX. Closure: Tier 3 audit round 2 PASS WITH FINDINGS |
-| 2 | AUD-003 (P3) | RESOLVED | Tier 2 committed 8 commits 41ab22b..5978065; evidence/go21-s05-apply-blocked.txt tồn tại với exit 2 + message đúng. | §0 spec → v1.3; Status → READY_FOR_EXECUTION; audit round → 2 | Tier 2 r1-FIX. Closure: Tier 3 audit round 2 PASS WITH FINDINGS |
+| 2 | AUD-002 (P1) | RESOLVED | Tier 2 committed 8 commits 41ab22b..5978065; git ls-files '.env*' = .env.example only (1 file); evidence/go21-s05-apply-blocked.txt ton tai; verify-task.ps1 PASS exit 0. | §0 spec → v1.3; Status → READY_FOR_EXECUTION; audit round → 2 | Tier 2 r1-FIX. Closure: Tier 3 audit round 2 PASS WITH FINDINGS |
+| 2 | AUD-003 (P3) | RESOLVED | Tier 2 committed 8 commits 41ab22b..5978065; evidence/go21-s05-apply-blocked.txt ton tai voi exit 2 + message dung. | §0 spec → v1.3; Status → READY_FOR_EXECUTION; audit round → 2 | Tier 2 r1-FIX. Closure: Tier 3 audit round 2 PASS WITH FINDINGS |
+| 3 | AUD-001 (P0 carry over) | ESCALATE_NEW_TASK | AUDIT.md round 3: check_rls.cjs van tracked voi raw Neon credential; task security hrp-v6-security-credential-rotation v1.1 READY_FOR_EXECUTION; rotate same window 2026-09-08 09:00-09:30. | §0 spec → v1.4; Status → CLOSED; audit round → 3 | Task security owns. Closure: task security ACCEPTED |
+| 3 | AUD-002 (P1) | RESOLVED | Round 3 confirmed: git ls-files .env* = .env.example (1 file); evidence go21-s01-r3-lsfiles.txt. | §0 spec → v1.4; Status → CLOSED | Tier 3 audit round 3 ACCEPTED |
+| 3 | AUD-003 (P3) | RESOLVED | Round 3 confirmed: evidence/go21-s05-apply-blocked.txt ton tai; AC-09 dry-run idempotency hash 3fb0d3cc... | §0 spec → v1.4; Status → CLOSED | Tier 3 audit round 3 ACCEPTED |
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
@@ -207,3 +209,4 @@ Tier 1 append quyết định sau audit; không sửa lịch sử finding. v1.1 
 | `v1.2.1` | `2026-09-07 13:33` | Patch cosmetic: thêm trailing pipe vào status line để `verify-task.ps1` không cảnh báo A-04 (`DRAFT-VALID`). KHÔNG đổi scope, RQ, STEP, AC hay verdict. RESOLVE DEV-21-07 (Planner-side). DEV-21-08 đợi Tier 3 re-audit round 2 với spec v1.2. | HANDOFF.md DEV-21-07/08; PLN-67 |
 | `v1.2.2` | `2026-09-07 13:42` | Owner trả lời Q-01..Q-04 (Vercel `hrp-prod`/`Production`/`hrpartner.vn`; 3 file local disposition; Neon-only reuse; window 2026-09-08 09:00-09:30 + PITR 7 days + DEMO KEEP). Tất cả Q block OP execution đã RESOLVE — `STEP-07..11` vẫn `OWNER_BLOCKED` cho tới khi Tier 3 re-audit round 2 PASS. Bump v1.2.1 → v1.2.2 cosmetic. | TASK.md §8 answers |
 | 1.3 | 2026-09-07 13:54 | Audit round 2 PASS WITH FINDINGS: AUD-002 RESOLVED (Tier 2 committed 8 commits 41ab22b..5978065, git ls-files '.env*' = 1 file, verify-task.ps1 PASS exit 0), AUD-003 RESOLVED (evidence/go21-s05-apply-blocked.txt tồn tại). AUD-001 ESCALATE_NEW_TASK carry over (task security v1.1 READY). Owner Q-01..Q-04 RESOLVED. Status -> READY_FOR_EXECUTION, execution round 1, audit round 2. Tier 2 /code OP execution STEP-07..11 + CLEANUP-PLAN C-14..C-31 (window 2026-09-08 09:00-09:30). | AUDIT.md round 2; 3aa8676; verify-task.ps1 exit 0 |
+| v1.4 | 2026-09-07 14:55 | Audit round 3 ACCEPTED (verdict CONDITIONAL; AUD-001 ESCALATE_NEW_TASK carry over to task security v1.1 READY; AUD-002/003/004 RESOLVED round 3; CLEANUP-PLAN C-14..C-49 DONE commit 1dba647+8b062d0; OP execution STEP-07..11 pending window 2026-09-08 09:00-09:30). Status -> CLOSED, execution round 1, audit round 3, spec v1.4. | AUDIT.md round 3 a2ef278; CLEANUP-PLAN §7 DONE; verify-audit.ps1 A-02 PASS |
