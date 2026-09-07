@@ -14,7 +14,7 @@
 | OP execution | `OWNER_BLOCKED` (Tier 2 prep scaffolding done; Owner runs STEP-07..11 in window **2026-09-08 09:00-09:30 Asia/Bangkok**) |
 | Baseline (TASK v1.0) | `7dd576e` |
 | Pre-r2 HEAD | `2f7baf0` (Planner bump v1.3) |
-| Post-r2 HEAD | `91ba2ce` (Tier 2 r2 OP-prep commit) |
+| Post-r2 HEAD | `3812527` (Tier 2 r2 OP-prep commit) |
 | Status | `READY_FOR_OWNER_EXECUTION` (Tier 2 scaffolding READY; Owner triggers STEP-07..11 in window) |
 | Started/updated | Round 1 2026-09-07 10:55 → 11:04; r1-FIX 2026-09-07 12:10 → 12:25; **OP-prep r2 2026-09-07 14:00 → 14:30 Asia/Bangkok** |
 
