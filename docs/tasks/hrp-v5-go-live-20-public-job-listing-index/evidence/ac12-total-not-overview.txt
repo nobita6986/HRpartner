@@ -1,0 +1,28 @@
+=== AC-12 / RQ-10 -- nhan so ket qua doc total, 0 lan chuoi overview ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- (0 dong khop nen ma thoat 1: dung ky vong)
+--- CMD: grep -c 'overview' "app/(jobs)/viec-lam/page.tsx"
+0
+=== EXIT=1
+--- doi chieu EV-09: chuoi overview CO thuc trong service, nen phep dem tren khong phai xanh rong
+--- CMD: grep -c 'overview' 'src/domains/job-board/public.service.ts'
+9
+=== EXIT=0
+--- nhan dem va nhanh rong doc total cua chinh ket qua da loc:
+--- CMD: grep -n 'total' "app/(jobs)/viec-lam/page.tsx"
+32: * lại theo chính lựa chọn vừa rồi. Nhãn số kết quả đọc `total` của tập ĐÃ lọc (`RQ-10`); con số
+312:  const { jobs, facets, total, nextOffset } = loaded.data;
+317:   * `RQ-02` liệt kê ba ca `offset` phải về 0, và ca "vượt `total`" là ca DUY NHẤT parser không đo
+318:   * được vì nó không biết `total`. Xử ở đây, và xử KHÔNG bằng một truy vấn thứ hai: service đã trả
+319:   * một lát rỗng cùng `total` thật, nên trang chỉ cần nhận ra tình huống rồi mời về trang đầu bằng
+322:  const beyondLastPage = params.offset > 0 && total > 0 && jobs.length === 0;
+332:  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+334:    total === 0
+338:      : `${total} việc làm đang tuyển${hasFilter ? ' khớp bộ lọc này' : ''}`;
+388:      {total > PAGE_SIZE ? (
+402:            Trang {currentPage} / {totalPages}
+=== EXIT=0
+--- CMD: grep -a 'AC-12' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-10/AC-12 — đếm bằng total, không có chữ overview nào[2m > [22mkhông xuất hiện chuỗi overview, kể cả trong chú thích
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-10/AC-12 — đếm bằng total, không có chữ overview nào[2m > [22mnhánh rỗng và nhãn đếm đọc total của chính kết quả
+=== EXIT=0

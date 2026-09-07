@@ -18,7 +18,8 @@ async function logout() {
 }
 
 const navLinks = [
-  { href: '/', label: 'Việc làm' },
+  { href: '/', label: 'Trang chủ' },
+  { href: '/viec-lam', label: 'Việc làm' },
   { href: '/ctv-portal', label: 'Cộng tác viên' },
   { href: '/ve-chung-toi', label: 'Về chúng tôi' },
   { href: '/lien-he', label: 'Liên hệ' },
@@ -26,7 +27,7 @@ const navLinks = [
 
 /**
  * go-live-15 / RQ-09 - muc dieu huong ung voi duong dan hien tai, SUY tu
- * `usePathname()` chu khong hard-code. Bon href cua `navLinks` khong long nhau
+ * `usePathname()` chu khong hard-code. Nam href cua `navLinks` khong long nhau
  * va `/` chi khop tuyet doi, nen ham nay tra ve NHIEU NHAT mot href: moi nhanh
  * chi co the co dung MOT link mang `aria-current="page"`.
  */

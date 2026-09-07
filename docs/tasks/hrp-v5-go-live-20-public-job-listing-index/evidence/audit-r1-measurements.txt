@@ -1,0 +1,62 @@
+===== AUDIT R1 INDEPENDENT MEASUREMENTS (Tier 3, gl20 worktree) =====
+generated: 2026-09-06T02:08:34Z
+
+=== [POST] gate fingerprints (compare to PRE recorded in AUDIT) ===
+gate-lib.ps1  6daa689a33604f873f2e9f2181a741bfe4a55a9f
+verify-task.ps1  e36b83dfbf7c860e320d5409535b82001cab574e
+verify-handoff.ps1  e1af8549b9dd73d8c569d66493b6e527fae021f5
+verify-audit.ps1  e1edaebac456da16cb618dca2607e7f46b1c4358
+verify-pipeline.ps1  1348bffe2adf3a5c247ecc1f3ed2525233b41db9
+
+=== staged scope (AC-20): count + ui-01 prefix absence ===
+CMD: git diff --cached --name-only | wc -l  => STAGED=63
+-- ui-01 forbidden prefixes (must all be 0) --
+app/(portal)/page.tsx : 0
+app/globals.css : 0
+src/domains/job-board/components/ : 0
+-- staged code paths (non-docs) --
+app/(jobs)/viec-lam/[slug]/page.tsx
+app/(jobs)/viec-lam/page.tsx
+app/components/GlobalNavbar.tsx
+src/domains/job-board/public-detail.static.test.ts
+src/domains/job-board/public-listing.labels.ts
+src/domains/job-board/public-listing.params.test.ts
+src/domains/job-board/public-listing.params.ts
+src/domains/job-board/public-listing.static.test.ts
+src/shared/security/public-surface-limiter.static.test.ts
+
+=== AC-08 fail-closed ORDER (fresh byte offsets in staged blob) ===
+CMD: git show ':app/(jobs)/viec-lam/page.tsx' | grep -bo <token>
+byte-offset evaluateRateLimits( = 5677
+byte-offset early-return guard = 5926
+byte-offset withPublicDb(       = 6355
+ORDER OK: rate-limit < guard < db (fail-closed)
+
+=== AC-10 DB-path exact counts (fresh) ===
+withPublicDb( : 1
+listPublicJobProjection : 3
+getPrisma() occurrences : 1  (import + withPublicDb arg only)
+/api/jobs references : 0
+
+=== C-05 measured-zero: NO new POST/PATCH mutation in delivered code files ===
+CMD: for each staged code file: git show :<p> | grep -cE 'export async function (POST|PATCH|PUT|DELETE)|method=post' => TOTAL=0
+
+=== C-06 measured-zero: NO migration / schema change staged ===
+CMD: git diff --cached --name-only | grep -cE '^prisma/(migrations|schema)' => 0
+
+=== fresh aggregate: total added lines across staged CODE files (numstat) ===
+2	2	app/(jobs)/viec-lam/[slug]/page.tsx
+419	0	app/(jobs)/viec-lam/page.tsx
+3	2	app/components/GlobalNavbar.tsx
+3	2	src/domains/job-board/public-detail.static.test.ts
+47	0	src/domains/job-board/public-listing.labels.ts
+259	0	src/domains/job-board/public-listing.params.test.ts
+113	0	src/domains/job-board/public-listing.params.ts
+260	0	src/domains/job-board/public-listing.static.test.ts
+21	2	src/shared/security/public-surface-limiter.static.test.ts
+TOTAL_ADDED_CODE_LINES=1127
+
+=== AC-21 single-hunk (fresh): census barrier staged diff hunk header + OLD-side start ===
+@@ -120,2 +120,21 @@ describe('bề mặt công khai: mọi consumer của withPublicDb phải đi qu
+HUNK_COUNT=1 (AC-21 requires exactly 1, OLD side start in lines 119-123)
+

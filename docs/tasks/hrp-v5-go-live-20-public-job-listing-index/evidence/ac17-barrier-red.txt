@@ -1,4 +1,25 @@
-/**
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts src/domains/job-board/public-detail.static.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP/.claude/worktrees/gl20[39m
+
+ [31m❯[39m src/domains/job-board/public-detail.static.test.ts [2m([22m[2m23 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[90m 12[2mms[22m[39m
+[31m   [31m×[31m RQ-06/RQ-08 — bề mặt hiển thị đúng phạm vi DTO công khai[2m > [22mRQ-08: có đúng một đường quay lại danh sách việc làm ở `/`[90m 4[2mms[22m[31m[39m
+[31m     → expected '/**\r\n * page.tsx — go-live-12 / RQ-…' to match /href="\/"/"[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 1 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/domains/job-board/public-detail.static.test.ts[2m > [22mRQ-06/RQ-08 — bề mặt hiển thị đúng phạm vi DTO công khai[2m > [22mRQ-08: có đúng một đường quay lại danh sách việc làm ở `/`
+[31m[1mAssertionError[22m: expected '/**\r\n * page.tsx — go-live-12 / RQ-…' to match /href="\/"/"[39m
+
+[32m- Expected:[39m 
+/href="\/"/
+
+[31m+ Received:[39m 
+"/**
  * page.tsx — go-live-12 / RQ-05, RQ-06, RQ-07, RQ-08, RQ-11 / DEC-01, DEC-02, DEC-06..DEC-11,
  * DEC-13, DEC-14.
  *
@@ -7,7 +28,7 @@
  *
  * Server Component đọc DB qua ĐÚNG `withPublicDb` (`DEC-02`, `RQ-05`): principal `MKT`,
  * transaction read-only, ba GUC đặt bên trong chính hàm đó. Trang KHÔNG mở transaction trần và
- * KHÔNG đặt GUC lẻ — đó đúng là cách defect "bề mặt công khai trả 0 dòng" của go-live-04 phát
+ * KHÔNG đặt GUC lẻ — đó đúng là cách defect \"bề mặt công khai trả 0 dòng\" của go-live-04 phát
  * sinh. Trang cũng không tự gọi API nội bộ của chính ứng dụng: thêm một chặng mạng, mất context
  * request, và làm metadata phụ thuộc base URL runtime.
  *
@@ -124,10 +145,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 function Chip({ icon, label }: { icon: string; label: string }) {
   return (
     <span
-      className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+      className=\"flex items-center gap-1 text-xs px-2 py-0.5 rounded-full\"
       style={{ color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container)' }}
     >
-      <span className="material-symbols-outlined text-[14px]" aria-hidden="true">{icon}</span>
+      <span className=\"material-symbols-outlined text-[14px]\" aria-hidden=\"true\">{icon}</span>
       {label}
     </span>
   );
@@ -136,8 +157,8 @@ function Chip({ icon, label }: { icon: string; label: string }) {
 function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>{label}</dt>
-      <dd className="text-sm font-semibold" style={{ color: 'var(--color-on-surface)' }}>{value}</dd>
+      <dt className=\"text-xs\" style={{ color: 'var(--color-on-surface-variant)' }}>{label}</dt>
+      <dd className=\"text-sm font-semibold\" style={{ color: 'var(--color-on-surface)' }}>{value}</dd>
     </div>
   );
 }
@@ -149,25 +170,25 @@ function Fact({ label, value }: { label: string; value: string }) {
  */
 function ThrottledNotice() {
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className=\"max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8\">
       <Link
-        href="/viec-lam"
-        className="inline-flex items-center gap-1 text-sm font-medium rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+        href=\"/viec-lam\"
+        className=\"inline-flex items-center gap-1 text-sm font-medium rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2\"
         style={{ color: 'var(--color-primary-dark)' }}
       >
-        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
+        <span className=\"material-symbols-outlined text-[18px]\" aria-hidden=\"true\">arrow_back</span>
         Quay lại danh sách việc làm
       </Link>
 
       <section
-        className="mt-4 rounded-xl border p-5 sm:p-6"
+        className=\"mt-4 rounded-xl border p-5 sm:p-6\"
         style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
-        aria-live="polite"
+        aria-live=\"polite\"
       >
-        <h1 className="text-xl font-bold" style={{ color: 'var(--color-on-surface)' }}>
+        <h1 className=\"text-xl font-bold\" style={{ color: 'var(--color-on-surface)' }}>
           {RATE_LIMITED_TITLE}
         </h1>
-        <p className="mt-2 text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+        <p className=\"mt-2 text-sm\" style={{ color: 'var(--color-on-surface-variant)' }}>
           {RATE_LIMITED_MESSAGE}
         </p>
       </section>
@@ -186,24 +207,24 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
   const isFull = job.availableSlots === 0;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className=\"max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8\">
       <Link
-        href="/viec-lam"
-        className="inline-flex items-center gap-1 text-sm font-medium rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+        href=\"/viec-lam\"
+        className=\"inline-flex items-center gap-1 text-sm font-medium rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2\"
         style={{ color: 'var(--color-primary-dark)' }}
       >
-        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
+        <span className=\"material-symbols-outlined text-[18px]\" aria-hidden=\"true\">arrow_back</span>
         Quay lại danh sách việc làm
       </Link>
 
       <article
-        className="mt-4 rounded-xl border p-5 sm:p-6"
+        className=\"mt-4 rounded-xl border p-5 sm:p-6\"
         style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
       >
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-on-surface)' }}>{job.title}</h1>
+        <div className=\"flex flex-wrap items-start justify-between gap-3\">
+          <h1 className=\"text-xl sm:text-2xl font-bold\" style={{ color: 'var(--color-on-surface)' }}>{job.title}</h1>
           <span
-            className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+            className=\"text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap\"
             style={
               isFull
                 ? { color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container-high)' }
@@ -213,54 +234,54 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
             {job.statusLabel}
           </span>
         </div>
-        <p className="mt-1 text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
-          Mã việc làm: <span className="font-semibold">{job.jobCode}</span>
+        <p className=\"mt-1 text-xs\" style={{ color: 'var(--color-on-surface-variant)' }}>
+          Mã việc làm: <span className=\"font-semibold\">{job.jobCode}</span>
         </p>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Chip icon="location_on" label={job.location?.trim() || 'Địa điểm đang cập nhật'} />
-          <Chip icon="schedule" label={job.shift?.trim() || 'Thời gian đang cập nhật'} />
-          <Chip icon="work" label={JOB_TYPE_LABELS[job.jobType]} />
+        <div className=\"mt-4 flex flex-wrap items-center gap-2\">
+          <Chip icon=\"location_on\" label={job.location?.trim() || 'Địa điểm đang cập nhật'} />
+          <Chip icon=\"schedule\" label={job.shift?.trim() || 'Thời gian đang cập nhật'} />
+          <Chip icon=\"work\" label={JOB_TYPE_LABELS[job.jobType]} />
         </div>
 
-        <dl className="mt-5 grid gap-3 sm:grid-cols-3">
+        <dl className=\"mt-5 grid gap-3 sm:grid-cols-3\">
           <Fact
-            label="Chỗ trống"
+            label=\"Chỗ trống\"
             value={isFull ? job.statusLabel : `Còn ${job.availableSlots} chỗ trống`}
           />
-          <Fact label="Chỉ tiêu đã tuyển" value={`${job.totalSlotsFilled}/${job.totalSlotsNeeded}`} />
-          {job.deadline && <Fact label="Hạn nhận hồ sơ" value={formatDeadlineDate(job.deadline)} />}
+          <Fact label=\"Chỉ tiêu đã tuyển\" value={`${job.totalSlotsFilled}/${job.totalSlotsNeeded}`} />
+          {job.deadline && <Fact label=\"Hạn nhận hồ sơ\" value={formatDeadlineDate(job.deadline)} />}
         </dl>
 
-        <div className="mt-6">
+        <div className=\"mt-6\">
           <DetailApplyCta job={{ slug: job.slug, title: job.title }} isFull={isFull} />
         </div>
 
-        <section className="mt-6">
-          <h2 className="text-base font-semibold" style={{ color: 'var(--color-on-surface)' }}>
+        <section className=\"mt-6\">
+          <h2 className=\"text-base font-semibold\" style={{ color: 'var(--color-on-surface)' }}>
             Vị trí tuyển dụng ({job.positions.length})
           </h2>
-          <ul className="mt-3 flex flex-col gap-3">
+          <ul className=\"mt-3 flex flex-col gap-3\">
             {job.positions.map((position, index) => (
               <li
                 key={`${position.positionCode}-${index}`}
-                className="rounded-lg border p-3"
+                className=\"rounded-lg border p-3\"
                 style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface-container-low)' }}
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-sm font-semibold" style={{ color: 'var(--color-on-surface)' }}>
+                <div className=\"flex flex-wrap items-center justify-between gap-2\">
+                  <h3 className=\"text-sm font-semibold\" style={{ color: 'var(--color-on-surface)' }}>
                     {position.positionTitle}
                   </h3>
                   <span
-                    className="text-xs font-semibold whitespace-nowrap"
+                    className=\"text-xs font-semibold whitespace-nowrap\"
                     style={{ color: position.available > 0 ? 'var(--color-primary-dark)' : 'var(--color-on-surface-variant)' }}
                   >
                     {position.available > 0 ? `Còn ${position.available} chỗ trống` : 'Đã đủ chỉ tiêu'}
                   </span>
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <Chip icon="schedule" label={position.shift?.trim() || 'Thời gian đang cập nhật'} />
-                  <Chip icon="location_on" label={position.workLocation?.trim() || 'Địa điểm đang cập nhật'} />
+                <div className=\"mt-2 flex flex-wrap items-center gap-2\">
+                  <Chip icon=\"schedule\" label={position.shift?.trim() || 'Thời gian đang cập nhật'} />
+                  <Chip icon=\"location_on\" label={position.workLocation?.trim() || 'Địa điểm đang cập nhật'} />
                 </div>
               </li>
             ))}
@@ -270,3 +291,21 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
     </div>
   );
 }
+"
+
+[36m [2m❯[22m src/domains/job-board/public-detail.static.test.ts:[2m150:18[22m[39m
+    [90m148| [39m  [34mit[39m([32m'RQ-08: có đúng một đường quay lại danh sách việc làm ở `/`'[39m[33m,[39m () …
+    [90m149| [39m    [34mexpect[39m(page)[33m.[39m[34mtoContain[39m([32m'Quay lại danh sách việc làm'[39m)[33m;[39m
+    [90m150| [39m    [34mexpect[39m(page)[33m.[39m[34mtoMatch[39m([36m/href="\/"/[39m)[33m;[39m
+    [90m   | [39m                 [31m^[39m
+    [90m151| [39m  })[33m;[39m
+    [90m152| [39m})[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m22 passed[39m[22m[90m (23)[39m
+[2m   Start at [22m 00:09:23
+[2m   Duration [22m 331ms[2m (transform 29ms, setup 0ms, collect 29ms, tests 12ms, environment 0ms, prepare 65ms)[22m
+
+=== EXIT=1

@@ -1,0 +1,17 @@
+TASK CONTRACT GATE
+  subject: C:\CodeApp\HrP\.claude\worktrees\gl20\docs\tasks\hrp-v5-go-live-20-public-job-listing-index\TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+  [FAIL] A-05 requirement RQ-17 has no direct RQ -> STEP -> AC traceability row.
+  [OK]   T-01 4 referenced npm script(s) all exist.
+  [OK]   T-02 23 file:line reference(s) resolve.
+  [FAIL] T-03 AC AC-21 proves scope with a bare 'git diff'. Use --cached, HEAD, or git status --porcelain.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-go-live-20-public-job-listing-index/**.
+  [OK]   T-05 all 21 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+
+RESULT: FAIL (2 error(s), 0 warning(s)).
+
+=== CMD: powershell -NoProfile -File .ai-pipeline\scripts\verify-task.ps1 -TaskPath docs\tasks\hrp-v5-go-live-20-public-job-listing-index\TASK.md -RepoRoot C:\CodeApp\HrP\.claude\worktrees\gl20
+=== EXIT=2

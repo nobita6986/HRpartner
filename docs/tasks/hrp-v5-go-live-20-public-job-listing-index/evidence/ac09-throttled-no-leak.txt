@@ -1,0 +1,16 @@
+=== AC-09 / RQ-07 -- nhanh bi chan khong nhan tham so, khong noi suy gia tri request ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- CMD: grep -n 'function ThrottledNotice' "app/(jobs)/viec-lam/page.tsx"
+135:function ThrottledNotice() {
+=== EXIT=0
+--- EV: loi viet lay theo trang chi tiet, xem ThrottledNotice cua no
+--- CMD: grep -n 'ThrottledNotice' "app/(jobs)/viec-lam/[slug]/page.tsx"
+150:function ThrottledNotice() {
+181:  if (result.kind === 'throttled') return <ThrottledNotice />;
+=== EXIT=0
+--- hang rao rut RA tap ten duoc noi suy trong than nhanh do roi ghim tap ay bang mot dang thuc:
+--- dung ba hang module LISTING_PATH, RATE_LIMITED_MESSAGE, RATE_LIMITED_TITLE
+--- CMD: grep -a 'AC-09' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-07/AC-09 — nhánh bị chặn không rò một giá trị request nào[2m > [22mThrottledNotice không nhận tham số nào
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-07/AC-09 — nhánh bị chặn không rò một giá trị request nào[2m > [22mmọi nội suy trong nhánh ấy là hằng module, không có giá trị nào của request
+=== EXIT=0

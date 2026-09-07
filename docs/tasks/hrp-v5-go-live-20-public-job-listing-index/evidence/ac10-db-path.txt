@@ -1,0 +1,31 @@
+=== AC-10 / RQ-08 -- dung MOT duong toi DB, khong co duong thu hai ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- CMD: grep -c 'withPublicDb(' "app/(jobs)/viec-lam/page.tsx"
+1
+=== EXIT=0
+--- CMD: grep -c 'listPublicJobProjection(' "app/(jobs)/viec-lam/page.tsx"
+1
+=== EXIT=0
+--- CMD: grep -c 'getPrisma()' "app/(jobs)/viec-lam/page.tsx"
+1
+=== EXIT=0
+--- getPrisma() CHI xuat hien lam doi so cua withPublicDb:
+--- CMD: grep -n 'withPublicDb(getPrisma()' "app/(jobs)/viec-lam/page.tsx"
+105:    const data = await withPublicDb(getPrisma(), (tx) =>
+=== EXIT=0
+--- 0 lan chuoi /api/jobs va 0 lan fetch( (0 dong => ma thoat 1, dung ky vong)
+--- CMD: grep -c '/api/jobs' "app/(jobs)/viec-lam/page.tsx"
+0
+=== EXIT=1
+--- CMD: grep -c 'fetch(' "app/(jobs)/viec-lam/page.tsx"
+0
+=== EXIT=1
+--- doi chieu EV-12: trang chu thi CO fetch /api/jobs, nen phep dem tren khong phai xanh rong
+--- CMD: grep -c '/api/jobs' 'app/(portal)/page.tsx'
+1
+=== EXIT=0
+--- CMD: grep -a 'AC-10' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-08/AC-10 — đúng MỘT đường tới DB, không có đường thứ hai[2m > [22mmột lời gọi withPublicDb, một lời gọi listPublicJobProjection
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-08/AC-10 — đúng MỘT đường tới DB, không có đường thứ hai[2m > [22mgetPrisma() chỉ xuất hiện làm đối số của withPublicDb
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-08/AC-10 — đúng MỘT đường tới DB, không có đường thứ hai[2m > [22mkhông tự gọi API nội bộ và không fetch, kể cả trong chú thích
+=== EXIT=0

@@ -1,0 +1,28 @@
+=== AC-04 / RQ-03 -- bon ten bi cam khong bao gio bi doc, cung khong bao gio bi phat ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- CMD: grep -n 'BANNED_PARAMS' "src/domains/job-board/public-listing.params.test.ts"
+31:const BANNED_PARAMS = ['salary', 'limit', 'shiftType', 'jobType'] as const;
+137:    for (const name of BANNED_PARAMS) {
+=== EXIT=0
+--- tren TEP TRANG: ba ten bi cam, dem theo bien tu (\\b) nen `salaryLabel` KHONG bi tinh la `salary`
+--- (0 dong khop nen ma thoat 1: dung ky vong)
+--- CMD: grep -cE '\b(salary|shiftType|jobType)\b' "app/(jobs)/viec-lam/page.tsx"
+0
+=== EXIT=1
+--- `limit` KHONG nam trong phep dem tren vi trang truyen `limit: PAGE_SIZE` cho service --
+--- day la hang cua server, khong phai tham so URL; xem dong duoi
+--- CMD: grep -n 'limit' "app/(jobs)/viec-lam/page.tsx"
+11: * DUY NHẤT tới DB trong tệp. Thứ tự khối import cũng theo đúng thứ tự đó — nhóm rate-limit trên nhóm
+43:import { evaluateRateLimits, RATE_LIMITED_MESSAGE } from '@/src/shared/security/rate-limit-guard';
+44:import { clientIpFromHeaders } from '@/src/shared/security/rate-limit-identity';
+45:import { RATE_LIMIT_RULES } from '@/src/shared/security/rate-limit-port';
+63:/** Nhãn log của cổng rate-limit, cùng dạng với `'GET /viec-lam/[slug]'` của trang chi tiết. */
+106:      listPublicJobProjection(tx, { q, area, shift, offset, limit: PAGE_SIZE }),
+=== EXIT=0
+--- CMD: grep -a 'AC-04' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.params.test.ts[2m > [22mRQ-03/AC-04 — mọi khoá ngoài bốn tên bị bỏ qua trong im lặng[2m > [22mparse trả về ĐÚNG bốn khoá, không mang theo khoá lạ nào
+ [32m✓[39m src/domains/job-board/public-listing.params.test.ts[2m > [22mRQ-03/AC-04 — mọi khoá ngoài bốn tên bị bỏ qua trong im lặng[2m > [22mbuildListingHref không bao giờ phát ra bốn tên bị cấm, kể cả khi input mang chúng
+ [32m✓[39m src/domains/job-board/public-listing.params.test.ts[2m > [22mRQ-03/AC-04 — mọi khoá ngoài bốn tên bị bỏ qua trong im lặng[2m > [22mhref luôn bắt đầu bằng LISTING_PATH, không phải URL tuyệt đối
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-03/AC-04 — trang chỉ đọc searchParams qua parser[2m > [22mmọi lần await searchParams đều đi qua parseListingSearchParams
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-03/AC-04 — trang chỉ đọc searchParams qua parser[2m > [22mkhông truy cập thuộc tính nào của searchParams, và không đọc bốn tên bị cấm
+=== EXIT=0

@@ -1,0 +1,18 @@
+=== AC-13 / RQ-11 -- trang thai rong: duong ve /viec-lam sach, loi nhac neu bo loc ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- CMD: grep -n 'resetHref\|resetLabel\|emptyMessage' "app/(jobs)/viec-lam/page.tsx"
+323:  const emptyMessage = beyondLastPage
+328:  const resetHref = beyondLastPage ? buildListingHref(params, 0) : LISTING_PATH;
+329:  const resetLabel = beyondLastPage ? 'Về trang đầu' : 'Xem toàn bộ việc làm';
+366:              {emptyMessage}
+370:                href={resetHref}
+373:                {resetLabel}
+=== EXIT=0
+--- LISTING_PATH la hang duy nhat mang duong /viec-lam, khong hard-code chuoi duong dan
+--- CMD: grep -n "LISTING_PATH = " "src/domains/job-board/public-listing.params.ts"
+30:export const LISTING_PATH = '/viec-lam';
+=== EXIT=0
+--- CMD: grep -a 'AC-13' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-11/AC-13 — trạng thái rỗng: đường về sạch, lời nhắc nêu bộ lọc[2m > [22mlink reset trỏ LISTING_PATH sạch khi chưa vượt trang cuối
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-11/AC-13 — trạng thái rỗng: đường về sạch, lời nhắc nêu bộ lọc[2m > [22mthông báo rỗng phân biệt ba tình huống chứ không dùng một câu chung
+=== EXIT=0

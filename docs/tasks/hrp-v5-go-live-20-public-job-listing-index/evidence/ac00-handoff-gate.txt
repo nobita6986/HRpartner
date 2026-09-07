@@ -1,0 +1,181 @@
+﻿HANDOFF SUBSTANCE GATE
+  subject: C:\CodeApp\HrP\.claude\worktrees\gl20\docs\tasks\hrp-v5-go-live-20-public-job-listing-index\HANDOFF.md (against C:\CodeApp\HrP\.claude\worktrees\gl20\docs\tasks\hrp-v5-go-live-20-public-job-listing-index\TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 27140 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.5 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 21 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 42 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 8 STEP appear in the execution trace.
+  [OK]   H-13 3 deviation(s) in section 2, 15 declared in section 5.
+  [OK]   H-14 section 7 records round 1.
+
+RESULT: PASS.
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+
+=== CMD: powershell -NoProfile -File .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-v5-go-live-20-public-job-listing-index/TASK.md -RepoRoot .
+=== GATE_EXIT=0
+
+=== PHU LUC / PHEP DO SAU KHI CONG CHAY -- vi sao con so pham vi la 63 chu khong phai 62 ===
+Luat noi cong chay CUOI CUNG. Nen chinh tep ac00-handoff-gate.txt nay sinh ra SAU khi
+step08-final-scope.txt da dem xong va chot con so 62. Stage no lai lam tap staged len 63.
+Day khong phai mot con so mau thuan, no la con so ke tiep trong cung mot chuoi thoi gian:
+44 (luc build) -> 56 (luc AC-20) -> 62 (phep do pham vi cuoi) -> 63 (sau khi stage evidence cua cong).
+Chuoi nay DUNG lai o 63: moi lan sua tiep chi doi BLOB cua path da co, khong sinh path moi.
+
+--- CMD: git diff --cached --name-only | wc -l
+63
+=== EXIT=0   (tap staged sau khi stage evidence cua cong -- con so CUOI)
+
+--- CMD: git diff --cached --name-only -- app src | wc -l
+0
+=== EXIT=0   (phan ma -- van dung 9)
+
+--- CMD: node ../evidence/step08-scope-subset.js | tail -6
+STAGED= 63 path (git diff --cached --name-only)
+OUTSIDE_ALLOWED= []
+BANNED_PREFIX_IN_STAGED app/(portal)/page.tsx = 0
+BANNED_PREFIX_IN_STAGED app/globals.css = 0
+BANNED_PREFIX_IN_STAGED src/domains/job-board/components/ = 0
+VERDICT= TAP CON, khong path nao ngoai muc 4.1
+=== EXIT=0   (tap 63 path VAN la tap con cua muc 4.1)
+
+=== SUA MOT PHEP DO CUA CHINH TOI, o ngay phia tren ===
+Dong 'git diff --cached --name-only -- app src | wc -l' o tren tra 0, va loi ghi chu canh no doan
+'van dung 9'. Ghi chu ay SAI. Con so 0 khong phai vi phan ma bien mat, ma vi lenh ay duoc chay tu
+trong thu muc evidence/: pathspec 'app' va 'src' cua git duoc giai TUONG DOI theo cwd, nen tu
+evidence/ chung khong khop path nao. Toi giu nguyen dong sai ay lam dau vet, va do lai tu goc
+worktree ngay duoi day. Bai hoc: pathspec cua git la tuong doi theo cwd, nen moi phep do pham vi
+phai chay tu goc worktree, dung tu thu muc evidence.
+
+--- CMD: (tu goc worktree) git diff --cached --name-only -- app src | wc -l
+9
+=== EXIT=0   (do lai cho dung tu goc worktree)
+
+--- CMD: (tu goc worktree) git diff --cached --name-only -- app src
+app/(jobs)/viec-lam/[slug]/page.tsx
+app/(jobs)/viec-lam/page.tsx
+app/components/GlobalNavbar.tsx
+src/domains/job-board/public-detail.static.test.ts
+src/domains/job-board/public-listing.labels.ts
+src/domains/job-board/public-listing.params.test.ts
+src/domains/job-board/public-listing.params.ts
+src/domains/job-board/public-listing.static.test.ts
+src/shared/security/public-surface-limiter.static.test.ts
+=== EXIT=0   (liet ke du chin path de con so tren khong phai tin loi toi)
+
+=== LAN CHAY THU HAI cua cong ban giao -- tren dung ban byte duoc giao ===
+Lan mot o dau tep chay TRUOC khi toi them hang cong ban giao vao muc 3, them LIM-16 vao muc 5 va sua bon con so o muc 1/4/6/7. Nen con so H-13 cua lan mot da CU. Lan nay chay SAU lan `git add` chot cuoi cung, output duoc NOI vao day chu khong ghi de, de phu luc 44->56->62->63 va khoi SUA MOT PHEP DO CUA CHINH TOI khong bi mat.
+HANDOFF SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-go-live-20-public-job-listing-index\HANDOFF.md (against docs/tasks/hrp-v5-go-live-20-public-job-listing-index/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 29172 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=False).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.5 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 21 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 43 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 8 STEP appear in the execution trace.
+  [OK]   H-13 3 deviation(s) in section 2, 16 declared in section 5.
+  [OK]   H-14 section 7 records round 1.
+
+RESULT: PASS.
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+=== CMD: powershell -NoProfile -File .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-v5-go-live-20-public-job-listing-index/TASK.md -RepoRoot .
+=== GATE_EXIT=0
+
+=== LAN CHAY THU BA -- duong dan TUYET DOI, va la lan nen tin ===
+Dong CMD duoi day KHONG duoc viet tay: no duoc noi tu dung nhung bien da truyen cho loi goi, nen no khong the lech khoi chuoi that su chay. Do la cach sua thang cho loi cua lan mot (xem LIM-17).
+HANDOFF SUBSTANCE GATE
+  subject: C:\CodeApp\HrP\.claude\worktrees\gl20\docs\tasks\hrp-v5-go-live-20-public-job-listing-index\HANDOFF.md (against C:\CodeApp\HrP\.claude\worktrees\gl20\docs\tasks\hrp-v5-go-live-20-public-job-listing-index\TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 31055 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=True).
+  [OK]   H-02 all 8 required sections present.
+  [OK]   H-03 spec version v1.5 matches TASK.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 21 AC have an evidence row.
+  [OK]   H-06 every AC row carries a re-runnable command and a result.
+  [OK]   H-07 43 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-12 all 8 STEP appear in the execution trace.
+  [OK]   H-13 3 deviation(s) in section 2, 17 declared in section 5.
+  [OK]   H-14 section 7 records round 1.
+
+RESULT: PASS.
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+=== CMD: powershell -NoProfile -File C:\CodeApp\HrP\.claude\worktrees\gl20\.ai-pipeline\scripts\verify-handoff.ps1 -TaskPath C:\CodeApp\HrP\.claude\worktrees\gl20\docs\tasks\hrp-v5-go-live-20-public-job-listing-index\TASK.md -RepoRoot C:\CodeApp\HrP\.claude\worktrees\gl20
+=== GATE_EXIT=0
+
+########## PHU LUC 2: vi sao lan HAI doc staged=False, doc thang tu ma kiem ##########
+Ba lan chay cung mot tep da stage ma H-01 tra hai gia tri khac nhau. Duoi day la co che, khong phai suy dien.
+
+--- CMD: powershell -NoProfile -Command "(Get-Content -LiteralPath .ai-pipeline\scripts\gate-lib.ps1)[81..91]"   (tuc dong 82..92)
+function Get-RelativeRepoPath {
+    param([string]$FullPath, [string]$RepoRoot)
+    $full = $FullPath
+    try { $full = (Resolve-Path -LiteralPath $FullPath).Path } catch { }
+    $root = $RepoRoot
+    if (-not $root.EndsWith('\')) { $root = $root + '\' }
+    if ($full.ToLower().StartsWith($root.ToLower())) {
+        return ($full.Substring($root.Length) -replace '\\', '/')
+    }
+    return ($full -replace '\\', '/')
+}
+=== DOC: ham chi CAT tien to khi $full bat dau bang $root. Voi -RepoRoot la dau cham thi $root = ".\", khong path tuyet doi nao bat dau bang no, nen ham tra ve NGUYEN duong dan tuyet doi da doi backslash thanh forward slash. Chuoi ay khong bao gio nam trong danh sach cua git diff --cached --name-only, nen $staged = $false. Voi -RepoRoot tuyet doi thi tien to cat dung va chuoi tra ve la docs/tasks/.../HANDOFF.md, khop danh sach, nen $staged = $true.
+=== HE QUA: staged=False cua lan hai la HIEN TUONG CUA DUNG CU, khong phai trang thai cua tep. Verdict khong doi: ca hai nhanh cua H-01 deu ghi OK, chi canh bao khi CA tracked va staged deu false.
+
+########## PHU LUC 2 / do doc lap trang thai index, khong qua cong ##########
+--- CMD: git status --porcelain -- docs/tasks/hrp-v5-go-live-20-public-job-listing-index/HANDOFF.md
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/HANDOFF.md
+=== DOC: cot mot A la them moi trong index, cot hai DAU CACH la worktree khong lech so voi index. Tuc ban ban giao DA STAGE va dang khop tung byte voi blob.
+
+--- CMD: git diff --cached --name-only   (dem tong)
+63
+=== DOC: van dung 63 -- ba lan chay cong chi doi BLOB cua tep evidence nay, khong sinh path moi.
+
+--- CMD: git diff --cached --name-only | loc rieng path ban giao
+1
+
+--- CMD: git diff --cached --name-only -- app src   (chay tu GOC worktree, xem LIM-16)
+9
+app/(jobs)/viec-lam/[slug]/page.tsx
+app/(jobs)/viec-lam/page.tsx
+app/components/GlobalNavbar.tsx
+src/domains/job-board/public-detail.static.test.ts
+src/domains/job-board/public-listing.labels.ts
+src/domains/job-board/public-listing.params.test.ts
+src/domains/job-board/public-listing.params.ts
+src/domains/job-board/public-listing.static.test.ts
+src/shared/security/public-surface-limiter.static.test.ts
+
+--- CMD: node docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step08-scope-subset.js
+TASK_SECTION= muc 4.1 cua docs/tasks/hrp-v5-go-live-20-public-job-listing-index/TASK.md
+ALLOWED= 10 hang rut tu bang muc 4.1:
+  [0] app/(jobs)/viec-lam/page.tsx
+  [1] src/domains/job-board/public-listing.params.ts
+  [2] src/domains/job-board/public-listing.labels.ts
+  [3] src/domains/job-board/public-listing.params.test.ts
+  [4] src/domains/job-board/public-listing.static.test.ts
+  [5] app/components/GlobalNavbar.tsx
+  [6] app/(jobs)/viec-lam/[slug]/page.tsx
+  [7] src/domains/job-board/public-detail.static.test.ts
+  [8] src/shared/security/public-surface-limiter.static.test.ts
+  [9] docs/tasks/hrp-v5-go-live-20-public-job-listing-index/
+STAGED= 63 path (git diff --cached --name-only)
+OUTSIDE_ALLOWED= []
+BANNED_PREFIX_IN_STAGED app/(portal)/page.tsx = 0
+BANNED_PREFIX_IN_STAGED app/globals.css = 0
+BANNED_PREFIX_IN_STAGED src/domains/job-board/components/ = 0
+VERDICT= TAP CON, khong path nao ngoai muc 4.1
+=== DOC: phep do dan xuat tu muc 4.1 cua TASK, chay lai tren tap staged CUOI CUNG.

@@ -1,0 +1,23 @@
+=== AC-17 / STEP-06 -- hai link quay lai tro /viec-lam, khong con href tro / ===
+--- CMD: grep -n "href=\"/" "app/(jobs)/viec-lam/[slug]/page.tsx"
+154:        href="/viec-lam"
+191:        href="/viec-lam"
+=== EXIT=0
+--- CMD: grep -c "href=\"/viec-lam\"" "app/(jobs)/viec-lam/[slug]/page.tsx"
+2
+=== EXIT=0
+--- CMD: grep -c "href=\"/\"" "app/(jobs)/viec-lam/[slug]/page.tsx"  (0 dong khop nen grep tra ma thoat 1, dung ky vong)
+0
+=== EXIT=1
+--- CMD: git diff --cached --numstat -- "app/(jobs)/viec-lam/[slug]/page.tsx"
+2	2	app/(jobs)/viec-lam/[slug]/page.tsx
+=== EXIT=0
+--- CMD: git diff --cached --numstat -- src/domains/job-board/public-detail.static.test.ts
+3	2	src/domains/job-board/public-detail.static.test.ts
+=== EXIT=0
+--- CMD: grep -c "^  it(" src/domains/job-board/public-detail.static.test.ts   (dem khoi it( neo dau dong, khong dem chuoi con)
+23
+=== EXIT=0
+--- CMD: grep -a "Tests" docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac17-barrier-green.txt   (so cua RUNNER, thu hieu cau truc; xem them ac17-barrier-red.txt cho cua so DO)
+[2m      Tests [22m [1m[32m23 passed[39m[22m[90m (23)[39m
+=== EXIT=0

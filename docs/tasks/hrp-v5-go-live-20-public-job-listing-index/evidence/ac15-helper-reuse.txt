@@ -1,0 +1,22 @@
+=== AC-15 / RQ-13 -- dung lai helper go-live-12, khong dinh dang ngay lan hai ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- CMD: grep -n 'public-detail.meta' "app/(jobs)/viec-lam/page.tsx"
+50:import { formatDeadlineDate, publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
+=== EXIT=0
+--- CMD: grep -c 'formatDeadlineDate(' "app/(jobs)/viec-lam/page.tsx"
+1
+=== EXIT=0
+--- 0 lan dinh dang ngay bang tay (0 dong => ma thoat 1, dung ky vong)
+--- CMD: grep -c 'toLocaleDateString\|Intl.DateTimeFormat' "app/(jobs)/viec-lam/page.tsx"
+0
+=== EXIT=1
+--- EV-10: ca hai ham da export san, nen day la IMPORT chu khong phai sao chep
+--- CMD: grep -n 'export function publicJobDetailPath\|export function formatDeadlineDate' 'src/domains/job-board/public-detail.meta.ts'
+34:export function publicJobDetailPath(slug: string): string {
+39:export function formatDeadlineDate(iso: string): string {
+=== EXIT=0
+--- phan "kieu khop" do bang lane typecheck, xem ac19-typecheck.txt
+--- CMD: grep -a 'AC-15' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-13/AC-15 — dùng lại helper của go-live-12, không định dạng ngày lần hai[2m > [22mimport publicJobDetailPath và formatDeadlineDate từ public-detail.meta
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-13/AC-15 — dùng lại helper của go-live-12, không định dạng ngày lần hai[2m > [22mkhông có hàm định dạng ngày thứ hai trong tệp
+=== EXIT=0

@@ -1,0 +1,20 @@
+=== AC-02 / RQ-01 -- cap co render, moi thu DUNG mot lan ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- CMD: grep -n 'export const dynamic\|export const runtime' "app/(jobs)/viec-lam/page.tsx"
+60:export const dynamic = 'force-dynamic';
+61:export const runtime = 'nodejs';
+=== EXIT=0
+--- CMD: grep -c "export const dynamic = 'force-dynamic'" "app/(jobs)/viec-lam/page.tsx"
+1
+=== EXIT=0
+--- CMD: grep -c "export const runtime = 'nodejs'" "app/(jobs)/viec-lam/page.tsx"
+1
+=== EXIT=0
+--- EV-03: doi chieu voi trang chi tiet da chung minh o go-live-12 (:62 va :63)
+--- CMD: grep -n 'export const dynamic\|export const runtime' "app/(jobs)/viec-lam/[slug]/page.tsx"
+62:export const dynamic = 'force-dynamic';
+63:export const runtime = 'nodejs';
+=== EXIT=0
+--- CMD: grep -a 'AC-02' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-01/AC-02 — cặp cờ render, mỗi thứ ĐÚNG một lần[2m > [22mkhai dynamic force-dynamic và runtime nodejs
+=== EXIT=0

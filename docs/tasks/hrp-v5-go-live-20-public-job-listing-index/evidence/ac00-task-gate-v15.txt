@@ -1,0 +1,100 @@
+TASK CONTRACT GATE
+  subject: C:\CodeApp\HrP\.claude\worktrees\gl20\docs\tasks\hrp-v5-go-live-20-public-job-listing-index\TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+  [OK]   A-05 17 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 4 referenced npm script(s) all exist.
+  [OK]   T-02 23 file:line reference(s) resolve.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-go-live-20-public-job-listing-index/**.
+  [OK]   T-05 all 21 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+
+RESULT: PASS. TASK contract is ready for execution.
+
+=== CMD: powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v5-go-live-20-public-job-listing-index/TASK.md -RepoRoot .
+=== SPEC: v1.5
+=== GATE_EXIT=0
+=== GHI CHU 1: cua so DO cua v1.4 (exit 2, hai loi A-05 + T-03) luu o ac00-task-gate-v14.txt, KHONG xoa.
+=== GHI CHU 2: day la lan chay THU BA tren v1.5. Hai lan truoc cung PASS/exit 0; tep bi ghi de nen chi con lan cuoi.
+=== GHI CHU 3: so dem cua T-02 la mot PHEP DO co y nghia. Hai lan dau v1.5 tra '23 file:line' -- y HET v1.4 -- du van muc 9 da dan sau vi tri dong trong chinh bo cong. Ket luan: T-02 chi nhan tham chieu co DUONG DAN, khong nhan ten tep tran. Nen lan nay moi tham chieu duoc viet lai thanh .ai-pipeline/scripts/verify-task.ps1:NNN de chinh cong kiem ho, thay vi nguoi doc phai tin loi toi. So dem tang la BANG CHUNG cho viec do.
+
+=== PHU LUC 1 / SUA GHI CHU 3 -- hai menh de cua chinh toi bi bac ===
+Ghi chu 3 doan (a) T-02 chi nhan tham chieu CO DUONG DAN, va (b) so dem se TANG sau khi qualify.
+Lan chay thu ba da qualify het moi tham chieu, va so dem VAN la 23. Ca hai menh de sai.
+Ly do thuc, doc tu ma kiem: regex o dong 159 chi nhan path bat dau bang mot trong muoi tien to.
+
+########## 1. DANH SACH TIEN TO cua T-02 -- doc thang tu ma kiem ##########
+
+--- CMD: sed -n '159p' .ai-pipeline/scripts/verify-task.ps1
+    foreach ($m in [regex]::Matches($plain, '(?<![\w\-\./\\])(?<path>(?:src|app|prisma|tests|scripts|docs|public|middleware|packages)[\w\-\./\[\]\(\)]*\.(?:tsx|ts|jsx|js|mjs|cjs|css|sql|prisma|json|md|ps1|html)):(?<line>\d{1,5})')) {
+=== EXIT=0
+
+--- CMD: sed -n '159p' .ai-pipeline/scripts/verify-task.ps1 | grep -c 'ai-pipeline'
+0
+=== EXIT=1   (0 = tien to nay KHONG co trong danh sach; grep -c tra exit 1 khi dem 0)
+
+DOI CHUNG cho phep dem tren -- cung dang grep, tren chuoi THAT SU co mat trong cung dong ay:
+
+--- CMD: sed -n '159p' .ai-pipeline/scripts/verify-task.ps1 | grep -c 'docs'
+1
+=== EXIT=0   (1 = 'docs' CO trong danh sach, nen phep dem tren khong bi mu)
+
+########## 2. SO DEM KHONG DOI -- phep do bac loi tien doan cua toi ##########
+v1.4 tra 23, va ca ba lan chay v1.5 cung tra 23, ke ca lan da qualify moi tham chieu.
+Canh mot cai bay tu chieu: chinh GHI CHU 3 o tren cung viet chuoi '23 file:line', nen mot phep dem
+tho tren ca tep se tra 2 va con 2 ay KHONG phai hai ban ghi cong. Nen do rieng tung dang:
+
+--- CMD: grep -c '^  \[OK\]   T-02 23 file:line' docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac00-task-gate-v15.txt
+1
+=== EXIT=0   (1 = so ban ghi CONG con lai trong tep; gate ghi de nen chi giu lan cuoi)
+
+--- CMD: grep -n '23 file:line' docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac00-task-gate-v15.txt
+grep: input file 'docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac00-task-gate-v15.txt' is also the output
+=== EXIT=2   (2 = grep TU CHOI khi tep vao trung tep ra -- giu lai de thay rang buoc, khong phai loi do)
+
+Dang tren that bai vi mot le co that: tep dang duoc GHI chinh la tep dang duoc DOC. Vong qua mot
+ong dan thi stdin la pipe chu khong con la tep ay, nen phep do chay duoc. Giu ca hai dang de nguoi
+audit thay day la rang buoc cua dung cu, khong phai mot phep do that bai bi bo qua.
+
+Va doc con so cua phep do duoi day cho dung: no KHONG tra 2. No tra SAU dong, vi moi cau toi viet
+ve chuoi ay lai sinh them mot lan xuat hien -- ke ca dong CMD cua chinh phep do nay. Do la ly do
+phep dem ket luan phai la phep do o tren, voi mau neo '^  [OK]   T-02 23': hai dau cach cong [OK]
+la HINH DANG ma van cua toi khong bao gio tao ra, nen no dem dung ban ghi cua cong va khong bao
+gio dem loi toi. Bai hoc: khi tep evidence noi ve chinh minh, hay neo vao hinh dang ma nguoi viet
+khong the phat ra, dung dem chuoi tran.
+
+--- CMD: cat docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac00-task-gate-v15.txt | grep -n '23 file:line'
+8:  [OK]   T-02 23 file:line reference(s) resolve.
+21:=== GHI CHU 3: so dem cua T-02 la mot PHEP DO co y nghia. Hai lan dau v1.5 tra '23 file:line' -- y HET v1.4 -- du van muc 9 da dan sau vi tri dong trong chinh bo cong. Ket luan: T-02 chi nhan tham chieu co DUONG DAN, khong nhan ten tep tran. Nen lan nay moi tham chieu duoc viet lai thanh .ai-pipeline/scripts/verify-task.ps1:NNN de chinh cong kiem ho, thay vi nguoi doc phai tin loi toi. So dem tang la BANG CHUNG cho viec do.
+46:Canh mot cai bay tu chieu: chinh GHI CHU 3 o tren cung viet chuoi '23 file:line', nen mot phep dem
+49:--- CMD: grep -c '^  \[OK\]   T-02 23 file:line' docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac00-task-gate-v15.txt
+53:--- CMD: grep -n '23 file:line' docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac00-task-gate-v15.txt
+68:--- CMD: cat docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac00-task-gate-v15.txt | grep -n '23 file:line'
+=== EXIT=0   (sau dong, va so nay se TANG neu ai them mot cau nua ve chuoi ay -- xem doan ngay tren)
+
+########## 3. TU DO BA DONG DUOC TRICH -- vi cong KHONG kiem ho ##########
+Muc 6.1 dan :115 va :117; muc 9 cong muc 10 dan :115, :117 va :185. Ba dong nguyen van:
+
+--- CMD: sed -n '115p' .ai-pipeline/scripts/verify-task.ps1
+    $stepToken = "(?:STEP-\d{2,}(?:\.\.\d{1,})?|all)"
+=== EXIT=0
+
+--- CMD: sed -n '117p' .ai-pipeline/scripts/verify-task.ps1
+    $noteToken = "(?:\s*\([^|)]*\))?"
+=== EXIT=0
+
+--- CMD: sed -n '185p' .ai-pipeline/scripts/verify-task.ps1
+    # go-live-15 AC-10 and go-live-09 PLN-14: bare `git diff` prints nothing
+=== EXIT=0
+
+--- CMD: wc -l < .ai-pipeline/scripts/verify-task.ps1
+302
+=== EXIT=0   (tong dong -- chung minh ba so tren khong vuot cuoi tep)
+
+########## 4. GIOI HAN, ghi ro thay vi de nguoi audit tu phat hien ##########
+LIM: tham chieu `.ai-pipeline/**:NNN` trong TASK.md nam ngoai vung T-02 quet, nen chung KHONG
+duoc cong xac nhan. Muc 3 o tren la phep do thay the. Toi KHONG sua regex do de mo rong vung
+quet: bo cong la tai san cua luong khac va muc 4.2 cam cham -- noi van pham dung cu de hop dong
+cua minh xanh hon la dung cai loi ma R-07 cong R-08 viet ra de chong.

@@ -1,0 +1,21 @@
+=== AC-07 / RQ-06 -- offset 0 KHONG duoc ghi vao URL, nen trang mot la DUNG mot URL ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- CMD: grep -n 'offset' "src/domains/job-board/public-listing.params.ts"
+11: *   - KHÔNG ghi `offset` khi nó bằng 0, nên trang một của một bộ lọc là ĐÚNG MỘT chuỗi (`RQ-06`).
+12: *     Thiếu luật này thì `/viec-lam?q=a` và `/viec-lam?q=a&offset=0` là hai URL cho cùng một nội
+14: *   - CHỈ bốn tên `q`, `area`, `shift`, `offset` được đọc và được phát ra. Mọi tên khác bị loại
+18: * Ba xử lý `offset` KHÁC nhau, đừng gộp: âm hoặc không phải số thì KẸP về 0 (`RQ-02`); không chia
+71:  offset: number;
+78:    offset: cleanOffset(raw.offset),
+87: * `offsetOverride` là cách hai nút Trước/Sau đổi trang mà giữ nguyên bộ lọc — phía gọi truyền
+88: * `params.offset ± PAGE_SIZE`, không tự ghép chuỗi.
+90:export function buildListingHref(params: ListingParams, offsetOverride?: number): string {
+91:  const offset = offsetOverride ?? params.offset;
+97:  if (offset > 0) search.set('offset', String(offset));
+111:    params.offset === 0
+=== EXIT=0
+--- CMD: grep -a 'AC-07' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.params.test.ts[2m > [22mRQ-06/AC-07 — trang một của một bộ lọc là ĐÚNG MỘT URL[2m > [22moffset bằng 0 thì tên tham số offset không xuất hiện
+ [32m✓[39m src/domains/job-board/public-listing.params.test.ts[2m > [22mRQ-06/AC-07 — trang một của một bộ lọc là ĐÚNG MỘT URL[2m > [22moffset ghi đè bằng 0 cũng không ghi tham số, dù params đang ở trang khác
+ [32m✓[39m src/domains/job-board/public-listing.params.test.ts[2m > [22mRQ-06/AC-07 — trang một của một bộ lọc là ĐÚNG MỘT URL[2m > [22mchỉ ghi tham số có giá trị: bộ lọc vắng thì không có khoá rỗng nào
+=== EXIT=0

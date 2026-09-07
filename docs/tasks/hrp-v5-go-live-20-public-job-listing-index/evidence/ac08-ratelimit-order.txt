@@ -1,0 +1,18 @@
+=== AC-08 / RQ-07 -- cong rate-limit dung TRUOC moi duong toi DB ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- so dong chung minh THU TU: evaluateRateLimits truoc, nhanh tra ve som, roi moi withPublicDb
+--- CMD: grep -n 'evaluateRateLimits\|outcome.kind\|withPublicDb' "app/(jobs)/viec-lam/page.tsx"
+9: * Thứ tự đọc là phần quan trọng nhất của tệp này: cổng `evaluateRateLimits` chạy TRƯỚC mọi đường
+10: * tới DB (`RQ-07`). Nó nằm trong `loadListing`, phía trên `withPublicDb`, và `loadListing` là đường
+43:import { evaluateRateLimits, RATE_LIMITED_MESSAGE } from '@/src/shared/security/rate-limit-guard';
+47:import { withPublicDb } from '@/src/shared/auth/with-public-db';
+94:    const outcome = await evaluateRateLimits({
+101:    if (outcome.kind !== 'allowed') return { kind: 'throttled' };
+105:    const data = await withPublicDb(getPrisma(), (tx) =>
+=== EXIT=0
+--- hang rao khong dem ma so CHI SO KY TU; xem them step07-barrier-mutation-red.txt: dao thu tu
+--- hai cau lenh trong ma nguon lam dung hai khang dinh nay DO, khong phai mot khang dinh nao khac
+--- CMD: grep -a 'AC-08' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-07/AC-08 — cổng rate-limit đứng TRƯỚC mọi đường tới DB[2m > [22mchỉ số ký tự của evaluateRateLimits nhỏ hơn của withPublicDb
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-07/AC-08 — cổng rate-limit đứng TRƯỚC mọi đường tới DB[2m > [22mcó nhánh trả về sớm khi outcome.kind khác allowed, và nhánh ấy nằm TRƯỚC lời gọi DB
+=== EXIT=0

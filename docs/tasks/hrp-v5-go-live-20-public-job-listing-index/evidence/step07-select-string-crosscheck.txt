@@ -1,0 +1,61 @@
+=== STEP-07 / doi chieu dung cu: chinh `Select-String` va `Test-Path` ma muc 6 goi ten ===
+Evidence per-AC dung `grep` de giu MOT duong ma hoa UTF-8 va de co ma thoat tien trinh that.
+Tep nay chay lai cac phep dem chinh bang dung cu hop dong goi ten, de chung minh HAI dung cu
+cho CUNG con so. Cot MATCHES la $m.Count cua Select-String tren ban Get-Content -Encoding UTF8.
+
+--- CMD: Test-Path 'app/(jobs)/viec-lam/page.tsx'
+RESULT= True
+
+--- CMD: Get-Content -Encoding UTF8 -LiteralPath $page | Select-String -SimpleMatch -Pattern 'use client'
+MATCHES= 0
+--- CMD: Get-Content -Encoding UTF8 -LiteralPath $page | Select-String -SimpleMatch -Pattern 'export const dynamic = 'force-dynamic''
+MATCHES= 1
+--- CMD: Get-Content -Encoding UTF8 -LiteralPath $page | Select-String -SimpleMatch -Pattern 'export const runtime = 'nodejs''
+MATCHES= 1
+--- CMD: Get-Content -Encoding UTF8 -LiteralPath $page | Select-String -SimpleMatch -Pattern 'withPublicDb('
+MATCHES= 1
+--- CMD: Get-Content -Encoding UTF8 -LiteralPath $page | Select-String -SimpleMatch -Pattern 'listPublicJobProjection('
+MATCHES= 1
+--- CMD: Get-Content -Encoding UTF8 -LiteralPath $page | Select-String -SimpleMatch -Pattern 'getPrisma()'
+MATCHES= 1
+--- CMD: Get-Content -Encoding UTF8 -LiteralPath $page | Select-String -SimpleMatch -Pattern '/api/jobs'
+MATCHES= 0
+--- CMD: Get-Content -Encoding UTF8 -LiteralPath $page | Select-String -SimpleMatch -Pattern 'overview'
+MATCHES= 0
+--- CMD: Get-Content -Encoding UTF8 -LiteralPath $page | Select-String -SimpleMatch -Pattern 'min-h-11'
+MATCHES= 9
+--- CMD: Get-Content -Encoding UTF8 -LiteralPath $page | Select-String -SimpleMatch -Pattern 'hrp-focus'
+MATCHES= 9
+--- CMD: Get-Content -Encoding UTF8 -LiteralPath $page | Select-String -SimpleMatch -Pattern 'htmlFor'
+MATCHES= 3
+--- CMD: Get-Content -Encoding UTF8 -LiteralPath $page | Select-String -SimpleMatch -Pattern 'color: 'var(--color-primary)''
+MATCHES= 0
+--- CMD: Get-Content -Encoding UTF8 -LiteralPath $page | Select-String -SimpleMatch -Pattern 'var(--color-primary-dark)'
+MATCHES= 2
+
+--- DOI CHIEU VOI CON SO CUA `grep` (lay tu chinh cac tep evidence per-AC trong cung thu muc)
+    pattern                                | Select-String | grep -c | tep evidence per-AC
+    'use client'                           |             0 |       0 | ac01-server-only.txt
+    'export const dynamic = force-dynamic'  |             1 |       1 | ac02-render-flags.txt
+    'export const runtime = nodejs'         |             1 |       1 | ac02-render-flags.txt
+    'withPublicDb('                        |             1 |       1 | ac10-db-path.txt
+    'listPublicJobProjection('             |             1 |       1 | ac10-db-path.txt
+    'getPrisma()'                          |             1 |       1 | ac10-db-path.txt
+    '/api/jobs'                            |             0 |       0 | ac10-db-path.txt
+    'overview'                             |             0 |       0 | ac12-total-not-overview.txt
+    'min-h-11'                             |             9 |       9 | ac18-a11y.txt
+    'hrp-focus'                            |             9 |       9 | ac18-a11y.txt
+    'htmlFor'                              |             3 |       3 | ac18-a11y.txt
+    'color: var(--color-primary)'          |             0 |       0 | ac18-a11y.txt
+Ket luan: 12/12 con so TRUNG KHIT. Nen viec evidence per-AC dung `grep` thay `Select-String` khong
+doi mot con so nao -- no chi doi duong ma hoa va cho toi mot MA THOAT TIEN TRINH de ghi.
+
+--- HAI CAVEAT phai noi ro, khong duoc de nguoi doc tu suy:
+  (1) CA HAI dung cu deu dem SO DONG co khop, khong phai so LAN khop: `Select-String` nhan tung dong
+      tu pipeline, `grep -c` cung dem dong. O tep nay hai cach cho cung ket qua vi khong dong nao
+      chua hai phan tu -- nhung do la mot su that ve TEP NAY, khong phai mot tinh chat cua dung cu.
+      Hang rao trong lane moi la thu dem theo SO LAN KHOP (regex tren toan van ban), va do la con so
+      dung de ghim AC-18; xem lai bai hoc "dem chuoi con khac dem token" cua go-live-16.
+  (2) `Select-String` la cmdlet nen KHONG co ma thoat tien trinh: `MATCHES= 0` o day la mot con so toi
+      tu in ra, khong phai mot ma thoat do he dieu hanh tra ve. Do la ly do goc khien duong evidence
+      chinh nam ben `grep`, cho o "phai bang 0" co mot bang chung khong do toi tu khai.

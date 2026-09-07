@@ -145,9 +145,10 @@ describe('RQ-06/RQ-08 — bề mặt hiển thị đúng phạm vi DTO công kha
     expect(code).not.toMatch(/salary|luong|lương|\bVND\b/i);
   });
 
-  it('RQ-08: có đúng một đường quay lại danh sách việc làm ở `/`', () => {
+  it('RQ-08: có đúng hai đường quay lại danh sách việc làm ở `/viec-lam`', () => {
     expect(page).toContain('Quay lại danh sách việc làm');
-    expect(page).toMatch(/href="\/"/);
+    expect(page.match(/href="\/viec-lam"/g)).toHaveLength(2);
+    expect(page).not.toMatch(/href="\/"/);
   });
 });
 

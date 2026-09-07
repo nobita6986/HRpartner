@@ -1,0 +1,23 @@
+=== AC-14 / RQ-12 -- moi chuoi nhan cua module nhan co mat Y HET ben trang chu ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- phep do DAN XUAT: rut TAT CA chuoi nghia ra khoi module nhan roi doi chieu tung byte voi
+--- trang chu. Khong liet ke tay -- do dung la diem mu cua TEXT_PAIRS o go-live-08: mot bang chi
+--- chua cap do chinh tac gia vua them thi luon xanh.
+--- CMD: node "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-label-parity.js"
+LABELS_FILE= src/domains/job-board/public-listing.labels.ts
+HOME_FILE=   app/(portal)/page.tsx
+count= 7 (san toi thieu cua hang rao: 6)
+  [0] ' · '  -> home.includes = true
+  [1] ' · '  -> home.includes = true
+  [2] 'vi-VN'  -> home.includes = true
+  [3] 'Lương thương lượng'  -> home.includes = true
+  [4] `${shown.join(' · ')} +${rest}`  -> home.includes = true
+  [5] `${from} – ${VND_FORMAT.format(max)} đ/giờ`  -> home.includes = true
+  [6] `${from} đ/giờ`  -> home.includes = true
+missing= []
+=== EXIT=0
+--- hang rao trong lane khang dinh cung mot dieu, cong san toi thieu 6 chuoi de chan xanh RONG
+--- CMD: grep -a 'AC-14' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-12/AC-14 — nhãn của /viec-lam nói y hệt nhãn trang chủ[2m > [22mmọi chuỗi nghĩa trong module nhãn có mặt TỪNG BYTE bên trang chủ
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-12/AC-14 — nhãn của /viec-lam nói y hệt nhãn trang chủ[2m > [22mchuỗi lương canonical là Lương thương lượng ở CẢ hai tệp, không phải 0 đ/giờ
+=== EXIT=0

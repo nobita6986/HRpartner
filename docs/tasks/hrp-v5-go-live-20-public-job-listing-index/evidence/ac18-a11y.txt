@@ -1,0 +1,37 @@
+=== AC-18 / RQ-16 -- label gan htmlFor, min-h-11, lop focus, 0 lan color primary tran ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- CMD: grep -n 'htmlFor' "app/(jobs)/viec-lam/page.tsx"
+169:          htmlFor="listing-q"
+191:          htmlFor="listing-area"
+218:          htmlFor="listing-shift"
+=== EXIT=0
+--- CMD: grep -n 'id="listing-' "app/(jobs)/viec-lam/page.tsx"
+176:          id="listing-q"
+198:          id="listing-area"
+225:          id="listing-shift"
+=== EXIT=0
+--- ba con so duoi day PHAI bang nhau; hang rao dem theo SO LAN KHOP (structure-aware), con grep -c
+--- dem theo SO DONG -- o tep nay hai cach cho cung 9 vi khong dong nao chua hai phan tu
+--- CMD: grep -cE '<(Link|button|input|select)\b' "app/(jobs)/viec-lam/page.tsx"
+9
+=== EXIT=0
+--- CMD: grep -c 'min-h-11' "app/(jobs)/viec-lam/page.tsx"
+9
+=== EXIT=0
+--- CMD: grep -c 'hrp-focus' "app/(jobs)/viec-lam/page.tsx"
+9
+=== EXIT=0
+--- EV-20: 0 lan color: var(--color-primary) tran (0 dong => ma thoat 1, dung ky vong)
+--- CMD: grep -c "color: 'var(--color-primary)'" "app/(jobs)/viec-lam/page.tsx"
+0
+=== EXIT=1
+--- thay vao do dung --color-primary-dark, dung loi da do o go-live-15
+--- CMD: grep -n 'var(--color-primary-dark)' "app/(jobs)/viec-lam/page.tsx"
+270:            style={{ color: 'var(--color-primary-dark)' }}
+281:      <p className="text-lg font-bold" style={{ color: 'var(--color-primary-dark)' }}>
+=== EXIT=0
+--- CMD: grep -a 'AC-18' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-16/AC-18 — dùng được bằng bàn phím và bằng ngón tay[2m > [22mmỗi input/select có đúng một label gắn bằng htmlFor, khớp theo id
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-16/AC-18 — dùng được bằng bàn phím và bằng ngón tay[2m > [22mMỌI phần tử tương tác mang cả min-h-11 lẫn lớp focus thấy được
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-16/AC-18 — dùng được bằng bàn phím và bằng ngón tay[2m > [22m0 lần color: var(--color-primary) trần — go-live-15 đo cặp đó ở 3.153:1
+=== EXIT=0

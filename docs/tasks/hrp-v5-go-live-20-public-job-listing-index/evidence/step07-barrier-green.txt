@@ -1,0 +1,44 @@
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts src/domains/job-board/public-listing.static.test.ts --reporter=verbose
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP/.claude/worktrees/gl20[39m
+
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-01/AC-01 — trang là Server Component, không có chỉ thị client[2m > [22mkhông chứa chỉ thị use client ở bất kỳ dạng nào, kể cả trong chú thích
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-01/AC-01 — trang là Server Component, không có chỉ thị client[2m > [22mkhông import hook trạng thái của React, thứ chỉ chạy ở client
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-01/AC-02 — cặp cờ render, mỗi thứ ĐÚNG một lần[2m > [22mkhai dynamic force-dynamic và runtime nodejs
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-07/AC-08 — cổng rate-limit đứng TRƯỚC mọi đường tới DB[2m > [22mchỉ số ký tự của evaluateRateLimits nhỏ hơn của withPublicDb
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-07/AC-08 — cổng rate-limit đứng TRƯỚC mọi đường tới DB[2m > [22mcó nhánh trả về sớm khi outcome.kind khác allowed, và nhánh ấy nằm TRƯỚC lời gọi DB
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-07/AC-09 — nhánh bị chặn không rò một giá trị request nào[2m > [22mThrottledNotice không nhận tham số nào
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-07/AC-09 — nhánh bị chặn không rò một giá trị request nào[2m > [22mmọi nội suy trong nhánh ấy là hằng module, không có giá trị nào của request
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-08/AC-10 — đúng MỘT đường tới DB, không có đường thứ hai[2m > [22mmột lời gọi withPublicDb, một lời gọi listPublicJobProjection
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-08/AC-10 — đúng MỘT đường tới DB, không có đường thứ hai[2m > [22mgetPrisma() chỉ xuất hiện làm đối số của withPublicDb
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-08/AC-10 — đúng MỘT đường tới DB, không có đường thứ hai[2m > [22mkhông tự gọi API nội bộ và không fetch, kể cả trong chú thích
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-03/AC-04 — trang chỉ đọc searchParams qua parser[2m > [22mmọi lần await searchParams đều đi qua parseListingSearchParams
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-03/AC-04 — trang chỉ đọc searchParams qua parser[2m > [22mkhông truy cập thuộc tính nào của searchParams, và không đọc bốn tên bị cấm
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-04/AC-05 — option select đến từ facets, không từ mảng hằng[2m > [22mcả hai select map trên facets của chính kết quả truy vấn
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-04/AC-05 — option select đến từ facets, không từ mảng hằng[2m > [22mtệp KHÔNG khai một mảng hằng nào — không có danh sách vùng/ca/ngành/loại việc dán tay
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-09/AC-11 — canonical sạch, robots theo listingIsIndexable[2m > [22mcanonical LUÔN là /viec-lam sạch, và chỉ có MỘT canonical trong tệp
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-09/AC-11 — canonical sạch, robots theo listingIsIndexable[2m > [22mrobots cho index CHỈ khi listingIsIndexable trả true
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-09/AC-11 — canonical sạch, robots theo listingIsIndexable[2m > [22mgenerateMetadata KHÔNG gọi loader, nên một lượt render tiêu đúng một suất ngân sách
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-10/AC-12 — đếm bằng total, không có chữ overview nào[2m > [22mkhông xuất hiện chuỗi overview, kể cả trong chú thích
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-10/AC-12 — đếm bằng total, không có chữ overview nào[2m > [22mnhánh rỗng và nhãn đếm đọc total của chính kết quả
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-11/AC-13 — trạng thái rỗng: đường về sạch, lời nhắc nêu bộ lọc[2m > [22mlink reset trỏ LISTING_PATH sạch khi chưa vượt trang cuối
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-11/AC-13 — trạng thái rỗng: đường về sạch, lời nhắc nêu bộ lọc[2m > [22mthông báo rỗng phân biệt ba tình huống chứ không dùng một câu chung
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-13/AC-15 — dùng lại helper của go-live-12, không định dạng ngày lần hai[2m > [22mimport publicJobDetailPath và formatDeadlineDate từ public-detail.meta
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-13/AC-15 — dùng lại helper của go-live-12, không định dạng ngày lần hai[2m > [22mkhông có hàm định dạng ngày thứ hai trong tệp
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-12/AC-14 — nhãn của /viec-lam nói y hệt nhãn trang chủ[2m > [22mmọi chuỗi nghĩa trong module nhãn có mặt TỪNG BYTE bên trang chủ
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-12/AC-14 — nhãn của /viec-lam nói y hệt nhãn trang chủ[2m > [22mchuỗi lương canonical là Lương thương lượng ở CẢ hai tệp, không phải 0 đ/giờ
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-16/AC-18 — dùng được bằng bàn phím và bằng ngón tay[2m > [22mmỗi input/select có đúng một label gắn bằng htmlFor, khớp theo id
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-16/AC-18 — dùng được bằng bàn phím và bằng ngón tay[2m > [22mMỌI phần tử tương tác mang cả min-h-11 lẫn lớp focus thấy được
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-16/AC-18 — dùng được bằng bàn phím và bằng ngón tay[2m > [22m0 lần color: var(--color-primary) trần — go-live-15 đo cặp đó ở 3.153:1
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-15 — trang chi tiết quay lại đúng danh sách, không về trang chủ[2m > [22mhai href quay lại trỏ /viec-lam, và không còn href nào trỏ /
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m29 passed[39m[22m[90m (29)[39m
+[2m   Start at [22m 00:31:37
+[2m   Duration [22m 270ms[2m (transform 35ms, setup 0ms, collect 40ms, tests 9ms, environment 0ms, prepare 62ms)[22m
+
+=== EXIT=0

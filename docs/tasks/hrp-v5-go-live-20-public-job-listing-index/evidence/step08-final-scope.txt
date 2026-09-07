@@ -1,0 +1,105 @@
+=== PHAM VI CUOI CUNG -- go-live-20 round 1 ===
+Chay sau khi HANDOFF.md viet xong. Quy uoc: grep -c tra exit 1 khi dem 0 -- moi cho "phai bang 0"
+co exit 1 la KET QUA MONG DOI, va di kem mot phep do doi chung tren chuoi that su co mat.
+
+########## 0. TRANG THAI TRUOC LAN ADD CHOT ##########
+
+--- CMD: git status --porcelain -- docs/tasks/hrp-v5-go-live-20-public-job-listing-index | grep -c '^??'
+6
+=== EXIT=0   (so tep con untracked trong slug truoc khi add)
+
+--- CMD: git diff --cached --name-only | wc -l
+56
+=== EXIT=0   (tap staged TRUOC lan add chot)
+
+########## 1. LAN ADD CHOT, pham vi dung mot thu muc slug ##########
+
+--- CMD: git add -- docs/tasks/hrp-v5-go-live-20-public-job-listing-index
+warning: in the working copy of 'docs/tasks/hrp-v5-go-live-20-public-job-listing-index/TASK.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/tasks/hrp-v5-go-live-20-public-job-listing-index/HANDOFF.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac00-task-gate-v14.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac00-task-gate-v15.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step08-append-gate-t02-blindspot.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step08-final-scope.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step08-final-scope.txt', LF will be replaced by CRLF the next time Git touches it
+=== EXIT=0
+
+--- CMD: git diff --cached --name-only | wc -l
+62
+=== EXIT=0   (tap staged SAU lan add chot -- day la con so CUOI)
+
+--- CMD: git diff --cached --name-only -- docs/tasks/hrp-v5-go-live-20-public-job-listing-index | wc -l
+53
+=== EXIT=0   (rieng phan tai lieu trong slug)
+
+--- CMD: git diff --cached --name-only -- app src | wc -l
+9
+=== EXIT=0   (rieng phan ma -- phai giu nguyen 9)
+
+########## 2. HANDOFF.md phai duoc git giu -- H-01 ##########
+
+--- CMD: git status --porcelain -- docs/tasks/hrp-v5-go-live-20-public-job-listing-index/HANDOFF.md
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/HANDOFF.md
+=== EXIT=0
+
+--- CMD: git diff --cached --name-only | grep -c '^docs/tasks/hrp-v5-go-live-20-public-job-listing-index/HANDOFF\.md$'
+1
+=== EXIT=0   (1 = ban ban giao da nam trong index, khong con mot buffer editor rong nao xoa duoc no)
+
+########## 3. TAP LON HON VAN LA TAP CON cua muc 4.1 ##########
+Chay lai chinh phep do dan xuat cua AC-20 tren tap staged MOI, khong sua mot dong nao trong script.
+
+--- CMD: node docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step08-scope-subset.js
+TASK_SECTION= muc 4.1 cua docs/tasks/hrp-v5-go-live-20-public-job-listing-index/TASK.md
+ALLOWED= 10 hang rut tu bang muc 4.1:
+  [0] app/(jobs)/viec-lam/page.tsx
+  [1] src/domains/job-board/public-listing.params.ts
+  [2] src/domains/job-board/public-listing.labels.ts
+  [3] src/domains/job-board/public-listing.params.test.ts
+  [4] src/domains/job-board/public-listing.static.test.ts
+  [5] app/components/GlobalNavbar.tsx
+  [6] app/(jobs)/viec-lam/[slug]/page.tsx
+  [7] src/domains/job-board/public-detail.static.test.ts
+  [8] src/shared/security/public-surface-limiter.static.test.ts
+  [9] docs/tasks/hrp-v5-go-live-20-public-job-listing-index/
+STAGED= 62 path (git diff --cached --name-only)
+OUTSIDE_ALLOWED= []
+BANNED_PREFIX_IN_STAGED app/(portal)/page.tsx = 0
+BANNED_PREFIX_IN_STAGED app/globals.css = 0
+BANNED_PREFIX_IN_STAGED src/domains/job-board/components/ = 0
+VERDICT= TAP CON, khong path nao ngoai muc 4.1
+=== EXIT=0
+
+########## 4. BA TIEN TO CUA ui-01 VAN PHAI VANG MAT ##########
+
+--- CMD: git diff --cached --name-only | grep -c '^app/(portal)/page\.tsx$'
+0
+=== EXIT=1   (phai 0)
+
+--- CMD: git diff --cached --name-only | grep -c '^app/globals\.css$'
+0
+=== EXIT=1   (phai 0)
+
+--- CMD: git diff --cached --name-only | grep -c '^src/domains/job-board/components/'
+0
+=== EXIT=1   (phai 0)
+
+DOI CHUNG cho ba phep dem tren -- cung dang grep, tren chuoi THAT SU co mat trong tap staged:
+
+--- CMD: git diff --cached --name-only | grep -c '^app/(jobs)/viec-lam/page\.tsx$'
+1
+=== EXIT=0   (1 = phep dem khong bi mu)
+
+########## 5. CON LAI GI NGOAI INDEX ##########
+
+--- CMD: git status --porcelain -- docs/tasks/hrp-v5-go-live-20-public-job-listing-index | grep -c '^??'
+0
+=== EXIT=1   (0 = khong con tep nao trong slug bi bo ngoai git)
+
+--- CMD: git status --porcelain -- docs/tasks/hrp-v5-go-live-20-public-job-listing-index | grep '^AM' || echo '(khong co dong AM)'
+AM docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step08-final-scope.txt
+=== EXIT=0   (dong AM neu co la chinh hai tep step08-final-scope.* -- xem docblock)
+
+--- CMD: git status --porcelain | grep -c '^.[MD]'
+1
+=== EXIT=0   (path dirty ngoai index tren toan cay)

@@ -1,0 +1,41 @@
+=== STEP-07 / phep thu DOT BIEN -- chung minh hang rao CO the do ===
+Ly do phai co tep nay: hang rao xanh ngay lan chay dau, tren ma nguon do CHINH toi viet. Do dung la
+hinh dang cua diem mu `TEXT_PAIRS` o go-live-08 (mot bang chi liet ke cai tac gia vua them thi luon
+xanh). Nen truoc khi khai XANH, toi doi ba cho trong ma nguon roi chay lai, va DU DOAN truoc dung
+nam khang dinh nao phai do:
+
+  DOT BIEN A (`app/(jobs)/viec-lam/page.tsx`): dao thu tu -- dua `withPublicDb(...)` len TRUOC
+    `evaluateRateLimits(...)`. Du doan: hai khang dinh cua AC-08 do.
+  DOT BIEN B (cung tep): them `const MUTANT_AREAS = ['Ha Noi'];`. Du doan: khang dinh "tep KHONG khai
+    mang hang nao" cua AC-05 do.
+  DOT BIEN C (`src/domains/job-board/public-listing.labels.ts`): doi `'Luong thuong luong'` thanh
+    `'Thuong luong'`. Du doan: hai khang dinh cua AC-14 do.
+
+Ket qua: DUNG nam khang dinh do, khong hon khong kem -- tuc hang rao cam dung nhung cho no noi la no
+cam, va KHONG bi cot cheo sang cho khac (24 khang dinh con lai van xanh duoi ca ba dot bien).
+
+Sau do ba dot bien duoc HOAN NGUYEN, va phep kiem hoan nguyen la
+`git diff --numstat` cho hai tep tra ve RONG (worktree trung khit index) -- xem
+step07-mutation-revert.txt. Luu y: khong dung `wc -c` de so worktree voi blob, vi `core.autocrlf`
+o cay nay doi LF thanh CRLF khi git cham tep.
+
+--- CMD: npm run test:unit -- src/domains/job-board/public-listing.static.test.ts   (tren ma nguon DA DOT BIEN)
+[31m   [31m×[31m RQ-07/AC-08 — cổng rate-limit đứng TRƯỚC mọi đường tới DB[2m > [22mchỉ số ký tự của evaluateRateLimits nhỏ hơn của withPublicDb[90m 6[2mms[22m[31m[39m
+[31m     → expected 2327 to be less than 2179[39m
+[31m   [31m×[31m RQ-07/AC-08 — cổng rate-limit đứng TRƯỚC mọi đường tới DB[2m > [22mcó nhánh trả về sớm khi outcome.kind khác allowed, và nhánh ấy nằm TRƯỚC lời gọi DB[90m 1[2mms[22m[31m[39m
+[31m     → expected 2576 to be less than 2179[39m
+[31m   [31m×[31m RQ-04/AC-05 — option select đến từ facets, không từ mảng hằng[2m > [22mtệp KHÔNG khai một mảng hằng nào — không có danh sách vùng/ca/ngành/loại việc dán tay[90m 2[2mms[22m[31m[39m
+[31m     → expected 1 to be +0 // Object.is equality[39m
+[31m   [31m×[31m RQ-12/AC-14 — nhãn của /viec-lam nói y hệt nhãn trang chủ[2m > [22mmọi chuỗi nghĩa trong module nhãn có mặt TỪNG BYTE bên trang chủ[90m 2[2mms[22m[31m[39m
+[31m     → expected [ '\'Thương lượng\'' ] to deeply equal [][39m
+[31m   [31m×[31m RQ-12/AC-14 — nhãn của /viec-lam nói y hệt nhãn trang chủ[2m > [22mchuỗi lương canonical là Lương thương lượng ở CẢ hai tệp, không phải 0 đ/giờ[90m 3[2mms[22m[31m[39m
+[31m     → expected '\n\n\nconst CARD_SUMMARY_LIMIT = 3;\n…' to contain '\'Lương thương lượng\''[39m
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 5 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+[31m[1mAssertionError[22m: expected 2327 to be less than 2179[39m
+[31m[1mAssertionError[22m: expected 2576 to be less than 2179[39m
+[31m[1mAssertionError[22m: expected 1 to be +0 // Object.is equality[39m
+[31m[1mAssertionError[22m: expected [ '\'Thương lượng\'' ] to deeply equal [][39m
+[31m[1mAssertionError[22m: expected '\n\n\nconst CARD_SUMMARY_LIMIT = 3;\n…' to contain '\'Lương thương lượng\''[39m
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m5 failed[39m[22m[2m | [22m[1m[32m24 passed[39m[22m[90m (29)[39m
+=== EXIT=1

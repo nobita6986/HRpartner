@@ -1,0 +1,32 @@
+=== AC-11 / RQ-09 -- canonical luon sach, robots theo listingIsIndexable ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- CMD: grep -n 'canonical\|robots\|listingIsIndexable\|CANONICAL_ORIGIN' "app/(jobs)/viec-lam/page.tsx"
+17: *     cần dữ liệu (tiêu đề là hằng, `robots` chỉ đọc bốn tham số đã làm sạch), nên nó không gọi
+49:import { CANONICAL_ORIGIN } from '@/src/shared/routing/portal-landing';
+55:  listingIsIndexable,
+113: * `DEC-08`: canonical LUÔN là `/viec-lam` sạch, kể cả trên một URL đang lọc — mọi tổ hợp lọc và mọi
+114: * trang từ hai trở đi là nội dung dẫn xuất của cùng một trang. `robots` mới là chỗ phân biệt, vì
+115: * `app/robots.ts` và `app/sitemap.ts` đều KHÔNG tồn tại (`EV-19`) nên luật index phải phát ra từng
+123:    alternates: { canonical: `${CANONICAL_ORIGIN}${LISTING_PATH}` },
+124:    robots: listingIsIndexable(params)
+=== EXIT=0
+--- chi co MOT canonical trong tep, va chi MOT lan index: true
+--- CMD: grep -c 'canonical:' "app/(jobs)/viec-lam/page.tsx"
+1
+=== EXIT=0
+--- CMD: grep -cE 'index: true' "app/(jobs)/viec-lam/page.tsx"
+1
+=== EXIT=0
+--- EV-22: CANONICAL_ORIGIN la hang, khong hard-code origin
+--- CMD: grep -n 'CANONICAL_ORIGIN' 'src/shared/routing/portal-landing.ts'
+20:export const CANONICAL_ORIGIN = 'https://hrpartner.vn';
+71: * as a transition redirect source (they resolve to CANONICAL_ORIGIN, never to a
+90: * The origin is the fixed CANONICAL_ORIGIN constant — the incoming host/scheme is
+98:  return `${CANONICAL_ORIGIN}${path}${query}`;
+=== EXIT=0
+--- phan "metadata bien dich duoc" do bang lane build, xem ac19-build.txt
+--- CMD: grep -a 'AC-11' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-09/AC-11 — canonical sạch, robots theo listingIsIndexable[2m > [22mcanonical LUÔN là /viec-lam sạch, và chỉ có MỘT canonical trong tệp
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-09/AC-11 — canonical sạch, robots theo listingIsIndexable[2m > [22mrobots cho index CHỈ khi listingIsIndexable trả true
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-09/AC-11 — canonical sạch, robots theo listingIsIndexable[2m > [22mgenerateMetadata KHÔNG gọi loader, nên một lượt render tiêu đúng một suất ngân sách
+=== EXIT=0

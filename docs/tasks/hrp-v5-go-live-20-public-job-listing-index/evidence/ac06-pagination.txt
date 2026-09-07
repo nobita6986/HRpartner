@@ -1,0 +1,16 @@
+=== AC-06 / RQ-05 -- phan trang giu du bo loc o ba moc offset ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- CMD: grep -n 'rel="prev"\|rel="next"' "app/(jobs)/viec-lam/page.tsx"
+393:              rel="prev"
+409:              rel="next"
+=== EXIT=0
+--- khoi nav phan trang chi render khi total > PAGE_SIZE
+--- CMD: grep -n 'total > PAGE_SIZE' "app/(jobs)/viec-lam/page.tsx"
+388:      {total > PAGE_SIZE ? (
+=== EXIT=0
+--- CMD: grep -a 'AC-06' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.params.test.ts[2m > [22mRQ-05/AC-06 — phân trang giữ nguyên bộ lọc ở ba mốc offset[2m > [22mmốc đầu, offset 0: link Sau mang đủ ba bộ lọc và offset 20
+ [32m✓[39m src/domains/job-board/public-listing.params.test.ts[2m > [22mRQ-05/AC-06 — phân trang giữ nguyên bộ lọc ở ba mốc offset[2m > [22mmốc giữa, offset 40: cả Trước và Sau giữ đủ ba bộ lọc
+ [32m✓[39m src/domains/job-board/public-listing.params.test.ts[2m > [22mRQ-05/AC-06 — phân trang giữ nguyên bộ lọc ở ba mốc offset[2m > [22mmốc cuối, offset 80 trên total 100: Trước về 60, và không còn trang sau
+ [32m✓[39m src/domains/job-board/public-listing.params.test.ts[2m > [22mRQ-05/AC-06 — phân trang giữ nguyên bộ lọc ở ba mốc offset[2m > [22msang trang rồi quay lại trang một thì URL trùng khít URL của chính bộ lọc đó
+=== EXIT=0

@@ -1,0 +1,23 @@
+=== AC-01 / RQ-01 -- trang ton tai va co 0 lan chi thi client ===
+--- NGUON LANE: docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt (npm run test:unit --reporter=verbose, 52 test XANH, EXIT=0)
+--- CMD: ls -l "app/(jobs)/viec-lam/page.tsx"
+-rw-r--r-- 1 Admin 197121 19109 Sep  6 00:30 app/(jobs)/viec-lam/page.tsx
+=== EXIT=0
+--- (0 dong khop nen grep tra ma thoat 1: dung ky vong cho o "phai bang 0")
+--- CMD: grep -c 'use client' "app/(jobs)/viec-lam/page.tsx"
+0
+=== EXIT=1
+--- doi chieu: trang chu LA client component, nen cung phep dem tren no phai ra 1
+--- CMD: grep -c 'use client' 'app/(portal)/page.tsx'
+1
+=== EXIT=0
+--- useState/useEffect chi xuat hien trong CHU THICH giai thich vi sao trang chu khac; hang rao
+--- khang dinh tren ban da bo chu thich, xem hai dong ✓ RQ-01/AC-01 duoi day
+--- CMD: grep -n 'useState\|useEffect' "app/(jobs)/viec-lam/page.tsx"
+5: * URL chứ không về hiển thị: trạng thái lọc của trang chủ nằm trong `useState` sau một `fetch` trong
+6: * `useEffect` (`EV-12`), nên nó không chia sẻ được, không đánh dấu trang được và không index được. Ở
+=== EXIT=0
+--- CMD: grep -a 'AC-01' "docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt"
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-01/AC-01 — trang là Server Component, không có chỉ thị client[2m > [22mkhông chứa chỉ thị use client ở bất kỳ dạng nào, kể cả trong chú thích
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts[2m > [22mRQ-01/AC-01 — trang là Server Component, không có chỉ thị client[2m > [22mkhông import hook trạng thái của React, thứ chỉ chạy ở client
+=== EXIT=0

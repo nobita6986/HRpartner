@@ -117,8 +117,27 @@ describe('bề mặt công khai: mọi consumer của withPublicDb phải đi qu
     expect(consumers).toHaveLength(referencing.length - 1);
   });
 
-  it('tập consumer có đúng 3 phần tử (EV-02)', () => {
-    expect(consumers.map((entry) => entry.path)).toHaveLength(3);
+  /**
+   * go-live-20 `EV-23` dịch con số này từ 3 sang 4: `/viec-lam` là bề mặt đọc DB công khai thứ tư.
+   * Bullet ở `:10` vẫn nói `3` vì nó ghi số đo của `EV-02` bên go-live-18; số điều tra dân số HIỆN
+   * HÀNH là 4, và chỗ ghim nó là đây.
+   *
+   * Ghim TẬP đường dẫn chứ không ghim con số, vì một con số trần vẫn xanh ở ba ca: một consumer bị
+   * đổi tên, bị dời sang thư mục khác, hoặc bị THAY bằng tệp khác trong khi tổng số giữ nguyên.
+   *
+   * Danh sách này KHÔNG vi phạm câu ở `:5` tới `:7`. Câu đó cấm một mảng dán tay làm NGUỒN của tập
+   * consumer, và nguồn vẫn là `consumerEntries(scanned)` — phép quét tự suy, không đọc một byte nào
+   * của danh sách dưới đây. Đây là KẾT QUẢ bị ghim. Bất biến thật ở khối kế tiếp vẫn chấm mọi tệp
+   * phép quét tìm được, gồm tệp không có tên ở đây, nên bề mặt thứ năm vẫn không vô hình được.
+   */
+  it('tập consumer có đúng 4 phần tử, đúng bốn đường dẫn ấy (go-live-20 EV-23)', () => {
+    expect(consumers.map((entry) => entry.path).sort()).toEqual([
+      'app/(jobs)/viec-lam/[slug]/page.tsx',
+      'app/(jobs)/viec-lam/page.tsx',
+      'app/api/jobs/[slug]/route.ts',
+      'app/api/jobs/route.ts',
+    ]);
+    expect(consumers).toHaveLength(4);
   });
 
   it('MỖI consumer tham chiếu limiter, không chỉ một tệp nào đó', () => {

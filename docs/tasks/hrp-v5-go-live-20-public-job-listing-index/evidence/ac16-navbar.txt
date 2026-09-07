@@ -1,0 +1,22 @@
+
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts src/domains/job-board/public-ui-premium.static.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP/.claude/worktrees/gl20[39m
+
+ [32m✓[39m src/domains/job-board/public-ui-premium.static.test.ts [2m([22m[2m63 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m63 passed[39m[22m[90m (63)[39m
+[2m   Start at [22m 00:07:55
+[2m   Duration [22m 342ms[2m (transform 47ms, setup 0ms, collect 54ms, tests 24ms, environment 0ms, prepare 57ms)[22m
+
+=== EXIT=0
+21:  { href: '/', label: 'Trang chủ' },
+22:  { href: '/viec-lam', label: 'Việc làm' },
+23:  { href: '/ctv-portal', label: 'Cộng tác viên' },
+24:  { href: '/ve-chung-toi', label: 'Về chúng tôi' },
+25:  { href: '/lien-he', label: 'Liên hệ' },
+=== EXIT=0

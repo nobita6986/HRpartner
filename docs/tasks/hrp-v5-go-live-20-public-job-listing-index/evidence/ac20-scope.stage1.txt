@@ -1,0 +1,170 @@
+=== AC-20 / pham vi thay doi -- go-live-20 ===
+Tap KET LUAN: git diff --cached --name-only. Tap LOAI TRU chi duoc liet ke, khong phan quyet.
+Quy uoc: grep -c tra exit 1 khi dem 0 -- moi cho "phai bang 0" duoi day co exit 1 la DUNG,
+va di kem mot phep do doi chung tren chuoi that su co mat.
+
+########## 1. TAP KET LUAN ##########
+
+--- CMD: git diff --cached --name-only
+app/(jobs)/viec-lam/[slug]/page.tsx
+app/(jobs)/viec-lam/page.tsx
+app/components/GlobalNavbar.tsx
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/TASK.md
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac00-task-gate-v12.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac01-server-only.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac02-render-flags.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac03-params-green.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac03-params-red.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac04-param-allowlist.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac05-facets-source.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac06-pagination.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac07-canonical-url.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac08-ratelimit-order.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac09-throttled-no-leak.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac10-db-path.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac11-metadata.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac12-total-not-overview.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac13-empty-state.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac14-label-parity.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac15-helper-reuse.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac16-navbar.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac17-back-links.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac17-barrier-green.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac17-barrier-red.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac18-a11y.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac19-baseline-lane.raw.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac21-census-green.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac21-census-red.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac21-single-hunk.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step02-03-unit-lane.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-barrier-green.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-barrier-mutation-red.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-emit-evidence.sh
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-label-parity.js
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-mutation-revert.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-select-string-crosscheck.txt
+docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt
+src/domains/job-board/public-detail.static.test.ts
+src/domains/job-board/public-listing.labels.ts
+src/domains/job-board/public-listing.params.test.ts
+src/domains/job-board/public-listing.params.ts
+src/domains/job-board/public-listing.static.test.ts
+src/shared/security/public-surface-limiter.static.test.ts
+=== EXIT=0
+
+--- CMD: git diff --cached --name-only | wc -l
+44
+=== EXIT=0
+
+########## 2. BA PATH CUA ui-01 PHAI VANG MAT ##########
+
+--- CMD: git diff --cached --name-only | grep -c '^app/(portal)/page\.tsx$'
+0
+=== EXIT=1
+
+--- CMD: git diff --cached --name-only | grep -c '^app/globals\.css$'
+0
+=== EXIT=1
+
+--- CMD: git diff --cached --name-only | grep -c '^src/domains/job-board/components/'
+0
+=== EXIT=1
+
+DOI CHUNG cho ba phep dem tren: cung mot dang grep, tren chuoi THAT SU co mat trong tap ket luan.
+
+--- CMD: git diff --cached --name-only | grep -c '^app/(jobs)/viec-lam/page\.tsx$'
+1
+=== EXIT=0
+
+--- CMD: git diff --cached --name-only | grep -c '^docs/tasks/hrp-v5-go-live-20-public-job-listing-index/'
+35
+=== EXIT=0
+
+########## 3. PHEP DO DAN XUAT: tap ket luan la TAP CON cua muc 4.1 ##########
+Allowlist duoc RUT tu bang muc 4.1 cua TASK.md, khong dan tay -- xem step08-scope-subset.js.
+
+--- CMD: node docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step08-scope-subset.js
+TASK_SECTION= muc 4.1 cua docs/tasks/hrp-v5-go-live-20-public-job-listing-index/TASK.md
+ALLOWED= 10 hang rut tu bang muc 4.1:
+  [0] app/(jobs)/viec-lam/page.tsx
+  [1] src/domains/job-board/public-listing.params.ts
+  [2] src/domains/job-board/public-listing.labels.ts
+  [3] src/domains/job-board/public-listing.params.test.ts
+  [4] src/domains/job-board/public-listing.static.test.ts
+  [5] app/components/GlobalNavbar.tsx
+  [6] app/(jobs)/viec-lam/[slug]/page.tsx
+  [7] src/domains/job-board/public-detail.static.test.ts
+  [8] src/shared/security/public-surface-limiter.static.test.ts
+  [9] docs/tasks/hrp-v5-go-live-20-public-job-listing-index/
+STAGED= 44 path (git diff --cached --name-only)
+OUTSIDE_ALLOWED= []
+BANNED_PREFIX_IN_STAGED app/(portal)/page.tsx = 0
+BANNED_PREFIX_IN_STAGED app/globals.css = 0
+BANNED_PREFIX_IN_STAGED src/domains/job-board/components/ = 0
+VERDICT= TAP CON, khong path nao ngoai muc 4.1
+=== EXIT=0
+
+########## 4. TAP LOAI TRU (chi liet ke -- KHONG phan quyet) ##########
+Vung cua Tier 1 (docs/ ngoai slug nay, .ai-pipeline/) va tep chua theo doi nam ngoai pham vi xet.
+
+--- CMD: git status --porcelain
+M  app/(jobs)/viec-lam/[slug]/page.tsx
+A  app/(jobs)/viec-lam/page.tsx
+M  app/components/GlobalNavbar.tsx
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/TASK.md
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac00-task-gate-v12.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac01-server-only.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac02-render-flags.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac03-params-green.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac03-params-red.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac04-param-allowlist.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac05-facets-source.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac06-pagination.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac07-canonical-url.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac08-ratelimit-order.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac09-throttled-no-leak.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac10-db-path.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac11-metadata.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac12-total-not-overview.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac13-empty-state.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac14-label-parity.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac15-helper-reuse.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac16-navbar.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac17-back-links.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac17-barrier-green.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac17-barrier-red.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac18-a11y.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac19-baseline-lane.raw.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac21-census-green.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac21-census-red.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac21-single-hunk.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step02-03-unit-lane.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-barrier-green.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-barrier-mutation-red.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-emit-evidence.sh
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-label-parity.js
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-mutation-revert.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-select-string-crosscheck.txt
+A  docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step07-verbose-both.txt
+M  src/domains/job-board/public-detail.static.test.ts
+A  src/domains/job-board/public-listing.labels.ts
+A  src/domains/job-board/public-listing.params.test.ts
+A  src/domains/job-board/public-listing.params.ts
+A  src/domains/job-board/public-listing.static.test.ts
+M  src/shared/security/public-surface-limiter.static.test.ts
+?? docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac19-lane-unit.txt
+?? docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac19-lint.txt
+?? docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac19-typecheck.txt
+?? docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/ac20-scope.txt
+?? docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step08-emit-scope.sh
+?? docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step08-scope-subset.js
+?? docs/tasks/hrp-v5-go-live-20-public-job-listing-index/evidence/step08-status-porcelain.txt
+=== EXIT=0
+
+--- CMD: git status --porcelain | grep -c '^??'
+7
+=== EXIT=0
+
+--- CMD: git status --porcelain | grep -c '^.[MD]'
+0
+=== EXIT=1
