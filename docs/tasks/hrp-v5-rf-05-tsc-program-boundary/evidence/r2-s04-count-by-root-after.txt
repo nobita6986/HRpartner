@@ -1,0 +1,22 @@
+=== R2-STEP-04 chuong trinh tsc SAU (tsconfig.json == blob 53cc484) ===
+CMD: npx tsc -p tsconfig.json --listFilesOnly
+LISTFILES_EXIT_AFTER=0   STDERR=0 byte
+TEP_CUA_REPO=461
+
+--- dem theo thu muc goc ---
+  src                      222
+  app                      115
+  .next                    112
+  <repo-root-file>         7
+  packages                 2
+  tests                    2
+  prisma                   1
+
+--- tep tang goc repo ---
+  middleware.ts
+  next-env.d.ts
+  playwright.config.ts
+  vitest.config.ts
+  vitest.integration-files.ts
+  vitest.integration.config.ts
+  vitest.unit.config.ts

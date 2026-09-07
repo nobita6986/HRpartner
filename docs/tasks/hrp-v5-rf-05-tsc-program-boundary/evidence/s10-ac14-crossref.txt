@@ -1,0 +1,39 @@
+### AC-14 KHÔNG phải tiêu chí của contract này: đo bằng chính TASK.md
+
+$ grep -oE 'AC-[0-9]{2,}' docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md | sort -u
+    AC-01
+    AC-02
+    AC-03
+    AC-04
+    AC-05
+    AC-06
+    AC-07
+    AC-08
+    AC-09
+    AC-10
+    AC-11
+    AC-12
+    AC-14
+
+$ grep -c '^| `AC-' docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md   -- so dong bang tieu chi THAT cua contract
+    12
+    => 13 chuoi hinh dang AC nhung chi 12 dong tieu chi. Chuoi thu 13 la AC-14.
+
+$ grep -n 'AC-14' docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md   -- moi lan xuat hien, nguyen van
+    17:| ADR references | `hrp-v5-test-01-browser-lane` `BLK-01` — lane trình duyệt bị chặn vì `npm run typecheck` exit `1`; `hrp-v5-go-live-18-public-surface-hardening` `AC-14` cùng `hrp-v5-go-live-17-rls-required-relation-sweep` `AC-11` — hai ô đòi typecheck exit `0` và chỉ tha dòng đỏ nằm ở path của contract CÙNG LÔ, nên một dòng đỏ ngoài mọi contract không có chỗ trong từ vựng của chúng |
+    200:| `v1.0` | 2026-09-04 | Bản đầu | Chương trình tsc hiện nuốt cả cây nên một tệp nháp ở thư mục gốc đủ làm `npm run typecheck` cùng `next build` đỏ cho mọi người. Đây là gốc của `BLK-01` bên `hrp-v5-test-01-browser-lane` và của khoảng trống ở `AC-14` cùng `AC-11` của lô trước. Contract này đóng biên chương trình bằng allow-list và trả giá fail-closed bằng một hàng rào tĩnh |
+
+-- Quy thuoc: AC-14 la cua contract nao --
+$ grep -c '^| `AC-14`' docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+    1
+$ grep -n '^| `AC-14`' docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+    165:| `AC-14` | `npm run test:unit` rồi `npm run typecheck`, lấy mã thoát bằng redirect chứ không sau ống | Cả hai exit `0`. Số test PASS không nhỏ hơn mốc của `STEP-01`. Mọi dòng đỏ, nếu có, được phân loại từng dòng thành hồi quy hay test cũ chưa đảo. Nếu một dòng đỏ nằm ở path đã khai của một contract cùng lô thì đó là d
+
+-- Vi sao cong doi mot dong cho no --
+$ grep -n 'taskACs' .ai-pipeline/scripts/verify-handoff.ps1
+    161:    $taskACs = [regex]::Matches($task, "AC-\d{2,}") | ForEach-Object { $_.Value } | Sort-Object -Unique
+    168:    $missingAc = @($taskACs | Where-Object { -not $acRowMap.ContainsKey($_) })
+    171:    } elseif ($taskACs.Count -gt 0) {
+    172:        Add-GateOk $ctx 'H-05' "all $($taskACs.Count) AC have an evidence row."
+    H-05 quet TOAN VAN TASK.md, nen mot THAM CHIEU toi AC cua contract khac
+    khong phan biet duoc voi AC cua chinh minh.

@@ -1,0 +1,36 @@
+=== a2-29 AC-02/AC-04: kiem DOC LAP hai DEV-01 ma HANDOFF khai (tap VAO = 0, src 222 -> 222) ===
+Khong chay lai tsc: dung chinh ban liet ke chuong trinh cua toi (a2-03) cong mot lan di cay,
+cong khoa include BASELINE doc bang git show o a2-02: ['**/*.ts','**/*.tsx','.next/types/**/*.ts'].
+
+PROGRAM_TOTAL=1145  NODE_MODULES=684  NGOAI_NODE_MODULES=461
+--- duoi tep cua 461 path ngoai node_modules:
+    .ts      410
+    .tsx     51
+SO_PATH_KHONG_PHAI_ts_hoac_tsx=0  []
+
+DISK_TS_TSX_NGOAI_node_modules=485
+PROGRAM_KHONG_CO_TREN_DIA=0 []
+DIA_NHUNG_NGOAI_PROGRAM_tap_ROI=24
+
+=== AC-02: tap VAO = program_MOI tru program_CU ===
+include CU la hai glob de quy toan cay, nen program_CU tren CAY HOM NAY chua TAT CA 485 tep .ts/.tsx ngoai node_modules.
+Moi phan tu program_MOI ngoai node_modules la mot .ts/.tsx co that tren dia (hai so 0 o tren)
+=> program_MOI la TAP CON cua program_CU => tap VAO RONG.
+TAP_VAO_DO_DUOC=0   (loi van AC-02 doi dung 1 -> DEV-01 cua HANDOFF la DUNG)
+
+=== AC-04: dem theo doan thu muc dau, CU (=dia) so voi MOI (=program) ===
+doan-dau                     CU      MOI    delta
+src                         222      222        0
+app                         115      115        0
+.next                       112      112        0
+scratch                      11        0      -11
+new-ui                       11        0      -11
+(tep-tang-goc)                7        7        0
+tests                         2        2        0
+docs                          2        0       -2
+packages                      2        2        0
+prisma                        1        1        0
+
+SRC_CU=222 SRC_MOI=222 DELTA_SRC=0   (loi van AC-04 doi +1 -> DEV-01 cua HANDOFF la DUNG)
+Ly do delta 0: CA HAI tep hang rao toolchain (rf-05 va rf-06) da nam tren dia luc MOC,
+nen include CU da dem chung roi; khong tep src nao SINH ra trong round nay.

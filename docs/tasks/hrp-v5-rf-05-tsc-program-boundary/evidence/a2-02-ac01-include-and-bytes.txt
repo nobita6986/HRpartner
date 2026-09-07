@@ -1,0 +1,30 @@
+=== a2-02 AC-01 independent: include shape + byte identity outside include ===
+CMD: git show 31625c4:tsconfig.json > evidence/a2-02-baseline-tsconfig-31625c4.json ; python json.loads on both
+WORKTREE_INCLUDE_LEN=13
+  [01] next-env.d.ts
+  [02] middleware.ts
+  [03] *.config.ts
+  [04] vitest.integration-files.ts
+  [05] app/**/*.ts
+  [06] app/**/*.tsx
+  [07] src/**/*.ts
+  [08] src/**/*.tsx
+  [09] packages/**/*.ts
+  [10] packages/**/*.tsx
+  [11] prisma/**/*.ts
+  [12] tests/**/*.ts
+  [13] .next/types/**/*.ts
+BASELINE_INCLUDE=['**/*.ts', '**/*.tsx', '.next/types/**/*.ts']
+ORDER_EXACT_MATCH_4_1=1
+HAS_next_env_d_ts=1
+ELEMENTS_WITH_RECURSIVE_GLOB_IN_FIRST_SEGMENT=0 []
+SHA256_OUTSIDE_INCLUDE_WORKTREE=6abcd2920e5a3b5ae6c94a68361410ad1a1fa0d075e76675d2eec096209b4c38
+SHA256_OUTSIDE_INCLUDE_BASELINE=6abcd2920e5a3b5ae6c94a68361410ad1a1fa0d075e76675d2eec096209b4c38
+BYTES_OUTSIDE_INCLUDE_IDENTICAL=1
+LEN_OUTSIDE_WORKTREE=744 LEN_OUTSIDE_BASELINE=744
+KEYS_WORKTREE=['compilerOptions', 'exclude', 'include']
+NON_INCLUDE_KEYS_DEEP_EQUAL=1
+EXCLUDE_WORKTREE=['node_modules']
+EXCLUDE_BASELINE=['node_modules']
+COMPILEROPTIONS_KEY_COUNT=16
+AC01_ALL_SUBCLAUSES_PASS=1

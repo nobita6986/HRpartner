@@ -1,0 +1,51 @@
+=== a2-09 AC-06 independent: guard properties ===
+--- CMD: python line/byte census of the guard
+BYTES=13206
+SPLITLINES=320
+NEWLINE_COUNT=320
+ENDS_WITH_NEWLINE=1
+CR_BYTES=0
+EXIT=0
+
+--- CMD: grep -n on the seven AC-06 markers
+16: *      suy từ `include`, hoặc có tên trong `OUTSIDE_PROGRAM` KÈM LÝ DO. Không có nhánh thứ ba.
+26:import { existsSync, readFileSync, readdirSync, type Dirent } from 'node:fs';
+37:const MIN_SCANNED_TS_FILES = 300;
+38:const MIN_PROGRAM_ROOTS = 5;
+39:const MIN_ROOT_LEVEL_TS_FILES = 5;
+49:const OUTSIDE_PROGRAM: Record<string, string> = {
+64:function classifyIncludePattern(pattern: string): PatternKind {
+121:    return readdirSync(dir, { withFileTypes: true });
+175:const parsedTsconfig = JSON.parse(readFileSync(TSCONFIG_PATH, 'utf8')) as { include?: unknown };
+181:const classified = INCLUDE.map((pattern) => ({ pattern, kind: classifyIncludePattern(pattern) }));
+182:const PROGRAM_ROOTS = new Set(
+214:    expect(totalScanned).toBeGreaterThanOrEqual(MIN_SCANNED_TS_FILES);
+218:    expect(PROGRAM_ROOTS.size).toBeGreaterThanOrEqual(MIN_PROGRAM_ROOTS);
+222:    expect(rootLevelTsFiles.length).toBeGreaterThanOrEqual(MIN_ROOT_LEVEL_TS_FILES);
+245:        !Object.prototype.hasOwnProperty.call(OUTSIDE_PROGRAM, name),
+251:    const missingReason = Object.keys(OUTSIDE_PROGRAM).filter(
+252:      (k) => (OUTSIDE_PROGRAM[k] ?? '').trim().length === 0,
+258:    const both = Object.keys(OUTSIDE_PROGRAM).filter((k) => PROGRAM_ROOTS.has(k));
+271:  const FAKE_PATTERNS: Array<{ pattern: string; kind: PatternKind['kind']; root?: string }> = [
+282:  const FAKE_MATCHES: Array<[string, string, boolean]> = [
+293:    const actual = FAKE_PATTERNS.map((c) => {
+297:    const expected = FAKE_PATTERNS.map((c) =>
+304:    const actual = FAKE_MATCHES.map(
+307:    const expected = FAKE_MATCHES.map(([p, name, want]) => p + ' ~ ' + name + ' => ' + String(want));
+316:        !Object.prototype.hasOwnProperty.call(OUTSIDE_PROGRAM, name),
+EXIT=0
+
+--- CMD: grep -c forbidden outbound calls (must be 0 each)
+execSync=1
+child_process=0
+spawn=0
+word_git=4
+DATABASE_URL=1
+
+--- CMD: grep -n hardcoded program-root array acting as source of truth (expect none)
+182:const PROGRAM_ROOTS = new Set(
+
+--- CMD: grep -n floors
+37:const MIN_SCANNED_TS_FILES = 300;
+38:const MIN_PROGRAM_ROOTS = 5;
+39:const MIN_ROOT_LEVEL_TS_FILES = 5;

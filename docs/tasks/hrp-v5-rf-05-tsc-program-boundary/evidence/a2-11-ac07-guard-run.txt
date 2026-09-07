@@ -1,0 +1,22 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [32m✓[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — sàn chống quét rỗng[2m > [22mphép quét thấy đủ mã TypeScript để mọi assertion dưới có nghĩa
+ [32m✓[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — sàn chống quét rỗng[2m > [22minclude của tsconfig.json suy ra đủ gốc chương trình
+ [32m✓[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — sàn chống quét rỗng[2m > [22mtầng gốc repo có đủ tệp cấu hình TypeScript
+ [32m✓[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — hình dạng của include[2m > [22mkhông mẫu nào có glob đệ quy ở đoạn ĐẦU
+ [32m✓[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — hình dạng của include[2m > [22minclude tồn tại và mọi phần tử là chuỗi
+ [32m✓[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — phân loại ĐÓNG[2m > [22mmỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do
+ [32m✓[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — phân loại ĐÓNG[2m > [22mmỗi mục của danh sách NGOÀI có lý do không rỗng
+ [32m✓[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — phân loại ĐÓNG[2m > [22mkhông tên nào vừa là gốc chương trình vừa nằm trong danh sách NGOÀI
+ [32m✓[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — phân loại ĐÓNG[2m > [22mmỗi tệp TypeScript ở tầng gốc repo khớp một mẫu một-đoạn của include
+ [32m✓[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA[2m > [22mphân loại mẫu đúng trên tám mẫu bịa
+ [32m✓[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA[2m > [22mbộ so mẫu một-đoạn đúng trên bảy cặp bịa
+ [32m✓[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA[2m > [22mmột gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 22:07:45
+[2m   Duration [22m 340ms[2m (transform 33ms, setup 0ms, collect 66ms, tests 4ms, environment 0ms, prepare 59ms)[22m
+

@@ -1,0 +1,15 @@
+=== AC-03 lai tren cay CUOI (sau khi di chuyen hang rao) ===
+lenh: grep -cE '^(app|src|packages|prisma|tests)/' docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-departed.txt
+PREFIX_MATCHES=0
+lenh: grep -cE '^(middleware|next-env\.d|playwright\.config|vitest\.config|vitest\.integration-files|vitest\.integration\.config|vitest\.unit\.config)\.ts$' docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-departed.txt
+EV05_ROOTFILE_MATCHES=0
+
+-- doi chieu: bay tep goc repo cua EV-05 con NAM trong chuong trinh cuoi --
+  middleware.ts -> 1
+  next-env.d.ts -> 1
+  playwright.config.ts -> 1
+  vitest.config.ts -> 1
+  vitest.integration-files.ts -> 1
+  vitest.integration.config.ts -> 1
+  vitest.unit.config.ts -> 1
+TONG_TEP_GOC_TRONG_CHUONG_TRINH=7

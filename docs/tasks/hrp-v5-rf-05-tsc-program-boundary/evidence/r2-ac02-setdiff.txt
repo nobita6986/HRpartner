@@ -1,0 +1,51 @@
+=== R2 AC-02 hieu hai chieu, BO nhanh .next (dong .next troi giua hai luot chay) ===
+CMD: sort hai danh sach roi lay hieu hai chieu (comm -23 / comm -13), phan .next loai truoc khi so
+TRUOC (bo .next) = 373 tep
+SAU   (bo .next) = 349 tep
+
+--- TAP ROI chuong trinh: 24 tep ---
+  new-ui/                                              11
+  scratch/                                             11
+  docs/                                                2
+  NGUONG RQ-04: 24 tep = 11 new-ui + 11 scratch + 2 docs/.../go-live-15/evidence
+  DAT=1
+
+--- liet ke tung tep ROI ---
+  docs/tasks/hrp-v5-go-live-15-public-contrast-aa/evidence/copy-marketplace-inventory-line350-round2.ts
+  docs/tasks/hrp-v5-go-live-15-public-contrast-aa/evidence/copy-public-ui-premium-static-test-round1.ts
+  new-ui/components/CompanyCard.tsx
+  new-ui/components/FeaturedJobsSection.tsx
+  new-ui/components/Footer.tsx
+  new-ui/components/HeroSection.tsx
+  new-ui/components/HomePage.tsx
+  new-ui/components/JobCard.tsx
+  new-ui/components/LocationSection.tsx
+  new-ui/components/MainLayout.tsx
+  new-ui/components/Navbar.tsx
+  new-ui/components/ReferralSection.tsx
+  new-ui/components/TopCompaniesSection.tsx
+  scratch/g-base-nav.tsx
+  scratch/g-base-page.tsx
+  scratch/gl05-facet-perf.ts
+  scratch/gl05-industry-check.ts
+  scratch/t1r4/app_(jobs)_track_page.tsx
+  scratch/t1r4/app_(jobs)_viec-lam__slug__page.tsx
+  scratch/t1r4/app_(portal)_ve-chung-toi_page.tsx
+  scratch/t1r4/app_components_GlobalNavbar.tsx
+  scratch/t1r4/src_domains_job-board_components_apply-modal.tsx
+  scratch/t1r4/src_domains_job-board_components_success-modal.tsx
+  scratch/t1r4/src_domains_job-board_public-ui-premium.static.test.ts
+
+--- TAP VAO chuong trinh: 0 tep ---
+  (RONG)
+
+GHI CHU round 2: tap VAO = 0 chu khong = 1 nhu round 1. Ly do do duoc:
+  round 1 dung danh sach TRUOC luc tep hang rao CHUA ton tai, nen hang rao "vao" chuong trinh.
+  round 2 la round KHOI PHUC: hang rao da nam san trong worktree tu round 1, va include cu ("**/*.ts")
+  vo het moi thu, nen hang rao co mat trong CA HAI danh sach va khong the "vao".
+  RQ-04 doi tap VAO "phai rong, tru chinh tep hang rao" -- tap rong thoa dieu kien ay.
+  Bang chung hang rao LA thanh vien chuong trinh SAU nam ngay duoi.
+
+--- hang rao co trong chuong trinh SAU khong? ---
+  src/shared/toolchain/tsc-program-boundary.static.test.ts -> CO
+  src/shared/toolchain/vitest-default-lane.static.test.ts (ban giao rf-06) -> CO

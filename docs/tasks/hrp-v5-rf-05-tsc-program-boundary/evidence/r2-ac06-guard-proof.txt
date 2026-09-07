@@ -1,0 +1,67 @@
+=== R2 AC-06: doc + grep -n hang rao (khong doi byte nao round nay) ===
+TEP: src/shared/toolchain/tsc-program-boundary.static.test.ts
+SO_DONG=321
+blob index = 0bfc244881c3f125dace47ac7832f71033cd94c0, git status = "A ", worktree == index
+
+--- 1. NGUON SU THAT la include cua tsconfig.json ---
+  L175  const parsedTsconfig = JSON.parse(readFileSync(TSCONFIG_PATH, 'utf8')) as { include?: unknown };
+  L176  const includeRaw = parsedTsconfig.include;
+  L177  const INCLUDE: string[] = Array.isArray(includeRaw)
+  => PROGRAM_ROOTS va ROOT_FILE_PATTERNS suy TU "classified", tuc tu mang include da phan tich:
+  L182  const PROGRAM_ROOTS = new Set(
+  L188  const ROOT_FILE_PATTERNS = classified
+  L181  const classified = INCLUDE.map((pattern) => ({ pattern, kind: classifyIncludePattern(pattern) }));
+  => KHONG mang chep tay nao dong vai nguon su that. FAKE_PATTERNS/FAKE_MATCHES chi la du lieu BIA cua khoi tu-kiem.
+
+--- 2. quet thu muc tang goc bang thu vien chuan Node ---
+  L26   import { existsSync, readFileSync, readdirSync, type Dirent } from 'node:fs';
+  L27   import { dirname, join, sep } from 'node:path';
+  L28   import { fileURLToPath } from 'node:url';
+  L121  return readdirSync(dir, { withFileTypes: true });
+  L193  const rootEntries = safeReaddir(REPO_ROOT);
+  L205  scannedByRootDir.set(name, scanTsSources(join(REPO_ROOT, name), name + '/'));
+
+--- 3. san chong quet rong, gia tri SO ghi trong ma ---
+  L37   const MIN_SCANNED_TS_FILES = 300;
+  L214  expect(totalScanned).toBeGreaterThanOrEqual(MIN_SCANNED_TS_FILES);
+  L38   const MIN_PROGRAM_ROOTS = 5;
+  L218  expect(PROGRAM_ROOTS.size).toBeGreaterThanOrEqual(MIN_PROGRAM_ROOTS);
+  L39   const MIN_ROOT_LEVEL_TS_FILES = 5;
+  L222  expect(rootLevelTsFiles.length).toBeGreaterThanOrEqual(MIN_ROOT_LEVEL_TS_FILES);
+  NGUONG AC-06: san so tep quet >= 300 (dat: 300), san so goc chuong trinh >= 5 (dat: 5)
+
+--- 4. danh sach NGOAI chuong trinh, moi muc kem ly do ---
+  L16   *      suy từ `include`, hoặc có tên trong `OUTSIDE_PROGRAM` KÈM LÝ DO. Không có nhánh thứ ba.
+  L49   const OUTSIDE_PROGRAM: Record<string, string> = {
+  L245  !Object.prototype.hasOwnProperty.call(OUTSIDE_PROGRAM, name),
+  L251  const missingReason = Object.keys(OUTSIDE_PROGRAM).filter(
+  L252  (k) => (OUTSIDE_PROGRAM[k] ?? '').trim().length === 0,
+  L258  const both = Object.keys(OUTSIDE_PROGRAM).filter((k) => PROGRAM_ROOTS.has(k));
+  L316  !Object.prototype.hasOwnProperty.call(OUTSIDE_PROGRAM, name),
+  L50   'new-ui': 'nguyên mẫu UI chưa theo dõi bởi git, là đầu vào của một contract UI về sau (DEC-05)',
+  L51   scratch: 'vật liệu nháp của những round đã đóng, không phải mã chạy (DEC-05)',
+  L52   docs: 'bản chép đông lạnh làm hồ sơ audit; typecheck một ảnh chụp lịch sử là phép đo vô nghĩa (DEC-04)',
+
+--- 5. tu-kiem bo so mau tren du lieu BIA ---
+  L271  const FAKE_PATTERNS: Array<{ pattern: string; kind: PatternKind['kind']; root?: string }> = [
+  L282  const FAKE_MATCHES: Array<[string, string, boolean]> = [
+  L312  const fakeRootDirsWithTs = [...rootDirsWithTs, 'zzz-unclassified-fake'];
+  L318  expect(unclassified).toEqual(['zzz-unclassified-fake']);
+  SO_MAU_BIA=8  SO_CAP_BIA=7
+
+--- 6. khong execSync, khong goi git (dem TOKEN, khong dem chuoi con) ---
+  L23   * Nó không gọi ra ngoài process: không `execSync`, không `git` (mục `4.3`). Một hàng rào phụ thuộc
+  L23   * Nó không gọi ra ngoài process: không `execSync`, không `git` (mục `4.3`). Một hàng rào phụ thuộc
+  L24   * `git` sẽ chết ở môi trường không có checkout. Nó không đọc một `DATABASE_URL` nào.
+  L42   const SKIP_DIRS = new Set(['node_modules', '.git']);
+  L50   'new-ui': 'nguyên mẫu UI chưa theo dõi bởi git, là đầu vào của một contract UI về sau (DEC-05)',
+  => moi lan xuat hien "execSync" va "git" deu o COMMENT (L23, L24), o TEN THU MUC bo qua (".git", L42),
+     hoac trong CHUOI ly do tieng Viet (L50). Khong mot lenh goi tien trinh nao.
+  import chi gom: node:fs, node:path, node:url, vitest. child_process=0, require(=0, spawn=0.
+
+--- 7. dem so test theo CAU TRUC (khong grep -o "it(") ---
+  SO_KHOI_it=12 tai dong: 213,217,221,227,234,241,250,257,262,292,303,311
+  SO_KHOI_describe=4
+  (con so nay se doi chieu voi con so RUNNER bao o AC-07)
+
+AC-06_DAT=1 (bay dau hieu deu co mat va do duoc)

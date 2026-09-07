@@ -1,0 +1,8 @@
+=== AC-07 lại: lane unit chạy ĐÚNG tệp ở path MỚI ===
+SINGLE_EXIT=0
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+-- runner NÊU path mới? --
+1
+-- runner còn nêu path CŨ không? (phải 0) --
+0

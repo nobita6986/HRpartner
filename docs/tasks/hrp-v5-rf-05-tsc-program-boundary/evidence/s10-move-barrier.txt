@@ -1,0 +1,12 @@
+### dấu tay TRƯỚC khi di chuyển
+0bfc244881c3f125dace47ac7832f71033cd94c0
+### sau khi di chuyển
+-- thư mục cũ còn không? --
+src/shared/build ĐÃ XOÁ (rỗng, không có tệp nào khác)
+-- dấu tay tệp ở path mới (phải KHỚP dòng trên, tức nội dung nguyên vẹn) --
+0bfc244881c3f125dace47ac7832f71033cd94c0
+-- git THẤY tệp mới chưa? --
+?? src/shared/toolchain/tsc-program-boundary.static.test.ts
+CHECK_IGNORE_EXIT=1 (1 = KHÔNG bị bỏ qua)
+-- số dòng --
+320

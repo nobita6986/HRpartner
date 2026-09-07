@@ -1,0 +1,6 @@
+CMD: npm run typecheck (lan hai, sau test:unit, theo thu tu STEP-09)
+
+> hrp@0.1.0 typecheck
+> tsc --noEmit
+
+TYPECHECK2_EXIT=0

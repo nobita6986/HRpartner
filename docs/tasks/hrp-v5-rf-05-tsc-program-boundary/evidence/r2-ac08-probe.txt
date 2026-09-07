@@ -1,0 +1,161 @@
+=== R2 AC-08 / STEP-07: RED probe 1 -- include de quy TRAN thi hang rao phai DO ===
+--- (a) hash TRUOC probe ---
+hash-object: 53cc484886ddf4164f0741739af42e75ad913528
+index      : 100644 53cc484886ddf4164f0741739af42e75ad913528 0	tsconfig.json
+PROBE_WRITE_EXIT=0
+--- (b) include luc probe ---
+["**/*.ts","**/*.tsx",".next/types/**/*.ts"]
+--- (c) chay hang rao voi include de quy TRAN ---
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ ❯ src/shared/toolchain/tsc-program-boundary.static.test.ts (12 tests | 5 failed) 11ms
+   × tsc program boundary — sàn chống quét rỗng > include của tsconfig.json suy ra đủ gốc chương trình 3ms
+     → expected 1 to be greater than or equal to 5
+   × tsc program boundary — hình dạng của include > không mẫu nào có glob đệ quy ở đoạn ĐẦU 3ms
+     → expected [ …(2) ] to deeply equal []
+   × tsc program boundary — phân loại ĐÓNG > mỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do 1ms
+     → expected [ 'app', 'packages', 'prisma', …(2) ] to deeply equal []
+   × tsc program boundary — phân loại ĐÓNG > mỗi tệp TypeScript ở tầng gốc repo khớp một mẫu một-đoạn của include 0ms
+     → expected [ 'middleware.ts', …(6) ] to deeply equal []
+   × tsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA > một gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ 1ms
+     → expected [ 'app', 'packages', 'prisma', …(3) ] to deeply equal [ 'zzz-unclassified-fake' ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — sàn chống quét rỗng > include của tsconfig.json suy ra đủ gốc chương trình
+AssertionError: expected 1 to be greater than or equal to 5
+ ❯ src/shared/toolchain/tsc-program-boundary.static.test.ts:218:32
+    216| 
+    217|   it('include của tsconfig.json suy ra đủ gốc chương trình', () => {
+    218|     expect(PROGRAM_ROOTS.size).toBeGreaterThanOrEqual(MIN_PROGRAM_ROOT…
+       |                                ^
+    219|   });
+    220| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — hình dạng của include > không mẫu nào có glob đệ quy ở đoạn ĐẦU
+AssertionError: expected [ …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "**/*.ts — glob đệ quy ở đoạn ĐẦU: **",
++   "**/*.tsx — glob đệ quy ở đoạn ĐẦU: **",
++ ]
+
+ ❯ src/shared/toolchain/tsc-program-boundary.static.test.ts:231:23
+    229|       .filter((c) => c.kind.kind === 'violation')
+    230|       .map((c) => c.pattern + ' — ' + (c.kind as { reason: string }).r…
+    231|     expect(offenders).toEqual([]);
+       |                       ^
+    232|   });
+    233| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — phân loại ĐÓNG > mỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do
+AssertionError: expected [ 'app', 'packages', 'prisma', …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "app",
++   "packages",
++   "prisma",
++   "src",
++   "tests",
++ ]
+
+ ❯ src/shared/toolchain/tsc-program-boundary.static.test.ts:247:26
+    245|         !Object.prototype.hasOwnProperty.call(OUTSIDE_PROGRAM, name),
+    246|     );
+    247|     expect(unclassified).toEqual([]);
+       |                          ^
+    248|   });
+    249| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — phân loại ĐÓNG > mỗi tệp TypeScript ở tầng gốc repo khớp một mẫu một-đoạn của include
+AssertionError: expected [ 'middleware.ts', …(6) ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "middleware.ts",
++   "next-env.d.ts",
++   "playwright.config.ts",
++   "vitest.config.ts",
++   "vitest.integration-files.ts",
++   "vitest.integration.config.ts",
++   "vitest.unit.config.ts",
++ ]
+
+ ❯ src/shared/toolchain/tsc-program-boundary.static.test.ts:266:23
+    264|       (name) => !ROOT_FILE_PATTERNS.some((p) => matchesRootFilePattern…
+    265|     );
+    266|     expect(uncovered).toEqual([]);
+       |                       ^
+    267|   });
+    268| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA > một gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ
+AssertionError: expected [ 'app', 'packages', 'prisma', …(3) ] to deeply equal [ 'zzz-unclassified-fake' ]
+
+- Expected
++ Received
+
+  Array [
++   "app",
++   "packages",
++   "prisma",
++   "src",
++   "tests",
+    "zzz-unclassified-fake",
+  ]
+
+ ❯ src/shared/toolchain/tsc-program-boundary.static.test.ts:318:26
+    316|         !Object.prototype.hasOwnProperty.call(OUTSIDE_PROGRAM, name),
+    317|     );
+    318|     expect(unclassified).toEqual(['zzz-unclassified-fake']);
+       |                          ^
+    319|   });
+    320| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 7 passed (12)
+   Start at  19:32:40
+   Duration  283ms (transform 33ms, setup 0ms, collect 65ms, tests 11ms, environment 0ms, prepare 60ms)
+
+PROBE_RED_EXIT=1
+RESTORE_EXIT=0
+--- (d) hash SAU khi hoan nguyen ---
+hash-object: 53cc484886ddf4164f0741739af42e75ad913528
+index      : 100644 53cc484886ddf4164f0741739af42e75ad913528 0	tsconfig.json
+porcelain  : [M  tsconfig.json]
+--- (e) chay lai hang rao sau hoan nguyen ---
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ ✓ src/shared/toolchain/tsc-program-boundary.static.test.ts (12 tests) 3ms
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  19:32:42
+   Duration  259ms (transform 33ms, setup 0ms, collect 64ms, tests 3ms, environment 0ms, prepare 56ms)
+
+PROBE_GREEN_EXIT=0

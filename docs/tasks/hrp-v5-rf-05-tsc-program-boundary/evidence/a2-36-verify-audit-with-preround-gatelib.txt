@@ -1,0 +1,38 @@
+MUC DICH: chay lai DUNG cong verify-audit nhung voi gate-lib.ps1 ban PRE-ROUND
+  de chung minh ket luan CONDITIONAL khong dua vao dung cu vua bi mot luong Tier 1 khac sua.
+CMD: git cat-file -p 4caa5fd5 > $T/gate-lib.ps1 ; powershell -NoProfile -File $T/verify-audit.ps1 -TaskPath ... -HandoffPath ... -RepoRoot C:\CodeApp\HrP
+TIME: 2026-09-05 08:50:39 SEAST
+--- hash cua THU VIEN dung trong lan chay nay ---
+gate-lib.ps1 (temp, pre-round)  = 4caa5fd51e09fd9a066612729dc6f7888f551403
+gate-lib.ps1 (repo, da dich)    = 43ada847f9bd84494f80114de01f9f0b1b05c816
+verify-audit.ps1 (temp)         = 2520a48dd7893f5cf9674357fd6a36e58772bcbd
+verify-audit.ps1 (repo)         = 2520a48dd7893f5cf9674357fd6a36e58772bcbd
+--- grep: ban pre-round KHONG biet token hash-object ---
+temp  GateCommandPattern chua 'hash-object': 0
+repo  GateCommandPattern chua 'hash-object': 2
+--- output cong duoi thu vien pre-round ---
+AUDIT SUBSTANCE GATE
+  subject: docs\tasks\hrp-v5-rf-05-tsc-program-boundary\AUDIT.md (against docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md)
+
+  [OK]   S-01 AUDIT.md size 30596 bytes.
+  [OK]   S-01 AUDIT.md is tracked by git (recoverable).
+  [OK]   A-01 all 8 required sections present.
+  [OK]   A-02 spec version v1.2 matches TASK.
+  [OK]   A-03 12 AC all carry a result row.
+  [OK]   S-02 every measured AC row carries a command and a value.
+  [OK]   S-17 no measured value is reused across three or more AC.
+  [OK]   A-05 verdict: CONDITIONAL
+  [OK]   S-07 section 5 is consistent with the AC table.
+  [OK]   S-08 no AC passed over a HANDOFF ENV_BLOCKED declaration.
+  [OK]   A-06 section 4 has 12 evidence rows.
+  [OK]   S-02 section 4 rows all carry command + result.
+  [OK]   S-10 33 measured values are new relative to TASK/HANDOFF.
+  [OK]   S-13 section 7 round numbering is within 1..2.
+  [OK]   S-14 no plaintext secret in AUDIT.md.
+  [OK]   S-15 43 referenced artifact path(s) exist.
+  [WARN] S-16 82 staged path(s) lie outside docs/tasks/hrp-v5-rf-05-tsc-program-boundary/ (e.g. .ai-pipeline/scripts/gate-lib.ps1, .ai-pipeline/scripts/verify-handoff.ps1, .ai-pipeline/scripts/verify-pipeline.ps1). Tier 3 must never commit source or test files with its audit.
+  [OK]   A-07 closing handoff line present.
+
+RESULT: PASS WITH WARNINGS (1 warning(s)).
+AUDIT.md carries measured evidence; Tier 1 may resolve on it.
+VA_PREROUND_LIB_EXIT=0

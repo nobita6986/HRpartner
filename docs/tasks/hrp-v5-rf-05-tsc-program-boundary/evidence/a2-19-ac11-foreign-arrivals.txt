@@ -1,0 +1,42 @@
+=== NAM path xuat hien SAU MOC ma NGOAI vung rf-05: quy trach + tac dong len phep do cua toi ===
+--- CMD: git status --porcelain -uall tren nam path (XY that, khong bi thu muc gom)
+A  docs/tasks/hrp-v5-gate-01-audit-row-identity/TASK.md
+A  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md
+ M src/shared/ui/role-guard/role-guard-layout.tsx
+?? docs/tasks/hrp-v5-gate-02-lane-premise-correction/TASK.md
+?? docs/v6-admin-rebuild.md
+SWEEP_EXIT=0
+
+--- CMD: python mtime cua nam path ay so voi mtime cua chinh cac artifact do luong cua TOI
+--- path la cua LUONG KHAC ---
+  2026-09-04 22:07:56  docs/tasks/hrp-v5-gate-01-audit-row-identity/TASK.md
+  2026-09-04 22:12:59  docs/tasks/hrp-v5-gate-02-lane-premise-correction
+  2026-09-04 20:17:13  docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md
+  2026-09-04 22:17:40  docs/v6-admin-rebuild.md
+  2026-09-04 22:17:12  src/shared/ui/role-guard/role-guard-layout.tsx
+--- artifact do luong cua TIER 3 (toi) ---
+  2026-09-04 21:49:31  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a2-03-program-after-raw.txt
+  2026-09-04 21:50:35  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a2-04-ac02-ac03-ac04-program-vs-tree.txt
+  2026-09-04 21:55:53  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a2-06-lane-typecheck.txt
+  2026-09-04 21:56:41  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a2-07-lane-unit.txt
+  2026-09-04 22:05:39  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a2-08-lane-default-bare.txt
+  2026-09-04 22:18:40  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a2-15-ac11-porcelain.txt
+
+--- CMD: grep role-guard-layout trong ban liet ke chuong trinh tsc do TOI chay (a2-03)
+1
+GREP_EXIT=0  (1 = 0 dong = tep chua co trong chuong trinh luc toi do)
+
+--- CMD: cat noi dung tep la (kiem xem no co lam typecheck do khong)
+338
+'use client';
+
+/**
+ * RoleGuardLayout — Role-based layout wrapper cho 3 cổng HRP.
+ *
+ * Cổng HRP (HRP v3.0 §4.2):
+ *   1. Admin Portal (/) — Admin, HR, PM, Accountant
+ *   2. Worker Portal (/m) — Worker (PWA/mobile-first)
+ *   3. Vendor Portal (vendor.hrpartner.vn) — Vendor, CTV
+ *
+ * Layout khác nhau theo cổng:
+ *   - Admin: sidebar desktop (left, 240px) + header + content

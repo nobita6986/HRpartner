@@ -1,0 +1,7 @@
+=== AC-10 lại: toàn lane canonical npm run test:unit ===
+UNIT_EXIT=0
+[2m Test Files [22m [1m[32m108 passed[39m[22m[90m (108)[39m
+[2m      Tests [22m [1m[32m1654 passed[39m[22m[90m (1654)[39m
+-- lane có NÊU tệp hàng rào ở path mới? --
+1
+-- mốc STEP-01: 107 tệp / 1642 test --

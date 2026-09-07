@@ -1,0 +1,13 @@
+### 1. Ba nhóm của 4.2 trong porcelain CUỐI (untracked-files=all cho hai path bản giao)
+ M tsconfig.json
+--- dòng gộp của thư mục evidence (nhóm 2) ---
+A  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+?? docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/
+
+### 2. Vì sao hai path bản giao KHÔNG nằm trong delta: chúng nằm trong dòng GỘP của thư mục chưa theo dõi
+-- mốc STEP-01 có dòng gộp nào cho src/shared/build và cho evidence? --
+75:A  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+144:?? docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/
+
+### 3. Nhóm 3 -- tệp tạm của hai phép thử ĐỎ, phải KHÔNG còn dấu vết
+LINES_MATCHING_PROBE=0

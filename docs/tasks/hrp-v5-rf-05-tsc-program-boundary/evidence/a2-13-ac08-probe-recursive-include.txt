@@ -1,0 +1,54 @@
+=== a2-13 AC-08 independent RED probe: include reverted to two bare recursive globs ===
+--- CMD: git hash-object tsconfig.json ; git ls-files -s tsconfig.json ; git diff --cached --numstat -- tsconfig.json   (BEFORE probe)
+HASH_BEFORE=53cc484886ddf4164f0741739af42e75ad913528
+100644 53cc484886ddf4164f0741739af42e75ad913528 0	tsconfig.json
+12	2	tsconfig.json
+
+--- CMD: python — rewrite ONLY the include array in the WORKTREE copy to ['**/*.ts','**/*.tsx']
+INCLUDE_NOW=['**/*.ts', '**/*.tsx']
+MUTATE_EXIT=0
+HASH_DURING_PROBE=8ef7732af7905653274c2ad26f60fce8f1fea8ed
+
+--- CMD: npx vitest run --config vitest.unit.config.ts src/shared/toolchain/tsc-program-boundary.static.test.ts   (expect RED)
+PROBE1_RED_EXIT=1
+8:[31m   [31m×[31m tsc program boundary — hình dạng của include[2m > [22mkhông mẫu nào có glob đệ quy ở đoạn ĐẦU[90m 3[2mms[22m[31m[39m
+17:[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 5 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+19:[31m[1m[7m FAIL [27m[22m[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — sàn chống quét rỗng[2m > [22minclude của tsconfig.json suy ra đủ gốc chương trình
+20:[31m[1mAssertionError[22m: expected 0 to be greater than or equal to 5[39m
+31:[31m[1m[7m FAIL [27m[22m[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — hình dạng của include[2m > [22mkhông mẫu nào có glob đệ quy ở đoạn ĐẦU
+32:[31m[1mAssertionError[22m: expected [ …(2) ] to deeply equal [][39m
+39:[31m+   "**/*.ts — glob đệ quy ở đoạn ĐẦU: **",[39m
+40:[31m+   "**/*.tsx — glob đệ quy ở đoạn ĐẦU: **",[39m
+53:[31m[1m[7m FAIL [27m[22m[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — phân loại ĐÓNG[2m > [22mmỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do
+54:[31m[1mAssertionError[22m: expected [ '.next', 'app', 'packages', …(3) ] to deeply equal [][39m
+79:[31m[1m[7m FAIL [27m[22m[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — phân loại ĐÓNG[2m > [22mmỗi tệp TypeScript ở tầng gốc repo khớp một mẫu một-đoạn của include
+80:[31m[1mAssertionError[22m: expected [ 'middleware.ts', …(6) ] to deeply equal [][39m
+106:[31m[1m[7m FAIL [27m[22m[39m src/shared/toolchain/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA[2m > [22mmột gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ
+107:[31m[1mAssertionError[22m: expected [ '.next', 'app', 'packages', …(4) ] to deeply equal [ 'zzz-unclassified-fake' ][39m
+132:[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+133:[2m      Tests [22m [1m[31m5 failed[39m[22m[2m | [22m[1m[32m7 passed[39m[22m[90m (12)[39m
+
+--- CMD: git restore -- tsconfig.json    (worktree from INDEX; the index is never touched)
+RESTORE_EXIT=0
+HASH_AFTER_RESTORE=53cc484886ddf4164f0741739af42e75ad913528
+100644 53cc484886ddf4164f0741739af42e75ad913528 0	tsconfig.json
+12	2	tsconfig.json
+M  tsconfig.json
+INCLUDE_AFTER_RESTORE:
+['next-env.d.ts', 'middleware.ts', '*.config.ts', 'vitest.integration-files.ts', 'app/**/*.ts', 'app/**/*.tsx', 'src/**/*.ts', 'src/**/*.tsx', 'packages/**/*.ts', 'packages/**/*.tsx', 'prisma/**/*.ts', 'tests/**/*.ts', '.next/types/**/*.ts']
+
+--- CMD: npx vitest run --config vitest.unit.config.ts src/shared/toolchain/tsc-program-boundary.static.test.ts   (expect GREEN)
+PROBE1_GREEN_EXIT=0
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+
+--- CMD: cmp evidence copy of the delivered index blob against the restored worktree file
+docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a2-05-tsconfig-delivered-index-copy.json tsconfig.json differ: char 2, line 1
+CMP_EXIT=1
+
+--- CMD: python CR census — why cmp exited 1 (core.autocrlf, memory trap)
+EVIDENCE_COPY_BYTES=1052 CR=0
+WORKTREE_BYTES=1108 CR=56
+LF_NORMALISED_EQUAL=1
+EXIT=0
+NOTE: cmp exit 1 is core.autocrlf, not a content difference. The valid identity measure is git hash-object, which returns 53cc484886ddf4164f0741739af42e75ad913528 on both the worktree file and the index entry.

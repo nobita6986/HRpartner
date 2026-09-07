@@ -1,0 +1,7 @@
+  221  src
+  115  app
+  112  .next
+    7  (root file)
+    2  packages
+    2  tests
+    1  prisma

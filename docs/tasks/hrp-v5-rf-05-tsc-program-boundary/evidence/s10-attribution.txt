@@ -1,0 +1,25 @@
+### QUY THUỘC bằng phép đo, không bằng lời: mỗi path dirty ngoài nhóm của tôi thuộc contract nào
+-- package.json --
+   khai ở: docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+   khai ở: docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+   khai ở: docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+-- package-lock.json --
+   khai ở: docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+   khai ở: docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+   khai ở: docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+-- .gitignore --
+   khai ở: docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+-- playwright.config.ts --
+   khai ở: docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+
+### các path dirty dưới app/ và src/ ngoài hàng rào của tôi: contract nào khai?
+  app/(jobs)/viec-lam/[slug]/page.tsx  <=  hrp-v5-go-live-05-public-card-truth hrp-v5-go-live-07-marketplace-launch-proof hrp-v5-go-live-09-public-board-architecture hrp-v5-go-live-12-public-job-detail-page hrp-v5-go-live-15-public-contrast-aa hrp-v5-go-live-18-public-surface-hardening 
+  app/api/public/applications/[trackingCode]/route.ts  <=  hrp-mp2-apply-tracking hrp-v5-go-live-04-public-read-rls-closure hrp-v5-go-live-07-marketplace-launch-proof hrp-v5-go-live-13-tracking-pii-mask hrp-v5-go-live-18-public-surface-hardening hrp-v5-go-live-19-tracking-pii-db-mask hrp-v5-ops-06a-marketplace-launch-hardening 
+  src/domains/applications/marketplace-inventory.static.test.ts  <=  hrp-v5-go-live-04-public-read-rls-closure hrp-v5-go-live-05-public-card-truth hrp-v5-go-live-13-tracking-pii-mask hrp-v5-go-live-14-industry-label-truth hrp-v5-go-live-15-public-contrast-aa hrp-v5-go-live-18-public-surface-hardening 
+  src/domains/applications/tracking-pii-containment.static.test.ts  <=  hrp-v5-go-live-18-public-surface-hardening hrp-v5-go-live-19-tracking-pii-db-mask 
+  src/domains/reconciliation/margin.service.ts  <=  hrp-phase4-vertical-slices hrp-v5-go-live-17-rls-required-relation-sweep 
+  src/domains/reconciliation/statement.service.ts  <=  hrp-phase4-vertical-slices hrp-v5-go-live-17-rls-required-relation-sweep hrp-v5-m1-09a-current-field-projection 
+  src/domains/staffing/submission.service.ts  <=  hrp-mp2-apply-tracking hrp-p1-portals hrp-phase4-vertical-slices hrp-v5-go-live-04-public-read-rls-closure hrp-v5-go-live-17-rls-required-relation-sweep 
+  src/shared/security/public-surface-limiter.static.test.ts  <=  hrp-v5-go-live-18-public-surface-hardening 
+  src/shared/security/rate-limit-guard.ts  <=  hrp-v5-go-live-04-public-read-rls-closure hrp-v5-go-live-18-public-surface-hardening hrp-v5-hotfix-02-public-jobs-required-relation 
+  src/shared/security/required-relation-sweep.static.test.ts  <=  hrp-v5-go-live-17-rls-required-relation-sweep 

@@ -1,0 +1,61 @@
+=== AC-06: kiem CAU TRUC hang rao bang grep -n tren src/shared/toolchain/tsc-program-boundary.static.test.ts ===
+TONG_DONG=320
+
+-- (1) DOC tsconfig.json va suy tap goc tu mang include DA PHAN TICH --
+19: * Giới hạn CÓ TÊN: tệp này đọc `tsconfig.json` bằng `JSON.parse`, tức nó đòi tsconfig là JSON
+26:import { existsSync, readFileSync, readdirSync, type Dirent } from 'node:fs';
+38:const MIN_PROGRAM_ROOTS = 5;
+173:const TSCONFIG_PATH = join(REPO_ROOT, 'tsconfig.json');
+175:const parsedTsconfig = JSON.parse(readFileSync(TSCONFIG_PATH, 'utf8')) as { include?: unknown };
+176:const includeRaw = parsedTsconfig.include;
+177:const INCLUDE: string[] = Array.isArray(includeRaw)
+178:  ? includeRaw.filter((p): p is string => typeof p === 'string')
+182:const PROGRAM_ROOTS = new Set(
+235:    expect(Array.isArray(includeRaw)).toBe(true);
+236:    expect(INCLUDE.length).toBe(Array.isArray(includeRaw) ? includeRaw.length : -1);
+
+-- (2) quet thu muc bang thu vien chuan cua Node --
+26:import { existsSync, readFileSync, readdirSync, type Dirent } from 'node:fs';
+27:import { dirname, join, sep } from 'node:path';
+28:import { fileURLToPath } from 'node:url';
+30:import { describe, expect, it } from 'vitest';
+121:    return readdirSync(dir, { withFileTypes: true });
+  (danh sach import day du o tren: chi node:fs, node:path, node:url va vitest)
+
+-- (3) san chong quet rong, gia tri so ghi TRONG ma --
+37:const MIN_SCANNED_TS_FILES = 300;
+38:const MIN_PROGRAM_ROOTS = 5;
+39:const MIN_ROOT_LEVEL_TS_FILES = 5;
+
+-- (4) danh sach NGOAI chuong trinh, moi muc kem ly do --
+49:const OUTSIDE_PROGRAM: Record<string, string> = {
+50-  'new-ui': 'nguyên mẫu UI chưa theo dõi bởi git, là đầu vào của một contract UI về sau (DEC-05)',
+51-  scratch: 'vật liệu nháp của những round đã đóng, không phải mã chạy (DEC-05)',
+52-  docs: 'bản chép đông lạnh làm hồ sơ audit; typecheck một ảnh chụp lịch sử là phép đo vô nghĩa (DEC-04)',
+53-};
+54-
+
+-- (5) tu-kiem bo so mau tren du lieu BIA --
+271:  const FAKE_PATTERNS: Array<{ pattern: string; kind: PatternKind['kind']; root?: string }> = [
+282:  const FAKE_MATCHES: Array<[string, string, boolean]> = [
+292:  it('phân loại mẫu đúng trên tám mẫu bịa', () => {
+293:    const actual = FAKE_PATTERNS.map((c) => {
+297:    const expected = FAKE_PATTERNS.map((c) =>
+303:  it('bộ so mẫu một-đoạn đúng trên bảy cặp bịa', () => {
+304:    const actual = FAKE_MATCHES.map(
+307:    const expected = FAKE_MATCHES.map(([p, name, want]) => p + ' ~ ' + name + ' => ' + String(want));
+311:  it('một gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ', () => {
+
+-- (6) KHONG execSync, KHONG goi git: DAN TUNG DONG khop, khong dem --
+   Ly do dan dong chu khong dem: mot con so khong phan biet duoc mot LOI GOI
+   voi mot chu trong comment. Duoi day la TOAN BO cho khop, va khong cho nao
+   la mot loi goi.
+23: * Nó không gọi ra ngoài process: không `execSync`, không `git` (mục `4.3`). Một hàng rào phụ thuộc
+24: * `git` sẽ chết ở môi trường không có checkout. Nó không đọc một `DATABASE_URL` nào.
+42:const SKIP_DIRS = new Set(['node_modules', '.git']);
+50:  'new-ui': 'nguyên mẫu UI chưa theo dõi bởi git, là đầu vào của một contract UI về sau (DEC-05)',
+   so ky tu backslash trong tep (grep -cF) = 0
+
+-- (7) khong mang path chep tay dong vai NGUON SU THAT --
+   so dong chua literal chuoi bat dau bang mot goc chuong trinh = 0
+   (0 = khong goc nao trong sau duoc viet cung; ca sau deu SUY tu include)

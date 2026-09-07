@@ -1,0 +1,25 @@
+### tệp hàng rào có TỒN TẠI trên đĩa?
+-rw-r--r-- 1 Admin 197121 13206 Sep  4 09:49 src/shared/build/tsc-program-boundary.static.test.ts
+
+### git có NHÌN THẤY nó không? (check-ignore -v, mã thoát 0 = ĐANG BỊ BỎ QUA)
+.gitignore:10:build/	src/shared/build/tsc-program-boundary.static.test.ts
+CHECK_IGNORE_EXIT=0
+
+### mẫu nào trong .gitignore bắt nó -- dòng nguồn
+.gitignore:10:build/	src/shared/build/tsc-program-boundary.static.test.ts
+
+### .gitignore ở worktree khác HEAD chỗ nào? (tệp này do luồng khác sửa)
+ .gitignore | 4 ++++
+ 1 file changed, 4 insertions(+)
+diff --git a/.gitignore b/.gitignore
+index 98c2329..a638065 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -70,3 +70,7 @@ docs/VERCEL_ENV_PRODUCTION.local.md
+ .ai-pipeline/admin-token.txt
+ .ai-pipeline/manager-token.txt
+ .ai-pipeline/role_secrets.txt
++
++# Playwright browser lane (hrp-v5-test-01) — artifact sinh ra moi luot chay, khong commit
++test-results/
++playwright-report/

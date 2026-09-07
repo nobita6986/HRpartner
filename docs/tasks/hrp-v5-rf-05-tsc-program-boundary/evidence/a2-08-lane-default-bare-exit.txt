@@ -1,0 +1,1 @@
+DEFAULT_BARE_EXIT=0  (cmd.exe /c "npx vitest run > file 2>&1" via PowerShell, $LASTEXITCODE)

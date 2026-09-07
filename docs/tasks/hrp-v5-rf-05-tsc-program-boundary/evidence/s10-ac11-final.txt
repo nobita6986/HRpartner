@@ -1,0 +1,161 @@
+### AC-11 / STEP-10 -- KIEM PHAM VI CUOI
+### Do SAU khi git add hai tep ban giao. Moi con so duoi day do bang dung lenh in ngay tren no.
+
+== 1. tong dong hai danh sach ==
+$ git status --porcelain --untracked-files=all | wc -l
+  PORCELAIN_ALL=622
+$ git status --porcelain | wc -l   (cung hinh lenh voi moc STEP-01, thu muc chua theo doi bi gop)
+  PORCELAIN_COLLAPSED=345
+$ git diff --cached --name-only | wc -l
+  CACHED=146
+
+== 2. DELTA so voi moc STEP-01 -- phep kiem ma muc 4.2 doan cuoi chi dinh ==
+   Moc la evidence/s01-status-before.txt, do bang 'git status --porcelain' TRAN.
+   Vi vay delta cung phai do bang 'git status --porcelain' TRAN. So sanh danh sach --untracked-files=all
+   voi moc la SAI hinh lenh: moc gop '?? .claude/' thanh MOT dong con lenh kia banh no ra tung tep.
+  MOC_PATHS=331   HIEN_TAI_PATHS=345
+  PATH_MOI=14
+    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-30-owner-notouch-sweep.txt LUONG KHAC -- artifact contract cung lo
+    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-31-contract-bump-v14.txt LUONG KHAC -- artifact contract cung lo
+    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-32-ac15-under-v14.txt  LUONG KHAC -- artifact contract cung lo
+    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-33-reclassify-under-v14.txt LUONG KHAC -- artifact contract cung lo
+    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-34-gx-attribution.txt  LUONG KHAC -- artifact contract cung lo
+    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-35-modules-numstat-and-gx-final.txt LUONG KHAC -- artifact contract cung lo
+    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-36-page-numstat-recheck.txt LUONG KHAC -- artifact contract cung lo
+    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-37-section3-numbers.txt LUONG KHAC -- artifact contract cung lo
+    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-38-final-fingerprint-and-citations.txt LUONG KHAC -- artifact contract cung lo
+    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-39-final-index-attribution.txt LUONG KHAC -- artifact contract cung lo
+    docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-40-closing-hygiene.txt LUONG KHAC -- artifact contract cung lo
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/HANDOFF.md                                  NHOM 2 -- artifact cua chinh task nay
+    src/shared/toolchain/tsc-program-boundary.static.test.ts                                 NHOM 1 -- ban giao cua task nay (Modules)
+    tsconfig.json                                                                            NHOM 1 -- ban giao cua task nay (Modules)
+  PATH_MAT=0   (phai bang 0)
+
+== 3. NHOM 3 cua muc 4.2 -- tep tam hai phep thu DO phai KHONG con dau vet ==
+$ grep -c zz-rf05-probe  tren danh sach --untracked-files=all
+  LINES_MATCHING_zz-rf05-probe=0
+  DIR_zz-rf05-probe_TON_TAI=KHONG
+  -- tsconfig.tmp.json: KHONG phai tep tam cua task nay, tra chu bang hai phep do --
+$ grep -n "tsconfig.tmp.json" evidence/s01-status-before.txt
+    330:?? tsconfig.tmp.json
+$ ls -l --time-style=long-iso tsconfig.tmp.json
+    -rw-r--r-- 1 Admin 197121 0 2026-09-03 16:22 tsconfig.tmp.json
+    => 0 byte, moc thoi gian 2026-09-03 16:22, som hon gio task nay bat dau (2026-09-04 09:34),
+       va no da nam san o dong 330 cua moc STEP-01. Phep thu DO cua STEP-07 ghi truc tiep len
+       tsconfig.json roi hoan nguyen, hash-object hai luot bang nhau; no khong sinh tep .tmp nao.
+
+== 4. DUONG DAN CAM CHAM cua muc 4.2 -- git status --porcelain chay RIENG tung path ==
+  CO DONG : package.json
+              M  package.json
+  CO DONG : package-lock.json
+              M  package-lock.json
+  CO DONG : .gitignore
+              M  .gitignore
+  RONG    : middleware.ts
+  RONG    : vitest.config.ts
+  RONG    : vitest.unit.config.ts
+  RONG    : vitest.integration.config.ts
+  RONG    : vitest.integration-files.ts
+  CO DONG : playwright.config.ts
+              A  playwright.config.ts
+  RONG    : eslint.config.mjs
+  RONG    : prisma
+  RONG    : .env
+  RONG    : .env.local
+  RONG    : .env.production
+
+  -- Bon path CO DONG. Quy chu bang NOI DUNG staged cua chinh chung, khong bang loi khai --
+$ grep -l -F -- "<path>" tren ba TASK.md cung lo
+  package.json           duoc NEU o contract: hrp-v5-go-live-18-public-surface-hardening hrp-v5-go-live-17-rls-required-relation-sweep hrp-v5-test-01-browser-lane 
+  package-lock.json      duoc NEU o contract: hrp-v5-go-live-18-public-surface-hardening hrp-v5-go-live-17-rls-required-relation-sweep hrp-v5-test-01-browser-lane 
+  .gitignore             duoc NEU o contract: hrp-v5-test-01-browser-lane 
+  playwright.config.ts   duoc NEU o contract: hrp-v5-test-01-browser-lane 
+
+$ git diff --cached -- <path> | grep -niE "playwright|test-results" | head -4   -- noi dung staged tu chi ve test-01
+  --- package.json ---
+      dong dien +/- trong diff staged = 4
+      9:+    "test:browser": "playwright test",
+      17:+    "@playwright/test": "1.62.1",
+  --- package-lock.json ---
+      dong dien +/- trong diff staged = 65
+      9:+        "@playwright/test": "1.62.1",
+      17:+    "node_modules/@playwright/test": {
+      19:+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.62.1.tgz",
+      24:+        "playwright": "1.62.1"
+  --- .gitignore ---
+      dong dien +/- trong diff staged = 6
+      10:+# Playwright browser lane (hrp-v5-test-01) — artifact sinh ra moi luot chay, khong commit
+      11:+test-results/
+      12:+playwright-report/
+  --- playwright.config.ts ---
+      dong dien +/- trong diff staged = 87
+      1:diff --git a/playwright.config.ts b/playwright.config.ts
+      5:+++ b/playwright.config.ts
+      8:+ * playwright.config.ts — hrp-v5-test-01 / RQ-02, RQ-03 / DEC-01, DEC-03, DEC-07.
+      30:+import { defineConfig, devices } from '@playwright/test';
+
+$ git diff --cached -- tsconfig.json | grep -ciE "playwright|test-results"  -- ban giao cua TASK NAY khong dinh gi cua test-01
+      0
+      => Bon path ay mang noi dung cua test-01 va khong mang mot dong nao cua task nay.
+         Task nay chua bao gio mo bon tep ay: bang chung doc lap la muc 2 tren, PATH_MOI khong nêu
+         mot path nao trong bon, tuc trang thai dirty cua chung da co san o moc STEP-01.
+
+== 5. new-ui/ va scratch/ -- muc 4.2 cam cham, phai con NGUYEN ==
+  new-ui  tong tep = 14
+  scratch tong tep = 242
+$ git status --porcelain -- new-ui scratch | grep -cE "^( M|M |D | D|MM|AD)"
+  DONG_M_HOAC_D=0   (phai bang 0: git chi duoc coi chung la ?? chua theo doi)
+$ 22 tep .ts/.tsx cua hai cay ay tren danh sach RA KHOI chuong trinh -- tat ca phai con ton tai
+  SO_TEP_MAT=0
+
+== 6. TAP STAGED -- phan chu tung path, khong path nao duoc de trong ==
+$ git diff --cached --name-only | wc -l
+  CACHED=146
+  Phan loai: nhom 1 va nhom 2 cua muc 4.2, roi hang tai san luong khac.
+  Path khong roi vao mot muc nao trong so ay duoc in nguyen ra o dong CUOI, va phai bang 0.
+  path da khai cua contract cung lo (test-01): .gitignore
+  path da khai cua contract cung lo (18): app/(jobs)/viec-lam/[slug]/page.tsx
+  path da khai cua contract cung lo (18): app/api/public/applications/[trackingCode]/route.ts
+  path da khai cua contract cung lo (18 17 test-01): package-lock.json
+  path da khai cua contract cung lo (18 17 test-01): package.json
+  path da khai cua contract cung lo (test-01): playwright.config.ts
+  path da khai cua contract cung lo (18): src/domains/applications/marketplace-inventory.static.test.ts
+  path da khai cua contract cung lo (18): src/domains/applications/tracking-pii-containment.static.test.ts
+  path da khai cua contract cung lo (17): src/domains/reconciliation/margin.service.ts
+  path da khai cua contract cung lo (17): src/domains/reconciliation/statement.service.ts
+  path da khai cua contract cung lo (17): src/domains/staffing/submission.service.ts
+  path da khai cua contract cung lo (18): src/shared/security/public-surface-limiter.static.test.ts
+  path da khai cua contract cung lo (18): src/shared/security/rate-limit-guard.ts
+  path da khai cua contract cung lo (17): src/shared/security/required-relation-sweep.static.test.ts
+  path da khai cua contract cung lo (test-01): tests/browser/public-home.spec.ts
+
+  NHOM 1 -- ban giao cua task nay          = 2
+      src/shared/toolchain/tsc-program-boundary.static.test.ts
+      tsconfig.json
+  NHOM 2 -- artifact cua chinh task nay    = 1
+  luong khac: TASK.md (contract Tier 1)    = 3
+  luong khac: tep gate .ai-pipeline        = 3
+  luong khac: artifact go-live-18          = 79
+  luong khac: artifact go-live-17          = 21
+  luong khac: artifact test-01             = 22
+  NGOAI MOI PHAN LOAI                      = 0   (phai bang 0)
+
+== 7. AC-11 phan commit -- HEAD phai bang dung gia tri STEP-01 da ghi ==
+$ git log --oneline -1
+    bay gio : e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+    STEP-01 : e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+    BANG_NHAU=CO
+$ git stash list | wc -l   -- task nay khong tao stash moi
+    STASH=3
+$ git stash list --date=iso --format='%gd %cd %h %gs'   -- ca ba deu co truoc gio task nay bat dau
+    stash@{2026-09-03 00:51:17 +0700} 7cfb65d On main: wip: warm tonal theme (khong thuoc go-live-15)
+    stash@{2026-08-20 23:59:19 +0700} a361ce9 WIP on main: b656b59 docs(tier1): plan hrp-portal-m12.1-bod-projects-fix
+    stash@{2026-08-18 22:02:44 +0700} f496f1c On main: r3-tier2-aud-003-seed appBCC dirty -- do not apply
+    => moc thoi gian tre nhat la 2026-09-03 00:51, som hon 2026-09-04 09:34 la gio STEP-01 chay.
+
+== 8. KET LUAN AC-11 ==
+  Delta so voi moc STEP-01 co 14 path: 3 la cua task nay (nhom 1 hai tep ban giao, nhom 2 mot
+  HANDOFF.md) va 11 la artifact audit round 1 cua go-live-18, tuc hang tai san luong khac.
+  0 path bi mat. Nhom 3 khong de lai dau vet. 10 trong 14 duong dan cam cham cho output RONG;
+  4 duong con lai mang noi dung staged cua test-01 va deu duoc TASK.md cua test-01 neu ten.
+  Tap staged 146 path deu quy duoc chu. HEAD bang dung gia tri STEP-01: khong commit nao moi.

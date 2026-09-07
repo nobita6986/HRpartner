@@ -1,0 +1,32 @@
+MOC_ROWS=383  NOW_ROWS=464
+ADDED=81  GONE=0  XY_CHANGED=17
+
+--- ADDED theo vung ---
+  VUNG-TASK(N2)        75
+  NGOAI-VUNG            5
+  VUNG-MODULES(N1)      1
+  ADDED_NGOAI_VUNG=5 ['docs/tasks/hrp-v5-gate-01-audit-row-identity/TASK.md', 'docs/tasks/hrp-v5-gate-02-lane-premise-correction/', 'docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md', 'docs/v6-admin-rebuild.md', 'src/shared/ui/role-guard/role-guard-layout.tsx']
+
+--- GONE (nguong 0) ---
+--- XY_CHANGED ---
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac01-diff.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac02-count.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac02-entered.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac02-left.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac03-ac04-src-count.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac05-typecheck.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac06-boundary-src.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac07-boundary-unit.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac08-probe1.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac09-probe2.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac10-general.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac11-status.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac12-limitation.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-verify-audit.txt  'AM' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s01-gate.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s01-head-tsconfig.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s01-status-before.txt  '??' -> 'A '  [VUNG-TASK(N2)]
+
+ADDED_LA_ARTIFACT_TIER3_a2=28
+ADDED_LA_ARTIFACT_TIER2_r2_hoac_HANDOFF=47
+ADDED_KHAC=6 ['docs/tasks/hrp-v5-gate-01-audit-row-identity/TASK.md', 'docs/tasks/hrp-v5-gate-02-lane-premise-correction/', 'docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md', 'docs/v6-admin-rebuild.md', 'src/shared/ui/role-guard/role-guard-layout.tsx', 'tsconfig.json']

@@ -1,0 +1,86 @@
+=== R2 AC-09 / STEP-08: RED probe 2 -- thu muc goc CHUA PHAN LOAI thi hang rao phai DO ===
+--- (a) trang thai truoc khi tao thu muc tam ---
+porcelain thu muc tam: []
+ton tai: KHONG
+MKDIR_EXIT=0
+--- (b) thu muc tam da co mot .tsx chua phan loai ---
+probe.tsx
+--- (c) chay hang rao voi thu muc goc chua phan loai ---
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ ❯ src/shared/toolchain/tsc-program-boundary.static.test.ts (12 tests | 2 failed) 10ms
+   × tsc program boundary — phân loại ĐÓNG > mỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do 5ms
+     → expected [ 'zzz-tmp-rf05-probe' ] to deeply equal []
+   × tsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA > một gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ 1ms
+     → expected [ 'zzz-tmp-rf05-probe', …(1) ] to deeply equal [ 'zzz-unclassified-fake' ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — phân loại ĐÓNG > mỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do
+AssertionError: expected [ 'zzz-tmp-rf05-probe' ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "zzz-tmp-rf05-probe",
++ ]
+
+ ❯ src/shared/toolchain/tsc-program-boundary.static.test.ts:247:26
+    245|         !Object.prototype.hasOwnProperty.call(OUTSIDE_PROGRAM, name),
+    246|     );
+    247|     expect(unclassified).toEqual([]);
+       |                          ^
+    248|   });
+    249| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA > một gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ
+AssertionError: expected [ 'zzz-tmp-rf05-probe', …(1) ] to deeply equal [ 'zzz-unclassified-fake' ]
+
+- Expected
++ Received
+
+  Array [
++   "zzz-tmp-rf05-probe",
+    "zzz-unclassified-fake",
+  ]
+
+ ❯ src/shared/toolchain/tsc-program-boundary.static.test.ts:318:26
+    316|         !Object.prototype.hasOwnProperty.call(OUTSIDE_PROGRAM, name),
+    317|     );
+    318|     expect(unclassified).toEqual(['zzz-unclassified-fake']);
+       |                          ^
+    319|   });
+    320| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  19:33:21
+   Duration  331ms (transform 29ms, setup 0ms, collect 61ms, tests 10ms, environment 0ms, prepare 56ms)
+
+PROBE2_RED_EXIT=1
+RM_EXIT=0
+--- (d) sau khi xoa thu muc tam ---
+ton tai: KHONG
+porcelain thu muc tam: []
+porcelain toan cay khop 'zzz': [0] dong
+--- (e) chay lai hang rao sau khi xoa ---
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ ✓ src/shared/toolchain/tsc-program-boundary.static.test.ts (12 tests) 4ms
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  19:33:23
+   Duration  297ms (transform 29ms, setup 0ms, collect 60ms, tests 4ms, environment 0ms, prepare 55ms)
+
+PROBE2_GREEN_EXIT=0

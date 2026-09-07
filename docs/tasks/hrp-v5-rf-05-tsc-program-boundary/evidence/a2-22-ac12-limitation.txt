@@ -1,0 +1,8 @@
+=== AC-12 — doc muc gioi han HANDOFF (LIM-01) va kiem KHONG dong nao khang dinh build an toan ===
+--- CMD: grep -in build docs/tasks/hrp-v5-rf-05-tsc-program-boundary/HANDOFF.md | so dong
+3
+--- CMD: grep -in build ... (liet ke so dong, cat 300 ky tu)
+75:| `AC-12` | `python` đọc mtime toàn cây `.next`, `git hash-object tsconfig.json`, `python -c json.load` đọc khoá `include` | `683` tệp trong `.next`, tệp mới nhất cũ hơn MỐC `13524` giây → `KHONG_CHAY_BUILD=1`; blob vẫn `53cc4848`; `include` còn hiện diện với `nex
+95:| `LIM-01` | Giới hạn CÓ TÊN mà `RQ-06` cùng `AC-12` buộc ghi | Task này KHÔNG chứng minh rằng `next build` để yên khoá `include` của `tsconfig.json`. Lý do là mục `4.3` của contract CẤM chạy `npm run build` và cấm `next dev`. Phép kiểm ấy được giao sa
+114:| Giới hạn | evidence/r2-ac12-no-build-proof.txt | mtime toàn cây `.next`, `KHONG_CHAY_BUILD=1`, `DEC-06_DIEU_KIEN_GIU=1` |
+EXIT=0

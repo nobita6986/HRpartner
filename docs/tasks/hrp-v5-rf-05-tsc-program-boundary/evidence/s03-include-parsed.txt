@@ -1,0 +1,16 @@
+[
+  "next-env.d.ts",
+  "middleware.ts",
+  "*.config.ts",
+  "vitest.integration-files.ts",
+  "app/**/*.ts",
+  "app/**/*.tsx",
+  "src/**/*.ts",
+  "src/**/*.tsx",
+  "packages/**/*.ts",
+  "packages/**/*.tsx",
+  "prisma/**/*.ts",
+  "tests/**/*.ts",
+  ".next/types/**/*.ts"
+]
+LEN=13

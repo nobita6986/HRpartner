@@ -1,0 +1,60 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/CodeApp/HrP[39m
+
+ [31m❯[39m src/shared/build/tsc-program-boundary.static.test.ts [2m([22m[2m12 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[90m 11[2mms[22m[39m
+[31m   [31m×[31m tsc program boundary — phân loại ĐÓNG[2m > [22mmỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do[90m 6[2mms[22m[31m[39m
+[31m     → expected [ 'zz-rf05-probe' ] to deeply equal [][39m
+[31m   [31m×[31m tsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA[2m > [22mmột gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ[90m 1[2mms[22m[31m[39m
+[31m     → expected [ 'zz-rf05-probe', …(1) ] to deeply equal [ 'zzz-unclassified-fake' ][39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 2 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/shared/build/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — phân loại ĐÓNG[2m > [22mmỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do
+[31m[1mAssertionError[22m: expected [ 'zz-rf05-probe' ] to deeply equal [][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- Array [][39m
+[31m+ Array [[39m
+[31m+   "zz-rf05-probe",[39m
+[31m+ ][39m
+
+[36m [2m❯[22m src/shared/build/tsc-program-boundary.static.test.ts:[2m247:26[22m[39m
+    [90m245| [39m        [33m![39m[33mObject[39m[33m.[39mprototype[33m.[39mhasOwnProperty[33m.[39m[34mcall[39m([33mOUTSIDE_PROGRAM[39m[33m,[39m name)[33m,[39m
+    [90m246| [39m    )[33m;[39m
+    [90m247| [39m    [34mexpect[39m(unclassified)[33m.[39m[34mtoEqual[39m([])[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m248| [39m  })[33m;[39m
+    [90m249| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/shared/build/tsc-program-boundary.static.test.ts[2m > [22mtsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA[2m > [22mmột gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ
+[31m[1mAssertionError[22m: expected [ 'zz-rf05-probe', …(1) ] to deeply equal [ 'zzz-unclassified-fake' ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  Array [[22m
+[31m+   "zz-rf05-probe",[39m
+[2m    "zzz-unclassified-fake",[22m
+[2m  ][22m
+
+[36m [2m❯[22m src/shared/build/tsc-program-boundary.static.test.ts:[2m318:26[22m[39m
+    [90m316| [39m        [33m![39m[33mObject[39m[33m.[39mprototype[33m.[39mhasOwnProperty[33m.[39m[34mcall[39m([33mOUTSIDE_PROGRAM[39m[33m,[39m name)[33m,[39m
+    [90m317| [39m    )[33m;[39m
+    [90m318| [39m    [34mexpect[39m(unclassified)[33m.[39m[34mtoEqual[39m([[32m'zzz-unclassified-fake'[39m])[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m319| [39m  })[33m;[39m
+    [90m320| [39m})[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m10 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 09:51:26
+[2m   Duration [22m 278ms[2m (transform 34ms, setup 0ms, collect 65ms, tests 11ms, environment 0ms, prepare 58ms)[22m
+
+PROBE2_RED_EXIT=1

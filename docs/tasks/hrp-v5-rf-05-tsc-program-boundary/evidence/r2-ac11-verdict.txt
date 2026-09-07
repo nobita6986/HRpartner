@@ -1,0 +1,394 @@
+AC-11 — PHAN LOAI DONG TOAN CO SO + PHEP DO DELTA-vs-MOC
+====================================================================================================
+Nguon: r2-s01-status-before-raw.txt (MOC, STEP-01) vs r2-ac11-status-raw-final.txt (SAU)
+Cot Delta: "0" = trang thai o SAU GIONG HET o MOC (task nay khong dong gi vao path ay).
+           "MOI" = path xuat hien trong vong nay (phai nam trong vung cua task nay).
+
+Tong so path do: 427  |  N1=1  N2=134  N3=78  N4=214
+Chua phan loai : 0
+
+----------------------------------------------------------------------------------------------------
+NHOM 4 — vat lieu nhap ngoai moi contract, KHONG duoc git theo doi (AC-10 cau cuoi doi neu du path)
+----------------------------------------------------------------------------------------------------
+  ??  delta=0       .ai-pipeline/scripts/verify-gates.selftest.ps1
+  ??  delta=0       .claude/
+  ??  delta=0       .neon
+  ??  delta=0       docs/aff_plan - Copy.md
+  ??  delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac01-package.txt
+  ??  delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac02-config.txt
+  ??  delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac04-spec.txt
+  ??  delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac07-gitignore.txt
+  ??  delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac07-status.txt
+  ??  delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac11-status1.txt
+  ??  delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac11-status2.txt
+  ??  delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-ac12-staged.txt
+  ??  delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-c09-verify-task.txt
+  ??  delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/a2-verify-audit.txt
+  ??  delta=0       fix.patch
+  ??  delta=0       new-ui.md
+  ??  delta=0       new-ui/
+  ??  delta=0       patch_test.ps1
+  ??  delta=0       patch_test2.ps1
+  ??  delta=0       patch_test3.ps1
+  ??  delta=0       rls-probe-insert.txt
+  ??  delta=0       rls-probe-output.txt
+  ??  delta=0       scratch/_add.txt
+  ??  delta=0       scratch/_audit_idx.md
+  ??  delta=0       scratch/_del.txt
+  ??  delta=0       scratch/_gone.txt
+  ??  delta=0       scratch/_idx.txt
+  ??  delta=0       scratch/_t2_head.txt
+  ??  delta=0       scratch/_t2_idx.txt
+  ??  delta=0       scratch/_theme_head.txt
+  ??  delta=0       scratch/_theme_idx.txt
+  ??  delta=0       scratch/bump-gl14-v11.py
+  ??  delta=0       scratch/check-rpc-schema-usage.mjs
+  ??  delta=0       scratch/commit-aff-plan.txt
+  ??  delta=0       scratch/commit-gl05-handoff.txt
+  ??  delta=0       scratch/commit-gl09-relock.txt
+  ??  delta=0       scratch/commit-gl14-accepted.txt
+  ??  delta=0       scratch/commit-gl14-audit-artifact.txt
+  ??  delta=0       scratch/commit-gl14-cursor.txt
+  ??  delta=0       scratch/commit-gl14-r3.txt
+  ??  delta=0       scratch/commit-gl14-v11.txt
+  ??  delta=0       scratch/commit-golive14.txt
+  ??  delta=0       scratch/cursor-2026-09-02-gl07-prose.py
+  ??  delta=0       scratch/cursor-2026-09-02-gl07-relock.py
+  ??  delta=0       scratch/cursor-commit-msg.txt
+  ??  delta=0       scratch/cursor-gl07-v13.py
+  ??  delta=0       scratch/cursor-gl07-v14.py
+  ??  delta=0       scratch/cursor-gl09-accepted.py
+  ??  delta=0       scratch/cursor-gl09-audit-r2.py
+  ??  delta=0       scratch/cursor-gl09-deployed.py
+  ??  delta=0       scratch/cursor-gl14-accepted.py
+  ??  delta=0       scratch/cursor-gl14-audit.py
+  ??  delta=0       scratch/cursor-golive14.py
+  ??  delta=0       scratch/db-state-check.mjs
+  ??  delta=0       scratch/fix-gl09-detail-path.py
+  ??  delta=0       scratch/g-base-audit.css
+  ??  delta=0       scratch/g-base-nav.tsx
+  ??  delta=0       scratch/g-base-page.tsx
+  ??  delta=0       scratch/git_status_after.txt
+  ??  delta=0       scratch/git_status_before.txt
+  ??  delta=0       scratch/git_status_final.txt
+  ??  delta=0       scratch/gl05-cursor-closed.py
+  ??  delta=0       scratch/gl05-cursor-v13.py
+  ??  delta=0       scratch/gl05-cursor-v14.py
+  ??  delta=0       scratch/gl05-facet-perf.cjs
+  ??  delta=0       scratch/gl05-facet-perf.ts
+  ??  delta=0       scratch/gl05-industry-check.cjs
+  ??  delta=0       scratch/gl05-industry-check.ts
+  ??  delta=0       scratch/gl05-resolve.py
+  ??  delta=0       scratch/gl05-stripped-grep.mjs
+  ??  delta=0       scratch/gl05-table-check.py
+  ??  delta=0       scratch/gl05-v14.py
+  ??  delta=0       scratch/gl07-bump-v15.py
+  ??  delta=0       scratch/gl07-relock-commit-msg.txt
+  ??  delta=0       scratch/gl07-revlog-v15.py
+  ??  delta=0       scratch/gl07-v13-dec17-db-leg.py
+  ??  delta=0       scratch/gl07-v14-fix-ledger-alarm.py
+  ??  delta=0       scratch/gl08-accepted-commit-msg.txt
+  ??  delta=0       scratch/gl08-bump-v12.py
+  ??  delta=0       scratch/gl08-bump-v13.py
+  ??  delta=0       scratch/gl08-cursor-accepted.py
+  ??  delta=0       scratch/gl08-cursor-commit-msg.txt
+  ??  delta=0       scratch/gl08-cursor-resolved.py
+  ??  delta=0       scratch/gl08-cursor-v12.py
+  ??  delta=0       scratch/gl08-cursor-v13.py
+  ??  delta=0       scratch/gl08-owner-op-accepted.py
+  ??  delta=0       scratch/gl08-page.diff
+  ??  delta=0       scratch/gl09-audit-r1-ruling.py
+  ??  delta=0       scratch/gl09-handoff-count.py
+  ??  delta=0       scratch/gl09-handoff-fixrefs.py
+  ??  delta=0       scratch/gl09-handoff-note03.py
+  ??  delta=0       scratch/gl09-handoff-s3.py
+  ??  delta=0       scratch/gl09-handoff-s31.py
+  ??  delta=0       scratch/gl09-handoff-s33.py
+  ??  delta=0       scratch/gl09-handoff-s45.py
+  ??  delta=0       scratch/gl09-handoff-s67.py
+  ??  delta=0       scratch/gl09-handoff-s6note.py
+  ??  delta=0       scratch/gl09-resolution-accept.py
+  ??  delta=0       scratch/gl15-cursor-apply.py
+  ??  delta=0       scratch/gl15-cursor-note-append.txt
+  ??  delta=0       scratch/gl15-cursor.yaml
+  ??  delta=0       scratch/gl15-deadvars-head.mjs
+  ??  delta=0       scratch/gl15-deadvars.mjs
+  ??  delta=0       scratch/gl15-delivered-vs-head.py
+  ??  delta=0       scratch/gl15-enc-test.txt
+  ??  delta=0       scratch/gl15-handoff-scope-numbers.py
+  ??  delta=0       scratch/gl15-linemap.py
+  ??  delta=0       scratch/gl15-md-table-check.py
+  ??  delta=0       scratch/gl15-mytests-head-tokens.mjs
+  ??  delta=0       scratch/gl15-numbers.py
+  ??  delta=0       scratch/gl15-r2-patch1.py
+  ??  delta=0       scratch/gl15-r2-patch2.py
+  ??  delta=0       scratch/gl15-r2-patch3.py
+  ??  delta=0       scratch/gl15-r2-patch4.py
+  ??  delta=0       scratch/gl15-r2-patch5.py
+  ??  delta=0       scratch/gl15-r2-patch6.py
+  ??  delta=0       scratch/gl15-r2-patch7.py
+  ??  delta=0       scratch/gl15-r2-scope.sh
+  ??  delta=0       scratch/gl15-step02-css.py
+  ??  delta=0       scratch/gl15-step03-nav.py
+  ??  delta=0       scratch/gl15-step04.py
+  ??  delta=0       scratch/gl15-step05-test.py
+  ??  delta=0       scratch/gl15-step05b-hover.py
+  ??  delta=0       scratch/gl15-step06-fixlabels.py
+  ??  delta=0       scratch/gl15-step06-measure.py
+  ??  delta=0       scratch/gl15-truth.py
+  ??  delta=0       scratch/gl16-head.py
+  ??  delta=0       scratch/gl16-numbers.py
+  ??  delta=0       scratch/gl16-remeasure.py
+  ??  delta=0       scratch/gl16-scan.txt
+  ??  delta=0       scratch/gl17-step06-fix.py
+  ??  delta=0       scratch/gl17-step07-barrier.py
+  ??  delta=0       scratch/golive03-ac-drive.mjs
+  ??  delta=0       scratch/golive03-ac08-remeasure.mjs
+  ??  delta=0       scratch/golive03-bigint-probe.mjs
+  ??  delta=0       scratch/golive03-db-probe.mjs
+  ??  delta=0       scratch/golive03-greps.ps1
+  ??  delta=0       scratch/golive03-migr-check.mjs
+  ??  delta=0       scratch/golive03-rls-gaps.mjs
+  ??  delta=0       scratch/golive03-seed.mjs
+  ??  delta=0       scratch/golive11-sql-balance.mjs
+  ??  delta=0       scratch/handover-s13.py
+  ??  delta=0       scratch/head-globals.css
+  ??  delta=0       scratch/lj-all.json
+  ??  delta=0       scratch/lj-area.json
+  ??  delta=0       scratch/lj-portal.html
+  ??  delta=0       scratch/md-table-check.py
+  ??  delta=0       scratch/mem-15-fix.py
+  ??  delta=0       scratch/mem-baseline-trap.py
+  ??  delta=0       scratch/mem-gate-trap3.py
+  ??  delta=0       scratch/mem-idx.py
+  ??  delta=0       scratch/mem-idx2.py
+  ??  delta=0       scratch/mem-index-update.py
+  ??  delta=0       scratch/mem-render-mode.py
+  ??  delta=0       scratch/mock-upstash.js
+  ??  delta=0       scratch/neon-schemadiff-live-vs-mp2test.txt
+  ??  delta=0       scratch/neon-schemadiff-snapshot-vs-live.txt
+  ??  delta=0       scratch/relock-gl07-a.py
+  ??  delta=0       scratch/relock-gl07-b.py
+  ??  delta=0       scratch/relock-gl07-c.py
+  ??  delta=0       scratch/relock-gl07-d.py
+  ??  delta=0       scratch/relock-gl07-e.py
+  ??  delta=0       scratch/relock-gl07-f.py
+  ??  delta=0       scratch/relock-gl07-v12.py
+  ??  delta=0       scratch/relock-gl07-v12b.py
+  ??  delta=0       scratch/relock-gl09-a.py
+  ??  delta=0       scratch/relock-gl09-b.py
+  ??  delta=0       scratch/relock-gl09-c.py
+  ??  delta=0       scratch/relock-gl09-d.py
+  ??  delta=0       scratch/relock-gl09-e1.py
+  ??  delta=0       scratch/relock-gl09-e2.py
+  ??  delta=0       scratch/relock-gl09-e3.py
+  ??  delta=0       scratch/relock-gl09-e4.py
+  ??  delta=0       scratch/relock-gl09-f.py
+  ??  delta=0       scratch/resolve-gl14.py
+  ??  delta=0       scratch/run_m1_06b_audit.ps1
+  ??  delta=0       scratch/run_m1_06c_audit.ps1
+  ??  delta=0       scratch/seed-hrp-live-demo.sql
+  ??  delta=0       scratch/seed-mkt-cleanup-probe.mjs
+  ??  delta=0       scratch/seed-mkt-probe.mjs
+  ??  delta=0       scratch/stash-globals.diff
+  ??  delta=0       scratch/t1-lane-audit-r4.txt
+  ??  delta=0       scratch/t1-lane-verify.txt
+  ??  delta=0       scratch/t1r10/
+  ??  delta=0       scratch/t1r4/
+  ??  delta=0       scratch/t1r5/
+  ??  delta=0       scratch/t1r6-test-unit.txt
+  ??  delta=0       scratch/t1r6-typecheck-no-newui.txt
+  ??  delta=0       scratch/t1r6-typecheck.txt
+  ??  delta=0       scratch/t1r6/
+  ??  delta=0       scratch/t1r7/
+  ??  delta=0       scratch/t1r8/
+  ??  delta=0       scratch/t1r9/
+  ??  delta=0       scratch/test-db.js
+  ??  delta=0       scratch/test-func.js
+  ??  delta=0       scratch/test-rpc.js
+  ??  delta=0       scratch/test-sql.js
+  ??  delta=0       scratch/test-writer.js
+  ??  delta=0       scratch/test_output.txt
+  ??  delta=0       scratch/tsc-diff.txt
+  ??  delta=0       scratch/tsc-files.txt
+  ??  delta=0       scratch/tsc-new-roots.txt
+  ??  delta=0       scratch/tsc-new.tmp
+  ??  delta=0       scratch/tsc-new.txt
+  ??  delta=0       scratch/tsc-old-roots.txt
+  ??  delta=0       scratch/tsc-old.txt
+  ??  delta=0       scratch/ui-contrast-out.txt
+  ??  delta=0       scratch/ui-contrast-scan.py
+  ??  delta=0       scratch/vitest-raw.txt
+  ??  delta=0       scratch/vt_out.txt
+  ??  delta=0       scripts/debug-parser.mjs
+  ??  delta=0       temp.diff
+  ??  delta=0       tsconfig.tmp.json
+  ??  delta=0       update_globals.js
+  => so path nhom 4: 214   |   so path co delta khac 0: 0
+
+----------------------------------------------------------------------------------------------------
+NHOM 3 — tai san cua luong khac (moi dong PHAI co delta=0, tuc task nay khong cham)
+----------------------------------------------------------------------------------------------------
+  A   delta=0       .ai-pipeline/scripts/gate-lib.ps1
+   M  delta=0       .ai-pipeline/scripts/verify-audit.ps1
+  A   delta=0       .ai-pipeline/scripts/verify-handoff.ps1
+  M   delta=0       .ai-pipeline/scripts/verify-pipeline.ps1
+   M  delta=0       .ai-pipeline/scripts/verify-task.ps1
+  M   delta=0       .gitignore
+   M  delta=0       docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+   M  delta=0       docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+   M  delta=0       docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/HANDOFF.md
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/TASK.md
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-baseline-vs-head.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-baseline.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-gate-task.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.meta.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.raw.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.meta.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.raw.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s02-config-diff.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.raw.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s04-mutation.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s05-bare-lane.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s06-regression.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s07-gate-handoff.txt
+  A   delta=0       docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s07-scope.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/AUDIT.md
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/HANDOFF.md
+  M   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r1-handoff-snapshot.md
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-blk02-tsconfig-reverted.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s00-baseline.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s08-hygiene.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s08-preflight-typecheck.raw.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s08-preflight-typecheck.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s08-run1.meta.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s08-run1.raw.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s08-run2.meta.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s08-run2.raw.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s09-cycle.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s09-red.meta.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s09-red.raw.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s10-scope.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s10-typecheck.meta.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s10-typecheck.raw.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s10-unit.meta.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s10-unit.raw.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s11-ac10.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s11-gate-handoff.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/r2-s11-gate-task.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-gate.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-newui-attribution.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-typecheck.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s01-unit.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s02-browser.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s02-install.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s02-version.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s03-gitignore.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s04-nextenv-override.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s06-script.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s07-blocker-attribution.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s07-diag-green.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s07-run1.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s08-run2.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s09-negative-fixture.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10-relane.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10-scope.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10b-lane-recheck.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s10c-attribution-app-src.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s11-gate-handoff.txt
+  A   delta=0       docs/tasks/hrp-v5-test-01-browser-lane/evidence/s11-scope-and-baseline.txt
+  M   delta=0       package-lock.json
+  M   delta=0       package.json
+  A   delta=0       playwright.config.ts
+   M  delta=0       public/index.html
+  A   delta=0       src/shared/toolchain/vitest-default-lane.static.test.ts
+  A   delta=0       tests/browser/public-home.spec.ts
+  M   delta=0       vitest.config.ts
+  => so path nhom 3: 78   |   so path co delta khac 0: 0
+
+----------------------------------------------------------------------------------------------------
+NHOM 1+2 — vung cua chinh task nay (135 path). Chi liet ke path KHONG thuoc evidence/ cho gon.
+----------------------------------------------------------------------------------------------------
+  A   delta=0       docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md
+  A   delta=0       docs/tasks/hrp-v5-rf-05-tsc-program-boundary/HANDOFF.md
+  A   delta=0       docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+  A   delta=0       src/shared/toolchain/tsc-program-boundary.static.test.ts
+  M   delta=MOI     tsconfig.json
+  => path duoi evidence/ cua slug nay: 130 (deu la MOI, deu la san pham do luong cua vong 2)
+
+====================================================================================================
+KET LUAN AC-11 (nua phan loai)
+  Path chua phan loai            : 0   (nguong: 0)
+  Path nhom 3/4 co delta khac 0  : 0   (nguong: 0)
+  PHAN_LOAI_DONG_DAT=1
+
+====================================================================================================
+AC-11 / BO SUNG A — PATH NAM TRONG THU MUC SLUG NAY MA KHONG PHAI TAI SAN CUA TIER 2
+====================================================================================================
+Nhom 2 cua 4.2 cho phep tôi cham HANDOFF.md va evidence/ cua slug nay. Ba path duoi day nam trong
+cung thu muc nhung thuoc tier KHAC. Chung deu delta=0, tuc vong 2 KHONG cham vao chung:
+  A    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md  <= tai san cua Tier 1
+  A    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md  <= tai san cua Tier 3
+
+  Bang chung khong cham AUDIT.md (blob o index vs blob o worktree, deu la ban Tier 3 ghi vong 1):
+    git ls-files -s : 100644 3413d9dc742c8472bd6fcca81c874b44edf391f0 0	docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md
+    hash-object     : 3413d9dc742c8472bd6fcca81c874b44edf391f0
+    Length (byte)   : 5785
+
+====================================================================================================
+AC-11 / BO SUNG B — new-ui/ va scratch/ CON NGUYEN
+====================================================================================================
+Nguong: van con tep chua theo doi nhu truoc, KHONG tep nao bi xoa hay bi sua.
+  new-ui/ : so tep tren dia = 14   |   so dong '?? new-ui/...' o MOC = 1
+         trang thai git bay gio (dem dong): 1 dong, ky tu dau: ?? 
+         so dong KHONG phai '??' (tuc bi xoa/sua/stage): 0   (nguong: 0)
+  scratch/ : so tep tren dia = 255   |   so dong '?? scratch/...' o MOC = 188
+         trang thai git bay gio (dem dong): 188 dong, ky tu dau: ?? 
+         so dong KHONG phai '??' (tuc bi xoa/sua/stage): 0   (nguong: 0)
+
+  Diff cua git doi voi hai thu muc nay (nguong: RONG ca hai lenh):
+    git diff --name-only -- new-ui scratch        => []
+    git diff --cached --name-only -- new-ui scratch => []
+
+====================================================================================================
+AC-11 / BO SUNG C — TASK NAY KHONG TAO COMMIT NAO
+====================================================================================================
+  Gia tri ghi o STEP-01 : 31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+  git log --oneline -1  : 31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+  git rev-parse HEAD    : 31625c4bb4ced393661684c2c8cb96f1e42bf054
+  git status -sb dong 1 : ## main...origin/main
+  KHONG_COMMIT_MOI=1   (HEAD == origin/main, khong co dau ahead)
+
+=====================================================================
+PHU LUC D — 427 -> 431: TANG DON DIEU TRONG BIN N2 (do sau khi cong ban giao PASS lan dau)
+=====================================================================
+Ly do ghi phu luc nay: Tier 3 chay lai `git status --porcelain | wc -l` se thay 431,
+KHONG phai 427 nhu ban chup `r2-ac11-status-raw-final.txt`. Bon dong chenh la bon
+ARTIFACT do chinh STEP-09/STEP-10 sinh ra SAU khi ban chup duoc lay. Do bang so sanh
+TAP KHOA (bo hai ky tu trang thai) giua ban chup va porcelain hien tai:
+
+  cu (luc do AC-11) : 427
+  nay               : 431
+  THEM              : 4
+     A  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac11-verdict.txt
+     A  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac12-no-build-proof.txt
+     A  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-handoff-snapshot.md
+     A  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s10-gate-handoff.txt
+  MAT               : 0
+  THEM ngoai slug   : 0
+  THEM chua staged  : 0
+  TANG_DON_DIEU_TRONG_BIN_N2 = 1
+
+Ba tinh chat khien phep tang nay KHONG lam hong phan loai DONG cua AC-11:
+  1. MAT = 0. Khong path nao roi khoi porcelain, tuc khong path nao bi commit, bi
+     restore hay bi xoa giua hai lan do.
+  2. THEM ngoai slug = 0. Ca bon deu nam duoi `docs/tasks/hrp-v5-rf-05-tsc-program-boundary/`,
+     tuc bin N2 — vung cua chinh task nay. Bon bin con lai (N1/N3/N4) khong doi mot dong.
+  3. THEM chua staged = 0. Ca bon o trang thai `A ` (staged, worktree sach), tuc da
+     duoc bao ve khoi lop loi truncation ngay khi ghi.
+
+Vay so 427 trong phan chinh la ban chup DUNG tai thoi diem do, va 431 la 427 + bon
+artifact bang chung. Hai con so KHONG mau thuan; chung do hai thoi diem khac nhau.

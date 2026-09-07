@@ -1,0 +1,5 @@
+=== lần nhắc 'shared/build' còn lại nằm ở đâu (phải là dòng changelog v1.2, nói LÝ DO đổi path) ===
+202:| `v1.2` | 2026-09-04 | **Đổi path tệp hàng rào từ `src/shared/build/` sang `src/shared/toolchain/`, chín 
+
+=== kiểm NHẤT QUÁN CỘT theo TỪNG bảng: mỗi dòng phải khớp số ống của HEADER bảng đó ===
+SO_DONG_LECH=0

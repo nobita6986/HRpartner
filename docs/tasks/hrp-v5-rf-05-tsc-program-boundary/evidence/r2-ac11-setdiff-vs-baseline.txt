@@ -1,0 +1,54 @@
+=== R2 AC-11: hieu tap dirty so voi MOC STEP-01 ===
+moc = r2-s01-status-before-raw.txt (383 path), bay gio = r2-ac11-status-raw.txt (421 path)
+
+--- path MOI xuat hien so voi moc: 38 ---
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac01-byte-proof.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac01-head-blob.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac01-include.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac02-setdiff.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac03-departed-safety.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac04-count-by-root.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac05-typecheck-after.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac06-guard-grep.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac06-guard-lines.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac06-guard-proof.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac07-guard-run.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac08-probe.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac09-probe.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac10-default-lane-after.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac10-red-set-match.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac10-summary.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac10-typecheck-after.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac10-unit-after.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac11-status-raw.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s01-default-lane-before.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s01-status-before-raw.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s01-typecheck-before.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s01-unit-before.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s02-count-by-root-before.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s02-listfiles-before-exit.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s02-listfiles-before.err
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s02-listfiles-before.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s02-program-before.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s03-blob-53cc484.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s03-restore.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s04-count-by-root-after.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s04-departed.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s04-entered.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s04-listfiles-after-exit.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s04-listfiles-after.err
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s04-listfiles-after.txt
+  ??   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s04-program-after.txt
+  M    tsconfig.json
+  SO_PATH_MOI_NGOAI_VUNG_TASK=0  -> PASS
+
+--- path BIEN MAT so voi moc: 0 ---
+  (RONG)
+
+--- path DOI CO STATUS so voi moc: 0 ---
+  (RONG)
+  SO_PATH_DOI_STATUS_NGOAI_VUNG_TASK=0  -> PASS
+
+--- new-ui/ va scratch/ con nguyen khong? ---
+  new-ui/   moc=1  bay gio=1  bien mat=0  doi status=0  moi status "??"=CO  -> PASS
+  scratch/  moc=188  bay gio=188  bien mat=0  doi status=0  moi status "??"=CO  -> PASS

@@ -1,0 +1,80 @@
+### AC-01 / AC-11 -- KIỂM PHẠM VI
+
+-- 1. git diff --cached --name-only cho tsconfig.json (mới chỉ sửa worktree, chưa add) --
+  LINES=0
+
+-- 2. TỪNG đường dẫn CẤM CHẠM: git status --porcelain, phải RỖNG (new-ui/ và scratch/ có luật riêng) --
+  CÓ DÒNG: package.json
+           M  package.json
+  CÓ DÒNG: package-lock.json
+           M  package-lock.json
+  CÓ DÒNG: .gitignore
+           M  .gitignore
+  RỖNG   : middleware.ts
+  RỖNG   : vitest.config.ts
+  RỖNG   : vitest.unit.config.ts
+  RỖNG   : vitest.integration.config.ts
+  RỖNG   : vitest.integration-files.ts
+  CÓ DÒNG: playwright.config.ts
+           A  playwright.config.ts
+  RỖNG   : eslint.config.mjs
+  RỖNG   : prisma
+  RỖNG   : .env
+  RỖNG   : .env.local
+  RỖNG   : .env.production
+
+-- 3. app/ và src/ : mọi dòng phải hoặc là hàng rào của tôi, hoặc là tài sản luồng khác --
+  M  app/(jobs)/viec-lam/[slug]/page.tsx
+  M  app/api/public/applications/[trackingCode]/route.ts
+  M  src/domains/applications/marketplace-inventory.static.test.ts
+  A  src/domains/applications/tracking-pii-containment.static.test.ts
+  M  src/domains/reconciliation/margin.service.ts
+  M  src/domains/reconciliation/statement.service.ts
+  M  src/domains/staffing/submission.service.ts
+  A  src/shared/security/public-surface-limiter.static.test.ts
+  M  src/shared/security/rate-limit-guard.ts
+  A  src/shared/security/required-relation-sweep.static.test.ts
+  ?? src/shared/toolchain/
+
+-- 4. docs/tasks/ ngoài slug của tôi --
+   M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+   M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+   M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/AUDIT.md
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/HANDOFF.md
+  M  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-gate17.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-tsc.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s01-unit.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s02-barrier-structure.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s02-remeasure.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s04-green.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s05-policy-classification.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s06-fix.py
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-green.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier-red.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s07-barrier.py
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s08-untouched.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-typecheck.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s09-unit.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-baseline.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-gate-h15-artifact.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-handoff-gate.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-newui-attribution.txt
+  A  docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/evidence/s10-scope.txt
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/AUDIT.md
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/HANDOFF.md
+  M  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-00-fingerprint-pre.txt
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-01-newui-class.txt
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-02-newui-origin.txt
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-03-unit.txt
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-04-lane-delta.txt
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-05-tsc.txt
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-06-tsc-exclude-newui.txt
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-07-lane-arithmetic.txt
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-08-page-order.txt
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-09-red-probe.txt
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-10-red-probe-pii.txt
+  A  docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-11-ac-measure.txt
+  TONG_DONG_NGOAI_SLUG=128

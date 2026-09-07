@@ -1,0 +1,18 @@
+PROOF: AUDIT.md round 2 va ban copy trong evidence/ la GIONG BYTE
+CMD: cmp; git hash-object; md5sum; python len(read('rb'))
+TIME: 2026-09-05 08:49:16 SEAST
+--- cmp ---
+CMP_EXIT=0
+--- git hash-object ---
+89b2102693160c27d8476149753623ccfc905f0e
+89b2102693160c27d8476149753623ccfc905f0e
+--- md5sum ---
+9740c41ca9fc9c0e8009a9b96eadc04a *docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md
+9740c41ca9fc9c0e8009a9b96eadc04a *docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a2-32-audit-round2-copy.md
+--- byte length doc bang python mode rb ---
+AUDIT_BYTES 30596
+COPY_BYTES 30596
+EQUAL True
+--- index blob cua AUDIT.md sau khi stage ---
+89b2102693160c27d8476149753623ccfc905f0e
+A  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md

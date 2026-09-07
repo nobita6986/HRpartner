@@ -1,0 +1,30 @@
+### STEP-10 -- ban staged cua TASK.md KHONG bang ban worktree. Do that, khong sua.
+### Tier 2 khong duoc cham TASK.md: muc 4.2 xep moi TASK.md duoi docs/tasks/ vao hang tai san
+### cua Tier 1 va cam sua, xoa, reset hoac bo stage no. Vi vay day chi la PHEP DO.
+
+$ git status --porcelain -- <TASK.md>
+AM docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+  EXIT=0
+
+$ grep -n "| Spec version |" <TASK.md>   # ban WORKTREE, la ban cong bo hien hanh
+10:| Spec version | `v1.2` |
+
+$ git show ":<TASK.md>" | grep -n "| Spec version |"   # ban trong INDEX
+10:| Spec version | `v1.1` |
+
+$ git diff --numstat -- <TASK.md>   # cong / tru / path
+11	10	docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+
+$ git cat-file -e "HEAD:<TASK.md>"   # tep nay co o HEAD khong
+  EXIT=1 -- KHONG co o HEAD, nen H-15 cua cong bi BO QUA
+
+$ git diff -- <TASK.md> | grep -E "^[+-]\| .v1\.[12]" 
+-| `v1.1` | 2026-09-04 | **Đảo thứ tự và mở hạng tài sản của luồng khác, theo phán quyết `AUD-001` của audit round 1 bên `hrp-v5-go-live-17-rls-required-relation-sweep`.** Bản `v1.0` cho task này chạy SAU khi lô 18/17 commit xong, nhưng phép đo cho thấy cả ba contract cùng lô đều đòi `npm run typecheck` exit `0` và không một task nào đạt được cho tới khi task NÀY chạy — điều kiện chờ ấy là một vòng tròn. Bản này bỏ điều kiện chờ, bỏ luật DỪNG khi cây dirty, và thêm hạng tài sản của luồng khác vào `4.2` để `AC-11` không FAIL oan vì bản giao của ba contract cùng lô cùng năm tệp gate của luồng khác. GIỮ nguyên chữ ba nhóm nên `STEP-10` cùng `AC-11` không đổi số nhóm. KHÔNG đổi phạm vi mã, KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào. Cửa sổ bump rộng nhất vì cả hai round vẫn đếm bằng `0` và task chưa có `HANDOFF.md` |
++| `v1.1` | 2026-09-04 | **Đảo thứ tự và mở hạng tài sản của luồng khác, theo phán quyết `AUD-001` của audit round 1 bên `hrp-v5-go-live-17-rls-required-relation-sweep`.** | Bản `v1.0` cho task này chạy SAU khi lô 18/17 commit xong, nhưng phép đo cho thấy cả ba contract cùng lô đều đòi `npm run typecheck` exit `0` và không một task nào đạt được cho tới khi task NÀY chạy — điều kiện chờ ấy là một vòng tròn. Bản này bỏ điều kiện chờ, bỏ luật DỪNG khi cây dirty, và thêm hạng tài sản của luồng khác vào `4.2` để `AC-11` không FAIL oan vì bản giao của ba contract cùng lô cùng năm tệp gate của luồng khác. GIỮ nguyên chữ ba nhóm nên `STEP-10` cùng `AC-11` không đổi số nhóm. KHÔNG đổi phạm vi mã, KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào. Cửa sổ bump rộng nhất vì cả hai round vẫn đếm bằng `0` và task chưa có `HANDOFF.md` |
++| `v1.2` | 2026-09-04 | **Đổi path tệp hàng rào từ `src/shared/build/` sang `src/shared/toolchain/`, chín chỗ trong văn, cộng một dấu ống cuối dòng bị thiếu ở dòng changelog `v1.1`. KHÔNG đổi một yêu cầu, một bước, một tiêu chí hay một con số nào.** | Path cũ bị git BỎ QUA. `.gitignore` có mẫu `build/` ở dòng `10` từ commit `451ea28` dưới đề mục build outputs, nên `git check-ignore -v` trên path cũ cho exit `0` và `git status --porcelain --untracked-files=all` trên nó cho `0` dòng. Vitest không đọc `.gitignore` nên lane vẫn chạy tệp và mọi bằng chứng test vẫn xanh, trong khi `git add` không bao giờ nhận nó: một commit sẽ ship allow-list fail-closed MÀ KHÔNG có hàng rào trả giá cho nó, đúng điểm mù mà `DEC-02` sinh ra để chặn. Nội dung tệp không đổi một byte, `git hash-object` hai bên cùng `0bfc244881c3f125dace47ac7832f71033cd94c0`. Không sửa `.gitignore` vì tệp ấy đang dirty của luồng khác và `Q-01` còn để ngỏ chính sách ignore. Cửa sổ bump còn mở vì `Current execution round` và `Current audit round` đều đếm `0` và task này chưa có `AUDIT.md`; bản `v1.2` được ghi vào `HANDOFF.md` của cùng round nên round audit sau đo đúng bản này |
+
+### Ket luan cua phep do:
+###   - Cong verify-task.ps1 doc ban WORKTREE, tuc v1.2, va HANDOFF khai Spec version v1.2 => khop.
+###   - Ban INDEX con v1.1. Ai doc contract bang 'git show :path' se doc ban CU.
+###   - Tier 3 phai doc TASK.md tu WORKTREE, hoac Tier 1 stage lai truoc khi mo audit round.
+###   - Tier 2 KHONG stage giup, vi lam vay la ghi vao index tai san cua Tier 1.

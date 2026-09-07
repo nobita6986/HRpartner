@@ -1,0 +1,5 @@
+=== STEP-08 cleanup proof (đếm dòng, không dùng mã thoát sau ống) ===
+DIR_EXISTS=NO
+PORCELAIN_TOTAL_LINES=340
+LINES_MATCHING_zz-rf05-probe=0
+LINES_MATCHING_probe.tsx=0

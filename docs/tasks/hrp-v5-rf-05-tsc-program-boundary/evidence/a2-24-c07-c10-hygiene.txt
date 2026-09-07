@@ -1,0 +1,22 @@
+=== C-10 — pham vi diff cua bang giao (staged) ===
+--- CMD: git diff --cached --numstat -- tsconfig.json src/shared/toolchain/tsc-program-boundary.static.test.ts
+320	0	src/shared/toolchain/tsc-program-boundary.static.test.ts
+12	2	tsconfig.json
+NUMSTAT_EXIT=0
+--- CMD: git diff --cached --stat -- tsconfig.json
+ tsconfig.json | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+--- CMD: git ls-files -s tren hai bang giao
+100644 0bfc244881c3f125dace47ac7832f71033cd94c0 0	src/shared/toolchain/tsc-program-boundary.static.test.ts
+100644 53cc484886ddf4164f0741739af42e75ad913528 0	tsconfig.json
+
+=== C-07 — ve sinh git ===
+--- CMD: git status -sb | head -1
+## main...origin/main
+--- CMD: git rev-parse HEAD | git rev-parse origin/main
+31625c4bb4ced393661684c2c8cb96f1e42bf054
+31625c4bb4ced393661684c2c8cb96f1e42bf054
+--- CMD: git rev-list --count origin/main..HEAD  (nguong 0 = khong commit chua push)
+0
+--- CMD: git stash list | wc -l
+3

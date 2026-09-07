@@ -1,0 +1,13 @@
+CMD: npx vitest run --config vitest.unit.config.ts src/shared/toolchain/tsc-program-boundary.static.test.ts
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ ✓ src/shared/toolchain/tsc-program-boundary.static.test.ts (12 tests) 5ms
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  19:32:10
+   Duration  272ms (transform 33ms, setup 0ms, collect 67ms, tests 5ms, environment 0ms, prepare 60ms)
+
+GUARD_ONLY_EXIT=0

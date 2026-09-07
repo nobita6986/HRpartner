@@ -1,0 +1,33 @@
+=== a2-12 AC-09 independent RED probe: unclassified root dir (Tier 3 ran this, not Tier 2) ===
+--- CMD: mkdir zzz-tmp-a2-audit-probe ; write one .tsx file into it
+total 41
+drwxr-xr-x 1 Admin 197121  0 Sep  4 22:08 .
+drwxr-xr-x 1 Admin 197121  0 Sep  4 22:08 ..
+-rw-r--r-- 1 Admin 197121 49 Sep  4 22:08 probe.tsx
+MKDIR_EXIT=0
+
+--- CMD: npx vitest run --config vitest.unit.config.ts src/shared/toolchain/tsc-program-boundary.static.test.ts   (expect RED)
+PROBE2_RED_EXIT=1
+--- assertion lines mentioning the probe dir:
+7:[31m     → expected [ 'zzz-tmp-a2-audit-probe' ] to deeply equal [][39m
+9:[31m     → expected [ 'zzz-tmp-a2-audit-probe', …(1) ] to deeply equal [ 'zzz-unclassified-fake' ][39m
+11:[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 2 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+14:[31m[1mAssertionError[22m: expected [ 'zzz-tmp-a2-audit-probe' ] to deeply equal [][39m
+21:[31m+   "zzz-tmp-a2-audit-probe",[39m
+35:[31m[1mAssertionError[22m: expected [ 'zzz-tmp-a2-audit-probe', …(1) ] to deeply equal [ 'zzz-unclassified-fake' ][39m
+41:[31m+   "zzz-tmp-a2-audit-probe",[39m
+55:[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+56:[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m10 passed[39m[22m[90m (12)[39m
+
+--- CMD: rm -r zzz-tmp-a2-audit-probe
+RM_EXIT=0
+TEST_PATH_EXISTS_AFTER_RM=0
+
+--- CMD: npx vitest run --config vitest.unit.config.ts src/shared/toolchain/tsc-program-boundary.static.test.ts   (expect GREEN again)
+PROBE2_GREEN_EXIT=0
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+
+--- CMD: git status --porcelain | grep -c zzz    (expect 0)
+PORCELAIN_LINES=455
+PORCELAIN_ZZZ_LINES=0

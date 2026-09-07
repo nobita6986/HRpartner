@@ -1,0 +1,26 @@
+=== R2-STEP-02 chuong trinh tsc TRUOC (tsconfig.json o HEAD, blob f0c8e7b4) ===
+CMD: npx tsc -p tsconfig.json --listFilesOnly
+LISTFILES_EXIT_BEFORE=0
+DONG_THO=1169 (ke ca node_modules)
+TEP_CUA_REPO=485 (bo node_modules, unique, duong dan tuong doi)
+
+--- dem theo thu muc goc ---
+  src                      222
+  app                      115
+  .next                    112
+  new-ui                   11
+  scratch                  11
+  <repo-root-file>         7
+  docs                     2
+  packages                 2
+  tests                    2
+  prisma                   1
+
+--- tep tang goc repo ---
+  middleware.ts
+  next-env.d.ts
+  playwright.config.ts
+  vitest.config.ts
+  vitest.integration-files.ts
+  vitest.integration.config.ts
+  vitest.unit.config.ts

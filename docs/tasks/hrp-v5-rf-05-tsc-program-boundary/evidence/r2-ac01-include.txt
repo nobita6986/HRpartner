@@ -1,0 +1,49 @@
+=== R2 AC-01 — diff chi cham khoa include ===
+CMD: git diff --cached -- tsconfig.json
+diff --git a/tsconfig.json b/tsconfig.json
+index f0c8e7b..53cc484 100644
+--- a/tsconfig.json
++++ b/tsconfig.json
+@@ -36,8 +36,18 @@
+     ]
+   },
+   "include": [
+-    "**/*.ts",
+-    "**/*.tsx",
++    "next-env.d.ts",
++    "middleware.ts",
++    "*.config.ts",
++    "vitest.integration-files.ts",
++    "app/**/*.ts",
++    "app/**/*.tsx",
++    "src/**/*.ts",
++    "src/**/*.tsx",
++    "packages/**/*.ts",
++    "packages/**/*.tsx",
++    "prisma/**/*.ts",
++    "tests/**/*.ts",
+     ".next/types/**/*.ts"
+   ],
+   "exclude": [
+DIFF_EXIT=0
+
+CMD: node -e đọc tsconfig.json rồi in mảng include
+SO_PHAN_TU=13
+ 1  next-env.d.ts
+ 2  middleware.ts
+ 3  *.config.ts
+ 4  vitest.integration-files.ts
+ 5  app/**/*.ts
+ 6  app/**/*.tsx
+ 7  src/**/*.ts
+ 8  src/**/*.tsx
+ 9  packages/**/*.ts
+10  packages/**/*.tsx
+11  prisma/**/*.ts
+12  tests/**/*.ts
+13  .next/types/**/*.ts
+CO_next_env_d_ts=1
+VI_TRI_next_env=1
+SO_MAU_CO_GLOB_DE_QUY_O_DOAN_DAU=0
+DANH_SACH_PHAM_QUY=[]
+NODE_EXIT=0

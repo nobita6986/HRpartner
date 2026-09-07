@@ -1,0 +1,20 @@
+CMD: git ls-files -s -- src/shared/toolchain/tsc-program-boundary.static.test.ts ; git status --porcelain -- src/shared/toolchain/tsc-program-boundary.static.test.ts ; wc -l
+100644 0bfc244881c3f125dace47ac7832f71033cd94c0 0	src/shared/toolchain/tsc-program-boundary.static.test.ts
+A  src/shared/toolchain/tsc-program-boundary.static.test.ts
+320
+--- git hash-object (dang repo) ---
+0bfc244881c3f125dace47ac7832f71033cd94c0
+
+=== grep -n cac dau hieu AC-06 ===
+readFileSync                 SO_DONG=2
+tsconfig.json                SO_DONG=8
+include                      SO_DONG=17
+readdirSync                  SO_DONG=2
+node:fs                      SO_DONG=1
+node:path                    SO_DONG=1
+300                          SO_DONG=1
+5                            SO_DONG=6
+OUTSIDE\|NGOAI\|outside      SO_DONG=7
+execSync                     SO_DONG=1
+child_process                SO_DONG=0
+git                          SO_DONG=4

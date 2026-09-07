@@ -1,0 +1,39 @@
+### Cong pipeline chay CUOI CUNG tren cay ban giao
+
+$ powershell -NoProfile -File .ai-pipeline/scripts/verify-pipeline.ps1
+    AI PIPELINE 3-TIER HEALTH CHECK
+      [OK] Folder exists: rules
+      [OK] Folder exists: skills
+      [OK] Folder exists: templates
+      [OK] Folder exists: scripts
+      [OK] File exists: Tier 1 manifest
+      [OK] File exists: Tier 2 manifest
+      [OK] File exists: Tier 3 manifest
+      [OK] File exists: Planner agent (Cursor YAML)
+      [OK] File exists: Engineer agent (Cursor YAML)
+      [OK] File exists: Auditor agent (Cursor YAML)
+      [OK] File exists: Cross-compat mapping
+      [OK] File exists: Global rules
+      [OK] File exists: Planner rules
+      [OK] File exists: Coder rules
+      [OK] File exists: Auditor rules
+      [OK] File exists: Coder skill
+      [OK] File exists: Auditor skill
+      [OK] File exists: TASK template
+      [OK] File exists: HANDOFF template
+      [OK] File exists: AUDIT template
+      [OK] File exists: Gate shared library
+      [OK] File exists: TASK contract validator
+      [OK] File exists: HANDOFF substance validator
+      [OK] File exists: AUDIT substance validator
+      [OK] File exists: Gate red/green self-test
+      [OK] File exists: Bootstrap wrapper generator
+    
+      [OK] Optional CLI available: node
+      [OK] Optional CLI available: npm
+      [OK] Optional CLI available: npx
+      [OK] Optional CLI available: codegraph
+      [WARN] Optional CLI unavailable: repomix
+    
+    RESULT: PASS. Three-tier, three-artifact contract is present.
+    EXIT=0

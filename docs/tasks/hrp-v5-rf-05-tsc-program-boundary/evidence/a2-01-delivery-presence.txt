@@ -1,0 +1,38 @@
+=== a2-01 delivery presence (Tier 3 round 2, independent) ===
+date=2026-09-04T14:46:57Z
+
+--- CMD: git log --oneline -1
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+EXIT=0
+
+--- CMD: git status -sb | head -1
+## main...origin/main
+EXIT=0
+
+--- CMD: git hash-object tsconfig.json
+53cc484886ddf4164f0741739af42e75ad913528
+EXIT=0
+
+--- CMD: git ls-files -s tsconfig.json
+100644 53cc484886ddf4164f0741739af42e75ad913528 0	tsconfig.json
+EXIT=0
+
+--- CMD: git diff --cached --numstat -- tsconfig.json
+12	2	tsconfig.json
+EXIT=0
+
+--- CMD: git status --porcelain tsconfig.json
+M  tsconfig.json
+EXIT=0
+
+--- CMD: git ls-files -s src/shared/toolchain/tsc-program-boundary.static.test.ts
+100644 0bfc244881c3f125dace47ac7832f71033cd94c0 0	src/shared/toolchain/tsc-program-boundary.static.test.ts
+EXIT=0
+
+--- CMD: git hash-object src/shared/toolchain/tsc-program-boundary.static.test.ts
+0bfc244881c3f125dace47ac7832f71033cd94c0
+EXIT=0
+
+--- CMD: git status --porcelain src/shared/toolchain/tsc-program-boundary.static.test.ts
+A  src/shared/toolchain/tsc-program-boundary.static.test.ts
+EXIT=0

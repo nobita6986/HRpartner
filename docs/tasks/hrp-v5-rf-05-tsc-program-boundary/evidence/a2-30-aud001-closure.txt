@@ -1,0 +1,15 @@
+=== a2-30 — dong AUD-001 bang chinh raw lane mac dinh cua toi (a2-08) ===
+--- CMD: grep -ac 'React is not defined' evidence/a2-08-lane-default-bare.txt
+SO_LAN_React_is_not_defined=0  (nguong 0; round 1 dem 24 test do vi loi nay)
+--- CMD: grep -acE '^ *FAIL ' evidence/a2-08-lane-default-bare.txt
+SO_DONG_FAIL=0  (nguong 0)
+--- CMD: grep placement-panel trong raw lane mac dinh
+ ✓ src/domains/applications/placement-panel.test.ts (26 tests) 22ms
+--- CMD: hai dong tong ket cua lane mac dinh (do CHINH toi chay, exit o a2-08-lane-default-bare-exit.txt)
+ Test Files  109 passed (109)
+      Tests  1669 passed (1669)
+--- CMD: dong dau cua artifact = dong lenh nguyen van
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+

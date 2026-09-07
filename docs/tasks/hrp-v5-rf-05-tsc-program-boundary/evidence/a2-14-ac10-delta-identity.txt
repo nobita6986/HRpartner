@@ -1,0 +1,26 @@
+=== AC-10 / DEV-01 số ba: phần tăng 5 test PASS co phai chinh tap DO cua hang rao tai MOC? ===
+(lan trich dau tien cua toi tra 0 dong ca hai ben vi regex '^FAIL ' bo qua khoang trang dau dong;
+ hai tap RONG bang nhau la bang nhau GIA — do lai bang '^ *FAIL ')
+
+--- CMD: sed strip-ANSI + grep '^ *FAIL ' tren raw DO do CHINH toi tao (probe 1, include = glob de quy = dieu kien MOC)
+MINE_RED_COUNT=5
+--- CMD: cung phep trich tren r2-s01-unit-before.txt (ban ghi MOC cua Tier 2, doi chieu)
+TIER2_MOC_RED_COUNT=5
+--- CMD: comm -3 (dong chi co o mot ben)
+SET_DIFF_LINES=0
+--- CMD: md5sum hai danh sach da sort (khong rong)
+ace85ed6c64cdfa8ee207002e92e0c02 */tmp/a2_mine.txt
+ace85ed6c64cdfa8ee207002e92e0c02 */tmp/a2_t2.txt
+--- danh sach DO cua toi:
+     1	src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — hình dạng của include > không mẫu nào có glob đệ quy ở đoạn ĐẦU
+     2	src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — phân loại ĐÓNG > mỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do
+     3	src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — phân loại ĐÓNG > mỗi tệp TypeScript ở tầng gốc repo khớp một mẫu một-đoạn của include
+     4	src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — sàn chống quét rỗng > include của tsconfig.json suy ra đủ gốc chương trình
+     5	src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA > một gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ
+
+--- CMD: dong tong ket cua tung lan chay
+PROBE1_TAI_TAO_DIEU_KIEN_MOC_CHI_TEP_HANG_RAO: Tests  5 failed | 7 passed (12)
+TIER2_MOC_TOAN_LANE: Test Files  1 failed | 108 passed (109)
+TIER2_MOC_TOAN_LANE: Tests  5 failed | 1664 passed (1669)
+TOI_DO_SAU_KHOI_PHUC: Test Files  109 passed (109)
+TOI_DO_SAU_KHOI_PHUC: Tests  1669 passed (1669)

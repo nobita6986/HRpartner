@@ -1,0 +1,10 @@
+  220  src
+  115  app
+  112  .next
+   11  new-ui
+   11  scratch
+    7  (root file)
+    2  docs
+    2  packages
+    2  tests
+    1  prisma

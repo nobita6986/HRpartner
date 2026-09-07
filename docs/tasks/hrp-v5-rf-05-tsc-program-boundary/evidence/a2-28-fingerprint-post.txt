@@ -1,0 +1,24 @@
+=== Dau tay CONG sau vong (post-round) — doi chieu voi a2-00-fingerprint-pre.txt ===
+--- CMD: git hash-object <5 tep cong>
+gate-lib.ps1           4caa5fd51e09fd9a066612729dc6f7888f551403
+verify-task.ps1        e36b83dfbf7c860e320d5409535b82001cab574e
+verify-handoff.ps1     3997dd4ff896ea9f7cebdf40a247bcb269ab23e5
+verify-audit.ps1       2520a48dd7893f5cf9674357fd6a36e58772bcbd
+verify-pipeline.ps1    1348bffe2adf3a5c247ecc1f3ed2525233b41db9
+
+--- Gia tri PRE da ghi luc dau vong:
+gate-lib.ps1 worktree=4caa5fd5 (exit=0) head=ABSENT_A (exit=128)
+verify-task.ps1 worktree=e36b83df (exit=0) head=f9014b7f (exit=0)
+verify-handoff.ps1 worktree=3997dd4f (exit=0) head=ABSENT_A (exit=128)
+verify-audit.ps1 worktree=2520a48d (exit=0) head=b5390297 (exit=0)
+verify-pipeline.ps1 worktree=1348bffe (exit=0) head=82d2bc5d (exit=0)
+
+--- CMD: git status --porcelain .ai-pipeline/scripts (dung cu co dich trong vong khong)
+A  .ai-pipeline/scripts/gate-lib.ps1
+ M .ai-pipeline/scripts/verify-audit.ps1
+A  .ai-pipeline/scripts/verify-handoff.ps1
+M  .ai-pipeline/scripts/verify-pipeline.ps1
+ M .ai-pipeline/scripts/verify-task.ps1
+?? .ai-pipeline/scripts/verify-gates.selftest.ps1
+--- CMD: git log --oneline -1
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit

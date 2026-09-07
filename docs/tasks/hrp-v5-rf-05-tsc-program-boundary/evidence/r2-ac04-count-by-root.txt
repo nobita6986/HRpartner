@@ -1,0 +1,30 @@
+=== R2 AC-04: uniq -c doan thu muc dau cua danh sach SAU ===
+CMD: cut doan dau moi dong cua r2-s04-program-after.txt roi sort | uniq -c (nhanh .next giu lai de tham chieu)
+
+NHOM              TRUOC      SAU   NGUONG  KET QUA
+src                 222      222      223  LECH
+app                 115      115      115  PASS
+packages              2        2        2  PASS
+prisma                1        1        1  PASS
+tests                 2        2        2  PASS
+(root file)           7        7        7  PASS
+new-ui               11        0        0  PASS
+scratch              11        0        0  PASS
+docs                  2        0        0  PASS
+.next               112      112        -  bo khoi phep so chinh thuc
+
+TONG (bo .next): TRUOC=373 SAU=349
+TONG (ca .next): TRUOC=485 SAU=461  chenh=24
+
+--- KE TOAN dong "src": vi sao SAU = moc chu khong = moc + 1 ---
+  round 1 STEP-02 moc src = 220 (doc s02-count-by-root-before.txt), round 1 SAU = 221 -> dung moc + 1.
+  round 2 STEP-02 moc src = 222 = 220 + 2. Hai tep cong them la HAI tep hang rao da ton tai san:
+    src/shared/toolchain/tsc-program-boundary.static.test.ts   (ban giao rf-05, staged tu round 1)
+    src/shared/toolchain/vitest-default-lane.static.test.ts    (ban giao rf-06, staged round 1 cua rf-06)
+  include cu cua HEAD la "**/*.ts" nen ca hai da la thanh vien chuong trinh TRUOC luc sua include.
+  Vi vay round 2 khong the co tep nao "vao" chuong trinh; src = moc + 0 la ket qua DUNG cua mot round KHOI PHUC.
+  Thuc chat AC-04 bao ve: src KHONG MAT tep nao va hang rao CO trong chuong trinh SAU. Ca hai dat.
+  Xem DEV-01 trong HANDOFF muc 5.
+
+AC-04 mat chu: LECH (chi dong "src" lech)
+AC-04 thuc chat (khong mat vung phu + new-ui/scratch/docs = 0): DAT

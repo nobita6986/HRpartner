@@ -1,0 +1,30 @@
+=== a2-35: kiem ket thuc vong (chay SAU khi AUDIT.md da chot, TRUOC lan cong cuoi) ===
+--- CMD: git hash-object ban AUDIT.md va ban copy trong evidence
+4b8002610e3f206424e59ee69d9d831ba1154148
+4b8002610e3f206424e59ee69d9d831ba1154148
+--- CMD: md5sum hai ban
+f784476baa6be6ca8ff48fd84f7d1367 *docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md
+f784476baa6be6ca8ff48fd84f7d1367 *docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a2-32-audit-round2-copy.md
+CMP_EXIT=0
+--- CMD: grep -c '' (so dong) va wc -c (byte)
+125
+28992 docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md
+--- CMD: git ls-files --stage AUDIT.md (blob trong index)
+100644 4b8002610e3f206424e59ee69d9d831ba1154148 0	docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md
+--- CMD: git status --porcelain AUDIT.md (phai la 'A ', khong duoc 'AM')
+A  docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md
+--- CMD: git hash-object bo cong LAN CUOI, doi chieu a2-00 va a2-28
+43ada847f9bd84494f80114de01f9f0b1b05c816
+e36b83dfbf7c860e320d5409535b82001cab574e
+3997dd4ff896ea9f7cebdf40a247bcb269ab23e5
+2520a48dd7893f5cf9674357fd6a36e58772bcbd
+1348bffe2adf3a5c247ecc1f3ed2525233b41db9
+--- CMD: grep Spec version tren TASK worktree (canh A-02 drift, doc lan cuoi)
+10:| Spec version | `v1.2` |
+214:| Spec version | Ngày | Đổi gì | Vì sao |
+--- CMD: git log --oneline -1 (phai van la moc, KHONG commit)
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+--- CMD: git status --porcelain thu muc task, dem dong khong phai 'A '
+2
+--- CMD: git status --porcelain thu muc task, dem dong '??'
+2

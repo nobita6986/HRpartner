@@ -1,0 +1,36 @@
+=== hrp-v5-rf-06-vitest-default-lane-safety ===
+16:| Modules | `vitest.config.ts`, `src/shared/toolchain/vitest-default-lane.static.test.ts` |
+10:| Spec version | `v1.0` |
+11:| Status | `ACCEPTED` |
+
+=== hrp-v5-test-01-browser-lane ===
+16:| Modules | `playwright.config.ts`, `tests/browser/public-home.spec.ts`, `package.json`, `.gitignore` |
+10:| Spec version | `v1.4` |
+11:| Status | `REVISION_REQUIRED` |
+
+=== hrp-v5-go-live-17-rls-required-relation-sweep ===
+16:| Modules | `src/shared/security/required-relation-sweep.static.test.ts`, `app/api/projects/route.ts`, `app/api/vendor/orders/route.ts`, `app/api/vendor/submissions/route.ts`, `src/domains/applications/application-queue.service.ts`, `src/domains/reconciliation/margin.service.ts`, `src/domains/reconciliation/statement.service.ts`, `src/domains/staffing/order.service.ts`, `src/domains/staffing/submission.service.ts` |
+10:| Spec version | `v1.4` |
+11:| Status | `ACCEPTED` |
+
+=== hrp-v5-go-live-18-public-surface-hardening ===
+16:| Modules | `src/shared/security/rate-limit-guard.ts`, `app/(jobs)/viec-lam/[slug]/page.tsx`, `app/api/public/applications/[trackingCode]/route.ts`, `src/domains/applications/marketplace-inventory.static.test.ts`, `src/shared/security/public-surface-limiter.static.test.ts`, `src/domains/applications/tracking-pii-containment.static.test.ts` |
+10:| Spec version | `v1.4` |
+11:| Status | `ACCEPTED` |
+
+=== CMD: grep -n 'package-lock' docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+102:2. `package-lock.json`, vì bước cài gói bắt buộc đổi nó.
+122:| `STEP-02` | Cài trình chạy: `npm install --save-dev --save-exact @playwright/test`, rồi `npx playwright install chromium` | Diff của `package.json` và `package-lock.json`, cộng output hai lệnh kèm mã thoát, cộng phiên bản đã phân giải ghi vào `HANDOFF.md` |
+178:Rollback: bản giao gồm hai tệp mới cộng ba tệp bị thêm dòng. Hoàn tác bằng `git restore` trên `package.json`, `package-lock.json`, `.gitignore`, rồi `git rm` hai tệp mới, rồi `npm ci` để dựng lại `node_modules` đúng bản khoá. Nhị phân trình duyệt nằm ngoài repo và không cần hoàn; nếu muốn dọn thì xoá thư mục cache của Playwright. Không có trạng thái database nào bị chạm, vì `RQ-03` bảo đảm không kết nối nào mở được.
+229:| `v1.1` | 2026-09-03 | **Mở đường cho lô gộp ba contract theo quyết định `03/09` của Owner.** Hai tiêu chí cũ BẤT KHẢ THOẢ khi 18 và 17 cùng dirty trong một index dùng chung — lỗi ở văn của Tier 1, không ở bản giao: `AC-11` đòi `git status` RỖNG trên `app/` cùng `src/` mà hai contract kia đều ghi vào đó, và `AC-12` đòi mọi path trong index thuộc ba nhóm của riêng task này. Bản này thêm nhóm bốn vào `4.2` cho path đã khai của hai contract cùng lô, tách phép kiểm của `AC-11` thành bốn đường dẫn phải RỖNG cộng `app/` với `src/` chỉ được chứa path đã khai của hai contract kia, đổi `AC-12` sang phép đếm ATTRIBUTION, và ghi luật quy trách một dòng test đỏ cho đúng contract. `AC-01`, `AC-06`, `AC-07` KHÔNG đổi vì `package.json`, `package-lock.json` và `.gitignore` là đất của chính task này. KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào. Cửa sổ bump còn mở vì cả hai round vẫn đếm bằng `0` |
+GREP_EXIT=0  (1 = khong co dong nao)
+
+=== CMD: grep -ni 'rf-06' docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md  — contract rf-05 co tu xep rf-06 chay TRUOC khong
+20:| Next gate | Hoàn tất `hrp-v5-rf-06-vitest-default-lane-safety`; sau đó `/code hrp-v5-rf-05-tsc-program-boundary` execution round `2` MỎNG để khôi phục đúng staged diff `12 2` của `tsconfig.json`, chạy lại guard/typ ...
+202:| Implementation decision | Mở task riêng `hrp-v5-rf-06-vitest-default-lane-safety` để sửa default Vitest/JSX runtime và đóng đường tự đọc DB thật. Sau bằng chứng TEST-01 round 2 cho thấy staged `tsconfig.jso ...
+203:| Closure condition | RF-06 audit PASS; RF-05 round 2 khôi phục staged diff `12 2`; Tier 3 audit round 2 tự đo `npx vitest run` exit `0`, đồng thời xác nhận AC-01..AC-12 và mandatory checks không hồi quy |
+
+=== CMD: grep -ni 'vitest.config\|vitest-default-lane' docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+20:| Next gate | Hoàn tất `hrp-v5-rf-06-vitest-default-lane-safety`; sau đó `/code hrp-v5-rf-05-tsc-program-boundary` execution round `2` MỎNG để khôi phục đúng staged diff `12 2` của `tsconfig.json`, chạy lại guard/typ ...
+56:| `EV-05` | `7` tệp gốc repo trong chương trình: `middleware.ts`, `next-env.d.ts`, `playwright.config.ts`, `vitest.config.ts`, `vitest.integration-files.ts`, `vitest.integration.config.ts`, `vitest.unit.config.ts`. Không có `nex ...
+202:| Implementation decision | Mở task riêng `hrp-v5-rf-06-vitest-default-lane-safety` để sửa default Vitest/JSX runtime và đóng đường tự đọc DB thật. Sau bằng chứng TEST-01 round 2 cho thấy staged `tsconfig.jso ...

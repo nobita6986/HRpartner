@@ -1,0 +1,274 @@
+PORCELAIN_ROWS=464  STAGED_ROWS=213  UNION_PATHS=464
+
+--- PHAN NHOM (theu 4.2) ---
+DRAFT-hoac-NGOAI-PHAN-NHOM        211
+G2-artifact-task                  163
+OL-artifact-3-slug                 55
+RF06(ngoai van 4.2)                19
+OL-gate-script                      5
+OL-path-khai-cua-3-slug             5
+OL-TASK.md-Tier1                    2
+G1-Modules                          2
+T3-audit-doc(ngoai van 4.2)         1
+G2?-khac-trong-thu-muc-task         1
+
+=== DRAFT-hoac-NGOAI-PHAN-NHOM (211) ===
+   .ai-pipeline/scripts/verify-gates.selftest.ps1                         porcelain:??
+   .claude/                                                               porcelain:??
+   .neon                                                                  porcelain:??
+   docs/aff_plan - Copy.md                                                porcelain:??
+   docs/tasks/hrp-v5-gate-02-lane-premise-correction/                     porcelain:??
+   docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md          porcelain: M
+   docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md          porcelain: M
+   docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md                porcelain: M
+   docs/v6-admin-rebuild.md                                               porcelain:??
+   fix.patch                                                              porcelain:??
+   new-ui.md                                                              porcelain:??
+   new-ui/                                                                porcelain:??
+   patch_test.ps1                                                         porcelain:??
+   patch_test2.ps1                                                        porcelain:??
+   patch_test3.ps1                                                        porcelain:??
+   public/index.html                                                      porcelain: M
+   rls-probe-insert.txt                                                   porcelain:??
+   rls-probe-output.txt                                                   porcelain:??
+   scratch/_add.txt                                                       porcelain:??
+   scratch/_audit_idx.md                                                  porcelain:??
+   scratch/_del.txt                                                       porcelain:??
+   scratch/_gone.txt                                                      porcelain:??
+   scratch/_idx.txt                                                       porcelain:??
+   scratch/_t2_head.txt                                                   porcelain:??
+   scratch/_t2_idx.txt                                                    porcelain:??
+   scratch/_theme_head.txt                                                porcelain:??
+   scratch/_theme_idx.txt                                                 porcelain:??
+   scratch/bump-gl14-v11.py                                               porcelain:??
+   scratch/check-rpc-schema-usage.mjs                                     porcelain:??
+   scratch/commit-aff-plan.txt                                            porcelain:??
+   scratch/commit-gl05-handoff.txt                                        porcelain:??
+   scratch/commit-gl09-relock.txt                                         porcelain:??
+   scratch/commit-gl14-accepted.txt                                       porcelain:??
+   scratch/commit-gl14-audit-artifact.txt                                 porcelain:??
+   scratch/commit-gl14-cursor.txt                                         porcelain:??
+   scratch/commit-gl14-r3.txt                                             porcelain:??
+   scratch/commit-gl14-v11.txt                                            porcelain:??
+   scratch/commit-golive14.txt                                            porcelain:??
+   scratch/cursor-2026-09-02-gl07-prose.py                                porcelain:??
+   scratch/cursor-2026-09-02-gl07-relock.py                               porcelain:??
+   scratch/cursor-commit-msg.txt                                          porcelain:??
+   scratch/cursor-gl07-v13.py                                             porcelain:??
+   scratch/cursor-gl07-v14.py                                             porcelain:??
+   scratch/cursor-gl09-accepted.py                                        porcelain:??
+   scratch/cursor-gl09-audit-r2.py                                        porcelain:??
+   scratch/cursor-gl09-deployed.py                                        porcelain:??
+   scratch/cursor-gl14-accepted.py                                        porcelain:??
+   scratch/cursor-gl14-audit.py                                           porcelain:??
+   scratch/cursor-golive14.py                                             porcelain:??
+   scratch/db-state-check.mjs                                             porcelain:??
+   scratch/fix-gl09-detail-path.py                                        porcelain:??
+   scratch/g-base-audit.css                                               porcelain:??
+   scratch/g-base-nav.tsx                                                 porcelain:??
+   scratch/g-base-page.tsx                                                porcelain:??
+   scratch/git_status_after.txt                                           porcelain:??
+   scratch/git_status_before.txt                                          porcelain:??
+   scratch/git_status_final.txt                                           porcelain:??
+   scratch/gl05-cursor-closed.py                                          porcelain:??
+   scratch/gl05-cursor-v13.py                                             porcelain:??
+   scratch/gl05-cursor-v14.py                                             porcelain:??
+   scratch/gl05-facet-perf.cjs                                            porcelain:??
+   scratch/gl05-facet-perf.ts                                             porcelain:??
+   scratch/gl05-industry-check.cjs                                        porcelain:??
+   scratch/gl05-industry-check.ts                                         porcelain:??
+   scratch/gl05-resolve.py                                                porcelain:??
+   scratch/gl05-stripped-grep.mjs                                         porcelain:??
+   scratch/gl05-table-check.py                                            porcelain:??
+   scratch/gl05-v14.py                                                    porcelain:??
+   scratch/gl07-bump-v15.py                                               porcelain:??
+   scratch/gl07-relock-commit-msg.txt                                     porcelain:??
+   scratch/gl07-revlog-v15.py                                             porcelain:??
+   scratch/gl07-v13-dec17-db-leg.py                                       porcelain:??
+   scratch/gl07-v14-fix-ledger-alarm.py                                   porcelain:??
+   scratch/gl08-accepted-commit-msg.txt                                   porcelain:??
+   scratch/gl08-bump-v12.py                                               porcelain:??
+   scratch/gl08-bump-v13.py                                               porcelain:??
+   scratch/gl08-cursor-accepted.py                                        porcelain:??
+   scratch/gl08-cursor-commit-msg.txt                                     porcelain:??
+   scratch/gl08-cursor-resolved.py                                        porcelain:??
+   scratch/gl08-cursor-v12.py                                             porcelain:??
+   scratch/gl08-cursor-v13.py                                             porcelain:??
+   scratch/gl08-owner-op-accepted.py                                      porcelain:??
+   scratch/gl08-page.diff                                                 porcelain:??
+   scratch/gl09-audit-r1-ruling.py                                        porcelain:??
+   scratch/gl09-handoff-count.py                                          porcelain:??
+   scratch/gl09-handoff-fixrefs.py                                        porcelain:??
+   scratch/gl09-handoff-note03.py                                         porcelain:??
+   scratch/gl09-handoff-s3.py                                             porcelain:??
+   scratch/gl09-handoff-s31.py                                            porcelain:??
+   scratch/gl09-handoff-s33.py                                            porcelain:??
+   scratch/gl09-handoff-s45.py                                            porcelain:??
+   scratch/gl09-handoff-s67.py                                            porcelain:??
+   scratch/gl09-handoff-s6note.py                                         porcelain:??
+   scratch/gl09-resolution-accept.py                                      porcelain:??
+   scratch/gl15-cursor-apply.py                                           porcelain:??
+   scratch/gl15-cursor-note-append.txt                                    porcelain:??
+   scratch/gl15-cursor.yaml                                               porcelain:??
+   scratch/gl15-deadvars-head.mjs                                         porcelain:??
+   scratch/gl15-deadvars.mjs                                              porcelain:??
+   scratch/gl15-delivered-vs-head.py                                      porcelain:??
+   scratch/gl15-enc-test.txt                                              porcelain:??
+   scratch/gl15-handoff-scope-numbers.py                                  porcelain:??
+   scratch/gl15-linemap.py                                                porcelain:??
+   scratch/gl15-md-table-check.py                                         porcelain:??
+   scratch/gl15-mytests-head-tokens.mjs                                   porcelain:??
+   scratch/gl15-numbers.py                                                porcelain:??
+   scratch/gl15-r2-patch1.py                                              porcelain:??
+   scratch/gl15-r2-patch2.py                                              porcelain:??
+   scratch/gl15-r2-patch3.py                                              porcelain:??
+   scratch/gl15-r2-patch4.py                                              porcelain:??
+   scratch/gl15-r2-patch5.py                                              porcelain:??
+   scratch/gl15-r2-patch6.py                                              porcelain:??
+   scratch/gl15-r2-patch7.py                                              porcelain:??
+   scratch/gl15-r2-scope.sh                                               porcelain:??
+   scratch/gl15-step02-css.py                                             porcelain:??
+   scratch/gl15-step03-nav.py                                             porcelain:??
+   scratch/gl15-step04.py                                                 porcelain:??
+   scratch/gl15-step05-test.py                                            porcelain:??
+   scratch/gl15-step05b-hover.py                                          porcelain:??
+   scratch/gl15-step06-fixlabels.py                                       porcelain:??
+   scratch/gl15-step06-measure.py                                         porcelain:??
+   scratch/gl15-truth.py                                                  porcelain:??
+   scratch/gl16-head.py                                                   porcelain:??
+   scratch/gl16-numbers.py                                                porcelain:??
+   scratch/gl16-remeasure.py                                              porcelain:??
+   scratch/gl16-scan.txt                                                  porcelain:??
+   scratch/gl17-step06-fix.py                                             porcelain:??
+   scratch/gl17-step07-barrier.py                                         porcelain:??
+   scratch/golive03-ac-drive.mjs                                          porcelain:??
+   scratch/golive03-ac08-remeasure.mjs                                    porcelain:??
+   scratch/golive03-bigint-probe.mjs                                      porcelain:??
+   scratch/golive03-db-probe.mjs                                          porcelain:??
+   scratch/golive03-greps.ps1                                             porcelain:??
+   scratch/golive03-migr-check.mjs                                        porcelain:??
+   scratch/golive03-rls-gaps.mjs                                          porcelain:??
+   scratch/golive03-seed.mjs                                              porcelain:??
+   scratch/golive11-sql-balance.mjs                                       porcelain:??
+   scratch/handover-s13.py                                                porcelain:??
+   scratch/head-globals.css                                               porcelain:??
+   scratch/lj-all.json                                                    porcelain:??
+   scratch/lj-area.json                                                   porcelain:??
+   scratch/lj-portal.html                                                 porcelain:??
+   scratch/md-table-check.py                                              porcelain:??
+   scratch/mem-15-fix.py                                                  porcelain:??
+   scratch/mem-baseline-trap.py                                           porcelain:??
+   scratch/mem-gate-trap3.py                                              porcelain:??
+   scratch/mem-idx.py                                                     porcelain:??
+   scratch/mem-idx2.py                                                    porcelain:??
+   scratch/mem-index-update.py                                            porcelain:??
+   scratch/mem-render-mode.py                                             porcelain:??
+   scratch/mock-upstash.js                                                porcelain:??
+   scratch/neon-schemadiff-live-vs-mp2test.txt                            porcelain:??
+   scratch/neon-schemadiff-snapshot-vs-live.txt                           porcelain:??
+   scratch/relock-gl07-a.py                                               porcelain:??
+   scratch/relock-gl07-b.py                                               porcelain:??
+   scratch/relock-gl07-c.py                                               porcelain:??
+   scratch/relock-gl07-d.py                                               porcelain:??
+   scratch/relock-gl07-e.py                                               porcelain:??
+   scratch/relock-gl07-f.py                                               porcelain:??
+   scratch/relock-gl07-v12.py                                             porcelain:??
+   scratch/relock-gl07-v12b.py                                            porcelain:??
+   scratch/relock-gl09-a.py                                               porcelain:??
+   scratch/relock-gl09-b.py                                               porcelain:??
+   scratch/relock-gl09-c.py                                               porcelain:??
+   scratch/relock-gl09-d.py                                               porcelain:??
+   scratch/relock-gl09-e1.py                                              porcelain:??
+   scratch/relock-gl09-e2.py                                              porcelain:??
+   scratch/relock-gl09-e3.py                                              porcelain:??
+   scratch/relock-gl09-e4.py                                              porcelain:??
+   scratch/relock-gl09-f.py                                               porcelain:??
+   scratch/resolve-gl14.py                                                porcelain:??
+   scratch/run_m1_06b_audit.ps1                                           porcelain:??
+   scratch/run_m1_06c_audit.ps1                                           porcelain:??
+   scratch/seed-hrp-live-demo.sql                                         porcelain:??
+   scratch/seed-mkt-cleanup-probe.mjs                                     porcelain:??
+   scratch/seed-mkt-probe.mjs                                             porcelain:??
+   scratch/stash-globals.diff                                             porcelain:??
+   scratch/t1-lane-audit-r4.txt                                           porcelain:??
+   scratch/t1-lane-verify.txt                                             porcelain:??
+   scratch/t1r10/                                                         porcelain:??
+   scratch/t1r4/                                                          porcelain:??
+   scratch/t1r5/                                                          porcelain:??
+   scratch/t1r6-test-unit.txt                                             porcelain:??
+   scratch/t1r6-typecheck-no-newui.txt                                    porcelain:??
+   scratch/t1r6-typecheck.txt                                             porcelain:??
+   scratch/t1r6/                                                          porcelain:??
+   scratch/t1r7/                                                          porcelain:??
+   scratch/t1r8/                                                          porcelain:??
+   scratch/t1r9/                                                          porcelain:??
+   scratch/test-db.js                                                     porcelain:??
+   scratch/test-func.js                                                   porcelain:??
+   scratch/test-rpc.js                                                    porcelain:??
+   scratch/test-sql.js                                                    porcelain:??
+   scratch/test-writer.js                                                 porcelain:??
+   scratch/test_output.txt                                                porcelain:??
+   scratch/tsc-diff.txt                                                   porcelain:??
+   scratch/tsc-files.txt                                                  porcelain:??
+   scratch/tsc-new-roots.txt                                              porcelain:??
+   scratch/tsc-new.tmp                                                    porcelain:??
+   scratch/tsc-new.txt                                                    porcelain:??
+   scratch/tsc-old-roots.txt                                              porcelain:??
+   scratch/tsc-old.txt                                                    porcelain:??
+   scratch/ui-contrast-out.txt                                            porcelain:??
+   scratch/ui-contrast-scan.py                                            porcelain:??
+   scratch/vitest-raw.txt                                                 porcelain:??
+   scratch/vt_out.txt                                                     porcelain:??
+   scripts/debug-parser.mjs                                               porcelain:??
+   src/shared/ui/role-guard/role-guard-layout.tsx                         porcelain: M
+   temp.diff                                                              porcelain:??
+   tsconfig.tmp.json                                                      porcelain:??
+   update_globals.js                                                      porcelain:??
+
+=== G1-Modules (2) ===
+   src/shared/toolchain/tsc-program-boundary.static.test.ts               porcelain:A ,staged
+   tsconfig.json                                                          porcelain:M ,staged
+
+=== G2?-khac-trong-thu-muc-task (1) ===
+   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md                   porcelain:A ,staged
+
+=== OL-gate-script (5) ===
+   .ai-pipeline/scripts/gate-lib.ps1                                      porcelain:A ,staged
+   .ai-pipeline/scripts/verify-audit.ps1                                  porcelain: M
+   .ai-pipeline/scripts/verify-handoff.ps1                                porcelain:A ,staged
+   .ai-pipeline/scripts/verify-pipeline.ps1                               porcelain:M ,staged
+   .ai-pipeline/scripts/verify-task.ps1                                   porcelain: M
+
+=== OL-path-khai-cua-3-slug (5) ===
+   .gitignore                                                             porcelain:M ,staged
+   package-lock.json                                                      porcelain:M ,staged
+   package.json                                                           porcelain:M ,staged
+   playwright.config.ts                                                   porcelain:A ,staged
+   tests/browser/public-home.spec.ts                                      porcelain:A ,staged
+
+=== RF06(ngoai van 4.2) (19) ===
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/AUDIT.md            porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/HANDOFF.md          porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-baseline-vs-head.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-baseline.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-gate-task.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.meta.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-typecheck-before.raw.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.meta.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s01-unit-before.raw.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s02-config-diff.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.raw.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s03-guard-green.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s04-mutation.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s05-bare-lane.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s06-regression.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s07-gate-handoff.txt porcelain:A ,staged
+   docs/tasks/hrp-v5-rf-06-vitest-default-lane-safety/evidence/s07-scope.txt porcelain:A ,staged
+   src/shared/toolchain/vitest-default-lane.static.test.ts                porcelain:A ,staged
+   vitest.config.ts                                                       porcelain:M ,staged
+
+=== T3-audit-doc(ngoai van 4.2) (1) ===
+   docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md                  porcelain:A ,staged
+
+NHOM3_TEP_TAM_CON_SOT=13 ['docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac08-probe1.txt', 'docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a1-ac09-probe2.txt', 'docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac08-probe.txt', 'docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-ac09-probe.txt', 'docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a2-12-ac09-probe-unclassified-root.txt', 'docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a2-12-porcelain-after-probe2.txt', 'docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a2-13-ac08-probe-recursive-include.txt', 'rls-probe-insert.txt', 'rls-probe-output.txt', 'scratch/golive03-bigint-probe.mjs', 'scratch/golive03-db-probe.mjs', 'scratch/seed-mkt-cleanup-probe.mjs', 'scratch/seed-mkt-probe.mjs']
+STAGED_NGOAI_MOI_HANG=1 ['docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md']

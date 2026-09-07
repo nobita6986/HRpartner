@@ -1,0 +1,18 @@
+=== R2-STEP-01 BEFORE — cay CHUA sua ===
+TS: 2026-09-04 18:57:50 +0700
+
+CMD: powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: REVISION_REQUIRED).
+  [OK]   A-05 6 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 3 referenced npm script(s) all exist.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v5-rf-05-tsc-program-boundary/**.
+  [OK]   T-05 all 12 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+
+RESULT: PASS. TASK contract is ready for execution.
+GATE_TASK_EXIT=0

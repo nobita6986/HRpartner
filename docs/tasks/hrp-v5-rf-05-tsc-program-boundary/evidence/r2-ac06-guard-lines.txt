@@ -1,0 +1,17 @@
+=== TAT CA dong co execSync / child_process / git / require / import ===
+23: * Nó không gọi ra ngoài process: không `execSync`, không `git` (mục `4.3`). Một hàng rào phụ thuộc
+24: * `git` sẽ chết ở môi trường không có checkout. Nó không đọc một `DATABASE_URL` nào.
+26:import { existsSync, readFileSync, readdirSync, type Dirent } from 'node:fs';
+27:import { dirname, join, sep } from 'node:path';
+28:import { fileURLToPath } from 'node:url';
+30:import { describe, expect, it } from 'vitest';
+42:const SKIP_DIRS = new Set(['node_modules', '.git']);
+50:  'new-ui': 'nguyên mẫu UI chưa theo dõi bởi git, là đầu vào của một contract UI về sau (DEC-05)',
+
+=== dong co so 300 va cac san so ===
+37:const MIN_SCANNED_TS_FILES = 300;
+38:const MIN_PROGRAM_ROOTS = 5;
+39:const MIN_ROOT_LEVEL_TS_FILES = 5;
+214:    expect(totalScanned).toBeGreaterThanOrEqual(MIN_SCANNED_TS_FILES);
+218:    expect(PROGRAM_ROOTS.size).toBeGreaterThanOrEqual(MIN_PROGRAM_ROOTS);
+222:    expect(rootLevelTsFiles.length).toBeGreaterThanOrEqual(MIN_ROOT_LEVEL_TS_FILES);

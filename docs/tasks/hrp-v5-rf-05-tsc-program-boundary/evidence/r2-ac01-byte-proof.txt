@@ -1,0 +1,11 @@
+=== R2 AC-01 chung minh BYTE: compilerOptions va exclude khong doi ===
+Phuong phap: chuan hoa ve LF, cat DUY NHAT mang include ra khoi ca hai ban, roi so phan con lai.
+
+HEAD:tsconfig.json  bytes(LF)=817  sha256=6c8dc7fa7174009f
+worktree hien tai   bytes(LF)=1052  sha256=2191b205eb47de00
+
+phan con lai (bo include) HEAD     sha256=a41c50dfa865116e795be607e650af6581ab9504145e29f3ff8dad7bfd3c3aa0 len=762
+phan con lai (bo include) worktree sha256=a41c50dfa865116e795be607e650af6581ab9504145e29f3ff8dad7bfd3c3aa0 len=762
+GIONG_NHAU=1
+
+KET LUAN: moi thu ngoai khoa include giong HEAD tung byte.

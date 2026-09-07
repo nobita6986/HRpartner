@@ -1,0 +1,14 @@
+=== C-08 / do phu test cua hang rao — do bang thu HIEU cau truc, khong dem chuoi con ===
+--- CMD: sed -n '/"test:unit"/p' package.json
+    "test:unit": "vitest run --config vitest.unit.config.ts",
+
+--- CMD: npm run test:unit -- src/shared/toolchain/tsc-program-boundary.static.test.ts   (lane canonical, LOC exit qua redirect)
+C08_EXIT=0
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m   Duration [22m 285ms[2m (transform 33ms, setup 0ms, collect 73ms, tests 4ms, environment 0ms, prepare 58ms)[22m
+
+--- Con so tu RUNNER (thu hieu cau truc) la con so tinh; grep chi de doi chieu:
+SO_DONG_BAT_DAU_BANG_describe = 4
+SO_DONG_BAT_DAU_BANG_it       = 12
+(memory: 'grep -o "it("' tra so LON hon vi bat ca cls.split( — nen chi neo dau dong)

@@ -1,0 +1,24 @@
+=== a2-29 — ba phep do bo sung cho AC-02 / AC-04 / C-03..C-06 ===
+--- CMD: git cat-file -e 31625c4:src/shared/toolchain/tsc-program-boundary.static.test.ts (tep hang rao co o BASELINE khong)
+fatal: path 'src/shared/toolchain/tsc-program-boundary.static.test.ts' exists on disk, but not in '31625c4'
+GUARD_AT_BASELINE_EXIT=128  (khac 0 = VANG o baseline => no la tep VAO chuong trinh)
+
+--- CMD: git cat-file -e 31625c4:src/shared/ui/role-guard/role-guard-layout.tsx (tep luong khac: co san hay moi?)
+ROLEGUARD_AT_BASELINE_EXIT=0  (0 = CO SAN => day la SUA, khong lam doi so DEM tep cua src)
+
+--- CMD: git cat-file -e 31625c4:src/shared/toolchain/vitest-default-lane.static.test.ts (tep cua rf-06)
+fatal: path 'src/shared/toolchain/vitest-default-lane.static.test.ts' exists on disk, but not in '31625c4'
+RF06_GUARD_AT_BASELINE_EXIT=128
+  (rf-06 KHONG nam trong ADDED cua a2-18 => no da co trong porcelain tu truoc MOC, nen no thuoc mau so MOC chu khong phai phan tang cua rf-05)
+
+--- CMD: python — dem tep .ts/.tsx tren dia duoi src (doi chieu 222 dong chuong trinh cua a2-04)
+TREE_SRC_TS_TSX=222
+
+--- CMD: git status --porcelain -uall -- app prisma (co so cho C-03..C-06 SKIP)
+SO_DONG_app_prisma=0
+--- CMD: git diff --cached --name-only | grep -cE '^(app/|prisma/)'
+STAGED_app_prisma=0  (grep exit 1 = 0 dong)
+--- CMD: git diff --cached --name-only | grep -cE 'route\.ts$'
+STAGED_route_ts=0
+--- CMD: git diff --cached --name-only | grep -cE '^prisma/migrations/'
+STAGED_migrations=0

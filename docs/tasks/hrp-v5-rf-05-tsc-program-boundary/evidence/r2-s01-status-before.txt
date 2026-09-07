@@ -1,0 +1,56 @@
+=== R2-STEP-01 — moc dirty/staged TRUOC ===
+CMD: git status --porcelain
+EXIT=0
+SO_DONG_STATUS=383
+CMD: git diff --cached --name-only | wc -l
+SO_STAGED=147
+
+--- phan bo theo chu (prefix) ---
+    165 docs/tasks
+      6 .ai-pipeline/scripts
+      2 src/shared
+      1 vitest.config.ts/
+      1 update_globals.js/
+      1 tsconfig.tmp.json/
+      1 tests/browser
+      1 temp.diff/
+      1 scripts/debug-parser.mjs
+      1 scratch/vt_out.txt
+      1 scratch/vitest-raw.txt
+      1 scratch/ui-contrast-scan.py
+      1 scratch/ui-contrast-out.txt
+      1 scratch/tsc-old.txt
+      1 scratch/tsc-old-roots.txt
+      1 scratch/tsc-new.txt
+      1 scratch/tsc-new.tmp
+      1 scratch/tsc-new-roots.txt
+      1 scratch/tsc-files.txt
+      1 scratch/tsc-diff.txt
+      1 scratch/test_output.txt
+      1 scratch/test-writer.js
+      1 scratch/test-sql.js
+      1 scratch/test-rpc.js
+      1 scratch/test-func.js
+      1 scratch/test-db.js
+      1 scratch/t1r9
+      1 scratch/t1r8
+      1 scratch/t1r7
+      1 scratch/t1r6-typecheck.txt
+
+--- staged theo slug docs/tasks ---
+     74 hrp-v5-rf-05-tsc-program-boundary
+     45 hrp-v5-test-01-browser-lane
+     17 hrp-v5-rf-06-vitest-default-lane-safety
+
+--- staged NGOAI docs/tasks ---
+.ai-pipeline/scripts/gate-lib.ps1
+.ai-pipeline/scripts/verify-handoff.ps1
+.ai-pipeline/scripts/verify-pipeline.ps1
+.gitignore
+package-lock.json
+package.json
+playwright.config.ts
+src/shared/toolchain/tsc-program-boundary.static.test.ts
+src/shared/toolchain/vitest-default-lane.static.test.ts
+tests/browser/public-home.spec.ts
+vitest.config.ts

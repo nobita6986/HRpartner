@@ -1,0 +1,54 @@
+=== a2-04 AC-02/03/04 independent: program membership vs real tree ===
+CMD: npx tsc -p tsconfig.json --listFilesOnly (exit 0, see a2-03-program-after-exit.txt) + os.walk of the tree
+RAW_LINES=1145
+PROGRAM_LINES_NODE_MODULES=684
+PROGRAM_FILES_OUTSIDE_NODE_MODULES=461
+--- program count by first segment:
+  src                          222
+  app                          115
+  .next                        112
+  (repo-root-file)             7
+  packages                     2
+  tests                        2
+  prisma                       1
+TREE_TS_TSX_FILES_TOTAL=485
+TREE_MINUS_PROGRAM_TOTAL=24  (of which under .next/: 0)
+OFFICIAL_OUTSIDE_SET_EXCLUDING_DOT_NEXT=24
+  OUTSIDE docs                     2
+  OUTSIDE new-ui                   11
+  OUTSIDE scratch                  11
+--- full outside list (excluding .next/):
+    docs/tasks/hrp-v5-go-live-15-public-contrast-aa/evidence/copy-marketplace-inventory-line350-round2.ts
+    docs/tasks/hrp-v5-go-live-15-public-contrast-aa/evidence/copy-public-ui-premium-static-test-round1.ts
+    new-ui/components/CompanyCard.tsx
+    new-ui/components/FeaturedJobsSection.tsx
+    new-ui/components/Footer.tsx
+    new-ui/components/HeroSection.tsx
+    new-ui/components/HomePage.tsx
+    new-ui/components/JobCard.tsx
+    new-ui/components/LocationSection.tsx
+    new-ui/components/MainLayout.tsx
+    new-ui/components/Navbar.tsx
+    new-ui/components/ReferralSection.tsx
+    new-ui/components/TopCompaniesSection.tsx
+    scratch/g-base-nav.tsx
+    scratch/g-base-page.tsx
+    scratch/gl05-facet-perf.ts
+    scratch/gl05-industry-check.ts
+    scratch/t1r4/app_(jobs)_track_page.tsx
+    scratch/t1r4/app_(jobs)_viec-lam__slug__page.tsx
+    scratch/t1r4/app_(portal)_ve-chung-toi_page.tsx
+    scratch/t1r4/app_components_GlobalNavbar.tsx
+    scratch/t1r4/src_domains_job-board_components_apply-modal.tsx
+    scratch/t1r4/src_domains_job-board_components_success-modal.tsx
+    scratch/t1r4/src_domains_job-board_public-ui-premium.static.test.ts
+AC03_OUTSIDE_WITH_PREFIX_app/      =0 []
+AC03_OUTSIDE_WITH_PREFIX_src/      =0 []
+AC03_OUTSIDE_WITH_PREFIX_packages/ =0 []
+AC03_OUTSIDE_WITH_PREFIX_prisma/   =0 []
+AC03_OUTSIDE_WITH_PREFIX_tests/    =0 []
+REPO_ROOT_TS_FILES_IN_TREE=7 ['middleware.ts', 'next-env.d.ts', 'playwright.config.ts', 'vitest.config.ts', 'vitest.integration-files.ts', 'vitest.integration.config.ts', 'vitest.unit.config.ts']
+REPO_ROOT_FILES_NOT_IN_PROGRAM=0 []
+PROGRAM_REPO_ROOT_FILE_COUNT=7
+GUARD_FILE_IN_PROGRAM=1
+PROGRAM_FILES_NOT_ON_DISK=0 []

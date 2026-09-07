@@ -1,0 +1,22 @@
+=== R2 AC-03: tap ROI khong duoc chua vung san xuat ===
+CMD: grep -c "^<prefix>" tren r2-s04-departed.txt cho tung tien to, va grep -Fx cho tung tep goc
+Tong tep trong tap ROI: 24
+
+--- nam tien to bat buoc 0 ket qua ---
+  app/         SO_KET_QUA=0  PASS
+  src/         SO_KET_QUA=0  PASS
+  packages/    SO_KET_QUA=0  PASS
+  prisma/      SO_KET_QUA=0  PASS
+  tests/       SO_KET_QUA=0  PASS
+
+--- bay tep goc repo cua EV-05 (lay tu danh sach TRUOC, khong / trong duong dan) ---
+  SO_TEP_GOC_TRUOC=7
+  middleware.ts                    trong_tap_ROI=0  con_trong_SAU=CO  PASS
+  next-env.d.ts                    trong_tap_ROI=0  con_trong_SAU=CO  PASS
+  playwright.config.ts             trong_tap_ROI=0  con_trong_SAU=CO  PASS
+  vitest.config.ts                 trong_tap_ROI=0  con_trong_SAU=CO  PASS
+  vitest.integration-files.ts      trong_tap_ROI=0  con_trong_SAU=CO  PASS
+  vitest.integration.config.ts     trong_tap_ROI=0  con_trong_SAU=CO  PASS
+  vitest.unit.config.ts            trong_tap_ROI=0  con_trong_SAU=CO  PASS
+
+AC-03_DAT=1

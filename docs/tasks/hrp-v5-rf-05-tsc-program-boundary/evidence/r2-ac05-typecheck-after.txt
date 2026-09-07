@@ -1,0 +1,6 @@
+CMD: npm run typecheck
+
+> hrp@0.1.0 typecheck
+> tsc --noEmit
+
+TYPECHECK_AFTER_EXIT=0

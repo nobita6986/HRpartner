@@ -1,0 +1,36 @@
+AC-12 / RQ-06 — BANG CHUNG TASK NAY KHONG CHAY BAN BUILD
+====================================================================================================
+Muc 4.3 CAM `npm run build` va `next dev`. Duoi day la phep do cho thay khong ban build nao
+chay trong vong 2, tuc gioi han cua RQ-06 la THAT chu khong phai mot cau chu de phong.
+
+MOC thoi gian bat dau vong 2 (mtime cua r2-s01-status-before-raw.txt): 2026-09-04 18:59:57
+
+.next/ — so tep = 683
+  tep MOI NHAT : .next\cache\.tsbuildinfo
+  mtime cua no : 2026-09-04 15:14:32
+  hieu (MOC - moi nhat) = 13524 giay  => MOI TEP .next DEU CU HON MOC, khong build nao chay
+  KHONG_CHAY_BUILD=1
+
+  .next/BUILD_ID                   mtime=VANG
+  .next/build-manifest.json        mtime=2026-09-04 15:14:26
+  next-env.d.ts                    mtime=2026-08-15 17:06:49
+  tsconfig.json                    mtime=2026-09-04 19:32:41
+
+Neu `next build` da chay thi no co quyen ghi lai tsconfig.json (DEC-06 / R-02). Blob cua tep ay
+van la ban giao cua rf-05, tuc khong ai ghi de len no trong vong nay:
+  git hash-object tsconfig.json = 53cc484886ddf4164f0741739af42e75ad913528
+  ky vong (ban giao rf-05)      = 53cc484886ddf4164f0741739af42e75ad913528
+  KHOP=1
+
+Khoa include VAN hien dien cung next-env.d.ts o vi tri dau — dieu kien cua DEC-06:
+  co khoa include        : True
+  so mau                 : 13
+  mau dau tien           : next-env.d.ts
+  DEC-06_DIEU_KIEN_GIU=1
+
+====================================================================================================
+DONG GIOI HAN CO TEN se ghi vao HANDOFF.md muc 6 (AC-12 doc dung muc nay):
+====================================================================================================
+  LIM-01 — Task nay KHONG chung minh rang `next build` de yen khoa `include` cua tsconfig.json.
+  Ly do: muc 4.3 cua contract CAM chay `npm run build` va `next dev`. Phep kiem ay duoc giao sang
+  execution round 2 cua hrp-v5-test-01-browser-lane, noi `webServer` chay mot ban build that.

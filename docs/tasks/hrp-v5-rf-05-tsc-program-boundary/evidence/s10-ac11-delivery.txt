@@ -1,0 +1,174 @@
+### AC-11 / AC-01 -- PHẠM VI ĐO LÚC GIAO, sau khi git add xong toàn bộ nhóm 1 và nhóm 2
+### Tệp này THAY THẾ hai ảnh giữa-lượt s10-scope-forbidden.txt và s10-ac11-final.txt ở phần SỐ TỔNG.
+
+-- 1. Tổng tập staged --
+$ git diff --cached --name-only | wc -l
+    TONG_STAGED=217   EXIT=0
+
+-- 2. Của task này: nhóm 1 và nhóm 2 của mục 4.2 --
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/HANDOFF.md
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s01-gate.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s01-head.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s01-status-before.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s01-typecheck.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s01-unit.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-count-by-root-after.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-count-by-root-before.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-count-by-root.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-listfiles-after.err
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-listfiles-after.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-listfiles-before.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-outside-src-app.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-program-after.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-program-before.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-summary-before.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-tracked-classification.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s03-include-parsed.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s03-tsconfig-diff.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s04-departed.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s04-entered.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s05-typecheck.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s06-barrier.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s07-barrier-green.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s07-barrier-red.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s07-hashes.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s08-barrier-green.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s08-barrier-red.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s08-cleanup.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-count-by-root-final.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-departed-final.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-entered-final.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-listfiles-final.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-program-final.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-setdiff.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-typecheck.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s09-unit.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac01-cached.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac03-coverage.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac11-delivery.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac11-final.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac12-limitation.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac12-patterns.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac12.ps1
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac14-crossref.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-attribution.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-barrier-ignored.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-barrier-single.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-barrier-structure.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-contract-bump-v12.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-contract-table-shape.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-count-by-root-after-move.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-delta-vs-mark.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-departed.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-entered.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-gate-handoff.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-gate-pipeline.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-gate-task-v12.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-groups.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ignore-sweep.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-listfiles-after-move.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-lost-paths.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-move-barrier.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-new-paths.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-program-after-move.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-scope-forbidden.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-status-final.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-task-index-vs-worktree.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-typecheck.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-unit.txt
+    docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-untouched-and-head.txt
+    src/shared/toolchain/tsc-program-boundary.static.test.ts
+    tsconfig.json
+    CUA_TASK_NAY=73
+    trong đó nhóm 1 = 2 tệp bản giao, nhóm 2 = 1 HANDOFF.md cộng 70 tệp evidence
+
+-- 3. Hạng tài sản luồng khác: đếm theo chủ --
+          3 .ai-pipeline/scripts/**
+          1 .gitignore
+          1 app/(jobs)/viec-lam/[slug]/page.tsx
+          1 app/api/public/applications/[trackingCode]/route.ts
+         22 docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/**
+         80 docs/tasks/hrp-v5-go-live-18-public-surface-hardening/**
+          1 docs/tasks/hrp-v5-rf-05-tsc-program-boundary/**
+         23 docs/tasks/hrp-v5-test-01-browser-lane/**
+          1 package-lock.json
+          1 package.json
+          1 playwright.config.ts
+          1 src/domains/applications/marketplace-inventory.static.test.ts
+          1 src/domains/applications/tracking-pii-containment.static.test.ts
+          1 src/domains/reconciliation/margin.service.ts
+          1 src/domains/reconciliation/statement.service.ts
+          1 src/domains/staffing/submission.service.ts
+          1 src/shared/security/public-surface-limiter.static.test.ts
+          1 src/shared/security/rate-limit-guard.ts
+          1 src/shared/security/required-relation-sweep.static.test.ts
+          1 tests/browser/public-home.spec.ts
+    LUONG_KHAC=144
+    217 trừ 73 bằng 144; khớp LUONG_KHAC=144 -> KHOP
+
+-- 4. Vì sao ảnh giữa-lượt đếm 146 mà lúc giao đếm 217 --
+    Hiệu bằng 71 path, và đó ĐÚNG BẰNG tập nhóm 2 mà chính task này add ở STEP-10:
+    1 HANDOFF.md cộng 70 tệp evidence bằng 71.
+    Không path nào của luồng khác vào thêm hay rơi ra: xem mục 3 so với s10-ac11-final.txt mục 8.
+
+-- 5. TỪNG đường dẫn CẤM CHẠM của mục 4.2: git status --porcelain phải RỖNG hoặc quy được chủ --
+    RỖNG=0  middleware.ts
+    RỖNG=0  vitest.config.ts
+    RỖNG=0  vitest.unit.config.ts
+    RỖNG=0  vitest.integration.config.ts
+    RỖNG=0  vitest.integration-files.ts
+    RỖNG=0  eslint.config.mjs
+    RỖNG=0  prisma
+    RỖNG=0  .env
+    RỖNG=0  .env.local
+    RỖNG=0  .env.production
+
+-- 6. Bốn đường dẫn cấm chạm KHÔNG rỗng: mỗi cái phải có contract khác khai tên --
+    -- package.json --
+       M  package.json
+       khai ở: docs/tasks/hrp-p2-commission/TASK.md
+       khai ở: docs/tasks/hrp-phase0-foundation/TASK.md
+       khai ở: docs/tasks/hrp-phase1-bcc-fence/TASK.md
+       khai ở: docs/tasks/hrp-phase4-vertical-slices/TASK.md
+       khai ở: docs/tasks/hrp-v5-g0-04-ci/TASK.md
+       khai ở: docs/tasks/hrp-v5-go-live-01-single-domain-consolidation/TASK.md
+       khai ở: docs/tasks/hrp-v5-go-live-02-public-surface-exposure/TASK.md
+       khai ở: docs/tasks/hrp-v5-go-live-08-public-ui-premium/TASK.md
+       khai ở: docs/tasks/hrp-v5-go-live-10-admin-ui-repair/TASK.md
+       khai ở: docs/tasks/hrp-v5-go-live-12-public-job-detail-page/TASK.md
+       khai ở: docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+       khai ở: docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+       khai ở: docs/tasks/hrp-v5-go-live-19-tracking-pii-db-mask/TASK.md
+       khai ở: docs/tasks/hrp-v5-m1-09a-current-field-projection/TASK.md
+       khai ở: docs/tasks/hrp-v5-ops-06a-marketplace-launch-hardening/TASK.md
+       khai ở: docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+       khai ở: docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+    -- package-lock.json --
+       M  package-lock.json
+       khai ở: docs/tasks/hrp-v5-g0-04-ci/TASK.md
+       khai ở: docs/tasks/hrp-v5-go-live-17-rls-required-relation-sweep/TASK.md
+       khai ở: docs/tasks/hrp-v5-go-live-18-public-surface-hardening/TASK.md
+       khai ở: docs/tasks/hrp-v5-ops-06a-marketplace-launch-hardening/TASK.md
+       khai ở: docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+       khai ở: docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+    -- .gitignore --
+       M  .gitignore
+       khai ở: docs/tasks/hrp-defectfix-code-review/TASK.md
+       khai ở: docs/tasks/hrp-phase1-bcc-fence/TASK.md
+       khai ở: docs/tasks/hrp-v5-go-live-01-single-domain-consolidation/TASK.md
+       khai ở: docs/tasks/hrp-v5-go-live-02-public-surface-exposure/TASK.md
+       khai ở: docs/tasks/hrp-v5-go-live-05-public-card-truth/TASK.md
+       khai ở: docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+       khai ở: docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+    -- playwright.config.ts --
+       A  playwright.config.ts
+       khai ở: docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+       khai ở: docs/tasks/hrp-v5-test-01-browser-lane/TASK.md
+
+-- 7. Ngoài mọi phân loại --
+    NGOAI_MOI_PHAN_LOAI=0
+
+-- 8. HEAD vẫn bằng giá trị STEP-01 đã ghi: task này không commit --
+$ git log --oneline -1
+    e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot
+    STEP-01 : e58a6c0 docs(go-live-18,17,test-01): bump ba contract de giao GOP mot luot

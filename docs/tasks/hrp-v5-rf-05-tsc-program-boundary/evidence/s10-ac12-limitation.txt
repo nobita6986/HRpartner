@@ -1,0 +1,95 @@
+﻿### AC-12 -- doc muc gioi han cua HANDOFF.md bang Get-Content, dung lenh ma AC-12 chi dinh
+### Moi phep so sanh dung String.Contains, tuc so khop TUYET DOI tren chuoi con.
+### KHONG dung toan tu -like: dau backtick trong mau -like la ky tu ESCAPE cua wildcard,
+### nen mau *`LIM-01`* bi doc thanh "LIM-01 roi mot dau sao THAT" va tra 0 oan.
+### Dong VAN BAN THAT in nguyen ven nho Get-Content -Encoding UTF8 cong Out-File -Encoding utf8.
+
+$ Get-Content -LiteralPath <HANDOFF.md> -Encoding UTF8
+  TONG_DONG=111
+  MAU_CO_DAU_DOC_TU_SIDECAR=4
+
+== 1. Dong LIM-01 -- in NGUYEN VAN de Tier 3 doc bang mat, khong dua vao mot con so nao ==
+  SO_DONG_CHUA_`LIM-01`=5
+
+  --- dong 26  thuoc ## 1. Outcome Summary ---
+Chưa hoàn thành: không có phần nào của `6` `RQ` bị bỏ. Giới hạn CÓ TÊN của `RQ-06` nằm ở `LIM-01`. Không commit, không push, không deploy: `git log --oneline -1` vẫn là `e58a6c0`, bằng đúng giá trị `STEP-01` đã ghi.
+
+  --- dong 41  thuoc ## 2. Execution Trace ---
+| `STEP-10` | `RQ-06` | `HANDOFF.md`, `34` tệp mở đầu bằng `s10-` dưới `evidence/` liệt kê ĐỦ TÊN ở mục `6`, `docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md` bản `v1.2` | `DONE` — mọi path phân nhóm được, cổng bản giao chạy CUỐI, không commit | `DEV-01` phát hiện ở đây; `LIM-01` là giới hạn CÓ TÊN của `RQ-06`; `LIM-02` là một mâu thuẫn nội bộ của contract; `LIM-03` là trạng thái index của `TASK.md` |
+
+  --- dong 61  thuoc ## 3. Acceptance Evidence ---
+| `AC-12` | `powershell -NoProfile -File docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac12.ps1`, và mã ấy đọc tài liệu bằng đúng `Get-Content -LiteralPath ... -Encoding UTF8` như `AC-12` chỉ định | `TONG_DONG=111`. Mục `5` chứa ĐÚNG `1` dòng `LIM-01`, và `DU_CA_BON_NHOM_NEO=CO`: cả bốn nhóm neo cùng nằm trên MỘT dòng ấy, gồm `next build` cùng `include` cho mệnh đề một, `4.3` cùng `npm run build` cùng `next dev` cho mệnh đề hai, `execution round 2` cùng `hrp-v5-test-01-browser-lane` cho mệnh đề ba, và `webServer` cùng `git status --porcelain tsconfig.json` cho phép phân biệt. Phía NGƯỢC: `7` dòng chứa chuỗi `build` được in NGUYÊN VĂN kèm đề mục chứa nó, vì một con số không chứng minh được sự VẮNG MẶT của một lời khẳng định; bảy hình dạng khẳng định sai đều cho `SO_DONG=0` | `evidence/s10-ac12-limitation.txt`, `evidence/s10-ac12.ps1`, `evidence/s10-ac12-patterns.txt` cộng `HANDOFF.md` mục `5` | `None` |
+
+  --- dong 80  thuoc ## 5. Deviations ---
+| `LIM-01` | Limitation CÓ TÊN của `RQ-06`, đúng như `AC-12` đòi | **Task này KHÔNG chứng minh rằng `next build` để nguyên khoá `include`.** Mục `4.3` CẤM `npm run build` và `next dev` vì hai lý do độc lập: `.env` trỏ PRODUCTION nên bản build tĩnh có thể truy vấn nó, và `next build` là thứ duy nhất có quyền ghi lại `tsconfig.json`. Vì vậy `13` mẫu `include` mới đúng cho `npx tsc` và cho lane vitest, nhưng chưa ai đo hành vi của chúng qua một lượt build thật. Phép kiểm đúng thuộc execution round `2` của `hrp-v5-test-01-browser-lane`, nơi khoá `webServer` khởi động một bản build thật; phép phân biệt là `git status --porcelain tsconfig.json` chạy NGAY sau lượt build ấy, RỖNG thì `include` sống sót, có dòng thì Next đã ghi lại và cần một contract nữa | `evidence/s10-ac12-limitation.txt`; mục `4.3` của `TASK.md`; `RQ-02` cùng `DEC-07` của `TASK.md` của `hrp-v5-test-01-browser-lane` | Tier 3 xét, rồi Tier 1 xếp lịch |
+
+  --- dong 109  thuoc ## 7. Execution Round History ---
+| 1 | `v1.2` | `READY_FOR_AUDIT` | Round đầu và duy nhất. Mười bước chạy hết trong một lượt, `AC-01` tới `AC-12` đều có số đo thật. Một deviation `DEV-01` đã được Tier 1 hấp thụ vào bản `v1.2` trước khi round này kết thúc, cộng hai limitation `LIM-01` và `LIM-02` để Tier 3 xét |
+
+  Muc 2 va muc 5 duoi day do TREN $row5, tuc CHI cac dong LIM-01 nam trong ## 5. Deviations,
+  khong phai tren ca nam dong co nhac LIM-01. Nho vay moi neo phai cung nam tren DUNG mot dong.
+  SO_DONG_LIM-01_TRONG_MUC_5=1
+
+== 2. Ba menh de AC-12 doi, do bang neo ASCII tren CHINH dong LIM-01 ==
+  menh de 1 -- task nay KHONG chung minh next build de yen khoa include
+    neo "next build" => CO
+    neo "`include`" => CO
+  menh de 2 -- ly do la muc 4.3 cam chay ban build
+    neo "`4.3`" => CO
+    neo "npm run build" => CO
+    neo "next dev" => CO
+  menh de 3 -- phep kiem thuoc execution round 2 cua test-01
+    neo "execution round `2`" => CO
+    neo "hrp-v5-test-01-browser-lane" => CO
+  phep phan biet -- neu ro cach do sau ban build that
+    neo "webServer" => CO
+    neo "git status --porcelain tsconfig.json" => CO
+  DU_CA_BON_NHOM_NEO=CO
+
+== 3. Quet NGUOC -- khong dong nao khang dinh task nay da chung minh ban build an toan ==
+   Mot con so khong the chung minh su VANG MAT cua mot loi khang dinh, nen day in HET moi dong
+   chua chuoi "build" kem de muc chua no, de Tier 3 tu doc va tu ket luan.
+  SO_DONG_CHUA_"build"=7
+
+  --- dong 24  thuoc ## 1. Outcome Summary ---
+Một defect hạ tầng thứ hai lộ ra ở `STEP-10` và nó là lý do duy nhất bản giao lệch contract `v1.1`: path hàng rào mà `v1.1` khai, `src/shared/build/`, bị `.gitignore` dòng `10` mẫu `build/` BỎ QUA, nên vitest vẫn chạy tệp và mọi bằng chứng test vẫn xanh trong khi `git add` không bao giờ nhận nó. Tệp đã chuyển sang `src/shared/toolchain/`, nội dung không đổi một byte, và contract được Tier 1 bump lên `v1.2` để khai đúng path ấy. Chi tiết ở `DEV-01`.
+
+  --- dong 37  thuoc ## 2. Execution Trace ---
+| `STEP-06` | `RQ-05` | `src/shared/toolchain/tsc-program-boundary.static.test.ts`, `evidence/s06-barrier.txt`, `evidence/s10-barrier-single.txt` | `DONE` — `12` test xanh, exit `0` | `DEV-01` — tệp được VIẾT ở `src/shared/build/` theo `v1.1` rồi CHUYỂN sang `src/shared/toolchain/` ở `STEP-10`; `evidence/s06-barrier.txt` vì vậy nêu path cũ |
+
+  --- dong 57  thuoc ## 3. Acceptance Evidence ---
+| `AC-08` | Đổi TẠM `include` về hai mẫu đệ quy trần, chạy `npx vitest run --config vitest.unit.config.ts src/shared/build/tsc-program-boundary.static.test.ts`, hoàn nguyên `include`, chạy LẠI đúng lệnh ấy, rồi `git hash-object tsconfig.json` hai lượt. Path trong lệnh là path CŨ vì `STEP-07` chạy TRƯỚC lượt chuyển của `DEV-01`, và header của runner trong cả hai tệp bằng chứng nêu đúng path ấy | Lượt ĐỎ exit `1`, `5 failed` cộng `7 passed`, assertion THẬT in `"**/*.ts — glob đệ quy ở đoạn ĐẦU: **"` cùng dòng `.tsx` tương ứng; lượt sau hoàn nguyên exit `0`; `HASH_IDENTICAL=YES` với `53cc484886ddf4164f0741739af42e75ad913528` ở cả hai lượt | `evidence/s07-barrier-red.txt`, `evidence/s07-barrier-green.txt`, `evidence/s07-hashes.txt` | `None` |
+
+  --- dong 61  thuoc ## 3. Acceptance Evidence ---
+| `AC-12` | `powershell -NoProfile -File docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac12.ps1`, và mã ấy đọc tài liệu bằng đúng `Get-Content -LiteralPath ... -Encoding UTF8` như `AC-12` chỉ định | `TONG_DONG=111`. Mục `5` chứa ĐÚNG `1` dòng `LIM-01`, và `DU_CA_BON_NHOM_NEO=CO`: cả bốn nhóm neo cùng nằm trên MỘT dòng ấy, gồm `next build` cùng `include` cho mệnh đề một, `4.3` cùng `npm run build` cùng `next dev` cho mệnh đề hai, `execution round 2` cùng `hrp-v5-test-01-browser-lane` cho mệnh đề ba, và `webServer` cùng `git status --porcelain tsconfig.json` cho phép phân biệt. Phía NGƯỢC: `7` dòng chứa chuỗi `build` được in NGUYÊN VĂN kèm đề mục chứa nó, vì một con số không chứng minh được sự VẮNG MẶT của một lời khẳng định; bảy hình dạng khẳng định sai đều cho `SO_DONG=0` | `evidence/s10-ac12-limitation.txt`, `evidence/s10-ac12.ps1`, `evidence/s10-ac12-patterns.txt` cộng `HANDOFF.md` mục `5` | `None` |
+
+  --- dong 69  thuoc ## 4. Changed Deliverables ---
+| `src/shared/toolchain/tsc-program-boundary.static.test.ts` | `A ` đã staged, tệp mới `320` dòng | Hàng rào tĩnh `12` test: đọc `include` bằng `JSON.parse` rồi suy `PROGRAM_ROOTS`, quét cây bằng `readdirSync` của `node:fs`, ba sàn `MIN_SCANNED_TS_FILES = 300` cùng `MIN_PROGRAM_ROOTS = 5` cùng `MIN_ROOT_LEVEL_TS_FILES = 5`, bảng `OUTSIDE_PROGRAM` ba mục kèm lý do từng mục, và hai tự-kiểm chống dữ liệu bịa trên `FAKE_PATTERNS` cùng `FAKE_MATCHES` | Tệp thứ hai ở `Modules`. Path GỐC mà bản `v1.0` chỉ định là `src/shared/build/`, và path ấy bị `.gitignore` bỏ qua nên không bao giờ `git add` được: xem `DEV-01` |
+
+  --- dong 79  thuoc ## 5. Deviations ---
+| `DEV-01` | Deviation đã được contract hấp thụ | Bản `v1.0` chỉ định path hàng rào là `src/shared/build/tsc-program-boundary.static.test.ts`. Path ấy bị `.gitignore` BỎ QUA: `git check-ignore -v` trên nó in `.gitignore:10:build/` cùng mã thoát `0`, và `git status --porcelain --untracked-files=all` trên nó cho `0` dòng. Vitest không đọc `.gitignore` nên lane vẫn chạy tệp và mọi bằng chứng test vẫn xanh, trong khi `git add` không bao giờ nhận nó. Tệp đã chuyển sang `src/shared/toolchain/`, nội dung KHÔNG đổi một byte, `git hash-object` hai bên cùng `0bfc244881c3f125dace47ac7832f71033cd94c0`; `git check-ignore -v` trên path mới cho mã thoát `1`. `.gitignore` KHÔNG bị sửa: mẫu `build/` vẫn ở dòng `10` cả ở worktree lẫn ở `HEAD`, và phần staged của tệp ấy là ba dòng `test-results/` cùng `playwright-report/` của test-01. Tier 1 đã hấp thụ đổi này vào bản `v1.2`, nên ở bản contract hiện hành đây KHÔNG còn là lệch | `evidence/s10-barrier-ignored.txt`, `evidence/s10-move-barrier.txt`, `evidence/s10-ignore-sweep.txt`, `evidence/s10-contract-bump-v12.txt` | Tier 1 đã quyết, ghi ở changelog `v1.2` của `TASK.md` |
+
+  --- dong 80  thuoc ## 5. Deviations ---
+| `LIM-01` | Limitation CÓ TÊN của `RQ-06`, đúng như `AC-12` đòi | **Task này KHÔNG chứng minh rằng `next build` để nguyên khoá `include`.** Mục `4.3` CẤM `npm run build` và `next dev` vì hai lý do độc lập: `.env` trỏ PRODUCTION nên bản build tĩnh có thể truy vấn nó, và `next build` là thứ duy nhất có quyền ghi lại `tsconfig.json`. Vì vậy `13` mẫu `include` mới đúng cho `npx tsc` và cho lane vitest, nhưng chưa ai đo hành vi của chúng qua một lượt build thật. Phép kiểm đúng thuộc execution round `2` của `hrp-v5-test-01-browser-lane`, nơi khoá `webServer` khởi động một bản build thật; phép phân biệt là `git status --porcelain tsconfig.json` chạy NGAY sau lượt build ấy, RỖNG thì `include` sống sót, có dòng thì Next đã ghi lại và cần một contract nữa | `evidence/s10-ac12-limitation.txt`; mục `4.3` của `TASK.md`; `RQ-02` cùng `DEC-07` của `TASK.md` của `hrp-v5-test-01-browser-lane` | Tier 3 xét, rồi Tier 1 xếp lịch |
+
+== 4. Neo NGUOC -- hinh dang chu cua mot loi khang dinh sai ==
+   Cac chuoi duoi day la hinh dang ma mot cau "ban build da an toan" phai mang.
+   Chung la neo BO SUNG, khong phai bang chung chinh: bang chung chinh la muc 3 in day du o tren.
+  "build an toan" => SO_DONG=0
+  "build khong ghi lai" => SO_DONG=0
+  "build-safe" => SO_DONG=0
+  "build verified" => SO_DONG=0
+  "da do ban build" => SO_DONG=0
+  "build da chay" => SO_DONG=0
+  "build da duoc" => SO_DONG=0
+
+== 5. Doi chieu bang mau CO DAU doc tu sidecar, khong nam trong script ==
+   Muc dich: chung minh dong LIM-01 mang chu PHU DINH, chu khong phai chu khang dinh.
+  mau[0] TREN_DONG_LIM-01=CO   CA_TEP_SO_DONG=1
+           noi dung mau: KHÔNG chứng minh
+  mau[1] TREN_DONG_LIM-01=CO   CA_TEP_SO_DONG=1
+           noi dung mau: chưa ai đo
+  mau[2] TREN_DONG_LIM-01=CO   CA_TEP_SO_DONG=1
+           noi dung mau: CẤM `npm run build`
+  mau[3] TREN_DONG_LIM-01=CO   CA_TEP_SO_DONG=1
+           noi dung mau: thuộc execution round

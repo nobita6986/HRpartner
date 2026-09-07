@@ -1,0 +1,61 @@
+=== AC-01: git diff --cached tren tsconfig.json (sau khi stage) ===
+lenh: git diff --cached -- tsconfig.json
+diff --git a/tsconfig.json b/tsconfig.json
+index f0c8e7b..53cc484 100644
+--- a/tsconfig.json
++++ b/tsconfig.json
+@@ -36,8 +36,18 @@
+     ]
+   },
+   "include": [
+-    "**/*.ts",
+-    "**/*.tsx",
++    "next-env.d.ts",
++    "middleware.ts",
++    "*.config.ts",
++    "vitest.integration-files.ts",
++    "app/**/*.ts",
++    "app/**/*.tsx",
++    "src/**/*.ts",
++    "src/**/*.tsx",
++    "packages/**/*.ts",
++    "packages/**/*.tsx",
++    "prisma/**/*.ts",
++    "tests/**/*.ts",
+     ".next/types/**/*.ts"
+   ],
+   "exclude": [
+DIFF_EXIT=0
+
+-- numstat: chi mot tep, cong 12 tru 2 --
+12	2	tsconfig.json
+
+-- khoa include da phan tich (node -e) --
+[
+  "next-env.d.ts",
+  "middleware.ts",
+  "*.config.ts",
+  "vitest.integration-files.ts",
+  "app/**/*.ts",
+  "app/**/*.tsx",
+  "src/**/*.ts",
+  "src/**/*.tsx",
+  "packages/**/*.ts",
+  "packages/**/*.tsx",
+  "prisma/**/*.ts",
+  "tests/**/*.ts",
+  ".next/types/**/*.ts"
+]
+LEN=13
+NEXT_ENV_PRESENT=true
+HEAD_RECURSIVE_GLOB=0
+NODE_EXIT=0
+
+-- compilerOptions cong exclude giong baseline tung byte --
+lenh: git show e58a6c0:tsconfig.json | node -e (in JSON hai khoi) va so voi ban worktree
+compilerOptions_IDENTICAL=true
+exclude_IDENTICAL=true
+exclude=["node_modules"]
+KEYS_HEAD=["compilerOptions","include","exclude"]
+KEYS_NOW=["compilerOptions","include","exclude"]
+NODE2_EXIT=0

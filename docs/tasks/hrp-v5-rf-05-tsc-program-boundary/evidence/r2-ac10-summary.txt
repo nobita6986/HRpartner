@@ -1,0 +1,40 @@
+=== R2 AC-10 / STEP-09: hai lane canonical cong default lane TRAN ===
+Ma thoat lay bang REDIRECT ({ cmd; echo NAME=$?; } > file 2>&1), khong sau ong.
+Nguon: r2-s01-*-before.txt (moc STEP-01) va r2-ac10-*-after.txt (round nay).
+
+LENH                        Test Files                     Tests                          exit  FAIL/errTS
+npm run test:unit  TRUOC    1 failed | 108 passed (109)    5 failed | 1664 passed (1669)  1     5/0
+npm run test:unit  SAU      109 passed (109)               1669 passed (1669)             0     0/0
+npx vitest run     TRUOC    1 failed | 108 passed (109)    5 failed | 1664 passed (1669)  1     5/0
+npx vitest run     SAU      109 passed (109)               1669 passed (1669)             0     0/0
+npm run typecheck  TRUOC    -                              -                              1     0/1
+npm run typecheck  SAU      -                              -                              0     0/0
+
+--- NGUONG AC-10 ---
+  ca hai exit 0                         : test:unit=0  typecheck=0  -> PASS
+  so tep test khong nho hon moc STEP-01 : moc=109  sau=109  -> PASS
+  so test PASS khong nho hon moc        : moc=1664  sau=1669  -> PASS
+  moi dong do duoc phan loai            : SO_DONG_FAIL sau = 0 o test:unit va 0 o default lane -> khong con dong nao de phan loai
+
+--- KE TOAN phan TANG (mat chu AC-10 doi = 12 test cua hang rao, do duoc = 5) ---
+  moc STEP-01 : 1 failed | 108 passed (109)  |  5 failed | 1664 passed (1669)
+  SAU         : 109 passed (109)  |  1669 passed (1669)
+  phan tang so test PASS = 1669 - 1664 = 5. Tong so test KHONG doi: 1669 -> 1669.
+  Ly do: hang rao 12 test DA ton tai o moc STEP-01 (staged tu round 1), chi 5 trong 12 test dang DO
+  vi include cua HEAD la glob de quy tran. Con so 12 ma runner bao o AC-07 la TONG test cua hang rao
+  va no giong nhau o CA HAI luot; 5 la phan tu DO chuyen sang XANH.
+  Round 1 tang dung 12 vi luc ay hang rao la tep MOI. Round 2 la round KHOI PHUC nen tang dung 5.
+  Xem DEV-01 trong HANDOFF muc 5 -- cung mot goc voi lech cua AC-02 va AC-04.
+  Doi chieu doc lap: nam tieu de do o moc STEP-01 trung khop tung dong voi nam tieu de do cua RED probe
+  AC-08 (luc co tinh dat include ve glob de quy tran), tuc nguyen nhan do dung la include chu khong gi khac.
+
+--- mandatory C-01 / AUD-001 ---
+  npx vitest run TRAN: exit 0, 109 passed (109), 1669 passed (1669), so dong "React is not defined" = 0, so dong FAIL = 0.
+  AUD-001 (24 test do tai src/domains/applications/placement-panel.test.ts do "React is not defined") DA DONG, do duoc.
+  Attribution: viec sua JSX runtime thuoc rf-06; round nay chi DO lai va khai ket qua, khong nhan cong.
+
+--- vat lieu nhap ngoai contract (cau cuoi AC-10) ---
+  Khong con dong do nao, nen khong co dong nao phai phan hang vat lieu nhap.
+  new-ui/ va scratch/ van la thu muc chua theo doi, con nguyen, va nay nam ngoai chuong trinh tsc.
+
+AC-10_DAT=1

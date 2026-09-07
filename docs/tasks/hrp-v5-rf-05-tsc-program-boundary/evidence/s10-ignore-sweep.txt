@@ -1,0 +1,16 @@
+### quét TOÀN BỘ path bản giao xem còn path nào bị .gitignore che
+git THẤY   : tsconfig.json
+BỊ BỎ QUA : src/shared/build/tsc-program-boundary.static.test.ts  <= .gitignore:10:build/
+git THẤY   : docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+git THẤY   : docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s01-gate.txt
+
+### thư mục src/shared/build/ có gì khác ngoài hàng rào?
+total 20
+drwxr-xr-x 1 Admin 197121     0 Sep  4 09:49 .
+drwxr-xr-x 1 Admin 197121     0 Sep  4 09:48 ..
+-rw-r--r-- 1 Admin 197121 13206 Sep  4 09:49 tsc-program-boundary.static.test.ts
+
+### tên thư mục thay thế: git có bỏ qua không? (mã thoát 1 = KHÔNG bỏ qua, tức tốt)
+src/shared/toolchain/x.static.test.ts -> check-ignore exit=1
+src/shared/build-boundary/x.static.test.ts -> check-ignore exit=1
+src/shared/program/x.static.test.ts -> check-ignore exit=1

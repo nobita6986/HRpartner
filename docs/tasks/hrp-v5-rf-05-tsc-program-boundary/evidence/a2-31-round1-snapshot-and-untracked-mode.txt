@@ -1,0 +1,17 @@
+=== Ban sao BYTE cua AUDIT.md round 1 truoc khi ghi round 2 ===
+--- CMD: git hash-object tren ban goc va ban sao
+goc  = 3413d9dc742c8472bd6fcca81c874b44edf391f0
+sao  = 3413d9dc742c8472bd6fcca81c874b44edf391f0
+--- CMD: md5sum
+8af1fc6fe01345a6b05d9d661da61439 *docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md
+8af1fc6fe01345a6b05d9d661da61439 *docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/a2-30-audit-round1-snapshot.md
+--- CMD: git ls-files -s (ban round 1 dang o INDEX, con song sau khi worktree bi ghi de)
+100644 3413d9dc742c8472bd6fcca81c874b44edf391f0 0	docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md
+
+=== Phan biet CHE DO untracked cho scratch va new-ui (HANDOFF ghi 255 va 14) ===
+PATH=scratch  porcelain_mac_dinh=188  porcelain_uall=220  find_type_f=255
+PATH=new-ui  porcelain_mac_dinh=1  porcelain_uall=14  find_type_f=14
+--- CMD: git status --porcelain -uall -- scratch new-ui | grep -vc '^??'  (so dong KHAC '??')
+0
+--- CMD: git diff --name-only -- new-ui scratch  (theo doi = 0 dong thi khong tep nao bi sua)
+0

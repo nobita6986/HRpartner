@@ -1,0 +1,22 @@
+=== R2-STEP-03 KHOI PHUC ban giao tsconfig.json cua rf-05 ===
+Cach lam: Edit dung khoi include ve 13 mau cua muc 4.1. Khong cham compilerOptions, khong cham exclude.
+
+--- TRUOC ---
+index blob    : f0c8e7b425330dd47e92243f18a9cc1d4d1f0c3a  (== HEAD:tsconfig.json, 817B)
+worktree hash : f0c8e7b425330dd47e92243f18a9cc1d4d1f0c3a
+ban giao r1   : 53cc484886ddf4164f0741739af42e75ad913528  (1052B) VANG khoi ca hai tang
+
+--- SAU ---
+CMD: git hash-object tsconfig.json
+53cc484886ddf4164f0741739af42e75ad913528
+CMD: git ls-files -s tsconfig.json
+100644 53cc484886ddf4164f0741739af42e75ad913528 0	tsconfig.json
+CMD: git status --porcelain -- tsconfig.json
+M  tsconfig.json
+CMD: git diff --name-only -- tsconfig.json   (worktree vs index)
+[dong tren rong = worktree == index]
+CMD: git diff --cached --numstat -- tsconfig.json
+12	2	tsconfig.json
+NGUONG Next-gate rf-05: 12 dong them / 2 dong bo -- DAT
+
+KET LUAN: worktree hash == index blob == 53cc484886ddf4164f0741739af42e75ad913528, tuc DUNG TUNG BYTE ban giao round 1.

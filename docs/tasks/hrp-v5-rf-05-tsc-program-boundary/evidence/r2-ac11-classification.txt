@@ -1,0 +1,50 @@
+=== R2 AC-11 / STEP-09: quet scope theo muc 4.2 ===
+git log --oneline -1 = 31625c4  (moc STEP-01 = 31625c4)  -> task nay KHONG tao commit nao
+git status -sb dong dau = "## main...origin/main"  -> khong ahead, khong push
+
+--- moc STEP-01 vs bay gio ---
+  git status --porcelain : moc 383 dong -> bay gio 421 dong  (chenh +38)
+  git diff --cached      : moc 147 path -> bay gio 148 path  (chenh +1)
+
+--- phan nhom TOAN BO 421 path dirty ---
+  L-Vat lieu chua theo doi (DEC-05)           189
+  N2-Artifact task nay                        127
+  L-Cung lo dang do                            54
+  L-rf-06 (do R1 cua task nay sinh ra)         16
+  L-Gate script luong khac                      6
+  L-Luong khac (test-01 / build static / Tier 1)    6
+  L-Vat lieu nhap ngoai contract                3
+  L-Ban giao rf-06                              2
+  L-TASK.md cua Tier 1                          2
+  N1-Modules                                    2
+  L-Tai lieu luong khac                         1
+  X-CHUA PHAN LOAI                             10
+  X-docs/tasks slug khac                        3
+
+--- nhom 1 + nhom 2 (cong cua task nay) ---
+  [A ] src/shared/toolchain/tsc-program-boundary.static.test.ts
+  [M ] tsconfig.json
+  [A ] docs/tasks/hrp-v5-rf-05-tsc-program-boundary/AUDIT.md
+  [A ] docs/tasks/hrp-v5-rf-05-tsc-program-boundary/HANDOFF.md
+  [A ] docs/tasks/hrp-v5-rf-05-tsc-program-boundary/TASK.md
+  [A ] docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s02-listfiles-after.err
+  [A ] docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/s10-ac12.ps1
+  [??] docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s02-listfiles-before.err
+  [??] docs/tasks/hrp-v5-rf-05-tsc-program-boundary/evidence/r2-s04-listfiles-after.err
+  ... cong 120 tep evidence (.txt) duoi evidence/ cua slug nay
+
+--- path CHUA PHAN LOAI (phai la 0) ---
+   M docs/tasks/hrp-v5-go-live-02-public-surface-exposure/AUDIT.md
+   M docs/tasks/hrp-v5-go-live-04-public-read-rls-closure/AUDIT.md
+   M docs/tasks/hrp-v5-go-live-13-tracking-pii-mask/AUDIT.md
+  ?? .neon
+  ?? fix.patch
+  ?? patch_test.ps1
+  ?? patch_test2.ps1
+  ?? patch_test3.ps1
+  ?? rls-probe-insert.txt
+  ?? rls-probe-output.txt
+  ?? scripts/debug-parser.mjs
+  ?? temp.diff
+  ?? update_globals.js
+  SO_PATH_CHUA_PHAN_LOAI=13

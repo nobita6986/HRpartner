@@ -1,0 +1,27 @@
+=== a2-10 AC-06 second pass: are execSync / git / DATABASE_URL in CODE or only in COMMENT? ===
+--- CMD: grep -n for each token, with the whole line so the context is visible
+23: * Nó không gọi ra ngoài process: không `execSync`, không `git` (mục `4.3`). Một hàng rào phụ thuộc
+---
+23: * Nó không gọi ra ngoài process: không `execSync`, không `git` (mục `4.3`). Một hàng rào phụ thuộc
+24: * `git` sẽ chết ở môi trường không có checkout. Nó không đọc một `DATABASE_URL` nào.
+42:const SKIP_DIRS = new Set(['node_modules', '.git']);
+50:  'new-ui': 'nguyên mẫu UI chưa theo dõi bởi git, là đầu vào của một contract UI về sau (DEC-05)',
+---
+24: * `git` sẽ chết ở môi trường không có checkout. Nó không đọc một `DATABASE_URL` nào.
+
+--- CMD: python — strip line comments and block comments, then re-search
+BYTES_WITH_COMMENTS=12169 BYTES_WITHOUT_COMMENTS=9391
+CODE_OCCURRENCES_execSync      =0
+CODE_OCCURRENCES_child_process =0
+CODE_OCCURRENCES_spawn         =0
+CODE_OCCURRENCES_fork(         =0
+CODE_OCCURRENCES_DATABASE_URL  =0
+CODE_OCCURRENCES_process.env   =0
+CODE_BARE_WORD_git=1
+CODE_DOTGIT_IN_SKIPDIRS=1
+CODE_IMPORT_LINES:
+    import { existsSync, readFileSync, readdirSync, type Dirent } from 'node:fs';
+    import { dirname, join, sep } from 'node:path';
+    import { fileURLToPath } from 'node:url';
+    import { describe, expect, it } from 'vitest';
+EXIT=0

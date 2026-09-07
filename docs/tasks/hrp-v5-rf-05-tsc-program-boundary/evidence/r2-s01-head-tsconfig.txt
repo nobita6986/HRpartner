@@ -1,0 +1,35 @@
+=== R2-STEP-01 — HEAD va tsconfig.json TRUOC khi khoi phuc ===
+CMD: git log --oneline -1
+31625c4 fix(go-live-17): quet quan he bat buoc duoi RLS -- ACCEPTED, Owner mien audit
+EXIT=0
+
+CMD: git rev-parse HEAD
+31625c4bb4ced393661684c2c8cb96f1e42bf054
+CMD: git status -sb | head -1
+## main...origin/main
+
+--- tsconfig.json: TRANG THAI TRUOC ---
+CMD: git ls-files -s tsconfig.json
+100644 f0c8e7b425330dd47e92243f18a9cc1d4d1f0c3a 0	tsconfig.json
+EXIT=0
+CMD: git status --porcelain -- tsconfig.json
+(rong = index==HEAD va worktree==index)
+CMD: git rev-parse HEAD:tsconfig.json
+f0c8e7b425330dd47e92243f18a9cc1d4d1f0c3a
+CMD: git cat-file -s HEAD:tsconfig.json
+817
+
+--- ban giao rf-05 con song trong object store ---
+CMD: git cat-file -t 53cc484886ddf4164f0741739af42e75ad913528
+blob
+CMD: git cat-file -s 53cc484886ddf4164f0741739af42e75ad913528
+1052
+
+--- do byte bang python ---
+worktree tsconfig.json         bytes=863    lines=46   crlf=46   bare_lf=0
+blob HEAD:tsconfig.json        bytes=817    lines=46   crlf=0    bare_lf=46
+blob 53cc484 rf-05             bytes=1052   lines=56   crlf=0    bare_lf=56
+CMD: git config --get core.autocrlf
+true
+
+KET LUAN TRUOC: index==HEAD==817B LF; worktree 863B CRLF cung noi dung; ban giao rf-05 1052B 56 dong VANG khoi ca hai tang.

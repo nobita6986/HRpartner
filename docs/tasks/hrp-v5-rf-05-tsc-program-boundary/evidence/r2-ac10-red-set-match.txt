@@ -1,0 +1,23 @@
+=== R2 doi chieu: 5 test DO o moc STEP-01  vs  5 test DO cua RED probe AC-08 ===
+CMD: trich moi dong bat dau bang "FAIL " trong r2-s01-unit-before.txt va trong doan probe DO cua r2-ac08-probe.txt
+
+--- moc STEP-01 (5 tieu de) ---
+  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — sàn chống quét rỗng > include của tsconfig.json suy ra đủ gốc chương trình
+  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — hình dạng của include > không mẫu nào có glob đệ quy ở đoạn ĐẦU
+  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — phân loại ĐÓNG > mỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do
+  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — phân loại ĐÓNG > mỗi tệp TypeScript ở tầng gốc repo khớp một mẫu một-đoạn của include
+  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA > một gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ
+
+--- RED probe AC-08, include dat lai ve glob de quy tran (5 tieu de) ---
+  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — sàn chống quét rỗng > include của tsconfig.json suy ra đủ gốc chương trình
+  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — hình dạng của include > không mẫu nào có glob đệ quy ở đoạn ĐẦU
+  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — phân loại ĐÓNG > mỗi thư mục tầng gốc có mã TypeScript là gốc chương trình, hoặc NGOÀI kèm lý do
+  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — phân loại ĐÓNG > mỗi tệp TypeScript ở tầng gốc repo khớp một mẫu một-đoạn của include
+  src/shared/toolchain/tsc-program-boundary.static.test.ts > tsc program boundary — tự-kiểm bộ so mẫu trên dữ liệu BỊA > một gốc bịa chưa phân loại làm phép kiểm phân loại ĐỎ
+
+GIONG_NHAU_TUNG_DONG=1
+sha256 danh sach moc  = 847916523a010fa1804fcd5c84c78669
+sha256 danh sach probe= 847916523a010fa1804fcd5c84c78669
+
+KET LUAN: tap test do o moc STEP-01 GIONG HET tap test do khi co tinh dat include ve glob de quy tran.
+Tuc nguyen nhan do o moc la khoa include cua HEAD, khong phai mot loi khac an minh sau cung mot con so.

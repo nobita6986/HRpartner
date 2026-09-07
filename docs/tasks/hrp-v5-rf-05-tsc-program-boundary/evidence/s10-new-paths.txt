@@ -1,0 +1,10 @@
+.ai-pipeline/scripts/gate-lib.ps1
+docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-30-owner-notouch-sweep.txt
+docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-31-contract-bump-v14.txt
+docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-32-ac15-under-v14.txt
+docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-33-reclassify-under-v14.txt
+docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-34-gx-attribution.txt
+docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-35-modules-numstat-and-gx-final.txt
+docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-36-page-numstat-recheck.txt
+docs/tasks/hrp-v5-go-live-18-public-surface-hardening/evidence/a1-37-section3-numbers.txt
+tsconfig.json
