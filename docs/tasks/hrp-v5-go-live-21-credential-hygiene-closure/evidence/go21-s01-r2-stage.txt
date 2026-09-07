@@ -1,0 +1,18 @@
+=== round 2 stage status (Tier 3 reproduce; AUD-002 closure verify) ===
+time:           2026-09-07 13:39 Asia/Bangkok
+cwd:            C:\CodeApp\HrP
+executor:       Tier 3 (re-audit round 2)
+purpose:        Independent verify: .env.dev/.env.preview/.env.prod.test untracked at HEAD.
+
+--- command: git ls-files --stage .env.dev .env.preview .env.prod.test .env.example ---
+100644 b777129f2fb7043bd188d04dbdd98a34de6a6543 0	.env.example
+
+--- exit_code ---
+0
+
+--- summary ---
+Only .env.example has a stage hash; the other three env files return empty
+(no entry in the index). Untrack persists at HEAD.
+
+--- verdict ---
+AUD-002 RESOLVED — three env files are out of the Git index.

@@ -1,0 +1,36 @@
+=== round 2 scratch tracked content (AC-07 partial evidence) ===
+time:           2026-09-07 13:40 Asia/Bangkok
+cwd:            C:\CodeApp\HrP
+executor:       Tier 3 (re-audit round 2)
+purpose:        Enumerate tracked scratch/ files that need STEP-10 disposition.
+
+--- command: git ls-files scratch/ | Out-File -Encoding utf8 ---
+15 file tracked in scratch/
+
+--- exit_code ---
+0
+
+--- summary ---
+Tracked scratch files (need Owner KEEP/DELETE at STEP-10):
+  scratch/f05/cross.py
+  scratch/f05/danger.json
+  scratch/f05/hits.json
+  scratch/f05/rls.json
+  scratch/f05/rls.py
+  scratch/f05/scan.py
+  scratch/f05/schema.json
+  scratch/f05/usage.py
+  scratch/golive06-migrstate.mjs
+  scratch/golive06-rls-probe.mjs
+  scratch/marketplace-profile-probe.mjs
+  scratch/migrate_test.ps1
+  scratch/run_integration.ps1
+  scratch/run_m1_06a_audit.ps1
+  scratch/write_plan.py
+
+--- .gitignore rule ---
+.gitignore:78: scratch/  (exact-name ignore; future untracked files ignored)
+
+--- verdict ---
+AC-07 BLOCKED by design (Owner disposition required); manifest at
+evidence/go21-s04-disposition.md; tracked count = 15.

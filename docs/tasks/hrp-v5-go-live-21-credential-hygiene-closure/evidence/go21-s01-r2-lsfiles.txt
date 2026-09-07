@@ -1,0 +1,32 @@
+=== round 2 ls '.env*' (Tier 3 reproduce; AUD-002 closure verify) ===
+time:           2026-09-07 13:39 Asia/Bangkok
+cwd:            C:\CodeApp\HrP
+executor:       Tier 3 (re-audit round 2)
+purpose:        Independent verify AUD-002 closure: only .env.example tracked after r1-FIX.
+
+--- command: git ls-files '.env*' ---
+.env.example
+
+--- command: git ls-files --stage .env.dev ---
+(empty)
+
+--- command: git ls-files --stage .env.preview ---
+(empty)
+
+--- command: git ls-files --stage .env.prod.test ---
+(empty)
+
+--- command: git ls-files --stage .env.example ---
+100644 b777129f2fb7043bd188d04dbdd98a34de6a6543 0	.env.example
+
+--- exit_code ---
+0
+
+--- summary ---
+count=.env.example = 1 (expected: 1)
+count of untracked env = 3 (untrack persists at HEAD)
+
+--- verdict ---
+AUD-002 RESOLVED — git ls-files '.env*' returns exactly one path: .env.example.
+The three formerly-tracked env files (.env.dev, .env.preview, .env.prod.test)
+are now untracked and ignored via .gitignore:75..77.

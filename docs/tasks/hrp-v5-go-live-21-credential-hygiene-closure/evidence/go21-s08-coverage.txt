@@ -1,0 +1,47 @@
+=== round 2 coverage map (C-08) ===
+time:           2026-09-07 13:46 Asia/Bangkok
+cwd:            C:\CodeApp\HrP
+executor:       Tier 3 (re-audit round 2)
+purpose:        Map modified/added files to test coverage.
+
+--- modified files ---
+
+prisma/seed.mjs (M)
+  - covered by: prisma/seed-portal-demo-password.static.test.ts (5/5 PASS)
+  - evidence: evidence/go21-s02-test-audit-r2.txt
+
+--- added files ---
+
+prisma/seed-portal-demo-password.static.test.ts (A)
+  - self-coverage (the test itself)
+  - 5/5 PASS via npx vitest run prisma/seed-portal-demo-password.static.test.ts
+
+docs/runbooks/credential-hygiene-cutover.md (A)
+  - documentation only (no code path); reviewed via rg + visual check of
+    sections §0..§7 for STEP-07..11, smoke matrix, branch names, rollback
+  - evidence: evidence/go21-s06-runbook-probes.txt,
+              evidence/go21-s06-smoke-matrix.txt,
+              evidence/go21-s06-branch-names.txt
+
+scripts/ops/demo-cleanup.mjs (A)
+  - covered by: dry-run × 2 (idempotent manifest hash), apply fail-closed
+    reproduce, apply with localhost stub
+  - evidence: evidence/go21-s05-dry-run-audit-r2.txt,
+              evidence/go21-s05-dry-run-audit-r2b.txt,
+              evidence/go21-s05-apply-audit-r2.txt,
+              evidence/go21-s05-apply-localhost-r2.txt
+
+.gitignore (M, +12 lines)
+  - covered by: git check-ignore -v on every env path + Browser Lane
+    preservation check
+  - evidence: evidence/go21-s01-r2-ignore.txt
+
+--- exit_code ---
+0
+
+--- summary ---
+All modified/added files have either automated tests (vitest) or
+Tier-3-independent reproduce coverage.
+
+--- verdict ---
+C-08 Test coverage PASS.

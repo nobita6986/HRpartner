@@ -1,0 +1,31 @@
+=== round 2 .gitignore check (Tier 3 reproduce; AUD-002 closure verify) ===
+time:           2026-09-07 13:39 Asia/Bangkok
+cwd:            C:\CodeApp\HrP
+executor:       Tier 3 (re-audit round 2)
+purpose:        Independent verify .gitignore covers all three untracked env files
+                plus local .env*.local files.
+
+--- command: git check-ignore -v .env.dev .env.preview .env.prod.test .env.local .env.ops06a-test.local .env.production.local ---
+.gitignore:75:.env.dev	.env.dev
+.gitignore:76:.env.preview	.env.preview
+.gitignore:77:.env.prod.test	.env.prod.test
+.gitignore:15:.env.local	.env.local
+.gitignore:18:.env.*.local	.env.ops06a-test.local
+.gitignore:66:.env.production.local	.env.production.local
+
+--- exit_code ---
+0
+
+--- summary ---
+All six env files map to specific .gitignore lines:
+- 3 untracked env (lines 75..77 of credential hygiene section)
+- 3 local env (line 15 = .env.local; line 18 = .env.*.local;
+  line 66 = .env.production.local; legacy from earlier commits)
+
+--- Browser Lane preservation ---
+- .gitignore:83: test-results/
+- .gitignore:84: playwright-report/
+Both intact (not modified by r1-FIX).
+
+--- verdict ---
+All credential hygiene .gitignore entries active; Browser Lane preserved.

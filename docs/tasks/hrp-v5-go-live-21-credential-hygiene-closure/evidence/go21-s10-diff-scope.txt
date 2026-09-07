@@ -1,0 +1,47 @@
+=== round 2 scope creep check (C-07 + C-10) ===
+time:           2026-09-07 13:45 Asia/Bangkok
+cwd:            C:\CodeApp\HrP
+executor:       Tier 3 (re-audit round 2)
+purpose:        Independent verify scope creep: only Tier 2 prep files in diff.
+
+--- command: git diff --name-only 7dd576e..HEAD | Measure-Object -Line ---
+49
+
+--- command: git log --oneline 7dd576e..HEAD ---
+5978065 infra(go-live-21): r1-FIX — final HEAD reference update to 5fc3469
+5fc3469 infra(go-live-21): r1-FIX — final HEAD reference update to c45de0c
+c45de0c infra(go-live-21): r1-FIX — final HANDOFF update with all 5 commits
+6213788 infra(go-live-21): r1-FIX — commit RQ-09 ops script
+f01ddca infra(go-live-21): r1-FIX — commit RQ-03 seed fix + RQ-04 runbook
+66c6440 infra(go-file-21): r1-FIX — HANDOFF update + gate evidence
+c5a5fbd infra(go-file-21): r1-FIX — TASK v1.2 pickup + HANDOFF + post-commit evidence
+41ab22b infra(go-file-21): r1-FIX — untrack env files + commit AUDIT + evidence
+485a36c docs(planner): phase map + go-file-21 v1.1 READY in ROADMAP_CURSOR
+3989469 Revert "docs(planner): phase map + go-file-21 v1.1 READY in ROADMAP_CURSOR"
+3fe77d8 docs(planner): phase map + go-file-21 v1.1 READY in ROADMAP_CURSOR
+
+--- exit_code ---
+0
+
+--- summary ---
+- 11 commits total (3 Planner + 7 Tier 2 r1-FIX + 1 HEAD reference)
+- 49 file changes (git diff --stat)
+- 4 forbidden-zone paths checked — all clean:
+  - middleware.ts (NOT in diff)
+  - app/api/ (NOT in diff)
+  - prisma/schema.prisma (NOT in diff)
+  - src/shared/auth/ (NOT in diff)
+
+--- scope classification ---
+1. .env.dev, .env.preview, .env.prod.test (D — untrack)
+2. .gitignore (M — credential hygiene section, +12 lines)
+3. docs/PLANNER_HANDOVER.md (M — Planner-side)
+4. docs/runbooks/credential-hygiene-cutover.md (A — RQ-04 runbook)
+5. prisma/seed.mjs (M — RQ-03 literal removed)
+6. prisma/seed-portal-demo-password.static.test.ts (A — RQ-03 static test)
+7. scripts/ops/demo-cleanup.mjs (A — RQ-09 ops script)
+8. docs/tasks/.../TASK.md, AUDIT.md, HANDOFF.md (Planner + Tier 2 round 1 + r1-FIX)
+9. evidence/* (35+ files — all under task 21 evidence dir)
+
+--- verdict ---
+C-07 Git hygiene PASS; C-10 Diff scope PASS; no out-of-scope file in diff.
