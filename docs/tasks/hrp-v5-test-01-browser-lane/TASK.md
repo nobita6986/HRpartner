@@ -8,7 +8,7 @@
 | Work type | `CODE` |
 | Audit mode (Tier 3 đọc) | `CODE_AUDIT` |
 | Spec version | `v1.5` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — Engineer |
 | Auditor | Tier 3 — independent auditor |
@@ -16,8 +16,8 @@
 | Modules | `playwright.config.ts`, `tests/browser/public-home.spec.ts`, `package.json`, `.gitignore` |
 | ADR references | `hrp-v5-go-live-07-marketplace-launch-proof` `DEC-20` — nơi ghi rằng URL gốc đo được bằng DOM sau hydrate HOẶC bằng response của API, tức lane trình duyệt là TUỲ CHỌN cho ra mắt; `hrp-v5-go-live-08-public-ui-premium` — round mà mười hai AC đòi giá trị tính bởi trình duyệt trong một repo không có trình chạy nào |
 | Current execution round | `4` |
-| Current audit round | `1` |
-| Next gate | `/code hrp-v5-test-01-browser-lane` — execution round `4` MỎNG trên baseline `f9c7bca`: chỉ chạy lại `STEP-08`, `STEP-09`, `STEP-10`, `STEP-11`, đo hash HEAD/worktree của `tsconfig.json` trước-sau, không dùng config chẩn đoán và không mở rộng deliverable |
+| Current audit round | `2` |
+| Next gate | `PHASE_REVIEW` — Tier 1 cập nhật `ROADMAP_CURSOR` §0 của `docs/PLANNER_HANDOVER.md` rồi chọn candidate kế tiếp theo hàng đợi sau TEST-01 |
 | Updated | `2026-09-07 Asia/Bangkok` |
 
 Repo hiện KHÔNG có trình chạy test trên trình duyệt: `devDependencies` không có Playwright, không Puppeteer, không jsdom, không `@testing-library`. Đó là lý do `go-live-08` từng có mười hai AC đòi giá trị tính bởi trình duyệt mà không ai đo được, và là lý do mọi hàng rào giao diện từ đó tới nay đều là hàng rào TĨNH đọc mã nguồn.
@@ -245,6 +245,33 @@ Các điều kiện chặn nay đã được đóng bằng bằng chứng mới:
 
 Nếu `npm run test:browser` vẫn đỏ, Tier 2 phải ghi defect mới với pha lỗi và path cụ thể. Không được quy nguyên nhân cho `next build` nếu chỉ quan sát thấy index thay đổi mà chưa có bằng chứng tác nhân Git.
 
+### Audit round `2` — execution round `4`
+
+`verify-audit.ps1 -TaskPath TASK.md -HandoffPath HANDOFF.md`: `RESULT: PASS WITH WARNINGS`, `EXIT=0`. Verdict §6 = **PASS**. §1 = "Không có finding. Các findings cũ (AUD-001, BLK-02) được Resolve toàn bộ." C-01/07/08/09/10 = DONE; C-02..06 = SKIP có lý do (TASK §4.3 cấm `npm run build` và `rf-05` 4.3 cũng cấm; task không sửa route handler / Prisma / POST-PATCH / migration).
+
+Ba WARN cổng xét riêng, không đổi verdict:
+
+- **S-06** (verdict PASS kèm SKIP): đúng quy tắc chung của Tier 3. `DEC-20` của `v1.5` cho phép `next build` ĐÚNG một lối qua `npm run test:browser`; hai lượt build đã chạy gián tiếp khi Tier 2 round `4` đo `AC-08`/`AC-09`. C-03..06 SKIP vì task này KHÔNG chạm `app/` và `src/` (`AC-11` đo `git status --porcelain app/ src/` chỉ có path của `go-live-19`, không phải của TEST-01).
+- **S-10** (chỉ 1 số không trùng TASK/HANDOFF = `15.8`): số mới đo độc lập là chuyện đúng đắn của audit. `AUD-001` đã ACCEPT_FIX ở round `1`, hạ severity P0→P2 và đã đóng bằng `8f3839d` (`rf-06`).
+- **S-16** (5 staged path ngoài `docs/tasks/.../`): WARN đúng nguyên tắc "Tier 3 không bao giờ stage source". `package.json`, `package-lock.json`, `playwright.config.ts`, `tests/browser/public-home.spec.ts`, `.gitignore` vẫn ở index từ round `1`; round `4` đo `git diff HEAD -- <4 deliverables>` cho `0` dòng mỗi tệp và Tier 2 không tạo commit nào. WARN mang tính lịch sử, không phải defect của round `4`.
+
+Spot-check rủi ro cao (theo §6): `AUD-001`/`BLK-02`/`BLK-03` đã đóng với closure evidence cụ thể (`npx vitest run` exit 0 với `1683/1683` ở audit round 2 — số khác `1735/1735` của HANDOFF round 4 là do giữa round 2 và round 4 repo đã thêm test; cả hai PASS, không mâu thuẫn). Hai commit mới `772aa68` và `f31d203` đều của Tier 1 vào `docs/PLANNER_HANDOVER.md`, không chạm TEST-01 — HANDOFF đã ghi rõ. `tsconfig.json` ổn định ba tầng `53cc4848…`, điều kiện `2`/`3`/`4` của `DEC-20` thoả.
+
+| Finding ID | Nguồn | Planner decision | Lý do & điều kiện |
+|---|---|---|---|
+| `AUD-001` (P0→P2, đã hạ ở round `1`) | Cổng S-10 | `ACCEPT_FIX` | Hạ severity xong từ round `1`; đóng bằng `8f3839d` (`rf-06`). Không mở execution round mới cho việc này |
+| `BLK-02` | HANDOFF §5 + AUDIT §7 | `ACCEPT` | Đóng bằng commit `bb223dd` (rf-05) đưa `tsconfig.json` lên `HEAD`. Round `4` đo ba tầng WORKTREE/INDEX/HEAD cùng `53cc484886ddf4164f0741739af42e75ad913528` cả trước lẫn sau lượt chạy, điều kiện `2`/`3` `DEC-20` thoả |
+| `BLK-03` | HANDOFF §1.1 + AUDIT §7 | `ACCEPT` | Đóng bằng `v1.5`: worktree policy "làm trên main, không nested worktree"; commit `bb223dd` + `8f3839d` trên `main`; TASK bump round `4` ở `0cd84ae` |
+| `DEV-04` (Hai lượt `AC-08` chạy liền nhau) | HANDOFF §5 | `ACCEPT` | Không hạ giá trị `AC-08`; hai lượt cách ~80 giây, cùng blob `eb9576be…`, cùng `1 passed`, `0` retry. Ngược lại thứ tự này cứu bằng chứng — kẹp `STEP-09` vào giữa thì `BLK-02` rơi đúng lúc có thể ăn mất lượt XANH thứ hai |
+| `DEV-05` (spec bị xoá khỏi worktree giữa RED và REVERT của `STEP-09`) | HANDOFF §5 | `ACCEPT` với điều kiện theo dõi | Blob khôi phục về đúng `eb9576be…`, GREEN exit `0` `1 passed (31.4s)`. Không mở execution round; nếu sự cố tái xuất ở lane khác thì khai blocker mới |
+| S-06 / S-10 / S-16 | Cổng `verify-audit.ps1` | `ACCEPT` với điều kiện | Ba WARN đã xét riêng ở trên. Không mở execution round, không tăng spec version |
+
+**Quyết định:** `READY_FOR_EXECUTION` → `ACCEPTED`. Spec version giữ `v1.5` — không có thay đổi contract nào trong execution/audit round `4`. Trạng thái task đã đóng về `ACCEPTED` theo Iron Rule `3`: chỉ Tier 3 PASS + Planner Resolution ACCEPTED mới đạt ACCEPTED.
+
+**Closure evidence cho round `4`:** `npx vitest run` exit 0; `npm run test:browser` XANH hai lượt; `STEP-09` RED → REVERT (`git checkout-index` blob `eb9576be…`) → GREEN; `npm run test:unit` exit 0 với `112/1735`; `npm run typecheck` exit 0 với `0` dòng `error TS`; `tsconfig.json` ba tầng cùng `53cc4848…` cả trước lẫn sau; `git diff HEAD -- <4 deliverables>` cho `0` dòng mỗi tệp; Tier 2 round `4` không tạo commit nào.
+
+**Bước tiếp theo (gate kế):** `PHASE_REVIEW` — task cuối phase browser lane đã ACCEPTED. Tier 1 cập nhật `ROADMAP_CURSOR` của `docs/PLANNER_HANDOVER.md` §0 và chọn candidate kế tiếp theo hàng đợi sau TEST-01: GO-LIVE-21 Credential Hygiene → GO-LIVE-07 Launch Proof → GO-LIVE-19 PII mask → V6-ADMIN-00 → V6 Phase 1A/1B/1C → Phase 2/3/4/5 → AFF-00..04 + AFF-05A → M7 → M8 → M6-01..03 policy → AFF-05B..07 → M6-04..07 → PAY. Hai commit Planner ghi vào `main` đồng thời round `4` chạy (`772aa68`, `f31d203`) cần được kiểm tra trong cursor update để phản ánh đúng trạng thái cây lúc chuyển gate.
+
 ## 10. Revision Log
 
 | Version | Ngày | Đổi gì |
@@ -255,3 +282,4 @@ Nếu `npm run test:browser` vẫn đỏ, Tier 2 phải ghi defect mới với p
 | `v1.3` | 2026-09-04 | **Sửa một path CHẾT mà chính bản `v1.2` vừa đưa vào.** Nhóm bốn ở `v1.2` khai `src/shared/build/tsc-program-boundary.static.test.ts`, nhưng sau đó `rf-05` bump lên `v1.2` của nó và CHUYỂN tệp ấy sang `src/shared/toolchain/` vì `.gitignore` có mẫu `build/` ở dòng `10` nên path cũ bị git BỎ QUA và `git add` không bao giờ nhận. Hệ quả nếu để nguyên: nhóm bốn của task này khai một path KHÔNG tồn tại trong cây, còn tệp thật thì rơi ra ngoài mọi nhóm và `AC-12` FAIL oan. Bản này đổi đúng một chuỗi path, `1` chỗ trong văn. KHÔNG đổi phạm vi, KHÔNG thêm hay bớt một yêu cầu, một bước hay một tiêu chí nào. Cửa sổ bump còn mở vì cả hai round vẫn đếm bằng `0` |
 | `v1.4` | 2026-09-04 | **Mở execution round `2` MỎNG và cấp phép `next build` đúng một lối, kèm bốn điều kiện.** Round `1` dừng ở `BLOCKED` vì `next build` chết ở pha kiểm kiểu, và `hrp-v5-rf-05-tsc-program-boundary` đã đóng nguyên nhân ấy: `npm run typecheck` giờ exit `0` với `0` dòng `error TS`. Bản này KHÔNG thêm, KHÔNG bớt một `RQ`, một `STEP` hay một `AC` nào; nó giữa nguyên mặt chữ của mười một bước và ghi phạm vi round `2` cùng `DEC-20` vào mục `9`, vì mục `4.3` của `rf-05` CẤM `npm run build` và muốn chạy lane bàn giao thì phải gỡ lệnh cấm ấy đúng một lối có điều kiện đo được. Cửa sổ bump còn MỞ vì task này chưa có `AUDIT.md` và `Current audit round` đếm bằng `0` |
 | `v1.5` | 2026-09-07 | **Nhận execution round `3` bị chặn đúng ở preflight và mở round `4` MỎNG trên baseline thật.** RF-06 (`8f3839d`), RF-05 (`bb223dd`) và go-live-20 (`f9c7bca`) đã nằm trên `main`; nested worktree `gl20` đã được remove; default Vitest đạt `1683/1683` và typecheck exit `0`. Không đổi RQ/STEP/AC hay deliverable; chỉ cập nhật control fields, khóa cách đo ba lớp HEAD/index/worktree và cấm lặp lại causal claim thiếu bằng chứng về `next build` |
+| `v1.5+` (resolution append-only, không bump version) | 2026-09-07 | **Đóng execution/audit round `4` ở `ACCEPTED`.** Audit round `2`: `verify-audit.ps1` PASS WITH WARNINGS, verdict §6 PASS, §1 không có finding. `BLK-02`/`BLK-03`/`AUD-001` đóng bằng commit `bb223dd` + `8f3839d` + worktree policy `v1.5`. S-06/S-10/S-16 ACCEPT với điều kiện (xem §9). `DEV-04`/`DEV-05` ACCEPT — không hạ giá trị AC. Closure: `npm run test:browser` XANH hai lượt; `STEP-09` RED → REVERT → GREEN; hai lane unit/typecheck exit `0`; ba tầng `tsconfig.json` cùng `53cc4848…`; `git diff HEAD -- <4 deliverables>` = `0` cho cả bốn. Gate kế: `PHASE_REVIEW` |

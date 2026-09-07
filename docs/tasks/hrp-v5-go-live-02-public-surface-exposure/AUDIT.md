@@ -84,3 +84,4 @@
 | `1` | `None` | `N/A` | `PASS` | Mọi Acceptance Criteria cục bộ đều thỏa mãn. |
 
 > Để bàn giao AUDIT.md cho Tier 1; chờ Planner Resolution trong TASK.md.
+

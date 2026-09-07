@@ -82,3 +82,4 @@ Không có. Test chạy đầy đủ các corner-cases. Các API internal không
 | `1` | `None` | `N/A` | `PASS` | Kiểm chứng mã nguồn filter, DTO, mask function, và các test unit & serialize của route. |
 
 > Để bàn giao AUDIT.md cho Tier 1; chờ Planner Resolution trong TASK.md.
+
