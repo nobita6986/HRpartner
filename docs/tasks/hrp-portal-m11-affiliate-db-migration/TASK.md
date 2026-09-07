@@ -7,8 +7,8 @@
 | Task slug | hrp-portal-m11-affiliate-db-migration |
 | Work type | CODE |
 | Audit mode (Tier 3 đọc) | CODE_AUDIT |
-| Spec version | v1.0 |
-| Status | READY_FOR_EXECUTION |
+| Spec version | v1.1 |
+| Status | CANCELLED — không được giao `/code`; hợp đồng cũ bị phân loại sai và trách nhiệm DB đã chuyển sang M11.1/M11.2 |
 | Planner | Tier 1 (Antigravity) |
 | Executor | Tier 2 |
 | Auditor | Tier 3 |
@@ -17,10 +17,12 @@
 | ADR references | M9 Audit Finding (AUD-002) |
 | Current execution round | 1 |
 | Current audit round | 0 |
-| Next gate | /code hrp-portal-m11-affiliate-db-migration |
-| Updated | 2026-08-20 22:30 +07:00 |
+| Next gate | CANCELLED — không có execution/audit gate; mọi thiết kế Affiliate mới đi theo `docs/V6/aff_plan.md` và các task V6 được Planner mở sau |
+| Updated | 2026-09-07 Asia/Bangkok |
 
 ## 1. Outcome
+
+> **CANCELLED / DO NOT EXECUTE.** Slug của task nói về Affiliate DB migration nhưng nội dung thực tế lại là luồng CTV withdrawal. Contract này không còn là nguồn sự thật cho Affiliate và không được dùng để sửa schema hoặc chạy migration.
 
 ### User-visible outcome
 
@@ -117,9 +119,11 @@
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
 | 1 | BLK-01 | Mở task infra hrp-m11.1-db-baseline để fix DB drift | Môi trường Neon DB gặp lỗi đồng bộ schema cũ, không thể migrate M11 an toàn. Cần chuẩn hóa DB trước. | Chuyển phần việc Migration DB của M11 sang M11.2, M11.1 làm DB baseline. | Antigravity / DONE |
+| Planner closure | PLN-01 | `CANCEL` | Slug, outcome và requirements không còn cùng một bounded context; phần DB baseline/migration đã được tách khỏi task này, còn kiến trúc Affiliate có plan V6 riêng. Giữ task mở sẽ tạo nguy cơ Tier 2 chạy nhầm migration/route withdrawal dưới tên Affiliate. | Không sửa tiếp contract cũ. M11.1/M11.2 giữ ownership phần DB đã tách; mọi feature Affiliate mới phải được sinh từ `docs/V6/aff_plan.md`. | Tier 1 / CLOSED 2026-09-07 |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
 | `v1.0` | 2026-08-20 | Tạo task hrp-portal-m11-affiliate-db-migration. | Khắc phục nợ kỹ thuật (AUD-002) từ M9. |
+| `v1.1` | 2026-09-07 | Chuyển task sang `CANCELLED`, xoá execution gate và thêm cảnh báo không được dùng như nguồn sự thật Affiliate. | Trách nhiệm DB đã chuyển sang M11.1/M11.2; nội dung task là CTV withdrawal và không khớp slug Affiliate. |
