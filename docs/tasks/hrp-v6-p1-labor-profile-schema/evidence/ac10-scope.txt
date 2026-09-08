@@ -1,0 +1,70 @@
+AC-10 — final shared-worktree and staged scope
+Command: git status --porcelain=v1
+--- worktree_status ---
+ M .ai-pipeline/CHANGELOG.md
+ M .ai-pipeline/PIPELINE-GUIDE.md
+ M .ai-pipeline/README.md
+ M .ai-pipeline/agents/auditor.md
+ M .ai-pipeline/agents/engineer.md
+ M .ai-pipeline/agents/planner.md
+ M .ai-pipeline/rules/00-global-rules.md
+ M .ai-pipeline/rules/01-planner-rules.md
+ M .ai-pipeline/rules/02-engineer-rules.md
+ M .ai-pipeline/rules/03-auditor-rules.md
+ M .ai-pipeline/scripts/verify-audit.ps1
+ M .ai-pipeline/scripts/verify-handoff.ps1
+ M .ai-pipeline/scripts/verify-pipeline.ps1
+ M .ai-pipeline/scripts/verify-task.ps1
+ M .ai-pipeline/templates/AUDIT.template.md
+ M .ai-pipeline/templates/HANDOFF.template.md
+ M .ai-pipeline/templates/TASK.template.md
+ M .ai-pipeline/tier1.md
+ M .ai-pipeline/tier2.md
+ M .ai-pipeline/tier3.md
+M  docs/tasks/hrp-v6-p1-labor-profile-schema/HANDOFF.md
+A  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac01-models.txt
+A  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac02-soft-dedup.txt
+A  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac03-worker-link.txt
+A  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac04-episode.txt
+A  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac05-submission-hook.txt
+A  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac06-additive.txt
+A  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac07-rls.txt
+A  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac08-vocab.txt
+A  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac09-typecheck.txt
+A  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac10-scope.txt
+A  prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/migration.sql
+A  prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/migration.sql
+M  prisma/schema.prisma
+?? docs/tasks/hrp-v5-go-live-07-marketplace-launch-proof/evidence/
+?? docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/ac01-baseline.txt
+?? docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/ac02-prisma-validate.txt
+?? docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/ac03-prisma-generate.txt
+?? docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/ac04-tsc-noemit.txt
+?? docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/ac05-schema-diff.txt
+?? docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/ac06-migration-ddl.txt
+?? docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/ac07-fence-test.txt
+?? docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/ac08-slot-relation.txt
+?? docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/ac09-scope-check.txt
+Command: git diff --cached --name-only
+--- staged_paths ---
+docs/tasks/hrp-v6-p1-labor-profile-schema/HANDOFF.md
+docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac01-models.txt
+docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac02-soft-dedup.txt
+docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac03-worker-link.txt
+docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac04-episode.txt
+docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac05-submission-hook.txt
+docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac06-additive.txt
+docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac07-rls.txt
+docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac08-vocab.txt
+docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac09-typecheck.txt
+docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac10-scope.txt
+prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/migration.sql
+prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/migration.sql
+prisma/schema.prisma
+staged_path_count=14
+forbidden_staged_path_count=0
+task_worktree_hash=d84dbfce0b6e9a4560d3cf9fa98d96fdaa220597
+task_head_hash=d84dbfce0b6e9a4560d3cf9fa98d96fdaa220597
+verify_task_hash=8e2cd4a0f9d824db73d920d7477ca4f2e4c753a3
+verify_handoff_hash=34212fa4a491e432ce7ef8ab7c5824cfc919fda0
+scope_check_exit=0

@@ -1,0 +1,10 @@
+AC-01 — models and Prisma validation
+Command: npx --prefix C:/CodeApp/HrP --no-install prisma validate --schema C:/CodeApp/HrP/prisma/schema.prisma (offline placeholder URLs set in process only)
+Prisma schema loaded from ..\..\..\..\..\..\CodeApp\HrP\prisma\schema.prisma
+The schema at ..\..\..\..\..\..\CodeApp\HrP\prisma\schema.prisma is valid 🚀
+prisma_validate_exit=0
+Command: git grep -n -E "^model (LaborProfile|LaborProfileIntake|EmploymentEpisode)" -- prisma/schema.prisma
+prisma/schema.prisma:1368:model LaborProfile {
+prisma/schema.prisma:1394:model LaborProfileIntake {
+prisma/schema.prisma:1412:model EmploymentEpisode {
+model_grep_exit=0

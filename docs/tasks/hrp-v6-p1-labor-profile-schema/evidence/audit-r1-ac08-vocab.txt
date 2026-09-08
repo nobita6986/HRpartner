@@ -1,0 +1,13 @@
+# AUDIT R1 — Independent AC-08: Application Vocabulary Fence
+Command: git grep -nE "^model Application" -- prisma/schema.prisma
+Result: exit 1 (no match) — model named exactly "Application" not found
+Output matched: model CandidateSubmission (line 519) and model ApplicationStatusHistory (line 580), neither is the forbidden name
+
+Command: git grep -nE "^enum Application" -- prisma/schema.prisma
+Result: exit 1 (no match) — enum named exactly "Application" not found
+
+Command: git grep -n "^model CandidateSubmission" -- prisma/schema.prisma
+Result: exit 0, line 519 — CandidateSubmission model still present as the primary application entity
+
+Vocabulary fence confirmed: no model or enum named "Application" exists. CandidateSubmission is untouched.
+Auditor: Tier 3 independent run.

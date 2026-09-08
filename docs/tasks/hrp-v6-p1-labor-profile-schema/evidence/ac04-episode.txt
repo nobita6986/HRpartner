@@ -1,0 +1,6 @@
+﻿AC-04 — half-open EmploymentEpisode
+Command: regex-check startedAt required, endedAt nullable, status ACTIVE default
+started_at_required_count=1
+ended_at_nullable_count=1
+active_status_default_count=1
+episode_check_exit=0

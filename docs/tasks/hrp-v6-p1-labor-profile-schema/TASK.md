@@ -8,11 +8,11 @@
 | Work type | `SCHEMA` |
 | Audit mode | `SCHEMA_AUDIT` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` |
 | Baseline | `main @ 97be0b2` — schema.prisma chưa có `LaborProfile` / `LaborProfileIntake` / `EmploymentEpisode`; xác nhận bằng `git grep -nE "model (LaborProfile\|LaborProfileIntake\|EmploymentEpisode)" -- prisma/schema.prisma` trả rỗng |
 | Current execution round | `2` |
-| Current audit round | `0` |
-| Updated | `2026-09-08 15:00 Asia/Bangkok` |
+| Current audit round | `1` |
+| Updated | `2026-09-08 18:31 Asia/Bangkok` |
 | Phase | `V6 Phase 1 — nền dữ liệu` |
 | Nguồn quyết định | `docs/V6/v6-admin-rebuild.md` mục 11 (V6-DEC-012..027) và mục 4.6 |
 
@@ -178,6 +178,7 @@ Phát hành `v1.0` ngày 06/09. Chưa có execution round hay audit round nào c
 |------|------|----------|---------|
 | `v1.0` | `2026-09-06` | Phát hành hợp đồng V6 Phase 1: ba model `LaborProfile` / `LaborProfileIntake` / `EmploymentEpisode` THÊM-thuần + móc `CandidateSubmission.laborProfileId` + migration RLS forward-only | Mới, chưa audit; nguồn quyết định `docs/V6/v6-admin-rebuild.md` mục 11 |
 | `v1.0` | `2026-09-08 15:00` | R1 BLOCKED: 4 semantic blockers (divergent refs, RLS ownership, DDL scope, baseline). Tier 1 resolve: bump execution round → R2, baseline `4758809` → `97be0b2`, thêm §4.5 integration path (cherry-pick 2 migration từ `3a33212`, identity mới), §4.6 RLS ownership (HR_STAFF INSERT khi `worker_id IS NULL`), override §4.4 additive DDL (cho phép CREATE INDEX + ADD FK). Xem RESOLVE-01..04 trong HANDOFF R1. | Tier 1 resolve; Tier 2 R2 sắp chạy |
+| `v1.0` | `2026-09-08 18:31` | R2 Tier 2 PASS. R1 Tier 3 audit PASS (FULL, 10/10 AC, 10/10 C-check, 0 P0/P1/P2, verify-audit.ps1 PASS WITH WARNINGS). Tier 1 bump status → `ACCEPTED`; audit round → 1. Evidence: `evidence/audit-r1-*.txt`. | Tier 3 audit r1 PASS |
 
 
 

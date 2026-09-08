@@ -1,0 +1,6 @@
+﻿AC-02 — soft dedup
+Command: isolate model LaborProfile, list @unique, and test normalizedPhone/phone/cccdNumber for @unique
+model_unique_lines=1
+  workerId String? @unique @map("worker_id")
+identity_soft_unique_count=0
+soft_dedup_check_exit=0

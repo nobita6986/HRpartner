@@ -1,0 +1,11 @@
+# AUDIT R1 — Independent AC-02: Soft Dedup Check
+Command: git grep -n "@unique" -- prisma/schema.prisma
+Searched for @unique on identity fields within LaborProfile block (lines 1368-1392):
+- workerId: @unique (expected per DEC-013)
+- normalizedPhone: NO @unique (only @@index per DEC-023)
+- cccdNumber: NO @unique (only @@index)
+- phone: NO @unique
+
+LaborProfile model unique fields: only workerId.
+NormalizedPhone and cccdNumber have @@index only — soft dedup confirmed.
+Auditor: Tier 3 independent run.

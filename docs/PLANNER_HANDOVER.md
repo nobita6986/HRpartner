@@ -7,7 +7,7 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-08 15:35 Asia/Bangkok
+updated_at: 2026-09-08 18:35 Asia/Bangkok
 roadmap_source: docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/UNIFIED_PLAN_v5.md chi con la nguon cho V5/go-live debt
 PHASE_MAP: |
   Phase 0: V5 Close — DA DONG 55/63 ACCEPTED
@@ -18,11 +18,10 @@ PHASE_MAP: |
     -> go-live-06: ACCEPTED R3 PASS
     -> go-live-07: DEFERRED (chờ end of V6 Phase 1 dev)
     -> go-live-19: DRAFT (việc viết, Tier 1)
-  Phase 1: V6 Phase 1 Foundation Schema — DANG CHO TIER_2_R2 + 1C_TIER_2_R4 SONG SONG
+  Phase 1: V6 Phase 1 Foundation Schema — ĐANG CHẠY 1C TIER_2_R4 SONG SONG
     -> hrp-v6-p1-job-opening-posting-split: ACCEPTED R4 PASS 08/09 (3a96b9c)
-    -> hrp-v6-p1-labor-profile-schema: READY_FOR_EXECUTION R2 — Tier 1 resolve 4 blockers 664efc3; Tier 2 đang chạy
-    -> hrp-v6-p1c-new-ui-restyling: READY_FOR_EXECUTION R4 — Tier 1 bump b025f3d; Owner keeps existing H1; Tier 2 chạy song song
-    -> hrp-v6-p1c-new-ui-restyling: READY v1.2 R4
+    -> hrp-v6-p1-labor-profile-schema: ACCEPTED R2 — Tier 3 audit r1 PASS 08/09 18:31 (0 P0/P1/P2)
+    -> hrp-v6-p1c-new-ui-restyling: READY_FOR_EXECUTION R4 — Tier 1 bump b025f3d; Owner keeps existing H1; Tier 2 đang chạy
     -> hrp-v6-security-credential-rotation: READY_FOR_EXECUTION
     -> hrp-v6-credential-rotation-posture: BLOCKED R2 (OP-gated)
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)

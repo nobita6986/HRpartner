@@ -1,0 +1,7 @@
+﻿AC-08 — Application vocabulary fence
+Command: anchored regex ^model Application\s*\{ and ^enum Application\s*\{ over prisma/schema.prisma; verify CandidateSubmission still exists
+exact_model_application_count=0
+exact_enum_application_count=0
+candidate_submission_model_count=1
+Note: TASK literal git grep pattern also matches existing ApplicationStatusHistory by prefix; exact brace-delimited token check removes that false positive.
+vocab_check_exit=0

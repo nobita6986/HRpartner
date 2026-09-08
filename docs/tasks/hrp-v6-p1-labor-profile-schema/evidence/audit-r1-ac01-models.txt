@@ -1,0 +1,16 @@
+# AUDIT R1 — Independent AC-01: Model Declarations
+Command: npx --no-install prisma validate --schema prisma/schema.prisma
+Result: schema valid, exit 0
+Output: "The schema at prisma\schema.prisma is valid"
+
+Command: git grep -n "model LaborProfile" -- prisma/schema.prisma
+Result: line 1368: model LaborProfile {
+
+Command: git grep -n "model LaborProfileIntake" -- prisma/schema.prisma
+Result: line 1394: model LaborProfileIntake {
+
+Command: git grep -n "model EmploymentEpisode" -- prisma/schema.prisma
+Result: line 1412: model EmploymentEpisode {
+
+All three model declarations found. prisma validate exit 0.
+Auditor: Tier 3 independent run.

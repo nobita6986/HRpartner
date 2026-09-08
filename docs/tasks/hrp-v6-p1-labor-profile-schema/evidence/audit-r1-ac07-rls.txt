@@ -1,0 +1,19 @@
+# AUDIT R1 — Independent AC-07: RLS Migration
+Static analysis of prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/migration.sql:
+
+ENABLE ROW LEVEL SECURITY count: 3 (labor_profiles, labor_profile_intakes, employment_episodes)
+FORCE ROW LEVEL SECURITY count: 3 (same three tables)
+CREATE POLICY count: 3 (hrp_labor_profile_scope, hrp_labor_profile_intake_scope, hrp_employment_episode_scope)
+
+Forbidden:
+- TO PUBLIC: 0 (only TO app_user_writer, app_user)
+- anon: 0
+- CREATE OR REPLACE: 0
+
+Policy analysis:
+- All three tables: ENABLE + FORCE + one policy each
+- labor_profiles: HR_STAFF INSERT when worker_id IS NULL, HR_STAFF READ via workers.assigned_to_id, SALE/WORKER/ADMIN access
+- labor_profile_intakes: INHERITS parent scope via EXISTS labor_profiles
+- employment_episodes: INHERITS parent scope (worker_id IS NULL INSERT NOT allowed per DEC-014)
+- No public/anonymous policy present
+Auditor: Tier 3 independent run.

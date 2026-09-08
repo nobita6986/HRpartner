@@ -1,0 +1,11 @@
+# AUDIT R1 — Independent AC-03: Worker Link
+Command: git grep -n "workerId String? @unique" -- prisma/schema.prisma
+Result: line 1381: workerId String? @unique @map("worker_id")
+EXIT: 0
+
+Command: git grep -n "laborProfile LaborProfile?" -- prisma/schema.prisma
+Result: line 273 (in model Worker): laborProfile LaborProfile?
+EXIT: 0
+
+LaborProfile.workerId is String? @unique (0..1 cardinality). Worker.laborProfile is back-relation without added column. Both verified.
+Auditor: Tier 3 independent run.

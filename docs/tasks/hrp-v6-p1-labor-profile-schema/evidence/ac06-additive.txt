@@ -1,0 +1,103 @@
+AC-06 — offline additive datamodel diff
+Command: git -C C:/CodeApp/HrP show HEAD:prisma/schema.prisma > temp baseline; npx --prefix C:/CodeApp/HrP --no-install prisma migrate diff --from-schema-datamodel baseline --to-schema-datamodel C:/CodeApp/HrP/prisma/schema.prisma --script
+migrate_diff_exit=0
+--- generated_sql ---
+-- AlterTable
+ALTER TABLE "candidate_submissions" ADD COLUMN     "labor_profile_id" TEXT;
+
+-- CreateTable
+CREATE TABLE "labor_profiles" (
+    "id" TEXT NOT NULL,
+    "full_name" TEXT,
+    "normalized_phone" TEXT,
+    "phone" TEXT,
+    "cccd_number" TEXT,
+    "identity_verification" TEXT NOT NULL DEFAULT 'UNVERIFIED',
+    "completeness" TEXT NOT NULL DEFAULT 'MINIMAL',
+    "consent_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "worker_id" TEXT,
+
+    CONSTRAINT "labor_profiles_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "labor_profile_intakes" (
+    "id" TEXT NOT NULL,
+    "labor_profile_id" TEXT NOT NULL,
+    "channel" TEXT NOT NULL,
+    "source_submission_id" TEXT,
+    "captured_by_user_id" TEXT,
+    "consent_at" TIMESTAMP(3),
+    "effective_at" TIMESTAMP(3),
+    "note" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "labor_profile_intakes_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "employment_episodes" (
+    "id" TEXT NOT NULL,
+    "labor_profile_id" TEXT NOT NULL,
+    "worker_id" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+    "started_at" TIMESTAMP(3) NOT NULL,
+    "ended_at" TIMESTAMP(3),
+    "end_reason" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "employment_episodes_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "labor_profiles_worker_id_key" ON "labor_profiles"("worker_id");
+
+-- CreateIndex
+CREATE INDEX "labor_profiles_normalized_phone_idx" ON "labor_profiles"("normalized_phone");
+
+-- CreateIndex
+CREATE INDEX "labor_profiles_cccd_number_idx" ON "labor_profiles"("cccd_number");
+
+-- CreateIndex
+CREATE INDEX "labor_profiles_completeness_identity_verification_idx" ON "labor_profiles"("completeness", "identity_verification");
+
+-- CreateIndex
+CREATE INDEX "labor_profile_intakes_labor_profile_id_idx" ON "labor_profile_intakes"("labor_profile_id");
+
+-- CreateIndex
+CREATE INDEX "labor_profile_intakes_channel_effective_at_idx" ON "labor_profile_intakes"("channel", "effective_at");
+
+-- CreateIndex
+CREATE INDEX "employment_episodes_labor_profile_id_idx" ON "employment_episodes"("labor_profile_id");
+
+-- CreateIndex
+CREATE INDEX "employment_episodes_worker_id_status_idx" ON "employment_episodes"("worker_id", "status");
+
+-- CreateIndex
+CREATE INDEX "employment_episodes_status_started_at_idx" ON "employment_episodes"("status", "started_at");
+
+-- CreateIndex
+CREATE INDEX "candidate_submissions_labor_profile_id_idx" ON "candidate_submissions"("labor_profile_id");
+
+-- AddForeignKey
+ALTER TABLE "candidate_submissions" ADD CONSTRAINT "candidate_submissions_labor_profile_id_fkey" FOREIGN KEY ("labor_profile_id") REFERENCES "labor_profiles"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "labor_profiles" ADD CONSTRAINT "labor_profiles_worker_id_fkey" FOREIGN KEY ("worker_id") REFERENCES "workers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "labor_profile_intakes" ADD CONSTRAINT "labor_profile_intakes_labor_profile_id_fkey" FOREIGN KEY ("labor_profile_id") REFERENCES "labor_profiles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "employment_episodes" ADD CONSTRAINT "employment_episodes_labor_profile_id_fkey" FOREIGN KEY ("labor_profile_id") REFERENCES "labor_profiles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "employment_episodes" ADD CONSTRAINT "employment_episodes_worker_id_fkey" FOREIGN KEY ("worker_id") REFERENCES "workers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+--- forbidden_statement_scan ---
+drop_statement_count=0
+alter_column_count=0
+drop_constraint_count=0
+additive_check_exit=0

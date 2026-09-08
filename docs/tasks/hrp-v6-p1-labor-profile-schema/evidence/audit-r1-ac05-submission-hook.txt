@@ -1,0 +1,10 @@
+# AUDIT R1 — Independent AC-05: CandidateSubmission Additive Hook
+Command: git diff --cached -- prisma/schema.prisma
+Analyzed diff hunks for CandidateSubmission model:
+- Only + lines added (new fields): laborProfileId, laborProfile relation, @@index
+- No - lines removing existing fields
+- Staged CandidateSubmission changes are purely additive
+
+Removed lines count: 1 (only the "--- a/prisma/schema.prisma" header line, not schema content)
+No existing CandidateSubmission field was removed.
+Auditor: Tier 3 independent run.

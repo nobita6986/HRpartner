@@ -1,0 +1,30 @@
+# AUDIT R1 — Independent AC-10: Scope Closure
+Command: git diff --cached --name-only
+Result:
+  docs/tasks/hrp-v6-p1-labor-profile-schema/HANDOFF.md
+  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac01-models.txt
+  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac02-soft-dedup.txt
+  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac03-worker-link.txt
+  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac04-episode.txt
+  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac05-submission-hook.txt
+  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac06-additive.txt
+  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac07-rls.txt
+  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac08-vocab.txt
+  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac09-typecheck.txt
+  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac10-scope.txt
+  prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/migration.sql
+  prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/migration.sql
+  prisma/schema.prisma
+
+Scope validation:
+- prisma/schema.prisma: ALLOWED (TASK §4.1 scope)
+- prisma/migrations/** (two new migrations): ALLOWED (TASK §4.1 scope)
+- docs/tasks/hrp-v6-p1-labor-profile-schema/** (HANDOFF + evidence): ALLOWED (TASK §4.1 scope)
+- evidence/audit-r1-baseline-head.prisma: temporary file in evidence/ — NOT staged, not in --cached output
+
+Forbidden paths (src/**, app/**, tests/**, .env, package.json, etc.): NOT staged.
+
+Unstaged but present (.ai-pipeline/**, .next/**, etc.): NOT staged, preserved untouched per LIM-02.
+
+Scope closure: PASS. All staged paths within TASK §4.1 allowed scope.
+Auditor: Tier 3 independent run.

@@ -1,0 +1,29 @@
+﻿AC-05 — nullable CandidateSubmission hook
+Command: git diff --cached --unified=3 -- prisma/schema.prisma; isolate CandidateSubmission hunk; count removed source lines
+candidate_removed_source_line_count=0
+--- candidate_submission_patch ---
+@@ -268,6 +268,11 @@ model Worker {
+   submissions       CandidateSubmission[] @relation("ConvertedWorkerSubmissions")
+   mergedSubmissions CandidateSubmission[] @relation("MergedWorkerSubmissions")
+
++  // V6 PHASE 1A — back-relations từ LaborProfile + EmploymentEpisode (DEC-013)
++  // LaborProfile.workerId là String? @unique (0..1); back-relation KHÔNG thêm cột mới
++  laborProfile LaborProfile?
++  episodes     EmploymentEpisode[]
++
+   // G22 — FK chủ sở hữu (thay String thô, giữ nguyên tên cột owner_id/assigned_to_id)
+   owner      User? @relation("WorkerOwner", fields: [ownerId], references: [id])
+   assignedTo User? @relation("WorkerAssignee", fields: [assignedToId], references: [id])
+@@ -551,6 +556,10 @@ model CandidateSubmission {
+   worker        Worker?  @relation("ConvertedWorkerSubmissions", fields: [workerId], references: [id])
+   mergedWorker  Worker?  @relation("MergedWorkerSubmissions", fields: [mergedWorkerId], references: [id])
+   slot          StaffingOrderSlot? @relation(fields: [slotId], references: [id]) // MP-2 RQ-01
++
++  // V6 PHASE 1A — móc THÊM-thuần (DEC-012); hàng cũ để NULL
++  laborProfileId String?       @map("labor_profile_id")
++  laborProfile   LaborProfile? @relation(fields: [laborProfileId], references: [id])
+   sourceClaims  SourceClaim[]
+   statusHistory ApplicationStatusHistory[] // MP-2 RQ-01/RQ-06
+   assignment    ProjectAssignment? // MP-3C RQ-01: at most one initial placement per submission
+
+submission_hook_check_exit=0

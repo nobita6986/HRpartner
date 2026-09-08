@@ -268,6 +268,11 @@ model Worker {
   submissions       CandidateSubmission[] @relation("ConvertedWorkerSubmissions")
   mergedSubmissions CandidateSubmission[] @relation("MergedWorkerSubmissions")
 
+  // V6 PHASE 1A — back-relations từ LaborProfile + EmploymentEpisode (DEC-013)
+  // LaborProfile.workerId là String? @unique (0..1); back-relation KHÔNG thêm cột mới
+  laborProfile LaborProfile?
+  episodes     EmploymentEpisode[]
+
   // G22 — FK chủ sở hữu (thay String thô, giữ nguyên tên cột owner_id/assigned_to_id)
   owner      User? @relation("WorkerOwner", fields: [ownerId], references: [id])
   assignedTo User? @relation("WorkerAssignee", fields: [assignedToId], references: [id])
@@ -551,6 +556,10 @@ model CandidateSubmission {
   worker        Worker?  @relation("ConvertedWorkerSubmissions", fields: [workerId], references: [id])
   mergedWorker  Worker?  @relation("MergedWorkerSubmissions", fields: [mergedWorkerId], references: [id])
   slot          StaffingOrderSlot? @relation(fields: [slotId], references: [id]) // MP-2 RQ-01
+
+  // V6 PHASE 1A — móc THÊM-thuần (DEC-012); hàng cũ để NULL
+  laborProfileId String?       @map("labor_profile_id")
+  laborProfile   LaborProfile? @relation(fields: [laborProfileId], references: [id])
   sourceClaims  SourceClaim[]
   statusHistory ApplicationStatusHistory[] // MP-2 RQ-01/RQ-06
   assignment    ProjectAssignment? // MP-3C RQ-01: at most one initial placement per submission
@@ -560,6 +569,7 @@ model CandidateSubmission {
   @@index([workerId]) // MP-3 conversion lookup
   @@index([status])
   @@index([slotId, normalizedPhone]) // MP-2 DEC-04: duplicate-guard lookup (partial-unique backstop lives in migration SQL)
+  @@index([laborProfileId]) // V6 PHASE 1A (DEC-012): lookup theo LaborProfile
   @@map("candidate_submissions")
 }
 
@@ -1351,3 +1361,69 @@ model PushSubscription {
   @@map("push_subscriptions")
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// V6 PHASE 1A — LABOR PROFILE SCHEMA (additive)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model LaborProfile {
+  id                   String    @id @default(uuid())
+  fullName             String?   @map("full_name")
+  normalizedPhone      String?   @map("normalized_phone") // DEC-023: dedup mềm
+  phone                 String?
+  cccdNumber            String?   @map("cccd_number") // nhạy cảm; dedup mềm
+  identityVerification String    @default("UNVERIFIED") @map("identity_verification")
+  completeness         String    @default("MINIMAL")
+  consentAt             DateTime? @map("consent_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  // DEC-013: tối đa một Worker canonical
+  workerId String? @unique @map("worker_id")
+  worker   Worker? @relation(fields: [workerId], references: [id])
+
+  submissions CandidateSubmission[]
+  intakes     LaborProfileIntake[]
+  episodes    EmploymentEpisode[]
+
+  @@index([normalizedPhone])
+  @@index([cccdNumber])
+  @@index([completeness, identityVerification])
+  @@map("labor_profiles")
+}
+
+model LaborProfileIntake {
+  id                 String    @id @default(uuid())
+  laborProfileId     String    @map("labor_profile_id")
+  channel            String
+  sourceSubmissionId String?   @map("source_submission_id")
+  capturedByUserId   String?   @map("captured_by_user_id")
+  consentAt          DateTime? @map("consent_at")
+  effectiveAt        DateTime? @map("effective_at")
+  note               String?   @db.Text
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  laborProfile LaborProfile @relation(fields: [laborProfileId], references: [id])
+
+  @@index([laborProfileId])
+  @@index([channel, effectiveAt])
+  @@map("labor_profile_intakes")
+}
+
+model EmploymentEpisode {
+  id             String    @id @default(uuid())
+  laborProfileId String    @map("labor_profile_id")
+  workerId       String?   @map("worker_id")
+  status         String    @default("ACTIVE")
+  startedAt      DateTime  @map("started_at")
+  endedAt        DateTime? @map("ended_at")
+  endReason      String?   @map("end_reason") @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  laborProfile LaborProfile @relation(fields: [laborProfileId], references: [id])
+  worker       Worker?      @relation(fields: [workerId], references: [id])
+
+  @@index([laborProfileId])
+  @@index([workerId, status])
+  @@index([status, startedAt])
+  @@map("employment_episodes")
+}

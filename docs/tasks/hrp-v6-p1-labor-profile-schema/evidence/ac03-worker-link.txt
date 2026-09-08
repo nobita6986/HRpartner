@@ -1,0 +1,5 @@
+﻿AC-03 — optional one-to-one Worker link
+Command: regex-check LaborProfile.workerId and Worker.laborProfile
+labor_profile_worker_id_unique_count=1
+worker_back_relation_count=1
+worker_link_check_exit=0

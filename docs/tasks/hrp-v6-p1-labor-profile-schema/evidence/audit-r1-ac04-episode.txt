@@ -1,0 +1,9 @@
+# AUDIT R1 — Independent AC-04: EmploymentEpisode Half-Open
+Read prisma/schema.prisma lines 1412-1429 (model EmploymentEpisode):
+- startedAt: DateTime (non-nullable) @map("started_at") — present at line 1417
+- endedAt: DateTime? (nullable) @map("ended_at") — present at line 1418
+- status: String @default("ACTIVE") — present at line 1415
+
+Half-open interval [startedAt, endedAt) confirmed. endedAt is nullable, startedAt is non-nullable.
+Active/Ended status via default ACTIVE confirmed.
+Auditor: Tier 3 independent run.

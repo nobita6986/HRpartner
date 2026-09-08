@@ -1,0 +1,18 @@
+# AUDIT R1 — Independent AC-06: Additive Migration
+Static analysis of prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/migration.sql:
+
+Forbidden statements:
+- DROP: 0
+- DROP COLUMN: 0
+- DROP CONSTRAINT: 0
+- ALTER COLUMN: 0 (only ALTER TABLE ... ADD COLUMN and ADD CONSTRAINT)
+
+Permitted additive statements:
+- CREATE TABLE: 3 (labor_profiles, labor_profile_intakes, employment_episodes)
+- ALTER TABLE ... ADD COLUMN: 1 (candidate_submissions.labor_profile_id)
+- CREATE INDEX: 9
+- CREATE UNIQUE INDEX: 1
+- ADD CONSTRAINT (FK): 5
+
+All DDL is forward-only additive. No destructive operations.
+Auditor: Tier 3 independent run.

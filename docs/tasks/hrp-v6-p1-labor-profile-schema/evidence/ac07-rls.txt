@@ -1,0 +1,29 @@
+﻿AC-07 — forward-only internal RLS
+Command: exact-token counts over the RLS migration for ENABLE/FORCE/POLICY, forbidden public/helper statements, and resolved role rules
+enable_rls_count=3
+force_rls_count=3
+create_policy_count=3
+public_or_anon_count=0
+create_or_replace_count=0
+labor_profile_hr_staff_null_using_or_check_count=2
+labor_profile_hr_staff_nonnull_read_count=1
+intake_hr_staff_null_scope_count=2
+assigned_to_scope_count=3
+sale_role_branch_count=3
+sale_owner_scope_count=3
+worker_role_branch_count=3
+worker_account_scope_count=3
+--- policy declarations ---
+7:ALTER TABLE labor_profiles ENABLE ROW LEVEL SECURITY;
+8:ALTER TABLE labor_profiles FORCE ROW LEVEL SECURITY;
+10:CREATE POLICY hrp_labor_profile_scope ON labor_profiles
+12:  TO app_user_writer, app_user
+54:ALTER TABLE labor_profile_intakes ENABLE ROW LEVEL SECURITY;
+55:ALTER TABLE labor_profile_intakes FORCE ROW LEVEL SECURITY;
+57:CREATE POLICY hrp_labor_profile_intake_scope ON labor_profile_intakes
+59:  TO app_user_writer, app_user
+111:ALTER TABLE employment_episodes ENABLE ROW LEVEL SECURITY;
+112:ALTER TABLE employment_episodes FORCE ROW LEVEL SECURITY;
+114:CREATE POLICY hrp_employment_episode_scope ON employment_episodes
+116:  TO app_user_writer, app_user
+rls_static_check_exit=0
