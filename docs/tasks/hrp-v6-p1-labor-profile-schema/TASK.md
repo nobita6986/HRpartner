@@ -9,10 +9,10 @@
 | Audit mode | `SCHEMA_AUDIT` |
 | Spec version | `v1.0` |
 | Status | `READY_FOR_EXECUTION` |
-| Baseline | `main @ 4758809` — schema.prisma chưa có `LaborProfile` / `LaborProfileIntake` / `EmploymentEpisode`; xác nhận bằng `git grep -nE "model (LaborProfile|LaborProfileIntake|EmploymentEpisode)" -- prisma/schema.prisma` trả rỗng |
-| Current execution round | `0` |
+| Baseline | `main @ 97be0b2` — schema.prisma chưa có `LaborProfile` / `LaborProfileIntake` / `EmploymentEpisode`; xác nhận bằng `git grep -nE "model (LaborProfile\|LaborProfileIntake\|EmploymentEpisode)" -- prisma/schema.prisma` trả rỗng |
+| Current execution round | `2` |
 | Current audit round | `0` |
-| Updated | `2026-09-06 11:00 Asia/Bangkok` |
+| Updated | `2026-09-08 15:00 Asia/Bangkok` |
 | Phase | `V6 Phase 1 — nền dữ liệu` |
 | Nguồn quyết định | `docs/V6/v6-admin-rebuild.md` mục 11 (V6-DEC-012..027) và mục 4.6 |
 
@@ -88,8 +88,24 @@ Mọi quyết định dưới đây là "Chốt" trong `docs/V6/v6-admin-rebuild
 Móc trên model cũ (THÊM-thuần): `CandidateSubmission.laborProfileId String?` + relation + `@@index`; `Worker.laborProfile LaborProfile?` (back-relation, KHÔNG thêm cột).
 
 ### 4.4 Luật migration
-- Migration schema THÊM-thuần: chỉ `CREATE TABLE` ba bảng mới + `ADD COLUMN labor_profile_id` nullable trên `candidate_submissions`. KHÔNG `DROP`, KHÔNG đổi cột/constraint cũ.
-- Migration RLS forward-only RIÊNG: `ENABLE ROW LEVEL SECURITY` + `FORCE ROW LEVEL SECURITY` cho ba bảng mới, policy phạm vi nhân sự theo GUC `app.role` như bảng `workers`; KHÔNG policy `anon`/công khai. KHÔNG `CREATE OR REPLACE` hàm cũ, KHÔNG đụng sáu migration RLS cũ.
+- Migration schema THÊM-thuần: chỉ `CREATE TABLE` ba bảng mới + `ADD COLUMN` nullable trên `candidate_submissions`. Bao gồm `CREATE INDEX` và `ADD CONSTRAINT ... FOREIGN KEY` cần thiết cho schema mới (Prisma tự sinh khi diff). **Cấm** `DROP`, `ALTER COLUMN`, `DROP CONSTRAINT`.
+- Migration RLS forward-only RIÊNG: `ENABLE ROW LEVEL SECURITY` + `FORCE ROW LEVEL SECURITY` cho ba bảng mới, policy phạm vi nhân sự theo GUC `app.role` như bảng `workers`; **cho phép** `HR_STAFF INSERT` khi `worker_id IS NULL` (hồ sơ do chính HR_STAFF tạo); **cấm** policy `anon`/công khai. **Cấm** `CREATE OR REPLACE` hàm cũ, **cấm** đụng sáu migration RLS cũ.
+
+### 4.5 Integration path (RESOLVE-01, 08/09/2026)
+
+- **Schema template:** dùng 3 model từ `3a33212:prisma/schema.prisma` (LaborProfile, LaborProfileIntake, EmploymentEpisode) làm template cho §4.3.
+- **Migration identity mới:** `20260908150000_v6_phase1a_labor_profile_schema` và `20260908150001_v6_phase1a_labor_profile_rls` — tránh trùng với `20260908001_job_opening_posting_split`.
+- **Giữ nguyên logic** từ 2 migration ở `3a33212`; chỉ đổi identity và sửa RLS policy theo §4.4.
+- **Không cherry-pick** toàn commit `3a33212` vì nó không thuộc ancestry main.
+
+### 4.6 RLS ownership decision (RESOLVE-02, 08/09/2026)
+
+- **HR_STAFF** được **INSERT + READ** `labor_profiles` khi `worker_id IS NULL` (hồ sơ pre-Worker do chính HR_STAFF tạo trực tiếp, V6-DEC-022).
+- **HR_STAFF** được **READ** khi `worker_id IS NOT NULL` VÀ `workers.assigned_to_id = session_user_id` (giữ nguyên).
+- **ADMIN / HR_MANAGER / DIRECTOR**: **ALL** (giữ nguyên).
+- **WORKER**: **READ** khi `workers.account_user_id = session_user_id` (giữ nguyên).
+- **SALE**: **READ** khi `workers.owner_id = session_user_id` (giữ nguyên).
+- **Intakes / Episodes** kế thừa scope qua `labor_profiles` FK.
 
 ## 5. Execution Plan
 
@@ -161,6 +177,7 @@ Phát hành `v1.0` ngày 06/09. Chưa có execution round hay audit round nào c
 | Spec | Ngày | Thay đổi | Ghi chú |
 |------|------|----------|---------|
 | `v1.0` | `2026-09-06` | Phát hành hợp đồng V6 Phase 1: ba model `LaborProfile` / `LaborProfileIntake` / `EmploymentEpisode` THÊM-thuần + móc `CandidateSubmission.laborProfileId` + migration RLS forward-only | Mới, chưa audit; nguồn quyết định `docs/V6/v6-admin-rebuild.md` mục 11 |
+| `v1.0` | `2026-09-08 15:00` | R1 BLOCKED: 4 semantic blockers (divergent refs, RLS ownership, DDL scope, baseline). Tier 1 resolve: bump execution round → R2, baseline `4758809` → `97be0b2`, thêm §4.5 integration path (cherry-pick 2 migration từ `3a33212`, identity mới), §4.6 RLS ownership (HR_STAFF INSERT khi `worker_id IS NULL`), override §4.4 additive DDL (cho phép CREATE INDEX + ADD FK). Xem RESOLVE-01..04 trong HANDOFF R1. | Tier 1 resolve; Tier 2 R2 sắp chạy |
 
 
 

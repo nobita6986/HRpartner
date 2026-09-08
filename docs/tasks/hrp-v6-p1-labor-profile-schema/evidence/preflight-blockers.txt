@@ -1,0 +1,105 @@
+PHASE 1A TIER 2 SEMANTIC PREFLIGHT — 2026-09-08 Asia/Bangkok
+
+All checks below were read-only and offline. No .env file was read, no database was contacted, and no migrate/seed command was run.
+
+=== COMMAND 1: current branch, HEAD, baseline ancestry ===
+Command:
+  git branch --show-current
+  git rev-parse HEAD
+  git cat-file -e "4758809^{commit}"
+  git merge-base --is-ancestor 4758809 HEAD
+  git rev-list --count 4758809..HEAD
+Exit/results:
+  branch=main
+  HEAD=97be0b2e83303bbcaa1b17b7262b44db15032dbc
+  baseline_exists_exit=0
+  baseline_ancestor_exit=0
+  commits_after_TASK_baseline=56
+
+=== COMMAND 2: divergent Phase 1A history ===
+Command:
+  git cat-file -e "3a33212^{commit}"
+  git merge-base --is-ancestor 3a33212 HEAD
+  git cat-file -e "a4ab9f0^{commit}"
+  git merge-base --is-ancestor a4ab9f0 HEAD
+  git branch --contains 3a33212
+  git branch --contains a4ab9f0
+Exit/results:
+  implementation_exists_exit=0
+  implementation_ancestor_exit=1
+  accepted_ref_exists_exit=0
+  accepted_ref_ancestor_exit=1
+  3a33212 is reachable from codex/hrp-v6-p1a-labor-profile-schema
+  a4ab9f0 is reachable from codex/hrp-v6-p1b-job-opening-posting-split
+Conclusion:
+  A completed Phase 1A implementation/evidence history exists, but neither ref is integrated into current main.
+
+=== COMMAND 3: current main lacks Phase 1A ===
+Command:
+  git grep -n -E "^model (LaborProfile|LaborProfileIntake|EmploymentEpisode)" -- prisma/schema.prisma
+  git grep -n "laborProfile" -- prisma/schema.prisma
+  git ls-files "prisma/migrations/*labor*" "prisma/migrations/*Labor*"
+Exit/results:
+  model_probe_exit=1; no model match
+  relation_probe_exit=1; no relation match
+  migration_probe_exit=0; output empty
+Conclusion:
+  Current main does not contain the Phase 1A schema, hooks, or migration.
+
+=== COMMAND 4: historical Phase 1A deliverables ===
+Command:
+  git show --format= --name-only 3a33212 -- prisma/schema.prisma prisma/migrations docs/tasks/hrp-v6-p1-labor-profile-schema
+Exit: 0
+Measured files include:
+  prisma/migrations/20260907151900_v6_phase1a_labor_profile_schema/migration.sql
+  prisma/migrations/20260907151901_v6_phase1a_labor_profile_rls/migration.sql
+  prisma/schema.prisma
+  docs/tasks/hrp-v6-p1-labor-profile-schema/HANDOFF.md
+  docs/tasks/hrp-v6-p1-labor-profile-schema/evidence/ac01-prisma-validate.txt through ac10-staged.txt
+Conclusion:
+  Reimplementing under the same task would create a second migration/evidence lineage unless Tier 1 designates a canonical selective integration path.
+
+=== COMMAND 5: current Phase 1B and divergent branch cannot be replayed wholesale ===
+Command:
+  git log --format="%h %s" --name-status 4758809..HEAD -- prisma/schema.prisma prisma/migrations/20260908001_job_opening_posting_split/migration.sql
+  git diff --stat 97be0b2..a4ab9f0 -- prisma/schema.prisma prisma/migrations
+  git cat-file -e "HEAD:prisma/migrations/20260908001_job_opening_posting_split/migration.sql"
+  git cat-file -e "a4ab9f0:prisma/migrations/20260908001_job_opening_posting_split/migration.sql"
+Exit/results:
+  current Phase 1B migration exists: exit 0
+  same path in a4ab9f0: exit 128, absent
+  divergent diff: 5 files changed, 485 insertions, 180 deletions
+Conclusion:
+  Current main already contains accepted Phase 1B work. The divergent Phase 1A-bearing history also replaces/removes that migration, so branch-wide merge/cherry-pick is unsafe. Tier 1 must designate an atomic replay/rebase or a new canonical migration identity.
+
+=== COMMAND 6: RLS decision is implementation-changing ===
+Command:
+  git show 3a33212:prisma/migrations/20260907151901_v6_phase1a_labor_profile_rls/migration.sql
+Exit: 0
+Measured semantics:
+  The historical policy grants HR_STAFF visibility only through an existing Worker whose assigned_to_id matches the session user.
+  WITH CHECK permits only ADMIN, HR_MANAGER, and DIRECTOR.
+Contract conflict:
+  TASK says staff may create LaborProfile directly and permits LaborProfile.workerId = NULL, while also asking for worker-like HR scope. It does not define ownership/creation semantics for a pre-Worker profile. The historical policy therefore denies HR_STAFF creation and gives no HR_STAFF-readable ownership path while worker_id is NULL.
+Conclusion:
+  Choosing a policy requires a Tier 1 decision; Tier 2 cannot guess a new ownership column or silently narrow staff creation.
+
+=== COMMAND 7: additive-DDL wording conflict ===
+Contract measurements:
+  TASK section 4.3 requires indexes, a unique constraint, relations, and foreign keys.
+  TASK sections 2 and 4.4 say generated SQL may contain only CREATE TABLE / ADD COLUMN.
+  A valid Prisma migration necessarily also emits CREATE INDEX and ALTER TABLE ... ADD CONSTRAINT.
+Conclusion:
+  Tier 1 must clarify that additive DDL includes required indexes and foreign keys. AC-06's no-DROP check alone does not resolve the literal scope conflict.
+
+=== COMMAND 8: contract gate ===
+Command:
+  powershell -NoProfile -File .\.ai-pipeline\scripts\verify-task.ps1 -TaskPath C:\CodeApp\HrP\docs\tasks\hrp-v6-p1-labor-profile-schema\TASK.md -RepoRoot C:\CodeApp\HrP
+Exit/result:
+  exit=0
+  RESULT: PASS. TASK contract is ready for execution.
+Limitation:
+  This mechanical PASS does not resolve the divergent canonical history, null-Worker RLS ownership/creation semantics, or literal additive-DDL contradiction found by semantic preflight.
+
+DISPOSITION
+  BLOCKED before STEP-01 source mutation. Tier 1 must (1) name the canonical integration history/path, (2) update the baseline/round authority for current main, (3) resolve RLS behavior for workerId=NULL and HR_STAFF creation, and (4) clarify allowed additive indexes/FKs. No acceptance AC is claimed PASS because implementation did not start.
