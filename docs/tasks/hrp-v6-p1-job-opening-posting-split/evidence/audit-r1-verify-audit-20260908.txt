@@ -1,0 +1,45 @@
+=== CMD: powershell -NoProfile -File C:\CodeApp\HrP\.ai-pipeline\scripts\verify-audit.ps1 -TaskPath C:\CodeApp\HrP\docs\tasks\hrp-v6-p1-job-opening-posting-split\TASK.md -AuditPath C:\CodeApp\HrP\docs\tasks\hrp-v6-p1-job-opening-posting-split\AUDIT.md -HandoffPath C:\CodeApp\HrP\docs\tasks\hrp-v6-p1-job-opening-posting-split\HANDOFF.md -RepoRoot C:\CodeApp\HrP ===
+
+Attempt 1:
+S-01 AUDIT.md size 12421 bytes: OK
+S-01 tracked/recoverable: OK
+A-01 all 8 required sections: OK
+A-02 spec v1.1 matches TASK: OK
+A-03 all 10 AC carry result rows: OK
+S-02 measured AC rows carry command + value: OK
+S-17 measured-value reuse: OK
+S-18 10 AC rows pairwise distinct: OK
+A-05 verdict BLOCKED: OK
+S-07 coverage gaps consistent: OK
+S-08 no PASS over ENV_BLOCKED: OK
+A-06 section 4 evidence rows=10: OK
+S-02 section 4 command + result: OK
+S-10 fresh measured values=11: OK
+S-13 trace rounds within 1..1: OK
+S-14 plaintext secrets=0: OK
+S-15 missing audit verifier evidence path: FAIL
+A-07 closing handoff line: OK
+RESULT: FAIL (1 error, 0 warnings)
+VERIFY_AUDIT_EXIT=2
+
+Attempt 2 after creating and staging this referenced artifact:
+S-01 AUDIT.md size 12421 bytes: OK
+S-01 tracked/recoverable: OK
+A-01 all 8 required sections: OK
+A-02 spec v1.1 matches TASK: OK
+A-03 all 10 AC carry result rows: OK
+S-02 measured AC rows carry command + value: OK
+S-17 measured-value reuse: OK
+S-18 10 AC rows pairwise distinct: OK
+A-05 verdict BLOCKED: OK
+S-07 coverage gaps consistent: OK
+S-08 no PASS over ENV_BLOCKED: OK
+A-06 section 4 evidence rows=10: OK
+S-02 section 4 command + result: OK
+S-10 fresh measured values=11: OK
+S-13 trace rounds within 1..1: OK
+S-14 plaintext secrets=0: OK
+S-15 referenced artifact paths=3 and all exist: OK
+A-07 closing handoff line: OK
+RESULT: PASS
+VERIFY_AUDIT_EXIT=0

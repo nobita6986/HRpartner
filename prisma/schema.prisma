@@ -390,6 +390,7 @@ model StaffingOrder {
 
   project     Project             @relation(fields: [projectId], references: [id])
   slots       StaffingOrderSlot[]
+  jobOpenings JobOpening[]
   assignments ProjectAssignment[]
 
   @@index([projectId, status])
@@ -397,9 +398,10 @@ model StaffingOrder {
 }
 
 model StaffingOrderSlot {
-  id             String   @id @default(uuid())
-  staffingOrderId String  @map("staffing_order_id")
-  positionCode   String   @map("position_code") // 'ELECTRICIAN'
+  id              String   @id @default(uuid())
+  staffingOrderId String   @map("staffing_order_id")
+  jobOpeningId    String?  @map("job_opening_id")
+  positionCode    String   @map("position_code") // 'ELECTRICIAN'
   positionTitle  String   @map("position_title")
   slotsNeeded    Int      @map("slots_needed")
   slotsFilled    Int      @default(0) @map("slots_filled") // denormalized (O9) — update trong transaction
@@ -412,11 +414,59 @@ model StaffingOrderSlot {
   createdAt      DateTime @default(now()) @map("created_at")
 
   staffingOrder StaffingOrder @relation(fields: [staffingOrderId], references: [id], onDelete: Cascade)
+  jobOpening   JobOpening?  @relation(fields: [jobOpeningId], references: [id])
   submissions   CandidateSubmission[] // MP-2 RQ-01: applications linked to this slot
   assignments   ProjectAssignment[]   // MP-3C RQ-01: placements filling this slot
 
   @@index([staffingOrderId, validFrom])
+  @@index([jobOpeningId])
   @@map("staffing_order_slots")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3c. JOB OPENING + JOB POSTING — nhu cầu tuyển nội bộ vs tin đăng công khai (V6 Phase 1)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// JobOpening: đơn vị NHU CẦU nội bộ (loại vị trí cần N người), đặt trên StaffingOrder/Slot
+// Vòng đời: DRAFT → OPEN → FILLED → CANCELLED
+model JobOpening {
+  id                   String    @id @default(uuid())
+  staffingOrderId      String    @map("staffing_order_id")
+  staffingOrderSlotId  String?   @map("staffing_order_slot_id")
+  status               String    @default("DRAFT") // DRAFT | OPEN | FILLED | CANCELLED
+  openedAt             DateTime? @map("opened_at")
+  closedAt             DateTime? @map("closed_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  staffingOrder      StaffingOrder      @relation(fields: [staffingOrderId], references: [id])
+  staffingOrderSlot  StaffingOrderSlot? @relation(fields: [staffingOrderSlotId], references: [id])
+  slots              StaffingOrderSlot[]
+  posting            JobPosting?        @relation("OpeningPosting") // V6-DEC-011: tối đa 1 posting PUBLISHED cùng lúc
+
+  @@index([staffingOrderId])
+  @@index([staffingOrderSlotId])
+  @@map("job_openings")
+}
+
+// JobPosting: hình chiếu công khai của đúng MỘT JobOpening; tối đa 1 tin PUBLISHED cùng lúc
+// Vòng đời: DRAFT → PUBLISHED → ARCHIVED
+model JobPosting {
+  id           String    @id @default(uuid())
+  jobOpeningId String    @unique @map("job_opening_id")
+  slug         String
+  revision     Int       @default(1)
+  status       String    @default("DRAFT") // DRAFT | PUBLISHED | ARCHIVED
+  publishedAt  DateTime? @map("published_at")
+  archivedAt   DateTime? @map("archived_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  jobOpening JobOpening @relation("OpeningPosting", fields: [jobOpeningId], references: [id])
+
+  @@index([jobOpeningId])
+  @@unique([slug])
+  @@map("job_postings")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

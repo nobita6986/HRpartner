@@ -7,12 +7,12 @@
 | Task slug | `hrp-v6-p1-job-opening-posting-split` |
 | Work type | `SCHEMA` |
 | Audit mode | `SCHEMA_AUDIT` |
-| Spec version | `v1.1` |
-| Status | `READY_FOR_TIER3_AUDIT` |
+| Spec version | `v1.2` |
+| Status | `RESOLVING_R2` |
 | Baseline | `main @ 4758809` — schema.prisma chưa có `JobOpening` / `JobPosting`; xác nhận bằng `git grep -nE "model (JobOpening|JobPosting)" -- prisma/schema.prisma` trả rỗng |
 | Current execution round | `1` |
 | Current audit round | `0` |
-| Updated | `2026-09-08 10:01 Asia/Bangkok` |
+| Updated | `2026-09-08 10:51 Asia/Bangkok` |
 | Phase | `V6 Phase 1 — nền dữ liệu` |
 | Nguồn quyết định | `docs/V6/v6-admin-rebuild.md` mục 11 (V6-DEC-011, V6-DEC-017, V6-DEC-030, V6-DEC-031) và mục 4.7 / 4.8 |
 
@@ -67,14 +67,15 @@ Mọi quyết định dưới đây là "Chốt" trong `docs/V6/v6-admin-rebuild
 ### 4.3 Đặc tả model (THÊM-thuần, id `String @id @default(uuid())`, snake_case qua `@map`/`@@map`)
 
 `JobOpening` → `@@map("job_openings")`:
-- `staffingOrderId String` + `@@index`; `staffingOrderSlotId String?` + `@@index` (theo V6-DEC-017).
+- `staffingOrderId String` + `@@index`; `staffingOrderSlotId String?` + `@@index` (theo V6-DEC-017, nullable vì slot-level granularity là tùy chọn).
 - `status String @default("DRAFT")` (DRAFT / OPEN / FILLED / CANCELLED).
+- `staffingOrderSlot StaffingOrderSlot?` (FK nullable → slot).
 - `slots StaffingOrderSlot[]` (one-to-many ngược).
-- `posting JobPosting?` (one-to-zero-or-one).
+- `posting JobPosting?` (one-to-zero-or-one, theo V6-DEC-011).
 - `createdAt DateTime @default(now())`; `updatedAt DateTime @updatedAt`.
 
 `JobPosting` → `@@map("job_postings")`:
-- `jobOpeningId String @unique` + relation `jobOpening JobOpening @relation(...)` (một opening chỉ một posting PUBLISHED).
+- `jobOpeningId String @unique` + relation `jobOpening JobOpening @relation("OpeningPosting")` (một opening chỉ một posting).
 - `slug String @unique`; `revision Int @default(1)`; `publishedAt DateTime?`; `archivedAt DateTime?`.
 - `status String @default("DRAFT")` (DRAFT / PUBLISHED / ARCHIVED).
 - `createdAt DateTime @default(now())`; `updatedAt DateTime @updatedAt`.
@@ -82,8 +83,8 @@ Mọi quyết định dưới đây là "Chốt" trong `docs/V6/v6-admin-rebuild
 Móc trên model cũ (THÊM-thuần): `StaffingOrderSlot.jobOpeningId String?` + `@@index` + relation `jobOpening JobOpening?`; `StaffingOrder.jobOpenings JobOpening[]` (back-relation).
 
 ### 4.4 Luật migration
-- Migration THÊM-thuần: chỉ `CREATE TABLE` hai bảng mới + `ADD COLUMN job_opening_id` nullable trên `staffing_order_slots` + `CREATE INDEX`. KHÔNG `DROP`, KHÔNG đổi constraint cũ.
-- Migration BACKFILL (tùy chọn): idempotent upsert tạo opening/posting từ dữ liệu sống; CẤM chạy trên DB sống trong task này.
+- Migration schema THÊM-thuần: chỉ `CREATE TABLE` hai bảng mới + `ADD COLUMN` trên ba bảng (`job_openings.staffing_order_slot_id`, `staffing_order_slots.job_opening_id`) + `CREATE INDEX/UNIQUE INDEX`. KHÔNG `DROP`, KHÔNG đổi constraint cũ.
+- Migration RLS forward-only cùng file: `ENABLE ROW LEVEL SECURITY` + `FORCE ROW LEVEL SECURITY` cho hai bảng mới, policy scope theo `staffing_orders.project_id` (họ staffing), dùng `hrp_project_visible_for` / `hrp_project_writable`. KHÔNG policy cho `anon`/công khai. Áp lên live là OP của sếp; TUYỆT ĐỐI không chạy lại các migration RLS cũ.
 
 ## 5. Execution Plan
 
@@ -132,23 +133,40 @@ Mỗi hàng đo bằng LỆNH thật; tất cả OFFLINE. Không dùng ký tự 
 
 ## 7. Risk và Rollback
 
-- Đụng lane khác trên `prisma/schema.prisma`: lane `1B` (labor-profile-schema) và `1C` (restyling) cũng ghi file này. Thứ tự an toàn: Phase 1 merge theo thứ tự 1A → 1B; điểm nhập lại là commit SHA ghi trong HANDOFF.
-- Hàng rào đóng băng: nếu test `public-card-truth` FAIL sau STEP-02, Tier 2 phải REVERT schema changes ngay, KHÔNG push.
-- Rollback task THÊM-thuần và CHƯA áp live: bỏ stage + xoá file migration mới; không dữ liệu sống nào bị đụng.
+- **Đụng lane khác trên `prisma/schema.prisma`:** lane `1B` (labor-profile-schema) và `1C` (restyling) cũng ghi file này. Thứ tự an toàn: Phase 1 merge theo thứ tự 1A → 1B; điểm nhập lại là commit SHA ghi trong HANDOFF.
+- **RLS/policy:** hai bảng mới có RLS scope theo `staffing_orders.project_id`. Áp migration RLS lên live là OP của sếp; KHÔNG tự chạy trên DB sống.
+- **Hàng rào đóng băng:** nếu test `public-card-truth` FAIL sau schema changes, phải REVERT ngay, KHÔNG push.
+- **Backfill:** NGOÀI PHẠM VI — là slice riêng, hàng cũ để NULL.
+- **Rollback task THÊM-thuần và CHƯA áp live:** bỏ stage + xoá file migration mới; không dữ liệu sống nào bị đụng.
 
 ## 8. Open Questions
 
-- Backfill opening/posting từ dữ liệu sống: là slice riêng cần đồng bộ idempotent; KHÔNG nằm trong hợp đồng này (hàng cũ để `jobOpeningId` NULL).
-- Không gian slug đổi và redirect cũ→mới: V6-DEC-030, việc PHASE 3.
-- Repoint bề mặt công khai sang `JobPosting`: V6-DEC-031, việc PHASE 3.
+- **Backfill opening/posting từ dữ liệu sống:** NGOÀI PHẠM VI. Tạo slice riêng sau khi Phase 1 schema hoàn thành. Task này chỉ đặt model + migration, hàng cũ để NULL.
+- **Không gian slug đổi và redirect cũ→mới:** V6-DEC-030, việc PHASE 3.
+- **Repoint bề mặt công khai sang `JobPosting`:** V6-DEC-031, việc PHASE 3.
 
 ## 9. Planner Resolution
 
-Phát hành `v1.0` ngày 06/09. R1 Tier 2 execution hoàn thành (commit baseline 4758809 → 2026-09-08); BLOCKED vì TASK.md thiếu sections 3-10. Tier 1 tự fix sections 3-10 ngày 08/09. Hợp đồng này giao qua roadmap `docs/V6/v6-roadmap.html` (thẻ Phase 1).
+### R1 Audit Resolution (AUD-001..AUD-006)
+
+| Finding | Resolution | Action |
+|---|---|---|
+| AUD-001 | Tier 1 tự fix sections 3-10 v1.0 → v1.1 | Done v1.1 |
+| AUD-002 | Tier 2 restage sau khi schema/migration được sửa | Ghi nhận, Tier 2 restage trong R2 |
+| AUD-003 | `JobOpening` có `staffingOrderSlotId String?` và quan hệ `posting JobPosting?` (one-to-zero-or-one) | Schema đã fix |
+| AUD-004 | Migration có `CREATE UNIQUE INDEX "job_postings_job_opening_id_key"` và `staffing_order_slot_id` column | Migration đã fix |
+| AUD-005 | Thêm RLS/policy cho `job_openings` và `job_postings` scope theo `staffing_orders.project_id` | Migration đã fix |
+| AUD-006 | Backfill là NGOÀI PHẠM VI — slice riêng | §8 ghi rõ, §4.4 sửa |
+
+Spec v1.2 bump sau khi Tier 3 R2 audit PASS.
+
+### R0 (trước audit)
+Phát hành `v1.0` ngày 06/09. R1 Tier 2 execution hoàn thành (commit baseline 4758809 → 2026-09-08); BLOCKED vì TASK.md thiếu sections 3-10. Tier 1 tự fix sections 3-10 ngày 08/09.
 
 ## 10. Revision Log
 
 | Spec | Ngày | Thay đổi | Ghi chú |
 |------|------|----------|---------|
 | `v1.0` | `2026-09-06` | Phát hành hợp đồng V6 Phase 1: hai model `JobOpening` / `JobPosting` THÊM-thuần + móc `StaffingOrderSlot.jobOpeningId` | Mới, chưa audit; nguồn quyết định `docs/V6/v6-admin-rebuild.md` mục 11 |
+| `v1.2` | `2026-09-08` | AUD-003: Thêm `staffingOrderSlotId` + đổi `postings[]` → `posting?`. AUD-004: Migration thêm `staffing_order_slot_id` column + `CREATE UNIQUE INDEX job_postings_job_opening_id_key`. AUD-005: Migration thêm RLS/policy scope theo `staffing_orders.project_id`. AUD-006: Backfill → NGOÀI PHẠM VI. §4.4, §7, §8 cập nhật. Status → RESOLVING_R2. | Owner/Tier 1 R1 audit resolution |
 | `v1.1` | `2026-09-08` | Tier 1 tự hoàn thiện sections 3-10 (Decisions, Contract, Execution Plan, Acceptance, Risk, Open Questions, Planner Resolution, Revision Log) để unlock Tier 3 audit | Fix BLK-01 từ R1 Tier 2; bump spec v1.1 |

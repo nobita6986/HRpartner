@@ -1,0 +1,51 @@
+=== Tier 3 independent checks — 2026-09-08 ===
+
+Repository and delivery:
+- git branch --show-current => main
+- git rev-parse HEAD => a7665efe2742bcc0cb56234d9d5e7a7243ddf25b
+- git rev-parse 4758809^{commit} => 475880934b7dbe88cf7ce1d44909bc9da6ea668d
+- git diff --cached --name-only => 0 paths
+- git diff --numstat -- prisma/schema.prisma => 50 insertions, 3 deletions
+- git diff --name-only 4758809 HEAD -- prisma/schema.prisma => 0 paths
+- git diff --name-only 4758809 -- public.service.ts public-card-truth.test.ts => 0 paths
+
+Schema/migration measurements:
+- Current schema JobOpening model count: 1
+- Current schema JobPosting model count: 1
+- Current schema staffingOrderSlotId token count: 0
+- Current schema singular posting JobPosting? relation count: 0
+- Current schema plural postings JobPosting[] relation count: 1
+- Current schema jobOpeningId String @unique count: 1
+- Authored migration DROP statement count: 0
+- Authored migration staffing_order_slot_id token count: 0
+- Authored migration unique job_opening_id index count: 0
+- Authored migration RLS token count: 0
+- Authored migration GRANT token count: 0
+- Authored migration git hash-object: 19239c50b9edf69e4e463f441a70751aa4084b26
+- Encoding-safe npx prisma migrate diff exit: 0
+- Generated diff DROP statement count: 0
+- Generated diff unique job_opening_id index count: 1
+- Generated diff staffing_order_slot_id token count: 0
+
+Readiness and structural gates:
+- HANDOFF control Status: READY_FOR_TIER3_AUDIT
+- HANDOFF closing status: BLOCKED
+- powershell -NoProfile -File verify-task.ps1 => exit 0, RESULT DRAFT-VALID, 2 warnings
+- powershell -NoProfile -File verify-handoff.ps1 => exit 2, RESULT FAIL, 4 errors, 1 warning
+- powershell -NoProfile -File verify-pipeline.ps1 => exit 0, RESULT PASS
+
+Validation lanes:
+- npm run test:unit -- --reporter=dot => exit 0, 113 files, 1740 tests passed
+- npm run test:unit -- public-card-truth --reporter=dot => exit 0, 1 file, 23 tests passed
+- npm run build => exit 0
+- npx prisma validate => exit 0
+- npx prisma generate => exit 0
+- npx tsc --noEmit => exit 0
+
+Security review:
+- Existing staffing-family migrations enable and force RLS for staffing_orders and staffing_order_slots.
+- Existing child-table policy scopes staffing_order_slots through staffing_orders.project_id.
+- New migration creates job_openings and job_postings without RLS, policies, or explicit grants.
+- Existing default privileges may grant app_user_writer table DML, making missing RLS a fail-open posture if this migration is applied.
+
+No database connection, migration deployment, seed, production write, source edit, contract edit, commit, push, or deploy occurred.
