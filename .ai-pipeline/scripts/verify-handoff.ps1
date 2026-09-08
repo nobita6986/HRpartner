@@ -1,10 +1,10 @@
 ﻿<#
 .SYNOPSIS
-Validates HANDOFF.md against TASK.md before Tier 2 hands the round to Tier 3.
+Validates HANDOFF.md against TASK.md before Tier 2 hands FAST to Tier 1 or audited lanes to Tier 3.
 
 Run by:
 - Tier 2: last step of every execution round (mandatory, before writing
-  `Handoff status: READY_FOR_AUDIT`).
+  `Handoff status: READY_FOR_REVIEW|READY_FOR_AUDIT`).
 - Tier 3: at preflight, to reject a malformed handoff without spending an audit.
 - Tier 1: at /resolve when no AUDIT exists yet.
 
@@ -120,6 +120,22 @@ try {
     if ($taskMode -ne '' -and $hMode -ne '' -and $taskMode -ne $hMode) {
         Add-GateError $ctx 'H-03' "audit mode mismatch: TASK=$taskMode vs HANDOFF=$hMode."
     }
+    $taskLaneRaw = Get-ControlField -Text $task -FieldName 'Assurance lane'
+    $taskLane = 'CRITICAL'
+    if ($taskLaneRaw.ToUpper() -match '^(FAST|STANDARD|CRITICAL)$') { $taskLane = $Matches[1] }
+    $hLaneRaw = Get-ControlField -Text $handoff -FieldName 'Assurance lane'
+    $hLane = ''
+    if ($hLaneRaw.ToUpper() -match '^(FAST|STANDARD|CRITICAL)$') { $hLane = $Matches[1] }
+    if ($hLaneRaw -eq '') {
+        Add-GateWarn $ctx 'H-03' "HANDOFF has no Assurance lane; legacy-safe default CRITICAL applies."
+        $hLane = 'CRITICAL'
+    } elseif ($hLane -eq '') {
+        Add-GateError $ctx 'H-03' "invalid Assurance lane '$hLaneRaw'."
+    } elseif ($hLane -ne $taskLane) {
+        Add-GateError $ctx 'H-03' "assurance lane mismatch: TASK=$taskLane vs HANDOFF=$hLane."
+    } else {
+        Add-GateOk $ctx 'H-03' "assurance lane $hLane matches TASK."
+    }
     $execRound = Get-ControlRoundNumber -Text $handoff -Kind 'Execution'
     if ($execRound -le 0) {
         Add-GateError $ctx 'H-03' "HANDOFF section 0 states no execution round number (expected a field 'Execution round')."
@@ -129,9 +145,26 @@ try {
     $h2 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*2\.'
     $h3 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*3\.'
     $h5 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*5\.'
+    $h6 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*6\.'
     $h7 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*7\.'
-    foreach ($n in @('h2','h3','h5','h7')) {
+    foreach ($n in @('h2','h3','h5','h6','h7')) {
         if ($null -eq (Get-Variable -Name $n -ValueOnly)) { Set-Variable -Name $n -Value '' }
+    }
+
+    # Evidence Registry lets one real command prove several AC without copying
+    # the same command/output into every row. The AC row cites E-xx; section 6
+    # carries the runnable command and measured result once.
+    $evidenceRegistry = @{}
+    foreach ($table in (Get-MarkdownTables -Text $h6)) {
+        foreach ($row in $table.Rows) {
+            $first = Clear-MdDecoration $row.Cells[0]
+            if ($first -notmatch '^E-\d{2,}$') { continue }
+            $joined = ($row.Cells -join ' ')
+            $evidenceRegistry[$first] = @{
+                Runnable = ((Test-CellHasCommand $joined) -and ((Test-CellHasResult $joined) -or (Test-CellHasNumber $joined)))
+                Raw = $joined
+            }
+        }
     }
 
     $h3Tables = Get-MarkdownTables -Text $h3
@@ -201,11 +234,23 @@ try {
         for ($i = 1; $i -lt $cells.Count; $i++) { $joined = $joined + ' ' + $cells[$i] }
 
         if (-not $hasLimitation) {
-            if (-not (Test-CellHasCommand $joined)) {
-                Add-GateError $ctx 'H-06' "$acId names no command. Tier 3 re-runs these exact commands - prose is not re-runnable."
+            $hasRunnable = Test-CellHasCommand $joined
+            $hasMeasured = ((Test-CellHasResult $joined) -or (Test-CellHasNumber $joined))
+            if (-not $hasRunnable) {
+                foreach ($m in [regex]::Matches((Clear-MdDecoration $joined), 'E-\d{2,}')) {
+                    $id = $m.Value
+                    if ($evidenceRegistry.ContainsKey($id) -and $evidenceRegistry[$id].Runnable) {
+                        $hasRunnable = $true
+                        $hasMeasured = $true
+                        break
+                    }
+                }
+            }
+            if (-not $hasRunnable) {
+                Add-GateError $ctx 'H-06' "$acId names neither a command nor a runnable E-xx entry in section 6."
                 $problems++
             }
-            if (-not (Test-CellHasResult $joined) -and -not (Test-CellHasNumber $joined)) {
+            if (-not $hasMeasured) {
                 Add-GateError $ctx 'H-06' "$acId carries neither an exit code nor a measured value."
                 $problems++
             }
@@ -226,7 +271,7 @@ try {
         }
     }
     if ($problems -eq 0 -and $acRowMap.Count -gt 0) {
-        Add-GateOk $ctx 'H-06' "every AC row carries a re-runnable command and a result."
+        Add-GateOk $ctx 'H-06' "every AC row carries a command/result directly or through a runnable E-xx registry entry."
     }
 
     # -- H-07b Referenced evidence artifacts must exist ----------------------
@@ -249,20 +294,20 @@ try {
 
     # -- H-10 Status and closing line ----------------------------------------
     $hStatus = Get-ControlField -Text $handoff -FieldName 'Status'
-    $allowed = @('READY_FOR_AUDIT', 'BLOCKED', 'IN_PROGRESS')
+    $allowed = @('READY_FOR_REVIEW', 'READY_FOR_AUDIT', 'BLOCKED', 'IN_PROGRESS')
     $statusHead = ''
     $mS = [regex]::Match($hStatus, '^[A-Z_]+')
     if ($mS.Success) { $statusHead = $mS.Value }
     if ($allowed -notcontains $statusHead) {
-        Add-GateError $ctx 'H-10' "HANDOFF status '$hStatus' is not one of READY_FOR_AUDIT|BLOCKED|IN_PROGRESS."
+        Add-GateError $ctx 'H-10' "HANDOFF status '$hStatus' is not one of READY_FOR_REVIEW|READY_FOR_AUDIT|BLOCKED|IN_PROGRESS."
     }
     $closing = [regex]::Match($handoff, '(?i)Handoff status:\s*`?([A-Z_]+)`?')
     if (-not $closing.Success) {
-        Add-GateError $ctx 'H-10' "missing the mandatory last line 'Handoff status: READY_FOR_AUDIT' or 'Handoff status: BLOCKED'."
+        Add-GateError $ctx 'H-10' "missing the mandatory last line 'Handoff status: READY_FOR_REVIEW', 'READY_FOR_AUDIT', or 'BLOCKED'."
     } else {
         $closingStatus = $closing.Groups[1].Value.ToUpper()
-        if (@('READY_FOR_AUDIT','BLOCKED') -notcontains $closingStatus) {
-            Add-GateError $ctx 'H-10' "closing line says '$closingStatus'; tier2.md allows only READY_FOR_AUDIT or BLOCKED."
+        if (@('READY_FOR_REVIEW','READY_FOR_AUDIT','BLOCKED') -notcontains $closingStatus) {
+            Add-GateError $ctx 'H-10' "closing line says '$closingStatus'; tier2.md allows READY_FOR_REVIEW, READY_FOR_AUDIT, or BLOCKED."
         } elseif ($statusHead -ne '' -and $statusHead -ne $closingStatus) {
             Add-GateError $ctx 'H-10' "section 0 Status is '$statusHead' but the closing line says '$closingStatus'."
         } else {
@@ -273,6 +318,12 @@ try {
             if ($blkRows.Count -eq 0) {
                 Add-GateError $ctx 'H-10' "status BLOCKED but section 5 lists no BLK-xx row stating what blocks and what decision Tier 1 must make."
             }
+        }
+        if ($closingStatus -eq 'READY_FOR_REVIEW' -and $taskLane -ne 'FAST') {
+            Add-GateError $ctx 'H-10' "READY_FOR_REVIEW is reserved for FAST; TASK lane is $taskLane."
+        }
+        if ($closingStatus -eq 'READY_FOR_AUDIT' -and $taskLane -eq 'FAST') {
+            Add-GateWarn $ctx 'H-10' "FAST task requests Tier 3 audit. This is allowed escalation, but not the default path."
         }
     }
 

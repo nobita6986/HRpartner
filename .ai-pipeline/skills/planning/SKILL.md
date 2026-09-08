@@ -1,7 +1,7 @@
 ---
 name: planning
-description: Use when Tier 1 (Planner) needs to research, analyze, and create a comprehensive implementation plan for an HRP feature or phase. Enforces YAGNI/KISS/DRY and the HRP artifact schema.
-license: HRP-Internal
+description: Use when Tier 1 researches, analyzes and creates an implementation plan for a feature or phase. Enforces YAGNI/KISS/DRY and pipeline artifacts.
+license: Internal
 ---
 
 # Planning (Tier 1)
@@ -12,7 +12,7 @@ Tạo kế hoạch kỹ thuật chi tiết thông qua research, codebase analysi
 
 Tier 1 dùng skill này khi:
 
-- Lên kế hoạch cho TASK mới trong HRP pipeline.
+- Lên kế hoạch cho TASK mới trong delivery pipeline.
 - Đánh giá trade-off giữa nhiều approaches.
 - Phân rã yêu cầu mơ hồ thành RQ/STEP/AC.
 - Mapping codebase pattern hiện hữu vào plan.
@@ -25,11 +25,11 @@ Luôn tuân thủ **YAGNI**, **KISS**, **DRY**. **Trung thực, thẳng thắn, 
 - Plan phải tự-contained (một engineer hiểu codebase đọc xong có thể thực thi).
 - Có snippet/pseudocode khi cần khóa contract.
 - Multi-options + trade-off khi cần.
-- Respect tất cả quy tắc trong `.ai-pipeline/rules/` (HRP rules > boilerplate).
+- Tuân thủ role, global rules và contract trước mọi boilerplate.
 
 ## Workflow
 
-1. **Initial Analysis** → đọc `docs/PHASE_*.md`, codebase summary, planning research cũ (nếu có).
+1. **Initial Analysis** → đọc yêu cầu, call path và đúng tài liệu nguồn được dẫn; không đọc toàn bộ roadmap theo thói quen.
 2. **Research Phase** → spawn `researcher` hoặc dùng `docs-seeker`/`research` skill khi cần fact bên ngoài.
 3. **Synthesis** → chốt architecture/approach.
 4. **Design Phase** → ghi vào `TASK.md > Plan & Design`.
@@ -38,13 +38,13 @@ Luôn tuân thủ **YAGNI**, **KISS**, **DRY**. **Trung thực, thẳng thắn, 
 
 ## Plan Directory
 
-HRP dùng cấu trúc:
+Pipeline dùng cấu trúc:
 
 ```
 docs/tasks/<slug>/
 ├── TASK.md         # contract duy nhất
 ├── HANDOFF.md      # Tier 2 viết (sau khi execute)
-├── AUDIT.md        # Tier 3 viết (sau khi audit)
+├── AUDIT.md        # Tier 3 viết cho STANDARD/CRITICAL; FAST không bắt buộc
 └── evidence/       # logs, screenshots, repomix output
 ```
 

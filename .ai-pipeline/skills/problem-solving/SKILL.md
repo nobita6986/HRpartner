@@ -1,7 +1,7 @@
 ---
 name: problem-solving
 description: Use when Tier 1 or Tier 3 (Auditor) encounters complexity spirals, innovation blocks, recurring patterns, assumption constraints, or scale uncertainty. Six dispatchable techniques adapted from Microsoft Amplifier project patterns.
-license: HRP-Internal
+license: Internal
 ---
 
 # Problem-Solving Techniques

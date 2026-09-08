@@ -1,20 +1,21 @@
 ---
 name: audit
-description: Use when Tier 3 (Auditor) writes the AUDIT artifact for an HRP task. Defines evidence block, severity grading, finding ID convention and verdict rules.
+description: Use when Tier 3 writes an AUDIT artifact. Defines evidence, severity, finding IDs and verdict rules.
 version: 1.0.0
-license: HRP-Internal
+license: Internal
 ---
 
 # Audit Skill (Tier 3)
 
-Tier 3 viết `AUDIT.md` đối chiếu với `TASK.md > Acceptance` và `HANDOFF.md > Diff & Evidence`.
+Tier 3 viết `AUDIT.md` cho STANDARD/CRITICAL hoặc FAST được escalation. Audit theo `FULL | DELTA`.
 
 ## Iron Rules
 
 1. Đánh giá chỉ dựa trên evidence thật; không dựa vào lời cam kết.
-2. Mỗi `AC-0X` phải có verdict: `PASS` | `FAIL` | `PARTIAL` | `NA`.
+2. Mỗi `AC-0X` phải có verdict: `PASS | FAIL | PARTIAL | BLOCKED | N/A | CARRIED_FORWARD`.
 3. Mỗi finding `AUD-00X` phải có file:line trỏ tới evidence hoặc vào source.
 4. Không tự fix lỗi; chỉ ghi nhận để Tier 1 resolve và Tier 2 sửa trong round tiếp theo.
+5. DELTA chỉ rerun changed surface; CARRIED_FORWARD phải có source round/baseline/evidence và impact proof.
 
 ## Severity Grades
 
@@ -28,10 +29,10 @@ Tier 3 viết `AUDIT.md` đối chiếu với `TASK.md > Acceptance` và `HANDOF
 ## Output
 
 - `docs/tasks/<slug>/AUDIT.md` với metadata giống `templates/AUDIT.template.md`.
-- `Audit round`, `Round opened by` đã được Tier 1 khởi tạo; Tier 3 không đổi `Round opened by`.
+- Ghi `Assurance lane`, `Audit depth`, execution/audit round và baseline nguồn.
 - Long evidence (log, screenshot) đặt trong `evidence/` đính kèm.
 
 ## References
 
 - `references/audit-checklist.md` — quick checklist 12 điểm
-- `references/severity-rubric.md` — ví dụ grading HRP hiện hữu
+- `references/severity-rubric.md` — ví dụ grading thực tế

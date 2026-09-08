@@ -1,8 +1,8 @@
 ---
 name: codegraph-usage
-description: Use when HRP tiers need to query the code-graph (callers, callees, blast radius, trace) before editing or auditing code. Defines which tier invokes which tool and where the result must be recorded.
+description: Use when a tier needs code-graph callers, callees, blast radius or traces before editing/auditing. Defines invocation and evidence rules.
 version: 1.0.0
-license: HRP-Internal
+license: Internal
 ---
 
 # CodeGraph Usage

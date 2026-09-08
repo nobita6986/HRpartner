@@ -1,0 +1,7 @@
+# A portable pipeline must never carry local credentials or runtime debris.
+role_secrets.txt
+*.local
+*.secret
+*.secrets
+*.log
+*.tmp

@@ -5,15 +5,12 @@ Validates the single TASK contract used by the three-tier pipeline.
 Run by:
 - Tier 1: before setting Status to READY_FOR_EXECUTION (mandatory).
 - Tier 2: at preflight, and as the first evidence row of HANDOFF section 3.
-- Tier 3: as mandatory check C-09.
+- Tier 3: as assurance check C-09 for STANDARD/CRITICAL.
 
 WHAT CHANGED (dry-run gate)
-Shape checks alone let four unsatisfiable or wrong acceptance criteria reach
-Tier 2 in `hrp-v5-go-live-15-public-contrast-aa` alone, plus a script that does
-not exist (`npm run diff-check`, go-live-08 AUD-003), a stale insertion line
-(go-live-08 AUD-002), and an AC measured with a bare `git diff` that prints
-nothing once the work is staged (go-live-15 AC-10). The `T-` checks below run
-the contract against reality before it is handed to an executor.
+Shape checks alone previously let unsatisfiable acceptance criteria, nonexistent
+commands, stale insertion lines and staged-blind diff checks reach Tier 2. The
+`T-` checks below run the contract against reality before execution.
 
 Strictness follows Status: a contract about to be executed
 (READY_FOR_EXECUTION / REVISION_REQUIRED) is failed; a closed contract
@@ -73,6 +70,10 @@ try {
     $isReady    = ($statusHead -eq 'READY_FOR_EXECUTION' -or $statusHead -eq 'REVISION_REQUIRED')
     $isClosed   = ($statusHead -eq 'ACCEPTED' -or $statusHead -eq 'CANCELLED')
     $dryRunHard = $isReady
+    $laneRaw = Get-ControlField -Text $content -FieldName 'Assurance lane'
+    $lane = ''
+    $mLane = [regex]::Match($laneRaw.ToUpper(), '^(FAST|STANDARD|CRITICAL)$')
+    if ($mLane.Success) { $lane = $mLane.Value }
 
     function Add-DryRunFinding {
         param([string]$Id, [string]$Message)
@@ -112,6 +113,40 @@ try {
         }
     }
     if ($missingFields -eq 0) { Add-GateOk $ctx 'A-02' "control fields present (status: $statusHead)." }
+    if ([string]::IsNullOrWhiteSpace($laneRaw)) {
+        Add-GateWarn $ctx 'A-02' "Assurance lane is absent; legacy-safe default CRITICAL applies. New contracts must declare FAST|STANDARD|CRITICAL."
+        $lane = 'CRITICAL'
+    } elseif ($lane -eq '') {
+        Add-DryRunFinding 'A-02' "Assurance lane '$laneRaw' is invalid; expected FAST|STANDARD|CRITICAL."
+    } else {
+        Add-GateOk $ctx 'A-02' "assurance lane: $lane."
+    }
+    if (-not [string]::IsNullOrWhiteSpace($laneRaw)) {
+        foreach ($field in @('In-scope roots', 'Required gates')) {
+            $v = Get-ControlField -Text $content -FieldName $field
+            if ([string]::IsNullOrWhiteSpace($v)) {
+                Add-DryRunFinding 'A-02' "lane-aware contract is missing control field '$field'."
+            }
+        }
+        $auditMode = (Get-ControlField -Text $content -FieldName 'Audit mode').ToUpper()
+        if (($lane -eq 'STANDARD' -or $lane -eq 'CRITICAL') -and $auditMode -match '^NONE$') {
+            Add-DryRunFinding 'A-02' "$lane lane cannot use Audit mode NONE."
+        }
+    }
+
+    # -- T-08 Lane cannot understate an obviously critical surface -----------
+    # This is intentionally conservative and only reads Control fields/paths,
+    # not prose in non-goals (where words such as auth/RLS often appear).
+    if ($lane -eq 'FAST') {
+        $workType = (Get-ControlField -Text $content -FieldName 'Work type').ToUpper()
+        $scopeRoots = Get-ControlField -Text $content -FieldName 'In-scope roots'
+        $criticalPath = '(?i)(^|[/\\])(prisma|migrations|middleware|auth|security|payments?|payroll|infra|\.github)([/\\]|$)|schema\.prisma|next\.config|tsconfig|package(-lock)?\.json'
+        if ($workType -match 'INFRA' -or $scopeRoots -match $criticalPath) {
+            Add-DryRunFinding 'T-08' "FAST lane targets an obviously critical/control-plane surface (work type=$workType, roots=$scopeRoots). Raise to STANDARD/CRITICAL or narrow the scope."
+        } else {
+            Add-GateOk $ctx 'T-08' "FAST lane does not declare an obvious critical/control-plane root."
+        }
+    }
 
     # -- A-03 Identifiers ----------------------------------------------------
     foreach ($pair in @(@('RQ-\d{2,}', 'requirement (RQ-01)'), @('STEP-\d{2,}', 'execution step (STEP-01)'), @('AC-\d{2,}', 'acceptance (AC-01)'))) {

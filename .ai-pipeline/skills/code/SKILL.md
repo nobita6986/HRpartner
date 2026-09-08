@@ -1,21 +1,20 @@
 ---
 name: code
-description: Use when Tier 2 (Engineer) executes an HRP HANDOFF and writes the HANDOFF artifact. Defines minimum evidence requirements, deviation rules and round closure contract.
+description: Use when Tier 2 executes a TASK and writes the HANDOFF artifact. Defines minimum evidence, deviation rules and round closure.
 version: 1.0.0
-license: HRP-Internal
+license: Internal
 ---
 
 # Code Skill (Tier 2)
 
-Tier 2 thực thi `TASK.md` và viết `HANDOFF.md` để bàn giao cho Tier 3 audit.
+Tier 2 thực thi `TASK.md` theo Assurance lane và viết `HANDOFF.md`. FAST bàn giao Tier 1; STANDARD/CRITICAL bàn giao Tier 3.
 
 ## Bắt buộc trong HANDOFF
 
-- Metadata khớp `TASK.md` (Work type, Audit mode, Spec version, Execution round, Current audit round).
-- Mỗi `STEP-0X` đã thực thi:
-  - file:line diff
-  - lệnh kiểm tra (lint/typecheck/test) + exit code
-  - tóm tắt output thật
+- Metadata khớp `TASK.md` (Assurance lane, Audit mode, Spec version, execution round).
+- STEP có outcome/status; được gộp khi cùng kết quả.
+- Evidence Registry `E-xx` ghi mỗi command + exit + output một lần và có thể map nhiều AC.
+- Gate đúng lane; không chạy trùng full suite/build nếu canonical command đã bao phủ hoặc lane không yêu cầu.
 - Nếu contract mơ hồ: ghi blocker, KHÔNG đoán.
 - Deviation khỏi contract: ghi rõ vào mục `Deviations` để Tier 1 xem xét.
 
@@ -27,7 +26,7 @@ Tier 2 chỉ đóng round khi:
 - Targeted test/check pass.
 - `deviations` rỗng hoặc đã được document.
 
-Sau đó chuyển `Status` → `READY_FOR_AUDIT` để Tier 3 thao tác.
+FAST chuyển `READY_FOR_REVIEW`; STANDARD/CRITICAL chuyển `READY_FOR_AUDIT`.
 
 ## Forbidden
 
@@ -37,5 +36,5 @@ Sau đó chuyển `Status` → `READY_FOR_AUDIT` để Tier 3 thao tác.
 
 ## References
 
-- `references/evidence-format.md` — block evidence chuẩn
-- `references/deviation-examples.md` — ví dụ deviation hợp lệ / không hợp lệ
+- `.ai-pipeline/templates/HANDOFF.template.md` — format và Evidence Registry chuẩn.
+- `.ai-pipeline/tier2.md` — lane và round closure.

@@ -1,4 +1,4 @@
-# Evidence Format (HRP)
+# Evidence Format
 
 ## Block chuẩn trong HANDOFF.md / AUDIT.md
 

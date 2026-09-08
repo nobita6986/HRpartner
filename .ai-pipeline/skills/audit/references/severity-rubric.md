@@ -7,7 +7,7 @@
 | **MEDIUM** | Code smell, scope creep nhẹ, missing test | Không chặn. Note cho backlog. | Tier 1 cân nhắc round tiếp theo |
 | **LOW** | Style, naming, comment | Không chặn | Fix trong maintain, không cần round mới |
 
-## Ví dụ HRP thực tế
+## Ví dụ thực tế
 
 - "Hard-coded role check thay vì RBAC middleware" → **CRITICAL** (security).
 - "Test cover 30% khi TASK yêu cầu 80%" → **HIGH**.

@@ -1,12 +1,12 @@
 ---
 name: databases
-description: Use when HRP needs to design Prisma schema, write SQL/queries, optimize indexes, manage migrations, or audit data integrity (tiền, permission). Postgres + Prisma focus because HRP uses them.
-license: HRP-Internal
+description: Use for Prisma/PostgreSQL schema, SQL/query, index, migration or data-integrity work. Apply only when the repository uses this stack.
+license: Internal
 ---
 
 # Databases (Postgres + Prisma)
 
-> **HRP stack**: Next.js/TypeScript + **PostgreSQL** + **Prisma**. MongoDB không trong scope HRP hiện tại → skip.
+> Skill này tập trung vào **PostgreSQL + Prisma**. Repository dùng stack khác thì chọn skill phù hợp thay vì áp checklist này.
 
 ## When to Use
 

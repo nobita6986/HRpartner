@@ -1,12 +1,12 @@
 ---
 name: code-review
 description: Use when Tier 3 (Auditor) needs structured review beyond the AUDIT artifact, OR when Tier 1 sanity-checks a HANDOFF. Covers receiving feedback with technical rigor, requesting reviews, and verification gates.
-license: HRP-Internal
+license: Internal
 ---
 
 # Code Review
 
-Hướng dẫn thực hành review chặt chẽ cho HRP, dựa trên evidence chứ không phải social comfort.
+Hướng dẫn review chặt chẽ dựa trên evidence, không dựa trên social comfort.
 
 ## Three Practices
 
@@ -22,7 +22,7 @@ IDENTIFY command → RUN full command → READ output → VERIFY confirms claim 
 
 Skip any step = lying, not verifying.
 
-## Integration with HRP Tier 3
+## Integration with Tier 3
 
 Tier 3 (Auditor) dùng skill này để:
 

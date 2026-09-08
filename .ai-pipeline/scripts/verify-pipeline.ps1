@@ -1,6 +1,6 @@
-﻿<#
+<#
 .SYNOPSIS
-Checks required files for the three-tier AI pipeline on Windows.
+Validates the portable AI Delivery Pipeline structure on Windows.
 #>
 [CmdletBinding()]
 param(
@@ -8,96 +8,114 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-# $PSScriptRoot is not populated while parameter defaults are evaluated under
-# `powershell.exe -File`, which made this script abort on line 7 before printing
-# a single check. Resolve the default in the body instead.
 if ([string]::IsNullOrWhiteSpace($PipelineRoot)) {
     $PipelineRoot = Split-Path $PSScriptRoot -Parent
 }
 $failCount = 0
+$warnCount = 0
 
 function Test-RequiredFolder {
     param([string]$Path, [string]$Name)
-
     if (Test-Path -LiteralPath $Path -PathType Container) {
-        Write-Host "  [OK] Folder exists: $Name" -ForegroundColor Green
-        return
+        Write-Host "  [OK] Folder: $Name" -ForegroundColor Green
+    } else {
+        Write-Host "  [FAIL] Missing folder: $Name ($Path)" -ForegroundColor Red
+        $script:failCount++
     }
-
-    Write-Host "  [FAIL] Missing folder: $Name ($Path)" -ForegroundColor Red
-    $script:failCount++
 }
 
 function Test-RequiredFile {
     param([string]$Path, [string]$Name)
-
     if (Test-Path -LiteralPath $Path -PathType Leaf) {
-        Write-Host "  [OK] File exists: $Name" -ForegroundColor Green
-        return
+        Write-Host "  [OK] File: $Name" -ForegroundColor Green
+    } else {
+        Write-Host "  [FAIL] Missing file: $Name ($Path)" -ForegroundColor Red
+        $script:failCount++
     }
-
-    Write-Host "  [FAIL] Missing file: $Name ($Path)" -ForegroundColor Red
-    $script:failCount++
 }
 
 function Test-OptionalCli {
     param([string]$Tool)
-
     if (Get-Command $Tool -ErrorAction SilentlyContinue) {
-        Write-Host "  [OK] Optional CLI available: $Tool" -ForegroundColor Green
+        Write-Host "  [OK] Optional CLI: $Tool" -ForegroundColor Green
     } else {
         Write-Host "  [WARN] Optional CLI unavailable: $Tool" -ForegroundColor Yellow
+        $script:warnCount++
     }
 }
 
 try {
     $resolvedPipelineRoot = (Resolve-Path -LiteralPath $PipelineRoot).Path
-    $projectRoot = Split-Path $resolvedPipelineRoot -Parent
+    Write-Host "AI DELIVERY PIPELINE HEALTH CHECK" -ForegroundColor Cyan
 
-    Write-Host "AI PIPELINE 3-TIER HEALTH CHECK" -ForegroundColor Cyan
+    foreach ($folder in @("rules", "skills", "templates", "scripts")) {
+        Test-RequiredFolder -Path (Join-Path $resolvedPipelineRoot $folder) -Name $folder
+    }
 
-    Test-RequiredFolder -Path (Join-Path $resolvedPipelineRoot "rules") -Name "rules"
-    Test-RequiredFolder -Path (Join-Path $resolvedPipelineRoot "skills") -Name "skills"
-    Test-RequiredFolder -Path (Join-Path $resolvedPipelineRoot "templates") -Name "templates"
-    Test-RequiredFolder -Path (Join-Path $resolvedPipelineRoot "scripts") -Name "scripts"
+    $requiredFiles = @(
+        @("README.md", "single onboarding entrypoint"),
+        @("PIPELINE-GUIDE.md", "operating guide"),
+        @("tier0.md", "Tier 0 manifest"),
+        @("tier1.md", "Tier 1 manifest"),
+        @("tier2.md", "Tier 2 manifest"),
+        @("tier3.md", "Tier 3 manifest"),
+        @("rules\00-global-rules.md", "global rules"),
+        @("rules\01-planner-rules.md", "legacy Planner pointer"),
+        @("rules\02-engineer-rules.md", "legacy Engineer pointer"),
+        @("rules\03-auditor-rules.md", "legacy Auditor pointer"),
+        @("skills\README.md", "skill map"),
+        @("skills\task-authoring\SKILL.md", "Planner core skill"),
+        @("skills\code\SKILL.md", "Engineer core skill"),
+        @("skills\audit\SKILL.md", "Auditor core skill"),
+        @("skills\anti-hallucination\SKILL.md", "evidence skill"),
+        @("templates\TASK.template.md", "TASK template"),
+        @("templates\HANDOFF.template.md", "HANDOFF template"),
+        @("templates\AUDIT.template.md", "AUDIT template"),
+        @("templates\DOMAIN-KNOWLEDGE.template.md", "domain template"),
+        @("scripts\gate-lib.ps1", "gate library"),
+        @("scripts\verify-task.ps1", "TASK validator"),
+        @("scripts\verify-handoff.ps1", "HANDOFF validator"),
+        @("scripts\verify-audit.ps1", "AUDIT validator"),
+        @("scripts\verify-delivery-presence.ps1", "delivery presence validator"),
+        @("scripts\verify-gates.selftest.ps1", "gate self-test"),
+        @("scripts\verify-pipeline.ps1", "pipeline health check")
+    )
+    foreach ($entry in $requiredFiles) {
+        Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot $entry[0]) -Name $entry[1]
+    }
 
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "tier1.md") -Name "Tier 1 manifest"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "tier2.md") -Name "Tier 2 manifest"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "tier3.md") -Name "Tier 3 manifest"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "agents\planner.md") -Name "Planner agent (Cursor YAML)"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "agents\engineer.md") -Name "Engineer agent (Cursor YAML)"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "agents\auditor.md") -Name "Auditor agent (Cursor YAML)"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "agents\CROSS-COMPAT.md") -Name "Cross-compat mapping"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "rules\00-global-rules.md") -Name "Global rules"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "rules\01-planner-rules.md") -Name "Planner rules"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "rules\02-engineer-rules.md") -Name "Coder rules"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "rules\03-auditor-rules.md") -Name "Auditor rules"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "skills\code\SKILL.md") -Name "Coder skill"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "skills\audit\SKILL.md") -Name "Auditor skill"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "templates\TASK.template.md") -Name "TASK template"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "templates\HANDOFF.template.md") -Name "HANDOFF template"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "templates\AUDIT.template.md") -Name "AUDIT template"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "scripts\gate-lib.ps1") -Name "Gate shared library"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "scripts\verify-task.ps1") -Name "TASK contract validator"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "scripts\verify-handoff.ps1") -Name "HANDOFF substance validator"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "scripts\verify-audit.ps1") -Name "AUDIT substance validator"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "scripts\verify-gates.selftest.ps1") -Name "Gate red/green self-test"
-    Test-RequiredFile -Path (Join-Path $resolvedPipelineRoot "scripts\init-project.ps1") -Name "Bootstrap wrapper generator"
+    $forbiddenNames = @("role_secrets.txt", "secrets.txt", ".env", ".env.local")
+    foreach ($name in $forbiddenNames) {
+        $candidate = Join-Path $resolvedPipelineRoot $name
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+            Write-Host "  [FAIL] Local secret must not live in portable kit: $name" -ForegroundColor Red
+            $failCount++
+        }
+    }
+
+    $allowedTopFiles = @(
+        ".gitignore", "README.md", "PIPELINE-GUIDE.md",
+        "tier0.md", "tier1.md", "tier2.md", "tier3.md"
+    )
+    Get-ChildItem -LiteralPath $resolvedPipelineRoot -File -Force | ForEach-Object {
+        if ($allowedTopFiles -notcontains $_.Name) {
+            Write-Host "  [WARN] Unexpected top-level file: $($_.Name)" -ForegroundColor Yellow
+            $warnCount++
+        }
+    }
 
     Write-Host ""
-    Test-OptionalCli -Tool "node"
-    Test-OptionalCli -Tool "npm"
-    Test-OptionalCli -Tool "npx"
-    Test-OptionalCli -Tool "codegraph"
-    Test-OptionalCli -Tool "repomix"
+    foreach ($tool in @("node", "npm", "npx", "codegraph")) {
+        Test-OptionalCli -Tool $tool
+    }
 
     Write-Host ""
     if ($failCount -gt 0) {
-        Write-Host "RESULT: FAIL ($failCount required artifact(s) missing)." -ForegroundColor Red
+        Write-Host "RESULT: FAIL ($failCount required/portable rule failure(s), $warnCount warning(s))." -ForegroundColor Red
         exit 2
     }
 
-    Write-Host "RESULT: PASS. Three-tier, three-artifact contract is present." -ForegroundColor Green
+    Write-Host "RESULT: PASS. Portable pipeline is coherent ($warnCount warning(s))." -ForegroundColor Green
     exit 0
 }
 catch {

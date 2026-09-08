@@ -1,10 +1,10 @@
 ---
 name: docs-seeker
-description: Use when Tier 1 (Planner) or Tier 2 needs authoritative documentation for a library/framework used by HRP (Next.js, Prisma, Vitest, etc.) before designing or implementing. Works without context7.com — uses WebFetch as fallback.
-license: HRP-Internal
+description: Use when Tier 1 or Tier 2 needs current authoritative documentation for a library/framework before designing or implementing.
+license: Internal
 ---
 
-# Documentation Discovery (HRP)
+# Documentation Discovery
 
 ## When to Use
 
@@ -12,9 +12,9 @@ license: HRP-Internal
 - Tier 2 cần check API ref khi implement.
 - Tier 3 cần verify behavior từ docs khi audit.
 
-## Primary Workflow (HRP — Windows, no local context7)
+## Primary Workflow
 
-HRP **không dùng** `node scripts/detect-topic.js` (chỉ dành cho .claude env). HRP dùng:
+Không giả định helper script hoặc documentation connector tồn tại. Dùng công cụ khả dụng theo thứ tự:
 
 ```text
 1. WebSearch   → "Next.js 15 <topic> official docs 2026"
@@ -37,5 +37,4 @@ Tier 1 trích fact có citation vào `TASK.md > Evidence`. Không tạo DOCS-REP
 
 ## References
 
-- `references/official-docs-index.md` — index docs URL các framework HRP dùng
-- `references/websearch-patterns.md` — pattern search hiệu quả
+- Ưu tiên official documentation, release notes và primary sources.

@@ -1,115 +1,116 @@
-# TASK: <task-slug>
+# TASK — `<task-slug>`
 
 ## 0. Control
 
 | Field | Value |
 |---|---|
 | Task slug | `<task-slug>` |
-| Work type | `<DESIGN / CODE / DOCS / DATA / INFRA>` |
-| Audit mode (Tier 3 đọc) | `<CODE_AUDIT / DESIGN_AUDIT / DOCS_AUDIT / DATA_AUDIT / INFRA_AUDIT>` — Tier 1 set rõ, suy từ Work type |
-| Spec version | `<v1.0>` |
-| Status | `<DRAFT / READY_FOR_EXECUTION / REVISION_REQUIRED / ACCEPTED / CANCELLED>` |
-| Planner | `<Tier 1 identity>` |
-| Executor | `<Tier 2 / Figma Owner / named owner>` |
-| Auditor | `<Tier 3 independent context>` |
-| Baseline | `<commit SHA, approved mockup version hoặc dated snapshot>` |
-| Modules | `<M0-M10>` |
-| ADR references | `<IDs/sections hoặc None>` |
-| Current execution round | `<1, 2, ...>` |
-| Current audit round | `<0 (chưa audit) / 1, 2, ...>` |
-| Next gate | `<verify-task → /code → /audit → /resolve → ACCEPTED>` |
-| Updated | `<YYYY-MM-DD HH:mm TZ>` |
+| Work type | `CODE | DOCS | DESIGN | INFRA | MIXED` |
+| Assurance lane | `FAST | STANDARD | CRITICAL` |
+| Audit mode | `NONE | FOCUSED | DEEP` (suy ra từ lane; FAST mặc định NONE) |
+| Spec version | `v1.0` |
+| Status | `DRAFT | READY_FOR_EXECUTION | REVISION_REQUIRED | ACCEPTED | CANCELLED` |
+| Planner | `Tier 1` |
+| Baseline | `<commit SHA>` |
+| In-scope roots | `<paths>` |
+| Forbidden paths | `<paths hoặc None>` |
+| Required gates | `<canonical commands, chỉ ghi một lần>` |
+| Current execution round | `0` |
+| Current audit round | `0` |
+| Next gate | `<FAST: /code → /resolve; STANDARD/CRITICAL: /code → /audit → /resolve>` |
+
+> Lane rule: schema/migration/RLS/auth/permission/PII/money/infra/production/shared toolchain luôn `CRITICAL`. Task lịch sử thiếu lane được hiểu là CRITICAL.
 
 ## 1. Outcome
 
-### User-visible outcome
+### 1.1 User-visible outcome
 
-<Kết quả cuối mà người dùng/stakeholder quan sát được.>
+- `<kết quả cần đạt, không mô tả cách code>`
 
-### Non-goals
+### 1.2 Non-goals
 
-- <Ngoài phạm vi cụ thể.>
+- `<những gì cố ý không làm>`
 
-## 2. Evidence và Baseline
+## 2. Evidence
 
-Chỉ ghi evidence cần để ra quyết định; dùng link/file:line thay vì chép tài liệu.
+Chỉ liệt kê bằng chứng cần để Tier 2 ra quyết định. FAST thường 1–3 dòng; không chép lại roadmap.
 
-| Evidence ID | Source | Observed fact | Planning impact |
-|---|---|---|---|
-| `EV-01` | `<file:line/tool output>` | `<fact>` | `<impact>` |
+| ID | Evidence | Why it matters |
+|---|---|---|
+| `EV-01` | `<file:line hoặc output>` | `<ý nghĩa>` |
 
-## 3. Decisions và Assumptions
+## 3. Decisions
 
-| ID | Type | Decision/Assumption | Source/Owner | Status/Expiry |
-|---|---|---|---|---|
-| `DEC-01` | `<CHOSEN / ASSUMPTION / NEED_USER_DECISION>` | `<content>` | `<source/owner>` | `<status/date>` |
+| ID | Decision | Status |
+|---|---|---|
+| `DEC-01` | `<quyết định đã chốt>` | `CHOSEN` |
+
+Không để `NEED_USER_DECISION` khi chuyển READY_FOR_EXECUTION.
 
 ## 4. Contract
 
 ### 4.1 Requirements
 
-| RQ ID | Requirement | Priority | Source | Failure behavior |
-|---|---|---|---|---|
-| `RQ-01` | `<measurable requirement>` | `<Must/Should>` | `<EV/DEC/source>` | `<expected rejection/error/state>` |
+| ID | Requirement |
+|---|---|
+| `RQ-01` | `<yêu cầu>` |
 
 ### 4.2 Scope boundaries
 
-**In scope:**
+- **In:** `<files/symbols/behavior>`
+- **Out:** `<explicit non-goals, WIP của agent khác>`
+- **Allowed task artifacts:** `docs/tasks/<task-slug>/**`
 
-- `<file/module/frame/artifact>`
+### 4.3 Domain boundaries
 
-**Out of scope:**
+Chỉ mở các mục áp dụng; mục không áp dụng ghi một dòng `N/A — <reason>`.
 
-- `<explicit exclusion>`
-
-### 4.3 Data, State, Permission và Interface Rules
-
-- **Data:** <type, precision, source of truth, consistency rule hoặc N/A>.
-- **State:** <allowed transition/invariant hoặc N/A>.
-- **Permission/data scope:** <actor/action/visibility hoặc N/A>.
-- **Interface:** <public contract, UI behavior hoặc artifact format>.
-- **Failure/idempotency/concurrency:** <rule hoặc N/A + reason>.
+- **Data/state:** `<rules hoặc N/A>`
+- **Permission/security:** `<rules hoặc N/A>`
+- **Interface/API:** `<rules hoặc N/A>`
+- **Migration/rollback:** `<rules hoặc N/A>`
 
 ## 5. Execution Plan
 
-| STEP ID | RQ | Target | Change intent/deliverable | Dependency/skill | Verify | Stop condition |
-|---|---|---|---|---|---|---|
-| `STEP-01` | `RQ-01` | `<path/symbol/frame>` | `<specific outcome, không cần full code>` | `<dependency/tool>` | `<command/check>` | `<when executor must stop>` |
+FAST nên có 1–4 STEP. STEP mô tả outcome theo thứ tự, không ép Tier 2 ghi nhật ký thao tác.
+
+| Step | Target | Intent | Verify | Stop condition |
+|---|---|---|---|---|
+| `STEP-01` | `<path/symbol>` | `<thay đổi cần đạt>` | `<E/AC hoặc command>` | `<khi nào phải trả Planner>` |
 
 ## 6. Acceptance
 
-| AC ID | RQ | Pass condition | Verification method | Required evidence | Blocking? |
-|---|---|---|---|---|---|
-| `AC-01` | `RQ-01` | `<binary/measurable condition>` | `<command/manual/visual check>` | `<output/screenshot/diff>` | `<Yes/No>` |
+### 6.1 Acceptance criteria
 
-### Traceability
+| AC | Pass condition | Verification method |
+|---|---|---|
+| `AC-01` | `<binary, measurable>` | `<command/manual method hoặc E-xx dùng chung>` |
 
-| Requirement | Execution | Acceptance |
+### 6.2 Traceability
+
+| Requirement | Step | Acceptance |
 |---|---|---|
 | `RQ-01` | `STEP-01` | `AC-01` |
 
-## 7. Risk và Rollback
+## 7. Risk
 
-| Risk ID | Risk | Trigger | Mitigation | Rollback/Recovery |
-|---|---|---|---|---|
-| `RISK-01` | `<risk>` | `<signal>` | `<preventive action>` | `<concrete rollback>` |
+| ID | Risk | Mitigation / rollback |
+|---|---|---|
+| `RISK-01` | `<risk>` | `<mitigation; FAST có thể một dòng>` |
 
 ## 8. Open Questions
 
-| ID | Question | Owner | Due | Blocks execution? |
-|---|---|---|---|---|
-| `Q-01` | `<question hoặc None>` | `<owner>` | `<date>` | `<Yes/No>` |
+- None.
 
 ## 9. Planner Resolution
 
-Tier 1 append quyết định sau audit; không sửa lịch sử finding.
+Tier 1 append sau review/audit. FAST resolve trực tiếp từ HANDOFF; STANDARD/CRITICAL resolve từ AUDIT.
 
-| Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
-|---|---|---|---|---|---|
-| `<round>` | `AUD-001` | `<ACCEPT_FIX/REJECT/DEFER/NEED_USER_DECISION>` | `<reason>` | `<None hoặc section/version>` | `<owner + condition>` |
+| Round | Decision | Reason |
+|---|---|---|
 
 ## 10. Revision Log
 
-| Spec version | Date | Change | Reason/Audit refs |
+| Spec version | Date | Change | Reason |
 |---|---|---|---|
-| `v1.0` | `<date>` | `<initial contract>` | `<request/source>` |
+| `v1.0` | `<YYYY-MM-DD>` | Initial contract | Initial |

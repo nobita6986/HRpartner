@@ -1,8 +1,8 @@
 ---
 name: debugging-protocol
-description: Use when HRP tiers reproduce or fix a bug inside the pipeline. Defines the 7-step debug flow and which tier owns reproduce/verify/retest.
+description: Use when a tier reproduces, fixes or verifies a bug. Defines the debug flow and ownership of reproduction/retest.
 version: 1.0.0
-license: HRP-Internal
+license: Internal
 ---
 
 # Debugging Protocol
@@ -25,7 +25,7 @@ license: HRP-Internal
 
 Không tạo debug report riêng. Không giữ temporary logging, commented code hoặc test bypass trong deliverable.
 
-Tool/command phải theo tech stack hiện hữu; không mặc định Python/pytest cho HRP Next.js/TypeScript.
+Tool/command phải theo manifest và tech stack hiện hữu; không mặc định một framework test.
 
 ## References
 

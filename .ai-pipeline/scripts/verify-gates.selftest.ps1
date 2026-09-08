@@ -38,10 +38,13 @@ $baseTask = @'
 |---|---|
 | Task slug | `fixture-gate-selftest` |
 | Work type | `CODE` |
+| Assurance lane | `CRITICAL` |
 | Audit mode | `CODE_AUDIT` |
 | Spec version | `v1.0` |
 | Status | `READY_FOR_EXECUTION` |
 | Baseline | `deadbeef` |
+| In-scope roots | `src/demo.ts` |
+| Required gates | `npm run test:unit` |
 | Current execution round | `1` |
 | Current audit round | `1` |
 | Next gate | `TIER_2_EXECUTION` |
@@ -119,6 +122,7 @@ $baseHandoff = @'
 |---|---|
 | Task slug | `fixture-gate-selftest` |
 | Work type | `CODE` |
+| Assurance lane | `CRITICAL` |
 | Audit mode (phải khớp TASK) | `CODE_AUDIT` |
 | Spec version | `v1.0` |
 | Execution round | `1` |
@@ -184,6 +188,8 @@ $baseAudit = @'
 |---|---|
 | Task slug | `fixture-gate-selftest` |
 | Work/Audit type | `CODE/CODE_AUDIT` |
+| Assurance lane | `CRITICAL` |
+| Audit depth | `FULL` |
 | Spec version | `v1.0` |
 | Execution round | `1` |
 | Audit round | `1` |
@@ -261,7 +267,7 @@ Không có finding.
 # ===========================================================================
 
 $stamp = (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + (Get-Random -Maximum 99999)
-$root = Join-Path $env:TEMP ("hrp-gate-selftest-" + $stamp)
+$root = Join-Path $env:TEMP ("ai-pipeline-gate-selftest-" + $stamp)
 $taskDir = Join-Path $root ("docs\tasks\" + $slug)
 $evDir = Join-Path $taskDir 'evidence'
 New-Item -ItemType Directory -Path $evDir -Force | Out-Null
@@ -281,7 +287,7 @@ export default formatVnd;
 
 @'
 {
-  "name": "hrp-gate-selftest-fixture",
+  "name": "ai-pipeline-gate-selftest-fixture",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -399,6 +405,48 @@ Add-Case -Name 'green: clean TASK'    -Gate task    -Expect PASS -Why 'contract 
 Add-Case -Name 'green: clean HANDOFF' -Gate handoff -Expect PASS -Why 'handoff hợp lệ vẫn phải xanh'
 Add-Case -Name 'green: clean AUDIT'   -Gate audit   -Expect PASS -Why 'audit có phép đo thật vẫn phải xanh'
 
+Add-Case -Name 'compat: artifact cũ thiếu Assurance lane vẫn PASS như CRITICAL' -Gate audit -Expect PASS `
+    -Why 'pipeline v3 không làm hỏng TASK/HANDOFF/AUDIT lịch sử' `
+    -Mutate { param($c)
+        $c.Task = $c.Task.Replace("| Assurance lane | ``CRITICAL`` |`n", '')
+        $c.Handoff = $c.Handoff.Replace("| Assurance lane | ``CRITICAL`` |`n", '')
+        $c.Audit = $c.Audit.Replace("| Assurance lane | ``CRITICAL`` |`n", '').Replace("| Audit depth | ``FULL`` |`n", '') }
+
+Add-Case -Name 'FAST handoff dùng READY_FOR_REVIEW và Evidence Registry' -Gate handoff -Expect PASS `
+    -Why 'task nhỏ không cần Tier 3 và một command được map nhiều AC' `
+    -Mutate { param($c)
+        $c.Task = $c.Task.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `FAST` |')
+        $c.Handoff = $c.Handoff.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `FAST` |')
+        $c.Handoff = $c.Handoff.Replace('| Status | `READY_FOR_AUDIT` |', '| Status | `READY_FOR_REVIEW` |')
+        $c.Handoff = $c.Handoff.Replace('| `1` | `v1.0` | `READY_FOR_AUDIT` |', '| `1` | `v1.0` | `READY_FOR_REVIEW` |')
+        $c.Handoff = $c.Handoff.Replace('> Handoff status: `READY_FOR_AUDIT`', '> Handoff status: `READY_FOR_REVIEW`')
+        $c.Handoff = $c.Handoff.Replace('| `AC-01` | `npm run test:unit` | `exit 0` | `1472 passed` — `evidence/unit.txt` | `None` |', '| `AC-01` | `E-01` | `1472 passed` | `evidence/unit.txt` | `None` |')
+        $c.Handoff = $c.Handoff.Replace('| `E-01` | `evidence/unit.txt` | `AC-01` |', '| `E-01` | `npm run test:unit` exit 0, 1472 passed | `AC-01` |') }
+
+Add-Case -Name 'T-08 FAST không được chạm critical root' -Gate task -Expect FAIL -Token 'T-08' `
+    -Why 'không dùng FAST để né audit schema/auth/infra' `
+    -Mutate { param($c)
+        $c.Task = $c.Task.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `FAST` |')
+        $c.Task = $c.Task.Replace('| In-scope roots | `src/demo.ts` |', '| In-scope roots | `prisma/schema.prisma` |') }
+
+Add-Case -Name 'H-10 STANDARD không được bàn giao READY_FOR_REVIEW' -Gate handoff -Expect FAIL -Token 'H-10' `
+    -Why 'chỉ FAST mới đi thẳng Tier 1' `
+    -Mutate { param($c)
+        $c.Task = $c.Task.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `STANDARD` |')
+        $c.Handoff = $c.Handoff.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `STANDARD` |')
+        $c.Handoff = $c.Handoff.Replace('| Status | `READY_FOR_AUDIT` |', '| Status | `READY_FOR_REVIEW` |')
+        $c.Handoff = $c.Handoff.Replace('| `1` | `v1.0` | `READY_FOR_AUDIT` |', '| `1` | `v1.0` | `READY_FOR_REVIEW` |')
+        $c.Handoff = $c.Handoff.Replace('> Handoff status: `READY_FOR_AUDIT`', '> Handoff status: `READY_FOR_REVIEW`') }
+
+Add-Case -Name 'DELTA cho phép AC carry forward có source và impact proof' -Gate audit -Expect PASS `
+    -Why 'round sau không audit lại phần bất biến' `
+    -Mutate { param($c)
+        $c.Audit = $c.Audit.Replace('| Audit depth | `FULL` |', '| Audit depth | `DELTA` |')
+        $c.Audit = $c.Audit.Replace('| Audit round | `1` |', '| Audit round | `2` |')
+        $c.Audit = $c.Audit.Replace('| `AC-02` | `git status --porcelain` | `PASS` | exit 0, 31 dòng, không có file ngoài phạm vi | `None` |', '| `AC-02` | Audit round 1, baseline deadbeef | `CARRIED_FORWARD` | `evidence/audit-status.txt`; `git diff --name-only deadbeef..HEAD` exit 0, 0 file liên quan | `None` |')
+        $c.Audit = $c.Audit.Replace('| `1` | `None` | `None` | `None` | `evidence/audit-unit.txt` |', "| ``1`` | ``None`` | ``None`` | ``None`` | ``evidence/audit-unit.txt`` |`n| ``2`` | ``AC-02`` | ``PASS`` | ``CARRIED_FORWARD`` | round 1, baseline deadbeef, ``evidence/audit-status.txt``; ``git diff --name-only deadbeef..HEAD`` exit 0, 0 file liên quan |")
+        $c.Audit = $c.Audit.Replace('1476 passed, 102 files | `evidence/audit-unit.txt`', '1477 passed, 102 files | `evidence/audit-unit.txt`') }
+
 # ---------------------------------------------------------------------------
 # RED - AUDIT gate
 # ---------------------------------------------------------------------------
@@ -478,7 +526,7 @@ Add-Case -Name 'S-14 credential thật nằm trong AUDIT.md' -Gate audit -Expect
     -Mutate { param($c)
         $c.Audit = $c.Audit.Replace(
             '- **Deliverables in scope:** đúng một file nguồn.',
-            '- **Deliverables in scope:** đã probe bằng postgresql://neondb_owner:npg_A1b2C3d4E5f6G7h8@ep-x.neon.tech/hrp.') }
+            '- **Deliverables in scope:** đã probe bằng postgresql://db_owner:npg_A1b2C3d4E5f6G7h8@ep-x.example.test/app.') }
 
 Add-Case -Name 'S-15 dẫn evidence file không tồn tại' -Gate audit -Expect FAIL -Token 'S-15' `
     -Why 'không có file thì không ai kiểm lại được phép đo' `
@@ -585,7 +633,7 @@ Add-Case -Name 'H-08 lane tran + VANG tep vitest.config.ts thi VAN DO (fail-clos
 
 Add-Case -Name 'H-09 credential thật nằm trong HANDOFF.md' -Gate handoff -Expect FAIL -Token 'H-09' `
     -Why 'm1-07a PLN-04: credential TEST admin/writer ghi thẳng vào HANDOFF, đóng bằng waiver' `
-    -Mutate { param($c) $c.Handoff = $c.Handoff.Replace('- **Environment/config:** None.', '- **Environment/config:** đã dùng postgresql://admin_test:Str0ngP4ssw0rd99@ep-y.neon.tech/hrp_test.') }
+    -Mutate { param($c) $c.Handoff = $c.Handoff.Replace('- **Environment/config:** None.', '- **Environment/config:** đã dùng postgresql://admin_test:Str0ngP4ssw0rd99@ep-y.example.test/app_test.') }
 
 Add-Case -Name 'H-10 thiếu dòng Handoff status cuối file' -Gate handoff -Expect FAIL -Token 'H-10' `
     -Why 'tier2.md buộc dòng cuối là Handoff status: READY_FOR_AUDIT hoặc BLOCKED' `

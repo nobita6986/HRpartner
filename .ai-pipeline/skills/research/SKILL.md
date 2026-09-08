@@ -1,7 +1,7 @@
 ---
 name: research
 description: Use when Tier 1 (Planner) needs to research external libraries, best practices, or technical solutions before writing a TASK. Enforces multi-source strategy and capped tool calls.
-license: HRP-Internal
+license: Internal
 ---
 
 # Research (Tier 1)
@@ -19,7 +19,7 @@ YAGNI · KISS · DRY. **Trung thực, thẳng thắn, ngắn gọn.**
 
 ## Phase 2: Information Gathering
 
-1. **WebSearch / WebFetch** (preferred, mặc định cho HRP):
+1. **Web search / fetch** (khi khả dụng):
    - Multiple parallel searches.
    - Include terms like "best practices", "2026", "latest", "security", "performance".
    - Official docs / GitHub / authoritative blogs first.
@@ -27,7 +27,7 @@ YAGNI · KISS · DRY. **Trung thực, thẳng thắn, ngắn gọn.**
 3. **Deep Content Analysis**: GitHub repos, official API refs.
 4. **Cross-Reference Validation**: multiple independent sources, publication date, consensus.
 
-> **Lưu ý**: HRP không dùng `gemini` bash mặc định vì thiếu CLI trong Windows env. Dùng `WebSearch`/`WebFetch` là primary.
+> Không giả định một CLI hay connector cụ thể tồn tại. Ưu tiên primary/official sources bằng công cụ khả dụng.
 
 ## Phase 3: Analysis & Synthesis
 
@@ -39,7 +39,7 @@ YAGNI · KISS · DRY. **Trung thực, thẳng thắn, ngắn gọn.**
 
 ## Phase 4: Report
 
-> HRP KHÔNG tạo report riêng; Planner extract fact cần thiết vào `TASK.md > Evidence`.
+> Không tạo report riêng nếu TASK không yêu cầu; Planner đưa fact cần thiết vào `TASK.md > Evidence`.
 
 Output structure (paste vào TASK.md Evidence):
 

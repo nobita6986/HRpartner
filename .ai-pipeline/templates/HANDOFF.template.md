@@ -1,65 +1,66 @@
-# HANDOFF: <task-slug>
+# HANDOFF — `<task-slug>`
 
 ## 0. Control
 
 | Field | Value |
 |---|---|
-| Task slug | `<task-slug>` |
-| Work type | `<from TASK>` |
-| Audit mode (phải khớp TASK) | `<CODE_AUDIT / DESIGN_AUDIT / DOCS_AUDIT / DATA_AUDIT / INFRA_AUDIT>` |
+| Task | `<task-slug>` |
 | Spec version | `<must match TASK>` |
-| Execution round | `<1, 2, ...>` |
-| Current audit round | `<0 (chưa audit) / 1, 2, ...>` |
-| Executor | `<Tier 2 / Figma Owner>` |
-| Baseline | `<same baseline + actual start state>` |
-| Status | `<IN_PROGRESS / BLOCKED / READY_FOR_AUDIT>` |
-| Started/updated | `<timestamps>` |
+| Assurance lane | `FAST | STANDARD | CRITICAL` |
+| Audit mode | `<must match TASK>` |
+| Execution round | `<N>` |
+| Baseline | `<SHA>` |
+| Status | `IN_PROGRESS | READY_FOR_REVIEW | READY_FOR_AUDIT | BLOCKED` |
 
 ## 1. Outcome Summary
 
-<Đã tạo/sửa gì và phần nào chưa hoàn thành. Không tự ghi audit verdict.>
+- **Delivered:** `<observable result>`
+- **Not delivered:** `<None hoặc phần còn lại>`
+- **Lane escalation needed:** `<No hoặc lý do>`
 
 ## 2. Execution Trace
 
-| STEP | RQ | File/artifact/symbol | Result | Deviation từ TASK |
-|---|---|---|---|---|
-| `STEP-01` | `RQ-01` | `<path/reference>` | `<DONE/BLOCKED>` | `<None hoặc explanation>` |
+Gộp STEP có cùng kết quả. Không ghi nhật ký từng thao tác.
+
+| STEP | Target / outcome | Status | Deviation |
+|---|---|---|---|
+| `STEP-01` | `<path/symbol + result>` | `DONE | BLOCKED` | `None | DEV-01` |
 
 ## 3. Acceptance Evidence
 
-**Ghi đúng lệnh chính xác đã chạy — Tier 3 sẽ chạy lại từng lệnh này.** Dòng đầu bắt buộc là `verify-task.ps1` PASS (C-09 của Tier 3).
+Dòng đầu `verify-task` bắt phải có. Mỗi AC có một hàng, nhưng được tham chiếu cùng `E-xx`; không copy lại command/output.
 
-| AC | Command/check | Exit/result | Evidence summary/link | Limitation |
-|---|---|---|---|---|
-| — | `.\.ai-pipeline\scripts\verify-task.ps1 -TaskPath .\docs\tasks\<slug>\TASK.md` | `RESULT: PASS` | `<contract hợp lệ>` | `<None>` |
-| `AC-01` | `<exact command/manual check>` | `<exit code/PASS/FAIL>` | `<output excerpt hoặc evidence/path>` | `<None/reason>` |
+| AC | Evidence ref or command | Result | Limitation |
+|---|---|---|---|
+| — | `verify-task.ps1 -TaskPath ...` | `RESULT: PASS` | `None` |
+| `AC-01` | `E-01` | `<measured result>` | `None` |
 
 ## 4. Changed Deliverables
 
-- **Source/artifact changed:** <list>.
-- **Dependency:** <None/list>.
-- **Schema/migration:** <None/list>.
-- **Environment/config:** <None/list>.
-- **Git diff/commit:** <reference hoặc Not created>.
+| File | Change | Why in scope |
+|---|---|---|
+| `<path>` | `<summary>` | `<RQ/STEP>` |
 
-## 5. Deviations, Limitations và Blockers
+## 5. Deviations
 
-| ID | Type | Evidence | Impact | Decision needed from Planner |
-|---|---|---|---|---|
-| `BLK-01` | `<Deviation/Limitation/Blocker>` | `<fact>` | `<impact>` | `<question/action>` |
+| ID | Type | Description | Decision needed |
+|---|---|---|---|
+| — | — | None | No |
+
+Nếu BLOCKED, thay hàng None bằng `BLK-xx` nêu đúng blocker và quyết định cần Tier 1/Owner.
 
 ## 6. Evidence Index
 
-Chỉ liệt kê artifact lớn; output ngắn để ngay ở §3.
+Đăng ký mỗi command một lần. Log ngắn để inline; chỉ tạo `evidence/*` cho output dài hoặc cần lưu bền.
 
-| Evidence | Path | Proves |
-|---|---|---|
-| `E-01` | `evidence/<file>` | `<AC/fact>` |
+| Evidence ID | Command / method | Result | Artifact |
+|---|---|---|---|
+| `E-01` | `<runnable command>` | `<exit + count/value>` | `<inline | evidence/file | file:line>` |
 
 ## 7. Execution Round History
 
 | Round | Spec version | Status | Summary |
 |---|---|---|---|
-| `1` | `v1.0` | `<status>` | `<summary>` |
+| `<N>` | `<vX.Y>` | `<status>` | `<one line>` |
 
-> Handoff status: `<READY_FOR_AUDIT / BLOCKED>`
+> Handoff status: `<FAST: READY_FOR_REVIEW; STANDARD/CRITICAL: READY_FOR_AUDIT; otherwise BLOCKED>`

@@ -1,8 +1,8 @@
 ---
 name: repomix-usage
-description: Use when an HRP tier needs to bundle the codebase as a single AI-friendly file. Defines when it is justified, what to exclude, and where the output must live.
+description: Use only when a tier must bundle a codebase for offline context transfer. Defines justification, exclusions and output location.
 version: 1.0.0
-license: HRP-Internal
+license: Internal
 ---
 
 # Repomix Usage

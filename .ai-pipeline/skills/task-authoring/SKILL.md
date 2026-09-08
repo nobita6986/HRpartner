@@ -2,12 +2,14 @@
 name: task-authoring
 description: Use when Tier 1 (Planner) authors a TASK.md contract. Defines level of detail, ID convention, traceability and the "ready test" that gates handoff to Tier 2.
 version: 1.0.0
-license: HRP-Internal
+license: Internal
 ---
 
 # TASK Contract Authoring
 
 TASK là contract duy nhất giữa Planner, Executor và Auditor.
+
+Mỗi TASK mới khai `Assurance lane: FAST | STANDARD | CRITICAL`. FAST phải ngắn; STANDARD đầy đủ theo changed surface; CRITICAL mới mở rộng data/state/permission/LIVE matrix. Task cũ thiếu lane mặc định CRITICAL.
 
 ## Mức chi tiết đúng
 
@@ -20,7 +22,7 @@ Mô tả outcome, rule, interface, state/data flow, boundary và cách kiểm ch
 - Acceptance: `AC-01`.
 - Finding: `AUD-001`.
 
-Mỗi RQ phải map ít nhất một STEP và AC. Step có target, intent, verify và stop condition.
+Mỗi RQ phải map ít nhất một STEP và AC. Nhiều AC được phép dùng chung một evidence; không tạo AC chỉ để kể từng thao tác.
 
 ## Khi nào dùng snippet
 
@@ -36,8 +38,8 @@ Không đưa toàn bộ implementation code vào TASK.
 
 ## Ready test
 
-Một implementation engineer hiểu codebase phải thực thi được mà không đoán business rule; một auditor phải xác minh được bằng AC độc lập.
+Một implementation engineer hiểu codebase phải thực thi được mà không đoán business rule. FAST phải cho phép Tier 1 review trực tiếp; STANDARD/CRITICAL phải audit được độc lập.
 
 ## References
 
-- `templates/TASK.template.md` — schema chuẩn HRP
+- `templates/TASK.template.md` — schema chuẩn của pipeline

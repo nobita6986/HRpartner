@@ -1,202 +1,106 @@
-# HRP Multi-AI Pipeline — 3 Tầng, 3 Artifact
+# AI Delivery Pipeline — Portable Kit
 
-## Phase 3 — Cleanup & Consolidation (16/08/2026)
+Đây là **cửa vào duy nhất** của bộ điều hành Agent. Thư mục này được thiết kế để copy nguyên khối vào root của một repository mới.
 
-Kể từ Phase 3, **chỉ cần copy `.ai-pipeline/` sang dự án mới** là đủ — toàn bộ tier prompt, skill, agent manifest và bootstrap script đã gom trong một thư mục duy nhất.
+> Không lưu password, token, connection string, PII hoặc log runtime trong `.ai-pipeline/`.
 
-- 3 file `TIER{1,2,3}_PROMPT.md` ở root đã được move và rename thành `.ai-pipeline/tier{1,2,3}.md` (lowercase).
-- Toàn bộ thư mục `.claude/` (legacy) đã được xóa sạch — 0 file tracked, nội dung đã được chuyển sang `.ai-pipeline/` từ Phase 2.
-- Wrappers (`GEMINI.md`, `CLAUDE.md`, `OPENCODE.md`, `.cursor/rules/hrp.mdc`, `.github/copilot-instructions.md`) hiện reference đủ cả `agents/*.md` lẫn `tier*.md`.
+## 1. Agent mới chỉ đọc ba thứ
 
-Cấu trúc cuối cùng:
+1. `.ai-pipeline/README.md` — bản đồ hệ thống.
+2. `.ai-pipeline/rules/00-global-rules.md` — luật chung.
+3. File đúng vai trò: `tier0.md`, `tier1.md`, `tier2.md` hoặc `tier3.md`.
+
+Sau đó Agent chỉ đọc artifact của công việc hiện tại và skill được file vai trò yêu cầu. **Không đọc toàn bộ thư viện skill.**
+
+## 2. Vị trí, quyền và sản phẩm bàn giao
+
+| Tầng | Vị trí | Quyền quyết định | Artifact sở hữu |
+|---|---|---|---|
+| Tier 0 — Owner/Chief Architect | Trên toàn bộ pipeline | Chiến lược, ưu tiên, go-live, rủi ro, quyền đặc biệt | Roadmap/quyết sách cấp dự án |
+| Tier 1 — Planner | Điều phối delivery | Scope, contract, assurance lane, nghiệm thu | `TASK.md` |
+| Tier 2 — Engineer | Thi công | Quyết định kỹ thuật trong contract | Source/test + `HANDOFF.md` |
+| Tier 3 — Auditor | Xác minh độc lập | Verdict và finding; không sửa code | `AUDIT.md` |
+
+Luồng mặc định:
+
+```text
+Tier 0 định hướng
+  → Tier 1 viết TASK
+  → Tier 2 thi công và HANDOFF
+  → Tier 3 audit khi lane yêu cầu
+  → Tier 1 resolve
+  → Tier 0 quyết định release/go-live khi cần
+```
+
+Mặc định **một worktree chỉ có một Tier 2 đang thi công**. Tier 0 chỉ mở song song khi partition file và dependency thực sự độc lập.
+
+## 3. Assurance lane
+
+| Lane | Dùng cho | Đường đi |
+|---|---|---|
+| `FAST` | Docs, copy, style hoặc local refactor nhỏ; không đổi data/security/public contract | Tier 2 → Tier 1 review |
+| `STANDARD` | Feature/fix cô lập, blast radius hữu hạn | Tier 2 → Tier 3 focused audit → Tier 1 |
+| `CRITICAL` | Schema, migration, auth/RLS, permission, PII, money, infra, production, shared config | Tier 2 → Tier 3 deep audit → Tier 1 |
+
+Task lịch sử thiếu lane được coi là `CRITICAL`. Tier 1/Owner có quyền nâng lane; không hạ lane chỉ để đi nhanh.
+
+## 4. Cấu trúc canonical
 
 ```text
 .ai-pipeline/
-├── README.md
-├── CHANGELOG.md
-├── PIPELINE-GUIDE.md        # workflow 3-tier
-├── PIPELINE-BOOTSTRAP.md    # onboard Agent mới
-├── SKILL-ECOSYSTEM.md       # skill decision matrix
-├── tier1.md                 # Tier 1 prompt (Planner)
-├── tier2.md                 # Tier 2 prompt (Engineer)
-├── tier3.md                 # Tier 3 prompt (Auditor)
-├── rules/                   # Tier 1/2/3 rules + global
-├── templates/               # TASK/HANDOFF/AUDIT/DOMAIN-KNOWLEDGE
-├── agents/                  # Cursor YAML + CROSS-COMPAT
-├── skills/                  # 23 skill folders (SKILL.md + references/)
-└── scripts/                 # init-project / verify-task / verify-pipeline / run-codegraph
+  README.md
+  PIPELINE-GUIDE.md
+  tier0.md
+  tier1.md
+  tier2.md
+  tier3.md
+  rules/
+  templates/
+  scripts/
+  skills/
 ```
 
-## Phase 2 — Skill Ecosystem & Multi-Agent Bootstrap
+Các file `tier0..3.md` là **nguồn sự thật duy nhất về vai trò**. Ba file role-specific trong `rules/` chỉ được giữ để liên kết từ task lịch sử không bị gãy.
 
-Kể từ Phase 2, `.ai-pipeline/` là **source of truth duy nhất** cho mọi CLI Coding Agent (Cursor, Antigravity, Claude Code, VSCode Copilot, OpenCode).
-
-- 23 skill folders dùng chuẩn `SKILL.md` + YAML frontmatter (`agents/*` manifest).
-- 3 agent files theo chuẩn Cursor tại `agents/{planner,engineer,auditor}.md`.
-- `init-project.ps1` regenerate wrapper cho mọi Agent từ source of truth.
+## 5. Artifact của từng task
 
 ```text
-.ai-pipeline/
-├── README.md           # file này
-├── PIPELINE-GUIDE.md   # workflow 3-tier
-├── PIPELINE-BOOTSTRAP.md  # onboard Agent mới
-├── SKILL-ECOSYSTEM.md  # skill decision matrix
-├── rules/              # Tier 1/2/3 rules + global
-├── templates/          # TASK/HANDOFF/AUDIT/DOMAIN-KNOWLEDGE
-├── agents/             # Cursor YAML + CROSS-COMPAT
-├── skills/             # 23 skill folders (SKILL.md + references/)
-└── scripts/            # init-project / verify-task / run-codegraph
-```
-
-## Nguyên tắc
-
-Một task chỉ có ba file sống:
-
-```text
-docs/tasks/<task-slug>/
+docs/tasks/<slug>/
   TASK.md
   HANDOFF.md
-  AUDIT.md
-  evidence/   # optional
+  AUDIT.md       # STANDARD/CRITICAL; FAST chỉ khi escalated
+  evidence/      # chỉ cho output lớn, LIVE transcript hoặc ảnh cần lưu
 ```
 
-| Artifact | Owner | Nội dung |
-|---|---|---|
-| `TASK.md` | Tier 1 | Outcome, evidence, decisions, contract, steps, acceptance, risk, audit resolution |
-| `HANDOFF.md` | Tier 2 hoặc Figma Owner | Những gì đã làm, diff/artifact, AC evidence, deviation, blocker |
-| `AUDIT.md` | Tier 3 | Findings, independent verification, verdict, re-audit history |
-
-Không tách context, plan, acceptance, skill routing, changelog, evidence, blocker hoặc Planner decision thành file riêng.
-
-## Vai trò
-
-- **Tier 1:** ra quyết định và sở hữu TASK; không code.
-- **Tier 2:** implementation engineer; tự chọn chi tiết cục bộ trong contract, self-check và sở hữu HANDOFF; không audit.
-- **Tier 3:** auditor read-only; sở hữu AUDIT; không fix và không quyết định thay Planner.
-- **Sếp:** điều phối, Figma Owner khi làm mockup và nghiệm thu cuối.
-
-Nếu chỉ có hai AI, dùng Planner AI cho Tier 1. Coding AI chạy Tier 2 và Tier 3 ở hai task/context tách biệt; không audit trong conversation vừa code.
-
-## Lifecycle
+Commands quy ước:
 
 ```text
-Tier 1: TASK DRAFT
-  -> resolve decisions
-  -> TASK READY_FOR_EXECUTION
-  -> Executor creates/updates HANDOFF
-  -> HANDOFF READY_FOR_AUDIT
-  -> Tier 3 appends AUDIT round
-  -> PASS: Tier 1/sếp ACCEPTED
-  -> FAIL/CONDITIONAL: Tier 1 appends Planner Resolution in TASK
-  -> Executor revision
-  -> Tier 3 re-audit
+/plan <slug>       # Tier 1
+/code <slug>       # Tier 2
+/audit <slug>      # Tier 3
+/resolve <slug>    # Tier 1
 ```
 
-Spec version chỉ tăng khi contract thay đổi. Execution round tăng khi executor làm lại. Audit round tăng mỗi lần Tier 3 hậu kiểm.
-
-## Traceability
-
-TASK bắt buộc map:
+## 6. Prompt khởi động Agent
 
 ```text
-RQ-01 -> STEP-01 -> AC-01
+Đọc .ai-pipeline/README.md, .ai-pipeline/rules/00-global-rules.md và
+.ai-pipeline/<ROLE_FILE>. Tuân thủ đúng quyền của vai trò đó. Sau đó đọc
+<WORK_ITEM> và thực hiện phần việc được giao; không tự nhận thêm vai trò.
 ```
 
-Độ chặt được kiểm soát bằng:
+Ví dụ: Tier 2 dùng `<ROLE_FILE> = tier2.md`, `<WORK_ITEM> = docs/tasks/<slug>/TASK.md`.
 
-- Baseline và spec version.
-- Requirement/state/data/permission rules rõ.
-- Scope/out-of-scope.
-- Verify + stop condition cho step.
-- AC nhị phân hoặc đo được.
-- Finding `AUD-xxx` có evidence và Planner Resolution.
+## 7. Copy sang dự án mới
 
-Không kiểm soát chất lượng bằng việc tăng số lượng tài liệu hoặc ép Planner viết full code trong plan.
-
-## Work Types
-
-| Work type | Executor | Audit focus |
-|---|---|---|
-| `DESIGN` | Figma Owner | Flow, hierarchy, states, data, accessibility, viewport |
-| `CODE` | Tier 2 | Behavior, data/security, regression, build/test/diff |
-| `DOCS/DATA/INFRA` | Owner ghi trong TASK | Acceptance/risk tương ứng |
-
-## Commands
-
-Khởi tạo thư mục task root:
+1. Copy nguyên thư mục `.ai-pipeline/` vào root repository.
+2. Không copy `.env*`, secret, evidence hay task của dự án cũ vào trong thư mục này.
+3. Bổ sung policy đặc thù dự án vào `rules/00-global-rules.md` hoặc tài liệu dự án; không nhân bản role file.
+4. Chạy:
 
 ```powershell
-.\.ai-pipeline\scripts\init-project.ps1
+pwsh .ai-pipeline/scripts/verify-pipeline.ps1
+pwsh .ai-pipeline/scripts/verify-gates.selftest.ps1
 ```
 
-Kiểm tra TASK contract:
-
-```powershell
-.\.ai-pipeline\scripts\verify-task.ps1 -TaskPath .\docs\tasks\<task-slug>\TASK.md
-```
-
-Giao Tier 2:
-
-```text
-/code <task-slug>
-```
-
-Giao Tier 3:
-
-```text
-/audit <task-slug>
-```
-
-Với Figma:
-
-```text
-/audit-design <task-slug>
-```
-
-Tier 1 xử lý audit findings:
-
-```text
-/resolve <task-slug>
-```
-
-Tạo task mới với yêu cầu inline hoặc brief file:
-
-```text
-/plan <task-slug> <yêu-cầu-hoặc-file-brief>
-```
-
-## Templates
-
-- `templates/TASK.template.md`
-- `templates/HANDOFF.template.md`
-- `templates/AUDIT.template.md`
-- `templates/DOMAIN-KNOWLEDGE.template.md` là tài liệu cấp dự án, không tạo lại theo task.
-
-## Onboard một Agent mới (Cursor / Antigravity / Claude Code / VSCode Copilot / OpenCode)
-
-```powershell
-# Tất cả (5 wrappers)
-pwsh .ai-pipeline/scripts/init-project.ps1
-
-# Một Agent cụ thể
-pwsh .ai-pipeline/scripts/init-project.ps1 -Agent "antigravity,claude-code"
-
-# Wrapper files sinh ra (đều auto-load)
-#   Cursor           → .cursor/rules/hrp.mdc
-#   Antigravity       → GEMINI.md
-#   Claude Code       → CLAUDE.md
-#   VSCode Copilot    → .github/copilot-instructions.md
-#   OpenCode          → OPENCODE.md
-```
-
-Wrapper files là derived. **Không sửa trực tiếp** — sửa `.ai-pipeline/` rồi re-run init.
-
-Xem chi tiết tại `PIPELINE-BOOTSTRAP.md`.
-
-## Safety
-
-- Không giả lập CodeGraph output khi CLI không có.
-- Không tự cài dependency hoặc tạo commit.
-- Không ghi đè thay đổi ngoài task.
-- Raw evidence chỉ tách file khi quá dài hoặc là ảnh/binary.
-- Mọi source/Figma change sau audit phải re-audit.
+Chi tiết vòng đời: [PIPELINE-GUIDE.md](PIPELINE-GUIDE.md). Bản đồ skill: [skills/README.md](skills/README.md).

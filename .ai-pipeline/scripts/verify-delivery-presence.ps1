@@ -4,12 +4,10 @@ Delivery-presence gate: every path a contract declares as delivered must exist i
 BOTH the working tree and the git index, and must be non-empty in both.
 
 .DESCRIPTION
-Why this check exists. Task hrp-v5-rf-05-tsc-program-boundary declared exactly two
-delivered files, one of them tsconfig.json. Partway through a LATER round that path
-left the working tree AND the git index at the same time. Every gate in this repo
-stayed green, because no gate had ever asked the one question that mattered: is the
-thing this contract says it delivered still there? The cost was two audit rounds and
-one blocked task, spent discovering by hand what one measurement answers in a second.
+Why this check exists. A prior delivery declared a configuration file that later
+left both the working tree and git index while all behavior gates stayed green.
+This gate asks the missing question: does every artifact the contract declares as
+delivered still exist and remain non-empty?
 
 The index half is the half that hides. A path dropped from the index but left on disk
 looks entirely normal to the eye, to every editor, and to a build; only `git ls-files`

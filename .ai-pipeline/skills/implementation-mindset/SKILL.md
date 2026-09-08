@@ -2,7 +2,7 @@
 name: implementation-mindset
 description: Use when Tier 2 (Implementation Engineer) needs to decide whether to make a judgment call locally or escalate to the Planner. Defines the boundary between "được tự quyết" và "phải hỏi Planner".
 version: 1.0.0
-license: HRP-Internal
+license: Internal
 ---
 
 # Implementation Engineer Mindset

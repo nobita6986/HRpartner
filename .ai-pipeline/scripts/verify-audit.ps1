@@ -10,12 +10,9 @@ Run by:
 Cost: a few seconds, no AI tokens.
 
 WHAT CHANGED (substance gate)
-Until now this script only checked SHAPE: sections present, one row per AC, a
-status token per C-check, at least five evidence rows. Two fabricated audits of
-`hrp-v5-go-live-15-public-contrast-aa` both returned `RESULT: PASS` exit 0 -
-recorded by Tier 1 in that TASK.md section 9.1: "that gate checks structure, not
-measurement". Every check below with an `S-` id closes a defect class that has
-already cost this project at least one round.
+An earlier version only checked SHAPE: sections, AC rows, status tokens and a
+minimum evidence count. Fabricated audits could therefore return PASS. Every
+`S-` check below closes a previously observed evidence-defect class.
 #>
 [CmdletBinding()]
 param(
@@ -119,6 +116,36 @@ try {
         Add-GateOk $ctx 'A-02' "spec version $auditSpec matches TASK."
     }
 
+    $taskLaneRaw = Get-ControlField -Text $task -FieldName 'Assurance lane'
+    $taskLane = 'CRITICAL'
+    if ($taskLaneRaw.ToUpper() -match '^(FAST|STANDARD|CRITICAL)$') { $taskLane = $Matches[1] }
+    $auditLaneRaw = Get-ControlField -Text $audit -FieldName 'Assurance lane'
+    $auditLane = ''
+    if ($auditLaneRaw.ToUpper() -match '^(STANDARD|CRITICAL)$') { $auditLane = $Matches[1] }
+    if ($auditLaneRaw -eq '') {
+        Add-GateWarn $ctx 'A-02' "AUDIT has no Assurance lane; legacy-safe default CRITICAL applies."
+        $auditLane = 'CRITICAL'
+    } elseif ($auditLane -eq '') {
+        Add-GateError $ctx 'A-02' "AUDIT Assurance lane '$auditLaneRaw' is invalid; an audit lane is STANDARD or CRITICAL."
+    } elseif ($taskLane -eq 'FAST') {
+        Add-GateWarn $ctx 'A-02' "FAST was explicitly escalated to Tier 3 audit ($auditLane)."
+    } elseif ($auditLane -ne $taskLane) {
+        Add-GateError $ctx 'A-02' "assurance lane mismatch: TASK=$taskLane vs AUDIT=$auditLane."
+    } else {
+        Add-GateOk $ctx 'A-02' "assurance lane $auditLane matches TASK."
+    }
+
+    $depthRaw = Get-ControlField -Text $audit -FieldName 'Audit depth'
+    $auditDepth = 'FULL'
+    if ($depthRaw.ToUpper() -match '^(FULL|DELTA)$') {
+        $auditDepth = $Matches[1]
+        Add-GateOk $ctx 'A-02' "audit depth: $auditDepth."
+    } elseif ($depthRaw -ne '') {
+        Add-GateError $ctx 'A-02' "Audit depth '$depthRaw' is invalid; expected FULL|DELTA."
+    } else {
+        Add-GateWarn $ctx 'A-02' "Audit depth absent; legacy default FULL applies."
+    }
+
     # -- Section bodies ------------------------------------------------------
     $sec2 = Get-MarkdownSection -Lines $auditLines -HeadingPattern '^##\s*2\.'
     $sec4 = Get-MarkdownSection -Lines $auditLines -HeadingPattern '^##\s*4\.'
@@ -154,7 +181,7 @@ try {
     # -- A-03 Every TASK AC needs a verdict row ------------------------------
     $taskACs = [regex]::Matches($task, "AC-\d{2,}") | ForEach-Object { $_.Value } | Sort-Object -Unique
     if ($taskACs.Count -eq 0) { Add-GateError $ctx 'A-03' "TASK has no AC-xx ids." }
-    $validResults = @('PASS', 'FAIL', 'PARTIAL', 'BLOCKED', 'ENV_BLOCKED', 'N/A', 'NA')
+    $validResults = @('PASS', 'FAIL', 'PARTIAL', 'BLOCKED', 'ENV_BLOCKED', 'N/A', 'NA', 'CARRIED_FORWARD')
     $missingAc = 0
     foreach ($acId in $taskACs) {
         $row = $acRows | Where-Object { (Clear-MdDecoration $_.Cells[0]) -match ('^' + $acId + '(\D|$)') } | Select-Object -First 1
@@ -169,7 +196,7 @@ try {
             if ($validResults -contains $v) { $result = $v; break }
         }
         if ($result -eq '') {
-            Add-GateError $ctx 'A-03' "$acId row carries no result token (PASS/FAIL/PARTIAL/BLOCKED/N/A): $($row.Raw)"
+            Add-GateError $ctx 'A-03' "$acId row carries no result token (PASS/FAIL/PARTIAL/BLOCKED/N/A/CARRIED_FORWARD): $($row.Raw)"
             $missingAc++
             continue
         }
@@ -196,7 +223,7 @@ try {
         # the coverage-gap cross-check (S-07) instead of being failed twice.
         $declared = ''
         if ($acStatus.ContainsKey($acId)) { $declared = $acStatus[$acId] }
-        $isUnmeasured = ($declared -eq 'BLOCKED' -or $declared -eq 'ENV_BLOCKED' -or $declared -eq 'N/A' -or $declared -eq 'NA')
+        $isUnmeasured = ($declared -eq 'BLOCKED' -or $declared -eq 'ENV_BLOCKED' -or $declared -eq 'N/A' -or $declared -eq 'NA' -or $declared -eq 'CARRIED_FORWARD')
 
         if (-not $isUnmeasured) {
             if (-not (Test-CellHasCommand $joined)) {
@@ -362,7 +389,17 @@ try {
             foreach ($r in $checkTable.Rows) { if ((Clear-MdDecoration $r.Cells[0]) -match '^C-\d{2}') { [void]$checkRows.Add($r) } }
         }
     }
-    $mandatory = @('C-01','C-02','C-03','C-04','C-05','C-06','C-07','C-08','C-09','C-10')
+    $allChecks = @('C-01','C-02','C-03','C-04','C-05','C-06','C-07','C-08','C-09','C-10')
+    $mandatory = if ([string]::IsNullOrWhiteSpace($taskLaneRaw) -or $auditLane -eq 'CRITICAL') {
+        $allChecks
+    } else {
+        @('C-07','C-09','C-10')
+    }
+    $presentChecks = @($checkRows | ForEach-Object {
+        $m = [regex]::Match((Clear-MdDecoration $_.Cells[0]), '^(C-\d{2})')
+        if ($m.Success) { $m.Groups[1].Value }
+    } | Sort-Object -Unique)
+    $checksToValidate = @($mandatory + $presentChecks | Sort-Object -Unique)
     $failedMandatory = @()
     $skippedNoReason = @()
     $skipped = @()
@@ -377,16 +414,18 @@ try {
             Add-GateError $ctx 'S-05' "the Deep Audit Checklist records a bare status for C-01..C-10 with no evidence column. tier3.md requires DONE to carry command + exit + output, and SKIP to carry a reason."
         }
     }
-    foreach ($checkId in $mandatory) {
+    foreach ($checkId in $checksToValidate) {
         $row = $checkRows | Where-Object { (Clear-MdDecoration $_.Cells[0]) -match ('^' + $checkId + '(\D|$)') } | Select-Object -First 1
         if ($null -eq $row) {
-            Add-GateError $ctx 'A-04' "mandatory check $checkId missing from the Deep Audit Checklist table."
+            if ($mandatory -contains $checkId) {
+                Add-GateError $ctx 'A-04' "mandatory check $checkId missing from the Assurance Checks table."
+            }
             continue
         }
         $status = ''
         foreach ($cell in $row.Cells) {
             $v = (Clear-MdDecoration $cell).ToUpper()
-            if ($v -match '^(DONE|SKIP|FAIL)') { $status = $v.Substring(0, 4).TrimEnd(')'); break }
+            if ($v -match '^(DONE|SKIP|FAIL|CARRIED_FORWARD)') { $status = $Matches[1]; break }
         }
         $evidence = ''
         if ($checkEvidenceCol -ge 0 -and $row.Cells.Count -gt $checkEvidenceCol) {
@@ -419,8 +458,16 @@ try {
                     Add-GateError $ctx 'S-11' "$checkId used a bare 'npx vitest run' and vitest.config.ts at the repo root does not pin the DB variable - use the canonical lane or lock that variable."
                 }
             }
+            '^CARRIED_FORWARD' {
+                $reason = Clear-MdDecoration $evidence
+                if ($auditDepth -ne 'DELTA') {
+                    Add-GateError $ctx 'A-04' "$checkId is CARRIED_FORWARD but Audit depth is $auditDepth; carry-forward is only valid in DELTA."
+                } elseif ($reason -notmatch '(?i)round\s*\d+' -or $reason -notmatch '(?i)(baseline|commit|sha|evidence|artifact)') {
+                    Add-GateError $ctx 'S-05' "$checkId CARRIED_FORWARD must cite a source round and source baseline/commit/evidence."
+                }
+            }
             default {
-                Add-GateError $ctx 'A-04' "mandatory check $checkId has no DONE|SKIP|FAIL status."
+                Add-GateError $ctx 'A-04' "check $checkId has no DONE|SKIP|FAIL|CARRIED_FORWARD status."
             }
         }
     }
@@ -445,7 +492,7 @@ try {
         }
         if ($verdict -eq 'PASS') {
             $nonPass = @()
-            foreach ($k in $acStatus.Keys) { if ($acStatus[$k] -ne 'PASS' -and $acStatus[$k] -ne 'N/A' -and $acStatus[$k] -ne 'NA') { $nonPass += "$k=$($acStatus[$k])" } }
+            foreach ($k in $acStatus.Keys) { if ($acStatus[$k] -ne 'PASS' -and $acStatus[$k] -ne 'N/A' -and $acStatus[$k] -ne 'NA' -and $acStatus[$k] -ne 'CARRIED_FORWARD') { $nonPass += "$k=$($acStatus[$k])" } }
             if ($nonPass.Count -gt 0) {
                 Add-GateError $ctx 'A-05' "verdict PASS while AC rows are not all PASS: $($nonPass -join ', ')."
             }
@@ -487,7 +534,7 @@ try {
         }
     }
 
-    # -- A-06 Independent Evidence needs at least 5 real rows ----------------
+    # -- A-06 Independent Evidence is proportional to lane/depth -------------
     $sec4Tables = Get-MarkdownTables -Text $sec4
     $sec4Table = $null
     foreach ($t in $sec4Tables) { if ($t.Rows.Count -gt 0) { $sec4Table = $t; break } }
@@ -497,7 +544,10 @@ try {
         $sec4PathCol = Get-ColumnIndex -Header $sec4Table.Header -Pattern '(?i)evidence|path|artifact|đường dẫn'
         foreach ($row in $sec4Table.Rows) { if ($row.Cells.Count -ge 3) { [void]$sec4Rows.Add($row) } }
     }
-    if ($sec4Rows.Count -lt 5) {
+    $minimumEvidence = 5
+    if ($auditDepth -eq 'DELTA') { $minimumEvidence = 2 }
+    elseif ($auditLane -eq 'STANDARD') { $minimumEvidence = 3 }
+    if ($sec4Rows.Count -lt $minimumEvidence) {
         # go-live-15 wrote section 4 as a fenced transcript instead of a table.
         # That is a format deviation, not an absence of evidence: accept it when
         # the block really contains commands with their output.
@@ -511,13 +561,13 @@ try {
                 if ((Test-CellHasResult $bl) -or (Test-CellHasNumber $bl)) { $blockResults++ }
             }
         }
-        if ($blockCmds -ge 3 -and $blockResults -ge 3) {
+        if ($blockCmds -ge $minimumEvidence -and $blockResults -ge $minimumEvidence) {
             Add-GateWarn $ctx 'A-06' "section 4 is a fenced transcript ($blockCmds command line(s), $blockResults output line(s)) instead of the template table. Substance accepted; convert to the table so each row can be re-run."
         } else {
-            Add-GateError $ctx 'A-06' "section 4 carries no independent evidence: $($sec4Rows.Count) table row(s), $blockCmds command line(s) in code blocks. The template requires at least 5 rows of command + exit + summary + path."
+            Add-GateError $ctx 'A-06' "section 4 carries insufficient independent evidence for $auditLane/${auditDepth}: $($sec4Rows.Count) table row(s), $blockCmds command line(s) in code blocks; minimum is $minimumEvidence."
         }
     } else {
-        Add-GateOk $ctx 'A-06' "section 4 has $($sec4Rows.Count) evidence rows."
+        Add-GateOk $ctx 'A-06' "section 4 has $($sec4Rows.Count) evidence rows (minimum $minimumEvidence for $auditLane/$auditDepth)."
     }
     $sec4Bad = 0
     foreach ($row in $sec4Rows) {
@@ -537,7 +587,7 @@ try {
             }
         }
     }
-    if ($sec4Bad -eq 0 -and $sec4Rows.Count -ge 5) { Add-GateOk $ctx 'S-02' "section 4 rows all carry command + result." }
+    if ($sec4Bad -eq 0 -and $sec4Rows.Count -ge $minimumEvidence) { Add-GateOk $ctx 'S-02' "section 4 rows all carry command + result." }
 
     # -- S-09 Section 4 must not be byte-identical to the previous round -----
     # go-live-15 audit round 2: section 4 was byte-identical to round 1, so no
@@ -601,6 +651,29 @@ try {
         if ($currentRound -gt 1 -and (Get-TableRows -Text $sec7).Count -eq 0) {
             Add-GateError $ctx 'S-13' "audit round $currentRound has an empty section 7 Re-audit Trace."
         }
+    }
+
+    # -- S-20 DELTA carry-forward must be explicit and impact-backed ---------
+    $carriedAcs = @($acStatus.Keys | Where-Object { $acStatus[$_] -eq 'CARRIED_FORWARD' })
+    if ($carriedAcs.Count -gt 0 -and $auditDepth -ne 'DELTA') {
+        Add-GateError $ctx 'S-20' "AC marked CARRIED_FORWARD in a $auditDepth audit: $($carriedAcs -join ', ')."
+    }
+    foreach ($acId in $carriedAcs) {
+        $traceRow = Get-TableRows -Text $sec7 | Where-Object { ($_.Cells -join ' ') -match [regex]::Escape($acId) } | Select-Object -First 1
+        if ($null -eq $traceRow) {
+            Add-GateError $ctx 'S-20' "$acId is CARRIED_FORWARD but has no row in section 7 Re-audit Trace."
+            continue
+        }
+        $traceText = Clear-MdDecoration ($traceRow.Cells -join ' ')
+        $hasSource = ($traceText -match '(?i)round\s*\d+' -and $traceText -match '(?i)(baseline|commit|sha)')
+        $hasEvidence = ($traceText -match '(?i)(evidence|artifact|\.txt|\.log|\.md|\.json)')
+        $hasImpact = ((Test-CellHasCommand $traceText) -and ((Test-CellHasResult $traceText) -or (Test-CellHasNumber $traceText)))
+        if (-not ($hasSource -and $hasEvidence -and $hasImpact)) {
+            Add-GateError $ctx 'S-20' "$acId carry-forward trace must name source round + baseline/commit + evidence + an impact command/result."
+        }
+    }
+    if ($carriedAcs.Count -gt 0 -and $ctx.Errors.Count -eq 0) {
+        Add-GateOk $ctx 'S-20' "$($carriedAcs.Count) carried-forward AC have source and impact trace."
     }
 
     # -- S-14 Secret scan ----------------------------------------------------

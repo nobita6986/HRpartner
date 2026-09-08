@@ -1,14 +1,14 @@
 ---
 name: frontend-design
 description: Use when Tier 2 (Engineer) creates a UI artifact (page, component, mockup) AND the TASK has Work type = DESIGN or UI-heavy CODE. Enforces intentional aesthetic direction and avoids generic AI-slop aesthetics.
-license: HRP-Internal
+license: Internal
 ---
 
 # Frontend Design (Anti AI-Slop)
 
 Tạo frontend production-grade với aesthetic direction rõ ràng. Tránh generic "AI slop" aesthetics.
 
-> **Scope HRP**: chỉ áp dụng cho TASK `Work type = DESIGN` hoặc UI-heavy CODE. Backend-only task → skip.
+> Chỉ áp dụng cho TASK `Work type = DESIGN` hoặc UI-heavy CODE. Backend-only task → skip.
 
 ## When to Use
 
@@ -54,5 +54,4 @@ Khi Tier 3 reject vì aesthetic chưa đạt:
 
 ## References
 
-- `references/hrp-visual-style.md` — visual style mà HRP đã chốt ở phase hiện tại
-- `references/anti-slop-checklist.md` — 12 điểm check trước khi claim DESIGN PASS
+- Design tokens, brand guide và visual references phải do TASK hoặc tài liệu dự án dẫn trực tiếp.

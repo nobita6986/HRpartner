@@ -1,13 +1,13 @@
 ---
 name: python-project
-description: Use when HRP works on a Python project OR Python sub-module (scripts, jobs, datapipe). HRP chính là Next.js/TypeScript nên skill này chỉ áp dụng cho các sub-tool Python (vd. seed scripts, MCP tools).
+description: Use when the repository or an in-scope submodule is genuinely Python. Select tools from the repository configuration.
 version: 1.0.0
-license: HRP-Internal
+license: Internal
 ---
 
 # Python Project Protocol (sub-tool)
 
-> **Lưu ý**: HRP chính là Next.js + TypeScript. Skill này chỉ áp dụng cho sub-tool Python (seed scripts, MCP tools, datapipe).
+> Chỉ áp dụng khi Python là stack hoặc submodule thật trong scope; không dùng Python để né toolchain chính của repository.
 
 ## 1. Môi trường & Convention (Python 3.10+)
 

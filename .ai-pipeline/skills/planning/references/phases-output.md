@@ -1,4 +1,4 @@
-# Phases & Output chuẩn HRP
+# Phases & Output chuẩn
 
 ## Phase output structure trong `TASK.md`
 

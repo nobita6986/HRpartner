@@ -1,8 +1,8 @@
 ---
 name: reviewcode
-description: Use when HRP needs a quick read-only code review outside the formal AUDIT round (e.g. Tier 1 sanity-check during planning). This is NOT a replacement for Tier 3 audit.
+description: Use for quick read-only code review outside a formal AUDIT round. This is not a replacement for required Tier 3 audit.
 version: 1.0.0
-license: HRP-Internal
+license: Internal
 ---
 
 # Codebase Survey / Review

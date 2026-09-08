@@ -1,6 +1,6 @@
 # Quy tắc Chung Toàn Hệ Thống
 
-Áp dụng cho Tầng 1, 2 và 3.
+Áp dụng cho Tier 0, 1, 2 và 3. Policy đặc thù của dự án được bổ sung tại cuối file này hoặc đặt trong tài liệu dự án mà TASK dẫn trực tiếp.
 
 ## 1. Ngôn ngữ
 
@@ -49,7 +49,16 @@ Không tự cài tool/dependency chỉ để thỏa checklist nếu Planner chư
 
 ## 7. Phân tách trách nhiệm
 
+- Tầng 0 không sa vào code/TASK/audit thường nhật; chỉ can thiệp trực tiếp khi đã tuyên bố ngoại lệ và ownership rõ.
 - Tầng 1 không sửa source.
 - Tầng 2 không phát hành audit verdict.
 - Tầng 3 không sửa source và không ra quyết định thay Planner.
-- Chỉ sếp hoặc Tầng 1 theo ủy quyền mới nghiệm thu cuối.
+- Tầng 1 nghiệm thu task; Tier 0/Owner quyết định release, go-live và chấp nhận rủi ro cấp dự án.
+
+## 8. Bảo đảm theo rủi ro
+
+- `FAST`, `STANDARD`, `CRITICAL` là một trục điều phối chung cho contract, execution và audit.
+- Task cũ không khai lane mặc định `CRITICAL`; không tự động hạ chuẩn lịch sử.
+- Có thể nâng lane khi phát hiện blast radius mới; chỉ Tier 1/Owner được đổi lane.
+- Không chạy lại phép đo còn hiệu lực chỉ để đủ checklist. Re-audit được carry forward khi có source evidence và impact proof.
+- Một worktree chỉ có một Tier 2 execution stream tại một thời điểm, trừ khi Owner phê duyệt partition độc lập rõ ràng.

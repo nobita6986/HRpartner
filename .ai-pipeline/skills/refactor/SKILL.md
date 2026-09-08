@@ -1,8 +1,8 @@
 ---
 name: refactor
-description: Use when HRP tiers plan or execute a refactor inside the 3-tier pipeline. Refactor preserves behavior — only contract changes go back to Planner.
+description: Use when tiers plan, execute or audit a behavior-preserving refactor. Contract changes return to Planner.
 version: 1.0.0
-license: HRP-Internal
+license: Internal
 ---
 
 # Refactor Workflow
