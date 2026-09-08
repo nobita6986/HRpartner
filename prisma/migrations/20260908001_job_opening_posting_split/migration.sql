@@ -62,6 +62,7 @@ CREATE UNIQUE INDEX "job_postings_job_opening_id_key" ON "job_postings"("job_ope
 CREATE UNIQUE INDEX "job_postings_slug_key" ON "job_postings"("slug");
 CREATE INDEX "job_openings_staffing_order_id_idx" ON "job_openings"("staffing_order_id");
 CREATE INDEX "job_openings_staffing_order_slot_id_idx" ON "job_openings"("staffing_order_slot_id");
+CREATE INDEX "job_postings_job_opening_id_status_idx" ON "job_postings"("job_opening_id", "status");
 CREATE INDEX "staffing_order_slots_job_opening_id_idx" ON "staffing_order_slots"("job_opening_id");
 
 -- ═══════════════════════════════════════════════════════════════════════════

@@ -7,16 +7,28 @@
 | Task slug | hrp-v6-p1-job-opening-posting-split |
 | Work/Audit type | SCHEMA / SCHEMA_AUDIT |
 | Spec version | v1.2 |
-| Execution round | 2 (the HANDOFF claim; TASK control still says 1) |
-| Audit round | 2 |
-| Round opened by | Planner Resolution AUD-001..AUD-006 and HANDOFF round 2 |
-| Round closes when | Tier 1 resolves every open finding and a new READY_FOR_AUDIT handoff is independently verified |
-| Auditor/context | Tier 3 independent re-audit; no implementation, contract, or HANDOFF changes made |
-| Baseline/diff/artifacts | baseline 475880934b7dbe88cf7ce1d44909bc9da6ea668d; R2 commits 1fd502b..481dbe4; current index initially empty |
-| Independence | Confirmed: R2 commands rerun independently; HANDOFF measurements were not reused as verdict evidence |
-| Audit time | 2026-09-08 11:12 Asia/Bangkok |
+| Execution round | 2 (HANDOFF; TASK control still says 1) |
+| Audit round | 3 |
+| Round opened by | User-requested narrow R3 over only the R2 non-passing gates |
+| Round closes when | Tier 1 resolves every still-open finding and Tier 2 submits Git evidence matching the actual delivery |
+| Auditor/context | Tier 3 narrow independent re-audit; no implementation, contract, HANDOFF, gate, or foreign-file changes made |
+| Baseline/diff/artifacts | schema baseline 475880934b7dbe88cf7ce1d44909bc9da6ea668d; prior R2 head 481dbe4; R3 head 45d609f; index initially empty |
+| Independence | Confirmed: only R2 red surfaces were freshly measured; R2 green results were carried forward, not rerun |
+| Audit time | 2026-09-08 12:41 Asia/Bangkok |
 
 ## 1. Findings
+
+### R3 narrow disposition (only R2 red findings)
+
+| Finding | R2 status | R3 status | Fresh R3 evidence |
+|---|---|---|---|
+| AUD-001 | OPEN | RESOLVED | Absolute-path `verify-handoff.ps1` exits 0: all 8 sections, 10 AC rows, 6 STEP rows, READY_FOR_AUDIT status and round-2 history pass. |
+| AUD-002 | OPEN | OPEN | Before Tier-3 writing, index paths=0 and staged schema diff lines=0 while HANDOFF still claims 2 status lines and 7 staged schema-diff lines; effective 481dbe4..45d609f range has 12 paths, 5 outside §4.1. |
+| AUD-004 | OPEN | OPEN | Offline `npx prisma migrate diff` still generates 6 indexes; authored SQL now has the slug unique index but still omits `job_postings_job_opening_id_idx` (generated=1, authored=0). |
+| AUD-005 | OPEN | RESOLVED | Anchored SQL scan: valid plain FORCE statements=2 and invalid FORCE-FOR-ROLE statements=0; policies=8 and grants=2. |
+| AUD-006 | OPEN | RESOLVED | TASK Outcome backfill promises=0; the contract consistently declares backfill outside this task. |
+
+**R3 scope rule:** Per the user's explicit instruction, Tier 3 did not rerun R2-green broad checks. AUD-003 remains RESOLVED; the R2 PASS/DONE/valid-SKIP results are carried forward unless a red-surface delta directly invalidates them.
 
 ### R2 disposition
 
@@ -39,6 +51,12 @@
 - **Impact:** Tier 3 không có artifact bàn giao hợp lệ, nhất quán để nghiệm thu theo readiness gate. Kết quả độc lập bên dưới chỉ mô tả repository hiện tại, không biến nó thành delivery đủ điều kiện.
 - **Decision needed from Planner:** Chuẩn hoá trạng thái HANDOFF về từ vựng hợp lệ, đồng bộ dòng đóng, và yêu cầu Tier 2 bàn giao lại đầy đủ theo contract hiện hành.
 
+### R3 status update — AUD-001
+
+- **R3 status:** RESOLVED.
+- **Fresh closure evidence:** `powershell -NoProfile -File verify-handoff.ps1` with absolute TASK and RepoRoot exits 0, RESULT PASS. The gate recognizes all 8 required sections, 10 AC evidence rows, 6 STEP rows, READY_FOR_AUDIT in both control and closing line, and execution-round-2 history.
+- **Boundary:** This closes HANDOFF structural readiness only; it does not validate stale Git measurements inside AC-04/AC-10.
+
 ### AUD-002 — Delivery claim không khớp Git artifact hiện hành
 
 - **Severity:** P1
@@ -46,7 +64,8 @@
 - **RQ/AC:** RQ-03, RQ-04, RQ-06 / AC-04, AC-06, AC-10
 - **Evidence R1:** `git diff --cached --name-only` trả 0 path; schema là thay đổi unstaged và migration là untracked.
 - **Evidence R2:** index vẫn có 0 path trước khi Tier 3 viết artifact, trong khi HANDOFF khai sáu entry staged. R2 đã được một stream khác commit/push qua `1fd502b` và `481dbe4`; effective range `1fd502b^..481dbe4` có 9 path, gồm 1 path ngoài §4.1 là `docs/PLANNER_HANDOVER.md`.
-- **Impact:** AC-04/AC-10 yêu cầu đo staged delivery nhưng staged delivery được mô tả không tồn tại; commit còn trộn Tier-1, Tier-2 và artifact Tier-3 lịch sử, nên không thể chứng nhận Git hygiene/scope theo contract.
+- **Evidence R3:** Trước khi Tier 3 viết R3, `git diff --cached --name-only`=0 path và staged schema diff=0 dòng, nhưng HANDOFF AC-04 vẫn khai 7 dòng và AC-10 khai 2 dòng. Effective range `481dbe4..45d609f` có 12 path, 7 thuộc §4.1 và 5 ngoài scope: bốn gate script cùng `.gitignore`. Các path ngoài scope đến từ commit pipeline đồng thời `45d609f`, không phải thay đổi Tier 3, nhưng artifact giao hiện hành vẫn không khớp claim staged.
+- **Impact:** AC-04/AC-10 yêu cầu đo staged delivery nhưng staged delivery được mô tả không tồn tại; phạm vi commit/range còn trộn artifact task với thay đổi pipeline độc lập, nên không thể chứng nhận Git hygiene/scope theo contract.
 - **Decision needed from Planner:** Yêu cầu một HANDOFF mới mô tả đúng delivery artifact đã commit, giải quyết path ngoài scope và round/status; không yêu cầu Tier 3 sửa hoặc stage implementation.
 
 ### AUD-003 — JobOpening slot/cardinality contract đã được hiện thực ở R2
@@ -66,7 +85,8 @@
 - **RQ/AC:** RQ-02, RQ-04 / AC-03, AC-06
 - **Evidence R1:** generated diff yêu cầu unique index cho `job_opening_id`, authored SQL có 0.
 - **Evidence R2:** unique index gốc đã được thêm=1. Tuy nhiên encoding-safe `npx prisma migrate diff` exit 0 sinh 6 indexes, gồm `job_postings_job_opening_id_idx`=1 và `job_postings_slug_key`=1; authored SQL có 0 cho cả hai.
-- **Impact:** DB áp authored migration không enforce slug uniqueness mà Prisma schema/Client khai báo, và không khớp explicit normal index. Schema validation không phát hiện drift giữa SQL viết tay và datamodel.
+- **Evidence R3:** Encoding-safe offline `npx prisma migrate diff` từ baseline vẫn exit 0 và sinh 6 index. Authored SQL đã thêm `job_postings_slug_key`=1 nhưng `job_postings_job_opening_id_idx` vẫn=0 trong khi generated DDL=1.
+- **Impact:** DB áp authored migration vẫn thiếu explicit normal index mà Prisma datamodel khai báo. Schema validation không phát hiện drift giữa SQL viết tay và datamodel.
 - **Decision needed from Planner:** Yêu cầu Tier 2 tạo migration mới/điều chỉnh chưa-deploy để khớp toàn bộ generated DDL, rồi chứng minh lại bằng diff offline.
 
 ### AUD-005 — RLS đã được thêm nhưng FORCE syntax không hợp lệ
@@ -79,6 +99,12 @@
 - **Impact:** migration lỗi cú pháp tại câu FORCE đầu tiên và không deploy được nguyên vẹn; policy/grant phía sau không thể được coi là posture đã giao thành công.
 - **Decision needed from Planner:** Yêu cầu Tier 2 dùng valid PostgreSQL FORCE syntax và tái kiểm SQL trên môi trường disposable/validator được phép; không chạy trên production.
 
+### R3 status update — AUD-005
+
+- **R3 status:** RESOLVED.
+- **Fresh closure evidence:** Anchored authored-SQL scan returns valid plain `FORCE ROW LEVEL SECURITY;`=2 and invalid `FORCE ROW LEVEL SECURITY FOR ROLE`=0; policies=8 and grants=2. No database connection or migration execution occurred.
+- **Boundary:** C-06 remains FAIL because the separate AUD-004 datamodel-index drift is still present.
+
 ### AUD-006 — Contract và HANDOFF không thống nhất phạm vi backfill
 
 - **Severity:** P2
@@ -89,74 +115,78 @@
 - **Impact:** Không thể đưa kết luận duy nhất về việc thiếu backfill là defect hay đúng scope; executor và auditor có thể cho verdict trái nhau trên cùng artifact.
 - **Decision needed from Planner:** Chốt một nghĩa duy nhất trong spec kế tiếp: bắt buộc trong task này hoặc tách hẳn sang task riêng.
 
+### R3 status update — AUD-006
+
+- **R3 status:** RESOLVED.
+- **Fresh closure evidence:** PowerShell section scan đo TASK Outcome BACKFILL promise=0. TASK hiện tuyên bố backfill ngoài phạm vi ở contract/risk/open-question/resolution text; không còn lời hứa Outcome đối nghịch.
+- **Decision needed from Planner:** None cho finding này; giữ backfill ở slice riêng.
+
 ## 2. Acceptance Verification
 
 | AC | Independent method | Result | Evidence | Finding |
 |---|---|---|---|---|
-| AC-01 | PowerShell model-scoped regex + `npx prisma validate`: models=2, opening slot-id=1, singular posting=1; validate exit 0 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
-| AC-02 | PowerShell extracts only `JobOpening`: default DRAFT=1, FILLED=1, CANCELLED=1 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
-| AC-03 | PowerShell extracts `JobPosting`: `jobOpeningId @unique`=1 and singular relation=1; validate exit 0 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
-| AC-04 | `git diff --cached -- prisma/schema.prisma` has 0 lines, so required staged proof is absent; semantic baseline comparison separately finds 0 removed and 4 added slot lines | BLOCKED | evidence/audit-r2-independent-checks-20260908.txt | AUD-002 |
-| AC-05 | PowerShell extracts `StaffingOrder`: `jobOpenings JobOpening[]` count=1 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
-| AC-06 | `npx prisma migrate diff` exit 0: generated indexes=6 and DROP=0; authored SQL omits 2 required indexes and has 2 invalid FORCE-FOR-ROLE statements | FAIL | evidence/audit-r2-independent-checks-20260908.txt | AUD-004, AUD-005, AUD-006 |
-| AC-07 | `npx prisma generate` exit 0; `npx tsc --noEmit` exit 0 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
-| AC-08 | `npx prisma validate` exit 0 with current named relations | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
-| AC-09 | `npm run test:unit -- public-card-truth --reporter=dot` exit 0; 1 file and 23 tests pass | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
-| AC-10 | `git diff --cached --name-only` returns 0 paths; effective R2 range has 9 paths with 1 outside §4.1 | FAIL | evidence/audit-r2-independent-checks-20260908.txt | AUD-002 |
+| AC-01 | R2 carry-forward: model-scoped PowerShell regex + `npx prisma validate` measured models=2 and validate exit 0; not rerun under narrow-R3 instruction | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
+| AC-02 | R2 carry-forward: model-scoped PowerShell regex measured `JobOpening` DRAFT/FILLED/CANCELLED counts=1/1/1; not rerun in R3 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
+| AC-03 | R2 carry-forward: model-scoped PowerShell regex measured `JobPosting.jobOpeningId @unique`=1 and singular relation=1; not rerun in R3 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
+| AC-04 | R3 `git diff --cached -- prisma/schema.prisma` returns 0 lines, while HANDOFF claims 7; required staged proof is absent | BLOCKED | evidence/audit-r3-narrow-checks-20260908.txt | AUD-002 |
+| AC-05 | R2 carry-forward: model-scoped PowerShell regex measured `StaffingOrder.jobOpenings` count=1; not rerun in R3 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
+| AC-06 | R3 offline `npx prisma migrate diff` exit 0 generates 6 indexes and 0 DROP; authored SQL still omits 1 required normal index, although FORCE syntax is now valid | FAIL | evidence/audit-r3-narrow-checks-20260908.txt | AUD-004 |
+| AC-07 | R2 carry-forward: `npx prisma generate` and `npx tsc --noEmit` exited 0/0; not rerun in R3 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
+| AC-08 | R2 carry-forward: `npx prisma validate` exited 0; not rerun in R3 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
+| AC-09 | R2 carry-forward: `npm run test:unit -- public-card-truth --reporter=dot` exited 0 with 23 tests passed; not rerun in R3 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
+| AC-10 | R3 `git diff --cached --name-only`=0 while HANDOFF claims 2 status lines; effective 481dbe4..45d609f range has 12 paths with 5 outside §4.1 | FAIL | evidence/audit-r3-narrow-checks-20260908.txt | AUD-002 |
 
 ### Mandatory Checks (Deep Audit — C-01..C-10)
 
 | Check | Status | Evidence (command + exit + output) |
 |---|---|---|
-| C-01 | DONE | `npm run test:unit -- --reporter=dot` exit 0; 113 files and 1740 tests pass |
-| C-02 | DONE | `npm run build` exit 0; compile succeeds and static generation reaches 29/29 |
-| C-03 | SKIP | `git diff --name-only 1fd502b^..481dbe4 -- app src` returns 0 paths; this schema task changes no route handler |
-| C-04 | DONE | `npx prisma validate` exit 0; model-scoped script measures both models=1 and required relation fields=1 each |
-| C-05 | SKIP | `git diff --name-only 1fd502b^..481dbe4 -- app src` returns 0 POST/PATCH source paths; no new write route exists |
-| C-06 | FAIL | `npx prisma migrate diff` exit 0 generates 6 indexes; authored SQL has only 4 and invalid FORCE-FOR-ROLE count=2 |
-| C-07 | FAIL | `git diff --cached --name-only` returns 0; `git diff --name-only 1fd502b^..481dbe4` returns 9 paths with 1 outside scope |
-| C-08 | FAIL | `git grep -l -E JobOpening... -- **/*.test.ts` returns 0 direct test files; green broad tests do not detect SQL drift/syntax defects |
-| C-09 | DONE | `powershell -NoProfile -File verify-task.ps1` exit 0; RESULT DRAFT-VALID with 2 warnings |
-| C-10 | FAIL | `git diff --name-only 1fd502b^..481dbe4` measures 9 effective R2 paths, including `docs/PLANNER_HANDOVER.md` outside §4.1 |
+| C-01 | DONE | R2 carry-forward: `npm run test:unit -- --reporter=dot` exit 0, 113 files and 1740 tests; intentionally not rerun in narrow R3 |
+| C-02 | DONE | R2 carry-forward: `npm run build` exit 0 and 29/29 pages; intentionally not rerun in narrow R3 |
+| C-03 | SKIP | R2 valid SKIP carried forward: no route handler was in the task delta; R3 red-surface delta introduced no task route file |
+| C-04 | DONE | R2 carry-forward: `npx prisma validate` exit 0 and model measurements passed; R3 migration scan did not change schema |
+| C-05 | SKIP | R2 valid SKIP carried forward: no new POST/PATCH route exists in the task delta |
+| C-06 | FAIL | R3 offline `npx prisma migrate diff` exit 0 generates 6 indexes; authored SQL has 5 of them, with valid FORCE=2 and invalid FORCE-FOR-ROLE=0 |
+| C-07 | FAIL | R3 `git diff --cached --name-only`=0; effective `git diff --name-only 481dbe4..45d609f` has 12 paths with 5 outside §4.1 |
+| C-08 | FAIL | R3 tracked test/spec content scan finds 0 direct files covering `JobOpening`, `JobPosting`, their tables, or migration id; generic permission-hygiene test covers another SQL defect class |
+| C-09 | DONE | R2 carry-forward: `verify-task.ps1` exit 0, RESULT DRAFT-VALID; intentionally not rerun because C-09 already passed and contract validity was outside R3 red scope |
+| C-10 | FAIL | R3 `git diff --name-only 481dbe4..45d609f` returns 12 effective paths, including 5 concurrent pipeline paths outside §4.1 |
 
 ## 3. Scope và Impact
 
-- **Deliverables in scope:** Current implementation is recoverable in commits `1fd502b` and `481dbe4`; current index had 0 paths before Tier-3 writing, contrary to HANDOFF's staged-delivery claim.
-- **Out-of-scope changes:** Effective R2 range contains 1 out-of-contract path, `docs/PLANNER_HANDOVER.md`. `baseline-head.prisma`, go-live-07 evidence, and nine old executor evidence files are pre-existing/foreign and were not modified or staged by Tier 3.
-- **Blast radius/callers/affected flows:** `git diff --name-only 1fd502b^..481dbe4 -- app src` returns 0; no query/route consumes the models yet. Generated Prisma Client and future migration execution are affected.
-- **Data/security/migration/operations:** Offline audit only; 0 DB connections and 0 migration executions. Authored SQL is not deployable due to AUD-005 and would leave datamodel drift due to AUD-004.
+- **Deliverables in scope:** R3 rechecked the committed task delta through `45d609f`; the implementation index had 0 paths before Tier-3 writing, contrary to HANDOFF AC-04/AC-10 staged measurements.
+- **Out-of-scope changes:** Effective `481dbe4..45d609f` range has 5 concurrent pipeline paths outside §4.1: four `.ai-pipeline/scripts/` files and `.gitignore`. They belong to the independent pipeline commit at HEAD and were not modified by Tier 3. `baseline-head.prisma`, go-live-07 evidence, and old executor evidence remain foreign/untracked and untouched.
+- **Blast radius/callers/affected flows:** R3 did not reopen R2-green caller/route checks. No task route or service delta was introduced; future migration execution remains the affected surface.
+- **Data/security/migration/operations:** Offline audit only; 0 DB connections and 0 migration executions. FORCE-RLS grammar is corrected, but authored SQL still drifts from the Prisma datamodel by 1 normal index.
 
 ## 4. Independent Evidence
 
 | Check/command | Exit/result | Summary | Evidence path/limitation |
 |---|---|---|---|
-| `npm run test:unit -- --reporter=dot` | exit 0 | 113 files, 1740 tests pass | evidence/audit-r2-independent-checks-20260908.txt |
-| `npm run build` | exit 0 | compile succeeds; static generation 29/29 | evidence/audit-r2-independent-checks-20260908.txt |
-| `npx prisma validate`; generate; `npx tsc --noEmit` | exits 0,0,0 | schema, generated client, and types are valid | evidence/audit-r2-independent-checks-20260908.txt |
-| `npm run test:unit -- public-card-truth --reporter=dot` | exit 0 | 1 file, 23 tests pass | evidence/audit-r2-independent-checks-20260908.txt |
-| `npx prisma migrate diff` from 4758809 | exit 0 | 2 tables, 1 added column, 0 DROP, 6 generated indexes | evidence/audit-r2-independent-checks-20260908.txt |
-| PowerShell anchored authored-SQL scan | result 2/1/0 | 2 tables, 1 added column, 0 DROP; two datamodel indexes missing | evidence/audit-r2-independent-checks-20260908.txt |
-| PowerShell RLS syntax scan | result 0/2/8/2 | plain FORCE=0, invalid FOR-ROLE=2, policies=8, grants=2 | evidence/audit-r2-independent-checks-20260908.txt |
-| `git diff --cached --name-only`; effective-range scope script | result 0/9/1 | index=0 paths; R2 range=9, outside scope=1 | evidence/audit-r2-independent-checks-20260908.txt |
-| `git grep -l -E JobOpening -- **/*.test.ts` | result 0 | no test/spec file directly covers new models/migration | evidence/audit-r2-independent-checks-20260908.txt |
-| `powershell -NoProfile -File verify-task.ps1` | exit 0 | RESULT DRAFT-VALID, 2 warnings | evidence/audit-r2-independent-checks-20260908.txt |
-| `powershell -NoProfile -File verify-handoff.ps1` | exit 2 | RESULT FAIL, 11 errors, 1 warning | evidence/audit-r2-independent-checks-20260908.txt |
-| `powershell -NoProfile -File verify-pipeline.ps1` | exit 0 | RESULT PASS | evidence/audit-r2-independent-checks-20260908.txt |
-| `powershell -NoProfile -File verify-audit.ps1` | exit 0 | RESULT PASS; 10 AC rows and 13 evidence rows accepted | evidence/audit-r2-verify-audit-20260908.txt |
+| `powershell -NoProfile -File verify-handoff.ps1` with absolute paths | exit 0 | RESULT PASS; 8 sections, 10 AC rows, 6 STEP rows and round 2 accepted | evidence/audit-r3-narrow-checks-20260908.txt |
+| `npx prisma migrate diff --from-schema-datamodel <UTF-8 baseline> --to-schema-datamodel prisma/schema.prisma --script` | exit 0 | 2 tables, 1 added column, 0 DROP and 6 generated indexes | evidence/audit-r3-narrow-checks-20260908.txt |
+| PowerShell anchored authored-SQL index scan | result 1/0/1 | opening unique=1, opening normal=0, slug unique=1; one generated index remains missing | evidence/audit-r3-narrow-checks-20260908.txt |
+| PowerShell anchored RLS grammar scan | result 2/0/8/2 | valid plain FORCE=2, invalid FOR-ROLE=0, policies=8, grants=2 | evidence/audit-r3-narrow-checks-20260908.txt |
+| PowerShell TASK section scan | result 0/4 | Outcome backfill promises=0; four explicit outside-scope statements | evidence/audit-r3-narrow-checks-20260908.txt |
+| `git diff --cached --name-only`; `git diff --name-only 481dbe4..45d609f` | result 0/12/5 | index=0 paths; effective range=12, outside §4.1=5 | evidence/audit-r3-narrow-checks-20260908.txt |
+| PowerShell tracked test/spec content scan | result 0 | no direct test file covers the two models/tables or this migration id | evidence/audit-r3-narrow-checks-20260908.txt |
+| PowerShell `Get-FileHash -Algorithm SHA1` on five gate scripts | exit 0 | fresh R3 gate fingerprints captured before verdict evidence | evidence/audit-r3-narrow-checks-20260908.txt |
+| R2 `npm run test:unit`; build; Prisma/static checks | carry-forward only | R2 green results retained and intentionally not rerun under the narrow-R3 instruction | evidence/audit-r2-independent-checks-20260908.txt |
+| `powershell -NoProfile -File verify-audit.ps1` with absolute TASK/AUDIT/HANDOFF/RepoRoot paths | exit 0, RESULT PASS | R3 structural/substance gate passes; this does not override the independent FAIL verdict | evidence/audit-r3-verify-audit-20260908.txt |
 
 ## 5. Coverage Gaps
 
-- AC-04 remains BLOCKED because the contract requires staged-diff evidence while the implementation index has 0 paths; Tier 3 does not stage implementation.
-- No live/disposable database execution was performed because the task forbids DB migration operations; RLS deployability is established by PostgreSQL grammar and repository canonical syntax, not a runtime mutation.
-- Direct tests for the two new models/migration number 0; broad unit/build success does not detect the two omitted indexes or invalid FORCE syntax.
-- Backfill has no determinate verdict because the current TASK simultaneously includes and excludes it; AUD-006 remains open.
-- HANDOFF readiness fails, so the round verdict is BLOCKED even independently of the remaining migration defects.
+- AC-04 remains BLOCKED because the contract requires staged schema evidence while the implementation index had 0 paths before Tier-3 R3 writing; Tier 3 does not stage implementation.
+- Authored SQL still omits 1 of the 6 indexes generated from the Prisma datamodel, so AC-06/C-06 remain red despite corrected FORCE-RLS grammar.
+- Direct tests for the two new models/tables or migration id remain 0; the generic migration permission-hygiene test protects a different SQL defect class.
+- AC-10/C-07/C-10 remain red because HANDOFF's staged measurements do not exist and the effective R3 range contains 5 concurrent pipeline paths outside §4.1.
+- Broad unit/build/schema/public-fence checks were not rerun by explicit narrow-R3 instruction; their R2 green results are carried forward.
+- No live/disposable database execution was performed; all R3 migration checks were offline and no production connection was opened.
 
 ## 6. Verdict và Planner Questions
 
-- **Verdict:** BLOCKED
-- **Reason:** HANDOFF R2 is not READY_FOR_AUDIT and its gate reports 11 errors; Git delivery claims are stale. Independently, authored migration omits 2 datamodel indexes and contains 2 invalid PostgreSQL FORCE-RLS statements.
-- **Planner decisions required:** AUD-001, AUD-002, AUD-004, AUD-005, AUD-006. AUD-003 is RESOLVED.
+- **Verdict:** FAIL
+- **Reason:** HANDOFF readiness, FORCE-RLS grammar, and backfill scope are now resolved. However, required AC-06 still fails because authored SQL omits 1 generated datamodel index; AC-10 and mandatory Git-scope checks remain FAIL because HANDOFF staged claims do not match an empty implementation index and the effective range has 5 paths outside §4.1. C-08 still has 0 direct tests for this schema/migration.
+- **Planner decisions required:** AUD-002 and AUD-004. AUD-001, AUD-003, AUD-005, and AUD-006 are RESOLVED.
 
 ## 7. Re-audit Trace
 
@@ -169,5 +199,11 @@
 | 2 | AUD-004 | OPEN | OPEN | generated indexes=6; authored SQL omits two required `job_postings` indexes |
 | 2 | AUD-005 | OPEN | OPEN | policies=8 and grants=2, but valid plain FORCE=0 and invalid FOR-ROLE=2 |
 | 2 | AUD-006 | OPEN | OPEN | one backfill promise and one explicit out-of-scope statement remain in TASK |
+| 3 | AUD-001 | OPEN | RESOLVED | absolute-path `verify-handoff.ps1` exit 0; 8 sections, 10 AC rows, 6 STEP rows, READY_FOR_AUDIT and round 2 accepted |
+| 3 | AUD-002 | OPEN | OPEN | staged paths=0 and staged schema lines=0 while HANDOFF claims 2/7; effective range has 12 paths and 5 outside §4.1 |
+| 3 | AUD-003 | RESOLVED | RESOLVED | carried forward without rerun per narrow-R3 scope; no relevant schema delta |
+| 3 | AUD-004 | OPEN | OPEN | generated indexes=6; authored SQL now has slug unique but still omits 1 normal opening index |
+| 3 | AUD-005 | OPEN | RESOLVED | valid plain FORCE=2, invalid FOR-ROLE=0, policies=8, grants=2 |
+| 3 | AUD-006 | OPEN | RESOLVED | Outcome backfill promises=0; contract consistently places backfill outside this task |
 
 > Đã bàn giao AUDIT.md cho Tier 1; chờ Planner Resolution trong TASK.md.

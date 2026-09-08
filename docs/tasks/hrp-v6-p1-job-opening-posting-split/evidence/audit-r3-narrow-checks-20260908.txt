@@ -1,0 +1,46 @@
+=== Tier 3 narrow re-audit — R3 — 2026-09-08 ===
+
+Scope rule:
+- Rechecked only R2 non-passing findings/gates: AUD-001, AUD-002, AUD-004, AUD-005, AUD-006; AC-04/06/10; C-06/07/08/10.
+- Carried forward R2 PASS/RESOLVED/DONE/SKIP results without rerunning broad unit, build, Prisma validate/generate, typecheck, public-card fence, route, or contract-validity lanes.
+
+Boundary and gate fingerprints at 2026-09-08 12:41:13 +07:00:
+- Branch: main.
+- HEAD = origin/main = 45d609f4b5dab580faf5307890257d6dffccc301.
+- Index before Tier-3 R3 writing = 0 paths.
+- Gate SHA-1: gate-lib=a11e357064ca326d290df6eff8d7a69d2e916c0b; verify-task=8d7d2e99d37b1e5b0505d843d41aa96d2314c332; verify-handoff=3eefdbaf52477e780f0d9d52ea54e9844b97564d; verify-audit=67ca9bb09fdea4d2b04dd49ac9b38ad468f2dc33; verify-pipeline=83488c8bf728cd56a91746e2c9e80874f3cb4e67.
+
+AUD-001 / HANDOFF readiness:
+- powershell -NoProfile -File verify-handoff.ps1 with absolute TASK and RepoRoot => exit 0, RESULT PASS.
+- H-01..H-15 applicable checks are green; HANDOFF status and closing line are READY_FOR_AUDIT; all 8 sections, 10 AC rows, 6 STEP rows and round 2 history exist.
+- AUD-001 is RESOLVED.
+
+AUD-002 / AC-04 / AC-10 / C-07 / C-10:
+- HANDOFF still reports AC-04 as `git diff --cached -- prisma/schema.prisma` = 7 lines and AC-10 as `git status --short` = 2 lines.
+- Independent current measurements before Tier-3 writing: staged paths=0; staged schema diff lines=0.
+- Effective delta from prior R2 head 481dbe4 to current HEAD has 12 paths: 7 task-allowed and 5 outside TASK section 4.1.
+- Outside paths: .ai-pipeline/scripts/gate-lib.ps1, verify-audit.ps1, verify-handoff.ps1, verify-task.ps1, and .gitignore.
+- HEAD itself is an independent pipeline commit with those 5 paths; they are concurrent/foreign and were not modified by Tier 3.
+- Delivery claims therefore still do not match current Git artifacts; AUD-002 remains OPEN, AC-04 remains BLOCKED, AC-10/C-07/C-10 remain FAIL.
+
+AUD-004 / AC-06 / C-06 migration-datamodel check:
+- Encoding-safe offline `npx prisma migrate diff` from baseline 4758809 => exit 0; 2 CREATE TABLE, 1 ADD COLUMN, 0 anchored DROP statements, 6 generated indexes.
+- Generated DDL includes job_postings_job_opening_id_idx=1 and job_postings_slug_key=1.
+- Authored SQL has job_postings_job_opening_id_key=1, job_postings_slug_key=1, but job_postings_job_opening_id_idx=0.
+- AUD-004 remains OPEN: one generated datamodel index is still omitted.
+
+AUD-005 / AC-06 / C-06 RLS syntax:
+- Anchored authored-SQL scan => valid plain FORCE ROW LEVEL SECURITY=2; invalid FORCE ... FOR ROLE=0; CREATE POLICY=8; GRANT=2.
+- AUD-005 is RESOLVED. No database connection or migration execution was used.
+
+AUD-006 / contract consistency:
+- TASK Outcome section has BACKFILL promise count=0.
+- TASK has 4 explicit backfill-out-of-scope statements across contract/risk/open-question/resolution text.
+- AUD-006 is RESOLVED: the contract now has one meaning (backfill outside this task).
+
+C-08 direct coverage:
+- Tracked test/spec content scan for JobOpening, JobPosting, job_openings, job_postings, or migration id 20260908001_job_opening_posting_split => 0 direct test files.
+- The generic prisma/migrations-permission-hygiene.static.test.ts exists but checks WITH SET FALSE / REVOKE membership hygiene, not this migration's indexes or FORCE-RLS grammar.
+- C-08 remains FAIL; broad R2 green tests are not rerun and do not cover the still-missing normal index.
+
+No production DB connection, migration execution, migrate/seed operation, implementation/contract/HANDOFF edit, commit, push, deploy, restore, clean, unstage, deletion, or foreign-file modification occurred.
