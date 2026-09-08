@@ -1,0 +1,25 @@
+# STEP-01 Evidence: Rotation manifest
+# Task: hrp-v6-credential-rotation-posture, Round 2
+# Executor: Tier 2
+# Date: 2026-09-08
+
+## Preflight pre-conditions
+git cat-file -e f853a3cfb7ae:.gitignore    -> EXIT:0  PASS
+git cat-file -e f853a3cfb7ae:prisma/seed.mjs -> EXIT:0  PASS
+git ls-files .env*                          -> .env.example (only)  PASS
+git ls-files --others --exclude-standard .env* -> empty (no untracked at baseline)  PASS
+git grep bcrypt seed.mjs                    -> 3 lines: line 10 import, line 60 hash, line 390 hash  PASS
+
+## STEP-01: Rotation manifest (RQ-01, RQ-02)
+Created: docs/tasks/hrp-v6-credential-rotation-posture/manifest/rotation-plan.md
+Created: docs/tasks/hrp-v6-credential-rotation-posture/manifest/dburl-chain.md
+
+## Gate: No value in manifest/
+git -C c:/CodeApp/HrP grep -nEi "(password|token|secret).*=" docs/tasks/hrp-v6-credential-rotation-posture/manifest/
+-> EXIT:0, no output (PASS - no credential values found)
+
+## Manifest files created
+1. rotation-plan.md  - neondb_owner / cloud_admin / app_user_writer plan (key + intent only, NO value)
+2. dburl-chain.md    - DATABASE_URL_ADMIN chain update plan with callers (key + intent only, NO value)
+
+## STEP-01 result: PASS

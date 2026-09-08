@@ -1,0 +1,19 @@
+# STEP-07 Evidence: Neon Branch Classification
+# Task: hrp-v6-credential-rotation-posture, Round 2
+# Executor: Tier 2
+# Date: 2026-09-08
+
+## RQ-08: Neon branch classification
+
+### Branch inventory
+| Branch | Neon ID | Classification | Reason |
+|--------|---------|---------------|--------|
+| pre-mp2-remediation-2026-08-28 | (unknown) | DELETE | Emergency RLS fix, superseded by hrp_mp2_test |
+| hrp_mp2_test | br-misty-cell-az3nx5l3 | KEEP | ONLY branch with full RLS test matrix |
+| main | (prod) | KEEP + ROTATE | Production branch, rotate credentials |
+
+### DEC-07 compliance
+- hrp_mp2_test NOT deleted — KEEP confirmed
+- pre-mp2-remediation-2026-08-28 classified as DELETE
+
+### Result: PASS

@@ -1,0 +1,39 @@
+# STEP-08 Evidence: Handoff verification
+# Task: hrp-v6-credential-rotation-posture, Round 2
+# Executor: Tier 2
+# Date: 2026-09-08
+
+## RQ-09: HANDOFF verification
+
+### verify-task.ps1
+powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v6-credential-rotation-posture/TASK.md -RepoRoot c:/CodeApp/HrP
+-> EXIT:0, RESULT: PASS
+
+### verify-handoff.ps1
+powershell -NoProfile -File .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-v6-credential-rotation-posture/TASK.md -RepoRoot c:/CodeApp/HrP
+-> EXIT:0, RESULT: PASS WITH WARNINGS
+-> 1 warning: H-04 the verify-task.ps1 row is at position 10 (template puts it first)
+-> All other gates: OK
+-> H-10 status BLOCKED consistent between section 0 and closing line
+
+### Staged files
+git diff --cached --name-only
+-> docs/tasks/hrp-v6-credential-rotation-posture/HANDOFF.md
+-> (TASK.md NOT staged per instruction)
+
+### HANDOFF structure (9 sections - v2 template)
+0. Control
+1. Outcome Summary
+2. Execution Trace
+3. Acceptance Evidence
+4. Changed Deliverables
+5. Deviations
+6. Evidence Index
+7. Execution Round History
+8. Limitations
+9. Open Questions
+
+### Handoff status
+> Handoff status: BLOCKED
+
+### Result: PASS with warnings

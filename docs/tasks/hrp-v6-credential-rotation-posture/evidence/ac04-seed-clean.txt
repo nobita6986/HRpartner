@@ -1,0 +1,30 @@
+# STEP-04 Evidence: Seed verify
+# Task: hrp-v6-credential-rotation-posture, Round 2
+# Executor: Tier 2
+# Date: 2026-09-08
+
+## RQ-05: prisma/seed.mjs literal password check
+
+### Baseline seed.mjs (f853a3cfb7ae)
+git show f853a3cfb7ae:prisma/seed.mjs
+
+### bcrypt/hashSync occurrences (3 lines):
+  Line 10: import bcrypt from 'bcryptjs';
+  Line 60: const passwordHash = await bcrypt.hash(password, 10);
+  Line 390: const passwordHash = await bcrypt.hash(demoPassword, 10);
+
+### Literal password value check
+- Password VALUE pattern: 12+ char strings in quotes (not key names like ADMIN_PASSWORD)
+- bcrypt.hash context: lines within 3 lines of bcrypt.hash call
+- Result: 0 matches in bcrypt/hash context
+- All passwords use process.env[passwordEnv] or process.env.PORTAL_DEMO_PASSWORD
+
+### Conclusion
+seed.mjs is CLEAN from go-live-21 v1.5
+- No literal password strings in bcrypt/hash context
+- All passwords read from env variables
+- Result: PASS — no cleanup needed
+
+### Evidence script
+node docs/tasks/hrp-v6-credential-rotation-posture/evidence/ac04-seed-check.mjs
+-> EXIT:0, PASS

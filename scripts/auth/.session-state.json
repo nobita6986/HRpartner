@@ -1,0 +1,10 @@
+{
+  "state": "pending",
+  "created_at": "2026-09-08T02:21:15.368Z",
+  "expires_at": "2026-09-08T10:21:15.369Z",
+  "roles": {
+    "hr_positive": "missing",
+    "neg_role": "missing"
+  },
+  "note": "Token values are read from .env.runtime at bootstrap time only. State file contains no secrets. [DRY-RUN]"
+}

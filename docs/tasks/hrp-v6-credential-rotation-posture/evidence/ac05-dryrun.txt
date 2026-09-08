@@ -1,0 +1,27 @@
+# STEP-05 Evidence: Rotation dry-run
+# Task: hrp-v6-credential-rotation-posture, Round 2
+# Executor: Tier 2
+# Date: 2026-09-08
+
+## RQ-06: rotation-dryrun.mjs
+
+### Script created
+scripts/auth/rotation-dryrun.mjs
+- Validates URL pattern: postgres://[REDACTED]@[REDACTED]/[REDACTED]
+- Does NOT actually connect to DB
+- Exits 0 with "OK" when pattern is valid
+- No real credential values in source
+
+### Execution result
+node scripts/auth/rotation-dryrun.mjs
+-> EXIT:0, "OK" (no real credentials, no DB connection)
+
+### Gate: grep for real DB URLs
+git -C c:/CodeApp/HrP grep -nE "['\"]postgres://[^@'\"]+@[^/'\"]+/['\"]" scripts/auth/
+-> No output (no real postgres:// URLs found)
+
+### Pattern validation
+The script validates that all postgres:// URLs in scripts/auth/ match the redacted pattern.
+Example URLs used in docs (dburl-chain.md) are for documentation only, not in script source.
+
+### Result: PASS

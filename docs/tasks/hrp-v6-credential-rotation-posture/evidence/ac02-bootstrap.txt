@@ -1,0 +1,31 @@
+# STEP-02 Evidence: Session bootstrap
+# Task: hrp-v6-credential-rotation-posture, Round 2
+# Executor: Tier 2
+# Date: 2026-09-08
+
+## RQ-03: Session bootstrap
+
+### Script created
+scripts/auth/session-bootstrap.mjs
+- CLI bootstrap with state: pending / active / revoked
+- Reads HRP_HR_BEARER + HRP_NEG_BEARER from .env.runtime
+- Session auto-expires after 8 hours
+- No token values in source or output
+
+### Dry-run result
+node scripts/auth/session-bootstrap.mjs --dry-run
+-> EXIT:0
+-> State: pending (dry-run)
+-> Created: 2026-09-08T02:10:58.462Z
+-> Expires: 2026-09-08T10:10:58.463Z
+-> Token metadata: [REDACTED — never printed]
+-> OK
+
+### Gate: grep for token/cookie/password values
+git -C c:/CodeApp/HrP grep -nEi "(token|cookie|password).*=" scripts/auth/
+-> EXIT:1, no output (PASS — no token/cookie/password values found)
+
+### README created
+scripts/auth/README.md — security rules + usage instructions
+
+### Result: PASS

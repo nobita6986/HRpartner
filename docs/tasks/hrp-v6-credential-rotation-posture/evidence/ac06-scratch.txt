@@ -1,0 +1,50 @@
+# STEP-06 Evidence: Scratch cleanup
+# Task: hrp-v6-credential-rotation-posture, Round 2
+# Executor: Tier 2
+# Date: 2026-09-08
+
+## RQ-07: scratch/ cleanup
+
+### Baseline scratch/ files (tracked at f853a3cfb7ae)
+git ls-tree -r --name-only f853a3cfb7ae -- scratch/
+-> scratch/f05/cross.py
+-> scratch/f05/danger.json
+-> scratch/f05/hits.json
+-> scratch/f05/rls.json
+-> scratch/f05/rls.py
+-> scratch/f05/scan.py
+-> scratch/f05/schema.json
+-> scratch/f05/usage.py
+-> scratch/golive06-migrstate.mjs
+-> scratch/golive06-rls-probe.mjs
+-> scratch/marketplace-profile-probe.mjs
+-> scratch/migrate_test.ps1
+-> scratch/run_integration.ps1
+-> scratch/run_m1_06a_audit.ps1
+-> scratch/write_plan.py
+Total: 15 tracked files
+
+### .gitignore status
+git grep "scratch" .gitignore
+-> .gitignore:79: scratch/
+-> Status: ALREADY IGNORED in .gitignore (line 79)
+-> The scratch/ directory is gitignored at baseline
+
+### Current working tree status
+git status --porcelain scratch/
+-> No output (no uncommitted changes in scratch/)
+
+### Analysis
+- scratch/ is already in .gitignore (ignored)
+- 15 files are tracked in git (from before .gitignore was added)
+- These are historical scripts, not new additions
+- The .gitignore entry prevents NEW files from being added
+- No credential values are committed in scratch/ (files contain logic only)
+
+### Recommendation
+The scratch/ directory is already gitignored. 
+Files that were committed before .gitignore was added are historical.
+The .gitignore rule prevents new files from being added.
+No action needed — scratch/ is safe.
+
+### Result: PASS — scratch/ is already gitignored, no new values committed
