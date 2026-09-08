@@ -57,6 +57,7 @@ docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/      staged (A)
 | 1 | Tier 2 | 2026-09-08 | READY_FOR_TIER3_AUDIT |
 | 1 | Tier 1 (AUD-001) | 2026-09-08 | TASK.md sections 3-10 fixed → v1.1 |
 | 2 | Tier 2 + Tier 1 | 2026-09-08 | RESOLVING_R2 — AUD-002..AUD-006 resolved |
+| 2 | Tier 1 (build fix) | 2026-09-08 11:04 | Fix ambiguous relation giữa `JobOpening.staffingOrderSlot` và `slots` đều trỏ về `StaffingOrderSlot`. Thêm `@relation("OpeningSlotNeo")`, `@relation("OpeningSlots")`, `@relation("OpeningOnOrder")` cho back-refs. Schema valid, fence 23/23 PASS. |
 
 ---
 

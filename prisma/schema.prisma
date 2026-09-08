@@ -390,7 +390,7 @@ model StaffingOrder {
 
   project     Project             @relation(fields: [projectId], references: [id])
   slots       StaffingOrderSlot[]
-  jobOpenings JobOpening[]
+  jobOpenings JobOpening[]        @relation("OpeningOnOrder")
   assignments ProjectAssignment[]
 
   @@index([projectId, status])
@@ -414,7 +414,8 @@ model StaffingOrderSlot {
   createdAt      DateTime @default(now()) @map("created_at")
 
   staffingOrder StaffingOrder @relation(fields: [staffingOrderId], references: [id], onDelete: Cascade)
-  jobOpening   JobOpening?  @relation(fields: [jobOpeningId], references: [id])
+  jobOpening   JobOpening?  @relation("OpeningSlots", fields: [jobOpeningId], references: [id])
+  neoJobOpenings JobOpening[] @relation("OpeningSlotNeo")
   submissions   CandidateSubmission[] // MP-2 RQ-01: applications linked to this slot
   assignments   ProjectAssignment[]   // MP-3C RQ-01: placements filling this slot
 
@@ -439,9 +440,9 @@ model JobOpening {
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
 
-  staffingOrder      StaffingOrder      @relation(fields: [staffingOrderId], references: [id])
-  staffingOrderSlot  StaffingOrderSlot? @relation(fields: [staffingOrderSlotId], references: [id])
-  slots              StaffingOrderSlot[]
+  staffingOrder      StaffingOrder      @relation("OpeningOnOrder", fields: [staffingOrderId], references: [id])
+  staffingOrderSlot  StaffingOrderSlot? @relation("OpeningSlotNeo", fields: [staffingOrderSlotId], references: [id])
+  slots              StaffingOrderSlot[] @relation("OpeningSlots")
   posting            JobPosting?        @relation("OpeningPosting") // V6-DEC-011: tối đa 1 posting PUBLISHED cùng lúc
 
   @@index([staffingOrderId])
