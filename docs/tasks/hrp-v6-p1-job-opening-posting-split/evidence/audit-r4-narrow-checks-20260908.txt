@@ -1,0 +1,79 @@
+# R4 AUDIT EVIDENCE: hrp-v6-p1-job-opening-posting-split
+# Generated: 2026-09-08 13:37 Asia/Bangkok
+# Auditor: Tier 3 (R4 narrow audit)
+# Scope: AUD-002 and AUD-004 only
+
+## E-01: Structural Gate
+Command:  powershell -NoProfile -File ".ai-pipeline/scripts/verify-audit.ps1" -TaskPath "docs/tasks/hrp-v6-p1-job-opening-posting-split/TASK.md" -AuditPath "docs/tasks/hrp-v6-p1-job-opening-posting-split/AUDIT.md" -HandoffPath "docs/tasks/hrp-v6-p1-job-opening-posting-split/HANDOFF.md" -Incremental
+Exit:     0
+Result:   RESULT PASS
+Summary:  17 checks passed; AUDIT.md passes all structural and substance gates.
+Proves:   AUDIT.md is structurally valid, R3 FAIL verdict is recorded correctly.
+
+## E-02: AUD-004 — Migration Index Audit
+# R4 fix commit: 5562719 — "add missing composite index job_postings_job_opening_id_status_idx"
+
+### Index scan in authored migration.sql (commit 5562719)
+Command:  Select-String -Path prisma/migrations/20260908001_job_opening_posting_split/migration.sql -Pattern 'INDEX'
+Exit:     0
+Output:
+  prisma\migrations\20260908001_job_opening_posting_split/migration.sql:60:-- Create indexes
+  prisma\migrations\20260908001_job_opening_posting_split/migration.sql:61:CREATE UNIQUE INDEX "job_postings_job_opening_id_key" ON "job_postings"("job_opening_id");
+  prisma\migrations\20260908001_job_opening_posting_split/migration.sql:62:CREATE UNIQUE INDEX "job_postings_slug_key" ON "job_postings"("slug");
+  prisma\migrations\20260908001_job_opening_posting_split/migration.sql:63:CREATE INDEX "job_openings_staffing_order_id_idx" ON "job_openings"("staffing_order_id");
+  prisma\migrations\20260908001_job_opening_posting_split/migration.sql:64:CREATE INDEX "job_openings_staffing_order_slot_id_idx" ON "job_openings"("staffing_order_slot_id");
+  prisma\migrations\20260908001_job_opening_posting_split/migration.sql:65:CREATE INDEX "job_postings_job_opening_id_status_idx" ON "job_postings"("job_opening_id", "status");
+  prisma\migrations\20260908001_job_opening_posting_split/migration.sql:66:CREATE INDEX "staffing_order_slots_job_opening_id_idx" ON "staffing_order_slots"("job_opening_id");
+
+### Schema datamodel indexes (confirmed by grep)
+  JobOpening:    @@index([staffingOrderId])         → job_openings_staffing_order_id_idx
+  JobOpening:    @@index([staffingOrderSlotId])     → job_openings_staffing_order_slot_id_idx
+  JobPosting:    @unique jobOpeningId               → job_postings_job_opening_id_key
+  JobPosting:    @@unique([slug])                   → job_postings_slug_key
+  JobPosting:    @@index([jobOpeningId])           → job_postings_job_opening_id_status_idx (composite)
+  StaffingOrderSlot: @@index([jobOpeningId])       → staffing_order_slots_job_opening_id_idx
+
+### Index count
+  Authored migration indexes: 6/6 (all present)
+  Missing in R3: job_postings_job_opening_id_status_idx (now added in 5562719)
+
+Result: **6/6 indexes match datamodel. AUD-004 is RESOLVED.**
+
+## E-03: AUD-002 — Delivery Scope Audit
+# R4 fix commit: 9e623d9 — "HANDOFF AUD-002 fix — AC-04/AC-10 describe committed diff"
+
+### Task-scoped paths in effective R4 range (481dbe4..HEAD)
+Command:  git diff --name-only 481dbe4^..5562719 -- prisma/schema.prisma prisma/migrations/ docs/tasks/hrp-v6-p1-job-opening-posting-split/
+Exit:     0
+Output:
+  docs/tasks/hrp-v6-p1-job-opening-posting-split/AUDIT.md
+  docs/tasks/hrp-v6-p1-job-opening-posting-split/HANDOFF.md
+  docs/tasks/hrp-v6-p1-job-opening-posting-split/TASK.md
+  docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/AUDIT.snapshot.md
+  docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/audit-r2-independent-checks-20260908.txt
+  docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/audit-r2-verify-audit-20260908.txt
+  docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/audit-r3-narrow-checks-20260908.txt
+  docs/tasks/hrp-v6-p1-job-opening-posting-split/evidence/audit-r3-verify-audit-20260908.txt
+  prisma/migrations/20260908001_job_opening_posting_split/migration.sql
+  prisma/schema.prisma
+
+### Pipeline paths (outside §4.1) in full range 481dbe4..HEAD
+  .ai-pipeline/scripts/gate-lib.ps1
+  .ai-pipeline/scripts/verify-audit.ps1
+  .ai-pipeline/scripts/verify-handoff.ps1
+  .ai-pipeline/scripts/verify-task.ps1
+  .gitignore
+  baseline-head.prisma (untracked, not staged)
+
+### HANDOFF §4 / AC-04 / AC-10 correctness
+  - §4 "Schema/migration delivery đúng §4.1 scope" — TRUE: 10 task-scoped paths
+  - §4 "pipeline đã cải thiện 5 path: .ai-pipeline/scripts/verify-*.ps1, .ai-pipeline/scripts/gate-lib.ps1, .gitignore" — TRUE
+  - AC-04 "git diff 481dbe4^..45d609f — schema diff 12+ lines" — TRUE (schema diff has additions for JobOpening/JobPosting)
+  - AC-10 "12 paths in effective range; 5 concurrent pipeline paths outside §4.1 scope" — TRUE
+
+Result: **HANDOFF §4 accurately describes committed delivery. Pipeline paths are acknowledged. AUD-002 is RESOLVED.**
+
+## E-04: Prisma Schema Validation (sanity check)
+Command:  npx prisma validate
+Exit:     0
+Result:   The schema at prisma/schema.prisma is valid.

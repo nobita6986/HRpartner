@@ -8,7 +8,7 @@
 | Work/Audit type | SCHEMA / SCHEMA_AUDIT |
 | Spec version | v1.2 |
 | Execution round | 2 (HANDOFF; TASK control still says 1) |
-| Audit round | 3 |
+| Audit round | 4 |
 | Round opened by | User-requested narrow R3 over only the R2 non-passing gates |
 | Round closes when | Tier 1 resolves every still-open finding and Tier 2 submits Git evidence matching the actual delivery |
 | Auditor/context | Tier 3 narrow independent re-audit; no implementation, contract, HANDOFF, gate, or foreign-file changes made |
@@ -128,13 +128,13 @@
 | AC-01 | R2 carry-forward: model-scoped PowerShell regex + `npx prisma validate` measured models=2 and validate exit 0; not rerun under narrow-R3 instruction | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
 | AC-02 | R2 carry-forward: model-scoped PowerShell regex measured `JobOpening` DRAFT/FILLED/CANCELLED counts=1/1/1; not rerun in R3 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
 | AC-03 | R2 carry-forward: model-scoped PowerShell regex measured `JobPosting.jobOpeningId @unique`=1 and singular relation=1; not rerun in R3 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
-| AC-04 | R3 `git diff --cached -- prisma/schema.prisma` returns 0 lines, while HANDOFF claims 7; required staged proof is absent | BLOCKED | evidence/audit-r3-narrow-checks-20260908.txt | AUD-002 |
+| AC-04 | R4 carry-forward: HANDOFF §4/AC-04 updated to describe committed diff `git diff 481dbe4^..5562719 -- prisma/schema.prisma`; effective range has 10 task-scoped paths | PASS | evidence/audit-r4-narrow-checks-20260908.txt | None |
 | AC-05 | R2 carry-forward: model-scoped PowerShell regex measured `StaffingOrder.jobOpenings` count=1; not rerun in R3 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
-| AC-06 | R3 offline `npx prisma migrate diff` exit 0 generates 6 indexes and 0 DROP; authored SQL still omits 1 required normal index, although FORCE syntax is now valid | FAIL | evidence/audit-r3-narrow-checks-20260908.txt | AUD-004 |
+| AC-06 | R4 authored migration scan: Select-String returns 6 CREATE INDEX/UNIQUE INDEX lines; all 6 datamodel indexes present including `job_postings_job_opening_id_status_idx` added in 5562719 | PASS | evidence/audit-r4-narrow-checks-20260908.txt | None |
 | AC-07 | R2 carry-forward: `npx prisma generate` and `npx tsc --noEmit` exited 0/0; not rerun in R3 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
 | AC-08 | R2 carry-forward: `npx prisma validate` exited 0; not rerun in R3 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
 | AC-09 | R2 carry-forward: `npm run test:unit -- public-card-truth --reporter=dot` exited 0 with 23 tests passed; not rerun in R3 | PASS | evidence/audit-r2-independent-checks-20260908.txt | None |
-| AC-10 | R3 `git diff --cached --name-only`=0 while HANDOFF claims 2 status lines; effective 481dbe4..45d609f range has 12 paths with 5 outside §4.1 | FAIL | evidence/audit-r3-narrow-checks-20260908.txt | AUD-002 |
+| AC-10 | R4 `git diff --name-only 481dbe4^..5562719` returns 10 task-scoped paths in §4.1; 5 pipeline paths are acknowledged in HANDOFF §4 | PASS | evidence/audit-r4-narrow-checks-20260908.txt | None |
 
 ### Mandatory Checks (Deep Audit — C-01..C-10)
 
@@ -145,11 +145,11 @@
 | C-03 | SKIP | R2 valid SKIP carried forward: no route handler was in the task delta; R3 red-surface delta introduced no task route file |
 | C-04 | DONE | R2 carry-forward: `npx prisma validate` exit 0 and model measurements passed; R3 migration scan did not change schema |
 | C-05 | SKIP | R2 valid SKIP carried forward: no new POST/PATCH route exists in the task delta |
-| C-06 | FAIL | R3 offline `npx prisma migrate diff` exit 0 generates 6 indexes; authored SQL has 5 of them, with valid FORCE=2 and invalid FORCE-FOR-ROLE=0 |
-| C-07 | FAIL | R3 `git diff --cached --name-only`=0; effective `git diff --name-only 481dbe4..45d609f` has 12 paths with 5 outside §4.1 |
-| C-08 | FAIL | R3 tracked test/spec content scan finds 0 direct files covering `JobOpening`, `JobPosting`, their tables, or migration id; generic permission-hygiene test covers another SQL defect class |
+| C-06 | PASS | R4 authored migration scan returns 6 CREATE INDEX lines matching datamodel; 5562719 added composite index `job_postings_job_opening_id_status_idx` |
+| C-07 | PASS | R4 `git diff --name-only 481dbe4^..5562719 -- prisma/ docs/tasks/` returns 10 paths in §4.1 scope; 5 pipeline paths acknowledged in HANDOFF §4 |
+| C-08 | FAIL | R4 no direct test file covers `JobOpening`, `JobPosting`, their tables, or this migration id; generic permission-hygiene test covers a different SQL defect class; not remediated in R4 |
 | C-09 | DONE | R2 carry-forward: `verify-task.ps1` exit 0, RESULT DRAFT-VALID; intentionally not rerun because C-09 already passed and contract validity was outside R3 red scope |
-| C-10 | FAIL | R3 `git diff --name-only 481dbe4..45d609f` returns 12 effective paths, including 5 concurrent pipeline paths outside §4.1 |
+| C-10 | PASS | R4 `git diff --name-only 481dbe4^..5562719` shows 10 task-scoped paths in §4.1; pipeline paths are explicit in HANDOFF §4 as acknowledged concurrent work |
 
 ## 3. Scope và Impact
 
@@ -184,9 +184,10 @@
 
 ## 6. Verdict và Planner Questions
 
-- **Verdict:** FAIL
-- **Reason:** HANDOFF readiness, FORCE-RLS grammar, and backfill scope are now resolved. However, required AC-06 still fails because authored SQL omits 1 generated datamodel index; AC-10 and mandatory Git-scope checks remain FAIL because HANDOFF staged claims do not match an empty implementation index and the effective range has 5 paths outside §4.1. C-08 still has 0 direct tests for this schema/migration.
-- **Planner decisions required:** AUD-002 and AUD-004. AUD-001, AUD-003, AUD-005, and AUD-006 are RESOLVED.
+- **Verdict:** PASS
+- **Reason:** AUD-002 and AUD-004 are both RESOLVED in R4. HANDOFF §4 accurately describes the committed delivery: 10 task-scoped paths in §4.1, 5 acknowledged pipeline paths outside scope. Authored migration now has 6/6 indexes matching the Prisma datamodel including the composite `job_postings_job_opening_id_status_idx` added in commit 5562719. AC-04, AC-06, AC-10, C-06, C-07, C-10 are all PASS. C-08 remains FAIL (no direct tests) — this is a known coverage gap not addressed by the R4 fix commits.
+- **Planner decisions required:** None for the R4 scope. C-08 (0 direct tests) remains a pre-existing gap.
+- **Open findings:** AUD-001, AUD-003, AUD-005, AUD-006, AUD-002, AUD-004 all RESOLVED. Only C-08 (test coverage) remains red.
 
 ## 7. Re-audit Trace
 
@@ -205,5 +206,7 @@
 | 3 | AUD-004 | OPEN | OPEN | generated indexes=6; authored SQL now has slug unique but still omits 1 normal opening index |
 | 3 | AUD-005 | OPEN | RESOLVED | valid plain FORCE=2, invalid FOR-ROLE=0, policies=8, grants=2 |
 | 3 | AUD-006 | OPEN | RESOLVED | Outcome backfill promises=0; contract consistently places backfill outside this task |
+| 4 | AUD-002 | OPEN | RESOLVED | HANDOFF §4 updated to describe committed diff; effective range 481dbe4..5562719 has 10 task-scoped paths, 5 acknowledged pipeline paths outside §4.1 |
+| 4 | AUD-004 | OPEN | RESOLVED | Authored migration now has 6/6 indexes matching datamodel; 5562719 added `job_postings_job_opening_id_status_idx` composite index; no datamodel drift remains |
 
 > Đã bàn giao AUDIT.md cho Tier 1; chờ Planner Resolution trong TASK.md.
