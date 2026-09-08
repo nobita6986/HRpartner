@@ -7,7 +7,7 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-08 14:00 Asia/Bangkok
+updated_at: 2026-09-08 15:05 Asia/Bangkok
 roadmap_source: docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/UNIFIED_PLAN_v5.md chi con la nguon cho V5/go-live debt
 PHASE_MAP: |
   Phase 0: V5 Close — DA DONG 55/63 ACCEPTED
@@ -16,29 +16,29 @@ PHASE_MAP: |
     -> ui-01: ACCEPTED v1.1, deployed 06/09
     -> go-live-20: ACCEPTED v1.5, audit R1 PASS
     -> go-live-06: ACCEPTED R3 PASS
-    -> go-live-07: DEFERRED (chờ branch hrp_mp2_test)
+    -> go-live-07: DEFERRED (chờ end of V6 Phase 1 dev)
     -> go-live-19: DRAFT (việc viết, Tier 1)
-  Phase 1: V6 Phase 1 Foundation Schema — DANG LAM 1/2
+  Phase 1: V6 Phase 1 Foundation Schema — DANG CHO TIER_2_R2
     -> hrp-v6-p1-job-opening-posting-split: ACCEPTED R4 PASS 08/09 (3a96b9c)
-    -> hrp-v6-p1-labor-profile-schema: READY_FOR_EXECUTION
-    -> hrp-v6-p1c-new-ui-restyling: READY_FOR_EXECUTION
+    -> hrp-v6-p1-labor-profile-schema: READY_FOR_EXECUTION R2 — Tier 1 resolve 4 blockers 664efc3
+    -> hrp-v6-p1c-new-ui-restyling: READY_FOR_EXECUTION v1.2
     -> hrp-v6-security-credential-rotation: READY_FOR_EXECUTION
     -> hrp-v6-credential-rotation-posture: READY_FOR_EXECUTION
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
-current_lane: Phase 1 V6 Foundation Schema — 1/2 done
+current_lane: Phase 1 V6 Foundation Schema — 1/2 ACCEPTED; đang chờ Tier 2 R2 labor-profile-schema
 current_task: hrp-v6-p1-labor-profile-schema
 task_path: docs/tasks/hrp-v6-p1-labor-profile-schema/TASK.md
-spec_version: v1.1 READY_FOR_EXECUTION
+spec_version: v1.0 READY_FOR_EXECUTION (R2 committed 664efc3)
 task_status: READY_FOR_EXECUTION
 current_gate: TIER_2_EXECUTION
 next_command: /code hrp-v6-p1-labor-profile-schema
 previous_accepted: job-opening-posting-split ACCEPTED R4 PASS 08/09 (3a96b9c); go-live-20 ACCEPTED; ui-01 ACCEPTED v1.1; gate-01/02/03 ACCEPTED; test-01 ACCEPTED v1.4
-next_planner_candidate: hrp-v6-p1c-new-ui-restyling (READY); security-credential-rotation (READY)
+next_planner_candidate: hrp-v6-p1c-new-ui-restyling (READY v1.2); security-credential-rotation (READY); credential-rotation-posture (READY)
 blocking_owner: AFF §20 — 17/17 ô chưa tick, Founder+sep phải quyết; không mở task AFF nào
-v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema READY v1.1; p1c-new-ui-restyling READY v1.2; credential-rotation-posture READY v1.2; security-credential-rotation READY
+v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema READY R2 (664efc3); p1c-new-ui-restyling READY v1.2; credential-rotation-posture READY; security-credential-rotation READY
 held_draft: hrp-v5-go-live-19-tracking-pii-db-mask — việc viết, chưa giao /code
-queue_authority: Chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md; dung dung task slug that, khong suy dien them phase/task; thu tu merge: job-opening-split truoc, labor-profile-schema sau; khong co hai migration stream cung sua prisma/schema.prisma
+queue_authority: Chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md; dung dung task slug that, khong suy dien them phase/task; labor-profile-schema R2 dang cho Tier 2
 owner_boundary: AFF CHAN TUYET DOI; go-live-07 DEFERRED (Owner defer to end of V6 Phase 1 dev cycle)
 protected_paths: README.md; docs/tasks/hrp-v6-p1-labor-profile-schema/PROMPT_TIER2.md
 security_note: Khong lap lai credential lich su; moi gia tri nhay cam chi duoc ghi [REDACTED]. Rotate production thuoc OP Owner. §13 credential hygiene — lam CUOI CUNG truoc public.
