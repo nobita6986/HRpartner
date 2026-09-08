@@ -24,7 +24,8 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$TaskPath,
     [string]$HandoffPath = "",
-    [string]$RepoRoot = ""
+    [string]$RepoRoot = "",
+    [switch]$Incremental
 )
 
 $ErrorActionPreference = "Stop"
@@ -42,6 +43,22 @@ try {
     $repoRoot = $RepoRoot
     if ([string]::IsNullOrWhiteSpace($repoRoot)) { $repoRoot = Get-RepoRoot -ScriptRoot $PSScriptRoot }
     $ctx = New-GateContext -Title "HANDOFF SUBSTANCE GATE" -Subject "$HandoffPath (against $TaskPath)"
+
+    # -- Incremental: skip if inputs unchanged --------------------------------
+    if ($Incremental) {
+        $inputFiles = @($TaskPath, $HandoffPath)
+        $changed = -not (Test-GateInputsUnchanged -GateName 'verify-handoff.ps1' -TaskDir $taskDir -InputFiles $inputFiles -RepoRoot $repoRoot)
+        if (-not $changed) {
+            $state = Get-GateState -TaskDir $taskDir
+            $prev = $state['gates']['verify-handoff.ps1']
+            $cachedResult = $prev.result
+            Write-GateIncrementalSkip -GateName 'verify-handoff.ps1' -CachedResult $cachedResult
+            $hashes = Get-FileHashes -FilePaths $inputFiles -RepoRoot $repoRoot
+            Save-GateState -TaskDir $taskDir -GateName 'verify-handoff.ps1' -Result $cachedResult -ExitCode $prev.exitCode -InputHashes $hashes
+            Write-Host "RESULT: $cachedResult." -ForegroundColor $(if ($cachedResult -match 'PASS') { 'Green' } else { 'Red' })
+            exit [int]($prev.exitCode)
+        }
+    }
 
     # -- H-01 Artifact integrity ---------------------------------------------
     if (-not (Test-Path -LiteralPath $HandoffPath -PathType Leaf)) {
@@ -328,6 +345,26 @@ try {
         } else {
             Add-GateOk $ctx 'H-15' "TASK.md control fields untouched by this round."
         }
+    }
+
+    # Save state cache
+    if ($Incremental) {
+        $inputFiles = @($TaskPath, $HandoffPath)
+        $hashes = Get-FileHashes -FilePaths $inputFiles -RepoRoot $repoRoot
+        $e = $ctx.Errors.Count
+        $w = $ctx.Warnings.Count
+        if ($e -gt 0) {
+            $result = "FAIL ($e error(s), $w warning(s))"
+        } elseif ($w -gt 0) {
+            $result = "PASS WITH WARNINGS ($w warning(s))"
+        } else {
+            $result = "PASS"
+        }
+        $exitCode = Close-GateContext $ctx `
+            'HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.' `
+            'Do NOT write "Handoff status: READY_FOR_AUDIT" until these fail items are fixed.'
+        Save-GateState -TaskDir $taskDir -GateName 'verify-handoff.ps1' -Result $result -ExitCode $exitCode -InputHashes $hashes
+        exit $exitCode
     }
 
     exit (Close-GateContext $ctx `

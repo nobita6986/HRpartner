@@ -23,7 +23,8 @@ param(
     [string]$TaskPath,
     [string]$AuditPath = "",
     [string]$HandoffPath = "",
-    [string]$RepoRoot = ""
+    [string]$RepoRoot = "",
+    [switch]$Incremental
 )
 
 $ErrorActionPreference = "Stop"
@@ -61,6 +62,22 @@ try {
         Add-GateOk $ctx 'S-01' "AUDIT.md is tracked by git (recoverable)."
     } else {
         Add-GateError $ctx 'S-01' "AUDIT.md is NOT tracked by git ($auditRel). Stage it the moment it is written - go-live-14 round 2 lost an untracked 6358-byte audit."
+    }
+
+    # -- Incremental: skip if inputs unchanged --------------------------------
+    if ($Incremental) {
+        $inputFiles = @($TaskPath, $AuditPath, $HandoffPath)
+        $changed = -not (Test-GateInputsUnchanged -GateName 'verify-audit.ps1' -TaskDir $taskDir -InputFiles $inputFiles -RepoRoot $repoRoot)
+        if (-not $changed) {
+            $state = Get-GateState -TaskDir $taskDir
+            $prev = $state['gates']['verify-audit.ps1']
+            $cachedResult = $prev.result
+            Write-GateIncrementalSkip -GateName 'verify-audit.ps1' -CachedResult $cachedResult
+            $hashes = Get-FileHashes -FilePaths $inputFiles -RepoRoot $repoRoot
+            Save-GateState -TaskDir $taskDir -GateName 'verify-audit.ps1' -Result $cachedResult -ExitCode $prev.exitCode -InputHashes $hashes
+            Write-Host "RESULT: $cachedResult." -ForegroundColor $(if ($cachedResult -match 'PASS') { 'Green' } else { 'Red' })
+            exit [int]($prev.exitCode)
+        }
     }
 
     $task    = Get-Content -LiteralPath $TaskPath  -Raw -Encoding UTF8
@@ -623,6 +640,26 @@ try {
         Add-GateError $ctx 'A-07' "missing closing line '... AUDIT.md cho Tier 1 ...'"
     } else {
         Add-GateOk $ctx 'A-07' "closing handoff line present."
+    }
+
+    # -- Close & save state ---------------------------------------------------
+    if ($Incremental) {
+        $inputFiles = @($TaskPath, $AuditPath, $HandoffPath)
+        $hashes = Get-FileHashes -FilePaths $inputFiles -RepoRoot $repoRoot
+        $e = $ctx.Errors.Count
+        $w = $ctx.Warnings.Count
+        if ($e -gt 0) {
+            $result = "FAIL ($e error(s), $w warning(s))"
+        } elseif ($w -gt 0) {
+            $result = "PASS WITH WARNINGS ($w warning(s))"
+        } else {
+            $result = "PASS"
+        }
+        $exitCode = Close-GateContext $ctx `
+            'AUDIT.md carries measured evidence; Tier 1 may resolve on it.' `
+            'Tier 1 MUST NOT resolve on this AUDIT.md - send it back to Tier 3.'
+        Save-GateState -TaskDir $taskDir -GateName 'verify-audit.ps1' -Result $result -ExitCode $exitCode -InputHashes $hashes
+        exit $exitCode
     }
 
     exit (Close-GateContext $ctx `

@@ -87,3 +87,6 @@ playwright-report/
 
 # Cursor/Claude agent dev artifacts (skills + worktrees) — khong phai source code project
 .claude/
+
+# Gate state cache — artifact sinh ra moi luot chay, khong commit
+.gate-state.json

@@ -23,7 +23,8 @@ Strictness follows Status: a contract about to be executed
 param(
     [Parameter(Mandatory = $true)]
     [string]$TaskPath,
-    [string]$RepoRoot = ""
+    [string]$RepoRoot = "",
+    [switch]$Incremental
 )
 
 $ErrorActionPreference = "Stop"
@@ -39,6 +40,25 @@ try {
     if ([string]::IsNullOrWhiteSpace($repoRoot)) { $repoRoot = Get-RepoRoot -ScriptRoot $PSScriptRoot }
     $taskDir  = Split-Path $TaskPath -Parent
     $slug     = Split-Path $taskDir -Leaf
+
+    # -- Incremental: skip if inputs unchanged --------------------------------
+    if ($Incremental) {
+        $gateCheck = Test-GateInputsUnchanged -GateName 'verify-task.ps1' -TaskDir $taskDir -InputFiles @($TaskPath) -RepoRoot $repoRoot
+        $changed = -not $gateCheck
+        if (-not $changed) {
+            Write-Host ""
+            $state = Get-GateState -TaskDir $taskDir
+            $prev = $state['gates']['verify-task.ps1']
+            $cachedResult = $prev.result
+            Write-GateIncrementalSkip -GateName 'verify-task.ps1' -CachedResult $cachedResult
+            # Restore cache to make exit code match
+            $hashes = Get-FileHashes -FilePaths @($TaskPath) -RepoRoot $repoRoot
+            Save-GateState -TaskDir $taskDir -GateName 'verify-task.ps1' -Result $cachedResult -ExitCode $prev.exitCode -InputHashes $hashes
+            Write-Host "RESULT: $cachedResult." -ForegroundColor $(if ($cachedResult -eq 'PASS' -or $cachedResult -eq 'DRAFT-VALID') { 'Green' } else { 'Red' })
+            exit [int]($prev.exitCode)
+        }
+    }
+
     $content  = Get-Content -LiteralPath $TaskPath -Raw -Encoding UTF8
     $lines    = $content -split "`r?`n"
     $bt       = [string][char]96
@@ -282,18 +302,29 @@ try {
     $w = $ctx.Warnings.Count
     if ($e -gt 0) {
         Write-Host "RESULT: FAIL ($e error(s), $w warning(s))." -ForegroundColor Red
-        exit 2
-    }
-    if ($w -gt 0 -and -not $isReady) {
+        $result = "FAIL ($e error(s), $w warning(s))"
+        $exitCode = 2
+    } elseif ($w -gt 0 -and -not $isReady) {
         Write-Host "RESULT: DRAFT-VALID ($w warning(s))." -ForegroundColor Yellow
-        exit 0
-    }
-    if ($w -gt 0) {
+        $result = "DRAFT-VALID ($w warning(s))"
+        $exitCode = 0
+    } elseif ($w -gt 0) {
         Write-Host "RESULT: PASS ($w warning(s)). TASK contract is ready for execution." -ForegroundColor Yellow
-        exit 0
+        $result = "PASS ($w warning(s))"
+        $exitCode = 0
+    } else {
+        Write-Host "RESULT: PASS. TASK contract is ready for execution." -ForegroundColor Green
+        $result = "PASS"
+        $exitCode = 0
     }
-    Write-Host "RESULT: PASS. TASK contract is ready for execution." -ForegroundColor Green
-    exit 0
+
+    # Save state cache
+    if ($Incremental) {
+        $hashes = Get-FileHashes -FilePaths @($TaskPath) -RepoRoot $repoRoot
+        Save-GateState -TaskDir $taskDir -GateName 'verify-task.ps1' -Result $result -ExitCode $exitCode -InputHashes $hashes
+    }
+
+    exit $exitCode
 }
 catch {
     Write-Host "RESULT: FAIL. $($_.Exception.Message)" -ForegroundColor Red

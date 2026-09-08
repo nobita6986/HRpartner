@@ -467,3 +467,184 @@ function Test-SectionSaysNone {
     if ($stripped.Length -eq 0) { return $false }
     return ([regex]::IsMatch($stripped, '(?i)^\s*[-*]?\s*(none|no gap|no coverage gap|không có|khong co|không|khong)\b'))
 }
+
+# ---------------------------------------------------------------------------
+# Incremental gate — state cache
+# ---------------------------------------------------------------------------
+# Saves/loads gate results to .gate-state.json per task.
+# When input files haven't changed, skip re-running the gate entirely.
+
+$GatesCachePath = '.gate-state.json'
+
+function Get-GateStatePath {
+    param([string]$TaskDir)
+    return Join-Path $TaskDir $script:GatesCachePath
+}
+
+function Get-GateState {
+    param([string]$TaskDir)
+    $path = Get-GateStatePath -TaskDir $TaskDir
+    if (-not (Test-Path -LiteralPath $path)) { return $null }
+    try {
+        $content = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+        $obj = ConvertFrom-Json $content
+        # Convert PSCustomObject to hashtable recursively
+        return ConvertTo-SafeHashtable $obj
+    } catch {
+        return $null
+    }
+}
+
+function ConvertTo-SafeHashtable {
+    param($obj, [int]$Depth = 0)
+    if ($obj -is [hashtable] -or $obj -is [System.Collections.Specialized.OrderedDictionary] -or $obj -is [System.Collections.IDictionary]) {
+        $result = @{}
+        foreach ($k in $obj.Keys) {
+            $result[$k] = ConvertTo-SafeHashtable -obj $obj[$k] -Depth ($Depth + 1)
+        }
+        return $result
+    } elseif ($obj -is [System.Management.Automation.PSCustomObject]) {
+        $result = @{}
+        foreach ($p in $obj.PSObject.Properties) {
+            $result[$p.Name] = ConvertTo-SafeHashtable -obj $p.Value -Depth ($Depth + 1)
+        }
+        return $result
+    } elseif ($obj -is [array]) {
+        return @($obj | ForEach-Object { ConvertTo-SafeHashtable -obj $_ -Depth ($Depth + 1) })
+    }
+    return $obj
+}
+
+function Save-GateState {
+    param(
+        [string]$TaskDir,
+        [string]$GateName,
+        [string]$Result,
+        [int]$ExitCode,
+        [hashtable]$InputHashes,
+        [hashtable]$ExtraData = @{}
+    )
+    $path = Get-GateStatePath -TaskDir $TaskDir
+    $state = @{ }
+    if (Test-Path -LiteralPath $path) {
+        try {
+            $content = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+            $obj = ConvertFrom-Json $content
+            $state = ConvertTo-SafeHashtable $obj
+        } catch { $state = @{} }
+    }
+    if (-not ($state.ContainsKey('gates'))) { $state['gates'] = @{} }
+    $state['gates'][$GateName] = @{
+        result   = $Result
+        exitCode = $ExitCode
+        hashes   = $InputHashes  # hashtable key=fullPath, value=hash
+        at       = (Get-Date).ToString('o')
+    }
+    foreach ($k in $ExtraData.Keys) { $state[$k] = $ExtraData[$k] }
+    # Convert hashtable to PSCustomObject so JSON serialization works in PS 5.1
+    $obj = ConvertTo-PscustomObject $state
+    $json = $obj | ConvertTo-Json -Depth 10
+    # Write atomically via temp file
+    $tmp = "$path.tmp"
+    Set-Content -LiteralPath $tmp -Value $json -Encoding UTF8
+    Move-Item -LiteralPath $tmp -Destination $path -Force
+}
+
+function ConvertTo-PscustomObject {
+    param($obj)
+    if ($obj -is [hashtable]) {
+        $result = New-Object pscustomobject
+        foreach ($k in $obj.Keys) {
+            $result | Add-Member -MemberType NoteProperty -Name $k -Value (ConvertTo-PscustomObject $obj[$k]) -Force
+        }
+        return $result
+    } elseif ($obj -is [array]) {
+        return @($obj | ForEach-Object { ConvertTo-PscustomObject $_ })
+    }
+    return $obj
+}
+
+function Get-FileHashes {
+    param(
+        [string[]]$FilePaths,
+        [string]$RepoRoot = ""
+    )
+    if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+        $RepoRoot = Get-RepoRoot -ScriptRoot $PSScriptRoot
+    }
+    $result = @{}
+    foreach ($f in $FilePaths) {
+        # Normalize path separators for Windows
+        $normalized = $f -replace '/', '\'
+        # Resolve to absolute path
+        if (-not [System.IO.Path]::IsPathRooted($normalized)) {
+            $normalized = Join-Path $RepoRoot $normalized
+        }
+        $normalized = [System.IO.Path]::GetFullPath($normalized)
+        if (Test-Path -LiteralPath $normalized -PathType Leaf) {
+            $hash = (Get-FileHash -LiteralPath $normalized -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
+            $result[$normalized] = $hash
+        }
+    }
+    return $result
+}
+
+function Test-GateInputsUnchanged {
+    param(
+        [string]$GateName,
+        [string]$TaskDir,
+        [string[]]$InputFiles,
+        [string]$RepoRoot = ""
+    )
+    if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+        $RepoRoot = Get-RepoRoot -ScriptRoot $PSScriptRoot
+    }
+    $state = Get-GateState -TaskDir $TaskDir
+    if ($null -eq $state) { return $false }
+    if (-not $state.ContainsKey('gates')) { return $false }
+    if (-not $state['gates'].ContainsKey($GateName)) { return $false }
+    $prev = $state['gates'][$GateName]
+    $prevHashes = @{}
+    $rawHashes = $prev['hashes']
+    if ($null -eq $rawHashes) { return $false }
+    if ($rawHashes -is [array]) {
+        # legacy: array of strings
+        foreach ($h in $rawHashes) { $prevHashes[$h] = $h }
+    } elseif ($rawHashes -is [System.Collections.IDictionary]) {
+        foreach ($k in $rawHashes.Keys) { $prevHashes[$k] = $rawHashes[$k] }
+    } elseif ($rawHashes -is [System.Management.Automation.PSCustomObject]) {
+        foreach ($p in $rawHashes.PSObject.Properties) { $prevHashes[$p.Name] = $p.Value }
+    }
+    $curHashes = Get-FileHashes -FilePaths $InputFiles -RepoRoot $RepoRoot
+    foreach ($f in $InputFiles) {
+        # Normalize path for key lookup
+        $absPath = $f -replace '/', '\'
+        if (-not [System.IO.Path]::IsPathRooted($absPath)) {
+            $absPath = Join-Path $RepoRoot $absPath
+        }
+        $absPath = [System.IO.Path]::GetFullPath($absPath)
+        # Build case-insensitive lookup table for prev hashes
+        $prevLookup = @{}
+        foreach ($k in $prevHashes.Keys) { $prevLookup[$k.ToLowerInvariant()] = $prevHashes[$k] }
+        $curLookup = @{}
+        foreach ($k in $curHashes.Keys) { $curLookup[$k.ToLowerInvariant()] = $curHashes[$k] }
+
+        $keyLower = $absPath.ToLowerInvariant()
+        if (-not $curLookup.ContainsKey($keyLower)) {
+            # file deleted — consider changed
+            if ($prevLookup.ContainsKey($keyLower)) { return $false }
+            continue
+        }
+        if (-not $prevLookup.ContainsKey($keyLower)) { return $false }
+        if ($curLookup[$keyLower] -ne $prevLookup[$keyLower]) { return $false }
+    }
+    return $true
+}
+
+function Write-GateIncrementalSkip {
+    param([string]$GateName, [string]$CachedResult)
+    Write-Host ""
+    Write-Host "[SKIP] $GateName — inputs unchanged since last run" -ForegroundColor Yellow
+    Write-Host "       cached result: $CachedResult" -ForegroundColor Yellow
+    Write-Host ""
+}
