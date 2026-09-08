@@ -7,7 +7,7 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-08 18:35 Asia/Bangkok
+updated_at: 2026-09-08 20:35 Asia/Bangkok
 roadmap_source: docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/UNIFIED_PLAN_v5.md chi con la nguon cho V5/go-live debt
 PHASE_MAP: |
   Phase 0: V5 Close — DA DONG 55/63 ACCEPTED
@@ -18,30 +18,32 @@ PHASE_MAP: |
     -> go-live-06: ACCEPTED R3 PASS
     -> go-live-07: DEFERRED (chờ end of V6 Phase 1 dev)
     -> go-live-19: DRAFT (việc viết, Tier 1)
-  Phase 1: V6 Phase 1 Foundation Schema — ĐANG CHẠY 1C TIER_2_R4 SONG SONG
+  Phase 1: V6 Phase 1 Foundation — 3/3 core task ACCEPTED; UI restyling đã audit PASS
     -> hrp-v6-p1-job-opening-posting-split: ACCEPTED R4 PASS 08/09 (3a96b9c)
-    -> hrp-v6-p1-labor-profile-schema: ACCEPTED R2 — Tier 3 audit r1 PASS 08/09 18:31 (0 P0/P1/P2)
-    -> hrp-v6-p1c-new-ui-restyling: READY_FOR_EXECUTION R4 — Tier 1 bump b025f3d; Owner keeps existing H1; Tier 2 đang chạy
+    -> hrp-v6-p1-labor-profile-schema: ACCEPTED R2 + Tier 3 audit r1 PASS + LIVE APPLIED hrp-live 08/09 (Owner xác nhận, f8bd761)
+    -> hrp-v6-p1c-new-ui-restyling: ACCEPTED R4 — Tier 3 audit r1 PASS 08/09 (0 P0/P1/P2); ready merge commit
     -> hrp-v6-security-credential-rotation: READY_FOR_EXECUTION
     -> hrp-v6-credential-rotation-posture: BLOCKED R2 (OP-gated)
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
-current_lane: Phase 1 V6 Foundation Schema — 1/2 ACCEPTED; đang chờ Tier 2 R2 labor-profile-schema
-current_task: hrp-v6-p1-labor-profile-schema
-task_path: docs/tasks/hrp-v6-p1-labor-profile-schema/TASK.md
-spec_version: v1.0 READY_FOR_EXECUTION (R2 committed 664efc3)
+current_lane: Phase 1 V6 Foundation — 3/3 ACCEPTED; chuyển sang security-credential-rotation R1 (READY)
+current_task: hrp-v6-security-credential-rotation
+task_path: docs/tasks/hrp-v6-security-credential-rotation/TASK.md
+spec_version: v1.0 READY_FOR_EXECUTION (Tier 1 ready; chưa có execution round hay audit round)
 task_status: READY_FOR_EXECUTION
 current_gate: TIER_2_EXECUTION
-next_command: /code hrp-v6-p1-labor-profile-schema
-previous_accepted: job-opening-posting-split ACCEPTED R4 PASS 08/09 (3a96b9c); go-live-20 ACCEPTED; ui-01 ACCEPTED v1.1; gate-01/02/03 ACCEPTED; test-01 ACCEPTED v1.4
-next_planner_candidate: hrp-v6-p1c-new-ui-restyling (READY v1.2); security-credential-rotation (READY); credential-rotation-posture (READY)
+next_command: /code hrp-v6-security-credential-rotation
+previous_accepted: new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS 08/09 (0 P0/P1/P2); labor-profile-schema ACCEPTED R2 + LIVE 08/09 (f8bd761); job-opening-posting-split ACCEPTED R4 PASS 08/09 (3a96b9c); go-live-20 ACCEPTED; ui-01 ACCEPTED v1.1; gate-01/02/03 ACCEPTED; test-01 ACCEPTED v1.4
+next_planner_candidate: hrp-v6-credential-rotation-posture (BLOCKED R2 OP-gated); held_draft go-live-19 PII DB mask (Tier 1 viết); V6 Phase 2 admin rebuild tasks (per docs/V6/v6-admin-rebuild_ROADMAP.md)
 blocking_owner: AFF §20 — 17/17 ô chưa tick, Founder+sep phải quyết; không mở task AFF nào
-v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema READY R2 (664efc3); p1c-new-ui-restyling READY v1.2; credential-rotation-posture READY; security-credential-rotation READY
+v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture READY (BLOCKED R2); security-credential-rotation READY (current_task)
 held_draft: hrp-v5-go-live-19-tracking-pii-db-mask — việc viết, chưa giao /code
-queue_authority: Chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md; dung dung task slug that, khong suy dien them phase/task; labor-profile-schema R2 dang cho Tier 2
-owner_boundary: AFF CHAN TUYET DOI; go-live-07 DEFERRED (Owner defer to end of V6 Phase 1 dev cycle)
-protected_paths: README.md; docs/tasks/hrp-v6-p1-labor-profile-schema/PROMPT_TIER2.md
-security_note: Khong lap lai credential lich su; moi gia tri nhay cam chi duoc ghi [REDACTED]. Rotate production thuoc OP Owner. §13 credential hygiene — lam CUOI CUNG truoc public.
+queue_authority: Chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md; dung dung task slug that, khong suy dien them phase/task; current_task = security-credential-rotation v1.0
+owner_boundary: AFF CHAN TUYET DOI; go-live-07 DEFERRED (Owner defer to end of V6 Phase 1 dev cycle); credential-rotation-posture BLOCKED OP-gated
+protected_paths: README.md; docs/tasks/hrp-v6-security-credential-rotation/PROMPT_TIER2.md (per Tier 1 contract nếu có)
+security_note: Khong lap lai credential lich su; moi gia tri nhay cam chi duoc ghi [REDACTED]. Rotate production thuoc OP Owner. §13 credential hygiene — lam CUOI CUNG truoc public. security-credential-rotation task: rotate scoped credentials (Tier 2 khong tu rotate production — OP gate).
+phase1_live_evidence: commit f8bd761 trên origin/main; 2 migration files (20260908150000_v6_phase1a_labor_profile_schema + 20260908150001_v6_phase1a_labor_profile_rls) confirmed applied hrp-live bởi Owner 08/09; không có CI/CD auto-deploy migration (verified: vercel.json buildCommand không gọi prisma migrate deploy; .github/workflows/ci.yml không có deploy job)
+phase1c_audit_evidence: AUDIT R1 PASS cho hrp-v6-p1c-new-ui-restyling; 11/11 AC PASS; 0 P1/P2 findings; verify-task=e36b83df... PASS; verify-handoff=e1af8549... PASS; 2 frozen test fence hash khớp tuyệt đối (431f650f..., e5bee466...); scope compliance 100%; evidence 7 file đầy đủ
 ```
 
 <!-- ROADMAP_CURSOR_END -->
@@ -209,6 +211,8 @@ Chỉ sửa khối `ROADMAP_CURSOR` ở §0 (từ `<!-- ROADMAP_CURSOR_START -->
 | 2.2 | 01/09/2026 | Thêm §13 — credential hygiene hoãn đến Phase 5 |
 | 2.3 | 07/09/2026 | Chuyển cursor sang TEST-01 round 4 |
 | 2.4 | 08/09/2026 | V6 Phase 1: 1/2 done, job-opening-split R4 PASS, labor-profile-schema READY, AFF §20 17/17 chưa tick |
+| 2.5 | 08/09/2026 | V6 Phase 1: 2/2 schema task ACCEPTED + LIVE APPLIED hrp-live (f8bd761); cursor chuyển sang p1c-new-ui-restyling R4 (READY); thêm phase1_live_evidence note (verified no auto-deploy migration) |
+| 2.6 | 08/09/2026 | V6 Phase 1: 3/3 core task ACCEPTED — p1c-new-ui-restyling AUDIT R1 PASS (0 P0/P1/P2); cursor chuyển sang security-credential-rotation (READY_FOR_EXECUTION); thêm phase1c_audit_evidence note (gate fingerprint + frozen test hashes) |
 
 ---
 
