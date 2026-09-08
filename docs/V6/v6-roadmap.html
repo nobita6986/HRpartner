@@ -200,29 +200,29 @@ footer {
 <body>
 <div class="wrap">
 <header>
-  <div class="eyebrow">HRP &middot; Lộ trình hợp nhất &middot; cập nhật 05/09/2026</div>
+  <div class="eyebrow">HRP &middot; Lộ trình hợp nhất &middot; cập nhật 08/09/2026</div>
   <h1>Lộ trình V6 — gom <em>new-ui</em>, <em>AFF</em> và <em>V6 Admin</em> vào một tuyến</h1>
   <p class="sub">
     Một tuyến duy nhất, thay cho ba tài liệu chạy song song. Ba nhánh việc mới chỉ mở
     <b>sau khi dải V5 đóng hẳn</b> (Phase&nbsp;0). Mọi con số trong trang này là <b>số đo</b>
-    trên cây làm việc ngày <span class="fn">05/09/2026</span>, không phải số ước lượng —
+    trên cây làm việc ngày <span class="fn">08/09/2026</span>, không phải số ước lượng —
     xem mục <a href="#provenance">Nguồn của số đo</a>.
   </p>
   <div class="stat-strip">
     <div class="stat">
       <div class="k">Nút cổ chai</div>
       <div class="v"><em>V6 Phase 1</em> — Foundation Schema</div>
-      <div class="d">Hợp đồng viết được <b>ngay hôm nay</b>: §11 của <code>v6-admin-rebuild.md</code> có <span class="fn">31</span> quyết định đều <code>Chốt</code> (thêm <code>028..031</code> ngày 05/09).</div>
+      <div class="d">Hai hợp đồng móng <code>hrp-v6-p1-labor-profile-schema</code> và <code>hrp-v6-p1-job-opening-posting-split</code>: cái thứ hai đã <b>ACCEPTED R4 PASS</b> ngày 08/09; cái thứ nhất READY.</div>
     </div>
     <div class="stat">
       <div class="k">Nhánh bị chặn thật</div>
       <div class="v"><em>AFF</em> — chặn bởi quyết định, không phải bởi code</div>
-      <div class="d"><code>aff_plan.md</code> <span class="fn">v2.3</span> §20 còn <span class="fn">17</span> ô chưa tick (mở rộng từ <span class="fn">10</span> ngày 05/09); §0 ghi &laquo;Chưa mở&raquo;.</div>
+      <div class="d"><code>aff_plan.md</code> <span class="fn">v2.3</span> §20 còn <span class="fn">17</span> ô chưa tick; §0 ghi &laquo;Chưa mở&raquo;.</div>
     </div>
     <div class="stat">
       <div class="k">Việc code giao được hôm nay</div>
-      <div class="v"><em>0</em> hợp đồng code MỚI — <code>ui-01</code> new-ui đã <b>ACCEPTED <span class="fn">v1.1</span></b> (round 2 xong, audit round 1 CONDITIONAL) và <code>go-live-20</code> trang danh sách đang <b>Tier 3 audit trong gl20</b></div>
-      <div class="d">Cả hai đã qua giai đoạn code. <code>ui-01</code> đã <b>commit scoped + push lên <code>main</code></b> ngày 06/09 dưới lệnh sếp "làm a ngay" (31 path ui-01, các path ngoài phạm vi giữ nguyên trong index) — deploy production đã kích hoạt qua Vercel Git. <code>go-live-20</code> để <span class="fn">63</span> path trong index <code>gl20</code> chờ Tier 3 (chưa có AUDIT.md). Code Tier 2 còn mở: <code>go-live-07</code> (bump <code>AC-09/AC-14</code> trước) và <code>test-01</code> relock round 3. <code>gate-01/02/03</code> đã ACCEPTED + push <code>b68d25b</code>.</div>
+      <div class="v"><em>4</em> hợp đồng READY_FOR_EXECUTION — Phase 3 mở</div>
+      <div class="d"><b class="fn">0</b> hợp đồng REVISION_REQUIRED/BLOCKED. <code>ui-01</code> + <code>gl20</code> đã ACCEPTED/audit PASS. <code>job-opening-posting-split</code> đã R4 PASS. Còn <code>v6-p1-labor-profile-schema</code>, <code>v6-p1c-new-ui-restyling</code>, <code>v6-security-credential-rotation</code>, <code>v6-credential-rotation-posture</code> đang READY.</div>
     </div>
   </div>
 </header>
@@ -230,32 +230,32 @@ footer {
 <div class="section-label">Tuyến sáu chặng</div>
 <div class="metro">
   <div class="metro-inner">
-    <div class="metro-track"><div class="done-part"></div></div>
+    <div class="metro-track"><div class="done-part" style="width:50%"></div></div>
     <div class="stops">
-      <div class="stop current">
-        <div class="you-are-here">ĐANG Ở ĐÂY</div>
+      <div class="stop done">
         <div class="stop-dot">P0</div>
         <div class="stop-name">Đóng dải V5</div>
         <div class="stop-week">Tuần 1</div>
-        <div class="stop-tag">7 MỤC CÒN NỢ</div>
+        <div class="stop-tag">55/63 ĐÃ ACCEPTED</div>
       </div>
-      <div class="stop">
+      <div class="stop done">
         <div class="stop-dot">P1</div>
         <div class="stop-name">new-ui trang chủ</div>
         <div class="stop-week">Tuần 1–2</div>
-        <div class="stop-tag">GIAO ĐƯỢC HÔM NAY</div>
+        <div class="stop-tag">ACCEPTED v1.1</div>
       </div>
       <div class="stop gate">
         <div class="stop-dot">P2</div>
         <div class="stop-name">Cổng quyết định AFF</div>
         <div class="stop-week">Tuần 2</div>
-        <div class="stop-tag">SẾP &amp; FOUNDER QUYẾT</div>
+        <div class="stop-tag">17/17 Ô CHƯA TICK</div>
       </div>
-      <div class="stop">
+      <div class="stop current">
+        <div class="you-are-here">ĐANG Ở ĐÂY</div>
         <div class="stop-dot">P3</div>
         <div class="stop-name">V6 Foundation Schema</div>
         <div class="stop-week">Tuần 2–4</div>
-        <div class="stop-tag">NÚT CỔ CHAI</div>
+        <div class="stop-tag">1/2 MỤC ĐÃ ĐÓNG</div>
       </div>
       <div class="stop">
         <div class="stop-dot">P4</div>
@@ -275,28 +275,22 @@ footer {
 
 <div class="section-label" id="p0">Phase 0 — Đóng hẳn dải V5 (điều kiện mở mọi việc mới)</div>
 
-<div class="phase-card is-current">
-  <div class="pc-badge badge-current">P0</div>
+<div class="phase-card">
+  <div class="pc-badge badge-done">P0</div>
   <div>
-    <div class="pc-title">Đóng dải V5 <span class="wk">Tuần 1</span> <span class="pc-status st-dang">ĐANG LÀM</span></div>
+    <div class="pc-title">Đóng dải V5 <span class="wk">Tuần 1</span> <span class="pc-status st-xong">ĐÃ ĐÓNG 55/63</span></div>
     <div class="pc-inv">
-      Đo ngày <span class="fn">05/09/2026</span>: <code>docs/tasks/</code> có <b class="fn">82</b> hợp đồng,
-      <b class="fn">67</b> đã <code>ACCEPTED</code>, còn <b class="fn">15</b> chưa. Trong <span class="fn">15</span> đó,
-      <span class="fn">1</span> là <code>CANCELLED</code>, <span class="fn">3</span> là slug tiền-template không có trường
-      <code>Status</code>, <span class="fn">4</span> là nhãn <code>hrp-portal-*</code> tồn từ thời trước V5, và
-      <b class="fn">7</b> là việc thật của Phase 0 — bảng dưới.
+      Đo ngày <span class="fn">08/09/2026</span>: <code>docs/tasks/</code> có <b class="fn">63</b> hợp đồng có trường <code>Status</code> trong <code>TASK.md</code>,
+      <b class="fn">55</b> đã <code>ACCEPTED</code>, <b class="fn">4</b> READY_FOR_EXECUTION, <b class="fn">1</b> DRAFT, <b class="fn">1</b> DEFERRED, <b class="fn">1</b> PASS (audit-final), <b class="fn">3</b> CANCELLED/SUPERSEDED/PASS, cộng <b class="fn">26</b> hợp đồng cũ không có trường Status (slug tiền-template / hrp-portal-*).
+      <b>0</b> hợp đồng REVISION_REQUIRED/BLOCKED. Còn <b class="fn">4</b> mục thật cần xử lý để đóng hoàn toàn — bảng dưới.
     </div>
   </div>
 </div>
 
-<div class="note danger">
-  <b>Cửa chặn số một, và nó thuộc Tier 1 chứ không thuộc Tier 2.</b>
-  Bản giao toolchain của <code>rf-05</code>/<code>rf-06</code> còn nằm trong index, chưa commit, nên
-  <code>tsconfig.json</code> chưa phải một baseline ổn định — <code>test-01</code> không relock được lên round 3.
-  Đo lại <span class="fn">05/09/2026</span>: index đang có <b class="fn">268</b> path staged của <b>bốn</b> luồng và cây có
-  <b class="fn">435</b> tệp untracked. Một <code>git commit</code> trần sẽ ship trọn <span class="fn">268</span> path đó.
-  Lệnh hợp lệ duy nhất là dạng <code>git commit -- &lt;pathspec&gt;</code>, xem
-  <a href="#cmd-t1">khối lệnh Tier 1</a>. Bẫy này đã xảy ra một lần và suýt ship <span class="fn">30</span> path chưa audit.
+<div class="note info">
+  <b>Index sạch hơn ba ngày trước.</b>
+  Đo lại <span class="fn">08/09/2026</span>: index đang có <b class="fn">0</b> path staged (toàn bộ 268 path ngày 05/09 đã được giao dứt điểm trong 6 round pipeline cải thiện + 3 round close task) và cây có <b class="fn">18</b> tệp untracked (tệp tin measurement/evidence mới, không phải code).
+  <b>Bẫy <code>git commit</code> trần không còn cận kề</b> — nhưng luật <code>git commit -- &lt;pathspec&gt;</code> vẫn giữ vì worktree <code>gl20</code> vẫn đang giữ 63 path của <code>go-live-20</code>, và cây chính có nhiều luồng chạy song song.
 </div>
 
 <div class="tbl-wrap">
@@ -306,37 +300,37 @@ footer {
 <tr>
   <td class="nowrap fn">0.1</td>
   <td class="nowrap"><code>hrp-v5-test-01-browser-lane</code><br><span class="fn">v1.4</span></td>
-  <td class="nowrap"><span class="pill p-rev">REVISION_REQUIRED</span></td>
-  <td class="nowrap"><span class="pill p-t1">Tier 1</span></td>
-  <td>Commit theo pathspec bản giao <code>rf-05</code>/<code>rf-06</code>, rồi relock <span class="fn">v1.4</span> sang round <span class="fn">3</span> neo trên chính commit ấy, rồi mới giao <code>/code</code>. HANDOFF round <span class="fn">2</span> đang <code>BLOCKED</code> vì baseline chưa có.</td>
+  <td class="nowrap"><span class="pill p-acc">ACCEPTED</span></td>
+  <td class="nowrap">Tier 3</td>
+  <td>Đã resolve. Baseline <code>b68d25b</code> ổn định sau pipeline cải thiện.</td>
 </tr>
 <tr>
   <td class="nowrap fn">0.2</td>
   <td class="nowrap"><code>hrp-v5-gate-01-audit-row-identity</code><br><span class="fn">v1.2</span></td>
-  <td class="nowrap"><span class="pill p-ready">READY_FOR_EXECUTION</span></td>
-  <td class="nowrap">Tier 2</td>
-  <td>Giao được ngay. Chạm <code>verify-audit.ps1</code> và <code>verify-gates.selftest.ps1</code>.</td>
+  <td class="nowrap"><span class="pill p-acc">ACCEPTED</span></td>
+  <td class="nowrap">Tier 3</td>
+  <td>Đã ACCEPTED.</td>
 </tr>
 <tr>
   <td class="nowrap fn">0.3</td>
   <td class="nowrap"><code>hrp-v5-gate-02-lane-premise-correction</code><br><span class="fn">v1.2</span></td>
-  <td class="nowrap"><span class="pill p-ready">READY_FOR_EXECUTION</span></td>
-  <td class="nowrap">Tier 2</td>
-  <td>Giao được ngay, nhưng <b>phải chạy SAU 0.2</b>: hai hợp đồng dùng chung <code>verify-gates.selftest.ps1</code>, nên <code>DEC-09</code> của nó phân loại lệch dấu tay thành nguyên nhân A và cho chạy tiếp.</td>
+  <td class="nowrap"><span class="pill p-acc">ACCEPTED</span></td>
+  <td class="nowrap">Tier 3</td>
+  <td>Đã ACCEPTED.</td>
 </tr>
 <tr>
   <td class="nowrap fn">0.4</td>
   <td class="nowrap"><code>hrp-v5-gate-03-delivery-vanish-forensics</code><br><span class="fn">v1.2</span></td>
-  <td class="nowrap"><span class="pill p-ready">READY_FOR_EXECUTION</span></td>
-  <td class="nowrap">Tier 2</td>
-  <td>Giao được ngay. Cấm <code>git gc --prune</code> trong suốt hợp đồng: blob <code>53cc484</code> của <code>rf-05</code> là vật chứng.</td>
+  <td class="nowrap"><span class="pill p-acc">ACCEPTED</span></td>
+  <td class="nowrap">Tier 3</td>
+  <td>Đã ACCEPTED. Cấm <code>git gc --prune</code>.</td>
 </tr>
 <tr>
   <td class="nowrap fn">0.5</td>
   <td class="nowrap"><code>hrp-v5-go-live-07-marketplace-launch-proof</code><br><span class="fn">v1.5</span></td>
-  <td class="nowrap"><span class="pill p-ready">READY_FOR_EXECUTION</span></td>
+  <td class="nowrap"><span class="pill p-rev">DEFERRED</span></td>
   <td class="nowrap">Tier 2</td>
-  <td>Mọi điều kiện xếp hàng đã đóng (<code>go-live-04/05/06/09</code> đều <code>ACCEPTED</code>, mã của 09 đã lên <code>main</code> và đã deploy). Không còn cửa chặn.</td>
+  <td>Đã xếp hàng đầy đủ (<code>go-live-04/05/06/09</code> đều <code>ACCEPTED</code>) nhưng <b>DEFERRED</b> ngày 08/09 — chờ ENV thật (branch <code>hrp_mp2_test</code>) để chứng minh; không mock, không force-pass.</td>
 </tr>
 <tr>
   <td class="nowrap fn">0.6</td>
@@ -347,6 +341,13 @@ footer {
 </tr>
 <tr>
   <td class="nowrap fn">0.7</td>
+  <td class="nowrap"><code>hrp-v5-go-live-06-live-rls-matrix-restore</code><br><span class="fn">v1.x</span></td>
+  <td class="nowrap"><span class="pill p-acc">ACCEPTED</span></td>
+  <td class="nowrap">Tier 3</td>
+  <td>Audit R3 PASS. Tier 1 tự phán quyết ngoại lệ legacy wrapper từ nguồn repo.</td>
+</tr>
+<tr>
+  <td class="nowrap fn">0.8</td>
   <td class="nowrap"><code>hrp-portal-m2</code>, <code>m2.5</code>, <code>m3</code>, <code>m11-affiliate-db-migration</code></td>
   <td class="nowrap"><span class="pill p-rev">NHÃN CŨ</span></td>
   <td class="nowrap"><span class="pill p-t1">Tier 1</span></td>
@@ -356,37 +357,15 @@ footer {
 </table>
 </div>
 
-<div class="section-label" id="p1">Phase 1 — new-ui trang chủ (làn code duy nhất giao được hôm nay)</div>
+<div class="section-label" id="p1">Phase 1 — new-ui trang chủ (ACCEPTED v1.1)</div>
 
 <div class="phase-card">
   <div class="pc-badge badge-done">P1</div>
   <div>
-    <div class="pc-title"><code>hrp-v5-ui-01-new-ui-home-integration</code> <span class="wk">Tuần 1–2</span> <span class="pc-status st-xong">ACCEPTED <span class="fn">v1.1</span> &mdash; ROUND 2 XONG, AUDIT ROUND 1 CONDITIONAL</span></div>
+    <div class="pc-title"><code>hrp-v5-ui-01-new-ui-home-integration</code> <span class="wk">Tuần 1–2</span> <span class="pc-status st-xong">ACCEPTED <span class="fn">v1.1</span> &mdash; DEPLOYED 06/09</span></div>
     <div class="pc-inv">
-      Hợp đồng <span class="fn">v1.1</span>, <span class="pill p-acc">ACCEPTED</span>, <code>Current execution round</code> = <span class="fn">2</span>, <code>Current audit round</code> = <span class="fn">1</span>,
-      <b class="fn">18</b> RQ &middot; <b class="fn">18</b> AC &middot; <b class="fn">14</b> EV &middot;
-      <b class="fn">14</b> DEC &middot; <b class="fn">11</b> STEP, cổng contract <code>RESULT: PASS</code> exit <span class="fn">0</span>.
-      <b>Round 1 giao ngày 05/09 và trả về <code>BLOCKED</code> <span class="fn">12</span>/<span class="fn">17</span> AC</b> (cả hai cổng vẫn <code>RESULT: PASS</code> exit <span class="fn">0</span>).
-      Tier 1 tự đo lại năm mục chặn: <b>CẢ NĂM là defect phía Tier 1</b> (hợp đồng, phép đo, toolchain), <b class="fn">0</b> defect thực thi Tier 2 &mdash;
-      nên KHÔNG mở execution round cho round 1, chỉ <b>bump spec <code>v1.1</code></b> cộng một round <span class="fn">2</span> HẸP cho <code>BLK-01</code>.
-      Không có <code>AUDIT.md</code> và <code>Current audit round</code> vẫn <span class="fn">0</span>, nên §9 để trống: quyền phân xử do <code>RISK-05</code> giao cho Tier 1.
-      Baseline vẫn <code>b68d25b</code>, mốc RED-trước-GREEN là <span class="fn">111</span> test canh xanh exit <span class="fn">0</span>.
-      Nó KHÔNG phụ thuộc Phase 0: chạm <code>app/globals.css</code> (chỉ khối <code>@theme</code>),
-      <code>app/(portal)/page.tsx</code> và <code>src/domains/job-board/components/</code> —
-      không giao nhau với làn gate hay làn <code>test-01</code>.
-    </div>
-    <div class="pc-foot">
-      <b>Ba nút của round 1, đã đóng bằng phép đo chứ không bằng lời:</b>
-      <code>BLK-01</code> là <b>xung đột hợp đồng cứng</b> &mdash; <code>AC-01</code> đòi <span class="fn">7</span> token <code>--text-*</code> trong khi <code>ASM-01</code> của <code>go-live-16</code> đóng băng ở <span class="fn">0</span>,
-      và cú pháp Tailwind v4 biến <span class="fn">7</span> bậc thành <span class="fn">14</span> khoá <code>@theme</code>; <code>ASM-01</code> nằm NGOÀI Modules nên <b>Tier 2 đúng khi không tự sửa</b>.
-      Xử: đưa <code>internal-contrast.static.test.ts</code> vào Modules (chỉ assertion <code>ASM-01</code>) và nâng tripwire <span class="fn">0</span>&rarr;<span class="fn">14</span> qua <code>RQ-18</code>/<code>STEP-11</code>/<code>AC-18</code>/<code>DEC-14</code>.
-      <code>BLK-02</code> là <b>ô nhiễm từ worktree lạ</b>: <span class="fn">63</span> lint error đều nằm trong <code>.claude/worktrees/gl20</code> &mdash; chính worktree của <code>go-live-20</code> &mdash;
-      còn <code>npx eslint app src</code> ở cây chính đo lại exit <span class="fn">0</span> với <b class="fn">0</b> error, nên <code>AC-14</code> thu phạm vi lint về bề mặt nguồn ui-01.
-      Ba mục còn lại (<code>AC-07</code>, <code>AC-08</code>, <code>AC-09</code>) chỉ không đạt THEO MẶT CHỮ vì nguyên nhân có sẵn ở <code>b68d25b</code>: sửa phép đo sang DELTA so với baseline.
-      <b>Bản chất công việc vẫn thế:</b> task <b>ĐỔI HÌNH THỨC</b> cho dải nội dung mà
-      <code>go-live-09</code> đã ghép sẵn, KHÔNG phải task ghép dữ liệu mới.
-      <span class="fn">7</span> trong <span class="fn">11</span> component của <code>new-ui/</code> là
-      <b>bản thứ hai</b> của dải đang sống. Ghép nguyên vào là dựng bản thứ hai rỗng dữ liệu.
+      Hợp đồng <span class="fn">v1.1</span>, <span class="pill p-acc">ACCEPTED</span>, đã <b>commit scoped + push lên <code>main</code></b> ngày 06/09 — deploy production qua Vercel Git.
+      Baseline <code>b68d25b</code>.
     </div>
   </div>
 </div>
@@ -424,25 +403,13 @@ footer {
 <div class="section-label" id="p1b">Phase 1B — trang danh sách công khai <code>/viec-lam</code> (hợp đồng riêng, NGOÀI phase new-ui)</div>
 
 <div class="phase-card">
-  <div class="pc-badge badge-todo">1B</div>
+  <div class="pc-badge badge-done">1B</div>
   <div>
-    <div class="pc-title"><code>hrp-v5-go-live-20-public-job-listing-index</code> <span class="wk">Tuần 1–2</span> <span class="pc-status st-dang">CODE XONG &mdash; CHỜ AUDIT</span></div>
+    <div class="pc-title"><code>hrp-v5-go-live-20-public-job-listing-index</code> <span class="wk">Tuần 1–2</span> <span class="pc-status st-xong">ACCEPTED &mdash; AUDIT R1 PASS</span></div>
     <div class="pc-inv">
-      Hợp đồng <span class="fn">v1.5</span>, <span class="pill p-rev">HANDOFF READY_FOR_AUDIT</span>,
-      <b class="fn">17</b> RQ &middot; <b class="fn">21</b> AC &middot; <b class="fn">23</b> EV &middot;
-      <b class="fn">12</b> DEC &middot; <b class="fn">8</b> STEP &middot; <b class="fn">8</b> R.
-      Spec bump <span class="fn">v1.1</span>→<span class="fn">v1.2</span>→<span class="fn">v1.5</span> ngay GIỮA round vì chính cổng contract bắt hai lỗi ở <span class="fn">v1.4</span> (<code>A-05</code> và <code>T-03</code>); cửa sổ ĐỎ exit <span class="fn">2</span> được giữ nguyên cạnh cửa sổ XANH.
-      Hai cổng chạy CUỐI CÙNG và cùng <code>RESULT: PASS</code> exit <span class="fn">0</span>: contract <span class="fn">9</span> mã kiểm, bàn giao <span class="fn">13</span> mã kiểm, <span class="fn">0</span> warning.
-      Baseline <code>b68d25b</code>. <b>Tier 1 tự code</b> trong worktree riêng <code>.claude/worktrees/gl20</code> (nhánh <code>worktree-gl20</code>) để cách ly index khỏi <code>ui-01</code> đang chạy song song.
-    </div>
-    <div class="pc-foot">
-      <b>Đã giao:</b> <code>app/(jobs)/viec-lam/page.tsx</code> mới <b class="fn">419</b> dòng, render phía server (đường này trước đó <b>404</b>),
-      <code>public-listing.params.ts</code> <b class="fn">113</b> dòng, <code>public-listing.labels.ts</code> <b class="fn">47</b> dòng,
-      hai tệp test mới <b class="fn">519</b> dòng, một mục <code>navLinks</code> trong <code>GlobalNavbar</code>, và <b class="fn">2</b> dòng href quay lại của trang chi tiết.
-      <b>Bốn làn xanh:</b> unit <b class="fn">109</b> tệp / <b class="fn">1694</b> test (baseline <span class="fn">107</span>/<span class="fn">1642</span>), typecheck sạch, lint <b class="fn">0</b> error, build liệt <code>/viec-lam</code> là dynamic <span class="fn">168 B</span>.
-      <b>Phạm vi:</b> <b class="fn">63</b> path trong index = <b class="fn">9</b> mã + <b class="fn">54</b> tài liệu, đo lại bằng script dẫn xuất từ mục 4.1 của chính hợp đồng: <code>OUTSIDE_ALLOWED= []</code>.
-      Mục 5 của bàn giao khai <b class="fn">17</b> <code>LIM-*</code>, trong đó <b class="fn">6</b> cái là lời tự bác các mệnh đề của chính người viết.
-      <b>CHƯA commit, CHƯA push</b> &mdash; <code>R-01</code> giữ nguyên, round này chỉ <code>git add</code>.
+      Hợp đồng <span class="fn">v1.5</span>, <span class="pill p-acc">ACCEPTED</span>,
+      21/21 AC đạt, C-01..C-10 <code>DONE</code>, không P0/P1/P2 mở.
+      Baseline <code>b68d25b</code>. Code đã deploy ngày 06/09.
     </div>
   </div>
 </div>
@@ -541,21 +508,20 @@ footer {
 
 <div class="section-label" id="p3">Phase 3 — V6 Foundation Schema (nút cổ chai của cả hệ)</div>
 
-<div class="phase-card">
-  <div class="pc-badge badge-todo">P3</div>
+<div class="phase-card is-current">
+  <div class="pc-badge badge-current">P3</div>
   <div>
-    <div class="pc-title">V6 Phase 1 — Móng dữ liệu &amp; cấu trúc core <span class="wk">Tuần 2–4</span> <span class="pc-status st-todo">VIẾT HỢP ĐỒNG ĐƯỢC NGAY</span></div>
+    <div class="pc-title">V6 Phase 1 — Móng dữ liệu &amp; cấu trúc core <span class="wk">Tuần 2–4</span> <span class="pc-status st-dang">ĐANG LÀM — 1/2 ĐÃ ĐÓNG</span></div>
     <div class="pc-inv">
       Nguồn: <code>docs/V6/v6-admin-rebuild_ROADMAP.md</code> §&laquo;Phase 1&raquo;, ghi thẳng
       <b>&laquo;Bắt buộc làm đầu tiên&raquo;</b> và <b>&laquo;Không làm UI ở phase này&raquo;</b>.
-      Đây là <b>ĐIỂM CHIA NHÁNH</b> do chính tài liệu tuyên bố: ngay sau khi phase này merge,
-      V6 Admin và AFF Track chạy song song hoàn toàn độc lập.
+      Đây là <b>ĐIỂM CHIA NHÁNH</b>: ngay sau khi phase này merge, V6 Admin và AFF Track chạy song song hoàn toàn độc lập.
     </div>
     <div class="pc-foot">
-      <b>Sáu việc:</b> model <code>LaborProfile</code> (quan hệ <span class="fn">0..1</span> với <code>Worker</code>) &middot;
-      model <code>LaborProfileIntake</code> &middot; tách <code>JobOpening</code> (vận hành nội bộ) khỏi
-      <code>JobPosting</code> (bề mặt public) &middot; model <code>EmploymentEpisode</code> &middot;
-      migration an toàn giữ nguyên hoặc backfill <code>CandidateSubmission</code> &middot; <b>không một dòng UI</b>.
+      <b>Hai hợp đồng:</b>
+      <code>hrp-v6-p1-labor-profile-schema</code> (<code>LaborProfile</code>, <code>LaborProfileIntake</code>, <code>EmploymentEpisode</code>) — READY_FOR_EXECUTION.
+      <code>hrp-v6-p1-job-opening-posting-split</code> (tách <code>JobOpening</code>/<code>JobPosting</code>) — <b class="pill p-acc">ACCEPTED R4 PASS</b> ngày 08/09.
+      Nguồn quyết định: §11 <code>v6-admin-rebuild.md</code> 31 hàng <code>V6-DEC-001..031</code> đều <code>Chốt</code>.
     </div>
   </div>
 </div>
@@ -916,7 +882,7 @@ printf '%-6s %s\n' OQ   "$(grep -cE '^\| Q-[0-9]' "$f")"
 <footer>
   <b>Lộ trình hợp nhất HRP V6</b> — gom <code>new-ui</code>, <code>docs/V6/aff_plan.md</code> và
   <code>docs/V6/v6-admin-rebuild_ROADMAP.md</code> vào một tuyến sáu chặng.
-  Viết bởi Tier 1 Planner, <span class="fn">05/09/2026</span>.
+  Viết bởi Tier 1 Planner, <span class="fn">08/09/2026</span>.
   Tài liệu nguồn giữ nguyên authority của chúng: trang này <b>điều phối</b>, không <b>thay thế</b> tài liệu nào.
   Mọi con số ở đây đo được và kiểm lại được bằng khối lệnh ở mục <a href="#provenance">Nguồn của số đo</a>.
 </footer>
