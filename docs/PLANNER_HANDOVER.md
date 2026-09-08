@@ -213,6 +213,7 @@ Chỉ sửa khối `ROADMAP_CURSOR` ở §0 (từ `<!-- ROADMAP_CURSOR_START -->
 | 2.4 | 08/09/2026 | V6 Phase 1: 1/2 done, job-opening-split R4 PASS, labor-profile-schema READY, AFF §20 17/17 chưa tick |
 | 2.5 | 08/09/2026 | V6 Phase 1: 2/2 schema task ACCEPTED + LIVE APPLIED hrp-live (f8bd761); cursor chuyển sang p1c-new-ui-restyling R4 (READY); thêm phase1_live_evidence note (verified no auto-deploy migration) |
 | 2.6 | 08/09/2026 | V6 Phase 1: 3/3 core task ACCEPTED — p1c-new-ui-restyling AUDIT R1 PASS (0 P0/P1/P2); cursor chuyển sang security-credential-rotation (READY_FOR_EXECUTION); thêm phase1c_audit_evidence note (gate fingerprint + frozen test hashes) |
+| 2.7 | 08/09/2026 | Task `hrp-v6-security-credential-rotation` preflight unblock: Tier 1 redact credential literal ở TASK.md (T-06 gate) + sửa traceability RQ-09 (A-05 gate) + remove HTML-bracket placeholders (A-04 gate) + thêm Assurance lane + In-scope roots + Required gates. verify-task.ps1 re-run PASS exit 0 (gate fingerprint `4AA126F9306531F4CD2ECEFD27C229F5C99570FC875CED541B2B323F6B8AD5ED`). Spec bump v1.1 → v1.2. Commit `f956dd1` lên main. Còn 4 blocker ngoài TASK (worktree clean, AUDIT.md thiếu ở HEAD, closure `314ecef` ở branch `codex/hrp-v6-p1b-job-opening-posting-split`, HANDOFF ghi non-canonical `READY_FOR_OWNER_EXECUTION`) — cần Tier 2 chạy closure canonical merge hoặc Tier 1 mở task riêng. |
 
 ---
 
