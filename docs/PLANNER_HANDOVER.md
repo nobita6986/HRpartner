@@ -24,15 +24,15 @@ PHASE_MAP: |
     -> hrp-v6-p1c-new-ui-restyling READY_FOR_EXECUTION v1.2 — Tier 1 sua provenance bug R3 BLOCKED ngay 08/09 08:35: adopt blob f52a2b4 (36320 B) tu detached a489da8 vao main tai commit 3e6131b (pure plumbing git commit-tree de giu blob nguyen CRLF); baseline neo main @ 3e6131b; EV-01/EV-02 ref HEAD that; Q-01..Q-04 da RESOLVED tu R2
     -> V6 Phase 2/3/4/5 chi mo theo roadmap va decision gate tuong ung
   Phase 9+: AFF -> M7/M8 -> M6 policy/slices -> PAY theo authority ben duoi
-current_lane: Phase 8 CLOSED (1C + credential-rotation ACCEPTED) — Phase 9+ pending review
-current_task: PHASE_REVIEW — 1C + credential-rotation Tier 3 ACCEPTED; cho next candidate xem task_path
-task_path: docs/tasks/hrp-v6-p1c-new-ui-restyling/TASK.md (ACCEPTED v1.2, 11/11 AC, 0 P1/P2); docs/tasks/hrp-v6-credential-rotation-posture/TASK.md (ACCEPTED v1.3, 10/10 AC, 0 P1, 2 P2 AUD-001/AUD-002, 1 P3 AUD-003); docs/tasks/hrp-v5-go-live-07-marketplace-launch-proof/TASK.md (GO_LIVE_BLOCKED)
-spec_version: 1C v1.2 ACCEPTED; credential-rotation v1.3 ACCEPTED; gl-07 v1.6 BLOCKED
-task_status: 1C ACCEPTED v1.2 (11/11 AC, 0 P1, Tier 3 R1); credential-rotation ACCEPTED v1.3 (10/10 AC, 0 P1, Tier 3 R1); gl-07 GO_LIVE_BLOCKED (P1 AUD-001/002 OPEN — Owner can retry round 3)
-current_gate: PHASE_REVIEW
-next_action: Review exit gate Phase 8 (1C + credential-rotation); xac dinh next candidate (gl-07 retry, v6-security, 1A, 1B). AUD-003 (Tier 1 EV-03 fact error in credential-rotation — .gitignore da cover .env.dev/.env.preview/.env.prod.test tu f853a3c) can Tier 1 close via PR resolution row.
-approval_sequence: 1C: HANDOFF -> Tier 3 R1 -> ACCEPTED; credential-rotation: HANDOFF -> Tier 3 R1 -> ACCEPTED
-previous_closed: 1C v1.2 ACCEPTED 08/09 09:42 (11/11 AC); credential-rotation v1.3 ACCEPTED 08/09 09:18 (10/10 AC); GO-LIVE-20 ACCEPTED v1.6; TEST-01 ACCEPTED v1.5; GO-LIVE-21 CLOSED v1.5; GO-LIVE-07 DONG GO_LIVE_BLOCKED v1.6
+current_lane: Phase 8 V6 Phase 1 (1C + credential-rotation ACCEPTED) — Tier 2 running 1A R1
+current_task: hrp-v6-p1-job-opening-posting-split — Tier 2 RUNNING R1
+task_path: docs/tasks/hrp-v6-p1-job-opening-posting-split/TASK.md (Tier 2 RUNNING R1); docs/tasks/hrp-v6-p1-labor-profile-schema/TASK.md (READY, cho sau 1A); docs/tasks/hrp-v5-go-live-07-marketplace-launch-proof/TASK.md (DEFERRED — Owner defer to end of V6 Phase 1 dev cycle); docs/tasks/hrp-v6-p1c-new-ui-restyling/TASK.md (ACCEPTED v1.2); docs/tasks/hrp-v6-credential-rotation-posture/TASK.md (ACCEPTED v1.3)
+spec_version: 1A v1.0 Tier 2 running R1; 1B v1.0 READY_FOR_EXECUTION; gl-07 v1.6 DEFERRED; 1C v1.2 ACCEPTED; credential-rotation v1.3 ACCEPTED
+task_status: 1A Tier 2 RUNNING R1 (baseline 4758809); 1B READY (baseline 4758809, same prisma/schema.prisma — phai chay NOI TIEP sau 1A commit); gl-07 DEFERRED (Owner defer to end of V6 Phase 1 dev cycle — no longer blocking)
+current_gate: TIER_2_EXECUTION (1A R1)
+next_action: Cho 1A R1 — Tier 2 chay STEP-01..09; sau khi 1A ACCEPTED thi commit scoped roi chuyen 1B. 1B chay noi tiep voi baseline moi = commit 1A.
+approval_sequence: 1A: HANDOFF -> Tier 3 R1 -> Tier 1 ACCEPT; 1B: HANDOFF -> Tier 3 R1 -> Tier 1 ACCEPT
+previous_closed: 1C v1.2 ACCEPTED 08/09 09:42 (11/11 AC, 0 P1/P2); credential-rotation v1.3 ACCEPTED 08/09 09:18 (10/10 AC, 0 P1, 2 P2, 1 P3); GO-LIVE-20 ACCEPTED v1.6; TEST-01 ACCEPTED v1.5; GO-LIVE-21 CLOSED v1.5; GO-LIVE-07 DONG GO_LIVE_BLOCKED v1.6
 v6_foundation: hrp-v6-p1-labor-profile-schema ACCEPTED v1.1 (a4ab9f0); hrp-v6-p1-job-opening-posting-split ACCEPTED v1.1 (audit d690693, planner acceptance cf887c0); hrp-v6-p1c-new-ui-restyling READY v1.2 (Tier 1 fix contract 08/09 00:00 + resolve Q 08/09 00:40 + adopt artifact 08/09 08:35); hrp-v6-credential-rotation-posture READY v1.2 (Tier 1 tu quyet Q 08/09 00:30 + sua 5 loi R1 08/09 09:05)
 held_draft: hrp-v5-go-live-19-tracking-pii-db-mask — can TEST DB + migration window
 metadata_drift: hrp-v6-security-credential-rotation, hrp-v6-p1-labor-profile-schema va hrp-v6-p1-job-opening-posting-split co control header cu READY/v1.0-v1.1 trong khi Planner Resolution + Revision Log ghi ACCEPTED; khong sua ngam accepted contract, can mot dot reconciliation rieng

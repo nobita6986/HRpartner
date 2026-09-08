@@ -7,8 +7,8 @@
 | Task slug | `hrp-v5-go-live-07-marketplace-launch-proof` |
 | Work type | `INFRA` |
 | Audit mode (Tier 3 đọc) | `INFRA_AUDIT` |
-| Spec version | `v1.6` |
-| Status | `READY_FOR_EXECUTION` — MỌI điều kiện xếp hàng đã đóng: ba dependency của `v1.0` (GO-LIVE-04, GO-LIVE-06, GO-LIVE-05) `ACCEPTED`, và `hrp-v5-go-live-09-public-board-architecture` `ACCEPTED` ngày 02/09. Chân DB của `DEC-17` cũng đã có bằng chứng sổ: xem `EV-21`. Điều kiện DEPLOY 09 cũng đã đóng: mã của 09 lên `main` ở commit `bb8a983` và production đã chạy mã đó. KHÔNG còn cửa chặn nào |
+| Spec version | `v1.7` |
+| Status | `DEFERRED` — Owner defer execution to end of V6 Phase 1 dev cycle. Owner production session can restart when ready. |
 | Planner | Tier 1 — Planner |
 | Executor | Tier 2 — operator/evidence recorder dưới quyền Owner |
 | Auditor | Tier 3 — independent live verifier |
@@ -17,8 +17,8 @@
 | ADR references | `UNIFIED_PLAN_v5.md §7.9.7`; `docs/runbooks/marketplace-launch-operations.md`; `docs/runbooks/marketplace-launch-drill.md` |
 | Current execution round | `1` |
 | Current audit round | `0` |
-| Next gate | Giao `/code hrp-v5-go-live-07-marketplace-launch-proof` — giao được NGAY, vì 09 đã `ACCEPTED`, đã push và đã deploy ngày 02/09 nên bề mặt LIVE đúng với mã. Owner có quyền giao SỚM HƠN theo `DEC-14`, đổi lại report phải mang ghi chú phạm vi và một nghĩa vụ đo lại phần bề mặt |
-| Updated | `2026-09-06 10:30 Asia/Bangkok` |
+| Next gate | Owner deferred — execute at end of V6 Phase 1 dev cycle |
+| Updated | `2026-09-08 09:56 Asia/Bangkok` |
 
 Đây là task chứng minh go-live, không phải task “viết thêm code cho đủ đẹp”. Nó đóng khoảng cách giữa gate/test xanh và hành vi thật trên `www.hrpartner.vn`, tạo một gói evidence để Owner ký quyết định công bố Marketplace.
 
@@ -281,6 +281,7 @@ Neo lại ở **`v1.6`** ngày 06/09, và như `v1.4`, contract sửa chính nó
 
 | Spec version | Date | Change | Reason/Audit refs |
 |---|---|---|---|
+| `v1.7` | `2026-09-08` | Owner defer execution to end of V6 Phase 1 dev cycle. Đổi Status thành `DEFERRED`, Next gate thành "Owner deferred", bump spec. | Owner 08/09 |
 | `v1.6` | `2026-09-06` | Viết lại `AC-09` và `AC-14` để mỗi hàng nêu phương pháp đo thật: `AC-09` gọi tên Auth UI/API state trail cộng bằng chứng `X-Request-Id`/timestamp/business code theo `DEC-05`; `AC-14` gọi tên lệnh `verify-audit.ps1 -TaskPath` trỏ `TASK.md` và nói rõ verdict là số finding của Tier 3, không phải màu gate. Mục 0 đổi `Spec version` và `Updated` | Gate `verify-task.ps1` trả `T-05` FAIL exit `2` vì hai hàng cũ ("State history"/"Final state" và "Audit command"/"AUDIT + output") không nêu command token lẫn manual method nào, nên executor không tạo được evidence. Cửa sổ bump còn MỞ vì `Current audit round` bằng `0` và thư mục task chưa có HANDOFF, nên không cắt ngang việc của ai |
 | `v1.5` | `2026-09-02` | Thêm `EV-22`, `DEC-20`, `RISK-16`; viết lại `RQ-04`, `AC-04`, `STEP-03`; mục 0 đổi `Spec version` và `Updated` | `RQ-04` bản `v1.1` đòi thấy đúng job drill trên `/` và `/jobs` mà KHÔNG nói đo bằng gì, trong khi ba URL ấy không cùng chế độ render: `/` là client component lấy dữ liệu bằng `fetch` tới `/api/jobs`, `/jobs` là `permanentRedirect` sang `/`, chỉ `/viec-lam/[slug]` là server component. Một người chạy drill dùng `curl` cho cả ba URL sẽ ghi BLOCK cho một hệ thống đang chạy ĐÚNG. Cùng họ với `RISK-08`: đo đúng mọi chữ contract viết mà kết luận vẫn sai. Cửa sổ bump còn MỞ vì `Current audit round` bằng `0` và thư mục task chưa có HANDOFF nào, nên không cắt ngang việc của ai |
 | `v1.4` | `2026-09-02` | Sửa `EV-21`, `RQ-17`, `RISK-15` cùng đoạn văn của `v1.3`; mục 0 đổi `Status`, `Next gate`, `Spec version`, `Updated` | Hai việc. Điều kiện DEPLOY của 09 đã đóng ở commit `bb8a983` nên task này hết cửa chặn. Và `v1.3` đã ghi sai một cảnh báo: dòng vắng của `20260831160000_public_rpc_residual_grant_revoke` trong `_prisma_migrations` KHÔNG phải khoảng trống mà là đúng thiết kế, vì header file migration cấm `prisma migrate deploy` và buộc dán tay; trạng thái quyền đã được GO-LIVE-11 đo trực tiếp bằng `pg_auth_members` ra `total=1, residual_self_grant=0, inheritable=0, safe_admin=1`. Không có việc nào cần giao cho Owner. Cửa sổ bump còn mở vì `Current audit round` bằng `0` |
