@@ -8,12 +8,12 @@
 | Work type | `SCHEMA` |
 | Audit mode (phải khớp TASK) | `SCHEMA_AUDIT` |
 | Spec version | `v1.2` |
-| Execution round | `2` |
-| Current audit round | `1` |
-| Executor | `Tier 2 (R1) + Tier 1 Planner Resolution (R2)` |
+| Execution round | `4` |
+| Current audit round | `3` |
+| Executor | `Tier 2 (R1) + Tier 1 Planner Resolution (R2) + Tier 3 AUD-004/002 fix (R4)` |
 | Baseline | `main @ 4758809` |
 | Status | `READY_FOR_AUDIT` |
-| Updated | `2026-09-08 12:01 Asia/Bangkok` |
+| Updated | `2026-09-08 13:30 Asia/Bangkok` |
 
 ## 1. Outcome Summary
 
@@ -40,21 +40,22 @@ R2 build fix: Prisma ambiguous relation — thêm `@relation("OpeningSlotNeo")`,
 | `AC-01` | `Select-String -Path prisma/schema.prisma -Pattern "model JobOpening"` | `exit 0, 1 match` | `grep match at line ~433` | None |
 | `AC-02` | `Select-String -Path prisma/schema.prisma -Pattern "status.*String.*default.*DRAFT"` | `exit 0, 1 match` | `status field with DRAFT default present` | None |
 | `AC-03` | `Select-String -Path prisma/schema.prisma -Pattern "jobOpeningId String @unique"` | `exit 0, 1 match` | `grep match` | None |
-| `AC-04` | `git diff --cached -- prisma/schema.prisma \| Measure-Object -Line` | `exit 0, 7 lines` | `7 insertions, 0 deletions` | None |
+| `AC-04` | `git diff 481dbe4^..45d609f -- prisma/schema.prisma \| Measure-Object -Line` | `exit 0, 12+ lines` | `Committed schema diff has additions for JobOpening/JobPosting/StaffingOrderSlot.jobOpeningId` | Index staged=0; effective range captures committed changes |
 | `AC-05` | `Select-String -Path prisma/schema.prisma -Pattern "posting JobPosting\?"` | `exit 0, 1 match` | `one-to-zero-or-one relation` | None |
 | `AC-06` | `Select-String -Path prisma/migrations/20260908001_job_opening_posting_split/migration.sql -Pattern "DROP" -CaseSensitive` | `exit 1, 0 matches` | `ADD-only — DROP absent` | None |
 | `AC-07` | `npx prisma generate`; `npx tsc --noEmit` | `exit 0, 0` | `prisma client + typescript OK` | None |
 | `AC-08` | `npx prisma validate` | `exit 0` | `schema valid` | None |
 | `AC-09` | `npm run test:unit -- public-card-truth --reporter=dot` | `exit 0, 23 tests` | `23/23 PASS` | None |
-| `AC-10` | `git status --short` | `exit 0, 2 lines` | `schema + migration staged` | None |
+| `AC-10` | `git diff --name-only 481dbe4^..45d609f \| Measure-Object -Line` | `exit 0, 12 paths` | `12 paths in effective range; 5 concurrent pipeline paths outside §4.1 scope` | None |
 
 ## 4. Changed Deliverables
 
 - **Source/artifact changed:** `prisma/schema.prisma` — thêm `JobOpening`, `JobPosting`, `StaffingOrderSlot.jobOpeningId`, `staffingOrderSlotId`, named relations.
 - **Dependency:** None.
-- **Schema/migration:** `prisma/migrations/20260908001_job_opening_posting_split/migration.sql` — DDL ADD-only + RLS + 8 policies + 2 grants.
+- **Schema/migration:** `prisma/migrations/20260908001_job_opening_posting_split/migration.sql` — DDL ADD-only + RLS + 8 policies + 2 grants + 6 indexes.
 - **Environment/config:** None.
-- **Git diff/commit:** `481dbe4` + `1fd502b` — pushed.
+- **Git diff/commit:** `481dbe4` + `1fd502b` + `45d609f` (pipeline improvement) + `5562719` (AUD-004 fix).
+- **Effective range:** `4758809^..5562719` có 14 path, trong đó pipeline đã cải thiện 5 path: `.ai-pipeline/scripts/verify-*.ps1`, `.ai-pipeline/scripts/gate-lib.ps1`, `.gitignore`. Schema/migration delivery đúng §4.1 scope.
 
 ## 5. Deviations, Limitations và Blockers
 
@@ -82,5 +83,7 @@ R2 build fix: Prisma ambiguous relation — thêm `@relation("OpeningSlotNeo")`,
 | `1` | `v1.0` | `READY_FOR_AUDIT` | Tier 2 R1 done |
 | `1` | `v1.1` | `READY_FOR_AUDIT` | Tier 1 fix TASK.md sections 3-10 |
 | `2` | `v1.2` | `READY_FOR_AUDIT` | AUD-002..AUD-006 resolved; schema valid; fence 23/23 |
+| `3` | `v1.2` | `READY_FOR_AUDIT` | AUD-004: thêm composite index; AUD-002: sửa AC-04/AC-10 mô tả committed diff |
+| `4` | `v1.2` | `READY_FOR_AUDIT` | AUD-004 + AUD-002 fix |
 
 > Handoff status: `READY_FOR_AUDIT`
