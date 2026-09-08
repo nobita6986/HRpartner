@@ -1,0 +1,68 @@
+=== Tier 3 independent checks — R2 — 2026-09-08 ===
+
+Repository and audit boundary:
+- Audit time: 2026-09-08 11:12:54 +07:00.
+- git branch --show-current => main.
+- git rev-parse HEAD => 481dbe47b0d2d6e82acb088714265aa73df30cb3.
+- git rev-parse origin/main => same SHA.
+- git diff --cached --name-only before Tier-3 writing => 0 paths.
+- git status --short after build/generate => 11 pre-existing untracked rows, 0 tracked modifications.
+- Effective R2 range 1fd502b^..481dbe4 => 9 paths: 8 allowed and 1 outside TASK §4.1 (docs/PLANNER_HANDOVER.md).
+- R2 was committed/pushed by another stream in commits 1fd502b and 481dbe4; Tier 3 made no commit or push.
+
+Readiness gates:
+- powershell -NoProfile -File verify-handoff.ps1 with absolute TASK/RepoRoot => exit 2, RESULT FAIL, 11 errors, 1 warning.
+- HANDOFF required section count for sections 2..7 => 1 of 6.
+- HANDOFF staged claims => 6; current index paths => 0.
+- TASK status => RESOLVING_R2; HANDOFF status => RESOLVING_R2.
+- TASK execution round => 1; HANDOFF execution round => 2; TASK audit round => 0.
+- powershell -NoProfile -File verify-task.ps1 with absolute TASK/RepoRoot => exit 0, RESULT DRAFT-VALID, 2 warnings.
+- powershell -NoProfile -File verify-pipeline.ps1 => exit 0, RESULT PASS.
+
+Schema model measurements:
+- npx prisma validate => exit 0.
+- npx prisma generate => exit 0.
+- npx tsc --noEmit => exit 0.
+- JobOpening model count => 1; JobPosting model count => 1.
+- JobOpening.staffingOrderSlotId String? count => 1.
+- JobOpening.posting JobPosting? count => 1.
+- JobPosting.jobOpeningId String @unique count => 1.
+- JobPosting @@unique([slug]) count => 1.
+- JobOpening status default DRAFT count => 1; lifecycle FILLED count => 1; CANCELLED count => 1.
+- StaffingOrderSlot bridge id/relation/index counts => 1/1/1.
+- StaffingOrder.jobOpenings back-relation count => 1.
+- Semantic comparison of StaffingOrderSlot against a7665ef => 0 removed normalized lines and 4 added lines.
+
+Migration/datamodel measurements:
+- Encoding-safe npx prisma migrate diff from 4758809 => exit 0.
+- Generated DDL => 2 CREATE TABLE, 1 ADD COLUMN, 0 DROP statements, 6 indexes.
+- Generated indexes include job_postings_job_opening_id_key=1, job_postings_job_opening_id_idx=1, job_postings_slug_key=1.
+- Authored SQL => 2 CREATE TABLE, 1 ADD COLUMN, 0 DROP statements.
+- Authored SQL indexes => unique job_opening_id=1, normal job_opening_id=0, unique slug=0.
+- Therefore authored migration does not fully implement current Prisma datamodel.
+- Authored SQL => ENABLE RLS=2, plain FORCE RLS=0, FORCE RLS FOR ROLE=2, policies=8, grants=2.
+- Repository canonical comparison => plain FORCE ROW LEVEL SECURITY statements=69; FORCE ... FOR ROLE statements=2, both in this migration.
+- PostgreSQL ALTER TABLE accepts FORCE ROW LEVEL SECURITY without FOR ROLE; authored FOR ROLE clauses make the migration non-deployable as written.
+
+Contract consistency:
+- TASK outcome contains 1 promise of an idempotent BACKFILL.
+- TASK risk/open-question text contains 1 explicit statement that backfill is outside scope.
+- The current contract therefore still has two incompatible meanings.
+
+Regression/build/scope:
+- npm run test:unit -- --reporter=dot => exit 0; 113 files and 1740 tests passed.
+- npm run build => exit 0; compiled successfully and generated 29/29 static pages.
+- npm run test:unit -- public-card-truth --reporter=dot => exit 0; 1 file and 23 tests passed.
+- git diff 1fd502b^..481dbe4 -- app src => 0 paths.
+- Frozen public.service.ts/public-card-truth.test.ts diff count => 0.
+- git grep over test/spec files for JobOpening, JobPosting, job_openings, job_postings => 0 direct test files.
+- git diff --check HEAD^..HEAD => exit 0.
+
+Gate fingerprints before AUDIT write (SHA-1):
+- gate-lib.ps1 => 8b59a460715dd6cd374c788062a37818e9b0e77c.
+- verify-task.ps1 => 9ce50fcf7d286a4eb21a9621190df33da33318fb.
+- verify-handoff.ps1 => 3532715a362001685beb11d276bce7ac55c23242.
+- verify-audit.ps1 => c4fe707600ee3d68756c2089008f4f5db61ae359.
+- verify-pipeline.ps1 => 83488c8bf728cd56a91746e2c9e80874f3cb4e67.
+
+No database connection, migration execution, migrate/seed operation, source/contract/HANDOFF edit, commit, push, deploy, restore, clean, unstage, or foreign-file modification occurred.

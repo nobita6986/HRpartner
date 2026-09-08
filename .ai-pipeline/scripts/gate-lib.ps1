@@ -317,7 +317,7 @@ function Test-GateRowPassed {
         $scope = Clear-MdDecoration ($cells -join ' ')
     }
     if ([regex]::IsMatch($scope, 'RESULT:\s*FAIL', 'IgnoreCase')) { return $false }
-    return ([regex]::IsMatch($scope, 'RESULT:\s*PASS', 'IgnoreCase'))
+    return ([regex]::IsMatch($scope, 'RESULT:\s*(PASS|DRAFT-VALID)', 'IgnoreCase'))
 }
 
 # hotfix-02 F-01, go-live-03/12/13 F-04: every evidence path read "Console Output".

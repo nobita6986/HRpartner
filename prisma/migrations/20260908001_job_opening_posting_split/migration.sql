@@ -59,6 +59,7 @@ ALTER TABLE "staffing_order_slots" ADD CONSTRAINT "staffing_order_slots_job_open
 
 -- Create indexes
 CREATE UNIQUE INDEX "job_postings_job_opening_id_key" ON "job_postings"("job_opening_id");
+CREATE UNIQUE INDEX "job_postings_slug_key" ON "job_postings"("slug");
 CREATE INDEX "job_openings_staffing_order_id_idx" ON "job_openings"("staffing_order_id");
 CREATE INDEX "job_openings_staffing_order_slot_id_idx" ON "job_openings"("staffing_order_slot_id");
 CREATE INDEX "staffing_order_slots_job_opening_id_idx" ON "staffing_order_slots"("job_opening_id");
@@ -67,7 +68,7 @@ CREATE INDEX "staffing_order_slots_job_opening_id_idx" ON "staffing_order_slots"
 -- RLS for job_openings — scope qua staffing_orders.project_id (họ staffing)
 -- ═══════════════════════════════════════════════════════════════════════════
 ALTER TABLE "job_openings" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "job_openings" FORCE ROW LEVEL SECURITY FOR ROLE "app_user_writer";
+ALTER TABLE "job_openings" FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY "job_openings_select" ON "job_openings" FOR SELECT
   USING (hrp_project_visible_for(
@@ -95,7 +96,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON "job_openings" TO app_user_writer;
 -- RLS for job_postings — scope qua job_openings → staffing_orders.project_id
 -- ═══════════════════════════════════════════════════════════════════════════
 ALTER TABLE "job_postings" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "job_postings" FORCE ROW LEVEL SECURITY FOR ROLE "app_user_writer";
+ALTER TABLE "job_postings" FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY "job_postings_select" ON "job_postings" FOR SELECT
   USING (hrp_project_visible_for(

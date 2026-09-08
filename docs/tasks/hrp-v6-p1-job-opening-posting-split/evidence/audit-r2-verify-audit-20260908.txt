@@ -1,0 +1,28 @@
+=== verify-audit R2 — 2026-09-08 ===
+
+Invocation:
+- powershell -NoProfile
+- absolute TaskPath points to TASK.md
+- absolute AuditPath, HandoffPath, and RepoRoot
+
+Attempt 1:
+- Exit: 2
+- RESULT: FAIL (1 error, 0 warnings)
+- S-02: section 4 row abbreviated the direct-test command as `git grep`, which the gate did not recognize as a runnable command.
+- All other reported checks passed, including A-02 spec v1.2, 10 AC rows, 13 section-4 evidence rows, S-09 fresh R2 evidence, S-10 five new measured values, S-13 rounds 1..2, S-14 secret scan, and S-15 referenced artifacts.
+- Audit-only correction: expanded that cell to the concrete `git grep -l -E JobOpening -- **/*.test.ts` command. No implementation, contract, HANDOFF, gate, or source file changed.
+
+Attempt 2:
+- Exit: 0
+- RESULT: PASS
+- A-02: spec v1.2 matches TASK.
+- A-03: all 10 AC have verdict rows.
+- A-05: independent verdict BLOCKED accepted.
+- A-06/S-02: 13 evidence rows carry command + result.
+- S-09: section 4 differs from committed R1.
+- S-10: 5 measured values are new relative to TASK/HANDOFF.
+- S-13: re-audit rounds are within 1..2.
+- S-14: no plaintext secret.
+- S-15: all 4 referenced artifact paths exist.
+
+The structural PASS does not override the business verdict BLOCKED.

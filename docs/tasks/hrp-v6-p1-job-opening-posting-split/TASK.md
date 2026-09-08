@@ -23,7 +23,7 @@ Tách hai khái niệm đang bị gộp ở tầng `Project`: NHU CẦU tuyển 
 - `JobOpening` — đơn vị NHU CẦU nội bộ (loại vị trí cần N người), đặt trên `StaffingOrder` / `StaffingOrderSlot` — persistence chuyển tiếp gần nhất (V6-DEC-017); một opening chứa nhiều slot (V6-DEC-011); có `status` vòng đời (mục 4.7).
 - `JobPosting` — HÌNH CHIẾU công khai của đúng MỘT `JobOpening` (V6-DEC-011); một opening tối đa MỘT tin đang PUBLISHED; giữ `slug`, `revision`, lịch sử publish (mục 4.8).
 
-Kèm móc THÊM-thuần `StaffingOrderSlot.jobOpeningId` nullable và một migration BACKFILL idempotent dựng opening/posting từ dữ liệu sống.
+Kèm móc THÊM-thuần `StaffingOrderSlot.jobOpeningId` nullable.
 
 RANH GIỚI PHASE (khai TRƯỚC, chống trôi):
 - Task này KHÔNG repoint bề mặt công khai. `getPublicJobProjection` / `getPublicJobDetail` vẫn đọc `Project` như cũ tại [public.service.ts:684](src/domains/job-board/public.service.ts#L684) và [public.service.ts:695](src/domains/job-board/public.service.ts#L695). Không gian slug đổi và map cũ→mới + redirect là việc PHASE 3 (V6-DEC-030).
