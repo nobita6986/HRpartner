@@ -10,16 +10,16 @@
 | In-scope roots | `check_rls.cjs` (untrack + sanitize); `.gitignore` (exact path); `docs/runbooks/credential-rotation-incident.md` (mới); `docs/tasks/hrp-v6-security-credential-rotation/**` (HANDOFF, evidence); 4 file canary `BLOCKED_DB_URL` ở `vitest.unit.config.ts`, `vitest.integration-files.ts`, `vitest.config.ts`, `playwright.config.ts` (chỉ đọc, KHÔNG sửa); Neon role `neondb_owner` host `ep-shy-tree-az32as2c-pooler.c-3.ap-southeast-1.aws.neon.tech` (Owner/OP rotate, masked) |
 | Required gates | `verify-task.ps1` (Tier 1); `verify-handoff.ps1` (Tier 2); `verify-audit.ps1` (Tier 3) |
 | Audit mode (Tier 3 đọc) | `INFRA_AUDIT` |
-| Spec version | `v1.2` |
-| Status | `READY_FOR_EXECUTION` — Owner trả lời Q-01/Q-02/Q-03 lúc 2026-09-07 13:42; bump `v1.1` → `v1.2` 08/09 sau khi Tier 1 redact credential literal ở §1/§2 (T-06 gate) + sửa traceability RQ-09 (A-05 gate) + thêm Lane (A-02 WARN) + chốt canonical env name = `DATABASE_URL`. Mở execution round 1 ngay sau re-run `verify-task.ps1` PASS. STEP-02 sanitize `check_rls.cjs` (KEEP + scrub raw credential); STEP-05 rotate `neondb_owner` tại maintenance window 2026-09-08 09:00-09:30 |
+| Spec version | `v1.3` |
+| Status | `BLOCKED` (audit round 1) — Tier 3 audit round 1 BLOCKED với AUD-001 (canary contract vs reality mismatch) + AUD-002 (Owner rotation chưa execute). Tier 1 DELTA: sửa AC-02 gitignore path (bỏ `/` prefix) + AC-09 canary whitelist (2/4 files tồn tại + 2 OUT_OF_SCOPE) + AC-10 vitest command (bỏ playwright + specific file args → full suite). Audit round 1 verdict BLOCKED đúng. Chờ Owner/OP rotate credential + Tier 3 re-audit round 2 → ACCEPTED |
 | Planner | `Tier 1` |
 | Executor | `Tier 2` cho repo hygiene (STEP-01..03); `Owner/OP` cho Neon rotate + verify (STEP-04..06) |
 | Auditor | `Tier 3 independent context` |
-| Baseline | `main @ 0d9fa73` — `check_rls.cjs` đã untrack tại commit `4a56122` + `.gitignore` exact path tại line 82; file sanitize dùng `process.env.DATABASE_URL` (2 hit) + fail-closed throw (2 hit); embedded postgres URL pattern = 0. `node --check` exit 0. Tier 2 evidence tại `evidence/sec-s06-post-verify.txt` |
+| Baseline | `main @ d3ca054` — sau Tier 1 redact commit `f956dd1` + handover bump `d3ca054`; `check_rls.cjs` đã untrack (git ls-files rỗng) + sanitize (0 URL pattern + 2 env.DATABASE_URL + 2 throw) + `.gitignore:82` exact path (git check-ignore exit 0); canary reality: 2/4 files có BLOCKED_DB_URL, 2 OUT_OF_SCOPE |
 | Modules | `Neon credentials; secret rotation; repository hygiene; Prisma RLS check; check_rls.cjs` |
 | ADR references | `docs/PLANNER_HANDOVER.md §13` fail-closed LIVE DB convention; `tier1.md §6` Resolve Protocol; `hrp-v5-go-live-21-credential-hygiene-closure` §9 AUD-001 ESCALATE_NEW_TASK |
-| Current execution round | `1` (mở sau re-run `verify-task.ps1` PASS) |
-| Current audit round | `0` |
+| Current execution round | `1` |
+| Current audit round | `1` (BLOCKED: AUD-001 canary mismatch + AUD-002 Owner rotation pending) |
 | Canonical env name | `DATABASE_URL` (file hiện tại đọc `process.env.DATABASE_URL` × 2; override §8 Q-02 answer cũ từ `CHECK_RLS_DSN`) |
 | Next gate | Tier 2 `/code hrp-v6-security-credential-rotation` execution round 1 sau khi task 21 audit round ≥ 2 PASS + verify-task.ps1 PASS + closure canonical từ branch `codex/hrp-v6-p1b-job-opening-posting-split` (commit `314ecef`) merge vào main. STEP-01 untrack check_rls.cjs = SKIP (đã landed tại `4a56122`); STEP-02 sanitize = SKIP (đã landed tại `4a56122`); STEP-03 commit scoped = SKIP (đã landed tại `121e796`); STEP-04 runbook = VERIFY (đã landed tại `121e796`); STEP-05..06 Owner/OP rotate Neon = PENDING OP window; STEP-07 Tier 3 fingerprint scan = PENDING; STEP-08 HANDOFF closure canonical = PENDING |
 | Updated | `2026-09-08 21:30 Asia/Bangkok` — Tier 1 redact + bump v1.1 → v1.2 sau khi Tier 2 báo cáo verify-task.ps1 FAIL exit 2 tại A-04/A-05/T-06 (8/8 Tier 2 claim đã verify đúng) |
@@ -104,7 +104,7 @@ HRPartner production database không còn chịu rủi ro từ một Neon owner 
 - `.gitignore` (thêm exact path cho `check_rls.cjs`)
 - `docs/runbooks/credential-rotation-incident.md` (mới)
 - `docs/tasks/hrp-v6-security-credential-rotation/**` (HANDOFF, evidence)
-- Bốn file canary `BLOCKED_DB_URL` ở `vitest.unit.config.ts`, `vitest.integration-files.ts`, `vitest.config.ts`, `playwright.config.ts` (chỉ đọc, KHÔNG sửa)
+- 2 file canary `BLOCKED_DB_URL` tồn tại: `vitest.unit.config.ts:15`, `vitest.config.ts:25` (chỉ đọc, KHÔNG sửa; `vitest.integration-files.ts` không phải canary, không thuộc whitelist; `playwright.config.ts` không tồn tại trong repo — OUT_OF_SCOPE)
 - Neon role `neondb_owner` cho `ep-shy-tree-az32as2c-pooler.c-3.ap-southeast-1.aws.neon.tech` (Owner/OP rotate)
 
 **Out of scope:**
@@ -172,15 +172,15 @@ Mỗi hàng đo bằng LỆNH thật. Tất cả OFFLINE trừ STEP-05/06 (Owner
 | AC | RQ | Điều kiện | Phương pháp đo | Bằng chứng | Chặn? |
 |----|----|-----------|----------------|------------|-------|
 | `AC-01` | `RQ-01` | `git ls-files check_rls.cjs` trả rỗng (file không còn tracked) | `git ls-files check_rls.cjs` exit 0 output rỗng | output, `evidence/ac01-untracked.txt` | Yes |
-| `AC-02` | `RQ-01` | `.gitignore` chứa exact path `/check_rls.cjs` (cùng pattern task 21); `git check-ignore -v check_rls.cjs` trả 1 dòng | `rg -n '/check_rls\.cjs$' .gitignore` ; `git check-ignore -v check_rls.cjs` | hai output, `evidence/ac02-gitignore.txt` | Yes |
+| `AC-02` | `RQ-01` | `.gitignore` chứa exact path `check_rls.cjs`; `git check-ignore -v check_rls.cjs` trả 1 dòng (exit 0) | `rg -n 'check_rls\.cjs$' .gitignore` ; `git check-ignore -v check_rls.cjs` | hai output, `evidence/ac02-gitignore.txt` | Yes |
 | `AC-03` | `RQ-02` | `check_rls.cjs` KHÔNG còn chứa scheme URL postgres pattern | `rg -nP '(postgres(?:ql)?|mysql\|...)://[^\s:/@]+:[^\s@]+@' check_rls.cjs` trả rỗng | output rỗng, `evidence/ac03-sanitized.txt` | Yes |
 | `AC-04` | `RQ-02` | `check_rls.cjs` đọc `process.env.DATABASE_URL`; throw fail-closed khi thiếu | `rg -n 'process.env.DATABASE_URL' check_rls.cjs` ≥ 1 ; `rg -n 'throw' check_rls.cjs` ≥ 1 | hai output, `evidence/ac04-failclosed.txt` | Yes |
 | `AC-05` | `RQ-03` | Commit scoped có message chứa `hrp-v6-security-credential-rotation`; chỉ touch `check_rls.cjs` + `.gitignore` | `git log -1 --format=%B` có chuỗi ; `git diff HEAD~1 HEAD --name-only` chỉ 2 path | hai output, `evidence/ac05-commit.txt` | Yes |
 | `AC-06` | `RQ-05` | Credential mới đúng identity `neondb_owner` + host `ep-shy-tree-...`; credential cũ fingerprint `sha256:redacted-neon-owner-pw` fail khi connect | Owner chạy masked identity probe (role, host fingerprint, posture) ; `node check_rls.cjs` với credential cũ trả connection refused | Identity matrix (masked), `evidence/ac06-rotation.txt` | Yes |
 | `AC-07` | `RQ-06, RQ-10` | Fingerprint scan HEAD + 5 commit gần nhất trước `ebca45c` trả 0 match ngoài whitelist canary | Tier 3 chạy `rg -nP 'sha256:redacted-neon-owner-pw\|ep-shy-tree-az32as2c-pooler' -- '*.ts' '*.tsx' '*.js' '*.mjs' '*.cjs' '.env*'` loại trừ 4 file canary ; verify 0 dòng | scan output, `evidence/ac07-fingerprint.txt` | Yes |
 | `AC-08` | `RQ-07` | `docs/runbooks/credential-rotation-incident.md` tồn tại với 5 mục: timeline, rotation order, smoke matrix, rollback, masked evidence template | `Test-Path` ; `rg -n '^## '` cho 5 mục | output, `evidence/ac08-runbook.txt` | Yes |
-| `AC-09` | `RQ-04` | 4 file canary còn chứa `BLOCKED_DB_URL` chưa sửa | `rg -n 'BLOCKED_DB_URL' vitest.unit.config.ts vitest.integration-files.ts vitest.config.ts playwright.config.ts` trả ≥ 1 dòng mỗi file | 4 dòng, `evidence/ac09-canary.txt` | Yes |
-| `AC-10` | `RQ-08` | Canary test pass sau untrack + sanitize | `npx vitest run vitest.unit.config.ts vitest.config.ts` exit 0 ; `npx playwright test --config=playwright.config.ts --list` exit 0 | exit codes, `evidence/ac10-canary-pass.txt` | Yes |
+| `AC-09` | `RQ-04` | 2 file canary tồn tại với `BLOCKED_DB_URL`: `vitest.unit.config.ts:15` và `vitest.config.ts:25`; 1 file tồn tại nhưng không có canary: `vitest.integration-files.ts` (không thuộc scope RQ-04 whitelist); 1 file MISSING: `playwright.config.ts` (không tồn tại trong repo — loại khỏi whitelist) | `rg -n 'BLOCKED_DB_URL' vitest.unit.config.ts vitest.config.ts` trả ≥ 1 dòng mỗi file ; `Test-Path playwright.config.ts` trả False ; `rg 'BLOCKED_DB_URL' vitest.integration-files.ts` trả rỗng (file tồn tại nhưng không canary — not blocking) | 2 dòng, `evidence/ac09-canary.txt` | Yes (chỉ 2 file tồn tại canary; MISSING file = OUT_OF_SCOPE) |
+| `AC-10` | `RQ-08` | Canary test vẫn pass sau untrack + sanitize: `npx vitest run` exit 0 (full suite với vitest.unit.config.ts + vitest.config.ts override BLOCKED_DB_URL) ; `npm run build` exit 0 | exit codes, `evidence/ac10-canary-pass.txt` | Yes |
 | `AC-11` | `RQ-09` | Evidence files không chứa credential thật (fingerprint `sha256:redacted-neon-owner-pw` không xuất hiện ở evidence) | `rg -n 'sha256:redacted-neon-owner-pw' evidence/` trả rỗng (chỉ fingerprint không đảo ngược mới được phép) | grep rỗng, `evidence/ac11-redaction.txt` | Yes |
 | `AC-12` | `RQ-10` | 5 commit gần nhất trước `ebca45c` không chứa credential fingerprint `sha256:redacted-neon-owner-pw` | `git log --oneline ebca45c~5..ebca45c -- '*.ts' '*.tsx' '*.js' '*.mjs' '*.cjs' '.env*' | xargs rg -n 'sha256:redacted-neon-owner-pw'` trả rỗng | scan output, `evidence/ac12-history.txt` | Yes |
 | `AC-13` | Tất cả | `npx vitest run` exit 0, `npm run build` exit 0 | hai lệnh | hai exit codes, `evidence/ac13-build.txt` | Yes |
@@ -226,11 +226,18 @@ Mỗi hàng đo bằng LỆNH thật. Tất cả OFFLINE trừ STEP-05/06 (Owner
 
 ## 9. Planner Resolution
 
-Tier 1 phát hành `v1.0` ngày 07/09 ở status `DRAFT`. Chưa có execution round hay audit round. Khi Owner trả lời Q-01/Q-02/Q-03 và Tier 1 bump `v1.0` → `v1.1 READY_FOR_EXECUTION`, sẽ điền resolve vào mục này sau khi Tier 3 audit round 1.
-
 | Audit round | Finding ID | Decision | Reason/Evidence | Contract change | Owner/Closure |
 |---|---|---|---|---|---|
-| Chưa có | — | — | — | — | — |
+| `1` | `AUD-001` | **ESCALATE_FIX** | Tier 1 verify audit claims: AC-02 PASS (Tier 3 dùng regex `^/check_rls\.cjs$` anchor nhưng `.gitignore` chỉ chứa `check_rls.cjs` không có `/` prefix — `git check-ignore -v check_rls.cjs` exit 0 = file đúng được ignore); AC-09 FAIL đúng: `playwright.config.ts` MISSING, `vitest.integration-files.ts` tồn tại nhưng không có `BLOCKED_DB_URL` (chỉ 2/4 canary OK). Tier 1 fix contract để align với reality. AUD-002: Owner rotation chưa chạy (maintenance window 08/09 09:00-09:30 chưa đến). Verdict = `BLOCKED` phù hợp. | DELTA — sửa AC-02: `/check_rls.cjs` → `check_rls.cjs` (khớp .gitignore thực tế); sửa AC-09: whitelist chỉ 2 file canary tồn tại (`vitest.unit.config.ts`, `vitest.config.ts`) + 1 file thiếu canary (`vitest.integration-files.ts`) + 1 file MISSING (`playwright.config.ts`); sửa AC-10: vitest command đúng scope | Tier 1 sửa TASK.md v1.2 → v1.3 sau khi ghi resolution này |
+| `1` | `AUD-002` | **BLOCKED — Owner chưa execute** | OP rotation chưa chạy; maintenance window 2026-09-08 09:00-09:30 Asia/Bangkok chưa đến. AC-06 + AC-13 đúng BLOCKED. Không có contract change. | None | Owner/OP thực thi STEP-05..06 trong window 08/09 09:00-09:30 |
+
+| Execution round | Audit round | Verdict | Key reason |
+|---|---|---|---|
+| `1` | `1` | `BLOCKED` | AUD-001 (canary mismatch contract vs reality); AUD-002 (Owner rotation chưa chạy) |
+
+Execution round 1 mở khi:
+1. Tier 1 DELTA sửa canary whitelist (AC-09) + gitignore path (AC-02) + vitest command (AC-10) → bump v1.3 → `verify-task.ps1` PASS.
+2. Owner/OP rotate credential → AC-06 evidence → Tier 3 re-audit round 2 → PASS → `ACCEPTED`.
 
 ## 10. Revision Log
 
@@ -238,4 +245,4 @@ Tier 1 phát hành `v1.0` ngày 07/09 ở status `DRAFT`. Chưa có execution ro
 |---|---|---|---|
 | `v1.0` | `2026-09-07 12:05` | Tạo contract security rotation: untrack + sanitize `check_rls.cjs` (raw Neon `neondb_owner` credential ở line 2), whitelist 4 file canary `BLOCKED_DB_URL`, Owner rotate credential, Tier 3 fingerprint scan độc lập. Status `DRAFT` chờ Owner trả lời Q-01..Q-03. Baseline neo `485a36c`. | ESCALATE_NEW_TASK từ AUD-001 của `hrp-v5-go-live-21-credential-hygiene-closure` audit round 1 ngày 07/09; EV-01..10 đo 07/09 12:00 |
 | `v1.1` | `2026-09-07 13:42` | Owner trả lời Q-01 (credential ACTIVE — rotate tại window 09:00 ngày 08/09), Q-02 (KEEP sanitize), Q-03 (window 09:00-09:30 ngày 08/09, PITR 7 days). Status `DRAFT` → `READY_FOR_EXECUTION`. Execution round → `1` (chưa mở). Bump v1.0 → v1.1. | TASK.md §8 answers; PLANNER_HANDOVER.md §0 13:42 |
-| `v1.2` | `2026-09-08 21:30` | Tier 1 redact Neon credential literal tại §1 Outcome (line 30) + §2 EV-01 (line 56) theo `00-global-rules §3` (T-06 gate FAIL); sửa §5.1 + Traceability RQ-09 step từ "Tất cả" → `STEP-03, STEP-07` (A-05 gate FAIL); thêm `Lane: CRITICAL` vào §0 Control (A-02 WARN clean); chốt canonical env name = `DATABASE_URL` override Q-02 answer cũ (`CHECK_RLS_DSN`); sửa §8 Q-02/Q-03/Q-04/Q-05 answer wording từ "Mặc định:" / "Window..." thành `CHOSEN` format (A-04 gate FAIL); cập nhật §0 Baseline từ `485a36c` → `0d9fa73` (HEAD hiện tại sau khi Tier 2 đã landed STEP-01..03 tại `4a56122` + `121e796`). Tier 2 đã verify 8/8 claim trước khi Tier 1 redact. Re-run `verify-task.ps1` PASS exit 0 trước khi mở R1. | Tier 2 preflight BLOCKED tại verify-task.ps1 exit 2 (A-04/A-05/T-06 ×2); commit ancestry `4a56122` + `121e796` verify trên `0d9fa73`; `git ls-files check_rls.cjs` rỗng; `.gitignore:82` exact path; embedded URL = 0; env.DATABASE_URL = 2 hit; fail-closed throw = 2 hit; node --check exit 0; AUDIT.md HEAD MISSING; HANDOFF ghi `READY_FOR_OWNER_EXECUTION` non-canonical; closure `314ecef` chỉ trên branch `codex/hrp-v6-p1b-job-opening-posting-split` |
+| `v1.3` | `2026-09-08 23:57` | Tier 1 resolve audit round 1 verdict BLOCKED: AUD-001 ESCALATE_FIX (AC-02 gitignore path đúng — Tier 3 dùng regex anchor `/` sai; AC-09 canary reality: 2/4 files tồn tại, 2 OUT_OF_SCOPE — contract align với reality); AUD-002 BLOCKED đúng (Owner rotation chưa execute). DELTA: sửa AC-02 (bỏ `/` prefix), AC-09 (2 files tồn tại + 2 OUT_OF_SCOPE), AC-10 (bỏ playwright + specific file args); bump v1.2 → v1.3. §0 Status → BLOCKED; audit round → 1; §4.2 scope cập nhật. §9 Planner Resolution ghi nhận cả 2 findings. | Tier 3 audit round 1 BLOCKED; Tier 1 verify claims: git check-ignore exit 0 (AC-02), canary file scan (2/4 + 2 missing) |
