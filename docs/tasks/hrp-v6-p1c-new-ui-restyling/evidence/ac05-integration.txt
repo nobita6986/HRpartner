@@ -1,0 +1,9 @@
+AC-05 / AC-06 — integration and frozen source locks
+Command: node docs/tasks/hrp-v5-go-live-09-public-board-architecture/evidence/gl09-locks.mjs plus source probes
+Exit: 0
+Output:
+Five landing imports found exactly once. One H1 remains.
+Frozen page counts: hrp-focus=12; FacetSelect=4; min-h-11=10; detailHref links=2; publicJobDetailPath=2; material icon spans=9; relative z-10=4.
+All gl09 lock rows reported OK; nav-item pairing OK; icon aria-hidden misses=0.
+H1 remains: Việc làm nhà máy, kho vận tại các khu công nghiệp.
+Local GET / returned 200, 41639 bytes; H1, Best Jobs, Search, and referral copy were present. Areas correctly omitted from initial HTML because facets were empty without a successful public-data response.

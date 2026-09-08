@@ -1,0 +1,13 @@
+AC-07 / AC-08 — frozen behavior fences
+Commands:
+- npm run test:unit -- public-card-truth
+- npm run test:unit -- marketplace-inventory
+- git hash-object and git diff for both frozen tests
+Exit: 0 for both test commands
+Output:
+public-card-truth: 1 file passed, 23 tests passed.
+marketplace-inventory: 1 file passed, 25 tests passed.
+Frozen hashes unchanged:
+431f650f00be8bcf77e81eb83501311b1573ddcc public-card-truth.test.ts
+e5bee46659b11b63c93cb31bc755f6bcc7ad6f23 marketplace-inventory.static.test.ts
+Both diffs empty.

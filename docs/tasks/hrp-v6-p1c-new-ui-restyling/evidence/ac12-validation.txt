@@ -1,0 +1,11 @@
+AC-12 — validation lanes
+Commands and results:
+1. npm run typecheck — exit 0.
+2. npm run build — exit 0; compiled successfully, 29/29 static pages generated; existing lint/CSS import warnings remained non-blocking.
+3. npm run test:unit — exit 0; 113 files passed, 1740 tests passed.
+Additional targeted lanes:
+- public-ui-premium: 63/63 pass.
+- public-ui-token-parity + design-tokens: 26/26 pass.
+- npm run dev -- -p 3117 then GET /: ready in 2.8s; HTTP 200; server stopped after smoke.
+- verify-task.ps1 with absolute TASK and repo paths: RESULT PASS, exit 0.
+- git diff --check on scoped source: exit 0.

@@ -1,0 +1,8 @@
+AC-10 / AC-11 — truthful fallback and prohibited output
+Command: Select-String across landing/*.tsx for prohibited company symbols/names and inspect Areas/Best Jobs wiring
+Exit: 0
+Output:
+COMPANY_HITS=0 for TopCompaniesSection, CompanyCard, Luxshare, Goertek, Brother, Foxconn, Pegatron.
+BestJobsSection has aria-busy=true and only neutral skeleton shapes; no fabricated posting, company, salary, status, or link.
+AreasSection receives areas={facets.areas}; it prints no invented count or remote image.
+Referral strip re-exports the existing ReferralInviteStrip implementation.

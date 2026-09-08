@@ -1,0 +1,7 @@
+AC-09 — Phase 1 dependencies
+Command: git log --all --oneline --grep for Phase 1A and Phase 1B
+Exit: 0
+Output:
+a4ab9f0 feat(planner): Phase 1A ACCEPTED v1.1 — hrp-v6-p1-labor-profile-schema
+cf887c0 feat(planner): Phase 1B ACCEPTED v1.1 — hrp-v6-p1-job-opening-posting-split
+Both commits are in actual-start HEAD ancestry, as established in R4 preflight.

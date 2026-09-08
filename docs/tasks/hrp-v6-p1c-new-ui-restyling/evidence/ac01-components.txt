@@ -1,0 +1,11 @@
+AC-01 / AC-02 — component inventory
+Command: Get-ChildItem src/domains/job-board/components/landing/*.tsx; count lines and exports
+Exit: 0
+Output:
+COUNT=5
+areas-section.tsx LINES=38 EXPORT=AreasSection
+best-jobs-section.tsx LINES=39 EXPORT=BestJobsSection
+hero.tsx LINES=22 EXPORT=Hero
+referral-strip.tsx LINES=1 EXPORT=ReferralInviteStrip
+search-section.tsx LINES=20 EXPORT=SearchSection
+All files are below 200 lines and each owns one landing responsibility.

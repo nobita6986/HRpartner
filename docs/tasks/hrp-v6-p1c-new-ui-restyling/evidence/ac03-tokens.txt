@@ -1,0 +1,11 @@
+AC-03 / AC-04 — tokens and component literals
+Commands:
+- git diff -- app/globals.css
+- Select-String src/domains/job-board/components/landing/*.tsx '#[0-9a-fA-F]{6}'
+- inspect compiled .next/static/css classes after npm run build
+Exit: 0
+Output:
+Added only --color-surface-warm: #faf9f7 under the existing @theme block.
+Existing seven typography keys were unchanged.
+HEX_HITS=0
+Compiled counts: --color-surface-warm=2, .bg-surface-warm=1, .bg-primary-fixed-dim=1, .bg-tertiary-fixed=1.

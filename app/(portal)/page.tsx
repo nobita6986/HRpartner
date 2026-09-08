@@ -6,11 +6,15 @@ import Link from 'next/link';
 // `CANONICAL_ORIGIN` đi theo `SuccessModal` — trang này không còn tham chiếu nào.
 import { ApplyModal } from '@/src/domains/job-board/components/apply-modal';
 import { SuccessModal } from '@/src/domains/job-board/components/success-modal';
+import { AreasSection } from '@/src/domains/job-board/components/landing/areas-section';
+import { BestJobsSection } from '@/src/domains/job-board/components/landing/best-jobs-section';
+import { Hero } from '@/src/domains/job-board/components/landing/hero';
+import { ReferralInviteStrip } from '@/src/domains/job-board/components/landing/referral-strip';
+import { SearchSection } from '@/src/domains/job-board/components/landing/search-section';
 // ui-01 / RQ-10 / DEC-05: dải mời cộng tác viên nằm RIÊNG một tệp. Nó phải có vòng focus thấy được
 // và đích chạm 44 pixel (`R-07`), mà ba hàng rào canh trang chủ ghim phép đếm hai class ấy CHÍNH XÁC
 // trên tệp này — nên chúng sống ở tệp con. Ở đây không viết thẳng tên hai class ấy vì phép đếm là
 // phép đếm CHUỖI CON: một dòng chú thích nhắc tên cũng làm lệch con số.
-import { ReferralInviteStrip } from '@/src/domains/job-board/components/referral-invite-strip';
 // go-live-12 / RQ-10 / DEC-01: đường dẫn trang chi tiết lấy từ ĐÚNG một nguồn, không nội suy tay.
 import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
 
@@ -752,13 +756,11 @@ export default function JobsPage() {
   return (
     <div id="hrp-main" tabIndex={-1} className="w-full max-w-[1600px] mx-auto px-6 md:px-[5%] py-8 flex flex-wrap items-start gap-8">
 
-      {/* go-live-09 / RQ-05, RQ-06, RQ-07, RQ-08 — Hero. `#hrp-main` là một hàng flex CÓ WRAP: mọi dải
-          `w-full` tự chiếm trọn một dòng, còn `<aside>` (`lg:w-80`) và cột chính (`flex-1`) nằm cùng một
-          dòng như trước. Chọn cách này thay vì lồng hai cột vào một thẻ mới vì thẻ mới sẽ thụt lề lại
-          toàn bộ panel bộ lọc, và bề mặt công khai có một hàng rào ghim ĐÚNG thụt lề của thẻ đóng
-          `</label>` trong panel đó. */}
-      <section className="w-full flex flex-col lg:flex-row gap-8 items-stretch">
-        <div className="flex-1 min-w-0 flex flex-col justify-center gap-4">
+      <Hero>
+        <div className="flex min-w-0 flex-col justify-center gap-5">
+          <p className="font-label text-label-sm font-bold uppercase tracking-widest text-primary-dark">
+            Cơ hội việc làm đáng tin cậy
+          </p>
           <h1 className="font-head text-headline-xl font-bold leading-tight" style={{ color: 'var(--color-on-surface)' }}>
             Việc làm nhà máy, kho vận tại các khu công nghiệp
           </h1>
@@ -772,8 +774,7 @@ export default function JobsPage() {
           </p>
           <form
             onSubmit={handleSearch}
-            className="flex flex-col md:flex-row md:items-end gap-4 rounded-xl border border-outline-variant/50 p-4"
-            style={{ backgroundColor: 'var(--color-surface)' }}
+            className="flex flex-col gap-4 rounded-2xl border border-outline-variant/50 bg-surface p-4 shadow-card md:flex-row md:items-end"
           >
             {/* Nhãn của ba ô là nhãn NHÌN THẤY được. Tiêu đề ẩn này chỉ để cây tiêu đề không nhảy từ
                 h1 sang h3 — nó không thay chỗ cho nhãn nào. */}
@@ -833,16 +834,16 @@ export default function JobsPage() {
         {/* RQ-08/DEC-14: không có việc nổi bật thì nửa phải KHÔNG render. Nửa trái là `flex-1` nên nó
             tự chiếm trọn chiều ngang, không để lại khoảng trắng giữ chỗ. */}
         {featured && (
-          <div className="w-full lg:w-96 flex-shrink-0 flex">
+          <div className="flex w-full flex-shrink-0 lg:w-96">
             <FeaturedJobCard featured={featured} onApply={handleApply} isApplied={appliedIds.includes(featured.id)} />
           </div>
         )}
-      </section>
+      </Hero>
 
       {/* go-live-09 / RQ-15, DEC-11 — ba con số của `overview.totals`, nhãn nói rõ nguồn. Không dấu
           cộng sau số, không một con số nào tự cộng trên mảng đang render. Dải này KHÔNG có icon: giữ
           nguyên phép đếm 9 icon trang trí của bề mặt công khai. */}
-      <section className="w-full grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <section aria-label="Tổng quan tuyển dụng" className="w-full grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { key: 'jobs', value: overview.totals.jobs, label: 'việc làm đang tuyển' },
           { key: 'slots', value: overview.totals.slots, label: 'chỗ còn tuyển' },
@@ -850,8 +851,7 @@ export default function JobsPage() {
         ].map((stat) => (
           <div
             key={stat.key}
-            className="rounded-xl border border-outline-variant/50 p-4"
-            style={{ backgroundColor: 'var(--color-surface-container-low)' }}
+            className="rounded-2xl border border-outline-variant/50 bg-surface p-5 shadow-card"
           >
             <p className="font-head text-headline-lg font-bold" style={{ color: 'var(--color-primary-dark)' }}>
               {stat.value}
@@ -863,13 +863,18 @@ export default function JobsPage() {
         ))}
       </section>
 
-      {/* go-live-09 / RQ-13, RQ-14 — hai dải tag. Trục thứ hai là CA LÀM, không phải ngành nghề:
-          `go-live-05` cấm thêm lại facet ngành nghề và `go-live-14` đã xoá field đó khỏi DTO. */}
-      <TagStrip heading="Việc làm theo khu vực" entries={overview.areaCounts} onPick={applyArea} />
+      <BestJobsSection />
+
+      {/* Khu vực dùng đúng facet từ response; không gắn số đếm hay ảnh minh hoạ không có nguồn. */}
+      <AreasSection areas={facets.areas} onPick={applyArea} />
+
+      {/* go-live-09 / RQ-14 — trục ca làm giữ nguyên overview do service trả về. */}
       <TagStrip heading="Việc làm theo ca làm" entries={overview.shiftCounts} onPick={applyShift} />
 
-      {/* Left Sidebar */}
-      <aside className="w-full lg:w-80 flex-shrink-0">
+      <SearchSection
+        filters={(
+          /* Left Sidebar */
+          <aside className="w-full lg:w-80 flex-shrink-0">
         <form
           onSubmit={handleSearch}
           className="hrp-panel rounded-xl border border-outline-variant/50 shadow-sm flex flex-col p-6 space-y-5"
@@ -943,10 +948,11 @@ export default function JobsPage() {
             </button>
           </div>
         </form>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 min-w-0 flex flex-col gap-6 w-full">
+          </aside>
+        )}
+        results={(
+          /* Main Content */
+          <div className="flex-1 min-w-0 flex flex-col gap-6 w-full">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -1091,7 +1097,9 @@ export default function JobsPage() {
             </div>
           </>
         )}
-      </div>
+          </div>
+        )}
+      />
 
       {/* go-live-09 / RQ-12, DEC-18 — hai dải cuối đọc `overview.newest` và `overview.topPaid` NGUYÊN
           thứ tự service trả về. Không `sort` nào ở trang này: mảng `jobs` chỉ là 12 dòng đầu, nên sắp
