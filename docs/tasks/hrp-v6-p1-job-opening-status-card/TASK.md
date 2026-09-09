@@ -11,7 +11,7 @@
 | Required gates | `verify-task.ps1`, `verify-handoff.ps1`, Tier 3 STANDARD_AUDIT |
 | In-scope roots | `src/domains/staffing/`, `app/admin/jobs/`, `app/api/admin/job-opening-status/` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` |
 | Baseline | `main @ 0ba285a` (Tier 0 Resolution 09/09 — defer Neon/security) |
 | Phase | `V6 Phase 1 — schema đã có → đọc + UI hiển thị` |
 | Prerequisite | `hrp-v6-p1-job-opening-posting-split` đã ACCEPTED trên main (`cf887c0` + `dfcbdfb`); model `JobOpening` đã có (`git show main:prisma/schema.prisma` chứa `model JobOpening`) |
@@ -171,11 +171,52 @@ Component `JobOpeningStatusCard`:
 
 ## 9. Planner Resolution
 
-(Rỗng — task chưa qua audit round nào.)
+### R1 Audit Resolution (2026-09-09) — superseded by R2 verdict
+
+Tier 3 audit round 1 (FULL depth) → verdict `FAIL` với 1 finding:
+
+| Finding | Severity | Resolution | Action |
+|---|---|---|---|
+| `AUD-001` Malformed HANDOFF | `P1` release-blocking | Lỗi thi công, KHÔNG đổi spec/contract/baseline. HANDOFF.md dùng heading tự do (## 1. Outcome and changed surface, ## 2. Acceptance evidence, ## 3. Evidence registry, ## 4. Deviations and blockers, ## 5. Final status) nhưng `verify-handoff.ps1` HARD-CODE expect heading cố định: `## 1. Outcome Summary`, `## 2. Execution Trace`, `## 3. Acceptance Evidence`, `## 4. Changed Deliverables`, `## 5. Deviations`, `## 6. Evidence Index`, `## 7. Execution Round History`. Giữ spec v1.0; mở execution round 2 để Tier 2 rewrite HANDOFF theo đúng heading name gate yêu cầu. Functional checks 6/6 PASS, không có vấn đề về code/test/scope. | Tier 2 round 2: rewrite HANDOFF.md với heading name khớp gate; không đổi contract/code/test/evidence; chạy lại `verify-handoff.ps1` PASS; báo Tier 3 re-audit round 2. |
+
+Functional AC đã PASS round 1 (AC-01..AC-06 đều PASS), không cần re-run test. Round 2 chỉ fix HANDOFF format.
+
+### R2 Audit Resolution (2026-09-09) — ACCEPTED
+
+Tier 3 audit round 2 (DELTA depth, đúng quy trình vì chỉ format fix) → verdict **PASS**:
+
+| Finding | Status | Action |
+|---|---|---|
+| `AUD-001` Malformed HANDOFF | **RESOLVED** | Tier 2 round 2 đã rewrite HANDOFF.md với 8 sections heading chuẩn gate. `verify-handoff.ps1` exit 0 PASS WITH WARNINGS (1 warning H-15 expected — Tier 3 đổi Status field trong TASK.md, không phải Tier 2). |
+
+**Acceptance Verification:** AC-01..AC-06 đều PASS (carry-forward từ R1 vì code/test/scope không đổi trong R2 — chỉ HANDOFF format fix).
+**Assurance Checks:** C-07 DONE, C-09 DONE, C-10 DONE.
+**Coverage Gaps:** None.
+**Debt:** None.
+
+### Commit Plan
+
+Branch: `tier1/job-opening-status-card-worktree` (worktree `C:\CodeApp\HrP-worktree-status-card`).
+
+Tất cả 6 code file + AUDIT.md + HANDOFF.md đã staged sẵn bởi Tier 2 (xem `git status --porcelain`). Bước còn lại:
+
+1. Stage evidence files: `git add docs/tasks/hrp-v6-p1-job-opening-status-card/evidence/`.
+2. Stage TASK.md (Status `ACCEPTED`).
+3. Single commit trên worktree branch (KHÔNG push, KHÔNG merge — anh duyệt):
+   ```
+   git -c user.email=tier2@hrp.local -c user.name="Tier 2 Engineer" commit -m "feat(v6-p1): add JobOpening status card on /admin/jobs"
+   ```
+4. Anh review commit, merge vào main qua PR hoặc fast-forward local.
+
+### ACCEPTED — task đóng sau khi anh merge main
+
+
 
 ## 10. Revision Log
 
 | Spec | Ngày | Thay đổi | Ghi chú |
 |------|------|----------|---------|
 | `v1.0` | `2026-09-09` | Phát hành draft sau Tier 0 Owner deferral 09/09; vertical slice: service + API + card trên admin/jobs page; STANDARD + FOCUSED; outcome nhìn thấy ngay khi mở `/admin/jobs`; không phụ thuộc task đang RESOLVING_R2 | Tier 1 viết trên worktree `tier1/job-opening-status-card-worktree`; baseline `main @ 0ba285a`; prerequisite đã có sẵn trên main |
+| `v1.0` | `2026-09-09` (re-issued) | Planner Resolution §9 ghi nhận AUD-001 (P1) từ Tier 3 audit R1: HANDOFF.md sai heading name (không match gate HARD-CODE). Functional AC 6/6 PASS. Spec KHÔNG đổi (lỗi thi công, không đổi contract). Status `READY_FOR_EXECUTION` → `REVISION_REQUIRED`. Mở execution round 2 để Tier 2 rewrite HANDOFF.md theo heading gate yêu cầu, không đổi code/test/evidence. | Tier 3 verdict FAIL do format HANDOFF; resolution: giữ spec, mở round 2 sửa format. |
+| `v1.0` | `2026-09-09` (R2 ACCEPTED) | Tier 3 audit R2 (DELTA) verdict PASS. AUD-001 RESOLVED. HANDOFF.md 8 sections heading chuẩn gate. Functional AC 6/6 carry-forward PASS (code/test/scope không đổi trong R2). Status `REVISION_REQUIRED` → `ACCEPTED`. Commit Plan §9 ghi rõ single commit trên worktree branch (Tier 2 đã stage 6 code + AUDIT + HANDOFF, Tier 1 stage evidence + TASK.md). Anh merge main. | Task đóng sau khi merge. Cursor chuyển sang task feature tiếp theo. |
 

@@ -1,0 +1,18 @@
+## AC-01 — Prisma client has model JobOpening
+
+Command: `npx prisma generate`
+Exit code: 0
+
+Output:
+```
+Prisma schema loaded from prisma\schema.prisma
+✔ Generated Prisma Client (v5.22.0) to .\node_modules\@prisma\client in 894ms
+```
+
+Command: `grep -n "model JobOpening" prisma/schema.prisma`
+Exit code: 0
+Output:
+```
+438|model JobOpening {
+```
+Match at line 438.

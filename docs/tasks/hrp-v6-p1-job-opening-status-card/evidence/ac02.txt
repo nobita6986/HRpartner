@@ -1,0 +1,30 @@
+## AC-02 — 5 service + 2 component tests PASS
+
+Command: `npm run test:unit -- "job-opening"`
+Exit code: 0
+
+Output:
+```
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts job-opening
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktree-status-card
+
+ ✓ src/domains/staffing/job-opening-status.test.ts (5 tests) 14ms
+ ✓ src/domains/staffing/job-opening-status-card.test.ts (2 tests) 20ms
+
+ Test Files  2 passed (2)
+      Tests  7 passed (7)
+   Duration  1.23s (transform 102ms, setup 0ms, collect 201ms, tests 34ms, environment 1ms, prepare 253ms)
+```
+
+5 service tests:
+1. 0 opening → all zero, total = 0.
+2. mix status → counts đúng.
+3. status ngoài 4 giá trị KHÔNG xuất hiện trong byStatus.
+4. Prisma throws → bubble up.
+5. groupBy không có DRAFT → DRAFT = 0.
+
+2 component tests:
+1. Render 4 badge với số đếm đúng.
+2. Loading state: 4 shimmer badge.
