@@ -1,0 +1,14 @@
+## AC-04 — Staged paths belong to §4.1 scope
+
+Command: `git diff --cached --name-only`
+Exit code: 0
+
+Staged paths:
+1. app/admin/jobs/job-opening-status-card.tsx  (§4.1: component mới)
+2. app/admin/jobs/page.tsx  (§4.1: sửa nhỏ — thêm import + render)
+3. app/api/admin/job-opening-status/route.ts  (§4.1: API route mới)
+4. src/domains/staffing/job-opening-status-card.test.ts  (§4.1: rendering test)
+5. src/domains/staffing/job-opening-status.test.ts  (§4.1: unit test service)
+6. src/domains/staffing/job-opening-status.ts  (§4.1: service mới)
+
+All 6 paths belong to §4.1 scope. ✅

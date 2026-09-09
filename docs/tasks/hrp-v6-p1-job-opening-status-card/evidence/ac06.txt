@@ -1,0 +1,22 @@
+## AC-06 — verify-task.ps1 PASS
+
+Command: `powershell -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath "docs/tasks/hrp-v6-p1-job-opening-status-card/TASK.md" -RepoRoot .`
+Exit code: 0
+
+Output:
+```
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v6-p1-job-opening-status-card/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+  [OK]   A-02 assurance lane: STANDARD.
+  [OK]   A-05 7 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 1 referenced npm script(s) all exist.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v6-p1-job-opening-status-card/**.
+  [OK]   T-05 all 6 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+
+RESULT: PASS. TASK contract is ready for execution.
+```

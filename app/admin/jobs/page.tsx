@@ -11,6 +11,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import JobOpeningStatusCard from './job-opening-status-card';
 
 type Tab = 'jobs' | 'submissions' | 'claims';
 
@@ -330,6 +331,8 @@ export default function AdminJobsPage() {
         {/* ── Jobs Tab ──────────────────────────────────────────────── */}
         {activeTab === 'jobs' && (
           <>
+            {/* V6 Phase 1: 4 badge đếm JobOpening theo status */}
+            <JobOpeningStatusCard />
             {actionError && (
               <div
                 role='alert'

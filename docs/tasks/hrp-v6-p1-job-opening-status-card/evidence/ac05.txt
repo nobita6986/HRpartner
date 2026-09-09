@@ -1,0 +1,23 @@
+## AC-05 — Working tree sạch ngoài scope
+
+Command: `git status --porcelain`
+Exit code: 0
+
+Output:
+```
+A  app/admin/jobs/job-opening-status-card.tsx
+A  app/admin/jobs/page.tsx
+A  app/api/admin/job-opening-status/route.ts
+A  src/domains/staffing/job-opening-status-card.test.ts
+A  src/domains/staffing/job-opening-status.test.ts
+A  src/domains/staffing/job-opening-status.ts
+?? docs/tasks/hrp-v6-p1-job-opening-status-card/evidence/ac01.txt
+?? docs/tasks/hrp-v6-p1-job-opening-status-card/evidence/ac02.txt
+?? docs/tasks/hrp-v6-p1-job-opening-status-card/evidence/ac03.txt
+?? docs/tasks/hrp-v6-p1-job-opening-status-card/evidence/ac04.txt
+```
+
+Staged = 6 files (§4.1 scope).
+Untracked = 4 evidence files (docs/tasks/<slug>/evidence/*).
+
+All tracked working tree changes are staged. Evidence files are untracked (allowed per §4.1). ✅
