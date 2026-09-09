@@ -1,0 +1,5 @@
+AC-01 evidence — pending Tier 2 capture (BLK-02 Edge CDP runtime missing).
+
+Edge CDP `querySelectorAll('[data-section]')` cần script `evidence/scripts/capture-desktop.ps1` chạy với Edge `--remote-debugging-port=9222` + dev server local port 3000/3001. Hiện script là stub; cần Owner hoặc Tier 3 có Edge access để chạy và điền output thật (7 khối `[data-section]` tên `nav|hero|bestjobs|areas|recruiting|ctv|footer`, kèm `getBoundingClientRect()` từng khối).
+
+Tier 1 không thể chụp vì không có Edge runtime trong working tree này.

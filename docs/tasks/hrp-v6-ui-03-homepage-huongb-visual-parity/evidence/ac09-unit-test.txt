@@ -1,1 +1,43 @@
-pending — Tier 2 will create during /code round (npm run test:unit cuối round, so với baseline đầu round).
+AC-09 unit-test final result (Tier 2 execution round 1, after commit ca13a62)
+
+Baseline (Tier 2 captured at 7f83053 by Tier 1 in this round — original Tier 2 baseline commit recorded in evidence/baseline-commit.txt):
+- Test Files: 1 failed | 114 passed (115)
+- Tests:     1 failed | 1746 passed (1747)
+- Exit code: 1
+- Only failing: src/shared/ui/design-tokens.static.test.ts > RQ-04/AC-03 (CSS var --surface-container-high in app/admin/jobs/job-opening-status-card.tsx:67 — file from hrp-v6-p1-job-opening-status-card task, not part of UI-03 scope)
+- Source: evidence/ac09-unit-test-baseline.txt (full vitest log)
+- See also: evidence/baseline-commit.txt = 7f83053
+
+Final (Tier 2 ca13a62, full vitest log at evidence/test-unit-r1.log):
+- Test Files: 7 failed | 108 passed (115)
+- Tests:    37 failed | 1710 passed (1747)
+- Exit code: 1
+- 37 failing tests by file (parsed via scratch/count-fail.ps1):
+    26   src/domains/job-board/public-ui-premium.static.test.ts   (token parity fence — className hrp-card nav-item-lift, hrp-pill-location)
+     3   src/domains/applications/marketplace-inventory.static.test.ts   (RQ-07/DEC-11 — UI apply canonical)
+     3   src/domains/job-board/public-detail.static.test.ts            (RQ-10/RISK-05 — card navigation)
+     2   src/shared/toolchain/tsc-program-boundary.static.test.ts      (OUTSIDE_PROGRAM for .claude/ + zzz-unclassified-fake)
+     1   src/shared/ui/design-tokens.static.test.ts                    (same baseline failure — design-tokens)
+     1   src/domains/job-board/public-listing.static.test.ts           (RQ-12/AC-14)
+     1   src/domains/job-board/public-ui-token-parity.static.test.ts   (token parity fence)
+
+Comparison vs baseline (Owner verdict P0-05 v1.3):
+- Expected failure set: design-tokens.static.test.ts (1 test) — unchanged
+- NEW failure count: 36 (37 final − 1 baseline = 36 new)
+- Result: VIOLATES P0-05 v1.3 ("new failure count = 0"); cuối round KHÔNG cùng expected failure set với baseline.
+
+Root cause hypothesis (Tier 1, chưa audit kỹ):
+- public-ui-premium.static.test.ts (26) + public-ui-token-parity.static.test.ts (1): token parity fence đang so khớp className cũ (hrp-card, hrp-pill-location, text-lg font-bold, hrp-btn-done, etc.). Tier 2 rewrite page.tsx + 8 landing components có thể đã đổi sang className mới (utility class Tailwind hoặc token class mới) → fence fail.
+- public-detail.static.test.ts (3): RQ-10/RISK-05 kiểm tra card / ở homepage dùng Next Link với anchor thật; có thể Tier 2 dùng anchor hoặc button khác.
+- marketplace-inventory.static.test.ts (3): RQ-07/DEC-11 UI apply canonical — Tier 2 thay đổi ApplyModal tích hợp trên homepage có thể phá vỡ invariant.
+- tsc-program-boundary.static.test.ts (2): OUTSIDE_PROGRAM có thêm `.claude/` (thư mục có sẵn trong working tree — Tier 0 handover); có thể baseline đã có nhưng log Tier 2 R1 không pick (cần cross-check baseline log).
+- public-listing.static.test.ts (1): RQ-12/AC-14 nhãn /viec-lam — Tier 2 đổi text có thể phá.
+
+Status: BLK-03 (36 new failing tests, P0-05 v1.3 violation).
+
+Action needed:
+- Tier 3 audit khi mở focused audit round sau Owner visual sign-off.
+- Tier 1 không đủ thẩm quyền quyết định regression vs cố ý. Tier 3 cần:
+  (1) đối chiếu token parity fence file để biết className cũ/mới;
+  (2) đối chiếu tsc-program-boundary baseline log để xác nhận `.claude/` đã có sẵn;
+  (3) đánh giá regression risk cho từng nhóm 36 failing mới.
