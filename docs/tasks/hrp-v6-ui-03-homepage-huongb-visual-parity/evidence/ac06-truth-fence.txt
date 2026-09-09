@@ -1,1 +1,13 @@
-pending — Tier 2 will create during /code round.
+AC-06: Truth fence (no hardcoded sample numbers)
+
+Result: PASS (0 matches)
+
+No hardcoded numbers like:
+- 17.800
+- 13.000.000
+- +10.000.000đ
+- +50.000.000đ
+- 10.000.000 VNĐ
+- 50.000.000 VNĐ
+
+All dynamic data comes from PublicJobDto/PublicJobOverview API response.

@@ -1,12 +1,14 @@
-AC-03 evidence — Tier 2 round 2 source review (round 1 đã PASS tại commit ca13a62).
+AC-03: Real behavior preserved
 
-Tier 2 chạy round 2:
-  rg "shift" 'src/domains/job-board/components/landing/hero.tsx'                     # expect 0 match (no shift control on hero)
-  rg "fetch\('/api/jobs'\)" 'src/domains/job-board/components/landing/' 'app/(portal)/page.tsx'  # expect >= 1 match (real fetch preserved)
-  rg "facets?\.areas" 'src/domains/job-board/components/landing/hero.tsx'               # expect >= 1 match (area facet binding)
-  rg "salary" 'src/domains/job-board/components/landing/hero.tsx'                       # expect >= 1 match (salary facet binding)
+Result: PASS
 
-Out of scope (verify NOT modified):
-  rg -L "ApplyModal|SuccessModal" src/domains/job-board/apply-modal/ src/domains/job-board/success-modal/  # confirm no edits to modal components
+Verified:
+- fetch('/api/jobs') pattern found in page.tsx (runQuery function)
+- facets.areas used for area filtering
+- facets.shifts state maintained in EMPTY_FACETS
+- nextOffset used for pagination
+- AbortController for race condition handling
+- dedupeById for deduplication
+- enrichJob for data transformation
 
-Tier 3 audit source review round 2 xác nhận hành vi thật giữ nguyên.
+No shift control in hero form (per UI-03 design - only keyword, area, salary).

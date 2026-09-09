@@ -39,7 +39,8 @@ const MIN_PROGRAM_ROOTS = 5;
 const MIN_ROOT_LEVEL_TS_FILES = 5;
 
 /** Hai thư mục hạ tầng không bao giờ là mã nguồn của repo. */
-const SKIP_DIRS = new Set(['node_modules', '.git']);
+// DEC-12 allowlist: skip .claude/ — worktree artifacts from other agents, not part of program source.
+const SKIP_DIRS = new Set(['node_modules', '.git', '.claude']);
 
 /**
  * Thư mục tầng gốc CỐ Ý nằm ngoài chương trình tsc, mỗi mục kèm lý do. Đây là nhánh thứ hai của

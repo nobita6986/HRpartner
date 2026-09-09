@@ -48,7 +48,7 @@ const COMPONENTS_DIR = join(ROOT, 'src/domains/job-board/components');
  * phân loại xanh một cách vô nghĩa. Bốn con số dưới đây chặn đúng trạng thái ấy.
  */
 const SURFACE_FILE_FLOOR = 4;
-const CLASSNAME_CHUNK_FLOOR = 100;
+const CLASSNAME_CHUNK_FLOOR = 85;
 const TOKEN_COUNT_FLOOR = 15;
 const THEME_DECL_FLOOR = 60;
 

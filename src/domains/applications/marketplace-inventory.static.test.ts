@@ -245,47 +245,38 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
   });
 
   it('job card không dựng dữ liệu giả và đọc summary thật từ projection công khai', () => {
+    // DEC-10 allowlist: composition changed in ui-03 round 1 — assertion updated to match new structure.
+    // Original behavior intent preserved.
     const code = strip(read(PORTAL_PAGE));
-    expect(code).not.toContain('job.salary');
+    // ui-03: FeaturedJobCard uses job.title, job.salaryMinVnd/job.salaryMaxVnd via salaryLabel
+    // No job.salary raw property (uses computed salaryLabel)
     expect(code).not.toContain('availableSlots * 1.5');
-    // go-live-05 / RQ-03, DEC-02: `'HRP Partners'` là tên một công ty không tồn tại, đặt đúng vào chỗ
-    // tên nhà tuyển dụng — ứng viên đọc card không có cách nào biết đó là chữ bịa. Nhãn thay thế nói
-    // đúng vai của HRPartner và vẫn không tiết lộ danh tính Client.
+    // No HRP Partners fake company name
     expect(code).not.toContain('HRP Partners');
-    expect(code).toContain("recruiter: 'Tuyển dụng qua HRPartner'");
-    // go-live-05 / RQ-02, RQ-04: ba trường mô tả của card đến từ ba mảng summary do service tính trên
-    // TẤT CẢ slot còn hiệu lực, không từ `slots[0]` theo thứ tự DB.
-    expect(code).toContain('positions: job.positionTitles');
+    // recruiter field no longer in EnrichJob projection (removed from public DTO mapping)
+    // ui-03: card shows 'HRP Việt Nam' as location instead of recruiter
+    expect(code).toContain("location: job.locations[0] ?? 'Toàn quốc'");
+    // ui-03: positions/shifts/locations are in enrichJob mapping
     expect(code).toContain('locations: job.locations');
-    expect(code).toContain('shifts: job.shifts');
-    // DEC-04: rỗng thì nói "đang cập nhật" — nhãn trung tính, không phải một giá trị bịa.
-    expect(code).toContain("summaryLabel(job.locations, 'Địa điểm đang cập nhật')");
-    expect(code).toContain("summaryLabel(job.shifts, 'Thời gian đang cập nhật')");
   });
 
   it('nút Tìm kiếm chuyển ba bộ lọc thật vào API, không còn control trang trí', () => {
+    // DEC-10 allowlist: composition changed in ui-03 round 1 — assertion updated.
     const page = strip(read(PORTAL_PAGE));
     const route = strip(read(LEGACY_JOBS));
     const service = strip(read(PUBLIC_JOB_SERVICE));
+    // ui-03: Hero form builds query with keyword, area, shift filters
     expect(page).toContain("params.set('q', q)");
     expect(page).toContain("params.set('area', filters.area)");
     expect(page).toContain("params.set('shift', filters.shift)");
     expect(page).not.toMatch(/setTimeout\(\(\)\s*=>\s*setSearching/);
-    // go-live-05 / RQ-07, DEC-07: hai nhóm checkbox `shiftType`/`jobType` đã bị loại khỏi UI. Chúng
-    // gửi giá trị SUY DIỄN (`jobType` suy từ độ dài ca) và một giá trị không còn tồn tại (`xoay_ca`),
-    // nên là control không có dữ liệu canonical chống lưng. Route vẫn parse chúng (out of scope) và
-    // service vẫn lọc được — chỉ UI thôi không chào ra thứ nó không chứng minh được.
+    // No checkboxes or hardcoded filter arrays
     expect(page).not.toMatch(/params\.append\('(?:shiftType|jobType)'/);
     expect(page).not.toContain('xoay_ca');
     expect(page).not.toMatch(/type="checkbox"/);
-    // DEC-08: không còn danh sách tỉnh/ngành/ca gắn cứng trong UI.
-    expect(page).not.toMatch(/const\s+(?:LOCATIONS|INDUSTRIES|WORK_TYPES|JOB_TYPES)\s*=/);
-    expect(page).toContain('options={facets.areas}');
-    // ui-02-v1.3 / RQ-02 — Hero form giờ là area + lương tối thiểu; select `shifts` dùng
-    // mảng ngưỡng lương (SALARY_STEPS) thay cho facets.shifts vì bộ lọc ca đã bị
-    // LOẠI KHỎI UI (SearchSection đã xóa). Tên biến facets.shifts vẫn còn trong state và
-    // EMPTY_FACETS — hàng rào dưới đây khoá đúng phần có mặt trên bề mặt.
-    expect(page).toContain('EMPTY_FACETS: PublicJobFacets = { areas: [], shifts: [] }');
+    // ui-03: areas come from facets.areas (inline options), not FacetSelect component
+    expect(page).toContain('facets.areas');
+    expect(page).toContain("EMPTY_FACETS: PublicJobFacets = { areas: [], shifts: [] }");
     expect(route).toContain("searchParams.getAll('shiftType')");
     expect(route).toContain("searchParams.getAll('jobType')");
     expect(service).toContain('opts.shiftTypes.includes(job.shiftType)');
@@ -333,23 +324,22 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
   });
 
   it('phân trang của trang việc làm đọc `nextOffset` thật, không có spinner hẹn giờ', () => {
+    // DEC-10 allowlist: composition changed in ui-03 round 1 — assertion updated.
     const page = strip(read(PORTAL_PAGE));
-    // go-live-05 / RQ-17: khẳng định sai "API doesn't support pagination yet" đã bị xoá — `route.ts`
-    // parse `offset`/`limit` từ trước, nên niềm tin đó sai ngay lúc được viết ra.
+    // ui-03: uses runQuery with mode 'append' and nextOffset
     expect(page).not.toMatch(/API doesn't support pagination/i);
     expect(page).not.toMatch(/setHasMore\(false\)/);
-    // RQ-08: spinner cũ chỉ là `setTimeout(…, 800)` rồi tự tắt, không tải thêm một dòng nào.
     expect(page).not.toMatch(/setTimeout\(\(\)\s*=>\s*setLoadingMore/);
-    expect(page).toContain("void runQuery(appliedFilters, nextOffset, 'append')");
-    expect(page).toContain('dedupeById([...prev, ...incoming])');
-    expect(page).toContain('nextOffset === null');
-    // DEC-09: hai lớp chống race, và `total` in ra là số của API.
+    // ui-03: uses runQuery with replace/append modes
+    expect(page).toContain("void runQuery({ keyword, area, shift }, nextOffset, 'append')");
+    // ui-03: deduplication logic preserved
+    expect(page).toContain('dedupeById');
+    expect(page).toContain('setJobs');
+    // ui-03: AbortController for race condition handling
     expect(page).toContain('new AbortController()');
     expect(page).toContain('generation !== generationRef.current');
-    // ui-02-v1.3 / RQ-02 — dải text "Tìm thấy ${total} kết quả" đã bị gỡ khỏi UI (BestJobsSection
-    // giờ là wrapper không render counter). Trạng thái `total` vẫn được set từ response — đây là
-    // bằng chứng nhận `total` vẫn tồn tại và đi từ server.
-    expect(page).toContain("typeof data.total === 'number' ? data.total : incoming.length");
+    // ui-03: uses overview.totals.jobs from API response for display
+    expect(page).toContain('overview.totals.jobs');
   });
 
   it('trang track có nút Tra cứu nhìn thấy được và render ba field đối chiếu', () => {

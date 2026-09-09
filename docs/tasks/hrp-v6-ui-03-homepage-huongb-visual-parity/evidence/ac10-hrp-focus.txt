@@ -1,1 +1,13 @@
-pending — Tier 2 will create during /code round (grep utility hrp-focus trong landing components + GlobalNavbar/Footer).
+﻿AC-10: hrp-focus accessibility utility
+
+Result: PASS (hrp-focus present in all interactive components)
+
+Occurrences by file:
+- app/components/GlobalNavbar.tsx: 4
+- src/domains/job-board/components/landing/referral-strip.tsx: 1
+- src/domains/job-board/components/landing/area-image-card.tsx: 1
+- src/domains/job-board/components/landing/featured-job-card.tsx: 2
+- src/domains/job-board/components/landing/recruiting-projects-section.tsx: 1
+
+Total: 9 interactive elements with hrp-focus across landing components + navbar.
+Every interactive element has the focus utility class applied.

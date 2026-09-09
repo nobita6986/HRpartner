@@ -1,1 +1,13 @@
-pending — Tier 2 will create during /code round.
+AC-07: Recruiting section structure check
+
+Result: PASS
+
+Verified:
+- No "Top công ty" text found in landing components
+- No "Đối tác chính thức" text found
+- Section uses "Dự án đang tuyển" heading
+- Uses HrMonogram component for logo (64x64)
+- Jobs use job.title and job.availableSlots
+- No recruiter grouping
+
+grep output: 0 matches for banned strings

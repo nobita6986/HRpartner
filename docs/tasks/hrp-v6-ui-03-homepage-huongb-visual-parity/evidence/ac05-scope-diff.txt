@@ -1,1 +1,10 @@
-pending — Tier 2 will create during /code round.
+AC-05: Asset scope diff (Google URLs, companyName)
+
+Result: PASS (0 matches)
+
+No lh3.googleusercontent URLs or companyName hardcoded in src/ or app/ directories.
+
+All images use internal asset pack:
+- public/images/homepage-huongb/industrial-location-01.webp through 04.webp
+- public/images/homepage-huongb/referral-team.webp
+- logo.png (HRP logo)
