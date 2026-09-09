@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 Validates HANDOFF.md against TASK.md before Tier 2 hands FAST to Tier 1 or audited lanes to Tier 3.
 
@@ -85,16 +85,29 @@ try {
     $hLines  = $handoff -split "`r?`n"
 
     # -- H-02 Required sections ----------------------------------------------
-    $requiredSections = @(
-        "## 0. Control",
-        "## 1. Outcome Summary",
-        "## 2. Execution Trace",
-        "## 3. Acceptance Evidence",
-        "## 4. Changed Deliverables",
-        "## 5. Deviations",
-        "## 6. Evidence Index",
-        "## 7. Execution Round History"
-    )
+    # New compact handoffs use 0..5. Historical 0..7 artifacts remain valid.
+    $compactHandoff = ($handoff -match [regex]::Escape('## 1. Outcome and changed surface'))
+    $requiredSections = if ($compactHandoff) {
+        @(
+            "## 0. Control",
+            "## 1. Outcome and changed surface",
+            "## 2. Acceptance evidence",
+            "## 3. Evidence registry",
+            "## 4. Deviations and blockers",
+            "## 5. Final status"
+        )
+    } else {
+        @(
+            "## 0. Control",
+            "## 1. Outcome Summary",
+            "## 2. Execution Trace",
+            "## 3. Acceptance Evidence",
+            "## 4. Changed Deliverables",
+            "## 5. Deviations",
+            "## 6. Evidence Index",
+            "## 7. Execution Round History"
+        )
+    }
     $missing = 0
     foreach ($s in $requiredSections) {
         if ($handoff -notmatch [regex]::Escape($s)) {
@@ -102,7 +115,7 @@ try {
             $missing++
         }
     }
-    if ($missing -eq 0) { Add-GateOk $ctx 'H-02' "all 8 required sections present." }
+    if ($missing -eq 0) { Add-GateOk $ctx 'H-02' "all $($requiredSections.Count) required sections present ($(if ($compactHandoff) { 'compact' } else { 'legacy' }))." }
 
     # -- H-03 Control fields must agree with TASK ----------------------------
     $taskSpec = Get-ControlField -Text $task    -FieldName 'Spec version'
@@ -142,11 +155,19 @@ try {
     }
 
     # -- Section bodies ------------------------------------------------------
-    $h2 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*2\.'
-    $h3 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*3\.'
-    $h5 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*5\.'
-    $h6 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*6\.'
-    $h7 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*7\.'
+    if ($compactHandoff) {
+        $h2 = ''
+        $h3 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*2\.'
+        $h5 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*4\.'
+        $h6 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*3\.'
+        $h7 = ''
+    } else {
+        $h2 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*2\.'
+        $h3 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*3\.'
+        $h5 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*5\.'
+        $h6 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*6\.'
+        $h7 = Get-MarkdownSection -Lines $hLines -HeadingPattern '^##\s*7\.'
+    }
     foreach ($n in @('h2','h3','h5','h6','h7')) {
         if ($null -eq (Get-Variable -Name $n -ValueOnly)) { Set-Variable -Name $n -Value '' }
     }
@@ -327,58 +348,68 @@ try {
         }
     }
 
-    # -- H-12 Execution trace must cover every STEP --------------------------
-    $taskSteps = [regex]::Matches($task, "STEP-\d{2,}") | ForEach-Object { $_.Value } | Sort-Object -Unique
-    $tracedSteps = New-Object 'System.Collections.Generic.HashSet[string]'
-    foreach ($row in (Get-TableRows -Text $h2)) {
-        foreach ($m in [regex]::Matches((Clear-MdDecoration $row.Cells[0]), 'STEP-\d{2,}')) { [void]$tracedSteps.Add($m.Value) }
-    }
-    $untraced = @($taskSteps | Where-Object { -not $tracedSteps.Contains($_) })
-    if ($untraced.Count -gt 0) {
-        Add-GateWarn $ctx 'H-12' "$($untraced.Count) STEP have no row in section 2 Execution Trace: $(($untraced | Select-Object -First 8) -join ', ')."
-    } elseif ($taskSteps.Count -gt 0) {
-        Add-GateOk $ctx 'H-12' "all $($taskSteps.Count) STEP appear in the execution trace."
-    }
-
-    # -- H-13 A deviation in section 2 must be declared in section 5 ---------
-    # go-live-02 DEV-01/DEV-02 and go-live-08 AUD-002: real deviations reached
-    # the auditor undeclared, so the auditor spent the round finding them.
-    $deviationCells = 0
-    $h2Tables = Get-MarkdownTables -Text $h2
-    foreach ($t in $h2Tables) {
-        $devCol = Get-ColumnIndex -Header $t.Header -Pattern '(?i)deviation|sai lệch|sai lech'
-        if ($devCol -lt 0) { continue }
-        foreach ($row in $t.Rows) {
-            if ($row.Cells.Count -le $devCol) { continue }
-            $dev = Clear-MdDecoration $row.Cells[$devCol]
-            if ($dev -eq '' -or $dev -match '(?i)^(none|không|khong|n/?a|-)$') { continue }
-            $deviationCells++
+    # -- H-12 Execution trace coverage (legacy only) -------------------------
+    if (-not $compactHandoff) {
+        $taskSteps = [regex]::Matches($task, "STEP-\d{2,}") | ForEach-Object { $_.Value } | Sort-Object -Unique
+        $tracedSteps = New-Object 'System.Collections.Generic.HashSet[string]'
+        foreach ($row in (Get-TableRows -Text $h2)) {
+            foreach ($m in [regex]::Matches((Clear-MdDecoration $row.Cells[0]), 'STEP-\d{2,}')) { [void]$tracedSteps.Add($m.Value) }
         }
-    }
-    $declaredIds = @(Get-TableRows -Text $h5 | Where-Object { (Clear-MdDecoration $_.Cells[0]) -match '^(BLK|LIM|DEV)-\d' })
-    if ($deviationCells -gt 0 -and $declaredIds.Count -eq 0) {
-        Add-GateError $ctx 'H-13' "section 2 records $deviationCells deviation(s) from TASK but section 5 declares none. An undeclared deviation costs a full audit round."
-    } elseif ($deviationCells -gt 0) {
-        Add-GateOk $ctx 'H-13' "$deviationCells deviation(s) in section 2, $($declaredIds.Count) declared in section 5."
+        $untraced = @($taskSteps | Where-Object { -not $tracedSteps.Contains($_) })
+        if ($untraced.Count -gt 0) {
+            Add-GateWarn $ctx 'H-12' "$($untraced.Count) STEP have no row in section 2 Execution Trace: $(($untraced | Select-Object -First 8) -join ', ')."
+        } elseif ($taskSteps.Count -gt 0) {
+            Add-GateOk $ctx 'H-12' "all $($taskSteps.Count) STEP appear in the execution trace."
+        }
+    } else {
+        Add-GateOk $ctx 'H-12' 'compact handoff reports changed surface instead of repeating STEP history.'
     }
 
-    # -- H-14 Round history must contain the current round -------------------
-    $roundNum = $execRound
-    if ($roundNum -gt 0) {
-        $historyRounds = New-Object System.Collections.ArrayList
-        foreach ($row in (Get-TableRows -Text $h7)) {
-            $first = Clear-MdDecoration $row.Cells[0]
-            if ($first -match '^\d+$') { [void]$historyRounds.Add([int]$first) }
+    # -- H-13 A legacy deviation in section 2 must be declared in section 5 --
+    # Compact handoffs have a single deviations/blockers section, so there is no
+    # duplicated deviation field to reconcile.
+    if (-not $compactHandoff) {
+        $deviationCells = 0
+        $h2Tables = Get-MarkdownTables -Text $h2
+        foreach ($t in $h2Tables) {
+            $devCol = Get-ColumnIndex -Header $t.Header -Pattern '(?i)deviation|sai lệch|sai lech'
+            if ($devCol -lt 0) { continue }
+            foreach ($row in $t.Rows) {
+                if ($row.Cells.Count -le $devCol) { continue }
+                $dev = Clear-MdDecoration $row.Cells[$devCol]
+                if ($dev -eq '' -or $dev -match '(?i)^(none|không|khong|n/?a|-)$') { continue }
+                $deviationCells++
+            }
         }
-        if ($historyRounds -notcontains $roundNum) {
-            Add-GateError $ctx 'H-14' "section 7 Execution Round History has no row for the current round $roundNum."
-        } else {
-            Add-GateOk $ctx 'H-14' "section 7 records round $roundNum."
+        $declaredIds = @(Get-TableRows -Text $h5 | Where-Object { (Clear-MdDecoration $_.Cells[0]) -match '^(BLK|LIM|DEV)-\d' })
+        if ($deviationCells -gt 0 -and $declaredIds.Count -eq 0) {
+            Add-GateError $ctx 'H-13' "section 2 records $deviationCells deviation(s) from TASK but section 5 declares none."
+        } elseif ($deviationCells -gt 0) {
+            Add-GateOk $ctx 'H-13' "$deviationCells deviation(s) in section 2, $($declaredIds.Count) declared in section 5."
         }
-        $bogus = @($historyRounds | Where-Object { $_ -gt $roundNum -or $_ -lt 1 })
-        if ($bogus.Count -gt 0) {
-            Add-GateError $ctx 'H-14' "section 7 invents round(s) $($bogus -join ', ') outside the real range 1..$roundNum."
+    }
+
+    # -- H-14 Round history validity (legacy only) ---------------------------
+    if (-not $compactHandoff) {
+        $roundNum = $execRound
+        if ($roundNum -gt 0) {
+            $historyRounds = New-Object System.Collections.ArrayList
+            foreach ($row in (Get-TableRows -Text $h7)) {
+                $first = Clear-MdDecoration $row.Cells[0]
+                if ($first -match '^\d+$') { [void]$historyRounds.Add([int]$first) }
+            }
+            if ($historyRounds -notcontains $roundNum) {
+                Add-GateError $ctx 'H-14' "section 7 Execution Round History has no row for the current round $roundNum."
+            } else {
+                Add-GateOk $ctx 'H-14' "section 7 records round $roundNum."
+            }
+            $bogus = @($historyRounds | Where-Object { $_ -gt $roundNum -or $_ -lt 1 })
+            if ($bogus.Count -gt 0) {
+                Add-GateError $ctx 'H-14' "section 7 invents round(s) $($bogus -join ', ') outside the real range 1..$roundNum."
+            }
         }
+    } else {
+        Add-GateOk $ctx 'H-14' 'compact handoff uses Control as the single round record.'
     }
 
     # -- H-15 Tier 2 must not write Tier 1 fields ----------------------------

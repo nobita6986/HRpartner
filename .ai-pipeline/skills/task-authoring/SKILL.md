@@ -9,7 +9,7 @@ license: Internal
 
 TASK là contract duy nhất giữa Planner, Executor và Auditor.
 
-Mỗi TASK mới khai `Assurance lane: FAST | STANDARD | CRITICAL`. FAST phải ngắn; STANDARD đầy đủ theo changed surface; CRITICAL mới mở rộng data/state/permission/LIVE matrix. Task cũ thiếu lane mặc định CRITICAL.
+Mỗi TASK mới khai `Assurance lane: FAST | STANDARD | CRITICAL`. FAST phải ngắn; STANDARD đầy đủ theo changed surface và mặc định `Audit mode: FOCUSED`; CRITICAL mới mở rộng data/state/permission/LIVE matrix và dùng `DEEP`. Task cũ thiếu lane mặc định CRITICAL.
 
 ## Mức chi tiết đúng
 

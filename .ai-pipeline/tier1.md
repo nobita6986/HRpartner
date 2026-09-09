@@ -22,8 +22,8 @@
 2. Chọn đúng một lane: FAST, STANDARD hoặc CRITICAL. Task thiếu lane = CRITICAL.
 3. Viết RQ → STEP → AC đo được, gate tỷ lệ với rủi ro và rollback hợp lý.
 4. Chạy `verify-task.ps1`, đặt `READY_FOR_EXECUTION`, giao một Tier 2 stream.
-5. Nhận HANDOFF: FAST thì review trực tiếp; STANDARD/CRITICAL thì giao Tier 3.
-6. Resolve và cập nhật vị trí roadmap/handover sau khi ACCEPTED.
+5. Nhận HANDOFF: FAST review trực tiếp; STANDARD giao Tier 3 focused audit; CRITICAL giao Tier 3 deep audit.
+6. Resolve và cập nhật vị trí roadmap/handover sau khi ACCEPTED. Không mở vòng mới chỉ để sửa P2/P3 không chặn release; ghi debt có owner khi cần.
 
 ## Contract proportionality
 

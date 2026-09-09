@@ -412,6 +412,134 @@ Add-Case -Name 'compat: artifact cũ thiếu Assurance lane vẫn PASS như CRIT
         $c.Handoff = $c.Handoff.Replace("| Assurance lane | ``CRITICAL`` |`n", '')
         $c.Audit = $c.Audit.Replace("| Assurance lane | ``CRITICAL`` |`n", '').Replace("| Audit depth | ``FULL`` |`n", '') }
 
+Add-Case -Name 'compact STANDARD audit passes with FOCUSED depth' -Gate audit -Expect PASS `
+    -Why 'compact audit keeps independent behavior, scope, and mandatory checks' `
+    -Mutate { param($c)
+        $c.Task = $c.Task.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `STANDARD` |')
+        $c.Handoff = $c.Handoff.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `STANDARD` |')
+        $c.Audit = @'
+# AUDIT: fixture-gate-selftest
+
+## 0. Control
+
+| Field | Value |
+|---|---|
+| Task slug | `fixture-gate-selftest` |
+| Assurance lane | `STANDARD` |
+| Audit depth | `FOCUSED` |
+| Spec version | `v1.0` |
+| Execution round | `1` |
+| Audit round | `1` |
+| Baseline / source round | `deadbeef` |
+| Auditor | `Tier 3 independent` |
+
+## 1. Findings
+
+None.
+
+## 2. Verification
+
+| AC | Independent method | Result | Evidence | Finding |
+|---|---|---|---|---|
+| `AC-01` | `npm run test:unit` | `PASS` | exit 0, 1481 passed, 103 files; `evidence/audit-unit.txt` | None |
+| `AC-02` | `git status --porcelain` | `PASS` | exit 0, 32 lines, scoped | None |
+
+| Check | Status | Evidence |
+|---|---|---|
+| `C-07` | `DONE` | `git status --porcelain` exit 0, 32 lines |
+| `C-08` | `DONE` | `npm run test:unit` exit 0, 1481 passed |
+| `C-09` | `DONE` | `verify-task.ps1` RESULT: PASS |
+| `C-10` | `DONE` | `git diff --name-only deadbeef..HEAD` exit 0, 1 file |
+
+## 3. Evidence and scope
+
+- Audited: `src/demo.ts`.
+
+| Evidence | Command | Exit / result | Mapping |
+|---|---|---|---|
+| `AE-01` | `npm run test:unit` | exit 0, 1481 passed | AC-01/C-08 |
+| `AE-02` | `git status --porcelain` | exit 0, 32 lines | AC-02/C-07/C-10 |
+
+## 4. Verdict and carry-forward
+
+- **Verdict:** `PASS`
+- **Open release blockers:** None
+- **Non-blocking debt:** None
+- **Reason:** independent behavior and scope checks passed.
+- **Carry-forward:** None
+
+> Đã bàn giao AUDIT.md cho Tier 1; chờ Planner Resolution trong TASK.md.
+'@
+}
+
+Add-Case -Name 'P2 non-release-blocking permits PASS' -Gate audit -Expect PASS `
+    -Why 'P2 advisory debt must not force another audit round' `
+    -Mutate { param($c)
+        $rows = "| ID | Severity | Release-blocking | Status | Finding / reproduction / impact | Planner decision |`n|---|---|---|---|---|---|`n| ``AUD-101`` | ``P2`` | ``NO`` | ``OPEN`` | ``npm run lint`` exit 0; naming debt only | Backlog owner Tier 1 |"
+        $c.Audit = $c.Audit.Replace('Không có finding.', $rows) }
+
+Add-Case -Name 'P2 release-blocking rejects PASS' -Gate audit -Expect FAIL -Token 'S-21' `
+    -Why 'P2 tied to release safety must block PASS' `
+    -Mutate { param($c)
+        $rows = "| ID | Severity | Release-blocking | Status | Finding / reproduction / impact | Planner decision |`n|---|---|---|---|---|---|`n| ``AUD-102`` | ``P2`` | ``YES`` | ``OPEN`` | ``npm run test:unit`` exit 1; acceptance regression | Fix before release |"
+        $c.Audit = $c.Audit.Replace('Không có finding.', $rows) }
+
+Add-Case -Name 'CRITICAL rejects FOCUSED depth' -Gate audit -Expect FAIL -Token 'A-02' `
+    -Why 'critical surfaces retain deep assurance' `
+    -Mutate { param($c) $c.Audit = $c.Audit.Replace('| Audit depth | `FULL` |', '| Audit depth | `FOCUSED` |') }
+
+Add-Case -Name 'compact HANDOFF passes without execution history' -Gate handoff -Expect PASS `
+    -Why 'compact handoff removes repeated STEP log and round history' `
+    -Mutate { param($c)
+        $c.Handoff = @'
+# HANDOFF: fixture-gate-selftest
+
+## 0. Control
+
+| Field | Value |
+|---|---|
+| Task slug | `fixture-gate-selftest` |
+| Assurance lane | `CRITICAL` |
+| Audit mode | `CODE_AUDIT` |
+| Spec version | `v1.0` |
+| Execution round | `1` |
+| Baseline | `deadbeef` |
+| Status | `READY_FOR_AUDIT` |
+
+## 1. Outcome and changed surface
+
+- Delivered: formatVnd fixed.
+- Changed: `src/demo.ts` for `STEP-01`.
+
+## 2. Acceptance evidence
+
+| AC | Evidence | Result | Limitation |
+|---|---|---|---|
+| - | `verify-task.ps1 -TaskPath docs/tasks/fixture-gate-selftest/TASK.md` | `RESULT: PASS` | None |
+| `AC-01` | `E-01` | exit 0, 1472 passed | None |
+| `AC-02` | `E-02` | exit 0, 2 paths | None |
+
+## 3. Evidence registry
+
+| Evidence | Command | Exit / measured result | Artifact |
+|---|---|---|---|
+| `E-01` | `npm run test:unit` | exit 0, 1472 passed | `evidence/unit.txt` |
+| `E-02` | `git status --porcelain` | exit 0, 2 paths | inline |
+
+## 4. Deviations and blockers
+
+| ID | Type | Description | Decision needed |
+|---|---|---|---|
+| - | - | None | No |
+
+## 5. Final status
+
+All acceptance evidence is green.
+
+> Handoff status: `READY_FOR_AUDIT`
+'@
+}
+
 Add-Case -Name 'FAST handoff dùng READY_FOR_REVIEW và Evidence Registry' -Gate handoff -Expect PASS `
     -Why 'task nhỏ không cần Tier 3 và một command được map nhiều AC' `
     -Mutate { param($c)

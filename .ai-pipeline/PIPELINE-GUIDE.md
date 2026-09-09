@@ -39,7 +39,7 @@ TASK READY_FOR_EXECUTION
 ```text
 TASK READY_FOR_EXECUTION
   → HANDOFF READY_FOR_AUDIT
-  → AUDIT FULL hoặc DELTA
+  → STANDARD: FOCUSED | CRITICAL: DEEP | vòng sau: DELTA
   → Tier 1 resolve
   → ACCEPTED hoặc REVISION_REQUIRED
 ```
@@ -64,17 +64,18 @@ Các AC tham chiếu `E-01` thay vì copy output. Chỉ tạo `evidence/` khi ou
 
 Mọi tuyên bố PASS phải là phép đo thật. `ENV_BLOCKED`, test skip hoặc fixture giả không được diễn giải thành PASS.
 
-## 6. Re-audit: FULL và DELTA
+## 6. Audit depth và carry-forward
 
-FULL bắt buộc ở audit đầu, khi spec/scope/baseline/environment đổi, diff ngoài dự kiến, có critical surface mới hoặc impact chưa rõ.
-
-DELTA hợp lệ khi spec, boundary, baseline và premise môi trường không đổi. Tier 3 chỉ đo lại finding còn mở, AC/check bị tác động, caller liên quan và gate cần thiết.
+- `FOCUSED`: mặc định cho STANDARD ngay từ audit đầu. Tier 3 tự chạy ít nhất một behavior check trọng yếu, C-07/C-09/C-10 và check rủi ro áp dụng; không lặp full suite/build khi evidence Tier 2 hợp lệ và impact proof cho thấy không cần.
+- `DEEP`: bắt buộc cho CRITICAL; độ sâu theo critical surface thực sự bị tác động, không phải checklist vô điều kiện.
+- `DELTA`: dùng ở vòng sau khi spec, boundary, baseline và premise môi trường không đổi; chỉ đo finding còn mở, AC/check và caller bị tác động.
+- `FULL` chỉ là alias tương thích artifact cũ của audit sâu; task mới không dùng.
 
 Phần bất biến ghi `CARRIED_FORWARD` cùng round nguồn, baseline/commit, evidence nguồn và impact proof. Không tái chạy chỉ để đủ checklist.
 
 ## 7. Assurance checks
 
-`C-07` Git hygiene, `C-09` contract validity và `C-10` diff scope luôn bắt buộc trong STANDARD/CRITICAL. STANDARD chỉ thêm check áp dụng. CRITICAL liệt kê C-01..C-10; mục không áp dụng dùng `SKIP(reason)`.
+`C-07` Git hygiene, `C-09` contract validity và `C-10` diff scope luôn bắt buộc trong STANDARD/CRITICAL. STANDARD thêm behavior/security/data check áp dụng. CRITICAL khai C-01..C-10; mục không áp dụng dùng `SKIP(reason)`. P0/P1 luôn chặn; P2 chỉ chặn khi audit ghi `Release-blocking: YES`; P2 không chặn và P3 đi vào debt/backlog có owner thay vì mở vòng code/audit mới.
 
 ## 8. Blocker và quyền quyết định
 

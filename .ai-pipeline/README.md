@@ -95,7 +95,7 @@ Ví dụ: Tier 2 dùng `<ROLE_FILE> = tier2.md`, `<WORK_ITEM> = docs/tasks/<slug
 
 1. Copy nguyên thư mục `.ai-pipeline/` vào root repository.
 2. Không copy `.env*`, secret, evidence hay task của dự án cũ vào trong thư mục này.
-3. Bổ sung policy đặc thù dự án vào `rules/00-global-rules.md` hoặc tài liệu dự án; không nhân bản role file.
+3. Bổ sung policy đặc thù dự án vào tài liệu ngoài `.ai-pipeline/` (khuyến nghị `docs/` hoặc `CLAUDE.md`) rồi dẫn từ quyết sách/TASK; không đưa roadmap, phase, product name hoặc prompt dự án vào Portable Kit và không nhân bản role file.
 4. Chạy:
 
 ```powershell

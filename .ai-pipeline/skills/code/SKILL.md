@@ -12,7 +12,7 @@ Tier 2 thực thi `TASK.md` theo Assurance lane và viết `HANDOFF.md`. FAST b�
 ## Bắt buộc trong HANDOFF
 
 - Metadata khớp `TASK.md` (Assurance lane, Audit mode, Spec version, execution round).
-- STEP có outcome/status; được gộp khi cùng kết quả.
+- Changed surface gắn STEP/outcome; không cần nhật ký thao tác hoặc round history lặp lại.
 - Evidence Registry `E-xx` ghi mỗi command + exit + output một lần và có thể map nhiều AC.
 - Gate đúng lane; không chạy trùng full suite/build nếu canonical command đã bao phủ hoặc lane không yêu cầu.
 - Nếu contract mơ hồ: ghi blocker, KHÔNG đoán.

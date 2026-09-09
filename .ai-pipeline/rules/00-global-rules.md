@@ -54,6 +54,7 @@ Không tự cài tool/dependency chỉ để thỏa checklist nếu Planner chư
 - Tầng 2 không phát hành audit verdict.
 - Tầng 3 không sửa source và không ra quyết định thay Planner.
 - Tầng 1 nghiệm thu task; Tier 0/Owner quyết định release, go-live và chấp nhận rủi ro cấp dự án.
+- `.ai-pipeline/` là portable kit dùng chung nhiều repository: không đưa tên sản phẩm, roadmap, phase hoặc prompt của một dự án cụ thể vào đây; đặt chúng trong tài liệu dự án và dẫn từ TASK/quyết sách.
 
 ## 8. Bảo đảm theo rủi ro
 

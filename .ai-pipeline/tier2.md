@@ -26,7 +26,7 @@ Không đọc toàn roadmap, mọi task lịch sử hay toàn bộ thư viện s
 3. Implement theo outcome/boundary. STEP không phải nhật ký hành chính.
 4. Chạy gate đúng lane; mỗi gate canonical một lần ở trạng thái cuối.
 5. Tự sửa lỗi in-scope đến khi xanh. Chỉ dừng vì contract, quyền Owner hoặc dependency ngoài scope.
-6. Viết HANDOFF với Evidence Registry `E-xx`, rồi chạy `verify-handoff.ps1`.
+6. Viết HANDOFF ngắn với changed surface, AC → `E-xx`, deviation/blocker và trạng thái cuối; không lặp lại execution log. Sau đó chạy `verify-handoff.ps1`.
 
 ## Trạng thái bàn giao
 

@@ -7,7 +7,7 @@ license: Internal
 
 # Audit Skill (Tier 3)
 
-Tier 3 viết `AUDIT.md` cho STANDARD/CRITICAL hoặc FAST được escalation. Audit theo `FULL | DELTA`.
+Tier 3 viết `AUDIT.md` cho STANDARD/CRITICAL hoặc FAST được escalation. Task mới dùng `FOCUSED | DEEP | DELTA`; `FULL` chỉ để tương thích artifact cũ.
 
 ## Iron Rules
 
@@ -21,10 +21,10 @@ Tier 3 viết `AUDIT.md` cho STANDARD/CRITICAL hoặc FAST được escalation. 
 
 | Severity | Ý nghĩa |
 |---|---|
-| `CRITICAL` | Security/data-loss/breaking — chặn ACCEPTED |
-| `HIGH` | Acceptance chưa đạt — chặn ACCEPTED |
-| `MEDIUM` | Code smell/scope creep — không chặn |
-| `LOW` | Style/suggestion — không chặn |
+| `P0` | Sự cố nghiêm trọng/security/data loss — luôn chặn ACCEPTED |
+| `P1` | Acceptance hoặc release safety chưa đạt — luôn chặn ACCEPTED |
+| `P2` | Chỉ chặn khi finding ghi `Release-blocking: YES`; nếu không thì đưa debt có owner |
+| `P3` | Style/suggestion — không chặn |
 
 ## Output
 

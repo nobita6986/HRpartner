@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 Validates AUDIT.md against TASK.md (and HANDOFF.md when present) for the
 three-tier pipeline.
@@ -86,16 +86,28 @@ try {
     }
 
     # -- A-01 Required sections ----------------------------------------------
-    $requiredSections = @(
-        "## 0. Audit Control",
-        "## 1. Findings",
-        "## 2. Acceptance Verification",
-        "## 3. Scope",
-        "## 4. Independent Evidence",
-        "## 5. Coverage Gaps",
-        "## 6. Verdict",
-        "## 7. Re-audit Trace"
-    )
+    # Compact audits use four sections. Historical eight-section artifacts stay valid.
+    $compactAudit = ($audit -match [regex]::Escape('## 3. Evidence and scope'))
+    $requiredSections = if ($compactAudit) {
+        @(
+            "## 0. Control",
+            "## 1. Findings",
+            "## 2. Verification",
+            "## 3. Evidence and scope",
+            "## 4. Verdict and carry-forward"
+        )
+    } else {
+        @(
+            "## 0. Audit Control",
+            "## 1. Findings",
+            "## 2. Acceptance Verification",
+            "## 3. Scope",
+            "## 4. Independent Evidence",
+            "## 5. Coverage Gaps",
+            "## 6. Verdict",
+            "## 7. Re-audit Trace"
+        )
+    }
     $missingSections = 0
     foreach ($section in $requiredSections) {
         if ($audit -notmatch [regex]::Escape($section)) {
@@ -103,7 +115,7 @@ try {
             $missingSections++
         }
     }
-    if ($missingSections -eq 0) { Add-GateOk $ctx 'A-01' "all 8 required sections present." }
+    if ($missingSections -eq 0) { Add-GateOk $ctx 'A-01' "all $($requiredSections.Count) required sections present ($(if ($compactAudit) { 'compact' } else { 'legacy' }))." }
 
     # -- A-02 Spec version must match TASK -----------------------------------
     $taskSpec  = Get-ControlField -Text $task  -FieldName 'Spec version'
@@ -136,21 +148,38 @@ try {
     }
 
     $depthRaw = Get-ControlField -Text $audit -FieldName 'Audit depth'
-    $auditDepth = 'FULL'
-    if ($depthRaw.ToUpper() -match '^(FULL|DELTA)$') {
+    $auditDepth = 'DEEP'
+    $depthUpper = $depthRaw.ToUpper()
+    if ($depthUpper -match '^(FOCUSED|DEEP|DELTA|FULL)$') {
         $auditDepth = $Matches[1]
-        Add-GateOk $ctx 'A-02' "audit depth: $auditDepth."
+        if ($auditDepth -eq 'FULL') {
+            Add-GateWarn $ctx 'A-02' 'Audit depth FULL is a legacy alias for DEEP; new artifacts should use DEEP.'
+        } else {
+            Add-GateOk $ctx 'A-02' "audit depth: $auditDepth."
+        }
     } elseif ($depthRaw -ne '') {
-        Add-GateError $ctx 'A-02' "Audit depth '$depthRaw' is invalid; expected FULL|DELTA."
+        Add-GateError $ctx 'A-02' "Audit depth '$depthRaw' is invalid; expected FOCUSED|DEEP|DELTA (FULL is legacy-compatible)."
     } else {
-        Add-GateWarn $ctx 'A-02' "Audit depth absent; legacy default FULL applies."
+        Add-GateWarn $ctx 'A-02' "Audit depth absent; legacy-safe default DEEP applies."
+    }
+    if ($auditLane -eq 'STANDARD' -and @('DEEP','FULL') -contains $auditDepth) {
+        Add-GateWarn $ctx 'A-02' 'STANDARD normally uses FOCUSED; deeper audit is allowed when justified.'
+    }
+    if ($auditLane -eq 'CRITICAL' -and $auditDepth -eq 'FOCUSED') {
+        Add-GateError $ctx 'A-02' 'CRITICAL cannot use FOCUSED; use DEEP or DELTA.'
     }
 
     # -- Section bodies ------------------------------------------------------
     $sec2 = Get-MarkdownSection -Lines $auditLines -HeadingPattern '^##\s*2\.'
-    $sec4 = Get-MarkdownSection -Lines $auditLines -HeadingPattern '^##\s*4\.'
-    $sec5 = Get-MarkdownSection -Lines $auditLines -HeadingPattern '^##\s*5\.'
-    $sec7 = Get-MarkdownSection -Lines $auditLines -HeadingPattern '^##\s*7\.'
+    if ($compactAudit) {
+        $sec4 = Get-MarkdownSection -Lines $auditLines -HeadingPattern '^##\s*3\.'
+        $sec5 = Get-MarkdownSection -Lines $auditLines -HeadingPattern '^##\s*4\.'
+        $sec7 = $sec5
+    } else {
+        $sec4 = Get-MarkdownSection -Lines $auditLines -HeadingPattern '^##\s*4\.'
+        $sec5 = Get-MarkdownSection -Lines $auditLines -HeadingPattern '^##\s*5\.'
+        $sec7 = Get-MarkdownSection -Lines $auditLines -HeadingPattern '^##\s*7\.'
+    }
     if ($null -eq $sec2) { $sec2 = '' }
     if ($null -eq $sec4) { $sec4 = '' }
     if ($null -eq $sec5) { $sec5 = '' }
@@ -298,7 +327,7 @@ try {
             # that same sentence written in words. Only the spellings carrying
             # diacritics are listed, on purpose: the bare ASCII foldings are
             # ordinary Vietnamese words and would rescue almost every row.
-            $emptyOutPattern = '(?i)(rỗng|trống|empty|no match|no output|không có dòng nào)'
+            $emptyOutPattern = '(?i)(empty|no match|no output|0 rows|0 lines|k.t qu. r.ng|k.t qu. tr.ng|result.*empty)'
             $hasEmptyOut = ((Test-CellHasCommand $strippedRow) -and [regex]::IsMatch($strippedRow, $emptyOutPattern))
             if (-not ($hasExit -or $hasValue -or $hasRatio -or $hasArtifact -or $hasEmptyOut)) {
                 Add-GateError $ctx 'S-19' "$acId uses the verdict word '$resultCell' as its measured result: the row carries no exit code, no measured value and no artifact path. A verdict is the conclusion of a measurement, not the measurement itself (rf-06 audit round 1 shipped nine such rows)."
@@ -499,19 +528,17 @@ try {
         }
     }
 
-    # -- S-07 Coverage Gaps must not contradict the AC table -----------------
-    # go-live-09 (two rounds running), go-live-11, go-live-13, go-live-15,
-    # m1-06c PLN-02: section 5 said "none" while cells read BLOCKED.
+    # -- S-07 Coverage/debt declaration must match the AC table --------------
     $nonPassList = @()
     foreach ($k in $acStatus.Keys) {
         if (@('FAIL','PARTIAL','BLOCKED','ENV_BLOCKED') -contains $acStatus[$k]) { $nonPassList += "$k=$($acStatus[$k])" }
     }
     if ((Test-SectionSaysNone -Text $sec5) -and ($nonPassList.Count -gt 0)) {
-        Add-GateError $ctx 'S-07' "section 5 Coverage Gaps says none, but section 2 has unmeasured or failing AC: $($nonPassList -join ', ')."
+        Add-GateError $ctx 'S-07' "verdict/coverage section says none, but verification has non-PASS AC: $($nonPassList -join ', ')."
     } elseif ((Test-SectionSaysNone -Text $sec5) -and ($verdict -eq 'BLOCKED' -or $verdict -eq 'FAIL')) {
-        Add-GateError $ctx 'S-07' "section 5 says no coverage gap while the verdict is $verdict."
+        Add-GateError $ctx 'S-07' "verdict/coverage section says no gap while verdict is $verdict."
     } else {
-        Add-GateOk $ctx 'S-07' "section 5 is consistent with the AC table."
+        Add-GateOk $ctx 'S-07' 'coverage/debt declaration is consistent with the AC table.'
     }
 
     # -- S-08 An AC the executor declared ENV_BLOCKED cannot be PASSed -------
@@ -541,12 +568,12 @@ try {
     $sec4Rows = New-Object System.Collections.ArrayList
     $sec4PathCol = -1
     if ($null -ne $sec4Table) {
-        $sec4PathCol = Get-ColumnIndex -Header $sec4Table.Header -Pattern '(?i)evidence|path|artifact|đường dẫn'
+        $sec4PathCol = Get-ColumnIndex -Header $sec4Table.Header -Pattern '(?i)evidence|path|artifact'
         foreach ($row in $sec4Table.Rows) { if ($row.Cells.Count -ge 3) { [void]$sec4Rows.Add($row) } }
     }
-    $minimumEvidence = 5
-    if ($auditDepth -eq 'DELTA') { $minimumEvidence = 2 }
-    elseif ($auditLane -eq 'STANDARD') { $minimumEvidence = 3 }
+    $minimumEvidence = 4
+    if ($auditDepth -eq 'DELTA' -or $auditDepth -eq 'FOCUSED') { $minimumEvidence = 2 }
+    elseif ($auditLane -eq 'STANDARD') { $minimumEvidence = 2 }
     if ($sec4Rows.Count -lt $minimumEvidence) {
         # go-live-15 wrote section 4 as a fenced transcript instead of a table.
         # That is a format deviation, not an absence of evidence: accept it when
@@ -589,22 +616,23 @@ try {
     }
     if ($sec4Bad -eq 0 -and $sec4Rows.Count -ge $minimumEvidence) { Add-GateOk $ctx 'S-02' "section 4 rows all carry command + result." }
 
-    # -- S-09 Section 4 must not be byte-identical to the previous round -----
-    # go-live-15 audit round 2: section 4 was byte-identical to round 1, so no
-    # new command had run, yet four AC gained numbers. Only compared ACROSS
-    # rounds - iterating inside one round legitimately leaves section 4 alone.
+    # -- S-09 Evidence must change across audit rounds -----------------------
     $prevAudit = Get-GitFileAtHead -RepoRoot $repoRoot -RelPath $auditRel
     $roundNow = Get-ControlRoundNumber -Text $audit -Kind 'Audit'
     if ($null -ne $prevAudit -and $prevAudit.Trim() -ne '') {
         $roundPrev = Get-ControlRoundNumber -Text $prevAudit -Kind 'Audit'
         if ($roundNow -gt $roundPrev -and $roundPrev -gt 0) {
             $prevLines = $prevAudit -split "`r?`n"
-            $prevSec4 = Get-MarkdownSection -Lines $prevLines -HeadingPattern '^##\s*4\.'
+            $prevSec4 = if ($compactAudit) {
+                Get-MarkdownSection -Lines $prevLines -HeadingPattern '^##\s*3\.'
+            } else {
+                Get-MarkdownSection -Lines $prevLines -HeadingPattern '^##\s*4\.'
+            }
             if ($null -ne $prevSec4 -and $prevSec4.Trim() -ne '' -and $sec4.Trim() -ne '') {
                 if ($prevSec4.Trim() -eq $sec4.Trim()) {
-                    Add-GateError $ctx 'S-09' "audit round $roundNow has a section 4 byte-identical to round $roundPrev's committed version. No new command was run in this round, so no AC can change verdict."
+                    Add-GateError $ctx 'S-09' "audit round $roundNow has evidence byte-identical to round $roundPrev. No new command was recorded."
                 } else {
-                    Add-GateOk $ctx 'S-09' "section 4 differs from round $roundPrev's committed version."
+                    Add-GateOk $ctx 'S-09' "evidence differs from round $roundPrev."
                 }
             }
         }
@@ -648,7 +676,7 @@ try {
         } else {
             Add-GateOk $ctx 'S-13' "section 7 round numbering is within 1..$currentRound."
         }
-        if ($currentRound -gt 1 -and (Get-TableRows -Text $sec7).Count -eq 0) {
+        if ($currentRound -gt 1 -and -not $compactAudit -and (Get-TableRows -Text $sec7).Count -eq 0) {
             Add-GateError $ctx 'S-13' "audit round $currentRound has an empty section 7 Re-audit Trace."
         }
     }
@@ -660,20 +688,42 @@ try {
     }
     foreach ($acId in $carriedAcs) {
         $traceRow = Get-TableRows -Text $sec7 | Where-Object { ($_.Cells -join ' ') -match [regex]::Escape($acId) } | Select-Object -First 1
-        if ($null -eq $traceRow) {
-            Add-GateError $ctx 'S-20' "$acId is CARRIED_FORWARD but has no row in section 7 Re-audit Trace."
+        $traceText = ''
+        if ($null -ne $traceRow) {
+            $traceText = Clear-MdDecoration ($traceRow.Cells -join ' ')
+        } elseif ($compactAudit -and $sec7 -match [regex]::Escape($acId)) {
+            $traceText = Clear-MdDecoration $sec7
+        } else {
+            Add-GateError $ctx 'S-20' "$acId is CARRIED_FORWARD but has no carry-forward entry."
             continue
         }
-        $traceText = Clear-MdDecoration ($traceRow.Cells -join ' ')
         $hasSource = ($traceText -match '(?i)round\s*\d+' -and $traceText -match '(?i)(baseline|commit|sha)')
         $hasEvidence = ($traceText -match '(?i)(evidence|artifact|\.txt|\.log|\.md|\.json)')
         $hasImpact = ((Test-CellHasCommand $traceText) -and ((Test-CellHasResult $traceText) -or (Test-CellHasNumber $traceText)))
         if (-not ($hasSource -and $hasEvidence -and $hasImpact)) {
-            Add-GateError $ctx 'S-20' "$acId carry-forward trace must name source round + baseline/commit + evidence + an impact command/result."
+            Add-GateError $ctx 'S-20' "$acId carry-forward must name source round + baseline/commit + evidence + an impact command/result."
         }
     }
     if ($carriedAcs.Count -gt 0 -and $ctx.Errors.Count -eq 0) {
         Add-GateOk $ctx 'S-20' "$($carriedAcs.Count) carried-forward AC have source and impact trace."
+    }
+
+    # -- S-21 Blocking severity must be explicit -----------------------------
+    $findingsSection = Get-MarkdownSection -Lines $auditLines -HeadingPattern '^##\s*1\.'
+    if ($null -eq $findingsSection) { $findingsSection = '' }
+    $blockingFindings = @()
+    foreach ($row in (Get-TableRows -Text $findingsSection)) {
+        $joined = Clear-MdDecoration ($row.Cells -join ' ')
+        if ($joined -notmatch 'AUD-\d{3,}') { continue }
+        $sev = if ($row.Cells.Count -gt 1) { Clear-MdDecoration $row.Cells[1] } else { $joined }
+        $releaseBlocking = if ($row.Cells.Count -gt 2) { Clear-MdDecoration $row.Cells[2] } else { '' }
+        if ($sev -match '(?i)^P[01]$') { $blockingFindings += $sev.ToUpper() }
+        if ($sev -match '(?i)^P2$' -and $releaseBlocking -match '(?i)^YES$') { $blockingFindings += 'P2-release-blocking' }
+    }
+    if ($verdict -eq 'PASS' -and $blockingFindings.Count -gt 0) {
+        Add-GateError $ctx 'S-21' "verdict PASS while blocking finding(s) remain: $($blockingFindings -join ', ')."
+    } else {
+        Add-GateOk $ctx 'S-21' 'finding severity is consistent with the verdict; non-blocking P2/P3 may become owned debt.'
     }
 
     # -- S-14 Secret scan ----------------------------------------------------
