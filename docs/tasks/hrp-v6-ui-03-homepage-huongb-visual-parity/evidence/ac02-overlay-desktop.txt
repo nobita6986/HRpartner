@@ -1,0 +1,3 @@
+evidence/screenshots/ac08-overlay-desktop.png — pending (Owner verdict MC-02 v1.4)
+
+PNG overlay sẽ được tạo bởi Tier 2 trong execution round qua Edge CDP Page.captureScreenshot (script `evidence/scripts/section-screenshots-cdp.ps1`). Tên file cuối là `ac08-overlay-desktop.png` (xem AC-08). File PNG hiện KHÔNG tồn tại; placeholder này là `.txt pending` theo Owner verdict MC-02 — KHÔNG commit PNG rỗng với magic extension khi chưa có nội dung thật.
