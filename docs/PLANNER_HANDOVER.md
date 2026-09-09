@@ -44,6 +44,32 @@ protected_paths: README.md; docs/tasks/hrp-v6-security-credential-rotation/PROMP
 security_note: Khong lap lai credential lich su; moi gia tri nhay cam chi duoc ghi [REDACTED]. Rotate production thuoc OP Owner. §13 credential hygiene — lam CUOI CUNG truoc public. security-credential-rotation task: rotate scoped credentials (Tier 2 khong tu rotate production — OP gate).
 phase1_live_evidence: commit f8bd761 trên origin/main; 2 migration files (20260908150000_v6_phase1a_labor_profile_schema + 20260908150001_v6_phase1a_labor_profile_rls) confirmed applied hrp-live bởi Owner 08/09; không có CI/CD auto-deploy migration (verified: vercel.json buildCommand không gọi prisma migrate deploy; .github/workflows/ci.yml không có deploy job)
 phase1c_audit_evidence: AUDIT R1 PASS cho hrp-v6-p1c-new-ui-restyling; 11/11 AC PASS; 0 P1/P2 findings; verify-task=e36b83df... PASS; verify-handoff=e1af8549... PASS; 2 frozen test fence hash khớp tuyệt đối (431f650f..., e5bee466...); scope compliance 100%; evidence 7 file đầy đủ
+owner_defer:
+  decision: "Deferred by Owner until target production stack and go-live hardening phase are confirmed."
+  scope:
+    - hrp-v6-security-credential-rotation (BLOCKED) -> dừng tại trạng thái hiện tại; không mở Tier 2 round mới; không yêu cầu Tier 3 re-audit; không tạo task deferral mới
+    - hrp-v6-credential-rotation-posture (BLOCKED R2 OP-gated) -> dừng tại trạng thái hiện tại; không mở round mới
+    - Neon-specific RLS/policy hardening tasks -> đưa ra khỏi critical path
+    - Production secret setup, infra security audit chưa phục vụ feature đang code
+    - Auth/infra redesign khi target stack chưa được quyết định
+  release_checkpoint:
+    description: "Một checkpoint duy nhất trước go-live, không phải task thực thi ngay."
+    trigger_when: ["target production stack đã được Owner xác nhận", "đã bước vào release hardening / go-live"]
+    contents: ["credential rotation", "secret ownership", "RLS/auth", "migration", "backup/rollback", "production configuration"]
+    pre_trigger: "Không tiếp tục giục hoặc mở vòng audit cho Neon hygiene."
+  exception: "Có bằng chứng credential đang bị lộ hoặc bị sử dụng trái phép -> xử lý như incident ngay. Không suy diễn 'có khả năng rủi ro' thành 'đã xảy ra incident'."
+  tier1_focus_shift:
+    - feature người dùng dùng/demo được
+    - UI và business flow còn thiếu
+    - API/domain logic cần cho vertical slice
+    - test trọng yếu bảo vệ behavior vừa code
+    - schema/domain work chỉ khi thực sự cần cho feature và không khóa cứng vào Neon
+  task_size_policy:
+    - FAST: thay đổi nhỏ, ít rủi ro
+    - STANDARD/FOCUSED: feature thông thường
+    - CRITICAL/DEEP: chỉ khi diff hiện tại thực sự chạm critical surface, không phải vì rủi ro hạ tầng tương lai
+  current_task_redirect: hrp-v6-p1-job-opening-posting-split (RESOLVING_R2) — schema THÊM-thuần, không khóa cứng Neon; Tier 2 unblock Tier 3 audit R2; tạo giá trị nền cho Phase 2 admin rebuild
+  no_new_adr: "Không viết ADR dài. Không mở task rationalization mới."
 ```
 
 <!-- ROADMAP_CURSOR_END -->
