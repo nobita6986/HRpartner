@@ -1,0 +1,7 @@
+{
+  "pending": true,
+  "note": "Tier 2 will populate this fixture with 4 jobs (job.id, job.title, job.availableSlots) during /code round",
+  "schema": [
+    { "id": "string", "title": "string", "availableSlots": "number" }
+  ]
+}

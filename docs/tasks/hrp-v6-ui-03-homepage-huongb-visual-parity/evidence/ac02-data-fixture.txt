@@ -1,0 +1,1 @@
+pending — Tier 2 will create during /code round with fixture-recruiting.json (4 jobs với job.id/job.title/job.availableSlots cố định để kiểm truth/overflow).
