@@ -1,56 +1,16 @@
-﻿=== STEP-01 baseline (hrp-v6-security-credential-rotation) ===
-time:           2026-09-07 14:55 Asia/Bangkok
-cwd:            C:\CodeApp\HrP
-HEAD:           d61ebac1ca99fabd2c23e1776e8fadcdf1663e27
-executor:       Tier 2 read-only verify (no mutation)
-contract ref:   TASK v1.1 §5 STEP-01; EV-01/02/03
+STEP-01 HISTORICAL BASELINE — REDACTED
+Task: hrp-v6-security-credential-rotation
 
---- (1) git ls-files check_rls.cjs ---
-check_rls.cjs
+The original evidence captured a credential-bearing database URL from historical source.
+That plaintext content has been removed from this artifact under global secret-handling rules.
 
---- (2) rg postgresql:// check_rls.cjs ---
+Safe retained facts:
+- Historical source path: check_rls.cjs
+- Historical introduction commit: ebca45c
+- Historical file state: tracked
+- Finding: credential-bearing URL existed in the historical blob
+- Current remediation commit: 4a56122
+- Current state: script untracked, local sanitized copy retained, no embedded database URL
 
-2:const prisma = new PrismaClient({ datasources: { db: { url: 'postgresql://neondb_owner:npg_E0eqUu7aHtpI@ep-shy-tree-az32as2c-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require' } } });
-
---- (3) git log --oneline -- check_rls.cjs | head -5 ---
-
-ebca45c feat(portal): audit M7 Admin Expansion pass
-
-
---- (4) git log --all --oneline -- check_rls.cjs ---
-
-a489da8 Agent host session 82424b19-4c0e-4938-8db9-a93007401d14 - baseline checkpoint
-ebca45c feat(portal): audit M7 Admin Expansion pass
-
-
---- (5) HEAD blob hash ---
-
-100644 ce47dea894463a5460fa31a06f2084178e0fb3fc 0	check_rls.cjs
-
---- (6) file size ---
-
-lines_total: 7
-
-
---- (7) full file content ---
-
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient({ datasources: { db: { url: 'postgresql://neondb_owner:npg_E0eqUu7aHtpI@ep-shy-tree-az32as2c-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require' } } });
-async function main() {
-  const policies = await prisma.\\\\SELECT tablename, policyname, roles, cmd, qual, with_check FROM pg_policies WHERE schemaname = 'public';\;
-  console.log(policies);
-}
-main().finally(() => prisma.\\\());
-
---- pre-summary ---
-file_status: tracked
-raw_credential_at_line: 2
-credential_user: neondb_owner
-credential_password_fragment: npg_E0eqUu7aHtpI
-credential_host: ep-shy-tree-az32as2c-pooler.c-3.ap-southeast-1.aws.neon.tech
-first_tracked_commit: ebca45c (feat(portal): audit M7 Admin Expansion pass)
-last_touched_commit: a489da8 (Agent host session baseline checkpoint)
-HEAD_blob: 100644 ce47dea894463a5460fa31a06f2084178e0fb3fc 0 check_rls.cjs
-AUD-001_status: CONFIRMED (raw credential still present in HEAD)
-
-
+No password, credential fragment, endpoint, DSN, environment value, or reversible identifier is retained here.
+Tier 3 must use an Owner-provided non-reversible fingerprint out of band; this file is not known-secret input.

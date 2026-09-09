@@ -1,0 +1,24 @@
+# STEP-01 Evidence — BestJobsSection wrapper
+# AC-02 verification
+
+## File: src/domains/job-board/components/landing/best-jobs-section.tsx
+
+## Line count
+Command: (Get-Content src/domains/job-board/components/landing/best-jobs-section.tsx | Measure-Object -Line).Lines
+Expected: <= 30
+Actual: 11
+Result: PASS
+
+## Forbidden content check
+Command: (Select-String -Path src/domains/job-board/components/landing/best-jobs-section.tsx -Pattern 'skeleton|aria-busy|Luxshare|Goertek|Brother').Count
+Expected: 0
+Actual: 0
+Result: PASS
+
+## Summary
+- Component converted to children-receiver wrapper
+- No skeleton, no hardcoded data
+- Heading H2 moved to page.tsx children
+- 11 lines total (<= 30)
+
+STEP-01: PASS

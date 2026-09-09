@@ -26,15 +26,16 @@ PHASE_MAP: |
     -> hrp-v6-credential-rotation-posture: BLOCKED R2 (OP-gated)
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
-current_lane: Phase 1 V6 Foundation — 3/3 ACCEPTED; chuyển sang security-credential-rotation R1 (READY)
-current_task: hrp-v6-security-credential-rotation
-task_path: docs/tasks/hrp-v6-security-credential-rotation/TASK.md
-spec_version: v1.0 READY_FOR_EXECUTION (Tier 1 ready; chưa có execution round hay audit round)
-task_status: READY_FOR_EXECUTION
-current_gate: TIER_2_EXECUTION
-next_command: /code hrp-v6-security-credential-rotation
-previous_accepted: new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS 08/09 (0 P0/P1/P2); labor-profile-schema ACCEPTED R2 + LIVE 08/09 (f8bd761); job-opening-posting-split ACCEPTED R4 PASS 08/09 (3a96b9c); go-live-20 ACCEPTED; ui-01 ACCEPTED v1.1; gate-01/02/03 ACCEPTED; test-01 ACCEPTED v1.4
-next_planner_candidate: hrp-v6-credential-rotation-posture (BLOCKED R2 OP-gated); held_draft go-live-19 PII DB mask (Tier 1 viết); V6 Phase 2 admin rebuild tasks (per docs/V6/v6-admin-rebuild_ROADMAP.md)
+current_lane: Phase 1 V6 Foundation — vertical slice tiếp theo (post Tier 0 deferral 09/09)
+current_task: hrp-v6-p1-job-opening-status-card
+task_path: docs/tasks/hrp-v6-p1-job-opening-status-card/TASK.md
+spec_version: v1.0 ACCEPTED 09/09 (Tier 3 R2 PASS; AUD-001 RESOLVED; chờ Owner merge main)
+task_status: ACCEPTED_PENDING_MERGE
+worktree_branch: tier1/job-opening-status-card-worktree (chưa merge main; anh duyệt trước)
+current_gate: OWNER_MERGE_TO_MAIN
+next_command: anh merge worktree branch → main qua PR hoặc fast-forward local
+previous_accepted: new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS 08/09 (0 P0/P1/P2); labor-profile-schema ACCEPTED R2 + LIVE 08/09 (f8bd761); job-opening-posting-split ACCEPTED R4 PASS 08/09 (3a96b9c); job-opening-status-card ACCEPTED R2 PASS 09/09 (Tier 3 verdict PASS); go-live-20 ACCEPTED; ui-01 ACCEPTED v1.1; gate-01/02/03 ACCEPTED; test-01 ACCEPTED v1.4
+next_planner_candidate: held_draft go-live-19 PII DB mask (Tier 1 viết); V6 Phase 2 admin rebuild tasks (per docs/V6/v6-admin-rebuild_ROADMAP.md). Defer: hrp-v6-security-credential-rotation, hrp-v6-credential-rotation-posture.
 blocking_owner: AFF §20 — 17/17 ô chưa tick, Founder+sep phải quyết; không mở task AFF nào
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture READY (BLOCKED R2); security-credential-rotation READY (current_task)
 held_draft: hrp-v5-go-live-19-tracking-pii-db-mask — việc viết, chưa giao /code

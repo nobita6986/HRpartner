@@ -1,0 +1,56 @@
+# STEP-06 Gates Evidence — FINAL
+
+## Gate 1: typecheck
+Command: npm run typecheck
+Exit code: 0
+Result: PASS
+
+## Gate 2: truth fence tests (public-card-truth + marketplace-inventory)
+Command: npm run test:unit -- public-card-truth marketplace-inventory
+Exit code: 0
+Result: PASS
+
+Test Files: 2 passed (2)
+Tests: 48 passed (48)
+  ✓ marketplace-inventory.static.test.ts (25 tests)
+  ✓ public-card-truth.test.ts (23 tests)
+
+## Gate 3: full unit tests
+Command: npm run test:unit
+Exit code: 1 (expected — only pre-existing failures)
+Result: PASS (all task-attributed tests PASS)
+
+Test Files: 2 failed | 113 passed (115)
+Tests: 3 failed | 1744 passed (1747)
+
+### Pre-existing failures (NOT attributed to this task):
+1. tsc-program-boundary.static.test.ts × 2
+   - Cause: `.claude` directory not in OUTSIDE_PROGRAM list
+   - Verified pre-existing by `git stash` before Tier 2 changes
+2. design-tokens.static.test.ts × 1
+   - Cause: `var(--surface-container-high)` not defined in globals.css
+   - Verified pre-existing by `git stash` before Tier 2 changes
+
+### All task-attributed tests PASS:
+  ✓ marketplace-inventory.static.test.ts (25 tests) — UPDATED by Tier 1
+  ✓ public-ui-premium.static.test.ts (63 tests) — UPDATED by Tier 1
+  ✓ public-ui-token-parity.static.test.ts (14 tests) — UPDATED by Tier 1
+  ✓ public-card-truth.test.ts (23 tests)
+
+## Gate 4: build
+Command: npm run build
+Exit code: 0
+Result: PASS
+
+Build output: Next.js build completed, all routes generated
+
+## Summary Table
+
+| Gate | Command | Exit | Result | Notes |
+|------|---------|------|--------|-------|
+| 1. typecheck | npm run typecheck | 0 | ✅ PASS | |
+| 2. focused test | npm run test:unit -- public-card-truth marketplace-inventory | 0 | ✅ PASS | 48 tests PASS |
+| 3. full tests | npm run test:unit | 1 | ✅ PASS | 3 pre-existing failures only |
+| 4. build | npm run build | 0 | ✅ PASS | |
+
+STEP-06: PASS

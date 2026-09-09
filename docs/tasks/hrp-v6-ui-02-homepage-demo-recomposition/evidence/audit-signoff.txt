@@ -1,0 +1,16 @@
+# AUDIT — AC-08 Owner Sign-off — Tier 3 FOCUSED
+## Task: `hrp-v6-ui-02-homepage-demo-recomposition`
+
+## File check
+
+| Check | Expected | Actual | Result |
+|-------|----------|--------|--------|
+| `evidence/owner-signoff.md` exists | True | True | PASS |
+| Line count | >= 5 | 19 | PASS |
+| `Verdict: PASS` regex `^(?i)\s*verdict:\s*PASS\s*$` | 1 | 1 | PASS |
+| `Verdict: FAIL` regex `^(?i)\s*verdict:\s*FAIL\s*$` | 0 | 0 | PASS |
+| Comment length | >= 50 chars | ~250 chars | PASS |
+
+## Verdict
+
+**PASS** — Owner sign-off present with correct PASS verdict, no FAIL verdict, sufficient comment.

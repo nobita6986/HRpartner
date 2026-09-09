@@ -3,142 +3,143 @@
 ## 0. Control
 
 | Field | Value |
-|---|
+|---|---|
 | Task slug | `hrp-v6-security-credential-rotation` |
 | Work type | `INFRA` |
+| Assurance lane | `CRITICAL` |
 | Audit mode (Tier 3 đọc) | `INFRA_AUDIT` |
-| Spec version | `v1.1` |
-| Execution round | `1` — Tier 2 prep (STEP-01..03: untrack + sanitize + commit); Owner/OP STEP-04..06 (window 2026-09-08 09:00-09:30) |
-| Current audit round | `0` (chưa có audit) |
-| Executor (round này) | Tier 2 — STEP-01 baseline; STEP-02 sanitize + gitignore + commit; runbook + templates |
-| OP execution | `OWNER_BLOCKED` — Owner rotate `neondb_owner` credential + update secret store + revoke old (window **2026-09-08 09:00-09:30 Asia/Bangkok**) |
-| Baseline (TASK v1.0) | `d61ebac` (before sanitize commit) |
-| New HEAD | `4a5612212af7c5e516168c3d3c24f9725356abb2` (sanitized + untracked; single scoped commit) |
-| Status | `READY_FOR_OWNER_EXECUTION` (Tier 2 scaffolding done; Owner triggers STEP-04..06 in window) |
-| Started/updated | 2026-09-07 14:55 Asia/Bangkok |
+| Spec version | `v1.2` |
+| Execution round | `1` |
+| Current audit round | `0` — chưa có canonical `AUDIT.md` trên current HEAD |
+| Executor | Tier 2 cho repo hygiene/runbook/HANDOFF; Owner/OP cho production rotation; Tier 3 independent cho fingerprint/history audit |
+| Baseline | `main @ d3ca054`; implementation commits `4a56122` và `121e796` đều thuộc ancestry hiện tại |
+| Status | `BLOCKED` — STEP-04 static verify xong; thiếu Owner/OP AC-06 và canonical Tier 3 audit; AC-09/10 contract/tree mismatch |
+| Updated | `2026-09-08` |
 
 ## 1. Outcome Summary
 
-**Tier 2 execution round 1 hoàn tất 3 bước prep:**
+Tier 2 không lặp STEP-01..03 vì implementation và artifact commits đã có trong ancestry. Retry này:
 
-| Deliverable | Status | Bằng chứng |
-|---|---|---|
-| STEP-01 baseline (check_rls.cjs tracked, raw credential line 2, first tracked commit `ebca45c`) | ĐẠT | `evidence/sec-s01-baseline.txt` |
-| STEP-02 sanitize (replace URL hardcode → `process.env.DATABASE_URL` + throw fail-closed) | ĐẠT | `evidence/sec-s02-sanitize.txt` |
-| STEP-03 .gitignore (exact-name ignore `check_rls.cjs`; Browser Lane + env rules preserved) | ĐẠT | `evidence/sec-s03-gitignore.txt` |
-| Runbook | ĐẠT | `docs/runbooks/credential-rotation-incident.md` |
-| OP evidence templates (STEP-04/05/06) | ĐẠT | `evidence/op-prep-step{04,05,06}-template.md` |
-| OP prep index | ĐẠT | `evidence/op-prep-index.md` |
-| HANDOFF | ĐẠT | tài liệu này |
-
-**Audits achievable in this round:**
-
-| AC | Verify | Result | Evidence |
-|---|---|---|---|
-| `AC-01` | `git ls-files check_rls.cjs` | PASS (empty) | `evidence/sec-s02-sanitize.txt` §(7) |
-| `AC-02` | `git check-ignore -v check_rls.cjs` | PASS (`.gitignore:82`) | `evidence/sec-s03-gitignore.txt` §(2) |
-| `AC-03` | `rg 'postgresql://\|postgres://' check_rls.cjs` | PASS (0 hit) | `evidence/sec-s02-sanitize.txt` §(1) |
-| `AC-04` | `rg 'process.env.DATABASE_URL' + 'throw'` | PASS (DATABASE_URL + throw) | `evidence/sec-s02-sanitize.txt` §(2)(3) |
-| `AC-05` | `git diff d61ebac HEAD --name-only` | PASS (2 files) | `evidence/sec-s02-sanitize.txt` §(10) |
-| `AC-09` | 4 file canary `BLOCKED_DB_URL` | PASS (untouched) | `evidence/sec-ac09-canary.txt` |
-| `AC-11` | `rg 'npg_E0eqUu7aHtpI' evidence/` | PARTIAL (DEV-22-03) | `evidence/sec-s01-baseline.txt` contains literal credential |
-| `AC-13` prereq | `prisma validate` + seed static test | PASS (5/5) | `evidence/sec-s06-post-verify.txt` §(6)(7) |
-
-**OP execution vẫn `OWNER_BLOCKED`** cho STEP-04..06. Owner trigger window **2026-09-08 09:00-09:30 Asia/Bangkok** (cùng slot với task 21 OP execution STEP-07..11).
+- re-run TASK gate v1.2: PASS;
+- static-verify helper script: syntax PASS, untracked + ignored, 0 embedded database URL scheme, canonical `DATABASE_URL`, fail-closed throw;
+- verify và redact runbook STEP-04: đủ incident timeline, state machine, smoke matrix, rollback và masked evidence format; 0 sensitive-pattern match;
+- không chạy DB/Neon/Vercel/secret store, không đọc `.env*`, không commit/push/merge/deploy;
+- chuyển STEP-07 sang Tier 3 context độc lập; Tier 2 không viết `AUDIT.md` và không phát hành verdict;
+- redact các legacy evidence/template đã lưu credential/endpoint hoặc phép đo hỏng; các bản thay thế chỉ giữ safe summary và blocker thực tế;
+- giữ closure ở `BLOCKED` vì Owner/OP evidence chưa có trên current HEAD và bốn-canary premise của AC-09/10 không đúng cây hiện tại.
 
 ## 2. Execution Trace
 
 | STEP | Action | Result | Evidence |
 |---|---|---|---|
-| `STEP-01` | Baseline: `git ls-files check_rls.cjs` → tracked; `rg postgresql://` → hit line 2; `git log --oneline -- check_rls.cjs` → `ebca45c` first tracked | ĐẠT | `evidence/sec-s01-baseline.txt` |
-| `STEP-02` | Sanitize worktree: replace URL hardcode → `process.env.DATABASE_URL` + throw fail-closed; `git rm --cached check_rls.cjs`; `rg 'npg_E0eqUu7aHtpI' check_rls.cjs` → 0 hits | ĐẠT | `evidence/sec-s02-sanitize.txt` §(1)(4)(5) |
-| `STEP-03` | Append `check_rls.cjs` to `.gitignore` (section header + exact-name); `git check-ignore -v check_rls.cjs` → `.gitignore:82`; Browser Lane lines preserved | ĐẠT | `evidence/sec-s03-gitignore.txt` |
-| `STEP-04..06` | Owner-only (window 2026-09-08 09:00-09:30) | OWNER_BLOCKED | runbook + 3 templates ready |
-| `STEP-07` | Tier 3 fingerprint scan | PENDING | — |
-| `STEP-08` | Tier 3 + HANDOFF | PENDING | — |
-
-**Note on commit history (a612ae9 vs 4a56122):** First commit `a612ae9` used `git add check_rls.cjs` after .gitignore was updated, which re-tracked the sanitized file (violating TASK AC-01). This was immediately corrected with `git reset --soft d61ebac` followed by a single scoped commit `4a56122` that properly untracks the file. Final HEAD is `4a56122`.
+| `STEP-01` | Xác nhận `check_rls.cjs` không tracked và được ignore | CARRY FORWARD PASS | `4a56122`; phép đo retry trong §4 |
+| `STEP-02` | Xác nhận script không chứa embedded DB URL, dùng `process.env.DATABASE_URL`, có fail-closed throw, syntax hợp lệ | CARRY FORWARD PASS | `4a56122`; phép đo retry trong §4 |
+| `STEP-03` | Xác nhận implementation/artifact commits thuộc ancestry current HEAD; không tạo commit mới | CARRY FORWARD PASS | `4a56122`, `121e796` |
+| `STEP-04` | Tabletop/static verify và redact runbook | PASS WITH BLOCKERS | `evidence/ac08-runbook.txt` |
+| `STEP-05` | Owner/OP rotate, deploy, smoke | BLOCKED — không có canonical Owner evidence | Expected masked Owner artifact per TASK v1.2; path chưa tồn tại |
+| `STEP-06` | Owner/OP revoke và negative/positive probes | BLOCKED — không có canonical Owner evidence | Expected masked Owner artifact per TASK v1.2; path chưa tồn tại |
+| `STEP-07` | Tier 3 fingerprint/history audit độc lập | FAIL + BLOCKED — audit report xác nhận canonical HEAD còn secret-bearing artifacts, thiếu safe exact-fingerprint input và canonical `AUDIT.md` | Independent read-only report; `AE-01..AE-10` |
+| `STEP-08` | Canonical HANDOFF closure | BLOCKED | tài liệu này |
 
 ## 3. Acceptance Evidence
 
-| AC | Command/check | Exit/result | Evidence summary | Limitation |
-|---|---|---|---|---|
-| `AC-01` | `git ls-files check_rls.cjs` | **PASS** — empty | `evidence/sec-s02-sanitize.txt` | — |
-| `AC-02` | `git check-ignore -v check_rls.cjs` | **PASS** — `.gitignore:82:check_rls.cjs check_rls.cjs` | `evidence/sec-s03-gitignore.txt` | — |
-| `AC-03` | `rg 'postgresql://\|postgres://' check_rls.cjs` | **PASS** — 0 hits | `evidence/sec-s02-sanitize.txt` | — |
-| `AC-04` | `rg 'process.env.DATABASE_URL' + 'throw'` | **PASS** — DATABASE_URL + throw present | `evidence/sec-s02-sanitize.txt` | — |
-| `AC-05` | `git diff d61ebac HEAD --name-only` | **PASS** — 2 files: `.gitignore`, `check_rls.cjs` (delete) | `evidence/sec-s02-sanitize.txt` | — |
-| `AC-06` | Masked identity/posture probe + `node check_rls.cjs` | **CHƯA ĐO** — OP execution STEP-04 | runbook §2 | Owner phải chạy |
-| `AC-07` | `rg 'npg_E0eqUu7aHtpI' -- '*.cjs' '*.ts' '*.tsx' '*.js' '*.mjs'` HEAD | **PASS** — 0 hits in source files; `.env.dev` contains old credential but is gitignored + OUT OF SCOPE (task 21 handles) | `evidence/sec-s06-post-verify.txt` | `.env.dev` leak is task 21 scope |
-| `AC-08` | `docs/runbooks/credential-rotation-incident.md` exists with 5 mục | **PASS** | runbook | — |
-| `AC-09` | 4 file canary `BLOCKED_DB_URL` | **PASS** — untainted | `evidence/sec-ac09-canary.txt` | — |
-| `AC-10` | vitest + playwright canary tests | **PARTIAL** — seed static test 5/5 PASS; full vitest + playwright pending in STEP-12 | `evidence/sec-s06-post-verify.txt` §(7) | Full test suite pending closure |
-| `AC-11` | `rg 'npg_E0eqUu7aHtpI' evidence/` | **PARTIAL** — baseline file contains literal credential (DEV-22-03) | `evidence/sec-s01-baseline.txt` | Tier 3 will judge |
-| `AC-12` | `git log -S 'npg_E0eqUu7aHtpI' ebca45c~5..ebca45c` | **PASS** — only `ebca45c` itself has the credential; 5 commits before have no source code hits | `evidence/sec-s06-post-verify.txt` §(3)(4) | — |
-| `AC-13` | `prisma validate` + vitest | **PASS** — schema valid; seed static test 5/5; full vitest + build pending | `evidence/sec-s06-post-verify.txt` | Full test suite pending closure |
+| AC | Evidence | Result | Limitation |
+|---|---|---|
+| — | `powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath <TASK> -RepoRoot <root>` | RESULT: PASS (exit 0) | `E-01` |
+| `AC-01` | `E-03` | PASS — `git ls-files -- check_rls.cjs` rỗng | None |
+| `AC-02` | `E-03` | BLOCKED CONTRACT MISMATCH — ignore check pass nhưng rule là exact-name, không phải root-only | `BLK-04` |
+| `AC-03` | `E-03` | PASS — embedded postgres scheme count = 0 | None |
+| `AC-04` | `E-03` | PASS — env refs = 2; throw token = 1; syntax exit 0 | None |
+| `AC-05` | `E-02`; `git log -1 --format=%B -- .gitignore` | PASS CARRY FORWARD — exit 0; message traces task; scoped implementation commit belongs to ancestry | None |
+| `AC-06` | `E-06`; `AE-03` | BLOCKED OWNER — không có canonical rotation/smoke/revoke evidence path | `BLK-01` |
+| `AC-07` | `AE-02`, `AE-03`, `AE-06` | BLOCKED — thiếu safe exact-fingerprint input; canonical HEAD vẫn có secret-bearing artifacts | `BLK-02`, `BLK-05` |
+| `AC-08` | `E-04`, `AE-02` | PASS trong redacted worktree; FAIL trên canonical HEAD chưa land redaction | `BLK-05` |
+| `AC-09` | `E-05`; `AE-07` | FAIL CONTRACT/TREE — counts `2,0,2,missing` | `BLK-03` |
+| `AC-10` | `E-05`; `AE-07` | BLOCKED — named canary/config premise is stale | `BLK-03` |
+| `AC-11` | `AE-02` | FAIL trên canonical HEAD — Tier 3 count-only scan thấy 40 credential-token occurrences trong 10 tracked artifacts | `BLK-05` |
+| `AC-12` | `AE-06` | PARTIAL — generic predecessor scan có 0 candidates; exact fingerprint chưa đo an toàn và contract method không hợp lệ | `BLK-02` |
+| `AC-13` | not run because prerequisites are blocked | BLOCKED / NOT RUN | `BLK-01..05` |
 
-## 4. Changed Deliverables (HEAD `4a56122`)
+## 4. Changed Deliverables
 
-| Path | Trạng thái | Bytes thay đổi | Mục đích | Commit |
-|---|---|---|---|---|
-| `check_rls.cjs` | `D` (untrack) | tracked → untracked at HEAD; worktree keeps sanitized 18-line version | `RQ-01`; AUD-001 fix | `4a56122` |
-| `.gitignore` | `M` | +2 lines (section header + `check_rls.cjs` at line 82) | `RQ-01`; `DEC-10` | `4a56122` |
-| `docs/runbooks/credential-rotation-incident.md` | `A` | +186 dòng | `RQ-07` | pending commit |
-| `docs/tasks/hrp-v6-security-credential-rotation/evidence/` | `A` | +9 files (baseline, sanitize, gitignore, canary, post-verify, templates, index) | evidence scaffolding | pending commit |
+### Evidence Registry
 
-`git log d61ebac..HEAD` = 1 commit: `4a56122` (`chore(security): untrack check_rls.cjs + sanitize URL - hrp-v6-security-credential-rotation`).
+| ID | Command/check | Exit | Sanitized output | Maps |
+|---|---|---:|---|---|
+| `E-01` | `powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath <TASK> -RepoRoot <root>` | 0 | TASK gate PASS; CRITICAL lane; 10 RQ traceable; no plaintext secret flagged | preflight |
+| `E-02` | ancestry checks for `4a56122`, `121e796`, `314ecef` | 0/0/1 | implementation + artifacts canonical; side-branch closure not ancestor | STEP-01..03, STEP-08 |
+| `E-03` | `node --check check_rls.cjs`; path-only/static counts | 0 | syntax 0; tracked=false; ignored=true; embedded scheme=0; env refs=2; throw=1 | AC-01,03,04 |
+| `E-04` | Runbook required-token checks + sensitive-pattern scan | 0 | all five required areas present; 0 sensitive-pattern matches | AC-08 |
+| `E-05` | Four canary path/count probe | 0 | counts `2,0,2,missing` in TASK order | AC-09,10 |
+| `E-06` | Owner evidence path lookup | 0 | no canonical Owner evidence paths returned | AC-06 |
+| `E-07` | canonical target lookup | 0 | current HEAD has TASK/HANDOFF/runbook but no `AUDIT.md` | AC-07,12 |
+| `AE-01` | Independent Tier 3 HEAD/status/index probe | 0 | target `main@d3ca054`; task index empty; redactions remain worktree-only | STEP-07 |
+| `AE-02` | Independent count-only scan of canonical HEAD artifacts | 0 | 40 credential-token occurrences across 10 tracked artifacts; no matched values emitted | AC-07,08,11 |
+| `AE-03` | Required closure artifact lookup | 0 | `ac06-rotation.txt`, `ac07-fingerprint.txt`, `ac12-history.txt`, and canonical `AUDIT.md` absent | AC-06,07,12 |
+| `AE-06` | Safe generic predecessor-blob scan | 0 | five predecessors returned zero generic candidates; not exact-fingerprint proof | AC-12 |
+| `AE-07` | Independent path-only canary probe | 0 | counts `2,0,2,missing` | AC-09,10 |
+| `AE-08` | Independent `verify-task` rerun | 0 | mechanical RESULT PASS; semantic contract defects remain | preflight |
+| `AE-09` | Independent `verify-handoff` rerun | 0 | worktree PASS WITH WARNINGS; not proof canonical HEAD is remediated | STEP-08 |
+| `AE-10` | `verify-audit` | NOT RUN | canonical `AUDIT.md` absent; no Tier 2 or report-only substitute | STEP-07 |
+
+### Changed paths
+
+| Path | Change | Purpose |
+|---|---|---|
+| `docs/runbooks/credential-rotation-incident.md` | Updated | Remove reusable credential/endpoint literals and stale expired-window instructions; preserve safe operational sequence |
+| `docs/tasks/hrp-v6-security-credential-rotation/evidence/ac08-runbook.txt` | Added | STEP-04 static/tabletop evidence |
+| `docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-s01-baseline.txt` | Redacted | Remove credential-bearing historical source while retaining safe provenance |
+| `docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-s02-sanitize.txt` | Redacted | Replace source-body transcript with current safe measurements |
+| `docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-s03-gitignore.txt` | Corrected | Replace legacy AC-02 PASS claim with current contract mismatch |
+| `docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-s06-post-verify.txt` | Redacted | Remove sensitive references and unsupported history conclusions |
+| `docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-ac09-canary.txt` | Corrected | Record current `2,0,2,missing` canary outcome |
+| `docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-gate-task.txt` | Refreshed | Record current TASK v1.2 gate PASS safely |
+| `docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-gate-audit.txt` | Refreshed | Record canonical AUDIT absence without a Tier 2 verdict |
+| `docs/tasks/hrp-v6-security-credential-rotation/evidence/op-prep-*.md` | Redacted/updated | Remove stale identifiers/windows and retain masked Owner-only templates |
+| `docs/tasks/hrp-v6-security-credential-rotation/HANDOFF.md` | Updated | Canonical v1.2 retry status and blocker closure |
 
 ## 5. Deviations
 
-| ID | Deviation | Lý do |
-|---|---|---|
-| `DEV-22-01` | Tier 2 used `process.env.DATABASE_URL` instead of `process.env.CHECK_RLS_DSN` (user directive) | TASK DEC-07 explicitly REJECTS default fallback and prefers standard `DATABASE_URL` env var (already in `.env.dev`); Iron Rules = TASK contract takes precedence |
-| `DEV-22-02` | First commit `a612ae9` incorrectly re-tracked the sanitized file because `git add` ran after `.gitignore` was updated | Immediately corrected with `git reset --soft` + single scoped commit `4a56122`; no data loss |
-| `DEV-22-03` | `evidence/sec-s01-baseline.txt` contains the literal `npg_E0eqUu7aHtpI` credential in full DSN format | Baseline evidence intentionally preserves the forensic trace for AUD-001; templates and post-verify evidence use fingerprint-only; Tier 3 will judge if this violates AC-11 strict interpretation |
+| ID | Type | Detail | Required owner |
+|---|---|---|---|
+| `BLK-01` | OWNER/OP | AC-06 lacks masked production rotation/deploy/smoke/revoke evidence | Owner/OP |
+| `BLK-02` | CONTRACT/TIER 3 | RQ-06/AC-07 lacks safe exact-fingerprint input; AC-12 method is not a valid Git-blob scan; canonical `AUDIT.md` absent | Tier 1 contract bump + independent Tier 3 |
+| `BLK-03` | CONTRACT/TREE | AC-09/10 names four canary paths, but current tree only has sentinel in two paths and one named config is absent | Tier 1 |
+| `BLK-04` | CONTRACT/IMPLEMENTATION | AC-02 requires root-only `/check_rls.cjs`; landed ignore rule is `check_rls.cjs` | Tier 1 decision; Tier 2 must not silently reinterpret completed STEP-01 |
+| `BLK-05` | CANONICAL SECURITY | Independent Tier 3 count-only scan found 40 credential-token occurrences in 10 artifacts on current HEAD; worktree redaction is not canonical until safely reviewed and landed by an authorized tier | Tier 1 + authorized canonical commit; Owner containment if any exposed credential may remain active |
+| `LIM-01` | ROLE BOUNDARY | Tier 2 cannot validate the credential against Neon or derive a known-secret fingerprint | Owner/OP + Tier 3 |
 
 ## 6. Evidence Index
 
-| File | Purpose |
-|---|
-| `evidence/sec-s01-baseline.txt` | STEP-01 baseline: file tracked, raw credential at line 2, first commit `ebca45c` |
-| `evidence/sec-s02-sanitize.txt` | STEP-02 sanitize: AC-01/03/04/05 verify outputs |
-| `evidence/sec-s03-gitignore.txt` | STEP-03 gitignore: AC-01/02 verify + Browser Lane sanity |
-| `evidence/sec-ac09-canary.txt` | AC-09 canary whitelist check |
-| `evidence/sec-s06-post-verify.txt` | STEP-06 post-verify: AC-07/11/12/13/10 verify outputs |
-| `evidence/op-prep-index.md` | OP prep master scaffold index |
-| `evidence/op-prep-step04-template.md` | STEP-04 evidence template for Owner (rotate credential) |
-| `evidence/op-prep-step05-template.md` | STEP-05 evidence template for Owner (secret store update) |
-| `evidence/op-prep-step06-template.md` | STEP-06 evidence template for Owner (revoke old) |
+| Evidence | Artifact / summary |
+|---|---|
+| `E-01` | TASK gate | `powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath <TASK> -RepoRoot <root>` exit 0, RESULT PASS |
+| `E-02` | Git ancestry | `git merge-base --is-ancestor <sha> HEAD` results `0,0,1` for implementation, artifacts, side closure |
+| `E-03` | Helper script | `node --check check_rls.cjs` exit 0; path/token probe measured `tracked=0`, `ignored=1`, `scheme=0`, `env=2`, `throw=1` |
+| `E-04` | Runbook | `Select-String` required-token/sensitive-pattern probe exit 0; artifact `evidence/ac08-runbook.txt` |
+| `E-05` | Canary | `Select-String BLOCKED_DB_URL` path probe exit 0, counts `2,0,2,missing` |
+| `E-06` | Owner evidence | `git ls-files -- <owner-evidence-paths>` exit 0, output empty |
+| `E-07` | Audit artifact | `Test-Path <task>/AUDIT.md` measured false |
+| `AE-01..10` | Independent Tier 3 report | Read-only deep audit anchored at `main@d3ca054`; verdict FAIL, closure BLOCKED; count/path-only output preserved in §4 without sensitive values |
 
-## 7. Owner Action List (BLOCKED)
+## 7. Execution Round History
 
-| Step | Owner action needed |
-|---|
-| `STEP-04` | Rotate `neondb_owner` credential in Neon (masked identity/posture probe); fill `evidence/sec-s04-rotate.txt` |
-| `STEP-05` | Update secret store / `.env.local` with new DSN; smoke `node check_rls.cjs`; fill `evidence/sec-s05-dsn-update.txt` |
-| `STEP-06` | Revoke old credential `npg_E0eqUu7aHtpI`; masked negative/positive probe; fill `evidence/sec-s06-revoke.txt` |
+| Round | Spec | Outcome | Evidence / next input |
+|---:|---|---|---|
+| 1 | `v1.2` | `BLOCKED` | STEP-04 worktree redaction verified; independent STEP-07 verdict FAIL because canonical HEAD remains unsafe and Owner/contract inputs are absent |
 
-Owner runs in window **2026-09-08 09:00-09:30 Asia/Bangkok** (cùng slot với task 21 STEP-07..11).
+### Inputs required for continuation
 
-## 8. Risk Index
+1. Owner/OP publishes masked `AC-06` evidence only: state transitions, role/target fingerprints, posture, UTC timestamps, smoke result, old-credential negative probe and new-credential positive probe. No secret, DSN, endpoint, cookie, token or environment value. Owner must treat any credential exposed in canonical history as compromised if it may remain active.
+2. Tier 1 bumps/reconciles AC-02 and AC-09/10 against the current tree; replaces AC-11 with a real credential-token/URI scanner; replaces AC-12 with a valid Git-blob scan; and provides Tier 3 a non-reversible matcher for RQ-06/AC-07.
+3. An authorized tier safely lands the reviewed redactions on canonical `main`; zero-candidate count-only scans must pass on HEAD/index/worktree. Tier 2 does not commit or push this work.
+4. Independent Tier 3 reruns STEP-07 under the reconciled contract, writes canonical `AUDIT.md`, and runs `verify-audit`; the report-only FAIL from this round is not a canonical audit artifact.
+5. A later Tier 2 round may finish STEP-08 only after Owner evidence, contract reconciliation, canonical redaction, AC-13 validation, and canonical Tier 3 audit all exist.
 
-| ID | Status | Note |
-|---|---|---|
-| `RISK-01..03` | OK | Owner execution state machine in runbook |
-| `RISK-04` | OK | Canary whitelist intact (AC-09 PASS) |
-| `RISK-05` | Open | `npg_E0eqUu7aHtpI` appears in commit `ebca45c` history (git history NOT rewritten per DEC-06); this is a finding for separate incident response |
-| `RISK-06` | OK | Owner decides KEEP (sanitize); Tier 2 followed DEC-03 |
-| `RISK-07` | Open | `.env.dev` still contains `npg_E0eqUu7aHtpI` in worktree (gitignored); OUT OF SCOPE for this task (task 21 handles) |
+## 8. Final State
 
-## 9. Next Step
+`BLOCKED` — STEP-04 is redacted and statically verified only in the current worktree. Independent STEP-07 returned `FAIL`: canonical HEAD still has secret-bearing artifacts, Owner evidence is absent, and the fingerprint/history plus canary contract is not safely executable as written. STEP-08 cannot close.
 
-**Status hiện tại:** Tier 2 STEP-01..03 DONE. Owner BLOCKED for STEP-04..06.
+Không commit, push, merge, deploy, DB/Neon connection hoặc `.env*` read được thực hiện trong retry này.
 
-- Tier 2: commit runbook + evidence files + HANDOFF → commit `TBD`
-- Owner: execute STEP-04..06 in window 2026-09-08 09:00-09:30
-- Tier 3: re-audit round 1 after OP execution evidence
-- Tier 1: bump spec → v1.2 ACCEPTED after Tier 3 verdict
-
----
-
-Handoff status: `READY_FOR_OWNER_EXECUTION` (Tier 2 scaffolding done; OP execution OWNER_BLOCKED until window **2026-09-08 09:00-09:30 Asia/Bangkok**); CLEANUP-PLAN C-01 already applied at commit `4a56122`
+Handoff status: BLOCKED

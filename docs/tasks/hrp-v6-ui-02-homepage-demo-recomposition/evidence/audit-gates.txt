@@ -1,0 +1,33 @@
+# AUDIT — AC-09 Gates — Tier 3 FOCUSED
+## Task: `hrp-v6-ui-02-homepage-demo-recomposition`
+
+## Gate results
+
+| Gate | Command | Expected | Actual | Evidence | Result |
+|------|---------|----------|--------|----------|--------|
+| 1. typecheck | `npm run typecheck` | exit 0 | exit 0 | `ac06-typecheck.txt` | PASS |
+| 2. truth fence | `npm run test:unit -- public-card-truth` | exit 0, 48 tests | exit 0, 48 tests | `ac06-truth-fence.txt` | PASS |
+| 3. full test | `npm run test:unit` | exit 1, 3 baseline failures, 0 new | exit 1, **T-04 FAIL** (new) | live run | **FAIL** |
+| 4. build | `npm run build` | exit 0 | exit 0 | `ac06-build.txt` | PASS |
+| 5. verify-handoff | `verify-handoff.ps1` | PASS | PASS | `ac09-verify-handoff.txt` | PASS |
+
+## New failure analysis
+
+Command run: `npm run test:unit -- --run src/domains/job-board/public-ui-token-parity.static.test.ts`
+
+Result: **T-04 FAIL** — "mỗi bậc được DÙNG ít nhất một lần trên bề mặt trang chủ"
+
+```
+const unused = SCALE_SUFFIXES.filter((s) => !TOKEN_FILES.has(`text-${s}`));
+expect(unused).toEqual([]);
+```
+
+Uncovered: `text-headline-xl` is NOT used anywhere on the homepage surface.
+
+Verification by independent script: only `text-headline-lg` and `text-headline-md` are present. `text-headline-xl` is absent.
+
+The 3 baseline failures (`tsc-program-boundary × 2`, `design-tokens × 1`) remain as documented. But T-04 is a NEW failure introduced by this task.
+
+## Result
+
+**FAIL** — `npm run test:unit` exit 1 includes T-04, which is a new failure not in the baseline failure set.

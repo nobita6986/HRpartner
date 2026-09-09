@@ -1,0 +1,14 @@
+# STEP-04 Evidence — search-section.tsx removed
+# AC-05 verification
+
+## File deletion
+Command: Test-Path src/domains/job-board/components/landing/search-section.tsx
+Expected: False
+Actual: False
+Result: PASS
+
+## Summary
+- search-section.tsx successfully removed
+- No remaining import or usage in page.tsx (already removed in STEP-03)
+
+STEP-04: PASS

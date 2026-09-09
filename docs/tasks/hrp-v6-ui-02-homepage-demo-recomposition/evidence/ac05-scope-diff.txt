@@ -1,0 +1,44 @@
+# STEP-05 Evidence — Scope verification (OBR-01)
+# AC-06 verification
+
+## OBR-01 Lớp 1: Pre-existing manifest hash check
+Command: Compare 17 baseline foreign files hash vs current
+Expected: All 17 files UNCHANGED
+Actual: ALL 17 PRE-EXISTING FILES UNCHANGED
+  - docs/PLANNER_HANDOVER.md OK
+  - docs/runbooks/credential-rotation-incident.md OK
+  - docs/tasks/hrp-v6-security-credential-rotation/AUDIT.md OK
+  - docs/tasks/hrp-v6-security-credential-rotation/HANDOFF.md OK
+  - docs/tasks/hrp-v6-security-credential-rotation/evidence/op-prep-index.md OK
+  - docs/tasks/hrp-v6-security-credential-rotation/evidence/op-prep-step04-template.md OK
+  - docs/tasks/hrp-v6-security-credential-rotation/evidence/op-prep-step05-template.md OK
+  - docs/tasks/hrp-v6-security-credential-rotation/evidence/op-prep-step06-template.md OK
+  - docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-ac09-canary.txt OK
+  - docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-gate-audit.txt OK
+  - docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-gate-task.txt OK
+  - docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-s01-baseline.txt OK
+  - docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-s02-sanitize.txt OK
+  - docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-s03-gitignore.txt OK
+  - docs/tasks/hrp-v6-security-credential-rotation/evidence/sec-s06-post-verify.txt OK
+  - docs\prompts\HRP_V6_NEXT_TASK_TIER0.md OK
+  - docs/tasks/hrp-v6-security-credential-rotation/evidence/ac08-runbook.txt OK
+Result: PASS
+
+## OBR-01 Lớp 2: Path diff against baseline snapshot
+git status --porcelain new files (task-attributed):
+  M app/(portal)/page.tsx                       -> ALLOWLIST OK
+  M src/domains/job-board/components/landing/areas-section.tsx -> ALLOWLIST OK
+  M src/domains/job-board/components/landing/best-jobs-section.tsx -> ALLOWLIST OK
+  M src/domains/job-board/components/landing/hero.tsx -> ALLOWLIST OK
+  D src/domains/job-board/components/landing/search-section.tsx -> ALLOWLIST OK (deletion)
+  ?? docs/tasks/hrp-v6-ui-02-homepage-demo-recomposition/ -> ALLOWLIST OK (task-owned evidence)
+
+All new/modified paths are within allowlist §11 OBR-02.
+Result: PASS
+
+## Summary
+- All 17 pre-existing foreign files: hash unchanged
+- All task-attributed changes: within allowlist
+- No path outside allowlist §11 OBR-02 modified
+
+STEP-05: PASS

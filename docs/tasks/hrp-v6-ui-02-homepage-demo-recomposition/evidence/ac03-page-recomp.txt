@@ -1,0 +1,33 @@
+# STEP-03 Evidence — page.tsx recomposition
+# AC-01 + AC-04 verification
+
+## Removed content check
+Command: Select-String -Path 'app/(portal)/page.tsx' -Pattern 'Tổng quan tuyển dụng|TagStrip|MiniJobList|SearchSection'
+Expected: 0 (function definitions for TagStrip/MiniJobList removed too)
+Actual: 0
+Result: PASS
+
+## FeaturedJobCard retained
+Command: Select-String -Path 'app/(portal)/page.tsx' -Pattern 'FeaturedJobCard|overview\.topPaid\[0\]\s*\?\?\s*overview\.newest\[0\]'
+Expected: >= 1
+Actual: 3 (FeaturedJobCard component definition, FeaturedJobCard usage, featuredSource = overview.topPaid[0] ?? overview.newest[0])
+Result: PASS
+
+## Block order
+Command: Select-String -Path 'app/(portal)/page.tsx' -Pattern 'Hero|BestJobsSection|AreasSection|ReferralInviteStrip'
+Expected: 4 lines (Hero + BestJobsSection + AreasSection + ReferralInviteStrip in order)
+Actual: 4
+Result: PASS
+
+## BestJobsSection children structure
+The BestJobsSection now wraps:
+- <h2 id="hrp-best-jobs-heading">
+- <div className="grid"> with visibleJobs.slice(0, 12).map(JobCard)
+
+## Summary
+- Removed: stats section (aria-label="Tổng quan tuyển dụng"), TagStrip, 2x MiniJobList, SearchSection
+- Removed: TagStrip and MiniJobList function definitions
+- Retained: Hero + FeaturedJobCard, BestJobsSection wrapper, AreasSection, ReferralInviteStrip
+- Order: Hero -> BestJobsSection (with grid) -> AreasSection -> ReferralInviteStrip
+
+STEP-03: PASS

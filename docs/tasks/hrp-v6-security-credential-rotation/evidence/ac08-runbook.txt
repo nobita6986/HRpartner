@@ -1,0 +1,34 @@
+STEP-04 RUNBOOK VERIFY — hrp-v6-security-credential-rotation
+Measured: 2026-09-08
+Executor: Tier 2 (offline/static only)
+TASK: v1.2, execution round 1, CRITICAL
+
+CMD: Test required runbook sections and state-machine token with Select-String
+EXIT: 0
+OUTPUT:
+- incident timeline: present
+- rotation order NEW_CREATED → NEW_VERIFIED → DEPLOYED → SMOKE_GREEN → OLD_REVOKED: present
+- smoke matrix: present
+- rollback/recovery: present
+- masked evidence template: present
+
+CMD: Scan runbook for credential fragments, concrete Neon endpoint, embedded database URL, and credential-bearing URL
+EXIT: 0
+OUTPUT: 0 matches
+
+CMD: Measure runbook file
+EXIT: 0
+OUTPUT: 7252 bytes
+
+TABLETOP RESULT: PASS WITH BLOCKERS
+- Owner-only production boundary is explicit.
+- Expired historical window is not reused; a current approved window is required.
+- Revoke is gated on SMOKE_GREEN.
+- Old/new probes use secret sources that must not log values.
+- Evidence permits only non-reversible 8-character fingerprints, timestamps, posture, and pass/fail.
+- No DB, Neon, Vercel, secret-store, or network action was performed by Tier 2.
+
+BLOCKERS OBSERVED OUTSIDE RUNBOOK CONTENT:
+- Owner/OP evidence for AC-06 is absent on current HEAD.
+- TASK AC-09/AC-10 expects four canary paths, but current tree has sentinel hits only in vitest.unit.config.ts and vitest.config.ts; vitest.integration-files.ts has 0 and playwright.config.ts is absent.
+- Tier 3 must independently decide STEP-07; Tier 2 does not issue the audit verdict.

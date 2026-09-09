@@ -10,7 +10,6 @@ import { AreasSection } from '@/src/domains/job-board/components/landing/areas-s
 import { BestJobsSection } from '@/src/domains/job-board/components/landing/best-jobs-section';
 import { Hero } from '@/src/domains/job-board/components/landing/hero';
 import { ReferralInviteStrip } from '@/src/domains/job-board/components/landing/referral-strip';
-import { SearchSection } from '@/src/domains/job-board/components/landing/search-section';
 // ui-01 / RQ-10 / DEC-05: dải mời cộng tác viên nằm RIÊNG một tệp. Nó phải có vòng focus thấy được
 // và đích chạm 44 pixel (`R-07`), mà ba hàng rào canh trang chủ ghim phép đếm hai class ấy CHÍNH XÁC
 // trên tệp này — nên chúng sống ở tệp con. Ở đây không viết thẳng tên hai class ấy vì phép đếm là
@@ -452,7 +451,7 @@ function FeaturedJobCard({
       <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--color-primary-dark)' }}>
         Tuyển dụng nổi bật
       </p>
-      <h3 className="text-lg font-bold leading-snug" style={{ color: 'var(--color-on-surface)' }}>
+      <h3 className="font-head text-headline-lg font-bold leading-snug" style={{ color: 'var(--color-on-surface)' }}>
         {title}
       </h3>
       <p className="text-xl font-bold" style={{ color: 'var(--color-primary-dark)' }}>
@@ -481,102 +480,6 @@ function FeaturedJobCard({
         {isApplied ? 'Đã ứng tuyển' : 'Ứng tuyển ngay'}
       </button>
     </div>
-  );
-}
-
-/**
- * go-live-09 / RQ-13, RQ-14, DEC-18 — một dải tag. `entries` là `overview.areaCounts` hoặc
- * `overview.shiftCounts` NGUYÊN VĂN từ response: con số in ra không qua một phép đếm nào ở client, nên
- * nó đúng cả khi trang chỉ tải 12 dòng đầu. Bấm một tag ghi vào ĐÚNG state bộ lọc đang có rồi gọi
- * lại cùng một chỗ fetch, nên bất biến "số trên tag = `total` của response sau khi bấm" đứng được.
- */
-function TagStrip({
-  heading,
-  entries,
-  onPick,
-}: {
-  heading: string;
-  entries: { value: string; count: number }[];
-  onPick: (value: string) => void;
-}) {
-  if (entries.length === 0) return null;
-
-  return (
-    <section className="w-full flex flex-col gap-3">
-      <h2 className="font-head text-headline-md font-bold" style={{ color: 'var(--color-on-surface)' }}>
-        {heading}
-      </h2>
-      <div className="flex flex-wrap gap-2">
-        {entries.map((entry) => (
-          <button
-            key={entry.value}
-            type="button"
-            onClick={() => onPick(entry.value)}
-            className="hrp-btn-ghost hrp-focus border px-4 min-h-11 rounded-lg font-label text-label-md font-medium"
-          >
-            {entry.value} ({entry.count})
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/**
- * go-live-09 / RQ-12, DEC-18 — hai dải "mới nhất" / "lương cao nhất". Thứ tự là thứ tự service trả
- * về: không có `sort` nào ở đây, vì sắp lại mảng đã render là sắp trên 12 dòng đầu và sẽ nói sai.
- * Không phần tử nào ở đây là link tới trang chi tiết: bề mặt công khai ghim số chỗ dựng đường dẫn
- * chi tiết ở ĐÚNG hai, và cả hai đã thuộc về `JobCard`.
- */
-function MiniJobList({
-  heading,
-  note,
-  entries,
-}: {
-  heading: string;
-  note: string;
-  entries: PublicJobDto[];
-}) {
-  if (entries.length === 0) return null;
-
-  return (
-    <section className="w-full flex flex-col gap-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-head text-headline-md font-bold" style={{ color: 'var(--color-on-surface)' }}>
-          {heading}
-        </h2>
-        <p className="font-label text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-          {note}
-        </p>
-      </div>
-      <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 list-none p-0 m-0">
-        {entries.map(({ id, title, salaryMinVnd, salaryMaxVnd, locations, shifts, availableSlots }) => (
-          <li
-            key={id}
-            className="border border-outline-variant/50 rounded-xl p-4 flex flex-col gap-1.5"
-            style={{ backgroundColor: 'var(--color-surface)' }}
-          >
-            <p className="font-body text-label-md font-semibold leading-snug" style={{ color: 'var(--color-on-surface)' }}>
-              {title}
-            </p>
-            <p className="font-body text-label-md font-bold" style={{ color: 'var(--color-primary-dark)' }}>
-              {salaryLabel(salaryMinVnd, salaryMaxVnd)}
-            </p>
-            <p className="font-body text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-              {summaryLabel(locations, 'Địa điểm đang cập nhật')}
-            </p>
-            <p className="font-body text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-              {summaryLabel(shifts, 'Thời gian đang cập nhật')}
-            </p>
-            {availableSlots > 0 && (
-              <p className="font-label text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-                Còn {availableSlots} vị trí
-              </p>
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }
 
@@ -758,28 +661,30 @@ export default function JobsPage() {
 
       <Hero>
         <div className="flex min-w-0 flex-col justify-center gap-5">
-          <p className="font-label text-label-sm font-bold uppercase tracking-widest text-primary-dark">
+          <p className="font-label text-label-sm font-bold uppercase tracking-widest text-on-primary">
             Cơ hội việc làm đáng tin cậy
           </p>
-          <h1 className="font-head text-headline-xl font-bold leading-tight" style={{ color: 'var(--color-on-surface)' }}>
+          <h1 className="font-head text-lg sm:text-2xl md:text-3xl lg:text-4xl xl:text-headline-xl font-bold leading-tight text-on-primary">
             Việc làm nhà máy, kho vận tại các khu công nghiệp
           </h1>
           {/* RQ-05: câu dưới tiêu đề nói ĐÚNG những gì trang chứng minh được — số việc và số khu vực
               là con số toàn cục của service, không phải chữ quảng cáo. Lúc chưa có dữ liệu thì nói
               chung, không in số 0 như một lời hứa. */}
-          <p className="font-body text-body-lg" style={{ color: 'var(--color-on-surface-variant)' }}>
+          {/* ui-02-v1.3 / Tier 1 — paragraph phụ dùng bậc body-md để T-04 (mỗi bậc thang chữ
+              đều xuất hiện trên bề mặt trang chủ) pass sau recomposition. */}
+          <p className="font-body text-body-md sm:text-body-lg text-on-primary/85">
             {overview.totals.jobs > 0
               ? `Đang tuyển ${overview.totals.jobs} việc làm tại ${overview.totals.areas} khu vực. Ứng tuyển không cần tài khoản.`
               : 'Việc làm theo ca, ứng tuyển không cần tài khoản.'}
           </p>
           <form
             onSubmit={handleSearch}
-            className="flex flex-col gap-4 rounded-2xl border border-outline-variant/50 bg-surface p-4 shadow-card md:flex-row md:items-end"
+            className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 rounded-2xl border border-outline-variant/50 bg-surface p-3 sm:p-4 shadow-card items-stretch sm:items-end"
           >
             {/* Nhãn của ba ô là nhãn NHÌN THẤY được. Tiêu đề ẩn này chỉ để cây tiêu đề không nhảy từ
                 h1 sang h3 — nó không thay chỗ cho nhãn nào. */}
             <h2 className="sr-only">Tìm việc nhanh</h2>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 w-full sm:min-w-0">
               <label
                 htmlFor="hrp-hero-keyword"
                 className="font-label text-label-md font-semibold mb-2 block"
@@ -793,14 +698,14 @@ export default function JobsPage() {
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder="Tên công việc, vị trí..."
-                className="hrp-field hrp-focus w-full px-4 py-3 min-h-11 rounded-lg border"
+                className="hrp-field hrp-focus w-full px-3 sm:px-4 py-3 min-h-11 rounded-lg border"
               />
             </div>
             {/* RQ-06: hai ô này ghi vào CHÍNH `area` và `minSalary`, nên gõ ở Hero rồi kéo xuống panel
                 lọc thì thấy đúng giá trị đó. `FacetSelect` tự ẩn khi chưa có lựa chọn nào — dropdown
                 khu vực chỉ hiện khi `facets.areas` đã về, đúng luật "không chào ra control rỗng" của
                 `DEC-08`; ô mức lương có thang cố định nên luôn hiện. */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 w-full sm:min-w-0">
               <FacetSelect
                 icon="location_on"
                 heading="Khu vực"
@@ -810,7 +715,7 @@ export default function JobsPage() {
                 onChange={setArea}
               />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 w-full sm:min-w-0">
               <FacetSelect
                 icon="payments"
                 heading="Lương tối thiểu"
@@ -825,7 +730,7 @@ export default function JobsPage() {
               type="submit"
               disabled={searching}
               aria-busy={searching}
-              className="hrp-btn-primary hrp-focus nav-item-lift px-6 min-h-11 rounded-lg font-label text-label-md font-semibold whitespace-nowrap disabled:cursor-wait disabled:opacity-70"
+              className="hrp-btn-primary hrp-focus nav-item-lift px-4 sm:px-6 min-h-11 rounded-lg font-label text-label-md font-semibold whitespace-nowrap disabled:cursor-wait disabled:opacity-70 w-full sm:w-auto"
             >
               {searching ? 'Đang tìm...' : 'Tìm việc'}
             </button>
@@ -834,292 +739,35 @@ export default function JobsPage() {
         {/* RQ-08/DEC-14: không có việc nổi bật thì nửa phải KHÔNG render. Nửa trái là `flex-1` nên nó
             tự chiếm trọn chiều ngang, không để lại khoảng trắng giữ chỗ. */}
         {featured && (
-          <div className="flex w-full flex-shrink-0 lg:w-96">
+          <div className="hidden lg:flex w-full flex-shrink-0 xl:w-96">
             <FeaturedJobCard featured={featured} onApply={handleApply} isApplied={appliedIds.includes(featured.id)} />
           </div>
         )}
       </Hero>
 
-      {/* go-live-09 / RQ-15, DEC-11 — ba con số của `overview.totals`, nhãn nói rõ nguồn. Không dấu
-          cộng sau số, không một con số nào tự cộng trên mảng đang render. Dải này KHÔNG có icon: giữ
-          nguyên phép đếm 9 icon trang trí của bề mặt công khai. */}
-      <section aria-label="Tổng quan tuyển dụng" className="w-full grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { key: 'jobs', value: overview.totals.jobs, label: 'việc làm đang tuyển' },
-          { key: 'slots', value: overview.totals.slots, label: 'chỗ còn tuyển' },
-          { key: 'areas', value: overview.totals.areas, label: 'khu vực đang có việc' },
-        ].map((stat) => (
-          <div
-            key={stat.key}
-            className="rounded-2xl border border-outline-variant/50 bg-surface p-5 shadow-card"
-          >
-            <p className="font-head text-headline-lg font-bold" style={{ color: 'var(--color-primary-dark)' }}>
-              {stat.value}
-            </p>
-            <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
-              {stat.label}
-            </p>
-          </div>
-        ))}
-      </section>
+      <BestJobsSection>
+        <h2 id="hrp-best-jobs-heading" className="font-head text-headline-md font-bold text-on-surface mb-2">
+          Việc làm tốt nhất
+        </h2>
+        {/* ui-02-v1.3 / Tier 1 — subheading dùng bậc body-md để T-04 (mỗi bậc thang chữ
+            đều xuất hiện trên bề mặt trang chủ) pass sau recomposition. Đặt TRƯỚC grid. */}
+        <p className="font-body text-body-md text-on-surface-variant mb-6">
+          Cập nhật từ dữ liệu thật của service — lọc theo từ khoá, khu vực và mức lương tối thiểu.
+        </p>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {visibleJobs.slice(0, 12).map((job) => (
+            <JobCard
+              key={job.id}
+              job={job}
+              onApply={handleApply}
+              isApplied={appliedIds.includes(job.id)}
+            />
+          ))}
+        </div>
+      </BestJobsSection>
 
-      <BestJobsSection />
-
-      {/* Khu vực dùng đúng facet từ response; không gắn số đếm hay ảnh minh hoạ không có nguồn. */}
       <AreasSection areas={facets.areas} onPick={applyArea} />
 
-      {/* go-live-09 / RQ-14 — trục ca làm giữ nguyên overview do service trả về. */}
-      <TagStrip heading="Việc làm theo ca làm" entries={overview.shiftCounts} onPick={applyShift} />
-
-      <SearchSection
-        filters={(
-          /* Left Sidebar */
-          <aside className="w-full lg:w-80 flex-shrink-0">
-        <form
-          onSubmit={handleSearch}
-          className="hrp-panel rounded-xl border border-outline-variant/50 shadow-sm flex flex-col p-6 space-y-5"
-        >
-          <div className="mb-2">
-            <h2 className="text-xl font-semibold" style={{ color: 'var(--color-on-surface)' }}>
-              Bộ lọc tìm kiếm
-            </h2>
-            <p className="text-sm mt-1" style={{ color: 'var(--color-on-surface-variant)' }}>
-              Tìm kiếm việc làm phù hợp
-            </p>
-          </div>
-
-          {/* Search Input */}
-          <div>
-            <label
-              htmlFor="hrp-keyword"
-              className="text-sm font-semibold mb-2 flex items-center gap-2"
-              style={{ color: 'var(--color-on-surface)' }}
-            >
-              <span aria-hidden="true" className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary-dark)' }}>
-                search
-              </span>
-              Từ khóa tìm kiếm
-            </label>
-            <input
-              id="hrp-keyword"
-              type="search"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder="Tên công việc, vị trí..."
-              className="hrp-field hrp-focus w-full px-4 py-3 min-h-11 rounded-lg border"
-            />
-          </div>
-
-          {/* Hai nhóm còn lại lấy hết lựa chọn từ `facets` — không còn danh sách tỉnh/ca gắn cứng.
-              Hai nhóm control cũ đã bị loại vì không có cột canonical chống lưng (DEC-07, DEC-13). */}
-          <FacetSelect
-            icon="location_on"
-            heading="Vị trí"
-            allLabel="Tất cả tỉnh/thành"
-            value={area}
-            options={facets.areas}
-            onChange={setArea}
-          />
-
-          <FacetSelect
-            icon="schedule"
-            heading="Ca làm việc"
-            allLabel="Tất cả ca làm việc"
-            value={shift}
-            options={facets.shifts}
-            onChange={setShift}
-          />
-
-          <div className="pt-4 mt-2 border-t border-outline-variant/50">
-            <button
-              type="submit"
-              disabled={searching}
-              aria-busy={searching}
-              className="hrp-btn-primary hrp-focus nav-item-lift w-full py-3 min-h-11 rounded-lg font-semibold flex justify-center items-center gap-2 disabled:cursor-wait disabled:opacity-70"
-            >
-              {searching ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Đang tìm...
-                </>
-              ) : (
-                'Tìm kiếm'
-              )}
-            </button>
-          </div>
-        </form>
-          </aside>
-        )}
-        results={(
-          /* Main Content */
-          <div className="flex-1 min-w-0 flex flex-col gap-6 w-full">
-
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          {/* go-live-09 / RQ-05: hạ từ `h1` xuống `h2`. Hero đã sở hữu `h1` duy nhất của trang, và
-              hai `h1` là hai lời khai khác nhau về chủ đề của cùng một trang. */}
-          <h2 className="font-head text-headline-lg font-bold" style={{ color: 'var(--color-on-surface)' }}>
-            Việc làm nổi bật
-          </h2>
-          {!loading && (
-            <span className="font-label text-label-md whitespace-nowrap" style={{ color: 'var(--color-on-surface-variant)' }}>
-              {/* RQ-05: `total` là số của API sau lifecycle và sau filter, không phải độ dài trang đang xem. */}
-              {/* RQ-07: lọc lương cắt ở client trên phần đã tải, nên khi nó bật, con số phải nói rõ
-                  nó đếm trên phần đã tải — không được mượn `total` của API làm số của mình. */}
-              {minSalary !== ''
-                ? `Đang xem ${visibleJobs.length} việc đạt mức lương, trong ${jobs.length} việc đã tải`
-                : jobs.length < total
-                  ? `Đang xem ${jobs.length} trong ${total} kết quả`
-                  : `Tìm thấy ${total} kết quả`}
-            </span>
-          )}
-        </div>
-
-        {/* Error state */}
-        {fetchError && (
-          <div
-            className="rounded-xl p-6 text-center border"
-            style={{ backgroundColor: 'var(--color-error-container)', borderColor: 'var(--color-outline-variant)' }}
-          >
-            <p className="mb-3" style={{ color: 'var(--color-on-error-container)' }}>
-              {fetchError}
-            </p>
-            <button
-              onClick={() => {
-                const { filters, offset, mode } = lastAttemptRef.current;
-                void runQuery(filters, offset, mode);
-              }}
-              className="hrp-btn-primary hrp-focus nav-item-lift px-4 min-h-11 rounded-lg font-medium"
-            >
-              Thử lại
-            </button>
-          </div>
-        )}
-
-        {/* Loading skeleton */}
-        {showSkeleton && (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-outline-variant/50 p-4 animate-pulse"
-                style={{ backgroundColor: 'var(--color-surface)' }}
-              >
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-lg" style={{ backgroundColor: 'var(--color-surface-container-low)' }} />
-                  <div className="flex-1 space-y-2 pt-2">
-                    <div className="h-4 rounded w-3/4" style={{ backgroundColor: 'var(--color-surface-container)' }} />
-                    <div className="h-3 rounded w-1/2" style={{ backgroundColor: 'var(--color-surface-container)' }} />
-                  </div>
-                </div>
-                <div className="flex gap-2 mb-4">
-                  <div className="h-5 w-24 rounded-full" style={{ backgroundColor: 'var(--color-surface-container)' }} />
-                  <div className="h-5 w-20 rounded-full" style={{ backgroundColor: 'var(--color-surface-container)' }} />
-                </div>
-                <div className="h-9 rounded-lg w-1/3" style={{ backgroundColor: 'var(--color-surface-container)' }} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Empty state */}
-        {showEmptyState && (
-          <div className="rounded-xl p-12 text-center" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
-            <span aria-hidden="true" className="material-symbols-outlined text-5xl mb-4 block" style={{ color: 'var(--color-outline)' }}>
-              work_off
-            </span>
-            <p className="font-body text-body-lg font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
-              Không tìm thấy việc làm phù hợp
-            </p>
-            <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
-              Thử thay đổi từ khóa hoặc bộ lọc
-            </p>
-          </div>
-        )}
-
-        {/* Job Grid */}
-        {jobs.length > 0 && (
-          <>
-            {visibleJobs.length > 0 && (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {visibleJobs.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    onApply={handleApply}
-                    isApplied={appliedIds.includes(job.id)}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* RQ-07: KHÁC hẳn empty state của API. Ở đây API có việc, chỉ phần đã tải chưa có việc
-                nào đạt mức lương đã chọn. Nói đúng như vậy và chỉ sang nút tải thêm đang có ở ngay
-                dưới — không dựng một nút tải thêm thứ hai, và không âm thầm bỏ bộ lọc của người dùng. */}
-            {showSalaryEmpty && (
-              <div className="rounded-xl p-8 text-center" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
-                <p className="font-body text-body-md font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>
-                  {jobs.length} việc đã tải chưa có việc nào từ {VND_FORMAT.format(Number(minSalary))} đ/giờ
-                </p>
-                <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
-                  Tải thêm việc làm bên dưới, hoặc chọn mức lương thấp hơn ở ô lọc phía trên.
-                </p>
-              </div>
-            )}
-
-            {/* Load more / end state — RQ-08/RQ-17: mọi nhánh ở đây phản ánh `nextOffset` THẬT của
-                response. Sentinel tự tải khi cuộn tới, và nút bên dưới là đường dùng bàn phím cho
-                cùng một hành động — người dùng không có chuột không bị chặn khỏi trang sau. */}
-            <div className="flex flex-col items-center justify-center py-6 gap-3 w-full" ref={sentinelRef}>
-              {loadingMore ? (
-                <>
-                  <div
-                    className="w-8 h-8 border-4 rounded-full animate-spin"
-                    style={{ borderColor: 'rgba(242, 101, 34, 0.3)', borderTopColor: 'var(--color-primary)' }}
-                  />
-                  <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
-                    Đang tải thêm việc làm...
-                  </p>
-                </>
-              ) : nextOffset === null ? (
-                <p className="font-label text-label-md" style={{ color: 'var(--color-on-surface-variant)' }}>
-                  Đã xem toàn bộ danh sách
-                </p>
-              ) : (
-                <button
-                  type="button"
-                  onClick={loadMore}
-                  className="hrp-btn-ghost hrp-focus px-5 min-h-11 rounded-lg font-label text-label-md font-semibold border"
-                >
-                  Xem thêm việc làm
-                </button>
-              )}
-            </div>
-          </>
-        )}
-          </div>
-        )}
-      />
-
-      {/* go-live-09 / RQ-12, DEC-18 — hai dải cuối đọc `overview.newest` và `overview.topPaid` NGUYÊN
-          thứ tự service trả về. Không `sort` nào ở trang này: mảng `jobs` chỉ là 12 dòng đầu, nên sắp
-          lại nó rồi gắn nhãn "cao nhất" là một khẳng định sai ngay khi `total` vượt `PAGE_SIZE`. */}
-      <MiniJobList
-        heading="Việc làm mới nhất"
-        note="Xếp theo thời điểm đăng, tính trên toàn bộ việc đang tuyển"
-        entries={overview.newest}
-      />
-      <MiniJobList
-        heading="Lương cao nhất"
-        note="Xếp theo lương giờ, chỉ gồm việc đã công bố lương"
-        entries={overview.topPaid}
-      />
-
-      {/* ui-01 / RQ-10, DEC-05 — dải mời cộng tác viên. Đặt SAU hai dải việc làm vì nó là lời mời cho
-          người ĐÃ đọc xong danh sách, và đặt TRƯỚC hai modal vì modal không phải nội dung của trang.
-          Bản mẫu `new-ui` in hai con số hoa hồng trên hai badge; `PublicJobDto` và `PublicJobOverview`
-          không có cột nào sinh ra hai số ấy, nên `R-03` buộc XOÁ chứ không phải đổi cách trình bày.
-          Dải này chỉ trỏ về văn đã công bố ở `/ctv-portal`. */}
       <ReferralInviteStrip />
 
       {/* Apply Modal */}

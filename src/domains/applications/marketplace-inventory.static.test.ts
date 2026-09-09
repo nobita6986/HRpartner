@@ -281,7 +281,11 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
     // DEC-08: không còn danh sách tỉnh/ngành/ca gắn cứng trong UI.
     expect(page).not.toMatch(/const\s+(?:LOCATIONS|INDUSTRIES|WORK_TYPES|JOB_TYPES)\s*=/);
     expect(page).toContain('options={facets.areas}');
-    expect(page).toContain('options={facets.shifts}');
+    // ui-02-v1.3 / RQ-02 — Hero form giờ là area + lương tối thiểu; select `shifts` dùng
+    // mảng ngưỡng lương (SALARY_STEPS) thay cho facets.shifts vì bộ lọc ca đã bị
+    // LOẠI KHỎI UI (SearchSection đã xóa). Tên biến facets.shifts vẫn còn trong state và
+    // EMPTY_FACETS — hàng rào dưới đây khoá đúng phần có mặt trên bề mặt.
+    expect(page).toContain('EMPTY_FACETS: PublicJobFacets = { areas: [], shifts: [] }');
     expect(route).toContain("searchParams.getAll('shiftType')");
     expect(route).toContain("searchParams.getAll('jobType')");
     expect(service).toContain('opts.shiftTypes.includes(job.shiftType)');
@@ -342,7 +346,10 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
     // DEC-09: hai lớp chống race, và `total` in ra là số của API.
     expect(page).toContain('new AbortController()');
     expect(page).toContain('generation !== generationRef.current');
-    expect(page).toMatch(/Tìm thấy \$\{total\} kết quả/);
+    // ui-02-v1.3 / RQ-02 — dải text "Tìm thấy ${total} kết quả" đã bị gỡ khỏi UI (BestJobsSection
+    // giờ là wrapper không render counter). Trạng thái `total` vẫn được set từ response — đây là
+    // bằng chứng nhận `total` vẫn tồn tại và đi từ server.
+    expect(page).toContain("typeof data.total === 'number' ? data.total : incoming.length");
   });
 
   it('trang track có nút Tra cứu nhìn thấy được và render ba field đối chiếu', () => {

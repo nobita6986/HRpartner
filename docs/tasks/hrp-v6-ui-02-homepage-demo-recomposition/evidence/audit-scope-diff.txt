@@ -1,0 +1,30 @@
+# AUDIT — OBR-01 Scope Compliance — Tier 3 FOCUSED
+## Task: `hrp-v6-ui-02-homepage-demo-recomposition`
+
+## Baseline verification
+
+| Check | Expected | Actual | Result |
+|-------|----------|--------|--------|
+| baseline-snapshot.txt SHA256 | `74A3FD36C1C6B38BD86AB2B68B73A86667B7A603D7DB42C8EB6995A2C115B87C` | `74A3FD36C1C6B38BD86AB2B68B73A86667B7A603D7DB42C8EB6995A2C115B87C` | PASS |
+| baseline-manifest.txt SHA256 | `F0D3483885A3255DF126C2F7D646FB02C0A1143DA4E4363060EB4BBBC322875D` | `F0D3483885A3255DF126C2F7D646FB02C0A1143DA4E4363060EB4BBBC322875D` | PASS |
+
+## Task-attributed paths (git status porcelain)
+
+| Path | Status | Allowlist? |
+|------|--------|------------|
+| `app/(portal)/page.tsx` | M | YES (Sửa) |
+| `src/domains/job-board/components/landing/areas-section.tsx` | M | YES (Sửa) |
+| `src/domains/job-board/components/landing/best-jobs-section.tsx` | M | YES (Sửa) |
+| `src/domains/job-board/components/landing/hero.tsx` | M | YES (Sửa) |
+| `src/domains/job-board/components/landing/search-section.tsx` | D | YES (Xóa) |
+| `src/domains/job-board/public-ui-premium.static.test.ts` | M | YES (Sửa) |
+| `src/domains/applications/marketplace-inventory.static.test.ts` | M | YES (Sửa) |
+| `src/domains/job-board/public-ui-token-parity.static.test.ts` | M | YES (Sửa) |
+| `prisma/seed.mjs` | M | **NO** (CẤM by §11 OBR-02) |
+| `docs/tasks/hrp-v6-ui-02-homepage-demo-recomposition/**` | A | YES (task-owned) |
+
+## Result
+
+**FAIL** — `prisma/seed.mjs` is modified outside allowlist §11 OBR-02.
+
+Tier 3 does NOT have authority to modify pre-existing manifests or declare waivers for path-compliance failures.

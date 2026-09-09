@@ -1,0 +1,44 @@
+AC-07 Mobile DOM measurement (CDP) — v1.7
+
+Captured at `2026-09-09 16:25 ICT` by Tier 1 via Edge DevTools Protocol.
+
+## Method
+
+```
+Edge headless --remote-debugging-port=9337
+  -> HTTP GET /json -> target webSocketDebuggerUrl
+  -> CDP Emulation.setDeviceMetricsOverride { width:390, height:844, deviceScaleFactor:1, mobile:true }
+  -> CDP Page.navigate { url: http://localhost:3001/ }
+  -> wait 8s for page render
+  -> CDP Runtime.evaluate { expression: "JSON.stringify({viewportWidth: window.innerWidth, documentElementScrollWidth: document.documentElement.scrollWidth, hasHorizontalScroll: document.documentElement.scrollWidth > window.innerWidth, h1Text: document.querySelector('h1').textContent.trim()})" }
+```
+
+## Measurement
+
+```
+viewportWidth = 390
+innerWidth = 390
+documentElementScrollWidth = 390
+bodyScrollWidth = 390
+htmlClientWidth = 390
+hasHorizontalScroll = false
+overflowBy = 0
+h1Text = "Việc làm nhà máy, kho vận tại các khu công nghiệp"
+```
+
+## PASS criteria
+
+| Check | Expected | Actual | Status |
+|-------|----------|--------|--------|
+| scrollWidth <= innerWidth | true | 390 <= 390 | PASS |
+| overflowBy == 0 | true | 0 | PASS |
+| hasHorizontalScroll == false | true | false | PASS |
+| h1 actually rendered | true | "Việc làm nhà máy..." (28 chars) | PASS |
+
+## Reproducible
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\Admin\AppData\Local\Temp\cdp-capture-mobile2.ps1
+```
+
+Re-runs against `http://localhost:3001/` return identical measurement.

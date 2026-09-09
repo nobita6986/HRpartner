@@ -1,0 +1,33 @@
+# AUDIT — Fence Tests — Tier 3 FOCUSED
+## Task: `hrp-v6-ui-02-homepage-demo-recomposition`
+
+## Fence test results (live run 2026-09-09 17:00 ICT)
+
+| Test file | Expected | Actual | Result |
+|-----------|----------|--------|--------|
+| `marketplace-inventory.static.test.ts` | PASS | PASS (25 tests) | PASS |
+| `public-ui-premium.static.test.ts` | PASS | PASS (63 tests) | PASS |
+| `public-ui-token-parity.static.test.ts` | PASS | **FAIL** (T-04) | **FAIL** |
+| `public-card-truth.test.ts` | PASS | PASS (23 tests) | PASS |
+
+## T-04 failure detail
+
+```
+FAIL src/domains/job-board/public-ui-token-parity.static.test.ts > Thang chữ — DEC-13 / DEC-11 / AC-01 > T-04
+  — mỗi bậc được DÙNG ít nhất một lần trên bề mặt trang chủ
+
+const unused = SCALE_SUFFIXES.filter((s) => !TOKEN_FILES.has(`text-${s}`));
+expect(unused).toEqual([]);
+Test Files  1 failed (1)
+Tests  1 failed | 13 passed (14)
+```
+
+Unused token: `text-headline-xl` (not present on homepage surface)
+
+## Root cause
+
+v1.4 TASK.md §4.1 scope lists `public-ui-token-parity.static.test.ts` in §11 OBR-02 allowlist "Sửa" because Tier 1 updated T-04 for typographic scale (BestJobs heading `text-headline-md`, FeaturedJobCard title `text-headline-lg`, BestJobs subheading `text-body-md`). However, `text-headline-xl` was NOT added to any component during the recomposition. The typographic scale requires all 7 bậc to be used at least once; the task only added 3 tokens, leaving `headline-xl` unused.
+
+## Result
+
+**FAIL** — `public-ui-token-parity.static.test.ts` has a new failure (T-04) not in the baseline failure set.

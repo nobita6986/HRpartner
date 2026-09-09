@@ -1,0 +1,27 @@
+# AUDIT — AC-07 Visual Evidence — Tier 3 FOCUSED
+## Task: `hrp-v6-ui-02-homepage-demo-recomposition`
+
+## PNG file verification
+
+| File | Magic bytes | Size documented | Source |
+|------|-------------|----------------|--------|
+| `desktop-reference.png` | `89504E47` (valid PNG) | 1440×900 @ ac07-screenshots.txt | scratch HTML ref |
+| `mobile-reference.png` | `89504E47` (valid PNG) | 390×844 @ ac07-screenshots.txt | scratch HTML ref |
+| `desktop-actual.png` | `89504E47` (valid PNG) | 1440×900 @ ac07-screenshots.txt | Edge headless |
+| `mobile-actual.png` | `89504E47` (valid PNG) | 390×844 @ ac07-screenshots.txt | CDP mobile |
+
+**Note**: PowerShell `[System.Drawing.Image]` assembly not available in current environment. Magic bytes verified directly from file bytes (byte 0-3 = `89 50 4E 47` = correct PNG signature). Dimensions from `ac07-screenshots.txt` documentation.
+
+## CDP measurement
+
+- `scrollWidth=390`, `innerWidth=390`, `hasHorizontalScroll=false` (from `ac07-cdp-measure.txt`)
+- PASS: no horizontal overflow on mobile
+
+## Content verification (from ac07-screenshots.txt)
+
+Desktop: Hero (gradient, form, FeaturedJobCard), BestJobs grid (JobCards), Areas chips, Referral, Footer.
+Mobile: Hero wrap, form full-width, no overflow, BestJobs heading, subheading.
+
+## Result
+
+**PASS** — 4 PNG files present with valid PNG magic bytes; CDP confirms no mobile overflow.

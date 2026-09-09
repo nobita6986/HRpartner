@@ -289,7 +289,7 @@ async function seedVendorStatement() {
   return 1;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
 // P1 Portals STEP-11 (DEC-12 + RQ-12): seed ≥2 staffing orders OPEN
 // StaffingOrder.status = 'OPEN' (not 'ACTIVE' — see schema StaffingOrder model)
 const STAFFING_ORDER_SEED = [
@@ -344,6 +344,29 @@ async function seedStaffingOrders() {
         validTo,
         workLocation: s.workLocation,
       },
+    });
+    count++;
+  }
+  return count;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Seed public job data for job board homepage
+// Sets isPublic=true on existing seed projects so they appear on /
+const PUBLIC_JOB_SEED = [
+  { projectCode: 'DA-2026-018', isPublic: true },
+  { projectCode: 'DA-2026-022', isPublic: true },
+  { projectCode: 'PRJ-SV-014', isPublic: true },
+];
+
+async function seedPublicJobs() {
+  let count = 0;
+  for (const s of PUBLIC_JOB_SEED) {
+    const project = await prisma.project.findUnique({ where: { code: s.projectCode } });
+    if (!project) { console.warn(`[seed] project ${s.projectCode} not found, skipping public job`); continue; }
+    await prisma.project.update({
+      where: { id: project.id },
+      data: { isPublic: s.isPublic },
     });
     count++;
   }
@@ -577,12 +600,14 @@ async function main() {
   const submissions = await seedCandidateSubmissionForVendor();
   const auth = await seedAuthAccounts();
   const perms = await seedPermissions();
+  const publicJobs = await seedPublicJobs();
 
   console.log(`[seed.mjs] Upserted: ${users} users, ${projects.clientCount} clients, ${projects.projectCount} projects, ${workers} workers, ${vendors} vendors`);
   console.log(`[seed.mjs] Phase 5: ${periods} timesheet period (LOCKED), ${statements} vendor statement (SENT), ${staffingOrders} staffing orders (OPEN)`);
   console.log(`[seed.mjs] P1 Portals: ${portalUsers} users, ${workerProfile} worker profile, ${claims} source claims, ${submissions} candidate submissions`);
   console.log(`[seed.mjs] Auth accounts (ENV): ${auth.created} created, ${auth.updated} updated, ${auth.skipped} skipped`);
   console.log(`[seed.mjs] Permissions: ${perms.permCount} catalog, ${perms.rpCount} role-permissions`);
+  console.log(`[seed.mjs] Public jobs: ${publicJobs} projects set isPublic=true`);
   console.log(`[seed.mjs] G0-02 ready: 13 roles, 2 clients, 4 projects, 2 vendors, 20 workers, 2 periods LOCKED`);
 }
 

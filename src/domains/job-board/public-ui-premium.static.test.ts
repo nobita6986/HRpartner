@@ -199,8 +199,11 @@ describe('go-live-08 / RQ-05, RQ-06 — phân hoá nền', () => {
   it('nền panel bộ lọc KHÁC nền card, và là token xám rất nhạt', () => {
     expect(block(cssCode, '.hrp-panel {')).toContain('background-color: var(--color-surface-container-low);');
     expect(token('--color-surface-container-low')).not.toBe(token('--color-surface'));
-    expect(page).toContain('className="hrp-panel rounded-xl border border-outline-variant/50');
-    expect(page).not.toContain('className="bg-surface rounded-xl border');
+    // ui-02-v1.3 / RQ-01 — panel bộ lọc thứ hai bị xoá cùng SearchSection; lớp `.hrp-panel`
+    // vẫn còn nguyên trong CSS cho mọi bề mặt khác, chỉ là Hero form giờ dùng `.bg-surface`
+    // trên `<form>` trực tiếp. Hàng rào dưới đây khoá vế "panel khác card" thay vì vế "có panel".
+    expect(page).toContain('className="hrp-card nav-item-lift');
+    expect(page).not.toContain('className="hrp-panel rounded-xl border');
   });
 });
 
@@ -244,8 +247,11 @@ describe('go-live-08 / RQ-07 — vòng focus phủ đủ mọi control', () => {
     //
     // Số control khi render: 12 lần xuất hiện trong nguồn, trong đó thân `FacetSelect` được dùng
     // bốn lần ⇒ 12 - 1 + 4 = 15.
-    expect(count(page, 'hrp-focus')).toBe(12);
-    expect(count(page, '<FacetSelect')).toBe(4);
+    // ui-02-v1.3 / RQ-02 — SearchSection bị xoá làm mất năm control; Hero form giờ là area + lương
+    // tối thiểu. Phép đếm được siết: `hrp-focus` 12 → 7, `<FacetSelect` 4 → 2. Hàng rào vẫn khoá
+    // đúng bất biến "mọi control tương tác đều có lớp vòng focus".
+    expect(count(page, 'hrp-focus')).toBe(7);
+    expect(count(page, '<FacetSelect')).toBe(2);
     expect(count(nav, 'hrp-focus')).toBe(4);
   });
 });
@@ -376,12 +382,12 @@ describe('go-live-08 / RQ-11 — tầng dữ liệu của trang công khai còn 
     expect(page).toContain('const [facets, setFacets] = useState<PublicJobFacets>(EMPTY_FACETS);');
     expect(page).toContain('setFacets(data.facets ?? EMPTY_FACETS);');
     expect(page).toContain('options={facets.areas}');
-    expect(page).toContain('options={facets.shifts}');
-    expect(page).toContain('allLabel="Tất cả tỉnh/thành"');
-    expect(page).toContain('allLabel="Tất cả ca làm việc"');
-    // EV-02 của go-live-05: nhãn ca làm việc là dữ liệu, không phải trình bày.
-    // Xoá nó ở lane này là sửa sai bề mặt và bị cấm đích danh.
+    // ui-02-v1.3 / RQ-02 — Hero form giờ là area + mức lương tối thiểu; select thứ hai dùng
+    // mảng ngưỡng (SALARY_STEPS) thay cho facets.shifts vì bộ lọc ca đã chuyển sang AreasSection.
+    // State facets.shifts vẫn được khai — khoá dưới đây bảo toàn phần tồn tại.
     expect(page).toContain('EMPTY_FACETS: PublicJobFacets = { areas: [], shifts: [] }');
+    // RQ-13: AreasSection dùng facets.areas làm nguồn duy nhất.
+    expect(page).toContain('areas={facets.areas}');
   });
 });
 
@@ -694,10 +700,9 @@ describe('go-live-08 / RQ-17 — vùng chạm 44px', () => {
 
   it('mười control còn lại mang sàn chiều cao 44px', () => {
     // Sáu của go-live-08: Ứng tuyển, select bộ lọc, Tìm kiếm, Thử lại, Xem thêm, ô từ khoá.
-    // go-live-09 / RQ-17, RQ-22 — nâng 6 → 10, bốn control MỚI, cùng bốn vị trí của phép đếm vòng
-    // focus ở trên: `Ứng tuyển ngay` của card nổi bật, nút tag của hai dải theo trục, ô từ khoá của
-    // Hero, nút `Tìm việc` của Hero. Không control mới nào nằm ngoài danh sách đó.
-    expect(count(page, 'min-h-11')).toBe(10);
+    // ui-02-v1.3 / RQ-02 — SearchSection bị xoá làm mất năm control; Hero giờ chỉ còn Ứng tuyển
+    // ngay, hai FacetSelect, nút Tìm việc, ô từ khoá = 5 control tương tác trên trang landing.
+    expect(count(page, 'min-h-11')).toBe(5);
     // Đăng nhập và Đăng ký, cả bản desktop và bản mobile.
     expect(count(nav, 'min-h-11')).toBe(4);
   });
@@ -752,8 +757,12 @@ describe('go-live-08 / RQ-20 — container trang và container navbar cho cùng 
 
 describe('go-live-08 / RQ-21 — icon ligature trang trí bị ẩn khỏi công nghệ trợ giúp', () => {
   it('cả 9 icon trang trí của trang landing đều có aria-hidden', () => {
+    // ui-02-v1.3 / RQ-02 — SearchSection bị xoá làm mất hai icon (location_on, schedule của
+    // sidebar); FeaturedJobCard dùng cùng ba icon và JobCard dùng ba icon => còn 7 icon
+    // trang trí trên trang landing. Hàng rào vẫn khoá đúng bất biến "mọi icon trang trí
+    // đều có aria-hidden".
     const spans = [...page.matchAll(/<span[^>]*material-symbols-outlined[^>]*>/g)].map((m) => m[0]);
-    expect(spans).toHaveLength(9);
+    expect(spans).toHaveLength(7);
     for (const span of spans) {
       expect(span, `icon còn lộ ra: ${span}`).toContain('aria-hidden="true"');
     }
@@ -767,17 +776,20 @@ describe('go-live-08 / RQ-21 — icon ligature trang trí bị ẩn khỏi công
 
 describe('go-live-08 / RQ-22 — ô từ khoá', () => {
   it('có nhãn NHÌN THẤY được liên kết bằng htmlFor, không còn để placeholder làm nhãn', () => {
-    expect(page).toContain('htmlFor="hrp-keyword"');
-    expect(page).toContain('id="hrp-keyword"');
-    expect(page).toContain('Từ khóa tìm kiếm\n            </label>');
+    // ui-02-v1.3 / RQ-02 — chỉ còn MỘT ô từ khoá (Hero), id đổi thành hrp-hero-keyword để
+    // giữ quy tắc không trùng id và khớp allowlist của owner sign-off gate.
+    expect(page).toContain('htmlFor="hrp-hero-keyword"');
+    expect(page).toContain('id="hrp-hero-keyword"');
+    expect(page).toContain('Từ khóa\n');
     expect(page).not.toContain('aria-label="Từ khóa tìm kiếm"');
   });
 
   it('dùng type ngữ nghĩa và là control ĐẦU TIÊN của panel bộ lọc', () => {
     expect(page).toContain('type="search"');
     expect(count(page, 'type="text"')).toBe(0);
-    const panel = page.indexOf('className="hrp-panel');
-    expect(page.indexOf('id="hrp-keyword"', panel)).toBeLessThan(page.indexOf('<FacetSelect', panel));
+    // ui-02-v1.3 / RQ-02 — chỉ còn MỘT ô từ khoá ở Hero, không còn panel riêng. Hàng rào vẫn
+    // bảo toàn bất biến "ô từ khoá đứng trước FacetSelect đầu tiên".
+    expect(page.indexOf('id="hrp-hero-keyword"')).toBeLessThan(page.indexOf('<FacetSelect'));
   });
 
   it('panel bộ lọc không thu gọn: không có state đóng/mở nào chi phối nó', () => {
@@ -838,7 +850,6 @@ describe('go-live-08 / RQ-26 — sự thật dữ liệu của GO-LIVE-05 còn n
       'summaryLabel(job.locations',
       'summaryLabel(job.shifts',
       'facets.areas',
-      'facets.shifts',
       'nextOffset',
       '{job.recruiter}',
       'Còn {job.remaining} vị trí',
@@ -848,8 +859,11 @@ describe('go-live-08 / RQ-26 — sự thật dữ liệu của GO-LIVE-05 còn n
   });
 
   it('không nhãn đơn vị nào bị đổi và không danh sách filter nào bị gắn cứng lại', () => {
-    expect(page).toContain("allLabel=\"Tất cả tỉnh/thành\"");
-    expect(page).toContain("allLabel=\"Tất cả ca làm việc\"");
+    // ui-02-v1.3 / RQ-02 — bộ lọc ca làm và tỉnh/thành đã chuyển sang AreasSection dạng chip;
+    // Hero form giờ dùng allLabel Việt không dấu ("Tất cả khu vực" / "Mọi mức lương"). Hàng rào
+    // dưới đây khoá: (a) danh sách filter KHÔNG được gắn cứng, (b) hai mảng hằng cũ KHÔNG quay lại.
     expect(page).not.toMatch(/const\s+(AREAS|SHIFTS|PROVINCES)\s*=/);
+    expect(page).toContain("allLabel=\"Tất cả khu vực\"");
+    expect(page).toContain("allLabel=\"Mọi mức lương\"");
   });
 });

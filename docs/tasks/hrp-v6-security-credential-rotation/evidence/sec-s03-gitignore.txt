@@ -1,53 +1,14 @@
-﻿=== STEP-03 gitignore (hrp-v6-security-credential-rotation) ===
-time:           2026-09-07 14:55 Asia/Bangkok
-cwd:            C:\CodeApp\HrP
-HEAD:           4a5612212af7c5e516168c3d3c24f9725356abb2
-executor:       Tier 2
-contract ref:   TASK v1.1 §5 STEP-01 RQ-01; AC-01/02
+STEP-03 IGNORE VERIFICATION — SAFE SUMMARY
+Task: hrp-v6-security-credential-rotation
+Implementation commit: 4a56122
 
---- (1) rg /check_rls.cjs in .gitignore (AC-02) ---
-82:check_rls.cjs
+Current offline measurements:
+- git check-ignore -v -- check_rls.cjs: exit 0
+- git ls-files -- check_rls.cjs: empty
+- Browser-lane ignore entries remain present
+- Environment-file ignore entries remain present
+- Implementation commit is an ancestor of current HEAD
 
---- (2) git check-ignore -v check_rls.cjs (AC-02) ---
+The landed rule is the exact name `check_rls.cjs`. TASK v1.2 AC-02 spells the required root-only rule as `/check_rls.cjs`; therefore canonical HANDOFF records AC-02 as BLOCKED CONTRACT/IMPLEMENTATION mismatch rather than carrying forward the legacy PASS claim.
 
-.gitignore:82:check_rls.cjs	check_rls.cjs
-
---- (3) .gitignore full diff against baseline ---
-
-diff --git a/.gitignore b/.gitignore
-index 266de74..9cfb138 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -78,6 +78,8 @@ docs/VERCEL_ENV_PRODUCTION.local.md
- scratch/
- .neon
- tsconfig.tmp.json
-+# Credential probe (hrp-v6-security-credential-rotation) ΓÇö exact-name ignore only, no glob, no prefix
-+check_rls.cjs
- 
- # Playwright browser lane (hrp-v5-test-01) ΓÇö artifact sinh ra moi luot chay, khong commit
- test-results/
-
---- (4) git ls-files check_rls.cjs (AC-01 expect empty) ---
-
-(empty = AC-01 PASS)
-
---- (5) sanity: Browser Lane still intact (.gitignore Playwright section) ---
-
-85:test-results/
-86:playwright-report/
-
---- (6) sanity: env ignore rules still intact ---
-
-15:.env.local
-16:.env.development
-75:.env.dev
-76:.env.preview
-77:.env.prod.test
-
---- summary ---
-AC-01: PASS (file untracked at HEAD)
-AC-02: PASS (.gitignore:82 + git check-ignore matches)
-DEC-10: NO sửa Browser Lane + env rules (sanity check)
-
-
+No credential, endpoint, DSN, environment value, or file contents are retained in this evidence.

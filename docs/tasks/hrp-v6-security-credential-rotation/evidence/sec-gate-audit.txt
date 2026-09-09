@@ -1,7 +1,16 @@
-AUDIT SUBSTANCE GATE
-  subject: docs\tasks\hrp-v6-security-credential-rotation\AUDIT.md (against docs/tasks/hrp-v6-security-credential-rotation/TASK.md)
+AUDIT SUBSTANCE GATE — CURRENT CANONICAL STATE
+Task: hrp-v6-security-credential-rotation
 
-  [FAIL] S-01 AUDIT file not found: docs\tasks\hrp-v6-security-credential-rotation\AUDIT.md
+Measured target:
+docs/tasks/hrp-v6-security-credential-rotation/AUDIT.md
 
-RESULT: FAIL (1 error(s), 0 warning(s)).
-Tier 1 MUST NOT resolve without AUDIT.md.
+Result:
+- canonical AUDIT.md present on current HEAD: no
+- verify-audit result: not runnable to PASS while the required artifact is absent
+- STEP-07 status: pending independent Tier 3
+- Tier 2 verdict: none; Tier 2 must not self-audit
+
+Required next input:
+An independent Tier 3 context must perform the safe fingerprint/history review and write canonical AUDIT.md after Owner/OP masked evidence and Tier 1 contract reconciliation are available.
+
+No secret, endpoint, DSN, environment value, or fingerprint is retained here.

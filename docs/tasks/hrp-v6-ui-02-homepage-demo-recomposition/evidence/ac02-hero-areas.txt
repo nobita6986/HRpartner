@@ -1,0 +1,48 @@
+# STEP-02 Evidence — Hero + AreasSection + Hero copy
+# AC-03 verification
+
+## File: src/domains/job-board/components/landing/hero.tsx
+Command: Select-String -Path 'src/domains/job-board/components/landing/hero.tsx' -Pattern 'bg-gradient-to-br from-primary-dark'
+Expected: >= 1
+Actual: 1
+Result: PASS
+
+Command: Select-String -Path 'src/domains/job-board/components/landing/hero.tsx' -Pattern 'from-primary to-primary-dark'
+Expected: 0 (no bright gradient)
+Actual: 0
+Result: PASS
+
+Command: Select-String -Path 'src/domains/job-board/components/landing/hero.tsx' -Pattern 'img|background-image|url\('
+Expected: 0
+Actual: 0
+Result: PASS
+
+## File: src/domains/job-board/components/landing/areas-section.tsx
+Command: Select-String -Path 'src/domains/job-board/components/landing/areas-section.tsx' -Pattern 'hover:text-on-primary-fixed'
+Expected: >= 1
+Actual: 1
+Result: PASS
+
+Command: Select-String -Path 'src/domains/job-board/components/landing/areas-section.tsx' -Pattern 'img|background-image|url\('
+Expected: 0
+Actual: 0
+Result: PASS
+
+## File: app/(portal)/page.tsx - Hero copy
+Command: Select-String -Path 'app/(portal)/page.tsx' -Pattern 'text-on-primary'
+Expected: >= 3 (eyebrow + H1 + mô tả)
+Actual: 3 (eyebrow line 664, H1 line 667, mô tả line 673)
+Result: PASS
+
+Command: Select-String -Path 'app/(portal)/page.tsx' -Pattern "var\(--color-on-surface"
+Expected: 0 (no inline style in Hero copy)
+Actual: 0 (only in form labels and other components outside Hero copy)
+Result: PASS
+
+## Summary
+- hero.tsx: gradient from-primary-dark to-primary-fixed applied, 2 blur blobs kept, opacity adjusted
+- Hero copy: eyebrow text-primary-dark -> text-on-primary, H1 style->class text-on-primary, mô tả style->class text-on-primary/85
+- AreasSection: chip style changed to hover:bg-primary-fixed-dim hover:text-on-primary-fixed
+- No images in hero.tsx or areas-section.tsx
+
+STEP-02: PASS

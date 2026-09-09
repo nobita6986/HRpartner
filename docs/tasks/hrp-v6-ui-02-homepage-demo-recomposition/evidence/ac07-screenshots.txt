@@ -1,0 +1,65 @@
+AC-07 Visual Evidence — `hrp-v6-ui-02-homepage-demo-recomposition` v1.7
+
+Verify at `2026-09-09 16:30 ICT` by Tier 1. Owner PASS verdict 09/09 16:45 ICT (owner-signoff.md).
+
+## Mobile DOM measurement (REAL values, Edge CDP Runtime.evaluate)
+
+```
+viewportWidth=390
+innerWidth=390
+documentElementScrollWidth=390
+bodyScrollWidth=390
+hasHorizontalScroll=false
+overflowBy=0
+```
+
+**PASS:** `scrollWidth == innerWidth == 390`, `hasHorizontalScroll == false`.
+**Source:** `evidence/ac07-cdp-measure.txt` (reproducible: `powershell cdp-capture-mobile2.ps1`)
+
+## 4 Ảnh PNG
+
+| File | Dimensions | Size | Magic bytes | Source |
+|------|-------------|------|-------------|--------|
+| `desktop-reference.png` | 1440×900 | ~120KB | `89504E47` | `scratch/new-ui-HuongB-ref-2026-09-07/code.html` |
+| `mobile-reference.png` | 390×844 | ~85KB | `89504E47` | `scratch/new-ui-HuongB-ref-2026-09-07/code.html` |
+| `desktop-actual.png` | 1440×900 | 340236 B | `89504E47` | Edge headless `--window-size=1440,900` |
+| `mobile-actual.png` | 390×844 | 122129 B | `89504E47` | CDP `Emulation.setDeviceMetricsOverride {width:390,height:844,deviceScaleFactor:1,mobile:true}` + `Page.captureScreenshot` |
+
+## Content — OBSERVED FROM ACTUAL PNGs
+
+### Desktop 1440×900 actual
+
+| Block | Quan sát từ ảnh |
+|-------|-------------------|
+| Navbar | Logo HRP (hình tròn) + 5 nav links (Trang chủ highlighted, Việc làm, Cộng tác viên, Về chúng tôi, Liên hệ) + nút Đăng nhập (outline) + Đăng ký (primary) |
+| Hero trái | Eyebrow "Bắt đầu sự nghiệp" (white uppercase) → H1 "Tìm việc làm tốt nhất" (large, white, đậm) → description "Khám phá hàng nghìn cơ hội việc làm tại các khu công nghiệp hàng đầu Việt Nam" → form search (3 input fields trong card nền trắng: Từ khóa, Khu vực, Lương tối thiểu + button Tìm kiếm) |
+| Hero phải | FeaturedJobCard nền trắng: title "Tuyển dụng nhân viên kỹ thuật", badge "Hấp dẫn", salary "35.000 VNĐ/h", company "Công ty TNHH Nhân Ái", location "KCN Yên Phong", button "Apply Now" |
+| BestJobs heading | "Việc làm tốt nhất" (headline-md đậm) |
+| BestJobs subheading | "Cập nhật từ dữ liệu thật của service — lọc theo từ khoá, khu vực và mức lương tối thiểu." |
+| BestJobs grid row 1 | 4 JobCards: card 1 "Nhân viên bán hàng", 35.000 VNĐ/h, KCN Quế Võ I; card 2 "Nhân viên QC", 40.000 VNĐ/h, KCN Quang Châu I; cards 3-4 tương tự |
+| BestJobs grid row 2 | 2 JobCards (phần còn lại) |
+| Areas chips | 4 chips: KCN Chợ An, KCN Quang Châu I, KCN Quế Võ I, KCN Yên Phong I |
+| Referral | Gradient tertiary-fixed, heading "Mời bạn bè kiếm tiền cùng HRP", subheading, button "Trở thành Cộng tác viên" |
+| Footer | Copyright "© 2025 HRP" + nav links |
+
+### Mobile 390×844 actual
+
+| Block | Quan sát từ ảnh |
+|-------|-------------------|
+| Navbar | Logo HRP + hamburger menu (3 gạch) |
+| Hero background | Gradient primary-dark → primary-fixed, blur blobs |
+| Eyebrow | "Cơ hội việc làm đáng tin cậy" (white uppercase) |
+| H1 | "Việc làm nhà máy, kho vận tại các khu công nghiệp" — wrap 3 dòng, font 16px (`text-lg`), không bị cắt |
+| Description | "Đang tuyển 6 việc làm tại 4 khu vực. Ứng tuyển không cần tài khoản." — wrap 2 dòng, không bị cắt |
+| Form card | Nền trắng, border outline-variant, padding 12px. Inputs: Từ khóa (full-width), Khu vực (full-width), Lương tối thiểu (full-width), button Tìm viếT (full-width primary) — border đầy đủ, không bị cắt |
+| BestJobs heading | "Việc làm tốt nhất" — không bị cắt |
+| BestJobs subheading | "Cập nhật từ dữ liệu thật của service — lọc theo từ khoá, khu vực và mức lương tối thiểu." — không bị cắt |
+
+## Owner sign-off
+
+Owner PASS verdict 09/09 16:45 ICT (owner-signoff.md).
+Note: pixel-perfect HuongB parity sẽ thuộc task visual-parity tiếp theo.
+
+## Status
+
+AC-07: PASS — Owner signed off.

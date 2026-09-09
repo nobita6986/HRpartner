@@ -25,7 +25,7 @@ export function AreasSection({ areas, onPick }: AreasSectionProps) {
             <button
               type="button"
               onClick={() => onPick(area)}
-              className="hrp-focus min-h-11 w-full rounded-xl border border-outline-variant/50 bg-surface-container-low px-4 py-3 text-left font-label text-label-md font-semibold text-on-surface nav-item-lift"
+              className="hrp-focus min-h-11 w-full rounded-xl border border-outline-variant bg-surface hover:bg-primary-fixed-dim hover:text-on-primary-fixed px-4 py-3 text-left font-label text-label-md font-semibold text-on-surface nav-item-lift"
               aria-label={`Xem việc làm tại ${area}`}
             >
               {area}
