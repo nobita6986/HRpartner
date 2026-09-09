@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Task | `hrp-v6-ui-03-homepage-huongb-visual-parity` |
-| Spec version | `v1.4` |
+| Spec version | `v1.4.1` |
 | Assurance lane | `STANDARD` |
 | Audit mode | `FOCUSED` |
 | Execution round | `0` (Tier 2 chưa khởi động; Owner verdict MC-01 v1.4: KHÔNG chạy verify-handoff cho HANDOFF tiền thực thi nếu parser không hỗ trợ round 0) |
@@ -57,7 +57,7 @@
 
 ## 5. Final status
 
-**READY_FOR_EXECUTION** (Owner verdict 09/09 22:55 ICT mechanical closeout v1.4 — Tier 1 áp dụng MC-01 đến MC-06, bump `v1.4`, đổi status thành `READY_FOR_EXECUTION`, giao Tier 2 ngay, KHÔNG trình Owner contract lần nữa). `verify-task.ps1` RESULT: PASS (TASK contract v1.4 hợp lệ). Sau khi Tier 2 thi công xong, Tier 1 vẫn phải trình Owner cặp actual/reference PNG + overlay thật trước khi Tier 3 focused audit (Owner vẫn giữ visual PASS).
+**READY_FOR_EXECUTION** (Owner verdict 09/09 22:55 ICT mechanical closeout v1.4 — Tier 1 áp dụng MC-01 đến MC-06, bump `v1.4`, đổi status thành `READY_FOR_EXECUTION`, giao Tier 2 ngay, KHÔNG trình Owner contract lần nữa). `verify-task.ps1` RESULT: PASS (TASK contract v1.4 hợp lệ). Sau khi Tier 2 thi công xong, Tier 1 vẫn phải trình Owner cặp actual/reference PNG + overlay thật trước khi Tier 3 focused audit (Owner vẫn giữ visual PASS). Tier 1 bump `v1.4.1` để đồng bộ 2 chỗ còn câu cũ trong TASK.md (§0 Next gate + §9 Planner Resolution) phát hiện bởi Tier 2 preflight.
 
 > Handoff status: READY_FOR_EXECUTION
 
