@@ -1,0 +1,3 @@
+﻿?? docs/reports/tier1-independent-app-assessment-2026-09-09.md
+?? docs/tasks/hrp-v6-ui-03-homepage-huongb-visual-parity/evidence/baseline-manifest.txt
+?? docs/tasks/hrp-v6-ui-03-homepage-huongb-visual-parity/evidence/baseline-snapshot.txt

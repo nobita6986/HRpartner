@@ -17,12 +17,12 @@ async function logout() {
   }
 }
 
-const navLinks = [
-  { href: '/', label: 'Trang chủ' },
-  { href: '/viec-lam', label: 'Việc làm' },
-  { href: '/ctv-portal', label: 'Cộng tác viên' },
-  { href: '/ve-chung-toi', label: 'Về chúng tôi' },
-  { href: '/lien-he', label: 'Liên hệ' },
+const navLinks: Array<{ href: string; label: string; type: 'route' | 'disabled' }> = [
+  { href: '/', label: 'Việc làm', type: 'route' },
+  { href: '#', label: 'Công ty', type: 'disabled' },
+  { href: '/ve-chung-toi', label: 'Về HRP Việt Nam', type: 'route' },
+  { href: '#', label: 'Tin tức', type: 'disabled' },
+  { href: '/ctv-portal', label: 'Cộng tác viên', type: 'route' },
 ];
 
 /**
@@ -123,13 +123,28 @@ export function GlobalNavbar() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             {navLinks.map((link) => {
-              // go-live-15 / RQ-09: dau hieu KHONG dua vao mau - chu dam hon cong gach
-              // chan - di kem `aria-current="page"`. Co che hover giu nguyen (RQ-12),
-              // chi GIA TRI mau doi: --color-primary -> --color-primary-dark (RQ-05).
-              const isActive = link.href === activeHref;
+              // ui-03 / RQ-08: link disabled dùng button element với attributes
+              // type=button, aria-disabled=true, title="Đang phát triển", tabindex=-1.
+              const isActive =
+                link.type === 'route' && link.href === activeHref;
               const restColor = isActive
                 ? 'var(--color-primary-dark)'
                 : 'var(--color-on-surface-variant)';
+              if (link.type === 'disabled') {
+                return (
+                  <button
+                    key={link.label}
+                    type="button"
+                    aria-disabled="true"
+                    title="Đang phát triển"
+                    tabIndex={-1}
+                    className="font-medium cursor-not-allowed opacity-70"
+                    style={{ color: 'var(--color-on-surface-variant)' }}
+                  >
+                    {link.label}
+                  </button>
+                );
+              }
               return (
                 <Link
                   key={link.href}
@@ -137,7 +152,7 @@ export function GlobalNavbar() {
                   aria-current={isActive ? 'page' : undefined}
                   className={`${
                     isActive
-                      ? 'font-semibold underline underline-offset-8 decoration-2'
+                      ? 'font-semibold border-b-2 border-primary-container'
                       : 'font-medium'
                   } transition-colors`}
                   style={{ color: restColor }}
@@ -238,12 +253,16 @@ export function GlobalNavbar() {
                 >
                   Đăng nhập
                 </Link>
-                <Link
-                  href="/register"
-                  className="hrp-btn-primary hrp-focus nav-item-lift font-semibold px-5 min-h-11 inline-flex items-center rounded-lg"
+                <button
+                  type="button"
+                  aria-disabled="true"
+                  title="Đang phát triển"
+                  tabIndex={-1}
+                  className="hrp-focus font-semibold px-5 min-h-11 inline-flex items-center rounded-lg cursor-not-allowed opacity-70"
+                  style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
                 >
                   Đăng ký
-                </Link>
+                </button>
               </>
             )}
           </div>
@@ -274,8 +293,23 @@ export function GlobalNavbar() {
             style={{ borderTop: '1px solid var(--color-line)' }}
           >
             {navLinks.map((link) => {
-              // Nhanh mobile mang CUNG hai dau hieu khong-mau nhu nhanh desktop (RQ-09).
-              const isActive = link.href === activeHref;
+              const isActive = link.type === 'route' && link.href === activeHref;
+              if (link.type === 'disabled') {
+                return (
+                  <button
+                    key={link.label}
+                    type="button"
+                    aria-disabled="true"
+                    title="Đang phát triển"
+                    tabIndex={-1}
+                    className="block w-full text-left px-2 py-2.5 font-medium cursor-not-allowed opacity-70"
+                    style={{ color: 'var(--color-on-surface-variant)' }}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </button>
+                );
+              }
               return (
                 <Link
                   key={link.href}
@@ -283,7 +317,7 @@ export function GlobalNavbar() {
                   aria-current={isActive ? 'page' : undefined}
                   className={`block px-2 py-2.5 ${
                     isActive
-                      ? 'font-semibold underline underline-offset-4 decoration-2'
+                      ? 'font-semibold border-b-2 border-primary-container'
                       : 'font-medium'
                   }`}
                   style={{
@@ -342,13 +376,17 @@ export function GlobalNavbar() {
                   >
                     Đăng nhập
                   </Link>
-                  <Link
-                    href="/register"
-                    className="hrp-btn-primary hrp-focus nav-item-lift flex items-center justify-center px-4 min-h-11 font-semibold rounded-lg"
+                  <button
+                    type="button"
+                    aria-disabled="true"
+                    title="Đang phát triển"
+                    tabIndex={-1}
+                    className="hrp-focus flex items-center justify-center px-4 min-h-11 font-semibold rounded-lg cursor-not-allowed opacity-70"
+                    style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Đăng ký
-                  </Link>
+                  </button>
                 </>
               )}
             </div>

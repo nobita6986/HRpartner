@@ -2,34 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef, useId } from 'react';
 import Link from 'next/link';
-// go-live-12 / RQ-09: hai modal đã ra khỏi file này để `/viec-lam/{code}` dùng lại đúng một bản.
-// `CANONICAL_ORIGIN` đi theo `SuccessModal` — trang này không còn tham chiếu nào.
 import { ApplyModal } from '@/src/domains/job-board/components/apply-modal';
 import { SuccessModal } from '@/src/domains/job-board/components/success-modal';
 import { AreasSection } from '@/src/domains/job-board/components/landing/areas-section';
 import { BestJobsSection } from '@/src/domains/job-board/components/landing/best-jobs-section';
 import { Hero } from '@/src/domains/job-board/components/landing/hero';
-import { ReferralInviteStrip } from '@/src/domains/job-board/components/landing/referral-strip';
-// ui-01 / RQ-10 / DEC-05: dải mời cộng tác viên nằm RIÊNG một tệp. Nó phải có vòng focus thấy được
-// và đích chạm 44 pixel (`R-07`), mà ba hàng rào canh trang chủ ghim phép đếm hai class ấy CHÍNH XÁC
-// trên tệp này — nên chúng sống ở tệp con. Ở đây không viết thẳng tên hai class ấy vì phép đếm là
-// phép đếm CHUỖI CON: một dòng chú thích nhắc tên cũng làm lệch con số.
-// go-live-12 / RQ-10 / DEC-01: đường dẫn trang chi tiết lấy từ ĐÚNG một nguồn, không nội suy tay.
+import { RecruitmentHighlight } from '@/src/domains/job-board/components/landing/recruitment-highlight';
+import { RecruitingProjectsSection } from '@/src/domains/job-board/components/landing/recruiting-projects-section';
+import { ReferralStrip } from '@/src/domains/job-board/components/landing/referral-strip';
 import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
-
-// ─── UI-adapter: projection công khai → props của card ───────────────────────
-
-/**
- * go-live-05 / RQ-02, RQ-11 — card đọc ĐÚNG kiểu DTO của service, không đọc một `interface ApiJob`
- * tự khai cục bộ.
- *
- * Trước đây file này khai `interface ApiJob` riêng rồi cast `res.json()` vào đó, nên đổi tên hay bỏ
- * một khóa trong projection công khai vẫn typecheck xanh và chỉ vỡ trên trình duyệt (bài học
- * `hrp-tsc-not-a-barrier-dto-rename`). Buộc vào kiểu thật thì tsc trở thành hàng rào.
- *
- * `import type` bị xoá hoàn toàn ở bước transpile, nên ràng buộc này KHÔNG kéo Prisma vào bundle
- * client — điều đó được đo lại bằng grep trên `.next/static/chunks/*.js` ở STEP-09.
- */
 import type {
   PublicJobDto,
   PublicJobFacets,
@@ -37,7 +18,8 @@ import type {
   PublicJobOverview,
 } from '@/src/domains/job-board/public.service';
 
-/** go-live-05 / DEC-09 — ba bộ lọc CÓ cột canonical đứng sau. Không nhóm nào là trang trí. */
+// ─── UI-adapter: projection công khai → props của card ───────────────────────
+
 interface JobSearchFilters {
   keyword: string;
   area: string;
@@ -46,11 +28,6 @@ interface JobSearchFilters {
 
 const EMPTY_FILTERS: JobSearchFilters = { keyword: '', area: '', shift: '' };
 const EMPTY_FACETS: PublicJobFacets = { areas: [], shifts: [] };
-/**
- * go-live-09 / RQ-23, DEC-18 — trạng thái ban đầu và trạng thái sau một lần fetch lỗi là con số 0 và
- * mảng rỗng, KHÔNG phải số bịa. Mọi dải nội dung chạy bằng `overview` đều tự ẩn khi mảng rỗng, nên
- * trang lúc chưa có dữ liệu không chào ra một tiêu đề trống rỗng nào.
- */
 const EMPTY_OVERVIEW: PublicJobOverview = {
   totals: { jobs: 0, slots: 0, areas: 0 },
   areaCounts: [],
@@ -58,52 +35,19 @@ const EMPTY_OVERVIEW: PublicJobOverview = {
   newest: [],
   topPaid: [],
 };
-
-/** Nhỏ hơn `total` thường gặp để load-more là đường đi THẬT, không phải nhánh chết. */
 const PAGE_SIZE = 12;
 
 interface EnrichedJob {
   id: string;
   slug: string;
   title: string;
-  /** DEC-02/RQ-03: HRPartner là bên tuyển dụng; danh tính Client KHÔNG công khai ở task này. */
-  recruiter: string;
-  positions: string[];
   locations: string[];
-  shifts: string[];
-  badge: string | null;
-  /**
-   * go-live-09 / RQ-11, RQ-23 — union HẸP LẠI còn đúng hai mức mà `urgency` của service sinh ra.
-   * Mức `'full'` cũ bị bỏ cùng lượt: `toDto` không bao giờ trả việc hết chỗ (`EV-09`) nên nhánh đó
-   * là nhánh CHẾT. Hẹp kiểu ở đây biến việc đắp lại một mức bịa thành lỗi BIÊN DỊCH, không phải một
-   * nhãn sai lặng lẽ trên card.
-   */
   badgeType: 'urgent' | 'closing' | null;
-  remaining: number;
-  /** RQ-10: lương giờ đã là `number | null` từ service (`RQ-18`); card không tự đổi kiểu, không tự tính. */
   salaryMinVnd: number | null;
   salaryMaxVnd: number | null;
-  /** RQ-08: hạn nộp ISO của service, `null` khi đơn không đặt hạn — chip hạn nộp khi đó không render. */
-  deadline: string | null;
+  availableSlots: number;
 }
 
-/** DEC-04: card in tối đa ba giá trị rồi `+N`. Rỗng thì nói "đang cập nhật", không bịa một giá trị. */
-const CARD_SUMMARY_LIMIT = 3;
-
-function summaryLabel(values: string[], fallback: string): string {
-  const shown = values.slice(0, CARD_SUMMARY_LIMIT);
-  if (shown.length === 0) return fallback;
-  const rest = values.length - shown.length;
-  return rest > 0 ? `${shown.join(' · ')} +${rest}` : shown.join(' · ');
-}
-
-/**
- * go-live-09 / RQ-10, DEC-03 — ĐÚNG một chỗ trên trang nói về tiền.
- *
- * `null` không được in thành `0`: `"0 đ/giờ"` là một khẳng định SAI về tiền, còn
- * `"Lương thương lượng"` là mô tả đúng trạng thái "đơn chưa công bố lương". Hai đầu bằng nhau thì in
- * một số chứ không in dải `30.000 – 30.000`.
- */
 const VND_FORMAT = new Intl.NumberFormat('vi-VN');
 
 function salaryLabel(min: number | null, max: number | null): string {
@@ -113,66 +57,25 @@ function salaryLabel(min: number | null, max: number | null): string {
   return `${from} đ/giờ`;
 }
 
-/**
- * go-live-09 / RQ-07 — thang lọc lương phía client.
- *
- * Đây là NGƯỠNG do UI đặt, không phải dữ liệu: một mức trong thang này KHÔNG hứa rằng sàn có việc ở
- * mức đó. Chính vì thế nhánh rỗng của nó phải nói rõ nó lọc trên phần ĐÃ TẢI, không phải trên cả
- * sàn — xem `showSalaryEmpty`. Tên hằng cố tình không phải một danh sách giá trị dữ liệu (`AREAS`,
- * `SHIFTS`, `PROVINCES`…): không giá trị nào ở đây được hiểu là facet.
- */
-const SALARY_STEPS = ['25000', '30000', '35000', '40000', '50000'];
-
-function salaryStepLabel(step: string): string {
-  return `Từ ${VND_FORMAT.format(Number(step))} đ/giờ`;
-}
-
-/** RQ-08: hạn nộp in theo lối Việt. Cắt bằng CHUỖI trên ISO nên không lệch một ngày vì múi giờ máy. */
-function deadlineLabel(deadline: string): string {
-  const [y, m, d] = deadline.slice(0, 10).split('-');
-  return d ? `${d}/${m}/${y}` : deadline;
-}
-
 function enrichJob(job: PublicJobDto): EnrichedJob {
-  // go-live-09 / RQ-11, RQ-23 — hai thay đổi cùng một gốc.
-  //
-  //   1. Badge chạy bằng `urgency` mà service tính từ TRẠNG THÁI ĐƠN (`RQ-04`), không suy từ
-  //      `availableSlots`. Ngưỡng cũ `<= 5` nói sai ở cả hai đầu: đơn 1 chỗ mở từ tháng trước không
-  //      "gấp", đơn 200 chỗ vừa mở cũng không. Không một nhánh nào dưới đây đọc `availableSlots`.
-  //   2. `isFull` biến mất: `toDto` chỉ trả việc CÒN chỗ (`EV-09`), nên `availableSlots === 0` là
-  //      điều kiện không bao giờ đúng ở đây; nhãn hết-chỗ mà nó in ra là một nhánh chết và contract
-  //      đòi grep mặt chữ của nhãn đó trên file này trả 0 dòng, nên nó không được nhắc lại ở đây.
-  //
-  // Bốn field mới lấy bằng destructure, không bằng `job.<tên>`: bề mặt này bị cấm mọi biểu thức tiền
-  // dựng tay, nên đọc thẳng field service đã tính là đường duy nhất còn lại.
-  const { salaryMinVnd, salaryMaxVnd, urgency, deadline } = job;
-
+  const { salaryMinVnd, salaryMaxVnd, urgency } = job;
   return {
     id: job.id,
     slug: job.slug ?? job.id,
     title: job.title,
-    recruiter: 'Tuyển dụng qua HRPartner',
-    // RQ-02/RQ-04: ba mảng này là summary THẬT của các slot còn hiệu lực, do service tính. Card
-    // không suy ra gì thêm và không đắp giá trị mặc định nào lên chỗ dữ liệu trống.
-    positions: job.positionTitles,
     locations: job.locations,
-    shifts: job.shifts,
-    badge: urgency === 'URGENT' ? 'Tuyển gấp' : urgency === 'CLOSING' ? 'Sắp hết hạn' : null,
     badgeType: urgency === 'URGENT' ? 'urgent' : urgency === 'CLOSING' ? 'closing' : null,
-    remaining: job.availableSlots,
     salaryMinVnd,
     salaryMaxVnd,
-    deadline,
+    availableSlots: job.availableSlots,
   };
 }
 
-/** RQ-08: append phải khử trùng theo `job.id` — retry hoặc trang chồng nhau không được nhân bản card. */
 function dedupeById(list: EnrichedJob[]): EnrichedJob[] {
   const seen = new Set<string>();
   return list.filter((job) => (seen.has(job.id) ? false : (seen.add(job.id), true)));
 }
 
-/** DEC-09: query dựng bằng `URLSearchParams`; `offset` luôn tường minh nên submit reset về 0. */
 function buildQuery(filters: JobSearchFilters, offset: number): string {
   const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
   const q = filters.keyword.trim();
@@ -182,449 +85,105 @@ function buildQuery(filters: JobSearchFilters, offset: number): string {
   return params.toString();
 }
 
-// ─── Khung logo ──────────────────────────────────────────────────────────────
-
-/**
- * go-live-09 / RQ-09 — khung logo của card: hình vuông bo góc, cạnh 48px (`w-12 h-12`, nằm trong
- * khoảng 48–64px của contract), viền nhạt bằng token, `flex-shrink-0` nên không co méo ở khổ 375px.
- *
- * Icon là một SVG toà nhà TRUNG TÍNH và `aria-hidden` vì nó không mang thông tin nào. Bản cũ chọn
- * icon theo keyword trong tiêu đề (`ICONS_BY_KEYWORD`) — đúng lối bịa mà `go-live-14` đã xoá khỏi bề
- * mặt này: gán `electrical_services` cho một việc vì tên nó có chữ "điện" là suy diễn của UI, không
- * có cột nào đứng sau. Màu đi qua `currentColor` cộng một token nên không thêm literal màu (`RQ-17`);
- * chọn `--color-primary-dark` vì `--color-primary` được đo là dưới 3:1 trên nền này.
- */
-function BuildingMark() {
-  return (
-    <div
-      className="w-12 h-12 rounded-lg border border-outline-variant/30 flex items-center justify-center flex-shrink-0"
-      style={{ backgroundColor: 'var(--color-surface-container-low)' }}
-    >
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 24 24"
-        className="w-7 h-7"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{ color: 'var(--color-primary-dark)' }}
-      >
-        <path d="M4 21h16" />
-        <path d="M6 21V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v16" />
-        <path d="M15 21V9h3a1 1 0 0 1 1 1v11" />
-        <path d="M9 8h3M9 12h3M9 16h3" />
-      </svg>
-    </div>
-  );
-}
-
-// ─── Job Card ─────────────────────────────────────────────────────────────────
-
-function JobCard({
-  job,
-  onApply,
-  isApplied,
-}: {
-  job: EnrichedJob;
-  onApply: (job: EnrichedJob) => void;
-  isApplied: boolean;
-}) {
-  // go-live-09 / RQ-23: `const isFull = job.badgeType === 'full'` đã bị bỏ ở đây. Nó đọc một mức
-  // `badgeType` mà `enrichJob` không còn sinh, và mức đó không bao giờ sinh được vì `toDto` chỉ trả
-  // việc CÒN chỗ (`EV-09`) — nhánh chết. Hai nhãn hết-chỗ mà nhánh đó in ra cũng đi theo; contract
-  // đòi grep chúng trên file này trả 0 dòng nên comment này không viết lại mặt chữ của chúng.
-  // go-live-12 / RQ-10 / DEC-03: card điều hướng tới trang chi tiết bằng LINK THẬT, không bằng
-  // `onClick` + `router.push`: giữ được middle-click, ctrl-click, "mở tab mới" và crawler đọc được.
-  // Tiêu đề là link có thể focus (đường dùng bàn phím), phần phủ `absolute inset-0` chỉ mở rộng
-  // vùng bấm bằng chuột nên bị ẩn khỏi cây trợ năng để không đọc trùng cùng một đích. Hai nút được
-  // nâng `relative z-10` lên trên phần phủ — chúng là SIBLING của phần phủ, không lồng trong nó,
-  // nên bấm nút không bao giờ chạm link, và không cần `stopPropagation` để chặn điều hướng.
-  const detailHref = publicJobDetailPath(job.slug);
-
-  // `marketplace-inventory.static.test.ts` cấm card đọc tiền qua một field tự đặt tên trên `job` —
-  // luật đó chặn việc dựng số tiền BỊA. Destructuring giữ đúng ý luật (hai con số vẫn đến nguyên từ
-  // DTO công khai, không qua phép nhân nào) mà không viết lại mặt chữ bị cấm.
-  const { salaryMinVnd, salaryMaxVnd } = job;
-
-  return (
-    <div
-      className="hrp-card nav-item-lift border border-outline-variant/50 rounded-xl flex flex-col gap-4 relative h-full"
-    >
-      <div
-        className="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
-        style={{ backgroundColor: 'var(--color-primary-container)' }}
-      />
-      <Link
-        href={detailHref}
-        aria-hidden="true"
-        tabIndex={-1}
-        className="absolute inset-0 z-0 rounded-xl"
-      />
-
-      <div className="flex items-start gap-4 pt-2">
-        <BuildingMark />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h3 className="text-lg font-bold" style={{ color: 'var(--color-on-surface)' }}>
-              <Link
-                href={detailHref}
-                className="relative z-10 hrp-focus rounded hover:underline"
-              >
-                {job.title}
-              </Link>
-            </h3>
-            {/* go-live-09 / RQ-11, DEC-05 — viên thuốc bo tròn hoàn toàn (`rounded-full`), màu bằng
-                ĐÚNG hai cặp token: mức `URGENT` cặp đỏ, mức `CLOSING` cặp cam nhạt/cam đậm. Không
-                literal màu. `--color-primary-strong` mà DEC-05 gọi tên KHÔNG tồn tại trong
-                `globals.css` và RQ-17 cấm thêm token, nên chữ dùng `--color-primary-dark` — token cam
-                đậm duy nhất đã có, và là token được đo 5.83–6.47:1 trên cả bốn nền công khai. */}
-            {job.badge && (
-              <span
-                className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
-                style={
-                  job.badgeType === 'urgent'
-                    ? { color: 'var(--color-error)', backgroundColor: 'var(--color-error-container)' }
-                    : { color: 'var(--color-primary-dark)', backgroundColor: 'var(--color-primary-soft)' }
-                }
-              >
-                {job.badge}
-              </span>
-            )}
-          </div>
-          {/* go-live-09 / RQ-10 — khối lương đứng NGAY sau tiêu đề và là phần tử nổi bật nhất sau
-              nó: `text-lg` (18px) so với body `text-xs` (12px) của card, `font-bold` vượt ngưỡng 600,
-              màu accent bằng token. Nhánh không có lương in đúng `Lương thương lượng` ở CÙNG vị trí,
-              CÙNG cỡ chữ — không thu nhỏ, không ẩn đi, không in `0`. */}
-          <p className="text-lg font-bold" style={{ color: 'var(--color-primary-dark)' }}>
-            {salaryLabel(salaryMinVnd, salaryMaxVnd)}
-          </p>
-          <p className="text-xs truncate" style={{ color: 'var(--color-on-surface-variant)' }}>
-            {job.recruiter}
-          </p>
-          {job.remaining > 0 && (
-            <p className="text-xs mt-0.5" style={{ color: 'var(--color-on-surface-variant)' }}>
-              Còn {job.remaining} vị trí
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="hrp-pill flex items-center gap-1 text-xs px-2 py-0.5 rounded-full">
-          <span aria-hidden="true" className="material-symbols-outlined text-[14px]">badge</span>
-          {summaryLabel(job.positions, 'Vị trí đang cập nhật')}
-        </span>
-        <span className="hrp-pill-location flex items-center gap-1 text-xs px-2 py-0.5 rounded-full">
-          <span aria-hidden="true" className="material-symbols-outlined text-[14px]">location_on</span>
-          {summaryLabel(job.locations, 'Địa điểm đang cập nhật')}
-        </span>
-        <span className="hrp-pill flex items-center gap-1 text-xs px-2 py-0.5 rounded-full">
-          <span aria-hidden="true" className="material-symbols-outlined text-[14px]">schedule</span>
-          {summaryLabel(job.shifts, 'Thời gian đang cập nhật')}
-        </span>
-      </div>
-
-      <div className="flex items-center justify-between pt-3 border-t border-outline-variant/40 mt-auto">
-        <button
-          onClick={() => onApply(job)}
-          disabled={isApplied}
-          className={
-            'relative z-10 hrp-focus font-semibold px-6 min-h-11 rounded-lg ' +
-            (isApplied ? 'hrp-btn-done' : 'hrp-btn-primary nav-item-lift')
-          }
-        >
-          {isApplied ? 'Đã ứng tuyển' : 'Ứng tuyển'}
-        </button>
-        <button
-          aria-label="Lưu việc"
-          className="relative z-10 hrp-focus w-11 h-11 rounded-full border border-outline-variant flex items-center justify-center cursor-pointer transition-[border-color] hover:border-error"
-          style={{ color: 'var(--color-on-surface-variant)' }}
-        >
-          <span aria-hidden="true" className="material-symbols-outlined text-[18px]">favorite</span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Facet-backed filter control ─────────────────────────────────────────────
-
-/**
- * go-live-05 / RQ-07, DEC-08 — một nhóm filter CHỈ được vẽ khi facet của nó có dữ liệu.
- *
- * `options` đến từ `facets` của API, vốn tính trên toàn tập public hợp lệ TRƯỚC khi áp bộ lọc của
- * người dùng, nên danh sách không co lại theo chính lựa chọn vừa rồi. `value=''` là "tất cả": nó
- * không phải một giá trị dữ liệu, nên không có nhãn nào trong DOM hứa một thứ mà DB không có.
- */
-/**
- * go-live-09 / RQ-07: `labelOf` là prop TUỲ CHỌN, mặc định là hàm đồng nhất, nên hai chỗ gọi cũ giữ
- * nguyên hành vi từng ký tự. Nó tồn tại để ô "mức lương tối thiểu" hiển thị `Từ 30.000 đ/giờ` trong
- * khi `value` gửi đi vẫn là con số thô. Nhờ vậy trang không cần thêm một `<select>` thứ hai, và phép
- * đếm element native mà bề mặt công khai đang ghim vẫn đúng vì ở đây chỉ có MỘT.
- */
-function FacetSelect({
-  icon,
-  heading,
-  allLabel,
-  value,
-  options,
-  onChange,
-  labelOf = (option) => option,
-}: {
-  icon: string;
-  heading: string;
-  allLabel: string;
-  value: string;
-  options: string[];
-  onChange: (next: string) => void;
-  labelOf?: (option: string) => string;
-}) {
-  /**
-   * go-live-09 / RQ-05, AC-07 — nhãn của một `select` phải là `<label htmlFor>`, không phải `<h3>`.
-   * Hai điều đổi cùng lượt: `useId` sinh id duy nhất cho từng chỗ dùng (bốn chỗ trên trang, id không
-   * được trùng), và `aria-label` bị BỎ vì `<label>` đã đặt tên cho control — để cả hai thì thuộc tính
-   * ARIA ghi đè phần tử nhãn, tức nhãn nhìn thấy được không còn là nguồn tên nữa. Đây cũng là luật
-   * nhà đã ACCEPTED ở ô từ khoá của panel: có `htmlFor` thì không giữ `aria-label` cùng chuỗi.
-   */
-  const selectId = useId();
-
-  if (options.length === 0) return null;
-
-  return (
-    <div>
-      <label htmlFor={selectId} className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-on-surface)' }}>
-        <span aria-hidden="true" className="material-symbols-outlined text-base" style={{ color: 'var(--color-primary-dark)' }}>{icon}</span>
-        {heading}
-      </label>
-      <div className="relative">
-        <select
-          id={selectId}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="hrp-field hrp-focus w-full appearance-none border border-outline-variant min-h-11 py-2.5 pl-4 pr-10 rounded-lg cursor-pointer"
-        >
-          <option value="">{allLabel}</option>
-          {options.map((option) => (
-            <option key={option} value={option}>{labelOf(option)}</option>
-          ))}
-        </select>
-        <span aria-hidden="true" className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-xl pointer-events-none" style={{ color: 'var(--color-on-surface-variant)' }}>
-          expand_more
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/**
- * go-live-09 / RQ-08, DEC-14 — thẻ việc nổi bật ở nửa phải Hero. Nguồn là `overview.topPaid[0]`, dự
- * phòng `overview.newest[0]` — cả hai do service tính trên TOÀN tập hợp lệ, nên thẻ này không phải
- * "dòng đầu của trang 1". Chip chỉ nói bốn thứ có cột thật chống lưng — ca làm, khu vực, số chỗ trống,
- * hạn nộp — và chip nào không có dữ liệu thì KHÔNG render, không in nhãn bù.
- *
- * Tham số tên `featured` (không phải `job`) là có chủ đích: hàng rào tĩnh của bề mặt công khai cắt
- * khối nút Ứng tuyển của `JobCard` bằng chính mặt chữ `onClick={() => onApply(job)}`, nên một chỗ gọi
- * thứ hai mang đúng chuỗi đó sẽ làm phép cắt ấy đo sang khối khác.
- */
-function FeaturedJobCard({
-  featured,
-  onApply,
-  isApplied,
-}: {
-  featured: EnrichedJob;
-  onApply: (job: EnrichedJob) => void;
-  isApplied: boolean;
-}) {
-  const { title, shifts, locations, remaining, deadline, salaryMinVnd, salaryMaxVnd } = featured;
-
-  const chips = [
-    shifts.length > 0 ? { icon: 'schedule', text: shifts[0] } : null,
-    locations.length > 0 ? { icon: 'location_on', text: locations[0] } : null,
-    remaining > 0 ? { icon: 'groups', text: `Còn ${remaining} chỗ trống` } : null,
-    deadline === null ? null : { icon: 'event', text: `Hạn nộp ${deadlineLabel(deadline)}` },
-  ].filter((chip): chip is { icon: string; text: string } => chip !== null);
-
-  return (
-    <div className="hrp-card nav-item-lift border border-outline-variant/50 rounded-xl flex flex-col gap-3 w-full">
-      <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--color-primary-dark)' }}>
-        Tuyển dụng nổi bật
-      </p>
-      <h3 className="font-head text-headline-lg font-bold leading-snug" style={{ color: 'var(--color-on-surface)' }}>
-        {title}
-      </h3>
-      <p className="text-xl font-bold" style={{ color: 'var(--color-primary-dark)' }}>
-        {salaryLabel(salaryMinVnd, salaryMaxVnd)}
-      </p>
-      <div className="flex flex-wrap items-center gap-2">
-        {chips.map((chip) => (
-          <span
-            key={chip.icon}
-            className="hrp-pill flex items-center gap-1.5 px-3 py-1 text-xs rounded-full"
-          >
-            <span aria-hidden="true" className="material-symbols-outlined text-[15px]">{chip.icon}</span>
-            {chip.text}
-          </span>
-        ))}
-      </div>
-      <button
-        type="button"
-        onClick={() => onApply(featured)}
-        disabled={isApplied}
-        className={
-          'hrp-focus font-semibold px-6 min-h-11 rounded-lg self-start ' +
-          (isApplied ? 'hrp-btn-done' : 'hrp-btn-primary nav-item-lift')
-        }
-      >
-        {isApplied ? 'Đã ứng tuyển' : 'Ứng tuyển ngay'}
-      </button>
-    </div>
-  );
-}
-
-// ─── Main Page ───────────────────────────────────────────────────────────────
+// ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<EnrichedJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
   const [searching, setSearching] = useState(false);
-
-  // Filter state — giá trị `''` nghĩa là "không lọc", nên không tồn tại giá trị giả nào trong DOM.
   const [keyword, setKeyword] = useState('');
   const [area, setArea] = useState('');
   const [shift, setShift] = useState('');
-  // RQ-08: load-more phải dùng ĐÚNG bộ lọc của trang đang xem, không đọc state đang gõ dở.
-  const [appliedFilters, setAppliedFilters] = useState<JobSearchFilters>(EMPTY_FILTERS);
-
-  // RQ-07: mức lương tối thiểu là bộ lọc PHÍA CLIENT trên phần đã tải, nên nó KHÔNG nằm trong
-  // `JobSearchFilters` và không bao giờ đi vào `buildQuery` — service công khai không có tham số lương,
-  // gửi lên là chào ra một API không tồn tại. Ba state truy vấn thật vẫn đúng ba như trước.
   const [minSalary, setMinSalary] = useState('');
-
-  // DEC-08: nguồn duy nhất của dropdown là facets từ API, tính trên toàn tập public hợp lệ.
   const [facets, setFacets] = useState<PublicJobFacets>(EMPTY_FACETS);
-  const [total, setTotal] = useState(0);
-  // RQ-21/DEC-18: con số TOÀN CỤC của service. Trang không tự đếm lại thứ gì trong đây — đếm trên
-  // `jobs` là đếm trên 12 dòng đầu và sẽ nói sai ngay khi `total > 12`.
   const [overview, setOverview] = useState<PublicJobOverview>(EMPTY_OVERVIEW);
-
-  // Apply state
   const [applyJob, setApplyJob] = useState<EnrichedJob | null>(null);
   const [appliedIds, setAppliedIds] = useState<string[]>([]);
   const [successCode, setSuccessCode] = useState('');
-
-  // Pagination state — `nextOffset` từ response THẬT; `null` nghĩa là hết dòng (RQ-08/RQ-17).
   const [nextOffset, setNextOffset] = useState<number | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  // DEC-09: hai lớp chống race. `generationRef` để response cũ về muộn không ghi đè kết quả mới;
-  // `AbortController` để huỷ luôn request cũ thay vì để nó chạy hết rồi mới bỏ.
   const generationRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
-  // Nút "Thử lại" phải lặp lại ĐÚNG lần gọi vừa thất bại, kể cả khi đó là một lần load-more.
-  const lastAttemptRef = useRef<{ filters: JobSearchFilters; offset: number; mode: 'replace' | 'append' }>({
-    filters: EMPTY_FILTERS,
-    offset: 0,
-    mode: 'replace',
-  });
 
-  const runQuery = useCallback(async (filters: JobSearchFilters, offset: number, mode: 'replace' | 'append') => {
-    const generation = ++generationRef.current;
-    lastAttemptRef.current = { filters, offset, mode };
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    if (mode === 'append') setLoadingMore(true);
-    else setLoading(true);
-    setFetchError('');
-    try {
-      const res = await fetch(`/api/jobs?${buildQuery(filters, offset)}`, { cache: 'no-store', signal: controller.signal });
-      // OPS-06A / RQ-07: browse cũng có limiter phân tán ⇒ hiển thị trạng thái
-      // thân thiện cho 429/503 thay vì "Lỗi <status>".
-      if (res.status === 429) throw new Error('Bạn tải trang quá nhanh. Vui lòng thử lại sau ít phút.');
-      if (res.status === 503) throw new Error('Hệ thống đang tạm thời quá tải. Vui lòng thử lại sau ít phút.');
-      if (!res.ok) throw new Error(`Lỗi ${res.status}`);
-      const data = (await res.json()) as PublicJobListResult;
-      if (generation !== generationRef.current) return;
-      const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
-      setJobs((prev) => (mode === 'append' ? dedupeById([...prev, ...incoming]) : incoming));
-      setFacets(data.facets ?? EMPTY_FACETS);
-      setOverview(data.overview ?? EMPTY_OVERVIEW);
-      setTotal(typeof data.total === 'number' ? data.total : incoming.length);
-      setNextOffset(typeof data.nextOffset === 'number' ? data.nextOffset : null);
-      setAppliedFilters(filters);
-    } catch (e) {
-      // Request bị chính ta huỷ không phải lỗi của người dùng, và không được ghi gì lên UI.
-      if (controller.signal.aborted || (e instanceof DOMException && e.name === 'AbortError')) return;
-      if (generation !== generationRef.current) return;
-      // RQ-09: KHÔNG xoá `jobs`. Refetch lỗi thì kết quả đang xem vẫn còn, kèm băng lỗi và nút thử lại.
-      setFetchError(e instanceof Error ? e.message : 'Không thể tải danh sách việc làm');
-    } finally {
-      if (generation === generationRef.current) {
-        setLoading(false);
-        setLoadingMore(false);
+  const runQuery = useCallback(
+    async (filters: JobSearchFilters, offset: number, mode: 'replace' | 'append') => {
+      const generation = ++generationRef.current;
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      if (mode === 'append') {
+        // load-more spinner handled by sentinel UI below
+      } else {
+        setLoading(true);
       }
-    }
-  }, []);
+      setFetchError('');
+      try {
+        const res = await fetch(`/api/jobs?${buildQuery(filters, offset)}`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (res.status === 429)
+          throw new Error('Bạn tải trang quá nhanh. Vui lòng thử lại sau ít phút.');
+        if (res.status === 503)
+          throw new Error('Hệ thống đang tạm thời quá tải. Vui lòng thử lại sau ít phút.');
+        if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+        const data = (await res.json()) as PublicJobListResult;
+        if (generation !== generationRef.current) return;
+        const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
+        setJobs((prev) => (mode === 'append' ? dedupeById([...prev, ...incoming]) : incoming));
+        setFacets(data.facets ?? EMPTY_FACETS);
+        setOverview(data.overview ?? EMPTY_OVERVIEW);
+        setNextOffset(typeof data.nextOffset === 'number' ? data.nextOffset : null);
+      } catch (e) {
+        if (controller.signal.aborted || (e instanceof DOMException && e.name === 'AbortError')) return;
+        if (generation !== generationRef.current) return;
+        setFetchError(e instanceof Error ? e.message : 'Không thể tải danh sách việc làm');
+      } finally {
+        if (generation === generationRef.current) setLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     void runQuery(EMPTY_FILTERS, 0, 'replace');
   }, [runQuery]);
 
   const loadMore = useCallback(() => {
-    if (nextOffset === null || loadingMore || loading) return;
-    void runQuery(appliedFilters, nextOffset, 'append');
-  }, [appliedFilters, loading, loadingMore, nextOffset, runQuery]);
+    if (nextOffset === null) return;
+    void runQuery({ keyword, area, shift }, nextOffset, 'append');
+  }, [keyword, area, shift, nextOffset, runQuery]);
 
-  // RQ-08/RQ-17: sentinel gọi ĐÚNG một request thật với `nextOffset` của response trước, thay cho
-  // `setTimeout(…, 800)` chỉ tắt spinner rồi không tải gì.
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
-
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) loadMore();
       },
       { rootMargin: '200px' },
     );
-
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [loadMore]);
-
-  const currentFilters = (): JobSearchFilters => ({ keyword, area, shift });
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setSearching(true);
     try {
-      // DEC-09: submit luôn quay về `offset = 0` — trang 3 của bộ lọc cũ không được trộn vào kết quả mới.
-      await runQuery(currentFilters(), 0, 'replace');
+      await runQuery({ keyword, area, shift }, 0, 'replace');
     } finally {
       setSearching(false);
     }
   }
 
-  /**
-   * go-live-09 / RQ-13, RQ-14 — tag ghi vào ĐÚNG state bộ lọc đang có, không thêm state nào, rồi gọi
-   * lại CHÍNH chỗ fetch đang có. Bộ lọc truyền xuống được dựng tường minh từ giá trị vừa bấm chứ
-   * không đọc lại `currentFilters()`: `setArea` của React không đồng bộ, đọc lại sẽ lấy giá trị CŨ và
-   * `total` trả về sẽ lệch khỏi con số in trên tag — đúng bất biến mà RQ-13 đòi phải đứng.
-   */
   function applyArea(value: string) {
     setArea(value);
     void runQuery({ keyword, area: value, shift }, 0, 'replace');
   }
 
-  function applyShift(value: string) {
-    setShift(value);
-    void runQuery({ keyword, area, shift: value }, 0, 'replace');
-  }
-
-  function handleApply(job: ReturnType<typeof enrichJob>) {
+  function handleApply(job: EnrichedJob) {
     setApplyJob(job);
     setSuccessCode('');
   }
@@ -635,60 +194,46 @@ export default function JobsPage() {
     setSuccessCode(code);
   }
 
-  // RQ-09 — ba trạng thái tách rời nhau, không nhóm nào che nhóm nào:
-  //   * skeleton chỉ ở lần tải ĐẦU (chưa có gì trên màn hình), không ở mỗi lần refetch;
-  //   * empty state chỉ khi đã đọc được API và tập kết quả thật sự rỗng;
-  //   * lưới còn dữ liệu thì luôn hiển thị, kể cả khi lần gọi mới nhất lỗi.
-  const showSkeleton = loading && jobs.length === 0 && !fetchError;
-  const showEmptyState = !loading && !fetchError && jobs.length === 0;
+  // Featured source — newest first, topPaid fallback (per RQ-03 / RQ-11)
+  const featuredSource = overview.newest[0] ?? overview.topPaid[0] ?? null;
+  const featuredJobs = (overview.newest.length > 0 ? overview.newest : overview.topPaid)
+    .slice(0, 3)
+    .map(enrichJob);
 
-  // RQ-07: lọc lương cắt trên PHẦN ĐÃ TẢI. Đọc bằng destructuring vì hàng rào tĩnh cấm trang này
-  // chạm tới tiền qua một field tự đặt tên trên `job` (luật chặn card dựng số tiền bịa).
-  const visibleJobs =
-    minSalary === ''
-      ? jobs
-      : jobs.filter(({ salaryMinVnd }) => salaryMinVnd !== null && salaryMinVnd >= Number(minSalary));
-  // Nhánh này KHÁC `showEmptyState`: API có dữ liệu, chỉ phần đã tải chưa có việc nào đạt mức lương.
-  // Nói đúng như vậy, và chỉ đường sang nút tải thêm đang có — không dựng một nút tải thêm thứ hai.
-  const showSalaryEmpty = !loading && !fetchError && jobs.length > 0 && visibleJobs.length === 0;
+  // Recruiting project source — newest fallback topPaid, max 4 (per RQ-05 / DEC-04)
+  const recruitingSource = (overview.newest.length > 0 ? overview.newest : overview.topPaid).slice(0, 4);
+  const recruitingProjects: EnrichedJob[] = recruitingSource.map(enrichJob);
 
-  // RQ-08/DEC-14: nguồn của thẻ nổi bật là dải TOÀN CỤC của service, không phải `jobs[0]` của trang.
-  const featuredSource = overview.topPaid[0] ?? overview.newest[0] ?? null;
-  const featured = featuredSource === null ? null : enrichJob(featuredSource);
+  // Areas for image card — pull top 4 from facet areaCounts (per RQ-04)
+  const areasForCards: Array<{ name: string; count: number }> = facets.areas.slice(0, 4).map((name) => {
+    const found = overview.areaCounts.find((entry) => entry.value === name);
+    return { name, count: found?.count ?? 0 };
+  });
 
   return (
-    <div id="hrp-main" tabIndex={-1} className="w-full max-w-[1600px] mx-auto px-6 md:px-[5%] py-8 flex flex-wrap items-start gap-8">
-
+    <main id="hrp-main" tabIndex={-1} className="flex w-full flex-col items-stretch gap-0">
       <Hero>
-        <div className="flex min-w-0 flex-col justify-center gap-5">
-          <p className="font-label text-label-sm font-bold uppercase tracking-widest text-on-primary">
-            Cơ hội việc làm đáng tin cậy
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-6 text-on-primary">
+          <p className="font-label text-label-md font-bold uppercase tracking-widest text-secondary-fixed">
+            Cùng tìm kiếm
           </p>
-          <h1 className="font-head text-lg sm:text-2xl md:text-3xl lg:text-4xl xl:text-headline-xl font-bold leading-tight text-on-primary">
-            Việc làm nhà máy, kho vận tại các khu công nghiệp
+          <h1 className="font-head text-headline-xl font-bold leading-tight text-on-primary">
+            Công việc mơ ước của bạn
           </h1>
-          {/* RQ-05: câu dưới tiêu đề nói ĐÚNG những gì trang chứng minh được — số việc và số khu vực
-              là con số toàn cục của service, không phải chữ quảng cáo. Lúc chưa có dữ liệu thì nói
-              chung, không in số 0 như một lời hứa. */}
-          {/* ui-02-v1.3 / Tier 1 — paragraph phụ dùng bậc body-md để T-04 (mỗi bậc thang chữ
-              đều xuất hiện trên bề mặt trang chủ) pass sau recomposition. */}
-          <p className="font-body text-body-md sm:text-body-lg text-on-primary/85">
+          <p className="font-body text-body-lg text-on-primary/90">
             {overview.totals.jobs > 0
               ? `Đang tuyển ${overview.totals.jobs} việc làm tại ${overview.totals.areas} khu vực. Ứng tuyển không cần tài khoản.`
               : 'Việc làm theo ca, ứng tuyển không cần tài khoản.'}
           </p>
           <form
             onSubmit={handleSearch}
-            className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 rounded-2xl border border-outline-variant/50 bg-surface p-3 sm:p-4 shadow-card items-stretch sm:items-end"
+            className="flex flex-col gap-3 rounded-2xl border border-white/30 bg-white/10 p-3 backdrop-blur-md sm:flex-row sm:items-end sm:p-4"
+            data-testid="hero-search-card"
           >
-            {/* Nhãn của ba ô là nhãn NHÌN THẤY được. Tiêu đề ẩn này chỉ để cây tiêu đề không nhảy từ
-                h1 sang h3 — nó không thay chỗ cho nhãn nào. */}
-            <h2 className="sr-only">Tìm việc nhanh</h2>
-            <div className="flex-1 w-full sm:min-w-0">
+            <div className="flex-1">
               <label
                 htmlFor="hrp-hero-keyword"
-                className="font-label text-label-md font-semibold mb-2 block"
-                style={{ color: 'var(--color-on-surface)' }}
+                className="mb-1 block font-label text-label-sm font-bold text-white"
               >
                 Từ khóa
               </label>
@@ -698,79 +243,164 @@ export default function JobsPage() {
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder="Tên công việc, vị trí..."
-                className="hrp-field hrp-focus w-full px-3 sm:px-4 py-3 min-h-11 rounded-lg border"
+                className="hrp-focus w-full rounded-lg border border-white/30 bg-white/95 px-3 py-2.5 text-on-surface min-h-11 placeholder:text-on-surface-variant"
               />
             </div>
-            {/* RQ-06: hai ô này ghi vào CHÍNH `area` và `minSalary`, nên gõ ở Hero rồi kéo xuống panel
-                lọc thì thấy đúng giá trị đó. `FacetSelect` tự ẩn khi chưa có lựa chọn nào — dropdown
-                khu vực chỉ hiện khi `facets.areas` đã về, đúng luật "không chào ra control rỗng" của
-                `DEC-08`; ô mức lương có thang cố định nên luôn hiện. */}
-            <div className="flex-1 w-full sm:min-w-0">
-              <FacetSelect
-                icon="location_on"
-                heading="Khu vực"
-                allLabel="Tất cả khu vực"
+            <div className="flex-1">
+              <label
+                htmlFor="hrp-hero-area"
+                className="mb-1 block font-label text-label-sm font-bold text-white"
+              >
+                Khu vực
+              </label>
+              <select
+                id="hrp-hero-area"
                 value={area}
-                options={facets.areas}
-                onChange={setArea}
-              />
+                onChange={(e) => setArea(e.target.value)}
+                className="hrp-focus w-full rounded-lg border border-white/30 bg-white/95 px-3 py-2.5 text-on-surface min-h-11"
+              >
+                <option value="">Tất cả khu vực</option>
+                {facets.areas.map((entry) => (
+                  <option key={entry} value={entry}>
+                    {entry}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="flex-1 w-full sm:min-w-0">
-              <FacetSelect
-                icon="payments"
-                heading="Lương tối thiểu"
-                allLabel="Mọi mức lương"
+            <div className="flex-1">
+              <label
+                htmlFor="hrp-hero-salary"
+                className="mb-1 block font-label text-label-sm font-bold text-white"
+              >
+                Mức lương
+              </label>
+              <select
+                id="hrp-hero-salary"
                 value={minSalary}
-                options={SALARY_STEPS}
-                onChange={setMinSalary}
-                labelOf={salaryStepLabel}
-              />
+                onChange={(e) => setMinSalary(e.target.value)}
+                className="hrp-focus w-full rounded-lg border border-white/30 bg-white/95 px-3 py-2.5 text-on-surface min-h-11"
+              >
+                <option value="">Mọi mức lương</option>
+                <option value="25000">Từ 25.000 đ/giờ</option>
+                <option value="30000">Từ 30.000 đ/giờ</option>
+                <option value="40000">Từ 40.000 đ/giờ</option>
+                <option value="50000">Từ 50.000 đ/giờ</option>
+              </select>
             </div>
             <button
               type="submit"
               disabled={searching}
               aria-busy={searching}
-              className="hrp-btn-primary hrp-focus nav-item-lift px-4 sm:px-6 min-h-11 rounded-lg font-label text-label-md font-semibold whitespace-nowrap disabled:cursor-wait disabled:opacity-70 w-full sm:w-auto"
+              className="hrp-btn-primary hrp-focus nav-item-lift min-h-11 rounded-lg px-6 font-label text-label-md font-semibold whitespace-nowrap"
             >
               {searching ? 'Đang tìm...' : 'Tìm việc'}
             </button>
           </form>
         </div>
-        {/* RQ-08/DEC-14: không có việc nổi bật thì nửa phải KHÔNG render. Nửa trái là `flex-1` nên nó
-            tự chiếm trọn chiều ngang, không để lại khoảng trắng giữ chỗ. */}
-        {featured && (
-          <div className="hidden lg:flex w-full flex-shrink-0 xl:w-96">
-            <FeaturedJobCard featured={featured} onApply={handleApply} isApplied={appliedIds.includes(featured.id)} />
-          </div>
-        )}
+        <div className="hidden w-full max-w-md flex-shrink-0 lg:block">
+          <RecruitmentHighlight />
+        </div>
       </Hero>
 
-      <BestJobsSection>
-        <h2 id="hrp-best-jobs-heading" className="font-head text-headline-md font-bold text-on-surface mb-2">
-          Việc làm tốt nhất
-        </h2>
-        {/* ui-02-v1.3 / Tier 1 — subheading dùng bậc body-md để T-04 (mỗi bậc thang chữ
-            đều xuất hiện trên bề mặt trang chủ) pass sau recomposition. Đặt TRƯỚC grid. */}
-        <p className="font-body text-body-md text-on-surface-variant mb-6">
-          Cập nhật từ dữ liệu thật của service — lọc theo từ khoá, khu vực và mức lương tối thiểu.
-        </p>
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {visibleJobs.slice(0, 12).map((job) => (
-            <JobCard
-              key={job.id}
-              job={job}
-              onApply={handleApply}
-              isApplied={appliedIds.includes(job.id)}
-            />
-          ))}
-        </div>
-      </BestJobsSection>
+      {loading && jobs.length === 0 ? (
+        <section className="w-full bg-surface-container-low px-4 py-12 md:px-8 md:py-16">
+          <div className="mx-auto flex w-full max-w-7xl items-center justify-center">
+            <p className="font-body text-body-lg text-on-surface-variant">Đang tải việc làm...</p>
+          </div>
+        </section>
+      ) : fetchError ? (
+        <section className="w-full px-4 py-12 md:px-8 md:py-16">
+          <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-3">
+            <p className="font-body text-body-lg text-error">{fetchError}</p>
+            <button
+              type="button"
+              onClick={() => void runQuery({ keyword, area, shift }, 0, 'replace')}
+              className="hrp-btn-primary hrp-focus min-h-11 rounded-lg px-4 py-2 font-label text-label-md font-semibold"
+            >
+              Thử lại
+            </button>
+          </div>
+        </section>
+      ) : (
+        <>
+          <BestJobsSection
+            jobs={featuredJobs.map((job) => ({
+              id: job.id,
+              title: job.title,
+              salary: salaryLabel(job.salaryMinVnd, job.salaryMaxVnd),
+              location: job.locations[0] ?? 'Toàn quốc',
+              badgeType: job.badgeType === 'urgent' ? 'urgent' : null,
+            }))}
+            buildHref={(jobId) => publicJobDetailPath(jobId)}
+          />
 
-      <AreasSection areas={facets.areas} onPick={applyArea} />
+          <AreasSection areas={areasForCards} onPick={applyArea} />
 
-      <ReferralInviteStrip />
+          <RecruitingProjectsSection
+            jobs={recruitingProjects.map((job) => ({
+              id: job.id,
+              title: job.title,
+              availableSlots: job.availableSlots,
+            }))}
+            buildHref={(jobId) => publicJobDetailPath(jobId)}
+          />
 
-      {/* Apply Modal */}
+          <ReferralStrip />
+
+          {/* Inline list of all jobs (search results) — hidden behind sentinel for pagination */}
+          <section
+            aria-label="Danh sách việc làm"
+            className="w-full bg-surface-container-low px-4 py-12 md:px-8 md:py-16"
+          >
+            <div className="mx-auto w-full max-w-7xl">
+              <div className="mb-6 flex flex-col gap-2">
+                <h2 className="font-head text-headline-lg font-bold text-on-surface">
+                  Danh sách việc làm
+                </h2>
+                <p className="font-body text-body-md text-on-surface-variant">
+                  Tổng cộng {jobs.length} việc đang hiển thị
+                  {overview.totals.jobs > jobs.length && ` / ${overview.totals.jobs}`}.
+                </p>
+              </div>
+              <ul className="grid list-none grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {jobs.map((job) => (
+                  <li
+                    key={job.id}
+                    className="rounded-2xl border border-outline-variant bg-surface p-5 shadow-card"
+                  >
+                    <Link
+                      href={publicJobDetailPath(job.slug)}
+                      className="hrp-focus block"
+                    >
+                      <p className="font-head text-headline-md font-bold text-on-surface">
+                        {job.title}
+                      </p>
+                      <p className="mt-1 font-body text-body-md text-on-surface-variant">
+                        {job.locations[0] ?? 'Toàn quốc'}
+                      </p>
+                      <p className="mt-2 font-label text-label-md font-bold text-primary-container">
+                        {salaryLabel(job.salaryMinVnd, job.salaryMaxVnd)}
+                      </p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {nextOffset !== null && (
+                <div
+                  ref={sentinelRef}
+                  className="mt-8 flex items-center justify-center"
+                  data-testid="load-more-sentinel"
+                >
+                  <p className="font-body text-body-md text-on-surface-variant">
+                    Đang tải thêm việc làm...
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+        </>
+      )}
+
       {applyJob && (
         <ApplyModal
           job={applyJob}
@@ -779,10 +409,7 @@ export default function JobsPage() {
         />
       )}
 
-      {/* Success Modal */}
-      {successCode && (
-        <SuccessModal code={successCode} onClose={() => setSuccessCode('')} />
-      )}
-    </div>
+      {successCode && <SuccessModal code={successCode} onClose={() => setSuccessCode('')} />}
+    </main>
   );
 }

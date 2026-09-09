@@ -1,0 +1,24 @@
+﻿ M app/(portal)/page.tsx
+ M app/components/GlobalFooter.tsx
+ M app/components/GlobalNavbar.tsx
+R  .tmp_plan_index.txt -> scratch/ROOT-2026-09-09-.tmp_plan_index.txt
+R  _m3_msg.txt -> scratch/ROOT-2026-09-09-_m3_msg.txt
+R  audit_report.md -> scratch/ROOT-2026-09-09-audit_report.md
+R  extract_css.txt -> scratch/ROOT-2026-09-09-extract_css.txt
+ M src/domains/job-board/components/landing/areas-section.tsx
+ M src/domains/job-board/components/landing/best-jobs-section.tsx
+ M src/domains/job-board/components/landing/hero.tsx
+ M src/domains/job-board/components/landing/referral-strip.tsx
+?? docs/TIER0_HANDOVER.md
+?? docs/reports/tier1-independent-app-assessment-2026-09-09.md
+?? docs/tasks/hrp-v6-ui-03-homepage-huongb-visual-parity/evidence/baseline-commit.txt
+?? docs/tasks/hrp-v6-ui-03-homepage-huongb-visual-parity/evidence/baseline-manifest.txt
+?? docs/tasks/hrp-v6-ui-03-homepage-huongb-visual-parity/evidence/baseline-snapshot.txt
+?? docs/tasks/hrp-v6-ui-03-homepage-huongb-visual-parity/evidence/post-status-snapshot.txt
+?? docs/tasks/hrp-v6-ui-03-homepage-huongb-visual-parity/evidence/scripts/
+?? src/domains/job-board/components/landing/area-image-card.tsx
+?? src/domains/job-board/components/landing/featured-job-card.tsx
+?? src/domains/job-board/components/landing/hr-monogram.tsx
+?? src/domains/job-board/components/landing/recruiting-projects-section.tsx
+?? src/domains/job-board/components/landing/recruitment-highlight.tsx
+?? src/domains/job-board/components/landing/search-section.tsx
