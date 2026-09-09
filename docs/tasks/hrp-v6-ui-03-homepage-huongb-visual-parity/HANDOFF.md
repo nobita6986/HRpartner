@@ -9,7 +9,7 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `FOCUSED` |
 | Execution round | `0` (Tier 2 chưa khởi động; Owner verdict MC-01 v1.4: KHÔNG chạy verify-handoff cho HANDOFF tiền thực thi nếu parser không hỗ trợ round 0) |
-| Baseline | `eda2602` |
+| Baseline | `eda2602` (commit chứa Owner mandate); execution baseline commit = `d3f3503` (commit `docs(ui-03): TASK v1.4 + HANDOFF READY_FOR_EXECUTION (Owner MC closeout)` — commit cuối cùng chứa trạng thái `READY_FOR_EXECUTION`, theo Owner Authorization §2 v1.4) |
 | Status | `READY_FOR_EXECUTION` (Owner verdict MC-01 v1.4 — Tier 1 mechanical closeout; giao Tier 2 ngay, không trình Owner contract lần nữa) |
 
 ## 1. Outcome and changed surface
