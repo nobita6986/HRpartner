@@ -1,0 +1,18 @@
+﻿AC-09: Ribbon compact — pointer-events-none, 24-28px height, 70-80% alpha
+
+src\domains\job-board\components\landing\featured-job-card.tsx:2:import { MapPin, Clock3, Banknote, Flame } from 
+'lucide-react';
+src\domains\job-board\components\landing\featured-job-card.tsx:66:      {/* RQ-09/RQ-10/RQ-23: Ribbon compact — 
+top-right overlay, pointer-events-none, ~24-28px height */}
+src\domains\job-board\components\landing\featured-job-card.tsx:69:          /* pointer-events-none: overlay does not 
+push content; RQ-09: no pr-[72px] on title */
+src\domains\job-board\components\landing\featured-job-card.tsx:70:          className="pointer-events-none absolute 
+top-0 right-0 z-20 flex items-center gap-1 rounded-bl-md border-l border-b border-orange-300/40 bg-orange-500/75 px-2 
+py-1 text-white backdrop-blur-[1px]"
+src\domains\job-board\components\landing\featured-job-card.tsx:71:          aria-label="Tuyển gấp"
+src\domains\job-board\components\landing\featured-job-card.tsx:73:          <Flame className="h-3 w-3 shrink-0" 
+aria-hidden="true" />
+src\domains\job-board\components\landing\featured-job-card.tsx:74:          <span className="text-[11px] font-semibold 
+leading-none">Tuyển gấp</span>
+
+

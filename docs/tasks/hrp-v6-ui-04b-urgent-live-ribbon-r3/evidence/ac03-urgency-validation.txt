@@ -1,0 +1,13 @@
+﻿AC-03: urgency=<invalid> returns 400; absence keeps current behavior
+
+  app\api\jobs\route.ts:24:  const { searchParams } = new URL(req.url);
+  app\api\jobs\route.ts:25:  const urgencyRaw = searchParams.get('urgency');
+  app\api\jobs\route.ts:26:  // DEC-01: only accept URGENT value; non-empty other values return 400; no param → pass 
+undefined (byte-compatible)
+> app\api\jobs\route.ts:27:  if (urgencyRaw !== null && urgencyRaw !== 'URGENT') {
+  app\api\jobs\route.ts:28:    return NextResponse.json({ error: 'Invalid urgency value. Only URGENT is supported.' }, 
+{ status: 400 });
+  app\api\jobs\route.ts:29:  }
+  app\api\jobs\route.ts:30:  const urgency = urgencyRaw as 'URGENT' | undefined;
+
+

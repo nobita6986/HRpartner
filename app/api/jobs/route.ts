@@ -22,6 +22,13 @@ export async function GET(req: NextRequest) {
   if (denied) return denied;
 
   const { searchParams } = new URL(req.url);
+  const urgencyRaw = searchParams.get('urgency');
+  // DEC-01: only accept URGENT value; non-empty other values return 400; no param → pass undefined (byte-compatible)
+  if (urgencyRaw !== null && urgencyRaw !== 'URGENT') {
+    return NextResponse.json({ error: 'Invalid urgency value. Only URGENT is supported.' }, { status: 400 });
+  }
+  const urgency = urgencyRaw as 'URGENT' | undefined;
+
   const prisma = getPrisma();
   // go-live-04 / RQ-03: principal công khai MKT + transaction read-only. `$transaction`
   // trần ở đây chính là defect P0 làm bề mặt việc làm trả 0 dòng dưới FORCE RLS.
@@ -33,6 +40,7 @@ export async function GET(req: NextRequest) {
     jobTypes: searchParams.getAll('jobType'),
     offset: Number(searchParams.get('offset') ?? 0),
     limit: Number(searchParams.get('limit') ?? 20),
+    urgency,
   }));
   return NextResponse.json(projection);
 }

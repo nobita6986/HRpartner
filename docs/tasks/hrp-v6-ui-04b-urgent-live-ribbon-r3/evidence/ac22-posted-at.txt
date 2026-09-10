@@ -1,0 +1,28 @@
+﻿AC-22: postedAt — ISO format, only when truthy, no relative time
+
+  app\(portal)\page.tsx:45:  availableSlots: number;
+> app\(portal)\page.tsx:46:  /** RQ-20 / STEP-10: postedAt from PublicJobDto for recruitment time display */
+> app\(portal)\page.tsx:47:  postedAt: string | null;
+  app\(portal)\page.tsx:48:}
+  app\(portal)\page.tsx:50:function enrichJob(job: PublicJobDto): EnrichedJob {
+> app\(portal)\page.tsx:51:  const { salaryMinVnd, salaryMaxVnd, urgency, postedAt } = job;
+  app\(portal)\page.tsx:52:  return {
+  app\(portal)\page.tsx:60:    availableSlots: job.availableSlots,
+> app\(portal)\page.tsx:61:    postedAt: postedAt ?? null,
+  app\(portal)\page.tsx:62:  };
+
+
+
+src\domains\job-board\components\landing\featured-job-card.tsx:18:    postedAt?: string | null;
+src\domains\job-board\components\landing\featured-job-card.tsx:44:/** Formats postedAt ISO to a short date label for 
+display. */
+src\domains\job-board\components\landing\featured-job-card.tsx:45:function postedAtLabel(iso: string | null | 
+undefined): string {
+src\domains\job-board\components\landing\featured-job-card.tsx:49:    return date.toLocaleDateString('vi-VN', { day: 
+'2-digit', month: '2-digit', year: 'numeric' });
+src\domains\job-board\components\landing\featured-job-card.tsx:58:  const postedAtDisplay = 
+postedAtLabel(job.postedAt);
+src\domains\job-board\components\landing\featured-job-card.tsx:107:        {postedAtDisplay && (
+src\domains\job-board\components\landing\featured-job-card.tsx:110:            <span>{postedAtDisplay}</span>
+
+

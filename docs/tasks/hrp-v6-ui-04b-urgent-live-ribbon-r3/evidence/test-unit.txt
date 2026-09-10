@@ -1,0 +1,2848 @@
+﻿
+> hrp@0.1.0 test:unit
+> vitest run --config vitest.unit.config.ts
+
+node.exe : [33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ Γ¥» src/domains/job-board/public-ui-premium.static.test.ts (71 tests | 8 failed) 112ms
+   ├ù go-live-08 / RQ-02, RQ-03, RQ-04 ΓÇö card viß╗çc l├ám > padding card bß║▒ng token 24px v├á cß╗í t├¬n viß╗çc l├ám ─æ├ú t─âng cß║Ñp 20ms
+     ΓåÆ expected 'import Link from \'next/link\';\nimpoΓÇª' to contain 'font-head text-headline-md font-bold'
+   ├ù go-live-08 / RQ-02, RQ-03, RQ-04 ΓÇö card viß╗çc l├ám > t├¬n ─æ╞ín vß╗ï v├á ─æß╗ïa ─æiß╗âm vß║½n d├╣ng token x├ím dß╗ïu 8ms
+     ΓåÆ expected 'import Link from \'next/link\';\nimpoΓÇª' to contain 'text-on-surface-variant'
+   ├ù go-live-08 / RQ-05, RQ-06 ΓÇö ph├ón ho├í nß╗ün > cß║ú hai pill vß║½n bo tr├▓n hß║┐t cß║ính v├á vß║½n giß╗» icon 4ms
+     ΓåÆ expected 'import Link from \'next/link\';\nimpoΓÇª' to contain 'bg-primary-fixed'
+   ├ù go-live-08 / RQ-21 ΓÇö icon ligature trang tr├¡ bß╗ï ß║⌐n khß╗Åi c├┤ng nghß╗ç trß╗ú gi├║p > icon trang tr├¡ ─æß╗üu c├│ aria-hidden 3ms
+     ΓåÆ expected 1 to be greater than or equal to 3
+   ├ù DEC-01 / STEP-03 / RQ-01, RQ-05 ΓÇö BestJobs tab filter and pagination controls > BestJobsSection accepts pageSize prop and renders up to pageSize items 4ms
+     ΓåÆ expected 'import Link from \'next/link\';\nimpoΓÇª' to contain 'jobs.slice(0, pageSize)'
+   ├ù DEC-01 / STEP-03 / RQ-01, RQ-05 ΓÇö BestJobs tab filter and pagination controls > BEST_JOBS_URGENT_PREVIEW imported in page.tsx (DEC-06) 9ms
+     ΓåÆ expected '\'use client\';\n\nimport { useState,ΓÇª' to contain 'BEST_JOBS_URGENT_PREVIEW'
+   ├ù DEC-06 / STEP-02 / RQ-03, RQ-04 ΓÇö URGENT fixture INTEGRATION_PENDING > fixture has source: INTEGRATION_PENDING on each item 1ms
+     ΓåÆ ENOENT: no such file or directory, open 'C:\CodeApp\HrP\src\domains\job-board\fixtures\best-jobs-urgent-preview.ts'
+   ├ù DEC-06 / STEP-02 / RQ-03, RQ-04 ΓÇö URGENT fixture INTEGRATION_PENDING > page.tsx renders URGENT tab from BEST_JOBS_URGENT_PREVIEW 17ms
+     ΓåÆ expected '\'use client\';\n\nimport { useState,ΓÇª' to contain 'bestJobsTab === \'all\' ? bestJobsDatΓÇª'
+ Γ£ô src/shared/ui/internal-contrast.static.test.ts (21 tests) 25ms
+ Γ¥» src/domains/applications/marketplace-inventory.static.test.ts (29 tests | 2 failed) 129ms
+   ├ù DEC-01 / RQ-01, RQ-02 ΓÇö BestJobs tab filter and pagination in page.tsx > page.tsx has BestJobs tab state and fetches separately (DEC-05) 41ms
+     ΓåÆ expected '\'use client\';\r\n\r\nimport { useStΓÇª' to contain 'BEST_JOBS_URGENT_PREVIEW'
+   ├ù DEC-01 / RQ-01, RQ-02 ΓÇö BestJobs tab filter and pagination in page.tsx > BestJobs tab does NOT send urgency=URGENT to server (DEC-01 / B4 ΓåÆ AV1) 4ms
+     ΓåÆ expected '\'use client\';\r\n\r\nimport { useStΓÇª' not to match /\/api\/jobs\?.*urgency=URGENT/api\
+ Γ£ô src/domains/staffing/assignment-placement.service.test.ts (65 tests) 57ms
+ Γ£ô src/domains/applications/marketplace-apply.routes.test.ts (31 tests) 72ms
+ Γ£ô src/shared/auth/vendor-object-scope.m1-08.route.test.ts (36 tests) 51ms
+ Γ£ô src/domains/job-board/public-card-truth.test.ts (23 tests) 37ms
+ Γ£ô src/domains/commission/golden.test.ts (10 tests) 18ms
+ Γ£ô src/domains/reconciliation/reconciliation-unit.test.ts (16 tests) 20ms
+ Γ£ô src/shared/toolchain/vitest-default-lane.static.test.ts (15 tests) 18ms
+ Γ£ô src/domains/attendance/ticket.service.test.ts (16 tests) 43ms
+stdout | src/shared/observability/logger.test.ts > Schema ΓÇö AC-03 > sink can be reset to default without throwing
+{"schemaVersion":"1.0","timestamp":"2026-09-10T11:43:39.782Z","level":"info","event":"after_reset","requestId":"req","meta":{}}
+
+ Γ£ô src/shared/observability/logger.test.ts (73 tests) 26ms
+ Γ£ô src/shared/auth/api-boundary.static.test.ts (27 tests) 31ms
+ Γ£ô src/domains/job-board/components/landing/featured-job-card.test.ts (75 tests) 26ms
+ Γ£ô src/domains/staffing/submission.service.test.ts (15 tests) 30ms
+ Γ¥» src/domains/job-board/public-ui-token-parity.static.test.ts (15 tests | 1 failed) 20ms
+   ├ù T╞░╞íng ß╗⌐ng token vß╗¢i class ΓÇö RQ-12 > P-01 ΓÇö kh├┤ng class text-*/font-*/bg-* n├áo tr├¬n trang chß╗º sinh ra 0 byte CSS 12ms
+     ΓåÆ expected [ ΓÇª(17) ] to deeply equal []
+ Γ£ô src/domains/job-board/public-board-architecture.test.ts (17 tests) 24ms
+ Γ¥» src/domains/applications/marketplace-browse.routes.test.ts (13 tests | 1 failed) 56ms
+   ├ù RQ-03 ΓÇö GET /api/jobs (list) > chuyß╗ân ─æß╗º bß╗Ö lß╗ìc thß║¡t tß╗½ query string xuß╗æng service, v├á Bß╗Ä tham sß╗æ ng├ánh ─æ├ú bß╗ï loß║íi 18ms
+     ΓåÆ expected "spy" to be called with arguments: [ Anything, { q: 'thß╗ú ─æiß╗çn', ΓÇª(6) } ]
+
+Received: 
+
+  1st spy call:
+
+  Array [
+-   Anything,
++   Object {},
+    Object {
+      "area": "Bß║»c Ninh",
+      "jobTypes": Array [
+        "toan_thoi_gian",
+      ],
+      "limit": 50,
+      "offset": 0,
+      "q": "thß╗ú ─æiß╗çn",
+      "shift": undefined,
+      "shiftTypes": Array [
+        "ca_ngay",
+        "ca_dem",
+      ],
++     "urgency": null,
+    },
+  ]
+
+
+Number of calls: 1
+
+ Γ£ô src/shared/security/required-relation-sweep.static.test.ts (11 tests) 556ms
+ Γ£ô src/domains/staffing/e2e-staffing-narrative.integration.test.ts (5 tests) 12ms
+ Γ£ô src/shared/observability/middleware.test.ts (24 tests) 28ms
+ Γ£ô src/domains/applications/placement-panel.test.ts (26 tests) 41ms
+ Γ£ô src/shared/auth/permission-resolver.test.ts (82 tests) 16ms
+ Γ£ô src/domains/staffing/assignment-placement.routes.test.ts (38 tests) 45ms
+stderr | src/domains/security/single-domain-consolidation.test.ts > C) login POST ΓÇö same-origin landing + host-only 
+cookie > bad credentials / locked / malformed ΓåÆ 401 INVALID_CREDENTIALS and NO cookie
+{"schemaVersion":"1.0","timestamp":"2026-09-10T11:43:45.864Z","level":"warn","event":"auth.login.denied","requestId":nu
+ll,"meta":{"route":"/api/auth/login","outcome":"user_not_found"}}
+{"schemaVersion":"1.0","timestamp":"2026-09-10T11:43:45.866Z","level":"warn","event":"auth.login.denied","requestId":nu
+ll,"meta":{"route":"/api/auth/login","outcome":"password_mismatch"}}
+
+ Γ£ô src/domains/security/single-domain-consolidation.test.ts (17 tests) 36ms
+ Γ£ô src/domains/job-board/public-listing.params.test.ts (23 tests) 11ms
+ Γ£ô src/shared/toolchain/tsc-program-boundary.static.test.ts (12 tests) 10ms
+ Γ£ô src/domains/job-board/public-listing.static.test.ts (29 tests) 11ms
+ Γ£ô src/domains/job-board/public-detail.static.test.ts (23 tests) 10ms
+ Γ£ô src/shared/security/rate-limit-guard.test.ts (13 tests) 25ms
+ Γ£ô src/domains/staffing/4role-jobboard.integration.test.ts (9 tests) 15ms
+ Γ£ô src/shared/security/rate-limit-config.test.ts (23 tests) 21ms
+ Γ£ô src/domains/attendance/4role-attendance.integration.test.ts (12 tests) 8ms
+ Γ£ô src/shared/auth/with-auth-scope.test.ts (39 tests) 15ms
+ Γ£ô src/domains/staffing/referral-guard.canonical.test.ts (23 tests) 29ms
+ Γ¥» src/shared/ui/design-tokens.static.test.ts (12 tests | 1 failed) 45ms
+   ├ù RQ-04/AC-03 ΓÇö mß╗ìi biß║┐n CSS m├á .tsx gß╗ìi ─æß╗üu ph├ón giß║úi ─æ╞░ß╗úc > kh├┤ng c├▓n l╞░ß╗út var(--ten) n├áo trß╗Å tß╗¢i custom property kh├┤ng tß╗ôn tß║íi 32ms
+     ΓåÆ expected [ Array(1) ] to deeply equal []
+ Γ£ô src/domains/applications/application-queue.service.test.ts (22 tests) 21ms
+ Γ£ô src/domains/attendance/e2e-attendance-narrative.integration.test.ts (7 tests) 7ms
+ Γ£ô src/shared/observability/error-reporter.test.ts (14 tests) 11ms
+ Γ£ô src/shared/security/public-surface-limiter.static.test.ts (9 tests) 14ms
+ Γ£ô src/shared/auth/vendor-submissions.route.test.ts (11 tests) 41ms
+ Γ£ô src/domains/staffing/order.service.test.ts (11 tests) 22ms
+ Γ£ô src/shared/observability/correlation-id.test.ts (28 tests) 11ms
+ Γ£ô src/domains/applications/tracking-pii-containment.static.test.ts (11 tests) 11ms
+ Γ£ô src/domains/job-board/mp1.contract.test.ts (6 tests) 18ms
+ Γ£ô src/domains/security/statements-list.projection.route.test.ts (17 tests) 41ms
+ Γ£ô src/domains/job-board/public-board-route-json.test.ts (5 tests) 35ms
+ Γ£ô src/shared/security/request-body.test.ts (13 tests) 33ms
+ Γ£ô src/shared/security/rate-limit-adapters.test.ts (9 tests) 15ms
+ Γ£ô src/domains/applications/conversion.service.test.ts (9 tests) 21ms
+ Γ£ô src/shared/integrity/idempotency.test.ts (6 tests) 32ms
+ Γ£ô src/domains/security/response-projection.static.test.ts (20 tests) 18ms
+ Γ£ô src/domains/security/portal-domains.integration.test.ts (49 tests) 15ms
+ Γ£ô src/domains/staffing/transfer.service.test.ts (7 tests) 11ms
+ Γ£ô prisma/seed-portal-demo-password.static.test.ts (5 tests) 7ms
+ Γ£ô src/shared/integrity/outbox.test.ts (7 tests) 9ms
+ Γ£ô src/domains/payroll/calculateVietnameseTaxes.test.ts (16 tests) 10ms
+ Γ£ô src/shared/auth/worker-projection.test.ts (15 tests) 9ms
+ Γ£ô src/shared/projection/manifest.test.ts (8 tests) 8ms
+ Γ£ô src/shared/auth/with-authorized-db.test.ts (4 tests) 9ms
+ Γ£ô src/shared/auth/webhook-payslip.route.test.ts (21 tests) 29ms
+ Γ£ô src/shared/auth/attendance-adjustments.route.test.ts (25 tests) 45ms
+ Γ£ô src/domains/applications/tracking-mask.routes.test.ts (4 tests) 18ms
+ Γ£ô prisma/migrations-permission-hygiene.static.test.ts (4 tests) 6ms
+ Γ£ô src/domains/security/statements-generate.projection.route.test.ts (16 tests) 38ms
+ Γ£ô src/domains/applications/application.service.test.ts (9 tests) 17ms
+ Γ£ô src/shared/privacy/mask.test.ts (12 tests) 8ms
+ Γ£ô src/shared/auth/projects-master.route.test.ts (22 tests) 31ms
+ Γ£ô src/domains/security/security-matrix-portals.test.ts (18 tests) 12ms
+ Γ£ô src/shared/auth/worker-portal.route.test.ts (7 tests) 28ms
+ Γ£ô src/domains/job-board/public-detail.service.test.ts (4 tests) 11ms
+ Γ£ô src/domains/security/workers-me.projection.route.test.ts (17 tests) 18ms
+ Γ£ô src/domains/applications/application-detail-mp3.test.ts (16 tests) 13ms
+ Γ£ô src/shared/auth/disputes.route.test.ts (7 tests) 23ms
+stdout | src/domains/security/ctv-withdrawals.projection.route.test.ts > POST /api/ctv/withdrawals ΓÇö self DTO omit ctvId (AC-08) > CTV ΓåÆ 201, DTO omit ctvId; owner = session (KH├öNG nhß║¡n ctvId tß╗½ body)
+[withdrawals] created wd-1
+
+ Γ£ô src/domains/security/ctv-withdrawals.projection.route.test.ts (27 tests) 32ms
+ Γ£ô src/domains/applications/screening.service.test.ts (9 tests) 13ms
+ Γ£ô src/shared/auth/clients-master.route.test.ts (16 tests) 24ms
+ Γ£ô src/shared/integrity/state-machine.test.ts (6 tests) 6ms
+ Γ£ô src/shared/auth/with-public-db.test.ts (7 tests) 15ms
+ Γ£ô src/domains/applications/apply-helpers.test.ts (12 tests) 108ms
+ Γ£ô src/shared/auth/statements-margin.route.test.ts (17 tests) 21ms
+ Γ£ô src/domains/attendance/taxonomy-unit.test.ts (14 tests) 9ms
+ Γ£ô src/domains/security/workers-projection.contract.test.ts (4 tests) 24ms
+ Γ£ô src/shared/auth/auth-context.test.ts (8 tests) 5ms
+ Γ£ô src/domains/job-board/public-select.static.test.ts (3 tests) 4ms
+ Γ£ô src/shared/auth/cron-routes.route.test.ts (5 tests) 17ms
+ Γ£ô src/domains/staffing/talent-pool.repo.test.ts (4 tests) 8ms
+ Γ£ô src/shared/auth/vendors-master.route.test.ts (12 tests) 16ms
+ Γ£ô src/shared/auth/projects-clients-master.route.test.ts (27 tests) 26ms
+ Γ£ô src/shared/integrity/audit.test.ts (3 tests) 7ms
+ Γ£ô src/shared/auth/push-subscribe.route.test.ts (4 tests) 16ms
+ Γ£ô src/domains/applications/conversion.routes.test.ts (4 tests) 17ms
+ Γ£ô src/shared/auth/scopes/ctv-account-scope.test.ts (13 tests) 8ms
+ Γ£ô src/domains/applications/screening.routes.test.ts (4 tests) 26ms
+ Γ£ô src/domains/commission/ctv-summary.route.test.ts (4 tests) 19ms
+stderr | src/shared/auth/require-permission.test.ts > requirePermission (RQ-05, DEC-05) > WORKER thiß║┐u 
+CAN_APPROVE_PAYROLL ΓåÆ throw AuthError PERMISSION_DENIED
+{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+
+stderr | src/shared/auth/require-permission.test.ts > requireAnyPermission > kh├┤ng code n├áo pass ΓåÆ throw 
+PERMISSION_DENIED
+{"evt":"permission_denied_any","userId":"u-w-1","role":"WORKER","requiredCodes":["CAN_APPROVE_PAYROLL","CAN_EDIT_CONTRA
+CT"]}
+
+ Γ£ô src/shared/auth/require-permission.test.ts (6 tests) 9ms
+ Γ£ô src/domains/staffing/job-opening-status.test.ts (5 tests) 6ms
+ Γ£ô src/shared/auth/payroll.route.test.ts (15 tests) 19ms
+ Γ£ô src/shared/auth/public-read-guc.static.test.ts (5 tests) 7ms
+ Γ£ô src/shared/auth/finance-scope.test.ts (27 tests) 8ms
+ Γ£ô src/domains/applications/status-machine.test.ts (7 tests) 9ms
+ Γ£ô src/shared/auth/jwt.test.ts (7 tests) 20ms
+ Γ£ô src/shared/auth/cron-auth.test.ts (6 tests) 5ms
+ Γ£ô src/shared/auth/preauth-db.test.ts (2 tests) 13ms
+ Γ£ô src/shared/auth/permission-catalog.test.ts (8 tests) 6ms
+ Γ£ô src/shared/auth/internal-webhook-auth.test.ts (6 tests) 14ms
+ Γ£ô src/shared/auth/session-adapter.test.ts (30 tests) 15ms
+ Γ£ô src/domains/staffing/job-opening-status-card.test.ts (2 tests) 11ms
+ Γ£ô src/shared/auth/debug.route.test.ts (4 tests) 12ms
+ Γ£ô src/domains/staffing/referral-guard.service.test.ts (4 tests) 5ms
+ Γ£ô src/domains/security/debug-route.contract.test.ts (4 tests) 19ms
+ Γ£ô src/shared/auth/me.route.test.ts (2 tests) 14ms
+ Γ£ô src/shared/auth/user.test.ts (5 tests) 9ms
+ Γ£ô src/lib/db.test.ts (1 test) 3ms
+ Γ£ô src/shared/utils/money.test.ts (4 tests) 4ms
+ Γ£ô src/shared/auth/password.test.ts (2 tests) 416ms
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 13 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  src/domains/applications/marketplace-browse.routes.test.ts > RQ-03 ΓÇö GET /api/jobs (list) > chuyß╗ân ─æß╗º 
+bß╗Ö lß╗ìc thß║¡t tß╗½ query string xuß╗æng service, v├á Bß╗Ä tham sß╗æ ng├ánh ─æ├ú bß╗ï loß║íi
+AssertionError: expected "spy" to be called with arguments: [ Anything, { q: 'thß╗ú ─æiß╗çn', ΓÇª(6) } ]
+
+Received: 
+
+  1st spy call:
+
+  Array [
+-   Anything,
++   Object {},
+    Object {
+      "area": "Bß║»c Ninh",
+      "jobTypes": Array [
+        "toan_thoi_gian",
+      ],
+      "limit": 50,
+      "offset": 0,
+      "q": "thß╗ú ─æiß╗çn",
+      "shift": undefined,
+      "shiftTypes": Array [
+        "ca_ngay",
+        "ca_dem",
+      ],
++     "urgency": null,
+    },
+  ]
+
+
+Number of calls: 1
+
+ Γ¥» src/domains/applications/marketplace-browse.routes.test.ts:202:43
+    200| 
+    201|     // `toHaveBeenCalledWith` so khß╗¢p CH├ìNH X├üC cß║ú object ΓçÆ mß╗Öt kh├│a `ΓÇª
+    202|     expect(mocks.listPublicJobProjection).toHaveBeenCalledWith(expect.ΓÇª
+       |                                           ^
+    203|       q: 'thß╗ú ─æiß╗çn',
+    204|       area: 'Bß║»c Ninh',
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/13]ΓÄ»
+
+ FAIL  src/domains/applications/marketplace-inventory.static.test.ts > DEC-01 / RQ-01, RQ-02 ΓÇö BestJobs tab filter 
+and pagination in page.tsx > page.tsx has BestJobs tab state and fetches separately (DEC-05)
+AssertionError: expected '\'use client\';\r\n\r\nimport { useStΓÇª' to contain 'BEST_JOBS_URGENT_PREVIEW'
+
+- Expected
++ Received
+
+- BEST_JOBS_URGENT_PREVIEW
++ 'use client';
++ 
++ import { useState, useEffect, useCallback, useId } from 'react';
++ import Link from 'next/link';
++ import { useRouter } from 'next/navigation';
++ import { ApplyModal } from '@/src/domains/job-board/components/apply-modal';
++ import { SuccessModal } from '@/src/domains/job-board/components/success-modal';
++ import { AreasSection } from '@/src/domains/job-board/components/landing/areas-section';
++ import { BestJobsSection } from '@/src/domains/job-board/components/landing/best-jobs-section';
++ import { Hero } from '@/src/domains/job-board/components/landing/hero';
++ import { RecruitmentHighlight } from '@/src/domains/job-board/components/landing/recruitment-highlight';
++ import { RecruitingProjectsSection } from '@/src/domains/job-board/components/landing/recruiting-projects-section';
++ import { ReferralStrip } from '@/src/domains/job-board/components/landing/referral-strip';
++ import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
++ import { buildListingHref } from '@/src/domains/job-board/public-listing.params';
++ import type {
++   PublicJobDto,
++   PublicJobFacets,
++   PublicJobListResult,
++   PublicJobOverview,
++ } from '@/src/domains/job-board/public.service';
++ 
++ 
++ 
++ const EMPTY_FACETS: PublicJobFacets = { areas: [], shifts: [] };
++ const EMPTY_OVERVIEW: PublicJobOverview = {
++   totals: { jobs: 0, slots: 0, areas: 0 },
++   areaCounts: [],
++   shiftCounts: [],
++   newest: [],
++   topPaid: [],
++ };
++ 
++ 
++ const BEST_JOBS_PAGE_SIZE = 9;
++ 
++ export interface EnrichedJob {
++   id: string;
++   slug: string;
++   title: string;
++   locations: string[];
++   badgeType: 'urgent' | 'closing' | null;
++   salaryMinVnd: number | null;
++   salaryMaxVnd: number | null;
++   availableSlots: number;
++   
++   postedAt: string | null;
++ }
++ 
++ function enrichJob(job: PublicJobDto): EnrichedJob {
++   const { salaryMinVnd, salaryMaxVnd, urgency, postedAt } = job;
++   return {
++     id: job.id,
++     slug: job.slug ?? job.id,
++     title: job.title,
++     locations: job.locations,
++     badgeType: urgency === 'URGENT' ? 'urgent' : urgency === 'CLOSING' ? 'closing' : null,
++     salaryMinVnd,
++     salaryMaxVnd,
++     availableSlots: job.availableSlots,
++     postedAt: postedAt ?? null,
++   };
++ }
++ 
++ 
++ 
++ function buildBestJobsQuery(offset: number): string {
++   const params = new URLSearchParams({ limit: String(BEST_JOBS_PAGE_SIZE), offset: String(offset) });
++   return params.toString();
++ }
++ 
++ 
++ 
++ export default function JobsPage() {
++   const router = useRouter();
++ 
++   const [keyword, setKeyword] = useState('');
++   const [area, setArea] = useState('');
++   const [shift, setShift] = useState('');
++   const [facets, setFacets] = useState<PublicJobFacets>(EMPTY_FACETS);
++   const [overview, setOverview] = useState<PublicJobOverview>(EMPTY_OVERVIEW);
++   const [applyJob, setApplyJob] = useState<EnrichedJob | null>(null);
++   const [appliedIds, setAppliedIds] = useState<string[]>([]);
++   const [successCode, setSuccessCode] = useState('');
++ 
++   
++   const [bestJobsTab, setBestJobsTab] = useState<'all' | 'urgent'>('all');
++   const [bestJobsOffset, setBestJobsOffset] = useState(0);
++   const [bestJobsData, setBestJobsData] = useState<{ jobs: EnrichedJob[]; total: number; bestJobsNextOffset: number 
+| null }>({
++     jobs: [],
++     total: 0,
++     bestJobsNextOffset: null,
++   });
++   
++   const [bestJobsUrgentOffset, setBestJobsUrgentOffset] = useState(0);
++   const [bestJobsUrgentData, setBestJobsUrgentData] = useState<{ jobs: EnrichedJob[]; total: number; 
+bestJobsNextOffset: number | null }>({
++     jobs: [],
++     total: 0,
++     bestJobsNextOffset: null,
++   });
++   const [bestJobsLoading, setBestJobsLoading] = useState(false);
++ 
++   
++   
++   const bootstrapBestJobs = useCallback(
++     (offset: number) => {
++       if (bestJobsTab !== 'all') return;
++ 
++       let cancelled = false;
++       setBestJobsLoading(true);
++ 
++       fetch(`/api/jobs?${buildBestJobsQuery(offset)}`, { cache: 'no-store' })
++         .then((res) => {
++           if (!res.ok) throw new Error(`Lß╗ùi ${res.status}`);
++           return res.json() as Promise<PublicJobListResult>;
++         })
++         .then((data) => {
++           if (cancelled) return;
++           const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
++           setBestJobsData({
++             jobs: incoming,
++             total: typeof data.total === 'number' ? data.total : 0,
++             bestJobsNextOffset: typeof data.nextOffset === 'number' ? data.nextOffset : null,
++           });
++           setFacets(data.facets ?? EMPTY_FACETS);
++           setOverview(data.overview ?? EMPTY_OVERVIEW);
++         })
++         .catch((e) => {
++           if (cancelled) return;
++           console.warn('bootstrapBestJobs error:', e instanceof Error ? e.message : e);
++         })
++         .finally(() => {
++           if (!cancelled) setBestJobsLoading(false);
++         });
++     },
++     [bestJobsTab],
++   );
++ 
++   
++   useEffect(() => {
++     bootstrapBestJobs(bestJobsOffset);
++   }, [bestJobsOffset, bootstrapBestJobs]);
++ 
++   
++   const bootstrapBestJobsUrgent = useCallback(
++     (offset: number) => {
++       if (bestJobsTab !== 'urgent') return;
++ 
++       let cancelled = false;
++       setBestJobsLoading(true);
++ 
++       fetch(`/api/jobs?urgency=URGENT&${buildBestJobsQuery(offset)}`, { cache: 'no-store' })
++         .then((res) => {
++           if (!res.ok) throw new Error(`Lß╗ùi ${res.status}`);
++           return res.json() as Promise<PublicJobListResult>;
++         })
++         .then((data) => {
++           if (cancelled) return;
++           const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
++           
++           setBestJobsUrgentData({
++             jobs: incoming,
++             total: typeof data.total === 'number' ? data.total : 0,
++             bestJobsNextOffset: typeof data.nextOffset === 'number' ? data.nextOffset : null,
++           });
++         })
++         .catch((e) => {
++           if (cancelled) return;
++           console.warn('bootstrapBestJobsUrgent error:', e instanceof Error ? e.message : e);
++         })
++         .finally(() => {
++           if (!cancelled) setBestJobsLoading(false);
++         });
++     },
++     [bestJobsTab],
++   );
++ 
++   
++   useEffect(() => {
++     bootstrapBestJobsUrgent(bestJobsUrgentOffset);
++   }, [bestJobsUrgentOffset, bootstrapBestJobsUrgent]);
++ 
++   
++   function handleSearch(e: React.FormEvent) {
++     e.preventDefault();
++     router.push(buildListingHref({ q: keyword.trim() || undefined, area: area || undefined, shift: shift || 
+undefined, offset: 0 }));
++   }
++ 
++   
++   function applyArea(value: string) {
++     setArea(value);
++     router.push(buildListingHref({ q: keyword.trim() || undefined, area: value || undefined, shift: shift || 
+undefined, offset: 0 }));
++   }
++ 
++   function handleApply(job: EnrichedJob) {
++     setApplyJob(job);
++     setSuccessCode('');
++   }
++ 
++   function handleApplySuccess(code: string) {
++     if (applyJob) setAppliedIds((prev) => [...prev, applyJob.id]);
++     setApplyJob(null);
++     setSuccessCode(code);
++   }
++ 
++   
++   function handleBestJobsTabChange(tab: 'all' | 'urgent') {
++     setBestJobsTab(tab);
++     
++     if (tab === 'all') {
++       setBestJobsOffset(0);
++     } else {
++       setBestJobsUrgentOffset(0);
++     }
++   }
++ 
++   function handleBestJobsPrev() {
++     if (bestJobsTab === 'all') {
++       setBestJobsOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
++     } else {
++       setBestJobsUrgentOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
++     }
++   }
++ 
++   function handleBestJobsNext() {
++     if (bestJobsTab === 'all') {
++       setBestJobsOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
++     } else {
++       setBestJobsUrgentOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
++     }
++   }
++ 
++   
++   const featuredSource = overview.newest[0] ?? overview.topPaid[0] ?? null;
++   const featuredJobs = (overview.newest.length > 0 ? overview.newest : overview.topPaid)
++     .slice(0, 3)
++     .map(enrichJob);
++ 
++   
++   const recruitingSource = (overview.newest.length > 0 ? overview.newest : overview.topPaid).slice(0, 4);
++   const recruitingProjects: EnrichedJob[] = recruitingSource.map(enrichJob);
++ 
++   
++   const areasForCards: Array<{ name: string; count: number }> = facets.areas.slice(0, 4).map((name) => {
++     const found = overview.areaCounts.find((entry) => entry.value === name);
++     return { name, count: found?.count ?? 0 };
++   });
++ 
++   
++   const bestJobsDisplayJobs = bestJobsTab === 'all' ? bestJobsData.jobs : bestJobsUrgentData.jobs;
++   const bestJobsDisplayTotal =
++     bestJobsTab === 'all' ? bestJobsData.total : bestJobsUrgentData.total;
++   const bestJobsDisplayNextOffset = bestJobsTab === 'all' ? bestJobsData.bestJobsNextOffset : 
+bestJobsUrgentData.bestJobsNextOffset;
++ 
++   return (
++     <main id="hrp-main" tabIndex={-1} className="flex w-full flex-col items-stretch gap-0">
++       <Hero>
++         <div className="flex min-w-0 flex-1 flex-col justify-center gap-6 text-on-primary">
++           <p className="font-label text-label-md font-bold uppercase tracking-widest text-secondary-fixed">
++             C├╣ng t├¼m kiß║┐m
++           </p>
++           <h1 className="font-head text-headline-xl font-bold leading-tight text-on-primary">
++             C├┤ng viß╗çc m╞í ╞░ß╗¢c cß╗ºa bß║ín
++           </h1>
++           <p className="font-body text-body-lg text-on-primary/90">
++             {overview.totals.jobs > 0
++               ? `─Éang tuyß╗ân ${overview.totals.jobs} viß╗çc l├ám tß║íi ${overview.totals.areas} khu vß╗▒c. ß╗¿ng 
+tuyß╗ân kh├┤ng cß║ºn t├ái khoß║ún.`
++               : 'Viß╗çc l├ám theo ca, ß╗⌐ng tuyß╗ân kh├┤ng cß║ºn t├ái khoß║ún.'}
++           </p>
++           <form
++             onSubmit={handleSearch}
++             
++             className="flex flex-col gap-3 rounded-2xl border border-outline-variant bg-white p-3 sm:flex-row 
+sm:items-end sm:p-4"
++             data-testid="hero-search-card"
++           >
++             <div className="flex-1">
++               <label
++                 htmlFor="hrp-hero-keyword"
++                 
++                 className="mb-1 block font-label text-label-sm font-bold text-on-surface"
++               >
++                 Tß╗½ kh├│a
++               </label>
++               <input
++                 id="hrp-hero-keyword"
++                 type="search"
++                 value={keyword}
++                 onChange={(e) => setKeyword(e.target.value)}
++                 placeholder="T├¬n c├┤ng viß╗çc, vß╗ï tr├¡..."
++                 
++                 className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 
+text-on-surface min-h-11 placeholder:text-on-surface-variant"
++               />
++             </div>
++             <div className="flex-1">
++               <label
++                 htmlFor="hrp-hero-area"
++                 
++                 className="mb-1 block font-label text-label-sm font-bold text-on-surface"
++               >
++                 Khu vß╗▒c
++               </label>
++               <select
++                 id="hrp-hero-area"
++                 value={area}
++                 onChange={(e) => setArea(e.target.value)}
++                 
++                 className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 
+text-on-surface min-h-11"
++               >
++                 <option value="">Tß║Ñt cß║ú khu vß╗▒c</option>
++                 {facets.areas.map((entry) => (
++                   <option key={entry} value={entry}>
++                     {entry}
++                   </option>
++                 ))}
++               </select>
++             </div>
++             <div className="flex-1">
++               <label
++                 htmlFor="hrp-hero-salary"
++                 
++                 className="mb-1 block font-label text-label-sm font-bold text-on-surface"
++               >
++                 Mß╗⌐c l╞░╞íng ΓÇö sß║»p c├│
++               </label>
++               <select
++                 id="hrp-hero-salary"
++                 disabled
++                 aria-disabled="true"
++                 className="hrp-focus w-full cursor-not-allowed rounded-lg border border-outline-variant 
+bg-surface-container-low px-3 py-2.5 text-on-surface-variant opacity-70 min-h-11"
++               >
++                 <option value="">Mß╗ìi mß╗⌐c l╞░╞íng</option>
++               </select>
++             </div>
++             <button
++               type="submit"
++               aria-busy={false}
++               className="hrp-btn-primary hrp-focus nav-item-lift min-h-11 rounded-lg px-6 font-label text-label-md 
+font-semibold whitespace-nowrap"
++             >
++               T├¼m viß╗çc
++             </button>
++           </form>
++         </div>
++         <div className="hidden w-full max-w-md flex-shrink-0 lg:block">
++           <RecruitmentHighlight />
++         </div>
++       </Hero>
++ 
++       {}
++       <BestJobsSection
++         jobs={bestJobsDisplayJobs}
++         total={bestJobsDisplayTotal}
++         pageSize={BEST_JOBS_PAGE_SIZE}
++         offset={bestJobsTab === 'all' ? bestJobsOffset : bestJobsUrgentOffset}
++         nextOffset={bestJobsDisplayNextOffset}
++         tab={bestJobsTab}
++         onTabChange={handleBestJobsTabChange}
++         onPrev={handleBestJobsPrev}
++         onNext={handleBestJobsNext}
++         
++         buildHref={(jobSlug) => publicJobDetailPath(jobSlug)}
++         
++         onApply={handleApply}
++       />
++ 
++       <AreasSection areas={areasForCards} onPick={applyArea} />
++ 
++       <RecruitingProjectsSection
++         jobs={recruitingProjects.map((job) => ({
++           id: job.id,
++           title: job.title,
++           availableSlots: job.availableSlots,
++         }))}
++         buildHref={(jobId) => publicJobDetailPath(jobId)}
++       />
++ 
++       <ReferralStrip />
++ 
++       {applyJob && (
++         <ApplyModal
++           job={applyJob}
++           onClose={() => setApplyJob(null)}
++           onSuccess={handleApplySuccess}
++         />
++       )}
++ 
++       {successCode && <SuccessModal code={successCode} onClose={() => setSuccessCode('')} />}
++     </main>
++   );
++ }
++
+
+ Γ¥» src/domains/applications/marketplace-inventory.static.test.ts:422:18
+    420|     expect(code).toContain("/api/jobs?");
+    421|     // Tab 'urgent' uses fixture
+    422|     expect(code).toContain('BEST_JOBS_URGENT_PREVIEW');
+       |                  ^
+    423|   });
+    424| 
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/13]ΓÄ»
+
+ FAIL  src/domains/applications/marketplace-inventory.static.test.ts > DEC-01 / RQ-01, RQ-02 ΓÇö BestJobs tab filter 
+and pagination in page.tsx > BestJobs tab does NOT send urgency=URGENT to server (DEC-01 / B4 ΓåÆ AV1)
+AssertionError: expected '\'use client\';\r\n\r\nimport { useStΓÇª' not to match /\/api\/jobs\?.*urgency=URGENT/api\
+
+- Expected: 
+/\/api\/jobs\?.*urgency=URGENT/
+
++ Received: 
+"'use client';
+
+import { useState, useEffect, useCallback, useId } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { ApplyModal } from '@/src/domains/job-board/components/apply-modal';
+import { SuccessModal } from '@/src/domains/job-board/components/success-modal';
+import { AreasSection } from '@/src/domains/job-board/components/landing/areas-section';
+import { BestJobsSection } from '@/src/domains/job-board/components/landing/best-jobs-section';
+import { Hero } from '@/src/domains/job-board/components/landing/hero';
+import { RecruitmentHighlight } from '@/src/domains/job-board/components/landing/recruitment-highlight';
+import { RecruitingProjectsSection } from '@/src/domains/job-board/components/landing/recruiting-projects-section';
+import { ReferralStrip } from '@/src/domains/job-board/components/landing/referral-strip';
+import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
+import { buildListingHref } from '@/src/domains/job-board/public-listing.params';
+import type {
+  PublicJobDto,
+  PublicJobFacets,
+  PublicJobListResult,
+  PublicJobOverview,
+} from '@/src/domains/job-board/public.service';
+
+
+
+const EMPTY_FACETS: PublicJobFacets = { areas: [], shifts: [] };
+const EMPTY_OVERVIEW: PublicJobOverview = {
+  totals: { jobs: 0, slots: 0, areas: 0 },
+  areaCounts: [],
+  shiftCounts: [],
+  newest: [],
+  topPaid: [],
+};
+
+
+const BEST_JOBS_PAGE_SIZE = 9;
+
+export interface EnrichedJob {
+  id: string;
+  slug: string;
+  title: string;
+  locations: string[];
+  badgeType: 'urgent' | 'closing' | null;
+  salaryMinVnd: number | null;
+  salaryMaxVnd: number | null;
+  availableSlots: number;
+  
+  postedAt: string | null;
+}
+
+function enrichJob(job: PublicJobDto): EnrichedJob {
+  const { salaryMinVnd, salaryMaxVnd, urgency, postedAt } = job;
+  return {
+    id: job.id,
+    slug: job.slug ?? job.id,
+    title: job.title,
+    locations: job.locations,
+    badgeType: urgency === 'URGENT' ? 'urgent' : urgency === 'CLOSING' ? 'closing' : null,
+    salaryMinVnd,
+    salaryMaxVnd,
+    availableSlots: job.availableSlots,
+    postedAt: postedAt ?? null,
+  };
+}
+
+
+
+function buildBestJobsQuery(offset: number): string {
+  const params = new URLSearchParams({ limit: String(BEST_JOBS_PAGE_SIZE), offset: String(offset) });
+  return params.toString();
+}
+
+
+
+export default function JobsPage() {
+  const router = useRouter();
+
+  const [keyword, setKeyword] = useState('');
+  const [area, setArea] = useState('');
+  const [shift, setShift] = useState('');
+  const [facets, setFacets] = useState<PublicJobFacets>(EMPTY_FACETS);
+  const [overview, setOverview] = useState<PublicJobOverview>(EMPTY_OVERVIEW);
+  const [applyJob, setApplyJob] = useState<EnrichedJob | null>(null);
+  const [appliedIds, setAppliedIds] = useState<string[]>([]);
+  const [successCode, setSuccessCode] = useState('');
+
+  
+  const [bestJobsTab, setBestJobsTab] = useState<'all' | 'urgent'>('all');
+  const [bestJobsOffset, setBestJobsOffset] = useState(0);
+  const [bestJobsData, setBestJobsData] = useState<{ jobs: EnrichedJob[]; total: number; bestJobsNextOffset: number | 
+null }>({
+    jobs: [],
+    total: 0,
+    bestJobsNextOffset: null,
+  });
+  
+  const [bestJobsUrgentOffset, setBestJobsUrgentOffset] = useState(0);
+  const [bestJobsUrgentData, setBestJobsUrgentData] = useState<{ jobs: EnrichedJob[]; total: number; 
+bestJobsNextOffset: number | null }>({
+    jobs: [],
+    total: 0,
+    bestJobsNextOffset: null,
+  });
+  const [bestJobsLoading, setBestJobsLoading] = useState(false);
+
+  
+  
+  const bootstrapBestJobs = useCallback(
+    (offset: number) => {
+      if (bestJobsTab !== 'all') return;
+
+      let cancelled = false;
+      setBestJobsLoading(true);
+
+      fetch(`/api/jobs?${buildBestJobsQuery(offset)}`, { cache: 'no-store' })
+        .then((res) => {
+          if (!res.ok) throw new Error(`Lß╗ùi ${res.status}`);
+          return res.json() as Promise<PublicJobListResult>;
+        })
+        .then((data) => {
+          if (cancelled) return;
+          const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
+          setBestJobsData({
+            jobs: incoming,
+            total: typeof data.total === 'number' ? data.total : 0,
+            bestJobsNextOffset: typeof data.nextOffset === 'number' ? data.nextOffset : null,
+          });
+          setFacets(data.facets ?? EMPTY_FACETS);
+          setOverview(data.overview ?? EMPTY_OVERVIEW);
+        })
+        .catch((e) => {
+          if (cancelled) return;
+          console.warn('bootstrapBestJobs error:', e instanceof Error ? e.message : e);
+        })
+        .finally(() => {
+          if (!cancelled) setBestJobsLoading(false);
+        });
+    },
+    [bestJobsTab],
+  );
+
+  
+  useEffect(() => {
+    bootstrapBestJobs(bestJobsOffset);
+  }, [bestJobsOffset, bootstrapBestJobs]);
+
+  
+  const bootstrapBestJobsUrgent = useCallback(
+    (offset: number) => {
+      if (bestJobsTab !== 'urgent') return;
+
+      let cancelled = false;
+      setBestJobsLoading(true);
+
+      fetch(`/api/jobs?urgency=URGENT&${buildBestJobsQuery(offset)}`, { cache: 'no-store' })
+        .then((res) => {
+          if (!res.ok) throw new Error(`Lß╗ùi ${res.status}`);
+          return res.json() as Promise<PublicJobListResult>;
+        })
+        .then((data) => {
+          if (cancelled) return;
+          const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
+          
+          setBestJobsUrgentData({
+            jobs: incoming,
+            total: typeof data.total === 'number' ? data.total : 0,
+            bestJobsNextOffset: typeof data.nextOffset === 'number' ? data.nextOffset : null,
+          });
+        })
+        .catch((e) => {
+          if (cancelled) return;
+          console.warn('bootstrapBestJobsUrgent error:', e instanceof Error ? e.message : e);
+        })
+        .finally(() => {
+          if (!cancelled) setBestJobsLoading(false);
+        });
+    },
+    [bestJobsTab],
+  );
+
+  
+  useEffect(() => {
+    bootstrapBestJobsUrgent(bestJobsUrgentOffset);
+  }, [bestJobsUrgentOffset, bootstrapBestJobsUrgent]);
+
+  
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    router.push(buildListingHref({ q: keyword.trim() || undefined, area: area || undefined, shift: shift || undefined, 
+offset: 0 }));
+  }
+
+  
+  function applyArea(value: string) {
+    setArea(value);
+    router.push(buildListingHref({ q: keyword.trim() || undefined, area: value || undefined, shift: shift || 
+undefined, offset: 0 }));
+  }
+
+  function handleApply(job: EnrichedJob) {
+    setApplyJob(job);
+    setSuccessCode('');
+  }
+
+  function handleApplySuccess(code: string) {
+    if (applyJob) setAppliedIds((prev) => [...prev, applyJob.id]);
+    setApplyJob(null);
+    setSuccessCode(code);
+  }
+
+  
+  function handleBestJobsTabChange(tab: 'all' | 'urgent') {
+    setBestJobsTab(tab);
+    
+    if (tab === 'all') {
+      setBestJobsOffset(0);
+    } else {
+      setBestJobsUrgentOffset(0);
+    }
+  }
+
+  function handleBestJobsPrev() {
+    if (bestJobsTab === 'all') {
+      setBestJobsOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
+    } else {
+      setBestJobsUrgentOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
+    }
+  }
+
+  function handleBestJobsNext() {
+    if (bestJobsTab === 'all') {
+      setBestJobsOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
+    } else {
+      setBestJobsUrgentOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
+    }
+  }
+
+  
+  const featuredSource = overview.newest[0] ?? overview.topPaid[0] ?? null;
+  const featuredJobs = (overview.newest.length > 0 ? overview.newest : overview.topPaid)
+    .slice(0, 3)
+    .map(enrichJob);
+
+  
+  const recruitingSource = (overview.newest.length > 0 ? overview.newest : overview.topPaid).slice(0, 4);
+  const recruitingProjects: EnrichedJob[] = recruitingSource.map(enrichJob);
+
+  
+  const areasForCards: Array<{ name: string; count: number }> = facets.areas.slice(0, 4).map((name) => {
+    const found = overview.areaCounts.find((entry) => entry.value === name);
+    return { name, count: found?.count ?? 0 };
+  });
+
+  
+  const bestJobsDisplayJobs = bestJobsTab === 'all' ? bestJobsData.jobs : bestJobsUrgentData.jobs;
+  const bestJobsDisplayTotal =
+    bestJobsTab === 'all' ? bestJobsData.total : bestJobsUrgentData.total;
+  const bestJobsDisplayNextOffset = bestJobsTab === 'all' ? bestJobsData.bestJobsNextOffset : 
+bestJobsUrgentData.bestJobsNextOffset;
+
+  return (
+    <main id=\"hrp-main\" tabIndex={-1} className=\"flex w-full flex-col items-stretch gap-0\">
+      <Hero>
+        <div className=\"flex min-w-0 flex-1 flex-col justify-center gap-6 text-on-primary\">
+          <p className=\"font-label text-label-md font-bold uppercase tracking-widest text-secondary-fixed\">
+            C├╣ng t├¼m kiß║┐m
+          </p>
+          <h1 className=\"font-head text-headline-xl font-bold leading-tight text-on-primary\">
+            C├┤ng viß╗çc m╞í ╞░ß╗¢c cß╗ºa bß║ín
+          </h1>
+          <p className=\"font-body text-body-lg text-on-primary/90\">
+            {overview.totals.jobs > 0
+              ? `─Éang tuyß╗ân ${overview.totals.jobs} viß╗çc l├ám tß║íi ${overview.totals.areas} khu vß╗▒c. ß╗¿ng 
+tuyß╗ân kh├┤ng cß║ºn t├ái khoß║ún.`
+              : 'Viß╗çc l├ám theo ca, ß╗⌐ng tuyß╗ân kh├┤ng cß║ºn t├ái khoß║ún.'}
+          </p>
+          <form
+            onSubmit={handleSearch}
+            
+            className=\"flex flex-col gap-3 rounded-2xl border border-outline-variant bg-white p-3 sm:flex-row 
+sm:items-end sm:p-4\"
+            data-testid=\"hero-search-card\"
+          >
+            <div className=\"flex-1\">
+              <label
+                htmlFor=\"hrp-hero-keyword\"
+                
+                className=\"mb-1 block font-label text-label-sm font-bold text-on-surface\"
+              >
+                Tß╗½ kh├│a
+              </label>
+              <input
+                id=\"hrp-hero-keyword\"
+                type=\"search\"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder=\"T├¬n c├┤ng viß╗çc, vß╗ï tr├¡...\"
+                
+                className=\"hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 
+text-on-surface min-h-11 placeholder:text-on-surface-variant\"
+              />
+            </div>
+            <div className=\"flex-1\">
+              <label
+                htmlFor=\"hrp-hero-area\"
+                
+                className=\"mb-1 block font-label text-label-sm font-bold text-on-surface\"
+              >
+                Khu vß╗▒c
+              </label>
+              <select
+                id=\"hrp-hero-area\"
+                value={area}
+                onChange={(e) => setArea(e.target.value)}
+                
+                className=\"hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 
+text-on-surface min-h-11\"
+              >
+                <option value=\"\">Tß║Ñt cß║ú khu vß╗▒c</option>
+                {facets.areas.map((entry) => (
+                  <option key={entry} value={entry}>
+                    {entry}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className=\"flex-1\">
+              <label
+                htmlFor=\"hrp-hero-salary\"
+                
+                className=\"mb-1 block font-label text-label-sm font-bold text-on-surface\"
+              >
+                Mß╗⌐c l╞░╞íng ΓÇö sß║»p c├│
+              </label>
+              <select
+                id=\"hrp-hero-salary\"
+                disabled
+                aria-disabled=\"true\"
+                className=\"hrp-focus w-full cursor-not-allowed rounded-lg border border-outline-variant 
+bg-surface-container-low px-3 py-2.5 text-on-surface-variant opacity-70 min-h-11\"
+              >
+                <option value=\"\">Mß╗ìi mß╗⌐c l╞░╞íng</option>
+              </select>
+            </div>
+            <button
+              type=\"submit\"
+              aria-busy={false}
+              className=\"hrp-btn-primary hrp-focus nav-item-lift min-h-11 rounded-lg px-6 font-label text-label-md 
+font-semibold whitespace-nowrap\"
+            >
+              T├¼m viß╗çc
+            </button>
+          </form>
+        </div>
+        <div className=\"hidden w-full max-w-md flex-shrink-0 lg:block\">
+          <RecruitmentHighlight />
+        </div>
+      </Hero>
+
+      {}
+      <BestJobsSection
+        jobs={bestJobsDisplayJobs}
+        total={bestJobsDisplayTotal}
+        pageSize={BEST_JOBS_PAGE_SIZE}
+        offset={bestJobsTab === 'all' ? bestJobsOffset : bestJobsUrgentOffset}
+        nextOffset={bestJobsDisplayNextOffset}
+        tab={bestJobsTab}
+        onTabChange={handleBestJobsTabChange}
+        onPrev={handleBestJobsPrev}
+        onNext={handleBestJobsNext}
+        
+        buildHref={(jobSlug) => publicJobDetailPath(jobSlug)}
+        
+        onApply={handleApply}
+      />
+
+      <AreasSection areas={areasForCards} onPick={applyArea} />
+
+      <RecruitingProjectsSection
+        jobs={recruitingProjects.map((job) => ({
+          id: job.id,
+          title: job.title,
+          availableSlots: job.availableSlots,
+        }))}
+        buildHref={(jobId) => publicJobDetailPath(jobId)}
+      />
+
+      <ReferralStrip />
+
+      {applyJob && (
+        <ApplyModal
+          job={applyJob}
+          onClose={() => setApplyJob(null)}
+          onSuccess={handleApplySuccess}
+        />
+      )}
+
+      {successCode && <SuccessModal code={successCode} onClose={() => setSuccessCode('')} />}
+    </main>
+  );
+}
+"
+
+ Γ¥» src/domains/applications/marketplace-inventory.static.test.ts:442:22
+    440|     // No urgency filter in the BestJobs fetch URL pattern
+    441|     expect(code).not.toMatch(/params\.set\(['"]urgency['"],['"]URGENT[ΓÇª
+    442|     expect(code).not.toMatch(/\/api\/jobs\?.*urgency=URGENT/);
+       |                      ^
+    443|   });
+    444| 
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/13]ΓÄ»
+
+ FAIL  src/domains/job-board/public-ui-premium.static.test.ts > go-live-08 / RQ-02, RQ-03, RQ-04 ΓÇö card viß╗çc l├ám 
+> padding card bß║▒ng token 24px v├á cß╗í t├¬n viß╗çc l├ám ─æ├ú t─âng cß║Ñp
+AssertionError: expected 'import Link from \'next/link\';\nimpoΓÇª' to contain 'font-head text-headline-md font-bold'
+
+- Expected
++ Received
+
+- font-head text-headline-md font-bold
++ import Link from 'next/link';
++ import { MapPin, Clock3, Banknote, Flame } from 'lucide-react';
++ import type { EnrichedJob } from '@/app/(portal)/page';
++ import { HrMonogram } from './hr-monogram';
++
++ export interface FeaturedJobCardProps {
++   /** Job data ΓÇö EnrichedJob shape from page.tsx */
++   job: {
++     id: string;
++     slug: string;
++     title: string;
++     salaryMinVnd: number | null;
++     salaryMaxVnd: number | null;
++     location?: string | null;
++     badgeType?: 'urgent' | 'new' | null;
++     source?: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
++     /** RQ-20: ISO timestamp of newest visible order ΓÇö render only when truthy */
++     postedAt?: string | null;
++   };
++   /** Canonical detail URL built by BestJobsSection via buildHref(job.slug) */
++   href: string;
++   /** Called when REAL card CTA is clicked ΓÇö triggers ApplyModal via page-level closure. */
++   onApply?: () => void;
++ }
++
++ /** Formats VND salary range for display. */
++ function salaryLabel(min: number | null, max: number | null): string {
++   if (min === null) return 'L╞░╞íng th╞░╞íng l╞░ß╗úng';
++   const VND_FORMAT = new Intl.NumberFormat('vi-VN');
++   const from = VND_FORMAT.format(min);
++   if (max !== null && max !== min) return `${from} ΓÇô ${VND_FORMAT.format(max)} ─æ/giß╗¥`;
++   return `${from} ─æ/giß╗¥`;
++ }
++
++ /** True when the card should behave as a preview/DEMO (fixture data, not live). */
++ function isPreview(job: FeaturedJobCardProps['job']): boolean {
++   return (
++     job.source === 'DEMO' ||
++     job.source === 'INTEGRATION_PENDING' ||
++     job.id.startsWith('preview-')
++   );
++ }
++
++ /** Formats postedAt ISO to a short date label for display. */
++ function postedAtLabel(iso: string | null | undefined): string {
++   if (!iso) return '';
++   try {
++     const date = new Date(iso);
++     return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
++   } catch {
++     return '';
++   }
++ }
++
++ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
++   const preview = isPreview(job);
++   const displaySalary = salaryLabel(job.salaryMinVnd, job.salaryMaxVnd);
++   const postedAtDisplay = postedAtLabel(job.postedAt);
++
++   return (
++     <article
++       data-testid={`featured-job-${job.id}`}
++       /* RQ-14: Minimal SaaS surface ΓÇö white bg + slate border + rounded-xl + shadow-sm */
++       className="hrp-focus group relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 
+bg-white shadow-sm transition-all duration-200 hover:shadow-md"
++     >
++       {/* RQ-09/RQ-10/RQ-23: Ribbon compact ΓÇö top-right overlay, pointer-events-none, ~24-28px height */}
++       {job.badgeType === 'urgent' && (
++         <span
++           /* pointer-events-none: overlay does not push content; RQ-09: no pr-[72px] on title */
++           className="pointer-events-none absolute top-0 right-0 z-20 flex items-center gap-1 rounded-bl-md border-l 
+border-b border-orange-300/40 bg-orange-500/75 px-2 py-1 text-white backdrop-blur-[1px]"
++           aria-label="Tuyß╗ân gß║Ñp"
++         >
++           <Flame className="h-3 w-3 shrink-0" aria-hidden="true" />
++           <span className="text-[11px] font-semibold leading-none">Tuyß╗ân gß║Ñp</span>
++         </span>
++       )}
++
++       {/* ΓöÇΓöÇΓöÇ Header ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
++       {/* RQ-15: 2-col layout ΓÇö logo fixed 48px square + content column with min-w-0 */}
++       <div className="flex items-start gap-3 p-4">
++         <HrMonogram
++           size={48}
++           className="h-12 w-12 shrink-0 rounded-lg border border-slate-100 bg-white"
++         />
++         <div className="min-w-0 flex-1">
++           <h3
++             className="text-lg font-semibold leading-tight text-slate-900 transition group-hover:text-blue-700 
+mb-0.5"
++             title={job.title}
++           >
++             {job.title}
++           </h3>
++           <p className="text-sm font-medium text-slate-500">
++             HRP Viß╗çt Nam
++           </p>
++         </div>
++       </div>
++
++       {/* ΓöÇΓöÇΓöÇ Body / Metadata ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
++       {/* RQ-16: responsive row with Lucide icons */}
++       <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 pb-3">
++         {job.location && (
++           <span className="inline-flex items-center gap-1 text-sm text-slate-500">
++             <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
++             <span>{job.location}</span>
++           </span>
++         )}
++         {postedAtDisplay && (
++           <span className="inline-flex items-center gap-1 text-sm text-slate-500">
++             <Clock3 className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
++             <span>{postedAtDisplay}</span>
++           </span>
++         )}
++       </div>
++
++       {/* ΓöÇΓöÇΓöÇ Footer / Actions ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
++       {/* RQ-17/RQ-18/RQ-19: salary pill (left) + Xem chi tiß║┐t CTA blue (right) */}
++       <div className="mt-auto flex items-center gap-2 border-t border-slate-100 p-4">
++         {/* RQ-17: Salary pill ΓÇö inline emerald, NOT full-width slab */}
++         <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-1 text-sm font-semibold 
+text-emerald-700">
++           <Banknote className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
++           <span>{displaySalary}</span>
++         </span>
++
++         {/* Spacer */}
++         <span className="flex-1" />
++
++         {/* RQ-18/RQ-24: Xem chi tiß║┐t ΓÇö Link and CTA share same canonical href */}
++         <Link
++           href={href}
++           className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white 
+transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 
+focus-visible:outline-blue-600"
++         >
++           <span>Xem chi tiß║┐t</span>
++           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" 
+aria-hidden="true">
++             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
++           </svg>
++         </Link>
++
++         {/* RQ-18/RQ-19: Quick Apply ΓÇö pill-sized compact, hover-trigger desktop, accessible mobile */}
++         <button
++           type="button"
++           disabled={preview}
++           onClick={preview ? undefined : onApply}
++           className={`inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors 
+focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
++             ${preview
++               ? 'cursor-not-allowed bg-slate-100 text-slate-400 opacity-60'
++               : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus-visible:outline-slate-400'
++             }`}
++           aria-label={preview ? 'Bß║ún xem tr╞░ß╗¢c' : 'ß╗¿ng tuyß╗ân nhanh'}
++           data-testid="featured-job-cta"
++         >
++           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" 
+aria-hidden="true">
++             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 
+0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
++           </svg>
++           <span className="hidden sm:inline">{preview ? 'Bß║ún xem tr╞░ß╗¢c' : 'ß╗¿ng tuyß╗ân'}</span>
++         </button>
++       </div>
++     </article>
++   );
++ }
++
+
+ Γ¥» src/domains/job-board/public-ui-premium.static.test.ts:171:18
+    169|     expect(base).toContain('padding: var(--spacing-card-padding);');
+    170|     // ui-03: title uses `font-head text-headline-md font-bold` (not `ΓÇª
+    171|     expect(CARD).toContain('font-head text-headline-md font-bold');
+       |                  ^
+    172|     // RQ-01: page.tsx no longer has inline list cards ΓÇö title patternΓÇª
+    173|     expect(CARD).not.toContain('<h3 className="text-lg font-bold"');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/13]ΓÄ»
+
+ FAIL  src/domains/job-board/public-ui-premium.static.test.ts > go-live-08 / RQ-02, RQ-03, RQ-04 ΓÇö card viß╗çc l├ám 
+> t├¬n ─æ╞ín vß╗ï v├á ─æß╗ïa ─æiß╗âm vß║½n d├╣ng token x├ím dß╗ïu
+AssertionError: expected 'import Link from \'next/link\';\nimpoΓÇª' to contain 'text-on-surface-variant'
+
+- Expected
++ Received
+
+- text-on-surface-variant
++ import Link from 'next/link';
++ import { MapPin, Clock3, Banknote, Flame } from 'lucide-react';
++ import type { EnrichedJob } from '@/app/(portal)/page';
++ import { HrMonogram } from './hr-monogram';
++
++ export interface FeaturedJobCardProps {
++   /** Job data ΓÇö EnrichedJob shape from page.tsx */
++   job: {
++     id: string;
++     slug: string;
++     title: string;
++     salaryMinVnd: number | null;
++     salaryMaxVnd: number | null;
++     location?: string | null;
++     badgeType?: 'urgent' | 'new' | null;
++     source?: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
++     /** RQ-20: ISO timestamp of newest visible order ΓÇö render only when truthy */
++     postedAt?: string | null;
++   };
++   /** Canonical detail URL built by BestJobsSection via buildHref(job.slug) */
++   href: string;
++   /** Called when REAL card CTA is clicked ΓÇö triggers ApplyModal via page-level closure. */
++   onApply?: () => void;
++ }
++
++ /** Formats VND salary range for display. */
++ function salaryLabel(min: number | null, max: number | null): string {
++   if (min === null) return 'L╞░╞íng th╞░╞íng l╞░ß╗úng';
++   const VND_FORMAT = new Intl.NumberFormat('vi-VN');
++   const from = VND_FORMAT.format(min);
++   if (max !== null && max !== min) return `${from} ΓÇô ${VND_FORMAT.format(max)} ─æ/giß╗¥`;
++   return `${from} ─æ/giß╗¥`;
++ }
++
++ /** True when the card should behave as a preview/DEMO (fixture data, not live). */
++ function isPreview(job: FeaturedJobCardProps['job']): boolean {
++   return (
++     job.source === 'DEMO' ||
++     job.source === 'INTEGRATION_PENDING' ||
++     job.id.startsWith('preview-')
++   );
++ }
++
++ /** Formats postedAt ISO to a short date label for display. */
++ function postedAtLabel(iso: string | null | undefined): string {
++   if (!iso) return '';
++   try {
++     const date = new Date(iso);
++     return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
++   } catch {
++     return '';
++   }
++ }
++
++ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
++   const preview = isPreview(job);
++   const displaySalary = salaryLabel(job.salaryMinVnd, job.salaryMaxVnd);
++   const postedAtDisplay = postedAtLabel(job.postedAt);
++
++   return (
++     <article
++       data-testid={`featured-job-${job.id}`}
++       /* RQ-14: Minimal SaaS surface ΓÇö white bg + slate border + rounded-xl + shadow-sm */
++       className="hrp-focus group relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 
+bg-white shadow-sm transition-all duration-200 hover:shadow-md"
++     >
++       {/* RQ-09/RQ-10/RQ-23: Ribbon compact ΓÇö top-right overlay, pointer-events-none, ~24-28px height */}
++       {job.badgeType === 'urgent' && (
++         <span
++           /* pointer-events-none: overlay does not push content; RQ-09: no pr-[72px] on title */
++           className="pointer-events-none absolute top-0 right-0 z-20 flex items-center gap-1 rounded-bl-md border-l 
+border-b border-orange-300/40 bg-orange-500/75 px-2 py-1 text-white backdrop-blur-[1px]"
++           aria-label="Tuyß╗ân gß║Ñp"
++         >
++           <Flame className="h-3 w-3 shrink-0" aria-hidden="true" />
++           <span className="text-[11px] font-semibold leading-none">Tuyß╗ân gß║Ñp</span>
++         </span>
++       )}
++
++       {/* ΓöÇΓöÇΓöÇ Header ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
++       {/* RQ-15: 2-col layout ΓÇö logo fixed 48px square + content column with min-w-0 */}
++       <div className="flex items-start gap-3 p-4">
++         <HrMonogram
++           size={48}
++           className="h-12 w-12 shrink-0 rounded-lg border border-slate-100 bg-white"
++         />
++         <div className="min-w-0 flex-1">
++           <h3
++             className="text-lg font-semibold leading-tight text-slate-900 transition group-hover:text-blue-700 
+mb-0.5"
++             title={job.title}
++           >
++             {job.title}
++           </h3>
++           <p className="text-sm font-medium text-slate-500">
++             HRP Viß╗çt Nam
++           </p>
++         </div>
++       </div>
++
++       {/* ΓöÇΓöÇΓöÇ Body / Metadata ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
++       {/* RQ-16: responsive row with Lucide icons */}
++       <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 pb-3">
++         {job.location && (
++           <span className="inline-flex items-center gap-1 text-sm text-slate-500">
++             <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
++             <span>{job.location}</span>
++           </span>
++         )}
++         {postedAtDisplay && (
++           <span className="inline-flex items-center gap-1 text-sm text-slate-500">
++             <Clock3 className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
++             <span>{postedAtDisplay}</span>
++           </span>
++         )}
++       </div>
++
++       {/* ΓöÇΓöÇΓöÇ Footer / Actions ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
++       {/* RQ-17/RQ-18/RQ-19: salary pill (left) + Xem chi tiß║┐t CTA blue (right) */}
++       <div className="mt-auto flex items-center gap-2 border-t border-slate-100 p-4">
++         {/* RQ-17: Salary pill ΓÇö inline emerald, NOT full-width slab */}
++         <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-1 text-sm font-semibold 
+text-emerald-700">
++           <Banknote className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
++           <span>{displaySalary}</span>
++         </span>
++
++         {/* Spacer */}
++         <span className="flex-1" />
++
++         {/* RQ-18/RQ-24: Xem chi tiß║┐t ΓÇö Link and CTA share same canonical href */}
++         <Link
++           href={href}
++           className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white 
+transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 
+focus-visible:outline-blue-600"
++         >
++           <span>Xem chi tiß║┐t</span>
++           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" 
+aria-hidden="true">
++             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
++           </svg>
++         </Link>
++
++         {/* RQ-18/RQ-19: Quick Apply ΓÇö pill-sized compact, hover-trigger desktop, accessible mobile */}
++         <button
++           type="button"
++           disabled={preview}
++           onClick={preview ? undefined : onApply}
++           className={`inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors 
+focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
++             ${preview
++               ? 'cursor-not-allowed bg-slate-100 text-slate-400 opacity-60'
++               : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus-visible:outline-slate-400'
++             }`}
++           aria-label={preview ? 'Bß║ún xem tr╞░ß╗¢c' : 'ß╗¿ng tuyß╗ân nhanh'}
++           data-testid="featured-job-cta"
++         >
++           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" 
+aria-hidden="true">
++             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 
+0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
++           </svg>
++           <span className="hidden sm:inline">{preview ? 'Bß║ún xem tr╞░ß╗¢c' : 'ß╗¿ng tuyß╗ân'}</span>
++         </button>
++       </div>
++     </article>
++   );
++ }
++
+
+ Γ¥» src/domains/job-board/public-ui-premium.static.test.ts:179:18
+    177|     // ui-03: location uses direct text with on-surface-variant, not `ΓÇª
+    178|     expect(page).toContain("text-on-surface-variant");
+    179|     expect(CARD).toContain('text-on-surface-variant');
+       |                  ^
+    180|     // The .hrp-pill-location CSS still exists in the design system foΓÇª
+    181|     expect(block(cssCode, '.hrp-pill-location {')).toContain('color: vΓÇª
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/13]ΓÄ»
+
+ FAIL  src/domains/job-board/public-ui-premium.static.test.ts > go-live-08 / RQ-05, RQ-06 ΓÇö ph├ón ho├í nß╗ün > cß║ú 
+hai pill vß║½n bo tr├▓n hß║┐t cß║ính v├á vß║½n giß╗» icon
+AssertionError: expected 'import Link from \'next/link\';\nimpoΓÇª' to contain 'bg-primary-fixed'
+
+- Expected
++ Received
+
+- bg-primary-fixed
++ import Link from 'next/link';
++ import { MapPin, Clock3, Banknote, Flame } from 'lucide-react';
++ import type { EnrichedJob } from '@/app/(portal)/page';
++ import { HrMonogram } from './hr-monogram';
++
++ export interface FeaturedJobCardProps {
++   /** Job data ΓÇö EnrichedJob shape from page.tsx */
++   job: {
++     id: string;
++     slug: string;
++     title: string;
++     salaryMinVnd: number | null;
++     salaryMaxVnd: number | null;
++     location?: string | null;
++     badgeType?: 'urgent' | 'new' | null;
++     source?: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
++     /** RQ-20: ISO timestamp of newest visible order ΓÇö render only when truthy */
++     postedAt?: string | null;
++   };
++   /** Canonical detail URL built by BestJobsSection via buildHref(job.slug) */
++   href: string;
++   /** Called when REAL card CTA is clicked ΓÇö triggers ApplyModal via page-level closure. */
++   onApply?: () => void;
++ }
++
++ /** Formats VND salary range for display. */
++ function salaryLabel(min: number | null, max: number | null): string {
++   if (min === null) return 'L╞░╞íng th╞░╞íng l╞░ß╗úng';
++   const VND_FORMAT = new Intl.NumberFormat('vi-VN');
++   const from = VND_FORMAT.format(min);
++   if (max !== null && max !== min) return `${from} ΓÇô ${VND_FORMAT.format(max)} ─æ/giß╗¥`;
++   return `${from} ─æ/giß╗¥`;
++ }
++
++ /** True when the card should behave as a preview/DEMO (fixture data, not live). */
++ function isPreview(job: FeaturedJobCardProps['job']): boolean {
++   return (
++     job.source === 'DEMO' ||
++     job.source === 'INTEGRATION_PENDING' ||
++     job.id.startsWith('preview-')
++   );
++ }
++
++ /** Formats postedAt ISO to a short date label for display. */
++ function postedAtLabel(iso: string | null | undefined): string {
++   if (!iso) return '';
++   try {
++     const date = new Date(iso);
++     return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
++   } catch {
++     return '';
++   }
++ }
++
++ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
++   const preview = isPreview(job);
++   const displaySalary = salaryLabel(job.salaryMinVnd, job.salaryMaxVnd);
++   const postedAtDisplay = postedAtLabel(job.postedAt);
++
++   return (
++     <article
++       data-testid={`featured-job-${job.id}`}
++       /* RQ-14: Minimal SaaS surface ΓÇö white bg + slate border + rounded-xl + shadow-sm */
++       className="hrp-focus group relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 
+bg-white shadow-sm transition-all duration-200 hover:shadow-md"
++     >
++       {/* RQ-09/RQ-10/RQ-23: Ribbon compact ΓÇö top-right overlay, pointer-events-none, ~24-28px height */}
++       {job.badgeType === 'urgent' && (
++         <span
++           /* pointer-events-none: overlay does not push content; RQ-09: no pr-[72px] on title */
++           className="pointer-events-none absolute top-0 right-0 z-20 flex items-center gap-1 rounded-bl-md border-l 
+border-b border-orange-300/40 bg-orange-500/75 px-2 py-1 text-white backdrop-blur-[1px]"
++           aria-label="Tuyß╗ân gß║Ñp"
++         >
++           <Flame className="h-3 w-3 shrink-0" aria-hidden="true" />
++           <span className="text-[11px] font-semibold leading-none">Tuyß╗ân gß║Ñp</span>
++         </span>
++       )}
++
++       {/* ΓöÇΓöÇΓöÇ Header ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
++       {/* RQ-15: 2-col layout ΓÇö logo fixed 48px square + content column with min-w-0 */}
++       <div className="flex items-start gap-3 p-4">
++         <HrMonogram
++           size={48}
++           className="h-12 w-12 shrink-0 rounded-lg border border-slate-100 bg-white"
++         />
++         <div className="min-w-0 flex-1">
++           <h3
++             className="text-lg font-semibold leading-tight text-slate-900 transition group-hover:text-blue-700 
+mb-0.5"
++             title={job.title}
++           >
++             {job.title}
++           </h3>
++           <p className="text-sm font-medium text-slate-500">
++             HRP Viß╗çt Nam
++           </p>
++         </div>
++       </div>
++
++       {/* ΓöÇΓöÇΓöÇ Body / Metadata ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
++       {/* RQ-16: responsive row with Lucide icons */}
++       <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 pb-3">
++         {job.location && (
++           <span className="inline-flex items-center gap-1 text-sm text-slate-500">
++             <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
++             <span>{job.location}</span>
++           </span>
++         )}
++         {postedAtDisplay && (
++           <span className="inline-flex items-center gap-1 text-sm text-slate-500">
++             <Clock3 className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
++             <span>{postedAtDisplay}</span>
++           </span>
++         )}
++       </div>
++
++       {/* ΓöÇΓöÇΓöÇ Footer / Actions ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
++       {/* RQ-17/RQ-18/RQ-19: salary pill (left) + Xem chi tiß║┐t CTA blue (right) */}
++       <div className="mt-auto flex items-center gap-2 border-t border-slate-100 p-4">
++         {/* RQ-17: Salary pill ΓÇö inline emerald, NOT full-width slab */}
++         <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-1 text-sm font-semibold 
+text-emerald-700">
++           <Banknote className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
++           <span>{displaySalary}</span>
++         </span>
++
++         {/* Spacer */}
++         <span className="flex-1" />
++
++         {/* RQ-18/RQ-24: Xem chi tiß║┐t ΓÇö Link and CTA share same canonical href */}
++         <Link
++           href={href}
++           className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white 
+transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 
+focus-visible:outline-blue-600"
++         >
++           <span>Xem chi tiß║┐t</span>
++           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" 
+aria-hidden="true">
++             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
++           </svg>
++         </Link>
++
++         {/* RQ-18/RQ-19: Quick Apply ΓÇö pill-sized compact, hover-trigger desktop, accessible mobile */}
++         <button
++           type="button"
++           disabled={preview}
++           onClick={preview ? undefined : onApply}
++           className={`inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors 
+focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
++             ${preview
++               ? 'cursor-not-allowed bg-slate-100 text-slate-400 opacity-60'
++               : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus-visible:outline-slate-400'
++             }`}
++           aria-label={preview ? 'Bß║ún xem tr╞░ß╗¢c' : 'ß╗¿ng tuyß╗ân nhanh'}
++           data-testid="featured-job-cta"
++         >
++           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" 
+aria-hidden="true">
++             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 
+0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
++           </svg>
++           <span className="hidden sm:inline">{preview ? 'Bß║ún xem tr╞░ß╗¢c' : 'ß╗¿ng tuyß╗ân'}</span>
++         </button>
++       </div>
++     </article>
++   );
++ }
++
+
+ Γ¥» src/domains/job-board/public-ui-premium.static.test.ts:226:18
+    224|     // ui-03: the salary pill uses bg-surface-container-low directly iΓÇª
+    225|     // VIS-02
+    226|     expect(CARD).toContain('bg-primary-fixed');
+       |                  ^
+    227|   });
+    228| 
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/13]ΓÄ»
+
+ FAIL  src/domains/job-board/public-ui-premium.static.test.ts > go-live-08 / RQ-21 ΓÇö icon ligature trang tr├¡ bß╗ï 
+ß║⌐n khß╗Åi c├┤ng nghß╗ç trß╗ú gi├║p > icon trang tr├¡ ─æß╗üu c├│ aria-hidden
+AssertionError: expected 1 to be greater than or equal to 3
+ Γ¥» src/domains/job-board/public-ui-premium.static.test.ts:836:29
+    834|     // Hero has no material icons, BestJobs has 1 (local_fire_departmeΓÇª
+    835|     // STEP-03: FeaturedJobCard c├│ 2 icons (location_on + payments), rΓÇª
+    836|     expect(allSpans.length).toBeGreaterThanOrEqual(3);
+       |                             ^
+    837|     for (const span of allSpans) {
+    838|       expect(span, `icon c├▓n lß╗Ö ra: ${span}`).toContain('aria-hidden="ΓÇª
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/13]ΓÄ»
+
+ FAIL  src/domains/job-board/public-ui-premium.static.test.ts > DEC-01 / STEP-03 / RQ-01, RQ-05 ΓÇö BestJobs tab 
+filter and pagination controls > BestJobsSection accepts pageSize prop and renders up to pageSize items
+AssertionError: expected 'import Link from \'next/link\';\nimpoΓÇª' to contain 'jobs.slice(0, pageSize)'
+
+- Expected
++ Received
+
+- jobs.slice(0, pageSize)
++ import Link from 'next/link';
++ import { FeaturedJobCard } from './featured-job-card';
++ import type { EnrichedJob } from '@/app/(portal)/page';
++
++ export interface BestJobsSectionProps {
++   // Jobs data
++   jobs: EnrichedJob[];
++   // Pagination metadata
++   total: number;
++   pageSize: number;
++   offset: number;
++   nextOffset: number | null;
++   // Tab control
++   tab: 'all' | 'urgent';
++   onTabChange: (tab: 'all' | 'urgent') => void;
++   // Pagination actions
++   onPrev: () => void;
++   onNext: () => void;
++   // Helpers
++   buildHref: (jobSlug: string) => string;
++   /**
++    * Called when a REAL card CTA is clicked.
++    * DEC-04: BestJobsSection closes over the EnrichedJob and passes a no-arg callback.
++    */
++   onApply?: (job: EnrichedJob) => void;
++ }
++
++ function salaryLabel(min: number | null, max: number | null): string {
++   if (min === null) return 'L╞░╞íng th╞░╞íng l╞░ß╗úng';
++   const VND_FORMAT = new Intl.NumberFormat('vi-VN');
++   const from = VND_FORMAT.format(min);
++   if (max !== null && max !== min) return `${from} ΓÇô ${VND_FORMAT.format(max)} ─æ/giß╗¥`;
++   return `${from} ─æ/giß╗¥`;
++ }
++
++ export function BestJobsSection({
++   jobs,
++   total,
++   pageSize,
++   offset,
++   nextOffset,
++   tab,
++   onTabChange,
++   onPrev,
++   onNext,
++   buildHref,
++   onApply,
++ }: BestJobsSectionProps) {
++   const currentPage = Math.floor(offset / pageSize) + 1;
++   const totalPages = Math.ceil(total / pageSize);
++   // STEP-04/STEP-05/STEP-06: pagination works for both tabs when total > pageSize
++   const showPagination = total > pageSize;
++
++   return (
++     <section
++       data-section="bestjobs"
++       aria-labelledby="hrp-best-jobs-heading"
++       className="w-full bg-surface-container-low px-4 py-12 md:px-8 md:py-16"
++     >
++       {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] */}
++       <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6">
++         <div className="mb-6 flex flex-col gap-2">
++           {/* STEP-04/RQ-07/DEC-11: Section header icon local_fire_department trong w-10 h-10 bg-secondary-container 
+rounded-full */}
++           <p className="font-label text-label-sm font-bold uppercase tracking-widest text-primary-dark">
++             <span className="w-10 h-10 bg-secondary-container rounded-full inline-flex items-center justify-center 
+mr-2 align-middle">
++               <span className="material-symbols-outlined text-base text-primary-dark" 
+aria-hidden="true">local_fire_department</span>
++             </span>
++             Gß╗úi ├╜ cho bß║ín
++           </p>
++           <h2
++             id="hrp-best-jobs-heading"
++             className="font-head text-headline-lg font-bold text-on-surface"
++           >
++             Viß╗çc l├ám tß╗æt nhß║Ñt
++           </h2>
++           <p className="max-w-2xl font-body text-body-md text-on-surface-variant">
++             C├íc vß╗ï tr├¡ ─æang tuyß╗ân nhiß╗üu ß╗⌐ng vi├¬n nhß║Ñt, cß║¡p nhß║¡t li├¬n tß╗Ñc tß╗½ dß╗» liß╗çu 
+thß║¡t cß╗ºa HRP.
++           </p>
++           {/* STEP-04/RQ-07/DEC-12: "Xem tß║Ñt cß║ú" link ΓåÆ /viec-lam */}
++           <div className="mt-2">
++             <Link
++               href="/viec-lam"
++               className="font-label text-label-md font-semibold text-primary-dark hover:text-primary-container 
+transition-colors"
++             >
++               Xem tß║Ñt cß║ú ΓåÆ
++             </Link>
++           </div>
++         </div>
++
++         {/* DEC-01: Tab filter ΓÇö Tß║Ñt cß║ú / Tuyß╗ân gß║Ñp */}
++         <div className="mb-6" role="tablist" aria-label="Bß╗Ö lß╗ìc viß╗çc l├ám tß╗æt nhß║Ñt">
++           <button
++             type="button"
++             role="tab"
++             aria-selected={tab === 'all'}
++             onClick={() => onTabChange('all')}
++             className={`mr-2 inline-flex items-center gap-1.5 rounded-full px-4 py-2 font-label text-label-md 
+font-semibold transition-colors ${
++               tab === 'all'
++                 ? 'bg-primary-container text-white font-bold'
++                 : 'bg-surface text-on-surface'
++             }`}
++           >
++             Tß║Ñt cß║ú
++           </button>
++           <button
++             type="button"
++             role="tab"
++             aria-selected={tab === 'urgent'}
++             onClick={() => onTabChange('urgent')}
++             className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 font-label text-label-md 
+font-semibold transition-colors ${
++               tab === 'urgent'
++                 ? 'bg-primary-container text-white font-bold'
++                 : 'bg-surface text-on-surface'
++             }`}
++           >
++             Tuyß╗ân gß║Ñp
++           </button>
++         </div>
++
++         {/* STEP-07: No preview banner ΓÇö URGENT tab uses live data */}
++
++         {/* DEC-01: Job grid ΓÇö render from props, driven by pageSize prop (DEC-04) */}
++         {jobs.length > 0 ? (
++           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
++             {jobs.map((job) => (
++               <FeaturedJobCard
++                 key={job.id}
++                 job={{
++                   id: job.id,
++                   slug: job.slug,
++                   title: job.title,
++                   salaryMinVnd: job.salaryMinVnd,
++                   salaryMaxVnd: job.salaryMaxVnd,
++                   location: job.locations[0] ?? 'To├án quß╗æc',
++                   badgeType: job.badgeType === 'urgent' ? 'urgent' : null,
++                   // DEC-08: ph├ón biß╗çt preview card qua source field
++                   source: (job as { source?: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING' }).source,
++                 }}
++                 href={buildHref(job.slug)}
++                 onApply={onApply ? () => onApply(job) : undefined}
++               />
++             ))}
++           </div>
++         ) : (
++           <div className="flex items-center justify-center rounded-lg border border-outline-variant 
+bg-surface-container-low py-12">
++             <p className="font-body text-body-md text-on-surface-variant">
++               {tab === 'urgent' ? 'Hiß╗çn ch╞░a c├│ viß╗çc tuyß╗ân gß║Ñp.' : 'Kh├┤ng c├│ viß╗çc l├ám n├áo.'}
++             </p>
++           </div>
++         )}
++
++         {/* DEC-03: Pagination control ΓÇö only shown when tab === 'all' && total > pageSize */}
++         {showPagination && (
++           <div
++             className="mt-8 flex items-center justify-center gap-4"
++             role="group"
++             aria-label="Ph├ón trang"
++           >
++             <button
++               type="button"
++               onClick={onPrev}
++               disabled={offset === 0}
++               className="hrp-btn-primary hrp-focus inline-flex items-center gap-1 rounded-lg px-4 py-2 font-label 
+text-label-md font-semibold disabled:opacity-40"
++               aria-label="Trang tr╞░ß╗¢c"
++             >
++               ΓåÉ Tr╞░ß╗¢c
++             </button>
++             <span className="font-body text-body-md text-on-surface-variant" aria-live="polite">
++               Trang {currentPage} / {totalPages}
++             </span>
++             <button
++               type="button"
++               onClick={onNext}
++               disabled={nextOffset === null || offset + pageSize >= total}
++               className="hrp-btn-primary hrp-focus inline-flex items-center gap-1 rounded-lg px-4 py-2 font-label 
+text-label-md font-semibold disabled:opacity-40"
++               aria-label="Trang sau"
++             >
++               Sau ΓåÆ
++             </button>
++           </div>
++         )}
++       </div>
++     </section>
++   );
++ }
++
+
+ Γ¥» src/domains/job-board/public-ui-premium.static.test.ts:960:18
+    958|     expect(BEST).toContain('nextOffset');
+    959|     // jobs.slice(0, pageSize) is the correct pattern ΓÇö uses the prop ΓÇª
+    960|     expect(BEST).toContain('jobs.slice(0, pageSize)');
+       |                  ^
+    961|     // Verify the pageSize is a prop (in interface) and used as a variΓÇª
+    962|     expect(BEST).toContain('pageSize: number');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[8/13]ΓÄ»
+
+ FAIL  src/domains/job-board/public-ui-premium.static.test.ts > DEC-01 / STEP-03 / RQ-01, RQ-05 ΓÇö BestJobs tab 
+filter and pagination controls > BEST_JOBS_URGENT_PREVIEW imported in page.tsx (DEC-06)
+AssertionError: expected '\'use client\';\n\nimport { useState,ΓÇª' to contain 'BEST_JOBS_URGENT_PREVIEW'
+
+- Expected
++ Received
+
+- BEST_JOBS_URGENT_PREVIEW
++ 'use client';
++
++ import { useState, useEffect, useCallback, useId } from 'react';
++ import Link from 'next/link';
++ import { useRouter } from 'next/navigation';
++ import { ApplyModal } from '@/src/domains/job-board/components/apply-modal';
++ import { SuccessModal } from '@/src/domains/job-board/components/success-modal';
++ import { AreasSection } from '@/src/domains/job-board/components/landing/areas-section';
++ import { BestJobsSection } from '@/src/domains/job-board/components/landing/best-jobs-section';
++ import { Hero } from '@/src/domains/job-board/components/landing/hero';
++ import { RecruitmentHighlight } from '@/src/domains/job-board/components/landing/recruitment-highlight';
++ import { RecruitingProjectsSection } from '@/src/domains/job-board/components/landing/recruiting-projects-section';
++ import { ReferralStrip } from '@/src/domains/job-board/components/landing/referral-strip';
++ import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
++ import { buildListingHref } from '@/src/domains/job-board/public-listing.params';
++ import type {
++   PublicJobDto,
++   PublicJobFacets,
++   PublicJobListResult,
++   PublicJobOverview,
++ } from '@/src/domains/job-board/public.service';
++
++ // ΓöÇΓöÇΓöÇ UI-adapter: projection c├┤ng khai ΓåÆ props cß╗ºa card 
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++ const EMPTY_FACETS: PublicJobFacets = { areas: [], shifts: [] };
++ const EMPTY_OVERVIEW: PublicJobOverview = {
++   totals: { jobs: 0, slots: 0, areas: 0 },
++   areaCounts: [],
++   shiftCounts: [],
++   newest: [],
++   topPaid: [],
++ };
++
++ // DEC-04 / STEP-04: BestJobs pageSize hardcoded 9 literal, passed via prop.
++ const BEST_JOBS_PAGE_SIZE = 9;
++
++ export interface EnrichedJob {
++   id: string;
++   slug: string;
++   title: string;
++   locations: string[];
++   badgeType: 'urgent' | 'closing' | null;
++   salaryMinVnd: number | null;
++   salaryMaxVnd: number | null;
++   availableSlots: number;
++   /** RQ-20 / STEP-10: postedAt from PublicJobDto for recruitment time display */
++   postedAt: string | null;
++ }
++
++ function enrichJob(job: PublicJobDto): EnrichedJob {
++   const { salaryMinVnd, salaryMaxVnd, urgency, postedAt } = job;
++   return {
++     id: job.id,
++     slug: job.slug ?? job.id,
++     title: job.title,
++     locations: job.locations,
++     badgeType: urgency === 'URGENT' ? 'urgent' : urgency === 'CLOSING' ? 'closing' : null,
++     salaryMinVnd,
++     salaryMaxVnd,
++     availableSlots: job.availableSlots,
++     postedAt: postedAt ?? null,
++   };
++ }
++
++ // ΓöÇΓöÇΓöÇ BestJobs fetch query (limit=9, offset via state) 
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++ function buildBestJobsQuery(offset: number): string {
++   const params = new URLSearchParams({ limit: String(BEST_JOBS_PAGE_SIZE), offset: String(offset) });
++   return params.toString();
++ }
++
++ // ΓöÇΓöÇΓöÇ Page ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++ export default function JobsPage() {
++   const router = useRouter();
++
++   const [keyword, setKeyword] = useState('');
++   const [area, setArea] = useState('');
++   const [shift, setShift] = useState('');
++   const [facets, setFacets] = useState<PublicJobFacets>(EMPTY_FACETS);
++   const [overview, setOverview] = useState<PublicJobOverview>(EMPTY_OVERVIEW);
++   const [applyJob, setApplyJob] = useState<EnrichedJob | null>(null);
++   const [appliedIds, setAppliedIds] = useState<string[]>([]);
++   const [successCode, setSuccessCode] = useState('');
++
++   // DEC-05 / STEP-04: BestJobs tab state + fetch (separate from sentinel homepage search)
++   const [bestJobsTab, setBestJobsTab] = useState<'all' | 'urgent'>('all');
++   const [bestJobsOffset, setBestJobsOffset] = useState(0);
++   const [bestJobsData, setBestJobsData] = useState<{ jobs: EnrichedJob[]; total: number; bestJobsNextOffset: number 
+| null }>({
++     jobs: [],
++     total: 0,
++     bestJobsNextOffset: null,
++   });
++   // STEP-04/STEP-05: URGENT tab separate data state + offset (race-safe: tab-specific)
++   const [bestJobsUrgentOffset, setBestJobsUrgentOffset] = useState(0);
++   const [bestJobsUrgentData, setBestJobsUrgentData] = useState<{ jobs: EnrichedJob[]; total: number; 
+bestJobsNextOffset: number | null }>({
++     jobs: [],
++     total: 0,
++     bestJobsNextOffset: null,
++   });
++   const [bestJobsLoading, setBestJobsLoading] = useState(false);
++
++   // DEC-02 / STEP-02: bootstrapBestJobs ΓÇö DUY NHß║ñT, chß╗ë tß║úi page BestJobs + set bestJobsData + facets + 
+overview.
++   // KH├öNG c├│ mode append, KH├öNG jobs state, KH├öNG nextOffset (chß╗ë bestJobsOffset), KH├öNG 
+generation/sentinel/observer.
++   const bootstrapBestJobs = useCallback(
++     (offset: number) => {
++       if (bestJobsTab !== 'all') return;
++
++       let cancelled = false;
++       setBestJobsLoading(true);
++
++       fetch(`/api/jobs?${buildBestJobsQuery(offset)}`, { cache: 'no-store' })
++         .then((res) => {
++           if (!res.ok) throw new Error(`Lß╗ùi ${res.status}`);
++           return res.json() as Promise<PublicJobListResult>;
++         })
++         .then((data) => {
++           if (cancelled) return;
++           const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
++           setBestJobsData({
++             jobs: incoming,
++             total: typeof data.total === 'number' ? data.total : 0,
++             bestJobsNextOffset: typeof data.nextOffset === 'number' ? data.nextOffset : null,
++           });
++           setFacets(data.facets ?? EMPTY_FACETS);
++           setOverview(data.overview ?? EMPTY_OVERVIEW);
++         })
++         .catch((e) => {
++           if (cancelled) return;
++           console.warn('bootstrapBestJobs error:', e instanceof Error ? e.message : e);
++         })
++         .finally(() => {
++           if (!cancelled) setBestJobsLoading(false);
++         });
++     },
++     [bestJobsTab],
++   );
++
++   // bootstrapBestJobs chß║íy khi mount v├á khi bestJobsOffset ─æß╗òi
++   useEffect(() => {
++     bootstrapBestJobs(bestJobsOffset);
++   }, [bestJobsOffset, bootstrapBestJobs]);
++
++   // STEP-04/STEP-05: bootstrapBestJobsUrgent ΓÇö URGENT tab fetch; separate from 'all' tab; does NOT set 
+facets/overview (RQ-07)
++   const bootstrapBestJobsUrgent = useCallback(
++     (offset: number) => {
++       if (bestJobsTab !== 'urgent') return;
++
++       let cancelled = false;
++       setBestJobsLoading(true);
++
++       fetch(`/api/jobs?urgency=URGENT&${buildBestJobsQuery(offset)}`, { cache: 'no-store' })
++         .then((res) => {
++           if (!res.ok) throw new Error(`Lß╗ùi ${res.status}`);
++           return res.json() as Promise<PublicJobListResult>;
++         })
++         .then((data) => {
++           if (cancelled) return;
++           const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
++           // RQ-07: URGENT response does NOT update global facets/overview ΓÇö only 'all' tab does
++           setBestJobsUrgentData({
++             jobs: incoming,
++             total: typeof data.total === 'number' ? data.total : 0,
++             bestJobsNextOffset: typeof data.nextOffset === 'number' ? data.nextOffset : null,
++           });
++         })
++         .catch((e) => {
++           if (cancelled) return;
++           console.warn('bootstrapBestJobsUrgent error:', e instanceof Error ? e.message : e);
++         })
++         .finally(() => {
++           if (!cancelled) setBestJobsLoading(false);
++         });
++     },
++     [bestJobsTab],
++   );
++
++   // bootstrapBestJobsUrgent runs when urgent offset changes
++   useEffect(() => {
++     bootstrapBestJobsUrgent(bestJobsUrgentOffset);
++   }, [bestJobsUrgentOffset, bootstrapBestJobsUrgent]);
++
++   // DEC-01 / STEP-02: Hero form submit ΓåÆ navigate tß╗¢i /viec-lam vß╗¢i offset: 0
++   function handleSearch(e: React.FormEvent) {
++     e.preventDefault();
++     router.push(buildListingHref({ q: keyword.trim() || undefined, area: area || undefined, shift: shift || 
+undefined, offset: 0 }));
++   }
++
++   // DEC-01 / STEP-02: applyArea ΓåÆ navigate tß╗¢i /viec-lam vß╗¢i area mß╗¢i, giß╗» keyword/shift hiß╗çn tß║íi, 
+offset: 0
++   function applyArea(value: string) {
++     setArea(value);
++     router.push(buildListingHref({ q: keyword.trim() || undefined, area: value || undefined, shift: shift || 
+undefined, offset: 0 }));
++   }
++
++   function handleApply(job: EnrichedJob) {
++     setApplyJob(job);
++     setSuccessCode('');
++   }
++
++   function handleApplySuccess(code: string) {
++     if (applyJob) setAppliedIds((prev) => [...prev, applyJob.id]);
++     setApplyJob(null);
++     setSuccessCode(code);
++   }
++
++   // BestJobs tab handlers
++   function handleBestJobsTabChange(tab: 'all' | 'urgent') {
++     setBestJobsTab(tab);
++     // STEP-05: race-safe ΓÇö reset offset on tab change
++     if (tab === 'all') {
++       setBestJobsOffset(0);
++     } else {
++       setBestJobsUrgentOffset(0);
++     }
++   }
++
++   function handleBestJobsPrev() {
++     if (bestJobsTab === 'all') {
++       setBestJobsOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
++     } else {
++       setBestJobsUrgentOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
++     }
++   }
++
++   function handleBestJobsNext() {
++     if (bestJobsTab === 'all') {
++       setBestJobsOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
++     } else {
++       setBestJobsUrgentOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
++     }
++   }
++
++   // Featured source ΓÇö newest first, topPaid fallback (per RQ-03 / RQ-11)
++   const featuredSource = overview.newest[0] ?? overview.topPaid[0] ?? null;
++   const featuredJobs = (overview.newest.length > 0 ? overview.newest : overview.topPaid)
++     .slice(0, 3)
++     .map(enrichJob);
++
++   // Recruiting project source ΓÇö newest fallback topPaid, max 4 (per RQ-05 / DEC-04)
++   const recruitingSource = (overview.newest.length > 0 ? overview.newest : overview.topPaid).slice(0, 4);
++   const recruitingProjects: EnrichedJob[] = recruitingSource.map(enrichJob);
++
++   // Areas for image card ΓÇö pull top 4 from facet areaCounts (per RQ-04)
++   const areasForCards: Array<{ name: string; count: number }> = facets.areas.slice(0, 4).map((name) => {
++     const found = overview.areaCounts.find((entry) => entry.value === name);
++     return { name, count: found?.count ?? 0 };
++   });
++
++   // STEP-04: Determine BestJobs display data based on active tab ΓÇö live data, no fixture
++   const bestJobsDisplayJobs = bestJobsTab === 'all' ? bestJobsData.jobs : bestJobsUrgentData.jobs;
++   const bestJobsDisplayTotal =
++     bestJobsTab === 'all' ? bestJobsData.total : bestJobsUrgentData.total;
++   const bestJobsDisplayNextOffset = bestJobsTab === 'all' ? bestJobsData.bestJobsNextOffset : 
+bestJobsUrgentData.bestJobsNextOffset;
++
++   return (
++     <main id="hrp-main" tabIndex={-1} className="flex w-full flex-col items-stretch gap-0">
++       <Hero>
++         <div className="flex min-w-0 flex-1 flex-col justify-center gap-6 text-on-primary">
++           <p className="font-label text-label-md font-bold uppercase tracking-widest text-secondary-fixed">
++             C├╣ng t├¼m kiß║┐m
++           </p>
++           <h1 className="font-head text-headline-xl font-bold leading-tight text-on-primary">
++             C├┤ng viß╗çc m╞í ╞░ß╗¢c cß╗ºa bß║ín
++           </h1>
++           <p className="font-body text-body-lg text-on-primary/90">
++             {overview.totals.jobs > 0
++               ? `─Éang tuyß╗ân ${overview.totals.jobs} viß╗çc l├ám tß║íi ${overview.totals.areas} khu vß╗▒c. ß╗¿ng 
+tuyß╗ân kh├┤ng cß║ºn t├ái khoß║ún.`
++               : 'Viß╗çc l├ám theo ca, ß╗⌐ng tuyß╗ân kh├┤ng cß║ºn t├ái khoß║ún.'}
++           </p>
++           <form
++             onSubmit={handleSearch}
++             /* STEP-06/RQ-11/DEC-17: A16 search card wrapper ─æß╗òi tß╗½ glass sang nß╗ün trß║»ng */
++             className="flex flex-col gap-3 rounded-2xl border border-outline-variant bg-white p-3 sm:flex-row 
+sm:items-end sm:p-4"
++             data-testid="hero-search-card"
++           >
++             <div className="flex-1">
++               <label
++                 htmlFor="hrp-hero-keyword"
++                 /* STEP-06/AC-11/AC-13: Label text-white ΓåÆ text-on-surface (WCAG AA contrast) */
++                 className="mb-1 block font-label text-label-sm font-bold text-on-surface"
++               >
++                 Tß╗½ kh├│a
++               </label>
++               <input
++                 id="hrp-hero-keyword"
++                 type="search"
++                 value={keyword}
++                 onChange={(e) => setKeyword(e.target.value)}
++                 placeholder="T├¬n c├┤ng viß╗çc, vß╗ï tr├¡..."
++                 /* STEP-06/RQ-11/DEC-17: Input ΓåÆ bg-white border-outline-variant */
++                 className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 
+text-on-surface min-h-11 placeholder:text-on-surface-variant"
++               />
++             </div>
++             <div className="flex-1">
++               <label
++                 htmlFor="hrp-hero-area"
++                 /* STEP-06/AC-11/AC-13: Label text-white ΓåÆ text-on-surface */
++                 className="mb-1 block font-label text-label-sm font-bold text-on-surface"
++               >
++                 Khu vß╗▒c
++               </label>
++               <select
++                 id="hrp-hero-area"
++                 value={area}
++                 onChange={(e) => setArea(e.target.value)}
++                 /* STEP-06/RQ-11/DEC-17: Select ΓåÆ bg-white border-outline-variant */
++                 className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 
+text-on-surface min-h-11"
++               >
++                 <option value="">Tß║Ñt cß║ú khu vß╗▒c</option>
++                 {facets.areas.map((entry) => (
++                   <option key={entry} value={entry}>
++                     {entry}
++                   </option>
++                 ))}
++               </select>
++             </div>
++             <div className="flex-1">
++               <label
++                 htmlFor="hrp-hero-salary"
++                 /* DEC-08: salary disabled ΓÇö Mß╗⌐c l╞░╞íng ΓÇö sß║»p c├│ */
++                 className="mb-1 block font-label text-label-sm font-bold text-on-surface"
++               >
++                 Mß╗⌐c l╞░╞íng ΓÇö sß║»p c├│
++               </label>
++               <select
++                 id="hrp-hero-salary"
++                 disabled
++                 aria-disabled="true"
++                 className="hrp-focus w-full cursor-not-allowed rounded-lg border border-outline-variant 
+bg-surface-container-low px-3 py-2.5 text-on-surface-variant opacity-70 min-h-11"
++               >
++                 <option value="">Mß╗ìi mß╗⌐c l╞░╞íng</option>
++               </select>
++             </div>
++             <button
++               type="submit"
++               aria-busy={false}
++               className="hrp-btn-primary hrp-focus nav-item-lift min-h-11 rounded-lg px-6 font-label text-label-md 
+font-semibold whitespace-nowrap"
++             >
++               T├¼m viß╗çc
++             </button>
++           </form>
++         </div>
++         <div className="hidden w-full max-w-md flex-shrink-0 lg:block">
++           <RecruitmentHighlight />
++         </div>
++       </Hero>
++
++       {/* STEP-04 / STEP-05 / STEP-06: BestJobs tab + pagination ΓÇö live URGENT data */}
++       <BestJobsSection
++         jobs={bestJobsDisplayJobs}
++         total={bestJobsDisplayTotal}
++         pageSize={BEST_JOBS_PAGE_SIZE}
++         offset={bestJobsTab === 'all' ? bestJobsOffset : bestJobsUrgentOffset}
++         nextOffset={bestJobsDisplayNextOffset}
++         tab={bestJobsTab}
++         onTabChange={handleBestJobsTabChange}
++         onPrev={handleBestJobsPrev}
++         onNext={handleBestJobsNext}
++         /* DEC-06: d├╣ng job.slug, KH├öNG job.id */
++         buildHref={(jobSlug) => publicJobDetailPath(jobSlug)}
++         /* DEC-04: prop chain chß╗æt ΓÇö page.tsx closure ΓåÆ BestJobsSection ΓåÆ FeaturedJobCard */
++         onApply={handleApply}
++       />
++
++       <AreasSection areas={areasForCards} onPick={applyArea} />
++
++       <RecruitingProjectsSection
++         jobs={recruitingProjects.map((job) => ({
++           id: job.id,
++           title: job.title,
++           availableSlots: job.availableSlots,
++         }))}
++         buildHref={(jobId) => publicJobDetailPath(jobId)}
++       />
++
++       <ReferralStrip />
++
++       {applyJob && (
++         <ApplyModal
++           job={applyJob}
++           onClose={() => setApplyJob(null)}
++           onSuccess={handleApplySuccess}
++         />
++       )}
++
++       {successCode && <SuccessModal code={successCode} onClose={() => setSuccessCode('')} />}
++     </main>
++   );
++ }
++
+
+ Γ¥» src/domains/job-board/public-ui-premium.static.test.ts:977:18
+    975| 
+    976|   it('BEST_JOBS_URGENT_PREVIEW imported in page.tsx (DEC-06)', () => {
+    977|     expect(page).toContain('BEST_JOBS_URGENT_PREVIEW');
+       |                  ^
+    978|     expect(page).toContain('bestJobsTab');
+    979|     expect(page).toContain('bestJobsOffset');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[9/13]ΓÄ»
+
+ FAIL  src/domains/job-board/public-ui-premium.static.test.ts > DEC-06 / STEP-02 / RQ-03, RQ-04 ΓÇö URGENT fixture 
+INTEGRATION_PENDING > fixture has source: INTEGRATION_PENDING on each item
+Error: ENOENT: no such file or directory, open 
+'C:\CodeApp\HrP\src\domains\job-board\fixtures\best-jobs-urgent-preview.ts'
+ Γ¥» read src/domains/job-board/public-ui-premium.static.test.ts:44:31
+     42| const HERO = 'src/domains/job-board/components/landing/hero.tsx';
+     43| 
+     44| const read = (rel: string) => readFileSync(join(process.cwd(), rel), 'ΓÇª
+       |                               ^
+     45| 
+     46| const css = read(CSS);
+ Γ¥» src/domains/job-board/public-ui-premium.static.test.ts:987:25
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[10/13]ΓÄ»
+
+ FAIL  src/domains/job-board/public-ui-premium.static.test.ts > DEC-06 / STEP-02 / RQ-03, RQ-04 ΓÇö URGENT fixture 
+INTEGRATION_PENDING > page.tsx renders URGENT tab from BEST_JOBS_URGENT_PREVIEW
+AssertionError: expected '\'use client\';\n\nimport { useState,ΓÇª' to contain 'bestJobsTab === \'all\' ? 
+bestJobsDatΓÇª'
+
+- Expected
++ Received
+
+- bestJobsTab === 'all' ? bestJobsData.jobs : BEST_JOBS_URGENT_PREVIEW
++ 'use client';
++
++ import { useState, useEffect, useCallback, useId } from 'react';
++ import Link from 'next/link';
++ import { useRouter } from 'next/navigation';
++ import { ApplyModal } from '@/src/domains/job-board/components/apply-modal';
++ import { SuccessModal } from '@/src/domains/job-board/components/success-modal';
++ import { AreasSection } from '@/src/domains/job-board/components/landing/areas-section';
++ import { BestJobsSection } from '@/src/domains/job-board/components/landing/best-jobs-section';
++ import { Hero } from '@/src/domains/job-board/components/landing/hero';
++ import { RecruitmentHighlight } from '@/src/domains/job-board/components/landing/recruitment-highlight';
++ import { RecruitingProjectsSection } from '@/src/domains/job-board/components/landing/recruiting-projects-section';
++ import { ReferralStrip } from '@/src/domains/job-board/components/landing/referral-strip';
++ import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
++ import { buildListingHref } from '@/src/domains/job-board/public-listing.params';
++ import type {
++   PublicJobDto,
++   PublicJobFacets,
++   PublicJobListResult,
++   PublicJobOverview,
++ } from '@/src/domains/job-board/public.service';
++
++ // ΓöÇΓöÇΓöÇ UI-adapter: projection c├┤ng khai ΓåÆ props cß╗ºa card 
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++ const EMPTY_FACETS: PublicJobFacets = { areas: [], shifts: [] };
++ const EMPTY_OVERVIEW: PublicJobOverview = {
++   totals: { jobs: 0, slots: 0, areas: 0 },
++   areaCounts: [],
++   shiftCounts: [],
++   newest: [],
++   topPaid: [],
++ };
++
++ // DEC-04 / STEP-04: BestJobs pageSize hardcoded 9 literal, passed via prop.
++ const BEST_JOBS_PAGE_SIZE = 9;
++
++ export interface EnrichedJob {
++   id: string;
++   slug: string;
++   title: string;
++   locations: string[];
++   badgeType: 'urgent' | 'closing' | null;
++   salaryMinVnd: number | null;
++   salaryMaxVnd: number | null;
++   availableSlots: number;
++   /** RQ-20 / STEP-10: postedAt from PublicJobDto for recruitment time display */
++   postedAt: string | null;
++ }
++
++ function enrichJob(job: PublicJobDto): EnrichedJob {
++   const { salaryMinVnd, salaryMaxVnd, urgency, postedAt } = job;
++   return {
++     id: job.id,
++     slug: job.slug ?? job.id,
++     title: job.title,
++     locations: job.locations,
++     badgeType: urgency === 'URGENT' ? 'urgent' : urgency === 'CLOSING' ? 'closing' : null,
++     salaryMinVnd,
++     salaryMaxVnd,
++     availableSlots: job.availableSlots,
++     postedAt: postedAt ?? null,
++   };
++ }
++
++ // ΓöÇΓöÇΓöÇ BestJobs fetch query (limit=9, offset via state) 
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++ function buildBestJobsQuery(offset: number): string {
++   const params = new URLSearchParams({ limit: String(BEST_JOBS_PAGE_SIZE), offset: String(offset) });
++   return params.toString();
++ }
++
++ // ΓöÇΓöÇΓöÇ Page ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++ export default function JobsPage() {
++   const router = useRouter();
++
++   const [keyword, setKeyword] = useState('');
++   const [area, setArea] = useState('');
++   const [shift, setShift] = useState('');
++   const [facets, setFacets] = useState<PublicJobFacets>(EMPTY_FACETS);
++   const [overview, setOverview] = useState<PublicJobOverview>(EMPTY_OVERVIEW);
++   const [applyJob, setApplyJob] = useState<EnrichedJob | null>(null);
++   const [appliedIds, setAppliedIds] = useState<string[]>([]);
++   const [successCode, setSuccessCode] = useState('');
++
++   // DEC-05 / STEP-04: BestJobs tab state + fetch (separate from sentinel homepage search)
++   const [bestJobsTab, setBestJobsTab] = useState<'all' | 'urgent'>('all');
++   const [bestJobsOffset, setBestJobsOffset] = useState(0);
++   const [bestJobsData, setBestJobsData] = useState<{ jobs: EnrichedJob[]; total: number; bestJobsNextOffset: number 
+| null }>({
++     jobs: [],
++     total: 0,
++     bestJobsNextOffset: null,
++   });
++   // STEP-04/STEP-05: URGENT tab separate data state + offset (race-safe: tab-specific)
++   const [bestJobsUrgentOffset, setBestJobsUrgentOffset] = useState(0);
++   const [bestJobsUrgentData, setBestJobsUrgentData] = useState<{ jobs: EnrichedJob[]; total: number; 
+bestJobsNextOffset: number | null }>({
++     jobs: [],
++     total: 0,
++     bestJobsNextOffset: null,
++   });
++   const [bestJobsLoading, setBestJobsLoading] = useState(false);
++
++   // DEC-02 / STEP-02: bootstrapBestJobs ΓÇö DUY NHß║ñT, chß╗ë tß║úi page BestJobs + set bestJobsData + facets + 
+overview.
++   // KH├öNG c├│ mode append, KH├öNG jobs state, KH├öNG nextOffset (chß╗ë bestJobsOffset), KH├öNG 
+generation/sentinel/observer.
++   const bootstrapBestJobs = useCallback(
++     (offset: number) => {
++       if (bestJobsTab !== 'all') return;
++
++       let cancelled = false;
++       setBestJobsLoading(true);
++
++       fetch(`/api/jobs?${buildBestJobsQuery(offset)}`, { cache: 'no-store' })
++         .then((res) => {
++           if (!res.ok) throw new Error(`Lß╗ùi ${res.status}`);
++           return res.json() as Promise<PublicJobListResult>;
++         })
++         .then((data) => {
++           if (cancelled) return;
++           const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
++           setBestJobsData({
++             jobs: incoming,
++             total: typeof data.total === 'number' ? data.total : 0,
++             bestJobsNextOffset: typeof data.nextOffset === 'number' ? data.nextOffset : null,
++           });
++           setFacets(data.facets ?? EMPTY_FACETS);
++           setOverview(data.overview ?? EMPTY_OVERVIEW);
++         })
++         .catch((e) => {
++           if (cancelled) return;
++           console.warn('bootstrapBestJobs error:', e instanceof Error ? e.message : e);
++         })
++         .finally(() => {
++           if (!cancelled) setBestJobsLoading(false);
++         });
++     },
++     [bestJobsTab],
++   );
++
++   // bootstrapBestJobs chß║íy khi mount v├á khi bestJobsOffset ─æß╗òi
++   useEffect(() => {
++     bootstrapBestJobs(bestJobsOffset);
++   }, [bestJobsOffset, bootstrapBestJobs]);
++
++   // STEP-04/STEP-05: bootstrapBestJobsUrgent ΓÇö URGENT tab fetch; separate from 'all' tab; does NOT set 
+facets/overview (RQ-07)
++   const bootstrapBestJobsUrgent = useCallback(
++     (offset: number) => {
++       if (bestJobsTab !== 'urgent') return;
++
++       let cancelled = false;
++       setBestJobsLoading(true);
++
++       fetch(`/api/jobs?urgency=URGENT&${buildBestJobsQuery(offset)}`, { cache: 'no-store' })
++         .then((res) => {
++           if (!res.ok) throw new Error(`Lß╗ùi ${res.status}`);
++           return res.json() as Promise<PublicJobListResult>;
++         })
++         .then((data) => {
++           if (cancelled) return;
++           const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
++           // RQ-07: URGENT response does NOT update global facets/overview ΓÇö only 'all' tab does
++           setBestJobsUrgentData({
++             jobs: incoming,
++             total: typeof data.total === 'number' ? data.total : 0,
++             bestJobsNextOffset: typeof data.nextOffset === 'number' ? data.nextOffset : null,
++           });
++         })
++         .catch((e) => {
++           if (cancelled) return;
++           console.warn('bootstrapBestJobsUrgent error:', e instanceof Error ? e.message : e);
++         })
++         .finally(() => {
++           if (!cancelled) setBestJobsLoading(false);
++         });
++     },
++     [bestJobsTab],
++   );
++
++   // bootstrapBestJobsUrgent runs when urgent offset changes
++   useEffect(() => {
++     bootstrapBestJobsUrgent(bestJobsUrgentOffset);
++   }, [bestJobsUrgentOffset, bootstrapBestJobsUrgent]);
++
++   // DEC-01 / STEP-02: Hero form submit ΓåÆ navigate tß╗¢i /viec-lam vß╗¢i offset: 0
++   function handleSearch(e: React.FormEvent) {
++     e.preventDefault();
++     router.push(buildListingHref({ q: keyword.trim() || undefined, area: area || undefined, shift: shift || 
+undefined, offset: 0 }));
++   }
++
++   // DEC-01 / STEP-02: applyArea ΓåÆ navigate tß╗¢i /viec-lam vß╗¢i area mß╗¢i, giß╗» keyword/shift hiß╗çn tß║íi, 
+offset: 0
++   function applyArea(value: string) {
++     setArea(value);
++     router.push(buildListingHref({ q: keyword.trim() || undefined, area: value || undefined, shift: shift || 
+undefined, offset: 0 }));
++   }
++
++   function handleApply(job: EnrichedJob) {
++     setApplyJob(job);
++     setSuccessCode('');
++   }
++
++   function handleApplySuccess(code: string) {
++     if (applyJob) setAppliedIds((prev) => [...prev, applyJob.id]);
++     setApplyJob(null);
++     setSuccessCode(code);
++   }
++
++   // BestJobs tab handlers
++   function handleBestJobsTabChange(tab: 'all' | 'urgent') {
++     setBestJobsTab(tab);
++     // STEP-05: race-safe ΓÇö reset offset on tab change
++     if (tab === 'all') {
++       setBestJobsOffset(0);
++     } else {
++       setBestJobsUrgentOffset(0);
++     }
++   }
++
++   function handleBestJobsPrev() {
++     if (bestJobsTab === 'all') {
++       setBestJobsOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
++     } else {
++       setBestJobsUrgentOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
++     }
++   }
++
++   function handleBestJobsNext() {
++     if (bestJobsTab === 'all') {
++       setBestJobsOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
++     } else {
++       setBestJobsUrgentOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
++     }
++   }
++
++   // Featured source ΓÇö newest first, topPaid fallback (per RQ-03 / RQ-11)
++   const featuredSource = overview.newest[0] ?? overview.topPaid[0] ?? null;
++   const featuredJobs = (overview.newest.length > 0 ? overview.newest : overview.topPaid)
++     .slice(0, 3)
++     .map(enrichJob);
++
++   // Recruiting project source ΓÇö newest fallback topPaid, max 4 (per RQ-05 / DEC-04)
++   const recruitingSource = (overview.newest.length > 0 ? overview.newest : overview.topPaid).slice(0, 4);
++   const recruitingProjects: EnrichedJob[] = recruitingSource.map(enrichJob);
++
++   // Areas for image card ΓÇö pull top 4 from facet areaCounts (per RQ-04)
++   const areasForCards: Array<{ name: string; count: number }> = facets.areas.slice(0, 4).map((name) => {
++     const found = overview.areaCounts.find((entry) => entry.value === name);
++     return { name, count: found?.count ?? 0 };
++   });
++
++   // STEP-04: Determine BestJobs display data based on active tab ΓÇö live data, no fixture
++   const bestJobsDisplayJobs = bestJobsTab === 'all' ? bestJobsData.jobs : bestJobsUrgentData.jobs;
++   const bestJobsDisplayTotal =
++     bestJobsTab === 'all' ? bestJobsData.total : bestJobsUrgentData.total;
++   const bestJobsDisplayNextOffset = bestJobsTab === 'all' ? bestJobsData.bestJobsNextOffset : 
+bestJobsUrgentData.bestJobsNextOffset;
++
++   return (
++     <main id="hrp-main" tabIndex={-1} className="flex w-full flex-col items-stretch gap-0">
++       <Hero>
++         <div className="flex min-w-0 flex-1 flex-col justify-center gap-6 text-on-primary">
++           <p className="font-label text-label-md font-bold uppercase tracking-widest text-secondary-fixed">
++             C├╣ng t├¼m kiß║┐m
++           </p>
++           <h1 className="font-head text-headline-xl font-bold leading-tight text-on-primary">
++             C├┤ng viß╗çc m╞í ╞░ß╗¢c cß╗ºa bß║ín
++           </h1>
++           <p className="font-body text-body-lg text-on-primary/90">
++             {overview.totals.jobs > 0
++               ? `─Éang tuyß╗ân ${overview.totals.jobs} viß╗çc l├ám tß║íi ${overview.totals.areas} khu vß╗▒c. ß╗¿ng 
+tuyß╗ân kh├┤ng cß║ºn t├ái khoß║ún.`
++               : 'Viß╗çc l├ám theo ca, ß╗⌐ng tuyß╗ân kh├┤ng cß║ºn t├ái khoß║ún.'}
++           </p>
++           <form
++             onSubmit={handleSearch}
++             /* STEP-06/RQ-11/DEC-17: A16 search card wrapper ─æß╗òi tß╗½ glass sang nß╗ün trß║»ng */
++             className="flex flex-col gap-3 rounded-2xl border border-outline-variant bg-white p-3 sm:flex-row 
+sm:items-end sm:p-4"
++             data-testid="hero-search-card"
++           >
++             <div className="flex-1">
++               <label
++                 htmlFor="hrp-hero-keyword"
++                 /* STEP-06/AC-11/AC-13: Label text-white ΓåÆ text-on-surface (WCAG AA contrast) */
++                 className="mb-1 block font-label text-label-sm font-bold text-on-surface"
++               >
++                 Tß╗½ kh├│a
++               </label>
++               <input
++                 id="hrp-hero-keyword"
++                 type="search"
++                 value={keyword}
++                 onChange={(e) => setKeyword(e.target.value)}
++                 placeholder="T├¬n c├┤ng viß╗çc, vß╗ï tr├¡..."
++                 /* STEP-06/RQ-11/DEC-17: Input ΓåÆ bg-white border-outline-variant */
++                 className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 
+text-on-surface min-h-11 placeholder:text-on-surface-variant"
++               />
++             </div>
++             <div className="flex-1">
++               <label
++                 htmlFor="hrp-hero-area"
++                 /* STEP-06/AC-11/AC-13: Label text-white ΓåÆ text-on-surface */
++                 className="mb-1 block font-label text-label-sm font-bold text-on-surface"
++               >
++                 Khu vß╗▒c
++               </label>
++               <select
++                 id="hrp-hero-area"
++                 value={area}
++                 onChange={(e) => setArea(e.target.value)}
++                 /* STEP-06/RQ-11/DEC-17: Select ΓåÆ bg-white border-outline-variant */
++                 className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 
+text-on-surface min-h-11"
++               >
++                 <option value="">Tß║Ñt cß║ú khu vß╗▒c</option>
++                 {facets.areas.map((entry) => (
++                   <option key={entry} value={entry}>
++                     {entry}
++                   </option>
++                 ))}
++               </select>
++             </div>
++             <div className="flex-1">
++               <label
++                 htmlFor="hrp-hero-salary"
++                 /* DEC-08: salary disabled ΓÇö Mß╗⌐c l╞░╞íng ΓÇö sß║»p c├│ */
++                 className="mb-1 block font-label text-label-sm font-bold text-on-surface"
++               >
++                 Mß╗⌐c l╞░╞íng ΓÇö sß║»p c├│
++               </label>
++               <select
++                 id="hrp-hero-salary"
++                 disabled
++                 aria-disabled="true"
++                 className="hrp-focus w-full cursor-not-allowed rounded-lg border border-outline-variant 
+bg-surface-container-low px-3 py-2.5 text-on-surface-variant opacity-70 min-h-11"
++               >
++                 <option value="">Mß╗ìi mß╗⌐c l╞░╞íng</option>
++               </select>
++             </div>
++             <button
++               type="submit"
++               aria-busy={false}
++               className="hrp-btn-primary hrp-focus nav-item-lift min-h-11 rounded-lg px-6 font-label text-label-md 
+font-semibold whitespace-nowrap"
++             >
++               T├¼m viß╗çc
++             </button>
++           </form>
++         </div>
++         <div className="hidden w-full max-w-md flex-shrink-0 lg:block">
++           <RecruitmentHighlight />
++         </div>
++       </Hero>
++
++       {/* STEP-04 / STEP-05 / STEP-06: BestJobs tab + pagination ΓÇö live URGENT data */}
++       <BestJobsSection
++         jobs={bestJobsDisplayJobs}
++         total={bestJobsDisplayTotal}
++         pageSize={BEST_JOBS_PAGE_SIZE}
++         offset={bestJobsTab === 'all' ? bestJobsOffset : bestJobsUrgentOffset}
++         nextOffset={bestJobsDisplayNextOffset}
++         tab={bestJobsTab}
++         onTabChange={handleBestJobsTabChange}
++         onPrev={handleBestJobsPrev}
++         onNext={handleBestJobsNext}
++         /* DEC-06: d├╣ng job.slug, KH├öNG job.id */
++         buildHref={(jobSlug) => publicJobDetailPath(jobSlug)}
++         /* DEC-04: prop chain chß╗æt ΓÇö page.tsx closure ΓåÆ BestJobsSection ΓåÆ FeaturedJobCard */
++         onApply={handleApply}
++       />
++
++       <AreasSection areas={areasForCards} onPick={applyArea} />
++
++       <RecruitingProjectsSection
++         jobs={recruitingProjects.map((job) => ({
++           id: job.id,
++           title: job.title,
++           availableSlots: job.availableSlots,
++         }))}
++         buildHref={(jobId) => publicJobDetailPath(jobId)}
++       />
++
++       <ReferralStrip />
++
++       {applyJob && (
++         <ApplyModal
++           job={applyJob}
++           onClose={() => setApplyJob(null)}
++           onSuccess={handleApplySuccess}
++         />
++       )}
++
++       {successCode && <SuccessModal code={successCode} onClose={() => setSuccessCode('')} />}
++     </main>
++   );
++ }
++
+
+ Γ¥» src/domains/job-board/public-ui-premium.static.test.ts:994:18
+    992| 
+    993|   it('page.tsx renders URGENT tab from BEST_JOBS_URGENT_PREVIEW', () =ΓÇª
+    994|     expect(page).toContain("bestJobsTab === 'all' ? bestJobsData.jobs ΓÇª
+       |                  ^
+    995|   });
+    996| });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[11/13]ΓÄ»
+
+ FAIL  src/domains/job-board/public-ui-token-parity.static.test.ts > T╞░╞íng ß╗⌐ng token vß╗¢i class ΓÇö RQ-12 > P-01 
+ΓÇö kh├┤ng class text-*/font-*/bg-* n├áo tr├¬n trang chß╗º sinh ra 0 byte CSS
+AssertionError: expected [ ΓÇª(17) ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "src/domains/job-board/components/landing/featured-job-card.tsx: bg-blue-600 ΓÇö kh├┤ng c├│ --color-blue-600 trong 
+@theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: bg-blue-700 ΓÇö kh├┤ng c├│ --color-blue-700 trong 
+@theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: bg-emerald-50 ΓÇö kh├┤ng c├│ --color-emerald-50 
+trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: bg-orange-500/75 ΓÇö kh├┤ng c├│ 
+--color-orange-500 trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: bg-slate-100 ΓÇö kh├┤ng c├│ --color-slate-100 
+trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: bg-slate-100 ΓÇö kh├┤ng c├│ --color-slate-100 
+trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: bg-slate-200 ΓÇö kh├┤ng c├│ --color-slate-200 
+trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: text-blue-700 ΓÇö kh├┤ng c├│ --text-blue-700 v├á 
+c┼⌐ng kh├┤ng c├│ --color-blue-700 trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: text-emerald-700 ΓÇö kh├┤ng c├│ 
+--text-emerald-700 v├á c┼⌐ng kh├┤ng c├│ --color-emerald-700 trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: text-slate-400 ΓÇö kh├┤ng c├│ --text-slate-400 
+v├á c┼⌐ng kh├┤ng c├│ --color-slate-400 trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: text-slate-400 ΓÇö kh├┤ng c├│ --text-slate-400 
+v├á c┼⌐ng kh├┤ng c├│ --color-slate-400 trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: text-slate-400 ΓÇö kh├┤ng c├│ --text-slate-400 
+v├á c┼⌐ng kh├┤ng c├│ --color-slate-400 trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: text-slate-500 ΓÇö kh├┤ng c├│ --text-slate-500 
+v├á c┼⌐ng kh├┤ng c├│ --color-slate-500 trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: text-slate-500 ΓÇö kh├┤ng c├│ --text-slate-500 
+v├á c┼⌐ng kh├┤ng c├│ --color-slate-500 trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: text-slate-500 ΓÇö kh├┤ng c├│ --text-slate-500 
+v├á c┼⌐ng kh├┤ng c├│ --color-slate-500 trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: text-slate-700 ΓÇö kh├┤ng c├│ --text-slate-700 
+v├á c┼⌐ng kh├┤ng c├│ --color-slate-700 trong @theme",
++   "src/domains/job-board/components/landing/featured-job-card.tsx: text-slate-900 ΓÇö kh├┤ng c├│ --text-slate-900 
+v├á c┼⌐ng kh├┤ng c├│ --color-slate-900 trong @theme",
++ ]
+
+ Γ¥» src/domains/job-board/public-ui-token-parity.static.test.ts:331:20
+ Test Files  5 failed | 111 passed (116)
+      Tests  13 failed | 1822 passed (1835)
+   Start at  18:43:32
+   Duration  48.62s (transform 3.04s, setup 0ms, collect 10.17s, tests 3.50s, environment 32ms, prepare 11.65s)
+
+    329|   it('P-01 ΓÇö kh├┤ng class text-*/font-*/bg-* n├áo tr├¬n trang chß╗º sinh raΓÇª
+    330|     const report = FAILURES.map((f) => `${f.file}: ${f.token} ΓÇö ${f.reΓÇª
+    331|     expect(report).toEqual([]);
+       |                    ^
+    332|   });
+    333| 
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[12/13]ΓÄ»
+
+ FAIL  src/shared/ui/design-tokens.static.test.ts > RQ-04/AC-03 ΓÇö mß╗ìi biß║┐n CSS m├á .tsx gß╗ìi ─æß╗üu ph├ón 
+giß║úi ─æ╞░ß╗úc > kh├┤ng c├▓n l╞░ß╗út var(--ten) n├áo trß╗Å tß╗¢i custom property kh├┤ng tß╗ôn tß║íi
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "app/admin/jobs/job-opening-status-card.tsx:67 var(--surface-container-high)",
++ ]
+
+ Γ¥» src/shared/ui/design-tokens.static.test.ts:86:24
+     84|       ),
+     85|     );
+     86|     expect(violations).toEqual([]);
+       |                        ^
+     87|   });
+     88| });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[13/13]ΓÄ»
+

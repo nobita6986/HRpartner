@@ -1,0 +1,8 @@
+﻿AC-12: 1080px composition (VIS-06) intact
+
+src\domains\job-board\components\landing\best-jobs-section.tsx:60:      {/* RQ-10 / DEC-14 (VIS-06): inner container 
+max-w-[1080px] */}
+src\domains\job-board\components\landing\best-jobs-section.tsx:61:      <div className="mx-auto w-full max-w-[1080px] 
+px-4 md:px-6">
+
+

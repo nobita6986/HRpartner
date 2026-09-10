@@ -573,7 +573,7 @@ function areaHaystack(row: PublicProjectRow, job: PublicJobDto): string {
 
 export async function listPublicJobProjection(
   tx: Prisma.TransactionClient,
-  opts: { q?: string; area?: string; shift?: string; shiftTypes?: string[]; jobTypes?: string[]; offset?: number; limit?: number } = {},
+  opts: { q?: string; area?: string; shift?: string; shiftTypes?: string[]; jobTypes?: string[]; offset?: number; limit?: number; urgency?: 'URGENT' } = {},
 ): Promise<PublicJobListResult> {
   const offset = Math.max(0, opts.offset ?? 0);
   const limit = Math.min(50, Math.max(1, opts.limit ?? 20));
@@ -670,7 +670,9 @@ export async function listPublicJobProjection(
     // kíp đứng đầu. Đây là chính giá trị mà facet `shifts` chào ra cho UI.
     .filter(({ job }) => !shift || job.shifts.some((label) => label.includes(shift)))
     .filter(({ job }) => !opts.shiftTypes?.length || (job.shiftType !== null && opts.shiftTypes.includes(job.shiftType)))
-    .filter(({ job }) => !opts.jobTypes?.length || opts.jobTypes.includes(job.jobType));
+    .filter(({ job }) => !opts.jobTypes?.length || opts.jobTypes.includes(job.jobType))
+    // DEC-02: filter URGENT BEFORE pagination — total and nextOffset describe the filtered set
+    .filter(({ job }) => !opts.urgency || job.urgency === 'URGENT');
 
   // DEC-06: `total` là số việc THẬT sau lifecycle và sau filter; `nextOffset` chỉ khác null khi còn
   // dòng phía sau. Cả trang và tổng đều tính từ cùng một mảng, nên không thể lệch nhau.

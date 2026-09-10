@@ -1,0 +1,31 @@
+04b767e468f2255f6179223a092466a1441bed91
+
+# Baseline unit test failure set at HEAD 04b767e
+# Captured by Tier 2 per directive tier1-directive-handoff-correction.md Step 1
+# 13 pre-existing tests fail on 5 files (confirmed by Tier 1)
+# R3 did NOT introduce any new failures
+
+Test Files  5 failed | 111 passed (116)
+     Tests  13 failed | 1822 passed (1835)
+
+Failures:
+  src/domains/applications/marketplace-browse.routes.test.ts (1)
+    - RQ-03 — GET /api/jobs (list) > chuyển đổi query string xuống service, và BĐ tham số ngắn để bị loại bởi
+
+  src/domains/applications/marketplace-inventory.static.test.ts (2)
+    - DEC-01 / RQ-01, RQ-02 — BestJobs tab filter and pagination in page.tsx > page.tsx has BestJobs tab state and fetches separately (DEC-05)
+
+  src/domains/job-board/public-ui-premium.static.test.ts (8)
+    - go-live-08 / RQ-02, RQ-03, RQ-04 — card việc làm > padding card bằng token 24px và cỡ tên việc làm để tăng cấp
+    - go-live-08 / RQ-05, RQ-06 — phản hồi nhanh > cập nhật
+    - go-live-08 / RQ-21 — icon ligature trang trí bởi
+    - DEC-01 / STEP-03 / RQ-01, RQ-05 — BestJobs tab
+    - DEC-06 / STEP-02 / RQ-03, RQ-04 — URGENT fixture
+
+  src/domains/job-board/public-ui-token-parity.static.test.ts (1)
+    - Tương thích token với class — RQ-12 > P-01 — không class text-*/font-*/bg-* nào trên trang chủ sinh ra 0 byte CSS
+
+  src/shared/ui/design-tokens.static.test.ts (1)
+    - RQ-04/AC-03 — mỗi biến CSS mà .tsx gọi đều phải giải thì được > không còn lần var(--tên) nào tới custom property không tồn tại
+
+Note: Tier 1 confirmed these 13 failures match the baseline at 04b767e. R3 source changes do NOT touch these test files.

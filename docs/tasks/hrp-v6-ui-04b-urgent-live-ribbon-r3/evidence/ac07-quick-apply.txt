@@ -1,0 +1,30 @@
+﻿AC-07: URGENT tab Quick Apply opens ApplyModal with real job
+Evidence: onApply chain: page.tsx handleApply → setApplyJob → ApplyModal receives job
+
+  app\(portal)\page.tsx:5:import { useRouter } from 'next/navigation';
+> app\(portal)\page.tsx:6:import { ApplyModal } from '@/src/domains/job-board/components/apply-modal';
+  app\(portal)\page.tsx:7:import { SuccessModal } from '@/src/domains/job-board/components/success-modal';
+  app\(portal)\page.tsx:81:  const [overview, setOverview] = useState<PublicJobOverview>(EMPTY_OVERVIEW);
+> app\(portal)\page.tsx:82:  const [applyJob, setApplyJob] = useState<EnrichedJob | null>(null);
+  app\(portal)\page.tsx:83:  const [appliedIds, setAppliedIds] = useState<string[]>([]);
+  app\(portal)\page.tsx:194:
+> app\(portal)\page.tsx:195:  function handleApply(job: EnrichedJob) {
+> app\(portal)\page.tsx:196:    setApplyJob(job);
+  app\(portal)\page.tsx:197:    setSuccessCode('');
+  app\(portal)\page.tsx:199:
+> app\(portal)\page.tsx:200:  function handleApplySuccess(code: string) {
+  app\(portal)\page.tsx:201:    if (applyJob) setAppliedIds((prev) => [...prev, applyJob.id]);
+> app\(portal)\page.tsx:202:    setApplyJob(null);
+  app\(portal)\page.tsx:203:    setSuccessCode(code);
+  app\(portal)\page.tsx:361:        /* DEC-04: prop chain chốt — page.tsx closure → BestJobsSection → FeaturedJobCard 
+*/
+> app\(portal)\page.tsx:362:        onApply={handleApply}
+  app\(portal)\page.tsx:363:      />
+  app\(portal)\page.tsx:378:      {applyJob && (
+> app\(portal)\page.tsx:379:        <ApplyModal
+  app\(portal)\page.tsx:380:          job={applyJob}
+> app\(portal)\page.tsx:381:          onClose={() => setApplyJob(null)}
+> app\(portal)\page.tsx:382:          onSuccess={handleApplySuccess}
+  app\(portal)\page.tsx:383:        />
+
+

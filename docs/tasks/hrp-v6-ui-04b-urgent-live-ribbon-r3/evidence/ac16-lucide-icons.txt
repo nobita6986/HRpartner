@@ -1,0 +1,29 @@
+﻿AC-16: Lucide icons MapPin Clock3 Banknote Flame; aria-hidden=true
+
+src\domains\job-board\components\landing\featured-job-card.tsx:2:import { MapPin, Clock3, Banknote, Flame } from 
+'lucide-react';
+src\domains\job-board\components\landing\featured-job-card.tsx:73:          <Flame className="h-3 w-3 shrink-0" 
+aria-hidden="true" />
+src\domains\job-board\components\landing\featured-job-card.tsx:103:            <MapPin className="h-3.5 w-3.5 shrink-0 
+text-slate-400" aria-hidden="true" />
+src\domains\job-board\components\landing\featured-job-card.tsx:109:            <Clock3 className="h-3.5 w-3.5 shrink-0 
+text-slate-400" aria-hidden="true" />
+src\domains\job-board\components\landing\featured-job-card.tsx:120:          <Banknote className="h-3.5 w-3.5 
+shrink-0" aria-hidden="true" />
+
+
+
+src\domains\job-board\components\landing\featured-job-card.tsx:73:          <Flame className="h-3 w-3 shrink-0" 
+aria-hidden="true" />
+src\domains\job-board\components\landing\featured-job-card.tsx:103:            <MapPin className="h-3.5 w-3.5 shrink-0 
+text-slate-400" aria-hidden="true" />
+src\domains\job-board\components\landing\featured-job-card.tsx:109:            <Clock3 className="h-3.5 w-3.5 shrink-0 
+text-slate-400" aria-hidden="true" />
+src\domains\job-board\components\landing\featured-job-card.tsx:120:          <Banknote className="h-3.5 w-3.5 
+shrink-0" aria-hidden="true" />
+src\domains\job-board\components\landing\featured-job-card.tsx:133:          <svg className="h-3.5 w-3.5" fill="none" 
+stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+src\domains\job-board\components\landing\featured-job-card.tsx:151:          <svg className="h-3.5 w-3.5" fill="none" 
+stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+
+

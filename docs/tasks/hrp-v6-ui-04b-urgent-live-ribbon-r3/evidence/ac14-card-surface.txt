@@ -1,0 +1,11 @@
+﻿AC-14: Card surface bg-white border-slate-200 rounded-xl shadow-sm
+
+src\domains\job-board\components\landing\featured-job-card.tsx:63:      /* RQ-14: Minimal SaaS surface — white bg + 
+slate border + rounded-xl + shadow-sm */
+src\domains\job-board\components\landing\featured-job-card.tsx:64:      className="hrp-focus group relative flex 
+h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 
+hover:shadow-md"
+src\domains\job-board\components\landing\featured-job-card.tsx:83:          className="h-12 w-12 shrink-0 rounded-lg 
+border border-slate-100 bg-white"
+
+

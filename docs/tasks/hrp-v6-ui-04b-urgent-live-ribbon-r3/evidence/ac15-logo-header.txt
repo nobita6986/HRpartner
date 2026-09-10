@@ -1,0 +1,17 @@
+﻿AC-15: Logo 48px w-12 h-12 rounded-lg border-slate-100; content min-w-0
+
+src\domains\job-board\components\landing\featured-job-card.tsx:79:      {/* RQ-15: 2-col layout — logo fixed 48px 
+square + content column with min-w-0 */}
+src\domains\job-board\components\landing\featured-job-card.tsx:83:          className="h-12 w-12 shrink-0 rounded-lg 
+border border-slate-100 bg-white"
+src\domains\job-board\components\landing\featured-job-card.tsx:85:        <div className="min-w-0 flex-1">
+src\domains\job-board\components\landing\featured-job-card.tsx:117:      <div className="mt-auto flex items-center 
+gap-2 border-t border-slate-100 p-4">
+src\domains\job-board\components\landing\featured-job-card.tsx:130:          className="inline-flex items-center gap-1 
+rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 
+focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+src\domains\job-board\components\landing\featured-job-card.tsx:143:          className={`inline-flex items-center 
+gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 
+focus-visible:outline-offset-2
+
+

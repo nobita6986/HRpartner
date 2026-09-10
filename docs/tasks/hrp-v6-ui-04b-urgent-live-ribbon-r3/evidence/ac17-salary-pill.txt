@@ -1,0 +1,11 @@
+﻿AC-17: Salary pill bg-emerald-50 text-emerald-700; NO bg-primary-fixed
+
+src\domains\job-board\components\landing\featured-job-card.tsx:2:import { MapPin, Clock3, Banknote, Flame } from 
+'lucide-react';
+src\domains\job-board\components\landing\featured-job-card.tsx:28:  if (min === null) return 'Lương thương lượng';
+src\domains\job-board\components\landing\featured-job-card.tsx:119:        <span className="inline-flex items-center 
+gap-1 rounded-md bg-emerald-50 px-2.5 py-1 text-sm font-semibold text-emerald-700">
+src\domains\job-board\components\landing\featured-job-card.tsx:120:          <Banknote className="h-3.5 w-3.5 
+shrink-0" aria-hidden="true" />
+
+

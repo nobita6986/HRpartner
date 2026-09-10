@@ -1,0 +1,19 @@
+﻿AC-25: Component tests — 75 tests covering real job, negotiable salary, long title, urgent, Quick Apply, detail href, mobile, reduced-motion, hover contrast
+node.exe : [33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ RUN  v2.1.9 C:/CodeApp/HrP
+
+ Γ£ô src/domains/job-board/components/landing/featured-job-card.test.ts (75 tests) 17ms
+
+ Test Files  1 passed (1)
+      Tests  75 passed (75)
+   Start at  18:46:14
+   Duration  543ms (transform 58ms, setup 0ms, collect 58ms, tests 17ms, environment 0ms, prepare 99ms)
+

@@ -1,0 +1,12 @@
+﻿AC-18: Xem chi tiết CTA bg-blue-600 hover:bg-blue-700; href={href}
+
+src\domains\job-board\components\landing\featured-job-card.tsx:116:      {/* RQ-17/RQ-18/RQ-19: salary pill (left) + 
+Xem chi tiết CTA blue (right) */}
+src\domains\job-board\components\landing\featured-job-card.tsx:127:        {/* RQ-18/RQ-24: Xem chi tiết — Link and 
+CTA share same canonical href */}
+src\domains\job-board\components\landing\featured-job-card.tsx:130:          className="inline-flex items-center gap-1 
+rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 
+focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+src\domains\job-board\components\landing\featured-job-card.tsx:132:          <span>Xem chi tiết</span>
+
+

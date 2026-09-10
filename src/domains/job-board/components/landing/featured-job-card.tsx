@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { MapPin, Clock3, Banknote, Flame } from 'lucide-react';
 import type { EnrichedJob } from '@/app/(portal)/page';
 import { HrMonogram } from './hr-monogram';
 
@@ -13,6 +14,8 @@ export interface FeaturedJobCardProps {
     location?: string | null;
     badgeType?: 'urgent' | 'new' | null;
     source?: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
+    /** RQ-20: ISO timestamp of newest visible order — render only when truthy */
+    postedAt?: string | null;
   };
   /** Canonical detail URL built by BestJobsSection via buildHref(job.slug) */
   href: string;
@@ -38,244 +41,119 @@ function isPreview(job: FeaturedJobCardProps['job']): boolean {
   );
 }
 
+/** Formats postedAt ISO to a short date label for display. */
+function postedAtLabel(iso: string | null | undefined): string {
+  if (!iso) return '';
+  try {
+    const date = new Date(iso);
+    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return '';
+  }
+}
+
 export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
   const preview = isPreview(job);
-  const hasSalary = job.salaryMinVnd !== null;
   const displaySalary = salaryLabel(job.salaryMinVnd, job.salaryMaxVnd);
-  const ctaLabel = preview ? 'Bản xem trước' : 'Ứng tuyển nhanh';
+  const postedAtDisplay = postedAtLabel(job.postedAt);
 
   return (
     <article
       data-testid={`featured-job-${job.id}`}
-      className="hrp-focus group relative card flex h-full flex-col gap-4 overflow-hidden rounded-2xl border border-outline-variant bg-surface p-5 shadow-card transition hover:-translate-y-0.5 hover:border-primary-container"
+      /* RQ-14: Minimal SaaS surface — white bg + slate border + rounded-xl + shadow-sm */
+      className="hrp-focus group relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
     >
-      {/* VIS-01: Ribbon sát góc trên-phải — chỉ khi badgeType === 'urgent' */}
+      {/* RQ-09/RQ-10/RQ-23: Ribbon compact — top-right overlay, pointer-events-none, ~24-28px height */}
       {job.badgeType === 'urgent' && (
         <span
-          className="absolute top-0 right-0 z-20 flex items-center gap-1 rounded-bl-lg bg-primary-container px-3 py-1 text-white shadow-sm"
+          /* pointer-events-none: overlay does not push content; RQ-09: no pr-[72px] on title */
+          className="pointer-events-none absolute top-0 right-0 z-20 flex items-center gap-1 rounded-bl-md border-l border-b border-orange-300/40 bg-orange-500/75 px-2 py-1 text-white backdrop-blur-[1px]"
           aria-label="Tuyển gấp"
         >
-          <span className="material-symbols-outlined text-[14px]" aria-hidden="true">
-            local_fire_department
-          </span>
-          <span className="px-2 py-0.5 text-[12px]">Tuyển gấp</span>
+          <Flame className="h-3 w-3 shrink-0" aria-hidden="true" />
+          <span className="text-[11px] font-semibold leading-none">Tuyển gấp</span>
         </span>
       )}
 
-      {/* ─── Card content: semantic Link (DEC-01) ─────────────────────────── */}
-      {/* DEC-01: Link bọc content; CTA button là sibling bên ngoài Link */}
-      {/* KHÔNG nested interactive element — Link và CTA là siblings */}
-      <Link
-        href={href}
-        className="hrp-focus flex flex-1 flex-col gap-4 rounded outline-none"
-        /* RQ-05: Focus indicator via hrp-focus class */
-      >
-        {/* Title/meta wrapper — pr-[72px] when urgent to avoid ribbon collision */}
-        <div className="flex items-start gap-4">
-          <HrMonogram
-            size={64}
-            className="w-16 h-16 shrink-0 rounded-xl border border-outline-variant bg-white"
-          />
-          <div className={`flex-1 ${job.badgeType === 'urgent' ? 'pr-[72px]' : ''}`}>
-            <h3 className="font-head text-headline-md font-bold leading-tight text-on-surface transition group-hover:text-primary-container mb-1">
-              {job.title}
-            </h3>
-            <p className="font-body text-body-md text-primary-container">
-              HRP Việt Nam
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 font-body text-body-md text-on-surface-variant">
-          <span className="material-symbols-outlined text-base" aria-hidden="true">
-            location_on
-          </span>
-          <span>{job.location ?? 'Toàn quốc'}</span>
-        </div>
-      </Link>
-
-      {/* ─── Action area: CSS 3D flip (DEC-02) ─────────────────────────── */}
-      {/*
-       * DEC-02: Flip chỉ áp dụng vùng action/salary area — KHÔNG flip toàn bộ card.
-       * Chiều cao CỐ ĐỊNH để grid không reflow khi flip.
-       * Dùng CSS 3D transform với perspective + transform-style: preserve-3d + backface-visibility.
-       */}
-      <div className="action-area-container relative h-[52px] overflow-hidden md:h-[56px]">
-        <div className="action-area-wrapper absolute inset-0" data-testid="action-area-wrapper">
-
-          {/* ── Front face: salary badge ── */}
-          {/*
-           * Mặt trước: salary badge thật hoặc "Lương thương lượng" (DEC-09).
-           * Hiển thị khi: (a) card có salary) HOẶC (b) không salary nhưng vẫn flip được.
-           */}
-          <div
-            className="action-area-front absolute inset-0 flex items-center justify-center rounded-xl bg-primary-fixed p-3 backface-hidden"
-            data-testid="action-area-front"
-            aria-hidden="false"
+      {/* ─── Header ─────────────────────────────────────────────────────── */}
+      {/* RQ-15: 2-col layout — logo fixed 48px square + content column with min-w-0 */}
+      <div className="flex items-start gap-3 p-4">
+        <HrMonogram
+          size={48}
+          className="h-12 w-12 shrink-0 rounded-lg border border-slate-100 bg-white"
+        />
+        <div className="min-w-0 flex-1">
+          <h3
+            className="text-lg font-semibold leading-tight text-slate-900 transition group-hover:text-blue-700 mb-0.5"
+            title={job.title}
           >
-            <div className="flex items-center justify-center gap-2">
-              <span
-                className="material-symbols-outlined text-[20px] text-primary-container"
-                aria-hidden="true"
-              >
-                payments
-              </span>
-              <span className="font-label text-label-md font-bold text-primary-container">
-                {displaySalary}
-              </span>
-            </div>
-          </div>
-
-          {/* ── Back face: CTA button ── */}
-          {/*
-           * Mặt sau: CTA "Ứng tuyển nhanh".
-           * DEC-01: CTA là sibling của Link, KHÔNG nested trong Link.
-           * KHÔNG dùng aria-hidden trên CTA vì nó có thể focus (RQ-05 / DEC-13).
-           */}
-          <div
-            className="action-area-back absolute inset-0 flex items-center justify-center rounded-xl rotate-x-180 backface-hidden"
-            data-testid="action-area-back"
-            aria-hidden="false"
-          >
-            <button
-              type="button"
-              disabled={preview}
-              onClick={preview ? undefined : onApply}
-              className={`
-                flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2
-                font-label text-label-md font-semibold
-                transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
-                ${
-                  preview
-                    ? 'bg-surface-container-high text-on-surface-variant cursor-not-allowed opacity-60'
-                    : 'bg-primary text-white hover:bg-primary-container focus-visible:outline-primary-container'
-                }
-              `}
-              aria-label={ctaLabel}
-              data-testid="featured-job-cta"
-            >
-              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
-                how_to_reg
-              </span>
-              <span>{ctaLabel}</span>
-            </button>
-          </div>
+            {job.title}
+          </h3>
+          <p className="text-sm font-medium text-slate-500">
+            HRP Việt Nam
+          </p>
         </div>
       </div>
 
-      <style>{`
-        /* ─── DEC-02 / RQ-02: CSS 3D flip transform ─── */
-        .action-area-container {
-          perspective: 600px;
-        }
+      {/* ─── Body / Metadata ───────────────────────────────────────────── */}
+      {/* RQ-16: responsive row with Lucide icons */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 pb-3">
+        {job.location && (
+          <span className="inline-flex items-center gap-1 text-sm text-slate-500">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+            <span>{job.location}</span>
+          </span>
+        )}
+        {postedAtDisplay && (
+          <span className="inline-flex items-center gap-1 text-sm text-slate-500">
+            <Clock3 className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+            <span>{postedAtDisplay}</span>
+          </span>
+        )}
+      </div>
 
-        .action-area-wrapper {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          transform-style: preserve-3d;
-          transition: transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
-        }
+      {/* ─── Footer / Actions ──────────────────────────────────────────── */}
+      {/* RQ-17/RQ-18/RQ-19: salary pill (left) + Xem chi tiết CTA blue (right) */}
+      <div className="mt-auto flex items-center gap-2 border-t border-slate-100 p-4">
+        {/* RQ-17: Salary pill — inline emerald, NOT full-width slab */}
+        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-1 text-sm font-semibold text-emerald-700">
+          <Banknote className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span>{displaySalary}</span>
+        </span>
 
-        /* ─── RQ-03 / AC-05: hover/focus-within trigger flip ─── */
-        /* Desktop: khi pointer vào card → mặt sau (CTA) ra */
-        article:is(:hover, :focus-within) .action-area-wrapper {
-          transform: rotateX(180deg);
-        }
+        {/* Spacer */}
+        <span className="flex-1" />
 
-        /* Fixed height để grid không reflow (DEC-02) */
-        .action-area-front,
-        .action-area-back {
-          height: 100%;
-        }
+        {/* RQ-18/RQ-24: Xem chi tiết — Link and CTA share same canonical href */}
+        <Link
+          href={href}
+          className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+        >
+          <span>Xem chi tiết</span>
+          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+          </svg>
+        </Link>
 
-        .backface-hidden {
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-        }
-
-        /* Mặt sau quay 180° để bắt đầu ẩn */
-        .rotate-x-180 {
-          transform: rotateX(180deg);
-        }
-
-        /* ─── RQ-04 / AC-06: mobile — hiển thị salary + CTA song song (side by side) ─── */
-        @media (hover: none) and (pointer: coarse) {
-          /* Touch device: hiển thị cả salary và CTA không cần hover */
-          .action-area-container {
-            height: auto;
-            perspective: none;
-          }
-
-          .action-area-wrapper {
-            position: static;
-            transform: none !important;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-          }
-
-          .action-area-front,
-          .action-area-back {
-            position: static;
-            transform: none !important;
-            height: auto;
-            min-height: 48px;
-          }
-        }
-
-        @media (max-width: 767px) {
-          .action-area-container {
-            height: auto;
-            perspective: none;
-          }
-
-          .action-area-wrapper {
-            position: static;
-            transform: none !important;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-          }
-
-          .action-area-front,
-          .action-area-back {
-            position: static;
-            transform: none !important;
-            height: auto;
-            min-height: 48px;
-          }
-        }
-
-        /* ─── RQ-06 / AC-07 / DEC-07: prefers-reduced-motion ─── */
-        @media (prefers-reduced-motion: reduce) {
-          .action-area-wrapper {
-            transition: none;
-            transform: none !important;
-          }
-
-          /* Luôn hiện cả salary và CTA song song khi reduced motion */
-          .action-area-container {
-            height: auto;
-            perspective: none;
-          }
-
-          .action-area-wrapper {
-            position: static;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-          }
-
-          .action-area-front,
-          .action-area-back {
-            position: static;
-            transform: none !important;
-            height: auto;
-            min-height: 48px;
-          }
-        }
-      `}</style>
+        {/* RQ-18/RQ-19: Quick Apply — pill-sized compact, hover-trigger desktop, accessible mobile */}
+        <button
+          type="button"
+          disabled={preview}
+          onClick={preview ? undefined : onApply}
+          className={`inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+            ${preview
+              ? 'cursor-not-allowed bg-slate-100 text-slate-400 opacity-60'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus-visible:outline-slate-400'
+            }`}
+          aria-label={preview ? 'Bản xem trước' : 'Ứng tuyển nhanh'}
+          data-testid="featured-job-cta"
+        >
+          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+          </svg>
+          <span className="hidden sm:inline">{preview ? 'Bản xem trước' : 'Ứng tuyển'}</span>
+        </button>
+      </div>
     </article>
   );
 }

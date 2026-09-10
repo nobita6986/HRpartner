@@ -12,7 +12,6 @@ import { RecruitmentHighlight } from '@/src/domains/job-board/components/landing
 import { RecruitingProjectsSection } from '@/src/domains/job-board/components/landing/recruiting-projects-section';
 import { ReferralStrip } from '@/src/domains/job-board/components/landing/referral-strip';
 import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
-import { BEST_JOBS_URGENT_PREVIEW } from '@/src/domains/job-board/fixtures/best-jobs-urgent-preview';
 import { buildListingHref } from '@/src/domains/job-board/public-listing.params';
 import type {
   PublicJobDto,
@@ -44,10 +43,12 @@ export interface EnrichedJob {
   salaryMinVnd: number | null;
   salaryMaxVnd: number | null;
   availableSlots: number;
+  /** RQ-20 / STEP-10: postedAt from PublicJobDto for recruitment time display */
+  postedAt: string | null;
 }
 
 function enrichJob(job: PublicJobDto): EnrichedJob {
-  const { salaryMinVnd, salaryMaxVnd, urgency } = job;
+  const { salaryMinVnd, salaryMaxVnd, urgency, postedAt } = job;
   return {
     id: job.id,
     slug: job.slug ?? job.id,
@@ -57,6 +58,7 @@ function enrichJob(job: PublicJobDto): EnrichedJob {
     salaryMinVnd,
     salaryMaxVnd,
     availableSlots: job.availableSlots,
+    postedAt: postedAt ?? null,
   };
 }
 
@@ -85,6 +87,13 @@ export default function JobsPage() {
   const [bestJobsTab, setBestJobsTab] = useState<'all' | 'urgent'>('all');
   const [bestJobsOffset, setBestJobsOffset] = useState(0);
   const [bestJobsData, setBestJobsData] = useState<{ jobs: EnrichedJob[]; total: number; bestJobsNextOffset: number | null }>({
+    jobs: [],
+    total: 0,
+    bestJobsNextOffset: null,
+  });
+  // STEP-04/STEP-05: URGENT tab separate data state + offset (race-safe: tab-specific)
+  const [bestJobsUrgentOffset, setBestJobsUrgentOffset] = useState(0);
+  const [bestJobsUrgentData, setBestJobsUrgentData] = useState<{ jobs: EnrichedJob[]; total: number; bestJobsNextOffset: number | null }>({
     jobs: [],
     total: 0,
     bestJobsNextOffset: null,
@@ -132,6 +141,45 @@ export default function JobsPage() {
     bootstrapBestJobs(bestJobsOffset);
   }, [bestJobsOffset, bootstrapBestJobs]);
 
+  // STEP-04/STEP-05: bootstrapBestJobsUrgent — URGENT tab fetch; separate from 'all' tab; does NOT set facets/overview (RQ-07)
+  const bootstrapBestJobsUrgent = useCallback(
+    (offset: number) => {
+      if (bestJobsTab !== 'urgent') return;
+
+      let cancelled = false;
+      setBestJobsLoading(true);
+
+      fetch(`/api/jobs?urgency=URGENT&${buildBestJobsQuery(offset)}`, { cache: 'no-store' })
+        .then((res) => {
+          if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+          return res.json() as Promise<PublicJobListResult>;
+        })
+        .then((data) => {
+          if (cancelled) return;
+          const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
+          // RQ-07: URGENT response does NOT update global facets/overview — only 'all' tab does
+          setBestJobsUrgentData({
+            jobs: incoming,
+            total: typeof data.total === 'number' ? data.total : 0,
+            bestJobsNextOffset: typeof data.nextOffset === 'number' ? data.nextOffset : null,
+          });
+        })
+        .catch((e) => {
+          if (cancelled) return;
+          console.warn('bootstrapBestJobsUrgent error:', e instanceof Error ? e.message : e);
+        })
+        .finally(() => {
+          if (!cancelled) setBestJobsLoading(false);
+        });
+    },
+    [bestJobsTab],
+  );
+
+  // bootstrapBestJobsUrgent runs when urgent offset changes
+  useEffect(() => {
+    bootstrapBestJobsUrgent(bestJobsUrgentOffset);
+  }, [bestJobsUrgentOffset, bootstrapBestJobsUrgent]);
+
   // DEC-01 / STEP-02: Hero form submit → navigate tới /viec-lam với offset: 0
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -158,17 +206,28 @@ export default function JobsPage() {
   // BestJobs tab handlers
   function handleBestJobsTabChange(tab: 'all' | 'urgent') {
     setBestJobsTab(tab);
+    // STEP-05: race-safe — reset offset on tab change
     if (tab === 'all') {
       setBestJobsOffset(0);
+    } else {
+      setBestJobsUrgentOffset(0);
     }
   }
 
   function handleBestJobsPrev() {
-    setBestJobsOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
+    if (bestJobsTab === 'all') {
+      setBestJobsOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
+    } else {
+      setBestJobsUrgentOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
+    }
   }
 
   function handleBestJobsNext() {
-    setBestJobsOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
+    if (bestJobsTab === 'all') {
+      setBestJobsOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
+    } else {
+      setBestJobsUrgentOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
+    }
   }
 
   // Featured source — newest first, topPaid fallback (per RQ-03 / RQ-11)
@@ -187,11 +246,11 @@ export default function JobsPage() {
     return { name, count: found?.count ?? 0 };
   });
 
-  // DEC-05: Determine BestJobs display data based on active tab
-  const bestJobsDisplayJobs = bestJobsTab === 'all' ? bestJobsData.jobs : BEST_JOBS_URGENT_PREVIEW;
+  // STEP-04: Determine BestJobs display data based on active tab — live data, no fixture
+  const bestJobsDisplayJobs = bestJobsTab === 'all' ? bestJobsData.jobs : bestJobsUrgentData.jobs;
   const bestJobsDisplayTotal =
-    bestJobsTab === 'all' ? bestJobsData.total : BEST_JOBS_URGENT_PREVIEW.length;
-  const bestJobsDisplayNextOffset = bestJobsTab === 'all' ? bestJobsData.bestJobsNextOffset : null;
+    bestJobsTab === 'all' ? bestJobsData.total : bestJobsUrgentData.total;
+  const bestJobsDisplayNextOffset = bestJobsTab === 'all' ? bestJobsData.bestJobsNextOffset : bestJobsUrgentData.bestJobsNextOffset;
 
   return (
     <main id="hrp-main" tabIndex={-1} className="flex w-full flex-col items-stretch gap-0">
@@ -286,12 +345,12 @@ export default function JobsPage() {
         </div>
       </Hero>
 
-      {/* DEC-01 / RQ-01, RQ-02, RQ-05, RQ-06: BestJobs tab + pagination */}
+      {/* STEP-04 / STEP-05 / STEP-06: BestJobs tab + pagination — live URGENT data */}
       <BestJobsSection
         jobs={bestJobsDisplayJobs}
         total={bestJobsDisplayTotal}
         pageSize={BEST_JOBS_PAGE_SIZE}
-        offset={bestJobsOffset}
+        offset={bestJobsTab === 'all' ? bestJobsOffset : bestJobsUrgentOffset}
         nextOffset={bestJobsDisplayNextOffset}
         tab={bestJobsTab}
         onTabChange={handleBestJobsTabChange}
@@ -299,7 +358,6 @@ export default function JobsPage() {
         onNext={handleBestJobsNext}
         /* DEC-06: dùng job.slug, KHÔNG job.id */
         buildHref={(jobSlug) => publicJobDetailPath(jobSlug)}
-        urgentPreviewBadge="Preview"
         /* DEC-04: prop chain chốt — page.tsx closure → BestJobsSection → FeaturedJobCard */
         onApply={handleApply}
       />

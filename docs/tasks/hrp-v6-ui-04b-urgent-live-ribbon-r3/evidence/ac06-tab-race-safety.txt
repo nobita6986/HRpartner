@@ -1,0 +1,22 @@
+﻿AC-06: Tab switch race-safe — tab-specific state, offset reset on tab change
+
+app\(portal)\page.tsx:88:  const [bestJobsOffset, setBestJobsOffset] = useState(0);
+app\(portal)\page.tsx:95:  const [bestJobsUrgentOffset, setBestJobsUrgentOffset] = useState(0);
+app\(portal)\page.tsx:104:  // KHÔNG có mode append, KHÔNG jobs state, KHÔNG nextOffset (chỉ bestJobsOffset), KHÔNG 
+generation/sentinel/observer.
+app\(portal)\page.tsx:139:  // bootstrapBestJobs chạy khi mount và khi bestJobsOffset đổi
+app\(portal)\page.tsx:141:    bootstrapBestJobs(bestJobsOffset);
+app\(portal)\page.tsx:142:  }, [bestJobsOffset, bootstrapBestJobs]);
+app\(portal)\page.tsx:180:    bootstrapBestJobsUrgent(bestJobsUrgentOffset);
+app\(portal)\page.tsx:181:  }, [bestJobsUrgentOffset, bootstrapBestJobsUrgent]);
+app\(portal)\page.tsx:207:  function handleBestJobsTabChange(tab: 'all' | 'urgent') {
+app\(portal)\page.tsx:211:      setBestJobsOffset(0);
+app\(portal)\page.tsx:213:      setBestJobsUrgentOffset(0);
+app\(portal)\page.tsx:219:      setBestJobsOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
+app\(portal)\page.tsx:221:      setBestJobsUrgentOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
+app\(portal)\page.tsx:227:      setBestJobsOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
+app\(portal)\page.tsx:229:      setBestJobsUrgentOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
+app\(portal)\page.tsx:353:        offset={bestJobsTab === 'all' ? bestJobsOffset : bestJobsUrgentOffset}
+app\(portal)\page.tsx:356:        onTabChange={handleBestJobsTabChange}
+
+

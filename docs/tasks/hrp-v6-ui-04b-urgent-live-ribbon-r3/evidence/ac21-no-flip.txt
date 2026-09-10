@@ -1,0 +1,1 @@
+﻿AC-21: No CSS 3D flip (perspective/rotateX); salary+Quick Apply+detail always visible
