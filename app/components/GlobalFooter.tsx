@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { Briefcase, Cpu, Users, PackageOpen, Package } from 'lucide-react';
-import { ContactForm } from './ContactForm';
 
 interface FooterLink {
   href: string;
@@ -111,14 +110,19 @@ export function GlobalFooter() {
             </ul>
           </div>
 
-          {/* Cột 3: Liên hệ */}
-          <div className="flex flex-col gap-3">
+          {/* Cột 3: Bản đồ */}
+          <div className="flex flex-col gap-y-3">
             <h3 className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface">
-              THÔNG TIN LIÊN HỆ
+              BẢN ĐỒ
             </h3>
-            {/* RQ-14: Panel cam ấm wrap ContactForm */}
-            <div className="rounded-2xl bg-primary-container/40 p-4 md:p-5">
-              <ContactForm disabled={true} />
+            <div className="overflow-hidden rounded-2xl border border-outline-variant">
+              <iframe
+                title="HRP Việt Nam - Bản đồ"
+                width="100%"
+                height="220"
+                loading="lazy"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=105.20%2C21.35%2C105.30%2C21.45&layer=mapnik&marker=21.40%2C105.25"
+              />
             </div>
           </div>
         </div>
