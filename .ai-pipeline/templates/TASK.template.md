@@ -7,7 +7,8 @@
 | Task slug | `<task-slug>` |
 | Work type | `CODE | DOCS | DESIGN | INFRA | MIXED` |
 | Assurance lane | `FAST | STANDARD | CRITICAL` |
-| Audit mode | `NONE | FOCUSED | DEEP` (suy ra từ lane; FAST mặc định NONE) |
+| Audit mode | `NONE | LIGHT` |
+| Audit reason | `<một câu; CRITICAL + NONE phải nêu risk acceptance>` |
 | Spec version | `v1.0` |
 | Status | `DRAFT | READY_FOR_EXECUTION | REVISION_REQUIRED | ACCEPTED | CANCELLED` |
 | Planner | `Tier 1` |
@@ -17,9 +18,9 @@
 | Required gates | `<canonical commands, chỉ ghi một lần>` |
 | Current execution round | `0` |
 | Current audit round | `0` |
-| Next gate | `<FAST: /code → /resolve; STANDARD/CRITICAL: /code → /audit → /resolve>` |
+| Next gate | `<NONE: /deliver → /resolve; LIGHT: /deliver → /audit → /resolve>` |
 
-> Lane rule: schema/migration/RLS/auth/permission/PII/money/infra/production/shared toolchain luôn `CRITICAL`. Task lịch sử thiếu lane được hiểu là CRITICAL.
+> Lane và audit là hai quyết định riêng. FAST mặc định NONE; STANDARD mặc định NONE; CRITICAL mặc định LIGHT. CRITICAL + NONE phải ghi lý do và người chấp nhận rủi ro.
 
 ## 1. Outcome
 
@@ -33,7 +34,7 @@
 
 ## 2. Evidence
 
-Chỉ liệt kê bằng chứng cần để Tier 2 ra quyết định. FAST thường 1–3 dòng; không chép lại roadmap.
+Chỉ liệt kê bằng chứng cần để Tier 1 triển khai. FAST thường 1–3 dòng; không chép lại roadmap.
 
 | ID | Evidence | Why it matters |
 |---|---|---|
@@ -72,7 +73,7 @@ Chỉ mở các mục áp dụng; mục không áp dụng ghi một dòng `N/A �
 
 ## 5. Execution Plan
 
-FAST nên có 1–4 STEP. STEP mô tả outcome theo thứ tự, không ép Tier 2 ghi nhật ký thao tác.
+FAST nên có 1–4 STEP. STEP mô tả outcome theo thứ tự, không ép Tier 1 ghi nhật ký thao tác.
 
 | Step | Target | Intent | Verify | Stop condition |
 |---|---|---|---|---|
@@ -104,7 +105,7 @@ FAST nên có 1–4 STEP. STEP mô tả outcome theo thứ tự, không ép Tier
 
 ## 9. Planner Resolution
 
-Tier 1 append sau review/audit. FAST resolve trực tiếp từ HANDOFF; STANDARD/CRITICAL resolve từ AUDIT.
+Tier 1 append sau review/audit. Audit NONE resolve trực tiếp từ HANDOFF; LIGHT resolve từ AUDIT.
 
 | Round | Decision | Reason |
 |---|---|---|

@@ -7,14 +7,14 @@ license: Internal
 
 # Audit Skill (Tier 3)
 
-Tier 3 viết `AUDIT.md` cho STANDARD/CRITICAL hoặc FAST được escalation. Task mới dùng `FOCUSED | DEEP | DELTA`; `FULL` chỉ để tương thích artifact cũ.
+Tier 3 viết `AUDIT.md` chỉ khi TASK chọn `Audit mode: LIGHT`. Task mới dùng `LIGHT | DELTA`; các depth cũ chỉ để tương thích artifact lịch sử.
 
 ## Iron Rules
 
 1. Đánh giá chỉ dựa trên evidence thật; không dựa vào lời cam kết.
 2. Mỗi `AC-0X` phải có verdict: `PASS | FAIL | PARTIAL | BLOCKED | N/A | CARRIED_FORWARD`.
 3. Mỗi finding `AUD-00X` phải có file:line trỏ tới evidence hoặc vào source.
-4. Không tự fix lỗi; chỉ ghi nhận để Tier 1 resolve và Tier 2 sửa trong round tiếp theo.
+4. Không tự fix lỗi; Tier 1 nhận finding, sửa và resolve.
 5. DELTA chỉ rerun changed surface; CARRIED_FORWARD phải có source round/baseline/evidence và impact proof.
 
 ## Severity Grades

@@ -12,7 +12,7 @@
   <actual output snippet>
   ```
 - **Date/time**: `<YYYY-MM-DD HH:mm TZ>`
-- **Author/Tier**: `<Tier 2 | Tier 3>`
+- **Author/Tier**: `<Tier 1 | Tier 3>`
 ```
 
 ## Quy tắc

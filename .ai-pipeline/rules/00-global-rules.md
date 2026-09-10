@@ -1,6 +1,6 @@
 # Quy tắc Chung Toàn Hệ Thống
 
-Áp dụng cho Tier 0, 1, 2 và 3. Policy đặc thù của dự án được bổ sung tại cuối file này hoặc đặt trong tài liệu dự án mà TASK dẫn trực tiếp.
+Áp dụng cho Tier 0, Tier 1 và Tier 3. Policy đặc thù của dự án đặt trong tài liệu dự án mà TASK dẫn trực tiếp.
 
 ## 1. Ngôn ngữ
 
@@ -32,7 +32,7 @@ Agent phải đọc manifest/config của repo trước khi chọn tool:
 - Python: chỉ dùng Black/Ruff/isort/pytest nếu repo thực sự cấu hình các tool này.
 - Stack khác: tuân theo toolchain đã được khai báo trong repo và TASK contract.
 
-Không tự cài tool/dependency chỉ để thỏa checklist nếu Planner chưa duyệt.
+Không tự cài tool/dependency chỉ để thỏa checklist nếu Tier 1 chưa xác định là cần cho delivery.
 
 ## 5. Git và worktree
 
@@ -49,17 +49,16 @@ Không tự cài tool/dependency chỉ để thỏa checklist nếu Planner chư
 
 ## 7. Phân tách trách nhiệm
 
-- Tầng 0 không sa vào code/TASK/audit thường nhật; chỉ can thiệp trực tiếp khi đã tuyên bố ngoại lệ và ownership rõ.
-- Tầng 1 không sửa source.
-- Tầng 2 không phát hành audit verdict.
+- Tầng 0 không code, không lập TASK/plan chi tiết và không audit thường nhật.
+- Tầng 1 sở hữu cả plan và implementation, nhưng không tự phát hành verdict Tier 3.
 - Tầng 3 không sửa source và không ra quyết định thay Planner.
 - Tầng 1 nghiệm thu task; Tier 0/Owner quyết định release, go-live và chấp nhận rủi ro cấp dự án.
 - `.ai-pipeline/` là portable kit dùng chung nhiều repository: không đưa tên sản phẩm, roadmap, phase hoặc prompt của một dự án cụ thể vào đây; đặt chúng trong tài liệu dự án và dẫn từ TASK/quyết sách.
 
 ## 8. Bảo đảm theo rủi ro
 
-- `FAST`, `STANDARD`, `CRITICAL` là một trục điều phối chung cho contract, execution và audit.
+- `FAST`, `STANDARD`, `CRITICAL` điều chỉnh độ chặt contract/gate. Audit là quyết định độc lập `NONE | LIGHT` ghi trong TASK.
 - Task cũ không khai lane mặc định `CRITICAL`; không tự động hạ chuẩn lịch sử.
 - Có thể nâng lane khi phát hiện blast radius mới; chỉ Tier 1/Owner được đổi lane.
-- Không chạy lại phép đo còn hiệu lực chỉ để đủ checklist. Re-audit được carry forward khi có source evidence và impact proof.
-- Một worktree chỉ có một Tier 2 execution stream tại một thời điểm, trừ khi Owner phê duyệt partition độc lập rõ ràng.
+- Không chạy lại phép đo còn hiệu lực chỉ để đủ checklist. Audit dùng carry-forward khi có source evidence và impact proof.
+- Tier 1 được điều phối sub-agent song song trong boundary đã giao. Mutating agents chỉ song song khi allowlist không giao nhau; một coordinator quản lý integration và Git index.

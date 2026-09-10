@@ -1,15 +1,15 @@
 <#
 .SYNOPSIS
-Validates HANDOFF.md against TASK.md before Tier 2 hands FAST to Tier 1 or audited lanes to Tier 3.
+Validates HANDOFF.md against TASK.md before Tier 1 self-review or Tier 3 LIGHT audit.
 
 Run by:
-- Tier 2: last step of every execution round (mandatory, before writing
+- Tier 1: last step of every execution round (mandatory, before writing
   `Handoff status: READY_FOR_REVIEW|READY_FOR_AUDIT`).
 - Tier 3: at preflight, to reject a malformed handoff without spending an audit.
 - Tier 1: at /resolve when no AUDIT exists yet.
 
 WHY THIS SCRIPT EXISTS
-There was no gate on HANDOFF.md at all. Everything Tier 2 wrote reached Tier 3
+There was no gate on HANDOFF.md at all. Everything implementation wrote reached review
 unchecked, and Tier 3 spent whole rounds reporting defects a regex finds in
 milliseconds: three wrong numbers (go-live-08 AUD-005), test counts later
 contradicted by an independent run (go-live-09/10/12), plaintext TEST
@@ -328,7 +328,7 @@ try {
     } else {
         $closingStatus = $closing.Groups[1].Value.ToUpper()
         if (@('READY_FOR_REVIEW','READY_FOR_AUDIT','BLOCKED') -notcontains $closingStatus) {
-            Add-GateError $ctx 'H-10' "closing line says '$closingStatus'; tier2.md allows READY_FOR_REVIEW, READY_FOR_AUDIT, or BLOCKED."
+            Add-GateError $ctx 'H-10' "closing line says '$closingStatus'; tier1.md allows READY_FOR_REVIEW, READY_FOR_AUDIT, or BLOCKED."
         } elseif ($statusHead -ne '' -and $statusHead -ne $closingStatus) {
             Add-GateError $ctx 'H-10' "section 0 Status is '$statusHead' but the closing line says '$closingStatus'."
         } else {
@@ -340,11 +340,13 @@ try {
                 Add-GateError $ctx 'H-10' "status BLOCKED but section 5 lists no BLK-xx row stating what blocks and what decision Tier 1 must make."
             }
         }
-        if ($closingStatus -eq 'READY_FOR_REVIEW' -and $taskLane -ne 'FAST') {
-            Add-GateError $ctx 'H-10' "READY_FOR_REVIEW is reserved for FAST; TASK lane is $taskLane."
+        $modeHead = ([regex]::Match($taskMode.ToUpper(), '^(NONE|LIGHT|FOCUSED|DEEP|DELTA|FULL)')).Value
+        $auditRequested = ($modeHead -ne '' -and $modeHead -ne 'NONE')
+        if ($closingStatus -eq 'READY_FOR_REVIEW' -and $auditRequested) {
+            Add-GateError $ctx 'H-10' "READY_FOR_REVIEW conflicts with TASK Audit mode $modeHead; use READY_FOR_AUDIT."
         }
-        if ($closingStatus -eq 'READY_FOR_AUDIT' -and $taskLane -eq 'FAST') {
-            Add-GateWarn $ctx 'H-10' "FAST task requests Tier 3 audit. This is allowed escalation, but not the default path."
+        if ($closingStatus -eq 'READY_FOR_AUDIT' -and -not $auditRequested) {
+            Add-GateError $ctx 'H-10' "READY_FOR_AUDIT conflicts with TASK Audit mode NONE; use READY_FOR_REVIEW."
         }
     }
 
@@ -412,9 +414,7 @@ try {
         Add-GateOk $ctx 'H-14' 'compact handoff uses Control as the single round record.'
     }
 
-    # -- H-15 Tier 2 must not write Tier 1 fields ----------------------------
-    # go-live-13 F-01 and hotfix-02 F-04: Status, Next gate, round counters and a
-    # whole section 9 Planner Resolution were written into TASK.md by another tier.
+    # -- H-15 TASK control changes need an explicit Tier 1 record ------------
     $taskRel = Get-RelativeRepoPath -FullPath $TaskPath -RepoRoot $repoRoot
     $taskHead = Get-GitFileAtHead -RepoRoot $repoRoot -RelPath $taskRel
     if ($null -ne $taskHead -and $taskHead.Trim() -ne '') {
@@ -423,7 +423,7 @@ try {
             if ((Get-ControlField -Text $task -FieldName $f) -ne (Get-ControlField -Text $taskHead -FieldName $f)) { [void]$changed.Add($f) }
         }
         if ($changed.Count -gt 0) {
-            Add-GateWarn $ctx 'H-15' "TASK.md control field(s) differ from HEAD: $($changed -join ', '). If Tier 2 changed them, revert - those fields belong to Tier 1."
+            Add-GateWarn $ctx 'H-15' "TASK.md control field(s) differ from HEAD: $($changed -join ', '). Ensure Tier 1 recorded the reason in Planner Resolution or Revision Log."
         } else {
             Add-GateOk $ctx 'H-15' "TASK.md control fields untouched by this round."
         }

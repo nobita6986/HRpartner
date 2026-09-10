@@ -2,7 +2,7 @@
 
 | Severity | Tiêu chí | Tác động | Hành động |
 |---|---|---|---|
-| **CRITICAL** | Security vuln, data-loss risk, breaking change, money mismatch | Chặn ACCEPTED. Phải re-audit. | Tier 1 update TASK; Tier 2 fix round mới |
+| **CRITICAL** | Security vuln, data-loss risk, breaking change, money mismatch | Chặn ACCEPTED. Phải audit delta. | Tier 1 update TASK và fix round mới |
 | **HIGH** | AC fail, performance regression, missing error handling | Chặn ACCEPTED | Re-audit round kế tiếp |
 | **MEDIUM** | Code smell, scope creep nhẹ, missing test | Không chặn. Note cho backlog. | Tier 1 cân nhắc round tiếp theo |
 | **LOW** | Style, naming, comment | Không chặn | Fix trong maintain, không cần round mới |

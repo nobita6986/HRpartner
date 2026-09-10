@@ -1,96 +1,74 @@
-# AI Delivery Pipeline — Operating Guide
+# AI Delivery Pipeline — Operating guide
 
-> Mục tiêu: giao hàng nhanh ở phần ít rủi ro và giữ kiểm soát sâu ở phần có thể gây thiệt hại. Protocol này không gắn với một sản phẩm cụ thể.
+> Ưu tiên giao giá trị nhanh. Chỉ thêm ceremony khi rủi ro thực tế biện minh cho chi phí đó.
 
-## 1. Chuỗi trách nhiệm
+## Trách nhiệm
 
-| Tier | Trách nhiệm | Không được tự làm thay |
+| Tier | Trách nhiệm | Boundary |
 |---|---|---|
-| Tier 0 | Chọn hướng đi, thứ tự, ngân sách rủi ro và quyết định release | Không sa vào TASK/code/audit thường nhật |
-| Tier 1 | Chuyển quyết sách thành contract đo được và resolve | Không viết source, không tự audit STANDARD/CRITICAL |
-| Tier 2 | Implement trong boundary và tạo evidence thực | Không đổi contract, không tự phát hành verdict |
-| Tier 3 | Tái hiện phép đo và phát hành verdict | Không sửa source, không thay Planner resolve |
+| Tier 0 | Outcome, ưu tiên, boundary phase, quyết định sản phẩm/go-live/risk acceptance | Không code, không viết TASK/plan chi tiết, không audit thường nhật |
+| Tier 1 | Khảo sát, plan vừa đủ, TASK, implementation, test, HANDOFF, resolve và delivery | Không tự đổi quyết sách chiến lược; không tự phát hành verdict Tier 3 |
+| Tier 3 | Audit nhẹ, độc lập, theo changed surface quan trọng | Không sửa source/TASK/HANDOFF; không mở rộng scope |
 
-Mỗi tầng chỉ sở hữu artifact của mình. Quyền ngoại lệ phải do Tier 0/Owner cấp rõ và được ghi lại.
+Tier 1 tự quyết kỹ thuật thường nhật. Chỉ hỏi Tier 0 khi thiếu business decision, đổi roadmap/scope lớn, có thao tác khó đảo ngược, cần risk acceptance hoặc go-live authority.
 
-## 2. Assurance lane
-
-| Lane | Ví dụ | Execution | Resolution |
-|---|---|---|---|
-| FAST | docs, copy, styling, local refactor không đổi contract | targeted check; typecheck nếu sửa TS; diff hygiene | Tier 1 review trực tiếp |
-| STANDARD | feature/fix cô lập | targeted tests + gate liên quan | Tier 3 focused audit |
-| CRITICAL | schema, migration, RLS/auth, PII, money, infra/prod | release gates + LIVE/security checks áp dụng | Tier 3 deep audit |
-
-Nếu diff phát sinh critical surface ngoài dự kiến, Tier 2 dừng phần đó và yêu cầu Tier 1 nâng lane.
-
-## 3. Vòng đời
-
-### FAST
+## Một luồng delivery
 
 ```text
-TASK READY_FOR_EXECUTION
-  → HANDOFF READY_FOR_REVIEW
-  → Tier 1 verify-handoff + tối đa 3 spot-check trọng yếu
-  → ACCEPTED hoặc REVISION_REQUIRED
+INTAKE → Tier 1 khảo sát → TASK + lane/audit → verify-task
+       → implement trực tiếp hoặc chia sub-agent
+       → gates + HANDOFF + verify-handoff
+       → NONE: Tier 1 spot-check | LIGHT: Tier 3 audit
+       → Tier 1 resolve → commit/push/deploy khi đã được ủy quyền
 ```
 
-### STANDARD / CRITICAL
+Tier 1 không chờ một Executor riêng. Plan và code thuộc cùng một owner; thay đổi contract vẫn phải ghi Revision Log.
+
+## Contract theo rủi ro
+
+- `FAST`: outcome, boundary, 1–3 RQ, 1–4 STEP, 1–5 AC, targeted gate.
+- `STANDARD`: thêm interface/data/risk thực sự áp dụng.
+- `CRITICAL`: thêm permission/state/migration/LIVE/rollback theo changed surface.
+
+Không bắt full suite/build theo thói quen. Một evidence có thể chứng minh nhiều AC. Không tạo AC cho thao tác hành chính.
+
+## Chọn audit trong TASK
+
+| Audit mode | Khi dùng | Handoff |
+|---|---|---|
+| `NONE` | Mặc định cho phần lớn task; Tier 1 tự review | `READY_FOR_REVIEW` |
+| `LIGHT` | Auth/data/money/migration/prod, public contract quan trọng, shared foundation hoặc blast radius cao | `READY_FOR_AUDIT` |
+
+Tier 1 ghi `Audit reason` một câu. `CRITICAL + NONE` phải ghi lý do và người chấp nhận rủi ro. Artifact cũ dùng `FOCUSED`, `DEEP`, `DELTA`, `FULL` vẫn được đọc tương thích; task mới chỉ dùng `NONE | LIGHT`.
+
+## Sub-agent concurrency
+
+1. Tier 1 ghi output, input và file ownership của từng nhánh.
+2. Research, code-reading và test analysis được chạy song song.
+3. Mutating agents chỉ song song khi allowlist không giao nhau và không có dependency thứ tự.
+4. Một coordinator tích hợp, chạy gate cuối, viết HANDOFF và stage/commit.
+5. Có conflict hoặc shared file thì chuyển tuần tự.
+
+Không cần Tier 0 duyệt từng sub-agent trong boundary đã giao.
+
+## Evidence và blocker
 
 ```text
-TASK READY_FOR_EXECUTION
-  → HANDOFF READY_FOR_AUDIT
-  → STANDARD: FOCUSED | CRITICAL: DEEP | vòng sau: DELTA
-  → Tier 1 resolve
-  → ACCEPTED hoặc REVISION_REQUIRED
+E-01 | command/method | baseline/environment | exit/result | artifact nếu có
 ```
 
-## 4. Contract tỷ lệ với rủi ro
+Mọi PASS dựa trên phép đo thật. `ENV_BLOCKED`, skipped test hoặc fixture giả không phải PASS. Chỉ ghi `BLOCKED` khi thiếu business decision, authority, dependency hoặc environment bắt buộc.
 
-- FAST: một outcome; boundary; 1–3 RQ; 1–4 STEP; 1–5 AC; gate và rollback ngắn.
-- STANDARD: đủ interface/data/risk liên quan, không dẫn tài liệu không dùng.
-- CRITICAL: thêm permission/state/migration/LIVE/rollback matrix tương ứng rủi ro.
+## Audit nhẹ
 
-Một evidence có thể chứng minh nhiều AC. Gate chỉ khai một lần. Không biến thao tác hành chính thành AC riêng.
+Tier 3 chỉ hỏi: outcome trọng yếu có đạt, có regression nghiêm trọng, diff có vượt scope/secret/bypass, và còn release blocker không. Audit cần tối thiểu hai phép đo độc lập, gồm một changed-behavior check; luôn có C-07 Git hygiene, C-09 contract validity và C-10 diff scope. Không bắt C-01..C-10 đầy đủ.
 
-## 5. Evidence Registry
-
-Tier 2 và Tier 3 đăng ký phép đo bằng mã `E-xx`:
-
-```text
-E-01 | command | environment/baseline | exit/result | output tóm tắt
-```
-
-Các AC tham chiếu `E-01` thay vì copy output. Chỉ tạo `evidence/` khi output lớn, cần lưu ảnh/LIVE transcript hoặc cần hash đối chứng.
-
-Mọi tuyên bố PASS phải là phép đo thật. `ENV_BLOCKED`, test skip hoặc fixture giả không được diễn giải thành PASS.
-
-## 6. Audit depth và carry-forward
-
-- `FOCUSED`: mặc định cho STANDARD ngay từ audit đầu. Tier 3 tự chạy ít nhất một behavior check trọng yếu, C-07/C-09/C-10 và check rủi ro áp dụng; không lặp full suite/build khi evidence Tier 2 hợp lệ và impact proof cho thấy không cần.
-- `DEEP`: bắt buộc cho CRITICAL; độ sâu theo critical surface thực sự bị tác động, không phải checklist vô điều kiện.
-- `DELTA`: dùng ở vòng sau khi spec, boundary, baseline và premise môi trường không đổi; chỉ đo finding còn mở, AC/check và caller bị tác động.
-- `FULL` chỉ là alias tương thích artifact cũ của audit sâu; task mới không dùng.
-
-Phần bất biến ghi `CARRIED_FORWARD` cùng round nguồn, baseline/commit, evidence nguồn và impact proof. Không tái chạy chỉ để đủ checklist.
-
-## 7. Assurance checks
-
-`C-07` Git hygiene, `C-09` contract validity và `C-10` diff scope luôn bắt buộc trong STANDARD/CRITICAL. STANDARD thêm behavior/security/data check áp dụng. CRITICAL khai C-01..C-10; mục không áp dụng dùng `SKIP(reason)`. P0/P1 luôn chặn; P2 chỉ chặn khi audit ghi `Release-blocking: YES`; P2 không chặn và P3 đi vào debt/backlog có owner thay vì mở vòng code/audit mới.
-
-## 8. Blocker và quyền quyết định
-
-Tier 2/3 chỉ ghi `BLOCKED` khi thiếu contract, authority, dependency hoặc môi trường bắt buộc. Báo cáo phải chỉ rõ evidence blocker, phần đã xong, đúng đầu vào cần và điều kiện chạy tiếp.
-
-Tier 0 quyết định ngoại lệ production, go-live, bỏ/giảm gate, chấp nhận rủi ro hoặc mở nhiều execution stream. Tier 1 ghi quyết định đó vào TASK/Resolution.
-
-## 9. Bộ kiểm tra
+## Bộ kiểm tra
 
 ```powershell
 pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/<slug>/TASK.md
 pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/<slug>/TASK.md
 pwsh .ai-pipeline/scripts/verify-audit.ps1 -TaskPath docs/tasks/<slug>/TASK.md
-pwsh .ai-pipeline/scripts/verify-gates.selftest.ps1
 pwsh .ai-pipeline/scripts/verify-pipeline.ps1
+pwsh .ai-pipeline/scripts/verify-gates.selftest.ps1
 ```
-
-Health check xác nhận cấu trúc pipeline, không thay thế test của sản phẩm.

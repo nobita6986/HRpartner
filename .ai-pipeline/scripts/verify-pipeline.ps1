@@ -57,15 +57,13 @@ try {
         @("PIPELINE-GUIDE.md", "operating guide"),
         @("tier0.md", "Tier 0 manifest"),
         @("tier1.md", "Tier 1 manifest"),
-        @("tier2.md", "Tier 2 manifest"),
         @("tier3.md", "Tier 3 manifest"),
         @("rules\00-global-rules.md", "global rules"),
         @("rules\01-planner-rules.md", "legacy Planner pointer"),
-        @("rules\02-engineer-rules.md", "legacy Engineer pointer"),
         @("rules\03-auditor-rules.md", "legacy Auditor pointer"),
         @("skills\README.md", "skill map"),
-        @("skills\task-authoring\SKILL.md", "Planner core skill"),
-        @("skills\code\SKILL.md", "Engineer core skill"),
+        @("skills\task-authoring\SKILL.md", "Tier 1 contract skill"),
+        @("skills\code\SKILL.md", "Tier 1 implementation skill"),
         @("skills\audit\SKILL.md", "Auditor core skill"),
         @("skills\anti-hallucination\SKILL.md", "evidence skill"),
         @("templates\TASK.template.md", "TASK template"),
@@ -95,7 +93,7 @@ try {
 
     $allowedTopFiles = @(
         ".gitignore", "README.md", "PIPELINE-GUIDE.md",
-        "tier0.md", "tier1.md", "tier2.md", "tier3.md"
+        "tier0.md", "tier1.md", "tier3.md"
     )
     Get-ChildItem -LiteralPath $resolvedPipelineRoot -File -Force | ForEach-Object {
         if ($allowedTopFiles -notcontains $_.Name) {

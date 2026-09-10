@@ -21,7 +21,7 @@ Tier 1 dùng skill này khi:
 
 Luôn tuân thủ **YAGNI**, **KISS**, **DRY**. **Trung thực, thẳng thắn, ngắn gọn.**
 
-- KHÔNG viết code thay Tier 2 — chỉ tạo plan (TASK.md).
+- Plan vừa đủ để triển khai; Tier 1 tiếp tục code ngay khi contract đã rõ và được phép.
 - Plan phải tự-contained (một engineer hiểu codebase đọc xong có thể thực thi).
 - Có snippet/pseudocode khi cần khóa contract.
 - Multi-options + trade-off khi cần.
@@ -34,7 +34,7 @@ Luôn tuân thủ **YAGNI**, **KISS**, **DRY**. **Trung thực, thẳng thắn, 
 3. **Synthesis** → chốt architecture/approach.
 4. **Design Phase** → ghi vào `TASK.md > Plan & Design`.
 5. **Documentation** → điền `TASK.md` với RQ/STEP/AC/Evidence.
-6. **Review** → dùng `verify-task.ps1` để chắc schema đúng trước khi chuyển Tier 2.
+6. **Review** → dùng `verify-task.ps1`, sau đó Tier 1 chuyển sang implementation.
 
 ## Plan Directory
 
@@ -43,8 +43,8 @@ Pipeline dùng cấu trúc:
 ```
 docs/tasks/<slug>/
 ├── TASK.md         # contract duy nhất
-├── HANDOFF.md      # Tier 2 viết (sau khi execute)
-├── AUDIT.md        # Tier 3 viết cho STANDARD/CRITICAL; FAST không bắt buộc
+├── HANDOFF.md      # Tier 1 viết sau implementation
+├── AUDIT.md        # Tier 3 viết chỉ khi Audit mode = LIGHT
 └── evidence/       # logs, screenshots, repomix output
 ```
 

@@ -12,9 +12,8 @@ Skill không mở rộng quyền của vai trò và không được dùng để 
 
 | Tier | Core | Nạp khi tình huống yêu cầu |
 |---|---|---|
-| Tier 0 | `planning`, `reviewcode` | `research`, `problem-solving`, `databases`, `frontend-design` |
-| Tier 1 | `task-authoring` | `planning`, `codegraph-usage`, `research`, `docs-seeker`, `databases`, `frontend-design`, `problem-solving`, `reviewcode` |
-| Tier 2 | `code`, `implementation-mindset`, `testing-protocol` | `debugging-protocol`, `databases`, `frontend-design`, `refactor`, `python-project`, `docs-seeker`, `codegraph-usage` |
+| Tier 0 | — | `reviewcode`, `research`, `problem-solving` chỉ khi cần ra quyết sách |
+| Tier 1 | `task-authoring`, `code`, `implementation-mindset`, `testing-protocol` | `planning`, `codegraph-usage`, `debugging-protocol`, `research`, `docs-seeker`, `databases`, `frontend-design`, `refactor`, `python-project`, `problem-solving`, `reviewcode` |
 | Tier 3 | `audit`, `anti-hallucination`, `testing-protocol`, `code-review` | `databases`, `frontend-design`, `debugging-protocol`, `codegraph-usage`, `problem-solving` |
 
 ## Tín hiệu chọn skill

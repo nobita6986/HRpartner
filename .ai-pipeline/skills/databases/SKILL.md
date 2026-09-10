@@ -10,8 +10,7 @@ license: Internal
 
 ## When to Use
 
-- Tier 1 design schema/data model → ghi vào `TASK.md > Acceptance`.
-- Tier 2 viết Prisma query/migration → ghi evidence vào `HANDOFF.md`.
+- Tier 1 design schema/data model, implement Prisma query/migration và ghi evidence vào `HANDOFF.md`.
 - Tier 3 audit data integrity (money, permission, scope) → dùng `testing-protocol > Permission/data scope`.
 
 ## Quick Start — Prisma

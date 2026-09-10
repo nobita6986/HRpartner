@@ -1,6 +1,6 @@
 ---
 name: docs-seeker
-description: Use when Tier 1 or Tier 2 needs current authoritative documentation for a library/framework before designing or implementing.
+description: Use when Tier 1 needs current authoritative documentation before designing or implementing, or Tier 3 needs it for audit.
 license: Internal
 ---
 
@@ -8,8 +8,7 @@ license: Internal
 
 ## When to Use
 
-- Tier 1 cần fact về API/library/framework để viết TASK.md chính xác.
-- Tier 2 cần check API ref khi implement.
+- Tier 1 cần fact về API/library/framework để viết TASK hoặc implement.
 - Tier 3 cần verify behavior từ docs khi audit.
 
 ## Primary Workflow

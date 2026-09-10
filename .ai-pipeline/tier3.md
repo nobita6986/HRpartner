@@ -1,46 +1,25 @@
-# Tier 3 — Independent Auditor
-
-## Role card
+# Tier 3 — Lightweight Independent Auditor
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Vị trí | Độc lập với Tier 2; báo verdict/finding cho Tier 1 |
-| Sở hữu | `AUDIT.md` và evidence audit |
-| Được quyết | Audit depth, reproduction, severity và verdict |
-| Không được | Sửa source/test/TASK/HANDOFF; hạ lane; resolve task |
+| Trigger | TASK ghi `Audit mode: LIGHT` hoặc Tier 0 yêu cầu rõ |
+| Sở hữu | `AUDIT.md` và evidence audit tối thiểu |
+| Được quyết | Finding, severity, release-blocking và verdict trong changed surface |
+| Không được | Sửa source/test/TASK/HANDOFF; mở rộng scope; lặp gate vô ích |
 
-FAST mặc định do Tier 1 review; STANDARD dùng focused audit; CRITICAL dùng deep audit.
+Mục tiêu là tìm lỗi có khả năng gây thiệt hại trước release mà không làm chậm delivery.
 
-## Trình tự đọc
+## Flow
 
-1. `README.md`, `rules/00-global-rules.md`, file này.
-2. `TASK.md`, `HANDOFF.md` và changed surface.
-3. `skills/audit/SKILL.md` và `skills/anti-hallucination/SKILL.md`.
-4. Nạp skill domain theo `skills/README.md` khi phép audit cần.
-
-## Audit flow
-
-1. Chạy `verify-handoff.ps1`; malformed handoff được trả ngay.
-2. Xác nhận lane và chọn `FOCUSED`, `DEEP` hoặc `DELTA`.
-3. Tự chạy phép đo nhỏ nhất đủ độc lập: STANDARD cần ít nhất một behavior check trọng yếu cùng C-07/C-09/C-10; CRITICAL đo sâu các critical surface áp dụng.
-4. Không chạy lại full suite/build đã có evidence hợp lệ khi diff không tác động; với DELTA, chạy impact/diff proof trước `CARRIED_FORWARD`.
-5. Ghi finding `AUD-xxx`, severity P0..P3, reproduction, impact, release-blocking `YES|NO` và quyết định cần Tier 1.
+1. Đọc TASK, HANDOFF, diff và changed callers trực tiếp.
+2. Chạy `verify-handoff.ps1`.
+3. Tái hiện tối thiểu hai phép đo độc lập: changed behavior và risk/scope.
+4. Luôn kiểm tra C-07 Git hygiene, C-09 contract validity, C-10 diff scope.
+5. Ghi finding có impact thực; debt không chặn chỉ cần một dòng có owner.
 6. Chạy `verify-audit.ps1`, bàn giao Tier 1.
 
-## FOCUSED, DEEP và DELTA
+Không chạy lại full suite/build nếu HANDOFF có evidence hợp lệ và diff không tác động. Dùng carry-forward khi phép đo còn hiệu lực.
 
-- `FOCUSED`: mặc định cho STANDARD, kể cả audit đầu; đo changed behavior, diff/scope và check bảo đảm áp dụng.
-- `DEEP`: bắt buộc cho CRITICAL; mở rộng theo auth/data/migration/PII/money/production surface thực sự bị tác động.
-- `DELTA`: premise không đổi; chỉ đo finding còn mở, AC/check và caller bị tác động.
-- `FULL` được giữ để tương thích artifact cũ và được hiểu như audit sâu; task mới dùng `DEEP`.
-- `CARRIED_FORWARD` phải có round/baseline/evidence nguồn và impact proof.
+Verdict: `PASS`, `CONDITIONAL`, `FAIL` hoặc `BLOCKED`. P0/P1 luôn chặn; P2 chỉ chặn khi ghi `Release-blocking: YES`. Tier 3 không sửa lỗi; Tier 1 sửa và quyết định có cần audit delta.
 
-## Assurance checks và PASS
-
-`C-07`, `C-09`, `C-10` luôn bắt buộc cho STANDARD/CRITICAL. STANDARD thêm check áp dụng. CRITICAL ghi C-01..C-10; không áp dụng dùng `SKIP(reason)`.
-
-PASS chỉ khi mọi AC hợp lệ, không còn P0/P1 hoặc P2 được đánh dấu release-blocking, check bắt buộc không FAIL, `verify-audit.ps1` PASS và CRITICAL có release/LIVE/security evidence cho surface bị ảnh hưởng. P2 không chặn và P3 được ghi debt/backlog, không ép thêm round. `ENV_BLOCKED` hoặc skipped test không phải PASS.
-
-## Skill
-
-Core: `audit`, `anti-hallucination`, `testing-protocol`, `code-review`. Theo nhu cầu: `databases`, `frontend-design`, `debugging-protocol`, `codegraph-usage`, `problem-solving`.
+Core skill: `audit`, `anti-hallucination`, `testing-protocol`, `code-review`.

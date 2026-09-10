@@ -19,8 +19,7 @@ license: Internal
 
 ## Pipeline ownership
 
-- Planner khóa expected behavior và acceptance trong TASK.
-- Tier 2 ghi reproduction/fix verification vào HANDOFF.
+- Tier 1 khóa expected behavior, sửa lỗi và ghi reproduction/fix verification vào HANDOFF.
 - Tier 3 tự reproduce/retest và ghi vào AUDIT.
 
 Không tạo debug report riêng. Không giữ temporary logging, commented code hoặc test bypass trong deliverable.

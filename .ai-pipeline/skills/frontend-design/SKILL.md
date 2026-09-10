@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: Use when Tier 2 (Engineer) creates a UI artifact (page, component, mockup) AND the TASK has Work type = DESIGN or UI-heavy CODE. Enforces intentional aesthetic direction and avoids generic AI-slop aesthetics.
+description: Use when Tier 1 creates a UI artifact and the TASK is DESIGN or UI-heavy CODE.
 license: Internal
 ---
 
@@ -12,8 +12,7 @@ Tạo frontend production-grade với aesthetic direction rõ ràng. Tránh gene
 
 ## When to Use
 
-- Tier 1 định nghĩa aesthetic direction trong `TASK.md > Plan & Design > UI Direction`.
-- Tier 2 implement theo direction đó.
+- Tier 1 định nghĩa aesthetic direction rồi implement theo direction đó.
 - Tier 3 verify theo `Testing Protocol > UI` matrix.
 
 ## Design Thinking
@@ -50,7 +49,7 @@ Trước khi code, hiểu context và commit một **BOLD aesthetic direction**:
 Khi Tier 3 reject vì aesthetic chưa đạt:
 
 - Tier 1 update `UI Direction` block trong TASK.md (AC mới).
-- Tier 2 re-implement theo direction mới.
+- Tier 1 re-implement theo direction mới.
 
 ## References
 

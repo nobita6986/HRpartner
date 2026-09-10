@@ -1,4 +1,4 @@
-# Compatibility pointer — Tier 3
+# Compatibility pointer — Tier 3 lightweight audit
 
 Nguồn sự thật của vai trò Auditor là [`../tier3.md`](../tier3.md).
 

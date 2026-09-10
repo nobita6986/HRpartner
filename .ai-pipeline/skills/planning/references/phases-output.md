@@ -21,7 +21,7 @@ Khi Tier 1 ghi `Plan & Design`, dùng structure:
 
 - **Rollout**: <step-by-step cutover>
 - **Rollback**: <step-by-step revert>
-- **Smoke test**: <3 commands Tier 2 chạy đầu>
+- **Smoke test**: <các command Tier 1 chạy đầu>
 ```
 
 ## Quy tắc

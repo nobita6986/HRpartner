@@ -10,7 +10,7 @@
 | Audit mode | `<must match TASK>` |
 | Execution round | `<N>` |
 | Baseline | `<SHA>` |
-| Status | `READY_FOR_REVIEW | READY_FOR_AUDIT | BLOCKED` |
+| Status | `<Audit NONE: READY_FOR_REVIEW; LIGHT: READY_FOR_AUDIT; otherwise BLOCKED>` |
 
 ## 1. Outcome and changed surface
 
@@ -48,4 +48,4 @@ Nếu BLOCKED, thay hàng None bằng `BLK-xx`, nêu phần đã xong, blocker c
 
 - `<một câu: vì sao đủ READY hoặc vì sao BLOCKED>`
 
-> Handoff status: `<FAST: READY_FOR_REVIEW; STANDARD/CRITICAL: READY_FOR_AUDIT; otherwise BLOCKED>`
+> Handoff status: `<Audit NONE: READY_FOR_REVIEW; LIGHT: READY_FOR_AUDIT; otherwise BLOCKED>`

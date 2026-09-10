@@ -1,13 +1,13 @@
 ---
 name: code
-description: Use when Tier 2 executes a TASK and writes the HANDOFF artifact. Defines minimum evidence, deviation rules and round closure.
+description: Use when Tier 1 executes a TASK and writes HANDOFF. Defines minimum evidence, deviation rules and round closure.
 version: 1.0.0
 license: Internal
 ---
 
-# Code Skill (Tier 2)
+# Code Skill (Tier 1)
 
-Tier 2 thực thi `TASK.md` theo Assurance lane và viết `HANDOFF.md`. FAST bàn giao Tier 1; STANDARD/CRITICAL bàn giao Tier 3.
+Tier 1 thực thi `TASK.md` theo Assurance lane và viết `HANDOFF.md`. Audit NONE được Tier 1 self-review; LIGHT bàn giao Tier 3.
 
 ## Bắt buộc trong HANDOFF
 
@@ -20,21 +20,21 @@ Tier 2 thực thi `TASK.md` theo Assurance lane và viết `HANDOFF.md`. FAST b�
 
 ## Round Closure
 
-Tier 2 chỉ đóng round khi:
+Tier 1 chỉ đóng round khi:
 
 - Mọi `STEP` đã chạy hoặc blocker ghi rõ.
 - Targeted test/check pass.
 - `deviations` rỗng hoặc đã được document.
 
-FAST chuyển `READY_FOR_REVIEW`; STANDARD/CRITICAL chuyển `READY_FOR_AUDIT`.
+Audit NONE chuyển `READY_FOR_REVIEW`; LIGHT chuyển `READY_FOR_AUDIT`.
 
 ## Forbidden
 
-- Không tự audit chính mình.
+- Không giả lập verdict Tier 3 khi TASK chọn LIGHT.
 - Không bỏ qua `AC` mà không ghi rõ lý do.
 - Không để lại debug log/commented code/bypass test.
 
 ## References
 
 - `.ai-pipeline/templates/HANDOFF.template.md` — format và Evidence Registry chuẩn.
-- `.ai-pipeline/tier2.md` — lane và round closure.
+- `.ai-pipeline/tier1.md` — quyền delivery và round closure.

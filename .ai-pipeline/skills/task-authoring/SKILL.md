@@ -1,19 +1,19 @@
 ---
 name: task-authoring
-description: Use when Tier 1 (Planner) authors a TASK.md contract. Defines level of detail, ID convention, traceability and the "ready test" that gates handoff to Tier 2.
+description: Use when Tier 1 authors a TASK.md before implementation. Defines proportional detail, audit selection, traceability and the ready test.
 version: 1.0.0
 license: Internal
 ---
 
 # TASK Contract Authoring
 
-TASK là contract duy nhất giữa Planner, Executor và Auditor.
+TASK là contract delivery của Tier 1 và là đầu vào audit nếu task chọn `LIGHT`.
 
-Mỗi TASK mới khai `Assurance lane: FAST | STANDARD | CRITICAL`. FAST phải ngắn; STANDARD đầy đủ theo changed surface và mặc định `Audit mode: FOCUSED`; CRITICAL mới mở rộng data/state/permission/LIVE matrix và dùng `DEEP`. Task cũ thiếu lane mặc định CRITICAL.
+Mỗi TASK khai `Assurance lane: FAST | STANDARD | CRITICAL`, `Audit mode: NONE | LIGHT` và `Audit reason`. FAST/STANDARD mặc định NONE; CRITICAL mặc định LIGHT. Tier 1 chỉ chọn LIGHT khi hậu quả sai sót đủ lớn để đáng chi phí audit.
 
 ## Mức chi tiết đúng
 
-Mô tả outcome, rule, interface, state/data flow, boundary và cách kiểm chứng. Không viết thay implementation khi Tier 2 có thể chọn an toàn theo pattern repo.
+Mô tả outcome, rule, interface, state/data flow, boundary và cách kiểm chứng. Không viết implementation chi tiết vào TASK khi Tier 1 có thể chọn an toàn trong lúc code.
 
 ## ID và traceability
 
@@ -38,7 +38,7 @@ Không đưa toàn bộ implementation code vào TASK.
 
 ## Ready test
 
-Một implementation engineer hiểu codebase phải thực thi được mà không đoán business rule. FAST phải cho phép Tier 1 review trực tiếp; STANDARD/CRITICAL phải audit được độc lập.
+Tier 1 phải có thể triển khai mà không đoán business rule. Task LIGHT phải đủ rõ để Tier 3 tái hiện các AC trọng yếu.
 
 ## References
 

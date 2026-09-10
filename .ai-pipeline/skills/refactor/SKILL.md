@@ -7,7 +7,7 @@ license: Internal
 
 # Refactor Workflow
 
-## Tier 1
+## Tier 1 contract
 
 Trong `TASK.md`, bắt buộc ghi:
 
@@ -18,11 +18,7 @@ Trong `TASK.md`, bắt buộc ghi:
 - Step chuyển đổi và rollback.
 - Characterization/regression acceptance.
 
-Không viết implementation đầy đủ thay Tier 2.
-
-## Tier 2
-
-Refactor trong contract, ưu tiên bước nhỏ và test sau mỗi boundary. Ghi diff/deviation/evidence trong `HANDOFF.md`.
+Sau khi contract đủ rõ, Tier 1 refactor theo bước nhỏ và test sau mỗi boundary. Ghi diff/deviation/evidence trong `HANDOFF.md`.
 
 ## Tier 3
 

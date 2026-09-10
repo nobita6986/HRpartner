@@ -7,13 +7,9 @@ license: Internal
 
 # CodeGraph Usage
 
-## Planner
+## Tier 1
 
-Dùng khi cần xác định callers/blast radius. Ghi kết luận cùng source/tool evidence vào `TASK.md`; không dump toàn bộ graph.
-
-## Executor
-
-Dùng để preflight hoặc verify thay đổi symbol. Không tự refactor caller ngoài contract. Ghi result vào `HANDOFF.md`.
+Dùng để xác định callers/blast radius khi plan và để preflight/verify khi implement. Ghi kết luận cần thiết vào TASK/HANDOFF; không dump toàn bộ graph và không tự mở rộng scope.
 
 ## Auditor
 

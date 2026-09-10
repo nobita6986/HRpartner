@@ -4,12 +4,12 @@ Validates the single TASK contract used by the three-tier pipeline.
 
 Run by:
 - Tier 1: before setting Status to READY_FOR_EXECUTION (mandatory).
-- Tier 2: at preflight, and as the first evidence row of HANDOFF section 3.
+- Tier 1: again at implementation preflight and as the first evidence row of HANDOFF.
 - Tier 3: as assurance check C-09 for STANDARD/CRITICAL.
 
 WHAT CHANGED (dry-run gate)
 Shape checks alone previously let unsatisfiable acceptance criteria, nonexistent
-commands, stale insertion lines and staged-blind diff checks reach Tier 2. The
+commands, stale insertion lines and staged-blind diff checks reach implementation. The
 `T-` checks below run the contract against reality before execution.
 
 Strictness follows Status: a contract about to be executed
@@ -129,8 +129,12 @@ try {
             }
         }
         $auditMode = (Get-ControlField -Text $content -FieldName 'Audit mode').ToUpper()
-        if (($lane -eq 'STANDARD' -or $lane -eq 'CRITICAL') -and $auditMode -match '^NONE$') {
-            Add-DryRunFinding 'A-02' "$lane lane cannot use Audit mode NONE."
+        if ($auditMode -notmatch '^(NONE|LIGHT|FOCUSED|DEEP|DELTA|FULL)$') {
+            Add-DryRunFinding 'A-02' "Audit mode '$auditMode' is invalid; new contracts use NONE or LIGHT."
+        } elseif ($auditMode -match '^(FOCUSED|DEEP|DELTA|FULL)$') {
+            Add-GateWarn $ctx 'A-02' "Audit mode '$auditMode' is legacy-compatible; new contracts use LIGHT."
+        } else {
+            Add-GateOk $ctx 'A-02' "audit mode: $auditMode."
         }
     }
 
@@ -238,7 +242,7 @@ try {
 
     # -- T-03 A scope AC must not be measured with a bare `git diff` ---------
     # go-live-15 AC-10 and go-live-09 PLN-14: bare `git diff` prints nothing
-    # once Tier 2 has staged, and `--stat` is blind to untracked files.
+    # once Tier 1 has staged, and `--stat` is blind to untracked files.
     $bareDiff = New-Object System.Collections.ArrayList
     foreach ($row in $acRows) {
         $joined = ($row.Cells -join ' ')
@@ -301,7 +305,7 @@ try {
     # -- T-06 Secret scan ----------------------------------------------------
     Add-SecretFindings -Ctx $ctx -CheckId 'T-06' -Text $content -Label 'TASK.md'
 
-    # -- T-07 Status and round counters are Tier 1 fields --------------------
+    # -- T-07 Status and round counters require a recorded Tier 1 decision ---
     # go-live-13 F-01 and hotfix-02 F-04: another tier wrote Status, Next gate
     # and the audit-round counter straight into TASK.md.
     $rel = Get-RelativeRepoPath -FullPath $TaskPath -RepoRoot $repoRoot

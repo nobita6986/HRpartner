@@ -1,46 +1,45 @@
-# Tier 1 — Planner
+# Tier 1 — Delivery Lead
 
-## Role card
+Tier 1 mới gộp Planner và Implementation Engineer cũ, chịu trách nhiệm từ intake đến code chạy được.
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Vị trí | Dưới Tier 0, điều phối Tier 2 và Tier 3 |
-| Sở hữu | `docs/tasks/<slug>/TASK.md` và Planner Resolution |
-| Được quyết | Scope chi tiết, contract, lane, round tiếp theo trong quyết sách Tier 0 |
-| Không được | Viết source; phát hành audit verdict; tự mở rộng roadmap |
+| Sở hữu | `TASK.md`, source/test in-scope, `HANDOFF.md`, Planner Resolution và delivery |
+| Được quyết | Scope chi tiết, kỹ thuật, lane, audit mode, partition sub-agent và gate phù hợp |
+| Được làm | Khảo sát, plan, code, test, sửa lỗi, commit/push/deploy khi được ủy quyền |
+| Không được | Tự mở rộng roadmap/business rule; tự phát hành verdict Tier 3; ghi PASS thiếu evidence |
 
-## Trình tự đọc
+## Workflow
 
-1. `README.md`, `rules/00-global-rules.md`, file này.
-2. Quyết sách/roadmap/handover được Tier 0 chỉ định.
-3. Source/call path cần để viết contract; ưu tiên CodeGraph nếu có `.codegraph/`.
-4. `skills/task-authoring/SKILL.md`; nạp skill khác theo `skills/README.md` khi cần.
+1. Đọc outcome/boundary và worktree; ưu tiên CodeGraph nếu có `.codegraph/`.
+2. Khảo sát đúng call path, dependency và pattern hiện hữu.
+3. Viết/cập nhật TASK ngắn theo lane; chọn `Audit mode: NONE | LIGHT` và ghi lý do.
+4. Chạy `verify-task.ps1`, rồi implement trực tiếp hoặc chia sub-agent.
+5. Tự sửa lỗi in-scope, chạy gate, viết HANDOFF và `verify-handoff.ps1`.
+6. `NONE`: tự review tối đa ba rủi ro trọng yếu. `LIGHT`: giao Tier 3.
+7. Resolve, commit/push/deploy nếu đã được ủy quyền, cập nhật roadmap ngắn.
 
-## Trách nhiệm
+Không dừng sau khi viết TASK nếu outcome đã cho phép triển khai.
 
-1. Chuyển outcome của Tier 0 thành scope, non-goal, boundary và dependency.
-2. Chọn đúng một lane: FAST, STANDARD hoặc CRITICAL. Task thiếu lane = CRITICAL.
-3. Viết RQ → STEP → AC đo được, gate tỷ lệ với rủi ro và rollback hợp lý.
-4. Chạy `verify-task.ps1`, đặt `READY_FOR_EXECUTION`, giao một Tier 2 stream.
-5. Nhận HANDOFF: FAST review trực tiếp; STANDARD giao Tier 3 focused audit; CRITICAL giao Tier 3 deep audit.
-6. Resolve và cập nhật vị trí roadmap/handover sau khi ACCEPTED. Không mở vòng mới chỉ để sửa P2/P3 không chặn release; ghi debt có owner khi cần.
+## Quyền tự quyết
 
-## Contract proportionality
+Tier 1 tự quyết tên helper, cấu trúc nội bộ, pattern/library đã có, test in-scope, cách chia file và trình tự kỹ thuật. Nếu outcome/boundary không đổi, Tier 1 được điều chỉnh contract trong lúc làm nhưng phải cập nhật spec/Revision Log trước khi đóng round.
 
-- FAST: 1 outcome, boundary, 1–3 RQ, 1–4 STEP, 1–5 AC, gate/rollback ngắn.
-- STANDARD: đủ interface/data/risk liên quan; không dẫn tài liệu không dùng.
-- CRITICAL: thêm state/permission/migration/LIVE/rollback matrix theo rủi ro.
+Chỉ hỏi Tier 0 theo tiêu chí trong `tier0.md`; không hỏi routine choice hoặc quyền đã cấp.
 
-Không bắt full suite/build theo thói quen. Một evidence có thể map nhiều AC. Gate khai đúng một lần.
+## Sub-agent
 
-## Resolve và re-audit
+- Được spawn sub-agent trong scope mà không xin lại Tier 0.
+- Mỗi nhánh có outcome, allowlist, forbidden paths, output và gate rõ.
+- Mutating agents chỉ song song khi allowlist không giao nhau và dependency độc lập.
+- Tier 1 là integrator duy nhất: review diff, giải conflict, gate cuối, HANDOFF và Git index.
+- Không để nhiều agent cùng sửa một file.
 
-- FAST: `verify-handoff` + tối đa 3 spot-check trọng yếu.
-- STANDARD/CRITICAL: `verify-audit.ps1` phải PASS; không tự dựng lại audit nếu evidence nhất quán.
-- DELTA khi spec, boundary, baseline và environment premise không đổi.
-- FULL khi scope/spec/baseline/environment đổi, diff lạ, critical surface mới hoặc impact chưa rõ.
-- Contract đổi → tăng spec version. Lỗi thi công → giữ spec, mở execution round mới.
+## Audit selection
 
-## Skill
+- `FAST`: mặc định `NONE`.
+- `STANDARD`: mặc định `NONE`; `LIGHT` cho public contract/integration/shared component quan trọng.
+- `CRITICAL`: mặc định `LIGHT`; `NONE` cần lý do và người chấp nhận rủi ro.
+- Audit phase/plan bằng các task then chốt, không audit mọi task phụ.
 
-Core: `task-authoring`. Thường dùng: `planning`, `codegraph-usage`. Theo nhu cầu: `research`, `docs-seeker`, `databases`, `frontend-design`, `problem-solving`, `reviewcode`.
+Core skill: `task-authoring`, `code`, `implementation-mindset`, `testing-protocol`. Nạp skill khác theo nhu cầu.

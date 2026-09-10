@@ -133,14 +133,12 @@ try {
     if ($taskLaneRaw.ToUpper() -match '^(FAST|STANDARD|CRITICAL)$') { $taskLane = $Matches[1] }
     $auditLaneRaw = Get-ControlField -Text $audit -FieldName 'Assurance lane'
     $auditLane = ''
-    if ($auditLaneRaw.ToUpper() -match '^(STANDARD|CRITICAL)$') { $auditLane = $Matches[1] }
+    if ($auditLaneRaw.ToUpper() -match '^(FAST|STANDARD|CRITICAL)$') { $auditLane = $Matches[1] }
     if ($auditLaneRaw -eq '') {
         Add-GateWarn $ctx 'A-02' "AUDIT has no Assurance lane; legacy-safe default CRITICAL applies."
         $auditLane = 'CRITICAL'
     } elseif ($auditLane -eq '') {
-        Add-GateError $ctx 'A-02' "AUDIT Assurance lane '$auditLaneRaw' is invalid; an audit lane is STANDARD or CRITICAL."
-    } elseif ($taskLane -eq 'FAST') {
-        Add-GateWarn $ctx 'A-02' "FAST was explicitly escalated to Tier 3 audit ($auditLane)."
+        Add-GateError $ctx 'A-02' "AUDIT Assurance lane '$auditLaneRaw' is invalid; expected FAST, STANDARD, or CRITICAL."
     } elseif ($auditLane -ne $taskLane) {
         Add-GateError $ctx 'A-02' "assurance lane mismatch: TASK=$taskLane vs AUDIT=$auditLane."
     } else {
@@ -148,25 +146,23 @@ try {
     }
 
     $depthRaw = Get-ControlField -Text $audit -FieldName 'Audit depth'
-    $auditDepth = 'DEEP'
+    $auditDepth = 'LIGHT'
     $depthUpper = $depthRaw.ToUpper()
-    if ($depthUpper -match '^(FOCUSED|DEEP|DELTA|FULL)$') {
+    if ($depthUpper -match '^(LIGHT|FOCUSED|DEEP|DELTA|FULL)$') {
         $auditDepth = $Matches[1]
         if ($auditDepth -eq 'FULL') {
             Add-GateWarn $ctx 'A-02' 'Audit depth FULL is a legacy alias for DEEP; new artifacts should use DEEP.'
         } else {
-            Add-GateOk $ctx 'A-02' "audit depth: $auditDepth."
+            if ($auditDepth -match '^(FOCUSED|DEEP)$') {
+                Add-GateWarn $ctx 'A-02' "Audit depth $auditDepth is legacy-compatible; new audits use LIGHT."
+            } else {
+                Add-GateOk $ctx 'A-02' "audit depth: $auditDepth."
+            }
         }
     } elseif ($depthRaw -ne '') {
-        Add-GateError $ctx 'A-02' "Audit depth '$depthRaw' is invalid; expected FOCUSED|DEEP|DELTA (FULL is legacy-compatible)."
+        Add-GateError $ctx 'A-02' "Audit depth '$depthRaw' is invalid; new audits use LIGHT or DELTA."
     } else {
-        Add-GateWarn $ctx 'A-02' "Audit depth absent; legacy-safe default DEEP applies."
-    }
-    if ($auditLane -eq 'STANDARD' -and @('DEEP','FULL') -contains $auditDepth) {
-        Add-GateWarn $ctx 'A-02' 'STANDARD normally uses FOCUSED; deeper audit is allowed when justified.'
-    }
-    if ($auditLane -eq 'CRITICAL' -and $auditDepth -eq 'FOCUSED') {
-        Add-GateError $ctx 'A-02' 'CRITICAL cannot use FOCUSED; use DEEP or DELTA.'
+        Add-GateWarn $ctx 'A-02' "Audit depth absent; compatibility default LIGHT applies."
     }
 
     # -- Section bodies ------------------------------------------------------
@@ -419,11 +415,7 @@ try {
         }
     }
     $allChecks = @('C-01','C-02','C-03','C-04','C-05','C-06','C-07','C-08','C-09','C-10')
-    $mandatory = if ([string]::IsNullOrWhiteSpace($taskLaneRaw) -or $auditLane -eq 'CRITICAL') {
-        $allChecks
-    } else {
-        @('C-07','C-09','C-10')
-    }
+    $mandatory = @('C-07','C-09','C-10')
     $presentChecks = @($checkRows | ForEach-Object {
         $m = [regex]::Match((Clear-MdDecoration $_.Cells[0]), '^(C-\d{2})')
         if ($m.Success) { $m.Groups[1].Value }
@@ -571,9 +563,7 @@ try {
         $sec4PathCol = Get-ColumnIndex -Header $sec4Table.Header -Pattern '(?i)evidence|path|artifact'
         foreach ($row in $sec4Table.Rows) { if ($row.Cells.Count -ge 3) { [void]$sec4Rows.Add($row) } }
     }
-    $minimumEvidence = 4
-    if ($auditDepth -eq 'DELTA' -or $auditDepth -eq 'FOCUSED') { $minimumEvidence = 2 }
-    elseif ($auditLane -eq 'STANDARD') { $minimumEvidence = 2 }
+    $minimumEvidence = 2
     if ($sec4Rows.Count -lt $minimumEvidence) {
         # go-live-15 wrote section 4 as a fenced transcript instead of a table.
         # That is a format deviation, not an absence of evidence: accept it when

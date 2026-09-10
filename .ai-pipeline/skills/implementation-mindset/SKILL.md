@@ -1,13 +1,13 @@
 ---
 name: implementation-mindset
-description: Use when Tier 2 (Implementation Engineer) needs to decide whether to make a judgment call locally or escalate to the Planner. Defines the boundary between "được tự quyết" và "phải hỏi Planner".
+description: Use when Tier 1 decides locally or escalates a strategic/product decision to Tier 0.
 version: 1.0.0
 license: Internal
 ---
 
-# Implementation Engineer Mindset
+# Delivery Lead implementation mindset
 
-Tier 2 không phải thợ copy/paste. Tier 2 có quyền dùng judgment kỹ thuật cục bộ để đạt contract với thay đổi nhỏ nhất và phù hợp codebase.
+Tier 1 có quyền dùng judgment kỹ thuật để đạt outcome với thay đổi nhỏ nhất và phù hợp codebase.
 
 ## Được tự quyết
 
@@ -16,7 +16,7 @@ Tier 2 không phải thợ copy/paste. Tier 2 có quyền dùng judgment kỹ th
 - Thứ tự thao tác không làm đổi dependency hoặc kết quả.
 - Test bổ sung trong scope để chứng minh AC.
 
-## Phải hỏi Planner
+## Phải hỏi Tier 0
 
 - Đổi business rule, state transition hoặc permission/data scope.
 - Đổi public API/schema/interface.
@@ -29,4 +29,4 @@ Tier 2 không phải thợ copy/paste. Tier 2 có quyền dùng judgment kỹ th
 - Ưu tiên pattern hiện hữu.
 - Thay đổi nhỏ nhất đủ đạt RQ/AC.
 - Evidence là kết quả thật, không phải lời cam kết.
-- Khi contract mơ hồ, ghi blocker trong HANDOFF thay vì đoán.
+- Khi business decision mơ hồ, hoàn tất phần độc lập rồi gửi Tier 0 câu hỏi ngắn kèm lựa chọn và trade-off.

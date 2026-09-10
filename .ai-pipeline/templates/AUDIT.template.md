@@ -6,14 +6,14 @@
 |---|---|
 | Task | `<task-slug>` |
 | Spec version | `<must match TASK>` |
-| Assurance lane | `STANDARD | CRITICAL` |
-| Audit depth | `FOCUSED | DEEP | DELTA` |
+| Assurance lane | `FAST | STANDARD | CRITICAL` |
+| Audit depth | `LIGHT | DELTA` |
 | Execution round | `<N>` |
 | Audit round | `<N>` |
 | Baseline / source round | `<SHA; DELTA thêm audit round nguồn>` |
 | Auditor | `Tier 3 — independent session` |
 
-> FAST không tạo AUDIT mặc định. Task cũ thiếu lane được coi là CRITICAL. `FULL` chỉ là alias tương thích artifact cũ của `DEEP`.
+> Chỉ tạo AUDIT khi TASK ghi `Audit mode: LIGHT`. `FOCUSED | DEEP | FULL` chỉ được đọc để tương thích artifact cũ.
 
 ## 1. Findings
 
@@ -34,7 +34,7 @@ P0/P1 luôn chặn. P2 chỉ chặn khi `Release-blocking: YES`; P2 không chặ
 
 ### 2.2 Assurance checks
 
-STANDARD bắt buộc `C-07`, `C-09`, `C-10`, ít nhất một changed-behavior check và các check rủi ro áp dụng. CRITICAL ghi C-01..C-10; không áp dụng dùng `SKIP(reason)`.
+LIGHT bắt buộc `C-07`, `C-09`, `C-10`, ít nhất một changed-behavior check và các check rủi ro thực sự áp dụng.
 
 | Check | Status | Evidence (command + exit + output, hoặc carry-forward source) |
 |---|---|---|
@@ -45,7 +45,7 @@ STANDARD bắt buộc `C-07`, `C-09`, `C-10`, ít nhất một changed-behavior 
 
 ## 3. Evidence and scope
 
-FOCUSED: ít nhất 2 phép đo độc lập, trong đó một phép đo changed behavior; DEEP: ít nhất 4; DELTA: ít nhất 2. Một phép đo có thể map nhiều AC/check.
+LIGHT và DELTA cần ít nhất 2 phép đo độc lập, trong đó một phép đo changed behavior. Một phép đo có thể map nhiều AC/check.
 
 - **Audited changed surface:** `<files/callers>`
 - **Excluded and why:** `<none hoặc impact proof>`
