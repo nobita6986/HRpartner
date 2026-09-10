@@ -27,13 +27,13 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
 current_lane: UI04 public homepage completion
-current_task: hrp-v6-ui-04c1-r7-bo-helper-text-disabled (READY_FOR_EXECUTION v0.1)
-task_path: docs/tasks/hrp-v6-ui-04c1-r7-bo-helper-text-disabled/TASK.md
-spec_version: v0.1 (Owner 11/09/2026 01:13 directive: bo <p> info + "Vui long lien he qua hotline hoac email trong thoi gian nay" trong ContactForm disabled; R7)
-task_status: Tier 1 (Delivery Lead) commit a21b586 + push fd139d5..a21b586 len origin/main 11/09/2026 01:13 theo tier1.md workflow; typecheck local PASS; Vercel auto-deploy; TIER1 self-review NONE (FAST lane); AC-06 evidence file task r2 tro thanh STALE (ghi note TIER1_HANDOVER §5.2)
-worktree_branch: main (Tier 0 directive TIER0_UI04 con hieu luc cho R3->R4->R5->R6->R7)
-current_gate: OWNER_VISUAL_REVIEW_R7 (anh refresh https://hrpvietnam.com/ footer preview: cot 3 da het dong helper text chua)
-next_command: Tier 0 chot visual R7: (a) ACCEPTED -> closeout UI04c1 + mo hrp-v6-ui-04d-section-render v1.6 (ke thua R7 footer cot 3 no helper), (b) can helper text khac -> mo R8, (c) can merge PR #1 fix-ci truoc khi closeout de CI Quality xanh
+current_task: hrp-v6-ui-04c1-r8-footer-cot-1-bo-min-h-11-contact (READY_FOR_EXECUTION v0.1)
+task_path: docs/tasks/hrp-v6-ui-04c1-r8-footer-cot-1-bo-min-h-11-contact/TASK.md
+spec_version: v0.1 (Owner reject R7 11/09/2026 01:17: "sua 3 4 vong ko xong" -- root cause that: min-h-11 (44px) tren 4 <a> contact items lam pad height, tao visual gap 32px (8px gap + 24px whitespace tu min-h-11). R8 bo min-h-11 o 4 <a>.)
+task_status: Tier 1 (Delivery Lead) commit cc548c3 + push 9100f3f..cc548c3 len origin/main 11/09/2026 01:18 theo tier1.md workflow; typecheck local PASS; Vercel auto-deploy; TIER1 self-review NONE (FAST lane)
+worktree_branch: main (Tier 0 directive TIER0_UI04 con hieu luc cho R3->R4->R5->R6->R7->R8)
+current_gate: OWNER_VISUAL_REVIEW_R8 (anh refresh https://hrpvietnam.com/ footer preview: cot 1 co con gian khong)
+next_command: Tier 0 chot visual R8: (a) ACCEPTED -> closeout UI04c1 + mo hrp-v6-ui-04d-section-render v1.6 (ke thua R8 footer), (b) van sai -> Tier 1 PAUSE (Q1: a designer live debug, b thu R3 spacing, c khac), (c) can merge PR #1 fix-ci truoc khi closeout de CI Quality xanh
 previous_accepted: 04c1 ACCEPTED round 1 (9f593fa) + 04c2 ACCEPTED round 1 (1316ff4) + R3 v1.3 ACCEPTED (8c6fd03) + composition/footer v1.4 ACCEPTED (04b767e) + interaction R2 ACCEPTED + VIS-01..03 correction R1 ACCEPTED (284e46c) + B pagination-admin ACCEPTED (18919da) + A visual-polish ACCEPTED
 next_planner_candidate: hrp-v6-ui-04d-section-render (BLOCKED v1.5 — sau 04c1+04c2 push production + Owner live visual review ACCEPTED); sau đó hrp-v6-ui-04d-detail-ui (D.A); sau đó Admin V6 theo dependency (AV1 → AV4 → AV2 → AV6 → AV5)
 blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); UI04 04c1+04c2 đã OWNER_DECIDED (16 lựa chọn chốt 10/09/2026) — gate đã mở sang TIER2_EXECUTION; Owner live visual review pending post-deploy (Tier 1 monitor Vercel/CI); section-render chờ Tier 1 review V6 stacking sau push production
