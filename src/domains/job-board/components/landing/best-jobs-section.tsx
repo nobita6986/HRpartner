@@ -62,7 +62,8 @@ export function BestJobsSection({
       aria-labelledby="hrp-best-jobs-heading"
       className="w-full bg-surface-container-low px-4 py-12 md:px-8 md:py-16"
     >
-      <div className="mx-auto w-full max-w-7xl">
+      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] */}
+      <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6">
         <div className="mb-6 flex flex-col gap-2">
           {/* STEP-04/RQ-07/DEC-11: Section header icon local_fire_department trong w-10 h-10 bg-secondary-container rounded-full */}
           <p className="font-label text-label-sm font-bold uppercase tracking-widest text-primary-dark">
@@ -128,7 +129,7 @@ export function BestJobsSection({
         {tab === 'urgent' && (
           <div className="mb-4 flex items-center gap-2 rounded-lg bg-surface-container-low px-3 py-2">
             <span className="material-symbols-outlined text-base text-on-surface-variant" aria-hidden="true">info</span>
-            <p className="font-body text-body-sm text-on-surface-variant">
+              <p className="font-body text-label-sm text-on-surface-variant">
               Preview / Backend chưa hỗ trợ
             </p>
           </div>

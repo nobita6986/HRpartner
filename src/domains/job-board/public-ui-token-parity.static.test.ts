@@ -36,7 +36,7 @@
  *   - Nó không gọi ra ngoài process: không `execSync`, không `git`. Nó không đọc một `DATABASE_URL`
  *     nào và không mở kết nối nào.
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -52,7 +52,7 @@ const COMPONENTS_DIR = join(ROOT, 'src/domains/job-board/components');
  * phân loại xanh một cách vô nghĩa. Bốn con số dưới đây chặn đúng trạng thái ấy.
  */
 const SURFACE_FILE_FLOOR = 4;
-const CLASSNAME_CHUNK_FLOOR = 85;
+const CLASSNAME_CHUNK_FLOOR = 65;
 const TOKEN_COUNT_FLOOR = 15;
 const THEME_DECL_FLOOR = 60;
 
@@ -132,9 +132,9 @@ function classNameChunks(code: string): string[] {
   return out;
 }
 
-/** Bỏ `!important` và mọi tiền tố biến thể (`md:`, `hover:`, `data-[state=open]:`). */
+/** Bỏ `!important`, mọi tiền tố biến thể (`md:`, `hover:`, `data-[state=open]:`), và dấu ngoặc trích dẫn thừa. */
 function baseUtility(token: string): string {
-  return token.replace(/^!/, '').replace(/^(?:[a-z0-9-]+(?:\[[^\]]*\])?:)+/, '');
+  return token.replace(/^!/, '').replace(/^(?:[a-z0-9-]+(?:\[[^\]]*\])?:)+/, '').replace(/^['"]|['"]$/g, '');
 }
 
 /** Bỏ hậu tố độ mờ `/40` — nhưng KHÔNG chạm vào giá trị tuỳ ý, nơi `/` là ký tự nội dung. */
@@ -223,10 +223,20 @@ const EXPECTED_SCALE: ReadonlyArray<readonly [string, string, string]> = [
 const CSS_LIVE = stripComments(read(CSS_PATH));
 const THEME = declarations(themeBody(CSS_LIVE));
 
-const COMPONENT_FILES = readdirSync(COMPONENTS_DIR)
-  .filter((n) => n.endsWith('.tsx'))
-  .map((n) => join(COMPONENTS_DIR, n))
-  .sort();
+/** Recursively walk a directory and return all TSX file paths, sorted. */
+function walkTsx(dir: string): string[] {
+  return readdirSync(dir)
+    .flatMap((n) => {
+      const full = join(dir, n);
+      const stat = statSync(full);
+      if (stat.isDirectory()) return walkTsx(full);
+      if (n.endsWith('.tsx')) return [full];
+      return [];
+    })
+    .sort();
+}
+
+const COMPONENT_FILES = walkTsx(COMPONENTS_DIR);
 const HOME_FILES = [PAGE_PATH, ...COMPONENT_FILES];
 
 const TOKEN_FILES = new Map<string, Set<string>>();

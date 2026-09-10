@@ -11,10 +11,12 @@ export function ReferralStrip() {
       id="register"
       data-section="ctv"
       aria-labelledby="hrp-ctv-heading"
-      /* STEP-07/RQ-01: Container max-w-[1200px] mx-auto px-4 md:px-6 */
-      className="w-full px-4 md:px-6 py-12 md:py-16"
+      /* RQ-02 / STEP-03: Peach/cam nhạt background — dùng bg-primary-fixed (--color-primary-fixed = #ffdbce)
+         với opacity để nhẹ hơn. Container giữ max-w-[1200px] trước VIS-06. */
+      className="w-full bg-primary-fixed/30 px-4 md:px-6 py-12 md:py-16"
     >
-      <div className="mx-auto w-full max-w-[1200px] grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
+      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] */}
+      <div className="mx-auto w-full max-w-[1080px] grid grid-cols-1 items-center gap-8 lg:grid-cols-2 px-4 md:px-6">
         <div className="flex flex-col gap-5">
           <p className="font-label text-label-sm font-bold uppercase tracking-widest text-secondary">
             Cơ hội mới

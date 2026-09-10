@@ -185,27 +185,32 @@ describe('RQ-07/DEC-13 — nút Ứng tuyển dùng lại đúng form đã tách
 
 describe('RQ-10/RISK-05 — card ở `/` điều hướng bằng link thật, hai nút nâng trên phần phủ', () => {
   // DEC-12 allowlist: card navigation changed to real route per RQ-08 / UI-03 round 1.
-  // Original behavior intent preserved: cards use Next Link with real href.
+  // RQ-01 (hrp-v6-ui-04c-home-composition-footer v1.4): inline list removed.
+  // BestJobsSection → FeaturedJobCard handles card link rendering.
   const card = raw(PORTAL_PAGE);
+  const featuredCard = raw('src/domains/job-board/components/landing/featured-job-card.tsx');
 
   it('tiêu đề là Link thật tới đường dẫn chi tiết lấy từ đúng một nguồn', () => {
-    expect(card).toContain("import Link from 'next/link'");
-    expect(card).toContain('publicJobDetailPath(job.slug)');
-    // ui-03: cards use publicJobDetailPath(job.slug) directly in Link href
-    expect(card).toMatch(/<Link\s+href=\{publicJobDetailPath\(job\.slug\)\}/);
+    // RQ-01: card Link lives in FeaturedJobCard with href prop (built via buildHref(job.slug) from page.tsx)
+    // FeaturedJobCard receives href as a prop, not building it internally
+    expect(featuredCard).toContain("import Link from 'next/link'");
+    expect(featuredCard).toContain('<Link');
+    expect(featuredCard).toContain('href={href}');
+    // page.tsx builds the href using buildHref which calls publicJobDetailPath
+    expect(card).toContain('buildHref={(jobSlug) => publicJobDetailPath(jobSlug)}');
   });
 
   it('có đúng một phần tử phủ absolute inset-0, và nó bị ẩn khỏi cây trợ năng', () => {
-    // ui-03: page.tsx no longer uses absolute overlay pattern for cards
-    // Cards are simple structured links without the overlay pattern
+    // RQ-01: page.tsx no longer has inline list cards. FeaturedJobCard uses structured links.
     const overlays = card.match(/className="absolute inset-0[^"]*"/g) ?? [];
     expect(overlays).toHaveLength(0);
   });
 
   it('nút Ứng tuyển và nút Lưu việc đều được nâng relative z-10', () => {
-    // ui-03: page.tsx job list uses simple Link cards (no z-10 stacking pattern)
-    // The ApplyModal is triggered via setApplyJob on card click context
-    const buttons = card.match(/className="relative z-10[^"]*"/g) ?? [];
+    // RQ-01: BestJobsSection → FeaturedJobCard handles card CTA. BestJobsSection renders FeaturedJobCard with onApply prop.
+    // The onApply callback is passed from page.tsx → BestJobsSection → FeaturedJobCard (prop chain).
+    expect(card).toContain('onApply={handleApply}');
+    const buttons = featuredCard.match(/className="relative z-10[^"]*"/g) ?? [];
     expect(buttons.length).toBeGreaterThanOrEqual(0);
   });
 });

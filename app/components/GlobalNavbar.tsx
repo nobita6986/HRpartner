@@ -108,10 +108,8 @@ export function GlobalNavbar() {
       <a className="hrp-skip" href="#hrp-main">
         Bỏ qua điều hướng, tới nội dung chính
       </a>
-      {/* go-live-08 / RQ-20: chuỗi class này PHẢI trùng chuỗi container của
-          `app/(portal)/page.tsx` để hai mép trái trùng nhau ở mọi breakpoint.
-          STEP-02/STEP-07: max-w-[1200px] (RQ-01) */}
-      <div className="w-full max-w-[1200px] mx-auto px-6">
+      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] + gutter px-4 md:px-6 */}
+      <div className="w-full max-w-[1080px] mx-auto px-4 md:px-6">
         {/* STEP-02: h-16 (RQ-02); logo+menu cluster left gap-8; auth cluster right gap-4 */}
         <div className="flex justify-between items-center h-16">
           {/* Logo + Desktop Navigation — cluster LEFT gap-8 */}

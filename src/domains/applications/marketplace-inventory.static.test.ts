@@ -275,22 +275,18 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
 
   it('nút Tìm kiếm chuyển ba bộ lọc thật vào API, không còn control trang trí', () => {
     // DEC-10 allowlist: composition changed in ui-03 round 1 — assertion updated.
+    // RQ-01 (hrp-v6-ui-04c-home-composition-footer v1.4): Hero form navigate to /viec-lam via useRouter + buildListingHref.
     const page = strip(read(PORTAL_PAGE));
     const route = strip(read(LEGACY_JOBS));
     const service = strip(read(PUBLIC_JOB_SERVICE));
-    // ui-03: Hero form builds query with keyword, area, shift filters
-    // STEP-06/A16: hero form now uses bg-white border-outline-variant
-    expect(page).toContain("params.set('q', q)");
-    expect(page).toContain("params.set('area', filters.area)");
-    expect(page).toContain("params.set('shift', filters.shift)");
-    expect(page).not.toMatch(/setTimeout\(\(\)\s*=>\s*setSearching/);
-    // No checkboxes or hardcoded filter arrays
-    expect(page).not.toMatch(/params\.append\('(?:shiftType|jobType)'/);
-    expect(page).not.toContain('xoay_ca');
-    expect(page).not.toMatch(/type="checkbox"/);
-    // ui-03: areas come from facets.areas (inline options), not FacetSelect component
-    expect(page).toContain('facets.areas');
-    expect(page).toContain("EMPTY_FACETS: PublicJobFacets = { areas: [], shifts: [] }");
+    // RQ-01: Hero submit navigates to /viec-lam via buildListingHref (offset:0)
+    expect(page).toContain('buildListingHref');
+    expect(page).toContain('router.push(buildListingHref');
+    expect(page).toContain('offset: 0');
+    // ui-03: Hero form builds keyword/area/shift via state (controlled inputs)
+    expect(page).toContain('keyword.trim()');
+    expect(page).toContain('area || undefined');
+    expect(page).toContain('shift || undefined');
     expect(route).toContain("searchParams.getAll('shiftType')");
     expect(route).toContain("searchParams.getAll('jobType')");
     expect(service).toContain('opts.shiftTypes.includes(job.shiftType)');
@@ -339,21 +335,24 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
 
   it('phân trang của trang việc làm đọc `nextOffset` thật, không có spinner hẹn giờ', () => {
     // DEC-10 allowlist: composition changed in ui-03 round 1 — assertion updated.
+    // RQ-01 (hrp-v6-ui-04c-home-composition-footer v1.4): inline list removed, runQuery deleted.
+    // Pagination now via BestJobs tab prev/next — bestJobsOffset state, bootstrapBestJobs fetch.
     const page = strip(read(PORTAL_PAGE));
-    // ui-03: uses runQuery with mode 'append' and nextOffset
-    expect(page).not.toMatch(/API doesn't support pagination/i);
-    expect(page).not.toMatch(/setHasMore\(false\)/);
-    expect(page).not.toMatch(/setTimeout\(\(\)\s*=>\s*setLoadingMore/);
-    // ui-03: uses runQuery with replace/append modes
-    expect(page).toContain("void runQuery({ keyword, area, shift }, nextOffset, 'append')");
-    // ui-03: deduplication logic preserved
-    expect(page).toContain('dedupeById');
-    expect(page).toContain('setJobs');
-    // ui-03: AbortController for race condition handling
-    expect(page).toContain('new AbortController()');
-    expect(page).toContain('generation !== generationRef.current');
-    // ui-03: uses overview.totals.jobs from API response for display
-    expect(page).toContain('overview.totals.jobs');
+    // RQ-01: runQuery removed, sentinel removed, loadMore removed
+    expect(page).not.toContain("void runQuery({ keyword, area, shift }, nextOffset, 'append')");
+    expect(page).not.toContain('dedupeById');
+    expect(page).not.toContain('setJobs');
+    expect(page).not.toContain('new AbortController()');
+    expect(page).not.toContain('generation !== generationRef.current');
+    expect(page).not.toContain('sentinelRef');
+    expect(page).not.toContain('IntersectionObserver');
+    expect(page).not.toContain('load-more-sentinel');
+    // RQ-01: BestJobs pagination via bestJobsOffset state + bootstrapBestJobs
+    expect(page).toContain('bestJobsOffset');
+    expect(page).toContain('bootstrapBestJobs');
+    // Pagination buttons use setBestJobsOffset
+    expect(page).toContain('handleBestJobsPrev');
+    expect(page).toContain('handleBestJobsNext');
   });
 
   it('trang track có nút Tra cứu nhìn thấy được và render ba field đối chiếu', () => {

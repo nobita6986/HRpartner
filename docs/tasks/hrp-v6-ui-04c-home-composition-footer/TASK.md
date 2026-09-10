@@ -16,7 +16,7 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `FOCUSED` |
 | Spec version | `v1.4` |
-| Status | `READY_FOR_EXECUTION` (R2 v1.4 ACCEPTED — Tier 1 chuyển; Owner R2 live review sau Tier 3 audit composition) |
+| Status | `ACCEPTED` (round 1.4.1 — Tier 2 thi công, Tier 3 FOCUSED audit PASS, Owner quyết patch Footer → 1080px, gates xanh; 2026-09-10) |
 | Planner | `Tier 1` |
 | Baseline | HEAD đầu round — `git rev-parse HEAD` ngay trước STEP-01 → `evidence/exec-head-before.txt` |
 | Source reference | correction R1 commit `284e46c` (predecessor visual) + interaction R2 correction round 1 (`e18e54e` hoặc commit tương đương sau khi R2 ACCEPTED) — diff để đối chiếu trạng thái inline list cũ + ReferralStrip/footer background cũ + inner container 1080px |
@@ -121,7 +121,7 @@ Cột 3 — Thông tin liên hệ:
 
 | Công việc | Thuộc plan | Trạng thái |
 |---|---|---|
-| Composition/footer (task này) | Plan UI composition/footer | DRAFT |
+| Composition/footer (task này) | Plan UI composition/footer | **ACCEPTED (2026-09-10, round 1.4.1)** |
 | BestJobs tab + pagination + URGENT fixture | Plan B | ACCEPTED (18919da) |
 | VIS-01..03 style/layout correction | Correction R1 | ACCEPTED (284e46c) |
 | Backend (schema, permission, write API, Admin page, listingPageSize, view-model) | Plan Admin V6 AV1 | DRAFT |

@@ -169,8 +169,8 @@ describe('go-live-08 / RQ-02, RQ-03, RQ-04 — card việc làm', () => {
     expect(base).toContain('padding: var(--spacing-card-padding);');
     // ui-03: title uses `font-head text-headline-md font-bold` (not `text-lg font-bold`)
     expect(CARD).toContain('font-head text-headline-md font-bold');
-    expect(page).toContain('font-head text-headline-md font-bold');
-    expect(page).not.toContain('<h3 className="text-lg font-bold"');
+    // RQ-01: page.tsx no longer has inline list cards — title pattern check moved to CARD
+    expect(CARD).not.toContain('<h3 className="text-lg font-bold"');
   });
 
   it('tên đơn vị và địa điểm vẫn dùng token xám dịu', () => {
@@ -264,17 +264,16 @@ describe('go-live-08 / RQ-07 — vòng focus phủ đủ mọi control', () => {
 
   it('cả control tương tác của trang landing đều mang lớp vòng focus', () => {
     // ui-03 round 1: composition changed — components are in separate files.
+    // RQ-01 (hrp-v6-ui-04c-home-composition-footer v1.4): inline list removed.
     //
     // `hrp-focus` on page.tsx:
     //   - Hero keyword input: 1
     //   - Hero area select: 1
-    //   - Hero salary select: 1
+    //   - Hero salary select (disabled): 1
     //   - Hero submit button: 1
-    //   - Retry button (job list error state): 1
-    //   - Job list link in section: 1 (area-image-card onPick triggers but that's not a page-level control)
-    //   = 6 total on page.tsx (the area-image-card is in a component but rendered on page)
-    // Actually, hrp-focus count on page.tsx is exactly 6 per grep
-    expect(count(page, 'hrp-focus')).toBe(6);
+    //   = 4 total on page.tsx
+    // No retry button (no inline list error state).
+    expect(count(page, 'hrp-focus')).toBe(4);
     expect(count(page, '<FacetSelect')).toBe(0);
     // ui-03: native selects use inline options from facets.areas
     expect(page).toContain('facets.areas');
@@ -283,7 +282,6 @@ describe('go-live-08 / RQ-07 — vòng focus phủ đủ mọi control', () => {
     // Navbar `hrp-focus`:
     // STEP-06/DEC-19: Login đổi từ hrp-btn-outline sang Link text (không còn hrp-focus)
     // Desktop Signup: hrp-focus = 1 (button với aria-disabled)
-    // Mobile Login: không còn hrp-focus = 0
     // Mobile Signup: hrp-focus = 1 (button với aria-disabled)
     // Total nav hrp-focus = 2
     expect(count(nav, 'hrp-focus')).toBe(2);
@@ -395,35 +393,41 @@ describe('go-live-08 / RQ-09 — trạng thái nút', () => {
  *   - `cache: 'no-store'` still exists — AbortController is used alongside it
  *   - facets.areas is still used as data source (via map)
  */
+/**
+ * RQ-01 (hrp-v6-ui-04c-home-composition-footer v1.4):
+ *   - runQuery deleted (inline search removed per RQ-01)
+ *   - buildQuery deleted
+ *   - dedupeById deleted
+ *   - enrichJob preserved (BestJobs bootstrap still needs it)
+ *   - facets/overview flow preserved via bootstrapBestJobs
+ *   - `cache: 'no-store'` still used in bootstrapBestJobs
+ *   - facets.areas is still used as data source (via map)
+ */
 describe('go-live-08 / RQ-11 — tầng dữ liệu của trang công khai còn nguyên', () => {
-  it('ba hàm dữ liệu và đường gọi API giữ nguyên chữ ký', () => {
+  it('enrichJob còn, nhưng buildQuery/dedupeById/runQuery đã xóa (RQ-01)', () => {
     expect(page).toContain('function enrichJob(job: PublicJobDto): EnrichedJob {');
-    expect(page).toContain('function dedupeById(list: EnrichedJob[]): EnrichedJob[] {');
-    expect(page).toContain('function buildQuery(filters: JobSearchFilters, offset: number): string {');
-    expect(page).toContain('await fetch(`/api/jobs?${buildQuery(filters, offset)}`');
-    // ui-03: AbortController is used alongside cache: 'no-store'
+    // RQ-01: these are deleted
+    expect(page).not.toContain('function dedupeById(');
+    expect(page).not.toContain('function buildQuery(');
+    expect(page).not.toContain('function runQuery(');
+    // RQ-01: bootstrapBestJobs uses cache: 'no-store' (same as old runQuery)
     expect(page).toContain("cache: 'no-store'");
-    expect(page).toContain('new AbortController()');
     expect(page).toContain('.map(enrichJob)');
-    expect(page).toContain("dedupeById([...prev, ...incoming])");
   });
 
   it('nhãn đơn vị trên card dùng job.title trực tiếp thay vì summaryLabel', () => {
     // ui-03: FeaturedJobCard uses job.title directly, not summaryLabel
     expect(CARD).toContain('job.title');
     expect(CARD).not.toContain('summaryLabel');
-    // ui-03: job list on page.tsx uses job.title directly
-    expect(page).toContain('{job.title}');
-    expect(page).not.toContain('summaryLabel(job.positions');
-    expect(page).not.toContain('summaryLabel(job.locations');
-    expect(page).not.toContain('summaryLabel(job.shifts');
+    // RQ-01: page.tsx no longer has inline list cards with {job.title}
+    expect(page).not.toContain('summaryLabel(job.');
     expect(count(page, 'summaryLabel(job.')).toBe(0);
   });
 
   it('nguồn lựa chọn của bộ lọc vẫn là facets từ API, dùng inline options', () => {
     // ui-03: facets.areas is still the data source, but rendered as inline <option> elements
     expect(page).toContain('const [facets, setFacets] = useState<PublicJobFacets>(EMPTY_FACETS);');
-    expect(page).toContain('setFacets(data.facets ?? EMPTY_FACETS);');
+    expect(page).toContain('setFacets(data.facets');
     // ui-03: no `options={facets.areas}` prop — uses inline options with facets.areas.map
     expect(page).not.toContain('options={facets.areas}');
     expect(page).toContain('facets.areas.map');
@@ -733,8 +737,8 @@ describe('go-live-08 / RQ-23 — trần chuyển động và danh sách thuộc 
 
 describe('go-live-08 / RQ-17 — vùng chạm 44px', () => {
   it('nút Lưu việc lên 44px và không còn kích thước 36px', () => {
-    // ui-03: job list on page.tsx no longer has save buttons (they were in old job cards)
-    // The inline job list uses simple list items without save buttons
+    // RQ-01: page.tsx no longer has inline list cards (save buttons were there)
+    // The inline job list was removed entirely
     expect(page).not.toContain('aria-label="Lưu việc"');
     // FeaturedJobCard doesn't have a save button either
     expect(CARD).not.toContain('aria-label="Lưu việc"');
@@ -744,17 +748,20 @@ describe('go-live-08 / RQ-17 — vùng chạm 44px', () => {
   });
 
   it('mười control còn lại mang sàn chiều cao 44px', () => {
-    // ui-03: Hero form has 4 controls with min-h-11 (keyword, area, salary, submit)
-    // Retry button in error state has min-h-11
-    // Total on page.tsx: 5
-    expect(count(page, 'min-h-11')).toBe(5);
+    // RQ-01: page.tsx has 4 interactive controls with min-h-11
+    //   - Hero keyword input (keyword)
+    //   - Hero area select
+    //   - Hero salary select (disabled, but still has min-h-11)
+    //   - Hero submit button
+    // Total on page.tsx: 4
+    expect(count(page, 'min-h-11')).toBe(4);
     // STEP-06/DEC-19: Navbar min-h-11 count updated
     // Desktop signup button + Mobile signup button = 2 total
     expect(count(nav, 'min-h-11')).toBe(2);
   });
 
   it('select bộ lọc KHÔNG bị hạ padding dọc — py-2.5 giữ nguyên như baseline', () => {
-    // ui-03: Hero form selects use py-2.5 and min-h-11 for touch targets
+    // RQ-01: Hero form selects use py-2.5 and min-h-11 for touch targets
     expect(page).toContain('py-2.5');
     expect(page).toContain('min-h-11');
     // The .hrp-field CSS still defines hover/focus states (even if not used in hero form)
@@ -775,8 +782,8 @@ describe('go-live-08 / RQ-18 — skip link', () => {
   it('tồn tại ĐÚNG MỘT skip link và nó là phần tử đầu tiên trong header', () => {
     expect(count(nav, 'hrp-skip')).toBe(1);
     expect(nav).toContain('<a className="hrp-skip" href="#hrp-main">');
-    // STEP-02: container changed from max-w-[1600px] to max-w-[1200px]
-    expect(nav.indexOf('hrp-skip')).toBeLessThan(nav.indexOf('max-w-[1200px]'));
+    // VIS-06 / DEC-14: container thu hẹp từ max-w-[1200px] sang max-w-[1080px]
+    expect(nav.indexOf('hrp-skip')).toBeLessThan(nav.indexOf('max-w-[1080px]'));
   });
 
   it('ẩn khỏi bố cục khi không có tiêu điểm, hiện rõ khi nhận tiêu điểm', () => {
@@ -798,14 +805,13 @@ describe('go-live-08 / RQ-18 — skip link', () => {
 
 describe('go-live-08 / RQ-20 — container trang và container navbar cho cùng mép trái', () => {
   it('hai chuỗi class container trùng nhau từng ký tự trên phần quyết định mép trái', () => {
-    // STEP-02/RQ-01: Navbar đổi từ max-w-[1600px] sang max-w-[1200px]
-    // STEP-07/RQ-01: Areas, CTV, Footer sync sang max-w-[1200px]
-    // DEC-19 comment: update container width from 1600 to 1200
-    const CONTAINER = 'w-full max-w-[1200px] mx-auto px-6';
-    expect(nav).toContain(`className="${CONTAINER}">`);
-    // ui-03: Hero component has its own internal container max-w-7xl
-    expect(HERO_SRC).toContain('max-w-7xl');
+    // VIS-06 / DEC-14: container thu hẹp từ max-w-[1200px] sang max-w-[1080px]
+    const CONTAINER = 'w-full max-w-[1080px] mx-auto';
+    expect(nav).toContain(`className="${CONTAINER}`);
+    // VIS-06: Hero component updated to max-w-[1080px]
+    expect(HERO_SRC).toContain('max-w-[1080px]');
     // Old navbar container classes have been replaced
+    expect(count(nav, 'max-w-[1200px]')).toBe(0);
     expect(count(nav, 'max-w-7xl')).toBe(0);
     expect(count(nav, 'max-w-[1600px]')).toBe(0);
     expect(count(nav, 'sm:px-6 lg:px-8')).toBe(0);
@@ -901,27 +907,28 @@ describe('go-live-08 / RQ-25 — ApplyModal vẫn là component đã tách', () 
 
 describe('go-live-08 / RQ-26 — sự thật dữ liệu của GO-LIVE-05 còn nguyên', () => {
   it('trục dữ liệu của trang landing không bị round trình bày chạm tới', () => {
-    // ui-03: data flow preserved via enrichJob, buildQuery, nextOffset
-    // Old patterns (summaryLabel, job.positions, job.remaining, job.recruiter) removed
+    // RQ-01: buildQuery/top-level nextOffset state removed; enrichJob + bootstrapBestJobs preserved
+    // facets.areas still flows through bootstrapBestJobs
     for (const anchor of [
       'enrichJob',
-      'buildQuery',
-      'nextOffset',
       'job.locations',
+      'data.nextOffset', // API response field still read (preserved data flow)
     ]) {
       expect(page, `mất neo trục dữ liệu: ${anchor}`).toContain(anchor);
     }
+    // RQ-01: buildQuery and top-level nextOffset state removed (were used by inline list)
+    // Note: data.nextOffset (API field read) is still present — that's the preserved data flow
+    expect(page).not.toContain('buildQuery');
     // facets still flow through
     expect(page).toContain('facets.areas');
     expect(page).toContain('setFacets(data.facets');
   });
 
   it('không nhãn đơn vị nào bị đổi và không danh sách filter nào bị gắn cứng lại', () => {
-    // ui-03: Hero form uses inline <option> elements (not FacetSelect component)
-    // Salary options are hardcoded thresholds, which is intentional per ui-03 design
-    // Check that areas come from facets and salary has inline options
+    // RQ-01: areas come from facets, salary disabled (no options)
     expect(page).toContain('facets.areas');
     expect(page).toContain('<option value="">Tất cả khu vực</option>');
+    // Salary select is disabled — no options except the default "Mọi mức lương"
     expect(page).toContain('<option value="">Mọi mức lương</option>');
   });
 });

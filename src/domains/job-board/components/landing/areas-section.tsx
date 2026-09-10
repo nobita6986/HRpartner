@@ -23,7 +23,8 @@ export function AreasSection({ areas, onPick }: AreasSectionProps) {
       /* STEP-07/RQ-01: Container max-w-[1200px] mx-auto px-4 md:px-6 */
       className="w-full px-4 md:px-6 py-12 md:py-16"
     >
-      <div className="mx-auto w-full max-w-[1200px]">
+      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] */}
+      <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6">
         <div className="mb-8 flex flex-col gap-2">
           {/* VIS-03: Eyebrow — text-primary-dark (sync with BestJobs eyebrow) */}
           <p className="font-label text-label-sm font-bold uppercase tracking-widest text-primary-dark">

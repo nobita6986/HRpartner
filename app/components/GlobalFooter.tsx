@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ContactForm } from './ContactForm';
 
 interface FooterLink {
   href: string;
@@ -35,57 +36,107 @@ function FooterLinkItem({ link }: { link: FooterLink }) {
   );
 }
 
+const SERVICES = [
+  'Cung ứng và cho thuê lại lao động thời vụ ngắn hạn, dài hạn',
+  'Dịch vụ gia công và kiểm tra, phân loại linh kiện điện tử',
+  'Dịch vụ giới thiệu lao động, việc làm',
+  'Dịch vụ bốc xếp hàng hóa',
+  'Dịch vụ đóng gói hàng hoá',
+];
+
 export function GlobalFooter() {
+  const year = new Date().getFullYear();
   return (
-    <footer data-section="footer" className="border-t border-line bg-surface-container-lowest">
-      {/* STEP-07/RQ-01: Container max-w-[1200px] mx-auto px-4 md:px-6 */}
-      <div className="mx-auto w-full max-w-[1200px] px-4 md:px-6 py-12">
-        <div className="grid w-full grid-cols-1 gap-8 md:grid-cols-4">
-          <div className="md:col-span-2">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <img src="/logo.png" alt="HRP Logo" style={{ height: '40px', width: 'auto' }} />
-            </Link>
-            <p className="mt-4 max-w-md font-body text-body-md text-on-surface-variant">
-              HRP Việt Nam — hệ sinh thái nhân sự toàn diện, kết nối người lao động với các nhà máy và
-              khu công nghiệp hàng đầu cả nước.
+    <footer data-section="footer" className="border-t border-line bg-primary-fixed/20">
+      {/* VIS-06: inner container 1080px */}
+      <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6 py-12">
+        {/* RQ-03 / STEP-04: 3 cột desktop — Công ty / Dịch vụ / Liên hệ */}
+        <div className="grid w-full grid-cols-1 gap-8 md:grid-cols-3">
+          {/* Cột 1: Công ty */}
+          <div className="flex flex-col gap-3">
+            <h3 className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface">
+              Công ty
+            </h3>
+            <p className="font-body text-body-md font-semibold text-on-surface">
+              CÔNG TY TNHH HRP VIỆT NAM
             </p>
+            <p className="font-body text-body-sm text-on-surface-variant">HRP VIET NAM COMPANY LIMITED</p>
+            <p className="font-body text-body-sm text-on-surface-variant">HRP Co.,Ltd</p>
+            <p className="mt-2 font-body text-body-sm text-on-surface-variant leading-relaxed">
+              Thuê Khu đất DV Tân Ngọc, Thống Nhất, Bắc Kê, Xã Bình Tuyền, Tỉnh Phú Thọ, Việt Nam
+            </p>
+            <div className="mt-3 flex flex-col gap-2">
+              <a
+                href="tel:02112216999"
+                className="font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+              >
+                Hotline: 0211 2216999
+              </a>
+              <a
+                href="tel:0964984866"
+                className="font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+              >
+                Hotline: 0964 984 866
+              </a>
+              <a
+                href="mailto:nhaluchrp@gmail.com"
+                className="font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+              >
+                Email: nhaluchrp@gmail.com
+              </a>
+              <a
+                href="https://hrpvietnam.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-body text-body-sm text-primary hover:text-primary-dark transition-colors"
+              >
+                Website: https://hrpvietnam.com/
+              </a>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-3 font-body text-body-md">
-            <h4 className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface">
-              HRP Việt Nam
-            </h4>
-            {footerLinks.map((link) => (
-              <FooterLinkItem key={link.label} link={link} />
-            ))}
+          {/* Cột 2: Dịch vụ */}
+          <div className="flex flex-col gap-3">
+            <h3 className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface">
+              Dịch vụ
+            </h3>
+            <ul className="flex list-none flex-col gap-2 font-body text-body-sm text-on-surface-variant">
+              {SERVICES.map((service) => (
+                <li key={service} className="flex items-start gap-2">
+                  <span
+                    className="material-symbols-outlined mt-0.5 text-xs text-primary shrink-0"
+                    aria-hidden="true"
+                  >
+                    circle
+                  </span>
+                  <span>{service}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <div className="flex flex-col gap-3 font-body text-body-md">
-            <h4 className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface">
-              Đối tác
-            </h4>
-            <Link
-              href="/ctv-portal"
-              className="text-on-surface-variant hover:text-primary transition-colors"
-            >
-              Đăng ký cộng tác viên
-            </Link>
-            <a
-              href="mailto:hello@hrpartner.vn"
-              className="text-on-surface-variant hover:text-primary transition-colors"
-            >
-              hello@hrpartner.vn
-            </a>
+          {/* Cột 3: Liên hệ */}
+          <div className="flex flex-col gap-3">
+            <h3 className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface">
+              Thông tin liên hệ
+            </h3>
+            {/* RQ-05 / STEP-04: ContactForm presentational disabled */}
+            <ContactForm disabled={true} />
           </div>
         </div>
       </div>
+
+      {/* RQ-07 / STEP-04: Copyright runtime năm — bỏ "Phiên bản 6.0" */}
       <div className="border-t border-line">
-        {/* STEP-07/RQ-01: Container max-w-[1200px] mx-auto px-4 md:px-6 */}
-        <div className="mx-auto w-full max-w-[1200px] px-4 md:px-6 flex flex-col items-center justify-between gap-2 py-4 text-on-surface-variant md:flex-row">
+        <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6 flex flex-col items-center justify-between gap-2 py-4 text-on-surface-variant md:flex-row">
           <p className="font-body text-body-md">
-            &copy; {new Date().getFullYear()} HRP — Hệ sinh thái nhân sự toàn diện.
+            &copy; {year} HRP — Hệ sinh thái nhân sự toàn diện.
           </p>
-          <p className="font-body text-body-sm">Phiên bản 6.0 — thiết kế bởi HRP Studio.</p>
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1" aria-label="Footer links">
+            {footerLinks.map((link) => (
+              <FooterLinkItem key={link.label} link={link} />
+            ))}
+          </nav>
         </div>
       </div>
     </footer>

@@ -197,9 +197,11 @@ describe('RQ-13/AC-15 — dùng lại helper của go-live-12, không định d�
 
 describe('RQ-12/AC-14 — nhãn của /viec-lam nói y hệt nhãn trang chủ', () => {
   // DEC-12 allowlist: label updated per UI-03 round 1.
-  // Original behavior intent preserved.
+  // RQ-01 (hrp-v6-ui-04c-home-composition-footer v1.4): salaryLabel moved to FeaturedJobCard.
+  // Original behavior intent preserved: salary label canonical exists in both listing + card.
   const labels = strip(raw(LABELS));
   const home = raw(HOME);
+  const featuredCard = raw('src/domains/job-board/components/landing/featured-job-card.tsx');
 
   /**
    * Không liệt kê tay các cặp chuỗi — đó chính là điểm mù của `TEXT_PAIRS` ở go-live-08: một bảng
@@ -207,21 +209,17 @@ describe('RQ-12/AC-14 — nhãn của /viec-lam nói y hệt nhãn trang chủ',
    * nhãn, nên thêm một nhãn mới mà quên đồng bộ trang chủ là đỏ ngay, không cần sửa test.
    */
   it('mọi chuỗi nghĩa trong module nhãn có mặt TỪNG BYTE bên trang chủ', () => {
-    // ui-03: The labels file has comments/docstrings that interfere with the literal extraction.
-    // After stripping comments, we need to check the actual meaningful strings.
-    // The key strings for UI-03 are salary-related labels.
-    // ui-03: labels use export function, check the function body strings
+    // ui-03: labels file has the canonical string
     expect(labels).toContain("'Lương thương lượng'");
-    // ui-03: salary labels present in both files
-    expect(home).toContain("'Lương thương lượng'");
-    // Check that the string patterns match across files
-    expect(labels).toContain('Lương thương lượng');
+    // RQ-01: salaryLabel now lives in FeaturedJobCard (not inline in page.tsx)
+    expect(featuredCard).toContain("'Lương thương lượng'");
   });
 
   it('chuỗi lương canonical là Lương thương lượng ở CẢ hai tệp, không phải 0 đ/giờ', () => {
     expect(labels).toContain("'Lương thương lượng'");
-    expect(home).toContain("'Lương thương lượng'");
+    expect(featuredCard).toContain("'Lương thương lượng'");
     expect(labels).not.toContain('0 đ/giờ');
+    expect(featuredCard).not.toContain('0 đ/giờ');
   });
 });
 

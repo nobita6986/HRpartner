@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useId } from 'react';
+import { useState, useEffect, useCallback, useId } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ApplyModal } from '@/src/domains/job-board/components/apply-modal';
 import { SuccessModal } from '@/src/domains/job-board/components/success-modal';
 import { AreasSection } from '@/src/domains/job-board/components/landing/areas-section';
@@ -12,6 +13,7 @@ import { RecruitingProjectsSection } from '@/src/domains/job-board/components/la
 import { ReferralStrip } from '@/src/domains/job-board/components/landing/referral-strip';
 import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
 import { BEST_JOBS_URGENT_PREVIEW } from '@/src/domains/job-board/fixtures/best-jobs-urgent-preview';
+import { buildListingHref } from '@/src/domains/job-board/public-listing.params';
 import type {
   PublicJobDto,
   PublicJobFacets,
@@ -21,13 +23,6 @@ import type {
 
 // ─── UI-adapter: projection công khai → props của card ───────────────────────
 
-interface JobSearchFilters {
-  keyword: string;
-  area: string;
-  shift: string;
-}
-
-const EMPTY_FILTERS: JobSearchFilters = { keyword: '', area: '', shift: '' };
 const EMPTY_FACETS: PublicJobFacets = { areas: [], shifts: [] };
 const EMPTY_OVERVIEW: PublicJobOverview = {
   totals: { jobs: 0, slots: 0, areas: 0 },
@@ -36,7 +31,6 @@ const EMPTY_OVERVIEW: PublicJobOverview = {
   newest: [],
   topPaid: [],
 };
-const PAGE_SIZE = 12;
 
 // DEC-04 / STEP-04: BestJobs pageSize hardcoded 9 literal, passed via prop.
 const BEST_JOBS_PAGE_SIZE = 9;
@@ -50,15 +44,6 @@ export interface EnrichedJob {
   salaryMinVnd: number | null;
   salaryMaxVnd: number | null;
   availableSlots: number;
-}
-
-const VND_FORMAT = new Intl.NumberFormat('vi-VN');
-
-function salaryLabel(min: number | null, max: number | null): string {
-  if (min === null) return 'Lương thương lượng';
-  const from = VND_FORMAT.format(min);
-  if (max !== null && max !== min) return `${from} – ${VND_FORMAT.format(max)} đ/giờ`;
-  return `${from} đ/giờ`;
 }
 
 function enrichJob(job: PublicJobDto): EnrichedJob {
@@ -75,20 +60,6 @@ function enrichJob(job: PublicJobDto): EnrichedJob {
   };
 }
 
-function dedupeById(list: EnrichedJob[]): EnrichedJob[] {
-  const seen = new Set<string>();
-  return list.filter((job) => (seen.has(job.id) ? false : (seen.add(job.id), true)));
-}
-
-function buildQuery(filters: JobSearchFilters, offset: number): string {
-  const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
-  const q = filters.keyword.trim();
-  if (q) params.set('q', q);
-  if (filters.area) params.set('area', filters.area);
-  if (filters.shift) params.set('shift', filters.shift);
-  return params.toString();
-}
-
 // ─── BestJobs fetch query (limit=9, offset via state) ───────────────────────
 
 function buildBestJobsQuery(offset: number): string {
@@ -99,145 +70,78 @@ function buildBestJobsQuery(offset: number): string {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function JobsPage() {
-  const [jobs, setJobs] = useState<EnrichedJob[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState('');
-  const [searching, setSearching] = useState(false);
+  const router = useRouter();
+
   const [keyword, setKeyword] = useState('');
   const [area, setArea] = useState('');
   const [shift, setShift] = useState('');
-  const [minSalary, setMinSalary] = useState('');
   const [facets, setFacets] = useState<PublicJobFacets>(EMPTY_FACETS);
   const [overview, setOverview] = useState<PublicJobOverview>(EMPTY_OVERVIEW);
   const [applyJob, setApplyJob] = useState<EnrichedJob | null>(null);
   const [appliedIds, setAppliedIds] = useState<string[]>([]);
   const [successCode, setSuccessCode] = useState('');
-  const [nextOffset, setNextOffset] = useState<number | null>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const generationRef = useRef(0);
-  const abortRef = useRef<AbortController | null>(null);
 
   // DEC-05 / STEP-04: BestJobs tab state + fetch (separate from sentinel homepage search)
   const [bestJobsTab, setBestJobsTab] = useState<'all' | 'urgent'>('all');
   const [bestJobsOffset, setBestJobsOffset] = useState(0);
-  const [bestJobsData, setBestJobsData] = useState<{ jobs: EnrichedJob[]; total: number; nextOffset: number | null }>({
+  const [bestJobsData, setBestJobsData] = useState<{ jobs: EnrichedJob[]; total: number; bestJobsNextOffset: number | null }>({
     jobs: [],
     total: 0,
-    nextOffset: null,
+    bestJobsNextOffset: null,
   });
   const [bestJobsLoading, setBestJobsLoading] = useState(false);
 
-  const runQuery = useCallback(
-    async (filters: JobSearchFilters, offset: number, mode: 'replace' | 'append') => {
-      const generation = ++generationRef.current;
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-      if (mode === 'append') {
-        // load-more spinner handled by sentinel UI below
-      } else {
-        setLoading(true);
-      }
-      setFetchError('');
-      try {
-        const res = await fetch(`/api/jobs?${buildQuery(filters, offset)}`, {
-          cache: 'no-store',
-          signal: controller.signal,
+  // DEC-02 / STEP-02: bootstrapBestJobs — DUY NHẤT, chỉ tải page BestJobs + set bestJobsData + facets + overview.
+  // KHÔNG có mode append, KHÔNG jobs state, KHÔNG nextOffset (chỉ bestJobsOffset), KHÔNG generation/sentinel/observer.
+  const bootstrapBestJobs = useCallback(
+    (offset: number) => {
+      if (bestJobsTab !== 'all') return;
+
+      let cancelled = false;
+      setBestJobsLoading(true);
+
+      fetch(`/api/jobs?${buildBestJobsQuery(offset)}`, { cache: 'no-store' })
+        .then((res) => {
+          if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+          return res.json() as Promise<PublicJobListResult>;
+        })
+        .then((data) => {
+          if (cancelled) return;
+          const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
+          setBestJobsData({
+            jobs: incoming,
+            total: typeof data.total === 'number' ? data.total : 0,
+            bestJobsNextOffset: typeof data.nextOffset === 'number' ? data.nextOffset : null,
+          });
+          setFacets(data.facets ?? EMPTY_FACETS);
+          setOverview(data.overview ?? EMPTY_OVERVIEW);
+        })
+        .catch((e) => {
+          if (cancelled) return;
+          console.warn('bootstrapBestJobs error:', e instanceof Error ? e.message : e);
+        })
+        .finally(() => {
+          if (!cancelled) setBestJobsLoading(false);
         });
-        if (res.status === 429)
-          throw new Error('Bạn tải trang quá nhanh. Vui lòng thử lại sau ít phút.');
-        if (res.status === 503)
-          throw new Error('Hệ thống đang tạm thời quá tải. Vui lòng thử lại sau ít phút.');
-        if (!res.ok) throw new Error(`Lỗi ${res.status}`);
-        const data = (await res.json()) as PublicJobListResult;
-        if (generation !== generationRef.current) return;
-        const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
-        setJobs((prev) => (mode === 'append' ? dedupeById([...prev, ...incoming]) : incoming));
-        setFacets(data.facets ?? EMPTY_FACETS);
-        setOverview(data.overview ?? EMPTY_OVERVIEW);
-        setNextOffset(typeof data.nextOffset === 'number' ? data.nextOffset : null);
-      } catch (e) {
-        if (controller.signal.aborted || (e instanceof DOMException && e.name === 'AbortError')) return;
-        if (generation !== generationRef.current) return;
-        setFetchError(e instanceof Error ? e.message : 'Không thể tải danh sách việc làm');
-      } finally {
-        if (generation === generationRef.current) setLoading(false);
-      }
     },
-    [],
+    [bestJobsTab],
   );
 
+  // bootstrapBestJobs chạy khi mount và khi bestJobsOffset đổi
   useEffect(() => {
-    void runQuery(EMPTY_FILTERS, 0, 'replace');
-  }, [runQuery]);
+    bootstrapBestJobs(bestJobsOffset);
+  }, [bestJobsOffset, bootstrapBestJobs]);
 
-  const loadMore = useCallback(() => {
-    if (nextOffset === null) return;
-    void runQuery({ keyword, area, shift }, nextOffset, 'append');
-  }, [keyword, area, shift, nextOffset, runQuery]);
-
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) loadMore();
-      },
-      { rootMargin: '200px' },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [loadMore]);
-
-  // DEC-05 / STEP-04: Fetch BestJobs separately for tab 'all'.
-  // Tab 'urgent' uses BEST_JOBS_URGENT_PREVIEW fixture.
-  useEffect(() => {
-    if (bestJobsTab !== 'all') return;
-
-    let cancelled = false;
-    setBestJobsLoading(true);
-
-    fetch(`/api/jobs?${buildBestJobsQuery(bestJobsOffset)}`, { cache: 'no-store' })
-      .then((res) => {
-        if (!res.ok) throw new Error(`Lỗi ${res.status}`);
-        return res.json() as Promise<PublicJobListResult>;
-      })
-      .then((data) => {
-        if (cancelled) return;
-        const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
-        setBestJobsData({
-          jobs: incoming,
-          total: typeof data.total === 'number' ? data.total : 0,
-          nextOffset: typeof data.nextOffset === 'number' ? data.nextOffset : null,
-        });
-      })
-      .catch((e) => {
-        if (cancelled) return;
-        // Error is not displayed in this scope; state not stored (out of scope)
-        console.warn('BestJobs fetch error:', e instanceof Error ? e.message : e);
-      })
-      .finally(() => {
-        if (!cancelled) setBestJobsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [bestJobsTab, bestJobsOffset]);
-
-  async function handleSearch(e: React.FormEvent) {
+  // DEC-01 / STEP-02: Hero form submit → navigate tới /viec-lam với offset: 0
+  function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    setSearching(true);
-    try {
-      await runQuery({ keyword, area, shift }, 0, 'replace');
-    } finally {
-      setSearching(false);
-    }
+    router.push(buildListingHref({ q: keyword.trim() || undefined, area: area || undefined, shift: shift || undefined, offset: 0 }));
   }
 
+  // DEC-01 / STEP-02: applyArea → navigate tới /viec-lam với area mới, giữ keyword/shift hiện tại, offset: 0
   function applyArea(value: string) {
     setArea(value);
-    void runQuery({ keyword, area: value, shift }, 0, 'replace');
+    router.push(buildListingHref({ q: keyword.trim() || undefined, area: value || undefined, shift: shift || undefined, offset: 0 }));
   }
 
   function handleApply(job: EnrichedJob) {
@@ -255,7 +159,6 @@ export default function JobsPage() {
   function handleBestJobsTabChange(tab: 'all' | 'urgent') {
     setBestJobsTab(tab);
     if (tab === 'all') {
-      // Reset offset and refetch
       setBestJobsOffset(0);
     }
   }
@@ -288,7 +191,7 @@ export default function JobsPage() {
   const bestJobsDisplayJobs = bestJobsTab === 'all' ? bestJobsData.jobs : BEST_JOBS_URGENT_PREVIEW;
   const bestJobsDisplayTotal =
     bestJobsTab === 'all' ? bestJobsData.total : BEST_JOBS_URGENT_PREVIEW.length;
-  const bestJobsDisplayNextOffset = bestJobsTab === 'all' ? bestJobsData.nextOffset : null;
+  const bestJobsDisplayNextOffset = bestJobsTab === 'all' ? bestJobsData.bestJobsNextOffset : null;
 
   return (
     <main id="hrp-main" tabIndex={-1} className="flex w-full flex-col items-stretch gap-0">
@@ -355,32 +258,26 @@ export default function JobsPage() {
             <div className="flex-1">
               <label
                 htmlFor="hrp-hero-salary"
-                /* STEP-06/AC-11/AC-13: Label text-white → text-on-surface */
+                /* DEC-08: salary disabled — Mức lương — sắp có */
                 className="mb-1 block font-label text-label-sm font-bold text-on-surface"
               >
-                Mức lương
+                Mức lương — sắp có
               </label>
               <select
                 id="hrp-hero-salary"
-                value={minSalary}
-                onChange={(e) => setMinSalary(e.target.value)}
-                /* STEP-06/RQ-11/DEC-17: Select → bg-white border-outline-variant */
-                className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 text-on-surface min-h-11"
+                disabled
+                aria-disabled="true"
+                className="hrp-focus w-full cursor-not-allowed rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-on-surface-variant opacity-70 min-h-11"
               >
                 <option value="">Mọi mức lương</option>
-                <option value="25000">Từ 25.000 đ/giờ</option>
-                <option value="30000">Từ 30.000 đ/giờ</option>
-                <option value="40000">Từ 40.000 đ/giờ</option>
-                <option value="50000">Từ 50.000 đ/giờ</option>
               </select>
             </div>
             <button
               type="submit"
-              disabled={searching}
-              aria-busy={searching}
+              aria-busy={false}
               className="hrp-btn-primary hrp-focus nav-item-lift min-h-11 rounded-lg px-6 font-label text-label-md font-semibold whitespace-nowrap"
             >
-              {searching ? 'Đang tìm...' : 'Tìm việc'}
+              Tìm việc
             </button>
           </form>
         </div>
@@ -389,111 +286,36 @@ export default function JobsPage() {
         </div>
       </Hero>
 
-      {loading && jobs.length === 0 ? (
-        <section className="w-full bg-surface-container-low px-4 py-12 md:px-8 md:py-16">
-          <div className="mx-auto flex w-full max-w-7xl items-center justify-center">
-            <p className="font-body text-body-lg text-on-surface-variant">Đang tải việc làm...</p>
-          </div>
-        </section>
-      ) : fetchError ? (
-        <section className="w-full px-4 py-12 md:px-8 md:py-16">
-          <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-3">
-            <p className="font-body text-body-lg text-error">{fetchError}</p>
-            <button
-              type="button"
-              onClick={() => void runQuery({ keyword, area, shift }, 0, 'replace')}
-              className="hrp-btn-primary hrp-focus min-h-11 rounded-lg px-4 py-2 font-label text-label-md font-semibold"
-            >
-              Thử lại
-            </button>
-          </div>
-        </section>
-      ) : (
-        <>
-          {/* DEC-01 / RQ-01, RQ-02, RQ-05, RQ-06: BestJobs tab + pagination */}
-          <BestJobsSection
-            jobs={bestJobsDisplayJobs}
-            total={bestJobsDisplayTotal}
-            pageSize={BEST_JOBS_PAGE_SIZE}
-            offset={bestJobsOffset}
-            nextOffset={bestJobsDisplayNextOffset}
-            tab={bestJobsTab}
-            onTabChange={handleBestJobsTabChange}
-            onPrev={handleBestJobsPrev}
-            onNext={handleBestJobsNext}
-            /* DEC-06: dùng job.slug, KHÔNG job.id */
-            buildHref={(jobSlug) => publicJobDetailPath(jobSlug)}
-            urgentPreviewBadge="Preview"
-            /* DEC-04: prop chain chốt — page.tsx closure → BestJobsSection → FeaturedJobCard */
-            onApply={handleApply}
-          />
+      {/* DEC-01 / RQ-01, RQ-02, RQ-05, RQ-06: BestJobs tab + pagination */}
+      <BestJobsSection
+        jobs={bestJobsDisplayJobs}
+        total={bestJobsDisplayTotal}
+        pageSize={BEST_JOBS_PAGE_SIZE}
+        offset={bestJobsOffset}
+        nextOffset={bestJobsDisplayNextOffset}
+        tab={bestJobsTab}
+        onTabChange={handleBestJobsTabChange}
+        onPrev={handleBestJobsPrev}
+        onNext={handleBestJobsNext}
+        /* DEC-06: dùng job.slug, KHÔNG job.id */
+        buildHref={(jobSlug) => publicJobDetailPath(jobSlug)}
+        urgentPreviewBadge="Preview"
+        /* DEC-04: prop chain chốt — page.tsx closure → BestJobsSection → FeaturedJobCard */
+        onApply={handleApply}
+      />
 
-          <AreasSection areas={areasForCards} onPick={applyArea} />
+      <AreasSection areas={areasForCards} onPick={applyArea} />
 
-          <RecruitingProjectsSection
-            jobs={recruitingProjects.map((job) => ({
-              id: job.id,
-              title: job.title,
-              availableSlots: job.availableSlots,
-            }))}
-            buildHref={(jobId) => publicJobDetailPath(jobId)}
-          />
+      <RecruitingProjectsSection
+        jobs={recruitingProjects.map((job) => ({
+          id: job.id,
+          title: job.title,
+          availableSlots: job.availableSlots,
+        }))}
+        buildHref={(jobId) => publicJobDetailPath(jobId)}
+      />
 
-          <ReferralStrip />
-
-          {/* Inline list of all jobs (search results) — hidden behind sentinel for pagination */}
-          <section
-            aria-label="Danh sách việc làm"
-            className="w-full bg-surface-container-low px-4 py-12 md:px-8 md:py-16"
-          >
-            <div className="mx-auto w-full max-w-7xl">
-              <div className="mb-6 flex flex-col gap-2">
-                <h2 className="font-head text-headline-lg font-bold text-on-surface">
-                  Danh sách việc làm
-                </h2>
-                <p className="font-body text-body-md text-on-surface-variant">
-                  Tổng cộng {jobs.length} việc đang hiển thị
-                  {overview.totals.jobs > jobs.length && ` / ${overview.totals.jobs}`}.
-                </p>
-              </div>
-              <ul className="grid list-none grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {jobs.map((job) => (
-                  <li
-                    key={job.id}
-                    className="rounded-2xl border border-outline-variant bg-surface p-5 shadow-card"
-                  >
-                    <Link
-                      href={publicJobDetailPath(job.slug)}
-                      className="hrp-focus block"
-                    >
-                      <p className="font-head text-headline-md font-bold text-on-surface">
-                        {job.title}
-                      </p>
-                      <p className="mt-1 font-body text-body-md text-on-surface-variant">
-                        {job.locations[0] ?? 'Toàn quốc'}
-                      </p>
-                      <p className="mt-2 font-label text-label-md font-bold text-primary-container">
-                        {salaryLabel(job.salaryMinVnd, job.salaryMaxVnd)}
-                      </p>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              {nextOffset !== null && (
-                <div
-                  ref={sentinelRef}
-                  className="mt-8 flex items-center justify-center"
-                  data-testid="load-more-sentinel"
-                >
-                  <p className="font-body text-body-md text-on-surface-variant">
-                    Đang tải thêm việc làm...
-                  </p>
-                </div>
-              )}
-            </div>
-          </section>
-        </>
-      )}
+      <ReferralStrip />
 
       {applyJob && (
         <ApplyModal

@@ -21,7 +21,8 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
       aria-labelledby="hrp-recruiting-heading"
       className="w-full bg-surface-container-low px-4 py-12 md:px-8 md:py-16"
     >
-      <div className="mx-auto w-full max-w-7xl">
+      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] */}
+      <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6">
         <div className="mb-8 flex flex-col gap-2">
           {/* STEP-05/RQ-08/DEC-13: Icon apartment trong vòng tròn nhẹ bg-secondary-container rounded-full */}
           {/* STEP-05/RQ-10/DEC-15: Bỏ eyebrow + sub-heading kỹ thuật */}
