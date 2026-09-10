@@ -1,0 +1,25 @@
+# AC-15 Evidence — VIS-04 CTA capsule removal
+
+## Command
+```
+Select-String -Path src/domains/job-board/components/landing/featured-job-card.tsx -Pattern "action-area-back absolute"
+```
+
+## Result
+Line 136: `className="action-area-back absolute inset-0 flex items-center justify-center rounded-xl rotate-x-180 backface-hidden"`
+
+**PASS**: `bg-primary-container` and `p-3` have been removed from `.action-area-back`.
+
+## Command
+```
+Select-String -Path src/domains/job-board/components/landing/featured-job-card.tsx -Pattern "bg-primary-container\s+p-3"
+```
+
+## Result
+0 matches on `.action-area-back`
+
+## Verification
+- `.action-area-back` is now a positioning/flip surface only
+- CTA button fills action area height + width (h-[52px]/h-[56px] from container)
+- No outer capsule, no double background, no inset ring
+- CTA is the single visible filled rounded surface

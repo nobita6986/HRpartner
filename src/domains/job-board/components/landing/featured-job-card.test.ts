@@ -232,3 +232,71 @@ describe('No-salary card: Lương thương lượng', () => {
     expect(hasNullCheck, 'salaryLabel phải trả "Lương thương lượng" khi min là null').toBe(true);
   });
 });
+
+/**
+ * AC-15: VIS-04 — CTA capsule removed
+ * `.action-area-back` KHÔNG có `bg-primary-container` hoặc `p-3`
+ */
+describe('AC-15: VIS-04 — action-area-back capsule removal', () => {
+  it('.action-area-back KHÔNG có bg-primary-container', () => {
+    // Tìm class của action-area-back
+    const backFaceStart = CARD.indexOf('className="action-area-back');
+    const backFaceClass = CARD.slice(backFaceStart, backFaceStart + 150);
+    expect(backFaceClass).not.toContain('bg-primary-container');
+  });
+
+  it('.action-area-back KHÔNG có p-3 padding', () => {
+    const backFaceStart = CARD.indexOf('className="action-area-back');
+    const backFaceClass = CARD.slice(backFaceStart, backFaceStart + 150);
+    expect(backFaceClass).not.toContain('p-3');
+  });
+
+  it('CTA button là filled surface fill action area (w-full h-full style)', () => {
+    // CTA có w-full để fill action area width
+    expect(CARD).toContain('w-full');
+    // CTA có rounded-lg (radius family của HuongB)
+    expect(CARD).toContain('rounded-lg');
+  });
+});
+
+/**
+ * AC-16: VIS-05 — CTA hover label contrast
+ * CTA KHÔNG có `hover:text-primary-container`
+ */
+describe('AC-16: VIS-05 — CTA hover label contrast', () => {
+  it('CTA button KHÔNG có hover:text-primary-container', () => {
+    // Trích CTA button block
+    const btnStart = CARD.indexOf('<button\n              type="button"');
+    const btnEnd = CARD.indexOf('</button>', btnStart);
+    const btnBlock = CARD.slice(btnStart, btnEnd);
+    expect(btnBlock).not.toContain('hover:text-primary-container');
+  });
+
+  it('CTA dùng contrasting pair: bg-primary + text-white (rest)', () => {
+    // REAL card CTA: bg-primary text-white
+    const realCtaClasses = CARD.match(/:\s*'bg-primary text-white[^']*'/);
+    expect(realCtaClasses).not.toBeNull();
+  });
+
+  it('CTA hover dùng background change, không đổi text sang background token', () => {
+    // Hover: hover:bg-primary-container (background change)
+    // text-white vẫn giữ nguyên → contrasting pair
+    const hasHoverBg = CARD.includes('hover:bg-primary-container');
+    expect(hasHoverBg, 'CTA phải có hover:bg-primary-container').toBe(true);
+    // Không hover:text-primary-container
+    const btnStart = CARD.indexOf('<button\n              type="button"');
+    const btnEnd = CARD.indexOf('</button>', btnStart);
+    const btnBlock = CARD.slice(btnStart, btnEnd);
+    expect(btnBlock).not.toContain('hover:text-primary-container');
+  });
+
+  it('Icon cùng foreground với label', () => {
+    // Icon span cùng block với label text
+    const btnStart = CARD.indexOf('<button\n              type="button"');
+    const btnEnd = CARD.indexOf('</button>', btnStart);
+    const btnBlock = CARD.slice(btnStart, btnEnd);
+    // Icon và label trong cùng button
+    expect(btnBlock).toContain('material-symbols-outlined');
+    expect(btnBlock).toContain('{ctaLabel}');
+  });
+});

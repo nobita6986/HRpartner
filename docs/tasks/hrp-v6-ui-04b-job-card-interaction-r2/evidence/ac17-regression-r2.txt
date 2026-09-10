@@ -1,0 +1,41 @@
+# AC-17 Evidence — Round 1 Regression Gate
+
+## Git Diff Scope
+```
+git diff --name-only HEAD
+```
+
+Result:
+- `docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/HANDOFF.md`
+- `src/domains/job-board/components/landing/featured-job-card.test.ts`
+- `src/domains/job-board/components/landing/featured-job-card.tsx`
+
+**PASS**: Only in-scope files changed. No files outside allowlist.
+
+## Test Results
+```
+npx vitest run src/domains/job-board/components/landing/featured-job-card.test.ts
+```
+
+Result: **37 tests pass** (30 original round 0 + 7 new AC-15/AC-16 tests)
+
+## Gate Summary
+- typecheck: ✅ exit 0
+- test:unit: ✅ 1 pre-existing failure (design-tokens), 0 new failures
+- build: ✅ exit 0
+- verify-task.ps1: ✅ RESULT: PASS
+- verify-handoff.ps1: ✅ RESULT: PASS WITH WARNINGS
+
+## Preserved from Round 0
+- Flip timing (0.4s cubic-bezier transition)
+- Salary front face display
+- Semantic Link/button sibling structure
+- ApplyModal callback chain
+- Preview disabled behavior
+- Mobile fallback
+- Reduced-motion
+- buildHref(job.slug) usage
+
+## Round 1 Specific Changes
+- VIS-04: `.action-area-back` capsule removed (`bg-primary-container p-3`)
+- VIS-05: CTA hover text color reset removed (`hover:text-primary-container`)

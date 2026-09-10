@@ -133,7 +133,7 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
            * KHÔNG dùng aria-hidden trên CTA vì nó có thể focus (RQ-05 / DEC-13).
            */}
           <div
-            className="action-area-back absolute inset-0 flex items-center justify-center rounded-xl bg-primary-container p-3 rotate-x-180 backface-hidden"
+            className="action-area-back absolute inset-0 flex items-center justify-center rounded-xl rotate-x-180 backface-hidden"
             data-testid="action-area-back"
             aria-hidden="false"
           >
@@ -148,7 +148,7 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
                 ${
                   preview
                     ? 'bg-surface-container-high text-on-surface-variant cursor-not-allowed opacity-60'
-                    : 'bg-primary text-white hover:bg-primary-container hover:text-primary-container focus-visible:outline-primary-container'
+                    : 'bg-primary text-white hover:bg-primary-container focus-visible:outline-primary-container'
                 }
               `}
               aria-label={ctaLabel}

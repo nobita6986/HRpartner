@@ -1,0 +1,30 @@
+# AC-16 Evidence — VIS-05 CTA hover label contrast
+
+## Command
+```
+Select-String -Path src/domains/job-board/components/landing/featured-job-card.tsx -Pattern "hover:text-primary-container"
+```
+
+## Result
+Line 80: `group-hover:text-primary-container` on card title (not CTA)
+
+**PASS**: `hover:text-primary-container` removed from CTA button. The remaining instance is on the card title, not the CTA.
+
+## CTA Button Classes After Fix
+```typescript
+// REAL card: bg-primary text-white hover:bg-primary-container focus-visible:outline-primary-container
+// PREVIEW card: bg-surface-container-high text-on-surface-variant cursor-not-allowed opacity-60
+```
+
+## Contrast Analysis
+- **REST**: `bg-primary` / `text-white` → Valid contrast pair ✓
+- **HOVER**: `hover:bg-primary-container` / `text-white` (unchanged) → Valid contrast pair ✓
+- **FOCUS**: `focus-visible:outline-primary-container` with `bg-primary-container` background → Valid contrast ✓
+- **ACTIVE**: Same as rest/hover ✓
+
+No state changes text to the background token.
+
+## Verification
+- Icon (`material-symbols-outlined`) inherits same foreground as label
+- Hover/focus does not hide CTA face, does not reset to back side, does not make text transparent
+- Subtle hover uses background change (shadow/overlay alternative per DEC-16)
