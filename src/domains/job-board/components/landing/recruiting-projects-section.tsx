@@ -19,7 +19,8 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
     <section
       data-section="recruiting"
       aria-labelledby="hrp-recruiting-heading"
-      className="w-full bg-surface-container-low px-4 py-12 md:px-8 md:py-16"
+      /* Y2: bỏ bg-surface-container-low, thu hẹp padding */
+      className="w-full px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6"
     >
       {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] */}
       <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6">

@@ -21,7 +21,8 @@ export function AreasSection({ areas, onPick }: AreasSectionProps) {
       data-section="areas"
       aria-labelledby="hrp-areas-heading"
       /* STEP-07/RQ-01: Container max-w-[1200px] mx-auto px-4 md:px-6 */
-      className="w-full px-4 md:px-6 py-12 md:py-16"
+      /* Y2: bỏ background riêng biệt, thu hẹp padding để liền mạch với Hero gradient */
+      className="w-full px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6"
     >
       {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] */}
       <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6">

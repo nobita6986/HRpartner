@@ -54,7 +54,7 @@ export function BestJobsSection({
     <section
       data-section="bestjobs"
       aria-labelledby="hrp-best-jobs-heading"
-      className="w-full px-4 py-8 md:px-8 md:py-10"
+      className="w-full px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6"
     >
       {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] */}
       <div className="mx-auto w-full max-w-[1080px]">

@@ -13,7 +13,8 @@ export function ReferralStrip() {
       aria-labelledby="hrp-ctv-heading"
       /* RQ-02 / STEP-03: Peach/cam nhạt background — dùng bg-primary-fixed (--color-primary-fixed = #ffdbce)
          với opacity để nhẹ hơn. Container giữ max-w-[1200px] trước VIS-06. */
-      className="w-full bg-primary-fixed/30 px-4 md:px-6 py-12 md:py-16"
+      /* Y2: thu hẹp padding để liền mạch hơn */
+      className="w-full bg-primary-fixed/20 px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6"
     >
       {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] */}
       <div className="mx-auto w-full max-w-[1080px] grid grid-cols-1 items-center gap-8 lg:grid-cols-2 px-4 md:px-6">
