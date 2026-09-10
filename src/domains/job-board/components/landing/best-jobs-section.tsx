@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { FeaturedJobCard } from './featured-job-card';
 import type { EnrichedJob } from '@/app/(portal)/page';
 
@@ -55,39 +54,30 @@ export function BestJobsSection({
     <section
       data-section="bestjobs"
       aria-labelledby="hrp-best-jobs-heading"
-      className="w-full bg-surface-container-low px-4 py-12 md:px-8 md:py-16"
+      className="w-full px-4 py-8 md:px-8 md:py-10"
     >
       {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] */}
-      <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6">
-        <div className="mb-6 flex flex-col gap-2">
-          {/* STEP-04/RQ-07/DEC-11: Section header icon local_fire_department trong w-10 h-10 bg-secondary-container rounded-full */}
-          <p className="font-label text-label-sm font-bold uppercase tracking-widest text-primary-dark">
-            <span className="w-10 h-10 bg-secondary-container rounded-full inline-flex items-center justify-center mr-2 align-middle">
-              <span className="material-symbols-outlined text-base text-primary-dark" aria-hidden="true">local_fire_department</span>
+      <div className="mx-auto w-full max-w-[1080px]">
+        {/* Y2: chỉ giữ icon ngọn lửa + tiêu đề "Việc làm tốt nhất"; bỏ 'Gợi ý cho bạn',
+            mô tả và link 'Xem tất cả →'. Tab đẩy thẳng xuống dưới tiêu đề. */}
+        <div className="mb-4 flex items-center gap-3">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-secondary-container">
+            <span
+              className="material-symbols-outlined text-base text-primary-dark"
+              aria-hidden="true"
+            >
+              local_fire_department
             </span>
-            Gợi ý cho bạn
-          </p>
+          </span>
           <h2
             id="hrp-best-jobs-heading"
             className="font-head text-headline-lg font-bold text-on-surface"
           >
             Việc làm tốt nhất
           </h2>
-          <p className="max-w-2xl font-body text-body-md text-on-surface-variant">
-            Các vị trí đang tuyển nhiều ứng viên nhất, cập nhật liên tục từ dữ liệu thật của HRP.
-          </p>
-          {/* STEP-04/RQ-07/DEC-12: "Xem tất cả" link → /viec-lam */}
-          <div className="mt-2">
-            <Link
-              href="/viec-lam"
-              className="font-label text-label-md font-semibold text-primary-dark hover:text-primary-container transition-colors"
-            >
-              Xem tất cả →
-            </Link>
-          </div>
         </div>
 
-        {/* DEC-01: Tab filter — Tất cả / Tuyển gấp */}
+        {/* DEC-01: Tab filter — Tất cả / Tuyển gấp (đẩy lên ngay dưới tiêu đề). */}
         <div className="mb-6" role="tablist" aria-label="Bộ lọc việc làm tốt nhất">
           <button
             type="button"
@@ -149,7 +139,7 @@ export function BestJobsSection({
           </div>
         )}
 
-        {/* DEC-03: Pagination control — only shown when tab === 'all' && total > pageSize */}
+        {/* DEC-03: Pagination control — works for both tabs when total > pageSize */}
         {showPagination && (
           <div
             className="mt-8 flex items-center justify-center gap-4"

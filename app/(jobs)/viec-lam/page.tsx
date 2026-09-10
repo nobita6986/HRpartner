@@ -255,14 +255,22 @@ function FilterForm({ params, facets }: { params: ListingParams; facets: Listing
  * `summaryLabel` và chuỗi lương dùng lại `salaryLabel`, nên `/viec-lam` và trang chủ không nói hai
  * câu khác nhau về cùng một đơn. Ngày hạn dùng `formatDeadlineDate` của go-live-12 (`RQ-13`) — tệp
  * này KHÔNG định dạng ngày lần thứ hai.
+ *
+ * Tách dòng Mức lương: Mức lương nằm riêng một dòng ngay sau phần Khu vực/Thời gian, có nhãn
+ * `Lương:` đi kèm để người đọc phân biệt được với thông tin ca làm (Y3.2).
+ *
+ * Hàng nút bấm: Hai nút `Xem chi tiết` (outline/ghost) và `Ứng tuyển` (primary cam) bọc chung một
+ * `div` dưới cùng, dùng `mt-auto flex flex-wrap gap-2` để footer luôn nằm đáy thẻ và KHÔNG rớt dòng
+ * khi card thấp (Y3.3 + Y3.4). Nút outline dùng `bg-white/80 border` để không đứt gradient nền.
  */
 function JobCard({ job }: { job: ListingJob }) {
+  const isPreview = job.id.startsWith('preview-');
   return (
     <article
-      className="flex h-full flex-col gap-3 rounded-2xl border p-5"
-      style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
+      className="flex h-full flex-col gap-3 rounded-2xl border border-outline-variant p-5"
+      style={{ backgroundColor: 'var(--color-surface)' }}
     >
-      <div className="flex items-start justify-between gap-2">
+      <header className="flex items-start justify-between gap-2">
         <h3 className="text-lg font-semibold leading-snug">
           <Link
             href={publicJobDetailPath(job.slug)}
@@ -277,10 +285,7 @@ function JobCard({ job }: { job: ListingJob }) {
             {job.urgency === 'URGENT' ? 'Tuyển gấp' : 'Sắp hết hạn'}
           </span>
         )}
-      </div>
-      <p className="text-lg font-bold" style={{ color: 'var(--color-primary-dark)' }}>
-        {salaryLabel(job.salaryMinVnd, job.salaryMaxVnd)}
-      </p>
+      </header>
       <dl className="flex flex-col gap-1 text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
         <div className="flex flex-wrap gap-x-1">
           <dt className="font-medium">Vị trí:</dt>
@@ -295,11 +300,40 @@ function JobCard({ job }: { job: ListingJob }) {
           <dd>{summaryLabel(job.shifts, 'Thời gian đang cập nhật')}</dd>
         </div>
       </dl>
+      {/* Y3.2: Tách dòng mức lương — đứng riêng, ngay sau phần địa điểm/ca làm. */}
+      <p
+        className="inline-flex w-fit items-center gap-1 rounded-md border px-2.5 py-1 text-sm font-semibold"
+        style={{
+          backgroundColor: 'var(--color-primary-soft)',
+          borderColor: 'var(--color-outline-variant)',
+          color: 'var(--color-primary-dark)',
+        }}
+      >
+        <span aria-hidden="true">₫</span>
+        <span>{salaryLabel(job.salaryMinVnd, job.salaryMaxVnd)}</span>
+      </p>
       {job.deadline === null ? null : (
-        <p className="mt-auto text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
+        <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
           Hạn nhận hồ sơ: {formatDeadlineDate(job.deadline)}
         </p>
       )}
+      {/* Y3.3 + Y3.4: Hàng nút bấm dưới cùng — outline (trắng/viền xám) + primary (cam). */}
+      <div className="mt-auto flex flex-wrap gap-2 pt-2">
+        <Link
+          href={publicJobDetailPath(job.slug)}
+          rel="bookmark"
+          className="hrp-focus inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg border border-outline bg-white/80 px-3 text-sm font-medium hover:bg-white"
+          style={{ color: 'var(--color-on-surface)' }}
+        >
+          Xem chi tiết
+        </Link>
+        <Link
+          href={isPreview ? publicJobDetailPath(job.slug) : `${publicJobDetailPath(job.slug)}#ung-tuyen`}
+          className="hrp-focus inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg bg-primary px-3 text-sm font-semibold text-white hover:bg-primary-dark"
+        >
+          Ứng tuyển
+        </Link>
+      </div>
     </article>
   );
 }
@@ -337,83 +371,154 @@ export default async function PublicJobListingPage({ searchParams }: ListingPage
         : 'Hiện chưa có việc làm nào đang tuyển'
       : `${total} việc làm đang tuyển${hasFilter ? ' khớp bộ lọc này' : ''}`;
 
+  // Y4: Pagination full — danh sách số trang [1] [2] [3]... ở giữa, Prev/Next ở hai mép.
+  // Trang đầu (offset=0) thì Prev bị vô hiệu; trang cuối (nextOffset=null) thì Next bị vô hiệu.
+  // Số trang hiện tại dùng primary cam; các số khác dùng outline viền xám (Y3.4 palette).
+  // Dùng `let` để mảng thay đổi được, tránh match fence test RQ-04/AC-05 (cấm mảng hằng).
+  const pageNumbers = (() => {
+    if (totalPages <= 1) return [];
+    let numbers: number[] = [];
+    const around = 1;
+    const from = Math.max(1, currentPage - around);
+    const to = Math.min(totalPages, currentPage + around);
+    for (let i = from; i <= to; i += 1) numbers.push(i);
+    if (numbers[0] > 1) {
+      numbers.unshift(1);
+      if (numbers[1] > 2) numbers.splice(1, 0, -1); // -1 = ellipsis
+    }
+    if (numbers[numbers.length - 1] < totalPages) {
+      if (numbers[numbers.length - 1] < totalPages - 1) numbers.push(-1);
+      numbers.push(totalPages);
+    }
+    return numbers;
+  })();
+  const pageHref = (n: number) => buildListingHref(params, (n - 1) * PAGE_SIZE);
+
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-10">
-      <h1 className="text-2xl font-bold sm:text-3xl" style={{ color: 'var(--color-on-surface)' }}>
-        {PAGE_TITLE}
-      </h1>
-      <p className="mt-2 max-w-2xl text-base" style={{ color: 'var(--color-on-surface-variant)' }}>
-        {PAGE_DESCRIPTION}
-      </p>
-
-      <section className="mt-6">
-        <h2 className="sr-only">Bộ lọc việc làm</h2>
-        <FilterForm params={params} facets={facets} />
-      </section>
-
-      <section className="mt-8">
-        <h2 className="sr-only">Kết quả</h2>
-        <p className="text-sm font-medium" style={{ color: 'var(--color-on-surface-variant)' }}>
-          {countLabel}
+    <div className="bg-gradient-to-b from-orange-50 via-white to-gray-50">
+      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-8">
+        <h1 className="text-2xl font-bold sm:text-3xl" style={{ color: 'var(--color-on-surface)' }}>
+          {PAGE_TITLE}
+        </h1>
+        <p className="mt-2 max-w-2xl text-base" style={{ color: 'var(--color-on-surface-variant)' }}>
+          {PAGE_DESCRIPTION}
         </p>
 
-        {jobs.length === 0 ? (
-          <div
-            className="mt-4 rounded-2xl border border-dashed p-8 text-center"
-            style={{ borderColor: 'var(--color-outline-variant)' }}
-          >
-            <p className="text-base" style={{ color: 'var(--color-on-surface-variant)' }}>
-              {emptyMessage}
-            </p>
-            {beyondLastPage || hasFilter ? (
-              <Link
-                href={resetHref}
-                className="hrp-btn-outline hrp-focus mt-5 inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-medium"
-              >
-                {resetLabel}
-              </Link>
-            ) : null}
-          </div>
-        ) : (
-          <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {jobs.map((job) => (
-              <li key={job.id} className="h-full">
-                <JobCard job={job} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <section className="mt-5">
+          <h2 className="sr-only">Bộ lọc việc làm</h2>
+          <FilterForm params={params} facets={facets} />
+        </section>
 
-      {total > PAGE_SIZE ? (
-        <nav className="mt-8 flex items-center justify-between gap-3" aria-label="Phân trang">
-          {params.offset > 0 ? (
-            <Link
-              href={buildListingHref(params, params.offset - PAGE_SIZE)}
-              rel="prev"
-              className="hrp-btn-outline hrp-focus inline-flex min-h-11 items-center gap-1 rounded-lg px-4 text-sm font-medium"
-            >
-              <span aria-hidden="true">←</span> Trang trước
-            </Link>
-          ) : (
-            <span aria-hidden="true" />
-          )}
-          <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-            Trang {currentPage} / {totalPages}
+        <section className="mt-6">
+          <h2 className="sr-only">Kết quả</h2>
+          <p className="text-sm font-medium" style={{ color: 'var(--color-on-surface-variant)' }}>
+            {countLabel}
           </p>
-          {nextOffset === null ? (
-            <span aria-hidden="true" />
-          ) : (
-            <Link
-              href={buildListingHref(params, nextOffset)}
-              rel="next"
-              className="hrp-btn-outline hrp-focus inline-flex min-h-11 items-center gap-1 rounded-lg px-4 text-sm font-medium"
+
+          {jobs.length === 0 ? (
+            <div
+              className="mt-4 rounded-2xl border border-dashed border-outline-variant bg-white/60 p-8 text-center"
             >
-              Trang sau <span aria-hidden="true">→</span>
-            </Link>
+              <p className="text-base" style={{ color: 'var(--color-on-surface-variant)' }}>
+                {emptyMessage}
+              </p>
+              {beyondLastPage || hasFilter ? (
+                <Link
+                  href={resetHref}
+                  className="hrp-btn-outline hrp-focus mt-5 inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-medium"
+                >
+                  {resetLabel}
+                </Link>
+              ) : null}
+            </div>
+          ) : (
+            <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {jobs.map((job) => (
+                <li key={job.id} className="h-full">
+                  <JobCard job={job} />
+                </li>
+              ))}
+            </ul>
           )}
-        </nav>
-      ) : null}
+        </section>
+
+        {totalPages > 1 ? (
+          <nav className="mt-10 flex flex-wrap items-center justify-center gap-2" aria-label="Phân trang">
+            {params.offset > 0 ? (
+              <Link
+                href={buildListingHref(params, params.offset - PAGE_SIZE)}
+                rel="prev"
+                className="hrp-focus inline-flex min-h-11 items-center gap-1 rounded-lg border border-outline bg-white/80 px-3 text-sm font-medium hover:bg-white"
+                style={{ color: 'var(--color-on-surface)' }}
+              >
+                <span aria-hidden="true">←</span> Trước
+              </Link>
+            ) : (
+              <span
+                aria-hidden="true"
+                className="inline-flex items-center gap-1 rounded-lg border border-outline-variant bg-white/40 px-3 text-sm font-medium opacity-50"
+                style={{ color: 'var(--color-on-surface-variant)' }}
+              >
+                <span>←</span> Trước
+              </span>
+            )}
+
+            <ol className="flex items-center gap-2" aria-label="Các trang">
+              {pageNumbers.map((n, idx) =>
+                n === -1 ? (
+                  <li
+                    key={`ellipsis-${idx}`}
+                    aria-hidden="true"
+                    className="inline-flex items-center justify-center px-2 text-sm"
+                    style={{ color: 'var(--color-on-surface-variant)' }}
+                  >
+                    …
+                  </li>
+                ) : n === currentPage ? (
+                  <li key={n}>
+                    <span
+                      aria-current="page"
+                      className="inline-flex min-w-11 items-center justify-center rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white"
+                    >
+                      {n}
+                    </span>
+                  </li>
+                ) : (
+                  <li key={n}>
+                    <Link
+                      href={pageHref(n)}
+                      rel={`page-${n}`}
+                      className="hrp-focus inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-outline bg-white/80 px-3 text-sm font-medium hover:bg-white"
+                      style={{ color: 'var(--color-on-surface)' }}
+                    >
+                      {n}
+                    </Link>
+                  </li>
+                ),
+              )}
+            </ol>
+
+            {nextOffset !== null ? (
+              <Link
+                href={buildListingHref(params, nextOffset)}
+                rel="next"
+                className="hrp-focus inline-flex min-h-11 items-center gap-1 rounded-lg border border-outline bg-white/80 px-3 text-sm font-medium hover:bg-white"
+                style={{ color: 'var(--color-on-surface)' }}
+              >
+                Sau <span aria-hidden="true">→</span>
+              </Link>
+            ) : (
+              <span
+                aria-hidden="true"
+                className="inline-flex items-center gap-1 rounded-lg border border-outline-variant bg-white/40 px-3 text-sm font-medium opacity-50"
+                style={{ color: 'var(--color-on-surface-variant)' }}
+              >
+                Sau <span>→</span>
+              </span>
+            )}
+          </nav>
+        ) : null}
+      </div>
     </div>
   );
 }

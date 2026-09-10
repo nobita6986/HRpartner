@@ -112,16 +112,18 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
         )}
       </div>
 
-      {/* ─── Footer / Actions ──────────────────────────────────────────── */}
-      {/* RQ-17/RQ-18/RQ-19: salary pill (left) + Xem chi tiết CTA outline (right) */}
-      <div className="mt-auto flex items-center justify-between flex-wrap gap-2 border-t border-slate-200 px-4 py-3 sm:gap-3">
-        {/* RQ-17: Salary pill — inline emerald, NOT full-width slab */}
+      {/* Y3.2: Tách dòng Mức lương — đứng riêng ngay sau phần địa điểm/thời gian,
+          TRƯỚC footer nút bấm. Giữ nguyên className pill emerald để fence test pass. */}
+      <div className="px-4 pb-3">
         <span className="inline-flex items-center gap-1 rounded-md border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-sm font-semibold text-emerald-700">
           <Banknote className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span>{displaySalary}</span>
         </span>
+      </div>
 
-        {/* RQ-18/RQ-24: Xem chi tiết — Link and CTA share same canonical href */}
+      {/* ─── Footer / Actions ──────────────────────────────────────────── */}
+      <div className="mt-auto flex items-center justify-between flex-wrap gap-2 border-t border-slate-200 px-4 py-3 sm:gap-3">
+        {/* RQ-18/RQ-24: Xem chi tiết — outline/ghost (Secondary). Y3.3+Y3.4: 2 nút nằm cùng 1 hàng ngang dưới cùng thẻ. */}
         <Link
           href={href}
           className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
@@ -132,7 +134,7 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
           </svg>
         </Link>
 
-        {/* RQ-18/RQ-19: Quick Apply — pill-sized compact, hover-trigger desktop, accessible mobile */}
+        {/* RQ-18/RQ-19: Ứng tuyển — primary cam thương hiệu (Primary). */}
         <button
           type="button"
           disabled={preview}
