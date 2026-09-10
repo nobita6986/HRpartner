@@ -1,0 +1,18 @@
+## AC-11 verification — RQ-14 (panel liên hệ cam ấm)
+
+Command: rg -n "primary-container/40" app/components/GlobalFooter.tsx
+Expected: >=1 match (panel bg-primary-container/40 wrap ContactForm)
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "rounded-2xl" app/components/GlobalFooter.tsx
+Expected: >=1 match (panel border-radius)
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "p-4 md:p-5" app/components/GlobalFooter.tsx
+Expected: >=1 match (panel padding)
+Measured: 1 match
+Result: PASS
+
+Token note: bg-primary-container/40 is a semantic token. Verified as existing in project (similar to bg-primary-fixed/30 used in ReferralStrip).

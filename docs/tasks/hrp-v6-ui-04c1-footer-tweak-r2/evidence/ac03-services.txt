@@ -1,0 +1,21 @@
+## AC-03 verification — RQ-03 (5 dịch vụ giữ nội dung + Lucide icons)
+
+Command: rg -n "Cung ứng và cho thuê lại lao động thời vụ ngắn hạn, dài hạn|Dịch vụ gia công và kiểm tra, phân loại linh kiện điện tử|Dịch vụ giới thiệu lao động, việc làm|Dịch vụ bốc xếp hàng hóa|Dịch vụ đóng gói hàng hoá" app/components/GlobalFooter.tsx
+Expected: =5 match (5 dịch vụ nội dung giữ nguyên)
+Measured: 5 match
+Result: PASS
+
+Command: rg -n "Briefcase|Cpu|Users|PackageOpen|Package" app/components/GlobalFooter.tsx
+Expected: >=5 match (Lucide icons per service)
+Measured: 5 match (Briefcase, Cpu, Users, PackageOpen, Package)
+Result: PASS
+
+Command: rg -n "material-symbols-outlined" app/components/GlobalFooter.tsx
+Expected: 0 match (baseline circle symbols replaced with Lucide)
+Measured: 0 match
+Result: PASS
+
+Command: rg -n "from 'lucide-react'" app/components/GlobalFooter.tsx
+Expected: >=1 match (Lucide import)
+Measured: 1 match
+Result: PASS

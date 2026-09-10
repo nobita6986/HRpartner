@@ -1,0 +1,26 @@
+## AC-04 verification — RQ-04 + RQ-05 (hotline/email/website/địa chỉ giữ)
+
+Command: rg -n "tel:02112216999" app/components/GlobalFooter.tsx
+Expected: >=1 match
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "tel:0964984866" app/components/GlobalFooter.tsx
+Expected: >=1 match
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "mailto:nhaluchrp@gmail\.com" app/components/GlobalFooter.tsx
+Expected: >=1 match
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "target=\"_blank\" rel=\"noopener noreferrer\"" app/components/GlobalFooter.tsx
+Expected: >=1 match (website external link)
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "Thuê Khu đất DV Tân Ngọc, Thống Nhất, Bắc Kê, Xã Bình Tuyền, Tỉnh Phú Thọ, Việt Nam" app/components/GlobalFooter.tsx
+Expected: >=1 match (địa chỉ Phú Thọ giữ nguyên)
+Measured: 1 match
+Result: PASS

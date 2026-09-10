@@ -1,0 +1,31 @@
+## Gates summary
+
+Command: npm run typecheck
+Expected: exit 0
+Measured: exit 0 (tsc --noEmit completed successfully)
+Result: PASS
+
+Command: npm run test:unit -- --reporter=basic
+Expected: same pre-existing failure set (12 failures on 5 files) + new failure count = 0
+Measured: 12 failures on 5 files (pre-existing, unchanged from expected-failure-set-before.txt)
+  - public-ui-premium.static.test.ts: 8 failures
+  - marketplace-inventory.static.test.ts: 2 failures
+  - public-ui-token-parity.static.test.ts: 1 failure
+  - marketplace-browse.routes.test.ts: 1 failure
+  New failure count: 0
+Result: PASS
+
+Command: npm run build
+Expected: exit 0
+Measured: exit 0 (next build completed successfully)
+Result: PASS
+
+Command: verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/TASK.md
+Expected: RESULT: PASS
+Measured: RESULT: PASS
+Result: PASS
+
+Command: verify-handoff.ps1 -TaskPath docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/TASK.md -HandoffPath docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/HANDOFF.md
+Expected: RESULT: PASS or PASS WITH WARNINGS
+Measured: RESULT: PASS WITH WARNINGS (H-15: TASK.md control fields differ from HEAD — expected, Tier 1/Tier 2 legitimately changed them)
+Result: PASS

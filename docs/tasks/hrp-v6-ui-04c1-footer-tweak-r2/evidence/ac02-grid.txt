@@ -1,0 +1,11 @@
+## AC-02 verification — RQ-02 (3 cột desktop giữ thứ tự)
+
+Command: Select-String -Path app/components/GlobalFooter.tsx -Pattern "md:grid-cols-\[1\.1fr_1fr_1\.1fr\]|md:grid-cols-3"
+Expected: >=1 match
+Measured: 1 match (md:grid-cols-[1.1fr_1fr_1.1fr])
+Result: PASS
+
+Command: rg -n "CÔNG TY|DANH MỤC DỊCH VỤ|THÔNG TIN LIÊN HỆ" app/components/GlobalFooter.tsx
+Expected: 3 cột giữ thứ tự Công ty → Dịch vụ → Liên hệ
+Measured: verified in source order
+Result: PASS

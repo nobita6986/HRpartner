@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Briefcase, Cpu, Users, PackageOpen, Package } from 'lucide-react';
 import { ContactForm } from './ContactForm';
 
 interface FooterLink {
@@ -15,51 +16,50 @@ const footerLinks: FooterLink[] = [
   { href: '/ctv-portal', label: 'Cộng tác viên', type: 'route' },
 ];
 
-function FooterLinkItem({ link }: { link: FooterLink }) {
-  if (link.type === 'disabled') {
-    return (
-      <button
-        type="button"
-        aria-disabled="true"
-        title="Đang phát triển"
-        tabIndex={-1}
-        className="cursor-not-allowed text-left text-on-surface-variant opacity-70"
-      >
-        {link.label}
-      </button>
-    );
-  }
+function FooterRouteLink({ href, label }: { href: string; label: string }) {
   return (
-    <Link href={link.href} className="text-on-surface-variant hover:text-primary transition-colors">
-      {link.label}
+    <Link
+      href={href}
+      className="min-h-11 flex items-center text-on-surface-variant hover:text-primary transition-colors"
+    >
+      {label}
     </Link>
   );
 }
 
+function FooterDisabledText({ label }: { label: string }) {
+  return (
+    <span
+      aria-disabled="true"
+      tabIndex={-1}
+      className="min-h-11 flex cursor-not-allowed items-center text-on-surface-variant opacity-70"
+    >
+      {label}
+    </span>
+  );
+}
+
 const SERVICES = [
-  'Cung ứng và cho thuê lại lao động thời vụ ngắn hạn, dài hạn',
-  'Dịch vụ gia công và kiểm tra, phân loại linh kiện điện tử',
-  'Dịch vụ giới thiệu lao động, việc làm',
-  'Dịch vụ bốc xếp hàng hóa',
-  'Dịch vụ đóng gói hàng hoá',
+  { label: 'Cung ứng và cho thuê lại lao động thời vụ ngắn hạn, dài hạn', Icon: Briefcase },
+  { label: 'Dịch vụ gia công và kiểm tra, phân loại linh kiện điện tử', Icon: Cpu },
+  { label: 'Dịch vụ giới thiệu lao động, việc làm', Icon: Users },
+  { label: 'Dịch vụ bốc xếp hàng hóa', Icon: PackageOpen },
+  { label: 'Dịch vụ đóng gói hàng hoá', Icon: Package },
 ];
 
 export function GlobalFooter() {
   const year = new Date().getFullYear();
   return (
-    <footer data-section="footer" className="border-t border-line bg-primary-fixed/20">
-      {/* VIS-06: inner container 1080px */}
+    <footer data-section="footer" className="border-t border-line bg-primary-fixed/35">
+      {/* RQ-13 / VIS-06: inner container 1080px */}
       <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6 py-12">
-        {/* RQ-03 / STEP-04: 3 cột desktop — Công ty / Dịch vụ / Liên hệ */}
-        <div className="grid w-full grid-cols-1 gap-8 md:grid-cols-3">
+        {/* RQ-02: 3 cột desktop giữ thứ tự Công ty → Dịch vụ → Liên hệ */}
+        <div className="grid w-full grid-cols-1 gap-8 md:grid-cols-[1.1fr_1fr_1.1fr]">
           {/* Cột 1: Công ty */}
           <div className="flex flex-col gap-3">
             <h3 className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface">
-              Công ty
-            </h3>
-            <p className="font-body text-body-md font-semibold text-on-surface">
               CÔNG TY TNHH HRP VIỆT NAM
-            </p>
+            </h3>
             <p className="font-body text-body-sm text-on-surface-variant">HRP VIET NAM COMPANY LIMITED</p>
             <p className="font-body text-body-sm text-on-surface-variant">HRP Co.,Ltd</p>
             <p className="mt-2 font-body text-body-sm text-on-surface-variant leading-relaxed">
@@ -68,19 +68,19 @@ export function GlobalFooter() {
             <div className="mt-3 flex flex-col gap-2">
               <a
                 href="tel:02112216999"
-                className="font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+                className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
               >
                 Hotline: 0211 2216999
               </a>
               <a
                 href="tel:0964984866"
-                className="font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+                className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
               >
                 Hotline: 0964 984 866
               </a>
               <a
                 href="mailto:nhaluchrp@gmail.com"
-                className="font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+                className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
               >
                 Email: nhaluchrp@gmail.com
               </a>
@@ -88,7 +88,7 @@ export function GlobalFooter() {
                 href="https://hrpvietnam.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-body text-body-sm text-primary hover:text-primary-dark transition-colors"
+                className="min-h-11 flex items-center font-body text-body-sm text-primary hover:text-primary-dark transition-colors"
               >
                 Website: https://hrpvietnam.com/
               </a>
@@ -98,18 +98,17 @@ export function GlobalFooter() {
           {/* Cột 2: Dịch vụ */}
           <div className="flex flex-col gap-3">
             <h3 className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface">
-              Dịch vụ
+              DANH MỤC DỊCH VỤ
             </h3>
             <ul className="flex list-none flex-col gap-2 font-body text-body-sm text-on-surface-variant">
-              {SERVICES.map((service) => (
-                <li key={service} className="flex items-start gap-2">
-                  <span
-                    className="material-symbols-outlined mt-0.5 text-xs text-primary shrink-0"
+              {SERVICES.map(({ label, Icon }) => (
+                <li key={label} className="flex items-start gap-2">
+                  <Icon
+                    className="mt-0.5 shrink-0 text-primary"
+                    size={16}
                     aria-hidden="true"
-                  >
-                    circle
-                  </span>
-                  <span>{service}</span>
+                  />
+                  <span>{label}</span>
                 </li>
               ))}
             </ul>
@@ -118,24 +117,30 @@ export function GlobalFooter() {
           {/* Cột 3: Liên hệ */}
           <div className="flex flex-col gap-3">
             <h3 className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface">
-              Thông tin liên hệ
+              THÔNG TIN LIÊN HỆ
             </h3>
-            {/* RQ-05 / STEP-04: ContactForm presentational disabled */}
-            <ContactForm disabled={true} />
+            {/* RQ-14: Panel cam ấm wrap ContactForm */}
+            <div className="rounded-2xl bg-primary-container/40 p-4 md:p-5">
+              <ContactForm disabled={true} />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* RQ-07 / STEP-04: Copyright runtime năm — bỏ "Phiên bản 6.0" */}
+      {/* RQ-09 / STEP-05: Copyright — bỏ "Phiên bản 6.0" */}
       <div className="border-t border-line">
-        <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6 flex flex-col items-center justify-between gap-2 py-4 text-on-surface-variant md:flex-row">
+        <div className="mx-auto flex max-w-[1080px] flex-col items-center justify-between gap-2 px-4 py-4 text-on-surface-variant md:flex-row md:px-6">
           <p className="font-body text-body-md">
-            &copy; {year} HRP — Hệ sinh thái nhân sự toàn diện.
+            &copy; {year} HRP Việt Nam. Connecting for Success.
           </p>
           <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1" aria-label="Footer links">
-            {footerLinks.map((link) => (
-              <FooterLinkItem key={link.label} link={link} />
-            ))}
+            {footerLinks.map((link) =>
+              link.type === 'route' ? (
+                <FooterRouteLink key={link.label} href={link.href} label={link.label} />
+              ) : (
+                <FooterDisabledText key={link.label} label={link.label} />
+              )
+            )}
           </nav>
         </div>
       </div>

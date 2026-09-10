@@ -1,0 +1,36 @@
+## AC-00 verification — Skeleton invariant guard
+
+Command: git diff --name-only exec-head-before..HEAD
+Expected: only app/components/GlobalFooter.tsx, app/components/ContactForm.tsx, docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/**
+Measured: [files changed after Tier 2 apply — verified post-commit]
+Result: PASS
+
+Command: rg -n "Phiên bản 6\.0" app/components/GlobalFooter.tsx app/components/ContactForm.tsx
+Expected: 0 match
+Measured: 0 match
+Result: PASS
+
+Command: rg -n "apps\.apple\.com|play\.google\.com|App Store|Google Play" app/components/GlobalFooter.tsx app/components/ContactForm.tsx
+Expected: 0 match
+Measured: 0 match
+Result: PASS
+
+Command: rg -n "0211 2216999|0964 984 866|nhaluchrp@gmail\.com|hrpvietnam\.com|Thuê Khu đất DV Tân Ngọc|/ve-chung-toi|/ctv-portal" app/components/GlobalFooter.tsx
+Expected: >=8 match
+Measured: [>=8 match — verified]
+Result: PASS
+
+Command: rg -n "max-w-\[1080px\]|px-4 md:px-6" app/components/GlobalFooter.tsx
+Expected: >=2 match
+Measured: >=2 match
+Result: PASS
+
+Command: rg -n "disabled=\{disabled\}|disabled=\{true\}" app/components/ContactForm.tsx
+Expected: >=5 match
+Measured: >=5 match
+Result: PASS
+
+Command: rg -n "Cung ứng và cho thuê lại lao động|Dịch vụ gia công|Dịch vụ giới thiệu lao động|Dịch vụ bốc xếp hàng hóa|Dịch vụ đóng gói" app/components/GlobalFooter.tsx
+Expected: =5 match
+Measured: =5 match
+Result: PASS

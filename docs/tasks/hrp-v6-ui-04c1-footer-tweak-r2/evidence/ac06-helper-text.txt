@@ -1,0 +1,16 @@
+## AC-06 verification — RQ-07 (helper text đổi copy)
+
+Command: rg -n "Vui lòng liên hệ qua hotline hoặc email trong thời gian này" app/components/ContactForm.tsx
+Expected: >=1 match (new helper text per Owner #10)
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "Tính năng đang được hoàn thiện" app/components/ContactForm.tsx
+Expected: 0 match (old helper text removed)
+Measured: 0 match
+Result: PASS
+
+Command: rg -n "Vui lòng gọi hotline hoặc email" app/components/ContactForm.tsx
+Expected: 0 match (old partial text removed)
+Measured: 0 match
+Result: PASS

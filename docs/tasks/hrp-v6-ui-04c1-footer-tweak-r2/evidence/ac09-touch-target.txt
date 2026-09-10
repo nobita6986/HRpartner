@@ -1,0 +1,12 @@
+## AC-09 verification — RQ-12 (touch target 44px min)
+
+Command: rg -n "min-h-\[44px\]|min-h-11" app/components/GlobalFooter.tsx app/components/ContactForm.tsx
+Expected: >=5 match (2 hotline tel:, 1 email mailto:, 1 website external, 1 CTA button)
+Measured: 7 match (2 tel: links + 1 mailto: + 1 website in GlobalFooter; 1 CTA in ContactForm; 2 route links in footer)
+Result: PASS
+
+Breakdown:
+- GlobalFooter.tsx: 2 tel: links (0211 2216999, 0964 984 866), 1 mailto:, 1 website external, 2 route Link (Về chúng tôi, Cộng tác viên) = 6
+- ContactForm.tsx: 1 CTA button (GỬI NGAY) = 1
+- Total: 7 match
+Result: PASS

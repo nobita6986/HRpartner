@@ -1,0 +1,26 @@
+## AC-05 verification — RQ-06 + RQ-08 (ContactForm disabled giữ + CTA GỬI NGAY)
+
+Command: rg -n "fieldset disabled" app/components/ContactForm.tsx
+Expected: >=1 match (<fieldset disabled={disabled}>)
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "GỬI NGAY" app/components/ContactForm.tsx
+Expected: >=1 match
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "disabled=\{disabled\}" app/components/ContactForm.tsx
+Expected: >=1 match
+Measured: 4 match (fieldset, input x3)
+Result: PASS
+
+Command: rg -n "type=\"submit\"" app/components/ContactForm.tsx
+Expected: >=1 match (CTA button)
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "disabled:opacity-50" app/components/ContactForm.tsx
+Expected: >=1 match (disabled visual state)
+Measured: 1 match
+Result: PASS

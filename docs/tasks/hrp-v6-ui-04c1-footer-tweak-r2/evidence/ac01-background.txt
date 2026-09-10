@@ -1,0 +1,11 @@
+## AC-01 verification — RQ-01 (nền peach tăng 1 bậc)
+
+Command: rg -n "bg-primary-fixed/35" app/components/GlobalFooter.tsx
+Expected: >=1 match
+Measured: 1 match (footer bg className)
+Result: PASS
+
+Command: rg -n "bg-primary-fixed/20" app/components/GlobalFooter.tsx
+Expected: 0 match (baseline /20 replaced)
+Measured: 0 match
+Result: PASS

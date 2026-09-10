@@ -1,0 +1,26 @@
+## AC-07 verification — RQ-09 (copyright đổi chuỗi)
+
+Command: rg -n "Connecting for Success" app/components/GlobalFooter.tsx
+Expected: >=1 match (new copyright per Owner #12)
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "HRP Việt Nam" app/components/GlobalFooter.tsx
+Expected: >=1 match (new copyright includes HRP Việt Nam)
+Measured: 2 match (heading column 1 + copyright)
+Result: PASS
+
+Command: rg -n "new Date\(\)\.getFullYear" app/components/GlobalFooter.tsx
+Expected: >=1 match (runtime year)
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "Phiên bản 6\.0" app/components/GlobalFooter.tsx
+Expected: 0 match (DEC-07 invariant)
+Measured: 0 match
+Result: PASS
+
+Command: rg -n "Hệ sinh thái nhân sự toàn diện" app/components/GlobalFooter.tsx
+Expected: 0 match (old copyright removed)
+Measured: 0 match
+Result: PASS

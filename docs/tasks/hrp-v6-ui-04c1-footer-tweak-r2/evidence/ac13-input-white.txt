@@ -1,0 +1,27 @@
+## AC-13 verification — RQ-16 (input ContactForm nền trắng + accessible name)
+
+Command: rg -n "bg-white" app/components/ContactForm.tsx
+Expected: >=3 match (3 input/textarea fields)
+Measured: 3 match (name input, phone input, message textarea)
+Result: PASS
+
+Command: rg -n "htmlFor=\"contact-" app/components/ContactForm.tsx
+Expected: >=3 match (3 label htmlFor)
+Measured: 3 match (contact-name, contact-phone, contact-message)
+Result: PASS
+
+Command: rg -n "id=\"contact-" app/components/ContactForm.tsx
+Expected: >=3 match (3 input id)
+Measured: 3 match (contact-name, contact-phone, contact-message)
+Result: PASS
+
+Command: rg -n "aria-label" app/components/ContactForm.tsx
+Expected: not required (htmlFor+id sufficient for a11y)
+Measured: not found (not added — htmlFor+id adequate)
+Result: PASS
+
+Label/Input pair breakdown:
+- Họ và tên: htmlFor="contact-name" + id="contact-name"
+- Điện thoại: htmlFor="contact-phone" + id="contact-phone"
+- Nội dung: htmlFor="contact-message" + id="contact-message"
+Result: PASS

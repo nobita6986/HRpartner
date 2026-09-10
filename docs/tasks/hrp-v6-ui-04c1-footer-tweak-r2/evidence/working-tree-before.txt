@@ -1,2 +1,17 @@
-# Tier 2 fill at STEP-01:
-# git status --porcelain > evidence/working-tree-before.txt
+## HEAD (Phase 1 - bang chung that, khong dung baseline du kien)
+0e0320b3053294a8425fb08bba371382ce77b5da -- docs(plan): ui04 04c2 job-card color refinement planning sync
+
+## git status --porcelain snapshot ngay sau khi baseline file ghi xong
+
+Luu y: file nay dang modified vi chinh no + exec-head-before.txt dang modified; Tier 2 CHAP NHAN modified state nay cua 2 file minh (chung la evidence cua task nay) - KHONG revert. Dirty source file KHONG co (clean state cua source production).
+
+Untracked tracking qua Tier 0 directive [TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH] nga 10/09/2026 -- Tier 2 chi stage cac file trong In-scope roots §0 TASK.md:
+
+  app/components/GlobalFooter.tsx
+  app/components/ContactForm.tsx
+  docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/** (HANDOFF.md + evidence/)
+
+KHONG stage bat ky untracked planning/report/prompt ngoai task.
+KHONG revert accepted commits (04b767e / 9e51917 / 8c6fd03 / 01c54dd / 2ee3b55 / 0e0320b).
+
+Tier 0 quyen push 04c1 (10/09/2026): commit path-scoped + push origin/main sau khi 04c1 + 04c2 dat gate.

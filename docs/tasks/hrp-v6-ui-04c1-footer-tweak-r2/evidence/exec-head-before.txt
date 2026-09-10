@@ -1,2 +1,10 @@
-# Tier 2 fill at STEP-01:
-# git rev-parse HEAD > evidence/exec-head-before.txt
+﻿0e0320b3053294a8425fb08bba371382ce77b5da
+
+(Phase 1 baseline - bang chung that, khong dung baseline du kien)
+HEAD commit short: 0e0320b
+Subject: docs(plan): ui04 04c2 job-card color refinement planning sync
+Tier 0 directive phien ban push production quyet dinh luc 22:40 (10/09/2026):
+  - Phase 1 (task nay): 04c1 footer tweak r2 v1.0 thi cong
+  - Phase 2 (tiep theo): 04c2 Job Card color refinement v10 v1.0 thi cong
+  - Cuoi round: push HEAD hien tai len origin/main
+Tier 2 capture baseline nay ngay truoc STEP-02 (skeleton invariant guard + review).

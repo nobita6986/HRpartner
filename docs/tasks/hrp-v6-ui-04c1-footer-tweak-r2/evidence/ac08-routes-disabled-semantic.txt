@@ -1,0 +1,31 @@
+## AC-08 verification — RQ-10 + RQ-11 (routes thật + 3 link disabled semantic)
+
+Command: rg -n "/ve-chung-toi" app/components/GlobalFooter.tsx
+Expected: >=1 match (route thật)
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "/ctv-portal" app/components/GlobalFooter.tsx
+Expected: >=1 match (route thật)
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "aria-disabled=\"true\"" app/components/GlobalFooter.tsx
+Expected: >=3 match (3 link disabled: Điều khoản / Chính sách bảo mật / Liên hệ)
+Measured: 3 match
+Result: PASS
+
+Command: rg -n "<button" app/components/GlobalFooter.tsx
+Expected: 0 match (no button in footer — CTA is in ContactForm.tsx)
+Measured: 0 match
+Result: PASS
+
+Command: rg -n "href=\"#\"" app/components/GlobalFooter.tsx
+Expected: 0 match (no href="#" for disabled links)
+Measured: 0 match
+Result: PASS
+
+Command: rg -n "FooterRouteLink|FooterDisabledText" app/components/GlobalFooter.tsx
+Expected: >=2 match (new semantic components)
+Measured: 2 match
+Result: PASS

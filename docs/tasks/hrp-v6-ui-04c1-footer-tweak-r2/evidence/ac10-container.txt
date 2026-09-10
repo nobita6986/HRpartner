@@ -1,0 +1,16 @@
+## AC-10 verification — RQ-13 (container 1080px, gutter)
+
+Command: rg -n "max-w-\[1080px\]" app/components/GlobalFooter.tsx
+Expected: >=2 match (inner container + copyright bar)
+Measured: 2 match
+Result: PASS
+
+Command: rg -n "px-4 md:px-6" app/components/GlobalFooter.tsx
+Expected: >=2 match (inner container + copyright bar)
+Measured: 2 match
+Result: PASS
+
+Command: rg -n "mx-auto w-full" app/components/GlobalFooter.tsx
+Expected: >=2 match (inner container + copyright bar)
+Measured: 2 match
+Result: PASS

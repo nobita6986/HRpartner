@@ -1,0 +1,26 @@
+## AC-12 verification — RQ-15 (heading labels)
+
+Command: rg -n "CÔNG TY TNHH HRP VIỆT NAM" app/components/GlobalFooter.tsx
+Expected: >=1 match (heading column 1)
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "DANH MỤC DỊCH VỤ" app/components/GlobalFooter.tsx
+Expected: >=1 match (heading column 2)
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "THÔNG TIN LIÊN HỆ" app/components/GlobalFooter.tsx
+Expected: >=1 match (heading column 3)
+Measured: 1 match
+Result: PASS
+
+Command: rg -n "Công ty$|Dịch vụ$|Thông tin liên hệ$" app/components/GlobalFooter.tsx
+Expected: 0 match (old labels removed from h3)
+Measured: 0 match
+Result: PASS
+
+Command: rg -n "<h3" app/components/GlobalFooter.tsx
+Expected: >=3 match (3 column headings)
+Measured: 3 match
+Result: PASS

@@ -98,13 +98,13 @@ export function ContactForm({ disabled = true }: ContactFormProps) {
         </fieldset>
       </form>
 
-      {/* RQ-05 / DEC-06: Helper text when disabled */}
+      {/* RQ-07: Helper text when disabled — new copy per Owner #10 */}
       {disabled && (
         <p className="flex items-start gap-1.5 font-body text-body-sm text-on-surface-variant">
           <span className="material-symbols-outlined text-base shrink-0" aria-hidden="true">
             info
           </span>
-          Tính năng đang được hoàn thiện. Vui lòng gọi hotline hoặc email.
+          Vui lòng liên hệ qua hotline hoặc email trong thời gian này.
         </p>
       )}
     </div>
