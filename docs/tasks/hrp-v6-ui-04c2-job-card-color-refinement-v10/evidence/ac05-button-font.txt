@@ -1,0 +1,5 @@
+## AC-05 verification — Button font giu text-sm font-medium
+Command: rg -n "text-sm font-medium" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: Match found
+Measured: text-sm font-medium FOUND in both CTA buttons
+Result: PASS

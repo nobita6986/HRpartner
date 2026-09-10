@@ -1,5 +1,5 @@
 /**
- * featured-job-card.test.tsx — hrp-v6-ui-04b-urgent-live-ribbon-r3 / AC-01..AC-25
+ * featured-job-card.test.tsx — hrp-v6-ui-04b-urgent-live-ribbon-r3 / AC-01..AC-25 + 04c2 Owner decisions
  *
  * RQ-25 / STEP-15: Component tests covering 9 cases:
  * 1. Real job (salary + posted time display)
@@ -11,6 +11,15 @@
  * 7. Mobile 390px layout
  * 8. Reduced-motion state
  * 9. Hover text contrast (WCAG AA)
+ *
+ * 04c2 v10: Owner decisions tests (RQ-01..RQ-21):
+ * - AC-18: Xem chi tiet CTA outline/ghost (was bg-blue-600 solid)
+ * - AC-19: Title text-base + line-clamp-2 + title attribute
+ * - AC-23: CTA Ung tuyen primary brand (bg-primary)
+ * - AC-25: Bubble prevention (stopPropagation/preventDefault)
+ * - AC-26: Accessible label for Quick Apply and Preview
+ * - AC-27: Mobile label not hidden (no hidden sm:inline)
+ * - AC-28: Footer layout justify-between + responsive gap
  *
  * Static source analysis tests.
  */
@@ -24,7 +33,7 @@ const PAGE = readFileSync(join(process.cwd(), 'app/(portal)/page.tsx'), 'utf8').
 
 const count = (src: string, pattern: string) => src.split(pattern).length - 1;
 
-/** Trích element bằng anchor text — tính tới close tag */
+/** Trich element bang anchor text — tinh toi close tag */
 function element(src: string, anchor: string, close: string): string {
   const i = src.indexOf(anchor);
   if (i < 0) throw new Error(`khong tim thay: "${anchor}"`);
@@ -36,100 +45,101 @@ function element(src: string, anchor: string, close: string): string {
 describe('AC-01: No nested interactive — Link and CTA are siblings', () => {
   it('chinh xac 1 Link trong card', () => {
     const linkCount = count(CARD, '<Link\n          href={href}');
-    expect(linkCount, 'phải có đúng 1 Link').toBe(1);
+    expect(linkCount, 'phai co dung 1 Link').toBe(1);
   });
 
-  it('button CTA nằm ben ngoài Link (sibling)', () => {
+  it('button CTA nam ben ngoai Link (sibling)', () => {
     const btnCount = count(CARD, '<button\n          type="button"');
-    expect(btnCount, 'phải có đúng 1 button CTA').toBe(1);
+    expect(btnCount, 'phai co dung 1 button CTA').toBe(1);
     const linkBlock = element(CARD, '<Link\n          href={href}', '</Link>');
     const btnInLink = linkBlock.includes('<button');
-    expect(btnInLink, 'button KHÔNG nested trong Link').toBe(false);
+    expect(btnInLink, 'button KHONG nested trong Link').toBe(false);
   });
 
-  it('Link và button là siblings trong article', () => {
+  it('Link va button la siblings trong article', () => {
     const articleBlock = element(CARD, '<article\n      data-testid', '</article>');
     const hasLink = articleBlock.includes('<Link');
     const hasButton = articleBlock.includes('<button');
-    expect(hasLink, 'article phải chứa Link').toBe(true);
-    expect(hasButton, 'article phải chứa button (CTA sibling)').toBe(true);
+    expect(hasLink, 'article phai chua Link').toBe(true);
+    expect(hasButton, 'article phai chua button (CTA sibling)').toBe(true);
   });
 });
 
 describe('AC-02: CTA calls onApply callback', () => {
-  it('CTA button có onClick gọi onApply callback', () => {
+  it('CTA button co onClick goi onApply callback', () => {
     // R3: CTA calls onApply via onClick={preview ? undefined : onApply}
-    const hasOnApply = CARD.includes('onClick={preview ? undefined : onApply}');
-    expect(hasOnApply, 'CTA phải gọi onApply callback').toBe(true);
+    // 04c2: may wrap in stopPropagation/preventDefault
+    const hasOnApply = CARD.includes('onApply?.()') || CARD.includes('onApply()');
+    expect(hasOnApply, 'CTA phai goi onApply callback').toBe(true);
   });
 
-  it('onApply là optional prop', () => {
+  it('onApply la optional prop', () => {
     expect(CARD).toContain('onApply?: () => void');
   });
 
-  it('preview card CTA disabled hoặc không gọi onApply', () => {
+  it('preview card CTA disabled hoac khong goi onApply', () => {
     const hasDisabled = CARD.includes('disabled={preview}');
     const hasConditional = CARD.includes('preview ? undefined : onApply');
-    expect(hasDisabled || hasConditional, 'Preview CTA phải disabled hoặc conditional').toBe(true);
+    expect(hasDisabled || hasConditional, 'Preview CTA phai disabled hoac conditional').toBe(true);
   });
 });
 
 describe('AC-03: Link navigate to detail via href prop', () => {
-  it('Link có href={href} prop', () => {
+  it('Link co href={href} prop', () => {
     expect(CARD).toContain('href={href}');
   });
 
-  it('FeaturedJobCard nhận slug trong job prop', () => {
+  it('FeaturedJobCard nhan slug trong job prop', () => {
     expect(CARD).toContain('slug: string');
   });
 
-  it('buildHref trong BestJobsSection dùng slug', () => {
+  it('buildHref trong BestJobsSection dung slug', () => {
     expect(BEST).toContain('buildHref(job.slug)');
   });
 });
 
-describe('AC-07: URGENT tab Quick Apply mở ApplyModal cho job thật', () => {
-  it('onApply được gọi với EnrichedJob từ page', () => {
-    // page.tsx handleApply nhận EnrichedJob
+describe('AC-07: URGENT tab Quick Apply mo ApplyModal cho job that', () => {
+  it('onApply duoc goi voi EnrichedJob tu page', () => {
+    // page.tsx handleApply nhan EnrichedJob
     expect(PAGE).toContain('function handleApply(job: EnrichedJob)');
     expect(PAGE).toContain('setApplyJob(job)');
   });
 
-  it('ApplyModal nhận job prop', () => {
+  it('ApplyModal nhan job prop', () => {
     expect(PAGE).toContain('<ApplyModal');
     expect(PAGE).toContain('job={applyJob}');
   });
 
-  it('CTA trên FeaturedJobCard gọi onApply với job data', () => {
-    // CTA: onClick={preview ? undefined : onApply} — onApply được gọi không có argument
-    // page.tsx truyền: onApply={handleApply} = onApply={() => onApply(job)}
+  it('CTA tren FeaturedJobCard goi onApply voi job data', () => {
+    // CTA: onClick={preview ? undefined : onApply} — onApply duoc goi khong co argument
+    // page.tsx truyen: onApply={handleApply} = onApply={() => onApply(job)}
     // BestJobsSection: onApply={onApply ? () => onApply(job) : undefined}
     expect(BEST).toContain('onApply={onApply ? () => onApply(job) : undefined}');
   });
 });
 
 describe('AC-09: Ribbon compact — pointer-events-none, ~24-28px, bg ~70-80% alpha', () => {
-  it('ribbon có pointer-events-none', () => {
+  it('ribbon co pointer-events-none', () => {
     const ribbonIdx = CARD.indexOf('badgeType === \'urgent\'');
     const ribbonBlock = CARD.slice(ribbonIdx, ribbonIdx + 300);
     expect(ribbonBlock).toContain('pointer-events-none');
   });
 
-  it('ribbon bg dùng alpha (opacity suffix hoặc /75 /80)', () => {
+  it('ribbon bg dung alpha (opacity suffix hoac /75 /80)', () => {
     const hasAlpha = CARD.includes('/75') || CARD.includes('/80') || CARD.includes('bg-orange-500/75');
-    expect(hasAlpha, 'ribbon phải có nền 70-80% alpha').toBe(true);
+    expect(hasAlpha, 'ribbon phai co nen 70-80% alpha').toBe(true);
   });
 
-  it('ribbon dùng Flame icon từ lucide-react', () => {
+  it('ribbon dung Flame icon tu lucide-react', () => {
     expect(CARD).toContain('Flame');
     expect(CARD).toContain('from \'lucide-react\'');
   });
 
-  it('ribbon text là "Tuyển gấp"', () => {
+  it('ribbon text la "Tuyen gap"', () => {
     expect(CARD).toContain('Tuyển gấp');
   });
 
-  it('KHÔNG có pr-[72px] trên title wrapper', () => {
+  it('KHONG co pr-[72px] tren title wrapper', () => {
     // Check the header div block (min-w-0 area), NOT the test file itself
     const headerIdx = CARD.indexOf('min-w-0');
     const headerBlock = CARD.slice(Math.max(0, headerIdx - 200), headerIdx + 200);
@@ -138,104 +148,110 @@ describe('AC-09: Ribbon compact — pointer-events-none, ~24-28px, bg ~70-80% al
 });
 
 describe('AC-14: Card surface Minimal SaaS — bg-white border-slate-200 rounded-xl shadow-sm', () => {
-  it('card dùng bg-white', () => {
+  it('card dung bg-white', () => {
     // Direct include check — more robust than indexOf slice
     expect(CARD).toContain('bg-white');
   });
 
-  it('card dùng border-slate-200', () => {
+  it('card dung border-slate-200', () => {
     expect(CARD).toContain('border-slate-200');
   });
 
-  it('card dùng rounded-xl', () => {
+  it('card dung rounded-xl', () => {
     expect(CARD).toContain('rounded-xl');
   });
 
-  it('card dùng shadow-sm', () => {
+  it('card dung shadow-sm', () => {
     expect(CARD).toContain('shadow-sm');
   });
 
-  it('hover dùng shadow-md (subtle lift ≤2px)', () => {
+  it('hover dung shadow-md (subtle lift ≤2px)', () => {
     expect(CARD).toContain('hover:shadow-md');
   });
 
-  it('KHÔNG dùng semantic surface color', () => {
+  it('KHONG dung semantic surface color', () => {
     // Minimal SaaS uses white/slate palette, NOT semantic surface tokens
     expect(CARD).not.toContain('bg-surface');
     expect(CARD).not.toContain('bg-primary-container');
   });
 });
 
-describe('AC-15: Logo 48px vuông rounded-lg border-slate-100 — min-w-0 content column', () => {
-  it('logo dùng size=48', () => {
+describe('AC-15: Logo 48px vuong rounded-lg border-slate-100 — min-w-0 content column', () => {
+  it('logo dung size=48', () => {
     expect(CARD).toContain('size={48}');
   });
 
-  it('logo dùng w-12 h-12', () => {
+  it('logo dung w-12 h-12', () => {
     expect(CARD).toContain('w-12');
     expect(CARD).toContain('h-12');
   });
 
-  it('logo dùng rounded-lg', () => {
+  it('logo dung rounded-lg', () => {
     expect(CARD).toContain('rounded-lg');
   });
 
-  it('logo border dùng border-slate-100 (không nested border)', () => {
+  it('logo border dung border-slate-100 (khong nested border)', () => {
     expect(CARD).toContain('border-slate-100');
   });
 
-  it('content column dùng min-w-0', () => {
+  it('content column dung min-w-0', () => {
     expect(CARD).toContain('min-w-0');
   });
 
-  it('title dùng text-lg font-semibold text-slate-900', () => {
-    expect(CARD).toContain('text-lg');
+  // 04c2 Owner #4: Title doi thanh text-base (was text-lg)
+  it('title dung text-base font-semibold text-slate-900 (04c2 RQ-04)', () => {
+    expect(CARD).toContain('text-base');
     expect(CARD).toContain('font-semibold');
     expect(CARD).toContain('text-slate-900');
+  });
+
+  // 04c2 Owner #4: Title co line-clamp-2
+  it('title co line-clamp-2 (04c2 RQ-04)', () => {
+    expect(CARD).toContain('line-clamp-2');
   });
 });
 
 describe('AC-16: Lucide icons — MapPin, Clock3, Banknote', () => {
-  it('import MapPin từ lucide-react', () => {
+  it('import MapPin tu lucide-react', () => {
     expect(CARD).toContain('MapPin');
     expect(CARD).toContain("from 'lucide-react'");
   });
 
-  it('import Clock3 từ lucide-react', () => {
+  it('import Clock3 tu lucide-react', () => {
     expect(CARD).toContain('Clock3');
   });
 
-  it('import Banknote từ lucide-react', () => {
+  it('import Banknote tu lucide-react', () => {
     expect(CARD).toContain('Banknote');
   });
 
-  it('import Flame từ lucide-react (ribbon)', () => {
+  it('import Flame tu lucide-react (ribbon)', () => {
     expect(CARD).toContain('Flame');
   });
 
-  it('decorative icons có aria-hidden="true"', () => {
+  it('decorative icons co aria-hidden="true"', () => {
     const iconCount = count(CARD, 'aria-hidden="true"');
-    // MapPin, Clock3, Banknote, Flame icons đều decorative → aria-hidden
+    // MapPin, Clock3, Banknote, Flame icons deu decorative → aria-hidden
     expect(iconCount).toBeGreaterThanOrEqual(3);
   });
 });
 
-describe('AC-17: Salary pill — bg-emerald-50 text-emerald-700, KHÔNG full-width slab', () => {
-  it('salary pill dùng bg-emerald-50', () => {
+describe('AC-17: Salary pill — bg-emerald-50 text-emerald-700, KHONG full-width slab', () => {
+  it('salary pill dung bg-emerald-50', () => {
     expect(CARD).toContain('bg-emerald-50');
   });
 
-  it('salary pill dùng text-emerald-700', () => {
+  it('salary pill dung text-emerald-700', () => {
     expect(CARD).toContain('text-emerald-700');
   });
 
-  it('salary pill dùng inline-flex items-center gap-1', () => {
+  it('salary pill dung inline-flex items-center gap-1', () => {
     expect(CARD).toContain('inline-flex');
     expect(CARD).toContain('items-center');
     expect(CARD).toContain('gap-1');
   });
 
-  it('KHÔNG có bg-primary-fixed (old slab)', () => {
+  it('KHONG co bg-primary-fixed (old slab)', () => {
     expect(CARD).not.toContain('bg-primary-fixed');
   });
 
@@ -245,134 +261,234 @@ describe('AC-17: Salary pill — bg-emerald-50 text-emerald-700, KHÔNG full-wid
     expect(salaryBlock).toContain('Banknote');
   });
 
-  it('"Lương thương lượng" fallback khi salaryMinVnd null', () => {
+  it('"Luong thuong luong" fallback khi salaryMinVnd null', () => {
     expect(CARD).toContain('Lương thương lượng');
     expect(CARD).toContain("min === null");
   });
+
+  // 04c2 Owner #3: Salary pill co them border-emerald-100
+  it('salary pill co border-emerald-100 (04c2 RQ-03)', () => {
+    const salaryIdx = CARD.indexOf('bg-emerald-50');
+    const salaryBlock = CARD.slice(salaryIdx - 50, salaryIdx + 200);
+    expect(salaryBlock).toContain('border-emerald-100');
+  });
 });
 
-describe('AC-18: Xem chi tiết CTA — bg-blue-600 hover:bg-blue-700', () => {
-  it('CTA dùng bg-blue-600', () => {
-    expect(CARD).toContain('bg-blue-600');
-  });
-
-  it('CTA hover dùng hover:bg-blue-700', () => {
-    expect(CARD).toContain('hover:bg-blue-700');
-  });
-
-  it('CTA dùng text-white', () => {
-    expect(CARD).toContain('text-white');
-  });
-
-  it('Link và CTA Xem chi tiết share cùng href', () => {
-    // "Xem chi tiết" là Link — check backward far enough to cross line boundary
+describe('AC-18: Xem chi tiet CTA — outline/ghost (04c2 Owner #1, RQ-01)', () => {
+  // 04c2: CTA doi tu solid blue sang outline/ghost
+  it('CTA KHONG con bg-blue-600 (da doi sang outline)', () => {
+    // Check trong Xem chi tiet Link block
     const xemLinkIdx = CARD.indexOf('>Xem chi tiết<');
-    expect(xemLinkIdx, 'Xem chi tiết phải là Link').toBeGreaterThan(0);
-    // Go back ~400 chars to cross line boundary with <Link and href
+    const xemLinkBlock = CARD.slice(Math.max(0, xemLinkIdx - 500), xemLinkIdx + 100);
+    expect(xemLinkBlock).not.toContain('bg-blue-600');
+  });
+
+  it('CTA dung border-slate-300 bg-white text-slate-700 outline style', () => {
+    const xemLinkIdx = CARD.indexOf('>Xem chi tiết<');
+    const xemLinkBlock = CARD.slice(Math.max(0, xemLinkIdx - 500), xemLinkIdx + 100);
+    expect(xemLinkBlock).toContain('border border-slate-300');
+    expect(xemLinkBlock).toContain('bg-white');
+    expect(xemLinkBlock).toContain('text-slate-700');
+    expect(xemLinkBlock).toContain('hover:bg-slate-50');
+  });
+
+  it('Link va CTA Xem chi tiet share cung href', () => {
+    const xemLinkIdx = CARD.indexOf('>Xem chi tiết<');
+    expect(xemLinkIdx, 'Xem chi tiet phai la Link').toBeGreaterThan(0);
     const xemLinkBlock = CARD.slice(Math.max(0, xemLinkIdx - 400), xemLinkIdx + 50);
     expect(xemLinkBlock).toContain('href={href}');
   });
 });
 
-describe('AC-19: Long title (>60 chars) wrap ≤2 dòng, không clipping', () => {
-  it('title có title attribute giữ full text', () => {
+describe('AC-19: Long title (>60 chars) wrap ≤2 dong, khong clipping (04c2 RQ-04)', () => {
+  it('title co title attribute giu full text', () => {
     expect(CARD).toContain('title={job.title}');
   });
 
-  it('title dùng leading-tight (tight line height)', () => {
-    expect(CARD).toContain('leading-tight');
+  // 04c2: doi tu leading-tight sang leading-snug
+  it('title dung leading-snug (04c2 RQ-04)', () => {
+    expect(CARD).toContain('leading-snug');
   });
 
-  it('KHÔNG có pr-[72px] (ribbon overlay không push title)', () => {
-    // Check in header area (after min-w-0) — NOT the whole file which has it in test comments
+  it('title co line-clamp-2 (04c2 RQ-04)', () => {
+    expect(CARD).toContain('line-clamp-2');
+  });
+
+  it('KHONG co pr-[72px] (ribbon overlay khong push title)', () => {
     const headerIdx = CARD.indexOf('min-w-0');
     const headerBlock = CARD.slice(Math.max(0, headerIdx - 200), headerIdx + 300);
     expect(headerBlock).not.toContain('pr-[72px]');
   });
 });
 
-describe('AC-20: Mobile 390px — không horizontal scroll, touch ≥44px', () => {
-  it('footer dùng flex gap-2 (compact, responsive)', () => {
+describe('AC-20: Mobile 390px — khong horizontal scroll, touch ≥44px', () => {
+  // 04c2 Owner #8: Footer layout justify-between + responsive gap
+  it('footer dung flex voi gap-2 sm:gap-3 responsive (04c2 RQ-07)', () => {
     const footerIdx = CARD.indexOf('mt-auto');
-    const footerBlock = CARD.slice(footerIdx, footerIdx + 300);
+    const footerBlock = CARD.slice(footerIdx, footerIdx + 400);
     expect(footerBlock).toContain('flex');
     expect(footerBlock).toContain('gap-2');
+    expect(footerBlock).toContain('sm:gap-3');
   });
 
-  it('Quick Apply button present với px-3 py-2 (touch target ≥44px)', () => {
-    // Classes are in template literal — verify via direct CARD search
-    // Quick Apply button has px-3 py-2
+  it('footer dung justify-between layout (04c2 RQ-08)', () => {
+    const footerIdx = CARD.indexOf('mt-auto');
+    const footerBlock = CARD.slice(footerIdx, footerIdx + 400);
+    expect(footerBlock).toContain('justify-between');
+  });
+
+  it('footer dung flex-wrap de wrap tren mobile (04c2 RQ-08)', () => {
+    const footerIdx = CARD.indexOf('mt-auto');
+    const footerBlock = CARD.slice(footerIdx, footerIdx + 400);
+    expect(footerBlock).toContain('flex-wrap');
+  });
+
+  it('Quick Apply button present voi px-3 py-2 (touch target ≥44px)', () => {
     expect(CARD).toContain('px-3');
     expect(CARD).toContain('py-2');
-    // And has data-testid
     expect(CARD).toContain('data-testid="featured-job-cta"');
   });
 });
 
-describe('AC-21: prefers-reduced-motion — KHÔNG flip, salary + Quick Apply + detail đầy đủ', () => {
-  it('KHÔNG có CSS 3D flip animation (perspective/rotateX)', () => {
-    // R3 Minimal SaaS KHÔNG có flip — dùng static layout
+describe('AC-21: prefers-reduced-motion — KHONG flip, salary + Quick Apply + detail day du', () => {
+  it('KHONG co CSS 3D flip animation (perspective/rotateX)', () => {
     expect(CARD).not.toContain('perspective:');
     expect(CARD).not.toContain('rotateX(180deg)');
     expect(CARD).not.toContain('transform-style: preserve-3d');
     expect(CARD).not.toContain('backface-visibility');
   });
 
-  it('KHÔNG có action-area-container với flip CSS', () => {
+  it('KHONG co action-area-container voi flip CSS', () => {
     expect(CARD).not.toContain('action-area-container');
     expect(CARD).not.toContain('action-area-wrapper');
   });
 
-  it('có Xem chi tiết Link (always visible, không animation)', () => {
+  it('co Xem chi tiet Link (always visible, khong animation)', () => {
     expect(CARD).toContain('>Xem chi tiết<');
   });
 
-  it('salary pill luôn visible (không flip)', () => {
+  it('salary pill luon visible (khong flip)', () => {
     expect(CARD).toContain('bg-emerald-50');
   });
 
-  it('Quick Apply button luôn visible (không flip)', () => {
+  it('Quick Apply button luon visible (khong flip)', () => {
     const hasCta = CARD.includes('data-testid="featured-job-cta"');
     expect(hasCta).toBe(true);
   });
 });
 
-describe('AC-22: Posted time chỉ render khi postedAt truthy — KHÔNG invent "x giờ trước"', () => {
-  it('EnrichedJob có postedAt field', () => {
+describe('AC-22: Posted time chi render khi postedAt truthy — KHONG invent "x gio truoc"', () => {
+  it('EnrichedJob co postedAt field', () => {
     expect(CARD).toContain('postedAt?: string | null');
   });
 
-  it('page.tsx enrichJob truyền postedAt', () => {
+  it('page.tsx enrichJob truyen postedAt', () => {
     expect(PAGE).toContain('postedAt: postedAt');
   });
 
-  it('postedAtLabel() chỉ format ISO, không relative time', () => {
+  it('postedAtLabel() chi format ISO, khong relative time', () => {
     expect(CARD).toContain('toLocaleDateString');
     expect(CARD).not.toMatch(/giờ trước|ngày trước|tuần trước|tháng trước/);
   });
 
-  it('postedAt chỉ render khi truthy', () => {
+  it('postedAt chi render khi truthy', () => {
     const hasConditional = CARD.includes('postedAtDisplay &&') || CARD.includes('{postedAtDisplay}');
-    // postedAtDisplay = postedAtLabel(job.postedAt) — chỉ render khi có giá trị
     expect(hasConditional || CARD.includes('job.postedAt')).toBe(true);
   });
 });
 
-describe('AC-24: Semantic structure — KHÔNG nested interactive, KHÔNG aria-hidden on focusable', () => {
-  it('Link và button KHÔNG nested lẫn nhau', () => {
+describe('AC-23: CTA Ung tuyen dung bg-primary brand (04c2 Owner #2, RQ-02)', () => {
+  it('CTA Ung tuyen dung bg-primary text-white (brand color)', () => {
+    // Search from data-testid backwards to include full button including className
+    const btnStart = CARD.indexOf('data-testid="featured-job-cta"');
+    const btnBlock = CARD.slice(Math.max(0, btnStart - 600), btnStart + 100);
+    expect(btnBlock).toContain('bg-primary');
+    expect(btnBlock).toContain('text-white');
+  });
+
+  it('CTA Ung tuyen hover dung bg-primary-dark', () => {
+    const btnStart = CARD.indexOf('data-testid="featured-job-cta"');
+    const btnBlock = CARD.slice(Math.max(0, btnStart - 600), btnStart + 100);
+    expect(btnBlock).toContain('hover:bg-primary-dark');
+  });
+
+  it('token bg-primary resolve duoc trong project', () => {
+    // Check globals.css hoac tailwind config co primary token
+    const globals = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8').replace(/\r\n/g, '\n');
+    expect(globals).toContain('--color-primary');
+  });
+});
+
+describe('AC-24: Bubble prevention — stopPropagation/preventDefault (04c2 RQ-19)', () => {
+  it('CTA Ung tuyen co stopPropagation de chan bubble', () => {
+    const btnStart = CARD.indexOf('data-testid="featured-job-cta"');
+    const btnBlock = CARD.slice(Math.max(0, btnStart - 600), btnStart + 100);
+    expect(btnBlock).toContain('stopPropagation');
+  });
+
+  it('CTA Ung tuyen co preventDefault de chan navigation', () => {
+    const btnStart = CARD.indexOf('data-testid="featured-job-cta"');
+    const btnBlock = CARD.slice(Math.max(0, btnStart - 600), btnStart + 100);
+    expect(btnBlock).toContain('preventDefault');
+  });
+});
+
+describe('AC-25: Accessible label for CTA and Preview (04c2 RQ-13)', () => {
+  it('CTA Ung tuyen co aria-label "Ung tuyen nhanh"', () => {
+    const btnStart = CARD.indexOf('data-testid="featured-job-cta"');
+    const btnBlock = CARD.slice(Math.max(0, btnStart - 600), btnStart + 100);
+    expect(btnBlock).toContain('aria-label');
+    expect(btnBlock).toContain('Ứng tuyển nhanh');
+  });
+
+  it('Preview button co aria-label "Ban xem truoc"', () => {
+    const btnStart = CARD.indexOf('data-testid="featured-job-cta"');
+    const btnBlock = CARD.slice(Math.max(0, btnStart - 600), btnStart + 100);
+    expect(btnBlock).toContain('Bản xem trước');
+  });
+});
+
+describe('AC-26: Mobile label not hidden (04c2 Owner #14, RQ-14)', () => {
+  it('CTA Ung tuyen KHONG co hidden sm:inline (mobile phai thay chu)', () => {
+    const btnStart = CARD.indexOf('data-testid="featured-job-cta"');
+    const btnBlock = CARD.slice(Math.max(0, btnStart - 600), btnStart + 100);
+    // Check the label span, not hidden
+    expect(btnBlock).not.toContain('hidden sm:inline');
+  });
+});
+
+describe('AC-27: Footer separator border-slate-200 (04c2 Owner #9, RQ-09)', () => {
+  it('footer separator dung border-slate-200 (khong phai border-slate-100)', () => {
+    const footerIdx = CARD.indexOf('mt-auto');
+    const footerBlock = CARD.slice(footerIdx, footerIdx + 200);
+    expect(footerBlock).toContain('border-slate-200');
+    expect(footerBlock).not.toContain('border-slate-100');
+  });
+});
+
+describe('AC-28: Footer padding px-4 py-3 (04c2 Owner #6, RQ-06)', () => {
+  it('footer dung px-4 py-3 (khong phai p-4)', () => {
+    const footerIdx = CARD.indexOf('mt-auto');
+    const footerBlock = CARD.slice(footerIdx, footerIdx + 200);
+    expect(footerBlock).toContain('px-4');
+    expect(footerBlock).toContain('py-3');
+  });
+});
+
+describe('AC-24: Semantic structure — KHONG nested interactive, KHONG aria-hidden on focusable', () => {
+  it('Link va button KHONG nested lan nhau', () => {
     const linkBlock = element(CARD, '<Link\n          href={href}', '</Link>');
     const btnInLink = linkBlock.includes('<button');
     expect(btnInLink).toBe(false);
   });
 
-  it('Quick Apply button KHÔNG có aria-hidden="true"', () => {
-    const btnStart = CARD.indexOf('<button\n          type="button"');
-    const btnSnippet = CARD.slice(btnStart, btnStart + 300);
+  it('Quick Apply button KHONG co aria-hidden="true"', () => {
+    const btnStart = CARD.indexOf('data-testid="featured-job-cta"');
+    const btnSnippet = CARD.slice(Math.max(0, btnStart - 600), btnStart + 100);
     expect(btnSnippet).not.toContain('aria-hidden="true"');
   });
 
-  it('Xem chi tiết là Link (anchor), không phải button', () => {
-    // "Xem chi tiết" is a Link — check backward far enough to cross line boundary
+  it('Xem chi tiet la Link (anchor), khong phai button', () => {
     const xemLink = CARD.indexOf('>Xem chi tiết<');
     const before = CARD.slice(Math.max(0, xemLink - 400), xemLink);
     expect(before).toContain('<Link');
@@ -380,11 +496,11 @@ describe('AC-24: Semantic structure — KHÔNG nested interactive, KHÔNG aria-h
 });
 
 describe('Additional: postedAt in EnrichedJob adapter (STEP-10 / RQ-20)', () => {
-  it('EnrichedJob interface có postedAt field', () => {
+  it('EnrichedJob interface co postedAt field', () => {
     expect(PAGE).toContain('postedAt: string | null');
   });
 
-  it('enrichJob() thêm postedAt từ PublicJobDto', () => {
+  it('enrichJob() them postedAt tu PublicJobDto', () => {
     const enrichIdx = PAGE.indexOf('function enrichJob');
     const enrichBlock = PAGE.slice(enrichIdx, enrichIdx + 400);
     expect(enrichBlock).toContain('postedAt');
@@ -392,19 +508,19 @@ describe('Additional: postedAt in EnrichedJob adapter (STEP-10 / RQ-20)', () => 
 });
 
 describe('Additional: URGENT tab uses live API (RQ-03)', () => {
-  it('page.tsx fetch URGENT từ /api/jobs?urgency=URGENT', () => {
+  it('page.tsx fetch URGENT tu /api/jobs?urgency=URGENT', () => {
     expect(PAGE).toContain('urgency=URGENT');
   });
 
-  it('page.tsx KHÔNG còn import BEST_JOBS_URGENT_PREVIEW', () => {
+  it('page.tsx KHONG con import BEST_JOBS_URGENT_PREVIEW', () => {
     expect(PAGE).not.toContain('BEST_JOBS_URGENT_PREVIEW');
   });
 
-  it('best-jobs-section KHÔNG còn urgentPreviewBadge prop', () => {
+  it('best-jobs-section KHONG con urgentPreviewBadge prop', () => {
     expect(BEST).not.toContain('urgentPreviewBadge');
   });
 
-  it('best-jobs-section KHÔNG còn "Preview / Backend chưa hỗ trợ" banner', () => {
+  it('best-jobs-section KHONG con "Preview / Backend chua ho tro" banner', () => {
     expect(BEST).not.toContain('Preview / Backend');
   });
 });
@@ -416,7 +532,7 @@ describe('Additional: Empty state for URGENT tab (RQ-05)', () => {
 });
 
 describe('Additional: Pagination works for both tabs (RQ-06 / RQ-08)', () => {
-  it('showPagination hoạt động cho cả hai tab', () => {
+  it('showPagination hoat dong cho ca hai tab', () => {
     const paginationIdx = BEST.indexOf('showPagination');
     const paginationBlock = BEST.slice(paginationIdx - 20, paginationIdx + 100);
     expect(paginationBlock).not.toContain("tab === 'all'");
@@ -424,12 +540,10 @@ describe('Additional: Pagination works for both tabs (RQ-06 / RQ-08)', () => {
 });
 
 describe('Additional: Tab race safety (RQ-04)', () => {
-  it('tab change reset offset về 0', () => {
-    // Use larger slice to capture full function body
+  it('tab change reset offset ve 0', () => {
     const tabChangeIdx = PAGE.indexOf('handleBestJobsTabChange');
     const tabBlock = PAGE.slice(tabChangeIdx, tabChangeIdx + 400);
     expect(tabBlock).toContain('setBestJobsOffset(0)');
-    // URGENT tab resets urgent offset
     expect(tabBlock).toContain('setBestJobsUrgentOffset');
   });
 
@@ -439,8 +553,8 @@ describe('Additional: Tab race safety (RQ-04)', () => {
   });
 });
 
-describe('Additional: URGENT response KHÔNG update global facets/overview (RQ-07)', () => {
-  it('bootstrapBestJobsUrgent không set facets/overview', () => {
+describe('Additional: URGENT response KHONG update global facets/overview (RQ-07)', () => {
+  it('bootstrapBestJobsUrgent khong set facets/overview', () => {
     const urgentIdx = PAGE.indexOf('bootstrapBestJobsUrgent');
     const urgentBlock = PAGE.slice(urgentIdx, urgentIdx + 500);
     expect(urgentBlock).not.toContain('setFacets');
@@ -455,16 +569,15 @@ describe('Additional: API urgency validation (RQ-01 / RQ-02)', () => {
     expect(apiRoute).toContain('status: 400');
   });
 
-  it('API route truyền urgency xuống service', () => {
+  it('API route truyen urgency xuong service', () => {
     const apiRoute = readFileSync(join(process.cwd(), 'app/api/jobs/route.ts'), 'utf8').replace(/\r\n/g, '\n');
     expect(apiRoute).toContain('urgency,');
   });
 });
 
 describe('Additional: Service filter urgency before pagination (DEC-02)', () => {
-  it('service filter URGENT trước pagination', () => {
+  it('service filter URGENT truoc pagination', () => {
     const svc = readFileSync(join(process.cwd(), 'src/domains/job-board/public.service.ts'), 'utf8').replace(/\r\n/g, '\n');
-    // urgency filter xuất hiện trước total và nextOffset
     const filterIdx = svc.indexOf('opts.urgency || job.urgency');
     const filterBlock = svc.slice(filterIdx, filterIdx + 300);
     expect(filterBlock).toContain('URGENT');

@@ -1,0 +1,9 @@
+## AC-01 verification — CTA "Xem chi tiet" outline/ghost
+Command: rg -n "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: Match found (outline/ghost style)
+Command: rg -n "bg-blue-600 hover:bg-blue-700" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: 0 match in Xem chi tiet CTA (old solid blue removed)
+Measured:
+- border border-slate-300 bg-white text-slate-700 hover:bg-slate-50: FOUND
+- bg-blue-600 in Xem chi tiet Link block: NOT FOUND (correct)
+Result: PASS

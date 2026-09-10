@@ -84,7 +84,7 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
         />
         <div className="min-w-0 flex-1">
           <h3
-            className="text-lg font-semibold leading-tight text-slate-900 transition group-hover:text-blue-700 mb-0.5"
+            className="text-base font-semibold leading-snug text-slate-900 line-clamp-2 transition group-hover:text-blue-700 mb-0.5"
             title={job.title}
           >
             {job.title}
@@ -113,21 +113,18 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
       </div>
 
       {/* ─── Footer / Actions ──────────────────────────────────────────── */}
-      {/* RQ-17/RQ-18/RQ-19: salary pill (left) + Xem chi tiết CTA blue (right) */}
-      <div className="mt-auto flex items-center gap-2 border-t border-slate-100 p-4">
+      {/* RQ-17/RQ-18/RQ-19: salary pill (left) + Xem chi tiết CTA outline (right) */}
+      <div className="mt-auto flex items-center justify-between flex-wrap gap-2 border-t border-slate-200 px-4 py-3 sm:gap-3">
         {/* RQ-17: Salary pill — inline emerald, NOT full-width slab */}
-        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-1 text-sm font-semibold text-emerald-700">
+        <span className="inline-flex items-center gap-1 rounded-md border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-sm font-semibold text-emerald-700">
           <Banknote className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span>{displaySalary}</span>
         </span>
 
-        {/* Spacer */}
-        <span className="flex-1" />
-
         {/* RQ-18/RQ-24: Xem chi tiết — Link and CTA share same canonical href */}
         <Link
           href={href}
-          className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
         >
           <span>Xem chi tiết</span>
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
@@ -139,11 +136,11 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
         <button
           type="button"
           disabled={preview}
-          onClick={preview ? undefined : onApply}
+          onClick={preview ? undefined : (e => { e.stopPropagation(); e.preventDefault(); onApply?.(); })}
           className={`inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
             ${preview
               ? 'cursor-not-allowed bg-slate-100 text-slate-400 opacity-60'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus-visible:outline-slate-400'
+              : 'bg-primary text-white hover:bg-primary-dark focus-visible:outline-primary'
             }`}
           aria-label={preview ? 'Bản xem trước' : 'Ứng tuyển nhanh'}
           data-testid="featured-job-cta"
@@ -151,7 +148,7 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
           </svg>
-          <span className="hidden sm:inline">{preview ? 'Bản xem trước' : 'Ứng tuyển'}</span>
+          <span>{preview ? 'Bản xem trước' : 'Ứng tuyển'}</span>
         </button>
       </div>
     </article>

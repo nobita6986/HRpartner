@@ -1,0 +1,15 @@
+## AC-02 verification — CTA "Ung tuyen" cam primary brand
+Command: rg -n "bg-primary.*text-white|bg-primary text-white hover:bg-primary-dark" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: Match found (primary brand color)
+Command: rg -n "primary:" tailwind.config.* app/globals.css
+Expected: Match found (--color-primary token exists)
+Command: Check type="button" + disabled={preview} + onClick wiring
+Expected: All present
+Measured:
+- bg-primary text-white: FOUND in CTA button className template literal
+- hover:bg-primary-dark: FOUND
+- --color-primary: FOUND in app/globals.css (#f26522)
+- type="button": FOUND
+- disabled={preview}: FOUND
+- onApply wiring: FOUND
+Result: PASS

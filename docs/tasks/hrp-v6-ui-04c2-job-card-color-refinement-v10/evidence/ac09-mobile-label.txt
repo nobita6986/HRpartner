@@ -1,0 +1,8 @@
+## AC-09 verification — Mobile label kho an
+Command: rg -n "hidden sm:inline" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: 0 match (CTA Ung tuyen mobile label must be visible)
+Measured:
+- hidden sm:inline on CTA Ung tuyen: NOT FOUND (correct)
+- Label span now shows "{preview ? 'Bản xem trước' : 'Ứng tuyển'}" without hidden class
+- Mobile can see "Ứng tuyển" text
+Result: PASS

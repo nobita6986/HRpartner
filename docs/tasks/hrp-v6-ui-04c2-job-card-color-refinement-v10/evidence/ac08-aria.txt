@@ -1,0 +1,8 @@
+## AC-08 verification — ARIA ten hanh dong ro
+Command: rg -n "aria-label.*Ung tuyen nhanh|aria-label.*Ban xem truoc|aria-label={preview" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: Match found
+Measured:
+- aria-label with "Ứng tuyển nhanh" when not preview: FOUND
+- aria-label with "Bản xem trước" when preview: FOUND
+- Accessible name is always present (conditional via preview variable)
+Result: PASS

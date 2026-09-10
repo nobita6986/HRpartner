@@ -1,0 +1,10 @@
+## AC-11 verification — Surface khong doi
+Command: rg -n "bg-white border border-slate-200 rounded-xl shadow-sm" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: Match found (R3 surface contract kept)
+Command: rg -n "bg-surface[^a-z]" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: 0 match (Owner #16: not changing to semantic surface)
+Measured:
+- bg-white border border-slate-200 rounded-xl shadow-sm: FOUND
+- bg-surface: NOT FOUND (correct)
+- hover:shadow-md transition-all duration-200: FOUND
+Result: PASS

@@ -1,0 +1,9 @@
+## AC-03 verification — Salary pill emerald
+Command: rg -n "bg-emerald-50 text-emerald-700|border-emerald-100" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: >=1 match (pill nho, KHONG full-width slab)
+Measured:
+- bg-emerald-50: FOUND
+- text-emerald-700: FOUND
+- border-emerald-100: FOUND (Owner #3 optional enhancement)
+- pill is inline-flex not full-width: CORRECT
+Result: PASS

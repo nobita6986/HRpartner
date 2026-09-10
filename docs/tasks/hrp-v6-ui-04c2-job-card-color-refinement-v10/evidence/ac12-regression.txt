@@ -1,0 +1,9 @@
+## AC-12 verification — Regression check: R3 + R2 + correction R1 + composition-footer khong revert
+Command: git diff --name-only 9f593fa..HEAD | Where-Object { $_ -notin @('src/domains/job-board/components/landing/featured-job-card.tsx', 'src/domains/job-board/components/landing/featured-job-card.test.ts', 'docs/tasks/hrp-v6-ui-04c2-job-card-color-refinement-v10/**') }
+Expected: 0 line (only allowlist files changed)
+Measured:
+- Only src/domains/job-board/components/landing/featured-job-card.tsx (modified)
+- Only src/domains/job-board/components/landing/featured-job-card.test.ts (modified)
+- Only docs/tasks/hrp-v6-ui-04c2-job-card-color-refinement-v10/** (HANDOFF + evidence)
+- No other source files modified
+Result: PASS

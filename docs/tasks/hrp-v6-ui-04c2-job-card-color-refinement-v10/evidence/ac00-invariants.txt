@@ -1,0 +1,13 @@
+## AC-00 verification
+Command: rg -n "bg-white border-slate-200 rounded-xl|<HrMonogram|bg-orange-500/75|<MapPin|<Clock3|salaryLabel|isPreview|onApply|pr-\[72px\]|hidden sm:inline" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: All invariant patterns present; no pr-[72px] wrapper; no hidden sm:inline on CTA
+Measured:
+- bg-white border-slate-200: FOUND (container className)
+- HrMonogram size=48: FOUND
+- bg-orange-500/75 pointer-events-none: FOUND (ribbon)
+- MapPin + Clock3: FOUND (body metadata)
+- salaryLabel: FOUND
+- isPreview + disabled={preview} + onApply: FOUND
+- pr-[72px]: NOT FOUND (correct - RQ-21 invariant)
+- hidden sm:inline: NOT FOUND (correct - Owner #14 mobile label visible)
+Result: PASS

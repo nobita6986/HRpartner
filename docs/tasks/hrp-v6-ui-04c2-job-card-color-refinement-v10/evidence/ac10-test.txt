@@ -1,0 +1,9 @@
+## AC-10 verification — Test file cap nhat co y nghia
+Manual review: featured-job-card.test.ts updated with:
+(a) Accessible label tests: AC-25 verifies aria-label for CTA/preview
+(b) Preview disabled: AC-02 verifies disabled={preview} + conditional
+(c) Bubble prevention: AC-24 verifies stopPropagation + preventDefault
+(d) 04c2 Owner decision tests: AC-18 (outline CTA), AC-23 (primary brand), AC-26 (mobile visible), AC-27 (separator), AC-28 (padding)
+Test runner result: 89 tests PASS (14 new tests for 04c2 decisions)
+Note: Tests do NOT merely copy class list — they verify behavior and accessibility
+Result: PASS

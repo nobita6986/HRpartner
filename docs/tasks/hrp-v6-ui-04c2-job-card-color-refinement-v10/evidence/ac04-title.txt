@@ -1,0 +1,9 @@
+## AC-04 verification — Title text-base + line-clamp-2 + title attribute
+Command: rg -n "text-base font-semibold leading-snug line-clamp-2|title={job.title}" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: Match found
+Measured:
+- text-base: FOUND (was text-lg in R3)
+- leading-snug: FOUND (was leading-tight in R3)
+- line-clamp-2: FOUND (NEW - R3 did not have this)
+- title={job.title}: FOUND
+Result: PASS

@@ -1,0 +1,10 @@
+## AC-06 verification — Footer padding + separator
+Command: rg -n "px-4 py-3 border-t border-slate-200|px-4 py-3" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: Match found
+Command: rg -n "border-t border-slate-100" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: 0 match
+Measured:
+- px-4 py-3: FOUND (was p-4 in R3)
+- border-t border-slate-200: FOUND (was border-slate-100 in R3)
+- border-slate-100 in footer: NOT FOUND
+Result: PASS

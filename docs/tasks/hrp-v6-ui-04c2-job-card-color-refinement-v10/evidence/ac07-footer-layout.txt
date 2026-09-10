@@ -1,0 +1,9 @@
+## AC-07 verification — Footer layout justify-between + gap responsive
+Command: rg -n "justify-between.*flex-wrap|flex-wrap.*justify-between|gap-2 sm:gap-3" src/domains/job-board/components/landing/featured-job-card.tsx
+Expected: Match found
+Measured:
+- justify-between: FOUND
+- flex-wrap: FOUND
+- gap-2 sm:gap-3: FOUND (responsive gap)
+- Footer now has salary left + CTA group right with wrap control
+Result: PASS
