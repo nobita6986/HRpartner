@@ -4,7 +4,10 @@
 > Tier 0 review v1 (`tier0-review-ui04c-contracts-v1.md`) + v2 (`tier0-review-ui04c-contracts-v2.md`): REVISION_REQUIRED v2 — sửa RQ-07 traceability STEP ID tường minh, AC-13 đo enabled/source policy, asset map dùng ảnh local phân biệt (industrial-location-01..04.webp, referral-team.webp), dependency overview từ `bootstrapBestJobs` của composition task, xóa residue SafeHtml, AV-CMS → AV6. Tier 0 review v3 (`tier0-review-ui04c-contracts-v3.md`) SMALL CLOSEOUT: thay mọi reference active còn sót `AV-CMS` bằng `AV6`; chuẩn hóa "CMS 4 section"; spec v1.3.
 > v1.4: Owner live visual review R1 (`docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/evidence/owner-live-visual-review-r1.md`) ghép VIS-06 vào composition/footer task. Section-render inherit: mọi inner container homepage dùng `max-w-[1080px] mx-auto` ngay từ đầu, KHÔNG hardcode 1200px. Section-render chạy SAU composition/footer (kế thừa 1080px contract).
 > Scope: dựng 4 section mới trên homepage (Section 1 Việc làm mới nhất REAL + Section 2..5 Giới thiệu HRP, Dải đối tác/minh họa, Tin tức & cẩm nang, Banner trải nghiệm trên di động DEMO) — tổng cộng 5 section trong Task D. Mỗi section nhận view-model có kiểu rõ, `source: REAL | DEMO | INTEGRATION_PENDING`, id, enabled/order. Renderer dùng chính sách DEMO/HIDDEN khi CMS chưa có. v1.4: dùng `max-w-[1080px] mx-auto` cho mọi section container. KHÔNG mở Admin/CMS schema/API/persistence (→ Plan Admin V6 AV6). UI-only, STANDARD/FOCUSED lane.
-> Plan UI predecessor: composition/footer task `ACCEPTED` (`hrp-v6-ui-04c-home-composition-footer` v1.4) + Plan B `ACCEPTED` (18919da) + correction R1 `ACCEPTED` (284e46c) + interaction R2 correction round 1 (VIS-04/05).
+> Plan UI predecessor: composition/footer task `ACCEPTED` (`hrp-v6-ui-04c-home-composition-footer` v1.4) + R3 `ACCEPTED` (`hrp-v6-ui-04b-urgent-live-ribbon-r3` v1.3) + Plan B `ACCEPTED` (18919da) + correction R1 `ACCEPTED` (284e46c) + interaction R2 correction round 1 (VIS-04/05).
+> Plan UI successor: `hrp-v6-ui-04d-detail-ui` (Plan D.A) — sau D.A là Plan Admin V6 theo dependency được duyệt.
+> v1.5: Tier 1 revise dependency theo Tier 0 directive `docs/prompts/TIER1_CONTINUATION_UI04_AFTER_R3.md` §5. Status `BLOCKED` — chờ `hrp-v6-ui-04c1-footer-tweak-r2` `ACCEPTED` trước khi giao Tier 2. Section-render kế thừa R3 (Job Card Minimal SaaS + URGENT live) + 04c1 footer tweak r2 (footer cuối cùng sau tweak) + composition/footer (container 1080px, mobile stack, ReferralStrip invariant). Section-render KHÔNG mở CMS/schema/API/Admin (→ Plan Admin V6 AV6). KHÔNG revert status `ACCEPTED` của composition/footer, R3, Plan B, correction R1, interaction R2.
+> Scope: dựng 4 section mới trên homepage (Section 1 Việc làm mới nhất REAL + Section 2..5 Giới thiệu HRP, Dải đối tác/minh họa, Tin tức & cẩm nang, Banner trải nghiệm trên di động DEMO) — tổng cộng 5 section trong Task D. Mỗi section nhận view-model có kiểu rõ, `source: REAL | DEMO | INTEGRATION_PENDING`, id, enabled/order. Renderer dùng chính sách DEMO/HIDDEN khi CMS chưa có. v1.4: dùng `max-w-[1080px] mx-auto` cho mọi section container. KHÔNG mở Admin/CMS schema/API/persistence (→ Plan Admin V6 AV6). UI-only, STANDARD/FOCUSED lane.
 
 ## 0. Control
 
@@ -14,19 +17,19 @@
 | Work type | `CODE` (UI section renderer + demo content + view-model) |
 | Assurance lane | `STANDARD` |
 | Audit mode | `FOCUSED` (UI thuần — section renderer + demo fixture có cấu trúc) |
-| Spec version | `v1.4` |
-| Status | `READY_FOR_EXECUTION` (composition/footer v1.4 ACCEPTED + R2 ACCEPTED — Tier 1 chuyển; Task D inherit 1080px VIS-06) |
+| Spec version | `v1.5` |
+| Status | `BLOCKED` (Tier 1 revise dependency v1.5: chờ `hrp-v6-ui-04c1-footer-tweak-r2` `ACCEPTED` trước khi giao Tier 2; composition/footer v1.4 ACCEPTED + R3 v1.3 ACCEPTED đã đóng; 2026-09-10) |
 | Planner | `Tier 1` |
 | Baseline | HEAD đầu round — `git rev-parse HEAD` ngay trước STEP-01 → `evidence/exec-head-before.txt` |
-| Source reference | composition/footer task v1.4 `ACCEPTED` (predecessor) — diff để đối chiếu ReferralStrip reorder cuối cùng + nền peach + inner container 1080px |
-| Plan UI predecessor | composition/footer `ACCEPTED` (`hrp-v6-ui-04c-home-composition-footer` v1.4) |
-| Plan UI successor | (không — Plan UI D xong; Plan D.A/B và Plan Admin V6 AV6 chạy song song sau) |
+| Source reference | composition/footer task v1.4 `ACCEPTED` (`04b767e`) + R3 v1.3 `ACCEPTED` (`8c6fd03` — Job Card Minimal SaaS + URGENT live + compact ribbon) + Plan B + correction R1 + interaction R2 correction round 1. 04c1 footer tweak r2 `DRAFT (pending Owner delta)` — KHÔNG sử dụng làm predecessor thực sự cho đến khi ACCEPTED. Khi 04c1 ACCEPTED sẽ bổ sung: footer cuối cùng sau tweak |
+| Plan UI predecessor | composition/footer `ACCEPTED` (`hrp-v6-ui-04c-home-composition-footer` v1.4 @ `04b767e`) + R3 `ACCEPTED` (`hrp-v6-ui-04b-urgent-live-ribbon-r3` v1.3 @ `8c6fd03`) + 04c1 footer tweak r2 `DRAFT pending Owner delta` (chưa thực sự chạy; KHÔNG dùng làm predecessor thực tế cho đến khi ACCEPTED) |
+| Plan UI successor | `hrp-v6-ui-04d-detail-ui` (Plan D.A — detail page UI); sau D.A là Plan Admin V6 theo dependency được duyệt (AV1 → AV4 → AV2 → AV6 → AV5; AV3 BACKLOG/DEFER) |
 | In-scope roots | `app/(portal)/page.tsx`, `src/domains/job-board/components/landing/newest-jobs-section.tsx` (NEW), `src/domains/job-board/components/landing/hrp-intro-section.tsx` (NEW), `src/domains/job-board/components/landing/partner-strip-section.tsx` (NEW), `src/domains/job-board/components/landing/news-section.tsx` (NEW), `src/domains/job-board/components/landing/mobile-banner-section.tsx` (NEW), `src/domains/job-board/components/landing/news-preview-modal.tsx` (NEW), `src/domains/job-board/components/landing/article-preview-data.ts` (NEW), `src/domains/job-board/public-types.ts` (NEW types), `src/domains/job-board/fixtures/demo-content.ts` (NEW), `public/images/landing/**` (NEW local assets), `docs/tasks/hrp-v6-ui-04d-section-render/**` |
 | Forbidden paths | `src/domains/job-board/public.service.ts`, `src/domains/job-board/components/landing/best-jobs-section.tsx`, `src/domains/job-board/components/landing/areas-section.tsx`, `src/domains/job-board/components/landing/recruiting-projects-section.tsx`, `src/domains/job-board/components/landing/featured-job-card.tsx`, `src/domains/job-board/components/landing/hero.tsx`, `src/domains/job-board/components/landing/referral-strip.tsx`, `app/components/GlobalFooter.tsx`, `app/components/ContactForm.tsx`, `src/domains/job-board/components/landing/referral-invite-strip.tsx`, `src/domains/job-board/fixtures/best-jobs-urgent-preview.ts`, `app/api/jobs/**`, `app/(jobs)/viec-lam/page.tsx`, `app/admin/**`, `prisma/**`, `src/shared/auth/permission-catalog.ts`, `prisma/seed.mjs`, `app/api/admin/homepage-settings/**`, `app/globals.css` NGOÀI nếu cần thêm token semantic (Tier 1 duyệt); `docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/**`, `docs/tasks/hrp-v6-ui-04a-visual-polish/**`, `docs/tasks/hrp-v6-ui-04b-pagination-admin/**`, `docs/tasks/hrp-v6-ui-04b-vis-correction-r1/**`, `docs/tasks/hrp-v6-ui-04c-home-composition-footer/**` NGOÀI file mới của task này |
 | Required gates | `npm run typecheck` exit 0; `npm run test:unit` cùng expected failure set với baseline + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04d-section-render/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS; Tier 3 FOCUSED audit PASS |
 | Visual gate | Owner live review post-deploy. KHÔNG Edge/CDP/PNG/bbox đã bỏ. KHÔNG Lighthouse/axe-core auto-install |
-| Current execution round | `0` (v1.3 DRAFT — closeout Tier 0 review v3) |
-| Next gate | Tier 2 thi công (STANDARD) → Tier 3 FOCUSED audit → Owner live visual review section-render → ACCEPTED |
+| Current execution round | `0` (v1.5 BLOCKED — chờ 04c1 footer tweak r2 ACCEPTED) |
+| Next gate | 04c1 footer tweak r2 `ACCEPTED` → Tier 1 chuyển Status `BLOCKED` → `READY_FOR_EXECUTION` → Tier 2 thi công (STANDARD) → Tier 3 FOCUSED audit → Owner live visual review section-render → ACCEPTED |
 
 ## 1. Outcome
 
@@ -111,8 +114,10 @@ Navbar
 
 | Công việc | Thuộc plan | Trạng thái |
 |---|---|---|
-| Sections 5 mới (Task D này) | Plan UI Task D section-render | DRAFT |
-| Composition/footer (UI04 footer + UI04C §2.2) | Plan UI composition/footer | DRAFT (v1.2 — chờ predecessor R2 ACCEPTED) |
+| Sections 5 mới (Task D này) | Plan UI Task D section-render | BLOCKED v1.5 (chờ 04c1 footer tweak r2 ACCEPTED) |
+| Composition/footer (UI04 footer + UI04C §2.2) | Plan UI composition/footer | ACCEPTED v1.4 (`04b767e`) |
+| R3 URGENT live + ribbon compact + Job Card Minimal SaaS | Plan UI R3 | ACCEPTED v1.3 (`8c6fd03`) |
+| Footer tweak r2 | Plan UI 04c1 | DRAFT v0.1 (chờ Owner delta) |
 | BestJobs tab + pagination + URGENT fixture | Plan B | ACCEPTED (18919da) |
 | VIS-01..03 style/layout correction | Correction R1 | ACCEPTED (284e46c) |
 | Backend (HomepageSettings, permission, write API, Admin page) | Plan Admin V6 AV1 | DRAFT |
@@ -263,7 +268,9 @@ None — UI04C §3 chốt cả 5 section + view-model + render policy. Tier 2 ch
 
 ## 9. Planner Resolution
 
-Tier 1 append sau mỗi round.
+| Round | Decision | Reason |
+|---|---|---|
+| 0 | Tier 1 revise dependency v1.5: Status `BLOCKED` chờ `hrp-v6-ui-04c1-footer-tweak-r2` `ACCEPTED` trước khi giao Tier 2. Spec bump → v1.5. Plan UI predecessor chain cập nhật: composition/footer v1.4 `ACCEPTED` + R3 v1.3 `ACCEPTED` (mới) + 04c1 footer tweak r2 `DRAFT (pending Owner delta)` + Plan B + correction R1 + interaction R2. NHƯNG round 1 (10/09/2026 sau Tier 0 verdict): sửa mâu thuẫn Tier 0 chỉ ra — (a) đồng bộ Control `Spec version v1.4` → `v1.5`; (b) Source reference sửa "04c1 ACCEPTED (sắp tới)" → "04c1 DRAFT (pending Owner delta), KHÔNG dùng làm predecessor thực tế cho đến khi ACCEPTED"; (c) Plan UI successor: ghi rõ `hrp-v6-ui-04d-detail-ui` (Plan D.A), không ghi "không có successor"; (d) §1.3 plan split reminder: Section-render status `DRAFT` → `BLOCKED v1.5`, composition/footer `DRAFT v1.2` → `ACCEPTED v1.4 (04b767e)`, bổ sung row R3 ACCEPTED `8c6fd03` + 04c1 DRAFT v0.1. KHÔNG bump spec khác; KHÔNG đổi RQ/STEP/AC/audit focus. | Tier 0 verdict `docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md` §4: "Header/revision gọi `v1.5` nhưng Control vẫn ghi `Spec version v1.4`; phải đồng bộ thành `v1.5`. `Source reference` đang gọi footer 04c1 là `ACCEPTED (sắp tới)`; sửa thành dependency pending, không tuyên bố ACCEPTED trước evidence. Status `BLOCKED` chờ footer là đúng tại thời điểm này. Plan successor phải ghi rõ `hrp-v6-ui-04d-detail-ui` (D.A)." Tier 1 round 1 đồng bộ đúng verdict. |
 
 ## 10. Revision Log
 
@@ -272,3 +279,5 @@ Tier 1 append sau mỗi round.
 - `v1.2` (10/09/2026): Tier 0 review v2 REVISION_REQUIRED. Sửa: (a) RQ-07 traceability dùng STEP ID tường minh STEP-04, STEP-05, STEP-06, STEP-07, STEP-08; (b) AC-13 đo enabled/source policy trực tiếp; (c) Asset map dùng ảnh phân biệt hiện có (industrial-location-01..04.webp, referral-team.webp); (d) data dependency `overview.newest` đến từ `bootstrapBestJobs` của composition task; (e) xóa residue SafeHtml (EV-07, DEC-12, DEC-13, RQ-05); (f) AV-CMS → AV6 (label tạm được chốt tên chính thức); (g) §1.3 plan split reminder sửa composition status DRAFT v1.2.
 - `v1.4` (10/09/2026): Owner live visual review R1 (`docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/evidence/owner-live-visual-review-r1.md`) ghép VIS-06 vào composition/footer task. Section-render inherit: RQ-11 sửa "1200px" → "1080px" cho mỗi section; thêm ghi chú "v1.4 inherit từ composition/footer v1.4 — VIS-06; section mới dùng `max-w-[1080px] mx-auto` ngay từ đầu". Predecessor dependency update: composition/footer v1.4 `ACCEPTED`. Plan UI predecessor chain: Plan B + correction R1 + interaction R2 correction round 1 + composition/footer v1.4. Tier 2 task D chạy SAU composition/footer v1.4 ACCEPTED → chuyển status `READY_FOR_EXECUTION`. KHÔNG thêm STEP/AC riêng — chỉ consistency reference với composition/footer. Spec bump → v1.4.
 - `v1.3` (10/09/2026): Tier 0 review v3 SMALL CLOSEOUT. Sửa: (a) thay mọi reference active còn sót `AV-CMS` bằng `AV6` (scope summary, §1.3 plan split successor, RQ-08, RQ-10, EV-09, view-model `storeLinks` note, `enabled` note, AV-CMS ref §1.1); (b) chuẩn hóa "CMS 4 section" — Task D dựng 4 section mới DEMO + Section 1 REAL = 5 section trong Task D; (c) `Current execution round` đồng bộ v1.3 DRAFT. Spec bump → v1.3.
+- `v1.5` (10/09/2026): Tier 1 revise dependency theo Tier 0 directive §5. (a) Header mở rộng: thêm Plan UI successor (none), ghi chú R3 ACCEPTED + 04c1 chờ Owner, scope UI-only nhắc lại. (b) Status → `BLOCKED` chờ 04c1 ACCEPTED. (c) Source reference bổ sung R3 v1.3 ACCEPTED + 04c1 ACCEPTED (sắp tới). (d) Plan UI predecessor: composition/footer v1.4 + R3 v1.3 + 04c1 (chưa). (e) Current execution round → v1.5 BLOCKED. (f) Next gate → chờ 04c1 ACCEPTED mới mở READY_FOR_EXECUTION. (g) Planner Resolution Round 0 ghi lý do. (h) Spec bump → v1.5. KHÔNG đổi RQ/STEP/AC/audit focus; chỉ cập nhật control field + predecessor + status.
+- `v1.5` (round 1, 10/09/2026): Tier 1 sửa mâu thuẫn Tier 0 verdict `docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md` §4: (1) Control `Spec version` đồng bộ `v1.4` → `v1.5`; (2) Source reference sửa "04c1 ACCEPTED (sắp tới)" → "04c1 DRAFT (pending Owner delta), KHÔNG dùng làm predecessor thực tế"; (3) Plan UI successor bổ sung `hrp-v6-ui-04d-detail-ui` (Plan D.A), không ghi "không có successor"; (4) §1.3 plan split reminder cập nhật row Section-render sang `BLOCKED v1.5`, composition/footer sang `ACCEPTED v1.4 (04b767e)`, bổ sung row R3 `ACCEPTED (8c6fd03)` + row 04c1 `DRAFT v0.1`; (5) Header dòng 8 đồng bộ Plan UI successor sang `hrp-v6-ui-04d-detail-ui`. Planner Resolution Round 0 mở rộng ghi rõ sửa đổi round 1.

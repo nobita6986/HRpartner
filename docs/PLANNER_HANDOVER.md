@@ -7,10 +7,10 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-08 20:35 Asia/Bangkok
-roadmap_source: docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/UNIFIED_PLAN_v5.md chi con la nguon cho V5/go-live debt
+updated_at: 2026-09-10 22:30 Asia/Bangkok
+roadmap_source: docs/AI_PROJECT_BRIEF.md; docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md
 PHASE_MAP: |
-  Phase 0: V5 Close — DA DONG 55/63 ACCEPTED
+  Phase 0: V5 Close — DA DONG 55/63 ACCEPTED (không thay đổi)
     -> gate-01/02/03: ACCEPTED
     -> test-01: ACCEPTED v1.4
     -> ui-01: ACCEPTED v1.1, deployed 06/09
@@ -22,29 +22,39 @@ PHASE_MAP: |
     -> hrp-v6-p1-job-opening-posting-split: ACCEPTED R4 PASS 08/09 (3a96b9c)
     -> hrp-v6-p1-labor-profile-schema: ACCEPTED R2 + Tier 3 audit r1 PASS + LIVE APPLIED hrp-live 08/09 (Owner xác nhận, f8bd761)
     -> hrp-v6-p1c-new-ui-restyling: ACCEPTED R4 — Tier 3 audit r1 PASS 08/09 (0 P0/P1/P2); ready merge commit
-    -> hrp-v6-security-credential-rotation: READY_FOR_EXECUTION
-    -> hrp-v6-credential-rotation-posture: BLOCKED R2 (OP-gated)
+    -> hrp-v6-security-credential-rotation: READY_FOR_EXECUTION (Owner defer giữ nguyên)
+    -> hrp-v6-credential-rotation-posture: BLOCKED R2 (OP-gated; Owner defer giữ nguyên)
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
-current_lane: Phase 1 V6 Foundation — vertical slice tiếp theo (post Tier 0 deferral 09/09)
-current_task: hrp-v6-p1-job-opening-status-card
-task_path: docs/tasks/hrp-v6-p1-job-opening-status-card/TASK.md
-spec_version: v1.0 ACCEPTED 09/09 (Tier 3 R2 PASS; AUD-001 RESOLVED; chờ Owner merge main)
-task_status: ACCEPTED_PENDING_MERGE
-worktree_branch: tier1/job-opening-status-card-worktree (chưa merge main; anh duyệt trước)
-current_gate: OWNER_MERGE_TO_MAIN
-next_command: anh merge worktree branch → main qua PR hoặc fast-forward local
-previous_accepted: new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS 08/09 (0 P0/P1/P2); labor-profile-schema ACCEPTED R2 + LIVE 08/09 (f8bd761); job-opening-posting-split ACCEPTED R4 PASS 08/09 (3a96b9c); job-opening-status-card ACCEPTED R2 PASS 09/09 (Tier 3 verdict PASS); go-live-20 ACCEPTED; ui-01 ACCEPTED v1.1; gate-01/02/03 ACCEPTED; test-01 ACCEPTED v1.4
-next_planner_candidate: held_draft go-live-19 PII DB mask (Tier 1 viết); V6 Phase 2 admin rebuild tasks (per docs/V6/v6-admin-rebuild_ROADMAP.md). Defer: hrp-v6-security-credential-rotation, hrp-v6-credential-rotation-posture.
-blocking_owner: AFF §20 — 17/17 ô chưa tick, Founder+sep phải quyết; không mở task AFF nào
-v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture READY (BLOCKED R2); security-credential-rotation READY (current_task)
+current_lane: UI04 public homepage completion
+current_task: hrp-v6-ui-04c1-footer-tweak-r2
+task_path: docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/TASK.md
+spec_version: v1.0 READY_FOR_EXECUTION (10/09/2026; 16 Owner decisions chốt tại docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/evidence/owner-footer-r2-decisions.md; verify-task.ps1 PASS)
+task_status: READY_FOR_EXECUTION
+worktree_branch: main (R3 đã commit path-scoped; main ahead origin/main 1 commit tại 8c6fd03)
+current_gate: TIER2_EXECUTION
+next_command: Tier 2 thi công (FAST lane) theo TASK.md v1.0; baseline = HEAD đầu round (~8c6fd03); capture evidence tại docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/evidence/; tạo HANDOFF.md; chạy verify-handoff.ps1; Owner live visual review post-deploy
+previous_accepted: R3 v1.3 ACCEPTED (8c6fd03 — feat(ui04): live urgent jobs and minimal job cards) + composition/footer v1.4 ACCEPTED (04b767e) + interaction R2 ACCEPTED + VIS-01..03 correction R1 ACCEPTED (284e46c) + B pagination-admin ACCEPTED (18919da) + A visual-polish ACCEPTED
+next_planner_candidate: hrp-v6-ui-04d-section-render (BLOCKED v1.5 — sau 04c1 ACCEPTED); sau đó hrp-v6-ui-04d-detail-ui (D.A); sau đó Admin V6 theo dependency (AV1 → AV4 → AV2 → AV6 → AV5)
+blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); UI04 footer tweak r2 đã OWNER_DECIDED (16 lựa chọn chốt 10/09/2026) — gate đã mở sang TIER2_EXECUTION
+v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
+ui04_status:
+  composition/footer: ACCEPTED v1.4 (04b767e)
+  R3 urgent live + minimal SaaS card: ACCEPTED v1.3 (8c6fd03)
+  04c1 footer tweak r2: READY_FOR_EXECUTION v1.0 (10/09/2026; 16 Owner decisions đã chốt; verify-task.ps1 PASS)
+  section-render: BLOCKED v1.5 — chờ 04c1 ACCEPTED
+  detail UI D.A: DRAFT — sau section-render ACCEPTED
+  detail editor D.B: DRAFT (CRITICAL) — sau D.A
 held_draft: hrp-v5-go-live-19-tracking-pii-db-mask — việc viết, chưa giao /code
-queue_authority: Chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md; dung dung task slug that, khong suy dien them phase/task; current_task = security-credential-rotation v1.0
-owner_boundary: AFF CHAN TUYET DOI; go-live-07 DEFERRED (Owner defer to end of V6 Phase 1 dev cycle); credential-rotation-posture BLOCKED OP-gated
-protected_paths: README.md; docs/tasks/hrp-v6-security-credential-rotation/PROMPT_TIER2.md (per Tier 1 contract nếu có)
-security_note: Khong lap lai credential lich su; moi gia tri nhay cam chi duoc ghi [REDACTED]. Rotate production thuoc OP Owner. §13 credential hygiene — lam CUOI CUNG truoc public. security-credential-rotation task: rotate scoped credentials (Tier 2 khong tu rotate production — OP gate).
+queue_authority: Chi tiet UI04 o docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/plan-overview.md; chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md; dung dung task slug that, khong suy dien them phase/task; current_task = hrp-v6-ui-04c1-footer-tweak-r2 v1.0 READY_FOR_EXECUTION
+owner_boundary: AFF CHAN TUYET DOI (giữ nguyên); go-live-07 DEFERRED; credential-rotation-posture BLOCKED OP-gated; UI04 04c1 đã OWNER_DECIDED (16 lựa chọn) — KHÔNG escalate Owner lần 2 về 16 lựa chọn
+protected_paths: README.md; docs/tasks/hrp-v6-security-credential-rotation/PROMPT_TIER2.md (per Tier 1 contract nếu có); Tier 1 KHÔNG sửa source production; Tier 1 KHÔNG revert R3 8 file dirty; Tier 1 KHÔNG revert composition/footer 04b767e
+security_note: Khong lap lai credential lich su; moi gia tri nhay cam chi duoc ghi [REDACTED]. Rotate production thuoc OP Owner. §13 credential hygiene — lam CUOI CUNG truoc public. UI04 04c1 KHONG mo contact API, persistence, schema, permission, CMS, Admin.
 phase1_live_evidence: commit f8bd761 trên origin/main; 2 migration files (20260908150000_v6_phase1a_labor_profile_schema + 20260908150001_v6_phase1a_labor_profile_rls) confirmed applied hrp-live bởi Owner 08/09; không có CI/CD auto-deploy migration (verified: vercel.json buildCommand không gọi prisma migrate deploy; .github/workflows/ci.yml không có deploy job)
-phase1c_audit_evidence: AUDIT R1 PASS cho hrp-v6-p1c-new-ui-restyling; 11/11 AC PASS; 0 P1/P2 findings; verify-task=e36b83df... PASS; verify-handoff=e1af8549... PASS; 2 frozen test fence hash khớp tuyệt đối (431f650f..., e5bee466...); scope compliance 100%; evidence 7 file đầy đủ
+ui04_evidence:
+  R3 ACCEPTED 8c6fd03: verify-task.ps1 PASS; verify-handoff.ps1 PASS WITH WARNINGS (H-15 control field Tier 1 sở hữu); Tier 3 FOCUSED audit PASS (0 finding release-blocking); verify-audit.ps1 PASS
+  composition/footer ACCEPTED 04b767e: verify-task.ps1 + verify-handoff.ps1 + verify-audit.ps1 đều PASS; container 1080px; Footer 3 cột; ReferralStrip invariant
+  04c1 READY_FOR_EXECUTION v1.0 10/09/2026: 16 Owner decisions tại docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/evidence/owner-footer-r2-decisions.md; verify-task.ps1 PASS (0 warning); RQ-00..RQ-16 (17 req) + AC-00..AC-14 (15 AC, 14 đo được) + STEP-03..STEP-08 (6 step thi công cụ thể); scope GlobalFooter.tsx + ContactForm.tsx only
 owner_defer:
   decision: "Deferred by Owner until target production stack and go-live hardening phase are confirmed."
   scope:
@@ -69,11 +79,36 @@ owner_defer:
     - FAST: thay đổi nhỏ, ít rủi ro
     - STANDARD/FOCUSED: feature thông thường
     - CRITICAL/DEEP: chỉ khi diff hiện tại thực sự chạm critical surface, không phải vì rủi ro hạ tầng tương lai
-  current_task_redirect: hrp-v6-p1-job-opening-posting-split (RESOLVING_R2) — schema THÊM-thuần, không khóa cứng Neon; Tier 2 unblock Tier 3 audit R2; tạo giá trị nền cho Phase 2 admin rebuild
+  ui04_04c1_owner_decided: |
+    Footer tweak r2 OWNER_DECIDED (10/09/2026) — 16 lựa chọn đã chốt tại evidence/owner-footer-r2-decisions.md.
+    Lane FAST, scope chỉ app/components/GlobalFooter.tsx + app/components/ContactForm.tsx.
+    Tier 2 thi công theo TASK.md v1.0 (RQ-00..RQ-16, STEP-03..STEP-08, AC-00..AC-14).
+    Baseline HEAD đầu round (Tier 2 đo tại STEP-01); expected-failure-set-before.txt capture trước khi sửa.
+    Không amend R3 8 file dirty; không revert 04b767e; không phục hồi "Phiên bản 6.0".
+    Tier 2 KHÔNG push lên origin/main (push thuộc phát hành Git riêng).
   no_new_adr: "Không viết ADR dài. Không mở task rationalization mới."
 ```
 
 <!-- ROADMAP_CURSOR_END -->
+
+<!-- PRE_UI04_LANE_SNAPSHOT_2026-09-10 -->
+<!-- Bản ROADMAP_CURSOR trước khi Tier 0 chốt UI04 là global delivery lane tại TIER0_UI04_R3_CLOSEOUT_VERDICT.md (2026-09-10).
+     current_lane: Phase 1 V6 Foundation — vertical slice tiếp theo (post Tier 0 deferral 09/09)
+     current_task: hrp-v6-p1-job-opening-status-card
+     spec_version: v1.0 ACCEPTED 09/09
+     task_status: ACCEPTED_PENDING_MERGE
+     current_gate: OWNER_MERGE_TO_MAIN
+     worktree_branch: tier1/job-opening-status-card-worktree
+
+     Bản tiếp theo (DRAFT v0.1 / BLOCKED_OWNER) trước khi Owner đối 16 lựa chọn — chỉ snapshot ở archive section 0A.
+     current_lane: UI04 public homepage completion
+     current_task: hrp-v6-ui-04c1-footer-tweak-r2
+     spec_version: v0.1 DRAFT
+     task_status: DRAFT
+     current_gate: BLOCKED_OWNER
+
+     Bản hiện tại (2026-09-10 22:30) — 16 Owner decisions đã chốt → v1.0 READY_FOR_EXECUTION → TIER2_EXECUTION.
+     Xem archive section 0A bên dưới cho snapshot đầy đủ ngày 2026-09-08 và 2026-09-10 trước đó. -->
 
 ## 0A. ROADMAP_CURSOR archive — snapshot 2026-09-08 09:15, chỉ để truy vết
 

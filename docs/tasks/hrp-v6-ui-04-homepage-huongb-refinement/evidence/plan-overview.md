@@ -87,7 +87,21 @@ Tier 1 chốt chuỗi **Interaction R2 → Composition/Footer → Section Render
 
 ---
 
-### Task D — Section Renderer + Demo Content (`hrp-v6-ui-04d-section-render`) (STANDARD, FOCUSED)
+### Task D — Section Renderer + Demo Content (`hrp-v6-ui-04d-section-render`) (STANDARD, FOCUSED) — BLOCKED v1.5, chờ 04c1 footer tweak r2 ACCEPTED
+
+> **Tình trạng thật 10/09/2026** (theo Tier 0 verdict `docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md`):
+> - **A (visual polish)**: ACCEPTED
+> - **B (pagination + admin config)**: ACCEPTED (`18919da`)
+> - **VIS-01..03 (correction R1)**: ACCEPTED (`284e46c`)
+> - **Interaction R2 (card flip)**: ACCEPTED
+> - **C composition/footer**: ACCEPTED v1.4 (`04b767e`) — container 1080px, ReferralStrip invariant, Footer 3 cột rebuild
+> - **R3 (live urgent jobs + Job Card Minimal SaaS + compact ribbon)**: ACCEPTED v1.3 (`8c6fd03`)
+> - **04c1 footer tweak r2** (`hrp-v6-ui-04c1-footer-tweak-r2`): **READY_FOR_EXECUTION v1.0** (10/09/2026; 16 Owner decisions đã chốt tại `evidence/owner-footer-r2-decisions.md`; `verify-task.ps1` PASS)
+> - **D section-render** (`hrp-v6-ui-04d-section-render`): BLOCKED v1.5, chờ 04c1 ACCEPTED
+> - **D.A detail UI**: DRAFT, sau D
+> - **D.B editor**: DRAFT (CRITICAL), sau D.A
+> - **AV3 custom tags**: BACKLOG/DEFER sau UI-05 và AV2
+> - **AFF**: bị chặn theo readiness gate hiện hành
 
 ### Task A — Visual Polish + Search Card Trắng (STANDARD/FOCUSED)
 
@@ -285,5 +299,39 @@ Tier 1 cập nhật tài liệu lần này:
 2. `evidence/field-matrix.md` — hợp đồng dữ liệu chung UI ↔ Admin
 3. `evidence/cut-plan.md` — **CẬP NHẬT** bỏ đề xuất gộp Phase A+B (giờ là 4 task riêng)
 4. `evidence/OWNER_APPROVAL_REQUIRED.md` — **CẬP NHẬT** điều chỉnh 28 quyết định theo Tier 0 (A11=Apartment, A12=64px, A14=Cần tuyển, A16 search card trắng, B2=URGENT only, B5=default 9, B6={3,6,9,12}, B8=integer 6..50, B10=invariant DB, B11=ADMIN thuần, B13=CRITICAL sâu changed surface)
-5. `TASK-A.md` — viết TASK A contract ngay, giao Tier 2
-6. `skeleton/B-C-D.md` — skeleton các task sau với dependency
+5. `docs/tasks/hrp-v6-ui-04a-visual-polish/TASK.md` — TASK A contract (ACCEPTED)
+6. `evidence/skeleton-B-C-D.md` — skeleton các task B/C/D với status hiện hành
+
+---
+
+## 8. Trạng thái acceptance hiện hành (10/09/2026, sau Tier 0 verdict `docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md`)
+
+| Task | Status | Commit | Ghi chú |
+|---|---|---|---|
+| A visual polish | ACCEPTED | — | foundation navbar/card |
+| VIS-01..03 correction R1 | ACCEPTED | `284e46c` | style/layout correction |
+| Interaction R2 (card flip) | ACCEPTED | — | job card interaction |
+| B pagination + admin config | ACCEPTED | `18919da` | CRITICAL lane closed |
+| C composition/footer | ACCEPTED v1.4 | `04b767e` | container `max-w-[1080px] mx-auto`, ReferralStrip invariant, Footer 3 cột rebuild |
+| R3 live urgent + minimal SaaS card | ACCEPTED v1.3 | `8c6fd03` | thay fixture URGENT preview; Job Card Minimal SaaS thay salary slab/3D flip cũ |
+| 04c1 footer tweak r2 | **READY_FOR_EXECUTION v1.0** | — | Tier 1 finalize contract v1.0 dựa trên 16 decisions tại `evidence/owner-footer-r2-decisions.md`; `verify-task.ps1` PASS |
+| D section-render | BLOCKED v1.5 | — | chờ 04c1 ACCEPTED; section renderer KHÔNG sở hữu CMS |
+| D.A detail UI | DRAFT | — | sau D ACCEPTED |
+| D.B editor | DRAFT (CRITICAL) | — | sau D.A |
+| AV3 custom tags | BACKLOG/DEFER | — | sau UI-05 và AV2 |
+| AFF | blocked | — | readiness gate hiện hành |
+
+**Lane hiện tại (UI04 public homepage completion)** theo Tier 0 verdict §2: DRAFT → READY_FOR_EXECUTION theo chuỗi `04c1 footer tweak r2 → section-render → detail UI D.A → Admin V6 (AV1 → AV4 → AV2 → AV6 → AV5)`. AV6 sở hữu CMS homepage (Giới thiệu, Đối tác/minh họa, Tin tức/cẩm nang, Banner di động); section renderer không sở hữu CMS.
+
+---
+
+## 9. Revision Log
+
+- 10/09/2026: Tier 1 đồng bộ residue theo Tier 0 verdict §5:
+  - §1.3 Task D status: bổ sung khối trạng thái acceptance hiện hành (A/B/VIS/R2/C/R3 ACCEPTED; 04c1 DRAFT BLOCKED_OWNER; D BLOCKED v1.5; D.A/D.B DRAFT; AV3 BACKLOG; AFF blocked)
+  - §7 bàn giao: bỏ reference `TASK-A.md` và `skeleton/B-C-D.md` không khớp path thật; thay bằng `docs/tasks/hrp-v6-ui-04a-visual-polish/TASK.md` (ACCEPTED) + `evidence/skeleton-B-C-D.md`
+  - §8 (mới): bảng trạng thái acceptance + lane chuỗi hiện tại
+  - KHÔNG đổi RQ/AC/STEP của bất kỳ task nào; KHÔNG sửa evidence/audit lịch sử
+- 10/09/2026 (round 2): Tier 1 nhận `evidence/owner-footer-r2-decisions.md` (16 lựa chọn đã chốt) → finalize 04c1 contract v1.0; đồng bộ:
+  - §1.3 bullet 04c1: `DRAFT v0.1, BLOCKED_OWNER` → `READY_FOR_EXECUTION v1.0` (16 Owner decisions đã chốt; verify-task PASS)
+  - §8 bảng row 04c1: status → `READY_FOR_EXECUTION v1.0`; thêm note về decisions + verify-task PASS
