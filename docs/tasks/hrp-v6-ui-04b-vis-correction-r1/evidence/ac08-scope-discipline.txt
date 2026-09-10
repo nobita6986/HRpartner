@@ -1,0 +1,12 @@
+# AC-08: Scope discipline
+# git diff --name-only vs baseline HEAD 465f811a2b311c0144db5078e5efaf43a20b37e8
+# Only 3 source files + evidence + HANDOFF changed
+# No forbidden paths touched
+
+# Changed files:
+# src/domains/job-board/components/landing/featured-job-card.tsx - ALLOWED (VIS-01 + VIS-02)
+# src/domains/job-board/components/landing/areas-section.tsx - ALLOWED (VIS-03)
+# src/domains/job-board/public-ui-premium.static.test.ts - ALLOWED (VIS-02 fence test)
+# docs/tasks/hrp-v6-ui-04b-vis-correction-r1/** - ALLOWED (evidence + HANDOFF)
+
+# Scope discipline: PASS - only allowed files modified

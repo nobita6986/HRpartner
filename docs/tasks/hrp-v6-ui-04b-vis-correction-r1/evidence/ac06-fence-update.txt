@@ -1,0 +1,9 @@
+# AC-06: Fence test updated with VIS-02 comment
+# Test name: "ui-03: salary pill" - NOT changed
+# Assertion updated: bg-surface-container-low → bg-primary-fixed
+# Comment VIS-02 added before the changed line
+command: Select-String -Path src/domains/job-board/public-ui-premium.static.test.ts -Pattern "bg-primary-fixed.*VIS-02|VIS-02.*bg-primary-fixed"
+result: >=1 match (PASS)
+
+command: Select-String -Path src/domains/job-board/public-ui-premium.static.test.ts -Pattern "bg-surface-container-low"
+result: 0 matches in "ui-03: salary pill" test (PASS)

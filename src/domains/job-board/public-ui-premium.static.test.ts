@@ -222,7 +222,8 @@ describe('go-live-08 / RQ-05, RQ-06 — phân hoá nền', () => {
     expect(block(cssCode, '.hrp-pill {')).toContain('background-color');
     expect(block(cssCode, '.hrp-pill-location {')).toContain('background-color');
     // ui-03: the salary pill uses bg-surface-container-low directly in FeaturedJobCard
-    expect(CARD).toContain('bg-surface-container-low');
+    // VIS-02
+    expect(CARD).toContain('bg-primary-fixed');
   });
 
   it('nền panel bộ lọc KHÁC nền card, và là token xám rất nhạt', () => {

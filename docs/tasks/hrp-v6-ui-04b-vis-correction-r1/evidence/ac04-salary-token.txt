@@ -1,0 +1,7 @@
+# AC-04: Salary pill bg-primary-fixed (not bg-surface-container-low)
+# VIS-02 change applied
+command: Select-String -Path src/domains/job-board/components/landing/featured-job-card.tsx -Pattern "bg-surface-container-low"
+result: 0 matches in salary pill context (PASS)
+
+command: Select-String -Path src/domains/job-board/components/landing/featured-job-card.tsx -Pattern "bg-primary-fixed"
+result: >=1 match (PASS)

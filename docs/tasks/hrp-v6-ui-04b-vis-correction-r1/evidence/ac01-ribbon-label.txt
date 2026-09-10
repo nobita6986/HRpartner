@@ -1,0 +1,7 @@
+# AC-01: Ribbon label "Tuyển gấp" (no uppercase, no tracking-wider)
+# Verification: Select-String pattern matches
+command: Select-String -Path src/domains/job-board/components/landing/featured-job-card.tsx -Pattern "TUYỂN GẤP|uppercase tracking-wider"
+result: 0 matches (PASS)
+
+command: Select-String -Path src/domains/job-board/components/landing/featured-job-card.tsx -Pattern "Tuyển gấp"
+result: >=1 match (PASS)

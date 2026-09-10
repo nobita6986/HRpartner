@@ -1,0 +1,10 @@
+# AC-03: Collision invariant - title never runs under ribbon
+# HrMonogram: w-16 h-16 = 64px
+# Ribbon: absolute top-0 right-0 ~56-64px corner
+# Title wrapper: pr-[64px] when badgeType === 'urgent' - reserves 64px right padding
+# Calculation: pr-[64px] >= ribbon width (56-64px) + buffer = safe zone maintained
+command: Select-String -Path src/domains/job-board/components/landing/featured-job-card.tsx -Pattern "w-16 h-16"
+result: >=1 match (PASS) - HrMonogram 64px confirmed
+
+command: Select-String -Path src/domains/job-board/components/landing/featured-job-card.tsx -Pattern "absolute top-0 right-0"
+result: >=1 match (PASS) - Ribbon corner confirmed

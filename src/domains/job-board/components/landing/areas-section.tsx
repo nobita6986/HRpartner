@@ -25,7 +25,8 @@ export function AreasSection({ areas, onPick }: AreasSectionProps) {
     >
       <div className="mx-auto w-full max-w-[1200px]">
         <div className="mb-8 flex flex-col gap-2">
-          <p className="font-label text-label-sm font-bold uppercase tracking-widest text-secondary-fixed">
+          {/* VIS-03: Eyebrow — text-primary-dark (sync with BestJobs eyebrow) */}
+          <p className="font-label text-label-sm font-bold uppercase tracking-widest text-primary-dark">
             Theo khu vực
           </p>
           <h2

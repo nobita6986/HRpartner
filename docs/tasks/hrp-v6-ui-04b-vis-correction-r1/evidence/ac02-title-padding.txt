@@ -1,0 +1,4 @@
+# AC-02: Title wrapper has pr-[64px] when badgeType === 'urgent'
+# Verification: Select-String pattern matches
+command: Select-String -Path src/domains/job-board/components/landing/featured-job-card.tsx -Pattern "pr-\[64px\]"
+result: >=1 match (PASS)

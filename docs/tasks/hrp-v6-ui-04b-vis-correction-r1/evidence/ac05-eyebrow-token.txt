@@ -1,0 +1,7 @@
+# AC-05: AreasSection eyebrow text-primary-dark (not text-secondary-fixed)
+# VIS-03 change applied
+command: Select-String -Path src/domains/job-board/components/landing/areas-section.tsx -Pattern "text-secondary-fixed"
+result: 0 matches (PASS)
+
+command: Select-String -Path src/domains/job-board/components/landing/areas-section.tsx -Pattern "text-primary-dark"
+result: >=1 match (PASS)

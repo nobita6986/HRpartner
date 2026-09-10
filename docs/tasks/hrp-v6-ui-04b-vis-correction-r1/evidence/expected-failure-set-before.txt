@@ -1,0 +1,7 @@
+# Expected unit failure set at baseline HEAD 465f811a2b311c0144db5078e5efaf43a20b37e8
+# npm run test:unit -- --reporter=json
+# Result: 1 failed test, 2 failed test suites, 1759 passed tests out of 1760 total
+# Exit code: 1 (non-zero due to pre-existing failure)
+
+Pre-existing failure: design-tokens.static.test.ts (RQ-04/AC-03 as documented in TASK.md)
+This is baseline expected failure count = 1

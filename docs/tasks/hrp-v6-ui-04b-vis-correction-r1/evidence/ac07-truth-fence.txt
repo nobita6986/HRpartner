@@ -1,0 +1,4 @@
+# AC-07: Truth fence - no fake data strings
+# Changed components do not contain fake strings
+command: Select-String -Path src/domains/job-board/components/landing/featured-job-card.tsx,src/domains/job-board/components/landing/areas-section.tsx -Pattern "Top công ty|Đối tác chính thức|Cơ hội mới|hiển thị số slot thật|Dự án trọng điểm|17\.800|13\.000\.000|\+10\.000\.000|\+50\.000\.000"
+result: 0 matches (PASS) - No fake data strings in changed components
