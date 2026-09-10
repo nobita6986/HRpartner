@@ -18,7 +18,7 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `FOCUSED` |
 | Spec version | `v1.1` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` (Tier 2 thi công 6/6 STEP, Tier 3 FOCUSED audit PASS 13/14 + AUD-001 P2 non-blocking, all gates PASS) |
 | Planner | `Tier 1` |
 | Baseline | `d3add63` — TASK A `ACCEPTED` HEAD (mốc tham chiếu) |
 | Execution HEAD | đo ngay trước STEP-01 bằng `git rev-parse HEAD` → `evidence/exec-head-before.txt` |
@@ -30,8 +30,8 @@
 | Forbidden paths | `prisma/**` (sang AV1), `src/shared/auth/permission-catalog.ts` (sang AV1), `prisma/seed.mjs` (sang AV1), `app/api/admin/homepage-settings/**` (sang AV1), `app/api/jobs/**` (KHÔNG mở scope filter URGENT — B4 đã đẩy sang AV1), `app/(jobs)/viec-lam/page.tsx` (KHÔNG inject listingPageSize — sang AV1), `app/(jobs)/viec-lam/[slug]/**` (sang Plan UI D.A), `app/admin/**` (sang AV1), `src/domains/job-board/public.service.ts` (KHÔNG đổi), `src/domains/job-board/public-settings.service.ts` (NEW sang AV1), `src/domains/job-board/public-types.ts` (NEW sang AV1), `app/globals.css` (chỉ thuộc TASK A scope; Plan B KHÔNG thêm class mới vì BestJobs tab/pagination dùng token hiện hữu), `app/admin/jobs/**` (sang Plan Admin V6 AV2), mọi file trong `docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/**` (Tier 1 plane — DEC-19) |
 | Required gates | `npm run typecheck` exit 0; `npm run test:unit -- public-card-truth` exit 0; `npm run test:unit` cùng expected failure set với baseline `d3add63` + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04b-pagination-admin/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS |
 | Visual gate | **Owner live review post-push** (DEC-18 chung — giữ override mới nhất). KHÔNG Edge/CDP/20 PNG/overlay/bbox markers; KHÔNG Lighthouse/pa11y/axe-core auto-install. Tier 3 KHÔNG audit visual; KHÔNG fail vì thiếu screenshot |
-| Current execution round | `1` (READY_FOR_AUDIT sau Tier 2 thi công 6/6 STEP; verify-task PASS, verify-handoff PASS WITH WARNINGS — 2 cosmetic warnings H-01 unstaged + H-15 Next gate stale) |
-| Next gate | `/audit → Tier 3 FOCUSED audit → /resolve → push Git → Owner live visual review post-deploy` |
+| Current execution round | `1` (READY_FOR_AUDIT → Tier 3 FOCUSED audit PASS 13/14 + AUD-001 P2 non-blocking → `/resolve` → ACCEPTED) |
+| Next gate | `/resolve → commit ACCEPTED → Owner live visual review post-deploy (AC-14, DEC-12)` |
 
 > **Phạm vi Plan B (verdict Tier 0 r1)**: Plan B là **UI thuần**. Tier 2 chỉ (1) refactor `BestJobsSection` để nhận props controls, (2) thêm state `bestJobsTab` + `bestJobsOffset` ở `app/(portal)/page.tsx` + fetch riêng `/api/jobs?limit=9&offset=...` cho tab Tất cả, (3) tạo `fixtures/best-jobs-urgent-preview.ts` cho tab URGENT (INTEGRATION_PENDING marker rõ). Tab URGENT KHÔNG gửi `urgency=URGENT` query lên server (chưa được hỗ trợ — sang AV1); chỉ hiển thị fixture + badge "Preview / Backend chưa hỗ trợ". Mọi backend (HomepageSettings schema, migration, permission, write API, Admin settings page, `/api/jobs?urgency`, listingPageSize injection, view-model `HomepageSettingsView`) **sang AV1 implementation task**.
 
@@ -252,7 +252,7 @@ Tier 1 append sau mỗi round.
 |---|---|---|
 | Round 0 (planning) | Tier 1 soạn `TASK.md` v1.0 với scope lẫn lộn UI/backend (schema + permission + read API trong Plan B) | Tier 0 chỉ thị mới 10/09/2026 + skeleton B + field-matrix §6–§9 + plan-admin-v6 §2. |
 | Round 1 (closeout) | Tier 0 verdict REVISION_REQUIRED: Plan B = UI thuần. Tier 1 sửa theo verdict: (1) lane CRITICAL → STANDARD/FOCUSED. (2) bỏ schema, permission catalog/seed, read API `GET /api/admin/homepage-settings`, write API, Admin settings page, listingPageSize injection, view-model `HomepageSettingsView` — toàn bộ sang AV1 implementation task. (3) B4: tab URGENT dùng fixture preview (INTEGRATION_PENDING marker) — KHÔNG gửi `urgency=URGENT` query lên server. (4) BestJobs fetch riêng qua `/api/jobs` hiện có cho tab Tất cả, KHÔNG dùng `overview.newest.slice(0, 3)` làm nguồn phân trang. (5) BestJobs pageSize = 9 hardcode literal truyền qua prop `pageSize: number = 9`. (6) Baseline reference = `d3add63` (TASK A ACCEPTED). Bump v1.1 → READY_FOR_EXECUTION. verify-task DRAFT-VALID | Tier 0 verdict REVISION_REQUIRED r1 — `evidence/tier0-review-task-b-v1.md`. |
-| Round 2 (sau execution) | Tier 2 thi công → verify-task PASS → verify-handoff PASS → Tier 3 FOCUSED audit → /resolve → push → Owner live visual review post-deploy | per §0 Next gate |
+| Round 2 (sau execution) | Tier 2 thi công 6/6 STEP → verify-task PASS → verify-handoff PASS → Tier 3 FOCUSED audit PASS 13/14 + AUD-001 P2 non-blocking → `/resolve` → Task `ACCEPTED` → Owner live visual review post-deploy (AC-14, DEC-12) | per §0 Next gate |
 
 ## 10. Revision Log
 
