@@ -115,14 +115,16 @@
 |---|---|---|
 | `AC-01` | GitHub Actions run mới nhất trên branch fix-worktree PASS ở `Prisma schema validate` step | GitHub Actions UI: ✅ xanh step |
 | `AC-02` | Local `npx prisma validate` exit 0 | Shell |
-| `AC-03` | Local `pnpm typecheck` exit 0 | Shell |
-| `AC-04` | Local `pnpm test:unit` exit 0 | Shell |
-| `AC-05` | Local `pnpm build` exit 0 | Shell |
+| `AC-03` | Local `npm run typecheck` exit 0 | Shell |
+| `AC-04` | Local `npm run test:unit` exit 0 | Shell |
+| `AC-05` | Local `npm run build` exit 0 | Shell |
 | `AC-06` | Diff scope chỉ trong `In-scope roots` (allowlist 3 files) | `git diff --name-only <baseline>..HEAD` |
 | `AC-07` | CI workflow file vẫn giữ `node-version: '22'` (hoặc Tier 0 chốt bump khác) | Diff inspection |
-| `AC-08` | Không có schema model/relation thay đổi (chỉ generator block nếu áp dụng) | `git diff prisma/schema.prisma` |
+| `AC-08` | Không có schema model/relation thay đổi (chỉ generator block nếu ápụng) | `git diff prisma/schema.prisma` |
 | `AC-09` | `verify-handoff.ps1` PASS | Shell |
 | `AC-10` | HANDOFF.md ghi rõ root cause + fix + CI run URL PASS | Manual review |
+| `AC-11` | **CI run #34509660710 Quality job step 6 `Prisma schema validate` = success** | `gh run view 34509660710 job 102980357457 step 6` ✅ PASS |
+| `AC-12` | Integration job ENV_BLOCKED được document rõ là expected theo RQ-07 fail-closed sentinel (cần DATABASE_URL_TEST secret); không phải lỗi fix | TASK.md `DEC-07` |
 
 ### 6.2 Traceability
 
@@ -144,6 +146,7 @@
 | `RISK-02` | Pin Prisma exact version phá vỡ dev environment khác | Chỉ áp dụng nếu STEP-02 fail; document trong HANDOFF |
 | `RISK-03` | CI vẫn fail sau fix | Revert commit; mở task CRITICAL lane riêng; KHÔNG tiếp tục trial-and-error |
 | `RISK-04` | Tier 0 cancel task (chọn defer) | Tier 1 đóng task với status `CANCELLED`, ghi note vào PLANNER_HANDOVER |
+| `RISK-05` | Lint debt (58 errors + 537 warnings) là pre-existing — không do fix-ci; CI Quality job chỉ hiện lên sau khi `Prisma schema validate` PASS | Mở task FAST riêng `hrp-v6-fix-ci-lint-debt-r1` (Tier 1 đề xuất) — escalate Tier 0 chốt; root cause candidates: (a) `.claude/worktrees/*/.next/**` chưa ignore, (b) `--max-warnings 0` policy chưa bật theo G0-04/RQ-03 spec |
 
 ## 8. Open Questions
 

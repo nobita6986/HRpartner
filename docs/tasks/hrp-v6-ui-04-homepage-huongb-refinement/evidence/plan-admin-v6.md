@@ -41,7 +41,12 @@ Ngày: 10/09/2026. Tier 1 khảo sát và khóa contract sớm.
 - Admin settings page: `app/admin/settings/page.tsx` (hiện placeholder)
 - Integration vào Plan UI B: homepage đọc `{bestJobsPageSize, listingPageSize}` từ API, fallback default
 
-> **Plan UI B v1.1 closeout (10/09/2026)**: Plan UI B (`hrp-v6-ui-04b-pagination-admin`) chỉ làm UI controls thuần (BestJobs tab + pagination + fixture URGENT preview). Toàn bộ backend dưới đây thuộc AV1 implementation task — Tier 1 lập `hrp-v6-admin-v6-av1-settings-editor` riêng sau khi Plan B `ACCEPTED`. Cụ thể:
+> **Current baseline correction (11/09/2026):** URGENT filtering/fetch is already
+> live and the preview fixture no longer exists. AV1 must preserve that behavior;
+> it owns HomepageSettings and page-size projection only. Historical Plan B/R3
+> notes below do not authorize reimplementing or reverting URGENT.
+>
+> AV1 implementation scope:
 > - Schema `HomepageSettings` + migration ADD-only + CHECK constraint `id = 'default'`
 > - `src/shared/auth/permission-catalog.ts`: thêm `CAN_EDIT_HOMEPAGE_SETTINGS` group SYSTEM + seed ADMIN trong `prisma/seed.mjs`
 > - `src/domains/job-board/public-types.ts` (NEW): export `HomepageSettingsDto`, `HomepageSettingsView`
@@ -49,12 +54,12 @@ Ngày: 10/09/2026. Tier 1 khảo sát và khóa contract sớm.
 > - `GET /api/public/homepage-settings` (public projection, NO auth) + `unstable_cache` tag `homepage-settings` + TTL 60s
 > - `POST /api/admin/homepage-settings` (ADMIN write) + `revalidateTag('homepage-settings')`
 > - `app/admin/settings/page.tsx` (Admin form)
-> - `/api/jobs` mở `urgency=URGENT` query (filter memory layer sau `q/area/shift/shiftTypes/jobTypes`, trước pagination) + tie-breaker `postedAt desc + id desc` + validate `limit` clamp
-> - `app/(portal)/page.tsx`: flip `featuredJobs` từ fixture preview sang `/api/jobs?urgency=URGENT&limit=N&offset=M` + replace prop `pageSize: number = 9` bằng view-model `HomepageSettingsView.settings?.bestJobsPageSize ?? 9`
+> - Giữ nguyên `/api/jobs?urgency=URGENT` và independent BestJobs fetch hiện có
+> - `app/(portal)/page.tsx`: thay hardcoded page size bằng `HomepageSettingsView.settings?.bestJobsPageSize ?? 9`
 > - `app/(jobs)/viec-lam/page.tsx`: inject `listingPageSize` từ view-model (fallback 12, range `[6..50]` clamp)
-> - Xóa file `src/domains/job-board/fixtures/best-jobs-urgent-preview.ts` (URGENT chuyển từ fixture preview sang data thật) — sau khi flip sang `source: 'REAL'`
-> 
-> Khi AV1 xong: UI B flip `source` từ `INTEGRATION_PENDING` sang `REAL`; `BestJobsSection` props refactor sang view-model; `featuredJobs` dùng fetch riêng có `urgency=URGENT`; sentinel load-more homepage search dùng `listingPageSize` từ settings.
+>
+> Khi AV1 xong: `BestJobsSection` nhận settings view-model mà không regress
+> live URGENT; listing/search dùng `listingPageSize` từ settings.
 
 ### 2.2 Schema
 
@@ -203,9 +208,16 @@ enum MediaStatus {
 
 ### 3.4 Sale scope enforcement
 
-Scope = `ProjectAssignment` table. Tier 2 verify chính xác field names trong `prisma/schema.prisma`:
-- Check `staffingOrder.projectId` có trong user's assignment set
-- ADMIN bypass scope check
+`ProjectAssignment` là quan hệ Worker làm việc tại Project, không phải quyền
+SALE biên tập nhu cầu. Cấm dùng bảng này để suy ra editorial ownership.
+
+Trước khi AV2 write API READY, Tier 1 phải khóa một scope contract V7-compatible:
+
+- ADMIN có command permission toàn cục;
+- SALE chỉ sửa draft thuộc explicit Project/Account responsibility;
+- nếu repo chưa có authority này, thêm minimal `ProjectResponsibility`
+  foundation tương thích V7.8 hoặc giữ SALE write disabled cho đến khi authority tồn tại;
+- không dùng `Worker.ownerId`, current handler hay PM relation làm surrogate cho SALE.
 
 ---
 
