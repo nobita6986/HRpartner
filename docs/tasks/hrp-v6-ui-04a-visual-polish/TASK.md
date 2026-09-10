@@ -14,7 +14,7 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `FOCUSED` |
 | Spec version | `v1.1` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` (Tier 2 thi công 10/10 STEP, Tier 3 FOCUSED audit PASS 21/21, all gates PASS) |
 | Planner | `Tier 1` |
 | Plan overview | `docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/plan-overview.md` |
 | Field matrix | `docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/field-matrix.md` |
@@ -27,8 +27,8 @@
 | Forbidden paths | `prisma/**`, `src/domains/job-board/public.service.ts`, `src/lib/auth/**`, `src/lib/db/**`, `src/domains/job-board/apply-modal/**`, `src/domains/job-board/success-modal/**`, route `/viec-lam/[slug]/**` (NGOÀI SCOPE — sang TASK D.A ở Plan UI; editor sang Plan Admin V6), `app/admin/**`, schema/database/file MIGRATION bất kỳ. **KHÔNG** `app/api/jobs/route.ts` (Tier 0 đã đóng query URGENT khỏi Plan UI; sang AV1 V6) |
 | Required gates | `npm run typecheck` exit 0; `npm run test:unit -- public-card-truth` exit 0; full `npm run test:unit` cùng expected failure set đo tại exec-head-before + new failure count = 0; `npm run build` exit 0; `verify-task.ps1` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS |
 | Visual gate | **Owner live review post-push** (DEC-11 chung — giữ override mới nhất). KHÔNG Edge/CDP/20 PNG/overlay/bbox markers; KHÔNG Lighthouse/pa11y/axe-core auto-install. Tier 3 KHÔNG audit visual; KHÔNG fail vì thiếu screenshot. |
-| Current execution round | `0` (READY_FOR_EXECUTION sau khi Tier 1 chuyển) |
-| Next gate | `/code → Tier 2 thi công → verify-task PASS → verify-handoff PASS → Tier 1 trình /audit → Tier 3 FOCUSED audit → /resolve → push Git → Owner live visual review post-deploy` |
+| Current execution round | `1` (READY_FOR_AUDIT after Tier 2 thi công → Tier 3 FOCUSED audit **PASS 21/21** với 2 cosmetic warnings only) |
+| Next gate | `/resolve → commit ACCEPTED → Owner live visual review post-deploy (AC-19, DEC-18)` |
 
 > **Nguyên tắc UI-04A**: thay đổi JSX/class/style của homepage shell, Navbar, Footer, Hero search wrapper (A16), BestJobs card, Recruiting card. Mọi container/padding đồng bộ 1200px ở các landing component được phép sửa thuần (xem OBR-02). KHÔNG đụng schema/permission/DTO/persistence/API write — đó là Plan Admin V6.
 
@@ -290,7 +290,8 @@ Tier 1 sẽ append sau mỗi round.
 |---|---|---|
 | Round 0 (planning) | Tier 1 soạn `TASK.md` canonical tại `docs/tasks/hrp-v6-ui-04a-visual-polish/TASK.md`. Plan cha `hrp-v6-ui-04-homepage-huongb-refinement/` chỉ chứa plan overview, field matrix, skeleton, owner approval. Tách Plan UI A→B→C→D và Plan Admin V6 (AV1..AV5) | Tier 0 chỉ thị mới 10/09/2026. |
 | Round 1 (closeout) | Tier 1 sửa đúng 5 nhóm theo Tier 0 review v1: (1) tách plan — gộp B schema/admin write, D.B editor sang Plan Admin V6 ngay; UI B chỉ controls/view-model INTEGRATION_PENDING. (2) container scope mở rộng cho phép Tier 2 sửa Areas/CTV/Footer thuần padding. (3) baseline reference + execution HEAD; Tier 1 sở hữu TASK.md canonical, Tier 2 HANDOFF/evidence. (4) gate: STEP IDs split tường minh; ACs document review cụ thể; rg PowerShell pattern đúng; AC-10/AC-15 thu hẹp scope; số AC match Required gates. (5) logo 64px outer 1 lớp + token thực + contrast thực đo. Bump v1.1 → READY_FOR_EXECUTION. verify-task DRAFT-VALID (1 warning). | Tier 0 verdict REVISION_REQUIRED r1. |
-| Round 2 (sau execution) | Tier 2 thi công → verify-task PASS → verify-handoff PASS → Tier 3 FOCUSED audit → push → Owner live review post-deploy | per §0 Next gate |
+| Round 2 (sau execution) | Tier 2 thi công → verify-task PASS → verify-handoff PASS → Tier 3 FOCUSED audit PASS 21/21 → Task `ACCEPTED` → Owner live visual review post-deploy (AC-19, DEC-18) | per §0 Next gate |
+| Round 3 (resolve) | Tier 1 bump status TASK.md → `ACCEPTED`, Next gate → `/resolve → commit → Owner live visual review`. Tier 3 evidence: audit report `agent-transcripts/9e5060da-c10f-451a-af40-8cf6d61856fd/subagents/02ca676b-1595-42fc-b4ce-d1f368d041b2.jsonl`. | Tier 3 verdict PASS |
 
 ## 10. Revision Log
 
