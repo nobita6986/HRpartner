@@ -25,11 +25,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      # Dummy, non-secret URL so `prisma generate/validate` and `next build` can read the
+      # Dummy, non-secret URLs so `prisma generate/validate` and `next build` can read the
       # datasource env WITHOUT a real database. Prisma connects lazily (on first query), and
       # none of these steps issues one — nothing ever dials localhost. The unit lane ignores
       # this entirely: vitest.unit.config.ts FORCES an unreachable sentinel of its own.
+      # Both DATABASE_URL (pooled writer) and DATABASE_URL_ADMIN (Prisma migrate / directUrl
+      # DDL) are required by prisma/schema.prisma at validation time; the dummy values just
+      # satisfy env(...) lookup — they are never dialed in CI (see schema.prisma:30).
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_dummy
+      DATABASE_URL_ADMIN: postgresql://ci:ci@localhost:5432/ci_dummy
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
