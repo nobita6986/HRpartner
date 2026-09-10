@@ -220,6 +220,8 @@ origin/main HEAD: 3209e23  (đồng bộ local main)
 - ❌ Lúc đầu viết TASK DRAFT `hrp-v6-fix-ci-prisma-validate` rồi dừng chờ Tier 0 chốt DEC-01..05 — sai nguyên tắc "không dừng sau khi viết TASK nếu outcome đã cho phép". Sau khi owner nói "làm luôn" mới tự khảo sát + tìm root cause thật (P1012 DATABASE_URL_ADMIN).
 - ❌ **R4 UI04c1** dùng `justify-between gap-0` cho column flex — sai. Với 4-7 items trong cột, `justify-between` tạo khoảng trống top↔bottom quá lớn. Pattern đúng: spacing natural (`gap-y-N`) hoặc `justify-start` + manual `mt-auto`.
 - ❌ **R5 UI04c1** giữ nested `<div>` cho 4 contact items trong cột 1 — sai. Cấu trúc 2 cấp DOM tạo visual gap không đều giữa ranh giới cấp (12px outer + 8px inner). Pattern đúng: **flatten** items flat ngang cấp DOM nếu cùng ngữ nghĩa siblings, KHÔNG group bằng nested div trừ khi cần style riêng (border, background).
+- ❌ **R5+R6 UI04c1 chưa PAUSE hỏi Owner sớm** — em đoán 2 lần (R4 `justify-between`, R5 keep nested) trước khi Owner pick `refactor-struct` ở AskQuestion R5->R6. Lần sau có 2 thất bại liên tiếp trên cùng scope → PAUSE hỏi Owner trước khi edit tiếp.
+- ⚠️ **AC-OBSOLETE: ac06-helper-text.txt (task r2)** — R7 (Owner 11/09 01:13 bỏ helper text) làm AC-06 verification trở thành stale. KHÔNG sửa file evidence (đó là history); ghi note vào lesson log này. Pattern: khi bỏ text đã có trong AC verification, reference "AC-OBSOLETE: <task>/<file>" để sau này tra cứu biết status.
 
 ### 5.3 Pattern đúng cho task FAST (UI thuần)
 
