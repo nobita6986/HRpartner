@@ -1,155 +1,125 @@
-# Cut plan — `hrp-v6-ui-04-homepage-huongb-refinement`
+# Cut Plan — UI-04 Homepage Refinement + Admin V6 + Detail Page
 
-Ngày: 10/09/2026. Đề xuất Tier 1. Chờ Owner duyệt trước khi viết TASK.md contract.
+Ngày: 10/09/2026. **CẬP NHẬT** theo Tier 0 chỉ thị mới (`docs/prompts/TIER0_UI04_OWNER_DECISIONS_AND_HOME_CONTENT.md`).
 
----
-
-## 1. Lát cắt đề xuất
-
-Tier 1 đề xuất **2 giai đoạn** (cắt theo dependency thật):
-
-### Phase A — Visual Polish (STANDARD / FOCUSED audit)
-
-Mục tiêu: đạt visual parity với reference ở những phần không cần thay đổi contract data/pagination.
-
-**In-scope**:
-- Nhóm 1: Navbar typography (N1.4, N1.6, N1.9, N1.10), logo–menu spacing (N1.8), container width (N1.1–N1.3)
-- Nhóm 2: Card style (BJ2, BJ3, BJ4, BJ5, BJ8, BJ9, BJ14), section header (BJ13, BJ14)
-- Nhóm 3: Recruiting card style (RP2, RP3, RP5, RP9, RP10)
-- Regression check: navbar dùng chung trên tất cả route portal
-
-**Out-of-scope Phase A**:
-- Pagination thật (BJ16, BJ17)
-- Tab filter (BJ11, BJ12)
-- Admin settings / persistence (Nhóm 4)
-- Tag tùy biến (DEFER)
-- "Xem tất cả" link (BJ13) — có thể làm sau nhưng trong Phase A cho đơn giản
-
-**Đặc điểm Phase A**:
-- Không chạm API/service/DTO/persistence
-- Không thêm schema/database
-- No new dependencies
-- No new permissions/auth changes
-- Only JSX/class/style changes
-
-**Gates Phase A**:
-- `npm run typecheck` exit 0
-- `npm run test:unit -- public-card-truth` PASS
-- `npm run test:unit` (expected failure set = baseline + new failure count = 0)
-- `npm run build` exit 0
-- Visual parity: **Owner live review** (post-push, same as UI-03)
+> Tier 0 đã thay cách chia: tách 2 plan (UI public riêng, Admin V6 riêng). Bản cut-plan cũ (gộp Phase A+B) **bị loại bỏ** vì mâu thuẫn với chỉ thị mới.
 
 ---
 
-### Phase B — Pagination thật + Admin Config (CRITICAL)
+## 1. Tóm tắt thay đổi so với bản cũ
 
-Mục tiêu: pagination thật ở BestJobs + cấu hình Admin.
-
-**In-scope Phase B**:
-- Nhóm 2: Tab filter `Tất cả` / `Tuyển gấp` (BJ11, BJ12)
-- Nhóm 2: Prev/Next pagination control (BJ16)
-- Nhóm 2: Admin-configured page size persistent (BJ17, Nhóm 4 AS1–AS7)
-- API contract: thêm endpoint `/api/admin/homepage-settings` (GET/POST) — cần Prisma schema mới
-- Fence tests cập nhật (nếu Phase A làm thay đổi test)
-
-**Đặc điểm Phase B**:
-- Có schema/database migration (CRITICAL lane)
-- Có new API endpoint (CRITICAL lane)
-- Có new permission check (CRITICAL lane)
-- Admin persistence
-
-**Đặc điểm Phase B — Deferred**:
-- Tag tùy biến do Admin tạo (AS8) — tách sang UI-05 sau
-
----
-
-## 2. Đề xuất Owner chọn lát cắt
-
-| Option | Mô tả | Ưu điểm | Nhược điểm |
-|---|---|---|---|
-| **A only** | Chỉ visual polish (không pagination thật, không admin config) | Nhanh, ít rủi ro, chỉ là JSX/style | Không đạt được yêu cầu "pagination thật" và "số tin mỗi trang do Admin cấu hình" |
-| **A + B** | Visual polish + pagination thật + admin config trong 1 task | Đạt mọi yêu cầu Owner, review 1 lần | Dài hơn, rủi ro CRITICAL lane (migration + permission) |
-| **B only** | Skip visual polish, chỉ pagination + admin config | Owner đã duyệt UI-03 visual | Bỏ qua visual gap N1/N2/N3, user thấy navbar/logovẫn chưa khớp ref |
-| **A → B sequential** | Visual polish trước, rồi pagination+admin | Đạt mọi yêu cầu, review theo phase | 2 task, 2 lần Owner review, 2 lần audit |
-
-**Tier 1 đề xuất**: **A + B trong 1 task CRITICAL**
-- Lý do: pagination + admin config phụ thuộc data flow từ service (đã có `overview.newest`/`overview.topPaid` làm source), và schema mới cần chạy migration 1 lần
-- Phân tách A và B ra 2 task → Tier 2 phải chạy lại test migration 2 lần
-- Nếu Owner muốn nhanh → chỉ làm Phase A trước (nhưng nhận nhược điểm)
-
----
-
-## 3. Lý do cắt theo cách này
-
-### Tại sao KHÔNG tách Phase A và Phase B hoàn toàn riêng?
-
-1. **BestJobs card visual changes (BJ3, BJ4, BJ8, BJ9)** ảnh hưởng trực tiếp đến `featured-job-card.tsx` — nếu đổi card trong Phase A rồi đổi lại trong Phase B, sẽ có 2 round chỉnh card cùng 1 file
-2. **Fence tests** phải cập nhật sau cả 2 phase — tách 2 task → 2 lần cập nhật test cùng file
-3. **Admin settings form** cần thêm vào `/admin/settings` — đã touch `/admin/settings/page.tsx` nên merge vào 1 task
-
-### Tại sao visual polish KHÔNG thuộc UI-03?
-
-- UI-03 đã push (`4d9a633`) — không tự revert
-- Navbar hiện tại (`max-w-[1600px]`, `h-20`, `font-medium`) khác với reference (`max-w-7xl`, `h-16`, `font-label-md`)
-- Những gap này không phải "lỗi" UI-03 mà là refinement mới
-- Owner prompt §1 gọi đích danh "chỉnh navbar" → đây là task mới
-
-### Tại sao tag tùy biến DEFER?
-
-- Chưa có data model (Admin tạo tag → gán vào JobPosting/JobOpening → hiển thị trên card)
-- Chưa có permission (ai được tạo tag? ai được gán? ai thấy?)
-- Schema impact lớn (cần `JobTag`, `Tag`, `JobTagAssignment` hoặc tương đương)
-- Owner prompt §2 nói "Tag tùy biến là yêu cầu tương lai" → DEFER hợp lý
-
----
-
-## 4. Dependency map
-
-```
-Phase A (Visual Polish)
-├── GlobalNavbar.tsx → N1.1–N1.15
-├── featured-job-card.tsx → BJ2–BJ5, BJ8, BJ9
-├── best-jobs-section.tsx → BJ13, BJ14
-├── recruiting-projects-section.tsx → RP2, RP3, RP5, RP9, RP10
-└── Regression: tất cả route portal (navbar dùng chung)
-
-Phase B (Pagination + Admin)
-├── Phase A outputs (featured-job-card, best-jobs-section đã polish)
-├── Schema migration: HomepageSettings table (singleton id=1)
-├── API: GET/POST /api/admin/homepage-settings
-├── Service: getHomepageSettings() + updateHomepageSettings()
-├── Page.tsx: thêm state cho tab filter + pagination control + fetch settings
-├── best-jobs-section.tsx: nhận page/tab props → fetch riêng
-├── Fence tests: update (DEC-13/DEC-14 allowlist)
-└── Admin settings page: thêm form "Cấu hình Homepage"
-```
-
----
-
-## 5. Fence test strategy
-
-Tier 2 (trong task này) sẽ cần cập nhật fence tests sau khi visual changes + pagination changes. Allowlist cho sửa test:
-
-| Test file | Reason |
+| Trước | Sau |
 |---|---|
-| `public-ui-premium.static.test.ts` | Phase A: card shape/theming đổi (BJ3, BJ4, BJ8, BJ9), Phase B: tab filter thêm |
-| `public-ui-token-parity.static.test.ts` | Phase A: class density đổi |
-| `public-card-truth.test.ts` | Phase A: BestJobs card content/theming đổi |
-| `marketplace-inventory.static.test.ts` | Phase A: salary label style đổi (BJ9) |
-| `public-listing.static.test.ts` | Phase B: listing pagination behavior có thể đổi |
-
-Cần Tier 1 confirm với Owner về DEC-13 (mở rộng allowlist) khi viết TASK.md contract.
+| Phase A (visual) + Phase B (pagination+admin) trong 1 task CRITICAL | **2 plan độc lập**: Plan UI (A→B→C→D) và Plan Admin V6 |
+| Admin settings mở ngay trong Phase B | Admin editor/permission/schema tách sang Plan Admin V6 (không mở schema qua task UI style) |
+| Tag tùy biến chưa chốt | **DEFER sang Plan Admin V6 #3** theo lộ trình V6 |
+| Trang chi tiết chưa đề cập | **Task D.A (UI) + Task D.B (Editor)** — UI trước, editor sau |
+| Chỉ lo BestJobs + Navbar + Recruiting | **A→B→C→D** thêm sections: Việc làm mới nhất, Giới thiệu HRP, Dải đối tác, Tin tức, Banner mobile, chi tiết |
+| A11=engineering, A12=56px | A11=`apartment` trong vòng tròn nhẹ, A12=giữ monogram **64px** |
+| A14=`{n} vị trí đang mở` | A14=**`Cần tuyển {n} người`** (n = availableSlots) |
+| A13=copy "dự án trọng điểm" | A13=bỏ cả eyebrow + sub-heading; chỉ heading/icon. KHÔNG thêm claim "dự án trọng điểm" |
+| B2=`URGENT \|\| CLOSING` | B2=**chỉ URGENT** (CLOSING = sắp đóng/hết hạn, không tự nhập chung Tuyển gấp) |
+| B5=default 3, B6={3,6,9,12} | B5=**default 9** (3 hàng × 3 desktop theo demo1), B6=**{3,6,9,12}** |
+| B8=[6..50] | B8=**integer [6..50]** — lựa chọn mật độ, không bảo đảm tránh trang rỗng |
+| B10=Singleton `@default("default") @unique` | B10=singleton + **invariant DB** (CHECK constraint id='default', validation, missing row handling, concurrent update, cache invalidation) |
+| B11=ADMIN hoặc SUPER_ADMIN | B11=**ADMIN thuần qua cơ chế hiện có**, server-side. KHÔNG phát minh SUPER_ADMIN |
+| B4=mở API/service để filter URGENT | **OK** — mở scope `/api/jobs` cho filter URGENT trước pagination, giữ invariant eligibility/public projection và backward compatibility; KHÔNG client-filter một trang/overview 6 tin |
+| B13=CRITICAL quét toàn repo | **CRITICAL sâu trên changed surface**, không quét toàn repo |
+| B7/B9=mơ hồ | **Phân biệt rõ**: homepage search `append/load-more` (giữ); SSR `/viec-lam` có pagination URL (`listingPageSize` áp dụng cả hai bằng cách kiểm tra loader); giữ navigation riêng hiện có + metadata/URL SSR; KHÔNG biến SSR thành append |
+| (chưa có) | **A16 search card nền trắng** (mới) |
 
 ---
 
-## 6. Non-goals giữ nguyên từ UI-03
+## 2. Plan tổng thể — 2 plan độc lập
 
-- Không thay đổi `src/domains/job-board/public.service.ts` (DTO contract cố định)
-- Không thay đổi `/api/jobs/route.ts` (chỉ thêm config endpoint mới ở Phase B)
-- Không thay đổi `ApplyModal` / `SuccessModal`
-- Không thay đổi route `/viec-lam/{code}`
-- Không thay đổi `Hero` search card (trừ container width đồng bộ)
-- Không thay đổi Areas section (không nằm trong Owner mandate)
-- Không thay đổi ReferralStrip / CTV section
-- Không thay đổi Footer structure
-- Không thêm logo công ty / "Đối tác chính thức" vào recruiting section
+### Plan UI (public) — Tier 1 viết TASK A ngay
+
+Chuỗi **A → B → C → D tuần tự**, một Tier 2 stream:
+
+#### Task A — Visual Polish + A16 Search Card Trắng (STANDARD/FOCUSED)
+- Navbar: container 1200px, h-16, login text link, logo+menu gom cụm
+- BestJobs: logo rounded-xl+border+bg-white 64px, ribbon sát góc + icon, salary thanh rộng + icon, section icon `local_fire_department`+circle, "Xem tất cả" `/viec-lam`
+- Recruiting: icon `apartment`+vòng tròn nhẹ, monogram 64px, **bỏ eyebrow + bỏ sub-heading**, copy `Cần tuyển {n} người`
+- **A16: search card nền trắng** (bỏ glass, dùng `bg-white`, label tối, CTA cam)
+
+#### Task B — Pagination + Admin Config read-only (CRITICAL)
+- Tab BestJobs: Tất cả / Tuyển gấp (CHỈ URGENT)
+- Pagination prev/next, fetch riêng `/api/jobs`
+- Homepage page size default 9, range {3,6,9,12}
+- Listing page size default 12, range [6..50]
+- Schema `HomepageSettings` singleton với invariant DB
+- Admin write API + ADMIN permission
+
+#### Task C — Section Renderer + Demo Content (STANDARD/FOCUSED)
+- Thứ tự homepage: navbar → hero/search → BestJobs → Dự án → **Việc làm mới nhất** → Khu vực → **Giới thiệu HRP** → **Dải đối tác** → CTV → **Tin tức** → **Banner mobile** → Footer
+- Demo content có cấu trúc + nhãn "Demo"/"Minh họa"
+- UI_READY / INTEGRATION_PENDING seam
+
+#### Task D — Detail Page + Editor Admin/Sale
+- **D.A (UI, STANDARD)**: nâng cấp `/viec-lam/[slug]/page.tsx` với editorial sections (gallery, intro, benefits, requirements, sidebar company, related jobs, CTA)
+- **D.B (Editor, CRITICAL)**: schema editorial fields, draft/preview/publish, Sale scope, ADMIN publish, media management
+
+### Plan Admin V6 — Sau Plan UI
+
+1. Editor tin Admin/Sale (D.B + mở rộng)
+2. CMS homepage content (Plan C sections)
+3. Tag tùy biến (DEFER sau UI-05)
+4. Media management
+5. Cache invalidation + integration test
+
+**Exit gate**: Admin/Sale nhập → lưu → preview → publish → public hiển thị đúng.
+
+---
+
+## 3. Chuỗi thực thi
+
+Tier 1 soạn TASK A ngay, không chờ thêm quyết định.
+
+```
+[A] ──┬──> [B] ──┬──> [C] ──┬──> [D.A] ──> [D.B]
+      │         │         │
+      └─────────┴─────────┴──> [Plan Admin V6] (sau khi D.A xong)
+```
+
+Một Tier 2 stream; không mở song song hai plan.
+
+---
+
+## 4. Phân lane
+
+| Task | Lane | Audit mode |
+|---|---|---|
+| A | STANDARD | FOCUSED |
+| B | CRITICAL | DEEP sâu schema/permission changed surface |
+| C | STANDARD | FOCUSED |
+| D.A | STANDARD | FOCUSED |
+| D.B | CRITICAL | DEEP sâu schema/permission/API changed surface |
+| Plan Admin V6 (các sub-task) | CRITICAL | DEEP sâu schema/permission/API |
+
+**Nguyên tắc**: chỉ nâng CRITICAL vì có migration/auth. UI thuần không tự nâng CRITICAL.
+
+---
+
+## 5. Out-of-scope tổng
+
+- Không thay `public.service.ts` ngoài scope B4/D.B
+- Không thay `ApplyModal` / `SuccessModal` / `DetailApplyCta` ngoài style đồng bộ
+- Không thay `/admin/settings` ở Phase A/B (chỉ thêm ở D.B nếu cần)
+- Không CMS tag tùy biến ở Plan UI
+- Không mở 2 Tier 2 stream song song
+
+---
+
+## 6. Visual gate
+
+Owner live review post-push. KHÔNG phục hồi Edge/CDP/PNG/bbox markers cũ.
+
+---
+
+## 7. References
+
+- Tier 0 chỉ thị mới: `docs/prompts/TIER0_UI04_OWNER_DECISIONS_AND_HOME_CONTENT.md`
+- Field matrix: `evidence/field-matrix.md`
+- Owner approval checklist (28 quyết định, cập nhật theo Tier 0): `evidence/OWNER_APPROVAL_REQUIRED.md`
+- Gap matrix gốc: `evidence/gap-matrix.md`
+- Bản plan tổng thể: `evidence/plan-overview.md`

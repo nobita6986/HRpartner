@@ -1,449 +1,340 @@
 # Owner Approval Required — UI-04 Homepage Refinement
 
-Ngày: 10/09/2026. **Cần Owner ký trước khi Tier 1 viết TASK.md.**
+Ngày: 10/09/2026. **CẬP NHẬT** theo Tier 0 chỉ thị mới (`docs/prompts/TIER0_UI04_OWNER_DECISIONS_AND_HOME_CONTENT.md`).
 
-Tier 1 đề xuất 2 task riêng:
-- **UI-04A**: Visual Polish (navbar + card styling)
-- **UI-04B**: Pagination thật + Admin Config
+> Các quyết định hình thức và nội dung giữ nguyên từ ký lần trước; chỉ điều chỉnh theo hướng dẫn mới và **tách 2 plan độc lập** (UI public vs Admin V6) với chuỗi A→B→C→D.
 
----
-
-## Task A — Visual Polish (`hrp-v6-ui-04a-visual-polish`)
-
-### Quyết định A1 — Container max-width
-
-Navbar + toàn bộ section container dùng `max-width` bao nhiêu?
-
-| Chọn | Giá trị | Ghi chú |
-|---|---|---|
-| ⬜ | **1200px** | ~`max-w-[1200px]`, Owner prompt §1 đề xuất |
-| ⬜ | 1140px | `max-w-[1140px]` |
-| ⬜ | 1280px | `max-w-[1280px]` ≈ `max-w-7xl` (khớp reference code.html) |
-| ⬜ | Giữ 1600px | Không thay đổi |
-
-**Tier 1 đề xuất**: ⬜ **1200px** (Owner prompt §1)
+> Tier 1 soạn TASK A ngay, không cần hỏi lại các quyết định đã chốt.
 
 ---
 
-### Quyết định A2 — Navbar height
+## Task A — Visual Polish + Search Card Trắng
 
-| Chọn | Giá trị | Ghi chú |
-|---|---|---|
-| ⬜ | **h-16 (64px)** | Khớp reference code.html |
-| ⬜ | Giữ h-20 (80px) | Hiện tại |
+### A1 — Container max-width
 
-**Tier 1 đề xuất**: ⬜ **h-16**
+| Chọn | Giá trị |
+|---|---|
+| ✅ | **1200px chính xác** (Owner điều chỉnh: không ghi tương đương 1280px. Padding nằm trong chiều rộng border-box.) |
 
----
+### A2 — Navbar height
 
-### Quyết định A3 — Login button style
+| Chọn | Giá trị |
+|---|---|
+| ✅ | h-16 (64px) |
 
-Nút "Đăng nhập" ở navbar phải thay đổi thành text link hay giữ nguyên?
+### A3 — Login button style
 
-| Chọn | Style | Ghi chú |
-|---|---|---|
-| ⬜ | **Text link** | `font-label-md text-label-md text-on-surface hover:text-primary-container` — khớp reference code.html |
-| ⬜ | Giữ outline button | `hrp-btn-outline` như hiện tại |
+| Chọn | Style |
+|---|---|
+| ✅ | Text link (`font-label-md text-label-md text-on-surface hover:text-primary-container`) |
 
-**Tier 1 đề xuất**: ⬜ **Text link**
+### A4 — Logo spacing trong navbar
 
----
+| Chọn | Layout |
+|---|---|
+| ✅ | Logo + menu cùng cụm trái, auth cụm phải (`flex items-center gap-8`) |
 
-### Quyết định A4 — Logo spacing trong navbar
+### A5 — BestJobs logo border/padding
 
-Logo và menu gom cùng cụm bên trái hay để `justify-between` như hiện tại?
+| Chọn | Style |
+|---|---|
+| ✅ | `w-16 h-16 rounded-xl border border-outline-variant p-2 bg-white` — khớp reference |
 
-| Chọn | Layout | Ghi chú |
-|---|---|---|
-| ⬜ | **Logo + menu cùng cụm trái, auth cụm phải** | `flex items-center gap-8` — khớp reference |
-| ⬜ | Giữ `justify-between` như hiện tại | Khoảng trống lớn giữa logo và menu |
+### A6 — Ribbon style trên BestJobs card
 
-**Tier 1 đề xuất**: ⬜ **Gom cụm**
+| Chọn | Style |
+|---|---|
+| ✅ | Sát góc `absolute top-0 right-0 rounded-bl-lg bg-primary-container text-white flex items-center gap-1` + `local_fire_department` icon 14px |
 
----
+### A7 — Salary bar trên BestJobs card
 
-### Quyết định A5 — BestJobs logo border/padding
+| Chọn | Style |
+|---|---|
+| ✅ | `bg-surface-container-low rounded-xl p-3 flex items-center justify-center gap-2` + `payments` icon 20px |
 
-Logo trên card BestJobs đổi style theo reference?
+### A8 — Salary unit
 
-| Chọn | Style | Ghi chú |
-|---|---|---|
-| ⬜ | **rounded-xl + border + bg-white** | `w-16 h-16 rounded-xl border border-outline-variant p-2 bg-white` — khớp reference code.html |
-| ⬜ | Giữ HrMonogram nguyên bản | Không thêm border/bg |
+| Chọn | Đơn vị |
+|---|---|
+| ✅ | **đ/giờ** (giữ nguyên, không quy đổi sang tháng) |
 
-**Tier 1 đề xuất**: ⬜ **rounded-xl + border + bg-white**
+### A9 — Section header icon BestJobs
 
----
+| Chọn | Icon |
+|---|---|
+| ✅ | `local_fire_department` trong `w-10 h-10 bg-secondary-container rounded-full flex items-center justify-center` |
 
-### Quyết định A6 — Ribbon style trên BestJobs card
+### A10 — "Xem tất cả" link
 
-Ribbon "Tuyển gấp" trên card đổi sang style sát góc theo reference?
+| Chọn | Hành vi |
+|---|---|
+| ✅ | Có — link đến `/viec-lam` (route listing thật đã kiểm tra) |
 
-| Chọn | Style | Ghi chú |
-|---|---|---|
-| ⬜ | **Sát góc trên-phải + có icon** | `absolute top-0 right-0 rounded-bl-lg bg-primary-container text-white flex items-center gap-1` + `local_fire_department` icon 14px — khớp reference |
-| ⬜ | Giữ pill tròn hiện tại | `rounded-full` ở góc trên-phải, không icon |
+### A11 — Recruiting section icon
 
-**Tier 1 đề xuất**: ⬜ **Sát góc + icon**
+| Chọn | Icon |
+|---|---|
+| ✅ | **`apartment` trong vòng tròn nhẹ** (điều chỉnh — gần hình thức demo, vẫn gọi "Dự án đang tuyển") |
 
----
+### A12 — Recruiting logo size
 
-### Quyết định A7 — Salary bar trên BestJobs card
+| Chọn | Size |
+|---|---|
+| ✅ | **Giữ monogram 64px**, đặt trong vùng nhận diện thoáng. **Không dùng nhận định chưa đo "Foxconn 56px"** làm evidence. Không nhân bản border hai lớp. |
 
-Thanh lương đổi thành thanh rộng theo reference?
+### A13 — Recruiting eyebrow / sub-heading
 
-| Chọn | Style | Ghi chú |
-|---|---|---|
-| ⬜ | **Thanh rộng + icon payments** | `bg-surface-container-low rounded-xl p-3 flex items-center justify-center gap-2` + `payments` icon 20px — khớp reference |
-| ⬜ | Giữ pill nhỏ như hiện tại | `rounded-full px-3 py-1 inline-flex` |
+| Chọn | Xử lý |
+|---|---|
+| ✅ | **Bỏ cả eyebrow + bỏ sub-heading**, chỉ heading + icon. Không thêm claim "dự án trọng điểm" khi chưa có căn cứ. |
 
-**Tier 1 đề xuất**: ⬜ **Thanh rộng + icon**
+### A14 — Recruiting slot copy
 
----
+| Chọn | Copy |
+|---|---|
+| ✅ | **`Cần tuyển {n} người`**, với `n = availableSlots`. Slot là số người cần, không phải số chức danh/vị trí khác nhau. |
 
-### Quyết định A8 — Salary unit
+### A15 — Audit mode Task A
 
-Đơn vị lương hiển thị `đ/giờ` hay `đ/tháng`?
+| Chọn | Mode |
+|---|---|
+| ✅ | STANDARD / FOCUSED |
 
-| Chọn | Đơn vị | Ghi chú |
-|---|---|---|
-| ⬜ | **đ/giờ** | Dữ liệu là lương giờ — giữ nguyên. Owner prompt §2 cấm quy đổi giờ→tháng. |
-| ⬜ | đ/tháng | Quy đổi theo tỷ lệ (không khuyến khích) |
+### A16 — Search card nền trắng (mới)
 
-**Tier 1 đề xuất**: ⬜ **đ/giờ**
-
----
-
-### Quyết định A9 — Section header icon BestJobs
-
-| Chọn | Icon | Ghi chú |
-|---|---|---|
-| ⬜ | **local_fire_department + circle** | `w-10 h-10 bg-secondary-container rounded-full flex items-center justify-center` + `local_fire_department` — khớp reference |
-| ⬜ | Giữ `workspace_premium` hiện tại | |
-
-**Tier 1 đề xuất**: ⬜ **local_fire_department + circle**
-
----
-
-### Quyết định A10 — "Xem tất cả" link trên BestJobs
-
-Có thêm link "Xem tất cả" ở header BestJobs không?
-
-| Chọn | Hành vi | Ghi chú |
-|---|---|---|
-| ⬜ | **Có** | Link đến route `/viec-lam` (listing page thật) |
-| ⬜ | Không | Giữ nguyên |
-
-**Tier 1 đề xuất**: ⬜ **Có**
+| Chọn | Hành vi |
+|---|---|
+| ✅ | Nền khung chứa toàn form search màu trắng như HuongB. Bỏ nền cam trong suốt/glass ở search wrapper. Dùng nhãn tối rõ, input border nhẹ, CTA cam. Giữ nền hero cam và recruitment highlight riêng. Giữ filter/submit/focus/mobile hoạt động, không để label trắng trên nền trắng. |
 
 ---
 
-### Quyết định A11 — Recruiting section icon
+## Task B — Pagination + Admin Config
 
-| Chọn | Icon | Ghi chú |
-|---|---|---|
-| ⬜ | `engineering` | Hiện tại |
-| ⬜ | `apartment` | |
-| ⬜ | `work_outline` | |
-| ⬜ | Không có icon | |
+### B1 — Tab filter BestJobs
 
-**Tier 1 đề xuất**: ⬜ **`engineering`**
+| Chọn | Hành vi |
+|---|---|
+| ✅ | Có tab `Tất cả` + `Tuyển gấp`, default = `Tất cả` |
 
----
+### B2 — Logic lọc "Tuyển gấp"
 
-### Quyết định A12 — Recruiting logo size
+| Chọn | Logic |
+|---|---|
+| ✅ | **Chỉ `urgency === 'URGENT'`** (điều chỉnh — CLOSING = sắp đóng/hết hạn, không tự nhập chung Tuyển gấp. Ribbon và tab dùng cùng ngữ nghĩa.) |
 
-Logo HRP monogram trên card Recruiting đổi kích thước?
+### B3 — Pagination control style
 
-| Chọn | Size | Ghi chú |
-|---|---|---|
-| ⬜ | **56px (size={56})** | Khớp reference Foxconn ~`w-14 h-14` |
-| ⬜ | Giữ 64px hiện tại | |
+| Chọn | Style |
+|---|---|
+| ✅ | Prev/Next thay trang |
 
-**Tier 1 đề xuất**: ⬜ **56px**
+### B4 — BestJobs fetch strategy
 
----
+| Chọn | Strategy |
+|---|---|
+| ✅ | Fetch riêng từ `/api/jobs`. **Mở scope query/service `/api/jobs` cho filter URGENT trước pagination** (điều chỉnh — bỏ non-goal cũ cấm sửa API/service). Giữ invariant eligibility/public projection và backward compatibility; không client-filter một trang hoặc overview 6 tin. |
 
-### Quyết định A13 — Recruiting eyebrow / sub-heading
+### B5 — BestJobs page size default
 
-Eyebrow "Cơ hội mới" và sub-heading của Recruiting section xử lý thế nào?
+| Chọn | Default |
+|---|---|
+| ✅ | **9** (điều chỉnh từ 3 → 9 — bố cục 3 hàng × 3 desktop theo demo1) |
 
-| Chọn | Xử lý | Ghi chú |
-|---|---|---|
-| ⬜ | **Bỏ eyebrow, bỏ sub-heading kỹ thuật** | Giữ heading "Dự án đang tuyển" thôi. Sub-heading mới: "Cơ hội làm việc tại các dự án trọng điểm." |
-| ⬜ | Giữ eyebrow + sub-heading hiện tại | "Cơ hội mới" + "Các dự án đang mở tuyển, hiển thị số slot thật từ dữ liệu HRP." |
+### B6 — BestJobs page size range
 
-**Tier 1 đề xuất**: ⬜ **Bỏ eyebrow + copy mới**
+| Chọn | Range |
+|---|---|
+| ✅ | `{3, 6, 9, 12}` |
 
----
+### B7 — Listing page size default
 
-### Quyết định A14 — Recruiting slot copy
+| Chọn | Default |
+|---|---|
+| ✅ | 12 |
 
-| Chọn | Copy | Ghi chú |
-|---|---|---|
-| ⬜ | **{n} vị trí đang mở** | Hướng người tìm việc, Owner prompt §3 |
-| ⬜ | Giữ `{n} slot đang mở` hiện tại | |
+### B8 — Listing page size range
 
-**Tier 1 đề xuất**: ⬜ **{n} vị trí đang mở**
+| Chọn | Range |
+|---|---|
+| ✅ | **integer 6..50** (điều chỉnh — đây là lựa chọn mật độ, không phải bảo đảm có dữ liệu hay tránh trang rỗng) |
 
----
+### B9 — Search list pagination (Danh sách việc làm) vs SSR `/viec-lam`
 
-### Quyết định A15 — Audit mode Task A
+| Chọn | Xử lý |
+|---|---|
+| ✅ | **Phân biệt rõ**: homepage search giữ append/load-more; SSR `/viec-lam` có pagination URL. `listingPageSize` áp dụng cả hai bằng cách kiểm tra loader. Giữ kiểu navigation riêng hiện có và metadata/URL của SSR, không biến SSR thành append. |
 
-| Chọn | Mode | Ghi chú |
-|---|---|---|
-| ⬜ | **STANDARD / FOCUSED** | Chỉ JSX/style changes, không schema/permission |
-| ⬜ | FAST | Nếu thay đổi rất nhỏ |
+### B10 — Schema HomepageSettings
 
-**Tier 1 đề xuất**: ⬜ **STANDARD / FOCUSED**
+| Chọn | Schema |
+|---|---|
+| ✅ | Singleton row + **invariant DB** (điều chỉnh — `@default("default") @unique` KHÔNG bảo đảm chỉ một row; Tier 1 khóa id canonical bằng invariant DB thích hợp). Trường số có validation, xử lý missing row, concurrent update, cache. Không xây generic settings platform. |
 
----
+### B11 — Admin permission
 
-## Task B — Pagination + Admin Config (`hrp-v6-ui-04b-pagination-admin`)
+| Chọn | Permission |
+|---|---|
+| ✅ | **ADMIN qua cơ chế quyền hiện có**, enforce server-side (điều chỉnh — không phát minh SUPER_ADMIN). Public chỉ đọc projection các giá trị cần hiển thị, không đọc endpoint quản trị hoặc metadata nội bộ. |
 
-### Quyết định B1 — Tab filter trên BestJobs
+### B12 — Tag tùy biến
 
-BestJobs có tab filter `Tất cả` / `Tuyển gấp` không?
+| Chọn | Xử lý |
+|---|---|
+| ✅ | **Hoãn sang lát cắt riêng sau**, không mặc định chiếm slug UI-05 trước khi đối chiếu roadmap. |
 
-| Chọn | Hành vi | Ghi chú |
-|---|---|---|
-| ⬜ | **Có tab `Tất cả` + `Tuyển gấp`** | Default = `Tất cả` |
-| ⬜ | Có tab nhưng default = `Tuyển gấp` | |
-| ⬜ | Không có tab | Chỉ prev/next pagination |
+### B13 — Audit mode Task B
 
-**Tier 1 đề xuất**: ⬜ **Có, default = Tất cả**
-
----
-
-### Quyết định B2 — Logic lọc "Tuyển gấp"
-
-Tab "Tuyển gấp" lọc theo logic nào?
-
-| Chọn | Logic | Ghi chú |
-|---|---|---|
-| ⬜ | **`urgency === 'URGENT' || urgency === 'CLOSING'`** | Dùng field `urgency` đã có trong DTO (DEC-04 P0-01) |
-| ⬜ | Chỉ `urgency === 'URGENT'` | Không include 'CLOSING' |
-
-**Tier 1 đề xuất**: ⬜ **`URGENT` || `CLOSING`**
+| Chọn | Mode |
+|---|---|
+| ✅ | **CRITICAL với audit sâu trên schema/permission/data thay đổi** (điều chỉnh — không quét lại toàn repo) |
 
 ---
 
-### Quyết định B3 — Pagination control style
+## Task C — Section Renderer + Demo Content
 
-BestJobs dùng prev/next hay append/load-more?
+### C1 — Section thứ tự homepage
 
-| Chọn | Style | Ghi chú |
-|---|---|---|
-| ⬜ | **Prev/Next thay trang** | Đúng hình thức demo. Owner prompt §2 ưu tiên. |
-| ⬜ | Append/load-more | |
+| Chọn | Thứ tự |
+|---|---|
+| ✅ | navbar → hero/search → **Việc làm tốt nhất** → **Dự án đang tuyển** → **Việc làm mới nhất** → **Việc làm theo khu vực** → **Giới thiệu HRP** → **Dải đối tác/minh họa** → **Cộng tác viên** → **Tin tức & cẩm nang** → **banner trải nghiệm trên di động** → footer |
 
-**Tier 1 đề xuất**: ⬜ **Prev/Next**
+### C2 — Demo content nhãn rõ
 
----
+| Chọn | Xử lý |
+|---|---|
+| ✅ | Mỗi section demo render badge "Demo" / "Minh họa". Tin tuyển dụng, slot, mức lương vẫn từ API thật. Demo không ghi vào DB nghiệp vụ. Khi chưa có nội dung published, renderer có chính sách demo/ẩn khai rõ; không fallback im lặng. |
 
-### Quyết định B4 — BestJobs fetch strategy
+### C3 — Section renderer props structure
 
-Dùng API call riêng cho BestJobs pagination hay dùng chung data với search list?
+| Chọn | Cấu trúc |
+|---|---|
+| ✅ | Mỗi section nhận `props/view-model` có `id, enabled/order, content fields, source: 'REAL' \| 'DEMO' \| 'INTEGRATION_PENDING'`. Seam để gắn CMS sau, không phải page builder. |
 
-| Chọn | Strategy | Ghi chú |
-|---|---|---|
-| ⬜ | **Fetch riêng từ `/api/jobs`** | Gọi `GET /api/jobs?limit={pageSize}&offset={offset}` riêng cho BestJobs. Clean, đúng REST. |
-| ⬜ | Client-side paging trên `overview.newest` (tối đa 6 items = 2 pages) | Hạn chế: chỉ 2 trang max |
+### C4 — Audit mode Task C
 
-**Tier 1 đề xuất**: ⬜ **Fetch riêng**
-
----
-
-### Quyết định B5 — BestJobs page size mặc định
-
-Admin config: giá trị mặc định cho `homepageBestJobs.pageSize`?
-
-| Chọn | Default | Ghi chú |
-|---|---|---|
-| ⬜ | **3** | Giữ nguyên hiện tại |
-| ⬜ | 6 | |
-| ⬜ | 9 | |
-| ⬜ | 12 | |
-
-**Tier 1 đề xuất**: ⬜ **3**
+| Chọn | Mode |
+|---|---|
+| ✅ | STANDARD / FOCUSED |
 
 ---
 
-### Quyết định B6 — BestJobs page size range
+## Task D — Trang chi tiết + Editor Admin/Sale
 
-Khoảng hợp lệ cho BestJobs page size?
+### D.A — Detail page UI
 
-| Chọn | Range | Ghi chú |
-|---|---|---|
-| ⬜ | **{3, 6, 9, 12}** | Chia hết cho 3-col grid. Owner prompt §2 đề xuất. |
-| ⬜ | {3, 6, 9, 12, 15, 18} | Multi của 3 |
-| ⬜ | [3..12] integer bất kỳ | |
+#### D.A1 — Section theo reference ảnh `screencapture-viec3mien-vn-viec-lam-chi-tiet-2026-09-10-08_57_09.png`
 
-**Tier 1 đề xuất**: ⬜ **{3, 6, 9, 12}**
+| Chọn | Section |
+|---|---|
+| ✅ | Search/breadcrumb, tóm tắt tin, thư viện ảnh, giới thiệu + mô tả, lương/thưởng/phúc lợi, hỗ trợ HRP (optional), thông tin CTV (AFF-gated), hồ sơ/yêu cầu/lưu ý, sidebar đơn vị tuyển dụng, hướng dẫn ứng tuyển, CTA trên/dưới (apply modal/flow thật, share, yêu thích chỉ mở khi persistence rõ), việc làm liên quan (data eligible thật), banner cuối |
 
----
+#### D.A2 — Container
 
-### Quyết định B7 — Listing page size mặc định
+| Chọn | Width |
+|---|---|
+| ✅ | 1200px (đồng bộ A1) |
 
-Admin config: giá trị mặc định cho `publicListing.pageSize`?
+#### D.A3 — Nhận diện
 
-| Chọn | Default | Ghi chú |
-|---|---|---|
-| ⬜ | **12** | Giữ nguyên PAGE_SIZE hiện tại |
-| ⬜ | 6 | |
-| ⬜ | 24 | |
+| Chọn | Hành vi |
+|---|---|
+| ✅ | Giữ cam HRP/HuongB. Không sao chép thương hiệu/màu/mức thưởng Việc 3 Miền. |
 
-**Tier 1 đề xuất**: ⬜ **12**
+#### D.A4 — Audit mode D.A
 
----
+| Chọn | Mode |
+|---|---|
+| ✅ | STANDARD / FOCUSED |
 
-### Quyết định B8 — Listing page size range
+### D.B — Editor Admin/Sale (CRITICAL)
 
-Khoảng hợp lệ cho listing page size?
+#### D.B1 — Editor đầy đủ trường
 
-| Chọn | Range | Ghi chú |
-|---|---|---|
-| ⬜ | **[6..50]** | API clamp `1..50`. Tối thiểu 6 để tránh page trống. |
-| ⬜ | [3..50] | |
-| ⬜ | [1..50] | |
+| Chọn | Hành vi |
+|---|---|
+| ✅ | Form nhập/sửa đủ trường editorial theo `field-matrix.md`: title, body, gallery, benefits, requirements, company info, age range, salary description, etc. Draft/preview/publish, scope Sale (chỉ với dự án/tin thuộc scope được giao, không tất cả dự án). ADMIN publish. |
 
-**Tier 1 đề xuất**: ⬜ **[6..50]**
+#### D.B2 — Sale workflow mặc định
 
----
+| Chọn | Hành vi |
+|---|---|
+| ✅ | Sale lưu draft + gửi duyệt (status=PENDING_REVIEW); ADMIN publish. Tier 2 verify quyền publish hiện có trước khi khóa matrix. |
 
-### Quyết định B9 — Search list pagination (Danh sách việc làm)
+#### D.B3 — Concurrency + audit
 
-"DanH sách việc làm" (search results) giữ append/load-more hay đổi sang prev/next?
+| Chọn | Hành vi |
+|---|---|
+| ✅ | Revision tăng khi save, optimistic lock; audit actor/action/time. Preview không public, không index. Slug/canonical/metadata/redirect giữ contract cũ. |
 
-| Chọn | Style | Ghi chú |
-|---|---|---|
-| ⬜ | **Giữ append/load-more** | Search list dùng sentinel + load-more (hiện tại). User search thường muốn đọc hết. |
-| ⬜ | Đổi sang prev/next | |
+#### D.B4 — Media
 
-**Tier 1 đề xuất**: ⬜ **Giữ append/load-more**
+| Chọn | Hành vi |
+|---|---|
+| ✅ | Upload + quản lý asset, validation URL, alt text, order, status (public/internal). Safe-render allowlist. Không lưu/render script/raw HTML. Không lọt thông tin nội bộ ra DTO public. |
 
----
+#### D.B5 — Demo data → job thật
 
-### Quyết định B10 — Schema cho HomepageSettings
+| Chọn | Hành vi |
+|---|---|
+| ✅ | Demo KHÔNG dùng làm job thật nhận ứng tuyển. Fixture tham khảo chỉ preview/test. |
 
-Admin config: dùng Prisma model nào để lưu settings?
+#### D.B6 — Audit mode D.B
 
-| Chọn | Schema | Ghi chú |
-|---|---|---|
-| ⬜ | **Singleton row** | `HomepageSettings` table với `id String @default("default") @unique`. Có `bestJobsPageSize Int`, `listingPageSize Int`. Chỉ 1 row. |
-| ⬜ | JSON trong SystemSetting | Nếu đã có `SystemSetting` table |
-| ⬜ | File-based config | `config/homepage.json` trong project |
-
-**Tier 1 đề xuất**: ⬜ **Singleton row**
-
----
-
-### Quyết định B11 — Admin permission
-
-Ai được phép thay đổi homepage settings?
-
-| Chọn | Permission | Ghi chú |
-|---|---|---|
-| ⬜ | **role === 'ADMIN'** | Dùng permission resolver hiện có |
-| ⬜ | role === 'ADMIN' \|\| role === 'SUPER_ADMIN' | Nếu có SUPER_ADMIN trong hệ thống |
-
-**Tier 1 đề xuất**: ⬜ **role === 'ADMIN'**
+| Chọn | Mode |
+|---|---|
+| ✅ | **CRITICAL** — schema/API/permission thay đổi. Audit sâu trên changed surface. Không thêm vào allowlist A/C bằng lý do "chỉ làm giao diện". |
 
 ---
 
-### Quyết định B12 — Tag tùy biến (Admin)
+## Plan Admin V6 (sau Plan UI)
 
-Tag do Admin tạo — xử lý thế nào?
+### AV1 — Editor tin Admin/Sale (extend từ D.B)
 
-| Chọn | Xử lý | Ghi chú |
-|---|---|---|
-| ⬜ | **DEFER sang task UI-05** | Chưa có data model. Owner prompt §2 gọi là "yêu cầu tương lai". |
-| ⬜ | Mở trong UI-04B luôn | |
+### AV2 — CMS homepage content
 
-**Tier 1 đề xuất**: ⬜ **DEFER sang UI-05**
+Các section trong Plan C: Giới thiệu HRP, Dải đối tác, Tin tức & cẩm nang, Banner mobile. Schema + form + API + media + publish.
 
----
+### AV3 — Tag tùy biến (DEFER sau UI-05)
 
-### Quyết định B13 — Audit mode Task B
+### AV4 — Media management (extend từ D.B4)
 
-| Chọn | Mode | Ghi chú |
-|---|---|---|
-| ⬜ | **CRITICAL** | Có schema migration + API + permission |
-| ⬜ | STANDARD | |
+### AV5 — Cache invalidation + integration test
 
-**Tier 1 đề xuất**: ⬜ **CRITICAL**
+| Chọn | Hành vi |
+|---|---|
+| ✅ | Tag `homepage-settings` + revalidateTag on write. Integration test cho mỗi section: Admin/Sale nhập → lưu → preview → publish → public hiển thị đúng. |
 
 ---
 
-## Tóm tắt Tier 1 đề xuất
+## Tóm tắt ký lần trước (28 quyết định) — đã chốt
 
-### Task A (Visual Polish)
-- A1: 1200px
-- A2: h-16
-- A3: Login → text link
-- A4: Logo + menu gom cụm trái
-- A5: Logo rounded-xl + border + bg-white
-- A6: Ribbon sát góc + icon
-- A7: Salary thanh rộng + icon
-- A8: Giữ đ/giờ
-- A9: local_fire_department + circle
-- A10: Có link "Xem tất cả"
-- A11: engineering
-- A12: 56px
-- A13: Bỏ eyebrow + copy mới
-- A14: {n} vị trí đang mở
-- A15: STANDARD/FOCUSED
+Theo Tier 0 §Quyền tiếp tục: **A1–A15, B1–B13 đã chốt trong bảng ký cuối**. Bảng ký này ưu tiên khi khác nhau. Tier 1 soạn TASK A ngay, không cần hỏi lại.
 
-### Task B (Pagination + Admin)
-- B1: Có tab Tất cả + Tuyển gấp, default = Tất cả
-- B2: urgency === URGENT || CLOSING
-- B3: Prev/Next
-- B4: Fetch riêng từ /api/jobs
-- B5: Default = 3
-- B6: Range {3, 6, 9, 12}
-- B7: Default = 12
-- B8: Range [6..50]
-- B9: Giữ append/load-more cho search list
-- B10: Singleton row HomepageSettings
-- B11: role === 'ADMIN'
-- B12: DEFER sang UI-05
-- B13: CRITICAL
+Cập nhật cuối cùng (Tier 0 chỉ thị mới §Điều chỉnh):
+- A11: `apartment` trong vòng tròn nhẹ
+- A12: giữ monogram 64px
+- A13: bỏ cả eyebrow + sub-heading
+- A14: `Cần tuyển {n} người`, n = availableSlots
+- A16: search card nền trắng (mới)
+- B2: chỉ URGENT (CLOSING riêng)
+- B5: mặc định 9 (3 hàng × 3 desktop)
+- B6: {3, 6, 9, 12}
+- B8: integer 6..50
+- B10: singleton + invariant DB
+- B11: ADMIN thuần qua cơ chế hiện có
+- B13: CRITICAL sâu changed surface
 
 ---
 
-## Owner ký xác nhận
-
-Owner điền ⬜ cho mỗi quyết định. Sau khi ký đủ → Tier 1 viết TASK.md cho Task A trước.
+## Ký xác nhận
 
 | Quyết định | Owner chọn |
 |---|---|
-| A1 | ⬜ |
-| A2 | ⬜ |
-| A3 | ⬜ |
-| A4 | ⬜ |
-| A5 | ⬜ |
-| A6 | ⬜ |
-| A7 | ⬜ |
-| A8 | ⬜ |
-| A9 | ⬜ |
-| A10 | ⬜ |
-| A11 | ⬜ |
-| A12 | ⬜ |
-| A13 | ⬜ |
-| A14 | ⬜ |
-| A15 | ⬜ |
-| B1 | ⬜ |
-| B2 | ⬜ |
-| B3 | ⬜ |
-| B4 | ⬜ |
-| B5 | ⬜ |
-| B6 | ⬜ |
-| B7 | ⬜ |
-| B8 | ⬜ |
-| B9 | ⬜ |
-| B10 | ⬜ |
-| B11 | ⬜ |
-| B12 | ⬜ |
-| B13 | ⬜ |
+| A1–A16 | ✅ (theo bảng trên) |
+| B1–B13 | ✅ |
+| C1–C4 | ✅ (đề xuất) |
+| D.A1–D.A4 | ✅ (đề xuất) |
+| D.B1–D.B6 | ✅ (đề xuất) |
+| AV1–AV5 | ✅ (backlog — sau Plan UI) |
 
-**Owner ký**: _________________________ **Ngày**: ____________
+Tier 1 soạn TASK A ngay.
