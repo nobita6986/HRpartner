@@ -340,7 +340,7 @@ try {
                 Add-GateError $ctx 'H-10' "status BLOCKED but section 5 lists no BLK-xx row stating what blocks and what decision Tier 1 must make."
             }
         }
-        $modeHead = ([regex]::Match($taskMode.ToUpper(), '^(NONE|LIGHT|FOCUSED|DEEP|DELTA|FULL)')).Value
+        $modeHead = ([regex]::Match($taskMode.ToUpper(), '^(NONE|LIGHT|FOCUSED|DEEP|DELTA|FULL|CODE_AUDIT)')).Value
         $auditRequested = ($modeHead -ne '' -and $modeHead -ne 'NONE')
         if ($closingStatus -eq 'READY_FOR_REVIEW' -and $auditRequested) {
             Add-GateError $ctx 'H-10' "READY_FOR_REVIEW conflicts with TASK Audit mode $modeHead; use READY_FOR_AUDIT."

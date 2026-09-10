@@ -45,5 +45,5 @@ Trước khi chạy test, đọc manifest và config hiện hữu:
 ## 5. Trách nhiệm theo tầng
 
 - Tier 1 chạy command/check theo Assurance lane và ghi mỗi phép đo một lần trong Evidence Registry của HANDOFF.
-- Tầng 3 không tham gia FAST mặc định; STANDARD dùng FOCUSED và chỉ chạy lại behavior/check trọng yếu; CRITICAL dùng DEEP theo critical surface. DELTA không lặp lại phần bất biến.
+- Tier 3 chỉ tham gia khi TASK chọn LIGHT; chỉ chạy lại behavior/risk check trọng yếu. DELTA không lặp phần bất biến.
 - Nếu môi trường không chạy được, không ghi PASS; nêu limitation và điều kiện cần để kiểm tra lại.

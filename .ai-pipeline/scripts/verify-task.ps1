@@ -129,12 +129,20 @@ try {
             }
         }
         $auditMode = (Get-ControlField -Text $content -FieldName 'Audit mode').ToUpper()
-        if ($auditMode -notmatch '^(NONE|LIGHT|FOCUSED|DEEP|DELTA|FULL)$') {
+        if ($auditMode -notmatch '^(NONE|LIGHT|FOCUSED|DEEP|DELTA|FULL|CODE_AUDIT)$') {
             Add-DryRunFinding 'A-02' "Audit mode '$auditMode' is invalid; new contracts use NONE or LIGHT."
-        } elseif ($auditMode -match '^(FOCUSED|DEEP|DELTA|FULL)$') {
+        } elseif ($auditMode -match '^(FOCUSED|DEEP|DELTA|FULL|CODE_AUDIT)$') {
             Add-GateWarn $ctx 'A-02' "Audit mode '$auditMode' is legacy-compatible; new contracts use LIGHT."
         } else {
             Add-GateOk $ctx 'A-02' "audit mode: $auditMode."
+        }
+        if ($auditMode -match '^(NONE|LIGHT)$') {
+            $auditReason = Get-ControlField -Text $content -FieldName 'Audit reason'
+            if ([string]::IsNullOrWhiteSpace($auditReason)) {
+                Add-GateWarn $ctx 'A-02' "Audit reason is absent. New contracts should record one sentence so selective audit is reviewable."
+            } else {
+                Add-GateOk $ctx 'A-02' "audit selection has a recorded reason."
+            }
         }
     }
 

@@ -127,7 +127,7 @@ $baseHandoff = @'
 | Spec version | `v1.0` |
 | Execution round | `1` |
 | Current audit round | `0` |
-| Executor | `Tier 2` |
+| Delivery owner | `Tier 1` |
 | Baseline | `deadbeef` |
 | Status | `READY_FOR_AUDIT` |
 | Started/updated | `2026-09-03 12:00 +07` |
@@ -484,8 +484,8 @@ Add-Case -Name 'P2 release-blocking rejects PASS' -Gate audit -Expect FAIL -Toke
         $rows = "| ID | Severity | Release-blocking | Status | Finding / reproduction / impact | Planner decision |`n|---|---|---|---|---|---|`n| ``AUD-102`` | ``P2`` | ``YES`` | ``OPEN`` | ``npm run test:unit`` exit 1; acceptance regression | Fix before release |"
         $c.Audit = $c.Audit.Replace('Không có finding.', $rows) }
 
-Add-Case -Name 'CRITICAL rejects FOCUSED depth' -Gate audit -Expect FAIL -Token 'A-02' `
-    -Why 'critical surfaces retain deep assurance' `
+Add-Case -Name 'legacy FOCUSED depth remains compatible' -Gate audit -Expect PASS -WarnToken 'A-02' `
+    -Why 'new pipeline uses LIGHT while old audited artifacts remain readable' `
     -Mutate { param($c) $c.Audit = $c.Audit.Replace('| Audit depth | `FULL` |', '| Audit depth | `FOCUSED` |') }
 
 Add-Case -Name 'compact HANDOFF passes without execution history' -Gate handoff -Expect PASS `
@@ -544,12 +544,32 @@ Add-Case -Name 'FAST handoff dùng READY_FOR_REVIEW và Evidence Registry' -Gate
     -Why 'task nhỏ không cần Tier 3 và một command được map nhiều AC' `
     -Mutate { param($c)
         $c.Task = $c.Task.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `FAST` |')
+        $c.Task = $c.Task.Replace('| Audit mode | `CODE_AUDIT` |', '| Audit mode | `NONE` |')
         $c.Handoff = $c.Handoff.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `FAST` |')
+        $c.Handoff = $c.Handoff.Replace('| Audit mode (phải khớp TASK) | `CODE_AUDIT` |', '| Audit mode (phải khớp TASK) | `NONE` |')
         $c.Handoff = $c.Handoff.Replace('| Status | `READY_FOR_AUDIT` |', '| Status | `READY_FOR_REVIEW` |')
         $c.Handoff = $c.Handoff.Replace('| `1` | `v1.0` | `READY_FOR_AUDIT` |', '| `1` | `v1.0` | `READY_FOR_REVIEW` |')
         $c.Handoff = $c.Handoff.Replace('> Handoff status: `READY_FOR_AUDIT`', '> Handoff status: `READY_FOR_REVIEW`')
         $c.Handoff = $c.Handoff.Replace('| `AC-01` | `npm run test:unit` | `exit 0` | `1472 passed` — `evidence/unit.txt` | `None` |', '| `AC-01` | `E-01` | `1472 passed` | `evidence/unit.txt` | `None` |')
         $c.Handoff = $c.Handoff.Replace('| `E-01` | `evidence/unit.txt` | `AC-01` |', '| `E-01` | `npm run test:unit` exit 0, 1472 passed | `AC-01` |') }
+
+Add-Case -Name 'STANDARD + NONE đi thẳng Tier 1 review' -Gate handoff -Expect PASS `
+    -Why 'audit selection độc lập với assurance lane' `
+    -Mutate { param($c)
+        $c.Task = $c.Task.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `STANDARD` |')
+        $c.Task = $c.Task.Replace('| Audit mode | `CODE_AUDIT` |', '| Audit mode | `NONE` |')
+        $c.Handoff = $c.Handoff.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `STANDARD` |')
+        $c.Handoff = $c.Handoff.Replace('| Audit mode (phải khớp TASK) | `CODE_AUDIT` |', '| Audit mode (phải khớp TASK) | `NONE` |')
+        $c.Handoff = $c.Handoff.Replace('| Status | `READY_FOR_AUDIT` |', '| Status | `READY_FOR_REVIEW` |')
+        $c.Handoff = $c.Handoff.Replace('| `1` | `v1.0` | `READY_FOR_AUDIT` |', '| `1` | `v1.0` | `READY_FOR_REVIEW` |')
+        $c.Handoff = $c.Handoff.Replace('> Handoff status: `READY_FOR_AUDIT`', '> Handoff status: `READY_FOR_REVIEW`') }
+
+Add-Case -Name 'LIGHT audit passes for selected important task' -Gate audit -Expect PASS `
+    -Why 'new Tier 3 path uses one lightweight depth' `
+    -Mutate { param($c)
+        $c.Task = $c.Task.Replace('| Audit mode | `CODE_AUDIT` |', '| Audit mode | `LIGHT` |')
+        $c.Handoff = $c.Handoff.Replace('| Audit mode (phải khớp TASK) | `CODE_AUDIT` |', '| Audit mode (phải khớp TASK) | `LIGHT` |')
+        $c.Audit = $c.Audit.Replace('| Audit depth | `FULL` |', '| Audit depth | `LIGHT` |') }
 
 Add-Case -Name 'T-08 FAST không được chạm critical root' -Gate task -Expect FAIL -Token 'T-08' `
     -Why 'không dùng FAST để né audit schema/auth/infra' `
@@ -557,8 +577,8 @@ Add-Case -Name 'T-08 FAST không được chạm critical root' -Gate task -Expe
         $c.Task = $c.Task.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `FAST` |')
         $c.Task = $c.Task.Replace('| In-scope roots | `src/demo.ts` |', '| In-scope roots | `prisma/schema.prisma` |') }
 
-Add-Case -Name 'H-10 STANDARD không được bàn giao READY_FOR_REVIEW' -Gate handoff -Expect FAIL -Token 'H-10' `
-    -Why 'chỉ FAST mới đi thẳng Tier 1' `
+Add-Case -Name 'H-10 task có audit không được bàn giao READY_FOR_REVIEW' -Gate handoff -Expect FAIL -Token 'H-10' `
+    -Why 'trạng thái bàn giao theo Audit mode, không theo lane' `
     -Mutate { param($c)
         $c.Task = $c.Task.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `STANDARD` |')
         $c.Handoff = $c.Handoff.Replace('| Assurance lane | `CRITICAL` |', '| Assurance lane | `STANDARD` |')
@@ -607,7 +627,7 @@ Add-Case -Name 'S-07 §5 nói None trong khi có AC BLOCKED' -Gate audit -Expect
         $c.Audit = $c.Audit.Replace('**Verdict:** `PASS`', '**Verdict:** `CONDITIONAL`') }
 
 Add-Case -Name 'S-08 AC PASS trong khi HANDOFF khai ENV_BLOCKED' -Gate audit -Expect FAIL -Token 'S-08' `
-    -Why 'go-live-09 PLN-13, go-live-13 F-03, mp3c AC-08: đóng limitation của Tier 2 là quyền Tier 1' `
+    -Why 'đóng limitation cần quyết định rõ của Tier 1' `
     -Mutate { param($c)
         $c.Handoff = $c.Handoff.Replace(
             '| `None` | `None` | `None` | `None` | `None` |',
@@ -713,7 +733,7 @@ Add-Case -Name 'T-02 contract dẫn file:line không tồn tại' -Gate task -Ex
     -Mutate { param($c) $c.Task = $c.Task.Replace('`src/demo.ts:3`', '`src/khong-ton-tai.ts:297`') }
 
 Add-Case -Name 'T-03 AC chứng minh phạm vi bằng git diff trần' -Gate task -Expect FAIL -Token 'T-03' `
-    -Why 'go-live-15 AC-10: git diff trần in rỗng sau khi Tier 2 stage nên PASS sai' `
+    -Why 'git diff trần in rỗng sau khi stage nên PASS sai' `
     -Mutate { param($c) $c.Task = $c.Task.Replace('`git status --porcelain` chỉ chứa', '`git diff` chỉ chứa') }
 
 Add-Case -Name 'T-04 AC giới hạn tập file mà không cho phép artifact của chính task' -Gate task -Expect FAIL -Token 'T-04' `
@@ -764,7 +784,7 @@ Add-Case -Name 'H-09 credential thật nằm trong HANDOFF.md' -Gate handoff -Ex
     -Mutate { param($c) $c.Handoff = $c.Handoff.Replace('- **Environment/config:** None.', '- **Environment/config:** đã dùng postgresql://admin_test:Str0ngP4ssw0rd99@ep-y.example.test/app_test.') }
 
 Add-Case -Name 'H-10 thiếu dòng Handoff status cuối file' -Gate handoff -Expect FAIL -Token 'H-10' `
-    -Why 'tier2.md buộc dòng cuối là Handoff status: READY_FOR_AUDIT hoặc BLOCKED' `
+    -Why 'tier1.md buộc dòng cuối là Handoff status hợp lệ hoặc BLOCKED' `
     -Mutate { param($c) $c.Handoff = $c.Handoff.Replace('> Handoff status: `READY_FOR_AUDIT`', '> Xong.') }
 
 Add-Case -Name 'H-13 §2 có deviation nhưng §5 khai None' -Gate handoff -Expect FAIL -Token 'H-13' `
@@ -772,7 +792,7 @@ Add-Case -Name 'H-13 §2 có deviation nhưng §5 khai None' -Gate handoff -Expe
     -Mutate { param($c) $c.Handoff = $c.Handoff.Replace('| `src/demo.ts` | `DONE` | `None` |', '| `src/demo.ts` | `DONE` | Đã thêm một export mới ngoài TASK |') }
 
 Add-Case -Name 'H-14 §7 bịa một execution round' -Gate handoff -Expect FAIL -Token 'H-14' `
-    -Why 'cùng họ với go-live-05 F-02 nhưng ở phía Tier 2' `
+    -Why 'execution round phải phản ánh lịch sử thật' `
     -Mutate { param($c) $c.Handoff = $c.Handoff.Replace('| `1` | `v1.0` | `READY_FOR_AUDIT` | `Sửa formatVnd và thêm test` |', '| `4` | `v1.0` | `READY_FOR_AUDIT` | `Sửa formatVnd và thêm test` |') }
 
 Add-Case -Name 'H-03 spec version lệch TASK' -Gate handoff -Expect FAIL -Token 'H-03' `

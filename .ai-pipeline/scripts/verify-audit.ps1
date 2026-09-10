@@ -128,6 +128,13 @@ try {
         Add-GateOk $ctx 'A-02' "spec version $auditSpec matches TASK."
     }
 
+    $taskAuditMode = (Get-ControlField -Text $task -FieldName 'Audit mode').ToUpper()
+    if ($taskAuditMode -eq 'NONE') {
+        Add-GateError $ctx 'A-02' "TASK Audit mode is NONE. Tier 3 audit requires Tier 1 to select LIGHT first."
+    } elseif ($taskAuditMode -eq 'LIGHT') {
+        Add-GateOk $ctx 'A-02' "TASK explicitly requests LIGHT audit."
+    }
+
     $taskLaneRaw = Get-ControlField -Text $task -FieldName 'Assurance lane'
     $taskLane = 'CRITICAL'
     if ($taskLaneRaw.ToUpper() -match '^(FAST|STANDARD|CRITICAL)$') { $taskLane = $Matches[1] }
@@ -151,7 +158,7 @@ try {
     if ($depthUpper -match '^(LIGHT|FOCUSED|DEEP|DELTA|FULL)$') {
         $auditDepth = $Matches[1]
         if ($auditDepth -eq 'FULL') {
-            Add-GateWarn $ctx 'A-02' 'Audit depth FULL is a legacy alias for DEEP; new artifacts should use DEEP.'
+            Add-GateWarn $ctx 'A-02' 'Audit depth FULL is legacy-compatible; new artifacts use LIGHT.'
         } else {
             if ($auditDepth -match '^(FOCUSED|DEEP)$') {
                 Add-GateWarn $ctx 'A-02' "Audit depth $auditDepth is legacy-compatible; new audits use LIGHT."
@@ -409,7 +416,7 @@ try {
     if ($null -eq $checkTable) {
         $checkTable = Find-MarkdownTable -Tables (Get-MarkdownTables -Text $audit) -FirstCellPattern '^C-\d{2}'
         if ($null -ne $checkTable) {
-            Add-GateWarn $ctx 'A-04' "the Deep Audit Checklist table is not under section 2 Acceptance Verification, where AUDIT.template.md puts it."
+            Add-GateWarn $ctx 'A-04' "the Assurance Checks table is not under section 2 Verification, where AUDIT.template.md puts it."
             $checkEvidenceCol = Get-ColumnIndex -Header $checkTable.Header -Pattern '(?i)evidence|bằng chứng|bang chung'
             foreach ($r in $checkTable.Rows) { if ((Clear-MdDecoration $r.Cells[0]) -match '^C-\d{2}') { [void]$checkRows.Add($r) } }
         }
@@ -432,7 +439,7 @@ try {
         foreach ($r in $checkTable.Rows) { if ($r.Cells.Count -gt $maxCells) { $maxCells = $r.Cells.Count } }
         if ($maxCells -lt 3) {
             $checklistHasEvidence = $false
-            Add-GateError $ctx 'S-05' "the Deep Audit Checklist records a bare status for C-01..C-10 with no evidence column. tier3.md requires DONE to carry command + exit + output, and SKIP to carry a reason."
+            Add-GateError $ctx 'S-05' "the Assurance Checks table records bare status with no evidence column. tier3.md requires DONE to carry command + exit + output, and SKIP to carry a reason."
         }
     }
     foreach ($checkId in $checksToValidate) {
