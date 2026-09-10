@@ -1,4 +1,4 @@
-# TIER 1 LIVING HANDOFF — HRP V6 Native / V7
+﻿# TIER 1 LIVING HANDOFF — HRP V6 Native / V7
 
 > Tài liệu này là hợp đồng tiếp quản cho **Tier 1 — Plan + Implementation**.
 > Pipeline hiện có Tier 0, Tier 1 và Tier 3 LIGHT; mô tả Tier 2 phía dưới chỉ
@@ -30,13 +30,13 @@ PHASE_MAP: |
   AFF: BLOCKED_FOR_REBASE + Owner clock policy; không dùng timing/ownership V6 cũ
   V7: chỉ mở V7.1 sau V6 Native Compatibility Gate PASS
 current_lane: UI04 public homepage completion
-current_task: hrp-v6-ui-04c1-r3-footer-text-hotfix (DRAFT v0.1)
-task_path: docs/tasks/hrp-v6-ui-04c1-r3-footer-text-hotfix/TASK.md
-spec_version: v0.1 DRAFT (Owner visual review post-deploy 10/09/2026 phat hien 4 cho text sai trong GlobalFooter.tsx; commit 204f605 feat(ui) footer text hotfix da apply local)
-task_status: DRAFT -> READY_FOR_EXECUTION (Tier 1 commit 204f605 + ready push len origin/main sau khi Tier 0 confirm; gates local PASS typecheck/build, test:unit 13 pre-existing FAIL khong phai do fix)
-worktree_branch: main (Tier 0 directive TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md cho phep Tier 1 push production; Tier 1 commit 204f605 + can push them 1 commit docs(task) finalize)
+current_task: hrp-v6-fix-ci-prisma-validate
+task_path: docs/tasks/hrp-v6-fix-ci-prisma-validate/TASK.md
+spec_version: v0.1 ACCEPTED r1 (11/09/2026 00:40; Tier 1 commit 416884a; root cause P1012 DATABASE_URL_ADMIN missing trong Quality job env - schema.prisma:30 directUrl; fix = add dummy env sentinel; verified CI run #34509660710 Quality step 6 PASS; PR #1 mở tại https://github.com/nobita6986/HRpartner/pull/1)
+task_status: ACCEPTED R1 (fix-ci complete; Tier 0 review PR #1)
+worktree_branch: fix-ci-prisma-validate-r1 (PR #1 ready cho Tier 0 merge; main đã có commit 204f605 + ff63083 từ 04c1-r3 push trước)
 current_gate: TIER_0_CONFIRM (Tier 0 xem fix diff + confirm push len origin/main hay chi staged)
-next_command: Tier 1 push commit 204f605 + finalize TASK.md ACCEPTED len origin/main. Tier 0 xem xet CI pre-existing fail va quyet dinh co mo task fix-ci-prisma-validate rieng khong (Tier 1 da tao DRAFT task fix-ci-prisma-validate/TASK.md nhung CHUA push, cho Tier 0 review). Tier 1 khong tu fix CI (Tier 1 owns plan/contract, CI infra fix thuoc Tier 0 hoac Tier 2 neu mo task rieng). Sau Owner visual review ACCEPTED final: Tier 1 closeout UI04 round Phase 1+2 -> mo hrp-v6-ui-04d-section-render (van BLOCKED v1.5). Neu Owner yeu cau chinh them visual footer: mo 04c1-r4 (hoac 04c3 cho Job Card).
+next_command: Hoàn tất current UI hotfix theo task hiện tại. Song song, Tier 1 được mở V6 Native N0 read-only contract + migration audit. Sau Owner visual acceptance, chuẩn hóa và thực thi hrp-v6-ui-04d-section-render. CI fix thuộc Tier 1 khi TASK được khóa; Tier 0 chỉ quyết định ưu tiên/policy.
 previous_accepted: 04c1 ACCEPTED round 1 (9f593fa + Tier 1 TASK.md finalize 780bb75) + 04c2 ACCEPTED round 1 (1316ff4 + Tier 1 TASK.md finalize d7e6899) + R3 v1.3 ACCEPTED (8c6fd03 — feat(ui04): live urgent jobs and minimal job cards) + composition/footer v1.4 ACCEPTED (04b767e) + interaction R2 ACCEPTED + VIS-01..03 correction R1 ACCEPTED (284e46c) + B pagination-admin ACCEPTED (18919da) + A visual-polish ACCEPTED
 next_planner_candidate: UI lane = hrp-v6-ui-04d-section-render sau Owner visual acceptance; domain lane song song = V6 Native N0 read-only contract + migration audit. Sau N0 chia N1 vertical slices. AV1/AV4 độc lập; AV2 publish phụ thuộc N3 ServiceModel; AV6 phụ thuộc section-render + AV4.
 blocking_owner: AFF implementation chờ plan rebase và Owner chốt calendar/business days + timezone/calendar; UI04 04c1+04c2 đã OWNER_DECIDED; Owner live visual review pending. N0 read-only không bị chặn.
@@ -56,7 +56,7 @@ owner_boundary: AFF chờ clock policy + rebase; go-live-07 DEFERRED; credential
 protected_paths: Không revert accepted UI04 commits. Tier 1 được sửa production theo TASK đã khóa; schema.prisma và migration ordering chỉ có một owner tại một thời điểm. Không dùng task cũ để mở rộng direct Assignment authority.
 security_note: Khong lap lai credential lich su; moi gia tri nhay cam chi duoc ghi [REDACTED]. Rotate production thuoc OP Owner. §13 credential hygiene — lam CUOI CUNG truoc public. UI04 04c1 KHONG mo contact API, persistence, schema, permission, CMS, Admin. UI04 04c2 KHONG mo API, schema, persistence; KHONG hardcode màu hex (chỉ Tailwind utility); KHONG thêm package icon (chỉ lucide-react đã có). Tier 1 push production authority theo Tier 0 directive TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md.
 phase1_live_evidence: commit f8bd761 trên origin/main; 2 migration files (20260908150000_v6_phase1a_labor_profile_schema + 20260908150001_v6_phase1a_labor_profile_rls) confirmed applied hrp-live bởi Owner 08/09; không có CI/CD auto-deploy migration (verified: vercel.json buildCommand không gọi prisma migrate deploy; .github/workflows/ci.yml không có deploy job)
-ci_status_2026-09-11: CI workflow #146 (commit 918e2ee) FAIL pre-existing Prisma schema validate step (Node 22 + Prisma 5.22 binary engine mismatch); CI fail tu commit 8c6fd03 (R3 ACCEPTED) truoc - khong phai do Phase 1+2 round UI04 gay ra; Tier 1 tao DRAFT task hrp-v6-fix-ci-prisma-validate/TASK.md (v0.1; root cause PROPOSED = binaryTargets; DEC-01..05 chờ Tier 0); Tier 1 khong tu fix CI (Tier 1 owns plan/contract, CI infra fix thuoc Tier 0 hoac Tier 2 neu mo task rieng); Tier 0 quyet dinh: (a) thuc thi task fix-ci, (b) defer sang go-live hardening, (c) cancel DRAFT
+ci_status_2026-09-11: Root cause đã xác nhận từ CI run #34509107196: Quality job thiếu DATABASE_URL_ADMIN cho Prisma directUrl, không phải binaryTargets. Fix local commit 416884a thêm dummy sentinel env; task/evidence update 302764d. Cần remote CI PASS trước khi ACCEPTED; hoàn tất trước schema migration N1.
 vercel_deploy_2026-09-10: Vercel deployment #6376933011 SUCCESS cho commit 918e2ee (created 17:02:13 UTC, ngay sau push 17:00:31 UTC); production preview URL https://hrpartner-k2958oa8l-thuans-projects-0b7f4d74.vercel.app; Tier 1 verify visual review sau khi Owner confirm URL production alias (Tier 1 khong truy cap Vercel dashboard truc tiep); Tier 0 confirm production alias domain neu can cho review post-deploy
 ui04_evidence:
   R3 ACCEPTED 8c6fd03: verify-task.ps1 PASS; verify-handoff.ps1 PASS WITH WARNINGS (H-15 control field Tier 1 sở hữu); Tier 3 FOCUSED audit PASS (0 finding release-blocking); verify-audit.ps1 PASS
