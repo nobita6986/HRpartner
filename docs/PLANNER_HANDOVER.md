@@ -27,14 +27,14 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
 current_lane: UI04 public homepage completion
-current_task: hrp-v6-ui-04c1-r4-footer-justify (READY_FOR_EXECUTION v0.1)
-task_path: docs/tasks/hrp-v6-ui-04c1-r4-footer-justify/TASK.md
-spec_version: v0.1 (Owner 11/09/2026 00:49 yeu cau sua footer 3 diem: bo HRP Co.,Ltd, flatten gap, justify-between cot Cong ty va cot Danh muc dich vu)
-task_status: Tier 1 (Delivery Lead) commit 0e866ca + push ff63083..0e866ca len origin/main 11/09/2026 00:53 theo tier1.md moi workflow (outcome cho phep implement ngay, khong cho Tier 0); typecheck local PASS; Vercel auto-deploy; CI main #34510854000 Quality fail P1012 DATABASE_URL_ADMIN expected (fix-ci chua merge tu PR #1)
-worktree_branch: main (Tier 0 directive TIER0_UI04 cho phep Tier 1 push production; round R4 tiep noi R3, chi sua GlobalFooter.tsx; fix-ci-prisma-validate-r1 van o branch rieng PR #1)
-current_gate: OWNER_VISUAL_REVIEW_R4 (anh xem https://hrpvietnam.com/ footer preview xem 3 diem fix OK khong)
-next_command: Tier 0 chot visual R4: (a) ACCEPTED -> closeout UI04c1 + mo hrp-v6-ui-04d-section-render, (b) yeu cau chinh them -> mo R5, (c) merge PR #1 fix-ci len main de CI Quality PASS (khong lien quan UI04, nhung can truoc khi closeout de CI xanh)
-previous_accepted: 04c1 ACCEPTED round 1 (9f593fa + Tier 1 TASK.md finalize 780bb75) + 04c2 ACCEPTED round 1 (1316ff4 + Tier 1 TASK.md finalize d7e6899) + R3 v1.3 ACCEPTED (8c6fd03 — feat(ui04): live urgent jobs and minimal job cards) + composition/footer v1.4 ACCEPTED (04b767e) + interaction R2 ACCEPTED + VIS-01..03 correction R1 ACCEPTED (284e46c) + B pagination-admin ACCEPTED (18919da) + A visual-polish ACCEPTED
+current_task: hrp-v6-ui-04c1-r5-footer-spacing-fix (READY_FOR_EXECUTION v0.1)
+task_path: docs/tasks/hrp-v6-ui-04c1-r5-footer-spacing-fix/TASK.md
+spec_version: v0.1 (Owner reject R4 11/09/2026 01:04 spacing cot Công ty gian qua xa do justify-between+gap-0 day items top<->bottom; R5 revert ve gap-y-3/gap-y-2 spacing tu nhien)
+task_status: Tier 1 (Delivery Lead) commit 15f6b27 + push 719cd1e..15f6b27 len origin/main 11/09/2026 01:05 theo tier1.md workflow; typecheck local PASS; Vercel auto-deploy
+worktree_branch: main (Tier 0 directive TIER0_UI04 con hieu luc cho R3+R4+R5)
+current_gate: OWNER_VISUAL_REVIEW_R5 (anh refresh https://hrpvietnam.com/ footer preview xem spacing da tho chua)
+next_command: Tier 0 chot visual R5: (a) ACCEPTED -> closeout UI04c1 + mo hrp-v6-ui-04d-section-render v1.6 (ke thua R5 footer), (b) spacing van sai -> mo R6 + Tier 1 PAUSE hoi Owner px reference (TASK §8 Q1), (c) can merge PR #1 fix-ci truoc khi closeout de CI Quality xanh
+previous_accepted: 04c1 ACCEPTED round 1 (9f593fa) + 04c2 ACCEPTED round 1 (1316ff4) + R3 v1.3 ACCEPTED (8c6fd03) + composition/footer v1.4 ACCEPTED (04b767e) + interaction R2 ACCEPTED + VIS-01..03 correction R1 ACCEPTED (284e46c) + B pagination-admin ACCEPTED (18919da) + A visual-polish ACCEPTED
 next_planner_candidate: hrp-v6-ui-04d-section-render (BLOCKED v1.5 — sau 04c1+04c2 push production + Owner live visual review ACCEPTED); sau đó hrp-v6-ui-04d-detail-ui (D.A); sau đó Admin V6 theo dependency (AV1 → AV4 → AV2 → AV6 → AV5)
 blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); UI04 04c1+04c2 đã OWNER_DECIDED (16 lựa chọn chốt 10/09/2026) — gate đã mở sang TIER2_EXECUTION; Owner live visual review pending post-deploy (Tier 1 monitor Vercel/CI); section-render chờ Tier 1 review V6 stacking sau push production
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
