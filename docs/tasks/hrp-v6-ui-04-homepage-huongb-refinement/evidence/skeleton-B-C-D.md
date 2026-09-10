@@ -295,6 +295,48 @@ Editor tin Admin/Sale đầy đủ trường theo `field-matrix.md` §5 (Editori
 
 ---
 
+## TASK 04c2 — Job Card color & layout refinement v10 (`hrp-v6-ui-04c2-job-card-color-refinement-v10`)
+
+### Status: `BLOCKED_OWNER DRAFT v0.1` (2026-09-10) — task mới mở theo directive Owner; verify-task.ps1 DRAFT-VALID 2 warning non-blocking
+
+### Lane / Audit
+- **FAST** (chỉ chỉnh style/copy className trong Job Card)
+- Audit mode: **NONE** (FAST bypass Tier 3)
+- Nâng `STANDARD/FOCUSED` nếu Owner delta chạm ApplyModal, route, responsive shared layout, hoặc blast radius ngoài featured-job-card
+
+### Outcome (TBD — chờ Owner trả lời §8)
+Owner đã nêu ý định refinement (delta thô):
+1. Đổi CTA "Xem chi tiết" từ solid `bg-blue-600` → ghost/outline
+2. Đổi CTA "Ứng tuyển" từ subtle slate-100 → primary cam/đỏ thương hiệu (nền cam + trắng text)
+3. Salary pill giảm saturation (emerald-50/700 → tone trầm, hoặc đen/xám đậm + icon xanh)
+4. Title `text-lg` → `text-base` + `line-clamp-2`
+5. Button text giữ `font-medium` (đã đúng)
+6. Footer tăng padding (px-4 py-2 theo Owner gợi ý) + `justify-between` + tăng gap
+7. Card surface, header layout, ribbon, body metadata, salaryLabel — không đổi
+
+### Skeleton invariant guard (R3 surface contract)
+- Container card `bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md` (R3 surface contract)
+- Header 2-cột `HrMonogram size={48}` + title + company `HRP Việt Nam` (R3 header contract)
+- Ribbon compact `bg-orange-500/75` nếu `badgeType === 'urgent'` (R3 ribbon contract)
+- Body metadata Lucide `MapPin` + `Clock3` slate-500 (R3 body contract)
+- Footer `border-t border-slate-100 p-4` (R3 footer contract)
+- `salaryLabel()` helper giữ nguyên
+- Preview logic slate-100 disabled + onApply wiring ApplyModal (R3 ApplyModal contract)
+- `Xem chi tiết` anchor `href={href}` (canonical URL từ BestJobsSection) giữ nguyên
+- KHÔNG revert R3 (`8c6fd03`) surface/border/shadow
+- KHÔNG revert R2 correction R1 (`9e51917`)
+- KHÔNG revert composition/footer `04b767e`
+
+### Out-of-scope
+- `featured-job-card.test.ts` (Tier 2 KHÔNG sửa trừ khi Owner yêu cầu)
+- `app/(portal)/page.tsx` (Tier 2 KHÔNG sửa — nơi `EnrichedJob` định nghĩa)
+- `package.json` (KHÔNG thêm package icon — chỉ `lucide-react` đã có)
+- `tailwind.config.*` (Tier 2 KHÔNG sửa — nếu cần token mới → escalate Tier 1)
+- API, schema, persistence, route mới
+
+### Bị chặn
+- Chờ Owner cung cấp 16 câu trả lời §8 (CTA color tone, salary tone, title size, footer padding/gap/layout, card surface revert...)
+
 ## Reference
 
 - Tier 0 chỉ thị:
@@ -309,7 +351,8 @@ Editor tin Admin/Sale đầy đủ trường theo `field-matrix.md` §5 (Editori
 - TASK B: `docs/tasks/hrp-v6-ui-04b-pagination-admin/TASK.md`
 - Interaction R2: `docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/TASK.md` (đầu chuỗi)
 - TASK C composition/footer: `docs/tasks/hrp-v6-ui-04c-home-composition-footer/TASK.md` (ACCEPTED v1.4 @ `04b767e`)
-- TASK 04c1 footer tweak r2: `docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/TASK.md` (DRAFT v0.1 — BLOCKED_OWNER)
+- TASK 04c1 footer tweak r2: `docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/TASK.md` (`READY_FOR_EXECUTION v1.0` — 10/09/2026)
+- TASK 04c2 job-card color refinement v10: `docs/tasks/hrp-v6-ui-04c2-job-card-color-refinement-v10/TASK.md` (`BLOCKED_OWNER DRAFT v0.1` — 10/09/2026; chờ Owner trả lời 16 câu hỏi §8)
 - TASK R3 urgent live + ribbon: `docs/tasks/hrp-v6-ui-04b-urgent-live-ribbon-r3/TASK.md` (ACCEPTED v1.3 @ `8c6fd03`)
 - TASK D section-render: `docs/tasks/hrp-v6-ui-04d-section-render/TASK.md` (BLOCKED v1.5 — chờ 04c1 ACCEPTED)
 - Visual correction R1 (VIS-01..03): `docs/tasks/hrp-v6-ui-04b-vis-correction-r1/TASK.md` (ACCEPTED)
@@ -330,3 +373,7 @@ Editor tin Admin/Sale đầy đủ trường theo `field-matrix.md` §5 (Editori
   - **TASK 04c1**: `DRAFT v0.1, BLOCKED_OWNER` → `READY_FOR_EXECUTION v1.0` (verify-task PASS)
   - Outcome: thay placeholder bằng 16 Owner decisions (#1 peach đậm hơn /20; #2 3 cột giữ; #3 mobile stack; #4 5 dịch vụ; #5-7 hotline/email/website; #8 địa chỉ; #9 form disabled; #10 helper text mới; #11 CTA; #12 copyright mới; #13 routes; #14 semantic disabled; #15 44px + 390px; #16 container)
   - Skeleton invariant: thêm panel liên hệ cam ấm + heading labels mới + bỏ row "Bị chặn"
+- 10/09/2026 (round 3): Tier 1 nhận directive Owner mới về Job Card color & layout refinement → mở task mới 04c2:
+  - **TASK 04c2**: thêm `BLOCKED_OWNER DRAFT v0.1`; scope featured-job-card.tsx only; baseline R3 Minimal SaaS surface invariant; song song 04c1 (file khác)
+  - Reference list: thêm 04c2
+  - Outcome: ghi 7 ý định Owner thô + skeleton invariant guard từ R3 surface contract

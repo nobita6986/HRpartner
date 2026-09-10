@@ -97,6 +97,7 @@ Tier 1 chốt chuỗi **Interaction R2 → Composition/Footer → Section Render
 > - **C composition/footer**: ACCEPTED v1.4 (`04b767e`) — container 1080px, ReferralStrip invariant, Footer 3 cột rebuild
 > - **R3 (live urgent jobs + Job Card Minimal SaaS + compact ribbon)**: ACCEPTED v1.3 (`8c6fd03`)
 > - **04c1 footer tweak r2** (`hrp-v6-ui-04c1-footer-tweak-r2`): **READY_FOR_EXECUTION v1.0** (10/09/2026; 16 Owner decisions đã chốt tại `evidence/owner-footer-r2-decisions.md`; `verify-task.ps1` PASS)
+> - **04c2 job-card color refinement v10** (`hrp-v6-ui-04c2-job-card-color-refinement-v10`): **BLOCKED_OWNER DRAFT v0.1** (10/09/2026; task mới mở theo directive Owner về đổi 2 CTA color + salary saturation + title size + footer layout; `verify-task.ps1` DRAFT-VALID 2 warning non-blocking; chờ Owner trả lời 16 câu hỏi §8 để bump v1.0; baseline R3 Minimal SaaS surface invariant; song song 04c1 vì scope khác file)
 > - **D section-render** (`hrp-v6-ui-04d-section-render`): BLOCKED v1.5, chờ 04c1 ACCEPTED
 > - **D.A detail UI**: DRAFT, sau D
 > - **D.B editor**: DRAFT (CRITICAL), sau D.A
@@ -315,6 +316,7 @@ Tier 1 cập nhật tài liệu lần này:
 | C composition/footer | ACCEPTED v1.4 | `04b767e` | container `max-w-[1080px] mx-auto`, ReferralStrip invariant, Footer 3 cột rebuild |
 | R3 live urgent + minimal SaaS card | ACCEPTED v1.3 | `8c6fd03` | thay fixture URGENT preview; Job Card Minimal SaaS thay salary slab/3D flip cũ |
 | 04c1 footer tweak r2 | **READY_FOR_EXECUTION v1.0** | — | Tier 1 finalize contract v1.0 dựa trên 16 decisions tại `evidence/owner-footer-r2-decisions.md`; `verify-task.ps1` PASS |
+| 04c2 job-card color refinement v10 | **BLOCKED_OWNER DRAFT v0.1** | — | Mở mới 10/09/2026 theo directive Owner về đổi 2 CTA color + salary saturation + title size + footer layout; verify-task DRAFT-VALID; chờ Owner trả lời 16 câu hỏi §8; song song 04c1 |
 | D section-render | BLOCKED v1.5 | — | chờ 04c1 ACCEPTED; section renderer KHÔNG sở hữu CMS |
 | D.A detail UI | DRAFT | — | sau D ACCEPTED |
 | D.B editor | DRAFT (CRITICAL) | — | sau D.A |
@@ -335,3 +337,7 @@ Tier 1 cập nhật tài liệu lần này:
 - 10/09/2026 (round 2): Tier 1 nhận `evidence/owner-footer-r2-decisions.md` (16 lựa chọn đã chốt) → finalize 04c1 contract v1.0; đồng bộ:
   - §1.3 bullet 04c1: `DRAFT v0.1, BLOCKED_OWNER` → `READY_FOR_EXECUTION v1.0` (16 Owner decisions đã chốt; verify-task PASS)
   - §8 bảng row 04c1: status → `READY_FOR_EXECUTION v1.0`; thêm note về decisions + verify-task PASS
+- 10/09/2026 (round 3): Tier 1 nhận directive Owner mới về Job Card color & layout refinement → mở task mới 04c2:
+  - §1.3 bullet 04c2: thêm `BLOCKED_OWNER DRAFT v0.1` (16 câu hỏi §8 đang chờ Owner; scope featured-job-card.tsx only; song song 04c1 vì file khác)
+  - §8 bảng row 04c2: thêm row mới với status DRAFT + verify-task DRAFT-VALID + song song 04c1
+  - KHÔNG đụng R3 (`8c6fd03`) file source
