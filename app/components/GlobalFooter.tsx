@@ -56,16 +56,15 @@ export function GlobalFooter() {
         {/* RQ-02: 3 cột desktop giữ thứ tự Công ty → Dịch vụ → Liên hệ */}
         <div className="grid w-full grid-cols-1 gap-8 md:grid-cols-[1.1fr_1fr_1.1fr]">
           {/* Cột 1: Công ty */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col justify-between gap-0">
             <h3 className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface">
               CÔNG TY TNHH HRP VIỆT NAM
             </h3>
             <p className="font-body text-body-sm text-on-surface-variant">HRP VIET NAM COMPANY LIMITED</p>
-            <p className="font-body text-body-sm text-on-surface-variant">HRP Co.,Ltd</p>
-            <p className="mt-2 font-body text-body-sm text-on-surface-variant leading-relaxed">
+            <p className="font-body text-body-sm text-on-surface-variant">
               Địa chỉ: Khu đất DV Tân Ngọc, Thống Nhất, Bắc Kế, Xã Bình Tuyền, Tỉnh Phú Thọ, Việt Nam
             </p>
-            <div className="mt-3 flex flex-col gap-2">
+            <div className="flex flex-col justify-between gap-0">
               <a
                 href="tel:02112216999"
                 className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
@@ -96,11 +95,11 @@ export function GlobalFooter() {
           </div>
 
           {/* Cột 2: Dịch vụ */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col justify-between gap-0">
             <h3 className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface">
               DANH MỤC DỊCH VỤ
             </h3>
-            <ul className="flex list-none flex-col gap-2 font-body text-body-sm text-on-surface-variant">
+            <ul className="flex list-none flex-col justify-between gap-0 font-body text-body-sm text-on-surface-variant">
               {SERVICES.map(({ label, Icon }) => (
                 <li key={label} className="flex items-start gap-2">
                   <Icon
