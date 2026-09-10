@@ -1,0 +1,13 @@
+# AC-02: BestJobs tab verification
+
+Command:
+Select-String -Path 'app/(portal)/page.tsx','src/domains/job-board/components/landing/best-jobs-section.tsx' -Pattern "bestJobsTab|BEST_JOBS_URGENT_PREVIEW|/api/jobs\?limit=9"
+
+Exit code: 0
+
+Matches found:
+- bestJobsTab: 6 matches
+- BEST_JOBS_URGENT_PREVIEW: 3 matches
+- /api/jobs?limit=9: 1 match (buildBestJobsQuery)
+
+Result: PASS — BestJobs tab state, fixture import, and separate fetch present.

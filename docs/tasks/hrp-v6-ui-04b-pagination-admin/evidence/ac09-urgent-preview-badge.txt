@@ -1,0 +1,13 @@
+# AC-09: URGENT tab preview badge
+
+Command:
+Select-String -Path 'app/(portal)/page.tsx','src/domains/job-board/components/landing/best-jobs-section.tsx' -Pattern "Preview|Backend chưa hỗ trợ"
+
+Exit code: 0
+
+Matches found:
+- "Preview" (urgentPreviewBadge prop): 2 matches
+- "Backend chưa hỗ trợ" (info banner): 1 match
+
+Source review: tab URGENT renders preview badge info div, no pagination control.
+Result: PASS — URGENT tab shows preview badge + "Backend chưa hỗ trợ" banner.

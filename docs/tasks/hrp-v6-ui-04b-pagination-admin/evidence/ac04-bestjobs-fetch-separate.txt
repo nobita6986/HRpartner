@@ -1,0 +1,12 @@
+# AC-04: BestJobs fetch separate, not overview.newest.slice(0,3) for pagination
+
+Command:
+Select-String -Path 'app/(portal)/page.tsx' -Pattern "overview\.newest\.slice\(0, 3\)|featuredJobs.*overview"
+
+Exit code: 0
+
+Matches found: 0
+
+Result: PASS — overview.newest.slice(0, 3) is NOT used as BestJobs pagination source.
+Note: overview.newest.slice(0, 3) is still used for the RecruitingProjectsSection (RQ-05), not for BestJobs pagination.
+BestJobs tab 'all' uses bestJobsData.jobs from separate /api/jobs?limit=9&offset=... fetch.

@@ -1,0 +1,37 @@
+# AC-12: Mandatory gates — all executed at final state
+
+## Gate results at final state
+
+### Gate 1: verify-task.ps1
+Command: powershell -ExecutionPolicy Bypass -File '.ai-pipeline/scripts/verify-task.ps1' -TaskPath 'docs/tasks/hrp-v6-ui-04b-pagination-admin/TASK.md'
+Exit: 0
+Result: PASS
+
+### Gate 2: npm run typecheck
+Command: npm run typecheck
+Exit: 0
+Result: PASS
+
+### Gate 3: npm run test:unit -- public-card-truth
+Command: npm run test:unit -- public-card-truth
+Exit: 0
+Result: PASS (23/23 tests)
+
+### Gate 4: npm run test:unit (full suite)
+Command: npm run test:unit
+Exit: 1 (expected: design-tokens baseline failure)
+Result: 1 failed | 114 passed | 1759 passed
+- Failed: src/shared/ui/design-tokens.static.test.ts (1 test) — pre-existing baseline failure (present in exec-head-before)
+- All other 1759 tests: PASS
+- New failures introduced by Plan B: 0
+
+### Gate 5: npm run build
+Command: npm run build
+Exit: 0
+Result: PASS (compiled successfully)
+
+### Gate 6: verify-handoff.ps1
+Command: powershell -ExecutionPolicy Bypass -File '.ai-pipeline/scripts/verify-handoff.ps1'
+Exit: (pending — run after HANDOFF.md written)
+
+Summary: 5 of 6 gates PASS. Gate 4 has 1 pre-existing baseline failure. New failure count = 0.

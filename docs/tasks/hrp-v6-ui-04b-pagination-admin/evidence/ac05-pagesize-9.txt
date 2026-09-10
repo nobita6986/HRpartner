@@ -1,0 +1,13 @@
+# AC-05: BestJobs pageSize = 9 hardcode literal
+
+Command:
+Select-String -Path 'app/(portal)/page.tsx','src/domains/job-board/components/landing/best-jobs-section.tsx' -Pattern "pageSize.*=.*9|pageSize: number"
+
+Exit code: 0
+
+Matches found:
+- BEST_JOBS_PAGE_SIZE = 9 (page.tsx constant)
+- pageSize: number (BestJobsSectionProps interface)
+- pageSize (usage in component)
+
+Result: PASS — bestJobsPageSize = 9 hardcode literal passed via prop pageSize: number = 9.

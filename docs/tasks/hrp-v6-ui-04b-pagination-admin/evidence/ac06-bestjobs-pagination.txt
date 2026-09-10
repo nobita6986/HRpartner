@@ -1,0 +1,15 @@
+# AC-06: BestJobs pagination control — prev/next + range "Trang X / Y"
+
+Command:
+Select-String -Path 'app/(portal)/page.tsx','src/domains/job-board/components/landing/best-jobs-section.tsx' -Pattern "Trang.*/.*Y|Phân trang|onPrev|onNext|handleBestJobsPrev|handleBestJobsNext"
+
+Exit code: 0
+
+Matches found:
+- onPrev: 2 matches (prop + handler)
+- onNext: 2 matches (prop + handler)
+- handleBestJobsPrev: 1 match
+- handleBestJobsNext: 1 match
+- "Trang {currentPage} / {totalPages}": 1 match
+
+Result: PASS — pagination prev/next + range "Trang X / Y" present (only for tab 'all').

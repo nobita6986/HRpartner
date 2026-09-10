@@ -1,0 +1,17 @@
+# AC-01: Urgent fixture verification
+
+Command:
+Test-Path src/domains/job-board/fixtures/best-jobs-urgent-preview.ts
+Select-String -Path src/domains/job-board/fixtures/best-jobs-urgent-preview.ts -Pattern "preview-urgent-|INTEGRATION_PENDING"
+
+Exit code: 0
+
+Matches found:
+- preview-urgent-001 (id prefix)
+- preview-urgent-002 (id prefix)
+- preview-urgent-003 (id prefix)
+- preview-urgent-004 (id prefix)
+- source: 'INTEGRATION_PENDING' (4 occurrences, one per fixture item)
+- badgeType: 'urgent' (4 occurrences)
+
+Result: PASS — fixture file exists, id prefix correct, INTEGRATION_PENDING marker present.

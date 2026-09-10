@@ -11,6 +11,7 @@ import { RecruitmentHighlight } from '@/src/domains/job-board/components/landing
 import { RecruitingProjectsSection } from '@/src/domains/job-board/components/landing/recruiting-projects-section';
 import { ReferralStrip } from '@/src/domains/job-board/components/landing/referral-strip';
 import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
+import { BEST_JOBS_URGENT_PREVIEW } from '@/src/domains/job-board/fixtures/best-jobs-urgent-preview';
 import type {
   PublicJobDto,
   PublicJobFacets,
@@ -37,7 +38,10 @@ const EMPTY_OVERVIEW: PublicJobOverview = {
 };
 const PAGE_SIZE = 12;
 
-interface EnrichedJob {
+// DEC-04 / STEP-04: BestJobs pageSize hardcoded 9 literal, passed via prop.
+const BEST_JOBS_PAGE_SIZE = 9;
+
+export interface EnrichedJob {
   id: string;
   slug: string;
   title: string;
@@ -85,6 +89,13 @@ function buildQuery(filters: JobSearchFilters, offset: number): string {
   return params.toString();
 }
 
+// ─── BestJobs fetch query (limit=9, offset via state) ───────────────────────
+
+function buildBestJobsQuery(offset: number): string {
+  const params = new URLSearchParams({ limit: String(BEST_JOBS_PAGE_SIZE), offset: String(offset) });
+  return params.toString();
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function JobsPage() {
@@ -105,6 +116,16 @@ export default function JobsPage() {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const generationRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+
+  // DEC-05 / STEP-04: BestJobs tab state + fetch (separate from sentinel homepage search)
+  const [bestJobsTab, setBestJobsTab] = useState<'all' | 'urgent'>('all');
+  const [bestJobsOffset, setBestJobsOffset] = useState(0);
+  const [bestJobsData, setBestJobsData] = useState<{ jobs: EnrichedJob[]; total: number; nextOffset: number | null }>({
+    jobs: [],
+    total: 0,
+    nextOffset: null,
+  });
+  const [bestJobsLoading, setBestJobsLoading] = useState(false);
 
   const runQuery = useCallback(
     async (filters: JobSearchFilters, offset: number, mode: 'replace' | 'append') => {
@@ -168,6 +189,42 @@ export default function JobsPage() {
     return () => observer.disconnect();
   }, [loadMore]);
 
+  // DEC-05 / STEP-04: Fetch BestJobs separately for tab 'all'.
+  // Tab 'urgent' uses BEST_JOBS_URGENT_PREVIEW fixture.
+  useEffect(() => {
+    if (bestJobsTab !== 'all') return;
+
+    let cancelled = false;
+    setBestJobsLoading(true);
+
+    fetch(`/api/jobs?${buildBestJobsQuery(bestJobsOffset)}`, { cache: 'no-store' })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+        return res.json() as Promise<PublicJobListResult>;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        const incoming = (Array.isArray(data.jobs) ? data.jobs : []).map(enrichJob);
+        setBestJobsData({
+          jobs: incoming,
+          total: typeof data.total === 'number' ? data.total : 0,
+          nextOffset: typeof data.nextOffset === 'number' ? data.nextOffset : null,
+        });
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        // Error is not displayed in this scope; state not stored (out of scope)
+        console.warn('BestJobs fetch error:', e instanceof Error ? e.message : e);
+      })
+      .finally(() => {
+        if (!cancelled) setBestJobsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bestJobsTab, bestJobsOffset]);
+
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setSearching(true);
@@ -194,6 +251,23 @@ export default function JobsPage() {
     setSuccessCode(code);
   }
 
+  // BestJobs tab handlers
+  function handleBestJobsTabChange(tab: 'all' | 'urgent') {
+    setBestJobsTab(tab);
+    if (tab === 'all') {
+      // Reset offset and refetch
+      setBestJobsOffset(0);
+    }
+  }
+
+  function handleBestJobsPrev() {
+    setBestJobsOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
+  }
+
+  function handleBestJobsNext() {
+    setBestJobsOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
+  }
+
   // Featured source — newest first, topPaid fallback (per RQ-03 / RQ-11)
   const featuredSource = overview.newest[0] ?? overview.topPaid[0] ?? null;
   const featuredJobs = (overview.newest.length > 0 ? overview.newest : overview.topPaid)
@@ -209,6 +283,12 @@ export default function JobsPage() {
     const found = overview.areaCounts.find((entry) => entry.value === name);
     return { name, count: found?.count ?? 0 };
   });
+
+  // DEC-05: Determine BestJobs display data based on active tab
+  const bestJobsDisplayJobs = bestJobsTab === 'all' ? bestJobsData.jobs : BEST_JOBS_URGENT_PREVIEW;
+  const bestJobsDisplayTotal =
+    bestJobsTab === 'all' ? bestJobsData.total : BEST_JOBS_URGENT_PREVIEW.length;
+  const bestJobsDisplayNextOffset = bestJobsTab === 'all' ? bestJobsData.nextOffset : null;
 
   return (
     <main id="hrp-main" tabIndex={-1} className="flex w-full flex-col items-stretch gap-0">
@@ -330,15 +410,19 @@ export default function JobsPage() {
         </section>
       ) : (
         <>
+          {/* DEC-01 / RQ-01, RQ-02, RQ-05, RQ-06: BestJobs tab + pagination */}
           <BestJobsSection
-            jobs={featuredJobs.map((job) => ({
-              id: job.id,
-              title: job.title,
-              salary: salaryLabel(job.salaryMinVnd, job.salaryMaxVnd),
-              location: job.locations[0] ?? 'Toàn quốc',
-              badgeType: job.badgeType === 'urgent' ? 'urgent' : null,
-            }))}
+            jobs={bestJobsDisplayJobs}
+            total={bestJobsDisplayTotal}
+            pageSize={BEST_JOBS_PAGE_SIZE}
+            offset={bestJobsOffset}
+            nextOffset={bestJobsDisplayNextOffset}
+            tab={bestJobsTab}
+            onTabChange={handleBestJobsTabChange}
+            onPrev={handleBestJobsPrev}
+            onNext={handleBestJobsNext}
             buildHref={(jobId) => publicJobDetailPath(jobId)}
+            urgentPreviewBadge="Preview"
           />
 
           <AreasSection areas={areasForCards} onPick={applyArea} />

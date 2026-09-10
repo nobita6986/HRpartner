@@ -1,0 +1,13 @@
+# AC-07: Tab ARIA — role="tablist" + role="tab" + aria-selected
+
+Command:
+Select-String -Path src/domains/job-board/components/landing/best-jobs-section.tsx -Pattern "role=""tablist""|role=""tab""|aria-selected"
+
+Exit code: 0
+
+Matches found:
+- role="tablist": 1 match (container div)
+- role="tab": 2 matches (Tất cả button + Tuyển gấp button)
+- aria-selected: 2 matches (one per tab button)
+
+Result: PASS — tab ARIA attributes present with proper semantics.

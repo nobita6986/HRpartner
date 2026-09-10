@@ -1,0 +1,10 @@
+# AC-10: Truth fence — no fake data strings
+
+Command:
+Select-String -Path src/domains/job-board/components/landing/best-jobs-section.tsx,src/domains/job-board/components/landing/recruiting-projects-section.tsx,src/domains/job-board/fixtures/best-jobs-urgent-preview.ts,"app/(portal)/page.tsx" -Pattern "Top công ty|Đối tác chính thức|Cơ hội mới|hiển thị số slot thật|Dự án trọng điểm|17\.800|13\.000\.000|\+10\.000\.000|\+50\.000\.000"
+
+Exit code: 0
+
+Matches found: 0
+
+Result: PASS — Truth fence clean. No fake data strings found in changed public surface.

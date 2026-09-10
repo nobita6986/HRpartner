@@ -1,6 +1,10 @@
 /**
  * public-card-truth.test.ts — V5-go-live-05 / RQ-12 / STEP-07 / AC-01..AC-04, AC-06, AC-11.
  *
+ * DEC-06: Tab URGENT fixture `BEST_JOBS_URGENT_PREVIEW` carries `source: 'INTEGRATION_PENDING'`
+ * per DEC-06 (RQ-03/RQ-04). This test file validates the DTO contract — it does not cover the
+ * fixture itself (fixture is tested via AC-01/AC-09 in the acceptance gates).
+ *
  * Test HÀNH VI (không grep) cho projection công khai của card việc làm. Mỗi khối dưới đây đo đúng
  * một khẳng định mà contract gọi là FAIL nếu vỡ:
  *   - `AC-02`/`RQ-04`: nhiều slot ⇒ `positionTitles`/`locations`/`shifts` unique + sort ổn định;

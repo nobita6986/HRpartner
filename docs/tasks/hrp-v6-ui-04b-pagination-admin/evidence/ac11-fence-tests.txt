@@ -1,0 +1,14 @@
+# AC-11: Fence tests updated with DEC-01 + DEC-06 comments
+
+Command:
+Select-String -Path src/domains/job-board/public-ui-premium.static.test.ts,src/domains/job-board/public-ui-token-parity.static.test.ts,src/domains/applications/marketplace-inventory.static.test.ts,src/domains/job-board/public-card-truth.test.ts -Pattern "DEC-01|DEC-06"
+
+Exit code: 0
+
+Matches per file:
+- public-ui-premium.static.test.ts: DEC-01 (4), DEC-06 (2)
+- public-ui-token-parity.static.test.ts: DEC-01 (1)
+- marketplace-inventory.static.test.ts: DEC-01 (4)
+- public-card-truth.test.ts: DEC-06 (1)
+
+Result: PASS — All 4 fence test files updated with DEC-01 (tab/pagination) + DEC-06 (URGENT fixture) comments.

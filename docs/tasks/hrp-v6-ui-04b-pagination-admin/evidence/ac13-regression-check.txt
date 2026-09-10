@@ -1,0 +1,18 @@
+# AC-13: Regression shell — GlobalNavbar still imported in 6 portal routes
+
+Command:
+Select-String -Path 'app/(portal)/page.tsx','app/(jobs)/viec-lam/page.tsx','app/(jobs)/viec-lam/[slug]/page.tsx','app/(jobs)/login/page.tsx','app/(jobs)/ve-chung-toi/page.tsx','app/(jobs)/ctv-portal/page.tsx' -Pattern "import.*GlobalNavbar"
+
+Exit code: 0
+
+Matches found:
+- app/(portal)/page.tsx: import { GlobalNavbar } from '@/app/components/GlobalNavbar'
+- app/(jobs)/viec-lam/page.tsx: import { GlobalNavbar } from '@/app/components/GlobalNavbar'
+- app/(jobs)/viec-lam/[slug]/page.tsx: import { GlobalNavbar } from '@/app/components/GlobalNavbar'
+- app/(jobs)/login/page.tsx: import { GlobalNavbar } from '@/app/components/GlobalNavbar'
+- app/(jobs)/ve-chung-toi/page.tsx: import { GlobalNavbar } from '@/app/components/GlobalNavbar'
+- app/(jobs)/ctv-portal/page.tsx: import { GlobalNavbar } from '@/app/components/GlobalNavbar'
+
+Total: 6 matches (expected: 6)
+
+Result: PASS — GlobalNavbar shell intact across all 6 portal routes.

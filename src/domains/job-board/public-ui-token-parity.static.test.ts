@@ -1,6 +1,10 @@
 /**
  * public-ui-token-parity.static.test.ts — hrp-v5-ui-01 / RQ-12 / DEC-08 / AC-12.
  *
+ * DEC-01: Tab/pagination classes added to BestJobsSection in Plan B:
+ *   bg-primary-container, bg-surface, text-on-surface, rounded-full, inline-flex,
+ *   role="tablist", role="tab", role="group", aria-label="Phân trang"
+ *
  * Lớp lỗi được chốt: một class Tailwind CÓ MẶT trong `className` mà KHÔNG có token tương ứng
  * trong khối `@theme` của `app/globals.css` thì không sinh ra một byte CSS nào. Nó không đỏ ở
  * `typecheck`, không đỏ ở `eslint`, không đỏ ở một hàng rào nào đang có — vì mọi hàng rào cũ đo

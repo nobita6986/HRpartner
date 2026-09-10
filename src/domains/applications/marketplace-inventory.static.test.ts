@@ -1,6 +1,11 @@
 /**
  * marketplace-inventory.static.test.ts — V5-OPS-06A / RQ-01/07/08 / STEP-04 / AC-06/07.
  *
+ * DEC-01: Plan B (hrp-v6-ui-04b-pagination-admin) adds BestJobs tab + pagination to page.tsx.
+ *   The BestJobsSection is rendered with new props (jobs, total, pageSize, offset, nextOffset, tab).
+ *   Tab URGENT uses BEST_JOBS_URGENT_PREVIEW fixture with source: 'INTEGRATION_PENDING'.
+ *   These changes are reflected in the PORTAL_PAGE assertions below.
+ *
  * Detector tĩnh chạy trên cây nguồn THẬT (đọc file, không mô phỏng):
  *   - RQ-08: đúng MỘT đường ghi ẩn danh — chỉ canonical apply route gọi
  *     `submitPublicApplication`; hai legacy write chỉ còn stub 410 (không nhận req,
@@ -246,18 +251,21 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
 
   it('job card không dựng dữ liệu giả và đọc summary thật từ projection công khai', () => {
     // DEC-10 allowlist: composition changed in ui-03 round 1 — assertion updated to match new structure.
+    // DEC-01 allowlist: BestJobsSection renders FeaturedJobCard with computed location/salary props internally.
     // Original behavior intent preserved.
-    const code = strip(read(PORTAL_PAGE));
+    const page = strip(read(PORTAL_PAGE));
+    const bestJobs = strip(read('src/domains/job-board/components/landing/best-jobs-section.tsx'));
     // ui-03: FeaturedJobCard uses job.title, job.salaryMinVnd/job.salaryMaxVnd via salaryLabel
     // No job.salary raw property (uses computed salaryLabel)
-    expect(code).not.toContain('availableSlots * 1.5');
+    expect(page).not.toContain('availableSlots * 1.5');
     // No HRP Partners fake company name
-    expect(code).not.toContain('HRP Partners');
+    expect(page).not.toContain('HRP Partners');
     // recruiter field no longer in EnrichJob projection (removed from public DTO mapping)
-    // ui-03: card shows 'HRP Việt Nam' as location instead of recruiter
-    expect(code).toContain("location: job.locations[0] ?? 'Toàn quốc'");
-    // ui-03: positions/shifts/locations are in enrichJob mapping
-    expect(code).toContain('locations: job.locations');
+    // ui-03: enrichJob maps locations, badgeType, salary fields
+    expect(page).toContain('locations: job.locations');
+    // DEC-01: location and salary computation moved inside BestJobsSection
+    expect(bestJobs).toContain("location: job.locations[0]");
+    expect(bestJobs).toContain('salary: salaryLabel');
   });
 
   it('nút Tìm kiếm chuyển ba bộ lọc thật vào API, không còn control trang trí', () => {
@@ -394,5 +402,46 @@ describe('DEC-06/DEC-12 — adapter kín và không log identifier', () => {
     for (const name of ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'RATE_LIMIT_HASH_SECRET']) {
       expect(env, name).toMatch(new RegExp(`^${name}=\\s*$`, 'm'));
     }
+  });
+});
+
+// DEC-01 / STEP-04: BestJobs tab + pagination in PORTAL_PAGE
+describe('DEC-01 / RQ-01, RQ-02 — BestJobs tab filter and pagination in page.tsx', () => {
+  it('page.tsx has BestJobs tab state and fetches separately (DEC-05)', () => {
+    const code = strip(read(PORTAL_PAGE));
+    expect(code).toContain('bestJobsTab');
+    expect(code).toContain('bestJobsOffset');
+    expect(code).toContain('bestJobsData');
+    // Tab 'all' fetches from /api/jobs
+    expect(code).toContain("/api/jobs?");
+    // Tab 'urgent' uses fixture
+    expect(code).toContain('BEST_JOBS_URGENT_PREVIEW');
+  });
+
+  it('BestJobs pagination fetches with limit=9 (DEC-04 / BEST_JOBS_PAGE_SIZE)', () => {
+    const code = strip(read(PORTAL_PAGE));
+    expect(code).toContain('BEST_JOBS_PAGE_SIZE');
+    expect(code).toContain('bestJobsOffset');
+    expect(code).toContain('buildBestJobsQuery');
+  });
+
+  it('BestJobs tab does NOT send urgency=URGENT to server (DEC-01 / B4 → AV1)', () => {
+    // BestJobs tab fetch should NOT include urgency=URGENT in the query string.
+    // enrichJob's `urgency === 'URGENT'` is legitimate client-side mapping, not a server query.
+    const code = strip(read(PORTAL_PAGE));
+    // Check that buildBestJobsQuery does NOT add urgency param
+    expect(code).toContain('buildBestJobsQuery');
+    // The buildBestJobsQuery should only add limit + offset
+    expect(code).not.toMatch(/buildBestJobsQuery.*urgency/);
+    // No urgency filter in the BestJobs fetch URL pattern
+    expect(code).not.toMatch(/params\.set\(['"]urgency['"],['"]URGENT['"]\)/);
+    expect(code).not.toMatch(/\/api\/jobs\?.*urgency=URGENT/);
+  });
+
+  it('BestJobs tab does NOT use overview.newest.slice(0, 3) as pagination source (DEC-05)', () => {
+    const code = strip(read(PORTAL_PAGE));
+    // featuredJobs still uses overview.newest for the legacy recruiting section
+    // But BestJobs tab uses bestJobsData.jobs from the separate fetch
+    expect(code).toContain('bestJobsData.jobs');
   });
 });

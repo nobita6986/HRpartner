@@ -1,0 +1,15 @@
+# AC-08: Pagination ARIA — role="group" aria-label="Phân trang"
+
+Command:
+Select-String -Path src/domains/job-board/components/landing/best-jobs-section.tsx -Pattern "role=""group""|aria-label=""Phân trang""|disabled.*offset.*=.*0|nextOffset === null"
+
+Exit code: 0
+
+Matches found:
+- role="group": 1 match (pagination container div)
+- aria-label="Phân trang": 1 match
+- offset === 0: 1 match (prev button disabled condition)
+- offset + pageSize >= total: 1 match (next button disabled condition)
+- nextOffset === null: 1 match (next button disabled condition)
+
+Result: PASS — pagination control has role="group" aria-label="Phân trang" with correct disabled logic.

@@ -1,6 +1,13 @@
 /**
  * public-ui-premium.static.test.ts — go-live-08 / RQ-14 / STEP-08 / AC-14.
  *
+ * DEC-01: BestJobs tab + pagination composition changes in Plan B (hrp-v6-ui-04b-pagination-admin):
+ *   - Tab filter (Tất cả / Tuyển gấp) with role="tablist"/role="tab" ARIA
+ *   - Pagination prev/next control (role="group" aria-label="Phân trang")
+ *   - pageSize=9 passed via prop (DEC-04 / BEST_JOBS_PAGE_SIZE hardcode)
+ * DEC-06: Tab URGENT uses fixture BEST_JOBS_URGENT_PREVIEW with source: 'INTEGRATION_PENDING'
+ *   (fixture tested via AC-01/AC-09; this file covers UI composition).
+ *
  * Vì sao hàng rào của round này là test TĨNH đọc cây nguồn: repo không có một
  * mảnh công cụ trình duyệt nào (0 file `*.test.tsx`, 0 match playwright /
  * puppeteer / cypress / jsdom), nên `getComputedStyle`, ảnh chụp và điều hướng
@@ -915,5 +922,67 @@ describe('go-live-08 / RQ-26 — sự thật dữ liệu của GO-LIVE-05 còn n
     expect(page).toContain('facets.areas');
     expect(page).toContain('<option value="">Tất cả khu vực</option>');
     expect(page).toContain('<option value="">Mọi mức lương</option>');
+  });
+});
+
+// DEC-01: BestJobs tab + pagination UI composition
+describe('DEC-01 / STEP-03 / RQ-01, RQ-05 — BestJobs tab filter and pagination controls', () => {
+  it('tab filter has role="tablist" with role="tab" pills and aria-selected', () => {
+    // best-jobs-section.tsx has tab controls with proper ARIA
+    expect(BEST).toContain('role="tablist"');
+    expect(BEST).toContain('role="tab"');
+    expect(BEST).toContain('aria-selected');
+  });
+
+  it('tab pills use bg-primary-container for active state (DEC-02)', () => {
+    // Tab active className uses bg-primary-container text-white font-bold
+    expect(BEST).toContain('bg-primary-container');
+    expect(BEST).toContain("tab === 'all'");
+    expect(BEST).toContain("tab === 'urgent'");
+  });
+
+  it('BestJobsSection accepts pageSize prop and renders up to pageSize items', () => {
+    // DEC-04: Component receives pageSize as a prop variable (not hardcoded literal 3).
+    // Uses jobs.slice(0, pageSize) for the grid render.
+    expect(BEST).toContain('pageSize');
+    expect(BEST).toContain('offset');
+    expect(BEST).toContain('total');
+    expect(BEST).toContain('nextOffset');
+    // jobs.slice(0, pageSize) is the correct pattern — uses the prop variable
+    expect(BEST).toContain('jobs.slice(0, pageSize)');
+    // Verify the pageSize is a prop (in interface) and used as a variable (not hardcoded as literal 9)
+    expect(BEST).toContain('pageSize: number');
+  });
+
+  it('pagination control has role="group" aria-label="Phân trang" (DEC-03)', () => {
+    expect(BEST).toContain('role="group"');
+    expect(BEST).toContain('aria-label="Phân trang"');
+  });
+
+  it('prev disabled when offset=0, next disabled when nextOffset=null or offset+pageSize>=total (RQ-06)', () => {
+    expect(BEST).toContain('offset === 0');
+    expect(BEST).toContain('nextOffset === null');
+    expect(BEST).toContain('offset + pageSize >= total');
+  });
+
+  it('BEST_JOBS_URGENT_PREVIEW imported in page.tsx (DEC-06)', () => {
+    expect(page).toContain('BEST_JOBS_URGENT_PREVIEW');
+    expect(page).toContain('bestJobsTab');
+    expect(page).toContain('bestJobsOffset');
+  });
+});
+
+// DEC-06: URGENT fixture INTEGRATION_PENDING marker
+describe('DEC-06 / STEP-02 / RQ-03, RQ-04 — URGENT fixture INTEGRATION_PENDING', () => {
+  it('fixture has source: INTEGRATION_PENDING on each item', () => {
+    const FIXTURE = 'src/domains/job-board/fixtures/best-jobs-urgent-preview.ts';
+    const fixtureCode = read(FIXTURE);
+    expect(fixtureCode).toContain("source: 'INTEGRATION_PENDING'");
+    expect(fixtureCode).toContain('preview-urgent-');
+    expect(fixtureCode).toContain("badgeType: 'urgent'");
+  });
+
+  it('page.tsx renders URGENT tab from BEST_JOBS_URGENT_PREVIEW', () => {
+    expect(page).toContain("bestJobsTab === 'all' ? bestJobsData.jobs : BEST_JOBS_URGENT_PREVIEW");
   });
 });

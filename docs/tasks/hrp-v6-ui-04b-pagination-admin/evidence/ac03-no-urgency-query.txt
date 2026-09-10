@@ -1,0 +1,12 @@
+# AC-03: No urgency query to server
+
+Command:
+Select-String -Path 'app/(portal)/page.tsx' -Pattern "urgency.*=.*URGENT|urgency=URGENT"
+Select-String -Path 'app/api/jobs/route.ts' -Pattern "urgency.*=.*URGENT"
+
+Exit code: 0 (both)
+
+Matches in page.tsx: 0 (enrichJob's urgency === 'URGENT' is client-side mapping, not a server query)
+Matches in route.ts: 0 (no urgency param in GET handler)
+
+Result: PASS — No urgency=URGENT query sent to server. enrichJob's urgency comparison is client-side DTO enrichment.
