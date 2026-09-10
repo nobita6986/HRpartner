@@ -1,4 +1,4 @@
-# TASK — `hrp-v6-ui-04d-section-render`
+﻿# TASK — `hrp-v6-ui-04d-section-render`
 
 > **Section renderer + demo content có cấu trúc** cho UI-04 theo Tier 0 mandate `docs/prompts/TIER1_UI04C_HOME_SECTIONS_FOOTER_AND_ADMIN_CMS.md` §3.
 > Tier 0 review v1 (`tier0-review-ui04c-contracts-v1.md`) + v2 (`tier0-review-ui04c-contracts-v2.md`): REVISION_REQUIRED v2 — sửa RQ-07 traceability STEP ID tường minh, AC-13 đo enabled/source policy, asset map dùng ảnh local phân biệt (industrial-location-01..04.webp, referral-team.webp), dependency overview từ `bootstrapBestJobs` của composition task, xóa residue SafeHtml, AV-CMS → AV6. Tier 0 review v3 (`tier0-review-ui04c-contracts-v3.md`) SMALL CLOSEOUT: thay mọi reference active còn sót `AV-CMS` bằng `AV6`; chuẩn hóa "CMS 4 section"; spec v1.3.
@@ -15,7 +15,7 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `FOCUSED` (UI thuần — section renderer + demo fixture có cấu trúc) |
 | Spec version | `v1.4` |
-| Status | `DRAFT` (v1.4: Owner R1 ghép VIS-06 inherited; chờ composition/footer v1.4 ACCEPTED → Tier 1 chuyển status `READY_FOR_EXECUTION`) |
+| Status | `READY_FOR_EXECUTION` (composition/footer v1.4 ACCEPTED + R2 ACCEPTED — Tier 1 chuyển; Task D inherit 1080px VIS-06) |
 | Planner | `Tier 1` |
 | Baseline | HEAD đầu round — `git rev-parse HEAD` ngay trước STEP-01 → `evidence/exec-head-before.txt` |
 | Source reference | composition/footer task v1.4 `ACCEPTED` (predecessor) — diff để đối chiếu ReferralStrip reorder cuối cùng + nền peach + inner container 1080px |
@@ -26,7 +26,7 @@
 | Required gates | `npm run typecheck` exit 0; `npm run test:unit` cùng expected failure set với baseline + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04d-section-render/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS; Tier 3 FOCUSED audit PASS |
 | Visual gate | Owner live review post-deploy. KHÔNG Edge/CDP/PNG/bbox đã bỏ. KHÔNG Lighthouse/axe-core auto-install |
 | Current execution round | `0` (v1.3 DRAFT — closeout Tier 0 review v3) |
-| Next gate | Sửa contract → `verify-task.ps1` PASS → Chờ composition/footer task ACCEPTED → interaction R2 READY_FOR_EXECUTION → composition/footer READY_FOR_EXECUTION → sau đó task này READY_FOR_EXECUTION |
+| Next gate | Tier 2 thi công (STANDARD) → Tier 3 FOCUSED audit → Owner live visual review section-render → ACCEPTED |
 
 ## 1. Outcome
 

@@ -1,4 +1,4 @@
-# TASK — `hrp-v6-ui-04c-home-composition-footer`
+﻿# TASK — `hrp-v6-ui-04c-home-composition-footer`
 
 > **Composition + Footer** cho UI-04 theo Tier 0 chỉ thị `docs/prompts/TIER0_UI04_HOME_COMPOSITION_FOOTER.md` + Tier 0 UI04C mandate `docs/prompts/TIER1_UI04C_HOME_SECTIONS_FOOTER_AND_ADMIN_CMS.md` §2.2.
 > Tier 0 review v1 (`tier0-review-ui04c-contracts-v1.md`) + v2 (`tier0-review-ui04c-contracts-v2.md`): REVISION_REQUIRED v2 — sửa RQ-01 (refactor BestJobs thành `bootstrapBestJobs`, xóa `runQuery` cũ sau khi `bootstrapBestJobs` nhận ownership, không có `jobs` state), xóa "read-only" và "flip flag" trong contact narrative (AV6 không sở hữu contact backend), đồng bộ RQ-01/DEC-02/STEP-02/AC-01/02/Risk cùng tên bootstrap + lifecycle. Tier 0 review v3 (`tier0-review-ui04c-contracts-v3.md`) SMALL CLOSEOUT: bỏ "KHÔNG xóa runQuery" trong scope summary; EV-02/EV-03 ghi rõ đây là evidence trước execution, spec v1.3.
@@ -16,7 +16,7 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `FOCUSED` |
 | Spec version | `v1.4` |
-| Status | `DRAFT` (v1.4: Owner R1 ghép VIS-06; chờ R2 round 1 ACCEPTED → Tier 1 chuyển status `READY_FOR_EXECUTION`) |
+| Status | `READY_FOR_EXECUTION` (R2 v1.4 ACCEPTED — Tier 1 chuyển; Owner R2 live review sau Tier 3 audit composition) |
 | Planner | `Tier 1` |
 | Baseline | HEAD đầu round — `git rev-parse HEAD` ngay trước STEP-01 → `evidence/exec-head-before.txt` |
 | Source reference | correction R1 commit `284e46c` (predecessor visual) + interaction R2 correction round 1 (`e18e54e` hoặc commit tương đương sau khi R2 ACCEPTED) — diff để đối chiếu trạng thái inline list cũ + ReferralStrip/footer background cũ + inner container 1080px |
@@ -27,7 +27,7 @@
 | Required gates | `npm run typecheck` exit 0; `npm run test:unit` cùng expected failure set với baseline + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04c-home-composition-footer/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS; Tier 3 FOCUSED audit PASS |
 | Visual gate | Owner live review post-deploy. KHÔNG Edge/CDP/PNG/bbox. KHÔNG Lighthouse/axe-core auto-install |
 | Current execution round | `0` (v1.4 DRAFT — Owner R1 ghép VIS-06) |
-| Next gate | Chờ R2 round 1 ACCEPTED → `verify-task.ps1` PASS với status `READY_FOR_EXECUTION` → Tier 2 thi công (STANDARD) → Tier 3 FOCUSED audit → Owner live visual review → ACCEPTED → Task D section-render READY_FOR_EXECUTION |
+| Next gate | Tier 2 thi công (STANDARD) → Tier 3 FOCUSED audit → Owner live visual review composition → ACCEPTED → Task D section-render READY_FOR_EXECUTION |
 
 ## 1. Outcome
 

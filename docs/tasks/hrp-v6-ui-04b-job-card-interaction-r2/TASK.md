@@ -1,4 +1,4 @@
-# TASK — `hrp-v6-ui-04b-job-card-interaction-r2`
+﻿# TASK — `hrp-v6-ui-04b-job-card-interaction-r2`
 
 > **Job-card interaction correction R2** theo Tier 0 review v2 (`tier0-review-ui04c-contracts-v2.md`) §3 + Tier 0 review v3 (`tier0-review-ui04c-contracts-v3.md`) SMALL CLOSEOUT.
 > Tier 0 review v1 (`tier0-review-ui04c-contracts-v1.md`) §6 + v2 + v3: sửa v1.3 với semantic Link cho content, CTA button sibling, prop chain chốt ngay trong contract, không dùng `aria-hidden` trên CTA có thể focus, thêm `featured-job-card.test.tsx` allowlist, dùng `buildHref(job.slug)`, RISK-05 bỏ stopPropagation, AC-10 bỏ selector `.cta:focus + .action-area`, metadata đồng bộ v1.3.
@@ -16,7 +16,7 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `FOCUSED` |
 | Spec version | `v1.4` |
-| Status | `READY_FOR_EXECUTION` (Owner R1 visual review FAIL → correction round, closeout Tier 0 review v3 PASS gate — Tier 1 chuyển status sau khi cả ba TASK `DRAFT-VALID`) |
+| Status | `ACCEPTED` (Tier 1 /resolve — Tier 3 FOCUSED audit PASS round 1, 0 findings, VIS-04/05 verified) |
 | Planner | `Tier 1` |
 | Baseline | HEAD đầu round — `git rev-parse HEAD` ngay trước STEP-01 → `evidence/exec-head-before.txt` |
 | Source reference | correction R1 commit `284e46c` (card polish + ribbon VIS-01..03 đã chốt) |
@@ -27,7 +27,7 @@
 | Required gates | `npm run typecheck` exit 0; `npm run test:unit` cùng expected failure set với baseline + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS; Tier 3 FOCUSED audit PASS |
 | Visual gate | Owner live review post-deploy. KHÔNG Edge/CDP/PNG/bbox. KHÔNG Lighthouse/axe-core auto-install |
 | Current execution round | `1` (v1.4 — Owner R1 visual review correction; round 0 implementation `e18e54e` đã pass gates nhưng CTA visual fail) |
-| Next gate | `/code → Tier 2 thi công round 1 (correction) → verify-task PASS → verify-handoff PASS → Tier 3 FOCUSED audit → Owner R2 live visual review → ACCEPTED → composition/footer + section-render READY_FOR_EXECUTION |
+| Next gate | `/resolve → ACCEPTED` — Tier 3 FOCUSED audit PASS round 1, 0 findings. composition/footer + section-render chuyển `READY_FOR_EXECUTION`. Owner R2 live visual review (post-deploy) |
 
 ## 1. Outcome
 
