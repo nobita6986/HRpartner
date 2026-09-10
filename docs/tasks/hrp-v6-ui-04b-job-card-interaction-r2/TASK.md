@@ -2,7 +2,8 @@
 
 > **Job-card interaction correction R2** theo Tier 0 review v2 (`tier0-review-ui04c-contracts-v2.md`) §3 + Tier 0 review v3 (`tier0-review-ui04c-contracts-v3.md`) SMALL CLOSEOUT.
 > Tier 0 review v1 (`tier0-review-ui04c-contracts-v1.md`) §6 + v2 + v3: sửa v1.3 với semantic Link cho content, CTA button sibling, prop chain chốt ngay trong contract, không dùng `aria-hidden` trên CTA có thể focus, thêm `featured-job-card.test.tsx` allowlist, dùng `buildHref(job.slug)`, RISK-05 bỏ stopPropagation, AC-10 bỏ selector `.cta:focus + .action-area`, metadata đồng bộ v1.3.
-> Scope: sửa `featured-job-card.tsx` để vùng lương/action có hiệu ứng lật sang CTA `Ứng tuyển nhanh` khi hover/focus; CTA gọi ApplyModal hiện có; click vùng card còn lại đi tới `/viec-lam/{slug}`; không nested interactive element; hỗ trợ keyboard + touch/mobile + prefers-reduced-motion; preview fixture cards có CTA disabled. **Đây là task FOCUSED đầu chuỗi** — thực thi TRƯỚC composition/footer và section-render vì cả hai phụ thuộc card này.
+> v1.4: Owner live visual review R1 (`docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/evidence/owner-live-visual-review-r1.md`) FAIL — `CORRECTION_REQUIRED` trước Tier 3 audit. Round mới: VIS-04 (CTA capsule/ring dư) + VIS-05 (hover label mất tương phản). Reset execution round về `1`. Status `READY_FOR_EXECUTION` (chờ Tier 2 round 1).
+> Scope: sửa `featured-job-card.tsx` để vùng lương/action có hiệu ứng lật sang CTA `Ứng tuyển nhanh` khi hover/focus; CTA gọi ApplyModal hiện có; click vùng card còn lại đi tới `/viec-lam/{slug}`; không nested interactive element; hỗ trợ keyboard + touch/mobile + prefers-reduced-motion; preview fixture cards có CTA disabled. Round 2 thêm: CTA hiển thị sạch — chỉ một filled surface duy nhất, không capsule/ring dư; hover/focus giữ text tương phản đọc được.
 > UI-only, STANDARD lane, FOCUSED audit. KHÔNG mở ApplyModal internals (Plan B đã chốt), KHÔNG schema/API/Admin.
 > Plan UI predecessor: Plan B `ACCEPTED` (18919da) + correction R1 `ACCEPTED` (284e46c).
 
@@ -14,19 +15,19 @@
 | Work type | `CODE` (UI interaction + accessibility + mobile fallback) |
 | Assurance lane | `STANDARD` |
 | Audit mode | `FOCUSED` |
-| Spec version | `v1.3` |
-| Status | `READY_FOR_EXECUTION` (closeout Tier 0 review v3 PASS gate — Tier 1 chuyển status sau khi cả ba TASK `DRAFT-VALID`) |
+| Spec version | `v1.4` |
+| Status | `READY_FOR_EXECUTION` (Owner R1 visual review FAIL → correction round, closeout Tier 0 review v3 PASS gate — Tier 1 chuyển status sau khi cả ba TASK `DRAFT-VALID`) |
 | Planner | `Tier 1` |
 | Baseline | HEAD đầu round — `git rev-parse HEAD` ngay trước STEP-01 → `evidence/exec-head-before.txt` |
 | Source reference | correction R1 commit `284e46c` (card polish + ribbon VIS-01..03 đã chốt) |
 | Plan UI predecessor | Plan B `ACCEPTED` (18919da) + correction R1 `ACCEPTED` (284e46c) |
 | Plan UI successor | composition/footer (`hrp-v6-ui-04c-home-composition-footer`) + section-render (`hrp-v6-ui-04d-section-render`) — cả hai phụ thuộc card đã hoàn thiện interaction này |
-| In-scope roots | `src/domains/job-board/components/landing/featured-job-card.tsx`, `src/domains/job-board/components/landing/featured-job-card.test.tsx` (NEW — AC-01/02/03/10), `src/domains/job-board/components/landing/best-jobs-section.tsx`, `app/(portal)/page.tsx` (chỉ khi cần thay đổi compose để test, không sửa section khác), `docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/**` |
+| In-scope roots | `src/domains/job-board/components/landing/featured-job-card.tsx`, `src/domains/job-board/components/landing/featured-job-card.test.tsx` (NEW — AC-01/02/03/10/15), `src/domains/job-board/components/landing/best-jobs-section.tsx`, `app/(portal)/page.tsx` (chỉ khi cần thay đổi compose để test, không sửa section khác), `docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/**` (bao gồm `evidence/owner-live-visual-review-r1.md`) |
 | Forbidden paths | `src/domains/job-board/public.service.ts`, `src/domains/job-board/components/landing/hero.tsx`, `src/domains/job-board/components/landing/areas-section.tsx`, `src/domains/job-board/components/landing/recruiting-projects-section.tsx`, `src/domains/job-board/components/landing/referral-strip.tsx`, `app/components/GlobalFooter.tsx`, `src/domains/job-board/public-listing.params.ts`, `src/domains/job-board/fixtures/best-jobs-urgent-preview.ts` (không sửa fixture; dùng prop để phân biệt), `app/api/**`, `prisma/**`, `src/shared/auth/permission-catalog.ts`, `app/admin/**`, `app/globals.css` NGOÀI nếu cần thêm CSS transition cho flip (Tier 1 duyệt); `docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/**`, `docs/tasks/hrp-v6-ui-04a-visual-polish/**`, `docs/tasks/hrp-v6-ui-04b-pagination-admin/**`, `docs/tasks/hrp-v6-ui-04b-vis-correction-r1/**`, `docs/tasks/hrp-v6-ui-04c-home-composition-footer/**`, `docs/tasks/hrp-v6-ui-04d-section-render/**` |
 | Required gates | `npm run typecheck` exit 0; `npm run test:unit` cùng expected failure set với baseline + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS; Tier 3 FOCUSED audit PASS |
 | Visual gate | Owner live review post-deploy. KHÔNG Edge/CDP/PNG/bbox. KHÔNG Lighthouse/axe-core auto-install |
-| Current execution round | `0` (v1.3 DRAFT — closeout Tier 0 review v3) |
-| Next gate | `/code → Tier 2 thi công (STANDARD) → verify-task PASS → verify-handoff PASS → Tier 3 FOCUSED audit → /resolve → commit → Owner live visual review → composition/footer + section-render READY_FOR_EXECUTION |
+| Current execution round | `1` (v1.4 — Owner R1 visual review correction; round 0 implementation `e18e54e` đã pass gates nhưng CTA visual fail) |
+| Next gate | `/code → Tier 2 thi công round 1 (correction) → verify-task PASS → verify-handoff PASS → Tier 3 FOCUSED audit → Owner R2 live visual review → ACCEPTED → composition/footer + section-render READY_FOR_EXECUTION |
 
 ## 1. Outcome
 
@@ -43,6 +44,12 @@
 - **`prefers-reduced-motion`:** không có chuyển động lật 3D. Chuyển tức thời hoặc fade nhẹ. Chức năng đầy đủ.
 - **Card không có salary:** hiển thị mặt trước "Lương thương lượng", sau đó flip sang CTA.
 - **Preview/INTEGRATION_PENDING cards:** CTA disabled hoặc ghi "Bản xem trước". Không mở ApplyModal bằng fixture giả. Card thật dùng flow thật.
+
+**CTA visual treatment (Owner R1 correction — VIS-04 + VIS-05):**
+- Mặt sau chỉ chứa **đúng một** filled CTA surface. KHÔNG có outer capsule/padded ring ngoài (không `bg-primary-container p-3` trên `.action-area-back`).
+- CTA button là visible rounded surface duy nhất; border không quá 1px semantic outline token; KHÔNG double background, KHÔNG inset ring khi nghỉ.
+- Rest + hover + focus + active giữ cặp foreground/background tương phản hợp lệ. KHÔNG `hover:text-primary-container` (làm icon + label mất tương phản cùng background token). Hover dùng subtle state overlay hoặc shadow, không đổi text sang background token.
+- Keyboard focus outline ≤ 2px, chỉ hiển thị trên `:focus-visible`, không trông giống resting border.
 
 **Semantic HTML structure:**
 - Không nested interactive element (không button bên trong Link, không Link bên trong button).
@@ -111,6 +118,9 @@
 | `DEC-12` | Visual parity = Owner live review post-deploy. KHÔNG Edge/CDP/PNG/bbox. KHÔNG fail vì thiếu screenshot | `CHOSEN` |
 | `DEC-13` | Tier 3 FOCUSED audit sau khi Tier 2 xong. Audit focus: semantic HTML structure (no nested interactive), CTA modal contract, keyboard accessibility, touch/mobile fallback, prefers-reduced-motion, preview card behavior | `CHOSEN` |
 | `DEC-14` | OBR-01 allow tạo HANDOFF + `evidence/**` + sửa featured-job-card.tsx (chính) + tạo featured-job-card.test.tsx (NEW) + best-jobs-section.tsx (nếu cần điều chỉnh prop chain) + page.tsx (nếu cần thay đổi compose để test). KHÔNG cấm mọi file mới trong §0 In-scope roots | `CHOSEN` |
+| `DEC-15` | VIS-04 (Owner R1): Mặt sau CTA chỉ chứa đúng một filled surface. `.action-area-back` KHÔNG dùng `bg-primary-container p-3` (loại bỏ outer capsule/ring). CTA button là visible rounded surface duy nhất, fill action area, border không quá 1px semantic outline. KHÔNG double background, KHÔNG inset ring khi nghỉ. Dùng radius family + restrained shadow hiện có của HuongB. Focus outline ≤ 2px, chỉ trên `:focus-visible` | `CHOSEN` |
+| `DEC-16` | VIS-05 (Owner R1): CTA giữ cặp foreground/background tương phản ở rest + hover + focus + active. KHÔNG `hover:text-primary-container` (làm icon + label mất tương phản cùng background token). Hover dùng subtle state overlay hoặc shadow, không đổi text sang background token. Icon cùng foreground đọc được với label. Hover/focus KHÔNG ẩn CTA face, KHÔNG reset về back side, KHÔNG làm text trong suốt | `CHOSEN` |
+| `DEC-17` | R2 round 1 preserve flip timing, salary front face, semantic Link/button sibling, ApplyModal callback, preview disabled, mobile fallback, reduced-motion, buildHref(job.slug) — chỉ sửa visual treatment CTA. KHÔNG đổi semantic HTML, KHÔNG đổi prop chain, KHÔNG đổi route helper. KHÔNG thêm padding/background mới vào `.action-area-back`; chỉ clean CTA surface | `CHOSEN` |
 
 ## 4. Contract
 
@@ -129,6 +139,8 @@
 | `RQ-09` | Card không có salary: mặt trước "Lương thương lượng", sau đó flip sang CTA. Không để action area rỗng |
 | `RQ-10` | Regression: KHÔNG sửa ApplyModal internals, Hero, Areas, Recruiting card, search card, ReferralStrip, Footer. KHÔNG mở API, service, schema, permission, Admin page. KHÔNG phục hồi bộ gate CDP/20 PNG đã bỏ |
 | `RQ-11` | Detail URL helper: `BestJobsSection` gọi `buildHref(job.slug)` (KHÔNG `job.id`) khi truyền prop cho `FeaturedJobCard`. `FeaturedJobCard` Link semantic dùng `href={\`/viec-lam/${job.slug}\`}`. KHÔNG hardcode route lần thứ hai trong card — card chỉ giữ `href` prop, route helper thuộc `BestJobsSection` |
+| `RQ-12` | VIS-04 (CTA visual treatment): Mặt sau CTA chỉ có đúng một filled surface duy nhất. `.action-area-back` KHÔNG dùng `bg-primary-container p-3` (loại bỏ outer capsule/ring ngoài); chỉ là positioning/flip surface, không background/padding trang trí. CTA button fill action area, dùng radius family + restrained shadow hiện có của HuongB. Border không quá 1px semantic outline token; KHÔNG double background, KHÔNG inset ring khi nghỉ |
+| `RQ-13` | VIS-05 (CTA label contrast): CTA giữ cặp foreground/background tương phản ở rest + hover + focus + active. KHÔNG dùng `hover:text-primary-container` (làm icon + label mất tương phản cùng background token). Hover dùng subtle state overlay hoặc shadow, không đổi text sang background token. Icon cùng foreground đọc được với label. Hover/focus KHÔNG ẩn CTA face, KHÔNG reset về back side, KHÔNG làm text trong suốt. Dùng một trong hai cặp semantic: `bg-primary-dark`/`text-on-primary` hoặc `bg-primary-container`/`text-on-primary-container` |
 
 ### 4.2 Scope boundaries
 
@@ -162,6 +174,8 @@
 | `STEP-11` | `src/domains/job-board/components/landing/best-jobs-section.tsx` + `app/(portal)/page.tsx` | Truyền `onApply` prop chain: `page.tsx` định nghĩa `handleApply(job)` closure bắt ApplyModal trigger; truyền xuống BestJobsSection qua prop `onApply`. `BestJobsSection` đóng closure theo `EnrichedJob` (best-jobs-urgent-preview shape) và truyền callback không tham số vào FeaturedJobCard qua prop `onApply: () => void`. RQ-11: `BestJobsSection` dùng `buildHref(job.slug)` khi truyền href cho `FeaturedJobCard` (KHÔNG `job.id`). Component test: render BestJobs trong page.tsx với mock ApplyModal, click CTA card thật mở modal đúng job | Source review + component test: prop chain đúng, modal mở với đúng job data, href dùng `job.slug` | Nếu prop chain gãy hoặc href dùng `job.id` → halt |
 | `STEP-12` | Regression check shell + mandatory gates (DEC-12) | Source review: KHÔNG có diff ngoài §0 In-scope roots. `git diff --name-only exec-head-before..HEAD` so với allowlist. `npm run typecheck` exit 0; `npm run test:unit` cùng expected failure set + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS | `evidence/ac12-gates.txt` | Nếu gate fail → halt, sửa, KHÔNG ghi READY_FOR_REVIEW |
 
+| `STEP-13` | `src/domains/job-board/components/landing/featured-job-card.tsx` — VIS-04 CTA capsule cleanup (R2 round 1) | RQ-12: Bỏ `bg-primary-container p-3` trên `.action-area-back` (loại bỏ outer capsule/ring). `.action-area-back` chỉ là positioning/flip surface, KHÔNG background/padding trang trí. CTA button fill action area height + width, dùng radius family + restrained shadow hiện có của HuongB. Border không quá 1px semantic outline. KHÔNG double background, KHÔNG inset ring khi nghỉ. Preserve DEC-17 (flip timing, salary front, sibling DOM, prop chain) | Source review: `.action-area-back` không còn `bg-primary-container p-3`; CTA button fill action area; chỉ một filled CTA surface. Lưu `evidence/ac15-cta-capsule.txt` | Nếu outer capsule/ring còn → halt |
+| `STEP-14` | `src/domains/job-board/components/landing/featured-job-card.tsx` — VIS-05 hover label contrast (R2 round 1) | RQ-13: CTA giữ cặp foreground/background tương phản ở rest + hover + focus + active. Bỏ `hover:text-primary-container` (làm icon + label mất tương phản). Hover dùng subtle state overlay hoặc shadow, không đổi text sang background token. Icon cùng foreground đọc được với label. Hover/focus KHÔNG ẩn CTA face, KHÔNG reset về back side, KHÔNG làm text trong suốt. Component test: assert CTA KHÔNG chứa `hover:text-primary-container`. Focus indicator ≤ 2px, chỉ `:focus-visible` | Source review + component test: CTA không có `hover:text-primary-container`; mỗi state (rest/hover/focus/active) giữ contrasting pair. Lưu `evidence/ac16-cta-hover-contrast.txt` | Nếu hover label mất tương phản → halt |
 ## 6. Acceptance
 
 ### 6.1 Acceptance criteria
@@ -181,7 +195,9 @@
 | `AC-11` | Regression — không đổi ApplyModal, Hero, Areas, Recruiting card, ReferralStrip, Footer | Command: `git diff --name-only exec-head-before..HEAD \| Where-Object { $_ -notin @('docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/HANDOFF.md', 'docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/evidence/**', 'src/domains/job-board/components/landing/featured-job-card.tsx', 'src/domains/job-board/components/landing/best-jobs-section.tsx', 'app/(portal)/page.tsx') }` expect 0 line. Lưu `evidence/ac11-regression.txt` |
 | `AC-12` | Mandatory gates | `npm run typecheck` exit 0; full `npm run test:unit` cùng expected failure set với expected-failure-set-before + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS. Tier 3 FOCUSED audit PASS. Lưu `evidence/ac12-gates.txt` với exit code từng gate |
 | `AC-13` | Detail URL helper dùng `buildHref(job.slug)`, không hardcode route trong card, không dùng `job.id` | Component test trong `featured-job-card.test.tsx`: render card với mockJob có `slug` (KHÔNG dùng `id`), expect `Link` href chứa `/viec-lam/${mockJob.slug}`. Command: `Select-String -Path src/domains/job-board/components/landing/best-jobs-section.tsx -Pattern "buildHref\(job\.slug\)\|buildHref\(.*\.slug\)"` expect ≥1 match. `Select-String -Path src/domains/job-board/components/landing/featured-job-card.tsx -Pattern "job\.id"` expect 0 match trong href/Link. Source review: `BestJobsSection` dùng `buildHref(job.slug)`; `FeaturedJobCard` Link `href={\`/viec-lam/${job.slug}\`}`; KHÔNG `job.id` trong href; KHÔNG hardcode route lần thứ hai trong card. Lưu `evidence/ac13-build-href.txt` |
-| `AC-14` | AWAITING_OWNER_LIVE_VISUAL_REVIEW (DEC-12). Tier 1 ghi closeout sau khi Owner confirm | Status marker trong HANDOFF; Tier 1 KHÔNG fail vì thiếu screenshot; Tier 1 KHÔNG audit visual; visual parity Owner duyệt post-deploy |
+| | `AC-15` | VIS-04 — CTA chỉ là một filled surface duy nhất; `.action-area-back` không còn capsule/ring dư | Component test: render `FeaturedJobCard`, expect className của `.action-area-back` KHÔNG chứa `bg-primary-container` và KHÔNG có `p-3` (no padding on back face). Source review: grep `bg-primary-container p-3` trên `.action-area-back` → expect 0 match. CTA button fill action area (height + width 100%). Border không quá 1px. Lưu `evidence/ac15-cta-capsule.txt` |
+| `AC-16` | VIS-05 — CTA giữ cặp foreground/background tương phản; hover KHÔNG đổi text sang background token | Component test (`@testing-library/react`): render CTA, assert button KHÔNG có class `hover:text-primary-container`. Source review: grep `hover:text-primary-container` trong `featured-job-card.tsx` → expect 0 match. Hover state dùng subtle state overlay hoặc shadow, không đổi text color. Lưu `evidence/ac16-cta-hover-contrast.txt` |
+| `AC-17` | R2 round 1 preserve flip + accessibility + prop chain — không regression | Component test: 30 test cũ + 2 test mới (AC-15/16) đều pass. `git diff --name-only exec-head-before..HEAD` filter allowlist vẫn 0 line ngoài In-scope roots. Required gates pass. Lưu `evidence/ac17-regression-r2.txt` |
 
 ### 6.2 Traceability
 
@@ -198,6 +214,9 @@
 | RQ-09 | STEP-10 | AC-09 |
 | RQ-10 | STEP-12 | AC-11, AC-12 |
 | RQ-11 | STEP-02, STEP-11 | AC-13 |
+| RQ-12 | STEP-13 | AC-15 |
+| RQ-13 | STEP-14 | AC-16 |
+| RQ-10, RQ-12, RQ-13 (round 1) | STEP-12, STEP-13, STEP-14 | AC-17 |
 | (visual review) | — | AC-14 |
 
 ## 7. Risk
@@ -214,6 +233,9 @@
 | `RISK-08` | Tier 2 sửa ApplyModal internals (Plan B đã chốt) | §0 Forbidden. STEP-12 git diff filter |
 | `RISK-09` | Tier 2 sửa Hero, Areas, Recruiting card (Plan A/B đã chốt) | §0 Forbidden. STEP-12 git diff filter |
 | `RISK-10` | Flip 3D gây vấn đề performance trên mobile low-end | STEP-03 dùng CSS transform tối thiểu. STEP-07 verify mobile fallback hoạt động |
+| `RISK-11` | R2 round 1 — Tier 2 revert semantic HTML structure (link/button sibling) khi sửa CTA visual | DEC-17 preserve + AC-17 regression gate. AC-01/02/03/04/05 vẫn pass; chỉ visual treatment đổi. Nếu semantic HTML bị revert → halt |
+| `RISK-12` | R2 round 1 — Tier 2 reintroduce `hover:text-primary-container` khi sửa | AC-16 grep + component test. Nếu hover token vẫn đổi text sang background → halt |
+| `RISK-13` | R2 round 1 — Owner R2 visual review lại FAIL vì còn ring dư hoặc hover contrast kém | DEC-15/16 chốt rõ. STEP-13/14 verify bằng grep + component test. Nếu R2 FAIL → Tier 1 đánh giá round tiếp theo |
 
 ## 8. Open Questions
 
@@ -227,4 +249,5 @@ Tier 1 append sau mỗi round.
 
 - `v1.0` (10/09/2026): Khởi tạo contract. Source: Tier 0 review v1 §6 + owner-live-visual-review-r1.md. STANDARD/FOCUSED lane. Đầu chuỗi thực hiện. UI-only, card interaction flip + ApplyModal + accessibility + touch/mobile + reduced-motion.
 - `v1.2` (10/09/2026): Tier 0 review v2 REVISION_REQUIRED. Sửa: (a) Card structure dùng Link semantic cho content, CTA button sibling (bỏ div với onClick để navigate); (b) Prop chain chốt ngay trong contract `handleApply(job)` → `onApply` qua BestJobsSection closure → `onApply()` trong CTA, không OQ; (c) Bỏ `aria-hidden` trên CTA có thể focus; (d) AC semantic dùng component test (không regex multiline); (e) Spec bump → v1.2.
+- `v1.4` (10/09/2026): Owner live visual review R1 FAIL — `CORRECTION_REQUIRED`. Append VIS-04 + VIS-05 (CTA capsule/ring dư + hover label mất tương phản). Bổ sung: DEC-15 (CTA chỉ một filled surface), DEC-16 (CTA foreground/background contrast pair), DEC-17 (preserve flip + accessibility + prop chain); RQ-12 (VIS-04 capsule cleanup) + RQ-13 (VIS-05 hover contrast); STEP-13 (VIS-04) + STEP-14 (VIS-05); AC-15 (capsule removed) + AC-16 (hover contrast) + AC-17 (round 1 regression gate); RISK-11/12/13 (round 1 specific). Reset execution round `1`. Status `READY_FOR_EXECUTION` (chờ Tier 2 round 1). In-scope roots thêm `evidence/owner-live-visual-review-r1.md`. Hand-off flow: Tier 2 round 1 → Tier 3 FOCUSED audit → Owner R2 live visual review → ACCEPTED → composition/footer + section-render chuyển `READY_FOR_EXECUTION`. Spec bump → v1.4.
 - `v1.3` (10/09/2026): Tier 0 review v3 SMALL CLOSEOUT. Sửa: (a) Thêm `featured-job-card.test.tsx` (NEW) vào In-scope roots + DEC-14 OBR-01; (b) Thêm DEC-06 + RQ-11 + STEP-11 + AC-13 chốt `BestJobsSection` dùng `buildHref(job.slug)`, KHÔNG `job.id`, KHÔNG hardcode route trong card; (c) RISK-05 bỏ `e.stopPropagation()` (CTA là sibling DOM); (d) AC-10 bỏ verification selector `.cta:focus + .action-area` — contract không khóa một selector CSS sai chiều; (e) AC-13 visual review → AC-14; (f) `Current execution round` đồng bộ v1.3 DRAFT. Spec bump → v1.3.

@@ -2,31 +2,32 @@
 
 > **Composition + Footer** cho UI-04 theo Tier 0 chỉ thị `docs/prompts/TIER0_UI04_HOME_COMPOSITION_FOOTER.md` + Tier 0 UI04C mandate `docs/prompts/TIER1_UI04C_HOME_SECTIONS_FOOTER_AND_ADMIN_CMS.md` §2.2.
 > Tier 0 review v1 (`tier0-review-ui04c-contracts-v1.md`) + v2 (`tier0-review-ui04c-contracts-v2.md`): REVISION_REQUIRED v2 — sửa RQ-01 (refactor BestJobs thành `bootstrapBestJobs`, xóa `runQuery` cũ sau khi `bootstrapBestJobs` nhận ownership, không có `jobs` state), xóa "read-only" và "flip flag" trong contact narrative (AV6 không sở hữu contact backend), đồng bộ RQ-01/DEC-02/STEP-02/AC-01/02/Risk cùng tên bootstrap + lifecycle. Tier 0 review v3 (`tier0-review-ui04c-contracts-v3.md`) SMALL CLOSEOUT: bỏ "KHÔNG xóa runQuery" trong scope summary; EV-02/EV-03 ghi rõ đây là evidence trước execution, spec v1.3.
-> Scope: xóa section inline list + dead state; refactor BestJobs thành `bootstrapBestJobs` DUY NHẤT, **xóa `runQuery` cũ** sau khi `bootstrapBestJobs` nhận ownership; reorder ReferralStrip xuống trước Footer; áp nền peach/cam nhạt; lắp footer 3 cột với content Owner cung cấp.
-> KHÔNG mở Admin/schema/API/AV1/CMS/pagination/Plan D. UI-only, FAST lane.
-> Plan UI predecessor: Plan B `ACCEPTED` (18919da) + correction R1 `ACCEPTED` (284e46c).
+> v1.4: Owner live visual review R1 (`docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/evidence/owner-live-visual-review-r1.md`) ghép thêm VIS-06: thu hẹp chiều rộng tổng thể homepage còn khoảng 90% — đổi inner container từ `max-w-[1200px]` sang `max-w-[1080px]` cho navbar + Hero + BestJobs + Areas + RecruitingProjects + section nội dung mới + ReferralStrip + Footer. Nâng lane FAST/NONE → **STANDARD/FOCUSED**. VIS-04/VIS-05 thuộc R2 riêng, không implement VIS-04/VIS-05 ở task này.
+> Scope: xóa section inline list + dead state; refactor BestJobs thành `bootstrapBestJobs` DUY NHẤT, **xóa `runQuery` cũ** sau khi `bootstrapBestJobs` nhận ownership; reorder ReferralStrip xuống trước Footer; áp nền peach/cam nhạt; lắp footer 3 cột với content Owner cung cấp; v1.4 thêm: đồng bộ inner container homepage 1080px (VIS-06).
+> UI-only, v1.3 FAST/NONE, v1.4 **STANDARD/FOCUSED** (nâng lane vì VIS-06 touch nhiều file + có thể gây overflow). KHÔNG mở Admin/schema/API/AV1/CMS/pagination/Plan D. Tier 2 v1.4 chạy SAU khi R2 round 1 ACCEPTED.
+> Plan UI predecessor: Plan B `ACCEPTED` (18919da) + correction R1 `ACCEPTED` (284e46c) + interaction R2 correction round 1 (VIS-04/05).
 
 ## 0. Control
 
 | Field | Value |
 |---|---|
 | Task slug | `hrp-v6-ui-04c-home-composition-footer` |
-| Work type | `CODE` (UI composition + content + style) |
-| Assurance lane | `FAST` |
-| Audit mode | `NONE` (FAST mặc định; UI composition style/layout thuần, Owner live review) |
-| Spec version | `v1.3` |
-| Status | `DRAFT` (Tier 0 review v3 SMALL CLOSEOUT — đang dọn closeout theo review v3) |
+| Work type | `CODE` (UI composition + content + style + layout correction VIS-06) |
+| Assurance lane | `STANDARD` |
+| Audit mode | `FOCUSED` |
+| Spec version | `v1.4` |
+| Status | `DRAFT` (v1.4: Owner R1 ghép VIS-06; chờ R2 round 1 ACCEPTED → Tier 1 chuyển status `READY_FOR_EXECUTION`) |
 | Planner | `Tier 1` |
 | Baseline | HEAD đầu round — `git rev-parse HEAD` ngay trước STEP-01 → `evidence/exec-head-before.txt` |
-| Source reference | correction R1 commit `284e46c` (predecessor visual) — diff để đối chiếu trạng thái inline list cũ + ReferralStrip/footer background cũ |
-| Plan UI predecessor | Plan B `ACCEPTED` (18919da) + correction R1 `ACCEPTED` (284e46c) |
-| Plan UI successor | Task D section-render (`hrp-v6-ui-04d-section-render`) — sau composition/footer |
-| In-scope roots | `app/(portal)/page.tsx`, `src/domains/job-board/components/landing/referral-strip.tsx`, `app/components/GlobalFooter.tsx`, `docs/tasks/hrp-v6-ui-04c-home-composition-footer/**` |
-| Forbidden paths | `src/domains/job-board/public.service.ts`, `src/domains/job-board/components/landing/best-jobs-section.tsx`, `src/domains/job-board/components/landing/areas-section.tsx`, `src/domains/job-board/components/landing/recruiting-projects-section.tsx`, `src/domains/job-board/components/landing/featured-job-card.tsx`, `src/domains/job-board/components/landing/hero.tsx`, `src/domains/job-board/fixtures/**`, `app/api/jobs/**`, `app/(jobs)/viec-lam/page.tsx`, `app/admin/**`, `prisma/**`, `src/shared/auth/permission-catalog.ts`, `prisma/seed.mjs`, `app/api/admin/homepage-settings/**`, `app/globals.css` NGOÀI nếu chỉ thêm token semantic mới cho nền peach (Tier 2 escalate nếu cần); `docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/**`, `docs/tasks/hrp-v6-ui-04a-visual-polish/**`, `docs/tasks/hrp-v6-ui-04b-pagination-admin/**`, `docs/tasks/hrp-v6-ui-04b-vis-correction-r1/**` NGOÀI file mới của task này |
-| Required gates | `npm run typecheck` exit 0; `npm run test:unit` cùng expected failure set với baseline + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04c-home-composition-footer/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS |
+| Source reference | correction R1 commit `284e46c` (predecessor visual) + interaction R2 correction round 1 (`e18e54e` hoặc commit tương đương sau khi R2 ACCEPTED) — diff để đối chiếu trạng thái inline list cũ + ReferralStrip/footer background cũ + inner container 1080px |
+| Plan UI predecessor | Plan B `ACCEPTED` (18919da) + correction R1 `ACCEPTED` (284e46c) + interaction R2 correction round 1 `ACCEPTED` (VIS-04/05) |
+| Plan UI successor | Task D section-render (`hrp-v6-ui-04d-section-render`) — sau composition/footer (Task D v1.4 inherit inner container 1080px) |
+| In-scope roots | `app/(portal)/page.tsx`, `app/components/GlobalNavbar.tsx` (v1.4 — VIS-06 container), `app/components/GlobalFooter.tsx`, `src/domains/job-board/components/landing/referral-strip.tsx`, `src/domains/job-board/components/landing/hero.tsx` (v1.4 — VIS-06 container chỉ), `src/domains/job-board/components/landing/best-jobs-section.tsx` (v1.4 — VIS-06 container chỉ), `src/domains/job-board/components/landing/areas-section.tsx` (v1.4 — VIS-06 container chỉ), `src/domains/job-board/components/landing/recruiting-projects-section.tsx` (v1.4 — VIS-06 container chỉ), `docs/tasks/hrp-v6-ui-04c-home-composition-footer/**` |
+| Forbidden paths | `src/domains/job-board/public.service.ts`, `src/domains/job-board/components/landing/featured-job-card.tsx` (R2 task sở hữu), `src/domains/job-board/fixtures/**`, `app/api/jobs/**`, `app/(jobs)/viec-lam/page.tsx`, `app/admin/**`, `prisma/**`, `src/shared/auth/permission-catalog.ts`, `prisma/seed.mjs`, `app/api/admin/homepage-settings/**`, `app/globals.css` NGOÀI nếu chỉ thêm token semantic mới cho nền peach (Tier 2 escalate nếu cần); `docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/**`, `docs/tasks/hrp-v6-ui-04a-visual-polish/**`, `docs/tasks/hrp-v6-ui-04b-pagination-admin/**`, `docs/tasks/hrp-v6-ui-04b-vis-correction-r1/**`, `docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/**` NGOÀI file mới của task này |
+| Required gates | `npm run typecheck` exit 0; `npm run test:unit` cùng expected failure set với baseline + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04c-home-composition-footer/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS; Tier 3 FOCUSED audit PASS |
 | Visual gate | Owner live review post-deploy. KHÔNG Edge/CDP/PNG/bbox. KHÔNG Lighthouse/axe-core auto-install |
-| Current execution round | `0` (v1.3 DRAFT — closeout Tier 0 review v3) |
-| Next gate | Sửa contract → `verify-task.ps1` PASS → Tier 1 chuyển interaction R2 DRAFT → READY_FOR_EXECUTION (đầu chuỗi) |
+| Current execution round | `0` (v1.4 DRAFT — Owner R1 ghép VIS-06) |
+| Next gate | Chờ R2 round 1 ACCEPTED → `verify-task.ps1` PASS với status `READY_FOR_EXECUTION` → Tier 2 thi công (STANDARD) → Tier 3 FOCUSED audit → Owner live visual review → ACCEPTED → Task D section-render READY_FOR_EXECUTION |
 
 ## 1. Outcome
 
@@ -96,6 +97,14 @@ Cột 3 — Thông tin liên hệ:
 - Không tái sử dụng màu production footer trắng lạnh `bg-surface-container-lowest`; chuyển sang họ peach.
 - Hero gradient orange giữ nguyên.
 
+**RQ-08 (v1.4) — VIS-06: thu hẹp inner container homepage còn ~90% (1080px)**
+
+- Dùng một mốc thống nhất `max-w-[1080px] mx-auto` cho inner container của: `GlobalNavbar`, Hero, BestJobs, Areas, RecruitingProjects, các section nội dung mới (Task D v1.4), ReferralStrip, Footer.
+- Gutter responsive cân đối: `px-4` mobile, `md:px-6` desktop. KHÔNG `width: 90vw` cố định. KHÔNG `transform: scale(...)` toàn trang.
+- Grid/card/padding bên trong giảm nhẹ (khoảng một spacing step) nơi cần thiết. KHÔNG thu nhỏ hàng loạt font bằng scale — giữ hierarchy chữ/logo/icon.
+- BestJobs tối đa 3 cột desktop; card phải đủ chỗ cho title + ribbon + CTA, không cắt chữ hoặc overflow. Areas/Recruiting/section mới reflow theo breakpoint hiện có.
+- Mobile giữ gutter + touch target tối thiểu 44px. KHÔNG horizontal scroll ở 390px. KHÔNG giảm touch target.
+
 ### 1.2 Non-goals
 
 - KHÔNG mở Admin editor, schema, Prisma, auth, AV1.
@@ -154,8 +163,10 @@ Cột 3 — Thông tin liên hệ:
 | `DEC-09` | Tier 1 owns TASK.md; Tier 2 owns HANDOFF + evidence + source/test allowlist. Tier 2 KHÔNG sửa TASK.md, KHÔNG sửa plan cha | `CHOSEN` |
 | `DEC-10` | Baseline = HEAD đầu round (Tier 2 đo `git rev-parse HEAD` ngay trước STEP-01 → `evidence/exec-head-before.txt`). Expected unit failure set capture tại exec-head-before | `CHOSEN` |
 | `DEC-11` | Visual parity = Owner live review post-deploy. KHÔNG Edge/CDP/PNG/bbox. KHÔNG fail vì thiếu screenshot | `CHOSEN` |
-| `DEC-12` | Tier 3 KHÔNG audit task này (FAST bypass). Tier 1 review HANDOFF trực tiếp | `CHOSEN` |
+| `DEC-12` | v1.3: Tier 3 KHÔNG audit task này (FAST bypass). v1.4: lane nâng STANDARD/FOCUSED → Tier 3 FOCUSED audit bắt buộc | `CHOSEN` |
 | `DEC-13` | OBR-01 allow tạo HANDOFF + `evidence/**` + sửa `app/globals.css` (chỉ khi cần thêm semantic token cho peach — Tier 1 duyệt trước khi Tier 2 commit). KHÔNG cấm mọi file mới | `CHOSEN` |
+| `DEC-14` | v1.4 (VIS-06): Mọi inner container homepage dùng `max-w-[1080px] mx-auto`. Chỉ sửa container wrapper của GlobalNavbar + Hero + BestJobs + Areas + RecruitingProjects + ReferralStrip + Footer — KHÔNG sửa nội dung card, KHÔNG sửa featured-job-card (R2 sở hữu). Gutter `px-4 md:px-6`. BestJobs vẫn tối đa 3 cột desktop. Mobile giữ touch target ≥44px, không horizontal scroll ở 390px | `CHOSEN` |
+| `DEC-15` | v1.4: Tier 3 FOCUSED audit sau khi Tier 2 xong (lane nâng từ FAST/NONE). Audit focus: VIS-06 container uniformity (1080px), overflow regression, mobile gutter/touch target preservation, không touch card internals | `CHOSEN` |
 
 ## 4. Contract
 
@@ -172,6 +183,8 @@ Cột 3 — Thông tin liên hệ:
 | `RQ-07` | Copyright `&copy; {năm hiện hành} HRP — Hệ sinh thái nhân sự toàn diện.` runtime tính năm. Bỏ "Phiên bản 6.0 — thiết kế bởi HRP Studio" |
 | `RQ-08` | Regression: KHÔNG đổi BestJobs, Areas, Recruiting card, Hero gradient, search card trắng (Plan A/B/correction R1 đã chốt). KHÔNG mở API, service, schema, permission, Admin page, AV1, Plan C/D, contact endpoint |
 | `RQ-09` | Visual: 1200px container giữ; desktop 3 cột footer, mobile stack; nhịp padding `px-4 md:px-6` giữ; nền peach semantic token |
+| `RQ-10` | v1.4 (VIS-06): Mọi inner container homepage dùng `max-w-[1080px] mx-auto` thay cho `max-w-[1200px]` hiện có. Áp dụng cho: `GlobalNavbar`, Hero, BestJobs, Areas, RecruitingProjects, các section nội dung mới (Task D), ReferralStrip, Footer. Gutter `px-4 md:px-6` giữ. Grid/card/padding bên trong giảm nhẹ (≈ 1 spacing step) nơi cần thiết. KHÔNG thu nhỏ font bằng scale. KHÔNG `width: 90vw` cố định. KHÔNG `transform: scale(...)` toàn trang. BestJobs tối đa 3 cột desktop, card đủ chỗ cho title + ribbon + CTA, không overflow. Mobile giữ gutter + touch target ≥44px, không horizontal scroll ở 390px |
+| `RQ-11` | v1.4 (VIS-06) Regression: KHÔNG sửa nội dung card, KHÔNG sửa featured-job-card (R2 sở hữu), KHÔNG đổi Hero gradient, KHÔNG sửa ApplyModal. KHÔNG mở API/service/schema/permission/Admin/AV1/Plan C/D/contact endpoint |
 
 ### 4.2 Scope boundaries
 
@@ -200,6 +213,8 @@ Cột 3 — Thông tin liên hệ:
 | `STEP-06` | (nếu cần) `app/globals.css` | RQ-02: Tier 2 chỉ sửa khi cần thêm semantic token mới. Tier 1 duyệt trước khi Tier 2 commit. Tier 2 đo contrast, đề xuất token name (e.g. `--color-surface-warm`, `--color-surface-warm-low`), Tier 1 duyệt | Source review + Tier 1 explicit approve | Nếu Tier 1 không duyệt → Tier 2 revert |
 | `STEP-07` | Regression check shell + mandatory gates (DEC-11) | Source review: KHÔNG có diff ngoài §0 In-scope roots (+ `app/globals.css` nếu Tier 1 duyệt STEP-06 + `app/components/ContactForm.tsx` từ STEP-05). `git diff --name-only exec-head-before..HEAD` so với allowlist. `npm run typecheck` exit 0; `npm run test:unit` cùng expected failure set + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04c-home-composition-footer/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS | `evidence/ac09-gates.txt` | Nếu gate fail → halt, sửa, KHÔNG ghi READY_FOR_REVIEW |
 
+| `STEP-08` | v1.4 VIS-06 inner container 1080px — `app/components/GlobalNavbar.tsx` + `src/domains/job-board/components/landing/hero.tsx` + `src/domains/job-board/components/landing/best-jobs-section.tsx` + `src/domains/job-board/components/landing/areas-section.tsx` + `src/domains/job-board/components/landing/recruiting-projects-section.tsx` + `src/domains/job-board/components/landing/referral-strip.tsx` + `app/components/GlobalFooter.tsx` + `app/(portal)/page.tsx` | RQ-10: đổi inner container từ `max-w-[1200px]` sang `max-w-[1080px] mx-auto` cho mọi section homepage. Gutter `px-4 md:px-6` giữ. KHÔNG touch card internals (BestJobs card tái dùng FeaturedJobCard đã chốt ở R2). BestJobs giữ tối đa 3 cột desktop; card đủ chỗ cho title + ribbon + CTA. Giảm nhẹ grid gap / padding nơi cần (≈ 1 spacing step). KHÔNG thu nhỏ font scale. KHÔNG horizontal scroll ở 390px | Source review: grep `max-w-\[1200px\]` trong In-scope roots expect 0 match (hoặc chỉ còn ở BestJobs nếu không touch); grep `max-w-\[1080px\]` expect ≥ 7 match (8 components homepage). Manual: build + load homepage ở 390px / 768px / 1280px — không horizontal scroll, gutter cân đối, touch target ≥44px. Lưu `evidence/ac10-vis06-container.txt` | Nếu 390px xuất hiện horizontal scroll → halt |
+| `STEP-09` | v1.4 Regression check shell + mandatory gates (DEC-15) | Source review: KHÔNG có diff ngoài §0 In-scope roots. `git diff --name-only exec-head-before..HEAD` filter allowlist với `featured-job-card.tsx` KHÔNG thuộc allowlist của task này. `npm run typecheck` exit 0; `npm run test:unit` cùng expected failure set + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04c-home-composition-footer/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS; Tier 3 FOCUSED audit PASS | `evidence/ac11-gates.txt` | Nếu gate fail → halt, sửa, KHÔNG ghi READY_FOR_AUDIT |
 ## 6. Acceptance
 
 ### 6.1 Acceptance criteria
@@ -214,7 +229,11 @@ Cột 3 — Thông tin liên hệ:
 | `AC-06` | Hotline `tel:` link 2 số, email `mailto:`, website external link | Command: `Select-String -Path app/components/GlobalFooter.tsx -Pattern "tel:02112216999\|tel:0964984866"` expect ≥2 match. `Select-String -Path app/components/GlobalFooter.tsx -Pattern "mailto:nhaluchrp@gmail\.com"` expect ≥1 match. `Select-String -Path app/components/GlobalFooter.tsx -Pattern "https://hrpvietnam\.com/.*target=\"_blank\".*rel=\"noopener noreferrer\""` expect ≥1 match. Lưu `evidence/ac06-footer-contact-links.txt` |
 | `AC-07` | Form liên hệ ContactForm với prop disabled và helper text | Command: `Select-String -Path app/components/GlobalFooter.tsx -Pattern "ContactForm\s+disabled"` expect ≥1 match. `Select-String -Path app/components/ContactForm.tsx -Pattern "Tính năng đang được hoàn thiện"` expect ≥1 match. `Select-String -Path app/components/ContactForm.tsx -Pattern "preventDefault\|fetch\(.*contact\|/api/contact"` expect 0 match. Lưu `evidence/ac07-contact-form-disabled.txt` |
 | `AC-08` | Copyright runtime năm; bỏ "Phiên bản 6.0" | Command: `Select-String -Path app/components/GlobalFooter.tsx -Pattern "new Date\(\)\.getFullYear\(\)"` expect ≥1 match. `Select-String -Path app/components/GlobalFooter.tsx -Pattern "Phiên bản 6\.0"` expect 0 match. Lưu `evidence/ac08-copyright-runtime.txt` |
-| `AC-09` | Mandatory gates | `npm run typecheck` exit 0; full `npm run test:unit` cùng expected failure set với expected-failure-set-before + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04c-home-composition-footer/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS. Lưu `evidence/ac09-gates.txt` với exit code từng gate |
+| `AC-09` | Visual parity | Visual parity invariants như §1.1 RQ-06: 1200px container giữ (v1.3); desktop 3 cột footer, mobile stack; nhịp padding `px-4 md:px-6` giữ; nền peach semantic token. Tier 3 / Owner live review |
+| `AC-10` | v1.4 VIS-06 inner container 1080px uniformity | Command: `rg --no-heading "max-w-\[1080px\]" app/components/GlobalNavbar.tsx src/domains/job-board/components/landing/hero.tsx src/domains/job-board/components/landing/best-jobs-section.tsx src/domains/job-board/components/landing/areas-section.tsx src/domains/job-board/components/landing/recruiting-projects-section.tsx src/domains/job-board/components/landing/referral-strip.tsx app/components/GlobalFooter.tsx app/(portal)/page.tsx` expect ≥ 7 match (8 components homepage). Command: `rg --no-heading "max-w-\[1200px\]"` trong cùng 8 path expect 0 match (BestJobs không giữ 1200px). Source review: không có `transform: scale(...)` toàn trang, không `width: 90vw`. Lưu `evidence/ac10-vis06-container.txt` |
+| `AC-11` | v1.4 VIS-06 — không horizontal scroll ở 390px, touch target ≥44px | Source review: gutter `px-4 md:px-6` đồng bộ 8 components; CTA button và link có `min-height: 44px` (Tailwind: `min-h-[44px]` hoặc `min-h-11`) cho mọi touch target trong các section đã touch. Manual / Owner: load homepage ở 390px — không horizontal scroll. BestJobs card đủ chỗ cho title + ribbon + CTA, không cắt chữ, không overflow. Lưu `evidence/ac11-vis06-mobile.txt` |
+| `AC-12` | v1.4 VIS-06 — KHÔNG sửa featured-job-card | Command: `git diff --name-only exec-head-before..HEAD -- src/domains/job-board/components/landing/featured-job-card.tsx` expect 0 line (R2 task sở hữu). Source review: In-scope roots của task này KHÔNG bao gồm `featured-job-card.tsx`. Lưu `evidence/ac12-vis06-featuredscope.txt` |
+| `AC-13` | v1.4 Mandatory gates | `npm run typecheck` exit 0; `npm run test:unit` cùng expected failure set + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04c-home-composition-footer/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS; Tier 3 FOCUSED audit PASS. Lưu `evidence/ac13-gates.txt` |
 | `AC-10` | AWAITING_OWNER_LIVE_VISUAL_REVIEW (DEC-11). Tier 1 ghi closeout sau khi Owner confirm | Status marker trong HANDOFF; Tier 1 KHÔNG fail vì thiếu screenshot; Tier 1 KHÔNG audit visual; visual parity Owner duyệt post-deploy |
 
 ### 6.2 Traceability
@@ -228,8 +247,10 @@ Cột 3 — Thông tin liên hệ:
 | RQ-05 | STEP-04, STEP-05 | AC-05, AC-07 |
 | RQ-06 | STEP-04 | AC-05 |
 | RQ-07 | STEP-04 | AC-08 |
-| RQ-08 | STEP-07 | AC-09 |
+| RQ-08 | STEP-07 | AC-09 (v1.3; v1.4 visual parity giữ 1080px qua AC-10) |
 | RQ-09 | STEP-03, STEP-04, STEP-07 | AC-04, AC-05, AC-09 |
+| RQ-10 | STEP-08 | AC-10, AC-11 |
+| RQ-11 | STEP-09 | AC-12, AC-13 |
 
 ## 7. Risk
 
@@ -243,6 +264,9 @@ Cột 3 — Thông tin liên hệ:
 | `RISK-06` | ContactForm tạo file mới nhưng Tier 2 đặt sai vị trí (e.g. trong `app/(portal)/`) làm vỡ route grouping | STEP-05: Tier 2 đặt tại `app/components/ContactForm.tsx`. Import từ GlobalFooter cùng `app/components/`. Tier 2 KHÔNG đặt trong `app/(portal)/_components/` |
 | `RISK-07` | Nền peach có contrast WCAG AA fail với text `text-on-surface` | STEP-03/04 source review + manual contrast check. Nếu fail → escalate Tier 1, KHÔNG commit với class tạm |
 | `RISK-08` | Tier 2 xóa nhầm `featuredSource`/`featuredJobs`/`recruitingSource`/`recruitingProjects`/`areasForCards` (BestJobs/Recruiting/Areas cần) | DEC-02 ghi rõ chỉ xóa inline-list state. STEP-02 source review: giữ nguyên các derived value này |
+| `RISK-09` | v1.4 — VIS-06 inner container gây overflow khi BestJobs card không đủ chỗ ở 1080px | STEP-08 verify 390px / 1280px viewport. BestJobs giữ tối đa 3 cột desktop. Nếu card overflow → giảm grid gap / padding 1 step, KHÔNG scale font |
+| `RISK-10` | v1.4 — Tier 2 sửa nhầm `featured-job-card.tsx` (R2 task sở hữu) | AC-12 enforce: `featured-job-card.tsx` KHÔNG thuộc allowlist task này. Forbidden paths giữ nguyên từ v1.3. STEP-09 git diff filter. Nếu bị sửa → revert |
+| `RISK-11` | v1.4 — Inner container 1080px khác breakpoint nội bộ từng component (e.g. BestJobs dùng container riêng) | STEP-08 source review: grep `max-w-[1080px]` expect ≥ 7 match (8 components). Nếu component nào giữ `max-w-[1200px]` → halt, đồng bộ |
 | `RISK-09` | Tier 2 vô tình revert status `ACCEPTED` của Plan B hay correction R1 | §0 Forbidden + §1.2 rõ ràng. Tier 2 chỉ tạo file mới trong task root; KHÔNG đụng Plan B / R1 files |
 
 ## 8. Open Questions
@@ -258,4 +282,5 @@ Tier 1 append sau mỗi round.
 - `v1.0` (10/09/2026): Khởi tạo contract. Source: Tier 0 UI04 footer mandate + UI04C §2.2. FAST lane. UI-only. Tier 1 review trực tiếp.
 - `v1.1` (10/09/2026): Tier 0 review v1 REVISION_REQUIRED. Sửa RQ-01 giữ `runQuery` vì facets/overview, `buildListingHref` offset:0, salary disabled label "sắp có", contact form disabled presentational không validation.
 - `v1.2` (10/09/2026): Tier 0 review v2 REVISION_REQUIRED. Sửa RQ-01 refactor BestJobs thành `bootstrapBestJobs`, xóa `runQuery` cũ sau khi nhận ownership; xóa "read-only" và "flip flag" trong contact narrative; đồng bộ RQ-01/DEC-02/STEP-02/AC-01/02/Risk cùng tên bootstrap + lifecycle; AV-CMS → AV6 trong CMS ownership ref.
+- `v1.4` (10/09/2026): Owner live visual review R1 (`docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/evidence/owner-live-visual-review-r1.md`) ghép VIS-06 (inner container 1080px). Nâng lane FAST/NONE → STANDARD/FOCUSED. Append: RQ-10 (VIS-06 container uniformity), RQ-11 (VIS-06 regression scope); DEC-14 (VIS-06 container rule), DEC-15 (Tier 3 FOCUSED audit bắt buộc); STEP-08 (VIS-06 container), STEP-09 (v1.4 regression + gates); AC-10 (container uniformity), AC-11 (mobile 390px scroll/touch target), AC-12 (featured-job-card not in scope), AC-13 (v1.4 gates); RISK-09/10/11. In-scope roots mở rộng: thêm `app/components/GlobalNavbar.tsx`, mở rồi `hero.tsx`/`best-jobs-section.tsx`/`areas-section.tsx`/`recruiting-projects-section.tsx` (VIS-06 container chỉ). Hand-off: chờ R2 round 1 ACCEPTED → Tier 1 chuyển status `READY_FOR_EXECUTION` → Tier 2 thi công (STANDARD) → Tier 3 FOCUSED audit → Owner live review → ACCEPTED → Task D section-render READY_FOR_EXECUTION. Spec bump → v1.4.
 - `v1.3` (10/09/2026): Tier 0 review v3 SMALL CLOSEOUT. Sửa: (a) bỏ "KHÔNG xóa runQuery" trong scope summary (quyết định đúng là xóa `runQuery` cũ sau khi `bootstrapBestJobs` nhận ownership); (b) EV-02/EV-03 ghi rõ đây là evidence trước execution (KHÔNG desired state); (c) `Current execution round` đồng bộ v1.3 DRAFT. Spec bump → v1.3.
