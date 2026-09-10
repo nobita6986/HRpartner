@@ -1,0 +1,1 @@
+﻿AC-11: 0 out-of-scope files (PASS) -- all changed files are in allowlist or pre-existing dirty set

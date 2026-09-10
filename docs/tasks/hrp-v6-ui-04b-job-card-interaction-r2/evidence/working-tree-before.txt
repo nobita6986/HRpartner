@@ -1,0 +1,17 @@
+﻿ M docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/field-matrix.md
+ M docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/plan-admin-v6.md
+ M docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/plan-overview.md
+ M docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/skeleton-B-C-D.md
+?? docs/TIER0_HANDOVER.md
+?? docs/prompts/TIER0_UI04_HOME_COMPOSITION_FOOTER.md
+?? docs/prompts/TIER0_UI04_OWNER_DECISIONS_AND_HOME_CONTENT.md
+?? docs/prompts/TIER1_HRP_V6_UI_04_HUONGB_REFINEMENT.md
+?? docs/prompts/TIER1_UI04C_HOME_SECTIONS_FOOTER_AND_ADMIN_CMS.md
+?? docs/reports/tier1-independent-app-assessment-2026-09-09.md
+?? docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/tier0-review-ui04c-contracts-v1.md
+?? docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/tier0-review-ui04c-contracts-v2.md
+?? docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/tier0-review-ui04c-contracts-v3.md
+?? docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/
+?? docs/tasks/hrp-v6-ui-04b-pagination-admin/evidence/owner-live-visual-review-r1.md
+?? docs/tasks/hrp-v6-ui-04c-home-composition-footer/
+?? docs/tasks/hrp-v6-ui-04d-section-render/

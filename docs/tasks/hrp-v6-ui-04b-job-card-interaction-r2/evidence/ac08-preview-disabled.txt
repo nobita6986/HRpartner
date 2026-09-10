@@ -1,0 +1,5 @@
+﻿
+src\domains\job-board\components\landing\featured-job-card.tsx:45:  const ctaLabel = preview ? 'Bản xem trước' : 'Ứng 
+tuyển nhanh';
+
+

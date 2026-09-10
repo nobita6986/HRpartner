@@ -1,0 +1,5 @@
+﻿
+src\domains\job-board\components\landing\featured-job-card.tsx:182:        article:is(:hover, :focus-within) 
+.action-area-wrapper {
+
+

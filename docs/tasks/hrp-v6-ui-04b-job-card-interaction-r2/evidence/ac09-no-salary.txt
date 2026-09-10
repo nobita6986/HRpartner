@@ -1,0 +1,6 @@
+﻿
+src\domains\job-board\components\landing\featured-job-card.tsx:25:  if (min === null) return 'Lương thương lượng';
+src\domains\job-board\components\landing\featured-job-card.tsx:108:           * Mặt trước: salary badge thật hoặc 
+"Lương thương lượng" (DEC-09).
+
+

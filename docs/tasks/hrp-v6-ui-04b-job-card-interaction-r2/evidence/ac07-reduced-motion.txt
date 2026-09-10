@@ -1,0 +1,6 @@
+﻿
+src\domains\job-board\components\landing\featured-job-card.tsx:250:        /* ─── RQ-06 / AC-07 / DEC-07: 
+prefers-reduced-motion ─── */
+src\domains\job-board\components\landing\featured-job-card.tsx:251:        @media (prefers-reduced-motion: reduce) {
+
+

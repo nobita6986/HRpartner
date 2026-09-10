@@ -421,8 +421,11 @@ export default function JobsPage() {
             onTabChange={handleBestJobsTabChange}
             onPrev={handleBestJobsPrev}
             onNext={handleBestJobsNext}
-            buildHref={(jobId) => publicJobDetailPath(jobId)}
+            /* DEC-06: dùng job.slug, KHÔNG job.id */
+            buildHref={(jobSlug) => publicJobDetailPath(jobSlug)}
             urgentPreviewBadge="Preview"
+            /* DEC-04: prop chain chốt — page.tsx closure → BestJobsSection → FeaturedJobCard */
+            onApply={handleApply}
           />
 
           <AreasSection areas={areasForCards} onPick={applyArea} />

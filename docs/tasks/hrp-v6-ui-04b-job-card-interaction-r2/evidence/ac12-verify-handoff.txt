@@ -1,0 +1,7 @@
+﻿HANDOFF SUBSTANCE GATE
+  subject: docs\tasks\hrp-v6-ui-04b-job-card-interaction-r2\HANDOFF.md (against docs\tasks\hrp-v6-ui-04b-job-card-interaction-r2\TASK.md)
+
+  [FAIL] H-01 HANDOFF file not found: docs\tasks\hrp-v6-ui-04b-job-card-interaction-r2\HANDOFF.md
+
+RESULT: FAIL (1 error(s), 0 warning(s)).
+Tier 3 MUST NOT audit without HANDOFF.md.

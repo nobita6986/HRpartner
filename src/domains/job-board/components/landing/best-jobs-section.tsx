@@ -17,9 +17,14 @@ export interface BestJobsSectionProps {
   onPrev: () => void;
   onNext: () => void;
   // Helpers
-  buildHref: (jobId: string) => string;
+  buildHref: (jobSlug: string) => string;
   /** Label shown on the URGENT tab badge, e.g. "Preview" */
   urgentPreviewBadge: string;
+  /**
+   * Called when a REAL card CTA is clicked.
+   * DEC-04: BestJobsSection closes over the EnrichedJob and passes a no-arg callback.
+   */
+  onApply?: (job: EnrichedJob) => void;
 }
 
 function salaryLabel(min: number | null, max: number | null): string {
@@ -42,6 +47,7 @@ export function BestJobsSection({
   onNext,
   buildHref,
   urgentPreviewBadge,
+  onApply,
 }: BestJobsSectionProps) {
   const currentPage = Math.floor(offset / pageSize) + 1;
   const totalPages = Math.ceil(total / pageSize);
@@ -136,12 +142,17 @@ export function BestJobsSection({
                 key={job.id}
                 job={{
                   id: job.id,
+                  slug: job.slug,
                   title: job.title,
-                  salary: salaryLabel(job.salaryMinVnd, job.salaryMaxVnd),
+                  salaryMinVnd: job.salaryMinVnd,
+                  salaryMaxVnd: job.salaryMaxVnd,
                   location: job.locations[0] ?? 'Toàn quốc',
                   badgeType: job.badgeType === 'urgent' ? 'urgent' : null,
+                  // DEC-08: phân biệt preview card qua source field
+                  source: (job as { source?: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING' }).source,
                 }}
-                href={buildHref(job.id)}
+                href={buildHref(job.slug)}
+                onApply={onApply ? () => onApply(job) : undefined}
               />
             ))}
           </div>

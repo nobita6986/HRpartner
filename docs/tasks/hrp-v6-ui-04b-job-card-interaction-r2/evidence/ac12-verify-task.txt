@@ -1,0 +1,15 @@
+﻿TASK CONTRACT GATE
+  subject: docs\tasks\hrp-v6-ui-04b-job-card-interaction-r2\TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+  [OK]   A-02 assurance lane: STANDARD.
+  [OK]   A-05 11 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 3 referenced npm script(s) all exist.
+  [OK]   T-02 1 file:line reference(s) resolve.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/**.
+  [OK]   T-05 all 14 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+
+RESULT: PASS. TASK contract is ready for execution.

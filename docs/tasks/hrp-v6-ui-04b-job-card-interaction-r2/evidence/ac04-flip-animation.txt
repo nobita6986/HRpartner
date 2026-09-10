@@ -1,0 +1,10 @@
+﻿
+src\domains\job-board\components\landing\featured-job-card.tsx:101:       * Dùng CSS 3D transform với perspective + 
+transform-style: preserve-3d + backface-visibility.
+src\domains\job-board\components\landing\featured-job-card.tsx:176:          transform-style: preserve-3d;
+src\domains\job-board\components\landing\featured-job-card.tsx:183:          transform: rotateX(180deg);
+src\domains\job-board\components\landing\featured-job-card.tsx:193:          backface-visibility: hidden;
+src\domains\job-board\components\landing\featured-job-card.tsx:194:          -webkit-backface-visibility: hidden;
+src\domains\job-board\components\landing\featured-job-card.tsx:199:          transform: rotateX(180deg);
+
+
