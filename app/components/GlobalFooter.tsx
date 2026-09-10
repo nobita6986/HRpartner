@@ -63,7 +63,7 @@ export function GlobalFooter() {
             <p className="font-body text-body-sm text-on-surface-variant">HRP VIET NAM COMPANY LIMITED</p>
             <p className="font-body text-body-sm text-on-surface-variant">HRP Co.,Ltd</p>
             <p className="mt-2 font-body text-body-sm text-on-surface-variant leading-relaxed">
-              Thuê Khu đất DV Tân Ngọc, Thống Nhất, Bắc Kê, Xã Bình Tuyền, Tỉnh Phú Thọ, Việt Nam
+              Địa chỉ: Khu đất DV Tân Ngọc, Thống Nhất, Bắc Kế, Xã Bình Tuyền, Tỉnh Phú Thọ, Việt Nam
             </p>
             <div className="mt-3 flex flex-col gap-2">
               <a
@@ -79,10 +79,10 @@ export function GlobalFooter() {
                 Hotline: 0964 984 866
               </a>
               <a
-                href="mailto:nhaluchrp@gmail.com"
+                href="mailto:nhanluchrp@gmail.com"
                 className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
               >
-                Email: nhaluchrp@gmail.com
+                Email: nhanluchrp@gmail.com
               </a>
               <a
                 href="https://hrpvietnam.com/"
