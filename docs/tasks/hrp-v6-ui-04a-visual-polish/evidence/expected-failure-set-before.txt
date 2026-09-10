@@ -1,0 +1,9 @@
+Baseline expected unit failure set (exec-head: 88543f75d6c6e556c3a90e1e588e41e0eb77458a)
+
+Failing test file count: 1
+Failing file: src/shared/ui/design-tokens.static.test.ts
+Failing test: RQ-04/AC-03 — mọi biến CSS mà .tsx gọi đều phân giải được
+Violation: "app/admin/jobs/job-opening-status-card.tsx:67 var(--surface-container-high)"
+
+This is a PRE-EXISTING baseline failure (not related to hrp-v6-ui-04a-visual-polish task).
+Expected failure count: 1 failing test file.

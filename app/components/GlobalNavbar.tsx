@@ -109,64 +109,68 @@ export function GlobalNavbar() {
         Bỏ qua điều hướng, tới nội dung chính
       </a>
       {/* go-live-08 / RQ-20: chuỗi class này PHẢI trùng chuỗi container của
-          `app/(portal)/page.tsx` để hai mép trái trùng nhau ở mọi breakpoint. */}
-      <div className="w-full max-w-[1600px] mx-auto px-6 md:px-[5%]">
-        <div className="flex justify-between items-center h-20">
+          `app/(portal)/page.tsx` để hai mép trái trùng nhau ở mọi breakpoint.
+          STEP-02/STEP-07: max-w-[1200px] (RQ-01) */}
+      <div className="w-full max-w-[1200px] mx-auto px-6">
+        {/* STEP-02: h-16 (RQ-02); logo+menu cluster left gap-8; auth cluster right gap-4 */}
+        <div className="flex justify-between items-center h-16">
+          {/* Logo + Desktop Navigation — cluster LEFT gap-8 */}
+          <div className="flex items-center gap-8">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <Link href="/" className="flex items-center gap-2">
+                <img src="/logo.png" alt="HRP Logo" style={{ height: '40px', width: 'auto' }} />
+              </Link>
+            </div>
 
-          {/* Logo */}
-          <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt="HRP Logo" style={{ height: '40px', width: 'auto' }} />
-            </Link>
-          </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            {navLinks.map((link) => {
-              // ui-03 / RQ-08: link disabled dùng button element với attributes
-              // type=button, aria-disabled=true, title="Đang phát triển", tabindex=-1.
-              const isActive =
-                link.type === 'route' && link.href === activeHref;
-              const restColor = isActive
-                ? 'var(--color-primary-dark)'
-                : 'var(--color-on-surface-variant)';
-              if (link.type === 'disabled') {
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-6">
+              {navLinks.map((link) => {
+                // ui-03 / RQ-08: link disabled dùng button element với attributes
+                // type=button, aria-disabled=true, title="Đang phát triển", tabindex=-1.
+                const isActive =
+                  link.type === 'route' && link.href === activeHref;
+                const restColor = isActive
+                  ? 'var(--color-primary-dark)'
+                  : 'var(--color-on-surface-variant)';
+                if (link.type === 'disabled') {
+                  return (
+                    <button
+                      key={link.label}
+                      type="button"
+                      aria-disabled="true"
+                      title="Đang phát triển"
+                      tabIndex={-1}
+                      className="font-medium cursor-not-allowed opacity-70"
+                      style={{ color: 'var(--color-on-surface-variant)' }}
+                    >
+                      {link.label}
+                    </button>
+                  );
+                }
                 return (
-                  <button
-                    key={link.label}
-                    type="button"
-                    aria-disabled="true"
-                    title="Đang phát triển"
-                    tabIndex={-1}
-                    className="font-medium cursor-not-allowed opacity-70"
-                    style={{ color: 'var(--color-on-surface-variant)' }}
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`${
+                      isActive
+                        ? 'font-label text-label-md font-semibold border-b-2 border-primary-container pb-1'
+                        : 'font-label text-label-md font-medium'
+                    } transition-colors`}
+                    style={{ color: restColor }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-primary-dark)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = restColor)}
                   >
                     {link.label}
-                  </button>
+                  </Link>
                 );
-              }
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`${
-                    isActive
-                      ? 'font-semibold border-b-2 border-primary-container'
-                      : 'font-medium'
-                  } transition-colors`}
-                  style={{ color: restColor }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-primary-dark)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = restColor)}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
+              })}
+            </nav>
+          </div>
 
-          {/* Desktop Auth Area */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* Desktop Auth Area — cluster RIGHT gap-4 */}
+          <div className="hidden md:flex items-center gap-4">
             {authLoading ? (
               <div
                 className="w-9 h-9 rounded-full animate-pulse"
@@ -245,11 +249,11 @@ export function GlobalNavbar() {
                 )}
               </div>
             ) : (
-              /* Not logged in */
+              /* Not logged in — STEP-02/RQ-03: Login as text link (bỏ hrp-btn-outline) */
               <>
                 <Link
                   href="/login"
-                  className="hrp-btn-outline hrp-focus font-medium px-4 min-h-11 inline-flex items-center border rounded-lg"
+                  className="font-label text-label-md text-on-surface hover:text-primary-container transition-colors"
                 >
                   Đăng nhập
                 </Link>
@@ -317,8 +321,8 @@ export function GlobalNavbar() {
                   aria-current={isActive ? 'page' : undefined}
                   className={`block px-2 py-2.5 ${
                     isActive
-                      ? 'font-semibold border-b-2 border-primary-container'
-                      : 'font-medium'
+                      ? 'font-label text-label-md font-semibold border-b-2 border-primary-container'
+                      : 'font-label text-label-md font-medium'
                   }`}
                   style={{
                     color: isActive
@@ -371,7 +375,7 @@ export function GlobalNavbar() {
                 <>
                   <Link
                     href="/login"
-                    className="hrp-btn-outline hrp-focus flex items-center justify-center px-4 min-h-11 font-medium border rounded-lg"
+                    className="font-label text-label-md text-on-surface hover:text-primary-container transition-colors text-center py-2.5"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Đăng nhập

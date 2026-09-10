@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { HrMonogram } from './hr-monogram';
 
 interface RecruitingProject {
@@ -22,36 +23,35 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
     >
       <div className="mx-auto w-full max-w-7xl">
         <div className="mb-8 flex flex-col gap-2">
-          <p className="font-label text-label-sm font-bold uppercase tracking-widest text-primary-dark">
-            <span className="material-symbols-outlined mr-1 align-middle text-base" aria-hidden="true">
-              engineering
-            </span>
-            Cơ hội mới
-          </p>
+          {/* STEP-05/RQ-08/DEC-13: Icon apartment trong vòng tròn nhẹ bg-secondary-container rounded-full */}
+          {/* STEP-05/RQ-10/DEC-15: Bỏ eyebrow + sub-heading kỹ thuật */}
           <h2
             id="hrp-recruiting-heading"
-            className="font-head text-headline-lg font-bold text-on-surface"
+            className="font-head text-headline-lg font-bold text-on-surface flex items-center gap-2"
           >
+            <span className="w-10 h-10 bg-secondary-container rounded-full inline-flex items-center justify-center">
+              <span className="material-symbols-outlined text-base text-primary-dark" aria-hidden="true">apartment</span>
+            </span>
             Dự án đang tuyển
           </h2>
-          <p className="max-w-2xl font-body text-body-md text-on-surface-variant">
-            Các dự án đang mở tuyển, hiển thị số slot thật từ dữ liệu HRP.
-          </p>
         </div>
+        {/* STEP-05/RQ-09: Card 4-col md / 2-col mobile, KHÔNG anchor giả — dùng Link */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {jobs.slice(0, 4).map((job) => (
-            <a
+            <Link
               key={job.id}
               href={buildHref(job.id)}
               data-testid={`recruiting-card-${job.id}`}
-              className="hrp-focus flex flex-col items-center gap-3 rounded-2xl border border-outline-variant bg-surface p-5 text-center shadow-card transition hover:-translate-y-0.5 hover:border-primary-container"
+              className="hrp-focus flex flex-col items-center gap-3 rounded-xl border border-outline-variant bg-surface p-4 text-center shadow-card transition hover:-translate-y-0.5 hover:border-primary-container"
             >
-              <HrMonogram size={64} />
-              <p className="font-head text-headline-md font-bold text-on-surface">{job.title}</p>
-              <p className="font-label text-label-md text-primary-container">
-                {job.availableSlots} slot đang mở
+              {/* STEP-05/RQ-09/DEC-14: Logo monogram 64×64 px outer */}
+              <HrMonogram size={64} className="w-16 h-16 rounded-xl border border-outline-variant bg-white shrink-0" />
+              <p className="font-head text-headline-md font-bold text-on-surface leading-tight">{job.title}</p>
+              {/* STEP-05/RQ-09/DEC-16: Copy "Cần tuyển {n} người", n = availableSlots */}
+              <p className="font-label text-label-md text-primary-container font-bold">
+                Cần tuyển {job.availableSlots} người
               </p>
-            </a>
+            </Link>
           ))}
         </div>
       </div>

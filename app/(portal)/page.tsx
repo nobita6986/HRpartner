@@ -227,13 +227,15 @@ export default function JobsPage() {
           </p>
           <form
             onSubmit={handleSearch}
-            className="flex flex-col gap-3 rounded-2xl border border-white/30 bg-white/10 p-3 backdrop-blur-md sm:flex-row sm:items-end sm:p-4"
+            /* STEP-06/RQ-11/DEC-17: A16 search card wrapper đổi từ glass sang nền trắng */
+            className="flex flex-col gap-3 rounded-2xl border border-outline-variant bg-white p-3 sm:flex-row sm:items-end sm:p-4"
             data-testid="hero-search-card"
           >
             <div className="flex-1">
               <label
                 htmlFor="hrp-hero-keyword"
-                className="mb-1 block font-label text-label-sm font-bold text-white"
+                /* STEP-06/AC-11/AC-13: Label text-white → text-on-surface (WCAG AA contrast) */
+                className="mb-1 block font-label text-label-sm font-bold text-on-surface"
               >
                 Từ khóa
               </label>
@@ -243,13 +245,15 @@ export default function JobsPage() {
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder="Tên công việc, vị trí..."
-                className="hrp-focus w-full rounded-lg border border-white/30 bg-white/95 px-3 py-2.5 text-on-surface min-h-11 placeholder:text-on-surface-variant"
+                /* STEP-06/RQ-11/DEC-17: Input → bg-white border-outline-variant */
+                className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 text-on-surface min-h-11 placeholder:text-on-surface-variant"
               />
             </div>
             <div className="flex-1">
               <label
                 htmlFor="hrp-hero-area"
-                className="mb-1 block font-label text-label-sm font-bold text-white"
+                /* STEP-06/AC-11/AC-13: Label text-white → text-on-surface */
+                className="mb-1 block font-label text-label-sm font-bold text-on-surface"
               >
                 Khu vực
               </label>
@@ -257,7 +261,8 @@ export default function JobsPage() {
                 id="hrp-hero-area"
                 value={area}
                 onChange={(e) => setArea(e.target.value)}
-                className="hrp-focus w-full rounded-lg border border-white/30 bg-white/95 px-3 py-2.5 text-on-surface min-h-11"
+                /* STEP-06/RQ-11/DEC-17: Select → bg-white border-outline-variant */
+                className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 text-on-surface min-h-11"
               >
                 <option value="">Tất cả khu vực</option>
                 {facets.areas.map((entry) => (
@@ -270,7 +275,8 @@ export default function JobsPage() {
             <div className="flex-1">
               <label
                 htmlFor="hrp-hero-salary"
-                className="mb-1 block font-label text-label-sm font-bold text-white"
+                /* STEP-06/AC-11/AC-13: Label text-white → text-on-surface */
+                className="mb-1 block font-label text-label-sm font-bold text-on-surface"
               >
                 Mức lương
               </label>
@@ -278,7 +284,8 @@ export default function JobsPage() {
                 id="hrp-hero-salary"
                 value={minSalary}
                 onChange={(e) => setMinSalary(e.target.value)}
-                className="hrp-focus w-full rounded-lg border border-white/30 bg-white/95 px-3 py-2.5 text-on-surface min-h-11"
+                /* STEP-06/RQ-11/DEC-17: Select → bg-white border-outline-variant */
+                className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 text-on-surface min-h-11"
               >
                 <option value="">Mọi mức lương</option>
                 <option value="25000">Từ 25.000 đ/giờ</option>

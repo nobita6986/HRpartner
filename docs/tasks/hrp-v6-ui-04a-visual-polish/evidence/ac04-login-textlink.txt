@@ -1,0 +1,6 @@
+AC-04 Login text link evidence
+
+grep hrp-btn-outline in GlobalNavbar.tsx:
+Expected: 0 match for Login (Signup button remains with hrp-btn-primary)
+
+Result: PASS — Login is now text link without hrp-btn-outline class

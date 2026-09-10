@@ -1,0 +1,16 @@
+AC-01 Container 1200px evidence
+
+grep max-w-[1200px] in 10 files:
+
+app\components\GlobalNavbar.tsx:113: STEP-02/STEP-07: max-w-[1200px] (RQ-01) */}
+app\components\GlobalNavbar.tsx:114: <div className="w-full max-w-[1200px] mx-auto px-6">
+app\components\GlobalFooter.tsx:41: {/* STEP-07/RQ-01: Container max-w-[1200px] mx-auto px-4 md:px-6 */}
+app\components\GlobalFooter.tsx:42: <div className="mx-auto w-full max-w-[1200px] px-4 md:px-6 py-12">
+app\components\GlobalFooter.tsx:83: {/* STEP-07/RQ-01: Container max-w-[1200px] mx-auto px-4 md:px-6 */}
+app\components\GlobalFooter.tsx:84: <div className="mx-auto w-full max-w-[1200px] px-4 md:px-6 flex...
+src\domains\job-board\components\landing\areas-section.tsx:23: {/* STEP-07/RQ-01: Container max-w-[1200px] */}
+src\domains\job-board\components\landing\areas-section.tsx:26: <div className="mx-auto w-full max-w-[1200px]">
+src\domains\job-board\components\landing\referral-strip.tsx:14: {/* STEP-07/RQ-01: Container max-w-[1200px] */}
+src\domains\job-board\components\landing\referral-strip.tsx:17: <div className="mx-auto w-full max-w-[1200px] grid...
+
+Result: PASS — max-w-[1200px] found in 4+ files (GlobalNavbar, GlobalFooter, areas-section, referral-strip)

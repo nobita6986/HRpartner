@@ -294,6 +294,21 @@ describe('Thang chữ — DEC-13 / DEC-11 / AC-01', () => {
     const unused = SCALE_SUFFIXES.filter((s) => !TOKEN_FILES.has(`text-${s}`));
     expect(unused).toEqual([]);
   });
+
+  it('T-05 — STEP-02/DEC-21: Các scoped typography class được định nghĩa trong globals.css', () => {
+    // Verify the new scoped classes are defined in CSS
+    const scopedClasses = [
+      '.font-label', '.text-label-sm', '.text-label-md',
+      '.font-label-sm', '.font-label-md'
+    ];
+    for (const cls of scopedClasses) {
+      expect(CSS_LIVE, `thiếu ${cls}`).toContain(cls);
+    }
+    // Verify they use the correct tokens
+    expect(CSS_LIVE).toContain('--font-label');
+    expect(CSS_LIVE).toContain('--text-label-sm');
+    expect(CSS_LIVE).toContain('--text-label-md');
+  });
 });
 
 describe('Tương ứng token với class — RQ-12', () => {

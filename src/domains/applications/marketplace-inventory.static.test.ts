@@ -266,6 +266,7 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
     const route = strip(read(LEGACY_JOBS));
     const service = strip(read(PUBLIC_JOB_SERVICE));
     // ui-03: Hero form builds query with keyword, area, shift filters
+    // STEP-06/A16: hero form now uses bg-white border-outline-variant
     expect(page).toContain("params.set('q', q)");
     expect(page).toContain("params.set('area', filters.area)");
     expect(page).toContain("params.set('shift', filters.shift)");

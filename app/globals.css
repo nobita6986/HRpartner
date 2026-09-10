@@ -646,3 +646,34 @@ body {
     transform: none !important;
   }
 }
+
+/*
+ * SCOPED TYPOGRAPHY CLASSES — STEP-02/DEC-21, STEP-06/AC-14
+ * Bổ sung các token chưa có trong Tailwind @theme của app/globals.css.
+ * DEC-21: không giả định class tồn tại — verify bằng grep trước khi dùng.
+ *
+ * Các class dưới đây phục vụ cho:
+ * - Navbar menu nav link (STEP-02): font-label text-label-md
+ * - Search card label (STEP-06): font-label text-label-sm font-bold text-on-surface
+ */
+.font-label {
+  font-family: var(--font-label);
+}
+.text-label-sm {
+  font-size: var(--text-label-sm);
+  line-height: var(--text-label-sm--line-height);
+}
+.text-label-md {
+  font-size: var(--text-label-md);
+  line-height: var(--text-label-md--line-height);
+}
+.font-label-sm {
+  font-family: var(--font-label);
+  font-size: var(--text-label-sm);
+  line-height: var(--text-label-sm--line-height);
+}
+.font-label-md {
+  font-family: var(--font-label);
+  font-size: var(--text-label-md);
+  line-height: var(--text-label-md--line-height);
+}

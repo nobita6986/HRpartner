@@ -1,0 +1,7 @@
+AC-15 Truth fence numbers evidence
+
+Select-String for fake numbers in changed public surface:
+Pattern: "17\.800|13\.000\.000|\+10\.000\.000|\+50\.000\.000|10\.000\.000 VNĐ|50\.000\.000 VNĐ"
+
+Result: 0 matches (exit 1) — PASS
+No fake numbers found in featured-job-card, recruiting-projects-section, or portal page

@@ -1,0 +1,8 @@
+AC-16 Asset refs evidence
+
+grep for lh3.googleusercontent and /logo.png in changed public surface:
+- featured-job-card.tsx: no external URLs
+- recruiting-projects-section.tsx: no external URLs
+- portal page: /logo.png used in Navbar/Footer (valid project asset)
+
+Result: PASS — No lh3.googleusercontent URLs found; /logo.png is valid project asset

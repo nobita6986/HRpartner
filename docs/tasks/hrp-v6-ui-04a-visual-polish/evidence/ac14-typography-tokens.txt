@@ -1,0 +1,10 @@
+AC-14 Typography tokens evidence
+
+app/globals.css scoped classes added:
+.font-label { font-family: var(--font-label); }
+.text-label-sm { font-size: var(--text-label-sm); line-height: var(--text-label-sm--line-height); }
+.text-label-md { font-size: var(--text-label-md); line-height: var(--text-label-md--line-height); }
+.font-label-sm { font-family: var(--font-label); font-size: var(--text-label-sm); ... }
+.font-label-md { font-family: var(--font-label); font-size: var(--text-label-md); ... }
+
+Result: PASS — All scoped typography classes defined using design tokens

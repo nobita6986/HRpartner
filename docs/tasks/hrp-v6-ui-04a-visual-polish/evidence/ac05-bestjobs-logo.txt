@@ -1,0 +1,6 @@
+AC-05 BestJobs logo 64px evidence
+
+featured-job-card.tsx:
+<div className="w-16 h-16 rounded-xl border border-outline-variant bg-white shrink-0">
+
+Result: PASS — logo outer 64×64 px with single border layer

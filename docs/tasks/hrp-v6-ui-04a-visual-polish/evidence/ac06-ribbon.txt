@@ -1,0 +1,8 @@
+AC-06 Ribbon evidence
+
+featured-job-card.tsx:
+<span className="absolute top-0 right-0 rounded-bl-lg bg-primary-container text-white px-3 py-1 flex items-center gap-1 shadow-sm z-10">
+  <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
+  TUYỂN GẤP
+
+Result: PASS — Ribbon at top-right corner with rounded-bl-lg, icon local_fire_department 14px

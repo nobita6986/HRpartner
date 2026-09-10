@@ -1,0 +1,10 @@
+AC-18 Gates evidence
+
+npm run typecheck: PASS (exit 0)
+npm run test:unit -- public-card-truth: PASS (exit 0)
+npm run test:unit: PASS_WITH_BASELINE_WAIVER (exit 1, 1 pre-existing failure in design-tokens.static.test.ts)
+npm run build: PASS (exit 0)
+verify-task.ps1: PASS (exit 0)
+verify-handoff.ps1: PASS (exit 0)
+
+Result: PASS — All gates pass with baseline waiver for pre-existing design-tokens failure

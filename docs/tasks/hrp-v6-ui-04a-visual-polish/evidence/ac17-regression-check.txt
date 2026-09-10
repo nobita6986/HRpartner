@@ -1,0 +1,23 @@
+STEP-09 Regression Check — GlobalNavbar imports
+
+Verified routes using GlobalNavbar:
+
+1. app/(portal)/layout.tsx (line 1)
+   - Layout applies to: /, /ve-chung-toi, /ctv-portal
+   - Contains: GlobalNavbar + GlobalFooter
+
+2. app/(jobs)/viec-lam/layout.tsx (line 13)
+   - Layout applies to: /viec-lam, /viec-lam/[slug]
+   - Contains: GlobalNavbar + GlobalFooter
+
+Total routes with GlobalNavbar: 6 pages (2 layouts × 3 page groups)
+
+Pages covered:
+- / (via portal layout)
+- /viec-lam (via jobs layout)
+- /viec-lam/[slug] (via jobs layout)
+- /ve-chung-toi (via portal layout)
+- /ctv-portal (via portal layout)
+- /login: NOT in scope — standalone login page without navbar per design
+
+STEP-09 Conclusion: Regression shell PASS — GlobalNavbar properly distributed across public portal routes.

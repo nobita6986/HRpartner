@@ -1,0 +1,9 @@
+AC-11 Search card white evidence
+
+app/(portal)/page.tsx:
+<form className="flex flex-col gap-3 rounded-2xl border border-outline-variant bg-white p-3...">
+  <label className="...text-on-surface">Từ khóa</label>
+  <input className="...border border-outline-variant bg-white...">
+  <select className="...border border-outline-variant bg-white...">
+
+Result: PASS — Wrapper uses bg-white, border-outline-variant; Label uses text-on-surface; Input/select use bg-white, border-outline-variant

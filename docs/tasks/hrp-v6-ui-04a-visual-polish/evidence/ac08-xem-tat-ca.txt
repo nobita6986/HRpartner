@@ -1,0 +1,6 @@
+AC-08 "Xem tất cả" link evidence
+
+best-jobs-section.tsx:
+<Link href="/viec-lam" className="...">Xem tất cả →</Link>
+
+Result: PASS — Link points to /viec-lam route

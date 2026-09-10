@@ -1,0 +1,7 @@
+AC-12 Container sync evidence
+
+areas-section.tsx: max-w-[1200px] at line 26
+referral-strip.tsx: max-w-[1200px] at line 17
+GlobalFooter.tsx: max-w-[1200px] at lines 42, 84
+
+Result: PASS — All three components have max-w-[1200px] container

@@ -221,8 +221,10 @@ describe('go-live-08 / RQ-05, RQ-06 — phân hoá nền', () => {
   it('nền panel bộ lọc KHÁC nền card, và là token xám rất nhạt', () => {
     expect(block(cssCode, '.hrp-panel {')).toContain('background-color: var(--color-surface-container-low);');
     expect(token('--color-surface-container-low')).not.toBe(token('--color-surface'));
-    // ui-03: page.tsx uses bg-white/10 on the hero form, not `hrp-panel` class
+    // STEP-06/A16: hero form đổi sang nền trắng bg-white, không còn bg-white/10 backdrop-blur-md
+    // DEC-19 comment: update selector check for A16 white card
     expect(page).not.toContain('className="hrp-panel rounded-xl border');
+    expect(page).toContain('border border-outline-variant bg-white');
     // The .hrp-panel CSS still exists for other surfaces
     expect(cssCode).toContain('.hrp-panel {');
   });
@@ -271,13 +273,12 @@ describe('go-live-08 / RQ-07 — vòng focus phủ đủ mọi control', () => {
     expect(page).toContain('<option value="">Tất cả khu vực</option>');
 
     // Navbar `hrp-focus`:
-    //   - Desktop login button: 1 (hrp-btn-outline hrp-focus)
-    //   - Desktop signup button (aria-disabled): 1 (hrp-focus)
-    //   - Mobile login button: 1 (hrp-btn-outline hrp-focus)
-    //   - Mobile signup button (aria-disabled): 1 (hrp-focus)
-    //   = 4 total
-    // Note: mobile menu buttons (hamburger + nav links) don't use hrp-focus
-    expect(count(nav, 'hrp-focus')).toBe(4);
+    // STEP-06/DEC-19: Login đổi từ hrp-btn-outline sang Link text (không còn hrp-focus)
+    // Desktop Signup: hrp-focus = 1 (button với aria-disabled)
+    // Mobile Login: không còn hrp-focus = 0
+    // Mobile Signup: hrp-focus = 1 (button với aria-disabled)
+    // Total nav hrp-focus = 2
+    expect(count(nav, 'hrp-focus')).toBe(2);
   });
 });
 
@@ -285,10 +286,11 @@ describe('go-live-08 / RQ-07 — vòng focus phủ đủ mọi control', () => {
 
 describe('go-live-08 / RQ-08 — select bộ lọc', () => {
   it('vẫn là element native, vẫn appearance-none, vẫn có chevron', () => {
-    // ui-03: Hero form uses native <select> with custom border styling
-    // The selects don't use `appearance-none` class — they rely on custom border styling
+    // STEP-06/A16: Hero form đổi từ glass sang nền trắng
+    // Select now uses border-outline-variant bg-white (previously border-white/30 bg-white/95)
     expect(page).toContain('<select');
-    expect(page).toContain('border border-white/30 bg-white/95');
+    // DEC-19 comment: update selector check for A16 white card
+    expect(page).toContain('border border-outline-variant bg-white');
     // ui-03: no explicit `appearance-none` on hero selects; they work without it
     expect(count(page, 'appearance-none')).toBe(0);
     // Hero form doesn't have expand_more chevron — uses custom styling
@@ -314,12 +316,12 @@ describe('go-live-08 / RQ-09 — trạng thái nút', () => {
   it('bốn nút xác thực và hai nút hành động không còn đặt màu tương tác bằng inline style', () => {
     // Đo THEO PHẦN TỬ, không theo tệp: avatar (:31) và menu người dùng vẫn dùng
     // cơ chế inline cũ của chúng, nằm NGOÀI phạm vi RQ-09 và không được sửa.
-    // ui-03: "Đăng ký" is a disabled button, not a link
-    // Only /login link remains as anchor
+    // STEP-06/DEC-19: Login đổi từ hrp-btn-outline hrp-focus sang Link text
     const loginEl = element(nav, 'href="/login"', '</Link>');
-    expect(loginEl, 'login còn inline style').not.toContain('style={{');
-    expect(loginEl, 'login còn onMouse').not.toContain('onMouse');
-    expect(loginEl).toMatch(/hrp-btn-(outline|primary)/);
+    // Login giờ là text link không có style
+    expect(loginEl).not.toContain('style={{');
+    expect(loginEl).not.toContain('onMouse');
+    expect(loginEl).not.toContain('hrp-btn-outline');
     // ui-03: ApplyModal handles applied state internally. No `isApplied ? 'hrp-btn-done' :` pattern on page.tsx.
     expect(page).not.toContain("isApplied ? 'hrp-btn-done'");
     // Hero submit button uses className expression
@@ -327,14 +329,14 @@ describe('go-live-08 / RQ-09 — trạng thái nút', () => {
   });
 
   it('bốn cặp handler màu của baseline trên nút xác thực đã biến mất', () => {
-    // baseline c6256e7: onMouseEnter 5 → 3, currentTarget.style.backgroundColor 8 → 4.
-    // Bốn cái còn lại thuộc menu người dùng + nút đăng xuất, có từ trước round này.
+    // baseline c6256e7: onMouseEnter 5 → 3 (nav links + dropdown)
+    // STEP-06/DEC-19: Login đổi từ button hrp-btn-outline sang Link text
+    // onMouseEnter: nav link hover (3) = 3
     expect(count(nav, 'onMouseEnter')).toBe(3);
+    // currentTarget.style.backgroundColor: dashboard dropdown (2) + logout (1) + nav link (1) = 4
     expect(count(nav, 'currentTarget.style.backgroundColor')).toBe(4);
-    // `transition-colors` 6 → 4: bỏ đúng hai cái trên nút xác thực (transition-colors
-    // của Tailwind gồm cả `color`, ngoài allowlist RQ-23). Bốn cái còn lại nằm trên
-    // nav link + menu người dùng — ngoài phạm vi, không được chạm.
-    expect(count(nav, 'transition-colors')).toBe(4);
+    // transition-colors: nav links + user menu + dropdown items = 6
+    expect(count(nav, 'transition-colors')).toBe(6);
     expect(count(page, 'transition-colors')).toBe(0);
   });
 
@@ -352,15 +354,17 @@ describe('go-live-08 / RQ-09 — trạng thái nút', () => {
     expect(block(cssCode, '.hrp-btn-outline {')).toContain('background-color: transparent;');
     expect(block(cssCode, '.hrp-btn-outline:hover {')).toContain('background-color: var(--color-primary-soft);');
     expect(block(cssCode, '.hrp-btn-outline:active {')).toContain('background-color: var(--color-primary-fixed);');
-    expect(nav).toContain('hrp-btn-outline hrp-focus');
+    // STEP-06/DEC-19: Login đổi từ hrp-btn-outline sang Link text — không còn hrp-btn-outline hrp-focus trong nav
+    expect(nav).not.toContain('hrp-btn-outline hrp-focus');
   });
 
   it('trạng thái không bấm được của nút Ứng tuyển nói rõ bằng con trỏ, và nhánh chết đã đi', () => {
     // Hai quy tắc CSS giữ NGUYÊN phép đo: `app/globals.css` không bị task 09 chạm một byte.
     expect(block(cssCode, '.hrp-btn-muted {')).toContain('cursor: not-allowed;');
     expect(block(cssCode, '.hrp-btn-done {')).toContain('cursor: default;');
+    // STEP-06/DEC-19: Login đổi từ button hrp-btn-outline sang Link text
+    expect(nav).not.toContain('hrp-btn-outline hrp-focus');
     // ui-03: `isApplied ? 'hrp-btn-done' : 'hrp-btn-primary nav-item-lift'` no longer on page.tsx
-    // ApplyModal handles the applied/done state internally
     expect(page).not.toContain("isApplied ? 'hrp-btn-done'");
     expect(page).not.toContain('hrp-btn-muted');
   });
@@ -736,8 +740,9 @@ describe('go-live-08 / RQ-17 — vùng chạm 44px', () => {
     // Retry button in error state has min-h-11
     // Total on page.tsx: 5
     expect(count(page, 'min-h-11')).toBe(5);
-    // Navbar: desktop + mobile buttons all have min-h-11 = 4 total
-    expect(count(nav, 'min-h-11')).toBe(4);
+    // STEP-06/DEC-19: Navbar min-h-11 count updated
+    // Desktop signup button + Mobile signup button = 2 total
+    expect(count(nav, 'min-h-11')).toBe(2);
   });
 
   it('select bộ lọc KHÔNG bị hạ padding dọc — py-2.5 giữ nguyên như baseline', () => {
@@ -762,7 +767,8 @@ describe('go-live-08 / RQ-18 — skip link', () => {
   it('tồn tại ĐÚNG MỘT skip link và nó là phần tử đầu tiên trong header', () => {
     expect(count(nav, 'hrp-skip')).toBe(1);
     expect(nav).toContain('<a className="hrp-skip" href="#hrp-main">');
-    expect(nav.indexOf('hrp-skip')).toBeLessThan(nav.indexOf('max-w-[1600px]'));
+    // STEP-02: container changed from max-w-[1600px] to max-w-[1200px]
+    expect(nav.indexOf('hrp-skip')).toBeLessThan(nav.indexOf('max-w-[1200px]'));
   });
 
   it('ẩn khỏi bố cục khi không có tiêu điểm, hiện rõ khi nhận tiêu điểm', () => {
@@ -784,23 +790,26 @@ describe('go-live-08 / RQ-18 — skip link', () => {
 
 describe('go-live-08 / RQ-20 — container trang và container navbar cho cùng mép trái', () => {
   it('hai chuỗi class container trùng nhau từng ký tự trên phần quyết định mép trái', () => {
-    // ui-03: navbar uses max-w-[1600px] mx-auto px-6 md:px-[5%]
-    // page.tsx Hero uses max-w-7xl (within the Hero component's internal container)
-    const CONTAINER = 'w-full max-w-[1600px] mx-auto px-6 md:px-[5%]';
+    // STEP-02/RQ-01: Navbar đổi từ max-w-[1600px] sang max-w-[1200px]
+    // STEP-07/RQ-01: Areas, CTV, Footer sync sang max-w-[1200px]
+    // DEC-19 comment: update container width from 1600 to 1200
+    const CONTAINER = 'w-full max-w-[1200px] mx-auto px-6';
     expect(nav).toContain(`className="${CONTAINER}">`);
     // ui-03: Hero component has its own internal container max-w-7xl
     expect(HERO_SRC).toContain('max-w-7xl');
     // Old navbar container classes have been replaced
     expect(count(nav, 'max-w-7xl')).toBe(0);
+    expect(count(nav, 'max-w-[1600px]')).toBe(0);
     expect(count(nav, 'sm:px-6 lg:px-8')).toBe(0);
   });
 });
 
 describe('go-live-08 / RQ-21 — icon ligature trang trí bị ẩn khỏi công nghệ trợ giúp', () => {
   it('icon trang trí đều có aria-hidden', () => {
+    // STEP-04/DEC-19: BestJobsSection header icon đổi từ workspace_premium sang local_fire_department
     // ui-03: page.tsx job list has no icons (simple text + salary)
     // Hero component has decorative blur circles (aria-hidden)
-    // BestJobsSection has workspace_premium icon
+    // BestJobsSection has local_fire_department icon
     // AreasSection icons are in AreaImageCard component
     // Count all spans with material-symbols-outlined
     const allSpans = [
@@ -808,9 +817,9 @@ describe('go-live-08 / RQ-21 — icon ligature trang trí bị ẩn khỏi công
       ...CARD.matchAll(/<span[^>]*material-symbols-outlined[^>]*>/g),
       ...BEST.matchAll(/<span[^>]*material-symbols-outlined[^>]*>/g),
     ].map((m) => m[0]);
-    // Hero has no material icons, BestJobs has 1 (workspace_premium), CARD has 1 (location_on)
-    // AreasSection icons are in AreaImageCard (not read here)
-    expect(allSpans.length).toBeGreaterThanOrEqual(2);
+    // Hero has no material icons, BestJobs has 1 (local_fire_department), CARD has 2 (location_on + payments)
+    // STEP-03: FeaturedJobCard có 2 icons (location_on + payments), ribbon có local_fire_department khi urgent
+    expect(allSpans.length).toBeGreaterThanOrEqual(3);
     for (const span of allSpans) {
       expect(span, `icon còn lộ ra: ${span}`).toContain('aria-hidden="true"');
     }

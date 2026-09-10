@@ -1,0 +1,7 @@
+AC-03 Navbar clustering evidence
+
+GlobalNavbar.tsx:
+- Logo cluster left: <div className="flex items-center gap-8">
+- Auth cluster right: <div className="hidden md:flex items-center gap-4">
+
+Result: PASS — logo+menu cluster left gap-8, auth cluster right gap-4

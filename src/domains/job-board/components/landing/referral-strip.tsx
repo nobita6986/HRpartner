@@ -11,9 +11,10 @@ export function ReferralStrip() {
       id="register"
       data-section="ctv"
       aria-labelledby="hrp-ctv-heading"
-      className="w-full px-4 py-12 md:px-8 md:py-16"
+      /* STEP-07/RQ-01: Container max-w-[1200px] mx-auto px-4 md:px-6 */
+      className="w-full px-4 md:px-6 py-12 md:py-16"
     >
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-8 lg:grid-cols-2">
+      <div className="mx-auto w-full max-w-[1200px] grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
         <div className="flex flex-col gap-5">
           <p className="font-label text-label-sm font-bold uppercase tracking-widest text-secondary">
             Cơ hội mới

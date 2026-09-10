@@ -1,0 +1,5 @@
+AC-02 Navbar h-16 evidence
+
+grep h-16 in GlobalNavbar.tsx:
+
+Result: PASS — h-16 found at line 116 in navbar wrapper div

@@ -1,0 +1,10 @@
+AC-07 Salary bar evidence
+
+featured-job-card.tsx:
+<div className="bg-surface-container-low rounded-xl p-3 flex items-center justify-center gap-2">
+  <span className="material-symbols-outlined text-[20px] text-primary-container">payments</span>
+  <span className="font-label text-label-md font-bold text-primary-container">{salary}</span>
+</div>
+Unit: đ/giờ (from page.tsx salaryLabel function)
+
+Result: PASS — Salary bar rounded-xl p-3, payments icon 20px, đ/giờ unit

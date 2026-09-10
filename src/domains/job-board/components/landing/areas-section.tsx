@@ -20,9 +20,10 @@ export function AreasSection({ areas, onPick }: AreasSectionProps) {
     <section
       data-section="areas"
       aria-labelledby="hrp-areas-heading"
-      className="w-full px-4 py-12 md:px-8 md:py-16"
+      /* STEP-07/RQ-01: Container max-w-[1200px] mx-auto px-4 md:px-6 */
+      className="w-full px-4 md:px-6 py-12 md:py-16"
     >
-      <div className="mx-auto w-full max-w-7xl">
+      <div className="mx-auto w-full max-w-[1200px]">
         <div className="mb-8 flex flex-col gap-2">
           <p className="font-label text-label-sm font-bold uppercase tracking-widest text-secondary-fixed">
             Theo khu vực

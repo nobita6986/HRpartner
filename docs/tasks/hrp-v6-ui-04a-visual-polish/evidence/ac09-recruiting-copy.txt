@@ -1,0 +1,14 @@
+AC-09 Recruiting copy evidence
+
+recruiting-projects-section.tsx:
+- Heading: "Dự án đang tuyển"
+- Icon: apartment in bg-secondary-container rounded-full
+- Copy: "Cần tuyển {job.availableSlots} người"
+- Eyebrow: REMOVED
+- Sub-heading: REMOVED
+- Top công ty: NOT PRESENT
+- Đối tác chính thức: NOT PRESENT
+- Cơ hội mới: NOT PRESENT
+- Dự án trọng điểm: NOT PRESENT
+
+Result: PASS — Copy matches spec, forbidden phrases absent
