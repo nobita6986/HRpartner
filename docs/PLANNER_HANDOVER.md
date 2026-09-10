@@ -27,13 +27,13 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
 current_lane: UI04 public homepage completion
-current_task: hrp-v6-ui-04c1-r3-footer-text-hotfix (DRAFT v0.1)
-task_path: docs/tasks/hrp-v6-ui-04c1-r3-footer-text-hotfix/TASK.md
-spec_version: v0.1 DRAFT (Owner visual review post-deploy 10/09/2026 phat hien 4 cho text sai trong GlobalFooter.tsx; commit 204f605 feat(ui) footer text hotfix da apply local)
-task_status: DRAFT -> READY_FOR_EXECUTION (Tier 1 commit 204f605 + ready push len origin/main sau khi Tier 0 confirm; gates local PASS typecheck/build, test:unit 13 pre-existing FAIL khong phai do fix)
-worktree_branch: main (Tier 0 directive TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md cho phep Tier 1 push production; Tier 1 commit 204f605 + can push them 1 commit docs(task) finalize)
-current_gate: TIER_0_CONFIRM (Tier 0 xem fix diff + confirm push len origin/main hay chi staged)
-next_command: Tier 1 push commit 204f605 + finalize TASK.md ACCEPTED len origin/main. Tier 0 xem xet CI pre-existing fail va quyet dinh co mo task fix-ci-prisma-validate rieng khong (Tier 1 da tao DRAFT task fix-ci-prisma-validate/TASK.md nhung CHUA push, cho Tier 0 review). Tier 1 khong tu fix CI (Tier 1 owns plan/contract, CI infra fix thuoc Tier 0 hoac Tier 2 neu mo task rieng). Sau Owner visual review ACCEPTED final: Tier 1 closeout UI04 round Phase 1+2 -> mo hrp-v6-ui-04d-section-render (van BLOCKED v1.5). Neu Owner yeu cau chinh them visual footer: mo 04c1-r4 (hoac 04c3 cho Job Card).
+current_task: hrp-v6-ui-04c1-r4-footer-justify (READY_FOR_EXECUTION v0.1)
+task_path: docs/tasks/hrp-v6-ui-04c1-r4-footer-justify/TASK.md
+spec_version: v0.1 (Owner 11/09/2026 00:49 yeu cau sua footer 3 diem: bo HRP Co.,Ltd, flatten gap, justify-between cot Cong ty va cot Danh muc dich vu)
+task_status: Tier 1 (Delivery Lead) commit 0e866ca + push ff63083..0e866ca len origin/main 11/09/2026 00:53 theo tier1.md moi workflow (outcome cho phep implement ngay, khong cho Tier 0); typecheck local PASS; Vercel auto-deploy; CI main #34510854000 Quality fail P1012 DATABASE_URL_ADMIN expected (fix-ci chua merge tu PR #1)
+worktree_branch: main (Tier 0 directive TIER0_UI04 cho phep Tier 1 push production; round R4 tiep noi R3, chi sua GlobalFooter.tsx; fix-ci-prisma-validate-r1 van o branch rieng PR #1)
+current_gate: OWNER_VISUAL_REVIEW_R4 (anh xem https://hrpvietnam.com/ footer preview xem 3 diem fix OK khong)
+next_command: Tier 0 chot visual R4: (a) ACCEPTED -> closeout UI04c1 + mo hrp-v6-ui-04d-section-render, (b) yeu cau chinh them -> mo R5, (c) merge PR #1 fix-ci len main de CI Quality PASS (khong lien quan UI04, nhung can truoc khi closeout de CI xanh)
 previous_accepted: 04c1 ACCEPTED round 1 (9f593fa + Tier 1 TASK.md finalize 780bb75) + 04c2 ACCEPTED round 1 (1316ff4 + Tier 1 TASK.md finalize d7e6899) + R3 v1.3 ACCEPTED (8c6fd03 — feat(ui04): live urgent jobs and minimal job cards) + composition/footer v1.4 ACCEPTED (04b767e) + interaction R2 ACCEPTED + VIS-01..03 correction R1 ACCEPTED (284e46c) + B pagination-admin ACCEPTED (18919da) + A visual-polish ACCEPTED
 next_planner_candidate: hrp-v6-ui-04d-section-render (BLOCKED v1.5 — sau 04c1+04c2 push production + Owner live visual review ACCEPTED); sau đó hrp-v6-ui-04d-detail-ui (D.A); sau đó Admin V6 theo dependency (AV1 → AV4 → AV2 → AV6 → AV5)
 blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); UI04 04c1+04c2 đã OWNER_DECIDED (16 lựa chọn chốt 10/09/2026) — gate đã mở sang TIER2_EXECUTION; Owner live visual review pending post-deploy (Tier 1 monitor Vercel/CI); section-render chờ Tier 1 review V6 stacking sau push production
