@@ -1,6 +1,9 @@
 # Plan tổng thể — UI-04 Homepage Refinement + Admin V6 + Detail Page
 
-Ngày: 10/09/2026. Cập nhật theo Tier 0 chỉ thị mới nhất (`docs/prompts/TIER0_UI04_OWNER_DECISIONS_AND_HOME_CONTENT.md`).
+Ngày: 10/09/2026. Cập nhật theo Tier 0 chỉ thị mới nhất:
+- `docs/prompts/TIER0_UI04_OWNER_DECISIONS_AND_HOME_CONTENT.md` (tách 2 plan)
+- `docs/prompts/TIER0_UI04_HOME_COMPOSITION_FOOTER.md` (composition + footer)
+- `docs/prompts/TIER1_UI04C_HOME_SECTIONS_FOOTER_AND_ADMIN_CMS.md` (UI04C mandate: Task C + sửa plan Admin V6 + flip interaction card)
 
 > **Tách đúng hai plan**:
 > - **Plan UI (public)**: A → B → C → D, một Tier 2 stream, nghiệm thu UI riêng, dùng dữ liệu thật có sẵn hoặc demo có cấu trúc.
@@ -49,7 +52,42 @@ Ngày: 10/09/2026. Cập nhật theo Tier 0 chỉ thị mới nhất (`docs/prom
 
 ## 2. Lát cắt A → B → C → D (Plan UI)
 
-Tier 1 chốt chuỗi **A → B → C → D tuần tự**, một Tier 2 stream.
+Tier 1 chốt chuỗi **Interaction R2 → Composition/Footer → Section Renderer → D** tuần tự, một Tier 2 stream.
+
+> **Thứ tự Tier 0 đã khóa**: interaction R2 (card flip) → composition/footer → section-render. Chỉ interaction R2 được chuyển READY_FOR_EXECUTION sau khi cả 3 contract PASS gate.
+
+### Interaction R2 — Job-card flip interaction (STANDARD/FOCUSED) — đầu chuỗi
+
+**In-scope** (theo Tier 0 review v1 §6 + owner-live-visual-review-r1.md):
+- `featured-job-card.tsx`: vùng lương/action flip sang CTA `Ứng tuyển nhanh` khi hover/focus
+- CTA gọi ApplyModal hiện có — không tạo modal mới
+- Click vùng card còn lại → `/viec-lam/{slug}`
+- Semantic HTML: không nested interactive element
+- Keyboard: Tab + focus indicator, screen reader không đọc đồng thời salary và CTA
+- Touch/mobile: CTA truy cập được mà không cần hover
+- `prefers-reduced-motion`: bỏ 3D rotation
+- Preview card: CTA disabled/"Bản xem trước"
+- Card không salary: mặt trước "Lương thương lượng"
+
+**Ghi chú**: Interaction R2 là predecessor cho composition/footer và section-render — cả hai phụ thuộc card đã hoàn thiện.
+
+---
+
+### Task C — Composition + Footer (`hrp-v6-ui-04c-home-composition-footer`) (FAST, NONE audit)
+
+**In-scope** (theo Tier 0 §Khảo sát + Tier 0 review v1):
+- Xóa section inline list (grid/sentinel/append) + dead state
+- **Giữ `runQuery`** — là bootstrap public DUY NHẤT cấp facets/overview cho Hero/Areas/Recruiting/section mới
+- Hero + applyArea navigate tới `/viec-lam` bằng `useRouter().push(buildListingHref({ q, area, shift, offset: 0 }))`
+- Salary select `disabled` label "Mức lương — sắp có"
+- ReferralStrip xuống cuối nội dung, nền peach/cam nhạt
+- GlobalFooter rebuild 3 cột (Công ty + Dịch vụ + Liên hệ disabled), nền peach nhạt hơn ReferralStrip
+
+**Out-of-scope**: CMS, schema, API, permission, AV1, AV6
+
+---
+
+### Task D — Section Renderer + Demo Content (`hrp-v6-ui-04d-section-render`) (STANDARD, FOCUSED)
 
 ### Task A — Visual Polish + Search Card Trắng (STANDARD/FOCUSED)
 
@@ -213,9 +251,11 @@ Tier 1 khóa sớm:
 |---|---|---|
 | A | STANDARD | FOCUSED |
 | B | CRITICAL | DEEP trên schema/permission changed surface |
-| C | STANDARD | FOCUSED |
-| D.A | STANDARD | FOCUSED |
-| D.B | CRITICAL | DEEP trên schema/permission/API changed surface |
+| Interaction R2 | STANDARD | FOCUSED |
+| C composition/footer | FAST | NONE |
+| D section-render | STANDARD | FOCUSED |
+| D.A Detail UI | STANDARD | FOCUSED |
+| D.B Editor | CRITICAL | DEEP trên schema/permission/API changed surface |
 
 **Nguyên tắc**: chỉ nâng CRITICAL vì phần backend có migration/auth. Phần UI thuần không tự nâng CRITICAL.
 

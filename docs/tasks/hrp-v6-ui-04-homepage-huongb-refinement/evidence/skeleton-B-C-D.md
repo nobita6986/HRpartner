@@ -58,50 +58,63 @@
 
 ---
 
-## TASK C — Section Renderer + Demo Content có cấu trúc (`hrp-v6-ui-04c-section-render`)
+## TASK C — Composition + Footer (`hrp-v6-ui-04c-home-composition-footer`)
 
-### Status: `DRAFT` (sau TASK B)
+### Status: `DRAFT` (song song interaction R2, sau R2 READY)
+
+### Lane / Audit
+- **FAST** (UI composition thuần — xóa inline list + reorder ReferralStrip + rebuild Footer)
+- Audit mode: **NONE** (FAST bypass Tier 3)
+
+### Outcome
+- Homepage KHÔNG còn section inline list (grid/sentinel/append) + dead state
+- Hero search + applyArea navigate tới `/viec-lam` bằng `useRouter().push(buildListingHref({ q, area, shift, offset: 0 }))`
+- `runQuery` giữ lại — là bootstrap public DUY NHẤT cấp facets/overview cho Hero/Areas/Recruiting/section mới
+- Salary select `disabled` label "Mức lương — sắp có"
+- ReferralStrip xuống cuối nội dung, ngay trước Footer, nền peach/cam nhạt
+- GlobalFooter rebuild 3 cột (Công ty + Dịch vụ + Liên hệ disabled), nền peach nhạt hơn ReferralStrip
+
+### In-scope
+- `app/(portal)/page.tsx`: xóa inline list section + state/effect riêng; sửa handleSearch/applyArea navigate
+- `src/domains/job-board/components/landing/referral-strip.tsx`: thêm nền peach/cam nhạt
+- `app/components/GlobalFooter.tsx`: rebuild 3 cột với content Owner
+- `app/components/ContactForm.tsx` (NEW): disabled presentational form
+
+### Out-of-scope
+- CMS, schema, API, permission, Admin page, AV1
+
+---
+
+## TASK D — Section Renderer + Demo Content (`hrp-v6-ui-04d-section-render`)
+
+### Status: `DRAFT` (sau TASK C)
 
 ### Lane / Audit
 - **STANDARD** (UI thuần — dùng demo fixture có cấu trúc)
 - Audit mode: **FOCUSED**
 
 ### Outcome
-Thứ tự homepage đầy đủ theo demo1:
-1. Navbar (từ A)
-2. Hero/search (từ A+A16)
-3. **Việc làm tốt nhất** (từ A+B)
-4. **Dự án đang tuyển** (từ A)
-5. **Việc làm mới nhất** (mới — tái dùng card polish, mặc định 6 tin từ `overview.newest`)
-6. **Việc làm theo khu vực** (giữ AreasSection)
-7. **Giới thiệu HRP** (mới — split image/text + 4 ô giá trị)
-8. **Dải đối tác/minh họa** (mới — logo strip với HRP monogram + "Minh họa")
-9. **Cộng tác viên** (giữ ReferralStrip)
-10. **Tin tức & cẩm nang** (mới — 1 bài lớn + 2 bài nhỏ, fixture "Nội dung mẫu")
-11. **Banner trải nghiệm trên di động** (mới)
-12. **Footer** (giữ)
+Thứ tự homepage cuối cùng: Navbar → Hero/Search → BestJobs → Areas → RecruitingProjects → Việc làm mới nhất (REAL) → Giới thiệu HRP (DEMO) → Dải đối tác/minh họa (DEMO) → Tin tức & cẩm nang (DEMO) → Banner trải nghiệm trên di động (DEMO) → ReferralStrip (nền peach) → Footer (3 cột)
 
 ### In-scope
-- Mỗi section nhận `props/view-model` có `id, enabled/order, content fields, source: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING'`
-- Demo data trong `src/domains/job-board/fixtures/demo-content.ts` (hoặc module riêng theo section)
-- Nhãn "Demo" / "Minh họa" hiển thị rõ ở section chứa nội dung mẫu
-- Renderer có chính sách demo/ẩn khi chưa có data published — KHÔNG fallback im lặng
+- 5 section component trong Task D (Section 1 REAL NewestJobsSection + Section 2..5 DEMO HrpIntroSection, PartnerStripSection, NewsSection, MobileBannerSection). CMS Admin V6 AV6 quản trị 4 section DEMO (Giới thiệu HRP, Đối tác/minh họa, Tin tức/cẩm nang, Banner di động); Section 1 Việc làm mới nhất REAL từ overview.newest, không thuộc AV6
+- Typed structured content (paragraphs/bullets) — KHÔNG SafeHtml tự viết
+- View-model với `source: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING'`
+- Local asset trong `public/images/landing/`
+- Badge minh họa cho DEMO section
 
 ### Out-of-scope
+- CMS schema/API/persistence (→ AV6)
 - Tag tùy biến (DEFER)
-- Editor CMS (Plan Admin V6 #2)
-- Schema mới cho CMS content
+- AV4 media (dùng chung)
 
 ### Acceptance criteria sơ bộ
-- AC: 7 section mới render đúng với view-model props (REAL hoặc DEMO hoặc INTEGRATION_PENDING)
-- AC: Demo section có badge "Demo"/"Minh họa" visible
-- AC: Mobile responsive 390px không overflow
-- AC: Việc làm mới nhất section: max 6 cards thật từ `overview.newest`; nếu < 6 thì render đúng số
-- AC: Giới thiệu HRP section 4 ô giá trị — KHÔNG chép "400.000+ / 50.000+" thành thành tích HRP (Owner mandate)
-- AC: Dải đối tác dùng HRP monogram + "Minh họa" — KHÔNG lấy logo doanh nghiệp khác
-- AC: Tin tức fixture có 1 bài lớn + 2 bài nhỏ với title/excerpt/category rõ — nhãn "Nội dung mẫu"
-- AC: Banner mobile CTA dùng route thật; store link optional để trống
-- AC: Bài tin tức click mở detail preview/modal phù hợp (KHÔNG anchor chết)
+- AC: 5 section trong Task D render đúng với view-model props
+- AC: Demo section có badge "Minh họa" visible
+- AC: Mobile responsive không overflow
+- AC: Việc làm mới nhất: max 6 tin thật từ `overview.newest`
+- AC: Structured content rendering — KHÔNG HTML string, KHÔNG SafeHtml
+- AC: Asset local tại `public/images/landing/` — không URL ngoài
 
 ### Gates
 - `npm run typecheck` exit 0
@@ -222,17 +235,27 @@ Editor tin Admin/Sale đầy đủ trường theo `field-matrix.md` §5 (Editori
 | Sub-task | Tên | Phạm vi | Tier 1 viết TASK khi |
 |---|---|---|---|
 | `AV1` | Editor tin extend (extend từ D.B) | Thêm variants, polish UI editor | Sau D.B |
-| `AV2` | CMS homepage content (sections Plan C) | Editor cho Giới thiệu, Đối tác, Tin tức, Banner mobile. Schema + form + API + media + publish | Sau C + AV1 |
+| `AV2` | Editor JobPosting (canonical mapping hiện hành) | Schema + form + write API + permission cho JobPosting editorial fields | AV1 |
+| `AV6` | CMS homepage content (Tier 0 review v2 chốt tên, work item đã thêm) | Editor 4 section Plan C (Giới thiệu HRP, Đối tác/minh họa, Tin tức/cẩm nang, Banner di động). Schema `HomepageSection` + form + API + media + publish + preview. **KHÔNG** gộp vào AV2 | Sau UI Task D section-render + AV4 (media foundation), AV1 nếu dùng chung HomepageSettings adapter |
 | `AV3` | Tag tùy biến | Sau UI-05 — đối chiếu roadmap V6 trước | Sau V6 priority |
-| `AV4` | Media management (extend từ D.B4) | Centralized media library + folder + tags | Sau D.B |
-| `AV5` | Cache invalidation + integration test | Tag-based revalidation; integration test cho từng section | Sau AV1, AV2, AV4 |
+| `AV4` | Media management (extend từ D.B4) — foundation chung, đứng trước các editor | Centralized media library + folder + tags; serve cả JobPosting và HomepageSection | (none — foundation, chuẩn bị song song với AV1) |
+| `AV5` | Cache invalidation + integration test | Tag-based revalidation; integration test cho từng section | Sau AV1, AV2, AV4, AV6 |
 
 ---
 
 ## Reference
 
-- Tier 0 chỉ thị: `docs/prompts/TIER0_UI04_OWNER_DECISIONS_AND_HOME_CONTENT.md`
+- Tier 0 chỉ thị:
+  - `docs/prompts/TIER0_UI04_OWNER_DECISIONS_AND_HOME_CONTENT.md`
+  - `docs/prompts/TIER0_UI04_HOME_COMPOSITION_FOOTER.md`
+  - `docs/prompts/TIER1_UI04C_HOME_SECTIONS_FOOTER_AND_ADMIN_CMS.md` (UI04C mandate)
+  - `docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/tier0-review-ui04c-contracts-v1.md` (Tier 0 review v1 REVISION_REQUIRED)
 - Plan tổng thể: `evidence/plan-overview.md`
 - Field matrix: `evidence/field-matrix.md`
-- Owner approval: `evidence/OWNER_APPROVAL_REQUIRED.md`
-- TASK A: `TASK-A.md`
+- Plan Admin V6 (Tier 0 chốt tên `AV6` tại review v2; lịch sử label planning tạm là `AV-CMS`): `evidence/plan-admin-v6.md`
+- TASK A: `docs/tasks/hrp-v6-ui-04a-visual-polish/TASK.md`
+- TASK B: `docs/tasks/hrp-v6-ui-04b-pagination-admin/TASK.md`
+- Interaction R2: `docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/TASK.md` (đầu chuỗi)
+- TASK C composition/footer: `docs/tasks/hrp-v6-ui-04c-home-composition-footer/TASK.md`
+- TASK D section-render: `docs/tasks/hrp-v6-ui-04d-section-render/TASK.md`
+- Visual correction R1 (VIS-01..03): `docs/tasks/hrp-v6-ui-04b-vis-correction-r1/TASK.md` (ACCEPTED)

@@ -1,6 +1,11 @@
 # Field / Interface Matrix — UI public ↔ Admin V6
 
-Ngày: 10/09/2026. Khóa sớm kiểu dữ liệu tiền/đơn vị, ngày, gallery, publish status, settings, pagination.
+Ngày: 10/09/2026. Cập nhật theo Tier 0 chỉ thị mới nhất:
+- `docs/prompts/TIER0_UI04_OWNER_DECISIONS_AND_HOME_CONTENT.md`
+- `docs/prompts/TIER0_UI04_HOME_COMPOSITION_FOOTER.md`
+- `docs/prompts/TIER1_UI04C_HOME_SECTIONS_FOOTER_AND_ADMIN_CMS.md`
+
+Khóa sớm kiểu dữ liệu tiền/đơn vị, ngày, gallery, publish status, settings, pagination.
 
 Mục đích: UI Plan và Admin Plan cùng dùng 1 hợp đồng này để nối lại sau. KHÔNG xây hai nguồn canonical.
 
@@ -206,14 +211,19 @@ interface PublicJobDetailDto {
 | Hero/search | `Hero.tsx` + `page.tsx` | `{ eyebrow, title, totalJobs, totalAreas, searchConfig }` | REAL |
 | BestJobs | `BestJobsSection` + `overview.newest` | `{ tab, jobs[], page, total, pageSize }` | REAL (B) |
 | Recruiting | `RecruitingProjectsSection` + `overview.newest` | `{ jobs[]: RecruitingProject }` | REAL |
-| **Việc làm mới nhất** | (NEW) `overview.newest` | `{ jobs[]: Card[] }` max 6 | REAL |
+| **Việc làm mới nhất** | (NEW C) `overview.newest` | `{ jobs[]: Card[] }` max 6 | **REAL** |
 | Khu vực | `AreasSection` + `facets.areas` + `overview.areaCounts` | `{ areas[]: AreaCard }` | REAL |
-| **Giới thiệu HRP** | (NEW) | `{ title, image, imageAlt, introHtml, values[] }` | DEMO |
-| **Dải đối tác** | (NEW) | `{ partners[]: { name, logoUrl, type: 'illustrative' \| 'real' } }` | DEMO (HRP monogram + "Minh họa") |
-| **Tin tức & cẩm nang** | (NEW) | `{ featured: Article, others: Article[] }` | DEMO (Nội dung mẫu) |
-| **Banner di động** | (NEW) | `{ title, body, imageUrl, imageAlt, ctaText, ctaHref, storeLinks? }` | DEMO (CTA dùng route thật) |
+| **Giới thiệu HRP** | (NEW C) | `{ title, image, imageAlt, introHtml, values[] }` | **DEMO** (4 ô giá trị KHÔNG chép "400.000+/50.000+" thành thành tích) |
+| **Dải đối tác** | (NEW C) | `{ partners[]: { name, logoUrl, type: 'illustrative' \| 'real' } }` | **DEMO** (HRP monogram + "Minh họa"; KHÔNG logo doanh nghiệp khác) |
+| **Tin tức & cẩm nang** | (NEW C) | `{ featured: Article, others: Article[] }` | **DEMO** (Nội dung mẫu; 1 bài lớn + 2 bài nhỏ; ảnh local) |
+| **Banner di động** | (NEW C) | `{ title, body, imageUrl, imageAlt, ctaText, ctaHref, storeLinks? }` | **DEMO** (CTA route thật; storeLinks optional; KHÔNG claim App Store/Google Play) |
 | CTV | `ReferralStrip` | giữ | REAL |
-| Footer | `GlobalFooter` | giữ | REAL |
+| Footer | `GlobalFooter` | giữ + content Owner cung cấp (Task composition/footer) | REAL (content) |
+
+**Thứ tự homepage cuối** (theo UI04C §3):
+`Navbar → Hero/Search → BestJobs → Areas → RecruitingProjects → Việc làm mới nhất → Giới thiệu HRP → Dải đối tác/minh họa → Tin tức & cẩm nang → Banner mobile → ReferralStrip → Footer`
+
+**ReferralStrip invariant** (UI04C §2.2 + UI04 footer §RQ-02): ReferralStrip LUÔN đứng sau toàn bộ section nội dung, ngay trước Footer. Tier 1 ghi invariant này vào skeleton Task C để lần sau không chèn content xuống dưới CTV.
 
 ---
 
@@ -306,6 +316,71 @@ export interface MobileBannerContent {
   ctaHref: string;
   storeLinks?: { appStore?: string; googlePlay?: string };
 }
+
+// --- Plan C section view-models (NEW 10/09/2026 per UI04C §5) ---
+
+export interface HrpValueItem {
+  icon: string;                           // material-symbols-outlined name (e.g. 'workspace_premium')
+  title: string;
+  body: string;
+}
+
+export interface HrpIntroContent {
+  title: string;
+  imageUrl: string;                       // local path under /images/...
+  imageAlt: string;
+  introHtml: string;                      // safe-render allowlist
+  values: HrpValueItem[];                 // 4 items per Owner UI04D §Giới thiệu HRP
+  source: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
+}
+
+export interface PartnerStripItem {
+  name: string;                           // e.g. 'HRP', 'Minh họa 1', ...
+  logoUrl: string;                        // local monogram path
+  type: 'illustrative' | 'real';
+}
+
+export interface PartnerStripContent {
+  title: string;
+  partners: PartnerStripItem[];           // 4–6 items, all illustrative in demo
+  source: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
+}
+
+export interface ArticleCardExtended {
+  id: string;
+  title: string;
+  excerpt: string;
+  imageUrl: string;
+  imageAlt: string;
+  category: string;
+  href: string;                           // detail preview/modal route
+  publishedAt: string;
+  source: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
+  featured: boolean;                      // 1 featured + 2 others per Owner UI04D
+}
+
+export interface NewsSectionContent {
+  title: string;
+  featured: ArticleCardExtended;
+  others: ArticleCardExtended[];          // length 2
+  source: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
+}
+
+export interface MobileBannerContentExtended extends MobileBannerContent {
+  source: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
+}
+
+export interface NewestJobsContent {
+  jobs: Array<{
+    id: string;
+    slug: string;
+    title: string;
+    location: string;
+    salary: string;
+    href: string;
+  }>;
+  source: 'REAL' | 'INTEGRATION_PENDING';  // ALWAYS REAL — uses overview.newest
+}
 ```
 
 ---
@@ -314,8 +389,9 @@ export interface MobileBannerContent {
 
 - **TASK A**: dùng section này cho types BestJobsCard, RecruitingProject (REAL)
 - **TASK B**: dùng section 6, 7, 8, 9 cho settings, tab filter, pagination, permission
-- **TASK C**: dùng section 10, 11, 12 cho demo content + props
+- **Task composition/footer (Plan UI, sẽ soạn)**: dùng section 10 cho Footer content Owner cung cấp (REAL)
+- **TASK D** (`hrp-v6-ui-04d-section-render`): dùng section 10, 11, 12 + section 13 (HrpIntroContent, PartnerStripContent, NewsSectionContent, MobileBannerContentExtended, NewestJobsContent) cho 5 section trong Task D (Section 1 Việc làm mới nhất REAL, Section 2..5 còn lại DEMO)
 - **TASK D.A**: dùng section 3, 5, 12 cho detail page props
-- **TASK D.B**: dùng section 4, 5, 6, 9 cho schema/permission/editor (Plan Admin V6 #1)
-- **Plan Admin V6 #2**: dùng section 10 cho CMS sections
-- **Plan Admin V6 #4**: dùng section 3 cho media management
+- **TASK D.B**: dùng section 4, 5, 6, 9 cho schema/permission/editor (Plan Admin V6 #2)
+- **Plan Admin V6 AV6** (Tier 0 chốt tên `AV6`; CMS cho 4 editorial sections): dùng section 10, 11, 13 cho CMS sections + flip `source: 'DEMO' | 'INTEGRATION_PENDING'` → `'REAL'`
+- **Plan Admin V6 AV4**: dùng section 3 cho media management
