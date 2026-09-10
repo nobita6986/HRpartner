@@ -55,8 +55,8 @@ export function GlobalFooter() {
       <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6 py-12">
         {/* RQ-02: 3 cột desktop giữ thứ tự Công ty → Dịch vụ → Liên hệ */}
         <div className="grid w-full grid-cols-1 gap-8 md:grid-cols-[1.1fr_1fr_1.1fr]">
-          {/* Cột 1: Công ty */}
-          <div className="flex flex-col gap-y-3">
+          {/* Cột 1: Công ty — flat list 7 items, gap-y-2 (8px) đều cho mọi dòng */}
+          <div className="flex flex-col gap-y-2">
             <h3 className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface">
               CÔNG TY TNHH HRP VIỆT NAM
             </h3>
@@ -64,34 +64,32 @@ export function GlobalFooter() {
             <p className="font-body text-body-sm text-on-surface-variant">
               Địa chỉ: Khu đất DV Tân Ngọc, Thống Nhất, Bắc Kế, Xã Bình Tuyền, Tỉnh Phú Thọ, Việt Nam
             </p>
-            <div className="flex flex-col gap-y-2">
-              <a
-                href="tel:02112216999"
-                className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
-              >
-                Hotline: 0211 2216999
-              </a>
-              <a
-                href="tel:0964984866"
-                className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
-              >
-                Hotline: 0964 984 866
-              </a>
-              <a
-                href="mailto:nhanluchrp@gmail.com"
-                className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
-              >
-                Email: nhanluchrp@gmail.com
-              </a>
-              <a
-                href="https://hrpvietnam.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="min-h-11 flex items-center font-body text-body-sm text-primary hover:text-primary-dark transition-colors"
-              >
-                Website: https://hrpvietnam.com/
-              </a>
-            </div>
+            <a
+              href="tel:02112216999"
+              className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+            >
+              Hotline: 0211 2216999
+            </a>
+            <a
+              href="tel:0964984866"
+              className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+            >
+              Hotline: 0964 984 866
+            </a>
+            <a
+              href="mailto:nhanluchrp@gmail.com"
+              className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+            >
+              Email: nhanluchrp@gmail.com
+            </a>
+            <a
+              href="https://hrpvietnam.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-h-11 flex items-center font-body text-body-sm text-primary hover:text-primary-dark transition-colors"
+            >
+              Website: https://hrpvietnam.com/
+            </a>
           </div>
 
           {/* Cột 2: Dịch vụ */}
