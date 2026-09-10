@@ -288,7 +288,7 @@ export default function JobsPage() {
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder="Tên công việc, vị trí..."
                 /* STEP-06/RQ-11/DEC-17: Input → bg-white border-outline-variant */
-                className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 text-on-surface min-h-11 placeholder:text-on-surface-variant"
+                className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 text-on-surface text-sm min-h-11 placeholder:text-on-surface-variant"
               />
             </div>
             <div className="flex-1">
@@ -304,7 +304,7 @@ export default function JobsPage() {
                 value={area}
                 onChange={(e) => setArea(e.target.value)}
                 /* STEP-06/RQ-11/DEC-17: Select → bg-white border-outline-variant */
-                className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 text-on-surface min-h-11"
+                className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 text-on-surface text-sm min-h-11"
               >
                 <option value="">Tất cả khu vực</option>
                 {facets.areas.map((entry) => (
@@ -326,7 +326,7 @@ export default function JobsPage() {
                 id="hrp-hero-salary"
                 disabled
                 aria-disabled="true"
-                className="hrp-focus w-full cursor-not-allowed rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-on-surface-variant opacity-70 min-h-11"
+                className="hrp-focus w-full cursor-not-allowed rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-on-surface-variant text-sm opacity-70 min-h-11"
               >
                 <option value="">Mọi mức lương</option>
               </select>
