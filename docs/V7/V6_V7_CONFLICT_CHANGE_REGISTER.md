@@ -1,8 +1,12 @@
-# HRP — V6/V6+/V7 Conflict & Change Register
+# HRP — V6 Native Foundation / V7 Conflict & Change Register
 
 > Status: Architecture reconciliation register  
-> Purpose: Resolve precedence between `v6-admin-rebuild.md`, `CRM_CSKH_INTEGRATION_PLAN.md`, `V6_PLUS_PLAN.md`, and `V7_ARCHITECTURE.md`.  
-> Rule: This register does not rewrite historical documents. It tells implementers which decisions remain valid, which are clarified, and which are superseded for V6+/V7.
+> Purpose: Resolve precedence between V6 history, the embedded compatibility workstream and V7 architecture.
+> Rule: This register does not rewrite historical decisions. It tells implementers which remain valid, which are clarified, and which are superseded.
+>
+> Naming note (2026-09-11): `MOVE_TO_V6+` and old V6+ wording are retained as
+> stable classifications. They now mean “move into V6 Native Foundation before
+> the V6 exit/V7 entry gate”, not a separate release.
 
 ---
 
@@ -11,20 +15,26 @@
 When implementing code, use this precedence:
 
 ```text
-1. V6_PLUS_PLAN.md
-   authority for V6+ bridge, migration, compatibility and pre-V7 corrections
+1. HRP_V6_PLUS_V7_MASTER_INDEX.md
+   global document precedence
 
-2. V7_ARCHITECTURE.md
+2. V6_V7_CONFLICT_CHANGE_REGISTER.md
+   authority for interpreting conflicts between old and new decisions
+
+3. ../V6/V6_change.md
+   authority for embedding compatibility work into the remaining V6 roadmap
+
+4. V7_ARCHITECTURE.md
    authority for V7 target domain and product architecture
 
-3. V6_V7_CONFLICT_CHANGE_REGISTER.md
-   authority for interpreting conflicts between old and new documents
+5. V6_PLUS_PLAN.md
+   authority for migration, compatibility and pre-V7 corrections
 
-4. CRM_CSKH_INTEGRATION_PLAN.md
+6. CRM_CSKH_INTEGRATION_PLAN.md
    retained as the CRM/omnichannel discovery and integration design basis
    except where explicitly superseded here
 
-5. v6-admin-rebuild.md
+7. v6-admin-rebuild.md
    retained as the V6 Marketplace/Admin source document
    except where V6+ explicitly changes semantics needed by V7
 ```
@@ -40,7 +50,7 @@ Important: V6 decisions not listed as changed/superseded in this register remain
 | `KEEP` | Existing decision remains authoritative. |
 | `CLARIFY` | Existing intent remains, but V6+/V7 gives a stricter semantic definition. |
 | `SUPERSEDE` | Old rule must not be used for new implementation after V6+ migration. |
-| `MOVE_TO_V6+` | Requirement belongs in bridge/foundation before V7 feature implementation. |
+| `MOVE_TO_V6+` | Stable legacy label: requirement belongs in V6 Native Foundation before V7 feature implementation. |
 | `MOVE_TO_V7` | Do not expand V6 for this feature; implement in V7. |
 | `DEFER` | Explicitly not required for V6+/initial V7. |
 | `OUT_OF_SCOPE` | Removed from current HRP architecture boundary. |
@@ -237,6 +247,12 @@ External Python app owns:
 HRP may emit canonical context/events to the Python app but does not calculate commission money.
 
 **Classification:** `SUPERSEDE` CRM ownership wording for `amount`; `OUT_OF_SCOPE` calculation in HRP.
+
+**Current-code disposition (2026-09-11):** existing HRP commission engine/ledger
+calculation is legacy compatibility code. Freeze feature expansion. A V6 Native
+task must inventory callers and define the beneficiary-decision/outbox boundary;
+do not silently delete historical ledger data or switch authority without
+reconciliation.
 
 **V7 model:** one Placement may produce multiple beneficiary decisions, e.g. `SOURCE` and `HANDLER`.
 

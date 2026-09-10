@@ -1,5 +1,12 @@
 # HRP V6 — Admin Rebuild
 
+> **Supersession notice — 2026-09-11:** Tài liệu này giữ lịch sử quyết định V6.
+> Task mới phải ưu tiên `docs/V6/V6_change.md`,
+> `docs/V7/V6_V7_CONFLICT_CHANGE_REGISTER.md` và
+> `docs/V7/V7_ARCHITECTURE.md`. Handling thuộc PlacementCase; AFF clock bắt
+> đầu khi case đủ điều kiện được mở; Placement độc lập Assignment; Worker chỉ
+> bắt đầu ở actual HRP-managed start.
+
 > Trạng thái: `BRAINSTORM / LIVING PLAN`
 >
 > Cập nhật gần nhất: 05/09/2026

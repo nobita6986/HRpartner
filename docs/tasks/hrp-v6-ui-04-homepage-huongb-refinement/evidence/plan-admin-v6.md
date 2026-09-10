@@ -6,6 +6,11 @@ Ngày: 10/09/2026. Tier 1 khảo sát và khóa contract sớm.
 
 > **Không cần chờ UI D.A** mới lập plan — Tier 1 khảo sát ngay và khóa data contract.
 
+> **V7-native dependency overlay — 2026-09-11:** AV1, AV4 và AV6 không đổi.
+> AV2 chỉ được publish/write hoàn chỉnh sau khi V6 Native Foundation N3 khóa
+> `JobOpening.serviceModel` và publish validation. D.B được hấp thụ vào AV2.
+> AV2 không được tạo direct Assignment/Worker hoặc lifecycle shortcut.
+
 > **Tier 0 review v2 + v3 chốt**: AV6 = CMS homepage content (đã đổi từ label tạm `AV-CMS` sang tên chính thức `AV6`). AV5 vẫn là Cache invalidation + Integration test. Dependency: AV1 + AV4 có thể chuẩn bị độc lập → AV2/AV6 (cả hai phụ thuộc AV4 cho media) → AV5. **Tier 0 review v3 §Quyết định còn thiếu chốt**: AV6 KHÔNG phụ thuộc AV1; chỉ phụ thuộc UI Task D section-render `ACCEPTED` + AV4 Media Foundation. HomepageSettings của AV1 không phải predecessor của AV6.
 
 ---
@@ -21,7 +26,7 @@ Ngày: 10/09/2026. Tier 1 khảo sát và khóa contract sớm.
 | ID | Tên | Phạm vi | Dependency | Status |
 |---|---|---|---|---|
 | `AV1` | Homepage Settings + Query API | `HomepageSettings` singleton schema + API + Admin settings page + query integration vào Plan UI B (view-model INTEGRATION_PENDING) | None | `DRAFT` |
-| `AV2` | Editor tin Admin/Sale (JobPosting) | `JobPosting` editorial fields schema + editor form + write API + permission + draft/preview/publish lifecycle | AV1 (settings) | `DRAFT` |
+| `AV2` | Editor tin Admin/Sale (JobPosting) | `JobPosting` editorial fields schema + editor form + write API + permission + draft/preview/publish lifecycle | AV1 (settings), AV4 (media), V6 Native N3 ServiceModel contract | `DRAFT` |
 | `AV6` | CMS homepage content (4 editorial sections: Giới thiệu HRP, Đối tác/minh họa, Tin tức/cẩm nang, Banner di động) | Editor cho 4 section Plan C (Việc làm mới nhất REAL từ overview.newest, không thuộc AV6). Schema + form + API + media + publish + preview cùng renderer public. UI task section-render ship trước với fixture; AV6 thay fixture bằng published data | UI D section-render (ACCEPTED), AV4 — KHÔNG phụ thuộc AV1 (Tier 0 review v3) | `DRAFT` |
 | `AV3` | Tag tùy biến | Schema + API + UI tag filter — **BACKLOG/DEFER sau UI-05 và AV2** (Tier 0 review v3 chốt) | AV2 | `BACKLOG` |
 | `AV4` | Media management | Upload + asset library + URL validation + alt text + order | (none — AV4 là foundation, đứng trước các editor) | `DRAFT` |

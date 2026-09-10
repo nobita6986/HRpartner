@@ -1,16 +1,23 @@
 # HRP UNIVERSAL AFFILIATE — CANONICAL DESIGN & IMPLEMENTATION PLAN
 
+> **BLOCKED FOR REBASE — 2026-09-11:** Không giao implementation từ plan này
+> cho đến khi Tier 1 rebase lên `docs/V6/V6_change.md`. Quy tắc cũ bắt đầu
+> handling khi create/match LaborProfile đã bị supersede. Attribution thuộc
+> LaborProfile; handling thuộc PlacementCase và bắt đầu khi mở case có
+> job-seeking intent hợp lệ. Owner còn phải chốt calendar/business days và
+> timezone/calendar cho cửa sổ 7 ngày.
+
 ## 0. Control và authority
 
 | Field | Value |
 |---|---|
 | Document | `docs/V6/aff_plan.md` |
-| Design version | `v2.3` |
-| Status | `DESIGN_REVIEW` — chưa tạo TASK, chưa giao Tier 2 |
+| Design version | `v2.4-rebase-pending` |
+| Status | `BLOCKED_FOR_REBASE` — chưa tạo TASK implementation |
 | Product owner | Founder / sếp |
-| Design owner | Tier 1 Planner |
-| Updated | `2026-09-05 Asia/Bangkok` |
-| Authority | Nguồn thiết kế và roadmap triển khai **chính** của Universal Affiliate |
+| Design owner | Tier 1 Plan + Implementation |
+| Updated | `2026-09-11 Asia/Bangkok` |
+| Authority | Product intent AFF; domain timing/ownership phụ thuộc V6 Native Foundation |
 | Relationship | Độc lập với plan Portal; `UNIFIED_PLAN_v5.md` chỉ là nguồn dependency/domain nền |
 | Current implementation gate | Chưa mở; phải đạt Definition of Ready §20 |
 
@@ -18,8 +25,8 @@
 
 - File này giữ product intent, canonical terminology, architecture, dependency, rollout và audit strategy cho Affiliate.
 - Không gộp Affiliate vào plan Portal, không dùng tên task Portal/M11 legacy để suy ra trạng thái của feature này.
-- Tier 1 đọc file này để chia contract `AFF-*`; mỗi contract vẫn phải nằm trong `docs/tasks/<slug>/TASK.md` theo pipeline.
-- Tier 2 không implement trực tiếp từ file này khi chưa có TASK `READY_FOR_EXECUTION`.
+- Tier 1 rebase file này trước, sau đó chia contract `AFF-*`; mỗi contract vẫn nằm trong `docs/tasks/<slug>/TASK.md`.
+- Tier 1 không implement trực tiếp từ file này khi chưa có TASK `READY_FOR_EXECUTION`.
 - Tier 3 dùng file này làm design authority để phát hiện contract/implementation đi lệch, nhưng verdict phải bám TASK cụ thể.
 - Khi design chưa khóa hết decision gate, trạng thái giữ `DESIGN_REVIEW`; không force-ready.
 

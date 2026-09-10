@@ -1,73 +1,158 @@
-# HRP V6 Admin Rebuild — Lộ trình Triển khai (Phases)
+# HRP V6 Admin Rebuild — Canonical Roadmap to V7
 
-Tài liệu này chia nhỏ kế hoạch `v6-admin-rebuild.md` thành các Phase thực thi có tính khả thi cao, ưu tiên xây dựng nền tảng dữ liệu trước để mở đường cho các tính năng nghiệp vụ và phân hệ Affiliate (AFF) chạy song song.
+> **Status:** maintained roadmap overlay
+> **Authority:** `docs/V6/V6_change.md` and the V7 Master Index supersede older V6 sequencing.
+> **Rule:** V6+ is not a separate release. Stable `V6P-*` work executes inside V6.
 
----
+## 1. Current baseline
 
-## 🚩 ĐIỂM CHIA NHÁNH (PARALLEL POINT)
-**Phase 1** là nút thắt cổ chai (bottleneck) của toàn bộ hệ thống. 
-Ngay sau khi **Phase 1** hoàn tất và được merge vào nhánh chính (Database đã có schema mới), hai phân hệ **V6 Admin** và **AFF Plan** có thể tiến hành **LÀM SONG SONG** hoàn toàn độc lập.
+Completed foundation:
 
----
+- JobOpening and JobPosting split;
+- LaborProfile, LaborProfileIntake and EmploymentEpisode additive schema;
+- CandidateSubmission nullable LaborProfile hook;
+- public UI and UI04 accepted work recorded in task evidence.
 
-## Phase 1: Móng dữ liệu & Cấu trúc Core (Foundation Schema)
-*Mục tiêu: Đập đi xây lại cấu trúc database cốt lõi, chuyển từ `CandidateSubmission` sang `LaborProfile`, tách bạch `JobOpening` và `JobPosting`.*
+This foundation is useful but does not yet pass the V6 Native Compatibility Gate.
+PlacementCase, case-scoped handling, independent Placement, ServiceModel,
+case-aware Application, authority switch and safe backfill remain.
 
-**Công việc chính:**
-- Thêm model `LaborProfile` (Hồ sơ gốc của NLD), thiết lập quan hệ 0..1 với `Worker`.
-- Thêm model `LaborProfileIntake` (Lịch sử tiếp nhận NLD).
-- Thêm/Tách model `JobOpening` (Vận hành nội bộ) và `JobPosting` (Hiển thị public).
-- Thêm model `EmploymentEpisode` (Đợt làm việc) để theo dõi vòng đời làm - nghỉ - quay lại.
-- Viết script migration an toàn: Giữ nguyên dữ liệu `CandidateSubmission` hiện tại hoặc backfill một phần dữ liệu cơ bản sang `LaborProfile`.
-- Không làm UI ở phase này.
+## 2. Parallel lanes
 
-> **Trạng thái:** Bắt buộc làm đầu tiên.
-> **Tiếp nối:** Sau phase này, **AFF Track (Từ AFF-01)** bắt đầu có thể code song song.
+```text
+Lane A — Public UI/CMS
+UI04 section-render -> Job Detail UI -> AV1/AV4/AV6
 
----
+Lane B — V6 Native Domain
+N0 -> N1 -> N2/N3 -> N4/N5 -> N6 -> N7 Gate
 
-## Phase 2: Workbench Tiếp nhận & Quản lý LaborProfile
-*Mục tiêu: Xây dựng bề mặt UI cho nhân viên HRP tiếp nhận và hoàn thiện thông tin ứng viên, không phụ thuộc vào Job.*
+Lane C — Demand/Admin
+AV2 editorial shell -> wait N3 ServiceModel -> publish/write completion
 
-**Công việc chính:**
-- Dựng trang Danh sách Hồ sơ NLD (`/admin/labor-profiles`) với các filter: của tôi, kho chung, chờ hoàn thiện.
-- Form "Tiếp nhận NLD" chia 2 chế độ:
-  - Tiếp nhận nhanh (từ điện thoại/chat/mối quan hệ).
-  - Hoàn thiện hồ sơ (update thêm CCCD, địa chỉ).
-- Tích hợp hàm kiểm tra trùng lặp (Dedup) bằng Số điện thoại/CCCD ngay trong form.
-- Trang chi tiết `LaborProfile` (mới có tab thông tin cá nhân và lịch sử Intake).
+Lane D — AFF
+blocked for rebase -> wait N1/N2 + Owner clock policy -> implementation
+```
 
----
+Parallel work is allowed when it does not create competing authority or share
+schema/migration ownership. Tier 1 may use sub-agents for independent files.
 
-## Phase 3: Quản trị Nhu cầu (Project & Job Management)
-*Mục tiêu: Tổ chức lại UI quản lý Khách hàng, Dự án và Tin tuyển dụng.*
+## 3. Phase N0 — Contract and read-only discovery
 
-**Công việc chính:**
-- Cấu trúc lại trang `/admin/projects` và trang chi tiết Dự án.
-- UI tạo/sửa `JobOpening` (nhu cầu thực tế: số lượng, đãi ngộ, ca làm).
-- UI tạo/sửa/publish `JobPosting` (bề mặt public).
-- Xây dựng quan hệ: Từ Dự án -> nhìn thấy các Job Openings -> nhìn thấy các Job Postings tương ứng.
+Goal: measure repository/live-data reality before mutation.
 
----
+- freeze V7-native domain contract;
+- build read-only migration audit runner;
+- inventory identity conflicts, direct Assignment semantics, source/handler/
+  beneficiary coupling, unclassified JobOpenings and unsafe backfill rows;
+- classify `EXACT_SAFE`, `POSSIBLE_DUPLICATE`, `UNRESOLVED`;
+- produce decomposition input for N1.
 
-## Phase 4: Vòng đời ghép việc (Placement & Employment Lifecycle)
-*Mục tiêu: Kết nối LaborProfile với JobOpening thông qua các lần bố trí việc làm.*
+No production behavior change. Audit mode for task: `NONE`; the N0 output is
+reviewed by Tier 0 as architecture evidence.
 
-**Công việc chính:**
-- Trang chi tiết `JobOpening` (Tab hiển thị ai đang quan tâm, ai đang làm, ai đã nghỉ).
-- Luồng Xử lý nghiệp vụ trên LaborProfile: 
-  - Tạo `Application` / `General Interest`.
-  - Luồng Convert NLD thành Worker (chỉ thực hiện 1 lần duy nhất).
-- Tính năng **Ghép việc (Placement)**: Gán Assignment mới vào JobOpening.
-- Tính năng **Di biến động**: Nút xử lý Worker nghỉ việc, chuyển dự án, hoặc tái tuyển (tạo Assignment / Episode mới).
+## 4. Phase N1 — Canonical identity and PlacementCase
 
----
+- centralize create-or-match authority;
+- harden possible-match and merge behavior;
+- add PlacementCase schema/lifecycle;
+- enforce max one active case concurrency-safe;
+- add nullable `CandidateSubmission.placementCaseId`;
+- move new public/staff-assisted Application creation through case-aware command;
+- preserve General Interest as a case with zero Applications;
+- establish command permissions required by the slice.
 
-## Phase 5: Giao diện Public Marketplace & Clean up
-*Mục tiêu: Cập nhật giao diện bên ngoài của NLD để khớp với cấu trúc JobPosting mới.*
+Schema/migration and command slices use Tier 3 `LIGHT`.
 
-**Công việc chính:**
-- Chỉnh sửa trang Danh sách việc làm public để đọc từ `JobPosting` thay vì Project.
-- NLD bấm Ứng tuyển -> gọi API ghi nhận vào `LaborProfile` (và `Application`).
-- Clean up: Xóa bỏ/ẩn bớt các UI cũ rườm rà (Staffing Order cũ không còn dùng).
-- Cập nhật các bảng Dashboard/Tổng quan điều hành.
+## 5. Phase N2 — Handling and AFF authority
+
+- add historical, case-scoped HandlingAssignment;
+- max one active handler per case;
+- assign/claim/transfer/release commands;
+- Company Pool selector;
+- AFF_INITIAL trigger from qualifying PlacementCase open;
+- preserve ReferralAttribution independently.
+
+AFF implementation remains blocked until Owner decides calendar/business days
+and timezone/calendar. Tier 3 `LIGHT` for lifecycle/security slices.
+
+## 6. Phase N3 — Demand ServiceModel and Placement
+
+- add canonical ServiceModel to JobOpening with legacy compatibility state;
+- add independent Placement and service-model snapshot;
+- add Placement lifecycle commands;
+- implement client-managed effective path without Worker;
+- add fulfillment selectors that distinguish effective placements from active
+  HRP workforce.
+
+AV2 JobPosting publish completion depends on the ServiceModel contract from this
+phase. Tier 3 `LIGHT`.
+
+## 7. Phase N4 — Workforce actual-start bridge
+
+- link ProjectAssignment to originating Placement where known;
+- enforce one active PRIMARY Assignment;
+- actual HRP-managed start atomically reuses/creates Worker, starts Episode,
+  creates Assignment and marks Placement effective;
+- harden no-show, transfer, exit and rehire behavior;
+- keep legacy direct Assignment path as compatibility only until authority switch.
+
+Tier 3 `LIGHT`.
+
+## 8. Phase N5 — Operational and security foundation
+
+- effectiveAt/recordedAt/actor/source/correlation pattern;
+- idempotency and optimistic concurrency patterns;
+- DomainAuditEvent/outbox projection as required;
+- JobProposal, InteractionOutcome and NextAction foundations;
+- RLS/data scopes and generic critical-mutation blocking;
+- remove new source/handler/beneficiary inference paths.
+
+Split into small tasks. Security and lifecycle tasks use `LIGHT`; isolated
+non-authoritative read/UI tasks may use `NONE`.
+
+## 9. Phase N6 — Backfill, compatibility reads and authority switch
+
+- dry-run classifiers before writes;
+- high-confidence Case/Handling/Placement/Assignment backfill;
+- leave ambiguous history unresolved and report it;
+- central current-state selectors;
+- switch new-write authority;
+- migrate affected counters/UI queries;
+- reconcile before disabling legacy writes.
+
+Tier 3 `LIGHT`.
+
+## 10. Phase N7 — V6 exit / V7 entry gate
+
+Run permanent fixtures for referral reclaim, direct hire, no-show, transfer,
+rehire, multi-job case, concurrent pool claim and duplicate Worker conversion.
+Validate identity, case, handling, placement, workforce, security, audit,
+migration and reconciliation sections in `docs/V6/V6_change.md`.
+
+Only after this gate passes:
+
+```text
+V7.1 Talent Repository
+-> V7.2 Talent Workbench
+-> V7.3 Matching & JobProposal
+-> V7.4 Placement UX
+-> V7.5 Workforce Operations
+-> V7.6..V7.10
+```
+
+## 11. Admin and public feature dependencies
+
+| Work | Dependency |
+|---|---|
+| UI04 section-render | none from native domain |
+| Job Detail UI | public DTO; application write changes wait N1 |
+| AV1 Homepage Settings | independent |
+| AV4 Media | independent |
+| AV6 CMS | UI section-render + AV4 |
+| AV2 JobPosting editor | AV1 + AV4; publish completion waits N3 |
+| AFF | N1 + N2 + Owner clock policy |
+| Assignment/placement admin | N3 + N4 |
+
+Do not create D.B separately; its JobPosting editor scope is absorbed by AV2.
+Do not expand HRP commission amount/rate/formula calculation; external Python
+application owns calculation.

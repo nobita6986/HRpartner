@@ -1,22 +1,30 @@
-# HRP V6+ — V7 Compatibility & Domain Foundation
+# HRP V6 Native Foundation — V7 Compatibility Workstream
 
-> Status: Architecture / Implementation Plan
-> Purpose: Bridge HRP V6 to HRP V7 Workforce Supply OS without inventing history or breaking canonical data.
+> Status: Architecture / Implementation Plan embedded in remaining V6
+> Purpose: Finish HRP V6 on V7-compatible authority without inventing history or breaking canonical data.
 > Scope: schema foundation, semantic corrections, migration/backfill, command boundaries, security hardening, and V7 entry gates.
 > Out of scope: Payroll, internal HRM, commission amount/formula calculation.
+>
+> Naming note (2026-09-11): the filename and stable `V6P-*` IDs remain for
+> compatibility. “V6+” below means the V6 Native Foundation workstream, not a
+> separate product release. `docs/V6/V6_change.md` controls its placement in V6.
 
 ---
 
-## 1. Why V6+ exists
+## 1. Why this compatibility workstream exists
 
-V6 remains the Marketplace/Admin canonicalization release. V6+ is not a large feature release; it is a compatibility and domain-correction release that prepares the canonical model required by V7.
+V6 remains the Marketplace/Admin canonicalization release. The compatibility and
+domain-correction work formerly labelled V6+ now ships inside V6 before its exit gate.
 
-V6+ must be completed before V7 feature work that depends on PlacementCase, Placement, case-scoped handling, canonical workforce transitions, partner attribution/beneficiary decisions, or the new Talent Workbench.
+The workstream must be completed before V7 feature work that depends on PlacementCase,
+Placement, case-scoped handling, canonical workforce transitions,
+partner attribution/beneficiary decisions, or the new Talent Workbench.
 
 Implementation rule:
 
 ```text
-ADD -> BACKFILL -> COMPATIBILITY READ -> SWITCH AUTHORITY -> CLEANUP LATER
+ADD -> AUDIT -> ADOPT NEW WRITES -> BACKFILL WHEN TRUTHFUL
+    -> COMPATIBILITY READ -> SWITCH AUTHORITY -> ENFORCE -> CLEANUP LATER
 ```
 
 Do not perform destructive renames/drops or rewrite historical data merely to make the new schema look clean.
@@ -656,13 +664,13 @@ Do not create broad tasks such as “Build PlacementCase”. Split schema, const
 
 ---
 
-## 10. Release sequence
+## 10. Delivery sequence
 
 ```text
-V6 FINAL
-  -> V6+ Foundation 1: schema + audit
-  -> V6+ Foundation 2: commands + migration + security
-  -> V6+ Gate Release
+V6 public/admin feature work
+  -> V6 Native Foundation 1: schema + audit
+  -> V6 Native Foundation 2: commands + migration + security
+  -> V6 Native Compatibility Gate (V6 exit)
   -> V7.1 Talent Repository
   -> V7.2 Talent Workbench
   -> V7.3 Matching
@@ -681,7 +689,7 @@ Destructive cleanup such as renaming `CandidateSubmission`, dropping legacy sour
 
 ---
 
-## 11. Definition of done for V6+
+## 11. Definition of done for V6 Native Foundation
 
 V6+ is complete when:
 
@@ -693,4 +701,3 @@ V6+ is complete when:
 6. both client-managed and HRP-managed Placement outcomes are representable;
 7. Worker re-entry and transfer semantics are stable;
 8. the full V7 compatibility gate passes.
-
