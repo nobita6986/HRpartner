@@ -1,0 +1,2 @@
+# Tier 2 fill at STEP-01:
+# git status --porcelain > evidence/working-tree-before.txt
