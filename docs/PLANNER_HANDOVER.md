@@ -7,7 +7,7 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-10 23:55 Asia/Bangkok
+updated_at: 2026-09-11 00:35 Asia/Bangkok
 roadmap_source: docs/AI_PROJECT_BRIEF.md; docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md; docs/prompts/TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md
 PHASE_MAP: |
   Phase 0: V5 Close — DA DONG 55/63 ACCEPTED (không thay đổi)
@@ -27,13 +27,13 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
 current_lane: UI04 public homepage completion
-current_task: hrp-v6-ui-04c1-footer-tweak-r2
-task_path: docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/TASK.md
-spec_version: v1.0 ACCEPTED round 1 (10/09/2026; Tier 2 commit 9f593fa; 16 Owner decisions chốt tại docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/evidence/owner-footer-r2-decisions.md; verify-task.ps1 PASS + verify-handoff.ps1 PASS WITH WARNINGS cosmetic)
-task_status: ACCEPTED
-worktree_branch: main (Tier 0 directive TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md cho phép Tier 1 push production cuối round Phase 1+2; Tier 1 sẽ push 4 commit local 9f593fa + 1316ff4 + d7e6899 + 780bb75 lên origin/main sau khi Owner live visual review)
-current_gate: PUSH_PENDING -> DEPLOY_VERIFIED (Vercel deployment #6376933011 success cho commit 918e2ee; production preview URL https://hrpartner-k2958oa8l-thuans-projects-0b7f4d74.vercel.app; CI #146 FAIL pre-existing - Prisma schema validate step fail tu commit 8c6fd03 truoc, khong phai do Phase 1+2 round gay ra; Tier 0 quyet dinh mo task fix-ci-prisma-validate rieng hay khong)
-next_command: Tier 1 cho Owner live visual review (review 04c1 footer/ContactForm + 04c2 Job Card tai Vercel preview URL hoac production alias). Tier 0 xem xet CI pre-existing fail va quyet dinh co mo task fix rieng khong. Tier 1 khong tu fix CI (Tier 1 owns plan/contract, khong fix CI infra).
+current_task: hrp-v6-ui-04c1-r3-footer-text-hotfix (DRAFT v0.1)
+task_path: docs/tasks/hrp-v6-ui-04c1-r3-footer-text-hotfix/TASK.md
+spec_version: v0.1 DRAFT (Owner visual review post-deploy 10/09/2026 phat hien 4 cho text sai trong GlobalFooter.tsx; commit 204f605 feat(ui) footer text hotfix da apply local)
+task_status: DRAFT -> READY_FOR_EXECUTION (Tier 1 commit 204f605 + ready push len origin/main sau khi Tier 0 confirm; gates local PASS typecheck/build, test:unit 13 pre-existing FAIL khong phai do fix)
+worktree_branch: main (Tier 0 directive TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md cho phep Tier 1 push production; Tier 1 commit 204f605 + can push them 1 commit docs(task) finalize)
+current_gate: TIER_0_CONFIRM (Tier 0 xem fix diff + confirm push len origin/main hay chi staged)
+next_command: Tier 1 push commit 204f605 + finalize TASK.md ACCEPTED len origin/main. Tier 0 xem xet CI pre-existing fail va quyet dinh co mo task fix-ci-prisma-validate rieng khong (Tier 1 da tao DRAFT task fix-ci-prisma-validate/TASK.md nhung CHUA push, cho Tier 0 review). Tier 1 khong tu fix CI (Tier 1 owns plan/contract, CI infra fix thuoc Tier 0 hoac Tier 2 neu mo task rieng). Sau Owner visual review ACCEPTED final: Tier 1 closeout UI04 round Phase 1+2 -> mo hrp-v6-ui-04d-section-render (van BLOCKED v1.5). Neu Owner yeu cau chinh them visual footer: mo 04c1-r4 (hoac 04c3 cho Job Card).
 previous_accepted: 04c1 ACCEPTED round 1 (9f593fa + Tier 1 TASK.md finalize 780bb75) + 04c2 ACCEPTED round 1 (1316ff4 + Tier 1 TASK.md finalize d7e6899) + R3 v1.3 ACCEPTED (8c6fd03 — feat(ui04): live urgent jobs and minimal job cards) + composition/footer v1.4 ACCEPTED (04b767e) + interaction R2 ACCEPTED + VIS-01..03 correction R1 ACCEPTED (284e46c) + B pagination-admin ACCEPTED (18919da) + A visual-polish ACCEPTED
 next_planner_candidate: hrp-v6-ui-04d-section-render (BLOCKED v1.5 — sau 04c1+04c2 push production + Owner live visual review ACCEPTED); sau đó hrp-v6-ui-04d-detail-ui (D.A); sau đó Admin V6 theo dependency (AV1 → AV4 → AV2 → AV6 → AV5)
 blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); UI04 04c1+04c2 đã OWNER_DECIDED (16 lựa chọn chốt 10/09/2026) — gate đã mở sang TIER2_EXECUTION; Owner live visual review pending post-deploy (Tier 1 monitor Vercel/CI); section-render chờ Tier 1 review V6 stacking sau push production
@@ -43,7 +43,7 @@ ui04_status:
   R3 urgent live + minimal SaaS card: ACCEPTED v1.3 (8c6fd03)
   04c1 footer tweak r2: ACCEPTED round 1 v1.0 (10/09/2026 23:21; Tier 2 commit 9f593fa; 16 Owner decisions đã chốt; verify-task.ps1 + verify-handoff.ps1 PASS; 14 AC evidence files; gate FAST; source production: app/components/GlobalFooter.tsx + app/components/ContactForm.tsx; 25 file commit trong allowlist; KHONG revert R3/composition-footer/R2/correction R1)
   04c2 job-card color refinement v10: ACCEPTED round 1 v1.0 (10/09/2026 23:48; Tier 2 commit 1316ff4; 16 Owner decisions + 5 interaction invariants đã chốt tai evidence/owner-job-card-color-refinement-decisions.md; verify-task.ps1 + verify-handoff.ps1 PASS WITH WARNINGS cosmetic; 14 AC evidence files; 89/89 tests pass trong featured-job-card.test.ts, 0 new failure; gates typecheck/test:unit/build PASS; source production: src/domains/job-board/components/landing/featured-job-card.tsx + featured-job-card.test.ts)
-  section-render: BLOCKED v1.5 — chờ 04c1+04c2 push production + Owner live visual review ACCEPTED
+  04c1-r3 footer text hotfix: DRAFT v0.1 (11/09/2026 00:35; Tier 1 commit 204f605 feat(ui) footer text hotfix; 4 chỗ text fix: address prefix + Kê→Kế + bỏ "Thuê" + email spelling từ `nhaluchrp@gmail.com` → `nhanluchrp@gmail.com`; source: app/components/GlobalFooter.tsx; gates local PASS typecheck/build, test:unit 13 pre-existing FAIL không phải do fix; chờ Tier 0 confirm push lên origin/main)
   detail UI D.A: DRAFT — sau section-render ACCEPTED
   detail editor D.B: DRAFT (CRITICAL) — sau D.A
 held_draft: hrp-v5-go-live-19-tracking-pii-db-mask — việc viết, chưa giao /code
@@ -52,7 +52,7 @@ owner_boundary: AFF CHAN TUYET DOI (giữ nguyên); go-live-07 DEFERRED; credent
 protected_paths: README.md; docs/tasks/hrp-v6-security-credential-rotation/PROMPT_TIER2.md (per Tier 1 contract nếu có); Tier 1 KHÔNG sửa source production; Tier 1 KHÔNG revert R3 8 file dirty; Tier 1 KHÔNG revert composition/footer 04b767e; Tier 1 KHÔNG revert R2 9e51917 / correction R1; Tier 1 KHÔNG revert 04c1 (9f593fa) / 04c2 (1316ff4)
 security_note: Khong lap lai credential lich su; moi gia tri nhay cam chi duoc ghi [REDACTED]. Rotate production thuoc OP Owner. §13 credential hygiene — lam CUOI CUNG truoc public. UI04 04c1 KHONG mo contact API, persistence, schema, permission, CMS, Admin. UI04 04c2 KHONG mo API, schema, persistence; KHONG hardcode màu hex (chỉ Tailwind utility); KHONG thêm package icon (chỉ lucide-react đã có). Tier 1 push production authority theo Tier 0 directive TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md.
 phase1_live_evidence: commit f8bd761 trên origin/main; 2 migration files (20260908150000_v6_phase1a_labor_profile_schema + 20260908150001_v6_phase1a_labor_profile_rls) confirmed applied hrp-live bởi Owner 08/09; không có CI/CD auto-deploy migration (verified: vercel.json buildCommand không gọi prisma migrate deploy; .github/workflows/ci.yml không có deploy job)
-ci_status_2026-09-10: CI workflow #146 (commit 918e2ee) FAIL pre-existing Prisma schema validate step (Node 24 + Prisma 5.22 binary engine mismatch); CI fail tu commit 8c6fd03 (R3 ACCEPTED) truoc - khong phai do Phase 1+2 round UI04 gay ra; Tier 0 quyet dinh mo task fix-ci-prisma-validate rieng; Tier 1 khong tu fix (Tier 1 owns plan/contract, CI infra fix thuoc Tier 0 hoac Tier 2 neu mo task rieng)
+ci_status_2026-09-11: CI workflow #146 (commit 918e2ee) FAIL pre-existing Prisma schema validate step (Node 22 + Prisma 5.22 binary engine mismatch); CI fail tu commit 8c6fd03 (R3 ACCEPTED) truoc - khong phai do Phase 1+2 round UI04 gay ra; Tier 1 tao DRAFT task hrp-v6-fix-ci-prisma-validate/TASK.md (v0.1; root cause PROPOSED = binaryTargets; DEC-01..05 chờ Tier 0); Tier 1 khong tu fix CI (Tier 1 owns plan/contract, CI infra fix thuoc Tier 0 hoac Tier 2 neu mo task rieng); Tier 0 quyet dinh: (a) thuc thi task fix-ci, (b) defer sang go-live hardening, (c) cancel DRAFT
 vercel_deploy_2026-09-10: Vercel deployment #6376933011 SUCCESS cho commit 918e2ee (created 17:02:13 UTC, ngay sau push 17:00:31 UTC); production preview URL https://hrpartner-k2958oa8l-thuans-projects-0b7f4d74.vercel.app; Tier 1 verify visual review sau khi Owner confirm URL production alias (Tier 1 khong truy cap Vercel dashboard truc tiep); Tier 0 confirm production alias domain neu can cho review post-deploy
 ui04_evidence:
   R3 ACCEPTED 8c6fd03: verify-task.ps1 PASS; verify-handoff.ps1 PASS WITH WARNINGS (H-15 control field Tier 1 sở hữu); Tier 3 FOCUSED audit PASS (0 finding release-blocking); verify-audit.ps1 PASS
