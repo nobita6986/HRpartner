@@ -27,13 +27,13 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
 current_lane: UI04 public homepage completion
-current_task: hrp-v6-ui-04c1-r5-footer-spacing-fix (READY_FOR_EXECUTION v0.1)
-task_path: docs/tasks/hrp-v6-ui-04c1-r5-footer-spacing-fix/TASK.md
-spec_version: v0.1 (Owner reject R4 11/09/2026 01:04 spacing cot Công ty gian qua xa do justify-between+gap-0 day items top<->bottom; R5 revert ve gap-y-3/gap-y-2 spacing tu nhien)
-task_status: Tier 1 (Delivery Lead) commit 15f6b27 + push 719cd1e..15f6b27 len origin/main 11/09/2026 01:05 theo tier1.md workflow; typecheck local PASS; Vercel auto-deploy
-worktree_branch: main (Tier 0 directive TIER0_UI04 con hieu luc cho R3+R4+R5)
-current_gate: OWNER_VISUAL_REVIEW_R5 (anh refresh https://hrpvietnam.com/ footer preview xem spacing da tho chua)
-next_command: Tier 0 chot visual R5: (a) ACCEPTED -> closeout UI04c1 + mo hrp-v6-ui-04d-section-render v1.6 (ke thua R5 footer), (b) spacing van sai -> mo R6 + Tier 1 PAUSE hoi Owner px reference (TASK §8 Q1), (c) can merge PR #1 fix-ci truoc khi closeout de CI Quality xanh
+current_task: hrp-v6-ui-04c1-r6-footer-flatten-cot-1 (READY_FOR_EXECUTION v0.1)
+task_path: docs/tasks/hrp-v6-ui-04c1-r6-footer-flatten-cot-1/TASK.md
+spec_version: v0.1 (Owner reject R5 11/09/2026 01:10 cot 1 van "cach xa" so voi cot Danh muc do R5 con nested div cho 4 contact items; R6 refactor: flatten 7 items cung cap DOM + gap-y-2 (8px) deu)
+task_status: Tier 1 (Delivery Lead) commit 84c4d61 + push a2d92f8..84c4d61 len origin/main 11/09/2026 01:11 theo tier1.md workflow; typecheck local PASS; Vercel auto-deploy; TIER1 self-review NONE (FAST lane)
+worktree_branch: main (Tier 0 directive TIER0_UI04 con hieu luc cho R3->R4->R5->R6)
+current_gate: OWNER_VISUAL_REVIEW_R6 (anh refresh https://hrpvietnam.com/ footer preview xem cot 1 flatten 8px da deu chua)
+next_command: Tier 0 chot visual R6: (a) ACCEPTED -> closeout UI04c1 + mo hrp-v6-ui-04d-section-render v1.6 (ke thua R6 footer cot 1 flatten 8px), (b) cot 1 van sai -> Tier 1 PAUSE hoi Owner px reference / screenshot OK (KHONG doan nua), (c) can merge PR #1 fix-ci truoc khi closeout de CI Quality xanh
 previous_accepted: 04c1 ACCEPTED round 1 (9f593fa) + 04c2 ACCEPTED round 1 (1316ff4) + R3 v1.3 ACCEPTED (8c6fd03) + composition/footer v1.4 ACCEPTED (04b767e) + interaction R2 ACCEPTED + VIS-01..03 correction R1 ACCEPTED (284e46c) + B pagination-admin ACCEPTED (18919da) + A visual-polish ACCEPTED
 next_planner_candidate: hrp-v6-ui-04d-section-render (BLOCKED v1.5 — sau 04c1+04c2 push production + Owner live visual review ACCEPTED); sau đó hrp-v6-ui-04d-detail-ui (D.A); sau đó Admin V6 theo dependency (AV1 → AV4 → AV2 → AV6 → AV5)
 blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); UI04 04c1+04c2 đã OWNER_DECIDED (16 lựa chọn chốt 10/09/2026) — gate đã mở sang TIER2_EXECUTION; Owner live visual review pending post-deploy (Tier 1 monitor Vercel/CI); section-render chờ Tier 1 review V6 stacking sau push production

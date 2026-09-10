@@ -218,6 +218,8 @@ origin/main HEAD: 3209e23  (đồng bộ local main)
 - ❌ Chưa chạy `verify-task.ps1` (workflow bước 4)
 - ❌ Chưa chạy `verify-handoff.ps1` (workflow bước 5)
 - ❌ Lúc đầu viết TASK DRAFT `hrp-v6-fix-ci-prisma-validate` rồi dừng chờ Tier 0 chốt DEC-01..05 — sai nguyên tắc "không dừng sau khi viết TASK nếu outcome đã cho phép". Sau khi owner nói "làm luôn" mới tự khảo sát + tìm root cause thật (P1012 DATABASE_URL_ADMIN).
+- ❌ **R4 UI04c1** dùng `justify-between gap-0` cho column flex — sai. Với 4-7 items trong cột, `justify-between` tạo khoảng trống top↔bottom quá lớn. Pattern đúng: spacing natural (`gap-y-N`) hoặc `justify-start` + manual `mt-auto`.
+- ❌ **R5 UI04c1** giữ nested `<div>` cho 4 contact items trong cột 1 — sai. Cấu trúc 2 cấp DOM tạo visual gap không đều giữa ranh giới cấp (12px outer + 8px inner). Pattern đúng: **flatten** items flat ngang cấp DOM nếu cùng ngữ nghĩa siblings, KHÔNG group bằng nested div trừ khi cần style riêng (border, background).
 
 ### 5.3 Pattern đúng cho task FAST (UI thuần)
 
