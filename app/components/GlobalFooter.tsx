@@ -66,19 +66,19 @@ export function GlobalFooter() {
             </p>
             <a
               href="tel:02112216999"
-              className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+              className="flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
             >
               Hotline: 0211 2216999
             </a>
             <a
               href="tel:0964984866"
-              className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+              className="flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
             >
               Hotline: 0964 984 866
             </a>
             <a
               href="mailto:nhanluchrp@gmail.com"
-              className="min-h-11 flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+              className="flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
             >
               Email: nhanluchrp@gmail.com
             </a>
@@ -86,7 +86,7 @@ export function GlobalFooter() {
               href="https://hrpvietnam.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="min-h-11 flex items-center font-body text-body-sm text-primary hover:text-primary-dark transition-colors"
+              className="flex items-center font-body text-body-sm text-primary hover:text-primary-dark transition-colors"
             >
               Website: https://hrpvietnam.com/
             </a>
