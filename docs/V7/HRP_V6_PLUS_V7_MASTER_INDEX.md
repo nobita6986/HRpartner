@@ -1,14 +1,20 @@
-# HRP — V6+ / V7 MASTER INDEX
+# HRP — V6 Native Foundation / V7 MASTER INDEX
 
 **Status:** Master engineering entrypoint  
 **Purpose:** Single source-of-navigation for architecture, migration, implementation order, and AI coding handoff  
-**Applies to:** HRP V6+, V7.1–V7.10
+**Applies to:** remaining HRP V6 compatibility work, V7.1–V7.10
+
+> **2026-09-11 Tier 0 directive:** V6+ is no longer a separate product/release phase. Its
+> task IDs and documents remain stable, but the work is embedded in V6 as **V6 Native
+> Foundation**. “V6+ Compatibility Gate” in historical text is an alias for the
+> **V6 Native Compatibility Gate**, which is the V6 exit/V7 entry gate. This removes a
+> release boundary, not the migration, backfill, compatibility-read or reconciliation work.
 
 ---
 
 # 0. HOW TO USE THIS DOCUMENT
 
-This file is the required starting point for any AI coding agent or engineer working on HRP V6+/V7.
+This file is the required starting point for any AI coding agent or engineer working on the V6-to-V7 path.
 
 Before implementing a task:
 
@@ -30,13 +36,14 @@ When two documents conflict, use this order:
 1. HRP_V6_PLUS_V7_MASTER_INDEX.md
 2. AI_CODING_GUARDRAILS.md
 3. V6_V7_CONFLICT_CHANGE_REGISTER.md
-4. V7_ARCHITECTURE.md
-5. V6_PLUS_PLAN.md
-6. Phase implementation backlog for the specific V7.x phase
-7. V6_PLUS_IMPLEMENTATION_BACKLOG.md
-8. CRM_CSKH_INTEGRATION_PLAN.md
-9. v6-admin-rebuild.md
-10. AI_PROJECT_BRIEF.md
+4. ../V6/V6_change.md
+5. V7_ARCHITECTURE.md
+6. V6_PLUS_PLAN.md
+7. Phase implementation backlog for the specific V7.x phase
+8. V6_PLUS_IMPLEMENTATION_BACKLOG.md
+9. CRM_CSKH_INTEGRATION_PLAN.md
+10. v6-admin-rebuild.md
+11. AI_PROJECT_BRIEF.md
 ```
 
 Important nuance:
@@ -44,6 +51,7 @@ Important nuance:
 - Phase backlog is the operational implementation authority for that phase.
 - `V7_ARCHITECTURE.md` remains the cross-phase domain constitution.
 - `V6_V7_CONFLICT_CHANGE_REGISTER.md` explicitly supersedes old V6 wording where identified.
+- `../V6/V6_change.md` controls how compatibility work is embedded into the remaining V6 roadmap.
 - Legacy documents remain valid where not superseded.
 
 ---
@@ -125,22 +133,23 @@ Official product/engineering version structure:
 HRP V6
 Marketplace & Admin Canonicalization
 
-HRP V6+
-V7 Compatibility & Domain Foundation
+HRP V6 Native Foundation
+V7 Compatibility embedded before V6 exit
 
 HRP V7
 Workforce Supply Operating System
 ```
 
-V6+ exists to make V7 possible without unsafe migration or semantic ambiguity.
+The old V6+ label is retained only in filenames and stable task IDs. Its engineering
+content is executed inside V6 so V7 does not inherit a repair phase.
 
 ---
 
-# 5. V6+ ENTRY PURPOSE
+# 5. V6 NATIVE FOUNDATION PURPOSE
 
-V6+ must finish before V7 feature implementation.
+V6 Native Foundation must finish before V7 feature implementation.
 
-Key V6+ objectives:
+Key V6 Native Foundation objectives:
 
 ```text
 canonical identity hardening
@@ -162,6 +171,7 @@ migration/backfill/reconciliation
 Primary documents:
 
 ```text
+../V6/V6_change.md
 V6_PLUS_PLAN.md
 V6_PLUS_IMPLEMENTATION_BACKLOG.md
 V6_V7_CONFLICT_CHANGE_REGISTER.md
@@ -169,9 +179,9 @@ V6_V7_CONFLICT_CHANGE_REGISTER.md
 
 ---
 
-# 6. V6+ HARD GATE
+# 6. V6 NATIVE COMPATIBILITY GATE
 
-V7 must NOT begin until the V6+ Compatibility Gate passes.
+V7 must NOT begin until the V6 Native Compatibility Gate passes.
 
 Minimum requirements:
 
@@ -256,7 +266,7 @@ Do not store conflicting duplicate management authority when it can be derived.
 Canonical implementation sequence:
 
 ```text
-V6+ Compatibility Gate
+V6 Native Compatibility Gate
         ↓
 V7.1 Talent Repository
         ↓
@@ -587,7 +597,7 @@ security catalog planning
 performance benchmark preparation
 ```
 
-Potentially safe after V6+:
+Potentially safe after the V6 Native Compatibility Gate:
 
 ```text
 Client CRM schema exploration
@@ -692,7 +702,7 @@ Frontend must consume these queries/read models rather than reconstruct them ind
 
 # 15. MIGRATION PRINCIPLE
 
-V6+ migrations follow:
+V6 Native Foundation migrations follow:
 
 ```text
 ADD
@@ -950,7 +960,7 @@ Each cleanup must be a separate explicit task with regression tests.
 V6
 Canonical marketplace/admin
 
-↓ V6+
+↓ embedded V6 Native Foundation
 
 Domain migration foundation
 Identity
@@ -961,6 +971,8 @@ ServiceModel
 Workforce bridge
 Security
 Migration/reconciliation
+
+↓ V6 Native Compatibility Gate
 
 ↓ V7.1
 Talent Repository

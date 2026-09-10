@@ -4,7 +4,7 @@
 > Product: HRP  
 > Target: V7 — Workforce Supply Operating System  
 > Upstream authority: `V7_ARCHITECTURE.md`  
-> Entry prerequisite: `V6_PLUS_IMPLEMENTATION_BACKLOG.md` M5 / V7 Compatibility Gate passed  
+> Entry prerequisite: `V6_PLUS_IMPLEMENTATION_BACKLOG.md` M5 / V6 Native Compatibility Gate passed
 > Conflict authority: `V6_V7_CONFLICT_CHANGE_REGISTER.md`  
 > Explicitly out of scope: Payroll engine, internal HRM, commission amount/formula calculation.
 
@@ -33,20 +33,20 @@ Detailed coding backlogs should be generated from this roadmap one phase at a ti
 
 ## 1.1 Source-of-truth order
 
-When documents disagree, use this order:
+Use the global order in `HRP_V6_PLUS_V7_MASTER_INDEX.md`. For this roadmap:
 
-1. explicit locked Owner Decisions recorded in V7 architecture / V6+ conflict register;
-2. `V7_ARCHITECTURE.md` for V7 domain semantics;
-3. `V6_PLUS_IMPLEMENTATION_BACKLOG.md` for bridge/migration prerequisites;
-4. `V6_PLUS_PLAN.md`;
-5. `V6_V7_CONFLICT_CHANGE_REGISTER.md` for superseded V6/CRM wording;
-6. older V6 and CRM design documents only for non-superseded behavior.
+1. the Master Index controls precedence;
+2. `V6_V7_CONFLICT_CHANGE_REGISTER.md` resolves old/new decisions;
+3. `../V6/V6_change.md` controls the V6-embedded transition;
+4. `V7_ARCHITECTURE.md` controls V7 target semantics;
+5. compatibility and phase backlogs control task sequencing;
+6. older V6/CRM documents apply only where not superseded.
 
 AI coding agents must not silently reconcile conflicts themselves.
 
-## 1.2 V7 cannot repair unfinished V6+ work locally
+## 1.2 V7 cannot repair unfinished V6 Native Foundation work locally
 
-If a V7 task discovers that any of the following are not satisfied, stop that task and route the gap back to V6+:
+If a V7 task discovers that any of the following are not satisfied, stop that task and route the gap back to the V6 Native Foundation backlog:
 
 - canonical LaborProfile/create-or-match not stable;
 - PlacementCase persistence or one-active-case invariant missing;
@@ -58,11 +58,11 @@ If a V7 task discovers that any of the following are not satisfied, stop that ta
 - required command permission/RLS is absent;
 - migration unresolved rows are being silently normalized.
 
-Do not implement a V7 UI workaround around a missing V6+ invariant.
+Do not implement a V7 UI workaround around a missing V6 Native Foundation invariant.
 
 ## 1.3 Additive evolution first
 
-V7 continues the same migration philosophy as V6+:
+V7 continues the same migration philosophy as V6 Native Foundation:
 
 ```text
 ADD
@@ -122,7 +122,7 @@ Every new aggregate/action must define:
 # 2. V7 phase map
 
 ```text
-V6+ M5 — V7 Compatibility Gate
+V6 Native M5 — V7 entry gate
         |
         v
 V7.1 Talent Repository
@@ -156,7 +156,7 @@ V7.9 Omnichannel
 V7.10 Intelligence
 ```
 
-`*` Client CRM schema/read-only foundations may begin after the V6+ gate if they do not change or delay Talent/Placement/Workforce authority. Its direct-hire confirmation path cannot be considered complete before V7.4.
+`*` Client CRM schema/read-only foundations may begin after the V6 Native Compatibility Gate if they do not change or delay Talent/Placement/Workforce authority. Its direct-hire confirmation path cannot be considered complete before V7.4.
 
 ---
 
@@ -164,7 +164,7 @@ V7.10 Intelligence
 
 ## G0 — V7 Entry Gate
 
-Source: V6+ M5.
+Source: V6 Native Foundation M5.
 
 Must be green before any V7 feature is enabled for production users.
 
@@ -1363,7 +1363,7 @@ The system must remain fully operable manually.
 
 # 14. Cross-phase capability ownership matrix
 
-| Capability | V6+ | V7.1 | V7.2 | V7.3 | V7.4 | V7.5 | V7.6 | V7.7 | V7.8 | V7.9 | V7.10 |
+| Capability | V6 Native | V7.1 | V7.2 | V7.3 | V7.4 | V7.5 | V7.6 | V7.7 | V7.8 | V7.9 | V7.10 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | Canonical LaborProfile | foundation | UX/core | use | use | use | use | use | use | use | map | intelligence |
 | PlacementCase persistence | foundation | history | core UX | use | use | use | use | use | - | map | use |

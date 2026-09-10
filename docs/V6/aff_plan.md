@@ -1,16 +1,23 @@
 # HRP UNIVERSAL AFFILIATE — CANONICAL DESIGN & IMPLEMENTATION PLAN
 
+> **BLOCKED FOR REBASE — 2026-09-11:** Không giao implementation từ plan này
+> cho đến khi Tier 1 rebase lên `docs/V6/V6_change.md`. Quy tắc cũ bắt đầu
+> handling khi create/match LaborProfile đã bị supersede. Attribution thuộc
+> LaborProfile; handling thuộc PlacementCase và bắt đầu khi mở case có
+> job-seeking intent hợp lệ. Owner còn phải chốt calendar/business days và
+> timezone/calendar cho cửa sổ 7 ngày.
+
 ## 0. Control và authority
 
 | Field | Value |
 |---|---|
 | Document | `docs/V6/aff_plan.md` |
-| Design version | `v2.3` |
-| Status | `DESIGN_REVIEW` — chưa tạo TASK, chưa giao Tier 2 |
+| Design version | `v2.4-rebase-pending` |
+| Status | `BLOCKED_FOR_REBASE` — chưa tạo TASK implementation |
 | Product owner | Founder / sếp |
-| Design owner | Tier 1 Planner |
-| Updated | `2026-09-05 Asia/Bangkok` |
-| Authority | Nguồn thiết kế và roadmap triển khai **chính** của Universal Affiliate |
+| Design owner | Tier 1 Plan + Implementation |
+| Updated | `2026-09-11 Asia/Bangkok` |
+| Authority | Product intent AFF; domain timing/ownership phụ thuộc V6 Native Foundation |
 | Relationship | Độc lập với plan Portal; `UNIFIED_PLAN_v5.md` chỉ là nguồn dependency/domain nền |
 | Current implementation gate | Chưa mở; phải đạt Definition of Ready §20 |
 
@@ -18,8 +25,8 @@
 
 - File này giữ product intent, canonical terminology, architecture, dependency, rollout và audit strategy cho Affiliate.
 - Không gộp Affiliate vào plan Portal, không dùng tên task Portal/M11 legacy để suy ra trạng thái của feature này.
-- Tier 1 đọc file này để chia contract `AFF-*`; mỗi contract vẫn phải nằm trong `docs/tasks/<slug>/TASK.md` theo pipeline.
-- Tier 2 không implement trực tiếp từ file này khi chưa có TASK `READY_FOR_EXECUTION`.
+- Tier 1 rebase file này trước, sau đó chia contract `AFF-*`; mỗi contract vẫn nằm trong `docs/tasks/<slug>/TASK.md`.
+- Tier 1 không implement trực tiếp từ file này khi chưa có TASK `READY_FOR_EXECUTION`.
 - Tier 3 dùng file này làm design authority để phát hiện contract/implementation đi lệch, nhưng verdict phải bám TASK cụ thể.
 - Khi design chưa khóa hết decision gate, trạng thái giữ `DESIGN_REVIEW`; không force-ready.
 
@@ -39,14 +46,13 @@ Affiliate User
   → public application
   → create/match LaborProfile
   → ReferralAttribution source snapshot
-  → initial Handling Assignment cho referrer (7 ngày)
-  → success hoặc hết hạn → kho chung → manager reassignment
-  → qualify/convert
-  → accepted SourceClaim
-  → ProjectAssignment giữ source referrer
-  → milestone evaluation
-  → CommissionLedger beneficiary lấy từ Handling Assignment hợp lệ/case resolution
-  → approve/pay/reverse có audit
+  → open/resolve PlacementCase từ job-seeking intent
+  → initial case-scoped Handling Assignment theo Owner clock policy
+  → success hoặc hết hạn → Company Pool projection → manager reassignment
+  → qualify/match
+  → Placement giữ source Application/Proposal và ServiceModel snapshot
+  → effective Placement snapshot CommissionBeneficiaryDecision
+  → outbox gửi external Python app tính commission
 ```
 
 Người chia sẻ link có thể theo dõi số click/apply/convert và ledger của chính mình theo permission. Người xin việc không thấy referrer identity, commission policy hoặc dữ liệu nội bộ.
@@ -83,14 +89,14 @@ Người chia sẻ link có thể theo dõi số click/apply/convert và ledger 
 | Beneficiary | User được ghi credit vào commission ledger; derive từ Handling Assignment hợp lệ, milestone, policy và case resolution |
 | Applicant | Người tìm việc gửi public application; có thể chưa có User |
 | LaborProfile | Hồ sơ canonical của một NLD từ lần để lại thông tin hợp lệ đầu tiên; tồn tại trước hoặc độc lập với Worker |
-| Company Pool | Kho chung gồm LaborProfile không có Handling Assignment active, để lãnh đạo phân phối lại |
+| Company Pool | Projection gồm PlacementCase active không có Handling Assignment hợp lệ |
 | Affiliate Code | Mã public opaque, unique, không chứa PII/role |
 | Referral Link | URL chứa Affiliate Code, ví dụ `/r/<code>` |
 | Attribution | Bản ghi server-side nối một lượt giới thiệu với referrer |
 | Attribution Token | Token ký bởi server, trỏ tới attribution; không phải raw userId |
 | First-click | Nguồn hợp lệ đầu tiên trong attribution window |
 | Attribution window | 30 ngày của signed cookie/token tính từ first valid click |
-| Protected handling window | 7 ngày tính từ lúc tạo/match LaborProfile, tự giao cho referrer xử lý ưu tiên |
+| Protected handling window | Bắt đầu khi PlacementCase có job-seeking intent hợp lệ được mở; duration/calendar policy chờ Owner |
 | Manual fallback | Applicant nhập code khi browser/in-app flow làm mất cookie và chưa có attribution hợp lệ |
 | SourceClaim | Nguồn được giữ sau khi submission convert thành Worker |
 | Commission milestone | Sự kiện policy-defined làm phát sinh credit, ví dụ ACTIVE đủ N ngày |
@@ -152,8 +158,8 @@ PARTIAL_FOUNDATION / NOT_END_TO_END / NOT_READY_FOR_TASK
 | `AFF-DEC-008` | Attribution hợp lệ đi theo NLD; placement sang job/project khác không đổi referrer/provenance. Beneficiary được quyết định riêng từ Handling Assignment + milestone/policy | Founder 04/09/2026 | `FINAL` |
 | `AFF-DEC-009` | Tranh chấp attribution phải tạo Ticket/Case để Trưởng phòng/Giám đốc phân xử; không silently overwrite/delete source history | Founder 04/09/2026 | `FINAL` |
 | `AFF-DEC-010` | Signed AFF cookie/token có TTL 30 ngày; first-click hợp lệ thắng trong attribution window | Founder / V4 G13-G15 / 04/09/2026 | `FINAL` |
-| `AFF-DEC-011` | Khi tạo/match LaborProfile từ AFF hợp lệ, referrer được tự động giao xử lý trong 7 ngày tính từ thời điểm profile được tạo/match | Founder 04/09/2026 | `FINAL` |
-| `AFF-DEC-012` | Hết 7 ngày chưa thành công, profile về Company Pool; lãnh đạo có thể giao lại cho User bất kỳ, kể cả referrer ban đầu, với thời hạn xác định | Founder 04/09/2026 | `FINAL` |
+| `AFF-DEC-011` | Attribution ghi khi create/match; handling bắt đầu khi PlacementCase đủ điều kiện được mở | Tier 0 supersession 11/09/2026 | `SUPERSEDED_BY_V6_NATIVE` |
+| `AFF-DEC-012` | Hết handling window, active case vào Company Pool projection; duration/calendar policy chờ Owner | Tier 0 supersession 11/09/2026 | `REBASE_PENDING_OWNER_POLICY` |
 | `AFF-DEC-013` | User có Handling Assignment hợp lệ tại milestone là beneficiary candidate; referrer không giữ quyền hưởng hoa hồng vô thời hạn | Founder 04/09/2026 | `FINAL` |
 | `AFF-DEC-014` | Ticket/Case có thể mở ngay trong cửa sổ 7 ngày; resolution có thể chuyển/thu hồi/gia hạn quyền xử lý nhưng phải giữ immutable history | Founder 04/09/2026 | `FINAL` |
 | `AFF-DEC-015` | Nhân viên HRP có quyền được tạo/hoàn thiện LaborProfile trực tiếp; staff-assisted intake phải preserve attribution/handling đã có | Founder 04/09/2026 | `FINAL` |
@@ -198,7 +204,8 @@ POST /api/public/jobs/<slug>/applications
   ├─ call SECURITY DEFINER RPC with attributionId only
   ├─ create/match LaborProfile
   ├─ RPC snapshots trusted referrer facts into CandidateSubmission
-  └─ create initial LaborProfileHandlingAssignment(referrer, 7 days)
+  ├─ resolve/open PlacementCase from valid job-seeking intent
+  └─ policy may create initial HandlingAssignment(referrer)
 
 Staff-assisted intake / completion
   ├─ mandatory dedup → create-or-match same LaborProfile
@@ -331,13 +338,13 @@ accepted: unique accepted source/worker theo backstop hiện hữu
 - `CommissionLedger.ctvId`, CommissionDebt và withdrawal hiện CTV-specific. Migration universal dùng additive `beneficiaryUserId`, backfill từ `ctvId`, dual-read/write có thời hạn, rồi chuyển RLS/API/UI.
 - Không rename/drop cột trong cùng migration foundation. Removal chỉ ở cleanup task sau khi compatibility evidence PASS.
 
-#### 6.5.1. `LaborProfileHandlingAssignment` — giao xử lý trước khi đi làm
+#### 6.5.1. `HandlingAssignment` — responsibility theo PlacementCase
 
 Tên model cuối cùng do TASK khóa; semantic tối thiểu:
 
 ```text
 id
-laborProfileId
+placementCaseId
 assigneeUserId
 assignedByUserId nullable          # null/system cho AFF_INITIAL
 source: AFF_INITIAL | MANAGER_ASSIGNMENT | CASE_RESOLUTION
@@ -352,9 +359,9 @@ createdAt / updatedAt / version
 
 Bất biến:
 
-- Tối đa một Handling Assignment `ACTIVE` trên một LaborProfile tại một thời điểm, có DB backstop.
-- `AFF_INITIAL` bắt đầu khi tạo/match LaborProfile và hết hạn sau 7 ngày; không lấy mốc click.
-- Hết hạn đưa profile vào Company Pool; scheduler chỉ materialize trạng thái, server-clock query vẫn phải coi row quá `expiresAt` là hết hiệu lực ngay cả khi job trễ.
+- Tối đa một Handling Assignment `ACTIVE` trên một PlacementCase tại một thời điểm, có DB backstop; LaborProfile có thể có nhiều case lịch sử.
+- `AFF_INITIAL` bắt đầu khi PlacementCase đủ điều kiện được mở; duration/calendar policy do Owner chốt.
+- Hết hạn đưa active case vào Company Pool projection; server-clock query phải coi row quá `expiresAt` là hết hiệu lực ngay cả khi scheduler trễ.
 - Giao lại/gia hạn/chuyển/thu hồi tạo transition có actor và audit; không sửa ngược history.
 - Beneficiary candidate được snapshot từ assignment hợp lệ tại milestone; client không truyền beneficiary.
 - ReferralAttribution gốc không bị xóa hoặc đổi khi Handling Assignment thay đổi.
@@ -557,21 +564,23 @@ Khi activate placement:
 3. Gán `ProjectAssignment.referrerId` server-side cùng create assignment.
 4. Không cho request body truyền/override referrer.
 5. Assignment replay/idempotent path phải giữ cùng referrer.
-6. Đồng thời re-read Handling Assignment hợp lệ của LaborProfile để snapshot beneficiary candidate; referrer và beneficiary có thể khác nhau sau khi hết cửa sổ 7 ngày/bàn giao.
+6. Đồng thời re-read Handling Assignment hợp lệ của PlacementCase tạo ra Placement để snapshot beneficiary candidate; referrer và beneficiary có thể khác nhau sau khi hết cửa sổ/bàn giao.
 7. Nếu referrer hoặc handling assignee inactive trước placement, xử theo policy/case resolution; không tự đoán hoặc tự chuyển beneficiary.
 
 ### 10.3. Traceability chain
 
-Mỗi credit phải trace ngược được:
+Mỗi beneficiary decision/outbox phải trace ngược được:
 
 ```text
-CommissionLedger
-  → milestone / ProjectAssignment
-  → LaborProfileHandlingAssignment
+CommissionBeneficiaryDecision
+  → effective Placement
+  → PlacementCase
+  → HandlingAssignment
   → User (beneficiary)
   → LaborProfile
   → ReferralAttribution          (qua ReferralAttribution.laborProfileId — AFF-DEC-018)
   → User (referrer/source)
+  → external Python calculation reference (nếu đã xử lý)
 ```
 
 Đường **đối chiếu**, không bắt buộc, dùng để kiểm tra chéo và để đọc lịch sử theo từng lượt ứng tuyển:
@@ -593,7 +602,7 @@ Nếu một mắt xích **bắt buộc** bị null ngoài trường hợp PUBLIC
 - Job/project trên link hoặc application chỉ là điểm vào; attribution hợp lệ gắn với hành trình NLD đến HRP.
 - Khi NLD được placement sang một Job/Project khác, server tiếp tục giữ cùng accepted SourceClaim/referrer; không tạo nguồn mới theo Project đích.
 - ReferralAttribution giữ provenance; Handling Assignment giữ quyền/trách nhiệm xử lý có thời hạn; Commission Ledger snapshot beneficiary khi milestone đạt. Ba relation không được đồng nhất.
-- Khi tạo/match LaborProfile, referrer nhận Handling Assignment `AFF_INITIAL` trong 7 ngày. Hết hạn chưa thành công thì profile về Company Pool, không xóa attribution.
+- Khi mở PlacementCase đủ điều kiện, referrer có thể nhận Handling Assignment `AFF_INITIAL` theo policy. Hết hạn thì active case vào Company Pool projection, không xóa attribution.
 - Lãnh đạo giao lại bằng Handling Assignment mới có thời hạn; User được giao có thể là referrer cũ hoặc User khác.
 - Không route/client nào được phép truyền `referrerUserId`, `assigneeUserId` hoặc `beneficiaryUserId` mới chỉ vì thay đổi placement.
 - Nếu có tranh chấp, hệ thống tạo Ticket/Case tham chiếu tối thiểu ReferralAttribution, LaborProfile, CandidateSubmission và Handling Assignment; sau convert có thể tham chiếu thêm Worker/SourceClaim/ProjectAssignment.
@@ -609,8 +618,8 @@ Nếu một mắt xích **bắt buộc** bị null ngoài trường hợp PUBLIC
 
 - Mọi User có thể sở hữu link và trở thành referrer.
 - Mọi User được lãnh đạo giao LaborProfile hợp lệ đều có thể trở thành beneficiary, dù không phải referrer ban đầu.
-- Credit chỉ được tạo khi ProjectAssignment đạt milestone và LaborProfileHandlingAssignment/case resolution xác định đúng beneficiary theo policy active/effective-dated.
-- Policy quyết định milestone, amount/formula, cap, eligibility, effective period, approval và reversal.
+- HRP chỉ snapshot `CommissionBeneficiaryDecision` khi Placement đạt milestone phù hợp; external Python app sở hữu amount/rate/formula/tier calculation.
+- HRP policy chỉ quyết định beneficiary context, milestone eligibility, effective period và correction evidence; không tính tiền.
 - Không hard-code theo role; nếu business muốn role/group khác rate, đó là policy data có version.
 - Click/apply/convert count chỉ là funnel metrics, không trực tiếp là amount.
 
@@ -747,9 +756,9 @@ Không tạo cặp API cạnh tranh `/api/ctv/affiliate-*` cho cùng nghiệp v�
 
 **Scope dự kiến:**
 
-- `LaborProfileHandlingAssignment` additive model + at-most-one-active DB backstop.
-- Auto-assign referrer 7 ngày từ lúc create/match LaborProfile.
-- Expiry theo server clock, Company Pool, manager assignment có thời hạn và lịch sử giao nhận.
+- Case-scoped `HandlingAssignment` history model + at-most-one-active DB backstop.
+- Auto-assign chỉ khi PlacementCase đủ điều kiện được mở, theo Owner clock policy.
+- Expiry theo server clock, Company Pool projection, manager assignment có thời hạn và lịch sử giao nhận.
 - Ticket/Case cho tranh chấp trong/ngoài 7 ngày; maker/resolver RBAC và immutable resolution.
 - Admin UI: người đang phụ trách, thời gian còn lại, nguồn giao, kho chung và hành động phân phối.
 
@@ -759,12 +768,14 @@ Không tạo cặp API cạnh tranh `/api/ctv/affiliate-*` cho cùng nghiệp v�
 
 **Scope dự kiến:**
 
-- `beneficiaryUserId` additive migration/backfill/compat.
-- Generic commission policy resolution, milestone credit, idempotency/reversal/debt.
-- RLS/scoped repository/API/DTO self visibility cho mọi User.
-- Accounting approve/pay flow; generic withdrawal/payout decision.
+- `CommissionBeneficiaryDecision` snapshot theo effective Placement, có source/handler evidence.
+- Idempotent beneficiary correction/dispute và transactional outbox sang external Python app.
+- RLS/scoped repository/API/DTO chỉ hiển thị entitlement context được phép.
+- Existing ledger/amount flow là legacy compatibility; không mở rộng calculation trong HRP.
 
-**Exit gate:** milestone tạo đúng một credit cho beneficiary từ Handling Assignment/case resolution hợp lệ bất kỳ role; referrer khác beneficiary vẫn trace đủ; concurrent retry không duplicate; reversal/debt đúng; cross-user ledger IDOR bị chặn; no fake estimate.
+**Exit gate:** effective Placement tạo đúng beneficiary decision/outbox; referrer
+khác beneficiary vẫn trace đủ; retry không duplicate; correction có audit;
+cross-user IDOR bị chặn; HRP không tính amount/rate/formula.
 
 ### AFF-06 — Analytics, dashboard và abuse hardening
 
@@ -789,9 +800,9 @@ Không tạo cặp API cạnh tranh `/api/ctv/affiliate-*` cho cùng nghiệp v�
 AFF-00
   → AFF-01
       → AFF-02
-          → AFF-03          ← cần V6 LaborProfile + LaborProfileHandlingAssignment
+          → AFF-03          ← cần V6 Native N1 create-or-match + PlacementCase
               → AFF-04
-                  → AFF-05A ← cần V6 LaborProfile
+                  → AFF-05A ← cần V6 Native N2 HandlingAssignment
                       → AFF-05B
                           → AFF-06
                               → AFF-07
@@ -803,11 +814,10 @@ AFF-06 analytics có thể chuẩn bị song song sau AFF-02, nhưng không đư
 "AFF-05A phụ thuộc V6 LaborProfile". Nhưng exit gate của **AFF-03** đòi nguyên văn hai câu:
 *"nhân viên hoàn thiện cùng profile không đổi attribution/handling"* và
 *"staff-created direct profile không auto-credit creator"*.
-Cả hai câu đọc/ghi **`LaborProfile` và `LaborProfileHandlingAssignment`**, tức cần đúng thứ mà AFF-05A mới dựng.
+Cả hai câu đọc/ghi **`LaborProfile`, `PlacementCase` và `HandlingAssignment`**, tức cần V6 Native N1/N2.
 Nghĩa là lane AFF chạm lane V6 sớm hơn **hai slice** so với bản đồ cũ. Ba hệ quả không thương lượng:
 
-1. `AFF-03` không mở được trước khi V6 Phase 1 (LaborProfile) **và** phần Handling Assignment merge — dựng
-   `LaborProfileHandlingAssignment` phải kéo lên **trước** AFF-03, hoặc hai câu exit gate trên phải tách khỏi AFF-03.
+1. `AFF-03` không mở được trước V6 Native N1; handling workflow không mở trước N2.
 2. Hai lane cùng ghi một `prisma/schema.prisma` dưới một thứ tự migration, nên thứ tự merge là ràng buộc thật, không phải sở thích.
 3. Nếu chọn tách: hai câu ấy chuyển sang AFF-05A và exit gate AFF-03 phải khai `LIM-*` rõ ràng là nó **chưa** phủ hai ca đó.
    Không được để một exit gate xanh trong khi hai ca nó tên chưa từng chạy.

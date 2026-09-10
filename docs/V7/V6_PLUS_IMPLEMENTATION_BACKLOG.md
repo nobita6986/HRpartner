@@ -1,10 +1,11 @@
-# HRP V6+ — AI Coding Implementation Backlog
+# HRP V6 Native Foundation — AI Coding Implementation Backlog
 
 > Status: Execution Backlog
 > Parent architecture: `V6_PLUS_PLAN.md`
 > Target architecture: `V7_ARCHITECTURE.md`
 > Reconciliation authority: `V6_V7_CONFLICT_CHANGE_REGISTER.md`
-> Purpose: Convert the V6+ architecture into small, dependency-aware implementation tasks suitable for AI coding and code review.
+> Execution placement: remaining V6; V6+ survives only in filename and stable `V6P-*` IDs.
+> Purpose: Convert the V6 Native Foundation architecture into small, dependency-aware implementation tasks suitable for AI coding and code review.
 > Explicitly out of scope: Payroll, internal HRM, commission amount/rate/formula calculation, Chatwoot/Zalo production UX, V7 feature UX except where required for migration/review tooling.
 
 ---
@@ -14,12 +15,14 @@
 When documents disagree, implement in this order:
 
 ```text
-1. This backlog for task sequencing and task-level acceptance criteria
-2. V6_PLUS_PLAN.md for V6+ domain/migration intent
-3. V6_V7_CONFLICT_CHANGE_REGISTER.md for superseded/clarified old decisions
-4. V7_ARCHITECTURE.md for target V7 semantics
-5. CRM_CSKH_INTEGRATION_PLAN.md for retained integration decisions
-6. v6-admin-rebuild.md for retained V6 behavior not superseded above
+1. HRP_V6_PLUS_V7_MASTER_INDEX.md for global precedence
+2. V6_V7_CONFLICT_CHANGE_REGISTER.md for superseded/clarified old decisions
+3. ../V6/V6_change.md for V6 execution placement and cross-plan dependencies
+4. This backlog for task sequencing and task-level acceptance criteria
+5. V6_PLUS_PLAN.md for domain/migration intent
+6. V7_ARCHITECTURE.md for target V7 semantics
+7. CRM_CSKH_INTEGRATION_PLAN.md for retained integration decisions
+8. v6-admin-rebuild.md for retained V6 behavior not superseded above
 ```
 
 No coding agent may silently reinterpret a locked domain rule. If repository reality makes a task impossible as specified, stop that task, record the mismatch, and propose the smallest compatible adjustment.
@@ -1513,7 +1516,7 @@ Concurrent HRP-managed actual-start commands reuse/create exactly one Worker.
 
 ---
 
-# 19. V7 Compatibility Gate
+# 19. V6 Native Compatibility Gate (V7 entry)
 
 No affected V7 feature phase may begin until all required checks are green.
 
@@ -1580,7 +1583,7 @@ No affected V7 feature phase may begin until all required checks are green.
 
 ---
 
-# 20. Suggested execution order for AI coding
+# 20. Suggested execution order for Tier 1
 
 ```text
 Batch 0 — Contract / discovery
@@ -1655,7 +1658,10 @@ V6P-T01 .. V6P-T08
 V7 Compatibility Gate
 ```
 
-Tasks within a batch may run in parallel only where their listed dependencies are satisfied and they do not mutate the same migration authority simultaneously.
+Tasks within a batch may run in parallel only where their listed dependencies are
+satisfied and they do not mutate the same migration authority simultaneously.
+`schema.prisma` and migration ordering have one owner at a time. Tier 1 may use
+sub-agents for independent service, tests, fixtures and read-only discovery.
 
 ---
 

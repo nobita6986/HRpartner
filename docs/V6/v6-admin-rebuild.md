@@ -1,5 +1,12 @@
 # HRP V6 — Admin Rebuild
 
+> **Supersession notice — 2026-09-11:** Tài liệu này giữ lịch sử quyết định V6.
+> Task mới phải ưu tiên `docs/V6/V6_change.md`,
+> `docs/V7/V6_V7_CONFLICT_CHANGE_REGISTER.md` và
+> `docs/V7/V7_ARCHITECTURE.md`. Handling thuộc PlacementCase; AFF clock bắt
+> đầu khi case đủ điều kiện được mở; Placement độc lập Assignment; Worker chỉ
+> bắt đầu ở actual HRP-managed start.
+
 > Trạng thái: `BRAINSTORM / LIVING PLAN`
 >
 > Cập nhật gần nhất: 05/09/2026
@@ -191,7 +198,7 @@ Hai bất biến trung tâm:
 | Đợt quan hệ lao động | Chưa có `EmploymentEpisode` trong schema hiện tại | Lưu từng lần NLD bắt đầu, nghỉ và quay lại làm việc với HRP | Khoảng trống cần xử lý trong V6 |
 | Quan hệ làm việc | `ProjectAssignment` | NLD đang/đã làm ở Project và Position nào, trong khoảng thời gian nào | Đã có liên kết Project/Order/Slot và status |
 | Nguồn giới thiệu | `SourceClaim`; `ReferralAttribution` nằm trong AFF plan | Bảo toàn người giới thiệu từ lúc vào chợ đến lúc phát sinh quyền lợi | Cần generalize theo mọi `User` |
-| Giao phụ trách NLD | Chưa có model canonical | Lưu người đang tư vấn, nguồn giao, thời hạn 7 ngày/thời hạn do lãnh đạo chọn và lịch sử bàn giao | Cần `LaborProfileHandlingAssignment` hoặc tên tương đương |
+| Giao phụ trách NLD | Chưa có model canonical | Lưu responsibility theo từng đợt tìm việc và lịch sử bàn giao | Cần case-scoped `HandlingAssignment` |
 | Người hưởng hoa hồng | Ledger hiện còn CTV-centric; AFF plan đề xuất `beneficiaryUserId` | Snapshot User đủ điều kiện khi Handling Assignment đạt milestone | Cần tách khỏi `referrerUserId` |
 | Tranh chấp nguồn | `Ticket` hiện có chưa phù hợp hoàn toàn | Case để Trưởng phòng/Giám đốc phân xử attribution | Cần thiết kế subtype hoặc generalize Ticket |
 
@@ -264,8 +271,8 @@ ReferralAttribution aggregate
 ├── accepted SourceClaim sau convert
 └── AttributionDisputeTicket[]
 
-LaborProfileHandlingAssignment aggregate (tên kỹ thuật tạm)
-├── LaborProfile đang được tư vấn
+HandlingAssignment aggregate (PlacementCase-scoped)
+├── PlacementCase đang được xử lý
 ├── User đang phụ trách
 ├── nguồn giao: AFF_INITIAL | MANAGER_ASSIGNMENT | CASE_RESOLUTION
 ├── startsAt / expiresAt
@@ -409,7 +416,7 @@ Phải tách ba khái niệm; không dùng một field `owner/referrer` để g�
 
 1. **AFF cookie/token — 30 ngày:** được tạo khi NLD mở link AFF. Đây là ngữ cảnh first-click trên thiết bị/browser để nhận diện nguồn khi NLD chưa có LaborProfile.
 2. **ReferralAttribution — nguồn lịch sử:** nối NLD với User đã đưa họ đến HRP. Nó phục vụ provenance, audit và tranh chấp; Job đích thay đổi không làm mất dấu nguồn.
-3. **LaborProfileHandlingAssignment — quyền/trách nhiệm xử lý có thời hạn:** cho biết User nào đang được giao tư vấn và sắp xếp việc cho NLD. Đây là căn cứ nghiệp vụ để xác định ứng viên hưởng hoa hồng khi đạt milestone, không phải cookie.
+3. **HandlingAssignment — quyền/trách nhiệm xử lý theo PlacementCase:** cho biết User nào đang xử lý một đợt tìm việc. Đây là evidence cho beneficiary decision, không tự động là quyền hưởng tiền.
 
 Hai đồng hồ khác nhau:
 
@@ -418,10 +425,10 @@ Hai đồng hồ khác nhau:
 Click link AFF ───────────── cookie/token tối đa 30 ngày
 
 Đồng hồ B — protected handling
-Tạo/match LaborProfile ───── 7 ngày bảo vệ cho người giới thiệu
+Mở PlacementCase đủ điều kiện ───── policy bảo vệ cho người giới thiệu
 ```
 
-Nếu NLD click ngày 01/09 nhưng đến ngày 20/09 mới đăng ký, cookie vẫn có thể hợp lệ vì chưa quá 30 ngày. Cửa sổ xử lý 7 ngày bắt đầu từ lúc LaborProfile được tạo/match ngày 20/09, không bắt đầu từ ngày click.
+Nếu NLD click ngày 01/09 nhưng đến ngày 20/09 mới đăng ký, cookie vẫn có thể hợp lệ vì chưa quá 30 ngày. Attribution có thể được ghi khi create/match; handling chỉ bắt đầu khi một PlacementCase có intent hợp lệ được mở.
 
 #### 4.12.1. Luồng khởi tạo từ link AFF
 
@@ -915,7 +922,7 @@ Mọi row/card phải deep-link vào trang LaborProfile và hiển thị bằng 
 Đã chốt mô hình thay cho khái niệm “sở hữu hồ sơ”:
 
 1. LaborProfile là tài sản dữ liệu của Công ty, không thuộc vĩnh viễn một cá nhân.
-2. User giới thiệu NLD bằng link AFF hợp lệ được tự động nhận Handling Assignment bảo vệ 7 ngày tính từ lúc tạo/match LaborProfile.
+2. **SUPERSEDED 2026-09-11:** attribution được ghi khi create/match; Handling Assignment chỉ bắt đầu khi PlacementCase có job-seeking intent hợp lệ được mở, theo Owner clock policy.
 3. Nếu chưa thành công khi hết hạn, profile về kho chung của Công ty.
 4. Lãnh đạo có thể giao profile cho bất kỳ User phù hợp, kể cả người giới thiệu ban đầu, trong một khoảng thời gian xác định.
 5. Mỗi lần giao nhận là record riêng, có người giao, người nhận, thời hạn, lý do, trạng thái và lịch sử.
@@ -1065,7 +1072,7 @@ Các route/code đã tồn tại của những module trên được giữ nguy�
 | 04/09/2026 | V6-DEC-015 | Chốt | AFF cookie/token first-click trên thiết bị có TTL 30 ngày theo Affiliate plan. |
 | 04/09/2026 | V6-DEC-016 | Chốt | Khi LaborProfile được tạo/match từ attribution hợp lệ, ReferralAttribution được gắn server-side và tồn tại độc lập với Job ban đầu, placement đích và đồng hồ giao xử lý. |
 | 04/09/2026 | V6-DEC-017 | Chốt | `StaffingOrderSlot` là persistence chuyển tiếp gần nhất cho JobOpening; V6 bổ sung JobPosting/public projection độc lập thay vì tiếp tục publish cả Project. |
-| 04/09/2026 | V6-DEC-018 | Chốt | Người giới thiệu được tự động giao LaborProfile trong cửa sổ bảo vệ 7 ngày tính từ lúc tạo/match profile, không phải từ lúc click link. |
+| 04/09/2026 | V6-DEC-018 | **SUPERSEDED** | Attribution vẫn ghi tại create/match; case-scoped handling bắt đầu khi PlacementCase đủ điều kiện được mở. Duration/calendar policy chờ Owner. |
 | 04/09/2026 | V6-DEC-019 | Chốt | Hết 7 ngày chưa thành công, lượt giao hết hạn và profile về kho chung; lãnh đạo có thể giao tiếp cho User bất kỳ, kể cả người ban đầu, trong thời hạn xác định. |
 | 04/09/2026 | V6-DEC-020 | Chốt | Người có Handling Assignment hợp lệ khi đạt milestone là beneficiary candidate; ReferralAttribution chỉ là nguồn lịch sử và không mặc nhiên cấp hoa hồng vô hạn. |
 | 04/09/2026 | V6-DEC-021 | Chốt | Tranh chấp có thể mở ngay trong 7 ngày; mọi chuyển giao/đổi beneficiary phải qua Ticket/Case có actor, reason, evidence và append-only history. Hạ tầng Case do `V6-DEC-028` quyết; **không** phải model `Ticket` hiện tại. |

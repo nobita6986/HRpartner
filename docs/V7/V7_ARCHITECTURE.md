@@ -4,7 +4,10 @@
 > Product: HRP
 > Version: V7
 > Scope: end-to-end workforce supply operations for HRP as a manpower intermediary/provider.
-> Preconditions: V6+ compatibility gate passed.
+> Preconditions: V6 Native Compatibility Gate passed.
+>
+> Naming note: historical “V6+” references mean the compatibility workstream now
+> embedded in V6 by `docs/V6/V6_change.md`.
 > Explicitly out of scope: Payroll engine, internal HRM, commission amount/formula calculation.
 
 ---
@@ -1232,4 +1235,3 @@ What canonical events should external systems consume?
 ```
 
 That is the operational definition of HRP V7 as a Workforce Supply Operating System.
-

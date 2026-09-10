@@ -2,7 +2,7 @@
 
 **Status:** Draft for implementation  
 **Target release:** V7.1  
-**Prerequisite:** V6+ Compatibility Gate PASS  
+**Prerequisite:** V6 Native Compatibility Gate PASS
 **Primary bounded context:** Talent Repository  
 **Primary aggregate:** `LaborProfile`
 
@@ -42,7 +42,7 @@ current handler
 
 # 1. NON-NEGOTIABLE DOMAIN INVARIANTS
 
-These invariants are inherited from V6+/V7 architecture and MUST NOT be reinterpreted by implementation agents.
+These invariants are inherited from V6 Native Foundation/V7 architecture and MUST NOT be reinterpreted by implementation agents.
 
 1. One human person maps to one canonical `LaborProfile`.
 2. `LaborProfile` is identity, not a candidate pipeline state.
@@ -122,7 +122,7 @@ No slice may silently implement V7.2 PlacementCase Workbench behavior.
 ## V71-001 — Define TalentRepository read contract
 
 **Type:** Architecture / service contract  
-**Dependency:** V6+ gate  
+**Dependency:** V6 Native Compatibility Gate
 **Priority:** BLOCKER
 
 Create a canonical read contract for repository list/detail screens.
@@ -313,7 +313,7 @@ Avoid count-heavy queries that require full scans on every list render.
 ## V71-010 — Add AvailabilityObservation model
 
 **Type:** Schema  
-**Dependency:** V6+ audit/effective-time foundation  
+**Dependency:** V6 Native audit/effective-time foundation
 **Priority:** BLOCKER
 
 Recommended conceptual fields:
@@ -450,7 +450,7 @@ A stale `AVAILABLE_NOW` must remain historically visible while UI indicates the 
 ## V71-014 — Build CurrentRelationship projection
 
 **Type:** Domain projection  
-**Dependency:** V6+ Worker/Episode/Assignment foundation  
+**Dependency:** V6 Native Worker/Episode/Assignment foundation
 **Priority:** BLOCKER
 
 Canonical output:
@@ -545,7 +545,7 @@ When evidence becomes stale, projection may become `UNKNOWN` while preserving pr
 ## V71-020 — Define identity signal catalog
 
 **Type:** Domain contract  
-**Dependency:** V6+ identity hardening  
+**Dependency:** V6 Native identity hardening
 **Priority:** BLOCKER
 
 Signals may include:
@@ -658,7 +658,7 @@ The UI must not encourage blind “merge because phone matches”.
 ## V71-024 — Harden mergeLaborProfiles command
 
 **Type:** Critical domain command  
-**Dependency:** V71-022 + V6+ merge audit foundation  
+**Dependency:** V71-022 + V6 Native merge audit foundation
 **Priority:** BLOCKER
 
 Before merge check:
@@ -1097,7 +1097,7 @@ Internal privileged search exceptions must be explicit and audited.
 
 Viewing highly sensitive identity documents/fields should be auditable where required by existing HRP security policy.
 
-V7.1 must not broaden access compared with V6+.
+V7.1 must not broaden access compared with V6 Native Foundation.
 
 ---
 
@@ -1171,7 +1171,7 @@ If materialized projections are added, they must be rebuildable/reconcilable fro
 
 # 14. MIGRATION REQUIREMENTS
 
-V7.1 must consume the V6+ migration outputs.
+V7.1 must consume the V6 Native Foundation migration outputs.
 
 Rules:
 
