@@ -121,7 +121,7 @@ export function GlobalFooter() {
                 width="100%"
                 height="220"
                 loading="lazy"
-                src="https://www.openstreetmap.org/export/embed.html?bbox=105.20%2C21.35%2C105.30%2C21.45&layer=mapnik&marker=21.40%2C105.25"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=105.679%2C21.312%2C105.682%2C21.316&layer=mapnik&marker=21.314035%2C105.680883"
               />
             </div>
           </div>
