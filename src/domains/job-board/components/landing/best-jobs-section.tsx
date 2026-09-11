@@ -43,8 +43,8 @@ export function BestJobsSection({
       aria-labelledby="hrp-best-jobs-heading"
       className="w-full px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6"
     >
-      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-7xl (đồng bộ với Hero + SearchSection) */}
-      <div className="mx-auto w-full max-w-7xl">
+      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-7xl + px-4 md:px-6 (đồng bộ với Areas section) */}
+      <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
         {/* Y2: chỉ giữ icon ngọn lửa + tiêu đề "Việc làm tốt nhất"; bỏ 'Gợi ý cho bạn',
             mô tả và link 'Xem tất cả →'. Tab đẩy thẳng xuống dưới tiêu đề. */}
         <div className="mb-4 flex items-center gap-3">
