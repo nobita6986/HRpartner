@@ -1,10 +1,11 @@
 /**
- * Y10.4/UI04g Owner directive 11/09/2026 09:08:
- * - Stamp style: rubber stamp như ảnh mẫu (thanh lệch + stars + textured) nhưng GIỮ TONE CAM HRP
- * - Mỗi card chỉ hiển thị 1 stamp (admin chọn khi tạo job)
- * - Stamp là field từ DB, không phải FE-derived mock
+ * Y10.6/UI04j Owner directive 11/09/2026 09:36:
+ * - Redesign rubber stamp: tràn ra ngoài card (3D overflow), tilted, ink texture
+ * - Đồng bộ tất cả 4 stamp (TUYỂN GẤP, HOT, THƯỞNG CAO, MỚI) cùng shape tròn
+ * - Tông cam HRP + tone hồng đỏ cho HOT để phân cấp urgency
  *
- * Design: rubber stamp với hiệu ứng tilted, textured background, border dashed/rough
+ * Design: round badge (rounded-full), dashed border (stamp edge), tilted 12°,
+ * ink-stamp texture bằng CSS gradient, drop-shadow mạnh để tạo depth khi tràn ra ngoài card.
  */
 
 import type { LucideIcon } from 'lucide-react';
@@ -15,28 +16,31 @@ export type StampKey = 'tuyen-gap' | 'hot' | 'thuong-cao' | 'moi';
 export interface StampDef {
   key: StampKey;
   label: string;
-  /** Tailwind class cho background (orange/cam tones). */
+  /** Tailwind class cho ink-fill (gradient trong lòng stamp). */
   bgClass: string;
   /** Tailwind class cho text/icon color. */
   fgClass: string;
-  /** Border color class. */
+  /** Border dashed color class. */
   borderClass: string;
-  /** Outer ring/border style (dashed/rough). */
+  /** Outer ring/shadow color class. */
   ringClass: string;
+  /** Rotation độ (tilted để giống đóng dấu tay). */
+  rotateDeg: number;
   Icon: LucideIcon;
   /** ARIA friendly description. */
   ariaLabel: string;
 }
 
-/** Stamp registry — rubber stamp style với tone cam HRP. */
+/** Stamp registry — rubber stamp style với tone cam HRP, đồng bộ shape tròn. */
 export const STAMPS: Record<StampKey, StampDef> = {
   'tuyen-gap': {
     key: 'tuyen-gap',
     label: 'TUYỂN GẤP',
     bgClass: 'bg-orange-500',
     fgClass: 'text-white',
-    borderClass: 'border-orange-400',
-    ringClass: 'ring-orange-600',
+    borderClass: 'border-orange-300',
+    ringClass: 'ring-orange-500',
+    rotateDeg: 12,
     Icon: Flame,
     ariaLabel: 'Tuyển gấp',
   },
@@ -45,8 +49,9 @@ export const STAMPS: Record<StampKey, StampDef> = {
     label: 'HOT',
     bgClass: 'bg-red-500',
     fgClass: 'text-white',
-    borderClass: 'border-red-400',
-    ringClass: 'ring-red-600',
+    borderClass: 'border-red-300',
+    ringClass: 'ring-red-500',
+    rotateDeg: -14,
     Icon: Star,
     ariaLabel: 'Việc làm hot',
   },
@@ -55,8 +60,9 @@ export const STAMPS: Record<StampKey, StampDef> = {
     label: 'THƯỞNG CAO',
     bgClass: 'bg-amber-500',
     fgClass: 'text-white',
-    borderClass: 'border-amber-400',
-    ringClass: 'ring-amber-600',
+    borderClass: 'border-amber-300',
+    ringClass: 'ring-amber-500',
+    rotateDeg: 10,
     Icon: Gift,
     ariaLabel: 'Thưởng cao',
   },
@@ -65,8 +71,9 @@ export const STAMPS: Record<StampKey, StampDef> = {
     label: 'MỚI',
     bgClass: 'bg-orange-400',
     fgClass: 'text-white',
-    borderClass: 'border-orange-300',
-    ringClass: 'ring-orange-500',
+    borderClass: 'border-orange-200',
+    ringClass: 'ring-orange-400',
+    rotateDeg: -10,
     Icon: Sparkles,
     ariaLabel: 'Việc làm mới',
   },

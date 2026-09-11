@@ -59,35 +59,56 @@ function deriveMonogram(title: string): string {
   return initials || 'HRP';
 }
 
-/** Y10.4/UI04g: rubber stamp single badge — tilted stamp style với tone cam HRP. */
+/**
+ * Y10.6/UI04j: rubber stamp tràn ra ngoài card — 3D overflow effect.
+ * - Shape TRÒN (rounded-full), tilted theo rotateDeg của def
+ * - Outer dashed ring (stamp edge giả) + inner ink-fill gradient
+ * - Position: góc trên-phải của card, một nửa tràn ra ngoài → tạo depth
+ * - Drop-shadow mạnh (shadow-2xl) → 3D pop khỏi mặt phẳng card
+ */
 function RubberStamp({ stampKey }: { stampKey: StampKey }) {
   const def = STAMPS[stampKey];
   const Icon = def.Icon;
   return (
     <div
-      className="pointer-events-none absolute -top-1 -right-1 z-20"
+      className="pointer-events-none absolute -top-5 -right-5 z-30"
       data-testid="job-stamp"
       aria-label={def.ariaLabel}
+      style={{ transform: `rotate(${def.rotateDeg}deg)` }}
     >
-      {/* Outer ring - rough/dashed border */}
-      <div className={`relative rotate-6 rounded border-2 ${def.ringClass} bg-white px-2 py-1 shadow-sm`}>
-        {/* Inner stamp bg with slight rotation for tilted effect */}
-        <div className={`rotate-[-2deg] rounded border ${def.borderClass} ${def.bgClass} px-1.5 py-0.5`}>
-          <div className="flex items-center gap-1">
-            <Icon className="h-3 w-3 shrink-0" aria-hidden="true" />
-            <span className="text-[10px] font-bold uppercase tracking-wider">{def.label}</span>
+      {/* Outer dashed ring — viền ngoài kiểu con dấu cao su */}
+      <div
+        className={`relative rounded-full border-[3px] border-dashed ${def.ringClass} bg-white p-1 shadow-2xl`}
+      >
+        {/* Inner ink stamp — gradient radial giả ink bleed, tilted ngược lại cho chaotic feel */}
+        <div
+          className={`relative rounded-full border-2 ${def.borderClass} ${def.bgClass} px-3 py-1.5 overflow-hidden`}
+          style={{
+            // Ink bleed texture: radial gradient trắng nhạt lốm đốm
+            backgroundImage:
+              `radial-gradient(circle at 20% 30%, rgba(255,255,255,0.25) 0%, transparent 35%),` +
+              `radial-gradient(circle at 70% 60%, rgba(255,255,255,0.18) 0%, transparent 40%),` +
+              `radial-gradient(circle at 50% 80%, rgba(0,0,0,0.10) 0%, transparent 30%)`,
+          }}
+        >
+          <div className={`flex items-center gap-1 ${def.fgClass}`}>
+            <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
+              {def.label}
+            </span>
           </div>
-        </div>
-        {/* Stars decoration */}
-        <div className="pointer-events-none absolute -left-1 -top-1 text-orange-400 opacity-60" aria-hidden="true">
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7L12 16.4 5.7 21l2.3-7-6-4.6h7.6z"/>
-          </svg>
-        </div>
-        <div className="pointer-events-none absolute -bottom-0.5 -right-0.5 text-orange-400 opacity-40" aria-hidden="true">
-          <svg width="6" height="6" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="12" cy="12" r="10"/>
-          </svg>
+          {/* Decorative star — góc trên trái */}
+          <div className={`pointer-events-none absolute -left-1 -top-1 ${def.fgClass} opacity-70`} aria-hidden="true">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7L12 16.4 5.7 21l2.3-7-6-4.6h7.6z"/>
+            </svg>
+          </div>
+          {/* Decorative star — góc dưới phải */}
+          <div className={`pointer-events-none absolute -bottom-0.5 -right-0.5 ${def.fgClass} opacity-50`} aria-hidden="true">
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7L12 16.4 5.7 21l2.3-7-6-4.6h7.6z"/>
+            </svg>
+          </div>
         </div>
       </div>
     </div>
@@ -115,8 +136,10 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
   return (
     <article
       data-testid={`featured-job-${job.id}`}
-      /* RQ-14: Minimal SaaS surface — white bg + slate border + rounded-xl + shadow-sm */
-      className="hrp-focus group relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
+      /* RQ-14: Minimal SaaS surface — white bg + slate border + rounded-xl + shadow-sm.
+         Y10.6/UI04j: bỏ overflow-hidden để RubberStamp tràn ra ngoài card (3D overflow).
+         Border-radius vẫn áp dụng cho nội dung bên trong vì không có element nào tràn qua edge. */
+      className="hrp-focus group relative flex h-full flex-col rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
     >
       {/* Y10.4/UI04g: Single rubber stamp badge — tilted stamp style với tone cam HRP.
           Chỉ hiển thị 1 stamp (admin chọn khi tạo job). */}
