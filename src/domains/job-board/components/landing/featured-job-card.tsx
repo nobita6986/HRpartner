@@ -156,16 +156,17 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
       })()}
 
       {/* ─── Header ─────────────────────────────────────────────────────── */}
-      {/* Y10.8: Fixed-height header (h-[4.75rem]) để salary pill đồng bộ ngang giữa các card.
-          Chứa: 48px logo + content column có thể chứa 2-line title + 1-line company. */}
-      <div className="flex items-start gap-3 p-4 h-[4.75rem]">
+      {/* Y10.8+: Header min-h-[4.75rem] (không fixed) để salary pill vẫn đồng bộ ngang giữa các card
+          trên desktop khi card thấp nhất đúng 4.75rem, nhưng mobile title 2-dòng dài có thể co giãn
+          xuống thêm (chứa logo 48px + 2-line title + 1-line company mà không tràn ra body). */}
+      <div className="flex items-start gap-3 p-4 min-h-[4.75rem]">
         {/* Y10.2/UI04f: monogram = abbreviation từ title job (vd "Yên Phong 3" -> "YP"). */}
         <HrMonogram
           size={48}
           label={monogram}
           className="h-12 w-12 shrink-0 rounded-lg border border-slate-200 bg-white"
         />
-        {/* Fixed-height header: h-[4.75rem] = 48px logo + ~40px content (2-line title + 1-line company). */}
+        {/* Content column — tự co giãn theo title 1-2 dòng + company 1 dòng. */}
         <div className="min-w-0 flex-1">
           {/* Y10.4/UI04g: hover tên job từ blue-700 → primary-dark (tone cam). */}
           <h3
