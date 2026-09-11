@@ -36,7 +36,7 @@ const PROJECTS = [
   {
     code: 'PRJ-2026-001',
     companyIdx: 0,
-    name: 'Tuyển công nhân lắp ráp linh kiện điện tử — Yên Phong',
+    name: 'Tuyển công nhân lắp ráp linh kiện điện tử',
     siteAddress: 'KCN Yên Phong, Bắc Ninh',
     startDate: '2026-09-15',
     positions: [{ code: 'ASSEMBLER', title: 'Công nhân lắp ráp', needed: 25, rate: 28000, shift: '07:30-16:30' }],
@@ -44,7 +44,7 @@ const PROJECTS = [
   {
     code: 'PRJ-2026-002',
     companyIdx: 1,
-    name: 'Tuyển công nhân may công nghiệp — Tiên Sơn',
+    name: 'Tuyển công nhân may công nghiệp',
     siteAddress: 'KCN Tiên Sơn, Bắc Ninh',
     startDate: '2026-09-20',
     positions: [
@@ -54,7 +54,7 @@ const PROJECTS = [
   {
     code: 'PRJ-2026-003',
     companyIdx: 2,
-    name: 'Tuyển công nhân đóng gói thực phẩm — Thành Phong',
+    name: 'Tuyển công nhân đóng gói thực phẩm',
     siteAddress: 'KCN Thành Phong, Bắc Ninh',
     startDate: '2026-09-10',
     positions: [{ code: 'PACKER', title: 'Công nhân đóng gói', needed: 18, rate: 24000, shift: '06:00-15:00' }],
@@ -62,7 +62,7 @@ const PROJECTS = [
   {
     code: 'PRJ-2026-004',
     companyIdx: 3,
-    name: 'Tuyển nhân viên kho vận — Quế Võ',
+    name: 'Tuyển nhân viên kho vận',
     siteAddress: 'KCN Quế Võ, Bắc Ninh',
     startDate: '2026-09-25',
     positions: [
@@ -72,7 +72,7 @@ const PROJECTS = [
   {
     code: 'PRJ-2026-005',
     companyIdx: 4,
-    name: 'Tuyển thợ hàn và cơ khí — Gia Bình',
+    name: 'Tuyển thợ hàn và cơ khí',
     siteAddress: 'KCN Gia Bình, Bắc Ninh',
     startDate: '2026-09-30',
     positions: [{ code: 'WELDER', title: 'Thợ hàn', needed: 15, rate: 35000, shift: '07:00-16:00' }],
