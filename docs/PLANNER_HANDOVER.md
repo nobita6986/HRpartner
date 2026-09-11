@@ -27,14 +27,14 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
 current_lane: UI04 public homepage completion
-current_task: hrp-v6-ui-04e-hero-width-balance (READY_FOR_EXECUTION v0.1)
-task_path: docs/tasks/hrp-v6-ui-04e-hero-width-balance/TASK.md
-spec_version: v0.1 (Owner 11/09/2026 08:19: hero hon hep hon body, search panel truncate "Ten cong viec"/"Tat ca..."/"Muc luong". Tang Hero 1080px -> 7xl, BestJobs 1080px -> 7xl, Home page bo max-w-2xl hero)
-task_status: Tier 1 commit 2e8e76f + push len origin/main 11/09/2026 08:23 theo tier1.md workflow; typecheck local PASS; Vercel auto-deploy; TIER1 self-review NONE (FAST lane)
+current_task: hrp-v6-ui-04f-card-monogram-abbrev (READY_FOR_EXECUTION v0.1)
+task_path: docs/tasks/hrp-v6-ui-04f-card-monogram-abbrev/TASK.md
+spec_version: v0.1 (Owner 11/09/2026 08:25: (1) logo HRP trong card -> abbreviation tu title (YP/KT/TB/PL), (2) 'Can tuyen N nguoi' thang hang giua cac card (h-full + min-h title + mt-auto), (3) hover ten job xanh -> cam dam (primary-dark #a63b00))
+task_status: Tier 1 commit 12a06da + push len origin/main 11/09/2026 08:27; typecheck local PASS; Vercel auto-deploy; TIER1 self-review NONE (FAST lane)
 worktree_branch: main
-current_gate: OWNER_VISUAL_REVIEW_04e (refresh https://hrpvietnam.com/ xem 3 cot Section ngang nhau + search panel text khong con truncate)
-next_command: Tier 0 chot visual 04e: (a) ACCEPTED -> closeout + mo phase tiep theo, (b) chua -> Tier 1 fix them
-previous_accepted: R9 footer map OSM ACCEPTED (39950a1) + R8 footer cot 1 bo min-h-11 ACCEPTED (cc548c3) + R7 bo helper text ACCEPTED + R6 footer flatten cot 1 ACCEPTED (84c4d61) + R5/R4 AC DRAFT + 04c1 R1 (9f593fa) + 04c2 R1 (1316ff4) + 04 R3 (8c6fd03) + composition/footer v1.4 (04b767e) + interaction R2 + VIS-01..03 (284e46c) + B pagination-admin (18919da) + A visual-polish
+current_gate: OWNER_VISUAL_REVIEW_04f (refresh https://hrpvietnam.com/ xem 4 cards du an co logo abbreviation + 'Can tuyen' thang hang, hover ten job o BestJobsCards chuyen cam dam)
+next_command: Tier 0 chot visual 04f: (a) ACCEPTED -> closeout + mo phase tiep theo, (b) chua -> Tier 1 fix them (vd Q1: monogram 3 chu YPE thay vi 2)
+previous_accepted: UI04e hero width balance ACCEPTED (2e8e76f) + R9 footer map OSM ACCEPTED (39950a1) + R8 footer cot 1 bo min-h-11 ACCEPTED (cc548c3) + R7 bo helper text ACCEPTED + R6 footer flatten cot 1 ACCEPTED + R3 v1.3 (8c6fd03) + 04c1/04c2 R1 + composition/footer v1.4 (04b767e) + interaction R2 + VIS-01..03 (284e46c) + B pagination-admin (18919da) + A visual-polish
 next_planner_candidate: hrp-v6-ui-04d-section-render (BLOCKED v1.5 — sau 04c1+04c2 push production + Owner live visual review ACCEPTED); sau đó hrp-v6-ui-04d-detail-ui (D.A); sau đó Admin V6 theo dependency (AV1 → AV4 → AV2 → AV6 → AV5)
 blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); UI04 04c1+04c2 đã OWNER_DECIDED (16 lựa chọn chốt 10/09/2026) — gate đã mở sang TIER2_EXECUTION; Owner live visual review pending post-deploy (Tier 1 monitor Vercel/CI); section-render chờ Tier 1 review V6 stacking sau push production
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
