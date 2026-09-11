@@ -7,25 +7,37 @@ interface RecruitmentHighlightProps {
 }
 
 /** Y10.4/UI04g fix: Ảnh thật Unsplash free stock theo chủ đề slide (thay SVG illustration + loại bỏ 2 dòng header text). */
-/** Y10.9/UI04i r5: Ảnh local Vietnamese worker từ C:\Users\Admin\Desktop\HrP\anhwweb — công nhân Việt Nam thật. */
+/** Y10.10/UI04i r6: 5 text dịch vụ HRP + 3 ảnh loop (công nhân Việt Nam thật). */
 const SLIDES = [
   {
-    // Slide 1: Đăng công việc trong 5 phút — công nhân vận hành máy móc (TP.HCM)
+    // Slide 1: Cung ứng và cho thuê lại lao động thời vụ — công nhân vận hành máy móc
     image: '/images/hero/cong-nhan-may-moc.jpg',
-    title: 'Đăng công việc trong 5 phút',
-    desc: 'Không cần tài khoản doanh nghiệp. Chỉ cần mô tả và đăng — ứng viên tự tìm đến bạn.',
+    title: 'Cung ứng và cho thuê lại lao động thời vụ ngắn hạn, dài hạn',
+    desc: '',
   },
   {
-    // Slide 2: HRP lọc hồ sơ thông minh — may Sài Gòn (công nhân may TP.HCM)
+    // Slide 2: Dịch vụ gia công và kiểm tra, phân loại linh kiện điện tử — công nhân may
     image: '/images/hero/may-sai-gon.jpg',
-    title: 'HRP lọc hồ sơ thông minh',
-    desc: 'Theo địa điểm, ca làm, mức lương thực tế. Chỉ ứng viên phù hợp mới được giới thiệu.',
+    title: 'Dịch vụ gia công và kiểm tra, phân loại linh kiện điện tử',
+    desc: '',
   },
   {
-    // Slide 3: Chỉ gặp ứng viên đã sàng lọc — đóng gói Hà Nội (công nhân đóng gói Hà Nội)
+    // Slide 3: Dịch vụ giới thiệu lao động, việc làm — đóng gói Hà Nội
     image: '/images/hero/dong-goi-ha-noi.jpg',
-    title: 'Chỉ gặp ứng viên đã sàng lọc',
-    desc: 'Ứng viên đã đồng ý phỏng vấn và sẵn sàng. Bạn tiết kiệm thời gian, hiệu quả cao hơn.',
+    title: 'Dịch vụ giới thiệu lao động, việc làm',
+    desc: '',
+  },
+  {
+    // Slide 4: Dịch vụ bốc xếp hàng hóa — công nhân vận hành máy móc (loop ảnh 1)
+    image: '/images/hero/cong-nhan-may-moc.jpg',
+    title: 'Dịch vụ bốc xếp hàng hóa',
+    desc: '',
+  },
+  {
+    // Slide 5: Dịch vụ đóng gói hàng hoá — công nhân đóng gói Hà Nội (loop ảnh 3)
+    image: '/images/hero/dong-goi-ha-noi.jpg',
+    title: 'Dịch vụ đóng gói hàng hoá',
+    desc: '',
   },
 ] as const;
 
