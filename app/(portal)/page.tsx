@@ -32,7 +32,8 @@ const EMPTY_OVERVIEW: PublicJobOverview = {
 };
 
 // DEC-04 / STEP-04: BestJobs pageSize hardcoded 9 literal, passed via prop.
-const BEST_JOBS_PAGE_SIZE = 6;
+// Y10.8: 3 cột × 3 hàng = 9 jobs/page.
+const BEST_JOBS_PAGE_SIZE = 9;
 
 export interface EnrichedJob {
   id: string;
@@ -314,7 +315,7 @@ export default function JobsPage() {
         </div>
       </Hero>
 
-      {/* Y10.4/UI04g: BestJobs section — ko phan tab, 3 cot x 2 hang (6 jobs/page) */}
+      {/* Y10.8: BestJobs section — 3 cột × 3 hàng (9 jobs/page) */}
       <BestJobsSection
         jobs={bestJobsData.jobs}
         total={bestJobsData.total}

@@ -432,8 +432,8 @@ describe('Y10.4/UI04g — BestJobs ko phan tab trong page.tsx', () => {
     expect(code).not.toMatch(/urgency=URGENT/);
   });
 
-  it('BestJobsSection render 6 jobs/page (3 cot x 2 hang)', () => {
+  it('BestJobsSection render 9 jobs/page (3 cot x 3 hang)', () => {
     const code = strip(read(PORTAL_PAGE));
-    expect(code).toContain('BEST_JOBS_PAGE_SIZE = 6');
+    expect(code).toContain('BEST_JOBS_PAGE_SIZE = 9');
   });
 });

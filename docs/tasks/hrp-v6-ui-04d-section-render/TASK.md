@@ -1,283 +1,206 @@
 ﻿# TASK — `hrp-v6-ui-04d-section-render`
 
 > **Section renderer + demo content có cấu trúc** cho UI-04 theo Tier 0 mandate `docs/prompts/TIER1_UI04C_HOME_SECTIONS_FOOTER_AND_ADMIN_CMS.md` §3.
-> Tier 0 review v1 (`tier0-review-ui04c-contracts-v1.md`) + v2 (`tier0-review-ui04c-contracts-v2.md`): REVISION_REQUIRED v2 — sửa RQ-07 traceability STEP ID tường minh, AC-13 đo enabled/source policy, asset map dùng ảnh local phân biệt (industrial-location-01..04.webp, referral-team.webp), dependency overview từ `bootstrapBestJobs` của composition task, xóa residue SafeHtml, AV-CMS → AV6. Tier 0 review v3 (`tier0-review-ui04c-contracts-v3.md`) SMALL CLOSEOUT: thay mọi reference active còn sót `AV-CMS` bằng `AV6`; chuẩn hóa "CMS 4 section"; spec v1.3.
-> v1.4: Owner live visual review R1 (`docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/evidence/owner-live-visual-review-r1.md`) ghép VIS-06 vào composition/footer task. Section-render inherit: mọi inner container homepage dùng `max-w-[1080px] mx-auto` ngay từ đầu, KHÔNG hardcode 1200px. Section-render chạy SAU composition/footer (kế thừa 1080px contract).
-> Scope: dựng 4 section mới trên homepage (Section 1 Việc làm mới nhất REAL + Section 2..5 Giới thiệu HRP, Dải đối tác/minh họa, Tin tức & cẩm nang, Banner trải nghiệm trên di động DEMO) — tổng cộng 5 section trong Task D. Mỗi section nhận view-model có kiểu rõ, `source: REAL | DEMO | INTEGRATION_PENDING`, id, enabled/order. Renderer dùng chính sách DEMO/HIDDEN khi CMS chưa có. v1.4: dùng `max-w-[1080px] mx-auto` cho mọi section container. KHÔNG mở Admin/CMS schema/API/persistence (→ Plan Admin V6 AV6). UI-only, STANDARD/FOCUSED lane.
-> Plan UI predecessor: composition/footer task `ACCEPTED` (`hrp-v6-ui-04c-home-composition-footer` v1.4) + R3 `ACCEPTED` (`hrp-v6-ui-04b-urgent-live-ribbon-r3` v1.3) + Plan B `ACCEPTED` (18919da) + correction R1 `ACCEPTED` (284e46c) + interaction R2 correction round 1 (VIS-04/05).
-> Plan UI successor: `hrp-v6-ui-04d-detail-ui` (Plan D.A) — sau D.A là Plan Admin V6 theo dependency được duyệt.
-> v1.5: Tier 1 revise dependency theo Tier 0 directive `docs/prompts/TIER1_CONTINUATION_UI04_AFTER_R3.md` §5. Status `BLOCKED` — chờ `hrp-v6-ui-04c1-footer-tweak-r2` `ACCEPTED` trước khi giao Tier 2. Section-render kế thừa R3 (Job Card Minimal SaaS + URGENT live) + 04c1 footer tweak r2 (footer cuối cùng sau tweak) + composition/footer (container 1080px, mobile stack, ReferralStrip invariant). Section-render KHÔNG mở CMS/schema/API/Admin (→ Plan Admin V6 AV6). KHÔNG revert status `ACCEPTED` của composition/footer, R3, Plan B, correction R1, interaction R2.
-> Scope: dựng 4 section mới trên homepage (Section 1 Việc làm mới nhất REAL + Section 2..5 Giới thiệu HRP, Dải đối tác/minh họa, Tin tức & cẩm nang, Banner trải nghiệm trên di động DEMO) — tổng cộng 5 section trong Task D. Mỗi section nhận view-model có kiểu rõ, `source: REAL | DEMO | INTEGRATION_PENDING`, id, enabled/order. Renderer dùng chính sách DEMO/HIDDEN khi CMS chưa có. v1.4: dùng `max-w-[1080px] mx-auto` cho mọi section container. KHÔNG mở Admin/CMS schema/API/persistence (→ Plan Admin V6 AV6). UI-only, STANDARD/FOCUSED lane.
+>
+> v1.7 (11/09/2026 10:35): Tier 0 directive mới — Tier 1 sửa contract theo HEAD thực tế, triển khai trực tiếp trong cùng lượt. Baseline = HEAD `22e310d` (commit Y10.8 stamp refinement đã là visual authority hiện hữu). Container pattern = `max-w-7xl mx-auto px-4 md:px-6` (đồng bộ với Hero/BestJobs/Areas/Recruiting/ReferralStrip). Tier 1 trực tiếp code + commit + push. Audit NONE. KHÔNG revert Y10.4..Y10.12. KHÔNG mở lại Tier 3 hay Owner visual review trước deploy.
+>
+> Lịch sử review: Tier 0 review v1 (`tier0-review-ui04c-contracts-v1.md`) + v2 (`tier0-review-ui04c-contracts-v2.md`): REVISION_REQUIRED v2. Tier 0 review v3 (`tier0-review-ui04c-contracts-v3.md`): SMALL CLOSEOUT. v1.4: Owner visual review ghép VIS-06 → container 1080px. v1.5: BLOCKED chờ 04c1. v1.6: confirm blockers closed (drafted nhưng revert theo directive mới). v1.7: thiết kế lại theo HEAD hiện hữu.
+>
+> **Outcome**: Làm homepage đầy đặn bằng các section có cấu trúc, dùng demo content + ảnh local trước khi AV6 CMS thật triển khai. Renderer nhận view-model typed với `source: REAL | DEMO | INTEGRATION_PENDING` + `enabled` + `order`; thiết kế component để AV6 sau này thay fixture bằng published CMS projection mà không viết lại layout.
 
 ## 0. Control
 
 | Field | Value |
 |---|---|
 | Task slug | `hrp-v6-ui-04d-section-render` |
-| Work type | `CODE` (UI section renderer + demo content + view-model) |
+| Work type | `CODE` (UI section renderer + demo fixture + typed view-model) |
 | Assurance lane | `STANDARD` |
-| Audit mode | `FOCUSED` (UI thuần — section renderer + demo fixture có cấu trúc) |
-| Spec version | `v1.5` |
-| Status | `BLOCKED` (Tier 1 revise dependency v1.5: chờ `hrp-v6-ui-04c1-footer-tweak-r2` `ACCEPTED` trước khi giao Tier 2; composition/footer v1.4 ACCEPTED + R3 v1.3 ACCEPTED đã đóng; 2026-09-10) |
+| Audit mode | `NONE` (UI thuần: renderer + typed fixture + view-model. Directive Tier 0 11/09/2026: bỏ FOCUSED audit, không gọi Tier 3 cho task này) |
+| Spec version | `v1.7` |
+| Status | `READY_FOR_EXECUTION` (Tier 1 triển khai trực tiếp theo Tier 0 directive 11/09/2026) |
 | Planner | `Tier 1` |
-| Baseline | HEAD đầu round — `git rev-parse HEAD` ngay trước STEP-01 → `evidence/exec-head-before.txt` |
-| Source reference | composition/footer task v1.4 `ACCEPTED` (`04b767e`) + R3 v1.3 `ACCEPTED` (`8c6fd03` — Job Card Minimal SaaS + URGENT live + compact ribbon) + Plan B + correction R1 + interaction R2 correction round 1. 04c1 footer tweak r2 `DRAFT (pending Owner delta)` — KHÔNG sử dụng làm predecessor thực sự cho đến khi ACCEPTED. Khi 04c1 ACCEPTED sẽ bổ sung: footer cuối cùng sau tweak |
-| Plan UI predecessor | composition/footer `ACCEPTED` (`hrp-v6-ui-04c-home-composition-footer` v1.4 @ `04b767e`) + R3 `ACCEPTED` (`hrp-v6-ui-04b-urgent-live-ribbon-r3` v1.3 @ `8c6fd03`) + 04c1 footer tweak r2 `DRAFT pending Owner delta` (chưa thực sự chạy; KHÔNG dùng làm predecessor thực tế cho đến khi ACCEPTED) |
-| Plan UI successor | `hrp-v6-ui-04d-detail-ui` (Plan D.A — detail page UI); sau D.A là Plan Admin V6 theo dependency được duyệt (AV1 → AV4 → AV2 → AV6 → AV5; AV3 BACKLOG/DEFER) |
-| In-scope roots | `app/(portal)/page.tsx`, `src/domains/job-board/components/landing/newest-jobs-section.tsx` (NEW), `src/domains/job-board/components/landing/hrp-intro-section.tsx` (NEW), `src/domains/job-board/components/landing/partner-strip-section.tsx` (NEW), `src/domains/job-board/components/landing/news-section.tsx` (NEW), `src/domains/job-board/components/landing/mobile-banner-section.tsx` (NEW), `src/domains/job-board/components/landing/news-preview-modal.tsx` (NEW), `src/domains/job-board/components/landing/article-preview-data.ts` (NEW), `src/domains/job-board/public-types.ts` (NEW types), `src/domains/job-board/fixtures/demo-content.ts` (NEW), `public/images/landing/**` (NEW local assets), `docs/tasks/hrp-v6-ui-04d-section-render/**` |
-| Forbidden paths | `src/domains/job-board/public.service.ts`, `src/domains/job-board/components/landing/best-jobs-section.tsx`, `src/domains/job-board/components/landing/areas-section.tsx`, `src/domains/job-board/components/landing/recruiting-projects-section.tsx`, `src/domains/job-board/components/landing/featured-job-card.tsx`, `src/domains/job-board/components/landing/hero.tsx`, `src/domains/job-board/components/landing/referral-strip.tsx`, `app/components/GlobalFooter.tsx`, `app/components/ContactForm.tsx`, `src/domains/job-board/components/landing/referral-invite-strip.tsx`, `src/domains/job-board/fixtures/best-jobs-urgent-preview.ts`, `app/api/jobs/**`, `app/(jobs)/viec-lam/page.tsx`, `app/admin/**`, `prisma/**`, `src/shared/auth/permission-catalog.ts`, `prisma/seed.mjs`, `app/api/admin/homepage-settings/**`, `app/globals.css` NGOÀI nếu cần thêm token semantic (Tier 1 duyệt); `docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/**`, `docs/tasks/hrp-v6-ui-04a-visual-polish/**`, `docs/tasks/hrp-v6-ui-04b-pagination-admin/**`, `docs/tasks/hrp-v6-ui-04b-vis-correction-r1/**`, `docs/tasks/hrp-v6-ui-04c-home-composition-footer/**` NGOÀI file mới của task này |
-| Required gates | `npm run typecheck` exit 0; `npm run test:unit` cùng expected failure set với baseline + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04d-section-render/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS; Tier 3 FOCUSED audit PASS |
-| Visual gate | Owner live review post-deploy. KHÔNG Edge/CDP/PNG/bbox đã bỏ. KHÔNG Lighthouse/axe-core auto-install |
-| Current execution round | `0` (v1.5 BLOCKED — chờ 04c1 footer tweak r2 ACCEPTED) |
-| Next gate | 04c1 footer tweak r2 `ACCEPTED` → Tier 1 chuyển Status `BLOCKED` → `READY_FOR_EXECUTION` → Tier 2 thi công (STANDARD) → Tier 3 FOCUSED audit → Owner live visual review section-render → ACCEPTED |
+| Implementer | `Tier 1` (Tier 1 owns task contract + implementation + evidence trong cùng round; KHÔNG chờ Tier 2) |
+| Baseline | HEAD `22e310d` (Y10.8 stamp refinement) — `git rev-parse HEAD` ngay trước STEP-01 → `evidence/exec-head-before.txt`. Working tree clean theo TIER0_HANDOVER §4.1. |
+| Source reference | HEAD `22e310d` = baseline visual authority hiện hữu. **Kế thừa nguyên xi** (KHÔNG sửa nếu không bắt buộc): `Hero` (`hero.tsx` gradient peach), `BestJobsSection`, `AreasSection`, `RecruitingProjectsSection`, `RecruitmentHighlight` (carousel 3 ảnh local VN), `ReferralStrip`, `FeaturedJobCard` (Y10.8 stamp nhỏ + opacity 50%, salary chip centered, header h-[4.75rem], strip "Tuyển " prefix, thicker logo border), `GlobalFooter`, `ContactForm`. Visual contract = HEAD đã chốt bởi 04c1 + 04c2 + Y10.4..Y10.12. |
+| Container contract (HEAD) | `max-w-7xl mx-auto px-4 md:px-6` cho mọi inner container section. Section padding `pb-8 pt-4 md:pb-10 md:pt-6` (BestJobs/Recruiting/ReferralStrip) hoặc `pb-4 pt-1 md:pb-5 md:pt-2` (Areas — Y10.11/UI04k r2). Tier 1 KHÔNG hardcode 1080px hay 1200px — theo HEAD đã chốt 1280px. |
+| Plan UI predecessor | composition/footer `ACCEPTED` (`hrp-v6-ui-04c-home-composition-footer` v1.4 @ `04b767e`) + R3 `ACCEPTED` (`hrp-v6-ui-04b-urgent-live-ribbon-r3` v1.3 @ `8c6fd03`) + 04c1 footer tweak r2 `ACCEPTED` (`780bb75`, 10/09/2026 23:21) + 04c2 job-card color refinement v10 `ACCEPTED` (`d7e6899`, 10/09/2026 23:48) + Plan B `ACCEPTED` + correction R1 + interaction R2 + Y10.4..Y10.12 stamp/header/salary/logo fixes. **Full chain closed.** |
+| Plan UI successor | `hrp-v6-ui-04d-detail-ui` (Plan D.A — sau UI04d ACCEPTED) |
+| In-scope roots | `app/(portal)/page.tsx`, `src/domains/job-board/public-types.ts` (NEW types), `src/domains/job-board/fixtures/demo-content.ts` (NEW), `src/domains/job-board/components/landing/newest-jobs-section.tsx` (NEW), `src/domains/job-board/components/landing/hrp-intro-section.tsx` (NEW), `src/domains/job-board/components/landing/partner-strip-section.tsx` (NEW), `src/domains/job-board/components/landing/news-section.tsx` (NEW), `src/domains/job-board/components/landing/news-preview-modal.tsx` (NEW), `src/domains/job-board/components/landing/mobile-banner-section.tsx` (NEW), `src/domains/job-board/components/landing/article-preview-data.ts` (NEW), `src/domains/job-board/components/landing/__tests__/sections-policy.test.tsx` (NEW), `docs/tasks/hrp-v6-ui-04d-section-render/**` |
+| Forbidden paths | `src/domains/job-board/public.service.ts` (KHÔNG đổi DTO công khai), `src/domains/job-board/components/landing/best-jobs-section.tsx`, `src/domains/job-board/components/landing/areas-section.tsx`, `src/domains/job-board/components/landing/recruiting-projects-section.tsx`, `src/domains/job-board/components/landing/featured-job-card.tsx`, `src/domains/job-board/components/landing/hero.tsx`, `src/domains/job-board/components/landing/referral-strip.tsx`, `src/domains/job-board/components/landing/recruitment-highlight.tsx`, `src/domains/job-board/components/landing/area-image-card.tsx`, `src/domains/job-board/components/landing/hr-monogram.tsx`, `src/domains/job-board/components/landing/stamp-defs.ts`, `src/domains/job-board/components/landing/search-section.tsx`, `app/components/GlobalFooter.tsx`, `app/components/ContactForm.tsx`, `src/domains/job-board/components/landing/referral-invite-strip.tsx`, `src/domains/job-board/fixtures/best-jobs-urgent-preview.ts`, `app/api/jobs/**`, `app/(jobs)/viec-lam/page.tsx`, `app/admin/**`, `prisma/**`, `src/shared/auth/permission-catalog.ts`, `prisma/seed.mjs`, `app/api/admin/homepage-settings/**`, `app/globals.css` NGOÀI nếu cần thêm token semantic (Tier 1 duyệt); các docs/tasks khác NGOÀI file mới của task này. |
+| Required gates | `npm run typecheck` exit 0; `npm run test:unit` exit 0 (cùng expected failure set + new failure count = 0); `npm run build` exit 0. KHÔNG `verify-task.ps1` (Tier 1 owns task). KHÔNG `verify-handoff.ps1`. KHÔNG Tier 3. |
+| Visual gate | Owner live review post-deploy (Vercel auto-deploy sau push). Tier 1 KHÔNG dùng Edge/CDP/PNG/bbox. Tier 1 KHÔNG fail vì thiếu screenshot. |
+| Current execution round | `1` (v1.7 READY_FOR_EXECUTION — Tier 1 implement trực tiếp) |
+| Next gate | Tier 1 code → gate local (typecheck/test/build) → commit + push → monitor Vercel → Owner live visual review → ACCEPTED |
 
 ## 1. Outcome
 
-### 1.1 User-visible outcome
-
-**Thứ tự homepage cuối cùng** (composition/footer + Task D này):
+### 1.1 Thứ tự homepage cuối cùng
 
 ```
 Navbar
-→ Hero/Search (A+A16)
-→ BestJobs (A+B)
-→ Areas (A)
-→ RecruitingProjects (A)
-→ Việc làm mới nhất (Task D, REAL)
-→ Giới thiệu HRP (Task D, DEMO)
-→ Dải đối tác/minh họa (Task D, DEMO)
-→ Tin tức & cẩm nang (Task D, DEMO)
-→ Banner trải nghiệm trên di động (Task D, DEMO)
-→ ReferralStrip (composition/footer, nền peach, đứng sau toàn bộ section nội dung)
-→ GlobalFooter (composition/footer, 3 cột, nền peach nhạt hơn)
+→ Hero (gradient peach + RecruitmentHighlight carousel 3 ảnh local VN)
+→ BestJobs (BestJobsSection)
+→ Areas (AreasSection)
+→ RecruitingProjects (RecruitingProjectsSection)
+→ NewestJobs (Section 1 — REAL — Task D) ← NEW
+→ HrpIntro (Section 2 — DEMO — Task D) ← NEW
+→ PartnerStrip (Section 3 — DEMO — Task D) ← NEW
+→ News (Section 4 — DEMO — Task D) ← NEW (modal preview trong page)
+→ MobileBanner (Section 5 — DEMO — Task D) ← NEW
+→ ReferralStrip (gradient peach nhạt)
+→ GlobalFooter (3 cột, peach nhạt hơn)
 ```
 
-**Section 1 — Việc làm mới nhất (REAL)**
+### 1.2 Section contract (mỗi section)
 
-- Nguồn: `overview.newest` (do `bootstrapBestJobs` của composition task cung cấp, không gọi API mới). Slice tối đa 6 tin.
-- Card tái dùng `FeaturedJobCard` đã polish (Plan A). Title wrap tự nhiên, ribbon `Tuyển gấp` nếu `urgency === URGENT`, salary từ `salaryLabel(min, max)`, link tới `/viec-lam/{slug}`.
-- Nếu `overview.newest.length` ít hơn 6: render đúng số tin. Nếu rỗng: KHÔNG hiển thị section (HIDDEN).
-- Props: `NewestJobsContent` từ `field-matrix.md` §13 — `{ jobs[], source: 'REAL' }`.
+| Section | source | Dữ liệu | Đặc điểm |
+|---|---|---|---|
+| **Section 1 — Việc làm mới nhất** | `REAL` | `overview.newest.slice(0, 6)` (đã có sẵn từ `bootstrapBestJobs`) | Tái dùng `FeaturedJobCard`. Title wrap tự nhiên. Stamp `tuyen-gap` nếu URGENT. Salary từ `salaryLabel(min, max)`. Link tới `/viec-lam/{slug}`. HIDDEN nếu rỗng. |
+| **Section 2 — Giới thiệu HRP** | `DEMO` | view-model từ fixture local | Split image/text 2 cột desktop, stack mobile. 4 ô giá trị lấy từ 5 dịch vụ HRP (carousel hero — cung ứng LĐ thời vụ, gia công linh kiện, giới thiệu LĐ, bốc xếp, đóng gói — chọn 4/5). paragraphs: string[] render trực tiếp bằng map. KHÔNG chữ "demo" / "CMS pending". |
+| **Section 3 — Đối tác/minh họa** | `DEMO` | view-model từ fixture local | Strip/strip monogram HRP + 4 monogram project (dùng chính deriveMonogram từ các project name đang tuyển, hoặc HRP monogram lặp). Container `max-w-7xl`, scroll-snap mobile. |
+| **Section 4 — Tin tức & cẩm nang** | `DEMO` | view-model từ fixture local | 1 bài lớn + 2 bài nhỏ (article-preview-data.ts). Click mở `NewsPreviewModal` (client component). body: `Array<{ type: 'paragraph' | 'heading' | 'list'; content: string | string[] }>` render trực tiếp bằng React elements. KHÔNG HTML string, KHÔNG dangerouslySetInnerHTML, KHÔNG SafeHtml. |
+| **Section 5 — Banner trải nghiệm trên di động** | `DEMO` | view-model từ fixture local | Image left + copy right desktop, stack mobile. CTA `href='/viec-lam'` (route thật). KHÔNG App Store/Google Play URL giả. KHÔNG storeLinks. |
 
-**Section 2 — Giới thiệu HRP (DEMO)**
+### 1.3 Renderer chính sách
 
-- View-model `HrpIntroContent` từ `field-matrix.md` §13: `{ title, imageUrl, imageAlt, paragraphs: string[], values: HrpValueItem[] }`.
-- Layout: split image/text 2 cột desktop, stack mobile. Image local `public/images/landing/hrp-intro.webp` (placeholder Owner-cung-cấp hoặc tạo ảnh trung tính).
-- 4 ô giá trị KHÔNG chép "400.000+ / 50.000+" thành thành tích HRP. Dùng 4 lợi ích lấy từ mô tả dịch vụ Owner cung cấp ở `app/components/GlobalFooter.tsx` (cung ứng lao động, gia công linh kiện, giới thiệu LĐ, bốc xếp/đóng gói).
-- Badge `Minh họa` ở góc heading.
-- Content dạng `paragraphs: string[]` — render trực tiếp bằng React elements hoặc `map`. KHÔNG HTML string.
+Mỗi section component nhận view-model có:
+- `id: string`
+- `enabled: boolean`
+- `order: number`
+- `source: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING'`
 
-**Section 3 — Dải đối tác/minh họa (DEMO)**
+Policy:
+- Nếu `enabled === false` → return null (KHÔNG render)
+- Nếu `source === 'REAL'` và data rỗng → return null (HIDDEN, không fallback giả)
+- Nếu `source === 'DEMO'` → render section + nội dung fixture (KHÔNG hiển thị badge "demo"/"CMS pending" theo directive)
+- Nếu `source === 'INTEGRATION_PENDING'` và data rỗng → HIDDEN (không fallback im lặng sang nội dung giả)
 
-- View-model `PartnerStripContent`: `{ title, partners: PartnerStripItem[] }`.
-- 5 logo strip. Tất cả dùng monogram HRP local lặp (ghi rõ minh họa). KHÔNG lấy logo doanh nghiệp khác, KHÔNG tự phát minh tên đối tác.
-- Badge `Minh họa` ở góc heading.
-- Container `max-w-[1200px]` desktop, scroll-snap ngang trên mobile.
+### 1.4 Non-goals (Tier 0 directive §5 — KHÔNG làm trong task này)
 
-**Section 4 — Tin tức & cẩm nang (DEMO)**
+- KHÔNG schema CMS / migration / Admin editor / write API / upload / media library / permission CMS / cache invalidation
+- KHÔNG JobPosting editor (→ AV2)
+- KHÔNG Job Detail UI (→ D.A, sau UI04d)
+- KHÔNG AFF
+- KHÔNG tự viết HTML sanitizer; rich text dùng structured paragraphs/bullets/typed fields
 
-- View-model `NewsSectionContent`: `{ title, featured: ArticleCardExtended, others: ArticleCardExtended[] }` (1 bài lớn + 2 bài nhỏ).
-- Badge `Nội dung mẫu` ở góc heading.
-- Click bài lớn mở `NewsPreviewModal` (client component, modal trong page). KHÔNG anchor chết. Click bài nhỏ cũng mở modal tương ứng.
-- Ảnh local: 3 placeholder `public/images/landing/news-1.webp`, `news-2.webp`, `news-3.webp`. Title/excerpt/category dạng cẩm nang mẫu (chung chung, không claim cụ thể).
-- Modal: title + excerpt + body dạng structured content `Array<{ type: 'paragraph' | 'heading' | 'list'; content: string | string[] }>` — render trực tiếp bằng React elements. KHÔNG HTML string, KHÔNG SafeHtml.
-- Tier 2 tạo `article-preview-data.ts` chứa 3 fixture article (id, title, excerpt, body: structured content array, category, publishedAt, imageUrl). Modal đọc từ đây.
-
-**Section 5 — Banner trải nghiệm HRP trên di động (DEMO)**
-
-- View-model `MobileBannerContentExtended`: `{ title, body, imageUrl, imageAlt, ctaText, ctaHref, storeLinks? }`.
-- CTA `ctaHref` dùng route thật (e.g. `/viec-lam` hoặc `/ctv-portal`); KHÔNG App Store/Google Play URL giả.
-- `storeLinks` KHÔNG render nút download (chỉ render khi AV6 bật).
-- Badge `Minh họa` ở góc.
-- Layout: image bên trái, copy bên phải desktop; stack mobile.
-
-**Renderer chính sách**
-
-- Mỗi section component nhận view-model có `source: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING'`.
-- Nếu `enabled === false` (real only, AV6 bật): KHÔNG render.
-- Nếu `source === 'DEMO'`: render section + badge minh họa.
-- Nếu `source === 'INTEGRATION_PENDING'` và data rỗng: KHÔNG render (HIDDEN), KHÔNG fallback im lặng sang nội dung giả.
-- Nếu `source === 'REAL'` và data rỗng: HIDDEN.
-
-### 1.2 Non-goals
-
-- KHÔNG mở Admin CMS schema/API/persistence → Plan Admin V6 AV6 (work item chốt theo Tier 0 review v2).
-- KHÔNG mở contact endpoint, Plan A/B/R1/composition-footer files, Plan D.A/B (detail page).
-- KHÔNG sửa BestJobs/Areas/Recruiting card nội bộ — Plan A/B đã chốt.
-- KHÔNG dùng Google Image Search URL, hotlink, hay logo doanh nghiệp khác.
-- KHÔNG chèn section nội dung xuống dưới ReferralStrip — invariant từ UI04C §3.
-- KHÔNG fallback im lặng từ lỗi API sang nội dung giả.
-- KHÔNG cài tool đo (axe-core, Lighthouse, CDP, pa11y).
-- KHÔNG phục hồi bộ gate CDP/20 PNG/overlay/bbox đã bỏ.
-
-### 1.3 Plan UI split reminder
+### 1.5 Plan split reminder
 
 | Công việc | Thuộc plan | Trạng thái |
 |---|---|---|
-| Sections 5 mới (Task D này) | Plan UI Task D section-render | BLOCKED v1.5 (chờ 04c1 footer tweak r2 ACCEPTED) |
-| Composition/footer (UI04 footer + UI04C §2.2) | Plan UI composition/footer | ACCEPTED v1.4 (`04b767e`) |
-| R3 URGENT live + ribbon compact + Job Card Minimal SaaS | Plan UI R3 | ACCEPTED v1.3 (`8c6fd03`) |
-| Footer tweak r2 | Plan UI 04c1 | DRAFT v0.1 (chờ Owner delta) |
-| BestJobs tab + pagination + URGENT fixture | Plan B | ACCEPTED (18919da) |
-| VIS-01..03 style/layout correction | Correction R1 | ACCEPTED (284e46c) |
-| Backend (HomepageSettings, permission, write API, Admin page) | Plan Admin V6 AV1 | DRAFT |
+| 5 section renderer + fixture (Task D này) | Plan UI Task D section-render | READY_FOR_EXECUTION v1.7 (Tier 1 triển khai) |
+| Composition/footer | Plan UI composition/footer | ACCEPTED v1.4 (`04b767e`) |
+| R3 URGENT live + Job Card Minimal SaaS | Plan UI R3 | ACCEPTED v1.3 (`8c6fd03`) |
+| 04c1 footer tweak r2 | Plan UI 04c1 | ACCEPTED v1.0 (`780bb75`) |
+| 04c2 job-card color refinement v10 | Plan UI 04c2 | ACCEPTED v1.0 (`d7e6899`) |
+| Y10.4..Y10.12 stamp/header/salary/logo fixes | Owner visual review rounds | HEAD `22e310d` (visual authority) |
+| Backend (HomepageSettings, write API, Admin) | Plan Admin V6 AV1 | DRAFT |
 | JobPosting editor | Plan Admin V6 AV2 | DRAFT |
 | CMS homepage content | Plan Admin V6 AV6 | DRAFT |
-| Detail page UI | Plan D.A | DRAFT |
-| Detail page editor | Plan D.B | DRAFT |
+| Detail page UI | Plan D.A | DRAFT — sau UI04d ACCEPTED |
+| Detail page editor | Plan D.B | DRAFT — sau D.A |
+| AFF | aff_plan | BLOCKED (17/17 §20 chưa tick) |
 
-## 2. Evidence
+## 2. Visual baseline (Tier 0 directive §6)
 
-| ID | Evidence | Why it matters |
-|---|---|---|
-| `EV-01` | `app/(portal)/page.tsx:412-493` | Composition hiện tại: BestJobs → Areas → RecruitingProjects → ReferralStrip → inline list. Sau composition/footer task: BestJobs → Areas → RecruitingProjects → ReferralStrip → Footer. Task D chèn 5 section (Section 1 REAL + Section 2..5 DEMO) giữa RecruitingProjects và ReferralStrip |
-| `EV-02` | `src/domains/job-board/public-types.ts` (chưa có — Tier 2 tạo từ field-matrix.md §13) | Canonical types: NewestJobsContent, HrpIntroContent, PartnerStripContent, NewsSectionContent, ArticleCardExtended, MobileBannerContentExtended, HrpValueItem, PartnerStripItem |
-| `EV-03` | `src/domains/job-board/components/landing/featured-job-card.tsx` | Card tái dùng cho Section 1. Đã polish từ Plan A. Tier 2 KHÔNG sửa |
-| `EV-04` | `src/domains/job-board/components/landing/referral-strip.tsx` | Sau composition/footer task, ReferralStrip đứng giữa section nội dung và Footer. Task D KHÔNG sửa ReferralStrip |
-| `EV-05` | `public/images/landing/` (NEW — Tier 2 sao chép ảnh local phân biệt hiện có) | Asset allowlist: hrp-intro.webp (copy từ `referral-team.webp`), news-1.webp (copy từ `industrial-location-01.webp`), news-2.webp (copy từ `industrial-location-02.webp`), news-3.webp (copy từ `industrial-location-03.webp`), mobile-banner.webp (copy từ `industrial-location-04.webp`), hrp-monogram-1.svg..5.svg (5 monogram HRP giống nhau cho partner strip minh họa) |
-| `EV-06` | `docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/field-matrix.md` §13 | Plan C view-models đã định nghĩa. Tier 2 dùng đúng types |
-| `EV-07` | `docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/field-matrix.md` §13 | Plan C view-models định nghĩa structured content types. Tier 2 dùng đúng types |
-| `EV-08` | `app/(jobs)/viec-lam/[slug]/page.tsx` | Tin tức preview modal có thể tái dùng route detail với slug fake (e.g. `/tin-tuc/cam-nang-phong-van`). Tier 2 chọn modal trong page (đơn giản hơn) — ghi rõ trong HANDOFF |
-| `EV-09` | `docs/prompts/TIER1_UI04C_HOME_SECTIONS_FOOTER_AND_ADMIN_CMS.md` §3 + §5 | UI04C mandate chốt: 5 section trong Task D (Section 1 REAL + Section 2..5 DEMO), view-model contract, REAL/DEMO/INTEGRATION_PENDING, ReferralStrip invariant |
-| `EV-10` | `src/domains/job-board/public.service.ts` (Tier 2 KHÔNG sửa) | `PublicJobOverview.newest` đã có sẵn — Tier 2 chỉ đọc |
+Tier 1 dùng visual source HEAD làm chuẩn — KHÔNG sửa các component đã hoàn thành:
+- container `max-w-7xl mx-auto px-4 md:px-6`
+- padding ngang và khoảng cách section nhất quán với Hero, BestJobs, Areas, RecruitingProjects, ReferralStrip
+- tone trắng/cam/peach nhẹ
+- card bo góc `rounded-xl` / `rounded-2xl`, shadow `shadow-sm` / `shadow-card`
+- typography: `font-head`, `font-body`, `font-label` (semantic tokens hiện hữu)
+- ảnh local `/images/homepage-huongb/industrial-location-01..04.webp` (4 ảnh phân biệt), `/images/homepage-huongb/referral-team.webp`, `/images/hero/cong-nhan-may-moc.jpg|may-sai-gon.jpg|dong-goi-ha-noi.jpg`
+- responsive mobile/tablet/desktop
+- KHÔNG tạo section nền tách rời thô cứng; section mới hòa vào flow với các section đã có
+- KHÔNG sửa Hero, BestJobsSection, FeaturedJobCard, AreasSection, RecruitingProjectsSection, RecruitmentHighlight, ReferralStrip, GlobalFooter — trừ khi integration thực sự bắt buộc (và khi đó diff tối thiểu + ghi rõ trong HANDOFF)
 
-## 3. Decisions
+## 3. Required Files (Tier 1 tạo mới)
 
-| ID | Decision | Status |
-|---|---|---|
-| `DEC-01` | Section 1 dùng `overview.newest.slice(0, 6)` — KHÔNG mở API mới. Card tái dùng `FeaturedJobCard` đã polish | `CHOSEN` |
-| `DEC-02` | Section 2 (Giới thiệu HRP) 4 ô giá trị lấy từ 5 dịch vụ ở Footer (cung ứng lao động, gia công linh kiện, giới thiệu LĐ, bốc xếp/đóng gói) — chọn 4/5 (chừa 1 cho banner mobile). KHÔNG chép "400.000+ / 50.000+" | `CHOSEN` |
-| `DEC-03` | Section 3 (Dải đối tác) 5 logo strip đều monogram HRP — KHÔNG lấy logo doanh nghiệp khác | `CHOSEN` |
-| `DEC-04` | Section 4 (Tin tức) 3 fixture (1 featured + 2 others) — title/excerpt/body dạng cẩm nang mẫu chung chung. Click mở modal trong page (KHÔNG route) | `CHOSEN` |
-| `DEC-05` | Section 5 (Banner mobile) CTA `ctaHref = '/viec-lam'` (route thật). `storeLinks` KHÔNG render khi undefined | `CHOSEN` |
-| `DEC-06` | Mỗi section component nhận view-model có `source: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING'` và `enabled` flag. Renderer chính sách HIDDEN nếu `enabled === false` hoặc data rỗng | `CHOSEN` |
-| `DEC-07` | **BỎ SafeHtml tự viết.** Dùng typed structured content: `paragraphs: string[]` cho Section 2 Giới thiệu HRP, `body: Array<{ type: 'paragraph' | 'heading' | 'list'; content: string | string[] }>` cho Section 4 Tin tức. AV6 (Homepage CMS) sau này chịu trách nhiệm quyết định rich-text storage và sanitization ở boundary thật. KHÔNG tạo file `safe-html.tsx` | `CHOSEN` |
-| `DEC-08` | Asset local tại `public/images/landing/` — Tier 2 dùng ảnh phân biệt hiện có: `hrp-intro.webp` (copy từ `referral-team.webp`), news cards dùng `industrial-location-01.webp`, `industrial-location-02.webp`, `industrial-location-03.webp`, mobile banner dùng `industrial-location-04.webp`. Partner strip minh họa dùng HRP monogram lặp (ghi rõ minh họa). KHÔNG download ảnh từ internet | `CHOSEN` |
-| `DEC-09` | Tier 1 owns TASK.md; Tier 2 owns HANDOFF + evidence + source/test allowlist. Tier 2 KHÔNG sửa TASK.md, KHÔNG sửa plan cha | `CHOSEN` |
-| `DEC-10` | Baseline = HEAD đầu round (Tier 2 đo `git rev-parse HEAD` ngay trước STEP-01 → `evidence/exec-head-before.txt`). Expected unit failure set capture tại exec-head-before | `CHOSEN` |
-| `DEC-11` | Visual parity = Owner live review post-deploy. KHÔNG Edge/CDP/PNG/bbox. KHÔNG fail vì thiếu screenshot | `CHOSEN` |
-| `DEC-12` | Tier 3 FOCUSED audit sau khi Tier 2 xong. Audit focus: view-model contract, source label rendering, asset local phân biệt, modal route fallback, enabled/source policy | `CHOSEN` |
-| `DEC-13` | OBR-01 allow tạo HANDOFF + `evidence/**` + section component files + fixture + image assets + structured content types. KHÔNG cấm mọi file mới | `CHOSEN` |
-| `DEC-14` | Order section trong `app/(portal)/page.tsx` theo UI04C §3 chuẩn — KHÔNG chèn dưới ReferralStrip | `CHOSEN` |
-| `DEC-15` | Section 1 (Việc làm mới nhất) KHÔNG có badge DEMO — là REAL. Section 2..5 có badge minh họa | `CHOSEN` |
-
-## 4. Contract
-
-### 4.1 Requirements
-
-| ID | Requirement |
+| File | Mục đích |
 |---|---|
-| `RQ-01` | Thứ tự homepage cuối cùng theo UI04C §3: Navbar → Hero/Search → BestJobs → Areas → RecruitingProjects → Việc làm mới nhất → Giới thiệu HRP → Dải đối tác/minh họa → Tin tức & cẩm nang → Banner trải nghiệm trên di động → ReferralStrip → Footer. ReferralStrip invariant: LUÔN đứng sau toàn bộ section nội dung và ngay trước Footer |
-| `RQ-02` | Section 1 (Việc làm mới nhất) — REAL data từ `overview.newest.slice(0, 6)`. Tái dùng `FeaturedJobCard`. Hidden nếu rỗng. KHÔNG badge demo |
-| `RQ-03` | Section 2 (Giới thiệu HRP) — DEMO. View-model `HrpIntroContent` từ field-matrix §13. Layout split image/text desktop, stack mobile. 4 ô giá trị lấy từ 5 dịch vụ Footer (chọn 4/5). KHÔNG chép "400.000+ / 50.000+". Badge `Minh họa` |
-| `RQ-04` | Section 3 (Dải đối tác/minh họa) — DEMO. 5 logo strip, tất cả monogram HRP local. Badge `Minh họa`. Mobile scroll-snap ngang |
-| `RQ-05` | Section 4 (Tin tức & cẩm nang) — DEMO. 1 bài lớn + 2 bài nhỏ. Click mở modal trong page (KHÔNG anchor chết, KHÔNG route). Modal render `title + excerpt + body` qua structured content array (React elements). Badge `Nội dung mẫu` |
-| `RQ-06` | Section 5 (Banner trải nghiệm trên di động) — DEMO. CTA `ctaHref = '/viec-lam'` (route thật). KHÔNG App Store/Google Play URL giả. `storeLinks` chỉ render khi defined. Badge `Minh họa` |
-| `RQ-07` | Mỗi section component nhận view-model có `source: REAL | DEMO | INTEGRATION_PENDING` và `enabled`. Renderer chính sách HIDDEN nếu `enabled === false` hoặc data rỗng. KHÔNG fallback im lặng từ lỗi API sang nội dung giả |
-| `RQ-08` | Dùng typed structured content thay vì HTML string. Section 2 Giới thiệu HRP: `paragraphs: string[]`. Section 4 Tin tức: `body: Array<{ type: 'paragraph' | 'heading' | 'list'; content: string | string[] }>`. Render trực tiếp bằng React elements. AV6 sau này quyết định rich-text storage và sanitization ở boundary thật |
-| `RQ-09` | Asset local tại `public/images/landing/` — Tier 2 tạo ảnh placeholder (copy từ `/images/homepage-huongb/` hoặc SVG inline đơn giản). KHÔNG download ảnh từ internet, KHÔNG Google Image Search, KHÔNG hotlink |
-| `RQ-10` | Regression: KHÔNG đổi BestJobs, Areas, Recruiting card, Hero, search card, ReferralStrip, Footer. KHÔNG mở API, service, schema, permission, Admin page, AV1, AV6, AV2, Plan D.A/B, contact endpoint |
-| `RQ-11` | Visual: 1080px container cho mỗi section (v1.4 inherit từ composition/footer v1.4 — VIS-06; KHÔNG dùng 1200px); desktop layout theo từng section; mobile stack (gutter `px-4 md:px-6`); nền peach semantic token kết hợp với ReferralStrip/Footer từ composition/footer task. Section mới dùng `max-w-[1080px] mx-auto` ngay từ đầu |
+| `src/domains/job-board/public-types.ts` | Typed view-models: `NewestJobsContent`, `HrpIntroContent`, `HrpValueItem`, `PartnerStripContent`, `PartnerStripItem`, `NewsSectionContent`, `ArticleCardExtended`, `MobileBannerContentExtended`. Source enum: `'REAL' | 'DEMO' | 'INTEGRATION_PENDING'`. Mỗi view-model có `id`, `enabled`, `order`, `source`. |
+| `src/domains/job-board/fixtures/demo-content.ts` | 4 view-model DEMO: `hrpIntro`, `partnerStrip`, `newsSection`, `mobileBanner`. Article body dạng structured content array. KHÔNG HTML string. |
+| `src/domains/job-board/components/landing/article-preview-data.ts` | 3 fixture article (id, title, excerpt, body structured content, category, publishedAt, imageUrl). |
+| `src/domains/job-board/components/landing/newest-jobs-section.tsx` | Section 1: 6 jobs từ `overview.newest.slice(0, 6)`. Grid 3 cột desktop. Tái dùng `FeaturedJobCard`. HIDDEN nếu `jobs.length === 0`. |
+| `src/domains/job-board/components/landing/hrp-intro-section.tsx` | Section 2: title + image left + text right + 4 value items. paragraphs string[] map render. |
+| `src/domains/job-board/components/landing/partner-strip-section.tsx` | Section 3: 5 logo monogram (1 HRP + 4 project abbreviations). Scroll-snap mobile. |
+| `src/domains/job-board/components/landing/news-section.tsx` | Section 4: title + 1 featured + 2 others. Click mở NewsPreviewModal. |
+| `src/domains/job-board/components/landing/news-preview-modal.tsx` | Modal client component: render `title + excerpt + body` từ structured content array (paragraph/heading/list → React elements). |
+| `src/domains/job-board/components/landing/mobile-banner-section.tsx` | Section 5: image + copy + CTA `href='/viec-lam'`. |
+| `src/domains/job-board/components/landing/__tests__/sections-policy.test.tsx` | Unit test cho enabled=false, ordering/view-model mapping, REAL/DEMO source policy, structured fixture validity. |
 
-### 4.2 Scope boundaries
+## 4. Required Updates
 
-- **Container-only edits**: KHÔNG đổi padding ở BestJobs/Areas/Recruiting/Hero/Footer (Plan A/B/composition-footer đã chốt)
-- **Data/state**: Section 1 dùng `overview.newest` (do `bootstrapBestJobs` của composition task cung cấp). Sections 2..5 dùng view-model DEMO từ fixture local — KHÔNG gọi API
-- **Permission/security**: N/A
-- **Interface/API**: KHÔNG tạo API mới. KHÔNG SafeHtml — dùng typed structured content
-- **Migration/rollback**: N/A
-- **Cache**: N/A
+| File | Thay đổi |
+|---|---|
+| `app/(portal)/page.tsx` | Import 5 section component + fixture. Chèn theo thứ tự UI04C §3: RecruitingProjects → NewestJobs → HrpIntro → PartnerStrip → News → MobileBanner → ReferralStrip. Section 1 lấy `overview.newest.slice(0, 6)` rồi `map(enrichJob)` thành `EnrichedJob[]` để pass cho `FeaturedJobCard`. |
 
-### 4.3 Scope
+## 5. Verification
 
-- In: §0 In-scope roots
-- Out: §0 Forbidden + §1.2
-- Tier 2 tạo HANDOFF + `evidence/**` tại `docs/tasks/hrp-v6-ui-04d-section-render/`. Tier 2 KHÔNG ghi TASK.md, KHÔNG ghi plan cha
+Chạy local:
+- `npm run typecheck` → exit 0
+- `npm run test:unit` → exit 0 (cùng expected failure set + new failure count = 0)
+- `npm run build` → exit 0
 
-## 5. Execution Plan
+Test trọng yếu (theo Tier 0 §8):
+- `enabled === false` → component return null
+- ordering/view-model mapping (component nhận props đúng typed view-model)
+- `source === 'REAL'` + data rỗng → return null (KHÔNG fallback)
+- `source === 'DEMO'` → render với content
+- structured fixture hợp lệ (article body parse được paragraph/heading/list)
+- NewsPreviewModal mở từ click + render structured body
 
-| Step | Target | Intent | Verify | Stop condition |
-|---|---|---|---|---|
-| `STEP-01` | OBR-01 baseline + execution HEAD | Record: (a) `git rev-parse HEAD` → `evidence/exec-head-before.txt`. (b) `git status --porcelain` → `evidence/working-tree-before.txt`. (c) Capture unit failure set hiện tại → `evidence/expected-failure-set-before.txt` | `git status --porcelain` không có path ngoài §1.3 dirty set; expected-failure-set-before.txt có hash + failing test files | Nếu expected failure set > 1 (baseline pre-existing) → verify đo đúng lúc exec-head-before; nếu > 1 → báo Planner |
-| `STEP-02` | `src/domains/job-board/public-types.ts` (NEW) | Thêm types Plan C: NewestJobsContent, HrpIntroContent, HrpValueItem, PartnerStripContent, PartnerStripItem, NewsSectionContent, ArticleCardExtended, MobileBannerContentExtended. Theo field-matrix.md §13 | Source review: types khớp với §13 (shape, label, source enum). Tier 2 verify với `npm run typecheck` | Nếu types không khớp field-matrix §13 → halt, sửa |
-| `STEP-03` | `src/domains/job-board/fixtures/demo-content.ts` (NEW) | Thêm 5 view-model DEMO: hrpIntro (title + image path + paragraphs string[] + 4 value items), partnerStrip (title + 5 monogram), newsSection (title + 1 featured + 2 others với body structured content array: Array<{ type: 'paragraph' | 'heading' | 'list'; content: string | string[] }>), mobileBanner (title + body paragraphs + cta). Mỗi view-model có `source: 'DEMO'`. Article body dạng structured content — render trực tiếp bằng React elements. KHÔNG HTML string | Source review: đủ 5 view-model, source đúng 'DEMO', paragraphs/bullets structured. Lưu `evidence/ac03-demo-content.txt` | Nếu view-model thiếu field hoặc source sai → halt |
-| `STEP-04` | `src/domains/job-board/components/landing/newest-jobs-section.tsx` (NEW) | Section 1: title + grid 3 cột desktop (tái dùng `FeaturedJobCard`). Hidden nếu `jobs.length === 0`. KHÔNG badge | Source review: `enabled` flag check, data rỗng → return null, `FeaturedJobCard` props đúng. Lưu `evidence/ac04-newest-jobs.txt` | Nếu không hidden khi rỗng → halt |
-| `STEP-05` | `src/domains/job-board/components/landing/hrp-intro-section.tsx` (NEW) | Section 2: title + badge `Minh họa` + image left + text right + 4 value items (icon + title + body). paragraphs string[] render trực tiếp bằng map | Source review: layout split, badge visible, 4 value items render, paragraphs map render. Lưu `evidence/ac05-hrp-intro.txt` | Nếu badge missing hoặc 4 items ít hơn 4 → halt |
-| `STEP-06` | `src/domains/job-board/components/landing/partner-strip-section.tsx` (NEW) | Section 3: title + badge `Minh họa` + 5 logo monogram. Mobile scroll-snap | Source review: 5 logos render, badge visible. Lưu `evidence/ac06-partner-strip.txt` | Nếu ít hơn 5 logos hoặc badge missing → halt |
-| `STEP-07` | `src/domains/job-board/components/landing/news-section.tsx` (NEW) + `news-preview-modal.tsx` (NEW) | Section 4: title + badge `Nội dung mẫu` + 1 featured (large card) + 2 others (small cards). Click mở `NewsPreviewModal` với title + excerpt + body (structured content array render trực tiếp bằng React elements). KHÔNG HTML string, KHÔNG SafeHtml | Source review: 1+2 layout, badge visible, modal mở từ click, body render từ structured content array. Lưu `evidence/ac07-news-section.txt` | Nếu modal không mở hoặc raw HTML → halt |
-| `STEP-08` | `src/domains/job-board/components/landing/mobile-banner-section.tsx` (NEW) | Section 5: title + badge `Minh họa` + image + copy + CTA `ctaHref='/viec-lam'`. KHÔNG storeLinks | Source review: CTA route thật, badge visible, KHÔNG App Store/Google Play URL. Lưu `evidence/ac08-mobile-banner.txt` | Nếu CTA href sai hoặc có link giả → halt |
-| `STEP-09` | `public/images/landing/` (NEW dir + assets) | Sao chép ảnh local phân biệt hiện có: `hrp-intro.webp` (copy từ `/images/homepage-huongb/referral-team.webp`), `news-1.webp` (copy từ `industrial-location-01.webp` tại `/images/landing-card/` hoặc thư mục asset hiện có), `news-2.webp` (copy từ `industrial-location-02.webp`), `news-3.webp` (copy từ `industrial-location-03.webp`), `mobile-banner.webp` (copy từ `industrial-location-04.webp`). Partner strip dùng `hrp-monogram-1.svg..5.svg` (5 SVG giống nhau inline SVG, ghi rõ minh họa). Tier 2 KHÔNG download ảnh từ internet, KHÔNG copy lặp 1 ảnh cho mọi card | Source review: file tồn tại, mỗi card ảnh phân biệt, SVG inline đơn giản. Lưu `evidence/ac09-assets.txt` | Nếu ảnh rỗng hoặc asset lặp → halt |
-| `STEP-10` | `app/(portal)/page.tsx` | Thêm 5 section component theo thứ tự UI04C §3: chèn sau `RecruitingProjects`, trước `ReferralStrip`. Section 1 lấy từ `overview.newest` (do `bootstrapBestJobs` của composition task cung cấp); Section 2..5 lấy từ `fixtures/demo-content.ts`. KHÔNG đổi BestJobs/Areas/Recruiting/ReferralStrip | Source review: 5 section render theo thứ tự, props đúng. Lưu `evidence/ac10-composition.txt` | Nếu thứ tự sai hoặc props sai → halt |
-| `STEP-11` | Truth fence — không có nội dung độc hại | PowerShell grep các pattern cấm: "Top công ty", "Đối tác chính thức", "17.800", "13.000.000", "+10.000.000", "+50.000.000", "400.000+", "50.000+", "App Store", "Google Play", "QR tải app", `play.google.com`, `apps.apple.com`. Source: 5 component mới + fixture + page.tsx | PowerShell `Select-String` expect 0 match. Lưu `evidence/ac11-truth-fence.txt` | Nếu có pattern cấm → halt, loại bỏ |
-| `STEP-12` | Regression check shell + mandatory gates (DEC-11) | Source review: KHÔNG có diff ngoài §0 In-scope roots. `git diff --name-only exec-head-before..HEAD` so với allowlist. `npm run typecheck` exit 0; `npm run test:unit` cùng expected failure set + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04d-section-render/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS | `evidence/ac12-gates.txt` | Nếu gate fail → halt, sửa, KHÔNG ghi READY_FOR_REVIEW |
+KHÔNG viết test:
+- đếm class CSS
+- đếm số dòng
+- comment anchor count
 
-## 6. Acceptance
+KHÔNG trộn:
+- lint scope archive
+- Integration `DATABASE_URL_TEST`
+- CI workflow fix
 
-### 6.1 Acceptance criteria
+(Khi local gates pass, Tier 1 commit + push; CI infra còn 2 issue tách biệt — không thuộc UI04d.)
 
-| AC | Pass condition | Verification method (command/source review/evidence file) |
-|---|---|---|
-| `AC-01` | Thứ tự homepage đúng theo UI04C §3 — 5 section mới chèn giữa RecruitingProjects và ReferralStrip | Command: Select-String path `app/(portal)/page.tsx` regex `NewestJobsSection\|HrpIntroSection\|PartnerStripSection\|NewsSection\|MobileBannerSection` expect ít nhất 5 match theo thứ tự. Source review. Lưu `evidence/ac01-order.txt` |
-| `AC-02` | Section 1 Việc làm mới nhất — REAL, dùng `overview.newest.slice(0, 6)`, hidden khi rỗng | Command: `Select-String -Path src/domains/job-board/components/landing/newest-jobs-section.tsx -Pattern "overview\.newest\.slice\|newestJobs\.length === 0\|return null"` expect ≥1 match. Source review. Lưu `evidence/ac02-newest-real.txt` |
-| `AC-03` | Section 2..5 có badge minh họa (Giới thiệu HRP + Đối tác + Tin tức + Banner mobile) | Command: `Select-String -Path src/domains/job-board/components/landing/hrp-intro-section.tsx,src/domains/job-board/components/landing/partner-strip-section.tsx,src/domains/job-board/components/landing/news-section.tsx,src/domains/job-board/components/landing/mobile-banner-section.tsx -Pattern "Minh họa\|Nội dung mẫu"` expect ≥4 match. Source review. Lưu `evidence/ac03-demo-badge.txt` |
-| `AC-04` | Structured content rendering — Section 2 Giới thiệu HRP dùng paragraphs string[] map, Section 4 Tin tức dùng body structured content array render. KHÔNG HTML string, KHÔNG SafeHtml, KHÔNG dangerouslySetInnerHTML | Command: `Select-String -Path src/domains/job-board/components/landing/hrp-intro-section.tsx -Pattern "paragraphs\.(map|forEach)"` expect ≥1 match. `Select-String -Path src/domains/job-board/components/landing/news-preview-modal.tsx -Pattern "body\.(map|forEach)\|type === 'paragraph'\|type === 'heading'\|type === 'list'"` expect ≥1 match. `Select-String -Path src/domains/job-board/components/landing/news-preview-modal.tsx,src/domains/job-board/components/landing/hrp-intro-section.tsx -Pattern "SafeHtml\|dangerouslySetInnerHTML"` expect 0 match. Lưu `evidence/ac04-structured-content.txt` |
-| `AC-05` | Section 3 (Dải đối tác) 5 logos monogram HRP local — không có URL ngoài | Command: `Select-String -Path src/domains/job-board/components/landing/partner-strip-section.tsx,src/domains/job-board/fixtures/demo-content.ts -Pattern "partners\.length === 5\|partners\.length >= 5\|partners\.length === 5"` expect ≥1 match. `Select-String -Path src/domains/job-board/fixtures/demo-content.ts -Pattern "https?://"` expect 0 match (ngoại trừ monogram local). Lưu `evidence/ac05-partner-strip.txt` |
-| `AC-06` | Section 4 (Tin tức) — modal mở từ click, body render từ structured content array | Command: `Select-String -Path src/domains/job-board/components/landing/news-section.tsx -Pattern "onClick.*setSelectedArticle\|setSelectedArticle"` expect ≥1 match. `Select-String -Path src/domains/job-board/components/landing/news-preview-modal.tsx -Pattern "body\.(map|forEach)"` expect ≥1 match. Lưu `evidence/ac06-news-modal.txt` |
-| `AC-07` | Section 5 (Banner mobile) CTA `href='/viec-lam'` — không có App Store/Google Play URL giả | Command: `Select-String -Path src/domains/job-board/components/landing/mobile-banner-section.tsx -Pattern "ctaHref.*viec-lam\|ctaHref === '/viec-lam'"` expect ≥1 match. `Select-String -Path src/domains/job-board/components/landing/mobile-banner-section.tsx,src/domains/job-board/fixtures/demo-content.ts -Pattern "apps\.apple\.com\|play\.google\.com\|App Store\|Google Play"` expect 0 match. Lưu `evidence/ac07-mobile-banner-cta.txt` |
-| `AC-08` | Asset local tại `public/images/landing/` — mỗi card dùng ảnh phân biệt, không có URL ngoài | Command: `Test-Path public/images/landing/hrp-intro.webp,public/images/landing/news-1.webp,public/images/landing/news-2.webp,public/images/landing/news-3.webp,public/images/landing/mobile-banner.webp,public/images/landing/hrp-monogram-1.svg` expect all True. Source review: ảnh news/intro/banner mỗi card khác nhau (so sánh file size/inode hoặc hash). Lưu `evidence/ac08-assets-local.txt` |
-| `AC-09` | Truth fence — không có nội dung độc hại | Command: `Select-String -Path src/domains/job-board/components/landing/newest-jobs-section.tsx,src/domains/job-board/components/landing/hrp-intro-section.tsx,src/domains/job-board/components/landing/partner-strip-section.tsx,src/domains/job-board/components/landing/news-section.tsx,src/domains/job-board/components/landing/mobile-banner-section.tsx,src/domains/job-board/components/landing/news-preview-modal.tsx,src/domains/job-board/fixtures/demo-content.ts,app/(portal)/page.tsx -Pattern "Top công ty\|Đối tác chính thức\|17\.800\|13\.000\.000\|\+10\.000\.000\|\+50\.000\.000\|400\.000\+\|50\.000\+\|App Store\|Google Play\|QR tải app\|play\.google\.com\|apps\.apple\.com"` expect 0 match. Lưu `evidence/ac09-truth-fence.txt` |
-| `AC-10` | Regression — không đổi BestJobs, Areas, Recruiting card, ReferralStrip, Footer, FeaturedJobCard | Command: `git diff --name-only exec-head-before..HEAD \| Where-Object { $_ -notin @('docs/tasks/hrp-v6-ui-04d-section-render/HANDOFF.md', 'docs/tasks/hrp-v6-ui-04d-section-render/evidence/**', 'src/domains/job-board/components/landing/newest-jobs-section.tsx', 'src/domains/job-board/components/landing/hrp-intro-section.tsx', 'src/domains/job-board/components/landing/partner-strip-section.tsx', 'src/domains/job-board/components/landing/news-section.tsx', 'src/domains/job-board/components/landing/mobile-banner-section.tsx', 'src/domains/job-board/components/landing/news-preview-modal.tsx', 'src/domains/job-board/components/landing/article-preview-data.ts', 'src/domains/job-board/public-types.ts', 'src/domains/job-board/fixtures/demo-content.ts', 'app/(portal)/page.tsx', 'public/images/landing/**') }` expect 0 line. Lưu `evidence/ac10-regression.txt` |
-| `AC-11` | Mandatory gates | `npm run typecheck` exit 0; full `npm run test:unit` cùng expected failure set với expected-failure-set-before + new failure count = 0; `npm run build` exit 0; `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-ui-04d-section-render/TASK.md` exit 0 PASS; `verify-handoff.ps1` exit 0 PASS. Tier 3 FOCUSED audit PASS. Lưu `evidence/ac11-gates.txt` với exit code từng gate |
-| `AC-12` | AWAITING_OWNER_LIVE_VISUAL_REVIEW (DEC-11). Tier 1 ghi closeout sau khi Owner confirm | Status marker trong HANDOFF; Tier 1 KHÔNG fail vì thiếu screenshot; Tier 1 KHÔNG audit visual; visual parity Owner duyệt post-deploy |
-| `AC-13` | **Renderer chính sách `enabled`/`source` (RQ-07)** | Command: `Select-String -Path src/domains/job-board/components/landing/hrp-intro-section.tsx,src/domains/job-board/components/landing/partner-strip-section.tsx,src/domains/job-board/components/landing/news-section.tsx,src/domains/job-board/components/landing/mobile-banner-section.tsx -Pattern "enabled === false\|!enabled\|source === 'DEMO'\|source === 'INTEGRATION_PENDING'"` expect ≥4 match (mỗi section 1 match policy check). Source review: nếu `enabled === false` → return null; nếu `source === 'INTEGRATION_PENDING'` và data rỗng → HIDDEN; KHÔNG fallback im lặng sang nội dung giả. Lưu `evidence/ac13-policy-enabled-source.txt` |
+## 6. Delivery (Tier 0 directive §9)
 
-### 6.2 Traceability
+Sau gate local đạt:
+1. Tự review diff
+2. Commit source + test + cập nhật TASK/HANDOFF
+3. Push `origin/main`
+4. Theo dõi Vercel auto-deploy
+5. Báo Owner: commit hash, danh sách section, kết quả gates, URL production preview, giới hạn còn lại, trạng thái CI thật
 
-| Requirement | Step | Acceptance |
-|---|---|---|
-| RQ-01 | STEP-11 | AC-01 |
-| RQ-02 | STEP-02, STEP-04, STEP-10 | AC-02 |
-| RQ-03 | STEP-02, STEP-03, STEP-05, STEP-10 | AC-03 |
-| RQ-04 | STEP-02, STEP-03, STEP-06, STEP-10 | AC-03, AC-05 |
-| RQ-05 | STEP-02, STEP-03, STEP-07, STEP-10 | AC-03, AC-06 |
-| RQ-06 | STEP-02, STEP-03, STEP-08, STEP-10 | AC-03, AC-07 |
-| RQ-07 | STEP-04, STEP-05, STEP-06, STEP-07, STEP-08 | AC-13 |
-| RQ-08 | STEP-03, STEP-07 | AC-04 |
-| RQ-09 | STEP-09 | AC-08 |
-| RQ-10 | STEP-12 | AC-10, AC-11 |
-| RQ-11 | STEP-10, STEP-12 | AC-01, AC-11 |
+Gate cuối: Owner visual review trên production. KHÔNG Tier 3.
 
 ## 7. Risk
 
-| ID | Risk | Mitigation / rollback |
+| ID | Risk | Mitigation |
 |---|---|---|
-| `RISK-01` | Tier 2 dùng ảnh internet cho asset (vi phạm RQ-09) | STEP-10 chỉ tạo ảnh local. Truth fence STEP-12 grep `https?://` trong fixture → expect 0 match ngoại trừ path local |
-| `RISK-02` | Modal news không mở do state sai | STEP-07 source review state + onClick. AC-06 grep setSelectedArticle |
-| `RISK-03` | Thứ tự section sai (chèn dưới ReferralStrip) | STEP-10 source review. AC-01 grep thứ tự render. UI04C §3 invariant |
-| `RISK-04` | Tier 2 sửa `FeaturedJobCard` (Plan A đã chốt) | §0 Forbidden. STEP-12 git diff filter. AC-10 scope discipline |
-| `RISK-05` | Tier 2 sửa `RecruitingProjectsSection` hay `AreasSection` (Plan A/B đã chốt) | §0 Forbidden. STEP-12 git diff filter |
-| `RISK-06` | Tier 2 mở API mới cho section (vi phạm UI-only) | §0 Forbidden: `app/api/jobs/**`. STEP-12 git diff filter |
-| `RISK-07` | Banner mobile chèn link App Store/Google Play giả | DEC-05 + STEP-08 source review. AC-07 grep cấm pattern |
-| `RISK-08` | Tier 2 hardcode màu hex (vi phạm dùng semantic token) | STEP-05..08 source review: chỉ dùng class Tailwind map semantic token. Nếu cần token mới → Tier 1 duyệt |
-| `RISK-09` | Tier 2 vô tình revert status `ACCEPTED` của Plan B/R1/composition-footer | §0 Forbidden rõ ràng. Tier 2 chỉ tạo file mới trong task root + 5 section component + 1 fixture + asset + page.tsx |
-| `RISK-10` | Asset SVG inline không render trên một số browser | STEP-09 dùng SVG cơ bản (rect + text). AC-08 verify file tồn tại + tier 3 visual audit |
+| `RISK-01` | Sửa `FeaturedJobCard` hoặc các component đã chốt | §0 Forbidden + step-05 self-review. Nếu phải sửa thì diff tối thiểu + ghi rõ trong HANDOFF. |
+| `RISK-02` | Tier 1 vô tình dùng ảnh internet cho asset | Fixture dùng `/images/homepage-huongb/*.webp` (industrial-location-01..04, referral-team) đã có sẵn — KHÔNG download ảnh. |
+| `RISK-03` | Modal news không mở do state sai | `news-preview-modal.tsx` dùng `useState<ArticleCardExtended \| null>`; NewsSection truyền `onSelect={setSelected}`. Test AC-06 grep setSelectedArticle/onSelect. |
+| `RISK-04` | Thứ tự section sai (chèn dưới ReferralStrip) | Source review trong `app/(portal)/page.tsx`. UI04C §3 invariant. |
+| `RISK-05` | Mở API/Schema/Admin | §0 Forbidden + step-05 git diff filter. AC-10 scope discipline. |
+| `RISK-06` | Banner mobile chèn App Store/Google Play giả | DEC-05 + source review. AC-07 grep cấm pattern. |
+| `RISK-07` | Tier 1 hardcode màu hex (vi phạm semantic token) | Dùng Tailwind utility map semantic token. Nếu cần token mới → Tier 1 duyệt `app/globals.css`. |
+| `RISK-08` | Tier 1 vô tình revert status `ACCEPTED` của Plan A/B/composition-footer/04c1/04c2/Y10.4..Y10.12 | §0 Forbidden + chỉ tạo file mới trong in-scope roots + page.tsx (composition-only edit). |
+| `RISK-09` | CI fail do lint scope archive / Integration thiếu DATABASE_URL_TEST | KHÔNG trộn infra fix vào UI04d. Tuyên bố gate local PASS (typecheck/test/build). Báo Owner trạng thái CI thật. |
 
-## 8. Open Questions
-
-None — UI04C §3 chốt cả 5 section + view-model + render policy. Tier 2 chỉ cần Tier 1 duyệt nếu cần thêm semantic token cho peach background (kế thừa từ composition/footer task).
-
-## 9. Planner Resolution
+## 8. Planner Resolution
 
 | Round | Decision | Reason |
 |---|---|---|
-| 0 | Tier 1 revise dependency v1.5: Status `BLOCKED` chờ `hrp-v6-ui-04c1-footer-tweak-r2` `ACCEPTED` trước khi giao Tier 2. Spec bump → v1.5. Plan UI predecessor chain cập nhật: composition/footer v1.4 `ACCEPTED` + R3 v1.3 `ACCEPTED` (mới) + 04c1 footer tweak r2 `DRAFT (pending Owner delta)` + Plan B + correction R1 + interaction R2. NHƯNG round 1 (10/09/2026 sau Tier 0 verdict): sửa mâu thuẫn Tier 0 chỉ ra — (a) đồng bộ Control `Spec version v1.4` → `v1.5`; (b) Source reference sửa "04c1 ACCEPTED (sắp tới)" → "04c1 DRAFT (pending Owner delta), KHÔNG dùng làm predecessor thực tế cho đến khi ACCEPTED"; (c) Plan UI successor: ghi rõ `hrp-v6-ui-04d-detail-ui` (Plan D.A), không ghi "không có successor"; (d) §1.3 plan split reminder: Section-render status `DRAFT` → `BLOCKED v1.5`, composition/footer `DRAFT v1.2` → `ACCEPTED v1.4 (04b767e)`, bổ sung row R3 ACCEPTED `8c6fd03` + 04c1 DRAFT v0.1. KHÔNG bump spec khác; KHÔNG đổi RQ/STEP/AC/audit focus. | Tier 0 verdict `docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md` §4: "Header/revision gọi `v1.5` nhưng Control vẫn ghi `Spec version v1.4`; phải đồng bộ thành `v1.5`. `Source reference` đang gọi footer 04c1 là `ACCEPTED (sắp tới)`; sửa thành dependency pending, không tuyên bố ACCEPTED trước evidence. Status `BLOCKED` chờ footer là đúng tại thời điểm này. Plan successor phải ghi rõ `hrp-v6-ui-04d-detail-ui` (D.A)." Tier 1 round 1 đồng bộ đúng verdict. |
+| 0 | v1.5 BLOCKED chờ 04c1 (10/09/2026) | Tier 0 directive continuation-after-R3. |
+| 1 | Tier 1 confirm blockers closed (11/09/2026 10:30 — reverted theo directive mới) | 04c1 + 04c2 đã ACCEPTED. |
+| 2 (current) | Tier 0 directive mới 11/09/2026: sửa contract theo HEAD, Tier 1 triển khai trực tiếp, audit NONE. Spec bump v1.6/v1.7. Tier 1 owns task + implementation trong cùng round. | Tier 0 directive 11/09/2026 §3-§9: HEAD `22e310d` = visual authority hiện hữu (Y10.4..Y10.12 đã chốt); container = `max-w-7xl` (KHÔNG 1080px); Tier 1 trực tiếp (KHÔNG Tier 2); audit NONE (KHÔNG Tier 3); commit + push + Vercel + Owner visual review là gate cuối. |
 
-## 10. Revision Log
+## 9. Revision Log
 
-- `v1.0` (10/09/2026): Khởi tạo contract. Source: UI04C §3 + UI04D §Giới thiệu HRP + field-matrix §13. STANDARD/FOCUSED lane. UI-only, 5 section với view-model contract + safe-html helper + asset local.
-- `v1.1` (10/09/2026): Tier 0 review v1 REVISION_REQUIRED. Sửa DEC-07: bỏ SafeHtml tự viết (XSS risk), dùng typed structured content paragraphs/bullets. Sửa §1.1 (Section 2 introHtml → paragraphs string[], Section 4 body → structured content array). Sửa RQ-08, STEP-03/04/05/06/07/08, AC-04/06/10, Risk table (bỏ 2 risk SafeHtml), Traceability. Spec bump → v1.1, Status → DRAFT. Thứ tự thực hiện: interaction R2 → composition/footer → section-render.
-- `v1.2` (10/09/2026): Tier 0 review v2 REVISION_REQUIRED. Sửa: (a) RQ-07 traceability dùng STEP ID tường minh STEP-04, STEP-05, STEP-06, STEP-07, STEP-08; (b) AC-13 đo enabled/source policy trực tiếp; (c) Asset map dùng ảnh phân biệt hiện có (industrial-location-01..04.webp, referral-team.webp); (d) data dependency `overview.newest` đến từ `bootstrapBestJobs` của composition task; (e) xóa residue SafeHtml (EV-07, DEC-12, DEC-13, RQ-05); (f) AV-CMS → AV6 (label tạm được chốt tên chính thức); (g) §1.3 plan split reminder sửa composition status DRAFT v1.2.
-- `v1.4` (10/09/2026): Owner live visual review R1 (`docs/tasks/hrp-v6-ui-04b-job-card-interaction-r2/evidence/owner-live-visual-review-r1.md`) ghép VIS-06 vào composition/footer task. Section-render inherit: RQ-11 sửa "1200px" → "1080px" cho mỗi section; thêm ghi chú "v1.4 inherit từ composition/footer v1.4 — VIS-06; section mới dùng `max-w-[1080px] mx-auto` ngay từ đầu". Predecessor dependency update: composition/footer v1.4 `ACCEPTED`. Plan UI predecessor chain: Plan B + correction R1 + interaction R2 correction round 1 + composition/footer v1.4. Tier 2 task D chạy SAU composition/footer v1.4 ACCEPTED → chuyển status `READY_FOR_EXECUTION`. KHÔNG thêm STEP/AC riêng — chỉ consistency reference với composition/footer. Spec bump → v1.4.
-- `v1.3` (10/09/2026): Tier 0 review v3 SMALL CLOSEOUT. Sửa: (a) thay mọi reference active còn sót `AV-CMS` bằng `AV6` (scope summary, §1.3 plan split successor, RQ-08, RQ-10, EV-09, view-model `storeLinks` note, `enabled` note, AV-CMS ref §1.1); (b) chuẩn hóa "CMS 4 section" — Task D dựng 4 section mới DEMO + Section 1 REAL = 5 section trong Task D; (c) `Current execution round` đồng bộ v1.3 DRAFT. Spec bump → v1.3.
-- `v1.5` (10/09/2026): Tier 1 revise dependency theo Tier 0 directive §5. (a) Header mở rộng: thêm Plan UI successor (none), ghi chú R3 ACCEPTED + 04c1 chờ Owner, scope UI-only nhắc lại. (b) Status → `BLOCKED` chờ 04c1 ACCEPTED. (c) Source reference bổ sung R3 v1.3 ACCEPTED + 04c1 ACCEPTED (sắp tới). (d) Plan UI predecessor: composition/footer v1.4 + R3 v1.3 + 04c1 (chưa). (e) Current execution round → v1.5 BLOCKED. (f) Next gate → chờ 04c1 ACCEPTED mới mở READY_FOR_EXECUTION. (g) Planner Resolution Round 0 ghi lý do. (h) Spec bump → v1.5. KHÔNG đổi RQ/STEP/AC/audit focus; chỉ cập nhật control field + predecessor + status.
-- `v1.5` (round 1, 10/09/2026): Tier 1 sửa mâu thuẫn Tier 0 verdict `docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md` §4: (1) Control `Spec version` đồng bộ `v1.4` → `v1.5`; (2) Source reference sửa "04c1 ACCEPTED (sắp tới)" → "04c1 DRAFT (pending Owner delta), KHÔNG dùng làm predecessor thực tế"; (3) Plan UI successor bổ sung `hrp-v6-ui-04d-detail-ui` (Plan D.A), không ghi "không có successor"; (4) §1.3 plan split reminder cập nhật row Section-render sang `BLOCKED v1.5`, composition/footer sang `ACCEPTED v1.4 (04b767e)`, bổ sung row R3 `ACCEPTED (8c6fd03)` + row 04c1 `DRAFT v0.1`; (5) Header dòng 8 đồng bộ Plan UI successor sang `hrp-v6-ui-04d-detail-ui`. Planner Resolution Round 0 mở rộng ghi rõ sửa đổi round 1.
+- `v1.0` (10/09/2026): Khởi tạo contract theo UI04C §3 + field-matrix §13. STANDARD/FOCUSED lane. 5 section với view-model contract + safe-html helper + asset local.
+- `v1.1` (10/09/2026): Tier 0 review v1 REVISION_REQUIRED. Sửa DEC-07: bỏ SafeHtml tự viết, dùng typed structured content. Spec bump → v1.1.
+- `v1.2` (10/09/2026): Tier 0 review v2 REVISION_REQUIRED. Sửa RQ-07 traceability STEP ID, AC-13 policy, asset map local, dependency overview, xóa residue SafeHtml, AV-CMS → AV6.
+- `v1.3` (10/09/2026): Tier 0 review v3 SMALL CLOSEOUT. Chuẩn hóa "CMS 4 section" + thay AV-CMS → AV6.
+- `v1.4` (10/09/2026): Owner visual review ghép VIS-06 → container 1080px.
+- `v1.5` (10/09/2026): Tier 1 revise dependency theo Tier 0 directive §5. Status BLOCKED chờ 04c1.
+- `v1.6` (11/09/2026 10:30 — drafted, reverted): Tier 1 confirm blockers closed. Status BLOCKED → READY_FOR_EXECUTION. Reverted theo directive mới.
+- `v1.7` (11/09/2026 10:35 — current): Tier 0 directive mới. (a) Baseline HEAD `22e310d` (visual authority Y10.4..Y10.12). (b) Container = `max-w-7xl` (KHÔNG 1080px). (c) Tier 1 trực tiếp (KHÔNG Tier 2). (d) Audit NONE (KHÔNG Tier 3). (e) Tier 1 owns task + implementation + commit + push + monitor Vercel + báo Owner. (f) Gate cuối: Owner visual review trên production. (g) Spec bump v1.6 → v1.7.
