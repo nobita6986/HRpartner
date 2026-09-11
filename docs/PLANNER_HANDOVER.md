@@ -27,14 +27,14 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
 current_lane: UI04 public homepage completion
-current_task: hrp-v6-ui-04g-recruitment-highlight-carousel (v0.3 owned)
-task_path: docs/tasks/hrp-v6-ui-04g-recruitment-highlight-carousel/TASK.md
-spec_version: v0.3 (Owner 11/09/2026 08:54: (a) bo header 'Quy trinh ro rang/Cung HRP tuyen nhanh', (b) thay picsum ngau nhien + SVG bang Unsplash anh that theo chu de)
-task_status: Tier 1 commit 6562aaa + push len origin/main 11/09/2026 08:55; typecheck local PASS; 306/306 tests PASS; Vercel auto-deploy; TIER1 self-review NONE (FAST lane)
+current_task: hrp-v6-ui-04g-card-title-fix (v0.1 owned)
+task_path: docs/tasks/hrp-v6-ui-04g-card-title-fix/TASK.md
+spec_version: v0.1 (Owner 11/09/2026 08:56: card title=position (ten cong viec), sub=companyName (ten nha may), thay hardcoded "HRP Viet Nam")
+task_status: Tier 1 commit 31bf314 + push main 09:03; typecheck PASS; 512/512 tests PASS; Vercel auto-deploy; TIER1 self-review NONE
 worktree_branch: main
-current_gate: OWNER_VISUAL_REVIEW_04g_v3 (refresh https://hrpvietnam.com/ xem carousel: ko header, 3 anh Unsplash that + dots)
-next_command: Tier 0 chot visual 04g v3: (a) ACCEPTED -> closeout + mo phase tiep theo, (b) chua -> Tier 1 fix them, (c) anh ko phu hop -> gui anh khac de thay
-previous_accepted: UI04g carousel v2 ACCEPTED (75d28d8) + UI04g carousel v1 ACCEPTED (e259eb6) + UI04f card monogram abbrev ACCEPTED (12a06da) + UI04e hero width balance ACCEPTED (2e8e76f)
+current_gate: OWNER_VISUAL_REVIEW_card_title (refresh https://hrpvietnam.com/ xem job card: title=ten cong viec, sub=ten nha may)
+next_command: Tier 0 visual review: (a) ACCEPTED -> closeout, (b) chua -> Tier 1 fix
+previous_accepted: UI04g carousel v3 ACCEPTED (6562aaa) + UI04g carousel v2 ACCEPTED (75d28d8) + UI04g carousel v1 ACCEPTED (e259eb6) + UI04f card monogram abbrev ACCEPTED (12a06da)
 next_planner_candidate: hrp-v6-ui-04d-section-render (BLOCKED v1.5 — sau 04c1+04c2 push production + Owner live visual review ACCEPTED); sau đó hrp-v6-ui-04d-detail-ui (D.A); sau đó Admin V6 theo dependency (AV1 → AV4 → AV2 → AV6 → AV5)
 blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); UI04 04c1+04c2 đã OWNER_DECIDED (16 lựa chọn chốt 10/09/2026) — gate đã mở sang TIER2_EXECUTION; Owner live visual review pending post-deploy (Tier 1 monitor Vercel/CI); section-render chờ Tier 1 review V6 stacking sau push production
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
