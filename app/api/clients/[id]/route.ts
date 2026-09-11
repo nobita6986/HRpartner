@@ -48,6 +48,10 @@ export async function PUT(
   try {
     // V5-M1-06c / RQ-04: update-by-id -> withDbContext (L2-only). RLS backstop:
     // client ngoai pham vi -> P2025 -> 404 (cross-client deny).
+    //
+    // [Y10.4-projection] When ClientCompany.name changes, propagate the new name to
+    // all Projects that reference this company. The denormalized clientCompanyName
+    // is a read projection that must stay in sync with the canonical source.
     const client = await withDbContext(prisma, ctx, (tx) =>
       tx.clientCompany.update({
         where: { id },
@@ -60,6 +64,16 @@ export async function PUT(
         },
       }),
     );
+
+    // [Y10.4-projection] Propagate rename to all related Projects.
+    // Only update if `name` was actually part of the change.
+    if (name !== undefined) {
+      await prisma.project.updateMany({
+        where: { clientCompanyId: id },
+        data: { clientCompanyName: name },
+      });
+    }
+
     return NextResponse.json({ client });
   } catch (err: any) {
     if (err.code === 'P2025') {

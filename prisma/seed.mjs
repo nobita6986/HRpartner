@@ -176,12 +176,13 @@ async function seedProjects() {
     if (!client) throw new Error(`[seed] missing client fixture ${p.clientCode}`);
     await prisma.project.upsert({
       where: { code: p.code },
-      update: { clientCompanyId: client.id, name: p.name, quota: p.quota, filled: p.filled, isPublic: p.isPublic, siteAddress: p.site },
+      update: { clientCompanyId: client.id, clientCompanyName: client.name, name: p.name, quota: p.quota, filled: p.filled, isPublic: p.isPublic, siteAddress: p.site },
       create: {
         id: `seed-proj-${p.code}`,
         code: p.code,
         name: p.name,
         clientCompanyId: client.id,
+        clientCompanyName: client.name,
         quota: p.quota,
         filled: p.filled,
         isPublic: p.isPublic,

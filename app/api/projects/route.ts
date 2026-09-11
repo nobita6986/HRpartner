@@ -118,6 +118,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // [Y10.4-projection] Derive clientCompanyName from canonical ClientCompany.name.
+  // This keeps the denormalized read-projection in sync at create time.
+  let clientCompanyName: string | null = null;
+  try {
+    const company = await prisma.clientCompany.findUnique({
+      where: { id: clientCompanyId },
+      select: { name: true },
+    });
+    clientCompanyName = company?.name ?? null;
+  } catch {
+    // ClientCompany lookup failed — project creation will still proceed;
+    // FK constraint handles invalid clientCompanyId if it passes Prisma-level checks.
+    clientCompanyName = null;
+  }
+
   try {
     const project = await withDbContext(prisma, ctx, (tx) =>
       tx.project.create({
@@ -125,6 +140,7 @@ export async function POST(req: NextRequest) {
           code,
           name,
           clientCompanyId,
+          clientCompanyName,
           pmUserId: pmUserId ?? null,
           siteAddress: siteAddress ?? null,
           startDate: new Date(startDate),

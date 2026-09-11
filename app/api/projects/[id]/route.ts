@@ -43,6 +43,22 @@ export async function PUT(
 
   const { name, clientCompanyId, pmUserId, siteAddress, startDate, endDate, status, quota } = body;
 
+  // [Y10.4-projection] When clientCompanyId changes, derive clientCompanyName from the new
+  // ClientCompany. We fetch the current project to know whether clientCompanyId is changing.
+  let newClientCompanyName: string | undefined = undefined;
+  if (clientCompanyId !== undefined) {
+    try {
+      const company = await prisma.clientCompany.findUnique({
+        where: { id: clientCompanyId },
+        select: { name: true },
+      });
+      // null → undefined so the spread only adds the field when there is a value
+      newClientCompanyName = company?.name ?? undefined;
+    } catch {
+      newClientCompanyName = undefined;
+    }
+  }
+
   try {
     // V5-M1-06c / RQ-03: update-by-id vo L1 (DEC-03) -> withDbContext (L2-only).
     // RLS backstop: project ngoai pham vi -> P2025 -> 404 (cross-project deny).
@@ -52,6 +68,8 @@ export async function PUT(
         data: {
           ...(name !== undefined && { name }),
           ...(clientCompanyId !== undefined && { clientCompanyId }),
+          // [Y10.4-projection] Sync denormalized projection whenever clientCompanyId changes.
+          ...(newClientCompanyName !== undefined && { clientCompanyName: newClientCompanyName }),
           ...(pmUserId !== undefined && { pmUserId }),
           ...(siteAddress !== undefined && { siteAddress }),
           ...(startDate !== undefined && { startDate: new Date(startDate) }),
