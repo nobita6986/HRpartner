@@ -9,7 +9,9 @@ CREATE TABLE IF NOT EXISTS homepage_settings (
   listing_page_size   INTEGER     NOT NULL    DEFAULT 12  CHECK (listing_page_size BETWEEN 6 AND 50),
   created_at          TIMESTAMPTZ NOT NULL    DEFAULT NOW(),
   updated_at          TIMESTAMPTZ NOT NULL    DEFAULT NOW(),
-  updated_by_id       UUID
+  -- users.id is Prisma String / PostgreSQL TEXT (UUID values are stored as text).
+  -- Keep the FK column identical to the referenced physical type.
+  updated_by_id       TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_homepage_settings_updated_at
