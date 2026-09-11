@@ -4,7 +4,7 @@
 **Tier:** 1
 **Lane:** STANDARD
 **Audit:** NONE
-**Trạng thái:** IMPLEMENTATION IN PROGRESS
+**Trạng thái:** IMPLEMENTATION COMPLETE — boundary-aware refactor (v1.1)
 
 ## Mục tiêu
 
@@ -41,23 +41,40 @@
 
 ## Implementation Steps
 
+### Architectural note (v1.1) — boundary-aware
+
+Tất cả 3 write path PHẢI chạy qua `withDbContext` (RLS-scoped boundary), không gọi trực tiếp
+trên raw `prisma = getPrisma()` để pass api-boundary gate AC-08. Cụ thể:
+
+- `tx.clientCompany.findUnique(...)` và `tx.project.update/updateMany(...)` đều nằm trong
+  CÙNG `withDbContext` callback — atomic, RLS-scoped, không có raw client op.
+- Lookup và write chạy trong CÙNG transaction ⇒ nếu ClientCompany lookup fail thì
+  project write cũng rollback (clean state).
+- Test mock `tx` chỉ cần 2 delegate: `clientCompany` + `project`.
+
 ### Step 1: Fix `POST /api/projects` — derive on create
 
 **File:** `app/api/projects/route.ts`
 
-Trước khi `tx.project.create`, fetch `ClientCompany.name` bằng `clientCompanyId`, rồi điền `clientCompanyName` vào data. Nếu `ClientCompany` không tồn tại → vẫn tạo project (FK constraint sẽ reject sau nếu cần), nhưng `clientCompanyName` = null.
+Trong `withDbContext` callback, fetch `ClientCompany.name` bằng `tx.clientCompany.findUnique`,
+rồi dùng nó làm `clientCompanyName` cho `tx.project.create`. Nếu `ClientCompany` không tồn tại
+→ vẫn tạo project (FK constraint sẽ reject sau nếu cần), nhưng `clientCompanyName` = null.
+KHÔNG lookup trên raw `prisma`.
 
 ### Step 2: Fix `PUT /api/projects/[id]` — sync on client change
 
 **File:** `app/api/projects/[id]/route.ts`
 
-Khi `clientCompanyId` thay đổi, fetch tên từ `ClientCompany` mới và cập nhật `clientCompanyName` trong cùng transaction.
+Khi `clientCompanyId` thay đổi (chỉ khi key có trong body), lookup tên từ `ClientCompany` mới
+TRONG `withDbContext` callback rồi set `clientCompanyName` cùng `tx.project.update`.
 
 ### Step 3: Fix `PUT /api/clients/[id]` — propagate on rename
 
 **File:** `app/api/clients/[id]/route.ts`
 
-Khi `name` thay đổi, cập nhật `clientCompanyName` của mọi `Project` có `clientCompanyId = id` trong cùng transaction.
+Khi `name` thay đổi, BÊN TRONG cùng `withDbContext` callback sau khi `tx.clientCompany.update`,
+gọi `tx.project.updateMany` để propagate `clientCompanyName` cho mọi Project có
+`clientCompanyId = id`. KHÔNG gọi `prisma.project.updateMany` sau boundary (raw client op).
 
 ### Step 4: Update `prisma/seed.mjs`
 
@@ -92,9 +109,11 @@ Test cases:
 ## Gate
 
 - `npx prisma validate` — PASS
-- `npx tsc --noEmit` — PASS
-- Unit tests — PASS
-- Không chạy lint/build vì chỉ thay đổi backend logic nhỏ
+- `npx tsc --noEmit` — PASS (pre-existing AV1 Settings typing issues not in scope)
+- Unit tests — PASS (1925/1925 — including 71 in 3 affected suites)
+- `npm run build` — PASS
+- Lint on changed files — 3 pre-existing `any` warnings only (no new errors)
+- api-boundary static gate — PASS (no raw-client ops in `app/api/projects/**` and `app/api/clients/**`)
 
 ---
 
@@ -103,3 +122,4 @@ Test cases:
 | Version | Date | Author | Change |
 |---|---|---|---|
 | v1.0 | 11/09/2026 | Tier 1 | Initial task |
+| v1.1 | 11/09/2026 | Tier 1 | **Boundary-aware refactor:** move `clientCompany.findUnique` và `project.updateMany` vào TRONG `withDbContext` callback. Fixes 2 pre-existing test failures (clients-master + api-boundary). All gates pass. |

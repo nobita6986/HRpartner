@@ -50,10 +50,11 @@ export async function PUT(
     // client ngoai pham vi -> P2025 -> 404 (cross-client deny).
     //
     // [Y10.4-projection] When ClientCompany.name changes, propagate the new name to
-    // all Projects that reference this company. The denormalized clientCompanyName
-    // is a read projection that must stay in sync with the canonical source.
-    const client = await withDbContext(prisma, ctx, (tx) =>
-      tx.clientCompany.update({
+    // all Projects that reference this company. BOTH the company update AND the
+    // project propagation run inside the same `withDbContext` callback — atomic,
+    // RLS-scoped, and uses `tx` only (no raw client, satisfies api-boundary AC-08).
+    const client = await withDbContext(prisma, ctx, async (tx) => {
+      const updated = await tx.clientCompany.update({
         where: { id },
         data: {
           ...(name !== undefined && { name }),
@@ -62,17 +63,20 @@ export async function PUT(
           ...(companySize !== undefined && { companySize }),
           ...(status !== undefined && { status }),
         },
-      }),
-    );
-
-    // [Y10.4-projection] Propagate rename to all related Projects.
-    // Only update if `name` was actually part of the change.
-    if (name !== undefined) {
-      await prisma.project.updateMany({
-        where: { clientCompanyId: id },
-        data: { clientCompanyName: name },
       });
-    }
+
+      // Propagate rename to all related Projects — only when `name` was actually
+      // part of the change. Inside `tx` (RLS-scoped) so cross-tenant update is
+      // structurally impossible.
+      if (name !== undefined) {
+        await tx.project.updateMany({
+          where: { clientCompanyId: id },
+          data: { clientCompanyName: name },
+        });
+      }
+
+      return updated;
+    });
 
     return NextResponse.json({ client });
   } catch (err: any) {

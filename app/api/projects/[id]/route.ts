@@ -43,27 +43,26 @@ export async function PUT(
 
   const { name, clientCompanyId, pmUserId, siteAddress, startDate, endDate, status, quota } = body;
 
-  // [Y10.4-projection] When clientCompanyId changes, derive clientCompanyName from the new
-  // ClientCompany. We fetch the current project to know whether clientCompanyId is changing.
-  let newClientCompanyName: string | undefined = undefined;
-  if (clientCompanyId !== undefined) {
-    try {
-      const company = await prisma.clientCompany.findUnique({
-        where: { id: clientCompanyId },
-        select: { name: true },
-      });
-      // null → undefined so the spread only adds the field when there is a value
-      newClientCompanyName = company?.name ?? undefined;
-    } catch {
-      newClientCompanyName = undefined;
-    }
-  }
-
   try {
     // V5-M1-06c / RQ-03: update-by-id vo L1 (DEC-03) -> withDbContext (L2-only).
     // RLS backstop: project ngoai pham vi -> P2025 -> 404 (cross-project deny).
-    const project = await withDbContext(prisma, ctx, (tx) =>
-      tx.project.update({
+    //
+    // [Y10.4-projection] When clientCompanyId changes, derive clientCompanyName from the new
+    // ClientCompany. BOTH the lookup AND the project update run inside the same
+    // `withDbContext` callback — atomic, RLS-scoped, and uses `tx` only (no raw client).
+    const project = await withDbContext(prisma, ctx, async (tx) => {
+      // Derive projection INSIDE the boundary — never on raw client.
+      let newClientCompanyName: string | null | undefined = undefined;
+      if (clientCompanyId !== undefined) {
+        const company = await tx.clientCompany.findUnique({
+          where: { id: clientCompanyId },
+          select: { name: true },
+        });
+        // null → undefined so spread only adds the field when there is a value.
+        newClientCompanyName = company?.name ?? undefined;
+      }
+
+      return tx.project.update({
         where: { id },
         data: {
           ...(name !== undefined && { name }),
@@ -77,8 +76,8 @@ export async function PUT(
           ...(status !== undefined && { status }),
           ...(quota !== undefined && { quota }),
         },
-      }),
-    );
+      });
+    });
     return NextResponse.json({ project });
   } catch (err: any) {
     if (err.code === 'P2025') {

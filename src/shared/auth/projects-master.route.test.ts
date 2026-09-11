@@ -18,6 +18,9 @@ const mocks = vi.hoisted(() => ({
   count: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
+  // [Y10.4-projection] Used inside withDbContext to derive clientCompanyName.
+  // Mock both create-side lookup (POST) and update-side lookup (PUT) on the same delegate.
+  clientCompanyFindUnique: vi.fn(),
   authorizedRO: vi.fn(),
   dbContext: vi.fn(),
 }));
@@ -45,6 +48,11 @@ const tx = () => ({
     create: mocks.create,
     update: mocks.update,
   },
+  // [Y10.4-projection] Mocked inside the same `tx` so the create/update route
+  // can derive clientCompanyName from ClientCompany.name via the boundary callback.
+  clientCompany: {
+    findUnique: mocks.clientCompanyFindUnique,
+  },
 });
 
 const getReq = () => new NextRequest('http://localhost/api/projects');
@@ -69,6 +77,9 @@ describe('projects master — role matrix (RQ-03 / AC-03)', () => {
     mocks.count.mockResolvedValue(0);
     mocks.create.mockResolvedValue({ id: 'p1' });
     mocks.update.mockResolvedValue({ id: 'p1' });
+    // [Y10.4-projection] Default: ClientCompany exists with a canonical name.
+    // Routes derive clientCompanyName from this lookup; tests verify the field.
+    mocks.clientCompanyFindUnique.mockResolvedValue({ name: 'Công ty ABC' });
     // boundary mặc định: gọi cb với tx đã scope (mô phỏng L1+L2 / L2).
     mocks.authorizedRO.mockImplementation((cb: (t: unknown) => unknown) => cb(tx()));
     mocks.dbContext.mockImplementation((cb: (t: unknown) => unknown) => cb(tx()));
@@ -138,5 +149,80 @@ describe('projects master — role matrix (RQ-03 / AC-03)', () => {
     mocks.update.mockRejectedValueOnce({ code: 'P2025' });
     const res = await PUT(putReq({ name: 'x' }), putCtx);
     expect(res.status).toBe(404);
+  });
+
+  // [Y10.4-projection] POST: derive clientCompanyName from ClientCompany lookup
+  // INSIDE the boundary callback. The lookup is RLS-scoped — no raw client op.
+  it('POST: clientCompanyName derived from ClientCompany lookup (no raw client op)', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ADMIN' });
+    mocks.clientCompanyFindUnique.mockResolvedValue({ name: 'Khách hàng XYZ' });
+    const res = await POST(
+      postReq({ code: 'P-NEW', name: 'DA mới', clientCompanyId: 'cc-99', startDate: '2026-12-01' }),
+    );
+    expect(res.status).toBe(201);
+    expect(mocks.clientCompanyFindUnique).toHaveBeenCalledTimes(1);
+    expect(mocks.clientCompanyFindUnique).toHaveBeenCalledWith({
+      where: { id: 'cc-99' },
+      select: { name: true },
+    });
+    // clientCompanyName phải lấy từ lookup, không phải từ body
+    expect(mocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          clientCompanyName: 'Khách hàng XYZ',
+          clientCompanyId: 'cc-99',
+        }),
+      }),
+    );
+  });
+
+  // [Y10.4-projection] POST: lookup returns null → clientCompanyName = null
+  // (FK constraint sẽ reject invalid clientCompanyId ở tầng dưới).
+  it('POST: lookup returns null → clientCompanyName = null', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ADMIN' });
+    mocks.clientCompanyFindUnique.mockResolvedValue(null);
+    const res = await POST(
+      postReq({ code: 'P-NEW', name: 'DA mới', clientCompanyId: 'cc-missing', startDate: '2026-12-01' }),
+    );
+    expect(res.status).toBe(201);
+    expect(mocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ clientCompanyName: null }),
+      }),
+    );
+  });
+
+  // [Y10.4-projection] PUT: when clientCompanyId changes, derive clientCompanyName
+  // from the NEW ClientCompany lookup INSIDE the boundary callback.
+  it('PUT: clientCompanyId changes → derive new clientCompanyName INSIDE boundary', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'pm', role: 'PM' });
+    mocks.clientCompanyFindUnique.mockResolvedValue({ name: 'Khách hàng mới' });
+    const res = await PUT(putReq({ clientCompanyId: 'cc-new' }), putCtx);
+    expect(res.status).toBe(200);
+    expect(mocks.clientCompanyFindUnique).toHaveBeenCalledWith({
+      where: { id: 'cc-new' },
+      select: { name: true },
+    });
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'p1' },
+        data: expect.objectContaining({
+          clientCompanyId: 'cc-new',
+          clientCompanyName: 'Khách hàng mới',
+        }),
+      }),
+    );
+  });
+
+  // [Y10.4-projection] PUT: when clientCompanyId is NOT in the body, NO lookup.
+  it('PUT: no clientCompanyId in body → no clientCompany lookup', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'pm', role: 'PM' });
+    const res = await PUT(putReq({ name: 'x' }), putCtx);
+    expect(res.status).toBe(200);
+    expect(mocks.clientCompanyFindUnique).not.toHaveBeenCalled();
+    // clientCompanyName KHÔNG nằm trong data update (giữ nguyên giá trị cũ trong DB)
+    const updateCall = mocks.update.mock.calls[0][0];
+    expect(updateCall.data).not.toHaveProperty('clientCompanyName');
+    expect(updateCall.data).not.toHaveProperty('clientCompanyId');
   });
 });

@@ -118,29 +118,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // [Y10.4-projection] Derive clientCompanyName from canonical ClientCompany.name.
-  // This keeps the denormalized read-projection in sync at create time.
-  let clientCompanyName: string | null = null;
   try {
-    const company = await prisma.clientCompany.findUnique({
-      where: { id: clientCompanyId },
-      select: { name: true },
-    });
-    clientCompanyName = company?.name ?? null;
-  } catch {
-    // ClientCompany lookup failed — project creation will still proceed;
-    // FK constraint handles invalid clientCompanyId if it passes Prisma-level checks.
-    clientCompanyName = null;
-  }
-
-  try {
-    const project = await withDbContext(prisma, ctx, (tx) =>
-      tx.project.create({
+    // [Y10.4-projection] Derive clientCompanyName from canonical ClientCompany.name.
+    // BOTH reads (lookup + create) run inside the same `withDbContext` callback so:
+    //   - The lookup is RLS-scoped (cross-tenant lookup denied) — same atomicity as the write.
+    //   - No raw-client `prisma.clientCompany.findUnique` (api-boundary gate AC-08).
+    //   - Tests mock `tx` with both `clientCompany` and `project` delegates.
+    // FK constraint handles invalid clientCompanyId if it bypasses the lookup.
+    const project = await withDbContext(prisma, ctx, async (tx) => {
+      const company = await tx.clientCompany.findUnique({
+        where: { id: clientCompanyId },
+        select: { name: true },
+      });
+      return tx.project.create({
         data: {
           code,
           name,
           clientCompanyId,
-          clientCompanyName,
+          clientCompanyName: company?.name ?? null,
           pmUserId: pmUserId ?? null,
           siteAddress: siteAddress ?? null,
           startDate: new Date(startDate),
@@ -148,8 +143,8 @@ export async function POST(req: NextRequest) {
           status: status ?? 'DRAFT',
           quota: quota ?? 0,
         },
-      }),
-    );
+      });
+    });
     return NextResponse.json({ project }, { status: 201 });
   } catch (err: any) {
     if (err.code === 'P2002') {

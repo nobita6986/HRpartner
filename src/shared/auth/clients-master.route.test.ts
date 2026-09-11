@@ -15,6 +15,9 @@ const mocks = vi.hoisted(() => ({
   count: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
+  // [Y10.4-projection] Used inside withDbContext when `name` changes —
+  // propagation to Projects that reference this ClientCompany.
+  projectUpdateMany: vi.fn(),
   authorizedRO: vi.fn(),
   dbContext: vi.fn(),
 }));
@@ -42,6 +45,11 @@ const tx = () => ({
     create: mocks.create,
     update: mocks.update,
   },
+  // [Y10.4-projection] Mock the project delegate used inside the same boundary
+  // callback for clientCompanyName propagation on rename.
+  project: {
+    updateMany: mocks.projectUpdateMany,
+  },
 });
 
 const getReq = () => new NextRequest('http://localhost/api/clients');
@@ -66,6 +74,8 @@ describe('clients master — role matrix (RQ-04 / AC-04)', () => {
     mocks.count.mockResolvedValue(0);
     mocks.create.mockResolvedValue({ id: 'c1' });
     mocks.update.mockResolvedValue({ id: 'c1' });
+    // [Y10.4-projection] Default no-op for project rename propagation.
+    mocks.projectUpdateMany.mockResolvedValue({ count: 0 });
     mocks.authorizedRO.mockImplementation((cb: (t: unknown) => unknown) => cb(tx()));
     mocks.dbContext.mockImplementation((cb: (t: unknown) => unknown) => cb(tx()));
   });
@@ -124,5 +134,29 @@ describe('clients master — role matrix (RQ-04 / AC-04)', () => {
     mocks.update.mockRejectedValueOnce({ code: 'P2025' });
     const res = await PUT(putReq({ name: 'x' }), putCtx);
     expect(res.status).toBe(404);
+  });
+
+  // [Y10.4-projection] Khi ClientCompany.name đổi, propagate sang tất cả Projects
+  // tham chiếu công ty đó. Cả `update` + `project.updateMany` chạy trong cùng
+  // `withDbContext` callback (RLS-scoped, atomic, satisfies api-boundary AC-08).
+  it('PUT: rename → propagate project.updateMany INSIDE boundary', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ADMIN' });
+    const res = await PUT(putReq({ name: 'Tên mới' }), putCtx);
+    expect(res.status).toBe(200);
+    expect(mocks.update).toHaveBeenCalledTimes(1);
+    expect(mocks.projectUpdateMany).toHaveBeenCalledTimes(1);
+    expect(mocks.projectUpdateMany).toHaveBeenCalledWith({
+      where: { clientCompanyId: 'c1' },
+      data: { clientCompanyName: 'Tên mới' },
+    });
+  });
+
+  // [Y10.4-projection] Khi body không có `name`, KHÔNG gọi project.updateMany
+  // (tránh churn không cần thiết).
+  it('PUT: no name change → KHÔNG propagate', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ADMIN' });
+    const res = await PUT(putReq({ industry: 'CN' }), putCtx);
+    expect(res.status).toBe(200);
+    expect(mocks.projectUpdateMany).not.toHaveBeenCalled();
   });
 });
