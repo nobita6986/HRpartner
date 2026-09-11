@@ -22,15 +22,14 @@ export function AreasSection({ areas, onPick }: AreasSectionProps) {
       aria-labelledby="hrp-areas-heading"
       /* STEP-07/RQ-01: Container max-w-[1200px] mx-auto px-4 md:px-6 */
       /* Y2: bỏ background riêng biệt, thu hẹp padding để liền mạch với Hero gradient */
-      className="w-full px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6"
+      /* Y10.11/UI04k: giảm padding trên dưới (pt-4→pt-1, pb-8→pb-4 md:pt-6→md:pt-2 md:pb-10→md:pb-5) */
+      className="w-full px-4 pb-4 pt-1 md:px-8 md:pb-5 md:pt-2"
     >
       {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-7xl (đồng bộ với Hero + SearchSection) */}
+      {/* Y10.11/UI04k: giảm mb-8 → mb-3 cho header */}
       <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
-        <div className="mb-8 flex flex-col gap-2">
-          {/* VIS-03: Eyebrow — text-primary-dark (sync with BestJobs eyebrow) */}
-          <p className="font-label text-label-sm font-bold uppercase tracking-widest text-primary-dark">
-            Theo khu vực
-          </p>
+        <div className="mb-3 flex flex-col gap-2">
+          {/* Y10.11/UI04k: bỏ eyebrow "Theo khu vực" — chỉ giữ heading + subtitle */}
           <h2
             id="hrp-areas-heading"
             className="font-head text-headline-lg font-bold text-on-surface"
