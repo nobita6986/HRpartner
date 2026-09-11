@@ -70,7 +70,8 @@ function RubberStamp({ stampKey }: { stampKey: StampKey }) {
   const Icon = def.Icon;
   return (
     <div
-      className="pointer-events-none absolute -top-4 -left-4 z-30 opacity-35"
+      /* Y10.8+: top-2 left-2 (8px vào trong) — stamp gọn trong card, không tràn viền ngoài. */
+      className="pointer-events-none absolute top-2 left-2 z-30 opacity-35"
       data-testid="job-stamp"
       aria-label={def.ariaLabel}
       style={{ transform: `rotate(${def.rotateDeg}deg) scale(0.7)`, transformOrigin: 'top left' }}

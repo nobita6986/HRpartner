@@ -166,10 +166,12 @@ describe('Y10.6/UI04j r2: Rubber stamp redesign — không viền đen, ink text
     expect(CARD).toContain('border-2');
   });
 
-  it('stamp tràn ra ngoài card (negative top/left position)', () => {
-    // Y10.8+: stamp đã chuyển sang góc trên-trái
-    expect(CARD).toContain('-top-4');
-    expect(CARD).toContain('-left-4');
+  it('stamp nằm gọn trong card (positive top/left position)', () => {
+    // Y10.8+: stamp đã chuyển sang top-2 left-2 (8px vào trong) thay vì -top-4 -left-4
+    expect(CARD).toContain('top-2');
+    expect(CARD).toContain('left-2');
+    expect(CARD).not.toContain('-top-4');
+    expect(CARD).not.toContain('-left-4');
     expect(CARD).not.toContain('-right-4');
   });
 
