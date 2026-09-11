@@ -45,6 +45,36 @@ export interface EnrichedJob {
   availableSlots: number;
   /** RQ-20 / STEP-10: postedAt from PublicJobDto for recruitment time display */
   postedAt: string | null;
+  /** Y10.4/UI04g: stamp tags render góc trên phải card (UI-only mock distribution). */
+  stamps: StampKey[];
+}
+
+import type { StampKey } from '@/src/domains/job-board/components/landing/stamp-defs';
+
+/** Y10.4/UI04g: hash-based stamp distribution để mock cards trên UI.
+    Khi admin form ready → thay bằng server-provided stamps[] từ DB. */
+function deriveStamps(args: {
+  /** Stable seed từ job (id hoặc slug). */
+  seed: string;
+  urgency: 'URGENT' | 'CLOSING' | 'NONE';
+  salaryMinVnd: number | null;
+  salaryMaxVnd: number | null;
+  postedAt: string | null;
+}): StampKey[] {
+  const stamps: StampKey[] = [];
+  if (args.urgency === 'URGENT') stamps.push('tuyen-gap');
+  // "thuong-cao" nếu max >= 30k VND/giờ
+  if (args.salaryMaxVnd !== null && args.salaryMaxVnd >= 30000) stamps.push('thuong-cao');
+  // "moi" nếu posted trong 3 ngày gần đây
+  if (args.postedAt) {
+    const d = new Date(args.postedAt).getTime();
+    if (Date.now() - d < 3 * 24 * 60 * 60 * 1000) stamps.push('moi');
+  }
+  // "hot" distributed qua hash (50% jobs) — đảm bảo ~một nửa card có hot
+  let h = 0;
+  for (let i = 0; i < args.seed.length; i++) h = (h * 31 + args.seed.charCodeAt(i)) | 0;
+  if (Math.abs(h) % 2 === 0) stamps.push('hot');
+  return stamps;
 }
 
 function enrichJob(job: PublicJobDto): EnrichedJob {
@@ -59,6 +89,14 @@ function enrichJob(job: PublicJobDto): EnrichedJob {
     salaryMaxVnd,
     availableSlots: job.availableSlots,
     postedAt: postedAt ?? null,
+    // Y10.4/UI04g: derive stamps from urgency + salary + postedAt + seed-based hash.
+    stamps: deriveStamps({
+      seed: job.id,
+      urgency,
+      salaryMinVnd,
+      salaryMaxVnd,
+      postedAt: postedAt ?? null,
+    }),
   };
 }
 

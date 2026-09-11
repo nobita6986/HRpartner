@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { MapPin, Clock3, Banknote, Flame } from 'lucide-react';
+import { MapPin, Clock3, Banknote } from 'lucide-react';
 import type { EnrichedJob } from '@/app/(portal)/page';
 import { HrMonogram } from './hr-monogram';
+import { STAMPS, STAMP_RANK, type StampKey } from './stamp-defs';
 
 export interface FeaturedJobCardProps {
   /** Job data — EnrichedJob shape from page.tsx */
@@ -12,7 +13,10 @@ export interface FeaturedJobCardProps {
     salaryMinVnd: number | null;
     salaryMaxVnd: number | null;
     location?: string | null;
+    /** Backward compat (single urgent flag). Deprecated — dùng `stamps`. */
     badgeType?: 'urgent' | 'new' | null;
+    /** Y10.4/UI04g: list các stamp sẽ render trên card góc trên phải. */
+    stamps?: StampKey[];
     source?: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
     /** RQ-20: ISO timestamp of newest visible order — render only when truthy */
     postedAt?: string | null;
@@ -77,17 +81,38 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
       /* RQ-14: Minimal SaaS surface — white bg + slate border + rounded-xl + shadow-sm */
       className="hrp-focus group relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
     >
-      {/* RQ-09/RQ-10/RQ-23: Ribbon compact — top-right overlay, pointer-events-none, ~24-28px height */}
-      {job.badgeType === 'urgent' && (
-        <span
-          /* pointer-events-none: overlay does not push content; RQ-09: no pr-[72px] on title */
-          className="pointer-events-none absolute top-0 right-0 z-20 flex items-center gap-1 rounded-bl-md border-l border-b border-orange-300/40 bg-orange-500/75 px-2 py-1 text-white backdrop-blur-[1px]"
-          aria-label="Tuyển gấp"
-        >
-          <Flame className="h-3 w-3 shrink-0" aria-hidden="true" />
-          <span className="text-[11px] font-semibold leading-none">Tuyển gấp</span>
-        </span>
-      )}
+      {/* Y10.4/UI04g: Stamp stack — góc trên phải, xếp chồng dọc (FIFO quan trọng nhất trên cùng).
+          Thay thế single urgent ribbon cũ. Mỗi stamp = border-l + border-b rounded-bl-md, ~24-28px height. */}
+      {(() => {
+        // Backward compat: nếu chỉ có badgeType='urgent' (FE cũ) → map sang ['tuyen-gap']
+        const stamps: StampKey[] = (job.stamps && job.stamps.length > 0)
+          ? job.stamps
+          : (job.badgeType === 'urgent' ? ['tuyen-gap'] : []);
+        if (stamps.length === 0) return null;
+        // Sắp xếp theo STAMP_RANK (tuyen-gap > hot > thuong-cao > moi) cho thứ tự hiển thị.
+        const sorted = [...stamps].sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b]);
+        return (
+          <div
+            className="pointer-events-none absolute top-0 right-0 z-20 flex flex-col items-end gap-1"
+            data-testid={`job-stamps-${job.id}`}
+          >
+            {sorted.map((key) => {
+              const def = STAMPS[key];
+              const Icon = def.Icon;
+              return (
+                <span
+                  key={key}
+                  className={`flex items-center gap-1 rounded-bl-md border-l border-b ${def.borderClass} ${def.bgClass} px-2 py-1 ${def.fgClass} backdrop-blur-[1px]`}
+                  aria-label={def.ariaLabel}
+                >
+                  <Icon className="h-3 w-3 shrink-0" aria-hidden="true" />
+                  <span className="text-[11px] font-semibold leading-none">{def.label}</span>
+                </span>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* ─── Header ─────────────────────────────────────────────────────── */}
       {/* RQ-15: 2-col layout — logo fixed 48px square + content column with min-w-0 */}

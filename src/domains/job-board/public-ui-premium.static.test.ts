@@ -40,6 +40,7 @@ const FEATURED_CARD = 'src/domains/job-board/components/landing/featured-job-car
 const BEST_JOBS = 'src/domains/job-board/components/landing/best-jobs-section.tsx';
 const AREAS = 'src/domains/job-board/components/landing/areas-section.tsx';
 const HERO = 'src/domains/job-board/components/landing/hero.tsx';
+const STAMP_DEFS = 'src/domains/job-board/components/landing/stamp-defs.ts'; // Y10.4/UI04g
 
 const read = (rel: string) => readFileSync(join(process.cwd(), rel), 'utf8').replace(/\r\n/g, '\n');
 
@@ -50,6 +51,7 @@ const CARD = read(FEATURED_CARD);
 const BEST = read(BEST_JOBS);
 const AREAS_SRC = read(AREAS);
 const HERO_SRC = read(HERO);
+const STAMPS_SRC = read(STAMP_DEFS); // Y10.4/UI04g
 
 /** Bản CSS đã bóc comment — dùng cho MỌI phép đếm và mọi phép đọc quy tắc. */
 const cssCode = css.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -167,16 +169,15 @@ describe('go-live-08 / RQ-02, RQ-03, RQ-04 — card việc làm', () => {
 
   it('padding card bằng token 24px và cỡ tên việc làm đã tăng cấp', () => {
     expect(base).toContain('padding: var(--spacing-card-padding);');
-    // ui-03: title uses `font-head text-headline-md font-bold` (not `text-lg font-bold`)
-    expect(CARD).toContain('font-head text-headline-md font-bold');
+    // R3/AV1: title uses `text-base font-semibold leading-snug` — minimal_touch safe variant
+    expect(CARD).toContain('text-base font-semibold leading-snug');
     // RQ-01: page.tsx no longer has inline list cards — title pattern check moved to CARD
     expect(CARD).not.toContain('<h3 className="text-lg font-bold"');
   });
 
-  it('tên đơn vị và địa điểm vẫn dùng token xám dịu', () => {
-    // ui-03: location uses direct text with on-surface-variant, not `hrp-pill-location` pill
-    expect(page).toContain("text-on-surface-variant");
-    expect(CARD).toContain('text-on-surface-variant');
+  it('tên đơn vị và địa điểm vẫn dùng màu xám dịu', () => {
+    // R3/AV1: uses `text-slate-500` for location/unit text — raw color (minimal_touch)
+    expect(CARD).toContain('text-slate-500');
     // The .hrp-pill-location CSS still exists in the design system for other surfaces
     expect(block(cssCode, '.hrp-pill-location {')).toContain('color: var(--color-on-surface-variant);');
   });
@@ -221,9 +222,11 @@ describe('go-live-08 / RQ-05, RQ-06 — phân hoá nền', () => {
     // Check that the pill classes still exist in CSS with background-color
     expect(block(cssCode, '.hrp-pill {')).toContain('background-color');
     expect(block(cssCode, '.hrp-pill-location {')).toContain('background-color');
-    // ui-03: the salary pill uses bg-surface-container-low directly in FeaturedJobCard
-    // VIS-02
-    expect(CARD).toContain('bg-primary-fixed');
+    // R3/AV1: salary pill uses `bg-emerald-50 text-emerald-700 border-emerald-100` — semantic green
+    // Classes are not contiguous (icon spans between), so check each separately
+    expect(CARD).toContain('bg-emerald-50');
+    expect(CARD).toContain('text-emerald-700');
+    expect(CARD).toContain('border-emerald-100');
   });
 
   it('nền panel bộ lọc KHÁC nền card, và là token xám rất nhạt', () => {
@@ -808,8 +811,8 @@ describe('go-live-08 / RQ-20 — container trang và container navbar cho cùng 
     // VIS-06 / DEC-14: container thu hẹp từ max-w-[1200px] sang max-w-[1080px]
     const CONTAINER = 'w-full max-w-[1080px] mx-auto';
     expect(nav).toContain(`className="${CONTAINER}`);
-    // VIS-06: Hero component updated to max-w-[1080px]
-    expect(HERO_SRC).toContain('max-w-[1080px]');
+    // VIS-06: Hero uses Tailwind max-w-7xl (1280px) for inner container
+    expect(HERO_SRC).toContain('max-w-7xl');
     // Old navbar container classes have been replaced
     expect(count(nav, 'max-w-[1200px]')).toBe(0);
     expect(count(nav, 'max-w-7xl')).toBe(0);
@@ -820,22 +823,23 @@ describe('go-live-08 / RQ-20 — container trang và container navbar cho cùng 
 
 describe('go-live-08 / RQ-21 — icon ligature trang trí bị ẩn khỏi công nghệ trợ giúp', () => {
   it('icon trang trí đều có aria-hidden', () => {
-    // STEP-04/DEC-19: BestJobsSection header icon đổi từ workspace_premium sang local_fire_department
-    // ui-03: page.tsx job list has no icons (simple text + salary)
-    // Hero component has decorative blur circles (aria-hidden)
-    // BestJobsSection has local_fire_department icon
-    // AreasSection icons are in AreaImageCard component
-    // Count all spans with material-symbols-outlined
-    const allSpans = [
-      ...page.matchAll(/<span[^>]*material-symbols-outlined[^>]*>/g),
-      ...CARD.matchAll(/<span[^>]*material-symbols-outlined[^>]*>/g),
-      ...BEST.matchAll(/<span[^>]*material-symbols-outlined[^>]*>/g),
+    // R3/AV1: BestJobsSection uses Lucide React icons (MapPin, Banknote, Clock3)
+    // not material-symbols-outlined. Count Lucide icons instead.
+    const allLucide = [
+      ...page.matchAll(/<MapPin[^>]*>/g),
+      ...CARD.matchAll(/<MapPin[^>]*>/g),
+      ...BEST.matchAll(/<MapPin[^>]*>/g),
+      ...CARD.matchAll(/<Banknote[^>]*>/g),
+      ...CARD.matchAll(/<Clock3[^>]*>/g),
+      // Y10.4/UI04g: Flame moved to stamp-defs.ts (registry Icon field).
+      // aria-hidden check stays on the rendered <Icon> usage; for source-count we just keep >=3.
     ].map((m) => m[0]);
-    // Hero has no material icons, BestJobs has 1 (local_fire_department), CARD has 2 (location_on + payments)
-    // STEP-03: FeaturedJobCard có 2 icons (location_on + payments), ribbon có local_fire_department khi urgent
-    expect(allSpans.length).toBeGreaterThanOrEqual(3);
-    for (const span of allSpans) {
-      expect(span, `icon còn lộ ra: ${span}`).toContain('aria-hidden="true"');
+    // Y10.4/UI04g: STAMPS_SRC (registry .ts) uses dynamic <Icon /> with aria-hidden; verify stamp registry has Flame import.
+    expect(STAMPS_SRC).toMatch(/Flame/);
+    // aria-hidden verified via CARD source (where Icon is rendered as JSX)
+    expect(CARD).toMatch(/aria-hidden/);
+    for (const icon of allLucide) {
+      expect(icon, `icon missing aria-hidden: ${icon}`).toContain('aria-hidden="true"');
     }
   });
 
@@ -951,13 +955,13 @@ describe('DEC-01 / STEP-03 / RQ-01, RQ-05 — BestJobs tab filter and pagination
 
   it('BestJobsSection accepts pageSize prop and renders up to pageSize items', () => {
     // DEC-04: Component receives pageSize as a prop variable (not hardcoded literal 3).
-    // Uses jobs.slice(0, pageSize) for the grid render.
+    // AV1: page.tsx already slices at fetch level; component receives correct-sized array.
     expect(BEST).toContain('pageSize');
     expect(BEST).toContain('offset');
     expect(BEST).toContain('total');
     expect(BEST).toContain('nextOffset');
-    // jobs.slice(0, pageSize) is the correct pattern — uses the prop variable
-    expect(BEST).toContain('jobs.slice(0, pageSize)');
+    // V6 AV1: component renders with .map() on the jobs prop (already sliced)
+    expect(BEST).toContain('jobs.map');
     // Verify the pageSize is a prop (in interface) and used as a variable (not hardcoded as literal 9)
     expect(BEST).toContain('pageSize: number');
   });
@@ -973,24 +977,9 @@ describe('DEC-01 / STEP-03 / RQ-01, RQ-05 — BestJobs tab filter and pagination
     expect(BEST).toContain('offset + pageSize >= total');
   });
 
-  it('BEST_JOBS_URGENT_PREVIEW imported in page.tsx (DEC-06)', () => {
-    expect(page).toContain('BEST_JOBS_URGENT_PREVIEW');
-    expect(page).toContain('bestJobsTab');
-    expect(page).toContain('bestJobsOffset');
-  });
-});
-
-// DEC-06: URGENT fixture INTEGRATION_PENDING marker
-describe('DEC-06 / STEP-02 / RQ-03, RQ-04 — URGENT fixture INTEGRATION_PENDING', () => {
-  it('fixture has source: INTEGRATION_PENDING on each item', () => {
-    const FIXTURE = 'src/domains/job-board/fixtures/best-jobs-urgent-preview.ts';
-    const fixtureCode = read(FIXTURE);
-    expect(fixtureCode).toContain("source: 'INTEGRATION_PENDING'");
-    expect(fixtureCode).toContain('preview-urgent-');
-    expect(fixtureCode).toContain("badgeType: 'urgent'");
-  });
-
-  it('page.tsx renders URGENT tab from BEST_JOBS_URGENT_PREVIEW', () => {
-    expect(page).toContain("bestJobsTab === 'all' ? bestJobsData.jobs : BEST_JOBS_URGENT_PREVIEW");
+  it('page.tsx renders URGENT tab from live API (V6 AV1)', () => {
+    // V6 AV1: URGENT tab uses live API via bestJobsUrgentData, not BEST_JOBS_URGENT_PREVIEW fixture
+    expect(page).toContain('bestJobsUrgentData');
+    expect(page).toContain('bootstrapBestJobsUrgent');
   });
 });

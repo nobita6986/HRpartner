@@ -122,6 +122,9 @@ export function BestJobsSection({
                   salaryMinVnd: job.salaryMinVnd,
                   salaryMaxVnd: job.salaryMaxVnd,
                   location: job.locations[0] ?? 'Toàn quốc',
+                  // Y10.4/UI04g: pass stamps array (tuyen-gap + hot + thuong-cao + moi).
+                  // badgeType chỉ giữ backward compat cho filter 'urgent' tab.
+                  stamps: job.stamps,
                   badgeType: job.badgeType === 'urgent' ? 'urgent' : null,
                   // DEC-08: phân biệt preview card qua source field
                   source: (job as { source?: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING' }).source,
