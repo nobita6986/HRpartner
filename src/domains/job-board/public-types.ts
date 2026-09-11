@@ -1,14 +1,18 @@
 /**
- * Typed view-models cho UI04d section renderer (Plan UI Task D).
+ * Typed view-models cho UI04d section renderer (Plan UI Task D) — v1.9 cắt gọn.
  *
  * Source enum:
  * - `'REAL'` — render từ dữ liệu thật (e.g. `overview.newest`)
  * - `'DEMO'` — render từ fixture local trước khi AV6 CMS triển khai
- * - `'INTEGRATION_PENDING'` — chờ integration (sẽ HIDDEN khi data rỗng)
+ * - `'INTEGRATION_PENDING'` — chỗ dành cho section chờ integration (sẽ HIDDEN khi data rỗng)
  *
  * Mỗi view-model có `id`, `enabled`, `order`, `source`. Section component
  * nhận view-model qua prop; policy `enabled === false` → return null,
  * `source === 'REAL'` + data rỗng → HIDDEN (không fallback giả).
+ *
+ * v1.9 (11/09/2026): Bỏ 3 view-model không dùng — `NewestJobsContent`,
+ * `PartnerStripContent`, `MobileBannerContentExtended`. Homepage mới giữ 2
+ * section renderer: HrpIntro (Section 2 — Về HRP) + News (Section 4 — Tin tức).
  */
 
 import type { EnrichedJob } from '@/app/(portal)/page';
@@ -22,19 +26,7 @@ interface BaseSectionViewModel {
   source: SectionSource;
 }
 
-/* ─── Section 1 — Việc làm mới nhất (REAL) ─────────────────────────────── */
-
-export interface NewestJobsContent extends BaseSectionViewModel {
-  source: 'REAL';
-  /** Title hiển thị cho section */
-  title: string;
-  /** Subtitle/description ngắn (optional) */
-  subtitle?: string;
-  /** Dữ liệu thật từ `overview.newest` đã `enrichJob` trong page.tsx. */
-  jobs: EnrichedJob[];
-}
-
-/* ─── Section 2 — Giới thiệu HRP (DEMO) ──────────────────────────────── */
+/* ─── Section — Về HRP (DEMO) ───────────────────────────────────── */
 
 export interface HrpValueItem {
   /** Tiêu đề ngắn của ô giá trị */
@@ -48,33 +40,17 @@ export interface HrpValueItem {
 export interface HrpIntroContent extends BaseSectionViewModel {
   source: 'DEMO';
   title: string;
-  /** Image URL local (e.g. `/images/homepage-huongb/referral-team.webp`) */
+  /** Image URL local (e.g. `/images/homepage-huongb/industrial-location-04.webp`) */
   imageUrl: string;
   imageAlt: string;
   /** Rich text content — paragraphs: string[] render trực tiếp bằng map.
    *  KHÔNG HTML string, KHÔNG dangerouslySetInnerHTML. */
   paragraphs: string[];
-  /** 4 ô giá trị lấy từ 5 dịch vụ HRP */
+  /** 3 ô giá trị lấy từ 5 dịch vụ HRP (v1.9: gọn lại còn 3, bỏ "Giới thiệu việc làm" + "shield-check") */
   values: HrpValueItem[];
 }
 
-/* ─── Section 3 — Đối tác/minh họa (DEMO) ────────────────────────────── */
-
-export interface PartnerStripItem {
-  /** Monogram text hiển thị (vd "HRP", "YP", "KT") */
-  monogram: string;
-  /** Tên hiển thị (optional) */
-  label?: string;
-}
-
-export interface PartnerStripContent extends BaseSectionViewModel {
-  source: 'DEMO';
-  title: string;
-  /** 5 logo strip — đều dùng monogram local (HRP lặp hoặc project abbreviation) */
-  partners: PartnerStripItem[];
-}
-
-/* ─── Section 4 — Tin tức & cẩm nang (DEMO) ──────────────────────────── */
+/* ─── Section — Tin tức & cẩm nang (DEMO) ──────────────────────── */
 
 export type ArticleStructuredBlock =
   | { type: 'paragraph'; content: string }
@@ -97,17 +73,4 @@ export interface NewsSectionContent extends BaseSectionViewModel {
   title: string;
   featured: ArticleCardExtended;
   others: ArticleCardExtended[];
-}
-
-/* ─── Section 5 — Banner trải nghiệm trên di động (DEMO) ────────────── */
-
-export interface MobileBannerContentExtended extends BaseSectionViewModel {
-  source: 'DEMO';
-  title: string;
-  body: string;
-  imageUrl: string;
-  imageAlt: string;
-  ctaText: string;
-  /** CTA route thật (vd `/viec-lam`). KHÔNG App Store/Google Play URL giả. */
-  ctaHref: string;
 }

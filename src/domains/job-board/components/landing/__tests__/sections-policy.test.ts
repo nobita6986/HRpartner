@@ -1,12 +1,15 @@
 /**
- * sections-policy.test.tsx — UI04d Task D policy tests
+ * sections-policy.test.ts — UI04d Task D v1.9 policy tests
  *
- * Test trọng yếu (Tier 0 directive §8):
+ * v1.9 (11/09/2026): Bỏ 3 section (NewestJobs, PartnerStrip, MobileBanner).
+ * Test chỉ còn 2 section: HrpIntro (Về HRP) + News (Tin tức & Cẩm nang).
+ *
+ * Test trọng yếu:
  * - enabled === false → component return null
- * - ordering/view-model mapping (props typed đúng)
- * - REAL/DEMO source policy
- * - structured fixture hợp lệ (article body parse paragraph/heading/list)
+ * - DEMO source policy
+ * - structured fixture hợp lệ
  * - NewsPreviewModal render từ structured content array
+ * - composition: HrpIntro → RecruitingProjects → ReferralStrip → News
  *
  * Static source analysis + import-time typecheck + runtime behavior test.
  */
@@ -21,12 +24,9 @@ const DEMO = readFileSync(join(ROOT, 'src/domains/job-board/fixtures/demo-conten
 const ARTICLES = readFileSync(join(ROOT, 'src/domains/job-board/components/landing/article-preview-data.ts'), 'utf8').replace(/\r\n/g, '\n');
 
 const SECTION_FILES = {
-  newest: readFileSync(join(ROOT, 'src/domains/job-board/components/landing/newest-jobs-section.tsx'), 'utf8').replace(/\r\n/g, '\n'),
   hrpIntro: readFileSync(join(ROOT, 'src/domains/job-board/components/landing/hrp-intro-section.tsx'), 'utf8').replace(/\r\n/g, '\n'),
-  partnerStrip: readFileSync(join(ROOT, 'src/domains/job-board/components/landing/partner-strip-section.tsx'), 'utf8').replace(/\r\n/g, '\n'),
   news: readFileSync(join(ROOT, 'src/domains/job-board/components/landing/news-section.tsx'), 'utf8').replace(/\r\n/g, '\n'),
   newsModal: readFileSync(join(ROOT, 'src/domains/job-board/components/landing/news-preview-modal.tsx'), 'utf8').replace(/\r\n/g, '\n'),
-  mobileBanner: readFileSync(join(ROOT, 'src/domains/job-board/components/landing/mobile-banner-section.tsx'), 'utf8').replace(/\r\n/g, '\n'),
 } as const;
 
 const PAGE = readFileSync(join(ROOT, 'app/(portal)/page.tsx'), 'utf8').replace(/\r\n/g, '\n');
@@ -40,17 +40,15 @@ describe('typed view-model contract', () => {
     expect(TYPES).toContain("'INTEGRATION_PENDING'");
   });
 
-  it('exports 5 view-models: NewestJobsContent, HrpIntroContent, PartnerStripContent, NewsSectionContent, MobileBannerContentExtended', () => {
-    expect(TYPES).toMatch(/export\s+interface\s+NewestJobsContent\b/);
+  it('v1.9 exports 2 view-models: HrpIntroContent, NewsSectionContent', () => {
     expect(TYPES).toMatch(/export\s+interface\s+HrpIntroContent\b/);
-    expect(TYPES).toMatch(/export\s+interface\s+PartnerStripContent\b/);
     expect(TYPES).toMatch(/export\s+interface\s+NewsSectionContent\b/);
-    expect(TYPES).toMatch(/export\s+interface\s+MobileBannerContentExtended\b/);
   });
 
-  it('NewestJobsContent source narrowed to REAL', () => {
-    /* Section 1 chỉ nhận REAL — DEMO/INTEGRATION_PENDING không hợp lệ với source này. */
-    expect(TYPES).toMatch(/NewestJobsContent[\s\S]*?source:\s*'REAL'/);
+  it('v1.9 KHÔNG còn NewestJobsContent / PartnerStripContent / MobileBannerContentExtended', () => {
+    expect(TYPES).not.toMatch(/export\s+interface\s+NewestJobsContent\b/);
+    expect(TYPES).not.toMatch(/export\s+interface\s+PartnerStripContent\b/);
+    expect(TYPES).not.toMatch(/export\s+interface\s+MobileBannerContentExtended\b/);
   });
 
   it('ArticleStructuredBlock có 3 type: paragraph | heading | list', () => {
@@ -63,48 +61,42 @@ describe('typed view-model contract', () => {
 /* ─── Demo content fixture ─────────────────────────────────────────── */
 
 describe('demo-content fixture', () => {
-  it('exports 4 view-model DEMO', () => {
+  it('v1.9 exports 2 view-model DEMO (hrpIntro, demoNewsSection)', () => {
     expect(DEMO).toMatch(/export\s+const\s+demoHrpIntro/);
-    expect(DEMO).toMatch(/export\s+const\s+demoPartnerStrip/);
     expect(DEMO).toMatch(/export\s+const\s+demoNewsSection/);
-    expect(DEMO).toMatch(/export\s+const\s+demoMobileBanner/);
+  });
+
+  it('v1.9 KHÔNG còn demoPartnerStrip / demoMobileBanner', () => {
+    expect(DEMO).not.toMatch(/export\s+const\s+demoPartnerStrip/);
+    expect(DEMO).not.toMatch(/export\s+const\s+demoMobileBanner/);
   });
 
   it('mỗi view-model có enabled: true, order: <number>, source: DEMO', () => {
-    /* Strip comment lines trước khi đếm để tránh match vào comment. */
     const codeOnly = DEMO
       .split('\n')
       .filter((line) => !line.trim().startsWith('*') && !line.trim().startsWith('//'))
       .join('\n');
     const enabledCount = (codeOnly.match(/enabled:\s*true/g) ?? []).length;
     const sourceCount = (codeOnly.match(/source:\s*'DEMO'/g) ?? []).length;
-    expect(enabledCount).toBe(4);
-    expect(sourceCount).toBe(4);
+    expect(enabledCount).toBe(2);
+    expect(sourceCount).toBe(2);
   });
 
-  it('HrpIntroContent có 4 value items (lấy từ 5 dịch vụ HRP, chọn 4/5)', () => {
-    /* values array phải có đúng 4 object với iconName hợp lệ */
-    expect(DEMO).toMatch(/values:\s*\[[\s\S]*?\]\s*,?\s*\}[\s\S]*?demoPartnerStrip/);
-  });
-
-  it('PartnerStripContent có 5 partners', () => {
-    /* Đếm số { monogram: xuất hiện trong demoPartnerStrip object */
-    const start = DEMO.indexOf('demoPartnerStrip');
-    const end = DEMO.indexOf('demoNewsSection');
+  it('v1.9: HrpIntroContent có đúng 3 value items (gọn lại từ 4)', () => {
+    /* Đếm số iconName trong demoHrpIntro (chỉ 3, không phải 4). */
+    const start = DEMO.indexOf('demoHrpIntro');
+    /* Block demoHrpIntro kết thúc khi gặp export const tiếp theo hoặc EOF. */
+    const endMatch = DEMO.slice(start).match(/export\s+const\s+demoNewsSection/);
+    const end = endMatch ? start + endMatch.index! : DEMO.length;
     const block = DEMO.slice(start, end);
-    const monogramCount = (block.match(/monogram:/g) ?? []).length;
-    expect(monogramCount).toBe(5);
+    const iconCount = (block.match(/iconName:/g) ?? []).length;
+    expect(iconCount).toBe(3);
   });
 
-  it('MobileBannerContentExtended ctaHref = "/viec-lam" (route thật)', () => {
-    expect(DEMO).toMatch(/ctaHref:\s*'\/viec-lam'/);
-  });
-
-  it('KHÔNG có App Store / Google Play URL giả trong demo-content', () => {
-    expect(DEMO).not.toMatch(/apps\.apple\.com/);
-    expect(DEMO).not.toMatch(/play\.google\.com/);
-    expect(DEMO).not.toMatch(/App Store/);
-    expect(DEMO).not.toMatch(/Google Play/);
+  it('v1.9: imageUrl của HrpIntro là industrial-location-04.webp (không trùng ReferralStrip)', () => {
+    expect(DEMO).toMatch(/imageUrl:\s*'\/images\/homepage-huongb\/industrial-location-04\.webp'/);
+    /* Đảm bảo KHÔNG còn referral-team.webp trong demo-content (vì trùng ReferralStrip) */
+    expect(DEMO).not.toMatch(/imageUrl:\s*'\/images\/homepage-huongb\/referral-team\.webp'/);
   });
 });
 
@@ -117,44 +109,19 @@ describe('article-preview-data fixture', () => {
   });
 
   it('mỗi article body là structured content array (paragraph | heading | list)', () => {
-    /* Lấy tất cả type: 'X' trong body */
     const types = ARTICLES.match(/type:\s*'(paragraph|heading|list)'/g) ?? [];
     expect(types.length).toBeGreaterThan(0);
-    /* Đủ cả 3 loại để test render switch */
     expect(types.some((t) => t.includes('paragraph'))).toBe(true);
     expect(types.some((t) => t.includes('heading'))).toBe(true);
     expect(types.some((t) => t.includes('list'))).toBe(true);
   });
 
-  it('KHÔNG có HTML string trong body (không có thẻ <p>, <h1>, <ul>... trong content string)', () => {
-    /* Tìm các content string có chứa thẻ HTML */
+  it('KHÔNG có HTML string trong body', () => {
     expect(ARTICLES).not.toMatch(/content:\s*'<[a-z]/);
   });
 });
 
 /* ─── Section components policy ────────────────────────────────────── */
-
-describe('newest-jobs-section: REAL policy + HIDDEN khi rỗng', () => {
-  it('check enabled === false return null', () => {
-    expect(SECTION_FILES.newest).toMatch(/if\s*\(\s*!content\.enabled\s*\)\s*return\s+null/);
-  });
-
-  it('check jobs.length === 0 return null', () => {
-    expect(SECTION_FILES.newest).toMatch(/if\s*\(\s*content\.jobs\.length\s*===\s*0\s*\)\s*return\s+null/);
-  });
-
-  it('dùng FeaturedJobCard (tái dùng từ Plan A)', () => {
-    expect(SECTION_FILES.newest).toMatch(/import\s*\{\s*FeaturedJobCard\s*\}/);
-    expect(SECTION_FILES.newest).toMatch(/<FeaturedJobCard\b/);
-  });
-
-  it('container max-w-7xl mx-auto px-4 md:px-6', () => {
-    expect(SECTION_FILES.newest).toMatch(/max-w-7xl/);
-    expect(SECTION_FILES.newest).toMatch(/mx-auto/);
-    expect(SECTION_FILES.newest).toMatch(/px-4/);
-    expect(SECTION_FILES.newest).toMatch(/md:px-6/);
-  });
-});
 
 describe('hrp-intro-section: DEMO policy + structured paragraphs render', () => {
   it('check enabled === false return null', () => {
@@ -163,30 +130,12 @@ describe('hrp-intro-section: DEMO policy + structured paragraphs render', () => 
 
   it('paragraphs render bằng map (KHÔNG HTML string)', () => {
     expect(SECTION_FILES.hrpIntro).toMatch(/content\.paragraphs\.map/);
-    /* KHÔNG có dangerouslySetInnerHTML, KHÔNG có SafeHtml */
     expect(SECTION_FILES.hrpIntro).not.toMatch(/dangerouslySetInnerHTML/);
     expect(SECTION_FILES.hrpIntro).not.toMatch(/SafeHtml/);
   });
 
-  it('4 values items render (icon + title + body)', () => {
+  it('values items render (icon + title + body)', () => {
     expect(SECTION_FILES.hrpIntro).toMatch(/content\.values\.map/);
-  });
-});
-
-describe('partner-strip-section: 5 logos monogram, scroll-snap mobile', () => {
-  it('check enabled === false return null', () => {
-    expect(SECTION_FILES.partnerStrip).toMatch(/if\s*\(\s*!content\.enabled\s*\)\s*return\s+null/);
-  });
-
-  it('5 logos render', () => {
-    expect(SECTION_FILES.partnerStrip).toMatch(/content\.partners\.slice\(0,\s*5\)/);
-    expect(SECTION_FILES.partnerStrip).toMatch(/<HrMonogram/);
-  });
-
-  it('mobile scroll-snap ngang (snap-x snap-mandatory overflow-x-auto)', () => {
-    expect(SECTION_FILES.partnerStrip).toMatch(/snap-x/);
-    expect(SECTION_FILES.partnerStrip).toMatch(/snap-mandatory/);
-    expect(SECTION_FILES.partnerStrip).toMatch(/overflow-x-auto/);
   });
 });
 
@@ -218,52 +167,41 @@ describe('news-section + news-preview-modal: modal mở từ click, body structu
   });
 });
 
-describe('mobile-banner-section: CTA route thật, không storeLinks', () => {
-  it('check enabled === false return null', () => {
-    expect(SECTION_FILES.mobileBanner).toMatch(/if\s*\(\s*!content\.enabled\s*\)\s*return\s+null/);
-  });
-
-  it('CTA href dùng content.ctaHref (KHÔNG hardcode App Store/Google Play)', () => {
-    expect(SECTION_FILES.mobileBanner).toMatch(/href=\{content\.ctaHref\}/);
-    expect(SECTION_FILES.mobileBanner).not.toMatch(/apps\.apple\.com/);
-    expect(SECTION_FILES.mobileBanner).not.toMatch(/play\.google\.com/);
-  });
-});
-
 /* ─── Composition: page.tsx ──────────────────────────────────────────── */
 
-describe('composition: 5 section theo đúng thứ tự UI04C §3', () => {
-  it('chèn đúng 5 section component vào page.tsx', () => {
-    expect(PAGE).toMatch(/<NewestJobsSection/);
+describe('composition: HrpIntro → RecruitingProjects → ReferralStrip → News', () => {
+  it('chèn đúng 2 section component vào page.tsx', () => {
     expect(PAGE).toMatch(/<HrpIntroSection/);
-    expect(PAGE).toMatch(/<PartnerStripSection/);
     expect(PAGE).toMatch(/<NewsSection/);
-    expect(PAGE).toMatch(/<MobileBannerSection/);
   });
 
-  it('Section 1 dùng overview.newest.slice(0, 6) — KHÁC featuredJobs slice 3', () => {
-    expect(PAGE).toMatch(/overview\.newest\.slice\(0,\s*6\)\.map\(enrichJob\)/);
+  it('v1.9 KHÔNG còn NewestJobsSection / PartnerStripSection / MobileBannerSection', () => {
+    expect(PAGE).not.toMatch(/<NewestJobsSection\b/);
+    expect(PAGE).not.toMatch(/<PartnerStripSection\b/);
+    expect(PAGE).not.toMatch(/<MobileBannerSection\b/);
+    /* Và không import chúng */
+    expect(PAGE).not.toMatch(/import\s*\{\s*NewestJobsSection/);
+    expect(PAGE).not.toMatch(/import\s*\{\s*PartnerStripSection/);
+    expect(PAGE).not.toMatch(/import\s*\{\s*MobileBannerSection/);
   });
 
-  it('Section 2..5 dùng fixture demo-content', () => {
+  it('v1.9: Section 2..3 dùng fixture demo-content (chỉ demoHrpIntro + demoNewsSection)', () => {
     expect(PAGE).toMatch(/demoHrpIntro/);
-    expect(PAGE).toMatch(/demoPartnerStrip/);
     expect(PAGE).toMatch(/demoNewsSection/);
-    expect(PAGE).toMatch(/demoMobileBanner/);
+    expect(PAGE).not.toMatch(/demoPartnerStrip/);
+    expect(PAGE).not.toMatch(/demoMobileBanner/);
   });
 
-  it('thứ tự 5 section theo UI04C §3: NewestJobs → HrpIntro → PartnerStrip → News → MobileBanner, ReferralStrip invariant', () => {
-    const newest = PAGE.indexOf('<NewestJobsSection');
-    const hrp = PAGE.indexOf('<HrpIntroSection');
-    const partner = PAGE.indexOf('<PartnerStripSection');
-    const news = PAGE.indexOf('<NewsSection');
-    const mobile = PAGE.indexOf('<MobileBannerSection');
+  it('thứ tự section theo v1.9: Areas → HrpIntro → RecruitingProjects → ReferralStrip → News', () => {
+    const areas = PAGE.indexOf('<AreasSection');
+    const hrpIntro = PAGE.indexOf('<HrpIntroSection');
+    const recruiting = PAGE.indexOf('<RecruitingProjectsSection');
     const referral = PAGE.indexOf('<ReferralStrip');
-    expect(newest).toBeGreaterThan(0);
-    expect(hrp).toBeGreaterThan(newest);
-    expect(partner).toBeGreaterThan(hrp);
-    expect(news).toBeGreaterThan(partner);
-    expect(mobile).toBeGreaterThan(news);
-    expect(referral).toBeGreaterThan(mobile);
+    const news = PAGE.indexOf('<NewsSection');
+    expect(areas).toBeGreaterThan(0);
+    expect(hrpIntro).toBeGreaterThan(areas);
+    expect(recruiting).toBeGreaterThan(hrpIntro);
+    expect(referral).toBeGreaterThan(recruiting);
+    expect(news).toBeGreaterThan(referral);
   });
 });

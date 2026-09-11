@@ -11,16 +11,11 @@ import { Hero } from '@/src/domains/job-board/components/landing/hero';
 import { RecruitmentHighlight } from '@/src/domains/job-board/components/landing/recruitment-highlight';
 import { RecruitingProjectsSection } from '@/src/domains/job-board/components/landing/recruiting-projects-section';
 import { ReferralStrip } from '@/src/domains/job-board/components/landing/referral-strip';
-import { NewestJobsSection } from '@/src/domains/job-board/components/landing/newest-jobs-section';
 import { HrpIntroSection } from '@/src/domains/job-board/components/landing/hrp-intro-section';
-import { PartnerStripSection } from '@/src/domains/job-board/components/landing/partner-strip-section';
 import { NewsSection } from '@/src/domains/job-board/components/landing/news-section';
-import { MobileBannerSection } from '@/src/domains/job-board/components/landing/mobile-banner-section';
 import {
   demoHrpIntro,
-  demoPartnerStrip,
   demoNewsSection,
-  demoMobileBanner,
 } from '@/src/domains/job-board/fixtures/demo-content';
 import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
 import { buildListingHref } from '@/src/domains/job-board/public-listing.params';
@@ -344,6 +339,12 @@ export default function JobsPage() {
 
       <AreasSection areas={areasForCards} onPick={applyArea} />
 
+      {/* ─── UI04d Task D v1.9 (11/09/2026): Đưa HrpIntro (Về HRP) lên trên RecruitingProjects.
+          Thu hẹp nội dung (3 values thay vì 4, 1 paragraph thay vì 2, đổi ảnh industrial-location-04 — không trùng ReferralStrip).
+          Bỏ NewestJobs (trùng BestJobs), PartnerStrip ("Đối tác"), MobileBanner ("Trải nghiệm di động").
+          Đưa ReferralStrip ("Chương trình Cộng tác viên") lên trên News ("Tin tức & Cẩm nang"). */}
+      <HrpIntroSection content={demoHrpIntro} />
+
       <RecruitingProjectsSection
         jobs={recruitingProjects.map((job) => ({
           id: job.id,
@@ -353,31 +354,9 @@ export default function JobsPage() {
         buildHref={(jobId) => publicJobDetailPath(jobId)}
       />
 
-      {/* ─── UI04d Task D: 5 section renderer (Section 1 REAL + Section 2..5 DEMO) ───
-          Order theo UI04C §3: RecruitingProjects → NewestJobs → HrpIntro → PartnerStrip → News → MobileBanner → ReferralStrip.
-          Section 1 lấy từ overview.newest (slice 6, KHÁC featuredJobs slice 3 ở BestJobs).
-          Sections 2..5 lấy từ fixtures/demo-content.ts.
-          KHÔNG đổi các component đã ACCEPTED (BestJobs, Areas, Recruiting, Hero, ReferralStrip). */}
-      <NewestJobsSection
-        content={{
-          id: 'newest-jobs',
-          enabled: true,
-          order: 0,
-          source: 'REAL',
-          title: 'Việc làm mới nhất',
-          jobs: overview.newest.slice(0, 6).map(enrichJob),
-        }}
-      />
-
-      <HrpIntroSection content={demoHrpIntro} />
-
-      <PartnerStripSection content={demoPartnerStrip} />
+      <ReferralStrip />
 
       <NewsSection content={demoNewsSection} />
-
-      <MobileBannerSection content={demoMobileBanner} />
-
-      <ReferralStrip />
 
       {applyJob && (
         <ApplyModal

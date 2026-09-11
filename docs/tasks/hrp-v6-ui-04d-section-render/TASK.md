@@ -2,7 +2,12 @@
 
 > **Section renderer + demo content có cấu trúc** cho UI-04 theo Tier 0 mandate `docs/prompts/TIER1_UI04C_HOME_SECTIONS_FOOTER_AND_ADMIN_CMS.md` §3.
 >
-> v1.8 (11/09/2026 11:10): Tier 0 đã chốt contract trong HEAD `1af8fbd` — 5 section import + JSX đã có sẵn trong `app/(portal)/page.tsx`. Tier 1 chỉ tạo file component + fixture + types + tests. Token fix: `text-body-sm`/`text-title-md` KHÔNG có trong DEC-13 scale (chỉ có 7 bậc); Tier 1 đổi sang `text-label-sm`/`text-headline-md` (đã có sẵn trong `@theme`).
+> v1.9 (11/09/2026 11:25): Owner visual review trên production yêu cầu thu gọn homepage. Bỏ 3 section: NewestJobs (trùng BestJobs), PartnerStrip ("Đối tác"), MobileBanner ("Trải nghiệm di động"). Đưa HrpIntro (Về HRP) lên trên RecruitingProjects + thu hẹp (3 values thay vì 4, 1 paragraph thay vì 2, đổi ảnh `industrial-location-04.webp` không trùng ReferralStrip). Đưa ReferralStrip (Chương trình Cộng tác viên) lên trên News (Tin tức & Cẩm nang). Xóa 3 file component + cập nhật public-types/demo-content/tests.
+
+Thứ tự homepage v1.9:
+```
+Navbar → Hero → BestJobs → Areas → HrpIntro → RecruitingProjects → ReferralStrip → News → Footer
+```
 >
 > Lịch sử review: Tier 0 review v1 (`tier0-review-ui04c-contracts-v1.md`) + v2 (`tier0-review-ui04c-contracts-v2.md`): REVISION_REQUIRED v2. Tier 0 review v3 (`tier0-review-ui04c-contracts-v3.md`): SMALL CLOSEOUT. v1.4: Owner visual review ghép VIS-06 → container 1080px. v1.5: BLOCKED chờ 04c1. v1.6: confirm blockers closed (drafted nhưng revert theo directive mới). v1.7: thiết kế lại theo HEAD hiện hữu.
 >
