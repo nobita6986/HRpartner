@@ -84,6 +84,8 @@ describe.skipIf(!enabled)('V5-go-live-05 LIVE — card việc làm trên dữ li
     await admin.project.create({
       data: {
         id: p.id, code: p.code, name: opts.name, clientCompanyId: ccId, status: 'ACTIVE',
+        // Y10.4/UI04g: denormalize company name on creation so MKT role can render it
+        clientCompanyName: 'Công ty TNHH Điện tử Kinh Bắc',
         isPublic: opts.isPublic, siteAddress: opts.siteAddress, startDate: new Date('2026-01-01'),
       },
     });

@@ -365,6 +365,9 @@ model Project {
   filled          Int      @default(0) // V4: luôn cùng transaction với assignment (9.9)
   version         Int      @default(1)
   isPublic        Boolean  @default(false) @map("is_public") // job board (A-04)
+  // Y10.4/UI04g: denormalize client_company_name so MKT role can render company name
+  // on cards without crossing the RLS boundary on client_companies
+  clientCompanyName String? @map("client_company_name")
   createdAt       DateTime @default(now()) @map("created_at")
 
   clientCompany  ClientCompany   @relation(fields: [clientCompanyId], references: [id])

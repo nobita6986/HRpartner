@@ -62,7 +62,7 @@ function order(slots: Slot[], overrides: Partial<Order> = {}): Order {
   return { status: 'OPEN', title: 'Tuyển công nhân lắp ráp', description: null, deadlineDate: null, createdAt: new Date('2026-01-15T00:00:00.000Z'), slots, ...overrides };
 }
 
-type Row = { id: string; code: string; name: string; siteAddress: string | null; staffingOrders: Order[] };
+type Row = { id: string; code: string; name: string; siteAddress: string | null; clientCompanyName: string | null; staffingOrders: Order[] };
 
 /** Đúng payload của `publicSelect`: scalar của `Project` cộng nhánh `staffingOrders`, không quan hệ. */
 function row(overrides: Partial<Row> = {}): Row {
@@ -71,6 +71,8 @@ function row(overrides: Partial<Row> = {}): Row {
     code: 'DA-2026-001',
     name: 'Lắp ráp điện tử Bắc Ninh',
     siteAddress: 'Bắc Ninh',
+    // Y10.4/UI04g: denormalized company name (MKT role không đọc được client_companies do RLS)
+    clientCompanyName: 'Công ty TNHH Điện tử Kinh Bắc',
     staffingOrders: [order([slot()])],
     ...overrides,
   };

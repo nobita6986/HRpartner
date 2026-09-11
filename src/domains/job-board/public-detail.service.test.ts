@@ -37,6 +37,8 @@ function detailRow(slots: Array<ReturnType<typeof slot>>) {
     code: 'DA-2026-012',
     name: 'Lap rap dien tu Bac Ninh',
     siteAddress: 'Bac Ninh',
+    // Y10.4/UI04g: denormalized company name (MKT role không đọc được client_companies do RLS)
+    clientCompanyName: 'Cong ty TNHH Dien tu Kinh Bac',
     staffingOrders: [
       // go-live-09 / RQ-01: `createdAt` của đơn nay nằm trong `publicSelect`, nên payload thật có nó.
       { status: 'OPEN', title: 'Tuyen cong nhan lap rap', description: null, deadlineDate: null, createdAt: new Date('2026-01-15T00:00:00.000Z'), slots },

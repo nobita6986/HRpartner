@@ -54,20 +54,21 @@ function rows() {
   return [
     {
       id: 'prj-a', code: 'DA-A', name: 'Lắp ráp điện tử', siteAddress: 'Bắc Ninh',
+      clientCompanyName: 'Công ty A',
       staffingOrders: [{
         status: 'OPEN', title: 'Tuyển công nhân', description: null, deadlineDate: null, createdAt: SEEDED_AT,
         slots: [slot({ workLocation: '   ' })],
       }],
     },
     {
-      id: 'prj-b', code: 'DA-B', name: 'Đóng gói', siteAddress: 'Bắc Ninh',
+      id: 'prj-b', code: 'DA-B', name: 'Đóng gói', siteAddress: 'Bắc Ninh', clientCompanyName: 'Công ty B',
       staffingOrders: [{
         status: 'OPEN', title: 'Tuyển đóng gói', description: null, deadlineDate: null, createdAt: SEEDED_AT,
         slots: [slot({ positionCode: 'PACK-01', positionTitle: 'Nhân viên đóng gói', hourlyRateVnd: 32_000n })],
       }],
     },
     {
-      id: 'prj-c', code: 'DA-C', name: 'Kiểm hàng', siteAddress: 'Hà Nội',
+      id: 'prj-c', code: 'DA-C', name: 'Kiểm hàng', siteAddress: 'Hà Nội', clientCompanyName: 'Công ty C',
       staffingOrders: [{
         status: 'OPEN', title: 'Tuyển QC', description: null, deadlineDate: null, createdAt: SEEDED_AT,
         slots: [slot({ positionCode: 'QC-01', positionTitle: 'Nhân viên QC', workLocation: 'KCN Thăng Long', hourlyRateVnd: 70_000n })],

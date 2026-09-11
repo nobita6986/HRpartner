@@ -238,7 +238,7 @@ function isExpired(date: Date | null, now: Date): boolean {
 /** Hình dạng dòng mà `publicSelect` trả về. Đặt tên để `toDto` và `toDetailDto` dùng đúng một kiểu. */
 type PublicSlotRow = { positionCode: string; positionTitle: string; slotsNeeded: number; slotsFilled: number; shiftStart: string | null; shiftEnd: string | null; validTo: Date | null; workLocation: string | null; hourlyRateVnd: bigint | null };
 type PublicOrderRow = { status: string; title: string; description: string | null; deadlineDate: Date | null; createdAt: Date; slots: PublicSlotRow[] };
-type PublicProjectRow = { id: string; code: string; name: string; siteAddress: string | null; staffingOrders: PublicOrderRow[] };
+type PublicProjectRow = { id: string; code: string; name: string; siteAddress: string | null; clientCompanyName: string | null; staffingOrders: PublicOrderRow[] };
 
 // RQ-03 / AC-03 / RISK-07: ĐÚNG MỘT định nghĩa cho mỗi vị từ lọc, gọi từ cả đường danh sách và
 // đường chi tiết. Hai biểu thức song song — dù hôm nay giống nhau từng ký tự — sẽ lệch ở lần sửa
@@ -438,8 +438,9 @@ function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
     id: project.id,
     slug: project.code,
     title: project.name,
-    /** Y10.4/UI04g fix: companyName = tên nhà máy (project.name), position = tên công việc. */
-    companyName: project.name,
+    /** Y10.4/UI04g fix: companyName = tên nhà máy/công ty (denormalized vào project.clientCompanyName),
+     *  position = tên công việc (project.name). */
+    companyName: project.clientCompanyName ?? project.name,
     // DEC-03: field đơn là phần tử ĐẦU của chính mảng summary đã sort, không phải chữ của một slot
     // ngẫu nhiên. Nhánh `??` chỉ đỡ trường hợp dữ liệu rỗng — `summarize` đã bỏ chuỗi trắng.
     position: summary.positionTitles[0] ?? slots[0].positionTitle,
@@ -491,8 +492,8 @@ function toDetailDto(project: PublicProjectRow, now: Date): PublicJobDetailDto |
     slug: project.code,
     jobCode: project.code,
     title: project.name,
-    /** Y10.4/UI04g fix: companyName = tên công ty/nhà máy. */
-    companyName: project.name,
+    /** Y10.4/UI04g fix: companyName = tên công ty/nhà máy (denormalized). */
+    companyName: project.clientCompanyName ?? project.name,
     // go-live-05 / RQ-11: cùng một PHÉP derive với card (`summarizeSlots` trên tập đã `sortSlots`),
     // nhưng cố ý trên tập slot RỘNG HƠN. Trước đây cả hai bề mặt đọc `slots[0]` theo thứ tự DB nên
     // có thể mô tả cùng một việc bằng hai ca khác nhau; nay thứ tự đã ổn định ở cả hai.
@@ -532,6 +533,8 @@ const publicSelect = Prisma.validator<Prisma.ProjectSelect>()({
   code: true,
   name: true,
   siteAddress: true,
+  // Y10.4/UI04g: denormalized company name (MKT role không đọc được client_companies do RLS)
+  clientCompanyName: true,
   staffingOrders: {
     where: { status: { in: VISIBLE_ORDER_STATUSES } },
     select: {

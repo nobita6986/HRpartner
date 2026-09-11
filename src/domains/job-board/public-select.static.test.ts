@@ -51,17 +51,23 @@ function topLevelSelectKeys(block: string): string[] {
 
 describe('public job projection — không select quan hệ bắt buộc bị RLS che (RQ-03)', () => {
   it('khối publicSelect không chứa khoá quan hệ clientCompany', () => {
-    expect(publicSelectBlock()).not.toContain('clientCompany');
+    expect(publicSelectBlock()).not.toContain('clientCompany:');
+    // Y10.4/UI04g: cho phép `clientCompanyName` (scalar denormalized) nhưng KHÔNG `clientCompany`
+    // (relation sẽ kéo vào client_companies bị RLS che).
+    expect(publicSelectBlock()).not.toContain('clientCompany ');
   });
 
   it('publicSelect chỉ gồm scalar của Project cộng đúng một quan hệ staffingOrders', () => {
     expect(topLevelSelectKeys(publicSelectBlock())).toEqual([
-      'code', 'id', 'name', 'siteAddress', 'staffingOrders',
+      'clientCompanyName', 'code', 'id', 'name', 'siteAddress', 'staffingOrders',
     ]);
   });
 
   it('toDto không deref quan hệ khách hàng và không suy nhãn ngành từ text nữa', () => {
-    expect(code).not.toContain('clientCompany');
+    // Y10.4/UI04g: cấm `clientCompany` (relation kéo bảng bị RLS che) nhưng CHO PHÉP
+    // `clientCompanyName` (scalar denormalized an toàn). Mẫu clientCompany[\s:] khớp "clientCompany:"
+    // (relation map key) nhưng KHÔNG "clientCompanyName:".
+    expect(code).not.toMatch(/clientCompany[\s:]/);
     // go-live-14 / RQ-02, DEC-05, DEC-07 — khẳng định cũ `toContain('inferIndustry(searchableText,
     // null)')` đã ĐỔI DẤU thành phủ định dưới đây. Dòng khẳng định DƯƠNG kèm theo là cố ý:
     // `searchableText` phải còn sống cho `classifyJobType`, nhờ đó "bỏ nhãn suy diễn" phân biệt được

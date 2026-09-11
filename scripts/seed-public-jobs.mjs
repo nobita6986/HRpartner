@@ -95,7 +95,7 @@ async function upsertCompanies() {
   return ids;
 }
 
-async function upsertProject(p, clientCompanyId) {
+async function upsertProject(p, clientCompanyId, companyName) {
   const existing = await prisma.project.findUnique({ where: { code: p.code } });
   let project;
   if (existing) {
@@ -108,6 +108,7 @@ async function upsertProject(p, clientCompanyId) {
         endDate: null,
         status: 'ACTIVE',
         isPublic: true,
+        clientCompanyName: companyName, // Y10.4/UI04g: denormalize so MKT can render
         quota: p.positions.reduce((s, pos) => s + pos.needed, 0),
         filled: 0,
         budgetVnd: BigInt(p.positions.reduce((s, pos) => s + pos.rate * 8 * 26 * pos.needed, 0)),
@@ -124,6 +125,7 @@ async function upsertProject(p, clientCompanyId) {
         startDate: new Date(p.startDate),
         status: 'ACTIVE',
         isPublic: true,
+        clientCompanyName: companyName,
         quota: p.positions.reduce((s, pos) => s + pos.needed, 0),
         filled: 0,
         budgetVnd: BigInt(p.positions.reduce((s, pos) => s + pos.rate * 8 * 26 * pos.needed, 0)),
@@ -228,7 +230,8 @@ async function main() {
     let totalJobs = 0;
     for (let i = 0; i < PROJECTS.length; i++) {
       const p = PROJECTS[i];
-      const project = await upsertProject(p, companyIds[p.companyIdx]);
+      const companyName = COMPANIES[p.companyIdx].name;
+      const project = await upsertProject(p, companyIds[p.companyIdx], companyName);
       const order = await upsertOrder(project, p, i);
       const slots = await upsertSlot(order, p, project);
       totalJobs += slots;

@@ -83,7 +83,7 @@ function order(slots: Slot[], overrides: Partial<Order> = {}): Order {
   };
 }
 
-type Row = { id: string; code: string; name: string; siteAddress: string | null; staffingOrders: Order[] };
+type Row = { id: string; code: string; name: string; siteAddress: string | null; clientCompanyName: string | null; staffingOrders: Order[] };
 
 /** Đúng payload của `publicSelect` sau `RQ-01`: scalar của `Project` cộng nhánh `staffingOrders`. */
 function row(overrides: Partial<Row> = {}): Row {
@@ -92,6 +92,8 @@ function row(overrides: Partial<Row> = {}): Row {
     code: 'DA-2026-001',
     name: 'Lắp ráp điện tử Bắc Ninh',
     siteAddress: 'Bắc Ninh',
+    // Y10.4/UI04g: denormalized company name
+    clientCompanyName: 'Công ty TNHH Điện tử Kinh Bắc',
     staffingOrders: [order([slot()])],
     ...overrides,
   };
