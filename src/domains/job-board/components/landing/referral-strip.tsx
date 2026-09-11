@@ -19,9 +19,7 @@ export function ReferralStrip() {
       {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-7xl (đồng bộ với Hero + SearchSection) */}
       <div className="mx-auto w-full max-w-7xl grid grid-cols-1 items-center gap-8 lg:grid-cols-2 px-4 md:px-6">
         <div className="flex flex-col gap-5">
-          <p className="font-label text-label-sm font-bold uppercase tracking-widest text-secondary">
-            Cơ hội mới
-          </p>
+          {/* Y10.8+: bỏ eyebrow "Cơ hội mới" — chỉ giữ heading + subheading. */}
           <h2
             id="hrp-ctv-heading"
             className="font-head text-headline-xl font-bold text-primary-container"
@@ -65,7 +63,7 @@ export function ReferralStrip() {
           <img
             src="/images/homepage-huongb/referral-team.webp"
             alt="Đội ngũ cộng tác viên HRP"
-            className="relative aspect-[4/3] w-full object-cover"
+            className="relative h-full w-full object-cover"
             width={1024}
             height={768}
           />
