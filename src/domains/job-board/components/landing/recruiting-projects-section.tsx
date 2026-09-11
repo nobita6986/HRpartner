@@ -27,16 +27,31 @@ function deriveMonogram(title: string): string {
 
 /** Y10.5/UI04i r2: chọn ảnh stock (Unsplash, factory/warehouse worker theme).
  *  4 ảnh KHÁC nhau — mỗi card index 0-3, không hash (tránh trùng).
- *  Overlay mờ đen 65-75% để chữ trắng đọc rõ trên ảnh. */
+ *  Overlay mờ đen 65-75% để chữ trắng đọc rõ trên ảnh.
+ *
+ *  v1.12 (11/09/2026): chuyển từ Unsplash (tối) sang ảnh local sáng để tone
+ *  nhẹ nhàng hơn. 4 ảnh hero/industrial local:
+ *    0: hero/dong-goi-ha-noi.jpg (lao động nữ, sáng)
+ *    1: hero/cong-nhan-may-moc.jpg (worker trong nhà)
+ *    2: industrial-location-02.webp (xây dựng ngoài trời)
+ *    3: industrial-location-03.webp (đường + KCN)
+ *  Overlay đổi từ đen 70-75% → trắng 40% để giữ tone sáng, text đổi từ
+ *  text-white → text-on-surface (đậm) để đọc rõ trên nền sáng.
+ *
+ *  Lưu ý: KHÔNG dùng industrial-location-04 (đang là ảnh HrpIntro).
+ *  Lưu ý: KHÔNG dùng industrial-location-01 (giống 1 ảnh Areas section).
+ *  Lưu ý: KHÔNG dùng 4 industrial-location-XX (trùng 100% với Areas).
+ */
+/** v1.12 (11/09/2026): 4 ảnh LOCAL sáng (Unsplash bị bỏ), tone chuyển sang sáng. */
 const CARD_BG_IMAGES: string[] = [
-  // 1. Worker operating machinery — dimly lit factory, Hanoi Vietnam (tối, worker)
-  'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80',
-  // 2. Factory workers preparing textile — phổ biến lao động nữ phổ thông VN
-  'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=600&q=80',
-  // 3. Worker walks through warehouse — kho vận, logistics
-  'https://images.unsplash.com/photo-1565008576549-57569a49371d?auto=format&fit=crop&w=600&q=80',
-  // 4. Industrial building — bối cảnh nhà máy, exterior
-  'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=600&q=80',
+  // 0. Lao động nữ đóng gói — sáng, worker
+  '/images/hero/dong-goi-ha-noi.jpg',
+  // 1. Công nhân vận hành máy móc — sáng, nhà xưởng
+  '/images/hero/cong-nhan-may-moc.jpg',
+  // 2. Cảnh xây dựng/KCN ngoài trời — sáng
+  '/images/homepage-huongb/industrial-location-02.webp',
+  // 3. Đường nội bộ + building KCN — sáng
+  '/images/homepage-huongb/industrial-location-03.webp',
 ];
 
 /** Chọn ảnh theo index (0-3) — mỗi card 1 ảnh khác nhau, không hash trùng. */
@@ -83,21 +98,22 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
               href={buildHref(job.id)}
               data-testid={`recruiting-card-${job.id}`}
               className="hrp-focus group relative flex h-full flex-col items-center gap-3 rounded-xl border border-outline-variant p-4 text-center shadow-card transition hover:-translate-y-0.5 hover:border-primary-container pb-10 overflow-hidden bg-cover bg-center bg-no-repeat"
-              /* Y10.5/UI04i r2: overlay mờ đen 70% để chữ trắng đọc rõ trên ảnh stock. */
-              style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.70), rgba(0,0,0,0.75)), url('${pickCardImage(index)}')` }}
+              /* v1.12 (11/09/2026): overlay đen 70-75% → overlay trắng 40% (rgba(255,255,255,0.40)) để giữ tone sáng. */
+              style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.40), rgba(255,255,255,0.45)), url('${pickCardImage(index)}')` }}
             >
-              {/* Y10.5/UI04i: monogram 64×64 overlay trên ảnh nền (chữ trắng nổi). */}
+              {/* Y10.5/UI04i: monogram 64×64 overlay trên ảnh nền.
+                  v1.12: border + bg đổi sang dark/translucent để nổi trên tone sáng. */}
               <HrMonogram
                 size={64}
                 label={deriveMonogram(displayTitle)}
-                className="w-16 h-16 rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm shrink-0"
+                className="w-16 h-16 rounded-xl border border-outline bg-surface-container-high shrink-0"
               />
-              {/* Y10.5/UI04i: title đổi sang text-white để đọc được trên ảnh tối. */}
-              <p className="font-head text-headline-md font-bold text-white leading-tight min-h-[3.2em]">
+              {/* v1.12: title đổi từ text-white → text-on-surface (đậm) để đọc rõ trên nền sáng. */}
+              <p className="font-head text-headline-md font-bold text-on-surface leading-tight min-h-[3.2em]">
                 {displayTitle}
               </p>
-              {/* Y10.5/UI04i: "Cần tuyển {n} người" đổi sang text-white. */}
-              <p className="absolute bottom-3 left-0 right-0 font-label text-label-md text-white font-bold">
+              {/* v1.12: "Cần tuyển {n} người" đổi từ text-white → text-on-surface-variant. */}
+              <p className="absolute bottom-3 left-0 right-0 font-label text-label-md text-on-surface-variant font-bold">
                 Cần tuyển {job.availableSlots} người
               </p>
             </Link>
