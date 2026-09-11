@@ -134,8 +134,11 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
   const preview = isPreview(job);
   const displaySalary = salaryLabel(job.salaryMinVnd, job.salaryMaxVnd);
   const postedAtDisplay = postedAtLabel(job.postedAt);
-  // Y10.2/UI04f: monogram = abbreviation từ title job (demo logo đại diện tên project/công ty).
-  const monogram = deriveMonogram(job.title);
+  // Y10.8+: Strip prefix "Tuyển ..." khỏi title (vd "Tuyển nhân viên Kho Yên Phong 3" → "Nhân viên Kho Yên Phong 3")
+  // — title trong DB thường có prefix "Tuyển" / "Tuyển gấp" / "Tuyển dụng" nhưng UI không cần.
+  const displayTitle = job.title.replace(/^(tuyển\s*(gấp|dụng)?\s*)/i, '').trim() || job.title;
+  // Monogram cũng dùng displayTitle để khớp với chữ cái đầu của role thật (vd "Nhân viên Kho..." -> "NK").
+  const monogram = deriveMonogram(displayTitle);
 
   return (
     <article
@@ -174,7 +177,7 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
             className="text-base font-semibold leading-snug text-slate-900 line-clamp-2 transition group-hover:text-primary-dark mb-0.5"
             title={job.title}
           >
-            {job.title}
+            {displayTitle}
           </h3>
           {/* Y10.4/UI04g fix: render companyName từ API (tên nhà máy), fallback "HRP Việt Nam". */}
           <p className="text-sm font-medium text-slate-500 leading-tight">

@@ -74,7 +74,10 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
             bất kể title 1 hay 2 dòng. Thêm pb-10 để tạo khoảng trống cho absolute bottom. */}
         {/* Y10.8+: hiển thị 8 dự án (2 hàng × 4 cột desktop). */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {jobs.slice(0, 8).map((job, index) => (
+          {jobs.slice(0, 8).map((job, index) => {
+            // Y10.8+: Strip prefix "Tuyển ..." khỏi title để card gọn.
+            const displayTitle = job.title.replace(/^(tuyển\s*(gấp|dụng)?\s*)/i, '').trim() || job.title;
+            return (
             <Link
               key={job.id}
               href={buildHref(job.id)}
@@ -86,19 +89,20 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
               {/* Y10.5/UI04i: monogram 64×64 overlay trên ảnh nền (chữ trắng nổi). */}
               <HrMonogram
                 size={64}
-                label={deriveMonogram(job.title)}
+                label={deriveMonogram(displayTitle)}
                 className="w-16 h-16 rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm shrink-0"
               />
               {/* Y10.5/UI04i: title đổi sang text-white để đọc được trên ảnh tối. */}
               <p className="font-head text-headline-md font-bold text-white leading-tight min-h-[3.2em]">
-                {job.title}
+                {displayTitle}
               </p>
               {/* Y10.5/UI04i: "Cần tuyển {n} người" đổi sang text-white. */}
               <p className="absolute bottom-3 left-0 right-0 font-label text-label-md text-white font-bold">
                 Cần tuyển {job.availableSlots} người
               </p>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
