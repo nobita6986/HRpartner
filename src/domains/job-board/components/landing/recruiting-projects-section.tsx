@@ -32,8 +32,14 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
     <section
       data-section="recruiting"
       aria-labelledby="hrp-recruiting-heading"
-      /* Y2: bỏ bg-surface-container-low, thu hẹp padding */
-      className="w-full px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6"
+      /* Y10.5/UI04i: nền không còn trắng — dùng ảnh stock (nhà máy/công nghiệp,
+         Unsplash, domain thân thiện production). Overlay gradient trắng mờ 78%
+         để giữ tương phản cho monogram + title + "Cần tuyển {n} người". */
+      className="w-full px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6 bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(255,255,255,0.78), rgba(255,255,255,0.78)), url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1600&q=80')",
+      }}
     >
       {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-7xl (đồng bộ với Hero + SearchSection) */}
       <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
