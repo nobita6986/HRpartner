@@ -25,6 +25,23 @@ function deriveMonogram(title: string): string {
   return initials || 'HRP';
 }
 
+/** Y10.5/UI04i: chọn ảnh stock (Unsplash, factory/industrial theme) theo `id` của card
+ *  để mỗi card có 1 ảnh ổn định qua các lần render (deterministic, không random flicker).
+ *  Bộ 4 ảnh nhà máy/công nghiệp đã được Owner verify visual trong evidence/preview-ui04i/. */
+const CARD_BG_IMAGES: string[] = [
+  'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1565793298595-6a879b1d9492?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=600&q=80',
+];
+
+/** Hash ổn định từ string -> index 0..3. Dùng để chọn ảnh theo id. */
+function pickCardImage(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return CARD_BG_IMAGES[h % CARD_BG_IMAGES.length];
+}
+
 export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProjectsSectionProps) {
   if (jobs.length === 0) return null;
 
@@ -32,14 +49,8 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
     <section
       data-section="recruiting"
       aria-labelledby="hrp-recruiting-heading"
-      /* Y10.5/UI04i: nền không còn trắng — dùng ảnh stock (nhà máy/công nghiệp,
-         Unsplash, domain thân thiện production). Overlay gradient trắng mờ 78%
-         để giữ tương phản cho monogram + title + "Cần tuyển {n} người". */
-      className="w-full px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6 bg-cover bg-center bg-no-repeat"
-      style={{
-        backgroundImage:
-          "linear-gradient(rgba(255,255,255,0.78), rgba(255,255,255,0.78)), url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1600&q=80')",
-      }}
+      /* Y2: bỏ bg-surface-container-low, thu hẹp padding */
+      className="w-full px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6"
     >
       {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-7xl (đồng bộ với Hero + SearchSection) */}
       <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
@@ -65,21 +76,24 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
               key={job.id}
               href={buildHref(job.id)}
               data-testid={`recruiting-card-${job.id}`}
-              className="hrp-focus group relative flex h-full flex-col items-center gap-3 rounded-xl border border-outline-variant bg-surface p-4 text-center shadow-card transition hover:-translate-y-0.5 hover:border-primary-container pb-10"
+              className="hrp-focus group relative flex h-full flex-col items-center gap-3 rounded-xl border border-outline-variant p-4 text-center shadow-card transition hover:-translate-y-0.5 hover:border-primary-container pb-10 overflow-hidden bg-cover bg-center bg-no-repeat"
+              /* Y10.5/UI04i: card KHÔNG còn nền trắng — dùng ảnh stock Unsplash
+                 (industrial/factory) làm nền, overlay gradient tối 50% để giữ
+                 tương phản monogram + title + "Cần tuyển {n} người" (chữ trắng). */
+              style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.55)), url('${pickCardImage(job.id)}')` }}
             >
-              {/* STEP-05/RQ-09/DEC-14: Logo monogram 64×64 px outer. Y10.2/UI04f: monogram = abbreviation từ title. */}
+              {/* Y10.5/UI04i: monogram 64×64 overlay trên ảnh nền (chữ trắng nổi). */}
               <HrMonogram
                 size={64}
                 label={deriveMonogram(job.title)}
-                className="w-16 h-16 rounded-xl border border-outline-variant bg-white shrink-0"
+                className="w-16 h-16 rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm shrink-0"
               />
-              {/* Y10.2/UI04f: title min-height = 2*line-height cho 1-2 dòng để các card title đồng đều. */}
-              <p className="font-head text-headline-md font-bold text-on-surface leading-tight min-h-[3.2em]">
+              {/* Y10.5/UI04i: title đổi sang text-white để đọc được trên ảnh tối. */}
+              <p className="font-head text-headline-md font-bold text-white leading-tight min-h-[3.2em]">
                 {job.title}
               </p>
-              {/* STEP-05/RQ-09/DEC-16: Copy "Cần tuyển {n} người", n = availableSlots.
-                  Y10.2/UI04f fix: position-absolute bottom-0 để LUÔN ở đáy card bất kể title dài/ngắn. */}
-              <p className="absolute bottom-3 left-0 right-0 font-label text-label-md text-primary-container font-bold">
+              {/* Y10.5/UI04i: "Cần tuyển {n} người" đổi sang text-white. */}
+              <p className="absolute bottom-3 left-0 right-0 font-label text-label-md text-white font-bold">
                 Cần tuyển {job.availableSlots} người
               </p>
             </Link>
