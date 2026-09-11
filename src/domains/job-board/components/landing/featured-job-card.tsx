@@ -73,7 +73,7 @@ function RubberStamp({ stampKey }: { stampKey: StampKey }) {
       className="pointer-events-none absolute -top-4 -left-4 z-30 opacity-35"
       data-testid="job-stamp"
       aria-label={def.ariaLabel}
-      style={{ transform: `rotate(${def.rotateDeg}deg)` }}
+      style={{ transform: `rotate(${def.rotateDeg}deg) scale(0.7)`, transformOrigin: 'top left' }}
     >
       {/* Stamp body: hình tròn, không viền đen, chỉ có mực + shadow-2xl 3D */}
       <div

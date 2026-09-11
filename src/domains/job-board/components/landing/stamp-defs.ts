@@ -21,7 +21,7 @@ export interface StampDef {
   borderClass: string;
   /** Outer ring/shadow color class. */
   ringClass: string;
-  /** Rotation độ (tilted để giống đóng dấu tay). */
+  /** Rotation độ (tilted để giống đóng dấu tay). Y10.8: đồng bộ -10deg cho mọi stamp. */
   rotateDeg: number;
   Icon: LucideIcon;
   /** ARIA friendly description. */
@@ -37,7 +37,7 @@ export const STAMPS: Record<StampKey, StampDef> = {
     fgClass: 'text-white',
     borderClass: 'border-red-300',
     ringClass: 'ring-red-500',
-    rotateDeg: 12,
+    rotateDeg: -10,
     Icon: Flame,
     ariaLabel: 'Tuyển gấp',
   },
@@ -48,7 +48,7 @@ export const STAMPS: Record<StampKey, StampDef> = {
     fgClass: 'text-white',
     borderClass: 'border-red-300',
     ringClass: 'ring-red-500',
-    rotateDeg: -14,
+    rotateDeg: -10,
     Icon: Star,
     ariaLabel: 'Việc làm hot',
   },
@@ -59,7 +59,7 @@ export const STAMPS: Record<StampKey, StampDef> = {
     fgClass: 'text-white',
     borderClass: 'border-amber-300',
     ringClass: 'ring-amber-500',
-    rotateDeg: 10,
+    rotateDeg: -10,
     Icon: Gift,
     ariaLabel: 'Thưởng cao',
   },
