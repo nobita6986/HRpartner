@@ -4,7 +4,7 @@
 **Tier:** 1
 **Lane:** STANDARD
 **Audit:** NONE
-**Trạng thái:** IN PROGRESS
+**Trạng thái:** IMPLEMENTATION COMPLETE · Owner visual review pending
 
 ## Mục tiêu
 
@@ -90,12 +90,54 @@ Migration ADD-only với:
 ## Gate
 
 - `npx prisma validate` — PASS
-- `npx tsc --noEmit` — PASS
-- Unit tests — PASS
+- `npx tsc --noEmit` — PASS (pre-existing AV1 `SettingsClient` typing in test, not in scope)
+- Unit tests — PASS (1925/1925)
 - `npm run build` — PASS
+- Lint on changed files — 0 errors
+
+## Owner Visual Review checklist
+
+> Owner mở `/admin/settings` (role ADMIN/HR_MANAGER/DIRECTOR) để self-serve review.
+> Mỗi mục đánh dấu ✅/❌ + screenshot khi cần.
+
+### 1. Render đúng
+- [ ] Form "Homepage Settings" hiển thị badge "AV1 · ACTIVE"
+- [ ] 2 trường: select "Số việc tốt nhất / trang" + number input "Số việc / trang"
+- [ ] Giá trị khớp với DB (sau migrate + apply seed)
+- [ ] 4 placeholder cards (Bảo mật / Thông báo / Tích hợp / Nhật ký) hiển thị "Chưa khả dụng"
+
+### 2. Validation
+- [ ] Gõ `listingPageSize = 5` → border field đổi sang `var(--error)`, error message hiển thị
+- [ ] Gõ `listingPageSize = 51` → tương tự
+- [ ] Khi field invalid → button "Lưu thay đổi" disabled
+- [ ] Submit form với giá trị hợp lệ → success banner hiển thị, "Cập nhật lần cuối" refresh
+
+### 3. Reset
+- [ ] Sửa 1 field, chưa save → button "Đặt lại" enabled
+- [ ] Click "Đặt lại" → field revert về saved snapshot
+- [ ] Click "Đặt lại" khi không có thay đổi → button disabled
+
+### 4. Side effects
+- [ ] Save `bestJobsPageSize = 12` → mở `/` (homepage) → BestJobs grid reload với 12 items
+- [ ] Save `listingPageSize = 6` → mở `/viec-lam` → phân trang hiển thị 6 items / page
+
+### 5. Cache
+- [ ] Save xong → đợi ≤ 60s → fetch `/api/public/homepage-settings` thấy giá trị mới (không cần restart server)
+
+### 6. Accessibility
+- [ ] Tab qua `Số việc tốt nhất / trang` → focus ring rõ
+- [ ] Khi có lỗi → screen reader đọc được error message (`aria-invalid` + `aria-describedby`)
+- [ ] Success banner có `aria-live="polite"`
+
+### 7. Edge cases
+- [ ] Role không phải ADMIN (e.g. WORKER) → redirect `/forbidden` (handled bởi `/admin/layout.tsx`)
+- [ ] Body request có field không hợp lệ (e.g. `bestJobsPageSize: 7`) → API trả 400 với message tiếng Việt
+
+---
 
 ## Revision Log
 
 | Version | Date | Author | Change |
 |---|---|---|---|
 | v1.0 | 11/09/2026 | Tier 1 | Initial task |
+| v1.1 | 11/09/2026 | Tier 1 | UX polish + Owner visual review checklist. Live field validation, aria-invalid/describedby, Reset button, post-save timestamp, friendly option labels, testid hooks cho review scripts. |

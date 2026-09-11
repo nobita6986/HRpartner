@@ -8,11 +8,19 @@
  *
  * POSTs to `/api/admin/homepage-settings` and invalidates the public cache
  * via the server (revalidateTag) on success.
+ *
+ * UX contract (v1.1 — Owner visual review):
+ *   - Live client-side validation mirrors server validation
+ *     (allow-list for bestJobsPageSize, range for listingPageSize).
+ *   - Field-level error display via aria-invalid + aria-describedby.
+ *   - "Đặt lại" (Reset) button restores last-saved values.
+ *   - BestJobs dropdown shows friendly label "N việc" + grid hint.
+ *   - Last-updated timestamp reflects post-save value (not stale initial).
  */
 import * as React from 'react';
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, RotateCcw, Save } from 'lucide-react';
 import {
   BEST_JOBS_PAGE_SIZES,
   LISTING_PAGE_SIZE_MAX,
@@ -59,29 +67,57 @@ export interface AdminSettingsFormProps {
   initialSettings: HomepageSettingsDto;
 }
 
+/** Field-level validators — must mirror server-side `validateBody` in admin route. */
+function validateBestJobs(value: number): string | null {
+  if (!Number.isFinite(value)) return 'Giá trị không hợp lệ.';
+  if (!(BEST_JOBS_PAGE_SIZES as readonly number[]).includes(Math.floor(value))) {
+    return `Số việc tốt nhất/trang phải là một trong {${BEST_JOBS_PAGE_SIZES.join(', ')}}.`;
+  }
+  return null;
+}
+
+function validateListing(value: number): string | null {
+  if (!Number.isFinite(value)) return 'Giá trị không hợp lệ.';
+  if (value < LISTING_PAGE_SIZE_MIN || value > LISTING_PAGE_SIZE_MAX) {
+    return `Số việc/trang phải nằm trong [${LISTING_PAGE_SIZE_MIN}, ${LISTING_PAGE_SIZE_MAX}].`;
+  }
+  return null;
+}
+
 export default function AdminSettingsForm({ initialSettings }: AdminSettingsFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  // Track last-saved snapshot so Reset can revert + "updated at" shows the latest.
+  const [savedSnapshot, setSavedSnapshot] = useState<HomepageSettingsDto>(initialSettings);
   const [bestJobsPageSize, setBestJobsPageSize] = useState<number>(initialSettings.bestJobsPageSize);
   const [listingPageSize, setListingPageSize] = useState<number>(initialSettings.listingPageSize);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const bestJobsError = validateBestJobs(bestJobsPageSize);
+  const listingError = validateListing(listingPageSize);
+  const hasFieldError = bestJobsError !== null || listingError !== null;
+
   const hasChanges =
-    bestJobsPageSize !== initialSettings.bestJobsPageSize ||
-    listingPageSize !== initialSettings.listingPageSize;
+    bestJobsPageSize !== savedSnapshot.bestJobsPageSize ||
+    listingPageSize !== savedSnapshot.listingPageSize;
+
+  // Clear stale success/error when user edits again.
+  useEffect(() => {
+    if (success || error) {
+      setSuccess(null);
+      setError(null);
+    }
+  }, [bestJobsPageSize, listingPageSize, success, error]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSuccess(null);
 
-    if (listingPageSize < LISTING_PAGE_SIZE_MIN || listingPageSize > LISTING_PAGE_SIZE_MAX) {
-      setError(`Số việc/trang phải nằm trong [${LISTING_PAGE_SIZE_MIN}, ${LISTING_PAGE_SIZE_MAX}].`);
-      return;
-    }
-    if (![3, 6, 9, 12].includes(bestJobsPageSize)) {
-      setError('Số việc tốt nhất/trang phải là một trong {3, 6, 9, 12}.');
+    if (hasFieldError) {
+      setError(bestJobsError ?? listingError ?? 'Có trường chưa hợp lệ.');
       return;
     }
 
@@ -98,14 +134,25 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
           return;
         }
         const data = await res.json();
-        setSuccess('Đã lưu cài đặt homepage.');
-        if (data?.settings?.bestJobsPageSize) setBestJobsPageSize(data.settings.bestJobsPageSize);
-        if (data?.settings?.listingPageSize) setListingPageSize(data.settings.listingPageSize);
+        if (data?.settings) {
+          setSavedSnapshot(data.settings);
+          // Sync local state to the server-canonicalized values (handles clamping).
+          setBestJobsPageSize(data.settings.bestJobsPageSize);
+          setListingPageSize(data.settings.listingPageSize);
+          setSuccess('Đã lưu cài đặt homepage.');
+        }
         router.refresh();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Lỗi không xác định.');
       }
     });
+  }
+
+  function handleReset() {
+    setBestJobsPageSize(savedSnapshot.bestJobsPageSize);
+    setListingPageSize(savedSnapshot.listingPageSize);
+    setError(null);
+    setSuccess(null);
   }
 
   return (
@@ -122,6 +169,7 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
       {/* AV1 — HomepageSettings (Plan UI B integration) */}
       <form
         onSubmit={handleSubmit}
+        noValidate
         className="mb-8 rounded-lg border p-6"
         style={{
           background: 'var(--surface-container-lowest)',
@@ -159,18 +207,38 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
               id="bestJobsPageSize"
               value={bestJobsPageSize}
               onChange={(e) => setBestJobsPageSize(Number(e.target.value))}
+              aria-invalid={bestJobsError !== null}
+              aria-describedby="bestJobsPageSize-help bestJobsPageSize-error"
               className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
-              style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}
+              style={{
+                borderColor: bestJobsError ? 'var(--error)' : 'var(--outline-variant)',
+                color: 'var(--on-surface)',
+              }}
+              data-testid="bestJobsPageSize-select"
             >
               {BEST_JOBS_PAGE_SIZES.map((size) => (
                 <option key={size} value={size}>
-                  {size} (BestJobs)
+                  {size} việc
                 </option>
               ))}
             </select>
-            <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
-              Bội của 3 để đảm bảo layout grid 3 cột.
+            <p
+              id="bestJobsPageSize-help"
+              style={{ color: 'var(--on-surface-variant)' }}
+              className="mt-1 text-xs"
+            >
+              Bội của 3 để đảm bảo layout grid 3 cột. Tùy chọn: {BEST_JOBS_PAGE_SIZES.join(', ')}.
             </p>
+            {bestJobsError && (
+              <p
+                id="bestJobsPageSize-error"
+                role="alert"
+                style={{ color: 'var(--error)' }}
+                className="mt-1 text-xs font-medium"
+              >
+                {bestJobsError}
+              </p>
+            )}
           </div>
 
           <div>
@@ -189,12 +257,32 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
               step={1}
               value={listingPageSize}
               onChange={(e) => setListingPageSize(Number(e.target.value))}
+              aria-invalid={listingError !== null}
+              aria-describedby="listingPageSize-help listingPageSize-error"
               className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
-              style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}
+              style={{
+                borderColor: listingError ? 'var(--error)' : 'var(--outline-variant)',
+                color: 'var(--on-surface)',
+              }}
+              data-testid="listingPageSize-input"
             />
-            <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+            <p
+              id="listingPageSize-help"
+              style={{ color: 'var(--on-surface-variant)' }}
+              className="mt-1 text-xs"
+            >
               Khoảng [{LISTING_PAGE_SIZE_MIN}, {LISTING_PAGE_SIZE_MAX}]. Mặc định 12.
             </p>
+            {listingError && (
+              <p
+                id="listingPageSize-error"
+                role="alert"
+                style={{ color: 'var(--error)' }}
+                className="mt-1 text-xs font-medium"
+              >
+                {listingError}
+              </p>
+            )}
           </div>
         </div>
 
@@ -214,6 +302,7 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
         {success && (
           <div
             role="status"
+            aria-live="polite"
             className="mt-4 rounded-lg border p-3 text-sm"
             style={{
               background: 'var(--secondary-container)',
@@ -225,14 +314,26 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
           </div>
         )}
 
-        <div className="mt-6 flex items-center justify-end gap-3">
+        <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
           <p style={{ color: 'var(--on-surface-variant)' }} className="text-xs">
-            Cập nhật lần cuối: {new Date(initialSettings.updatedAt).toLocaleString('vi-VN')}
+            Cập nhật lần cuối: {new Date(savedSnapshot.updatedAt).toLocaleString('vi-VN')}
           </p>
           <button
-            type="submit"
+            type="button"
+            onClick={handleReset}
             disabled={isPending || !hasChanges}
+            style={{ background: 'var(--surface-container)', color: 'var(--on-surface)' }}
+            className="hrp-focus inline-flex items-center gap-2 rounded-lg border border-[var(--outline-variant)] px-4 py-2 text-sm font-semibold disabled:opacity-40"
+            data-testid="settings-reset-button"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Đặt lại
+          </button>
+          <button
+            type="submit"
+            disabled={isPending || !hasChanges || hasFieldError}
             className="hrp-btn-primary hrp-focus inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-40"
+            data-testid="settings-save-button"
           >
             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Lưu thay đổi

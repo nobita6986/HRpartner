@@ -7,7 +7,7 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-11 00:35 Asia/Bangkok
+updated_at: 2026-09-11 15:30 Asia/Bangkok
 roadmap_source: docs/AI_PROJECT_BRIEF.md; docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md; docs/prompts/TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md
 PHASE_MAP: |
   Phase 0: V5 Close — DA DONG 55/63 ACCEPTED (không thay đổi)
@@ -26,16 +26,15 @@ PHASE_MAP: |
     -> hrp-v6-credential-rotation-posture: BLOCKED R2 (OP-gated; Owner defer giữ nguyên)
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
-current_lane: V6 transition cleanup + N0 discovery
-current_task: hrp-v6-n0-contract-audit (IN_PROGRESS — Tier 1 đang thực hiện N0 read-only discovery)
-task_path: docs/tasks/hrp-v6-n0-contract-audit/TASK.md
+current_lane: V6 Admin vertical slice (post-N0)
+current_task: hrp-v6-admin-v6-av1-settings-editor (IMPLEMENTATION COMPLETE — Owner visual review pending; v1.1 UX polish + Owner review checklist landed in d99accc→0f1cb99→ebc7058+pending)
+task_path: docs/tasks/hrp-v6-admin-v6-av1-settings-editor/TASK.md
 worktree_branch: main
-current_gate: PLANNER_CONTRACT
-next_command: Tier 1 thực hiện N0 (docs/planning read-only + inventory + authority map + migration audit + seed classification); sau đó mở task clientCompanyName projection consistency (STANDARD, NONE); tiếp theo ưu tiên AV1 Homepage Settings (CMS foundation cho AV6) hoặc AV4 Media
-next_planner_candidate: hrp-v6-project-company-name-projection-consistency (STANDARD, NONE — sau N0 inventory); UI04d đã reconcile (IMPLEMENTATION_COMPLETE, Owner visual review pending trên production); AV1 Homepage Settings (sau UI04d ACCEPTED); AV4 Media (độc lập với N1)
-previous_accepted: UI04g carousel v3 ACCEPTED (6562aaa) + UI04g carousel v2 ACCEPTED (75d28d8) + UI04g carousel v1 ACCEPTED (e259eb6) + UI04f card monogram abbrev ACCEPTED (12a06da)
-next_planner_candidate: hrp-v6-project-company-name-projection-consistency (STANDARD, NONE — sau N0); AV1 Homepage Settings (CMS foundation — AV6 dependency); AV4 Media (AV6 dependency, độc lập N1); D.A Job Detail UI refinement (sau UI04d ACCEPTED)
-blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); UI04d IMPLEMENTATION_COMPLETE — Owner visual review pending post-deploy; 04c1+04c2 đã thực hiện bởi Owner trong UI04d commit chain; 04c1-r3 hotfix (204f605) ACCEPTED; Tier 1 next: N0 read-only + clientCompanyName projection consistency
+current_gate: OWNER_VISUAL_REVIEW
+next_command: Owner self-serve review theo checklist trong TASK.md v1.1 (7 nhóm: render / validation / reset / side effects / cache / a11y / edge cases); Tier 1 sẵn sàng mở AV4 Media (AV6 dependency, độc lập N1) nếu Owner chấp nhận tạm dừng AV1 review
+next_planner_candidate: AV4 Media design (CMS media library — AV6 dependency, độc lập N1/N2/N3); N1 schema work (JobPosting → PlacementCase → HandlingAssignment) sau N0
+previous_accepted: UI04g carousel v3 ACCEPTED (6562aaa) + UI04g carousel v2 ACCEPTED (75d28d8) + UI04g carousel v1 ACCEPTED (e259eb6) + UI04f card monogram abbrev ACCEPTED (12a06da) + AV1 HomepageSettings (0f1cb99) + projection consistency (ebc7058) + N0 contract audit (documented)
+blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); AV1 Settings form — Owner visual review pending (checklist 7 nhóm tại docs/tasks/hrp-v6-admin-v6-av1-settings-editor/TASK.md); UI04d IMPLEMENTATION_COMPLETE — Owner visual review pending post-deploy
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
 ui04_status:
   composition/footer: ACCEPTED v1.4 (04b767e)
@@ -46,8 +45,8 @@ ui04_status:
   detail UI D.A: DRAFT — sau section-render ACCEPTED
   detail editor D.B: DRAFT (CRITICAL) — sau D.A
 held_draft: hrp-v5-go-live-19-tracking-pii-db-mask — việc viết, chưa giao /code
-queue_authority: Chi tiet UI04 o docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/plan-overview.md; chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md; dung dung task slug that, khong suy dien them phase/task; current_task = hrp-v6-n0-contract-audit IN_PROGRESS (11/09/2026); section-render đã reconcile (IMPLEMENTATION_COMPLETE, Owner visual review pending); 04c1+04c2 đã thực hiện bởi Owner trong commit UI04d trên main; 04c1-r3 hotfix 204f605 ACCEPTED; Tier 1 tiếp theo: N0 (read-only) → clientCompanyName projection fix → AV1/AV4/UI04d verdict
-owner_boundary: AFF CHAN TUYET DOI (giữ nguyên); go-live-07 DEFERRED; credential-rotation-posture BLOCKED OP-gated; UI04 04c1+04c2 đã OWNER_DECIDED (16 lựa chọn + 5 interaction invariants) — KHÔNG escalate Owner lần 2; UI04d IMPLEMENTATION_COMPLETE — Owner visual review pending trên production; 04c1-r3 hotfix ACCEPTED (204f605); section-render đã reconcile trong N0 cleanup
+queue_authority: Chi tiet UI04 o docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/plan-overview.md; chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md; dung dung task slug that, khong suy dien them phase/task; current_task = hrp-v6-admin-v6-av1-settings-editor IMPLEMENTATION_COMPLETE (Owner visual review pending); section-render đã reconcile (IMPLEMENTATION_COMPLETE, Owner visual review pending); 04c1+04c2 đã thực hiện bởi Owner trong commit UI04d trên main; 04c1-r3 hotfix 204f605 ACCEPTED; projection consistency fix landed ebc7058; Tier 1 sẵn sàng AV4 Media sau AV1 review verdict
+owner_boundary: AFF CHAN TUYET DOI (giữ nguyên); go-live-07 DEFERRED; credential-rotation-posture BLOCKED OP-gated; UI04 04c1+04c2 đã OWNER_DECIDED (16 lựa chọn + 5 interaction invariants) — KHÔNG escalate Owner lần 2; UI04d IMPLEMENTATION_COMPLETE — Owner visual review pending trên production; 04c1-r3 hotfix ACCEPTED (204f605); section-render đã reconcile trong N0 cleanup; AV1 Settings form v1.1 — Owner visual review pending theo 7-nhóm checklist trong TASK.md
 protected_paths: README.md; docs/tasks/hrp-v6-security-credential-rotation/PROMPT_TIER2.md (per Tier 1 contract nếu có); Tier 1 KHÔNG sửa source production; Tier 1 KHÔNG revert R3 8 file dirty; Tier 1 KHÔNG revert composition/footer 04b767e; Tier 1 KHÔNG revert R2 9e51917 / correction R1; Tier 1 KHÔNG revert 04c1 (9f593fa) / 04c2 (1316ff4)
 security_note: Khong lap lai credential lich su; moi gia tri nhay cam chi duoc ghi [REDACTED]. Rotate production thuoc OP Owner. §13 credential hygiene — lam CUOI CUNG truoc public. UI04 04c1 KHONG mo contact API, persistence, schema, permission, CMS, Admin. UI04 04c2 KHONG mo API, schema, persistence; KHONG hardcode màu hex (chỉ Tailwind utility); KHONG thêm package icon (chỉ lucide-react đã có). Tier 1 push production authority theo Tier 0 directive TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md.
 phase1_live_evidence: commit f8bd761 trên origin/main; 2 migration files (20260908150000_v6_phase1a_labor_profile_schema + 20260908150001_v6_phase1a_labor_profile_rls) confirmed applied hrp-live bởi Owner 08/09; không có CI/CD auto-deploy migration (verified: vercel.json buildCommand không gọi prisma migrate deploy; .github/workflows/ci.yml không có deploy job)
@@ -59,6 +58,7 @@ ui04_evidence:
   04c1 ACCEPTED round 1 v1.0 10/09/2026 23:21 (Tier 2 commit 9f593fa): 16 Owner decisions tại docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/evidence/owner-footer-r2-decisions.md; verify-task.ps1 PASS (0 warning); RQ-00..RQ-16 (17 req) + AC-00..AC-14 (15 AC, 14 đo được) + STEP-03..STEP-08 (6 step thi công cụ thể); scope GlobalFooter.tsx + ContactForm.tsx; gates PASS; Tier 1 finalize TASK.md ACCEPTED tại 780bb75 [NOTE: Tier 1 204f605 hotfix commit trên main 81c7aeb; 9f593fa/780bb75 KHÔNG trên main hiện tại]
   04c2 ACCEPTED round 1 v1.0 10/09/2026 23:48 (Tier 2 commit 1316ff4): 16 Owner decisions + 5 interaction invariants tại docs/tasks/hrp-v6-ui-04c2-job-card-color-refinement-v10/evidence/owner-job-card-color-refinement-decisions.md; verify-task.ps1 PASS + verify-handoff.ps1 PASS WITH WARNINGS cosmetic (H-15 control field Tier 1 sở hữu); RQ-00..RQ-21 (22 req) + AC-00..AC-14 (15 AC) + STEP-01..STEP-12 (13 step thi công); scope featured-job-card.tsx + featured-job-card.test.ts; 89/89 tests PASS, 0 new failure; gates typecheck/test:unit/build PASS; Tier 1 finalize TASK.md ACCEPTED tại d7e6899 [NOTE: 1316ff4/d7e6899 KHÔNG trên main hiện tại — features đã được Owner thực hiện lại trong các commit UI04d mới trên main 81c7aeb]
   UI04d section-render: IMPLEMENTATION_COMPLETE (11/09/2026 13:39); source tại commits 781480c (v1.9 composition), 3cff151 (section renderer + demo), 40482f7 (seed), 6aecd16 (News v1.11), 40482f7 (extra seed), 61b7601 (strip tuyển prefix), 191b9ab (recruiting tone sáng), 84624f6 (BestJobs spinner), 81c7aeb (recruiting 8→4 cards); components: hrp-intro-section.tsx, news-section.tsx (modal preview), recruiting-projects-section.tsx (8→4 cards), best-jobs-section.tsx (loading state); homepage order đúng: Navbar → Hero → BestJobs → Areas → HrpIntro → RecruitingProjects → ReferralStrip → News → Footer; NewestJobs/PartnerStrip/MobileBanner đã bị loại khỏi homepage; gate cuối: Owner visual review pending trên production; ACCEPTED chờ verdict Owner.
+  AV1 HomepageSettings: IMPLEMENTATION_COMPLETE v1.1 (11/09/2026 15:30); Owner visual review pending theo 7-nhóm checklist tại docs/tasks/hrp-v6-admin-v6-av1-settings-editor/TASK.md; scope: schema + migration + permission + service + 2 API routes + admin form + homepage + listing integration; gates: prisma validate / vitest 1925/1925 / build / lint 0 errors / api-boundary PASS; commits: 0f1cb99 (initial), ebc7058 (projection boundary-aware refactor), pending (v1.1 UX polish + checklist)
 owner_defer:
   decision: "Deferred by Owner until target production stack and go-live hardening phase are confirmed."
   scope:
