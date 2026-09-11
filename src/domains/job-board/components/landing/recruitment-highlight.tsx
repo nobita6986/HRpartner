@@ -7,22 +7,23 @@ interface RecruitmentHighlightProps {
 }
 
 /** Y10.4/UI04g fix: Ảnh thật Unsplash free stock theo chủ đề slide (thay SVG illustration + loại bỏ 2 dòng header text). */
+/** Y10.5/UI04i r3: Ảnh thật Unsplash free stock cho Hero carousel — 3 ảnh KHÁC nhau, overlay gradient tối. */
 const SLIDES = [
   {
-    // Slide 1: Đăng công việc trong 5 phút — hiring/job posting workspace
-    image: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=400&h=280&q=80',
+    // Slide 1: Đăng công việc trong 5 phút — laptop/desk workspace
+    image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=400&h=280&q=80',
     title: 'Đăng công việc trong 5 phút',
     desc: 'Không cần tài khoản doanh nghiệp. Chỉ cần mô tả và đăng — ứng viên tự tìm đến bạn.',
   },
   {
-    // Slide 2: HRP lọc hồ sơ thông minh — resume/CV filtering
-    image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=400&h=280&q=80',
+    // Slide 2: HRP lọc hồ sơ thông minh — team collaboration meeting
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=280&q=80',
     title: 'HRP lọc hồ sơ thông minh',
     desc: 'Theo địa điểm, ca làm, mức lương thực tế. Chỉ ứng viên phù hợp mới được giới thiệu.',
   },
   {
-    // Slide 3: Chỉ gặp ứng viên đã sàng lọc — professional interview meeting
-    image: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=400&h=280&q=80',
+    // Slide 3: Chỉ gặp ứng viên đã sàng lọc — professional interview
+    image: 'https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?auto=format&fit=crop&w=400&h=280&q=80',
     title: 'Chỉ gặp ứng viên đã sàng lọc',
     desc: 'Ứng viên đã đồng ý phỏng vấn và sẵn sàng. Bạn tiết kiệm thời gian, hiệu quả cao hơn.',
   },
