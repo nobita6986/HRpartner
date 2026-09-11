@@ -27,14 +27,14 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
 current_lane: UI04 public homepage completion
-current_task: hrp-v6-ui-04c1-r9-footer-map-osm (READY_FOR_EXECUTION v0.1)
-task_path: docs/tasks/hrp-v6-ui-04c1-r9-footer-map-osm/TASK.md
-spec_version: v0.1 (Owner 11/09/2026 01:22 directive: bo cot 3 ContactForm, thay map; dung OSM embed (khong co Google Maps API key); header "BẢN ĐỒ"; iframe height 220px de 3 cot cao tuong duong)
-task_status: Tier 1 (Delivery Lead) commit 39950a1 + push len origin/main 11/09/2026 01:23 theo tier1.md workflow; typecheck local PASS; Vercel auto-deploy; TIER1 self-review NONE (FAST lane)
-worktree_branch: main (Tier 0 directive TIER0_UI04 con hieu luc cho R3->R4->R5->R6->R7->R8->R9)
-current_gate: OWNER_VISUAL_REVIEW_R9 (anh refresh https://hrpvietnam.com/ footer preview: xem map + cao 3 cot tuong duong)
-next_command: Tier 0 chot visual R9: (a) ACCEPTED -> closeout UI04c1 + mo hrp-v6-ui-04d-section-render v1.6, (b) map sai toa do -> Tier 1 thu toa do khac, (c) can merge PR #1 fix-ci truoc
-previous_accepted: 04c1 ACCEPTED round 1 (9f593fa) + 04c2 ACCEPTED round 1 (1316ff4) + R3 v1.3 ACCEPTED (8c6fd03) + composition/footer v1.4 ACCEPTED (04b767e) + interaction R2 ACCEPTED + VIS-01..03 correction R1 ACCEPTED (284e46c) + B pagination-admin ACCEPTED (18919da) + A visual-polish ACCEPTED
+current_task: hrp-v6-ui-04e-hero-width-balance (READY_FOR_EXECUTION v0.1)
+task_path: docs/tasks/hrp-v6-ui-04e-hero-width-balance/TASK.md
+spec_version: v0.1 (Owner 11/09/2026 08:19: hero hon hep hon body, search panel truncate "Ten cong viec"/"Tat ca..."/"Muc luong". Tang Hero 1080px -> 7xl, BestJobs 1080px -> 7xl, Home page bo max-w-2xl hero)
+task_status: Tier 1 commit 2e8e76f + push len origin/main 11/09/2026 08:23 theo tier1.md workflow; typecheck local PASS; Vercel auto-deploy; TIER1 self-review NONE (FAST lane)
+worktree_branch: main
+current_gate: OWNER_VISUAL_REVIEW_04e (refresh https://hrpvietnam.com/ xem 3 cot Section ngang nhau + search panel text khong con truncate)
+next_command: Tier 0 chot visual 04e: (a) ACCEPTED -> closeout + mo phase tiep theo, (b) chua -> Tier 1 fix them
+previous_accepted: R9 footer map OSM ACCEPTED (39950a1) + R8 footer cot 1 bo min-h-11 ACCEPTED (cc548c3) + R7 bo helper text ACCEPTED + R6 footer flatten cot 1 ACCEPTED (84c4d61) + R5/R4 AC DRAFT + 04c1 R1 (9f593fa) + 04c2 R1 (1316ff4) + 04 R3 (8c6fd03) + composition/footer v1.4 (04b767e) + interaction R2 + VIS-01..03 (284e46c) + B pagination-admin (18919da) + A visual-polish
 next_planner_candidate: hrp-v6-ui-04d-section-render (BLOCKED v1.5 — sau 04c1+04c2 push production + Owner live visual review ACCEPTED); sau đó hrp-v6-ui-04d-detail-ui (D.A); sau đó Admin V6 theo dependency (AV1 → AV4 → AV2 → AV6 → AV5)
 blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); UI04 04c1+04c2 đã OWNER_DECIDED (16 lựa chọn chốt 10/09/2026) — gate đã mở sang TIER2_EXECUTION; Owner live visual review pending post-deploy (Tier 1 monitor Vercel/CI); section-render chờ Tier 1 review V6 stacking sau push production
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
