@@ -25,25 +25,23 @@ function deriveMonogram(title: string): string {
   return initials || 'HRP';
 }
 
-/** Y10.5/UI04i: chọn ảnh stock (Unsplash, casual/blue-collar worker theme, gần gũi
- *  với thị trường lao động phổ thông Việt Nam — workshop, dây chuyền, may mặc, F&B).
- *  Mỗi card có 1 ảnh ổn định qua các lần render (deterministic theo `id`, không random flicker). */
+/** Y10.5/UI04i r2: chọn ảnh stock (Unsplash, factory/warehouse worker theme).
+ *  4 ảnh KHÁC nhau — mỗi card index 0-3, không hash (tránh trùng).
+ *  Overlay mờ đen 65-75% để chữ trắng đọc rõ trên ảnh. */
 const CARD_BG_IMAGES: string[] = [
-  // 1. Workshop cơ khí thủ công — bối cảnh Việt Nam, casual
-  'https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=600&q=80',
-  // 2. Công nhân dây chuyền may — phù hợp thị trường lao động nữ phổ thông VN
+  // 1. Worker operating machinery — dimly lit factory, Hanoi Vietnam (tối, worker)
+  'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80',
+  // 2. Factory workers preparing textile — phổ biến lao động nữ phổ thông VN
   'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=600&q=80',
-  // 3. Lao động F&B / hospitality — phổ biến với lao động phổ thông VN
-  'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=600&q=80',
-  // 4. Kho vận / logistics — nam lao động phổ thông VN
-  'https://images.unsplash.com/photo-1601598851547-4302969d0614?auto=format&fit=crop&w=600&q=80',
+  // 3. Worker walks through warehouse — kho vận, logistics
+  'https://images.unsplash.com/photo-1565008576549-57569a49371d?auto=format&fit=crop&w=600&q=80',
+  // 4. Industrial building — bối cảnh nhà máy, exterior
+  'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=600&q=80',
 ];
 
-/** Hash ổn định từ string -> index 0..3. Dùng để chọn ảnh theo id. */
-function pickCardImage(id: string): string {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return CARD_BG_IMAGES[h % CARD_BG_IMAGES.length];
+/** Chọn ảnh theo index (0-3) — mỗi card 1 ảnh khác nhau, không hash trùng. */
+function pickCardImage(index: number): string {
+  return CARD_BG_IMAGES[index % CARD_BG_IMAGES.length];
 }
 
 export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProjectsSectionProps) {
@@ -75,16 +73,14 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
             Y10.2/UI04f fix: dùng position-relative card + position-absolute "Cần tuyển" để luôn sticky bottom
             bất kể title 1 hay 2 dòng. Thêm pb-10 để tạo khoảng trống cho absolute bottom. */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {jobs.slice(0, 4).map((job) => (
+          {jobs.slice(0, 4).map((job, index) => (
             <Link
               key={job.id}
               href={buildHref(job.id)}
               data-testid={`recruiting-card-${job.id}`}
               className="hrp-focus group relative flex h-full flex-col items-center gap-3 rounded-xl border border-outline-variant p-4 text-center shadow-card transition hover:-translate-y-0.5 hover:border-primary-container pb-10 overflow-hidden bg-cover bg-center bg-no-repeat"
-              /* Y10.5/UI04i: card KHÔNG còn nền trắng — dùng ảnh stock Unsplash
-                 (industrial/factory) làm nền, overlay gradient tối 50% để giữ
-                 tương phản monogram + title + "Cần tuyển {n} người" (chữ trắng). */
-              style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.55)), url('${pickCardImage(job.id)}')` }}
+              /* Y10.5/UI04i r2: overlay mờ đen 70% để chữ trắng đọc rõ trên ảnh stock. */
+              style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.70), rgba(0,0,0,0.75)), url('${pickCardImage(index)}')` }}
             >
               {/* Y10.5/UI04i: monogram 64×64 overlay trên ảnh nền (chữ trắng nổi). */}
               <HrMonogram
