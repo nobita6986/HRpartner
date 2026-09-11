@@ -12,7 +12,7 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `NONE` |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_REVIEW` |
+| Status | `READY_FOR_REVIEW` → commit `fe54903` |
 | Planner | `Tier 1` |
 | Baseline | `ce7fc7c` (HEAD trước task) |
 | In-scope roots | `src/domains/job-board/public-ui-premium.static.test.ts`, `src/domains/job-board/public-ui-token-parity.static.test.ts`, `src/domains/applications/marketplace-inventory.static.test.ts`, `src/domains/applications/marketplace-browse.routes.test.ts`, `src/shared/ui/design-tokens.static.test.ts`, `app/globals.css`, `docs/tasks/hrp-v6-ui-04d-pre-existing-13-fail-resolve-2026-09-11/**` |
@@ -141,3 +141,4 @@ None.
 ## 10. Revision Log
 
 - `v1.0` (11/09/2026): Initial TASK.
+- `v1.1` (11/09/2026): Executed all 13 fixes. Commit `fe54903`. 0 fail / 1847 tests / 116 files.
