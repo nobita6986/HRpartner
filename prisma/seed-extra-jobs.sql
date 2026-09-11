@@ -6,24 +6,24 @@
 --
 -- Chạy trên STAGING DB:
 --   psql "$DATABASE_URL" -f prisma/seed-extra-jobs.sql
+-- Hoặc qua Node: node scripts/run-seed-sql.mjs  (tự load .env.dev)
 --
 -- IDEMPOTENT: dùng fixed UUID + ON CONFLICT (id) DO NOTHING.
--- Xóa seed: DELETE FROM projects WHERE code LIKE 'EXTRA-2026-%';
+-- Xóa seed: DELETE FROM outsourcing_projects WHERE code LIKE 'EXTRA-2026-%';
+--            (CASCADE sẽ xóa orders + slots theo FK)
+--
+-- LƯU Ý: Project table = `outsourcing_projects` (xem prisma/schema.prisma @@map).
 
 BEGIN;
 
--- ─── Clients mới (3 công ty đa vùng) ─────────────────────────────────────
-INSERT INTO client_companies (id, code, name, tax_code, industry, status, created_at)
-VALUES
-  ('seed-client-extra-hn-01',    'CC-EXTRA-HN',    'Khách hàng mẫu Hà Nội',      '08****011', 'Điện tử',         'ACTIVE', NOW()),
-  ('seed-client-extra-hcm-01',   'CC-EXTRA-HCM',   'Khách hàng mẫu TP.HCM',       '08****012', 'Dệt may',          'ACTIVE', NOW()),
-  ('seed-client-extra-bd-01',    'CC-EXTRA-BD',    'Khách hàng mẫu Bình Dương',   '08****013', 'Công nghiệp nhẹ',  'ACTIVE', NOW())
-ON CONFLICT (id) DO NOTHING;
+-- ─── Clients mới (KHÔNG cần thêm vì DB này đã có sẵn seed clients) ────────
+-- DB hiện có: CC-DEMO-001, CC-NB-001..005, CC-SEED-001, CC-EXTRA-HN/HCM/BD
+-- Em dùng lại các client này thay vì tạo mới.
 
 -- ─── 10 Projects ─────────────────────────────────────────────────────────
 -- Cấu trúc: code = 'EXTRA-2026-NNN', name = chức danh (đã strip Tuyển),
 -- siteAddress = "KCN ..., Tỉnh", quota/filled cho phù hợp
-INSERT INTO projects (id, code, client_company_id, name, quota, filled, is_public, site_address, client_company_name, start_date, status, version, created_at)
+INSERT INTO outsourcing_projects (id, code, client_company_id, name, quota, filled, is_public, site_address, client_company_name, start_date, status, version, created_at)
 VALUES
   -- 1. Hà Nội · Điện tử · URGENT
   ('seed-proj-EXTRA-2026-001', 'EXTRA-2026-001', 'seed-client-extra-hn-01',
@@ -31,9 +31,9 @@ VALUES
    'KCN Thăng Long, Hà Nội', 'Công ty CP Điện tử Thăng Long',
    '2026-01-01', 'ACTIVE', 1, NOW()),
   -- 2. Bắc Ninh · Điện tử · thường
-  ('seed-proj-EXTRA-2026-002', 'EXTRA-2026-002', 'seed-client-hrp-demo-1',
+  ('seed-proj-EXTRA-2026-002', 'EXTRA-2026-002', 'demo-client-kb-001',
    'Công nhân đóng gói sản phẩm Yên Phong 2', 40, 32, true,
-   'KCN Yên Phong, Bắc Ninh', 'Công ty TNHH Điện tử An Phát',
+   'KCN Yên Phong, Bắc Ninh', 'Công ty TNHH Điện tử Kinh Bắc',
    '2026-01-01', 'ACTIVE', 1, NOW()),
   -- 3. TP.HCM · Dệt may · URGENT
   ('seed-proj-EXTRA-2026-003', 'EXTRA-2026-003', 'seed-client-extra-hcm-01',
@@ -46,14 +46,14 @@ VALUES
    'KCN VSIP II, Bình Dương', 'Công ty TNHH Cơ khí Châu Á',
    '2026-01-01', 'ACTIVE', 1, NOW()),
   -- 5. Hải Phòng · Kho vận · URGENT
-  ('seed-proj-EXTRA-2026-005', 'EXTRA-2026-005', 'seed-client-extra-hn-01',
+  ('seed-proj-EXTRA-2026-005', 'EXTRA-2026-005', 'seed-client-hrp-demo',
    'Nhân viên vận hành kho lạnh Đình Vũ', 15, 9, true,
    'KCN Đình Vũ, Hải Phòng', 'Công ty CP Logistics Miền Bắc',
    '2026-01-01', 'ACTIVE', 1, NOW()),
   -- 6. Thái Nguyên · Điện tử · thường
-  ('seed-proj-EXTRA-2026-006', 'EXTRA-2026-006', 'seed-client-extra-hn-01',
+  ('seed-proj-EXTRA-2026-006', 'EXTRA-2026-006', 'seed-client-hrp-demo',
    'Kỹ thuật viên SMT Yên Bình', 12, 5, true,
-   'KCN Yên Bình, Thái Nguyên', 'Công ty TNHH Samsung Display VN',
+   'KCN Yên Bình, Thái Nguyên', 'HRP Demo Client',
    '2026-01-01', 'ACTIVE', 1, NOW()),
   -- 7. Hưng Yên · May mặc · URGENT
   ('seed-proj-EXTRA-2026-007', 'EXTRA-2026-007', 'seed-client-extra-hcm-01',
@@ -66,9 +66,9 @@ VALUES
    'KCN Hòa Khánh, Đà Nẵng', 'Công ty CP Cơ khí Miền Trung',
    '2026-01-01', 'ACTIVE', 1, NOW()),
   -- 9. Bắc Giang · Kho vận · URGENT
-  ('seed-proj-EXTRA-2026-009', 'EXTRA-2026-009', 'seed-client-hrp-demo-2',
+  ('seed-proj-EXTRA-2026-009', 'EXTRA-2026-009', 'seed-client-hrp-demo',
    'Nhân viên xếp dỡ kho Quang Châu', 25, 16, true,
-   'KCN Quang Châu, Bắc Giang', 'Công ty TNHH Kho vận Đông Bắc',
+   'KCN Quang Châu, Bắc Giang', 'HRP Demo Client',
    '2026-01-01', 'ACTIVE', 1, NOW()),
   -- 10. Hà Nội · Văn phòng · thường
   ('seed-proj-EXTRA-2026-010', 'EXTRA-2026-010', 'seed-client-extra-hn-01',
@@ -163,7 +163,7 @@ ON CONFLICT (id) DO NOTHING;
 COMMIT;
 
 -- ─── Verify ──────────────────────────────────────────────────────────────
--- SELECT code, name, site_address, quota, filled FROM projects WHERE code LIKE 'EXTRA-2026-%' ORDER BY code;
+-- SELECT code, name, site_address, quota, filled FROM outsourcing_projects WHERE code LIKE 'EXTRA-2026-%' ORDER BY code;
 -- SELECT so.code, so.status, so.deadline_date, COUNT(s.id) AS slots
 --   FROM staffing_orders so LEFT JOIN staffing_order_slots s ON s.staffing_order_id = so.id
 --   WHERE so.code LIKE 'SO-EXTRA-%' GROUP BY so.code, so.status, so.deadline_date ORDER BY so.code;
