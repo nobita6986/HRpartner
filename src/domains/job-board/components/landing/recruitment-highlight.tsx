@@ -7,23 +7,23 @@ interface RecruitmentHighlightProps {
 }
 
 /** Y10.4/UI04g fix: Ảnh thật Unsplash free stock theo chủ đề slide (thay SVG illustration + loại bỏ 2 dòng header text). */
-/** Y10.8/UI04i r4: Ảnh Vietnamese / Asian worker lao động phổ thông — thay ảnh Tây cũ. */
+/** Y10.9/UI04i r5: Ảnh local Vietnamese worker từ C:\Users\Admin\Desktop\HrP\anhwweb — công nhân Việt Nam thật. */
 const SLIDES = [
   {
-    // Slide 1: Đăng công việc trong 5 phút — công nhân vận hành máy (Bernd Dittrich, Hanoi VN)
-    image: 'https://images.unsplash.com/photo-1771098124487-efcfcba07d08?auto=format&fit=crop&w=400&h=280&q=80',
+    // Slide 1: Đăng công việc trong 5 phút — công nhân vận hành máy móc (TP.HCM)
+    image: '/images/hero/cong-nhan-may-moc.jpg',
     title: 'Đăng công việc trong 5 phút',
     desc: 'Không cần tài khoản doanh nghiệp. Chỉ cần mô tả và đăng — ứng viên tự tìm đến bạn.',
   },
   {
-    // Slide 2: HRP lọc hồ sơ thông minh — Vietnamese woman weaving machine (Brayden Prato)
-    image: 'https://images.unsplash.com/photo-1715375397897-1e5e94d69ec3?auto=format&fit=crop&w=400&h=280&q=80',
+    // Slide 2: HRP lọc hồ sơ thông minh — may Sài Gòn (công nhân may TP.HCM)
+    image: '/images/hero/may-sai-gon.jpg',
     title: 'HRP lọc hồ sơ thông minh',
     desc: 'Theo địa điểm, ca làm, mức lương thực tế. Chỉ ứng viên phù hợp mới được giới thiệu.',
   },
   {
-    // Slide 3: Chỉ gặp ứng viên đã sàng lọc — HR manager handshake interview (asian)
-    image: 'https://images.unsplash.com/photo-1758518730384-be3d205838e8?auto=format&fit=crop&w=400&h=280&q=80',
+    // Slide 3: Chỉ gặp ứng viên đã sàng lọc — đóng gói Hà Nội (công nhân đóng gói Hà Nội)
+    image: '/images/hero/dong-goi-ha-noi.jpg',
     title: 'Chỉ gặp ứng viên đã sàng lọc',
     desc: 'Ứng viên đã đồng ý phỏng vấn và sẵn sàng. Bạn tiết kiệm thời gian, hiệu quả cao hơn.',
   },
