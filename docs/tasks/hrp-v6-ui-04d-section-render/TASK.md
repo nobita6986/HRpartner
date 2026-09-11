@@ -2,7 +2,7 @@
 
 > **Section renderer + demo content có cấu trúc** cho UI-04 theo Tier 0 mandate `docs/prompts/TIER1_UI04C_HOME_SECTIONS_FOOTER_AND_ADMIN_CMS.md` §3.
 >
-> v1.7 (11/09/2026 10:35): Tier 0 directive mới — Tier 1 sửa contract theo HEAD thực tế, triển khai trực tiếp trong cùng lượt. Baseline = HEAD `22e310d` (commit Y10.8 stamp refinement đã là visual authority hiện hữu). Container pattern = `max-w-7xl mx-auto px-4 md:px-6` (đồng bộ với Hero/BestJobs/Areas/Recruiting/ReferralStrip). Tier 1 trực tiếp code + commit + push. Audit NONE. KHÔNG revert Y10.4..Y10.12. KHÔNG mở lại Tier 3 hay Owner visual review trước deploy.
+> v1.8 (11/09/2026 11:10): Tier 0 đã chốt contract trong HEAD `1af8fbd` — 5 section import + JSX đã có sẵn trong `app/(portal)/page.tsx`. Tier 1 chỉ tạo file component + fixture + types + tests. Token fix: `text-body-sm`/`text-title-md` KHÔNG có trong DEC-13 scale (chỉ có 7 bậc); Tier 1 đổi sang `text-label-sm`/`text-headline-md` (đã có sẵn trong `@theme`).
 >
 > Lịch sử review: Tier 0 review v1 (`tier0-review-ui04c-contracts-v1.md`) + v2 (`tier0-review-ui04c-contracts-v2.md`): REVISION_REQUIRED v2. Tier 0 review v3 (`tier0-review-ui04c-contracts-v3.md`): SMALL CLOSEOUT. v1.4: Owner visual review ghép VIS-06 → container 1080px. v1.5: BLOCKED chờ 04c1. v1.6: confirm blockers closed (drafted nhưng revert theo directive mới). v1.7: thiết kế lại theo HEAD hiện hữu.
 >
@@ -20,7 +20,7 @@
 | Status | `READY_FOR_EXECUTION` (Tier 1 triển khai trực tiếp theo Tier 0 directive 11/09/2026) |
 | Planner | `Tier 1` |
 | Implementer | `Tier 1` (Tier 1 owns task contract + implementation + evidence trong cùng round; KHÔNG chờ Tier 2) |
-| Baseline | HEAD `22e310d` (Y10.8 stamp refinement) — `git rev-parse HEAD` ngay trước STEP-01 → `evidence/exec-head-before.txt`. Working tree clean theo TIER0_HANDOVER §4.1. |
+| Baseline | HEAD `1af8fbd` (Y10.4..Y10.12 mobile header fix) — `git rev-parse HEAD` ngay trước STEP-01 → `evidence/exec-head-before.txt`. Working tree clean theo TIER0_HANDOVER §4.1. **Tier 0 chốt contract trong HEAD `1af8fbd`**: 5 section import + JSX đã có sẵn trong `app/(portal)/page.tsx`. Tier 1 chỉ tạo file component + fixture + types + tests. |
 | Source reference | HEAD `22e310d` = baseline visual authority hiện hữu. **Kế thừa nguyên xi** (KHÔNG sửa nếu không bắt buộc): `Hero` (`hero.tsx` gradient peach), `BestJobsSection`, `AreasSection`, `RecruitingProjectsSection`, `RecruitmentHighlight` (carousel 3 ảnh local VN), `ReferralStrip`, `FeaturedJobCard` (Y10.8 stamp nhỏ + opacity 50%, salary chip centered, header h-[4.75rem], strip "Tuyển " prefix, thicker logo border), `GlobalFooter`, `ContactForm`. Visual contract = HEAD đã chốt bởi 04c1 + 04c2 + Y10.4..Y10.12. |
 | Container contract (HEAD) | `max-w-7xl mx-auto px-4 md:px-6` cho mọi inner container section. Section padding `pb-8 pt-4 md:pb-10 md:pt-6` (BestJobs/Recruiting/ReferralStrip) hoặc `pb-4 pt-1 md:pb-5 md:pt-2` (Areas — Y10.11/UI04k r2). Tier 1 KHÔNG hardcode 1080px hay 1200px — theo HEAD đã chốt 1280px. |
 | Plan UI predecessor | composition/footer `ACCEPTED` (`hrp-v6-ui-04c-home-composition-footer` v1.4 @ `04b767e`) + R3 `ACCEPTED` (`hrp-v6-ui-04b-urgent-live-ribbon-r3` v1.3 @ `8c6fd03`) + 04c1 footer tweak r2 `ACCEPTED` (`780bb75`, 10/09/2026 23:21) + 04c2 job-card color refinement v10 `ACCEPTED` (`d7e6899`, 10/09/2026 23:48) + Plan B `ACCEPTED` + correction R1 + interaction R2 + Y10.4..Y10.12 stamp/header/salary/logo fixes. **Full chain closed.** |
