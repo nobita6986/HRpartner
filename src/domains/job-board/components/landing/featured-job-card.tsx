@@ -70,7 +70,7 @@ function RubberStamp({ stampKey }: { stampKey: StampKey }) {
   const Icon = def.Icon;
   return (
     <div
-      className="pointer-events-none absolute -top-4 -right-4 z-30 opacity-50"
+      className="pointer-events-none absolute -top-4 -left-4 z-30 opacity-35"
       data-testid="job-stamp"
       aria-label={def.ariaLabel}
       style={{ transform: `rotate(${def.rotateDeg}deg)` }}
@@ -109,10 +109,10 @@ function RubberStamp({ stampKey }: { stampKey: StampKey }) {
           </span>
         </div>
 
-        {/* Grunge dots nhỏ — hạt mực văng (80% nhẹ hơn) */}
-        <div className={`pointer-events-none absolute -left-0.5 top-1/3 h-1.5 w-1.5 rounded-full ${def.bgClass} opacity-40`} aria-hidden="true" />
-        <div className={`pointer-events-none absolute -bottom-0.5 right-0 h-1 w-1 rounded-full ${def.bgClass} opacity-30`} aria-hidden="true" />
-        <div className={`pointer-events-none absolute -right-0.5 bottom-1/4 h-1 w-1.5 rounded-full ${def.bgClass} opacity-25`} aria-hidden="true" />
+        {/* Grunge dots nhỏ — hạt mực văng (đối xứng cho stamp góc trái) */}
+        <div className={`pointer-events-none absolute -right-0.5 top-1/3 h-1 w-1 rounded-full ${def.bgClass} opacity-30`} aria-hidden="true" />
+        <div className={`pointer-events-none absolute -bottom-0.5 left-0 h-0.5 w-0.5 rounded-full ${def.bgClass} opacity-20`} aria-hidden="true" />
+        <div className={`pointer-events-none absolute -left-0.5 bottom-1/4 h-0.5 w-1 rounded-full ${def.bgClass} opacity-15`} aria-hidden="true" />
       </div>
     </div>
   );
