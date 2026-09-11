@@ -41,6 +41,18 @@ function isPreview(job: FeaturedJobCardProps['job']): boolean {
   );
 }
 
+/** Y10.2/UI04f: derive 2-3 letter monogram từ job title (vd "Kỹ thuật viên điện tử Yên Phong 3" -> "KY", "Chuyên viên nhân sự Khổng Tiên" -> "CH"). */
+function deriveMonogram(title: string): string {
+  const words = title.split(/\s+/).filter(Boolean);
+  const initials = words
+    .map((w) => w.replace(/[^A-Za-zÀ-ỹ]/g, '').charAt(0))
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+  return initials || 'HRP';
+}
+
 /** Formats postedAt ISO to a short date label for display. */
 function postedAtLabel(iso: string | null | undefined): string {
   if (!iso) return '';
@@ -56,6 +68,8 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
   const preview = isPreview(job);
   const displaySalary = salaryLabel(job.salaryMinVnd, job.salaryMaxVnd);
   const postedAtDisplay = postedAtLabel(job.postedAt);
+  // Y10.2/UI04f: monogram = abbreviation từ title job (demo logo đại diện tên project/công ty).
+  const monogram = deriveMonogram(job.title);
 
   return (
     <article
@@ -78,13 +92,16 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
       {/* ─── Header ─────────────────────────────────────────────────────── */}
       {/* RQ-15: 2-col layout — logo fixed 48px square + content column with min-w-0 */}
       <div className="flex items-start gap-3 p-4">
+        {/* Y10.2/UI04f: monogram = abbreviation từ title job (vd "Yên Phong 3" -> "YP"). */}
         <HrMonogram
           size={48}
+          label={monogram}
           className="h-12 w-12 shrink-0 rounded-lg border border-slate-100 bg-white"
         />
         <div className="min-w-0 flex-1">
+          {/* Y10.2/UI04f: hover tên job từ blue-700 → primary-dark (tone cam). */}
           <h3
-            className="text-base font-semibold leading-snug text-slate-900 line-clamp-2 transition group-hover:text-blue-700 mb-0.5"
+            className="text-base font-semibold leading-snug text-slate-900 line-clamp-2 transition group-hover:text-primary-dark mb-0.5"
             title={job.title}
           >
             {job.title}
