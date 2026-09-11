@@ -18,7 +18,7 @@
  * handlers that handle auth, cache tags, and rate limits.
  */
 
-import type { Prisma, PrismaClient } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import {
   BEST_JOBS_PAGE_SIZE_DEFAULT,
   LISTING_PAGE_SIZE_DEFAULT,
@@ -111,7 +111,7 @@ export class SettingsRowMissingError extends Error {
 }
 
 export async function updateHomepageSettings(
-  prisma: PrismaClient,
+  prisma: SettingsClient,
   input: UpdateHomepageSettingsInput,
   actorId: string | null,
 ): Promise<UpdateHomepageSettingsResult> {

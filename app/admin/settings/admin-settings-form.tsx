@@ -65,6 +65,8 @@ const PLACEHOLDER_GROUPS = [
 export interface AdminSettingsFormProps {
   /** Server-side fetched initial settings. */
   initialSettings: HomepageSettingsDto;
+  /** Present when the settings schema is not ready on the deployed database. */
+  unavailableReason?: string;
 }
 
 /** Field-level validators — must mirror server-side `validateBody` in admin route. */
@@ -84,7 +86,7 @@ function validateListing(value: number): string | null {
   return null;
 }
 
-export default function AdminSettingsForm({ initialSettings }: AdminSettingsFormProps) {
+export default function AdminSettingsForm({ initialSettings, unavailableReason }: AdminSettingsFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -115,6 +117,11 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
     e.preventDefault();
     setError(null);
     setSuccess(null);
+
+    if (unavailableReason) {
+      setError(unavailableReason);
+      return;
+    }
 
     if (hasFieldError) {
       setError(bestJobsError ?? listingError ?? 'Có trường chưa hợp lệ.');
@@ -177,6 +184,19 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
         }}
         data-testid="homepage-settings-form"
       >
+        {unavailableReason && (
+          <div
+            role="alert"
+            className="mb-5 rounded-lg border p-3 text-sm"
+            style={{
+              background: 'var(--warning-container)',
+              color: 'var(--on-warning-container)',
+              borderColor: 'var(--warning)',
+            }}
+          >
+            {unavailableReason} Các giá trị mặc định bên dưới chỉ để tham khảo.
+          </div>
+        )}
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 style={{ color: 'var(--on-surface)' }} className="text-base font-semibold">
@@ -187,10 +207,13 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
             </p>
           </div>
           <span
-            style={{ background: 'var(--secondary-container)', color: 'var(--on-secondary-container)' }}
+            style={{
+              background: unavailableReason ? 'var(--warning-container)' : 'var(--secondary-container)',
+              color: unavailableReason ? 'var(--on-warning-container)' : 'var(--on-secondary-container)',
+            }}
             className="rounded-full px-2 py-0.5 text-xs font-medium"
           >
-            AV1 · ACTIVE
+            {unavailableReason ? 'AV1 · CHỜ MIGRATION' : 'AV1 · ACTIVE'}
           </span>
         </div>
 
@@ -207,6 +230,7 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
               id="bestJobsPageSize"
               value={bestJobsPageSize}
               onChange={(e) => setBestJobsPageSize(Number(e.target.value))}
+              disabled={Boolean(unavailableReason)}
               aria-invalid={bestJobsError !== null}
               aria-describedby="bestJobsPageSize-help bestJobsPageSize-error"
               className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
@@ -257,6 +281,7 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
               step={1}
               value={listingPageSize}
               onChange={(e) => setListingPageSize(Number(e.target.value))}
+              disabled={Boolean(unavailableReason)}
               aria-invalid={listingError !== null}
               aria-describedby="listingPageSize-help listingPageSize-error"
               className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
@@ -316,12 +341,14 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
 
         <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
           <p style={{ color: 'var(--on-surface-variant)' }} className="text-xs">
-            Cập nhật lần cuối: {new Date(savedSnapshot.updatedAt).toLocaleString('vi-VN')}
+            {unavailableReason
+              ? 'Chưa có dữ liệu cấu hình trên database'
+              : `Cập nhật lần cuối: ${new Date(savedSnapshot.updatedAt).toLocaleString('vi-VN')}`}
           </p>
           <button
             type="button"
             onClick={handleReset}
-            disabled={isPending || !hasChanges}
+            disabled={Boolean(unavailableReason) || isPending || !hasChanges}
             style={{ background: 'var(--surface-container)', color: 'var(--on-surface)' }}
             className="hrp-focus inline-flex items-center gap-2 rounded-lg border border-[var(--outline-variant)] px-4 py-2 text-sm font-semibold disabled:opacity-40"
             data-testid="settings-reset-button"
@@ -331,7 +358,7 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
           </button>
           <button
             type="submit"
-            disabled={isPending || !hasChanges || hasFieldError}
+            disabled={Boolean(unavailableReason) || isPending || !hasChanges || hasFieldError}
             className="hrp-btn-primary hrp-focus inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-40"
             data-testid="settings-save-button"
           >

@@ -11,7 +11,7 @@
  *   - SettingsRowMissingError on missing row
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   BEST_JOBS_PAGE_SIZES,
   LISTING_PAGE_SIZE_DEFAULT,
@@ -33,7 +33,7 @@ import {
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
 /** Mock Prisma client for testing. */
-function createMockPrisma(existingRow?: Record<string, unknown>) {
+function createMockPrisma(existingRow?: Record<string, unknown> | null) {
   return {
     homepageSettings: {
       findUnique: vi.fn().mockResolvedValue(existingRow ?? null),
