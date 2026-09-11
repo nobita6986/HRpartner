@@ -160,6 +160,9 @@ model User {
   subManagedProjects2 Project[] @relation("ProjectSubPm2") // M13: phó PM thứ 2
   managingWorkers    Worker[]  @relation("WorkerManager")   // M13: quản lý trực tiếp worker
 
+  // AV1 — singleton HomepageSettings updater
+  homepageSettingsUpdates HomepageSettings[]
+
   @@index([role, isActive])
   @@map("users")
 }
@@ -1429,4 +1432,24 @@ model EmploymentEpisode {
   @@index([workerId, status])
   @@index([status, startedAt])
   @@map("employment_episodes")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AV1 — HOMEPAGE SETTINGS (singleton, Plan UI B integration)
+//   Vòng đời: chỉ UPDATE row 'default' — INSERT khác id bị DB constraint chặn.
+//   bestJobsPageSize: 3 | 6 | 9 | 12 (số card mỗi page của BestJobsSection)
+//   listingPageSize: 6..50 (số job mỗi page của /viec-lam)
+//   updatedBy: User FK (nullable — trước khi có auth, row seed không có actor)
+// ═══════════════════════════════════════════════════════════════════════════
+model HomepageSettings {
+  id               String   @id @default("default")
+  bestJobsPageSize Int      @default(9)  @map("best_jobs_page_size")
+  listingPageSize  Int      @default(12) @map("listing_page_size")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt    @map("updated_at")
+  updatedById      String?  @map("updated_by_id")
+  updatedBy        User?    @relation(fields: [updatedById], references: [id])
+
+  @@index([updatedAt])
+  @@map("homepage_settings")
 }

@@ -426,14 +426,18 @@ describe('Y10.4/UI04g — BestJobs ko phan tab trong page.tsx', () => {
     expect(code).toContain('buildBestJobsQuery');
   });
 
-  it('page.tsx fetch tu /api/jobs (khong con urgency=URGENT)', () => {
+  it('AV1: BestJobs uses pageSize variable (from HomepageSettings), featuredJobs uses urgency=URGENT', () => {
     const code = strip(read(PORTAL_PAGE));
-    expect(code).toContain("/api/jobs?");
-    expect(code).not.toMatch(/urgency=URGENT/);
+    // AV1: BestJobs fetch uses bestPageSize variable (not hardcoded 9)
+    // Matches: buildBestJobsQuery(offset, bestPageSize) — no urgency param
+    expect(code).toMatch(/buildBestJobsQuery\([^,]+,\s*\w+[^)]*\)/);
+    // AV1: featured jobs fetch uses hardcoded urgency=URGENT for the URGENT picker
+    expect(code).toMatch(/\/api\/jobs\?limit=3&urgency=URGENT/);
   });
 
-  it('BestJobsSection render 9 jobs/page (3 cot x 3 hang)', () => {
+  it('BestJobs pageSize (AV1: từ HomepageSettings singleton, default 9)', () => {
     const code = strip(read(PORTAL_PAGE));
-    expect(code).toContain('BEST_JOBS_PAGE_SIZE = 9');
+    // AV1: pageSize is now a state variable initialized from default constant
+    expect(code).toContain('BEST_JOBS_PAGE_SIZE_DEFAULT');
   });
 });

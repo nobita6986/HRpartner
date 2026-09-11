@@ -94,6 +94,11 @@ export const PERMISSION_CATALOG: readonly PermissionDescriptor[] = [
     group: PERMISSION_GROUPS.CONTRACT,
     description: 'Sửa hợp đồng worker (HR_MANAGER).',
   },
+  {
+    code: 'CAN_EDIT_HOMEPAGE_SETTINGS',
+    group: PERMISSION_GROUPS.SYSTEM,
+    description: 'Sửa singleton HomepageSettings (ADMIN only — Plan UI B integration).',
+  },
 ] as const;
 
 export type PermissionCode = (typeof PERMISSION_CATALOG)[number]['code'];

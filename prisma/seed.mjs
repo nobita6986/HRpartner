@@ -524,6 +524,7 @@ const PERMISSION_SEED = [
   { code: 'CAN_PROCESS_TICKET',         group: 'TICKET',   description: 'Xử lý ticket (cancel/pay/reject — Planner bổ sung nhóm TICKET).' },
   { code: 'CAN_PUBLISH_JOB',            group: 'PROJECT',  description: 'Publish hoặc unpublish job trên public job board trong Project scope.' },
   { code: 'CAN_EDIT_CONTRACT',          group: 'CONTRACT', description: 'Sửa hợp đồng worker (HR_MANAGER).' },
+  { code: 'CAN_EDIT_HOMEPAGE_SETTINGS', group: 'SYSTEM',   description: 'Sửa singleton HomepageSettings (ADMIN only — Plan UI B integration).' },
 ];
 
 // Role → tập permission codes (theo data-scope-security §4.2 seed mẫu + DEC-02 bổ sung).

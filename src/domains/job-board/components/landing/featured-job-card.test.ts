@@ -595,9 +595,9 @@ describe('Y10.4/UI04g: BestJobs ko phan tab — chi hien thi 1 data set', () => 
   });
 });
 
-describe('Y10.4/UI04g: BestJobs khong con URGENT tab nua', () => {
-  it('page.tsx khong fetch urgency=URGENT', () => {
-    expect(PAGE).not.toContain('urgency=URGENT');
+describe('Y10.4/UI04g + AV1: BestJobs khong con URGENT tab nhung featuredJobs uses URGENT query', () => {
+  it('page.tsx co fetch urgency=URGENT cho featuredJobs (AV1 flip)', () => {
+    expect(PAGE).toMatch(/urgency=URGENT/);
   });
 });
 

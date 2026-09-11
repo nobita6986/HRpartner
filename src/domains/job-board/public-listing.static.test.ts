@@ -98,8 +98,10 @@ describe('RQ-08/AC-10 — đúng MỘT đường tới DB, không có đường 
     expect(count(code, /listPublicJobProjection\(/g)).toBe(1);
   });
 
-  it('getPrisma() chỉ xuất hiện làm đối số của withPublicDb', () => {
-    expect(count(code, /getPrisma\(\)/g)).toBe(1);
+  it('getPrisma() chỉ xuất hiện trong withPublicDb wrapper (AV1: 1 cho settings + 1 cho query)', () => {
+    // AV1: getPrisma() dùng cho 2 việc — đọc singleton HomepageSettings + query jobs.
+    // Cả hai đều wrap hoặc là singleton global (no RLS).
+    expect(count(code, /getPrisma\(\)/g)).toBe(2);
     expect(code).toMatch(/withPublicDb\(getPrisma\(\),/);
   });
 

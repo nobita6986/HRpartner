@@ -25,6 +25,7 @@ import type {
   PublicJobListResult,
   PublicJobOverview,
 } from '@/src/domains/job-board/public.service';
+import { BEST_JOBS_PAGE_SIZE_DEFAULT } from '@/src/domains/job-board/public-types';
 
 // ─── UI-adapter: projection công khai → props của card ───────────────────────
 
@@ -37,9 +38,11 @@ const EMPTY_OVERVIEW: PublicJobOverview = {
   topPaid: [],
 };
 
-// DEC-04 / STEP-04: BestJobs pageSize hardcoded 9 literal, passed via prop.
-// Y10.8: 3 cột × 3 hàng = 9 jobs/page.
-const BEST_JOBS_PAGE_SIZE = 9;
+// AV1: injected from HomepageSettings singleton
+const DEFAULT_BEST_PAGE_SIZE = BEST_JOBS_PAGE_SIZE_DEFAULT;
+
+// DEC-04 / STEP-04: BestJobs pageSize — AV1: default 9, fetched from HomepageSettings singleton.
+// Y10.8: 3 cột × 3 hàng = 9 jobs/page. Used as fallback before settings are loaded.
 
 export interface EnrichedJob {
   id: string;
@@ -112,10 +115,12 @@ function enrichJob(job: PublicJobDto): EnrichedJob {
   };
 }
 
-// ─── BestJobs fetch query (limit=9, offset via state) ───────────────────────
-
-function buildBestJobsQuery(offset: number): string {
-  const params = new URLSearchParams({ limit: String(BEST_JOBS_PAGE_SIZE), offset: String(offset) });
+// ─── BestJobs fetch query (limit=N, offset via state, urgency optional) ───────
+// AV1: bestPageSize injected from HomepageSettings singleton.
+// Y10.8: featuredJobs = urgency=URGENT jobs (filter tie-breaker: postedAt desc + id desc).
+function buildBestJobsQuery(offset: number, pageSize: number, urgency?: 'URGENT'): string {
+  const params = new URLSearchParams({ limit: String(pageSize), offset: String(offset) });
+  if (urgency === 'URGENT') params.set('urgency', 'URGENT');
   return params.toString();
 }
 
@@ -140,6 +145,7 @@ export default function JobsPage() {
     bestJobsNextOffset: null,
   });
   const [bestJobsLoading, setBestJobsLoading] = useState(false);
+  const [bestPageSize, setBestPageSize] = useState(DEFAULT_BEST_PAGE_SIZE);
 
   // DEC-02 / STEP-02: bootstrapBestJobs — DUY NHẤT, chỉ tải page BestJobs + set bestJobsData + facets + overview.
   // KHÔNG có mode append, KHÔNG jobs state, KHÔNG nextOffset (chỉ bestJobsOffset), KHÔNG generation/sentinel/observer.
@@ -148,7 +154,7 @@ export default function JobsPage() {
       let cancelled = false;
       setBestJobsLoading(true);
 
-      fetch(`/api/jobs?${buildBestJobsQuery(offset)}`, { cache: 'no-store' })
+      fetch(`/api/jobs?${buildBestJobsQuery(offset, bestPageSize)}`, { cache: 'no-store' })
         .then((res) => {
           if (!res.ok) throw new Error(`Lỗi ${res.status}`);
           return res.json() as Promise<PublicJobListResult>;
@@ -173,12 +179,45 @@ export default function JobsPage() {
         });
     },
     [],
+    // AV1: re-fetch when bestPageSize changes (settings update).
   );
 
   // bootstrapBestJobs chạy khi mount và khi bestJobsOffset đổi
   useEffect(() => {
     bootstrapBestJobs(bestJobsOffset);
   }, [bestJobsOffset, bootstrapBestJobs]);
+
+  // AV1: bootstrap HomepageSettings singleton (server fetches, client hydrates from page data).
+  // If the API call fails, defaults are already in place via DEFAULT_BEST_PAGE_SIZE.
+  useEffect(() => {
+    fetch('/api/public/homepage-settings', { cache: 'no-store' })
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json() as Promise<{ bestJobsPageSize: number }>;
+      })
+      .then((data) => {
+        if (data?.bestJobsPageSize && [3, 6, 9, 12].includes(data.bestJobsPageSize)) {
+          setBestPageSize(data.bestJobsPageSize);
+        }
+      })
+      .catch(() => { /* use default on error */ });
+  }, []);
+
+  // AV1: fetch featuredJobs = urgency=URGENT jobs for overview seeding.
+  // Tie-breaker: postedAt desc + id desc. Cached with no-store.
+  const [featuredJobsData, setFeaturedJobsData] = useState<PublicJobOverview['newest']>([]);
+
+  useEffect(() => {
+    fetch(`/api/jobs?limit=3&urgency=URGENT`, { cache: 'no-store' })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+        return res.json() as Promise<PublicJobListResult>;
+      })
+      .then((data) => {
+        setFeaturedJobsData(Array.isArray(data.jobs) ? data.jobs : []);
+      })
+      .catch(() => { /* featured section will use overview fallback */ });
+  }, []);
 
   // DEC-01 / STEP-02: Hero form submit → navigate tới /viec-lam với offset: 0
   function handleSearch(e: React.FormEvent) {
@@ -205,16 +244,18 @@ export default function JobsPage() {
 
   // Y10.4/UI04g: Bỏ tabs — chỉ dùng 1 data set + pagination
   function handleBestJobsPrev() {
-    setBestJobsOffset((prev) => Math.max(0, prev - BEST_JOBS_PAGE_SIZE));
+    setBestJobsOffset((prev) => Math.max(0, prev - bestPageSize));
   }
 
   function handleBestJobsNext() {
-    setBestJobsOffset((prev) => prev + BEST_JOBS_PAGE_SIZE);
+    setBestJobsOffset((prev) => prev + bestPageSize);
   }
 
-  // Featured source — newest first, topPaid fallback (per RQ-03 / RQ-11)
-  const featuredSource = overview.newest[0] ?? overview.topPaid[0] ?? null;
-  const featuredJobs = (overview.newest.length > 0 ? overview.newest : overview.topPaid)
+  // Featured source — AV1: urgency=URGENT jobs from featuredJobsData first,
+  // then overview fallback (newest → topPaid). Slice to 3 for featured hero.
+  const featuredSource = featuredJobsData[0] ??
+    (overview.newest[0] ?? overview.topPaid[0] ?? null);
+  const featuredJobs = (featuredJobsData.length > 0 ? featuredJobsData : overview.newest.length > 0 ? overview.newest : overview.topPaid)
     .slice(0, 3)
     .map(enrichJob);
 
@@ -329,7 +370,7 @@ export default function JobsPage() {
            thay vì 'Không có việc làm nào' khi data chưa về. */
         isLoading={bestJobsLoading}
         total={bestJobsData.total}
-        pageSize={BEST_JOBS_PAGE_SIZE}
+        pageSize={bestPageSize}
         offset={bestJobsOffset}
         nextOffset={bestJobsData.bestJobsNextOffset}
         onPrev={handleBestJobsPrev}

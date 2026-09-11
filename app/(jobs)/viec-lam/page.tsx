@@ -46,11 +46,13 @@ import { RATE_LIMIT_RULES } from '@/src/shared/security/rate-limit-port';
 import { getPrisma } from '@/src/lib/db';
 import { withPublicDb } from '@/src/shared/auth/with-public-db';
 import { listPublicJobProjection } from '@/src/domains/job-board/public.service';
+import { getHomepageSettings } from '@/src/domains/job-board/public-settings.service';
+import { clampListingPageSize, LISTING_PAGE_SIZE_DEFAULT } from '@/src/domains/job-board/public-types';
 import { CANONICAL_ORIGIN } from '@/src/shared/routing/portal-landing';
 import { formatDeadlineDate, publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
 import {
   LISTING_PATH,
-  PAGE_SIZE,
+  PAGE_SIZE as _LISTING_PATH_PAGE_SIZE,
   buildListingHref,
   listingIsIndexable,
   parseListingSearchParams,
@@ -80,7 +82,7 @@ type ListingJob = ListingData['jobs'][number];
 type ListingFacets = ListingData['facets'];
 
 type ListingLoad =
-  | { readonly kind: 'ok'; readonly data: ListingData }
+  | { readonly kind: 'ok'; readonly data: ListingData; readonly listingPageSize: number }
   | { readonly kind: 'throttled' };
 
 const loadListing = cache(
@@ -90,6 +92,19 @@ const loadListing = cache(
     shift: string | undefined,
     offset: number,
   ): Promise<ListingLoad> => {
+    // AV1: inject listingPageSize from HomepageSettings singleton.
+    // The table has no RLS and is a global singleton — safe to read with admin prisma.
+    let listingPageSize = LISTING_PAGE_SIZE_DEFAULT;
+    try {
+      const prisma = getPrisma();
+      const settings = await prisma.homepageSettings.findUnique({ where: { id: 'default' } });
+      if (settings) {
+        listingPageSize = clampListingPageSize(settings.listingPageSize);
+      }
+    } catch {
+      // fallback to default on any error (e.g. migration not applied yet)
+    }
+
     const requestHeaders = await headers();
     const outcome = await evaluateRateLimits({
       buckets: [
@@ -99,13 +114,12 @@ const loadListing = cache(
       requestId: getCorrelationId(requestHeaders),
     });
     if (outcome.kind !== 'allowed') return { kind: 'throttled' };
-    // `PAGE_SIZE` truyền TƯỜNG MINH: để service dùng mặc định của chính nó thì hằng ở
-    // `public-listing.params.ts` không còn là nguồn duy nhất của kích thước trang, và ngày ai đó đổi
-    // nó, số học phân trang bước một khoảng khác với số dòng truy vấn thật sự trả về.
+    // AV1: `listingPageSize` injected from HomepageSettings singleton — passed explicitly
+    // to the service so pagination arithmetic stays consistent with the actual page size.
     const data = await withPublicDb(getPrisma(), (tx) =>
-      listPublicJobProjection(tx, { q, area, shift, offset, limit: PAGE_SIZE }),
+      listPublicJobProjection(tx, { q, area, shift, offset, limit: listingPageSize }),
     );
-    return { kind: 'ok', data };
+    return { kind: 'ok', data, listingPageSize };
   },
 );
 
@@ -344,6 +358,7 @@ export default async function PublicJobListingPage({ searchParams }: ListingPage
   if (loaded.kind === 'throttled') return <ThrottledNotice />;
 
   const { jobs, facets, total, nextOffset } = loaded.data;
+  const listingPageSize = loaded.listingPageSize;
   const hasFilter =
     params.q !== undefined || params.area !== undefined || params.shift !== undefined;
 
@@ -362,8 +377,8 @@ export default async function PublicJobListingPage({ searchParams }: ListingPage
   const resetHref = beyondLastPage ? buildListingHref(params, 0) : LISTING_PATH;
   const resetLabel = beyondLastPage ? 'Về trang đầu' : 'Xem toàn bộ việc làm';
 
-  const currentPage = Math.floor(params.offset / PAGE_SIZE) + 1;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const currentPage = Math.floor(params.offset / listingPageSize) + 1;
+  const totalPages = Math.max(1, Math.ceil(total / listingPageSize));
   const countLabel =
     total === 0
       ? hasFilter
@@ -392,7 +407,7 @@ export default async function PublicJobListingPage({ searchParams }: ListingPage
     }
     return numbers;
   })();
-  const pageHref = (n: number) => buildListingHref(params, (n - 1) * PAGE_SIZE);
+  const pageHref = (n: number) => buildListingHref(params, (n - 1) * listingPageSize);
 
   return (
     <div className="bg-gradient-to-b from-orange-50 via-white to-gray-50">
@@ -446,7 +461,7 @@ export default async function PublicJobListingPage({ searchParams }: ListingPage
           <nav className="mt-10 flex flex-wrap items-center justify-center gap-2" aria-label="Phân trang">
             {params.offset > 0 ? (
               <Link
-                href={buildListingHref(params, params.offset - PAGE_SIZE)}
+                href={buildListingHref(params, params.offset - listingPageSize)}
                 rel="prev"
                 className="hrp-focus inline-flex min-h-11 items-center gap-1 rounded-lg border border-outline bg-white/80 px-3 text-sm font-medium hover:bg-white"
                 style={{ color: 'var(--color-on-surface)' }}
