@@ -60,11 +60,10 @@ function deriveMonogram(title: string): string {
 }
 
 /**
- * Y10.6/UI04j: rubber stamp tràn ra ngoài card — 3D overflow effect.
- * - Shape TRÒN (rounded-full), tilted theo rotateDeg của def
- * - Outer dashed ring (stamp edge giả) + inner ink-fill gradient
- * - Position: góc trên-phải của card, một nửa tràn ra ngoài → tạo depth
- * - Drop-shadow mạnh (shadow-2xl) → 3D pop khỏi mặt phẳng card
+ * Y10.6/UI04j r2: rubber stamp redesign — bỏ viền dashed đen,
+ * chỉ dùng mực cam HRP + grunge ink texture + concentric rings.
+ *
+ * Style: con dấu cao su thật — không border đen, chỉ ink + shadow 3D.
  */
 function RubberStamp({ stampKey }: { stampKey: StampKey }) {
   const def = STAMPS[stampKey];
@@ -76,40 +75,41 @@ function RubberStamp({ stampKey }: { stampKey: StampKey }) {
       aria-label={def.ariaLabel}
       style={{ transform: `rotate(${def.rotateDeg}deg)` }}
     >
-      {/* Outer dashed ring — viền ngoài kiểu con dấu cao su */}
+      {/* Stamp body: hình tròn, không viền đen, chỉ có mực + shadow-2xl 3D */}
       <div
-        className={`relative rounded-full border-[3px] border-dashed ${def.ringClass} bg-white p-1 shadow-2xl`}
+        className={`relative flex flex-col items-center justify-center rounded-full ${def.bgClass} px-4 py-2 shadow-2xl`}
+        style={{
+          // Grunge ink texture: nhiều radial gradient lốm đốm mực không đều
+          backgroundImage:
+            `radial-gradient(ellipse at 15% 25%, rgba(255,255,255,0.35) 0%, transparent 30%),` +
+            `radial-gradient(ellipse at 75% 30%, rgba(0,0,0,0.18) 0%, transparent 25%),` +
+            `radial-gradient(ellipse at 40% 70%, rgba(255,255,255,0.25) 0%, transparent 35%),` +
+            `radial-gradient(ellipse at 85% 80%, rgba(0,0,0,0.15) 0%, transparent 20%),` +
+            `radial-gradient(ellipse at 25% 55%, rgba(255,255,255,0.30) 0%, transparent 30%),` +
+            `radial-gradient(ellipse at 60% 15%, rgba(0,0,0,0.12) 0%, transparent 25%),` +
+            `radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.10) 0%, transparent 50%)`,
+          // Shadow mạnh để 3D pop khỏi card
+          boxShadow: `0 8px 20px -4px ${def.ringClass.includes('amber') ? 'rgba(217,119,6,0.6)' : def.ringClass.includes('orange') ? 'rgba(249,115,22,0.6)' : 'rgba(239,68,68,0.6)'}, 0 4px 8px -2px rgba(0,0,0,0.3)`,
+        }}
       >
-        {/* Inner ink stamp — gradient radial giả ink bleed, tilted ngược lại cho chaotic feel */}
+        {/* Inner ring line — vòng tròn mực bên trong (kiểu con dấu) */}
         <div
-          className={`relative rounded-full border-2 ${def.borderClass} ${def.bgClass} px-3 py-1.5 overflow-hidden`}
-          style={{
-            // Ink bleed texture: radial gradient trắng nhạt lốm đốm
-            backgroundImage:
-              `radial-gradient(circle at 20% 30%, rgba(255,255,255,0.25) 0%, transparent 35%),` +
-              `radial-gradient(circle at 70% 60%, rgba(255,255,255,0.18) 0%, transparent 40%),` +
-              `radial-gradient(circle at 50% 80%, rgba(0,0,0,0.10) 0%, transparent 30%)`,
-          }}
-        >
-          <div className={`flex items-center gap-1 ${def.fgClass}`}>
-            <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            <span className="text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
-              {def.label}
-            </span>
-          </div>
-          {/* Decorative star — góc trên trái */}
-          <div className={`pointer-events-none absolute -left-1 -top-1 ${def.fgClass} opacity-70`} aria-hidden="true">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7L12 16.4 5.7 21l2.3-7-6-4.6h7.6z"/>
-            </svg>
-          </div>
-          {/* Decorative star — góc dưới phải */}
-          <div className={`pointer-events-none absolute -bottom-0.5 -right-0.5 ${def.fgClass} opacity-50`} aria-hidden="true">
-            <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7L12 16.4 5.7 21l2.3-7-6-4.6h7.6z"/>
-            </svg>
-          </div>
+          className={`absolute inset-1.5 rounded-full border-2 ${def.borderClass} opacity-60`}
+          aria-hidden="true"
+        />
+
+        {/* Nội dung stamp */}
+        <div className={`relative flex flex-col items-center gap-0.5 ${def.fgClass}`}>
+          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="text-[10px] font-black uppercase tracking-widest leading-none whitespace-nowrap">
+            {def.label}
+          </span>
         </div>
+
+        {/* Grunge dots nhỏ — hạt mực văng */}
+        <div className={`pointer-events-none absolute -left-0.5 top-1/3 h-1.5 w-1.5 rounded-full ${def.bgClass} opacity-50`} aria-hidden="true" />
+        <div className={`pointer-events-none absolute -bottom-0.5 right-0 h-1 w-1 rounded-full ${def.bgClass} opacity-40`} aria-hidden="true" />
+        <div className={`pointer-events-none absolute -right-0.5 bottom-1/4 h-1 w-1.5 rounded-full ${def.bgClass} opacity-35`} aria-hidden="true" />
       </div>
     </div>
   );

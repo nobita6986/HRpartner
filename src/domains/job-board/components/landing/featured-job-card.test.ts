@@ -119,74 +119,80 @@ describe('AC-07: URGENT tab Quick Apply mo ApplyModal cho job that', () => {
   });
 });
 
-describe('Y10.6/UI04j: Rubber stamp redesign — tràn ra ngoài card, ink texture, đồng bộ 4 stamp', () => {
-  it('RubberStamp component renders với style mới (rounded-full + dashed border)', () => {
-    // Y10.6/UI04j: stamp dùng rounded-full (tròn), border-dashed (stamp edge)
+describe('Y10.6/UI04j r2: Rubber stamp redesign — không viền đen, ink texture grunge, 3D shadow', () => {
+  it('RubberStamp renders với rounded-full + shadow-2xl (không border đen)', () => {
+    // Y10.6/UI04j r2: stamp tròn, KHÔNG có viền đen dashed
     expect(CARD).toContain('rounded-full');
-    expect(CARD).toContain('border-dashed');
+    expect(CARD).toContain('shadow-2xl');
     expect(CARD).toContain('RubberStamp');
   });
 
-  it('stamp uses ringClass cho outer border', () => {
-    // Y10.6/UI04j: outer ring dùng def.ringClass (e.g., ring-orange-500)
-    expect(CARD).toContain('def.ringClass');
+  it('stamp KHÔNG còn border-dashed (bỏ viền đen)', () => {
+    // Y10.6/UI04j r2: bỏ dashed border đen, chỉ dùng mực cam
+    expect(CARD).not.toContain('border-dashed');
   });
 
-  it('inner stamp uses bgClass + borderClass', () => {
-    // Y10.6/UI04j: inner stamp dùng def.bgClass + def.borderClass
+  it('stamp uses bgClass cho background (ink fill)', () => {
+    // Y10.6/UI04j r2: bgClass là mực (orange-500, red-500, amber-500, orange-400)
     expect(CARD).toContain('def.bgClass');
-    expect(CARD).toContain('def.borderClass');
   });
 
-  it('stamp text uppercase với tracking-wider', () => {
-    // Y10.6/UI04j: label uppercase + tracking-wider
+  it('stamp text uppercase với tracking-widest', () => {
+    // Y10.6/UI04j r2: label uppercase + tracking-widest (bold stamp feel)
     expect(CARD).toContain('uppercase');
-    expect(CARD).toContain('tracking-wider');
+    expect(CARD).toContain('tracking-widest');
   });
 
-  it('stamp tilted theo rotateDeg từ stamp-defs (không hardcoded)', () => {
-    // Y10.6/UI04j: rotation động theo def.rotateDeg → mỗi stamp tilted khác nhau
+  it('stamp tilted theo rotateDeg từ stamp-defs', () => {
+    // Y10.6/UI04j r2: rotation động theo def.rotateDeg
     expect(CARD).toContain('rotate(');
     expect(CARD).toContain('def.rotateDeg');
   });
 
-  it('stamp có ink-bleed texture bằng radial-gradient', () => {
-    // Y10.6/UI04j: ink texture giả lốm đốm mực
+  it('stamp có grunge ink texture bằng radial-gradient', () => {
+    // Y10.6/UI04j r2: ink texture grunge (nhiều radial gradient lốm đốm)
     expect(CARD).toContain('radial-gradient');
   });
 
-  it('stamp có shadow-2xl cho 3D depth', () => {
-    // Y10.6/UI04j: drop-shadow mạnh để tạo 3D pop khi tràn ra ngoài card
-    expect(CARD).toContain('shadow-2xl');
+  it('stamp có boxShadow cho 3D depth', () => {
+    // Y10.6/UI04j r2: shadow có màu theo stamp (amber/orange/red)
+    expect(CARD).toContain('boxShadow');
+  });
+
+  it('stamp có inner ring (vòng tròn mực bên trong)', () => {
+    // Y10.6/UI04j r2: inner ring line kiểu con dấu
+    expect(CARD).toContain('inset-1.5');
+    expect(CARD).toContain('rounded-full');
+    expect(CARD).toContain('border-2');
   });
 
   it('stamp tràn ra ngoài card (negative top/right position)', () => {
-    // Y10.6/UI04j: stamp positioned -top-5 -right-5 để tràn ra ngoài card
+    // Y10.6/UI04j r2: stamp -top-5 -right-5 tràn ra ngoài
     expect(CARD).toContain('-top-5');
     expect(CARD).toContain('-right-5');
   });
 
   it('card KHÔNG còn overflow-hidden (để stamp tràn ra được)', () => {
-    // Y10.6/UI04j: card bỏ overflow-hidden để stamp 3D overflow ra ngoài
+    // Y10.6/UI04j r2: card bỏ overflow-hidden để stamp 3D overflow
     const cardClassLine = CARD.match(/className="hrp-focus[^"]+"/);
     expect(cardClassLine).toBeTruthy();
     expect(cardClassLine![0]).not.toContain('overflow-hidden');
   });
 
   it('chỉ hiển thị 1 stamp duy nhất', () => {
-    // Y10.6/UI04j: vẫn chỉ render stamps[0]
+    // Y10.6/UI04j r2: vẫn chỉ render stamps[0]
     const stampRenderIdx = CARD.indexOf('stamps[0]');
     expect(stampRenderIdx).toBeGreaterThanOrEqual(0);
   });
 
   it('stamp có pointer-events-none trên wrapper', () => {
-    // Y10.6/UI04j: wrapper div có pointer-events-none
+    // Y10.6/UI04j r2: wrapper có pointer-events-none
     const pointerIdx = CARD.indexOf('pointer-events-none');
     expect(pointerIdx).toBeGreaterThanOrEqual(0);
   });
 
-  it('stamp-defs có 4 stamp keys (tuyen-gap, hot, thuong-cao, moi)', () => {
-    // Y10.6/UI04j: stamp registry đầy đủ 4 stamp đồng bộ
+  it('stamp-defs có 4 stamp keys', () => {
+    // Y10.6/UI04j r2: stamp registry đầy đủ 4 stamp
     expect(STAMPS).toContain('tuyen-gap');
     expect(STAMPS).toContain('hot');
     expect(STAMPS).toContain('thuong-cao');
@@ -194,22 +200,21 @@ describe('Y10.6/UI04j: Rubber stamp redesign — tràn ra ngoài card, ink textu
   });
 
   it('stamp-defs có icons Star, Sparkles từ lucide-react', () => {
-    // Y10.6/UI04j: stamp-defs.ts imports Star, Sparkles
+    // Y10.6/UI04j r2: stamp-defs imports Star, Sparkles
     expect(STAMPS).toContain('Star');
     expect(STAMPS).toContain('Sparkles');
   });
 
   it('stamp-defs sử dụng icon từ lucide-react (Flame, Star, Gift)', () => {
-    // Y10.6/UI04j: stamp-defs.ts imports Flame, Star, Gift, Sparkles
+    // Y10.6/UI04j r2: stamp-defs imports Flame, Star, Gift, Sparkles
     expect(STAMPS).toContain('Flame');
     expect(STAMPS).toContain('Star');
     expect(STAMPS).toContain('Gift');
   });
 
-  it('4 stamp có rotateDeg khác nhau (đồng bộ shape, varied tilt)', () => {
-    // Y10.6/UI04j: mỗi stamp có rotateDeg riêng → chaotic stamp feel
+  it('4 stamp có rotateDeg khác nhau', () => {
+    // Y10.6/UI04j r2: mỗi stamp có rotateDeg riêng
     expect(STAMPS).toContain('rotateDeg');
-    // Đếm số lần xuất hiện rotateDeg — phải >= 4 (4 stamp + 1 type def)
     const matches = STAMPS.match(/rotateDeg/g) ?? [];
     expect(matches.length).toBeGreaterThanOrEqual(4);
   });
