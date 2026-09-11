@@ -27,14 +27,14 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
 current_lane: UI04 public homepage completion
-current_task: hrp-v6-ui-04g-recruitment-highlight-carousel (READY_FOR_EXECUTION v0.1)
-task_path: docs/tasks/hrp-v6-ui-04g-recruitment-highlight-carousel/TASK.md
-spec_version: v0.1 (Owner 11/09/2026 08:32: thay bang 3 checkmarks text thanh 3-slide image carousel voi picsum placeholder + auto-play 3.5s + navigation dots; title + desc giu nguyen noi dung)
-task_status: Tier 1 commit e259eb6 + push len origin/main 11/09/2026 08:33; typecheck local PASS; Vercel auto-deploy; TIER1 self-review NONE (FAST lane)
+current_task: hrp-v6-ui-04h-width-uniform (READY_FOR_EXECUTION v0.1)
+task_path: docs/tasks/hrp-v6-ui-04h-width-uniform/TASK.md
+spec_version: v0.1 (Owner 11/09/2026 08:37: dong nhat chieu rong tat ca sections lay chuan Hero max-w-7xl (1280px) -- areas-section + recruiting-projects + referral-strip + GlobalFooter)
+task_status: Tier 1 commit 19caf39 + push len origin/main 11/09/2026 08:38; typecheck local PASS; Vercel auto-deploy; TIER1 self-review NONE (FAST lane)
 worktree_branch: main
-current_gate: OWNER_VISUAL_REVIEW_04g (refresh https://hrpvietnam.com/ xem card ben phai Hero: 3-slide image carousel thay 3 checkmarks, auto-play 3.5s + dots)
-next_command: Tier 0 chot visual 04g: (a) ACCEPTED -> closeout + mo phase tiep theo, (b) chua -> Tier 1 fix them, (c) co anh that -> cung cap duong dan
-previous_accepted: UI04f card monogram abbrev ACCEPTED (12a06da) + UI04e hero width balance ACCEPTED (2e8e76f) + R9 footer map OSM ACCEPTED (39950a1) + R8 footer cot 1 bo min-h-11 ACCEPTED (cc548c3)
+current_gate: OWNER_VISUAL_REVIEW_04h (refresh https://hrpvietnam.com/ xem chieu rong hero = areas = recruiting = referral = footer = max-w-7xl 1280px)
+next_command: Tier 0 chot visual 04h: (a) ACCEPTED -> closeout + mo phase tiep theo, (b) chua -> Tier 1 fix them
+previous_accepted: UI04g recruitment highlight carousel ACCEPTED (e259eb6) + UI04f card monogram abbrev ACCEPTED (12a06da) + UI04e hero width balance ACCEPTED (2e8e76f) + R9 footer map OSM ACCEPTED (39950a1)
 next_planner_candidate: hrp-v6-ui-04d-section-render (BLOCKED v1.5 — sau 04c1+04c2 push production + Owner live visual review ACCEPTED); sau đó hrp-v6-ui-04d-detail-ui (D.A); sau đó Admin V6 theo dependency (AV1 → AV4 → AV2 → AV6 → AV5)
 blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); UI04 04c1+04c2 đã OWNER_DECIDED (16 lựa chọn chốt 10/09/2026) — gate đã mở sang TIER2_EXECUTION; Owner live visual review pending post-deploy (Tier 1 monitor Vercel/CI); section-render chờ Tier 1 review V6 stacking sau push production
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
