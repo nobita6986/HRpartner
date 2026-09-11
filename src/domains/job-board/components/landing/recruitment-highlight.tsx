@@ -96,9 +96,9 @@ export function RecruitmentHighlight({ className = '' }: RecruitmentHighlightPro
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                   </div>
 
-                  {/* Text */}
+                  {/* Text — Y10.12/UI04l: bỏ in đậm, dùng font-medium + leading chậm */}
                   <div className="mt-3">
-                    <h4 className="font-head text-base font-bold text-on-primary leading-snug">
+                    <h4 className="font-head text-sm font-medium text-on-primary leading-snug">
                       {slide.title}
                     </h4>
                     <p className="mt-1 text-sm text-white/80 leading-relaxed">
