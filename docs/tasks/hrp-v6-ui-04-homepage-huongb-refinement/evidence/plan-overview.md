@@ -317,7 +317,7 @@ Tier 1 cập nhật tài liệu lần này:
 | R3 live urgent + minimal SaaS card | ACCEPTED v1.3 | `8c6fd03` | thay fixture URGENT preview; Job Card Minimal SaaS thay salary slab/3D flip cũ |
 | 04c1 footer tweak r2 | **READY_FOR_EXECUTION v1.0** | — | Tier 1 finalize contract v1.0 dựa trên 16 decisions tại `evidence/owner-footer-r2-decisions.md`; `verify-task.ps1` PASS |
 | 04c2 job-card color refinement v10 | **BLOCKED_OWNER DRAFT v0.1** | — | Mở mới 10/09/2026 theo directive Owner về đổi 2 CTA color + salary saturation + title size + footer layout; verify-task DRAFT-VALID; chờ Owner trả lời 16 câu hỏi §8; song song 04c1 |
-| D section-render | BLOCKED v1.5 | — | chờ 04c1 ACCEPTED; section renderer KHÔNG sở hữu CMS |
+| D section-render | **IMPLEMENTATION_COMPLETE** (v1.9 composition Owner visual review); gate cuối **Owner visual review pending** trên production post-deploy | `81c7aeb` (recruiting v1.14 — giảm 8→4 cards) | components `hrp-intro-section.tsx`, `news-section.tsx` (modal preview), `recruiting-projects-section.tsx` (8→4), `best-jobs-section.tsx` (loading spinner) đã ship; `app/(portal)/page.tsx` lắp đúng thứ tự `Navbar → Hero → BestJobs → Areas → HrpIntro → RecruitingProjects → ReferralStrip → News → Footer`; NewestJobs/PartnerStrip/MobileBanner đã bị loại khỏi homepage. KHÔNG mở file component mới; spec v1.7 §3 (5 file section) là residue planning, không phải spec còn thi công. ACCEPTED chờ Owner visual review post-deploy theo pipeline hiện hành (Tier 1 tự review FAST + audit NONE). |
 | D.A detail UI | DRAFT | — | sau D ACCEPTED |
 | D.B editor | DRAFT (CRITICAL) | — | sau D.A |
 | AV3 custom tags | BACKLOG/DEFER | — | sau UI-05 và AV2 |

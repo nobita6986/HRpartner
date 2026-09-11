@@ -6,7 +6,7 @@ Ngày: 10/09/2026. Tier 1 khảo sát và khóa contract sớm.
 
 > **Không cần chờ UI D.A** mới lập plan — Tier 1 khảo sát ngay và khóa data contract.
 
-> **Tier 0 review v2 + v3 chốt**: AV6 = CMS homepage content (đã đổi từ label tạm `AV-CMS` sang tên chính thức `AV6`). AV5 vẫn là Cache invalidation + Integration test. Dependency: AV1 + AV4 có thể chuẩn bị độc lập → AV2/AV6 (cả hai phụ thuộc AV4 cho media) → AV5. **Tier 0 review v3 §Quyết định còn thiếu chốt**: AV6 KHÔNG phụ thuộc AV1; chỉ phụ thuộc UI Task D section-render `ACCEPTED` + AV4 Media Foundation. HomepageSettings của AV1 không phải predecessor của AV6.
+> **Tier 0 review v2 + v3 chốt**: AV6 = CMS homepage content MVP (chỉ 2 section: HrpIntro + News). AV5 vẫn là Cache invalidation + Integration test. Dependency: AV1 + AV4 có thể chuẩn bị độc lập → AV2/AV6 (cả hai phụ thuộc AV4 cho media) → AV5. **Tier 0 review v3 §Quyết định còn thiếu chốt**: AV6 KHÔNG phụ thuộc AV1; chỉ phụ thuộc AV4 Media Foundation. HomepageSettings của AV1 không phải predecessor của AV6. PartnerStrip và MobileBanner chuyển sang BACKLOG/FUTURE.
 
 ---
 
@@ -22,7 +22,7 @@ Ngày: 10/09/2026. Tier 1 khảo sát và khóa contract sớm.
 |---|---|---|---|---|
 | `AV1` | Homepage Settings + Query API | `HomepageSettings` singleton schema + API + Admin settings page + query integration vào Plan UI B (view-model INTEGRATION_PENDING) | None | `DRAFT` |
 | `AV2` | Editor tin Admin/Sale (JobPosting) | `JobPosting` editorial fields schema + editor form + write API + permission + draft/preview/publish lifecycle | AV1 (settings) | `DRAFT` |
-| `AV6` | CMS homepage content (4 editorial sections: Giới thiệu HRP, Đối tác/minh họa, Tin tức/cẩm nang, Banner di động) | Editor cho 4 section Plan C (Việc làm mới nhất REAL từ overview.newest, không thuộc AV6). Schema + form + API + media + publish + preview cùng renderer public. UI task section-render ship trước với fixture; AV6 thay fixture bằng published data | UI D section-render (ACCEPTED), AV4 — KHÔNG phụ thuộc AV1 (Tier 0 review v3) | `DRAFT` |
+| `AV6` | CMS homepage content MVP — Giới thiệu HRP + Tin tức/cẩm nang | AV4 media foundation; KHÔNG phụ thuộc AV1 (Tier 0 review v3 chốt); Renderer demo hiện tại phải hoạt động (DEMO → REAL flip sau AV6) | `DRAFT` |
 | `AV3` | Tag tùy biến | Schema + API + UI tag filter — **BACKLOG/DEFER sau UI-05 và AV2** (Tier 0 review v3 chốt) | AV2 | `BACKLOG` |
 | `AV4` | Media management | Upload + asset library + URL validation + alt text + order | (none — AV4 là foundation, đứng trước các editor) | `DRAFT` |
 | `AV5` | Cache invalidation + Integration test | `revalidateTag` on write + end-to-end integration test cho từng section | AV1, AV2, AV4, AV6 | `DRAFT` |
@@ -204,29 +204,45 @@ Scope = `ProjectAssignment` table. Tier 2 verify chính xác field names trong `
 
 ---
 
-## 4. AV6 — CMS homepage content
+## 4. AV6 — CMS homepage content (MVP: HrpIntro + News)
 
-> Tier 0 review v2 chốt tên `AV6`. Trước đó mang nhãn planning `AV-CMS`. ID không biểu thị thứ tự chạy; phụ thuộc UI D section-render (ACCEPTED) và AV4 (media foundation).
+> Tier 0 review v2 chốt tên `AV6`. Trước đó mang nhãn planning `AV-CMS`. ID không biểu thị thứ tự chạy; phụ thuộc AV4 (media foundation). KHÔNG phụ thuộc AV1 (Tier 0 review v3 chốt).
+>
+> **MVP scope (11/09/2026)**: AV6 MVP chỉ bao gồm 2 section đang tồn tại trên homepage. 2 section còn lại chuyển sang BACKLOG/FUTURE.
 
-### 4.1 Outcome
+### 4.1 AV6 MVP Sections
 
-CMS riêng cho 4 section Plan C (trừ Việc làm mới nhất đã REAL từ `overview.newest`):
-1. **Giới thiệu HRP** — split image/text + 4 ô giá trị (DEMO hiện tại)
-2. **Dải đối tác/minh họa** — logo strip (DEMO, dùng HRP monogram)
-3. **Tin tức & cẩm nang** — 1 bài lớn + 2 bài nhỏ (DEMO)
-4. **Banner trải nghiệm HRP trên di động** — CTA route thật (DEMO)
+| Section | Type | Description |
+|---|---|---|
+| **Giới thiệu HRP** | `HrpIntro` | Split image/text + 4 ô giá trị (DEMO hiện tại) |
+| **Tin tức & cẩm nang** | `News` | 1 bài lớn + 2 bài nhỏ (DEMO) |
 
-### 4.2 Phạm vi
+### 4.2 AV6 BACKLOG/FUTURE Sections (NOT in MVP)
 
-- Editor form cho từng section: title/body/excerpt/CTA label+href/ảnh
-- `Section.enabled`, thứ tự hiển thị, draft/published, revision, audit actor/time
+| Section | Type | Reason |
+|---|---|---|
+| **Dải đối tác/minh họa** | `PartnerStrip` | Chưa có requirement đầy đủ; để BACKLOG sau khi AV6 MVP hoàn thành |
+| **Banner di động** | `MobileBanner` | Chưa có requirement đầy đủ; để BACKLOG sau khi AV6 MVP hoàn thành |
+
+### 4.3 AV6 MVP Outcome
+
+CMS cho 2 section MVP (trừ Việc làm mới nhất đã REAL từ `overview.newest`):
+1. **Giới thiệu HRP** (`HrpIntro`) — split image/text + 4 ô giá trị (DEMO hiện tại)
+2. **Tin tức & cẩm nang** (`News`) — 1 bài lớn + 2 bài nhỏ (DEMO)
+
+### 4.4 MVP Phạm vi
+
+- Editor form cho 2 section MVP: title/body/excerpt/CTA label+href/ảnh
+- `Section.enabled`, draft/published, revision, audit actor/time
 - Public read projection chỉ trả `section.status === 'PUBLISHED'` và field được phép công khai
-- Migration/backfill/fallback để UI Plan C đang dùng fixture không vỡ khi CMS bật (UI flip `source: 'DEMO' | 'INTEGRATION_PENDING'` → `'REAL'` chỉ đổi adapter, không viết lại section)
+- Migration/backfill/fallback để UI đang dùng fixture không vỡ khi CMS bật (flip `source: 'DEMO'` → `'REAL'` chỉ đổi adapter, không viết lại section)
 - Media: dùng chung AV4 (asset library + alt + order + cover)
 - Cache invalidation: tag-based revalidation (AV5)
 - Preview dùng cùng renderer/component với public UI
+- **Không tạo schema hoặc migration AV6 trong MVP này** (dùng demo renderer tạm thời)
+- Renderer demo hiện tại phải tiếp tục hoạt động cho đến khi có data CMS published
 
-### 4.3 Schema (additive)
+### 4.5 Schema (additive)
 
 ```prisma
 model HomepageSection {
@@ -246,14 +262,14 @@ model HomepageSection {
 }
 
 enum SectionType {
-  GIỚI_THIỆU_HRP
-  ĐỐI_TÁC
-  TIN_TỨC
-  BANNER_MOBILE
+  GIỚI_THIỆU_HRP  // MVP
+  ĐỐI_TÁC         // BACKLOG/FUTURE
+  TIN_TỨC          // MVP
+  BANNER_MOBILE    // BACKLOG/FUTURE
 }
 ```
 
-### 4.4 API endpoints
+### 4.6 API endpoints
 
 > **Lưu ý**: `/api/admin/...` LUÔN là bề mặt quản trị có auth. Public read projection dùng route public riêng.
 
@@ -264,7 +280,7 @@ enum SectionType {
 | POST | `/api/admin/homepage-sections/[id]/publish` | ADMIN only | Publish section |
 | GET | `/api/public/homepage-sections` | Public | Read published sections (filtered by type, enabled, public fields only) |
 
-### 4.5 Permission
+### 4.7 Permission
 
 | Role | Read public | Read draft | Edit | Publish |
 |---|---|---|---|---|
@@ -273,12 +289,14 @@ enum SectionType {
 
 (Sale KHÔNG edit homepage sections — chỉ JobPosting editorial. Tách rõ ownership.)
 
-### 4.6 Out-of-scope
+### 4.8 Out-of-scope
 
 - Editor form JobPosting (→ AV2)
 - Tag tùy biến (→ AV3)
 - Media upload (→ AV4)
 - Cache invalidation + integration test (→ AV5)
+- PartnerStrip CMS editor (→ BACKLOG/FUTURE)
+- MobileBanner CMS editor (→ BACKLOG/FUTURE)
 
 ---
 
