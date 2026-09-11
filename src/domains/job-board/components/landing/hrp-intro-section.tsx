@@ -16,8 +16,12 @@ const ICON_MAP: Record<HrpValueItem['iconName'], LucideIcon> = {
  * Split image/text 2 cột desktop, stack mobile. paragraphs: string[] render
  * trực tiếp bằng map → React elements. KHÔNG HTML string, KHÔNG raw HTML render.
  *
- * HIDDEN nếu `enabled === false`. Nội dung lấy từ 5 dịng vụ HRP
+ * HIDDEN nếu `enabled === false`. Nội dung lấy từ 5 dịnh vụ HRP
  * (carousel hero) — chọn 4/5; KHÔNG chữ "demo" / "CMS pending" trên UI.
+ *
+ * v1.10 (11/09/2026): 4 value cards (2×2 từ `sm`). Ảnh full-height bằng
+ * column content bên phải — bỏ `aspect-[4/3]`, thêm `h-full object-cover`
+ * (grid items stretch mặc định).
  */
 export function HrpIntroSection({ content }: { content: HrpIntroContent }) {
   if (!content.enabled) return null;
@@ -30,8 +34,9 @@ export function HrpIntroSection({ content }: { content: HrpIntroContent }) {
       className="w-full px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6"
     >
       <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
-        <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
-          {/* Image left */}
+        {/* v1.10: items-stretch (mặc định) — image bên trái fill h-full khớp chiều cao content bên phải */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+          {/* Image left — full height = right column */}
           <div className="relative overflow-hidden rounded-2xl shadow-card">
             <div
               aria-hidden="true"
@@ -44,7 +49,9 @@ export function HrpIntroSection({ content }: { content: HrpIntroContent }) {
             <img
               src={content.imageUrl}
               alt={content.imageAlt}
-              className="relative aspect-[4/3] w-full object-cover"
+              /* v1.10: bỏ aspect-[4/3] — h-full + object-cover để ảnh fill column,
+                 khớp chiều cao với content + 4 cards bên phải */
+              className="relative h-full min-h-72 w-full object-cover"
               width={1024}
               height={768}
               loading="lazy"

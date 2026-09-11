@@ -45,6 +45,11 @@ export const demoHrpIntro: HrpIntroContent = {
       body: 'Cung cấp đội ngũ bốc xếp, đóng gói hàng hóa cho các kho bãi và dây chuyền xuất hàng.',
       iconName: 'truck',
     },
+    {
+      title: 'Dịch vụ giới thiệu lao động, việc làm',
+      body: 'Kết nối người tìm việc với các vị trí phù hợp tại nhà máy, hỗ trợ cả ứng viên và nhà tuyển dụng.',
+      iconName: 'users',
+    },
   ],
 };
 

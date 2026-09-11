@@ -4,6 +4,9 @@
  * v1.9 (11/09/2026): Bỏ 3 section (NewestJobs, PartnerStrip, MobileBanner).
  * Test chỉ còn 2 section: HrpIntro (Về HRP) + News (Tin tức & Cẩm nang).
  *
+ * v1.10 (11/09/2026): HrpIntroContent tăng từ 3 → 4 value items (2×2 grid).
+ * Ảnh HRP cao bằng column content bên phải (h-full object-cover).
+ *
  * Test trọng yếu:
  * - enabled === false → component return null
  * - DEMO source policy
@@ -82,15 +85,15 @@ describe('demo-content fixture', () => {
     expect(sourceCount).toBe(2);
   });
 
-  it('v1.9: HrpIntroContent có đúng 3 value items (gọn lại từ 4)', () => {
-    /* Đếm số iconName trong demoHrpIntro (chỉ 3, không phải 4). */
+  it('v1.10: HrpIntroContent có đúng 4 value items (2×2 grid)', () => {
+    /* v1.10 (11/09/2026): tăng từ 3 → 4 values, thêm "Dịch vụ giới thiệu lao động, việc làm". */
     const start = DEMO.indexOf('demoHrpIntro');
     /* Block demoHrpIntro kết thúc khi gặp export const tiếp theo hoặc EOF. */
     const endMatch = DEMO.slice(start).match(/export\s+const\s+demoNewsSection/);
     const end = endMatch ? start + endMatch.index! : DEMO.length;
     const block = DEMO.slice(start, end);
     const iconCount = (block.match(/iconName:/g) ?? []).length;
-    expect(iconCount).toBe(3);
+    expect(iconCount).toBe(4);
   });
 
   it('v1.9: imageUrl của HrpIntro là industrial-location-04.webp (không trùng ReferralStrip)', () => {
@@ -132,6 +135,19 @@ describe('hrp-intro-section: DEMO policy + structured paragraphs render', () => 
     expect(SECTION_FILES.hrpIntro).toMatch(/content\.paragraphs\.map/);
     expect(SECTION_FILES.hrpIntro).not.toMatch(/dangerouslySetInnerHTML/);
     expect(SECTION_FILES.hrpIntro).not.toMatch(/SafeHtml/);
+  });
+
+  it('v1.10: ảnh HrpIntro dùng h-full object-cover (cao = content bên phải)', () => {
+    /* Bỏ aspect-[4/3] (cố định tỉ lệ) → dùng h-full + min-h-72 fallback mobile.
+       Lưu ý: comment có thể chứa chữ "aspect-[4/3]" giải thích lịch sử;
+       test chỉ assert className JSX, không assert comment. */
+    expect(SECTION_FILES.hrpIntro).toMatch(/h-full\s+min-h-72\s+w-full\s+object-cover/);
+    /* JSX className KHÔNG còn aspect-[4/3]. Tìm cụm "className=" đứng sau đoạn "<img". */
+    const imgBlock = SECTION_FILES.hrpIntro.match(/<img[\s\S]*?className="([^"]+)"/);
+    expect(imgBlock).not.toBeNull();
+    expect(imgBlock![1]).not.toMatch(/aspect-\[4\/3\]/);
+    expect(imgBlock![1]).toMatch(/h-full/);
+    expect(imgBlock![1]).toMatch(/object-cover/);
   });
 
   it('values items render (icon + title + body)', () => {
