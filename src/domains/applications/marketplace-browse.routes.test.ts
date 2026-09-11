@@ -199,6 +199,7 @@ describe('RQ-03 — GET /api/jobs (list)', () => {
     ));
 
     // `toHaveBeenCalledWith` so khớp CHÍNH XÁC cả object ⇒ một khóa `industry` lọt lại là FAIL ngay.
+    // V6: route passes `urgency: undefined` when no urgency query param present
     expect(mocks.listPublicJobProjection).toHaveBeenCalledWith(expect.anything(), {
       q: 'thợ điện',
       area: 'Bắc Ninh',
@@ -207,6 +208,7 @@ describe('RQ-03 — GET /api/jobs (list)', () => {
       jobTypes: ['toan_thoi_gian'],
       offset: 0,
       limit: 50,
+      urgency: null,
     });
     // Và không có đường vòng nào: opts gửi xuống service không mang khóa tên `industry`.
     expect(Object.keys(mocks.listPublicJobProjection.mock.calls[0][1] ?? {})).not.toContain('industry');

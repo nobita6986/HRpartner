@@ -118,6 +118,22 @@
   --text-label-md: 14px; --text-label-md--line-height: 1.4;
   --text-label-sm: 12px; --text-label-sm--line-height: 1.4;
 
+  /* P1 / RQ-02 — minimal_touch: FeaturedJobCard uses raw Tailwind colors for gray tones
+     (slate-400/500/700/900) and semantic greens (emerald-50/700) on the salary pill.
+     Adding as color tokens so token-parity test P-01 passes. Note: raw text-* classes
+     (text-slate-400, text-emerald-700 etc.) are accepted by the test's N-03 guard — the
+     Tailwind raw palette is NOT required to be token-aliased. */
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-700: #334155;
+  --color-slate-900: #0f172a;
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-700: #047857;
+  --color-orange-500: #f97316;
+
   /* Motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --t-fast: 150ms;

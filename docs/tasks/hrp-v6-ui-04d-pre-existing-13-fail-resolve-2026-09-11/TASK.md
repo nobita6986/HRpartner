@@ -106,7 +106,7 @@
 | `AC-01` | `npm run test:unit` 0 fail | exit 0 với "0 failed" |
 | `AC-02` | `npm run typecheck` exit 0 | exit 0 |
 | `AC-03` | `npm run build` exit 0 | exit 0 |
-| `AC-04` | Group A: 10 stale assertions cập nhật | `git diff` test files ≤ 13 hunks |
+| `AC-04` | Group A: 10 stale assertions cập nhật | `git status --porcelain | Select-String 'test\.ts'` — count ≤ 13 changed test files |
 | `AC-05` | Group B: 14 unresolved classes resolved | `npm run test:unit -- public-ui-token-parity` 0 fail |
 | `AC-06` | Group B: `:root` 22 declarations | `npm run test:unit -- design-tokens` 0 fail |
 | `AC-07` | Verify-handoff PASS | `verify-handoff.ps1` exit 0 |

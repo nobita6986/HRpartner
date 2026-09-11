@@ -64,7 +64,7 @@ const STATUS_CONFIG: Array<{ key: StatusKey; label: string; colorClass: string }
   {
     key: 'DRAFT',
     label: 'Nháp',
-    colorClass: 'bg-[var(--surface-container-high)]',
+    colorClass: 'bg-[var(--color-surface-container-high)]',
   },
   {
     key: 'OPEN',

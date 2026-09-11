@@ -418,8 +418,8 @@ describe('DEC-01 / RQ-01, RQ-02 — BestJobs tab filter and pagination in page.t
     expect(code).toContain('bestJobsData');
     // Tab 'all' fetches from /api/jobs
     expect(code).toContain("/api/jobs?");
-    // Tab 'urgent' uses fixture
-    expect(code).toContain('BEST_JOBS_URGENT_PREVIEW');
+    // Tab 'urgent' uses live API via bestJobsUrgentData (V6 AV1)
+    expect(code).toContain('bestJobsUrgentData');
   });
 
   it('BestJobs pagination fetches with limit=9 (DEC-04 / BEST_JOBS_PAGE_SIZE)', () => {
@@ -429,17 +429,11 @@ describe('DEC-01 / RQ-01, RQ-02 — BestJobs tab filter and pagination in page.t
     expect(code).toContain('buildBestJobsQuery');
   });
 
-  it('BestJobs tab does NOT send urgency=URGENT to server (DEC-01 / B4 → AV1)', () => {
-    // BestJobs tab fetch should NOT include urgency=URGENT in the query string.
-    // enrichJob's `urgency === 'URGENT'` is legitimate client-side mapping, not a server query.
+  it('BestJobs URGENT tab sends urgency=URGENT to server (V6 AV1 — live API)', () => {
+    // V6 AV1: URGENT tab uses live API, so urgency=URGENT is sent in the URL
     const code = strip(read(PORTAL_PAGE));
-    // Check that buildBestJobsQuery does NOT add urgency param
-    expect(code).toContain('buildBestJobsQuery');
-    // The buildBestJobsQuery should only add limit + offset
-    expect(code).not.toMatch(/buildBestJobsQuery.*urgency/);
-    // No urgency filter in the BestJobs fetch URL pattern
-    expect(code).not.toMatch(/params\.set\(['"]urgency['"],['"]URGENT['"]\)/);
-    expect(code).not.toMatch(/\/api\/jobs\?.*urgency=URGENT/);
+    // bootstrapBestJobsUrgent adds urgency=URGENT to the fetch URL
+    expect(code).toMatch(/\/api\/jobs\?.*urgency=URGENT/);
   });
 
   it('BestJobs tab does NOT use overview.newest.slice(0, 3) as pagination source (DEC-05)', () => {
