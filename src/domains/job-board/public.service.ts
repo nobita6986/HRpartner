@@ -629,7 +629,8 @@ export async function listPublicJobProjection(
    * `job.locations` của nó không chứa chữ đó. Nên số duy nhất đúng là số đếm bằng CHÍNH vị từ ấy, và
    * chỉ service có nó. Bất biến đo được: số trên tag bằng `total` của lần gọi lại với `area` đó.
    */
-  const overviewStripSize = 6;
+  // Y10.8+: tăng lên 8 để đủ cung cấp cho 2 section Areas + Recruiting (mỗi cái 8 cards).
+  const overviewStripSize = 8;
   const countBy = (
     values: string[],
     matches: (entry: { row: PublicProjectRow; job: PublicJobDto }, value: string) => boolean,

@@ -29,19 +29,20 @@ export function AreasSection({ areas, onPick }: AreasSectionProps) {
       {/* Y10.11/UI04k: giảm mb-8 → mb-3 cho header */}
       <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
         <div className="mb-3 flex flex-col gap-2">
-          {/* Y10.11/UI04k: bỏ eyebrow "Theo khu vực" — chỉ giữ heading + subtitle */}
+          {/* Y10.8+: thêm logo (material icon location_on) trước heading, bỏ subtitle. */}
           <h2
             id="hrp-areas-heading"
-            className="font-head text-headline-lg font-bold text-on-surface"
+            className="font-head text-headline-lg font-bold text-on-surface flex items-center gap-2"
           >
+            <span className="w-10 h-10 bg-secondary-container rounded-full inline-flex items-center justify-center">
+              <span className="material-symbols-outlined text-base text-primary-dark" aria-hidden="true">location_on</span>
+            </span>
             Việc làm theo khu vực
           </h2>
-          <p className="max-w-2xl font-body text-body-md text-on-surface-variant">
-            Chọn một khu vực đang có dữ liệu tuyển dụng để xem các vị trí phù hợp.
-          </p>
         </div>
+        {/* Y10.8+: hiển thị 8 khu vực (2 hàng × 4 cột desktop). */}
         <ul className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {areas.slice(0, 4).map((area, index) => (
+          {areas.slice(0, 8).map((area, index) => (
             <AreaImageCard
               key={area.name}
               area={area.name}

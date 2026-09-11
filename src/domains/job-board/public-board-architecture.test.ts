@@ -295,11 +295,11 @@ describe('go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tín
     expect(shiftNumbers).toEqual([...shiftNumbers].sort((a, b) => b - a));
   });
 
-  it('topPaid không chứa việc không có lương, sắp giảm dần, tối đa 6 phần tử', async () => {
+  it('topPaid không chứa việc không có lương, sắp giảm dần, tối đa 8 phần tử', async () => {
     const { tx } = listTx(boardRows());
     const result = await listPublicJobProjection(tx, {});
 
-    expect(result.overview.topPaid.length).toBeLessThanOrEqual(6);
+    expect(result.overview.topPaid.length).toBeLessThanOrEqual(8);
     // `prj-a` hợp lệ và có mặt trong `jobs`, nhưng KHÔNG được có mặt ở dải "Lương cao nhất".
     expect(result.overview.topPaid.map((job) => job.id)).toEqual(['prj-c', 'prj-b']);
     for (const job of result.overview.topPaid) {
@@ -312,7 +312,7 @@ describe('go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tín
     const result = await listPublicJobProjection(tx, {});
 
     expect(result.overview.newest.map((job) => job.id)).toEqual(['prj-b', 'prj-c', 'prj-a']);
-    expect(result.overview.newest.length).toBeLessThanOrEqual(6);
+    expect(result.overview.newest.length).toBeLessThanOrEqual(8);
     // `DEC-18`: dải phải render được kể cả khi phần tử KHÔNG nằm trong trang 12 dòng đang tải.
     expect(result.overview.newest[0].title).toBe('Lắp ráp điện tử Bắc Ninh');
   });

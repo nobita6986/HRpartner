@@ -11,6 +11,17 @@ import { Hero } from '@/src/domains/job-board/components/landing/hero';
 import { RecruitmentHighlight } from '@/src/domains/job-board/components/landing/recruitment-highlight';
 import { RecruitingProjectsSection } from '@/src/domains/job-board/components/landing/recruiting-projects-section';
 import { ReferralStrip } from '@/src/domains/job-board/components/landing/referral-strip';
+import { NewestJobsSection } from '@/src/domains/job-board/components/landing/newest-jobs-section';
+import { HrpIntroSection } from '@/src/domains/job-board/components/landing/hrp-intro-section';
+import { PartnerStripSection } from '@/src/domains/job-board/components/landing/partner-strip-section';
+import { NewsSection } from '@/src/domains/job-board/components/landing/news-section';
+import { MobileBannerSection } from '@/src/domains/job-board/components/landing/mobile-banner-section';
+import {
+  demoHrpIntro,
+  demoPartnerStrip,
+  demoNewsSection,
+  demoMobileBanner,
+} from '@/src/domains/job-board/fixtures/demo-content';
 import { publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
 import { buildListingHref } from '@/src/domains/job-board/public-listing.params';
 import type {
@@ -213,11 +224,12 @@ export default function JobsPage() {
     .map(enrichJob);
 
   // Recruiting project source — newest fallback topPaid, max 4 (per RQ-05 / DEC-04)
-  const recruitingSource = (overview.newest.length > 0 ? overview.newest : overview.topPaid).slice(0, 4);
+  // Y10.8+: hiển thị 8 dự án (2 hàng × 4 cột).
+  const recruitingSource = (overview.newest.length > 0 ? overview.newest : overview.topPaid).slice(0, 8);
   const recruitingProjects: EnrichedJob[] = recruitingSource.map(enrichJob);
 
-  // Areas for image card — pull top 4 from facet areaCounts (per RQ-04)
-  const areasForCards: Array<{ name: string; count: number }> = facets.areas.slice(0, 4).map((name) => {
+  // Areas for image card — pull top 8 from facet areaCounts (Y10.8+: 2 hàng × 4 cột).
+  const areasForCards: Array<{ name: string; count: number }> = facets.areas.slice(0, 8).map((name) => {
     const found = overview.areaCounts.find((entry) => entry.value === name);
     return { name, count: found?.count ?? 0 };
   });
@@ -340,6 +352,30 @@ export default function JobsPage() {
         }))}
         buildHref={(jobId) => publicJobDetailPath(jobId)}
       />
+
+      {/* ─── UI04d Task D: 5 section renderer (Section 1 REAL + Section 2..5 DEMO) ───
+          Order theo UI04C §3: RecruitingProjects → NewestJobs → HrpIntro → PartnerStrip → News → MobileBanner → ReferralStrip.
+          Section 1 lấy từ overview.newest (slice 6, KHÁC featuredJobs slice 3 ở BestJobs).
+          Sections 2..5 lấy từ fixtures/demo-content.ts.
+          KHÔNG đổi các component đã ACCEPTED (BestJobs, Areas, Recruiting, Hero, ReferralStrip). */}
+      <NewestJobsSection
+        content={{
+          id: 'newest-jobs',
+          enabled: true,
+          order: 0,
+          source: 'REAL',
+          title: 'Việc làm mới nhất',
+          jobs: overview.newest.slice(0, 6).map(enrichJob),
+        }}
+      />
+
+      <HrpIntroSection content={demoHrpIntro} />
+
+      <PartnerStripSection content={demoPartnerStrip} />
+
+      <NewsSection content={demoNewsSection} />
+
+      <MobileBannerSection content={demoMobileBanner} />
 
       <ReferralStrip />
 
