@@ -937,49 +937,32 @@ describe('go-live-08 / RQ-26 — sự thật dữ liệu của GO-LIVE-05 còn n
   });
 });
 
-// DEC-01: BestJobs tab + pagination UI composition
-describe('DEC-01 / STEP-03 / RQ-01, RQ-05 — BestJobs tab filter and pagination controls', () => {
-  it('tab filter has role="tablist" with role="tab" pills and aria-selected', () => {
-    // best-jobs-section.tsx has tab controls with proper ARIA
-    expect(BEST).toContain('role="tablist"');
-    expect(BEST).toContain('role="tab"');
-    expect(BEST).toContain('aria-selected');
-  });
-
-  it('tab pills use bg-primary-container for active state (DEC-02)', () => {
-    // Tab active className uses bg-primary-container text-white font-bold
-    expect(BEST).toContain('bg-primary-container');
-    expect(BEST).toContain("tab === 'all'");
-    expect(BEST).toContain("tab === 'urgent'");
+// Y10.4/UI04g: BestJobs ko phan tab — chi hien thi 1 data set
+describe('Y10.4/UI04g — BestJobs ko phan tab', () => {
+  it('BestJobsSection khong co tab controls', () => {
+    // best-jobs-section.tsx khong co tablist nua
+    expect(BEST).not.toContain('role="tablist"');
+    expect(BEST).not.toContain('role="tab"');
+    expect(BEST).not.toContain('Tất cả');
+    expect(BEST).not.toContain('Tuyển gấp');
   });
 
   it('BestJobsSection accepts pageSize prop and renders up to pageSize items', () => {
-    // DEC-04: Component receives pageSize as a prop variable (not hardcoded literal 3).
-    // AV1: page.tsx already slices at fetch level; component receives correct-sized array.
     expect(BEST).toContain('pageSize');
     expect(BEST).toContain('offset');
     expect(BEST).toContain('total');
     expect(BEST).toContain('nextOffset');
-    // V6 AV1: component renders with .map() on the jobs prop (already sliced)
     expect(BEST).toContain('jobs.map');
-    // Verify the pageSize is a prop (in interface) and used as a variable (not hardcoded as literal 9)
     expect(BEST).toContain('pageSize: number');
   });
 
-  it('pagination control has role="group" aria-label="Phân trang" (DEC-03)', () => {
-    expect(BEST).toContain('role="group"');
-    expect(BEST).toContain('aria-label="Phân trang"');
+  it('grid uses 3-column layout (sm:grid-cols-2 lg:grid-cols-3)', () => {
+    expect(BEST).toContain('sm:grid-cols-2');
+    expect(BEST).toContain('lg:grid-cols-3');
   });
 
-  it('prev disabled when offset=0, next disabled when nextOffset=null or offset+pageSize>=total (RQ-06)', () => {
-    expect(BEST).toContain('offset === 0');
-    expect(BEST).toContain('nextOffset === null');
-    expect(BEST).toContain('offset + pageSize >= total');
-  });
-
-  it('page.tsx renders URGENT tab from live API (V6 AV1)', () => {
-    // V6 AV1: URGENT tab uses live API via bestJobsUrgentData, not BEST_JOBS_URGENT_PREVIEW fixture
-    expect(page).toContain('bestJobsUrgentData');
-    expect(page).toContain('bootstrapBestJobsUrgent');
+  it('empty state chi hien thi 1 text', () => {
+    expect(BEST).toContain('Không có việc làm nào.');
+    expect(BEST).not.toContain('Hiện chưa có việc tuyển gấp');
   });
 });

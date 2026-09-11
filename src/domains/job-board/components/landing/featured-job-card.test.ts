@@ -119,38 +119,53 @@ describe('AC-07: URGENT tab Quick Apply mo ApplyModal cho job that', () => {
   });
 });
 
-describe('AC-09: Stamp stack — pointer-events-none, ~24-28px each, bg ~70-80% alpha (Y10.4/UI04g multi-stamp)', () => {
-  it('stamp stack co pointer-events-none', () => {
-    // Y10.4/UI04g: anchor mới là flex flex-col items-end (stamp stack wrapper)
-    const idx = CARD.indexOf("flex flex-col items-end gap-1");
-    expect(idx).toBeGreaterThanOrEqual(0);
-    const block = CARD.slice(Math.max(0, idx - 100), idx + 200);
-    expect(block).toContain('pointer-events-none');
+describe('Y10.4/UI04g: Rubber stamp badge — tilted style, single stamp per card', () => {
+  it('RubberStamp component renders with tilted rotate-6 style', () => {
+    // Y10.4/UI04g: RubberStamp uses rotate-6 for tilted stamp effect
+    expect(CARD).toContain('rotate-6');
+    expect(CARD).toContain('RubberStamp');
   });
 
-  it('stamp bg dung alpha (70-80%)', () => {
-    // Y10.4/UI04g: STAMPS registry dùng /75 alpha; check stamp-defs.ts source.
-    const hasAlpha = STAMPS.includes('/75') || STAMPS.includes('/80');
-    expect(hasAlpha, 'stamp phai co nen 70-80% alpha').toBe(true);
+  it('stamp uses ringClass for outer border', () => {
+    // Y10.4/UI04g: outer ring uses def.ringClass (e.g., ring-orange-600)
+    expect(CARD).toContain('def.ringClass');
   });
 
-  it('stamp "tuyen-gap" dung Flame icon tu lucide-react (qua stamp-defs)', () => {
-    // Y10.4/UI04g: Flame import từ stamp-defs.ts không phải từ CARD.
-    // Test pass bằng cách verify STAMPS registry co Flame, CARD import STAMPS.
-    expect(CARD).toContain("from './stamp-defs'");
+  it('inner stamp uses bgClass + borderClass', () => {
+    // Y10.4/UI04g: inner stamp uses def.bgClass (orange/red tones) + def.borderClass
+    expect(CARD).toContain('def.bgClass');
+    expect(CARD).toContain('def.borderClass');
   });
 
-  it('stamp text "Tuyen gap" duoc render', () => {
-    // Y10.4/UI04g: "Tuyển gấp" lấy từ STAMPS['tuyen-gap'].label; CARD truyền def.label.
-    // Verify STAMPS registry co label nay, CARD reference def.label.
-    expect(CARD).toContain('def.label');
+  it('stamp text uppercase with tracking-wider', () => {
+    // Y10.4/UI04g: stamp label is uppercase with wide tracking
+    expect(CARD).toContain('uppercase');
+    expect(CARD).toContain('tracking-wider');
   });
 
-  it('KHONG co pr-[72px] tren title wrapper', () => {
-    // Check the header div block (min-w-0 area), NOT the test file itself
-    const headerIdx = CARD.indexOf('min-w-0');
-    const headerBlock = CARD.slice(Math.max(0, headerIdx - 200), headerIdx + 200);
-    expect(headerBlock).not.toContain('pr-[72px]');
+  it('chi hien thi 1 stamp duy nhat', () => {
+    // Y10.4/UI04g: chi render stamps[0], khong phai mang
+    const stampRenderIdx = CARD.indexOf('stamps[0]');
+    expect(stampRenderIdx).toBeGreaterThanOrEqual(0);
+  });
+
+  it('stamp co pointer-events-none tren wrapper', () => {
+    // Y10.4/UI04g: wrapper div co pointer-events-none
+    const pointerIdx = CARD.indexOf('pointer-events-none');
+    expect(pointerIdx).toBeGreaterThanOrEqual(0);
+  });
+
+  it('stamp-defs co icons Star, Sparkles tu lucide-react', () => {
+    // Y10.4/UI04g: stamp-defs.ts imports Star, Sparkles tu lucide-react
+    expect(STAMPS).toContain('Star');
+    expect(STAMPS).toContain('Sparkles');
+  });
+
+  it('stamp-defs su dung icon tu lucide-react (Flame, Star, Gift)', () => {
+    // Y10.4/UI04g: stamp-defs.ts imports Flame, Star, Gift, Sparkles tu lucide-react
+    expect(STAMPS).toContain('Flame');
+    expect(STAMPS).toContain('Star');
+    expect(STAMPS).toContain('Gift');
   });
 });
 
@@ -515,58 +530,42 @@ describe('Additional: postedAt in EnrichedJob adapter (STEP-10 / RQ-20)', () => 
   });
 });
 
-describe('Additional: URGENT tab uses live API (RQ-03)', () => {
-  it('page.tsx fetch URGENT tu /api/jobs?urgency=URGENT', () => {
-    expect(PAGE).toContain('urgency=URGENT');
+describe('Y10.4/UI04g: BestJobs ko phan tab — chi hien thi 1 data set', () => {
+  it('page.tsx khong con bestJobsTab state', () => {
+    expect(PAGE).not.toContain('bestJobsTab');
+    expect(PAGE).not.toContain('bestJobsUrgentData');
+    expect(PAGE).not.toContain('bootstrapBestJobsUrgent');
   });
 
-  it('page.tsx KHONG con import BEST_JOBS_URGENT_PREVIEW', () => {
-    expect(PAGE).not.toContain('BEST_JOBS_URGENT_PREVIEW');
-  });
-
-  it('best-jobs-section KHONG con urgentPreviewBadge prop', () => {
-    expect(BEST).not.toContain('urgentPreviewBadge');
-  });
-
-  it('best-jobs-section KHONG con "Preview / Backend chua ho tro" banner', () => {
-    expect(BEST).not.toContain('Preview / Backend');
-  });
-});
-
-describe('Additional: Empty state for URGENT tab (RQ-05)', () => {
-  it('best-jobs-section empty state text cho URGENT tab', () => {
-    expect(BEST).toContain('Hiện chưa có việc tuyển gấp.');
-  });
-});
-
-describe('Additional: Pagination works for both tabs (RQ-06 / RQ-08)', () => {
-  it('showPagination hoat dong cho ca hai tab', () => {
-    const paginationIdx = BEST.indexOf('showPagination');
-    const paginationBlock = BEST.slice(paginationIdx - 20, paginationIdx + 100);
-    expect(paginationBlock).not.toContain("tab === 'all'");
-  });
-});
-
-describe('Additional: Tab race safety (RQ-04)', () => {
-  it('tab change reset offset ve 0', () => {
-    const tabChangeIdx = PAGE.indexOf('handleBestJobsTabChange');
-    const tabBlock = PAGE.slice(tabChangeIdx, tabChangeIdx + 400);
-    expect(tabBlock).toContain('setBestJobsOffset(0)');
-    expect(tabBlock).toContain('setBestJobsUrgentOffset');
-  });
-
-  it('cancelled flag cho race condition', () => {
+  it('cancelled flag van con cho race condition', () => {
     expect(PAGE).toContain('let cancelled = false');
     expect(PAGE).toContain('if (cancelled) return');
   });
 });
 
-describe('Additional: URGENT response KHONG update global facets/overview (RQ-07)', () => {
-  it('bootstrapBestJobsUrgent khong set facets/overview', () => {
-    const urgentIdx = PAGE.indexOf('bootstrapBestJobsUrgent');
-    const urgentBlock = PAGE.slice(urgentIdx, urgentIdx + 500);
-    expect(urgentBlock).not.toContain('setFacets');
-    expect(urgentBlock).not.toContain('setOverview');
+describe('Y10.4/UI04g: BestJobs khong con URGENT tab nua', () => {
+  it('page.tsx khong fetch urgency=URGENT', () => {
+    expect(PAGE).not.toContain('urgency=URGENT');
+  });
+});
+
+describe('Y10.4/UI04g: BestJobs ko phan tab — chi hien thi 1 data set', () => {
+  it('page.tsx khong con bestJobsTab state', () => {
+    expect(PAGE).not.toContain('bestJobsTab');
+    expect(PAGE).not.toContain('bestJobsUrgentData');
+    expect(PAGE).not.toContain('bootstrapBestJobsUrgent');
+  });
+
+  it('BestJobsSection khong co tab prop', () => {
+    expect(BEST).not.toContain('tab:');
+    expect(BEST).not.toContain('onTabChange');
+    expect(BEST).not.toContain("role=\"tablist\"");
+    expect(BEST).not.toContain("role=\"tab\"");
+  });
+
+  it('cancelled flag van con cho race condition', () => {
+    expect(PAGE).toContain('let cancelled = false');
+    expect(PAGE).toContain('if (cancelled) return');
   });
 });
 

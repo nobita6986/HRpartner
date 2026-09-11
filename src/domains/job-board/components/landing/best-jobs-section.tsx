@@ -9,9 +9,6 @@ export interface BestJobsSectionProps {
   pageSize: number;
   offset: number;
   nextOffset: number | null;
-  // Tab control
-  tab: 'all' | 'urgent';
-  onTabChange: (tab: 'all' | 'urgent') => void;
   // Pagination actions
   onPrev: () => void;
   onNext: () => void;
@@ -24,22 +21,12 @@ export interface BestJobsSectionProps {
   onApply?: (job: EnrichedJob) => void;
 }
 
-function salaryLabel(min: number | null, max: number | null): string {
-  if (min === null) return 'Lương thương lượng';
-  const VND_FORMAT = new Intl.NumberFormat('vi-VN');
-  const from = VND_FORMAT.format(min);
-  if (max !== null && max !== min) return `${from} – ${VND_FORMAT.format(max)} đ/giờ`;
-  return `${from} đ/giờ`;
-}
-
 export function BestJobsSection({
   jobs,
   total,
   pageSize,
   offset,
   nextOffset,
-  tab,
-  onTabChange,
   onPrev,
   onNext,
   buildHref,
@@ -47,7 +34,7 @@ export function BestJobsSection({
 }: BestJobsSectionProps) {
   const currentPage = Math.floor(offset / pageSize) + 1;
   const totalPages = Math.ceil(total / pageSize);
-  // STEP-04/STEP-05/STEP-06: pagination works for both tabs when total > pageSize
+  // Pagination works when total > pageSize
   const showPagination = total > pageSize;
 
   return (
@@ -77,41 +64,11 @@ export function BestJobsSection({
           </h2>
         </div>
 
-        {/* DEC-01: Tab filter — Tất cả / Tuyển gấp (đẩy lên ngay dưới tiêu đề). */}
-        <div className="mb-6" role="tablist" aria-label="Bộ lọc việc làm tốt nhất">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'all'}
-            onClick={() => onTabChange('all')}
-            className={`mr-2 inline-flex items-center gap-1.5 rounded-full px-4 py-2 font-label text-label-md font-semibold transition-colors ${
-              tab === 'all'
-                ? 'bg-primary-container text-white font-bold'
-                : 'bg-surface text-on-surface'
-            }`}
-          >
-            Tất cả
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'urgent'}
-            onClick={() => onTabChange('urgent')}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 font-label text-label-md font-semibold transition-colors ${
-              tab === 'urgent'
-                ? 'bg-primary-container text-white font-bold'
-                : 'bg-surface text-on-surface'
-            }`}
-          >
-            Tuyển gấp
-          </button>
-        </div>
+        {/* Y10.4/UI04g: No tabs — all jobs displayed together */}
 
-        {/* STEP-07: No preview banner — URGENT tab uses live data */}
-
-        {/* DEC-01: Job grid — render from props, driven by pageSize prop (DEC-04) */}
+        {/* DEC-01: Job grid 3 hàng x 3 cột — render from props, driven by pageSize prop (DEC-04) */}
         {jobs.length > 0 ? (
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {jobs.map((job) => (
               <FeaturedJobCard
                 key={job.id}
@@ -122,8 +79,7 @@ export function BestJobsSection({
                   salaryMinVnd: job.salaryMinVnd,
                   salaryMaxVnd: job.salaryMaxVnd,
                   location: job.locations[0] ?? 'Toàn quốc',
-                  // Y10.4/UI04g: pass stamps array (tuyen-gap + hot + thuong-cao + moi).
-                  // badgeType chỉ giữ backward compat cho filter 'urgent' tab.
+                  // Y10.4/UI04g: pass stamps array (admin chọn khi tạo job).
                   stamps: job.stamps,
                   badgeType: job.badgeType === 'urgent' ? 'urgent' : null,
                   // Y10.4/UI04g fix: companyName = tên nhà máy từ API.
@@ -139,12 +95,12 @@ export function BestJobsSection({
         ) : (
           <div className="flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container-low py-12">
             <p className="font-body text-body-md text-on-surface-variant">
-              {tab === 'urgent' ? 'Hiện chưa có việc tuyển gấp.' : 'Không có việc làm nào.'}
+              Không có việc làm nào.
             </p>
           </div>
         )}
 
-        {/* DEC-03: Pagination control — works for both tabs when total > pageSize */}
+        {/* DEC-03: Pagination control */}
         {showPagination && (
           <div
             className="mt-8 flex items-center justify-center gap-4"

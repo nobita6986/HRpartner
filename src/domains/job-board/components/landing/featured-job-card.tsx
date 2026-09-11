@@ -59,6 +59,41 @@ function deriveMonogram(title: string): string {
   return initials || 'HRP';
 }
 
+/** Y10.4/UI04g: rubber stamp single badge — tilted stamp style với tone cam HRP. */
+function RubberStamp({ stampKey }: { stampKey: StampKey }) {
+  const def = STAMPS[stampKey];
+  const Icon = def.Icon;
+  return (
+    <div
+      className="pointer-events-none absolute -top-1 -right-1 z-20"
+      data-testid="job-stamp"
+      aria-label={def.ariaLabel}
+    >
+      {/* Outer ring - rough/dashed border */}
+      <div className={`relative rotate-6 rounded border-2 ${def.ringClass} bg-white px-2 py-1 shadow-sm`}>
+        {/* Inner stamp bg with slight rotation for tilted effect */}
+        <div className={`rotate-[-2deg] rounded border ${def.borderClass} ${def.bgClass} px-1.5 py-0.5`}>
+          <div className="flex items-center gap-1">
+            <Icon className="h-3 w-3 shrink-0" aria-hidden="true" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">{def.label}</span>
+          </div>
+        </div>
+        {/* Stars decoration */}
+        <div className="pointer-events-none absolute -left-1 -top-1 text-orange-400 opacity-60" aria-hidden="true">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7L12 16.4 5.7 21l2.3-7-6-4.6h7.6z"/>
+          </svg>
+        </div>
+        <div className="pointer-events-none absolute -bottom-0.5 -right-0.5 text-orange-400 opacity-40" aria-hidden="true">
+          <svg width="6" height="6" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Formats postedAt ISO to a short date label for display. */
 function postedAtLabel(iso: string | null | undefined): string {
   if (!iso) return '';
@@ -83,37 +118,15 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
       /* RQ-14: Minimal SaaS surface — white bg + slate border + rounded-xl + shadow-sm */
       className="hrp-focus group relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
     >
-      {/* Y10.4/UI04g: Stamp stack — góc trên phải, xếp chồng dọc (FIFO quan trọng nhất trên cùng).
-          Thay thế single urgent ribbon cũ. Mỗi stamp = border-l + border-b rounded-bl-md, ~24-28px height. */}
+      {/* Y10.4/UI04g: Single rubber stamp badge — tilted stamp style với tone cam HRP.
+          Chỉ hiển thị 1 stamp (admin chọn khi tạo job). */}
       {(() => {
-        // Backward compat: nếu chỉ có badgeType='urgent' (FE cũ) → map sang ['tuyen-gap']
+        // Lấy stamp đầu tiên (quan trọng nhất theo STAMP_RANK)
         const stamps: StampKey[] = (job.stamps && job.stamps.length > 0)
-          ? job.stamps
+          ? [...job.stamps].sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b])
           : (job.badgeType === 'urgent' ? ['tuyen-gap'] : []);
         if (stamps.length === 0) return null;
-        // Sắp xếp theo STAMP_RANK (tuyen-gap > hot > thuong-cao > moi) cho thứ tự hiển thị.
-        const sorted = [...stamps].sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b]);
-        return (
-          <div
-            className="pointer-events-none absolute top-0 right-0 z-20 flex flex-col items-end gap-1"
-            data-testid={`job-stamps-${job.id}`}
-          >
-            {sorted.map((key) => {
-              const def = STAMPS[key];
-              const Icon = def.Icon;
-              return (
-                <span
-                  key={key}
-                  className={`flex items-center gap-1 rounded-bl-md border-l border-b ${def.borderClass} ${def.bgClass} px-2 py-1 ${def.fgClass} backdrop-blur-[1px]`}
-                  aria-label={def.ariaLabel}
-                >
-                  <Icon className="h-3 w-3 shrink-0" aria-hidden="true" />
-                  <span className="text-[11px] font-semibold leading-none">{def.label}</span>
-                </span>
-              );
-            })}
-          </div>
-        );
+        return <RubberStamp stampKey={stamps[0]} />;
       })()}
 
       {/* ─── Header ─────────────────────────────────────────────────────── */}

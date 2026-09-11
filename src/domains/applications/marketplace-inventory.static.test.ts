@@ -409,37 +409,31 @@ describe('DEC-06/DEC-12 — adapter kín và không log identifier', () => {
   });
 });
 
-// DEC-01 / STEP-04: BestJobs tab + pagination in PORTAL_PAGE
-describe('DEC-01 / RQ-01, RQ-02 — BestJobs tab filter and pagination in page.tsx', () => {
-  it('page.tsx has BestJobs tab state and fetches separately (DEC-05)', () => {
+// Y10.4/UI04g: BestJobs ko phan tab — chi 1 data set, 6 jobs/page (3 cot x 2 hang)
+describe('Y10.4/UI04g — BestJobs ko phan tab trong page.tsx', () => {
+  it('page.tsx khong con bestJobsTab state (UI04g)', () => {
     const code = strip(read(PORTAL_PAGE));
-    expect(code).toContain('bestJobsTab');
-    expect(code).toContain('bestJobsOffset');
-    expect(code).toContain('bestJobsData');
-    // Tab 'all' fetches from /api/jobs
-    expect(code).toContain("/api/jobs?");
-    // Tab 'urgent' uses live API via bestJobsUrgentData (V6 AV1)
-    expect(code).toContain('bestJobsUrgentData');
+    expect(code).not.toContain('bestJobsTab');
+    expect(code).not.toContain('bestJobsUrgentData');
+    expect(code).not.toContain('bootstrapBestJobsUrgent');
   });
 
-  it('BestJobs pagination fetches with limit=9 (DEC-04 / BEST_JOBS_PAGE_SIZE)', () => {
+  it('page.tsx co bestJobsOffset + bestJobsData + bootstrapBestJobs', () => {
     const code = strip(read(PORTAL_PAGE));
-    expect(code).toContain('BEST_JOBS_PAGE_SIZE');
     expect(code).toContain('bestJobsOffset');
+    expect(code).toContain('bestJobsData');
+    expect(code).toContain('bootstrapBestJobs');
     expect(code).toContain('buildBestJobsQuery');
   });
 
-  it('BestJobs URGENT tab sends urgency=URGENT to server (V6 AV1 — live API)', () => {
-    // V6 AV1: URGENT tab uses live API, so urgency=URGENT is sent in the URL
+  it('page.tsx fetch tu /api/jobs (khong con urgency=URGENT)', () => {
     const code = strip(read(PORTAL_PAGE));
-    // bootstrapBestJobsUrgent adds urgency=URGENT to the fetch URL
-    expect(code).toMatch(/\/api\/jobs\?.*urgency=URGENT/);
+    expect(code).toContain("/api/jobs?");
+    expect(code).not.toMatch(/urgency=URGENT/);
   });
 
-  it('BestJobs tab does NOT use overview.newest.slice(0, 3) as pagination source (DEC-05)', () => {
+  it('BestJobsSection render 6 jobs/page (3 cot x 2 hang)', () => {
     const code = strip(read(PORTAL_PAGE));
-    // featuredJobs still uses overview.newest for the legacy recruiting section
-    // But BestJobs tab uses bestJobsData.jobs from the separate fetch
-    expect(code).toContain('bestJobsData.jobs');
+    expect(code).toContain('BEST_JOBS_PAGE_SIZE = 6');
   });
 });

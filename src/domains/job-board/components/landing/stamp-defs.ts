@@ -1,70 +1,73 @@
 /**
- * UI04g Owner directive 11/09/2026 08:43:
- * "tạo ra các stamp như hiểu đóng dấu mộc lên góc trên bên phải các tag là:
- *  Tuyển gấp, Hot, Thưởng cao,... những tag này sẽ được lựa chọn khi tạo job trong UI"
+ * Y10.4/UI04g Owner directive 11/09/2026 09:08:
+ * - Stamp style: rubber stamp như ảnh mẫu (thanh lệch + stars + textured) nhưng GIỮ TONE CAM HRP
+ * - Mỗi card chỉ hiển thị 1 stamp (admin chọn khi tạo job)
+ * - Stamp là field từ DB, không phải FE-derived mock
  *
- * Stamp = tag đóng dấu mộc góc trên phải card (UI-only ở giai đoạn này).
- * Sau này: stamp là field trong admin form create job, persisted vào DB.
- *
- * Y10.4/UI04g: FE-derived mock distribution từ urgency + postedAt (page.tsx enrichJob).
- * Khi admin form ready → thay bằng server-provided stamps[].
+ * Design: rubber stamp với hiệu ứng tilted, textured background, border dashed/rough
  */
 
 import type { LucideIcon } from 'lucide-react';
-import { Flame, Sparkles, DollarSign, BadgePlus } from 'lucide-react';
+import { Flame, Star, Gift, Sparkles } from 'lucide-react';
 
 export type StampKey = 'tuyen-gap' | 'hot' | 'thuong-cao' | 'moi';
 
 export interface StampDef {
   key: StampKey;
   label: string;
-  /** Tailwind class cho background (with /alpha 70-80%). */
+  /** Tailwind class cho background (orange/cam tones). */
   bgClass: string;
   /** Tailwind class cho text/icon color. */
   fgClass: string;
-  /** Tailwind class cho border-l + border-b. */
+  /** Border color class. */
   borderClass: string;
+  /** Outer ring/border style (dashed/rough). */
+  ringClass: string;
   Icon: LucideIcon;
   /** ARIA friendly description. */
   ariaLabel: string;
 }
 
-/** Stamp registry — thêm stamp mới bằng cách push vào đây. */
+/** Stamp registry — rubber stamp style với tone cam HRP. */
 export const STAMPS: Record<StampKey, StampDef> = {
   'tuyen-gap': {
     key: 'tuyen-gap',
-    label: 'Tuyển gấp',
-    bgClass: 'bg-orange-500/75',
+    label: 'TUYỂN GẤP',
+    bgClass: 'bg-orange-500',
     fgClass: 'text-white',
-    borderClass: 'border-orange-300/40',
+    borderClass: 'border-orange-400',
+    ringClass: 'ring-orange-600',
     Icon: Flame,
     ariaLabel: 'Tuyển gấp',
   },
   'hot': {
     key: 'hot',
-    label: 'Hot',
-    bgClass: 'bg-red-500/75',
+    label: 'HOT',
+    bgClass: 'bg-red-500',
     fgClass: 'text-white',
-    borderClass: 'border-red-300/40',
-    Icon: Sparkles,
+    borderClass: 'border-red-400',
+    ringClass: 'ring-red-600',
+    Icon: Star,
     ariaLabel: 'Việc làm hot',
   },
   'thuong-cao': {
     key: 'thuong-cao',
-    label: 'Thưởng cao',
-    bgClass: 'bg-emerald-500/75',
+    label: 'THƯỞNG CAO',
+    bgClass: 'bg-amber-500',
     fgClass: 'text-white',
-    borderClass: 'border-emerald-300/40',
-    Icon: DollarSign,
+    borderClass: 'border-amber-400',
+    ringClass: 'ring-amber-600',
+    Icon: Gift,
     ariaLabel: 'Thưởng cao',
   },
   'moi': {
     key: 'moi',
-    label: 'Mới',
-    bgClass: 'bg-blue-500/75',
+    label: 'MỚI',
+    bgClass: 'bg-orange-400',
     fgClass: 'text-white',
-    borderClass: 'border-blue-300/40',
-    Icon: BadgePlus,
+    borderClass: 'border-orange-300',
+    ringClass: 'ring-orange-500',
+    Icon: Sparkles,
     ariaLabel: 'Việc làm mới',
   },
 };
