@@ -219,8 +219,8 @@ export default function JobsPage() {
     .map(enrichJob);
 
   // Recruiting project source — newest fallback topPaid, max 4 (per RQ-05 / DEC-04)
-  // Y10.8+: hiển thị 8 dự án (2 hàng × 4 cột).
-  const recruitingSource = (overview.newest.length > 0 ? overview.newest : overview.topPaid).slice(0, 8);
+  // v1.14 (11/09/2026): hiển thị 4 dự án (1 hàng × 4 cột) — giảm từ 8 để tránh lặp ảnh.
+  const recruitingSource = (overview.newest.length > 0 ? overview.newest : overview.topPaid).slice(0, 4);
   const recruitingProjects: EnrichedJob[] = recruitingSource.map(enrichJob);
 
   // Areas for image card — pull top 8 from facet areaCounts (Y10.8+: 2 hàng × 4 cột).

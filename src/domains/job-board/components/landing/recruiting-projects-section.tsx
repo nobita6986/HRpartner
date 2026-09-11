@@ -87,9 +87,11 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
         {/* STEP-05/RQ-09: Card 4-col md / 2-col mobile, KHÔNG anchor giả — dùng Link.
             Y10.2/UI04f fix: dùng position-relative card + position-absolute "Cần tuyển" để luôn sticky bottom
             bất kể title 1 hay 2 dòng. Thêm pb-10 để tạo khoảng trống cho absolute bottom. */}
-        {/* Y10.8+: hiển thị 8 dự án (2 hàng × 4 cột desktop). */}
+        {/* v1.14 (11/09/2026): giảm từ 8 → 4 dự án (1 hàng × 4 cột desktop) để tránh lặp ảnh.
+            4 ảnh unique (dong-goi-ha-noi / cong-nhan-may-moc / industrial-location-02 / industrial-location-03)
+            đã đủ đa dạng cho 4 cards; 8 cards sẽ lặp ảnh xấu. */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {jobs.slice(0, 8).map((job, index) => {
+          {jobs.slice(0, 4).map((job, index) => {
             // Y10.8+: Strip prefix "Tuyển ..." khỏi title để card gọn.
             const displayTitle = job.title.replace(/^(tuyển\s*(gấp|dụng)?\s*)/i, '').trim() || job.title;
             return (
