@@ -70,7 +70,7 @@ function RubberStamp({ stampKey }: { stampKey: StampKey }) {
   const Icon = def.Icon;
   return (
     <div
-      className="pointer-events-none absolute -top-5 -right-5 z-30 opacity-70"
+      className="pointer-events-none absolute -top-4 -right-4 z-30 opacity-50"
       data-testid="job-stamp"
       aria-label={def.ariaLabel}
       style={{ transform: `rotate(${def.rotateDeg}deg)` }}

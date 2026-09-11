@@ -167,9 +167,9 @@ describe('Y10.6/UI04j r2: Rubber stamp redesign — không viền đen, ink text
   });
 
   it('stamp tràn ra ngoài card (negative top/right position)', () => {
-    // Y10.6/UI04j r2: stamp -top-5 -right-5 tràn ra ngoài
-    expect(CARD).toContain('-top-5');
-    expect(CARD).toContain('-right-5');
+    // Y10.8: stamp -top-4 -right-4 tràn ra ngoài (đã thu nhỏ)
+    expect(CARD).toContain('-top-4');
+    expect(CARD).toContain('-right-4');
   });
 
   it('card KHÔNG còn overflow-hidden (để stamp tràn ra được)', () => {
@@ -262,8 +262,9 @@ describe('AC-15: Logo 48px vuong rounded-lg border-slate-100 — min-w-0 content
     expect(CARD).toContain('rounded-lg');
   });
 
-  it('logo border dung border-slate-200 (no nested border)', () => {
-    expect(CARD).toContain('border-slate-200');
+  it('logo border dung border-slate-300 (no nested border)', () => {
+    // Y10.8: logo border dày hơn để nổi bật trên card
+    expect(CARD).toContain('border-slate-300');
   });
 
   it('content column dung min-w-0', () => {
