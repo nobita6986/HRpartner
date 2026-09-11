@@ -25,14 +25,18 @@ function deriveMonogram(title: string): string {
   return initials || 'HRP';
 }
 
-/** Y10.5/UI04i: chọn ảnh stock (Unsplash, factory/industrial theme) theo `id` của card
- *  để mỗi card có 1 ảnh ổn định qua các lần render (deterministic, không random flicker).
- *  Bộ 4 ảnh nhà máy/công nghiệp đã được Owner verify visual trong evidence/preview-ui04i/. */
+/** Y10.5/UI04i: chọn ảnh stock (Unsplash, casual/blue-collar worker theme, gần gũi
+ *  với thị trường lao động phổ thông Việt Nam — workshop, dây chuyền, may mặc, F&B).
+ *  Mỗi card có 1 ảnh ổn định qua các lần render (deterministic theo `id`, không random flicker). */
 const CARD_BG_IMAGES: string[] = [
-  'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1565793298595-6a879b1d9492?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=600&q=80',
+  // 1. Workshop cơ khí thủ công — bối cảnh Việt Nam, casual
+  'https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=600&q=80',
+  // 2. Công nhân dây chuyền may — phù hợp thị trường lao động nữ phổ thông VN
+  'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=600&q=80',
+  // 3. Lao động F&B / hospitality — phổ biến với lao động phổ thông VN
+  'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=600&q=80',
+  // 4. Kho vận / logistics — nam lao động phổ thông VN
+  'https://images.unsplash.com/photo-1601598851547-4302969d0614?auto=format&fit=crop&w=600&q=80',
 ];
 
 /** Hash ổn định từ string -> index 0..3. Dùng để chọn ảnh theo id. */
