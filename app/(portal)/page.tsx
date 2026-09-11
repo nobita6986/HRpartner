@@ -47,6 +47,8 @@ export interface EnrichedJob {
   postedAt: string | null;
   /** Y10.4/UI04g: stamp tags render góc trên phải card (UI-only mock distribution). */
   stamps: StampKey[];
+  /** Y10.4/UI04g fix: tên công ty/nhà máy (project.name), hiển thị dưới title job. */
+  companyName: string | null;
 }
 
 import type { StampKey } from '@/src/domains/job-board/components/landing/stamp-defs';
@@ -78,7 +80,7 @@ function deriveStamps(args: {
 }
 
 function enrichJob(job: PublicJobDto): EnrichedJob {
-  const { salaryMinVnd, salaryMaxVnd, urgency, postedAt } = job;
+  const { salaryMinVnd, salaryMaxVnd, urgency, postedAt, companyName } = job;
   return {
     id: job.id,
     slug: job.slug ?? job.id,
@@ -97,6 +99,8 @@ function enrichJob(job: PublicJobDto): EnrichedJob {
       salaryMaxVnd,
       postedAt: postedAt ?? null,
     }),
+    // Y10.4/UI04g fix: companyName = tên nhà máy từ API, hiển thị dưới title.
+    companyName: companyName ?? null,
   };
 }
 

@@ -17,6 +17,8 @@ export interface FeaturedJobCardProps {
     badgeType?: 'urgent' | 'new' | null;
     /** Y10.4/UI04g: list các stamp sẽ render trên card góc trên phải. */
     stamps?: StampKey[];
+    /** Y10.4/UI04g: tên công ty/nhà máy — render thay hardcoded "HRP Việt Nam". */
+    companyName?: string | null;
     source?: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
     /** RQ-20: ISO timestamp of newest visible order — render only when truthy */
     postedAt?: string | null;
@@ -124,15 +126,16 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
           className="h-12 w-12 shrink-0 rounded-lg border border-slate-100 bg-white"
         />
         <div className="min-w-0 flex-1">
-          {/* Y10.2/UI04f: hover tên job từ blue-700 → primary-dark (tone cam). */}
+          {/* Y10.4/UI04g: hover tên job từ blue-700 → primary-dark (tone cam). */}
           <h3
             className="text-base font-semibold leading-snug text-slate-900 line-clamp-2 transition group-hover:text-primary-dark mb-0.5"
             title={job.title}
           >
             {job.title}
           </h3>
+          {/* Y10.4/UI04g fix: render companyName từ API (tên nhà máy), fallback "HRP Việt Nam". */}
           <p className="text-sm font-medium text-slate-500">
-            HRP Việt Nam
+            {job.companyName ?? 'HRP Việt Nam'}
           </p>
         </div>
       </div>

@@ -20,6 +20,8 @@ export interface PublicJobDto {
   id: string;
   slug: string;
   title: string;
+  /** Y10.4/UI04g fix: companyName = tên công ty/nhà máy (project.name), hiển thị dưới title job. */
+  companyName: string;
   position: string;
   shift: string | null;
   location: string | null;
@@ -436,6 +438,8 @@ function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
     id: project.id,
     slug: project.code,
     title: project.name,
+    /** Y10.4/UI04g fix: companyName = tên nhà máy (project.name), position = tên công việc. */
+    companyName: project.name,
     // DEC-03: field đơn là phần tử ĐẦU của chính mảng summary đã sort, không phải chữ của một slot
     // ngẫu nhiên. Nhánh `??` chỉ đỡ trường hợp dữ liệu rỗng — `summarize` đã bỏ chuỗi trắng.
     position: summary.positionTitles[0] ?? slots[0].positionTitle,
@@ -487,6 +491,8 @@ function toDetailDto(project: PublicProjectRow, now: Date): PublicJobDetailDto |
     slug: project.code,
     jobCode: project.code,
     title: project.name,
+    /** Y10.4/UI04g fix: companyName = tên công ty/nhà máy. */
+    companyName: project.name,
     // go-live-05 / RQ-11: cùng một PHÉP derive với card (`summarizeSlots` trên tập đã `sortSlots`),
     // nhưng cố ý trên tập slot RỘNG HƠN. Trước đây cả hai bề mặt đọc `slots[0]` theo thứ tự DB nên
     // có thể mô tả cùng một việc bằng hai ca khác nhau; nay thứ tự đã ổn định ở cả hai.

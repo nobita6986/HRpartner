@@ -91,6 +91,8 @@ const PUBLISHED_JOB: PublicJobDto = {
   id: 'prj-1',
   slug: 'PRJ-001',
   title: 'Dự án lắp ráp điện tử',
+  /** Y10.4/UI04g fix: companyName = tên công ty/nhà máy. */
+  companyName: 'Dự án lắp ráp điện tử',
   position: 'Công nhân sản xuất',
   shift: '06:00-14:00',
   location: 'KCN VSIP 1',

@@ -416,7 +416,7 @@ describe('AC-01/AC-03, DEC-10/RISK-01/RISK-07 — DTO đúng allow-list, JSON an
   // là bốn tên duy nhất được thêm. Tên cột nội bộ `hourlyRateVnd` KHÔNG có mặt và vẫn bị cấm ở vòng
   // dưới — thứ được công bố là con số, không phải cột.
   const PUBLIC_KEYS = [
-    'availableSlots', 'deadline', 'id', 'jobType', 'location', 'locations',
+    'availableSlots', 'companyName', 'deadline', 'id', 'jobType', 'location', 'locations',
     'position', 'positionTitles', 'postedAt', 'salaryMaxVnd', 'salaryMinVnd',
     'shift', 'shiftType', 'shifts', 'slug', 'statusLabel', 'title', 'urgency',
   ];

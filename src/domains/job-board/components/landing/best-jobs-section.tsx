@@ -126,6 +126,8 @@ export function BestJobsSection({
                   // badgeType chỉ giữ backward compat cho filter 'urgent' tab.
                   stamps: job.stamps,
                   badgeType: job.badgeType === 'urgent' ? 'urgent' : null,
+                  // Y10.4/UI04g fix: companyName = tên nhà máy từ API.
+                  companyName: job.companyName,
                   // DEC-08: phân biệt preview card qua source field
                   source: (job as { source?: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING' }).source,
                 }}
