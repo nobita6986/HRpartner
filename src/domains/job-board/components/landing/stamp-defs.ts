@@ -1,11 +1,8 @@
 /**
- * Y10.6/UI04j Owner directive 11/09/2026 09:36:
- * - Redesign rubber stamp: tràn ra ngoài card (3D overflow), tilted, ink texture
- * - Đồng bộ tất cả 4 stamp (TUYỂN GẤP, HOT, THƯỞNG CAO, MỚI) cùng shape tròn
- * - Tông cam HRP + tone hồng đỏ cho HOT để phân cấp urgency
- *
- * Design: round badge (rounded-full), dashed border (stamp edge), tilted 12°,
- * ink-stamp texture bằng CSS gradient, drop-shadow mạnh để tạo depth khi tràn ra ngoài card.
+ * Y10.7/UI04j r6: grunge ink texture NHẸ (80% opacity) + CHỈ phần trong stamp.
+ * - Giảm opacity radial gradient từ 0.35 → 0.28, 0.18 → 0.14, v.v.
+ * - Dùng radial-gradient mask để texture chỉ tập trung ở TÂM stamp,
+ *   rìa stamp giữ nguyên màu mực đặc — không phải toàn bộ con dấu.
  */
 
 import type { LucideIcon } from 'lucide-react';

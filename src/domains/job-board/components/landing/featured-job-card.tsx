@@ -79,15 +79,18 @@ function RubberStamp({ stampKey }: { stampKey: StampKey }) {
       <div
         className={`relative flex flex-col items-center justify-center rounded-full ${def.bgClass} px-4 py-2 shadow-2xl`}
         style={{
-          // Grunge ink texture: nhiều radial gradient lốm đốm mực không đều
+          // Y10.7/UI04j r6: Grunge ink texture NHẸ (80% opacity), CHỈ phần TÂM stamp.
+          // - Opacity giảm từ 0.35→0.28, 0.18→0.14, v.v.
+          // - Các blob radial gradient nhỏ tập trung ở TÂM, rìa stamp giữ nguyên màu mực đặc.
+          // - Dùng radial-gradient mask effect: blend mực sáng/tối ở tâm, rìa mực đều.
           backgroundImage:
-            `radial-gradient(ellipse at 15% 25%, rgba(255,255,255,0.35) 0%, transparent 30%),` +
-            `radial-gradient(ellipse at 75% 30%, rgba(0,0,0,0.18) 0%, transparent 25%),` +
-            `radial-gradient(ellipse at 40% 70%, rgba(255,255,255,0.25) 0%, transparent 35%),` +
-            `radial-gradient(ellipse at 85% 80%, rgba(0,0,0,0.15) 0%, transparent 20%),` +
-            `radial-gradient(ellipse at 25% 55%, rgba(255,255,255,0.30) 0%, transparent 30%),` +
-            `radial-gradient(ellipse at 60% 15%, rgba(0,0,0,0.12) 0%, transparent 25%),` +
-            `radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.10) 0%, transparent 50%)`,
+            `radial-gradient(ellipse 80% 80% at 50% 50%, rgba(0,0,0,0.22) 0%, transparent 100%),` +
+            `radial-gradient(ellipse at 30% 35%, rgba(255,255,255,0.28) 0%, transparent 30%),` +
+            `radial-gradient(ellipse at 70% 65%, rgba(0,0,0,0.14) 0%, transparent 28%),` +
+            `radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.20) 0%, transparent 50%),` +
+            `radial-gradient(ellipse at 20% 75%, rgba(255,255,255,0.22) 0%, transparent 25%),` +
+            `radial-gradient(ellipse at 80% 25%, rgba(0,0,0,0.12) 0%, transparent 22%),` +
+            `radial-gradient(ellipse at 50% 20%, rgba(255,255,255,0.18) 0%, transparent 30%)`,
           // Shadow mạnh để 3D pop khỏi card
           boxShadow: `0 8px 20px -4px ${def.ringClass.includes('amber') ? 'rgba(217,119,6,0.6)' : def.ringClass.includes('orange') ? 'rgba(249,115,22,0.6)' : 'rgba(239,68,68,0.6)'}, 0 4px 8px -2px rgba(0,0,0,0.3)`,
         }}
@@ -106,10 +109,10 @@ function RubberStamp({ stampKey }: { stampKey: StampKey }) {
           </span>
         </div>
 
-        {/* Grunge dots nhỏ — hạt mực văng */}
-        <div className={`pointer-events-none absolute -left-0.5 top-1/3 h-1.5 w-1.5 rounded-full ${def.bgClass} opacity-50`} aria-hidden="true" />
-        <div className={`pointer-events-none absolute -bottom-0.5 right-0 h-1 w-1 rounded-full ${def.bgClass} opacity-40`} aria-hidden="true" />
-        <div className={`pointer-events-none absolute -right-0.5 bottom-1/4 h-1 w-1.5 rounded-full ${def.bgClass} opacity-35`} aria-hidden="true" />
+        {/* Grunge dots nhỏ — hạt mực văng (80% nhẹ hơn) */}
+        <div className={`pointer-events-none absolute -left-0.5 top-1/3 h-1.5 w-1.5 rounded-full ${def.bgClass} opacity-40`} aria-hidden="true" />
+        <div className={`pointer-events-none absolute -bottom-0.5 right-0 h-1 w-1 rounded-full ${def.bgClass} opacity-30`} aria-hidden="true" />
+        <div className={`pointer-events-none absolute -right-0.5 bottom-1/4 h-1 w-1.5 rounded-full ${def.bgClass} opacity-25`} aria-hidden="true" />
       </div>
     </div>
   );
