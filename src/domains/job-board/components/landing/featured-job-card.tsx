@@ -60,11 +60,48 @@ function deriveMonogram(title: string): string {
 }
 
 /**
- * Y10.6/UI04j r2: rubber stamp redesign — bỏ viền dashed đen,
- * chỉ dùng mực cam HRP + grunge ink texture + concentric rings.
+ * Y10.6/UI04j r3: rubber stamp redesign với SVG grunge ink filter —
+ * hiệu ứng mực lốm đốm, viền tròn không đều (kiểu con dấu cao su thật).
  *
- * Style: con dấu cao su thật — không border đen, chỉ ink + shadow 3D.
+ * Workflow:
+ * 1. Define 1 SVG filter duy nhất (GrungeInkFilter) — turbulence + displacementMap
+ *    làm méo các shape của stamp → tạo cảm giác mực không đều.
+ * 2. Stamp body dùng clipPath tròn + fill mực cam → áp filter để có hiệu ứng grunge.
+ * 3. Inner ring + icon + text đặt trên overlay, không bị filter làm méo chữ.
  */
+function GrungeInkFilter() {
+  return (
+    <svg width="0" height="0" className="pointer-events-none absolute" aria-hidden="true">
+      <defs>
+        {/* R3: noise filter mạnh — tạo hiệu ứng grunge realistic */}
+        <filter id="hrp-stamp-grunge" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5" result="noise" />
+          <feColorMatrix
+            in="noise"
+            type="matrix"
+            values="0 0 0 0 1
+                    0 0 0 0 1
+                    0 0 0 0 1
+                    0 0 0 2 -0.8"
+            result="texture"
+          />
+          <feComposite in="texture" in2="SourceGraphic" operator="in" result="textureClipped" />
+          <feMerge>
+            <feMergeNode in="SourceGraphic" />
+            <feMergeNode in="textureClipped" />
+          </feMerge>
+        </filter>
+
+        {/* R3: displacement filter — làm méo viền tròn, tạo cảm giác con dấu thật */}
+        <filter id="hrp-stamp-distort" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="3" result="turb" />
+          <feDisplacementMap in="SourceGraphic" in2="turb" scale="3.5" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+    </svg>
+  );
+}
+
 function RubberStamp({ stampKey }: { stampKey: StampKey }) {
   const def = STAMPS[stampKey];
   const Icon = def.Icon;
@@ -75,41 +112,96 @@ function RubberStamp({ stampKey }: { stampKey: StampKey }) {
       aria-label={def.ariaLabel}
       style={{ transform: `rotate(${def.rotateDeg}deg)` }}
     >
-      {/* Stamp body: hình tròn, không viền đen, chỉ có mực + shadow-2xl 3D */}
+      <GrungeInkFilter />
+
+      {/* Stamp body: SVG-based để có hiệu ứng grunge distortion chân thực */}
       <div
-        className={`relative flex flex-col items-center justify-center rounded-full ${def.bgClass} px-4 py-2 shadow-2xl`}
+        className="relative"
         style={{
-          // Grunge ink texture: nhiều radial gradient lốm đốm mực không đều
-          backgroundImage:
-            `radial-gradient(ellipse at 15% 25%, rgba(255,255,255,0.35) 0%, transparent 30%),` +
-            `radial-gradient(ellipse at 75% 30%, rgba(0,0,0,0.18) 0%, transparent 25%),` +
-            `radial-gradient(ellipse at 40% 70%, rgba(255,255,255,0.25) 0%, transparent 35%),` +
-            `radial-gradient(ellipse at 85% 80%, rgba(0,0,0,0.15) 0%, transparent 20%),` +
-            `radial-gradient(ellipse at 25% 55%, rgba(255,255,255,0.30) 0%, transparent 30%),` +
-            `radial-gradient(ellipse at 60% 15%, rgba(0,0,0,0.12) 0%, transparent 25%),` +
-            `radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.10) 0%, transparent 50%)`,
-          // Shadow mạnh để 3D pop khỏi card
-          boxShadow: `0 8px 20px -4px ${def.ringClass.includes('amber') ? 'rgba(217,119,6,0.6)' : def.ringClass.includes('orange') ? 'rgba(249,115,22,0.6)' : 'rgba(239,68,68,0.6)'}, 0 4px 8px -2px rgba(0,0,0,0.3)`,
+          // Shadow mạnh có màu mực để 3D pop
+          filter: `drop-shadow(0 6px 8px ${def.ringClass.includes('amber') ? 'rgba(217,119,6,0.55)' : def.ringClass.includes('orange') ? 'rgba(249,115,22,0.55)' : 'rgba(239,68,68,0.55)'}) drop-shadow(0 2px 4px rgba(0,0,0,0.25))`,
         }}
       >
-        {/* Inner ring line — vòng tròn mực bên trong (kiểu con dấu) */}
-        <div
-          className={`absolute inset-1.5 rounded-full border-2 ${def.borderClass} opacity-60`}
-          aria-hidden="true"
-        />
+        <svg
+          width="120"
+          height="120"
+          viewBox="0 0 120 120"
+          className="block"
+          style={{ filter: 'url(#hrp-stamp-distort)' }}
+        >
+          {/* Vòng tròn mực chính — áp grunge filter */}
+          <circle
+            cx="60"
+            cy="60"
+            r="52"
+            className={def.bgClass}
+            filter="url(#hrp-stamp-grunge)"
+          />
 
-        {/* Nội dung stamp */}
-        <div className={`relative flex flex-col items-center gap-0.5 ${def.fgClass}`}>
+          {/* Lỗ hổng grunge trắng — tạo đốm mực loang lổ */}
+          <g opacity="0.55" filter="url(#hrp-stamp-grunge)">
+            <circle cx="35" cy="45" r="3" fill="white" />
+            <circle cx="82" cy="38" r="2.5" fill="white" />
+            <circle cx="45" cy="80" r="4" fill="white" />
+            <circle cx="78" cy="75" r="2" fill="white" />
+            <circle cx="60" cy="35" r="2" fill="white" />
+            <circle cx="55" cy="92" r="2.5" fill="white" />
+            <circle cx="92" cy="62" r="1.8" fill="white" />
+            <circle cx="28" cy="65" r="2" fill="white" />
+          </g>
+
+          {/* Đốm đậm (mực in đè) */}
+          <g opacity="0.45" filter="url(#hrp-stamp-grunge)">
+            <circle cx="50" cy="55" r="2" fill="black" />
+            <circle cx="72" cy="50" r="1.5" fill="black" />
+            <circle cx="68" cy="78" r="2.5" fill="black" />
+            <circle cx="40" cy="70" r="1.8" fill="black" />
+          </g>
+
+          {/* Inner ring — vòng tròn mực bên trong kiểu con dấu */}
+          <circle
+            cx="60"
+            cy="60"
+            r="40"
+            fill="none"
+            className={def.borderClass}
+            strokeWidth="2"
+            opacity="0.7"
+            filter="url(#hrp-stamp-grunge)"
+          />
+        </svg>
+
+        {/* Text + Icon overlay (không bị filter làm méo) */}
+        <div
+          className={`absolute inset-0 flex flex-col items-center justify-center ${def.fgClass}`}
+        >
           <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span className="text-[10px] font-black uppercase tracking-widest leading-none whitespace-nowrap">
+          <span className="mt-0.5 text-[10px] font-black uppercase tracking-widest leading-none whitespace-nowrap">
             {def.label}
           </span>
         </div>
 
-        {/* Grunge dots nhỏ — hạt mực văng */}
-        <div className={`pointer-events-none absolute -left-0.5 top-1/3 h-1.5 w-1.5 rounded-full ${def.bgClass} opacity-50`} aria-hidden="true" />
-        <div className={`pointer-events-none absolute -bottom-0.5 right-0 h-1 w-1 rounded-full ${def.bgClass} opacity-40`} aria-hidden="true" />
-        <div className={`pointer-events-none absolute -right-0.5 bottom-1/4 h-1 w-1.5 rounded-full ${def.bgClass} opacity-35`} aria-hidden="true" />
+        {/* Grunge dots văng ra ngoài — hạt mực */}
+        <div
+          className={`pointer-events-none absolute -left-1 top-1/3 h-1.5 w-1.5 rounded-full ${def.bgClass}`}
+          style={{ opacity: 0.55 }}
+          aria-hidden="true"
+        />
+        <div
+          className={`pointer-events-none absolute -bottom-0.5 -right-0.5 h-1 w-1 rounded-full ${def.bgClass}`}
+          style={{ opacity: 0.45 }}
+          aria-hidden="true"
+        />
+        <div
+          className={`pointer-events-none absolute -right-1 bottom-1/4 h-1 w-1.5 rounded-full ${def.bgClass}`}
+          style={{ opacity: 0.4 }}
+          aria-hidden="true"
+        />
+        <div
+          className={`pointer-events-none absolute -top-1 -left-0.5 h-1 w-1 rounded-full ${def.bgClass}`}
+          style={{ opacity: 0.5 }}
+          aria-hidden="true"
+        />
       </div>
     </div>
   );
