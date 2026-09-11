@@ -961,8 +961,17 @@ describe('Y10.4/UI04g — BestJobs ko phan tab', () => {
     expect(BEST).toContain('lg:grid-cols-3');
   });
 
-  it('empty state chi hien thi 1 text', () => {
+  it('v1.13: empty state chi hien thi 1 text', () => {
     expect(BEST).toContain('Không có việc làm nào.');
     expect(BEST).not.toContain('Hiện chưa có việc tuyển gấp');
+  });
+
+  it('v1.13: BestJobsSection accepts isLoading prop + render spinner "Đang tải việc làm"', () => {
+    /* Tránh khách hiểu lầm lúc data chưa về. */
+    expect(BEST).toMatch(/isLoading:\s*boolean/);
+    expect(BEST).toMatch(/isLoading/);
+    expect(BEST).toContain('Đang tải việc làm');
+    expect(BEST).toContain('Loader2');
+    expect(BEST).toContain('animate-spin');
   });
 });

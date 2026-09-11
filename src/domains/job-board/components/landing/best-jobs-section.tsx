@@ -1,9 +1,13 @@
+import { Loader2 } from 'lucide-react';
 import { FeaturedJobCard } from './featured-job-card';
 import type { EnrichedJob } from '@/app/(portal)/page';
 
 export interface BestJobsSectionProps {
   // Jobs data
   jobs: EnrichedJob[];
+  /* v1.13 (11/09/2026): loading state — khi true render spinner 'Đang tải việc làm'
+     thay vì 'Không có việc làm nào' để tránh khách hiểu lầm lúc data chưa về. */
+  isLoading: boolean;
   // Pagination metadata
   total: number;
   pageSize: number;
@@ -23,6 +27,7 @@ export interface BestJobsSectionProps {
 
 export function BestJobsSection({
   jobs,
+  isLoading,
   total,
   pageSize,
   offset,
@@ -67,6 +72,10 @@ export function BestJobsSection({
         {/* Y10.4/UI04g: No tabs — all jobs displayed together */}
 
         {/* DEC-01: Job grid 3 hàng x 3 cột — render from props, driven by pageSize prop (DEC-04) */}
+        {/* v1.13 (11/09/2026): phân biệt 3 trạng thái:
+              - isLoading=true → spinner 'Đang tải việc làm' (tránh khách hiểu lầm)
+              - isLoading=false && jobs rỗng → 'Không có việc làm nào.' (giữ nguyên)
+              - jobs có data → grid (giữ nguyên) */}
         {jobs.length > 0 ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {jobs.map((job) => (
@@ -92,8 +101,23 @@ export function BestJobsSection({
               />
             ))}
           </div>
+        ) : isLoading ? (
+          <div
+            className="flex items-center justify-center gap-3 rounded-lg border border-outline-variant bg-surface-container-low py-12"
+            role="status"
+            aria-live="polite"
+            data-testid="best-jobs-loading"
+          >
+            <Loader2 className="h-5 w-5 animate-spin text-primary-dark" aria-hidden="true" />
+            <p className="font-body text-body-md text-on-surface-variant">
+              Đang tải việc làm
+            </p>
+          </div>
         ) : (
-          <div className="flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container-low py-12">
+          <div
+            className="flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container-low py-12"
+            data-testid="best-jobs-empty"
+          >
             <p className="font-body text-body-md text-on-surface-variant">
               Không có việc làm nào.
             </p>

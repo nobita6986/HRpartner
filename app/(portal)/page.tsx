@@ -325,6 +325,9 @@ export default function JobsPage() {
       {/* Y10.8: BestJobs section — 3 cột × 3 hàng (9 jobs/page) */}
       <BestJobsSection
         jobs={bestJobsData.jobs}
+        /* v1.13 (11/09/2026): truyền bestJobsLoading để render spinner 'Đang tải việc làm'
+           thay vì 'Không có việc làm nào' khi data chưa về. */
+        isLoading={bestJobsLoading}
         total={bestJobsData.total}
         pageSize={BEST_JOBS_PAGE_SIZE}
         offset={bestJobsOffset}
