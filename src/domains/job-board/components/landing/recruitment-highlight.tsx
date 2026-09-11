@@ -1,14 +1,56 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+
 interface RecruitmentHighlightProps {
   className?: string;
 }
 
+const SLIDES = [
+  {
+    image: 'https://picsum.photos/seed/hrp-post/400/280',
+    title: 'Đăng công việc trong 5 phút',
+    desc: 'Không cần tài khoản doanh nghiệp. Chỉ cần mô tả và đăng — ứng viên tự tìm đến bạn.',
+  },
+  {
+    image: 'https://picsum.photos/seed/hrp-filter/400/280',
+    title: 'HRP lọc hồ sơ thông minh',
+    desc: 'Theo địa điểm, ca làm, mức lương thực tế. Chỉ ứng viên phù hợp mới được giới thiệu.',
+  },
+  {
+    image: 'https://picsum.photos/seed/hrp-interview/400/280',
+    title: 'Chỉ gặp ứng viên đã sàng lọc',
+    desc: 'Ứng viên đã đồng ý phỏng vấn và sẵn sàng. Bạn tiết kiệm thời gian, hiệu quả cao hơn.',
+  },
+] as const;
+
+/** Y10.3/UI04g: 3-slide image carousel với auto-play + navigation dots */
 export function RecruitmentHighlight({ className = '' }: RecruitmentHighlightProps) {
+  const [current, setCurrent] = useState(0);
+
+  const next = useCallback(() => {
+    setCurrent((c) => (c + 1) % SLIDES.length);
+  }, []);
+
+  // Auto-play: chuyển slide mỗi 3.5 giây
+  useEffect(() => {
+    const id = setInterval(next, 3500);
+    return () => clearInterval(id);
+  }, [next]);
+
+  // Hover → tạm dừng auto-play
+  const handleMouseEnter = () => clearInterval(
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    (window as unknown as { _interval?: ReturnType<typeof setInterval> })._interval ?? 0
+  );
+
   return (
     <div
       data-testid="recruitment-highlight"
-      className={`relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 p-6 text-on-primary shadow-card backdrop-blur-md ${className}`}
+      className={`relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 shadow-card backdrop-blur-md ${className}`}
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 p-6">
+        {/* Header */}
         <div>
           <p className="font-label text-label-sm font-bold uppercase tracking-widest text-white/80">
             Quy trình rõ ràng
@@ -17,26 +59,71 @@ export function RecruitmentHighlight({ className = '' }: RecruitmentHighlightPro
             Cùng HRP tuyển nhanh
           </h3>
         </div>
-        <ul className="flex flex-col gap-3 text-body-md text-white/90">
-          <li className="flex items-start gap-2">
-            <span className="material-symbols-outlined mt-0.5 text-base" aria-hidden="true">
-              check_circle
-            </span>
-            <span>Đăng công việc trong 5 phút, không cần tài khoản doanh nghiệp.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="material-symbols-outlined mt-0.5 text-base" aria-hidden="true">
-              check_circle
-            </span>
-            <span>HRP lọc hồ sơ theo tiêu chí địa điểm, ca làm, mức lương thực tế.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="material-symbols-outlined mt-0.5 text-base" aria-hidden="true">
-              check_circle
-            </span>
-            <span>Bạn chỉ gặp ứng viên đã được sàng lọc và đồng ý phỏng vấn.</span>
-          </li>
-        </ul>
+
+        {/* Carousel */}
+        <div
+          className="relative"
+          onMouseEnter={handleMouseEnter}
+          aria-label="Tính năng nổi bật"
+          role="region"
+        >
+          {/* Slides */}
+          <div className="relative overflow-hidden rounded-2xl">
+            <div
+              className="flex transition-transform duration-500 ease-out"
+              style={{ transform: `translateX(-${current * 100}%)` }}
+            >
+              {SLIDES.map((slide, i) => (
+                <div
+                  key={slide.title}
+                  className="w-full flex-shrink-0"
+                  aria-hidden={i !== current}
+                >
+                  {/* Hình ảnh */}
+                  <div className="relative overflow-hidden rounded-2xl">
+                    <img
+                      src={slide.image}
+                      alt={slide.title}
+                      className="h-44 w-full object-cover sm:h-52 md:h-56"
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                    />
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  </div>
+
+                  {/* Text */}
+                  <div className="mt-3">
+                    <h4 className="font-head text-base font-bold text-on-primary leading-snug">
+                      {slide.title}
+                    </h4>
+                    <p className="mt-1 text-sm text-white/80 leading-relaxed">
+                      {slide.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dots navigation */}
+          <div className="mt-3 flex items-center justify-center gap-2" role="tablist" aria-label="Chuyển slide">
+            {SLIDES.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                role="tab"
+                aria-selected={i === current}
+                aria-label={`Slide ${i + 1}`}
+                onClick={() => setCurrent(i)}
+                className={`h-1.5 rounded-full transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60
+                  ${i === current
+                    ? 'w-5 bg-white'
+                    : 'w-1.5 bg-white/40 hover:bg-white/60'
+                  }`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
