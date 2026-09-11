@@ -18,8 +18,8 @@ export function Hero({ children, className = '' }: HeroProps) {
         aria-hidden="true"
         className="absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-tertiary-fixed opacity-30 blur-3xl"
       />
-      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] */}
-      <div className="relative mx-auto w-full max-w-[1080px] px-4 py-12 md:px-6 md:py-16 lg:py-20">
+      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-7xl (đồng bộ với SearchSection + body) */}
+      <div className="relative mx-auto w-full max-w-7xl px-4 py-12 md:px-8 md:py-16 lg:py-20">
         <div className="flex flex-col items-stretch gap-8 lg:flex-row lg:items-center">
           {children}
         </div>

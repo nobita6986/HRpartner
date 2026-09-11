@@ -68,7 +68,6 @@ export default function HomePage() {
           }}
         />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10">
-          <div className="max-w-2xl">
 
             {/* Badge */}
             <div className="flex items-center gap-3 mb-4">
@@ -79,74 +78,75 @@ export default function HomePage() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-on-surface leading-tight mb-6">
+            <h1 className="max-w-3xl text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-on-surface leading-tight mb-6">
               Nền tảng Kết nối Nhân sự &amp; Quản lý Hàng đầu
             </h1>
 
             {/* Sub */}
-            <p className="text-base sm:text-lg text-on-surface-variant mb-8">
+            <p className="max-w-3xl text-base sm:text-lg text-on-surface-variant mb-8">
               Tìm việc làm phù hợp, hỗ trợ doanh nghiệp tuyển dụng nhanh và quản lý nhân sự hiệu quả.
             </p>
 
             {/* Search Box */}
-            <form
-              onSubmit={handleSearch}
-              className="bg-surface p-3 sm:p-4 rounded-xl shadow-card mb-6"
-            >
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
-                    search
-                  </span>
-                  <input
-                    type="text"
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    placeholder="Công việc muốn tìm: lắp ráp, may mặc, kho vận..."
-                    aria-label="Từ khóa tìm việc"
-                    className="w-full pl-10 pr-4 py-3 sm:py-3.5 border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none text-base"
-                  />
+            <div className="max-w-5xl">
+              <form
+                onSubmit={handleSearch}
+                className="bg-surface p-3 sm:p-4 rounded-xl shadow-card mb-6"
+              >
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1 relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
+                      search
+                    </span>
+                    <input
+                      type="text"
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
+                      placeholder="Công việc muốn tìm: lắp ráp, may mặc, kho vận..."
+                      aria-label="Tên công việc"
+                      className="w-full pl-10 pr-4 py-3 sm:py-3.5 border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none text-base"
+                    />
+                  </div>
+                  <select
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    aria-label="Tỉnh/thành"
+                    className="sm:w-48 py-3 sm:py-3.5 px-3 border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none text-on-surface bg-surface text-base"
+                  >
+                    {PROVINCES.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="bg-primary text-on-primary px-6 sm:px-8 py-3 sm:py-3.5 rounded-lg font-semibold text-base sm:text-lg hover:bg-primary-dark transition-colors shadow-lg whitespace-nowrap disabled:opacity-70"
+                  >
+                    {submitting ? 'Đang tìm...' : 'Tìm việc ngay'}
+                  </button>
                 </div>
-                <select
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  aria-label="Tỉnh/thành"
-                  className="sm:w-44 py-3 sm:py-3.5 px-3 border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none text-on-surface bg-surface text-base"
-                >
-                  {PROVINCES.map((p) => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="bg-primary text-on-primary px-6 sm:px-8 py-3 sm:py-3.5 rounded-lg font-semibold text-base sm:text-lg hover:bg-primary-dark transition-colors shadow-lg whitespace-nowrap disabled:opacity-70"
-                >
-                  {submitting ? 'Đang tìm...' : 'Tìm việc ngay'}
-                </button>
-              </div>
-              {message && (
-                <p className="mt-3 text-sm text-on-surface-variant" role="status">
-                  {message}
-                </p>
-              )}
-            </form>
+                {message && (
+                  <p className="mt-3 text-sm text-on-surface-variant" role="status">
+                    {message}
+                  </p>
+                )}
+              </form>
 
-            {/* Quick links */}
-            <div className="flex items-center gap-2 flex-wrap text-sm text-on-surface-variant">
-              <span className="font-semibold">Tìm nhiều:</span>
-              {QUICK_TAGS.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => setKeyword(tag)}
-                  className="bg-primary-soft text-primary px-3 py-1 rounded-full hover:bg-primary hover:text-on-primary transition-colors"
-                >
-                  {tag}
-                </button>
-              ))}
+              {/* Quick links */}
+              <div className="flex items-center gap-2 flex-wrap text-sm text-on-surface-variant">
+                <span className="font-semibold">Tìm nhiều:</span>
+                {QUICK_TAGS.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setKeyword(tag)}
+                    className="bg-primary-soft text-primary px-3 py-1 rounded-full hover:bg-primary hover:text-on-primary transition-colors"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
         </div>
       </section>
 
