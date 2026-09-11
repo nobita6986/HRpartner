@@ -35,8 +35,8 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
       /* Y2: bỏ bg-surface-container-low, thu hẹp padding */
       className="w-full px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6"
     >
-      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] */}
-      <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6">
+      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-7xl (đồng bộ với Hero + SearchSection) */}
+      <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
         <div className="mb-8 flex flex-col gap-2">
           {/* STEP-05/RQ-08/DEC-13: Icon apartment trong vòng tròn nhẹ bg-secondary-container rounded-full */}
           {/* STEP-05/RQ-10/DEC-15: Bỏ eyebrow + sub-heading kỹ thuật */}

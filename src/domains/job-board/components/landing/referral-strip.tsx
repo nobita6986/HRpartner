@@ -16,8 +16,8 @@ export function ReferralStrip() {
       /* Y2: thu hẹp padding để liền mạch hơn */
       className="w-full bg-primary-fixed/20 px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6"
     >
-      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-[1080px] */}
-      <div className="mx-auto w-full max-w-[1080px] grid grid-cols-1 items-center gap-8 lg:grid-cols-2 px-4 md:px-6">
+      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-7xl (đồng bộ với Hero + SearchSection) */}
+      <div className="mx-auto w-full max-w-7xl grid grid-cols-1 items-center gap-8 lg:grid-cols-2 px-4 md:px-6">
         <div className="flex flex-col gap-5">
           <p className="font-label text-label-sm font-bold uppercase tracking-widest text-secondary">
             Cơ hội mới

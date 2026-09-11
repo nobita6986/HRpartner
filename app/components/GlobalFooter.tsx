@@ -50,8 +50,8 @@ export function GlobalFooter() {
   const year = new Date().getFullYear();
   return (
     <footer data-section="footer" className="border-t border-line bg-primary-fixed/35">
-      {/* RQ-13 / VIS-06: inner container 1080px */}
-      <div className="mx-auto w-full max-w-[1080px] px-4 md:px-6 py-12">
+      {/* RQ-13 / VIS-06: inner container max-w-7xl (đồng bộ với Hero + toàn bộ sections) */}
+      <div className="mx-auto w-full max-w-7xl px-4 md:px-6 py-12">
         {/* RQ-02: 3 cột desktop giữ thứ tự Công ty → Dịch vụ → Liên hệ */}
         <div className="grid w-full grid-cols-1 gap-8 md:grid-cols-[1.1fr_1fr_1.1fr]">
           {/* Cột 1: Công ty — flat list 7 items, gap-y-2 (8px) đều cho mọi dòng */}
