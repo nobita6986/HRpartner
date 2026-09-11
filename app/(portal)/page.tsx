@@ -72,10 +72,11 @@ function deriveStamps(args: {
     const d = new Date(args.postedAt).getTime();
     if (Date.now() - d < 3 * 24 * 60 * 60 * 1000) stamps.push('moi');
   }
-  // "hot" distributed qua hash (50% jobs) — đảm bảo ~một nửa card có hot
+  // "tuyen-gap" distributed qua hash (50% jobs) — đảm bảo ~một nửa card có tuyển gấp.
+  // Y10.8: bỏ stamp "hot", đổi sang "tuyen-gap" để đồng bộ nhánh brand HRP (Tiếng Việt).
   let h = 0;
   for (let i = 0; i < args.seed.length; i++) h = (h * 31 + args.seed.charCodeAt(i)) | 0;
-  if (Math.abs(h) % 2 === 0) stamps.push('hot');
+  if (Math.abs(h) % 2 === 0) stamps.push('tuyen-gap');
   return stamps;
 }
 

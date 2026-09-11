@@ -192,9 +192,8 @@ describe('Y10.6/UI04j r2: Rubber stamp redesign — không viền đen, ink text
   });
 
   it('stamp-defs có 4 stamp keys', () => {
-    // Y10.6/UI04j r2: stamp registry đầy đủ 4 stamp
+    // Y10.8: bỏ stamp "hot" — chỉ giữ 3 stamp (tuyen-gap, thuong-cao, moi).
     expect(STAMPS).toContain('tuyen-gap');
-    expect(STAMPS).toContain('hot');
     expect(STAMPS).toContain('thuong-cao');
     expect(STAMPS).toContain('moi');
   });
@@ -263,8 +262,8 @@ describe('AC-15: Logo 48px vuong rounded-lg border-slate-100 — min-w-0 content
     expect(CARD).toContain('rounded-lg');
   });
 
-  it('logo border dung border-slate-100 (khong nested border)', () => {
-    expect(CARD).toContain('border-slate-100');
+  it('logo border dung border-slate-200 (no nested border)', () => {
+    expect(CARD).toContain('border-slate-200');
   });
 
   it('content column dung min-w-0', () => {

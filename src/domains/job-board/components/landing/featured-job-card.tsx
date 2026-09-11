@@ -70,7 +70,7 @@ function RubberStamp({ stampKey }: { stampKey: StampKey }) {
   const Icon = def.Icon;
   return (
     <div
-      className="pointer-events-none absolute -top-5 -right-5 z-30"
+      className="pointer-events-none absolute -top-5 -right-5 z-30 opacity-70"
       data-testid="job-stamp"
       aria-label={def.ariaLabel}
       style={{ transform: `rotate(${def.rotateDeg}deg)` }}
@@ -156,14 +156,16 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
       })()}
 
       {/* ─── Header ─────────────────────────────────────────────────────── */}
-      {/* RQ-15: 2-col layout — logo fixed 48px square + content column with min-w-0 */}
-      <div className="flex items-start gap-3 p-4">
+      {/* Y10.8: Fixed-height header (h-[4.75rem]) để salary pill đồng bộ ngang giữa các card.
+          Chứa: 48px logo + content column có thể chứa 2-line title + 1-line company. */}
+      <div className="flex items-start gap-3 p-4 h-[4.75rem]">
         {/* Y10.2/UI04f: monogram = abbreviation từ title job (vd "Yên Phong 3" -> "YP"). */}
         <HrMonogram
           size={48}
           label={monogram}
-          className="h-12 w-12 shrink-0 rounded-lg border border-slate-100 bg-white"
+          className="h-12 w-12 shrink-0 rounded-lg border border-slate-200 bg-white"
         />
+        {/* Fixed-height header: h-[4.75rem] = 48px logo + ~40px content (2-line title + 1-line company). */}
         <div className="min-w-0 flex-1">
           {/* Y10.4/UI04g: hover tên job từ blue-700 → primary-dark (tone cam). */}
           <h3
@@ -173,7 +175,7 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
             {job.title}
           </h3>
           {/* Y10.4/UI04g fix: render companyName từ API (tên nhà máy), fallback "HRP Việt Nam". */}
-          <p className="text-sm font-medium text-slate-500">
+          <p className="text-sm font-medium text-slate-500 leading-tight">
             {job.companyName ?? 'HRP Việt Nam'}
           </p>
         </div>

@@ -33,10 +33,10 @@ export const STAMPS: Record<StampKey, StampDef> = {
   'tuyen-gap': {
     key: 'tuyen-gap',
     label: 'TUYỂN GẤP',
-    bgClass: 'bg-orange-500',
+    bgClass: 'bg-red-500',
     fgClass: 'text-white',
-    borderClass: 'border-orange-300',
-    ringClass: 'ring-orange-500',
+    borderClass: 'border-red-300',
+    ringClass: 'ring-red-500',
     rotateDeg: 12,
     Icon: Flame,
     ariaLabel: 'Tuyển gấp',
