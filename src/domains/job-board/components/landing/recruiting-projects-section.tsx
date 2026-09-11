@@ -51,14 +51,15 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
           </h2>
         </div>
         {/* STEP-05/RQ-09: Card 4-col md / 2-col mobile, KHÔNG anchor giả — dùng Link.
-            Y10.2/UI04f: thêm h-full + mt-auto cho "Cần tuyển" để thẳng hàng giữa các card khi title 1 dòng vs 2 dòng. */}
+            Y10.2/UI04f fix: dùng position-relative card + position-absolute "Cần tuyển" để luôn sticky bottom
+            bất kể title 1 hay 2 dòng. Thêm pb-10 để tạo khoảng trống cho absolute bottom. */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {jobs.slice(0, 4).map((job) => (
             <Link
               key={job.id}
               href={buildHref(job.id)}
               data-testid={`recruiting-card-${job.id}`}
-              className="hrp-focus group flex h-full flex-col items-center gap-3 rounded-xl border border-outline-variant bg-surface p-4 text-center shadow-card transition hover:-translate-y-0.5 hover:border-primary-container"
+              className="hrp-focus group relative flex h-full flex-col items-center gap-3 rounded-xl border border-outline-variant bg-surface p-4 text-center shadow-card transition hover:-translate-y-0.5 hover:border-primary-container pb-10"
             >
               {/* STEP-05/RQ-09/DEC-14: Logo monogram 64×64 px outer. Y10.2/UI04f: monogram = abbreviation từ title. */}
               <HrMonogram
@@ -66,13 +67,13 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
                 label={deriveMonogram(job.title)}
                 className="w-16 h-16 rounded-xl border border-outline-variant bg-white shrink-0"
               />
-              {/* Y10.2/UI04f: title min-height = 2*line-height (~48px) cho 1-2 dòng để các card title đồng đều. */}
+              {/* Y10.2/UI04f: title min-height = 2*line-height cho 1-2 dòng để các card title đồng đều. */}
               <p className="font-head text-headline-md font-bold text-on-surface leading-tight min-h-[3.2em]">
                 {job.title}
               </p>
               {/* STEP-05/RQ-09/DEC-16: Copy "Cần tuyển {n} người", n = availableSlots.
-                  Y10.2/UI04f: mt-auto đẩy xuống đáy card -> thẳng hàng với mọi card khác. */}
-              <p className="font-label text-label-md text-primary-container font-bold mt-auto">
+                  Y10.2/UI04f fix: position-absolute bottom-0 để LUÔN ở đáy card bất kể title dài/ngắn. */}
+              <p className="absolute bottom-3 left-0 right-0 font-label text-label-md text-primary-container font-bold">
                 Cần tuyển {job.availableSlots} người
               </p>
             </Link>
