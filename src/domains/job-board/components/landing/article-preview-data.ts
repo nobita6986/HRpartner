@@ -1,5 +1,5 @@
 /**
- * 3 fixture article cho Section 4 (Tin tức & cẩm nang).
+ * 5 fixture article cho Section 4 (Tin tức & cẩm nang).
  *
  * Content dạng structured content array (paragraph | heading | list) — render
  * trực tiếp bằng React elements trong NewsPreviewModal. KHÔNG HTML string,
@@ -7,6 +7,10 @@
  *
  * Title/excerpt/category/body dạng cẩm nang mẫu CHUNG CHUNG, không claim
  * số liệu cụ thể của HRP.
+ *
+ * v1.11 (11/09/2026): thêm 2 article #4, #5 để điền vào slot 2×2 bên phải
+ * News section (khoanh đỏ trống). Ảnh dùng từ hero/ (đã có sẵn, không
+ * sinh ảnh mới): #4 = dong-goi-ha-noi.jpg, #5 = cong-nhan-may-moc.jpg.
  */
 
 import type { ArticleCardExtended } from '../../public-types';
@@ -135,6 +139,81 @@ export const articlePreviewData: ArticleCardExtended[] = [
         type: 'paragraph',
         content:
           'Theo Bộ luật Lao động, người lao động được nghỉ phép năm theo thâm niên, nghỉ lễ Tết và các trường hợp đặc biệt (hiếu, hỷ, ốm đau). Mức hưởng chi tiết do pháp luật và nội quy nhà máy quy định.',
+      },
+    ],
+  },
+  {
+    id: 'meo-thich-ung-moi-truong',
+    title: 'Mẹo thích ứng nhanh khi mới vào nhà máy',
+    excerpt:
+      'Những tuần đầu tiên tại nhà máy thường có nhiều bỡ ngỡ. Bài viết chia sẻ các mẹo giúp người mới nhanh chóng hòa nhịp với môi trường làm việc.',
+    category: 'Cẩm nang',
+    publishedAt: '2026-07-20',
+    imageUrl: '/images/hero/dong-goi-ha-noi.jpg',
+    body: [
+      {
+        type: 'paragraph',
+        content:
+          'Vào một nhà máy mới, mọi thứ đều lạ — từ tiếng máy, quy trình, đến cách giao tiếp với tổ trưởng. Nếu chuẩn bị tâm lý và quan sát tốt, bạn sẽ nhanh chóng ổn định và làm chủ công việc.',
+      },
+      {
+        type: 'heading',
+        content: 'Quan sát và học hỏi trong tuần đầu',
+      },
+      {
+        type: 'list',
+        content: [
+          'Chú ý cách các công nhân lâu năm xử lý tình huống',
+          'Ghi chú lại các quy trình quan trọng của dây chuyền',
+          'Không ngại hỏi khi chưa rõ — hỏi đúng lúc giúp tránh sai sót',
+        ],
+      },
+      {
+        type: 'heading',
+        content: 'Giữ gìn sức khỏe và tinh thần',
+      },
+      {
+        type: 'paragraph',
+        content:
+          'Ăn đủ bữa, ngủ đủ giấc, và dành thời gian nghỉ ngơi hợp lý. Sức khỏe tốt là nền tảng để bạn theo kịp tiến độ và duy trì công việc lâu dài.',
+      },
+    ],
+  },
+  {
+    id: 'cach-doc-bang-luong',
+    title: 'Cách đọc bảng lương và các khoản trừ hàng tháng',
+    excerpt:
+      'Bảng lương nhà máy thường có nhiều mục — lương cơ bản, phụ cấp, bảo hiểm, thuế. Bài viết giúp bạn hiểu rõ từng khoản để không bị bất ngờ khi nhận lương.',
+    category: 'Quyền lợi',
+    publishedAt: '2026-07-05',
+    imageUrl: '/images/hero/cong-nhan-may-moc.jpg',
+    body: [
+      {
+        type: 'paragraph',
+        content:
+          'Bảng lương không chỉ là một con số cuối cùng — nó phản ánh cơ cấu thu nhập và các nghĩa vụ đóng góp của người lao động. Hiểu rõ bảng lương giúp bạn kiểm tra tính chính xác và lên kế hoạch chi tiêu hợp lý.',
+      },
+      {
+        type: 'heading',
+        content: 'Các khoản thu nhập phổ biến',
+      },
+      {
+        type: 'list',
+        content: [
+          'Lương cơ bản theo hợp đồng',
+          'Phụ cấp (ăn ca, xăng xe, nhà ở, độc hại…)',
+          'Lương làm thêm giờ, làm ca đêm, chủ nhật',
+          'Thưởng tháng/quý/theo sản phẩm (nếu có)',
+        ],
+      },
+      {
+        type: 'heading',
+        content: 'Các khoản khấu trừ',
+      },
+      {
+        type: 'paragraph',
+        content:
+          'Bảo hiểm xã hội, bảo hiểm y tế, bảo hiểm thất nghiệp và thuế thu nhập cá nhân (nếu có) là các khoản trừ bắt buộc theo quy định. Tỷ lệ đóng góp được tính trên lương cơ sở hoặc lương đóng bảo hiểm, không phải trên tổng thu nhập.',
       },
     ],
   },

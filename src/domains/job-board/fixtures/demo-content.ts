@@ -60,5 +60,12 @@ export const demoNewsSection: NewsSectionContent = {
   source: 'DEMO',
   title: 'Tin tức & Cẩm nang',
   featured: articlePreviewData[0],
-  others: [articlePreviewData[1], articlePreviewData[2]],
+  /* v1.11 (11/09/2026): tăng từ 2 → 4 others để lấp đầy 2×2 grid bên phải
+     (khoanh đỏ trống ở News section khi featured chiếm col-span-2 row-span-2). */
+  others: [
+    articlePreviewData[1],
+    articlePreviewData[2],
+    articlePreviewData[3],
+    articlePreviewData[4],
+  ],
 };

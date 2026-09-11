@@ -8,7 +8,9 @@ import { NewsPreviewModal } from './news-preview-modal';
 /**
  * Section 4 — Tin tức & cẩm nang (DEMO).
  *
- * 1 bài lớn (featured) + 2 bài nhỏ (others). Click mở NewsPreviewModal.
+ * v1.9: 1 bài lớn (featured, col-span-2 row-span-2) + 2 bài nhỏ (others).
+ * v1.11 (11/09/2026): đổi layout → 1 featured full-width (col-span-4) + 4 bài
+ * nhỏ (others, grid-cols-4). Tổng 5 article. Click mở NewsPreviewModal.
  *
  * Client component vì dùng useState cho modal.
  *
@@ -44,12 +46,13 @@ export function NewsSection({ content }: { content: NewsSectionContent }) {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          {/* Featured (large) */}
+        {/* v1.11: grid lg:grid-cols-4 — featured full-width row 1 (col-span-4), 4 others row 2 (col-span-1 mỗi) */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
+          {/* Featured (full-width row 1) */}
           <button
             type="button"
             onClick={() => setSelected(content.featured)}
-            className="hrp-focus group flex h-full flex-col overflow-hidden rounded-2xl border border-outline-variant bg-white shadow-sm transition-all hover:shadow-md lg:col-span-2 lg:row-span-2 text-left"
+            className="hrp-focus group flex h-full flex-col overflow-hidden rounded-2xl border border-outline-variant bg-white shadow-sm transition-all hover:shadow-md lg:col-span-4 text-left"
             data-testid={`news-featured-${content.featured.id}`}
           >
             <div className="relative aspect-[16/9] w-full overflow-hidden">
@@ -83,8 +86,8 @@ export function NewsSection({ content }: { content: NewsSectionContent }) {
             </div>
           </button>
 
-          {/* Others (small) */}
-          {content.others.slice(0, 2).map((article) => (
+          {/* Others (small) — v1.11: 4 cards, 4-col grid */}
+          {content.others.slice(0, 4).map((article) => (
             <button
               key={article.id}
               type="button"

@@ -7,6 +7,10 @@
  * v1.10 (11/09/2026): HrpIntroContent tăng từ 3 → 4 value items (2×2 grid).
  * Ảnh HRP cao bằng column content bên phải (h-full object-cover).
  *
+ * v1.11 (11/09/2026): News section thêm 2 article (3 → 5), layout đổi:
+ * featured full-width (col-span-4) + 4 small (grid-cols-4). Điền vào khoanh
+ * đỏ trống trước đây khi chỉ có 2 others.
+ *
  * Test trọng yếu:
  * - enabled === false → component return null
  * - DEMO source policy
@@ -101,14 +105,23 @@ describe('demo-content fixture', () => {
     /* Đảm bảo KHÔNG còn referral-team.webp trong demo-content (vì trùng ReferralStrip) */
     expect(DEMO).not.toMatch(/imageUrl:\s*'\/images\/homepage-huongb\/referral-team\.webp'/);
   });
+
+  it('v1.11: demoNewsSection.others có đúng 4 articles', () => {
+    /* Block demoNewsSection đếm số articlePreviewData[N] trong others array.
+       Lưu ý: regex phải non-greedy kiểu "lazy" qua các [] bên trong (articlePreviewData[N]).
+       Cách an toàn: đếm trực tiếp "articlePreviewData[" trong toàn file DEMO rồi trừ 1 (featured dùng [0]). */
+    const allRefs = (DEMO.match(/articlePreviewData\[\d+\]/g) ?? []).length;
+    /* 1 lần cho featured + 4 lần cho others = 5. */
+    expect(allRefs).toBe(5);
+  });
 });
 
 /* ─── Article preview data ─────────────────────────────────────────── */
 
 describe('article-preview-data fixture', () => {
-  it('exports 3 articles', () => {
+  it('v1.11 exports 5 articles (1 featured + 4 others)', () => {
     const count = (ARTICLES.match(/id:\s*'/g) ?? []).length;
-    expect(count).toBe(3);
+    expect(count).toBe(5);
   });
 
   it('mỗi article body là structured content array (paragraph | heading | list)', () => {
@@ -163,6 +176,18 @@ describe('news-section + news-preview-modal: modal mở từ click, body structu
 
   it('news-section gọi setSelected khi click', () => {
     expect(SECTION_FILES.news).toMatch(/onClick=\{\(\)\s*=>\s*setSelected/);
+  });
+
+  it('v1.11: featured dùng col-span-4 (full-width row 1), grid lg:grid-cols-4', () => {
+    expect(SECTION_FILES.news).toMatch(/lg:grid-cols-4/);
+    expect(SECTION_FILES.news).toMatch(/lg:col-span-4/);
+    /* Bỏ col-span-2 row-span-2 cũ (v1.9) */
+    expect(SECTION_FILES.news).not.toMatch(/lg:col-span-2\s+lg:row-span-2/);
+  });
+
+  it('v1.11: others render slice(0, 4) thay vì slice(0, 2)', () => {
+    expect(SECTION_FILES.news).toMatch(/content\.others\.slice\(0,\s*4\)/);
+    expect(SECTION_FILES.news).not.toMatch(/content\.others\.slice\(0,\s*2\)/);
   });
 
   it('news-preview-modal render body bằng switch trên type (paragraph/heading/list)', () => {
