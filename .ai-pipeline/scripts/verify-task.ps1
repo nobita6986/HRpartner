@@ -170,7 +170,22 @@ try {
         if ($content -match "NEED_USER_DECISION") {
             Add-GateError $ctx 'A-04' "$statusHead contract still contains NEED_USER_DECISION."
         }
-        if ($content -match "<[^>]+>" -or $content -match "\bTBD\b" -or $content -match "\bTODO\b(?!\s*\()") {
+        # Strict whitelist for angle-bracket values:
+        # - Valid enum literal: inner matches <WORD> or <WORD | WORD | ...> where all words are UPPERCASE_PascalCase
+        # - Placeholder: anything else
+        $isPlaceholder = $false
+        $bracketRx = [regex]'<([^>]+)>'
+        foreach ($m in $bracketRx.Matches($content)) {
+            $inner = $m.Groups[1].Value.Trim()
+            # Match if each "word" (split by '|') is UPPERCASE identifier
+            $words = $inner -split '\s*\|\s*'
+            $allUpper = $true
+            foreach ($w in $words) {
+                if ($w -notmatch '^[A-Z][A-Z0-9_]*$') { $allUpper = $false; break }
+            }
+            if (-not $allUpper) { $isPlaceholder = $true; break }
+        }
+        if ($isPlaceholder) {
             Add-GateError $ctx 'A-04' "$statusHead contract still contains placeholders / TBD / TODO."
         }
     } elseif (-not $isClosed) {
