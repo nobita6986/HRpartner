@@ -29,6 +29,7 @@ import {
   ClipboardList,
   Construction,
   FileText,
+  Image,
   LayoutDashboard,
   LogOut,
   Settings,
@@ -119,6 +120,8 @@ export const ADMIN_NAV_PHASE4: NavItem[] = [
   { href: '/admin/tickets', label: 'Phản ánh / Tạm ứng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' },
   { href: '/admin/payroll', label: 'Tính lương', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' },
   { href: '/admin/settings', label: 'Cài đặt', icon: Settings, roles: ['ADMIN'] },
+  // AV4 — Media Library foundation
+  { href: '/admin/media', label: 'Thư viện Media', icon: Image, roles: ['ADMIN', 'HR_MANAGER', 'HR_STAFF'] },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════

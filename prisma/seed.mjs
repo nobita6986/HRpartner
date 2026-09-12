@@ -525,6 +525,8 @@ const PERMISSION_SEED = [
   { code: 'CAN_PUBLISH_JOB',            group: 'PROJECT',  description: 'Publish hoặc unpublish job trên public job board trong Project scope.' },
   { code: 'CAN_EDIT_CONTRACT',          group: 'CONTRACT', description: 'Sửa hợp đồng worker (HR_MANAGER).' },
   { code: 'CAN_EDIT_HOMEPAGE_SETTINGS', group: 'SYSTEM',   description: 'Sửa singleton HomepageSettings (ADMIN only — Plan UI B integration).' },
+  // AV4 — Media library management
+  { code: 'CAN_MANAGE_MEDIA',          group: 'MEDIA',     description: 'Upload, sửa, xóa media asset trong thư viện Media (AV4 foundation).' },
 ];
 
 // Role → tập permission codes (theo data-scope-security §4.2 seed mẫu + DEC-02 bổ sung).
@@ -541,10 +543,12 @@ const ROLE_PERMISSION_SEED = [
   { role: 'HR_MANAGER', code: 'CAN_EDIT_CONTRACT' },
   { role: 'HR_MANAGER', code: 'CAN_VIEW_WORKER_SENSITIVE' },
   { role: 'HR_MANAGER', code: 'CAN_PUBLISH_JOB' },
+  { role: 'HR_MANAGER', code: 'CAN_MANAGE_MEDIA' },
 
   // HR_STAFF — tạo worker, xử lý ticket
   { role: 'HR_STAFF', code: 'CAN_CREATE_WORKER' },
   { role: 'HR_STAFF', code: 'CAN_PROCESS_TICKET' },
+  { role: 'HR_STAFF', code: 'CAN_MANAGE_MEDIA' },
 
   // SALE — tạo worker và publish job trong Project scope
   { role: 'SALE', code: 'CAN_CREATE_WORKER' },

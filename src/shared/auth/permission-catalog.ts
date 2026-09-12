@@ -17,6 +17,7 @@ export const PERMISSION_GROUPS = {
   REFERRAL: 'REFERRAL',
   STATEMENT: 'STATEMENT',
   WORKER: 'WORKER',
+  MEDIA: 'MEDIA',
 } as const;
 export type PermissionGroup = (typeof PERMISSION_GROUPS)[keyof typeof PERMISSION_GROUPS];
 
@@ -98,6 +99,12 @@ export const PERMISSION_CATALOG: readonly PermissionDescriptor[] = [
     code: 'CAN_EDIT_HOMEPAGE_SETTINGS',
     group: PERMISSION_GROUPS.SYSTEM,
     description: 'Sửa singleton HomepageSettings (ADMIN only — Plan UI B integration).',
+  },
+  // AV4 — Media library management (ADMIN, HR_MANAGER, DIRECTOR)
+  {
+    code: 'CAN_MANAGE_MEDIA',
+    group: PERMISSION_GROUPS.SYSTEM,
+    description: 'Upload, sửa, xóa media asset trong thư viện Media (AV4 foundation).',
   },
 ] as const;
 

@@ -163,6 +163,9 @@ model User {
   // AV1 — singleton HomepageSettings updater
   homepageSettingsUpdates HomepageSettings[]
 
+  // AV4 — Media library creator (nullable FK)
+  mediaCreatedBy           Media[] @relation("MediaCreatedBy")
+
   @@index([role, isActive])
   @@map("users")
 }
@@ -1452,4 +1455,74 @@ model HomepageSettings {
 
   @@index([updatedAt])
   @@map("homepage_settings")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AV4 — Media Management
+// Foundation asset library: upload (Vercel Blob) → metadata (Media) → assign (MediaAssignment).
+// AV2 (JobPosting editor) và AV6 (HomepageSection CMS) sẽ dùng MediaAssignment sau.
+// ADD-only migration; không sửa schema cũ; không RLS change.
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum MediaStatus {
+  PUBLIC // hiển thị public qua /api/public/media
+  INTERNAL // chỉ admin
+}
+
+model Media {
+  id        String      @id @default(cuid())
+  // Vercel Blob URL (https://) — unique trên toàn library
+  url       String      @unique
+  alt       String      @default("")
+  caption   String?
+  order     Int         @default(0) @map("order")
+  status    MediaStatus @default(PUBLIC)
+  cover     Boolean     @default(false)
+
+  // Organization
+  folder    String      @default("uncategorized")
+  tags      String[]    @default([])
+
+  // Metadata (from Vercel Blob)
+  filename  String
+  size      Int // bytes
+  mimeType  String      @map("mime_type")
+
+  // Denormalized public URL — hiện tại = url; có thể đổi sang CDN URL sau
+  publicUrl String      @default("") @map("public_url")
+
+  // Ownership
+  ownerId   String      @map("owner_id")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt    @map("updated_at")
+  createdById String?   @map("created_by_id")
+  createdBy   User?    @relation("MediaCreatedBy", fields: [createdById], references: [id])
+
+  // Relations
+  assignments MediaAssignment[]
+
+  @@index([ownerId])
+  @@index([folder])
+  @@index([status])
+  @@index([createdAt])
+  @@map("media")
+}
+
+// Polymorphic junction: `ownerType` discriminator + `ownerId` không Prisma relation
+// vì AV4 là foundation, AV2/AV6 chưa có model tại lúc AV4 schema. Tránh schema migration
+// khi thêm entity mới. onDelete: Cascade trên mediaId (xóa Media → xóa assignment).
+model MediaAssignment {
+  id        String   @id @default(cuid())
+  mediaId   String   @map("media_id")
+  ownerType String   @map("owner_type") // 'JobPosting' | 'HomepageSection' | 'Article' | 'Partner'
+  ownerId   String   @map("owner_id")
+  order     Int      @default(0) @map("order")
+  cover     Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([mediaId, ownerType, ownerId])
+  @@index([ownerType, ownerId])
+  @@map("media_assignment")
 }
