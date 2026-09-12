@@ -34,7 +34,14 @@
   - `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO app_user_writer, app_user`
 - These grants are NOT modified by the N1 migrations themselves — they come from the earlier `20260824161500_g0_schema_reconcile` migration. The probe therefore did NOT need a forward-only fix.
 
-## Results: **25/25 PASS** (probe exit 0)
+## Results: **26/26 PASS** (probe exit 0, abnormal_exit=false)
+
+> 2026-09-12 16:55 update: the probe gained one new boot row
+> (`db-identity-same-branch`, audit fix 7) that proves both connections reach
+> the same Neon branch via DB-side identity (`current_database()` +
+> `host(inet_server_addr())` match). Total test count went from 25 → 26.
+> The `summary` line now includes `abnormal_exit` + `abnormal_reason` to
+> record whether the script reached the success-path cleanup (audit fix 8).
 
 Per-test summary (full NDJSON in `embedded-pg18-ndjson.txt`):
 
@@ -65,6 +72,7 @@ Per-test summary (full NDJSON in `embedded-pg18-ndjson.txt`):
 | 23 | T4 SALE sees 0 rows | PASS | 00000 | rows=0; sqlstate 00000 ≠ 42501 |
 | 24 | T4 CTV sees 0 rows | PASS | 00000 | rows=0; sqlstate 00000 ≠ 42501 |
 | 25 | T4 ANON sees 0 rows | PASS | 00000 | rows=0; sqlstate 00000 ≠ 42501 |
+| 26 | boot db-identity-same-branch | PASS | 00000 | admin.db=writer.db=n1probe, admin.ip=writer.ip=127.0.0.1, admin.role=neondb_owner, writer.role=app_user_writer |
 
 ## What this self-test proves vs what requires `hrp_mp2_test`
 
@@ -88,13 +96,28 @@ Per-test summary (full NDJSON in `embedded-pg18-ndjson.txt`):
 
 The probe is **correct and re-runnable**. The migration is **ADD-only and re-runnable on a populated schema**. No forward-only fix migration was needed.
 
+**Caveats**:
+- The probe's cleanup is best-effort on the success path only. On abnormal
+  exit (connect failure, unhandled rejection, `process.exit(...)` early),
+  seeded `n1lp-%` / `n1c%` / `n1sub-%` rows may remain. The `summary`
+  row records `abnormal_exit: true` if so; operator must clean up via
+  psql DELETE before considering the test DB clean. We have not
+  exhaustively tested every abnormal-exit path.
+
 The next step — running this same probe against `hrp_mp2_test` — only needs:
 1. Owner/OP sets `TEST_DATABASE_URL_ADMIN` and `TEST_DATABASE_URL_WRITER` in their secure channel (not chat).
-2. Tier 1 (or operator) runs `node scratch/n1-stage3-db-proof/probe.mjs > evidence/stage3-hrp-mp2-test.ndjson`.
-3. Sanitize and commit `evidence/stage3-hrp-mp2-test.ndjson`.
+2. Tier 1 (or operator) runs the gate procedure in
+   `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-hrp-mp2-test-runbook.md`
+   (5-step SOP: STEP 1 endpoint fingerprint, STEP 2 migrate status + raw audit,
+   STEP 3 migrate deploy, STEP 4 probe, STEP 5 sanitize + commit).
+3. Sanitize and commit `evidence/stage3-hrp-mp2-test-ndjson.txt`.
 
 If the production run reports ANY pass=false:
 - Capture the row(s).
-- If GRANT-layer 42501, write a forward-only fix migration naming ONLY the missing privilege (no broad GRANT DELETE TO app_user).
-- If migration SQL error, write a forward-only fix migration.
-- Tier 3 LIGHT re-audit delta before retrying the live cutover.
+- The `db-identity-same-branch` row at boot is the source of truth for
+  "same branch". If it fails, do NOT proceed — the URLs are misconfigured.
+- If a T4 row reports `sqlstate=42501`, escalate to Tier 0 with the
+  `t4-app_user_writer-grant-on-placement_case` row's `has_table_privilege`
+  output (DO NOT auto-add a forward-only fix migration — Tier 0 authorises
+  the resolution path).
+- Tier 3 LIGHT re-audit delta is required before any retry.

@@ -1,5 +1,4 @@
-{"kind":"boot","ts":"2026-09-12T09:35:08.097Z","admin_fp":"fp:b146048b3e8e","writer_fp":"fp:938557ade704","admin_host_tail":"0.0.1","writer_host_tail":"0.0.1"}
-{"kind":"who","test":"admin-connection-identity","pass":true,"sqlstate":"00000","db":"n1probe","role":"neondb_owner","ip":"127.0.0.1/32"}
+ï»¿{"kind":"who","test":"admin-connection-identity","pass":true,"sqlstate":"00000","db":"n1probe","role":"neondb_owner","ip":"127.0.0.1/32"}
 {"kind":"who","test":"writer-connection-identity","pass":true,"sqlstate":"00000","db":"n1probe","role":"app_user_writer"}
 {"kind":"schema","test":"migration-20260912140411_n1_placement_case_foundation-applied","pass":true,"sqlstate":"00000","migration_name":"20260912140411_n1_placement_case_foundation"}
 {"kind":"schema","test":"migration-20260912140412_n1_placement_case_rls-applied","pass":true,"sqlstate":"00000","migration_name":"20260912140412_n1_placement_case_rls"}
@@ -19,9 +18,9 @@
 {"kind":"t4","test":"t4-HR_MANAGER-sees-committed-case","pass":true,"sqlstate":"00000","rows":1}
 {"kind":"t4","test":"t4-ADMIN-sees-committed-case","pass":true,"sqlstate":"00000","rows":1}
 {"kind":"t4","test":"t4-HR_STAFF-sees-committed-case","pass":true,"sqlstate":"00000","rows":1}
-{"kind":"t4","test":"t4-PUBLIC-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 00000 + 0 rows (NOT 42501 GÇö see has_table_privilege above)"}
-{"kind":"t4","test":"t4-WORKER-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 00000 + 0 rows (NOT 42501 GÇö see has_table_privilege above)"}
-{"kind":"t4","test":"t4-SALE-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 00000 + 0 rows (NOT 42501 GÇö see has_table_privilege above)"}
-{"kind":"t4","test":"t4-CTV-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 00000 + 0 rows (NOT 42501 GÇö see has_table_privilege above)"}
-{"kind":"t4","test":"t4-ANON-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 00000 + 0 rows (NOT 42501 GÇö see has_table_privilege above)"}
-{"kind":"summary","total":25,"passed":25,"failed":0}
+{"kind":"t4","test":"t4-PUBLIC-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 00000 + 0 rows (NOT 42501 Î“Ã‡Ã¶ see has_table_privilege above)"}
+{"kind":"t4","test":"t4-WORKER-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 00000 + 0 rows (NOT 42501 Î“Ã‡Ã¶ see has_table_privilege above)"}
+{"kind":"t4","test":"t4-SALE-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 00000 + 0 rows (NOT 42501 Î“Ã‡Ã¶ see has_table_privilege above)"}
+{"kind":"t4","test":"t4-CTV-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 00000 + 0 rows (NOT 42501 Î“Ã‡Ã¶ see has_table_privilege above)"}
+{"kind":"t4","test":"t4-ANON-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 00000 + 0 rows (NOT 42501 Î“Ã‡Ã¶ see has_table_privilege above)"}
+{"kind":"summary","total":26,"passed":26,"failed":0,"abnormal_exit":false,"abnormal_reason":null,"comment":"abnormal_exit=true means the probe exited before reaching the success-path cleanup; operator MUST clean n1lp-% / n1c% / n1sub-% rows via psql DELETE before considering the test DB clean"}
