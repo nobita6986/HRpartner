@@ -114,9 +114,10 @@ type JobLoadResult =
  * lượt (`RQ-02`). Dùng `evaluateRateLimits` — điểm vào chỉ-trả-quyết-định của `DEC-01` — vì một
  * Server Component không trả được `NextResponse`.
  *
- * UI04d D.A: trong cùng transaction công khai, lấy thêm `relatedJobs` (lọc
- * trong bộ nhớ theo area/shift overlap) để render section related mà không
- * thêm một roundtrip DB.
+ * UI04d D.A: lấy thêm `relatedJobs` qua một transaction công khai riêng. Không
+ * giữ truy vấn projection rộng trong transaction đọc detail: interactive
+ * transaction mặc định của Prisma có thể hết hạn trước truy vấn thứ hai trên
+ * dữ liệu production và làm toàn bộ trang trả 500/P2028.
  */
 const loadJob = cache(async (slug: string): Promise<JobLoadResult> => {
   const requestHeaders = await headers();
@@ -130,19 +131,19 @@ const loadJob = cache(async (slug: string): Promise<JobLoadResult> => {
   // Cả `rate-limited` lẫn `unavailable` đều KHÔNG được chạm DB: fail-closed (`DEC-02`).
   if (outcome.kind !== 'allowed') return { kind: 'throttled' };
 
-  return withPublicDb(getPrisma(), (tx) => loadJobAndRelated(tx, slug));
+  return loadJobAndRelated(slug);
 });
 
-async function loadJobAndRelated(
-  tx: Parameters<typeof getPublicJobDetail>[0],
-  slug: string,
-): Promise<JobLoadResult> {
-  const job = await getPublicJobDetail(tx, slug);
+async function loadJobAndRelated(slug: string): Promise<JobLoadResult> {
+  const prisma = getPrisma();
+  const job = await withPublicDb(prisma, (tx) => getPublicJobDetail(tx, slug));
   if (!job) return { kind: 'missing' };
 
-  // Lấy 20 dòng eligible, lọc trong bộ nhớ cho related (giữ RLS công khai và
-  // không tự gọi API nội bộ). 20 → 4 sau khi overlap area/shift.
-  const list = await listPublicJobProjection(tx, { limit: 20, offset: 0 });
+  // Transaction riêng vẫn giữ đúng principal/RLS công khai và tránh kéo dài
+  // transaction đọc detail. Không tự gọi API nội bộ của chính ứng dụng.
+  const list = await withPublicDb(prisma, (tx) =>
+    listPublicJobProjection(tx, { limit: 20, offset: 0 }),
+  );
   const relatedJobs = list.jobs.filter((candidate) => {
     if (candidate.id === job.id) return false;
     if (candidate.slug === job.slug) return false;
