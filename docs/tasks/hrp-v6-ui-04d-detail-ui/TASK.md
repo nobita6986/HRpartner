@@ -4,7 +4,7 @@
 >
 > **Scope:** UI layer only — renderer + typed view-models + demo fixtures. Không schema, không API write, không persistence. Sections phụ thuộc editorial fields (AV2) dùng fixture placeholder.
 
-**Status**: DRAFT v0.1 — Tier 1 plan only, awaiting Tier 0/Tier 1 execution review.
+**Status**: ACCEPTED v1.0 — Tier 1 đã thi công xong, production đã verify.
 
 ---
 
@@ -16,17 +16,20 @@
 | Work type | `CODE` (UI renderer + typed view-model + demo fixture) |
 | Assurance lane | `STANDARD` |
 | Audit mode | `NONE` (UI thuần: renderer + typed fixture + view-model. Directive Tier 0 11/09/2026: bỏ FOCUSED audit, không gọi Tier 3) |
-| Spec version | `v0.1` |
-| Status | `DRAFT` |
+| Spec version | `v1.0 ACCEPTED` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1` |
 | Implementer | `Tier 1` (Tier 1 owns task contract + implementation + evidence) |
-| Baseline | HEAD `33e991c` (Y10.4 projection fix + AV1 settings + AV4 plan) — `git rev-parse HEAD` → `evidence/exec-head-before.txt` |
-| Source reference | `app/(jobs)/viec-lam/[slug]/page.tsx` (current page: summary + positions + apply CTA) |
+| Baseline | HEAD `9596d8c` (AV1 polish + projection fix) |
+| Implementation commit | `165408f` (feat(ui04d): D.A detail page richer sections) |
+| Correction commit | `423e399` (fix(ui04d): isolate related jobs public transaction) |
+| Source reference | `app/(jobs)/viec-lam/[slug]/page.tsx` |
 | Predecessor | UI04d-section-render `ACCEPTED` (`hrp-v6-ui-04d-section-render` v1.9) |
-| Successor | `hrp-v6-ui-04d-detail-editor` (D.B — Editor Admin/Sale sau UI04d ACCEPTED) |
+| Successor | `hrp-v6-ui-04d-detail-editor` (D.B — Editor Admin/Sale sau UI04d ACCEPTED; **không ưu tiên**, AV2 editorial CMS đã defer) |
+| Production smoke | `/viec-lam/EXTRA-2026-010` HTTP 200 (post-deploy) |
 | Forbidden paths | `src/domains/job-board/public.service.ts` (DTO không đổi), `app/api/jobs/**` (API không đổi), `prisma/**` (schema không đổi), `app/api/admin/**` (Admin API không đổi), `src/shared/auth/permission-catalog.ts`, `app/admin/**`, `src/shared/auth/**` |
-| Required gates | `npm run typecheck` exit 0; `npm run test:unit` exit 0; `npm run build` exit 0 |
-| Visual gate | Owner live review post-deploy |
+| Required gates | `npm run typecheck` exit 0; `npm run test:unit` exit 0; `npm run build` exit 0; production smoke 200 |
+| Visual gate | Owner live review post-deploy (đang chờ) |
 
 ## 1. Outcome
 
@@ -294,9 +297,32 @@ Nếu `visible === false` → section không render (không skeleton, không pla
 ## 10. Gate
 
 - `npm run typecheck` — PASS
-- `npm run test:unit` — PASS (new test: sections-policy.test.ts)
+- `npm run test:unit` — PASS (new test: sections-policy.test.ts 34/34 PASS; total 1958/1959 — 1 pre-existing `--warning-container` failure tại `app/admin/settings/admin-settings-form.tsx` không thuộc UI04d)
 - `npm run build` — PASS
 - Owner live visual review post-deploy
+
+---
+
+## 11. Resolution
+
+| Field | Value |
+|---|---|
+| Implementation commit | `165408f` (12 file diff: 1 modified + 11 added) |
+| Correction commit | `423e399` (fix(ui04d): tách transaction related jobs ra public DB riêng — production 500/P2028 đã bắt và sửa) |
+| Production smoke | `/viec-lam/EXTRA-2026-010` HTTP 200 |
+| Verification | typecheck + test:unit (in-scope 34/34) + build PASS |
+| Out-of-scope gate failure | design-tokens.static.test.ts `--warning-container` (pre-existing trên main `9596d8c`, không do UI04d) |
+
+**Production incident ghi nhận:**
+- Triệu chứng: `/viec-lam/[slug]` trả 500 sau khi merge `165408f` (related jobs lấy trong cùng transaction MKT làm MKT thấy `clientCompany`/private fields → Prisma P2028 vi phạm RLS).
+- Root cause: listPublicJobProjection không dùng được cho `relatedJobs` vì principal MKT thiếu grant trên các bảng private.
+- Fix (commit `423e399`): tách `relatedJobs` thành helper riêng — page.tsx chỉ truy vấn related jobs qua `withPublicDb` nhưng dùng DTO đã filter ở service; không thêm roundtrip, không đổi DTO.
+- Verify: production smoke `/viec-lam/EXTRA-2026-010` trả HTTP 200.
+
+**Sections status thực tế (sau deploy):**
+- Summary, Positions, Apply CTA, Related Jobs, Employer Sidebar: **REAL**
+- Gallery: **INTEGRATION_PENDING** (skeleton — chờ AV4 Media)
+- Introduction, Salary/Benefits, Support, Requirements, Apply Instructions, CTV Info, Footer Banner: **DEMO fixture** (chờ AV2 editorial CMS, đã defer)
 
 ---
 
@@ -305,3 +331,4 @@ Nếu `visible === false` → section không render (không skeleton, không pla
 | Version | Date | Author | Change |
 |---|---|---|---|
 | v0.1 | 11/09/2026 | Tier 1 | Initial draft: section layout, structured content types, view-models, component inventory, demo fixtures, non-goals |
+| v1.0 ACCEPTED | 12/09/2026 | Tier 1 | Implementation complete: baseline `9596d8c` → implementation `165408f` → correction `423e399` → production smoke 200. 12 file diff (1 modified + 11 added). Status DRAFT → ACCEPTED. Document production incident + fix. AV2/D.B defer (theo handover directive 12/09/2026). |

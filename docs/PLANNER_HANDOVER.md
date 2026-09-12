@@ -7,8 +7,8 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-11 15:30 Asia/Bangkok
-roadmap_source: docs/AI_PROJECT_BRIEF.md; docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md; docs/prompts/TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md
+updated_at: 2026-09-12 10:25 Asia/Bangkok
+roadmap_source: docs/AI_PROJECT_BRIEF.md; docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md; docs/prompts/TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md; docs/TIER0_HANDOVER.md
 PHASE_MAP: |
   Phase 0: V5 Close — DA DONG 55/63 ACCEPTED (không thay đổi)
     -> gate-01/02/03: ACCEPTED
@@ -27,14 +27,24 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
 current_lane: V6 Admin vertical slice (post-N0)
-current_task: hrp-v6-admin-v4-media-library (DRAFT v0.1 — Tier 1 plan only, implementation by Tier 2)
+current_task: hrp-v6-admin-v4-media-library (TASK v0.1 → Tier 1 delivery in-progress)
 task_path: docs/tasks/hrp-v6-admin-v4-media-library/TASK.md
-worktree_branch: main
-current_gate: PLANNER_CONTRACT
-next_command: AV4 TASK review by Owner/Tier 0 (schema, API, UI decisions); AV1 verdict pending; Tier 1 sẵn sàng handover AV4 cho Tier 2 implementation sau khi DEC-01..DEC-06 được chốt
-next_planner_candidate: N1 schema work (JobPosting → PlacementCase → HandlingAssignment) sau N0 inventory; AV2 JobPosting editor (sau AV4); AV6 HomepageSection CMS (sau AV4)
-previous_accepted: UI04g carousel v3 ACCEPTED (6562aaa) + UI04g carousel v2 ACCEPTED (75d28d8) + UI04g carousel v1 ACCEPTED (e259eb6) + UI04f card monogram abbrev ACCEPTED (12a06da) + AV1 HomepageSettings IMPLEMENTATION COMPLETE (0f1cb99) + projection consistency fix (ebc7058) + AV1 polish (01ef329) + N0 contract audit (documented) + AV4 TASK DRAFT v0.1 (docs/tasks/hrp-v6-admin-v4-media-library/TASK.md)
-blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); AV1 Settings form — Owner visual review pending (checklist 7 nhóm tại docs/tasks/hrp-v6-admin-v6-av1-settings-editor/TASK.md v1.1); AV4 DEC-01..DEC-06 pending Owner decisions; UI04d IMPLEMENTATION_COMPLETE — Owner visual review pending post-deploy
+worktree_branch: worktree-04v-media-r1
+current_gate: TIER_1_DELIVERY (Tier 1 = Planner + Engineer, owns contract + code)
+next_command: Tier 1 thi công AV4 theo TASK v0.1 — schema + migration + service + API + Admin UI + tests + safe render allowlist; không triển khai AV2/AV6 trong lượt này
+next_planner_candidate: N0 contract discovery (post-AV4); AV2 JobPosting editor (post-AV4, không ưu tiên trước N0); AV6 HomepageSection CMS (post-AV4, defer)
+previous_accepted: UI04d detail D.A ACCEPTED v1.0 (165408f + 423e399 + production smoke `/viec-lam/EXTRA-2026-010` HTTP 200) + UI04g carousel v3 ACCEPTED (6562aaa) + UI04g carousel v2 ACCEPTED (75d28d8) + UI04g carousel v1 ACCEPTED (e259eb6) + UI04f card monogram abbrev ACCEPTED (12a06da) + AV1 HomepageSettings IMPLEMENTATION COMPLETE (0f1cb99) + projection consistency fix (ebc7058) + AV1 polish (01ef329) + N0 contract audit (documented) + AV4 TASK DRAFT v0.1 (docs/tasks/hrp-v6-admin-v4-media-library/TASK.md)
+blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); AV1 Settings form — Owner visual review pending (checklist 7 nhóm tại docs/tasks/hrp-v6-admin-v6-av1-settings-editor/TASK.md v1.1); AV4 DEC-01..DEC-06 — Tier 1 tự quyết theo RECOMMENDATION trong TASK.md (max 5MB, không transform, Vercel CDN, manual token, không thumbnail, offset pagination); UI04d ACCEPTED v1.0 — Owner visual review pending trên production
+v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
+ui04_status:
+  composition/footer: ACCEPTED v1.4 (04b767e)
+  R3 urgent live + minimal SaaS card: ACCEPTED v1.3 (8c6fd03)
+  04c1 footer tweak r2: ACCEPTED round 1 v1.0 (10/09/2026 23:21; Tier 2 commit 9f593fa; 16 Owner decisions đã chốt; verify-task.ps1 + verify-handoff.ps1 PASS; 14 AC evidence files; gate FAST; source production: app/components/GlobalFooter.tsx + app/components/ContactForm.tsx; 25 file commit trong allowlist; KHONG revert R3/composition-footer/R2/correction R1)
+  04c2 job-card color refinement v10: ACCEPTED round 1 v1.0 (10/09/2026 23:48; Tier 2 commit 1316ff4; 16 Owner decisions + 5 interaction invariants đã chốt tai evidence/owner-job-card-color-refinement-decisions.md; verify-task.ps1 + verify-handoff.ps1 PASS WITH WARNINGS cosmetic; 14 AC evidence files; 89/89 tests pass trong featured-job-card.test.ts, 0 new failure; gates typecheck/test:unit/build PASS; source production: src/domains/job-board/components/landing/featured-job-card.tsx + featured-job-card.test.ts)
+  04c1-r3 footer text hotfix: ACCEPTED (Tier 1 commit 204f605 feat(ui) 11/09/2026 00:35; 4 chỗ text fix: address prefix + Kê→Kế + bỏ "Thuê" + email spelling `nhaluchrp@gmail.com` → `nhanluchrp@gmail.com`; source: app/components/GlobalFooter.tsx; gates local PASS typecheck/build, test:unit 13 pre-existing FAIL không phải do fix; committed to origin/main 81c7aeb)
+  detail UI D.A: ACCEPTED v1.0 (12/09/2026) — Tier 1 commit 165408f (feat: richer sections) + 423e399 (fix: isolate related jobs public transaction, production 500/P2028 đã bắt và sửa); production smoke `/viec-lam/EXTRA-2026-010` HTTP 200; 12 file diff (1 modified + 11 added); gates typecheck/test:unit (in-scope 34/34)/build PASS; out-of-scope 1 pre-existing failure tại design-tokens.static.test.ts không do UI04d; source production: app/(jobs)/viec-lam/[slug]/page.tsx + 8 section components + 1 fixture + public-types.ts; detail editor D.B defer (AV2)
+held_draft: hrp-v5-go-live-19-tracking-pii-db-mask — việc viết, chưa giao /code
+queue_authority: Chi tiet UI04 o docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/plan-overview.md; chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md; dung dung task slug that, khong suy dien them phase/task; current_task = hrp-v6-admin-v4-media-library DRAFT v0.1 → Tier 1 delivery in-progress (12/09/2026); AV1 IMPLEMENTATION COMPLETE + Owner visual review pending; AV4 DEC-01..DEC-06 — Tier 1 tự quyết theo RECOMMENDATION trong TASK.md (max 5MB, không transform, Vercel CDN, manual token, không thumbnail, offset pagination); AV4 là foundation (không đợi gì); AV2 và AV6 phụ thuộc AV4 cho media assignment
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
 ui04_status:
   composition/footer: ACCEPTED v1.4 (04b767e)
@@ -57,9 +67,9 @@ ui04_evidence:
   composition/footer ACCEPTED 04b767e: verify-task.ps1 + verify-handoff.ps1 + verify-audit.ps1 đều PASS; container 1080px; Footer 3 cột; ReferralStrip invariant
   04c1 ACCEPTED round 1 v1.0 10/09/2026 23:21 (Tier 2 commit 9f593fa): 16 Owner decisions tại docs/tasks/hrp-v6-ui-04c1-footer-tweak-r2/evidence/owner-footer-r2-decisions.md; verify-task.ps1 PASS (0 warning); RQ-00..RQ-16 (17 req) + AC-00..AC-14 (15 AC, 14 đo được) + STEP-03..STEP-08 (6 step thi công cụ thể); scope GlobalFooter.tsx + ContactForm.tsx; gates PASS; Tier 1 finalize TASK.md ACCEPTED tại 780bb75 [NOTE: Tier 1 204f605 hotfix commit trên main 81c7aeb; 9f593fa/780bb75 KHÔNG trên main hiện tại]
   04c2 ACCEPTED round 1 v1.0 10/09/2026 23:48 (Tier 2 commit 1316ff4): 16 Owner decisions + 5 interaction invariants tại docs/tasks/hrp-v6-ui-04c2-job-card-color-refinement-v10/evidence/owner-job-card-color-refinement-decisions.md; verify-task.ps1 PASS + verify-handoff.ps1 PASS WITH WARNINGS cosmetic (H-15 control field Tier 1 sở hữu); RQ-00..RQ-21 (22 req) + AC-00..AC-14 (15 AC) + STEP-01..STEP-12 (13 step thi công); scope featured-job-card.tsx + featured-job-card.test.ts; 89/89 tests PASS, 0 new failure; gates typecheck/test:unit/build PASS; Tier 1 finalize TASK.md ACCEPTED tại d7e6899 [NOTE: 1316ff4/d7e6899 KHÔNG trên main hiện tại — features đã được Owner thực hiện lại trong các commit UI04d mới trên main 81c7aeb]
-  UI04d section-render: IMPLEMENTATION_COMPLETE (11/09/2026 13:39); source tại commits 781480c (v1.9 composition), 3cff151 (section renderer + demo), 40482f7 (seed), 6aecd16 (News v1.11), 40482f7 (extra seed), 61b7601 (strip tuyển prefix), 191b9ab (recruiting tone sáng), 84624f6 (BestJobs spinner), 81c7aeb (recruiting 8→4 cards); components: hrp-intro-section.tsx, news-section.tsx (modal preview), recruiting-projects-section.tsx (8→4 cards), best-jobs-section.tsx (loading state); homepage order đúng: Navbar → Hero → BestJobs → Areas → HrpIntro → RecruitingProjects → ReferralStrip → News → Footer; NewestJobs/PartnerStrip/MobileBanner đã bị loại khỏi homepage; gate cuối: Owner visual review pending trên production; ACCEPTED chờ verdict Owner.
+  UI04d D.A detail sections: ACCEPTED v1.0 (12/09/2026); baseline `9596d8c` → implementation `165408f` → correction `423e399` (production 500/P2028 đã bắt và sửa) → production smoke `/viec-lam/EXTRA-2026-010` HTTP 200; 12 file diff (1 modified + 11 added); sections: summary (REAL), gallery (INTEGRATION_PENDING skeleton — chờ AV4 Media), introduction/salary/support/requirements/apply-instructions/ctv-info/footer-banner (DEMO fixture — chờ AV2 editorial), positions/apply-cta/related-jobs/employer-sidebar (REAL); gates typecheck/test:unit (in-scope 34/34)/build PASS; out-of-scope 1 pre-existing failure tại design-tokens.static.test.ts không do UI04d; components production: src/domains/job-board/components/detail/* (8 sections) + fixtures/detail-sections.fixture.ts + public-types.ts (StructuredContent union + BenefitItem + MediaItem + SalarySectionContent + SupportSectionContent + GallerySectionContent + ContentSectionContent + CtvInfoSectionContent + EmployerSidebarContent + FooterBannerContent); detail editor D.B defer (AV2)
   AV1 HomepageSettings: IMPLEMENTATION COMPLETE v1.1 (11/09/2026 15:30); Owner visual review pending theo 7-nhóm checklist tại docs/tasks/hrp-v6-admin-v6-av1-settings-editor/TASK.md; scope: schema + migration + permission + service + 2 API routes + admin form + homepage + listing integration; gates: prisma validate / vitest 1925/1925 / build / lint 0 errors / api-boundary PASS; commits: 0f1cb99 (initial), ebc7058 (projection boundary-aware refactor), 01ef329 (v1.1 UX polish + checklist)
-  AV4 Media Library: DRAFT v0.1 (11/09/2026 15:35); Tier 1 plan-only; implementation belongs to Tier 2; docs/tasks/hrp-v6-admin-v4-media-library/TASK.md; scope: Media model + MediaAssignment junction + Vercel Blob presigned URL upload + asset library + safe render allowlist; DEC-01..DEC-06 pending Owner decisions; AV4 là foundation (không đợi gì); AV2 và AV6 phụ thuộc AV4 cho media assignment
+  AV4 Media Library: TASK v0.1 (11/09/2026); Tier 1 delivery in-progress (worktree `worktree-04v-media-r1`); DEC-01..DEC-06 — Tier 1 tự quyết theo RECOMMENDATION trong TASK.md (max 5MB, không transform, Vercel CDN, manual token, không thumbnail, offset pagination); scope: Media model + MediaAssignment junction + Vercel Blob presigned URL upload + asset library + safe render allowlist + Admin UI; không triển khai AV2/AV6 trong lượt này; migration safety: ADD-only, không phá huỷ dữ liệu; Tier 1 push trực tiếp origin/main sau khi gates PASS; AV2 và AV6 phụ thuộc AV4 cho media assignment
 owner_defer:
   decision: "Deferred by Owner until target production stack and go-live hardening phase are confirmed."
   scope:
@@ -104,6 +114,16 @@ owner_defer:
     Tier 0 directive TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md (10/09/2026) — Tier 1 được phép push HEAD len origin/main 1 lan cho ca 2 task (04c1 + 04c2).
     4 commit local ahead origin/main: 9f593fa (feat ui 04c1) + 1316ff4 (feat ui 04c2) + d7e6899 (docs 04c2 finalize) + 780bb75 (docs 04c1 finalize).
     Tier 1 push HEAD 780bb75 len origin/main sau do monitor Vercel/CI deploy status + Owner live visual review post-deploy.
+  ui04d_owner_decided: |
+    UI04d detail D.A Tier 1 tự quyết theo Tier 0 directive 12/09/2026 (no Owner gate chặn).
+    Sections phụ thuộc AV2 (editorial fields) dùng DEMO fixture thay skeleton — không phải INTEGRATION_PENDING.
+    Gallery section giữ INTEGRATION_PENDING skeleton cho AV4 Media (chính task hiện tại).
+    Tier 1 commit trực tiếp origin/main sau khi gates PASS (Tier 1 = Planner + Engineer).
+    Production smoke test `/viec-lam/EXTRA-2026-010` HTTP 200 ngay sau deploy.
+  tier1_push_authority_av4: |
+    Tier 0 directive 12/09/2026 — Tier 1 mới (Planner + Engineer gộp) được push trực tiếp origin/main cho AV4 Media Library.
+    AV4 là schema ADD-only + service + API + Admin UI + tests; không có destructive migration; gates: prisma validate, typecheck, test:unit (in-scope), build.
+    Không hardcode secret (BLOB_READ_WRITE_TOKEN qua env); nếu credential chưa có, deploy vẫn build PASS nhưng upload runtime sẽ fail đúng — báo đúng phần deployment bị chặn.
   no_new_adr: "Không viết ADR dài. Không mở task rationalization mới."
 ```
 
@@ -305,7 +325,8 @@ Chỉ sửa khối `ROADMAP_CURSOR` ở §0 (phần nằm trong marker `<!-- ROA
 | 2.5 | 08/09/2026 | V6 Phase 1: 2/2 schema task ACCEPTED + LIVE APPLIED hrp-live (f8bd761); cursor chuyển sang p1c-new-ui-restyling R4 (READY); thêm phase1_live_evidence note (verified no auto-deploy migration) |
 | 2.6 | 08/09/2026 | V6 Phase 1: 3/3 core task ACCEPTED — p1c-new-ui-restyling AUDIT R1 PASS (0 P0/P1/P2); cursor chuyển sang security-credential-rotation (READY_FOR_EXECUTION); thêm phase1c_audit_evidence note (gate fingerprint + frozen test hashes) |
 | 2.7 | 08/09/2026 23:57 | Task `hrp-v6-security-credential-rotation` Tier 3 audit round 1 BLOCKED (AUD-001: canary contract vs reality mismatch; AUD-002: Owner rotation pending). Tier 1 verify audit claims: AC-02 PASS (git check-ignore exit 0); AC-09 2/4 canary tồn tại + 2 OUT_OF_SCOPE. DELTA: sửa AC-02/AC-09/AC-10. bump v1.2 → v1.3. §9 Planner Resolution ghi nhận. verify-task.ps1 DRAFT-VALID exit 0 (BLOCKED = non-READY_FOR_EXECUTION). Commit `13f3e40` (AUDIT.md + TASK.md v1.3). Chờ Owner/OP rotate credential → Tier 3 re-audit round 2 → ACCEPTED. |
+| 2.8 | 12/09/2026 | UI04d D.A ACCEPTED v1.0 (165408f + 423e399 + production smoke 200); cursor chuyển sang AV4 Media Library DRAFT v0.1 → Tier 1 delivery in-progress (worktree-04v-media-r1); Tier 1 mới = Planner + Engineer gộp theo docs/TIER0_HANDOVER.md 11/09/2026; Tier 1 push authority mở rộng cho AV4 (ADD-only schema, không destructive migration); UI04d D.B detail editor defer (AV2 editorial CMS) |
 
 ---
 
-*Cập nhật lần cuối: 08/09/2026 14:00 +07:00 bởi Tier 1 Agent*
+*Cập nhật lần cuối: 12/09/2026 10:25 +07:00 bởi Tier 1 Agent*

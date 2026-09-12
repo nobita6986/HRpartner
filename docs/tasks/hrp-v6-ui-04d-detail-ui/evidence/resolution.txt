@@ -1,0 +1,10 @@
+baseline: 9596d8c18fa183efc60ed09070bc52681f1effc6
+implementation: 165408fbd1bdcb2d48e1b5e2f944a649411e898b
+correction: 423e399673dfc7e47181bf35a516283990711c66
+production_smoke: GET /viec-lam/EXTRA-2026-010 HTTP 200
+file_diff_count: 12 (1 modified + 11 added)
+gate_typecheck: PASS
+gate_test_unit_in_scope: 34/34 PASS (detail-sections-policy.test.ts)
+gate_test_unit_out_of_scope: 1 pre-existing failure tại design-tokens.static.test.ts `--warning-container` (không do UI04d)
+gate_build: PASS
+status: ACCEPTED v1.0
