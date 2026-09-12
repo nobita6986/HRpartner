@@ -154,3 +154,93 @@ export function toHomepageSettingsView(dto: HomepageSettingsDto | null): Homepag
     defaultListingPageSize: LISTING_PAGE_SIZE_DEFAULT,
   };
 }
+
+/* ─── Detail page sections (UI04d D.A) ──────────────────────────────── */
+
+/**
+ * Structured content block — render bằng React elements (KHÔNG HTML string,
+ * KHÔNG dangerouslySetInnerHTML). Mỗi section content section (giới thiệu,
+ * mô tả, yêu cầu, hướng dẫn) dùng mảng các block này.
+ */
+export type StructuredContent =
+  | { type: 'heading'; level: 2 | 3 | 4; text: string }
+  | { type: 'paragraph'; text: string }
+  | { type: 'list'; ordered: boolean; items: string[] }
+  | { type: 'callout'; variant: 'info' | 'warning' | 'success'; text: string };
+
+/** Một lợi ích trong section Salary/Benefits */
+export interface BenefitItem {
+  /** Material Symbols icon name */
+  icon: string;
+  /** Title ngắn */
+  title: string;
+  /** Mô tả chi tiết (optional) */
+  description: string | null;
+  /** Giá trị cụ thể (optional) — ví dụ "12.500 đ/giờ" */
+  value: string | null;
+}
+
+/** Media item cho gallery section (AV4) */
+export interface MediaItem {
+  id: string;
+  url: string;
+  alt: string;
+  caption: string | null;
+  cover: boolean;
+  order: number;
+}
+
+/** Salary type semantics (AV2) */
+export type SalaryType = 'BASIC' | 'EXPECTED' | 'NEGOTIABLE';
+
+/** Cấu hình section Salary */
+export interface SalarySectionContent extends BaseSectionViewModel {
+  salaryType: SalaryType;
+  salaryDetail: StructuredContent[];
+  bonusItems: BenefitItem[];
+  benefitItems: BenefitItem[];
+}
+
+/** Cấu hình section HRP Support */
+export interface SupportItem {
+  icon: string;
+  label: string;
+  description: string;
+  available: boolean;
+}
+
+export interface SupportSectionContent extends BaseSectionViewModel {
+  items: SupportItem[];
+}
+
+/** Cấu hình section Apply Instructions */
+export interface ContentSectionContent extends BaseSectionViewModel {
+  title: string;
+  blocks: StructuredContent[];
+}
+
+/** Cấu hình section Employer Sidebar */
+export interface EmployerSidebarContent extends BaseSectionViewModel {
+  companyName: string;
+  logoUrl: string | null;
+  address: string;
+  mapUrl: string | null;
+}
+
+/** Cấu hình section Footer Banner */
+export interface FooterBannerContent extends BaseSectionViewModel {
+  ctaLabel: string;
+  ctaHref: string;
+  imageUrl: string;
+}
+
+/** Cấu hình section Gallery */
+export interface GallerySectionContent extends BaseSectionViewModel {
+  media: MediaItem[];
+}
+
+/** Cấu hình section CTV Info (AFF-gated) */
+export interface CtvInfoSectionContent extends BaseSectionViewModel {
+  title: string;
+  blocks: StructuredContent[];
+}

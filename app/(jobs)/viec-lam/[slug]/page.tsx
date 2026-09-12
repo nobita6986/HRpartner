@@ -36,6 +36,12 @@
  * Giới hạn CÓ TÊN (`DEC-03`, `RQ-04`): Server Component của Next `15.1` KHÔNG đặt được status
  * code, nên nhánh bị từ chối vẫn trả HTTP `200` kèm một khối thông báo. Điều được bảo đảm là ZERO
  * truy vấn DB ở nhánh đó, KHÔNG phải một mã `429`.
+ *
+ * UI04d D.A (11/09/2026): mở rộng với các section editor thân thiện với CMS
+ * phía sau (gallery, benefits, support, ctv-info, requirements, employer-sidebar,
+ * apply instructions, related jobs, footer banner). Sections phụ thuộc
+ * editorial fields (AV2) / media (AV4) dùng demo fixture hoặc render skeleton
+ * với `source: INTEGRATION_PENDING`. KHÔNG đổi DTO công khai, KHÔNG đổi API.
  */
 import { cache } from 'react';
 import type { Metadata } from 'next';
@@ -44,7 +50,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPrisma } from '@/src/lib/db';
 import { withPublicDb } from '@/src/shared/auth/with-public-db';
-import { getPublicJobDetail } from '@/src/domains/job-board/public.service';
+import { getPublicJobDetail, listPublicJobProjection } from '@/src/domains/job-board/public.service';
+import type { PublicJobDto } from '@/src/domains/job-board/public.service';
 import { getCorrelationId } from '@/src/shared/observability/correlation-id';
 import { evaluateRateLimits, RATE_LIMITED_MESSAGE } from '@/src/shared/security/rate-limit-guard';
 import { clientIpFromHeaders } from '@/src/shared/security/rate-limit-identity';
@@ -58,6 +65,26 @@ import {
   publicJobDetailPath,
   publicJobMetaText,
 } from '@/src/domains/job-board/public-detail.meta';
+import { GallerySection } from '@/src/domains/job-board/components/detail/gallery-section';
+import { ContentSection, CtvInfoSection } from '@/src/domains/job-board/components/detail/content-section';
+import { BenefitsSection } from '@/src/domains/job-board/components/detail/benefits-section';
+import { SupportSection } from '@/src/domains/job-board/components/detail/support-section';
+import { EmployerSidebar } from '@/src/domains/job-board/components/detail/employer-sidebar';
+import { RelatedJobsSection } from '@/src/domains/job-board/components/detail/related-jobs-section';
+import { FooterBannerSection } from '@/src/domains/job-board/components/detail/footer-banner-section';
+import {
+  demoIntroductionContent,
+  demoRequirementsContent,
+  demoCompensationContent as demoBenefitsContent,
+  demoSupportContent,
+  demoApplyInstructionsContent,
+  demoFooterBannerContent,
+} from '@/src/domains/job-board/fixtures/detail-sections.fixture';
+import type {
+  GallerySectionContent,
+  CtvInfoSectionContent,
+  EmployerSidebarContent,
+} from '@/src/domains/job-board/public-types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -75,7 +102,7 @@ type LoadedJob = NonNullable<Awaited<ReturnType<typeof getPublicJobDetail>>>;
 
 /** Ba kết cục PHÂN BIỆT được: có việc, không có việc, và bị limiter từ chối (`RQ-03`). */
 type JobLoadResult =
-  | { readonly kind: 'ok'; readonly job: LoadedJob }
+  | { readonly kind: 'ok'; readonly job: LoadedJob; readonly relatedJobs: PublicJobDto[] }
   | { readonly kind: 'missing' }
   | { readonly kind: 'throttled' };
 
@@ -86,6 +113,10 @@ type JobLoadResult =
  * Vì gộp, limiter đặt ở ĐÂY chạy ĐÚNG một lần mỗi request render và chặn cả hai đường vào DB một
  * lượt (`RQ-02`). Dùng `evaluateRateLimits` — điểm vào chỉ-trả-quyết-định của `DEC-01` — vì một
  * Server Component không trả được `NextResponse`.
+ *
+ * UI04d D.A: trong cùng transaction công khai, lấy thêm `relatedJobs` (lọc
+ * trong bộ nhớ theo area/shift overlap) để render section related mà không
+ * thêm một roundtrip DB.
  */
 const loadJob = cache(async (slug: string): Promise<JobLoadResult> => {
   const requestHeaders = await headers();
@@ -99,9 +130,33 @@ const loadJob = cache(async (slug: string): Promise<JobLoadResult> => {
   // Cả `rate-limited` lẫn `unavailable` đều KHÔNG được chạm DB: fail-closed (`DEC-02`).
   if (outcome.kind !== 'allowed') return { kind: 'throttled' };
 
-  const job = await withPublicDb(getPrisma(), (tx) => getPublicJobDetail(tx, slug));
-  return job ? { kind: 'ok', job } : { kind: 'missing' };
+  return withPublicDb(getPrisma(), (tx) => loadJobAndRelated(tx, slug));
 });
+
+async function loadJobAndRelated(
+  tx: Parameters<typeof getPublicJobDetail>[0],
+  slug: string,
+): Promise<JobLoadResult> {
+  const job = await getPublicJobDetail(tx, slug);
+  if (!job) return { kind: 'missing' };
+
+  // Lấy 20 dòng eligible, lọc trong bộ nhớ cho related (giữ RLS công khai và
+  // không tự gọi API nội bộ). 20 → 4 sau khi overlap area/shift.
+  const list = await listPublicJobProjection(tx, { limit: 20, offset: 0 });
+  const relatedJobs = list.jobs.filter((candidate) => {
+    if (candidate.id === job.id) return false;
+    if (candidate.slug === job.slug) return false;
+    const areaOverlap = candidate.locations.some((loc) =>
+      job.locations.some((jLoc) => jLoc && loc && jLoc.trim().toLowerCase() === loc.trim().toLowerCase()),
+    );
+    const shiftOverlap = candidate.shifts.some((s) =>
+      job.shifts.some((jS) => jS && s && jS.trim().toLowerCase() === s.trim().toLowerCase()),
+    );
+    return areaOverlap || shiftOverlap;
+  }).slice(0, 4);
+
+  return { kind: 'ok', job, relatedJobs };
+}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -175,6 +230,61 @@ function ThrottledNotice() {
   );
 }
 
+/**
+ * UI04d D.A: build các section view-model từ `PublicJobDetailDto` + fixtures.
+ * Skeleton dùng `source: 'INTEGRATION_PENDING'` + data rỗng; demo dùng fixture
+ * typed. KHÔNG đổi DTO — chỉ derive thêm trường view-model.
+ */
+function buildGallerySection(): GallerySectionContent {
+  return {
+    id: 'gallery',
+    enabled: true,
+    order: 20,
+    source: 'INTEGRATION_PENDING',
+    media: [],
+  };
+}
+
+function buildCtvInfoSection(): CtvInfoSectionContent {
+  return {
+    id: 'ctv-info',
+    enabled: true,
+    order: 60,
+    source: 'DEMO',
+    title: 'Thông tin dành cho CTV',
+    blocks: [
+      {
+        type: 'paragraph',
+        text: 'Bạn là CTV? HRP có chính sách hoa hồng và hỗ trợ riêng cho cộng tác viên giới thiệu ứng viên.',
+      },
+      {
+        type: 'list',
+        ordered: false,
+        items: [
+          'Hoa hồng theo bậc, thanh toán theo tháng',
+          'Hỗ trợ marketing và tài liệu tuyển dụng',
+          'Theo dõi trạng thái giới thiệu trực tuyến',
+        ],
+      },
+    ],
+  };
+}
+
+function buildEmployerSidebar(
+  job: LoadedJob,
+): EmployerSidebarContent {
+  return {
+    id: 'employer-sidebar',
+    enabled: true,
+    order: 80,
+    source: 'REAL',
+    companyName: job.companyName,
+    logoUrl: null,
+    address: job.siteAddress?.trim() || job.location?.trim() || 'Địa chỉ đang cập nhật',
+    mapUrl: null,
+  };
+}
+
 export default async function PublicJobDetailPage({ params }: PageProps) {
   const { slug } = await params;
   const result = await loadJob(slug);
@@ -185,8 +295,15 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
 
   const isFull = job.availableSlots === 0;
 
+  // UI04d D.A: AFF-gated (chưa có role CTV → mặc định false; sau này sẽ đọc từ session).
+  const showCtvInfo = false;
+
+  const gallery = buildGallerySection();
+  const ctvInfo = buildCtvInfoSection();
+  const employerSidebar = buildEmployerSidebar(job);
+
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
       <Link
         href="/viec-lam"
         className="inline-flex items-center gap-1 text-sm font-medium rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -196,6 +313,7 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
         Quay lại danh sách việc làm
       </Link>
 
+      {/* SUMMARY — section 1, REAL */}
       <article
         className="mt-4 rounded-xl border p-5 sm:p-6"
         style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
@@ -235,38 +353,85 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
         <div className="mt-6">
           <DetailApplyCta job={{ slug: job.slug, title: job.title }} isFull={isFull} />
         </div>
-
-        <section className="mt-6">
-          <h2 className="text-base font-semibold" style={{ color: 'var(--color-on-surface)' }}>
-            Vị trí tuyển dụng ({job.positions.length})
-          </h2>
-          <ul className="mt-3 flex flex-col gap-3">
-            {job.positions.map((position, index) => (
-              <li
-                key={`${position.positionCode}-${index}`}
-                className="rounded-lg border p-3"
-                style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface-container-low)' }}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-sm font-semibold" style={{ color: 'var(--color-on-surface)' }}>
-                    {position.positionTitle}
-                  </h3>
-                  <span
-                    className="text-xs font-semibold whitespace-nowrap"
-                    style={{ color: position.available > 0 ? 'var(--color-primary-dark)' : 'var(--color-on-surface-variant)' }}
-                  >
-                    {position.available > 0 ? `Còn ${position.available} chỗ trống` : 'Đã đủ chỉ tiêu'}
-                  </span>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <Chip icon="schedule" label={position.shift?.trim() || 'Thời gian đang cập nhật'} />
-                  <Chip icon="location_on" label={position.workLocation?.trim() || 'Địa điểm đang cập nhật'} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
       </article>
+
+      {/* SECTIONS 2..13 — UI04d D.A */}
+      <div className="mt-6 flex flex-col gap-4">
+        {/* GALLERY (skeleton — chờ AV4 Media) */}
+        <GallerySection content={gallery} />
+
+        {/* GRID: editorial + sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 flex flex-col gap-4">
+            {/* INTRODUCTION (DEMO) */}
+            <ContentSection content={demoIntroductionContent} />
+
+            {/* BENEFITS (DEMO) */}
+            <BenefitsSection content={demoBenefitsContent} />
+
+            {/* SUPPORT (DEMO) */}
+            <SupportSection content={demoSupportContent} />
+
+            {/* CTV INFO (DEMO, AFF-gated) */}
+            <CtvInfoSection content={ctvInfo} visible={showCtvInfo} />
+
+            {/* REQUIREMENTS (DEMO) */}
+            <ContentSection content={demoRequirementsContent} />
+          </div>
+
+          <aside className="flex flex-col gap-4">
+            {/* EMPLOYER SIDEBAR (REAL) */}
+            <EmployerSidebar content={employerSidebar} />
+
+            {/* POSITIONS (REAL, existing) */}
+            <div
+              className="rounded-xl border p-4"
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                borderColor: 'var(--color-outline-variant)',
+              }}
+            >
+              <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-on-surface)' }}>
+                Vị trí tuyển dụng ({job.positions.length})
+              </h3>
+              <ul className="flex flex-col gap-3">
+                {job.positions.map((position, index) => (
+                  <li
+                    key={`${position.positionCode}-${index}`}
+                    className="rounded-lg border p-3"
+                    style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface-container-low)' }}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h4 className="text-sm font-semibold" style={{ color: 'var(--color-on-surface)' }}>
+                        {position.positionTitle}
+                      </h4>
+                      <span
+                        className="text-xs font-semibold whitespace-nowrap"
+                        style={{ color: position.available > 0 ? 'var(--color-primary-dark)' : 'var(--color-on-surface-variant)' }}
+                      >
+                        {position.available > 0 ? `Còn ${position.available} chỗ trống` : 'Đã đủ chỉ tiêu'}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Chip icon="schedule" label={position.shift?.trim() || 'Thời gian đang cập nhật'} />
+                      <Chip icon="location_on" label={position.workLocation?.trim() || 'Địa điểm đang cập nhật'} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </aside>
+        </div>
+
+        {/* APPLY INSTRUCTIONS (DEMO) */}
+        <ContentSection content={demoApplyInstructionsContent} />
+
+        {/* RELATED JOBS (REAL) */}
+        <RelatedJobsSection relatedJobs={result.kind === 'ok' ? result.relatedJobs : []} />
+
+        {/* FOOTER BANNER (DEMO) */}
+        <FooterBannerSection content={demoFooterBannerContent} />
+      </div>
     </div>
   );
 }
