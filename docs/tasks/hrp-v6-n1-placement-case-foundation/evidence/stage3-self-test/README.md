@@ -1,6 +1,6 @@
 # N1 stage_3 self-test — PostgreSQL 18.4 embedded @ 127.0.0.1:55432
 
-> Self-test of `scratch/n1-stage3-db-proof/probe.mjs` against an isolated
+> Self-test of `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/probe.mjs` against an isolated
 > Postgres cluster, run BEFORE requesting Owner/OP test-branch URLs. This
 > run proves the PROBE + MIGRATION combination is correct: the probe
 > produces the expected outcomes against real, freshly-migrated PG. The
@@ -34,7 +34,7 @@
   - `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO app_user_writer, app_user`
 - These grants are NOT modified by the N1 migrations themselves — they come from the earlier `20260824161500_g0_schema_reconcile` migration. The probe therefore did NOT need a forward-only fix.
 
-## Results: **26/26 PASS** (probe exit 0, abnormal_exit=false)
+## Results: **28/28 PASS** (probe exit 0, abnormal_exit=false)
 
 > 2026-09-12 16:55 update: the probe gained one new boot row
 > (`db-identity-same-branch`, audit fix 7) that proves both connections reach
@@ -50,6 +50,57 @@
 > evidence file: only 2 lines differ — the two `boot` rows (timestamp
 > + fingerprint hash). All 26 test rows are identical (deterministic
 > probe). Result: 26/26 PASS, exit 0, `abnormal_exit=false`.
+>
+> 2026-09-12 21:00 re-run (audit fixes batch 2): wiped `pgdata/`, re-run.
+> Captured to `embedded-pg18-ndjson-rerun-2026-09-12-21-00.txt`. Two
+> new tests added:
+> - `boot neon-control-plane-branch-membership` (skipped=true on local
+>   self-test because `NEON_API_KEY`/`NEON_PROJECT_ID` aren't set;
+>   exercises the URL-side endpoint-id match against
+>   `PROD_ENDPOINT_ID` regardless of `db` name).
+> - `cleanup-needed uncleaned-run-ids` (n_ids=0 on the success path;
+>   tracks exact run-scoped IDs the probe created; replaces LIKE-pattern
+>   cleanup).
+> T1 now reports `c2_blocked_while_a_open: true` (wall-time 800ms probe
+> proves B was blocked while A was OPEN — true 2-tx concurrency, not
+> sequential). Result: **28/28 PASS**, exit 0, `abnormal_exit=false`.
+
+> 2026-09-12 21:30 re-run (audit fixes batch 3 — Tier-0-block items):
+> wiped `pgdata/`, re-run. Captured to
+> `embedded-pg18-ndjson-rerun-2026-09-12-21-30.txt`. Five items fixed
+> per Tier 0 directive:
+> 1. `endpointIdOf()` rewritten to split on `.` and strip `ep-` prefix +
+>    optional `-pooler` suffix — covers both direct and pooler routes.
+>    Unit-tested against 8 hostnames (direct, pooler, short ids,
+>    127.0.0.1) — all PASS.
+> 2. URL-side prod block already correct (endpoint-id alone, regardless
+>    of db name); runbook §0/STEP 1 wording clarified.
+> 3. Neon control-plane branch check tightened: now requires branch
+>    NAME = `hrp_mp2_test` (case-insensitive), not just "non-primary".
+>    Configurable via `NEON_EXPECTED_BRANCH_NAME` env.
+> 4. T1 already correct — `c2_blocked_while_a_open: true` is an
+>    ATTRIBUTE of the T1 row (count math: 26 prior + 2 new rows
+>    = 28 tests, NOT 29).
+> 5. Cleanup tightened: `idsCreatedThisRun` lifted to module scope;
+>    `cleanup-needed` row emitted in BOTH `catch{}` and `finally{}`
+>    (idempotent guard) so exact IDs are always present in NDJSON —
+>    even on uncaught exception. Runbook STEP 4 adds a fallback
+>    LIKE-by-run-id-suffix query for the pathological case where
+>    NDJSON itself is missing.
+> Plus: `probe.mjs` relocated from `scratch/n1-stage3-db-proof/` (was
+> gitignored per hrp-v5-go-live-21) to this directory (Git-tracked).
+> Runbook + self-test README + PLANNER_ROADMAP_CURSOR all reference
+> the new path.
+>
+> **Self-test Stage 3 distinction**: the local self-test is allowed
+> to have `neon-control-plane-branch-membership.skipped=true` (no
+> Neon credentials needed). A `hrp_mp2_test` run with
+> `skipped=true` is NOT a real Stage 3 PASS — the operator MUST
+> escalate to Tier 0 (credentials not supplied) and re-run.
+>
+> Result: **28/28 PASS**, exit 0, `abnormal_exit=false`, T1
+> `c2_blocked_while_a_open=true`, T1 `sqlstate_c2=23505`, `cleanup-needed`
+> `pass=true, n_ids=0`.
 
 Per-test summary (full NDJSON in `embedded-pg18-ndjson.txt`):
 
@@ -81,6 +132,8 @@ Per-test summary (full NDJSON in `embedded-pg18-ndjson.txt`):
 | 24 | T4 CTV sees 0 rows | PASS | 00000 | rows=0; sqlstate 00000 ≠ 42501 |
 | 25 | T4 ANON sees 0 rows | PASS | 00000 | rows=0; sqlstate 00000 ≠ 42501 |
 | 26 | boot db-identity-same-branch | PASS | 00000 | admin.db=writer.db=n1probe, admin.ip=writer.ip=127.0.0.1, admin.role=neondb_owner, writer.role=app_user_writer |
+| 27 | **T1 row carries `c2_blocked_while_a_open: true`** (audit fix 21:00 — not a separate row) | PASS | c1=00000, c2=23505 | The T1 row #13 reports `c2_blocked_while_a_open: true` as a field; this confirms B was demonstrably blocked while A was OPEN (800ms wall-time probe). True 2-tx concurrency, not sequential. |
+| 28 | boot neon-control-plane-branch-membership (skipped on local self-test) | PASS (skipped) | 00000 | skipped=true because `NEON_API_KEY` / `NEON_PROJECT_ID` not set; on `hrp_mp2_test` with both set, verifies both endpoint-ids map to the SAME branch of `NEON_PROJECT_ID` AND that branch's name equals `hrp_mp2_test` (case-insensitive), AND that branch is NOT the project primary. On a real `hrp_mp2_test` run, skipped=true means Tier 0 did NOT supply credentials — that is NOT a real Stage 3 PASS; the operator MUST escalate. |
 
 ## What this self-test proves vs what requires `hrp_mp2_test`
 
@@ -106,11 +159,20 @@ The probe is **correct and re-runnable**. The migration is **ADD-only and re-run
 
 **Caveats**:
 - The probe's cleanup is best-effort on the success path only. On abnormal
-  exit (connect failure, unhandled rejection, `process.exit(...)` early),
-  seeded `n1lp-%` / `n1c%` / `n1sub-%` rows may remain. The `summary`
-  row records `abnormal_exit: true` if so; operator must clean up via
-  psql DELETE before considering the test DB clean. We have not
-  exhaustively tested every abnormal-exit path.
+  exit (connect failure, unhandled rejection, `process.exit(...)` early,
+  uncaught exception inside T1-T4), the probe's `catch{}` and `finally{}`
+  blocks emit a `cleanup-needed` row with the exact list of run-scoped IDs
+  (`n_ids` + `ids` array). The operator runs IN-list DELETE SQL per the
+  cleanup contract in the runbook (STEP 4 — abnormal-exit path, exact IDs
+  only, NOT LIKE patterns). We have not exhaustively tested every
+  abnormal-exit path. For the local self-test we have NOT hit an
+  abnormal exit (`abnormal_exit=false`), so this contract is by-design
+  rather than empirically validated.
+- The `boot neon-control-plane-branch-membership` row on local self-test
+  has `skipped=true` — that is fine for the embedded-PG run (no Neon
+  credentials are needed). On a real `hrp_mp2_test` run, `skipped=true`
+  means the operator did NOT set `NEON_API_KEY` / `NEON_PROJECT_ID` and
+  the run is NOT a real Stage 3 PASS.
 
 The next step — running this same probe against `hrp_mp2_test` — only needs:
 1. Owner/OP sets `TEST_DATABASE_URL_ADMIN` and `TEST_DATABASE_URL_WRITER` in their secure channel (not chat).

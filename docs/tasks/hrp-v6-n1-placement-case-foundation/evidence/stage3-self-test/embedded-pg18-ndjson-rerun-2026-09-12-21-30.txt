@@ -1,0 +1,64 @@
+﻿
+{"kind":"boot","ts":"2026-09-12T14:24:38.977Z","admin_fp":"fp:b146048b3e8e","writer_fp":"fp:938557ade704","admin_endpoi
+nt_id":"","writer_endpoint_id":"","admin_host_tail":"0.0.1","writer_host_tail":"0.0.1","note":"URL-side endpoint-id 
+check passed; DB-side identity + Neon control-plane branch check follow after 
+connect","neon_control_plane_enabled":false}
+{"kind":"boot","test":"db-identity-same-branch","pass":true,"admin_db":"n1probe","admin_ip":"127.0.0.1","admin_role":"n
+eondb_owner","writer_db":"n1probe","writer_ip":"127.0.0.1","writer_role":"app_user_writer","comment":"DB-side proof 
+that both URLs reach the same Neon branch compute"}
+{"kind":"boot","test":"neon-control-plane-branch-membership","pass":true,"skipped":true,"reason":"NEON_API_KEY or 
+NEON_PROJECT_ID not set; control-plane check skipped (local self-test or Tier-0-authorised offline run)"}
+{"kind":"who","test":"admin-connection-identity","pass":true,"sqlstate":"00000","db":"n1probe","role":"neondb_owner","i
+p":"127.0.0.1/32"}
+{"kind":"who","test":"writer-connection-identity","pass":true,"sqlstate":"00000","db":"n1probe","role":"app_user_writer
+"}
+{"kind":"schema","test":"migration-20260912140411_n1_placement_case_foundation-applied","pass":true,"sqlstate":"00000",
+"migration_name":"20260912140411_n1_placement_case_foundation"}
+{"kind":"schema","test":"migration-20260912140412_n1_placement_case_rls-applied","pass":true,"sqlstate":"00000","migrat
+ion_name":"20260912140412_n1_placement_case_rls"}
+{"kind":"schema","test":"placement_case-exists","pass":true,"sqlstate":"00000","relrowsecurity":true,"forcerowsecurity"
+:true,"message":null}
+{"kind":"schema","test":"placement_case-policies","pass":true,"sqlstate":"00000","n_policies":1,"policyname":"hrp_place
+ment_case_scope","cmd":"ALL","roles":"{app_user,app_user_writer}"}
+{"kind":"probe","test":"labor_profiles-exists","pass":true,"value":"labor_profiles"}
+{"kind":"probe","test":"candidate_submissions-exists","pass":true,"value":"candidate_submissions"}
+{"kind":"seed","test":"labor_profile-insert","pass":true,"sqlstate":"00000","message":null}
+{"kind":"t1","test":"concurrent-insert-same-labor-second-active-rejected-23505","pass":true,"sqlstate_c1_insert":"00000
+","sqlstate_c1_commit":"00000","msg_c1_commit":null,"c2_blocked_while_a_open":true,"sqlstate_c2":"23505","msg_c2":"dupl
+icate key value violates unique constraint \"placement_case_labor_profile_id_active_unique\"","comment":"true 
+2-transaction concurrency: B INSERTs while A is OPEN; the partial unique index blocks B on A's row lock until A 
+commits, then B resolves 23505. Block detected by 800ms wall-time probe of B's promise ΓÇö pg_stat_activity does not 
+expose bind-parameter values."}
+{"kind":"t2","test":"second-active-same-labor-rejected-23505-strict","pass":true,"sqlstate":"23505","message":"duplicat
+e key value violates unique constraint \"placement_case_labor_profile_id_active_unique\""}
+{"kind":"t2","test":"t2-close-active","pass":true,"sqlstate":"00000","status":"CLOSED"}
+{"kind":"t2","test":"t2-reopen-after-closed","pass":true,"sqlstate":"00000","status":"OPEN"}
+{"kind":"t3","test":"t3-insert-submission-linked-to-case","pass":true,"sqlstate":"00000","message":null}
+{"kind":"t3","test":"t3-delete-parent-case-rejected-fk-restrict","pass":true,"sqlstate":"23001","message":"update or 
+delete on table \"placement_case\" violates RESTRICT setting of foreign key constraint 
+\"candidate_submissions_placement_case_id_fkey\" on table 
+\"candidate_submissions\"","accepted_states":["23001","23503"]}
+{"kind":"t4","test":"t4-app_user_writer-grant-on-placement_case","pass":true,"sqlstate":"00000","sel":true,"ins":true,"
+upd":true,"del":true,"comment":"FIX 6: GRANT sanity is a separate row from RLS rows so a 42501 cannot masquerade as 
+RLS-deny"}
+{"kind":"t4","test":"t4-setup-committed-active-case","pass":true,"sqlstate":"00000","message":null}
+{"kind":"t4","test":"t4-HR_MANAGER-sees-committed-case","pass":true,"sqlstate":"00000","rows":1}
+{"kind":"t4","test":"t4-ADMIN-sees-committed-case","pass":true,"sqlstate":"00000","rows":1}
+{"kind":"t4","test":"t4-HR_STAFF-sees-committed-case","pass":true,"sqlstate":"00000","rows":1}
+{"kind":"t4","test":"t4-PUBLIC-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 
+00000 + 0 rows (NOT 42501 ΓÇö see has_table_privilege above)"}
+{"kind":"t4","test":"t4-WORKER-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 
+00000 + 0 rows (NOT 42501 ΓÇö see has_table_privilege above)"}
+{"kind":"t4","test":"t4-SALE-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 
+00000 + 0 rows (NOT 42501 ΓÇö see has_table_privilege above)"}
+{"kind":"t4","test":"t4-CTV-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 
+00000 + 0 rows (NOT 42501 ΓÇö see has_table_privilege above)"}
+{"kind":"t4","test":"t4-ANON-sees-zero-rows","pass":true,"sqlstate":"00000","rows":0,"comment":"RLS denial: sqlstate 
+00000 + 0 rows (NOT 42501 ΓÇö see has_table_privilege above)"}
+{"kind":"cleanup-needed","test":"uncleaned-run-ids","pass":true,"n_ids":0,"ids":[],"comment":"all run-scoped rows 
+cleaned up on success path"}
+{"kind":"summary","total":28,"passed":28,"failed":0,"abnormal_exit":false,"abnormal_reason":null,"comment":"abnormal_ex
+it=true means the probe exited before reaching the success-path cleanup; the cleanup-needed row above lists the exact 
+IDs that need manual cleanup via IN-list (NOT LIKE pattern)"}
+
+

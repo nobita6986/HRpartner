@@ -8,7 +8,7 @@
 ## What was changed (commit 551f303, parent 3662099)
 
 4 audit fixes to `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-hrp-mp2-test-runbook.md`
-and `scratch/n1-stage3-db-proof/probe.mjs`:
+and `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/probe.mjs`:
 
 1. STEP 2/3 migration-failed detection now uses `finished_at IS NULL AND rolled_back_at IS NULL`
    (Prisma's `_prisma_migrations` does NOT have a `failed_at` column).
