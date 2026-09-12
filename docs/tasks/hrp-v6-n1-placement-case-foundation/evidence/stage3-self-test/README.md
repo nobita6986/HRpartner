@@ -102,6 +102,124 @@
 > `c2_blocked_while_a_open=true`, T1 `sqlstate_c2=23505`, `cleanup-needed`
 > `pass=true, n_ids=0`.
 
+> 2026-09-12 22:12 re-run (audit fixes batch 4 — Tier-0-block items):
+> Tier 0 caught three issues in the previous run:
+> 1. NDJSON evidence file `embedded-pg18-ndjson-rerun-2026-09-12-21-30.txt`
+>    had JSON objects split across multiple lines (PowerShell
+>    `Out-File -Encoding utf8` wraps at console width — 10 of 30 lines
+>    were parseable on Tier-0's `ConvertFrom-Json` test). Fix: the
+>    self-test runner now writes probe stdout/stderr to
+>    `probe-stdout.ndjson` and `probe-stderr.log` via Node `fs`
+>    directly (no PowerShell pipe wrapping); the evidence file is
+>    then copied via `[System.IO.File]::Copy` (raw bytes, no
+>    console-side line transformation). The new evidence file
+>    `embedded-pg18-ndjson-rerun-2026-09-12-22-12.txt` parses
+>    cleanly: 30 lines, 30 valid JSON objects (`ConvertFrom-Json`
+>    test PASS).
+> 2. The Neon control-plane check already runs BEFORE any DB write
+>    query in the probe (it sits in the boot guard before the
+>    `try { T1... }` block). To make the Stage-3-real-vs-self-test
+>    distinction enforceable, the row now carries an explicit
+>    `stage3_real_pass` flag (`false` whenever `skipped=true`,
+>    regardless of the `pass` field — which is still `true` on
+>    self-test for line-counting purposes). The summary row now
+>    reports `stage3_real_pass` and a `strict_stage3` flag controlled
+>    by the `STRICT_STAGE3` env var (when `STRICT_STAGE3=true`, any
+>    skipped=true anywhere fails the summary; the self-test does NOT
+>    set this). The probe comment is updated to spell out: "skipped=true
+>    on hrp_mp2_test is NOT a real Stage 3 PASS".
+> 3. Cleanup contract hardened in two places:
+>    - Probe `idsCreatedThisRun` now wrapped by `trackCreated(id)` /
+>      `trackDeleted(id)` helpers. Each push emits `n1-trace: created <id>`
+>      to stderr; each successful delete emits `n1-trace: deleted <id>`.
+>      The operator can diff created-vs-deleted on stderr to recover
+>      uncleaned IDs even if the NDJSON file is lost.
+>    - DELETE-from-tracking is now guarded by `pgCall.ok && rowCount > 0`
+>      (using `DELETE ... RETURNING id`). A silent DELETE failure (e.g.
+>      FK still held, concurrent row lock) keeps the ID in
+>      `idsCreatedThisRun` so the operator can retry.
+>    - Runbook's LIKE-by-run-id-suffix fallback was removed (it could
+>      match another run's rows in the same time window). The new
+>      fallback is the stderr trace channel.
+>
+> A developer-time `DB-cleanliness verifier` was added to
+> `run-embedded-pg.js` (runs immediately after the probe, while the
+> embedded PG server is still up). It queries `n1lp-*`, `n1c*`, `n1sub-*`
+> row counts and reports leftover_rows; this run's verifier reports
+> `leftover_rows=0,0,0` and prints `DB-cleanliness verifier: PASS (0 leftover rows)`.
+> This is a developer sanity check, NOT part of the Stage 3 runbook
+> (production operators rely on the `cleanup-needed` NDJSON row + IN-list
+> fallback).
+>
+> Result: **28/28 PASS**, exit 0, `abnormal_exit=false`, T1
+> `c2_blocked_while_a_open=true`, T1 `sqlstate_c2=23505`, `cleanup-needed`
+> `pass=true, n_ids=0`. Captured to
+> `embedded-pg18-ndjson-rerun-2026-09-12-22-12.txt`.
+
+> 2026-09-12 22:25 re-run (audit fixes batch 5 — Tier-0-block items round 4):
+> Tier 0 caught three more issues on the previous diff:
+>
+> 1. **Neon control-plane gate moved to STEP 1.5 (BEFORE STEP 3)** — Tier 0
+>    noted the control-plane check ran only in probe.mjs (STEP 4, AFTER
+>    migrate deploy in STEP 3). To enforce FAIL-CLOSED before any DB
+>    write, a new STEP 1.5 gate script was added:
+>    `docs/tasks/.../evidence/stage3-self-test/neon_branch_gate.ps1`.
+>    It calls Neon's control plane API directly (`GET /projects/{id}/branches`
+>    + `…/branches/{branch_id}/endpoints`), confirms BOTH endpoint-ids
+>    resolve to the SAME branch of `NEON_PROJECT_ID` whose `name` equals
+>    `NEON_EXPECTED_BRANCH_NAME` (default `hrp_mp2_test`), and refuses
+>    with non-zero exit (10..15) before STEP 2 / STEP 3. The probe.mjs
+>    control-plane check remains as a belt-and-braces inside the
+>    probe body. The probe now also refuses with exit 71 BEFORE any DB
+>    write when `N1_STAGE3_REAL=true` is set but `NEON_API_KEY` /
+>    `NEON_PROJECT_ID` are missing — fail-closed.
+>
+> 2. **`stage3_real_pass` semantics re-fixed** — the previous
+>    implementation had `STRICT_STAGE3=false` on the local self-test, so
+>    `stage3_real_pass=true` even when the control-plane row had
+>    `stage3_real_pass=false` (skipped). Tier 0 caught this. The summary
+>    now ALWAYS computes `stage3_real_pass = (passed === total) && !anyRealFail`
+>    where `anyRealFail = RESULT.some(r => r.stage3_real_pass === false)`.
+>    A local self-test run therefore reports `summary.stage3_real_pass=false`
+>    by design (control-plane check was skipped), which gates the runbook
+>    STEP 5a into a TWO-MODE gate (real-run vs self-test). The two-mode
+>    decision table is documented in runbook STEP 4 (gate values table).
+>    The `STRICT_STAGE3` flag was removed; the new explicit signal is
+>    `N1_STAGE3_REAL` (set by operator on real runs, unset on self-test).
+>
+> 3. **NDJSON stdout/stderr captured separately; STEP 5b no longer uses
+>    `Out-File`** — Tier 0 noted the runbook STEP 5b still used
+>    `Select-String | Out-File -Encoding utf8` (which wraps long JSON
+>    lines) and STEP 4 only redirected stdout (`> log`), losing the
+>    stderr `n1-trace:` lines the runbook promises. Fix:
+>    - New helper script `write_ndjson_evidence.ps1` (Git-tracked) reads
+>      NDJSON via `[System.IO.File]::ReadAllText`, parses each line with
+>      `ConvertFrom-Json` in a per-line try/catch, refuses to commit if
+>      ANY line is unparseable, then writes the sanitized file via
+>      `[System.IO.File]::WriteAllText` (raw bytes, no console
+>      transformation). PowerShell `Out-File` is no longer used anywhere
+>      in the NDJSON evidence path.
+>    - STEP 4 now uses `node probe.mjs 1> stdout.ndjson 2> stderr.log`
+>      (split streams via PowerShell `1>` / `2>`), and STEP 5b copies
+>      both files to evidence paths via the raw-byte helper. The stderr
+>      trace channel is now end-to-end — operator can diff `created` vs
+>      `deleted` records to recover uncleaned IDs even if the NDJSON is
+>      truncated.
+>    - Corrupt-NDJSON test: run the helper against a deliberately broken
+>      file (`{...` truncated). The helper exits 1 with the indices of
+>      unparseable lines, blocking evidence commit. Good file: exit 0,
+>      30 lines copied.
+>
+> Result of this run: **28/28 row-level pass, summary.stage3_real_pass=false**
+> (SELF-TEST MODE — `N1_STAGE3_REAL` unset on the local embedded PG
+> self-test; this is expected and by design, see Tier-0-stated semantic),
+> probe exit 1, `abnormal_exit=false`, T1 `c2_blocked_while_a_open=true`,
+> T1 `sqlstate_c2=23505`, `cleanup-needed pass=true, n_ids=0`.
+> DB-cleanliness verifier: `leftover_rows=0,0,0` PASS. stderr trace:
+> 6 created / 6 deleted (parity). Captured to
+> `embedded-pg18-ndjson-rerun-2026-09-12-22-25.txt` (30 lines, 30 parseable)
+> + `embedded-pg18-stderr-rerun-2026-09-12-22-25.txt` (separate stderr channel).
+
 Per-test summary (full NDJSON in `embedded-pg18-ndjson.txt`):
 
 | # | Test | Outcome | SQLSTATE | Notes |
@@ -134,6 +252,92 @@ Per-test summary (full NDJSON in `embedded-pg18-ndjson.txt`):
 | 26 | boot db-identity-same-branch | PASS | 00000 | admin.db=writer.db=n1probe, admin.ip=writer.ip=127.0.0.1, admin.role=neondb_owner, writer.role=app_user_writer |
 | 27 | **T1 row carries `c2_blocked_while_a_open: true`** (audit fix 21:00 — not a separate row) | PASS | c1=00000, c2=23505 | The T1 row #13 reports `c2_blocked_while_a_open: true` as a field; this confirms B was demonstrably blocked while A was OPEN (800ms wall-time probe). True 2-tx concurrency, not sequential. |
 | 28 | boot neon-control-plane-branch-membership (skipped on local self-test) | PASS (skipped) | 00000 | skipped=true because `NEON_API_KEY` / `NEON_PROJECT_ID` not set; on `hrp_mp2_test` with both set, verifies both endpoint-ids map to the SAME branch of `NEON_PROJECT_ID` AND that branch's name equals `hrp_mp2_test` (case-insensitive), AND that branch is NOT the project primary. On a real `hrp_mp2_test` run, skipped=true means Tier 0 did NOT supply credentials — that is NOT a real Stage 3 PASS; the operator MUST escalate. |
+
+> 2026-09-12 23:00 re-run (audit fixes batch 6 — Tier-0-block round 5):
+> Tier 0 caught three issues on the previous diff:
+>
+> 1. **STEP 5a self-test gate counter was wrong** — it required
+>    `lines.Count -ne 28`, but the NDJSON file actually carries
+>    **30 JSON lines** (1 URL-side boot log emitted via
+>    `console.log` + 28 `row()` calls + 1 summary via `console.log`).
+>    The self-test branch would have failed the gate against a
+>    correctly-built NDJSON. Fix: STEP 5a now parses the
+>    `summary` row with `ConvertFrom-Json` and requires
+>    `summary.total == 28` directly (the probe's authoritative row
+>    count); additionally it verifies the file shape (exactly 1
+>    URL-side boot log with `kind:'boot'` and no `test`, plus 28 data
+>    rows, plus 1 summary = 30 JSON lines). Real-run branch uses
+>    the same ConvertFrom-Json-based verification so a single
+>    helper-style extraction applies to both modes.
+>
+> 2. **`write_ndjson_evidence.ps1` was used for both stdout and
+>    stderr** — its filter `if ($l[0] -eq '{')` SILENTLY DROPPED every
+>    `n1-trace:` line on stderr, leaving an empty trace evidence file
+>    exactly when Tier 0 needed it most. Fix:
+>    - `write_ndjson_evidence.ps1` (NDJSON helper) is now STRICTLY
+>      for NDJSON streams. It refuses if any `{`-line is unparseable
+>      (exit 21), refuses if zero `{`-lines are present (exit 22),
+>      and refuses if the source contains `n1-trace:` lines (exit
+>      23 — channel-mix safety).
+>    - NEW `copy_stderr_trace.ps1` (stderr helper) is the dedicated
+>      companion. It refuses if zero `n1-trace:` lines are present
+>      (exit 31 — empty-trace safety), refuses if the source has
+>      `{`-lines (exit 32 — channel-mix safety), and emits a
+>      header + the preserved `n1-trace:` lines into the evidence
+>      file. `created` vs `deleted` parity is reported in the
+>      header for the operator's diff.
+>    - Both helpers now use `Continue` + `[Console]::Error.WriteLine`
+>      so a refusal preserves the intended `exit N` for the runbook's
+>      `$LASTEXITCODE -ne 0` checks (the old `Stop` + `Write-Error`
+>      combination turned refusal into a terminating exception that
+>      PowerShell translated to exit code 1 regardless of our `exit N`).
+>    - STEP 5b now uses the NDJSON helper for stdout and the stderr
+>      helper for `stderr.log`, plus a sanity assertion that
+>      `created >= 1 && deleted >= 1` (operator recovery channel
+>      exists).
+>
+> 3. **`neon_branch_gate.ps1` had two correctness bugs**:
+>    - `host.Contains(endpointId)` was a SUBSTRING match. It would
+>      falsely accept `shrub` against `ep-shrub-extended.us-east-2...`
+>      or `shrubbery` against `ep-shrub.us-east-2...`. Fix:
+>      normalize the API-returned host via the same `endpointIdOf`
+>      function (strip `ep-` prefix + optional `-pooler` suffix +
+>      lowercase) and require EXACT equality.
+>    - Property access on `$adminBranch.id` / `$writerBranch.id`
+>      could throw a runtime error if either was `$null`, BLOCKING
+>      the documented exit 12. Fix: null-check BEFORE any property
+>      access; an explicit verdict with `null` for the missing
+>      branches is emitted before `exit 12` is taken.
+>    - Also: `$ErrorActionPreference = 'Stop'` + `Write-Error`
+>      overrode the explicit `exit N` with `$LASTEXITCODE = 1`.
+>      Replaced with `Continue` + `Refuse(N, msg)` helper that uses
+>      `[Console]::Error.WriteLine` so the exit code is preserved.
+>    - New `NEON_API_BASE` env var allows offline testing against a
+>      stub server (`fake_neon_api.js`). A new test script
+>      `test-neon-branch-gate.ps1` exercises every exit code (0,
+>      12, 13, 14, 15) including the substring-false-match case
+>      that the old `Contains()` would have accepted.
+>
+> This re-run wipes `pgdata/`, restarts the runner with the env
+> sanitized (NEON_API_KEY / NEON_PROJECT_ID / N1_STAGE3_REAL all
+> stripped from the parent shell before `spawn(node)`), and produces
+> fresh evidence files via the NEW strict helpers. Probe exit 1 is
+> the expected self-test exit (summary.stage3_real_pass=false). All
+> helpers were unit-tested separately with fake data:
+> `test-evidence-helpers.ps1` (PASS, 8/8 assertions) and
+> `test-neon-branch-gate.ps1` (PASS, 6/6 scenarios).
+>
+> Result: **28/28 row-level pass, summary.stage3_real_pass=false**
+> (SELF-TEST MODE by design), probe exit 1, `abnormal_exit=false`,
+> T1 `c2_blocked_while_a_open=true`, T1 `sqlstate_c2=23505`,
+> `cleanup-needed pass=true, n_ids=0`. DB-cleanliness verifier:
+> `leftover_rows=0,0,0` PASS. stderr trace: 6 created / 6 deleted
+> (parity). Captured to
+> `embedded-pg18-ndjson-rerun-2026-09-12-23-00.txt` (30 JSON lines,
+> ALL 30 parseable via ConvertFrom-Json) +
+> `embedded-pg18-stderr-rerun-2026-09-12-23-00.txt` (12 n1-trace
+> lines preserved: 6 created + 6 deleted, with header explaining
+> the recovery channel).
 
 ## What this self-test proves vs what requires `hrp_mp2_test`
 

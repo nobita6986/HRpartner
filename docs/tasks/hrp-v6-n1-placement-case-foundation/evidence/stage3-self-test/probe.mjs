@@ -72,9 +72,34 @@ const NEON_PROJECT_ID   = process.env.NEON_PROJECT_ID   || '';   // test project
 // Tier 0 authorises running against a differently-named test branch.
 const EXPECTED_BRANCH_NAME = (process.env.NEON_EXPECTED_BRANCH_NAME || 'hrp_mp2_test').toLowerCase();
 
+// N1_STAGE3_REAL semantic (audit fix 2026-09-12 22:30):
+//   'true'  → the operator is running on a real hrp_mp2_test branch.
+//              The Neon control-plane check is MANDATORY; if either
+//              NEON_API_KEY or NEON_PROJECT_ID is unset, refuse with
+//              exit code 71 (FAIL-CLOSED). The probe also reports
+//              `stage3_real_pass=false` in any NDJSON summary unless
+//              every boot guard row's `stage3_real_pass` is true.
+//   unset   → the operator is running the LOCAL self-test (embedded
+//              PG, no Neon credentials). The control-plane check may
+//              be skipped; the row reports `pass:true, skipped:true,
+//              stage3_real_pass:false` (so the summary's
+//              stage3_real_pass=false is by design — this is a self-
+//              test, NOT a Stage 3 PASS).
+// The separate runbook STEP 1.5 gate (neon_branch_gate.ps1) is the
+// AUTHORITATIVE branch check on a real run; this probe-side check is
+// the belt-and-braces inside the probe body. Either one is enough
+// on its own; both are belt-and-braces.
+const N1_STAGE3_REAL = (process.env.N1_STAGE3_REAL || '').toLowerCase() === 'true';
+
 if (!ADMIN_URL || !WRITER_URL) {
   console.error('PROOF_ENV_BLOCKED: set TEST_DATABASE_URL_ADMIN (neondb_owner) and TEST_DATABASE_URL_WRITER (app_user_writer) BEFORE running this script.');
   process.exit(64);
+}
+
+// Refuse-with-71: real hrp_mp2_test run started without Neon credentials.
+if (N1_STAGE3_REAL && (!NEON_API_KEY || !NEON_PROJECT_ID)) {
+  console.error('PROOF_GATE_FAIL: N1_STAGE3_REAL=true but NEON_API_KEY or NEON_PROJECT_ID is unset. On a real hrp_mp2_test run, Tier 0 MUST supply these via the secure channel BEFORE STEP 3 (migrate deploy). Refusing before any DB write.');
+  process.exit(71);
 }
 
 // hrp-live fingerprint (Neon main branch): host contains 'shy-tree-az32as2c'.
@@ -216,18 +241,32 @@ row({ kind: 'boot', test: 'db-identity-same-branch', pass: sameBranch, admin_db:
 
 // ---------- Neon control-plane branch check (audit fix 2026-09-12 21:00) ----------
 // Verifies that BOTH endpoint-ids (admin, writer) belong to the SAME
-// non-primary branch of NEON_PROJECT_ID. This is the second line of
-// defense behind the URL-side endpoint-id check above; it does NOT depend
-// on the URL hostname or the db name. It rejects a misconfigured test
-// URL even when the URL points at a different Neon project (e.g.
-// production), and confirms the branch is the intended test branch.
+// branch of NEON_PROJECT_ID whose name equals EXPECTED_BRANCH_NAME
+// (default 'hrp_mp2_test'), AND that branch is NOT the project's
+// primary branch. This is the third boot guard (after the URL-side
+// endpoint-id check and the DB-side identity check). It is the most
+// authoritative because it queries Neon's control plane directly —
+// the only one that catches a misconfigured URL pointing at a
+// DIFFERENT Neon project entirely.
 //
-// Skipped when NEON_API_KEY or NEON_PROJECT_ID is unset (e.g. local
-// embedded-PG self-test).
+// When NEON_API_KEY or NEON_PROJECT_ID is unset (e.g. local embedded
+// PG self-test), the check is SKIPPED. This is acceptable for the
+// LOCAL SELF-TEST only. A real Stage 3 run on `hrp_mp2_test` MUST set
+// both env vars; if it does not, the operator must escalate to Tier 0
+// (the run is NOT a real Stage 3 PASS — see runbook decision matrix).
 {
   let cpRow;
   if (!NEON_API_KEY || !NEON_PROJECT_ID) {
-    cpRow = { kind: 'boot', test: 'neon-control-plane-branch-membership', pass: true, skipped: true, reason: 'NEON_API_KEY or NEON_PROJECT_ID not set; control-plane check skipped (local self-test or Tier-0-authorised offline run)' };
+    cpRow = {
+      kind: 'boot',
+      test: 'neon-control-plane-branch-membership',
+      pass: true, // local self-test: skipped counts as pass (no Neon reachable)
+      skipped: true,
+      skip_reason: 'NEON_API_KEY or NEON_PROJECT_ID not set; control-plane check skipped. THIS IS ONLY VALID FOR THE LOCAL EMBEDDED-PG SELF-TEST.',
+      stage3_real_pass: false, // explicit flag — false whenever skipped=true (regardless of `pass`)
+      n1_stage3_real: N1_STAGE3_REAL, // visible in NDJSON for audit
+      reason: 'NEON_API_KEY or NEON_PROJECT_ID not set; control-plane check skipped (local self-test or Tier-0-authorised offline run)'
+    };
   } else {
     // Fetch all branches and find which one owns each endpoint-id.
     const branchesResp = await neonFetch(`/projects/${NEON_PROJECT_ID}/branches?limit=200`);
@@ -268,6 +307,9 @@ row({ kind: 'boot', test: 'db-identity-same-branch', pass: sameBranch, admin_db:
       kind: 'boot',
       test: 'neon-control-plane-branch-membership',
       pass: ok,
+      skipped: false,
+      stage3_real_pass: ok, // on a real run, pass === ok
+      n1_stage3_real: N1_STAGE3_REAL,
       admin_endpoint_id: ADMIN_EP,
       writer_endpoint_id: WRITER_EP,
       admin_branch_id: adminBranch?.id || null,
@@ -279,7 +321,7 @@ row({ kind: 'boot', test: 'db-identity-same-branch', pass: sameBranch, admin_db:
       branch_name_match: branchNameMatch,
       expected_branch_name: EXPECTED_BRANCH_NAME,
       primary_branch_id: primary?.id || null,
-      comment: `Both endpoint-ids must belong to the SAME branch of the test project, AND that branch's name must equal EXPECTED_BRANCH_NAME="${EXPECTED_BRANCH_NAME}" (case-insensitive), AND that branch must NOT be the project's primary branch. On a misconfigured URL, this refuses BEFORE any DB queries run. Override EXPECTED_BRANCH_NAME only when Tier 0 authorises running against a differently-named test branch.`
+      comment: `Both endpoint-ids must belong to the SAME branch of the test project, AND that branch's name must equal EXPECTED_BRANCH_NAME="${EXPECTED_BRANCH_NAME}" (case-insensitive), AND that branch must NOT be the project's primary branch. This runs BEFORE any DB write query (the operator must set NEON_API_KEY + NEON_PROJECT_ID via the secure channel on a real hrp_mp2_test run). Override EXPECTED_BRANCH_NAME only when Tier 0 authorises running against a differently-named test branch.`
     };
     if (!ok) {
       console.error('REFUSED by Neon control-plane check: ' + JSON.stringify(cpRow));
@@ -296,6 +338,40 @@ row({ kind: 'boot', test: 'db-identity-same-branch', pass: sameBranch, admin_db:
 // On abnormal exit it carries the exact list for operator cleanup.
 // operator MUST use this exact list — NEVER LIKE 'n1%' (test branch
 // may have legitimate rows whose IDs match that prefix).
+//
+// Audit fix 2026-09-12 22:00 — every ID we push into idsCreatedThisRun
+// is also written to STDERR as `n1-trace: created <id>` (and every
+// successfully deleted ID as `n1-trace: deleted <id>`). This is a
+// belt-and-braces recovery channel: even if the NDJSON file is lost
+// or truncated, the operator can diff created vs deleted in the
+// stderr stream to recover the exact uncleaned set. Both NDJSON and
+// stderr carry the SAME logical trace; neither is authoritative alone.
+function traceCreated(id) {
+  try { process.stderr.write('n1-trace: created ' + id + '\n'); } catch {}
+}
+function traceDeleted(id) {
+  try { process.stderr.write('n1-trace: deleted ' + id + '\n'); } catch {}
+}
+function trackCreated(...ids) {
+  for (const id of ids) {
+    if (typeof id !== 'string' || !id) continue;
+    if (!idsCreatedThisRun.includes(id)) {
+      idsCreatedThisRun.push(id);
+      traceCreated(id);
+    }
+  }
+}
+function trackDeleted(id) {
+  if (typeof id !== 'string' || !id) return false;
+  const i = idsCreatedThisRun.indexOf(id);
+  if (i >= 0) {
+    idsCreatedThisRun.splice(i, 1);
+    traceDeleted(id);
+    return true;
+  }
+  return false;
+}
+
 function emitCleanupNeeded() {
   // Idempotent: avoid double-emit if both finally and the success path run.
   if (RESULT.find(r => r.kind === 'cleanup-needed')) return;
@@ -353,7 +429,7 @@ try {
       'insert-labor-profile');
     laborInserted = ins.ok;
     row({ kind: 'seed', test: 'labor_profile-insert', pass: laborInserted, sqlstate: ins.sqlstate, message: !ins.ok ? ins.message : null });
-    if (ins.ok) idsCreatedThisRun.push(laborId); // track for cleanup on abnormal exit
+    if (ins.ok) trackCreated(laborId); // track for cleanup on abnormal exit
   }
 
   // ============================================================
@@ -401,7 +477,7 @@ try {
           "INSERT INTO placement_case (id, labor_profile_id, status, opened_at, created_at, updated_at) VALUES ($1, $2, 'OPEN', now(), now(), now()) RETURNING id",
           [caseA, laborId]);
         c1InsertState = '00000';
-        idsCreatedThisRun.push(caseA);
+        trackCreated(caseA);
       } catch (e) {
         c1InsertState = e.code || 'EXCEPTION';
         c1InsertMsg = (e.message || '').slice(0, 200);
@@ -496,7 +572,7 @@ try {
       "INSERT INTO placement_case (id, labor_profile_id, status, opened_at, created_at, updated_at) VALUES ($1, $2, 'OPEN', now(), now(), now()) RETURNING id, status",
       [caseC, laborId], 't2-reopen');
     row({ kind: 't2', test: 't2-reopen-after-closed', pass: reopen.ok && reopen.rows?.[0]?.status === 'OPEN', sqlstate: reopen.sqlstate, status: reopen.rows?.[0]?.status });
-    if (reopen.ok) idsCreatedThisRun.push(caseC);
+    if (reopen.ok) trackCreated(caseC);
   } else {
     row({ kind: 't2', test: 't2-skipped-no-labor-fixture', pass: false });
   }
@@ -517,7 +593,7 @@ try {
        VALUES ($1, $2, $3, $4, $5, 'NEW') RETURNING id`,
       [subId, caseC, 'N1 Probe Applicant', phone, normPhone], 't3-insert-submission');
     row({ kind: 't3', test: 't3-insert-submission-linked-to-case', pass: insSub.ok, sqlstate: insSub.sqlstate, message: !insSub.ok ? insSub.message : null });
-    if (insSub.ok) idsCreatedThisRun.push(subId);
+    if (insSub.ok) trackCreated(subId);
 
     const delCase = await pgCall(admin,
       "DELETE FROM placement_case WHERE id=$1", [caseC], 't3-delete-parent-case');
@@ -529,17 +605,21 @@ try {
     // test branch may legitimately carry rows whose IDs match 'n1%'
     // (created by an earlier probe run that didn't clean up). We touch
     // ONLY the IDs this run created.
-    await pgCall(admin, "DELETE FROM candidate_submissions WHERE id=$1", [subId], 't3-cleanup-sub');
-    await pgCall(admin, "DELETE FROM placement_case WHERE id IN ($1,$2,$3)", [caseA, caseB, caseC], 't3-cleanup-cases');
-    // Remove from tracking array so we don't include them in the
-    // cleanup-needed row at the end (they were successfully deleted).
-    for (const id of [subId, caseA, caseB, caseC]) {
-      const i = idsCreatedThisRun.indexOf(id);
-      if (i >= 0) idsCreatedThisRun.splice(i, 1);
+    //
+    // Audit fix 2026-09-12 22:00 — DELETE success is verified via the
+    // returned rowCount AND a follow-up SELECT count(*) before removing
+    // an ID from idsCreatedThisRun. If the DELETE failed silently (e.g.
+    // a concurrent transaction held the row), the ID stays in the
+    // cleanup-needed list so the operator can retry via IN-list.
+    const t3SubDel = await pgCall(admin, "DELETE FROM candidate_submissions WHERE id=$1 RETURNING id", [subId], 't3-cleanup-sub');
+    const t3CasesDel = await pgCall(admin, "DELETE FROM placement_case WHERE id IN ($1,$2,$3) RETURNING id", [caseA, caseB, caseC], 't3-cleanup-cases');
+    if (t3SubDel.ok && t3SubDel.rowCount > 0) trackDeleted(subId);
+    const deletedCaseIds = new Set((t3CasesDel.rows || []).map(r => r.id));
+    for (const id of [caseA, caseB, caseC]) {
+      if (deletedCaseIds.has(id)) trackDeleted(id);
     }
-    await pgCall(admin, "DELETE FROM labor_profiles WHERE id=$1", [laborId], 't3-cleanup-labor');
-    const lpi = idsCreatedThisRun.indexOf(laborId);
-    if (lpi >= 0) idsCreatedThisRun.splice(lpi, 1);
+    const t3LaborDel = await pgCall(admin, "DELETE FROM labor_profiles WHERE id=$1 RETURNING id", [laborId], 't3-cleanup-labor');
+    if (t3LaborDel.ok && t3LaborDel.rowCount > 0) trackDeleted(laborId);
   } else {
     row({ kind: 't3', test: 't3-skipped-no-candidates-or-labor', pass: false });
   }
@@ -570,7 +650,7 @@ try {
     setupOk = s1.ok && s2.ok;
     row({ kind: 't4', test: 't4-setup-committed-active-case', pass: setupOk, sqlstate: s2.sqlstate, message: !s2.ok ? s2.message : null });
     if (setupOk) {
-      idsCreatedThisRun.push(setupId, setupCase);
+      trackCreated(setupId, setupCase);
     }
   }
 
@@ -603,13 +683,15 @@ try {
   }
 
   // Cleanup the seeded case + labor (exact run-scoped IDs only — no LIKE).
+  // Audit fix 2026-09-12 22:00 — only remove IDs from idsCreatedThisRun
+  // if the DELETE RETURNING actually returned the row. A silent failure
+  // (e.g. concurrent tx holding the row, FK still referencing the
+  // placement_case) keeps the ID in cleanup-needed for operator retry.
   if (setupOk) {
-    await pgCall(admin, "DELETE FROM placement_case WHERE id=$1", [setupCase], 't4-cleanup-case');
-    await pgCall(admin, "DELETE FROM labor_profiles WHERE id=$1", [setupId], 't4-cleanup-labor');
-    for (const id of [setupCase, setupId]) {
-      const i = idsCreatedThisRun.indexOf(id);
-      if (i >= 0) idsCreatedThisRun.splice(i, 1);
-    }
+    const t4CaseDel = await pgCall(admin, "DELETE FROM placement_case WHERE id=$1 RETURNING id", [setupCase], 't4-cleanup-case');
+    if (t4CaseDel.ok && t4CaseDel.rowCount > 0) trackDeleted(setupCase);
+    const t4LaborDel = await pgCall(admin, "DELETE FROM labor_profiles WHERE id=$1 RETURNING id", [setupId], 't4-cleanup-labor');
+    if (t4LaborDel.ok && t4LaborDel.rowCount > 0) trackDeleted(setupId);
   }
 
   // Final cleanup-needed row: emitted in finally{} below so it ALWAYS
@@ -617,9 +699,47 @@ try {
   // above (right before this try block).
   emitCleanupNeeded();
 
-  const summary = { kind: 'summary', total: RESULT.length, passed, failed, abnormal_exit: abnormalExit, abnormal_reason: abnormalReason, comment: 'abnormal_exit=true means the probe exited before reaching the success-path cleanup; the cleanup-needed row above lists the exact IDs that need manual cleanup via IN-list (NOT LIKE pattern)' };
+  // Semantic (audit fix 2026-09-12 22:30):
+  //   stage3_real_pass is the COMMIT-time answer to the question
+  //   "did every assertion that must hold on a real hrp_mp2_test run
+  //   actually hold?". The probe computes it as:
+  //     - passed === RESULT.length   (every emitted row passed)
+  //   AND
+  //     - !anyRealFail                (no row has stage3_real_pass=false)
+  //   The second clause exists because some rows carry an explicit
+  //   `stage3_real_pass` flag (currently only
+  //   `neon-control-plane-branch-membership`). When the check is
+  //   SKIPPED on a real run, that row reports `pass: true` (so the
+  //   `passed` counter is still 28/28) BUT `stage3_real_pass: false`
+  //   (because the check did not actually run). The summary's
+  //   `stage3_real_pass=false` then FAILS the gate — exit code != 0.
+  //   On a real hrp_mp2_test run, when both NEON_API_KEY and
+  //   NEON_PROJECT_ID are set, the row reports `stage3_real_pass: true`
+  //   so the gate passes. The LOCAL self-test still has
+  //   `stage3_real_pass=false` in its summary — that is BY DESIGN,
+  //   the run is a self-test, not a Stage 3 PASS. The Tier-0-stated
+  //   semantic: "local self-test có thể PASS, nhưng stage3_real_pass
+  //   phải false khi check bị skip; Stage 3 thật phải fail closed".
+  //   To require FAIL-CLOSED on a real run even when the control-
+  //   plane env is missing, set N1_STAGE3_REAL=true in the env — the
+  //   probe then refuses with exit code 71 BEFORE any DB write.
+  const N1_STAGE3_REAL = (process.env.N1_STAGE3_REAL || '').toLowerCase() === 'true';
+  const anyRealFail    = RESULT.some(r => r.stage3_real_pass === false);
+  const stage3_real_pass = (passed === RESULT.length) && !anyRealFail;
+  const summary = {
+    kind: 'summary',
+    total: RESULT.length,
+    passed,
+    failed,
+    abnormal_exit: abnormalExit,
+    abnormal_reason: abnormalReason,
+    stage3_real_pass,
+    n1_stage3_real: N1_STAGE3_REAL,
+    any_real_fail: anyRealFail,
+    comment: 'stage3_real_pass=false when (a) any assertion failed, OR (b) any emitted row has stage3_real_pass=false (currently only the neon-control-plane-branch-membership boot row carries that flag, and it reports false whenever skipped=true). On the LOCAL self-test, stage3_real_pass is reported as false EVEN WHEN all 28 rows pass — that is by design and signals the run is a self-test, NOT a real Stage 3 PASS. On a real hrp_mp2_test run, the operator sets N1_STAGE3_REAL=true; the probe then refuses with exit code 71 if NEON_API_KEY/NEON_PROJECT_ID are missing (fail-closed).'
+  };
   console.log(JSON.stringify(summary));
-  process.exitCode = failed === 0 ? 0 : 1;
+  process.exitCode = (failed === 0 && stage3_real_pass) ? 0 : 1;
 } catch (probeErr) {
   // An unhandled error escaped the per-step try/catch blocks (e.g. a
   // throw inside T1/T2/T3/T4). Mark abnormal-exit and emit the
@@ -627,7 +747,16 @@ try {
   abnormalExit = true;
   abnormalReason = 'uncaught:' + (probeErr?.message || String(probeErr)).slice(0, 200);
   try { emitCleanupNeeded(); } catch {}
-  const summary = { kind: 'summary', total: RESULT.length, passed, failed, abnormal_exit: abnormalExit, abnormal_reason: abnormalReason, comment: 'uncaught exception escaped probe body; cleanup-needed row lists exact IDs to delete via IN-list (NOT LIKE pattern). Do NOT auto-resolve migrations.' };
+  const N1_STAGE3_REAL = (process.env.N1_STAGE3_REAL || '').toLowerCase() === 'true';
+  const anyRealFail = RESULT.some(r => r.stage3_real_pass === false);
+  const stage3_real_pass = (passed === RESULT.length) && !anyRealFail;
+  const summary = {
+    kind: 'summary',
+    total: RESULT.length, passed, failed,
+    abnormal_exit: abnormalExit, abnormal_reason: abnormalReason,
+    stage3_real_pass, n1_stage3_real: N1_STAGE3_REAL, any_real_fail: anyRealFail,
+    comment: 'uncaught exception escaped probe body; cleanup-needed row lists exact IDs to delete via IN-list (NOT LIKE pattern). Do NOT auto-resolve migrations.'
+  };
   console.log(JSON.stringify(summary));
   process.exitCode = 1;
 } finally {

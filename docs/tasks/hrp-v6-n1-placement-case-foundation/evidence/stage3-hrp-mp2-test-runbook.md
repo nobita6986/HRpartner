@@ -144,6 +144,57 @@ only when Tier 0 authorises running against a differently-named test branch.
 
 ---
 
+## STEP 1.5 — Neon control-plane branch gate (operator, mandatory on real `hrp_mp2_test` runs)
+
+> **Audit fix 2026-09-12 22:30 (Tier-0-block round 3)** — the URL/DB-side
+> checks above catch most misconfigurations, but a URL misconfigured to
+> point at a DIFFERENT Neon project entirely (e.g. another team's
+> sandbox project) would slip through. STEP 1.5 calls Neon's control
+> plane API directly to confirm BOTH endpoint-ids resolve to the SAME
+> branch of `NEON_PROJECT_ID` AND that branch's name is `hrp_mp2_test`.
+> This runs **BEFORE STEP 2 / STEP 3** and FAIL-CLOSED — any non-zero
+> exit code stops the run.
+
+The gate script lives at
+`docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/neon_branch_gate.ps1`
+(Git-tracked; review it before use). It exits:
+
+- `0` → both endpoint-ids map to the SAME non-primary branch of
+  `NEON_PROJECT_ID` whose `name` equals `NEON_EXPECTED_BRANCH_NAME`
+  (default `hrp_mp2_test`). Proceed to STEP 2.
+- `10` → `NEON_API_KEY` or `NEON_PROJECT_ID` not set. On a real
+  `hrp_mp2_test` run this is HARD STOP. Request Tier 0 to supply
+  credentials via the secure channel and re-run STEP 1.5.
+- `11` → HTTP error against Neon API.
+- `12` → endpoint-id not found in any branch of `NEON_PROJECT_ID`
+  (URL points at a different Neon project entirely).
+- `13` → endpoint-ids map to DIFFERENT branches.
+- `14` → branch is the project's primary branch (PROD guard).
+- `15` → branch name ≠ `NEON_EXPECTED_BRANCH_NAME`.
+
+```powershell
+$env:TEST_DATABASE_URL_ADMIN  = $env:TEST_DATABASE_URL_ADMIN
+$env:TEST_DATABASE_URL_WRITER = $env:TEST_DATABASE_URL_WRITER
+$env:NEON_API_KEY             = $env:NEON_API_KEY    # set in secure channel
+$env:NEON_PROJECT_ID          = $env:NEON_PROJECT_ID # id of the test project (not prod)
+
+& 'docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/neon_branch_gate.ps1'
+if ($LASTEXITCODE -ne 0) {
+  throw "Neon control-plane branch gate FAILED (exit $LASTEXITCODE). STOP — DO NOT proceed to STEP 2 (migrate status) or STEP 3 (migrate deploy). Escalate to Tier 0 with the gate verdict JSON."
+}
+Write-Host "STEP 1.5 PASS — branch membership confirmed before migrate status/deploy."
+```
+
+> **Why this is mandatory**: the probe.mjs control-plane check at STEP 4
+> is a belt-and-braces check, NOT the primary gate. Without STEP 1.5,
+> the only thing guarding the operator from running `prisma migrate
+> deploy` on a misconfigured URL is the probe's row emission, which is
+> AFTER `migrate deploy`. STEP 1.5 is the gate that must close BEFORE
+> any DB write to the test branch. The probe's row in NDJSON is then
+> double-evidence (it should match what STEP 1.5 already confirmed).
+
+---
+
 ## STEP 2 — `migrate status` + raw `_prisma_migrations` audit (operator, READ-ONLY)
 
 ```powershell
@@ -215,29 +266,67 @@ on Tier 0 authorising the resolution path.
 # run with stale shell state).
 $env:TEST_DATABASE_URL_ADMIN  = $env:TEST_DATABASE_URL_ADMIN
 $env:TEST_DATABASE_URL_WRITER = $env:TEST_DATABASE_URL_WRITER
-# Optional: control-plane evidence (only set if Tier 0 supplied a key):
+# Control-plane evidence (set by Tier 0 via the secure channel on every
+# real hrp_mp2_test run). STEP 1.5 already verified branch membership;
+# these same values feed the probe-side belt-and-braces check.
 $env:NEON_API_KEY    = $env:NEON_API_KEY    # set in secure channel
 $env:NEON_PROJECT_ID = $env:NEON_PROJECT_ID # id of the test project (not prod)
+# Real-run flag — probe refuses with exit 71 if NEON_API_KEY/PROJECT_ID
+# are missing on a real hrp_mp2_test run. On the local self-test this is
+# unset (and the probe reports `stage3_real_pass=false` in summary,
+# signalling it's a self-test, NOT a real Stage 3 PASS).
+$env:N1_STAGE3_REAL = 'true'
 
-node docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/probe.mjs > run-$(Get-Date -Format 'yyyyMMdd-HHmmss').ndjson
+# Run via the Node wrapper that captures stdout AND stderr to two
+# SEPARATE files via raw bytes (no PowerShell `>` wrap; no `2>` loss).
+# `node docs/.../probe.mjs > run.ndjson` ALONE WOULD DROP the
+# `n1-trace: created/deleted` lines and risk long-line wrapping.
+$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+node "docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/probe.mjs" `
+     1> "run-$stamp.ndjson" `
+     2> "run-$stamp-stderr.log"
 $probeExit = $LASTEXITCODE
 ```
 
+> **Audit fix 2026-09-12 22:30** — when running via PowerShell `1>` /
+> `2>` redirection, PowerShell does not wrap lines on Console Host as
+> long as the host width is large enough; however, on older hosts it
+> may. **NEVER pipe NDJSON through `Out-File` or any cmdlet that takes
+> `-Encoding utf8`** (those wrap at host width and break per-line
+> parse). The STEP 5b helper below uses `[System.IO.File]::ReadAllText`
+> + `ConvertFrom-Json` line-by-line and refuses to commit if any line
+> is unparseable.
+
 Expected: NDJSON rows including a `boot db-identity-same-branch` PASS,
-`boot neon-control-plane-branch-membership` PASS (or skipped=true with
-`NEON_API_KEY` unset), T1 PASS with `c2_blocked_while_a_open: true`
-(the test is **truly concurrent** — B starts INSERT while A is still
-OPEN; the partial unique index blocks B on A's row lock until A commits,
-then B resolves 23505), T2 PASS, T3 PASS, T4 PASS, `cleanup-needed`
-PASS (n_ids=0 on the success path), and a `summary` row with
-`passed=28, failed=0`. `$probeExit = 0`.
+`boot neon-control-plane-branch-membership` PASS (or `skipped=true` with
+`NEON_API_KEY` unset AND `N1_STAGE3_REAL` ≠ `true`), T1 PASS with
+`c2_blocked_while_a_open: true` (the test is **truly concurrent** — B
+starts INSERT while A is still OPEN; the partial unique index blocks B on
+A's row lock until A commits, then B resolves 23505), T2 PASS, T3 PASS,
+T4 PASS, `cleanup-needed` PASS (n_ids=0 on the success path), and a
+`summary` row with `passed=28, failed=0`, `stage3_real_pass` reflecting
+the run mode (see below).
+
+> **Gate values on real `hrp_mp2_test` runs vs the local self-test**
+> (audit fix 2026-09-12 22:30):
+>
+> | Run mode      | `N1_STAGE3_REAL` | control-plane row | `summary.stage3_real_pass` | probe exit |
+> | ------------- | ---------------- | ----------------- | -------------------------- | ---------- |
+> | Local self-test (no Neon creds) | unset / `local` | `pass:true, skipped:true, stage3_real_pass:false` | **`false`** (by design — this is a self-test, not a Stage 3 PASS) | 1 (gate fail — operator reads NDJSON; for the local embedded-PG self-test run, exit 1 is the EXPECTED outcome signalling "you cannot claim Stage 3 PASS from this run"). |
+> | Real `hrp_mp2_test` with NEON creds | `true` | `pass:true, skipped:false, stage3_real_pass:true` | **`true`** | 0 |
+> | Real `hrp_mp2_test` WITHOUT NEON creds (operator forgot) | `true` | probe refuses exit 71 BEFORE any DB write | n/a — probe never emits rows | 71 |
+>
+> **A `passed=28, failed=0` summary with `stage3_real_pass=false` is
+> expected on the local self-test. It is NOT a real Stage 3 PASS. The
+> operator MUST consume both NDJSON evidence AND step-1.5 gate verdict
+> before claiming Stage 3 PASS.**
 
 > Test counts: prior self-test (audit-fix commits) shipped 26 rows; the
-> most recent self-test (this audit fix) ships **28 rows** because the
-> `cleanup-needed` row and the `neon-control-plane-branch-membership` boot
-> row added 2 new tests on top of the 26 pre-existing ones. **All gate
-> checks refer to 28/28, not 25/25 or 26/26** — earlier references in
-> earlier runs are obsolete.
+> most recent self-test ships **28 rows** because the `cleanup-needed`
+> row and the `neon-control-plane-branch-membership` boot row added 2
+> new tests on top of the 26 pre-existing ones. **All gate checks refer
+> to 28/28, not 25/25 or 26/26** — earlier references in earlier runs
+> are obsolete.
 
 **Important about cleanup**: the probe does NOT promise to leave the test DB in its starting state.
 The cleanup blocks at T3 and T4 only run on the success path. If the probe aborts mid-script
@@ -266,31 +355,23 @@ operator's post-run `psql` verification.
 
 **How operator finds exact IDs after abnormal exit**: the probe pushes each row it creates
 into `idsCreatedThisRun` BEFORE attempting the INSERT (and pops it only after a successful
-DELETE). It then emits a `cleanup-needed` NDJSON row with the exact remaining list in the
-`ids` array — and that row is emitted in a `finally{}` block AND in a `catch{}` block,
-so it is written even if the probe aborts mid-script (uncaught exception, `process.exit(...)`
-between T1 and the success-path cleanup). The `summary` row records `abnormal_exit: true`
-and `abnormal_reason: <reason>` when the probe exited abnormally; in that state the operator
+`DELETE ... RETURNING id` confirms the row was actually removed — audit fix 2026-09-12 22:00).
+It then emits a `cleanup-needed` NDJSON row with the exact remaining list in the `ids` array
+— and that row is emitted in a `finally{}` block AND in a `catch{}` block, so it is written
+even if the probe aborts mid-script (uncaught exception, `process.exit(...)` between T1 and
+the success-path cleanup). The `summary` row records `abnormal_exit: true` and
+`abnormal_reason: <reason>` when the probe exited abnormally; in that state the operator
 MUST consult the `cleanup-needed.ids` array (NOT LIKE patterns) and run the IN-list DELETEs
-above. If for any reason the NDJSON file itself is missing or corrupted (e.g. shell
-truncation, disk full), operator MUST query by run-id range from the recent probe log:
+above.
 
-```sql
--- Last-resort fallback: query for candidate IDs from the most recent
--- run via the run-id timestamp suffix ('n1p3-<base36ts>-<rand6>') that
--- the probe stamps into every seeded ID. The suffix is unique per run;
--- copy the prefix from any row the operator knows was created by the
--- failing run (e.g. via Vercel/Neon DB query history).
-SELECT id FROM candidate_submissions WHERE id LIKE 'n1sub-n1p3-%' AND created_at > now() - interval '1 hour';
-SELECT id FROM placement_case       WHERE id LIKE 'n1c_n1p3-%'  AND created_at > now() - interval '1 hour';
-SELECT id FROM placement_case       WHERE id LIKE 'n1cA-n1p3-%' AND created_at > now() - interval '1 hour';
-SELECT id FROM placement_case       WHERE id LIKE 'n1cB-n1p3-%' AND created_at > now() - interval '1 hour';
-SELECT id FROM placement_case       WHERE id LIKE 'n1cC-n1p3-%' AND created_at > now() - interval '1 hour';
-SELECT id FROM labor_profiles       WHERE id LIKE 'n1lp-n1p3-%' AND created_at > now() - interval '1 hour';
-```
-(These LIKE patterns are time-bounded AND prefix-bounded to the run's
-timestamp suffix, so they still target ONLY this run's rows — never
-LIKE `'n1%'` against the whole branch.)
+**As a belt-and-braces measure against NDJSON loss**: the probe ALSO emits every ID it
+creates (and every ID it successfully deletes) to **stderr** as one-line records of the form
+`n1-trace: created <id>` and `n1-trace: deleted <id>`. The stderr stream is interleaved
+with the stdout NDJSON by the shell, so even if the NDJSON file is truncated or the disk
+fills up, the operator can recover the exact list of uncleaned IDs by diffing the stderr
+`created` records against the `deleted` records. **No LIKE patterns, no time ranges, no
+prefix matches anywhere.** This is the LAST-RESORT recovery path when both NDJSON and
+operator memory are unavailable.
 
 Decision matrix:
 
@@ -313,55 +394,189 @@ Decision matrix:
 
 ### 5a — gate on probe exit code AND summary line BEFORE touching the file
 
-```powershell
-if ($probeExit -ne 0) {
-  throw "Probe exited non-zero ($probeExit). Do NOT commit. Escalate to Tier 0 (Stage 3 NOT PASS)."
-}
-
-# Require the summary line to be {"kind":"summary","total":28,"passed":28,"failed":0}.
-$summaryLine = Select-String -Path run-YYYYMMDD-HHMMSS.ndjson -Pattern '"kind"\s*:\s*"summary"' -List
-if (-not $summaryLine) {
-  throw "No summary line found in NDJSON. Probe may have crashed before summary. Do NOT commit."
-}
-if ($summaryLine.Line -notmatch '"total":\s*28' -or
-    $summaryLine.Line -notmatch '"passed":\s*28' -or
-    $summaryLine.Line -notmatch '"failed":\s*0') {
-  throw "Summary line does not match 28/28 PASS. Line was: $($summaryLine.Line). Do NOT commit."
-}
-
-# Sanity: cleanup-needed row must show n_ids=0 (all run-scoped rows cleaned up).
-$cleanupLine = Select-String -Path run-YYYYMMDD-HHMMSS.ndjson -Pattern '"kind"\s*:\s*"cleanup-needed"' -List
-if (-not $cleanupLine -or $cleanupLine.Line -notmatch '"n_ids":\s*0') {
-  throw "cleanup-needed row is missing or has uncleaned IDs. The probe did not clean up after itself. Line was: $($cleanupLine.Line). Do NOT commit."
-}
-
-Write-Host "Gate OK: probe exit 0 + summary 28/28 + cleanup-needed n_ids=0. Proceeding to sanitise."
-```
-
-### 5b — sanitise (probe never prints cleartext credentials, but operator wrapper commands could)
-
-> **CORRECTED** — the old `Select-String -SimpleMatch …` made the regex literal-string
-> match, so `(password|secret|token|postgresql://...)` was searched as ONE literal string
-> and never matched anything. Drop `-SimpleMatch` so regex semantics apply.
+> **Audit fix 2026-09-12 22:30 (Tier-0-block round 3)** — the gate now
+> enforces `stage3_real_pass=true` semantics. A local self-test run
+> (where `NEON_API_KEY` is unset) MUST show `stage3_real_pass=false` —
+> that is the EXPECTED outcome, signalling the run is a self-test, NOT
+> a real Stage 3 PASS. This gate is therefore TWO-MODE:
+>
+>   1. **Real `hrp_mp2_test` run**: `N1_STAGE3_REAL=true` (set in STEP 4).
+>      Probe MUST emit `summary.stage3_real_pass=true`. Exit code MUST be 0.
+>      If either is false → STOP, escalate to Tier 0.
+>   2. **Local self-test run** (embedded PG, no `NEON_API_KEY`):
+>      `N1_STAGE3_REAL` is unset. Probe emits `summary.stage3_real_pass=false`
+>      by design (check was skipped). Exit code is 1.
+>      The operator RUNS this gate in self-test mode to confirm the
+>      28-row contract holds, sanity-checks DB cleanliness, and saves
+>      the NDJSON. This is NOT a Stage 3 PASS — the claim requires the
+>      real run mode above.
 
 ```powershell
-# Keep only the JSON lines (probe sometimes prints console.error REFUSED lines we want to skip).
-Select-String -Path run-YYYYMMDD-HHMMSS.ndjson -Pattern '^\{'
-  | ForEach-Object { $_.Line }
-  | Out-File docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-hrp-mp2-test-ndjson-clean.txt -Encoding utf8
+$runMode = if ($env:N1_STAGE3_REAL -eq 'true') { 'real' } else { 'self-test' }
+Write-Host "STEP 5a gate run-mode: $runMode (N1_STAGE3_REAL='$env:N1_STAGE3_REAL')"
 
-# Sanity: confirm no credential-like string in the cleaned file.
-# -SimpleMatch is INTENTIONALLY OMITTED: regex semantics are required.
-$hits = Select-String -Path docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-hrp-mp2-test-ndjson-clean.txt -Pattern '(?i)(password|secret|token|postgresql://[^"]+@)'
-if ($hits) {
-  throw "Credential-like string leaked into evidence file: $($hits | Out-String). Stop. Redact manually before retrying."
+if ($runMode -eq 'real') {
+  # Real run — require probe exit 0 AND stage3_real_pass=true AND summary 28/28.
+  if ($probeExit -ne 0) {
+    throw "REAL RUN: probe exited $probeExit (expected 0). DO NOT commit. Stage 3 NOT PASS."
+  }
+  $jsonLines = Get-Content run-YYYYMMDD-HHMMSS.ndjson | Where-Object { $_ -match '^\{' }
+  $summaryLine = $jsonLines | Where-Object { $_ -match '"kind":"summary"' } | Select-Object -First 1
+  if (-not $summaryLine) { throw "REAL RUN: no summary line found. DO NOT commit." }
+  $summary = $summaryLine | ConvertFrom-Json
+  if ($summary.total -ne 28 -or $summary.passed -ne 28 -or $summary.failed -ne 0) {
+    throw "REAL RUN: summary not 28/28 (total=$($summary.total) passed=$($summary.passed) failed=$($summary.failed)). DO NOT commit."
+  }
+  if (-not ($summary.PSObject.Properties.Name -contains 'stage3_real_pass')) {
+    throw "REAL RUN: summary missing stage3_real_pass field. DO NOT commit. Probe contract drift; investigate."
+  }
+  # Audit fix 2026-09-12 23:30 (Tier-0-block round 7): the previous
+  # guard was `-or $summary.stage3_real_pass`, which threw when the
+  # value was TRUE — i.e. it REJECTED the real-pass case and silently
+  # let the false-case through. The correct semantics for a real run
+  # is "accept only when the field exists AND equals exactly the
+  # boolean true". A naive `$x -eq $true` is NOT strict enough — in
+  # PowerShell the string "true" compares equal to the boolean $true
+  # (verified empirically with `probe-bool.ps1`). The robust check is
+  # to require the value to be the boolean TYPE first, then verify
+  # equality with $true. Anything else (missing, $null, $false, the
+  # string "true", a number 1) refuses.
+  $srp = $summary.stage3_real_pass
+  if (($srp -isnot [bool]) -or (-not $srp)) {
+    throw "REAL RUN: summary.stage3_real_pass is not the boolean true (got type=$($srp.GetType().Name) value='$srp'). DO NOT commit. Escalate to Tier 0."
+  }
+  Write-Host "REAL RUN gate OK: exit 0, summary 28/28, stage3_real_pass=true."
+} else {
+  # Self-test — require probe emit 28 NON-SUMMARY rows AND the summary
+  # show stage3_real_pass=false (by design on local embedded PG with no
+  # Neon creds). Exit code will be 1; that is EXPECTED.
+  #
+  # Audit fix 2026-09-12 22:45 (Tier-0-block round 5): the previous
+  # formula `$lines.Count -ne 28` was wrong. The NDJSON file actually
+  # carries **30 JSON lines**:
+  #   - 1 URL-side boot log (no `test` field, has `kind:'boot'` only)
+  #   - 28 row() outputs (test rows + db-identity + control-plane +
+  #     cleanup-needed)
+  #   - 1 summary row (`kind:'summary'`)
+  # The summary's own `total` field is the AUTHORITATIVE row count.
+  # We therefore:
+  #   (a) parse the summary row and require `summary.total == 28`
+  #   (b) require 29 non-summary JSON lines (URL-side boot + 28 rows)
+  #   (c) require the summary to show stage3_real_pass=false
+  $jsonLines = Get-Content run-YYYYMMDD-HHMMSS.ndjson | Where-Object { $_ -match '^\{' }
+  $summaryLine = $jsonLines | Where-Object { $_ -match '"kind":"summary"' } | Select-Object -First 1
+  if (-not $summaryLine) {
+    throw "SELF-TEST gate FAILED: no summary row in NDJSON. DO NOT commit. Probe may have crashed before summary."
+  }
+  $summary = $summaryLine | ConvertFrom-Json
+  # (a) summary.total must be 28 — this is the AUTHORITATIVE count from
+  # the probe itself. Anything else means the probe emitted a different
+  # number of row() calls, which means probe-side contract changed.
+  if ($summary.total -ne 28) {
+    throw "SELF-TEST gate FAILED: summary.total=$($summary.total), expected 28. DO NOT commit. Probe contract drift; investigate."
+  }
+  # (b) file must contain 29 non-summary JSON lines (URL-side boot + 28 rows).
+  # Anything else means either a boot log was dropped or extra rows leaked.
+  $nonSummary = $jsonLines | Where-Object { $_ -notmatch '"kind":"summary"' }
+  $urlSideBoots = $nonSummary | Where-Object { ($_ -match '"kind":"boot"') -and ($_ -notmatch '"test":') }
+  $dataRows     = $nonSummary | Where-Object { $_ -notmatch ('"kind":"boot"\s*\}\s*$|"kind":"boot"\s*,\s*"ts":') -or ($_ -match '"test":') }
+  $expectedUrlSideBoots = 1
+  $expectedDataRows     = 28
+  if ($urlSideBoots.Count -ne $expectedUrlSideBoots) {
+    throw "SELF-TEST gate FAILED: expected $expectedUrlSideBoots URL-side boot log(s), got $($urlSideBoots.Count). DO NOT commit. Probe boot log may have been dropped or duplicated."
+  }
+  # Verify URL-side boot has the expected shape (kind:'boot' with no test,
+  # and contains `admin_fp` field).
+  $firstBoot = $urlSideBoots[0] | ConvertFrom-Json
+  if (-not $firstBoot.PSObject.Properties.Name -contains 'admin_fp') {
+    throw "SELF-TEST gate FAILED: URL-side boot log is malformed (no admin_fp field). DO NOT commit."
+  }
+  $dataRowCount = ($nonSummary | Where-Object { $urlSideBoots -notcontains $_ }).Count
+  if ($dataRowCount -ne $expectedDataRows) {
+    throw "SELF-TEST gate FAILED: expected $expectedDataRows data rows, got $dataRowCount. DO NOT commit."
+  }
+  # (c) summary must show stage3_real_pass=false on self-test (by design).
+  if (-not ($summary.PSObject.Properties.Name -contains 'stage3_real_pass')) {
+    throw "SELF-TEST gate FAILED: summary missing stage3_real_pass field. DO NOT commit. Probe contract drift."
+  }
+  if ($summary.stage3_real_pass) {
+    throw "SELF-TEST gate FAILED: expected summary.stage3_real_pass=false on self-test (it's a self-test, NOT a real Stage 3 PASS). DO NOT commit. The probe must report false whenever the control-plane check is skipped."
+  }
+  if ($summary.passed -ne 28 -or $summary.failed -ne 0) {
+    throw "SELF-TEST gate FAILED: not 28/28 PASS (passed=$($summary.passed) failed=$($summary.failed)). DO NOT commit."
+  }
+  Write-Host "SELF-TEST gate OK: summary.total=28, 28 data rows + 1 URL-side boot + 1 summary = 30 JSON lines, summary.stage3_real_pass=false. (This is a self-test, NOT a Stage 3 PASS — the real run above is what counts.)"
 }
 
-Write-Host "Sanitise OK: no credential-like strings in the cleaned NDJSON."
+# Common to both modes: cleanup-needed must show n_ids=0.
+$lines = Get-Content run-YYYYMMDD-HHMMSS.ndjson
+$cleanupLine = $lines | Where-Object { $_ -match '"kind":"cleanup-needed"' } | Select-Object -First 1
+if (-not $cleanupLine) {
+  throw "cleanup-needed row missing. DO NOT commit. Verify via the `run-*-stderr.log` trace (n1-trace: created vs deleted)."
+}
+$cleanup = $cleanupLine | ConvertFrom-Json
+if ($cleanup.n_ids -ne 0) {
+  throw "cleanup-needed has uncleaned IDs (n_ids=$($cleanup.n_ids), ids=[$($cleanup.ids -join ',')]). DO NOT commit. Operator must run the IN-list DELETEs from the cleanup comment BEFORE re-running."
+}
+
+Write-Host "Gate OK. Proceeding to sanitise."
 ```
 
-If `Select-String` returns any hits → STOP, redact, retry. (The probe does not print
-credentials, but operator-side commands that wrap it could.)
+### 5b — sanitise + commit evidence (raw bytes, no PowerShell line-wrapping)
+
+> **Audit fix 2026-09-12 22:45 (Tier-0-block round 4)** — the previous
+> STEP 5b reused the NDJSON helper for both stdout and stderr. The
+> NDJSON helper filtered with `if ($l[0] -eq '{')`, which silently
+> DROPS every `n1-trace:` line on stderr — Tier-0 caught the resulting
+> empty trace evidence file. The two channels are now separated:
+>
+> - `write_ndjson_evidence.ps1` (NDJSON helper): writes JSON-shaped
+>   records only, refuses if any `{`-line is unparseable, refuses if the
+>   file contains `n1-trace:` lines (channel-mix safety).
+> - `copy_stderr_trace.ps1` (stderr helper): writes `n1-trace:` lines
+>   only, refuses if zero trace lines are present (empty-trace safety),
+>   refuses if the file contains `{`-lines (channel-mix safety).
+>
+> Both helpers read the source via `[System.IO.File]::ReadAllText`
+> (UTF-8 no BOM, no console transformation), parse line-by-line with
+> try/catch, refuse on broken content, and write via
+> `[System.IO.File]::WriteAllText` (raw bytes, LF only). PowerShell
+> `Out-File` is NOT used anywhere in the evidence path.
+
+```powershell
+# 5b.1 — NDJSON evidence (stdout).
+& 'docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/write_ndjson_evidence.ps1' `
+    -Src 'run-YYYYMMDD-HHMMSS.ndjson' `
+    -Dst 'docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/embedded-pg18-ndjson-rerun-YYYY-MM-DD-HH-MM.txt'
+if ($LASTEXITCODE -ne 0) {
+  throw "NDJSON evidence write FAILED (exit $LASTEXITCODE). The NDJSON is broken OR the source contains trace lines — DO NOT commit. Inspect the helper output."
+}
+
+# 5b.2 — stderr trace evidence (n1-trace).
+& 'docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/copy_stderr_trace.ps1' `
+    -Src 'run-YYYYMMDD-HHMMSS-stderr.log' `
+    -Dst 'docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/embedded-pg18-stderr-rerun-YYYY-MM-DD-HH-MM.txt'
+if ($LASTEXITCODE -ne 0) {
+  throw "Stderr trace evidence write FAILED (exit $LASTEXITCODE). The stderr channel has no n1-trace lines OR the source contains JSON lines — DO NOT commit. Inspect the helper output."
+}
+
+# Sanity: confirm no credential-like string in NDJSON (regex semantics
+# required — do NOT add `-SimpleMatch`).
+$hits = Select-String -Path 'docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/embedded-pg18-ndjson-rerun-YYYY-MM-DD-HH-MM.txt' -Pattern '(?i)(password|secret|token|postgresql://[^"]+@)'
+if ($hits) { throw "Credential-like string leaked: $($hits | Out-String). DO NOT commit." }
+
+# Sanity: stderr trace must contain BOTH `created` and `deleted`
+# records. On the success path these are equal in count (parity). On
+# the failure path the difference is exactly the uncleaned set.
+$traceContent = Get-Content 'docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/embedded-pg18-stderr-rerun-YYYY-MM-DD-HH-MM.txt'
+$createdTrace = ($traceContent | Select-String -SimpleMatch 'n1-trace: created ').Count
+$deletedTrace = ($traceContent | Select-String -SimpleMatch 'n1-trace: deleted ').Count
+if ($createdTrace -eq 0 -or $deletedTrace -eq 0) {
+  throw "Stderr trace looks incomplete: created=$createdTrace deleted=$deletedTrace. Both should be >= 1 on any probe run that inserted + cleaned at least one row. DO NOT commit."
+}
+
+Write-Host "Sanitise OK: NDJSON parseable, stderr trace has created=$createdTrace / deleted=$deletedTrace (parity check), no credentials. Proceeding to commit."
+```
 
 Commit (Tier 1 author):
 
