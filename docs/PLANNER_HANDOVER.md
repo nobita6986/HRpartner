@@ -1,4 +1,4 @@
-﻿# TIER 1 LIVING HANDOFF v2.4 — HRP V5/V6
+﻿# TIER 1 LIVING HANDOFF v2.10 — HRP V5/V6
 
 > Tài liệu này là hợp đồng tiếp quản lâu dài cho **Tier 1 — Planner**. Khi bàn giao cho Agent Tier 1 khác, bình thường **chỉ cập nhật khối `ROADMAP_CURSOR` ở §0**. Không chép tiến độ task vào các section ổn định bên dưới.
 
@@ -7,7 +7,7 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-12 10:50 Asia/Bangkok
+updated_at: 2026-09-12 12:30 Asia/Bangkok
 roadmap_source: docs/AI_PROJECT_BRIEF.md; docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md; docs/prompts/TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md; docs/TIER0_HANDOVER.md
 PHASE_MAP: |
   Phase 0: V5 Close — DA DONG 55/63 ACCEPTED (không thay đổi)
@@ -27,14 +27,14 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin || AFF Track — CHUA MO
 current_lane: V6 Admin vertical slice (post-N0)
-current_task: AV4 Media Library ACCEPTED v1.0 (pushed to origin/main 62cdfd9)
-task_path: docs/tasks/hrp-v6-admin-v4-media-library/TASK.md
-worktree_branch: main (worktree-04v-media-r1 đã merge + xóa)
-current_gate: TIER_1_ACCEPTED (chờ Owner set BLOB_READ_WRITE_TOKEN env + visual review)
-next_command: Owner set BLOB_READ_WRITE_TOKEN trên Vercel dashboard → AV4 runtime hoạt động. Tier 1 sẵn sàng mở task tiếp (N0 contract audit post-AV4, hoặc AV2 JobPosting editor shell, hoặc AV6 HomepageSection CMS theo ưu tiên Owner)
-next_planner_candidate: N0 contract audit (sau AV4, theo TIER0_HANDOVER.md §5) — read-only discovery; AV2 JobPosting editor shell (chuẩn bị, publish chờ N3 ServiceModel); AV6 HomepageSection CMS (sau AV2)
-previous_accepted: AV4 Media Library ACCEPTED v1.0 (a5de2c4 schema + 8edf1ac impl + 62cdfd9 task) + UI04d detail D.A ACCEPTED v1.0 (165408f + 423e399 + production smoke 200) + UI04g carousel v3 ACCEPTED (6562aaa) + UI04g carousel v2 ACCEPTED (75d28d8) + UI04g carousel v1 ACCEPTED (e259eb6) + UI04f card monogram abbrev ACCEPTED (12a06da) + AV1 HomepageSettings IMPLEMENTATION COMPLETE (0f1cb99) + projection consistency fix (ebc7058) + AV1 polish (01ef329) + N0 contract audit (documented)
-blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); AV1 Settings form — Owner visual review pending (checklist 7 nhóm); UI04d ACCEPTED v1.0 — Owner visual review pending trên production; AV4 ACCEPTED v1.0 — Owner set BLOB_READ_WRITE_TOKEN env trên Vercel + visual review thư viện media
+current_task: N0 contract audit ACCEPTED v1.1 (re-audit sau AV1 + AV4 + projection consistency)
+task_path: docs/tasks/hrp-v6-n0-contract-audit/TASK.md
+worktree_branch: main (worktree-n0-audit-r1 đã merge + xóa)
+current_gate: TIER_1_ACCEPTED (chờ Owner visual review AV1/AV4/UI04d production; BLOB_READ_WRITE_TOKEN vẫn là Owner blocker cho AV4 runtime)
+next_command: Mở N1 PlacementCase/Placement foundation design (next domain task theo TIER0_HANDOVER.md §N0); song song có thể dựng AV6 HomepageSection CMS (dùng MediaAssignment đã sẵn) hoặc AV2 JobPosting editor shell (publish chờ N3 ServiceModel)
+next_planner_candidate: N1 PlacementCase/Placement foundation (N0 §5.2 #1) — schema design cho PlacementCase 1→N LaborProfile, invariant concurrency-safe; AV6 HomepageSection CMS (N0 §5.2 #2) — schema + admin editor + media assignment; AV2 JobPosting editor shell (N0 §5.3) — shell-only, publish flow gated by N3
+previous_accepted: N0 contract audit v1.1 (12/09/2026) + AV4 Media Library ACCEPTED v1.0 (62cdfd9/3133db3) + UI04d detail D.A ACCEPTED v1.0 (165408f + 423e399 + production smoke 200) + UI04g carousel v3 ACCEPTED (6562aaa) + UI04g carousel v2 ACCEPTED (75d28d8) + UI04g carousel v1 ACCEPTED (e259eb6) + UI04f card monogram abbrev ACCEPTED (12a06da) + AV1 HomepageSettings ACCEPTED v1.1 (0f1cb99/ebc7058/01ef329) + projection consistency fix (ebc7058) + N0 contract audit v1.0 (documented)
+blocking_owner: AFF §20 — 17/17 ô chưa tick (Founder+sep phải quyết; không mở task AFF nào); UI04d ACCEPTED v1.0 — Owner visual review pending trên production; AV1 Settings form v1.1 — Owner visual review pending theo 7-nhóm checklist; AV4 ACCEPTED v1.0 — Owner set BLOB_READ_WRITE_TOKEN env trên Vercel + visual review thư viện media
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
 ui04_status:
   composition/footer: ACCEPTED v1.4 (04b767e)
@@ -44,7 +44,7 @@ ui04_status:
   04c1-r3 footer text hotfix: ACCEPTED (Tier 1 commit 204f605 feat(ui) 11/09/2026 00:35; 4 chỗ text fix: address prefix + Kê→Kế + bỏ "Thuê" + email spelling `nhaluchrp@gmail.com` → `nhanluchrp@gmail.com`; source: app/components/GlobalFooter.tsx; gates local PASS typecheck/build, test:unit 13 pre-existing FAIL không phải do fix; committed to origin/main 81c7aeb)
   detail UI D.A: ACCEPTED v1.0 (12/09/2026) — Tier 1 commit 165408f (feat: richer sections) + 423e399 (fix: isolate related jobs public transaction, production 500/P2028 đã bắt và sửa); production smoke `/viec-lam/EXTRA-2026-010` HTTP 200; 12 file diff (1 modified + 11 added); gates typecheck/test:unit (in-scope 34/34)/build PASS; out-of-scope 1 pre-existing failure tại design-tokens.static.test.ts không do UI04d; source production: app/(jobs)/viec-lam/[slug]/page.tsx + 8 section components + 1 fixture + public-types.ts; detail editor D.B defer (AV2)
 held_draft: hrp-v5-go-live-19-tracking-pii-db-mask — việc viết, chưa giao /code
-queue_authority: Chi tiet UI04 o docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/plan-overview.md; chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md; dung dung task slug that, khong suy dien them phase/task; current_task = hrp-v6-admin-v4-media-library DRAFT v0.1 → Tier 1 delivery in-progress (12/09/2026); AV1 IMPLEMENTATION COMPLETE + Owner visual review pending; AV4 DEC-01..DEC-06 — Tier 1 tự quyết theo RECOMMENDATION trong TASK.md (max 5MB, không transform, Vercel CDN, manual token, không thumbnail, offset pagination); AV4 là foundation (không đợi gì); AV2 và AV6 phụ thuộc AV4 cho media assignment
+queue_authority: Chi tiet UI04 o docs/tasks/hrp-v6-ui-04-homepage-huongb-refinement/evidence/plan-overview.md; chi tiet V6 o docs/V6/v6-admin-rebuild_ROADMAP.md va docs/V6/aff_plan.md; dung dung task slug that, khong suy dien them phase/task; current_task = hrp-v6-n0-contract-audit ACCEPTED v1.1 (12/09/2026 re-audit); N1 PlacementCase/Placement foundation là next domain task (N0 §5.2); AV6 HomepageSection CMS (N0 §5.2 #2) có thể mở song song nếu tách worktree; AV2 JobPosting editor shell (N0 §5.3) — publish flow gated by N3 ServiceModel
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
 ui04_status:
   composition/footer: ACCEPTED v1.4 (04b767e)
