@@ -189,8 +189,8 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             role="alert"
             className="mb-5 rounded-lg border p-3 text-sm"
             style={{
-              background: 'var(--warning-container)',
-              color: 'var(--on-warning-container)',
+              background: 'var(--secondary-container)',
+              color: 'var(--on-secondary-container)',
               borderColor: 'var(--warning)',
             }}
           >
@@ -208,12 +208,12 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           </div>
           <span
             style={{
-              background: unavailableReason ? 'var(--warning-container)' : 'var(--secondary-container)',
-              color: unavailableReason ? 'var(--on-warning-container)' : 'var(--on-secondary-container)',
+              background: 'var(--secondary-container)',
+              color: 'var(--on-secondary-container)',
             }}
             className="rounded-full px-2 py-0.5 text-xs font-medium"
           >
-            {unavailableReason ? 'AV1 · CHỜ MIGRATION' : 'AV1 · ACTIVE'}
+            AV1 · ACTIVE
           </span>
         </div>
 
