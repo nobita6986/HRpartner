@@ -1,10 +1,10 @@
 # TASK — HRP V6 Admin V4 — Media Management
 
 **Ngày:** 11/09/2026
-**Tier:** 1 (Plan-only; implementation belongs to Tier 2)
+**Tier:** 1 (Planner + Engineer gộp — sở hữu TASK + implementation + HANDOFF theo TIER0_HANDOVER.md §1)
 **Lane:** STANDARD
 **Audit:** NONE (schema-only additive, no RLS/permission change)
-**Trạng thái:** DRAFT v0.1
+**Trạng thái:** ACCEPTED v1.0 — implementation complete, pushed to origin/main
 
 ## Mục tiêu
 
@@ -580,3 +580,4 @@ AV4 không đợi gì cả — foundation.
 | Version | Date | Author | Change |
 |---|---|---|---|
 | v0.1 | 11/09/2026 | Tier 1 | Initial draft: schema, API, UI, migration plan, safe render allowlist, open decisions |
+| v1.0 ACCEPTED | 12/09/2026 | Tier 1 | Implementation complete: schema + migration + service + API + Admin UI + safe-render + tests. Pushed to origin/main (commits a5de2c4 schema, 8edf1ac impl). 2007/2008 unit tests PASS (1 pre-existing design-tokens fail không do AV4). Build PASS. 7 API routes + /admin/media page registered. DEC-01..06 self-resolved theo RECOMMENDATION (5MB, no transform, Vercel CDN, manual token, no thumbnail, offset pagination). Deployment blocker: BLOB_READ_WRITE_TOKEN env chưa set → upload sẽ trả 503 cho đến khi Owner cấu hình env. |
