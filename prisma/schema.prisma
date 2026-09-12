@@ -528,9 +528,11 @@ model Vendor {
 model CandidateSubmission {
   id            String   @id @default(uuid())
   vendorId      String?  @map("vendor_id")
-  ctvId         String?  @map("ctv_id")
-  projectId     String?  @map("project_id")
-  fullName      String   @map("full_name")
+  ctvId             String?  @map("ctv_id")
+  projectId         String?  @map("project_id")
+  // N1 DEC-03: nullable FK ON DELETE RESTRICT — legacy rows giữ NULL
+  placementCaseId   String?  @map("placement_case_id")
+  fullName          String   @map("full_name")
   phone         String
   cccdNumber    String?  @map("cccd_number") // F17
   dateOfBirth   DateTime? @map("date_of_birth") @db.Date
@@ -569,6 +571,8 @@ model CandidateSubmission {
   // V6 PHASE 1A — móc THÊM-thuần (DEC-012); hàng cũ để NULL
   laborProfileId String?       @map("labor_profile_id")
   laborProfile   LaborProfile? @relation(fields: [laborProfileId], references: [id])
+  // N1 DEC-03: nullable FK ON DELETE RESTRICT — legacy rows giữ NULL
+  placementCase  PlacementCase? @relation(fields: [placementCaseId], references: [id])
   sourceClaims  SourceClaim[]
   statusHistory ApplicationStatusHistory[] // MP-2 RQ-01/RQ-06
   assignment    ProjectAssignment? // MP-3C RQ-01: at most one initial placement per submission
@@ -1390,9 +1394,10 @@ model LaborProfile {
   workerId String? @unique @map("worker_id")
   worker   Worker? @relation(fields: [workerId], references: [id])
 
-  submissions CandidateSubmission[]
-  intakes     LaborProfileIntake[]
-  episodes    EmploymentEpisode[]
+  submissions    CandidateSubmission[]
+  intakes        LaborProfileIntake[]
+  episodes       EmploymentEpisode[]
+  placementCases  PlacementCase[]
 
   @@index([normalizedPhone])
   @@index([cccdNumber])
@@ -1436,6 +1441,56 @@ model EmploymentEpisode {
   @@index([status, startedAt])
   @@map("employment_episodes")
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// N1 — PLACEMENT CASE FOUNDATION
+// Đại diện một đợt HRP giúp LaborProfile tìm / đổi / tái bố trí việc.
+// LaborProfile 1 → N PlacementCase (nhiều case lịch sử OK).
+// Tối đa MỘT case ACTIVE (status ∈ OPEN/IN_PROGRESS/READY_TO_PLACE)
+//   → partial unique index: (labor_profile_id) WHERE status IN ('OPEN','IN_PROGRESS','READY_TO_PLACE')
+// Task này: schema foundation; createOrMatchLaborProfile/intake writer thuộc task kế tiếp.
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum PlacementCaseStatus {
+  OPEN           // case mới mở
+  IN_PROGRESS    // đang xử lý
+  READY_TO_PLACE // sẵn sàng place
+  CLOSED         // đã đóng (final)
+  // NOTE: Stage enum (NEW/CONTACTING/QUALIFYING/MATCHING/...) deferred sang Phase sau.
+}
+
+model PlacementCase {
+  id             String              @id @default(cuid())
+  laborProfileId String              @map("labor_profile_id")
+  status         PlacementCaseStatus @default(OPEN) @map("status")
+  openedAt       DateTime            @default(now()) @map("opened_at")
+  closedAt       DateTime?                           @map("closed_at")
+  closeReason    String?                             @map("close_reason") @db.Text
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt      @map("updated_at")
+
+  // N1 DEC-04: LaborProfile 1 → N PlacementCase, FK REQUIRED từ PlacementCase → LaborProfile
+  laborProfile LaborProfile @relation(fields: [laborProfileId], references: [id])
+
+  // Back-relation: CandidateSubmission liên kết ngược
+  submissions   CandidateSubmission[]
+
+  // N1 DEC-02: partial unique index — max 1 ACTIVE case / LaborProfile
+  // Constraint name: placement_case_labor_profile_id_active_unique
+  // WHERE status IN ('OPEN','IN_PROGRESS','READY_TO_PLACE')
+  // Implemented in migration: CREATE UNIQUE INDEX ... WHERE status IN (...)
+
+  @@index([laborProfileId])
+  @@index([status, openedAt])
+  @@map("placement_case")
+}
+
+// N1 DEC-03: nullable FK — legacy rows giữ NULL
+// FK ON DELETE RESTRICT: chặn xóa case khi còn submission liên kết
+// Task kế tiếp sẽ backfill placementCaseId cho legacy submission rows
+// CandidateSubmission model (bổ sung field):
+//   placementCaseId String? @map("placement_case_id")
+//   placementCase   PlacementCase? @relation(fields: [placementCaseId], references: [id])
 
 // ═══════════════════════════════════════════════════════════════════════════
 // AV1 — HOMEPAGE SETTINGS (singleton, Plan UI B integration)
