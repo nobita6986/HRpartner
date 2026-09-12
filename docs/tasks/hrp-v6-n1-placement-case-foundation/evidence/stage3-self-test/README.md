@@ -42,6 +42,14 @@
 > `host(inet_server_addr())` match). Total test count went from 25 → 26.
 > The `summary` line now includes `abnormal_exit` + `abnormal_reason` to
 > record whether the script reached the success-path cleanup (audit fix 8).
+>
+> 2026-09-12 18:43 re-run (post-audit-fix verification): wiped `pgdata/`
+> and re-bootstrapped the embedded cluster on port 55433 (port 55432
+> was held by a stale SYSTEM-owned postgres process). Captured to
+> `embedded-pg18-ndjson-rerun-after-audit-fix.txt`. Diff vs the prior
+> evidence file: only 2 lines differ — the two `boot` rows (timestamp
+> + fingerprint hash). All 26 test rows are identical (deterministic
+> probe). Result: 26/26 PASS, exit 0, `abnormal_exit=false`.
 
 Per-test summary (full NDJSON in `embedded-pg18-ndjson.txt`):
 
