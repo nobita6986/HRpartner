@@ -11,6 +11,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import JobOpeningStatusCard from './job-opening-status-card';
 
 type Tab = 'jobs' | 'submissions' | 'claims';
@@ -302,13 +303,22 @@ export default function AdminJobsPage() {
               Quan ly tuyen dung
             </p>
           </div>
-          <button
-            onClick={() => setActiveTab('jobs')}
-            className='flex items-center gap-2 py-2 px-4 rounded-lg font-medium transition-colors'
-            style={{ backgroundColor: 'var(--primary)', color: 'var(--on-primary, white)' }}
-          >
-            Quản lý trạng thái publish
-          </button>
+          <div className='flex items-center gap-2'>
+            <Link
+              href='/admin/jobs/job-postings'
+              className='rounded border px-3 py-2 text-sm font-medium'
+              style={{ borderColor: 'var(--outline)', color: 'var(--primary)' }}
+            >
+              AV2 — Soạn JobPosting (bản nháp)
+            </Link>
+            <button
+              onClick={() => setActiveTab('jobs')}
+              className='flex items-center gap-2 py-2 px-4 rounded-lg font-medium transition-colors'
+              style={{ backgroundColor: 'var(--primary)', color: 'var(--on-primary, white)' }}
+            >
+              Quản lý trạng thái publish
+            </button>
+          </div>
         </div>
 
         <div className='flex gap-1 mb-6' style={{ borderBottom: '2px solid var(--outline)' }}>
