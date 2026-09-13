@@ -2,6 +2,13 @@
 -- Plan: docs/tasks/hrp-v6-admin-v4-media-library/TASK.md v0.1
 -- ADD-only migration: tạo bảng mới, không sửa schema cũ, không RLS change.
 -- AV4 là foundation cho AV2 (JobPosting editor) và AV6 (HomepageSection CMS).
+--
+-- 2026-09-13 fix (commit chuẩn bị): đổi `created_by_id` UUID → TEXT để khớp
+-- `users.id` (TEXT) trên hrp-live. Tier 0 chạy AV4 lần đầu 13/09/2026 13:41 fail
+-- với PostgreSQL 42804 (datatype mismatch). FK constraint `media_created_by_id_fkey`
+-- được khai báo trong block #3 dưới đây (idempotent DO $$) để tránh duplicate
+-- constraint khi migration re-apply (lần đầu apply thất bại nên transaction
+-- rollback sạch → chưa có constraint nào tồn tại).
 
 -- 1. Create MediaStatus enum
 DO $$
@@ -29,7 +36,7 @@ CREATE TABLE IF NOT EXISTS media (
   owner_id        TEXT         NOT NULL,
   created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-  created_by_id   UUID
+  created_by_id   TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_media_folder ON media(folder);
@@ -38,6 +45,8 @@ CREATE INDEX IF NOT EXISTS idx_media_owner_id ON media(owner_id);
 CREATE INDEX IF NOT EXISTS idx_media_created_at ON media(created_at DESC);
 
 -- 3. FK: media.created_by_id → users.id (nullable, SET NULL on delete)
+--    users.id is TEXT on hrp-live (Prisma @default(cuid())); created_by_id is TEXT for FK compatibility.
+--    If applied against a UUID-shaped users table, change both columns to UUID.
 DO $$
 BEGIN
   IF NOT EXISTS (

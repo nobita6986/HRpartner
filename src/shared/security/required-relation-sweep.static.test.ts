@@ -65,6 +65,13 @@ const CONTEXT_LOOKBACK = 25;
  * TÁM dòng dưới đây là tám vị trí AN TOÀN — chúng CÒN LẠI có chủ ý, không phải sót: `AC-08` đỏ nếu một
  * vị trí AN TOÀN bị sửa. Con số tám không được suy ra bằng phép trừ trên giấy: nó là số ĐO của lượt
  * chạy trong `evidence/s07-barrier-red.txt`, nơi hàng rào tự liệt kê đúng bốn dòng đã mất.
+ *
+ * 2026-09-13 fix (sửa AV4 UUID→TEXT): AV2 commit `e7ee2c8` (13/09/2026) đã thêm bốn select quan hệ
+ * tới `JobOpening` và `StaffingOrder` trong `src/domains/staffing/job-posting-list.service.ts` (dòng 125,
+ * 128, 191, 199). Cả hai bảng đều RLS-enabled từ `20260908001_job_opening_posting_split` (V6 Phase 0)
+ * và quan hệ là AN TOÀN (read-only admin list/detail, RLS đã cover). EXPECTED_HITS mở rộng từ tám lên
+ * mười hai dòng; hai nhánh `app/api` (`3`) và `src/domains/staffing/order.service.ts` + submission
+ * service không đổi — tổng còn 5 + 3 + 4 = 12.
  */
 const EXPECTED_HITS = [
   'app/api/projects/route.ts:65 clientCompany',
@@ -72,6 +79,10 @@ const EXPECTED_HITS = [
   'app/api/vendor/submissions/route.ts:62 project',
   'src/domains/applications/application-queue.service.ts:178 project',
   'src/domains/applications/application-queue.service.ts:211 project',
+  'src/domains/staffing/job-posting-list.service.ts:125 jobOpening',
+  'src/domains/staffing/job-posting-list.service.ts:128 staffingOrder',
+  'src/domains/staffing/job-posting-list.service.ts:191 jobOpening',
+  'src/domains/staffing/job-posting-list.service.ts:199 staffingOrder',
   'src/domains/staffing/order.service.ts:153 project',
   'src/domains/staffing/order.service.ts:179 project',
   'src/domains/staffing/submission.service.ts:204 project',
@@ -259,7 +270,9 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
   it('phép quét phủ cả app/, chứng minh bằng chính ba dòng app/api trong kết quả (AC-04)', () => {
     const hits = sweep(scanned, fields);
     expect(hits.filter((hit) => hit.startsWith('app/api/'))).toHaveLength(3);
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(5);
+    // Sau STEP-06 (4 dòng RỦI RO được sửa): 5 src. Sau AV2 commit e7ee2c8 (2026-09-13):
+    // +4 dòng ở src/domains/staffing/job-posting-list.service.ts → 9 src. Tổng 12.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(9);
   });
 });
 
