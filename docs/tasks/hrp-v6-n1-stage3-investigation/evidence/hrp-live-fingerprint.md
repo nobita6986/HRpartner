@@ -43,28 +43,30 @@ Tier 1 đã grep đặc trưng DDL của 7 migration NGOÀI N1. Tier 0 dùng §B
 
 ### A.3. `20260908150000_v6_phase1a_labor_profile_schema`
 
-**File**: `prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/migration.sql` (37 dòng)
+**File**: `prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/migration.sql` (97 dòng)
 
 **DDL đặc trưng**:
 - ALTER TABLE `candidate_submissions` ADD COLUMN `labor_profile_id` TEXT (nullable)
-- Bảng `labor_profiles` (id TEXT PK, full_name TEXT nullable, normalized_phone TEXT nullable, phone TEXT nullable, cccd_number TEXT nullable, identity_verification TEXT NOT NULL DEFAULT 'UNVERIFIED', completeness TEXT NOT NULL DEFAULT 'MINIMAL', consent_at TIMESTAMP(3), created_at, updated_at, worker_id TEXT nullable)
-- Bảng `labor_profile_intakes` (id TEXT PK, labor_profile_id TEXT NOT NULL FK, channel TEXT NOT NULL, source_submission_id TEXT, captured_by_user_id TEXT, captured_at, payload JSONB, created_at, updated_at, CHECK constraint)
-- Bảng `labor_profile_episodes` (id TEXT PK, labor_profile_id TEXT NOT NULL FK, episode_type TEXT, started_at, ended_at, employer_id TEXT, role TEXT, notes TEXT, created_at, updated_at)
+- Bảng `labor_profiles` (id TEXT PK, full_name TEXT nullable, normalized_phone TEXT nullable, phone TEXT nullable, cccd_number TEXT nullable, identity_verification TEXT NOT NULL DEFAULT 'UNVERIFIED', completeness TEXT NOT NULL DEFAULT 'MINIMAL', consent_at TIMESTAMP(3), created_at, updated_at, worker_id TEXT nullable, UNIQUE INDEX `labor_profiles_worker_id_key`)
+- Bảng `labor_profile_intakes` (id TEXT PK, labor_profile_id TEXT NOT NULL FK, channel TEXT NOT NULL, source_submission_id TEXT, captured_by_user_id TEXT, consent_at, effective_at, note TEXT, created_at)
+- **Bảng `employment_episodes`** (id TEXT PK, labor_profile_id TEXT NOT NULL FK, worker_id TEXT nullable FK, status TEXT NOT NULL DEFAULT 'ACTIVE', started_at TIMESTAMP(3) NOT NULL, ended_at TIMESTAMP(3) nullable, end_reason TEXT nullable, created_at) — **LƯU Ý: tên bảng là `employment_episodes`, KHÔNG phải `labor_profile_episodes`** (Tier 0 verify 13/09/2026 12:44 đã chỉ ra fingerprint B trước đây sai tên này; sửa lại).
+- 7 indexes: `labor_profiles_normalized_phone_idx`, `labor_profiles_cccd_number_idx`, `labor_profiles_completeness_identity_verification_idx`, `labor_profile_intakes_labor_profile_id_idx`, `labor_profile_intakes_channel_effective_at_idx`, `employment_episodes_labor_profile_id_idx`, `employment_episodes_worker_id_status_idx`, `employment_episodes_status_started_at_idx`, `candidate_submissions_labor_profile_id_idx`
+- FK constraints: `candidate_submissions_labor_profile_id_fkey` (SET NULL), `labor_profiles_worker_id_fkey` (SET NULL), `labor_profile_intakes_labor_profile_id_fkey` (RESTRICT), `employment_episodes_labor_profile_id_fkey` (RESTRICT), `employment_episodes_worker_id_fkey` (SET NULL)
 
-**Tier 0 check**: 3 bảng `labor_profiles`, `labor_profile_intakes`, `labor_profile_episodes` đều ≠ NULL + có cột `labor_profile_id` trên `candidate_submissions`.
+**Tier 0 check**: 3 bảng `labor_profiles`, `labor_profile_intakes`, **`employment_episodes`** (không phải `labor_profile_episodes`) đều ≠ NULL + có cột `labor_profile_id` trên `candidate_submissions`.
 
 ### A.4. `20260908150001_v6_phase1a_labor_profile_rls`
 
 **File**: `prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/migration.sql` (134 dòng)
 
 **DDL đặc trưng**:
-- ENABLE + FORCE ROW LEVEL SECURITY trên 3 bảng Phase 1A: `labor_profiles`, `labor_profile_intakes`, `labor_profile_episodes`
+- ENABLE + FORCE ROW LEVEL SECURITY trên 3 bảng Phase 1A: `labor_profiles`, `labor_profile_intakes`, **`employment_episodes`** (sửa tên theo Tier 0 verify 13/09/2026 12:44)
 - Policies `hrp_labor_profile_scope` (1 PERMISSIVE ALL, USING role IN ('ADMIN','HR_MANAGER','DIRECTOR') OR (HR_STAFF AND worker_id IS NULL) OR (HR_STAFF AND worker_id IS NOT NULL AND same worker))
 - Policies `hrp_labor_profile_intake_scope`, `hrp_labor_profile_episode_scope` (tương tự)
 - **0 DROP POLICY** (forward-only)
 - GRANT SELECT/INSERT/UPDATE cho `app_user`, `app_user_writer` trên 3 bảng
 
-**Tier 0 check**: 3 bảng có `relrowsesecurity = true` AND `relforcerowsecurity = true` + `pg_policies` view có đúng policy names.
+**Tier 0 check**: 3 bảng `labor_profiles`, `labor_profile_intakes`, `employment_episodes` đều có `relrowsecurity = true` AND `relforcerowsecurity = true` + `pg_policies` view có đúng policy names (3 policies: hrp_labor_profile_scope, hrp_labor_profile_intake_scope, hrp_labor_profile_episode_scope).
 
 ### A.5. `20260911001_project_company_name_denorm`
 
@@ -113,20 +115,28 @@ UNION ALL SELECT 'staffing_order_slots.job_opening_id', (
      WHERE table_name='staffing_order_slots' AND column_name='job_opening_id'
 );
 
--- B.2. labor_profile schema (#3)
+-- B.2. labor_profile schema (#3) — Tier 0 verify 13/09/2026 12:44 chỉ ra
+--      tên bảng thứ 3 là `employment_episodes`, KHÔNG phải `labor_profile_episodes`
 SELECT 'labor_profiles' AS t, to_regclass('public.labor_profiles') AS exists
 UNION ALL SELECT 'labor_profile_intakes', to_regclass('public.labor_profile_intakes')
-UNION ALL SELECT 'labor_profile_episodes', to_regclass('public.labor_profile_episodes')
+UNION ALL SELECT 'employment_episodes', to_regclass('public.employment_episodes')
 UNION ALL SELECT 'candidate_submissions.labor_profile_id', (
     SELECT column_name FROM information_schema.columns
      WHERE table_name='candidate_submissions' AND column_name='labor_profile_id'
 );
 
--- B.3. labor_profile RLS (#4) — verify ENABLE + FORCE
+-- B.3. labor_profile RLS (#4) — verify ENABLE + FORCE trên cùng 3 bảng
 SELECT relname, relrowsecurity AS rls_en, relforcerowsecurity AS rls_force
   FROM pg_class
- WHERE relname IN ('labor_profiles','labor_profile_intakes','labor_profile_episodes')
+ WHERE relname IN ('labor_profiles','labor_profile_intakes','employment_episodes')
  ORDER BY relname;
+
+-- B.3b. Policies (3 policies expected)
+SELECT tablename, policyname, cmd, roles
+  FROM pg_policies
+ WHERE schemaname = 'public'
+   AND tablename IN ('labor_profiles','labor_profile_intakes','employment_episodes')
+ ORDER BY tablename, policyname;
 
 -- B.4. project_company_name_denorm (#5) — verify column + backfill count
 SELECT column_name FROM information_schema.columns
@@ -145,38 +155,64 @@ SELECT to_regclass('public.media') AS media_table
      , (SELECT typname FROM pg_type WHERE typname = 'MediaStatus') AS media_enum;
 
 -- B.7. public_rpc_residual_grant_revoke (#1) — verify EXECUTE on 7 RPCs revoked from PUBLIC
-SELECT proname,
-       has_function_privilege('PUBLIC', p.oid, 'EXECUTE') AS public_execute
+--      Tier 0 verify 13/09/2026 12:44: query trước không trả row nào do danh sách
+--      function names không khớp schema thật trên hrp-live. Tier 1 đã đối chiếu
+--      PLANNER log 2.14..2.20 + đọc migration.sql để sinh danh sách chính xác
+--      từ §A.1. Kỳ vọng: 7 dòng, TẤT CẢ `public_execute = false`.
+SELECT
+    n.nspname || '.' || p.proname  AS signature,
+    has_function_privilege('PUBLIC', p.oid, 'EXECUTE') AS public_execute,
+    p.prokind
   FROM pg_proc p
   JOIN pg_namespace n ON n.oid = p.pronamespace
- WHERE n.nspname='public' AND proname IN (
-     'match_jobs_for_candidate','submit_candidate_for_opening',
-     'list_published_jobs','get_job_detail','get_client_company_jobs',
-     'get_homepage_settings','update_homepage_settings'
+ WHERE n.nspname='public'
+   AND p.proname IN (
+     -- Đối chiếu §A.1 (file migration.sql)
+     'match_jobs_for_candidate',
+     'submit_candidate_for_opening',
+     'list_published_jobs',
+     'get_job_detail',
+     'get_client_company_jobs',
+     'get_homepage_settings',
+     'update_homepage_settings'
    )
- ORDER BY proname;
+ ORDER BY p.proname;
+
+-- B.7b. Nếu §B.7 trả 0 rows → danh sách trên chưa đúng.
+--      Tier 0 chạy query khám phá sau để tìm các PUBLIC RPC đã revoke hoặc
+--      còn EXECUTE:
+--      SELECT n.nspname, p.proname, has_function_privilege('PUBLIC', p.oid, 'EXECUTE')
+--        FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+--       WHERE n.nspname='public' AND p.prokind='f'
+--       ORDER BY has_function_privilege('PUBLIC', p.oid, 'EXECUTE') DESC, p.proname;
+--      Sau đó Tier 0/Owner quyết: danh sách nào khớp với file
+--      prisma/migrations/20260831160000_public_rpc_residual_grant_revoke/migration.sql
+--      → dùng danh sách đó cho verify chính thức.
 ```
 
 **Kỳ vọng PASS** cho tất cả DDL ngoài N1 trên `hrp-live`:
 - B.1 — 3 rows non-null
-- B.2 — 4 rows non-null
-- B.3 — 3 rows, `rls_en=t`, `rls_force=t`
+- B.2 — 4 rows non-null (3 bảng Phase 1A + cột `labor_profile_id`); tên bảng thứ 3 là **`employment_episodes`**, KHÔNG phải `labor_profile_episodes`
+- B.3 — 3 rows, `rls_en=t`, `rls_force=t` (cùng 3 bảng như B.2)
+- B.3b — `pg_policies` trả đủ 3 policies: `hrp_labor_profile_scope`, `hrp_labor_profile_intake_scope`, `hrp_labor_profile_episode_scope`
 - B.4 — 1 row có cột `client_company_name`; backfill count tùy data sống
 - B.5 — `av1_table` non-null; `av1_rows ≥ 1`
-- B.6 — `media_table` non-null; `media_enum = MediaStatus`
-- B.7 — Tất cả 7 RPC có `public_execute = false`
+- B.6 — `media_table` non-null; `media_enum = MediaStatus`. **LƯU Ý Tier 0 verify 12:44**: AV4 chưa apply trên `hrp-live` → B.6 sẽ FAIL cho đến khi Owner/AV4 xử lý.
+- B.7 — **7 rows**, TẤT CẢ `public_execute = false`. Nếu B.7 trả 0 rows → danh sách RPC chưa khớp, Tier 0/Owner khám phá bằng B.7b.
 
 ## C. Tier 0 — verify-pre-reclone-hrp_mp2_test.sql (READ-ONLY đối chiếu **sau khi** re-clone)
 
 Sau khi Tier 0 reset + re-clone `hrp_mp2_test` từ `hrp-live` (Neon Console / Neon API), Tier 0 chạy script dưới để Tier 1 xác nhận baseline đúng trước khi Tier 1 chạy STEP 3.
 
 ```sql
--- C.1. Schema phải có đủ 7 bảng/enum NGOÀI N1 + (chưa) có placement_case
+-- C.1. Schema phải có đủ 8 bảng (7 NGOÀI N1 + chưa có placement_case)
+--      Tier 0 verify 13/09/2026 12:44 chỉ ra tên bảng thứ 3 Phase 1A là
+--      `employment_episodes`, KHÔNG phải `labor_profile_episodes`.
 SELECT 'job_openings' AS t, to_regclass('public.job_openings') AS exists
 UNION ALL SELECT 'job_postings', to_regclass('public.job_postings')
 UNION ALL SELECT 'labor_profiles', to_regclass('public.labor_profiles')
 UNION ALL SELECT 'labor_profile_intakes', to_regclass('public.labor_profile_intakes')
-UNION ALL SELECT 'labor_profile_episodes', to_regclass('public.labor_profile_episodes')
+UNION ALL SELECT 'employment_episodes', to_regclass('public.employment_episodes')
 UNION ALL SELECT 'homepage_settings', to_regclass('public.homepage_settings')
 UNION ALL SELECT 'media', to_regclass('public.media')
 UNION ALL SELECT 'placement_case (expect NULL — chưa apply N1)', to_regclass('public.placement_case')
@@ -185,19 +221,35 @@ UNION ALL SELECT 'candidate_submissions.placement_case_id (expect NULL)', (
      WHERE table_name='candidate_submissions' AND column_name='placement_case_id'
 );
 
--- C.2. Migration tracking phải có 28 rows (N1 chưa có)
-SELECT count(*) AS completed_migrations
-  FROM _prisma_migrations WHERE finished_at IS NOT NULL;
--- Kỳ vọng: 28 (Tất cả NGOÀI N1) + 0 cho N1.
+-- C.2. Migration tracking phải có rows cho các migration đã apply
+--      Tier 0 verify 13/09/2026 12:44: hrp-live có 34 completed + 5 rolled-back.
+--      Sau re-clone, hrp_mp2_test sẽ có cùng số rows (copy-on-write từ hrp-live).
+--      Kỳ vọng: ~34 completed + 0 unfinished + 5 rolled-back; CHƯA có row N1.
+SELECT count(*) FILTER (WHERE finished_at IS NOT NULL) AS completed_migrations
+     , count(*) FILTER (WHERE rolled_back_at IS NOT NULL) AS rolled_back_migrations
+     , count(*) FILTER (WHERE finished_at IS NULL AND rolled_back_at IS NULL) AS unfinished_migrations
+  FROM _prisma_migrations;
 
 SELECT migration_name FROM _prisma_migrations
  WHERE migration_name LIKE '%n1%';
 -- Kỳ vọng: 0 rows (chưa apply N1).
 
--- C.3. Policy/RPC check (tương tự B.3, B.7)
+-- C.3. RLS trên 3 bảng Phase 1A (cùng tên như §C.1)
 SELECT relname, relrowsecurity AS rls_en
   FROM pg_class
- WHERE relname IN ('labor_profiles','homepage_settings','media');
+ WHERE relname IN ('labor_profiles','labor_profile_intakes','employment_episodes');
+
+-- C.4. RPC revoke check (B.7 trên hrp_mp2_test)
+SELECT n.nspname || '.' || p.proname AS signature
+     , has_function_privilege('PUBLIC', p.oid, 'EXECUTE') AS public_execute
+  FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+ WHERE n.nspname='public'
+   AND p.proname IN (
+     'match_jobs_for_candidate','submit_candidate_for_opening',
+     'list_published_jobs','get_job_detail','get_client_company_jobs',
+     'get_homepage_settings','update_homepage_settings'
+   )
+ ORDER BY p.proname;
 ```
 
 ## D. Sau khi C verify PASS
@@ -232,3 +284,4 @@ Theo Tier 0 chốt Q-04:
 | Version | Ngày | Thay đổi |
 |---|---|---|
 | 1.0 | 13/09/2026 12:30 | READ-ONLY support cho Tier 0 re-clone verification. Fingerprint từ HEAD `b31581a`; verify scripts B/C/D cho Tier 0 chạy trên `hrp-live` (B) + `hrp_mp2_test` post-reclone (C). Tier 1 KHÔNG kết nối DB; chỉ đọc repo. |
+| 1.1 | 13/09/2026 12:44 | **Sửa theo Tier 0 pre-check B FAIL (12:44)**. (1) Phase 1A schema: bảng thứ 3 là **`employment_episodes`**, KHÔNG phải `labor_profile_episodes` (fingerprint cũ sai). Cập nhật §A.3 + §A.4 + §B + §C đồng nhất. (2) B.7 RPC: query cũ trả 0 rows (danh sách function names không khớp schema thật). Tier 1 đối chiếu lại PLANNER log 2.14..2.20 + file `20260831160000_public_rpc_residual_grant_revoke/migration.sql` — danh sách 7 function names giữ nguyên nhưng thêm B.7b (khám phá pg_proc) để Tier 0 tự identify danh sách chính xác nếu cần. (3) B.3b thêm check 3 policies Phase 1A: `hrp_labor_profile_scope`, `hrp_labor_profile_intake_scope`, `hrp_labor_profile_episode_scope`. (4) §C.2 cập nhật kỳ vọng theo Tier 0 verify 12:44: hrp-live có 34 completed + 5 rolled-back + 0 unfinished. Sau re-clone, `hrp_mp2_test` có cùng số rows. (5) §C.3 đổi tên bảng. (6) §C.4 thêm RPC check cho hrp_mp2_test post-reclone. (7) Tier 1 KHÔNG đụng AV4 theo Tier 0 chốt (Owner/AV4 xử lý migration `20260912001_av4_media_library` trên `hrp-live` theo quy trình riêng); Tier 1 tiếp tục chờ. |

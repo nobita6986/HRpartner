@@ -243,6 +243,37 @@ Xem `evidence/hrp-live-fingerprint.md` — Tier 1 cung cấp:
 - §E: điều kiện Stage 3 PASS.
 - §F: KHÔNG chạm `hrp-live`/reset/chạy STEP.
 
+### 9.2. Tier 0 pre-check B ngày 13/09/2026 12:44 — FAIL, giữ HOLD
+
+Tier 0 đã chạy `verify-pre-reclone.sql` (B) trên `hrp-live` qua Neon CLI:
+
+| B.x | Item | Kết quả Tier 0 |
+|---|---|---|
+| B.1 | `job_openings`, `job_postings` | ✅ Có |
+| B.2 | `labor_profiles`, `labor_profile_intakes`, `*_episodes` | ⚠️ 2/3 (`employment_episodes`); tên bảng thứ 3 là `employment_episodes` không `labor_profile_episodes` (Tier 1 đã sửa fingerprint) |
+| B.5 | `homepage_settings` | ✅ Có |
+| B.6 | `media` + `MediaStatus` | ❌ **THIẾU** — migration `20260912001_av4_media_library` chưa apply trên `hrp-live` |
+| B.7 | 7 RPC `public_execute=false` | ⚠️ 0 rows trả về (danh sách RPC chưa khớp; Tier 1 đã thêm B.7b khám phá + Tier 0 đối chiếu với file `20260831160000_*`/migration.sql) |
+
+**Bonus** (Tier 0 thu thập thêm): `_prisma_migrations` trên `hrp-live` = **34 completed + 0 unfinished + 5 rolled-back**.
+
+**Quyết định Tier 0 (12:44)**:
+1. ❌ KHÔNG re-clone `hrp_mp2_test` lúc này.
+2. Owner/AV4 xử lý migration `20260912001_av4_media_library` trên `hrp-live` theo quy trình riêng.
+3. Tier 1 sửa fingerprint B/C: `labor_profile_episodes` → `employment_episodes`; RPC phải trả đủ 7 dòng + `public_execute=false`.
+4. Chạy lại pre-check B. Chỉ khi PASS đầy đủ → reset/re-clone + post-check C.
+5. Tier 1 tiếp tục chờ; chưa chạy migration/probe.
+
+**Tier 1 đã làm** (12:45):
+- Sửa `evidence/hrp-live-fingerprint.md` §A.3, §A.4, §B, §C, §G (revision log v1.1).
+- Fingerprint giờ đồng nhất với migration.sql thật (`employment_episodes`); B.7b bổ sung để Tier 0 khám phá nếu B.7 trả 0 rows.
+- KHÔNG đụng AV4 (Tier 0 owner giải quyết).
+- KHÔNG chạm `hrp-live`.
+- KHÔNG chạy migration/probe.
+- KHÔNG mở AV6.
+
+**Authorization HOLD** cho đến khi (i) AV4 xử lý `20260912001_*` trên `hrp-live`, (ii) Tier 0 chạy lại pre-check B PASS đầy đủ, (iii) Tier 0 re-clone, (iv) post-check C PASS, (v) STEP 1.5 PASS.
+
 ## 10. KHÔNG chạm (theo Tier 0 directive)
 
 - ❌ `hrp-live` (DEC-N1-06).
@@ -257,4 +288,6 @@ Xem `evidence/hrp-live-fingerprint.md` — Tier 1 cung cấp:
 | Version | Ngày | Thay đổi |
 |---|---|---|
 | 1.0 | 13/09/2026 11:45 | READ-ONLY investigation DRAFT — 4 phương án; khuyến nghị B (resolve --applied) có điều kiện xác minh; A (re-clone) là fallback an toàn. Chờ Tier 0 chốt §9 trước khi Tier 1 chạy bất kỳ thao tác ghi. |
-| 1.1 | 13/09/2026 12:30 | Tier 0 đã verify Q-01 (13/09 12:28) và chốt A. Cập nhật §4, §7, §9 theo evidence mới: `_prisma_migrations` 29 rows (28 completed, 1 rolled-back, 0 unfinished) — không có row cho cả 9 migration pending; tất cả DDL NGOÀI N1 đều CHƯA tồn tại trên `hrp_mp2_test`. Bác bỏ giả thuyết cũ về `public_rpc_residual_grant_revoke` đã apply raw SQL (PLANNER log 2.15 chỉ là artifact của embedded PG skip-list, không phải evidence trên `hrp_mp2_test` thật). Tier 0 authorize STEP 1 → 5 **sau khi** re-clone + post-check §C PASS. Thêm `evidence/hrp-live-fingerprint.md` (§A fingerprint + §B verify-pre-reclone.sql cho Tier 0 đối chiếu trên `hrp-live` + §C verify-pre-reclone-hrp_mp2_test.sql cho Tier 0 đối chiếu sau re-clone + §D Tier 1 STEP 1 → 5 + §E điều kiện PASS + §F không chạm). |
+| 1.1 | 13/09/2026 12:30 | Tier 0 đã verify Q-01 (13/09 12:28) và chốt A. Cập nhật §4, §7, §9 theo evidence mới: `_prisma_migrations` 29 rows (28 completed, 1 rolled-back, 0 unfinished) — không có row cho cả 9 migration pending; tất cả DDL NGOÀI N1 đều CHƯA tồn tại trên `hrp_mp2_test`. Bác bỏ giả thuyết cũ về `public_rpc_residual_grant_revoke` đã apply raw SQL (PLANNER log 2.15 chỉ là artifact của embedded PG skip-list, không phải evidence trên `hrp_mp2_test` thật). Tier 0 authorize STEP 1 → 5 **sau khi** re-clone + post-check §C PASS. Thêm `evidence/hrp-live-fingerprint.md` (§A fingerprint + §B verify-pre-reclone.sql cho Tier 0 đối chiếu trên `hrp-live` + §C verify-pre-reclone-hrp_mp2_test.sql cho Tier 0 đối chiếu sau re-clone + §D Tier 1 STEP 1 → 5 + §E điều kiện PASS + §F không chạm).
+
+| 1.2 | 13/09/2026 12:45 | Tier 0 pre-check B FAIL (12:44). Phát hiện: (i) Phase 1A schema tạo bảng employment_episodes chứ không phải labor_profile_episodes (Tier 1 fingerprint §A.3 đã sai tên); (ii) media + MediaStatus THIẾU trên hrp-live → AV4 chưa apply; (iii) B.7 RPC query trả 0 rows (danh sách function names chưa khớp; Tier 1 thêm B.7b để Tier 0 khám phá); (iv) bonus: _prisma_migrations trên hrp-live có 34 completed + 5 rolled-back. Tier 0 quyết định: KHÔNG re-clone lúc này; Owner/AV4 xử lý 20260912001_av4_media_library theo quy trình riêng; chạy lại pre-check B sau khi sửa. Tier 1 đã sửa hrp-live-fingerprint.md §A.3, §A.4, §B, §C, §G (revision log v1.1): đổi tên employment_episodes đồng nhất; B.3b thêm 3 policies; §C.2 cập nhật kỳ vọng 34 completed + 5 rolled-back; §C.4 thêm RPC check post-reclone. Tier 1 KHÔNG đụng AV4; KHÔNG chạm hrp-live; KHÔNG chạy migration/probe; authorization HOLD giữ. |
