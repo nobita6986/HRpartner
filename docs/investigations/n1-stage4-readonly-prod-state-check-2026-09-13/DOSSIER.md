@@ -632,18 +632,16 @@ Tier 1 chi chuan bi Stage 4 dossier nay + gate production + test evidence. Tier 
   - Ket noi admin (read-write) hoat dong -- Tier 0 chay duoc `prisma migrate status` ma khong gap 28P01.
   - Tier 0 chay gate that tren Neon that (khong `-TestMode`, khong `NEON_API_BASE`) va nhan `exit 0`.
   - Tier 0 verify dung 2 N1 pending (`20260912140411_n1_placement_case_foundation` + `20260912140412_n1_placement_case_rls`), KHONG co migration loi (khong co row nao co `finished_at IS NULL`).
-  - Tier 0 do duoc lock production (vi test harness gia khong the do) va muc lock chap nhan duoc theo nguong Tier 0/Owner thiet lap (Tier 1 KHONG cam ket con so thoi gian lock -- Tier 0 phai do va quyet dinh).
-  - **CHI khi ca 4 dieu kien tren PASS**, Tier 0 doi verdict sang GO va chay `prisma migrate deploy`.
+  - Tier 0 do duoc tinh trang tranh chap lock truoc deploy (qua `pg_locks`, `pg_stat_activity`) va uoc luong tac dong lock (qua test branch clone chay thu `prisma migrate deploy` voi EXPLAIN ANALYZE). Muc tac dong chap nhan duoc do Tier 0/Owner thiet lap nguong (Tier 1 KHONG cam ket con so cu the). **Luu y quan trong**: thoi gian lock that cua migration tren `hrp-live` chi do duoc khi thuc thi -- preflight chi co the uoc luong, KHONG phai phep do da hoan thanh truoc khi GO. Tier 0 can quyet dinh dua tren uoc luong + nguong chap nhan + rollback plan (§6), KHONG dua tren mot con so thoi gian lock "da do duoc tu preflight".
+  - **CHI khi ca 5 dieu kien tren PASS**, Tier 0 doi verdict sang GO va chay `prisma migrate deploy`. Neu bat ky dieu kien nao FAIL, Tier 0 giu NO-GO va cap nhat dossier / bay lai cho Tier 1.
 - **Pham vi Tier 1 commit/push (sau NO-GO):**
-  - `docs/investigations/n1-stage4-readonly-prod-state-check-2026-09-13/DOSSIER.md` (rev round 3).
+  - `docs/investigations/n1-stage4-readonly-prod-state-check-2026-09-13/DOSSIER.md` (rev 2.33 -- round 3).
   - `docs/investigations/n1-stage4-readonly-prod-state-check-2026-09-13/COVER-NOTE-TO-OWNER.md`.
   - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/neon_branch_gate_prod.ps1` (gate).
   - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/fake_neon_api.js` (fake API stub -- can thiet de test harness chay lap).
   - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/test-neon-branch-gate-prod.ps1` (test harness).
   - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/gate-prod-test-summary.json` (6/6 PASS).
-  - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/gate-*.{stdout,stderr}.log` (6 case log).
-  - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/fake-api-*.{stdout,stderr}.log` (6 case log).
-- **Tier 1 KHONG commit/push:** khong co gi them (Tier 1 chi sua dossier + viet gate/test harness).
+- **Tier 1 KHONG push (working tree local)**: 12 file `*.log` (6 case `gate-*.{stdout,stderr}.log` + 6 case `fake-api-*.{stdout,stderr}.log`) bi `.gitignore` rule `*.log` repo-level bo qua. Logs van con o working tree de Tier 0 tham khao khi can, nhung KHONG nam trong commit `a987e80`.
 - **Tier 1 KHONG thuc hien:** KHONG chay `prisma migrate deploy`, KHONG cap nhat production credential, KHONG tu fix 28P01 (Tier 0/Owner thuoc kenh bao mat).
 
 ### 8.4 Thay doi so voi ban dossier truoc (rev 2.32 / chi thi Owner 13/09 20:14 -> 21:25 -> 21:44)
