@@ -1,0 +1,51 @@
+{
+  "started_at": "2026-09-13T12:17:29.306Z",
+  "operator": "Tier0",
+  "target": "hrp_mp2_test",
+  "allowlist": [
+    "20260912140411_n1_placement_case_foundation",
+    "20260912140412_n1_placement_case_rls"
+  ],
+  "step15": {
+    "exit_code": 0,
+    "stdout": "Neon control-plane branch-membership gate PASS:\r\n{\"admin_endpoint_id\":\"empty-forest-azlhfyo9\",\"writer_endpoint_id\":\"empty-forest-azlhfyo9\",\"expected_branch_name\":\"hrp_mp2_test\",\"admin_branch_id\":\"br-misty-cell-az3nx5l3\",\"writer_branch_id\":\"br-misty-cell-az3nx5l3\",\"admin_branch_name\":\"hrp_mp2_test\",\"writer_branch_name\":\"hrp_mp2_test\",\"primary_branch_id\":\"br-quiet-salad-azoo8scl\",\"primary_branch_name\":\"snapshot-rls-off-dont-use\",\"same_branch\":true,\"branch_is_primary\":false,\"branch_name_matches\":true,\"gate\":\"PASS\"}\r\n",
+    "stderr": ""
+  },
+  "pending_before": [
+    "20260912140411_n1_placement_case_foundation",
+    "20260912140412_n1_placement_case_rls"
+  ],
+  "unfinished_before": 0,
+  "migration_sha256": {
+    "20260912140411_n1_placement_case_foundation": "9c33728438245140dcdb6fc528eb679531ae769a686d14abe9c42d0350f1ba10",
+    "20260912140412_n1_placement_case_rls": "2adc8f6ea67fc2dab87d297ca444c06153df279f6e36e06f0eb8ccc35bc13f02"
+  },
+  "step3": {
+    "command": "prisma migrate deploy",
+    "exit_code": 0,
+    "stdout": "Environment variables loaded from .env\nPrisma schema loaded from prisma\\schema.prisma\nDatasource \"db\": PostgreSQL database \"neondb\", schema \"public\" at \"ep-empty-forest-azlhfyo9.c-3.ap-southeast-1.aws.neon.tech\"\n\n37 migrations found in prisma/migrations\n\nApplying migration `20260912140411_n1_placement_case_foundation`\nApplying migration `20260912140412_n1_placement_case_rls`\n\nThe following migration(s) have been applied:\n\nmigrations/\n  └─ 20260912140411_n1_placement_case_foundation/\n    └─ migration.sql\n  └─ 20260912140412_n1_placement_case_rls/\n    └─ migration.sql\n      \nAll migrations have been successfully applied.\n",
+    "stderr": "",
+    "error": null
+  },
+  "tracking_after": [
+    {
+      "migration_name": "20260912140411_n1_placement_case_foundation",
+      "checksum": "9c33728438245140dcdb6fc528eb679531ae769a686d14abe9c42d0350f1ba10",
+      "started_at": "2026-09-13T12:17:34.133Z",
+      "finished_at": "2026-09-13T12:17:34.472Z",
+      "rolled_back_at": null,
+      "applied_steps_count": 1
+    },
+    {
+      "migration_name": "20260912140412_n1_placement_case_rls",
+      "checksum": "2adc8f6ea67fc2dab87d297ca444c06153df279f6e36e06f0eb8ccc35bc13f02",
+      "started_at": "2026-09-13T12:17:34.555Z",
+      "finished_at": "2026-09-13T12:17:34.771Z",
+      "rolled_back_at": null,
+      "applied_steps_count": 1
+    }
+  ],
+  "unfinished_after": 0,
+  "status": "N1_TEST_MIGRATIONS_APPLIED_PROBE_PENDING",
+  "finished_at": "2026-09-13T12:17:35.089Z"
+}

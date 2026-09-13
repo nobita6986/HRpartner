@@ -1,0 +1,12 @@
+[
+  {
+    "helper": "write_ndjson_evidence.ps1",
+    "exit_code": 0,
+    "stdout": "NDJSON OK: src_lines=31 json_lines=30 bad_lines=0 -> docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-hrp-mp2-test-run/probe-20260913.clean.ndjson\r\n"
+  },
+  {
+    "helper": "copy_stderr_trace.ps1",
+    "exit_code": 0,
+    "stdout": "Trace OK: src_lines=13 trace_lines=12 created=6 deleted=6 -> docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-hrp-mp2-test-run/probe-20260913.trace.txt\r\n"
+  }
+]

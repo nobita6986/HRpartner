@@ -1,0 +1,80 @@
+{
+  "observed_at": "2026-09-13T12:19:48.615Z",
+  "method": "SELECT with exact ANY(text[]) ids; no cleanup mutations",
+  "created_ids": [
+    "n1lp-n1p3-mtzs5dks-j3yzfp",
+    "n1cA-n1p3-mtzs5dks-j3yzfp",
+    "n1cC-n1p3-mtzs5dks-j3yzfp",
+    "n1sub-n1p3-mtzs5dks-j3yzfp",
+    "n1lp-mtzs5f8p-fh4l26",
+    "n1c-mtzs5f8p-ohzk18"
+  ],
+  "attempted_second_case_id": "n1cB-n1p3-mtzs5dks-j3yzfp",
+  "test": {
+    "counts": {
+      "completed": 37,
+      "rolled_back": 5,
+      "unfinished": 0
+    },
+    "n1_tracking": [
+      {
+        "migration_name": "20260912140411_n1_placement_case_foundation",
+        "checksum": "9c33728438245140dcdb6fc528eb679531ae769a686d14abe9c42d0350f1ba10",
+        "started_at": "2026-09-13T12:17:34.133Z",
+        "finished_at": "2026-09-13T12:17:34.472Z",
+        "rolled_back_at": null
+      },
+      {
+        "migration_name": "20260912140412_n1_placement_case_rls",
+        "checksum": "2adc8f6ea67fc2dab87d297ca444c06153df279f6e36e06f0eb8ccc35bc13f02",
+        "started_at": "2026-09-13T12:17:34.555Z",
+        "finished_at": "2026-09-13T12:17:34.771Z",
+        "rolled_back_at": null
+      }
+    ],
+    "placement_case": "placement_case",
+    "remaining": {
+      "labor_profiles": [],
+      "placement_case": [],
+      "candidate_submissions": []
+    },
+    "rls": {
+      "relrowsecurity": true,
+      "relforcerowsecurity": true
+    },
+    "policies": [
+      {
+        "policyname": "hrp_placement_case_scope",
+        "roles": "{app_user,app_user_writer}",
+        "qual": "(hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'HR_STAFF'::text]))",
+        "with_check": "(hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'HR_STAFF'::text]))"
+      }
+    ],
+    "constraints": [
+      {
+        "conname": "candidate_submissions_placement_case_id_fkey",
+        "definition": "FOREIGN KEY (placement_case_id) REFERENCES placement_case(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "conname": "placement_case_labor_profile_id_fkey",
+        "definition": "FOREIGN KEY (labor_profile_id) REFERENCES labor_profiles(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      }
+    ],
+    "active_index": [
+      {
+        "indexdef": "CREATE UNIQUE INDEX placement_case_labor_profile_id_active_unique ON public.placement_case USING btree (labor_profile_id) WHERE (status = ANY (ARRAY['OPEN'::\"PlacementCaseStatus\", 'IN_PROGRESS'::\"PlacementCaseStatus\", 'READY_TO_PLACE'::\"PlacementCaseStatus\"]))"
+      }
+    ]
+  },
+  "live": {
+    "counts": {
+      "completed": 35,
+      "rolled_back": 5,
+      "unfinished": 0
+    },
+    "n1_tracking": [],
+    "placement_case": null
+  },
+  "cleanup_pass": true,
+  "production_n1_absent": true
+}

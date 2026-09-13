@@ -1,0 +1,10 @@
+{
+  "started_at": "2026-09-13T12:18:10.898Z",
+  "finished_at": "2026-09-13T12:18:24.942Z",
+  "command": "node docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/probe.mjs",
+  "probe_sha256": "0163c6f236c45c5c0c4059184e8a720b883b75ecee3503be2b52d43dad6f7700",
+  "N1_STAGE3_REAL": true,
+  "exit_code": 0,
+  "signal": null,
+  "error": null
+}

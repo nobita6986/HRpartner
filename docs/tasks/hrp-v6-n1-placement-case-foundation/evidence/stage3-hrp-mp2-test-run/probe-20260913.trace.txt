@@ -1,0 +1,19 @@
+# n1-trace evidence file (audit fix 2026-09-12 22:45)
+# created=6 deleted=6 unknown=0
+# recover uncleaned IDs: diff created - deleted = (this trace's created lines) - (this trace's deleted lines)
+# operator recovery path (NO LIKE, NO time range, exact IN-list only):
+#   DELETE FROM candidate_submissions WHERE id IN (...);
+#   DELETE FROM placement_case       WHERE id IN (...);
+#   DELETE FROM labor_profiles       WHERE id IN (...);
+n1-trace: created n1lp-n1p3-mtzs5dks-j3yzfp
+n1-trace: created n1cA-n1p3-mtzs5dks-j3yzfp
+n1-trace: created n1cC-n1p3-mtzs5dks-j3yzfp
+n1-trace: created n1sub-n1p3-mtzs5dks-j3yzfp
+n1-trace: deleted n1sub-n1p3-mtzs5dks-j3yzfp
+n1-trace: deleted n1cA-n1p3-mtzs5dks-j3yzfp
+n1-trace: deleted n1cC-n1p3-mtzs5dks-j3yzfp
+n1-trace: deleted n1lp-n1p3-mtzs5dks-j3yzfp
+n1-trace: created n1lp-mtzs5f8p-fh4l26
+n1-trace: created n1c-mtzs5f8p-ohzk18
+n1-trace: deleted n1c-mtzs5f8p-ohzk18
+n1-trace: deleted n1lp-mtzs5f8p-fh4l26

@@ -1,0 +1,18 @@
+{
+  "gate_command": "PowerShell strict type/shape checks against saved NDJSON, process exit and control-plane row; see runbook STEP 5a",
+  "exit_code": 0,
+  "total_json_lines": 30,
+  "assertions": 28,
+  "passed": 28,
+  "failed": 0,
+  "stage3_real_pass": true,
+  "stage3_real_pass_type": "Boolean",
+  "probe_exit": 0,
+  "abnormal_exit": false,
+  "control_plane_skipped": false,
+  "cleanup_n_ids": 0,
+  "created_count": 6,
+  "deleted_count": 6,
+  "postrun_cleanup_pass": true,
+  "production_n1_absent": true
+}

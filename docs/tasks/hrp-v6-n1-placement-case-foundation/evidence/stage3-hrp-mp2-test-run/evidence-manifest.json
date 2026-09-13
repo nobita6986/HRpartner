@@ -1,0 +1,64 @@
+{
+  "verified_at": "2026-09-13T12:22:28.090Z",
+  "hash_format": "SHA-256 of UTF-8 with CRLF normalized to LF, matching Git text content",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256_lf": "3a3cdfac86a081d2842a432fab15b84ae5379774fcf999aa1409b4a5b48f1391"
+    },
+    {
+      "path": "baseline-readonly-20260913T121238Z.json",
+      "sha256_lf": "56fbbcb796e0b41b34ba4fd2a5734b721d9361b7072827311ba01b0a6a3fa2b2"
+    },
+    {
+      "path": "postrun-cleanup-and-live-20260913.json",
+      "sha256_lf": "9d91d5f3ae538038710d390abf8fc561851f1f741f197fcab75a95f164ac427a"
+    },
+    {
+      "path": "probe-20260913.clean.ndjson",
+      "sha256_lf": "aaefe5560634bf792868fc742b13a186f1cd2860eb7b3242c169bf7a394a06df"
+    },
+    {
+      "path": "probe-20260913.process.json",
+      "sha256_lf": "cace7c4f202392fcd5bdc078803e55e39067e3a39e07952b818d6842f851602e"
+    },
+    {
+      "path": "probe-20260913.stderr.txt",
+      "sha256_lf": "ff80c07811a5b0a2cc4337a2a4fe3197e50f036e9d01e6c09806de346cdb9459"
+    },
+    {
+      "path": "probe-20260913.stdout.ndjson",
+      "sha256_lf": "aaefe5560634bf792868fc742b13a186f1cd2860eb7b3242c169bf7a394a06df"
+    },
+    {
+      "path": "probe-20260913.trace.txt",
+      "sha256_lf": "5f70ef1de5e235f323564ba5f06337e6d5bedb6d234d7c5f9e0eb8be23856d0b"
+    },
+    {
+      "path": "step15-20260913.json",
+      "sha256_lf": "cd8b5584babee675d62a52c094e464a090f08e41d7edc40048f3a2863d968d11"
+    },
+    {
+      "path": "step2-migrate-status-20260913.json",
+      "sha256_lf": "8eb71bf8a6c20f2fb5b6f88bf1c4b864add548df63e28a5eaf0d0557ad1caa42"
+    },
+    {
+      "path": "step3-deploy-20260913.json",
+      "sha256_lf": "c368ea701554d894032d8a700e63dd31bc82ed22d07d0e624a0d8704a21c9c9f"
+    },
+    {
+      "path": "step5-verification-20260913.json",
+      "sha256_lf": "de24dc92d16125486cfb16eaf0b88f33913401f5de6dd1954e29b2cf2b6423f3"
+    },
+    {
+      "path": "step5b-sanitizers-20260913.json",
+      "sha256_lf": "ebf5d6cbbd112ccc0c8d1c7ce8648df294d2332d9ad39e938b4cd7a7ab7f659c"
+    }
+  ],
+  "checks": {
+    "credential_leaks": 0,
+    "json_files_parsed": 8,
+    "ndjson_records_unchanged": true,
+    "stderr_trace_records_unchanged": true
+  }
+}
