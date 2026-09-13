@@ -46,14 +46,14 @@ Dựa trên PLANNER §n1_stage_tracker + log 2.15 (12/09/2026 16:35, self-test d
 
 | # | Migration | Trạng thái trên `hrp_mp2_test` | Nguồn evidence |
 |---|---|---|---|
-| 1 | `20260831160000_public_rpc_residual_grant_revoke` | ✅ **ĐÃ apply** qua Neon SQL Editor (DEC-07), không qua `prisma migrate deploy` | PLANNER log 2.15: "applied on hrp_mp2_test via Neon SQL Editor per DEC-07". **Vì vậy xuất hiện pending trong `prisma migrate status`** — Prisma tracking table chưa thấy row này (apply raw SQL ngoài Prisma). |
-| 2 | `20260908001_job_opening_posting_split` | ❓ **CHƯA có evidence xác nhận**. PLANNER không ghi cutover `hrp_mp2_test`. Tier 1 chưa chạy Stage 3 thật trên `hrp_mp2_test` (BLOCKED-on-env). | Ngụ ý từ log 2.15: driver skip-list đã gồm 3 migration (public_rpc, av1, av4) → ngầm hiểu các migration khác (gồm job_opening_posting_split) **ĐÃ được apply thật** qua `prisma migrate deploy` trước đó. Cần Tier 0 verify bằng cách hỏi `_prisma_migrations` xem có row `20260908001_*` không. |
-| 3 | `20260908150000_v6_phase1a_labor_profile_schema` | ❓ **CẦN XÁC MINH** trên `hrp_mp2_test`. Migration gốc đã LIVE APPLIED trên `hrp-live` 08/09. Clone Neon từ `hrp-live` có thể đã bao gồm (Neon copy-on-write + `pg_dump`/`neon clone` defaults). | N/A — chưa có evidence trực tiếp trên `hrp_mp2_test`; chỉ suy luận từ self-test driver skip-list ở log 2.15. |
-| 4 | `20260908150001_v6_phase1a_labor_profile_rls` | ❓ **CẦN XÁC MINH** tương tự #3. | N/A — tương tự #3. |
-| 5 | `20260911001_project_company_name_denorm` | ❓ **CẦN XÁC MINH**. UI04g production đã ACCEPTED + hotfix `f45f324` đã trên origin/main. Production data đã có `client_company_name` denorm. `hrp_mp2_test` có thể chưa apply (UI04g chỉ chạy production smoke + AV1 migration sang Neon tại thời điểm khác). | Cần Tier 0 verify qua `_prisma_migrations`. |
-| 6 | `20260911002_av1_homepage_settings` | ❌ **CHƯA apply** trên `hrp_mp2_test`. | PLANNER log 2.15: "SKIPS `20260911002_av1_homepage_settings` (out of N1 scope; AV1/AV4 have their own cutovers)". Self-test driver SKIP = chưa apply trên test branch khi đó. |
-| 7 | `20260912001_av4_media_library` | ❌ **CHƯA apply** trên `hrp_mp2_test`. | Tương tự #6. |
-| 8 | `20260912140411_n1_placement_case_foundation` | ❌ **CHƯA apply** trên `hrp_mp2_test`. | Tier 0 directive 13/09/2026 11:26 ("Tier 1 chỉ commit file migration; KHÔNG apply lên hrp-live trong task này", DEC-N1-06). Đây là mục tiêu Stage 3. |
+| 1 | `20260831160000_public_rpc_residual_grant_revoke` | ❌ **CHƯA apply** trên `hrp_mp2_test`. **GIẢ THUYẾT CŨ SAI** (PLANNER log 2.15 "applied via Neon SQL Editor per DEC-07" suy ra từ self-test driver skip-list, không phải từ evidence trực tiếp). Tier 0 verify 13/09/2026 12:28 xác nhận `_prisma_migrations` không có row cho migration này **và** các DDL chưa có trên test branch. | Tier 0 verify output (Q-01) |
+| 2 | `20260908001_job_opening_posting_split` | ❌ **CHƯA apply** — Tier 0 verify Q-01 xác nhận `to_regclass('public.job_openings')` = NULL (bảng chưa tồn tại). | Tier 0 verify output (Q-01) |
+| 3 | `20260908150000_v6_phase1a_labor_profile_schema` | ❌ **CHƯA apply** — Tier 0 verify Q-01 xác nhận `to_regclass('public.labor_profiles')` = NULL. | Tier 0 verify output (Q-01) |
+| 4 | `20260908150001_v6_phase1a_labor_profile_rls` | ❌ **CHƯA apply** (RLS chưa bật vì schema chưa có). | Tier 0 verify output (Q-01) |
+| 5 | `20260911001_project_company_name_denorm` | ❌ **CHƯA apply** — Tier 0 verify Q-01 xác nhận cột `client_company_name` chưa có trên `outsourcing_projects`. | Tier 0 verify output (Q-01) |
+| 6 | `20260911002_av1_homepage_settings` | ❌ **CHƯA apply** — Tier 0 verify Q-01 xác nhận `to_regclass('public.homepage_settings')` = NULL. | Tier 0 verify output (Q-01) |
+| 7 | `20260912001_av4_media_library` | ❌ **CHƯA apply** — Tier 0 verify Q-01 xác nhận `to_regclass('public.media')` = NULL. | Tier 0 verify output (Q-01) |
+| 8 | `20260912140411_n1_placement_case_foundation` | ❌ **CHƯA apply** trên `hrp_mp2_test`. | Tier 0 directive 13/09/2026 11:26; DEC-N1-06. Đây là mục tiêu Stage 3. |
 | 9 | `20260912140412_n1_placement_case_rls` | ❌ **CHƯA apply** trên `hrp_mp2_test`. | Tương tự #8. |
 
 ## 5. Phân tích dependency + ghi/thay thế dữ liệu của từng migration ngoài N1
@@ -90,26 +90,28 @@ Theo runbook STEP 2 decision matrix:
 
 Có 3 nguyên nhân khả dĩ (xếp theo khả năng):
 
-### 7.1. Branch `hrp_mp2_test` được tạo từ Neon snapshot **trước** một số cutover (khả năng cao nhất)
+### 7.1. Branch `hrp_mp2_test` được tạo từ Neon snapshot **trước** nhiều cutover (khả năng cao nhất) — **XÁC NHẬN bởi Tier 0 verify Q-01 ngày 13/09/2026 12:28**
 
-- `hrp_mp2_test` được tạo ban đầu (per PLANNER §n1_stage_tracker stage_2 ngày 12/09/2026 15:35) từ `hrp-live` tại thời điểm ~08/09 (sau khi Phase 1A labor-profile-schema applied).
-- Từ 08/09 → 12/09, đã có các commit/cutover mới trên `hrp-live`:
-  - `fb993a7` (31/08) `public_rpc_residual_grant_revoke` — apply raw SQL qua Neon SQL Editor.
-  - `20260908001_*` job_opening_posting_split (08/09) — **chưa rõ** có apply live không (ACCEPTED R4 nhưng chưa thấy ghi "LIVE APPLIED").
-  - `20260911001_*` project_company_name_denorm (11/09 UI04g) — đã trên production (UI04d D.A ACCEPTED).
-  - `20260911002_*` av1_homepage_settings (11/09 AV1) — v1.1 ACCEPTED.
-  - `20260912001_*` av4_media_library (12/09 AV4) — ACCEPTED v1.0.
-- Nhưng `hrp_mp2_test` được tạo snapshot **trước** các cutover này → thiếu migration tracking rows cho cả những migration đã apply trên live.
+- `_prisma_migrations` trên `hrp_mp2_test`: **29 rows, 28 completed, 0 unfinished, 1 rolled-back**; KHÔNG có row cho cả 9 migration pending.
+- **Tất cả** schema NGOÀI N1 chưa tồn tại trên `hrp_mp2_test`: `job_openings`, `job_postings`, `labor_profiles`, `homepage_settings`, `media` đều NULL; cột `client_company_name` cũng chưa có.
+- **Giả thuyết cũ (§7 dự thảo v1.0) rằng `public_rpc_residual_grant_revoke` đã apply raw SQL trên `hrp_mp2_test` (per PLANNER log 2.15) là SAI.** Tier 0 verify cho thấy không có tracking row VÀ không có DDL thật. Self-test driver skip-list chỉ là artifact của môi trường embedded PG (Tier 1 đã cố ý skip để tránh FAIL-CLOSED), không phải evidence về `hrp_mp2_test` thật.
+- Tức là: branch `hrp_mp2_test` được clone từ `hrp-live` tại **một thời điểm rất sớm** (trước Phase 1A) — hoặc clone không thành công → branch rỗng về cơ bản; **hoặc** branch được tạo qua `WITH DATA = false` (Neon copy schema-only).
 
-### 7.2. Một số migration apply **ngoài Prisma** (qua raw SQL Editor Neon)
+### 7.2. Một số migration apply **ngoài Prisma** (qua raw SQL Editor Neon) — **BỊ BÁC BỎ bởi Tier 0 verify**
 
-- `public_rpc_residual_grant_revoke`: apply qua Neon SQL Editor (theo PLANNER log 2.15) → không có row trong `_prisma_migrations` → Prisma thấy pending.
-- Có thể các migration khác (#5 denorm, #6 AV1, #7 AV4) cũng apply ngoài Prisma mà PLANNER chưa ghi. Cần Tier 0 verify.
+- Giả thuyết cũ §7.2 về `public_rpc_residual_grant_revoke` apply qua Neon SQL Editor (per PLANNER log 2.15) không còn đứng vững: nếu DDL đã chạy thật qua raw SQL, các function privilege phải được revoke. Tier 0 verify sẽ confirm `has_function_privilege('PUBLIC', ...)` = false cho 7 RPC; nếu đúng → có thể `public_rpc_residual_grant_revoke` đã apply (nhưng vẫn cần resolve --applied để đồng bộ tracking). **Tuy nhiên**: các DDL cho migration #2/#3/#4/#5/#6/#7 chưa tồn tại (bảng/enum không có), nên giả thuyết "apply ngoài Prisma" chỉ có thể đúng với #1.
 
-### 7.3. Tier 1 chưa từng chạy `prisma migrate deploy` đầy đủ trên `hrp_mp2_test`
+### 7.3. Tier 1 chưa từng chạy `prisma migrate deploy` đầy đủ trên `hrp_mp2_test` — **VẪN ĐÚNG**
 
 - Stage 3 chỉ mới PASS self-test trên embedded PG (28/28 PASS). Real `hrp_mp2_test` run BLOCKED-on-env → chưa từng apply N1 hoặc các migration khác qua Prisma trên test branch.
-- Vì vậy `_prisma_migrations` trên `hrp_mp2_test` chỉ có row cho các migration đã được apply raw SQL (qua Neon SQL Editor).
+- Tier 0 verify Q-01 confirms: `_prisma_migrations` không có row N1 (chưa apply) → consistent với giả thuyết này.
+
+### 7.4. Kết luận tổng hợp
+
+- `_prisma_migrations` 29 rows gồm: 28 migration Phase V6 Phase 0/1 đầu (≤ `20260827160000_*`) + 1 rolled-back (cần identify nhưng không ảnh hưởng Stage 3 vì đã rolled-back).
+- Tất cả 9 migration pending (2 N1 + 7 NGOÀI N1) đều CHƯA apply thật trên `hrp_mp2_test`.
+- → **Phương án A (re-clone `hrp_mp2_test` từ `hrp-live`) là lựa chọn đúng**, vì đảm bảo `hrp_mp2_test` có đủ DDL + tracking rows từ `hrp-live` (đã verified 08/09 trở đi có đủ cả 7 DDL NGOÀI N1).
+- Tier 0 đã chốt A (Q-02 ngày 13/09/2026 12:28).
 
 ## 8. Phương án đề xuất (tác động nhỏ nhất)
 
@@ -223,12 +225,23 @@ So 2 list để biết branch test thiếu tracking rows cho migration nào.
 - Chạy lại §8.3.1 + §8.3.2: phải thấy `_prisma_migrations` có rows tương ứng (với B) hoặc schema đầy đủ (với A), `migrate status` chỉ pending 2 N1.
 - Lưu output §8.3.1 + §8.3.2 mới vào `evidence/`.
 
-## 9. Câu hỏi cần Tier 0 chốt (blocker cho STEP 3)
+## 9. Câu hỏi cần Tier 0 chốt (blocker cho STEP 3) — **ĐÃ CHỐT 13/09/2026 12:28**
 
-1. **Tier 0 đã verify chưa**: `_prisma_migrations` trên `hrp_mp2_test` hiện chứa những row nào? Có row cho `20260831160000_public_rpc_residual_grant_revoke` không? Có row cho `20260908001_job_opening_posting_split` không? (Tier 1 không có quyền query `_prisma_migrations` mà không expose URL.)
-2. **Tier 0 chọn phương án nào** trong §8.1? Khuyến nghị B nếu xác minh được, A nếu không.
-3. Nếu chọn B: Tier 0 có cho phép Tier 1 chạy `prisma migrate resolve --applied` (chỉ insert row tracking, không DDL)?
-4. Sau khi baseline đúng, **Tier 0 xác nhận** Tier 1 chạy STEP 3 → 5 trên `hrp_mp2_test`? (Yêu cầu: 2 N1 migration ADD-only + 28/28 probe PASS + `stage3_real_pass=true`.)
+1. ✅ **Q-01 RESOLVED**: Tier 0 verified: `_prisma_migrations` trên `hrp_mp2_test` có 29 rows (28 completed, 0 unfinished, 1 rolled-back); KHÔNG có row cho cả 9 migration pending; các DDL NGOÀI N1 đều chưa tồn tại (job_openings, job_postings, labor_profiles, homepage_settings, media đều NULL; cột `client_company_name` cũng chưa có).
+2. ✅ **Q-02 CHỐT**: Phương án **A** (re-clone `hrp_mp2_test` từ `hrp-live`). Lý do: phương án B không an toàn vì DDL NGOÀI N1 chưa tồn tại. Tier 0 chấp nhận điều kiện tiên quyết: **trước khi reset, Owner xác minh `hrp-live` đã có đủ 7 DDL NGOÀI N1**; nếu không → chuyển sang D.
+3. ⏸️ **Q-03 RESOLVED (N/A)**: Tier 0 **KHÔNG authorize** `prisma migrate resolve --applied` hoặc `prisma migrate deploy` cả 9.
+4. ⏸️ **Q-04 PARTIAL**: Tier 0 authorize **STEP 1 → 5** SAU KHI (i) re-clone hoàn tất, (ii) post-check xác nhận chỉ 2 N1 pending + 0 unfinished/stuck + STEP 1.5 PASS branch `hrp_mp2_test`. STEP 3 chỉ deploy 2 N1. Stage 3 PASS khi probe thực trả 28/28 + cleanup-needed n_ids=0 + `stage3_real_pass=true` + exit 0.
+5. **Authorization hiện tại HOLD** cho đến khi re-clone + post-check hoàn tất.
+
+### 9.1. Hỗ trợ Tier 0 verify `hrp-live` (READ-ONLY, Tier 1 không kết nối DB)
+
+Xem `evidence/hrp-live-fingerprint.md` — Tier 1 cung cấp:
+- §A: DDL fingerprint cho 7 migration NGOÀI N1 (đọc từ HEAD `b31581a`).
+- §B: script `verify-pre-reclone.sql` để Tier 0 chạy trên `hrp-live` đối chiếu.
+- §C: script `verify-pre-reclone-hrp_mp2_test.sql` để Tier 0 chạy trên `hrp_mp2_test` SAU re-clone.
+- §D: sau khi §C PASS → Tier 1 chạy STEP 1 → 5 theo runbook.
+- §E: điều kiện Stage 3 PASS.
+- §F: KHÔNG chạm `hrp-live`/reset/chạy STEP.
 
 ## 10. KHÔNG chạm (theo Tier 0 directive)
 
@@ -244,3 +257,4 @@ So 2 list để biết branch test thiếu tracking rows cho migration nào.
 | Version | Ngày | Thay đổi |
 |---|---|---|
 | 1.0 | 13/09/2026 11:45 | READ-ONLY investigation DRAFT — 4 phương án; khuyến nghị B (resolve --applied) có điều kiện xác minh; A (re-clone) là fallback an toàn. Chờ Tier 0 chốt §9 trước khi Tier 1 chạy bất kỳ thao tác ghi. |
+| 1.1 | 13/09/2026 12:30 | Tier 0 đã verify Q-01 (13/09 12:28) và chốt A. Cập nhật §4, §7, §9 theo evidence mới: `_prisma_migrations` 29 rows (28 completed, 1 rolled-back, 0 unfinished) — không có row cho cả 9 migration pending; tất cả DDL NGOÀI N1 đều CHƯA tồn tại trên `hrp_mp2_test`. Bác bỏ giả thuyết cũ về `public_rpc_residual_grant_revoke` đã apply raw SQL (PLANNER log 2.15 chỉ là artifact của embedded PG skip-list, không phải evidence trên `hrp_mp2_test` thật). Tier 0 authorize STEP 1 → 5 **sau khi** re-clone + post-check §C PASS. Thêm `evidence/hrp-live-fingerprint.md` (§A fingerprint + §B verify-pre-reclone.sql cho Tier 0 đối chiếu trên `hrp-live` + §C verify-pre-reclone-hrp_mp2_test.sql cho Tier 0 đối chiếu sau re-clone + §D Tier 1 STEP 1 → 5 + §E điều kiện PASS + §F không chạm). |
