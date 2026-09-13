@@ -1,10 +1,37 @@
 /**
  * /admin — trang tổng quan của portal điều hành.
  *
- * Server Component: chỉ render danh sách lối vào các nghiệp vụ, không truy vấn DB.
- * Số liệu thật (đơn đang mở, kỳ công chờ chốt, ...) sẽ gắn sau, khi có nguồn đếm
- * đủ nhanh để render trong request.
+ * Server Component (force-dynamic) — đọc 3 KPI cards số liệu thật + giữ
+ * nguyên section cards điều hướng các nghiệp vụ. KPI cards được render
+ * phía trên SECTION_CARDS để Admin/Sale mở portal thấy ngay tình hình.
+ *
+ * RLS Phase 2 (DEC-02 + data-scope-security §6.2):
+ *  - 3 bảng JobOpening/CandidateSubmission/Ticket đều có FORCE ROW LEVEL
+ *    SECURITY. Mỗi query đã được wrap trong `withDbContext(prisma, ctx, ...)`
+ *    để `applyRlsContext` set GUC transaction-local — RLS policy tự filter
+ *    theo role + ownership.
+ *
+ * Vòng đầu (v1.0) chỉ 3 KPI:
+ *  - KPI-1: JobOpening.status = OPEN
+ *  - KPI-2: CandidateSubmission.status = NEW
+ *  - KPI-3: Ticket.status = PENDING
+ * Mỗi KPI có ma trận quyền riêng (xem service `overview-metrics.service.ts`).
+ * KPI không có quyền → ẩn href + hiển thị "Không có quyền xem".
+ * Số liệu bị RLS giới hạn (PM) ghi "trong phạm vi của bạn", không gọi là tổng.
+ *
+ * Vòng đầu KHÔNG có cache chung giữa user/role (force-dynamic).
+ *
+ * Auth: chỉ role thuộc ADMIN_PORTAL_ROLES (xem `server-session.ts`) được vào.
+ * Role ngoài (WORKER, VENDOR, CTV) redirect về portal tương ứng.
  */
+
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+
+import { getServerSession } from '@/src/shared/auth/server-session';
+import { getPrisma } from '@/src/lib/db';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { loadOverviewMetrics, type KpiEntry } from '@/src/domains/admin/overview-metrics.service';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -67,7 +94,7 @@ const SECTION_CARDS = [
     label: 'Cấu hình lương',
     group: 'Tài chính',
     href: '/admin/payroll',
-    description: 'Tham số tính lương: bảo hiểm xã hội, thuế thu nhập cá nhân, lương tối thiểu.',
+    description: 'Tham khảo tham số tính lương: bảo hiểm xã hội, thuế thu nhập cá nhân, lương tối thiểu.',
   },
   {
     id: 'tickets',
@@ -78,7 +105,33 @@ const SECTION_CARDS = [
   },
 ] as const;
 
-export default function AdminOverviewPage() {
+export default async function AdminOverviewPage() {
+  const session = await getServerSession();
+  if (!session) {
+    redirect('/login?callback=/admin');
+  }
+  // Page `/admin` chỉ dành cho ADMIN_PORTAL_ROLES (xem server-session.ts).
+  // Role ngoài (WORKER/VENDOR/CTV) không vào — guard ở admin layout, đây là fallback.
+  if (session.role === 'WORKER' || session.role === 'VENDOR_ADMIN' || session.role === 'VENDOR_STAFF' || session.role === 'CTV') {
+    redirect('/forbidden');
+  }
+
+  // RLS Phase 2 — mở transaction đã set GUC theo session trước khi đọc 3 KPI.
+  // AuthContext tối thiểu chỉ cần userId+role cho RLS của 3 bảng này.
+  const ctx = { userId: session.userId, role: session.role };
+  const prisma = getPrisma();
+  let kpis: KpiEntry[] = [];
+  let loadError: string | null = null;
+  try {
+    const result = await withDbContext(prisma, ctx, async (tx) => {
+      return loadOverviewMetrics({ role: session.role }, tx);
+    });
+    kpis = result.kpis;
+  } catch (err) {
+    // Prisma throw bubble-up từ service — KHÔNG trả 0 giả. Lưu message để UI hiển thị.
+    loadError = err instanceof Error ? err.message : 'Chưa tải được số liệu';
+  }
+
   return (
     <div className="px-6 py-8 lg:px-8 lg:py-10" style={{ background: 'var(--surface)' }}>
       <header className="mb-8">
@@ -90,6 +143,45 @@ export default function AdminOverviewPage() {
         </p>
       </header>
 
+      {/* KPI cards */}
+      <section className="mb-8" aria-label="Số liệu tổng quan">
+        <h2 className="mb-3 text-base font-semibold" style={{ color: 'var(--on-surface)' }}>
+          Số liệu tổng quan
+        </h2>
+        {loadError ? (
+          <div
+            className="rounded-lg border p-4 text-sm"
+            style={{
+              borderColor: 'var(--outline)',
+              backgroundColor: 'var(--surface-container-lowest)',
+              color: 'var(--on-surface-variant)',
+            }}
+          >
+            <span className="font-medium">Chưa tải được số liệu.</span>{' '}
+            <span className="text-xs">{loadError}</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {kpis.map((kpi) => (
+              <KpiCard key={kpi.key} kpi={kpi} />
+            ))}
+          </div>
+        )}
+        <p
+          className="mt-2 text-xs"
+          style={{ color: 'var(--on-surface-variant)' }}
+          aria-live="polite"
+        >
+          Số liệu phản ánh đúng phạm vi quyền đọc của tài khoản hiện tại — nếu ghi
+          &ldquo;trong phạm vi của bạn&rdquo;, con số bị RLS giới hạn theo dự án/vai trò,
+          không phải tổng toàn hệ thống.
+        </p>
+      </section>
+
+      {/* Section cards điều hướng — giữ nguyên như cũ */}
+      <h2 className="mb-3 text-base font-semibold" style={{ color: 'var(--on-surface)' }}>
+        Nghiệp vụ
+      </h2>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {SECTION_CARDS.map((card) => (
           <a
@@ -123,4 +215,55 @@ export default function AdminOverviewPage() {
       </div>
     </div>
   );
+}
+
+function KpiCard({ kpi }: { kpi: KpiEntry }) {
+  const cardStyle: React.CSSProperties = {
+    background: 'var(--surface-container-lowest)',
+    borderColor: 'var(--outline-variant)',
+  };
+  const inner = (
+    <div
+      className="block rounded-lg border p-5 transition-shadow"
+      style={cardStyle}
+    >
+      <div className="text-sm font-medium" style={{ color: 'var(--on-surface-variant)' }}>
+        {kpi.label}
+      </div>
+      {kpi.hasPermission ? (
+        <>
+          <div
+            className="mt-2 text-3xl font-semibold tabular-nums"
+            style={{ color: 'var(--on-surface)' }}
+          >
+            {kpi.value.toLocaleString('vi-VN')}
+          </div>
+          <div
+            className="mt-1 text-xs"
+            style={{ color: 'var(--on-surface-variant)' }}
+          >
+            {kpi.scopeLabel}
+          </div>
+        </>
+      ) : (
+        <>
+          <div
+            className="mt-2 text-base font-medium italic"
+            style={{ color: 'var(--on-surface-variant)' }}
+          >
+            {kpi.fallback}
+          </div>
+        </>
+      )}
+    </div>
+  );
+  // Chỉ đặt link tới route đang tồn tại (href khác null). KPI không có quyền → không link.
+  if (kpi.hasPermission && kpi.href) {
+    return (
+      <Link href={kpi.href} className="hover:shadow-md" aria-label={`${kpi.label} — mở module`}>
+        {inner}
+      </Link>
+    );
+  }
+  return inner;
 }
