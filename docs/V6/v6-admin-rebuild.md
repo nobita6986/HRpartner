@@ -1037,7 +1037,7 @@ V6 Admin Rebuild ở thời điểm brainstorm này chưa triển khai sâu các
 - Tính lương.
 - Portal tự phục vụ dành cho bên Cty.
 - Payroll engine; phần tính lương tiếp tục để ở chặng sau cùng do HRP đã có app lương riêng.
-- CRM chi tiết cho phone/chat và lịch gọi lại.
+- CRM chi tiết cho phone/chat và lịch gọi lại: theo quyết định Owner 13/09/2026, triển khai trong ứng dụng CRM riêng; HRP chỉ giữ bản ghi nghiệp vụ canonical và API tích hợp. Xem `docs/V7/HRP_CRM_INFRA_SPLIT.md`.
 - Ma trận RBAC chi tiết, thuật toán cân bằng tải kho chung và quyền chính-phụ của nhân viên HRP; mô hình giao nhận có thời hạn đã nằm trong scope.
 - KPI/milestone cuối cùng của Marketplace và commission.
 - Chính sách phân tách đãi ngộ public/nội bộ.

@@ -4,6 +4,8 @@
 **Purpose:** Single source-of-navigation for architecture, migration, implementation order, and AI coding handoff  
 **Applies to:** HRP V6+, V7.1–V7.10
 
+> **Owner decision 13/09/2026:** CRM/Chat/CSKH vận hành ở ứng dụng riêng. Đọc [HRP_CRM_INFRA_SPLIT.md](HRP_CRM_INFRA_SPLIT.md) trước mọi task V7.2/V7.8/V7.9/V7.10. Những dòng bên dưới giao inbox, Chatwoot/Zalo, ACL, CSKH workbench hoặc AI hội thoại cho HRP đã được chuyển sang repo CRM; chỉ HRP canonical domain/API/outbox còn là scope ở repo này.
+
 ---
 
 # 0. HOW TO USE THIS DOCUMENT
@@ -19,6 +21,7 @@ Before implementing a task:
 5. Confirm all prerequisite gates are passed.
 6. Do not infer missing business rules from legacy code if newer architecture documents explicitly supersede them.
 7. If two documents conflict, follow the precedence rules below.
+8. For any CRM-facing work, read `HRP_CRM_INFRA_SPLIT.md` and `HRP_CRM_CONNECTOR.md`; do not implement a CRM-owned row in the HRP repository.
 
 ---
 
@@ -27,16 +30,17 @@ Before implementing a task:
 When two documents conflict, use this order:
 
 ```text
-1. HRP_V6_PLUS_V7_MASTER_INDEX.md
-2. AI_CODING_GUARDRAILS.md
-3. V6_V7_CONFLICT_CHANGE_REGISTER.md
-4. V7_ARCHITECTURE.md
-5. V6_PLUS_PLAN.md
-6. Phase implementation backlog for the specific V7.x phase
-7. V6_PLUS_IMPLEMENTATION_BACKLOG.md
-8. CRM_CSKH_INTEGRATION_PLAN.md
-9. v6-admin-rebuild.md
-10. AI_PROJECT_BRIEF.md
+1. Explicit latest Owner decisions, including HRP_CRM_INFRA_SPLIT.md (13/09/2026)
+2. HRP_V6_PLUS_V7_MASTER_INDEX.md
+3. AI_CODING_GUARDRAILS.md
+4. V6_V7_CONFLICT_CHANGE_REGISTER.md
+5. V7_ARCHITECTURE.md
+6. V6_PLUS_PLAN.md
+7. Phase implementation backlog for the specific V7.x phase, only its HRP-owned rows
+8. V6_PLUS_IMPLEMENTATION_BACKLOG.md
+9. HRP_CRM_CONNECTOR.md (current proposed cross-app contract); CRM_CSKH_INTEGRATION_PLAN.md is historical and absent from this checkout
+10. v6-admin-rebuild.md
+11. AI_PROJECT_BRIEF.md
 ```
 
 Important nuance:
@@ -272,11 +276,15 @@ V7.6 Supply Partner Network
         ↓
 V7.7 Beneficiary & External Commission Integration
         ↓
-V7.8 Native Client CRM
+V7.8 HRP canonical Client/Demand (may start earlier after its own prerequisites)
         ↓
-V7.9 Omnichannel Integration
+V7.10 HRP operational intelligence (after required domain facts)
+
+Parallel CRM app lane: Chat/CSKH UI + provider adapters + mock contracts
         ↓
-V7.10 Intelligence & Controlled Automation
+V7.9 HRP↔CRM production integration gates per Talent/B2B flow
+        ↓
+V7.10 CRM conversational AI (separate release gate)
 ```
 
 ---
@@ -466,7 +474,7 @@ Hard outcome:
 
 ---
 
-## V7.8 — Native Client CRM
+## V7.8 — Canonical Client/Demand domain; CRM engagement UI external
 
 Document:
 
@@ -489,13 +497,15 @@ opportunity-to-demand handoff
 direct-hire confirmation
 ```
 
+These are HRP canonical entities/commands only. The Client CRM Workbench and commercial/CSKH engagement UI are CRM-app deliverables, not HRP deliverables.
+
 Hard outcome:
 
 > HRP manages B2B manpower relationships without introducing a second client source of truth.
 
 ---
 
-## V7.9 — Omnichannel Integration
+## V7.9 — HRP connector milestone; Omnichannel runtime external
 
 Document:
 
@@ -503,7 +513,7 @@ Document:
 V7_9_OMNICHANNEL_INTEGRATION_BACKLOG.md
 ```
 
-Owns:
+CRM app owns:
 
 ```text
 Anti-Corruption Layer
@@ -513,10 +523,12 @@ webhook verification
 identity mapping
 conversation mapping
 idempotency
-outbox
+outbound delivery queue
 retry/DLQ
 reconciliation
 ```
+
+HRP owns authenticated canonical command/query APIs, business permission/audit and its own transactional outbox/event publisher. CRM does not consume HRP core DB directly.
 
 Hard outcome:
 
@@ -524,7 +536,7 @@ Hard outcome:
 
 ---
 
-## V7.10 — Intelligence & Controlled Automation
+## V7.10 — HRP operational intelligence; conversational AI external
 
 Document:
 
@@ -532,17 +544,12 @@ Document:
 V7_10_INTELLIGENCE_CONTROLLED_AUTOMATION_BACKLOG.md
 ```
 
-Owns:
+Ownership split:
 
 ```text
-reactivation suggestions
-matching ranking
-AI summary
-next-best-action
-risk signals
-controlled automation
-AI evaluation
-redaction/security
+HRP: matching ranking, operational risk/facts, command policy/approval
+CRM app: reactivation outreach, conversation AI summary/draft, CSKH next-best-action
+CRM app: agent coaching, AI evaluation of conversations, channel redaction/security
 ```
 
 Hard outcome:

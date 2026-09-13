@@ -819,6 +819,8 @@ new Assignment
 
 ## 17. Client CRM / B2B
 
+**Owner split 13/09/2026:** Here “Client CRM” denotes canonical B2B business data and commands owned by HRP. The engagement workbench, Chat/CSKH operation and conversational AI are owned by the separate CRM app; see [HRP_CRM_INFRA_SPLIT.md](HRP_CRM_INFRA_SPLIT.md). The CRM app does not get direct HRP database access.
+
 V7 includes only the commercial CRM required to support workforce supply operations.
 
 Recommended graph:
@@ -1139,27 +1141,28 @@ Events support audit/integration/reconciliation; they do not require full event 
 - beneficiary dispute/override history;
 - outbox events to Python app.
 
-### V7.8 Client CRM
+### V7.8 Client CRM (HRP canonical domain, CRM app engagement UI)
 
 - ClientContact;
 - SalesOpportunity;
 - ClientInteraction;
 - ClientNextAction;
-- Client Workbench;
+- Client Workbench in the CRM app, backed by HRP-authorized projections;
 - direct-hire confirmation support.
 
-### V7.9 Omnichannel
+### V7.9 Omnichannel (CRM app; HRP connector only)
 
-- Chatwoot technical integration;
-- Zalo OA production adapter;
+- Chatwoot technical integration in the CRM app;
+- Zalo OA production adapter in the CRM app;
+- HRP canonical command/query APIs, permission and outbox contracts;
 - channel expansion only after first channel is stable.
 
-### V7.10 Intelligence
+### V7.10 Intelligence (split ownership)
 
 - reactivation suggestions;
 - matching ranking;
-- AI summary/draft;
-- next-best-action;
+- AI summary/draft in the CRM app;
+- CSKH next-best-action in the CRM app;
 - funnel/no-show risk;
 - anomaly detection.
 

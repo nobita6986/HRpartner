@@ -1,11 +1,13 @@
 # HRP V7.8 — NATIVE CLIENT CRM IMPLEMENTATION BACKLOG
 
-**Status:** Draft for implementation  
+**Status:** SPLIT_REQUIRED — HRP canonical rows only; engagement UI transferred to CRM app (Owner 13/09/2026)
 **Target release:** V7.8  
-**Prerequisite:** V7.7 Exit Gate PASS  
+**Prerequisite:** HRP canonical B2B foundations may start after the V6+ gate; direct-hire path needs V7.4 Placement authority. V7.7 Beneficiary is not a blanket blocker for Client/Demand work.
 **Cross-cutting:** `AI_CODING_GUARDRAILS.md` is mandatory  
 **Primary bounded context:** Client CRM / Client & Demand  
 **Primary aggregates:** `ClientCompany`, `SalesOpportunity`
+
+> **Scope correction, Owner 13/09/2026:** This is a historical mixed backlog. Only canonical B2B models, domain commands, read projections, demand/direct-hire handoff, security and audit remain HRP work. Client CRM Workbench, sales/CSKH engagement views, inbox, routine follow-up and campaigns move to the separate CRM app. Do not hand their UI tasks to an HRP coding agent. See [HRP_CRM_INFRA_SPLIT.md](HRP_CRM_INFRA_SPLIT.md); its ownership matrix supersedes the execution/exit-gate wording below.
 
 ---
 
@@ -75,8 +77,8 @@ ClientInteraction
 ClientNextAction
 AccountResponsibility
 ProjectResponsibility
-Client CRM Workbench
-Commercial pipeline views
+Client CRM Workbench (CRM app; not HRP scope)
+Commercial engagement/pipeline views (CRM app over HRP-authorized projections)
 Opportunity -> Project/StaffingOrder handoff
 Direct-hire confirmation workflow support
 Security/RLS/audit

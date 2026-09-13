@@ -4,6 +4,8 @@
 > Purpose: Resolve precedence between `v6-admin-rebuild.md`, `CRM_CSKH_INTEGRATION_PLAN.md`, `V6_PLUS_PLAN.md`, and `V7_ARCHITECTURE.md`.  
 > Rule: This register does not rewrite historical documents. It tells implementers which decisions remain valid, which are clarified, and which are superseded for V6+/V7.
 
+> **Later Owner decision (13/09/2026):** [HRP_CRM_INFRA_SPLIT.md](HRP_CRM_INFRA_SPLIT.md) supersedes every row here that assigns Chat, CSKH, Client CRM engagement workbench or Chatwoot/Zalo runtime to the HRP repo. Canonical HRP business records/commands remain HRP-owned. `CRM_CSKH_INTEGRATION_PLAN.md` is a historical reference named below and is not present in this checkout; use the split decision and [HRP_CRM_CONNECTOR.md](HRP_CRM_CONNECTOR.md) for current execution.
+
 ---
 
 ## 1. Document authority / precedence

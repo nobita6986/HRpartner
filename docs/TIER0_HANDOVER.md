@@ -320,12 +320,13 @@ AV2 không publish trước ServiceModel. AFF không code trên timing cũ.
 | V7.5 | Workforce Operations | Worker/Episode/Assignment bridge từ N4 |
 | V7.6 | Supply Partner Network | Referral/partner attribution tách handling |
 | V7.7 | Beneficiary & External Commission | Beneficiary decision + Python integration |
-| V7.8 | Native Client CRM | Client/company responsibility và demand history |
-| V7.9 | Omnichannel Integration | Chatwoot/Zalo adapters trên canonical commands |
-| V7.10 | Intelligence & Controlled Automation | AI trên audit trail và governed commands |
+| V7.8 | HRP canonical Client/Demand; CRM app lo sales/CSKH UI | Client/company responsibility và demand history |
+| V7.9 | HRP↔CRM integration gate | HRP command/query/outbox; Chatwoot/Zalo/ACL ở CRM app |
+| V7.10 | HRP operational intelligence; CRM app lo AI hội thoại | Audit trail, governed commands, matching/risk facts |
 
-Có thể nghiên cứu phase sau sớm, nhưng implementation chỉ chạy song song khi upstream
-contract đã khóa và không tạo authority trùng nhau.
+Có thể nghiên cứu phase sau sớm; CRM app có thể xây Chat/CSKH UI, adapter và mock contract song song, không ghi HRP canonical bằng mock. Tích hợp production chỉ chạy khi từng HRP command contract và gate của luồng tương ứng đã khóa; Talent không phải chờ toàn bộ V7.8 B2B/V7.7 Beneficiary.
+
+Quyết định Owner 13/09/2026 tách toàn bộ Chat/CSKH sang ứng dụng CRM riêng được ghi trong [HRP_CRM_INFRA_SPLIT.md](V7/HRP_CRM_INFRA_SPLIT.md). Tài liệu này thay thế mọi dòng cũ giao CRM engagement UI hoặc provider runtime cho HRP; không thay đổi trạng thái triển khai N1 Stage 3 hay quyền duyệt migration production.
 
 ---
 

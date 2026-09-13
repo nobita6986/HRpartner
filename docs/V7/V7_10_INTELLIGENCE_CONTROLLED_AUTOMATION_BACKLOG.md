@@ -1,11 +1,13 @@
 # HRP V7.10 — INTELLIGENCE & CONTROLLED AUTOMATION IMPLEMENTATION BACKLOG
 
-**Status:** Draft for implementation  
+**Status:** SPLIT_REQUIRED — HRP operational intelligence only; conversational AI transferred to CRM app (Owner 13/09/2026)
 **Target release:** V7.10  
-**Prerequisite:** V7.9 Exit Gate PASS  
+**Prerequisite:** HRP operational intelligence needs its canonical fact/permission gate, not CRM V7.9. CRM conversational AI needs the relevant channel/consent/contract gate.
 **Cross-cutting:** `AI_CODING_GUARDRAILS.md` is mandatory  
 **Primary bounded contexts:** Intelligence / Decision Support / Controlled Automation  
 **Primary principle:** AI assists canonical HRP workflows; it does not become canonical authority
+
+> **Split ownership, Owner 13/09/2026:** The HRP repo may implement matching/risk/operational analytics from canonical domain facts and policy gates for approved commands. Chat summaries, reply drafting, CSKH next-best-action, agent coaching and conversational analytics belong to the separate CRM app. The conversational tasks below are retained only as CRM planning reference; they are removed from HRP execution and exit gates. See [HRP_CRM_INFRA_SPLIT.md](HRP_CRM_INFRA_SPLIT.md).
 
 ---
 

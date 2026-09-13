@@ -1,12 +1,14 @@
 # HRP V7.9 — OMNICHANNEL INTEGRATION IMPLEMENTATION BACKLOG
 
-**Status:** Draft for implementation  
+**Status:** TRANSFERRED_TO_CRM — reference only for HRP connector/contract work (Owner 13/09/2026)
 **Target release:** V7.9  
-**Prerequisite:** V7.8 Exit Gate PASS  
+**Prerequisite:** Per-flow HRP canonical command/auth/contract gate; Talent channel does not require all V7.8 B2B or V7.7 Beneficiary work.
 **Cross-cutting:** `AI_CODING_GUARDRAILS.md` is mandatory  
 **Primary bounded context:** Integration / Anti-Corruption Layer  
 **Primary systems:** HRP System of Record, Chatwoot, Zalo OA  
 **Primary principle:** CRM/chat systems are Systems of Engagement, never canonical business authority
+
+> **Transferred out of HRP, Owner 13/09/2026:** This backlog is retained as integration reference, not an HRP task queue. Chatwoot, Zalo OA, provider adapters, ACL, external mapping/receipts, retry/DLQ/reconciliation, chat inbox and CSKH UI are built and operated by the separate CRM app. HRP owns only canonical command/query APIs, authentication/permissions, business audit, transactional outbox/events and shared contract fixtures. V7.9 acceptance is cross-repo. See [HRP_CRM_INFRA_SPLIT.md](HRP_CRM_INFRA_SPLIT.md). All implementation steps below naming CRM runtime are **CRM work**, even if they were formerly phrased as HRP tasks.
 
 ---
 

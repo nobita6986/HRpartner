@@ -26,7 +26,7 @@ Is the case in Company Pool?
 What must a manager intervene in?
 ```
 
-V7.2 MUST remain usable without Chatwoot, Zalo integration, AI, or external automation.
+V7.2 MUST remain usable without Chatwoot, Zalo integration, AI, or external automation. Under the Owner's 13/09/2026 [HRP/CRM split](HRP_CRM_INFRA_SPLIT.md), this means canonical case/handling/outcome/NextAction operations and a minimal manual/phone fallback in HRP; full Chat/CSKH inbox, routing, reminders and conversation SLA UI belong to the CRM app. Any later task below that describes those engagement surfaces is not an HRP deliverable.
 
 The canonical source of truth remains HRP.
 

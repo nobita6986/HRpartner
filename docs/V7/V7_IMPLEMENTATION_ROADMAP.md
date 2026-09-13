@@ -8,6 +8,8 @@
 > Conflict authority: `V6_V7_CONFLICT_CHANGE_REGISTER.md`  
 > Explicitly out of scope: Payroll engine, internal HRM, commission amount/formula calculation.
 
+> **Owner decision 13/09/2026:** [HRP_CRM_INFRA_SPLIT.md](HRP_CRM_INFRA_SPLIT.md) supersedes all HRP implementation assignments for Chat, CSKH, Chatwoot/Zalo, ACL and CRM engagement UI in this roadmap. V7.9 is a cross-repo integration gate; CRM builds its runtime. V7.10 conversational AI belongs to CRM. HRP retains canonical domain, commands, read projections, outbox and operational intelligence.
+
 ---
 
 ## 0. Purpose of this roadmap
@@ -35,7 +37,7 @@ Detailed coding backlogs should be generated from this roadmap one phase at a ti
 
 When documents disagree, use this order:
 
-1. explicit locked Owner Decisions recorded in V7 architecture / V6+ conflict register;
+1. explicit locked Owner Decisions, including `HRP_CRM_INFRA_SPLIT.md` (13/09/2026);
 2. `V7_ARCHITECTURE.md` for V7 domain semantics;
 3. `V6_PLUS_IMPLEMENTATION_BACKLOG.md` for bridge/migration prerequisites;
 4. `V6_PLUS_PLAN.md`;
@@ -133,7 +135,7 @@ V7.2 Talent Workbench
         +-----------------------------+
         |                             |
         v                             v
-V7.3 Matching & JobProposal      V7.8 Client CRM foundation*
+V7.3 Matching & JobProposal      V7.8 HRP Client/Demand foundation*
         |                             |
         v                             |
 V7.4 Placement & ServiceModel UX <----+
@@ -144,19 +146,21 @@ V7.5 Workforce Operations
         +-------------------+
         |                   |
         v                   v
-V7.6 Partner Network    V7.8 Client CRM full operational flow
+V7.6 Partner Network    V7.8 HRP B2B commands + CRM app UI
         |
         v
 V7.7 Beneficiary Integration
         |
         v
-V7.9 Omnichannel
+V7.9 HRP-CRM connector gate / CRM Omnichannel
         |
         v
-V7.10 Intelligence
+V7.10 HRP operational / CRM conversational intelligence
 ```
 
 `*` Client CRM schema/read-only foundations may begin after the V6+ gate if they do not change or delay Talent/Placement/Workforce authority. Its direct-hire confirmation path cannot be considered complete before V7.4.
+
+The diagram is a domain-dependency view, **not** a requirement to delay CRM app development until V7.7/V7.8. CRM may build Chat/CSKH UI, adapter and contract-mock flows independently while HRP completes V6+/V7.1–V7.8. A Talent intake integration can pass its own HRP↔CRM gate once the relevant identity/case/interaction commands, auth, receipts, DNC and outage tests are real; it need not wait for all B2B Client CRM features or Beneficiary Integration. B2B integration remains gated by its own ClientContact/Opportunity/interaction contract. Production never mutates HRP canonical data through a mock.
 
 ---
 
@@ -1152,9 +1156,9 @@ Structured B2B communication separate from Talent InteractionOutcome.
 
 B2B follow-up tasks. Can share infrastructure patterns with Talent NextAction but domain semantics remain distinct.
 
-### Client Workbench
+### Client Workbench (CRM app)
 
-Suggested views:
+Suggested CRM app views, backed by HRP-authorized projections:
 
 ```text
 overdue client follow-ups
@@ -1191,7 +1195,7 @@ However:
 
 ## 11.7 Exit gate
 
-V7.8 is complete when HRP can track commercial opportunities and client follow-up through actual operational demand without conflating sales pipeline with StaffingOrder fulfillment.
+The HRP portion of V7.8 is complete when canonical commercial opportunities, structured client follow-up and handoff to actual operational demand are exposed through authorized commands/queries without conflating sales pipeline with StaffingOrder fulfillment. CRM owns the engagement workbench and its separate acceptance gate.
 
 ---
 
@@ -1199,7 +1203,7 @@ V7.8 is complete when HRP can track commercial opportunities and client follow-u
 
 ## 12.1 Goal
 
-Add external engagement channels after HRP's manual Talent Workbench is fully operational.
+Integrate the external CRM app after HRP's canonical commands and manual fallback are ready. Provider/channel implementation is not a task in this repo.
 
 ## 12.2 Locked architecture boundary
 
@@ -1215,7 +1219,7 @@ contact / conversation / raw transcript / agent inbox / reply productivity
 
 No CRM/engagement provider may write HRP DB directly.
 
-## 12.3 Order
+## 12.3 Cross-repo order (CRM owns provider, ACL and UI rows)
 
 ```text
 1. Chatwoot technical POC
@@ -1227,7 +1231,7 @@ No CRM/engagement provider may write HRP DB directly.
 7. second channel only after Zalo production gate
 ```
 
-## 12.4 Chatwoot integration capabilities
+## 12.4 Chatwoot integration capabilities (CRM repo; HRP supplies canonical APIs)
 
 - ExternalContactLink;
 - ConversationLink;
@@ -1240,7 +1244,7 @@ No CRM/engagement provider may write HRP DB directly.
 
 Chatwoot agent assignment is not HRP HandlingAssignment.
 
-## 12.5 Zalo OA production requirements
+## 12.5 Zalo OA production requirements (CRM repo)
 
 Before pilot:
 
@@ -1256,7 +1260,7 @@ Before pilot:
 
 No personal-account scraping or unofficial DM workaround.
 
-## 12.6 AI policy during Omnichannel
+## 12.6 AI policy during Omnichannel (CRM repo)
 
 AI remains suggest-only initially for:
 
@@ -1276,7 +1280,7 @@ AI must not autonomously:
 - expose sensitive PII;
 - send outside allowed consent/window policy.
 
-## 12.7 Exit gate G6
+## 12.7 Cross-repo exit gate G6
 
 Zalo/first production channel is complete when:
 
@@ -1355,7 +1359,7 @@ Canonical action still requires HRP command and policy gate.
 
 ## 13.6 Exit gate
 
-Intelligence features are complete only when they can be disabled without breaking core HRP operations.
+HRP operational intelligence and CRM conversational intelligence have separate delivery gates. Both can be disabled without breaking core HRP operations; HRP does not implement conversation summary, reply drafting or CSKH next-best-action UI.
 
 The system must remain fully operable manually.
 

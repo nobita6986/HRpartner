@@ -670,12 +670,14 @@ V6 FINAL
   -> V7.5 Workforce Operations
   -> V7.6 Partner Network
   -> V7.7 Beneficiary Integration
-  -> V7.8 Client CRM
-  -> V7.9 Omnichannel
-  -> V7.10 Intelligence
+  -> V7.8 HRP canonical Client/Demand; CRM app engagement UI
+  -> V7.9 HRP↔CRM integration gate; CRM app Omnichannel runtime
+  -> V7.10 HRP operational intelligence; CRM app conversational AI
 ```
 
 Feature flags may be used for safe rollout, but they must not preserve competing canonical semantics indefinitely.
+
+Owner decision 13/09/2026: [HRP_CRM_INFRA_SPLIT.md](HRP_CRM_INFRA_SPLIT.md) assigns all Chat/CSKH runtime, workbench and channel adapters to the separate CRM app. V6+ still builds only the canonical HRP foundations and connector-ready commands/events.
 
 Destructive cleanup such as renaming `CandidateSubmission`, dropping legacy source fields, or deleting compatibility projections belongs to a later stabilization/cleanup phase after V7 paths have proven stable in production.
 
