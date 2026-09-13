@@ -1,0 +1,57 @@
+﻿{
+    "gate_script":  "neon_branch_gate_prod.ps1",
+    "tested_at":  "2026-09-13T22:02:10.0257883+07:00",
+    "node_version":  "v24.19.0",
+    "pwsh_version":  "5.1.26100.9168",
+    "results":  [
+                    {
+                        "scenario":  "test-pass-hrp-live",
+                        "expected_exit":  19,
+                        "actual_exit":  19,
+                        "pass":  true,
+                        "stdout_tail":  "{\"url1_endpoint_id\":\"shy-tree-az32as2c\",\"url2_endpoint_id\":\"shy-tree-az32as2c\",\"expected_branch_name\":\"hrp-live\",\"branch1_id\":\"br-hrp-live-001\",\"branch1_name\":\"hrp-live\",\"primary_branch_id\":\"br-hrp-live-001\",\"primary_branch_name\":\"hrp-live\",\"same_branch\":true,\"branch_name_matches\":true,\"gate\":\"TEST_PASS\",\"test_mode\":true}",
+                        "stderr_tail":  "NOTICE: mock Neon API in use (NEON_API_BASE=http://127.0.0.1:4603). Production gate MUST NOT use this mode."
+                    },
+                    {
+                        "scenario":  "test-refuse-name",
+                        "expected_exit":  16,
+                        "actual_exit":  16,
+                        "pass":  true,
+                        "stdout_tail":  "",
+                        "stderr_tail":  "h\":true,\"branch_name_matches\":false,\"gate\":\"REFUSE_branch_name_mismatch_CASE_SENSITIVE\",\"test_mode\":true}"
+                    },
+                    {
+                        "scenario":  "test-refuse-empty",
+                        "expected_exit":  12,
+                        "actual_exit":  12,
+                        "pass":  true,
+                        "stdout_tail":  "",
+                        "stderr_tail":  "nd\",\"test_mode\":true}"
+                    },
+                    {
+                        "scenario":  "test-wrong-branch",
+                        "expected_exit":  13,
+                        "actual_exit":  13,
+                        "pass":  true,
+                        "stdout_tail":  "",
+                        "stderr_tail":  "h\":null,\"branch_name_matches\":null,\"gate\":\"REFUSE_admin_writer_endpoint_mismatch\",\"test_mode\":true}"
+                    },
+                    {
+                        "scenario":  "prod-mock-without-testmode",
+                        "expected_exit":  17,
+                        "actual_exit":  17,
+                        "pass":  true,
+                        "stdout_tail":  "",
+                        "stderr_tail":  " "
+                    },
+                    {
+                        "scenario":  "test-hrp-live-url-only",
+                        "expected_exit":  10,
+                        "actual_exit":  10,
+                        "pass":  true,
+                        "stdout_tail":  "",
+                        "stderr_tail":  " "
+                    }
+                ],
+    "all_pass":  true
+}

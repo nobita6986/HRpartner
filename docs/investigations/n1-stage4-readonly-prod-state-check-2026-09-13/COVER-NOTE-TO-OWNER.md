@@ -1,80 +1,225 @@
-# T1 → Owner: Cover note cho Stage 4 dossier
+# T1 -> Owner: Cover note cho Stage 4 dossier (rev sau khi sua 5 chi thi)
 
-**Date:** 2026-09-13 19:58 (UTC+7)
-**From:** Tier 1 — Agent
+**Date:** 2026-09-13 21:00 (UTC+7)
+**From:** Tier 1 - Agent
 **To:** Owner
-**Subject:** Hồ sơ quyết định Stage 4 N1 PlacementCase (READ-ONLY, chưa mở lệnh ghi)
+**Subject:** Sua dossier Stage 4 theo 5 chi thi cua anh (20:14) + gate production da kiem thu
 
 ---
 
 Anh,
 
-Em (Tier 1) đã chuẩn bị xong hồ sơ quyết định Stage 4 tại `docs/investigations/n1-stage4-readonly-prod-state-check-2026-09-13/DOSSIER.md`. Hồ sơ này trả lời đúng 4 yêu cầu của anh:
+Em (Tier 1) da sua dossier theo dung 5 chi thi cua anh luc 20:14, viet gate production rieng cho `hrp-live`, kiem thu 3 scenario, va day tat ca evidence. Ban sua o file:
 
-1. **Kiểm tra chỉ đọc trạng thái migration production ngay trước lúc triển khai** → §4, với 3 query SQL READ-ONLY (`_prisma_migrations` + `pg_indexes` + `pg_constraint` + `pg_class` + `pg_policy`) — Tier 0 chạy, Tier 1 không có quyền `psql` tới `hrp-live`.
+**`docs/investigations/n1-stage4-readonly-prod-state-check-2026-09-13/DOSSIER.md`** (da overwrite file cu, em xoa ban `DOSSIER-v2-pre-approval.md` de tranh nham).
 
-2. **Xác nhận chỉ còn đúng hai migration N1** → §4.3 với kỳ vọng rõ:
-   - `_prisma_migrations` NGOÀI N1: 34 completed + 5 rolled-back.
-   - `_prisma_migrations` N1: 0 rows trên `hrp_mp2_test` (chưa apply).
-   - Sau Stage 4 trên `hrp-live`: 36 completed + 5 rolled-back + 2 N1 mới = 43 rows total.
+---
 
-3. **Đánh giá tác động khoá bảng `candidate_submissions`** → §2, với phân tích chi tiết:
-   - `ALTER TABLE ... ADD COLUMN TEXT NULL` (không default) → catalog-only, **dưới 1 giây**, ACCESS EXCLUSIVE chỉ trên bảng `candidate_submissions`.
-   - FK mới `placement_case_id` (nullable, ON DELETE RESTRICT, ON UPDATE CASCADE) → rủi ro thực tế = 0 vì ứng dụng KHÔNG xoá case và KHÔNG update PK.
-   - RLS migration → ACCESS EXCLUSIVE trên bảng mới `placement_case` (0 traffic), không ảnh hưởng runtime.
-   - Partial unique index → SHARE lock trên bảng mới (0 rows), không ảnh hưởng runtime.
+## Tom tat 5 sua doi
 
-4. **Xác minh đích là branch `hrp-live` theo danh tính branch/endpoint — KHÔNG suy từ cờ `primary`** → §3, với 4 bước xác minh:
-   - Bước 1: Neon API lấy `branch.name == "hrp-live"` (case-sensitive chính xác).
-   - Bước 2: Neon API lấy `endpoint.id` của branch đó.
-   - Bước 3: Cross-check endpoint-id từ `DATABASE_URL` với endpoint-id từ Neon API (qua `endpointIdOf()` helper).
-   - Bước 4: SQL `current_database()` + `inet_server_addr()` như defense-in-depth.
-   - **Cấm**: dùng `branch.primary == true` để chọn branch, tạo branch mới qua API, echo `DATABASE_URL`.
+### 1. §3.2 timeout - Bo menu 3 cach chua kiem thu
 
-## Hành động em đã làm
+Dossier truoc de xuat 3 cach dat `lock_timeout` cho Prisma (`default_transaction_lock_timeout`, bien env, `PGOPTIONS`). Em da **BO** menu nay vi Tier 1 khong khang dinh Prisma ton trong cac co nay khi chua kiem thu tren duong ket noi that.
 
-- ✅ Đọc 2 file migration (`20260912140411_n1_placement_case_foundation` + `20260912140412_n1_placement_case_rls`) từ commit `f7f85bb`.
-- ✅ Đọc `schema.prisma` để verify model `PlacementCase` + `CandidateSubmission.placementCaseId`.
-- ✅ Đọc `TASK.md` N1 để hiểu AC-05, AC-06, RISK-03 (partial unique index concurrency chỉ static verify).
-- ✅ Đọc `HANDOFF.md` N1 round 2 để lấy AE-01..AE-10 measured values + audit findings CLOSED.
-- ✅ Đọc `hrp-live-fingerprint.md` v1.1 (commit `0611b5d`) để biết Tier 0 verify scripts đã có.
-- ✅ Cross-check git state 13/09 19:58: HEAD `4e49a3a`, chỉ 2 branch trên origin.
+Thay bang: **neu can timeout, Tier 1 de xuat mot cach da kiem thu tren test branch truoc khi dua vao runbook**. Hien chua co cach nao duoc Tier 1 verify. Tier 0 quyet: (a) chay khong timeout, hoac (b) Tier 0 tu kiem thu 1 cach + push evidence.
 
-## Hành động em KHÔNG làm (và sẽ không làm)
+### 2. Gate production da viet + kiem thu 3/3 PASS
 
-- ⛔ KHÔNG `psql` đến `hrp-live` (Tier 1 không có credentials).
-- ⛔ KHÔNG `prisma migrate deploy` (Tier 1 không có quyền apply lên prod).
-- ⛔ KHÔNG mở Stage 5 (N1 intake writer) — gated bởi Stage 3 + Stage 4.
-- ⛔ KHÔNG mở AV6 (HomepageSection CMS) — defer theo queue_authority.
-- ⛔ KHÔNG echo `DATABASE_URL` ở bất kỳ đâu.
+Tier 1 da viet `neon_branch_gate_prod.ps1` (counterpart cua `neon_branch_gate.ps1` test):
 
-## Stage 5 / AV6
+- **Gate script:** `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/neon_branch_gate_prod.ps1`
+- **Fake Neon API stub:** `evidence/stage4-preflight/fake_neon_api.js` (Node.js, 3 scenarios)
+- **Test harness:** `evidence/stage4-preflight/test-neon-branch-gate-prod.ps1`
+- **Summary:** `evidence/stage4-preflight/gate-prod-test-summary.json`
 
-Vẫn **CHƯA MỞ** như anh yêu cầu. Tier 1 chỉ chuẩn bị dossier Stage 4. Việc apply + Stage 5 + AV6 đều gated bởi Owner phê duyệt.
+**Khac biet gate prod vs gate test:**
 
-## Đề xuất hướng đi (cập nhật 20:08)
+| Dac diem | Test gate (`neon_branch_gate.ps1`) | Prod gate (`neon_branch_gate_prod.ps1`) |
+|---|---|---|
+| `NEON_EXPECTED_BRANCH_NAME` default | `hrp_mp2_test` | `hrp-live` |
+| Branch name check | Case-insensitive `.ToLower()` | Case-sensitive `-ceq` |
+| Primary branch | **Tu choi** (exit `14`) -- test branch phai non-primary | **Chap nhan** -- `hrp-live` co the la primary |
+| Env vars | `TEST_DATABASE_URL_ADMIN/WRITER` | `HRP_LIVE_URL_ADMIN/WRITER` |
 
-Stage 3 đã PASS thật (theo Tier 0 commit `233fab1` 19:54). Phương án B của em trước đó đã hoàn tất. Bây giờ dossier này là **bước tiếp theo tự nhiên**:
+**Exit codes gate prod:**
 
-**Phương án C — Áp dụng dossier Stage 4 (khuyến nghị hiện tại):**
-1. Anh (Owner) duyệt dossier này (chỉ cần "OK" hoặc comment chỉnh sửa).
-2. Tier 0 dùng checklist §5.1 (P-01..P-05) để apply 2 migration N1 lên `hrp-live`. Hầu hết P-01..P-04 đã được Tier 0 verify trong `233fab1` evidence — chỉ cần apply 2 migration thật.
-3. Sau Stage 4 PASS, Tier 1 viết `verify-task.ps1` + `verify-handoff.ps1` cho Stage 4 round 1, Tier 3 LIGHT audit.
-4. Stage 5 mở sau khi Stage 4 audit PASS.
+| Code | Y nghia |
+|---|---|
+| 0 | PASS |
+| 10 | credentials missing |
+| 11 | HTTP error Neon API |
+| 12 | endpoint-id khong co trong bat ky branch nao |
+| 13 | admin + writer endpoints map ve 2 branch khac nhau |
+| 16 | branch name != "hrp-live" (case-sensitive) |
 
-**Lưu ý quan trọng:**
-- T1 đã verify Tier 0 evidence Tier 0 publish trong commit `233fab1` — đầy đủ 7 artifact (probe NDJSON stdout, NDJSON qua helper, stderr, trace, process, step5 sanitizers, postrun cleanup).
-- Tier 0 cũng đã verify fingerprint có chỗ sai (B.7 RPC list + policy episode tên) và đã publish đính chính trong cùng README. Tier 1 không cần sửa fingerprint trong dossier này; vấn đề đó thuộc commit `4e49a3a` (fingerprint v1.1) và sẽ được xử lý khi Tier 1 viết verify scripts cho Stage 4.
-- Tier 0 evidence dùng định danh `parent: hrp-live / br-icy-dew-azbrgthw, parent_timestamp: 2026-09-13T07:04:20Z` cho test branch `br-misty-cell-az3nx5l3`. Branch id này được Neon trả qua API — Tier 1 không thẩm tra được nhưng dựa trên contract `neon_branch_gate.ps1` đã verify exit 0 trong step15 evidence.
+**Test results (3/3 PASS, timestamp 2026-09-13T20:55:21+07:00):**
 
-## Trạng thái
+| Scenario | Input | Expected | Actual |
+|---|---|---|---|
+| `pass` | URLs map ve `hrp-live` (primary) | 0 | 0 PASS |
+| `refuse-name` | URLs map ve `hrp_mp2_test` | 16 | 16 PASS |
+| `refuse-empty` | URL map ve endpoint-id khong ton tai | 12 | 12 PASS |
 
-- Dossier: READY_FOR_OWNER_REVIEW.
-- Stage 3: vẫn `AWAITING_TIER0_REAPPLY` (rev 2.30).
-- Stage 4: CHƯA MỞ — chờ Owner duyệt dossier + Tier 0 hoàn tất chuỗi AV4 + Stage 3.
-- Stage 5: CHƯA MỞ.
-- AV6: CHƯA MỞ (defer).
+**Sua theo chi thi anh:**
+- Dong "branch non-primary fail-closed" trong §3.3 da bo.
+- Exit code primary gate test = **14** (khong phai 13) -- em da verify trong script goc.
 
-Anh duyệt dossier + chọn phương án A/B nhé. Nếu cần em chỉnh sửa gì trong dossier, em sẵn sàng sửa ngay.
+### 3. §5.2 enum check - Sua `to_regclass` -> `to_regtype`
 
-— Tier 1 Agent, 13/09/2026 19:58 UTC+7
+Enum `PlacementCaseStatus` la **TYPE**, khong phai relation. PG phan biet:
+
+```sql
+-- Sai (enum khong phai relation)
+SELECT to_regclass('public."PlacementCaseStatus"');
+
+-- Dung
+SELECT to_regtype('public."PlacementCaseStatus"');
+```
+
+Bo sung verify policy trong §5.3 -- khong chi `polname` + `polcmd` ma con:
+- `polroles` (qua `string_agg(r.rolname)` tu `pg_roles`) -- verify roles ap dung policy
+- `using_expression` (qua `pg_get_expr(polqual, polrelid)`) -- verify USING
+- `with_check_expression` (qua `pg_get_expr(polwithcheck, polrelid)`) -- verify WITH CHECK
+
+### 4. §6 dung & chan doan - Bo danh sach recovery R-A..R-E
+
+Dossier truoc liet ke 5 phuong an recovery (R-A tiep tuc manual, R-B `migrate resolve --rolled-back`, R-C `migrate resolve --applied`, R-D forward-only fix migration, R-E dung vinh vien). Em da **BO** danh sach nay.
+
+Ly do: migration cu co the dang failed o trang thai khong xac dinh; khong phuong an nao mac dinh an toan. Tier 1 khong de xuat "sua migration da commit" hoac "them migration moi" khi chua biet trang thai DB that.
+
+**Quy trinh moi:**
+- **STOP** ngay khi `prisma migrate deploy` exit non-zero.
+- Thu thap evidence (artifact file + READ ONLY queries).
+- Bao cao Owner/Tier 0 -- Tier 0/Owner **quyet dinh rieng theo trang thai thuc**.
+- Tham khao duy nhat: [Prisma migrate - troubleshooting failed migration](https://www.prisma.io/docs/orm/prisma-migrate/workflows/troubleshooting).
+
+§6.4 cam them 1 dong: "Sua file SQL cua 2 migration da commit" (Prisma dung checksum; sua se fail `migrate deploy` lan sau).
+
+### 5. Sua git state + FK lock note
+
+**§8.2 sua:** `git log origin/main` HEAD = `fee3f9f` (sai -- day la local HEAD, ahead origin). Sua thanh:
+
+> Local `HEAD = fee3f9f` (rev 2.32 dossier Stage 4 cua T1); **local AHEAD origin/main 1 commit** (`origin/main` HEAD = `233fab1`, Tier 0 commit 19:54). Tier 0 fetch + merge truoc khi apply Stage 4.
+
+**§2.2 sua FK lock note:** Truoc em ghi `ADD CONSTRAINT FK` lay SHARE o bang tham chieu. Theo PG ALTER TABLE reference, thuc te lay **SHARE ROW EXCLUSIVE** tren **CA HAI** bang (referencing + referenced). Em da sua bang lock semantics:
+
+| Thao tac | Lock tren bang bi cham | Lock tren bang tham chieu |
+|---|---|---|
+| `ADD CONSTRAINT FK` (Prisma default, khong NOT VALID) | SHARE ROW EXCLUSIVE | **SHARE ROW EXCLUSIVE** (khong phai SHARE) |
+
+---
+
+## SUA LAN 2 -- 3 diem theo chi thi Owner 21:25 (chua commit)
+
+### A. Gate prod doc env vars khop prisma/schema.prisma
+
+Dossier/gate truoc doc `HRP_LIVE_URL_ADMIN/WRITER`. **Sai**: `prisma/schema.prisma` dung `DATABASE_URL` (writer -- Prisma migrate deploy) + `DATABASE_URL_ADMIN` (directUrl). Hai cap co the tro ve 2 branch khac nhau ma gate van PASS, trong khi Tier 0 viet `prisma migrate deploy` chi target theo Prisma schema -> ghi vao branch khac.
+
+**Sua**: gate prod doc `DATABASE_URL` + `DATABASE_URL_ADMIN` (khop Prisma). Tier 0 viet migration se dung cung env vars; khong the co tinh trang gate PASS nhung Prisma deploy vao branch khac.
+
+### B. Gate prod chan bypass qua fake API
+
+Dossier/gate truoc cho phep:
+- `NEON_EXPECTED_BRANCH_NAME` override branch dich (co the doi sang `hrp_mp2_test` de fake PASS).
+- `NEON_API_BASE` tro vao fake Neon API (co the dung local server tra PASS gia).
+
+**Sua**:
+- Branch name **hardcode** `hrp-live` trong script -- khong doc env.
+- `NEON_API_BASE` chi duoc chap nhan khi co `-TestMode` switch HOAC `NEON_ALLOW_MOCK_API=1`. Production deploy khong co 2 cai nay, nen attempt bypass se exit 17 truoc khi goi API.
+
+Test case moi: `mock-without-testmode` (gate refuse 17), `wrong-branch` (2 URL khac branch -> gate refuse 13 truoc khi goi API).
+
+### C. §2.7 + §2.6 cam ket thoi gian sai
+
+Dossier ghi "SHARE ROW EXCLUSIVE tren `labor_profiles` KHONG chan INSERT/UPDATE/DELETE". **Sai** theo PG conflict table (https://www.postgresql.org/docs/current/explicit-locking.html): SHARE ROW EXCLUSIVE conflict voi ROW EXCLUSIVE (lock cua INSERT/UPDATE/DELETE) -> SHARE ROW EXCLUSIVE **CHAN** INSERT/UPDATE/DELETE.
+
+Cung sua: §2.5 + §2.6 co "<1ms", "<1 giay tren moi PG version" cho cac lenh tren `placement_case`. **BO cam ket** -- Tier 0 phai do.
+
+### Test results 5/5 PASS (sau khi sua)
+
+| Scenario | Input | Expected | Actual |
+|---|---|---|---|
+| `pass-hrp-live` | Ca 2 URL -> hrp-live | 0 | 0 PASS |
+| `pass-hrp-mp2` | Ca 2 URL -> hrp_mp2_test (gate hardcode hrp-live -> refuse) | 16 | 16 PASS |
+| `refuse-empty` | URL -> endpoint khong ton tai | 12 | 12 PASS |
+| `wrong-branch` | Url1->hrp-live, Url2->hrp_mp2_test | 13 | 13 PASS |
+| `mock-without-testmode` | NEON_API_BASE fake, khong co -TestMode | 17 | 17 PASS |
+
+**Luu y quan trong (Tier 0 can doc ky)**: 5/5 PASS chi la proof-of-correctness cho code gate tren test harness offline. **KHONG PHAI preflight tren Neon that**. Tier 0 phai chay gate voi NEON_API_KEY that + NEON_PROJECT_ID that + DATABASE_URL that + DATABASE_URL_ADMIN that truoc khi apply migration.
+
+---
+
+## SUA LAN 3 -- theo chi thi Owner 21:44 (chua commit)
+
+### A. Gate bo fallback `HRP_LIVE_URL_*` + bo tham so `-Url1`/`-Url2`
+
+Gate round 2 van co fallback `HRP_LIVE_URL_*` (Tier 1 them de compat voi offline scripts) va parameters `-Url1`/`-Url2`. **Sai**: ca hai deu cho phep bypass env mismatch.
+
+**Sua**: gate prod chi doc `DATABASE_URL_ADMIN` + `DATABASE_URL` tu env. KHONG co fallback. KHONG co parameters. Tier 0 PHAI migrate env vars sang `DATABASE_URL*` truoc khi chay gate (xem evidence `233fab1/baseline-readonly-20260913T121238Z.json` -- Tier 0 baseline script dung `HRP_LIVE_ADMIN_URL`, can doi sang `DATABASE_URL_ADMIN`).
+
+### B. Tach tin hieu PASS khoi test logic
+
+Gate round 2 khi chay `-TestMode` van emit `gate=PASS` + `exit 0`. **Sai**: deploy script co the interpret `exit 0` tu test mode nhu production PASS.
+
+**Sua**: 
+- Production preflight (khong `-TestMode`, khong `NEON_API_BASE`): PASS -> `exit 0` + `gate=PASS`.
+- Test mode (co `-TestMode`): PASS logic nhung emit `exit 19` + `gate=TEST_PASS`. Deploy script PHAI check exit code va tu choi di tiep khi gap 19.
+- `NEON_ALLOW_MOCK_API=1` (env var) cu~ KHONG con duoc chap nhan -- chi `-TestMode` switch moi mo mock (env var co the bi set tu session truoc va quen xoa).
+
+### C. `directUrl` semantics (sua dossier)
+
+Dossier round 2 ghi `directUrl` la Prisma shadow DB / introspection. **Sai** theo Prisma docs (https://www.prisma.io/docs/orm/overview/databases/postgresql): `directUrl` la URL ket noi truc tiep non-pooled ma Prisma CLI/migration su dung de apply DDL (pooled connection qua PgBouncer khong ho tro advisory lock + long-lived transaction can thiet cho migration DDL).
+
+**Sua**: dossier ghi ro `prisma migrate deploy` se connect qua `DATABASE_URL_ADMIN` (directUrl), KHONG phai qua `DATABASE_URL` (pooled). Gate check CA HAI de phong hop Tier 0 sua schema de bo directUrl.
+
+### D. §3.3 verify sau deploy tro sai section
+
+Dossier §3.3 Buoc 4 ghi "Chay Query B o §5.2". **Sai**: §5.2 la preflight query (do N1 chua apply), §5.3 la post-deploy verify query.
+
+**Sua**: §3.3 Buoc 4 tro ve §5.3. Them ghi chu Tier 0 phai GIAM SAT live traffic 5-10 phut sau apply (Tier 0 lam thu cong; Tier 1 khong co quyen truy cap live log).
+
+### Test results 6/6 PASS (sau khi sua round 3)
+
+| Scenario | TestMode | Expected | Actual |
+|---|---|---|---|
+| `test-pass-hrp-live` (URLs -> hrp-live, test mode) | co | 19 (TEST_PASS) | 19 PASS |
+| `test-refuse-name` (URLs -> hrp_mp2_test) | co | 16 | 16 PASS |
+| `test-refuse-empty` (endpoint khong ton tai) | co | 12 | 12 PASS |
+| `test-wrong-branch` (Url1->hrp-live, Url2->hrp_mp2_test) | co | 13 | 13 PASS |
+| `prod-mock-without-testmode` (fake API base, khong co -TestMode) | khong | 17 | 17 PASS |
+| `test-hrp-live-url-only` (chi co `HRP_LIVE_URL_*`) | co | 10 (gate khong fallback) | 10 PASS |
+
+**Luu yeu cau cho deploy script Tier 0**:
+- Deploy script chi di tiep sang `prisma migrate deploy` khi `exit 0` (production PASS).
+- `exit 19` (TEST_PASS) phai dung deploy -- chi la test PASS tren mock, KHONG phai production preflight that.
+- `exit 10/11/12/13/16/17` la REFUSE, deploy script phai abort va bao loi.
+
+**Tier 0 PHAI chay gate tren Neon that truoc khi apply migration** (khong co `-TestMode`, khong co `NEON_API_BASE`). 6/6 PASS chi la proof-of-correctness cho code gate tren test harness offline.
+
+---
+
+## Trang thai truoc commit
+
+**CHUA commit gi** (anh bao "chua push dossier nhu mot runbook da duoc chap thuan"). Files dang o local:
+
+- **Modified:** `docs/investigations/n1-stage4-readonly-prod-state-check-2026-09-13/DOSSIER.md` (overwrite ban cu)
+- **Modified:** `docs/investigations/n1-stage4-readonly-prod-state-check-2026-09-13/COVER-NOTE-TO-OWNER.md`
+- **Untracked:**
+  - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/neon_branch_gate_prod.ps1`
+  - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/fake_neon_api.js`
+  - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/test-neon-branch-gate-prod.ps1`
+  - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/gate-prod-test-summary.json`
+  - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/gate-pass.{stdout,stderr}.log` (test artifact)
+  - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/gate-refuse-name.{stdout,stderr}.log`
+  - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/gate-refuse-empty.{stdout,stderr}.log`
+  - `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-preflight/fake-api-{pass,refuse-name,refuse-empty}.{stdout,stderr}.log`
+
+Anh check `DOSSIER.md` (dac biet §2.2 FK lock + §3.2 timeout + §4.4 gate + §5.2 enum + §6 stop) va `gate-prod-test-summary.json`. Khi anh duyet:
+
+1. Em commit dossier + cover note + gate files (`docs/investigations/...` + `docs/tasks/.../evidence/stage4-preflight/`).
+2. Update PLANNER_HANDOVER.md rev 2.33 (ghi ro "sua theo 5 chi thi 13/09 20:14, gate production da kiem thu 3/3 PASS").
+3. Push len origin/main.
+
+Neu anh can sua tiep em san sang.
+
+-- Tier 1 Agent, 13/09/2026 21:00 UTC+7
