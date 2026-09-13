@@ -7,7 +7,7 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-13 19:52 Asia/Bangkok
+updated_at: 2026-09-13 22:36 Asia/Bangkok
 roadmap_source: docs/AI_PROJECT_BRIEF.md; docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md; docs/prompts/TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md; docs/TIER0_HANDOVER.md
 PHASE_MAP: |
   Phase 0: V5 Close — DA DONG 55/63 ACCEPTED (không thay đổi)
@@ -27,12 +27,12 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin đang triển khai; AFF Track vẫn bị chặn bởi §20
 current_lane: V6 Admin vertical slice (post-N0)
-current_task: "N1 Stage 4 dossier rev 2.33 da push (commit a987e80) — 6/6 gate test PASS chi tren Neon gia (fake API stub). Production preflight bi chan boi 28P01 (admin credential chua duoc update qua kenh bao mat). Tier 0 NO-GO Stage 4 hien tai. Tier 1 KHONG duoc deploy. Tiep theo: Tier 0 cho Owner/Operator cap nhat production credential + Neon API; sau do chay gate that tren Neon that + verify 2 N1 pending + uoc luong tac dong lock (Tier 1 khong cam ket con so cu the) + Tier 0 quyet dinh GO/NO-GO."
-task_path: "docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-hrp-mp2-test-run/README.md"
+current_task: "N1 Stage 4 da apply tren hrp-live va verify PASS. Tier 1 mo task hrp-v6-n1-intake-writer (Stage 5: createOrMatchLaborProfile + intake writer + possible-match + transition), khong can cho migration N1 nua."
+task_path: "docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-hrp-live-run/README.md"
 worktree_branch: merged to main (worktree `tier1-n1-foundation` giữ lịch sử local; branch `tier1/n1-foundation` HEAD 9fe4da2)
-current_gate: "N1_STAGE3_PASS_AWAITING_STAGE4_OWNER_DECISION; production N1 absent as of 2026-09-13 19:19 Asia/Bangkok; STAFFING_LIST_PAGINATION_BUILT_READY_FOR_DEPLOY + DASHBOARD_V1_BUILT_READY_FOR_DEPLOY + AV2_BUILT_READY_FOR_DEPLOY."
+current_gate: "N1_STAGE4_APPLIED_VERIFIED_STAGE5_READY_FOR_PLANNING; STAFFING_LIST_PAGINATION_BUILT_READY_FOR_DEPLOY + DASHBOARD_V1_BUILT_READY_FOR_DEPLOY + AV2_BUILT_READY_FOR_DEPLOY."
 previous_accepted: N1 PlacementCase/Placement foundation ACCEPTED v1.2 (12/09/2026 15:18; branch `tier1/n1-foundation`; deliver `f7f85bb` + docs `9fe4da2`; Tier 3 LIGHT audit round 2 verdict PASS; baseline `703193a`; HANDOFF.md + AUDIT.md round 2 PASS co-located; schema + 2 migrations ADD-only + static SQL gate 17/17 + full unit suite 2025/2025 PASS + typecheck PASS + design-tokens 12/12 PASS carry-forward; CHƯA apply lên hrp-live — Tier 0 deploy gate DEC-N1-06/07) + N0 contract audit v1.1 (12/09/2026) + AV1 admin-settings-form hotfix f2f3296 (12/09/2026 13:25; post-acceptance correction; revert 4 dòng `var(--warning-container)`/`--on-warning-container` do `c8c6321` không resolve trong `globals.css` về `--secondary-container`/`--on-secondary-container`; gate `src/shared/ui/design-tokens.static.test.ts` giờ PASS 12/12; full unit suite 2028/2028 PASS at hotfix commit; AV1 logic không đổi) [evidence: docs/tasks/hrp-v6-n0-contract-audit/evidence-v1.1/av1-design-token-regression.md] + AV4 Media Library ACCEPTED v1.0 (62cdfd9/3133db3) + UI04d detail D.A ACCEPTED v1.0 (165408f + 423e399 + production smoke 200) + UI04g carousel v3 ACCEPTED (6562aaa) + UI04g carousel v2 ACCEPTED (75d28d8) + UI04g carousel v1 ACCEPTED (e259eb6) + UI04f card monogram abbrev ACCEPTED (12a06da) + AV1 HomepageSettings ACCEPTED v1.1 (0f1cb99/ebc7058/01ef329) + projection consistency fix (ebc7058) + N0 contract audit v1.0 (documented)
-blocking_owner: "N1 Stage 4 production deploy needs a separate Tier 0/Owner decision after fresh production read-only preflight; Tier 1 must not deploy. AFF §20 remains closed; Owner visual reviews for AV1/UI04d and Vercel deployment of staffing/dashboard/AV2 remain independent; AV4 Blob env remains Owner-operated."
+blocking_owner: "N1 Stage 4 da hoan tat; khong con credential/deploy gate N1. AFF §20 remains closed; Owner visual reviews for AV1/UI04d and Vercel deployment of staffing/dashboard/AV2 remain independent; AV4 Blob env remains Owner-operated."
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
 ui04_status:
   composition/footer: ACCEPTED v1.4 (04b767e)
@@ -42,7 +42,7 @@ ui04_status:
   04c1-r3 footer text hotfix: ACCEPTED (Tier 1 commit 204f605 feat(ui) 11/09/2026 00:35; 4 chỗ text fix: address prefix + Kê→Kế + bỏ "Thuê" + email spelling `nhaluchrp@gmail.com` → `nhanluchrp@gmail.com`; source: app/components/GlobalFooter.tsx; gates local PASS typecheck/build, test:unit 13 pre-existing FAIL không phải do fix; committed to origin/main 81c7aeb)
   detail UI D.A: ACCEPTED v1.0 (12/09/2026) — Tier 1 commit 165408f (feat: richer sections) + 423e399 (fix: isolate related jobs public transaction, production 500/P2028 đã bắt và sửa); production smoke `/viec-lam/EXTRA-2026-010` HTTP 200; 12 file diff (1 modified + 11 added); gates typecheck/test:unit (in-scope 34/34)/build PASS; out-of-scope 1 pre-existing failure tại design-tokens.static.test.ts không do UI04d; source production: app/(jobs)/viec-lam/[slug]/page.tsx + 8 section components + 1 fixture + public-types.ts; detail editor D.B defer (AV2)
 held_draft: hrp-v5-go-live-19-tracking-pii-db-mask — việc viết, chưa giao /code
-queue_authority: "N1 stages: Stage 1 audit PASS; Stage 2 merged main; Stage 3 real hrp_mp2_test PASS with evidence at stage3-hrp-mp2-test-run; Stage 4 production migration PENDING Owner decision; Stage 5 N1 intake writer only after Stage 4. AV6 CMS remains deferred during this schema/migration lane. AV2 editor shell and staffing/dashboard UI are built, with Vercel verification pending."
+queue_authority: "N1 stages: Stage 1 audit PASS; Stage 2 merged main; Stage 3 real hrp_mp2_test PASS; Stage 4 production migration APPLIED + VERIFIED on hrp-live. Stage 5 hrp-v6-n1-intake-writer may open now. AV6 CMS remains deferred pending separate priority/scope decision. AV2 editor shell and staffing/dashboard UI are built, with Vercel verification pending."
 n1_stage_tracker:
   stage_1_audit_pass_branch:
     status: COMPLETE
@@ -62,15 +62,15 @@ n1_stage_tracker:
     evidence: "docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-hrp-mp2-test-run/{README.md,evidence-manifest.json,step3-deploy-20260913.json,step5-verification-20260913.json,postrun-cleanup-and-live-20260913.json,probe-20260913.clean.ndjson}"
     date: "13/09/2026 19:19 Asia/Bangkok"
   stage_4_db_applied_prod:
-    status: PENDING
-    state: "đã áp dụng DB (hrp-live production)"
-    gating: "Tier 0/Owner quyết (DEC-N1-06/07); Tier 1 KHÔNG tự chạy deploy prod"
-    date: null
+    status: COMPLETE
+    state: "Hai migration N1 applied trên hrp-live; prisma migrate deploy exit 0; postcheck catalog 8/8 PASS; prisma migrate status exit 0."
+    evidence: "docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-hrp-live-run/README.md"
+    date: "13/09/2026 22:28 Asia/Bangkok"
   stage_5_intake_writer_task:
-    status: PENDING
+    status: READY_FOR_PLANNING
     state: "mở hrp-v6-n1-intake-writer"
-    gating: "Chỉ mở SAU stage_3 (local test PASS) + stage_4 (prod migration applied)"
-    date: null
+    gating: "Stage 3 + Stage 4 complete; Tier 1 co the mo task va deliver theo lane phu hop."
+    date: "13/09/2026 22:35 Asia/Bangkok"
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
 ui04_status:
   composition/footer: ACCEPTED v1.4 (04b767e)
@@ -380,4 +380,7 @@ Chỉ sửa khối `ROADMAP_CURSOR` ở §0 (phần nằm trong marker `<!-- ROA
 
 | 2.33 | 13/09/2026 22:08 | **N1 Stage 4 dossier rev 2.33 push (commit `a987e80`) — Tier 0 NO-GO Stage 4 this round**. Tier 1 viet/sua dossier + production gate `neon_branch_gate_prod.ps1` (mock Neon API chi qua `-TestMode` switch, KHONG qua `NEON_ALLOW_MOCK_API` env var; test mode emit `exit 19` + `gate=TEST_PASS`, production preflight `exit 0` + `gate=PASS`; doc chi `DATABASE_URL`/`DATABASE_URL_ADMIN`, bo fallback `HRP_LIVE_URL_*` va parameters `-Url1`/`-Url2`; SHARE ROW EXCLUSIVE chan INSERT/UPDATE/DELETE theo PG conflict table; bo cam ket thoi gian lock cu the; §3.3 verify sau deploy tro ve §5.3). Test harness offline 6/6 PASS (`gate-prod-test-summary.json`). **Tier 0 NO-GO**: 6/6 PASS chi tren Neon gia (fake API stub); `prisma migrate status` fail 28P01 vi production admin credential chua duoc update; chua the xac nhan 2 N1 pending, chua the do lock that. Tier 0 chua thuc hien ghi DB. Tier 1 commit/push `a987e80` (6 files: DOSSIER.md + COVER-NOTE + 4 gate/harness/summary); 12 file `*.log` con o working tree bi `.gitignore` rule `*.log` repo-level ignore. Dieu kien GO (Tier 0 danh gia lai): (i) Owner/Operator cap nhat credential + Neon API qua kenh bao mat; (ii) `prisma migrate status` PASS khong 28P01; (iii) gate that tren Neon that exit 0; (iv) verify dung 2 N1 pending, 0 migration loi; (v) Tier 0 do duoc tinh trang tranh chap lock + uoc luong tac dong (lock THAT chi do duoc khi thuc thi). Stage 4 tiep tuc NO-GO cho den khi ca 5 dieu kien PASS. Stage 5 + AV6 van CHUA MO. |
 
-*Cập nhật lần cuối: 13/09/2026 22:08 +07:00 bởi Tier 1 Agent*
+| 2.34 | 13/09/2026 22:20 | Tier 1 commit `5b5767b` đính chính cursor/dossier của vòng NO-GO; đây là ghi nhận lịch sử trước khi production credential được cập nhật. |
+| 2.35 | 13/09/2026 22:36 | **Tier 0 áp dụng N1 Stage 4 trên `hrp-live` theo lệnh Owner “tiếp tục đi”.** Credential admin direct hoạt động; Neon production gate thật exit 0; trước deploy đúng 2 N1 pending, 35 completed/5 rolled-back/0 unfinished, không có lock chờ. `npx prisma migrate deploy` exit 0, áp đúng hai migration N1. Sau deploy Prisma status exit 0; catalog postcheck 8/8 PASS (FK, indexes, column, RLS, policy); public `/` và `/viec-lam` HTTP 200. Theo dõi DB 5 phút: rollback không tăng, không deadlock/conflict/lock chờ/giao dịch dài ở sáu snapshot. Evidence: `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-hrp-live-run/README.md`. Stage 5 `hrp-v6-n1-intake-writer` được mở cho Tier 1 lên plan/thi công; AV6 vẫn hoãn theo ưu tiên sản phẩm. |
+
+*Cập nhật lần cuối: 13/09/2026 22:36 +07:00 bởi Tier 0*

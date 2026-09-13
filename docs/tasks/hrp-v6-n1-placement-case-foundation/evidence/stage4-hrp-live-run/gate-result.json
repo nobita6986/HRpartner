@@ -1,0 +1,10 @@
+{
+  "checked_at_utc": "2026-09-13T15:34:29.880Z",
+  "gate_exit": 0,
+  "gate": "PASS",
+  "test_mode": false,
+  "branch": "hrp-live",
+  "same_branch": true,
+  "branch_name_matches": true,
+  "endpoint_ids_match": true
+}
