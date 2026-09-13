@@ -18,6 +18,8 @@ import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 import { withIdempotency } from '@/src/shared/integrity/idempotency';
+import { parsePaginationFromUrl } from '@/src/shared/http/pagination';
+import { STAFFING_ORDER_STATUSES, type StaffingOrderStatus } from '@/src/domains/staffing/types';
 import {
   listStaffingOrders,
   createStaffingOrder,
@@ -32,8 +34,20 @@ export const runtime = 'nodejs';
 const LIST_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'SALE', 'DIRECTOR', 'ACCOUNTANT'] as const);
 const CREATE_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'SALE'] as const);
 
-/**
- * slot.hourlyRateVnd là BigInt trong Prisma, mà JSON.stringify không serialize được
+/** Parse + validate `?status=...` từ URL. Trả về undefined nếu không truyền; throw `Error('VALIDATION_ERROR')` nếu truyền sai. */
+function parseStaffingOrderStatus(raw: string | null): StaffingOrderStatus | undefined {
+  if (raw === null || raw === '') return undefined;
+  if (!(STAFFING_ORDER_STATUSES as readonly string[]).includes(raw)) {
+    const allowed = STAFFING_ORDER_STATUSES.join(', ');
+    throw new StaffingOrderServiceError(
+      'INVALID_STATUS',
+      `status phải là một trong: ${allowed}`,
+    );
+  }
+  return raw as StaffingOrderStatus;
+}
+
+/** slot.hourlyRateVnd là BigInt trong Prisma, mà JSON.stringify không serialize được
  * BigInt ⇒ NextResponse.json(order) ném TypeError và route trả 500 SAU KHI đơn đã
  * commit (người dùng thấy lỗi, bấm lại, tạo trùng đơn). Đổi BigInt sang number —
  * VND nguyên nên còn rất xa Number.MAX_SAFE_INTEGER.
@@ -63,14 +77,35 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const projectId = searchParams.get('projectId') ?? undefined;
-  const status = searchParams.get('status') ?? undefined;
-  const take = Math.min(50, parseInt(searchParams.get('take') ?? '20', 10));
-  const skip = parseInt(searchParams.get('skip') ?? '0', 10);
+
+  // Validation: status phải nằm trong STAFFING_ORDER_STATUSES whitelist.
+  // Trước đây route ép `status as any` → Prisma query bị ép kiểu lỏng, có thể
+  // sinh query thừa/bỏ sót filter. Trả 400 nếu client gửi status lạ.
+  let status: StaffingOrderStatus | undefined;
+  try {
+    status = parseStaffingOrderStatus(searchParams.get('status'));
+  } catch (e) {
+    if (e instanceof StaffingOrderServiceError) {
+      return NextResponse.json({ error: e.code, message: e.message }, { status: 400 });
+    }
+    throw e;
+  }
+
+  // Validation: take/skip đi qua shared utility `parsePaginationFromUrl`.
+  // Default take=20 (đồng bộ v1), maxTake=100 (mở rộng từ 50 → 100 cho tier 1 client
+  // khi muốn hiển thị nhiều hơn — không có lý do kỹ thuật giữ max=50; service
+  // không cap). Default skip=0, maxSkip=1_000_000 (chống DoS).
+  const { take, skip } = parsePaginationFromUrl(searchParams, {
+    defaultTake: 20,
+    maxTake: 100,
+    defaultSkip: 0,
+    maxSkip: 1_000_000,
+  });
 
   const prisma = getPrisma();
   try {
     const { rows, total } = await withDbContext(prisma, ctx, (tx) =>
-      listStaffingOrders(tx, ctx, { projectId, status: status as any, take, skip }),
+      listStaffingOrders(tx, ctx, { projectId, status, take, skip }),
     );
     return NextResponse.json({ orders: rows, total, take, skip });
   } catch (e) {
