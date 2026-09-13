@@ -1,0 +1,8 @@
+{
+  "observed_at": "2026-09-13T12:14:19.388Z",
+  "command": "prisma migrate status (test admin/writer URLs injected)",
+  "exit_code": 1,
+  "stdout": "Environment variables loaded from .env\nPrisma schema loaded from prisma\\schema.prisma\nDatasource \"db\": PostgreSQL database \"neondb\", schema \"public\" at \"ep-empty-forest-azlhfyo9.c-3.ap-southeast-1.aws.neon.tech\"\n\n37 migrations found in prisma/migrations\nFollowing migrations have not yet been applied:\n20260912140411_n1_placement_case_foundation\n20260912140412_n1_placement_case_rls\n\nTo apply migrations in development run prisma migrate dev.\nTo apply migrations in production run prisma migrate deploy.\n",
+  "stderr": "",
+  "error": null
+}

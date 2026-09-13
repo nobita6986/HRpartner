@@ -1,0 +1,12 @@
+{
+  "collected_at": "2026-09-13 12:14:29 UTC",
+  "command": "powershell -File docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage3-self-test/neon_branch_gate.ps1",
+  "environment": {
+    "NEON_PROJECT_ID": "proud-lake-83253847",
+    "NEON_EXPECTED_BRANCH_NAME": "hrp_mp2_test",
+    "NEON_API_BASE": "unset; official default",
+    "authentication": "Existing Neon CLI OAuth bearer injected into NEON_API_KEY in child process only"
+  },
+  "exit_code": 0,
+  "stdout": "Neon control-plane branch-membership gate PASS:\r\n{\"admin_endpoint_id\":\"empty-forest-azlhfyo9\",\"writer_endpoint_id\":\"empty-forest-azlhfyo9\",\"expected_branch_name\":\"hrp_mp2_test\",\"admin_branch_id\":\"br-misty-cell-az3nx5l3\",\"writer_branch_id\":\"br-misty-cell-az3nx5l3\",\"admin_branch_name\":\"hrp_mp2_test\",\"writer_branch_name\":\"hrp_mp2_test\",\"primary_branch_id\":\"br-quiet-salad-azoo8scl\",\"primary_branch_name\":\"snapshot-rls-off-dont-use\",\"same_branch\":true,\"branch_is_primary\":false,\"branch_name_matches\":true,\"gate\":\"PASS\"}\r\n"
+}

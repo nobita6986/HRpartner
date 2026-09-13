@@ -1,0 +1,1325 @@
+{
+  "observed_at": "2026-09-13T12:12:38.108Z",
+  "git_head": "3ded03eab7e8ad2da5109e86842bab415e0d469e",
+  "identity": [
+    {
+      "connection": "HRP_LIVE_ADMIN_URL",
+      "branch_id": "br-icy-dew-azbrgthw",
+      "branch_name": "hrp-live",
+      "endpoint_id": "ep-shy-tree-az32as2c",
+      "url_sha256_12": "e161b840a0a0"
+    },
+    {
+      "connection": "TEST_DATABASE_URL_ADMIN",
+      "branch_id": "br-misty-cell-az3nx5l3",
+      "branch_name": "hrp_mp2_test",
+      "endpoint_id": "ep-empty-forest-azlhfyo9",
+      "url_sha256_12": "cc0d3f899904"
+    },
+    {
+      "connection": "TEST_DATABASE_URL_WRITER",
+      "branch_id": "br-misty-cell-az3nx5l3",
+      "branch_name": "hrp_mp2_test",
+      "endpoint_id": "ep-empty-forest-azlhfyo9",
+      "url_sha256_12": "a2384d9a26ed"
+    }
+  ],
+  "branches": [
+    {
+      "id": "br-icy-dew-azbrgthw",
+      "name": "hrp-live",
+      "parent_id": "br-quiet-salad-azoo8scl",
+      "parent_lsn": "0/438A420",
+      "parent_timestamp": "2026-08-15T18:17:03Z",
+      "last_reset_at": null,
+      "current_state": "ready",
+      "primary": false
+    },
+    {
+      "id": "br-misty-cell-az3nx5l3",
+      "name": "hrp_mp2_test",
+      "parent_id": "br-icy-dew-azbrgthw",
+      "parent_lsn": "0/E11F7A8",
+      "parent_timestamp": "2026-09-13T07:04:20Z",
+      "last_reset_at": "2026-09-13T07:04:41Z",
+      "current_state": "ready",
+      "primary": false
+    },
+    {
+      "id": "br-old-lab-azk2j9xd",
+      "name": "pre-n1-stage3-reclone-20260913",
+      "parent_id": "br-quiet-salad-azoo8scl",
+      "parent_lsn": "0/4821A80",
+      "parent_timestamp": "2026-08-18T16:35:29Z",
+      "last_reset_at": null,
+      "current_state": "archived",
+      "primary": false
+    }
+  ],
+  "repo_migration_count": 37,
+  "databases": {
+    "hrp-live": {
+      "identity": {
+        "db": "neondb",
+        "role": "neondb_owner",
+        "server": "169.254.254.254"
+      },
+      "migrations": [
+        {
+          "migration_name": "20260815013341_init",
+          "checksum": "47cc35c1d4f529f3a9bcf69d3a982eef6f5d17af2e51c16133c07fead7ba32e6",
+          "started_at": "2026-08-20T15:52:54.746Z",
+          "finished_at": "2026-08-20T15:52:54.746Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260815084134_g22_security",
+          "checksum": "9103c1e9e1672f5b6a238de47ae459553197cea9309de54f14e9e858c3df5ad1",
+          "started_at": "2026-08-20T15:51:44.987Z",
+          "finished_at": "2026-08-20T15:51:44.987Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816010542_g0_baseline",
+          "checksum": "945efd1281634c6a8509783d1ecf1cca19f8348f87061cc79a8fb3eb64a6b37b",
+          "started_at": "2026-08-20T15:51:47.301Z",
+          "finished_at": "2026-08-20T15:51:47.301Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816161815_s1_integrity_idem_outbox",
+          "checksum": "e6f8d3c9d7b8ac0cf3f0c1909724bad56055d6eaaafb9765b8ab71df4e4cac83",
+          "started_at": "2026-08-20T15:51:49.721Z",
+          "finished_at": "2026-08-20T15:51:49.721Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816161958_s1_integrity_idem_outbox",
+          "checksum": "c3ca0615edf082d0ebd9fcb1056aa0c8e8140eb36d6b7cd22d08bd6f77d0910f",
+          "started_at": "2026-08-20T15:51:52.015Z",
+          "finished_at": "2026-08-20T15:51:52.015Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816180349_g0_rq09_uniq_portal_timesheets",
+          "checksum": "23a6b464688b07f66a2cf6973e99149619456eb3f313997c8b0c373b131112ba",
+          "started_at": "2026-08-20T15:51:54.365Z",
+          "finished_at": "2026-08-20T15:51:54.365Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816210000_s1_rls_worker",
+          "checksum": "dcf7e677e0df5730c0961a2de6e414131329263e3e94ff6e081a94dca801a0d3",
+          "started_at": "2026-08-20T15:51:56.692Z",
+          "finished_at": "2026-08-20T15:51:56.692Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816211000_s1_rls_project",
+          "checksum": "09be951296766e6a0d22323ff0f5d0cfe9fd229a836ed018a7630389d6de1427",
+          "started_at": "2026-08-20T15:51:58.939Z",
+          "finished_at": "2026-08-20T15:51:58.939Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816212000_s1_rls_vendor",
+          "checksum": "53eaf696d6c4a6c2b3b925a025266d575a28457eb0ec76f09ccc892a8f2a450b",
+          "started_at": "2026-08-20T15:52:01.340Z",
+          "finished_at": "2026-08-20T15:52:01.340Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260817080000_s1_rls_staffing_order_slots",
+          "checksum": "ced1a6794cbb3267f293da549a77e271f4165ee4082b6625d8f4580e5c4c38bc",
+          "started_at": "2026-08-20T15:52:03.608Z",
+          "finished_at": "2026-08-20T15:52:03.608Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260817160000_s1_rls_attendance_timesheet",
+          "checksum": "fb5092ae74aa3ea1d8507905d78551e047d4a23b603ba3138f44b1c644148c6a",
+          "started_at": "2026-08-20T15:52:06.177Z",
+          "finished_at": "2026-08-20T15:52:06.177Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260818100000_s1_rls_client_statements",
+          "checksum": "c2285ff79552d66866001f0cb04b59e653cf56e81fd8a4e04544340419c6287b",
+          "started_at": "2026-08-20T15:52:08.706Z",
+          "finished_at": "2026-08-20T15:52:08.706Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260818150000_p1_portals_schema",
+          "checksum": "ea3e6c8744f6c455263249c5fa9f86efda2b7488aa26bda8113b612af29c9d0f",
+          "started_at": "2026-08-20T15:52:11.090Z",
+          "finished_at": "2026-08-20T15:52:11.090Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260819083254_p2_commission_schema",
+          "checksum": "2032c0dbac937be746803f4a801b94dbdafd52ca04e9056193e803a1c79a0dcd",
+          "started_at": "2026-08-20T15:52:13.426Z",
+          "finished_at": "2026-08-20T15:52:13.426Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260819104700_p2_commission_rls",
+          "checksum": "e00a97a855d310354b8e30434c7afc798763d35d3ab0cdff1202874308ceea47",
+          "started_at": "2026-08-20T15:52:15.718Z",
+          "finished_at": "2026-08-20T15:52:15.718Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260819104701_m13_backend_expansion",
+          "checksum": "79b61377f6f712e676bc5711744fb1c54c4bd26225844ab67d1fa5ff13fa082a",
+          "started_at": "2026-08-21T01:54:16.428Z",
+          "finished_at": null,
+          "rolled_back_at": "2026-08-21T01:54:57.275Z",
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260819104701_m13_backend_expansion",
+          "checksum": "79b61377f6f712e676bc5711744fb1c54c4bd26225844ab67d1fa5ff13fa082a",
+          "started_at": "2026-08-21T01:54:57.380Z",
+          "finished_at": "2026-08-21T01:54:57.380Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260821103500_m13_restore_rls_matrix",
+          "checksum": "f055dfc3dfa262ff8ed09811ca1f3d9cdbf926cad25d3fde54a1b1c225edda62",
+          "started_at": "2026-08-21T03:59:45.877Z",
+          "finished_at": "2026-08-21T03:59:46.233Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260823101500_mp2_apply_tracking",
+          "checksum": "845b5ad6ba06263b938bd7bd8ec9a16369ff034adad6d5de724e99b9785c1213",
+          "started_at": "2026-08-25T04:15:21.551Z",
+          "finished_at": null,
+          "rolled_back_at": "2026-08-28T07:37:45.958Z",
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260823101500_mp2_apply_tracking",
+          "checksum": "845b5ad6ba06263b938bd7bd8ec9a16369ff034adad6d5de724e99b9785c1213",
+          "started_at": "2026-08-28T07:37:46.063Z",
+          "finished_at": "2026-08-28T07:37:46.063Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260824130000_mp3_submission_lifecycle",
+          "checksum": "6bb457b88b7822490cc0a88e70ed16ea75940a9dfdcb7a9ea4ea7bfedd49c828",
+          "started_at": "2026-08-28T07:45:15.814Z",
+          "finished_at": "2026-08-28T07:45:16.188Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260824143000_mp3_conversion_worker_link",
+          "checksum": "3e828e3329de01a8eee8654c9dab7c814e8f6eb5282b2a1608e15c5685c925dd",
+          "started_at": "2026-08-28T07:45:16.284Z",
+          "finished_at": "2026-08-28T07:45:16.556Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260824161500_g0_schema_reconcile",
+          "checksum": "a3d1c5b95306637abe4ca748188f4e3bbf4c1486f50a59439a55cbdc8f755b06",
+          "started_at": "2026-08-28T07:45:16.650Z",
+          "finished_at": null,
+          "rolled_back_at": "2026-08-28T07:52:04.008Z",
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260824161500_g0_schema_reconcile",
+          "checksum": "a3d1c5b95306637abe4ca748188f4e3bbf4c1486f50a59439a55cbdc8f755b06",
+          "started_at": "2026-08-28T07:52:04.104Z",
+          "finished_at": "2026-08-28T07:52:04.104Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260824163000_g0_portal_timesheet_index_reconcile",
+          "checksum": "49e654cd366cff85248d9b64658a37466ef67f1ac670468a22c809800f6b756a",
+          "started_at": "2026-08-28T07:52:11.209Z",
+          "finished_at": "2026-08-28T07:52:11.464Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260825090000_mp3c_assignment_placement_links",
+          "checksum": "903e77d319885d033c8cc6fa2751fb870eb4e008ec7f4821f141db7709de5029",
+          "started_at": "2026-08-28T07:52:11.603Z",
+          "finished_at": "2026-08-28T07:52:11.893Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260826120000_m1_07a_ticket_rls_backstop",
+          "checksum": "bd66f415b9b6daa8fc4d35788b4c165f3e6e66d482d5315bf22619581ce7711e",
+          "started_at": "2026-08-28T07:52:11.988Z",
+          "finished_at": "2026-08-28T07:52:12.302Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260827160000_m1_07b_rls_runtime_posture_closure",
+          "checksum": "dc8223f95e311dc5721a6154e66562ac3c0983a9b5a8c3155ae40c437095854b",
+          "started_at": "2026-08-28T07:52:12.393Z",
+          "finished_at": "2026-08-28T07:52:12.669Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260829093000_mp2_public_rpc_schema_usage",
+          "checksum": "6f6ad425d511f362893a82cae76b77eb2d417a9f31dcca1a15c65f7c9c9b0ea9",
+          "started_at": "2026-08-31T02:41:27.496Z",
+          "finished_at": "2026-08-31T02:41:27.791Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260830214139_m14_rls_matrix_repair",
+          "checksum": "5c9c9dc7f97064a6a13dbbdcb561a3b78446ea3a526636a5358e518baf018ed5",
+          "started_at": "2026-08-31T02:41:27.909Z",
+          "finished_at": "2026-08-31T02:41:28.238Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260831103000_marketplace_search_tracking_profile",
+          "checksum": "781da6e9af178318a391edc72ff91229f7e6f721a181739b5eb456aea9356039",
+          "started_at": "2026-08-31T03:10:46.502Z",
+          "finished_at": "2026-08-31T03:10:46.915Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260831160000_public_rpc_residual_grant_revoke",
+          "checksum": "3dfafe955574572eccf57e5b9eba1376064cfe573f8b7555d80dbb210a31caac",
+          "started_at": "2026-09-11T02:40:37.009Z",
+          "finished_at": "2026-09-11T02:40:37.287Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260908001_job_opening_posting_split",
+          "checksum": "0ed95140b4dda8d84b48bb7d00d10e648aad2bdb243089eb3274e57236c25827",
+          "started_at": "2026-09-11T02:40:37.387Z",
+          "finished_at": "2026-09-11T02:40:37.910Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260908150000_v6_phase1a_labor_profile_schema",
+          "checksum": "5d9bf15be11da994dc59af4ce30a28aaee9a038cfe9893cce0bf46938945d58b",
+          "started_at": "2026-09-11T02:40:38.004Z",
+          "finished_at": "2026-09-11T02:44:11.513Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260908150001_v6_phase1a_labor_profile_rls",
+          "checksum": "06edba67-87d7-4f84-ac56-b7e9418a4e55",
+          "started_at": "2026-09-11T02:44:11.716Z",
+          "finished_at": "2026-09-11T02:44:11.716Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260911001_project_company_name_denorm",
+          "checksum": "2d882ddd-bcff-4d41-abf5-3b423bac6097",
+          "started_at": "2026-09-11T03:01:25.883Z",
+          "finished_at": "2026-09-11T03:01:25.883Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260911002_av1_homepage_settings",
+          "checksum": "c3089bc1af595478f24939be6e3caf6a1a568a8b7cdfc582c09a3012b012f5fd",
+          "started_at": "2026-09-11T08:51:38.084Z",
+          "finished_at": null,
+          "rolled_back_at": "2026-09-11T08:54:12.488Z",
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260911002_av1_homepage_settings",
+          "checksum": "c3089bc1af595478f24939be6e3caf6a1a568a8b7cdfc582c09a3012b012f5fd",
+          "started_at": "2026-09-11T09:31:55.043Z",
+          "finished_at": null,
+          "rolled_back_at": "2026-09-11T09:32:20.342Z",
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260911002_av1_homepage_settings",
+          "checksum": "1348ab7cffcebaccc73a8ee800d92523a17a72a38f7c243bdbf6c5cc900d4bd1",
+          "started_at": "2026-09-11T09:32:23.213Z",
+          "finished_at": "2026-09-11T09:32:23.490Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260912001_av4_media_library",
+          "checksum": "67529c2d244d1af7bf73422570df7ac1a36ddbbd2f68c697e66838c1809440ab",
+          "started_at": "2026-09-13T07:00:42.502Z",
+          "finished_at": "2026-09-13T07:00:42.502Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        }
+      ],
+      "objects": [
+        {
+          "obj": "job_openings",
+          "relation": "job_openings"
+        },
+        {
+          "obj": "job_postings",
+          "relation": "job_postings"
+        },
+        {
+          "obj": "labor_profiles",
+          "relation": "labor_profiles"
+        },
+        {
+          "obj": "labor_profile_intakes",
+          "relation": "labor_profile_intakes"
+        },
+        {
+          "obj": "employment_episodes",
+          "relation": "employment_episodes"
+        },
+        {
+          "obj": "homepage_settings",
+          "relation": "homepage_settings"
+        },
+        {
+          "obj": "media",
+          "relation": "media"
+        },
+        {
+          "obj": "media_assignment",
+          "relation": "media_assignment"
+        },
+        {
+          "obj": "placement_case",
+          "relation": null
+        }
+      ],
+      "columns": [
+        {
+          "table_name": "candidate_submissions",
+          "column_name": "labor_profile_id",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "media",
+          "column_name": "created_by_id",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "outsourcing_projects",
+          "column_name": "client_company_name",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "staffing_order_slots",
+          "column_name": "job_opening_id",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "users",
+          "column_name": "id",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        }
+      ],
+      "rls": [
+        {
+          "relname": "employment_episodes",
+          "relrowsecurity": true,
+          "relforcerowsecurity": true
+        },
+        {
+          "relname": "labor_profile_intakes",
+          "relrowsecurity": true,
+          "relforcerowsecurity": true
+        },
+        {
+          "relname": "labor_profiles",
+          "relrowsecurity": true,
+          "relforcerowsecurity": true
+        }
+      ],
+      "policies": [
+        {
+          "tablename": "employment_episodes",
+          "policyname": "hrp_employment_episode_scope",
+          "cmd": "ALL",
+          "roles": "{app_user,app_user_writer}",
+          "qual": "((hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'DIRECTOR'::text])) OR (EXISTS ( SELECT 1\n   FROM labor_profiles lp\n  WHERE ((lp.id = employment_episodes.labor_profile_id) AND (((hrp_session_role() = 'HR_STAFF'::text) AND (lp.worker_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM workers w\n          WHERE ((w.id = lp.worker_id) AND (w.assigned_to_id = hrp_session_user_id()))))) OR ((hrp_session_role() = 'SALE'::text) AND (EXISTS ( SELECT 1\n           FROM workers w\n          WHERE ((w.id = lp.worker_id) AND (w.owner_id = hrp_session_user_id()))))) OR ((hrp_session_role() = 'WORKER'::text) AND (EXISTS ( SELECT 1\n           FROM workers w\n          WHERE ((w.id = lp.worker_id) AND (w.account_user_id = hrp_session_user_id()))))))))))",
+          "with_check": "(hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'DIRECTOR'::text]))"
+        },
+        {
+          "tablename": "labor_profile_intakes",
+          "policyname": "hrp_labor_profile_intake_scope",
+          "cmd": "ALL",
+          "roles": "{app_user,app_user_writer}",
+          "qual": "((hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'DIRECTOR'::text])) OR (EXISTS ( SELECT 1\n   FROM labor_profiles lp\n  WHERE ((lp.id = labor_profile_intakes.labor_profile_id) AND (((hrp_session_role() = 'HR_STAFF'::text) AND (lp.worker_id IS NULL)) OR ((hrp_session_role() = 'HR_STAFF'::text) AND (lp.worker_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM workers w\n          WHERE ((w.id = lp.worker_id) AND (w.assigned_to_id = hrp_session_user_id()))))) OR ((hrp_session_role() = 'SALE'::text) AND (EXISTS ( SELECT 1\n           FROM workers w\n          WHERE ((w.id = lp.worker_id) AND (w.owner_id = hrp_session_user_id()))))) OR ((hrp_session_role() = 'WORKER'::text) AND (EXISTS ( SELECT 1\n           FROM workers w\n          WHERE ((w.id = lp.worker_id) AND (w.account_user_id = hrp_session_user_id()))))))))))",
+          "with_check": "((hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'DIRECTOR'::text])) OR ((hrp_session_role() = 'HR_STAFF'::text) AND (EXISTS ( SELECT 1\n   FROM labor_profiles lp\n  WHERE ((lp.id = labor_profile_intakes.labor_profile_id) AND (lp.worker_id IS NULL))))))"
+        },
+        {
+          "tablename": "labor_profiles",
+          "policyname": "hrp_labor_profile_scope",
+          "cmd": "ALL",
+          "roles": "{app_user,app_user_writer}",
+          "qual": "((hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'DIRECTOR'::text])) OR ((hrp_session_role() = 'HR_STAFF'::text) AND (worker_id IS NULL)) OR ((hrp_session_role() = 'HR_STAFF'::text) AND (worker_id IS NOT NULL) AND (EXISTS ( SELECT 1\n   FROM workers w\n  WHERE ((w.id = labor_profiles.worker_id) AND (w.assigned_to_id = hrp_session_user_id()))))) OR ((hrp_session_role() = 'SALE'::text) AND (EXISTS ( SELECT 1\n   FROM workers w\n  WHERE ((w.id = labor_profiles.worker_id) AND (w.owner_id = hrp_session_user_id()))))) OR ((hrp_session_role() = 'WORKER'::text) AND (EXISTS ( SELECT 1\n   FROM workers w\n  WHERE ((w.id = labor_profiles.worker_id) AND (w.account_user_id = hrp_session_user_id()))))))",
+          "with_check": "((hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'DIRECTOR'::text])) OR ((hrp_session_role() = 'HR_STAFF'::text) AND (worker_id IS NULL)))"
+        }
+      ],
+      "av4_constraints": [
+        {
+          "conname": "media_alt_not_null",
+          "definition": "NOT NULL alt"
+        },
+        {
+          "conname": "media_assignment_cover_not_null",
+          "definition": "NOT NULL cover"
+        },
+        {
+          "conname": "media_assignment_created_at_not_null",
+          "definition": "NOT NULL created_at"
+        },
+        {
+          "conname": "media_assignment_id_not_null",
+          "definition": "NOT NULL id"
+        },
+        {
+          "conname": "media_assignment_media_id_fkey",
+          "definition": "FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "media_assignment_media_id_not_null",
+          "definition": "NOT NULL media_id"
+        },
+        {
+          "conname": "media_assignment_media_id_owner_type_owner_id_key",
+          "definition": "UNIQUE (media_id, owner_type, owner_id)"
+        },
+        {
+          "conname": "media_assignment_order_not_null",
+          "definition": "NOT NULL \"order\""
+        },
+        {
+          "conname": "media_assignment_owner_id_not_null",
+          "definition": "NOT NULL owner_id"
+        },
+        {
+          "conname": "media_assignment_owner_type_allowlist",
+          "definition": "CHECK ((owner_type = ANY (ARRAY['JobPosting'::text, 'HomepageSection'::text, 'Article'::text, 'Partner'::text])))"
+        },
+        {
+          "conname": "media_assignment_owner_type_not_null",
+          "definition": "NOT NULL owner_type"
+        },
+        {
+          "conname": "media_assignment_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "media_cover_not_null",
+          "definition": "NOT NULL cover"
+        },
+        {
+          "conname": "media_created_at_not_null",
+          "definition": "NOT NULL created_at"
+        },
+        {
+          "conname": "media_created_by_id_fkey",
+          "definition": "FOREIGN KEY (created_by_id) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "media_filename_not_null",
+          "definition": "NOT NULL filename"
+        },
+        {
+          "conname": "media_folder_not_null",
+          "definition": "NOT NULL folder"
+        },
+        {
+          "conname": "media_id_not_null",
+          "definition": "NOT NULL id"
+        },
+        {
+          "conname": "media_mime_type_nonempty",
+          "definition": "CHECK ((length(mime_type) > 0))"
+        },
+        {
+          "conname": "media_mime_type_not_null",
+          "definition": "NOT NULL mime_type"
+        },
+        {
+          "conname": "media_order_not_null",
+          "definition": "NOT NULL \"order\""
+        },
+        {
+          "conname": "media_owner_id_not_null",
+          "definition": "NOT NULL owner_id"
+        },
+        {
+          "conname": "media_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "media_public_url_not_null",
+          "definition": "NOT NULL public_url"
+        },
+        {
+          "conname": "media_size_not_null",
+          "definition": "NOT NULL size"
+        },
+        {
+          "conname": "media_size_positive",
+          "definition": "CHECK ((size > 0))"
+        },
+        {
+          "conname": "media_status_not_null",
+          "definition": "NOT NULL status"
+        },
+        {
+          "conname": "media_tags_not_null",
+          "definition": "NOT NULL tags"
+        },
+        {
+          "conname": "media_updated_at_not_null",
+          "definition": "NOT NULL updated_at"
+        },
+        {
+          "conname": "media_url_key",
+          "definition": "UNIQUE (url)"
+        },
+        {
+          "conname": "media_url_not_null",
+          "definition": "NOT NULL url"
+        }
+      ],
+      "av4_enum": [
+        {
+          "enumlabel": "PUBLIC"
+        },
+        {
+          "enumlabel": "INTERNAL"
+        }
+      ],
+      "av1": [
+        {
+          "id": "default",
+          "best_jobs_page_size": 9,
+          "listing_page_size": 12
+        }
+      ],
+      "denorm": [
+        {
+          "missing_name": 0
+        }
+      ],
+      "rpc_membership": [
+        {
+          "member": "neondb_owner",
+          "grantor": "cloud_admin",
+          "admin_option": true,
+          "inherit_option": false,
+          "set_option": false
+        }
+      ],
+      "rpc_acl": [
+        {
+          "proname": "hrp_public_apply_submission",
+          "arguments": "p_slug text, p_slot_id text, p_full_name text, p_phone text, p_normalized_phone text, p_cccd text, p_dob date, p_gender text, p_experience text, p_consent_at timestamp with time zone, p_cv_file_name text, p_cv_mime_type text, p_cv_size_bytes integer, p_cv_storage_key text, p_idempotency_key_hash text, p_idempotency_payload_hash text, p_tracking_code text",
+          "public_execute": false
+        },
+        {
+          "proname": "hrp_public_tracking_profile",
+          "arguments": "p_tracking_code text",
+          "public_execute": false
+        },
+        {
+          "proname": "hrp_public_tracking_projection",
+          "arguments": "p_tracking_code text",
+          "public_execute": false
+        }
+      ],
+      "counts": {
+        "completed": 35,
+        "rolled_back": 5,
+        "unfinished": 0
+      },
+      "pending": [
+        "20260912140411_n1_placement_case_foundation",
+        "20260912140412_n1_placement_case_rls"
+      ],
+      "av4_checksum": {
+        "stored": "67529c2d244d1af7bf73422570df7ac1a36ddbbd2f68c697e66838c1809440ab",
+        "worktree_sha256": "67529c2d244d1af7bf73422570df7ac1a36ddbbd2f68c697e66838c1809440ab",
+        "lf_sha256": "23907a7985036567699fbef23f9bf1d153eb4cc3d4363b92644cc56ec73a9450",
+        "matches": true
+      }
+    },
+    "hrp_mp2_test": {
+      "identity": {
+        "db": "neondb",
+        "role": "neondb_owner",
+        "server": "169.254.254.254"
+      },
+      "migrations": [
+        {
+          "migration_name": "20260815013341_init",
+          "checksum": "47cc35c1d4f529f3a9bcf69d3a982eef6f5d17af2e51c16133c07fead7ba32e6",
+          "started_at": "2026-08-20T15:52:54.746Z",
+          "finished_at": "2026-08-20T15:52:54.746Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260815084134_g22_security",
+          "checksum": "9103c1e9e1672f5b6a238de47ae459553197cea9309de54f14e9e858c3df5ad1",
+          "started_at": "2026-08-20T15:51:44.987Z",
+          "finished_at": "2026-08-20T15:51:44.987Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816010542_g0_baseline",
+          "checksum": "945efd1281634c6a8509783d1ecf1cca19f8348f87061cc79a8fb3eb64a6b37b",
+          "started_at": "2026-08-20T15:51:47.301Z",
+          "finished_at": "2026-08-20T15:51:47.301Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816161815_s1_integrity_idem_outbox",
+          "checksum": "e6f8d3c9d7b8ac0cf3f0c1909724bad56055d6eaaafb9765b8ab71df4e4cac83",
+          "started_at": "2026-08-20T15:51:49.721Z",
+          "finished_at": "2026-08-20T15:51:49.721Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816161958_s1_integrity_idem_outbox",
+          "checksum": "c3ca0615edf082d0ebd9fcb1056aa0c8e8140eb36d6b7cd22d08bd6f77d0910f",
+          "started_at": "2026-08-20T15:51:52.015Z",
+          "finished_at": "2026-08-20T15:51:52.015Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816180349_g0_rq09_uniq_portal_timesheets",
+          "checksum": "23a6b464688b07f66a2cf6973e99149619456eb3f313997c8b0c373b131112ba",
+          "started_at": "2026-08-20T15:51:54.365Z",
+          "finished_at": "2026-08-20T15:51:54.365Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816210000_s1_rls_worker",
+          "checksum": "dcf7e677e0df5730c0961a2de6e414131329263e3e94ff6e081a94dca801a0d3",
+          "started_at": "2026-08-20T15:51:56.692Z",
+          "finished_at": "2026-08-20T15:51:56.692Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816211000_s1_rls_project",
+          "checksum": "09be951296766e6a0d22323ff0f5d0cfe9fd229a836ed018a7630389d6de1427",
+          "started_at": "2026-08-20T15:51:58.939Z",
+          "finished_at": "2026-08-20T15:51:58.939Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260816212000_s1_rls_vendor",
+          "checksum": "53eaf696d6c4a6c2b3b925a025266d575a28457eb0ec76f09ccc892a8f2a450b",
+          "started_at": "2026-08-20T15:52:01.340Z",
+          "finished_at": "2026-08-20T15:52:01.340Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260817080000_s1_rls_staffing_order_slots",
+          "checksum": "ced1a6794cbb3267f293da549a77e271f4165ee4082b6625d8f4580e5c4c38bc",
+          "started_at": "2026-08-20T15:52:03.608Z",
+          "finished_at": "2026-08-20T15:52:03.608Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260817160000_s1_rls_attendance_timesheet",
+          "checksum": "fb5092ae74aa3ea1d8507905d78551e047d4a23b603ba3138f44b1c644148c6a",
+          "started_at": "2026-08-20T15:52:06.177Z",
+          "finished_at": "2026-08-20T15:52:06.177Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260818100000_s1_rls_client_statements",
+          "checksum": "c2285ff79552d66866001f0cb04b59e653cf56e81fd8a4e04544340419c6287b",
+          "started_at": "2026-08-20T15:52:08.706Z",
+          "finished_at": "2026-08-20T15:52:08.706Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260818150000_p1_portals_schema",
+          "checksum": "ea3e6c8744f6c455263249c5fa9f86efda2b7488aa26bda8113b612af29c9d0f",
+          "started_at": "2026-08-20T15:52:11.090Z",
+          "finished_at": "2026-08-20T15:52:11.090Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260819083254_p2_commission_schema",
+          "checksum": "2032c0dbac937be746803f4a801b94dbdafd52ca04e9056193e803a1c79a0dcd",
+          "started_at": "2026-08-20T15:52:13.426Z",
+          "finished_at": "2026-08-20T15:52:13.426Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260819104700_p2_commission_rls",
+          "checksum": "e00a97a855d310354b8e30434c7afc798763d35d3ab0cdff1202874308ceea47",
+          "started_at": "2026-08-20T15:52:15.718Z",
+          "finished_at": "2026-08-20T15:52:15.718Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260819104701_m13_backend_expansion",
+          "checksum": "79b61377f6f712e676bc5711744fb1c54c4bd26225844ab67d1fa5ff13fa082a",
+          "started_at": "2026-08-21T01:54:16.428Z",
+          "finished_at": null,
+          "rolled_back_at": "2026-08-21T01:54:57.275Z",
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260819104701_m13_backend_expansion",
+          "checksum": "79b61377f6f712e676bc5711744fb1c54c4bd26225844ab67d1fa5ff13fa082a",
+          "started_at": "2026-08-21T01:54:57.380Z",
+          "finished_at": "2026-08-21T01:54:57.380Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260821103500_m13_restore_rls_matrix",
+          "checksum": "f055dfc3dfa262ff8ed09811ca1f3d9cdbf926cad25d3fde54a1b1c225edda62",
+          "started_at": "2026-08-21T03:59:45.877Z",
+          "finished_at": "2026-08-21T03:59:46.233Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260823101500_mp2_apply_tracking",
+          "checksum": "845b5ad6ba06263b938bd7bd8ec9a16369ff034adad6d5de724e99b9785c1213",
+          "started_at": "2026-08-25T04:15:21.551Z",
+          "finished_at": null,
+          "rolled_back_at": "2026-08-28T07:37:45.958Z",
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260823101500_mp2_apply_tracking",
+          "checksum": "845b5ad6ba06263b938bd7bd8ec9a16369ff034adad6d5de724e99b9785c1213",
+          "started_at": "2026-08-28T07:37:46.063Z",
+          "finished_at": "2026-08-28T07:37:46.063Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260824130000_mp3_submission_lifecycle",
+          "checksum": "6bb457b88b7822490cc0a88e70ed16ea75940a9dfdcb7a9ea4ea7bfedd49c828",
+          "started_at": "2026-08-28T07:45:15.814Z",
+          "finished_at": "2026-08-28T07:45:16.188Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260824143000_mp3_conversion_worker_link",
+          "checksum": "3e828e3329de01a8eee8654c9dab7c814e8f6eb5282b2a1608e15c5685c925dd",
+          "started_at": "2026-08-28T07:45:16.284Z",
+          "finished_at": "2026-08-28T07:45:16.556Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260824161500_g0_schema_reconcile",
+          "checksum": "a3d1c5b95306637abe4ca748188f4e3bbf4c1486f50a59439a55cbdc8f755b06",
+          "started_at": "2026-08-28T07:45:16.650Z",
+          "finished_at": null,
+          "rolled_back_at": "2026-08-28T07:52:04.008Z",
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260824161500_g0_schema_reconcile",
+          "checksum": "a3d1c5b95306637abe4ca748188f4e3bbf4c1486f50a59439a55cbdc8f755b06",
+          "started_at": "2026-08-28T07:52:04.104Z",
+          "finished_at": "2026-08-28T07:52:04.104Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260824163000_g0_portal_timesheet_index_reconcile",
+          "checksum": "49e654cd366cff85248d9b64658a37466ef67f1ac670468a22c809800f6b756a",
+          "started_at": "2026-08-28T07:52:11.209Z",
+          "finished_at": "2026-08-28T07:52:11.464Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260825090000_mp3c_assignment_placement_links",
+          "checksum": "903e77d319885d033c8cc6fa2751fb870eb4e008ec7f4821f141db7709de5029",
+          "started_at": "2026-08-28T07:52:11.603Z",
+          "finished_at": "2026-08-28T07:52:11.893Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260826120000_m1_07a_ticket_rls_backstop",
+          "checksum": "bd66f415b9b6daa8fc4d35788b4c165f3e6e66d482d5315bf22619581ce7711e",
+          "started_at": "2026-08-28T07:52:11.988Z",
+          "finished_at": "2026-08-28T07:52:12.302Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260827160000_m1_07b_rls_runtime_posture_closure",
+          "checksum": "dc8223f95e311dc5721a6154e66562ac3c0983a9b5a8c3155ae40c437095854b",
+          "started_at": "2026-08-28T07:52:12.393Z",
+          "finished_at": "2026-08-28T07:52:12.669Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260829093000_mp2_public_rpc_schema_usage",
+          "checksum": "6f6ad425d511f362893a82cae76b77eb2d417a9f31dcca1a15c65f7c9c9b0ea9",
+          "started_at": "2026-08-31T02:41:27.496Z",
+          "finished_at": "2026-08-31T02:41:27.791Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260830214139_m14_rls_matrix_repair",
+          "checksum": "5c9c9dc7f97064a6a13dbbdcb561a3b78446ea3a526636a5358e518baf018ed5",
+          "started_at": "2026-08-31T02:41:27.909Z",
+          "finished_at": "2026-08-31T02:41:28.238Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260831103000_marketplace_search_tracking_profile",
+          "checksum": "781da6e9af178318a391edc72ff91229f7e6f721a181739b5eb456aea9356039",
+          "started_at": "2026-08-31T03:10:46.502Z",
+          "finished_at": "2026-08-31T03:10:46.915Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260831160000_public_rpc_residual_grant_revoke",
+          "checksum": "3dfafe955574572eccf57e5b9eba1376064cfe573f8b7555d80dbb210a31caac",
+          "started_at": "2026-09-11T02:40:37.009Z",
+          "finished_at": "2026-09-11T02:40:37.287Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260908001_job_opening_posting_split",
+          "checksum": "0ed95140b4dda8d84b48bb7d00d10e648aad2bdb243089eb3274e57236c25827",
+          "started_at": "2026-09-11T02:40:37.387Z",
+          "finished_at": "2026-09-11T02:40:37.910Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260908150000_v6_phase1a_labor_profile_schema",
+          "checksum": "5d9bf15be11da994dc59af4ce30a28aaee9a038cfe9893cce0bf46938945d58b",
+          "started_at": "2026-09-11T02:40:38.004Z",
+          "finished_at": "2026-09-11T02:44:11.513Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260908150001_v6_phase1a_labor_profile_rls",
+          "checksum": "06edba67-87d7-4f84-ac56-b7e9418a4e55",
+          "started_at": "2026-09-11T02:44:11.716Z",
+          "finished_at": "2026-09-11T02:44:11.716Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260911001_project_company_name_denorm",
+          "checksum": "2d882ddd-bcff-4d41-abf5-3b423bac6097",
+          "started_at": "2026-09-11T03:01:25.883Z",
+          "finished_at": "2026-09-11T03:01:25.883Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260911002_av1_homepage_settings",
+          "checksum": "c3089bc1af595478f24939be6e3caf6a1a568a8b7cdfc582c09a3012b012f5fd",
+          "started_at": "2026-09-11T08:51:38.084Z",
+          "finished_at": null,
+          "rolled_back_at": "2026-09-11T08:54:12.488Z",
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260911002_av1_homepage_settings",
+          "checksum": "c3089bc1af595478f24939be6e3caf6a1a568a8b7cdfc582c09a3012b012f5fd",
+          "started_at": "2026-09-11T09:31:55.043Z",
+          "finished_at": null,
+          "rolled_back_at": "2026-09-11T09:32:20.342Z",
+          "applied_steps_count": 0
+        },
+        {
+          "migration_name": "20260911002_av1_homepage_settings",
+          "checksum": "1348ab7cffcebaccc73a8ee800d92523a17a72a38f7c243bdbf6c5cc900d4bd1",
+          "started_at": "2026-09-11T09:32:23.213Z",
+          "finished_at": "2026-09-11T09:32:23.490Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 1
+        },
+        {
+          "migration_name": "20260912001_av4_media_library",
+          "checksum": "67529c2d244d1af7bf73422570df7ac1a36ddbbd2f68c697e66838c1809440ab",
+          "started_at": "2026-09-13T07:00:42.502Z",
+          "finished_at": "2026-09-13T07:00:42.502Z",
+          "rolled_back_at": null,
+          "applied_steps_count": 0
+        }
+      ],
+      "objects": [
+        {
+          "obj": "job_openings",
+          "relation": "job_openings"
+        },
+        {
+          "obj": "job_postings",
+          "relation": "job_postings"
+        },
+        {
+          "obj": "labor_profiles",
+          "relation": "labor_profiles"
+        },
+        {
+          "obj": "labor_profile_intakes",
+          "relation": "labor_profile_intakes"
+        },
+        {
+          "obj": "employment_episodes",
+          "relation": "employment_episodes"
+        },
+        {
+          "obj": "homepage_settings",
+          "relation": "homepage_settings"
+        },
+        {
+          "obj": "media",
+          "relation": "media"
+        },
+        {
+          "obj": "media_assignment",
+          "relation": "media_assignment"
+        },
+        {
+          "obj": "placement_case",
+          "relation": null
+        }
+      ],
+      "columns": [
+        {
+          "table_name": "candidate_submissions",
+          "column_name": "labor_profile_id",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "media",
+          "column_name": "created_by_id",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "outsourcing_projects",
+          "column_name": "client_company_name",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "staffing_order_slots",
+          "column_name": "job_opening_id",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "users",
+          "column_name": "id",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        }
+      ],
+      "rls": [
+        {
+          "relname": "employment_episodes",
+          "relrowsecurity": true,
+          "relforcerowsecurity": true
+        },
+        {
+          "relname": "labor_profile_intakes",
+          "relrowsecurity": true,
+          "relforcerowsecurity": true
+        },
+        {
+          "relname": "labor_profiles",
+          "relrowsecurity": true,
+          "relforcerowsecurity": true
+        }
+      ],
+      "policies": [
+        {
+          "tablename": "employment_episodes",
+          "policyname": "hrp_employment_episode_scope",
+          "cmd": "ALL",
+          "roles": "{app_user,app_user_writer}",
+          "qual": "((hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'DIRECTOR'::text])) OR (EXISTS ( SELECT 1\n   FROM labor_profiles lp\n  WHERE ((lp.id = employment_episodes.labor_profile_id) AND (((hrp_session_role() = 'HR_STAFF'::text) AND (lp.worker_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM workers w\n          WHERE ((w.id = lp.worker_id) AND (w.assigned_to_id = hrp_session_user_id()))))) OR ((hrp_session_role() = 'SALE'::text) AND (EXISTS ( SELECT 1\n           FROM workers w\n          WHERE ((w.id = lp.worker_id) AND (w.owner_id = hrp_session_user_id()))))) OR ((hrp_session_role() = 'WORKER'::text) AND (EXISTS ( SELECT 1\n           FROM workers w\n          WHERE ((w.id = lp.worker_id) AND (w.account_user_id = hrp_session_user_id()))))))))))",
+          "with_check": "(hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'DIRECTOR'::text]))"
+        },
+        {
+          "tablename": "labor_profile_intakes",
+          "policyname": "hrp_labor_profile_intake_scope",
+          "cmd": "ALL",
+          "roles": "{app_user,app_user_writer}",
+          "qual": "((hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'DIRECTOR'::text])) OR (EXISTS ( SELECT 1\n   FROM labor_profiles lp\n  WHERE ((lp.id = labor_profile_intakes.labor_profile_id) AND (((hrp_session_role() = 'HR_STAFF'::text) AND (lp.worker_id IS NULL)) OR ((hrp_session_role() = 'HR_STAFF'::text) AND (lp.worker_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM workers w\n          WHERE ((w.id = lp.worker_id) AND (w.assigned_to_id = hrp_session_user_id()))))) OR ((hrp_session_role() = 'SALE'::text) AND (EXISTS ( SELECT 1\n           FROM workers w\n          WHERE ((w.id = lp.worker_id) AND (w.owner_id = hrp_session_user_id()))))) OR ((hrp_session_role() = 'WORKER'::text) AND (EXISTS ( SELECT 1\n           FROM workers w\n          WHERE ((w.id = lp.worker_id) AND (w.account_user_id = hrp_session_user_id()))))))))))",
+          "with_check": "((hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'DIRECTOR'::text])) OR ((hrp_session_role() = 'HR_STAFF'::text) AND (EXISTS ( SELECT 1\n   FROM labor_profiles lp\n  WHERE ((lp.id = labor_profile_intakes.labor_profile_id) AND (lp.worker_id IS NULL))))))"
+        },
+        {
+          "tablename": "labor_profiles",
+          "policyname": "hrp_labor_profile_scope",
+          "cmd": "ALL",
+          "roles": "{app_user,app_user_writer}",
+          "qual": "((hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'DIRECTOR'::text])) OR ((hrp_session_role() = 'HR_STAFF'::text) AND (worker_id IS NULL)) OR ((hrp_session_role() = 'HR_STAFF'::text) AND (worker_id IS NOT NULL) AND (EXISTS ( SELECT 1\n   FROM workers w\n  WHERE ((w.id = labor_profiles.worker_id) AND (w.assigned_to_id = hrp_session_user_id()))))) OR ((hrp_session_role() = 'SALE'::text) AND (EXISTS ( SELECT 1\n   FROM workers w\n  WHERE ((w.id = labor_profiles.worker_id) AND (w.owner_id = hrp_session_user_id()))))) OR ((hrp_session_role() = 'WORKER'::text) AND (EXISTS ( SELECT 1\n   FROM workers w\n  WHERE ((w.id = labor_profiles.worker_id) AND (w.account_user_id = hrp_session_user_id()))))))",
+          "with_check": "((hrp_session_role() = ANY (ARRAY['ADMIN'::text, 'HR_MANAGER'::text, 'DIRECTOR'::text])) OR ((hrp_session_role() = 'HR_STAFF'::text) AND (worker_id IS NULL)))"
+        }
+      ],
+      "av4_constraints": [
+        {
+          "conname": "media_alt_not_null",
+          "definition": "NOT NULL alt"
+        },
+        {
+          "conname": "media_assignment_cover_not_null",
+          "definition": "NOT NULL cover"
+        },
+        {
+          "conname": "media_assignment_created_at_not_null",
+          "definition": "NOT NULL created_at"
+        },
+        {
+          "conname": "media_assignment_id_not_null",
+          "definition": "NOT NULL id"
+        },
+        {
+          "conname": "media_assignment_media_id_fkey",
+          "definition": "FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "media_assignment_media_id_not_null",
+          "definition": "NOT NULL media_id"
+        },
+        {
+          "conname": "media_assignment_media_id_owner_type_owner_id_key",
+          "definition": "UNIQUE (media_id, owner_type, owner_id)"
+        },
+        {
+          "conname": "media_assignment_order_not_null",
+          "definition": "NOT NULL \"order\""
+        },
+        {
+          "conname": "media_assignment_owner_id_not_null",
+          "definition": "NOT NULL owner_id"
+        },
+        {
+          "conname": "media_assignment_owner_type_allowlist",
+          "definition": "CHECK ((owner_type = ANY (ARRAY['JobPosting'::text, 'HomepageSection'::text, 'Article'::text, 'Partner'::text])))"
+        },
+        {
+          "conname": "media_assignment_owner_type_not_null",
+          "definition": "NOT NULL owner_type"
+        },
+        {
+          "conname": "media_assignment_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "media_cover_not_null",
+          "definition": "NOT NULL cover"
+        },
+        {
+          "conname": "media_created_at_not_null",
+          "definition": "NOT NULL created_at"
+        },
+        {
+          "conname": "media_created_by_id_fkey",
+          "definition": "FOREIGN KEY (created_by_id) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "media_filename_not_null",
+          "definition": "NOT NULL filename"
+        },
+        {
+          "conname": "media_folder_not_null",
+          "definition": "NOT NULL folder"
+        },
+        {
+          "conname": "media_id_not_null",
+          "definition": "NOT NULL id"
+        },
+        {
+          "conname": "media_mime_type_nonempty",
+          "definition": "CHECK ((length(mime_type) > 0))"
+        },
+        {
+          "conname": "media_mime_type_not_null",
+          "definition": "NOT NULL mime_type"
+        },
+        {
+          "conname": "media_order_not_null",
+          "definition": "NOT NULL \"order\""
+        },
+        {
+          "conname": "media_owner_id_not_null",
+          "definition": "NOT NULL owner_id"
+        },
+        {
+          "conname": "media_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "media_public_url_not_null",
+          "definition": "NOT NULL public_url"
+        },
+        {
+          "conname": "media_size_not_null",
+          "definition": "NOT NULL size"
+        },
+        {
+          "conname": "media_size_positive",
+          "definition": "CHECK ((size > 0))"
+        },
+        {
+          "conname": "media_status_not_null",
+          "definition": "NOT NULL status"
+        },
+        {
+          "conname": "media_tags_not_null",
+          "definition": "NOT NULL tags"
+        },
+        {
+          "conname": "media_updated_at_not_null",
+          "definition": "NOT NULL updated_at"
+        },
+        {
+          "conname": "media_url_key",
+          "definition": "UNIQUE (url)"
+        },
+        {
+          "conname": "media_url_not_null",
+          "definition": "NOT NULL url"
+        }
+      ],
+      "av4_enum": [
+        {
+          "enumlabel": "PUBLIC"
+        },
+        {
+          "enumlabel": "INTERNAL"
+        }
+      ],
+      "av1": [
+        {
+          "id": "default",
+          "best_jobs_page_size": 9,
+          "listing_page_size": 12
+        }
+      ],
+      "denorm": [
+        {
+          "missing_name": 0
+        }
+      ],
+      "rpc_membership": [
+        {
+          "member": "neondb_owner",
+          "grantor": "cloud_admin",
+          "admin_option": true,
+          "inherit_option": false,
+          "set_option": false
+        }
+      ],
+      "rpc_acl": [
+        {
+          "proname": "hrp_public_apply_submission",
+          "arguments": "p_slug text, p_slot_id text, p_full_name text, p_phone text, p_normalized_phone text, p_cccd text, p_dob date, p_gender text, p_experience text, p_consent_at timestamp with time zone, p_cv_file_name text, p_cv_mime_type text, p_cv_size_bytes integer, p_cv_storage_key text, p_idempotency_key_hash text, p_idempotency_payload_hash text, p_tracking_code text",
+          "public_execute": false
+        },
+        {
+          "proname": "hrp_public_tracking_profile",
+          "arguments": "p_tracking_code text",
+          "public_execute": false
+        },
+        {
+          "proname": "hrp_public_tracking_projection",
+          "arguments": "p_tracking_code text",
+          "public_execute": false
+        }
+      ],
+      "counts": {
+        "completed": 35,
+        "rolled_back": 5,
+        "unfinished": 0
+      },
+      "pending": [
+        "20260912140411_n1_placement_case_foundation",
+        "20260912140412_n1_placement_case_rls"
+      ],
+      "av4_checksum": {
+        "stored": "67529c2d244d1af7bf73422570df7ac1a36ddbbd2f68c697e66838c1809440ab",
+        "worktree_sha256": "67529c2d244d1af7bf73422570df7ac1a36ddbbd2f68c697e66838c1809440ab",
+        "lf_sha256": "23907a7985036567699fbef23f9bf1d153eb4cc3d4363b92644cc56ec73a9450",
+        "matches": true
+      }
+    }
+  },
+  "writer_identity": {
+    "db": "neondb",
+    "role": "app_user_writer",
+    "server": "169.254.254.254"
+  }
+}
