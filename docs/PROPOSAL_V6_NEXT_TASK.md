@@ -1,7 +1,8 @@
-# Đề xuất task V6 tiếp theo (chờ Tier 0 duyệt trước khi mở)
+# Đề xuất task V6 tiếp theo (đã thực hiện)
 
-> **Trạng thái:** PROPOSAL — chưa mở task. Tier 1 khảo sát theo directive Tier 0 ngày 13/09/2026 10:21.
-> **Quyết định cuối thuộc Tier 0.** Khi Tier 0 chốt, mở task mới theo template chuẩn.
+> **Trạng thái:** ✅ **DONE** — `hrp-v6-admin-overview-dashboard v1` đã push `a8517c7` lúc 13/09/2026 10:53. Tier 3 LIGHT audit round 1 PASS (sub-agent `0d259610-ef8a-41fc-8372-b2f505e7c2eb`).
+> **Chờ:** Vercel deploy verification từ Tier 0/Owner (theo handoff v2.13 quy ước).
+> **File này giữ lại** để truy vết lý do chọn đề tài này; TASK.md + evidence tại `docs/tasks/hrp-v6-admin-overview-dashboard/`.
 
 ## 1. Ràng buộc lọc (tier 0 directive)
 
