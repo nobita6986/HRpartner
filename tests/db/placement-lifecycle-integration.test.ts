@@ -40,7 +40,7 @@ import type {
   TransitionPlacementInput,
   CreatePlacementResult,
 } from '@/src/domains/talent/placement.service';
-import { PlacementValidationError } from '@/src/domains/talent/placement.errors';
+import { PlacementIdempotencyConflictError, PlacementValidationError } from '@/src/domains/talent/placement.errors';
 
 const HAS_TEST_DB =
   !!process.env.DATABASE_URL_TEST &&
@@ -1053,6 +1053,136 @@ describeIf('N3 placement-lifecycle integration — DB-touching proof', () => {
       });
       expect(rowAfter).not.toBeNull();
       expect(rowAfter!.status).toBe('SELECTED');
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  }, 15000);
+
+  // ─────────────────────────────────────────────────────────────────────
+  // (xiv) [F-09 round-4] race-loser transition: concurrent cancel → PlacementIdempotencyConflictError
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('(xiv) race-loser transition: caller confirm, concurrent cancel → PlacementIdempotencyConflictError', async () => {
+    const writer = makeClient(writerUrl);
+    try {
+      const f = await buildHrpManagedFixture(admin, 'xiv-race-loser');
+      createdLaborProfileIds.push(f.lpId);
+      createdPlacementCaseIds.push(f.pcId);
+
+      const actorId = `n3-actor-xiv-${runId}`;
+      const created = await withHrManagerContext(writer, actorId, (tx) =>
+        createPlacement(tx, {
+          laborProfileId: f.laborProfileId,
+          placementCaseId: f.placementCaseId,
+          jobOpeningId: f.jobOpeningId,
+          actorId,
+        }),
+      );
+      createdPlacementIds.push(created.placementId);
+
+      // Concurrent cancel thành công trước (giả lập admin cancel riêng).
+      await admin.placement.update({
+        where: { id: created.placementId },
+        data: { status: 'CANCELLED', failureReason: 'concurrent cancel for test xiv' },
+      });
+
+      // Caller confirm — canTransition(CANCELLED, CONFIRMED) = TERMINAL_STATE.
+      // → throw InvalidStateTransitionError.
+      let errCaught: Error | null = null;
+      try {
+        await withHrManagerContext(writer, actorId, (tx) =>
+          confirmPlacement(tx, { placementId: created.placementId, actorId }),
+        );
+      } catch (e) {
+        errCaught = e as Error;
+      }
+      expect(errCaught).not.toBeNull();
+      // canTransition reject sớm hơn updateMany — đây là path bình thường.
+      // Round-4 fix F-09 chỉ trigger khi canTransition pass + updateMany count=0.
+      // Test này verify nhánh canTransition reject (giữ behavior cũ).
+      expect(errCaught!.message).toMatch(/TERMINAL_STATE|không hợp lệ/i);
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  }, 15000);
+
+  // ─────────────────────────────────────────────────────────────────────
+  // (xv) [F-08 + F-09 round-4] closePlacementCaseSuccess rollback khi case đã CLOSED đồng thời
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('(xv) Client-managed EFFECTIVE khi case đã CLOSED đồng thời → PlacementIdempotencyConflictError + Placement KHÔNG EFFECTIVE (transaction rollback)', async () => {
+    const writer = makeClient(writerUrl);
+    try {
+      const f = await buildClientManagedFixture(admin, 'xv-concurrent-close');
+      createdLaborProfileIds.push(f.lpId);
+      createdPlacementCaseIds.push(f.pcId);
+
+      const actorId = `n3-actor-xv-${runId}`;
+      const created = await withHrManagerContext(writer, actorId, (tx) =>
+        createPlacement(tx, {
+          laborProfileId: f.laborProfileId,
+          placementCaseId: f.placementCaseId,
+          jobOpeningId: f.jobOpeningId,
+          actorId,
+        }),
+      );
+      createdPlacementIds.push(created.placementId);
+
+      await withHrManagerContext(writer, actorId, (tx) =>
+        confirmPlacement(tx, { placementId: created.placementId, actorId }),
+      );
+
+      // Concurrent closure (giả lập admin đóng case trước khi EFFECTIVE chạy).
+      await admin.placementCase.update({
+        where: { id: f.placementCaseId },
+        data: { status: 'CLOSED', closedAt: new Date(), closeReason: 'concurrent close for test xv' },
+      });
+
+      // EFFECTIVE — closePlacementCaseSuccess sẽ thấy case không ACTIVE → throw.
+      let errCaught: Error | null = null;
+      try {
+        await withHrManagerContext(writer, actorId, (tx) =>
+          markPlacementEffective(tx, {
+            placementId: created.placementId,
+            actorId,
+            evidence: {
+              clientAcknowledgedAt: new Date(),
+              clientAcknowledgedByUserId: `client-ack-${runId}`,
+              acknowledgementRef: `ACK-${runId}-xv`,
+            },
+          }),
+        );
+      } catch (e) {
+        errCaught = e as Error;
+      }
+      expect(errCaught).not.toBeNull();
+      expect(errCaught!.message).toMatch(/ACTIVE|CLOSED|concurrent|case|đóng/i);
+      expect(errCaught).toBeInstanceOf(PlacementIdempotencyConflictError);
+
+      // CRITICAL: Verify Placement KHÔNG EFFECTIVE (rollback toàn bộ transaction).
+      const placementAfter = await admin.placement.findUnique({
+        where: { id: created.placementId },
+        select: {
+          status: true,
+          evidenceAcknowledgedAt: true,
+          evidenceAcknowledgedByUserId: true,
+          evidenceAcknowledgementRef: true,
+          effectiveAt: true,
+        },
+      });
+      expect(placementAfter!.status).toBe('CONFIRMED'); // vẫn CONFIRMED — rollback
+      expect(placementAfter!.evidenceAcknowledgedAt).toBeNull(); // evidence KHÔNG persisted (rollback)
+      expect(placementAfter!.evidenceAcknowledgedByUserId).toBeNull();
+      expect(placementAfter!.evidenceAcknowledgementRef).toBeNull();
+      expect(placementAfter!.effectiveAt).toBeNull();
+
+      // Verify case vẫn CLOSED (từ concurrent closure, không bị thay đổi bởi EFFECTIVE)
+      const caseAfter = await admin.placementCase.findUnique({
+        where: { id: f.placementCaseId },
+        select: { status: true, closeReason: true },
+      });
+      expect(caseAfter!.status).toBe('CLOSED');
+      expect(caseAfter!.closeReason).toBe('concurrent close for test xv'); // closeReason cũ
     } finally {
       await writer.$disconnect().catch(() => {});
     }

@@ -200,12 +200,11 @@ CREATE POLICY "hrp_placements_scope" ON "placements"
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 7) GRANT cho runtime write role — bỏ DELETE (Placement lịch sử phải giữ).
---    ALTER DEFAULT PRIVILEGES chặn future DELETE privilege trên table này.
+--    Scope giới hạn: chỉ thu hồi DELETE trên bảng `placements` này.
+--    KHÔNG dùng ALTER DEFAULT PRIVILEGES (round-4 fix: tránh ảnh hưởng
+--    mọi bảng TƯƠNG LAI trong schema public — N3 chỉ thuộc phạm vi
+--    placements).
 -- ═══════════════════════════════════════════════════════════════════════════
 GRANT SELECT, INSERT, UPDATE ON "placements" TO app_user_writer;
 -- REVOKE DELETE (audit-safe: Placement lịch sử không thể xóa qua runtime role).
 REVOKE DELETE ON "placements" FROM app_user_writer;
-
--- ALTER DEFAULT PRIVILEGES: chặn quyền DELETE về sau trên table mới trong schema public.
-ALTER DEFAULT PRIVILEGES IN SCHEMA "public"
-  REVOKE DELETE ON TABLES FROM app_user_writer;

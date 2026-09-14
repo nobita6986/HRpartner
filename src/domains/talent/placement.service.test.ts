@@ -13,7 +13,8 @@
  *   - markPlacementEffective client-managed thiếu evidence REJECT
  *   - markPlacementEffective client-managed happy path: persist evidence + close case SUCCESS
  *   - failPlacement / cancelPlacement side exits
- *   - race-loser transition: returns current state with replayed=false
+ *   - race-loser transition: replay=true khi same state, throw conflict khi khác state (round-4)
+ *   - closePlacementCaseSuccess rollback khi case không còn ACTIVE (round-4)
  *   - PlacementNotFoundError khi placementId không tồn tại
  */
 
@@ -21,6 +22,7 @@ import { describe, expect, it } from 'vitest';
 import { Prisma } from '@prisma/client';
 import {
   InvalidStateTransitionError,
+  PlacementIdempotencyConflictError,
   PlacementNotFoundError,
   PlacementValidationError,
 } from '@/src/domains/talent/placement.errors';
@@ -524,6 +526,70 @@ describe('placement.service — markPlacementEffective (DEC-07, DEC-08, AC-07)',
     expect(closedCase.closeReason).toContain('PLACEMENT_EFFECTIVE');
   });
 
+  it('(F-08) Client-managed EFFECTIVE: case đã CLOSED đồng thời → throw PlacementIdempotencyConflictError', async () => {
+    // Round-4 fix F-08: closePlacementCaseSuccess phải yêu cầu cập nhật CHÍNH XÁC 1 case.
+    // Nếu case đã đóng đồng thời (concurrent closure hoặc case CLOSED sẵn),
+    // updateMany trả count=0 → throw PlacementIdempotencyConflictError.
+    // Trong production với Prisma transaction: throw sẽ rollback toàn bộ transaction
+    // (bao gồm cả Placement EFFECTIVE updateMany) — Placement KHÔNG thể EFFECTIVE mà
+    // case KHÔNG đóng. Đây là atomic closure guarantee (AC-07).
+    //
+    // Trong mock này, updateMany returns count=1 (mock state không tự rollback)
+    // → Placement vẫn EFFECTIVE. Nhưng ta verify LOẠI error được raise.
+    const { state, placementId } = setupConfirmedPlacement('RECRUITMENT_SERVICE');
+    // Pre-set case ở CLOSED (simulate concurrent closure).
+    state.placementCases.get('case-1')!.status = 'CLOSED';
+    const tx = makeTx(state);
+
+    // Force mock placementCase.updateMany trả count=0 (giả lập concurrent closure
+    // khiến WHERE status IN ACTIVE không match).
+    (tx.placementCase.updateMany as any) = async () => ({ count: 0 });
+
+    let caught: Error | null = null;
+    try {
+      await markPlacementEffective(tx, {
+        placementId,
+        actorId: 'user-1',
+        evidence: {
+          clientAcknowledgedAt: new Date(),
+          clientAcknowledgedByUserId: 'client-1',
+          acknowledgementRef: 'ref-1',
+        },
+      });
+    } catch (e) {
+      caught = e as Error;
+    }
+    expect(caught).toBeInstanceOf(PlacementIdempotencyConflictError);
+    expect(caught!.message).toMatch(/ACTIVE|CLOSED|concurrent|case/i);
+  });
+
+  it('(F-08) closePlacementCaseSuccess: case.status CLOSED → count=0 → throw (verify error type)', async () => {
+    // Verify thêm: trong production với Prisma thật, nếu PlacementCase đã được đóng
+    // đồng thời (count=0), transaction rollback → Placement.updateMany cũng bị undo.
+    // Test này đứng riêng để verify loại error message cụ thể.
+    const { state, placementId } = setupConfirmedPlacement('RECRUITMENT_SERVICE');
+    state.placementCases.get('case-1')!.status = 'CLOSED';
+    const tx = makeTx(state);
+    // Mock closePlacementCaseSuccess path: giả lập updateMany returns count=0
+    // bằng cách set status sang giá trị không ACTIVE.
+    state.placementCases.get('case-1')!.status = 'IN_PROGRESS'; // ACTIVE — first call pass
+    // Second call (concurrent) sẽ thấy CLOSED → count=0. Để đơn giản test direct:
+    state.placementCases.get('case-1')!.status = 'CLOSED';
+    (tx.placementCase.updateMany as any) = async () => ({ count: 0 });
+
+    await expect(
+      markPlacementEffective(tx, {
+        placementId,
+        actorId: 'user-1',
+        evidence: {
+          clientAcknowledgedAt: new Date(),
+          clientAcknowledgedByUserId: 'client-1',
+          acknowledgementRef: 'ref-1',
+        },
+      }),
+    ).rejects.toThrow(PlacementIdempotencyConflictError);
+  });
+
   it('HRP-managed EFFECTIVE reject KHÔNG đóng PlacementCase (N4 boundary)', async () => {
     const { state, placementId } = setupConfirmedPlacement('STAFFING_SUPPLY');
     const tx = makeTx(state);
@@ -707,5 +773,103 @@ describe('placement.service — race-loser / state-mismatch fix', () => {
     await expect(
       confirmPlacement(tx, { placementId: 'pl-1', actorId: 'user-1' }),
     ).rejects.toThrow(InvalidStateTransitionError);
+  });
+
+  it('(F-09) race-loser qua updateMany count=0: caller mong đợi SELECTED→CONFIRMED nhưng state đã cancel (CANCELLED) → throw PlacementIdempotencyConflictError', async () => {
+    // Round-4 fix: phân biệt replay vs conflict. Nếu current state ≠ target caller
+    // yêu cầu → throw PlacementIdempotencyConflictError (không phải silent no-op).
+    //
+    // Scenario thực sự: SELECTED → CONFIRMED. Giữa lúc đó, concurrent cancel
+    // đã đổi state sang CANCELLED. Để test đúng path conditional UPDATE (chứ
+    // không phải canTransition reject sớm), ta setup:
+    //   - state ban đầu SELECTED (pass canTransition).
+    //   - mock updateMany returns count=0 (giả lập concurrent change trước).
+    //   - state hiện tại sau concurrent: CANCELLED.
+    // → runTransition tới updateMany → count=0 → refresh → CANCELLED ≠ CONFIRMED
+    // → throw PlacementIdempotencyConflictError.
+    const state: MockState = {
+      jobOpenings: new Map(),
+      staffingOrders: new Map(),
+      projects: new Map(),
+      clientCompanies: new Map(),
+      placementCases: new Map(),
+      placements: new Map([
+        [
+          'pl-1',
+          {
+            id: 'pl-1',
+            placementCaseId: 'case-1',
+            laborProfileId: 'lp-1',
+            jobOpeningId: 'jo-1',
+            clientCompanyId: 'cc-1',
+            projectId: 'prj-1',
+            serviceModelSnapshot: 'STAFFING_SUPPLY',
+            status: 'SELECTED',
+            version: 1,
+          },
+        ],
+      ]),
+    };
+    seedActiveCase(state, { caseId: 'case-1', laborProfileId: 'lp-1' });
+    const tx = makeTx(state);
+
+    // Mock updateMany returns count=0 (giả lập concurrent change).
+    // Đồng thời update state.placements sang CANCELLED để findUnique sau đó
+    // trả CANCELLED → throw conflict.
+    (tx.placement.updateMany as any) = async () => {
+      state.placements.get('pl-1')!.status = 'CANCELLED';
+      return { count: 0 };
+    };
+
+    await expect(
+      confirmPlacement(tx, { placementId: 'pl-1', actorId: 'user-1' }),
+    ).rejects.toThrow(PlacementIdempotencyConflictError);
+  });
+
+  it('(F-09) race-loser qua updateMany count=0 + current state = target → replay=true', async () => {
+    // Round-4 fix: current state = target caller yêu cầu → replay=true (idempotent).
+    // Scenario: caller A confirm; caller B cũng confirm cùng placementId
+    // NHƯNG giữa chừng concurrent confirm đã đổi state SELECTED→CONFIRMED.
+    // Caller B: canTransition(CONFIRMED, CONFIRMED) = same state → replay=true
+    // (early return — đã cover bởi test case "transition loser returns current state
+    // with replayed=true" ở trên).
+    //
+    // Test này verify nhánh conditional UPDATE: nếu concurrent change sang state =
+    // target (không phải qua same-state early return) → vẫn replay=true.
+    const state: MockState = {
+      jobOpenings: new Map(),
+      staffingOrders: new Map(),
+      projects: new Map(),
+      clientCompanies: new Map(),
+      placementCases: new Map(),
+      placements: new Map([
+        [
+          'pl-1',
+          {
+            id: 'pl-1',
+            placementCaseId: 'case-1',
+            laborProfileId: 'lp-1',
+            jobOpeningId: 'jo-1',
+            clientCompanyId: 'cc-1',
+            projectId: 'prj-1',
+            serviceModelSnapshot: 'STAFFING_SUPPLY',
+            status: 'SELECTED',
+            version: 1,
+          },
+        ],
+      ]),
+    };
+    seedActiveCase(state, { caseId: 'case-1', laborProfileId: 'lp-1' });
+    const tx = makeTx(state);
+
+    // Mock updateMany returns count=0; đồng thời update state sang CONFIRMED.
+    (tx.placement.updateMany as any) = async () => {
+      state.placements.get('pl-1')!.status = 'CONFIRMED';
+      return { count: 0 };
+    };
+
+    const result = await confirmPlacement(tx, { placementId: 'pl-1', actorId: 'user-1' });
+    expect(result.status).toBe('CONFIRMED');
+    expect(result.replayed).toBe(true);
   });
 });

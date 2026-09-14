@@ -383,12 +383,19 @@ async function runTransition(
   });
 
   if (result.count === 0) {
-    // Status changed by concurrent command. Round-3 fix: return CURRENT status
-    // with replayed=false so caller biết command KHÔNG idempotent (state khác
-    // target caller yêu cầu). Nếu may mắn current=target (e.g. concurrent
-    // confirm thành công), caller xử lý theo state thực tế.
+    // Status changed by concurrent command. Round-4 fix (F-09): phân biệt rõ
+    // replay vs conflict:
+    //   - current state = target caller yêu cầu → IDEMPOTENT no-op (replay=true).
+    //   - current state ≠ target caller yêu cầu → CONFLICT (throw); caller phải
+    //     xử lý theo state thực tế (không phải silent no-op).
     const refreshed = await findPlacementForTransition(args.tx, row.id);
-    return { placementId: refreshed.id, status: refreshed.status, replayed: false };
+    if (refreshed.status === args.to) {
+      return { placementId: refreshed.id, status: refreshed.status, replayed: true };
+    }
+    throw new PlacementIdempotencyConflictError(
+      `Transition thua race: yêu cầu ${row.status} → ${args.to}, nhưng placement hiện ở ${refreshed.status}. Cần xử lý theo state thực tế.`,
+      refreshed.id,
+    );
   }
 
   // AC-07: client-managed EFFECTIVE thành công → đóng PlacementCase (atomic closure).
@@ -403,6 +410,12 @@ async function runTransition(
  * Close PlacementCase SUCCESS (atomic) sau khi Client-managed EFFECTIVE thành công.
  * Đây là AC-07: client-managed EFFECTIVE đóng case SUCCESS + record Placement —
  * KHÔNG tạo Worker/Episode/Assignment (đó là N4).
+ *
+ * Round-4 fix (F-08): yêu cầu cập nhật CHÍNH XÁC 1 case. Nếu case đã được đóng
+ * đồng thời (concurrent closure / case CLOSED sẵn), updateMany trả count=0 →
+ * throw PlacementIdempotencyConflictError để caller xử lý. Không có trường hợp
+ * nào Placement commit EFFECTIVE mà case KHÔNG đóng thành công — nếu không
+ * đóng được, rollback toàn bộ transaction (Placement cũng bị undo).
  */
 async function closePlacementCaseSuccess(
   tx: PrismaTypes.TransactionClient,
@@ -410,7 +423,7 @@ async function closePlacementCaseSuccess(
   actorId: string,
   closedAt: Date,
 ): Promise<void> {
-  await tx.placementCase.updateMany({
+  const result = await tx.placementCase.updateMany({
     where: { id: placementCaseId, status: { in: ACTIVE_CASE_STATUSES } },
     data: {
       status: 'CLOSED',
@@ -418,6 +431,15 @@ async function closePlacementCaseSuccess(
       closeReason: `PLACEMENT_EFFECTIVE by ${actorId} at ${closedAt.toISOString()}`,
     },
   });
+  if (result.count === 0) {
+    // Case đã không còn ACTIVE (đã đóng trước đó hoặc concurrent closure).
+    // Theo AC-07, Placement EFFECTIVE atomic-close case → nếu không đóng được
+    // thì rollback toàn bộ transaction (bao gồm cả Placement EFFECTIVE update).
+    throw new PlacementIdempotencyConflictError(
+      `PlacementCase ${placementCaseId} không ở trạng thái ACTIVE khi đóng. Concurrent closure hoặc case đã CLOSED sẵn → rollback transaction.`,
+      placementCaseId,
+    );
+  }
 }
 
 function deriveModeFromSnapshot(snapshot: ServiceModel): 'HRP_MANAGED' | 'CLIENT_MANAGED' {
