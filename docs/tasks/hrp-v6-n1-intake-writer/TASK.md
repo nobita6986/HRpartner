@@ -16,9 +16,9 @@
 | In-scope roots | `src/domains/talent/**` (mới); `src/domains/staffing/assignment-placement.service.ts` (chỉ dùng làm pattern, không sửa nếu không in-scope); `app/api/jobs/apply/**` (mới); `app/api/admin/intake/**` (mới); `tests/**` (test mới cho authority + race + idempotency); `docs/tasks/hrp-v6-n1-intake-writer/**` |
 | Forbidden paths | `prisma/schema.prisma`; `prisma/migrations/**`; `app/(jobs)/**` (UI thuộc task khác); `app/admin/applications/**` (luồng admin staff cũ — out of scope phase này); `app/api/admin/assignments/**` (MP-3C, giữ nguyên); mọi thay đổi liên quan Chat/CSKH/provider runtime (CRM app tách riêng — `docs/TIER0_HANDOVER.md §7`). |
 | Required gates | `npx prisma validate` (smoke); `npx tsc --noEmit` (typecheck); `npx vitest run --config vitest.unit.config.ts tests/domains/talent/**` (authority unit tests); `npx vitest run --config vitest.unit.config.ts tests/db/intake-writer-integration.test.ts` (integration test trên `DATABASE_URL_TEST` — race/idempotency/RLS); `npx vitest run --config vitest.unit.config.ts tests/api/intake.routes.test.ts` (route tests); full unit suite cuối để verify không regress; `npx vitest run --config vitest.unit.config.ts src/shared/ui/design-tokens.static.test.ts` carry-forward. |
-| Current execution round | `0` |
+| Current execution round | `1` |
 | Current audit round | `0` |
-| Next gate | `/deliver` → `/audit` (Tier 3 LIGHT theo contract) → `/resolve` (Tier 1 + Tier 0 deploy gate — KHÔNG apply lên `hrp-live` trong task này) |
+| Next gate | `/deliver` (Tier 1 implement on worktree if any) → `/audit` (Tier 3 LIGHT theo contract) → `/resolve` (Tier 1 + Tier 0 deploy gate — KHÔNG apply lên `hrp-live` trong task này). Tại thời điểm hand-off: HANDOFF deliver ở round 1 → `/audit` Tier 3 round 1. |
 
 > Lane CRITICAL + Audit LIGHT — không được hạ. CRITICAL vì chạm identity (`createOrMatchLaborProfile` là canonical authority cho mọi first-party intake theo V6P-007A) + invariant (`max 1 active PlacementCase/LaborProfile` concurrency-safe đã có ở schema N1 foundation, phase này phải xử lý race ở app layer + idempotency).
 
@@ -237,9 +237,11 @@ Tier 1 append sau review/audit. Audit NONE resolve trực tiếp từ HANDOFF; L
 
 | Round | Decision | Reason |
 |---|---|---|
+| 1 | **ACCEPTED for Tier 3 LIGHT audit round 1.** 36 unit tests PASS tại `src/domains/talent/` + 12 design-tokens carry-forward + typecheck 0 lỗi in-scope + prisma validate PASS + 0 migration diff + scope allowlist respected. HANDOFF.md READY_FOR_AUDIT theo verify-handoff.ps1. Integration test trên `DATABASE_URL_TEST` BLK-01 (chờ Owner/Tier 0 setup). Pre-existing typecheck `marketplace-browse.routes.test.ts` BLK-02 (Tier 2 task riêng). | Tier 1 ownership toàn plan + code + test. HANDOFF ngày 14/09/2026 08:36 Asia/Bangkok. |
 
 ## 10. Revision Log
 
 | Spec version | Date | Author | Change | Reason |
 |---|---|---|---|---|
 | `v0.1 DRAFT` | `2026-09-14 08:09` | `Tier 1` | Initial contract (DRAFT) sau N1 foundation ACCEPTED v1.2 (12/09) + Stage 4 apply PASS (13/09 22:28, commit `5b5767b`). Outcome theo TIER0_HANDOVER.md §N1 + V6P-007A/001B/002B/003/002A. Lane CRITICAL + Audit LIGHT (identity + concurrency). Chia thành 11 STEP nhỏ; cover RQ-01..15 + AC-01..16; race-safe qua partial unique index đã có ở schema foundation + idempotency `withIdempotency`. KHÔNG sửa schema, KHÔNG tạo migration, KHÔNG đổi tên CandidateSubmission (TIER0_HANDOVER.md §11). | N0 §N1 mở next domain task; Tier 1 ownership toàn plan + code + test. |
+| `v0.1 ACCEPTED round 1` | `2026-09-14 08:50` | `Tier 1` | Round 1 deliver: 36 unit tests PASS, typecheck 0 in-scope errors, prisma validate PASS, design-tokens 12/12, no migration diff, scope allowlist. HANDOFF.md READY_FOR_AUDIT. Current execution round 0 → 1; Current audit round 0. Next gate → /audit Tier 3. | Tier 1 self-accept để Tier 3 LIGHT audit round 1. |

@@ -1,27 +1,23 @@
 /**
- * POST /api/jobs/apply — N1 intake writer (STEP-07, TASK hrp-v6-n1-intake-writer).
+ * POST /api/admin/intake/staff — N1 intake writer (STEP-08, TASK hrp-v6-n1-intake-writer).
  *
- * PUBLIC endpoint (marketplace apply). Nhận `{ fullName, phone, ... }`, gọi
- * `createCandidateSubmissionFromIntake` trong transaction có RLS context.
+ * ADMIN/HR_STAFF endpoint (auth required). Staff nhập liệu candidate vào hệ thống.
  *
  * SECURITY:
- *   - Server dùng role `HR_STAFF` (proxy) để INSERT placement_case được RLS cho phép.
- *     Caller public không có AuthContext → KHÔNG thể dùng `withDbContext` cần AuthContext.
- *   - actorId = `public-anon-<uuid>` chỉ cho audit; KHÔNG set referrer/handler.
- *   - KHÔNG log PII qua logWarn/logInfo (logger allow-list tự redact CCCD/phone patterns).
+ *   - Auth bắt buộc (getAuthContext). Role gate ADMIN/HR_MANAGER/HR_STAFF.
+ *   - RLS context = actor thật qua withDbContext (RLS cho INSERT placement_case).
+ *   - actorId = ctx.userId (audit); KHÔNG set referrer.
  *   - Idempotency-Key BẮT BUỘC.
  *
  * Response:
- *   - 201/200 với `{ verdict, laborProfileId, placementCaseId, candidateSubmissionId, ... }`.
- *   - 409 IDEMPOTENCY_CONFLICT nếu key trùng nhưng payload khác.
- *   - 400 INVALID_INPUT nếu thiếu Idempotency-Key hoặc intent không hợp lệ.
+ *   - 201/200 với `{ verdict, laborProfileId, placementCaseId, candidateSubmissionId }`.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { getPrisma } from '@/src/lib/db';
+import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { withIdempotency, IdempotencyConflictError } from '@/src/shared/integrity/idempotency';
-import { applyRlsContext } from '@/src/shared/auth/rls-context';
 import { warn, info } from '@/src/shared/observability/logger';
 import {
   createCandidateSubmissionFromIntake,
@@ -31,56 +27,74 @@ import {
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const ROUTE_KEY = 'POST:/api/jobs/apply';
+const ROUTE_KEY = 'POST:/api/admin/intake/staff';
 
-const ApplyBodySchema = z.object({
+const STAFF_INTAKE_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF'] as const);
+
+const StaffIntakeBodySchema = z.object({
   fullName: z.string().min(1).max(255),
   phone: z.string().min(1).max(20),
   cccdNumber: z.string().max(20).optional(),
-  email: z.string().email().optional(),
   dateOfBirth: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
   jobOpeningId: z.string().optional(),
   projectId: z.string().optional(),
   intent: z.enum(['JOB_INTEREST', 'GENERAL_INTEREST']),
+  consentAt: z.string().datetime().optional(),
 });
 
-type ApplyBody = z.infer<typeof ApplyBodySchema>;
+type StaffIntakeBody = z.infer<typeof StaffIntakeBodySchema>;
 
 function badRequest(message: string): NextResponse {
   return NextResponse.json({ error: 'INVALID_INPUT', message }, { status: 400 });
 }
 
 function isUuidLike(s: string): boolean {
-  // Accept UUID format theo chuẩn (canonical idempotency key).
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // 1. Idempotency-Key bắt buộc.
+  // 1. Auth.
+  let ctx;
+  try {
+    ctx = await getAuthContext(req);
+  } catch (error) {
+    if (error instanceof AuthSessionError) {
+      return NextResponse.json({ error: error.code, message: error.message }, { status: 401 });
+    }
+    return NextResponse.json({ error: 'INTERNAL', message: 'Failed to build auth context' }, { status: 500 });
+  }
+
+  // 2. Role gate.
+  if (!STAFF_INTAKE_ROLES.has(ctx.role as 'ADMIN')) {
+    return NextResponse.json(
+      { error: 'FORBIDDEN', message: `Role ${ctx.role} không có quyền staff intake` },
+      { status: 403 },
+    );
+  }
+
+  // 3. Idempotency-Key bắt buộc.
   const idempotencyKey = (req.headers.get('idempotency-key') ?? req.headers.get('x-idempotency-key') ?? '').trim();
   if (!idempotencyKey || !isUuidLike(idempotencyKey)) {
     return badRequest('Header Idempotency-Key (UUID) is required');
   }
 
-  // 2. Parse body.
+  // 4. Parse body.
   let rawBody: unknown;
   try {
     rawBody = await req.json();
   } catch {
     return badRequest('Body không phải JSON hợp lệ');
   }
-  const parsed = ApplyBodySchema.safeParse(rawBody);
+  const parsed = StaffIntakeBodySchema.safeParse(rawBody);
   if (!parsed.success) {
     return badRequest(`Body không hợp lệ: ${parsed.error.issues.map((i) => i.path.join('.') + ' ' + i.message).join('; ')}`);
   }
-  const body: ApplyBody = parsed.data;
+  const body: StaffIntakeBody = parsed.data;
 
-  // 3. Canonical payload cho idempotency hash (key order cố định).
   const canonicalBody = {
     fullName: body.fullName,
     phone: body.phone,
     cccdNumber: body.cccdNumber ?? null,
-    email: body.email ?? null,
     dateOfBirth: body.dateOfBirth ?? null,
     jobOpeningId: body.jobOpeningId ?? null,
     projectId: body.projectId ?? null,
@@ -88,40 +102,35 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   };
 
   const prisma = getPrisma();
-  const actorId = `public-anon-${randomUUID()}`;
 
   try {
     const result = await withIdempotency({
       prisma,
       route: ROUTE_KEY,
-      actorId,
+      actorId: ctx.userId,
       key: idempotencyKey,
       requestBody: canonicalBody,
       handler: async () => {
-        // Wrap composite write trong transaction có RLS context (proxy HR_STAFF).
-        const outcome = await prisma.$transaction(async (tx) => {
-          await applyRlsContext(tx, {
-            userId: actorId,
-            role: 'HR_STAFF',
-          });
-          return createCandidateSubmissionFromIntake(tx, {
+        const outcome = await withDbContext(prisma, ctx, async (tx) =>
+          createCandidateSubmissionFromIntake(tx, {
             applicant: {
               fullName: body.fullName,
               phone: body.phone,
               cccdNumber: body.cccdNumber ?? null,
               dateOfBirth: body.dateOfBirth ?? null,
             },
-            channel: 'PUBLIC_MARKETPLACE',
+            channel: 'STAFF_INTAKE',
             intent: body.intent,
             projectId: body.projectId ?? null,
-            actorId,
+            actorId: ctx.userId,
             partnerRef: null,
-          });
-        });
+            consentAt: body.consentAt ? new Date(body.consentAt) : null,
+          }),
+        );
 
         info('talent.intake.create', null, {
           route: ROUTE_KEY,
-          actorRole: 'PUBLIC',
+          actorRole: ctx.role,
           resourceType: 'candidate_submission',
           outcome: outcome.match.verdict,
         });
@@ -148,8 +157,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'IDEMPOTENCY_CONFLICT', message: err.message }, { status: 409 });
     }
     if (err instanceof PossibleMatchNotResolvedError) {
-      // POSSIBLE_MATCH chưa resolve — caller (FE) cần hiển thị candidates + chờ user chọn.
-      // Phase này trả 409 để UI xử lý (out of scope auto-merge V6P-007B).
       return NextResponse.json(
         {
           error: 'POSSIBLE_MATCH_NOT_RESOLVED',
@@ -165,10 +172,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
     warn('talent.intake.error', null, {
       route: ROUTE_KEY,
+      actorRole: ctx.role,
       outcome: 'unhandled',
       errorCode:
         typeof err === 'object' && err !== null && 'code' in err ? String((err as { code?: unknown }).code) : 'UNCLASSIFIED',
     });
-    return NextResponse.json({ error: 'INTERNAL', message: 'Apply failed' }, { status: 500 });
+    return NextResponse.json({ error: 'INTERNAL', message: 'Staff intake failed' }, { status: 500 });
   }
 }
