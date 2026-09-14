@@ -41,7 +41,8 @@ export const INTEGRATION_TEST_FILES: string[] = [
   'src/shared/auth/live-public-read-rls.go-live-04.test.ts',
   // go-live-05 / RQ-13 / STEP-08: LIVE evidence cho projection card (seed thật + cleanup thật).
   'src/domains/job-board/public-card-truth.integration.test.ts',
-  // hrp-v6-n1-intake-writer (round 2): DB-touching proof for race + idempotency +
-  // RLS + General Interest + conflictingEvidence. Self-skips when env not present.
-  'tests/db/intake-writer-integration.test.ts',
+  // hrp-v6-n3-service-model-placement: DB-touching proof for ServiceModel taxonomy +
+  // Placement lifecycle + RLS/GRANT + unique partial index anti-race + FK chain resolve.
+  // Self-skips when DATABASE_URL_TEST absent (ENV_BLOCKED — Tier 0/Owner cung cấp DB trước khi xét merge).
+  'tests/db/placement-lifecycle-integration.test.ts',
 ];

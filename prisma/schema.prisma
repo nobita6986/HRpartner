@@ -328,6 +328,7 @@ model ClientCompany {
 
   projects Project[]
   leads    CrmLead[]
+  placements Placement[] @relation("ClientCompanyPlacements")
 
   @@map("client_companies")
 }
@@ -381,6 +382,7 @@ model Project {
   staffingOrders StaffingOrder[]
   submissions    CandidateSubmission[]
   sites          Site[]
+  placements     Placement[]      @relation("ProjectPlacements")
   pmUser         User?           @relation("ProjectPm", fields: [pmUserId], references: [id]) // G22
   subPm1         User?           @relation("ProjectSubPm1", fields: [subPmUserId1], references: [id]) // M13
   subPm2         User?           @relation("ProjectSubPm2", fields: [subPmUserId2], references: [id]) // M13
@@ -454,13 +456,18 @@ model JobOpening {
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
 
+  // N3 DEC-01: ServiceModel taxonomy. Nullable — legacy openings keep NULL until Owner classifies.
+  serviceModel ServiceModel? @map("service_model")
+
   staffingOrder      StaffingOrder      @relation("OpeningOnOrder", fields: [staffingOrderId], references: [id])
   staffingOrderSlot  StaffingOrderSlot? @relation("OpeningSlotNeo", fields: [staffingOrderSlotId], references: [id])
   slots              StaffingOrderSlot[] @relation("OpeningSlots")
   posting            JobPosting?        @relation("OpeningPosting") // V6-DEC-011: tối đa 1 posting PUBLISHED cùng lúc
+  placements         Placement[]        @relation("PlacementJobOpening") // N3 back-relation
 
   @@index([staffingOrderId])
   @@index([staffingOrderSlotId])
+  @@index([serviceModel]) // N3: query theo taxonomy
   @@map("job_openings")
 }
 
@@ -576,6 +583,7 @@ model CandidateSubmission {
   sourceClaims  SourceClaim[]
   statusHistory ApplicationStatusHistory[] // MP-2 RQ-01/RQ-06
   assignment    ProjectAssignment? // MP-3C RQ-01: at most one initial placement per submission
+  placements    Placement[]         @relation("SubmissionPlacements") // N3: source submission (nullable)
 
   @@index([vendorId, phone]) // V4.5 G13: bỏ unique để nộp LẠI cùng người cho nhu cầu khác — chống trùng bằng Referral Guard
   @@index([cccdNumber]) // V4.3 G11: Referral Guard tra cứu nhanh theo CCCD
@@ -657,6 +665,10 @@ model ProjectAssignment {
   // Marketplace placement that starts from a CONVERTED submission fills them.
   submissionId        String? @unique @map("submission_id")          // MP-3C RQ-01: canonical source submission — one initial assignment per submission
   staffingOrderSlotId String? @map("staffing_order_slot_id")         // MP-3C RQ-01: the slot this assignment fills (slotsFilled projection source)
+  // N3 V6P-013: nullable back-link to originating Placement. Phase này ADD COLUMN nullable,
+  // KHÔNG populate (atomic workforce bridge thuộc N4).
+  placementId         String? @map("placement_id")
+  placement           Placement? @relation("AssignmentPlacement", fields: [placementId], references: [id])
   createdAt      DateTime  @default(now()) @map("created_at")
 
   worker        Worker        @relation(fields: [workerId], references: [id])
@@ -1398,6 +1410,7 @@ model LaborProfile {
   intakes        LaborProfileIntake[]
   episodes       EmploymentEpisode[]
   placementCases  PlacementCase[]
+  placements      Placement[]      @relation("LaborProfilePlacements")
 
   @@index([normalizedPhone])
   @@index([cccdNumber])
@@ -1459,6 +1472,31 @@ enum PlacementCaseStatus {
   // NOTE: Stage enum (NEW/CONTACTING/QUALIFYING/MATCHING/...) deferred sang Phase sau.
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// N3 — ServiceModel + Placement (V6 Phase 1+)
+// DEC-01..DEC-14. Enum taxonomy + bản ghi placement độc lập với ProjectAssignment.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// DEC-01: 4 giá trị nghiệp vụ. Legacy opening dùng NULL (không sentinel).
+// Derived managementMode: STAFFING_SUPPLY|LABOR_LEASING → HRP_MANAGED;
+//                         RECRUITMENT_SERVICE|REFERRAL_SERVICE → CLIENT_MANAGED.
+enum ServiceModel {
+  STAFFING_SUPPLY
+  LABOR_LEASING
+  RECRUITMENT_SERVICE
+  REFERRAL_SERVICE
+}
+
+// DEC-03 / DEC-05: lifecycle SELECTED → CONFIRMED → EFFECTIVE | FAILED | CANCELLED.
+// Side exits: SELECTED | CONFIRMED → FAILED | CANCELLED. EFFECTIVE KHÔNG revert trong N3.
+enum PlacementStatus {
+  SELECTED
+  CONFIRMED
+  EFFECTIVE
+  FAILED
+  CANCELLED
+}
+
 model PlacementCase {
   id             String              @id @default(cuid())
   laborProfileId String              @map("labor_profile_id")
@@ -1475,6 +1513,9 @@ model PlacementCase {
   // Back-relation: CandidateSubmission liên kết ngược
   submissions   CandidateSubmission[]
 
+  // N3 back-relation: PlacementCase → N Placement (retry lịch sử của cùng LaborProfile)
+  placements    Placement[]    @relation("PlacementCasePlacements")
+
   // N1 DEC-02: partial unique index — max 1 ACTIVE case / LaborProfile
   // Constraint name: placement_case_labor_profile_id_active_unique
   // WHERE status IN ('OPEN','IN_PROGRESS','READY_TO_PLACE')
@@ -1483,6 +1524,62 @@ model PlacementCase {
   @@index([laborProfileId])
   @@index([status, openedAt])
   @@map("placement_case")
+}
+
+// N3 — Placement model (DEC-03, DEC-04, DEC-04a, DEC-05).
+// Bản ghi placement/fulfillment ĐỘC LẬP với ProjectAssignment.
+// - PlacementCase → N Placement (retry lịch sử của cùng LaborProfile).
+// - Lifecycle: SELECTED → CONFIRMED → EFFECTIVE | FAILED | CANCELLED.
+// - serviceModelSnapshot: chỉ set khi JobOpening.serviceModel ≠ NULL (legacy reject).
+// - DB-level anti-race: unique partial index (placement_case_id, job_opening_id)
+//   WHERE status IN ('SELECTED','CONFIRMED') — đảm bảo tại một thời điểm
+//   chỉ có tối đa 1 placement đang active cho cùng (case, opening).
+//   Sau khi chuyển FAILED/CANCELLED/EFFECTIVE, slot giải phóng cho lần thử mới.
+model Placement {
+  id                          String          @id @default(uuid())
+  placementCaseId             String          @map("placement_case_id")
+  laborProfileId              String          @map("labor_profile_id")
+  jobOpeningId                String?         @map("job_opening_id")        // nullable — legacy openings có thể thiếu JobOpening
+  clientCompanyId             String?         @map("client_company_id")     // nullable — legacy rows; createPlacement REJECT nếu NULL
+  projectId                   String?         @map("project_id")            // nullable — denormalized FK từ JobOpening→StaffingOrder→Project
+  serviceModelSnapshot        ServiceModel?   @map("service_model_snapshot") // copy từ JobOpening.serviceModel tại SELECTED; NULL nếu JobOpening legacy
+  status                      PlacementStatus @default(SELECTED)
+  selectedAt                  DateTime        @default(now()) @map("selected_at")
+  confirmedAt                 DateTime?       @map("confirmed_at")
+  effectiveAt                 DateTime?       @map("effective_at")
+  failureReason               String?         @map("failure_reason") @db.Text
+  sourceCandidateSubmissionId String?         @map("source_candidate_submission_id") // FK nullable tới CandidateSubmission
+  createdByUserId             String?         @map("created_by_user_id")
+  version                     Int             @default(1)                  // optimistic locking (DEC-12)
+  createdAt                   DateTime        @default(now()) @map("created_at")
+  updatedAt                   DateTime        @updatedAt @map("updated_at")
+
+  // FK relations
+  placementCase        PlacementCase         @relation("PlacementCasePlacements", fields: [placementCaseId], references: [id], onDelete: Restrict)
+  laborProfile         LaborProfile          @relation("LaborProfilePlacements", fields: [laborProfileId], references: [id], onDelete: Restrict)
+  jobOpening           JobOpening?           @relation("PlacementJobOpening", fields: [jobOpeningId], references: [id], onDelete: SetNull)
+  clientCompany        ClientCompany?        @relation("ClientCompanyPlacements", fields: [clientCompanyId], references: [id], onDelete: SetNull)
+  project              Project?              @relation("ProjectPlacements", fields: [projectId], references: [id], onDelete: SetNull)
+  sourceSubmission     CandidateSubmission?  @relation("SubmissionPlacements", fields: [sourceCandidateSubmissionId], references: [id], onDelete: SetNull)
+  assignments          ProjectAssignment[]   @relation("AssignmentPlacement") // V6P-013 back-link
+
+  @@index([placementCaseId])
+  @@index([laborProfileId])
+  @@index([jobOpeningId])
+  @@index([clientCompanyId])
+  @@index([projectId])
+  @@index([status, selectedAt]) // query lifecycle
+  @@index([sourceCandidateSubmissionId])
+  // N3 DEC-04a — unique partial index chống race:
+  //   chỉ một SELECTED hoặc CONFIRMED cho cùng (case, opening) tại một thời điểm.
+  //   Sau khi placement chuyển FAILED/CANCELLED/EFFECTIVE, index giải phóng slot
+  //   cho request createPlacement mới (retry của cùng LaborProfile).
+  //   Implemented in migration: CREATE UNIQUE INDEX placements_active_unique
+  //   ON placements (placement_case_id, job_opening_id) WHERE status IN ('SELECTED','CONFIRMED')
+  //   Lưu ý: job_opening_id nullable → Postgres cho phép nhiều NULL cùng unique
+  //   index (NULLs distinct). Migration dùng COALESCE(job_opening_id, '__NONE__')
+  //   để enforce cả NULL.
+  @@map("placements")
 }
 
 // N1 DEC-03: nullable FK — legacy rows giữ NULL
