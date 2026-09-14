@@ -7,7 +7,7 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-  updated_at: 2026-09-14 22:18 Asia/Bangkok
+  updated_at: 2026-09-14 23:10 Asia/Bangkok
 roadmap_source: docs/AI_PROJECT_BRIEF.md; docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md; docs/prompts/TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md; docs/TIER0_HANDOVER.md
 PHASE_MAP: |
   Phase 0: V5 Close — DA DONG 55/63 ACCEPTED (không thay đổi)
@@ -27,10 +27,10 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin đang triển khai; AFF Track vẫn bị chặn bởi §20
 current_lane: V6 Admin vertical slice (post-N0)
-current_task: "N3 service-model-placement đã push branch `tier1/n3-service-model-placement` HEAD `4e7b8fe` (remote verified); chờ Tier 0/Owner review + cung cấp DATABASE_URL_TEST để chạy DB integration + Tier 3 LIGHT audit chốt final verdict."
+current_task: "N3 service-model-placement round-3 fix COMPLETE — branch `tier1/n3-service-model-placement` HEAD `dc7b8fc` (pushed); 6 bug nghiệp vụ fix (RLS role-INVARIANT, case-ownership check, evidence persistence, atomic case close SUCCESS, race-loser fix, REVOKE DELETE) + 5 case DB mới (ix-xiii); DB integration **14/14 PASS trên hrp_n3_v3** (Neon branch mới br-billowing-meadow-azqpi3oo TẠO TỪ baseline hrp-live, endpoint ep-aged-mode-azhomkea); chờ Tier 3 LIGHT audit round 4 chốt final verdict + Tier 0/Owner review + merge → main + apply migration lên hrp-live."
 task_path: "docs/tasks/hrp-v6-n3-service-model-placement/{TASK.md,HANDOFF.md,AUDIT.md,evidence/**}"
-worktree_branch: "tier1/n3-service-model-placement (worktree `C:/CodeApp/HrP-worktrees/tier1-n3-service-model-placement` HEAD 4e7b8fe; pushed, không merge main, không apply prod)"
-current_gate: "N3_PUSHED_BRANCH_REVIEW; N1_PROD_VERIFICATION_REMAINS_OPEN (Tier 0/Owner xác minh Vercel rebuild + admin intake flow với credential thật); STAFFING_LIST_PAGINATION_BUILT_READY_FOR_DEPLOY + DASHBOARD_V1_BUILT_READY_FOR_DEPLOY + AV2_BUILT_READY_FOR_DEPLOY."
+worktree_branch: "tier1/n3-service-model-placement (worktree `C:/CodeApp/HrP-worktrees/tier1-n3-service-model-placement` HEAD dc7b8fc; pushed, không merge main, không apply prod)"
+current_gate: "N3_DB_GATE_PASSED_AWAITING_TIER3_ROUND_4_FINAL_AUDIT; N1_PROD_VERIFICATION_REMAINS_OPEN (Tier 0/Owner xác minh Vercel rebuild + admin intake flow với credential thật); STAFFING_LIST_PAGINATION_BUILT_READY_FOR_DEPLOY + DASHBOARD_V1_BUILT_READY_FOR_DEPLOY + AV2_BUILT_READY_FOR_DEPLOY."
 previous_accepted: N1 PlacementCase/Placement foundation ACCEPTED v1.2 (12/09/2026 15:18; branch `tier1/n1-foundation`; deliver `f7f85bb` + docs `9fe4da2`; Tier 3 LIGHT audit round 2 verdict PASS; baseline `703193a`; HANDOFF.md + AUDIT.md round 2 PASS co-located; schema + 2 migrations ADD-only + static SQL gate 17/17 + full unit suite 2025/2025 PASS + typecheck PASS + design-tokens 12/12 PASS carry-forward; CHƯA apply lên hrp-live — Tier 0 deploy gate DEC-N1-06/07) + N0 contract audit v1.1 (12/09/2026) + AV1 admin-settings-form hotfix f2f3296 (12/09/2026 13:25; post-acceptance correction; revert 4 dòng `var(--warning-container)`/`--on-warning-container` do `c8c6321` không resolve trong `globals.css` về `--secondary-container`/`--on-secondary-container`; gate `src/shared/ui/design-tokens.static.test.ts` giờ PASS 12/12; full unit suite 2028/2028 PASS at hotfix commit; AV1 logic không đổi) [evidence: docs/tasks/hrp-v6-n0-contract-audit/evidence-v1.1/av1-design-token-regression.md] + AV4 Media Library ACCEPTED v1.0 (62cdfd9/3133db3) + UI04d detail D.A ACCEPTED v1.0 (165408f + 423e399 + production smoke 200) + UI04g carousel v3 ACCEPTED (6562aaa) + UI04g carousel v2 ACCEPTED (75d28d8) + UI04g carousel v1 ACCEPTED (e259eb6) + UI04f card monogram abbrev ACCEPTED (12a06da) + AV1 HomepageSettings ACCEPTED v1.1 (0f1cb99/ebc7058/01ef329) + projection consistency fix (ebc7058) + N0 contract audit v1.0 (documented)
 blocking_owner: "N1 Stage 4 da hoan tat; khong con credential/deploy gate N1. AFF §20 remains closed; Owner visual reviews for AV1/UI04d and Vercel deployment of staffing/dashboard/AV2 remain independent; AV4 Blob env remains Owner-operated."
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
@@ -88,11 +88,11 @@ n3_placement_tracker:
     state: "Slice B: placement.errors.ts; placement.resolution.ts (resolveClientCompanyIdForJobOpening + computeManagementMode + assertClassifiedJobOpening); placement.service.ts commands (createPlacement/confirmPlacement/markPlacementEffective/failPlacement/cancelPlacement) với idempotency + anti-race conditional UPDATE + HRP-vs-client guard; placement.service.test.ts + placement.resolution.test.ts mock Prisma."
     evidence: "TBD (Slice B)"
   stage_3_slice_c_integration_audit:
-    status: AUDIT_COMPLETE
-    state: "Slice C COMPLETE: 9/9 DB integration tests PASS trên hrp_n3_test (Neon branch br-restless-star-azn9cd6a from hrp_mp2_test). Migration fix: reorder placements before FK + row-level RLS predicate. HANDOFF/AUDIT updated (bỏ scaffold, ghi rõ 9 test cases). Tier 3 LIGHT audit round 3 verdict: CONDITIONAL — RECOMMENDED FOR MERGE. All gates passed: typecheck 0 new errors, full unit 135 files 2220/2220 PASS. Pending: Tier 0/Owner merge decision + N1 prod verification (independent)."
-    commit: "2aff2b3 (tier1/n3-service-model-placement); remote HEAD = 2aff2b3 (86385bc..2aff2b3 fast-forward)"
-    evidence: "docs/tasks/hrp-v6-n3-service-model-placement/{HANDOFF.md v0.2, AUDIT.md round 3 CONDITIONAL}; tests/db/placement-lifecycle-integration.test.ts 9/9 PASS on hrp_n3_test"
-    date: "14/09/2026 22:18 Asia/Bangkok"
+    status: ROUND_3_FIX_VERIFIED_AWAITING_TIER3_ROUND_4_FINAL_AUDIT
+    state: "Slice C round 3 COMPLETE: 14/14 DB integration tests PASS trên hrp_n3_v3 (Neon branch br-billowing-meadow-azqpi3oo TẠO MỚI từ baseline hrp-live, endpoint ep-aged-mode-azhomkea). 6 bug nghiệp vụ fix: (1) RLS predicate role-INVARIANT (HR roles cũng phải match labor_profile_id qua case); (2) createPlacement verify case-ownership + ACTIVE; (3) markPlacementEffective persist 3 cột evidence (AC-07); (4) Client-managed EFFECTIVE đóng PlacementCase 'SUCCESS' atomic; (5) Race-loser fix (replayed=true chỉ khi state=SELECTED); (6) Migration REVOKE DELETE cho runtime role + ALTER DEFAULT PRIVILEGES. 5 case DB mới (ix-xiii) verify round-3 fixes. HANDOFF/AUDIT updated (v0.4 / round 4). Full unit 135 files 2225/2225 PASS. Tier 3 LIGHT audit round 4 verdict pending."
+    commit: "dc7b8fc (tier1/n3-service-model-placement); remote HEAD = dc7b8fc (8de4e60..dc7b8fc)"
+    evidence: "docs/tasks/hrp-v6-n3-service-model-placement/{HANDOFF.md v0.4, AUDIT.md round 4}; tests/db/placement-lifecycle-integration.test.ts 14/14 PASS on hrp_n3_v3"
+    date: "14/09/2026 23:10 Asia/Bangkok"
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
 ui04_status:
   composition/footer: ACCEPTED v1.4 (04b767e)
