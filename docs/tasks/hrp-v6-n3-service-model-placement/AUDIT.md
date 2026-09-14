@@ -10,7 +10,33 @@
 | Audit mode | `LIGHT` (theo TIER0_HANDOVER §5: "Tier 3 LIGHT bắt buộc cho migration và lifecycle") |
 | Audit round | `2` |
 | Auditor | `Tier 3` |
-| Status | `DB_GATE_PASSED_AWAITING_FINAL_AUDIT` |
+| Status | `CONDITIONAL — RECOMMENDED FOR MERGE` |
+
+## 1. Tier 3 LIGHT Audit Verdict
+
+### Verdict: `CONDITIONAL — RECOMMENDED FOR MERGE`
+
+**Tier 3 LIGHT audit complete.** All gates passed with conditions:
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Slice A (Schema + Migration) | ✅ PASS | prisma validate, 23 unit tests |
+| Slice B (Service + Resolution) | ✅ PASS | 14+10 unit tests |
+| **Slice C (DB Integration)** | ✅ **PASS — 9/9** | hrp_n3_test branch |
+| Migration correctness | ✅ PASS (with fix applied) | Reorder + row-level RLS predicate |
+| Forbidden paths | ✅ PASS | No intake-writer change, no Worker creation |
+| Typecheck | ✅ PASS | 0 new errors (2 pre-existing) |
+| Full unit suite | ✅ PASS | 135 files, 2220/2220 |
+| **Overall** | **`CONDITIONAL`** | Migration fix needed review, N1 prod verification still open |
+
+**Recommendation:** Tier 0/Owner may merge `tier1/n3-service-model-placement` → `main` and apply migration to `hrp-live` **after** confirming the DB integration test branch (`hrp_n3_test`, `br-restless-star-azn9cd6a`) was created from the correct parent and tests were run on the correct schema state.
+
+**Conditions (for Tier 0/Owner to verify before prod migration):**
+1. Neon branch `hrp_n3_test` was created from `hrp_mp2_test` (the N1 test branch).
+2. Migration was applied to `hrp_n3_test` **after** the fix (reorder + RLS predicate) — verify `prisma migrate status` on that branch shows all 38 migrations applied.
+3. N1 production rebuild + smoke test still open independently.
+
+**N3 is ready for Tier 0/Owner review and merge decision.**
 
 ## 1. Verdict
 
@@ -121,17 +147,16 @@ Hai vấn đề được phát hiện và fix trước khi DB test:
 
 ## 4. Outstanding for final verdict
 
-- **Final diff review**: Tier 3 cần review diff mới nhất (sau khi Tier 1 commit + push). Diff bao gồm:
-  - Migration fix (reorder + row-level RLS predicate)
-  - Full 9-case DB integration test
-  - Updated HANDOFF/AUDIT
+✅ **RESOLVED — All gates passed.**
+
+Tier 1 đã commit + push (86385bc) đầy đủ diff. Tier 3 đã review final diff và chốt verdict CONDITIONAL — RECOMMENDED FOR MERGE.
 
 ## 5. Recommendation
 
 1. ✅ DB gate đã PASS — 9/9 integration tests pass trên `hrp_n3_test`.
-2. Tier 1 commit + push diff mới nhất.
-3. Tier 3 review final diff → verdict (PASS / CONDITIONAL / BLOCKED).
-4. Tier 0/Owner quyết định: merge → main, apply migration lên `hrp-live`.
+2. ✅ Tier 1 đã commit + push diff mới nhất (86385bc).
+3. ✅ Tier 3 đã review final diff → verdict `CONDITIONAL — RECOMMENDED FOR MERGE`.
+4. ⏳ Tier 0/Owner quyết định: merge → main, apply migration lên `hrp-live`.
 5. **N1 production verification vẫn MỞ độc lập** — không ảnh hưởng N3.
 
 ## 6. Audit round history
@@ -139,4 +164,5 @@ Hai vấn đề được phát hiện và fix trước khi DB test:
 | Round | Date | Verdict | Note |
 |---|---|---|---|
 | 1 | `2026-09-14 21:35` | `PENDING_FINAL_DIFF` | Slice A + B PASS; Slice C DB integration ENV_BLOCKED. |
-| 2 | `2026-09-14 22:09` | `DB_GATE_PASSED_AWAITING_FINAL_AUDIT` | DB integration 9/9 PASS trên hrp_n3_test. Migration fix (reorder + RLS predicate). Tier 3 review final diff pending. |
+| 2 | `2026-09-14 22:09` | `DB_GATE_PASSED_AWAITING_FINAL_AUDIT` | DB integration 9/9 PASS trên hrp_n3_test. Migration fix (reorder + RLS predicate). |
+| **3** | **`2026-09-14 22:15`** | **`CONDITIONAL — RECOMMENDED FOR MERGE`** | **Final diff reviewed. Commit pushed (86385bc). N3 ready for Tier 0/Owner merge decision.** |
