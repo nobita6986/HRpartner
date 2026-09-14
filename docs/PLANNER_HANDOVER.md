@@ -7,7 +7,7 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-13 22:36 Asia/Bangkok
+updated_at: 2026-09-14 17:05 Asia/Bangkok
 roadmap_source: docs/AI_PROJECT_BRIEF.md; docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md; docs/prompts/TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md; docs/TIER0_HANDOVER.md
 PHASE_MAP: |
   Phase 0: V5 Close — DA DONG 55/63 ACCEPTED (không thay đổi)
@@ -27,10 +27,10 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin đang triển khai; AFF Track vẫn bị chặn bởi §20
 current_lane: V6 Admin vertical slice (post-N0)
-current_task: "N1 Stage 4 da apply tren hrp-live va verify PASS. Tier 1 mo task hrp-v6-n1-intake-writer (Stage 5: createOrMatchLaborProfile + intake writer + possible-match + transition), khong can cho migration N1 nua."
-task_path: "docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-hrp-live-run/README.md"
-worktree_branch: merged to main (worktree `tier1-n1-foundation` giữ lịch sử local; branch `tier1/n1-foundation` HEAD 9fe4da2)
-current_gate: "N1_STAGE4_APPLIED_VERIFIED_STAGE5_READY_FOR_PLANNING; STAFFING_LIST_PAGINATION_BUILT_READY_FOR_DEPLOY + DASHBOARD_V1_BUILT_READY_FOR_DEPLOY + AV2_BUILT_READY_FOR_DEPLOY."
+current_task: "N1 intake writer round-5 (55f4180) push len origin/main (50dedee..55f4180 ff); Tier 0 verify production deploy (Vercel rebuild + smoke N1 flow)."
+task_path: "docs/tasks/hrp-v6-n1-intake-writer/{TASK.md,HANDOFF.md,AUDIT.md}"
+worktree_branch: merged to main (worktree `tier1-n1-intake-writer-r2` giu lich su local; branch `tier1/n1-intake-writer-r2` HEAD 55f4180)
+current_gate: "N1_ROUND_5_PUSHED_TO_ORIGIN_TIER0_VERIFY_PRODUCTION; STAFFING_LIST_PAGINATION_BUILT_READY_FOR_DEPLOY + DASHBOARD_V1_BUILT_READY_FOR_DEPLOY + AV2_BUILT_READY_FOR_DEPLOY."
 previous_accepted: N1 PlacementCase/Placement foundation ACCEPTED v1.2 (12/09/2026 15:18; branch `tier1/n1-foundation`; deliver `f7f85bb` + docs `9fe4da2`; Tier 3 LIGHT audit round 2 verdict PASS; baseline `703193a`; HANDOFF.md + AUDIT.md round 2 PASS co-located; schema + 2 migrations ADD-only + static SQL gate 17/17 + full unit suite 2025/2025 PASS + typecheck PASS + design-tokens 12/12 PASS carry-forward; CHƯA apply lên hrp-live — Tier 0 deploy gate DEC-N1-06/07) + N0 contract audit v1.1 (12/09/2026) + AV1 admin-settings-form hotfix f2f3296 (12/09/2026 13:25; post-acceptance correction; revert 4 dòng `var(--warning-container)`/`--on-warning-container` do `c8c6321` không resolve trong `globals.css` về `--secondary-container`/`--on-secondary-container`; gate `src/shared/ui/design-tokens.static.test.ts` giờ PASS 12/12; full unit suite 2028/2028 PASS at hotfix commit; AV1 logic không đổi) [evidence: docs/tasks/hrp-v6-n0-contract-audit/evidence-v1.1/av1-design-token-regression.md] + AV4 Media Library ACCEPTED v1.0 (62cdfd9/3133db3) + UI04d detail D.A ACCEPTED v1.0 (165408f + 423e399 + production smoke 200) + UI04g carousel v3 ACCEPTED (6562aaa) + UI04g carousel v2 ACCEPTED (75d28d8) + UI04g carousel v1 ACCEPTED (e259eb6) + UI04f card monogram abbrev ACCEPTED (12a06da) + AV1 HomepageSettings ACCEPTED v1.1 (0f1cb99/ebc7058/01ef329) + projection consistency fix (ebc7058) + N0 contract audit v1.0 (documented)
 blocking_owner: "N1 Stage 4 da hoan tat; khong con credential/deploy gate N1. AFF §20 remains closed; Owner visual reviews for AV1/UI04d and Vercel deployment of staffing/dashboard/AV2 remain independent; AV4 Blob env remains Owner-operated."
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
@@ -67,10 +67,11 @@ n1_stage_tracker:
     evidence: "docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-hrp-live-run/README.md"
     date: "13/09/2026 22:28 Asia/Bangkok"
   stage_5_intake_writer_task:
-    status: READY_FOR_PLANNING
-    state: "mở hrp-v6-n1-intake-writer"
-    gating: "Stage 3 + Stage 4 complete; Tier 1 co the mo task va deliver theo lane phu hop."
-    date: "13/09/2026 22:35 Asia/Bangkok"
+    status: PUSHED_TO_ORIGIN_ROUND_5
+    state: "round-5 push len origin/main (commit 55f4180, fast-forward tu 50dedee). Tier 3 LIGHT audit round-5 PASS. Integration N1 9/9 PASS (hrp_mp2_test), integration lane 18 files 361 PASS + 2 SKIP, unit suite 2173/2173 PASS. Diff scope: 8 file (TASK/HANDOFF/AUDIT + src/domains/talent/** + tests/db/intake-writer-integration.test.ts + evidence). Tier 0 can verify Vercel production deploy."
+    commit: "55f4180 (tier1/n1-intake-writer-r2); remote origin/main = 55f4180 (50dedee..55f4180 fast-forward)"
+    evidence: "docs/tasks/hrp-v6-n1-intake-writer/{TASK.md,HANDOFF.md,AUDIT.md}"
+    date: "14/09/2026 17:05 Asia/Bangkok"
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
 ui04_status:
   composition/footer: ACCEPTED v1.4 (04b767e)
@@ -382,5 +383,6 @@ Chỉ sửa khối `ROADMAP_CURSOR` ở §0 (phần nằm trong marker `<!-- ROA
 
 | 2.34 | 13/09/2026 22:20 | Tier 1 commit `5b5767b` đính chính cursor/dossier của vòng NO-GO; đây là ghi nhận lịch sử trước khi production credential được cập nhật. |
 | 2.35 | 13/09/2026 22:36 | **Tier 0 áp dụng N1 Stage 4 trên `hrp-live` theo lệnh Owner “tiếp tục đi”.** Credential admin direct hoạt động; Neon production gate thật exit 0; trước deploy đúng 2 N1 pending, 35 completed/5 rolled-back/0 unfinished, không có lock chờ. `npx prisma migrate deploy` exit 0, áp đúng hai migration N1. Sau deploy Prisma status exit 0; catalog postcheck 8/8 PASS (FK, indexes, column, RLS, policy); public `/` và `/viec-lam` HTTP 200. Theo dõi DB 5 phút: rollback không tăng, không deadlock/conflict/lock chờ/giao dịch dài ở sáu snapshot. Evidence: `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-hrp-live-run/README.md`. Stage 5 `hrp-v6-n1-intake-writer` được mở cho Tier 1 lên plan/thi công; AV6 vẫn hoãn theo ưu tiên sản phẩm. |
+| 2.36 | 14/09/2026 17:05 | **N1 Stage 5 round-5 push lên origin/main (commit 55f4180, fast-forward từ 50dedee)**. Tier 0 verify origin/main ở `50dedee`, worktree N1 HEAD `55f4180` tại `C:\CodeApp\HrP-worktrees\tier1-n1-intake-writer-r2` (branch `tier1/n1-intake-writer-r2`). Tier 1 verify trước push: `git merge-base --is-ancestor 50dedee 55f4180` = TRUE (1 commit ahead); `git diff 50dedee..55f4180 --name-only` = 8 file in-scope (TASK/HANDOFF/AUDIT + src/domains/talent/** + tests/db/intake-writer-integration.test.ts + evidence/neon_branch_gate.r4.stdout.txt); forbidden paths (prisma/schema.prisma, prisma/migrations/, src/domains/staffing/, app/api/admin/assignments/, app/(jobs)/) đều diff rỗng; `git ls-remote origin refs/heads/main` = 50dedee; fetch origin trước push, vẫn 50dedee. **Push**: `git push origin 55f4180:refs/heads/main` exit 0, output `50dedee..55f4180 55f4180 -> main`. **Verify post-push**: `git ls-remote origin refs/heads/main` = `55f418078b7ff221ee6ae6656f37c785e02f833a` (khớp local HEAD). **Smoke test production an toàn** (Tier 1 không in credential, không tạo production data, không chạy migration): `GET https://hrpartner-k2958oa8l-thuans-projects-0b7f4d74.vercel.app/` → 200 (337 KB HTML); `GET /viec-lam` → 200; `POST /api/admin/intake/staff` (no auth, empty body) → 401 (auth gate đúng — admin route bắt buộc ADMIN/HR_MANAGER/HR_STAFF + Idempotency-Key); `POST /api/jobs/apply` (no auth) → 401 (auth middleware trước route handler; route thực là stub 410 theo DEC-10/RQ-08, không touch trong round-5 diff). **Giới hạn smoke test**: 200/401 chỉ chứng minh URL truy cập được và auth gate hoạt động — chưa chứng minh Vercel đã rebuild từ 55f4180 hay luồng intake admin thật sự hoạt động. **current_gate giữ nguyên**: Tier 0/Owner xác minh deploy + smoke bằng tài khoản ADMIN thật (POST /api/admin/intake/staff với credential hợp lệ → 201 + verdict). Worktree `C:\CodeApp\HrP` WIP riêng KHÔNG bị động. PLANNER_HANDOVER.md commit riêng `e1e2c3d` (docs/planner: v2.36 N1 round-5 push tracker). **Next V6**: chờ Tier 0/Owner verify production deploy + smoke admin intake; KHÔNG mở task V6 mới trong bước này; V6P-007B/V6P-008 và AV6 là task riêng, chưa mở. |
 
-*Cập nhật lần cuối: 13/09/2026 22:36 +07:00 bởi Tier 0*
+*Cập nhật lần cuối: 14/09/2026 17:05 +07:00 bởi Tier 1*
