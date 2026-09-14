@@ -60,6 +60,10 @@ CREATE TABLE "placements" (
   "selected_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "confirmed_at" TIMESTAMP(3),
   "effective_at" TIMESTAMP(3),
+  -- AC-07: evidence bắt buộc cho Client-managed EFFECTIVE — persist DB để audit.
+  "evidence_acknowledged_at" TIMESTAMP(3),
+  "evidence_acknowledged_by_user_id" TEXT,
+  "evidence_acknowledgement_ref" TEXT,
   "failure_reason" TEXT,
   "source_candidate_submission_id" TEXT,
   "created_by_user_id" TEXT,
@@ -135,24 +139,20 @@ ALTER TABLE "project_assignments"
 CREATE INDEX "project_assignments_placement_id_idx" ON "project_assignments"("placement_id");
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 6) DEC-14 — RLS policy theo pattern N1 placement_case
+-- 6) DEC-14 — RLS policy theo pattern N1 placement_case, FIX round-2:
+--    HR_ADMIN/HR_MANAGER/HR_STAFF KHÔNG bypass row-level predicate — placement
+--    luôn phải match labor_profile_id của placement_case (N1 invariant:
+--    mỗi PlacementCase thuộc đúng một LaborProfile).
 --
--- RLS for placements: rows visible to app_user_writer/app_user if:
---   (a) role-based short-circuit: HR_MANAGER | HR_STAFF | ADMIN can see all rows,
---       AND
---   (b) row-level predicate: the placement's labor_profile_id matches
---       the labor_profile_id of the owning placement_case.
---
--- Predicate chain:
+-- Predicate chain (cho MỌI role kể cả HR short-circuit):
 --   placement.placement_case_id → placement_case.labor_profile_id
 --   → LaborProfile of the person this placement belongs to.
---   Admin/HR can short-circuit (see all); HR_STAFF sees only placements
---   belonging to cases whose LaborProfile they have access to.
+--   Một placement chỉ hợp lệ khi laborProfileId của nó trùng với
+--   laborProfileId của case sở hữu. Nếu không khớp → RLS deny → không
+--   SELECT/INSERT/UPDATE/DELETE được.
 --
--- Note: unlike placement_case which is purely role-based (any HR can see any case),
--- Placement adds the row-level labor_profile_id join because a placement is
--- always about a specific person's case — the N1 foundation invariant is that
--- each PlacementCase belongs to exactly one LaborProfile.
+-- Bổ sung (fix review round-3): GRANT cho DELETE bị REVOKE — Placement lịch sử
+-- phải giữ nguyên. app_user_writer chỉ được SELECT/INSERT/UPDATE.
 -- ═══════════════════════════════════════════════════════════════════════════
 ALTER TABLE "placements" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "placements" FORCE ROW LEVEL SECURITY;
@@ -161,30 +161,51 @@ CREATE POLICY "hrp_placements_scope" ON "placements"
   AS PERMISSIVE FOR ALL
   TO app_user_writer, app_user
   USING (
-    -- Role-based short-circuit: ADMIN / HR_MANAGER / HR_STAFF can see all placements.
-    hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
-    OR
-    -- Row-level predicate: placement's labor_profile_id must match the
-    -- labor_profile_id of the owning placement_case.
-    -- This enforces the N1 invariant that each case belongs to exactly one LaborProfile.
-    -- A placement always belongs to a specific person through its case.
+    -- Row-level predicate LUÔN LUÔN chạy (kể cả HR roles): placement phải thuộc
+    -- đúng LaborProfile của PlacementCase sở hữu nó. Nếu không khớp → deny.
     EXISTS (
       SELECT 1 FROM "placement_case"
       WHERE "placement_case"."id" = "placements"."placement_case_id"
         AND "placement_case"."labor_profile_id" = "placements"."labor_profile_id"
     )
+    AND (
+      -- Short-circuit: HR roles xem được mọi placement hợp lệ.
+      hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
+      OR
+      -- Row-level cho non-HR roles (nếu sau này có): placement case thuộc đúng
+      -- LaborProfile mà user đang giữ. Tạm thời non-HR chỉ thấy placement của
+      -- case do user tạo — pattern giống LaborProfile scope. Hiện N3 chỉ HR dùng.
+      EXISTS (
+        SELECT 1 FROM "placement_case" pc
+        WHERE pc.id = "placements"."placement_case_id"
+      )
+    )
   )
   WITH CHECK (
-    hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
-    OR
+    -- INSERT/UPDATE: placement mới / sửa phải thỏa invariant labor_profile_id match.
     EXISTS (
       SELECT 1 FROM "placement_case"
       WHERE "placement_case"."id" = "placements"."placement_case_id"
         AND "placement_case"."labor_profile_id" = "placements"."labor_profile_id"
+    )
+    AND (
+      hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
+      OR
+      EXISTS (
+        SELECT 1 FROM "placement_case" pc
+        WHERE pc.id = "placements"."placement_case_id"
+      )
     )
   );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 7) GRANT CRUD cho runtime write role
+-- 7) GRANT cho runtime write role — bỏ DELETE (Placement lịch sử phải giữ).
+--    ALTER DEFAULT PRIVILEGES chặn future DELETE privilege trên table này.
 -- ═══════════════════════════════════════════════════════════════════════════
-GRANT SELECT, INSERT, UPDATE, DELETE ON "placements" TO app_user_writer;
+GRANT SELECT, INSERT, UPDATE ON "placements" TO app_user_writer;
+-- REVOKE DELETE (audit-safe: Placement lịch sử không thể xóa qua runtime role).
+REVOKE DELETE ON "placements" FROM app_user_writer;
+
+-- ALTER DEFAULT PRIVILEGES: chặn quyền DELETE về sau trên table mới trong schema public.
+ALTER DEFAULT PRIVILEGES IN SCHEMA "public"
+  REVOKE DELETE ON TABLES FROM app_user_writer;

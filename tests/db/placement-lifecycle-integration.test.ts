@@ -781,6 +781,282 @@ describeIf('N3 placement-lifecycle integration — DB-touching proof', () => {
       await writer.$disconnect().catch(() => {});
     }
   }, 15000);
+
+  // ─────────────────────────────────────────────────────────────────────
+  // (ix) case-ownership mismatch: case thuộc LaborProfile khác → REJECT
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('(ix) createPlacement: case thuộc LaborProfile khác → PlacementValidationError (N1 invariant)', async () => {
+    const writer = makeClient(writerUrl);
+    try {
+      const f = await buildHrpManagedFixture(admin, 'ix-mismatch');
+      createdLaborProfileIds.push(f.lpId);
+      createdPlacementCaseIds.push(f.pcId);
+
+      const actorId = `n3-actor-ix-${runId}`;
+      let errCaught: Error | null = null;
+      try {
+        await withHrManagerContext(writer, actorId, (tx) =>
+          createPlacement(tx, {
+            laborProfileId: 'lp-WRONG-not-the-case-owner',
+            placementCaseId: f.placementCaseId,
+            jobOpeningId: f.jobOpeningId,
+            actorId,
+          }),
+        );
+      } catch (e) {
+        errCaught = e as Error;
+      }
+      expect(errCaught).not.toBeNull();
+      expect(errCaught!.message).toMatch(/thuộc LaborProfile khác|N1 invariant|case.laborProfileId/i);
+
+      // Verify NO placement row created
+      const rows = await admin.placement.findMany({
+        where: { placementCaseId: f.placementCaseId, laborProfileId: 'lp-WRONG-not-the-case-owner' },
+        select: { id: true },
+      });
+      expect(rows).toHaveLength(0);
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  }, 15000);
+
+  // ─────────────────────────────────────────────────────────────────────
+  // (x) case CLOSED: tạo Placement trên case đã CLOSED → REJECT
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('(x) createPlacement: case CLOSED → PlacementValidationError', async () => {
+    const writer = makeClient(writerUrl);
+    try {
+      const f = await buildHrpManagedFixture(admin, 'x-closed');
+      createdLaborProfileIds.push(f.lpId);
+      createdPlacementCaseIds.push(f.pcId);
+
+      // Close the case manually
+      await admin.placementCase.update({
+        where: { id: f.pcId },
+        data: { status: 'CLOSED', closedAt: new Date(), closeReason: 'test-closed-pre' },
+      });
+
+      const actorId = `n3-actor-x-${runId}`;
+      let errCaught: Error | null = null;
+      try {
+        await withHrManagerContext(writer, actorId, (tx) =>
+          createPlacement(tx, {
+            laborProfileId: f.laborProfileId,
+            placementCaseId: f.placementCaseId,
+            jobOpeningId: f.jobOpeningId,
+            actorId,
+          }),
+        );
+      } catch (e) {
+        errCaught = e as Error;
+      }
+      expect(errCaught).not.toBeNull();
+      expect(errCaught!.message).toMatch(/CLOSED|đã đóng|không thể tạo/i);
+
+      // Verify NO placement row created
+      const rows = await admin.placement.findMany({
+        where: { placementCaseId: f.placementCaseId },
+        select: { id: true },
+      });
+      expect(rows).toHaveLength(0);
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  }, 15000);
+
+  // ─────────────────────────────────────────────────────────────────────
+  // (xi) client-managed EFFECTIVE: evidence PERSISTED + PlacementCase CLOSED
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('(xi) client-managed EFFECTIVE: evidence persisted to DB columns + PlacementCase closed SUCCESS', async () => {
+    const writer = makeClient(writerUrl);
+    try {
+      const f = await buildClientManagedFixture(admin, 'xi-effective');
+      createdLaborProfileIds.push(f.lpId);
+      createdPlacementCaseIds.push(f.pcId);
+
+      const actorId = `n3-actor-xi-${runId}`;
+      const ackAt = new Date('2026-09-14T10:00:00Z');
+
+      const created = await withHrManagerContext(writer, actorId, (tx) =>
+        createPlacement(tx, {
+          laborProfileId: f.laborProfileId,
+          placementCaseId: f.placementCaseId,
+          jobOpeningId: f.jobOpeningId,
+          actorId,
+        }),
+      );
+      createdPlacementIds.push(created.placementId);
+
+      await withHrManagerContext(writer, actorId, (tx) =>
+        confirmPlacement(tx, { placementId: created.placementId, actorId }),
+      );
+
+      // EFFECTIVE với evidence
+      await withHrManagerContext(writer, actorId, (tx) =>
+        markPlacementEffective(tx, {
+          placementId: created.placementId,
+          actorId,
+          evidence: {
+            clientAcknowledgedAt: ackAt,
+            clientAcknowledgedByUserId: `client-ack-${runId}`,
+            acknowledgementRef: `ACK-${runId}-xi`,
+          },
+        }),
+      );
+
+      // Verify evidence PERSISTED in DB
+      const row = await admin.placement.findUnique({
+        where: { id: created.placementId },
+        select: {
+          status: true,
+          effectiveAt: true,
+          evidenceAcknowledgedAt: true,
+          evidenceAcknowledgedByUserId: true,
+          evidenceAcknowledgementRef: true,
+        },
+      });
+      expect(row!.status).toBe('EFFECTIVE');
+      expect(row!.evidenceAcknowledgedAt).toEqual(ackAt);
+      expect(row!.evidenceAcknowledgedByUserId).toBe(`client-ack-${runId}`);
+      expect(row!.evidenceAcknowledgementRef).toBe(`ACK-${runId}-xi`);
+
+      // Verify PlacementCase CLOSED SUCCESS (atomic closure)
+      const closedCase = await admin.placementCase.findUnique({
+        where: { id: f.placementCaseId },
+        select: { status: true, closedAt: true, closeReason: true },
+      });
+      expect(closedCase!.status).toBe('CLOSED');
+      expect(closedCase!.closedAt).not.toBeNull();
+      expect(closedCase!.closeReason).toMatch(/PLACEMENT_EFFECTIVE/);
+
+      // Verify NO Worker/Episode/Assignment created (N4 boundary)
+      const episodeCount = await admin.employmentEpisode.count({
+        where: { laborProfileId: f.laborProfileId },
+      });
+      expect(episodeCount).toBe(0);
+
+      const assignmentCount = await admin.projectAssignment.count({
+        where: { id: { startsWith: 'n3-xi-' } }, // any n3-xi-* — should be 0
+      });
+      expect(assignmentCount).toBe(0);
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  }, 15000);
+
+  // ─────────────────────────────────────────────────────────────────────
+  // (xii) HRP-managed EFFECTIVE reject KHÔNG đóng PlacementCase (N4 boundary)
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('(xii) HRP-managed EFFECTIVE reject → case vẫn OPEN (atomic N4 boundary)', async () => {
+    const writer = makeClient(writerUrl);
+    try {
+      const f = await buildHrpManagedFixture(admin, 'xii-hrp-reject');
+      createdLaborProfileIds.push(f.lpId);
+      createdPlacementCaseIds.push(f.pcId);
+
+      const actorId = `n3-actor-xii-${runId}`;
+      const created = await withHrManagerContext(writer, actorId, (tx) =>
+        createPlacement(tx, {
+          laborProfileId: f.laborProfileId,
+          placementCaseId: f.placementCaseId,
+          jobOpeningId: f.jobOpeningId,
+          actorId,
+        }),
+      );
+      createdPlacementIds.push(created.placementId);
+
+      await withHrManagerContext(writer, actorId, (tx) =>
+        confirmPlacement(tx, { placementId: created.placementId, actorId }),
+      );
+
+      // HRP-managed EFFECTIVE → REJECT
+      let errCaught: Error | null = null;
+      try {
+        await withHrManagerContext(writer, actorId, (tx) =>
+          markPlacementEffective(tx, {
+            placementId: created.placementId,
+            actorId,
+            evidence: {
+              clientAcknowledgedAt: new Date(),
+              clientAcknowledgedByUserId: 'x',
+              acknowledgementRef: 'x',
+            },
+          }),
+        );
+      } catch (e) {
+        errCaught = e as Error;
+      }
+      expect(errCaught).not.toBeNull();
+      expect(errCaught!.message).toMatch(/HRP_EFFECTIVE_FORBIDDEN|atomic workforce bridge|N4/i);
+
+      // Verify status stays CONFIRMED
+      const row = await admin.placement.findUnique({
+        where: { id: created.placementId },
+        select: { status: true, evidenceAcknowledgedAt: true },
+      });
+      expect(row!.status).toBe('CONFIRMED');
+      expect(row!.evidenceAcknowledgedAt).toBeNull(); // evidence NOT persisted
+
+      // Verify case vẫn ACTIVE (HRP reject → không atomic close)
+      const stillActiveCase = await admin.placementCase.findUnique({
+        where: { id: f.placementCaseId },
+        select: { status: true, closedAt: true, closeReason: true },
+      });
+      expect(stillActiveCase!.status).toBe('OPEN');
+      expect(stillActiveCase!.closedAt).toBeNull();
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  }, 15000);
+
+  // ─────────────────────────────────────────────────────────────────────
+  // (xiii) DELETE privilege revoked: app_user_writer KHÔNG được DELETE
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('(xiii) RLS/privilege: app_user_writer DELETE bị REVOKE — Placement lịch sử bất khả xóa', async () => {
+    const writer = makeClient(writerUrl);
+    try {
+      const f = await buildHrpManagedFixture(admin, 'xiii-no-delete');
+      createdLaborProfileIds.push(f.lpId);
+      createdPlacementCaseIds.push(f.pcId);
+
+      const actorId = `n3-actor-xiii-${runId}`;
+      const created = await withHrManagerContext(writer, actorId, (tx) =>
+        createPlacement(tx, {
+          laborProfileId: f.laborProfileId,
+          placementCaseId: f.placementCaseId,
+          jobOpeningId: f.jobOpeningId,
+          actorId,
+        }),
+      );
+      createdPlacementIds.push(created.placementId);
+
+      // app_user_writer cố DELETE → bị PG privilege deny
+      let deleteErr: Error | null = null;
+      try {
+        await withHrManagerContext(writer, actorId, (tx) =>
+          tx.placement.delete({ where: { id: created.placementId } }),
+        );
+      } catch (e) {
+        deleteErr = e as Error;
+      }
+      expect(deleteErr).not.toBeNull(); // privilege deny hoặc RLS deny
+
+      // Verify row vẫn còn (DELETE bị chặn)
+      const rowAfter = await admin.placement.findUnique({
+        where: { id: created.placementId },
+        select: { id: true, status: true },
+      });
+      expect(rowAfter).not.toBeNull();
+      expect(rowAfter!.status).toBe('SELECTED');
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  }, 15000);
 });
 
 // ─────────────────────────────────────────────────────────────────────────

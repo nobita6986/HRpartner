@@ -5,6 +5,7 @@
  *   - createPlacement       → SELECTED
  *   - confirmPlacement      → SELECTED → CONFIRMED
  *   - markPlacementEffective → CONFIRMED → EFFECTIVE (chỉ CLIENT_MANAGED — DEC-07)
+ *     - Persist evidence + đóng PlacementCase SUCCESS (AC-07)
  *   - failPlacement         → SELECTED | CONFIRMED → FAILED
  *   - cancelPlacement       → SELECTED | CONFIRMED → CANCELLED
  *
@@ -15,14 +16,20 @@
  *   - Transition commands dùng conditional UPDATE với status guard
  *     (DEC-12: không read-modify-write trong app).
  *   - HRP-managed: markPlacementEffective REJECT (DEC-07). Atomic workforce bridge thuộc N4.
- *   - Client-managed EFFECTIVE: yêu cầu evidence (clientAcknowledgedAt + by + ref).
+ *   - Client-managed EFFECTIVE: yêu cầu evidence (clientAcknowledgedAt + by + ref);
+ *     evidence phải được PERSIST vào DB columns (AC-07) để audit/trace.
+ *   - Client-managed EFFECTIVE SUCCESS: đóng PlacementCase với status='CLOSED' +
+ *     closedAt + closeReason='PLACEMENT_EFFECTIVE'. Đây là atomic closure.
  *
  * Idempotency (DEC-09):
  *   - SELECTED: theo (laborProfileId, placementCaseId, jobOpeningId) qua partial unique index.
  *   - Các command khác: theo placementId qua conditional UPDATE (same status → no-op).
+ *   - Race-loser path: trả replayed=true CHỈ KHI trạng thái mới = trạng thái caller yêu cầu
+ *     (state unchanged). Nếu concurrent command đổi sang terminal khác → trả status mới,
+ *     replayed=false — caller xử lý theo state hiện tại (fix round-3 review).
  */
 
-import { Prisma, type PlacementStatus, type ServiceModel } from '@prisma/client';
+import { Prisma, type PlacementStatus, type ServiceModel, type PlacementCaseStatus } from '@prisma/client';
 import type { Prisma as PrismaTypes } from '@prisma/client';
 import {
   InvalidStateTransitionError,
@@ -59,7 +66,7 @@ export interface CreatePlacementResult {
 export interface TransitionPlacementInput {
   placementId: string;
   actorId: string;
-  /** Chỉ dùng cho markPlacementEffective — DEC-08. */
+  /** Chỉ dùng cho markPlacementEffective — DEC-08 / AC-07. */
   evidence?: PlacementEffectivenessEvidence;
 }
 
@@ -76,6 +83,9 @@ export interface TransitionPlacementResult {
   replayed: boolean;
 }
 
+/** PlacementCase ACTIVE statuses — case phải còn ACTIVE mới được tạo Placement mới. */
+const ACTIVE_CASE_STATUSES: PlacementCaseStatus[] = ['OPEN', 'IN_PROGRESS', 'READY_TO_PLACE'];
+
 // ═══════════════════════════════════════════════════════════════════════════
 // createPlacement — SELECTED (DEC-04a, DEC-06, DEC-09, DEC-10)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -85,11 +95,43 @@ export interface TransitionPlacementResult {
  *
  * Retry trong khi Placement còn SELECTED/CONFIRMED → trả placement hiện tại (P2002 path).
  * Sau FAILED/CANCELLED → INSERT mới thành công (index giải phóng slot).
+ *
+ * Round-3 review fix:
+ *   - Verify PlacementCase thuộc đúng LaborProfile (N1 invariant) — REJECT nếu lệch.
+ *   - Verify PlacementCase còn ACTIVE (status ∈ ACTIVE_CASE_STATUSES) — REJECT nếu CLOSED.
  */
 export async function createPlacement(
   tx: PrismaTypes.TransactionClient,
   input: CreatePlacementInput,
 ): Promise<CreatePlacementResult> {
+  // Bước 1: verify PlacementCase thuộc đúng LaborProfile + còn ACTIVE.
+  const placementCase = await tx.placementCase.findUnique({
+    where: { id: input.placementCaseId },
+    select: { id: true, laborProfileId: true, status: true },
+  });
+  if (!placementCase) {
+    throw new PlacementValidationError(`PlacementCase ${input.placementCaseId} không tồn tại`, {
+      placementCaseId: input.placementCaseId,
+    });
+  }
+  if (placementCase.laborProfileId !== input.laborProfileId) {
+    throw new PlacementValidationError(
+      `PlacementCase ${input.placementCaseId} thuộc LaborProfile khác (case.laborProfileId=${placementCase.laborProfileId}, input.laborProfileId=${input.laborProfileId}). N1 invariant: mỗi case thuộc đúng một LaborProfile.`,
+      {
+        placementCaseId: input.placementCaseId,
+        caseLaborProfileId: placementCase.laborProfileId,
+        inputLaborProfileId: input.laborProfileId,
+      },
+    );
+  }
+  if (!ACTIVE_CASE_STATUSES.includes(placementCase.status)) {
+    throw new PlacementValidationError(
+      `PlacementCase ${input.placementCaseId} đã CLOSED (status=${placementCase.status}). Không thể tạo Placement mới trên case đã đóng.`,
+      { placementCaseId: input.placementCaseId, caseStatus: placementCase.status },
+    );
+  }
+
+  // Bước 2: verify JobOpening + resolve clientCompanyId qua FK chain (DEC-06, DEC-10).
   const jobOpening = await tx.jobOpening.findUnique({
     where: { id: input.jobOpeningId },
     select: { id: true, staffingOrderId: true, serviceModel: true },
@@ -103,6 +145,7 @@ export async function createPlacement(
 
   const resolved = await resolveClientCompanyIdForJobOpening(tx, jobOpening);
 
+  // Bước 3: idempotent replay (DEC-09).
   const existing = await findActivePlacement(tx, {
     placementCaseId: input.placementCaseId,
     jobOpeningId: input.jobOpeningId,
@@ -159,6 +202,9 @@ export async function createPlacement(
       (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') ||
       (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2002');
     if (isUniqueViolation) {
+      // Round-3 fix: race-loser returns replayed=true CHỈ KHI current state = SELECTED
+      // (caller's intent). Nếu current state = CONFIRMED (concurrent confirm đã xảy ra),
+      // trả replayed=false để caller biết state đã đổi, không phải no-op INSERT.
       const winner = await findActivePlacement(tx, {
         placementCaseId: input.placementCaseId,
         jobOpeningId: input.jobOpeningId,
@@ -170,7 +216,7 @@ export async function createPlacement(
           serviceModelSnapshot: winner.serviceModelSnapshot,
           clientCompanyId: winner.clientCompanyId,
           projectId: winner.projectId,
-          replayed: true,
+          replayed: winner.status === 'SELECTED', // SELECTED = caller intent match → idempotent
         };
       }
       throw new PlacementIdempotencyConflictError(
@@ -208,9 +254,6 @@ async function findActivePlacement(
     },
   });
   if (!row) return null;
-  // Service layer caller (createPlacement) đã qua resolveClientCompanyIdForJobOpening;
-  // SELECTED placements luôn có clientCompanyId/projectId/serviceModelSnapshot (đã set khi INSERT).
-  // Cast là an toàn vì DB-level constraint đảm bảo.
   return {
     id: row.id,
     status: row.status,
@@ -226,6 +269,7 @@ async function findActivePlacement(
 
 interface PlacementTransitionRow {
   id: string;
+  placementCaseId: string;
   status: PlacementStatus;
   serviceModelSnapshot: ServiceModel | null;
   clientCompanyId: string | null;
@@ -240,6 +284,7 @@ async function findPlacementForTransition(
     where: { id: placementId },
     select: {
       id: true,
+      placementCaseId: true,
       status: true,
       serviceModelSnapshot: true,
       clientCompanyId: true,
@@ -295,6 +340,7 @@ async function runTransition(
     );
   }
 
+  // AC-07 / DEC-08: validate evidence cho Client-managed EFFECTIVE.
   if (args.to === 'EFFECTIVE' && managementMode === 'CLIENT_MANAGED') {
     if (!ctx.evidence) {
       throw new PlacementValidationError(
@@ -302,11 +348,15 @@ async function runTransition(
         { placementId: row.id },
       );
     }
-    if (!ctx.evidence.clientAcknowledgedAt || !ctx.evidence.clientAcknowledgedByUserId || !ctx.evidence.acknowledgementRef) {
-      throw new PlacementValidationError(
-        'Evidence EFFECTIVE thiếu field bắt buộc',
-        { placementId: row.id, evidence: ctx.evidence },
-      );
+    if (
+      !ctx.evidence.clientAcknowledgedAt ||
+      !ctx.evidence.clientAcknowledgedByUserId ||
+      !ctx.evidence.acknowledgementRef
+    ) {
+      throw new PlacementValidationError('Evidence EFFECTIVE thiếu field bắt buộc', {
+        placementId: row.id,
+        evidence: ctx.evidence,
+      });
     }
   }
 
@@ -314,7 +364,15 @@ async function runTransition(
   const now = new Date();
   const updateData: Prisma.PlacementUpdateInput = { status: args.to, version: { increment: 1 } };
   if (args.to === 'CONFIRMED') updateData.confirmedAt = now;
-  if (args.to === 'EFFECTIVE') updateData.effectiveAt = now;
+  if (args.to === 'EFFECTIVE') {
+    updateData.effectiveAt = now;
+    // AC-07: persist evidence columns cho audit/trace.
+    if (ctx.evidence) {
+      updateData.evidenceAcknowledgedAt = ctx.evidence.clientAcknowledgedAt;
+      updateData.evidenceAcknowledgedByUserId = ctx.evidence.clientAcknowledgedByUserId;
+      updateData.evidenceAcknowledgementRef = ctx.evidence.acknowledgementRef;
+    }
+  }
   if (args.to === 'FAILED' || args.to === 'CANCELLED') {
     updateData.failureReason = `Marked ${args.to} by ${args.actorId} at ${now.toISOString()}`;
   }
@@ -325,12 +383,41 @@ async function runTransition(
   });
 
   if (result.count === 0) {
-    // Status changed by concurrent command → idempotent no-op cho caller.
+    // Status changed by concurrent command. Round-3 fix: return CURRENT status
+    // with replayed=false so caller biết command KHÔNG idempotent (state khác
+    // target caller yêu cầu). Nếu may mắn current=target (e.g. concurrent
+    // confirm thành công), caller xử lý theo state thực tế.
     const refreshed = await findPlacementForTransition(args.tx, row.id);
-    return { placementId: refreshed.id, status: refreshed.status, replayed: true };
+    return { placementId: refreshed.id, status: refreshed.status, replayed: false };
+  }
+
+  // AC-07: client-managed EFFECTIVE thành công → đóng PlacementCase (atomic closure).
+  if (args.to === 'EFFECTIVE' && managementMode === 'CLIENT_MANAGED') {
+    await closePlacementCaseSuccess(args.tx, row.placementCaseId, args.actorId, now);
   }
 
   return { placementId: row.id, status: args.to, replayed: false };
+}
+
+/**
+ * Close PlacementCase SUCCESS (atomic) sau khi Client-managed EFFECTIVE thành công.
+ * Đây là AC-07: client-managed EFFECTIVE đóng case SUCCESS + record Placement —
+ * KHÔNG tạo Worker/Episode/Assignment (đó là N4).
+ */
+async function closePlacementCaseSuccess(
+  tx: PrismaTypes.TransactionClient,
+  placementCaseId: string,
+  actorId: string,
+  closedAt: Date,
+): Promise<void> {
+  await tx.placementCase.updateMany({
+    where: { id: placementCaseId, status: { in: ACTIVE_CASE_STATUSES } },
+    data: {
+      status: 'CLOSED',
+      closedAt,
+      closeReason: `PLACEMENT_EFFECTIVE by ${actorId} at ${closedAt.toISOString()}`,
+    },
+  });
 }
 
 function deriveModeFromSnapshot(snapshot: ServiceModel): 'HRP_MANAGED' | 'CLIENT_MANAGED' {

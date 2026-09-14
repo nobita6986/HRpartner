@@ -1547,6 +1547,12 @@ model Placement {
   selectedAt                  DateTime        @default(now()) @map("selected_at")
   confirmedAt                 DateTime?       @map("confirmed_at")
   effectiveAt                 DateTime?       @map("effective_at")
+  // AC-07: evidence bắt buộc cho Client-managed EFFECTIVE. Persist ngay khi transition.
+  // Client-managed HRP thì KHÔNG có evidence vì EFFECTIVE bị REJECT (DEC-07).
+  // Lưu DB để audit/trace — không chỉ kiểm ở command input.
+  evidenceAcknowledgedAt      DateTime?       @map("evidence_acknowledged_at")
+  evidenceAcknowledgedByUserId String?        @map("evidence_acknowledged_by_user_id")
+  evidenceAcknowledgementRef  String?         @map("evidence_acknowledgement_ref")
   failureReason               String?         @map("failure_reason") @db.Text
   sourceCandidateSubmissionId String?         @map("source_candidate_submission_id") // FK nullable tới CandidateSubmission
   createdByUserId             String?         @map("created_by_user_id")
