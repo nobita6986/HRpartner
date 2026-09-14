@@ -40,6 +40,9 @@ export interface CreateCandidateSubmissionFromIntakeInput {
   applicant: ApplicantInput;
   channel: IntakeChannel;
   intent: IntakeIntent;
+  /** Optional job opening id (caller-resolved). Phase này KHÔNG lưu vào schema
+   *  (CandidateSubmission không có jobOpeningId FK) — chỉ ghi cho audit metadata. */
+  jobOpeningId?: string | null;
   /** Optional project link (NOT NULL ⇒ MP-2 slot/job apply — out of scope phase này). */
   projectId?: string | null;
   /** Actor id (audit only — KHÔNG set referrer). */
