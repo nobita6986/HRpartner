@@ -7,7 +7,7 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-14 21:05 Asia/Bangkok
+updated_at: 2026-09-14 21:42 Asia/Bangkok
 roadmap_source: docs/AI_PROJECT_BRIEF.md; docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md; docs/prompts/TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md; docs/TIER0_HANDOVER.md
 PHASE_MAP: |
   Phase 0: V5 Close — DA DONG 55/63 ACCEPTED (không thay đổi)
@@ -27,10 +27,10 @@ PHASE_MAP: |
   Phase 2: AFF Gate — CHAN HOAN TOAN (17/17 ô §20 chưa tick)
   Phase 3+: V6 Admin đang triển khai; AFF Track vẫn bị chặn bởi §20
 current_lane: V6 Admin vertical slice (post-N0)
-current_task: "N3 service-model-placement TASK v0.3 (theo chốt Tier 0 21:00): Schema + RLS + GRANT + unique partial index + pure lifecycle + service layer + idempotency/anti-race + DB integration. Tier 0 GO Slice A; Tier 1 chạy thẳng A→B→C qua gate."
-task_path: "docs/tasks/hrp-v6-n3-service-model-placement/{TASK.md,evidence/stage0-contract/README.md}"
-worktree_branch: "tier1/n3-service-model-placement (worktree `C:/CodeApp/HrP-worktrees/tier1-n3-service-model-placement` HEAD 40cd9d4; đang triển khai Slice A)"
-current_gate: "N3_CONTRACT_V0_3_IN_PROGRESS_A_B_C; N1_PROD_VERIFICATION_REMAINS_OPEN (Tier 0/Owner xác minh Vercel rebuild + admin intake flow với credential thật); STAFFING_LIST_PAGINATION_BUILT_READY_FOR_DEPLOY + DASHBOARD_V1_BUILT_READY_FOR_DEPLOY + AV2_BUILT_READY_FOR_DEPLOY."
+current_task: "N3 service-model-placement đã push branch `tier1/n3-service-model-placement` HEAD `4e7b8fe` (remote verified); chờ Tier 0/Owner review + cung cấp DATABASE_URL_TEST để chạy DB integration + Tier 3 LIGHT audit chốt final verdict."
+task_path: "docs/tasks/hrp-v6-n3-service-model-placement/{TASK.md,HANDOFF.md,AUDIT.md,evidence/**}"
+worktree_branch: "tier1/n3-service-model-placement (worktree `C:/CodeApp/HrP-worktrees/tier1-n3-service-model-placement` HEAD 4e7b8fe; pushed, không merge main, không apply prod)"
+current_gate: "N3_PUSHED_BRANCH_REVIEW; N1_PROD_VERIFICATION_REMAINS_OPEN (Tier 0/Owner xác minh Vercel rebuild + admin intake flow với credential thật); STAFFING_LIST_PAGINATION_BUILT_READY_FOR_DEPLOY + DASHBOARD_V1_BUILT_READY_FOR_DEPLOY + AV2_BUILT_READY_FOR_DEPLOY."
 previous_accepted: N1 PlacementCase/Placement foundation ACCEPTED v1.2 (12/09/2026 15:18; branch `tier1/n1-foundation`; deliver `f7f85bb` + docs `9fe4da2`; Tier 3 LIGHT audit round 2 verdict PASS; baseline `703193a`; HANDOFF.md + AUDIT.md round 2 PASS co-located; schema + 2 migrations ADD-only + static SQL gate 17/17 + full unit suite 2025/2025 PASS + typecheck PASS + design-tokens 12/12 PASS carry-forward; CHƯA apply lên hrp-live — Tier 0 deploy gate DEC-N1-06/07) + N0 contract audit v1.1 (12/09/2026) + AV1 admin-settings-form hotfix f2f3296 (12/09/2026 13:25; post-acceptance correction; revert 4 dòng `var(--warning-container)`/`--on-warning-container` do `c8c6321` không resolve trong `globals.css` về `--secondary-container`/`--on-secondary-container`; gate `src/shared/ui/design-tokens.static.test.ts` giờ PASS 12/12; full unit suite 2028/2028 PASS at hotfix commit; AV1 logic không đổi) [evidence: docs/tasks/hrp-v6-n0-contract-audit/evidence-v1.1/av1-design-token-regression.md] + AV4 Media Library ACCEPTED v1.0 (62cdfd9/3133db3) + UI04d detail D.A ACCEPTED v1.0 (165408f + 423e399 + production smoke 200) + UI04g carousel v3 ACCEPTED (6562aaa) + UI04g carousel v2 ACCEPTED (75d28d8) + UI04g carousel v1 ACCEPTED (e259eb6) + UI04f card monogram abbrev ACCEPTED (12a06da) + AV1 HomepageSettings ACCEPTED v1.1 (0f1cb99/ebc7058/01ef329) + projection consistency fix (ebc7058) + N0 contract audit v1.0 (documented)
 blocking_owner: "N1 Stage 4 da hoan tat; khong con credential/deploy gate N1. AFF §20 remains closed; Owner visual reviews for AV1/UI04d and Vercel deployment of staffing/dashboard/AV2 remain independent; AV4 Blob env remains Owner-operated."
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
@@ -88,9 +88,10 @@ n3_placement_tracker:
     state: "Slice B: placement.errors.ts; placement.resolution.ts (resolveClientCompanyIdForJobOpening + computeManagementMode + assertClassifiedJobOpening); placement.service.ts commands (createPlacement/confirmPlacement/markPlacementEffective/failPlacement/cancelPlacement) với idempotency + anti-race conditional UPDATE + HRP-vs-client guard; placement.service.test.ts + placement.resolution.test.ts mock Prisma."
     evidence: "TBD (Slice B)"
   stage_3_slice_c_integration_audit:
-    status: PENDING
-    state: "Slice C: tests/db/placement-lifecycle-integration.test.ts trên DATABASE_URL_TEST (skip nếu thiếu); HANDOFF.md; AUDIT.md (Tier 3 LIGHT); evidence/stage1..3; commit + push code lên tier1/n3-service-model-placement (KHÔNG merge main; KHÔNG apply migration lên hrp-live — Tier 0/Owner quyết)."
-    evidence: "TBD (Slice C)"
+    status: PENDING_DB_GATE
+    state: "Slice C: HANDOFF + AUDIT viết xong; 8 DB integration cases scaffold + env.skipIf(!HAS_TEST_DB) + ENV_BLOCKED honest report; đăng ký vitest.integration-files whitelist; full unit suite 135 files / 2220 PASS (baseline 132/2173); commit 4e7b8fe + push branch tier1/n3-service-model-placement lên origin (remote HEAD = 4e7b8fe verified; main vẫn 40cd9d4). Slice C không tự merge main; không tự apply migration prod. Chờ DATABASE_URL_TEST (Tier 0/Owner) + Tier 3 LIGHT final verdict."
+    evidence: "docs/tasks/hrp-v6-n3-service-model-placement/{HANDOFF.md, AUDIT.md}; docs/tasks/hrp-v6-n3-service-model-placement/evidence/{stage0-contract, stage1-slice-a-schema, stage2-slice-b-service, stage3-slice-c-integration}/README.md"
+    date: "14/09/2026 21:42 Asia/Bangkok"
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
 ui04_status:
   composition/footer: ACCEPTED v1.4 (04b767e)
