@@ -1,4 +1,4 @@
-﻿# TIER 1 LIVING HANDOFF v2.11 — HRP V5/V6
+﻿# TIER 1 LIVING HANDOFF v2.12 — HRP V5/V6
 
 > Tài liệu này là hợp đồng tiếp quản lâu dài cho **Tier 1 — Planner**. Khi bàn giao cho Agent Tier 1 khác, bình thường **chỉ cập nhật khối `ROADMAP_CURSOR` ở §0**. Không chép tiến độ task vào các section ổn định bên dưới.
 
@@ -7,7 +7,7 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-14 21:42 Asia/Bangkok
+  updated_at: 2026-09-14 22:18 Asia/Bangkok
 roadmap_source: docs/AI_PROJECT_BRIEF.md; docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md; docs/prompts/TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md; docs/TIER0_HANDOVER.md
 PHASE_MAP: |
   Phase 0: V5 Close — DA DONG 55/63 ACCEPTED (không thay đổi)
@@ -88,10 +88,11 @@ n3_placement_tracker:
     state: "Slice B: placement.errors.ts; placement.resolution.ts (resolveClientCompanyIdForJobOpening + computeManagementMode + assertClassifiedJobOpening); placement.service.ts commands (createPlacement/confirmPlacement/markPlacementEffective/failPlacement/cancelPlacement) với idempotency + anti-race conditional UPDATE + HRP-vs-client guard; placement.service.test.ts + placement.resolution.test.ts mock Prisma."
     evidence: "TBD (Slice B)"
   stage_3_slice_c_integration_audit:
-    status: PENDING_DB_GATE
-    state: "Slice C: HANDOFF + AUDIT viết xong; 8 DB integration cases scaffold + env.skipIf(!HAS_TEST_DB) + ENV_BLOCKED honest report; đăng ký vitest.integration-files whitelist; full unit suite 135 files / 2220 PASS (baseline 132/2173); commit 4e7b8fe + push branch tier1/n3-service-model-placement lên origin (remote HEAD = 4e7b8fe verified; main vẫn 40cd9d4). Slice C không tự merge main; không tự apply migration prod. Chờ DATABASE_URL_TEST (Tier 0/Owner) + Tier 3 LIGHT final verdict."
-    evidence: "docs/tasks/hrp-v6-n3-service-model-placement/{HANDOFF.md, AUDIT.md}; docs/tasks/hrp-v6-n3-service-model-placement/evidence/{stage0-contract, stage1-slice-a-schema, stage2-slice-b-service, stage3-slice-c-integration}/README.md"
-    date: "14/09/2026 21:42 Asia/Bangkok"
+    status: AUDIT_COMPLETE
+    state: "Slice C COMPLETE: 9/9 DB integration tests PASS trên hrp_n3_test (Neon branch br-restless-star-azn9cd6a from hrp_mp2_test). Migration fix: reorder placements before FK + row-level RLS predicate. HANDOFF/AUDIT updated (bỏ scaffold, ghi rõ 9 test cases). Tier 3 LIGHT audit round 3 verdict: CONDITIONAL — RECOMMENDED FOR MERGE. All gates passed: typecheck 0 new errors, full unit 135 files 2220/2220 PASS. Pending: Tier 0/Owner merge decision + N1 prod verification (independent)."
+    commit: "2aff2b3 (tier1/n3-service-model-placement); remote HEAD = 2aff2b3 (86385bc..2aff2b3 fast-forward)"
+    evidence: "docs/tasks/hrp-v6-n3-service-model-placement/{HANDOFF.md v0.2, AUDIT.md round 3 CONDITIONAL}; tests/db/placement-lifecycle-integration.test.ts 9/9 PASS on hrp_n3_test"
+    date: "14/09/2026 22:18 Asia/Bangkok"
 v6_foundation: job-opening-posting-split ACCEPTED R4 PASS (3a96b9c); labor-profile-schema ACCEPTED R2 + LIVE (f8bd761); p1c-new-ui-restyling ACCEPTED R4 + Tier 3 audit r1 PASS; credential-rotation-posture BLOCKED R2 (Owner defer); security-credential-rotation READY (Owner defer giữ nguyên)
 ui04_status:
   composition/footer: ACCEPTED v1.4 (04b767e)
