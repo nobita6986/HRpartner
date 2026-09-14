@@ -349,10 +349,17 @@ describe.skipIf(!DB_READY)('AC-04/05/08 LIVE — chặn ⇒ zero write trên TES
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toBe('no-store');
     const json = (await res.json()) as { application: Record<string, unknown> };
+    // go-live-13 / DEC-15: ba khóa mask (`cccdMasked`, `fullName`, `phoneMasked`) là ĐÚNG một phần
+    // PUBLIC của `PublicTrackingDto` (DEC-01). MASK là ranh giới: raw số ĐT/CCCD không bao giờ đi
+    // qua JSON; `fullName` đi verbatim (DEC-07). Tập khóa phải khớp CHÍNH XÁC 11 tên trong
+    // `application.service.ts` `PublicTrackingDto`; một khóa thứ 12 lọt vào là FAIL.
     expect(Object.keys(json.application).sort()).toEqual([
+      'cccdMasked',
+      'fullName',
       'jobCode',
       'jobTitle',
       'nextStep',
+      'phoneMasked',
       'positionTitle',
       'status',
       'statusLabel',

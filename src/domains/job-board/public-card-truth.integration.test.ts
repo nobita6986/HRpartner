@@ -260,7 +260,7 @@ describe.skipIf(!enabled)('V5-go-live-05 LIVE — card việc làm trên dữ li
     // go-live-09 / RQ-02, RQ-22: 14 lên 18 — thêm ĐÚNG bốn tên của `RQ-02`, `toEqual` giữ nguyên nên
     // phép so vẫn là so tập khóa CHÍNH XÁC trên DB THẬT.
     expect(Object.keys(job).sort()).toEqual(
-      ['availableSlots', 'deadline', 'id', 'jobType', 'location', 'locations', 'position',
+      ['availableSlots', 'companyName', 'deadline', 'id', 'jobType', 'location', 'locations', 'position',
         'positionTitles', 'postedAt', 'salaryMaxVnd', 'salaryMinVnd', 'shift', 'shiftType',
         'shifts', 'slug', 'statusLabel', 'title', 'urgency'].sort(),
     );
