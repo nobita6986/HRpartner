@@ -6,8 +6,12 @@
  * Quy tắc (DEC-04 + V6P-003):
  *   - Race-safe nhờ partial unique index `placement_case_labor_profile_id_active_unique`
  *     (đã có ở N1 foundation migration — `20260912140411_n1_placement_case_foundation`).
- *   - INSERT race thua: Prisma throw P2002 → catch → SELECT existing active case
- *     → trả về caller (idempotent từ caller POV, KHÔNG 500).
+ *   - INSERT race thua: Prisma throw P2002 → SAVEPOINT rollback → SELECT existing
+ *     active case → trả về caller (idempotent từ caller POV, KHÔNG 500).
+ *     QUAN TRỌNG: PG đánh dấu transaction là aborted sau error đầu tiên trong
+ *     transaction block (code 25P02 trên các query tiếp theo). Catch P2002 ở JS
+ *     level không reset transaction state. Phải dùng SAVEPOINT/ROLLBACK TO để
+ *     transaction vẫn tiếp tục usable (verified round-3 fix).
  *   - Idempotency: wrap qua `withIdempotency` nếu caller cung cấp `idempotencyKey`.
  */
 
@@ -36,13 +40,24 @@ export interface OpenPlacementCaseResult {
 const ACTIVE_STATUSES = ['OPEN', 'IN_PROGRESS', 'READY_TO_PLACE'] as const;
 
 /**
- * INSERT PlacementCase mới. Catch P2002 (unique violation) → return null để caller
- * chuyển sang SELECT existing.
+ * Try INSERT PlacementCase trong SAVEPOINT.
+ *
+ * Tại sao cần savepoint: Postgres default transaction abort trên error đầu tiên
+ * (code 25P02 trên mọi query kế tiếp). Race P2002 catch ở Prisma client KHÔNG
+ * reset transaction state → SELECT tiếp theo sẽ fail. SAVEPOINT/ROLLBACK TO cho
+ * phép catch error ở JS level và tiếp tục transaction.
+ *
+ * Returns:
+ *   - { id } nếu INSERT thành công (no error).
+ *   - null nếu P2002 (race hoặc đã có row).
+ *   - throw nếu error khác (giữ nguyên để caller debug).
  */
 async function tryInsertPlacementCase(
   tx: PrismaTypes.TransactionClient,
   laborProfileId: string,
 ): Promise<{ id: string } | null> {
+  const sp = `n1pc_insert_${Math.random().toString(36).slice(2, 10)}`;
+  await tx.$executeRawUnsafe(`SAVEPOINT ${sp}`);
   try {
     const created = await tx.placementCase.create({
       data: {
@@ -52,8 +67,11 @@ async function tryInsertPlacementCase(
       },
       select: { id: true },
     });
+    await tx.$executeRawUnsafe(`RELEASE SAVEPOINT ${sp}`);
     return created;
   } catch (err) {
+    // Bất kỳ error nào trong SAVEPOINT → ROLLBACK TO để transaction vẫn usable.
+    await tx.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT ${sp}`);
     const isUniqueViolation =
       (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') ||
       (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2002');

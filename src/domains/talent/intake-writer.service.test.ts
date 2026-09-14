@@ -50,6 +50,7 @@ function makeMockTx() {
   }
 
   const tx: any = {
+    $executeRawUnsafe: vi.fn(async (_sql: string, ..._params: unknown[]) => 0),
     laborProfile: {
       findMany: vi.fn(async (args: { where?: { OR?: Array<Record<string, unknown>> }; select?: Record<string, boolean>; take?: number }) =>
         findMany('laborProfile', args?.where).slice(0, args?.take ?? 100).map((r) => {

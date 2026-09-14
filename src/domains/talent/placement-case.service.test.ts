@@ -27,6 +27,7 @@ function makeMockTx() {
     return null;
   }
   const tx = {
+    $executeRawUnsafe: vi.fn(async (_sql: string, ..._params: unknown[]) => 0),
     placementCase: {
       create: vi.fn(async (args: { data: Record<string, unknown>; select?: Record<string, boolean> }) => {
         // Simulate partial unique index violation: nếu đã có row cùng laborProfileId
