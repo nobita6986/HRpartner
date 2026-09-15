@@ -8,7 +8,7 @@
 | Work type | `DOCS+CONFIG` |
 | Assurance lane | `LOW` (docs-only + test typing; no production behavior change) |
 | Audit mode | `NONE` (per T0: docs/config chỉ LIGHT nếu đổi logic ngoài test typing) |
-| Spec version | `v0.2 COMPLETE` |
+| Spec version | `v0.3 DANGEROUS_STRINGS_REMOVED` |
 | Status | `COMPLETE` |
 | Planner | `Tier 1` |
 | Baseline | `68e184e` (origin/main HEAD) |
@@ -27,19 +27,21 @@
 
 ## 1. Outcome
 
-### 1.1 N3 closeout (docs-only, no code merge)
+### 1.1 N3 closeout (docs-only)
 
-- `docs/tasks/hrp-v6-n3-service-model-placement/{TASK.md,HANDOFF.md,AUDIT.md}` đã viết đúng trạng thái thật tại `b98e470` (round-4 fix) + `1a1eba4` (audit round 5 verdict PASS).
-- Tier 3 audit round 5 PASS đã ghi rõ: 16/16 DB integration PASS trên `hrp_n3_v5` (nhánh mới từ baseline `hrp-live`); branch `tier1/n3-service-model-placement` HEAD `1a1eba4` (pushed → origin).
-- `docs/PLANNER_HANDOVER.md` phản ánh: N3 chờ Tier 0/Owner merge `tier1/n3-service-model-placement` → main + apply migration `20260914212136_n3_service_model_placement` lên `hrp-live` (Tier 1 KHÔNG tự làm).
-- Hygiene branches N3: ghi rõ `hrp_n3_v3` (round-3 test, Neon branch br-billowing-meadow-azqpi3oo) + `hrp_n3_v5` (round-4 test, Neon branch br-bold-term-az0ej1zd) vẫn còn trong Neon console. Tier 1 KHÔNG tự xóa.
+N3 đã hoàn tất trong main. Closeout task này chỉ cập nhật docs phản ánh live state:
+
+- `docs/tasks/hrp-v6-n3-service-model-placement/{TASK.md,HANDOFF.md,AUDIT.md}` đã ghi trạng thái thật tại HEAD `68e184e` (origin/main).
+- Tier 3 audit round 5 PASS: 16/16 DB integration PASS trên `hrp_n3_v5` (nhánh mới từ baseline `hrp-live`); branch `tier1/n3-service-model-placement` HEAD `1a1eba4` (pushed → origin, code đã in main).
+- `docs/PLANNER_HANDOVER.md` ghi: N3 code in main (`68e184e`); migration `20260914212136_n3_service_model_placement` DECIDED/APPLIED_REPORTED; DO_NOT_REAPPLY.
+- Hygiene branches N3: `hrp_n3_v3` (round-3 test, Neon branch `br-billowing-meadow-azqpi3oo`) + `hrp_n3_v5` (round-4 test, Neon branch `br-bold-term-az0ej1zd`) vẫn còn trong Neon console. Tier 1 KHÔNG tự xóa — ghi rõ bằng văn bản trong closeout.
 
 ### 1.2 N1 closeout (Vercel part; ADMIN-smoke giữ OPEN)
 
 - `docs/tasks/hrp-v6-n1-intake-writer/{TASK.md,HANDOFF.md,AUDIT.md}` phản ánh:
-  - Production rebuild trên Vercel: completed (1 commit `b62f4f1` rebuild thành công).
+  - Production rebuild trên Vercel: PASS — verified tại `68e184e` (origin/main HEAD, GitHub status SUCCESS).
   - Admin intake smoke flow (ADMIN-authenticated): OPEN, KHÔNG đạt PASS. Không dùng 401 để kết luận PASS.
-  - Tier 1 KHÔNG tự cung cấp credential/secret/PII. T0 sẽ đưa evidence cho smoke ADMIN.
+  - Tier 1 KHÔNG tự cung cấp credential/secret/PII. Tier 0/Owner sẽ đưa evidence cho smoke ADMIN.
 - Fix 9 TypeScript errors trong `tests/db/intake-writer-integration.test.ts` (test-only typing, KHÔNG đổi behavior production).
 
 ### 1.3 W0.3-W0.8 hygiene
@@ -73,7 +75,7 @@
 ### Out-of-scope (cấm)
 
 - KHÔNG sửa `app/admin/**`, `src/shared/ui/role-guard/**`, `docs/V6/V6_OUTSTANDING_WORK_PLAN.md`.
-- KHÔNG apply/re-apply migration `20260914212136_n3_service_model_placement` lên `hrp-live` (đã GO và applied thì chỉ ghi trạng thái).
+- KHÔNG apply/re-apply migration `20260914212136_n3_service_model_placement` lên `hrp-live` (APPLIED_REPORTED trong closeout — DO_NOT_REAPPLY).
 - KHÔNG mở TASK migration N2.
 - KHÔNG rotate credential, KHÔNG dùng credential/secret/PII vào repo, TASK, evidence, log (chỉ ghi `[REDACTED]`).
 - KHÔNG `git add -A` / `git add .`. KHÔNG push main, KHÔNG merge main.

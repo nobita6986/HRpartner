@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Task | `hrp-v6-n1-intake-writer` |
-| Spec version | `v0.5 ROUND_5_DELIVERED` |
+| Spec version | `v0.7 CLOSEOUT_DANGEROUS_STRINGS_REMOVED` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Execution round | `5` |
@@ -14,7 +14,7 @@
 | Round 3 HEAD | `(round-3 fix, baseline 50dedee)` (SAVEPOINT quanh INSERT placement_case + integration test DB-touching — 1 case concurrent retry fail) |
 | Round 4 HEAD | `(round-4 fix)` (2 PrismaClient riêng + Math.random tag — 9/9 PASS; Tier 3 round-4 PASS) |
 | Round 5 HEAD | `(round-5 fix)` (handler intake thật createCandidateSubmissionFromIntake + verify đủ 3 điều kiện + bỏ claim singleton) |
-| Status | `CLOSEOUT_VERCEL_PASS_ADMIN_SMOKE_OPEN` |
+| Status | `CLOSEOUT — Vercel PASS @ 68e184e; ADMIN smoke OPEN; v0.7 dangerous-strings removed` |
 
 ## 1. Outcome and changed surface
 
@@ -137,13 +137,22 @@ Theo lệnh Tier 0 ngày 15/09, closeout N1 về trạng thái thật:
 - C:\CodeApp\HrP main repo có 2 modified files (N1 working tree chưa push): `placement-case.service.test.ts` + `placement-case.service.ts`. Tier 1 KHÔNG touch main repo trong closeout này — chờ Owner review + commit + push riêng.
 - Branch `tier1/n-closeout-docs-config` (worktree sạch) là nơi closeout docs + ts-error fix sẽ commit + push.
 
-### 7.5 Tier 1 next steps
+### 7.5 Tier 1 next steps (CLOSED — historical record)
 
-1. Push branch `tier1/n-closeout-docs-config` sau khi đóng gói:
-   - Closeout N3 docs (HANDOFF v0.6 + AUDIT.md round 5 verdict).
+1. Push branch `tier1/n-closeout-docs-config` (DONE — HEAD `d5e01aa` pushed → origin, PR #2 open):
+   - Closeout N3 docs (HANDOFF v0.7 + AUDIT.md round 5 verdict PASS).
    - Closeout N1 docs (HANDOFF v0.7 + AUDIT.md ghi SMOKE_ADMIN_OPEN).
-   - Fix 9 TS errors trong `intake-writer-integration.test.ts` (test typing).
+   - Fix 9 TS errors trong `intake-writer-integration.test.ts` (test typing only).
    - W0.7: `.gitignore` + `tsc-*.txt`.
    - W0.6: verify roadmap files tracked, không orphan.
-2. Tier 0/Owner quyết định: merge N3 + closeout → main + apply prod migration + smoke ADMIN thật.
-3. KHÔNG tự merge main, KHÔNG tự apply prod migration, KHÔNG tự smoke ADMIN.
+   - W0.3-W0.8 hygiene + dangerous strings removal (chờ merge / chờ Owner apply / `b62f4f1` references / `55f4180` as deployment evidence).
+2. Trạng thái N3 deployment: code in `origin/main` (`68e184e`); migration `20260914212136_n3_service_model_placement` APPLIED_REPORTED; DO_NOT_REAPPLY. Không còn action deploy còn lại thuộc N3.
+3. Tier 0/Owner remaining work: ADMIN smoke thật (Tier 1 KHÔNG tự smoke); Quality CI verify tại HEAD mới của PR #2 (T0 chấp thuận merge S1 sau khi xanh).
+
+## 8. Revision log
+
+| Version | Date | Author | Change |
+|---|---|---|---|
+| `v0.5 ROUND_5_DELIVERED` | `2026-09-14 15:52` | `Tier 1` | Round-5: intake flow thật + verify đủ 3 điều kiện + bỏ claim singleton. 9/9 PASS trên `hrp_mp2_test`. |
+| `v0.7 CLOSEOUT` | `2026-09-15 10:30` | `Tier 1` | Closeout: Vercel PASS @ `68e184e`; ADMIN smoke OPEN; 9 TS errors resolved (test typing); W0 hygiene. |
+| **`v0.8 DANGEROUS_STRINGS_REMOVED`** | **`2026-09-15 12:30`** | **`Tier 1`** | **S2: xoá 6 chuỗi nguy hiểm — "Tier 0/Owner quyết định: merge N3 + closeout → main + apply prod migration" đổi thành trạng thái N3 đã in main; §7.5 next steps → "CLOSED — historical record"; bỏ tham chiếu `55f4180`/`b62f4f1` làm deployment evidence.** |

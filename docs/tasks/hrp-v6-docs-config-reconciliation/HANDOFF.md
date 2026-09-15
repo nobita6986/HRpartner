@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Task | `hrp-v6-docs-config-reconciliation` |
-| Spec version | `v1.0 COMPLETE` |
+| Spec version | `v1.1 DANGEROUS_STRINGS_REMOVED` |
 | Status | `COMPLETE` |
 | Baseline | `68e184e` (origin/main HEAD) |
 | Worktree | `C:\CodeApp\HrP-worktrees\tier1-n-closeout-docs-config` (branch `tier1/n-closeout-docs-config`) |
@@ -21,12 +21,10 @@
   - Migration `20260914212136_n3_service_model_placement` đã DECIDED/APPLIED_REPORTED; DO_NOT_REAPPLY.
   - Branch `tier1/n3-service-model-placement` HEAD `1a1eba4` (pushed; code đã in main — branch chỉ để audit).
   - Hygiene branches `hrp_n3_v3` + `hrp_n3_v5` còn trong Neon console (ghi rõ bằng văn bản, Tier 1 KHÔNG tự xóa).
-  - Không còn dòng "chờ merge" hay "chờ Owner apply migration".
 
 - **N1 closeout docs**: `docs/tasks/hrp-v6-n1-intake-writer/HANDOFF.md` v0.7 CLOSEOUT:
-  - Vercel rebuild PASS: production deployment verified tại commit `68e184e` (GitHub status SUCCESS).
+  - Vercel rebuild PASS: production deployment verified tại commit `68e184e` (GitHub status SUCCESS) — main HEAD đại diện cho code hiện tại trên production.
   - Admin intake smoke (ADMIN-authenticated): OPEN — Tier 1 KHÔNG tự cung cấp credential thật. KHÔNG dùng 401 để kết luận PASS.
-  - Vercel rebuild dùng `68e184e` (main HEAD), không dùng `b62f4f1`.
 
 - **Test typing fix** (`tests/db/intake-writer-integration.test.ts`):
   - 9 lỗi `TS18046` (`first.body` / `second.body` is `unknown`) — vì `IdempotencyResult.body` typed `unknown` trong `idempotency.ts:46`.
@@ -77,16 +75,15 @@
 
 - Code: **in `origin/main` at `68e184e`** (verified: `68e184e..1a1eba4` chain trong main).
 - Migration `20260914212136_n3_service_model_placement`: **DECIDED/APPLIED_REPORTED** — DO_NOT_REAPPLY.
-- Branch `tier1/n3-service-model-placement` HEAD `1a1eba4` (pushed, not merged — code already in main).
+- Branch `tier1/n3-service-model-placement` HEAD `1a1eba4` (pushed, code đã in main — branch chỉ để audit history).
 - Tier 3 audit: **PASS round 5** (2 consecutive PASS rounds).
 - DB integration: **16/16 PASS** on `hrp_n3_v5` (Neon branch `br-bold-term-az0ej1zd`).
 - Hygiene branches `hrp_n3_v3` + `hrp_n3_v5`: ghi rõ trong văn bản; **Tier 1 KHÔNG tự xóa**.
-- Tier 1 KHÔNG tự merge, KHÔNG tự apply prod.
 
 ### N1 — `hrp-v6-n1-intake-writer`
 
-- Vercel rebuild: **PASS** tại `68e184e` (GitHub status SUCCESS — production đã serve code mới).
-- Admin intake smoke (ADMIN-auth): **OPEN** — chờ Tier 0/Owner cung cấp credential thật.
+- Vercel rebuild: **PASS** tại `68e184e` (GitHub status SUCCESS — production đã serve code mới nhất).
+- Admin intake smoke (ADMIN-auth): **OPEN** — Tier 0/Owner cung cấp evidence bằng credential ADMIN/HR_MANAGER thật.
 - KHÔNG dùng 401 để kết luận PASS.
 
 ## 4. Integration lane carry-forward
@@ -101,3 +98,4 @@
 |---|---|---|---|
 | `v0.1 DRAFT` | `2026-09-15 10:15` | `Tier 1` | TASK slug tạo mới. |
 | **`v1.0 COMPLETE`** | **`2026-09-15 11:30`** | **`Tier 1`** | **S1 hoàn tất: N3 code in main + migration APPLIED_REPORTED; N1 Vercel PASS (68e184e) + ADMIN smoke OPEN; 9 TS errors resolved; W0 hygiene done; branch `tier1/n-closeout-docs-config` HEAD `2fb9bd2` pushed → origin; PR mở để trigger Quality CI.** |
+| **`v1.1 DANGEROUS_STRINGS_REMOVED`** | **`2026-09-15 12:30`** | **`Tier 1`** | **S2: sửa 6 chuỗi nguy hiểm — toàn bộ wording "chờ merge N3", "chờ Owner apply migration", `b62f4f1` evidence code, "apply prod migration" trigger, "re-apply N3" wording đã được thay bằng live state. N3 đã in main (`68e184e`) + migration APPLIED_REPORTED. T0 chấp thuận merge S1 sau khi HEAD mới xanh Quality CI.** |
