@@ -9,7 +9,7 @@ Hoàn thành P2: sửa lỗi "sự thật" (truth defects) của admin module, b
 - **AD3**: `ledger.service.ts` query tên CTV & Worker thủ công bên trong transaction scoped bằng RLS. Sổ cái `/admin/commission/ledger` dọn sạch `slice(-8)`, hiển thị tên nếu có, hoặc báo "Chưa có dữ liệu" (khi workerId null) / "Không có quyền xem" (khi RLS che lấp worker). Có unit test kiểm chứng ở `src/domains/commission/ledger.service.test.ts`.
 - **AD4**: Loại bỏ các logic, render của Submissions/Claims tab tại `/admin/jobs`. Đổi nhãn thành "Danh sách nhu cầu".
 - **AD5**: Dữ liệu navigation của dashboard `app/admin/page.tsx` đã nhóm theo quy trình "Nhu cầu -> Tuyển -> Người -> Bố trí -> Tiền".
-- **HEAD & CI**: Branch cập nhật tại HEAD `6bb07a7`. Quality CI PASS (137 test files, 2237 tests pass, tsc exit 0).
+- **HEAD & CI**: Branch cập nhật tại HEAD `015fe83`. Quality CI PASS (137 test files, 2237 tests pass, tsc exit 0).
 - **Browser Smoke (Vercel Preview)**: `NOT_RUN`
   - **Trạng thái**: Preview URL do Vercel cấp trả về HTTP 401 (Protected Deployment). Do không có authorized session, tiến trình không thể truy cập.
   - **ENV_BLOCKED**: Không thể thực hiện manual browser smoke cho AD1/AD4/AD5. Các kết luận trước đây đều là source inspection / unit test, không phải browser evidence thực tế.
