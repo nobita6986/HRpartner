@@ -5,7 +5,7 @@
 **Type:** READ-ONLY Discovery — no production code changes
 **Baseline:** `origin/main` `b91a33f948aed224a88f3e8e7c9847006f33e97f`
 **Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
-**HEAD:** see `git log -1`
+**HEAD (R2):** `fd56ea` (R2 revision pending push)
 
 ---
 
@@ -13,13 +13,14 @@
 
 - ✅ Surveyed codebase for all 10 N2 policy questions
 - ✅ Documented evidence with file:line references
-- ✅ Proposed 6 vertical slices with dependency graph (revised per T0 R1)
-- ✅ Identified 15 unresolved decisions for T0 (revised per T0 R1)
+- ✅ Proposed 6 vertical slices with dependency graph (R1 revised)
+- ✅ Identified 18 unresolved decisions for T0 (R2 updated)
 - ✅ Recommended options for each decision with rationale
-- ✅ **Revised Q7** per T0: CommissionBeneficiaryDecision as authority record (not dynamic handler read)
-- ✅ **Timezone layer separation**: Storage UTC / Business clock Asia/Bangkok
-- ✅ **Legacy ctvId classification**: EXACT_SAFE vs UNRESOLVED
-- ✅ **V6 Phase 1 merge status verified with evidence** (NOT in origin/main)
+- ✅ **R2: Q7 fully revised** — beneficiaryUserId required, UNRESOLVED outcome, SYSTEM actor valid User, invariant contract
+- ✅ **R2: Q9b tightened** — EXACT_SAFE requires valid FK + provenance + writer semantics + no conflict + audit
+- ✅ **R2: V6 P1 corrected** — migrations already in main, no merge dependency, capability-based dependency
+- ✅ **R2: Attribution cardinality clarified** — immutable, separate clocks
+- ✅ **R2: All 4 docs synced**
 
 ---
 
@@ -33,7 +34,7 @@
 - Produce `DISCOVERY.md` with evidence-backed answers
 - Identify gaps between design intent and current codebase
 - Propose decomposition into implementable slices
-- Verify V6 Phase 1 merge status with git evidence
+- Verify V6 Phase 1 capability in origin/main via filesystem (not commit ancestry)
 
 ### 2.2 Out of Scope (boundary)
 
@@ -53,99 +54,75 @@
 
 ## 3. RQ → STEP → AC
 
-### RQ-01 (Q1): AFF clock type
-- **AC:** Recommended calendar days vs business days with rationale
-
-### RQ-02 (Q2): Timezone canonical + cut-off
-- **AC:** Storage = TIMESTAMPTZ UTC; Business clock = Asia/Bangkok; cut-off = 23:59:59.999 VN
-
-### RQ-03 (Q3): Holiday calendar authority + unconfigured behavior
-- **AC:** Recommended HR Admin owner + calendar fallback behavior
-
-### RQ-04 (Q4): Clock start event
-- **AC:** Recommended `PlacementCase.openedAt` as canonical anchor
-
-### RQ-05 (Q5): Pause/reset semantics
-- **AC:** Recommended clock RUNNING always, assignment expires (no pause)
-
-### RQ-06 (Q6): ReferralAttribution immutability + cardinality
-- **AC:** Immutable source; attribution does NOT change when handling changes/expires; handling clock (7d) and attribution clock (30d) are separate
-
-### RQ-07 (Q7): CommissionBeneficiaryDecision separation — REVISED
-- **AC:** Decision as authority record (NOT dynamic handler read); handlingAssignmentId nullable (evidence only); decision snapshots beneficiary, reason, source, evidence, decidedAt, actor; engine reads decision not active handler
-
-### RQ-08 (Q8): Role/permission/data-scope matrix
-- **AC:** 6 permission codes (incl. CAN_CREATE_BENEFICIARY_DECISION) + RLS policy skeleton
-
-### RQ-09 (Q9): Inventory reuse + N2 conflicts + legacy classification
-- **AC:** Component inventory with reuse vs conflict assessment; legacy ctvId backfill requires EXACT_SAFE / UNRESOLVED classification (NO blanket backfill)
-
-### RQ-10 (Q10): Vertical slice decomposition
-- **AC:** 6 slices with dependency graph; V6 Phase 1A merge required for N2-3/4 (verified NOT yet merged)
+| RQ | Question | AC |
+|---|---|---|
+| RQ-01 | Q1: Clock type | Recommended calendar days |
+| RQ-02 | Q2: Storage = TIMESTAMPTZ UTC; Business = Asia/Bangkok; cut-off 23:59:59.999 VN | Recommended |
+| RQ-03 | Q3: Holiday owner + fallback | HR Admin + calendar fallback |
+| RQ-04 | Q4: Clock start | `openedAt` |
+| RQ-05 | Q5: Pause/reset | Clock RUNNING always |
+| RQ-06 | Q6: Attribution immutability | Immutable source, separate clocks |
+| RQ-07 | Q7: BeneficiaryDecision | R2: authority record, beneficiaryUserId required, UNRESOLVED outcome, SYSTEM=valid User, max one ACTIVE per key |
+| RQ-08 | Q8: Permissions | 6 codes + RLS proposal |
+| RQ-09 | Q9: Inventory reuse | Component inventory + conflicts |
+| RQ-09b | Q9b: Legacy ctvId | R2: EXACT_SAFE = FK + provenance + writer + no conflict + audit |
+| RQ-10 | Q10: Slices | 6 slices; V6 P1 capability in main |
 
 ---
 
 ## 4. Evidence Index
 
-- `DISCOVERY.md` — Main document (this task's deliverable)
-- `HANDOFF.md` — Status and handoff summary
-- `evidence/OVERVIEW.md` — Survey findings + aff_plan.md affinity
+| File | Purpose | Status |
+|---|---|---|
+| `DISCOVERY.md` | Main document — 10 questions, evidence, recommendations, 18 T0 decisions | ✅ R2 updated |
+| `TASK.md` | This file — RQ → STEP → AC, scope, boundary | ✅ R2 synced |
+| `HANDOFF.md` | Status + handoff to T0 | ✅ R2 updated |
+| `evidence/OVERVIEW.md` | Affinity to aff_plan.md, migration inventory, V6 P1 status | ✅ R2 synced |
 
 ---
 
-## 5. T0 Decision Required Before N2 Implementation
+## 5. V6 Phase 1A — Corrected (R2)
 
-See `DISCOVERY.md §3` for full list. Summary of **15 decisions**:
+**V6 Phase 1A migrations are in `prisma/migrations/` of origin/main. No merge dependency.**
 
-1. Q1: Clock type (calendar vs business days)
-2. Q2a: Storage timezone (TIMESTAMPTZ UTC)
-3. Q2b: Business clock timezone (Asia/Bangkok)
-4. Q2c: Cut-off time
-5. Q3a: Holiday calendar owner
-6. Q3b: Unconfigured fallback
-7. Q4: Clock start event confirmation
-8. Q5: Pause/reset semantics
-9. Q7a: CommissionBeneficiaryDecision as authority (T0 revised)
-10. Q7b: handlingAssignmentId nullable (T0 revised)
-11. Q7c: No handler = skip credit or create decision?
-12. Q8: Permission codes for handling
-13. Q9a: RPC change acceptability for N2-3
-14. Q9b: Legacy ctvId backfill classification (T0 revised)
-15. Q10: N2-1/N2-2 can run before V6 P1 merge?
+Evidence:
+```
+$ git ls-tree origin/main prisma/migrations/ | Select-String "phase1a"
+  prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/
+  prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/
+```
+
+Capability available: `LaborProfile`, `LaborProfileIntake`, `EmploymentEpisode` tables, `CandidateSubmission.laborProfileId` FK, RLS policies.
+
+Implication: N2-3 and N2-4 are not blocked by V6 P1 merge.
 
 ---
 
-## 6. V6 Phase 1 Dependency Status
+## 6. T0 Decision Summary (18 decisions)
 
-**Verified evidence:**
-```
-$ git merge-base --is-ancestor 3a33212 origin/main
-# exit 1: V6 P1 schema commit NOT in origin/main (b91a33f)
-```
+Full list in `DISCOVERY.md §3`. Summary:
 
-**Impact on N2 slices:**
-- N2-1 (Attribution Foundation): **No V6 P1 dep** → can start after T0 unlocks
-- N2-2 (Link Capture): **No V6 P1 dep** → can start after T0 unlocks
-- N2-3 (Apply Attribution): **REQUIRES V6 P1 merge** → blocked
-- N2-4 (Handling Assignment): **REQUIRES V6 P1 merge** → blocked
-- N2-5 (Beneficiary Decision): Requires N2-4 → blocked
-- N2-6 (Commission Beneficiary): Requires N2-5 → blocked
-
-**T0 should consider:** Allow N2-1/N2-2 to proceed in parallel with V6 P1 merge preparation.
+| Category | Count | Key changes |
+|---|---|---|
+| Clock/Time | 5 | Q1, Q2a/b/c, Q3a/b |
+| Lifecycle | 2 | Q4, Q5 |
+| Beneficiary Decision | 5 | Q7a/b/c/d/e (R2 major revision) |
+| Permissions | 1 | Q8 |
+| Migration/Compat | 3 | Q9a, Q9b (R2 tightened), Q10 |
+| **Total** | **18** | |
 
 ---
 
 ## 7. Next Steps
 
 **T0 action:**
-1. Review `DISCOVERY.md` recommendations
-2. Chốt the 15 open decisions
-3. Authorize Tier 1 to create N2-1 task (with N2-2 in parallel)
+1. Review `DISCOVERY.md`
+2. Chốt 18 open decisions
+3. Authorize Tier 1 to create N2-1 + N2-2
 
 **Tier 1 action (after T0 unlock):**
-- Create N2-1 TASK with full RQ → STEP → AC, baseline, dependencies, test gates
-- Create N2-2 TASK in parallel (no schema dependency on N2-1)
-- Do not start implementation until §20 DoR in `aff_plan.md` is satisfied
-- Track V6 P1 merge status; N2-3/N2-4 cannot start before merge
+- Create N2-1 TASK
+- Create N2-2 TASK (parallel)
+- Do not start N2-3/4/5/6 until prior slices complete
 
-**Branch status:** Awaiting T0 unlock.
+**Branch status:** R2 revision committed, push + PR pending.

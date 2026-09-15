@@ -13,49 +13,57 @@
 | Item | State |
 |---|---|
 | Survey scope | ✅ Complete (10 policy questions) |
-| Evidence gathering | ✅ Complete (file:line + git evidence) |
-| Recommendations | ✅ Complete (15 decisions with options + recommendation) |
+| Evidence gathering | ✅ Complete (file:line + migration filesystem evidence) |
+| Recommendations | ✅ Complete (18 decisions with options + recommendation) |
 | Slice decomposition | ✅ Complete (6 slices with dependency graph) |
-| V6 P1 merge status verified | ✅ Yes (NOT in origin/main — see §3) |
-| T0 decisions requested | ✅ Yes (see §4) |
+| V6 P1 capability verified | ✅ Yes — migrations in main@prisma/migrations/ |
+| T0 decisions requested | ✅ Yes (18 decisions) |
 | Implementation gate | ⏸️ **BLOCKED — awaiting T0** |
-
-**This task is COMPLETE as a discovery deliverable.** T0 must decide 15 open decisions before N2-1 can be authorized.
 
 ---
 
 ## 2. Deliverables
 
-| File | Purpose | Status |
-|---|---|---|
-| `DISCOVERY.md` | 10 policy questions + evidence + recommendations + 15 T0 decisions | ✅ Updated per T0 R1 |
-| `TASK.md` | RQ → STEP → AC, scope, boundary, evidence index | ✅ Updated to READY_FOR_T0_DECISION |
-| `evidence/OVERVIEW.md` | Affinity to aff_plan.md, migration inventory, V6 P1 status | ✅ Updated |
-| `HANDOFF.md` (this file) | Final status + handoff to T0 | ✅ Created |
+| File | Lines | Purpose | Status |
+|---|---|---|---|
+| `DISCOVERY.md` | 711 | 10 questions + evidence + 18 T0 decisions | ✅ R2 updated |
+| `TASK.md` | 151 | RQ → STEP → AC, scope, boundary | ✅ R2 synced |
+| `HANDOFF.md` | 191 | Status + handoff to T0 | ✅ R2 updated |
+| `evidence/OVERVIEW.md` | 151 | aff_plan.md affinity, migration inventory, V6 P1 status | ✅ R2 synced |
+| **Total** | **1204** | **4 files, zero code** | ✅ |
 
 ---
 
-## 3. Critical Evidence: V6 Phase 1 NOT in origin/main
+## 3. Critical Evidence: V6 Phase 1A in origin/main (CORRECTED R2)
 
 ```
-$ git merge-base --is-ancestor 3a33212 origin/main
-# Exit 1: V6 P1 schema (3a33212) is NOT an ancestor of origin/main (b91a33f)
-
-$ git branch --contains 3a33212
-  codex/hrp-v6-p1a-labor-profile-schema
-  codex/hrp-v6-p1b-job-opening-posting-split
+$ git ls-tree origin/main prisma/migrations/ | Select-String "phase1a"
+  prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/
+  prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/
 ```
 
-**Implication for N2:**
-- N2-3 (Apply Attribution) requires `LaborProfile` FK → BLOCKED until V6 P1 merge
-- N2-4 (Handling Assignment) requires `LaborProfile` FK → BLOCKED until V6 P1 merge
-- N2-1 (Attribution Foundation) and N2-2 (Link Capture) have NO V6 P1 dependency → can start independently
+**Capability available:**
+- `LaborProfile` table: CREATE TABLE ✅
+- `LaborProfileIntake` table: CREATE TABLE ✅
+- `EmploymentEpisode` table: CREATE TABLE ✅
+- `CandidateSubmission.laborProfileId` nullable FK: ADD COLUMN ✅
+- RLS policies on all three tables: APPLIED ✅
+
+**Dependency impact:**
+- N2-1 (Attribution Foundation): No V6 P1 dep → can start immediately
+- N2-2 (Link Capture): No V6 P1 dep → can start immediately
+- N2-3 (Apply Attribution): LaborProfile FK available → can start
+- N2-4 (Handling Assignment): LaborProfile FK available → can start
+- N2-5 (Beneficiary Decision): Requires N2-4 → sequential
+- N2-6 (Commission Beneficiary): Requires N2-5 → sequential
+
+**No merge dependency.** V6 P1 capability is in origin/main at b91a33f.
 
 ---
 
-## 4. T0 Decision Summary (15 decisions)
+## 4. T0 Decision Summary (18 decisions)
 
-### Pre-implementation gate (must be resolved before N2-1):
+See `DISCOVERY.md §3` for full list. Summary:
 
 | # | Decision | Recommendation |
 |---|---|---|
@@ -65,68 +73,49 @@ $ git branch --contains 3a33212
 | Q2c | Cut-off time | **23:59:59.999 VN** |
 | Q3a | Holiday owner | **HR Admin** |
 | Q3b | Unconfigured fallback | **Calendar days** |
-| Q4 | Clock start | **`PlacementCase.openedAt`** |
+| Q4 | Clock start | **`openedAt`** |
 | Q5 | Pause/reset | **Clock RUNNING always** |
-| Q7a | Decision as authority (T0 revised) | **YES, immutable record** |
-| Q7b | handlingAssignmentId nullable (T0 revised) | **Nullable (evidence only)** |
-| Q7c | No handler = create decision or skip? | **Create with null beneficiary** |
+| Q7a | Decision as authority | **YES, immutable record** |
+| Q7b | beneficiaryUserId for ACTIVE | **Required (not nullable)** |
+| Q7c | UNRESOLVED outcome | **No active decision with null beneficiary** |
+| Q7d | SYSTEM actor | **Valid User FK (not magic string)** |
+| Q7e | Invariant: max one ACTIVE per key | **Yes, partial unique index + advisory lock** |
 | Q8 | Permission codes | **6 codes per proposal** |
 | Q9a | RPC change for N2-3 | **Yes, with LIVE test plan** |
-| Q9b | Legacy ctvId classification (T0 revised) | **EXACT_SAFE / UNRESOLVED** |
-| Q10 | N2-1/N2-2 before V6 P1 merge | **Yes, no dep** |
-
-See `DISCOVERY.md §3` for full option descriptions.
+| Q9b | Legacy ctvId classification | **EXACT_SAFE = FK + provenance + writer + no conflict + audit** |
+| Q10 | V6 P1 capability | **Confirmed in main — no dependency** |
 
 ---
 
-## 5. T0-Revised Decisions — Key Changes from Round 0
+## 5. T0-R2 Key Changes
 
-### Q7 — CommissionBeneficiaryDecision (MAJOR REVISION)
+### Q7 — CommissionBeneficiaryDecision (R2 MAJOR REVISION)
 
-**OLD (round 0):** Engine reads active `LaborProfileHandlingAssignment` at milestone time.
-**NEW (round 1, per T0):** `CommissionBeneficiaryDecision` is immutable authority record. HandlingAssignment is input/candidate only.
+**Changes from R1:**
+- `beneficiaryUserId` is **REQUIRED** for ACTIVE decision (not nullable)
+- No handler/no beneficiary → typed `UNRESOLVED` outcome; **no active decision** created with `beneficiaryUserId = null`
+- Actor SYSTEM must be **valid `User` row** (pre-created system service account); not a magic string
+- Invariant contract: **max one ACTIVE decision per (laborProfileId, assignmentId, milestone)** — enforced by partial unique index + advisory lock
+- Correction/reversal preserves SUPERSEDED/REVERSED history (never delete)
 
-**Key model fields (NEW):**
-```prisma
-model CommissionBeneficiaryDecision {
-  id                   String   @id @default(uuid())
-  laborProfileId       String
-  assignmentId         String?
-  handlingAssignmentId String?     // nullable — evidence only
-  beneficiaryUserId    String
-  source               String     // AFF_INITIAL | MANAGER_ASSIGNMENT | CASE_RESOLUTION | DIRECT
-  reason               String     // typed reason
-  evidence             Json       // snapshot
-  decidedAt            DateTime
-  actorId              String
-  milestone            String
-  status               String     // ACTIVE | SUPERSEDED | REVERSED
-  @@unique([laborProfileId, assignmentId, milestone])
-}
-```
+### Q9b — Legacy ctvId (R2 TIGHTENED)
 
-**Engine change:** Read decision, not active handler.
+**Changes from R1:**
+- Valid `User` FK alone is **NOT sufficient** for EXACT_SAFE
+- EXACT_SAFE requires ALL of: valid FK + provenance + writer semantics + no conflict + audit trail
+- UNRESOLVED rows must be manually reviewed, not blindly backfilled
 
-### Q9b — Legacy ctvId (REVISION)
+### Q6 — Attribution Cardinality (R2 CLARIFIED)
 
-**OLD (round 0):** Backfill all `ctvId` to `beneficiary_user_id`.
-**NEW (round 1, per T0):** Classify per row.
-- `EXACT_SAFE`: valid FK to User → backfill OK
-- `UNRESOLVED`: no FK or ambiguous → skip, manual review
+- Attribution does NOT change when handling assignment changes or expires
+- Two separate clocks: attribution TTL (30d) and handling protected window (7d)
+- Attribution survives assignment expiry and handler transfer
 
-### Q2 — Timezone (REVISION)
+### V6 Phase 1 (R2 CORRECTED)
 
-**OLD (round 0):** "TIMESTAMPTZ Asia/Bangkok" — ambiguous.
-**NEW (round 1, per T0):** Layered:
-- Storage: UTC instant / TIMESTAMPTZ
-- Business clock: Asia/Bangkok
-
-### Q6 — Attribution Cardinality (CLARIFICATION)
-
-**OLD (round 0):** Mentioned immutability.
-**NEW (round 1, per T0):** Explicit rule:
-- Immutable attribution does NOT change when handling changes/expires
-- Handling clock (7d) and attribution clock (30d) are separate
+- **Migrations already in `origin/main@prisma/migrations/`**
+- **No merge dependency**
+- **Capability-based dependency**: N2-3/4 can start because LaborProfile FK is available in main
 
 ---
 
@@ -134,36 +123,25 @@ model CommissionBeneficiaryDecision {
 
 **Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
 **Base:** `origin/main` b91a33f
-**HEAD:** See `git rev-parse HEAD` (updated after each push)
-**Diff vs origin/main:** 3 docs files (DISCOVERY.md + TASK.md + evidence/OVERVIEW.md + HANDOFF.md), zero code changes
-**PR:** Open as docs-only PR against `main`
+**HEAD (R2):** `fd56ea` (R2 revision — pending push)
+**Diff vs origin/main:** 4 files, +1204 lines (docs only)
+**R2 changes:** DISCOVERY.md, TASK.md, HANDOFF.md, evidence/OVERVIEW.md updated
 
 ---
 
 ## 7. What T0 Should Do
 
 1. Read `DISCOVERY.md` end-to-end
-2. Review §3 (15 decisions) — confirm or override each recommendation
+2. Review §3 (18 decisions) — confirm or override each recommendation
 3. Sign off on:
-   - Q7 (decision as authority — biggest design change)
-   - Q2 (timezone layers)
-   - Q9b (legacy classification)
-   - Q10 (slice ordering + V6 P1 dependency)
-4. Authorize Tier 1 to create N2-1 task (and N2-2 in parallel)
-5. Decide: N2-1/N2-2 starts before or after V6 P1 merge?
+   - Q7 R2 revisions (biggest design changes)
+   - Q9b R2 tightening (EXACT_SAFE criteria)
+   - V6 P1 capability (already in main)
+4. Authorize Tier 1 to create N2-1 + N2-2 tasks
 
 ---
 
-## 8. What Tier 1 Should Do (after T0 unlock)
-
-- Create `hrp-v6-n2-aff-01-attribution-foundation` task with full RQ → STEP → AC
-- Create `hrp-v6-n2-aff-02-link-capture` task in parallel
-- Do NOT start N2-3, N2-4 until V6 P1 merged into origin/main
-- Do NOT start implementation until §20 DoR in `aff_plan.md` is satisfied
-
----
-
-## 9. Boundary Compliance
+## 8. Boundary Compliance
 
 - ✅ No schema/migration/source changes
 - ✅ No production DB writes
@@ -174,15 +152,14 @@ model CommissionBeneficiaryDecision {
 
 ---
 
-## 10. Final Note
+## 9. Final Note
 
-This discovery task is a **decision package**, not an implementation artifact.
+This is a **decision package**, not an implementation artifact.
 
-The 15 decisions in `DISCOVERY.md §3` are the bottleneck for N2. Once T0 chốt, Tier 1 has everything needed to:
-1. Create N2-1 task with locked schema/API scope
-2. Create N2-2 task in parallel
-3. Track V6 P1 merge for N2-3/N2-4 unlock
-4. Plan N2-5/N2-6 sequentially
+The 18 decisions in `DISCOVERY.md §3` are the bottleneck for N2. Once T0 chốt:
+1. Tier 1 creates N2-1 + N2-2 tasks (parallel)
+2. Tier 1 tracks N2-3/4 (no V6 dependency — can start)
+3. Tier 1 plans N2-5/6 sequentially
 
 No further S1 survey needed before T0 decisions.
 
