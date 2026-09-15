@@ -15,7 +15,9 @@ try {
     const m = line.match(/^DATABASE_URL=(.+)$/);
     if (m && !process.env.DATABASE_URL) process.env.DATABASE_URL = m[1].trim();
   }
-} catch {}
+} catch {
+  // Missing .env.dev is not fatal; rely on existing process.env.
+}
 
 const url = process.env.DATABASE_URL;
 if (!url) { console.error('DATABASE_URL missing'); process.exit(1); }

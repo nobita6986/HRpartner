@@ -6,9 +6,9 @@
 |---|---|
 | Task slug | `hrp-v6-docs-config-reconciliation` |
 | Work type | `DOCS+CONFIG` |
-| Assurance lane | `LOW` (docs-only + test typing; no production behavior change) |
+| Assurance lane | `FAST` (docs-only + test typing + lint hygiene; no production behavior change) |
 | Audit mode | `NONE` (per T0: docs/config chỉ LIGHT nếu đổi logic ngoài test typing) |
-| Spec version | `v0.3 DANGEROUS_STRINGS_REMOVED` |
+| Spec version | `v0.4 S1_FINAL_CORRECTION` |
 | Status | `COMPLETE` |
 | Planner | `Tier 1` |
 | Baseline | `68e184e` (origin/main HEAD) |

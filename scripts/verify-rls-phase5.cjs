@@ -40,11 +40,6 @@ const EXPECTED_POLICIES = {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-/** Run a raw query with NO Prisma param interpolation — inline literals. */
-async function rawQuery(prisma, sql) {
-  return prisma.$queryRawUnsafe(sql);
-}
-
 /** Run functional test inside a transaction so SET LOCAL ROLE survives. */
 async function withRole(prisma, role, fn) {
   return prisma.$transaction(async (tx) => {

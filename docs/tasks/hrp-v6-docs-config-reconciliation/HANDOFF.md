@@ -57,7 +57,7 @@
 
 - `app/admin/**`: empty diff ✅
 - `src/shared/ui/role-guard/**`: empty diff ✅
-- `docs/V6/V6_OUTSTANDING_WORK_PLAN.md`: không tồn tại trong origin/main ✅
+- `docs/V6/V6_OUTSTANDING_WORK_PLAN.md`: không bị sửa; forbidden-path diff empty ✅
 - `.ai-pipeline-bak/`: không tồn tại ✅
 
 ## 2. Acceptance evidence

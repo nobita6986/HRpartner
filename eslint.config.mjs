@@ -49,10 +49,6 @@ export default tseslint.config(
       // part of this app's TS source. Ignoring is consistent with the
       // existing policy above for `docs/**` and `public/**`.
       'scratch/**',
-      // Pre-existing root-level diagnostics throwaways. Pre-N3 baseline.
-      // Keeping the ignore list explicit so `eslint .` stays green.
-      'scripts/run-seed-sql.mjs',
-      'scripts/verify-rls-phase5.cjs',
     ],
   },
   js.configs.recommended,
