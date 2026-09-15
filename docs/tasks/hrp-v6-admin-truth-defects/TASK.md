@@ -10,15 +10,15 @@
 | Audit mode | `LIGHT` |
 | Audit reason | AD2 sửa filter API đọc `workers` (bảng FORCE RLS) + projection; AD3 join `users`/`workers` trong read service có RLS — Tier 3 kiểm tra không mở rộng data scope, không lộ PII, nhãn "Không có quyền xem" đúng chỗ. AD1/AD4/AD5 là UI reversible đi kèm trong cùng diff nên chịu LIGHT chung |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `READY_FOR_AUDIT_ROUND_1` |
 | Planner | `Tier 1` (stream T1-UI, lệnh T0 ngày 15/09) |
 | Baseline | `68e184e` (origin/main, verify tại worktree `tier1/admin-truth-defects`, `git status` sạch) |
 | In-scope roots | `app/admin/workers/page.tsx`; `app/api/workers/route.ts`; `app/admin/commission/ledger/page.tsx`; `app/api/admin/commission-ledger/route.ts`; `src/domains/commission/ledger.service.ts`; `app/admin/jobs/page.tsx`; `app/admin/page.tsx`; `src/shared/ui/role-guard/role-guard-layout.tsx`; `docs/tasks/hrp-v6-admin-truth-defects/**` |
 | Forbidden paths | `prisma/**` (schema + migrations); `src/domains/talent/**`; `src/domains/staffing/**`; `app/(jobs)/**`; `docs/PLANNER_HANDOVER.md`; `package.json`; `.gitignore` |
 | Required gates | `npx tsc --noEmit`; `npm run test:unit` (in-scope + carry-forward `design-tokens.static.test.ts`); `powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v6-admin-truth-defects/TASK.md` |
-| Current execution round | `0` |
+| Current execution round | `1` |
 | Current audit round | `0` |
-| Next gate | `/deliver` (Tier 1 implement trên worktree `tier1/admin-truth-defects`) → `/audit` Tier 3 LIGHT (chỉ AD2/AD3) → `/resolve` |
+| Next gate | `/audit` Tier 3 LIGHT ROUND 1 (chỉ AD2/AD3) → `/resolve` |
 
 > Lane STANDARD + audit phân vùng: AD2/AD3 LIGHT vì đụng read scope bảng FORCE RLS; AD1/AD4/AD5 NONE vì UI reversible. Lệnh T0 ngày 15/09 cho phép cấu trúc này.
 
@@ -144,10 +144,11 @@
 
 | Round | Decision | Reason |
 |---|---|---|
-| - | - | Chưa có execution round nào hoàn tất |
+| `1` | Sửa GET /api/workers và test theo T0 review; update ledger UI | Accept precedence `employmentStatus` qua `status`, whitelist 4 enum, 400 invalid, không gọi Prisma khi invalid. Ledger UI thay '-' bằng 'Chưa có dữ liệu'. |
 
 ## 10. Revision Log
 
 | Spec version | Date | Author | Change | Reason |
 |---|---|---|---|---|
 | `v1.0` | 2026-09-15 | Tier 1 (T1-UI) | Tạo TASK từ lệnh T0, baseline `68e184e` | Mở W1 song song S1 |
+| `v1.1` | 2026-09-15 | Tier 1 (T1-UI) | Cập nhật ROUND 1: GET /api/workers 400; ledger UI `Chưa có dữ liệu` | Lệnh T0 REVISION REQUIRED |

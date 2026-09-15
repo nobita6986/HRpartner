@@ -179,7 +179,7 @@ export default function AdminCommissionLedgerPage() {
                       {r.ctvName ?? 'Chưa có dữ liệu'}
                     </td>
                     <td className="px-3 py-3 text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-                      {r.workerId ? (r.workerName ?? <span className="italic text-slate-400">Không có quyền xem</span>) : '-'}
+                      {r.workerId ? (r.workerName ?? <span className="italic text-slate-400">Không có quyền xem</span>) : 'Chưa có dữ liệu'}
                     </td>
                     <td className="px-3 py-3" style={{ color: 'var(--on-surface)' }}>{r.milestone}</td>
                     <td className="px-3 py-3 text-right font-mono" style={{ color: r.direction === 'REVERSAL' ? 'var(--error)' : 'var(--on-surface)' }}>

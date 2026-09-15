@@ -41,26 +41,37 @@ beforeEach(() => {
 });
 
 describe('GET /api/workers', () => {
-  it('maps status=ACTIVE to where.employmentStatus=ACTIVE', async () => {
-    const req = new NextRequest('http://localhost/api/workers?status=ACTIVE');
-    await GET(req);
+  it('supports employmentStatus param and takes precedence over status alias', async () => {
+    // Both params provided -> employmentStatus wins
+    const req1 = new NextRequest('http://localhost/api/workers?employmentStatus=SUSPENDED&status=ACTIVE');
+    await GET(req1);
+    expect(mocks.findMany.mock.calls[0][0].where.employmentStatus).toBe('SUSPENDED');
+    
+    // Only status provided
+    mocks.findMany.mockClear();
+    const req2 = new NextRequest('http://localhost/api/workers?status=ACTIVE');
+    await GET(req2);
     expect(mocks.findMany.mock.calls[0][0].where.employmentStatus).toBe('ACTIVE');
-    expect(mocks.findMany.mock.calls[0][0].where).not.toHaveProperty('status');
   });
 
-  it('maps NONE, SUSPENDED, TERMINATED correctly', async () => {
-    for (const st of ['NONE', 'SUSPENDED', 'TERMINATED']) {
+  it('whitelists all four enum values', async () => {
+    for (const st of ['NONE', 'ACTIVE', 'SUSPENDED', 'TERMINATED']) {
       mocks.findMany.mockClear();
-      const req = new NextRequest(`http://localhost/api/workers?status=${st}`);
+      const req = new NextRequest(`http://localhost/api/workers?employmentStatus=${st}`);
       await GET(req);
       expect(mocks.findMany.mock.calls[0][0].where.employmentStatus).toBe(st);
     }
   });
 
-  it('invalid filter does not cause Prisma 500 (just passes as is)', async () => {
+  it('invalid value returns 400 and does not call findMany/count', async () => {
     const req = new NextRequest('http://localhost/api/workers?status=INVALID_STATUS');
-    await GET(req);
-    expect(mocks.findMany.mock.calls[0][0].where.employmentStatus).toBe('INVALID_STATUS');
+    const res = await GET(req);
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error).toBe('BAD_REQUEST');
+    
+    expect(mocks.findMany).not.toHaveBeenCalled();
+    expect(mocks.count).not.toHaveBeenCalled();
   });
 });
 

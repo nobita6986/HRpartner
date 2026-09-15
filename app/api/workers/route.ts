@@ -41,11 +41,18 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const take = Math.min(parseInt(searchParams.get('take') ?? '50', 10), 200);
   const skip = parseInt(searchParams.get('skip') ?? '0', 10);
-  const status = searchParams.get('status') ?? undefined;
+  const employmentStatus = searchParams.get('employmentStatus');
+  const statusParam = searchParams.get('status');
+  const finalStatus = employmentStatus ?? statusParam ?? undefined;
   const search = searchParams.get('search') ?? undefined;
 
   const where: Record<string, unknown> = {};
-  if (status) where.employmentStatus = status;
+  if (finalStatus) {
+    if (!['NONE', 'ACTIVE', 'SUSPENDED', 'TERMINATED'].includes(finalStatus)) {
+      return NextResponse.json({ error: 'BAD_REQUEST', message: 'Invalid employmentStatus' }, { status: 400 });
+    }
+    where.employmentStatus = finalStatus;
+  }
   if (search) {
     where.OR = [
       { fullName: { contains: search, mode: 'insensitive' } },
