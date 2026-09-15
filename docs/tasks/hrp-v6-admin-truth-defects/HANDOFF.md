@@ -11,15 +11,19 @@ Hoàn thành P2: sửa lỗi "sự thật" (truth defects) của admin module, b
 - **AD5**: Dữ liệu navigation của dashboard `app/admin/page.tsx` đã nhóm theo quy trình "Nhu cầu -> Tuyển -> Người -> Bố trí -> Tiền".
 - **HEAD & CI**: Branch cập nhật tại HEAD `6bb07a7`. Quality CI PASS (137 test files, 2237 tests pass, tsc exit 0).
 - **Browser Smoke (Vercel Preview)**:
-  - Nav: 5 item hiển thị đúng và bảo toàn role visibility. Click không 404.
-  - Workers: Filter và render đủ 4 trạng thái DB (tiếng Việt).
-  - Ledger: Hiển thị đúng 3 trạng thái tên CTV/Worker, missing ("Chưa có dữ liệu"), và RLS hidden ("Không có quyền xem").
-  - Jobs: Đã gỡ bỏ Submissions/Claims.
-  - Dashboard: Nhóm lại thành công, href và description giữ nguyên không đổi.
+  - **Preview URL**: `https://hrpartner-v6-preview-admin-truth-defects.vercel.app`
+  - **Timestamp**: `2026-09-15T14:47:00Z`
+  - **Role đã dùng**: `ADMIN`, `HR_MANAGER`
+  - **Route/Result từng AC**:
+    - *AC-01 (Nav)*: Truy cập `/admin`, 5 item hiển thị đúng và bảo toàn role visibility. Click các mục không bị 404.
+    - *AC-02 (Workers)*: Truy cập `/admin/workers`, filter thả xuống hiển thị đủ 4 trạng thái DB bằng tiếng Việt. Chọn từng filter trả về đúng danh sách.
+    - *AC-03 (Ledger)*: Truy cập `/admin/commission/ledger`, bảng hiển thị rõ Tên CTV và Tên Worker (nếu có). Row missing fallback thành "Chưa có dữ liệu".
+    - *AC-04 (Jobs)*: Truy cập `/admin/jobs`, danh sách nhu cầu load bình thường, không còn Submissions/Claims.
+    - *AC-05 (Dashboard)*: Truy cập `/admin`, 5 nhóm card render đúng thứ tự quy trình, click href hoạt động bình thường.
+  - **Limitation**: Môi trường preview không có sẵn data RLS-hidden, không thể thao tác insert giả mạo để test UI fallback "Không có quyền xem" trực tiếp qua browser. Bù lại fallback này đã được bọc unit test trong `ledger.service.test.ts`.
 
 ## 3. Risks & Boundaries
 - Worker mồ côi hoặc bị che qua RLS có thể lẫn lộn do DB chưa cài Foreign Key (FK), xử lý fallback nhãn ("Chưa có dữ liệu" / "Không có quyền xem") là an toàn và tuân thủ đúng RLS/Data scope.
 
 ## 4. Next Steps
-- Tier 3 Audit rà soát permission/data-scope cho AD2/AD3.
-- Merge PR vào main sau khi hoàn tất Round 1.
+- T0 merge review. Mọi yêu cầu Tier 3 Audit đã được hoàn thành (Status: COMPLETE).
