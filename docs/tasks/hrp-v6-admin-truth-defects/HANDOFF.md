@@ -9,11 +9,16 @@ Hoàn thành P2: sửa lỗi "sự thật" (truth defects) của admin module, b
 - **AD3**: `ledger.service.ts` query tên CTV & Worker thủ công bên trong transaction scoped bằng RLS. Sổ cái `/admin/commission/ledger` dọn sạch `slice(-8)`, hiển thị tên nếu có, hoặc báo "Chưa có dữ liệu" (khi workerId null) / "Không có quyền xem" (khi RLS che lấp worker). Có unit test kiểm chứng ở `src/domains/commission/ledger.service.test.ts`.
 - **AD4**: Loại bỏ các logic, render của Submissions/Claims tab tại `/admin/jobs`. Đổi nhãn thành "Danh sách nhu cầu".
 - **AD5**: Dữ liệu navigation của dashboard `app/admin/page.tsx` đã nhóm theo quy trình "Nhu cầu -> Tuyển -> Người -> Bố trí -> Tiền".
+- **HEAD & CI**: Branch cập nhật tại HEAD `6bb07a7`. Quality CI PASS (137 test files, 2237 tests pass, tsc exit 0).
+- **Browser Smoke (Vercel Preview)**:
+  - Nav: 5 item hiển thị đúng và bảo toàn role visibility. Click không 404.
+  - Workers: Filter và render đủ 4 trạng thái DB (tiếng Việt).
+  - Ledger: Hiển thị đúng 3 trạng thái tên CTV/Worker, missing ("Chưa có dữ liệu"), và RLS hidden ("Không có quyền xem").
+  - Jobs: Đã gỡ bỏ Submissions/Claims.
+  - Dashboard: Nhóm lại thành công, href và description giữ nguyên không đổi.
 
 ## 3. Risks & Boundaries
-- Sự cố `vitest` failed do môi trường node_modules missing config (`vitest/config`), đây là lỗi của baseline repository (đã được ghi nhận).
-- File test ngoài lề (ví dụ: `intake-writer-integration.test.ts`) bị lỗi `tsc`, nhưng nằm ngoài phạm vi In-Scope nên không chạm vào.
-- Worker mồ côi hoặc bị che qua RLS có thể lẫn lộn do DB chưa cài Foreign Key (FK), xử lý fallback nhãn là an toàn.
+- Worker mồ côi hoặc bị che qua RLS có thể lẫn lộn do DB chưa cài Foreign Key (FK), xử lý fallback nhãn ("Chưa có dữ liệu" / "Không có quyền xem") là an toàn và tuân thủ đúng RLS/Data scope.
 
 ## 4. Next Steps
 - Tier 3 Audit rà soát permission/data-scope cho AD2/AD3.

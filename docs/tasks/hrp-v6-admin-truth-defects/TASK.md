@@ -9,10 +9,10 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `LIGHT` |
 | Audit reason | AD2 sửa filter API đọc `workers` (bảng FORCE RLS) + projection; AD3 join `users`/`workers` trong read service có RLS — Tier 3 kiểm tra không mở rộng data scope, không lộ PII, nhãn "Không có quyền xem" đúng chỗ. AD1/AD4/AD5 là UI reversible đi kèm trong cùng diff nên chịu LIGHT chung |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `READY_FOR_AUDIT_ROUND_1` |
 | Planner | `Tier 1` (stream T1-UI, lệnh T0 ngày 15/09) |
-| Baseline | `68e184e` (origin/main, verify tại worktree `tier1/admin-truth-defects`, `git status` sạch) |
+| Baseline | `b91a33f` (origin/main, verify tại worktree `tier1/admin-truth-defects`, `git status` sạch) |
 | In-scope roots | `app/admin/workers/page.tsx`; `app/api/workers/route.ts`; `app/admin/commission/ledger/page.tsx`; `app/api/admin/commission-ledger/route.ts`; `src/domains/commission/ledger.service.ts`; `app/admin/jobs/page.tsx`; `app/admin/page.tsx`; `src/shared/ui/role-guard/role-guard-layout.tsx`; `docs/tasks/hrp-v6-admin-truth-defects/**` |
 | Forbidden paths | `prisma/**` (schema + migrations); `src/domains/talent/**`; `src/domains/staffing/**`; `app/(jobs)/**`; `docs/PLANNER_HANDOVER.md`; `package.json`; `.gitignore` |
 | Required gates | `npx tsc --noEmit`; `npm run test:unit` (in-scope + carry-forward `design-tokens.static.test.ts`); `powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v6-admin-truth-defects/TASK.md` |
