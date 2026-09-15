@@ -113,8 +113,8 @@ Theo lệnh Tier 0 ngày 15/09, closeout N1 về trạng thái thật:
 
 ### 7.1 Production rebuild (Vercel) — PASS
 
-- **Vercel rebuild**: thành công. Production deployment verified tại commit `b62f4f1`.
-- **Kết quả**: trang Vercel `hrp-[redacted].vercel.app` đã serve production code mới nhất từ origin/main.
+- **Vercel rebuild**: thành công. Production deployment verified tại commit `68e184e` (GitHub status SUCCESS). Đây là HEAD của `origin/main` tại thời điểm closeout — đại diện cho toàn bộ code hiện tại trên main bao gồm cả N3 + N1.
+- **Kết quả**: trang Vercel `hrp-[redacted].vercel.app` đã serve production code mới nhất từ `origin/main`.
 - **Lane**: production rebuild PASS độc lập với Tier 3 audit.
 
 ### 7.2 Admin intake smoke test (ADMIN-authenticated) — OPEN

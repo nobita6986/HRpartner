@@ -8,8 +8,8 @@
 | Work type | `DOCS+CONFIG` |
 | Assurance lane | `LOW` (docs-only + test typing; no production behavior change) |
 | Audit mode | `NONE` (per T0: docs/config chỉ LIGHT nếu đổi logic ngoài test typing) |
-| Spec version | `v0.1 DRAFT` |
-| Status | `DRAFT` |
+| Spec version | `v0.2 COMPLETE` |
+| Status | `COMPLETE` |
 | Planner | `Tier 1` |
 | Baseline | `68e184e` (origin/main HEAD) |
 | Worktree | `C:\CodeApp\HrP-worktrees\tier1-n-closeout-docs-config` (branch `tier1/n-closeout-docs-config`) |
@@ -62,7 +62,7 @@
 
 | Path | Loại |
 |---|---|
-| `docs/tasks/hrp-v6-n3-service-model-placement/HANDOFF.md` | closeout status (chỉ đánh dấu rõ branch/HEAD, không merge) |
+| `docs/tasks/hrp-v6-n3-service-model-placement/HANDOFF.md` | closeout status v0.7 — code in main, migration APPLIED_REPORTED, DO_NOT_REAPPLY |
 | `docs/tasks/hrp-v6-n1-intake-writer/{TASK.md,HANDOFF.md,AUDIT.md}` | closeout Vercel part; ADMIN smoke OPEN |
 | `tests/db/intake-writer-integration.test.ts` | fix 9 TS errors (typing only, no behavior change) |
 | `.gitignore` | thêm `tsc-*.txt` |
@@ -86,15 +86,14 @@
 
 1. Verify origin/main = `68e184e` (✅ done).
 2. Tạo worktree clean từ origin/main (✅ done).
-3. Update `docs/PLANNER_HANDOVER.md`: status hiện tại đã đúng (gate `N3_AUDIT_2X_PASS_READY_FOR_OWNER_MERGE` + `N1_PROD_VERIFICATION_REMAINS_OPEN`); chỉ thêm hygiene branch names + closeout note.
-4. Verify `docs/tasks/hrp-v6-n3-service-model-placement/HANDOFF.md` + `AUDIT.md` đã ghi rõ:
-   - HEAD `1a1eba4` (audit commit) trên branch `tier1/n3-service-model-placement` (pushed).
-   - Hygiene branches `hrp_n3_v3` + `hrp_n3_v5` còn trong Neon (KHÔNG tự xóa).
-   - Migration `20260914212136_n3_service_model_placement` đã applied lên test branches nhưng KHÔNG trên `hrp-live` (Tier 1 chờ Owner).
-5. Update `docs/tasks/hrp-v6-n1-intake-writer/HANDOFF.md` (docs-only):
-   - Vercel rebuild: PASS (commit `b62f4f1`).
-   - Admin intake smoke (ADMIN-auth): OPEN, KHÔNG dùng 401 PASS.
-   - Tier 1 KHÔNG tự cung cấp evidence; chờ T0.
+3. Update `docs/PLANNER_HANDOVER.md`: N3 code in main (`68e184e`), migration APPLIED_REPORTED, DO_NOT_REAPPLY; gate `N3_CODE_IN_MAIN_MIGRATION_APPLIED_REPORTED_DO_NOT_REAPPLY`.
+4. Update `docs/tasks/hrp-v6-n3-service-model-placement/HANDOFF.md` v0.7 CLOSEOUT:
+   - N3 code in main; migration DECIDED/APPLIED_REPORTED; DO_NOT_REAPPLY.
+   - Hygiene branches ghi rõ trong văn bản.
+   - Bỏ mọi dòng "chờ merge" / "chờ Owner apply migration".
+5. Update `docs/tasks/hrp-v6-n1-intake-writer/HANDOFF.md` v0.7 CLOSEOUT:
+   - Vercel rebuild PASS tại `68e184e` (GitHub status SUCCESS), không dùng `b62f4f1`.
+   - Admin intake smoke OPEN, không dùng 401 kết luận PASS.
 
 ### S2 — Fix 9 TS errors + W0.3-W0.8 hygiene
 
@@ -125,10 +124,11 @@
 
 ## 5. Definition of done
 
-- Branch `tier1/n-closeout-docs-config` push thành công.
-- 9 TS errors trong `intake-writer-integration.test.ts` resolved.
+- Branch `tier1/n-closeout-docs-config` push thành công → origin.
+- 9 TS errors trong `intake-writer-integration.test.ts` resolved (test-typing only, không đổi behavior).
 - `.gitignore` có `tsc-*.txt`.
-- N3 + N1 docs phản ánh trạng thái thật (PASS cho Vercel rebuild; OPEN cho admin smoke).
+- N3 + N1 docs phản ánh trạng thái thật:
+  - N3: code in main (`68e184e`), migration DECIDED/APPLIED_REPORTED, DO_NOT_REAPPLY.
+  - N1: Vercel rebuild PASS (`68e184e`), ADMIN smoke OPEN.
 - Hygiene branches `hrp_n3_v3`/`hrp_n3_v5` ghi rõ trong closeout; KHÔNG tự xóa.
-- Migration `20260914212136_n3_service_model_placement` KHÔNG apply lên `hrp-live` (Tier 1 chờ T0).
-- HANDOFF.md v2.0 + AUDIT.md round 1 cho TASK này (audit NONE per T0).
+- HANDOFF.md v1.0 COMPLETE (audit NONE per T0).
