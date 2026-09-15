@@ -90,3 +90,6 @@ playwright-report/
 
 # Gate state cache — artifact sinh ra moi luot chay, khong commit
 .gate-state.json
+
+# TypeScript compiler output dumps (tsc-*.txt) — debug artifact, khong commit
+tsc-*.txt

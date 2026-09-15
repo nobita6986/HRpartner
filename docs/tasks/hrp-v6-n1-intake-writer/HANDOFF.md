@@ -14,7 +14,7 @@
 | Round 3 HEAD | `(round-3 fix, baseline 50dedee)` (SAVEPOINT quanh INSERT placement_case + integration test DB-touching — 1 case concurrent retry fail) |
 | Round 4 HEAD | `(round-4 fix)` (2 PrismaClient riêng + Math.random tag — 9/9 PASS; Tier 3 round-4 PASS) |
 | Round 5 HEAD | `(round-5 fix)` (handler intake thật createCandidateSubmissionFromIntake + verify đủ 3 điều kiện + bỏ claim singleton) |
-| Status | `READY_FOR_AUDIT_ROUND_5` |
+| Status | `CLOSEOUT_VERCEL_PASS_ADMIN_SMOKE_OPEN` |
 
 ## 1. Outcome and changed surface
 
@@ -106,3 +106,44 @@
 - **Tier 3 LIGHT audit round 5** tiếp theo: verify round-5 delta (handler intake thật + verify 3 conditions + bỏ singleton claim) + evidence.
 
 > Handoff status: READY_FOR_AUDIT_ROUND_5
+
+## 7. CLOSEOUT — Trạng thái thật ngày 2026-09-15
+
+Theo lệnh Tier 0 ngày 15/09, closeout N1 về trạng thái thật:
+
+### 7.1 Production rebuild (Vercel) — PASS
+
+- **Vercel rebuild**: thành công. Production deployment verified tại commit `b62f4f1`.
+- **Kết quả**: trang Vercel `hrp-[redacted].vercel.app` đã serve production code mới nhất từ origin/main.
+- **Lane**: production rebuild PASS độc lập với Tier 3 audit.
+
+### 7.2 Admin intake smoke test (ADMIN-authenticated) — OPEN
+
+- **Trạng thái**: OPEN. **KHÔNG đạt PASS**.
+- **Lý do mở**: Tier 1 KHÔNG tự cung cấp credential/secret/PII để smoke thật với ADMIN/HR_MANAGER auth. Tier 0/Owner phải tự smoke với credential thật để verify intake flow end-to-end (từ login → form intake → submission tạo → idempotency replay).
+- **KHÔNG dùng 401 để kết luận PASS** (401 chỉ chứng minh route có auth guard, KHÔNG chứng minh intake flow chạy đúng với ADMIN credential thật).
+- **Tier 1 đã ghi trung thực**: SMOKE_ADMIN_OPEN — chờ Tier 0/Owner smoke thật với credential ADMIN/HR_MANAGER.
+
+### 7.3 Pre-existing TS errors — Tier 1 closeout sẽ fix trong TASK `hrp-v6-docs-config-reconciliation`
+
+- **9 TS errors** trong `tests/db/intake-writer-integration.test.ts` (lines 309, 311, 324, 481, 482, 485, 486, 490, 491): `first.body` / `second.body` is of type `unknown`.
+- **Root cause**: `IdempotencyResult.body` được typed là `unknown` trong `src/shared/integrity/idempotency.ts:46`; test gọi `first.body.candidateSubmission.id` mà không cast.
+- **Fix plan**: cast body sang `any` (test-typing only, KHÔNG đổi runtime behavior).
+- **Scope**: test-only; production code KHÔNG thay đổi.
+- **Tier 0 priority**: test typing hygiene trong closeout.
+
+### 7.4 Working tree state tại 2026-09-15
+
+- C:\CodeApp\HrP main repo có 2 modified files (N1 working tree chưa push): `placement-case.service.test.ts` + `placement-case.service.ts`. Tier 1 KHÔNG touch main repo trong closeout này — chờ Owner review + commit + push riêng.
+- Branch `tier1/n-closeout-docs-config` (worktree sạch) là nơi closeout docs + ts-error fix sẽ commit + push.
+
+### 7.5 Tier 1 next steps
+
+1. Push branch `tier1/n-closeout-docs-config` sau khi đóng gói:
+   - Closeout N3 docs (HANDOFF v0.6 + AUDIT.md round 5 verdict).
+   - Closeout N1 docs (HANDOFF v0.7 + AUDIT.md ghi SMOKE_ADMIN_OPEN).
+   - Fix 9 TS errors trong `intake-writer-integration.test.ts` (test typing).
+   - W0.7: `.gitignore` + `tsc-*.txt`.
+   - W0.6: verify roadmap files tracked, không orphan.
+2. Tier 0/Owner quyết định: merge N3 + closeout → main + apply prod migration + smoke ADMIN thật.
+3. KHÔNG tự merge main, KHÔNG tự apply prod migration, KHÔNG tự smoke ADMIN.
