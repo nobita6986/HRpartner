@@ -1,10 +1,13 @@
 # N2 AFF Discovery — HANDOFF
 
 **Task:** `hrp-v6-n2-aff-policy-contract-discovery`
-**Status:** `READY_FOR_T0_DECISION`
-**Type:** READ-ONLY Discovery
+**Status:** `COMPLETE` / `READY_FOR_MERGE`
+**Audit:** `NONE`
 **Lane:** STANDARD (no implementation in this task)
-**Audit:** NONE (read-only docs-only branch)
+**Type:** READ-ONLY Discovery
+**Baseline:** `origin/main` `b91a33f948aed224a88f3e8e7c9847006f33e97f`
+**Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
+**PR:** [#4](https://github.com/nobita6986/HRpartner/pull/4)
 
 ---
 
@@ -12,157 +15,138 @@
 
 | Item | State |
 |---|---|
-| Survey scope | ✅ Complete (10 policy questions) |
-| Evidence gathering | ✅ Complete (file:line + migration filesystem evidence) |
-| Recommendations | ✅ Complete (18 decisions with options + recommendation) |
-| Slice decomposition | ✅ Complete (6 slices with dependency graph) |
-| V6 P1 capability verified | ✅ Yes — migrations in main@prisma/migrations/ |
-| T0 decisions requested | ✅ Yes (18 decisions) |
-| Implementation gate | ⏸️ **BLOCKED — awaiting T0** |
+| Survey scope | ✅ Complete |
+| Evidence gathering | ✅ Complete (file:line + filesystem migration evidence) |
+| T0 verdict applied | ✅ All R0–R3 decisions applied |
+| Locked decisions | ✅ All operational decisions LOCKED |
+| 6-slice plan | ✅ Ready |
+| Implementation gate | ⏸️ LOCKED until PR #4 merges (Tier 1 unlocks N2-1 separately) |
+
+**Task is COMPLETE — ready for review and merge.**
 
 ---
 
 ## 2. Deliverables
 
-| File | Lines | Purpose | Status |
-|---|---|---|---|
-| `DISCOVERY.md` | 711 | 10 questions + evidence + 18 T0 decisions | ✅ R2 updated |
-| `TASK.md` | 151 | RQ → STEP → AC, scope, boundary | ✅ R2 synced |
-| `HANDOFF.md` | 191 | Status + handoff to T0 | ✅ R2 updated |
-| `evidence/OVERVIEW.md` | 151 | aff_plan.md affinity, migration inventory, V6 P1 status | ✅ R2 synced |
-| **Total** | **1204** | **4 files, zero code** | ✅ |
+4 files. Zero code.
+
+| File | Purpose |
+|---|---|
+| `DISCOVERY.md` | Locked decisions, schema sketches, invariant contracts, 6-slice plan |
+| `TASK.md` | RQ → STEP → AC, scope, boundary |
+| `HANDOFF.md` | Status + handoff to Tier 1 / Tier 0 reviewer |
+| `evidence/OVERVIEW.md` | Migration inventory + aff_plan.md affinity + V6 P1 status |
 
 ---
 
-## 3. Critical Evidence: V6 Phase 1A in origin/main (CORRECTED R2)
+## 3. Critical Evidence
+
+### V6 P1 in origin/main
 
 ```
 $ git ls-tree origin/main prisma/migrations/ | Select-String "phase1a"
   prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/
+  prisma/migrations/20260912140411_n1_placement_case_foundation
   prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/
 ```
 
-**Capability available:**
-- `LaborProfile` table: CREATE TABLE ✅
-- `LaborProfileIntake` table: CREATE TABLE ✅
-- `EmploymentEpisode` table: CREATE TABLE ✅
-- `CandidateSubmission.laborProfileId` nullable FK: ADD COLUMN ✅
-- RLS policies on all three tables: APPLIED ✅
-
-**Dependency impact:**
-- N2-1 (Attribution Foundation): No V6 P1 dep → can start immediately
-- N2-2 (Link Capture): No V6 P1 dep → can start immediately
-- N2-3 (Apply Attribution): LaborProfile FK available → can start
-- N2-4 (Handling Assignment): LaborProfile FK available → can start
-- N2-5 (Beneficiary Decision): Requires N2-4 → sequential
-- N2-6 (Commission Beneficiary): Requires N2-5 → sequential
-
-**No merge dependency.** V6 P1 capability is in origin/main at b91a33f.
+V6 P1 capability: `LaborProfile`, `LaborProfileIntake`, `EmploymentEpisode` tables, `CandidateSubmission.laborProfileId` FK, RLS — all in main.
 
 ---
 
-## 4. T0 Decision Summary (18 decisions)
+## 4. Locked Decisions Summary
 
-See `DISCOVERY.md §3` for full list. Summary:
+### Clock & Time
+- Calendar days (no business days)
+- Storage: TIMESTAMPTZ UTC
+- Business clock: Asia/Bangkok
+- Day boundary: exclusive next-day `[start, nextDayStart)`
+- Holiday: OUT OF N2 SCOPE
 
-| # | Decision | Recommendation |
-|---|---|---|
-| Q1 | Clock type | **Calendar** |
-| Q2a | Storage timezone | **TIMESTAMPTZ UTC** |
-| Q2b | Business clock timezone | **Asia/Bangkok** |
-| Q2c | Cut-off time | **23:59:59.999 VN** |
-| Q3a | Holiday owner | **HR Admin** |
-| Q3b | Unconfigured fallback | **Calendar days** |
-| Q4 | Clock start | **`openedAt`** |
-| Q5 | Pause/reset | **Clock RUNNING always** |
-| Q7a | Decision as authority | **YES, immutable record** |
-| Q7b | beneficiaryUserId for ACTIVE | **Required (not nullable)** |
-| Q7c | UNRESOLVED outcome | **No active decision with null beneficiary** |
-| Q7d | SYSTEM actor | **Valid User FK (not magic string)** |
-| Q7e | Invariant: max one ACTIVE per key | **Yes, partial unique index + advisory lock** |
-| Q8 | Permission codes | **6 codes per proposal** |
-| Q9a | RPC change for N2-3 | **Yes, with LIVE test plan** |
-| Q9b | Legacy ctvId classification | **EXACT_SAFE = FK + provenance + writer + no conflict + audit** |
-| Q10 | V6 P1 capability | **Confirmed in main — no dependency** |
+### Lifecycle
+- Clock start: `PlacementCase.openedAt`
+- Pause: none (clock RUNNING always); assignment has expiresAt
 
----
+### Attribution
+- Immutable source; separate clocks (7d handling, 30d attribution)
+- Immutable facts vs mutable lifecycle metadata split
 
-## 5. T0-R2 Key Changes
+### Beneficiary Decision (Q7 — Critical)
+- Authority record, immutable
+- **Invariant**: max one ACTIVE per `(laborProfileId, assignmentId, milestone)`
+- **Nullable-safe**: PG15+ `NULLS NOT DISTINCT` OR COALESCE sentinel partial unique
+- **Advisory lock**: normalized tuple with sentinel delimiter
+- **Actor model**: `actorType USER|SYSTEM` + `actorUserId nullable` + `CHECK` constraint
+- **UNRESOLVED**: typed result + outbox event (no decision row created)
+- **Correction/reversal**: SUPERSEDED/REVERSED history preserved
 
-### Q7 — CommissionBeneficiaryDecision (R2 MAJOR REVISION)
+### Migration & Compat
+- RPC signature change accepted for N2-3 with LIVE test plan
+- EXACT_SAFE classification: FK + provenance + writer semantics + no conflict + audit
+- V6 P1 capability in main — no merge dep
 
-**Changes from R1:**
-- `beneficiaryUserId` is **REQUIRED** for ACTIVE decision (not nullable)
-- No handler/no beneficiary → typed `UNRESOLVED` outcome; **no active decision** created with `beneficiaryUserId = null`
-- Actor SYSTEM must be **valid `User` row** (pre-created system service account); not a magic string
-- Invariant contract: **max one ACTIVE decision per (laborProfileId, assignmentId, milestone)** — enforced by partial unique index + advisory lock
-- Correction/reversal preserves SUPERSEDED/REVERSED history (never delete)
-
-### Q9b — Legacy ctvId (R2 TIGHTENED)
-
-**Changes from R1:**
-- Valid `User` FK alone is **NOT sufficient** for EXACT_SAFE
-- EXACT_SAFE requires ALL of: valid FK + provenance + writer semantics + no conflict + audit trail
-- UNRESOLVED rows must be manually reviewed, not blindly backfilled
-
-### Q6 — Attribution Cardinality (R2 CLARIFIED)
-
-- Attribution does NOT change when handling assignment changes or expires
-- Two separate clocks: attribution TTL (30d) and handling protected window (7d)
-- Attribution survives assignment expiry and handler transfer
-
-### V6 Phase 1 (R2 CORRECTED)
-
-- **Migrations already in `origin/main@prisma/migrations/`**
-- **No merge dependency**
-- **Capability-based dependency**: N2-3/4 can start because LaborProfile FK is available in main
+### Permissions
+- 6 codes per proposal in DISCOVERY.md §2.6
+- RLS policy skeleton ready
 
 ---
 
-## 6. Branch State
+## 5. 6 Slice Plan
 
-**Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
-**Base:** `origin/main` b91a33f
-**HEAD (R2):** `fd56ea` (R2 revision — pending push)
-**Diff vs origin/main:** 4 files, +1204 lines (docs only)
-**R2 changes:** DISCOVERY.md, TASK.md, HANDOFF.md, evidence/OVERVIEW.md updated
-
----
-
-## 7. What T0 Should Do
-
-1. Read `DISCOVERY.md` end-to-end
-2. Review §3 (18 decisions) — confirm or override each recommendation
-3. Sign off on:
-   - Q7 R2 revisions (biggest design changes)
-   - Q9b R2 tightening (EXACT_SAFE criteria)
-   - V6 P1 capability (already in main)
-4. Authorize Tier 1 to create N2-1 + N2-2 tasks
+| Slice | Slug | Schema scope | Migration risk | Test gate |
+|---|---|---|---|---|
+| N2-1 | `hrp-v6-n2-aff-01-attribution-foundation` | `ReferralAttribution` immutable table | Low | Immutability + RLS |
+| N2-2 | `hrp-v6-n2-aff-02-link-capture` | None (pure app logic) | Zero | Race, forged code |
+| N2-3 | `hrp-v6-n2-aff-03-apply-attribution` | Additive columns + RPC signature change | HIGH | RPC migration test |
+| N2-4 | `hrp-v6-n2-aff-04-handling-assignment` | `labor_profile_handling_assignments` with partial unique | Medium | Race to assign, expiry |
+| N2-5 | `hrp-v6-n2-aff-05-beneficiary-decision` | `CommissionBeneficiaryDecision` with NULLS NOT DISTINCT + CHECK + advisory lock | Medium | Invariant, UNRESOLVED typed result |
+| N2-6 | `hrp-v6-n2-aff-06-commission-beneficiary` | Additive `beneficiary_user_id` + EXACT_SAFE-only backfill + engine update | Medium | EXACT_SAFE classification |
 
 ---
 
-## 8. Boundary Compliance
+## 6. Boundary Compliance
 
 - ✅ No schema/migration/source changes
 - ✅ No production DB writes
 - ✅ No `PLANNER_HANDOVER.md` / `TIER0_SHIFT_HANDOVER.md` modifications
 - ✅ No PR #3 / P2 file changes
 - ✅ No N4 implementation
-- ✅ No N2 implementation (locked by T0 decisions)
+- ✅ No N2 implementation
+- ✅ Docs-only PR
+- ✅ Read-only research on existing codebase
 
 ---
 
-## 9. Final Note
+## 7. T0 Final Verdict Applied
 
-This is a **decision package**, not an implementation artifact.
+**Round-by-round changes:**
 
-The 18 decisions in `DISCOVERY.md §3` are the bottleneck for N2. Once T0 chốt:
-1. Tier 1 creates N2-1 + N2-2 tasks (parallel)
-2. Tier 1 tracks N2-3/4 (no V6 dependency — can start)
-3. Tier 1 plans N2-5/6 sequentially
-
-No further S1 survey needed before T0 decisions.
+| Round | Files affected | Major changes |
+|---|---|---|
+| R0 | All 4 | Discovery baseline — 10 questions answered |
+| R1 | All 4 | Status sync; HANDOFF.md added; Q7 (CommissionBeneficiaryDecision as authority); Q9b (legacy classification); Q2 (timezone layer); V6 P1 (initial wrong evidence) |
+| R2 | All 4 | V6 P1 corrected (filesystem evidence); Q7 R2 (beneficiaryUserId required, SYSTEM = valid User FK, invariant contract, UNRESOLVED outcome); Q9b tightened; Q6 immutable facts |
+| **R3** | All 4 | T0 final verdict — NULLS NOT DISTINCT, advisory lock with sentinel, **actorType/actorUserId + CHECK** (no SYSTEM user), outcome removed, UNRESOLVED = typed result only, immutable/mutable split, exclusive next-day boundary, Holiday OUT OF SCOPE, status COMPLETE/READY_FOR_MERGE, PR #4 audit facts |
 
 ---
 
-**Handoff complete. Awaiting T0.**
+## 8. What's Next
+
+### Reviewer path
+1. Open [PR #4](https://github.com/nobita6986/HRpartner/pull/4)
+2. Review 4 docs files (zero code risk)
+3. Approve → merge to `main`
+
+### After merge
+1. Tier 1 reads `DISCOVERY.md` §2 (locked decisions) as the contract
+2. Tier 1 creates `hrp-v6-n2-aff-01-attribution-foundation` task
+3. Implementation starts under separate task in separate branch
+
+### Out of PR scope
+- ❌ No N2-1 implementation in this PR
+- ❌ No schema changes
+- ❌ No migration
+
+---
+
+**Handoff complete. Status: COMPLETE / READY_FOR_MERGE. PR #4 ready for review.**

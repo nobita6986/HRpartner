@@ -4,17 +4,16 @@
 **Baseline:** `origin/main` `b91a33f948aed224a88f3e8e7c9847006f33e97f` (15 Sep 2026)
 **Author:** S1
 **Type:** READ-ONLY Discovery — no production code changes
-**Status:** `READY_FOR_T0_DECISION` — awaiting T0 policy decisions before implementation
+**Status:** `COMPLETE` / `READY_FOR_MERGE`
+**Audit:** `NONE` (read-only docs-only)
 **Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
-**HEAD (R2):** `fd56eaa` (R2 revision pending push)
+**PR:** [Pull Request #4](https://github.com/nobita6986/HRpartner/pull/4)
 
 ---
 
 ## 0. Executive Summary
 
-N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất cả đều greenfield. `aff_plan.md v2.3` đã chốt 18 decision, nhưng **15 câu hỏi vận hành cụ thể chưa được trả lời** — mỗi câu ảnh hưởng trực tiếp đến schema, migration, và implementation gate.
-
-Tài liệu này trình bày evidence từ codebase, gaps, và recommendation cho từng câu. T0 cần chốt trước khi N2 implementation có thể bắt đầu.
+N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất cả đều greenfield. `aff_plan.md v2.3` đã chốt 18 decision. T0 đã chốt thêm operational decisions trong rounds R0–R3. Tài liệu này lock toàn bộ policy để Tier 1 mở N2-1 slice.
 
 ---
 
@@ -30,46 +29,27 @@ Tài liệu này trình bày evidence từ codebase, gaps, và recommendation ch
 | `LaborProfile` | ✅ EXISTS in origin/main | `schema.prisma:1393` |
 | `LaborProfileIntake` | ✅ EXISTS in origin/main | `schema.prisma:1421` |
 | `EmploymentEpisode` | ✅ EXISTS in origin/main | `schema.prisma:1431` |
-| V6 Phase 1A migrations | ✅ IN main migrations/ | `20260908150000_v6_phase1a_labor_profile_schema/migration.sql`, `20260908150001_v6_phase1a_labor_profile_rls/migration.sql` |
+| V6 Phase 1A migrations | ✅ IN main migrations/ | `20260908150000_v6_phase1a_labor_profile_schema/`, `20260912140411_n1_placement_case_foundation`, `20260908150001_v6_phase1a_labor_profile_rls/` |
 | `Holiday` table | ✅ Exists, attendance-only | `schema.prisma:737-745` |
 | Commission ledger | ✅ CTV-specific | `schema.prisma:1229-1260` |
 | Commission engine | ✅ 30/60/90-day milestones | `engine.service.ts:75-80` |
 | `ProjectAssignment.referrerId` | ✅ Legacy referral | `schema.prisma:658` |
 | `ReferralAttribution` | ❌ NOT IMPLEMENTED | Greenfield |
-| `CommissionBeneficiaryDecision` | ❌ NOT IMPLEMENTED | Greenfield — see Q7 revision |
+| `CommissionBeneficiaryDecision` | ❌ NOT IMPLEMENTED | Greenfield |
 | `LaborProfileHandlingAssignment` | ❌ NOT IMPLEMENTED | Greenfield |
-| `beneficiaryUserId` | ❌ NOT IMPLEMENTED | Greenfield |
 | Handler assignment service | ❌ NOT IMPLEMENTED | Greenfield |
 | AFF-specific API routes | ❌ NOT IMPLEMENTED | Greenfield |
 
-### 1.2 V6 Phase 1A — Capability Is Available in origin/main (CORRECTED)
+### 1.2 V6 Phase 1A — Capability Is Available in origin/main
 
-**T0 R2 correction:** V6 Phase 1A schema và RLS đã nằm trong `prisma/migrations/` của origin/main. Không cần merge branch cũ. N2 dependency được tính từ **capability thực tế**, không phải commit ancestry.
+V6 Phase 1A schema và RLS đã nằm trong `prisma/migrations/` của origin/main. No merge dependency. N2-3 và N2-4 không bị blocked.
 
-Evidence:
 ```
 $ git ls-tree origin/main prisma/migrations/ | Select-String "phase1a"
-  040000 tree 613b6fe6... prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/
-  040000 tree a399344c... prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/
-
-$ git show origin/main:prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/migration.sql
-  CREATE TABLE labor_profiles (...)
-  CREATE TABLE labor_profile_intakes (...)
-  CREATE TABLE employment_episodes (...)
-  ALTER TABLE candidate_submissions ADD COLUMN labor_profile_id TEXT
+  prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/
+  prisma/migrations/20260912140411_n1_placement_case_foundation
+  prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/
 ```
-
-Capability summary:
-- `LaborProfile` table: CREATE TABLE ✅
-- `LaborProfileIntake` table: CREATE TABLE ✅
-- `CandidateSubmission.laborProfileId` nullable FK: ADD COLUMN ✅
-- RLS policies on all three tables: APPLIED ✅
-
-**Điều này có nghĩa:**
-- N2-3 và N2-4 **không bị blocked** bởi V6 P1 merge — capability đã sẵn sàng trong origin/main
-- N2-1, N2-2, N2-3, N2-4 đều có thể proceed sau khi T0 unlock
-- N2-5 phụ thuộc N2-4 (HandlingAssignment là input cho decision)
-- N2-6 phụ thuộc N2-5 (Decision là authority cho commission engine)
 
 ### 1.3 No timezone handling anywhere
 
@@ -79,228 +59,94 @@ openedAt       DateTime  @default(now()) @map("opened_at")     -- schema.prisma:
 validFrom      DateTime  @map("valid_from") @db.Timestamptz(3) -- ONLY exception: ProjectAssignment.validFrom/To
 ```
 
-**Zero** timezone fields, zero `TIMEZONE` config, zero `tz`/`utc`/`offset` in any migration.
-
-### 1.4 No business-day logic
-
-`REFERRAL_GUARD_DAYS` uses pure calendar arithmetic:
-```typescript:48:src/domains/staffing/referral-guard.service.ts
-export const REFERRAL_GUARD_DAYS = Number(process.env['REFERRAL_GUARD_DAYS'] ?? 7);
-// Used as: cutoff.setDate(cutoff.getDate() - REFERRAL_GUARD_DAYS)
-```
-
-### 1.5 No pause/reset on PlacementCase
-
-```prisma:1460:1466:prisma/schema.prisma
-enum PlacementCaseStatus {
-  OPEN
-  IN_PROGRESS
-  READY_TO_PLACE
-  CLOSED
-}
-// No RELEASED, TRANSFERRED, PAUSED, SUSPENDED
-```
-
-### 1.6 Existing permissions catalog
-
-No handler-assignment permissions exist. Only generic permissions like `CAN_MANAGE_PERMISSIONS`, `CAN_VIEW_UNASSIGNED_POOL`, etc.
-
 ---
 
-## 2. The 10 Policy Questions
+## 2. Locked Decisions (T0 Verdict Applied)
 
----
+Theo verdict T0, các operational decisions dưới đây **đã chốt** (`LOCKED`). Tier 1 dùng trực tiếp làm contract khi viết N2-1 TASK.
 
-### Q1. AFF Clock — Calendar Days vs Business Days
+### 2.1 Clock & Timezone
 
-**Question:** Nên dùng calendar days hay business days để tính AFF clock?
-
-**Evidence:**
-- `PlacementCase.openedAt` là clock anchor duy nhất hiện tại
-- Codebase **không có business-day logic** — tất cả date arithmetic dùng calendar days
-- `Holiday` table tồn tại (attendance-only) nhưng không được consume
-- Commission milestone engine dùng calendar days: `ageDays = ageMs / (24*60*60*1000)` (`engine.service.ts:75`)
-- Referral Guard dùng calendar days: `cutoff.setDate(cutoff.getDate() - REFERRAL_GUARD_DAYS)` (`referral-guard.service.ts:48`)
-
-**Recommendation:** ⬅️ **T0 quyết định**
-
-| Option | Pros | Cons |
+| Decision | Status | Locked Value |
 |---|---|---|
-| **A. Calendar days (Recommended for MVP)** | Đơn giản, consistent với existing codebase, predictable | Không skip VN holidays |
-| **B. Business days** | Chính xác hơn với VN business practice | Cần `Holiday` population + `computeBusinessDays()` utility |
+| Q1 | `LOCKED` | **Calendar days** (không business day) |
+| Q2a — Storage | `LOCKED` | **TIMESTAMPTZ UTC** cho toàn bộ AFF clock fields |
+| Q2b — Business clock | `LOCKED` | **Asia/Bangkok** cho business boundary |
+| Q2c — Day boundary | `LOCKED` | **Exclusive next-day** — boundary = start of next day Asia/Bangkok (00:00:00 +07:00 ngày kế tiếp). Half-open interval `[start, nextDayStart)` |
+| Q3a — Holiday owner | `OUT OF N2 SCOPE` | Holiday không thuộc implementation scope N2 (xem §2.2) |
+| Q3b — Unconfigured | `OUT OF N2 SCOPE` | Calendar days luôn — không cần Holiday |
 
----
+### 2.2 Holiday OUT of N2 Scope
 
-### Q2. Timezone Canonical + Cut-off Time
+> **Holiday table dropped from N2 implementation scope.**
 
-**Question:** Dùng timezone nào làm canonical? Cut-off time là mấy giờ?
+`Holiday` table hiện đang độc lập, chỉ phục vụ attendance/timesheet. N2 AFF clock dùng **calendar days pure** — không có business-day logic, không cần Holiday consumption. Nếu sau này business days được chốt, đó là task riêng ngoài N2.
 
-**Evidence:**
-- **Tất cả** timestamps hiện tại là `TIMESTAMP(3)` không có timezone (PostgreSQL)
-- **Một ngoại lệ duy nhất:** `ProjectAssignment.validFrom/validTo` dùng `@db.Timestamptz(3)` (`schema.prisma:648-651`)
+### 2.3 Lifecycle
 
-**Recommendation:** ⬅️ **T0 quyết định**
-
-| Layer | Option | Description |
+| Decision | Status | Locked Value |
 |---|---|---|
-| **Storage** | **TIMESTAMPTZ UTC (Recommended)** | Store all AFF clock fields as `TIMESTAMPTZ(3)`, normalized to UTC |
-| **Business clock** | **Asia/Bangkok (Recommended)** | AFF clock tính theo VN business hours |
-| **Cut-off** | **23:59:59.999 Asia/Bangkok (Recommended)** | Midnight VN |
+| Q4 — Clock start | `LOCKED` | **`PlacementCase.openedAt`** là clock anchor |
+| Q5 — Pause/reset | `LOCKED` | **Clock RUNNING always** — assignment có `expiresAt`, không pause |
 
----
+### 2.4 Attribution Cardinality & Immutable Facts (LOCKED)
 
-### Q3. Holiday Calendar Authority + Unconfigured Behavior
+**Attribution history is immutable. Attribution does NOT change when handling assignment changes or expires.**
 
-**Question:** Holiday calendar thuộc authority nào? Nếu chưa configured thì sao?
+Two separate clocks:
+- Attribution TTL: 30 days from first click
+- Handling protected window: 7 days from LaborProfile create/match
 
-**Evidence:**
-- `Holiday` model tồn tại (`schema.prisma:737-745`) với `date`, `name`, `type` (PUBLIC_HOLIDAY | WEEKEND | COMPANY_HOLIDAY)
-- Hiện tại chỉ dùng cho attendance/timesheet, **không dùng cho business-day calculation**
-
-**Recommendation:** ⬅️ **T0 quyết định**
-
-| Decision | Option | Implication |
+| Fact | Mutable? | Notes |
 |---|---|---|
-| **Calendar owner** | A. HR Admin (Recommended) | HR tạo/edit holiday entries qua admin UI |
-| | B. System — hard-coded VN holidays | Không linh hoạt |
-| **Unconfigured behavior** | A. Fallback to calendar days (Recommended) | Fail-safe, always works |
-| | B. Block/Error | Strict, có thể break deployment |
-
----
-
-### Q4. Clock Start Event
-
-**Question:** Clock bắt đầu chính xác từ `PlacementCase.openedAt` hay event khác?
-
-**Evidence:**
-- `PlacementCase.openedAt` được set bằng `new Date()` khi `openPlacementCase()` được gọi (`placement-case.service.ts:69`)
-- `openPlacementCase()` được gọi từ `createCandidateSubmissionFromIntake()` trong intake flow (`intake-writer.service.ts:120`)
-- No separate "open case" API route — placement case được tạo implicit khi intake submission
-
-**Recommendation:** ✅ **Recommend: `PlacementCase.openedAt` là clock anchor**
-
-| Option | Description | Risk |
-|---|---|---|
-| **A. `openedAt` = clock anchor (Recommended)** | Clock start = `openedAt`. Đơn giản, đã có field. | Clock bắt đầu khi intake submission |
-| **B. Separate `affClockStartAt` field** | Thêm field mới để tách clock start | Thêm complexity |
-
----
-
-### Q5. Pause/Reset Semantics
-
-**Question:** Khi case được release hoặc transfer handling, clock có pause/reset không?
-
-**Evidence:**
-- Không có `RELEASED`, `TRANSFERRED`, `PAUSED`, `SUSPENDED` status trên `PlacementCase`
-- `LaborProfileHandlingAssignment` chưa tồn tại — không có cơ chế giao/xóa handling assignment
-- `aff_plan.md §14` nói "Ticket/Case có thể mở ngay trong cửa sổ 7 ngày" — clock không bị pause khi dispute
-
-**Recommendation:** ✅ **Recommend: Clock RUNNING always, assignment có thời hạn**
-
-| Option | Description | Implication |
-|---|---|---|
-| **A. Clock RUNNING always (Recommended)** | Assignment có `expiresAt`. Hết hạn → profile vào Company Pool. Không pause. | Đơn giản, predictable |
-| **B. Clock PAUSES during certain statuses** | Clock tạm dừng khi dispute. Resume khi resolve. | Phức tạp hơn |
-
----
-
-### Q6. ReferralAttribution Immutability + Attribution Cardinality/History
-
-**Question:** ReferralAttribution phải bất biến thế nào khi handler thay đổi?
-
-**Evidence:**
-- `ReferralAttribution` **chưa được implement** — greenfield
-- `aff_plan.md §6.2` đã design model với `status: ACTIVE | CONSUMED | EXPIRED | REVOKED | SUPERSEDED`
-- `aff_plan.md §10.4` nói: "ReferralAttribution giữ provenance; Handling Assignment giữ quyền/trách nhiệm xử lý có thời hạn; Commission Ledger snapshot beneficiary khi milestone đạt. Ba relation không được đồng nhất."
-- `aff_plan.md AFF-DEC-018` đã chốt: `ReferralAttribution` treo trên `LaborProfile` bằng `laborProfileId` nullable + unique
-
-**Attribution Cardinality and History Rule:**
-
-> **Attribution history is immutable. Attribution does NOT change when handling assignment changes or expires.**
-
-Specifically:
-
-| Event | Attribution Row | Handling Assignment Row | Relationship |
-|---|---|---|---|
-| AFF click captures | `ReferralAttribution` created with `status=ACTIVE` | Not yet created | Independent |
-| LaborProfile created/matched | Attribution linked via `laborProfileId` | `LaborProfileHandlingAssignment` created with `source=AFF_INITIAL`, `status=ACTIVE` | Attribution holds source; assignment holds handler |
-| Assignment expires (7d) | Attribution row stays `ACTIVE`, `laborProfileId` unchanged | Assignment → `status=EXPIRED` | Attribution survives assignment expiry |
-| Handler transferred | Attribution row unchanged | New assignment → `status=ACTIVE`; old → `status=TRANSFERRED` | Attribution never changes |
-| Attribution expires (30d) | Attribution row → `status=EXPIRED` | Existing assignment unaffected | Separate clocks |
-
-**Two separate clocks:**
-- Attribution TTL: 30 days from first click (`AFF-DEC-010`)
-- Handling protected window: 7 days from LaborProfile create/match (`AFF-DEC-011`)
-- These clocks are independent — handling expiry does NOT affect attribution, and vice versa
-
-**Immutable facts on `ReferralAttribution`:**
-- `referrerUserId` — NEVER mutable after creation
-- `affiliateCodeSnapshot` — NEVER mutable after creation
-- `firstClickedAt` — NEVER mutable after creation
-- `expiresAt` — NEVER mutable after creation (set once at creation time)
-- `laborProfileId` — SET ONCE at `CONSUME` time (when LaborProfile is matched), immutable thereafter
-
-**Mutable fields (status transitions only):**
-- `status`: ACTIVE → CONSUMED | EXPIRED | REVOKED | SUPERSEDED
-- `consumedAt`: SET when status transitions to CONSUMED
+| `referrerUserId` | **IMMUTABLE** | Set once; never changes |
+| `affiliateCodeSnapshot` | **IMMUTABLE** | Set once; never changes |
+| `firstClickedAt` | **IMMUTABLE** | Set once; never changes |
+| `expiresAt` | **IMMUTABLE** | Set once at creation; never extended |
+| `laborProfileId` | **IMMUTABLE** | Set once via `consume()`; never cleared |
+| `status` | **MUTABLE** (lifecycle) | ACTIVE → CONSUMED / EXPIRED / REVOKED / SUPERSEDED |
+| `consumedAt` | **MUTABLE** (lifecycle) | Set when status → CONSUMED |
+| `createdAt` | IMMUTABLE | Auto-generated |
+| `updatedAt` | MUTABLE (system) | Auto-managed by Prisma |
 
 **Immutability enforcement:**
-1. RLS policy: no UPDATE/DELETE on `referral_attributions` table
+1. RLS: no UPDATE/DELETE on `referral_attributions`
 2. Application service: no setter for immutable fields
-3. `laborProfileId` set once via explicit `consume()` method, not direct setter
-4. Only status transitions via explicit transition methods with audit
+3. `laborProfileId` set once via explicit `consume()` method
+4. Status transitions only via explicit transition methods with audit
 
-**Recommendation:** ✅ **Already decided by `AFF-DEC-018` + T0 clarification — no T0 action needed**
+### 2.5 CommissionBeneficiaryDecision (Q7 — LOCKED Per T0 Verdict)
 
----
-
-### Q7. CommissionBeneficiaryDecision — REVISED PER T0 R1 + R2
-
-**Question:** CommissionBeneficiaryDecision tách khỏi referral/handling ra sao?
-
-**⚠️ R2 MAJOR REVISIONS:**
-
-> 1. `beneficiaryUserId` bắt buộc đối với ACTIVE decision.
-> 2. No handler/no beneficiary → typed `UNRESOLVED` outcome; không tạo active decision với `beneficiaryUserId = null`.
-> 3. Actor SYSTEM phải reference valid `User` row (không dùng magic string "SYSTEM").
-> 4. Uniqueness invariant: max one ACTIVE decision per (laborProfileId, assignmentId, milestone); nullable-safe; concurrency-safe; preserves correction/reversal history.
-
-### Current state (evidence)
-
-- `CommissionLedger.ctvId` là CTV-specific, không generic
-- `CommissionEngine` đọc `assignment.referrerId` và ghi ledger bằng `ctvId` (`engine.service.ts:239-242`)
-- `aff_plan.md §6.5.1` nói: "`LaborProfileHandlingAssignment` xác định beneficiary candidate tại milestone"
-- `aff_plan.md §11.1` nói: "Mọi User được lãnh đạo giao LaborProfile hợp lệ đều có thể trở thành beneficiary"
-
-### Proposed CommissionBeneficiaryDecision model (REVISED per R2)
+#### 2.5.1 Schema (LOCKED)
 
 ```prisma
 /// CommissionBeneficiaryDecision — authority record độc lập cho mỗi milestone.
 /// Không derived từ active handler động. Mỗi decision là immutable snapshot.
-/// Invariant: max one ACTIVE decision per (laborProfileId, assignmentId, milestone).
 model CommissionBeneficiaryDecision {
   id                      String    @id @default(uuid())
   laborProfileId          String    @map("labor_profile_id")
   assignmentId            String?   @map("assignment_id")
-  handlingAssignmentId    String?   @map("handling_assignment_id")  // nullable — evidence only
-  beneficiaryUserId       String    @map("beneficiary_user_id")     // REQUIRED for ACTIVE decision
+  handlingAssignmentId    String?   @map("handling_assignment_id")
+  beneficiaryUserId       String    @map("beneficiary_user_id")     // REQUIRED
   source                  String    @map("source")                   // AFF_INITIAL | MANAGER_ASSIGNMENT | CASE_RESOLUTION | DIRECT
   reason                  String    @map("reason")                   // Typed reason
-  evidence                Json      @default("{}") @map("evidence") // Full snapshot
+  evidence                Json      @default("{}") @map("evidence") // Snapshot
   decidedAt               DateTime  @map("decided_at")
-  actorId                 String    @map("actor_id")                // User.id — SYSTEM = valid User row
   milestone               String    @map("milestone")
   status                  String    @default("ACTIVE") @map("status") // ACTIVE | SUPERSEDED | REVERSED
   supersededById          String?   @map("superseded_by_id")
-  outcome                 String?   @map("outcome")                 // ACTIVE | UNRESOLVED (set when no valid handler)
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @updatedAt      @map("updated_at")
 
-  laborProfile      LaborProfile               @relation(fields: [laborProfileId], references: [id])
-  beneficiary      User                       @relation("BeneficiaryUser", fields: [beneficiaryUserId], references: [id])
-  actor            User                       @relation("DecisionActor", fields: [actorId], references: [id])
-  supersededBy     CommissionBeneficiaryDecision? @relation("DecisionSupersession", fields: [supersededById], references: [id])
-  supersessions    CommissionBeneficiaryDecision[] @relation("DecisionSupersession")
+  // === T0 R3 verdict ===
+  actorType               String    @map("actor_type")               // USER | SYSTEM
+  actorUserId             String?   @map("actor_user_id")            // nullable when actorType=SYSTEM
+
+  laborProfile      LaborProfile                   @relation(fields: [laborProfileId], references: [id])
+  beneficiary       User                           @relation("BeneficiaryUser", fields: [beneficiaryUserId], references: [id])
+  actorUser         User?                          @relation("DecisionActor", fields: [actorUserId], references: [id])
+  supersededBy      CommissionBeneficiaryDecision? @relation("DecisionSupersession", fields: [supersededById], references: [id])
+  supersessions     CommissionBeneficiaryDecision[] @relation("DecisionSupersession")
 
   @@index([laborProfileId, status])
   @@index([beneficiaryUserId, status])
@@ -308,146 +154,157 @@ model CommissionBeneficiaryDecision {
 }
 ```
 
-### Invariant Contract: Max One ACTIVE Decision Per Business Key
+#### 2.5.2 Invariant Contract — LOCKED
 
 **Business key:** `(laborProfileId, assignmentId, milestone)`
 
-**Invariant:** At any point in time, there can be **at most one ACTIVE decision** for a given business key.
+**Invariant:** At any point in time, at most **one ACTIVE decision** per business key.
 
-**Implementation requirements:**
+**Nullable-safe handling (T0 R3 directive):**
 
-1. **Nullable-safe:** `(NULL, NULL, NULL)` does not violate the invariant (multiple UNRESOLVED rows for different keys are fine; same key with `assignmentId=null` is still unique).
+PostgreSQL 15+ cung cấp `NULLS NOT DISTINCT`:
 
-2. **Concurrency-safe:** Use partial unique index + advisory lock:
-   ```sql
-   -- Partial unique index: one ACTIVE per laborProfileId + assignmentId + milestone
-   CREATE UNIQUE INDEX cbd_active_uniq
-     ON commission_beneficiary_decisions(labor_profile_id, assignment_id, milestone)
-     WHERE status = 'ACTIVE';
-   ```
+```sql
+-- PostgreSQL 15+ partial unique with NULLS NOT DISTINCT (preferred)
+CREATE UNIQUE INDEX cbd_active_uniq
+  ON commission_beneficiary_decisions(labor_profile_id, assignment_id, milestone)
+  WHERE status = 'ACTIVE'
+  NULLS NOT DISTINCT;
+```
 
-3. **Advisory lock on write:**
-   ```typescript
-   await prisma.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(laborProfileId || assignmentId || milestone))`;
-   // Then upsert with ON CONFLICT DO NOTHING or check-then-insert
-   ```
+Alternative cho PostgreSQL < 15 hoặc nếu cần normalized key:
 
-4. **Preserving correction/reversal history:**
-   - When a decision is corrected (e.g., dispute resolution changes beneficiary):
-     - Old ACTIVE → SUPERSEDED (sets `supersededById` to new decision's id)
-     - New ACTIVE decision created with full evidence of correction
-   - When a decision must be reversed (e.g., found to be fraudulent):
-     - Old ACTIVE → REVERSED (sets `supersededById`)
-     - New decision references original for audit chain
-   - Historical SUPERSEDED/REVERSED rows are NEVER deleted — they are the audit trail
+```sql
+-- Expression-based partial unique index using COALESCE sentinel
+CREATE UNIQUE INDEX cbd_active_uniq
+  ON commission_beneficiary_decisions(
+    labor_profile_id,
+    COALESCE(assignment_id, '__NONE__'),
+    COALESCE(milestone, '__NONE__')
+  )
+  WHERE status = 'ACTIVE';
+```
 
-5. **No handler scenario (UNRESOLVED outcome):**
-   - **No active decision is created** with `beneficiaryUserId = null`
-   - Instead, when no valid handler found:
-     - Outcome is recorded as `UNRESOLVED` in a separate tracking mechanism (not a decision row with null beneficiary)
-     - Commission engine skips credit with typed reason `NO_ACTIVE_HANDLER`
-     - This preserves the invariant: every ACTIVE decision has a valid `beneficiaryUserId`
-   - Alternatively: create decision with `outcome = 'UNRESOLVED'` and `beneficiaryUserId` pointing to a SYSTEM service user:
-     ```prisma
-     // SYSTEM actor must be a valid User row (e.g., userId of a dedicated system service account)
-     // This is NOT a magic string — it's a real FK to users table
-     actorId = "00000000-0000-0000-0000-000000000001"  // System service account User
-     outcome = "UNRESOLVED"
-     beneficiaryUserId = "00000000-0000-0000-0000-000000000001"  // Same system user
-     ```
+**Authority:** Migration SQL owns the constraint. Prisma schema is documentation; nếu không support thì SQL migration is authority.
 
-### Decision Resolution Flow (REVISED per R2)
+**Concurrency-safe write:**
+
+```typescript
+// Advisory lock with normalized tuple — RS (0x1E) is delimiter sentinel
+// RS is a non-printable ASCII separator never appearing in cuid/uuid
+function normalizeKey(laborProfileId: string, assignmentId: string | null, milestone: string): string {
+  return [laborProfileId, assignmentId ?? '__NONE__', milestone].join('\x1E');
+}
+
+await prisma.$executeRaw`
+  SELECT pg_advisory_xact_lock(hashtext(${normalizeKey(laborProfileId, assignmentId, milestone)}))
+`;
+// Then check-then-insert pattern relying on partial unique index
+```
+
+#### 2.5.3 UNRESOLVED Outcome (LOCKED — T0 R3)
+
+> **UNRESOLVED là typed result + audit/outbox, KHÔNG phải active decision.**
+
+Khi không có handler/no beneficiary:
+- **Không tạo active decision** với `beneficiaryUserId = null`
+- Commission engine returns **typed result** `NO_ACTIVE_HANDLER`
+- `OutboxEvent` ghi UNRESOLVED audit
+- Skipped credit có typed reason
+
+```typescript
+type MilestoneResult =
+  | { kind: 'CREATED'; decisionId: string }
+  | { kind: 'SKIPPED'; reason: 'NO_ACTIVE_HANDLER' }
+  | { kind: 'SKIPPED'; reason: 'OTHER' };
+
+if (result.kind === 'SKIPPED') {
+  await outbox.publish({
+    type: 'BENEFICIARY_DECISION_UNRESOLVED',
+    payload: { laborProfileId, assignmentId, milestone, reason: result.reason, decidedAt: now }
+  });
+}
+```
+
+#### 2.5.4 Actor Field (LOCKED — T0 R3)
+
+Schema drops the magic-string SYSTEM approach. Two-field model instead:
+
+```prisma
+actorType    String   // 'USER' | 'SYSTEM'
+actorUserId  String?  // nullable; FK to users when actorType='USER'
+```
+
+**CHECK constraint (SQL authority):**
+
+```sql
+ALTER TABLE commission_beneficiary_decisions
+  ADD CONSTRAINT cbd_actor_check
+  CHECK (
+    (actor_type = 'USER' AND actor_user_id IS NOT NULL)
+    OR (actor_type = 'SYSTEM' AND actor_user_id IS NULL)
+  );
+```
+
+**Decision creation:**
+
+| Trigger | actorType | actorUserId |
+|---|---|---|
+| HR/Manager explicit decision | `USER` | The HR's `User.id` |
+| Auto-created at milestone by engine | `SYSTEM` | `NULL` |
+| Correction via Ticket/Case resolution | `USER` | Resolver's `User.id` |
+
+#### 2.5.5 Decision Resolution Flow (LOCKED)
 
 ```
 At milestone evaluation time:
-1. ACQUIRE advisory lock on business key (laborProfileId, assignmentId, milestone)
+1. ACQUIRE advisory lock on normalized(business key)
 2. Lookup existing ACTIVE decision for business key
-   a. IF found AND has valid beneficiaryUserId:
+   a. IF found AND status=ACTIVE:
       → Use decision.beneficiaryUserId
-      → decision is authoritative
    b. IF NOT found:
-      → Evaluate candidate from LaborProfileHandlingAssignment (ACTIVE + not expired)
-      → IF valid handler found:
-         → Create ACTIVE decision with beneficiaryUserId = assigneeUserId
-         → outcome = 'ACTIVE'
-         → actorId = 'SYSTEM_USER_ID' (valid User FK)
-      → IF no valid handler:
-         → DO NOT create decision with null beneficiary
-         → Record UNRESOLVED outcome separately (audit log or outcome table)
-         → Skip commission credit with typed reason 'NO_ACTIVE_HANDLER'
-         → No decision row created
-3. RELEASES lock
+      → IF active LaborProfileHandlingAssignment exists (ACTIVE + not expired):
+         → CREATE ACTIVE decision with:
+            beneficiaryUserId = assigneeUserId
+            actorType = 'SYSTEM'
+            actorUserId = NULL
+         → outbox publish: BENEFICIARY_DECISION_CREATED
+      → ELSE:
+         → Return { kind: 'SKIPPED', reason: 'NO_ACTIVE_HANDLER' }
+         → outbox publish: BENEFICIARY_DECISION_UNRESOLVED
+         → NO decision row created
+3. RELEASE lock
 ```
 
-### Actor SYSTEM — Valid User Requirement
+#### 2.5.6 Correction/Reversal History (LOCKED)
 
-> **Actor SYSTEM must reference a valid `User` row. Do not use a magic string like "SYSTEM".**
-
-**Implementation options:**
-
-| Option | Description | Pros | Cons |
+| Action | Old decision | New decision | History preservation |
 |---|---|---|---|
-| **A. System service User (Recommended)** | Pre-create a `User` row with role=SYSTEM and use its ID as `actorId` | Valid FK, auditable, queryable | Requires pre-seed |
-| **B. Nullable actorId** | Allow `actorId=null` for system-generated decisions | Simple | Breaks FK integrity, harder to query |
-| **C. Magic string** | Use `"SYSTEM"` as sentinel value | Simple | Not a valid FK; query breaks; violates referential integrity |
+| Correction (dispute resolves change of beneficiary) | status: ACTIVE → SUPERSEDED, sets `supersededById` | New decision created, status: ACTIVE | Old kept as SUPERSEDED for audit chain |
+| Reversal (fraud/error) | status: ACTIVE → REVERSED, sets `supersededById` | New decision references original for audit | Original kept as REVERSED; not deleted |
 
-**Recommendation: Option A.** Create a `User` row for system operations (or reuse an existing service account) and reference it by ID. This makes all decisions queryable via the same `actorId` relation and maintains FK integrity.
+SUPERSEDED/REVERSED rows are **never deleted** — they are the audit trail.
 
-### Beneficiary Derivation Hierarchy (REVISED per R2)
-
-```
-1. Explicit CommissionBeneficiaryDecision (authority record) — highest priority
-   └── Must have valid beneficiaryUserId (FK to User)
-   └── Superseded → superseding decision (via supersededById)
-2. System evaluation at milestone:
-   a. Active LaborProfileHandlingAssignment exists
-      → Create decision with assigneeUserId as beneficiaryUserId
-   b. No active assignment
-      → UNRESOLVED outcome (no active decision created)
-      → Commission engine skips credit
-3. Company Pool default:
-   → NOT represented as a decision with null beneficiary
-   → Represented as UNRESOLVED outcome in audit
-```
-
-**T0 Action Required:**
-- Confirm `outcome = 'UNRESOLVED'` pattern (no decision row with null beneficiary)
-- Confirm SYSTEM actor must be valid `User` row (Option A)
-- Confirm invariant contract: max one ACTIVE per (laborProfileId, assignmentId, milestone)
-- Confirm correction/reversal preserves history (SUPERSEDED/REVERSED, never deleted)
-
----
-
-### Q8. Role/Permission/Data-Scope
-
-**Question:** Role và permission nào cho assign, transfer, release, và beneficiary decision?
-
-**Evidence:**
-- `PlacementCase` RLS: HR_MANAGER + HR_STAFF + ADMIN only
-- `CommissionLedger` RLS: CTV đọc own rows; ADMIN/ACCOUNTANT/DIRECTOR write
-- No permissions for handler assignment
-
-**Recommendation:** ⬅️ **T0 quyết định**
+### 2.6 Permissions (LOCKED)
 
 | Action | Permission | Data Scope |
 |---|---|---|
-| **Assign handler to profile** | `CAN_ASSIGN_HANDLING` | MANAGER: team member; HR: anyone; ADMIN: anyone |
-| **Transfer handling** | `CAN_TRANSFER_HANDLING` | Assignee current OR MANAGER/HR/ADMIN |
-| **Release (về Company Pool)** | `CAN_RELEASE_HANDLING` | Assignee self OR MANAGER/HR/ADMIN |
-| **Create beneficiary decision** | `CAN_CREATE_BENEFICIARY_DECISION` | HR/ADMIN for disputes; SYSTEM for auto at milestone |
-| **View Company Pool** | `CAN_VIEW_HANDLING_POOL` | MANAGER: team; HR: all |
-| **View own assignments** | Implicit (self) | User chỉ thấy assignment mình là assignee |
+| Assign handler to profile | `CAN_ASSIGN_HANDLING` | MANAGER (team), HR (anyone), ADMIN (anyone) |
+| Transfer handling | `CAN_TRANSFER_HANDLING` | Assignee current OR MANAGER/HR/ADMIN |
+| Release (về Company Pool) | `CAN_RELEASE_HANDLING` | Assignee self OR MANAGER/HR/ADMIN |
+| Create beneficiary decision | `CAN_CREATE_BENEFICIARY_DECISION` | HR/ADMIN for explicit decisions |
+| View Company Pool | `CAN_VIEW_HANDLING_POOL` | MANAGER (team), HR (all) |
+| View own assignments | Implicit self | Assignee only |
 
-**RLS proposal:**
 ```sql
--- LaborProfileHandlingAssignment
+-- LaborProfileHandlingAssignment RLS
 CREATE POLICY hrp_handling_assignment_scope ON labor_profile_handling_assignments
   USING (
     hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
     OR hrp_session_user_id() = assignee_user_id
   );
 
--- CommissionBeneficiaryDecision
+-- CommissionBeneficiaryDecision RLS
 CREATE POLICY hrp_beneficiary_decision_scope ON commission_beneficiary_decisions
   USING (
     hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
@@ -455,15 +312,7 @@ CREATE POLICY hrp_beneficiary_decision_scope ON commission_beneficiary_decisions
   );
 ```
 
-**T0 Action Required:** Chốt permission codes và data scope matrix.
-
----
-
-### Q9. Inventory Reuse + N2 Conflicts + Legacy Classification
-
-**Question:** Inventory hiện tại có thể tái sử dụng gì, và có conflict gì với N2?
-
-**Evidence:**
+### 2.7 Inventory Reuse + N2 Conflicts
 
 | Component | N2 Reuse | Conflict Risk | Resolution |
 |---|---|---|---|
@@ -471,81 +320,41 @@ CREATE POLICY hrp_beneficiary_decision_scope ON commission_beneficiary_decisions
 | `PlacementCase.openedAt` | ✅ Clock anchor | Low | Additive |
 | `LaborProfile` | ✅ Available in main | Low | FK ready |
 | `ReferralGuard.applyOverride()` | ✅ Block-code logic | Medium | R1/R2/R3 rules có thể conflict |
-| `CommissionEngine.evaluateMilestones()` | ✅ Milestone pattern | Medium | Update to read from Decision |
-| `CommissionLedger.ctvId` | ⚠️ CTV-specific | High | Additive `beneficiaryUserId` |
+| `CommissionEngine.evaluateMilestones()` | ✅ Milestone pattern | Medium | Update to read `CommissionBeneficiaryDecision` |
+| `CommissionLedger.ctvId` | ⚠️ CTV-specific | High | Additive `beneficiaryUserId` legacy compat |
 | `SourceClaim.ctvId/vendorId` | ⚠️ Legacy | High | Additive `referrerUserId` |
 | `ProjectAssignment.referrerId` | ✅ Source field | Low | Placement derives from accepted SourceClaim |
 | `intake-writer.service.ts` | ✅ Intake flow | Low | Preserve attribution |
 | `candidate_submissions` RPC | ⚠️ SECURITY DEFINER | High | RPC signature change — needs LIVE test |
-| `Holiday` table | ✅ VN holiday data | Low | Population + consumption |
-| `outbox.service.ts` | ✅ Audit events | Low | Reuse for handling + decision events |
+| `outbox.service.ts` | ✅ Audit events | Low | Reuse for handling + decision + UNRESOLVED events |
+| `Holiday` | ❌ NOT in N2 scope | — | Out of scope per T0 |
 
-**Highest-risk conflicts:**
+### 2.8 Legacy ctvId Backfill (LOCKED — Tightened EXACT_SAFE)
 
-1. **RPC signature change (`hrp_public_apply_submission`):** Critical path for public apply. Migration + ACL + LIVE test required.
+**EXACT_SAFE requires ALL of:**
 
-2. **Commission engine beneficiary:** Engine needs to read `CommissionBeneficiaryDecision` (Q7 revised) instead of dynamic handler.
-
-3. **Legacy ctvId/SourceClaim:** Requires EXACT_SAFE classification (see Q9b).
-
----
-
-### Q9b. Legacy ctvId Backfill Classification (TIGHTENED PER R2)
-
-**⚠️ R2 TIGHTENING: valid User/FK là cần nhưng CHƯA ĐỦ.**
-
-**EXACT_SAFE requires ALL of the following:**
-
-| Criterion | Description | Why Required |
+| # | Criterion | Why |
 |---|---|---|
-| **Valid FK** | `ctvId` maps to a `User.id` that exists and is not soft-deleted | Referential integrity |
-| **Provenance** | The `ctvId` was written by a known writer with known semantics | The writer's context proves the beneficiary relationship |
-| **Writer semantics** | The commission was created via the canonical `CommissionEngine` or an audited migration with the same semantics | Not a manual INSERT or an ad-hoc write |
-| **No conflict** | No other `beneficiaryUserId` already set for this worker/period | No overwriting of existing decisions |
-| **Audit trail** | The row has an `outbox` event or equivalent audit proving the relationship | Evidence for disputes |
+| 1 | Valid `User` FK | Referential integrity |
+| 2 | **Provenance** | The row was written in a known context with documented meaning |
+| 3 | **Writer semantics** | The row was created by canonical `CommissionEngine` or audited migration (no manual INSERT) |
+| 4 | No conflict | No existing `beneficiaryUserId` already set |
+| 5 | Audit trail | Outbox event or equivalent audit proving the relationship |
 
-**What does NOT qualify as EXACT_SAFE:**
-- `ctvId` that maps to a User, but was written by a manual INSERT (not via engine)
-- `ctvId` that maps to a User, but the commission row has no audit trail
-- `ctvId` that maps to a User, but there is already a `beneficiaryUserId` set (conflict)
-- `ctvId` that is a string but not a valid `User.id` (no FK match)
+**UNRESOLVED** = fails ANY criterion → manual review, no backfill.
 
-**Classification workflow:**
-
-```
-For each CommissionLedger row with ctvId:
-1. Check: Does ctvId match a valid User.id?
-   → NO: UNRESOLVED (invalid FK)
-2. Check: Was this row written by canonical engine or audited migration?
-   → NO: UNRESOLVED (no writer semantics proof)
-3. Check: Is there already a beneficiaryUserId set?
-   → YES: UNRESOLVED (conflict — manual override exists)
-4. Check: Is there an outbox event or audit trail?
-   → NO: UNRESOLVED (no provenance evidence)
-5. ALL PASS: EXACT_SAFE → backfill beneficiaryUserId = ctvId
-```
-
-**UNRESOLVED disposition:**
-- Do NOT backfill
-- Log for manual review
-- Manual resolution required with evidence review
-
-**T0 Action Required:**
-- Confirm EXACT_SAFE criteria (R2 tightened: valid FK alone is not enough)
-- Set expectation for UNRESOLVED count — may be significant
+Valid FK alone is **NOT sufficient**.
 
 ---
 
-### Q10. Proposed Vertical Slices
-
-**Recommendation:** 6 slices, ordered by dependency:
+## 3. Implementation Slice Plan (LOCKED)
 
 ```
 N2-1 (Attribution Foundation)
     ↓
 N2-2 (Link Capture) [parallel with N2-1]
     ↓
-N2-3 (Apply Attribution) [requires LaborProfile — available in main]
+N2-3 (Apply Attribution) [requires LaborProfile — available]
     ↓
 N2-4 (Handling Assignment) [requires LaborProfile FK]
     ↓
@@ -554,172 +363,67 @@ N2-5 (Beneficiary Decision) [requires N2-4]
 N2-6 (Commission Beneficiary) [requires N2-5]
 ```
 
-**V6 Phase 1A status:** Capability available in origin/main — no merge dependency.
+**Per-slice lock state:**
+
+| Slice | Slug | Schema scope | Migration risk | Test gate | V6 P1 dep |
+|---|---|---|---|---|---|
+| N2-1 | `hrp-v6-n2-aff-01-attribution-foundation` | `ReferralAttribution` table (immutable, status-only state machine, partial unique on laborProfileId) | Low — additive | Immutability enforcement + RLS | No |
+| N2-2 | `hrp-v6-n2-aff-02-link-capture` | None (pure app) | Zero | Race, forged code, all roles | No |
+| N2-3 | `hrp-v6-n2-aff-03-apply-attribution` | Additive `candidate_submissions` columns + RPC signature change | HIGH | RPC migration test, upgrade path | No (LaborProfile in main) |
+| N2-4 | `hrp-v6-n2-aff-04-handling-assignment` | `labor_profile_handling_assignments` with partial unique `(laborProfileId) WHERE status = 'ACTIVE'` | Medium | Race to assign, expiry | No |
+| N2-5 | `hrp-v6-n2-aff-05-beneficiary-decision` | `CommissionBeneficiaryDecision` per §2.5 schema; **migration SQL owns**: partial unique with `NULLS NOT DISTINCT` + CHECK constraint + advisory lock (normalized tuple) | Medium | Invariant, UNRESOLVED typed result, correction history | No (requires N2-4) |
+| N2-6 | `hrp-v6-n2-aff-06-commission-beneficiary` | Additive `beneficiary_user_id` columns; EXACT_SAFE-only backfill; engine reads decision | Medium | EXACT_SAFE classification, UNRESOLVED skip | No (requires N2-5) |
 
 ---
 
-#### Slice N2-1: `ReferralAttribution` Foundation
+## 4. Timing/Boundary Policy (LOCKED)
 
-**Slug:** `hrp-v6-n2-aff-01-attribution-foundation`
-**Schema scope:**
-- New table: `ReferralAttribution` per `aff_plan.md §6.2` + Q6 immutability rules
-  - Immutable fields: `referrerUserId`, `affiliateCodeSnapshot`, `firstClickedAt`, `expiresAt`
-  - `laborProfileId` set once via `consume()` method
-  - `status` transitions only via explicit methods
-- RLS: referrer thấy own rows; ADMIN/HR_MANAGER/HR_STAFF thấy all
-- No new API routes
-**Migration risk:** Low — additive
-**Test gate:** Immutability, unique constraint, RLS
+### 4.1 Day boundary
 
----
+> Day boundary = exclusive next-day. Half-open interval `[start, nextDayStart)`.
 
-#### Slice N2-2: Link Capture + Shared Self-Service
+Ví dụ: profile tạo ngày 2026-09-10 14:00 Asia/Bangkok → 7-day window kết thúc tại **2026-09-17 00:00:00 +07:00** (exclusive). Sau thời điểm đó = expired.
 
-**Slug:** `hrp-v6-n2-aff-02-link-capture`
-**Schema scope:** None (pure application logic)
-- New API: `GET /api/me/affiliate-link`
-- New route: `GET /r/:code` (redirect + attribution capture)
-- New cookie: `hrp_aff` signed HttpOnly, 30-day TTL
-- Feature flags: `AFFILIATE_LINK_ISSUANCE_ENABLED`, `AFFILIATE_CAPTURE_ENABLED`
-**Migration risk:** Zero
-**Test gate:** Race, forged code, all roles
+```typescript
+const nextDayStart = (anchor: Date): Date => {
+  // Convert UTC to Asia/Bangkok, ceil to next day start, back to UTC
+  const BKK_OFFSET_MS = 7 * 60 * 60 * 1000;
+  const bkkMs = anchor.getTime() + BKK_OFFSET_MS;
+  const dayBkk = Math.floor(bkkMs / (24 * 60 * 60 * 1000));
+  const startOfNextDayUtc = (dayBkk + 1) * 24 * 60 * 60 * 1000 - BKK_OFFSET_MS;
+  return new Date(startOfNextDayUtc);
+};
 
----
+const expiry = nextDayStart(addDays(openedAt, 7));  // exclusive
+```
 
-#### Slice N2-3: Public Apply Attribution Snapshot
+### 4.2 Half-open intervals
 
-**Slug:** `hrp-v6-n2-aff-03-apply-attribution`
-**Schema scope:**
-- Additive columns on `candidate_submissions`:
-  - `referrer_user_id` (nullable FK)
-  - `referral_attribution_id` (nullable FK)
-  - `referral_code_snapshot` (text)
-  - `referral_captured_at` (timestamptz)
-  - `referral_channel` (text)
-- RPC signature change — **HIGH RISK**
-**Migration risk:** HIGH — RPC + ACL
-**Test gate:** Apply flow, RPC migration, upgrade path
-**V6 P1 dependency:** LaborProfile FK available in main — no block
+Mọi `[start, end)` interval:
+- `startAt` inclusive
+- `expiresAt` exclusive (= start of next slot)
+- Tại `now == expiresAt` → đã expired
 
 ---
 
-#### Slice N2-4: `LaborProfileHandlingAssignment` + 7-Day Clock
+## 5. Out of Scope (Locked)
 
-**Slug:** `hrp-v6-n2-aff-04-handling-assignment`
-**Schema scope:**
-- New table: `labor_profile_handling_assignments`
-  - `laborProfileId` (FK → LaborProfile)
-  - `assigneeUserId`, `assignedByUserId`
-  - `source` (AFF_INITIAL | MANAGER_ASSIGNMENT | CASE_RESOLUTION)
-  - `startsAt`, `expiresAt` (TIMESTAMPTZ, UTC storage)
-  - `status` (ACTIVE | COMPLETED | EXPIRED | TRANSFERRED | REVOKED)
-  - Partial unique: `(laborProfileId)` WHERE `status = 'ACTIVE'`
-- API routes: assign, transfer, release, view pool
-- Permission codes
-**Migration risk:** Medium
-**Test gate:** Race to assign, expiry, client override denied
-**V6 P1 dependency:** LaborProfile FK available — no block
+Items explicitly **không thuộc N2 implementation**:
 
----
-
-#### Slice N2-5: `CommissionBeneficiaryDecision` Authority Record
-
-**Slug:** `hrp-v6-n2-aff-05-beneficiary-decision`
-**Schema scope:**
-- New table: `CommissionBeneficiaryDecision` (per Q7 R2 model)
-  - `beneficiaryUserId` REQUIRED for ACTIVE decision
-  - `outcome` field: `ACTIVE | UNRESOLVED`
-  - Max one ACTIVE per (laborProfileId, assignmentId, milestone) — invariant enforced
-  - Advisory lock on write
-  - Correction/reversal preserves SUPERSEDED/REVERSED history
-  - SYSTEM actor = valid User FK (not magic string)
-- RLS: beneficiary thấy own; HR/ADMIN thấy all
-**Migration risk:** Medium — unique constraint, FK
-**Test gate:** Invariant, UNRESOLVED outcome, correction history
-
----
-
-#### Slice N2-6: `beneficiaryUserId` Generalization + Commission Update
-
-**Slug:** `hrp-v6-n2-aff-06-commission-beneficiary`
-**Schema scope:**
-- Additive column: `commission_ledger.beneficiary_user_id` (nullable FK)
-- Additive column: `commission_debt.beneficiary_user_id` (nullable FK)
-- Additive column: `ctv_withdrawal_requests.beneficiary_user_id` (nullable FK)
-- Index: `(beneficiary_user_id, month, year, milestone)` on ledger
-- **Legacy backfill — EXACT_SAFE classification only (per Q9b R2 tightening):**
-  - Valid FK + provenance + writer semantics + no conflict + audit trail
-  - UNRESOLVED: manual review
-- Engine update: reads `CommissionBeneficiaryDecision` (N2-5)
-**Migration risk:** Medium — backfill with classification
-**Test gate:** EXACT_SAFE/UNRESOLVED classification, UNRESOLVED skip, credit creation
-
----
-
-## 3. Unresolved Decisions — T0 Must Decide
-
-### Decision Gate: Before N2-1 Implementation
-
-| # | Decision | Options | Owner | Recommendation |
-|---|---|---|---|---|
-| Q1 | **AFF clock = calendar hay business days?** | A. Calendar / B. Business | Founder/T0 | **A** |
-| Q2a | **Storage timezone?** | A. TIMESTAMPTZ UTC / B. Keep TIMESTAMP | T0 | **A** |
-| Q2b | **Business clock timezone?** | A. Asia/Bangkok / B. Other | T0 | **A** |
-| Q2c | **Cut-off time?** | A. 23:59:59.999 VN / B. Other | T0 | **A** |
-| Q3a | **Holiday calendar owner?** | A. HR Admin / B. Hard-coded | T0 | **A** |
-| Q3b | **Unconfigured fallback?** | A. Calendar days / B. Block | T0 | **A** |
-| Q4 | **Clock start event?** | A. `openedAt` / B. Separate field | Founder/T0 | **A** |
-| Q5 | **Pause/reset semantics?** | A. Clock RUNNING always / B. Pause | T0 | **A** |
-| Q7a | **Decision as authority (R1 revised)?** | A. Yes, immutable record / B. Dynamic handler | T0 | **A** |
-| Q7b | **beneficiaryUserId required for ACTIVE (R2)?** | A. Yes / B. Nullable allowed | T0 | **A** |
-| Q7c | **UNRESOLVED outcome pattern (R2)?** | A. No active decision with null beneficiary / B. Create with null | T0 | **A** |
-| Q7d | **SYSTEM actor = valid User FK (R2)?** | A. Yes, pre-created system User / B. Magic string | T0 | **A** |
-| Q7e | **Invariant: max one ACTIVE per key (R2)?** | A. Yes / B. Allow multiple | T0 | **A** |
-| Q8 | **Permission codes for handling?** | See proposal | T0 | Review |
-| Q9a | **RPC change acceptable for N2-3?** | A. Yes / B. Defer | T0 | **A** |
-| Q9b | **Legacy ctvId classification (R2 tightened)?** | EXACT_SAFE = FK + provenance + writer + no conflict + audit | T0 | Confirm criteria |
-| Q10 | **V6 P1 capability available in main?** | ✅ Confirmed — no dependency | T0 | Acknowledge |
-
-### Decisions Already Locked (no T0 action needed)
-
-- `AFF-DEC-001` — All Users eligible
-- `AFF-DEC-003` — Reuse `User.affCode`
-- `AFF-DEC-010` — Cookie TTL 30 days, first-click wins
-- `AFF-DEC-011` — 7-day protected window
-- `AFF-DEC-012` — Expiry → Company Pool
-- `AFF-DEC-013` — Referrer không giữ commission vô thời hạn
-- `AFF-DEC-018` — `ReferralAttribution` on `LaborProfile`
-
----
-
-## 4. Trade-offs Summary
-
-| Decision | Simpler Option | Robust Option | Recommendation |
-|---|---|---|---|
-| Clock type | Calendar days | Business days | Calendar |
-| Storage timezone | TIMESTAMP + env | TIMESTAMPTZ UTC | TIMESTAMPTZ UTC |
-| Business clock | Asia/Bangkok | Other | Asia/Bangkok |
-| Clock start | `openedAt` | Separate field | `openedAt` |
-| Pause behavior | Clock always running | Pause on hold | Always running |
-| Commission beneficiary | Dynamic handler read | Decision authority record | **Decision record (R1+R2)** |
-| UNRESOLVED | Active decision with null beneficiary | No decision row, typed UNRESOLVED outcome | **No decision with null (R2)** |
-| Legacy ctvId | Blanket backfill | EXACT_SAFE/UNRESOLVED classification | **EXACT_SAFE (R2 tightened)** |
-
----
-
-## 5. Next Steps for T0
-
-1. Review this document — confirm recommendations
-2. Chốt 18 open decisions
-3. Authorize Tier 1 to create N2-1 task (with N2-2 in parallel)
-4. Set RPC change expectation for N2-3
-5. Set UNRESOLVED count expectation for N2-6
+1. ❌ **Holiday** — out of scope. N2 uses pure calendar days.
+2. ❌ **Business-day arithmetic** — không có trong N2.
+3. ❌ **N2-1 implementation** — task này là discovery only.
+4. ❌ **Schema/migration changes** — task này là discovery only.
+5. ❌ **`docs/TIER0_SHIFT_HANDOVER.md`** — không touch.
+6. ❌ **`docs/PLANNER_HANDOVER.md`** — không touch.
+7. ❌ **PR #3 / P2** — không touch.
+8. ❌ **N4 implementation** — không mở.
 
 ---
 
 ## 6. Evidence Appendix
 
-### File:line references
+### 6.1 File:line references
 
 | Evidence | Location |
 |---|---|
@@ -728,24 +432,46 @@ N2-6 (Commission Beneficiary) [requires N2-5]
 | `LaborProfile` model | `schema.prisma:1393` |
 | `LaborProfileIntake` model | `schema.prisma:1421` |
 | `EmploymentEpisode` model | `schema.prisma:1431` |
-| V6 Phase 1A migrations in main | `prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/`, `prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/` |
+| V6 Phase 1A migrations in main | `prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/`, `20260912140411_n1_placement_case_foundation`, `prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/` |
 | `CommissionLedger.ctvId` | `schema.prisma:1231` |
 | `CommissionEngine.milestone` | `engine.service.ts:75-80` |
-| `Holiday` table | `schema.prisma:737-745` |
+| `Holiday` table (informational only) | `schema.prisma:737-745` |
 | `aff_plan.md v2.3` | `docs/V6/aff_plan.md:1-1080` |
 
-### V6 Phase 1A Capability in origin/main
+### 6.2 V6 Phase 1A Capability in origin/main
 
 ```
 $ git ls-tree origin/main prisma/migrations/ | Select-String "phase1a"
   040000 tree 613b6fe6... prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/
+  040000 tree a399344c... prisma/migrations/20260912140411_n1_placement_case_foundation
   040000 tree a399344c... prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/
 ```
 
-Tables available: `labor_profiles`, `labor_profile_intakes`, `employment_episodes`
-FK available: `candidate_submissions.labor_profile_id`
-RLS applied: all three tables
+Tables: `labor_profiles`, `labor_profile_intakes`, `employment_episodes`
+FK: `candidate_submissions.labor_profile_id`
+RLS: all three tables
 
 ---
 
-**Discovery complete. Status: READY_FOR_T0_DECISION. Awaiting T0 decisions before N2 implementation.**
+## 7. Definition of Done — Discovery (Locked)
+
+Discovery hoàn tất khi:
+
+- ✅ 18 `AFF-DEC-*` decisions đã chốt bởi `aff_plan.md`
+- ✅ Operational decisions chốt bởi T0 verdict (R0–R3)
+- ✅ Schema sketch cho ReferralAttribution, LaborProfileHandlingAssignment, CommissionBeneficiaryDecision
+- ✅ Invariant contracts với nullable-safe specification (NULLS NOT DISTINCT)
+- ✅ UNRESOLVED pattern (typed result + outbox, no decision row)
+- ✅ Actor model (actorType + actorUserId nullable + CHECK constraint)
+- ✅ Day boundary policy (exclusive next-day, half-open interval)
+- ✅ Holiday out-of-scope
+- ✅ 6 vertical slices với dependency graph
+- ✅ V6 P1 capability confirmed available
+- ✅ All 4 files synced
+- ✅ PR #4 opened as docs-only
+- ✅ Status: COMPLETE / READY_FOR_MERGE
+- ✅ Audit: NONE (read-only docs-only task)
+
+---
+
+**Discovery COMPLETE. Status READY_FOR_MERGE. PR #4 ready for review and merge.**

@@ -6,28 +6,29 @@ This folder contains supporting evidence for the N2 AFF Policy Discovery task.
 
 ## Files in This Task
 
-| File | Lines | Purpose |
-|---|---|---|
-| `../DISCOVERY.md` | 711 | Main document — 10 questions, evidence, 18 T0 decisions |
-| `../TASK.md` | 151 | RQ → STEP → AC, scope, boundary |
-| `../HANDOFF.md` | 191 | Status + handoff to T0 |
-| `OVERVIEW.md` (this) | ~151 | Survey summary, aff_plan.md affinity, migration inventory |
+| File | Purpose |
+|---|---|
+| `../DISCOVERY.md` | Main document — locked decisions, schema sketches, invariant contracts, 6-slice plan |
+| `../TASK.md` | RQ → STEP → AC, scope, boundary |
+| `../HANDOFF.md` | Status + handoff summary |
+| `OVERVIEW.md` (this) | Survey summary, aff_plan.md affinity, migration inventory |
 
-**Total: 4 files, ~1204 lines. Zero code changes.**
+**Total: 4 files. Zero code changes.**
 
 ---
 
-## V6 Phase 1A — Evidence of Capability in origin/main (CORRECTED R2)
+## V6 Phase 1A — Evidence of Capability in origin/main
 
 ```
 $ git ls-tree origin/main prisma/migrations/ | Select-String "phase1a"
   prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/
+  prisma/migrations/20260912140411_n1_placement_case_foundation
   prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/
 ```
 
 ### Migration Contents
 
-**20260908150000_v6_phase1a_labor_profile_schema/migration.sql:**
+**`20260908150000_v6_phase1a_labor_profile_schema/migration.sql`**:
 ```sql
 ALTER TABLE "candidate_submissions" ADD COLUMN "labor_profile_id" TEXT;
 CREATE TABLE "labor_profiles" (...);
@@ -35,48 +36,43 @@ CREATE TABLE "labor_profile_intakes" (...);
 CREATE TABLE "employment_episodes" (...);
 ```
 
-**20260908150001_v6_phase1a_labor_profile_rls/migration.sql:**
+**`20260908150001_v6_phase1a_labor_profile_rls/migration.sql`**:
 ```sql
 ALTER TABLE labor_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE labor_profiles FORCE ROW LEVEL SECURITY;
 CREATE POLICY hrp_labor_profile_scope ON labor_profiles ...;
-ALTER TABLE labor_profile_intakes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE labor_profile_intakes FORCE ROW LEVEL SECURITY;
-CREATE POLICY hrp_labor_profile_intake_scope ON labor_profile_intakes ...;
 ```
 
 ### Capability Summary
 
-| Capability | Status | Evidence |
-|---|---|---|
-| `LaborProfile` table | ✅ Available | `schema.prisma:1393` + migration |
-| `LaborProfileIntake` table | ✅ Available | `schema.prisma:1421` + migration |
-| `EmploymentEpisode` table | ✅ Available | `schema.prisma:1431` + migration |
-| `CandidateSubmission.laborProfileId` FK | ✅ Available | Migration ADD COLUMN |
-| RLS policies | ✅ Applied | `_rls` migration |
-
-**Conclusion:** V6 Phase 1A is already in origin/main at b91a33f. No merge dependency for N2.
+| Capability | Status |
+|---|---|
+| `LaborProfile` table | ✅ Available |
+| `LaborProfileIntake` table | ✅ Available |
+| `EmploymentEpisode` table | ✅ Available |
+| `CandidateSubmission.laborProfileId` FK | ✅ Available |
+| RLS policies | ✅ Applied |
 
 ---
 
 ## Migration Inventory (relevant to N2)
 
-| Migration | Date | Tables | N2 Relevance | In origin/main? |
-|---|---|---|---|---|
-| `20260908150000_v6_phase1a_labor_profile_schema` | 20260908150000 | labor_profiles, labor_profile_intakes, employment_episodes | N2-3, N2-4 FK | ✅ YES |
-| `20260908150001_v6_phase1a_labor_profile_rls` | 20260908150001 | RLS on above | N2-3, N2-4 RLS | ✅ YES |
-| `20260912140411_n1_placement_case_foundation` | 20260912140411 | placement_case | N2 clock anchor | ✅ YES |
-| `20260912140412_n1_placement_case_rls` | 20260912140412 | RLS on placement_case | N2 RLS | ✅ YES |
-| `20260819083254_p2_commission_schema` | 20260819083254 | commission_policies, commission_ledger, commission_debts | N2-6 base | ✅ YES |
-| `20260819104700_p2_commission_rls` | 20260819104700 | RLS on commission tables | N2-6 RLS | ✅ YES |
+| Migration | Tables | N2 Relevance | In origin/main |
+|---|---|---|---|
+| `20260908150000_v6_phase1a_labor_profile_schema` | labor_profiles, labor_profile_intakes, employment_episodes | N2-3/4 FK | ✅ YES |
+| `20260908150001_v6_phase1a_labor_profile_rls` | RLS on above | N2-3/4 RLS | ✅ YES |
+| `20260912140411_n1_placement_case_foundation` | placement_case | N2 clock anchor | ✅ YES |
+| `20260912140412_n1_placement_case_rls` | RLS on placement_case | N2 RLS | ✅ YES |
+| `20260819083254_p2_commission_schema` | commission_policies, commission_ledger, commission_debts | N2-6 base | ✅ YES |
+| `20260819104700_p2_commission_rls` | RLS on commission tables | N2-6 RLS | ✅ YES |
 
 ---
 
 ## Affinity to aff_plan.md Decisions
 
-All 18 `AFF-DEC-*` decisions are LOCKED. Discovery confirms no conflicts with these.
+All 18 `AFF-DEC-*` decisions in `aff_plan.md v2.3` are LOCKED. No conflicts.
 
-| `AFF-DEC-*` | Topic | Status |
+| DEC | Topic | Status |
 |---|---|---|
 | `AFF-DEC-001` | All Users eligible | LOCKED |
 | `AFF-DEC-002` | Standalone design | LOCKED |
@@ -99,28 +95,43 @@ All 18 `AFF-DEC-*` decisions are LOCKED. Discovery confirms no conflicts with th
 
 ---
 
-## Open Decisions (18 — awaiting T0)
+## Locked Decisions (T0 R3 Verdict)
 
-See `DISCOVERY.md §3` for full list.
-
-| Category | Count | Key decisions |
+| Q | Decision | Value |
 |---|---|---|
-| Clock/Time | 5 | Q1, Q2a/b/c, Q3a/b |
-| Lifecycle | 2 | Q4, Q5 |
-| Beneficiary Decision (R2) | 5 | Q7a/b/c/d/e — major revision |
-| Permissions | 1 | Q8 |
-| Migration/Compat (R2) | 3 | Q9a, Q9b (tightened), Q10 |
-| **Total** | **18** | |
+| Q1 | Clock type | Calendar days |
+| Q2a | Storage timezone | TIMESTAMPTZ UTC |
+| Q2b | Business clock | Asia/Bangkok |
+| Q2c | Day boundary | Exclusive next-day `[start, nextDayStart)` |
+| Q3 | Holiday | OUT OF N2 SCOPE |
+| Q4 | Clock start | `PlacementCase.openedAt` |
+| Q5 | Pause/reset | Clock RUNNING always |
+| Q6 | Attribution | Immutable; separate clocks; immutable facts vs mutable metadata split |
+| Q7a | BeneficiaryDecision | Authority record (immutable) |
+| Q7b | Invariant | Max one ACTIVE per business key |
+| Q7c | Nullable-safe | PG15+ `NULLS NOT DISTINCT` OR COALESCE sentinel |
+| Q7d | Concurrency | Advisory lock with normalized tuple + sentinel |
+| Q7e | Actor model | `actorType USER/SYSTEM` + `actorUserId nullable` + CHECK |
+| Q7f | UNRESOLVED | Typed result + outbox (no decision row) |
+| Q7g | Correction history | SUPERSEDED/REVERSED preserved |
+| Q8 | Permissions | 6 codes + RLS proposal |
+| Q9a | RPC change | Yes, with LIVE test plan |
+| Q9b | EXACT_SAFE | FK + provenance + writer + no conflict + audit |
+| Q10 | V6 P1 dep | Capability in main — no merge dep |
 
 ---
 
-## T0-R2 Revisions Applied
+## T0 R3 Revisions Applied
 
-| # | Change | Reason |
+| # | Directive | Implementation |
 |---|---|---|
-| R2-1 | V6 P1: migrations in main confirmed | T0 correction |
-| R2-2 | Q7: beneficiaryUserId required, UNRESOLVED, SYSTEM=valid User | T0 directive |
-| R2-3 | Q7: Invariant contract for max one ACTIVE per key | T0 directive |
-| R2-4 | Q6: Attribution cardinality + immutable facts clarified | T0 directive |
-| R2-5 | Q9b: EXACT_SAFE tightened — provenance + writer required | T0 directive |
-| R2-6 | All 4 docs synced, HEAD and file count accurate | T0 directive |
+| R3-1 | Active unique invariant nullable-safe | NULLS NOT DISTINCT (PG15+) OR COALESCE sentinel; SQL migration is authority |
+| R3-2 | Advisory lock with delimiter/sentinel | Normalized tuple using RS (0x1E) delimiter and `__NONE__` for null |
+| R3-3 | No SYSTEM user; use actorType + actorUserId + CHECK | Schema: two-field actor; SQL CHECK enforces XOR |
+| R3-4 | UNRESOLVED = typed result + outbox | No decision row; outbox event BENEFICIARY_DECISION_UNRESOLVED |
+| R3-5 | Immutable vs mutable | Split documented; immutable source vs mutable lifecycle metadata |
+| R3-6 | Exclusive next-day boundary | Half-open `[start, nextDayStart)` |
+| R3-7 | Holiday out of N2 scope | Removed from N2 implementation |
+| R3-8 | Sync PR #4 audited facts | PR #4, HEAD 0341a43 → R3 revision on same branch, 4 files |
+| R3-9 | Status COMPLETE / READY_FOR_MERGE | All 4 docs synced; Audit NONE |
+| R3-10 | Push to PR #4 (no new PR) | R3 changes commit on same branch |
