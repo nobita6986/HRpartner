@@ -1,9 +1,11 @@
 # Task: N2 AFF Policy & Contract Discovery
 
 **Slug:** `hrp-v6-n2-aff-policy-contract-discovery`
-**Status:** `DONE` — discovery complete, awaiting T0 policy decisions
-**Type:** READ-ONLY — no production code changes
+**Status:** `READY_FOR_T0_DECISION`
+**Type:** READ-ONLY Discovery — no production code changes
 **Baseline:** `origin/main` `b91a33f948aed224a88f3e8e7c9847006f33e97f`
+**Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
+**HEAD:** see `git log -1`
 
 ---
 
@@ -11,9 +13,13 @@
 
 - ✅ Surveyed codebase for all 10 N2 policy questions
 - ✅ Documented evidence with file:line references
-- ✅ Proposed 5 vertical slices with dependency graph
-- ✅ Identified 10 unresolved decisions for T0
+- ✅ Proposed 6 vertical slices with dependency graph (revised per T0 R1)
+- ✅ Identified 15 unresolved decisions for T0 (revised per T0 R1)
 - ✅ Recommended options for each decision with rationale
+- ✅ **Revised Q7** per T0: CommissionBeneficiaryDecision as authority record (not dynamic handler read)
+- ✅ **Timezone layer separation**: Storage UTC / Business clock Asia/Bangkok
+- ✅ **Legacy ctvId classification**: EXACT_SAFE vs UNRESOLVED
+- ✅ **V6 Phase 1 merge status verified with evidence** (NOT in origin/main)
 
 ---
 
@@ -27,6 +33,7 @@
 - Produce `DISCOVERY.md` with evidence-backed answers
 - Identify gaps between design intent and current codebase
 - Propose decomposition into implementable slices
+- Verify V6 Phase 1 merge status with git evidence
 
 ### 2.2 Out of Scope (boundary)
 
@@ -40,6 +47,7 @@
 - ❌ No `docs/TIER0_SHIFT_HANDOVER.md` modification
 - ❌ No PR #3 / P2 file changes
 - ❌ No N4 implementation
+- ❌ No N2-1 implementation until T0 unlocks
 
 ---
 
@@ -49,7 +57,7 @@
 - **AC:** Recommended calendar days vs business days with rationale
 
 ### RQ-02 (Q2): Timezone canonical + cut-off
-- **AC:** Recommended TIMESTAMPTZ Asia/Bangkok with cut-off time proposal
+- **AC:** Storage = TIMESTAMPTZ UTC; Business clock = Asia/Bangkok; cut-off = 23:59:59.999 VN
 
 ### RQ-03 (Q3): Holiday calendar authority + unconfigured behavior
 - **AC:** Recommended HR Admin owner + calendar fallback behavior
@@ -60,57 +68,84 @@
 ### RQ-05 (Q5): Pause/reset semantics
 - **AC:** Recommended clock RUNNING always, assignment expires (no pause)
 
-### RQ-06 (Q6): ReferralAttribution immutability
-- **AC:** Documented immutability rules + RLS enforcement
+### RQ-06 (Q6): ReferralAttribution immutability + cardinality
+- **AC:** Immutable source; attribution does NOT change when handling changes/expires; handling clock (7d) and attribution clock (30d) are separate
 
-### RQ-07 (Q7): CommissionBeneficiaryDecision separation
-- **AC:** Recommended additive `beneficiaryUserId` + handling assignment resolution
+### RQ-07 (Q7): CommissionBeneficiaryDecision separation — REVISED
+- **AC:** Decision as authority record (NOT dynamic handler read); handlingAssignmentId nullable (evidence only); decision snapshots beneficiary, reason, source, evidence, decidedAt, actor; engine reads decision not active handler
 
 ### RQ-08 (Q8): Role/permission/data-scope matrix
-- **AC:** Proposed 5 permission codes + RLS policy skeleton
+- **AC:** 6 permission codes (incl. CAN_CREATE_BENEFICIARY_DECISION) + RLS policy skeleton
 
-### RQ-09 (Q9): Inventory reuse + N2 conflicts
-- **AC:** Component inventory with reuse vs conflict assessment
+### RQ-09 (Q9): Inventory reuse + N2 conflicts + legacy classification
+- **AC:** Component inventory with reuse vs conflict assessment; legacy ctvId backfill requires EXACT_SAFE / UNRESOLVED classification (NO blanket backfill)
 
 ### RQ-10 (Q10): Vertical slice decomposition
-- **AC:** 5 slices with dependency graph + migration/test gates per slice
+- **AC:** 6 slices with dependency graph; V6 Phase 1A merge required for N2-3/4 (verified NOT yet merged)
 
 ---
 
 ## 4. Evidence Index
 
-See `DISCOVERY.md` for full evidence. Summary:
-
 - `DISCOVERY.md` — Main document (this task's deliverable)
-- `evidence/codebase-survey-summary.md` — Survey findings
-- `evidence/migration-inventory.md` — Relevant migrations
+- `HANDOFF.md` — Status and handoff summary
+- `evidence/OVERVIEW.md` — Survey findings + aff_plan.md affinity
 
 ---
 
-## 5. Open Decisions for T0
+## 5. T0 Decision Required Before N2 Implementation
 
-See `DISCOVERY.md §3` — 10 decisions require T0/Founder input before N2-1 implementation:
+See `DISCOVERY.md §3` for full list. Summary of **15 decisions**:
 
-1. Clock type (calendar vs business days)
-2. Timezone canonical
-3. Holiday calendar owner + unconfigured fallback
-4. Clock start event confirmation
-5. Pause/reset semantics
-6. No-handler-assignment = no commission?
-7. Permission codes for handling
-8. RPC change acceptability for N2-3
-9. V6 Phase 1 merge status confirmation
-10. N2-3 dependency on V6 LaborProfile
+1. Q1: Clock type (calendar vs business days)
+2. Q2a: Storage timezone (TIMESTAMPTZ UTC)
+3. Q2b: Business clock timezone (Asia/Bangkok)
+4. Q2c: Cut-off time
+5. Q3a: Holiday calendar owner
+6. Q3b: Unconfigured fallback
+7. Q4: Clock start event confirmation
+8. Q5: Pause/reset semantics
+9. Q7a: CommissionBeneficiaryDecision as authority (T0 revised)
+10. Q7b: handlingAssignmentId nullable (T0 revised)
+11. Q7c: No handler = skip credit or create decision?
+12. Q8: Permission codes for handling
+13. Q9a: RPC change acceptability for N2-3
+14. Q9b: Legacy ctvId backfill classification (T0 revised)
+15. Q10: N2-1/N2-2 can run before V6 P1 merge?
 
 ---
 
-## 6. Next Steps
+## 6. V6 Phase 1 Dependency Status
+
+**Verified evidence:**
+```
+$ git merge-base --is-ancestor 3a33212 origin/main
+# exit 1: V6 P1 schema commit NOT in origin/main (b91a33f)
+```
+
+**Impact on N2 slices:**
+- N2-1 (Attribution Foundation): **No V6 P1 dep** → can start after T0 unlocks
+- N2-2 (Link Capture): **No V6 P1 dep** → can start after T0 unlocks
+- N2-3 (Apply Attribution): **REQUIRES V6 P1 merge** → blocked
+- N2-4 (Handling Assignment): **REQUIRES V6 P1 merge** → blocked
+- N2-5 (Beneficiary Decision): Requires N2-4 → blocked
+- N2-6 (Commission Beneficiary): Requires N2-5 → blocked
+
+**T0 should consider:** Allow N2-1/N2-2 to proceed in parallel with V6 P1 merge preparation.
+
+---
+
+## 7. Next Steps
 
 **T0 action:**
 1. Review `DISCOVERY.md` recommendations
-2. Chốt the 10 open decisions
-3. Authorize Tier 1 to create `hrp-v6-n2-aff-01-attribution-foundation` task (N2-1)
+2. Chốt the 15 open decisions
+3. Authorize Tier 1 to create N2-1 task (with N2-2 in parallel)
 
-**Tier 1 action (after T0):**
+**Tier 1 action (after T0 unlock):**
 - Create N2-1 TASK with full RQ → STEP → AC, baseline, dependencies, test gates
+- Create N2-2 TASK in parallel (no schema dependency on N2-1)
 - Do not start implementation until §20 DoR in `aff_plan.md` is satisfied
+- Track V6 P1 merge status; N2-3/N2-4 cannot start before merge
+
+**Branch status:** Awaiting T0 unlock.

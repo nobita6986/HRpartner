@@ -9,6 +9,8 @@ Two parallel surveys were conducted:
 1. **N2 policy survey** — Answered the 10 policy questions
 2. **Codebase & migrations survey** — Mapped schema, RLS, services
 
+**Survey results consolidated in `../DISCOVERY.md`.**
+
 ---
 
 ## Key Findings
@@ -16,13 +18,14 @@ Two parallel surveys were conducted:
 ### Already Exists
 - `User.affCode` (`schema.prisma:141`) — reusable, no new column needed
 - `PlacementCase.openedAt` (`schema.prisma:1465`) — viable clock anchor
-- `LaborProfile` (V6 Phase 1) — N2-3 dependency satisfied
+- `LaborProfile` model exists in schema (`schema.prisma:1380-1400`) BUT V6 Phase 1A not yet in origin/main (see §V6 Status below)
 - `Holiday` table — reusable for business-day logic if chosen
 - `CommissionLedger` / `CommissionEngine` — patterns reusable, additive beneficiary needed
 - `outbox.service.ts` — pattern reusable for handling assignment events
 
 ### Greenfield (NOT Implemented)
 - `ReferralAttribution` model — designed in `aff_plan.md §6.2` but not coded
+- `CommissionBeneficiaryDecision` model — designed per T0 R1 revision but not coded
 - `LaborProfileHandlingAssignment` model — designed in `aff_plan.md §6.5.1` but not coded
 - `beneficiaryUserId` columns on `commission_ledger`, `commission_debt`, `ctv_withdrawal_requests`
 - Handler assignment permissions (`CAN_ASSIGN_HANDLING`, etc.)
@@ -31,13 +34,41 @@ Two parallel surveys were conducted:
 
 ### Conflicts / High-Risk
 - `hrp_public_apply_submission` RPC signature change required for N2-3
-- Commission engine `ctvId`-specific logic needs dual-write compat window
+- Commission engine `ctvId`-specific logic needs dual-write compat window with EXACT_SAFE/UNRESOLVED classification
 - `SourceClaim.ctvId/vendorId` legacy columns need additive `referrerUserId`
 
 ### No Conflicts
 - Timezone: only `ProjectAssignment.validFrom/To` uses TIMESTAMPTZ; rest are TIMESTAMP
 - Permissions: existing catalog has no handling-specific codes yet — additive only
 - RLS: existing patterns (HR_MANAGER + HR_STAFF + ADMIN) extend to new tables
+
+---
+
+## V6 Phase 1 Status — CRITICAL EVIDENCE
+
+**Verified via git:**
+
+```
+$ git merge-base --is-ancestor 3a33212 origin/main
+# Exit 1: V6 P1 schema commit (3a33212) is NOT an ancestor of origin/main (b91a33f)
+
+$ git branch --contains 3a33212
+  codex/hrp-v6-p1a-labor-profile-schema
+  codex/hrp-v6-p1b-job-opening-posting-split
+```
+
+| Commit | Description | Branch | In origin/main? |
+|---|---|---|---|
+| `3a33212` | V6 Phase 1A — LaborProfile schema | `codex/hrp-v6-p1a-labor-profile-schema` | ❌ NO |
+| `a4ab9f0` | Phase 1A ACCEPTED + AUDIT + 21 evidence | `codex/hrp-v6-p1b-job-opening-posting-split` | ❌ NO |
+| `4e7b8fe` | N3 ServiceModel + Placement | origin/main | ✅ YES |
+| `f7f85bb` | N1 PlacementCase foundation | origin/main | ✅ YES |
+
+**Implication:**
+- `LaborProfile` model trong `origin/main` `schema.prisma` là legacy placeholder
+- Production-ready LaborProfile model chỉ tồn tại trên `codex/hrp-v6-p1a-labor-profile-schema`
+- N2-3 và N2-4 **blocked** cho đến khi V6 P1 merge vào main
+- N2-1 và N2-2 **không có dependency** — có thể chạy song song với V6 P1 merge
 
 ---
 
@@ -54,14 +85,14 @@ The two surveys were conducted by separate subagents (explore mode). Their raw o
 
 ## Migration Inventory (relevant to N2)
 
-| Migration | Date | N2 Relevance |
-|---|---|---|
-| `v6_phase1a_labor_profile_schema` | 20260908001 | N2-3 dependency (LaborProfile) |
-| `v6_phase1a_labor_profile_rls` | 20260908150001 | N2-3 dependency |
-| `n1_placement_case_foundation` | 20260912140411 | N2 clock anchor |
-| `n1_placement_case_rls` | 20260912140412 | N2 RLS pattern |
-| `p2_commission_schema` | 20260819083254 | N2-5 base |
-| `p2_commission_rls` | 20260819104700 | N2-5 RLS pattern |
+| Migration | Date | N2 Relevance | In origin/main? |
+|---|---|---|---|
+| `v6_phase1a_labor_profile_schema` | 20260908001 | N2-3/4 dependency (LaborProfile) | ❌ NO |
+| `v6_phase1a_labor_profile_rls` | 20260908150001 | N2-3/4 dependency | ❌ NO |
+| `n1_placement_case_foundation` | 20260912140411 | N2 clock anchor | ✅ YES |
+| `n1_placement_case_rls` | 20260912140412 | N2 RLS pattern | ✅ YES |
+| `p2_commission_schema` | 20260819083254 | N2-6 base | ✅ YES |
+| `p2_commission_rls` | 20260819104700 | N2-6 RLS pattern | ✅ YES |
 
 ---
 
@@ -88,12 +119,33 @@ The two surveys were conducted by separate subagents (explore mode). Their raw o
 | `AFF-DEC-017` (Direct channel) | LOCKED | None |
 | `AFF-DEC-018` (Attribution on LaborProfile) | LOCKED | None |
 
-All 18 decisions are LOCKED. Discovery confirms no conflicts with these.
+All 18 aff_plan.md decisions are LOCKED. Discovery confirms no conflicts with these.
 
 ---
 
-## Open Decisions (10 new, awaiting T0)
+## Open Decisions (15 — awaiting T0)
 
-See `DISCOVERY.md §3` for full list with options + recommendations.
+See `DISCOVERY.md §3` for full list with options + recommendations. Summary:
 
-These 10 are operational details (clock type, timezone, permission codes) — not in scope of `aff_plan.md` decisions but required before N2-1 implementation.
+| Category | Decisions |
+|---|---|
+| Clock / Time | Q1, Q2a, Q2b, Q2c (4) |
+| Holiday | Q3a, Q3b (2) |
+| Lifecycle | Q4, Q5 (2) |
+| Decision (T0-revised) | Q7a, Q7b, Q7c (3) |
+| Permissions | Q8 (1) |
+| Migration / Compat | Q9a, Q9b, Q10 (3) |
+
+These 15 are operational details required before N2-1 implementation.
+
+---
+
+## T0-R1 Revisions Applied
+
+1. ✅ Status: DONE → **READY_FOR_T0_DECISION** (consistent across TASK/DISCOVERY/HANDOFF)
+2. ✅ HANDOFF.md created
+3. ✅ Q7: CommissionBeneficiaryDecision as authority record (immutable, with full snapshot fields)
+4. ✅ Q9b: Legacy ctvId backfill requires EXACT_SAFE / UNRESOLVED classification
+5. ✅ Q2: Storage = TIMESTAMPTZ UTC / Business clock = Asia/Bangkok (layered)
+6. ✅ V6 Phase 1 merge status verified with git evidence (NOT in origin/main)
+7. ✅ Q6: Attribution cardinality clarified — immutable, separate from handling clock
