@@ -3,13 +3,13 @@
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 
-type WorkerStatus = 'ACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED';
+type EmploymentStatus = 'NONE' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED';
 
 interface WorkerRow {
   id: string;
   userId: string;
   fullName: string;
-  status: WorkerStatus;
+  employmentStatus: EmploymentStatus | null;
   phone: string | null;
   createdAt: string;
 }
@@ -21,14 +21,15 @@ interface WorkersResponse {
   skip: number;
 }
 
-const STATUS_CONFIG: Record<WorkerStatus, { label: string; color: string; bg: string }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  NONE:       { label: 'Chưa rõ',    color: '#607d8b', bg: '#eceff1' },
   ACTIVE:     { label: 'Đang làm',   color: '#197a56', bg: '#e8f5e9' },
-  ON_LEAVE:   { label: 'Nghỉ phép',  color: '#e65100', bg: '#fff3e0' },
   SUSPENDED:  { label: 'Tạm ngưng',  color: '#6a1b9a', bg: '#f3e5f5' },
   TERMINATED: { label: 'Đã nghỉ',    color: '#c62828', bg: '#ffebee' },
 };
 
-function StatusBadge({ status }: { status: WorkerStatus }) {
+function StatusBadge({ status }: { status?: string | null }) {
+  if (!status) return <span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500">Trống</span>;
   const cfg = STATUS_CONFIG[status] ?? { label: status, color: '#37474f', bg: '#eceff1' };
   return (
     <span style={{ background: cfg.bg, color: cfg.color }} className="rounded-full px-2 py-0.5 text-xs font-semibold">
@@ -42,7 +43,6 @@ function Modal({ onClose, onSuccess, editData }: { onClose: () => void; onSucces
   const [fullName, setFullName] = useState(editData?.fullName ?? '');
   const [phone, setPhone] = useState('');
   const [cccdNumber, setCccdNumber] = useState('');
-  const [status, setStatus] = useState<WorkerStatus>(editData?.status ?? 'ACTIVE');
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState('');
 
@@ -64,7 +64,6 @@ function Modal({ onClose, onSuccess, editData }: { onClose: () => void; onSucces
       body.fullName = fullName.trim();
       if (phone.trim()) body.phone = phone.trim();
       if (cccdNumber.trim()) body.cccdNumber = cccdNumber.trim();
-      body.status = status;
 
       const r = await fetch(url, {
         method,
@@ -120,19 +119,6 @@ function Modal({ onClose, onSuccess, editData }: { onClose: () => void; onSucces
                 className="w-full rounded border px-3 py-2 text-sm font-mono" />
             </div>
           </div>
-          {isEdit && (
-            <div>
-              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Trạng thái</label>
-              <select value={status} onChange={e => setStatus(e.target.value as WorkerStatus)}
-                style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
-                className="w-full rounded border px-3 py-2 text-sm">
-                <option value="ACTIVE">Đang làm</option>
-                <option value="ON_LEAVE">Nghỉ phép</option>
-                <option value="SUSPENDED">Tạm ngưng</option>
-                <option value="TERMINATED">Đã nghỉ</option>
-              </select>
-            </div>
-          )}
           {err && <p style={{ color: 'var(--error)' }} className="text-sm">{err}</p>}
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} style={{ background: 'var(--surface-container)', color: 'var(--on-surface)' }} className="rounded px-4 py-2 text-sm">Hủy</button>
@@ -202,7 +188,7 @@ export default function WorkersPage() {
           style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
           className="rounded border px-3 py-2 text-sm" />
         <div className="flex flex-wrap gap-2">
-          {['', 'ACTIVE', 'ON_LEAVE', 'SUSPENDED', 'TERMINATED'].map(s => (
+          {['', 'NONE', 'ACTIVE', 'SUSPENDED', 'TERMINATED'].map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
               style={{
                 borderColor: statusFilter === s ? 'var(--primary)' : 'var(--outline-variant)',
@@ -210,7 +196,7 @@ export default function WorkersPage() {
                 color: statusFilter === s ? 'var(--on-primary-container)' : 'var(--on-surface-variant)',
               }}
               className="rounded-full border px-3 py-1 text-xs font-medium transition-colors">
-              {s === '' ? 'Tất cả' : STATUS_CONFIG[s as WorkerStatus]?.label ?? s}
+              {s === '' ? 'Tất cả' : STATUS_CONFIG[s]?.label ?? s}
             </button>
           ))}
         </div>
@@ -241,7 +227,7 @@ export default function WorkersPage() {
                   <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">{w.userId}</td>
                   <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">{w.fullName}</td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{w.phone ?? '—'}</td>
-                  <td className="px-4 py-3"><StatusBadge status={w.status} /></td>
+                  <td className="px-4 py-3"><StatusBadge status={w.employmentStatus} /></td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{new Date(w.createdAt).toLocaleDateString('vi-VN')}</td>
                   <td className="px-4 py-3">
                     <button onClick={() => setEditRow(w)} style={{ color: 'var(--primary)' }} className="text-xs font-medium hover:underline">Sửa</button>

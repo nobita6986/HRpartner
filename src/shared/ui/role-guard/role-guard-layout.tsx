@@ -62,7 +62,7 @@ export interface NavItem {
   /** Roles được phép thấy item này */
   roles: Role[];
   /** Nhóm điều hướng thứ cấp. Không khai báo = menu cấp 1. */
-  section?: 'development';
+  section?: 'development' | 'recruitment' | 'people' | 'finance' | 'system';
 }
 
 export interface RoleGuardLayoutProps {
@@ -109,19 +109,31 @@ export const VENDOR_NAV: NavItem[] = [
  */
 export const ADMIN_NAV_PHASE4: NavItem[] = [
   { href: '/admin', label: 'Tổng quan', icon: LayoutDashboard, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT', 'SALE', 'DIRECTOR'] },
-  { href: '/admin/staffing', label: 'Staffing', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'] },
-  { href: '/admin/attendance', label: 'Chấm công', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT'], section: 'development' },
-  { href: '/admin/reconciliation', label: 'Đối soát', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' },
-  { href: '/admin/jobs', label: 'Job Board', icon: Briefcase, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'] },
-  { href: '/admin/applications', label: 'Đơn ứng tuyển', icon: UserRoundCheck, roles: ['ADMIN', 'HR_MANAGER', 'SALE', 'DIRECTOR'] },
-  { href: '/admin/workers', label: 'Nhân sự', icon: Users, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'] },
-  { href: '/admin/projects', label: 'Dự án', icon: Briefcase, roles: ['ADMIN', 'PM', 'HR_MANAGER'] },
-  { href: '/admin/clients', label: 'Khách hàng', icon: Building2, roles: ['ADMIN', 'PM'] },
-  { href: '/admin/tickets', label: 'Phản ánh / Tạm ứng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' },
-  { href: '/admin/payroll', label: 'Tính lương', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' },
-  { href: '/admin/settings', label: 'Cài đặt', icon: Settings, roles: ['ADMIN'] },
-  // AV4 — Media Library foundation
-  { href: '/admin/media', label: 'Thư viện Media', icon: Image, roles: ['ADMIN', 'HR_MANAGER', 'HR_STAFF'] },
+  
+  // Nhu cầu & Tuyển (recruitment)
+  { href: '/admin/projects', label: 'Dự án', icon: Briefcase, roles: ['ADMIN', 'PM', 'HR_MANAGER'], section: 'recruitment' },
+  { href: '/admin/jobs', label: 'Danh sách nhu cầu', icon: Briefcase, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'], section: 'recruitment' },
+  { href: '/admin/jobs/job-postings', label: 'Tin tuyển dụng', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'], section: 'recruitment' },
+  { href: '/admin/applications', label: 'Đơn ứng tuyển', icon: UserRoundCheck, roles: ['ADMIN', 'HR_MANAGER', 'SALE', 'DIRECTOR'], section: 'recruitment' },
+  
+  // Con người (people)
+  { href: '/admin/staffing', label: 'Staffing', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'], section: 'people' },
+  { href: '/admin/workers', label: 'Nhân sự', icon: Users, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
+  { href: '/admin/users', label: 'Tài khoản', icon: Users, roles: ['ADMIN'], section: 'people' },
+  { href: '/admin/clients', label: 'Khách hàng', icon: Building2, roles: ['ADMIN', 'PM'], section: 'people' },
+  { href: '/admin/vendors', label: 'Nhà cung cấp', icon: Building2, roles: ['ADMIN', 'PM'], section: 'people' },
+  { href: '/admin/tickets', label: 'Phản ánh / Tạm ứng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' }, // Keep as development
+  { href: '/admin/attendance', label: 'Chấm công', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT'], section: 'development' }, // Keep as development
+
+  // Tài chính (finance)
+  { href: '/admin/commission/policies', label: 'Chính sách hoa hồng', icon: FileText, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'finance' },
+  { href: '/admin/commission/ledger', label: 'Sổ cái hoa hồng', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'finance' },
+  { href: '/admin/reconciliation', label: 'Đối soát', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' }, // Keep as development
+  { href: '/admin/payroll', label: 'Tính lương', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' }, // Keep as development
+
+  // Hệ thống (system)
+  { href: '/admin/settings', label: 'Cài đặt', icon: Settings, roles: ['ADMIN'], section: 'system' },
+  { href: '/admin/media', label: 'Thư viện Media', icon: Image, roles: ['ADMIN', 'HR_MANAGER', 'HR_STAFF'], section: 'system' },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -146,9 +158,14 @@ export function RoleGuardLayout({
   );
 
   const primaryNav = React.useMemo(
-    () => visibleNav.filter((item) => item.section !== 'development'),
+    () => visibleNav.filter((item) => !item.section),
     [visibleNav],
   );
+  const recruitmentNav = React.useMemo(() => visibleNav.filter(item => item.section === 'recruitment'), [visibleNav]);
+  const peopleNav = React.useMemo(() => visibleNav.filter(item => item.section === 'people'), [visibleNav]);
+  const financeNav = React.useMemo(() => visibleNav.filter(item => item.section === 'finance'), [visibleNav]);
+  const systemNav = React.useMemo(() => visibleNav.filter(item => item.section === 'system'), [visibleNav]);
+
   const developmentNav = React.useMemo(
     () => visibleNav.filter((item) => item.section === 'development'),
     [visibleNav],
@@ -211,8 +228,36 @@ export function RoleGuardLayout({
           )}
         >
           <SidebarHeader title={brandTitle} portal={portal} />
-          <nav className="flex flex-col gap-0.5 p-3" aria-label="Menu chính">
+          <nav className="flex flex-col gap-0.5 p-3 overflow-y-auto max-h-[calc(100vh-140px)]" aria-label="Menu chính">
             {primaryNav.map((item) => renderNavItem(item))}
+
+            {portal === 'admin' && recruitmentNav.length > 0 && (
+              <>
+                <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Nhu cầu & Tuyển</div>
+                {recruitmentNav.map(item => renderNavItem(item))}
+              </>
+            )}
+            
+            {portal === 'admin' && peopleNav.length > 0 && (
+              <>
+                <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Con người</div>
+                {peopleNav.map(item => renderNavItem(item))}
+              </>
+            )}
+            
+            {portal === 'admin' && financeNav.length > 0 && (
+              <>
+                <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Tài chính</div>
+                {financeNav.map(item => renderNavItem(item))}
+              </>
+            )}
+            
+            {portal === 'admin' && systemNav.length > 0 && (
+              <>
+                <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Hệ thống</div>
+                {systemNav.map(item => renderNavItem(item))}
+              </>
+            )}
 
             {portal === 'admin' && developmentNav.length > 0 && (
               <details

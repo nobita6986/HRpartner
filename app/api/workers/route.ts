@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
   const search = searchParams.get('search') ?? undefined;
 
   const where: Record<string, unknown> = {};
-  if (status) where.status = status;
+  if (status) where.employmentStatus = status;
   if (search) {
     where.OR = [
       { fullName: { contains: search, mode: 'insensitive' } },

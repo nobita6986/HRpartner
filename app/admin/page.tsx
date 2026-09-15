@@ -37,71 +37,73 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const SECTION_CARDS = [
-  {
-    id: 'staffing',
-    label: 'Đơn tuyển dụng',
-    group: 'Điều hành',
-    href: '/admin/staffing',
-    description:
-      'Tạo đơn tuyển dụng cho dự án, khai vị trí cần người và điều phối nhân sự giữa các dự án.',
-  },
-  {
-    id: 'attendance',
-    label: 'Chấm công',
-    group: 'Điều hành',
-    href: '/admin/attendance',
-    description: 'Nhập bảng chấm công, soát lỗi giờ công và chốt kỳ công theo dự án.',
-  },
-  {
-    id: 'reconciliation',
-    label: 'Đối soát',
-    group: 'Tài chính',
-    href: '/admin/reconciliation',
-    description:
-      'Đối soát công nợ với nhà cung ứng và khách hàng, theo dõi chênh lệch của từng dự án.',
-  },
-  {
-    id: 'jobs',
-    label: 'Tin tuyển dụng',
-    group: 'Điều hành',
-    href: '/admin/jobs',
-    description:
-      'Đăng tin tuyển dụng lên trang công khai, tắt tin khi tuyển đủ và xem hồ sơ ứng viên gửi về.',
-  },
+  // ── NHU CẦU ──
   {
     id: 'projects',
     label: 'Dự án',
-    group: 'Dữ liệu nền',
+    group: 'Nhu cầu',
     href: '/admin/projects',
     description: 'Danh sách dự án: mã, khách hàng, địa điểm làm việc và chỉ tiêu nhân sự.',
   },
   {
-    id: 'workers',
-    label: 'Nhân viên',
-    group: 'Dữ liệu nền',
-    href: '/admin/workers',
-    description: 'Danh sách nhân viên đang làm việc, lọc theo trạng thái hồ sơ.',
+    id: 'staffing',
+    label: 'Đơn tuyển dụng',
+    group: 'Nhu cầu',
+    href: '/admin/staffing',
+    description: 'Tạo đơn tuyển dụng cho dự án, khai vị trí cần người và điều phối nhân sự giữa các dự án.',
   },
+  // ── TUYỂN ──
+  {
+    id: 'jobs',
+    label: 'Tin tuyển dụng',
+    group: 'Tuyển',
+    href: '/admin/jobs',
+    description: 'Đăng tin tuyển dụng lên trang công khai, tắt tin khi tuyển đủ và xem hồ sơ ứng viên gửi về.',
+  },
+  // ── NGƯỜI ──
   {
     id: 'clients',
     label: 'Khách hàng',
-    group: 'Dữ liệu nền',
+    group: 'Người',
     href: '/admin/clients',
     description: 'Danh sách công ty khách hàng và thông tin liên hệ.',
   },
   {
-    id: 'payroll',
-    label: 'Cấu hình lương',
-    group: 'Tài chính',
-    href: '/admin/payroll',
-    description: 'Tham khảo tham số tính lương: bảo hiểm xã hội, thuế thu nhập cá nhân, lương tối thiểu.',
+    id: 'workers',
+    label: 'Nhân viên',
+    group: 'Người',
+    href: '/admin/workers',
+    description: 'Danh sách nhân viên đang làm việc, lọc theo trạng thái hồ sơ.',
   },
   {
     id: 'tickets',
     label: 'Phản ánh',
-    group: 'Điều hành',
+    group: 'Người',
     href: '/admin/tickets',
     description: 'Xử lý đề nghị của người lao động: khiếu nại giờ công, nghỉ phép, tạm ứng lương.',
+  },
+  // ── BỐ TRÍ ──
+  {
+    id: 'attendance',
+    label: 'Chấm công',
+    group: 'Bố trí',
+    href: '/admin/attendance',
+    description: 'Nhập bảng chấm công, soát lỗi giờ công và chốt kỳ công theo dự án.',
+  },
+  // ── TIỀN ──
+  {
+    id: 'payroll',
+    label: 'Cấu hình lương',
+    group: 'Tiền',
+    href: '/admin/payroll',
+    description: 'Tham khảo tham số tính lương: bảo hiểm xã hội, thuế thu nhập cá nhân, lương tối thiểu.',
+  },
+  {
+    id: 'reconciliation',
+    label: 'Đối soát',
+    group: 'Tiền',
+    href: '/admin/reconciliation',
+    description: 'Đối soát công nợ với nhà cung ứng và khách hàng, theo dõi chênh lệch của từng dự án.',
   },
 ] as const;
 
