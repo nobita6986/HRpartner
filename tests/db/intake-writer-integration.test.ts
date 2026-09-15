@@ -306,9 +306,9 @@ describe.skipIf(!HAS_TEST_DB)('N1 intake-writer round 3 — DB-touching proof', 
       expect(first.statusCode).toBe(201);
 
       // Track submission created.
-      const submissionIdFromHandler = first.body.candidateSubmission.id;
+      const submissionIdFromHandler = (first.body as any).candidateSubmission.id;
       createdSubmissionIds.push(submissionIdFromHandler);
-      createdLaborProfileIds.push(first.body.match.laborProfileId ?? '');
+      createdLaborProfileIds.push((first.body as any).match.laborProfileId ?? '');
 
       // 2. Second call cùng key + cùng payload → REPLAY, KHÔNG tạo submission mới.
       const second = await withIdempotency({
@@ -321,7 +321,7 @@ describe.skipIf(!HAS_TEST_DB)('N1 intake-writer round 3 — DB-touching proof', 
       });
       expect(second.replayed).toBe(true);
       expect(second.statusCode).toBe(201);
-      const submissionIdFromReplay = second.body.candidateSubmission.id;
+      const submissionIdFromReplay = (second.body as any).candidateSubmission.id;
       expect(submissionIdFromReplay).toBe(submissionIdFromHandler);
 
       // 3. Verify DB: chỉ 1 CandidateSubmission + 1 IdempotencyKey.
@@ -478,17 +478,17 @@ describe.skipIf(!HAS_TEST_DB)('N1 intake-writer round 3 — DB-touching proof', 
       expect(replayedFalse).toBe(1);
 
       // (b) Cả 2 cùng trỏ về 1 submission + 1 placement case + 1 labor profile.
-      const firstSubId = first.body.candidateSubmission.id;
-      const secondSubId = second.body.candidateSubmission.id;
+      const firstSubId = (first.body as any).candidateSubmission.id;
+      const secondSubId = (second.body as any).candidateSubmission.id;
       expect(firstSubId).toBe(secondSubId);
 
-      const firstPcId = first.body.placementCase.placementCaseId;
-      const secondPcId = second.body.placementCase.placementCaseId;
+      const firstPcId = (first.body as any).placementCase.placementCaseId;
+      const secondPcId = (second.body as any).placementCase.placementCaseId;
       expect(firstPcId).toBe(secondPcId);
 
       // CreateOrMatchResult.EXACT_MATCH: laborProfileId là field trực tiếp (không phải nested candidate).
-      const firstLpid = first.body.match.laborProfileId ?? '';
-      const secondLpid = second.body.match.laborProfileId ?? '';
+      const firstLpid = (first.body as any).match.laborProfileId ?? '';
+      const secondLpid = (second.body as any).match.laborProfileId ?? '';
       expect(firstLpid).toBe(secondLpid);
       expect(firstLpid).toBe(preLp.id); // phải match với pre-created profile
 

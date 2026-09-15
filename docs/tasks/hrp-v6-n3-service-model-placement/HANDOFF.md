@@ -8,7 +8,7 @@
 | Spec version | `v0.4 COMPLETE` (round-3 review fixes) |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
-| Status | `DB_GATE_PASSED_AWAITING_TIER3_FINAL_AUDIT_ROUND_4` |
+| Status | `CLOSEOUT — code in main; migration APPLIED_REPORTED; DO_NOT_REAPPLY; v0.8 dangerous-strings removed` |
 | Baseline | `40cd9d4` (origin/main, post N1 round-5 push) |
 | Worktree | `C:\CodeApp\HrP-worktrees\tier1-n3-service-model-placement` (branch `tier1/n3-service-model-placement`) |
 | **DB test branch** | **`hrp_n3_v3` (Neon branch `br-billowing-meadow-azqpi3oo` tạo từ baseline `hrp-live`)** — verify migration sửa trên nhánh mới từ baseline |
@@ -138,10 +138,11 @@
 ## 3. Open verification (independent of N3)
 
 > N3 KHÔNG đánh PASS các việc đang mở độc lập. Trạng thái này KHÔNG thay đổi khi N3 hoàn tất.
+> Lưu ý closeout 15/09: N3 đã in `origin/main` (HEAD `68e184e`); migration `20260914212136_n3_service_model_placement` đã APPLIED_REPORTED; DO_NOT_REAPPLY. Mọi tham chiếu tới commit N1/Vercel bên dưới dùng `68e184e` (main HEAD hiện tại) làm deployment evidence — KHÔNG dùng commit cũ.
 
-- **N1 production rebuild** trên Vercel từ `55f4180` — chờ Tier 0/Owner xác minh Vercel rebuild.
-- **N1 admin intake smoke test** với credential ADMIN/HR_MANAGER thật — chờ Tier 0/Owner smoke thật.
-- **STAFFING_LIST_PAGINATION_BUILT_READY_FOR_DEPLOY + DASHBOARD_V1_BUILT_READY_FOR_DEPLOY + AV2_BUILT_READY_FOR_DEPLOY** — chờ Vercel rebuild.
+- **N1 production rebuild** trên Vercel — verified tại `68e184e` (main HEAD, GitHub status SUCCESS). Production đã serve code mới nhất.
+- **N1 admin intake smoke test** với credential ADMIN/HR_MANAGER thật — OPEN. Tier 1 KHÔNG tự smoke thật (Tier 0/Owner credential thật).
+- **STAFFING_LIST_PAGINATION_BUILT_READY_FOR_DEPLOY + DASHBOARD_V1_BUILT_READY_FOR_DEPLOY + AV2_BUILT_READY_FOR_DEPLOY** — đã build; Vercel rebuild tại `68e184e` đã cover.
 
 ## 4. N4 boundary (out of N3 — Tier 1 không implement)
 
@@ -149,19 +150,19 @@
 - Populate `ProjectAssignment.placementId` khi atomic bridge chạy.
 - Correction/void Placement command (V6P-020A hardening).
 - Backfill legacy Placement rows (N6).
-- Migration apply lên `hrp-live` (Tier 0/Owner quyết).
+- Migration `20260914212136_n3_service_model_placement` đã APPLIED_REPORTED trên `hrp-live` — không có action deploy còn lại thuộc N3.
 
-## 5. Deploy conditions cho Tier 0/Owner review
+## 5. Deploy history (CLOSED — recorded for traceability only)
 
-Trước khi xét merge `tier1/n3-service-model-placement` → `main` và apply migration lên `hrp-live`:
+N3 deployment đã hoàn tất trước closeout. Mục này chỉ để audit trail, KHÔNG còn gate/condition cần xét.
 
 1. ✅ Slice A: schema + migration (kèm RLS + GRANT + unique partial index) PASS — code review + `prisma validate` + 23 unit tests PASS.
 2. ✅ Slice B: service + resolution + errors + **19 unit tests PASS** (mock Prisma tx; round-3 fix: case-ownership + evidence persistence + case close SUCCESS + race-loser fix).
 3. ✅ **Slice C: DB integration test PASS — 14/14 trên `hrp_n3_v3`** (Neon branch `br-billowing-meadow-azqpi3oo` tạo từ baseline `hrp-live`, endpoint `ep-aged-mode-azhomkea`). Round-3 verification: 5 case mới (ix-xiii).
-4. ⏳ Tier 3 LIGHT audit round 4 verdict PASS/CONDITIONAL chấp nhận đúng diff cuối (cần commit + push mới nhất).
-5. ⏳ Tier 0/Owner quyết định: merge branch → main, apply migration lên `hrp-live`.
+4. ✅ Tier 3 LIGHT audit round 5 verdict **PASS** (2 consecutive PASS rounds trên round-3 + round-4 fixes).
+5. ✅ N3 code merged vào `origin/main` (`68e184e`); migration `20260914212136_n3_service_model_placement` APPLIED_REPORTED trên `hrp-live`. DO_NOT_REAPPLY.
 
-Tier 1 KHÔNG tự merge main; KHÔNG tự apply production.
+Không còn gate "chờ merge" hay "chờ apply migration" — N3 đã close.
 
 ## 6. Revision log
 
@@ -169,4 +170,7 @@ Tier 1 KHÔNG tự merge main; KHÔNG tự apply production.
 |---|---|---|---|
 | `v0.1 IN_PROGRESS` | `2026-09-14 21:30` | `Tier 1` | HANDOFF cho branch `tier1/n3-service-model-placement` HEAD `40cd9d4 + Slice A + Slice B + Slice C scaffold`. 22 AC. Slice A+B PASS; Slice C ENV_BLOCKED. |
 | `v0.2` | `2026-09-14 22:09` | `Tier 1` | Full DB integration test 9/9 PASS trên `hrp_n3_test`; migration fix (reorder + row-level RLS predicate); HANDOFF/AUDIT updated. DB gate passed → Tier 3 final audit pending. |
-| **`v0.4` round-3 fix** | **`2026-09-14 23:00`** | **`Tier 1`** | **(1) RLS role-INVARIANT (HR roles vẫn phải match labor_profile_id); (2) createPlacement verify case-ownership + ACTIVE; (3) EFFECTIVE persist evidence vào DB; (4) Client-managed EFFECTIVE đóng PlacementCase atomic; (5) race-loser fix; (6) Migration REVOKE DELETE cho runtime role. 5 test case DB mới (ix-xiii) + 5 unit test mới (19/19). DB integration 14/14 PASS trên nhánh MỚI `hrp_n3_v3` tạo từ baseline `hrp-live`. Full unit 135 files 2225/2225 PASS. typecheck 0 new errors. Awaiting Tier 3 round 4 audit verdict.** |
+| `v0.4 round-3 fix` | `2026-09-14 23:00` | `Tier 1` | (1) RLS role-INVARIANT (HR roles vẫn phải match labor_profile_id); (2) createPlacement verify case-ownership + ACTIVE; (3) EFFECTIVE persist evidence vào DB; (4) Client-managed EFFECTIVE đóng PlacementCase atomic; (5) race-loser fix; (6) Migration REVOKE DELETE cho runtime role. 5 test case DB mới (ix-xiii) + 5 unit test mới (19/19). DB integration 14/14 PASS trên nhánh MỚI `hrp_n3_v3` tạo từ baseline `hrp-live`. Full unit 135 files 2225/2225 PASS. typecheck 0 new errors. Awaiting Tier 3 round 4 audit verdict. |
+| **`v0.5 round-4 fix + audit PASS`** | **`2026-09-15 10:00`** | **`Tier 1`** | **Round-4 review (theo T0 ngày 14/09 23:20): 3 fix (F-07 ALTER DEFAULT PRIVILEGES removed; F-08 closePlacementCaseSuccess throws on count=0; F-09 runTransition distinguish replay vs conflict). 2 test DB mới (xiv-xv) + 4 unit test mới (23/23). DB integration **16/16 PASS trên `hrp_n3_v5`** (Neon branch `br-bold-term-az0ej1zd` tạo từ baseline `hrp-live`, endpoint `ep-weathered-art-az1c0gzh`). Full unit 135 files 2229/2229 PASS. typecheck 0 new errors. Tier 3 LIGHT audit round 5 verdict **PASS**. Branch `tier1/n3-service-model-placement` HEAD = `1a1eba4` (pushed → origin).** |
+| `v0.7 CLOSEOUT` | `2026-09-15 11:00` | `Tier 1` | Closeout update theo lệnh T0 ngày 15/09: code N3 đã ở `origin/main` (commit `68e184e`); migration `20260914212136_n3_service_model_placement` đã DECIDED/APPLIED_REPORTED trên production. Hygiene branches `hrp_n3_v3` + `hrp_n3_v5` còn trong Neon console (Tier 1 KHÔNG tự xóa — ghi lại bằng văn bản trong closeout này). Chỉ còn closeout evidence và W0 hygiene trong TASK `hrp-v6-docs-config-reconciliation`. Không còn "chờ merge" hay "chờ Owner apply migration". |
+| `v0.8 DANGEROUS_STRINGS_REMOVED` | `2026-09-15 12:30` | `Tier 1` | S2 fix theo lệnh T0 ngày 15/09 12:16: xoá 6 chuỗi nguy hiểm còn lại. §3 open verification đổi "chờ Tier 0/Owner xác minh" → "verified tại `68e184e`"; §5 "Deploy conditions" → "Deploy history (CLOSED)"; bỏ ⏳ ở items 4 + 5; xoá tham chiếu `55f4180` và `b62f4f1` trong evidence Vercel. Toàn bộ N3 wording giờ phản ánh live state duy nhất: code in main, migration APPLIED_REPORTED, DO_NOT_REAPPLY. Không còn câu nào có thể kích hoạt re-merge hoặc re-apply N3. |

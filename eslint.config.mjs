@@ -42,6 +42,13 @@ export default tseslint.config(
       'check_rls.cjs',
       'apply-changes.mjs',
       '.tmp-*', // transient lint/report scratch files
+      // S1 docs-config-reconciliation (closeout): scratch/** is the canonical
+      // archive for root maintenance scripts + V5-era docs tasks (commits
+      // 653bf57 + 097e8db). It contains JS artifacts in foreign runtimes
+      // (k6, browser mockups with `document`/`window`, etc.) that are not
+      // part of this app's TS source. Ignoring is consistent with the
+      // existing policy above for `docs/**` and `public/**`.
+      'scratch/**',
     ],
   },
   js.configs.recommended,
