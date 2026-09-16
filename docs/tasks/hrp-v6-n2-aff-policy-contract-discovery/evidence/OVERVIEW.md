@@ -2,6 +2,8 @@
 
 This folder contains supporting evidence for the N2 AFF Policy Discovery task.
 
+**Status:** OPEN / REVISION_REQUIRED (T0 verdict after R7 → R8 in progress)
+
 ---
 
 ## Files in This Task
@@ -9,7 +11,7 @@ This folder contains supporting evidence for the N2 AFF Policy Discovery task.
 | File | Purpose |
 |---|---|
 | ../DISCOVERY.md | Main document — locked decisions, schema sketches, invariant contracts, 6-slice plan |
-| ../TASK.md | RQ → STEP → AC, scope, boundary |
+| ../TASK.md | RQ -> STEP -> AC, scope, boundary |
 | ../HANDOFF.md | Status + handoff summary |
 | OVERVIEW.md (this) | Survey summary, aff_plan.md affinity, migration inventory |
 
@@ -17,9 +19,9 @@ This folder contains supporting evidence for the N2 AFF Policy Discovery task.
 
 ---
 
-## V6 Phase 1A — Evidence of Capability in Pinned Baseline (R7 full-SHA reproducible)
+## V6 Phase 1A — Evidence of Capability in Pinned Baseline
 
-> **Evidence rule:** pinned to commit `b91a33f948aed224a88f3e8e7c9847006f33e97f` (full SHA, no shortened hash, no `<hash>` placeholder). Evidence commands use `git ls-tree -r --name-only -- <path>` (recursive, full names; `--` separator guards against accidental path interpretation).
+> **Evidence rule:** pinned to commit `b91a33f948aed224a88f3e8e7c9847006f33e97f` (full SHA, no shortened hash, no `<hash>` placeholder). Evidence commands use `git ls-tree -r --name-only -- <path>` (recursive, full names; `--` separator).
 
 ### Reproducible evidence commands
 
@@ -39,39 +41,6 @@ prisma/migrations/20260912140411_n1_placement_case_foundation/migration.sql
 prisma/migrations/20260912140412_n1_placement_case_rls/migration.sql
 ```
 
-### Migration Contents (real, not claimed)
-
-**`prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/migration.sql`**:
-```sql
-ALTER TABLE "candidate_submissions" ADD COLUMN "labor_profile_id" TEXT;
-CREATE TABLE "labor_profiles" (...);
-CREATE TABLE "labor_profile_intakes" (...);
-CREATE TABLE "employment_episodes" (...);
-```
-
-**`prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/migration.sql`**:
-```sql
-ALTER TABLE labor_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE labor_profiles FORCE ROW LEVEL SECURITY;
-CREATE POLICY hrp_labor_profile_scope ON labor_profiles ...;
-```
-
-**`prisma/migrations/20260912140411_n1_placement_case_foundation/migration.sql`**:
-- Provides `placement_case` and supporting indexes for N2 clock anchor.
-
-**`prisma/migrations/20260912140412_n1_placement_case_rls/migration.sql`**:
-- RLS policies on `placement_case`.
-
-### Capability Summary
-
-| Capability | Status |
-|---|---|
-| LaborProfile table | Available |
-| LaborProfileIntake table | Available |
-| EmploymentEpisode table | Available |
-| CandidateSubmission.laborProfileId FK | Available |
-| RLS policies | Applied |
-
 ---
 
 ## Migration Inventory (relevant to N2)
@@ -89,70 +58,38 @@ CREATE POLICY hrp_labor_profile_scope ON labor_profiles ...;
 
 ## Affinity to aff_plan.md Decisions
 
-All 18 AFF-DEC-* decisions in aff_plan.md v2.3 are LOCKED. No conflicts.
-
-| DEC | Topic | Status |
-|---|---|---|
-| AFF-DEC-001 | All Users eligible | LOCKED |
-| AFF-DEC-002 | Standalone design | LOCKED |
-| AFF-DEC-003 | Reuse User.affCode | LOCKED |
-| AFF-DEC-004 | Generic User identity | LOCKED |
-| AFF-DEC-005 | Public client no raw userId | LOCKED |
-| AFF-DEC-006 | Versioned policy + milestone | LOCKED |
-| AFF-DEC-007 | Analytics ≠ attribution | LOCKED |
-| AFF-DEC-008 | Attribution immutable + handling separate | LOCKED |
-| AFF-DEC-009 | Dispute → Ticket/Case | LOCKED |
-| AFF-DEC-010 | Cookie TTL 30d, first-click | LOCKED |
-| AFF-DEC-011 | 7d protected window | LOCKED |
-| AFF-DEC-012 | Expiry → pool | LOCKED |
-| AFF-DEC-013 | Referrer ≠ beneficiary | LOCKED |
-| AFF-DEC-014 | Ticket in window | LOCKED |
-| AFF-DEC-015 | HR preserve attribution | LOCKED |
-| AFF-DEC-016 | Actor ≠ referrer | LOCKED |
-| AFF-DEC-017 | Direct channel | LOCKED |
-| AFF-DEC-018 | Attribution on LaborProfile | LOCKED |
+All 18 AFF-DEC-* decisions in aff_plan.md v2.3 are LOCKED.
 
 ---
 
-## Locked Decisions (T0 R7 Verdict)
+## Locked Decisions (T0 R8 Verdict)
 
 | Q | Decision | Value |
 |---|---|---|
 | Q1 | Clock type | Calendar days |
 | Q2a | Storage timezone | TIMESTAMPTZ UTC |
 | Q2b | Business clock | Asia/Bangkok |
-| Q2c | Day boundary | Exclusive next-day [start, nextDayStart); helper removed; N2-1 owns implementation |
+| Q2c | Day boundary | Exclusive next-day [start, nextDayStart) |
 | Q3 | Holiday | OUT OF N2 SCOPE |
 | Q4 | Clock start | PlacementCase.openedAt |
 | Q5 | Pause/reset | Clock RUNNING always |
-| Q6 | Attribution | R7: Layer 1 (immutable cols incl. created_at, NO labor_profile_id check); Layer 1b (NULL→value write-once — sole authority); Layer 1c (lifecycle transition trigger); CHECK current state only; RLS per N2-1 (ADMIN/referrer/engine); N2-4 adds team policies; default-deny DELETE |
-| Q7a | BeneficiaryDecision | Authority record; immutable facts vs mutable metadata split |
-| Q7b | Invariant | Max one ACTIVE per business key |
-| Q7c | Nullable-safe SQL | NULLS NOT DISTINCT after column list, before WHERE; OR COALESCE sentinel |
-| Q7d | Concurrency | Single prisma.$transaction (lock + lookup + supersede + insert) |
-| Q7e | Actor model | actorType USER/SYSTEM + actorUserId nullable + CHECK XOR |
-| Q7f | UNRESOLVED | Typed result + outbox (no decision row) |
-| Q7g | Four commands | R7: CREATE (idempotent on exact-match ACTIVE; decidedAt NOT in idempotency; canonical JSON deep-equal); CORRECT (lock→lookup→UPDATE→INSERT→link→commit); REVERSE; REDECIDE_AFTER_REVERSAL |
-| Q7h | Supersede link | old.supersededById → replacement (single direction) |
-| Q7i | Forbidden | REVERSED→SUPERSEDED; SUPERSEDED→REVERSED; any resurrection |
-| Q7j | CREATE/CORRECT split | R7: separate functions; CREATE typed CONFLICT_EXISTING_ACTIVE; CORRECT typed NO_ACTIVE; CORRECT ordering: lock→lookup→UPDATE→INSERT→link→commit |
-| Q8 | Permissions | R7: 5 explicit codes + implicit self-view; role-scoped RLS; UPDATE USING (OLD) + WITH CHECK (NEW) both team-scope for HR_MANAGER; HR_STAFF UPDATE denied; app_engine_writer (no BYPASSRLS, explicit policies TO app_engine_writer, current_setting gate); LIVE RLS matrix required (expanded per-table, self-release removed) |
-| Q9a | RPC change | Yes, with LIVE test plan |
+| Q6 | Attribution | Layer 1 (immutables incl. created_at, NO labor_profile_id); Layer 1b (NULL→value write-once — sole authority); Layer 1c (lifecycle); Layer 2 (CHECK current state); RLS N2-1 (ADMIN/referrer/engine); N2-4 adds team policies; default-deny DELETE |
+| Q7 | BeneficiaryDecision | R8: separate CREATE/CORRECT functions; CREATE three typed outcomes; CORRECT lock→lookup→UPDATE→INSERT→link→commit; idempotency excludes decidedAt; recursive canonicalJson or DB-layer jsonb = (must agree); 10 LIVE tests K-01..K-10 for canonical JSON |
+| Q8 | Permissions | R8: 5 explicit codes + implicit self-view; team-scope BOTH rows; HR_STAFF UPDATE denied; N2-1 RLS simplified; app_engine_writer contract (NO BYPASSRLS, REVOKE DELETE, three policies, current_setting context gate, set_config(..., true) only); 12 LIVE tests E-01..E-12; cross-profile denial LIVE test (R8) |
+| Q9a | RPC change | Yes, LIVE test plan |
 | Q9b | EXACT_SAFE | FK + provenance + writer + no conflict + audit |
 | Q10 | V6 P1 dep | Capability in pinned baseline (full SHA) — no merge dep |
 
 ---
 
-## T0 R7 Revisions Applied — 6 Directives
+## T0 R8 Revisions Applied — 4 P1 Executable-Contract Blockers
 
 | # | Directive | Implementation |
 |---|---|---|
-| 1 | RLS expressions use valid PostgreSQL syntax | No NEW./OLD. prefixes in policy USING/WITH CHECK; column names used directly; trigger bodies still use NEW./OLD. (valid SQL) |
-| 2 | Layer 1 trigger does NOT check labor_profile_id; Layer 1b is sole authority | Layer 1 labor_profile_id check removed; write-once LIVE test cases defined |
-| 3 | N2-1 RLS simplified | N2-1 RLS: ADMIN/referrer SELECT, app_engine_writer INSERT (current_setting gate), ADMIN UPDATE; no LHA/team refs |
-| 4 | app_engine_writer contract fixed | no BYPASSRLS, INSERT/UPDATE grants TO app_engine_writer, DELETE denied, current_setting gate, valid set_config syntax, LIVE isolation tests |
-| 5 | CORRECT ordering fixed | lock→lookup→UPDATE→INSERT→link→commit; partial unique invariant satisfied throughout |
-| 6 | Matrix self-release removed; idempotency clarified | Matrix: self-release row removed; exactMatch: decidedAt NOT in idempotency identity; canonicalJson (sorted keys) |
+| 1 | CBD RLS scope bypass | Bare `labor_profile_id` in WITH CHECK subqueries replaced with qualified `commission_beneficiary_decisions.labor_profile_id` (CBD INSERT + UPDATE); cross-profile denial LIVE test added |
+| 2 | app_engine_writer executable contract | DISCOVERY §2.6.3: idempotent provisioning (`DO $$` with `pg_roles` lookup), explicit grants + REVOKE DELETE, three per-table policies (SELECT for consume flow, INSERT/UPDATE gated by `current_setting('hrp.engine_context', true)`); 12 LIVE contract tests E-01..E-12 (role attributes, grants, context absent/invalid/valid) |
+| 3 | `set_config(..., false)` wrong isolation | Application contract mandates `set_config('hrp.engine_context', '<value>', true)` only; LIVE tests E-06/E-07 prove context cleared after COMMIT / ROLLBACK / pooled-connection reuse; lint blocks `set_config(..., false)` |
+| 4 | Canonical JSON only sorts top-level | `canonicalJson` recursive helper covers nested objects, arrays, null, primitives; 10 LIVE tests K-01..K-10 (key-order, nested objects, array order, null, edge cases); optional DB-layer `jsonb =` backup option |
 
 ---
 
@@ -160,11 +97,6 @@ All 18 AFF-DEC-* decisions in aff_plan.md v2.3 are LOCKED. No conflicts.
 
 | Round | Major changes |
 |---|---|
-| R0 | Discovery baseline — 10 questions answered with codebase evidence |
-| R1 | Status sync; HANDOFF.md; Q7 authority record; Q9b classification; Q2 timezone; V6 P1 initial |
-| R2 | V6 P1 corrected (filesystem); Q7 beneficiaryUserId required + SYSTEM FK + invariant; Q9b tightened |
-| R3 | NULLS NOT DISTINCT, advisory lock, actorType/CHECK, UNRESOLVED typed, immutable/mutable (referral), exclusive next-day, Holiday OUT, COMPLETE/READY_FOR_MERGE |
-| R4 | 7 blockers fixed (DDL syntax, transaction-scoped advisory lock, multi-layer immutability, off-by-one helper, reproducible evidence, decision immutable/mutable split + correction vs reversal, permission codes) |
-| R5 | drop write-once CHECK; trigger owns write-once; CHECK = current state; default-deny DELETE; four beneficiary commands; supersede link direction fixed; role-scoped RLS; LIVE RLS matrix; evidence pinned to full SHA; PR body clean |
-| R6 | branch sync; CREATE/CORRECT split with typed CONFLICT_EXISTING_ACTIVE; RLS team-scope on both rows; ReferralAttribution DB contract complete; state diagram corrected; full-SHA evidence |
-| **R7** | **RLS expressions corrected (valid PostgreSQL, no NEW./OLD. in policies); CORRECT ordering fixed; idempotency identity clarified (decidedAt out, canonical JSON deep-equal); N2-1 RLS simplified (ADMIN/referrer/engine only, no external table refs); app_engine_writer contract fixed; Layer 1 labor_profile_id check removed; write-once LIVE test cases; matrix self-release removed** |
+| R0–R6 | Prior rounds (branch sync, CREATE/CORRECT split, RLS team-scope, ReferralAttribution DB contract, state diagram, full-SHA evidence) |
+| R7 | RLS expressions corrected (valid PostgreSQL, no NEW./OLD.); CORRECT ordering fixed; idempotency identity clarified; N2-1 RLS simplified; app_engine_writer contract; Layer 1 labor_profile_id removed; matrix self-release removed |
+| **R8** | **CBD RLS scope fix (qualified outer column); app_engine_writer executable contract (idempotent provisioning, explicit grants + REVOKE DELETE, three per-table policies, 12 LIVE tests E-01..E-12); set_config(..., true) only with isolation LIVE tests; recursive canonical JSON with 10 LIVE tests K-01..K-10; PR status CHANGED to OPEN / REVISION_REQUIRED** |

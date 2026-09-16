@@ -13,9 +13,15 @@
 
 ## 0. Executive Summary
 
-N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất cả đều greenfield. `aff_plan.md v2.3` đã chốt 18 decision. T0 đã chốt operational decisions R0–R7. Tài liệu này lock toàn bộ policy để Tier 1 mở N2-1 slice.
+N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất cả đều greenfield. `aff_plan.md v2.3` đã chốt 18 decision. T0 đã chốt operational decisions R0–R8. Tài liệu này lock toàn bộ policy để Tier 1 mở N2-1 slice.
 
-**R7 additions** (post main sync): (1) CREATE/CORRECT pseudocode split with correct CORRECT ordering (lock→lookup→UPDATE→INSERT→link→commit) + canonical JSON deep-equal + decidedAt out of idempotency identity; (2) All RLS policy expressions corrected to valid PostgreSQL (no NEW./OLD. prefixes); (3) N2-1 RLS simplified (ADMIN/referrer own-view + engine INSERT/UPDATE only, no external table refs); (4) N2-4 owns team-membership source and LHA; (5) app_engine_writer contract with explicit policies, current_setting check, valid syntax, no BYPASSRLS/DELETE; (6) Layer 1 trigger does NOT check labor_profile_id (Layer 1b sole authority); write-once LIVE test cases defined; (7) State diagram redrawn; (8) Full-SHA evidence.
+> **R8 status note:** PR #4 has been REVISION_REQUIRED by T0 after R7. R8 closes 4 P1 executable-contract blockers (CBD scope bypass, missing app_engine_writer executable contract, set_config isolation semantics, recursive canonical JSON). PR remains OPEN / REVISION_REQUIRED until T0 final authorization.
+
+**R8 additions**: (1) **CBD RLS scope**: bare `labor_profile_id` in WITH CHECK subqueries replaced with qualified `commission_beneficiary_decisions.labor_profile_id` to prevent self-comparison; cross-profile denial LIVE test added; (2) **app_engine_writer executable contract**: idempotent provisioning (`DO $$` block), explicit grants with REVOKE DELETE, three policies (SELECT for consume flow, INSERT gated by context, UPDATE gated by context), NO BYPASSRLS assertion, 12 LIVE contract tests (E-01..E-12); (3) **set_config semantics**: `set_config(..., false)` FORBIDDEN — must use `true` (transaction-local); LIVE tests prove context cleared after COMMIT/ROLLBACK/pooled-connection reuse; (4) **Recursive canonical JSON**: top-level `Object.keys().sort()` replaced with recursive helper handling nested objects and arrays; 10 LIVE tests (K-01..K-10) covering key-order, nested objects, array order, null, edge cases; DB-layer `jsonb =` backup option documented.
+
+**R7 prior**: (1) CREATE/CORRECT split + CORRECT ordering; (2) RLS expressions using column names directly; (3) N2-1 RLS simplified (ADMIN/referrer/engine only); (4) app_engine_writer separate DB principal; (5) Layer 1 does NOT check labor_profile_id (Layer 1b sole authority); (6) matrix self-release removed.
+
+**R6 prior**: branch sync; CREATE/CORRECT pseudocode split; RLS team-scope on both rows; ReferralAttribution DB contract complete; state diagram corrected; full-SHA evidence.
 
 ---
 
@@ -441,9 +447,29 @@ async function createBeneficiaryDecision(input: {
     // who decided at time T1 vs T2 with identical inputs is the same decision.
     // Canonical deep-equal for evidence: sort keys then JSON.stringify (no key-order variance).
     function canonicalJson(val: unknown): string {
-      if (val === null || val === undefined) return JSON.stringify(val);
-      if (typeof val !== 'object') return JSON.stringify(val);
-      return JSON.stringify(val, Object.keys(val as object).sort());
+      // R8 recursive canonical JSON — handles nested objects and arrays in any order.
+      // Returns a deterministic string. JSON.parse(a) === JSON.parse(b) is NOT enough
+      // because key order matters in string-level comparison.
+      if (val === null || val === undefined) return 'null';
+      if (typeof val === 'number') {
+        // Normalize -0 / NaN; standard JSON.stringify accepts numbers canonically.
+        return JSON.stringify(val);
+      }
+      if (typeof val === 'string' || typeof val === 'boolean') return JSON.stringify(val);
+      if (typeof val !== 'object') return JSON.stringify(String(val));
+      if (Array.isArray(val)) {
+        // Arrays: preserve element order (in-vivo list semantics); recurse on each.
+        return '[' + val.map((item) => canonicalJson(item)).join(',') + ']';
+      }
+      // Object: sort keys lexicographically, recurse on each value.
+      const keys = Object.keys(val as Record<string, unknown>).sort();
+      return (
+        '{' +
+        keys
+          .map((k) => JSON.stringify(k) + ':' + canonicalJson((val as Record<string, unknown>)[k]))
+          .join(',') +
+        '}'
+      );
     }
 
     const exactMatch =
@@ -676,7 +702,14 @@ ALTER TABLE commission_beneficiary_decisions
 
 #### 2.6.3 RLS Matrix (R7 strict — valid PostgreSQL syntax, N2-1 simplified, engine properly scoped)
 
-> **PostgreSQL RLS syntax rule:** Policy expressions (USING and WITH CHECK) do NOT use `NEW.` or `OLD.` prefixes. They evaluate the proposed/resulting row directly by column name. `WITH CHECK` evaluates the final values of the row being inserted/updated; `USING` evaluates the existing row for SELECT/DELETE and the old row for UPDATE.
+> **PostgreSQL RLS syntax rule (R7+R8):**
+> - Policy expressions (USING and WITH CHECK) do NOT use `NEW.` or `OLD.` prefixes (R7 fix).
+> - Bare column names in a correlated subquery may resolve to the nearest match; for column
+>   names also used in the subquery's referenced table, **qualify with the outer table name**
+>   to avoid self-comparison. Example: `WHERE lha.labor_profile_id = commission_beneficiary_decisions.labor_profile_id`,
+>   NOT `WHERE lha.labor_profile_id = labor_profile_id` (R8 fix).
+> - `WITH CHECK` evaluates the final values of the row being inserted/updated; `USING`
+>   evaluates the existing row for SELECT/DELETE and the old row for UPDATE.
 >
 > **N2-1 RLS simplification (R7):** N2-1 migration must NOT reference tables that don't exist yet. `labor_profile_handling_assignments` (N2-4) and `hr_team_members` (N2-4) are not available at N2-1 time. N2-1 policies are scoped only to the referral attribution's own data and the engine principal.
 >
@@ -838,13 +871,16 @@ CREATE POLICY hrp_cbd_select ON commission_beneficiary_decisions
 CREATE POLICY hrp_cbd_insert ON commission_beneficiary_decisions
   AS PERMISSIVE FOR INSERT TO app_user_writer
   WITH CHECK (
-    -- PostgreSQL: column names evaluate the proposed row directly (no NEW. prefix)
+    -- PostgreSQL: WITH CHECK evaluates the proposed row's column values directly.
+    -- The bare column name 'labor_profile_id' in the EXISTS subquery would resolve
+    -- to the nearest match in scope; qualify with the outer table name to avoid
+    -- self-comparison (R8 fix).
     hrp_session_role() = 'ADMIN'
     OR (
       hrp_session_role() = 'HR_MANAGER'
       AND EXISTS (
         SELECT 1 FROM labor_profile_handling_assignments lha
-        WHERE lha.labor_profile_id = labor_profile_id
+        WHERE lha.labor_profile_id = commission_beneficiary_decisions.labor_profile_id
           AND EXISTS (
             SELECT 1 FROM hr_team_members m
             WHERE m.manager_id = hrp_session_user_id()
@@ -874,13 +910,14 @@ CREATE POLICY hrp_cbd_update ON commission_beneficiary_decisions
     )
   )
   WITH CHECK (
-    -- WITH CHECK evaluates the resulting row's labor_profile_id (NEW row)
+    -- WITH CHECK evaluates the resulting row's labor_profile_id (NEW row).
+    -- Qualify with outer table to avoid self-comparison (R8 fix).
     hrp_session_role() = 'ADMIN'
     OR (
       hrp_session_role() = 'HR_MANAGER'
       AND EXISTS (
         SELECT 1 FROM labor_profile_handling_assignments lha
-        WHERE lha.labor_profile_id = labor_profile_id
+        WHERE lha.labor_profile_id = commission_beneficiary_decisions.labor_profile_id
           AND EXISTS (
             SELECT 1 FROM hr_team_members m
             WHERE m.manager_id = hrp_session_user_id()
@@ -893,27 +930,108 @@ CREATE POLICY hrp_cbd_update ON commission_beneficiary_decisions
 -- No DELETE policy => default-deny DELETE under FORCE RLS
 
 -- ============================================================
--- System engine DB principal — role setup and context guard
+-- System engine DB principal — executable contract (R8)
 -- ============================================================
--- The engine runs as app_engine_writer (NOT app_user_writer, NOT BYPASSRLS).
--- Each engine transaction sets the context using set_config (session-level):
+-- The engine runs as app_engine_writer (separate Postgres role, NOT a member
+-- of app_user_writer, NOT BYPASSRLS, NOT table owner).
+--
+-- PROVISIONING (idempotent — safe to run multiple times):
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_engine_writer') THEN
+    CREATE ROLE app_engine_writer NOLOGIN NOSUPERUSER NOINHERIT;
+  END IF;
+END
+$$;
 
--- In the application/service layer before engine operations:
---   await tx.$executeRaw`SELECT set_config('hrp.engine_context', 'link-capture', false)`;
---   await tx.$executeRaw`SELECT set_config('hrp.engine_context', 'consume', false)`;
---   await tx.$executeRaw`SELECT set_config('hrp.engine_context', 'milestone', false)`;
+-- Assert NO BYPASSRLS attribute (R8 LIVE test asserts this):
+-- SELECT rolname, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = 'app_engine_writer';
+-- Expected: rolsuper=false, rolbypassrls=false
+
+-- Least-privilege grants (engine does NOT inherit from app_user_writer):
+GRANT USAGE ON SCHEMA public TO app_engine_writer;
+GRANT SELECT, INSERT, UPDATE ON referral_attributions TO app_engine_writer;
+GRANT SELECT, INSERT, UPDATE ON commission_beneficiary_decisions TO app_engine_writer;
+-- EXPLICITLY REVOKE DELETE (no DELETE privilege for the engine):
+REVOKE DELETE ON referral_attributions FROM app_engine_writer;
+REVOKE DELETE ON commission_beneficiary_decisions FROM app_engine_writer;
+
+-- SELECT policy for engine consume flow (R8 addition — necessary for engine
+-- to read rows before/after INSERT/UPDATE within the same transaction):
+CREATE POLICY hrp_ra_select_engine ON referral_attributions
+  AS PERMISSIVE FOR SELECT TO app_engine_writer
+  USING (
+    -- Engine only sees rows that match the current operation context
+    current_setting('hrp.engine_context', true) IN ('consume', 'milestone')
+  );
+
+-- Engine INSERT policy (context gate):
+CREATE POLICY hrp_ra_insert_engine ON referral_attributions
+  AS PERMISSIVE FOR INSERT TO app_engine_writer
+  WITH CHECK (
+    current_setting('hrp.engine_context', true) IN ('link-capture', 'consume', 'milestone')
+  );
+
+-- Engine UPDATE policy (context gate, transition triggers + RLS both enforced):
+CREATE POLICY hrp_ra_update_engine ON referral_attributions
+  AS PERMISSIVE FOR UPDATE TO app_engine_writer
+  USING (
+    current_setting('hrp.engine_context', true) IN ('consume', 'milestone')
+  )
+  WITH CHECK (
+    current_setting('hrp.engine_context', true) IN ('consume', 'milestone')
+  );
+
+-- Equivalent engine policies for commission_beneficiary_decisions:
+CREATE POLICY hrp_cbd_select_engine ON commission_beneficiary_decisions
+  AS PERMISSIVE FOR SELECT TO app_engine_writer
+  USING (
+    current_setting('hrp.engine_context', true) IN ('consume', 'milestone')
+  );
+
+CREATE POLICY hrp_cbd_insert_engine ON commission_beneficiary_decisions
+  AS PERMISSIVE FOR INSERT TO app_engine_writer
+  WITH CHECK (
+    current_setting('hrp.engine_context', true) IN ('milestone')
+  );
+
+CREATE POLICY hrp_cbd_update_engine ON commission_beneficiary_decisions
+  AS PERMISSIVE FOR UPDATE TO app_engine_writer
+  USING (
+    current_setting('hrp.engine_context', true) IN ('milestone')
+  )
+  WITH CHECK (
+    current_setting('hrp.engine_context', true) IN ('milestone')
+  );
+
+-- No DELETE policy for app_engine_writer. DELETE privilege was REVOKEd above.
+-- No DELETE policy under FORCE RLS => default-deny DELETE for ALL roles.
+
+-- ============================================================
+-- set_config semantics (R8 strict)
+-- ============================================================
+-- set_config(setting_name, new_value, is_local):
+--   is_local = false -> session-scoped (persists across transactions)
+--   is_local = true  -> transaction-local (cleared at COMMIT or ROLLBACK)
 --
--- VALID SET LOCAL syntax (not `SET LOCAL var = 'a' | 'b'`):
---   SET LOCAL hrp.engine_context TO 'link-capture';   -- valid SQL
---   SELECT set_config('hrp.engine_context', 'link-capture', false);  -- application equivalent
+-- The engine MUST use is_local = true so that context is cleared at COMMIT
+-- and never leaks to the next transaction that reuses the pooled connection.
+-- is_local = false is FORBIDDEN for engine operations; session-level context
+-- would leak across COMMIT boundaries in a connection pool.
 --
--- LIVE tests must assert:
---   1. app_engine_writer has NO BYPASSRLS attribute
---   2. app_engine_writer has INSERT, UPDATE grants on target tables; NO DELETE grant
---   3. Without engine_context set: INSERT/UPDATE denied (current_setting returns '')
---   4. With invalid context: denied
---   5. With valid context (set_config): allowed
---   6. app_user_writer cannot satisfy current_setting('hrp.engine_context', true) IN (...)
+-- APPLICATION CALL (TxScope or before the operation):
+--   await tx.$executeRaw`SELECT set_config('hrp.engine_context', 'link-capture', true)`;
+--   await tx.$executeRaw`SELECT set_config('hrp.engine_context', 'consume', true)`;
+--   await tx.$executeRaw`SELECT set_config('hrp.engine_context', 'milestone', true)`;
+--
+-- LIVE tests must assert (R8):
+--   1. After COMMIT: SELECT current_setting('hrp.engine_context', true)
+--      from a NEW transaction returns '' (cleared)
+--   2. After ROLLBACK: same — cleared
+--   3. Pooled-connection reuse: open tx1 (set context), COMMIT, open tx2 on
+--      same connection: current_setting returns '' (no leak)
+--   4. set_config(..., false) is rejected by application layer (lint rule);
+--      only set_config(..., true) is allowed in engine code paths
 ```
 
 #### 2.6.4 LIVE RLS matrix tests (R6 — extended per table)
@@ -953,6 +1071,7 @@ CREATE POLICY hrp_cbd_update ON commission_beneficiary_decisions
 | HR_MANAGER (out-of-team) | INSERT/UPDATE labor_profile_id outside team | denied (WITH CHECK on NEW row) |
 | beneficiary | SELECT own decision | allowed |
 | beneficiary | UPDATE own decision | denied (no UPDATE policy for self) |
+| HR_MANAGER (team, profile P1) | UPDATE a CBD row attached to a DIFFERENT profile (P2) | **denied** (cross-profile WITH CHECK denial — R8 LIVE test case) |
 
 **`referral_attributions` (N2-1 RLS simplified — R7):**
 
@@ -970,7 +1089,45 @@ CREATE POLICY hrp_cbd_update ON commission_beneficiary_decisions
 | beneficiary (referrer) | UPDATE own attribution | **DENIED** |
 | any role | DELETE attribution | denied (no DELETE policy; default-deny under FORCE RLS) |
 
+**App engine writer LIVE contract tests (R8 executable):**
+
+| # | Test | Expected result |
+|---|---|---|
+| E-01 | `SELECT rolname, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = 'app_engine_writer'` | `rolname = 'app_engine_writer'`, `rolsuper = false`, `rolbypassrls = false` |
+| E-02 | `SELECT has_table_privilege('app_engine_writer', 'referral_attributions', 'DELETE')` | `false` (no DELETE privilege) |
+| E-03 | `SELECT has_table_privilege('app_engine_writer', 'referral_attributions', 'INSERT')` | `true` |
+| E-04 | `SELECT has_table_privilege('app_engine_writer', 'referral_attributions', 'UPDATE')` | `true` |
+| E-05 | `SELECT has_table_privilege('app_engine_writer', 'referral_attributions', 'SELECT')` | `true` |
+| E-06 | Open tx1 as `app_engine_writer`, `SELECT set_config('hrp.engine_context', 'link-capture', true)`, INSERT, COMMIT. Open tx2 on SAME connection: `SELECT current_setting('hrp.engine_context', true)` | returns `''` (cleared at COMMIT, R8 transactional isolation test) |
+| E-07 | Open tx1 as `app_engine_writer`, set context, ROLLBACK. tx2 same connection: `current_setting` | returns `''` (cleared at ROLLBACK) |
+| E-08 | Set context to `'link-capture'` then attempt UPDATE on ACTIVE row | allowed only for `consume`/`milestone`; insert/UPDATE require context match |
+| E-09 | TX without `set_config` first: INSERT | denied (current_setting returns `''`) |
+| E-10 | TX with `set_config('hrp.engine_context', 'invalid', true)`: INSERT | denied (not in allowed list) |
+| E-11 | Lint rule / static check: `set_config('hrp.engine_context', ..., false)` in app_engine_writer code paths | rejected; only `set_config(..., true)` allowed |
+| E-12 | Pooled-connection reuse: tx1 set context + COMMIT, tx2 immediate INSERT on same pooled connection | denied (context cleared) |
+
 N2-1 and N2-5 TASKs must include these LIVE matrices as hard test gates.
+
+**Canonical JSON (R8 recursive LIVE tests):**
+
+| # | Input A | Input B | `canonicalJson(A) === canonicalJson(B)` |
+|---|---|---|---|
+| K-01 | `{a:1,b:2}` | `{b:2,a:1}` | true (key-order invariance) |
+| K-02 | `{a:{x:1,y:2}}` | `{a:{y:2,x:1}}` | true (nested key-order invariance) |
+| K-03 | `{a:[1,2,3]}` | `{a:[1,2,3]}` | true (array identity) |
+| K-04 | `{a:[1,2]}` | `{a:[2,1]}` | false (array order is significant) |
+| K-05 | `{a:1,b:null}` | `{a:1}` | false (null is meaningful) |
+| K-06 | `{a:1,b:{c:2}}` | `{a:1,b:{c:2}}` | true (deep equality) |
+| K-07 | `{a:1,b:[{x:1},{x:2}]}` | `{b:[{x:1},{x:2}],a:1}` | true (mixed nested) |
+| K-08 | `{a:1.0}` | `{a:1}` | implementation-defined; current implementation returns false (number-to-number compare via stringify). Documented in N2-5 test. |
+| K-09 | `{a:-0}` | `{a:0}` | false (-0 vs 0 distinction documented in N2-5 test) |
+| K-10 | `{a:"x"}` | `{a:'x'}` | true (string normalization) |
+
+For absolute idempotency identity guarantee at the DB layer (recommended backup),
+the `evidence` column may also be persisted as `jsonb` and compared with PostgreSQL's
+native `jsonb` equality (`evidence = $1::jsonb`). Either application-layer `canonicalJson`
+or DB-layer `jsonb =` comparison is acceptable; they must agree. N2-5 TASK must include a
+test that proves both produce identical results for the 10 canonical-JSON inputs above.
 
 ### 2.7 Inventory Reuse + N2 Conflicts
 
@@ -1127,7 +1284,7 @@ RLS: all three tables
 Discovery hoàn tất khi:
 
 - 18 `AFF-DEC-*` decisions đã chốt bởi `aff_plan.md`
-- Operational decisions chốt bởi T0 verdict (R0–R7)
+- Operational decisions chốt bởi T0 verdict (R0–R8)
 - Schema sketch cho ReferralAttribution, LaborProfileHandlingAssignment, CommissionBeneficiaryDecision
 - Invariant contracts với nullable-safe specification (NULLS NOT DISTINCT — R4 corrected syntax)
 - UNRESOLVED pattern (typed result + outbox, no decision row)
@@ -1138,6 +1295,10 @@ Discovery hoàn tất khi:
 - Immutable facts vs mutable metadata split for both tables
 - Interactive transaction contract for advisory lock
 - Permission codes = 5 explicit + implicit self-view (R5 final)
+- **R8 — CBD RLS scope fix**: bare `labor_profile_id` in WITH CHECK subqueries replaced with qualified `commission_beneficiary_decisions.labor_profile_id`; cross-profile denial LIVE test added
+- **R8 — App engine writer executable contract**: idempotent provisioning (DO $$ with EXISTS check), explicit grants + REVOKE DELETE, three policies per table (SELECT for consume flow, INSERT/UPDATE gated by current_setting context), NO BYPASSRLS assertion; 12 LIVE contract tests
+- **R8 — set_config(..., true)**: set_config(setting, value, false) FORBIDDEN — only set_config(setting, value, true) (transaction-local); LIVE tests prove context cleared after COMMIT/ROLLBACK/pooled-reuse
+- **R8 — Recursive canonical JSON**: top-level Object.keys().sort() replaced with recursive helper; 10 LIVE tests (K-01..K-10); optional DB-layer `jsonb =` comparison
 - **R7 — CREATE/CORRECT split**: two separate functions, three typed CREATE outcomes (CREATED / IDEMPOTENT_REPLAY / CONFLICT_EXISTING_ACTIVE), explicit CORRECT typed outcomes (CORRECTED / NO_ACTIVE), exact-match across all authoritative immutable facts (decidedAt NOT in idempotency identity; canonical JSON deep-equal for evidence)
 - **R7 — CORRECT ordering**: lock → lookup → UPDATE old ACTIVE→SUPERSEDED → INSERT replacement ACTIVE → SET supersededById on old → commit; partial unique invariant satisfied throughout
 - **R7 — RLS valid PostgreSQL**: no NEW./OLD. prefixes in policy expressions; column names evaluate proposed/resulting row directly; WITH CHECK enforces team-scope on BOTH old (USING) and new (WITH CHECK) rows; HR_STAFF UPDATE denied on both tables
