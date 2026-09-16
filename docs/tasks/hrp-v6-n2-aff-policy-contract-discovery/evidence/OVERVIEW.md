@@ -17,16 +17,24 @@ This folder contains supporting evidence for the N2 AFF Policy Discovery task.
 
 ---
 
-## V6 Phase 1A — Evidence of Capability in Pinned Baseline (R5)
+## V6 Phase 1A — Evidence of Capability in Pinned Baseline (R6 full-SHA reproducible)
 
-> **R5 evidence rule:** pinned to commit `b91a33f948aed224a88f3e8e7c9847006f33e97f`. Evidence commands use `git ls-tree -r --name-only` (recursive, full names); no hash placeholders or shortened hashes.
+> **R5 evidence rule + R6 full-SHA rule:** pinned to commit `b91a33f948aed224a88f3e8e7c9847006f33e97f` (full SHA, no shortened hash, no `<hash>` placeholder). Evidence commands use `git ls-tree -r --name-only -- <path>` (recursive, full names; `--` separator guards against accidental path interpretation).
 
-### Reproducible evidence commands
+### Reproducible evidence commands (R6)
 
 ```
-$ git ls-tree -r --name-only b91a33f prisma/migrations/ | Select-String "phase1a|n1_placement"
+$ git ls-tree -r --name-only `
+>>   b91a33f948aed224a88f3e8e7c9847006f33e97f `
+>>   -- prisma/migrations `
+>>   | Select-String "phase1a"
 prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/migration.sql
 prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/migration.sql
+
+$ git ls-tree -r --name-only `
+>>   b91a33f948aed224a88f3e8e7c9847006f33e97f `
+>>   -- prisma/migrations `
+>>   | Select-String "n1_placement"
 prisma/migrations/20260912140411_n1_placement_case_foundation/migration.sql
 prisma/migrations/20260912140412_n1_placement_case_rls/migration.sql
 ```
@@ -68,7 +76,7 @@ CREATE POLICY hrp_labor_profile_scope ON labor_profiles ...;
 
 ## Migration Inventory (relevant to N2)
 
-| Migration | Tables | N2 Relevance | In pinned baseline |
+| Migration | Tables | N2 Relevance | In pinned baseline (full SHA `b91a33f948aed224a88f3e8e7c9847006f33e97f`) |
 |---|---|---|---|
 | `20260908150000_v6_phase1a_labor_profile_schema` | labor_profiles, labor_profile_intakes, employment_episodes | N2-3/4 FK | YES |
 | `20260908150001_v6_phase1a_labor_profile_rls` | RLS on above | N2-3/4 RLS | YES |
@@ -106,7 +114,7 @@ All 18 `AFF-DEC-*` decisions in `aff_plan.md v2.3` are LOCKED. No conflicts.
 
 ---
 
-## Locked Decisions (T0 R5 Verdict)
+## Locked Decisions (T0 R6 Verdict)
 
 | Q | Decision | Value |
 |---|---|---|
@@ -117,7 +125,7 @@ All 18 `AFF-DEC-*` decisions in `aff_plan.md v2.3` are LOCKED. No conflicts.
 | Q3 | Holiday | OUT OF N2 SCOPE |
 | Q4 | Clock start | `PlacementCase.openedAt` |
 | Q5 | Pause/reset | Clock RUNNING always |
-| Q6 | Attribution | R5: trigger BEFORE UPDATE for immutables; trigger BEFORE INSERT/UPDATE for laborProfileId NULL→value; CHECK current state only; RLS per role; default-deny DELETE |
+| Q6 | Attribution | R6: trigger BEFORE UPDATE for immutables (incl. `created_at`); trigger BEFORE INSERT/UPDATE for laborProfileId NULL→value; trigger BEFORE UPDATE Layer 1c for transition matrix; CHECK current state only; RLS per role per-command (SELECT/INSERT/UPDATE) in §2.4.3; default-deny DELETE |
 | Q7a | BeneficiaryDecision | Authority record; immutable facts vs mutable metadata split |
 | Q7b | Invariant | Max one ACTIVE per business key |
 | Q7c | Nullable-safe SQL | `NULLS NOT DISTINCT` after column list, before `WHERE`; OR COALESCE sentinel + sentinel-domain CHECK |
@@ -127,22 +135,24 @@ All 18 `AFF-DEC-*` decisions in `aff_plan.md v2.3` are LOCKED. No conflicts.
 | Q7g | Four commands | CREATE (idempotent on exact-match ACTIVE); CORRECT (supersede + replacement); REVERSE (REVERSED, no replacement); REDECIDE_AFTER_REVERSAL |
 | Q7h | Supersede link | `old.supersededById → replacement` (single direction) |
 | Q7i | Forbidden | REVERSED→SUPERSEDED; SUPERSEDED→REVERSED; any resurrection |
-| Q8 | Permissions | R5: 5 explicit codes + implicit self-view; role-scoped RLS; UPDATE USING/WITH CHECK for all commands; LIVE RLS matrix required |
+| Q7j (R6) | CREATE/CORRECT split | CREATE has typed `CONFLICT_EXISTING_ACTIVE` (no auto-supersede, no second ACTIVE insert); exact-match across all authoritative immutable facts; CORRECT is separate function with typed `NO_ACTIVE` outcome |
+| Q8 | Permissions | R6: 5 explicit codes + implicit self-view; role-scoped RLS; team-scope on BOTH old (USING) and new (WITH CHECK) rows for HR_MANAGER INSERT/UPDATE on LHA and CBD; HR_STAFF UPDATE denied; manager cannot reassign out-of-team; system engine `app_engine_writer` separate DB principal; LIVE RLS matrix required (expanded per-table) |
 | Q9a | RPC change | Yes, with LIVE test plan |
 | Q9b | EXACT_SAFE | FK + provenance + writer + no conflict + audit |
-| Q10 | V6 P1 dep | Capability in pinned baseline b91a33f — no merge dep |
+| Q10 | V6 P1 dep | Capability in pinned baseline (full SHA) — no merge dep |
 
 ---
 
-## T0 R5 Revisions Applied — 5 Directives
+## T0 R6 Revisions Applied — 6 Directives
 
 | # | Directive | Implementation |
 |---|---|---|
-| R5-A | Drop write-once CHECK concept; trigger owns write-once; CHECK = current state only; WITH CHECK ≠ DELETE protection; default-deny DELETE under FORCE RLS; optional BEFORE DELETE trigger defense-in-depth | DISCOVERY §2.4.2 layered model: Layer 1 trigger BEFORE UPDATE for immutable columns; Layer 1b trigger BEFORE INSERT/UPDATE for `laborProfileId` NULL→value; Layer 2 CHECK inspects current state; Layer 5 default-deny DELETE under FORCE RLS |
-| R5-B | Four beneficiary commands (CREATE/CORRECT/REVERSE/REDECIDE_AFTER_REVERSAL); CREATE idempotent on exact-match ACTIVE; REVERSED→SUPERSEDED forbidden; single supersede link direction | DISCOVERY §2.5.1 link direction (`old.supersededById → replacement`); §2.5.5 command matrix with preconditions, effects, audit events; §2.5.5 forbidden transitions list |
-| R5-C | Drop role-only policies; HR_MANAGER team scope; HR_STAFF assigned-only; UPDATE USING/WITH CHECK contract for transfer/release/supersede/correction/reversal; system engine = internal capability; service-layer authorization authority; LIVE RLS matrix tests required | DISCOVERY §2.6.2 role semantics; §2.6.3 RLS matrix with explicit UPDATE USING/WITH CHECK; §2.6.4 LIVE RLS matrix test gate |
-| R5-D | Pin evidence to b91a33f; use `git ls-tree -r --name-only`; no hash placeholders or shortened hashes | DISCOVERY §1.1, §6.2 + OVERVIEW uses pinned baseline; `git ls-tree -r --name-only b91a33f prisma/migrations/ \| Select-String "phase1a\|n1_placement"` |
-| R5-E | PR body: remove R3 stale claims + control characters; 5 explicit permission codes + implicit self-view | gh pr edit #4 body — clean, no control characters, 5 codes + implicit self-view stated |
+| R6-1 | Branch sync with origin/main `0d7f8a1` (no force-push) | Merge commit `97f639f524eef7c97ee35996d615fcdfcad3a3eb`; PR #4 history preserved; merge-base = `0d7f8a1` |
+| R6-2 | CREATE pseudocode split from CORRECT; typed CONFLICT_EXISTING_ACTIVE; no auto-supersede or second ACTIVE insert | DISCOVERY §2.5.4: `createBeneficiaryDecision` with three typed outcomes (CREATED / IDEMPOTENT_REPLAY / CONFLICT_EXISTING_ACTIVE) + exact-match across all authoritative immutable facts (beneficiaryUserId, source, reason, evidence deep-equal, handlingAssignmentId, actorType, actorUserId); `correctBeneficiaryDecision` is a separate function with two typed outcomes (CORRECTED / NO_ACTIVE) |
+| R6-3 | RLS team-scope on BOTH old and new rows; HR_STAFF UPDATE denied; manager cannot reassign out-of-team; system engine DB principal tested LIVE | DISCOVERY §2.6.3: USING checks OLD row team-scope; WITH CHECK verifies NEW row team-scope for HR_MANAGER INSERT/UPDATE on both LHA and CBD; HR_STAFF UPDATE removed from USING and WITH CHECK on both tables; explicit `app_engine_writer` separate DB principal; LIVE isolation tests in §2.6.4 |
+| R6-4 | ReferralAttribution DB contract complete | DISCOVERY §2.4.2 Layer 1 (added `created_at` immutability), Layer 1c lifecycle transition trigger; §2.4.3 per-command RLS policies (SELECT/INSERT/UPDATE); default-deny DELETE; §2.6.4 expanded LIVE matrix for referral_attributions (own/non-own/team/system consume) |
+| R6-5 | State diagram with two direct branches only; REDECIDE_AFTER_REVERSAL is INSERT, not transition from REVERSED | DISCOVERY §2.5.5: diagram redrawn with ACTIVE -> SUPERSEDED (via CORRECT), ACTIVE -> REVERSED (via REVERSE), and REVERSED -> NEW ACTIVE (separate row via REDECIDE_AFTER_REVERSAL); no arrow from REVERSED to ACTIVE; explicit clarification added |
+| R6-6 | Evidence command uses full SHA `b91a33f948aed224a88f3e8e7c9847006f33e97f` | DISCOVERY §1.1, §6.2 + HANDOFF §3 + OVERVIEW: full-SHA command with `--` separator and two separate `Select-String` calls (one for phase1a, one for n1_placement) |
 
 ---
 
@@ -155,4 +165,5 @@ All 18 `AFF-DEC-*` decisions in `aff_plan.md v2.3` are LOCKED. No conflicts.
 | R2 | V6 P1 corrected (filesystem); Q7 beneficiaryUserId required + SYSTEM FK + invariant; Q9b tightened |
 | R3 | NULLS NOT DISTINCT, advisory lock, actorType/CHECK, UNRESOLVED typed, immutable/mutable (referral), exclusive next-day, Holiday OUT, COMPLETE/READY_FOR_MERGE |
 | R4 | 7 blockers fixed (DDL syntax, transaction-scoped advisory lock, multi-layer immutability, off-by-one helper, reproducible evidence, decision immutable/mutable split + correction vs reversal, permission codes) |
-| **R5** | **5 directives applied**: (A) trigger owns write-once; CHECK = current state; default-deny DELETE; (B) four beneficiary commands; supersede link direction fixed; (C) role-scoped RLS with UPDATE USING/WITH CHECK; LIVE RLS matrix; (D) evidence pinned to b91a33f; `git ls-tree -r --name-only`; no placeholders; (E) PR body clean |
+| R5 | drop write-once CHECK; trigger owns write-once; CHECK = current state; default-deny DELETE; four beneficiary commands; supersede link direction fixed; role-scoped RLS; LIVE RLS matrix; evidence pinned to full SHA; PR body clean |
+| **R6** | **Branch synced with origin/main; CREATE/CORRECT split with typed CONFLICT_EXISTING_ACTIVE / NO_ACTIVE; exact-match across all authoritative immutable facts; RLS team-scope on BOTH old and new rows; HR_STAFF UPDATE denied; manager cannot reassign out-of-team; system engine `app_engine_writer` separate DB principal; ReferralAttribution DB contract complete (Layer 1 covers `created_at`; Layer 1c transition trigger; per-command RLS in §2.4.3); state diagram redrawn with two direct branches; evidence command uses full SHA with `--` separator** |
