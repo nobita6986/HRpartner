@@ -21,6 +21,9 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
+import { Breadcrumb } from '@/src/shared/ui/navigation/breadcrumb';
+import { RelatedObjects } from '@/src/shared/ui/data-display/related-objects';
+
 import { getServerSession } from '@/src/shared/auth/server-session';
 import { getPrisma } from '@/src/lib/db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
@@ -76,12 +79,14 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
     <div className="min-h-screen p-6" style={{ backgroundColor: 'var(--surface)' }}>
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
-        <div className="mb-4 flex items-center gap-2 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-          <Link href="/admin/jobs" className="hover:underline">Admin Jobs</Link>
-          <span aria-hidden="true">/</span>
-          <Link href="/admin/jobs/job-postings" className="hover:underline">JobPosting viewer</Link>
-          <span aria-hidden="true">/</span>
-          <span className="font-mono">{posting.slug}</span>
+        <div className="mb-4">
+          <Breadcrumb
+            items={[
+              { label: 'Admin Jobs', href: '/admin/jobs' },
+              { label: 'JobPosting viewer', href: '/admin/jobs/job-postings' },
+              { label: posting.slug },
+            ]}
+          />
         </div>
 
         {/* Header metadata */}
@@ -101,15 +106,6 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
           <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Fact label="Slug" value={posting.slug} mono />
             <Fact label="Revision" value={`v${posting.revision}`} />
-            <Fact
-              label="JobOpening"
-              value={posting.opening?.staffingOrderCode ?? '(orphan)'}
-              mono
-            />
-            <Fact
-              label="JobOpening status"
-              value={posting.opening?.status ?? '—'}
-            />
             <Fact label="Created" value={new Date(posting.createdAt).toLocaleString('vi-VN')} />
             <Fact label="Updated" value={new Date(posting.updatedAt).toLocaleString('vi-VN')} />
             <Fact
@@ -121,6 +117,18 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
               value={posting.archivedAt ? new Date(posting.archivedAt).toLocaleString('vi-VN') : '—'}
             />
           </dl>
+
+          <div className="mt-6">
+            <RelatedObjects
+              title="Job Opening"
+              items={posting.opening ? [{
+                id: posting.opening.staffingOrderCode,
+                title: <span className="font-mono">{posting.opening.staffingOrderCode}</span>,
+                statusLabel: posting.opening.status,
+              }] : []}
+              emptyState="Chưa được gắn với JobOpening nào (orphan)."
+            />
+          </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
             {/* Liên kết tới /viec-lam/[slug] đã được cố ý bỏ: trang public

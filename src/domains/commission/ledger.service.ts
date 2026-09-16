@@ -551,7 +551,7 @@ export async function listLedger(
     ctvId?: string;
     direction?: Direction;
   } = {},
-): Promise<{ items: CommissionLedger[]; total: number }> {
+): Promise<{ items: (CommissionLedger & { ctvName: string | null; workerName: string | null })[]; total: number }> {
   const take = Math.min(100, options.take ?? 50);
   const skip = options.skip ?? 0;
   const where: Prisma.CommissionLedgerWhereInput = {};
@@ -567,13 +567,34 @@ export async function listLedger(
     }),
     prisma.commissionLedger.count({ where }),
   ]);
-  return { items, total };
+
+  const ctvIds = [...new Set(items.map(i => i.ctvId))];
+  const workerIds = [...new Set(items.map(i => i.workerId).filter(Boolean) as string[])];
+
+  const p = prisma as any;
+  const [users, workers] = await Promise.all([
+    ctvIds.length > 0 ? p.user.findMany({ where: { id: { in: ctvIds } }, select: { id: true, name: true } }) : [],
+    workerIds.length > 0 ? p.worker.findMany({ where: { id: { in: workerIds } }, select: { id: true, fullName: true } }) : [],
+  ]);
+
+  const userMap = new Map<string, string>(users.map((u: any) => [u.id, u.name]));
+  const workerMap = new Map<string, string>(workers.map((w: any) => [w.id, w.fullName]));
+
+  const enrichedItems = items.map(item => ({
+    ...item,
+    ctvName: userMap.get(item.ctvId) ?? null,
+    workerName: item.workerId ? (workerMap.get(item.workerId) ?? null) : null,
+  }));
+
+  return { items: enrichedItems, total };
 }
 
 export interface LedgerDTO {
   id: string;
   ctvId: string;
+  ctvName: string | null;
   workerId: string | null;
+  workerName: string | null;
   assignmentId: string | null;
   policyId: string;
   milestone: string;
@@ -590,11 +611,13 @@ export interface LedgerDTO {
   rejectionReason: string | null;
 }
 
-export function ledgerToDTO(l: CommissionLedger): LedgerDTO {
+export function ledgerToDTO(l: CommissionLedger & { ctvName?: string | null; workerName?: string | null }): LedgerDTO {
   return {
     id: l.id,
     ctvId: l.ctvId,
+    ctvName: l.ctvName ?? null,
     workerId: l.workerId,
+    workerName: l.workerName ?? null,
     assignmentId: l.assignmentId,
     policyId: l.policyId,
     milestone: l.milestone,
