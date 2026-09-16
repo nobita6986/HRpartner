@@ -4,9 +4,9 @@
 **Baseline (pinned):** `b91a33f948aed224a88f3e8e7c9847006f33e97f` (15 Sep 2026)
 **Author:** S1
 **Type:** READ-ONLY Discovery — no production code changes
-**Status:** `OPEN / REVISION_REQUIRED` (T0 verdict after R7/R8/R9/R10/R11 reviews)
+**Status:** `OPEN / FINAL_R11_DELTA_REQUIRED` (T0 verdict after R7/R8/R9/R10/R11 reviews + R11 delta)
 
-> **R11 status note:** R10 closed 4 P1 + 2 P2 blockers. R11 closes 6 additional blockers: (P1-1) membership SQL fixed — FOR LOOP inside DO $$, pg_auth_members joined via pg_roles on roleid=oid; (P1-2) blanket REVOKE ALL replaced with per-slice privilege allowlist (only RA grants revoked in Step 2; CBD grants survive re-run); schema ownership check added via pg_namespace.nspowner; (P1-3) L-03 fixed — exact immutable trigger name, admin-before-role-switch transaction, SQLSTATE 42501 assertion; (P1-4) L-05 uses `updatedAt` (mutable system column) instead of `outcomeNote`; (P2-1) L-02 split into L-02a (NOT NULL constraint) and L-02b (positive in-team INSERT); (P2-2) jsonb parity text corrected — removed IEEE-754 claim, numeric parity specific to JSON/PostgreSQL numeric; stale R0-R9/R10 status references synced to R10/R11. PR remains OPEN / REVISION_REQUIRED until T0 final authorization.
+> **R11 delta status note:** R11 closes 6 blockers; FINAL R11 DELTA closes 6 surgical corrections on top: (D1) removed blanket ALL SEQUENCES revoke; (D2) `public` schema now checked in ownership assertion (only `information_schema` and `pg_%` excluded); (D3) removed unsupported full-grant-scan claim, added E-19 N2-5 privilege-survival LIVE vector; (D4) L-02a is admin/bypass-RLS schema-only SQLSTATE 23502 test (NOT an RLS test); (D5) L-03 strengthened with `current_user`, `rolsuper=false`, schema/table privilege assertions and RLS-diagnostic on denial; (D6) removed IEEE-754/DOUBLE_PRECISION claim; numeric parity limited to two specific vectors (`1.0=1`, `-0=0`); all stale R0-R9/R10 references synced to R11. PR remains OPEN until T0 final authorization.
 **Audit:** `NONE` (read-only docs-only)
 **Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
 **PR:** [Pull Request #4](https://github.com/nobita6986/HRpartner/pull/4)
@@ -15,13 +15,13 @@
 
 ## 0. Executive Summary
 
-N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất cả đều greenfield. `aff_plan.md v2.3` đã chốt 18 decision. T0 đã chốt operational decisions R0–R11. Tài liệu này lock toàn bộ policy để Tier 1 mở N2-1 slice.
+N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất cả đều greenfield. `aff_plan.md v2.3` đã chốt 18 decision. T0 đã chốt operational decisions R0–R11 (R11 delta applied). Tài liệu này lock toàn bộ policy để Tier 1 mở N2-1 slice.
 
 > **R8 status note:** PR #4 has been REVISION_REQUIRED by T0 after R7. R8 closes 4 P1 executable-contract blockers (CBD scope bypass, missing app_engine_writer executable contract, set_config isolation semantics, recursive canonical JSON). PR remains OPEN / REVISION_REQUIRED until T0 final authorization.
 
-**R9/R10/R11 additions**: (1) **app_engine_writer runtime (R9)**: dedicated LOGIN role + dedicated engine DSN/connection pool (`HRPARTNER_ENGINE_URL`); runtime test confirms `current_user='app_engine_writer'`; no SET ROLE assumption; pool/credential boundary verified via `pg_stat_activity`. (2) **membership/ownership lock (R11 P1-1+P1-2)**: `FOR LOOP` inside `DO $$` with cursor; `pg_auth_members` joined via `pg_roles` on `roleid=oid`; per-slice privilege allowlist (only RA grants revoked in Step 2; CBD grants survive re-run); `pg_namespace.nspowner` schema ownership check added. (3) **link-capture + RETURNING (R9)**: SELECT policy permits `link-capture` so Prisma `INSERT ... RETURNING` works; LIVE test E-17 with exact Prisma statement. (4) **Canonical JSON K-08/K-09 alignment (R9)**: `1.0 ↔ 1` and `-0 ↔ 0` return `true` to match both `JSON.stringify` and PostgreSQL `jsonb` numeric semantics. (5) **`isJsonValue` with WeakSet cycle detection (R10 P1-1)**: rejects undefined, NaN, ±Infinity, Date, exotic objects, cycles; 10 rejection vectors K-11..K-20; WeakSet add-before-descend/delete-after-unwind pattern. (6) **N2-1 slice scope (R10 P1-3)**: N2-1 = RA grants/policies only; CBD grants deferred to N2-5. (7) **L-01..L-06 isolation (R11 P1-3+P1-4+P2-1)**: L-02 split into L-02a (NOT NULL constraint) and L-02b (positive in-team INSERT); L-03 exact immutable trigger name, admin-before-role-switch, SQLSTATE 42501; L-05 uses `updatedAt` (mutable system column).
+**R9/R10/R11/R11-delta additions**: (1) **app_engine_writer runtime (R9)**: dedicated LOGIN role + dedicated engine DSN/connection pool (`HRPARTNER_ENGINE_URL`); runtime test confirms `current_user='app_engine_writer'`; no SET ROLE assumption; pool/credential boundary verified via `pg_stat_activity`. (2) **membership/ownership lock (R11 P1-1+P1-2, R11-delta D2)**: `FOR LOOP` inside `DO $$` with cursor; `pg_auth_members` joined via `pg_roles` on `roleid=oid`; per-slice privilege allowlist (only RA grants revoked in Step 2; CBD grants survive re-run); `pg_namespace.nspowner` schema ownership check now includes `public`. (3) **link-capture + RETURNING (R9)**: SELECT policy permits `link-capture` so Prisma `INSERT ... RETURNING` works; LIVE test E-17 with exact Prisma statement. (4) **Canonical JSON K-08/K-09 alignment (R9)**: `1.0 ↔ 1` and `-0 ↔ 0` return `true` to match both `JSON.stringify` and PostgreSQL `jsonb` numeric semantics. (5) **`isJsonValue` with WeakSet cycle detection (R10 P1-1)**: rejects undefined, NaN, ±Infinity, Date, exotic objects, cycles; 10 rejection vectors K-11..K-20; WeakSet add-before-descend/delete-after-unwind pattern. (6) **N2-1 slice scope (R10 P1-3)**: N2-1 = RA grants/policies only; CBD grants deferred to N2-5. (7) **L-01..L-06 isolation (R11 P1-3+P1-4+P2-1, R11-delta D4+D5)**: L-02a is admin/bypass-RLS schema-only SQLSTATE 23502 test; L-02b positive in-team CBD INSERT; L-03 strengthened with current_user, rolsuper, schema/table privilege assertions and RLS-diagnostic on denial; L-05 uses `updatedAt` (mutable system column).
 
-**R9/R10/R11 P2 corrections**: (8) **COALESCE (R9)**: engine policies use `COALESCE(current_setting(..., true), '')` for absent-or-not-in-allowlist. (9) **Posture converge (R10)**: ALTER first, then post-assert; fail-loud on drift. (10) **jsonb parity (R11 P2-2)**: application validator runs first; DB `jsonb =` equality is secondary backup only; IEEE-754 claim removed; numeric parity specific to JSON/PostgreSQL numeric. (11) **Status sync (R9)**: `OPEN / REVISION_REQUIRED` in all 4 docs. (12) **Stale references (R11 P2-2)**: all R0-R9/R10 status text synced to R10/R11.
+**R9/R10/R11/R11-delta P2 corrections**: (8) **COALESCE (R9)**: engine policies use `COALESCE(current_setting(..., true), '')` for absent-or-not-in-allowlist. (9) **Posture converge (R10)**: ALTER first, then post-assert; fail-loud on drift. (10) **jsonb parity (R11-delta D6)**: application validator runs first; DB `jsonb =` equality is secondary backup only; IEEE-754 / DOUBLE_PRECISION claim removed; numeric parity limited to two specific vectors (`1.0=1`, `-0=0`). (11) **Status sync (R9)**: `OPEN / FINAL_R11_DELTA_REQUIRED` in all 4 docs. (12) **Stale references (R11-delta D6)**: all R0-R9/R10 status text synced to R11. (13) **Privilege-survival LIVE (R11-delta D3)**: E-19 vector proves CBD grants survive N2-1 re-run via `has_table_privilege` assertions. (14) **Sequence revoke (R11-delta D1)**: blanket `ALL SEQUENCES` revoke removed; only exact sequences are revoked if needed.
 
 **R8 prior**: CBD RLS scope; app_engine_writer executable contract; set_config(true) only; recursive canonical JSON.
 
@@ -1034,13 +1034,16 @@ $$;
 --     referral_attributions. It does NOT touch commission_beneficiary_decisions.
 --   - CBD grants (added by N2-5) survive a re-run of the N2-1 provisioning block.
 --   - This approach is idempotent per slice: re-running Step 2 only affects RA grants.
---   - The post-assert (Step 4) uses the full catalog scan to detect ANY unexpected
---     grant or membership — it does NOT have false negatives on N2-5 grants.
+--   - The post-assert (Step 4) checks role attributes + memberships + schema/table
+--     ownership only. It does NOT claim a "full grant scan". N2-5 privilege
+--     survival is proven by the dedicated E-19 LIVE vector (see below).
 --
 -- Revoke all direct grants on referral_attributions only (N2-1 scope):
 REVOKE ALL PRIVILEGES ON referral_attributions FROM app_engine_writer;
-REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM app_engine_writer;
--- (The engine never needs to access other application tables; this is safe to revoke.)
+-- (R11 delta D1 fix: removed blanket ALL SEQUENCES revoke. RA uses UUID primary
+-- keys, so no application sequence is needed. CBD sequences are owned by N2-5
+-- and not touched here. If a future N2-1 migration introduces a sequence, it
+-- must be revoked by exact name.)
 
 -- Revoke unexpected memberships (must be inside a DO $$ block — FOR LOOP is not
 -- valid at top-level SQL; also pg_auth_members has no direct role_name column):
@@ -1113,19 +1116,23 @@ BEGIN
     RAISE EXCEPTION 'engine contract: app_engine_writer has unexpected memberships: %', unexpected_members;
   END IF;
 
-  -- Schema ownership assertions (R11 P1-2 fix): engine must own ZERO non-system schemas.
-  -- pg_namespace.nspowner is the OID of the owning role.
+  -- Schema ownership assertions (R11 delta D2 fix): engine must own ZERO
+  -- application schemas. Only system schemas are excluded: `information_schema`
+  -- and any `pg_%` catalog schema (matched via `nspname NOT LIKE 'pg_%'`).
+  -- `public` is now checked — the engine must NOT own `public` either.
   SELECT string_agg(nspname, ', ' ORDER BY nspname)
   INTO unexpected_owned_schemas
   FROM pg_namespace
   WHERE nspowner = (SELECT oid FROM pg_roles WHERE rolname = 'app_engine_writer')
-    AND nspname NOT IN ('pg_catalog', 'information_schema', 'public');
+    AND nspname <> 'information_schema'
+    AND nspname NOT LIKE 'pg_%';
   IF unexpected_owned_schemas IS NOT NULL THEN
     RAISE EXCEPTION 'engine contract: app_engine_writer must not own application schemas: %', unexpected_owned_schemas;
   END IF;
 
   -- Table and sequence ownership assertions (R10 P1-2, R11 P1-2 fix):
   -- engine must own ZERO non-system application tables/sequences.
+  -- `public` schema is included — engine must NOT own application objects there.
   SELECT string_agg(nspname || '.' || relname, ', ' ORDER BY nspname, relname)
   INTO unexpected_owned_objects
   FROM (
@@ -1133,7 +1140,8 @@ BEGIN
     FROM pg_class c
     JOIN pg_namespace n ON c.relnamespace = n.oid
     WHERE c.relowner = (SELECT oid FROM pg_roles WHERE rolname = 'app_engine_writer')
-      AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+      AND n.nspname <> 'information_schema'
+      AND n.nspname NOT LIKE 'pg_%'
   ) t;
   IF unexpected_owned_objects IS NOT NULL THEN
     RAISE EXCEPTION 'engine contract: app_engine_writer must not own any application objects: %', unexpected_owned_objects;
@@ -1280,18 +1288,20 @@ on the OLD row. To isolate the WITH CHECK clause, R9 adds these targeted tests:
 | # | Test scenario | Expected | Layer that denies |
 |---|---|---|---|
 | L-01 | HR_MANAGER (team) INSERTs a NEW CBD row with `labor_profile_id` of out-of-team profile | **denied** | CBD INSERT WITH CHECK |
-| L-02a | Application/schema: direct SQL `INSERT` with `labor_profile_id = NULL` (column is NOT NULL) | **rejected** | PostgreSQL NOT NULL table constraint — applied before RLS |
+| L-02a | Direct SQL `INSERT ... (labor_profile_id = NULL)` executed by **test-admin / table-owner** in the dedicated integration test DB, BYPASSING RLS (e.g. via `SET LOCAL row_security = OFF` in the same transaction). | **rejected with SQLSTATE `23502`** (NOT NULL violation). | PostgreSQL NOT NULL table constraint — schema layer. **This is NOT an RLS test.** RLS is intentionally bypassed here to isolate the schema constraint. |
 | L-02b | Positive control: HR_MANAGER (team) INSERTs a NEW CBD row with valid `labor_profile_id` matching in-team profile | **allowed** | CBD INSERT WITH CHECK (passes — in-team) |
-| L-03 | HR_MANAGER (team) UPDATE on a CBD row attached to profile P1 (in-team), changing `labor_profile_id` to P2 (out-of-team); uses a dedicated integration test DB (not the migration target); executed under table-owner/admin who can disable the specific immutable trigger; `SET LOCAL ROLE app_user_writer` switches to engine role (not a real runtime path — test-only exception); HR_MANAGER GUC is set transaction-locally; asserts `rolsuper = false` throughout; UPDATE attempts to set `labor_profile_id = P2` | **denied with SQLSTATE 42501** (RLS WITH CHECK denial, not permission error) | CBD UPDATE WITH CHECK — confirmed by SQLSTATE (R11 P1-3 isolation note: blanket `DISABLE TRIGGER ALL` requires superuser and bypasses everything — test uses exact trigger name instead) |
+| L-03 | HR_MANAGER (team) UPDATE on a CBD row attached to profile P1 (in-team), changing `labor_profile_id` to P2 (out-of-team); uses a dedicated integration test DB (not the migration target); executed under table-owner/admin who can disable the specific immutable trigger; `SET LOCAL ROLE app_user_writer` switches to the **human writer principal** (test-only exception — not a runtime path); HR_MANAGER GUC is set transaction-locally. Before UPDATE: `assert current_user = 'app_user_writer'`, `assert rolsuper = false`, `assert has_schema_privilege('app_user_writer', 'public', 'USAGE') = true`, `assert has_table_privilege('app_user_writer', 'commission_beneficiary_decisions', 'UPDATE') = true`, `assert OLD P1 row visible under HR_MANAGER context` (USING policy passes for OLD row). UPDATE attempts to set `labor_profile_id = P2`. | **denied with SQLSTATE `42501` AND ERROR MESSAGE containing new-row RLS policy violation on CBD** (e.g. `new row violates row-level security policy for table "commission_beneficiary_decisions"`) | CBD UPDATE WITH CHECK — confirmed by SQLSTATE + diagnostic (R11 delta D5 fix: SQLSTATE 42501 alone is insufficient — it could also indicate a privilege gap; the diagnostic must point to new-row RLS) |
 | L-04 | Same as L-03 with the immutable trigger **enabled** (full system, non-superuser, same transaction flow) | **denied** | CBD UPDATE WITH CHECK OR immutable trigger (full stack denial; L-03 isolates WITH CHECK) |
 | L-05 | HR_MANAGER (team) UPDATE to change `updatedAt` to `NOW()` (a mutable system column, no-op update); the OLD row's `labor_profile_id` is in-team; immutable columns (`beneficiaryUserId`, `source`, `reason`, `actorType`, `actorUserId`) are unchanged | **allowed** | n/a (mutable column only; no immutable trigger conflict; no RLS denial — in-team) |
 | L-06 | HR_MANAGER (team) INSERT a NEW CBD row attached to profile P2 (out-of-team); verify INSERT WITH CHECK denies before the partial unique index is consulted | **denied before index** | CBD INSERT WITH CHECK |
 
-> **R11 P1-3 isolation note for L-03:** Blanket `DISABLE TRIGGER ALL` requires superuser and bypasses all RLS — it tests nothing. L-03 instead uses the **exact immutable trigger name** (e.g. `hrp_cbd_immutable_layer1` — the actual name assigned by the N2-5 migration). Only the table owner or a superuser can `DISABLE TRIGGER`. In the dedicated integration test DB, the test runs as table-owner/admin, disables the **named** trigger (not `ALL`), then switches to `app_user_writer` via `SET LOCAL ROLE` to execute the UPDATE under the engine role's RLS context. `SET LOCAL ROLE` is a **test-only exception** — it is not a real runtime path; the engine always connects as `app_user_writer` directly. The test asserts: (a) `current_user = 'app_user_writer'` after the switch, (b) `rolsuper = false` (confirms this is not a superuser bypass), (c) SQLSTATE `42501` on UPDATE (RLS WITH CHECK denial, not permission error). Rollback to clean up.
+> **R11 delta D5 isolation note for L-03:** `app_user_writer` is the **human writer principal** (not the engine role). SQLSTATE `42501` alone is insufficient evidence — it can also indicate missing schema/table privilege. Before the UPDATE, the test asserts: (a) `current_user = 'app_user_writer'`, (b) `rolsuper = false`, (c) `has_schema_privilege('app_user_writer', 'public', 'USAGE') = true`, (d) `has_table_privilege('app_user_writer', 'commission_beneficiary_decisions', 'UPDATE') = true`, (e) OLD P1 row is visible under HR_MANAGER context (USING policy passes). The UPDATE then attempts to set `labor_profile_id = P2`; the test asserts SQLSTATE `42501` AND an error message that contains the new-row RLS policy violation string on `commission_beneficiary_decisions`. This proves the denial is the new-row RLS WITH CHECK, not a privilege gap. `SET LOCAL ROLE app_user_writer` is a **test-only exception** — not a real runtime path; the engine always connects via `HRPARTNER_ENGINE_URL`.
+>
+> **R11 delta D4 isolation note for L-02a:** L-02a runs under test-admin / table-owner in the dedicated integration test DB, **explicitly bypassing RLS** (`SET LOCAL row_security = OFF`) so the test isolates the schema-layer NOT NULL constraint. SQLSTATE `23502` is the expected rejection. L-02a is **explicitly NOT an RLS test**; it confirms the schema rejects NULL before RLS is even consulted. L-02b provides the positive RLS control that CBD INSERT WITH CHECK correctly allows valid in-team rows.
+>
+> **R11 P1-3 isolation note for L-03:** Blanket `DISABLE TRIGGER ALL` requires superuser and bypasses all RLS — it tests nothing. L-03 uses the **exact immutable trigger name** (e.g. `hrp_cbd_immutable_layer1` — the actual name assigned by the N2-5 migration). Only the table owner or a superuser can `DISABLE TRIGGER`. In the dedicated integration test DB, the test runs as table-owner/admin, disables the **named** trigger (not `ALL`), then switches to `app_user_writer` via `SET LOCAL ROLE` to execute the UPDATE under the human writer principal's RLS context.
 >
 > **R11 P1-4 isolation note for L-05:** The CBD schema does not contain `outcomeNote`. L-05 uses `updatedAt` (a mutable system column — typically `updated_at` with `DEFAULT now()` or `ON UPDATE`). This is truly mutable: no immutable trigger fires, and the UPDATE is allowed by RLS (in-team). As an alternative, a valid lifecycle transition (e.g. `ACTIVE -> SUPERSEDED` if the CBD is in `ACTIVE` state) is also a legitimate mutable path with appropriate fixtures.
->
-> **R11 P2-1 isolation note for L-02:** L-02a and L-02b are split: L-02a tests the PostgreSQL NOT NULL constraint layer (not RLS) using direct SQL; L-02b provides the positive control that CBD INSERT WITH CHECK correctly allows valid in-team rows. The application validation layer would raise before SQL reaches PostgreSQL in the real runtime; L-02a exercises the schema layer directly.
 
 **`referral_attributions` (N2-1 RLS simplified — R7):**
 
@@ -1331,6 +1341,7 @@ on the OLD row. To isolate the WITH CHECK clause, R9 adds these targeted tests:
 | E-16 | Credential boundary: `app_engine_writer` connection string is `HRPARTNER_ENGINE_URL` env var; `app_user_writer` connection string is `HRPARTNER_PRIMARY_URL`; no shared `PGUSER` env var | runtime config review confirms separation; no fallback to `app_user_writer` when engine secret unset (engine refuses to start) |
 | E-17 | Prisma create with `INSERT ... RETURNING` under `link-capture` context: `await tx.referralAttribution.create({ data })` (Prisma adds RETURNING by default) | allowed; row inserted; SELECT policy permits `link-capture` so RETURNING returns the new row |
 | E-18 | Canonical JSON K-08 with `JSON.stringify(1.0) === JSON.stringify(1)` and `JSON.stringify(-0) === JSON.stringify(0)` | BOTH JavaScript `JSON.stringify` and PostgreSQL `jsonb` map `1.0 ↔ 1` and `-0 ↔ 0`; canonicalJson matches application+DB (`true` for both, NOT `false`) |
+| E-19 | N2-5 privilege-survival LIVE vector (R11 delta D3 fix): apply N2-5 CBD grants (`GRANT SELECT, INSERT, UPDATE ON commission_beneficiary_decisions TO app_engine_writer` + `REVOKE DELETE ... FROM app_engine_writer`), then re-run N2-1 provisioning (Step 1-5) in the SAME transaction, then assert: `has_table_privilege('app_engine_writer', 'commission_beneficiary_decisions', 'SELECT')` = true, `has_table_privilege('app_engine_writer', 'commission_beneficiary_decisions', 'INSERT')` = true, `has_table_privilege('app_engine_writer', 'commission_beneficiary_decisions', 'UPDATE')` = true, `has_table_privilege('app_engine_writer', 'commission_beneficiary_decisions', 'DELETE')` = false. (N2-1 MUST NOT introduce a generic CBD query; this vector exercises only `has_table_privilege` and the re-run, no `commission_beneficiary_decisions` SELECT in N2-1.) |
 
 N2-1 and N2-5 TASKs must include these LIVE matrices as hard test gates.
 
@@ -1369,9 +1380,15 @@ helper uses `JSON.stringify` for primitives so 1.0 and 1 produce identical outpu
 | K-19 | `{a: {b: undefined}}` (nested undefined) | throws TypeError |
 | K-20 | `{a: [1, undefined, 3]}` (undefined in array) | throws TypeError |
 
-> **R10 P2-2 correction — jsonb parity scope:** The statement "both `canonicalJson` and PostgreSQL `jsonb` reject these inputs" is only accurate after the input has been validated as a JSON value. `isJsonValue` is the application-layer gate that runs FIRST — it rejects Date, Map, Set, Symbol, function, NaN, ±Infinity, undefined, cyclic objects, and exotic prototypes before they ever reach `canonicalJson` or a JSON serialization round-trip. PostgreSQL does not directly receive JavaScript types (undefined, Date, Map, etc.) — they cannot appear as input to `jsonb_in`. The `jsonb =` operator in PostgreSQL is a backup equality check applied only to column values that already passed the DB schema (NOT NULL jsonb column accepts only valid JSON values).
+> **R10 P2-2 correction — jsonb parity scope (R11 delta D6):** The statement "both `canonicalJson` and PostgreSQL `jsonb` reject these inputs" is misleading — `isJsonValue` (JavaScript layer) is the validator that rejects Date, Map, Set, Symbol, function, NaN, ±Infinity, undefined, cyclic objects, and exotic prototypes. PostgreSQL `jsonb_in` does not directly receive JavaScript types; the DB only sees JSON-serialized strings. The two systems operate at different layers: the application validator runs FIRST, and `jsonb =` is a backup equality check applied only to confirmed-JSON column values (NOT NULL jsonb column accepts only valid JSON values).
 >
-> **Numeric parity (specific, not IEEE-754 claim):** `JSON.stringify(1.0) === JSON.stringify(1)` in JavaScript. PostgreSQL `jsonb` normalizes numeric literals: `'1.0'::jsonb = '1'::jsonb` evaluates to `true` (PostgreSQL numeric comparison, not IEEE 754 floating-point). Similarly, `-0` and `0` are normalized to the same representation in both systems. These two specific equalities hold, but this is not a general IEEE 754 claim — PostgreSQL jsonb uses numeric/DOUBLE_PRECISION semantics, not binary floating-point representation.
+> **Numeric parity (R11 delta D6 — only the two specific vectors):**
+> - `JSON.stringify(1.0) === JSON.stringify(1)` is `true` in JavaScript.
+> - `'1.0'::jsonb = '1'::jsonb` is `true` in PostgreSQL.
+> - `JSON.stringify(-0) === JSON.stringify(0)` is `true` in JavaScript.
+> - `'-0'::jsonb = '0'::jsonb` is `true` in PostgreSQL.
+>
+> **PostgreSQL jsonb number type uses `numeric` (arbitrary precision), not IEEE 754 double-precision.** The numeric parity above holds because both JS `JSON.stringify` and PG `jsonb` normalize these specific literals to the same canonical form — not because of IEEE 754 floating-point semantics.
 >
 > **Application validator runs first; DB jsonb equality is a secondary backup check applied only to confirmed-JSON values.**
 
@@ -1572,9 +1589,9 @@ Discovery hoàn tất khi:
 - V6 P1 capability confirmed available in pinned baseline
 - All 4 files synced
 - PR #4 opened as docs-only
-- Status: OPEN / REVISION_REQUIRED (T0 verdict after R7/R8/R9/R10/R11 reviews; awaiting T0 final authorization)
+- Status: OPEN / FINAL_R11_DELTA_REQUIRED (T0 verdict after R7/R8/R9/R10/R11 reviews + R11 delta; awaiting T0 final authorization)
 - Audit: NONE (read-only docs-only task)
 
 ---
 
-**Discovery in REVISION_REQUIRED state. PR #4 awaiting T0 final authorization (R0..R11 corrections applied; merge-base = origin/main `0d7f8a1099bc9f1a41767aefe5bd3bc149de84d2`).**
+**Discovery in FINAL_R11_DELTA_REQUIRED state. PR #4 awaiting T0 final authorization (R0..R11 + R11 delta corrections applied; merge-base = origin/main `0d7f8a1099bc9f1a41767aefe5bd3bc149de84d2`).**

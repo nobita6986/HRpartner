@@ -1,7 +1,7 @@
 # Task: N2 AFF Policy & Contract Discovery
 
 **Slug:** `hrp-v6-n2-aff-policy-contract-discovery`
-**Status:** `OPEN / REVISION_REQUIRED` (T0 verdict after R7 → R8 → R9 → R10 → R11)
+**Status:** `OPEN / FINAL_R11_DELTA_REQUIRED` (T0 verdict after R7 → R8 → R9 → R10 → R11 → R11 delta)
 **Audit:** `NONE`
 **Type:** READ-ONLY Discovery — no production code changes
 **Baseline (pinned):** `b91a33f948aed224a88f3e8e7c9847006f33e97f` (full SHA)
@@ -15,7 +15,7 @@
 - Surveyed codebase for all 10 N2 policy questions
 - Documented evidence with file:line references (full SHA pinning)
 - Proposed 6 vertical slices with dependency graph
-- **T0 R0–R11 verdicts applied** (R11 closes 6 blockers):
+- **T0 R0–R11 verdicts + R11 delta applied** (R11 delta closes 6 surgical corrections)
 
 ### R0–R8: prior rounds
 - R0: discovery baseline
@@ -29,32 +29,28 @@
 - R8: 4 P1 executable-contract blockers — CBD RLS scope; app_engine_writer executable contract; set_config(..., true) only; recursive canonical JSON
 
 ### R9: 4 P1 + 4 P2 blockers
-1. **app_engine_writer runtime** — dedicated LOGIN role + dedicated engine DSN/connection pool (`HRPARTNER_ENGINE_URL`)
-2. **link-capture + RETURNING** — SELECT policy permits `link-capture`; LIVE test E-17
-3. **Canonical JSON K-08/K-09 alignment** — `1.0 ↔ 1` and `-0 ↔ 0` return `true`
-4. **`isJsonValue` reject vectors** — 10 LIVE rejection vectors K-11..K-20
+1. app_engine_writer runtime — dedicated LOGIN + dedicated engine DSN/connection pool
+2. link-capture + RETURNING — SELECT policy permits link-capture; LIVE test E-17
+3. Canonical JSON K-08/K-09 alignment — 1.0↔1 and -0↔0 return true
+4. isJsonValue reject vectors — 10 LIVE rejection vectors K-11..K-20
 
-P2 corrections:
-5. **L-01..L-06** — CBD INSERT WITH CHECK isolation tests
-6. **COALESCE** — all engine policies use `COALESCE(current_setting(..., true), '')`
-7. **Posture converge** — `ALTER ROLE` converges to `NOSUPERUSER NOBYPASSRLS NOINHERIT NOREPLICATION`
-8. **Status sync** — `OPEN / REVISION_REQUIRED` in all 4 docs
+P2: L-01..L-06 isolation; COALESCE; posture converge; status sync
 
 ### R10: 4 P1 + 2 P2 blockers
-1. **P1-1: Cycle detection** — WeakSet add-before-descend/delete-after-unwind; K-15 throws TypeError
-2. **P1-2: Membership/ownership lock** — REVOKE ALL + pg_auth_members + pg_class checks + post-assert
-3. **P1-3: Slice ordering** — N2-1 = RA grants only; CBD grants deferred to N2-5
-4. **P1-4: L-01..L-06 matrix** — L-02 deny (NOT NULL), L-03 ALTER TRIGGER disable, L-05 mutable outcomeNote
-5. **P2-1: Posture assert AFTER ALTER** — fail-loud on drift
-6. **P2-2: jsonb parity scope** — application validator runs first; DB jsonb is secondary backup only
+P1: cycle detection (WeakSet); membership/ownership lock; N2-1/CBD slice ordering; L-01..L-06 corrected.
+P2: posture AFTER ALTER; jsonb parity scope.
 
-### R11 (this): 6 blockers
-1. **P1-1: Membership SQL invalid** — FOR LOOP inside DO $$, pg_auth_members joined via pg_roles on roleid=oid
-2. **P1-2: Blanket revoke breaks N2-5 CBD grants** — per-slice privilege allowlist; pg_namespace.nspowner schema ownership check
-3. **P1-3: L-03 not executable** — exact immutable trigger name, admin-before-role-switch transaction, SQLSTATE 42501
-4. **P1-4: L-05 uses non-existent field** — uses `updatedAt` (mutable system column)
-5. **P2-1: L-02 not layer-isolated** — split into L-02a (NOT NULL constraint) and L-02b (positive in-team INSERT)
-6. **P2-2: JSON/status text still contradictory** — removed IEEE-754 claim; numeric parity specific to JSON/PostgreSQL numeric; stale R0-R9/R10 status references synced to R10/R11
+### R11: 6 blockers
+P1: membership SQL fixed (FOR LOOP in DO $$, pg_auth_members join); per-slice privilege allowlist + pg_namespace.nspowner; L-03 exact-trigger + admin-before-role-switch; L-05 updatedAt.
+P2: L-02 split (L-02a/L-02b); jsonb parity corrected (no IEEE-754).
+
+### R11 delta (this): 6 surgical corrections
+1. **D1**: Removed blanket ALL SEQUENCES revoke (RA uses UUID; no application sequence needed)
+2. **D2**: `public` schema now checked in ownership assertion (only `information_schema` and `pg_%` excluded)
+3. **D3**: Removed unsupported full-grant-scan claim; added E-19 N2-5 privilege-survival LIVE vector
+4. **D4**: L-02a is admin/bypass-RLS schema-only SQLSTATE 23502 test (NOT an RLS test)
+5. **D5**: L-03 strengthened with current_user, rolsuper, schema/table privilege assertions and RLS-diagnostic on denial; calls app_user_writer the **human writer principal**
+6. **D6**: Removed IEEE-754/DOUBLE_PRECISION claim; numeric parity limited to two specific vectors (`1.0=1`, `-0=0`); all stale R0-R9/R10 references synced to R11
 
 ---
 
@@ -80,7 +76,7 @@ P2 corrections:
 - No docs/TIER0_SHIFT_HANDOVER.md modification
 - No PR #3 / P2 file changes
 - No N4 implementation
-- No new policy decisions (R11 is correction-only)
+- No new policy decisions (R11 delta is correction-only)
 - No mutable origin/main references (evidence pinned)
 
 ---
@@ -96,7 +92,7 @@ P2 corrections:
 | RQ-05 | Q5: Pause/reset | **Clock RUNNING always, assignment has expiresAt** |
 | RQ-06 | Q6: Attribution | **Layer 1+1b+1c triggers; N2-1 RLS = ADMIN/referrer/engine (no LHA/team refs); Layer 1b NULL→value write-once; CHECK current state only; default-deny DELETE** |
 | RQ-07 | Q7: BeneficiaryDecision | **Authority record; CREATE/CORRECT separate functions; CREATE three typed outcomes; CORRECT lock→lookup→UPDATE→INSERT→link→commit ordering; four commands; idempotency identity excludes decidedAt; canonicalJson validated by isJsonValue (WeakSet cycle detection; rejects undefined, NaN, ±Infinity, exotic objects) and aligned with JSON.stringify + jsonb semantics (K-01..K-20 LIVE tests)** |
-| RQ-08 | Q8: Permissions | **5 explicit codes + implicit self-view; role-scoped RLS; team-scope on BOTH old/new rows (USING + WITH CHECK); HR_STAFF UPDATE denied; N2-1 RLS simplified; system engine app_engine_writer (dedicated LOGIN role + dedicated connection pool `HRPARTNER_ENGINE_URL`, no SET ROLE assumption, posture converge `NOSUPERUSER NOBYPASSRLS NOINHERIT NOREPLICATION`, per-slice privilege allowlist, REVOKE DELETE, explicit policies with COALESCE current_setting context gate, set_config(..., true) only, membership/ownership lock R11, 18 LIVE tests E-01..E-18); LIVE RLS matrix tests (L-01..L-06 isolation R11)** |
+| RQ-08 | Q8: Permissions | **5 explicit codes + implicit self-view; role-scoped RLS; team-scope on BOTH old/new rows (USING + WITH CHECK); HR_STAFF UPDATE denied; N2-1 RLS simplified; system engine app_engine_writer (dedicated LOGIN role + dedicated connection pool `HRPARTNER_ENGINE_URL`, no SET ROLE assumption, posture converge `NOSUPERUSER NOBYPASSRLS NOINHERIT NOREPLICATION`, per-slice privilege allowlist R11, REVOKE DELETE, explicit policies with COALESCE current_setting context gate, set_config(..., true) only, membership/ownership lock R11, 18 LIVE tests E-01..E-18, E-19 N2-5 privilege-survival R11-delta); LIVE RLS matrix tests (L-01..L-06 isolation R11-delta)** |
 | RQ-09 | Q9: Inventory reuse | **Component inventory + conflicts** |
 | RQ-09b | Q9b: Legacy ctvId | **EXACT_SAFE = FK + provenance + writer + no conflict + audit** |
 | RQ-10 | Q10: Slices | **6 slices; V2 P1 capability in pinned baseline, no merge dep** |
@@ -116,16 +112,16 @@ P2 corrections:
 
 ---
 
-## 5. R11 Blocker Corrections (this revision)
+## 5. R11 delta Corrections (this revision)
 
 | # | Directive | Implementation |
 |---|---|---|
-| P1-1 | Membership SQL invalid — FOR LOOP not in DO $$, wrong pg_auth_members column | DISCOVERY §2.6.3: FOR LOOP wrapped inside DO $$ with CURSOR; pg_auth_members joined via pg_roles ON roleid=oid to get granted_role.rolname |
-| P1-2 | Blanket REVOKE breaks N2-5 CBD grants; pg_namespace.nspowner unchecked | DISCOVERY §2.6.3: per-slice privilege allowlist (Step 2 only revokes RA grants, not CBD); pg_namespace.nspowner schema ownership check added; regression test: re-run N2-1 provisioning after N2-5 applied, RA+CBD grants still present |
-| P1-3 | L-03 DISABLE TRIGGER ALL not executable by non-superuser | DISCOVERY §2.6.4: L-03 uses exact immutable trigger name; admin-before-role-switch transaction; dedicated integration test DB; SET LOCAL ROLE app_user_writer (test-only exception); asserts current_user=app_user_writer, rolsuper=false, SQLSTATE 42501 |
-| P1-4 | L-05 uses non-existent outcomeNote field | DISCOVERY §2.6.4: L-05 uses updatedAt (mutable system column) or valid lifecycle transition fixture |
-| P2-1 | L-02 conflates two layers | DISCOVERY §2.6.4: L-02 split into L-02a (NOT NULL constraint via direct SQL) and L-02b (positive in-team CBD INSERT control); L-02a not called RLS test |
-| P2-2 | JSON/status text still contradictory; stale R0-R9/R10 references | DISCOVERY §0+§2.5.4+§2.6.4+§2.6.5: IEEE-754 claim removed; jsonb parity is specific to JSON/PostgreSQL numeric; all R0-R9/R10 status references synced to R10/R11 |
+| D1 | Blanket ALL SEQUENCES revoke breaks slice ordering | DISCOVERY §2.6.3: removed blanket `REVOKE ALL PRIVILEGES ON ALL SEQUENCES`. RA uses UUID; CBD sequences belong to N2-5 |
+| D2 | `public` schema excluded from ownership check | DISCOVERY §2.6.3 Step 4: ownership assertion now excludes only `information_schema` and `pg_%`; `public` is checked |
+| D3 | Full grant scan claim unsupported; need CBD survival evidence | DISCOVERY §2.6.3 removed "full catalog scan" claim; added E-19 N2-5 privilege-survival LIVE vector with `has_table_privilege` assertions |
+| D4 | L-02a needs admin/bypass-RLS ordering | DISCOVERY §2.6.4: L-02a runs under test-admin/table-owner with `SET LOCAL row_security = OFF`, expects SQLSTATE 23502; explicitly NOT an RLS test |
+| D5 | L-03 needs privilege/visibility preconditions | DISCOVERY §2.6.4: L-03 asserts current_user, rolsuper, schema/table privileges, OLD P1 row visibility before UPDATE; SQLSTATE 42501 + RLS-diagnostic on denial; calls app_user_writer the **human writer principal** |
+| D6 | IEEE-754/DOUBLE_PRECISION claim wrong; R0-R9/R10 stale refs | DISCOVERY §2.5.4: removed IEEE-754/DOUBLE_PRECISION; numeric parity limited to two specific vectors; all R0-R9/R10 status text synced to R11 |
 
 ---
 
@@ -134,15 +130,15 @@ P2 corrections:
 **Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
 **Base (post-sync):** `0d7f8a1099bc9f1a41767aefe5bd3bc149de84d2` (origin/main)
 **PR:** [Pull Request #4](https://github.com/nobita6986/HRpartner/pull/4)
-**History preserved:** R0-R10 commits + R11 corrections
-**Status:** `OPEN / REVISION_REQUIRED` — waiting for T0 final authorization
+**History preserved:** R0-R11 commits + R11 delta corrections
+**Status:** `OPEN / FINAL_R11_DELTA_REQUIRED` — waiting for T0 final authorization
 
 ---
 
 ## 7. Status
 
-**OPEN / REVISION_REQUIRED**
+**OPEN / FINAL_R11_DELTA_REQUIRED**
 
 PR #4 remains docs-only, no production code changes. Branch ahead of main; merge to main awaits T0 final authorization.
 
-**This task is in REVISION_REQUIRED state. N2-1 is a separate task T0 will unlock via Tier 1.**
+**This task is in FINAL_R11_DELTA_REQUIRED state. N2-1 is a separate task T0 will unlock via Tier 1.**
