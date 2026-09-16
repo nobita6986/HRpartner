@@ -10,9 +10,10 @@
 
 ## Verification Evidence
 - **Typecheck & Lint:** `tsc --noEmit` pass; `npm run lint` pass đối với các file in-scope.
-- **Unit Tests:** `npm run test:unit` pass (2237 tests).
-- **Build:** Next.js build hoàn thành thành công, Server Components compile không vướng lỗi.
-- **Browser Smoke:** `NOT_RUN` / `ENV_BLOCKED` (Do không có session Vercel preview hợp lệ trong môi trường test pipeline hiện tại. Code được đảm bảo qua static typing, component UI testing cục bộ, và markup HTML an toàn).
+- **Unit Tests:** `npm run test:unit` pass (bao gồm 4 bài test UI focused `admin-detail-foundation.test.ts` trực tiếp cho `Breadcrumb`, `RelatedObjects`, `EmptyState`, và `RowLink`).
+- **Build:** Next.js build hoàn thành thành công.
+- **Browser Smoke:** `NOT_RUN` / `ENV_BLOCKED`.
+  - Có rủi ro tương tác (residual interaction risk) liên quan đến `RowLink` khi áp dụng class class `before:inset-0` trên table rows. Bắt buộc phải thực hiện manual smoke khi có session Vercel thật để kiểm tra click propagation.
 
 ## Next Steps
-Bàn giao (Handoff) cho T0 Review. Sau khi T0 xác nhận, sẽ tiến hành mở W3/W4 theo plan.
+Bàn giao code qua PR để T0 review theo quy trình chuẩn.

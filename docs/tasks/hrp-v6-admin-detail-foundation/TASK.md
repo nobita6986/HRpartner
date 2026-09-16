@@ -13,11 +13,11 @@
 | Status | `COMPLETE` |
 | Planner | `Tier 1` |
 | Baseline | `436bbcb` (origin/main) |
-| In-scope roots | `src/shared/ui/data-display/**`; `src/shared/ui/navigation/**`; `docs/tasks/hrp-v6-admin-detail-foundation/**` |
+| In-scope roots | `src/shared/ui/data-display/**`; `src/shared/ui/navigation/**`; `docs/tasks/hrp-v6-admin-detail-foundation/**`; `app/admin/jobs/job-postings/page.tsx`; `app/admin/jobs/job-postings/[id]/page.tsx` |
 | Forbidden paths | `prisma/**` (schema + migrations); `src/domains/talent/**`; `src/domains/staffing/**`; `app/(jobs)/**` |
 | Required gates | `npx tsc --noEmit`; `npm run test:unit`; `powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v6-admin-detail-foundation/TASK.md` |
-| Current execution round | `1` |
-| Current audit round | `1` |
+| Current execution round | `2` |
+| Current audit round | `0` |
 | Next gate | T0 review |
 
 ## 1. Outcome
@@ -31,10 +31,16 @@
 - Không sửa luồng public/job board.
 
 ## 2. Evidence
-*(Pending)*
+| ID | Evidence | Why it matters |
+|---|---|---|
+| `EV-01` | `src/shared/ui/admin-detail-foundation.test.ts` | 4 bài test UI focused. |
+| `EV-02` | Pipeline CI pass (tsc, lint, unit test). | Contract cơ sở. |
 
 ## 3. Decisions
-*(Pending)*
+| ID | Decision | Status |
+|---|---|---|
+| `DEC-01` | Dùng Server Component + trực tiếp gọi read service. | `CHOSEN` |
+| `DEC-02` | `RelatedObjects` sinh `aria-labelledby` bằng `React.useId()`. | `CHOSEN` |
 
 ## 4. Contract
 - **RQ-01**: Cung cấp các nền tảng UI tái sử dụng cho các trang chi tiết admin: Breadcrumb, `<RelatedObjects>`, Row deep-link, Empty-state.
@@ -54,15 +60,20 @@
 | `RQ-01` | `STEP-01` | `AC-01`, `AC-02` |
 
 ## 7. Risk
-*(Pending)*
+| ID | Risk | Mitigation |
+|---|---|---|
+| `RISK-01` | Lỗi click control trên table khi dùng RowLink | Yêu cầu `tr relative` và control `relative z-10`. Cần manual smoke test khi có session. |
 
 ## 8. Open Questions
-*(Pending)*
+| ID | Question | Status |
+|---|---|---|
+| `OQ-01` | Không có. | `CLOSED` |
 
 ## 9. Planner Resolution
-*(Pending)*
+- Tier 1 chấp nhận T0 feedback, thêm focused tests, dọn dẹp N2 artifacts, sửa hook `useId()`, update tài liệu trung thực.
 
 ## 10. Revision Log
 | Spec version | Date | Author | Change | Reason |
 |---|---|---|---|---|
 | `v1.0` | 2026-09-15 | Tier 1 | Khởi tạo TASK W2 | Tiếp nối sau W1 |
+| `v1.1` | 2026-09-16 | Tier 1 | Round 2 revision | Fix issues theo chỉ đạo T0 |

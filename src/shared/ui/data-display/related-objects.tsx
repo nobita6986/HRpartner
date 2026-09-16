@@ -22,14 +22,15 @@ export interface RelatedObjectsProps {
  * Displays related children/objects with text-based statuses and optional deep links.
  */
 export function RelatedObjects({ title, items, emptyState, className }: RelatedObjectsProps) {
+  const headingId = React.useId();
   return (
     <section 
       className={`rounded-lg border p-4 ${className ?? ''}`}
       style={{ borderColor: 'var(--outline)', backgroundColor: 'var(--color-surface)' }}
-      aria-labelledby={`related-objects-title-${title}`}
+      aria-labelledby={headingId}
     >
       <h2 
-        id={`related-objects-title-${title}`}
+        id={headingId}
         className="mb-3 text-sm font-semibold" 
         style={{ color: 'var(--on-surface)' }}
       >
