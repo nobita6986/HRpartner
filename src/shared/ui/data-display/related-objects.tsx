@@ -62,7 +62,7 @@ export function RelatedObjects({ title, items, emptyState, className }: RelatedO
                     style={
                       item.statusColor 
                         ? { backgroundColor: item.statusColor.bg, color: item.statusColor.fg }
-                        : { backgroundColor: 'var(--surface-container-high)', color: 'var(--on-surface-variant)' }
+                        : { backgroundColor: 'var(--color-surface-container-high)', color: 'var(--on-surface-variant)' }
                     }
                   >
                     {item.statusLabel}

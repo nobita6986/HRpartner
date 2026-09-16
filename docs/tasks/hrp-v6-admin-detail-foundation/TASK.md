@@ -37,13 +37,14 @@
 *(Pending)*
 
 ## 4. Contract
-*(Pending)*
+- **RQ-01**: Cung cấp các nền tảng UI tái sử dụng cho các trang chi tiết admin: Breadcrumb, `<RelatedObjects>`, Row deep-link, Empty-state.
 
 ## 5. Execution Plan
-*(Pending)*
+- **STEP-01**: Implement `Breadcrumb`, `RelatedObjects`, `EmptyState`, and `RowLink` components. Áp dụng lên `/admin/jobs/job-postings` (list và detail).
 
 ## 6. Acceptance
-*(Pending)*
+- **AC-01**: `/admin/jobs/job-postings` page implements `RowLink` and `EmptyState`.
+- **AC-02**: `/admin/jobs/job-postings/[id]` page implements `Breadcrumb` and `RelatedObjects`.
 
 ## 7. Risk
 *(Pending)*
