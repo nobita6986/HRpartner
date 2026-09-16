@@ -1,7 +1,7 @@
 # N2 AFF Policy & Contract Discovery
 
 **Task:** `hrp-v6-n2-aff-policy-contract-discovery`
-**Baseline:** `origin/main` `b91a33f948aed224a88f3e8e7c9847006f33e97f` (15 Sep 2026)
+**Baseline (pinned):** `b91a33f948aed224a88f3e8e7c9847006f33e97f` (15 Sep 2026)
 **Author:** S1
 **Type:** READ-ONLY Discovery — no production code changes
 **Status:** `COMPLETE` / `READY_FOR_MERGE`
@@ -13,24 +13,24 @@
 
 ## 0. Executive Summary
 
-N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất cả đều greenfield. `aff_plan.md v2.3` đã chốt 18 decision. T0 đã chốt operational decisions R0–R4. Tài liệu này lock toàn bộ policy để Tier 1 mở N2-1 slice.
+N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất cả đều greenfield. `aff_plan.md v2.3` đã chốt 18 decision. T0 đã chốt operational decisions R0–R5. Tài liệu này lock toàn bộ policy để Tier 1 mở N2-1 slice.
 
 ---
 
 ## 1. Evidence Baseline
 
-### 1.1 What exists for N2/AFF in origin/main b91a33f
+### 1.1 What exists for N2/AFF in pinned baseline b91a33f
 
 | Component | Status | Evidence |
 |---|---|---|
 | `User.affCode` | ✅ Already exists | `schema.prisma:141` |
 | `PlacementCase` | ✅ Foundation exists | `schema.prisma:1460-1484` |
 | `PlacementCase.openedAt` | ✅ Clock anchor candidate | `schema.prisma:1465` |
-| `LaborProfile` | ✅ EXISTS in origin/main | `schema.prisma:1393` |
-| `LaborProfileIntake` | ✅ EXISTS in origin/main | `schema.prisma:1421` |
-| `EmploymentEpisode` | ✅ EXISTS in origin/main | `schema.prisma:1431` |
-| V6 Phase 1A migrations | ✅ IN main migrations/ | `20260908150000_v6_phase1a_labor_profile_schema/`, `20260908150001_v6_phase1a_labor_profile_rls/` |
-| `n1_placement_case_foundation` | ✅ IN main migrations/ | `20260912140411_n1_placement_case_foundation/` |
+| `LaborProfile` | ✅ EXISTS in pinned baseline | `schema.prisma:1393` |
+| `LaborProfileIntake` | ✅ EXISTS in pinned baseline | `schema.prisma:1421` |
+| `EmploymentEpisode` | ✅ EXISTS in pinned baseline | `schema.prisma:1431` |
+| V6 Phase 1A migrations | ✅ IN pinned baseline | `20260908150000_v6_phase1a_labor_profile_schema/`, `20260908150001_v6_phase1a_labor_profile_rls/` |
+| n1_placement_case_foundation | ✅ IN pinned baseline | `20260912140411_n1_placement_case_foundation/`, `20260912140412_n1_placement_case_rls/` |
 | `Holiday` table | ✅ Exists, attendance-only | `schema.prisma:737-745` |
 | Commission ledger | ✅ CTV-specific | `schema.prisma:1229-1260` |
 | Commission engine | ✅ 30/60/90-day milestones | `engine.service.ts:75-80` |
@@ -41,18 +41,9 @@ N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất
 | Handler assignment service | ❌ NOT IMPLEMENTED | Greenfield |
 | AFF-specific API routes | ❌ NOT IMPLEMENTED | Greenfield |
 
-### 1.2 V6 Phase 1A — Capability Is Available in origin/main
+### 1.2 V6 Phase 1A — Capability Available in Pinned Baseline
 
-V6 Phase 1A schema và RLS đã nằm trong `prisma/migrations/` của origin/main. No merge dependency. N2-3 và N2-4 không bị blocked.
-
-```
-$ git ls-tree origin/main prisma/migrations/ | Select-String "phase1a"
-  040000 tree 613b6fe6... prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/
-  040000 tree a399344c... prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/
-
-$ git ls-tree origin/main prisma/migrations/ | Select-String "n1_placement_case"
-  040000 tree <hash>...   prisma/migrations/20260912140411_n1_placement_case_foundation/
-```
+V6 Phase 1A schema và RLS đã nằm trong `prisma/migrations/` của pinned baseline. No merge dependency. N2-3 và N2-4 không bị blocked.
 
 ### 1.3 No timezone handling anywhere
 
@@ -65,8 +56,6 @@ validFrom      DateTime  @map("valid_from") @db.Timestamptz(3) -- ONLY exception
 ---
 
 ## 2. Locked Decisions (T0 Verdict Applied)
-
-Theo verdict T0, các operational decisions dưới đây **đã chốt** (`LOCKED`). Tier 1 dùng trực tiếp làm contract khi viết N2-1 TASK.
 
 ### 2.1 Clock & Timezone
 
@@ -83,7 +72,7 @@ Theo verdict T0, các operational decisions dưới đây **đã chốt** (`LOCK
 
 > **Holiday table dropped from N2 implementation scope.**
 
-`Holiday` table hiện đang độc lập, chỉ phục vụ attendance/timesheet. N2 AFF clock dùng **calendar days pure** — không có business-day logic, không cần Holiday consumption. Nếu sau này business days được chốt, đó là task riêng ngoài N2.
+`Holiday` table hiện đang độc lập, chỉ phục vụ attendance/timesheet. N2 AFF clock dùng **calendar days pure** — không có business-day logic, không cần Holiday consumption.
 
 ### 2.3 Lifecycle
 
@@ -108,57 +97,131 @@ Two separate clocks:
 | `affiliateCodeSnapshot` | **IMMUTABLE** | Set once; never changes |
 | `firstClickedAt` | **IMMUTABLE** | Set once; never changes |
 | `expiresAt` | **IMMUTABLE** | Set once at creation; never extended |
-| `laborProfileId` | **IMMUTABLE (write-once NULL → value)** | Set once via `consume()`; never cleared; transition is `NULL → value` only |
+| `laborProfileId` | **IMMUTABLE NULL → value** | Pre-consume: NULL; post-consume: a `labor_profiles.id` value; never re-cleared, never replaced |
 | `status` | **MUTABLE (lifecycle)** | ACTIVE → CONSUMED / EXPIRED / REVOKED / SUPERSEDED; transitions only via explicit transition command |
 | `consumedAt` | **MUTABLE (lifecycle)** | Set when status → CONSUMED |
 | `createdAt` | IMMUTABLE | Auto-generated |
 | `updatedAt` | MUTABLE (system) | Auto-managed by Prisma |
 
-#### 2.4.2 Immutability enforcement — multi-layer (R4)
+#### 2.4.2 Immutability enforcement — multi-layer (R5 clarified)
 
-> **No single layer owns the invariant.** Application service is **NOT** the sole layer; DB constraints are the authority for write-once columns.
+> **No single layer owns the invariant.** Application service is **NOT** the sole layer; triggers + RLS work together; each layer has a distinct role.
 
-Layers:
+**Layer 1 — Trigger BEFORE UPDATE (immutable protection):**
 
-1. **RLS USING**: read visibility only — restricts **which rows** a session sees.
-2. **RLS WITH CHECK**: write-path visibility — restricts **which rows** can be inserted/updated.
-3. **DB trigger / BEFORE UPDATE**: rejects updates to IMMUTABLE columns. If `OLD.<immutable_col> IS DISTINCT FROM NEW.<immutable_col>` → raise exception.
-4. **BEFORE INSERT / BEFORE UPDATE trigger on `labor_profile_id`**: enforces `NULL → value` write-once transition. For `INSERT`, accepts both NULL (pre-consume) and value (consume in same transaction). For `UPDATE`, rejects change from a non-null value.
-5. **Application service**: command-path authorized; scoped UPDATE allowed only for lifecycle columns (`status`, `consumedAt`). Application service is convenience, not authority.
-6. **No DELETE**: enforced by RLS `WITH CHECK` and trigger.
+Rejects any UPDATE that attempts to change an immutable column. Allowed only on lifecycle columns (`status`, `consumedAt`).
 
-The earlier text "RLS: no UPDATE/DELETE on `referral_attributions`" was misleading — scoped UPDATE is required for the lifecycle state machine. The corrected stance:
+```sql
+CREATE FUNCTION referral_attributions_immutable_update()
+RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.referrer_user_id       IS DISTINCT FROM OLD.referrer_user_id       THEN RAISE EXCEPTION 'referrer_user_id is immutable';       END IF;
+  IF NEW.affiliate_code_snapshot IS DISTINCT FROM OLD.affiliate_code_snapshot THEN RAISE EXCEPTION 'affiliate_code_snapshot is immutable'; END IF;
+  IF NEW.first_clicked_at       IS DISTINCT FROM OLD.first_clicked_at       THEN RAISE EXCEPTION 'first_clicked_at is immutable';       END IF;
+  IF NEW.expires_at             IS DISTINCT FROM OLD.expires_at             THEN RAISE EXCEPTION 'expires_at is immutable';             END IF;
+  RETURN NEW;
+END $$;
 
-- **DB authority**: triggers + CHECK constraints prevent UPDATE to immutable columns and reject DELETE.
-- **Application service**: only exposes scoped transition methods (`consume()`, `transitionStatus()`).
-- **RLS WITH CHECK**: write-path visibility on top of DB authority.
+CREATE TRIGGER referral_attributions_immutable_update_trg
+  BEFORE UPDATE ON referral_attributions
+  FOR EACH ROW EXECUTE FUNCTION referral_attributions_immutable_update();
+```
+
+**Layer 1b — Trigger BEFORE INSERT/UPDATE on `laborProfileId` (write-once NULL → value, R5):**
+
+Enforces the `NULL → value` write-once transition. INSERT allows NULL or a real `labor_profiles.id`. UPDATE rejects change from a non-null value and rejects clearing a non-null value.
+
+```sql
+CREATE FUNCTION referral_attributions_labor_profile_id_write_once()
+RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.labor_profile_id IS NOT NULL AND length(NEW.labor_profile_id) = 0 THEN
+      RAISE EXCEPTION 'labor_profile_id empty';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  IF TG_OP = 'UPDATE' THEN
+    IF OLD.labor_profile_id IS NULL AND NEW.labor_profile_id IS NOT NULL THEN
+      RETURN NEW;
+    END IF;
+    IF OLD.labor_profile_id IS NOT NULL AND NEW.labor_profile_id IS DISTINCT FROM OLD.labor_profile_id THEN
+      RAISE EXCEPTION 'labor_profile_id is write-once (NULL -> value only)';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  RETURN NEW;
+END $$;
+
+CREATE TRIGGER referral_attributions_labor_profile_id_write_once_trg
+  BEFORE INSERT OR UPDATE ON referral_attributions
+  FOR EACH ROW EXECUTE FUNCTION referral_attributions_labor_profile_id_write_once();
+```
+
+**Layer 2 — CHECK constraints (current state, R5 clarified):**
+
+CHECK constraints inspect **only the row's current values**. They do not enforce write-once semantics — that is the trigger's job.
+
+```sql
+ALTER TABLE referral_attributions
+  ADD CONSTRAINT referral_attributions_labor_profile_id_fk
+    FOREIGN KEY (labor_profile_id) REFERENCES labor_profiles(id) DEFERRABLE INITIALLY DEFERRED;
+
+ALTER TABLE referral_attributions
+  ADD CONSTRAINT referral_attributions_status_check
+    CHECK (status IN ('ACTIVE', 'CONSUMED', 'EXPIRED', 'REVOKED', 'SUPERSEDED'));
+```
+
+**Layer 3 — RLS USING (read visibility, per role) + WITH CHECK (write-path policy, per command):**
+
+See §2.6 for the role-scoped RLS matrix.
+
+**Layer 4 — Application service (convenience, not authority):**
+
+Application service only exposes scoped transition methods (`consume()`, `transitionStatus()`). The DB trigger is the authority for write-once / immutable enforcement.
+
+**Layer 5 — DELETE policy (R5 clarified):**
+
+> **`WITH CHECK` is NOT a DELETE protection.** `WITH CHECK` applies to `INSERT` and `UPDATE` only. DELETE is governed by the `USING` clause of a DELETE policy, OR by the absence of any DELETE policy under `FORCE ROW LEVEL SECURITY` (which yields a default-deny).
+
+Recommended pattern: rely on **default-deny DELETE** under `FORCE ROW LEVEL SECURITY`. Optionally add a **BEFORE DELETE trigger** as defense-in-depth.
+
+```sql
+ALTER TABLE referral_attributions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE referral_attributions FORCE ROW LEVEL SECURITY;
+-- No DELETE policy => default-deny.
+CREATE FUNCTION referral_attributions_block_delete() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN RAISE EXCEPTION 'referral_attributions rows are never deleted'; END $$;
+CREATE TRIGGER referral_attributions_block_delete_trg
+  BEFORE DELETE ON referral_attributions FOR EACH ROW EXECUTE FUNCTION referral_attributions_block_delete();
+```
 
 ### 2.5 CommissionBeneficiaryDecision (Q7 — LOCKED Per T0 Verdict)
 
 #### 2.5.1 Schema (LOCKED)
 
 ```prisma
-/// CommissionBeneficiaryDecision — authority record độc lập cho mỗi milestone.
-/// Không derived tởi active handler động. Mỗi decision là immutable snapshot.
 model CommissionBeneficiaryDecision {
   id                      String    @id @default(uuid())
   laborProfileId          String    @map("labor_profile_id")
   assignmentId            String?   @map("assignment_id")
   handlingAssignmentId    String?   @map("handling_assignment_id")
-  beneficiaryUserId       String    @map("beneficiary_user_id")     // REQUIRED for ACTIVE
-  source                  String    @map("source")                   // AFF_INITIAL | MANAGER_ASSIGNMENT | CASE_RESOLUTION | DIRECT
-  reason                  String    @map("reason")                   // Typed reason
-  evidence                Json      @default("{}") @map("evidence") // Snapshot — referrerFacts, handlingFacts
+  beneficiaryUserId       String    @map("beneficiary_user_id")
+  source                  String    @map("source")
+  reason                  String    @map("reason")
+  evidence                Json      @default("{}") @map("evidence")
   decidedAt               DateTime  @map("decided_at")
   milestone               String    @map("milestone")
-  status                  String    @default("ACTIVE") @map("status") // ACTIVE | SUPERSEDED | REVERSED
+  status                  String    @default("ACTIVE") @map("status")
   supersededById          String?   @map("superseded_by_id")
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @updatedAt      @map("updated_at")
-
-  // === T0 R3 verdict ===
-  actorType               String    @map("actor_type")               // USER | SYSTEM
-  actorUserId             String?   @map("actor_user_id")            // nullable when actorType=SYSTEM
+  actorType               String    @map("actor_type")
+  actorUserId             String?   @map("actor_user_id")
 
   laborProfile      LaborProfile                   @relation(fields: [laborProfileId], references: [id])
   beneficiary       User                           @relation("BeneficiaryUser", fields: [beneficiaryUserId], references: [id])
@@ -172,7 +235,9 @@ model CommissionBeneficiaryDecision {
 }
 ```
 
-#### 2.5.2 Immutable Facts vs Mutable Lifecycle Metadata (R4)
+**R5 link direction:** `OLD.supersededById` points to the **replacement** decision id. The replacement does NOT carry a back-pointer. Single direction.
+
+#### 2.5.2 Immutable Facts vs Mutable Lifecycle Metadata
 
 | Field | Mutable? | Notes |
 |---|---|---|
@@ -187,22 +252,16 @@ model CommissionBeneficiaryDecision {
 | `actorType` | **IMMUTABLE** | Snapshot; never changes after row creation |
 | `actorUserId` | **IMMUTABLE** | Snapshot; never changes after row creation |
 | `handlingAssignmentId` | **IMMUTABLE** | Snapshot at creation; never changes |
-| `status` | **MUTABLE** (lifecycle) | ACTIVE → SUPERSEDED | REVERSED via explicit transition commands |
-| `supersededById` | **MUTABLE** (lifecycle) | Set during SUPERSEDED or REVERSED transition |
+| `status` | **MUTABLE** (lifecycle) | ACTIVE → SUPERSEDED / REVERSED via explicit transition commands |
+| `supersededById` | **MUTABLE** (lifecycle) | Set during SUPERSEDED transition only (forward link) |
 | `createdAt` | IMMUTABLE | Auto-generated |
 | `updatedAt` | MUTABLE (system) | Auto-managed by Prisma |
 
-**R4 correction:** Earlier docs called decisions "immutable" as a whole. R4 splits immutable facts (everything except `status`, `supersededById`, `updatedAt`) from mutable lifecycle metadata.
+#### 2.5.3 Invariant Contract — LOCKED
 
-#### 2.5.3 Invariant Contract — LOCKED (R4 syntax fix)
+**Business key:** `(laborProfileId, assignmentId, milestone)`. `milestone` is non-null; only `assignmentId` may be null.
 
-**Business key:** `(laborProfileId, assignmentId, milestone)`. Note: `milestone` is non-null in the locked schema, so it does not need NULL normalization; only `assignmentId` may be null.
-
-**Invariant:** At any point in time, at most **one ACTIVE decision** per business key.
-
-**Nullable-safe handling — PostgreSQL 15+ correct syntax (R4 fix):**
-
-The earlier SQL placed `NULLS NOT DISTINCT` after `WHERE status = 'ACTIVE'`. PostgreSQL syntax requires `NULLS NOT DISTINCT` immediately after the column list, before `WHERE`:
+**Invariant:** At most **one ACTIVE decision** per business key.
 
 ```sql
 -- PostgreSQL 15+ partial unique index (preferred)
@@ -213,12 +272,9 @@ CREATE UNIQUE INDEX cbd_active_uniq
   WHERE status = 'ACTIVE';
 ```
 
-**Sentinel fallback** (for environments without PG 15+ `NULLS NOT DISTINCT`, or when DB-level NULL semantics must be enforced):
+**Sentinel fallback:**
 
 ```sql
--- Expression-based partial unique index using COALESCE sentinel
--- Sentinel '__NONE__' must be excluded from the laborProfileId/assignmentId/milestone domain
--- via a CHECK constraint (cbd_id_domain_check) so sentinel cannot collide with real IDs.
 CREATE UNIQUE INDEX cbd_active_uniq
   ON commission_beneficiary_decisions(
     labor_profile_id,
@@ -226,67 +282,82 @@ CREATE UNIQUE INDEX cbd_active_uniq
   )
   WHERE status = 'ACTIVE';
 
--- Sentinel domain guard:
 ALTER TABLE commission_beneficiary_decisions
   ADD CONSTRAINT cbd_id_domain_check
   CHECK (
     labor_profile_id <> '__NONE__'
-    AND assignment_id <> '__NONE__'  -- explicit check; assignmentId may be NULL but not '__NONE__'
+    AND assignment_id <> '__NONE__'
   );
 ```
 
-**Note:** In the locked schema `milestone` is **non-null**, so `COALESCE(milestone, '__NONE__')` is technically redundant. R4 drops it. The CHECK constraint explicitly guards the sentinel against the assignment_id domain (assignment_id may be NULL, but if present must not equal the sentinel).
+**Authority:** Migration SQL owns the constraint. Prisma schema is documentation.
 
-**Authority:** Migration SQL owns the constraint. Prisma schema is documentation; if Prisma can't represent the index, SQL migration is authority.
-
-#### 2.5.4 Concurrency-safe write — interactive transaction required (R4 fix)
-
-> **`pg_advisory_xact_lock` only persists for the duration of the transaction holding it. Lock + lookup + supersede + insert MUST run inside a single interactive transaction.**
-
-The earlier sketch used `prisma.$executeRaw` then a separate `tx` — that releases the lock before the lookup. R4 mandates:
+#### 2.5.4 Concurrency-safe write — interactive transaction required
 
 ```typescript
 await prisma.$transaction(async (tx) => {
-  // 1. ACQUIRE advisory lock (xact-scoped — released at commit/rollback)
   await tx.$queryRaw`
     SELECT pg_advisory_xact_lock(
       hashtextextended(${normalizeKey(laborProfileId, assignmentId, milestone)}, 0)
     )
   `;
 
-  // 2. LOOKUP existing ACTIVE decision for business key
   const existing = await tx.commissionBeneficiaryDecision.findFirst({
     where: { laborProfileId, assignmentId: assignmentId ?? null, milestone, status: 'ACTIVE' }
   });
-  if (existing) {
-    return existing; // idempotent — keep authoritative row
+
+  if (existing && existing.beneficiaryUserId === beneficiaryUserId) {
+    return existing;
   }
 
-  // 3. SUPERSEDE if there is a non-ACTIVE row needing correction
-  //    (correction path — see §2.5.7)
-
-  // 4. INSERT new ACTIVE decision
   await tx.commissionBeneficiaryDecision.create({
-    data: { /* ... */ }
+    data: { }
   });
-
-  // 5. Lock released on COMMIT (or stays locked on ROLLBACK)
 });
 ```
 
-**Why `hashtextextended` instead of `hashtext`:** `hashtextextended(key, seed)` accepts a `text` argument directly and is the preferred 64-bit hashing function in modern PostgreSQL. The R4 contract uses `hashtextextended(key, 0)` for clarity.
+#### 2.5.5 Beneficiary Commands (R5)
 
-**DB unique index remains the authority for the invariant.** Advisory lock only reduces contention under concurrent writes; it is not a substitute for the unique index.
+The decision lifecycle is driven by **four explicit commands**.
 
-#### 2.5.5 UNRESOLVED Outcome (LOCKED — T0 R3, R4 retained)
+| Command | Precondition | Effect | New row? | Audit event |
+|---|---|---|---|---|
+| **CREATE** | No ACTIVE for business key, OR existing ACTIVE is exact-match (idempotent path) | If no ACTIVE: INSERT new ACTIVE. If exact-match ACTIVE: no-op return. | Only when no ACTIVE | `BENEFICIARY_DECISION_CREATED` |
+| **CORRECT** | Existing ACTIVE for business key | UPDATE old ACTIVE → status=SUPERSEDED, supersededById = new replacement id; INSERT new ACTIVE with new beneficiary | YES | `BENEFICIARY_DECISION_CORRECTED` (old SUPERSEDED) + `BENEFICIARY_DECISION_CREATED` (new) |
+| **REVERSE** | Existing ACTIVE for business key | UPDATE old ACTIVE → status=REVERSED, supersededById = NULL (no replacement) | NO | `BENEFICIARY_DECISION_REVERSED` |
+| **REDECIDE_AFTER_REVERSAL** | Most recent row for business key has status=REVERSED | INSERT new ACTIVE with new beneficiary (no supersede link) | YES | `BENEFICIARY_DECISION_REDECIDED` |
 
-> **UNRESOLVED là typed result + audit/outbox, KHÔNG phải active decision.**
+**Forbidden transitions (R5):**
 
-Khi không có handler/no beneficiary:
-- **Không tạo active decision** với `beneficiaryUserId = null`
-- Commission engine returns **typed result** `NO_ACTIVE_HANDLER`
-- `OutboxEvent` ghi UNRESOLVED audit
-- Skipped credit có typed reason
+- ❌ REVERSED → SUPERSEDED (a reversed row is terminal)
+- ❌ SUPERSEDED → REVERSED (a superseded row is also terminal)
+- ❌ REVERSED → ACTIVE (no resurrection)
+- ❌ SUPERSEDED → ACTIVE (no resurrection)
+
+**Transition state machine:**
+
+```
+            CREATE
+              |
+              v
+            ACTIVE <-----+
+              |          |
+              |  CORRECT |  REDECIDE_AFTER_REVERSAL
+              v          |
+         SUPERSEDED     |
+              |          |
+              v          |
+           (terminal)    |
+              |          |
+              | REVERSE  |
+              v          |
+           REVERSED -----+
+              |
+              v
+           (terminal)
+```
+
+#### 2.5.6 UNRESOLVED Outcome (LOCKED)
 
 ```typescript
 type MilestoneResult =
@@ -302,16 +373,12 @@ if (result.kind === 'SKIPPED') {
 }
 ```
 
-#### 2.5.6 Actor Field (LOCKED — T0 R3, R4 retained)
-
-Schema drops the magic-string SYSTEM approach. Two-field model instead:
+#### 2.5.7 Actor Field (LOCKED)
 
 ```prisma
-actorType    String   // 'USER' | 'SYSTEM'
-actorUserId  String?  // nullable; FK to users when actorType='USER'
+actorType    String
+actorUserId  String?
 ```
-
-**CHECK constraint (SQL authority):**
 
 ```sql
 ALTER TABLE commission_beneficiary_decisions
@@ -322,129 +389,168 @@ ALTER TABLE commission_beneficiary_decisions
   );
 ```
 
-**Decision creation:**
+### 2.6 Permissions (LOCKED — R5 final)
 
-| Trigger | actorType | actorUserId |
-|---|---|---|
-| HR/Manager explicit decision | `USER` | The HR's `User.id` |
-| Auto-created at milestone by engine | `SYSTEM` | `NULL` |
-| Correction via Ticket/Case resolution | `USER` | Resolver's `User.id` |
+> **R5:** System engine path is **internal capability**, NOT a human permission. The count is **5 explicit permission codes + implicit self-view**.
 
-#### 2.5.7 Correction vs Reversal Semantics (R4 clarified)
-
-| Action | Old decision | New decision? | Audit record |
-|---|---|---|---|
-| **Correction** (dispute resolves change of beneficiary) | `status: ACTIVE → SUPERSEDED`, sets `supersededById = <new decision id>` | YES — new ACTIVE decision created with new beneficiary | SUPERSEDED row kept as audit chain; new decision links back via `supersededById` (forward link) |
-| **Reversal** (fraud/error discovered) | `status: ACTIVE → REVERSED`, sets `supersededById = NULL or <self>` | NO replacement created automatically | REVERSED row kept; no new active row until an explicit correction command |
-| **Reversal + replacement** | Same as reversal, then explicit correction command | YES, as a separate audited command | Both REVERSED and SUPERSEDED rows preserved with full chain |
-
-**Implications:**
-
-- Reversal does NOT by itself create a replacement ACTIVE decision. If the operator wants a replacement, they run an explicit correction command (which creates a new ACTIVE row and supersedes the REVERSED row).
-- Reversal + replacement is two commands, two audit records.
-- R4 separates "reversal" from "correction" — they are distinct lifecycle events, not the same thing.
-
-#### 2.5.8 Decision Resolution Flow (LOCKED)
-
-```
-At milestone evaluation time (single interactive transaction):
-1. ACQUIRE advisory_xact_lock on normalized(business key)
-2. LOOKUP existing ACTIVE decision for business key
-   a. IF found AND status=ACTIVE:
-      → Use decision.beneficiaryUserId
-   b. IF NOT found:
-      → IF active LaborProfileHandlingAssignment exists (ACTIVE + not expired):
-         → INSERT ACTIVE decision with:
-            beneficiaryUserId = assigneeUserId
-            actorType = 'SYSTEM'
-            actorUserId = NULL
-         → outbox publish: BENEFICIARY_DECISION_CREATED
-      → ELSE:
-         → Return { kind: 'SKIPPED', reason: 'NO_ACTIVE_HANDLER' }
-         → outbox publish: BENEFICIARY_DECISION_UNRESOLVED
-         → NO decision row created
-3. COMMIT (releases lock) or ROLLBACK
-```
-
-### 2.6 Permissions (LOCKED — R4 corrected)
-
-> **R4 correction:** Earlier §2.6 listed 6 codes but the actual count is 5 explicit permission codes + implicit self-view. R4 formally records **5 codes + implicit self-view**.
-
-System engine path is **internal capability**, NOT a human permission — does not require a 6th code.
+#### 2.6.1 Permission codes
 
 | Action | Permission | Authorized Roles | Data Scope |
 |---|---|---|---|
-| Assign handler to profile | `CAN_ASSIGN_HANDLING` | `ADMIN`, `HR_MANAGER` | ADMIN/HR_MANAGER: anyone |
-| Transfer handling | `CAN_TRANSFER_HANDLING` | `ADMIN`, `HR_MANAGER` | Authorized roles; assignee current |
-| Release (về Company Pool) | `CAN_RELEASE_HANDLING` | `ADMIN`, `HR_MANAGER` | Authorized roles; assignee self |
-| Create beneficiary decision / correction / reversal | `CAN_CREATE_BENEFICIARY_DECISION` | `ADMIN`, `HR_MANAGER` | Explicit beneficiary/correction/reversal commands |
-| View Company Pool | `CAN_VIEW_HANDLING_POOL` | `ADMIN`, `HR_MANAGER`, `HR_STAFF` | HR_MANAGER (team), HR_STAFF (assigned rows only), HR (all) |
+| Assign handler to profile | `CAN_ASSIGN_HANDLING` | ADMIN, HR_MANAGER | HR_MANAGER (team scope); ADMIN (anyone) |
+| Transfer handling | `CAN_TRANSFER_HANDLING` | ADMIN, HR_MANAGER | Assignee current OR HR_MANAGER (team); ADMIN (anyone) |
+| Release (về Company Pool) | `CAN_RELEASE_HANDLING` | ADMIN, HR_MANAGER | Assignee self OR HR_MANAGER (team); ADMIN (anyone) |
+| Create beneficiary decision / correction / reversal / redeide-after-reversal | `CAN_CREATE_BENEFICIARY_DECISION` | ADMIN, HR_MANAGER | Explicit beneficiary/correction/reversal/redeide commands |
+| View Company Pool | `CAN_VIEW_HANDLING_POOL` | ADMIN, HR_MANAGER, HR_STAFF | HR_MANAGER (team); HR_STAFF (assigned rows only); ADMIN (all) |
 | View own assignments | **Implicit self-view** (no code) | Any session user | Own rows only |
 
-**Role semantics clarified:**
-- `ADMIN` — full override.
-- `HR_MANAGER` — assign/reassign/release, beneficiary decisions/corrections/reversals.
-- `HR_STAFF` — visibility on assigned rows only; **NOT** beneficiary override by default.
-- `SYSTEM` — internal engine capability; not a role for human authorization.
+#### 2.6.2 Role semantics (R5)
 
-**RLS USING = read visibility skeleton; WITH CHECK = write-path policy. Authorization is at the command/service layer; RLS is defense-in-depth, not the authorization authority.**
+- `ADMIN` — full override; scope: any row.
+- `HR_MANAGER` — assign/reassign/release; beneficiary decisions/corrections/reversals/redeides; **scope: team**.
+- `HR_STAFF` — visibility on assigned rows only; **NOT** beneficiary override by default; **NOT** assigner/releaser.
+- `SYSTEM` — internal engine capability; **NOT** a role for human authorization.
+
+**R5 invariant:** No role-only policy opens all rows. Every policy must be scoped (team/assigned/self/own).
+
+#### 2.6.3 RLS Matrix (R5 — UPDATE USING/WITH CHECK required)
 
 ```sql
--- LaborProfileHandlingAssignment RLS
+-- LaborProfileHandlingAssignment
 ALTER TABLE labor_profile_handling_assignments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE labor_profile_handling_assignments FORCE ROW LEVEL SECURITY;
 
-CREATE POLICY hrp_handling_assignment_read ON labor_profile_handling_assignments
-  AS PERMISSIVE FOR SELECT
-  TO app_user
+CREATE POLICY hrp_lha_select ON labor_profile_handling_assignments
+  AS PERMISSIVE FOR SELECT TO app_user
   USING (
-    hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
-    OR hrp_session_user_id() = assignee_user_id
+    hrp_session_role() = 'ADMIN'
+    OR (hrp_session_role() = 'HR_MANAGER'
+        AND EXISTS (
+          SELECT 1 FROM hr_team_members m
+          WHERE m.manager_id = hrp_session_user_id()
+            AND m.member_user_id = assignee_user_id
+        ))
+    OR (hrp_session_role() = 'HR_STAFF' AND assignee_user_id = hrp_session_user_id())
+    OR assignee_user_id = hrp_session_user_id()
   );
 
-CREATE POLICY hrp_handling_assignment_write ON labor_profile_handling_assignments
-  AS PERMISSIVE FOR INSERT
-  TO app_user_writer
+CREATE POLICY hrp_lha_insert ON labor_profile_handling_assignments
+  AS PERMISSIVE FOR INSERT TO app_user_writer
   WITH CHECK (
     hrp_session_role() IN ('ADMIN', 'HR_MANAGER')
   );
 
--- CommissionBeneficiaryDecision RLS
+CREATE POLICY hrp_lha_update ON labor_profile_handling_assignments
+  AS PERMISSIVE FOR UPDATE TO app_user_writer
+  USING (
+    hrp_session_role() = 'ADMIN'
+    OR (hrp_session_role() = 'HR_MANAGER'
+        AND EXISTS (
+          SELECT 1 FROM hr_team_members m
+          WHERE m.manager_id = hrp_session_user_id()
+            AND m.member_user_id = assignee_user_id
+        ))
+    OR assignee_user_id = hrp_session_user_id()
+  )
+  WITH CHECK (
+    hrp_session_role() IN ('ADMIN', 'HR_MANAGER')
+    OR assignee_user_id = hrp_session_user_id()
+  );
+
+-- No DELETE policy => default-deny DELETE under FORCE RLS
+
+-- CommissionBeneficiaryDecision
 ALTER TABLE commission_beneficiary_decisions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE commission_beneficiary_decisions FORCE ROW LEVEL SECURITY;
 
-CREATE POLICY hrp_beneficiary_decision_read ON commission_beneficiary_decisions
-  AS PERMISSIVE FOR SELECT
-  TO app_user
+CREATE POLICY hrp_cbd_select ON commission_beneficiary_decisions
+  AS PERMISSIVE FOR SELECT TO app_user
   USING (
-    hrp_session_role() IN ('ADMIN', 'HR_MANAGER', 'HR_STAFF')
-    OR hrp_session_user_id() = beneficiary_user_id
+    hrp_session_role() = 'ADMIN'
+    OR (hrp_session_role() = 'HR_MANAGER'
+        AND EXISTS (
+          SELECT 1 FROM labor_profile_handling_assignments lha
+          WHERE lha.labor_profile_id = commission_beneficiary_decisions.labor_profile_id
+            AND EXISTS (
+              SELECT 1 FROM hr_team_members m
+              WHERE m.manager_id = hrp_session_user_id()
+                AND m.member_user_id = lha.assignee_user_id
+            )
+        ))
+    OR beneficiary_user_id = hrp_session_user_id()
+    OR (hrp_session_role() = 'HR_STAFF'
+        AND EXISTS (
+          SELECT 1 FROM labor_profile_handling_assignments lha
+          WHERE lha.labor_profile_id = commission_beneficiary_decisions.labor_profile_id
+            AND lha.assignee_user_id = hrp_session_user_id()
+        ))
   );
 
-CREATE POLICY hrp_beneficiary_decision_write ON commission_beneficiary_decisions
-  AS PERMISSIVE FOR INSERT
-  TO app_user_writer
+CREATE POLICY hrp_cbd_insert ON commission_beneficiary_decisions
+  AS PERMISSIVE FOR INSERT TO app_user_writer
   WITH CHECK (
     hrp_session_role() IN ('ADMIN', 'HR_MANAGER')
   );
+
+CREATE POLICY hrp_cbd_update ON commission_beneficiary_decisions
+  AS PERMISSIVE FOR UPDATE TO app_user_writer
+  USING (
+    hrp_session_role() = 'ADMIN'
+    OR (hrp_session_role() = 'HR_MANAGER'
+        AND EXISTS (
+          SELECT 1 FROM labor_profile_handling_assignments lha
+          WHERE lha.labor_profile_id = commission_beneficiary_decisions.labor_profile_id
+            AND EXISTS (
+              SELECT 1 FROM hr_team_members m
+              WHERE m.manager_id = hrp_session_user_id()
+                AND m.member_user_id = lha.assignee_user_id
+            )
+        ))
+  )
+  WITH CHECK (
+    hrp_session_role() IN ('ADMIN', 'HR_MANAGER')
+  );
+
+-- No DELETE policy => default-deny DELETE under FORCE RLS
 ```
+
+#### 2.6.4 LIVE RLS matrix tests (R5 — required)
+
+> **R5 requirement:** The RLS policies above MUST be exercised by an explicit LIVE matrix test on a real Postgres instance.
+
+| Role | Action | Expected result |
+|---|---|---|
+| ADMIN | SELECT all rows | allowed |
+| HR_MANAGER | SELECT team-scoped rows | allowed |
+| HR_MANAGER | SELECT out-of-team rows | denied |
+| HR_STAFF | SELECT assigned rows | allowed |
+| HR_STAFF | SELECT unassigned rows | denied |
+| any role | DELETE row | denied (no DELETE policy) |
+| HR_STAFF | INSERT row | denied |
+| HR_STAFF | UPDATE row | denied |
+| HR_MANAGER (team) | INSERT/UPDATE own-team row | allowed |
+| HR_MANAGER (out-of-team) | INSERT/UPDATE row | denied |
+| beneficiary | SELECT own decision | allowed |
+| beneficiary | UPDATE own decision | denied (no UPDATE policy for self) |
+
+N2-5 TASK must include this LIVE matrix as a hard test gate.
 
 ### 2.7 Inventory Reuse + N2 Conflicts
 
 | Component | N2 Reuse | Conflict Risk | Resolution |
 |---|---|---|---|
-| `User.affCode` | ✅ Reuse mandatory | Low | Already there |
-| `PlacementCase.openedAt` | ✅ Clock anchor | Low | Additive |
-| `LaborProfile` | ✅ Available in main | Low | FK ready |
-| `ReferralGuard.applyOverride()` | ✅ Block-code logic | Medium | R1/R2/R3 rules có thể conflict |
-| `CommissionEngine.evaluateMilestones()` | ✅ Milestone pattern | Medium | Update to read `CommissionBeneficiaryDecision` |
-| `CommissionLedger.ctvId` | ⚠️ CTV-specific | High | Additive `beneficiaryUserId` legacy compat |
-| `SourceClaim.ctvId/vendorId` | ⚠️ Legacy | High | Additive `referrerUserId` |
-| `ProjectAssignment.referrerId` | ✅ Source field | Low | Placement derives from accepted SourceClaim |
-| `intake-writer.service.ts` | ✅ Intake flow | Low | Preserve attribution |
-| `candidate_submissions` RPC | ⚠️ SECURITY DEFINER | High | RPC signature change — needs LIVE test |
-| `outbox.service.ts` | ✅ Audit events | Low | Reuse for handling + decision + UNRESOLVED events |
-| `Holiday` | ❌ NOT in N2 scope | — | Out of scope per T0 |
+| `User.affCode` | Reuse mandatory | Low | Already there |
+| `PlacementCase.openedAt` | Clock anchor | Low | Additive |
+| `LaborProfile` | Available in pinned baseline | Low | FK ready |
+| `ReferralGuard.applyOverride()` | Block-code logic | Medium | R1/R2/R3 rules có thể conflict |
+| `CommissionEngine.evaluateMilestones()` | Milestone pattern | Medium | Update to read `CommissionBeneficiaryDecision` |
+| `CommissionLedger.ctvId` | CTV-specific | High | Additive `beneficiaryUserId` legacy compat |
+| `SourceClaim.ctvId/vendorId` | Legacy | High | Additive `referrerUserId` |
+| `ProjectAssignment.referrerId` | Source field | Low | Placement derives from accepted SourceClaim |
+| `intake-writer.service.ts` | Intake flow | Low | Preserve attribution |
+| `candidate_submissions` RPC | SECURITY DEFINER | High | RPC signature change — needs LIVE test |
+| `outbox.service.ts` | Audit events | Low | Reuse for handling + decision + UNRESOLVED events |
+| `Holiday` | NOT in N2 scope | — | Out of scope per T0 |
 
 ### 2.8 Legacy ctvId Backfill (LOCKED — Tightened EXACT_SAFE)
 
@@ -484,24 +590,20 @@ N2-6 (Commission Beneficiary) [requires N2-5]
 
 | Slice | Slug | Schema scope | Migration risk | Test gate | V6 P1 dep |
 |---|---|---|---|---|---|
-| N2-1 | `hrp-v6-n2-aff-01-attribution-foundation` | `ReferralAttribution` table (immutable facts vs mutable lifecycle metadata per §2.4.1; trigger + write-once CHECK on `laborProfileId`; partial unique on laborProfileId for one-attribution-per-profile) | Low — additive | Immutability trigger + lifecycle transitions + RLS USING + RLS WITH CHECK | No |
+| N2-1 | `hrp-v6-n2-aff-01-attribution-foundation` | `ReferralAttribution` table; immutable trigger (Layer 1) + laborProfileId write-once trigger (Layer 1b) + CHECK current state (Layer 2) + RLS per role (Layer 3) + default-deny DELETE (Layer 5) | Low — additive | Immutability trigger test + lifecycle transitions + role-scoped LIVE RLS matrix | No |
 | N2-2 | `hrp-v6-n2-aff-02-link-capture` | None (pure app) | Zero | Race, forged code, all roles | No |
-| N2-3 | `hrp-v6-n2-aff-03-apply-attribution` | Additive `candidate_submissions` columns + RPC signature change | HIGH | RPC migration test, upgrade path | No (LaborProfile in main) |
-| N2-4 | `hrp-v6-n2-aff-04-handling-assignment` | `labor_profile_handling_assignments` with partial unique `(laborProfileId) WHERE status = 'ACTIVE'`; RLS USING + RLS WITH CHECK per §2.6 | Medium | Race to assign, expiry | No |
-| N2-5 | `hrp-v6-n2-aff-05-beneficiary-decision` | `CommissionBeneficiaryDecision` per §2.5 schema; **migration SQL owns**: NULLS NOT DISTINCT partial unique (R4 corrected syntax) + CHECK constraint + CHECK actor XOR + immutable-fact trigger; interactive transaction per §2.5.4 | Medium | Invariant, UNRESOLVED typed result, correction/reversal history, transaction scope | No (requires N2-4) |
+| N2-3 | `hrp-v6-n2-aff-03-apply-attribution` | Additive `candidate_submissions` columns + RPC signature change | HIGH | RPC migration test, upgrade path | No (LaborProfile in pinned baseline) |
+| N2-4 | `hrp-v6-n2-aff-04-handling-assignment` | `labor_profile_handling_assignments` with partial unique `(laborProfileId) WHERE status = 'ACTIVE'`; RLS per §2.6.3 with explicit UPDATE USING/WITH CHECK for transfer + release | Medium | Race to assign, expiry, LIVE RLS matrix | No |
+| N2-5 | `hrp-v6-n2-aff-05-beneficiary-decision` | `CommissionBeneficiaryDecision` per §2.5 schema; **migration SQL owns**: NULLS NOT DISTINCT partial unique + CHECK constraint + CHECK actor XOR + immutable-fact trigger; interactive transaction per §2.5.4; four explicit commands per §2.5.5; RLS per §2.6.3 with explicit UPDATE USING/WITH CHECK for CORRECT + REVERSE | Medium | Invariant, command-level lifecycle test, four-command matrix, LIVE RLS matrix | No (requires N2-4) |
 | N2-6 | `hrp-v6-n2-aff-06-commission-beneficiary` | Additive `beneficiary_user_id` columns; EXACT_SAFE-only backfill; engine reads decision | Medium | EXACT_SAFE classification, UNRESOLVED skip | No (requires N2-5) |
 
 ---
 
 ## 4. Timing/Boundary Policy (LOCKED)
 
-### 4.1 Day boundary (R4 — helper removed)
+### 4.1 Day boundary
 
 > Day boundary = exclusive next-day. Half-open interval `[start, nextDayStart)`.
-
-Ví dụ: profile tạo ngày 2026-09-10 14:00 Asia/Bangkok → 7-day window kết thúc tại **2026-09-17 00:00:00 +07:00** (exclusive). Sau thời điểm đó = expired.
-
-**R4 correction:** The earlier `nextDayStart()` helper was off-by-one — it added 7 days then ceiled to next day, producing `2026-09-18 00:00 BKK` instead of `2026-09-17 00:00 BKK`. R4 **removes the broken helper from this discovery**. The concrete helper is N2-1's job and must be designed against the acceptance vector:
 
 ```
 openedAt = 2026-09-10T07:00:00Z   (≈ 2026-09-10 14:00 Asia/Bangkok)
@@ -510,6 +612,8 @@ expiresAt = 2026-09-16T17:00:00Z  (≈ 2026-09-17 00:00 Asia/Bangkok)  -- exclus
 now < expiresAt   => active
 now == expiresAt  => expired
 ```
+
+Concrete helper is N2-1's job.
 
 ### 4.2 Half-open intervals
 
@@ -524,20 +628,20 @@ Mọi `[start, end)` interval:
 
 Items explicitly **không thuộc N2 implementation**:
 
-1. ❌ **Holiday** — out of scope. N2 uses pure calendar days.
-2. ❌ **Business-day arithmetic** — không có trong N2.
-3. ❌ **N2-1 implementation** — task này là discovery only.
-4. ❌ **Schema/migration changes** — task này là discovery only.
-5. ❌ **`docs/TIER0_SHIFT_HANDOVER.md`** — không touch.
-6. ❌ **`docs/PLANNER_HANDOVER.md`** — không touch.
-7. ❌ **PR #3 / P2** — không touch.
-8. ❌ **N4 implementation** — không mở.
+1. **Holiday** — out of scope. N2 uses pure calendar days.
+2. **Business-day arithmetic** — không có trong N2.
+3. **N2-1 implementation** — task này là discovery only.
+4. **Schema/migration changes** — task này là discovery only.
+5. **`docs/TIER0_SHIFT_HANDOVER.md`** — không touch.
+6. **`docs/PLANNER_HANDOVER.md`** — không touch.
+7. **PR #3 / P2** — không touch.
+8. **N4 implementation** — không mở.
 
 ---
 
 ## 6. Evidence Appendix
 
-### 6.1 File:line references
+### 6.1 File:line references (pinned to b91a33f)
 
 | Evidence | Location |
 |---|---|
@@ -546,22 +650,23 @@ Items explicitly **không thuộc N2 implementation**:
 | `LaborProfile` model | `schema.prisma:1393` |
 | `LaborProfileIntake` model | `schema.prisma:1421` |
 | `EmploymentEpisode` model | `schema.prisma:1431` |
-| V6 Phase 1A migrations in main | `prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/`, `prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/` |
-| n1_placement_case_foundation | `prisma/migrations/20260912140411_n1_placement_case_foundation/` |
+| V6 Phase 1A migrations in pinned baseline | `prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/`, `prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/` |
+| n1_placement_case_foundation in pinned baseline | `prisma/migrations/20260912140411_n1_placement_case_foundation/`, `prisma/migrations/20260912140412_n1_placement_case_rls/` |
 | `CommissionLedger.ctvId` | `schema.prisma:1231` |
 | `CommissionEngine.milestone` | `engine.service.ts:75-80` |
 | `Holiday` table (informational only) | `schema.prisma:737-745` |
 | `aff_plan.md v2.3` | `docs/V6/aff_plan.md:1-1080` |
 
-### 6.2 V6 Phase 1A Capability in origin/main
+### 6.2 V6 Phase 1A Capability in Pinned Baseline (R5 reproducible)
+
+> **R5 evidence:** pinned to commit `b91a33f948aed224a88f3e8e7c9847006f33e97f`. Evidence commands use `git ls-tree -r --name-only` (recursive, full names); no hash placeholders or shortened hashes.
 
 ```
-$ git ls-tree origin/main prisma/migrations/ | Select-String "phase1a"
-  040000 tree 613b6fe6... prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/
-  040000 tree a399344c... prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/
-
-$ git ls-tree origin/main prisma/migrations/ | Select-String "n1_placement_case"
-  040000 tree <hash>...   prisma/migrations/20260912140411_n1_placement_case_foundation/
+$ git ls-tree -r --name-only b91a33f prisma/migrations/ | Select-String "phase1a|n1_placement"
+prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/migration.sql
+prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/migration.sql
+prisma/migrations/20260912140411_n1_placement_case_foundation/migration.sql
+prisma/migrations/20260912140412_n1_placement_case_rls/migration.sql
 ```
 
 Tables: `labor_profiles`, `labor_profile_intakes`, `employment_episodes`
@@ -574,24 +679,30 @@ RLS: all three tables
 
 Discovery hoàn tất khi:
 
-- ✅ 18 `AFF-DEC-*` decisions đã chốt bởi `aff_plan.md`
-- ✅ Operational decisions chốt bởi T0 verdict (R0–R4)
-- ✅ Schema sketch cho ReferralAttribution, LaborProfileHandlingAssignment, CommissionBeneficiaryDecision
-- ✅ Invariant contracts với nullable-safe specification (NULLS NOT DISTINCT — R4 corrected syntax)
-- ✅ UNRESOLVED pattern (typed result + outbox, no decision row)
-- ✅ Actor model (actorType + actorUserId nullable + CHECK constraint)
-- ✅ Day boundary policy (exclusive next-day, half-open interval; helper removed — N2-1 owns concrete implementation)
-- ✅ Holiday out-of-scope
-- ✅ **R4: Correction vs reversal semantics clarified**
-- ✅ **R4: Immutable facts vs mutable metadata split for both tables**
-- ✅ **R4: Interactive transaction contract for advisory lock**
-- ✅ **R4: Permission codes reconciled to 5 + implicit self-view; WITH CHECK clauses added**
-- ✅ 6 vertical slices với dependency graph
-- ✅ V6 P1 capability confirmed available
-- ✅ All 4 files synced
-- ✅ PR #4 opened as docs-only
-- ✅ Status: COMPLETE / READY_FOR_MERGE
-- ✅ Audit: NONE (read-only docs-only task)
+- 18 `AFF-DEC-*` decisions đã chốt bởi `aff_plan.md`
+- Operational decisions chốt bởi T0 verdict (R0–R5)
+- Schema sketch cho ReferralAttribution, LaborProfileHandlingAssignment, CommissionBeneficiaryDecision
+- Invariant contracts với nullable-safe specification (NULLS NOT DISTINCT — R4 corrected syntax)
+- UNRESOLVED pattern (typed result + outbox, no decision row)
+- Actor model (actorType + actorUserId nullable + CHECK constraint)
+- Day boundary policy (exclusive next-day, half-open interval; helper removed — N2-1 owns concrete implementation)
+- Holiday out-of-scope
+- Correction vs reversal vs redeide-after-reversal semantics split; supersede link direction fixed (R5)
+- Immutable facts vs mutable metadata split for both tables
+- Interactive transaction contract for advisory lock
+- Permission codes = 5 explicit + implicit self-view (R5 final)
+- WITH CHECK clauses added for all write paths (R5)
+- Role-scoped RLS, no role-only opens (R5)
+- LIVE RLS matrix tests required (R5)
+- DELETE default-deny under FORCE RLS; optional BEFORE DELETE trigger defense-in-depth (R5)
+- CHECK constraints are current-state only; write-once is trigger's job (R5)
+- Evidence pinned to b91a33f, `git ls-tree -r --name-only`, no placeholders (R5)
+- 6 vertical slices với dependency graph
+- V6 P1 capability confirmed available in pinned baseline
+- All 4 files synced
+- PR #4 opened as docs-only
+- Status: COMPLETE / READY_FOR_MERGE
+- Audit: NONE (read-only docs-only task)
 
 ---
 
