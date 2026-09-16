@@ -194,9 +194,9 @@ describe.skipIf(!enabled)('W3 Admin Demand Tree — LIVE RLS Integration Test', 
   });
 
   describe('8. missing GUC/context → fail closed', () => {
-    it('fails when trying to read without RLS context applied', async () => {
+    it('fails when trying to read without RLS context applied (returns null due to 0 rows)', async () => {
       // Using writer directly without withDbContext
-      await expect(getProjectDetail(writer, P1_VISIBLE)).rejects.toThrow();
+      await expect(getProjectDetail(writer, P1_VISIBLE)).resolves.toBeNull();
     });
   });
 });
