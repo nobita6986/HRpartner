@@ -42,6 +42,9 @@ describe('Admin Detail Foundation UI Components', () => {
       const emptyChildren = emptyEl.props.children;
       expect(emptyChildren[1].props.children).toBe('No items');
       expect(emptyEl.props['aria-labelledby']).toBe('mocked-id');
+      const header = emptyChildren[0];
+      expect(header.type).toBe('h2');
+      expect(header.props.id).toBe(emptyEl.props['aria-labelledby']);
 
       const items = [
         { id: '1', title: 'Item 1', statusLabel: 'Active', statusColor: { bg: 'green', fg: 'white' }, href: '/1' },

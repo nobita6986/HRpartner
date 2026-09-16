@@ -15,7 +15,7 @@
 | Baseline | `436bbcb` (origin/main) |
 | In-scope roots | `src/shared/ui/data-display/**`; `src/shared/ui/navigation/**`; `docs/tasks/hrp-v6-admin-detail-foundation/**`; `app/admin/jobs/job-postings/page.tsx`; `app/admin/jobs/job-postings/[id]/page.tsx` |
 | Forbidden paths | `prisma/**` (schema + migrations); `src/domains/talent/**`; `src/domains/staffing/**`; `app/(jobs)/**` |
-| Required gates | `npx tsc --noEmit`; `npm run test:unit`; `powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v6-admin-detail-foundation/TASK.md` |
+| Required gates | `npx tsc --noEmit`; `npm run lint`; `npm run test:unit`; `npm run build`; `powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v6-admin-detail-foundation/TASK.md` |
 | Current execution round | `2` |
 | Current audit round | `0` |
 | Next gate | T0 review |
