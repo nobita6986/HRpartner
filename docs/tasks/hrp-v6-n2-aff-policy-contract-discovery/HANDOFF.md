@@ -17,16 +17,17 @@
 |---|---|
 | Survey scope | Complete |
 | Evidence gathering | Complete (full SHA pinning) |
-| T0 verdict applied | All R0-R8 decisions applied |
+| T0 verdict applied | All R0-R9 decisions applied |
 | R4 corrections | 7 blockers fixed |
 | R5 corrections | 5 directives applied |
 | R6 corrections | 6 contract defects fixed |
 | R7 corrections | 6 executable blockers fixed |
 | R8 corrections | 4 P1 executable-contract blockers fixed |
+| R9 corrections | 4 P1 + 4 P2 blockers fixed (engine runtime, RETURNING, K-08/K-09 alignment, reject vectors, L-01..L-06 isolation, COALESCE, posture converge, status sync) |
 | Implementation gate | LOCKED until PR #4 merges (Tier 1 unlocks N2-1 separately) |
 | **PR #4 status** | **OPEN / REVISION_REQUIRED** |
 
-**Task is OPEN / REVISION_REQUIRED — waiting for T0 final authorization after R8.**
+**Task is OPEN / REVISION_REQUIRED — waiting for T0 final authorization after R9.**
 
 ---
 
@@ -36,9 +37,9 @@
 
 | File | Purpose |
 |---|---|
-| DISCOVERY.md | Locked decisions, schema sketches, invariant contracts, 6-slice plan |
-| TASK.md | RQ -> STEP -> AC, scope, boundary |
-| HANDOFF.md | Status + handoff summary |
+| DISCOVERY.md | Locked decisions, schema sketches, invariant contracts, 6-slice plan (now status OPEN / REVISION_REQUIRED) |
+| TASK.md | RQ → STEP → AC, scope, boundary |
+| HANDOFF.md | Status + handoff summary (status OPEN / REVISION_REQUIRED) |
 | evidence/OVERVIEW.md | Migration inventory + aff_plan.md affinity + V6 P1 evidence (pinned) |
 
 ---
@@ -63,7 +64,7 @@ prisma/migrations/20260912140412_n1_placement_case_rls/migration.sql
 
 ---
 
-## 4. Locked Decisions Summary (R8 final)
+## 4. Locked Decisions Summary (R9 final)
 
 ### Clock & Time
 - Calendar days; storage TIMESTAMPTZ UTC; business Asia/Bangkok
@@ -72,39 +73,20 @@ prisma/migrations/20260912140412_n1_placement_case_rls/migration.sql
 ### Lifecycle
 - Clock start: PlacementCase.openedAt; pause none; assignment has expiresAt
 
-### Attribution (Q6 — R8 final)
-- Immutable facts vs mutable metadata split; multi-layer enforcement:
-  - Layer 1: Trigger BEFORE UPDATE rejects UPDATE on immutable columns incl. created_at; NO labor_profile_id check (Layer 1b sole authority)
-  - Layer 1b: NULL→value write-once (sole authority); write-once LIVE test cases defined
-  - Layer 1c: lifecycle transition trigger (terminal cannot resurrect)
-  - Layer 2: CHECK current state only
-  - Layer 3: RLS N2-1 = ADMIN/referrer/engine (no external table refs)
-  - Layer 5: default-deny DELETE under FORCE RLS
-- N2-4 adds additive handler/team RLS
+### Attribution (Q6 — R9 final)
+- Layer 1+1b+1c triggers; Layer 1b NULL→value write-once (sole authority)
+- Layer 2 CHECK current state only
+- N2-1 RLS = ADMIN/referrer/engine (no external table refs); N2-4 adds team policies
+- Default-deny DELETE under FORCE RLS
 
-### Beneficiary Decision (Q7 — R8 final)
-- Authority record; max one ACTIVE per business key
-- NULLS NOT DISTINCT (PG15+) after column list
-- Interactive transaction (lock + lookup + supersede + insert)
-- actorType USER/SYSTEM + actorUserId nullable + CHECK XOR
-- UNRESOLVED typed result + outbox
-- CREATE/CORRECT separate functions:
-  - CREATE: CREATED | IDEMPOTENT_REPLAY | CONFLICT_EXISTING_ACTIVE. Idempotency excludes decidedAt; uses recursive canonicalJson (R8 K-01..K-10) OR DB-layer jsonb = (must agree).
-  - CORRECT: lock→lookup→UPDATE→INSERT→link→commit. Partial unique invariant satisfied throughout.
-- REVERSE / REDECIDE_AFTER_REVERSAL; REVERSED→SUPERSEDED forbidden
-- Supersede link: old.supersededById → replacement (single direction)
+### Beneficiary Decision (Q7 — R9 final)
+- CREATE/CORRECT separate functions; CREATE three typed outcomes; CORRECT lock→lookup→UPDATE→INSERT→link→commit
+- Idempotency identity excludes decidedAt; canonicalJson validated by isJsonValue (rejects undefined/NaN/±Infinity/exotic) and aligned with JSON.stringify + jsonb semantics (K-01..K-20 LIVE tests)
 
-### Permissions (Q8 — R8 final)
-- 5 explicit codes + implicit self-view
-- ADMIN/HR_MANAGER only for beneficiary decisions
-- HR_STAFF = assigned-rows visibility; HR_STAFF UPDATE denied
-- System engine = app_engine_writer (NO BYPASSRLS, REVOKE DELETE, explicit policies with current_setting context gate, set_config(..., true) only); 12 LIVE contract tests E-01..E-12
-- Team-scope on BOTH rows for HR_MANAGER; valid PostgreSQL RLS syntax (no NEW./OLD. prefixes, qualified outer column for WITH CHECK)
-- LIVE RLS matrix required (cross-profile denial test added R8)
-
-### Migration & Compat
-- RPC signature change OK for N2-3 with LIVE test
-- EXACT_SAFE classification; V6 P1 capability in pinned baseline (full SHA)
+### Permissions (Q8 — R9 final)
+- 5 explicit codes + implicit self-view; HR_STAFF UPDATE denied; team-scope on BOTH rows
+- System engine app_engine_writer: dedicated LOGIN role + dedicated connection pool `HRPARTNER_ENGINE_URL`; no SET ROLE assumption; posture converge `NOSUPERUSER NOBYPASSRLS NOINHERIT NOREPLICATION`; REVOKE DELETE; explicit policies with COALESCE current_setting context gate; set_config(..., true) only; 18 LIVE tests E-01..E-18
+- CBD RLS: qualified outer column; L-01..L-06 isolation tests
 
 ---
 
@@ -112,11 +94,11 @@ prisma/migrations/20260912140412_n1_placement_case_rls/migration.sql
 
 | Slice | Schema scope | Test gate |
 |---|---|---|
-| N2-1 | ReferralAttribution + Layer 1+1b+1c+2+5 + N2-1 RLS + app_engine_writer executable contract (R8) | Immutability, write-once (K-01..K-10), lifecycle, engine contract (E-01..E-12) |
-| N2-2 | None (pure app, runs as app_engine_writer) | Engine isolation, race, forged code |
+| N2-1 | ReferralAttribution + Layer 1+1b+1c+2+5 + N2-1 RLS + app_engine_writer runtime (LOGIN + dedicated pool) | Immutability, write-once (K-01..K-20), lifecycle, engine contract (E-01..E-18) |
+| N2-2 | None (pure app, runs as app_engine_writer via dedicated pool) | Engine isolation, race, forged code |
 | N2-3 | Additive columns + RPC signature | RPC migration test |
-| N2-4 | labor_profile_handling_assignments + hr_team_members + N2-4 RLS + additive handler/team RLS | Race to assign, cross-profile denial (R8), team scope, HR_STAFF UPDATE denied |
-| N2-5 | CommissionBeneficiaryDecision + CORRECT ordering + CREATE/CORRECT split + N2-5 RLS (no scope bypass R8) | Invariant, command matrix, CORRECT ordering, CONFLICT_EXISTING_ACTIVE, cross-profile denial (R8), LIVE RLS |
+| N2-4 | labor_profile_handling_assignments + hr_team_members + N2-4 RLS + additive handler/team RLS | Race to assign, L-01..L-06, team scope, HR_STAFF UPDATE denied |
+| N2-5 | CommissionBeneficiaryDecision + CORRECT ordering + CREATE/CORRECT split + N2-5 RLS | Invariant, command matrix, CORRECT ordering, CONFLICT_EXISTING_ACTIVE, L-01..L-06 isolation, LIVE RLS |
 | N2-6 | Additive beneficiary_user_id + EXACT_SAFE-only backfill + engine update | EXACT_SAFE classification |
 
 ---
@@ -130,24 +112,25 @@ prisma/migrations/20260912140412_n1_placement_case_rls/migration.sql
 - No N4 implementation; No N2 implementation
 - Docs-only PR
 - Read-only research against pinned baseline
-- R8 is correction-only — no new policy, no new survey
-- Branch synced with origin/main (HEAD 0d7f8a1) before R6; preserved through R7/R8
+- R9 is correction-only — no new policy, no new survey
+- Branch synced with origin/main (HEAD 0d7f8a1) before R6; preserved through R7/R8/R9
 
 ---
 
-## 7. T0 Verdict Applied (R0–R8)
+## 7. T0 Verdict Applied (R0–R9)
 
 | Round | Major changes |
 |---|---|
 | R0 | Discovery baseline — 10 questions answered |
 | R1 | Status sync; HANDOFF.md; Q7 authority record; Q9b classification; Q2 timezone; V6 P1 initial |
 | R2 | V6 P1 corrected; Q7 beneficiaryUserId required + SYSTEM FK + invariant; Q9b tightened |
-| R3 | NULLS NOT DISTINCT, advisory lock, actorType/CHECK, UNRESOLVED typed, immutable/mutable, exclusive next-day, Holiday OUT, COMPLETE/READY_FOR_MERGE |
+| R3 | NULLS NOT DISTINCT, advisory lock, actorType/CHECK, UNRESOLVED typed, immutable/mutable, exclusive next-day, Holiday OUT |
 | R4 | 7 blockers fixed (DDL syntax, transaction-scoped advisory lock, multi-layer immutability, off-by-one helper, reproducible evidence, decision immutable/mutable split, permission codes) |
 | R5 | drop write-once CHECK; trigger owns write-once; CHECK = current state; default-deny DELETE; four beneficiary commands; supersede link direction; role-scoped RLS; LIVE RLS matrix; full-SHA evidence; PR body clean |
 | R6 | branch sync; CREATE/CORRECT split; RLS team-scope on both rows; ReferralAttribution DB contract complete; state diagram corrected; full-SHA evidence |
 | R7 | RLS expressions corrected (no NEW./OLD. prefixes); CORRECT ordering fixed; idempotency identity clarified; N2-1 RLS simplified; app_engine_writer contract; Layer 1 labor_profile_id removed; matrix self-release removed |
-| **R8** | **CBD RLS scope fix (qualified outer column); app_engine_writer executable contract (idempotent provisioning, explicit grants + REVOKE DELETE, three per-table policies, set_config(..., true) only, 12 LIVE tests E-01..E-12); set_config(..., false) FORBIDDEN; recursive canonical JSON + 10 LIVE tests K-01..K-10; status CHANGED to OPEN / REVISION_REQUIRED** |
+| R8 | CBD RLS scope fix; app_engine_writer executable contract; set_config(..., true) only; recursive canonical JSON; status CHANGED to OPEN / REVISION_REQUIRED |
+| **R9** | **app_engine_writer runtime (dedicated LOGIN + connection pool `HRPARTNER_ENGINE_URL`; posture converge; explicit assertion); link-capture + RETURNING (SELECT policy permits link-capture; E-17 LIVE test); Canonical JSON K-08/K-09 alignment (1.0↔1 and -0↔0 true; aligns with JSON.stringify and jsonb); isJsonValue reject vectors (K-11..K-20, 10 inputs); L-01..L-06 CBD INSERT WITH CHECK isolation tests; COALESCE engine policies (absent-or-not-in-allowlist); ALTER ROLE posture converge; status sync (DISCOVERY.md status changed from COMPLETE/READY_FOR_MERGE to OPEN/REVISION_REQUIRED)** |
 
 ---
 
@@ -156,12 +139,12 @@ prisma/migrations/20260912140412_n1_placement_case_rls/migration.sql
 ### Reviewer path
 1. Open PR #4
 2. Review 4 docs files (zero code risk)
-3. Approve -> merge to main
-4. OR open follow-up revision
+3. Approve → merge to main
+4. OR open follow-up revision (R10)
 
 ### After merge
 1. Tier 1 reads DISCOVERY.md section 2 (locked decisions) as the contract
-2. Tier 1 creates hrp-v6-n2-aff-01-attribution-foundation task
+2. Tier 1 creates `hrp-v6-n2-aff-01-attribution-foundation` task
 3. Implementation starts under separate task in separate branch
 
 ### Out of PR scope
@@ -171,4 +154,4 @@ prisma/migrations/20260912140412_n1_placement_case_rls/migration.sql
 
 ---
 
-**Handoff state: OPEN / REVISION_REQUIRED. PR #4 ready for T0 review.**
+**Handoff state: OPEN / REVISION_REQUIRED. PR #4 ready for T0 review (R9 corrections applied).**

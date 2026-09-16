@@ -4,7 +4,13 @@
 **Baseline (pinned):** `b91a33f948aed224a88f3e8e7c9847006f33e97f` (15 Sep 2026)
 **Author:** S1
 **Type:** READ-ONLY Discovery — no production code changes
-**Status:** `COMPLETE` / `READY_FOR_MERGE`
+**Status:** `OPEN / REVISION_REQUIRED` (T0 verdict after R7/R8/R9 reviews)
+
+> **R9 status note:** R8 closed 4 P1 executable-contract blockers (CBD scope, app_engine_writer
+> contract, set_config true, recursive canonical JSON). R9 closes 4 additional P1 blockers
+> (engine runtime, RETURNING, K-08/K-09 alignment, reject-vector) and 4 P2 corrections
+> (L-01..L-06 isolation, COALESCE absence, posture converge, status sync). PR remains
+> OPEN / REVISION_REQUIRED until T0 final authorization.
 **Audit:** `NONE` (read-only docs-only)
 **Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
 **PR:** [Pull Request #4](https://github.com/nobita6986/HRpartner/pull/4)
@@ -17,9 +23,13 @@ N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất
 
 > **R8 status note:** PR #4 has been REVISION_REQUIRED by T0 after R7. R8 closes 4 P1 executable-contract blockers (CBD scope bypass, missing app_engine_writer executable contract, set_config isolation semantics, recursive canonical JSON). PR remains OPEN / REVISION_REQUIRED until T0 final authorization.
 
-**R8 additions**: (1) **CBD RLS scope**: bare `labor_profile_id` in WITH CHECK subqueries replaced with qualified `commission_beneficiary_decisions.labor_profile_id` to prevent self-comparison; cross-profile denial LIVE test added; (2) **app_engine_writer executable contract**: idempotent provisioning (`DO $$` block), explicit grants with REVOKE DELETE, three policies (SELECT for consume flow, INSERT gated by context, UPDATE gated by context), NO BYPASSRLS assertion, 12 LIVE contract tests (E-01..E-12); (3) **set_config semantics**: `set_config(..., false)` FORBIDDEN — must use `true` (transaction-local); LIVE tests prove context cleared after COMMIT/ROLLBACK/pooled-connection reuse; (4) **Recursive canonical JSON**: top-level `Object.keys().sort()` replaced with recursive helper handling nested objects and arrays; 10 LIVE tests (K-01..K-10) covering key-order, nested objects, array order, null, edge cases; DB-layer `jsonb =` backup option documented.
+**R9 additions**: (1) **app_engine_writer runtime**: dedicated LOGIN role + dedicated engine DSN/connection pool (`HRPARTNER_ENGINE_URL`); runtime test confirms `current_user='app_engine_writer'`, no SET ROLE assumption; pool/credential boundary verified via `pg_stat_activity`; (2) **link-capture + RETURNING**: SELECT policy now permits `link-capture` so Prisma `INSERT ... RETURNING` works; LIVE test E-17 with exact Prisma statement; (3) **Canonical JSON K-08/K-09 alignment**: `1.0 ↔ 1` and `-0 ↔ 0` now return `true` to match both `JSON.stringify` and PostgreSQL `jsonb` semantics (R9 must align with what JS and PG actually do); (4) **`isJsonValue` validator**: rejects undefined, NaN, ±Infinity, Date, exotic objects, cycles; 10 rejection vectors K-11..K-20; both `canonicalJson` and `jsonb` reject these inputs.
 
-**R7 prior**: (1) CREATE/CORRECT split + CORRECT ordering; (2) RLS expressions using column names directly; (3) N2-1 RLS simplified (ADMIN/referrer/engine only); (4) app_engine_writer separate DB principal; (5) Layer 1 does NOT check labor_profile_id (Layer 1b sole authority); (6) matrix self-release removed.
+**R9 P2 corrections**: (5) **L-01..L-06**: INSERT WITH CHECK isolation tests; (6) **COALESCE**: engine policies use `COALESCE(current_setting(..., true), '')` for absent-or-not-in-allowlist; (7) **Posture converge**: ALTER ROLE converges to NOSUPERUSER/NOBYPASSRLS/NOINHERIT/NOREPLICATION; assert before/after raising explicit posture errors; (8) **Status sync**: DISCOVERY.md status now `OPEN / REVISION_REQUIRED` (was `COMPLETE / READY_FOR_MERGE`).
+
+**R8 prior**: CBD RLS scope; app_engine_writer executable contract; set_config(true) only; recursive canonical JSON.
+
+**R7 prior**: CREATE/CORRECT split + ordering; RLS valid PostgreSQL; N2-1 RLS simplified; engine separate DB principal; Layer 1 / Layer 1b separation; matrix self-release removed.
 
 **R6 prior**: branch sync; CREATE/CORRECT pseudocode split; RLS team-scope on both rows; ReferralAttribution DB contract complete; state diagram corrected; full-SHA evidence.
 
@@ -446,22 +456,56 @@ async function createBeneficiaryDecision(input: {
     // decision made at two different timestamps is still the same decision; the human/system
     // who decided at time T1 vs T2 with identical inputs is the same decision.
     // Canonical deep-equal for evidence: sort keys then JSON.stringify (no key-order variance).
+    function isJsonValue(v: unknown): boolean {
+      // R9 strict: only JSON-value domain allowed:
+      //   null | boolean | finite number | string | array<JSON> | plain object<JSON>
+      // Reject: undefined, NaN, ±Infinity, Date, RegExp, Map, Set, Function, cyclic
+      if (v === null) return true;
+      const t = typeof v;
+      if (t === 'boolean' || t === 'string') return true;
+      if (t === 'number') return Number.isFinite(v);  // rejects NaN, ±Infinity
+      if (Array.isArray(v)) {
+        for (let i = 0; i < v.length; i++) {
+          if (!isJsonValue(v[i])) return false;
+        }
+        return true;
+      }
+      if (t === 'object') {
+        // Plain object check: getPrototypeOf must be Object.prototype (or null).
+        const proto = Object.getPrototypeOf(v);
+        if (proto !== Object.prototype && proto !== null) return false;
+        for (const k of Object.keys(v as Record<string, unknown>)) {
+          if (!isJsonValue((v as Record<string, unknown>)[k])) return false;
+        }
+        return true;
+      }
+      return false;  // undefined, function, symbol, bigint, exotic objects
+    }
+
     function canonicalJson(val: unknown): string {
-      // R8 recursive canonical JSON — handles nested objects and arrays in any order.
-      // Returns a deterministic string. JSON.parse(a) === JSON.parse(b) is NOT enough
-      // because key order matters in string-level comparison.
-      if (val === null || val === undefined) return 'null';
+      // R9: validate input is a JSON-value domain object. Reject otherwise.
+      // This guarantees canonicalJson and PostgreSQL jsonb agree on the
+      // representation (both reject undefined/NaN/±Infinity; both treat
+      // 1.0 == 1 and -0 == 0 at numeric level).
+      if (!isJsonValue(val)) {
+        throw new TypeError(
+          'canonicalJson: input is not a valid JSON value. ' +
+          'Rejected: undefined, NaN, ±Infinity, Date, exotic objects, cycles.'
+        );
+      }
+      if (val === null) return 'null';
       if (typeof val === 'number') {
-        // Normalize -0 / NaN; standard JSON.stringify accepts numbers canonically.
+        // Number.isFinite already guaranteed finite. JSON.stringify normalizes
+        // 1.0 vs 1 and -0 vs 0 to the same serialization (both align with
+        // PostgreSQL jsonb numeric equality).
         return JSON.stringify(val);
       }
       if (typeof val === 'string' || typeof val === 'boolean') return JSON.stringify(val);
-      if (typeof val !== 'object') return JSON.stringify(String(val));
       if (Array.isArray(val)) {
-        // Arrays: preserve element order (in-vivo list semantics); recurse on each.
+        // Arrays: preserve order; recurse on each element.
         return '[' + val.map((item) => canonicalJson(item)).join(',') + ']';
       }
-      // Object: sort keys lexicographically, recurse on each value.
+      // Plain object: sort keys lexicographically, recurse on each value.
       const keys = Object.keys(val as Record<string, unknown>).sort();
       return (
         '{' +
@@ -930,23 +974,70 @@ CREATE POLICY hrp_cbd_update ON commission_beneficiary_decisions
 -- No DELETE policy => default-deny DELETE under FORCE RLS
 
 -- ============================================================
--- System engine DB principal — executable contract (R8)
+-- System engine DB principal — executable contract (R9 — dedicated connection)
 -- ============================================================
--- The engine runs as app_engine_writer (separate Postgres role, NOT a member
--- of app_user_writer, NOT BYPASSRLS, NOT table owner).
---
--- PROVISIONING (idempotent — safe to run multiple times):
+-- The engine uses a DEDICATED Postgres role with direct LOGIN capability.
+-- The engine does NOT assume SET ROLE from app_user_writer (forbidden by current
+-- session backend policy). Instead, the engine connects with its own DSN and
+-- PgPool/pgBouncer is configured with TWO pools:
+--   - HRPARTNER_PRIMARY_URL — used by app_user_writer (human role path)
+--   - HRPARTNER_ENGINE_URL   — used ONLY by the engine; connects as
+--                              app_engine_writer with its own secret
+-- The engine pool has no SET ROLE capability and no INHERIT to app_user_writer.
+
+-- PROVISIONING (R9 — idempotent + posture converge; FAIL-LOUD if forced role
+-- attributes don't match the contract).
 DO $$
+DECLARE
+  r pg_roles%ROWTYPE;
 BEGIN
+  -- Step 1: create role if absent (LOGIN with empty password; secret is set
+  -- out-of-band by ops, not in this migration). NOINHERIT, NOSUPERUSER,
+  -- NOBYPASSRLS are explicit at CREATE TIME.
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_engine_writer') THEN
-    CREATE ROLE app_engine_writer NOLOGIN NOSUPERUSER NOINHERIT;
+    CREATE ROLE app_engine_writer LOGIN NOSUPERUSER NOBYPASSRLS NOINHERIT;
   END IF;
 END
 $$;
 
--- Assert NO BYPASSRLS attribute (R8 LIVE test asserts this):
--- SELECT rolname, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = 'app_engine_writer';
--- Expected: rolsuper=false, rolbypassrls=false
+-- Step 2: POSTURE ASSERTION — converge to required attributes (R9 fix).
+-- If a pre-existing role has different attributes (e.g. someone set SUPERUSER
+-- or BYPASSRLS outside the contract), the migration MUST fail loud with an
+-- explicit error, not silently overwrite.
+DO $$
+DECLARE
+  r pg_roles%ROWTYPE;
+BEGIN
+  SELECT * INTO r FROM pg_roles WHERE rolname = 'app_engine_writer';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'engine contract: app_engine_writer role missing after provisioning';
+  END IF;
+  IF r.rolcanlogin = false THEN
+    RAISE EXCEPTION 'engine contract: app_engine_writer must be LOGIN (NOLOGIN is forbidden)';
+  END IF;
+  IF r.rolsuper = true THEN
+    RAISE EXCEPTION 'engine contract: app_engine_writer must NOT be SUPERUSER';
+  END IF;
+  IF r.rolbypassrls = true THEN
+    RAISE EXCEPTION 'engine contract: app_engine_writer must NOT be BYPASSRLS';
+  END IF;
+  IF r.rolinherit = true THEN
+    RAISE EXCEPTION 'engine contract: app_engine_writer must NOT INHERIT';
+  END IF;
+  IF r.rolreplication = true THEN
+    RAISE EXCEPTION 'engine contract: app_engine_writer must NOT be REPLICATION';
+  END IF;
+END
+$$;
+
+-- Converge attributes (idempotent; only writes if a previous run set them wrong).
+-- ALTER ROLE is idempotent: setting same value is no-op.
+ALTER ROLE app_engine_writer NOSUPERUSER NOBYPASSRLS NOINHERIT NOREPLICATION;
+-- Login attribute is set; secret is provisioned out-of-band by ops.
+
+-- Assert NO BYPASSRLS attribute (R9 LIVE test E-01 asserts this):
+-- SELECT rolname, rolsuper, rolbypassrls, rolcanlogin FROM pg_roles WHERE rolname = 'app_engine_writer';
+-- Expected: rolcanlogin=true, rolsuper=false, rolbypassrls=false, rolinherit=false
 
 -- Least-privilege grants (engine does NOT inherit from app_user_writer):
 GRANT USAGE ON SCHEMA public TO app_engine_writer;
@@ -961,47 +1052,68 @@ REVOKE DELETE ON commission_beneficiary_decisions FROM app_engine_writer;
 CREATE POLICY hrp_ra_select_engine ON referral_attributions
   AS PERMISSIVE FOR SELECT TO app_engine_writer
   USING (
-    -- Engine only sees rows that match the current operation context
-    current_setting('hrp.engine_context', true) IN ('consume', 'milestone')
+    -- Engine reads rows that match the current operation context.
+    -- R9 addition: include 'link-capture' so Prisma's INSERT...RETURNING and
+    -- subsequent SELECT within the same transaction both work. PostgreSQL
+    -- applies SELECT RLS even on RETURNING clauses, so the SELECT policy must
+    -- permit the link-capture context or the engine cannot read back the
+    -- row it just inserted.
+    COALESCE(current_setting('hrp.engine_context', true), '') IN
+      ('link-capture', 'consume', 'milestone')
   );
 
 -- Engine INSERT policy (context gate):
 CREATE POLICY hrp_ra_insert_engine ON referral_attributions
   AS PERMISSIVE FOR INSERT TO app_engine_writer
   WITH CHECK (
-    current_setting('hrp.engine_context', true) IN ('link-capture', 'consume', 'milestone')
+    -- COALESCE handles two failure modes:
+    --   1. current_setting(name, true) returns NULL when setting has never
+    --      been set in this session (parameter missing_ok=true default).
+    --   2. After ROLLBACK or COMMIT the GUC resets to empty string.
+    -- The COALESCE pattern enforces "absent OR not in allowlist" semantics.
+    COALESCE(current_setting('hrp.engine_context', true), '') IN
+      ('link-capture', 'consume', 'milestone')
   );
 
 -- Engine UPDATE policy (context gate, transition triggers + RLS both enforced):
 CREATE POLICY hrp_ra_update_engine ON referral_attributions
   AS PERMISSIVE FOR UPDATE TO app_engine_writer
   USING (
-    current_setting('hrp.engine_context', true) IN ('consume', 'milestone')
+    COALESCE(current_setting('hrp.engine_context', true), '') IN
+      ('consume', 'milestone')
   )
   WITH CHECK (
-    current_setting('hrp.engine_context', true) IN ('consume', 'milestone')
+    COALESCE(current_setting('hrp.engine_context', true), '') IN
+      ('consume', 'milestone')
   );
 
 -- Equivalent engine policies for commission_beneficiary_decisions:
 CREATE POLICY hrp_cbd_select_engine ON commission_beneficiary_decisions
   AS PERMISSIVE FOR SELECT TO app_engine_writer
   USING (
-    current_setting('hrp.engine_context', true) IN ('consume', 'milestone')
+    -- Engine reads rows for consume + milestone; link-capture does not
+    -- target CBD (CBD is created via the application CREATE/CORRECT
+    -- commands under app_user_writer, not the engine).
+    COALESCE(current_setting('hrp.engine_context', true), '') IN
+      ('consume', 'milestone')
   );
 
 CREATE POLICY hrp_cbd_insert_engine ON commission_beneficiary_decisions
   AS PERMISSIVE FOR INSERT TO app_engine_writer
   WITH CHECK (
-    current_setting('hrp.engine_context', true) IN ('milestone')
+    COALESCE(current_setting('hrp.engine_context', true), '') IN
+      ('milestone')
   );
 
 CREATE POLICY hrp_cbd_update_engine ON commission_beneficiary_decisions
   AS PERMISSIVE FOR UPDATE TO app_engine_writer
   USING (
-    current_setting('hrp.engine_context', true) IN ('milestone')
+    COALESCE(current_setting('hrp.engine_context', true), '') IN
+      ('milestone')
   )
   WITH CHECK (
-    current_setting('hrp.engine_context', true) IN ('milestone')
+    COALESCE(current_setting('hrp.engine_context', true), '') IN
+      ('milestone')
   );
 
 -- No DELETE policy for app_engine_writer. DELETE privilege was REVOKEd above.
@@ -1071,7 +1183,26 @@ CREATE POLICY hrp_cbd_update_engine ON commission_beneficiary_decisions
 | HR_MANAGER (out-of-team) | INSERT/UPDATE labor_profile_id outside team | denied (WITH CHECK on NEW row) |
 | beneficiary | SELECT own decision | allowed |
 | beneficiary | UPDATE own decision | denied (no UPDATE policy for self) |
-| HR_MANAGER (team, profile P1) | UPDATE a CBD row attached to a DIFFERENT profile (P2) | **denied** (cross-profile WITH CHECK denial — R8 LIVE test case) |
+
+**`commission_beneficiary_decisions` — R9 P2 INSERT/WITH CHECK isolation tests:**
+
+The single cross-profile UPDATE test in §2.6.4 above only hits the USING clause
+on the OLD row. To isolate the WITH CHECK clause, R9 adds these targeted tests:
+
+| # | Test scenario | Expected | Layer that denies |
+|---|---|---|---|
+| L-01 | HR_MANAGER (team) INSERTs a NEW row with `labor_profile_id` of out-of-team profile | **denied** | CBD INSERT WITH CHECK |
+| L-02 | HR_MANAGER (team) INSERTs a NEW row with NULL `labor_profile_id` (should be allowed by RLS, application provides default) | allowed | n/a |
+| L-03 | HR_MANAGER (team) runs UPDATE on a CBD row attached to profile P1 (in-team), changing `labor_profile_id` to P2 (out-of-team); BEFORE statement, temporarily disable the row-level trigger to isolate RLS from triggers | **denied** | CBD UPDATE WITH CHECK |
+| L-04 | Same as L-03 with triggers ENABLED (full system) | denied | RLS WITH CHECK OR immutable trigger; isolated by L-05 below |
+| L-05 | HR_MANAGER (team) UPDATE to set only non-`labor_profile_id` field (e.g. reason text) where the OLD row's `labor_profile_id` is in-team AND immutable columns stay the same | allowed (UPDATE non-`labor_profile_id` fields, both rows in team, no immutable column changed) | n/a |
+| L-06 | HR_MANAGER (team) INSERT a NEW row attached to profile P2 (out-of-team); verify the partial unique index does NOT catch the mis-INSERT first (insertion never reaches index because RLS denies earlier) | denied before COMMIT | CBD INSERT WITH CHECK |
+
+> **R9 isolation note:** L-01 tests INSERT WITH CHECK directly without crossing other layers.
+> L-03 tests the WITH CHECK (NEW row) while bypassing the immutable trigger by running in a
+> test transaction with `SET session_replication_role = replica` (only `superuser` can run this;
+> the test fixture uses a dedicated test superuser).
+> L-05 verifies that non-team-modifying updates are still allowed under team scope.
 
 **`referral_attributions` (N2-1 RLS simplified — R7):**
 
@@ -1105,29 +1236,56 @@ CREATE POLICY hrp_cbd_update_engine ON commission_beneficiary_decisions
 | E-10 | TX with `set_config('hrp.engine_context', 'invalid', true)`: INSERT | denied (not in allowed list) |
 | E-11 | Lint rule / static check: `set_config('hrp.engine_context', ..., false)` in app_engine_writer code paths | rejected; only `set_config(..., true)` allowed |
 | E-12 | Pooled-connection reuse: tx1 set context + COMMIT, tx2 immediate INSERT on same pooled connection | denied (context cleared) |
+| E-13 | `SELECT COALESCE(current_setting('hrp.engine_context', true), '')` in fresh tx | returns `''` (COALESCE guards against NULL when GUC never set); engine policy USING/CHECK uses COALESCE — absence or not-in-allowlist is denied |
+| E-14 | `SELECT current_user, session_user` when engine connects via dedicated DSN | `current_user='app_engine_writer'`, `session_user='app_engine_writer'` (no SET ROLE assumption; direct LOGIN as engine role) |
+| E-15 | Engine pool + human pool are distinct: `SELECT * FROM pg_stat_activity WHERE usename = 'app_engine_writer'` | shows connections from engine pool only; `app_user_writer` connections from human pool only; no overlap |
+| E-16 | Credential boundary: `app_engine_writer` connection string is `HRPARTNER_ENGINE_URL` env var; `app_user_writer` connection string is `HRPARTNER_PRIMARY_URL`; no shared `PGUSER` env var | runtime config review confirms separation; no fallback to `app_user_writer` when engine secret unset (engine refuses to start) |
+| E-17 | Prisma create with `INSERT ... RETURNING` under `link-capture` context: `await tx.referralAttribution.create({ data })` (Prisma adds RETURNING by default) | allowed; row inserted; SELECT policy permits `link-capture` so RETURNING returns the new row |
+| E-18 | Canonical JSON K-08 with `JSON.stringify(1.0) === JSON.stringify(1)` and `JSON.stringify(-0) === JSON.stringify(0)` | BOTH JavaScript `JSON.stringify` and PostgreSQL `jsonb` map `1.0 ↔ 1` and `-0 ↔ 0`; canonicalJson matches application+DB (`true` for both, NOT `false`) |
 
 N2-1 and N2-5 TASKs must include these LIVE matrices as hard test gates.
 
-**Canonical JSON (R8 recursive LIVE tests):**
+**Canonical JSON (R9 strict — application/JSON.stringify and PostgreSQL jsonb aligned):**
+
+R9 alignment principle: `canonicalJson(x)` and PostgreSQL `jsonb` MUST agree on
+representation. Both reject undefined, NaN, ±Infinity; both treat `1.0 == 1` and
+`-0 == 0` (PostgreSQL jsonb normalizes numerics identically). The application
+helper uses `JSON.stringify` for primitives so 1.0 and 1 produce identical output.
 
 | # | Input A | Input B | `canonicalJson(A) === canonicalJson(B)` |
 |---|---|---|---|
 | K-01 | `{a:1,b:2}` | `{b:2,a:1}` | true (key-order invariance) |
-| K-02 | `{a:{x:1,y:2}}` | `{a:{y:2,x:1}}` | true (nested key-order invariance) |
+| K-02 | `{a:{x:1,y:2}}` | `{a:{y:2,x:1}}` | true (nested key-order) |
 | K-03 | `{a:[1,2,3]}` | `{a:[1,2,3]}` | true (array identity) |
 | K-04 | `{a:[1,2]}` | `{a:[2,1]}` | false (array order is significant) |
 | K-05 | `{a:1,b:null}` | `{a:1}` | false (null is meaningful) |
 | K-06 | `{a:1,b:{c:2}}` | `{a:1,b:{c:2}}` | true (deep equality) |
 | K-07 | `{a:1,b:[{x:1},{x:2}]}` | `{b:[{x:1},{x:2}],a:1}` | true (mixed nested) |
-| K-08 | `{a:1.0}` | `{a:1}` | implementation-defined; current implementation returns false (number-to-number compare via stringify). Documented in N2-5 test. |
-| K-09 | `{a:-0}` | `{a:0}` | false (-0 vs 0 distinction documented in N2-5 test) |
-| K-10 | `{a:"x"}` | `{a:'x'}` | true (string normalization) |
+| K-08 | `{a:1.0}` | `{a:1}` | **true** — `JSON.stringify(1.0) === JSON.stringify(1)` AND PostgreSQL jsonb normalizes numerics identically; application and DB agree |
+| K-09 | `{a:-0}` | `{a:0}` | **true** — `JSON.stringify(-0) === JSON.stringify(0)` AND PostgreSQL jsonb normalizes -0 to 0; application and DB agree |
+| K-10 | `{a:"x"}` | `{a:'x'}` | true (string normalization; JSON.stringify handles quotes) |
 
-For absolute idempotency identity guarantee at the DB layer (recommended backup),
-the `evidence` column may also be persisted as `jsonb` and compared with PostgreSQL's
-native `jsonb` equality (`evidence = $1::jsonb`). Either application-layer `canonicalJson`
-or DB-layer `jsonb =` comparison is acceptable; they must agree. N2-5 TASK must include a
-test that proves both produce identical results for the 10 canonical-JSON inputs above.
+**Rejection vectors (R9 — `canonicalJson` must throw, not coerce):**
+
+| # | Input | Expected |
+|---|---|---|
+| K-11 | `{a: undefined}` | throws TypeError (undefined is not a JSON value) |
+| K-12 | `{a: NaN}` | throws TypeError (NaN is not a JSON value) |
+| K-13 | `{a: Infinity}` | throws TypeError (±Infinity is not a JSON value) |
+| K-14 | `new Date()` | throws TypeError (Date prototype — not a plain object) |
+| K-15 | `(() => { const o: any = {}; o.self = o; return o; })()` (cyclic) | throws TypeError (cycle detected via prototype/iter check) |
+| K-16 | `new Map([['a',1]])` | throws TypeError (Map prototype — not a plain object) |
+| K-17 | `(a:number) => a` | throws TypeError (function type) |
+| K-18 | `Symbol('x')` | throws TypeError (symbol type) |
+| K-19 | `{a: {b: undefined}}` (nested undefined) | throws TypeError |
+| K-20 | `{a: [1, undefined, 3]}` (undefined in array) | throws TypeError |
+
+**DB-layer parity (R9 required):** the `evidence` column is persisted as `jsonb`.
+A backup equality check is performed at COMMIT using PostgreSQL's native
+`jsonb =` operator to confirm idempotency identity. N2-5 TASK must include a
+test that proves `canonicalJson(a) === canonicalJson(b)` is exactly equivalent
+to `a::jsonb = b::jsonb` for the 10 K-01..K-10 inputs and that the 10 K-11..K-20
+rejection vectors are rejected by jsonb too (`jsonb_in` rejects them).
 
 ### 2.7 Inventory Reuse + N2 Conflicts
 
@@ -1284,7 +1442,7 @@ RLS: all three tables
 Discovery hoàn tất khi:
 
 - 18 `AFF-DEC-*` decisions đã chốt bởi `aff_plan.md`
-- Operational decisions chốt bởi T0 verdict (R0–R8)
+- Operational decisions chốt bởi T0 verdict (R0–R9)
 - Schema sketch cho ReferralAttribution, LaborProfileHandlingAssignment, CommissionBeneficiaryDecision
 - Invariant contracts với nullable-safe specification (NULLS NOT DISTINCT — R4 corrected syntax)
 - UNRESOLVED pattern (typed result + outbox, no decision row)
@@ -1295,6 +1453,12 @@ Discovery hoàn tất khi:
 - Immutable facts vs mutable metadata split for both tables
 - Interactive transaction contract for advisory lock
 - Permission codes = 5 explicit + implicit self-view (R5 final)
+- **R9 — app_engine_writer runtime**: dedicated LOGIN role + dedicated engine connection pool (`HRPARTNER_ENGINE_URL`); no SET ROLE assumption; `current_user='app_engine_writer'` runtime test; pool/credential boundary via `pg_stat_activity`; posture converge `ALTER ROLE ... NOSUPERUSER NOBYPASSRLS NOINHERIT NOREPLICATION`; explicit posture assertion raises if forced attributes don't match
+- **R9 — link-capture + RETURNING**: SELECT policy permits `link-capture` so `INSERT ... RETURNING` (Prisma default) works; LIVE test E-17 with exact Prisma statement
+- **R9 — Canonical JSON K-08/K-09 alignment**: 1.0↔1 and -0↔0 return true (align with `JSON.stringify` and PostgreSQL `jsonb` numeric normalization)
+- **R9 — `isJsonValue` reject vectors**: 10 LIVE tests K-11..K-20 cover undefined, NaN, ±Infinity, Date, exotic objects, cycles, function, symbol, nested undefined, undefined-in-array; `canonicalJson` and PostgreSQL `jsonb` must both reject
+- **R9 — CBD INSERT WITH CHECK isolation tests**: L-01..L-06 isolate WITH CHECK from USING and from immutable triggers; L-05 verifies non-team-modifying updates still allowed
+- **R9 — COALESCE engine policies**: all engine policies use `COALESCE(current_setting('hrp.engine_context', true), '')` to guard against NULL when GUC never set
 - **R8 — CBD RLS scope fix**: bare `labor_profile_id` in WITH CHECK subqueries replaced with qualified `commission_beneficiary_decisions.labor_profile_id`; cross-profile denial LIVE test added
 - **R8 — App engine writer executable contract**: idempotent provisioning (DO $$ with EXISTS check), explicit grants + REVOKE DELETE, three policies per table (SELECT for consume flow, INSERT/UPDATE gated by current_setting context), NO BYPASSRLS assertion; 12 LIVE contract tests
 - **R8 — set_config(..., true)**: set_config(setting, value, false) FORBIDDEN — only set_config(setting, value, true) (transaction-local); LIVE tests prove context cleared after COMMIT/ROLLBACK/pooled-reuse
@@ -1320,9 +1484,9 @@ Discovery hoàn tất khi:
 - V6 P1 capability confirmed available in pinned baseline
 - All 4 files synced
 - PR #4 opened as docs-only
-- Status: COMPLETE / READY_FOR_MERGE
+- Status: OPEN / REVISION_REQUIRED (T0 verdict after R7/R8/R9 reviews; awaiting T0 final authorization)
 - Audit: NONE (read-only docs-only task)
 
 ---
 
-**Discovery COMPLETE. Status READY_FOR_MERGE. PR #4 ready for review and merge.**
+**Discovery in REVISION_REQUIRED state. PR #4 awaiting T0 final authorization (R0..R9 corrections applied; merge-base = origin/main `0d7f8a1099bc9f1a41767aefe5bd3bc149de84d2`).**

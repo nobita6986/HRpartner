@@ -2,7 +2,7 @@
 
 This folder contains supporting evidence for the N2 AFF Policy Discovery task.
 
-**Status:** OPEN / REVISION_REQUIRED (T0 verdict after R7 → R8 in progress)
+**Status:** OPEN / REVISION_REQUIRED (T0 verdict after R7 → R8 → R9)
 
 ---
 
@@ -11,7 +11,7 @@ This folder contains supporting evidence for the N2 AFF Policy Discovery task.
 | File | Purpose |
 |---|---|
 | ../DISCOVERY.md | Main document — locked decisions, schema sketches, invariant contracts, 6-slice plan |
-| ../TASK.md | RQ -> STEP -> AC, scope, boundary |
+| ../TASK.md | RQ → STEP → AC, scope, boundary |
 | ../HANDOFF.md | Status + handoff summary |
 | OVERVIEW.md (this) | Survey summary, aff_plan.md affinity, migration inventory |
 
@@ -62,7 +62,7 @@ All 18 AFF-DEC-* decisions in aff_plan.md v2.3 are LOCKED.
 
 ---
 
-## Locked Decisions (T0 R8 Verdict)
+## Locked Decisions (T0 R9 Verdict)
 
 | Q | Decision | Value |
 |---|---|---|
@@ -73,23 +73,29 @@ All 18 AFF-DEC-* decisions in aff_plan.md v2.3 are LOCKED.
 | Q3 | Holiday | OUT OF N2 SCOPE |
 | Q4 | Clock start | PlacementCase.openedAt |
 | Q5 | Pause/reset | Clock RUNNING always |
-| Q6 | Attribution | Layer 1 (immutables incl. created_at, NO labor_profile_id); Layer 1b (NULL→value write-once — sole authority); Layer 1c (lifecycle); Layer 2 (CHECK current state); RLS N2-1 (ADMIN/referrer/engine); N2-4 adds team policies; default-deny DELETE |
-| Q7 | BeneficiaryDecision | R8: separate CREATE/CORRECT functions; CREATE three typed outcomes; CORRECT lock→lookup→UPDATE→INSERT→link→commit; idempotency excludes decidedAt; recursive canonicalJson or DB-layer jsonb = (must agree); 10 LIVE tests K-01..K-10 for canonical JSON |
-| Q8 | Permissions | R8: 5 explicit codes + implicit self-view; team-scope BOTH rows; HR_STAFF UPDATE denied; N2-1 RLS simplified; app_engine_writer contract (NO BYPASSRLS, REVOKE DELETE, three policies, current_setting context gate, set_config(..., true) only); 12 LIVE tests E-01..E-12; cross-profile denial LIVE test (R8) |
-| Q9a | RPC change | Yes, LIVE test plan |
-| Q9b | EXACT_SAFE | FK + provenance + writer + no conflict + audit |
-| Q10 | V6 P1 dep | Capability in pinned baseline (full SHA) — no merge dep |
+| Q6 | Attribution | Layer 1 (immutables incl. created_at, NO labor_profile_id); Layer 1b (NULL→value write-once — sole authority); Layer 1c (lifecycle); Layer 2 (CHECK current state); N2-1 RLS (ADMIN/referrer/engine); N2-4 adds team policies; default-deny DELETE |
+| Q7 | BeneficiaryDecision | R9: separate CREATE/CORRECT functions; CREATE three typed outcomes; CORRECT lock→lookup→UPDATE→INSERT→link→commit; idempotency excludes decidedAt; canonicalJson validated by isJsonValue (rejects undefined/NaN/±Infinity/exotic); aligned with JSON.stringify + jsonb semantics (K-01..K-20 LIVE tests) |
+| Q8 | Permissions | R9: 5 explicit codes + implicit self-view; team-scope BOTH rows; HR_STAFF UPDATE denied; N2-1 RLS simplified; app_engine_writer dedicated LOGIN + connection pool `HRPARTNER_ENGINE_URL` (no SET ROLE assumption; posture converge `NOSUPERUSER NOBYPASSRLS NOINHERIT NOREPLICATION`; REVOKE DELETE; COALESCE current_setting gate; set_config(..., true) only; 18 LIVE tests E-01..E-18); CBD RLS qualified outer column; L-01..L-06 isolation tests |
 
 ---
 
-## T0 R8 Revisions Applied — 4 P1 Executable-Contract Blockers
+## T0 R9 Revisions Applied — 8 Blockers
 
+### P1 (4 blockers)
 | # | Directive | Implementation |
 |---|---|---|
-| 1 | CBD RLS scope bypass | Bare `labor_profile_id` in WITH CHECK subqueries replaced with qualified `commission_beneficiary_decisions.labor_profile_id` (CBD INSERT + UPDATE); cross-profile denial LIVE test added |
-| 2 | app_engine_writer executable contract | DISCOVERY §2.6.3: idempotent provisioning (`DO $$` with `pg_roles` lookup), explicit grants + REVOKE DELETE, three per-table policies (SELECT for consume flow, INSERT/UPDATE gated by `current_setting('hrp.engine_context', true)`); 12 LIVE contract tests E-01..E-12 (role attributes, grants, context absent/invalid/valid) |
-| 3 | `set_config(..., false)` wrong isolation | Application contract mandates `set_config('hrp.engine_context', '<value>', true)` only; LIVE tests E-06/E-07 prove context cleared after COMMIT / ROLLBACK / pooled-connection reuse; lint blocks `set_config(..., false)` |
-| 4 | Canonical JSON only sorts top-level | `canonicalJson` recursive helper covers nested objects, arrays, null, primitives; 10 LIVE tests K-01..K-10 (key-order, nested objects, array order, null, edge cases); optional DB-layer `jsonb =` backup option |
+| 1 | app_engine_writer cannot be used by current runtime | Dedicated LOGIN role + dedicated connection pool `HRPARTNER_ENGINE_URL`; runtime test E-14 confirms `current_user='app_engine_writer'`; E-15 verifies pool/credential boundary via `pg_stat_activity`; E-16 verifies credential boundary; explicit posture assertion raises if forced attributes don't match |
+| 2 | Link-capture INSERT...RETURNING fails | SELECT policy for `referral_attributions` now permits `link-capture`; LIVE test E-17 with exact Prisma `INSERT ... RETURNING` statement |
+| 3 | Canonical JSON K-08/K-09 false vs JSON.stringify + jsonb | `canonicalJson` now aligns with `JSON.stringify` and PostgreSQL `jsonb` semantics — `1.0 ↔ 1` and `-0 ↔ 0` return true (R9 LIVE test E-18) |
+| 4 | canonicalJson coerces undefined/NaN/Infinity/exotic | `isJsonValue` validator rejects all non-JSON-value inputs before canonicalization; 10 LIVE rejection vectors K-11..K-20 |
+
+### P2 (4 blockers)
+| # | Directive | Implementation |
+|---|---|---|
+| 5 | CBD cross-profile UPDATE blocked by USING on OLD row (didn't test WITH CHECK) | L-01..L-06 isolation tests; L-01 INSERTs out-of-team `labor_profile_id` (tests INSERT WITH CHECK); L-03 UPDATEs from in-team to out-of-team with triggers bypassed; L-05 verifies non-team-modifying updates allowed |
+| 6 | Context-clear test not strict about NULL | All engine policies use `COALESCE(current_setting('hrp.engine_context', true), '')` so absent-or-not-in-allowlist is denied; LIVE test E-13 confirms |
+| 7 | Role provisioning not state-idempotent | `DO $$` posture assertion raises explicit error if existing role has wrong attributes; `ALTER ROLE ... NOSUPERUSER NOBYPASSRLS NOINHERIT NOREPLICATION` converges |
+| 8 | DISCOVERY.md status still says COMPLETE/READY_FOR_MERGE | DISCOVERY.md status now `OPEN / REVISION_REQUIRED`; all 4 docs synced |
 
 ---
 
@@ -97,6 +103,6 @@ All 18 AFF-DEC-* decisions in aff_plan.md v2.3 are LOCKED.
 
 | Round | Major changes |
 |---|---|
-| R0–R6 | Prior rounds (branch sync, CREATE/CORRECT split, RLS team-scope, ReferralAttribution DB contract, state diagram, full-SHA evidence) |
-| R7 | RLS expressions corrected (valid PostgreSQL, no NEW./OLD.); CORRECT ordering fixed; idempotency identity clarified; N2-1 RLS simplified; app_engine_writer contract; Layer 1 labor_profile_id removed; matrix self-release removed |
-| **R8** | **CBD RLS scope fix (qualified outer column); app_engine_writer executable contract (idempotent provisioning, explicit grants + REVOKE DELETE, three per-table policies, 12 LIVE tests E-01..E-12); set_config(..., true) only with isolation LIVE tests; recursive canonical JSON with 10 LIVE tests K-01..K-10; PR status CHANGED to OPEN / REVISION_REQUIRED** |
+| R0–R7 | Prior rounds (branch sync, CREATE/CORRECT split + ordering, RLS valid PostgreSQL, N2-1 RLS simplified, app_engine_writer contract, Layer 1/1b separation, matrix self-release) |
+| R8 | CBD RLS scope fix; app_engine_writer executable contract; set_config(..., true) only; recursive canonical JSON; status CHANGED to OPEN / REVISION_REQUIRED |
+| **R9** | **app_engine_writer runtime (dedicated LOGIN + connection pool `HRPARTNER_ENGINE_URL`; posture converge; explicit assertion); link-capture + RETURNING (SELECT policy permits link-capture; E-17 LIVE test); Canonical JSON K-08/K-09 alignment (1.0↔1 and -0↔0 true; aligns with JSON.stringify and jsonb); isJsonValue reject vectors (K-11..K-20, 10 inputs); L-01..L-06 CBD INSERT WITH CHECK isolation tests; COALESCE engine policies; ALTER ROLE posture converge; status sync (DISCOVERY.md status changed)** |
