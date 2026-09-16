@@ -4,7 +4,7 @@
 - **Phase:** Implementation
 - **Result:** IMPLEMENTED / AUDIT_REVISION_REQUIRED
 - **Exact HEAD:** 
-  - Implementation HEAD: `00d175435d256e17bc9ecf68ea7c19de68c56a46`
+  - Implementation HEAD: `6049cf90be292412a6d4123bedbf312d293f02c6`
   - *(Note: The subsequent HANDOFF-only correction commit will have a different metadata SHA. Do not attempt to make a commit contain its own SHA.)*
 - **Base:** `origin/main` at `0d7f8a1099bc9f1a41767aefe5bd3bc149de84d2`
 
@@ -34,12 +34,12 @@
 - **Typecheck (`npx tsc --noEmit`):** SUCCESS (0 errors)
 - **Lint (`npm run lint`):** FAIL (Exit code: 1, Problems: 13,927)
 - **Unit & Static Tests (`npm run test:unit`):** SUCCESS (142 files, 2257 tests passed in 31s)
-- **Integration Test (`npm run test:integration`):** ENV_BLOCKED (Test logic provided and registered in integration lane, but dedicated test database is absent locally).
+- **Integration Test (`npm run test:integration`):** SUCCESS (locally)
 - **Build (`npm run build`):** SUCCESS
 
 ## Remote Evidence
-- **Quality:** PASS (Job 104730084672 - https://github.com/nobita6986/HRpartner/actions/runs/35076508861/job/104730084672)
-- **Integration:** ENV_BLOCKED / failure, NOT PASS (Job 104730084911 - https://github.com/nobita6986/HRpartner/actions/runs/35076508861/job/104730084911)
+- **Quality:** PASS (Job 104852646519 - https://github.com/nobita6986/HRpartner/actions/runs/35113414258/job/104852646519)
+- **Integration:** FAIL (Job 104852646949 - https://github.com/nobita6986/HRpartner/actions/runs/35113414258/job/104852646949). `admin-demand-tree.integration.test.ts` PASSES (17 tests, 51.2s), but pre-existing DB tests (e.g. `placement-lifecycle-integration`, `matrix-scope.test.ts`) failed due to interactive transaction timeouts and state leaks.
 - **Browser Smoke:** NOT_RUN / ENV_BLOCKED
 
 
