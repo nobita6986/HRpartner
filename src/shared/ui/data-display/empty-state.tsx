@@ -7,8 +7,7 @@ export interface EmptyStateProps {
   icon?: React.ReactNode;
   action?: {
     label: string;
-    href?: string;
-    onClick?: () => void;
+    href: string;
   };
   className?: string;
 }
@@ -36,24 +35,13 @@ export function EmptyState({ title, description, icon, action, className }: Empt
       </p>
       
       {action && (
-        action.href ? (
-          <Link
-            href={action.href}
-            className="rounded px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80 focus-visible:ring-2 outline-none"
-            style={{ backgroundColor: 'var(--primary)', color: 'var(--on-primary)' }}
-          >
-            {action.label}
-          </Link>
-        ) : action.onClick ? (
-          <button
-            onClick={action.onClick}
-            type="button"
-            className="rounded px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80 focus-visible:ring-2 outline-none"
-            style={{ backgroundColor: 'var(--primary)', color: 'var(--on-primary)' }}
-          >
-            {action.label}
-          </button>
-        ) : null
+        <Link
+          href={action.href}
+          className="rounded px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80 focus-visible:ring-2 outline-none"
+          style={{ backgroundColor: 'var(--primary)', color: 'var(--on-primary)' }}
+        >
+          {action.label}
+        </Link>
       )}
     </div>
   );

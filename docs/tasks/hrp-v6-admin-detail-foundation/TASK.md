@@ -41,6 +41,7 @@
 |---|---|---|
 | `DEC-01` | Dùng Server Component + trực tiếp gọi read service. | `CHOSEN` |
 | `DEC-02` | `RelatedObjects` sinh `aria-labelledby` bằng `React.useId()`. | `CHOSEN` |
+| `DEC-03` | `EmptyState` loại bỏ prop `onClick`, chỉ hỗ trợ `href` để tuân thủ RSC (Server Component). | `CHOSEN` |
 
 ## 4. Contract
 - **RQ-01**: Cung cấp các nền tảng UI tái sử dụng cho các trang chi tiết admin: Breadcrumb, `<RelatedObjects>`, Row deep-link, Empty-state.
@@ -71,9 +72,11 @@
 
 ## 9. Planner Resolution
 - Tier 1 chấp nhận T0 feedback, thêm focused tests, dọn dẹp N2 artifacts, sửa hook `useId()`, update tài liệu trung thực.
+- (Round 2 Correction) Xóa support `onClick` trong `EmptyState` để tuân thủ RSC.
 
 ## 10. Revision Log
 | Spec version | Date | Author | Change | Reason |
 |---|---|---|---|---|
 | `v1.0` | 2026-09-15 | Tier 1 | Khởi tạo TASK W2 | Tiếp nối sau W1 |
 | `v1.1` | 2026-09-16 | Tier 1 | Round 2 revision | Fix issues theo chỉ đạo T0 |
+| `v1.2` | 2026-09-16 | Tier 1 | Round 2 correction | Loại bỏ onClick khỏi EmptyState (RSC constraint) |

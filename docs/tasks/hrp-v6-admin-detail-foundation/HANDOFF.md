@@ -5,7 +5,7 @@
 
 - `Breadcrumb`: Đường dẫn semantic, điều hướng ổn định.
 - `RelatedObjects`: Panel hiển thị các đối tượng có quan hệ với deep-link.
-- `EmptyState`: Component rỗng có tính định hướng action.
+- `EmptyState`: Component rỗng có tính định hướng action (chỉ hỗ trợ `href` để tương thích RSC).
 - `RowLink`: Giải pháp UX/Accessibility click nguyên hàng cho data table mà không vi phạm nested `<a>`.
 
 ## Verification Evidence

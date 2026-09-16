@@ -72,7 +72,7 @@ describe('Admin Detail Foundation UI Components', () => {
   });
 
   describe('EmptyState', () => {
-    it('renders action when provided and no-action when not provided', () => {
+    it('renders action link when href is provided and no-action when not provided', () => {
       const el = EmptyState({ title: 'No Data', description: 'Check back later' });
       const children = el.props.children;
       expect(children[1].props.children).toBe('No Data');
