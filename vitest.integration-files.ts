@@ -45,4 +45,5 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // Placement lifecycle + RLS/GRANT + unique partial index anti-race + FK chain resolve.
   // Self-skips when DATABASE_URL_TEST absent (ENV_BLOCKED — Tier 0/Owner cung cấp DB trước khi xét merge).
   'tests/db/placement-lifecycle-integration.test.ts',
+  'src/domains/admin-demand-tree.integration.test.ts',
 ];

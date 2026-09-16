@@ -1,14 +1,29 @@
 # TASK: hrp-v6-admin-demand-tree (W3 Planning)
 
 ## Control
-- **Spec Version:** v1.1 (Discovery & Planning)
-- **Status:** PLAN_READY (Đang chờ T0 review)
+- **Spec Version:** v1.2 (Implementation)
+- **Status:** IN_PROGRESS
 - **Branch:** `tier1/admin-demand-tree`
 - **Baseline:** `origin/main` (at `0d7f8a1099bc9f1a41767aefe5bd3bc149de84d2`)
 - **Lane:** STANDARD
 - **Outcome:** Dựng cây điều hướng Admin (Client → Project → JobOpening) sử dụng W2 foundation (Breadcrumb, RelatedObjects, EmptyState, RowLink). Xác định và khóa data contract, service ownership, và RLS matrix trước khi code.
 - **Required Gates:** `tsc --noEmit`, `npm run lint`, `npm run test:unit`, `npm run build`
 - **Audit:** LIGHT (Bắt buộc Tier 3 độc lập do có domain read services, auth và RLS). Tiêu chí: Tier 3 audit artifact chỉ do Tier 3 sở hữu.
+
+## Binding Addendum
+1. **Đồng bộ sub-PM tại L1:**
+   - DB RLS `hrp_project_visible_for()` hỗ trợ: `pmUserId`, `subPmUserId1`, `subPmUserId2`.
+   - Nhưng `buildProjectScope()` hiện chỉ hỗ trợ `pmUserId`. Bổ sung vào scope `src/shared/auth/scopes/project.scope.ts` và `src/shared/auth/scopes/project.scope.test.ts`.
+   - PM scope phải là:
+     ```ts
+     { OR: [ { pmUserId: ctx.userId }, { subPmUserId1: ctx.userId }, { subPmUserId2: ctx.userId } ] }
+     ```
+   - Phải regression-test primary PM, sub-PM 1, sub-PM 2 và unrelated PM. (Đây là alignment L1 với L2 hiện hành, không phải mở rộng role).
+2. **Chốt list/navigation behavior:**
+   - Client list hiện chỉ cho ADMIN, HR_MANAGER, DIRECTOR; giữ nguyên. PM không được mở rộng quyền Client list trong W3.
+   - PM đi tới Client detail từ parent link của visible Project. Client detail guard vẫn yêu cầu ít nhất một visible Project.
+   - Project list phải hiển thị project cho primary PM và hai sub-PM sau khi sửa L1 scope.
+   - Admin JobPosting link hiển thị khi relation posting tồn tại; không yêu cầu posting phải PUBLISHED (Admin detail link, không phải public preview).
 
 ## Architecture Decisions & Rules
 1. **Service Integration & Interfaces:**
@@ -52,7 +67,7 @@
 - **Interface:** `getJobOpeningDetail(tx: Prisma.TransactionClient, id: string): Promise<JobOpeningDetailDto | null>`
 - **Contract:**
   - Identity & Status: Trạng thái tuyển dụng bằng text (`DRAFT | OPEN | FILLED | CANCELLED`).
-  - Admin JobPosting detail (Navigation link): Khóa chính xác route `/admin/jobs/job-postings/[posting.id]`. Link này chỉ xuất hiện nếu có route mapping thật tới record đủ điều kiện publish. Không gọi là "Public Preview".
+  - Admin JobPosting detail (Navigation link): Khóa chính xác route `/admin/jobs/job-postings/[posting.id]`. Link này xuất hiện khi relation tồn tại, bất kể publish status. Không gọi là "Public Preview".
   - Traversal: JobOpening → associated `StaffingOrderSlot` rows → `CandidateSubmission` / `ProjectAssignment`. Nếu gom cả `staffingOrderSlot` (trực tiếp) và `slots` (mảng), bắt buộc deduplicate bằng ID.
 
 ## File Ownership (Locked)
