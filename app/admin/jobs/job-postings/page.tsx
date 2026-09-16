@@ -29,6 +29,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { EmptyState } from '@/src/shared/ui/data-display/empty-state';
+import { RowLink } from '@/src/shared/ui/navigation/row-link';
+
 import { getServerSession } from '@/src/shared/auth/server-session';
 import { getPrisma } from '@/src/lib/db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
@@ -186,18 +189,18 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
                   Cập nhật
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-                  Thao tác
-                </th>
               </tr>
             </thead>
             <tbody>
               {result.items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-                    {statusFilter
-                      ? `Chưa có JobPosting nào ở trạng thái ${statusFilter}${VIEWER_ROLES.has(session.role) ? '' : ' (role hiện tại không đọc được — xem banner)'}.`
-                      : 'Chưa có JobPosting nào trong hệ thống (hoặc role hiện tại không đọc được — xem banner).'}
+                  <td colSpan={5} className="p-4">
+                    <EmptyState
+                      title="Chưa có dữ liệu"
+                      description={statusFilter
+                        ? `Chưa có JobPosting nào ở trạng thái ${statusFilter}${VIEWER_ROLES.has(session.role) ? '' : ' (role hiện tại không đọc được — xem banner)'}.`
+                        : 'Chưa có JobPosting nào trong hệ thống (hoặc role hiện tại không đọc được — xem banner).'}
+                    />
                   </td>
                 </tr>
               ) : (
@@ -207,10 +210,12 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
                     style={{
                       borderTop: idx > 0 ? '1px solid var(--outline)' : 'none',
                     }}
-                    className="transition-colors hover:bg-[var(--color-surface-container)]"
+                    className="relative transition-colors hover:bg-[var(--color-surface-container)]"
                   >
                     <td className="px-4 py-3 font-mono text-sm" style={{ color: 'var(--on-surface)' }}>
-                      {item.slug}
+                      <RowLink href={`/admin/jobs/job-postings/${item.id}`}>
+                        {item.slug}
+                      </RowLink>
                     </td>
                     <td className="px-4 py-3 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
                       {item.openingStaffingOrderCode ? (
@@ -234,15 +239,6 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
                     </td>
                     <td className="px-4 py-3 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
                       {new Date(item.updatedAt).toLocaleString('vi-VN')}
-                    </td>
-                    <td className="px-4 py-3 text-center text-sm">
-                      <Link
-                        href={`/admin/jobs/job-postings/${item.id}`}
-                        className="rounded border px-3 py-1 text-sm font-medium"
-                        style={{ borderColor: 'var(--outline)', color: 'var(--primary)' }}
-                      >
-                        Mở editor shell
-                      </Link>
                     </td>
                   </tr>
                 ))

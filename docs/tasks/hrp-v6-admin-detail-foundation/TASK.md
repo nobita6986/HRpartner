@@ -10,15 +10,15 @@
 | Audit mode | `NONE` |
 | Audit reason | Thuần UI components, reversible (theo định hướng plan) |
 | Spec version | `v1.0` |
-| Status | `DRAFT` |
+| Status | `COMPLETE` |
 | Planner | `Tier 1` |
 | Baseline | `436bbcb` (origin/main) |
 | In-scope roots | `src/shared/ui/data-display/**`; `src/shared/ui/navigation/**`; `docs/tasks/hrp-v6-admin-detail-foundation/**` |
 | Forbidden paths | `prisma/**` (schema + migrations); `src/domains/talent/**`; `src/domains/staffing/**`; `app/(jobs)/**` |
 | Required gates | `npx tsc --noEmit`; `npm run test:unit`; `powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v6-admin-detail-foundation/TASK.md` |
-| Current execution round | `0` |
-| Current audit round | `0` |
-| Next gate | `/plan` |
+| Current execution round | `1` |
+| Current audit round | `1` |
+| Next gate | T0 review |
 
 ## 1. Outcome
 
