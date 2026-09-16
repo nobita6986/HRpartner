@@ -17,14 +17,20 @@ This folder contains supporting evidence for the N2 AFF Policy Discovery task.
 
 ---
 
-## V6 Phase 1A — Evidence of Capability in origin/main
+## V6 Phase 1A — Evidence of Capability in origin/main (R4 reproducible)
+
+### Reproducible evidence commands
 
 ```
 $ git ls-tree origin/main prisma/migrations/ | Select-String "phase1a"
-  prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/
-  prisma/migrations/20260912140411_n1_placement_case_foundation
-  prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/
+  040000 tree 613b6fe6... prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/
+  040000 tree a399344c... prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/
+
+$ git ls-tree origin/main prisma/migrations/ | Select-String "n1_placement_case"
+  040000 tree <hash>...   prisma/migrations/20260912140411_n1_placement_case_foundation/
 ```
+
+(R4 removed the previously combined `Select-String "phase1a"` filter that implicitly assumed `n1_placement_case_foundation` matched the same pattern; commands are now split to ensure each pattern matches its own migration family and the output is reproducible.)
 
 ### Migration Contents
 
@@ -42,6 +48,9 @@ ALTER TABLE labor_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE labor_profiles FORCE ROW LEVEL SECURITY;
 CREATE POLICY hrp_labor_profile_scope ON labor_profiles ...;
 ```
+
+**`20260912140411_n1_placement_case_foundation/migration.sql`**:
+- Provides `placement_case` and supporting indexes for N2 clock anchor.
 
 ### Capability Summary
 
@@ -95,43 +104,52 @@ All 18 `AFF-DEC-*` decisions in `aff_plan.md v2.3` are LOCKED. No conflicts.
 
 ---
 
-## Locked Decisions (T0 R3 Verdict)
+## Locked Decisions (T0 R4 Verdict)
 
 | Q | Decision | Value |
 |---|---|---|
 | Q1 | Clock type | Calendar days |
 | Q2a | Storage timezone | TIMESTAMPTZ UTC |
 | Q2b | Business clock | Asia/Bangkok |
-| Q2c | Day boundary | Exclusive next-day `[start, nextDayStart)` |
+| Q2c | Day boundary | Exclusive next-day `[start, nextDayStart)`; helper removed; N2-1 owns implementation against acceptance vector |
 | Q3 | Holiday | OUT OF N2 SCOPE |
 | Q4 | Clock start | `PlacementCase.openedAt` |
 | Q5 | Pause/reset | Clock RUNNING always |
-| Q6 | Attribution | Immutable; separate clocks; immutable facts vs mutable metadata split |
-| Q7a | BeneficiaryDecision | Authority record (immutable) |
+| Q6 | Attribution | Immutable facts vs mutable metadata split; multi-layer enforcement; application is convenience |
+| Q7a | BeneficiaryDecision | Authority record; immutable facts vs mutable metadata split |
 | Q7b | Invariant | Max one ACTIVE per business key |
-| Q7c | Nullable-safe | PG15+ `NULLS NOT DISTINCT` OR COALESCE sentinel |
-| Q7d | Concurrency | Advisory lock with normalized tuple + sentinel |
-| Q7e | Actor model | `actorType USER/SYSTEM` + `actorUserId nullable` + CHECK |
+| Q7c | Nullable-safe SQL | R4: `NULLS NOT DISTINCT` after column list, before `WHERE`; OR COALESCE sentinel + sentinel-domain CHECK |
+| Q7d | Concurrency | R4: single `prisma.$transaction` containing lock + lookup + supersede + insert |
+| Q7e | Actor model | `actorType USER/SYSTEM` + `actorUserId nullable` + CHECK XOR |
 | Q7f | UNRESOLVED | Typed result + outbox (no decision row) |
-| Q7g | Correction history | SUPERSEDED/REVERSED preserved |
-| Q8 | Permissions | 6 codes + RLS proposal |
+| Q7g | Correction vs Reversal | R4: distinct commands; reversal does NOT auto-create replacement |
+| Q8 | Permissions | R4: 5 explicit codes + implicit self-view; ADMIN/HR_MANAGER for beneficiary; HR_STAFF = visibility only; system engine = internal capability |
 | Q9a | RPC change | Yes, with LIVE test plan |
 | Q9b | EXACT_SAFE | FK + provenance + writer + no conflict + audit |
 | Q10 | V6 P1 dep | Capability in main — no merge dep |
 
 ---
 
-## T0 R3 Revisions Applied
+## T0 R4 Revisions Applied — 7 Blockers
 
 | # | Directive | Implementation |
 |---|---|---|
-| R3-1 | Active unique invariant nullable-safe | NULLS NOT DISTINCT (PG15+) OR COALESCE sentinel; SQL migration is authority |
-| R3-2 | Advisory lock with delimiter/sentinel | Normalized tuple using RS (0x1E) delimiter and `__NONE__` for null |
-| R3-3 | No SYSTEM user; use actorType + actorUserId + CHECK | Schema: two-field actor; SQL CHECK enforces XOR |
-| R3-4 | UNRESOLVED = typed result + outbox | No decision row; outbox event BENEFICIARY_DECISION_UNRESOLVED |
-| R3-5 | Immutable vs mutable | Split documented; immutable source vs mutable lifecycle metadata |
-| R3-6 | Exclusive next-day boundary | Half-open `[start, nextDayStart)` |
-| R3-7 | Holiday out of N2 scope | Removed from N2 implementation |
-| R3-8 | Sync PR #4 audited facts | PR #4, HEAD 0341a43 → R3 revision on same branch, 4 files |
-| R3-9 | Status COMPLETE / READY_FOR_MERGE | All 4 docs synced; Audit NONE |
-| R3-10 | Push to PR #4 (no new PR) | R3 changes commit on same branch |
+| R4-1 | DDL `NULLS NOT DISTINCT` syntax fix | `NULLS NOT DISTINCT` placed **after column list, before `WHERE status = 'ACTIVE'`** in DISCOVERY §2.5.3 |
+| R4-2 | Advisory lock must be in interactive transaction | §2.5.4 now mandates `prisma.$transaction(async tx => ...)` containing lock + lookup + supersede + insert; uses `hashtextextended(key, 0)` |
+| R4-3 | Attribution immutability multi-layer (not RLS-only) | §2.4.2 lays out DB trigger + write-once CHECK + RLS USING + RLS WITH CHECK; explicit that scoped UPDATE is allowed only for lifecycle columns; application service is convenience, not authority |
+| R4-4 | `nextDayStart()` off-by-one helper removed | §4.1 helper deleted; acceptance vector locked; N2-1 owns concrete implementation |
+| R4-5 | Reproducible evidence commands | §1.2, §6.2, OVERVIEW split into two reproducible `Select-String` commands (one per migration family) |
+| R4-6 | CommissionBeneficiaryDecision immutable/mutable split + correction vs reversal | §2.5.2 splits immutable facts (business key, beneficiary, source, reason, evidence, decidedAt, actor, handlingAssignmentId) from mutable (status, supersededById, updatedAt); §2.5.7 separates correction (supersede + new ACTIVE) from reversal (REVERSED, no replacement by default) |
+| R4-7 | Permission contract reconciled | §2.6 = 5 explicit codes + implicit self-view; ADMIN/HR_MANAGER for beneficiary decisions; HR_STAFF = visibility only; system engine = internal capability; RLS USING + WITH CHECK clauses added; service layer is authorization authority |
+
+---
+
+## Round-by-Round Summary
+
+| Round | Major changes |
+|---|---|
+| R0 | Discovery baseline — 10 questions answered with codebase evidence |
+| R1 | Status sync; HANDOFF.md; Q7 authority record; Q9b classification; Q2 timezone layering; V6 P1 initial |
+| R2 | V6 P1 corrected (filesystem); Q7 beneficiaryUserId required + SYSTEM FK + invariant; Q9b tightened |
+| R3 | NULLS NOT DISTINCT, advisory lock, actorType/CHECK, UNRESOLVED typed, immutable/mutable (referral), exclusive next-day, Holiday OUT, COMPLETE/READY_FOR_MERGE |
+| **R4** | **7 blockers fixed** (this round — correction only, no new policy) |

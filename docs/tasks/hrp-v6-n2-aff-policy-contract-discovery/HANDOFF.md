@@ -17,9 +17,10 @@
 |---|---|
 | Survey scope | ✅ Complete |
 | Evidence gathering | ✅ Complete (file:line + filesystem migration evidence) |
-| T0 verdict applied | ✅ All R0–R3 decisions applied |
+| T0 verdict applied | ✅ All R0–R4 decisions applied |
 | Locked decisions | ✅ All operational decisions LOCKED |
 | 6-slice plan | ✅ Ready |
+| R4 corrections | ✅ 7 blockers fixed across 4 artifacts |
 | Implementation gate | ⏸️ LOCKED until PR #4 merges (Tier 1 unlocks N2-1 separately) |
 
 **Task is COMPLETE — ready for review and merge.**
@@ -41,53 +42,61 @@
 
 ## 3. Critical Evidence
 
-### V6 P1 in origin/main
+### V6 P1 in origin/main (R4 reproducible)
 
 ```
 $ git ls-tree origin/main prisma/migrations/ | Select-String "phase1a"
-  prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/
-  prisma/migrations/20260912140411_n1_placement_case_foundation
-  prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/
+  040000 tree 613b6fe6... prisma/migrations/20260908150000_v6_phase1a_labor_profile_schema/
+  040000 tree a399344c... prisma/migrations/20260908150001_v6_phase1a_labor_profile_rls/
+
+$ git ls-tree origin/main prisma/migrations/ | Select-String "n1_placement_case"
+  040000 tree <hash>...   prisma/migrations/20260912140411_n1_placement_case_foundation/
 ```
 
 V6 P1 capability: `LaborProfile`, `LaborProfileIntake`, `EmploymentEpisode` tables, `CandidateSubmission.laborProfileId` FK, RLS — all in main.
 
 ---
 
-## 4. Locked Decisions Summary
+## 4. Locked Decisions Summary (R4 final)
 
 ### Clock & Time
 - Calendar days (no business days)
 - Storage: TIMESTAMPTZ UTC
 - Business clock: Asia/Bangkok
-- Day boundary: exclusive next-day `[start, nextDayStart)`
+- Day boundary: exclusive next-day `[start, nextDayStart)` (helper removed; N2-1 owns)
 - Holiday: OUT OF N2 SCOPE
 
 ### Lifecycle
 - Clock start: `PlacementCase.openedAt`
 - Pause: none (clock RUNNING always); assignment has expiresAt
 
-### Attribution
-- Immutable source; separate clocks (7d handling, 30d attribution)
+### Attribution (Q6)
 - Immutable facts vs mutable lifecycle metadata split
+- Multi-layer enforcement: DB trigger + write-once CHECK + RLS USING + RLS WITH CHECK; application is convenience, not authority
+- `laborProfileId` write-once (NULL → value, never back)
+- Separate clocks: 7d handling, 30d attribution
 
-### Beneficiary Decision (Q7 — Critical)
-- Authority record, immutable
+### Beneficiary Decision (Q7)
+- Authority record; immutable facts vs mutable lifecycle metadata split (R4)
 - **Invariant**: max one ACTIVE per `(laborProfileId, assignmentId, milestone)`
-- **Nullable-safe**: PG15+ `NULLS NOT DISTINCT` OR COALESCE sentinel partial unique
-- **Advisory lock**: normalized tuple with sentinel delimiter
-- **Actor model**: `actorType USER|SYSTEM` + `actorUserId nullable` + `CHECK` constraint
+- **Nullable-safe SQL** (R4 corrected): `NULLS NOT DISTINCT` immediately after column list, before `WHERE status = 'ACTIVE'`
+- **Concurrency** (R4 corrected): interactive transaction contract — `pg_advisory_xact_lock` + lookup + supersede + insert in single `prisma.$transaction`
+- **Actor model**: `actorType USER|SYSTEM` + `actorUserId nullable` + CHECK constraint (XOR)
 - **UNRESOLVED**: typed result + outbox event (no decision row created)
-- **Correction/reversal**: SUPERSEDED/REVERSED history preserved
+- **Correction vs Reversal** (R4): distinct commands; reversal does NOT create replacement ACTIVE row by default
+- **Correction/reversal history**: SUPERSEDED/REVERSED preserved forever
 
 ### Migration & Compat
 - RPC signature change accepted for N2-3 with LIVE test plan
 - EXACT_SAFE classification: FK + provenance + writer semantics + no conflict + audit
 - V6 P1 capability in main — no merge dep
 
-### Permissions
-- 6 codes per proposal in DISCOVERY.md §2.6
-- RLS policy skeleton ready
+### Permissions (Q8 — R4 corrected)
+- **5 explicit permission codes** + implicit self-view
+- ADMIN/HR_MANAGER for beneficiary decisions
+- HR_STAFF = visibility only, no beneficiary override
+- System engine path is internal capability, not a human permission
+- RLS USING = read visibility; WITH CHECK = write-path policy; service-layer is authorization authority
 
 ---
 
@@ -95,11 +104,11 @@ V6 P1 capability: `LaborProfile`, `LaborProfileIntake`, `EmploymentEpisode` tabl
 
 | Slice | Slug | Schema scope | Migration risk | Test gate |
 |---|---|---|---|---|
-| N2-1 | `hrp-v6-n2-aff-01-attribution-foundation` | `ReferralAttribution` immutable table | Low | Immutability + RLS |
+| N2-1 | `hrp-v6-n2-aff-01-attribution-foundation` | `ReferralAttribution` immutable facts + lifecycle metadata split; trigger + write-once CHECK on `laborProfileId`; partial unique on laborProfileId; RLS USING + WITH CHECK | Low | Immutability trigger, lifecycle transitions, RLS read + write |
 | N2-2 | `hrp-v6-n2-aff-02-link-capture` | None (pure app logic) | Zero | Race, forged code |
 | N2-3 | `hrp-v6-n2-aff-03-apply-attribution` | Additive columns + RPC signature change | HIGH | RPC migration test |
-| N2-4 | `hrp-v6-n2-aff-04-handling-assignment` | `labor_profile_handling_assignments` with partial unique | Medium | Race to assign, expiry |
-| N2-5 | `hrp-v6-n2-aff-05-beneficiary-decision` | `CommissionBeneficiaryDecision` with NULLS NOT DISTINCT + CHECK + advisory lock | Medium | Invariant, UNRESOLVED typed result |
+| N2-4 | `hrp-v6-n2-aff-04-handling-assignment` | `labor_profile_handling_assignments` with partial unique; RLS USING + WITH CHECK | Medium | Race to assign, expiry |
+| N2-5 | `hrp-v6-n2-aff-05-beneficiary-decision` | `CommissionBeneficiaryDecision` with NULLS NOT DISTINCT (R4 syntax) + CHECK + CHECK actor XOR + immutable-fact trigger; interactive transaction per R4 | Medium | Invariant, UNRESOLVED typed result, correction vs reversal split, transaction scope |
 | N2-6 | `hrp-v6-n2-aff-06-commission-beneficiary` | Additive `beneficiary_user_id` + EXACT_SAFE-only backfill + engine update | Medium | EXACT_SAFE classification |
 
 ---
@@ -114,19 +123,19 @@ V6 P1 capability: `LaborProfile`, `LaborProfileIntake`, `EmploymentEpisode` tabl
 - ✅ No N2 implementation
 - ✅ Docs-only PR
 - ✅ Read-only research on existing codebase
+- ✅ R4 is correction-only — no new policy, no new survey
 
 ---
 
-## 7. T0 Final Verdict Applied
-
-**Round-by-round changes:**
+## 7. T0 Final Verdict Applied (R0–R4)
 
 | Round | Files affected | Major changes |
 |---|---|---|
 | R0 | All 4 | Discovery baseline — 10 questions answered |
-| R1 | All 4 | Status sync; HANDOFF.md added; Q7 (CommissionBeneficiaryDecision as authority); Q9b (legacy classification); Q2 (timezone layer); V6 P1 (initial wrong evidence) |
-| R2 | All 4 | V6 P1 corrected (filesystem evidence); Q7 R2 (beneficiaryUserId required, SYSTEM = valid User FK, invariant contract, UNRESOLVED outcome); Q9b tightened; Q6 immutable facts |
-| **R3** | All 4 | T0 final verdict — NULLS NOT DISTINCT, advisory lock with sentinel, **actorType/actorUserId + CHECK** (no SYSTEM user), outcome removed, UNRESOLVED = typed result only, immutable/mutable split, exclusive next-day boundary, Holiday OUT OF SCOPE, status COMPLETE/READY_FOR_MERGE, PR #4 audit facts |
+| R1 | All 4 | Status sync; HANDOFF.md added; Q7 (authority record); Q9b (legacy); Q2 (timezone); V6 P1 initial |
+| R2 | All 4 | V6 P1 corrected; Q7 R2 (beneficiaryUserId required + SYSTEM FK + invariant + UNRESOLVED); Q9b tightened; Q6 immutable |
+| R3 | All 4 | NULLS NOT DISTINCT, advisory lock, actorType/CHECK, outcome removed, UNRESOLVED typed, immutable/mutable split (referral only), exclusive next-day, Holiday OUT, COMPLETE/READY_FOR_MERGE |
+| **R4** | All 4 | **7 blockers fixed**: DDL syntax fix, transaction-scoped advisory lock, multi-layer attribution immutability, off-by-one helper removed, reproducible evidence commands, CommissionBeneficiaryDecision immutable/mutable split + correction vs reversal, permission codes reconciled to 5+implicit-self + WITH CHECK |
 
 ---
 
