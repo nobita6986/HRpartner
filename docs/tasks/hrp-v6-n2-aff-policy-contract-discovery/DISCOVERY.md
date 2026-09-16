@@ -4,13 +4,9 @@
 **Baseline (pinned):** `b91a33f948aed224a88f3e8e7c9847006f33e97f` (15 Sep 2026)
 **Author:** S1
 **Type:** READ-ONLY Discovery — no production code changes
-**Status:** `OPEN / REVISION_REQUIRED` (T0 verdict after R7/R8/R9 reviews)
+**Status:** `OPEN / REVISION_REQUIRED` (T0 verdict after R7/R8/R9/R10 reviews)
 
-> **R9 status note:** R8 closed 4 P1 executable-contract blockers (CBD scope, app_engine_writer
-> contract, set_config true, recursive canonical JSON). R9 closes 4 additional P1 blockers
-> (engine runtime, RETURNING, K-08/K-09 alignment, reject-vector) and 4 P2 corrections
-> (L-01..L-06 isolation, COALESCE absence, posture converge, status sync). PR remains
-> OPEN / REVISION_REQUIRED until T0 final authorization.
+> **R10 status note:** R9 closed 4 P1 + 4 P2 blockers. R10 closes 4 additional P1 + 2 P2 blockers: (P1-1) cycle detection via WeakSet (K-15 throws TypeError); (P1-2) membership/ownership lock with pg_auth_members check + post-assert; (P1-3) N2-1 scope = RA only, CBD grants deferred to N2-5; (P1-4) L-01..L-06 matrix corrected (L-02 deny NOT NULL, L-03 ALTER TRIGGER disable, L-05 mutable outcomeNote). (P2-1) posture assert runs AFTER ALTER (fail-loud on drift); (P2-2) jsonb parity only after JSON-value validation. PR remains OPEN / REVISION_REQUIRED until T0 final authorization.
 **Audit:** `NONE` (read-only docs-only)
 **Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
 **PR:** [Pull Request #4](https://github.com/nobita6986/HRpartner/pull/4)
@@ -19,13 +15,13 @@
 
 ## 0. Executive Summary
 
-N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất cả đều greenfield. `aff_plan.md v2.3` đã chốt 18 decision. T0 đã chốt operational decisions R0–R8. Tài liệu này lock toàn bộ policy để Tier 1 mở N2-1 slice.
+N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất cả đều greenfield. `aff_plan.md v2.3` đã chốt 18 decision. T0 đã chốt operational decisions R0–R10. Tài liệu này lock toàn bộ policy để Tier 1 mở N2-1 slice.
 
 > **R8 status note:** PR #4 has been REVISION_REQUIRED by T0 after R7. R8 closes 4 P1 executable-contract blockers (CBD scope bypass, missing app_engine_writer executable contract, set_config isolation semantics, recursive canonical JSON). PR remains OPEN / REVISION_REQUIRED until T0 final authorization.
 
-**R9 additions**: (1) **app_engine_writer runtime**: dedicated LOGIN role + dedicated engine DSN/connection pool (`HRPARTNER_ENGINE_URL`); runtime test confirms `current_user='app_engine_writer'`, no SET ROLE assumption; pool/credential boundary verified via `pg_stat_activity`; (2) **link-capture + RETURNING**: SELECT policy now permits `link-capture` so Prisma `INSERT ... RETURNING` works; LIVE test E-17 with exact Prisma statement; (3) **Canonical JSON K-08/K-09 alignment**: `1.0 ↔ 1` and `-0 ↔ 0` now return `true` to match both `JSON.stringify` and PostgreSQL `jsonb` semantics (R9 must align with what JS and PG actually do); (4) **`isJsonValue` validator**: rejects undefined, NaN, ±Infinity, Date, exotic objects, cycles; 10 rejection vectors K-11..K-20; both `canonicalJson` and `jsonb` reject these inputs.
+**R9/R10 additions**: (1) **app_engine_writer runtime (R9)**: dedicated LOGIN role + dedicated engine DSN/connection pool (`HRPARTNER_ENGINE_URL`); runtime test confirms `current_user='app_engine_writer'`, no SET ROLE assumption; pool/credential boundary verified via `pg_stat_activity`. (2) **membership/ownership lock (R10 P1-2)**: `REVOKE ALL PRIVILEGES ON ALL TABLES/SCHEMAS/SEQUENCES`; `pg_auth_members` membership check; `pg_class` ownership check; post-assert raises explicit error. (3) **link-capture + RETURNING (R9)**: SELECT policy permits `link-capture` so Prisma `INSERT ... RETURNING` works; LIVE test E-17 with exact Prisma statement. (4) **Canonical JSON K-08/K-09 alignment (R9)**: `1.0 ↔ 1` and `-0 ↔ 0` return `true` to match both `JSON.stringify` and PostgreSQL `jsonb` semantics. (5) **`isJsonValue` with WeakSet cycle detection (R10 P1-1)**: rejects undefined, NaN, ±Infinity, Date, exotic objects, cycles; 10 rejection vectors K-11..K-20; WeakSet add-before-descend/delete-after-unwind pattern. (6) **N2-1 slice scope (R10 P1-3)**: N2-1 = RA grants/policies only; CBD grants deferred to N2-5.
 
-**R9 P2 corrections**: (5) **L-01..L-06**: INSERT WITH CHECK isolation tests; (6) **COALESCE**: engine policies use `COALESCE(current_setting(..., true), '')` for absent-or-not-in-allowlist; (7) **Posture converge**: ALTER ROLE converges to NOSUPERUSER/NOBYPASSRLS/NOINHERIT/NOREPLICATION; assert before/after raising explicit posture errors; (8) **Status sync**: DISCOVERY.md status now `OPEN / REVISION_REQUIRED` (was `COMPLETE / READY_FOR_MERGE`).
+**R9/R10 P2 corrections**: (7) **L-01..L-06 isolation (R10 P1-4)**: L-02 deny (NOT NULL), L-03 ALTER TRIGGER disable + dedicated test DB + non-superuser, L-05 mutable outcomeNote (not immutable reason). (8) **COALESCE (R9)**: engine policies use `COALESCE(current_setting(..., true), '')` for absent-or-not-in-allowlist. (9) **Posture converge (R10 P2-1)**: ALTER first, then post-assert; fail-loud on drift. (10) **jsonb parity (R10 P2-2)**: application validator runs first; DB jsonb equality is secondary backup only. (11) **Status sync (R9)**: `OPEN / REVISION_REQUIRED` in all 4 docs.
 
 **R8 prior**: CBD RLS scope; app_engine_writer executable contract; set_config(true) only; recursive canonical JSON.
 
@@ -456,34 +452,63 @@ async function createBeneficiaryDecision(input: {
     // decision made at two different timestamps is still the same decision; the human/system
     // who decided at time T1 vs T2 with identical inputs is the same decision.
     // Canonical deep-equal for evidence: sort keys then JSON.stringify (no key-order variance).
-    function isJsonValue(v: unknown): boolean {
-      // R9 strict: only JSON-value domain allowed:
+    function isJsonValue(val: unknown, seen?: WeakSet<object>): boolean {
+      // R10 strict: only JSON-value domain allowed:
       //   null | boolean | finite number | string | array<JSON> | plain object<JSON>
-      // Reject: undefined, NaN, ±Infinity, Date, RegExp, Map, Set, Function, cyclic
-      if (v === null) return true;
-      const t = typeof v;
+      // Reject: undefined, NaN, ±Infinity, Date, RegExp, Map, Set, Function,
+      //         cyclic references, exotic prototypes.
+      //
+      // Cycle detection: uses a WeakSet passed by reference across the full
+      // validation call stack. An object/array reference is added to `seen`
+      // BEFORE recursing into its children. If a previously-visited reference
+      // is encountered again, a cycle exists → throw TypeError (contract K-15).
+      //
+      // WeakSet is used (not Set) so that once an object becomes unreachable
+      // from the root it can be garbage-collected. The shared `seen` set is
+      // created once at the public entry point and passed by reference through
+      // all recursive calls.
+
+      if (val === null) return true;
+      const t = typeof val;
       if (t === 'boolean' || t === 'string') return true;
-      if (t === 'number') return Number.isFinite(v);  // rejects NaN, ±Infinity
-      if (Array.isArray(v)) {
-        for (let i = 0; i < v.length; i++) {
-          if (!isJsonValue(v[i])) return false;
+      if (t === 'number') return Number.isFinite(val); // rejects NaN, ±Infinity
+      if (Array.isArray(val)) {
+        // Arrays are objects (typeof === 'object'). Add to seen BEFORE recursing.
+        if (!seen) seen = new WeakSet<object>();
+        if (seen.has(val)) {
+          throw new TypeError('canonicalJson: input contains a cycle (array)');
         }
+        seen.add(val);
+        for (let i = 0; i < val.length; i++) {
+          if (!isJsonValue(val[i], seen)) return false;
+        }
+        seen.delete(val); // unwind: allow sibling subtrees to revisit this ref
         return true;
       }
       if (t === 'object') {
-        // Plain object check: getPrototypeOf must be Object.prototype (or null).
-        const proto = Object.getPrototypeOf(v);
+        // Plain object: getPrototypeOf must be Object.prototype or null.
+        const proto = Object.getPrototypeOf(val);
         if (proto !== Object.prototype && proto !== null) return false;
-        for (const k of Object.keys(v as Record<string, unknown>)) {
-          if (!isJsonValue((v as Record<string, unknown>)[k])) return false;
+        if (!seen) seen = new WeakSet<object>();
+        if (seen.has(val)) {
+          throw new TypeError('canonicalJson: input contains a cycle (object)');
         }
+        seen.add(val);
+        const keys = Object.keys(val as Record<string, unknown>);
+        for (let i = 0; i < keys.length; i++) {
+          if (!isJsonValue((val as Record<string, unknown>)[keys[i]], seen)) {
+            seen.delete(val); // unwind on early exit
+            return false;
+          }
+        }
+        seen.delete(val); // unwind: allow sibling subtrees to revisit this ref
         return true;
       }
-      return false;  // undefined, function, symbol, bigint, exotic objects
+      return false; // undefined, function, symbol, bigint, exotic objects
     }
 
     function canonicalJson(val: unknown): string {
-      // R9: validate input is a JSON-value domain object. Reject otherwise.
+      // R10: validate input is a JSON-value domain object. Reject otherwise.
       // This guarantees canonicalJson and PostgreSQL jsonb agree on the
       // representation (both reject undefined/NaN/±Infinity; both treat
       // 1.0 == 1 and -0 == 0 at numeric level).
@@ -1000,20 +1025,46 @@ BEGIN
 END
 $$;
 
--- Step 2: POSTURE ASSERTION — converge to required attributes (R9 fix).
--- If a pre-existing role has different attributes (e.g. someone set SUPERUSER
--- or BYPASSRLS outside the contract), the migration MUST fail loud with an
--- explicit error, not silently overwrite.
+-- STEP 2: REVOKE unexpected memberships and table ownership (R10 P1-2).
+-- NOINHERIT only prevents automatic privilege inheritance; it does NOT revoke
+-- existing memberships or remove ownership. Both must be revoked explicitly.
+-- This block is idempotent: revoking a non-existent membership is a no-op.
+REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM app_engine_writer;
+REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM app_engine_writer;
+REVOKE ALL PRIVILEGES ON SCHEMA public FROM app_engine_writer;
+
+-- Also revoke any unexpected role memberships (e.g. app_user_writer, PUBLIC, etc.).
+-- The only allowed membership is none (self-membership is harmless).
+FOR membership_role IN
+  SELECT m.role_name
+  FROM pg_auth_members m
+  JOIN pg_roles r ON m.role_name = r.rolname
+  WHERE m.member = (SELECT oid FROM pg_roles WHERE rolname = 'app_engine_writer')
+  AND m.role_name != 'app_engine_writer'
+LOOP
+  EXECUTE format('REVOKE %I FROM app_engine_writer', membership_role);
+END LOOP;
+
+-- STEP 3: CONVERGE role attributes (idempotent; ALTER with same value is no-op).
+-- MUST run BEFORE the post-assert (P2-1 fix: assert-after not assert-before).
+ALTER ROLE app_engine_writer NOSUPERUSER NOBYPASSRLS NOINHERIT NOREPLICATION;
+
+-- STEP 4: POST-ASSERT — fail-loud if any contract attribute is violated (R10 P2-1).
+-- Runs AFTER ALTER so it catches external drift that ALTER did not fix.
 DO $$
 DECLARE
   r pg_roles%ROWTYPE;
+  unexpected_members TEXT;
+  owned_objects TEXT;
 BEGIN
   SELECT * INTO r FROM pg_roles WHERE rolname = 'app_engine_writer';
   IF NOT FOUND THEN
     RAISE EXCEPTION 'engine contract: app_engine_writer role missing after provisioning';
   END IF;
+
+  -- Attribute assertions
   IF r.rolcanlogin = false THEN
-    RAISE EXCEPTION 'engine contract: app_engine_writer must be LOGIN (NOLOGIN is forbidden)';
+    RAISE EXCEPTION 'engine contract: app_engine_writer must be LOGIN (found NOLOGIN)';
   END IF;
   IF r.rolsuper = true THEN
     RAISE EXCEPTION 'engine contract: app_engine_writer must NOT be SUPERUSER';
@@ -1027,25 +1078,55 @@ BEGIN
   IF r.rolreplication = true THEN
     RAISE EXCEPTION 'engine contract: app_engine_writer must NOT be REPLICATION';
   END IF;
+
+  -- Membership assertions (R10 P1-2): engine must have ZERO unexpected memberships.
+  -- Only app_engine_writer itself is allowed (self-membership is harmless).
+  SELECT string_agg(m.role_name, ', ' ORDER BY m.role_name)
+  INTO unexpected_members
+  FROM pg_auth_members m
+  WHERE m.member = (SELECT oid FROM pg_roles WHERE rolname = 'app_engine_writer')
+    AND m.role_name != 'app_engine_writer';
+  IF unexpected_members IS NOT NULL THEN
+    RAISE EXCEPTION 'engine contract: app_engine_writer has unexpected memberships: %', unexpected_members;
+  END IF;
+
+  -- Ownership assertions (R10 P1-2): engine must own ZERO application tables/sequences/schemas.
+  -- (pg_catalog and information_schema are not owned by any application role; skip them.)
+  SELECT string_agg(nspname || '.' || relname, ', ' ORDER BY nspname, relname)
+  INTO owned_objects
+  FROM (
+    SELECT c.relnamespace::regnamespace::text AS nspname, c.relname
+    FROM pg_class c
+    JOIN pg_namespace n ON c.relnamespace = n.oid
+    WHERE c.relowner = (SELECT oid FROM pg_roles WHERE rolname = 'app_engine_writer')
+      AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+  ) t;
+  IF owned_objects IS NOT NULL THEN
+    RAISE EXCEPTION 'engine contract: app_engine_writer must not own any application objects: %', owned_objects;
+  END IF;
 END
 $$;
 
--- Converge attributes (idempotent; only writes if a previous run set them wrong).
--- ALTER ROLE is idempotent: setting same value is no-op.
-ALTER ROLE app_engine_writer NOSUPERUSER NOBYPASSRLS NOINHERIT NOREPLICATION;
--- Login attribute is set; secret is provisioned out-of-band by ops.
+-- Assert expected attributes (R10 LIVE tests E-01/E-14 confirm this):
+-- SELECT rolname, rolsuper, rolbypassrls, rolcanlogin, rolinherit, rolreplication
+-- FROM pg_roles WHERE rolname = 'app_engine_writer';
+-- Expected: rolcanlogin=true, rolsuper=false, rolbypassrls=false,
+--          rolinherit=false, rolreplication=false.
 
--- Assert NO BYPASSRLS attribute (R9 LIVE test E-01 asserts this):
--- SELECT rolname, rolsuper, rolbypassrls, rolcanlogin FROM pg_roles WHERE rolname = 'app_engine_writer';
--- Expected: rolcanlogin=true, rolsuper=false, rolbypassrls=false, rolinherit=false
-
--- Least-privilege grants (engine does NOT inherit from app_user_writer):
+-- STEP 5: N2-1 SLICE SCOPE — least-privilege grants for referral_attributions ONLY (R10 P1-3).
+-- CBD grants are deferred to N2-5 (CBD table does not exist in N2-1).
+-- The engine does NOT inherit from app_user_writer (NOINHERIT set above).
 GRANT USAGE ON SCHEMA public TO app_engine_writer;
 GRANT SELECT, INSERT, UPDATE ON referral_attributions TO app_engine_writer;
-GRANT SELECT, INSERT, UPDATE ON commission_beneficiary_decisions TO app_engine_writer;
 -- EXPLICITLY REVOKE DELETE (no DELETE privilege for the engine):
 REVOKE DELETE ON referral_attributions FROM app_engine_writer;
-REVOKE DELETE ON commission_beneficiary_decisions FROM app_engine_writer;
+
+-- CBD grants and policies are deferred to N2-5 (R10 P1-3):
+--   GRANT SELECT, INSERT, UPDATE ON commission_beneficiary_decisions TO app_engine_writer;
+--   CREATE POLICY hrp_cbd_select_engine ...
+--   CREATE POLICY hrp_cbd_insert_engine ...
+--   CREATE POLICY hrp_cbd_update_engine ...
+--   REVOKE DELETE ON commission_beneficiary_decisions FROM app_engine_writer;
 
 -- SELECT policy for engine consume flow (R8 addition — necessary for engine
 -- to read rows before/after INSERT/UPDATE within the same transaction):
@@ -1087,34 +1168,7 @@ CREATE POLICY hrp_ra_update_engine ON referral_attributions
       ('consume', 'milestone')
   );
 
--- Equivalent engine policies for commission_beneficiary_decisions:
-CREATE POLICY hrp_cbd_select_engine ON commission_beneficiary_decisions
-  AS PERMISSIVE FOR SELECT TO app_engine_writer
-  USING (
-    -- Engine reads rows for consume + milestone; link-capture does not
-    -- target CBD (CBD is created via the application CREATE/CORRECT
-    -- commands under app_user_writer, not the engine).
-    COALESCE(current_setting('hrp.engine_context', true), '') IN
-      ('consume', 'milestone')
-  );
-
-CREATE POLICY hrp_cbd_insert_engine ON commission_beneficiary_decisions
-  AS PERMISSIVE FOR INSERT TO app_engine_writer
-  WITH CHECK (
-    COALESCE(current_setting('hrp.engine_context', true), '') IN
-      ('milestone')
-  );
-
-CREATE POLICY hrp_cbd_update_engine ON commission_beneficiary_decisions
-  AS PERMISSIVE FOR UPDATE TO app_engine_writer
-  USING (
-    COALESCE(current_setting('hrp.engine_context', true), '') IN
-      ('milestone')
-  )
-  WITH CHECK (
-    COALESCE(current_setting('hrp.engine_context', true), '') IN
-      ('milestone')
-  );
+-- CBD grants and policies are deferred to N2-5 (R10 P1-3):
 
 -- No DELETE policy for app_engine_writer. DELETE privilege was REVOKEd above.
 -- No DELETE policy under FORCE RLS => default-deny DELETE for ALL roles.
@@ -1192,17 +1246,15 @@ on the OLD row. To isolate the WITH CHECK clause, R9 adds these targeted tests:
 | # | Test scenario | Expected | Layer that denies |
 |---|---|---|---|
 | L-01 | HR_MANAGER (team) INSERTs a NEW row with `labor_profile_id` of out-of-team profile | **denied** | CBD INSERT WITH CHECK |
-| L-02 | HR_MANAGER (team) INSERTs a NEW row with NULL `labor_profile_id` (should be allowed by RLS, application provides default) | allowed | n/a |
-| L-03 | HR_MANAGER (team) runs UPDATE on a CBD row attached to profile P1 (in-team), changing `labor_profile_id` to P2 (out-of-team); BEFORE statement, temporarily disable the row-level trigger to isolate RLS from triggers | **denied** | CBD UPDATE WITH CHECK |
-| L-04 | Same as L-03 with triggers ENABLED (full system) | denied | RLS WITH CHECK OR immutable trigger; isolated by L-05 below |
-| L-05 | HR_MANAGER (team) UPDATE to set only non-`labor_profile_id` field (e.g. reason text) where the OLD row's `labor_profile_id` is in-team AND immutable columns stay the same | allowed (UPDATE non-`labor_profile_id` fields, both rows in team, no immutable column changed) | n/a |
+| L-02 | HR_MANAGER (team) INSERTs a NEW CBD row with NULL `labor_profile_id` (column is required NOT NULL; application validation layer raises before RLS sees the row) | **denied** | application NOT NULL check (not RLS — RLS cannot authorize NULL into a required column) |
+| L-03 | HR_MANAGER (team) UPDATE on a CBD row attached to profile P1 (in-team), changing `labor_profile_id` to P2 (out-of-team); immutable trigger disabled via `ALTER TABLE ... DISABLE TRIGGER ALL` within the same non-superuser transaction; dedicated test DB used (not migration target) | **denied** | CBD UPDATE WITH CHECK (RLS layer is the denial; trigger bypassed for isolation; `session_replication_role = replica` NOT used) |
+| L-04 | Same as L-03 with triggers ENABLED (full system, non-superuser, same dedicated test DB) | **denied** | CBD UPDATE WITH CHECK OR immutable trigger (L-03 isolates WITH CHECK; L-04 shows full stack denial) |
+| L-05 | HR_MANAGER (team) UPDATE to change `outcomeNote` (a mutable metadata field, NOT part of authoritative immutable identity) where the OLD row's `labor_profile_id` is in-team | **allowed** | n/a (mutable field, no immutable trigger conflict; note: updating `reason` would trigger immutable layer — `reason` is immutable identity, not mutable metadata) |
 | L-06 | HR_MANAGER (team) INSERT a NEW row attached to profile P2 (out-of-team); verify the partial unique index does NOT catch the mis-INSERT first (insertion never reaches index because RLS denies earlier) | denied before COMMIT | CBD INSERT WITH CHECK |
 
-> **R9 isolation note:** L-01 tests INSERT WITH CHECK directly without crossing other layers.
-> L-03 tests the WITH CHECK (NEW row) while bypassing the immutable trigger by running in a
-> test transaction with `SET session_replication_role = replica` (only `superuser` can run this;
-> the test fixture uses a dedicated test superuser).
-> L-05 verifies that non-team-modifying updates are still allowed under team scope.
+> **R10 isolation note for L-03:** The blanket `SET session_replication_role = replica` bypasses ALL RLS and triggers — it tests nothing useful. R10 replaces it with `ALTER TABLE ... DISABLE TRIGGER` (or `ALTER TABLE ... DISABLE TRIGGER ALL` for all triggers) executed within the same test transaction as a non-superuser. The test DB is a dedicated integration DB (not the migration target). `session_replication_role` is never used in any LIVE test. The test runs: `BEGIN → SET ROLE app_user_writer → ALTER TABLE ... DISABLE TRIGGER ALL → UPDATE → RLS denied → ROLLBACK`.
+>
+> **R10 isolation note for L-05:** `reason` is part of the authoritative immutable identity of a CBD decision — changing it would require a CORRECT command (which is the correct path). L-05 uses a mutable metadata field, e.g. `outcomeNote` or `decidedAt` (mutable lifecycle metadata, not part of authoritative immutable facts). Similarly, `actorType`, `actorUserId`, `source` are immutable; only mutable lifecycle metadata fields may be updated without triggering the immutable-layer trigger.
 
 **`referral_attributions` (N2-1 RLS simplified — R7):**
 
@@ -1273,19 +1325,16 @@ helper uses `JSON.stringify` for primitives so 1.0 and 1 produce identical outpu
 | K-12 | `{a: NaN}` | throws TypeError (NaN is not a JSON value) |
 | K-13 | `{a: Infinity}` | throws TypeError (±Infinity is not a JSON value) |
 | K-14 | `new Date()` | throws TypeError (Date prototype — not a plain object) |
-| K-15 | `(() => { const o: any = {}; o.self = o; return o; })()` (cyclic) | throws TypeError (cycle detected via prototype/iter check) |
+| K-15 | `(() => { const o: any = {}; o.self = o; return o; })()` (cyclic object) | **throws TypeError** (WeakSet detects cycle in object, throws on second visit) |
 | K-16 | `new Map([['a',1]])` | throws TypeError (Map prototype — not a plain object) |
 | K-17 | `(a:number) => a` | throws TypeError (function type) |
 | K-18 | `Symbol('x')` | throws TypeError (symbol type) |
 | K-19 | `{a: {b: undefined}}` (nested undefined) | throws TypeError |
 | K-20 | `{a: [1, undefined, 3]}` (undefined in array) | throws TypeError |
 
-**DB-layer parity (R9 required):** the `evidence` column is persisted as `jsonb`.
-A backup equality check is performed at COMMIT using PostgreSQL's native
-`jsonb =` operator to confirm idempotency identity. N2-5 TASK must include a
-test that proves `canonicalJson(a) === canonicalJson(b)` is exactly equivalent
-to `a::jsonb = b::jsonb` for the 10 K-01..K-10 inputs and that the 10 K-11..K-20
-rejection vectors are rejected by jsonb too (`jsonb_in` rejects them).
+> **R10 P2-2 correction — jsonb parity scope:** The statement "both `canonicalJson` and PostgreSQL `jsonb` reject these inputs" is only accurate after the input has been validated as a JSON value. `isJsonValue` is the application-layer gate that runs FIRST — it rejects Date, Map, Set, Symbol, function, NaN, ±Infinity, undefined, cyclic objects, and exotic prototypes before they ever reach `canonicalJson` or a JSON serialization round-trip. The `jsonb =` operator in PostgreSQL is a backup equality check applied only to column values that already passed the DB schema (NOT NULL jsonb column accepts only valid JSON). The two systems' parity on numeric normalization (`1.0 ↔ 1`, `-0 ↔ 0`) holds because both normalize via IEEE 754 and JSON serialization rules — this is not a general claim about exotic inputs.
+>
+> **Application validator runs first; DB jsonb equality is a secondary backup check applied only to confirmed-JSON values.**
 
 ### 2.7 Inventory Reuse + N2 Conflicts
 
