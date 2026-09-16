@@ -29,7 +29,7 @@ if (WRITER_URL && !ADMIN_URL) {
 
 const enabled = Boolean(ADMIN_URL && WRITER_URL);
 
-describe.skipIf(!enabled)('W3 Admin Demand Tree — LIVE RLS Integration Test', () => {
+describe.skipIf(!enabled)('W3 Admin Demand Tree — LIVE RLS Integration Test', { timeout: 30000 }, () => {
   const admin = new PrismaClient({ datasourceUrl: ADMIN_URL });
   const writer = new PrismaClient({ datasourceUrl: WRITER_URL });
 

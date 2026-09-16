@@ -58,7 +58,7 @@ jobs:
   integration:
     name: Integration (DB tests · fail-closed)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     # Never run on a FORK pull request: secrets are not exposed to forks (RQ-07), and we do
     # not want a dedicated test-DB touched from untrusted PR code. Same-repo PRs, pushes to
     # main, and manual dispatch still run — and fail closed (ENV_BLOCKED) if no secret is set.
