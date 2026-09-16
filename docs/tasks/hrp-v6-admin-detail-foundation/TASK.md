@@ -43,8 +43,15 @@
 - **STEP-01**: Implement `Breadcrumb`, `RelatedObjects`, `EmptyState`, and `RowLink` components. Áp dụng lên `/admin/jobs/job-postings` (list và detail).
 
 ## 6. Acceptance
+
+### 6.1 Acceptance criteria
 - **AC-01**: `/admin/jobs/job-postings` page implements `RowLink` and `EmptyState`.
 - **AC-02**: `/admin/jobs/job-postings/[id]` page implements `Breadcrumb` and `RelatedObjects`.
+
+### 6.2 Traceability
+| Requirement | Step | Acceptance |
+|---|---|---|
+| `RQ-01` | `STEP-01` | `AC-01`, `AC-02` |
 
 ## 7. Risk
 *(Pending)*
