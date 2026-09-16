@@ -4,9 +4,9 @@
 **Baseline (pinned):** `b91a33f948aed224a88f3e8e7c9847006f33e97f` (15 Sep 2026)
 **Author:** S1
 **Type:** READ-ONLY Discovery — no production code changes
-**Status:** `OPEN / FINAL_R11_DELTA_REQUIRED` (T0 verdict after R7/R8/R9/R10/R11 reviews + R11 delta)
+**Status:** `OPEN / MICRO_DELTA_REQUIRED` (T0 verdict after R7/R8/R9/R10/R11 reviews + R11 delta + R11 micro-delta)
 
-> **R11 delta status note:** R11 closes 6 blockers; FINAL R11 DELTA closes 6 surgical corrections on top: (D1) removed blanket ALL SEQUENCES revoke; (D2) `public` schema now checked in ownership assertion (only `information_schema` and `pg_%` excluded); (D3) removed unsupported full-grant-scan claim, added E-19 N2-5 privilege-survival LIVE vector; (D4) L-02a is admin/bypass-RLS schema-only SQLSTATE 23502 test (NOT an RLS test); (D5) L-03 strengthened with `current_user`, `rolsuper=false`, schema/table privilege assertions and RLS-diagnostic on denial; (D6) removed IEEE-754/DOUBLE_PRECISION claim; numeric parity limited to two specific vectors (`1.0=1`, `-0=0`); all stale R0-R9/R10 references synced to R11. PR remains OPEN until T0 final authorization.
+> **R11 micro-delta status note:** R11 delta closes 6 surgical corrections; R11 micro-delta applies 3 surgical corrections on top: (D4-fix) `SET LOCAL row_security = OFF` is NOT a bypass — replaced L-02a with executable Path A (test principal with `rolbypassrls=true` or `rolsuper=true`) or Path B (transactional `ALTER TABLE ... NO FORCE ROW LEVEL SECURITY` with FORCE RLS re-asserted after ROLLBACK); (D3-fix) E-19 rerun limited to idempotent role/privilege convergence sub-block; `CREATE POLICY` DDL is excluded because PostgreSQL has no `CREATE POLICY IF NOT EXISTS`; (D6-fix) removed three remaining stale JSON/R0-R9/R10 statements (canonicalJson/jsonb both reject, R0-R9 status, must both reject). PR remains OPEN until T0 final authorization.
 **Audit:** `NONE` (read-only docs-only)
 **Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
 **PR:** [Pull Request #4](https://github.com/nobita6986/HRpartner/pull/4)
@@ -15,7 +15,7 @@
 
 ## 0. Executive Summary
 
-N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất cả đều greenfield. `aff_plan.md v2.3` đã chốt 18 decision. T0 đã chốt operational decisions R0–R11 (R11 delta applied). Tài liệu này lock toàn bộ policy để Tier 1 mở N2-1 slice.
+N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất cả đều greenfield. `aff_plan.md v2.3` đã chốt 18 decision. T0 đã chốt operational decisions R0–R11 (R11 delta + R11 micro-delta applied). Tài liệu này lock toàn bộ policy để Tier 1 mở N2-1 slice.
 
 > **R8 status note:** PR #4 has been REVISION_REQUIRED by T0 after R7. R8 closes 4 P1 executable-contract blockers (CBD scope bypass, missing app_engine_writer executable contract, set_config isolation semantics, recursive canonical JSON). PR remains OPEN / REVISION_REQUIRED until T0 final authorization.
 
@@ -509,9 +509,11 @@ async function createBeneficiaryDecision(input: {
 
     function canonicalJson(val: unknown): string {
       // R10: validate input is a JSON-value domain object. Reject otherwise.
-      // This guarantees canonicalJson and PostgreSQL jsonb agree on the
-      // representation (both reject undefined/NaN/±Infinity; both treat
-      // 1.0 == 1 and -0 == 0 at numeric level).
+      // canonicalJson produces a stable string for canonical JSON; PostgreSQL
+      // jsonb operates on the already-serialized JSON text — the two layers
+      // agree only after isJsonValue has validated the input as a JSON value.
+      // Numeric parity: 1.0 == 1 and -0 == 0 (the only two specific vectors;
+      // see §2.5.4 K-08/K-09 LIVE tests).
       if (!isJsonValue(val)) {
         throw new TypeError(
           'canonicalJson: input is not a valid JSON value. ' +
@@ -1288,7 +1290,7 @@ on the OLD row. To isolate the WITH CHECK clause, R9 adds these targeted tests:
 | # | Test scenario | Expected | Layer that denies |
 |---|---|---|---|
 | L-01 | HR_MANAGER (team) INSERTs a NEW CBD row with `labor_profile_id` of out-of-team profile | **denied** | CBD INSERT WITH CHECK |
-| L-02a | Direct SQL `INSERT ... (labor_profile_id = NULL)` executed by **test-admin / table-owner** in the dedicated integration test DB, BYPASSING RLS (e.g. via `SET LOCAL row_security = OFF` in the same transaction). | **rejected with SQLSTATE `23502`** (NOT NULL violation). | PostgreSQL NOT NULL table constraint — schema layer. **This is NOT an RLS test.** RLS is intentionally bypassed here to isolate the schema constraint. |
+| L-02a | Two acceptable executable paths (R11 micro-delta D4-fix). **Path A (preferred)**: a test principal with `rolbypassrls=true` (or `rolsuper=true`) is created in the dedicated integration test DB only; the test asserts this attribute before INSERT. **Path B (fallback)**: under table-owner in a test-only transaction, assert `FORCE ROW LEVEL SECURITY` is enabled, run `ALTER TABLE commission_beneficiary_decisions NO FORCE ROW LEVEL SECURITY` (transactional), attempt `INSERT ... (labor_profile_id = NULL)`, expect SQLSTATE `23502`, then ROLLBACK. Re-assert `FORCE ROW LEVEL SECURITY` is still enabled after rollback (no permanent state change). | **rejected with SQLSTATE `23502`** (NOT NULL violation) | PostgreSQL NOT NULL table constraint — schema layer. **This is NOT an RLS test.** `SET LOCAL row_security = OFF` does NOT bypass RLS — it only relaxes the error-vs-silent-filter behavior; table owners are still subject to FORCE RLS. Path A or Path B is the only valid isolation technique. |
 | L-02b | Positive control: HR_MANAGER (team) INSERTs a NEW CBD row with valid `labor_profile_id` matching in-team profile | **allowed** | CBD INSERT WITH CHECK (passes — in-team) |
 | L-03 | HR_MANAGER (team) UPDATE on a CBD row attached to profile P1 (in-team), changing `labor_profile_id` to P2 (out-of-team); uses a dedicated integration test DB (not the migration target); executed under table-owner/admin who can disable the specific immutable trigger; `SET LOCAL ROLE app_user_writer` switches to the **human writer principal** (test-only exception — not a runtime path); HR_MANAGER GUC is set transaction-locally. Before UPDATE: `assert current_user = 'app_user_writer'`, `assert rolsuper = false`, `assert has_schema_privilege('app_user_writer', 'public', 'USAGE') = true`, `assert has_table_privilege('app_user_writer', 'commission_beneficiary_decisions', 'UPDATE') = true`, `assert OLD P1 row visible under HR_MANAGER context` (USING policy passes for OLD row). UPDATE attempts to set `labor_profile_id = P2`. | **denied with SQLSTATE `42501` AND ERROR MESSAGE containing new-row RLS policy violation on CBD** (e.g. `new row violates row-level security policy for table "commission_beneficiary_decisions"`) | CBD UPDATE WITH CHECK — confirmed by SQLSTATE + diagnostic (R11 delta D5 fix: SQLSTATE 42501 alone is insufficient — it could also indicate a privilege gap; the diagnostic must point to new-row RLS) |
 | L-04 | Same as L-03 with the immutable trigger **enabled** (full system, non-superuser, same transaction flow) | **denied** | CBD UPDATE WITH CHECK OR immutable trigger (full stack denial; L-03 isolates WITH CHECK) |
@@ -1297,7 +1299,7 @@ on the OLD row. To isolate the WITH CHECK clause, R9 adds these targeted tests:
 
 > **R11 delta D5 isolation note for L-03:** `app_user_writer` is the **human writer principal** (not the engine role). SQLSTATE `42501` alone is insufficient evidence — it can also indicate missing schema/table privilege. Before the UPDATE, the test asserts: (a) `current_user = 'app_user_writer'`, (b) `rolsuper = false`, (c) `has_schema_privilege('app_user_writer', 'public', 'USAGE') = true`, (d) `has_table_privilege('app_user_writer', 'commission_beneficiary_decisions', 'UPDATE') = true`, (e) OLD P1 row is visible under HR_MANAGER context (USING policy passes). The UPDATE then attempts to set `labor_profile_id = P2`; the test asserts SQLSTATE `42501` AND an error message that contains the new-row RLS policy violation string on `commission_beneficiary_decisions`. This proves the denial is the new-row RLS WITH CHECK, not a privilege gap. `SET LOCAL ROLE app_user_writer` is a **test-only exception** — not a real runtime path; the engine always connects via `HRPARTNER_ENGINE_URL`.
 >
-> **R11 delta D4 isolation note for L-02a:** L-02a runs under test-admin / table-owner in the dedicated integration test DB, **explicitly bypassing RLS** (`SET LOCAL row_security = OFF`) so the test isolates the schema-layer NOT NULL constraint. SQLSTATE `23502` is the expected rejection. L-02a is **explicitly NOT an RLS test**; it confirms the schema rejects NULL before RLS is even consulted. L-02b provides the positive RLS control that CBD INSERT WITH CHECK correctly allows valid in-team rows.
+> **R11 micro-delta D4-fix isolation note for L-02a:** `SET LOCAL row_security = OFF` is **NOT** a bypass of RLS. PostgreSQL documents it as only relaxing the error-vs-silent-filter behavior — table owners are still subject to `FORCE ROW LEVEL SECURITY`. R11 micro-delta replaces the false bypass with two acceptable executable paths. **Path A (preferred)**: a dedicated test principal in the integration test DB has `rolbypassrls=true` (or `rolsuper=true`); the test asserts this attribute via `SELECT rolbypassrls FROM pg_roles WHERE rolname = current_user` before the INSERT. **Path B (fallback)**: under table-owner in a test-only transaction, the test (a) asserts `FORCE ROW LEVEL SECURITY` is enabled on `commission_beneficiary_decisions`, (b) runs `ALTER TABLE commission_beneficiary_decisions NO FORCE ROW LEVEL SECURITY` (DDL is transactional in PostgreSQL), (c) attempts the INSERT with `labor_profile_id = NULL` and asserts SQLSTATE `23502`, (d) ROLLBACK to undo the `NO FORCE` change, (e) re-asserts `FORCE ROW LEVEL SECURITY` is still enabled. Path B preserves the production posture — `FORCE RLS` remains enabled after rollback. L-02a is explicitly NOT an RLS test in either path; it confirms the schema rejects NULL before RLS is even consulted. L-02b provides the positive RLS control that CBD INSERT WITH CHECK correctly allows valid in-team rows.
 >
 > **R11 P1-3 isolation note for L-03:** Blanket `DISABLE TRIGGER ALL` requires superuser and bypasses all RLS — it tests nothing. L-03 uses the **exact immutable trigger name** (e.g. `hrp_cbd_immutable_layer1` — the actual name assigned by the N2-5 migration). Only the table owner or a superuser can `DISABLE TRIGGER`. In the dedicated integration test DB, the test runs as table-owner/admin, disables the **named** trigger (not `ALL`), then switches to `app_user_writer` via `SET LOCAL ROLE` to execute the UPDATE under the human writer principal's RLS context.
 >
@@ -1341,7 +1343,7 @@ on the OLD row. To isolate the WITH CHECK clause, R9 adds these targeted tests:
 | E-16 | Credential boundary: `app_engine_writer` connection string is `HRPARTNER_ENGINE_URL` env var; `app_user_writer` connection string is `HRPARTNER_PRIMARY_URL`; no shared `PGUSER` env var | runtime config review confirms separation; no fallback to `app_user_writer` when engine secret unset (engine refuses to start) |
 | E-17 | Prisma create with `INSERT ... RETURNING` under `link-capture` context: `await tx.referralAttribution.create({ data })` (Prisma adds RETURNING by default) | allowed; row inserted; SELECT policy permits `link-capture` so RETURNING returns the new row |
 | E-18 | Canonical JSON K-08 with `JSON.stringify(1.0) === JSON.stringify(1)` and `JSON.stringify(-0) === JSON.stringify(0)` | BOTH JavaScript `JSON.stringify` and PostgreSQL `jsonb` map `1.0 ↔ 1` and `-0 ↔ 0`; canonicalJson matches application+DB (`true` for both, NOT `false`) |
-| E-19 | N2-5 privilege-survival LIVE vector (R11 delta D3 fix): apply N2-5 CBD grants (`GRANT SELECT, INSERT, UPDATE ON commission_beneficiary_decisions TO app_engine_writer` + `REVOKE DELETE ... FROM app_engine_writer`), then re-run N2-1 provisioning (Step 1-5) in the SAME transaction, then assert: `has_table_privilege('app_engine_writer', 'commission_beneficiary_decisions', 'SELECT')` = true, `has_table_privilege('app_engine_writer', 'commission_beneficiary_decisions', 'INSERT')` = true, `has_table_privilege('app_engine_writer', 'commission_beneficiary_decisions', 'UPDATE')` = true, `has_table_privilege('app_engine_writer', 'commission_beneficiary_decisions', 'DELETE')` = false. (N2-1 MUST NOT introduce a generic CBD query; this vector exercises only `has_table_privilege` and the re-run, no `commission_beneficiary_decisions` SELECT in N2-1.) |
+| E-19 | N2-5 privilege-survival LIVE vector (R11 delta D3 + R11 micro-delta D3-fix): apply N2-5 CBD grants (`GRANT SELECT, INSERT, UPDATE ON commission_beneficiary_decisions TO app_engine_writer` + `REVOKE DELETE ... FROM app_engine_writer`), then **rerun only the idempotent role/privilege convergence sub-block** of N2-1 provisioning in the SAME transaction — i.e. (a) role creation/convergence (Step 1 + Step 3 ALTER), (b) membership/ownership assertions (Step 2 REVOKE + FOR LOOP, Step 4 post-assert), (c) RA-specific REVOKE/GRANT in Step 5 (`REVOKE ALL PRIVILEGES ON referral_attributions FROM app_engine_writer` + `GRANT USAGE ON SCHEMA public TO app_engine_writer` + `GRANT SELECT, INSERT, UPDATE ON referral_attributions TO app_engine_writer` + `REVOKE DELETE ON referral_attributions FROM app_engine_writer`). **CREATE POLICY statements are EXCLUDED from the rerun** because PostgreSQL does not support `CREATE POLICY IF NOT EXISTS` and would fail with a duplicate-policy error before any privilege assertions. After the rerun, assert: `has_table_privilege('app_engine_writer', 'commission_beneficiary_decisions', 'SELECT')` = true, `has_table_privilege('app_engine_writer', 'commission_beneficiary_decisions', 'INSERT')` = true, `has_table_privilege('app_engine_writer', 'commission_beneficiary_decisions', 'UPDATE')` = true, `has_table_privilege('app_engine_writer', 'commission_beneficiary_decisions', 'DELETE')` = false. (N2-1 MUST NOT introduce a generic CBD query; this vector exercises only `has_table_privilege` and the privileged-sub-block rerun, no `commission_beneficiary_decisions` SELECT in N2-1. If future N2-1 migrations add policy DDL, they must be made idempotent via `DROP POLICY IF EXISTS ...; CREATE POLICY ...;` or equivalent — but that is OUT OF SCOPE for this revision.) |
 
 N2-1 and N2-5 TASKs must include these LIVE matrices as hard test gates.
 
@@ -1547,7 +1549,7 @@ RLS: all three tables
 Discovery hoàn tất khi:
 
 - 18 `AFF-DEC-*` decisions đã chốt bởi `aff_plan.md`
-- Operational decisions chốt bởi T0 verdict (R0–R9)
+- Operational decisions chốt bởi T0 verdict (R0–R11 + R11 delta + R11 micro-delta)
 - Schema sketch cho ReferralAttribution, LaborProfileHandlingAssignment, CommissionBeneficiaryDecision
 - Invariant contracts với nullable-safe specification (NULLS NOT DISTINCT — R4 corrected syntax)
 - UNRESOLVED pattern (typed result + outbox, no decision row)
@@ -1561,7 +1563,7 @@ Discovery hoàn tất khi:
 - **R9 — app_engine_writer runtime**: dedicated LOGIN role + dedicated engine connection pool (`HRPARTNER_ENGINE_URL`); no SET ROLE assumption; `current_user='app_engine_writer'` runtime test; pool/credential boundary via `pg_stat_activity`; posture converge `ALTER ROLE ... NOSUPERUSER NOBYPASSRLS NOINHERIT NOREPLICATION`; explicit posture assertion raises if forced attributes don't match
 - **R9 — link-capture + RETURNING**: SELECT policy permits `link-capture` so `INSERT ... RETURNING` (Prisma default) works; LIVE test E-17 with exact Prisma statement
 - **R9 — Canonical JSON K-08/K-09 alignment**: 1.0↔1 and -0↔0 return true (align with `JSON.stringify` and PostgreSQL `jsonb` numeric normalization)
-- **R9 — `isJsonValue` reject vectors**: 10 LIVE tests K-11..K-20 cover undefined, NaN, ±Infinity, Date, exotic objects, cycles, function, symbol, nested undefined, undefined-in-array; `canonicalJson` and PostgreSQL `jsonb` must both reject
+- **R9 — `isJsonValue` reject vectors**: 10 LIVE tests K-11..K-20 cover undefined, NaN, ±Infinity, Date, exotic objects, cycles, function, symbol, nested undefined, undefined-in-array; `isJsonValue` rejects these JS-specific values before serialization. PostgreSQL receives only serialized valid JSON.
 - **R9 — CBD INSERT WITH CHECK isolation tests**: L-01..L-06 isolate WITH CHECK from USING and from immutable triggers; L-05 verifies non-team-modifying updates still allowed
 - **R9 — COALESCE engine policies**: all engine policies use `COALESCE(current_setting('hrp.engine_context', true), '')` to guard against NULL when GUC never set
 - **R8 — CBD RLS scope fix**: bare `labor_profile_id` in WITH CHECK subqueries replaced with qualified `commission_beneficiary_decisions.labor_profile_id`; cross-profile denial LIVE test added
@@ -1589,9 +1591,9 @@ Discovery hoàn tất khi:
 - V6 P1 capability confirmed available in pinned baseline
 - All 4 files synced
 - PR #4 opened as docs-only
-- Status: OPEN / FINAL_R11_DELTA_REQUIRED (T0 verdict after R7/R8/R9/R10/R11 reviews + R11 delta; awaiting T0 final authorization)
+- Status: OPEN / MICRO_DELTA_REQUIRED (T0 verdict after R7/R8/R9/R10/R11 reviews + R11 delta + R11 micro-delta; awaiting T0 final authorization)
 - Audit: NONE (read-only docs-only task)
 
 ---
 
-**Discovery in FINAL_R11_DELTA_REQUIRED state. PR #4 awaiting T0 final authorization (R0..R11 + R11 delta corrections applied; merge-base = origin/main `0d7f8a1099bc9f1a41767aefe5bd3bc149de84d2`).**
+**Discovery in MICRO_DELTA_REQUIRED state. PR #4 awaiting T0 final authorization (R0..R11 + R11 delta + R11 micro-delta corrections applied; merge-base = origin/main `0d7f8a1099bc9f1a41767aefe5bd3bc149de84d2`).**
