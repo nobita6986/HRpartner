@@ -35,9 +35,13 @@ const ADMIN_URL = process.env.DATABASE_URL_ADMIN;
 const WRITER_URL = process.env.DATABASE_URL;
 const enabled = Boolean(process.env.GOLIVE04_LIVE_PUBLIC_READ && ADMIN_URL && WRITER_URL);
 
+const TEST_TRANSACTION_OPTIONS = {
+  timeout: 15_000,
+} as const;
+
 describe.skipIf(!enabled)('V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS', () => {
-  const admin = new PrismaClient({ datasourceUrl: ADMIN_URL });
-  const writer = new PrismaClient({ datasourceUrl: WRITER_URL });
+  const admin = new PrismaClient({ datasourceUrl: ADMIN_URL, transactionOptions: TEST_TRANSACTION_OPTIONS });
+  const writer = new PrismaClient({ datasourceUrl: WRITER_URL, transactionOptions: TEST_TRANSACTION_OPTIONS });
 
   const RUN = `gl04-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   const ccId = `cc-${RUN}`;

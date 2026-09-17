@@ -14,10 +14,14 @@ const ADMIN_URL = process.env.DATABASE_URL_ADMIN;
 const WRITER_URL = process.env.DATABASE_URL;
 const enabled = Boolean(process.env.MP3B_LIVE_CONVERSION_CHECK && ADMIN_URL && WRITER_URL);
 
+const TEST_TRANSACTION_OPTIONS = {
+  timeout: 15_000,
+} as const;
+
 describe.skipIf(!enabled)('MP-3B LIVE conversion', () => {
-  const admin = new PrismaClient({ datasourceUrl: ADMIN_URL });
-  const writerA = new PrismaClient({ datasourceUrl: WRITER_URL });
-  const writerB = new PrismaClient({ datasourceUrl: WRITER_URL });
+  const admin = new PrismaClient({ datasourceUrl: ADMIN_URL, transactionOptions: TEST_TRANSACTION_OPTIONS });
+  const writerA = new PrismaClient({ datasourceUrl: WRITER_URL, transactionOptions: TEST_TRANSACTION_OPTIONS });
+  const writerB = new PrismaClient({ datasourceUrl: WRITER_URL, transactionOptions: TEST_TRANSACTION_OPTIONS });
 
   beforeAll(async () => {
     await Promise.all([admin.$connect(), writerA.$connect(), writerB.$connect()]);

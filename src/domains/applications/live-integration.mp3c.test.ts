@@ -45,10 +45,14 @@ const newTracker = (): Tracker => ({
   actorIds: [], submissionIds: [], slotIds: [], orderIds: [], projectIds: [], clientCompanyIds: [], workerIds: [],
 });
 
+const TEST_TRANSACTION_OPTIONS = {
+  timeout: 15_000,
+} as const;
+
 describe.skipIf(!enabled)('MP-3C LIVE assignment placement', () => {
-  const admin = new PrismaClient({ datasourceUrl: ADMIN_URL });
-  const writerA = new PrismaClient({ datasourceUrl: WRITER_URL });
-  const writerB = new PrismaClient({ datasourceUrl: WRITER_URL });
+  const admin = new PrismaClient({ datasourceUrl: ADMIN_URL, transactionOptions: TEST_TRANSACTION_OPTIONS });
+  const writerA = new PrismaClient({ datasourceUrl: WRITER_URL, transactionOptions: TEST_TRANSACTION_OPTIONS });
+  const writerB = new PrismaClient({ datasourceUrl: WRITER_URL, transactionOptions: TEST_TRANSACTION_OPTIONS });
 
   beforeAll(async () => {
     await Promise.all([admin.$connect(), writerA.$connect(), writerB.$connect()]);
