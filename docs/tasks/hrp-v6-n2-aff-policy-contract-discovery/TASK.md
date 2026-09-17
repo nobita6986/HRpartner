@@ -119,7 +119,7 @@ D1 blanket ALL SEQUENCES revoke removed; D2 public schema now checked; D3 full-g
 
 ## 7. Status
 
-**RESOLVED_MERGED / RESOLVED_MERGED**
+**RESOLVED_MERGED**
 
 PR #4 remains docs-only, no production code changes. ; merge to main awaits T0 final authorization.
 

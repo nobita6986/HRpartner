@@ -1,3 +1,34 @@
+# V6 Outstanding Work Plan
+
+## 2026-09-17 Authority Snapshot
+
+**Current Baseline:**
+- Main: `df1c89b3bf0270a0bd215eb4e202989cdd010e3c`
+- PR #8: Merged (post-merge CI 35194100441 PASS)
+
+**Completed:**
+- W1, W2, W3: COMPLETE
+- N3: COMPLETE
+- CI stabilization: COMPLETE
+
+**In Progress / Next:**
+- N1: Implementation/audit accepted, authenticated smoke OPEN.
+- N2: Discovery merged. N2-1 next. N2-2..N2-6 OPEN.
+
+**Upcoming / OPEN:**
+- W4: OPEN
+- W5 (after N2): OPEN
+- N4+: OPEN
+- W0.7/W0.8: OPEN
+- Credential rotation (Owner/OP): OPEN
+
+---
+
+
+## HISTORICAL SNAPSHOT (14/09)
+
+> **NOTE:** The following section is historical and NOT actionable.
+
 # HRP V6 — KẾ HOẠCH GIẢI QUYẾT TỒN ĐỌNG
 
 > **Status:** APPROVED một phần — `D-1`, `D-2` (kèm `D-2b`), `D-3`, `D-4`, `D-5`, `D-6` **đã chốt**

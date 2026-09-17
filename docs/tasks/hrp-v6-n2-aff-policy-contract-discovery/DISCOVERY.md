@@ -4,7 +4,7 @@
 **Baseline (pinned):** `b91a33f948aed224a88f3e8e7c9847006f33e97f` (15 Sep 2026)
 **Author:** S1
 **Type:** READ-ONLY Discovery — no production code changes
-**Status:** `OPEN / MICRO_DELTA_REQUIRED` (T0 verdict after R7/R8/R9/R10/R11 reviews + R11 delta + R11 micro-delta)
+**Status:** `RESOLVED_MERGED`
 
 > **R11 micro-delta status note:** R11 delta closes 6 surgical corrections; R11 micro-delta applies 3 surgical corrections on top: (D4-fix) `SET LOCAL row_security = OFF` is NOT a bypass — replaced L-02a with executable Path A (test principal with `rolbypassrls=true` or `rolsuper=true`) or Path B (transactional `ALTER TABLE ... NO FORCE ROW LEVEL SECURITY` with FORCE RLS re-asserted after ROLLBACK); (D3-fix) E-19 rerun limited to idempotent role/privilege convergence sub-block; `CREATE POLICY` DDL is excluded because PostgreSQL has no `CREATE POLICY IF NOT EXISTS`; (D6-fix) three remaining stale statements removed from the JSON parity section, operational-decisions footer, and isJsonValue description. PR remains OPEN until T0 final authorization.
 **Audit:** `NONE` (read-only docs-only)
@@ -21,7 +21,7 @@ N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất
 
 **R9/R10/R11/R11-delta additions**: (1) **app_engine_writer runtime (R9)**: dedicated LOGIN role + dedicated engine DSN/connection pool (`HRPARTNER_ENGINE_URL`); runtime test confirms `current_user='app_engine_writer'`; no SET ROLE assumption; pool/credential boundary verified via `pg_stat_activity`. (2) **membership/ownership lock (R11 P1-1+P1-2, R11-delta D2)**: `FOR LOOP` inside `DO $$` with cursor; `pg_auth_members` joined via `pg_roles` on `roleid=oid`; per-slice privilege allowlist (only RA grants revoked in Step 2; CBD grants survive re-run); `pg_namespace.nspowner` schema ownership check now includes `public`. (3) **link-capture + RETURNING (R9)**: SELECT policy permits `link-capture` so Prisma `INSERT ... RETURNING` works; LIVE test E-17 with exact Prisma statement. (4) **Canonical JSON K-08/K-09 alignment (R9)**: `1.0 ↔ 1` and `-0 ↔ 0` return `true` to match both `JSON.stringify` and PostgreSQL `jsonb` numeric semantics. (5) **`isJsonValue` with WeakSet cycle detection (R10 P1-1)**: rejects undefined, NaN, ±Infinity, Date, exotic objects, cycles; 10 rejection vectors K-11..K-20; WeakSet add-before-descend/delete-after-unwind pattern. (6) **N2-1 slice scope (R10 P1-3)**: N2-1 = RA grants/policies only; CBD grants deferred to N2-5. (7) **L-01..L-06 isolation (R11 P1-3+P1-4+P2-1, R11-delta D4+D5)**: L-02a is admin/bypass-RLS schema-only SQLSTATE 23502 test; L-02b positive in-team CBD INSERT; L-03 strengthened with current_user, rolsuper, schema/table privilege assertions and RLS-diagnostic on denial; L-05 uses `updatedAt` (mutable system column).
 
-**R9/R10/R11/R11-delta P2 corrections**: (8) **COALESCE (R9)**: engine policies use `COALESCE(current_setting(..., true), '')` for absent-or-not-in-allowlist. (9) **Posture converge (R10)**: ALTER first, then post-assert; fail-loud on drift. (10) **jsonb parity (R11-delta D6)**: application validator runs first; DB `jsonb =` equality is secondary backup only; IEEE-754 / DOUBLE_PRECISION claim removed; numeric parity limited to two specific vectors (`1.0=1`, `-0=0`). (11) **Status sync (R9)**: `OPEN / FINAL_R11_DELTA_REQUIRED` in all 4 docs. (12) **Stale references (R11-delta D6)**: all R0-R9/R10 status text synced to R11. (13) **Privilege-survival LIVE (R11-delta D3)**: E-19 vector proves CBD grants survive N2-1 re-run via `has_table_privilege` assertions. (14) **Sequence revoke (R11-delta D1)**: blanket `ALL SEQUENCES` revoke removed; only exact sequences are revoked if needed.
+**R9/R10/R11/R11-delta P2 corrections**: (8) **COALESCE (R9)**: engine policies use `COALESCE(current_setting(..., true), '')` for absent-or-not-in-allowlist. (9) **Posture converge (R10)**: ALTER first, then post-assert; fail-loud on drift. (10) **jsonb parity (R11-delta D6)**: application validator runs first; DB `jsonb =` equality is secondary backup only; IEEE-754 / DOUBLE_PRECISION claim removed; numeric parity limited to two specific vectors (`1.0=1`, `-0=0`). (11) **Status sync (R9)**: `RESOLVED_MERGED` in all 4 docs. (12) **Stale references (R11-delta D6)**: all R0-R9/R10 status text synced to R11. (13) **Privilege-survival LIVE (R11-delta D3)**: E-19 vector proves CBD grants survive N2-1 re-run via `has_table_privilege` assertions. (14) **Sequence revoke (R11-delta D1)**: blanket `ALL SEQUENCES` revoke removed; only exact sequences are revoked if needed.
 
 **R8 prior**: CBD RLS scope; app_engine_writer executable contract; set_config(true) only; recursive canonical JSON.
 
@@ -1592,7 +1592,7 @@ Discovery hoàn tất khi:
 - V6 P1 capability confirmed available in pinned baseline
 - All 4 files synced
 - PR #4 opened as docs-only
-- Status: OPEN / MICRO_DELTA_REQUIRED (T0 verdict after R7/R8/R9/R10/R11 reviews + R11 delta + R11 micro-delta; awaiting T0 final authorization)
+- Status: RESOLVED_MERGED (T0 verdict after R7/R8/R9/R10/R11 reviews + R11 delta + R11 micro-delta; awaiting T0 final authorization)
 - Audit: NONE (read-only docs-only task)
 
 ---

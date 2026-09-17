@@ -2,7 +2,7 @@
 
 This folder contains supporting evidence for the N2 AFF Policy Discovery task.
 
-**Status:** OPEN / MICRO_DELTA_REQUIRED (T0 verdict after R7 → R8 → R9 → R10 → R11 → R11 delta → R11 micro-delta)
+**Status:** `RESOLVED_MERGED`
 
 ---
 

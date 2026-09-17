@@ -9,13 +9,13 @@
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
 | Audit reason | Modifies DB schema (ReferralAttribution), triggers, RLS, and dedicated engine principal |
-| Spec version | v1.1 |
+| Spec version | v1.2 |
 | Status | READY_FOR_EXECUTION |
 | Planner | Tier 1 |
 | Baseline | df1c89b3bf0270a0bd215eb4e202989cdd010e3c |
 | In-scope roots | prisma/schema.prisma, prisma/migrations/**, src/db/**, tests/db/**, vitest.integration.config.ts, vitest.integration-files.ts |
 | Forbidden paths | docs/TIER0_SHIFT_HANDOVER.md, application code modifying N2-4 logic |
-| Required gates | npx prisma validate; npx prisma migrate status |
+| Required gates | npx prisma validate; npx prisma migrate diff; npm run test:unit; npm run test:integration; npm run lint |
 | Current execution round | 0 |
 | Current audit round | 0 |
 | Next gate | /deliver → /audit → /resolve |
@@ -49,44 +49,35 @@
 | DEC-03 | Direct LOGIN role for engine (LOGIN NOSUPERUSER NOBYPASSRLS NOINHERIT NOREPLICATION) | CHOSEN |
 | DEC-04 | HRPARTNER_ENGINE_URL fail-closed behavior with no writer fallback | CHOSEN |
 | DEC-05 | RA-only privilege convergence and ownership/membership assertions | CHOSEN |
+| DEC-06 | Migrate status/apply operations use dedicated test DB only | CHOSEN |
 
 ## 4. Contract
 
-### 4.1 Requirements
+### 4.1 Prisma Schema & DB Contract
 
-| ID | Requirement |
-|---|---|
-| RQ-01 | Complete `ReferralAttribution` schema (referrerUserId, affiliateCodeSnapshot, firstClickedAt, expiresAt, laborProfileId, status, consumedAt, createdAt, updatedAt) with exact Enum, FKs, indexes, and CHECKs. |
-| RQ-02 | Immutable Layer 1 trigger on `ReferralAttribution`. |
-| RQ-03 | `laborProfileId` Layer 1b NULL→value write-once trigger. |
-| RQ-04 | Layer 1c terminal lifecycle matrix. |
-| RQ-05 | Current-state CHECK constraints. |
-| RQ-06 | TIMESTAMPTZ(3) UTC storage for clock fields. |
-| RQ-07 | Asia/Bangkok exclusive next-day calculation boundary vector from DISCOVERY.md (helper path: `src/shared/utils/date-boundary.ts`). |
-| RQ-08 | FORCE RLS with no DELETE grant and no DELETE policy. |
-| RQ-09 | ADMIN/referrer SELECT, engine SELECT for INSERT ... RETURNING. |
-| RQ-10 | Engine INSERT/UPDATE policies and ADMIN UPDATE policy. |
-| RQ-11 | Gated by `COALESCE(current_setting('hrp.engine_context', true), '')`. |
-| RQ-12 | Direct LOGIN role, RA-only privilege convergence and ownership/membership assertions. |
-| RQ-13 | `current_user/session_user` verification. |
-| RQ-14 | Explicit E-01..E-18 mapped vectors. |
-| RQ-15 | E-19 DOCUMENTED_DEFERRED_TO_N2_5, with no command pretending to run it. |
-| RQ-16 | `HRPARTNER_ENGINE_URL` fail-closed behavior with no writer fallback (path: `src/db/engine-client.ts`). |
-| RQ-17 | Migration/role/RLS rollback and stop conditions defined. |
-| RQ-18 | Full Quality gates and strict dedicated-DB Integration gate (vitest.integration-files.ts in scope). |
-| RQ-19 | Test-only engine/admin/writer environment requirements explicitly fulfilled in integration tests. |
+**Prisma Model: `ReferralAttribution`**
+- `id` String @id @default(uuid())
+- `referrerUserId` String @map("referrer_user_id")
+- `affiliateCodeSnapshot` String @map("affiliate_code_snapshot")
+- `firstClickedAt` DateTime @map("first_clicked_at") @db.Timestamptz(3)
+- `expiresAt` DateTime @map("expires_at") @db.Timestamptz(3)
+- `laborProfileId` String? @map("labor_profile_id")
+- `status` String @default("ACTIVE") @map("status")
+- `consumedAt` DateTime? @map("consumed_at") @db.Timestamptz(3)
+- `createdAt` DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+- `updatedAt` DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-### 4.2 Scope boundaries
+**Enums & DB Constraints:**
+- `status` CHECK: IN ('ACTIVE', 'CONSUMED', 'EXPIRED', 'REVOKED', 'SUPERSEDED')
+- FK: `labor_profile_id` REFERENCES `labor_profiles(id)` DEFERRABLE INITIALLY DEFERRED
+- Indexes: `referrer_user_id`, `status`
 
-- **In:** `prisma/schema.prisma`, migration SQL files, `src/db/engine-client.ts`, `src/shared/utils/date-boundary.ts`, `vitest.integration.config.ts`, `vitest.integration-files.ts`, `tests/db/**`
-- **Out:** N2-4 team tables, production deployments.
-- **Allowed task artifacts:** docs/tasks/hrp-v6-n2-aff-01-attribution-foundation/**
+### 4.2 Application / Infrastructure
 
-### 4.3 Domain boundaries
-
-- **Data/state:** Exact state machine (ACTIVE, CONSUMED, EXPIRED, REVOKED, SUPERSEDED).
-- **Permission/security:** FORCE RLS, NO DELETE. Dedicated `app_engine_writer` role.
-- **Migration/rollback:** Additive migration. Dedicated test DB only. Stop condition: `pg_roles` attribute drift.
+- `HRPARTNER_ENGINE_URL` fail-closed behavior with no writer fallback (path: `src/db/engine-client.ts`).
+- Asia/Bangkok exclusive next-day calculation boundary vector from DISCOVERY.md (helper path: `src/shared/utils/date-boundary.ts`).
+- E-19 is `DOCUMENTED_DEFERRED_TO_N2_5` only.
+- `tests/db/referral-attribution-foundation.integration.test.ts` is registered in `vitest.integration-files.ts`.
 
 ## 5. Execution Plan
 
@@ -94,11 +85,11 @@
 |---|---|---|---|---|
 | STEP-01 | prisma/schema.prisma | Add ReferralAttribution model | npx prisma validate | Compile error |
 | STEP-02 | prisma/migrations/ | Generate empty migration and add schema/trigger/constraint SQL | npx prisma migrate diff | SQL error |
-| STEP-03 | src/db/engine-client.ts | Create engine client with HRPARTNER_ENGINE_URL fail-closed | npx vitest run --config vitest.unit.config.ts tests/db/ | Engine fallback |
-| STEP-04 | src/shared/utils/date-boundary.ts | Asia/Bangkok date boundary helper | npx vitest run --config vitest.unit.config.ts tests/db/ | Incorrect timezone |
-| STEP-05 | DB role/policies | Provision app_engine_writer and RLS (no DELETE) | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts | Privilege convergence fail |
-| STEP-06 | Tests | Implement LIVE test matrices E-01..E-18 + N2-1 specific | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts | Test failures |
-| STEP-07 | vitest.integration-files.ts | Add new integration test files | npm run test:integration | CI failure |
+| STEP-03 | src/db/engine-client.ts | Create engine client with HRPARTNER_ENGINE_URL fail-closed | npm run test:unit | Engine fallback |
+| STEP-04 | src/shared/utils/date-boundary.ts | Asia/Bangkok date boundary helper | npm run test:unit | Incorrect timezone |
+| STEP-05 | DB role/policies | Provision app_engine_writer and RLS (no DELETE) | npm run test:integration | Privilege convergence fail |
+| STEP-06 | Tests | Implement LIVE test matrices E-01..E-18 + N2-1 specific | npm run test:integration | Test failures |
+| STEP-07 | vitest.integration-files.ts | Register integration test file | npm run test:integration | CI failure |
 
 ## 6. Acceptance
 
@@ -106,27 +97,51 @@
 
 | AC | Pass condition | Verification method |
 |---|---|---|
-| AC-01 | ReferralAttribution schema matches DISCOVERY.md exactly. | npx prisma validate |
-| AC-02 | Layer 1 trigger functions correctly. | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts |
-| AC-03 | Layer 1b write-once trigger functions correctly. | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts |
-| AC-04 | Layer 1c lifecycle matrix functions correctly. | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts |
-| AC-05 | CHECK constraints function correctly. | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts |
-| AC-06 | TIMESTAMPTZ(3) UTC clock fields are correct. | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts |
-| AC-07 | Asia/Bangkok boundary helper matches DISCOVERY.md vector. | npx vitest run --config vitest.unit.config.ts tests/db/boundary.test.ts |
-| AC-08 | FORCE RLS active; no DELETE allowed. | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts |
-| AC-09 | SELECT policies (ADMIN/referrer/engine) function correctly. | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts |
-| AC-10 | INSERT/UPDATE policies function correctly. | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts |
-| AC-11 | Policies function via COALESCE(current_setting(...), ''). | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts |
-| AC-12 | Direct LOGIN role created correctly. | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts |
-| AC-13 | current_user/session_user verified. | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts |
-| AC-14 | E-01..E-18 tests explicitly implemented and passing. | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts |
+| AC-01 | ReferralAttribution schema matches contract exactly. | npx prisma validate |
+| AC-02 | Layer 1 trigger functions correctly. | npx vitest run --config vitest.integration.config.ts tests/db/referral-attribution-foundation.integration.test.ts |
+| AC-03 | Layer 1b write-once trigger functions correctly. | npx vitest run --config vitest.integration.config.ts tests/db/referral-attribution-foundation.integration.test.ts |
+| AC-04 | Layer 1c lifecycle matrix functions correctly. | npx vitest run --config vitest.integration.config.ts tests/db/referral-attribution-foundation.integration.test.ts |
+| AC-05 | CHECK constraints function correctly. | npx vitest run --config vitest.integration.config.ts tests/db/referral-attribution-foundation.integration.test.ts |
+| AC-06 | TIMESTAMPTZ(3) UTC clock fields are correct. | npx vitest run --config vitest.integration.config.ts tests/db/referral-attribution-foundation.integration.test.ts |
+| AC-07 | Asia/Bangkok boundary helper matches DISCOVERY.md vector. | npx vitest run --config vitest.unit.config.ts src/shared/utils/date-boundary.test.ts |
+| AC-08 | FORCE RLS active; no DELETE allowed. | npx vitest run --config vitest.integration.config.ts tests/db/referral-attribution-foundation.integration.test.ts |
+| AC-09 | SELECT policies (ADMIN/referrer/engine) function correctly. | npx vitest run --config vitest.integration.config.ts tests/db/referral-attribution-foundation.integration.test.ts |
+| AC-10 | INSERT/UPDATE policies function correctly. | npx vitest run --config vitest.integration.config.ts tests/db/referral-attribution-foundation.integration.test.ts |
+| AC-11 | Policies function via COALESCE(current_setting(...), ''). | npx vitest run --config vitest.integration.config.ts tests/db/referral-attribution-foundation.integration.test.ts |
+| AC-12 | Direct LOGIN role created correctly. | npx vitest run --config vitest.integration.config.ts tests/db/referral-attribution-foundation.integration.test.ts |
+| AC-13 | current_user/session_user verified. | npx vitest run --config vitest.integration.config.ts tests/db/referral-attribution-foundation.integration.test.ts |
+| AC-14 | E-01..E-18 tests explicitly implemented and passing. | npx vitest run --config vitest.integration.config.ts tests/db/referral-attribution-foundation.integration.test.ts |
 | AC-15 | E-19 is DOCUMENTED_DEFERRED_TO_N2_5, no code attempts to run it. | Code inspection |
-| AC-16 | HRPARTNER_ENGINE_URL is fail-closed, no writer fallback. | npx vitest run --config vitest.unit.config.ts tests/db/engine-client.test.ts |
+| AC-16 | HRPARTNER_ENGINE_URL is fail-closed, no writer fallback. | npx vitest run --config vitest.unit.config.ts src/db/engine-client.test.ts |
 | AC-17 | Rollback defined. | Code inspection |
 | AC-18 | Full Quality gates pass. | npm run test:unit; npm run lint |
-| AC-19 | Test-only engine/admin/writer environments provided. | npx vitest run --config vitest.integration.config.ts tests/db/placement-lifecycle-integration.test.ts |
+| AC-19 | Migrate status/apply operations use dedicated test DB only. | Code inspection |
 
-### 6.2 Traceability
+### 6.2 E-01 through E-18 Contract Map
+
+| E-Vector | Expected Result | Test File | Target AC |
+|---|---|---|---|
+| E-01 | rolname='app_engine_writer', rolsuper=false, rolbypassrls=false | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-12 |
+| E-02 | has_table_privilege DELETE is false | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-08 |
+| E-03 | has_table_privilege INSERT is true | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-10 |
+| E-04 | has_table_privilege UPDATE is true | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-10 |
+| E-05 | has_table_privilege SELECT is true | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-09 |
+| E-06 | Context cleared at COMMIT | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-11 |
+| E-07 | Context cleared at ROLLBACK | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-11 |
+| E-08 | Link-capture context UPDATE on ACTIVE denied | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-10 |
+| E-09 | INSERT without context set denied | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-10 |
+| E-10 | INSERT with invalid context denied | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-10 |
+| E-11 | set_config(..., false) rejected by lint | `npm run lint` | AC-18 |
+| E-12 | Pooled connection context leak denied | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-11 |
+| E-13 | COALESCE handles unset GUC correctly | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-11 |
+| E-14 | current_user='app_engine_writer' | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-13 |
+| E-15 | pg_stat_activity connection separation | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-12 |
+| E-16 | HRPARTNER_ENGINE_URL no fallback | `src/db/engine-client.test.ts` | AC-16 |
+| E-17 | INSERT ... RETURNING allowed | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-09 |
+| E-18 | Canonical JSON 1.0=1 and -0=0 | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-14 |
+| E-19 | DOCUMENTED_DEFERRED_TO_N2_5 | `Code inspection` | AC-15 |
+
+### 6.3 Traceability
 
 | Requirement | Step | Acceptance |
 |---|---|---|
@@ -155,7 +170,11 @@
 | ID | Risk | Mitigation / rollback |
 |---|---|---|
 | RISK-01 | Trigger definitions leak to other schemas | Scope triggers explicitly to ReferralAttribution |
-| RISK-02 | RLS bypass or missing policies | Run full E-01..E-18 isolation matrices via npx vitest |
+| RISK-02 | RLS bypass or missing policies | Run full E-01..E-18 isolation matrices via dedicated integration tests |
+| RISK-03 | Role drift or ownership/membership leakage | Assert exact NOINHERIT/NOSUPERUSER/NOBYPASSRLS and check pg_auth_members/pg_class |
+| RISK-04 | RLS lockout from over-restrictive policies | Implement comprehensive SELECT/INSERT/UPDATE matrices for ADMIN/referrer/engine |
+| RISK-05 | Engine credential leakage or fallback | Strictly separate HRPARTNER_ENGINE_URL; test fail-closed behavior |
+| RISK-06 | Faulty migration / schema rollback failure | Migration must use dedicated test DB only; implement explicit rollback stop conditions |
 
 ## 8. Open Questions
 
@@ -173,3 +192,4 @@
 |---|---|---|---|
 | v1.0 | 2026-09-17 | Initial contract | Converted from N2 DISCOVERY.md |
 | v1.1 | 2026-09-17 | PR #9 revision | Added exact model fields, engine URL, explicit E-19 deferral, strict integration paths |
+| v1.2 | 2026-09-17 | PR #9 revision 2 | Explicit E-01..E-18 table, expanded risk matrix, exact N2-1 test file |
