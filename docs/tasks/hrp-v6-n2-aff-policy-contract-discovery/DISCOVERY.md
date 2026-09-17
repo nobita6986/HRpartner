@@ -6,7 +6,7 @@
 **Type:** READ-ONLY Discovery — no production code changes
 **Status:** `OPEN / MICRO_DELTA_REQUIRED` (T0 verdict after R7/R8/R9/R10/R11 reviews + R11 delta + R11 micro-delta)
 
-> **R11 micro-delta status note:** R11 delta closes 6 surgical corrections; R11 micro-delta applies 3 surgical corrections on top: (D4-fix) `SET LOCAL row_security = OFF` is NOT a bypass — replaced L-02a with executable Path A (test principal with `rolbypassrls=true` or `rolsuper=true`) or Path B (transactional `ALTER TABLE ... NO FORCE ROW LEVEL SECURITY` with FORCE RLS re-asserted after ROLLBACK); (D3-fix) E-19 rerun limited to idempotent role/privilege convergence sub-block; `CREATE POLICY` DDL is excluded because PostgreSQL has no `CREATE POLICY IF NOT EXISTS`; (D6-fix) removed three remaining stale JSON/R0-R9/R10 statements (canonicalJson/jsonb both reject, R0-R9 status, must both reject). PR remains OPEN until T0 final authorization.
+> **R11 micro-delta status note:** R11 delta closes 6 surgical corrections; R11 micro-delta applies 3 surgical corrections on top: (D4-fix) `SET LOCAL row_security = OFF` is NOT a bypass — replaced L-02a with executable Path A (test principal with `rolbypassrls=true` or `rolsuper=true`) or Path B (transactional `ALTER TABLE ... NO FORCE ROW LEVEL SECURITY` with FORCE RLS re-asserted after ROLLBACK); (D3-fix) E-19 rerun limited to idempotent role/privilege convergence sub-block; `CREATE POLICY` DDL is excluded because PostgreSQL has no `CREATE POLICY IF NOT EXISTS`; (D6-fix) three remaining stale statements removed from the JSON parity section, operational-decisions footer, and isJsonValue description. PR remains OPEN until T0 final authorization.
 **Audit:** `NONE` (read-only docs-only)
 **Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
 **PR:** [Pull Request #4](https://github.com/nobita6986/HRpartner/pull/4)
@@ -1350,9 +1350,10 @@ N2-1 and N2-5 TASKs must include these LIVE matrices as hard test gates.
 **Canonical JSON (R9 strict — application/JSON.stringify and PostgreSQL jsonb aligned):**
 
 R9 alignment principle: `canonicalJson(x)` and PostgreSQL `jsonb` MUST agree on
-representation. Both reject undefined, NaN, ±Infinity; both treat `1.0 == 1` and
-`-0 == 0` (PostgreSQL jsonb normalizes numerics identically). The application
-helper uses `JSON.stringify` for primitives so 1.0 and 1 produce identical output.
+representation for confirmed JSON values. `isJsonValue` rejects JavaScript-specific
+non-JSON values before serialization. PostgreSQL receives only serialized valid JSON.
+Cross-layer parity is asserted only for confirmed JSON values; the explicit numeric
+vectors are `1.0 == 1` and `-0 == 0`.
 
 | # | Input A | Input B | `canonicalJson(A) === canonicalJson(B)` |
 |---|---|---|---|
