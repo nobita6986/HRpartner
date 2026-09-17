@@ -1592,7 +1592,7 @@ Discovery hoàn tất khi:
 - V6 P1 capability confirmed available in pinned baseline
 - All 4 files synced
 - PR #4 opened as docs-only
-- Status: RESOLVED_MERGED (T0 verdict after R7/R8/R9/R10/R11 reviews + R11 delta + R11 micro-delta; awaiting T0 final authorization)
+- Status: RESOLVED_MERGED (T0 verdict after R7/R8/R9/R10/R11 reviews + R11 delta + R11 micro-delta; resolved)
 - Audit: NONE (read-only docs-only task)
 
 ---
