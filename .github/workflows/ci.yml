@@ -70,20 +70,89 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
+        with:
+          # For PRs we need a diff base; fetch enough history to diff against the
+          # base ref. `fetch-depth: 0` is the safe minimum (covers shallow + normal).
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
+      - name: Detect changed paths (short-circuit for docs/config-only PRs)
+        id: path-filter
+        shell: bash
+        # Fail-safe default = RUN. Only SKIP when EVERY changed file falls into the
+        # conservative allowlist below. Any file outside the allowlist → continue
+        # full Integration run (env-blocked semantics unchanged).
+        run: |
+          set -euo pipefail
+          # Resolve base ref safely: PR → base.sha, push → github.event.before, fallback → origin/main
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          elif [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="${{ github.event.before }}"
+          else
+            BASE_SHA="$(git rev-parse origin/main)"
+          fi
+          if [ -z "$BASE_SHA" ]; then
+            echo "::warning::could not resolve BASE_SHA — fail-safe to RUN full Integration"
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          HEAD_SHA="${{ github.sha }}"
+          echo "BASE_SHA=$BASE_SHA HEAD_SHA=$HEAD_SHA"
+          CHANGED="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" || true)"
+          if [ -z "$CHANGED" ]; then
+            echo "::warning::empty diff (likely initial push to main) — RUN full Integration"
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Changed files:"
+          printf '%s\n' "$CHANGED"
+          should_run=false
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              docs/*|*.md|scratch/*|.gitignore|README*|.env.example)
+                echo "  SKIP-eligible: $f" ;;
+              *)
+                should_run=true
+                echo "  RUN-required:  $f" ;;
+            esac
+          done <<< "$CHANGED"
+          if [ "$should_run" = "true" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "Decision: RUN full Integration (code/schema/RLS path changed)"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "Decision: docs/config-only — Integration skipped (job still reports success)"
+          fi
       - name: Install (clean, from lockfile)
+        if: steps.path-filter.outputs.should_run != 'false'
         run: npm ci
       - name: Prisma generate
+        if: steps.path-filter.outputs.should_run != 'false'
         run: npm run prisma:generate
       - name: Integration tests (dedicated test DB only; ENV_BLOCKED if absent)
         # The preflight refuses dev/prod URLs, requires DATABASE_URL_TEST, and prints ENV_BLOCKED
         # Local runs may report ENV_BLOCKED with exit 0, but CI is always strict: a missing
         # dedicated test DB is a red blocked check, never a green/fake integration PASS.
+        if: steps.path-filter.outputs.should_run != 'false'
         env:
           DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST }}
           DATABASE_URL_ADMIN_TEST: ${{ secrets.DATABASE_URL_ADMIN_TEST }}
           CI_INTEGRATION_STRICT: '1'
         run: npm run test:integration
+      - name: Short-circuit success (docs/config-only PRs)
+        # Runs ONLY when path-filter decided should_run=false. The job still completes with
+        # status=success, satisfying the "Integration (DB tests · fail-closed)" required check
+        # on branch protection. No DB secrets accessed on this branch.
+        if: steps.path-filter.outputs.should_run == 'false'
+        run: |
+          echo "=========================================="
+          echo "  docs/config-only — Integration skipped"
+          echo "=========================================="
+          echo "Reason: changed files are exclusively in the docs/config allowlist."
+          echo "No code/schema/RLS touch detected by git diff against base SHA."
+          echo "Branch protection requires this check to report success — and it does."
+          echo "Quality job covers typecheck/lint/unit/build for docs-only PRs."
