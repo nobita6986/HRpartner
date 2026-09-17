@@ -248,7 +248,7 @@ export default function AttendancePage() {
       .then(r => r.json())
       .then(d => {
         if (d.batches) {
-          setBatches(d.batches.map((b: any) => ({
+          setBatches(d.batches.map((b: Batch) => ({
             id: b.id,
             source: b.source,
             totalRows: b.totalRows,
@@ -271,7 +271,7 @@ export default function AttendancePage() {
       .then(r => r.json())
       .then(d => {
         if (d.periods) {
-          setPeriods(d.periods.map((p: any) => ({
+          setPeriods(d.periods.map((p: Period) => ({
             id: p.id,
             month: p.month,
             year: p.year,
@@ -297,7 +297,7 @@ export default function AttendancePage() {
           const previewRes = await fetch(`/api/attendance/import?batchId=${batchId}`);
           const preview = await previewRes.json();
           if (preview.batch?.unmatchedRows) {
-            setExceptions(preview.batch.unmatchedRows.map((u: any) => ({
+            setExceptions(preview.batch.unmatchedRows.map((u: UnmatchedRow) => ({
               id: u.id,
               batchId,
               rowNumber: u.rowNumber,

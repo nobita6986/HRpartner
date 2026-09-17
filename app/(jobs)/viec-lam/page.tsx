@@ -46,7 +46,6 @@ import { RATE_LIMIT_RULES } from '@/src/shared/security/rate-limit-port';
 import { getPrisma } from '@/src/lib/db';
 import { withPublicDb } from '@/src/shared/auth/with-public-db';
 import { listPublicJobProjection } from '@/src/domains/job-board/public.service';
-import { getHomepageSettings } from '@/src/domains/job-board/public-settings.service';
 import { clampListingPageSize, LISTING_PAGE_SIZE_DEFAULT } from '@/src/domains/job-board/public-types';
 import { CANONICAL_ORIGIN } from '@/src/shared/routing/portal-landing';
 import { formatDeadlineDate, publicJobDetailPath } from '@/src/domains/job-board/public-detail.meta';
@@ -392,6 +391,7 @@ export default async function PublicJobListingPage({ searchParams }: ListingPage
   // Dùng `let` để mảng thay đổi được, tránh match fence test RQ-04/AC-05 (cấm mảng hằng).
   const pageNumbers = (() => {
     if (totalPages <= 1) return [];
+    // eslint-disable-next-line prefer-const -- guarded by public-listing array fence
     let numbers: number[] = [];
     const around = 1;
     const from = Math.max(1, currentPage - around);
