@@ -6,7 +6,7 @@
 **Type:** READ-ONLY Discovery — no production code changes
 **Status:** `RESOLVED_MERGED`
 
-> **R11 micro-delta status note:** R11 delta closes 6 surgical corrections; R11 micro-delta applies 3 surgical corrections on top: (D4-fix) `SET LOCAL row_security = OFF` is NOT a bypass — replaced L-02a with executable Path A (test principal with `rolbypassrls=true` or `rolsuper=true`) or Path B (transactional `ALTER TABLE ... NO FORCE ROW LEVEL SECURITY` with FORCE RLS re-asserted after ROLLBACK); (D3-fix) E-19 rerun limited to idempotent role/privilege convergence sub-block; `CREATE POLICY` DDL is excluded because PostgreSQL has no `CREATE POLICY IF NOT EXISTS`; (D6-fix) three remaining stale statements removed from the JSON parity section, operational-decisions footer, and isJsonValue description. PR remains OPEN until T0 final authorization.
+> **R11 micro-delta status note:** R11 delta closes 6 surgical corrections; R11 micro-delta applies 3 surgical corrections on top: (D4-fix) `SET LOCAL row_security = OFF` is NOT a bypass — replaced L-02a with executable Path A (test principal with `rolbypassrls=true` or `rolsuper=true`) or Path B (transactional `ALTER TABLE ... NO FORCE ROW LEVEL SECURITY` with FORCE RLS re-asserted after ROLLBACK); (D3-fix) E-19 rerun limited to idempotent role/privilege convergence sub-block; `CREATE POLICY` DDL is excluded because PostgreSQL has no `CREATE POLICY IF NOT EXISTS`; (D6-fix) three remaining stale statements removed from the JSON parity section, operational-decisions footer, and isJsonValue description. PR has been RESOLVED_MERGED.
 **Audit:** `NONE` (read-only docs-only)
 **Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
 **PR:** [Pull Request #4](https://github.com/nobita6986/HRpartner/pull/4)
@@ -17,7 +17,7 @@
 
 N2 AFF (Admin Fee Clock) chưa có schema/service/API nào trong codebase. Tất cả đều greenfield. `aff_plan.md v2.3` đã chốt 18 decision. T0 đã chốt operational decisions R0–R11 (R11 delta + R11 micro-delta applied). Tài liệu này lock toàn bộ policy để Tier 1 mở N2-1 slice.
 
-> **R8 status note:** PR #4 has been REVISION_REQUIRED by T0 after R7. R8 closes 4 P1 executable-contract blockers (CBD scope bypass, missing app_engine_writer executable contract, set_config isolation semantics, recursive canonical JSON). PR remains OPEN / REVISION_REQUIRED until T0 final authorization.
+> **R8 status note:** PR #4 has been REVISION_REQUIRED by T0 after R7. R8 closes 4 P1 executable-contract blockers (CBD scope bypass, missing app_engine_writer executable contract, set_config isolation semantics, recursive canonical JSON). PR has been RESOLVED_MERGED.
 
 **R9/R10/R11/R11-delta additions**: (1) **app_engine_writer runtime (R9)**: dedicated LOGIN role + dedicated engine DSN/connection pool (`HRPARTNER_ENGINE_URL`); runtime test confirms `current_user='app_engine_writer'`; no SET ROLE assumption; pool/credential boundary verified via `pg_stat_activity`. (2) **membership/ownership lock (R11 P1-1+P1-2, R11-delta D2)**: `FOR LOOP` inside `DO $$` with cursor; `pg_auth_members` joined via `pg_roles` on `roleid=oid`; per-slice privilege allowlist (only RA grants revoked in Step 2; CBD grants survive re-run); `pg_namespace.nspowner` schema ownership check now includes `public`. (3) **link-capture + RETURNING (R9)**: SELECT policy permits `link-capture` so Prisma `INSERT ... RETURNING` works; LIVE test E-17 with exact Prisma statement. (4) **Canonical JSON K-08/K-09 alignment (R9)**: `1.0 ↔ 1` and `-0 ↔ 0` return `true` to match both `JSON.stringify` and PostgreSQL `jsonb` numeric semantics. (5) **`isJsonValue` with WeakSet cycle detection (R10 P1-1)**: rejects undefined, NaN, ±Infinity, Date, exotic objects, cycles; 10 rejection vectors K-11..K-20; WeakSet add-before-descend/delete-after-unwind pattern. (6) **N2-1 slice scope (R10 P1-3)**: N2-1 = RA grants/policies only; CBD grants deferred to N2-5. (7) **L-01..L-06 isolation (R11 P1-3+P1-4+P2-1, R11-delta D4+D5)**: L-02a is admin/bypass-RLS schema-only SQLSTATE 23502 test; L-02b positive in-team CBD INSERT; L-03 strengthened with current_user, rolsuper, schema/table privilege assertions and RLS-diagnostic on denial; L-05 uses `updatedAt` (mutable system column).
 
@@ -1597,4 +1597,4 @@ Discovery hoàn tất khi:
 
 ---
 
-**Discovery in MICRO_DELTA_REQUIRED state. PR #4 awaiting T0 final authorization (R0..R11 + R11 delta + R11 micro-delta corrections applied; merge-base = origin/main `0d7f8a1099bc9f1a41767aefe5bd3bc149de84d2`).**
+**Discovery is RESOLVED_MERGED.**
