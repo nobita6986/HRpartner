@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+﻿import { describe, it, expect, beforeEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -60,7 +60,7 @@ describe('Referral Attribution Migration Static Review', () => {
 
     it('must have exactly one INSERT policy for app_engine_writer named hrp_ra_insert_engine', () => {
       // The original migration content has it as upper case because we do .toUpperCase()
-      const insertMatches = content.match(/CREATE POLICY .* FOR INSERT TO APP_ENGINE_WRITER/g);
+      const insertMatches = content.match(/CREATE POLICY [\s\S]*? FOR INSERT TO APP_ENGINE_WRITER/g);
       expect(insertMatches).toHaveLength(1);
       expect(insertMatches?.[0]).toMatch(/HRP_RA_INSERT_ENGINE/);
     });
@@ -71,3 +71,5 @@ describe('Referral Attribution Migration Static Review', () => {
     });
   });
 });
+
+
