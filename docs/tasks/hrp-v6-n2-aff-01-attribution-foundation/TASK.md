@@ -12,11 +12,11 @@
 | Spec version | v1.4 |
 | Status | READY_FOR_EXECUTION |
 | Planner | Tier 1 |
-| Baseline | df1c89b3bf0270a0bd215eb4e202989cdd010e3c |
+| Baseline | 30a204743a2478e16e33adfe9da95d9f2fcd03dc |
 | In-scope roots | prisma/schema.prisma, prisma/migrations/**, src/db/**, tests/db/**, src/shared/utils/**, vitest.integration-files.ts |
 | Forbidden paths | docs/TIER0_SHIFT_HANDOVER.md, application code modifying N2-4 logic |
 | Required gates | npx prisma validate; npm run typecheck; npm run lint; npm run test:unit; npm run build; npm run test:integration |
-| Current execution round | 0 |
+| Current execution round | 1 |
 | Current audit round | 0 |
 | Next gate | /deliver → /audit → /resolve |
 
