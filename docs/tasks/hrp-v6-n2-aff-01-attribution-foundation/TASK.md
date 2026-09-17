@@ -9,11 +9,11 @@
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
 | Audit reason | Modifies DB schema (ReferralAttribution), triggers, RLS, and dedicated engine principal |
-| Spec version | v1.3 |
+| Spec version | v1.4 |
 | Status | READY_FOR_EXECUTION |
 | Planner | Tier 1 |
 | Baseline | df1c89b3bf0270a0bd215eb4e202989cdd010e3c |
-| In-scope roots | prisma/schema.prisma, prisma/migrations/**, src/db/**, tests/db/**, vitest.integration.config.ts, vitest.integration-files.ts |
+| In-scope roots | prisma/schema.prisma, prisma/migrations/**, src/db/**, tests/db/**, src/shared/utils/**, vitest.integration-files.ts |
 | Forbidden paths | docs/TIER0_SHIFT_HANDOVER.md, application code modifying N2-4 logic |
 | Required gates | npx prisma validate; npm run typecheck; npm run lint; npm run test:unit; npm run build; npm run test:integration |
 | Current execution round | 0 |
@@ -58,28 +58,34 @@
 
 **Prisma Model: `ReferralAttribution`**
 - Deliberate decision: `status` is mapped as a `String` at the Prisma level. The constraint is enforced entirely by a DB `CHECK` constraint. The schema MUST NOT claim a Prisma enum.
-- `id` String @id @default(uuid())
-- `referrerUserId` String @map("referrer_user_id")
-- `affiliateCodeSnapshot` String @map("affiliate_code_snapshot")
-- `firstClickedAt` DateTime @map("first_clicked_at") @db.Timestamptz(3)
-- `expiresAt` DateTime @map("expires_at") @db.Timestamptz(3)
-- `laborProfileId` String? @map("labor_profile_id")
-- `status` String @default("ACTIVE") @map("status")
-- `consumedAt` DateTime? @map("consumed_at") @db.Timestamptz(3)
-- `createdAt` DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-- `updatedAt` DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+```prisma
+model ReferralAttribution {
+  id                      String         @id @default(uuid())
+  referrerUserId          String         @map("referrer_user_id")
+  affiliateCodeSnapshot   String         @map("affiliate_code_snapshot")
+  firstClickedAt          DateTime       @map("first_clicked_at") @db.Timestamptz(3)
+  expiresAt               DateTime       @map("expires_at") @db.Timestamptz(3)
+  laborProfileId          String?        @map("labor_profile_id")
+  status                  String         @default("ACTIVE") @map("status")
+  consumedAt              DateTime?      @map("consumed_at") @db.Timestamptz(3)
+  createdAt               DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  referrerUser            User           @relation("ReferralAttributionReferrer", fields: [referrerUserId], references: [id], map: "referral_attributions_referrer_user_id_fkey", onDelete: Restrict, onUpdate: Cascade)
+  laborProfile            LaborProfile?  @relation("ReferralAttributionLaborProfile", fields: [laborProfileId], references: [id], map: "referral_attributions_labor_profile_id_fkey", onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([referrerUserId], map: "referral_attributions_referrer_user_id_idx")
+  @@index([status], map: "referral_attributions_status_idx")
+  @@map("referral_attributions")
+}
+```
 
 **Relations & Exact FKs:**
-- `referrerUser` User @relation("ReferralAttributionReferrer", fields: [referrerUserId], references: [id])
-- `laborProfile` LaborProfile? @relation(fields: [laborProfileId], references: [id])
-- The migration must define the FK for `labor_profile_id` exactly as: `FOREIGN KEY (labor_profile_id) REFERENCES labor_profiles(id) DEFERRABLE INITIALLY DEFERRED`.
-
-**Exact Indexes:**
-- `@@index([referrerUserId], map: "referral_attributions_referrer_user_id_idx")`
-- `@@index([status], map: "referral_attributions_status_idx")`
-
-**Table Map:**
-- `@@map("referral_attributions")`
+- `referrer_user_id` FK constraint name: `referral_attributions_referrer_user_id_fkey` (ON DELETE RESTRICT, ON UPDATE CASCADE) - NOT deferrable.
+- `labor_profile_id` FK constraint name: `referral_attributions_labor_profile_id_fkey` (ON DELETE RESTRICT, ON UPDATE CASCADE) - DEFERRABLE INITIALLY DEFERRED.
+- `User` back-relation: `referralAttributionsAsReferrer ReferralAttribution[] @relation("ReferralAttributionReferrer")`
+- `LaborProfile` back-relation: `referralAttributions ReferralAttribution[] @relation("ReferralAttributionLaborProfile")`
 
 **Exact Database Constraints & Trigger Names:**
 Integration tests will assert against these exact names:
@@ -105,7 +111,7 @@ Integration tests will assert against these exact names:
 | Step | Target | Intent | Verify | Stop condition |
 |---|---|---|---|---|
 | STEP-01 | prisma/schema.prisma | Add ReferralAttribution model exact to contract | npx prisma validate | Compile error |
-| STEP-02 | prisma/migrations/ | Generate empty migration and add schema/trigger/constraint SQL | npx prisma migrate diff | SQL error |
+| STEP-02 | prisma/migrations/ | Generate empty migration and add schema/trigger/constraint SQL | npx prisma validate; npm run test:unit; npm run test:integration | SQL error |
 | STEP-03 | src/db/engine-client.ts | Create engine client with HRPARTNER_ENGINE_URL fail-closed | npm run test:unit | Engine fallback |
 | STEP-04 | src/shared/utils/date-boundary.ts | Asia/Bangkok date boundary helper | npm run test:unit | Incorrect timezone |
 | STEP-05 | DB role/policies | Provision app_engine_writer and RLS (no DELETE) | npm run test:integration | Privilege convergence fail |
@@ -135,7 +141,7 @@ Integration tests will assert against these exact names:
 | AC-15 | E-18 and E-19 are DOCUMENTED_DEFERRED_TO_N2_5. | Code inspection |
 | AC-16 | HRPARTNER_ENGINE_URL is fail-closed, no writer fallback. | npx vitest run --config vitest.unit.config.ts src/db/engine-client.test.ts |
 | AC-17 | Rollback defined. | Code inspection |
-| AC-18 | Full Quality gates pass. | npm run test:unit; npm run lint |
+| AC-18 | Full Quality gates pass. | npm run typecheck; npm run lint; npm run test:unit; npm run build |
 | AC-19 | Migrate status/apply operations use dedicated test DB only. | Code inspection |
 
 ### 6.2 E-01 through E-19 Contract Map
@@ -152,7 +158,7 @@ Integration tests will assert against these exact names:
 | E-08 | Link-capture context UPDATE on ACTIVE denied | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-14 |
 | E-09 | INSERT without context set denied | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-14 |
 | E-10 | INSERT with invalid context denied | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-14 |
-| E-11 | set_config(..., false) rejected | `tests/static/engine-set-config.test.ts` (targeted static test) | AC-14 |
+| E-11 | set_config(..., false) rejected | `src/db/engine-set-config.static.test.ts` (targeted static test) | AC-14 |
 | E-12 | Pooled connection context leak denied | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-14 |
 | E-13 | COALESCE handles unset GUC correctly | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-14 |
 | E-14 | current_user='app_engine_writer' | `tests/db/referral-attribution-foundation.integration.test.ts` | AC-14 |
@@ -215,3 +221,4 @@ Integration tests will assert against these exact names:
 | v1.1 | 2026-09-17 | PR #9 revision | Added exact model fields, engine URL, explicit E-19 deferral, strict integration paths |
 | v1.2 | 2026-09-17 | PR #9 revision 2 | Explicit E-01..E-18 table, expanded risk matrix, exact N2-1 test file |
 | v1.3 | 2026-09-17 | PR #9 micro-delta | Exact Prisma String + DB CHECK specification, exact enum/trigger names, expanded required gates, E-18/19 exact deferral, static test for E-11 |
+| v1.4 | 2026-09-17 | PR #9 surgical closeout | Exact relation constraints, strict test gates, integration dependencies, explicit Prisma model |
