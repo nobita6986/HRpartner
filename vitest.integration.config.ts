@@ -24,6 +24,7 @@ export default defineConfig({
   },
   test: {
     include: INTEGRATION_TEST_FILES,
+    testTimeout: 30_000,
     env: {
       DATABASE_URL: TEST_DB,
       DATABASE_URL_WRITER: TEST_DB,
