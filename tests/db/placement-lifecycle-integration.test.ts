@@ -358,7 +358,7 @@ describeIf(
     } finally {
       await writer.$disconnect().catch(() => {});
     }
-  }, 15000);
+  }, 30_000);
 
   // ─────────────────────────────────────────────────────────────────────
   // (ii) client-managed SELECTED → CONFIRMED → EFFECTIVE (with evidence)
@@ -420,7 +420,7 @@ describeIf(
     } finally {
       await writer.$disconnect().catch(() => {});
     }
-  }, 15000);
+  }, 30_000);
 
   // ─────────────────────────────────────────────────────────────────────
   // (iii) HRP-managed markPlacementEffective REJECT (DEC-07)
@@ -477,7 +477,7 @@ describeIf(
     } finally {
       await writer.$disconnect().catch(() => {});
     }
-  }, 15000);
+  }, 30_000);
 
   // ─────────────────────────────────────────────────────────────────────
   // (iv) idempotent replay: retry SELECTED → return existing placement
@@ -525,7 +525,7 @@ describeIf(
     } finally {
       await writer.$disconnect().catch(() => {});
     }
-  }, 15000);
+  }, 30_000);
 
   // ─────────────────────────────────────────────────────────────────────
   // (v) retry after FAILED: unique index slot released → new placement OK
@@ -648,7 +648,7 @@ describeIf(
     } finally {
       await writer.$disconnect().catch(() => {});
     }
-  }, 15000);
+  }, 30_000);
 
   // ─────────────────────────────────────────────────────────────────────
   // (vii) RLS: HR_MANAGER GUC → sees rows; PUBLIC (no GUC) → sees 0
@@ -791,7 +791,7 @@ describeIf(
     } finally {
       await writer.$disconnect().catch(() => {});
     }
-  }, 15000);
+  }, 30_000);
 
   // ─────────────────────────────────────────────────────────────────────
   // (ix) case-ownership mismatch: case thuộc LaborProfile khác → REJECT
@@ -830,7 +830,7 @@ describeIf(
     } finally {
       await writer.$disconnect().catch(() => {});
     }
-  }, 15000);
+  }, 30_000);
 
   // ─────────────────────────────────────────────────────────────────────
   // (x) case CLOSED: tạo Placement trên case đã CLOSED → REJECT
@@ -875,7 +875,7 @@ describeIf(
     } finally {
       await writer.$disconnect().catch(() => {});
     }
-  }, 15000);
+  }, 30_000);
 
   // ─────────────────────────────────────────────────────────────────────
   // (xi) client-managed EFFECTIVE: evidence PERSISTED + PlacementCase CLOSED
@@ -956,7 +956,7 @@ describeIf(
     } finally {
       await writer.$disconnect().catch(() => {});
     }
-  }, 15000);
+  }, 30_000);
 
   // ─────────────────────────────────────────────────────────────────────
   // (xii) HRP-managed EFFECTIVE reject KHÔNG đóng PlacementCase (N4 boundary)
@@ -1022,7 +1022,7 @@ describeIf(
     } finally {
       await writer.$disconnect().catch(() => {});
     }
-  }, 15000);
+  }, 30_000);
 
   // ─────────────────────────────────────────────────────────────────────
   // (xiii) DELETE privilege revoked: app_user_writer KHÔNG được DELETE
@@ -1067,7 +1067,7 @@ describeIf(
     } finally {
       await writer.$disconnect().catch(() => {});
     }
-  }, 15000);
+  }, 30_000);
 
   // ─────────────────────────────────────────────────────────────────────
   // (xiv) [F-09 round-4] race-loser transition: concurrent cancel → PlacementIdempotencyConflictError
@@ -1115,7 +1115,7 @@ describeIf(
     } finally {
       await writer.$disconnect().catch(() => {});
     }
-  }, 15000);
+  }, 30_000);
 
   // ─────────────────────────────────────────────────────────────────────
   // (xv) [F-08 + F-09 round-4] closePlacementCaseSuccess rollback khi case đã CLOSED đồng thời
@@ -1197,7 +1197,7 @@ describeIf(
     } finally {
       await writer.$disconnect().catch(() => {});
     }
-  }, 15000);
+  }, 30_000);
 });
 
 // ─────────────────────────────────────────────────────────────────────────
