@@ -16,7 +16,7 @@
 | In-scope roots | prisma/schema.prisma, prisma/migrations/**, src/db/**, tests/db/**, src/shared/utils/**, vitest.integration-files.ts |
 | Forbidden paths | docs/TIER0_SHIFT_HANDOVER.md, application code modifying N2-4 logic |
 | Required gates | npx prisma validate; npm run typecheck; npm run lint; npm run test:unit; npm run build; npm run test:integration |
-| Current execution round | 1 |
+| Current execution round | 2 |
 | Current audit round | 0 |
 | Next gate | /deliver → /audit → /resolve |
 
