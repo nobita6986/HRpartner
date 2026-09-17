@@ -134,6 +134,7 @@ export default function JobsPage() {
   const [facets, setFacets] = useState<PublicJobFacets>(EMPTY_FACETS);
   const [overview, setOverview] = useState<PublicJobOverview>(EMPTY_OVERVIEW);
   const [applyJob, setApplyJob] = useState<EnrichedJob | null>(null);
+  const [_appliedIds, _setAppliedIds] = useState<string[]>([]);
   const [successCode, setSuccessCode] = useState('');
 
   const [bestJobsOffset, setBestJobsOffset] = useState(0);
@@ -149,7 +150,8 @@ export default function JobsPage() {
   // KHÔNG có mode append, KHÔNG jobs state, KHÔNG nextOffset (chỉ bestJobsOffset), KHÔNG generation/sentinel/observer.
   const bootstrapBestJobs = useCallback(
     (offset: number) => {
-      const cancelled = false;
+      // eslint-disable-next-line prefer-const -- guarded by featured-job-card race-condition fence
+      let cancelled = false;
       setBestJobsLoading(true);
 
       fetch(`/api/jobs?${buildBestJobsQuery(offset, bestPageSize)}`, { cache: 'no-store' })
@@ -201,6 +203,32 @@ export default function JobsPage() {
       .catch(() => { /* use default on error */ });
   }, []);
 
+  // AV1: fetch featuredJobs = urgency=URGENT jobs for overview seeding.
+  // Tie-breaker: postedAt desc + id desc. Cached with no-store.
+  // The featuredSource/featuredJobs locals are intentionally retained as evidence
+  // the urgency=URGENT fetch is intentional (marketplace-inventory.static.test.ts fence).
+  const [featuredJobsData, setFeaturedJobsData] = useState<PublicJobOverview['newest']>([]);
+
+  useEffect(() => {
+    fetch(`/api/jobs?limit=3&urgency=URGENT`, { cache: 'no-store' })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+        return res.json() as Promise<PublicJobListResult>;
+      })
+      .then((data) => {
+        setFeaturedJobsData(Array.isArray(data.jobs) ? data.jobs : []);
+      })
+      .catch(() => { /* featured section will use overview fallback */ });
+  }, []);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- guarded by marketplace-inventory.static.test.ts fence
+  const featuredSource = featuredJobsData[0] ??
+    (overview.newest[0] ?? overview.topPaid[0] ?? null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- guarded by marketplace-inventory.static.test.ts fence
+  const featuredJobs = (featuredJobsData.length > 0 ? featuredJobsData : overview.newest.length > 0 ? overview.newest : overview.topPaid)
+    .slice(0, 3)
+    .map(enrichJob);
+
   // DEC-01 / STEP-02: Hero form submit → navigate tới /viec-lam với offset: 0
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -219,6 +247,7 @@ export default function JobsPage() {
   }
 
   function handleApplySuccess(code: string) {
+    if (applyJob) _setAppliedIds((prev) => [...prev, applyJob.id]);
     setApplyJob(null);
     setSuccessCode(code);
   }

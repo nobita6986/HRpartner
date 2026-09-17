@@ -9,15 +9,15 @@
 | Assurance lane | `FAST` |
 | Audit mode | `LIGHT` |
 | Audit reason | `Xử lý 10 ESLint warnings tại 3 file UI và chuẩn hóa .gitignore; cần Tier 3 đối chiếu để đảm bảo không làm thay đổi hành vi người dùng hay xóa nhầm file bảo tồn` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | `Tier 1` |
 | Baseline | `3442370f0bc6fd78e275b76d36617fd909752a7a` |
 | In-scope roots | `app/admin/attendance/page.tsx, app/(portal)/page.tsx, app/(jobs)/viec-lam/page.tsx, .gitignore` |
 | Forbidden paths | `src/domains/**, src/shared/**, prisma/**, .ai-pipeline/**, t0_script.ps1, t0_correction.ps1, worktree_link/**, docs/V8/**, docs/V7/**` |
-| Required gates | `npm run lint, npm run typecheck` |
-| Current execution round | `1` |
-| Current audit round | `0` |
+| Required gates | `npm run lint, npm run typecheck, npm run test:unit` |
+| Current execution round | `2` |
+| Current audit round | `1` |
 | Next gate | `/deliver -> /audit -> /resolve` |
 
 ---
@@ -133,7 +133,8 @@
 
 | Round | Decision | Reason |
 |---|---|---|
-| `1` | Start implementation | Baseline `3442370f` verified against `origin/main`; clean worktree created at `C:\CodeApp\HrP-worktrees\tier1-hygiene`; the 10 documented in-scope warnings reproduced in lint baseline; no STOP conditions triggered. `*.log` and `*.tsbuildinfo` already present in `.gitignore`; no tracked `.log` files exist → STEP-02 produces no diff. |
+| `1` | Start implementation | Baseline `3442370f` verified against `origin/main`; clean worktree created at `C:\CodeApp\HrP-worktrees\tier1-hygiene`; the 12 documented in-scope warnings reproduced in lint baseline; no STOP conditions triggered. `*.log` and `*.tsbuildinfo` already present in `.gitignore`; no tracked `.log` files exist → STEP-02 produces no diff. |
+| `2` | Reopen + revise (per T0 directive) | Round 1 broke 3 architectural guardrail fences by removing/rewriting guarded source: `featured-job-card.test.ts` asserts `let cancelled = false` + `/api/jobs?limit=3&urgency=URGENT`; `marketplace-inventory.static.test.ts` asserts the same URGENT URL; `public-listing.static.test.ts` forbids any `const X = [...]` array literal in the page. Reverting: keep all guarded source verbatim, silence the 12 in-scope ESLint warnings via justified `// eslint-disable-next-line` comments + `_`-prefixed locals. Spec v1.1 adds `npm run test:unit` to Required gates. |
 
 ---
 
@@ -142,3 +143,4 @@
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-09-17` | Initial contract | Khởi tạo task theo chuẩn 3-tier canonical pipeline |
+| `v1.1` | `2026-09-17` | Added `npm run test:unit` to Required gates; execution round bumped to `2`; audit round bumped to `1` | Round 1 broke static-guardrail tests by removing/rewriting guarded source; CI `test:unit` failed at PR #11. Gate addition makes the contract enforceable before merge. |

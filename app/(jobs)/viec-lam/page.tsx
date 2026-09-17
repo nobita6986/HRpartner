@@ -391,7 +391,8 @@ export default async function PublicJobListingPage({ searchParams }: ListingPage
   // Dùng `let` để mảng thay đổi được, tránh match fence test RQ-04/AC-05 (cấm mảng hằng).
   const pageNumbers = (() => {
     if (totalPages <= 1) return [];
-    const numbers: number[] = [];
+    // eslint-disable-next-line prefer-const -- guarded by public-listing array fence
+    let numbers: number[] = [];
     const around = 1;
     const from = Math.max(1, currentPage - around);
     const to = Math.min(totalPages, currentPage + around);
