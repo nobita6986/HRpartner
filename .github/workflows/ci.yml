@@ -57,6 +57,9 @@ jobs:
 # <<APPEND-INTEGRATION-JOB>>
   integration:
     name: Integration (DB tests · fail-closed)
+    concurrency:
+      group: hrpartner-dedicated-integration-db
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Never run on a FORK pull request: secrets are not exposed to forks (RQ-07), and we do

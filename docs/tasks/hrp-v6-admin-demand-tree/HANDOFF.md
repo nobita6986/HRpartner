@@ -39,7 +39,7 @@
 
 ## Remote Evidence
 - **Quality:** PASS (Job 104852646519 - https://github.com/nobita6986/HRpartner/actions/runs/35113414258/job/104852646519)
-- **Integration:** FAIL (Job 104852646949 - https://github.com/nobita6986/HRpartner/actions/runs/35113414258/job/104852646949). `admin-demand-tree.integration.test.ts` PASSES (17 tests, 51.2s), but pre-existing DB tests (e.g. `placement-lifecycle-integration`, `matrix-scope.test.ts`) failed due to interactive transaction timeouts and state leaks.
+- **Integration:** FAIL (Job 104852646140 - https://github.com/nobita6986/HRpartner/actions/runs/35113414258/job/104852646140). W3 `admin-demand-tree.integration.test.ts` passed 17/17 in approximately 51.2 seconds. Full Integration failed while multiple workflows shared the same dedicated test DB. Root cause of the remaining placement-lifecycle and matrix-scope failures is UNCONFIRMED pending one repository-serialized isolated run.
 - **Browser Smoke:** NOT_RUN / ENV_BLOCKED
 
 
