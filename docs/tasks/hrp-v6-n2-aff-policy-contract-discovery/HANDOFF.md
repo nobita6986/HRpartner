@@ -129,3 +129,6 @@
 ---
 
 **Handoff state: OPEN / MICRO_DELTA_REQUIRED. PR #4 ready for T0 final review (R11 micro-delta corrections applied).**
+
+## Resolution
+Status: RESOLVED_MERGED into N2-1.

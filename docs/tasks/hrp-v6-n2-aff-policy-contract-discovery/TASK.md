@@ -1,7 +1,7 @@
 # Task: N2 AFF Policy & Contract Discovery
 
 **Slug:** `hrp-v6-n2-aff-policy-contract-discovery`
-**Status:** `OPEN / MICRO_DELTA_REQUIRED` (T0 verdict after R7 → R8 → R9 → R10 → R11 → R11 delta → R11 micro-delta)
+**Status:** `RESOLVED_MERGED`
 **Audit:** `NONE`
 **Type:** READ-ONLY Discovery — no production code changes
 **Baseline (pinned):** `b91a33f948aed224a88f3e8e7c9847006f33e97f` (full SHA)

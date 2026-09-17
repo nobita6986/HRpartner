@@ -9,8 +9,7 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` (theo TIER0_HANDOVER.md §5: "Tier 3 LIGHT bắt buộc cho migration và lifecycle") |
 | Spec version | `v0.3 DRAFT` |
-| Status | `DRAFT` |
-| Planner | `Tier 1` |
+| Status | ACCEPTED_TERMINAL | Planner | `Tier 1` |
 | Baseline | `40cd9d4` (origin/main, post N1 round-5 push) |
 | Worktree | `C:\CodeApp\HrP-worktrees\tier1-n3-service-model-placement` (branch `tier1/n3-service-model-placement`) |
 | Slicing | N3 chia thành 3 slices (A/B/C). Tier 0 cho phép chạy thẳng A→B→C qua gate, KHÔNG cần xin GO giữa slice. Stop point thực sự là gate của từng slice + audit + Tier 0 review branch. |

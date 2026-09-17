@@ -156,3 +156,8 @@ Theo lệnh Tier 0 ngày 15/09, closeout N1 về trạng thái thật:
 | `v0.5 ROUND_5_DELIVERED` | `2026-09-14 15:52` | `Tier 1` | Round-5: intake flow thật + verify đủ 3 điều kiện + bỏ claim singleton. 9/9 PASS trên `hrp_mp2_test`. |
 | `v0.7 CLOSEOUT` | `2026-09-15 10:30` | `Tier 1` | Closeout: Vercel PASS @ `68e184e`; ADMIN smoke OPEN; 9 TS errors resolved (test typing); W0 hygiene. |
 | **`v0.8 DANGEROUS_STRINGS_REMOVED`** | **`2026-09-15 12:30`** | **`Tier 1`** | **S2: xoá 6 chuỗi nguy hiểm — "Tier 0/Owner quyết định: merge N3 + closeout → main + apply prod migration" đổi thành trạng thái N3 đã in main; §7.5 next steps → "CLOSED — historical record"; bỏ tham chiếu `55f4180`/`b62f4f1` làm deployment evidence.** |
+
+
+## Resolution
+Status: IMPLEMENTATION_AND_AUDIT_ACCEPTED.
+Note: Authenticated production smoke remains OPEN.
