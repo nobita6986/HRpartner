@@ -1,0 +1,4 @@
+﻿----SKIP-set grep----
+.github/workflows/ci.yml:116:              docs/*|*.md|scratch/*|.gitignore|README*|.env.example)
+----RUN-set grep----
+(empty - default case is RUN, fail-safe)
