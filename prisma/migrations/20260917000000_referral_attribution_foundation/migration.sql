@@ -229,11 +229,7 @@ CREATE POLICY hrp_ra_select ON referral_attributions
     OR referrer_user_id = hrp_session_user_id()
   );
 
-CREATE POLICY hrp_ra_insert ON referral_attributions
-  AS PERMISSIVE FOR INSERT TO app_engine_writer
-  WITH CHECK (
-    current_setting('hrp.engine_context', true) IN ('link-capture', 'consume', 'milestone')
-  );
+
 
 CREATE POLICY hrp_ra_update ON referral_attributions
   AS PERMISSIVE FOR UPDATE TO app_user_writer

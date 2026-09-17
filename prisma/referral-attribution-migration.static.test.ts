@@ -49,7 +49,6 @@ describe('Referral Attribution Migration Static Review', () => {
 
     it('must define exact named constraints/triggers/policies', () => {
       expect(content).toMatch(/HRP_RA_SELECT/);
-      expect(content).toMatch(/HRP_RA_INSERT/);
       expect(content).toMatch(/HRP_RA_UPDATE/);
       expect(content).toMatch(/HRP_RA_SELECT_ENGINE/);
       expect(content).toMatch(/HRP_RA_INSERT_ENGINE/);
@@ -57,6 +56,18 @@ describe('Referral Attribution Migration Static Review', () => {
       expect(content).toMatch(/REFERRAL_ATTRIBUTIONS_IMMUTABLE_UPDATE_TRG/);
       expect(content).toMatch(/REFERRAL_ATTRIBUTIONS_LABOR_PROFILE_ID_WRITE_ONCE_TRG/);
       expect(content).toMatch(/REFERRAL_ATTRIBUTIONS_LIFECYCLE_TRANSITION_TRG/);
+    });
+
+    it('must have exactly one INSERT policy for app_engine_writer named hrp_ra_insert_engine', () => {
+      // The original migration content has it as upper case because we do .toUpperCase()
+      const insertMatches = content.match(/CREATE POLICY .* FOR INSERT TO APP_ENGINE_WRITER/g);
+      expect(insertMatches).toHaveLength(1);
+      expect(insertMatches?.[0]).toMatch(/HRP_RA_INSERT_ENGINE/);
+    });
+
+    it('must not use bare current_setting for hrp.engine_context without COALESCE', () => {
+      const bareContextMatches = content.match(/(?<!COALESCE\(\s*)CURRENT_SETTING\('HRP\.ENGINE_CONTEXT'/g);
+      expect(bareContextMatches).toBeNull();
     });
   });
 });

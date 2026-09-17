@@ -16,8 +16,8 @@
 | In-scope roots | prisma/schema.prisma, prisma/migrations/**, src/db/**, tests/db/**, src/shared/utils/**, vitest.integration-files.ts |
 | Forbidden paths | docs/TIER0_SHIFT_HANDOVER.md, application code modifying N2-4 logic |
 | Required gates | npx prisma validate; npm run typecheck; npm run lint; npm run test:unit; npm run build; npm run test:integration |
-| Current execution round | 2 |
-| Current audit round | 0 |
+| Current execution round | 3 |
+| Current audit round | 1 |
 | Next gate | /deliver → /audit → /resolve |
 
 ## 1. Outcome
@@ -212,6 +212,7 @@ Integration tests will assert against these exact names:
 | Round | Decision | Reason |
 |---|---|---|
 | 0 | READY_FOR_EXECUTION | All requirements satisfied per Owner directive |
+| 1 | AUDIT_REMEDIATION | Remediate F-01 (redundant policy) based on Tier 3 Round 1 audit verdict |
 
 ## 10. Revision Log
 

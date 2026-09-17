@@ -8,7 +8,7 @@
 | Spec version | v1.4 |
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
-| Execution round | 2 |
+| Execution round | 3 |
 | Baseline | 30a204743a2478e16e33adfe9da95d9f2fcd03dc |
 | Status | READY_FOR_AUDIT |
 
@@ -18,10 +18,15 @@
 - Not delivered: None
 - Lane escalation: No
 - **Implementation HEAD**: 89208e2698251d4f8dfd26a66ee1afe38fedf0c4
+- **Round-2 pre-audit delivery HEAD**: 9778cf0b51c6fa8311da622a340cde1f541c61b8
+- **Tier-3 round-1 audit artifact HEAD**: 8b772c833ee4a4a084e00517f53a20a49b498482
 - **N2-1 result**: 15 passed, 0 skipped
 - **Total integration result**: 20 files, 402 passed, 2 skipped
 - **ENV_BLOCKED**: 0
 - **Test Environment & Recoveries**: `npx prisma migrate reset --force` was run as a dedicated-test-DB-only recovery action to resolve state corruption from an older migration. hrp-live and production were not touched. No `_prisma_migrations` rows were edited manually. The conflicting migration `20260917170735_n2_aff_01_attribution_foundation` was removed before final verification and exactly one N2-1 migration remains.
+- **F-01 remediation**: Removed redundant `hrp_ra_insert` policy. Keep only `hrp_ra_insert_engine` using `COALESCE(current_setting('hrp.engine_context', true), '')`.
+- **Regression test added**: Updated `prisma/referral-attribution-migration.static.test.ts` to assert exact insert policy target and name, and verify `COALESCE` is used correctly.
+- **Audit round 1 verdict**: REVISION_REQUIRED by Tier 3.
 
 ## 2. Execution Trace
 
@@ -97,5 +102,6 @@
 |---|---|---|---|
 | 1 | 2026-09-17 | Tier 1 | Completed implementation. REVISION_REQUIRED by T0. |
 | 2 | 2026-09-17 | Tier 1 | Revised RLS policies, dates, static tests, and test isolations. |
+| 3 | 2026-09-17 | Tier 1 | Remediated F-01 from T3 audit (removed redundant policy) and added regression proof. |
 
 > Handoff status: READY_FOR_AUDIT
