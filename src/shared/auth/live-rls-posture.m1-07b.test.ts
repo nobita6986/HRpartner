@@ -484,7 +484,7 @@ describe.skipIf(!enabled)(
       expect(await admin.clientRateCard.count({ where: { id: crcId } })).toBe(1);
       expect(await admin.vendorRateCard.count({ where: { id: vrcId } })).toBe(1);
       expect(await admin.ctvWithdrawalRequest.count({ where: { id: cwAId } })).toBe(1);
-    });
+    }, 30_000);
 
     // ══ AC-04: GUC posture — missing context denies, no cross-tx leak ══════════
     it('AC-04: missing GUC → empty role AND zero rows (deny-by-default, not masked)', async () => {

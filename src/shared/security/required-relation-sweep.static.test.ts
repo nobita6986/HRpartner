@@ -79,6 +79,10 @@ const EXPECTED_HITS = [
   'app/api/vendor/submissions/route.ts:62 project',
   'src/domains/applications/application-queue.service.ts:178 project',
   'src/domains/applications/application-queue.service.ts:211 project',
+  'src/domains/crm/client-read.service.ts:80 staffingOrder',
+  'src/domains/crm/project-read.service.ts:40 clientCompany',
+  'src/domains/staffing/job-opening-read.service.ts:41 staffingOrder',
+  'src/domains/staffing/job-opening-read.service.ts:46 project',
   'src/domains/staffing/job-posting-list.service.ts:125 jobOpening',
   'src/domains/staffing/job-posting-list.service.ts:128 staffingOrder',
   'src/domains/staffing/job-posting-list.service.ts:191 jobOpening',
@@ -272,7 +276,8 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     expect(hits.filter((hit) => hit.startsWith('app/api/'))).toHaveLength(3);
     // Sau STEP-06 (4 dòng RỦI RO được sửa): 5 src. Sau AV2 commit e7ee2c8 (2026-09-13):
     // +4 dòng ở src/domains/staffing/job-posting-list.service.ts → 9 src. Tổng 12.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(9);
+    // +4 dòng ở src/domains/crm và staffing W3 → 13 src. Tổng 16.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(13);
   });
 });
 

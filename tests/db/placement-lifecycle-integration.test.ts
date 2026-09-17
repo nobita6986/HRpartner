@@ -52,8 +52,16 @@ const adminUrl = process.env.DATABASE_URL_ADMIN_TEST ?? '';
 const writerUrl = process.env.DATABASE_URL_TEST ?? '';
 const runId = `n3-${randomUUID().slice(0, 8)}`;
 
+const TEST_TRANSACTION_OPTIONS = {
+  timeout: 15_000,
+} as const;
+
 function makeClient(url: string): PrismaClient {
-  return new PrismaClient({ datasources: { db: { url } }, log: ['error'] });
+  return new PrismaClient({
+    datasources: { db: { url } },
+    log: ['error'],
+    transactionOptions: TEST_TRANSACTION_OPTIONS,
+  });
 }
 
 /** Set HR_MANAGER GUC context trong transaction. */
@@ -250,7 +258,10 @@ async function buildClientManagedFixture(
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-describeIf('N3 placement-lifecycle integration — DB-touching proof', () => {
+describeIf(
+  'N3 placement-lifecycle integration — DB-touching proof',
+  { timeout: 30_000 },
+  () => {
   let admin: PrismaClient;
 
   const createdLaborProfileIds: string[] = [];

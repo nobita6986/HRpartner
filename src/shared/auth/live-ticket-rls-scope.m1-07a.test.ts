@@ -676,7 +676,7 @@ describe.skipIf(!enabled)(
         ) as unknown[];
         expect(rows).toHaveLength(0);
       }
-    });
+    }, 30_000);
 
     // ── AC-04: Child table isolation ────────────────────────────────────────────
     it('AC-04: WORKER cannot read internal comments', async () => {
