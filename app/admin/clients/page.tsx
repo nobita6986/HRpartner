@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
+import { RowLink } from '@/src/shared/ui/navigation/row-link';
 
 interface ClientRow {
   id: string;
@@ -189,15 +190,17 @@ export default function ClientsPage() {
             </thead>
             <tbody>
               {clients.map((c, i) => (
-                <tr key={c.id} className="transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]" style={{ borderBottom: i < clients.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}>
-                  <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">{c.code}</td>
+                <tr key={c.id} className="relative transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]" style={{ borderBottom: i < clients.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}>
+                  <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">
+                    <RowLink href={`/admin/clients/${c.id}`}>{c.code}</RowLink>
+                  </td>
                   <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">{c.name}</td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{c.taxCode ?? '—'}</td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{c.industry ?? '—'}</td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{c.companySize ?? '—'}</td>
                   <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{new Date(c.createdAt).toLocaleDateString('vi-VN')}</td>
-                  <td className="px-4 py-3"><button onClick={() => setEditRow(c)} style={{ color: 'var(--primary)' }} className="text-xs font-medium hover:underline">Sửa</button></td>
+                  <td className="px-4 py-3"><button onClick={() => setEditRow(c)} style={{ color: 'var(--primary)' }} className="relative z-10 text-xs font-medium hover:underline">Sửa</button></td>
                 </tr>
               ))}
             </tbody>

@@ -16,7 +16,13 @@ export function buildProjectScope(ctx: AuthContext): Prisma.ProjectWhereInput {
       return {};
 
     case 'PM':
-      return { pmUserId: ctx.userId };
+      return {
+        OR: [
+          { pmUserId: ctx.userId },
+          { subPmUserId1: ctx.userId },
+          { subPmUserId2: ctx.userId },
+        ],
+      };
 
     case 'WORKER':
       return {

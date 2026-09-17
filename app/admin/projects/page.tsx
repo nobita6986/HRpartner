@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
+import { RowLink } from '@/src/shared/ui/navigation/row-link';
 
 interface ProjectRow {
   id: string;
@@ -241,13 +242,15 @@ export default function ProjectsPage() {
             </thead>
             <tbody>
               {projects.map((p, i) => (
-                <tr key={p.id} className="transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]" style={{ borderBottom: i < projects.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}>
-                  <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">{p.code}</td>
+                <tr key={p.id} className="relative transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]" style={{ borderBottom: i < projects.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}>
+                  <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">
+                    <RowLink href={`/admin/projects/${p.id}`}>{p.code}</RowLink>
+                  </td>
                   <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">{p.name}</td>
                   <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{new Date(p.startDate).toLocaleDateString('vi-VN')}</td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{new Date(p.createdAt).toLocaleDateString('vi-VN')}</td>
-                  <td className="px-4 py-3"><button onClick={() => setEditRow(p)} style={{ color: 'var(--primary)' }} className="text-xs font-medium hover:underline">Sửa</button></td>
+                  <td className="px-4 py-3"><button onClick={() => setEditRow(p)} style={{ color: 'var(--primary)' }} className="relative z-10 text-xs font-medium hover:underline">Sửa</button></td>
                 </tr>
               ))}
             </tbody>
