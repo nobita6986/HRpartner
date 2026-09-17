@@ -93,3 +93,8 @@ playwright-report/
 
 # TypeScript compiler output dumps (tsc-*.txt) — debug artifact, khong commit
 tsc-*.txt
+
+# W0.7 / hrp-v7-w0-gitignore-test-lane — local scratch artifacts (root-only, leading slash)
+# Prevents accidental commit of throwaway probe/scratch files at repo root.
+/temp*.txt
+/orca*.bat
