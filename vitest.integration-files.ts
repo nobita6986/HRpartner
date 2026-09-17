@@ -46,4 +46,5 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // Self-skips when DATABASE_URL_TEST absent (ENV_BLOCKED — Tier 0/Owner cung cấp DB trước khi xét merge).
   'tests/db/placement-lifecycle-integration.test.ts',
   'src/domains/admin-demand-tree.integration.test.ts',
+  'tests/db/referral-attribution-foundation.integration.test.ts',
 ];
