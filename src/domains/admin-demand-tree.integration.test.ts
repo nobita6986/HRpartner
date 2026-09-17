@@ -23,6 +23,10 @@ import { withDbContext } from '@/src/shared/auth/with-db-context';
 const ADMIN_URL = process.env.DATABASE_URL_ADMIN_TEST;
 const WRITER_URL = process.env.DATABASE_URL_TEST;
 
+const TEST_TRANSACTION_OPTIONS = {
+  timeout: 15_000,
+} as const;
+
 if (WRITER_URL && !ADMIN_URL) {
   throw new Error('DATABASE_URL_TEST is set but DATABASE_URL_ADMIN_TEST is missing. Cannot run LIVE RLS test reliably.');
 }
@@ -31,7 +35,10 @@ const enabled = Boolean(ADMIN_URL && WRITER_URL);
 
 describe.skipIf(!enabled)('W3 Admin Demand Tree — LIVE RLS Integration Test', { timeout: 30000 }, () => {
   const admin = new PrismaClient({ datasourceUrl: ADMIN_URL });
-  const writer = new PrismaClient({ datasourceUrl: WRITER_URL });
+  const writer = new PrismaClient({
+    datasourceUrl: WRITER_URL,
+    transactionOptions: TEST_TRANSACTION_OPTIONS,
+  });
 
   const RUN = `w3-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
