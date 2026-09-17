@@ -7,6 +7,60 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
+updated_at: 2026-09-17T07:55:25.194Z
+roadmap_source: docs/V6/v6-roadmap.html; docs/TIER0_HANDOVER.md; docs/tasks/hrp-v6-n2-aff-policy-contract-discovery/DISCOVERY.md
+PHASE_MAP: |
+  Phase 0: V5 Close (No change)
+  Phase 1: V6 Phase 1 Foundation
+  Phase 2: AFF Gate - N2-1 Attribution Foundation
+current_lane: N2 AFF Policy & Contract
+current_task: hrp-v6-n2-aff-01-attribution-foundation
+task_path: docs/tasks/hrp-v6-n2-aff-01-attribution-foundation/TASK.md
+worktree_branch: planner/n2-1-task-authoring
+current_gate: T0_REVIEW
+previous_accepted: hrp-v6-n2-aff-policy-contract-discovery
+blocking_owner: "None"
+owner_defer: "None"
+```
+
+<!-- ROADMAP_CURSOR_END -->
+
+<!-- PRE_UI04_LANE_SNAPSHOT_2026-09-10_22-30 -->
+<!-- Bản ROADMAP_CURSOR trước khi Tier 1 mở task 04c2 (2026-09-10 22:40):
+     current_task = hrp-v6-ui-04c1-footer-tweak-r2 v1.0 READY_FOR_EXECUTION;
+     Tier 2 đã có HANDOFF skeleton + tier1-directive-handoff.md;
+     04c2 chưa mở (BLOCKED_OWNER chưa có skeleton).
+
+     Bản hiện tại (2026-09-10 22:40) — bổ sung task 04c2 job-card color refinement
+     theo directive Owner mới (đổi 2 CTA color, salary saturation, title size,
+     footer layout); current_task vẫn là 04c1; 04c2 = BLOCKED_OWNER DRAFT v0.1.
+     Xem archive section 0A bên dưới cho snapshot đầy đủ ngày 2026-09-08 và 2026-09-10 trước đó. -->
+
+<!-- PRE_UI04_LANE_SNAPSHOT_2026-09-10 -->
+<!-- Bản ROADMAP_CURSOR trước khi Tier 0 chốt UI04 là global delivery lane tại TIER0_UI04_R3_CLOSEOUT_VERDICT.md (2026-09-10).
+     current_lane: Phase 1 V6 Foundation — vertical slice tiếp theo (post Tier 0 deferral 09/09)
+     current_task: hrp-v6-p1-job-opening-status-card
+     spec_version: v1.0 ACCEPTED 09/09
+     task_status: ACCEPTED_PENDING_MERGE
+     current_gate: OWNER_MERGE_TO_MAIN
+     worktree_branch: tier1/job-opening-status-card-worktree
+
+     Bản tiếp theo (DRAFT v0.1 / BLOCKED_OWNER) trước khi Owner đối 16 lựa chọn — chỉ snapshot ở archive section 0A.
+     current_lane: UI04 public homepage completion
+     current_task: hrp-v6-ui-04c1-footer-tweak-r2
+     spec_version: v0.1 DRAFT
+     task_status: DRAFT
+     current_gate: BLOCKED_OWNER
+
+     Bản hiện tại (2026-09-10 22:30) — 16 Owner decisions đã chốt → v1.0 READY_FOR_EXECUTION → TIER2_EXECUTION.
+     Xem archive section 0A bên dưới cho snapshot đầy đủ ngày 2026-09-08 và 2026-09-10 trước đó. -->
+
+## 0A. ROADMAP_CURSOR archive — snapshot 2026-09-08 09:15, chỉ để truy vết
+
+
+<!-- ROADMAP_CURSOR_ARCHIVE_START -->
+
+```yaml
   updated_at: 2026-09-15 11:30 Asia/Bangkok
 roadmap_source: docs/AI_PROJECT_BRIEF.md; docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/prompts/TIER0_UI04_R3_CLOSEOUT_VERDICT.md; docs/prompts/TIER0_UI04_04C1_04C2_EXECUTE_AND_PUSH.md; docs/TIER0_HANDOVER.md
 PHASE_MAP: |
@@ -176,42 +230,7 @@ owner_defer:
   no_new_adr: "Không viết ADR dài. Không mở task rationalization mới."
 ```
 
-<!-- ROADMAP_CURSOR_END -->
-
-<!-- PRE_UI04_LANE_SNAPSHOT_2026-09-10_22-30 -->
-<!-- Bản ROADMAP_CURSOR trước khi Tier 1 mở task 04c2 (2026-09-10 22:40):
-     current_task = hrp-v6-ui-04c1-footer-tweak-r2 v1.0 READY_FOR_EXECUTION;
-     Tier 2 đã có HANDOFF skeleton + tier1-directive-handoff.md;
-     04c2 chưa mở (BLOCKED_OWNER chưa có skeleton).
-
-     Bản hiện tại (2026-09-10 22:40) — bổ sung task 04c2 job-card color refinement
-     theo directive Owner mới (đổi 2 CTA color, salary saturation, title size,
-     footer layout); current_task vẫn là 04c1; 04c2 = BLOCKED_OWNER DRAFT v0.1.
-     Xem archive section 0A bên dưới cho snapshot đầy đủ ngày 2026-09-08 và 2026-09-10 trước đó. -->
-
-<!-- PRE_UI04_LANE_SNAPSHOT_2026-09-10 -->
-<!-- Bản ROADMAP_CURSOR trước khi Tier 0 chốt UI04 là global delivery lane tại TIER0_UI04_R3_CLOSEOUT_VERDICT.md (2026-09-10).
-     current_lane: Phase 1 V6 Foundation — vertical slice tiếp theo (post Tier 0 deferral 09/09)
-     current_task: hrp-v6-p1-job-opening-status-card
-     spec_version: v1.0 ACCEPTED 09/09
-     task_status: ACCEPTED_PENDING_MERGE
-     current_gate: OWNER_MERGE_TO_MAIN
-     worktree_branch: tier1/job-opening-status-card-worktree
-
-     Bản tiếp theo (DRAFT v0.1 / BLOCKED_OWNER) trước khi Owner đối 16 lựa chọn — chỉ snapshot ở archive section 0A.
-     current_lane: UI04 public homepage completion
-     current_task: hrp-v6-ui-04c1-footer-tweak-r2
-     spec_version: v0.1 DRAFT
-     task_status: DRAFT
-     current_gate: BLOCKED_OWNER
-
-     Bản hiện tại (2026-09-10 22:30) — 16 Owner decisions đã chốt → v1.0 READY_FOR_EXECUTION → TIER2_EXECUTION.
-     Xem archive section 0A bên dưới cho snapshot đầy đủ ngày 2026-09-08 và 2026-09-10 trước đó. -->
-
-## 0A. ROADMAP_CURSOR archive — snapshot 2026-09-08 09:15, chỉ để truy vết
-
-<!-- ROADMAP_CURSOR_ARCHIVE_START -->
-
+---
 ```yaml
 updated_at: 2026-09-08 09:15 Asia/Bangkok
 roadmap_source: docs/V6/v6-roadmap.html; docs/V6/v6-admin-rebuild_ROADMAP.md; docs/UNIFIED_PLAN_v5.md chi con la nguon cho V5/go-live debt
@@ -238,7 +257,6 @@ task_status: RESOLVING_R2
 current_gate: TIER_3_AUDIT_R2
 next_action: Tier 3 audit R2 cho 1A
 ```
-
 <!-- ROADMAP_CURSOR_ARCHIVE_END -->
 
 ### Quy tắc của cursor

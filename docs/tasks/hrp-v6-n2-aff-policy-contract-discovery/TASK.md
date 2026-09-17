@@ -1,12 +1,12 @@
 # Task: N2 AFF Policy & Contract Discovery
 
 **Slug:** `hrp-v6-n2-aff-policy-contract-discovery`
-**Status:** `OPEN / MICRO_DELTA_REQUIRED` (T0 verdict after R7 → R8 → R9 → R10 → R11 → R11 delta → R11 micro-delta)
+**Status:** `RESOLVED_MERGED`
 **Audit:** `NONE`
 **Type:** READ-ONLY Discovery — no production code changes
 **Baseline (pinned):** `b91a33f948aed224a88f3e8e7c9847006f33e97f` (full SHA)
 **Branch:** `hrp-v6-n2-aff-policy-contract-discovery`
-**PR:** [#4](https://github.com/nobita6986/HRpartner/pull/4)
+**PR:** [#4](https://github.com/nobita6986/HRpartner/pull/4) (Merged via commit 17a8487/9f180f5)
 
 ---
 
@@ -113,14 +113,14 @@ D1 blanket ALL SEQUENCES revoke removed; D2 public schema now checked; D3 full-g
 **Base (post-sync):** `0d7f8a1099bc9f1a41767aefe5bd3bc149de84d2` (origin/main)
 **PR:** [Pull Request #4](https://github.com/nobita6986/HRpartner/pull/4)
 **History preserved:** R0-R11 + R11 delta + R11 micro-delta
-**Status:** `OPEN / MICRO_DELTA_REQUIRED` — waiting for T0 final authorization
+**Status:** `RESOLVED_MERGED`
 
 ---
 
 ## 7. Status
 
-**OPEN / MICRO_DELTA_REQUIRED**
+**RESOLVED_MERGED**
 
-PR #4 remains docs-only, no production code changes. Branch ahead of main; merge to main awaits T0 final authorization.
+PR #4 remains docs-only, no production code changes. ; merge to main awaits T0 final authorization.
 
-**This task is in MICRO_DELTA_REQUIRED state. N2-1 is a separate task T0 will unlock via Tier 1.**
+**This task is in RESOLVED_MERGED state. N2-1 is a separate task T0 will unlock via Tier 1.**

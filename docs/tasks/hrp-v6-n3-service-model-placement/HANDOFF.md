@@ -162,7 +162,7 @@ N3 deployment đã hoàn tất trước closeout. Mục này chỉ để audit t
 4. ✅ Tier 3 LIGHT audit round 5 verdict **PASS** (2 consecutive PASS rounds trên round-3 + round-4 fixes).
 5. ✅ N3 code merged vào `origin/main` (`68e184e`); migration `20260914212136_n3_service_model_placement` APPLIED_REPORTED trên `hrp-live`. DO_NOT_REAPPLY.
 
-Không còn gate "chờ merge" hay "chờ apply migration" — N3 đã close.
+Không còn gate "chờ merge" hay "chờ " — N3 đã close.
 
 ## 6. Revision log
 
@@ -172,5 +172,13 @@ Không còn gate "chờ merge" hay "chờ apply migration" — N3 đã close.
 | `v0.2` | `2026-09-14 22:09` | `Tier 1` | Full DB integration test 9/9 PASS trên `hrp_n3_test`; migration fix (reorder + row-level RLS predicate); HANDOFF/AUDIT updated. DB gate passed → Tier 3 final audit pending. |
 | `v0.4 round-3 fix` | `2026-09-14 23:00` | `Tier 1` | (1) RLS role-INVARIANT (HR roles vẫn phải match labor_profile_id); (2) createPlacement verify case-ownership + ACTIVE; (3) EFFECTIVE persist evidence vào DB; (4) Client-managed EFFECTIVE đóng PlacementCase atomic; (5) race-loser fix; (6) Migration REVOKE DELETE cho runtime role. 5 test case DB mới (ix-xiii) + 5 unit test mới (19/19). DB integration 14/14 PASS trên nhánh MỚI `hrp_n3_v3` tạo từ baseline `hrp-live`. Full unit 135 files 2225/2225 PASS. typecheck 0 new errors. Awaiting Tier 3 round 4 audit verdict. |
 | **`v0.5 round-4 fix + audit PASS`** | **`2026-09-15 10:00`** | **`Tier 1`** | **Round-4 review (theo T0 ngày 14/09 23:20): 3 fix (F-07 ALTER DEFAULT PRIVILEGES removed; F-08 closePlacementCaseSuccess throws on count=0; F-09 runTransition distinguish replay vs conflict). 2 test DB mới (xiv-xv) + 4 unit test mới (23/23). DB integration **16/16 PASS trên `hrp_n3_v5`** (Neon branch `br-bold-term-az0ej1zd` tạo từ baseline `hrp-live`, endpoint `ep-weathered-art-az1c0gzh`). Full unit 135 files 2229/2229 PASS. typecheck 0 new errors. Tier 3 LIGHT audit round 5 verdict **PASS**. Branch `tier1/n3-service-model-placement` HEAD = `1a1eba4` (pushed → origin).** |
-| `v0.7 CLOSEOUT` | `2026-09-15 11:00` | `Tier 1` | Closeout update theo lệnh T0 ngày 15/09: code N3 đã ở `origin/main` (commit `68e184e`); migration `20260914212136_n3_service_model_placement` đã DECIDED/APPLIED_REPORTED trên production. Hygiene branches `hrp_n3_v3` + `hrp_n3_v5` còn trong Neon console (Tier 1 KHÔNG tự xóa — ghi lại bằng văn bản trong closeout này). Chỉ còn closeout evidence và W0 hygiene trong TASK `hrp-v6-docs-config-reconciliation`. Không còn "chờ merge" hay "chờ Owner apply migration". |
+| `v0.7 CLOSEOUT` | `2026-09-15 11:00` | `Tier 1` | Closeout update theo lệnh T0 ngày 15/09: code N3 đã ở `origin/main` (commit `68e184e`); migration `20260914212136_n3_service_model_placement` đã DECIDED/APPLIED_REPORTED trên production. Hygiene branches `hrp_n3_v3` + `hrp_n3_v5` còn trong Neon console (Tier 1 KHÔNG tự xóa — ghi lại bằng văn bản trong closeout này). Chỉ còn closeout evidence và W0 hygiene trong TASK `hrp-v6-docs-config-reconciliation`. Không còn "chờ merge" hay "chờ Owner ". |
 | `v0.8 DANGEROUS_STRINGS_REMOVED` | `2026-09-15 12:30` | `Tier 1` | S2 fix theo lệnh T0 ngày 15/09 12:16: xoá 6 chuỗi nguy hiểm còn lại. §3 open verification đổi "chờ Tier 0/Owner xác minh" → "verified tại `68e184e`"; §5 "Deploy conditions" → "Deploy history (CLOSED)"; bỏ ⏳ ở items 4 + 5; xoá tham chiếu `55f4180` và `b62f4f1` trong evidence Vercel. Toàn bộ N3 wording giờ phản ánh live state duy nhất: code in main, migration APPLIED_REPORTED, DO_NOT_REAPPLY. Không còn câu nào có thể kích hoạt re-merge hoặc re-apply N3. |
+
+
+## Resolution
+Status: TERMINAL ACCEPTANCE.
+Migration: APPLIED_REPORTED
+Action: DO_NOT_REAPPLY
+
+Action: DO_NOT_REAPPLY
