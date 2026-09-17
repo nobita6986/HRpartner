@@ -17,7 +17,7 @@ current_lane: N2 AFF Policy & Contract
 current_task: hrp-v6-n2-aff-01-attribution-foundation
 task_path: docs/tasks/hrp-v6-n2-aff-01-attribution-foundation/TASK.md
 worktree_branch: planner/n2-1-task-authoring
-current_gate: PLANNER_CONTRACT
+current_gate: T0_REVIEW
 previous_accepted: hrp-v6-n2-aff-policy-contract-discovery
 blocking_owner: "None"
 owner_defer: "None"

@@ -160,4 +160,4 @@ Theo lệnh Tier 0 ngày 15/09, closeout N1 về trạng thái thật:
 
 ## Resolution
 Status: IMPLEMENTATION_AND_AUDIT_ACCEPTED.
-Note: Authenticated production smoke remains OPEN.
+Note: Authenticated production smoke remains a separate OPEN OP gate.

@@ -1,7 +1,7 @@
 # N2 AFF Discovery — HANDOFF
 
 **Task:** `hrp-v6-n2-aff-policy-contract-discovery`
-**Status:** `OPEN / MICRO_DELTA_REQUIRED`
+**Status:** `RESOLVED_MERGED / RESOLVED_MERGED`
 **Audit:** `NONE`
 **Lane:** STANDARD (no implementation in this task)
 **Type:** READ-ONLY Discovery
@@ -19,9 +19,9 @@
 | Evidence gathering | Complete (full SHA pinning) |
 | T0 verdict applied | R0-R11 + R11 delta + R11 micro-delta applied |
 | Implementation gate | LOCKED until PR #4 merges (Tier 1 unlocks N2-1 separately) |
-| **PR #4 status** | **OPEN / MICRO_DELTA_REQUIRED** |
+| **PR #4 status** | **RESOLVED_MERGED / RESOLVED_MERGED** |
 
-**Task is OPEN / MICRO_DELTA_REQUIRED — waiting for T0 final authorization.**
+**Task is RESOLVED_MERGED / RESOLVED_MERGED — waiting for T0 final authorization.**
 
 ---
 
@@ -31,9 +31,9 @@
 
 | File | Purpose |
 |---|---|
-| DISCOVERY.md | Locked decisions, schema sketches, invariant contracts, 6-slice plan (status OPEN / MICRO_DELTA_REQUIRED) |
+| DISCOVERY.md | Locked decisions, schema sketches, invariant contracts, 6-slice plan (status RESOLVED_MERGED / RESOLVED_MERGED) |
 | TASK.md | RQ -> STEP -> AC, scope, boundary |
-| HANDOFF.md | Status + handoff summary (status OPEN / MICRO_DELTA_REQUIRED) |
+| HANDOFF.md | Status + handoff summary (status RESOLVED_MERGED / RESOLVED_MERGED) |
 | evidence/OVERVIEW.md | Migration inventory + aff_plan.md affinity + V6 P1 evidence (pinned) |
 
 ---
@@ -128,7 +128,7 @@
 
 ---
 
-**Handoff state: OPEN / MICRO_DELTA_REQUIRED. PR #4 ready for T0 final review (R11 micro-delta corrections applied).**
+**Handoff state: RESOLVED_MERGED / RESOLVED_MERGED. PR #4 ready for T0 final review (R11 micro-delta corrections applied).**
 
 ## Resolution
 Status: RESOLVED_MERGED into N2-1.

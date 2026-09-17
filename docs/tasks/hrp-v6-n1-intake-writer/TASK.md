@@ -10,7 +10,7 @@
 | Audit mode | `LIGHT` |
 | Audit reason | Identity + concurrency (TIER0_HANDOVER.md §N1: "Audit Tier 3 LIGHT bắt buộc cho identity, migration và invariant"). Touch: `createOrMatchLaborProfile` authority (race-safe match), `openPlacementCase` invariant (max 1 active case/LaborProfile qua partial unique index đã có từ N1 foundation — phase này phải xử lý race + idempotency ở app layer), intake writer (`createCandidateSubmissionFromIntake`) đi qua cùng một authority, idempotency pattern. **KHÔNG sửa schema, KHÔNG tạo migration, KHÔNG đổi enum `PlacementCaseStatus`/`CandidateSubmissionStatus`/`CandidateSubmissionStatus` (TIER0_HANDOVER.md §N1: "không tạo model Application mới chỉ để đổi tên CandidateSubmission")**. **KHÔNG ghi test data vào `hrp-live`**; **KHÔNG tự áp migration production mới** (N1 foundation migrations đã applied ở Stage 4 — `5b5767b`; phase này chỉ viết app-layer code trên schema đã có). |
 | Spec version | `v0.5 ROUND_5_DELIVERED` |
-| Status | ACCEPTED_TERMINAL | Planner | `Tier 1` |
+| Status | ACCEPTED |
 | Baseline | Round-1: `c9a61dd`; Round-2: `284785a` (sau khi route stub được REVERT 410); Round-3: `50dedee`; Round-4: `(round-3 HEAD)` |
 | Round-2 HEAD | `362e6a9` (allow-list align 2 file test + 3 file production mới + dọn debug scripts) |
 | Round-3 HEAD | `(round-3 fix)` (SAVEPOINT quanh INSERT placement_case + integration test DB-touching — 1 case concurrent retry fail) |
