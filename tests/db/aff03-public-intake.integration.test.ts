@@ -407,13 +407,18 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03 public anon intake — DB-touching proof',
     if (!writerUrl) return;
     const attr = await seedAttribution({ status: 'ACTIVE' });
     const writer = makeClient(writerUrl);
+    // Use a unique numeric prefix for each call so the SELECT-by-normalizedPhone
+    // lookup in the second call cannot collide with any leftover LP from a prior
+    // test in this run or a prior failed CI run.
+    const suffixA = randomUUID().replace(/\D/g, '').slice(0, 12);
+    const suffixB = randomUUID().replace(/\D/g, '').slice(0, 12);
     try {
       // First call: consume the attribution, bind laborProfileId.
       const dto1 = await withHrManagerContext(writer, 'system:public-intake', (tx) =>
         submitPublicIntake(tx, {
           applicant: {
             fullName: `AC-11-A ${runId}`,
-            phone: `09${runId.replace(/-/g, '').slice(0, 8)}A`,
+            phone: `09${suffixA}`,
             consentAt: new Date().toISOString(),
           },
           hrpAffCookie: makeHrAffCookie(attr.id),
@@ -429,14 +434,16 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03 public anon intake — DB-touching proof',
       expect(consumedAt1?.status).toBe('CONSUMED');
       expect(consumedAt1?.laborProfileId).toBe(dto1.laborProfileId);
 
-      // Second call (different applicant, same cookie pointing to same attribution).
-      // The writer's `existingAttr` guard (intake-writer.service.ts:130) prevents
-      // re-consumption; the attribution row stays as it is.
+      // Second call (different applicant, different phone, same cookie pointing
+      // to the same attribution). The writer's `existingAttr` guard at
+      // intake-writer.service.ts:130 prevents re-consumption; the attribution
+      // row stays as it is. The second applicant creates a SEPARATE LaborProfile
+      // (no normalizedPhone collision because suffixB is fresh).
       const dto2 = await withHrManagerContext(writer, 'system:public-intake', (tx) =>
         submitPublicIntake(tx, {
           applicant: {
             fullName: `AC-11-B ${runId}`,
-            phone: `09${runId.replace(/-/g, '').slice(0, 8)}B`,
+            phone: `09${suffixB}`,
             consentAt: new Date().toISOString(),
           },
           hrpAffCookie: makeHrAffCookie(attr.id),
