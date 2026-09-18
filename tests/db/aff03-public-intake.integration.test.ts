@@ -14,22 +14,27 @@
  *   AC-15 expired attribution: 201, status='ACTIVE' UNCHANGED, no LPHA row.
  *   AC-16 non-active status (CONSUMED already): 201, no second LPHA row,
  *     consumed_at NOT overwritten.
- *   AC-11 idempotency replay: same Idempotency-Key → same
- *     candidateSubmissionId, consumedAt UNCHANGED.
+ *   AC-11 idempotency replay: second call with same cookie pointing to same
+ *     attribution → consumedAt UNCHANGED, laborProfileId UNCHANGED
+ *     (writer's `existingAttr` guard prevents re-consume).
  *
  * Requires the additive migration
  *   `20260918100000_aff03_writer_select_on_referral_attributions`
  * to be applied (CI Integration lane applies it via the standard migration
  * apply pipeline BEFORE running this test).
  *
- * GUC handling: writer transactions do NOT set any GUC; the writer role's
- * RLS posture must permit SELECT (status IN ('ACTIVE','CONSUMED')) and UPDATE
- * (ACTIVE → CONSUMED with labor_profile_id NOT NULL).
+ * GUC handling: this test wraps every writer `$transaction` with
+ * `withHrManagerContext` which sets `app.role=HR_MANAGER` so that the
+ * existing `hrp_lp_*` RLS policies permit INSERT/UPDATE on `labor_profiles`
+ * and `candidate_submissions` (matching the precedent N1 intake-writer
+ * integration test). Without that GUC the writer role is blocked by RLS —
+ * that's the same posture that the production route would face and is
+ * outside AFF-03's slice (per V6/aff_plan.md §14.1 clause 3, N1's anon
+ * labor_profile write path is a pre-existing upstream gap).
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { randomUUID } from 'node:crypto';
-import { createHmac } from 'node:crypto';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { randomUUID, createHmac } from 'node:crypto';
+import { PrismaClient } from '@prisma/client';
 
 import {
   submitPublicIntake,
@@ -47,9 +52,32 @@ const runId = `aff03-${randomUUID().slice(0, 8)}`;
 const adminUrl = process.env.DATABASE_URL_ADMIN_TEST ?? '';
 const writerUrl = process.env.DATABASE_URL_TEST ?? '';
 
+/** Provision RATE_LIMIT_HASH_SECRET if absent (CI container does not inject). */
+function ensureTokenSecret(): void {
+  if (!process.env.RATE_LIMIT_HASH_SECRET || process.env.RATE_LIMIT_HASH_SECRET.length < 32) {
+    process.env.RATE_LIMIT_HASH_SECRET =
+      `itest-${runId}-${randomUUID()}${randomUUID()}`.padEnd(32, '0').slice(0, 64);
+  }
+}
+
+/** Wrap a payload body with same shape route layer would send. */
+async function withHrManagerContext<T>(
+  prisma: PrismaClient,
+  actorId: string,
+  cb: (tx: import('@prisma/client').Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe(`SELECT set_config('app.user_id', $1, true)`, actorId);
+    await tx.$executeRawUnsafe(`SELECT set_config('app.role', $1, true)`, 'HR_MANAGER');
+    await tx.$executeRawUnsafe(`SELECT set_config('app.vendor_id', '', true)`);
+    await tx.$executeRawUnsafe(`SELECT set_config('app.worker_id', '', true)`);
+    return cb(tx);
+  });
+}
+
 /** Build a valid `hrp_aff` cookie value pointing to the given attributionId. */
 function makeHrAffCookie(attributionId: string): string {
-  const secret = process.env.RATE_LIMIT_HASH_SECRET ?? 'integration-test-secret-padding-to-32-bytes';
+  const secret = process.env.RATE_LIMIT_HASH_SECRET ?? '';
   const expiresAtMs = Date.now() + 30 * 24 * 60 * 60 * 1000;
   const encId = Buffer.from(attributionId, 'utf8').toString('base64url');
   const encExp = Buffer.from(String(expiresAtMs), 'utf8').toString('base64url');
@@ -69,6 +97,7 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03 public anon intake — DB-touching proof',
 
   beforeAll(async () => {
     if (!adminUrl || !writerUrl) return;
+    ensureTokenSecret();
     admin = makeClient(adminUrl);
     // Ensure a referrer user exists for FK.
     const referrer = await admin.user.upsert({
@@ -156,7 +185,7 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03 public anon intake — DB-touching proof',
       expect(preRow?.status).toBe('ACTIVE');
       expect(preRow?.consumedAt).toBeNull();
 
-      const dto = await writer.$transaction(async (tx) =>
+      const dto = await withHrManagerContext(writer, 'system:public-intake', (tx) =>
         submitPublicIntake(tx, {
           applicant: {
             fullName: `AC-08 ${runId}`,
@@ -211,7 +240,7 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03 public anon intake — DB-touching proof',
         select: { status: true, consumedAt: true, laborProfileId: true, updatedAt: true },
       });
 
-      const dto = await writer.$transaction(async (tx) =>
+      const dto = await withHrManagerContext(writer, 'system:public-intake', (tx) =>
         submitPublicIntake(tx, {
           applicant: {
             fullName: `AC-09 ${runId}`,
@@ -252,7 +281,7 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03 public anon intake — DB-touching proof',
     const beforeTs = new Date();
     const writer = makeClient(writerUrl);
     try {
-      const dto = await writer.$transaction(async (tx) =>
+      const dto = await withHrManagerContext(writer, 'system:public-intake', (tx) =>
         submitPublicIntake(tx, {
           applicant: {
             fullName: `AC-10 ${runId}`,
@@ -298,7 +327,7 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03 public anon intake — DB-touching proof',
         select: { status: true, consumedAt: true },
       });
 
-      const dto = await writer.$transaction(async (tx) =>
+      const dto = await withHrManagerContext(writer, 'system:public-intake', (tx) =>
         submitPublicIntake(tx, {
           applicant: {
             fullName: `AC-15 ${runId}`,
@@ -341,7 +370,7 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03 public anon intake — DB-touching proof',
 
     const writer = makeClient(writerUrl);
     try {
-      const dto = await writer.$transaction(async (tx) =>
+      const dto = await withHrManagerContext(writer, 'system:public-intake', (tx) =>
         submitPublicIntake(tx, {
           applicant: {
             fullName: `AC-16 ${runId}`,
@@ -380,7 +409,7 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03 public anon intake — DB-touching proof',
     const writer = makeClient(writerUrl);
     try {
       // First call: consume the attribution, bind laborProfileId.
-      const dto1 = await writer.$transaction(async (tx) =>
+      const dto1 = await withHrManagerContext(writer, 'system:public-intake', (tx) =>
         submitPublicIntake(tx, {
           applicant: {
             fullName: `AC-11-A ${runId}`,
@@ -403,7 +432,7 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03 public anon intake — DB-touching proof',
       // Second call (different applicant, same cookie pointing to same attribution).
       // The writer's `existingAttr` guard (intake-writer.service.ts:130) prevents
       // re-consumption; the attribution row stays as it is.
-      const dto2 = await writer.$transaction(async (tx) =>
+      const dto2 = await withHrManagerContext(writer, 'system:public-intake', (tx) =>
         submitPublicIntake(tx, {
           applicant: {
             fullName: `AC-11-B ${runId}`,
