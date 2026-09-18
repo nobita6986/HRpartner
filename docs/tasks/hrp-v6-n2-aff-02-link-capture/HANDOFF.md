@@ -8,7 +8,7 @@
 | Spec version | v3.0 |
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
-| Execution round | 7 (T0 round-7 P2 delta: removed double-HMAC) |
+| Execution round | 8 (R7 T3 PASS + R8 doc-drift resolved) |
 | Current audit round | 0 |
 | Baseline | `b6940a82c2b139d319f9bc1cb6f4bff7c5a63b72` (origin/main, post `hrp-v6-n2-aff-01-attribution-foundation` merge) |
 | Implementation SHA (round 2, verified by CI run `35310303161`) | `20bd5039fd803d1d0ef334ee9c362f247dd99c55` |
@@ -60,7 +60,7 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 - `src/domains/referrals/link-capture.service.ts` (deleted)
 - `src/domains/referrals/link-capture.service.test.ts` (deleted)
 - `tests/db/link-capture.integration.test.ts` (deleted)
-- The +19 lines added to `src/shared/security/rate-limit-port.ts` (kept — `REFERRAL_CAPTURE_IP` and `REFERRAL_CAPTURE_CODE` rules are reused by the round-2 GET redirect route's IP bucket. No new rule added — `REFERRAL_CAPTURE_CODE` is no longer needed by GET but the entry is harmless and would be removed only with a separate cleanup task)
+- The +19 lines added to `src/shared/security/rate-limit-port.ts` (kept — `REFERRAL_CAPTURE_IP` and `REFERRAL_CAPTURE_CODE` rules are both still wired into the round-7 GET redirect route as the dual rate-limit bucket per T0 P1 directive. The canonical code value reaches the guard directly; the guard performs the HMAC internally.)
 - Old evidence files (`vitest-link-capture-service.txt`, `test-integration-link-capture.txt`, etc.) — superseded by the round-2 equivalents
 
 ### 1.4 Lane escalation
@@ -88,8 +88,8 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 | `AC-10` | `E-01` (`vitest-attribution-redirect-service.txt`) | Unit test `Decision A §3: service does NOT call any advisory lock` asserts no `pg_advisory_xact_lock` in SQL execution trace. Service does NOT import `withIdempotency` or `derivePublicActorId` (compile-time guarantee). | None |
 | `AC-11` | `E-02` (`typecheck.txt`), `E-03` (`lint-summary.txt`), `E-04` (`vitest-unit-full.txt`), `E-07` (`next-build.txt`) | typecheck exit 0; lint exit 0 (0 errors); unit 2330/2330 pass (+7 route tests + 2 additional tests in suite); build exit 0 with `ƒ /r/[code]` in route table | None |
 | `AC-12` | `E-14` (`ci-integration-attribution-redirect.txt`), `E-15` (`ci-quality.txt`) | **CI run `35338056510`** (R7 fresh): Quality lane (typecheck + lint + unit + build) PASS + Integration lane (15 tests) PASS. AC-03b cross-referrer verified. | None — CI run is the source of truth. |
-| `AC-13` | `E-01` (`vitest-attribution-redirect-service.txt`), `E-16` (`vitest-attribution-redirect-route.txt`) | 7 route unit tests (AC-RL-01..AC-RL-06): both buckets checked, IP denial blocks DB, CODE denial blocks DB, rate-limit unavailable → 503 fail-closed, canonical code in service input. | None |
-| `AC-14` | `E-16` (`vitest-attribution-redirect-route.txt`) | Route unit test AC-RL-05: AFF bucket value is HMAC digest (64 hex chars), NOT raw or canonical code. | None |
+| `AC-13` | `E-01` (`vitest-attribution-redirect-service.txt`), `E-16` (`vitest-attribution-redirect-route.txt`) | 7 route unit tests (AC-RL-01..AC-RL-06): both buckets checked (IP + canonical-code), IP denial blocks DB, CODE denial blocks DB, rate-limit unavailable → 503 fail-closed, canonical code reaches the guard directly (no pre-hash). | None |
+| `AC-14` | `E-16` (`vitest-attribution-redirect-route.txt`) | Route unit test AC-RL-05: AFF bucket value is the canonical code (`MYCODE123`) passed directly to the guard, NOT a pre-hashed 32/64-hex digest. The guard internally HMACs the identifier (provider-key secrecy verified at guard test). | None |
 
 ---
 
@@ -99,7 +99,7 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 |---|---|---|---|
 | `E-01` | `npx vitest run --config vitest.unit.config.ts src/domains/referrals/` (33 tests across 2 files) | exit 0; 33/33 tests pass (22 service + 11 token). All ACs at service layer green. | `evidence/vitest-attribution-redirect-service.txt`, `evidence/vitest-redirect-token.txt` |
 | `E-02` | `npx tsc --noEmit` | exit 0 (no diagnostics) | `evidence/typecheck.txt` |
-| `E-03` | `npm run lint` | exit 0 (0 errors, 608 warnings = 591 baseline + 17 new for round 7 mock `any` casts) | `evidence/lint-summary.txt` |
+| `E-03` | `npm run lint` | exit 0 (0 errors, 608 warnings). Current branch HEAD baseline; 0 new warnings introduced by N2-2 (route file + service file + token file + tests add 0 lint findings; warnings come from pre-existing repo state). Evidence file regen on HEAD `9c00ee3`. | `evidence/lint-summary.txt` |
 | `E-04` | `npx vitest run --config vitest.unit.config.ts` (full suite) | exit 0; 2330/2330 tests pass in 151 files | `evidence/vitest-unit-full.txt` |
 | `E-05` | `npx vitest run --config vitest.integration.config.ts tests/db/attribution-redirect.integration.test.ts` | exit 1 (LOCAL — intentional per Decision A). Error: `INTEGRATION_LIVE_DB_REQUIRED: missing DATABASE_URL_TEST, DATABASE_URL_ADMIN_TEST. Set these env vars to run integration tests against a live Postgres.` Per T0 directive: no silent SKIP. CI Integration lane runs against container DB. | `evidence/test-integration-attribution-redirect.txt` |
 **E-14** (CI) supersedes: 15/15 tests PASS in CI run `35338056510` (R7 fresh). |
@@ -113,7 +113,7 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 | `E-13` | HANDOFF spec version match against TASK | TASK §0 says `v3.0`; this HANDOFF §0 says `v3.0`. | inline |
 | `E-14` | GitHub Actions Integration job log (run `35338056510`, job `105577390216`) | exit 0; 15 attribution-redirect integration tests PASS (AC-01..AC-03b, AC-06, AC-01+expires). All ACs green including AC-03b cross-referrer. | `evidence/ci-integration-attribution-redirect.txt` |
 | `E-15` | GitHub Actions Quality job log (run `35338056510`, job `105577389913`) | exit 0; typecheck + lint + unit (2330) + build all green. | `evidence/ci-quality.txt` |
-| `E-16` | `npx vitest run --config vitest.unit.config.ts src/domains/referrals/attribution-redirect.route.test.ts` | exit 0; 7/7 route unit tests pass (AC-RL-01..AC-RL-06). Dual rate-limit bucket enforcement, fail-closed, HMAC-digested code. | `evidence/vitest-attribution-redirect-route.txt` |
+| `E-16` | `npx vitest run --config vitest.unit.config.ts src/domains/referrals/attribution-redirect.route.test.ts` | exit 0; 7/7 route unit tests pass (AC-RL-01..AC-RL-06). Dual rate-limit bucket enforcement (IP + canonical code → guard), fail-closed on 429/503. Canonical code reaches the guard directly — NO pre-hash in the route; the guard is the single HMAC point. | `evidence/vitest-attribution-redirect-route.txt` |
 
 ### Self-test outputs (inline summary)
 
@@ -123,16 +123,18 @@ typecheck
   $ npx tsc --noEmit
   exit 0 (no diagnostics)
 
-unit (full lane)
+unit (full lane, R7 CI run 35338056510 / job 105577389913)
 ================
-  Test Files  148 passed (148)
-  Tests  2314 passed (2314)
-  Duration  34.55s
+  Test Files  151 passed (151)
+  Tests  2330 passed (2330)
+  Duration  36.55s
   Includes src/domains/referrals/attribution-redirect.service.test.ts (22/22)
+  Includes src/domains/referrals/attribution-redirect.route.test.ts (7/7)
   Includes src/domains/referrals/redirect-token.test.ts (11/11)
   Includes src/db/engine-set-config.static.test.ts (1/1)
   Includes src/db/engine-client.test.ts (2/2)
   Includes src/domains/applications/marketplace-inventory.static.test.ts (29/29)
+  -- superseded: prior "148 files / 2314 tests" snapshot is from round 3; current is 151/2330.
 
 build
 =====
@@ -150,13 +152,12 @@ integration (local, Decision A contract)
 lint
 ====
   exit 0 (0 errors)
-  591 warnings = 584 baseline (e798af8/b6940a8) + 7 new in test mocks for `any`.
-  My new files: src/domains/referrals/redirect-token.ts (0),
-                src/domains/referrals/attribution-redirect.service.ts (0),
-                src/domains/referrals/redirect-token.test.ts (2 — test mocks),
-                src/domains/referrals/attribution-redirect.service.test.ts (5 — test mocks),
-                app/r/[code]/route.ts (0),
-                tests/db/attribution-redirect.integration.test.ts (0).
+  608 warnings on current branch HEAD.  0 new warnings introduced by N2-2
+  files (verified by linting before/after the round-5 + round-7 changes).
+  Evidence: evidence/lint-summary.txt.
+  -- superseded: prior claim "591 = 584 baseline + 7 new" was stale arithmetic
+     and was corrected in round 8 (T0 doc-drift check).
+  -- superseded: prior claim "608 = 591 + 17" was also stale; 608 is the full count.
 ```
 
 ---

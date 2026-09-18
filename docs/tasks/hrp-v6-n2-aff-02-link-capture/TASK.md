@@ -19,7 +19,7 @@
 | Forbidden paths | `docs/TIER0_SHIFT_HANDOVER.md`, `prisma/schema.prisma`, `prisma/migrations/**`, `src/domains/talent/**`, `src/db/engine-client.ts` (reuse only), any N2-1 policy/trigger source |
 | Required gates | `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run build`; `npm run test:integration` (DB env must be present — INTEGRATION_LIVE_DB_REQUIRED, NOT a self-skip) |
 | Current execution round | 7 |
-| Current audit round | 1 |
+| Current audit round | 8 |
 | Next gate | T3 R7 PASS received → status now `READY_FOR_AUDIT` (gate-allowed); T3 round-8 close-out + Tier 0 production-gate authorization (BLK-01: N2-1 migration + app_engine_writer credential). PR #16 remains open until production gate cleared. |
 
 > **v1.0 → v2.0 → v3.0 revisions:**
@@ -271,7 +271,8 @@ HTTP/1.1 503 Service Unavailable
 | 5 | READY_FOR_AUDIT (v3.0 + P1+P2 fixes) | T0 verdict: missing REFERRAL_CAPTURE_CODE bucket; incorrect "RLS-enforced" claim on direct `$queryRaw` call. Dual rate-limit bucket + named referral-public-lookup boundary added. |
 | 6 | RESOLVED (v3.0 + P1+P2 fixes) | T3 audit round 5: PASS. P1 dual-rate-limit bucket correct; P2 named boundary correct; all gates pass with fresh CI evidence (run `35329611208`). P3 doc drift resolved in this commit. |
 | 7 | READY_FOR_AUDIT (v3.0 + delta fix) | T0 round-7 P2 delta: removed double-HMAC. The route previously pre-hashed the canonical code via `hashRateLimitIdentifier` and then passed the digest to `enforceRateLimits`, which performs its own canonicalization + HMAC internally. The outer hash produced a 64-hex blob where the guard expected a 32-hex digest. Fix: route now passes the canonical code directly; guard is the single hash point. |
-| 8 | RESOLVED (R7 T3 PASS + P3 doc drift resolved) | T3 audit round 7: PASS. Route no longer pre-hashes; canonicalCode reaches `enforceRateLimits` directly. AC-RL-05 updated correctly. CI run `35338056510` confirms 2330/2330 unit + 15/15 integration. P3 doc drift resolved in this commit: AC-01 row (22/22), AC-12 row (CI `35338056510`), E-04 row (2330/2330 in 151 files), E-03 row (608 warnings). |
+| 8 | READY_FOR_AUDIT (R7 T3 PASS + P8 docs stable) | T3 audit round 7: PASS. Route no longer pre-hashes; canonicalCode reaches `enforceRateLimits` directly. AC-RL-05 updated correctly. CI run `35338056510` confirms 2330/2330 unit + 15/15 integration. Status reconciled to READY_FOR_AUDIT per verify-handoff.ps1 H-10 enum constraint (RESOLVED is not a HANDOFF state in tier1.md). |
+| 9 | READY_FOR_AUDIT (R8 T0 doc-drift sweep) | T0 round-8 doc-drift sweep: (a) `TASK.md` §0 "Current audit round" 1→8; (b) `HANDOFF.md` §0 "Execution round" 7→8; (c) `HANDOFF.md` AC-14 row no longer claims the AFF bucket is "HMAC digest (64 hex)" — now says canonical code reaches guard directly, guard is the single HMAC point; (d) `HANDOFF.md` §1.3 stopped claiming "REFERRAL_CAPTURE_CODE is no longer needed by GET" — the dual bucket is still wired per T0 P1 directive; (e) `HANDOFF.md` E-03 row stopped citing stale "591 baseline + 17 new" arithmetic — actual `npm run lint` on HEAD = 0 errors, 608 warnings (current branch baseline); (f) `HANDOFF.md` §5 Self-test inline summary updated to current vitest output (151 files, 2330 tests, 36.55s) and current lint count (608); (g) `HANDOFF.md` AC-13 row wording aligned with AC-14. No code/runtime changes — docs and the evidence file only. |
 
 ---
 
