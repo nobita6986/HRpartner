@@ -19,6 +19,7 @@ import { createOrMatchLaborProfile } from './labor-profile.service';
 import type { ApplicantInput, CreateOrMatchResult } from './labor-profile.types';
 import { openPlacementCase, type OpenPlacementCaseResult } from './placement-case.service';
 import { InvalidPartnerRefError } from './intake.errors';
+import { createInitialAffiliateAssignment } from './handling-assignment.service';
 
 export type IntakeChannel =
   | 'PUBLIC_MARKETPLACE'
@@ -51,6 +52,8 @@ export interface CreateCandidateSubmissionFromIntakeInput {
   partnerRef?: PartnerRef | null;
   /** Caller consent timestamp (ghi vào LaborProfile.consentAt nếu NEW_PROFILE). */
   consentAt?: Date | null;
+  /** Resolved ReferralAttribution ID for auto-assignment (AFF-05A). */
+  referralAttributionId?: string | null;
 }
 
 export interface CreateCandidateSubmissionFromIntakeResult {
@@ -114,6 +117,25 @@ export async function createCandidateSubmissionFromIntake(
     // POSSIBLE_MATCH: caller phải tự quyết (DEC-04). Phase này KHÔNG merge.
     // Trả lỗi để caller xử lý (vd trả về client với verdict POSSIBLE_MATCH + candidates).
     throw new PossibleMatchNotResolvedError(match);
+  }
+
+  // 1.5. Bind ReferralAttribution & create initial Handling Assignment (AFF-05A).
+  if (input.referralAttributionId) {
+    const existingAttr = await tx.referralAttribution.findUnique({
+      where: { laborProfileId },
+      select: { id: true },
+    });
+    if (!existingAttr) {
+      const attr = await tx.referralAttribution.update({
+        where: { id: input.referralAttributionId },
+        data: { laborProfileId },
+        select: { referrerUserId: true },
+      });
+      await createInitialAffiliateAssignment(tx, {
+        laborProfileId,
+        referrerUserId: attr.referrerUserId,
+      });
+    }
   }
 
   // 2. Resolve/open active PlacementCase.

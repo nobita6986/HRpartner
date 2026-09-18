@@ -160,6 +160,11 @@ model User {
   subManagedProjects2 Project[] @relation("ProjectSubPm2") // M13: phó PM thứ 2
   managingWorkers    Worker[]  @relation("WorkerManager")   // M13: quản lý trực tiếp worker
 
+  // AFF-05A: Handling Assignments & Attributions
+  assignedHandlingAssignments LaborProfileHandlingAssignment[] @relation("AssigneeAssignments")
+  createdHandlingAssignments LaborProfileHandlingAssignment[] @relation("AssignedByAssignments")
+  referralAttributions ReferralAttribution[]
+
   // AV1 — singleton HomepageSettings updater
   homepageSettingsUpdates HomepageSettings[]
 
@@ -1412,6 +1417,9 @@ model LaborProfile {
   placementCases  PlacementCase[]
   placements      Placement[]      @relation("LaborProfilePlacements")
 
+  handlingAssignments LaborProfileHandlingAssignment[]
+  referralAttribution ReferralAttribution?
+
   @@index([normalizedPhone])
   @@index([cccdNumber])
   @@index([completeness, identityVerification])
@@ -1683,4 +1691,49 @@ model MediaAssignment {
   @@unique([mediaId, ownerType, ownerId])
   @@index([ownerType, ownerId])
   @@map("media_assignment")
+}
+
+model ReferralAttribution {
+  id                      String    @id @default(uuid())
+  referrerUserId          String    @map("referrer_user_id")
+  affiliateCodeSnapshot   String    @map("affiliate_code_snapshot")
+  firstClickedAt          DateTime  @map("first_clicked_at")
+  expiresAt               DateTime  @map("expires_at")
+  laborProfileId          String?   @unique @map("labor_profile_id")
+  status                  String
+  consumedAt              DateTime? @map("consumed_at")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+
+  referrerUser            User          @relation(fields: [referrerUserId], references: [id])
+  laborProfile            LaborProfile? @relation(fields: [laborProfileId], references: [id])
+
+  @@map("referral_attributions")
+}
+
+model LaborProfileHandlingAssignment {
+  id                    String    @id @default(uuid())
+  laborProfileId        String    @map("labor_profile_id")
+  assigneeUserId        String    @map("assignee_user_id")
+  assignedByUserId      String?   @map("assigned_by_user_id") // null/system cho AFF_INITIAL
+  source                String    // AFF_INITIAL | MANAGER_ASSIGNMENT | CASE_RESOLUTION
+  startsAt              DateTime  @map("starts_at")
+  expiresAt             DateTime? @map("expires_at")
+  status                String    // ACTIVE | COMPLETED | EXPIRED | TRANSFERRED | REVOKED
+  reason                String?   @db.Text
+  previousAssignmentId  String?   @map("previous_assignment_id")
+  completedMilestoneId  String?   @map("completed_milestone_id")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  version               Int       @default(1)
+
+  laborProfile          LaborProfile @relation(fields: [laborProfileId], references: [id])
+  assigneeUser          User         @relation("AssigneeAssignments", fields: [assigneeUserId], references: [id])
+  assignedByUser        User?        @relation("AssignedByAssignments", fields: [assignedByUserId], references: [id])
+  previousAssignment    LaborProfileHandlingAssignment?  @relation("HandlingAssignmentHistory", fields: [previousAssignmentId], references: [id])
+  nextAssignments       LaborProfileHandlingAssignment[] @relation("HandlingAssignmentHistory")
+
+  @@index([laborProfileId])
+  @@index([assigneeUserId])
+  @@map("labor_profile_handling_assignments")
 }
