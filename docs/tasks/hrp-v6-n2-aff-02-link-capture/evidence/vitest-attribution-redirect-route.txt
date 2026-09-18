@@ -1,0 +1,21 @@
+﻿node.exe : [33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/tier1-n2-aff-02-link-capture
+
+ Γ£ô src/domains/referrals/attribution-redirect.route.test.ts (7 tests) 22ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  16:24:36
+   Duration  546ms (transform 78ms, setup 0ms, collect 148ms, tests 22ms, environment 0ms, prepare 108ms)
+
+exit=0
+generated_at=2026-09-18T16:24:36.8460484+07:00
+sha=0ceddfe1bcb725f8c6588be029acc2984d2a9f7b
