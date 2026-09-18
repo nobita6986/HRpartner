@@ -44,9 +44,9 @@
 | `app/r/[code]/route.ts` | **NEW** | DEC-A2, DEC-A16: GET handler — rate-limit (IP bucket only) → query + cookie read → engine fail-closed → service → HTTP response |
 | `src/domains/referrals/attribution-redirect.service.ts` | **NEW** | DEC-A1..DEC-A11, DEC-A14: typed `RedirectOutcome` engine. Writer-side RLS-enforced `User.affCode` lookup; cookie verification (sig + expiry + DB re-read); engine-side `set_config('hrp.engine_context', 'link-capture', true)` + raw SQL INSERT |
 | `src/domains/referrals/redirect-token.ts` | **NEW** | DEC-A6: HMAC-SHA256 cookie token signing/verification (`node:crypto`, no new dependency). Format: `b64(id).b64(exp).b64(kv).b64(sig)`. Uses `RATE_LIMIT_HASH_SECRET` (existing) |
-| `src/domains/referrals/attribution-redirect.service.test.ts` | **NEW** (19 tests) | AC-01..AC-10 coverage at service layer (mocked writer + engine) |
+| `src/domains/referrals/attribution-redirect.service.test.ts` | **NEW** (22 tests) | AC-01..AC-10 + cross-referrer coverage at service layer (mocked writer + engine) |
 | `src/domains/referrals/redirect-token.test.ts` | **NEW** (11 tests) | Token sign/verify, tamper, expire, wrong secret, malformed |
-| `tests/db/attribution-redirect.integration.test.ts` | **NEW** (14 tests) | AC-01..AC-08 container-DB coverage. **Must RUN (not SKIP)** — fails explicitly with `INTEGRATION_LIVE_DB_REQUIRED` when env absent |
+| `tests/db/attribution-redirect.integration.test.ts` | **NEW** (15 tests) | AC-01..AC-03b container-DB coverage. **Must RUN (not SKIP)** — fails explicitly with `INTEGRATION_LIVE_DB_REQUIRED` when env absent |
 | `vitest.integration-files.ts` | file entry swapped | `tests/db/link-capture.integration.test.ts` → `tests/db/attribution-redirect.integration.test.ts` |
 | `src/domains/applications/marketplace-inventory.static.test.ts` | `MARKETPLACE_ANON` shrinks | Removed `app/api/public/referrals/[affCode]/capture/route.ts` (no longer an anonymous POST endpoint) |
 
@@ -93,11 +93,12 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 
 | Evidence | Command / method | Exit / measured result | Artifact |
 |---|---|---|---|
-| `E-01` | `npx vitest run --config vitest.unit.config.ts src/domains/referrals/` (30 tests across 2 files) | exit 0; 30/30 tests pass (19 service + 11 token). All ACs at service layer green. | `evidence/vitest-attribution-redirect-service.txt`, `evidence/vitest-redirect-token.txt` |
+| `E-01` | `npx vitest run --config vitest.unit.config.ts src/domains/referrals/` (33 tests across 2 files) | exit 0; 33/33 tests pass (22 service + 11 token). All ACs at service layer green. | `evidence/vitest-attribution-redirect-service.txt`, `evidence/vitest-redirect-token.txt` |
 | `E-02` | `npx tsc --noEmit` | exit 0 (no diagnostics) | `evidence/typecheck.txt` |
 | `E-03` | `npm run lint` | exit 0 (0 errors, 591 warnings = 584 baseline + 7 new in test mocks for `any`) | `evidence/lint-summary.txt` |
-| `E-04` | `npx vitest run --config vitest.unit.config.ts` (full suite) | exit 0; 2311/2311 tests pass in 148 files (62.47s) | `evidence/vitest-unit-full.txt` |
+| `E-04` | `npx vitest run --config vitest.unit.config.ts` (full suite) | exit 0; 2314/2314 tests pass in 148 files | `evidence/vitest-unit-full.txt` |
 | `E-05` | `npx vitest run --config vitest.integration.config.ts tests/db/attribution-redirect.integration.test.ts` | exit 1 (LOCAL — intentional per Decision A). Error: `INTEGRATION_LIVE_DB_REQUIRED: missing DATABASE_URL_TEST, DATABASE_URL_ADMIN_TEST. Set these env vars to run integration tests against a live Postgres.` Per T0 directive: no silent SKIP. CI Integration lane runs against container DB. | `evidence/test-integration-attribution-redirect.txt` |
+**E-14** (CI) supersedes: 15/15 tests PASS in CI run `35322545969`. |
 | `E-06` | `npx vitest run --config vitest.unit.config.ts src/db/engine-set-config.static.test.ts src/db/engine-client.test.ts src/domains/applications/marketplace-inventory.static.test.ts` | exit 0; 32/32 tests pass (1+2+29). Static lint rejects `set_config(..., false)` in 0 files of `src/**/*.ts`. Static inventory test green after `MARKETPLACE_ANON` entry removal. | `evidence/vitest-static-checks.txt` |
 | `E-07` | `npm run build` | exit 0; route table includes `ƒ /r/[code] 349 B 103 kB` | `evidence/next-build.txt` |
 | `E-08` | `npx vitest run --config vitest.integration.config.ts` (full integration config; 21 files incl. this one) | exit 1 (LOCAL — many integration tests fail without DB env, including my new test per Decision A). 21 files registered. CI provides runtime env. | `evidence/vitest-integration-files-listed.txt` |
@@ -106,8 +107,8 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 | `E-11` | `git grep -nE 'set_config\([^,]+,[^,]+,\s*false\s*\)' src/domains/referrals/` | exit 0; 0 matches. | inline |
 | `E-12` | `git grep -nE 'pg_advisory_xact_lock|withIdempotency|derivePublicActorId|Idempotency-Key' src/domains/referrals/ app/r/` | exit 0; 0 matches (Decision A §3: all removed). | inline |
 | `E-13` | HANDOFF spec version match against TASK | TASK §0 says `v3.0`; this HANDOFF §0 says `v3.0`. | inline |
-| `E-14` | GitHub Actions Integration job log (run `35310303161`, job `105490789083`) | exit 0; 21 integration test files passed (414 tests + 2 skipped). All 14 attribution-redirect tests green (AC-01..AC-08 + AC-04 + expires + AC-07 + 2 invalid-job variants). | `evidence/ci-integration-attribution-redirect.txt` |
-| `E-15` | GitHub Actions Quality job log (run `35310303161`, job `105490788848`) | exit 0; typecheck + lint + unit + build all green. Quality lane verifies the same gates as local CI. | `evidence/ci-quality.txt` |
+| `E-14` | GitHub Actions Integration job log (run `35322545969`, job `105528084535`) | exit 0; 15 attribution-redirect integration tests PASS (AC-01..AC-03b, AC-06, AC-01+expires). All ACs green including AC-03b cross-referrer. | `evidence/ci-integration-attribution-redirect.txt` |
+| `E-15` | GitHub Actions Quality job log (run `35322545969`, job `105528084193`) | exit 0; typecheck + lint + unit + build all green. | `evidence/ci-quality.txt` |
 
 ### Self-test outputs (inline summary)
 
@@ -120,9 +121,9 @@ typecheck
 unit (full lane)
 ================
   Test Files  148 passed (148)
-  Tests  2311 passed (2311)
-  Duration  62.47s
-  Includes src/domains/referrals/attribution-redirect.service.test.ts (19/19)
+  Tests  2314 passed (2314)
+  Duration  34.55s
+  Includes src/domains/referrals/attribution-redirect.service.test.ts (22/22)
   Includes src/domains/referrals/redirect-token.test.ts (11/11)
   Includes src/db/engine-set-config.static.test.ts (1/1)
   Includes src/db/engine-client.test.ts (2/2)
@@ -136,7 +137,7 @@ build
 integration (local, Decision A contract)
 ========================================
   $ npx vitest run --config vitest.integration.config.ts tests/db/attribution-redirect.integration.test.ts
-  ❯ tests/db/attribution-redirect.integration.test.ts (14 tests | 14 skipped)
+  ❯ tests/db/attribution-redirect.integration.test.ts (15 tests | 15 skipped)
   FAIL  N2-2 Attribution Redirect Integration
   Error: INTEGRATION_LIVE_DB_REQUIRED: missing DATABASE_URL_TEST, DATABASE_URL_ADMIN_TEST.
   → per T0 directive: SKIP/ENV_BLOCKED is not PASS. CI Integration lane must run.
@@ -267,7 +268,7 @@ Per T3 audit feedback, the implementation SHA verified by CI run `35310303161` w
 | `DEV-02` | Helper convention | Deviates from the convention of "no Prisma model → refuse to add a route" by **not** introducing a Prisma model here. Two options considered: (a) add a Prisma model for `referral_attributions`; (b) use raw SQL inside the engine transaction. Chose (b) — the table was added by N2-1 raw DDL, and introducing a Prisma model in N2-2 scope would drift from N2-1 AUDIT (round 2 PASS). Tier 3 / Tier 0 may want a separate cleanup task to add the Prisma model later. | None (Tier 1 chose; documented). |
 | `DEV-03` | Decision A §3 | The "exactly-one initial capture" invariant is **deferred** to a separate CRITICAL additive schema slice. Decision A documents: simultaneous initial requests without a cookie can create orphan rows in dev/test. For production-grade exactly-one semantics, a CRITICAL additive task is needed (out of N2-2). | Tier 0 / Owner: schedule separate CRITICAL additive slice |
 | `BLK-01` | Production gate | N2-1 production migration and `app_engine_writer` credential are **not** authorized by Tier 0 — verbatim from T0 directive. This slice cannot be deployed to production until Tier 0 authorizes both. The slice is PR-ready + audit-ready and ships the contract; the production gate is out of Tier 1 scope. | Tier 0 authorize (N2-1 prod migration + engine credential) |
-| `BLK-02` | Integration evidence (RESOLVED via CI) | CI Integration lane (run `35310303161`, job `105490789083`) provides the live runtime env: all 14 attribution-redirect tests PASS. Local integration test still FAILS with `INTEGRATION_LIVE_DB_REQUIRED` by design (no local DB), but CI is the source of truth for the integration gate. Evidence files: `evidence/ci-integration-attribution-redirect.txt`. | RESOLVED |
+| `BLK-02` | Integration evidence (RESOLVED via CI) | CI Integration lane (run `35322545969`, job `105528084535`) provides the live runtime env: all 15 attribution-redirect tests PASS including AC-03b. Local integration test still FAILS with `INTEGRATION_LIVE_DB_REQUIRED` by design (no local DB), but CI is the source of truth for the integration gate. Evidence files: `evidence/ci-integration-attribution-redirect.txt`. | RESOLVED |
 
 No other deviations. No other blockers.
 
@@ -276,7 +277,7 @@ No other deviations. No other blockers.
 ## 5. Final status
 
 - **Outcome**: Public referral-link redirect endpoint delivered as pure application slice per T0 Decision A. Service + route + token signing + unit + container-DB integration test are in place. N2-1 schema, RLS policies, and triggers are **unchanged** (zero forbidden-path writes).
-- **Gates**: typecheck=0, lint=0 errors, unit=2311/2311, build=success. **CI Integration lane (run `35310303161`): PASS** — 21 files / 414 tests passed (all 14 attribution-redirect integration tests green); Quality lane PASS (typecheck + lint + unit + build all green). Local intentionally FAILs with `INTEGRATION_LIVE_DB_REQUIRED` (no DB env), which is the design-correct failure mode per T0 Decision A.
+- **Gates**: typecheck=0, lint=0 errors, unit=2314/2314, build=success. **CI Integration lane (run `35322545969`): PASS** — all 15 attribution-redirect integration tests green (AC-01..AC-03b, AC-06, AC-01+expires); Quality lane PASS (typecheck + lint + unit + build all green). Local intentionally FAILs with `INTEGRATION_LIVE_DB_REQUIRED` (no DB env), which is the design-correct failure mode per T0 Decision A.
 - **Production gate** (separate from this slice): N2-1 production migration + `app_engine_writer` credential — awaits Tier 0 authorization.
 - **Lane**: CRITICAL/LIGHT, as briefed. No escalation.
 
