@@ -36,13 +36,13 @@
 | AC | Evidence | Result | Limitation |
 |---|---|---|---|
 | — | `verify-task.ps1 -TaskPath ...` | `RESULT: PASS` | `None` |
-| `AC-01` | `E-01` | `Tests 3 passed (3)` | `None` |
+| `AC-01` | `E-01` | `Tests 2290 passed (2290)` | `None` |
 | `AC-02` | `E-02` | `Compiled successfully in ~25s` | `None` |
-| `AC-03` | `E-01` | `Tests 3 passed (3)` | `None` |
+| `AC-03` | `E-01` | `Tests 2290 passed (2290)` | `None` |
 | `AC-04` | `E-02` | `Compiled successfully in ~25s` | `None` |
-| `AC-05` | `E-01` | `Tests 3 passed (3)` | `None` |
+| `AC-05` | `E-01` | `Tests 2290 passed (2290)` | `None` |
 | `AC-06` | `E-02` | `Compiled successfully in ~25s` | `None` |
-| `AC-07` | `E-01` | `Tests 3 passed (3)` | `None` |
+| `AC-07` | `E-01` | `Tests 2290 passed (2290)` | `None` |
 | `AC-08` | `E-02` | `Compiled successfully in ~25s` | `None` |
 | `AC-09` | `E-02` | `Compiled successfully in ~25s` | `None` |
 
@@ -50,7 +50,7 @@
 
 | Evidence | Command / method | Exit / measured result | Artifact |
 |---|---|---|---|
-| `E-01` | `npm run test:unit src/domains/talent/labor-profile.read-service.test.ts app/api/admin/labor-profiles/route.test.ts` | `0` | `inline` |
+| `E-01` | `npm run test:unit` | `0` | `docs/tasks/hrp-v6-admin-labor-profile-workbench/evidence/test-unit.txt` |
 | `E-02` | `npm run build` | `0` | `inline` |
 | `E-03` | `verify-task.ps1` | `PASS` | `inline` |
 | `E-04` | `verify-handoff.ps1` | `PASS` | `inline` |
@@ -70,6 +70,6 @@ Evidence files are logged to `docs/tasks/hrp-v6-admin-labor-profile-workbench/ev
 
 - **PII Oracle Closed**: `cccdNumber` is now conditionally included in generic search *only* when `canSeeSensitive` is active (`labor-profile.read-service.ts`).
 - **Canonical Intake API**: Re-routed `POST /api/admin/labor-profiles` to consume `createCandidateSubmissionFromIntake`, ensuring `ADMIN_INTAKE` is properly documented inside the submission schema.
-- **Deduplication UI**: Properly handles 409 `POSSIBLE_MATCH` resolving down to `forceNew: true` flag.
+- **Deduplication UI**: Properly handles 409 `POSSIBLE_MATCH`. The `forceNew` flag has been fully removed from both API, form, and tests.
 
 Handoff status: READY_FOR_AUDIT

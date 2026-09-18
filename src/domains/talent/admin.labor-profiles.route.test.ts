@@ -1,6 +1,6 @@
 import { expect, test, vi, describe, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { POST } from './route';
+import { POST } from '@/app/api/admin/labor-profiles/route';
 import { getAuthContext } from '@/src/shared/auth/auth-context';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { createCandidateSubmissionFromIntake, PossibleMatchNotResolvedError } from '@/src/domains/talent/intake-writer.service';
@@ -98,34 +98,4 @@ describe('POST /api/admin/labor-profiles', () => {
     expect(data.candidates[0].laborProfileId).toBe('lp-2');
   });
 
-  test('forceNew bypasses intake writer and creates profile directly', async () => {
-    const mockTx = {
-      laborProfile: {
-        create: vi.fn().mockResolvedValue({ id: 'lp-forced' }),
-      },
-    };
-    vi.mocked(withDbContext).mockImplementation(async (prisma, ctx, fn) => {
-      return fn(mockTx as any);
-    });
-
-    const req = createRequest({
-      fullName: 'John Doe',
-      phone: '0912345678',
-      consent: true,
-      forceNew: true, // User chose to bypass
-    });
-
-    const res = await POST(req);
-    expect(res.status).toBe(201);
-    
-    // Intake writer NOT called
-    expect(createCandidateSubmissionFromIntake).not.toHaveBeenCalled();
-    // Manual creation triggered
-    expect(mockTx.laborProfile.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        fullName: 'John Doe',
-        phone: '0912345678',
-      })
-    });
-  });
 });
