@@ -51,4 +51,10 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // Validates affCode + job allowlist + hrp_aff cookie + engine context.
   // RUNs (not SKIPs) against live container DB; fails explicitly if DB unavailable.
   'tests/db/attribution-redirect.integration.test.ts',
+  // hrp-v6-n2-aff-03-apply-attribution: POST /api/public/intake. Validates cookie
+  // → ReferralAttribution lookup, server-clock + status guards, consumption,
+  // and LaborProfileHandlingAssignment creation. Requires the additive
+  // migration `20260918100000_aff03_writer_select_on_referral_attributions`
+  // to be applied (CI Integration lane applies via the standard pipeline).
+  'tests/db/aff03-public-intake.integration.test.ts',
 ];
