@@ -44,4 +44,3 @@ ALTER TABLE "labor_profile_handling_assignments" ADD CONSTRAINT "labor_profile_h
 
 -- AddForeignKey
 -- AddForeignKey
-ALTER TABLE "referral_attributions" ADD CONSTRAINT "referral_attributions_labor_profile_id_fkey" FOREIGN KEY ("labor_profile_id") REFERENCES "labor_profiles"("id") ON DELETE SET NULL ON UPDATE CASCADE;

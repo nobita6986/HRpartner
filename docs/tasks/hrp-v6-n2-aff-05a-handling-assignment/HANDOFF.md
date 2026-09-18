@@ -47,6 +47,11 @@
 ## 5. Final status
 
 - Tất cả P1 và P0 từ round 1 đã được xử lý xong.
+- Expiry dùng server clock trực tiếp ở READ path (không dựa vào scheduler hay job update trạng thái DB).
+- Thời gian 7 ngày cho Affiliate assignment hiện là policy constant hard-coded.
+- Idempotency / outbox (để handle N5 invariant) là phần follow-up.
+- Việc xử lý column version (optimistic locking) cũng được defer lại làm follow-up.
 
 > Handoff status: READY_FOR_AUDIT
+
 
