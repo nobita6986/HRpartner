@@ -7,7 +7,7 @@
 | Task slug | hrp-v6-n2-aff-05a-handling-assignment |
 | Work type | CODE |
 | Assurance lane | STANDARD |
-| Audit mode | NONE |
+| Audit mode | LIGHT |
 | Audit reason | N/A |
 | Spec version | v1.1 |
 | Status | READY_FOR_EXECUTION |
@@ -100,6 +100,7 @@
 | ID | Risk | Mitigation / rollback |
 |---|---|---|
 | RISK-01 | Race condition during profile creation. | Handled via P2002 catch block. |
+| RISK-02 | N5 Idempotency/Outbox gap | Will be addressed as a followup refactor |
 
 ## 8. Open Questions
 
@@ -117,4 +118,5 @@
 |---|---|---|---|
 | v1.0 | 2026-09-18 | Initial contract | Initial |
 | v1.1 | 2026-09-18 | Rewrite to template and fix P1s | Round 1 Audit |
+
 

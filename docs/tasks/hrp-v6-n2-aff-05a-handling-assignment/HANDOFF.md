@@ -7,10 +7,10 @@
 | Task | hrp-v6-n2-aff-05a-handling-assignment |
 | Spec version | v1.1 |
 | Assurance lane | STANDARD |
-| Audit mode | NONE |
+| Audit mode | LIGHT |
 | Execution round | 2 |
-| Baseline | 1679c49d23a672dafb498bb757894ed9939b6a86 |
-| Status | READY_FOR_REVIEW |
+| Baseline | ada7c83bcc7294f828e6a403f8f406c550954f7b |
+| Status | READY_FOR_AUDIT |
 
 ## 1. Outcome and changed surface
 
@@ -48,4 +48,5 @@
 
 - Tất cả P1 và P0 từ round 1 đã được xử lý xong.
 
-> Handoff status: READY_FOR_REVIEW
+> Handoff status: READY_FOR_AUDIT
+
