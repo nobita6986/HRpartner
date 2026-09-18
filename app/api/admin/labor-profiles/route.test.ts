@@ -82,7 +82,7 @@ describe('POST /api/admin/labor-profiles', () => {
     const mockError = new PossibleMatchNotResolvedError({ 
       verdict: 'POSSIBLE_MATCH',
       candidates: [{ laborProfileId: 'lp-2', signalsMatched: [], conflictingEvidence: [] }] 
-    });
+    } as any);
     vi.mocked(createCandidateSubmissionFromIntake).mockRejectedValue(mockError);
 
     const req = createRequest({

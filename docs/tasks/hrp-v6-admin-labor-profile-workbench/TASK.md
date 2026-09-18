@@ -12,6 +12,7 @@
 | Spec version | `v1.0` |
 | Status | `READY_FOR_AUDIT` |
 | Planner | `Tier 1` |
+| Planner authority | `docs/V6/V6_OUTSTANDING_WORK_PLAN.md §8` |
 | Baseline | `e798af80fd4111b5c41688abc1b9b9362b3b7727` |
 | In-scope roots | `src/domains/talent/**`, `app/api/admin/labor-profiles/**`, `app/admin/labor-profiles/**` |
 | Forbidden paths | `prisma/schema.prisma` |
@@ -133,4 +134,4 @@
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-09-18` | Initial contract | Initial |
-| `v1.1` | `2026-09-18` | Round 2-4 fixes | Fixed PII and Dedup logic |
+| `v1.0` | `2026-09-18` | Round 4 fixes | Canonical matching, dedup, PII |

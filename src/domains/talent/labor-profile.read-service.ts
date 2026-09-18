@@ -1,7 +1,8 @@
 import { Prisma } from '@prisma/client';
 import { AuthContext } from '@/src/shared/auth/auth-context';
-import { resolveEffectivePermissions } from '@/src/shared/auth/permission-resolver';
+import { resolveEffectivePermissions, AuthError } from '@/src/shared/auth/permission-resolver';
 import { maskCccd, maskPhone } from '@/src/shared/privacy/mask';
+import { normalizePhone } from '@/src/domains/talent/normalize';
 
 export interface LaborProfileListFilter {
   search?: string;
@@ -50,7 +51,15 @@ export async function getLaborProfilesList(
   }
   
   if (filter.exactPhone) {
-    where.phone = filter.exactPhone;
+    if (!canSeeSensitive) {
+      throw new AuthError('PERMISSION_DENIED', 'Cannot use exact lookup without sensitive permission');
+    }
+    const normalized = normalizePhone(filter.exactPhone);
+    if (normalized) {
+      where.phone = normalized;
+    } else {
+      where.phone = filter.exactPhone;
+    }
   }
   
   if (filter.completeness) {

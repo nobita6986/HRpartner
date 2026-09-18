@@ -48,9 +48,7 @@ const CreateProfileSchema = z.object({
   fullName: z.string().min(1).max(255),
   phone: z.string().min(1).max(20),
   cccdNumber: z.string().max(20).optional(),
-  source: z.string().default('OFFLINE'), // Actually we'll just ignore source for now since it's not part of canonical input
   consent: z.boolean(),
-  forceNew: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -68,30 +66,7 @@ export async function POST(req: NextRequest) {
 
     const prisma = getPrisma();
     
-    // Check possible match force fallback if forceNew is set. But wait, createCandidateSubmissionFromIntake doesn't take forceNew.
-    // If it throws PossibleMatchNotResolvedError, it means it's a POSSIBLE_MATCH.
-    // If we want to force create, we'd have to call createOrMatchLaborProfile first.
-    // To keep it simple, we just use createCandidateSubmissionFromIntake. If forceNew is needed, we'll manually create the profile and bypass matching.
-    
     const result = await withDbContext(prisma, ctx, async (tx) => {
-      
-      if (parsed.data.forceNew) {
-         // Create a new profile anyway
-         const created = await tx.laborProfile.create({
-           data: {
-             fullName: parsed.data.fullName,
-             phone: parsed.data.phone,
-             cccdNumber: parsed.data.cccdNumber || null,
-             completeness: 'MINIMAL',
-             identityVerification: 'UNVERIFIED',
-             consentAt: parsed.data.consent ? new Date() : null,
-           }
-         });
-         
-         // We should technically still create a submission here if we bypass intake-writer, but let's just return the created profile.
-         return { id: created.id, verdict: 'NEW_PROFILE' as const };
-      }
-
       // Canonical intake write
       const intakeResult = await createCandidateSubmissionFromIntake(tx, {
         applicant: {

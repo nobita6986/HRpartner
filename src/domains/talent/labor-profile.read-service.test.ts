@@ -4,9 +4,17 @@ import type { Prisma } from '@prisma/client';
 import * as permResolver from '@/src/shared/auth/permission-resolver';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
 
-vi.mock('@/src/shared/auth/permission-resolver', () => ({
-  resolveEffectivePermissions: vi.fn(),
-}));
+vi.mock('@/src/shared/auth/permission-resolver', () => {
+  return {
+    resolveEffectivePermissions: vi.fn(),
+    AuthError: class extends Error {
+      constructor(public code: string, message: string) {
+        super(message);
+        this.name = 'AuthError';
+      }
+    }
+  };
+});
 
 describe('LaborProfile Read Service', () => {
   let mockFindMany: any;
@@ -118,6 +126,20 @@ describe('LaborProfile Read Service', () => {
             { episodes: { some: { status: 'ENDED' } } }
           ]
         })
+      }));
+    });
+
+    it('blocks exactPhone lookup if user lacks CAN_VIEW_WORKER_SENSITIVE', async () => {
+      vi.mocked(permResolver.resolveEffectivePermissions).mockImplementationOnce(async () => new Set());
+      await expect(getLaborProfilesList(mockTx, adminCtx, { exactPhone: '0912345678' }))
+        .rejects.toThrowError('Cannot use exact lookup without sensitive permission');
+    });
+
+    it('normalizes exactPhone lookup if user has CAN_VIEW_WORKER_SENSITIVE', async () => {
+      vi.mocked(permResolver.resolveEffectivePermissions).mockImplementationOnce(async () => new Set(['CAN_VIEW_WORKER_SENSITIVE']));
+      await getLaborProfilesList(mockTx, adminCtx, { exactPhone: '0912 345 678' });
+      expect(mockFindMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ phone: '912345678' })
       }));
     });
   });
