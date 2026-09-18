@@ -9,7 +9,7 @@ export interface LaborProfileListFilter {
   exactPhone?: string;
   completeness?: string;
   identityVerification?: string;
-  view?: 'INCOMPLETE' | 'UNVERIFIED' | 'NEVER_WORKED' | 'WORKING' | 'TERMINATED';
+  view?: 'INCOMPLETE' | 'UNVERIFIED' | 'NEVER_WORKED' | 'WORKING' | 'TERMINATED' | 'COMPANY_POOL';
   skip?: number;
   take?: number;
 }
@@ -90,6 +90,16 @@ export async function getLaborProfilesList(
           { episodes: { some: { status: 'ENDED' } } }
         ];
         break;
+      case 'COMPANY_POOL':
+        where.AND = [
+          {
+            OR: [
+              { handlingAssignments: { none: { status: 'ACTIVE' } } },
+              { handlingAssignments: { some: { status: 'ACTIVE', expiresAt: { lt: new Date() } } } }
+            ]
+          }
+        ];
+        break;
     }
   }
 
@@ -154,6 +164,15 @@ export interface LaborProfileDetailDto {
     id: string;
     status: string;
   }[];
+  
+  activeHandlingAssignment: {
+    id: string;
+    assigneeUserId: string;
+    assigneeName: string | null;
+    source: string;
+    startsAt: string;
+    expiresAt: string | null;
+  } | null;
 }
 
 export async function getLaborProfileDetail(
@@ -194,12 +213,18 @@ export async function getLaborProfileDetail(
           status: true,
         }
       },
+      handlingAssignments: {
+        where: { status: 'ACTIVE' },
+        include: { assigneeUser: { select: { name: true } } },
+      },
     },
   });
 
   if (!profile) {
     return null;
   }
+
+  const activeAssignment = profile.handlingAssignments?.[0];
 
   return {
     ...profile,
@@ -210,5 +235,13 @@ export async function getLaborProfileDetail(
     updatedAt: profile.updatedAt.toISOString(),
     intakes: profile.intakes.map(i => ({ ...i, createdAt: i.createdAt.toISOString() })),
     submissions: profile.submissions.map(s => ({ ...s, createdAt: s.createdAt.toISOString() })),
+    activeHandlingAssignment: activeAssignment ? {
+      id: activeAssignment.id,
+      assigneeUserId: activeAssignment.assigneeUserId,
+      assigneeName: activeAssignment.assigneeUser?.name ?? null,
+      source: activeAssignment.source,
+      startsAt: activeAssignment.startsAt.toISOString(),
+      expiresAt: activeAssignment.expiresAt?.toISOString() ?? null,
+    } : null,
   };
 }

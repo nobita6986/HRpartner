@@ -15,6 +15,9 @@ const mockTx = {
     update: vi.fn(),
     findFirst: vi.fn(),
   },
+  user: {
+    findUnique: vi.fn(),
+  }
 } as unknown as Prisma.TransactionClient;
 
 describe('handling-assignment.service', () => {
@@ -74,6 +77,7 @@ describe('handling-assignment.service', () => {
     const activeAssignment = { id: 'old-1' };
     (mockTx.laborProfileHandlingAssignment.findFirst as any).mockResolvedValue(activeAssignment);
     (mockTx.laborProfileHandlingAssignment.create as any).mockImplementation(async (args: any) => args.data);
+    (mockTx.user.findUnique as any).mockResolvedValue({ role: 'HR_STAFF' });
 
     const newAssignment = await managerAssign(mockTx, {
       laborProfileId: 'lp-3',
