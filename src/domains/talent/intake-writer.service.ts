@@ -128,7 +128,11 @@ export async function createCandidateSubmissionFromIntake(
     if (!existingAttr) {
       const attr = await tx.referralAttribution.update({
         where: { id: input.referralAttributionId },
-        data: { laborProfileId },
+        data: {
+          laborProfileId,
+          status: 'CONSUMED',
+          consumedAt: new Date(),
+        },
         select: { referrerUserId: true },
       });
       await createInitialAffiliateAssignment(tx, {

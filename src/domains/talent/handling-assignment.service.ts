@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 export interface HandlingAssignmentStatus {
   ACTIVE: 'ACTIVE';
@@ -47,17 +47,27 @@ export async function createInitialAffiliateAssignment(
     },
   });
 
-  return tx.laborProfileHandlingAssignment.create({
-    data: {
-      laborProfileId: input.laborProfileId,
-      assigneeUserId: input.referrerUserId,
-      assignedByUserId: null,
-      source: ASSIGNMENT_SOURCE.AFF_INITIAL,
-      startsAt: now,
-      expiresAt: expiresAt,
-      status: ASSIGNMENT_STATUS.ACTIVE,
-    },
-  });
+  try {
+    return await tx.laborProfileHandlingAssignment.create({
+      data: {
+        laborProfileId: input.laborProfileId,
+        assigneeUserId: input.referrerUserId,
+        assignedByUserId: null,
+        source: ASSIGNMENT_SOURCE.AFF_INITIAL,
+        startsAt: now,
+        expiresAt: expiresAt,
+        status: ASSIGNMENT_STATUS.ACTIVE,
+      },
+    });
+  } catch (err: any) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      // Race condition: another active assignment was created simultaneously.
+      // Do not overwrite, just return the existing active assignment.
+      const active = await getActiveHandlingAssignment(tx, input.laborProfileId);
+      if (active) return active;
+    }
+    throw err;
+  }
 }
 
 export interface ManagerAssignInput {
