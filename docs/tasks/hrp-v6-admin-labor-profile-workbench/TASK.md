@@ -10,7 +10,7 @@
 | Audit mode | `LIGHT` |
 | Audit reason | Read services touching user data, RLS and identity dedup requires LIGHT audit. |
 | Spec version | `v1.0` |
-| Status | `REVISION_REQUIRED` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1` |
 | Planner authority | `docs/V6/V6_OUTSTANDING_WORK_PLAN.md §8` |
 | Baseline | `e798af80fd4111b5c41688abc1b9b9362b3b7727` |
