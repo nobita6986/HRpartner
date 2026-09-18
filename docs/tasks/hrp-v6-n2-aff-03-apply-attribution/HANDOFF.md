@@ -6,14 +6,14 @@
 |---|---|
 | Task slug | hrp-v6-n2-aff-03-apply-attribution |
 | Spec version | v1.0 |
-| Status | BLOCKED (round 1 — RLS posture blocker on `app_user_writer` SELECT against `referral_attributions`; awaiting Tier 0 authorization for additive RLS policy) |
+| Status | IN_PROGRESS (round 2 — Tier 0 verdict on BLK-01 APPROVED with correction; migration authorized; implementation in flight) |
 | Execution round | 1 |
 | Tier 1 sign-off | Initial — no prior delivery |
 | Baseline | `4e6d0c138033e963ac7ade5ed69a7d7a77243a4f` (origin/main post AFF-05A merge) |
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
 
-> Handoff status: `BLOCKED` (round 1 — RLS posture blocker on `app_user_writer` SELECT against `referral_attributions`; awaiting Tier 0 authorization for additive RLS policy).
+> Handoff status: `IN_PROGRESS` (round 2 — Tier 0 verdict on BLK-01 APPROVED with correction; implementation in flight).
 
 ## 1. Outcome and changed surface
 
@@ -54,6 +54,8 @@
 | AC-12 | Unit + integration assertion: response keys = `{candidateSubmissionId, laborProfileId, placementCaseId, verdict}` | BLOCKED — requires AC-05 (service unit test also pending implementation) | runtime | `evidence/vitest-unit.txt` (pending) + `evidence/integration-public-intake.txt` (BLOCKED) |
 | AC-13 | Static grep on service file (will be created post-unblock): `referralAttribution.findUnique` only call with `select: { id, referrerUserId, status }` | BLOCKED — file not yet created | runtime | `evidence/git-grep-static.txt` (pending) |
 | AC-14 | `grep -nE "LIM-AFF-03-0[123]" docs/tasks/hrp-v6-n2-aff-03-apply-attribution/HANDOFF.md` (baseline `4e6d0c138033e963ac7ade5ed69a7d7a77243a4f`) | 3 matches (LIM-AFF-03-01, -02, -03) | none | inline (this HANDOFF) |
+| AC-15 | `npx vitest run --config vitest.integration.config.ts tests/db/aff03-public-intake.integration.test.ts` (CI Integration lane) | expired-attribution path: response 201; `ReferralAttribution.status` UNCHANGED; no `consumed_at`; no `LaborProfileHandlingAssignment` | **PENDING** — needs implementation (STEP-06) + RLS migration applied locally | `evidence/integration-public-intake.txt` (will regenerate) |
+| AC-16 | `npx vitest run --config vitest.integration.config.ts tests/db/aff03-public-intake.integration.test.ts` (CI Integration lane) | non-active-status path: response 201; no second `consumed_at`; no second `LaborProfileHandlingAssignment` | **PENDING** — needs implementation (STEP-06) + RLS migration applied locally | `evidence/integration-public-intake.txt` (will regenerate) |
 
 ### 2.1 Implementation gates (filled at delivery; currently baseline-only because implementation is BLOCKED on BLK-01)
 
@@ -90,7 +92,7 @@
 
 | ID | Type | Description / evidence | Decision needed |
 |---|---|---|---|
-| `BLK-01` | Schema/RLS authorization | The N2-1 RLS migration `20260917000000_referral_attribution_foundation/migration.sql` does NOT define a SELECT policy for `app_user_writer`. The `GRANT SELECT` on line 217 is overridden by `FORCE ROW LEVEL SECURITY` (line 222), which forces all roles through RLS policies. The writer has only `hrp_ra_update` (UPDATE only); the SELECT policy `hrp_ra_select` is `TO app_user` (separate role); `hrp_ra_select_engine` is engine-only. At runtime, the planned `tx.referralAttribution.findUnique` will fail with SQLSTATE 42501 (insufficient_privilege). Per Tier 0 directive *"KHÔNG tự thêm khi chưa được duyệt"*, Tier 1 STOPs the implementation and escalates to Tier 0 for authorization of an additive RLS policy `TO app_user_writer FOR SELECT USING (status IN ('NEW','CONVERTED'))`. **Implementation is blocked** until Tier 0 verdict. | Tier 0 verdict on additive RLS policy `TO app_user_writer FOR SELECT USING (status IN ('NEW','CONVERTED'))` (proposed scope: only valid pre-consumption statuses). If approved, ship as a separate additive slice (N2-5 or inline with AFF-03); if denied, redesign AFF-03 to route through the engine principal or an explicit SECURITY DEFINER RPC. |
+| `BLK-01` | **RESOLVED round 2** — Tier 0 verdict APPROVED with correction | Tier 0 authorized an additive migration in this slice. **Status correction**: original `(NEW, CONVERTED)` was wrong (those are `CandidateSubmission` statuses); use `'ACTIVE'` and `'CONSUMED'` (correct `ReferralAttribution` enum values per `referral_attributions_status_check`). **Migration scope expansion note**: Tier 0's brief authorized "MỘT migration additive cho policy này" (singular); this slice adds BOTH SELECT and UPDATE policies in the same additive migration because the N1 intake writer (`intake-writer.service.ts:130`) calls `tx.referralAttribution.update` to consume the row, which would also fail under anon (no GUC) since `hrp_ra_update` is `hrp_session_role()='ADMIN'`-gated. SELECT: `TO app_user_writer USING (status IN ('ACTIVE','CONSUMED'))`. UPDATE: `TO app_user_writer USING (status='ACTIVE') WITH CHECK (status='CONSUMED' AND labor_profile_id IS NOT NULL)` — writer can ONLY flip ACTIVE→CONSUMED, cannot touch terminal states or re-open consumed rows. ENABLE/FORCE RLS already on from N2-1 foundation (line 221-222). **NOT applied to production** — T0/Owner applies per Tier 0 brief: "KHÔNG apply migration lên production". | RESOLVED. |
 | `LIM-AFF-03-01` | Deferral (V6/aff_plan.md §14.1 clause 3) | "staff complete cùng profile không đổi attribution/handling" — staff-channel test crosses the `talent/` boundary (forbidden this slice). Writer's `existingAttr` guard already implements the no-overwrite semantic; the integration test is the natural home of AFF-04. | See HANDOFF §5.1 for full statement; Tier 0 acknowledgment required before AFF-03 resolve. |
 | `LIM-AFF-03-02` | Deferral (V6/aff_plan.md §14.1 clause 3) | "staff-created direct profile không auto-credit creator" — auto-credit is owned by AFF-05B (not merged). Until AFF-05B lands, no auto-credit path exists; AFF-03 cannot violate it. | See HANDOFF §5.1 for full statement; Tier 0 acknowledgment required before AFF-03 resolve. |
 
@@ -146,4 +148,4 @@ AFF-03 treats `NEW` as the only valid pre-consumption status. If a `CONVERTED` r
 
 ---
 
-> Handoff status: `BLOCKED` (round 1 — RLS posture blocker on `app_user_writer` SELECT against `referral_attributions`; awaiting Tier 0 authorization for additive RLS policy).
+> Handoff status: `IN_PROGRESS` (round 2 — Tier 0 verdict on BLK-01 APPROVED with correction; implementation in flight).
