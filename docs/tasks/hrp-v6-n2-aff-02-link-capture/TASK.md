@@ -8,19 +8,22 @@
 | Work type | CODE |
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
-| Audit reason | Public-facing unauthenticated capture route; requires forged-code defense, race/double-click deterministic handling, role boundary (writer vs engine), and fail-closed posture against misconfigured engine URL. |
-| Spec version | v2.0 |
-| Status | READY_FOR_EXECUTION |
+| Audit reason | Public anonymous redirect with persisted DB side-effect + signed cookie state + open-redirect attack surface; needs forged-code defense, exactly-one invariant semantics, role boundary (writer vs engine), fail-closed posture, container-DB evidence. |
+| Spec version | v3.0 |
+| Status | RESOLVED |
 | Planner | Tier 1 |
-| Baseline | `e798af80fd4111b5c41688abc1b9b9362b3b7727` (origin/main, post `hrp-v7-ci-container-db` merge) |
-| In-scope roots | `app/api/public/referrals/**`, `src/domains/referrals/**`, `tests/db/link-capture.integration.test.ts`, `vitest.integration-files.ts` |
+| Baseline | `b6940a82c2b139d319f9bc1cb6f4bff7c5a63b72` (origin/main, post `hrp-v6-n2-aff-01-attribution-foundation` merge) |
+| In-scope roots | `app/r/**`, `src/domains/referrals/**`, `tests/db/attribution-redirect.integration.test.ts`, `vitest.integration-files.ts` |
 | Forbidden paths | `docs/TIER0_SHIFT_HANDOVER.md`, `prisma/schema.prisma`, `prisma/migrations/**`, `src/domains/talent/**`, `src/db/engine-client.ts` (reuse only), any N2-1 policy/trigger source |
-| Required gates | `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run build`; `npm run test:integration` (DB env must be present, else `ENV_BLOCKED`) |
-| Current execution round | 1 |
-| Current audit round | 0 |
-| Next gate | `/deliver` → `/audit` → `/resolve` |
+| Required gates | `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run build`; `npm run test:integration` (DB env must be present — INTEGRATION_LIVE_DB_REQUIRED, NOT a self-skip) |
+| Current execution round | 2 |
+| Current audit round | 1 |
+| Next gate | `/deliver` → `/audit` → `/resolve` → `/merge` (T3 PASS, P3 drifts resolved in this commit; production gate BLK-01 outstanding) |
 
-> **v1.0 → v2.0 revisions (executed this round):** baseline updated to current `origin/main`; in-scope paths corrected to actual Next.js App Router layout (`app/api/public/referrals/**`, `src/domains/referrals/**`); API request/response contract locked; idempotency key requirement + replay contract locked; error semantics per outcome locked; AC set expanded (race deterministic, abuse boundary, engine-context isolation, static `set_config(..., false)` rejection); `audit_reason` sharpened.
+> **v1.0 → v2.0 → v3.0 revisions:**
+> - v1.0 (initial, 2026-09-17): extracted from N2 DISCOVERY.md, stale paths.
+> - v2.0 (2026-09-18 round 1): corrected baseline + App Router paths; locked POST contract; idempotency key + advisory lock + partial unique test.
+> - **v3.0 (2026-09-18 round 2, Decision A — T0 directive)**: replaced POST contract with canonical GET /r/{code} redirect flow; removed Idempotency-Key, synthetic actor, advisory lock; added signed `hrp_aff` cookie with server-side attribution row re-verification; locked destination allowlist (open-redirect defense); integration tests must RUN not SKIP.
 
 ---
 
@@ -28,17 +31,25 @@
 
 ### 1.1 User-visible outcome
 
-- A **public, unauthenticated** `POST /api/public/referrals/{affCode}/capture` endpoint that records the first valid click on a referral link into `referral_attributions`, behind the existing rate-limit guard, idempotency helper, and the N2-1 `app_engine_writer` engine principal with `hrp.engine_context = 'link-capture'`.
-- Forged, invalid, or inactive affiliate codes are rejected with **no DB write** and a generic error envelope (no existence signal).
-- Double-click / concurrent requests resolve to a single row (idempotent on `(referrer_user_id, affiliate_code_snapshot)` business key) and replay returns the original response payload.
+- A **public, unauthenticated** `GET /r/{code}` (with optional `?job=<slug>`) redirect endpoint that:
+  - Validates the affiliate code (constant-shape, no existence signal).
+  - Resolves the destination against an internal allowlist (`/jobs[/...]`) — open-redirect payloads are rejected with a 302 to `/jobs`.
+  - Reads the `hrp_aff` cookie. If signature + expiry are valid AND the referenced attribution row is still ACTIVE and the referrer is still active → existing attribution wins, just redirect.
+  - Otherwise, creates a `referral_attributions` row via the N2-1 `app_engine_writer` engine principal with `hrp.engine_context = 'link-capture'` (transaction-local).
+  - Sets `hrp_aff` cookie (HttpOnly, SameSite=Lax, Path=/, Max-Age=2592000, Secure in production).
+  - Returns 302 to the validated destination.
+- Forged / unknown / inactive affiliate codes → 302 to `/jobs` with **no DB write** and **no existence signal**.
+- Invalid / open-redirect `job` query param → 302 to `/jobs`.
+- Missing engine URL → 503 (fail-closed).
 
 ### 1.2 Non-goals
 
 - No DB schema changes or migrations (pure app slice). N2-1 `referral_attributions` table and engine principal are unchanged.
+- No "exactly-one initial capture" — that is a CRITICAL additive schema slice (out of N2-2 scope, per Decision A §3).
 - No N2-3 (apply-attribution), N2-4 (handling-assignment), or N2-5 (beneficiary-decision) work.
 - No modifications to N2-1 policies or triggers.
 - No UI components; service-layer + route-layer only.
-- No new third-party dependency. Reuse `pg` (transitive via `@prisma/client`), `@upstash/ratelimit` (already a dep), and existing helpers.
+- No new third-party dependency. Reuse `node:crypto` (built-in), `@prisma/client`, `@upstash/ratelimit` (already a dep), and existing helpers.
 
 ---
 
@@ -50,11 +61,11 @@
 | EV-02 | `docs/tasks/hrp-v6-n2-aff-01-attribution-foundation/AUDIT.md` (round 2 PASS) | N2-1 dependency verified; `app_engine_writer` + `hrp.engine_context` GUC + `set_config(..., true)` + `INSERT ... RETURNING` (E-17) all in place |
 | EV-03 | `prisma/migrations/20260917000000_referral_attribution_foundation/migration.sql` (in baseline) | Table columns, engine INSERT/UPDATE/SELECT policies, lifecycle trigger semantics |
 | EV-04 | `src/db/engine-client.ts` | Engine client fail-closed on missing `HRPARTNER_ENGINE_URL`; direct LOGIN as `app_engine_writer` (no SET ROLE) |
-| EV-05 | `src/shared/integrity/idempotency.ts` | UNIQUE-scope `(actorId, route, key)` + P2002 race replay + 24h TTL default; reuse only |
-| EV-06 | `src/shared/security/rate-limit-guard.ts` + `rate-limit-port.ts` + `rate-limit-identity.ts` | DUAL bucket (IP + tracking-code HMAC) + fail-closed 503 pattern; reuse only |
-| EV-07 | `src/shared/auth/rls-context.ts` | Confirms `set_config(..., true)` is the only allowed GUC mechanism; `set_config(..., false)` rejected by static lint (`src/db/engine-set-config.static.test.ts`) |
-| EV-08 | `vitest.integration-files.ts` | Single source of truth for DB-touching lane; my new integration file must be registered here |
-| EV-09 | `tests/db/referral-attribution-foundation.integration.test.ts` | Existing N2-1 integration pattern: ephemeral password mutation for `app_engine_writer`, admin/engine split, FK-safe teardown, READY-style assertions; reuse pattern |
+| EV-05 | `src/shared/security/rate-limit-guard.ts` + `rate-limit-port.ts` + `rate-limit-identity.ts` | IP bucket rate-limiting + fail-closed 503 pattern; reuse only |
+| EV-06 | `src/db/engine-set-config.static.test.ts` | Static lint rejecting `set_config('hrp.engine_context', ..., false)` |
+| EV-07 | `vitest.integration-files.ts` | Single source of truth for DB-touching lane; my new integration file must be registered here |
+| EV-08 | `tests/db/referral-attribution-foundation.integration.test.ts` | Existing N2-1 integration pattern: ephemeral password mutation for `app_engine_writer`, admin/engine split, FK-safe teardown |
+| EV-09 | `node:crypto` (built-in `createHmac`, `timingSafeEqual`) | Cookie token signing primitive — no new dependency |
 
 ---
 
@@ -62,35 +73,22 @@
 
 | ID | Decision | Status |
 |---|---|---|
-| DEC-01 | Pure application slice with zero DB migration risk. Reuse `app_engine_writer` engine client, N2-1 `referral_attributions` table, and `set_config('hrp.engine_context', 'link-capture', true)` (transaction-local). | CHOSEN |
-| DEC-02 | Endpoint: `POST /api/public/referrals/{affCode}/capture` (path-param encodes the affiliate code). `affCode` is canonicalized via `User.affCode` lookup against `app_user_writer` connection (read-only). Engine write happens in a **separate** engine transaction that does not assume any human role. | CHOSEN |
-| DEC-03 | Rate-limit: DUAL bucket on existing rule matrix — add new surface `REFERRAL_CAPTURE_IP` (subject=`ip`, conservative limit, see DEC-04) using `RATE_LIMIT_RULES` pattern. Reuse `enforceRateLimits()`; no new rule-engine code. | CHOSEN |
-| DEC-04 | Rate-limit values: `REFERRAL_CAPTURE_IP` = `{surface:'REFERRAL_CAPTURE_IP', subject:'ip', limit:10, windowSec:60}` (one order tighter than `TRACKING_IP` because the public write path is anonymous — abuse vector is higher than a self-service read). Tighten 4× on unknown-client bucket via existing `tightenForUnknownSubject` (no change needed). | CHOSEN |
-| DEC-05 | Idempotency: **REQUIRED** `Idempotency-Key` header (UUID). Reuse `withIdempotency()` from `src/shared/integrity/idempotency.ts`. `actorId` for the scope UNIQUE is a synthetic public-anonymous identifier derived deterministically from `(affCode, clientIpUnknownBucket, correlationId)` — see DEC-09. | CHOSEN |
-| DEC-06 | Idempotency replay semantics: a successful capture returns `201` on first call; a duplicate `Idempotency-Key` returns the **same response body** and `201` (replay). The `withIdempotency()` helper already enforces P2002 read-back; no change. | CHOSEN |
-| DEC-07 | Race / double-click semantics: deterministic via the idempotency key (DEC-05). **In addition**, the engine write is wrapped in a transaction-local advisory lock keyed by `('aff:' || affCode)` so that two **distinct idempotency keys** for the same affiliate code cannot produce two attribution rows in the same window — verified by `ON CONFLICT` partial unique index test (E-22). The combination of (idempotency-key + advisory lock + partial unique index) gives deterministic behavior under any concurrency. | CHOSEN |
-| DEC-08 | Forged / invalid / inactive affiliate code → `400 INVALID_REFERRAL` with a **generic** message (`"Mã giới thiệu không hợp lệ hoặc đã hết hạn"`), no existence signal, **no DB write**. Lookup goes through `app_user_writer` connection (RLS-enforced) so an `inactive` user (`User.isActive = false`) is filtered by the human-side policy. | CHOSEN |
-| DEC-09 | Synthetic `actorId` for idempotency-key scope: NOT a real user id (public-anonymous). Use a stable hash of `(affCode, ip, userAgent)` salted with `RATE_LIMIT_HASH_SECRET` so the same browser+code+UA combination reuses the row, but two different browsers get independent scopes. Hash truncated to 32 chars (matches the existing HMAC convention). | CHOSEN |
-| DEC-10 | Engine write transaction body (raw SQL, because no Prisma model exists for `referral_attributions`): inside `engineDb.$transaction(async (tx) => { await tx.$executeRaw`SELECT set_config('hrp.engine_context','link-capture',true)`; ... INSERT ... RETURNING id, referrer_user_id, status, created_at; })`. The transaction **always** calls `set_config` before any read or write; engine-context absent is fail-closed at the DB layer (E-09 from N2-1). | CHOSEN |
-| DEC-11 | Validation: `affCode` must match the same regex as `User.affCode` (UUID-like, length 1..64) per `User.affCode` Prisma schema (`@unique` `String`). Reject empty / oversized / non-printable with `400 INVALID_REFERRAL` (generic). | CHOSEN |
-| DEC-12 | Logging: log via `info()` / `warn()` with the typed allow-list meta only — route class, status, outcome, surface, retryAfter. **NEVER** log `affCode`, idempotency key, raw client IP, user-agent, full response body, or any PII. Reuse `logger.ts`. | CHOSEN |
-| DEC-13 | Abuse control: per-IP rate-limit (DEC-04) + per-`affCode` rate-limit using existing `TRACKING_CODE` rule on the canonicalized `affCode`. A forged-code burst from one IP hits IP limit; a single valid-code burst from many IPs hits the `affCode` limit (10/60s). The combination throttles both vectors. | CHOSEN |
-| DEC-14 | `first_clicked_at` is the DB-side `NOW()` (server clock) — never trust client-supplied timestamps. `expires_at` is computed server-side (`first_clicked_at + 30 calendar days`, exclusive next-day boundary per DISCOVERY §2.1 Q2c). N2-1 does NOT own the helper for the **public** boundary because N2-1's window is a different one (placement lifecycle). I will inline a 30-day constant here and document that N2-1 is the authority for the **placement** boundary helper. | CHOSEN |
-| DEC-15 | Response body on success: `{ captured: true, attributionId, referrerUserId, status: 'ACTIVE', createdAt }`. **Never** echo back `affiliate_code_snapshot`, `expires_at`, or any internal-only field. | CHOSEN |
-| DEC-16 | Failure modes and status codes — locked: | CHOSEN |
-
-| Outcome | HTTP | `error` code | DB write | Note |
-|---|---|---|---|---|
-| Success (first call) | 201 | — | yes | engine insert; response per DEC-15 |
-| Idempotent replay | 201 | — | no (P2002 read-back) | `Idempotency-Key` already used with same body; returns stored body |
-| Missing / malformed `Idempotency-Key` | 400 | `IDEMPOTENCY_KEY_REQUIRED` | no | header required to dedupe |
-| Forged / invalid / inactive `affCode` | 400 | `INVALID_REFERRAL` | no | generic message; no existence signal |
-| Body parse / schema fail | 400 | `INVALID_INPUT` | no | zod failure path |
-| Rate-limited (IP or affCode bucket) | 429 | `RATE_LIMITED` | no | via `enforceRateLimits()` |
-| Limiter unavailable (fail-closed) | 503 | `RATE_LIMIT_UNAVAILABLE` | no | via `enforceRateLimits()` |
-| Engine URL missing (`HRPARTNER_ENGINE_URL`) | 503 | `ENGINE_UNAVAILABLE` | no | fail-closed at engine client |
-| Engine DB error (migrate drift, role drift, transient) | 503 | `CAPTURE_FAILED` | rolled back | never 500 with raw SQLSTATE in body |
-| Internal unexpected | 500 | `INTERNAL` | rolled back | generic message; logged with route class only |
+| DEC-A1 | Pure application slice with zero DB migration risk. Reuse `app_engine_writer` engine client and N2-1 `referral_attributions` table. | CHOSEN |
+| DEC-A2 | Endpoint: `GET /r/{code}` with optional `?job=<slug>` query param. Path-param is the canonical affiliate code; `job` query param controls destination. | CHOSEN |
+| DEC-A3 | Rate-limit: IP bucket only (reuse `REFERRAL_CAPTURE_IP` rule; existing 10/60s limit). No affCode bucket on GET redirect (GETs are inherently cheap and idempotent at the user level; the sign-cookie-with-HMAC step prevents abuse at the cookie layer). | CHOSEN |
+| DEC-A4 | Destination allowlist: paths MUST start with `/jobs` (and may have sub-paths). All other paths → 302 to `/jobs`. Query and hash fragments are stripped before prefix check, so `?job=/jobs?redirect=https://evil.com` becomes `/jobs` (safe: dangerous query was discarded). | CHOSEN |
+| DEC-A5 | Open-redirect defense: deny `//evil.com`, `https://evil.com`, `/../etc/passwd`, `/admin`, any non-`/jobs` prefix. Denied payloads redirect to `/jobs`. | CHOSEN |
+| DEC-A6 | Cookie `hrp_aff` content: opaque HMAC-SHA256 token = `base64url(attributionId) . base64url(expiresAtMs) . base64url(keyVersion) . base64url(sig)`. Key derived from `RATE_LIMIT_HASH_SECRET` (existing). | CHOSEN |
+| DEC-A7 | Cookie verification is a TWO-step gate: (1) signature + expiry + key version; (2) DB re-read of the row (must exist, status='ACTIVE', expires_at > NOW(), referrer active). Either failing → treated as no cookie. | CHOSEN |
+| DEC-A8 | Existing valid attribution WINS — a subsequent click with a valid cookie does NOT overwrite. The first-write-wins invariant is owned by the `referral_attributions` table + the cookie-recheck. | CHOSEN |
+| DEC-A9 | No Idempotency-Key, no synthetic actor id, no advisory lock. Decision A §3 explicitly removes these (they were causing orphan rows + false invariants in dev/test). The exactly-one initial capture invariant is a CRITICAL additive schema slice, out of N2-2. | CHOSEN |
+| DEC-A10 | Engine write transaction body: `set_config('hrp.engine_context', 'link-capture', true)` then INSERT raw SQL (no Prisma model for `referral_attributions`). No advisory lock. No P2002 / exactly-one claim. | CHOSEN |
+| DEC-A11 | Validation: `affCode` must match `/^[A-Za-z0-9_-]{1,64}$/` (consistent with `User.affCode` Prisma schema). Empty / oversized / non-printable / SQL-injection-shaped → INVALID_CODE. | CHOSEN |
+| DEC-A12 | Logging: log via `info()` / `warn()` with typed allow-list meta only — route class, outcome. **NEVER** log `affCode`, cookie value, IP, user-agent, or any PII. Reuse `logger.ts`. | CHOSEN |
+| DEC-A13 | Fail-closed: missing `HRPARTNER_ENGINE_URL` → 503 ENGINE_UNAVAILABLE. Limiter unavailable → 503 RATE_LIMIT_UNAVAILABLE. Writer / engine DB error → 503 WRITE_FAILED (no internal SQLSTATE leakage). | CHOSEN |
+| DEC-A14 | Constant-shape response: forged / unknown / inactive code → 302 to `/jobs` (same as a successful default-destination response, no existence signal). | CHOSEN |
+| DEC-A15 | Cookie attributes: `HttpOnly`, `SameSite=Lax`, `Path=/`, `Max-Age=2592000` (30 days), `Secure=true` in production (NODE_ENV==='production'). | CHOSEN |
+| DEC-A16 | Outcome → HTTP mapping: REDIRECT_EXISTING → 302 to destination (no Set-Cookie); REDIRECT_NEW → 302 to destination + Set-Cookie; NOT_FOUND / INVALID_JOB → 302 to /jobs; INVALID_CODE → 404 (no body); RATE_LIMITED → 429; ENGINE_UNAVAILABLE / WRITE_FAILED → 503. | CHOSEN |
 
 ---
 
@@ -100,76 +98,86 @@
 
 | ID | Requirement |
 |---|---|
-| RQ-01 | `affCode` validated against an active `User.affCode` (`User.isActive = true`) before any engine write. Forged / inactive / unknown codes reject without insert and without existence signal. |
-| RQ-02 | Concurrent requests for the same `(affCode, browser)` combination resolve to a single `referral_attributions` row (idempotent on `Idempotency-Key`). Distinct idempotency keys for the same `affCode` cannot create duplicate rows in the same window (advisory lock + partial unique test). |
-| RQ-03 | Insertion executes under `app_engine_writer` with `hrp.engine_context = 'link-capture'` set transaction-locally via `set_config(..., true)`. `set_config(..., false)` is rejected by static lint (`src/db/engine-set-config.static.test.ts`). |
-| RQ-04 | All public-surface writes are rate-limited via existing `enforceRateLimits()` helper — DUAL bucket (IP + canonicalized affCode). Limiter-unavailable is fail-closed 503. |
-| RQ-05 | Service-layer test (unit) + integration test (container-DB) cover: success, forged code, missing context, role boundary (writer cannot insert; engine can), concurrency (race), abuse control (rate-limit threshold respected). |
-| RQ-06 | Reuse `withIdempotency()`, `enforceRateLimits()`, `getEnginePrisma()`, `evaluateRateLimits()` — **no new third-party dependency**. |
-| RQ-07 | `referral_attributions` schema, RLS policies, and triggers are unchanged. N2-1 is the authority for the table; this slice is app-only. |
+| RQ-01 | `affCode` validated against an active `User.affCode` (`User.isActive = true`) before any engine write. Forged / inactive / unknown codes return NOT_FOUND (302 to /jobs) with NO DB write and NO existence signal. |
+| RQ-02 | Cookie verification is two-step: (1) signature + expiry + key version; (2) DB re-read of the row. Either failing → cookie treated as absent. |
+| RQ-03 | Existing valid attribution WINS — a subsequent click with a valid cookie does NOT overwrite. |
+| RQ-04 | `job` query param is allowlisted to `/jobs[/...]` paths only. Open-redirect payloads (`//evil.com`, `https://evil.com`, `/../etc/passwd`, `/admin`) are rejected with 302 to /jobs. Query/hash fragments are stripped before prefix check. |
+| RQ-05 | Insertion executes under `app_engine_writer` with `hrp.engine_context = 'link-capture'` set transaction-locally via `set_config(..., true)`. `set_config(..., false)` is rejected by static lint. |
+| RQ-06 | Public-surface reads are rate-limited via existing `enforceRateLimits()` helper — IP bucket only on GET redirect. Limiter-unavailable is fail-closed 503. |
+| RQ-07 | Service-layer unit test + container-DB integration test cover: success, forged code, existing cookie wins, RLS (writer cannot insert; engine can), engine-context isolation (cleared at COMMIT), open-redirect payloads, destination allowlist, missing engine URL fail-closed. |
+| RQ-08 | Reuse `getEnginePrisma()`, `getPrisma()`, `enforceRateLimits()`, `clientIpFromHeaders()`, `canonicalTrackingCode()`, `getCorrelationId()`, `info()`/`warn()` from logger — **no new third-party dependency**. |
+| RQ-09 | `referral_attributions` schema, RLS policies, and triggers are unchanged. N2-1 is the authority for the table; this slice is app-only. |
+| RQ-10 | Integration test must RUN against the live container DB (not self-skip). If env vars are missing → FAIL with `INTEGRATION_LIVE_DB_REQUIRED` error, NOT a silent PASS. |
 
 ### 4.2 Scope boundaries
 
-- **In:** New route handler at `app/api/public/referrals/[affCode]/capture/route.ts`; new service at `src/domains/referrals/link-capture.service.ts`; new unit test at `src/domains/referrals/link-capture.service.test.ts`; new integration test at `tests/db/link-capture.integration.test.ts`; new rule entry in `src/shared/security/rate-limit-port.ts` (`REFERRAL_CAPTURE_IP`); 1-line addition to `vitest.integration-files.ts`.
+- **In:** New route handler at `app/r/[code]/route.ts`; new service at `src/domains/referrals/attribution-redirect.service.ts`; new token helper at `src/domains/referrals/redirect-token.ts`; new unit tests at `src/domains/referrals/attribution-redirect.service.test.ts` and `redirect-token.test.ts`; new integration test at `tests/db/attribution-redirect.integration.test.ts`; 1-line addition to `vitest.integration-files.ts`; removal of `MARKETPLACE_ANON` entry for `app/api/public/referrals/[affCode]/capture/route.ts`.
 - **Out:** Any `prisma/schema.prisma` change, any migration, any N2-1 policy/trigger source, any UI component, any new npm dependency.
 - **Allowed task artifacts:** `docs/tasks/hrp-v6-n2-aff-02-link-capture/**`.
 
 ### 4.3 Domain boundaries
 
 - **Data/state:** Reads from `users` (via `app_user_writer`, RLS-enforced) to validate `affCode`. Writes to `referral_attributions` (via `app_engine_writer`, engine context `'link-capture'`). No new tables; no new columns.
-- **Permission/security:** Public unauthenticated route. Two layers of abuse defense: rate-limit + idempotency. Engine context gate is the third layer (DB-authority). Strict separation between read-side (`app_user_writer`) and write-side (`app_engine_writer`) — **never** in the same transaction.
-- **Interface/API:** REST POST endpoint with path-param `{affCode}` and JSON body (optional metadata, see RQ contract below). Standard error envelope: `{ error: string, message: string }`.
+- **Permission/security:** Public unauthenticated route. Two layers of abuse defense: rate-limit (IP bucket) + HMAC-signed cookie. Engine context gate is the third layer (DB-authority). Strict separation between read-side (`app_user_writer`) and write-side (`app_engine_writer`) — never in the same transaction.
+- **Interface/API:** REST GET endpoint with path-param `{code}` and optional `?job=<slug>` query param. Reads `hrp_aff` cookie. Writes `hrp_aff` cookie on new attribution.
 - **Migration/rollback:** None. App rollback is a standard deploy rollback.
 
 ### 4.4 API contract — locked
 
 **Request:**
 
-```http
-POST /api/public/referrals/{affCode}/capture HTTP/1.1
+```
+GET /r/{code}?job={slug} HTTP/1.1
 Host: HOST
-Content-Type: application/json
-Idempotency-Key: UUIDV4                  # required, UUID format
-User-Agent: UA                           # optional; folded into synthetic actor scope
-X-Request-Id: CORRELATION_ID             # optional; forwarded to logger
-
-{                                         # body — currently empty allowed
-  "source": "qr"                          # optional, free string length-lte-64 (UI hint)
-}
+User-Agent: UA
+Cookie: hrp_aff=TOKEN      # optional
 ```
 
-**Success response (201):**
+- `{code}` — path param, the affiliate code (`[A-Za-z0-9_-]{1,64}`).
+- `?job=<slug>` — optional. Must start with `/jobs` after query/hash stripping. Defaults to `/jobs`.
 
-```json
-{
-  "captured": true,
-  "attributionId": "ATTRIBUTION_ID",
-  "referrerUserId": "USER_ID",
-  "status": "ACTIVE",
-  "createdAt": "ISO_8601"
-}
+**Success response (302):**
+
+```
+HTTP/1.1 302 Found
+Location: /jobs
+Set-Cookie: hrp_aff=TOKEN; HttpOnly; SameSite=Lax; Path=/; Max-Age=2592000; Secure
+Cache-Control: no-store, no-cache, must-revalidate, private
+X-Request-Id: CORRELATION_ID
 ```
 
-**Idempotent replay response (201, identical body to first call):** same shape as success — `withIdempotency()` re-emits the stored body.
+(For existing valid cookie: same Location, but no Set-Cookie.)
 
-**Error envelope (4xx / 5xx):**
+**Forged / unknown / inactive code → 302 to /jobs (constant shape):**
 
-```json
-{ "error": "INVALID_REFERRAL", "message": "Mã giới thiệu không hợp lệ hoặc đã hết hạn." }
+```
+HTTP/1.1 302 Found
+Location: /jobs
 ```
 
-Error code mapping: see DEC-16.
+**Invalid `code` (format fail) → 404:**
 
-### 4.5 Race / double-click contract — locked
+```
+HTTP/1.1 404 Not Found
+```
 
-| Scenario | Behavior | Evidence |
-|---|---|---|
-| Same browser, same `affCode`, same `Idempotency-Key` → 2 clicks within TTL | 1 row, 1 response, second call returns stored body (replay) | unit + integration |
-| Same browser, same `affCode`, **different** `Idempotency-Key` → 2 clicks within window | 1 row (advisory lock + partial-unique test), second call returns 409 `RACE_RESOLVED` | integration |
-| Two different browsers, same `affCode`, no `Idempotency-Key` overlap | 2 rows (different actor scopes) | integration (allowed per DISCOVERY §2.4.1 — `referrer_user_id` is fixed, but `affiliate_code_snapshot` is fixed too; the second click from another browser is a separate `attribution_id`) |
-| Two different `affCode` values, same browser | 2 rows (one per code) | integration |
+**Missing engine URL → 503:**
 
-> The "1 row per (referrer, code)" invariant is owned by N2-1 (immutable columns + lifecycle). My slice enforces "at most one engine-context-gated insert per request" via the combination above.
+```
+HTTP/1.1 503 Service Unavailable
+```
+
+### 4.5 Cookie contract — locked
+
+| Attribute | Value |
+|---|---|
+| Name | `hrp_aff` |
+| Value | opaque HMAC-SHA256 token (see DEC-A6) |
+| HttpOnly | yes |
+| SameSite | `Lax` |
+| Path | `/` |
+| Max-Age | 2592000 seconds (30 days) |
+| Secure | yes (production only — `NODE_ENV === 'production'`) |
 
 ---
 
@@ -177,12 +185,16 @@ Error code mapping: see DEC-16.
 
 | Step | Target | Intent | Verify | Stop condition |
 |---|---|---|---|---|
-| STEP-01 | `src/shared/security/rate-limit-port.ts` | Add `REFERRAL_CAPTURE_IP` rule (DEC-04). No new provider code. | `npm run typecheck`; `npm run test:unit` (`rate-limit-config.test.ts` etc.) | type error |
-| STEP-02 | `src/domains/referrals/link-capture.service.ts` | Service-layer: validate input, lookup `affCode` via `app_user_writer`, prepare engine `set_config + INSERT ... RETURNING` (raw SQL — no Prisma model). Synthetic actor id (DEC-09). All branches return typed errors per DEC-16. | `npm run test:unit` | service logic error |
-| STEP-03 | `src/domains/referrals/link-capture.service.test.ts` | Unit tests: forged code, missing context (no engine URL), invalid input, idempotency replay, rate-limit interaction, log redaction. Mocks via `vi.mock` of `@/src/db/engine-client`, `@/src/lib/db`, `@/src/shared/integrity/idempotency`. | `npm run test:unit` | test fail |
-| STEP-04 | `app/api/public/referrals/[affCode]/capture/route.ts` | Route handler: `enforceRateLimits` (DUAL bucket IP + canonicalized affCode) → zod body parse → `Idempotency-Key` header gate → service call → response. Force-dynamic, nodejs runtime. | `npm run typecheck`; `npm run lint`; `npm run build` | route wiring error |
-| STEP-05 | `tests/db/link-capture.integration.test.ts` | Container-DB integration: success + forged (no insert) + missing context (denied) + role boundary (writer cannot insert; engine can) + concurrent double-click (1 row, replay) + engine-context isolation (no leak across COMMIT). Reuse N2-1 integration test pattern (EV-09). | `npm run test:integration` | DB error |
-| STEP-06 | `vitest.integration-files.ts` | Register `tests/db/link-capture.integration.test.ts`. | `npm run test:integration` (config picks it up) | file not registered |
+| STEP-01 | `src/domains/referrals/redirect-token.ts` | HMAC token signing/verification. Pure `node:crypto` — no DB. | `npm run test:unit` | type / test fail |
+| STEP-02 | `src/domains/referrals/attribution-redirect.service.ts` | Service-layer: validate affCode, validate job, lookup referrer, verify cookie + re-check DB row, engine write with link-capture context. Typed `RedirectOutcome`. | `npm run test:unit` | service logic error |
+| STEP-03 | `src/domains/referrals/attribution-redirect.service.test.ts` | Unit tests: invalid code, invalid job (open-redirect payloads), NOT_FOUND, no cookie (REDIRECT_NEW), invalid cookie (treated as no cookie), P2002 → REDIRECT_EXISTING, engine RLS deny → WRITE_FAILED, no advisory lock. | `npm run test:unit` | test fail |
+| STEP-04 | `src/domains/referrals/redirect-token.test.ts` | Token unit tests: create, verify, tamper, expire, malformed, wrong secret. | `npm run test:unit` | test fail |
+| STEP-05 | `app/r/[code]/route.ts` | Route handler: rate-limit (IP) → query param + cookie read → engine client fail-closed → service → HTTP response. Force-dynamic, nodejs runtime. | `npm run typecheck`; `npm run build` | route wiring error |
+| STEP-06 | `tests/db/attribution-redirect.integration.test.ts` | Container-DB integration: success, forged/inactive → NOT_FOUND, existing cookie wins, open-redirect payloads, job allowlist, RLS deny, engine context isolation, missing engine URL. **Must RUN (not SKIP) — fail explicitly when env missing.** | `npm run test:integration` | DB error |
+| STEP-07 | `vitest.integration-files.ts` | Register `tests/db/attribution-redirect.integration.test.ts`. Remove old `tests/db/link-capture.integration.test.ts` entry. | `npm run test:integration` (config picks it up) | file not registered |
+| STEP-08 | `src/domains/applications/marketplace-inventory.static.test.ts` | Remove `app/api/public/referrals/[affCode]/capture/route.ts` from `MARKETPLACE_ANON` (no longer an anonymous POST). | `npm run test:unit` | static test fail |
+| STEP-09 | Delete old files | Remove `app/api/public/referrals/[affCode]/capture/route.ts`, `src/domains/referrals/link-capture.service.ts`, `src/domains/referrals/link-capture.service.test.ts`, `tests/db/link-capture.integration.test.ts`. | `git status` | file still exists |
+| STEP-10 | Full gates | typecheck + lint + unit + build + integration (container DB) | all green | gate fail |
 
 ---
 
@@ -192,29 +204,33 @@ Error code mapping: see DEC-16.
 
 | AC | Pass condition | Verification method |
 |---|---|---|
-| AC-01 | Valid `affCode` (active `User.affCode`) creates a single `referral_attributions` row via `app_engine_writer` with `hrp.engine_context = 'link-capture'`. | `npm run test:integration` (E-17-equivalent + new E-22) |
-| AC-02 | Forged / unknown / inactive `affCode` returns `400 INVALID_REFERRAL` with NO DB write (assert `count = 0`). | `npm run test:unit` + `npm run test:integration` |
-| AC-03 | Two identical requests (same `Idempotency-Key`, same body, same `affCode`) within TTL resolve to one DB row and return the same response body twice. | `npm run test:unit` + `npm run test:integration` |
-| AC-04 | `app_user_writer` cannot insert a `referral_attributions` row (RLS deny). `app_engine_writer` with `link-capture` context can. | `npm run test:integration` (writer denies / engine allows) |
-| AC-05 | Concurrent double-click from one browser with distinct `Idempotency-Key`s resolves to one row (advisory lock + partial-unique test E-22) — second call returns `409 RACE_RESOLVED`. | `npm run test:integration` |
-| AC-06 | Rate-limit: 11th call from one IP within 60s returns `429 RATE_LIMITED`. Limiter-unavailable returns `503 RATE_LIMIT_UNAVAILABLE` (no DB call). | `npm run test:unit` (with injected memory provider) + `npm run test:integration` |
-| AC-07 | Engine-context isolation: after COMMIT, `current_setting('hrp.engine_context', true)` returns `''` on a new transaction (no leak). After ROLLBACK, same. | `npm run test:integration` (reuses N2-1 E-06/E-07 pattern) |
-| AC-08 | Missing `HRPARTNER_ENGINE_URL` returns `503 ENGINE_UNAVAILABLE` without DB call. | `npm run test:unit` (mocked engine client) |
-| AC-09 | Static check: `set_config('hrp.engine_context', ..., false)` does not appear anywhere in `src/`. Existing `engine-set-config.static.test.ts` enforces this. | `npm run test:unit` |
-| AC-10 | Full Quality gates pass (`typecheck`, `lint`, `test:unit`, `build`). | `npm run typecheck; npm run lint; npm run test:unit; npm run build` |
-| AC-11 | Integration gate runs end-to-end against the container DB (`npm run test:integration`) with all new + existing integration tests green, OR `ENV_BLOCKED` if Tier 0 has not provided test DB secrets. | `npm run test:integration` |
+| AC-01 | Valid code → REDIRECT_NEW with Set-Cookie + 302 to allowlisted destination; engine write succeeds. | `npm run test:integration` |
+| AC-02 | Forged / unknown / inactive `affCode` → NOT_FOUND (302 to /jobs) with NO DB write (assert count unchanged). | `npm run test:integration` |
+| AC-03 | Existing valid cookie + active row → REDIRECT_EXISTING (302 to destination, no Set-Cookie, no new row). | `npm run test:integration` |
+| AC-04 | Engine context `link-capture` set transaction-locally; cleared at COMMIT (no leak across pooled reuse). | `npm run test:integration` |
+| AC-05 | Open-redirect payloads (`//evil.com`, `https://evil.com`, `/../etc/passwd`, `/admin`) → INVALID_JOB / NOT_FOUND / 302 to /jobs. | `npm run test:unit` + `npm run test:integration` |
+| AC-06 | Destination allowlist: `/jobs[/...]` preserved (query/hash stripped before prefix check); `/admin` and other prefixes → INVALID_JOB. | `npm run test:unit` + `npm run test:integration` |
+| AC-07 | Missing `HRPARTNER_ENGINE_URL` → 503 ENGINE_UNAVAILABLE without DB call. | `npm run test:unit` + `npm run test:integration` |
+| AC-08 | `app_user_writer` cannot INSERT `referral_attributions` (RLS deny). `app_engine_writer` with `link-capture` context can. | `npm run test:integration` |
+| AC-09 | Static check: `set_config('hrp.engine_context', ..., false)` does not appear in `src/`. | `npm run test:unit` (engine-set-config.static.test.ts) |
+| AC-10 | Service does NOT call any advisory lock, does NOT derive a synthetic actor id, does NOT use `Idempotency-Key`. Decision A §3. | `npm run test:unit` |
+| AC-11 | Full Quality gates pass (`typecheck`, `lint`, `test:unit`, `build`). | `npm run typecheck; npm run lint; npm run test:unit; npm run build` |
+| AC-12 | Integration gate RUNs end-to-end against the live container DB (`npm run test:integration`) — no ENV_BLOCKED self-skip. Missing env vars cause `INTEGRATION_LIVE_DB_REQUIRED` failure (NOT a silent PASS). | `npm run test:integration` |
 
 ### 6.2 Traceability
 
 | Requirement | Step | Acceptance |
 |---|---|---|
-| RQ-01 | STEP-02, STEP-03, STEP-05 | AC-02 |
-| RQ-02 | STEP-02, STEP-04, STEP-05 | AC-03, AC-05 |
-| RQ-03 | STEP-02, STEP-05, STEP-06 | AC-01, AC-04, AC-07, AC-09 |
-| RQ-04 | STEP-01, STEP-04, STEP-06 | AC-06 |
-| RQ-05 | STEP-03, STEP-05, STEP-06 | AC-01, AC-02, AC-03, AC-04, AC-05, AC-06, AC-07, AC-08, AC-09 |
-| RQ-06 | STEP-02, STEP-04 | AC-08 |
-| RQ-07 | STEP-06 | AC-11 (covered by N2-1 AUDIT round 2 PASS, referenced in EV-02) |
+| RQ-01 | STEP-02, STEP-03, STEP-06 | AC-02 |
+| RQ-02 | STEP-01, STEP-02, STEP-04, STEP-06 | AC-03 |
+| RQ-03 | STEP-02, STEP-06 | AC-03 |
+| RQ-04 | STEP-02, STEP-03, STEP-06 | AC-05, AC-06 |
+| RQ-05 | STEP-02, STEP-06, STEP-09 | AC-01, AC-04, AC-08, AC-09 |
+| RQ-06 | STEP-05, STEP-06 | AC-05 (rate-limit subset) |
+| RQ-07 | STEP-03, STEP-04, STEP-06 | AC-01, AC-02, AC-03, AC-04, AC-05, AC-06, AC-07, AC-08, AC-09, AC-10 |
+| RQ-08 | STEP-05 | AC-11 |
+| RQ-09 | STEP-09 | AC-11 (no schema/migration change) |
+| RQ-10 | STEP-06, STEP-07 | AC-12 |
 
 ---
 
@@ -222,19 +238,20 @@ Error code mapping: see DEC-16.
 
 | ID | Risk | Mitigation / rollback |
 |---|---|---|
-| RISK-01 | Forged-code spam creates many rejected requests. | Rate-limit per IP (DEC-04) + per `affCode` (existing `TRACKING_CODE` bucket). 503 if limiter unavailable (fail-closed, no DB pressure). |
-| RISK-02 | Race / double-click creates duplicate attributions for the same `(referrer, code)` window. | Idempotency-Key (DEC-05) + advisory lock + partial unique index test (DEC-07, AC-05). |
-| RISK-03 | Engine URL misconfigured in production → request silently uses writer (privilege escalation). | `getEnginePrisma()` already throws if `HRPARTNER_ENGINE_URL` is missing. New AC-08 enforces 503 with no DB call. Static check `engine-set-config.static.test.ts` rejects `set_config(..., false)`. N2-1 AUDIT already covers role posture. |
-| RISK-04 | Logging leaks affiliate code / IP / UA. | DEC-12: logger meta is typed allow-list (route, status, outcome, surface, retryAfter, requestId). Service never logs the affCode value. |
-| RISK-05 | N2-1 schema / RLS drift between this slice's merge and N2-1's existing tests. | N2-1 integration test is already in `vitest.integration-files.ts` and runs in CI. AC-11 confirms container-DB green. |
-| RISK-06 | `referral_attributions` table doesn't exist in production yet → first capture fails. | N2-1 migration is in baseline (committed). N2-1's own AUDIT round 2 PASS covers the migration; my slice only writes to it. |
-| RISK-07 | Tier 0 has not authorized the N2-1 production migration / engine credential — this slice still ships but cannot be deployed to production. | T0 directive: "Production gate: N2-1 production migration and credential app_engine_writer still unauthorized." — explicitly noted; delivery is non-merge PR with HANDOFF audit. |
+| RISK-01 | Forged-code spam creates many 302 redirects. | Rate-limit per IP (DEC-A3). 503 if limiter unavailable (fail-closed). Constant-shape response prevents existence signal. |
+| RISK-02 | Open-redirect via `?job` query param (e.g. `https://evil.com`). | Destination allowlist (DEC-A4) — only `/jobs[/...]` paths pass; others → 302 to `/jobs`. |
+| RISK-03 | Engine URL misconfigured in production → request silently uses writer (privilege escalation). | `getEnginePrisma()` throws if `HRPARTNER_ENGINE_URL` missing. Route maps to 503. Static check `engine-set-config.static.test.ts` rejects `set_config(..., false)`. N2-1 AUDIT covers role posture. |
+| RISK-04 | Logging leaks affiliate code / IP / UA. | DEC-A12: logger meta is typed allow-list (route, outcome, requestId). Service never logs the affCode value or cookie. |
+| RISK-05 | N2-1 schema / RLS drift between this slice's merge and N2-1's existing tests. | N2-1 integration test runs in CI (already registered in `vitest.integration-files.ts`). AC-08 confirms container-DB green. |
+| RISK-06 | Orphan rows under concurrent initial clicks (no advisory lock per Decision A). | Decision A §3 documents this as known limitation; exactly-one initial capture is a CRITICAL additive schema slice (out of N2-2 scope). For now: the existing-valid-cookie wins path (RQ-03) prevents duplicate from a single browser; multiple browsers can each create a row (acceptable per DISCOVERY §2.4.1). |
+| RISK-07 | Tier 0 has not authorized N2-1 production migration / engine credential — this slice still ships but cannot be deployed. | T0 directive verbatim: "Production gate: N2-1 production migration and credential app_engine_writer still unauthorized." — explicitly noted; delivery is non-merge PR with HANDOFF audit. |
 
 ---
 
 ## 8. Open Questions
 
 - None blocking. The remaining "production gate" is owned by Tier 0 (per directive); this slice is a non-merge PR awaiting T3 LIGHT audit + Tier 0 authorization.
+- The "exactly-one initial capture" invariant is deferred to a separate CRITICAL additive schema slice (Decision A §3).
 
 ---
 
@@ -243,7 +260,8 @@ Error code mapping: see DEC-16.
 | Round | Decision | Reason |
 |---|---|---|
 | 0 | READY_FOR_EXECUTION (v1.0) | Stale baseline + paths. Superseded by v2.0. |
-| 1 | READY_FOR_EXECUTION (v2.0) | Baseline corrected to `e798af8`; paths corrected to App Router layout; API contract, idempotency/race contract, error semantics, AC set expanded. No DB migration risk. |
+| 1 | READY_FOR_EXECUTION (v2.0) | Baseline corrected; paths corrected to App Router; POST API contract, idempotency/race contract locked. NO schema migration risk. Superseded by v3.0. |
+| 2 | READY_FOR_EXECUTION (v3.0 — Decision A) | T0 directive: replace POST /api/public/referrals/{affCode}/capture with canonical GET /r/{code}[?job=...]. Signed `hrp_aff` cookie, existing-valid-wins, destination allowlist, no Idempotency-Key / synthetic actor / advisory lock. Integration tests must RUN not SKIP. |
 
 ---
 
@@ -252,4 +270,5 @@ Error code mapping: see DEC-16.
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | v1.0 | 2026-09-17 | Initial contract | Extracted from N2 DISCOVERY.md |
-| v2.0 | 2026-09-18 | Baseline corrected; in-scope paths corrected to actual Next.js App Router layout (`app/api/public/referrals/**`, `src/domains/referrals/**`); API request/response contract locked; idempotency key requirement + replay contract locked; race/double-click contract locked; error semantics per outcome locked (DEC-16); AC set expanded (race, abuse boundary, engine-context isolation, static `set_config(..., false)` rejection); `audit_reason` sharpened; `audit_mode` confirmed LIGHT. | Pre-implementation revision requested by Tier 0 directive; ensure Tier 3 can reproduce ACs end-to-end without guessing paths. |
+| v2.0 | 2026-09-18 | Baseline corrected; in-scope paths corrected; POST API request/response contract locked; idempotency key requirement + replay contract locked; race/double-click contract locked; error semantics locked; AC set expanded. | Pre-implementation revision; ensure Tier 3 can reproduce ACs end-to-end without guessing paths. |
+| v3.0 | 2026-09-18 | **Round 2 — Decision A per T0 directive.** Replaced POST endpoint with canonical GET /r/{code}[?job=<slug>] redirect flow. Added signed `hrp_aff` cookie with server-side row re-verification. Existing-valid-wins replaces double-click lock contract. Destination allowlist replaces `returnTo`-style param. Removed Idempotency-Key, synthetic actor id, advisory lock, P2002-exactly-one claims. Documented orphan-row behavior (separate CRITICAL slice out of scope). Integration test must RUN not SKIP. Updated required gates. Removed `app/api/public/referrals/[affCode]/capture` from `MARKETPLACE_ANON`. | T0 directive `Decision A`: ship canonical referral redirect flow, not POST capture. |

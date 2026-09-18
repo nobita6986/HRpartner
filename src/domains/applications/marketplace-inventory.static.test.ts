@@ -78,13 +78,12 @@ const MUTATING = /export\s+(async\s+)?function\s+(POST|PUT|PATCH|DELETE)\b/;
 const AUTH_MARKER =
   /getAuthContext|requireAuth|withDbContext|applyRlsContext|resolvePerms|requirePermission|assertPermission|getSessionUser|verifySession/;
 // Ba route marketplace ẩn danh có chủ đích: 1 canonical apply + 2 stub 410.
-// N2-2 link-capture (hrp-v6-n2-aff-02-link-capture) bổ sung 1 public capture POST ẩn danh
-// theo DEC-08..DEC-15: rate-limit + idempotency + engine-context gate là ba lớp auth-equivalent.
+// N2-2 link-capture (Decision A): GET /r/[code] canonical redirect with signed
+// cookie (rate-limit + engine-context gate = auth-equivalent). No anonymous POST.
 const MARKETPLACE_ANON = [
   'app/api/public/jobs/[slug]/applications/route.ts',
   'app/api/jobs/route.ts',
   'app/api/jobs/apply/route.ts',
-  'app/api/public/referrals/[affCode]/capture/route.ts',
 ];
 // Vòng đời phiên: login xác thực credential, logout chỉ xoá cookie (không ghi business).
 const SESSION_ROUTES = ['app/api/auth/login/route.ts', 'app/api/auth/logout/route.ts'];
