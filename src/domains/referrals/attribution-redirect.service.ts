@@ -11,6 +11,14 @@
  *   - No Idempotency-Key, no synthetic actor id, no advisory lock.
  *   - Orphan row note documented (Decision A §3).
  *
+ * Security model:
+ *   - Referrer lookup: `findActivePublicReferrerByAffCode` named boundary
+ *     (src/domains/referrals/referral-public-lookup.ts).  Boundary enforces
+ *     writer role/grant — there is no row-level policy on `users` today; that
+ *     is a separate CRITICAL additive slice (BLK-01).  Fixed projection (`id`
+ *     only) prevents PII leakage.  Fail-closed: any DB error throws.
+ *   - Cookie row verification: engine tx + writer role lookup (split client).
+ *
  * Steps:
  *   1. Validate affCode (format + active referrer lookup via writer RLS).
  *   2. Validate `job` param against allowlist.
@@ -28,6 +36,9 @@ import {
   createAttributionToken,
   verifyAttributionToken,
 } from './redirect-token';
+import {
+  findActivePublicReferrerByAffCode,
+} from './referral-public-lookup';
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 
@@ -199,15 +210,19 @@ type ReferrerResult =
   | { kind: 'MISSING' }
   | { kind: 'ERROR' };
 
+/**
+ * Lookup the active referrer via the `referral-public-lookup` named boundary.
+ *
+ * P2 fix (round-5 audit): replaced direct `writer.$queryRaw` with the named
+ * boundary so downstream code (including static gates) can audit the exact
+ * projection and surface.  Fail-closed: any DB error → `ERROR`.
+ */
 async function lookupActiveReferrer(
   writer: PrismaClient,
   affCode: string,
 ): Promise<ReferrerResult> {
   try {
-    const rows = await writer.$queryRaw<Array<{ id: string }>>(
-      Prisma.sql`SELECT id::text FROM "users" WHERE "aff_code" = ${affCode} AND "is_active" = true LIMIT 1`,
-    );
-    const row = rows[0];
+    const row = await findActivePublicReferrerByAffCode(writer, affCode);
     if (!row) return { kind: 'MISSING' };
     return { kind: 'FOUND', userId: row.id };
   } catch {

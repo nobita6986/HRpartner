@@ -4,7 +4,9 @@
  * Canonical GET /r/{code}[?job=<slug>] referral redirect.
  *
  * Order of guards (each fail-closed):
- *   1. Rate-limit (IP bucket).  Rejects 429 / 503.
+ *   1. Rate-limit — dual bucket: IP (clientIp bucket) + AFF (canonical code bucket).
+ *      Both must pass; either denial → 429 / 503.  AFF key is HMAC-digested
+ *      (no raw affiliate code reaches the provider or logs).
  *   2. Code format + job allowlist (service layer).
  *   3. Engine client fail-closed on missing URL.
  *   4. Service typed outcome -> HTTP.
@@ -110,16 +112,34 @@ export async function GET(
   // Pre-decode: full validation happens in service.
   const canonicalCode = canonicalTrackingCode(rawCode ?? '');
 
-  // 1. Rate-limit guard (IP bucket only — no affCode bucket for GET redirect).
+  // 1. Rate-limit guard — DUAL bucket: IP + AFF.
+  //    Both must pass.  Denial → 429 / 503 (fail-closed).
+  //    AFF key = HMAC-digested canonical code — raw code never reaches provider/log.
   const clientIp = clientIpFromHeaders(req.headers, process.env);
+  const hashedCode = hashRateLimitIdentifier(
+    RATE_LIMIT_RULES.REFERRAL_CAPTURE_CODE,
+    canonicalCode,
+    process.env.RATE_LIMIT_HASH_SECRET ?? '',
+  );
 
-  const rateLimitResponse = await enforceRateLimits({
-    buckets: [
-      { rule: RATE_LIMIT_RULES.REFERRAL_CAPTURE_IP, value: clientIp },
-    ],
-    routeClass: ROUTE_CLASS,
-    requestId,
-  });
+  let rateLimitResponse: NextResponse | null = null;
+  try {
+    rateLimitResponse = await enforceRateLimits({
+      buckets: [
+        { rule: RATE_LIMIT_RULES.REFERRAL_CAPTURE_IP, value: clientIp },
+        { rule: RATE_LIMIT_RULES.REFERRAL_CAPTURE_CODE, value: hashedCode },
+      ],
+      routeClass: ROUTE_CLASS,
+      requestId,
+    });
+  } catch {
+    // Fail-closed: rate-limiter unavailable → reject the request.
+    warn('referral.redirect.rate_limit_error', requestId, {
+      route: ROUTE_CLASS,
+      outcome: 'engine_unavailable',
+    });
+    return new NextResponse(null, { status: 503 });
+  }
   if (rateLimitResponse) return rateLimitResponse;
 
   // 2. Job query param (null if absent).
