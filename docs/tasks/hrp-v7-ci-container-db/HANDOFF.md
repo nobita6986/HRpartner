@@ -129,7 +129,7 @@ Results: PASS=11 FAIL=0
 | Field | Value |
 |---|---|
 | PR URL | https://github.com/nobita6986/HRpartner/pull/15 |
-| Remote HEAD | `86d56ee27c5bb02f472ff75e45729d9e8cad29fe` (`ci: ephemeral postgres service container for Integration lane (hrp-v7-ci-container-db)`) — exact `git rev-parse HEAD` at delivery time; later amends to this HANDOFF shift the HEAD by 1 commit |
+| Remote HEAD (FINAL — pinned at delivery, do not amend again) | `c2a576f2ad78faf28a7636e4683171df259e0ffd` (`ci: ephemeral postgres service container for Integration lane (hrp-v7-ci-container-db)`) |
 | Workflow run | `35297725987` |
 | Quality job ID | `105453629167` |
 | Quality duration | **2m15s** (135s) |
