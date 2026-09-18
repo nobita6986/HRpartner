@@ -8,7 +8,7 @@
 | Spec version | `v1.0` |
 | Assurance lane | `STANDARD` |
 | Audit mode | `LIGHT` |
-| Execution round | `3` |
+| Execution round | `4` |
 | Baseline | `e798af80fd4111b5c41688abc1b9b9362b3b7727` |
 | Status | `READY_FOR_AUDIT` |
 
