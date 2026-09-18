@@ -1,0 +1,21 @@
+evidence file — full unit lane run
+===================================
+
+Run command:
+  npm run test:unit
+
+Observed:
+  Test Files  147 passed (147)
+  Tests  2301 passed (2301)
+  Duration  34.22s
+  Start at  11:05:23
+
+Includes (selected files relevant to N2-2):
+  ✓ src/db/engine-set-config.static.test.ts (1 test) 19ms
+  ✓ src/db/engine-client.test.ts (2 tests) 18ms
+  ✓ src/lib/db.test.ts (1 test) 3ms
+  ✓ src/domains/referrals/link-capture.service.test.ts (20 tests)
+  ✓ src/domains/applications/marketplace-inventory.static.test.ts (29 tests) 46ms
+    -- this file included a new MARKETPLACE_ANON entry for the capture route
+
+Zero failures.

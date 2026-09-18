@@ -1,0 +1,18 @@
+evidence file — Next.js production build
+==========================================
+
+Run command:
+  npm run build
+
+Observed (truncated):
+  ✓ Compiled successfully in 17.1s
+
+  Middleware                                          41.4 kB
+
+Route table excerpt (new line):
+  ƒ /api/public/referrals/[affCode]/capture             349 B         103 kB
+
+Middleware: 41.4 kB (unchanged from baseline).
+
+New route is force-dynamic (server-rendered on demand) with `runtime: 'nodejs'`,
+as documented in TASK §4.4 contract.

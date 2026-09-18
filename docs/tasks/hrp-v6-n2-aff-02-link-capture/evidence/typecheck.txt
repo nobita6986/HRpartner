@@ -1,0 +1,10 @@
+evidence file — typecheck
+=========================
+
+Run command:
+  npm run typecheck
+  (alias for `tsc --noEmit`)
+
+Observed:
+  exit 0
+  no diagnostics

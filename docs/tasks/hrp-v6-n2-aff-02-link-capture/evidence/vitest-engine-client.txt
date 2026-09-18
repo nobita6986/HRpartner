@@ -1,0 +1,17 @@
+evidence file — engine-client fail-closed test
+==============================================
+
+Run command:
+  ./node_modules/.bin/vitest run --config vitest.unit.config.ts \
+    src/db/engine-client.test.ts
+
+Observed (truncated):
+  ✓ src/db/engine-client.test.ts (2 tests) 18ms
+    ✓ fails closed when HRPARTNER_ENGINE_URL is missing
+    ✓ returns a PrismaClient instance when HRPARTNER_ENGINE_URL is present
+
+  Test Files  1 passed (1)
+  Tests  2 passed (2)
+
+Maps to AC-08: HRPARTNER_ENGINE_URL → throw /HRPARTNER_ENGINE_URL/;
+route translates this throw to HTTP 503 ENGINE_UNAVAILABLE without touching DB.

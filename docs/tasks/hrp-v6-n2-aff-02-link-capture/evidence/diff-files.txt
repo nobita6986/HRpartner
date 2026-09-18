@@ -1,0 +1,26 @@
+evidence file — git diff (changed surface vs origin/main)
+============================================================
+
+Run command:
+  git diff --name-only origin/main..HEAD
+
+Observed (expected):
+  docs/tasks/hrp-v6-n2-aff-02-link-capture/HANDOFF.md
+  docs/tasks/hrp-v6-n2-aff-02-link-capture/TASK.md
+  src/shared/security/rate-limit-port.ts
+  src/domains/referrals/link-capture.service.ts
+  src/domains/referrals/link-capture.service.test.ts
+  app/api/public/referrals/[affCode]/capture/route.ts
+  tests/db/link-capture.integration.test.ts
+  vitest.integration-files.ts
+  src/domains/applications/marketplace-inventory.static.test.ts
+
+Plus under docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/:
+  (this file and 8 sibling evidence files)
+
+Forbidden paths — UNCHANGED:
+  prisma/schema.prisma             (not modified)
+  prisma/migrations/**             (not modified)
+  src/domains/talent/**            (not modified)
+  src/db/engine-client.ts          (reused; not modified)
+  N2-1 policies/triggers (migration.sql) — not modified

@@ -1,0 +1,21 @@
+evidence file — captured output of unit test for link-capture.service
+==================================================================
+
+Run command:
+  ./node_modules/.bin/vitest run --config vitest.unit.config.ts \
+    src/domains/referrals/link-capture.service.test.ts
+
+Observed:
+  ✓ src/domains/referrals/link-capture.service.test.ts (20 tests) 8ms
+
+  Test Files  1 passed (1)
+  Tests  20 passed (20)
+
+Coverage matrix (described; per-it detail in vitest output):
+  - input validation (forged, empty, oversized, missing UUID, oversized source)  PASS x6
+  - writer lookup branches (found, missing, inactive, error)  PASS x4
+  - engine write (happy, set_config(...,true), P2002, 42501, engine throws)  PASS x5
+  - derivePublicActorId (format, stability, UA/IP/code variation)  PASS x5
+  - log redaction (DEC-12 — affCode never appears in any logger call)  PASS (probe-style)
+
+Exit 0.  PASS=20 FAIL=0.

@@ -1,0 +1,16 @@
+evidence file — engine-set-config static lint
+===============================================
+
+Run command:
+  ./node_modules/.bin/vitest run --config vitest.unit.config.ts \
+    src/db/engine-set-config.static.test.ts
+
+Observed:
+  ✓ src/db/engine-set-config.static.test.ts (1 test) 19ms
+
+  Test Files  1 passed (1)
+  Tests  1 passed (1)
+
+Static check: regex sweep over every `src/**/*.ts` (excluding `*.test.ts`) for
+the forbidden pattern `set_config('hrp.engine_context', <value>, false)`.
+My service uses the literal `, true)`. Zero matches. PASS.

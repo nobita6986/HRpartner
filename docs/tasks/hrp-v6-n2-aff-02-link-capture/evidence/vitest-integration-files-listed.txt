@@ -1,0 +1,17 @@
+evidence file — integration-file-list verification (self-skip)
+===============================================================
+
+Run command:
+  ./node_modules/.bin/vitest run --config vitest.integration.config.ts
+
+Observed:
+  RUN  v2.1.9 C:/CodeApp/HrP-worktrees/tier1-n2-aff-02-link-capture
+  Test Files  21 skipped (21)
+  Tests       410 skipped (410)
+  Duration    5.23s
+
+All 21 integration test files (the 20 pre-existing entries in
+`vitest.integration-files.ts` plus the newly registered
+`tests/db/link-capture.integration.test.ts`) are picked up by the
+integration config. Without `DATABASE_URL_TEST` they ALL self-skip — the
+existing `fileParallelism: false` and preflight guard are preserved.

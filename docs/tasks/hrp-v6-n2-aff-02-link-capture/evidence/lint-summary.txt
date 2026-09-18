@@ -1,0 +1,21 @@
+evidence file — lint summary (my files + repo total)
+=====================================================
+
+Run command:
+  npm run lint
+
+Repo totals at baseline `e798af8`:
+  ✖ 584 problems (0 errors, 584 warnings)
+  0 errors and 8 warnings potentially fixable with the `--fix` option.
+
+My files only (eslint scoped to my files):
+  src/domains/referrals/link-capture.service.test.ts        8 warnings (no-explicit-any in mocks)
+  src/domains/referrals/link-capture.service.ts            0 warnings
+  app/api/public/referrals/[affCode]/capture/route.ts      0 warnings
+  tests/db/link-capture.integration.test.ts                0 warnings
+  src/shared/security/rate-limit-port.ts                   0 warnings
+  src/domains/applications/marketplace-inventory.static.test.ts  0 warnings
+
+Exit 0. My slice adds 0 errors. The 584 warnings are baseline lint debt
+(Go-live/Hygiene backlog, tracked separately) — none are introduced by
+this slice.

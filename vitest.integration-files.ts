@@ -47,4 +47,8 @@ export const INTEGRATION_TEST_FILES: string[] = [
   'tests/db/placement-lifecycle-integration.test.ts',
   'src/domains/admin-demand-tree.integration.test.ts',
   'tests/db/referral-attribution-foundation.integration.test.ts',
+  // hrp-v6-n2-aff-02-link-capture: DB-touching proof for the public link-capture
+  // path (engine principal with link-capture context, advisory lock + RLS gate).
+  // Self-skips when DATABASE_URL_TEST is absent (ENV_BLOCKED).
+  'tests/db/link-capture.integration.test.ts',
 ];
