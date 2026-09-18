@@ -8,15 +8,18 @@
 | Spec version | v3.0 |
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
-| Execution round | 2 (round 2 = Decision A revision per T0 directive) |
+| Execution round | 3 (Decision A revised, then P1 fixes applied per T3 audit) |
 | Current audit round | 0 |
 | Baseline | `b6940a82c2b139d319f9bc1cb6f4bff7c5a63b72` (origin/main, post `hrp-v6-n2-aff-01-attribution-foundation` merge) |
-| Status | `RESOLVED` |
+| Implementation SHA (round 2, verified by CI run `35310303161`) | `20bd5039fd803d1d0ef334ee9c362f247dd99c55` |
+| Status | `READY_FOR_AUDIT` |
 | Next gate | `/audit` (Tier 3 LIGHT) → `/resolve` |
 
 > Brief-prescribed **production gate noted (NOT a slice blocker)**: N2-1 production migration and `app_engine_writer` credential are not yet authorized by Tier 0. This slice is a non-merge PR awaiting T3 LIGHT audit + Tier 0 authorization before any go-live step.
 
 > **Round-2 Decision A revision (T0 directive):** Round 1 shipped a POST `/api/public/referrals/[affCode]/capture` endpoint with `Idempotency-Key`, synthetic actor id, and `pg_advisory_xact_lock`. T0 directive `Decision A` requires the canonical GET `/r/{code}` referral redirect flow with signed `hrp_aff` cookie, no Idempotency-Key, no synthetic actor, no advisory lock. The round-1 implementation has been REMOVED (deleted files); the round-2 implementation matches the T0 directive verbatim.
+
+> **Round-3 P1 fixes (T3 audit feedback):** Round 2 had a subtle but critical bug — existing-cookie verification was tied to the **currently-clicked code's referrer**, not the cookie's stored referrer. This meant that clicking code B after a valid cookie A would fail the verification (because B's referrer ≠ cookie A's referrer) and overwrite the cookie with a new attribution.  Round 3 fixes this: `verifyCookieAgainstRow` reads the row, then independently verifies that the row's **stored** referrer is still active in `users` (independent of the click).  A cross-referrer integration test (AC-03b) is added to prove this.  P2002 fake race-winner branch removed.  Token documented as "signed structured" (not opaque).  Status reset to READY_FOR_AUDIT (matches the documented flow).  See §6 below for the full P1 fix list.
 
 ---
 
@@ -73,6 +76,7 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 | `AC-01` | `E-01` (`vitest-attribution-redirect-service.txt`) and `E-05` (`test-integration-attribution-redirect.txt`) | Unit `npx vitest run src/domains/referrals/attribution-redirect.service.test.ts` → 19/19 tests pass; AC-01 happy-path asserts `set_config('hrp.engine_context','link-capture',true)`, INSERT returns row. | Container-DB integration RUNs in CI (`.github/workflows/ci.yml` ephemeral postgres service) |
 | `AC-02` | `E-01`, `E-05` | Same unit + integration runs. AC-02 branches assert: forged/inactive `affCode` returns NOT_FOUND (302 to /jobs) with NO engine call. Adversarial regex inputs (`<empty>`, `'; DROP TABLE users; --`, length > 64) all reject at format check. | None |
 | `AC-03` | `E-01`, `E-05` | Same unit + integration runs. AC-03: valid cookie + active row → REDIRECT_EXISTING; DB row count unchanged after second call | None |
+| `AC-03b` | `E-05`, `E-14` | **Round-3 P1 fix.** Cross-referrer: cookie from code A + click code B → REDIRECT_EXISTING (first click wins). No new row written for code B; DB row count unchanged.  Tests the cookie independence from currently-clicked code. | None — unit `22/22` + integration (will be re-verified in fresh CI run). |
 | `AC-04` | `E-05`, `E-14` (CI integration) | Integration test AC-04: engine context cleared at COMMIT (re-read `current_setting('hrp.engine_context', true)` returns `''`). **CI**: PASS in `35310303161/105490789083` — 21 files / 414 tests passed (14 from this file, all ACs green). | None — CI run provides live assertion. |
 | `AC-05` | `E-01`, `E-05` | Unit + integration. `?job=//evil.com`, `?job=https://evil.com`, `?job=/../etc/passwd`, `?job=/admin` → INVALID_JOB (302 to /jobs). | None |
 | `AC-06` | `E-01`, `E-05` | Unit + integration. `?job=/jobs/some-slug` → allowlisted prefix preserved (REDIRECT_NEW to that destination); `?job=/jobs?page=2` → query stripped, `/jobs` valid (REDIRECT_NEW to `/jobs`); `?job=/admin` → INVALID_JOB. | None |
@@ -152,6 +156,110 @@ lint
 ---
 
 ## 4. Deviations and blockers
+
+*See §6 (round-3 P1 fixes) for the T3 audit findings that prompted this round.*
+
+---
+
+## 6. Round-3 P1 fixes (per T3 audit)
+
+### 6.1 P1: existing-cookie verification is now INDEPENDENT of clicked code
+
+**Before (round 2 bug):**
+
+```ts
+const existingValid = await checkAttributionStillValid(
+  deps.engine,
+  parsed.attributionId,
+  referrer.userId,        // ← click-time referrer
+);
+// SQL: WHERE id = ? AND referrer_user_id = referrer.userId AND status = 'ACTIVE'
+```
+
+If a user clicked code A (cookie A), then clicked code B, this query would fail because B's referrer ≠ cookie A's referrer — and the service would create a new attribution B, overwriting the original cookie.
+
+**After (round 3 fix):**
+
+```ts
+const verified = await verifyCookieAgainstRow(
+  deps.engine,
+  deps.writer,
+  parsed.attributionId,   // ← only the cookie's stored id
+);
+// Step 1: engine SELECTs the row by id (returns row.referrer_user_id)
+// Step 2: writer SELECTs users WHERE id = row.referrer_user_id AND is_active
+//         — INDEPENDENT of the currently-clicked code
+```
+
+The cookie's row IS the authority. Switching to a different code's referrer does NOT invalidate the cookie and does NOT create a new row.
+
+### 6.2 P1: cross-referrer integration test (AC-03b)
+
+```ts
+it('AC-03b: cookie from code A + click code B → REDIRECT_EXISTING (first click wins)', async () => {
+  // Step 1: click CODE_ACTIVE1, get cookieA
+  const first = await resolveReferralRedirect(
+    baseInput({ affCode: `CODE_${runNamespace}_ACTIVE1` }),
+    { writer: writerDb, engine },
+  );
+  expect(first.kind).toBe('REDIRECT_NEW');
+  const cookieA = asWithCookieToken(first).cookieToken;
+
+  // Step 2: click CODE_ACTIVE2 WITH cookieA. Must NOT create a new attribution.
+  const second = await resolveReferralRedirect(
+    baseInput({ affCode: `CODE_${runNamespace}_ACTIVE2`, hrpAffCookie: cookieA }),
+    { writer: writerDb, engine },
+  );
+  expect(second.kind).toBe('REDIRECT_EXISTING');
+  expect(asWithDestination(second).destination).toBe('/jobs');
+
+  // Attribution count unchanged — no new row for CODE_ACTIVE2.
+  const countAfter = await countAttributions(`CODE_${runNamespace}_ACTIVE1`);
+  expect(countAfter).toBe(countBefore);
+});
+```
+
+### 6.3 P1: P2002 fake race-winner branch removed
+
+**Before:**
+
+```ts
+} catch (err) {
+  const sqlState = (err as { code?: string }).code ?? '';
+  if (sqlState === 'P2002') {
+    return { kind: 'REDIRECT_EXISTING', destination };  // ← FAKE: no business-key support
+  }
+  return { kind: 'WRITE_FAILED' };
+}
+```
+
+**After:**
+
+```ts
+} catch (err) {
+  // Decision A §3: No business-key unique constraint supports a race-winner claim.
+  // Even a PK collision (astronomically rare UUID) cannot be mapped to REDIRECT_EXISTING
+  // because we don't have the winner's cookie to set.  Treat any write failure as
+  // WRITE_FAILED (fail-closed).  Orphan initial rows are accepted as out-of-scope.
+  return { kind: 'WRITE_FAILED' };
+}
+```
+
+### 6.4 P2: status reset to READY_FOR_AUDIT
+
+The previous round had `TASK.status = RESOLVED` and `HANDOFF.status = RESOLVED` written **before** a fresh T3 audit verdict on round-3 changes. Per the documented handoff flow (`READY_FOR_AUDIT → T3 PASS → Tier 1 Planner Resolution → RESOLVED`), status must remain `READY_FOR_AUDIT` until T3 reviews the round-3 implementation.
+
+### 6.5 P2: implementation SHA chain documented
+
+Per T3 audit feedback, the implementation SHA verified by CI run `35310303161` was `20bd5039fd803d1d0ef334ee9c362f247dd99c55`. Subsequent SHAs (`7253295`, `1b667f4`) were documentation-only.  Round-3 commit is a functional delta and requires a fresh CI run.  See TASK §11 for the full chain.
+
+### 6.6 P2: token documented as "signed structured" (not opaque)
+
+`redirect-token.ts` uses base64url-encoded payload — the `attributionId` is recoverable from a captured token.  The cookie is HttpOnly (limits XSS exfiltration), but operators should treat it as bearer-secret material.  True opaqueness (server-side handle → id mapping) is out of N2-2 scope.  DEC-A6 updated to reflect this.
+
+---
+
+## 7. Deviations and blockers
 
 | ID | Type | Description / evidence | Decision needed |
 |---|---|---|---|
