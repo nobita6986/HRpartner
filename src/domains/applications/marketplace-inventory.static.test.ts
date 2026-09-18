@@ -78,6 +78,8 @@ const MUTATING = /export\s+(async\s+)?function\s+(POST|PUT|PATCH|DELETE)\b/;
 const AUTH_MARKER =
   /getAuthContext|requireAuth|withDbContext|applyRlsContext|resolvePerms|requirePermission|assertPermission|getSessionUser|verifySession/;
 // Ba route marketplace ẩn danh có chủ đích: 1 canonical apply + 2 stub 410.
+// N2-2 link-capture (Decision A): GET /r/[code] canonical redirect with signed
+// cookie (rate-limit + engine-context gate = auth-equivalent). No anonymous POST.
 const MARKETPLACE_ANON = [
   'app/api/public/jobs/[slug]/applications/route.ts',
   'app/api/jobs/route.ts',

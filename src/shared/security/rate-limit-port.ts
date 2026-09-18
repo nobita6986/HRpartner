@@ -16,7 +16,16 @@ export type RateLimitSurface =
   | 'TRACKING_IP'
   | 'TRACKING_CODE'
   | 'APPLY_IP'
-  | 'APPLY_PHONE';
+  | 'APPLY_PHONE'
+  // N2-2 link-capture (DEC-03/DEC-04 of hrp-v6-n2-aff-02-link-capture).
+  // One order tighter than TRACKING_IP because the public write path is
+  // anonymous — abuse vector is higher than a self-service read.
+  | 'REFERRAL_CAPTURE_IP'
+  // Same family but keyed by the affiliate code under capture; a forged-code
+  // burst from one IP hits REFERRAL_CAPTURE_IP; a single valid-code burst
+  // from many IPs hits REFERRAL_CAPTURE_CODE. Existing TRACKING_CODE rule
+  // is REUSED here so we never add a new subject-shape.
+  | 'REFERRAL_CAPTURE_CODE';
 
 export type RateLimitSubject = 'ip' | 'tracking-code' | 'phone';
 
@@ -37,6 +46,14 @@ export const RATE_LIMIT_RULES = {
   TRACKING_CODE: { surface: 'TRACKING_CODE', subject: 'tracking-code', limit: 10, windowSec: 60 },
   APPLY_IP: { surface: 'APPLY_IP', subject: 'ip', limit: 10, windowSec: 600 },
   APPLY_PHONE: { surface: 'APPLY_PHONE', subject: 'phone', limit: 5, windowSec: 3600 },
+  // N2-2 link-capture (hrp-v6-n2-aff-02-link-capture, DEC-04). These are
+  // intentionally smaller than TRACKING_* because the public capture route
+  // is a WRITE path that inserts attribution rows, not a self-service read.
+  REFERRAL_CAPTURE_IP: { surface: 'REFERRAL_CAPTURE_IP', subject: 'ip', limit: 10, windowSec: 60 },
+  // Alias of TRACKING_CODE shape but exposed under the capture surface so
+  // observability dashboards can separate capture traffic from public-tracking
+  // traffic. Same underlying subject='tracking-code'.
+  REFERRAL_CAPTURE_CODE: { surface: 'REFERRAL_CAPTURE_CODE', subject: 'tracking-code', limit: 10, windowSec: 60 },
 } as const satisfies Record<RateLimitSurface, RateLimitRule>;
 
 /**

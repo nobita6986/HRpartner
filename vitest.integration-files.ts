@@ -47,4 +47,8 @@ export const INTEGRATION_TEST_FILES: string[] = [
   'tests/db/placement-lifecycle-integration.test.ts',
   'src/domains/admin-demand-tree.integration.test.ts',
   'tests/db/referral-attribution-foundation.integration.test.ts',
+  // hrp-v6-n2-aff-02-link-capture (Decision A): GET /r/[code] canonical redirect.
+  // Validates affCode + job allowlist + hrp_aff cookie + engine context.
+  // RUNs (not SKIPs) against live container DB; fails explicitly if DB unavailable.
+  'tests/db/attribution-redirect.integration.test.ts',
 ];

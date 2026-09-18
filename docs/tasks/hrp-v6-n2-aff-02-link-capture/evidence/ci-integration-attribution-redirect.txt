@@ -1,0 +1,1014 @@
+﻿2026-09-18T11:08:21.0002876Z Current runner version: '2.337.0'
+2026-09-18T11:08:21.0019002Z ##[group]Runner Image Provisioner
+2026-09-18T11:08:21.0019659Z Hosted Compute Agent
+2026-09-18T11:08:21.0020060Z Version: 20260828.587
+2026-09-18T11:08:21.0020481Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-18T11:08:21.0021028Z Build Date: 2026-08-28T16:44:25Z
+2026-09-18T11:08:21.0021486Z Worker ID: {b57a0c0d-c360-4ec9-84cf-5c6534778f5c}
+2026-09-18T11:08:21.0021980Z Azure Region: centralus
+2026-09-18T11:08:21.0022388Z ##[endgroup]
+2026-09-18T11:08:21.0023806Z ##[group]Operating System
+2026-09-18T11:08:21.0024572Z Ubuntu
+2026-09-18T11:08:21.0024940Z 24.04.5
+2026-09-18T11:08:21.0025287Z LTS
+2026-09-18T11:08:21.0025644Z ##[endgroup]
+2026-09-18T11:08:21.0026059Z ##[group]Runner Image
+2026-09-18T11:08:21.0026495Z Image: ubuntu-24.04
+2026-09-18T11:08:21.0026874Z Version: 20260907.300.1
+2026-09-18T11:08:21.0027768Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-18T11:08:21.0028825Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-18T11:08:21.0029472Z ##[endgroup]
+2026-09-18T11:08:21.0030232Z ##[group]GITHUB_TOKEN Permissions
+2026-09-18T11:08:21.0031927Z Contents: read
+2026-09-18T11:08:21.0032330Z Metadata: read
+2026-09-18T11:08:21.0032964Z ##[endgroup]
+2026-09-18T11:08:21.0034430Z Secret source: Actions
+2026-09-18T11:08:21.0035021Z Cache mode: write
+2026-09-18T11:08:21.0035528Z Prepare workflow directory
+2026-09-18T11:08:21.0336118Z Prepare all required actions
+2026-09-18T11:08:21.0370638Z Getting action download info
+2026-09-18T11:08:21.2465398Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-18T11:08:21.3665598Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-09-18T11:08:21.6901438Z Complete job name: Integration (DB tests · fail-closed)
+2026-09-18T11:08:21.7245795Z ##[group]Checking docker version
+2026-09-18T11:08:21.7254864Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+2026-09-18T11:08:22.1042050Z '1.48'
+2026-09-18T11:08:22.1054526Z Docker daemon API version: '1.48'
+2026-09-18T11:08:22.1055240Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+2026-09-18T11:08:22.1184825Z '1.48'
+2026-09-18T11:08:22.1191970Z Docker client API version: '1.48'
+2026-09-18T11:08:22.1196281Z ##[endgroup]
+2026-09-18T11:08:22.1198515Z ##[group]Clean up resources from previous jobs
+2026-09-18T11:08:22.1202158Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=7fdafd"
+2026-09-18T11:08:22.1315776Z ##[command]/usr/bin/docker network prune --force --filter "label=7fdafd"
+2026-09-18T11:08:22.1420237Z ##[endgroup]
+2026-09-18T11:08:22.1420741Z ##[group]Create local container network
+2026-09-18T11:08:22.1427716Z ##[command]/usr/bin/docker network create --label 7fdafd github_network_43e4cbfae49f43fea0b5436fbed29191
+2026-09-18T11:08:22.2622473Z b46e5c6ed8201ab2f053f8ff758809a34aa415d6b0ab85d26a0c9b5a7de4e658
+2026-09-18T11:08:22.2631390Z ##[endgroup]
+2026-09-18T11:08:22.2651737Z ##[group]Starting postgres service container
+2026-09-18T11:08:22.2667618Z ##[command]/usr/bin/docker pull postgres:16-alpine
+2026-09-18T11:08:22.8480422Z 16-alpine: Pulling from library/postgres
+2026-09-18T11:08:23.0196209Z e2de96513ba9: Pulling fs layer
+2026-09-18T11:08:23.0197102Z 1b7f9cd581ee: Pulling fs layer
+2026-09-18T11:08:23.0197826Z 210b280f9556: Pulling fs layer
+2026-09-18T11:08:23.0198660Z 81717818649a: Pulling fs layer
+2026-09-18T11:08:23.0199445Z 3ae6141cfd99: Pulling fs layer
+2026-09-18T11:08:23.0200202Z 25b77f59fd95: Pulling fs layer
+2026-09-18T11:08:23.0200969Z 6c25da34e03f: Pulling fs layer
+2026-09-18T11:08:23.0201733Z a88782f92806: Pulling fs layer
+2026-09-18T11:08:23.0202520Z d8d21be4bf02: Pulling fs layer
+2026-09-18T11:08:23.0203673Z 6117bd39f23f: Pulling fs layer
+2026-09-18T11:08:23.0204472Z 509688edf37b: Pulling fs layer
+2026-09-18T11:08:23.0205208Z a88782f92806: Waiting
+2026-09-18T11:08:23.0206239Z 81717818649a: Waiting
+2026-09-18T11:08:23.0207091Z 3ae6141cfd99: Waiting
+2026-09-18T11:08:23.0207792Z 25b77f59fd95: Waiting
+2026-09-18T11:08:23.0208454Z 6c25da34e03f: Waiting
+2026-09-18T11:08:23.0209132Z d8d21be4bf02: Waiting
+2026-09-18T11:08:23.0209833Z 6117bd39f23f: Waiting
+2026-09-18T11:08:23.0210527Z 509688edf37b: Waiting
+2026-09-18T11:08:23.1800832Z 1b7f9cd581ee: Verifying Checksum
+2026-09-18T11:08:23.1801587Z 1b7f9cd581ee: Download complete
+2026-09-18T11:08:23.2438589Z 210b280f9556: Verifying Checksum
+2026-09-18T11:08:23.2439352Z 210b280f9556: Download complete
+2026-09-18T11:08:23.2795839Z e2de96513ba9: Verifying Checksum
+2026-09-18T11:08:23.2796286Z e2de96513ba9: Download complete
+2026-09-18T11:08:23.3267573Z 81717818649a: Verifying Checksum
+2026-09-18T11:08:23.3268024Z 81717818649a: Download complete
+2026-09-18T11:08:23.3658993Z 3ae6141cfd99: Verifying Checksum
+2026-09-18T11:08:23.3660097Z 3ae6141cfd99: Download complete
+2026-09-18T11:08:23.3686377Z e2de96513ba9: Pull complete
+2026-09-18T11:08:23.4517136Z 6c25da34e03f: Download complete
+2026-09-18T11:08:23.5292989Z a88782f92806: Verifying Checksum
+2026-09-18T11:08:23.5294041Z a88782f92806: Download complete
+2026-09-18T11:08:23.5948710Z d8d21be4bf02: Verifying Checksum
+2026-09-18T11:08:23.5949529Z d8d21be4bf02: Download complete
+2026-09-18T11:08:23.6933474Z 6117bd39f23f: Verifying Checksum
+2026-09-18T11:08:23.6934236Z 6117bd39f23f: Download complete
+2026-09-18T11:08:23.7192167Z 509688edf37b: Verifying Checksum
+2026-09-18T11:08:23.7192530Z 509688edf37b: Download complete
+2026-09-18T11:08:23.8101657Z 25b77f59fd95: Verifying Checksum
+2026-09-18T11:08:23.8102047Z 25b77f59fd95: Download complete
+2026-09-18T11:08:30.2047628Z 1b7f9cd581ee: Pull complete
+2026-09-18T11:08:30.2446298Z 210b280f9556: Pull complete
+2026-09-18T11:08:30.2625013Z 81717818649a: Pull complete
+2026-09-18T11:08:30.3735822Z 3ae6141cfd99: Pull complete
+2026-09-18T11:08:33.4566423Z 25b77f59fd95: Pull complete
+2026-09-18T11:08:33.5255265Z 6c25da34e03f: Pull complete
+2026-09-18T11:08:33.5407881Z a88782f92806: Pull complete
+2026-09-18T11:08:33.5560258Z d8d21be4bf02: Pull complete
+2026-09-18T11:08:33.9274108Z 6117bd39f23f: Pull complete
+2026-09-18T11:08:33.9921727Z 509688edf37b: Pull complete
+2026-09-18T11:08:34.0008468Z Digest: sha256:3c5c8892d184f738f4fe282d14ddaa613a38f00f4189d2d94725ebe6f2909ddb
+2026-09-18T11:08:34.0040890Z Status: Downloaded newer image for postgres:16-alpine
+2026-09-18T11:08:34.0054530Z docker.io/library/postgres:16-alpine
+2026-09-18T11:08:34.0115092Z ##[command]/usr/bin/docker create --name 29c7e70d4b3f4f95a92d81583ce21dff_postgres16alpine_e4ead0 --label 7fdafd --network github_network_43e4cbfae49f43fea0b5436fbed29191 --network-alias postgres -p 5432:5432 --health-cmd "pg_isready -U postgres -d ci_test" --health-interval 5s --health-timeout 5s --health-retries 10 -e "POSTGRES_USER=postgres" -e "POSTGRES_PASSWORD=postgres" -e "POSTGRES_DB=ci_test" -e GITHUB_ACTIONS=true -e CI=true postgres:16-alpine
+2026-09-18T11:08:34.0410325Z d6ad915f357957a45b5ab25df2926fcae9fbced9c6c2fe1b35ae4e8159455643
+2026-09-18T11:08:34.0425031Z ##[command]/usr/bin/docker start d6ad915f357957a45b5ab25df2926fcae9fbced9c6c2fe1b35ae4e8159455643
+2026-09-18T11:08:35.1339984Z d6ad915f357957a45b5ab25df2926fcae9fbced9c6c2fe1b35ae4e8159455643
+2026-09-18T11:08:35.1355889Z ##[command]/usr/bin/docker ps --all --filter id=d6ad915f357957a45b5ab25df2926fcae9fbced9c6c2fe1b35ae4e8159455643 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-09-18T11:08:35.1496021Z d6ad915f357957a45b5ab25df2926fcae9fbced9c6c2fe1b35ae4e8159455643 Up Less than a second (health: starting)
+2026-09-18T11:08:35.1509716Z ##[command]/usr/bin/docker port d6ad915f357957a45b5ab25df2926fcae9fbced9c6c2fe1b35ae4e8159455643
+2026-09-18T11:08:35.1631204Z 5432/tcp -> 0.0.0.0:5432
+2026-09-18T11:08:35.1631600Z 5432/tcp -> [::]:5432
+2026-09-18T11:08:35.1667579Z ##[endgroup]
+2026-09-18T11:08:35.1675459Z ##[group]Waiting for all services to be ready
+2026-09-18T11:08:35.1687618Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" d6ad915f357957a45b5ab25df2926fcae9fbced9c6c2fe1b35ae4e8159455643
+2026-09-18T11:08:35.2162545Z starting
+2026-09-18T11:08:35.2176540Z postgres service is starting, waiting 2 seconds before checking again.
+2026-09-18T11:08:37.2183703Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" d6ad915f357957a45b5ab25df2926fcae9fbced9c6c2fe1b35ae4e8159455643
+2026-09-18T11:08:37.2295804Z starting
+2026-09-18T11:08:37.2302967Z postgres service is starting, waiting 4 seconds before checking again.
+2026-09-18T11:08:41.2693353Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" d6ad915f357957a45b5ab25df2926fcae9fbced9c6c2fe1b35ae4e8159455643
+2026-09-18T11:08:41.2813505Z healthy
+2026-09-18T11:08:41.2825624Z postgres service is healthy.
+2026-09-18T11:08:41.2826068Z ##[endgroup]
+2026-09-18T11:08:41.3045323Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T11:08:41.3050730Z ##[group]Run actions/checkout@v4
+2026-09-18T11:08:41.3051366Z with:
+2026-09-18T11:08:41.3051580Z   fetch-depth: 0
+2026-09-18T11:08:41.3051798Z   repository: nobita6986/HRpartner
+2026-09-18T11:08:41.3053965Z   token: ***
+2026-09-18T11:08:41.3054201Z   ssh-strict: true
+2026-09-18T11:08:41.3054432Z   ssh-user: git
+2026-09-18T11:08:41.3054656Z   persist-credentials: true
+2026-09-18T11:08:41.3054877Z   clean: true
+2026-09-18T11:08:41.3055119Z   sparse-checkout-cone-mode: true
+2026-09-18T11:08:41.3055377Z   fetch-tags: false
+2026-09-18T11:08:41.3055585Z   show-progress: true
+2026-09-18T11:08:41.3055801Z   lfs: false
+2026-09-18T11:08:41.3056104Z   submodules: false
+2026-09-18T11:08:41.3056325Z   set-safe-directory: true
+2026-09-18T11:08:41.3056588Z   allow-unsafe-pr-checkout: false
+2026-09-18T11:08:41.3056983Z env:
+2026-09-18T11:08:41.3057373Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+2026-09-18T11:08:41.3057792Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+2026-09-18T11:08:41.3058084Z   PG_BASELINE_PASSWORD: postgres
+2026-09-18T11:08:41.3058313Z   CI_INTEGRATION_STRICT: 1
+2026-09-18T11:08:41.3058555Z ##[endgroup]
+2026-09-18T11:08:41.3860983Z Syncing repository: nobita6986/HRpartner
+2026-09-18T11:08:41.3862333Z ##[group]Getting Git version info
+2026-09-18T11:08:41.3863042Z Working directory is '/home/runner/work/HRpartner/HRpartner'
+2026-09-18T11:08:41.3863844Z [command]/usr/bin/git version
+2026-09-18T11:08:41.3872219Z git version 2.55.0
+2026-09-18T11:08:41.3887057Z ##[endgroup]
+2026-09-18T11:08:41.3895302Z Temporarily overriding HOME='/home/runner/work/_temp/6419c179-723f-4869-8d02-ce086d699f79' before making global git config changes
+2026-09-18T11:08:41.3896256Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-18T11:08:41.3900018Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/HRpartner/HRpartner
+2026-09-18T11:08:41.3945362Z Deleting the contents of '/home/runner/work/HRpartner/HRpartner'
+2026-09-18T11:08:41.3948762Z ##[group]Initializing the repository
+2026-09-18T11:08:41.3951608Z [command]/usr/bin/git init /home/runner/work/HRpartner/HRpartner
+2026-09-18T11:08:41.6490771Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-18T11:08:41.6491681Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-18T11:08:41.6492364Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-18T11:08:41.6493113Z hint: call:
+2026-09-18T11:08:41.6493558Z hint:
+2026-09-18T11:08:41.6494547Z hint: 	git config --global init.defaultBranch <name>
+2026-09-18T11:08:41.6495029Z hint:
+2026-09-18T11:08:41.6495416Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-18T11:08:41.6496303Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-18T11:08:41.6496730Z hint:
+2026-09-18T11:08:41.6497019Z hint: 	git branch -m <name>
+2026-09-18T11:08:41.6497340Z hint:
+2026-09-18T11:08:41.6497693Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-18T11:08:41.6498284Z Initialized empty Git repository in /home/runner/work/HRpartner/HRpartner/.git/
+2026-09-18T11:08:41.6502165Z [command]/usr/bin/git remote add origin https://github.com/nobita6986/HRpartner
+2026-09-18T11:08:41.6543440Z ##[endgroup]
+2026-09-18T11:08:41.6543912Z ##[group]Disabling automatic garbage collection
+2026-09-18T11:08:41.6546604Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-18T11:08:41.6571233Z ##[endgroup]
+2026-09-18T11:08:41.6571910Z ##[group]Setting up auth
+2026-09-18T11:08:41.6577013Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-18T11:08:41.6600476Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-18T11:08:41.6881638Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-18T11:08:41.6905317Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-18T11:08:41.7051992Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-18T11:08:41.7075676Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-18T11:08:41.7222794Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-18T11:08:41.7504302Z ##[endgroup]
+2026-09-18T11:08:41.7505118Z ##[group]Fetching the repository
+2026-09-18T11:08:41.7510997Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+2026-09-18T11:08:43.4347053Z From https://github.com/nobita6986/HRpartner
+2026-09-18T11:08:43.4347663Z  * [new branch]      codex/hrp-vision-portal-aff -> origin/codex/hrp-vision-portal-aff
+2026-09-18T11:08:43.4348222Z  * [new branch]      fix-ci-prisma-validate-r1 -> origin/fix-ci-prisma-validate-r1
+2026-09-18T11:08:43.4348841Z  * [new branch]      hrp-v6-n2-aff-policy-contract-discovery -> origin/hrp-v6-n2-aff-policy-contract-discovery
+2026-09-18T11:08:43.4349405Z  * [new branch]      main                    -> origin/main
+2026-09-18T11:08:43.4349861Z  * [new branch]      tier1/admin-demand-tree -> origin/tier1/admin-demand-tree
+2026-09-18T11:08:43.4350369Z  * [new branch]      tier1/admin-detail-foundation -> origin/tier1/admin-detail-foundation
+2026-09-18T11:08:43.4350818Z  * [new branch]      tier1/admin-truth-defects -> origin/tier1/admin-truth-defects
+2026-09-18T11:08:43.4351328Z  * [new branch]      tier1/hrp-v6-admin-labor-profile-workbench -> origin/tier1/hrp-v6-admin-labor-profile-workbench
+2026-09-18T11:08:43.4352079Z  * [new branch]      tier1/hrp-v6-n2-aff-02-link-capture -> origin/tier1/hrp-v6-n2-aff-02-link-capture
+2026-09-18T11:08:43.4352920Z  * [new branch]      tier1/integration-test-budget-stabilization -> origin/tier1/integration-test-budget-stabilization
+2026-09-18T11:08:43.4353557Z  * [new branch]      tier1/n-closeout-docs-config -> origin/tier1/n-closeout-docs-config
+2026-09-18T11:08:43.4354182Z  * [new branch]      tier1/n1-foundation     -> origin/tier1/n1-foundation
+2026-09-18T11:08:43.4354730Z  * [new branch]      tier1/n3-service-model-placement -> origin/tier1/n3-service-model-placement
+2026-09-18T11:08:43.4355408Z  * [new branch]      worktree-04d-detail-ui-r1 -> origin/worktree-04d-detail-ui-r1
+2026-09-18T11:08:43.4355918Z  * [new branch]      worktree-n0-audit-r1    -> origin/worktree-n0-audit-r1
+2026-09-18T11:08:43.4358043Z [command]/usr/bin/git branch --list --remote origin/tier1/hrp-v6-n2-aff-02-link-capture
+2026-09-18T11:08:43.4379554Z   origin/tier1/hrp-v6-n2-aff-02-link-capture
+2026-09-18T11:08:43.4386522Z [command]/usr/bin/git rev-parse refs/remotes/origin/tier1/hrp-v6-n2-aff-02-link-capture
+2026-09-18T11:08:43.4408084Z 3d9e788a5bdc04e805aed179040875f758f3ef2a
+2026-09-18T11:08:43.4409753Z ##[endgroup]
+2026-09-18T11:08:43.4410258Z ##[group]Determining the checkout info
+2026-09-18T11:08:43.4411036Z ##[endgroup]
+2026-09-18T11:08:43.4422517Z [command]/usr/bin/git sparse-checkout disable
+2026-09-18T11:08:43.5108744Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-18T11:08:43.5128656Z ##[group]Checking out the ref
+2026-09-18T11:08:43.5134050Z [command]/usr/bin/git checkout --progress --force -B tier1/hrp-v6-n2-aff-02-link-capture refs/remotes/origin/tier1/hrp-v6-n2-aff-02-link-capture
+2026-09-18T11:08:43.6873563Z Switched to a new branch 'tier1/hrp-v6-n2-aff-02-link-capture'
+2026-09-18T11:08:43.6876939Z branch 'tier1/hrp-v6-n2-aff-02-link-capture' set up to track 'origin/tier1/hrp-v6-n2-aff-02-link-capture'.
+2026-09-18T11:08:43.6885697Z ##[endgroup]
+2026-09-18T11:08:43.6921774Z [command]/usr/bin/git log -1 --format=%H
+2026-09-18T11:08:43.6940610Z 3d9e788a5bdc04e805aed179040875f758f3ef2a
+2026-09-18T11:08:43.7118176Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T11:08:43.7119571Z ##[group]Run actions/setup-node@v4
+2026-09-18T11:08:43.7119843Z with:
+2026-09-18T11:08:43.7120046Z   node-version: 22
+2026-09-18T11:08:43.7120241Z   cache: npm
+2026-09-18T11:08:43.7120467Z   always-auth: false
+2026-09-18T11:08:43.7120690Z   check-latest: false
+2026-09-18T11:08:43.7122524Z   token: ***
+2026-09-18T11:08:43.7122926Z env:
+2026-09-18T11:08:43.7123368Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+2026-09-18T11:08:43.7123766Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+2026-09-18T11:08:43.7124082Z   PG_BASELINE_PASSWORD: postgres
+2026-09-18T11:08:43.7124347Z   CI_INTEGRATION_STRICT: 1
+2026-09-18T11:08:43.7124639Z ##[endgroup]
+2026-09-18T11:08:43.8936063Z Found in cache @ /opt/hostedtoolcache/node/22.23.2/x64
+2026-09-18T11:08:43.8939273Z (node:2435) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-18T11:08:43.8940137Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-18T11:08:43.8941159Z ##[group]Environment details
+2026-09-18T11:08:50.1031752Z node: v22.23.2
+2026-09-18T11:08:50.1032298Z npm: 10.9.8
+2026-09-18T11:08:50.1032549Z yarn: 1.22.22
+2026-09-18T11:08:50.1033807Z ##[endgroup]
+2026-09-18T11:08:50.1065396Z [command]/opt/hostedtoolcache/node/22.23.2/x64/bin/npm config get cache
+2026-09-18T11:08:50.4817818Z /home/runner/.npm
+2026-09-18T11:08:50.7426365Z Cache hit for: node-cache-Linux-x64-npm-fe29b93b127ccbd26361131b38e17a4a8100d00939daa9fbf6aef928b952fd7a
+2026-09-18T11:08:50.7499273Z (node:2435) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-18T11:08:51.8860317Z Received 124258593 of 128452897 (96.7%), 118.4 MBs/sec
+2026-09-18T11:08:51.9450446Z Received 128452897 of 128452897 (100.0%), 115.5 MBs/sec
+2026-09-18T11:08:51.9450897Z Cache Size: ~123 MB (128452897 B)
+2026-09-18T11:08:51.9476994Z [command]/usr/bin/tar -xf /home/runner/work/_temp/1f1641a2-4db6-43bf-876d-9d342b49b0db/cache.tzst -P -C /home/runner/work/HRpartner/HRpartner --use-compress-program unzstd
+2026-09-18T11:08:52.1050898Z Cache restored successfully
+2026-09-18T11:08:52.1095324Z Cache restored from key: node-cache-Linux-x64-npm-fe29b93b127ccbd26361131b38e17a4a8100d00939daa9fbf6aef928b952fd7a
+2026-09-18T11:08:52.1229475Z ##[group]Run set -euo pipefail
+2026-09-18T11:08:52.1229959Z set -euo pipefail
+2026-09-18T11:08:52.1230466Z # Resolve base ref safely: PR → base.sha, push → github.event.before, fallback → origin/main
+2026-09-18T11:08:52.1230893Z if [ "workflow_dispatch" = "pull_request" ]; then
+2026-09-18T11:08:52.1231173Z   BASE_SHA=""
+2026-09-18T11:08:52.1231515Z elif [ -n "" ] && [ "" != "0000000000000000000000000000000000000000" ]; then
+2026-09-18T11:08:52.1231830Z   BASE_SHA=""
+2026-09-18T11:08:52.1232048Z else
+2026-09-18T11:08:52.1232293Z   BASE_SHA="$(git rev-parse origin/main)"
+2026-09-18T11:08:52.1232582Z fi
+2026-09-18T11:08:52.1233075Z if [ -z "$BASE_SHA" ]; then
+2026-09-18T11:08:52.1233426Z   echo "::warning::could not resolve BASE_SHA — fail-safe to RUN full Integration"
+2026-09-18T11:08:52.1233840Z   echo "should_run=true" >> "$GITHUB_OUTPUT"
+2026-09-18T11:08:52.1234227Z   exit 0
+2026-09-18T11:08:52.1234465Z fi
+2026-09-18T11:08:52.1234744Z HEAD_SHA="3d9e788a5bdc04e805aed179040875f758f3ef2a"
+2026-09-18T11:08:52.1235060Z echo "BASE_SHA=$BASE_SHA HEAD_SHA=$HEAD_SHA"
+2026-09-18T11:08:52.1235429Z CHANGED="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" || true)"
+2026-09-18T11:08:52.1235746Z if [ -z "$CHANGED" ]; then
+2026-09-18T11:08:52.1236124Z   echo "::warning::empty diff (likely initial push to main) — RUN full Integration"
+2026-09-18T11:08:52.1236515Z   echo "should_run=true" >> "$GITHUB_OUTPUT"
+2026-09-18T11:08:52.1237006Z   exit 0
+2026-09-18T11:08:52.1237226Z fi
+2026-09-18T11:08:52.1237457Z echo "Changed files:"
+2026-09-18T11:08:52.1237690Z printf '%s\n' "$CHANGED"
+2026-09-18T11:08:52.1237991Z should_run=false
+2026-09-18T11:08:52.1238227Z while IFS= read -r f; do
+2026-09-18T11:08:52.1238506Z   [ -z "$f" ] && continue
+2026-09-18T11:08:52.1238760Z   case "$f" in
+2026-09-18T11:08:52.1239057Z     docs/*|*.md|scratch/*|.gitignore|README*|.env.example)
+2026-09-18T11:08:52.1239378Z       echo "  SKIP-eligible: $f" ;;
+2026-09-18T11:08:52.1239628Z     *)
+2026-09-18T11:08:52.1240157Z       should_run=true
+2026-09-18T11:08:52.1240432Z       echo "  RUN-required:  $f" ;;
+2026-09-18T11:08:52.1240676Z   esac
+2026-09-18T11:08:52.1240899Z done <<< "$CHANGED"
+2026-09-18T11:08:52.1241159Z if [ "$should_run" = "true" ]; then
+2026-09-18T11:08:52.1241473Z   echo "should_run=true" >> "$GITHUB_OUTPUT"
+2026-09-18T11:08:52.1241830Z   echo "Decision: RUN full Integration (code/schema/RLS path changed)"
+2026-09-18T11:08:52.1242140Z else
+2026-09-18T11:08:52.1242414Z   echo "should_run=false" >> "$GITHUB_OUTPUT"
+2026-09-18T11:08:52.1242973Z   echo "Decision: docs/config-only — Integration skipped (job still reports success)"
+2026-09-18T11:08:52.1243378Z fi
+2026-09-18T11:08:52.1273815Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-18T11:08:52.1274167Z env:
+2026-09-18T11:08:52.1274699Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+2026-09-18T11:08:52.1275107Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+2026-09-18T11:08:52.1275394Z   PG_BASELINE_PASSWORD: postgres
+2026-09-18T11:08:52.1275656Z   CI_INTEGRATION_STRICT: 1
+2026-09-18T11:08:52.1275907Z ##[endgroup]
+2026-09-18T11:08:52.1351334Z BASE_SHA=3d117c0ae3597f4484f153178f72d4b6b7b32a2c HEAD_SHA=3d9e788a5bdc04e805aed179040875f758f3ef2a
+2026-09-18T11:08:52.1366029Z Changed files:
+2026-09-18T11:08:52.1366468Z app/r/[code]/route.ts
+2026-09-18T11:08:52.1366940Z docs/tasks/hrp-v6-n2-aff-02-link-capture/HANDOFF.md
+2026-09-18T11:08:52.1367403Z docs/tasks/hrp-v6-n2-aff-02-link-capture/TASK.md
+2026-09-18T11:08:52.1368273Z docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/ci-integration-attribution-redirect.txt
+2026-09-18T11:08:52.1369050Z docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/ci-quality.txt
+2026-09-18T11:08:52.1369560Z docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/diff-files.txt
+2026-09-18T11:08:52.1370093Z docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/lint-summary.txt
+2026-09-18T11:08:52.1370705Z docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/next-build.txt
+2026-09-18T11:08:52.1371333Z docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/test-integration-attribution-redirect.txt
+2026-09-18T11:08:52.1371931Z docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/typecheck.txt
+2026-09-18T11:08:52.1372715Z docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/vitest-attribution-redirect-route.txt
+2026-09-18T11:08:52.1373550Z docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/vitest-attribution-redirect-service.txt
+2026-09-18T11:08:52.1374275Z docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/vitest-integration-files-listed.txt
+2026-09-18T11:08:52.1374779Z docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/vitest-redirect-token.txt
+2026-09-18T11:08:52.1375298Z docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/vitest-static-checks.txt
+2026-09-18T11:08:52.1376105Z docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/vitest-unit-full.txt
+2026-09-18T11:08:52.1376642Z src/domains/applications/marketplace-inventory.static.test.ts
+2026-09-18T11:08:52.1377156Z src/domains/referrals/attribution-redirect.route.test.ts
+2026-09-18T11:08:52.1377705Z src/domains/referrals/attribution-redirect.service.test.ts
+2026-09-18T11:08:52.1378181Z src/domains/referrals/attribution-redirect.service.ts
+2026-09-18T11:08:52.1378522Z src/domains/referrals/redirect-token.test.ts
+2026-09-18T11:08:52.1378879Z src/domains/referrals/redirect-token.ts
+2026-09-18T11:08:52.1379193Z src/domains/referrals/referral-public-lookup.ts
+2026-09-18T11:08:52.1379523Z src/shared/security/rate-limit-port.ts
+2026-09-18T11:08:52.1379865Z tests/db/attribution-redirect.integration.test.ts
+2026-09-18T11:08:52.1380160Z vitest.integration-files.ts
+2026-09-18T11:08:52.1380482Z   RUN-required:  app/r/[code]/route.ts
+2026-09-18T11:08:52.1380845Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/HANDOFF.md
+2026-09-18T11:08:52.1381256Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/TASK.md
+2026-09-18T11:08:52.1381799Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/ci-integration-attribution-redirect.txt
+2026-09-18T11:08:52.1382342Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/ci-quality.txt
+2026-09-18T11:08:52.1382952Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/diff-files.txt
+2026-09-18T11:08:52.1383437Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/lint-summary.txt
+2026-09-18T11:08:52.1383870Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/next-build.txt
+2026-09-18T11:08:52.1384384Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/test-integration-attribution-redirect.txt
+2026-09-18T11:08:52.1384969Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/typecheck.txt
+2026-09-18T11:08:52.1385458Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/vitest-attribution-redirect-route.txt
+2026-09-18T11:08:52.1386086Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/vitest-attribution-redirect-service.txt
+2026-09-18T11:08:52.1386622Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/vitest-integration-files-listed.txt
+2026-09-18T11:08:52.1387134Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/vitest-redirect-token.txt
+2026-09-18T11:08:52.1387663Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/vitest-static-checks.txt
+2026-09-18T11:08:52.1388119Z   SKIP-eligible: docs/tasks/hrp-v6-n2-aff-02-link-capture/evidence/vitest-unit-full.txt
+2026-09-18T11:08:52.1388598Z   RUN-required:  src/domains/applications/marketplace-inventory.static.test.ts
+2026-09-18T11:08:52.1389130Z   RUN-required:  src/domains/referrals/attribution-redirect.route.test.ts
+2026-09-18T11:08:52.1389884Z   RUN-required:  src/domains/referrals/attribution-redirect.service.test.ts
+2026-09-18T11:08:52.1390313Z   RUN-required:  src/domains/referrals/attribution-redirect.service.ts
+2026-09-18T11:08:52.1390700Z   RUN-required:  src/domains/referrals/redirect-token.test.ts
+2026-09-18T11:08:52.1391057Z   RUN-required:  src/domains/referrals/redirect-token.ts
+2026-09-18T11:08:52.1391445Z   RUN-required:  src/domains/referrals/referral-public-lookup.ts
+2026-09-18T11:08:52.1391826Z   RUN-required:  src/shared/security/rate-limit-port.ts
+2026-09-18T11:08:52.1392191Z   RUN-required:  tests/db/attribution-redirect.integration.test.ts
+2026-09-18T11:08:52.1392748Z   RUN-required:  vitest.integration-files.ts
+2026-09-18T11:08:52.1393150Z Decision: RUN full Integration (code/schema/RLS path changed)
+2026-09-18T11:08:52.1432335Z ##[group]Run npm ci
+2026-09-18T11:08:52.1432562Z npm ci
+2026-09-18T11:08:52.1447870Z shell: /usr/bin/bash -e {0}
+2026-09-18T11:08:52.1448162Z env:
+2026-09-18T11:08:52.1448597Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+2026-09-18T11:08:52.1449129Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+2026-09-18T11:08:52.1449434Z   PG_BASELINE_PASSWORD: postgres
+2026-09-18T11:08:52.1449657Z   CI_INTEGRATION_STRICT: 1
+2026-09-18T11:08:52.1449903Z ##[endgroup]
+2026-09-18T11:08:58.6680215Z npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+2026-09-18T11:09:05.1498881Z 
+2026-09-18T11:09:05.1499724Z added 276 packages, and audited 277 packages in 13s
+2026-09-18T11:09:05.1500220Z 
+2026-09-18T11:09:05.1500734Z 87 packages are looking for funding
+2026-09-18T11:09:05.1501268Z   run `npm fund` for details
+2026-09-18T11:09:05.1974325Z 
+2026-09-18T11:09:05.1976015Z 11 vulnerabilities (4 moderate, 5 high, 2 critical)
+2026-09-18T11:09:05.1976856Z 
+2026-09-18T11:09:05.1980281Z To address issues that do not require attention, run:
+2026-09-18T11:09:05.1980908Z   npm audit fix
+2026-09-18T11:09:05.1981256Z 
+2026-09-18T11:09:05.1981662Z To address all issues (including breaking changes), run:
+2026-09-18T11:09:05.1982218Z   npm audit fix --force
+2026-09-18T11:09:05.1982467Z 
+2026-09-18T11:09:05.1983376Z Run `npm audit` for details.
+2026-09-18T11:09:05.2444403Z ##[group]Run npm run prisma:generate
+2026-09-18T11:09:05.2444818Z npm run prisma:generate
+2026-09-18T11:09:05.2467094Z shell: /usr/bin/bash -e {0}
+2026-09-18T11:09:05.2467517Z env:
+2026-09-18T11:09:05.2468132Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:05.2468710Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:05.2469136Z   PG_BASELINE_PASSWORD: postgres
+2026-09-18T11:09:05.2469497Z   CI_INTEGRATION_STRICT: 1
+2026-09-18T11:09:05.2469828Z ##[endgroup]
+2026-09-18T11:09:05.3283948Z 
+2026-09-18T11:09:05.3304388Z > hrp@0.1.0 prisma:generate
+2026-09-18T11:09:05.3304829Z > prisma generate
+2026-09-18T11:09:05.3304961Z 
+2026-09-18T11:09:05.6534065Z Prisma schema loaded from prisma/schema.prisma
+2026-09-18T11:09:06.5863505Z 
+2026-09-18T11:09:06.5864801Z ✔ Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client in 529ms
+2026-09-18T11:09:06.5865116Z 
+2026-09-18T11:09:06.5865722Z Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+2026-09-18T11:09:06.5865997Z 
+2026-09-18T11:09:06.5866412Z Tip: Easily identify and fix slow SQL queries in your app. Optimize helps you enhance your visibility: https://pris.ly/--optimize
+2026-09-18T11:09:06.5866743Z 
+2026-09-18T11:09:06.8630156Z ##[group]Run set -euo pipefail
+2026-09-18T11:09:06.8630560Z set -euo pipefail
+2026-09-18T11:09:06.8630966Z for i in $(seq 1 30); do
+2026-09-18T11:09:06.8631381Z   if pg_isready -h localhost -p 5432 -U postgres -d ci_test; then
+2026-09-18T11:09:06.8631810Z     echo "postgres ready after ${i}s"
+2026-09-18T11:09:06.8632197Z     exit 0
+2026-09-18T11:09:06.8632509Z   fi
+2026-09-18T11:09:06.8633101Z   sleep 1
+2026-09-18T11:09:06.8633506Z done
+2026-09-18T11:09:06.8633737Z echo "::error::postgres NOT ready after 30s"
+2026-09-18T11:09:06.8634073Z exit 1
+2026-09-18T11:09:06.8661632Z shell: /usr/bin/bash -e {0}
+2026-09-18T11:09:06.8661930Z env:
+2026-09-18T11:09:06.8662925Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:06.8663370Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:06.8663664Z   PG_BASELINE_PASSWORD: postgres
+2026-09-18T11:09:06.8664039Z   CI_INTEGRATION_STRICT: 1
+2026-09-18T11:09:06.8664322Z ##[endgroup]
+2026-09-18T11:09:06.9768560Z localhost:5432 - accepting connections
+2026-09-18T11:09:06.9772512Z postgres ready after 1s
+2026-09-18T11:09:06.9912849Z ##[group]Run node scripts/ci/container-test-db.mjs --phase=pre
+2026-09-18T11:09:06.9913465Z node scripts/ci/container-test-db.mjs --phase=pre
+2026-09-18T11:09:06.9930592Z shell: /usr/bin/bash -e {0}
+2026-09-18T11:09:06.9930834Z env:
+2026-09-18T11:09:06.9931447Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:06.9931859Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:06.9932505Z   PG_BASELINE_PASSWORD: postgres
+2026-09-18T11:09:06.9932945Z   CI_INTEGRATION_STRICT: 1
+2026-09-18T11:09:06.9933167Z ##[endgroup]
+2026-09-18T11:09:07.0508142Z BOOTSTRAP_PHASE=wait_for_ready
+2026-09-18T11:09:07.0518869Z BOOTSTRAP_PHASE=db_ready
+2026-09-18T11:09:07.3602294Z ROLE_COUNT=8
+2026-09-18T11:09:07.3602975Z GRANTS_PHASE=pre_migrate
+2026-09-18T11:09:07.4500742Z GRANTS_COUNT=11
+2026-09-18T11:09:07.4515276Z VERIFY_POSTURE_ROWS=3
+2026-09-18T11:09:07.4515704Z POSTURE_app_user=PASS login=true super=false bypassrls=false
+2026-09-18T11:09:07.4516558Z POSTURE_app_user_writer=PASS login=true super=false bypassrls=false
+2026-09-18T11:09:07.4517115Z POSTURE_hrp_etl=PASS login=true super=false bypassrls=false
+2026-09-18T11:09:07.4517565Z BOOTSTRAP_PHASE=done
+2026-09-18T11:09:07.4518315Z READY role_count=8 grants_count=11
+2026-09-18T11:09:07.4721174Z ##[group]Run npx prisma migrate deploy
+2026-09-18T11:09:07.4721543Z npx prisma migrate deploy
+2026-09-18T11:09:07.4742095Z shell: /usr/bin/bash -e {0}
+2026-09-18T11:09:07.4742382Z env:
+2026-09-18T11:09:07.4743095Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:07.4743489Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:07.4743830Z   PG_BASELINE_PASSWORD: postgres
+2026-09-18T11:09:07.4744101Z   CI_INTEGRATION_STRICT: 1
+2026-09-18T11:09:07.4744445Z   DATABASE_URL: ***localhost:5432/ci_test
+2026-09-18T11:09:07.4744890Z   DATABASE_URL_ADMIN: ***localhost:5432/ci_test
+2026-09-18T11:09:07.4745153Z ##[endgroup]
+2026-09-18T11:09:08.1033787Z Prisma schema loaded from prisma/schema.prisma
+2026-09-18T11:09:08.1108091Z Datasource "db": PostgreSQL database "ci_test", schema "public" at "localhost:5432"
+2026-09-18T11:09:08.1816479Z 
+2026-09-18T11:09:08.1817289Z 39 migrations found in prisma/migrations
+2026-09-18T11:09:08.1817675Z 
+2026-09-18T11:09:08.3007983Z Applying migration `20260815013341_init`
+2026-09-18T11:09:08.9250857Z Applying migration `20260815084134_g22_security`
+2026-09-18T11:09:08.9604221Z Applying migration `20260816010542_g0_baseline`
+2026-09-18T11:09:08.9933339Z Applying migration `20260816161815_s1_integrity_idem_outbox`
+2026-09-18T11:09:09.0146665Z Applying migration `20260816161958_s1_integrity_idem_outbox`
+2026-09-18T11:09:09.0314957Z Applying migration `20260816180349_g0_rq09_uniq_portal_timesheets`
+2026-09-18T11:09:09.0358392Z Applying migration `20260816210000_s1_rls_worker`
+2026-09-18T11:09:09.0437548Z Applying migration `20260816211000_s1_rls_project`
+2026-09-18T11:09:09.0534861Z Applying migration `20260816212000_s1_rls_vendor`
+2026-09-18T11:09:09.0592323Z Applying migration `20260817080000_s1_rls_staffing_order_slots`
+2026-09-18T11:09:09.0637888Z Applying migration `20260817160000_s1_rls_attendance_timesheet`
+2026-09-18T11:09:09.0756398Z Applying migration `20260818100000_s1_rls_client_statements`
+2026-09-18T11:09:09.0810071Z Applying migration `20260818150000_p1_portals_schema`
+2026-09-18T11:09:09.1064867Z Applying migration `20260819083254_p2_commission_schema`
+2026-09-18T11:09:09.1256401Z Applying migration `20260819104700_p2_commission_rls`
+2026-09-18T11:09:09.1349061Z Applying migration `20260819104701_m13_backend_expansion`
+2026-09-18T11:09:09.1443408Z Applying migration `20260821103500_m13_restore_rls_matrix`
+2026-09-18T11:09:09.1580749Z Applying migration `20260823101500_mp2_apply_tracking`
+2026-09-18T11:09:09.1768891Z Applying migration `20260824130000_mp3_submission_lifecycle`
+2026-09-18T11:09:09.3059747Z Applying migration `20260824143000_mp3_conversion_worker_link`
+2026-09-18T11:09:09.3141710Z Applying migration `20260824161500_g0_schema_reconcile`
+2026-09-18T11:09:09.3560897Z Applying migration `20260824163000_g0_portal_timesheet_index_reconcile`
+2026-09-18T11:09:09.3595598Z Applying migration `20260825090000_mp3c_assignment_placement_links`
+2026-09-18T11:09:09.3713545Z Applying migration `20260826120000_m1_07a_ticket_rls_backstop`
+2026-09-18T11:09:09.3800036Z Applying migration `20260827160000_m1_07b_rls_runtime_posture_closure`
+2026-09-18T11:09:09.3963038Z Applying migration `20260829093000_mp2_public_rpc_schema_usage`
+2026-09-18T11:09:09.3995162Z Applying migration `20260830214139_m14_rls_matrix_repair`
+2026-09-18T11:09:09.4164008Z Applying migration `20260831103000_marketplace_search_tracking_profile`
+2026-09-18T11:09:09.5359026Z Applying migration `20260831160000_public_rpc_residual_grant_revoke`
+2026-09-18T11:09:09.5448866Z Applying migration `20260908001_job_opening_posting_split`
+2026-09-18T11:09:09.5676257Z Applying migration `20260908150000_v6_phase1a_labor_profile_schema`
+2026-09-18T11:09:09.8395910Z Applying migration `20260908150001_v6_phase1a_labor_profile_rls`
+2026-09-18T11:09:09.8450007Z Applying migration `20260911001_project_company_name_denorm`
+2026-09-18T11:09:09.8489541Z Applying migration `20260911002_av1_homepage_settings`
+2026-09-18T11:09:09.8610909Z Applying migration `20260912001_av4_media_library`
+2026-09-18T11:09:09.8820272Z Applying migration `20260912140411_n1_placement_case_foundation`
+2026-09-18T11:09:09.8957358Z Applying migration `20260912140412_n1_placement_case_rls`
+2026-09-18T11:09:09.8988468Z Applying migration `20260914212136_n3_service_model_placement`
+2026-09-18T11:09:09.9278734Z Applying migration `20260917000000_referral_attribution_foundation`
+2026-09-18T11:09:10.0495520Z 
+2026-09-18T11:09:10.0496727Z The following migration(s) have been applied:
+2026-09-18T11:09:10.0497001Z 
+2026-09-18T11:09:10.0497153Z migrations/
+2026-09-18T11:09:10.0497742Z   └─ 20260815013341_init/
+2026-09-18T11:09:10.0498282Z     └─ migration.sql
+2026-09-18T11:09:10.0498631Z   └─ 20260815084134_g22_security/
+2026-09-18T11:09:10.0499018Z     └─ migration.sql
+2026-09-18T11:09:10.0499413Z   └─ 20260816010542_g0_baseline/
+2026-09-18T11:09:10.0499752Z     └─ migration.sql
+2026-09-18T11:09:10.0500169Z   └─ 20260816161815_s1_integrity_idem_outbox/
+2026-09-18T11:09:10.0500551Z     └─ migration.sql
+2026-09-18T11:09:10.0500970Z   └─ 20260816161958_s1_integrity_idem_outbox/
+2026-09-18T11:09:10.0501368Z     └─ migration.sql
+2026-09-18T11:09:10.0501815Z   └─ 20260816180349_g0_rq09_uniq_portal_timesheets/
+2026-09-18T11:09:10.0502260Z     └─ migration.sql
+2026-09-18T11:09:10.0502610Z   └─ 20260816210000_s1_rls_worker/
+2026-09-18T11:09:10.0503237Z     └─ migration.sql
+2026-09-18T11:09:10.0503585Z   └─ 20260816211000_s1_rls_project/
+2026-09-18T11:09:10.0503984Z     └─ migration.sql
+2026-09-18T11:09:10.0504343Z   └─ 20260816212000_s1_rls_vendor/
+2026-09-18T11:09:10.0504726Z     └─ migration.sql
+2026-09-18T11:09:10.0505140Z   └─ 20260817080000_s1_rls_staffing_order_slots/
+2026-09-18T11:09:10.0505554Z     └─ migration.sql
+2026-09-18T11:09:10.0506052Z   └─ 20260817160000_s1_rls_attendance_timesheet/
+2026-09-18T11:09:10.0506424Z     └─ migration.sql
+2026-09-18T11:09:10.0506826Z   └─ 20260818100000_s1_rls_client_statements/
+2026-09-18T11:09:10.0507176Z     └─ migration.sql
+2026-09-18T11:09:10.0507529Z   └─ 20260818150000_p1_portals_schema/
+2026-09-18T11:09:10.0507989Z     └─ migration.sql
+2026-09-18T11:09:10.0508851Z   └─ 20260819083254_p2_commission_schema/
+2026-09-18T11:09:10.0509402Z     └─ migration.sql
+2026-09-18T11:09:10.0510093Z   └─ 20260819104700_p2_commission_rls/
+2026-09-18T11:09:10.0510788Z     └─ migration.sql
+2026-09-18T11:09:10.0511376Z   └─ 20260819104701_m13_backend_expansion/
+2026-09-18T11:09:10.0511791Z     └─ migration.sql
+2026-09-18T11:09:10.0512340Z   └─ 20260821103500_m13_restore_rls_matrix/
+2026-09-18T11:09:10.0512999Z     └─ migration.sql
+2026-09-18T11:09:10.0513624Z   └─ 20260823101500_mp2_apply_tracking/
+2026-09-18T11:09:10.0514215Z     └─ migration.sql
+2026-09-18T11:09:10.0514728Z   └─ 20260824130000_mp3_submission_lifecycle/
+2026-09-18T11:09:10.0515330Z     └─ migration.sql
+2026-09-18T11:09:10.0516044Z   └─ 20260824143000_mp3_conversion_worker_link/
+2026-09-18T11:09:10.0516541Z     └─ migration.sql
+2026-09-18T11:09:10.0517369Z   └─ 20260824161500_g0_schema_reconcile/
+2026-09-18T11:09:10.0518069Z     └─ migration.sql
+2026-09-18T11:09:10.0518607Z   └─ 20260824163000_g0_portal_timesheet_index_reconcile/
+2026-09-18T11:09:10.0519065Z     └─ migration.sql
+2026-09-18T11:09:10.0519527Z   └─ 20260825090000_mp3c_assignment_placement_links/
+2026-09-18T11:09:10.0519908Z     └─ migration.sql
+2026-09-18T11:09:10.0520324Z   └─ 20260826120000_m1_07a_ticket_rls_backstop/
+2026-09-18T11:09:10.0520781Z     └─ migration.sql
+2026-09-18T11:09:10.0521217Z   └─ 20260827160000_m1_07b_rls_runtime_posture_closure/
+2026-09-18T11:09:10.0521653Z     └─ migration.sql
+2026-09-18T11:09:10.0522068Z   └─ 20260829093000_mp2_public_rpc_schema_usage/
+2026-09-18T11:09:10.0522762Z     └─ migration.sql
+2026-09-18T11:09:10.0523213Z   └─ 20260830214139_m14_rls_matrix_repair/
+2026-09-18T11:09:10.0523660Z     └─ migration.sql
+2026-09-18T11:09:10.0524095Z   └─ 20260831103000_marketplace_search_tracking_profile/
+2026-09-18T11:09:10.0524559Z     └─ migration.sql
+2026-09-18T11:09:10.0525025Z   └─ 20260831160000_public_rpc_residual_grant_revoke/
+2026-09-18T11:09:10.0525768Z     └─ migration.sql
+2026-09-18T11:09:10.0526178Z   └─ 20260908001_job_opening_posting_split/
+2026-09-18T11:09:10.0526605Z     └─ migration.sql
+2026-09-18T11:09:10.0526988Z   └─ 20260908150000_v6_phase1a_labor_profile_schema/
+2026-09-18T11:09:10.0527464Z     └─ migration.sql
+2026-09-18T11:09:10.0527907Z   └─ 20260908150001_v6_phase1a_labor_profile_rls/
+2026-09-18T11:09:10.0528294Z     └─ migration.sql
+2026-09-18T11:09:10.0528640Z   └─ 20260911001_project_company_name_denorm/
+2026-09-18T11:09:10.0529045Z     └─ migration.sql
+2026-09-18T11:09:10.0529452Z   └─ 20260911002_av1_homepage_settings/
+2026-09-18T11:09:10.0529817Z     └─ migration.sql
+2026-09-18T11:09:10.0530229Z   └─ 20260912001_av4_media_library/
+2026-09-18T11:09:10.0530650Z     └─ migration.sql
+2026-09-18T11:09:10.0531151Z   └─ 20260912140411_n1_placement_case_foundation/
+2026-09-18T11:09:10.0531646Z     └─ migration.sql
+2026-09-18T11:09:10.0532100Z   └─ 20260912140412_n1_placement_case_rls/
+2026-09-18T11:09:10.0532824Z     └─ migration.sql
+2026-09-18T11:09:10.0533263Z   └─ 20260914212136_n3_service_model_placement/
+2026-09-18T11:09:10.0533837Z     └─ migration.sql
+2026-09-18T11:09:10.0534344Z   └─ 20260917000000_referral_attribution_foundation/
+2026-09-18T11:09:10.0534752Z     └─ migration.sql
+2026-09-18T11:09:10.0535104Z       
+2026-09-18T11:09:10.0535475Z All migrations have been successfully applied.
+2026-09-18T11:09:10.1474627Z ┌─────────────────────────────────────────────────────────┐
+2026-09-18T11:09:10.1475297Z │  Update available 5.22.0 -> 8.0.0-rc.15                 │
+2026-09-18T11:09:10.1475906Z │                                                         │
+2026-09-18T11:09:10.1476404Z │  This is a major update - please follow the guide at    │
+2026-09-18T11:09:10.1477008Z │  https://pris.ly/d/major-version-upgrade                │
+2026-09-18T11:09:10.1477487Z │                                                         │
+2026-09-18T11:09:10.1477951Z │  Run the following to update                            │
+2026-09-18T11:09:10.1478674Z │    npm i --save-dev prisma@latest                       │
+2026-09-18T11:09:10.1479611Z │    npm i @prisma/client@latest                          │
+2026-09-18T11:09:10.1480183Z └─────────────────────────────────────────────────────────┘
+2026-09-18T11:09:10.1660546Z ##[group]Run npx prisma migrate status
+2026-09-18T11:09:10.1660893Z npx prisma migrate status
+2026-09-18T11:09:10.1682179Z shell: /usr/bin/bash -e {0}
+2026-09-18T11:09:10.1682477Z env:
+2026-09-18T11:09:10.1683169Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:10.1683617Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:10.1683921Z   PG_BASELINE_PASSWORD: postgres
+2026-09-18T11:09:10.1684180Z   CI_INTEGRATION_STRICT: 1
+2026-09-18T11:09:10.1684561Z   DATABASE_URL: ***localhost:5432/ci_test
+2026-09-18T11:09:10.1684937Z   DATABASE_URL_ADMIN: ***localhost:5432/ci_test
+2026-09-18T11:09:10.1685225Z ##[endgroup]
+2026-09-18T11:09:10.6226722Z Prisma schema loaded from prisma/schema.prisma
+2026-09-18T11:09:10.6300132Z Datasource "db": PostgreSQL database "ci_test", schema "public" at "localhost:5432"
+2026-09-18T11:09:10.7126149Z 
+2026-09-18T11:09:10.7126705Z 39 migrations found in prisma/migrations
+2026-09-18T11:09:10.7126943Z 
+2026-09-18T11:09:10.7127369Z Database schema is up to date!
+2026-09-18T11:09:10.7496773Z ##[group]Run node scripts/ci/container-test-db.mjs --phase=post
+2026-09-18T11:09:10.7497214Z node scripts/ci/container-test-db.mjs --phase=post
+2026-09-18T11:09:10.7516237Z shell: /usr/bin/bash -e {0}
+2026-09-18T11:09:10.7516530Z env:
+2026-09-18T11:09:10.7516984Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:10.7517443Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:10.7517781Z   PG_BASELINE_PASSWORD: postgres
+2026-09-18T11:09:10.7518057Z   CI_INTEGRATION_STRICT: 1
+2026-09-18T11:09:10.7518298Z ##[endgroup]
+2026-09-18T11:09:10.8057048Z BOOTSTRAP_PHASE=wait_for_ready
+2026-09-18T11:09:10.8066320Z BOOTSTRAP_PHASE=db_ready
+2026-09-18T11:09:10.9289850Z ROLE_COUNT=8
+2026-09-18T11:09:10.9290309Z GRANTS_PHASE=post_migrate
+2026-09-18T11:09:10.9328203Z GRANTS_COUNT=1
+2026-09-18T11:09:10.9339554Z VERIFY_POSTURE_ROWS=4
+2026-09-18T11:09:10.9340078Z POSTURE_app_engine_writer=PASS login=true super=false bypassrls=false
+2026-09-18T11:09:10.9340791Z POSTURE_app_user=PASS login=true super=false bypassrls=false
+2026-09-18T11:09:10.9341326Z POSTURE_app_user_writer=PASS login=true super=false bypassrls=false
+2026-09-18T11:09:10.9341839Z POSTURE_hrp_etl=PASS login=true super=false bypassrls=false
+2026-09-18T11:09:10.9342281Z BOOTSTRAP_PHASE=done
+2026-09-18T11:09:10.9342729Z READY role_count=8 grants_count=1
+2026-09-18T11:09:10.9421103Z ##[group]Run npm run test:integration
+2026-09-18T11:09:10.9421428Z npm run test:integration
+2026-09-18T11:09:10.9439777Z shell: /usr/bin/bash -e {0}
+2026-09-18T11:09:10.9440038Z env:
+2026-09-18T11:09:10.9440516Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:10.9440942Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+2026-09-18T11:09:10.9441224Z   PG_BASELINE_PASSWORD: postgres
+2026-09-18T11:09:10.9441502Z   CI_INTEGRATION_STRICT: 1
+2026-09-18T11:09:10.9441727Z ##[endgroup]
+2026-09-18T11:09:11.0110311Z 
+2026-09-18T11:09:11.0110658Z > hrp@0.1.0 test:integration
+2026-09-18T11:09:11.0111223Z > node scripts/ci/integration-preflight.mjs
+2026-09-18T11:09:11.0111588Z 
+2026-09-18T11:09:11.0368915Z [integration-preflight] Test DB accepted (guards passed).
+2026-09-18T11:09:11.0373198Z [integration-preflight]   writer: postgresql://****@localhost:5432/ci_test  fp=2db199c7dd0a
+2026-09-18T11:09:11.0374261Z [integration-preflight]   admin : postgresql://****@localhost:5432/ci_test  fp=0289e3d52825
+2026-09-18T11:09:11.3747731Z The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+2026-09-18T11:09:11.3931207Z 
+2026-09-18T11:09:11.3944386Z  RUN  v2.1.9 /home/runner/work/HRpartner/HRpartner
+2026-09-18T11:09:11.3945378Z 
+2026-09-18T11:09:12.2778819Z stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration — DB-touching proof > (vii) RLS: HR_MANAGER GUC thấy rows; PUBLIC (no GUC) thấy 0 — FORCE RLS enforced
+2026-09-18T11:09:12.2780472Z prisma:error 
+2026-09-18T11:09:12.2781193Z Invalid `tx.placement.create()` invocation in
+2026-09-18T11:09:12.2782086Z /home/runner/work/HRpartner/HRpartner/tests/db/placement-lifecycle-integration.test.ts:692:24
+2026-09-18T11:09:12.2782888Z 
+2026-09-18T11:09:12.2783348Z   689 let publicInsertErr: Error | null = null;
+2026-09-18T11:09:12.2783890Z   690 try {
+2026-09-18T11:09:12.2784384Z   691   await withPublicContext(writer, (tx) =>
+2026-09-18T11:09:12.2785013Z → 692     tx.placement.create(
+2026-09-18T11:09:12.2785450Z Error occurred during query execution:
+2026-09-18T11:09:12.2786478Z ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "42501", message: "new row violates row-level security policy for table \"placements\"", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+2026-09-18T11:09:12.2787259Z 
+2026-09-18T11:09:12.4854203Z stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration — DB-touching proof > (viii) UNIQUE partial index race: concurrent INSERT cùng (case,opening) → both fulfilled, one winner one replayed
+2026-09-18T11:09:12.4856289Z prisma:error 
+2026-09-18T11:09:12.4856922Z Invalid `tx.placement.create()` invocation in
+2026-09-18T11:09:12.4857584Z /home/runner/work/HRpartner/HRpartner/src/domains/talent/placement.service.ts:168:40
+2026-09-18T11:09:12.4858054Z 
+2026-09-18T11:09:12.4858274Z   165 const sp = `n3pl_insert_${Math.random().toString(36).slice(2, 10)}`;
+2026-09-18T11:09:12.4858802Z   166 await tx.$executeRawUnsafe(`SAVEPOINT ${sp}`);
+2026-09-18T11:09:12.4860266Z   167 try {
+2026-09-18T11:09:12.4860745Z → 168   const created = await tx.placement.create(
+2026-09-18T11:09:12.4861128Z Unique constraint failed on the (not available)
+2026-09-18T11:09:12.4861703Z 
+2026-09-18T11:09:12.9173197Z stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration — DB-touching proof > (xiii) RLS/privilege: app_user_writer DELETE bị REVOKE — Placement lịch sử bất khả xóa
+2026-09-18T11:09:12.9175311Z prisma:error 
+2026-09-18T11:09:12.9175614Z Invalid `tx.placement.delete()` invocation in
+2026-09-18T11:09:12.9176440Z /home/runner/work/HRpartner/HRpartner/tests/db/placement-lifecycle-integration.test.ts:1053:24
+2026-09-18T11:09:12.9176743Z 
+2026-09-18T11:09:12.9176898Z   1050 let deleteErr: Error | null = null;
+2026-09-18T11:09:12.9177167Z   1051 try {
+2026-09-18T11:09:12.9177510Z   1052   await withHrManagerContext(writer, actorId, (tx) =>
+2026-09-18T11:09:12.9177871Z → 1053     tx.placement.delete(
+2026-09-18T11:09:12.9178204Z Error occurred during query execution:
+2026-09-18T11:09:12.9179050Z ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "42501", message: "permission denied for table placements", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+2026-09-18T11:09:12.9179604Z 
+2026-09-18T11:09:13.1230642Z  ✓ tests/db/placement-lifecycle-integration.test.ts (16 tests) 1421ms
+2026-09-18T11:09:13.7008488Z  ✓ src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts (32 tests) 391ms
+2026-09-18T11:09:13.9818505Z stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-12 — publicSelect chạy dưới principal MKT, đúng hai dự án public lọt qua
+2026-09-18T11:09:13.9820019Z [gl05 list] total=2 nextOffset=null slugs=["GL05-ELEC-gl05-1789729753877-848579173","GL05-WARE-gl05-1789729753877-848579173"]
+2026-09-18T11:09:13.9820775Z 
+2026-09-18T11:09:13.9927728Z stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-02/RQ-04 — ba mảng summary và availableSlots đúng trên dòng thật
+2026-09-18T11:09:13.9929726Z [gl05 card GL05-ELEC-gl05-1789729753877-848579173] positionTitles=["Công nhân lắp ráp","Kiểm tra chất lượng"] locations=["KCN VSIP 1 gl05-1789729753877-848579173","KCN Yên Phong gl05-1789729753877-848579173"] shifts=["07:00-16:00","14:00-22:00"] availableSlots=6 shiftType=ca_ngay
+2026-09-18T11:09:13.9930620Z 
+2026-09-18T11:09:14.0049621Z stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-01/RISK-01/RISK-07 — hourlyRateVnd là BigInt THẬT nhưng DTO chỉ có 18 khóa allow-list
+2026-09-18T11:09:14.0050878Z [gl05 bigint] hourlyRateVnd=45000 typeof=bigint
+2026-09-18T11:09:14.0051194Z 
+2026-09-18T11:09:14.0350199Z stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-07/DEC-08 — facet dựng từ toàn tập public hợp lệ và KHÔNG co lại theo filter
+2026-09-18T11:09:14.0351996Z [gl05 facets] keys=["areas","shifts"] areas(RUN)=["KCN Đình Vũ gl05-1789729753877-848579173","KCN VSIP 1 gl05-1789729753877-848579173","KCN Yên Phong gl05-1789729753877-848579173"] total(before)=2 total(area=dinhVu)=1
+2026-09-18T11:09:14.0352486Z 
+2026-09-18T11:09:14.0527760Z stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-12/go-live-12 DEC-14 — trang chi tiết kể MỌI vị trí còn hiệu lực, card chỉ kể vị trí còn tuyển
+2026-09-18T11:09:14.0529629Z [gl05 detail GL05-ELEC-gl05-1789729753877-848579173] positions=[["GL05-ASSY",4],["GL05-QC",2],["GL05-FORK",0]] availableSlots=6 needed=10 filled=4 shiftType=null
+2026-09-18T11:09:14.0530214Z 
+2026-09-18T11:09:14.0571026Z stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-12 — dự án nội bộ không có card, không facet, và trang chi tiết trả null
+2026-09-18T11:09:14.0572349Z [gl05 non-public] getPublicJobDetail(GL05-PRIV-gl05-1789729753877-848579173) => null
+2026-09-18T11:09:14.0572932Z 
+2026-09-18T11:09:14.0849691Z stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-05 — q fold dấu, không khớp description; area đọc tập slot SAU lifecycle
+2026-09-18T11:09:14.0850898Z [gl05 q] fold=["GL05-ELEC-gl05-1789729753877-848579173"] description=0 slotDaDu=0
+2026-09-18T11:09:14.0851267Z 
+2026-09-18T11:09:14.1109593Z stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-05 — q fold dấu, không khớp description; area đọc tập slot SAU lifecycle
+2026-09-18T11:09:14.1111030Z [gl05 area] yenPhong=["GL05-ELEC-gl05-1789729753877-848579173"] quangChau=0 dinhVu=["GL05-WARE-gl05-1789729753877-848579173"]
+2026-09-18T11:09:14.1111396Z 
+2026-09-18T11:09:14.1298749Z stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-06 — shift khớp cả nhãn KHÔNG đứng đầu, nhãn của slot đã đủ chỉ tiêu thì không
+2026-09-18T11:09:14.1300140Z [gl05 filter] shift(14:00-22:00)=["GL05-ELEC-gl05-1789729753877-848579173"] shift(18:00-02:00)=0
+2026-09-18T11:09:14.1300517Z 
+2026-09-18T11:09:14.1776998Z stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-04 — total/nextOffset và hai trang thật khớp nhau, limit bị kẹp [1,50]
+2026-09-18T11:09:14.1778850Z [gl05 page] p1=["GL05-WARE-gl05-1789729753877-848579173"] next=1 p2=["GL05-ELEC-gl05-1789729753877-848579173"] next=null past(offset=2)=0 total=2
+2026-09-18T11:09:14.1779405Z 
+2026-09-18T11:09:14.1910366Z stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật
+2026-09-18T11:09:14.1911079Z [gl05 cleanup] projects còn lại=0 slots còn lại=0 (RUN=gl05-1789729753877-848579173)
+2026-09-18T11:09:14.1911426Z 
+2026-09-18T11:09:14.2025796Z  ✓ src/domains/job-board/public-card-truth.integration.test.ts (10 tests) 323ms
+2026-09-18T11:09:14.4658341Z stdout | src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > PLN-02: writer grants on the 29 tables are least-privilege (CRUD subset, none grantable)
+2026-09-18T11:09:14.4659838Z [PLN-02 grants] grantee=app_user_writer privileges=["DELETE","INSERT","SELECT","UPDATE"] tables_with_grants=29/29 is_grantable=NONE
+2026-09-18T11:09:14.4660323Z 
+2026-09-18T11:09:14.6238298Z  ✓ src/shared/auth/live-rls-posture.m1-07b.test.ts (32 tests) 261ms
+2026-09-18T11:09:16.1535947Z  ✓ src/domains/applications/live-integration.mp3c.test.ts (7 tests) 1305ms
+2026-09-18T11:09:16.1537705Z    ✓ MP-3C LIVE assignment placement > referral guard R1 blocks placement; a valid override activates and writes exactly one OVERRIDE_S2 audit 307ms
+2026-09-18T11:09:16.5201553Z  ✓ src/domains/applications/live-integration.mp2.test.ts (11 tests) 230ms
+2026-09-18T11:09:16.7818946Z stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-01: valid active code creates attribution row via engine and returns REDIRECT_NEW
+2026-09-18T11:09:16.7820728Z {"schemaVersion":"1.0","timestamp":"2026-09-18T11:09:16.779Z","level":"info","event":"referral.redirect.new","requestId":"itest-327f3372-f54b-49eb-be21-6c71fa64e4c2","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+2026-09-18T11:09:16.7821748Z 
+2026-09-18T11:09:16.7907551Z stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-02: forged code → NOT_FOUND (constant /jobs), no attribution row
+2026-09-18T11:09:16.7909592Z {"schemaVersion":"1.0","timestamp":"2026-09-18T11:09:16.790Z","level":"info","event":"referral.redirect.referrer_not_found","requestId":"itest-bd5f4131-00c3-4b30-8ac6-2f9e4c4062ac","meta":{"route":"GET /r/[code]","outcome":"not_found"}}
+2026-09-18T11:09:16.7910400Z 
+2026-09-18T11:09:16.8042988Z stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-02: inactive user code → NOT_FOUND, no attribution row
+2026-09-18T11:09:16.8044376Z {"schemaVersion":"1.0","timestamp":"2026-09-18T11:09:16.797Z","level":"info","event":"referral.redirect.referrer_not_found","requestId":"itest-d09b2a35-c6f0-482d-bee2-c724a83de648","meta":{"route":"GET /r/[code]","outcome":"not_found"}}
+2026-09-18T11:09:16.8047233Z 
+2026-09-18T11:09:16.8531069Z stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03: valid cookie + existing active row → REDIRECT_EXISTING (existing wins, no new row)
+2026-09-18T11:09:16.8533166Z {"schemaVersion":"1.0","timestamp":"2026-09-18T11:09:16.851Z","level":"info","event":"referral.redirect.new","requestId":"itest-fc507158-20a2-4444-8e42-45b961a59406","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+2026-09-18T11:09:16.8534139Z 
+2026-09-18T11:09:16.8633379Z stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03: valid cookie + existing active row → REDIRECT_EXISTING (existing wins, no new row)
+2026-09-18T11:09:16.8635051Z {"schemaVersion":"1.0","timestamp":"2026-09-18T11:09:16.856Z","level":"info","event":"referral.redirect.existing_wins","requestId":"itest-ec42b977-1523-4303-9c50-a6345c6e488d","meta":{"route":"GET /r/[code]","outcome":"redirect_existing"}}
+2026-09-18T11:09:16.8635718Z 
+2026-09-18T11:09:16.9220756Z stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03b: cookie from code A + click code B → REDIRECT_EXISTING (first click wins)
+2026-09-18T11:09:16.9222426Z {"schemaVersion":"1.0","timestamp":"2026-09-18T11:09:16.921Z","level":"info","event":"referral.redirect.new","requestId":"itest-97ec5a7a-0e8f-4df8-848d-81cafc201b6f","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+2026-09-18T11:09:16.9223220Z 
+2026-09-18T11:09:16.9316689Z stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03b: cookie from code A + click code B → REDIRECT_EXISTING (first click wins)
+2026-09-18T11:09:16.9318903Z {"schemaVersion":"1.0","timestamp":"2026-09-18T11:09:16.924Z","level":"info","event":"referral.redirect.existing_wins","requestId":"itest-955b269c-73a9-4ee4-99c7-d3542779db52","meta":{"route":"GET /r/[code]","outcome":"redirect_existing"}}
+2026-09-18T11:09:16.9319963Z 
+2026-09-18T11:09:17.0074641Z stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-06: ?job=/jobs/vietnam-senior-dev → allowlisted prefix preserved
+2026-09-18T11:09:17.0076049Z {"schemaVersion":"1.0","timestamp":"2026-09-18T11:09:17.001Z","level":"info","event":"referral.redirect.new","requestId":"itest-66ad5043-be82-4b23-80fe-0b91f3ed585c","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+2026-09-18T11:09:17.0076656Z 
+2026-09-18T11:09:17.0371555Z stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-06: ?job=/jobs?page=2 → query stripped, prefix preserved
+2026-09-18T11:09:17.0373315Z {"schemaVersion":"1.0","timestamp":"2026-09-18T11:09:17.029Z","level":"info","event":"referral.redirect.new","requestId":"itest-4416d1fe-ce7f-47b5-84da-c38bfc6195ee","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+2026-09-18T11:09:17.0374190Z 
+2026-09-18T11:09:17.1100688Z stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-01 + expires: created attribution has expires_at = now + 30 days
+2026-09-18T11:09:17.1102327Z {"schemaVersion":"1.0","timestamp":"2026-09-18T11:09:17.108Z","level":"info","event":"referral.redirect.new","requestId":"itest-f5d2c35d-d751-4cc4-84d5-11bf51c16c7d","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+2026-09-18T11:09:17.1103192Z 
+2026-09-18T11:09:17.1310609Z  ✓ tests/db/attribution-redirect.integration.test.ts (15 tests) 443ms
+2026-09-18T11:09:17.6822092Z  ✓ src/shared/auth/live-vendor-idor.m1-08.test.ts (13 tests) 357ms
+2026-09-18T11:09:17.9613714Z stderr | src/domains/applications/live-integration.ops06a.test.ts > AC-04/05/08 LIVE — chặn ⇒ zero write trên TEST DB thật > AC-04: limiter deny ⇒ 429 và KHÔNG có row nào được tạo (before/after bằng nhau)
+2026-09-18T11:09:17.9615526Z {"schemaVersion":"1.0","timestamp":"2026-09-18T11:09:17.959Z","level":"warn","event":"rate_limit.denied","requestId":"2c90959a-35b0-4790-9b03-0c7604c060fd","meta":{"route":"POST /api/public/jobs/[slug]/applications","status":429,"outcome":"rate_limited","detail":{"surface":"APPLY_IP","retryAfterSec":30}}}
+2026-09-18T11:09:17.9616416Z 
+2026-09-18T11:09:18.1364053Z  ✓ src/domains/applications/live-integration.ops06a.test.ts (6 tests | 2 skipped) 210ms
+2026-09-18T11:09:19.1826490Z  ✓ src/domains/security/security-matrix.integration.test.ts (124 tests) 890ms
+2026-09-18T11:09:19.4160453Z  ✓ src/domains/staffing/4role-staffing.integration.test.ts (11 tests) 52ms
+2026-09-18T11:09:19.6355182Z stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-10(a): current_user không BYPASSRLS và không SUPERUSER
+2026-09-18T11:09:19.6356314Z [go-live-04][AC-10a] current_user=app_user_writer rolbypassrls=false rolsuper=false
+2026-09-18T11:09:19.6356695Z 
+2026-09-18T11:09:19.6501568Z stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-08: cùng kết nối, KHÔNG set GUC ⇒ app.role rỗng và 0 dòng
+2026-09-18T11:09:19.6502506Z [go-live-04][AC-08] no-GUC app.role="" total=0 jobs=0 detail(GL04-PUB-gl04-1789729759573-72dpoug)=null
+2026-09-18T11:09:19.6503016Z 
+2026-09-18T11:09:19.6703304Z stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-10(c): helper trả ≥ 1 job và mọi dòng nhìn thấy được đều is_public = true
+2026-09-18T11:09:19.6704707Z [go-live-04][AC-10c] app.role="MKT" app.user_id="system:public-job-board-read" transaction_read_only=on total=1 jobs=1 visibleRows=1 leaked=[]
+2026-09-18T11:09:19.6705155Z 
+2026-09-18T11:09:19.6717397Z stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-06: dự án is_public = false vắng mặt ở mọi đường đọc công khai
+2026-09-18T11:09:19.6718886Z [go-live-04][AC-06] fixture non-public id=prj-priv-gl04-1789729759573-72dpoug code=GL04-PRIV-gl04-1789729759573-72dpoug isPublic=false status=ACTIVE
+2026-09-18T11:09:19.6719400Z 
+2026-09-18T11:09:19.6840575Z stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-06: dự án is_public = false vắng mặt ở mọi đường đọc công khai
+2026-09-18T11:09:19.6842200Z [go-live-04][AC-06] qua helper: detail(GL04-PRIV-gl04-1789729759573-72dpoug)=null rlsRows=0 slugs=["GL04-PUB-gl04-1789729759573-72dpoug"]
+2026-09-18T11:09:19.6842731Z 
+2026-09-18T11:09:19.6904449Z stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-07: DELETE phát trong transaction của helper bị từ chối SQLSTATE 25006
+2026-09-18T11:09:19.6906075Z [go-live-04][AC-07] sqlstate=25006 message= Invalid `prisma.$executeRawUnsafe()` invocation: Raw query failed. Code: `25006`. Message: `ERROR: cannot execute DELETE in a read-only transaction`
+2026-09-18T11:09:19.6906600Z 
+2026-09-18T11:09:19.7006646Z stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS
+2026-09-18T11:09:19.7007515Z [go-live-04][cleanup] fixture còn lại = 0 (kỳ vọng 0)
+2026-09-18T11:09:19.7007922Z 
+2026-09-18T11:09:19.7083036Z  ✓ src/shared/auth/live-public-read-rls.go-live-04.test.ts (5 tests) 132ms
+2026-09-18T11:09:20.4729593Z  ✓ src/shared/auth/live-vendor-worker-scope.m1-06b.test.ts (10 tests) 595ms
+2026-09-18T11:09:20.8954793Z  ✓ tests/db/referral-attribution-foundation.integration.test.ts (15 tests) 274ms
+2026-09-18T11:09:21.0870308Z  ✓ src/domains/applications/security-boundary.mp2.test.ts (13 tests) 65ms
+2026-09-18T11:09:21.4551729Z  ✓ src/shared/auth/live-ticket-route-boundary.m1-06d.test.ts (5 tests) 194ms
+2026-09-18T11:09:21.8903206Z  ✓ src/domains/admin-demand-tree.integration.test.ts (17 tests) 272ms
+2026-09-18T11:09:22.3984828Z  ✓ src/shared/auth/live-auth-scope.m1-06a.test.ts (6 tests) 349ms
+2026-09-18T11:09:22.6125820Z  ✓ src/shared/auth/rls-context.test.ts (9 tests) 59ms
+2026-09-18T11:09:22.9865532Z  ✓ src/shared/auth/matrix-scope.test.ts (59 tests) 205ms
+2026-09-18T11:09:23.3282314Z  ✓ src/domains/applications/live-integration.mp3b.test.ts (1 test) 171ms
+2026-09-18T11:09:23.3368110Z 
+2026-09-18T11:09:23.3377846Z  Test Files  21 passed (21)
+2026-09-18T11:09:23.3378603Z       Tests  415 passed | 2 skipped (417)
+2026-09-18T11:09:23.3379202Z    Start at  11:09:11
+2026-09-18T11:09:23.3380106Z    Duration  11.94s (transform 511ms, setup 0ms, collect 1.19s, tests 8.20s, environment 3ms, prepare 795ms)
+2026-09-18T11:09:23.3380595Z 
+2026-09-18T11:09:23.3714115Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T11:09:23.3715107Z Post job cleanup.
+2026-09-18T11:09:23.4577238Z (node:3848) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-18T11:09:23.4577974Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-18T11:09:23.4579312Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-fe29b93b127ccbd26361131b38e17a4a8100d00939daa9fbf6aef928b952fd7a, not saving cache.
+2026-09-18T11:09:23.4789795Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T11:09:23.4790936Z Post job cleanup.
+2026-09-18T11:09:23.5393600Z [command]/usr/bin/git version
+2026-09-18T11:09:23.5423916Z git version 2.55.0
+2026-09-18T11:09:23.5454281Z Temporarily overriding HOME='/home/runner/work/_temp/bfdea4a4-d312-4fe8-8833-937110a45339' before making global git config changes
+2026-09-18T11:09:23.5455227Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-18T11:09:23.5459287Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/HRpartner/HRpartner
+2026-09-18T11:09:23.5488153Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-18T11:09:23.5513935Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-18T11:09:23.5693945Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-18T11:09:23.5705703Z http.https://github.com/.extraheader
+2026-09-18T11:09:23.5714342Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-18T11:09:23.5744802Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-18T11:09:23.5901461Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-18T11:09:23.5925941Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-18T11:09:23.6163734Z Print service container logs: 29c7e70d4b3f4f95a92d81583ce21dff_postgres16alpine_e4ead0
+2026-09-18T11:09:23.6167151Z ##[command]/usr/bin/docker logs --details d6ad915f357957a45b5ab25df2926fcae9fbced9c6c2fe1b35ae4e8159455643
+2026-09-18T11:09:23.6272025Z  sh: locale: not found
+2026-09-18T11:09:23.6274605Z  2026-09-18 11:08:35.393 UTC [36] WARNING:  no usable system locales were found
+2026-09-18T11:09:23.6275164Z  initdb: warning: enabling "trust" authentication for local connections
+2026-09-18T11:09:23.6275798Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+2026-09-18T11:09:23.6276375Z  2026-09-18 11:08:37.753 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+2026-09-18T11:09:23.6276797Z  2026-09-18 11:08:37.753 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-09-18T11:09:23.6277167Z  2026-09-18 11:08:37.753 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-09-18T11:09:23.6277506Z  2026-09-18 11:08:37.755 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-18T11:09:23.6277872Z  2026-09-18 11:08:37.821 UTC [58] LOG:  database system was shut down at 2026-09-18 11:08:37 UTC
+2026-09-18T11:09:23.6278207Z  2026-09-18 11:08:37.824 UTC [1] LOG:  database system is ready to accept connections
+2026-09-18T11:09:23.6278571Z  2026-09-18 11:09:12.266 UTC [124] ERROR:  new row violates row-level security policy for table "placements"
+2026-09-18T11:09:23.6279349Z  2026-09-18 11:09:12.266 UTC [124] STATEMENT:  INSERT INTO "public"."placements" ("id","placement_case_id","labor_profile_id","job_opening_id","status","selected_at","version","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."PlacementStatus"),$6,$7,$8,$9) RETURNING "public"."placements"."id"
+2026-09-18T11:09:23.6280153Z  2026-09-18 11:09:12.482 UTC [125] ERROR:  duplicate key value violates unique constraint "placements_active_unique"
+2026-09-18T11:09:23.6281555Z  2026-09-18 11:09:12.482 UTC [125] STATEMENT:  INSERT INTO "public"."placements" ("id","placement_case_id","labor_profile_id","job_opening_id","client_company_id","project_id","service_model_snapshot","status","selected_at","created_by_user_id","version","created_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,CAST($7::text AS "public"."ServiceModel"),CAST($8::text AS "public"."PlacementStatus"),$9,$10,$11,$12,$13) RETURNING "public"."placements"."id", "public"."placements"."status"::text, "public"."placements"."service_model_snapshot"::text, "public"."placements"."client_company_id", "public"."placements"."project_id"
+2026-09-18T11:09:23.6283284Z  2026-09-18 11:09:12.914 UTC [131] ERROR:  permission denied for table placements
+2026-09-18T11:09:23.6286301Z  2026-09-18 11:09:12.914 UTC [131] STATEMENT:  DELETE FROM "public"."placements" WHERE ("public"."placements"."id" = $1 AND 1=1) RETURNING "public"."placements"."id", "public"."placements"."placement_case_id", "public"."placements"."labor_profile_id", "public"."placements"."job_opening_id", "public"."placements"."client_company_id", "public"."placements"."project_id", "public"."placements"."service_model_snapshot"::text, "public"."placements"."status"::text, "public"."placements"."selected_at", "public"."placements"."confirmed_at", "public"."placements"."effective_at", "public"."placements"."evidence_acknowledged_at", "public"."placements"."evidence_acknowledged_by_user_id", "public"."placements"."evidence_acknowledgement_ref", "public"."placements"."failure_reason", "public"."placements"."source_candidate_submission_id", "public"."placements"."created_by_user_id", "public"."placements"."version", "public"."placements"."created_at", "public"."placements"."updated_at"
+2026-09-18T11:09:23.6288984Z  2026-09-18 11:09:13.529 UTC [135] ERROR:  new row violates row-level security policy for table "tickets"
+2026-09-18T11:09:23.6293150Z  2026-09-18 11:09:13.529 UTC [135] STATEMENT:  INSERT INTO "public"."tickets" ("id","type","status","priority","worker_id","created_by_actor_id","created_by_role","created_at","amount_vnd","deduction_vnd","leave_from_date","leave_to_date","title","description","metadata","is_overdue","version") VALUES ($1,CAST($2::text AS "public"."TicketType"),CAST($3::text AS "public"."TicketStatus"),CAST($4::text AS "public"."TicketPriority"),$5,$6,CAST($7::text AS "public"."TicketActorRole"),$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING "public"."tickets"."id", "public"."tickets"."type"::text, "public"."tickets"."status"::text, "public"."tickets"."priority"::text, "public"."tickets"."worker_id", "public"."tickets"."created_by_actor_id", "public"."tickets"."created_by_role"::text, "public"."tickets"."created_at", "public"."tickets"."assignment_id", "public"."tickets"."work_date", "public"."tickets"."current_hours", "public"."tickets"."requested_hours", "public"."tickets"."delta_hours", "public"."tickets"."reason_code", "public"."tickets"."amount_vnd", "public"."tickets"."requested_pay_date", "public"."tickets"."deduct_month", "public"."tickets"."deduct_year", "public"."tickets"."deduction_vnd", "public"."tickets"."leave_from_date", "public"."tickets"."leave_to_date", "public"."tickets"."leave_days", "public"."tickets"."leave_type_code", "public"."tickets"."title", "public"."tickets"."description", "public"."tickets"."metadata", "public"."tickets"."sla_due_at", "public"."tickets"."is_overdue", "public"."tickets"."version"
+2026-09-18T11:09:23.6296205Z  2026-09-18 11:09:13.564 UTC [135] ERROR:  new row violates row-level security policy for table "tickets"
+2026-09-18T11:09:23.6299338Z  2026-09-18 11:09:13.564 UTC [135] STATEMENT:  INSERT INTO "public"."tickets" ("id","type","status","priority","worker_id","created_by_actor_id","created_by_role","created_at","amount_vnd","deduction_vnd","leave_from_date","leave_to_date","title","description","metadata","is_overdue","version") VALUES ($1,CAST($2::text AS "public"."TicketType"),CAST($3::text AS "public"."TicketStatus"),CAST($4::text AS "public"."TicketPriority"),$5,$6,CAST($7::text AS "public"."TicketActorRole"),$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING "public"."tickets"."id", "public"."tickets"."type"::text, "public"."tickets"."status"::text, "public"."tickets"."priority"::text, "public"."tickets"."worker_id", "public"."tickets"."created_by_actor_id", "public"."tickets"."created_by_role"::text, "public"."tickets"."created_at", "public"."tickets"."assignment_id", "public"."tickets"."work_date", "public"."tickets"."current_hours", "public"."tickets"."requested_hours", "public"."tickets"."delta_hours", "public"."tickets"."reason_code", "public"."tickets"."amount_vnd", "public"."tickets"."requested_pay_date", "public"."tickets"."deduct_month", "public"."tickets"."deduct_year", "public"."tickets"."deduction_vnd", "public"."tickets"."leave_from_date", "public"."tickets"."leave_to_date", "public"."tickets"."leave_days", "public"."tickets"."leave_type_code", "public"."tickets"."title", "public"."tickets"."description", "public"."tickets"."metadata", "public"."tickets"."sla_due_at", "public"."tickets"."is_overdue", "public"."tickets"."version"
+2026-09-18T11:09:23.6302840Z  2026-09-18 11:09:13.575 UTC [135] ERROR:  new row violates row-level security policy for table "tickets"
+2026-09-18T11:09:23.6305919Z  2026-09-18 11:09:13.575 UTC [135] STATEMENT:  INSERT INTO "public"."tickets" ("id","type","status","priority","worker_id","created_by_actor_id","created_by_role","created_at","amount_vnd","deduction_vnd","leave_from_date","leave_to_date","title","description","metadata","is_overdue","version") VALUES ($1,CAST($2::text AS "public"."TicketType"),CAST($3::text AS "public"."TicketStatus"),CAST($4::text AS "public"."TicketPriority"),$5,$6,CAST($7::text AS "public"."TicketActorRole"),$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING "public"."tickets"."id", "public"."tickets"."type"::text, "public"."tickets"."status"::text, "public"."tickets"."priority"::text, "public"."tickets"."worker_id", "public"."tickets"."created_by_actor_id", "public"."tickets"."created_by_role"::text, "public"."tickets"."created_at", "public"."tickets"."assignment_id", "public"."tickets"."work_date", "public"."tickets"."current_hours", "public"."tickets"."requested_hours", "public"."tickets"."delta_hours", "public"."tickets"."reason_code", "public"."tickets"."amount_vnd", "public"."tickets"."requested_pay_date", "public"."tickets"."deduct_month", "public"."tickets"."deduct_year", "public"."tickets"."deduction_vnd", "public"."tickets"."leave_from_date", "public"."tickets"."leave_to_date", "public"."tickets"."leave_days", "public"."tickets"."leave_type_code", "public"."tickets"."title", "public"."tickets"."description", "public"."tickets"."metadata", "public"."tickets"."sla_due_at", "public"."tickets"."is_overdue", "public"."tickets"."version"
+2026-09-18T11:09:23.6309089Z  2026-09-18 11:09:13.587 UTC [135] ERROR:  new row violates row-level security policy for table "tickets"
+2026-09-18T11:09:23.6309496Z  The files belonging to this database system will be owned by user "postgres".
+2026-09-18T11:09:23.6309802Z  This user must also own the server process.
+2026-09-18T11:09:23.6310020Z  
+2026-09-18T11:09:23.6310239Z  The database cluster will be initialized with locale "en_US.utf8".
+2026-09-18T11:09:23.6310558Z  The default database encoding has accordingly been set to "UTF8".
+2026-09-18T11:09:23.6310869Z  The default text search configuration will be set to "english".
+2026-09-18T11:09:23.6311110Z  
+2026-09-18T11:09:23.6311267Z  Data page checksums are disabled.
+2026-09-18T11:09:23.6311452Z  
+2026-09-18T11:09:23.6311676Z  fixing permissions on existing directory /var/lib/postgresql/data ... ok
+2026-09-18T11:09:23.6311955Z  creating subdirectories ... ok
+2026-09-18T11:09:23.6312238Z  selecting dynamic shared memory implementation ... posix
+2026-09-18T11:09:23.6312496Z  selecting default max_connections ... 100
+2026-09-18T11:09:23.6312871Z  selecting default shared_buffers ... 128MB
+2026-09-18T11:09:23.6313095Z  selecting default time zone ... UTC
+2026-09-18T11:09:23.6313314Z  creating configuration files ... ok
+2026-09-18T11:09:23.6313518Z  running bootstrap script ... ok
+2026-09-18T11:09:23.6313739Z  performing post-bootstrap initialization ... ok
+2026-09-18T11:09:23.6313970Z  syncing data to disk ... ok
+2026-09-18T11:09:23.6314157Z  
+2026-09-18T11:09:23.6314298Z  
+2026-09-18T11:09:23.6314477Z  Success. You can now start the database server using:
+2026-09-18T11:09:23.6314705Z  
+2026-09-18T11:09:23.6314887Z      pg_ctl -D /var/lib/postgresql/data -l logfile start
+2026-09-18T11:09:23.6315102Z  
+2026-09-18T11:09:23.6315495Z  waiting for server to start....2026-09-18 11:08:36.864 UTC [42] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+2026-09-18T11:09:23.6316084Z  2026-09-18 11:08:36.865 UTC [42] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-18T11:09:23.6316473Z  2026-09-18 11:08:36.896 UTC [45] LOG:  database system was shut down at 2026-09-18 11:08:35 UTC
+2026-09-18T11:09:23.6316841Z  2026-09-18 11:08:36.900 UTC [42] LOG:  database system is ready to accept connections
+2026-09-18T11:09:23.6317103Z   done
+2026-09-18T11:09:23.6317252Z  server started
+2026-09-18T11:09:23.6317413Z  CREATE DATABASE
+2026-09-18T11:09:23.6317576Z  
+2026-09-18T11:09:23.6317716Z  
+2026-09-18T11:09:23.6317950Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+2026-09-18T11:09:23.6318231Z  
+2026-09-18T11:09:23.6318486Z  waiting for server to shut down....2026-09-18 11:08:37.357 UTC [42] LOG:  received fast shutdown request
+2026-09-18T11:09:23.6318841Z  2026-09-18 11:08:37.358 UTC [42] LOG:  aborting any active transactions
+2026-09-18T11:09:23.6319244Z  2026-09-18 11:08:37.361 UTC [42] LOG:  background worker "logical replication launcher" (PID 48) exited with exit code 1
+2026-09-18T11:09:23.6319614Z  2026-09-18 11:08:37.361 UTC [43] LOG:  shutting down
+2026-09-18T11:09:23.6319895Z  2026-09-18 11:08:37.362 UTC [43] LOG:  checkpoint starting: shutdown immediate
+2026-09-18T11:09:23.6320672Z  2026-09-18 11:08:37.583 UTC [43] LOG:  checkpoint complete: wrote 926 buffers (5.7%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.156 s, sync=0.062 s, total=0.223 s; sync files=301, longest=0.013 s, average=0.001 s; distance=4283 kB, estimate=4283 kB; lsn=0/1925D60, redo lsn=0/1925D60
+2026-09-18T11:09:23.6321364Z  2026-09-18 11:08:37.587 UTC [42] LOG:  database system is shut down
+2026-09-18T11:09:23.6321598Z   done
+2026-09-18T11:09:23.6321750Z  server stopped
+2026-09-18T11:09:23.6321907Z  
+2026-09-18T11:09:23.6322089Z  PostgreSQL init process complete; ready for start up.
+2026-09-18T11:09:23.6322315Z  
+2026-09-18T11:09:23.6325374Z  2026-09-18 11:09:13.587 UTC [135] STATEMENT:  INSERT INTO "public"."tickets" ("id","type","status","priority","worker_id","created_by_actor_id","created_by_role","created_at","amount_vnd","deduction_vnd","title","description","metadata","is_overdue","version") VALUES ($1,CAST($2::text AS "public"."TicketType"),CAST($3::text AS "public"."TicketStatus"),CAST($4::text AS "public"."TicketPriority"),$5,$6,CAST($7::text AS "public"."TicketActorRole"),$8,$9,$10,$11,$12,$13,$14,$15) RETURNING "public"."tickets"."id", "public"."tickets"."type"::text, "public"."tickets"."status"::text, "public"."tickets"."priority"::text, "public"."tickets"."worker_id", "public"."tickets"."created_by_actor_id", "public"."tickets"."created_by_role"::text, "public"."tickets"."created_at", "public"."tickets"."assignment_id", "public"."tickets"."work_date", "public"."tickets"."current_hours", "public"."tickets"."requested_hours", "public"."tickets"."delta_hours", "public"."tickets"."reason_code", "public"."tickets"."amount_vnd", "public"."tickets"."requested_pay_date", "public"."tickets"."deduct_month", "public"."tickets"."deduct_year", "public"."tickets"."deduction_vnd", "public"."tickets"."leave_from_date", "public"."tickets"."leave_to_date", "public"."tickets"."leave_days", "public"."tickets"."leave_type_code", "public"."tickets"."title", "public"."tickets"."description", "public"."tickets"."metadata", "public"."tickets"."sla_due_at", "public"."tickets"."is_overdue", "public"."tickets"."version"
+2026-09-18T11:09:23.6328558Z  2026-09-18 11:09:13.623 UTC [135] ERROR:  new row violates row-level security policy for table "ticket_comments"
+2026-09-18T11:09:23.6329995Z  2026-09-18 11:09:13.623 UTC [135] STATEMENT:  INSERT INTO "public"."ticket_comments" ("id","ticket_id","author_id","author_role","author_name","body","is_internal","created_at","updated_at") VALUES ($1,$2,$3,CAST($4::text AS "public"."TicketActorRole"),$5,$6,$7,$8,$9) RETURNING "public"."ticket_comments"."id", "public"."ticket_comments"."ticket_id", "public"."ticket_comments"."author_id", "public"."ticket_comments"."author_role"::text, "public"."ticket_comments"."author_name", "public"."ticket_comments"."body", "public"."ticket_comments"."is_internal", "public"."ticket_comments"."created_at", "public"."ticket_comments"."updated_at"
+2026-09-18T11:09:23.6331463Z  2026-09-18 11:09:14.483 UTC [140] ERROR:  new row violates row-level security policy for table "worker_deductions"
+2026-09-18T11:09:23.6332541Z  2026-09-18 11:09:14.483 UTC [140] STATEMENT:  INSERT INTO "public"."worker_deductions" ("id","worker_id","amount_vnd","reason","status","created_at") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."worker_deductions"."id", "public"."worker_deductions"."worker_id", "public"."worker_deductions"."amount_vnd", "public"."worker_deductions"."reason", "public"."worker_deductions"."status", "public"."worker_deductions"."created_by", "public"."worker_deductions"."created_at"
+2026-09-18T11:09:23.6333761Z  2026-09-18 11:09:14.518 UTC [140] ERROR:  new row violates row-level security policy for table "client_companies"
+2026-09-18T11:09:23.6335004Z  2026-09-18 11:09:14.518 UTC [140] STATEMENT:  INSERT INTO "public"."client_companies" ("id","code","name","status","created_at") VALUES ($1,$2,$3,$4,$5) RETURNING "public"."client_companies"."id", "public"."client_companies"."code", "public"."client_companies"."name", "public"."client_companies"."tax_code", "public"."client_companies"."industry", "public"."client_companies"."company_size", "public"."client_companies"."status", "public"."client_companies"."created_at"
+2026-09-18T11:09:23.6336109Z  2026-09-18 11:09:14.544 UTC [140] ERROR:  new row violates row-level security policy for table "client_rate_cards"
+2026-09-18T11:09:23.6337401Z  2026-09-18 11:09:14.544 UTC [140] STATEMENT:  INSERT INTO "public"."client_rate_cards" ("id","contract_id","rate_type","price","effective_from","created_at") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."client_rate_cards"."id", "public"."client_rate_cards"."contract_id", "public"."client_rate_cards"."rate_type", "public"."client_rate_cards"."price", "public"."client_rate_cards"."work_type", "public"."client_rate_cards"."site_id", "public"."client_rate_cards"."effective_from", "public"."client_rate_cards"."effective_to", "public"."client_rate_cards"."created_at"
+2026-09-18T11:09:23.6338624Z  2026-09-18 11:09:14.548 UTC [140] ERROR:  new row violates row-level security policy for table "vendor_rate_cards"
+2026-09-18T11:09:23.6339864Z  2026-09-18 11:09:14.548 UTC [140] STATEMENT:  INSERT INTO "public"."vendor_rate_cards" ("id","contract_id","rate_type","price","effective_from","created_at") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."vendor_rate_cards"."id", "public"."vendor_rate_cards"."contract_id", "public"."vendor_rate_cards"."rate_type", "public"."vendor_rate_cards"."price", "public"."vendor_rate_cards"."work_type", "public"."vendor_rate_cards"."site_id", "public"."vendor_rate_cards"."effective_from", "public"."vendor_rate_cards"."effective_to", "public"."vendor_rate_cards"."created_at"
+2026-09-18T11:09:23.6341096Z  2026-09-18 11:09:14.561 UTC [140] ERROR:  new row violates row-level security policy for table "ctv_withdrawal_requests"
+2026-09-18T11:09:23.6342390Z  2026-09-18 11:09:14.561 UTC [140] STATEMENT:  INSERT INTO "public"."ctv_withdrawal_requests" ("id","ctv_id","amount_vnd","bank_account","bank_name","status","created_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "public"."ctv_withdrawal_requests"."id", "public"."ctv_withdrawal_requests"."ctv_id", "public"."ctv_withdrawal_requests"."amount_vnd", "public"."ctv_withdrawal_requests"."bank_account", "public"."ctv_withdrawal_requests"."bank_name", "public"."ctv_withdrawal_requests"."status", "public"."ctv_withdrawal_requests"."created_at", "public"."ctv_withdrawal_requests"."updated_at"
+2026-09-18T11:09:23.6343900Z  2026-09-18 11:09:14.564 UTC [140] ERROR:  new row violates row-level security policy for table "ctv_withdrawal_requests"
+2026-09-18T11:09:23.6345244Z  2026-09-18 11:09:14.564 UTC [140] STATEMENT:  INSERT INTO "public"."ctv_withdrawal_requests" ("id","ctv_id","amount_vnd","bank_account","bank_name","status","created_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "public"."ctv_withdrawal_requests"."id", "public"."ctv_withdrawal_requests"."ctv_id", "public"."ctv_withdrawal_requests"."amount_vnd", "public"."ctv_withdrawal_requests"."bank_account", "public"."ctv_withdrawal_requests"."bank_name", "public"."ctv_withdrawal_requests"."status", "public"."ctv_withdrawal_requests"."created_at", "public"."ctv_withdrawal_requests"."updated_at"
+2026-09-18T11:09:23.6346581Z  2026-09-18 11:09:15.700 UTC [142] ERROR:  duplicate key value violates unique constraint "one_active_assignment"
+2026-09-18T11:09:23.6347011Z  2026-09-18 11:09:15.700 UTC [142] DETAIL:  Key (worker_id)=(d9a8e99a-f724-48e5-85e6-01f00b92c9dd) already exists.
+2026-09-18T11:09:23.6349580Z  2026-09-18 11:09:15.700 UTC [142] STATEMENT:  INSERT INTO "public"."project_assignments" ("id","worker_id","project_id","employee_code","employment_type","valid_from","status","is_primary","salary_per_day_vnd","salary_type","created_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "public"."project_assignments"."id", "public"."project_assignments"."worker_id", "public"."project_assignments"."project_id", "public"."project_assignments"."staffing_order_id", "public"."project_assignments"."employee_code", "public"."project_assignments"."employment_type", "public"."project_assignments"."work_setting", "public"."project_assignments"."valid_from", "public"."project_assignments"."valid_to", "public"."project_assignments"."status", "public"."project_assignments"."is_primary", "public"."project_assignments"."manager_id", "public"."project_assignments"."referrer_id", "public"."project_assignments"."salary_per_day_vnd", "public"."project_assignments"."salary_type", "public"."project_assignments"."salary_month_vnd", "public"."project_assignments"."transfer_reason", "public"."project_assignments"."submission_id", "public"."project_assignments"."staffing_order_slot_id", "public"."project_assignments"."placement_id", "public"."project_assignments"."created_at"
+2026-09-18T11:09:23.6352370Z  2026-09-18 11:09:15.707 UTC [142] ERROR:  duplicate key value violates unique constraint "project_assignments_submission_id_key"
+2026-09-18T11:09:23.6353019Z  2026-09-18 11:09:15.707 UTC [142] DETAIL:  Key (submission_id)=(975035ed-a8fd-44fb-bbda-2b32e84e2c55) already exists.
+2026-09-18T11:09:23.6355831Z  2026-09-18 11:09:15.707 UTC [142] STATEMENT:  INSERT INTO "public"."project_assignments" ("id","worker_id","project_id","employee_code","employment_type","valid_from","status","is_primary","salary_per_day_vnd","salary_type","submission_id","created_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING "public"."project_assignments"."id", "public"."project_assignments"."worker_id", "public"."project_assignments"."project_id", "public"."project_assignments"."staffing_order_id", "public"."project_assignments"."employee_code", "public"."project_assignments"."employment_type", "public"."project_assignments"."work_setting", "public"."project_assignments"."valid_from", "public"."project_assignments"."valid_to", "public"."project_assignments"."status", "public"."project_assignments"."is_primary", "public"."project_assignments"."manager_id", "public"."project_assignments"."referrer_id", "public"."project_assignments"."salary_per_day_vnd", "public"."project_assignments"."salary_type", "public"."project_assignments"."salary_month_vnd", "public"."project_assignments"."transfer_reason", "public"."project_assignments"."submission_id", "public"."project_assignments"."staffing_order_slot_id", "public"."project_assignments"."placement_id", "public"."project_assignments"."created_at"
+2026-09-18T11:09:23.6358710Z  2026-09-18 11:09:15.709 UTC [142] ERROR:  duplicate key value violates unique constraint "project_assignments_project_id_employee_code_key"
+2026-09-18T11:09:23.6359356Z  2026-09-18 11:09:15.709 UTC [142] DETAIL:  Key (project_id, employee_code)=(83760003-3bad-435e-83f2-091d1b343a6c, EMP-1-1789729755672-fdobk1d) already exists.
+2026-09-18T11:09:23.6362067Z  2026-09-18 11:09:15.709 UTC [142] STATEMENT:  INSERT INTO "public"."project_assignments" ("id","worker_id","project_id","employee_code","employment_type","valid_from","status","is_primary","salary_per_day_vnd","salary_type","created_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "public"."project_assignments"."id", "public"."project_assignments"."worker_id", "public"."project_assignments"."project_id", "public"."project_assignments"."staffing_order_id", "public"."project_assignments"."employee_code", "public"."project_assignments"."employment_type", "public"."project_assignments"."work_setting", "public"."project_assignments"."valid_from", "public"."project_assignments"."valid_to", "public"."project_assignments"."status", "public"."project_assignments"."is_primary", "public"."project_assignments"."manager_id", "public"."project_assignments"."referrer_id", "public"."project_assignments"."salary_per_day_vnd", "public"."project_assignments"."salary_type", "public"."project_assignments"."salary_month_vnd", "public"."project_assignments"."transfer_reason", "public"."project_assignments"."submission_id", "public"."project_assignments"."staffing_order_slot_id", "public"."project_assignments"."placement_id", "public"."project_assignments"."created_at"
+2026-09-18T11:09:23.6364882Z  2026-09-18 11:09:16.346 UTC [152] ERROR:  JOB_NOT_AVAILABLE
+2026-09-18T11:09:23.6365534Z  2026-09-18 11:09:16.346 UTC [152] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 62 at RAISE
+2026-09-18T11:09:23.6366326Z  2026-09-18 11:09:16.346 UTC [152] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+2026-09-18T11:09:23.6366739Z  2026-09-18 11:09:16.349 UTC [152] ERROR:  JOB_NOT_AVAILABLE
+2026-09-18T11:09:23.6367313Z  2026-09-18 11:09:16.349 UTC [152] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 62 at RAISE
+2026-09-18T11:09:23.6368086Z  2026-09-18 11:09:16.349 UTC [152] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+2026-09-18T11:09:23.6368496Z  2026-09-18 11:09:16.352 UTC [152] ERROR:  JOB_NOT_AVAILABLE
+2026-09-18T11:09:23.6369077Z  2026-09-18 11:09:16.352 UTC [152] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 62 at RAISE
+2026-09-18T11:09:23.6369835Z  2026-09-18 11:09:16.352 UTC [152] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+2026-09-18T11:09:23.6370233Z  2026-09-18 11:09:16.355 UTC [152] ERROR:  JOB_NOT_AVAILABLE
+2026-09-18T11:09:23.6370822Z  2026-09-18 11:09:16.355 UTC [152] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 62 at RAISE
+2026-09-18T11:09:23.6371546Z  2026-09-18 11:09:16.355 UTC [152] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+2026-09-18T11:09:23.6371950Z  2026-09-18 11:09:16.358 UTC [152] ERROR:  JOB_NOT_AVAILABLE
+2026-09-18T11:09:23.6372538Z  2026-09-18 11:09:16.358 UTC [152] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 62 at RAISE
+2026-09-18T11:09:23.6373424Z  2026-09-18 11:09:16.358 UTC [152] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+2026-09-18T11:09:23.6373853Z  2026-09-18 11:09:16.366 UTC [152] ERROR:  IDEMPOTENCY_PAYLOAD_MISMATCH
+2026-09-18T11:09:23.6374500Z  2026-09-18 11:09:16.366 UTC [152] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 24 at RAISE
+2026-09-18T11:09:23.6375300Z  2026-09-18 11:09:16.366 UTC [152] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+2026-09-18T11:09:23.6375767Z  2026-09-18 11:09:16.371 UTC [152] ERROR:  DUPLICATE_APPLICATION
+2026-09-18T11:09:23.6376383Z  2026-09-18 11:09:16.371 UTC [152] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 70 at RAISE
+2026-09-18T11:09:23.6377151Z  2026-09-18 11:09:16.371 UTC [152] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+2026-09-18T11:09:23.6377736Z  2026-09-18 11:09:16.379 UTC [152] ERROR:  duplicate key value violates unique constraint "candidate_submissions_idempotency_key_hash_key"
+2026-09-18T11:09:23.6378351Z  2026-09-18 11:09:16.379 UTC [152] STATEMENT:  INSERT INTO candidate_submissions (id, full_name, phone, idempotency_key_hash, status, created_at)
+2026-09-18T11:09:23.6378821Z  	           VALUES ($1,'Dup Guard','0900000000',$2,'NEW', now())
+2026-09-18T11:09:23.6379120Z  2026-09-18 11:09:16.424 UTC [154] ERROR:  DUPLICATE_APPLICATION
+2026-09-18T11:09:23.6379762Z  2026-09-18 11:09:16.424 UTC [154] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 70 at RAISE
+2026-09-18T11:09:23.6380554Z  2026-09-18 11:09:16.424 UTC [154] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+2026-09-18T11:09:23.6381008Z  2026-09-18 11:09:16.425 UTC [157] ERROR:  DUPLICATE_APPLICATION
+2026-09-18T11:09:23.6381644Z  2026-09-18 11:09:16.425 UTC [157] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 70 at RAISE
+2026-09-18T11:09:23.6382422Z  2026-09-18 11:09:16.425 UTC [157] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+2026-09-18T11:09:23.6383068Z  2026-09-18 11:09:17.037 UTC [160] ERROR:  permission denied for table referral_attributions
+2026-09-18T11:09:23.6383647Z  2026-09-18 11:09:17.037 UTC [160] STATEMENT:  INSERT INTO referral_attributions(id, referrer_user_id, affiliate_code_snapshot, first_clicked_at, expires_at, status, updated_at)
+2026-09-18T11:09:23.6384226Z  	         VALUES ($1::text, $2::text, $3::text, NOW(), NOW(), 'ACTIVE'::text, NOW())
+2026-09-18T11:09:23.6384825Z  2026-09-18 11:09:17.117 UTC [159] ERROR:  update or delete on table "users" violates foreign key constraint "referral_attributions_referrer_user_id_fkey" on table "referral_attributions"
+2026-09-18T11:09:23.6385530Z  2026-09-18 11:09:17.117 UTC [159] DETAIL:  Key (id)=(n2-2-redirect-5972da3e-active1) is still referenced from table "referral_attributions".
+2026-09-18T11:09:23.6386263Z  2026-09-18 11:09:17.117 UTC [159] STATEMENT:  DELETE FROM users WHERE id IN ('n2-2-redirect-5972da3e-active1','n2-2-redirect-5972da3e-active2','n2-2-redirect-5972da3e-inactive1')
+2026-09-18T11:09:23.6386846Z  2026-09-18 11:09:19.685 UTC [178] ERROR:  cannot execute DELETE in a read-only transaction
+2026-09-18T11:09:23.6387241Z  2026-09-18 11:09:19.685 UTC [178] STATEMENT:  DELETE FROM outsourcing_projects WHERE id = $1
+2026-09-18T11:09:23.6387715Z  2026-09-18 11:09:20.732 UTC [189] ERROR:  new row violates row-level security policy for table "referral_attributions"
+2026-09-18T11:09:23.6388611Z  2026-09-18 11:09:20.732 UTC [189] STATEMENT:  INSERT INTO referral_attributions(id, referrer_user_id, affiliate_code_snapshot, first_clicked_at, expires_at, status, updated_at) VALUES ('1c7fe93a-5d10-4795-822f-142b3f5ced5a', 'n2-1-7b1e1fab-worker', 'snap', NOW(), NOW(), 'ACTIVE', NOW())
+2026-09-18T11:09:23.6389507Z  2026-09-18 11:09:20.740 UTC [189] ERROR:  new row violates row-level security policy for table "referral_attributions"
+2026-09-18T11:09:23.6390405Z  2026-09-18 11:09:20.740 UTC [189] STATEMENT:  INSERT INTO referral_attributions(id, referrer_user_id, affiliate_code_snapshot, first_clicked_at, expires_at, status, updated_at) VALUES ('d7ad328d-4e6f-46a1-b9e6-303668403de2', 'n2-1-7b1e1fab-worker', 'snap', NOW(), NOW(), 'ACTIVE', NOW())
+2026-09-18T11:09:23.6391168Z  2026-09-18 11:09:20.757 UTC [188] ERROR:  affiliate_code_snapshot is immutable
+2026-09-18T11:09:23.6391586Z  2026-09-18 11:09:20.757 UTC [188] CONTEXT:  PL/pgSQL function referral_attributions_immutable_update() line 5 at RAISE
+2026-09-18T11:09:23.6392153Z  2026-09-18 11:09:20.757 UTC [188] STATEMENT:  UPDATE referral_attributions SET affiliate_code_snapshot = 'changed' WHERE id = '5ecd43c2-cd50-48c1-8b15-d37b580a1de1'
+2026-09-18T11:09:23.6392761Z  2026-09-18 11:09:20.758 UTC [188] ERROR:  created_at is immutable
+2026-09-18T11:09:23.6393167Z  2026-09-18 11:09:20.758 UTC [188] CONTEXT:  PL/pgSQL function referral_attributions_immutable_update() line 8 at RAISE
+2026-09-18T11:09:23.6393698Z  2026-09-18 11:09:20.758 UTC [188] STATEMENT:  UPDATE referral_attributions SET created_at = NOW() WHERE id = '5ecd43c2-cd50-48c1-8b15-d37b580a1de1'
+2026-09-18T11:09:23.6394194Z  2026-09-18 11:09:20.762 UTC [188] ERROR:  labor_profile_id is write-once (NULL -> value only)
+2026-09-18T11:09:23.6394700Z  2026-09-18 11:09:20.762 UTC [188] CONTEXT:  PL/pgSQL function referral_attributions_labor_profile_id_write_once() line 15 at RAISE
+2026-09-18T11:09:23.6395299Z  2026-09-18 11:09:20.762 UTC [188] STATEMENT:  UPDATE referral_attributions SET labor_profile_id = 'n2-1-7b1e1fab-lp2' WHERE id = 'c167f2c0-77d1-4019-97b8-3ef69faba1bd'
+2026-09-18T11:09:23.6395881Z  2026-09-18 11:09:20.819 UTC [188] ERROR:  referral_attributions: terminal status EXPIRED cannot transition to REVOKED
+2026-09-18T11:09:23.6396365Z  2026-09-18 11:09:20.819 UTC [188] CONTEXT:  PL/pgSQL function referral_attributions_lifecycle_transition() line 8 at RAISE
+2026-09-18T11:09:23.6396891Z  2026-09-18 11:09:20.819 UTC [188] STATEMENT:  UPDATE referral_attributions SET status = 'REVOKED' WHERE id = '2a240187-05e4-481a-87b0-db9e48347610'
+2026-09-18T11:09:23.6397367Z  2026-09-18 11:09:20.820 UTC [188] ERROR:  referral_attributions rows are never deleted
+2026-09-18T11:09:23.6397772Z  2026-09-18 11:09:20.820 UTC [188] CONTEXT:  PL/pgSQL function referral_attributions_block_delete() line 2 at RAISE
+2026-09-18T11:09:23.6398252Z  2026-09-18 11:09:20.820 UTC [188] STATEMENT:  DELETE FROM referral_attributions WHERE id = '7a39028f-6d85-4708-9511-a26eac1e3764'
+2026-09-18T11:09:23.6398703Z  2026-09-18 11:09:20.820 UTC [188] ERROR:  referral_attributions rows are never deleted
+2026-09-18T11:09:23.6399101Z  2026-09-18 11:09:20.820 UTC [188] CONTEXT:  PL/pgSQL function referral_attributions_block_delete() line 2 at RAISE
+2026-09-18T11:09:23.6399577Z  2026-09-18 11:09:20.820 UTC [188] STATEMENT:  DELETE FROM referral_attributions WHERE id = '4a3e503a-ad60-4d04-ba9e-6ba167b7945f'
+2026-09-18T11:09:23.6400027Z  2026-09-18 11:09:20.821 UTC [188] ERROR:  referral_attributions rows are never deleted
+2026-09-18T11:09:23.6400421Z  2026-09-18 11:09:20.821 UTC [188] CONTEXT:  PL/pgSQL function referral_attributions_block_delete() line 2 at RAISE
+2026-09-18T11:09:23.6400913Z  2026-09-18 11:09:20.821 UTC [188] STATEMENT:  DELETE FROM referral_attributions WHERE id = '5ecd43c2-cd50-48c1-8b15-d37b580a1de1'
+2026-09-18T11:09:23.6401329Z  2026-09-18 11:09:20.822 UTC [188] ERROR:  referral_attributions rows are never deleted
+2026-09-18T11:09:23.6401705Z  2026-09-18 11:09:20.822 UTC [188] CONTEXT:  PL/pgSQL function referral_attributions_block_delete() line 2 at RAISE
+2026-09-18T11:09:23.6402156Z  2026-09-18 11:09:20.822 UTC [188] STATEMENT:  DELETE FROM referral_attributions WHERE id = 'c167f2c0-77d1-4019-97b8-3ef69faba1bd'
+2026-09-18T11:09:23.6402540Z  2026-09-18 11:09:20.823 UTC [188] ERROR:  referral_attributions rows are never deleted
+2026-09-18T11:09:23.6403077Z  2026-09-18 11:09:20.823 UTC [188] CONTEXT:  PL/pgSQL function referral_attributions_block_delete() line 2 at RAISE
+2026-09-18T11:09:23.6403633Z  2026-09-18 11:09:20.823 UTC [188] STATEMENT:  DELETE FROM referral_attributions WHERE id = '2a240187-05e4-481a-87b0-db9e48347610'
+2026-09-18T11:09:23.6404287Z  2026-09-18 11:09:20.828 UTC [188] ERROR:  update or delete on table "labor_profiles" violates foreign key constraint "referral_attributions_labor_profile_id_fkey" on table "referral_attributions"
+2026-09-18T11:09:23.6404942Z  2026-09-18 11:09:20.828 UTC [188] DETAIL:  Key (id)=(n2-1-7b1e1fab-lp1) is still referenced from table "referral_attributions".
+2026-09-18T11:09:23.6405523Z  2026-09-18 11:09:20.828 UTC [188] STATEMENT:  DELETE FROM labor_profiles WHERE id IN ('n2-1-7b1e1fab-worker', 'n2-1-7b1e1fab-lp1', 'n2-1-7b1e1fab-lp2')
+2026-09-18T11:09:23.6406190Z  2026-09-18 11:09:20.833 UTC [188] ERROR:  update or delete on table "users" violates foreign key constraint "referral_attributions_referrer_user_id_fkey" on table "referral_attributions"
+2026-09-18T11:09:23.6406854Z  2026-09-18 11:09:20.833 UTC [188] DETAIL:  Key (id)=(n2-1-7b1e1fab-worker) is still referenced from table "referral_attributions".
+2026-09-18T11:09:23.6407361Z  2026-09-18 11:09:20.833 UTC [188] STATEMENT:  DELETE FROM users WHERE id IN ('n2-1-7b1e1fab-worker', 'n2-1-7b1e1fab-admin')
+2026-09-18T11:09:23.6407900Z  2026-09-18 11:09:21.083 UTC [194] ERROR:  new row violates row-level security policy for table "candidate_submissions"
+2026-09-18T11:09:23.6408410Z  2026-09-18 11:09:21.083 UTC [194] STATEMENT:  INSERT INTO candidate_submissions (id, project_id, full_name, phone, status)
+2026-09-18T11:09:23.6408804Z  	             VALUES (gen_random_uuid()::text, NULL, 'x', '0', 'NEW')
+2026-09-18T11:09:23.6413114Z Stop and remove container: 29c7e70d4b3f4f95a92d81583ce21dff_postgres16alpine_e4ead0
+2026-09-18T11:09:23.6416350Z ##[command]/usr/bin/docker rm --force d6ad915f357957a45b5ab25df2926fcae9fbced9c6c2fe1b35ae4e8159455643
+2026-09-18T11:09:25.2719327Z d6ad915f357957a45b5ab25df2926fcae9fbced9c6c2fe1b35ae4e8159455643
+2026-09-18T11:09:25.2744095Z Remove container network: github_network_43e4cbfae49f43fea0b5436fbed29191
+2026-09-18T11:09:25.2747477Z ##[command]/usr/bin/docker network rm github_network_43e4cbfae49f43fea0b5436fbed29191
+2026-09-18T11:09:25.3933645Z github_network_43e4cbfae49f43fea0b5436fbed29191
+2026-09-18T11:09:25.3999152Z Cleaning up orphan processes
+2026-09-18T11:09:25.4236456Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+
+sha=3d9e788a5bdc04e805aed179040875f758f3ef2a
+ci_run_id=35338056510
+job_id=105577390216
+generated_at=2026-09-18T18:10:51.1229184+07:00
