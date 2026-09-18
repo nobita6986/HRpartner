@@ -47,9 +47,6 @@ vi.mock('@/src/domains/referrals/attribution-redirect.service', () => ({
 vi.mock('@/src/shared/security/rate-limit-identity', () => ({
   canonicalTrackingCode: (raw: string) => raw.trim().toUpperCase(),
   clientIpFromHeaders: vi.fn(() => '192.0.2.1'),
-  hashRateLimitIdentifier: vi.fn((_rule: unknown, _rawValue: string) =>
-    'a'.repeat(64), // real HMAC-SHA256 → 64 hex chars
-  ),
 }));
 
 vi.mock('@/src/shared/security/rate-limit-provider', () => ({
@@ -141,10 +138,10 @@ describe('P1 — dual rate-limit bucket enforcement', () => {
     expect(mockResolveReferralRedirect).not.toHaveBeenCalled();
   });
 
-  it('AC-RL-05: route calls hashRateLimitIdentifier with canonical code, NOT raw code', async () => {
-    // We can't easily intercept hashRateLimitIdentifier in the route because it's
-    // called synchronously. Instead, verify the hashed value that reaches
-    // enforceRateLimits is NOT the raw code.
+  it('AC-RL-05: canonical affiliate code is passed directly to enforceRateLimits (no double-HMAC)', async () => {
+    // The guard internally canonicalizes, resolves the secret, and HMAC's the
+    // identifier — the route MUST pass the canonical (raw, but upper-cased,
+    // trimmed) code so the guard's single HMAC produces the right 32-hex digest.
     const req = GET_request('mycode123');
     await GET(req, { params: Promise.resolve({ code: 'mycode123' }) });
 
@@ -153,11 +150,11 @@ describe('P1 — dual rate-limit bucket enforcement', () => {
     };
     const codeBucket = call.buckets.find((b) => b.rule.surface === 'REFERRAL_CAPTURE_CODE')!;
 
-    // The hashed value must NOT be the raw or canonicalized code
-    expect(codeBucket.value).not.toBe('mycode123');   // raw
-    expect(codeBucket.value).not.toBe('MYCODE123');   // canonical
-    // Real HMAC-SHA256 produces a 64-char hex string (not 32)
-    expect(codeBucket.value).toMatch(/^[0-9a-f]{64}$/);
+    // Value must be the canonical code (uppercase, trimmed), NOT a pre-hashed digest.
+    expect(codeBucket.value).toBe('MYCODE123');
+    // Defensive: must NOT be a 64-hex or 32-hex pre-digest (which would indicate
+    // a double-HMAC bug).
+    expect(codeBucket.value).not.toMatch(/^[0-9a-f]{32,64}$/);
   });
 
   it('AC-RL-06: valid both buckets → proceeds to service with canonicalized input', async () => {

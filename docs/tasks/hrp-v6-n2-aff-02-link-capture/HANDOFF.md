@@ -8,11 +8,11 @@
 | Spec version | v3.0 |
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
-| Execution round | 5 (Decision A, P1 dual bucket, P2 named boundary) |
+| Execution round | 7 (T0 round-7 P2 delta: removed double-HMAC) |
 | Current audit round | 0 |
 | Baseline | `b6940a82c2b139d319f9bc1cb6f4bff7c5a63b72` (origin/main, post `hrp-v6-n2-aff-01-attribution-foundation` merge) |
 | Implementation SHA (round 2, verified by CI run `35310303161`) | `20bd5039fd803d1d0ef334ee9c362f247dd99c55` |
-| Status | `RESOLVED` (T3 audit round 5 PASS) |
+| Status | `READY_FOR_AUDIT` (T0 round-7 P2 delta: removed double-HMAC) |
 | Next gate | `/audit` (Tier 3 LIGHT) → `/resolve` |
 
 > Brief-prescribed **production gate noted (NOT a slice blocker)**: N2-1 production migration and `app_engine_writer` credential are not yet authorized by Tier 0. This slice is a non-merge PR awaiting T3 LIGHT audit + Tier 0 authorization before any go-live step.
@@ -308,6 +308,26 @@ Both buckets must pass.  Either denial → 429 (rate-limit response) or 503 (fai
 
 ---
 
+## 7a. Round-7 T0 delta fix: removed double-HMAC
+
+**Finding:** The route in round-5 pre-hashed the canonical code via `hashRateLimitIdentifier` and passed the digest to `enforceRateLimits`.  The guard (`enforceRateLimits`) already performs canonicalization + secret resolution + HMAC-SHA256 internally, then truncates to a 32-hex digest before reaching the provider.  Pre-hashing produced a 64-hex blob where the guard expected 32-hex — leaking the abstraction and breaking the provider-key contract.  The T0 verdict (round 7) confirmed this.
+
+**Fix:** `app/r/[code]/route.ts` now passes the canonical code directly to the guard.  No pre-hash, no secret lookup in the route.  `hashRateLimitIdentifier` and `getRateLimitRuntime` imports removed.
+
+```ts
+await enforceRateLimits({
+  buckets: [
+    { rule: RATE_LIMIT_RULES.REFERRAL_CAPTURE_IP, value: clientIp },
+    { rule: RATE_LIMIT_RULES.REFERRAL_CAPTURE_CODE, value: canonicalCode },
+  ],
+  ...
+});
+```
+
+Test `AC-RL-05` updated: the value the guard receives is the canonical code (`MYCODE123`), NOT a 32/64-hex digest.  Provider-key secrecy is verified at the guard test, where the actual HMAC happens.  Tests verifying zero-DB on rate-limit denial (429 / 503) are unchanged.
+
+---
+
 ## 8. Deviations and blockers
 
 | ID | Type | Description / evidence | Decision needed |
@@ -329,4 +349,4 @@ No other deviations. No other blockers.
 - **Production gate** (separate from this slice): N2-1 production migration + `app_engine_writer` credential — awaits Tier 0 authorization.
 - **Lane**: CRITICAL/LIGHT, as briefed. No escalation.
 
-> Handoff status: `RESOLVED` (T3 audit round 5 PASS)
+> Handoff status: `READY_FOR_AUDIT` (T0 round-7 P2 delta: removed double-HMAC)

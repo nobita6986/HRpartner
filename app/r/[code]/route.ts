@@ -5,8 +5,8 @@
  *
  * Order of guards (each fail-closed):
  *   1. Rate-limit — dual bucket: IP (clientIp bucket) + AFF (canonical code bucket).
- *      Both must pass; either denial → 429 / 503.  AFF key is HMAC-digested
- *      (no raw affiliate code reaches the provider or logs).
+ *      Both must pass; either denial → 429 / 503.  The guard performs HMAC-SHA256
+ *      hashing internally; the route passes the canonical code directly — no double-hash.
  *   2. Code format + job allowlist (service layer).
  *   3. Engine client fail-closed on missing URL.
  *   4. Service typed outcome -> HTTP.
@@ -22,11 +22,9 @@ import { getEnginePrisma } from '@/src/db/engine-client';
 import {
   canonicalTrackingCode,
   clientIpFromHeaders,
-  hashRateLimitIdentifier,
 } from '@/src/shared/security/rate-limit-identity';
 import { RATE_LIMIT_RULES } from '@/src/shared/security/rate-limit-port';
 import { enforceRateLimits } from '@/src/shared/security/rate-limit-guard';
-import { getRateLimitRuntime } from '@/src/shared/security/rate-limit-provider';
 import { getCorrelationId } from '@/src/shared/observability/correlation-id';
 import { warn } from '@/src/shared/observability/logger';
 import { resolveReferralRedirect, type RedirectOutcome } from '@/src/domains/referrals/attribution-redirect.service';
@@ -114,20 +112,19 @@ export async function GET(
 
   // 1. Rate-limit guard — DUAL bucket: IP + AFF.
   //    Both must pass.  Denial → 429 / 503 (fail-closed).
-  //    AFF key = HMAC-digested canonical code — raw code never reaches provider/log.
+  //    The guard performs canonicalization, secret resolution, and HMAC-SHA256
+  //    internally (see src/shared/security/rate-limit-guard.ts).  The route
+  //    passes the canonical code directly — DO NOT pre-hash here, or the
+  //    provider key gets HMAC'd twice (which leaks the abstraction and
+  //    produces a wrong 64-hex digest where the guard expects 32-hex).
   const clientIp = clientIpFromHeaders(req.headers, process.env);
-  const hashedCode = hashRateLimitIdentifier(
-    RATE_LIMIT_RULES.REFERRAL_CAPTURE_CODE,
-    canonicalCode,
-    process.env.RATE_LIMIT_HASH_SECRET ?? '',
-  );
 
   let rateLimitResponse: NextResponse | null = null;
   try {
     rateLimitResponse = await enforceRateLimits({
       buckets: [
         { rule: RATE_LIMIT_RULES.REFERRAL_CAPTURE_IP, value: clientIp },
-        { rule: RATE_LIMIT_RULES.REFERRAL_CAPTURE_CODE, value: hashedCode },
+        { rule: RATE_LIMIT_RULES.REFERRAL_CAPTURE_CODE, value: canonicalCode },
       ],
       routeClass: ROUTE_CLASS,
       requestId,

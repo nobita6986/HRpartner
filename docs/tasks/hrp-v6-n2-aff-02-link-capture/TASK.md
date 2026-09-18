@@ -10,7 +10,7 @@
 | Audit mode | LIGHT |
 | Audit reason | Public anonymous redirect with persisted DB side-effect + signed cookie state + open-redirect attack surface; needs forged-code defense, exactly-one invariant semantics, role boundary (writer vs engine), fail-closed posture, container-DB evidence. |
 | Spec version | v3.0 |
-| Status | RESOLVED (round 6 — T3 audit PASS; dual rate-limit bucket, named boundary, CI 35329611208) |
+| Status | READY_FOR_AUDIT (round 7 — T0 P2 delta: removed double-HMAC; route passes canonical code to guard) |
 | Planner | Tier 1 |
 | Baseline | `b6940a82c2b139d319f9bc1cb6f4bff7c5a63b72` (origin/main, post `hrp-v6-n2-aff-01-attribution-foundation` merge) |
 | Implementation SHA (verified by CI run `35310303161`) | `20bd5039fd803d1d0ef334ee9c362f247dd99c55` |
@@ -18,9 +18,9 @@
 | In-scope roots | `app/r/**`, `src/domains/referrals/**`, `tests/db/attribution-redirect.integration.test.ts`, `vitest.integration-files.ts` |
 | Forbidden paths | `docs/TIER0_SHIFT_HANDOVER.md`, `prisma/schema.prisma`, `prisma/migrations/**`, `src/domains/talent/**`, `src/db/engine-client.ts` (reuse only), any N2-1 policy/trigger source |
 | Required gates | `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run build`; `npm run test:integration` (DB env must be present — INTEGRATION_LIVE_DB_REQUIRED, NOT a self-skip) |
-| Current execution round | 5 |
+| Current execution round | 7 |
 | Current audit round | 1 |
-| Next gate | T3 PASS received → `RESOLVED`. Production gate (BLK-01: N2-1 migration + app_engine_writer credential) awaits Tier 0 authorization. PR #16 remains open until production gate cleared. |
+| Next gate | `/deliver` → `/audit` (T0 round-7 delta: double-HMAC removed) → `/resolve`. T3 PASS round 5 followed by T0 P2 delta audit. Production gate (BLK-01: N2-1 migration + app_engine_writer credential) awaits Tier 0 authorization. PR #16 remains open until production gate cleared. |
 
 > **v1.0 → v2.0 → v3.0 revisions:**
 > - v1.0 (initial, 2026-09-17): extracted from N2 DISCOVERY.md, stale paths.
@@ -269,7 +269,8 @@ HTTP/1.1 503 Service Unavailable
 | 3 | READY_FOR_AUDIT (v3.0 + P1 fixes) | T3 audit: existing-cookie precedence wrongly tied to click-time referrer; P2002 → REDIRECT_EXISTING with no business-key; premature RESOLVED. |
 | 4 | READY_FOR_AUDIT (R3 evidence refresh) | T3 audit: stale CI evidence. Tier 1 re-ran CI on 18a5463 (run 35322545969); fresh evidence committed. |
 | 5 | READY_FOR_AUDIT (v3.0 + P1+P2 fixes) | T0 verdict: missing REFERRAL_CAPTURE_CODE bucket; incorrect "RLS-enforced" claim on direct `$queryRaw` call. Dual rate-limit bucket + named referral-public-lookup boundary added. |
-| 6 | **RESOLVED** (v3.0 + P1+P2 fixes) | T3 audit round 5: PASS. P1 dual-rate-limit bucket correct; P2 named boundary correct; all gates pass with fresh CI evidence (run `35329611208`). P3 doc drift resolved in this commit. |
+| 6 | RESOLVED (v3.0 + P1+P2 fixes) | T3 audit round 5: PASS. P1 dual-rate-limit bucket correct; P2 named boundary correct; all gates pass with fresh CI evidence (run `35329611208`). P3 doc drift resolved in this commit. |
+| 7 | READY_FOR_AUDIT (v3.0 + delta fix) | T0 round-7 P2 delta: removed double-HMAC. The route previously pre-hashed the canonical code via `hashRateLimitIdentifier` and then passed the digest to `enforceRateLimits`, which performs its own canonicalization + HMAC internally. The outer hash produced a 64-hex blob where the guard expected a 32-hex digest. Fix: route now passes the canonical code directly; guard is the single hash point. |
 
 ---
 
@@ -282,6 +283,7 @@ HTTP/1.1 503 Service Unavailable
 | v3.0 | 2026-09-18 | **Round 2 — Decision A per T0 directive.** Replaced POST endpoint with canonical GET /r/{code}[?job=<slug>] redirect flow. Added signed `hrp_aff` cookie with server-side row re-verification. Existing-valid-wins replaces double-click lock contract. Destination allowlist replaces `returnTo`-style param. Removed Idempotency-Key, synthetic actor id, advisory lock, P2002-exactly-one claims. Documented orphan-row behavior (separate CRITICAL slice out of scope). Integration test must RUN not SKIP. Updated required gates. Removed `app/api/public/referrals/[affCode]/capture` from `MARKETPLACE_ANON`. | T0 directive `Decision A`: ship canonical referral redirect flow, not POST capture. |
 | v3.0 + P1 fixes | 2026-09-18 | **Round 3 — P1 fixes per T3 audit.** (1) Existing-cookie verification is now INDEPENDENT of the currently-clicked code: `verifyCookieAgainstRow` reads the row's own `referrer_user_id` and verifies that referrer is still active in `users`, instead of coupling to the click-time referrer. (2) Cross-referrer first-click integration test (AC-03b): cookie from code A + click code B → REDIRECT_EXISTING, no overwrite, no new row. (3) P2002 fake race-winner branch removed from `writeAttributionViaEngine`; engine write errors uniformly map to WRITE_FAILED. (4) Status reset from RESOLVED → READY_FOR_AUDIT (matches the documented handoff flow: READY_FOR_AUDIT → T3 PASS → Tier 1 Planner Resolution → RESOLVED). (5) Token documented as "signed structured" (not opaque). (6) Implementation SHA chain documented in §11. | T3 audit: existing-cookie precedence was wrongly tied to the clicked code's referrer; P2002 → REDIRECT_EXISTING had no business-key support; premature RESOLVED. |
 | v3.0 + P1+P2 fixes | 2026-09-18 | **Round 5 — P1 (AFF bucket) + P2 (named boundary) fixes per T0 verdict.** (1) P1: dual rate-limit bucket added: `REFERRAL_CAPTURE_IP` (IP) + `REFERRAL_CAPTURE_CODE` (HMAC-digested canonical affiliate code). Both must pass; either denial → 429/503 without DB access. Rate-limit unavailable (throw) → 503 fail-closed. 7 focused route unit tests added. (2) P2: created `src/domains/referrals/referral-public-lookup.ts` named boundary with fixed projection (`id` only). `attribution-redirect.service.ts` now delegates `users` lookup through this boundary instead of calling `writer.$queryRaw` directly. Described as runtime writer role/grant boundary (no `users` row-policy today; separate CRITICAL additive slice in BLK-01). Fail-closed: any DB error throws. (3) New AC-13: dual-rate-limit buckets enforced. New AC-14: AFF key never contains raw code. | T0 verdict: missing AFF bucket + incorrect "RLS-enforced" claim. |
+| v3.0 + delta fix | 2026-09-18 | **Round 7 — T0 P2 delta audit fix.** Removed double-HMAC in `app/r/[code]/route.ts`: route no longer pre-hashes the canonical code via `hashRateLimitIdentifier`. The guard (`enforceRateLimits`) performs canonicalization, secret resolution, and HMAC-SHA256 internally; the route must pass the canonical code directly. Route test AC-RL-05 updated: guard receives canonical `MYCODE123`, not a 32/64-hex digest. `hashRateLimitIdentifier` and `getRateLimitRuntime` imports removed from the route. 7/7 route unit tests pass. | T0 verdict round 7: outer HMAC violated guard abstraction; canonical code must be passed directly. |
 
 ---
 
