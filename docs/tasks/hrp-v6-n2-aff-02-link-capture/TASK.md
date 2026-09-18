@@ -10,7 +10,7 @@
 | Audit mode | LIGHT |
 | Audit reason | Public anonymous redirect with persisted DB side-effect + signed cookie state + open-redirect attack surface; needs forged-code defense, exactly-one invariant semantics, role boundary (writer vs engine), fail-closed posture, container-DB evidence. |
 | Spec version | v3.0 |
-| Status | READY_FOR_AUDIT (round 3 — P1 fixes for first-click precedence, P2002 removal, status reset, SHA documentation) |
+| Status | READY_FOR_AUDIT (round 5 — dual rate-limit bucket, named referral-public-lookup boundary) |
 | Planner | Tier 1 |
 | Baseline | `b6940a82c2b139d319f9bc1cb6f4bff7c5a63b72` (origin/main, post `hrp-v6-n2-aff-01-attribution-foundation` merge) |
 | Implementation SHA (verified by CI run `35310303161`) | `20bd5039fd803d1d0ef334ee9c362f247dd99c55` |
@@ -18,7 +18,7 @@
 | In-scope roots | `app/r/**`, `src/domains/referrals/**`, `tests/db/attribution-redirect.integration.test.ts`, `vitest.integration-files.ts` |
 | Forbidden paths | `docs/TIER0_SHIFT_HANDOVER.md`, `prisma/schema.prisma`, `prisma/migrations/**`, `src/domains/talent/**`, `src/db/engine-client.ts` (reuse only), any N2-1 policy/trigger source |
 | Required gates | `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run build`; `npm run test:integration` (DB env must be present — INTEGRATION_LIVE_DB_REQUIRED, NOT a self-skip) |
-| Current execution round | 3 |
+| Current execution round | 5 |
 | Current audit round | 1 |
 | Next gate | `/deliver` → `/audit` → `/resolve` → `/merge` (T3 PASS, P3 drifts resolved in this commit; production gate BLK-01 outstanding) |
 
@@ -218,6 +218,8 @@ HTTP/1.1 503 Service Unavailable
 | AC-10 | Service does NOT call any advisory lock, does NOT derive a synthetic actor id, does NOT use `Idempotency-Key`. Decision A §3. | `npm run test:unit` |
 | AC-11 | Full Quality gates pass (`typecheck`, `lint`, `test:unit`, `build`). | `npm run typecheck; npm run lint; npm run test:unit; npm run build` |
 | AC-12 | Integration gate RUNs end-to-end against the live container DB (`npm run test:integration`) — no ENV_BLOCKED self-skip. Missing env vars cause `INTEGRATION_LIVE_DB_REQUIRED` failure (NOT a silent PASS). | `npm run test:integration` |
+| AC-13 | Both `REFERRAL_CAPTURE_IP` and `REFERRAL_CAPTURE_CODE` buckets are enforced by `enforceRateLimits` before any DB access. Either denial → 429/503. | `npm run test:unit` (route unit tests) |
+| AC-14 | The AFF bucket key never contains the raw affiliate code — only the HMAC-SHA256 digest. | `npm run test:unit` (route unit tests) |
 
 ### 6.2 Traceability
 
@@ -264,6 +266,9 @@ HTTP/1.1 503 Service Unavailable
 | 0 | READY_FOR_EXECUTION (v1.0) | Stale baseline + paths. Superseded by v2.0. |
 | 1 | READY_FOR_EXECUTION (v2.0) | Baseline corrected; paths corrected to App Router; POST API contract, idempotency/race contract locked. NO schema migration risk. Superseded by v3.0. |
 | 2 | READY_FOR_EXECUTION (v3.0 — Decision A) | T0 directive: replace POST /api/public/referrals/{affCode}/capture with canonical GET /r/{code}[?job=...]. Signed `hrp_aff` cookie, existing-valid-wins, destination allowlist, no Idempotency-Key / synthetic actor / advisory lock. Integration tests must RUN not SKIP. |
+| 3 | READY_FOR_AUDIT (v3.0 + P1 fixes) | T3 audit: existing-cookie precedence wrongly tied to click-time referrer; P2002 → REDIRECT_EXISTING with no business-key; premature RESOLVED. |
+| 4 | READY_FOR_AUDIT (R3 evidence refresh) | T3 audit: stale CI evidence. Tier 1 re-ran CI on 18a5463 (run 35322545969); fresh evidence committed. |
+| 5 | READY_FOR_AUDIT (v3.0 + P1+P2 fixes) | T0 verdict: missing REFERRAL_CAPTURE_CODE bucket; incorrect "RLS-enforced" claim on direct `$queryRaw` call. Dual rate-limit bucket + named referral-public-lookup boundary added. |
 
 ---
 
@@ -275,3 +280,18 @@ HTTP/1.1 503 Service Unavailable
 | v2.0 | 2026-09-18 | Baseline corrected; in-scope paths corrected; POST API request/response contract locked; idempotency key requirement + replay contract locked; race/double-click contract locked; error semantics locked; AC set expanded. | Pre-implementation revision; ensure Tier 3 can reproduce ACs end-to-end without guessing paths. |
 | v3.0 | 2026-09-18 | **Round 2 — Decision A per T0 directive.** Replaced POST endpoint with canonical GET /r/{code}[?job=<slug>] redirect flow. Added signed `hrp_aff` cookie with server-side row re-verification. Existing-valid-wins replaces double-click lock contract. Destination allowlist replaces `returnTo`-style param. Removed Idempotency-Key, synthetic actor id, advisory lock, P2002-exactly-one claims. Documented orphan-row behavior (separate CRITICAL slice out of scope). Integration test must RUN not SKIP. Updated required gates. Removed `app/api/public/referrals/[affCode]/capture` from `MARKETPLACE_ANON`. | T0 directive `Decision A`: ship canonical referral redirect flow, not POST capture. |
 | v3.0 + P1 fixes | 2026-09-18 | **Round 3 — P1 fixes per T3 audit.** (1) Existing-cookie verification is now INDEPENDENT of the currently-clicked code: `verifyCookieAgainstRow` reads the row's own `referrer_user_id` and verifies that referrer is still active in `users`, instead of coupling to the click-time referrer. (2) Cross-referrer first-click integration test (AC-03b): cookie from code A + click code B → REDIRECT_EXISTING, no overwrite, no new row. (3) P2002 fake race-winner branch removed from `writeAttributionViaEngine`; engine write errors uniformly map to WRITE_FAILED. (4) Status reset from RESOLVED → READY_FOR_AUDIT (matches the documented handoff flow: READY_FOR_AUDIT → T3 PASS → Tier 1 Planner Resolution → RESOLVED). (5) Token documented as "signed structured" (not opaque). (6) Implementation SHA chain documented in §11. | T3 audit: existing-cookie precedence was wrongly tied to the clicked code's referrer; P2002 → REDIRECT_EXISTING had no business-key support; premature RESOLVED. |
+| v3.0 + P1+P2 fixes | 2026-09-18 | **Round 5 — P1 (AFF bucket) + P2 (named boundary) fixes per T0 verdict.** (1) P1: dual rate-limit bucket added: `REFERRAL_CAPTURE_IP` (IP) + `REFERRAL_CAPTURE_CODE` (HMAC-digested canonical affiliate code). Both must pass; either denial → 429/503 without DB access. Rate-limit unavailable (throw) → 503 fail-closed. 7 focused route unit tests added. (2) P2: created `src/domains/referrals/referral-public-lookup.ts` named boundary with fixed projection (`id` only). `attribution-redirect.service.ts` now delegates `users` lookup through this boundary instead of calling `writer.$queryRaw` directly. Described as runtime writer role/grant boundary (no `users` row-policy today; separate CRITICAL additive slice in BLK-01). Fail-closed: any DB error throws. (3) New AC-13: dual-rate-limit buckets enforced. New AC-14: AFF key never contains raw code. | T0 verdict: missing AFF bucket + incorrect "RLS-enforced" claim. |
+
+---
+
+## 11. Implementation SHA Chain
+
+| SHA | Round | Description | CI Run | Notes |
+|-----|-------|-------------|--------|-------|
+| `20bd5039` | R2 | Decision A GET /r/[code] implementation | `35310303161` | First CI verification |
+| `1b667f4` | R2 | Docs-only delta | `35310303161` | Same run |
+| `343c8f8` | R3 | P1 fixes (verifyCookieAgainstRow, AC-03b, P2002 removal) | — | Not yet CI-verified at time of R3 |
+| `18a5463` | R3 | Docs reset + SHA chain documented | `35322545969` | R3 fixes verified by this run |
+| `1019c1d` | R4 | Fresh CI evidence (35322545969) | `35322545969` | Confirmed |
+| `0ceddfe` | R4 | P3 doc drift (stale counts) | `35322545969` | Same run |
+| `[HEAD]` | R5 | P1 dual bucket + P2 named boundary | pending | This commit |

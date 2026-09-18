@@ -8,7 +8,7 @@
 | Spec version | v3.0 |
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
-| Execution round | 3 (Decision A revised, then P1 fixes applied per T3 audit) |
+| Execution round | 5 (Decision A, P1 dual bucket, P2 named boundary) |
 | Current audit round | 0 |
 | Baseline | `b6940a82c2b139d319f9bc1cb6f4bff7c5a63b72` (origin/main, post `hrp-v6-n2-aff-01-attribution-foundation` merge) |
 | Implementation SHA (round 2, verified by CI run `35310303161`) | `20bd5039fd803d1d0ef334ee9c362f247dd99c55` |
@@ -41,10 +41,12 @@
 
 | Path | Change | Reason / contract pin |
 |---|---|---|
-| `app/r/[code]/route.ts` | **NEW** | DEC-A2, DEC-A16: GET handler — rate-limit (IP bucket only) → query + cookie read → engine fail-closed → service → HTTP response |
-| `src/domains/referrals/attribution-redirect.service.ts` | **NEW** | DEC-A1..DEC-A11, DEC-A14: typed `RedirectOutcome` engine. Writer-side RLS-enforced `User.affCode` lookup; cookie verification (sig + expiry + DB re-read); engine-side `set_config('hrp.engine_context', 'link-capture', true)` + raw SQL INSERT |
+| `app/r/[code]/route.ts` | **NEW** | DEC-A2, DEC-A16: GET handler — dual rate-limit bucket (IP + HMAC-digested code) → query + cookie read → engine fail-closed → service → HTTP response |
+| `src/domains/referrals/attribution-redirect.service.ts` | **NEW** | DEC-A1..DEC-A11, DEC-A14: typed `RedirectOutcome` engine. `findActivePublicReferrerByAffCode` named boundary (fixed projection, writer role/grant); cookie verification (sig + expiry + DB re-read); engine-side `set_config('hrp.engine_context', 'link-capture', true)` + raw SQL INSERT |
 | `src/domains/referrals/redirect-token.ts` | **NEW** | DEC-A6: HMAC-SHA256 cookie token signing/verification (`node:crypto`, no new dependency). Format: `b64(id).b64(exp).b64(kv).b64(sig)`. Uses `RATE_LIMIT_HASH_SECRET` (existing) |
+| `src/domains/referrals/referral-public-lookup.ts` | **NEW** | P2 fix (round-5): named boundary for writer-side `users` lookup. Fixed projection (`id` only). Runtime writer role/grant boundary (no `users` row-policy today). Fail-closed: any DB error throws. |
 | `src/domains/referrals/attribution-redirect.service.test.ts` | **NEW** (22 tests) | AC-01..AC-10 + cross-referrer coverage at service layer (mocked writer + engine) |
+| `src/domains/referrals/attribution-redirect.route.test.ts` | **NEW** (7 tests) | P1 fix (round-5): AC-RL-01..AC-RL-06 focused unit tests for dual rate-limit bucket, fail-closed, no raw code in provider key |
 | `src/domains/referrals/redirect-token.test.ts` | **NEW** (11 tests) | Token sign/verify, tamper, expire, wrong secret, malformed |
 | `tests/db/attribution-redirect.integration.test.ts` | **NEW** (15 tests) | AC-01..AC-03b container-DB coverage. **Must RUN (not SKIP)** — fails explicitly with `INTEGRATION_LIVE_DB_REQUIRED` when env absent |
 | `vitest.integration-files.ts` | file entry swapped | `tests/db/link-capture.integration.test.ts` → `tests/db/attribution-redirect.integration.test.ts` |
@@ -84,8 +86,10 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 | `AC-08` | `E-05`, `E-14` (CI integration) | Integration test AC-08: writer RLS denies INSERT; engine with link-capture context succeeds. **CI**: PASS in `35310303161/105490789083`. | None — CI run provides live assertion. |
 | `AC-09` | `E-06` (`vitest-static-checks.txt`) | Static sweep over `src/**/*.ts` for forbidden pattern `set_config('hrp.engine_context', ..., false)`. Service uses literal `, true)`. Zero matches. | None |
 | `AC-10` | `E-01` (`vitest-attribution-redirect-service.txt`) | Unit test `Decision A §3: service does NOT call any advisory lock` asserts no `pg_advisory_xact_lock` in SQL execution trace. Service does NOT import `withIdempotency` or `derivePublicActorId` (compile-time guarantee). | None |
-| `AC-11` | `E-02` (`typecheck.txt`), `E-03` (`lint-summary.txt`), `E-04` (`vitest-unit-full.txt`), `E-07` (`next-build.txt`) | typecheck exit 0; lint exit 0 (0 errors, 591 warnings = 584 baseline + 7 new in test mocks for `any`); unit 2311/2311 pass (up from 2301: +30 = +19 service + +11 token + adjustment); build exit 0 with `ƒ /r/[code] 349 B 103 kB` in route table | None |
-| `AC-12` | `E-14` (`ci-integration-attribution-redirect.txt`), `E-15` (`ci-quality.txt`) | **CI**: PASS in run `35310303161` — Quality lane (typecheck + lint + unit + build) ✓ + Integration lane (DB tests · fail-closed) ✓. Test Files: 21 passed (21); Tests: 414 passed + 2 skipped (416). All 14 attribution-redirect integration tests pass (AC-01..AC-08, AC-04 + expires, AC-07, plus the two extra `invalid job` cases). Vercel deployment ✓. Local intentionally FAILs with `INTEGRATION_LIVE_DB_REQUIRED` (no DB env). | None — CI run is the source of truth. |
+| `AC-11` | `E-02` (`typecheck.txt`), `E-03` (`lint-summary.txt`), `E-04` (`vitest-unit-full.txt`), `E-07` (`next-build.txt`) | typecheck exit 0; lint exit 0 (0 errors); unit 2321/2321 pass (+7 route tests); build exit 0 with `ƒ /r/[code]` in route table | None |
+| `AC-12` | `E-14` (`ci-integration-attribution-redirect.txt`), `E-15` (`ci-quality.txt`) | **CI run `35322545969`**: Quality lane (typecheck + lint + unit + build) PASS + Integration lane (15 tests) PASS. AC-03b cross-referrer verified. | None — CI run is the source of truth. |
+| `AC-13` | `E-01` (`vitest-attribution-redirect-service.txt`), `E-16` (`vitest-attribution-redirect-route.txt`) | 7 route unit tests (AC-RL-01..AC-RL-06): both buckets checked, IP denial blocks DB, CODE denial blocks DB, rate-limit unavailable → 503 fail-closed, canonical code in service input. | None |
+| `AC-14` | `E-16` (`vitest-attribution-redirect-route.txt`) | Route unit test AC-RL-05: AFF bucket value is HMAC digest (64 hex chars), NOT raw or canonical code. | None |
 
 ---
 
@@ -109,6 +113,7 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 | `E-13` | HANDOFF spec version match against TASK | TASK §0 says `v3.0`; this HANDOFF §0 says `v3.0`. | inline |
 | `E-14` | GitHub Actions Integration job log (run `35322545969`, job `105528084535`) | exit 0; 15 attribution-redirect integration tests PASS (AC-01..AC-03b, AC-06, AC-01+expires). All ACs green including AC-03b cross-referrer. | `evidence/ci-integration-attribution-redirect.txt` |
 | `E-15` | GitHub Actions Quality job log (run `35322545969`, job `105528084193`) | exit 0; typecheck + lint + unit + build all green. | `evidence/ci-quality.txt` |
+| `E-16` | `npx vitest run --config vitest.unit.config.ts src/domains/referrals/attribution-redirect.route.test.ts` | exit 0; 7/7 route unit tests pass (AC-RL-01..AC-RL-06). Dual rate-limit bucket enforcement, fail-closed, HMAC-digested code. | `evidence/vitest-attribution-redirect-route.txt` |
 
 ### Self-test outputs (inline summary)
 
@@ -158,7 +163,7 @@ lint
 
 ## 4. Deviations and blockers
 
-*See §6 (round-3 P1 fixes) for the T3 audit findings that prompted this round.*
+*See §6 (round-3 P1 fixes) and §7 (round-5 P1+P2 fixes) for the T3/T0 audit findings that prompted each revision.*
 
 ---
 
@@ -260,7 +265,50 @@ Per T3 audit feedback, the implementation SHA verified by CI run `35310303161` w
 
 ---
 
-## 7. Deviations and blockers
+## 7. Round-5 P1+P2 fixes (per T0 verdict)
+
+### 7.1 P1: dual rate-limit bucket — REFERRAL_CAPTURE_IP + REFERRAL_CAPTURE_CODE
+
+**Finding:** `route.ts` only enforced `REFERRAL_CAPTURE_IP` (IP bucket).  T0 directive required both IP and AFF-specific buckets.  The `REFERRAL_CAPTURE_CODE` rule already existed in `rate-limit-port.ts` (keyed on `tracking-code` subject) but was not wired into the route.
+
+**Fix:** `route.ts` now calls `enforceRateLimits` with two buckets:
+
+```ts
+const hashedCode = hashRateLimitIdentifier(
+  RATE_LIMIT_RULES.REFERRAL_CAPTURE_CODE,
+  canonicalCode,
+  process.env.RATE_LIMIT_HASH_SECRET ?? '',
+);
+
+await enforceRateLimits({
+  buckets: [
+    { rule: RATE_LIMIT_RULES.REFERRAL_CAPTURE_IP, value: clientIp },
+    { rule: RATE_LIMIT_RULES.REFERRAL_CAPTURE_CODE, value: hashedCode },
+  ],
+  ...
+});
+```
+
+Both buckets must pass.  Either denial → 429 (rate-limit response) or 503 (fail-closed).  Raw affiliate code never enters the provider key — only the HMAC digest does.  `enforceRateLimits` throw (rate-limiter unavailable) → 503.
+
+7 focused route unit tests (AC-RL-01..AC-RL-06) cover: both buckets checked, IP denial blocks DB, CODE denial blocks DB, rate-limit unavailable → 503 fail-closed, raw code never in provider key, canonical input passed to service.
+
+### 7.2 P2: named referral-public-lookup boundary replaces direct `$queryRaw`
+
+**Finding:** `attribution-redirect.service.ts` called `writer.$queryRaw` directly for the `users` lookup, bypassing the "named boundary" convention.  The code was described as "RLS-enforced" but there is no row-level policy on `users` — the boundary is the **runtime writer role/grant** (`app_user_writer` LOGIN role + table GRANTs).  Adding `users` RLS is a separate CRITICAL additive production slice (BLK-01).
+
+**Fix:** Created `src/domains/referrals/referral-public-lookup.ts` — a named boundary with:
+
+- Fixed projection: `{ id: string }` only.  No PII (`phone`, `email`, `passwordHash`, …) leaks to service layer.
+- Predicate: `aff_code = $1 AND is_active = true LIMIT 1`.
+- Fail-closed: any DB error throws (caller maps to `WRITE_FAILED` → 503).
+- No ADMIN GUC bootstrap (writer role's GRANTs are sufficient today; if `users` gets a row policy later, this helper evolves with it).
+
+`attribution-redirect.service.ts` now delegates through `findActivePublicReferrerByAffCode()` instead of raw SQL.
+
+---
+
+## 8. Deviations and blockers
 
 | ID | Type | Description / evidence | Decision needed |
 |---|---|---|---|
@@ -277,7 +325,7 @@ No other deviations. No other blockers.
 ## 5. Final status
 
 - **Outcome**: Public referral-link redirect endpoint delivered as pure application slice per T0 Decision A. Service + route + token signing + unit + container-DB integration test are in place. N2-1 schema, RLS policies, and triggers are **unchanged** (zero forbidden-path writes).
-- **Gates**: typecheck=0, lint=0 errors, unit=2314/2314, build=success. **CI Integration lane (run `35322545969`): PASS** — all 15 attribution-redirect integration tests green (AC-01..AC-03b, AC-06, AC-01+expires); Quality lane PASS (typecheck + lint + unit + build all green). Local intentionally FAILs with `INTEGRATION_LIVE_DB_REQUIRED` (no DB env), which is the design-correct failure mode per T0 Decision A.
+- **Gates**: typecheck=0, lint=0 errors, unit=2321/2321 (+7 route tests), build=success. **CI Integration lane (run `35322545969`): PASS** — all 15 attribution-redirect integration tests green (AC-01..AC-03b, AC-06, AC-01+expires); Quality lane PASS (typecheck + lint + unit + build all green). Local intentionally FAILs with `INTEGRATION_LIVE_DB_REQUIRED` (no DB env), which is the design-correct failure mode per T0 Decision A.
 - **Production gate** (separate from this slice): N2-1 production migration + `app_engine_writer` credential — awaits Tier 0 authorization.
 - **Lane**: CRITICAL/LIGHT, as briefed. No escalation.
 
