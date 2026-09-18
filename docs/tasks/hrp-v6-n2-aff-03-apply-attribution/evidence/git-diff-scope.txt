@@ -1,0 +1,7 @@
+﻿git diff --name-only origin/main..HEAD
+-------
+
+-------
+forbidden-overlap count: 0
+result=exit 0 (no forbidden-path writes; only docs/tasks/hrp-v6-n2-aff-03-apply-attribution/** is added)
+git_sha=4e6d0c138033e963ac7ade5ed69a7d7a77243a4f

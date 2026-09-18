@@ -1,0 +1,13 @@
+﻿npx vitest run --config vitest.unit.config.ts
+-------
+ Γ£ô src/shared/utils/money.test.ts (4 tests) 3ms
+ Γ£ô src/shared/auth/password.test.ts (2 tests) 233ms
+
+ Test Files  152 passed (152)
+      Tests  2334 passed (2334)
+   Start at  21:58:20
+   Duration  55.26s (transform 2.99s, setup 0ms, collect 17.06s, tests 3.36s, environment 27ms, prepare 12.10s)
+
+-------
+result=exit 0 (baseline unit suite at HEAD 4e6d0c1; no AFF-03 tests yet — implementation blocked on Tier 0 RLS verdict)
+git_sha=4e6d0c138033e963ac7ade5ed69a7d7a77243a4f

@@ -1,0 +1,19 @@
+﻿npm run build
+-------
+Γöö Γùï /worker                                           3.29 kB         106 kB
++ First Load JS shared by all                          103 kB
+  Γö£ chunks/1255-a20f6c5e797a687b.js                   46.4 kB
+  Γö£ chunks/4bd1b696-f785427dddbba9fb.js               54.2 kB
+  Γöö other shared chunks (total)                       2.02 kB
+
+
+╞Æ Middleware                                          41.3 kB
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+
+-------
+result=exit 0 (build succeeded after 
+px prisma generate; baseline 4e6d0c1 ships schema changes from AFF-05A but the generated client was not committed — running prisma generate is required before 
+ext build succeeds)
+git_sha=4e6d0c138033e963ac7ade5ed69a7d7a77243a4f
