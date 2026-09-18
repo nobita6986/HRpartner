@@ -39,11 +39,14 @@ export async function getLaborProfilesList(
   const where: Prisma.LaborProfileWhereInput = {};
   
   if (filter.search) {
-    where.OR = [
+    const searchOr: Prisma.LaborProfileWhereInput[] = [
       { fullName: { contains: filter.search, mode: 'insensitive' } },
       { phone: { contains: filter.search } },
-      { cccdNumber: { contains: filter.search } },
     ];
+    if (canSeeSensitive) {
+      searchOr.push({ cccdNumber: { contains: filter.search } });
+    }
+    where.OR = searchOr;
   }
   
   if (filter.exactPhone) {

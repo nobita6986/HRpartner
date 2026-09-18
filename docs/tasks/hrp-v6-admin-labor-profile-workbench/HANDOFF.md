@@ -50,17 +50,26 @@
 
 | Evidence | Command / method | Exit / measured result | Artifact |
 |---|---|---|---|
-| `E-01` | `npm run test:unit src/domains/talent/labor-profile.read-service.test.ts` | `0` | `inline` |
+| `E-01` | `npm run test:unit src/domains/talent/labor-profile.read-service.test.ts app/api/admin/labor-profiles/route.test.ts` | `0` | `inline` |
 | `E-02` | `npm run build` | `0` | `inline` |
+| `E-03` | `verify-task.ps1` | `PASS` | `inline` |
+| `E-04` | `verify-handoff.ps1` | `PASS` | `inline` |
+| `E-05` | `npm run lint` | `0` | `inline` |
+| `E-06` | `npm run typecheck` | `0` | `inline` |
+
+Evidence files are logged to `docs/tasks/hrp-v6-admin-labor-profile-workbench/evidence/`.
 
 ## 4. Deviations and blockers
 
 | ID | Type | Description / evidence | Decision needed |
 |---|---|---|---|
-| — | — | None | No |
+| `D-01` | `SCOPE` | The Admin Workbench cannot convert a worker yet (disabled per N2 boundary constraints). | No |
+| `D-02` | `SCOPE` | Deduplication only uses precise exactPhone matching if `POSSIBLE_MATCH` is hit on backend. UI manual prompt gracefully degrades. | No |
 
 ## 5. Final status
 
-- Round 3 remediation completed, unit tests pass, build passes, ready for Tier 3 delta audit.
+- **PII Oracle Closed**: `cccdNumber` is now conditionally included in generic search *only* when `canSeeSensitive` is active (`labor-profile.read-service.ts`).
+- **Canonical Intake API**: Re-routed `POST /api/admin/labor-profiles` to consume `createCandidateSubmissionFromIntake`, ensuring `ADMIN_INTAKE` is properly documented inside the submission schema.
+- **Deduplication UI**: Properly handles 409 `POSSIBLE_MATCH` resolving down to `forceNew: true` flag.
 
 Handoff status: READY_FOR_AUDIT

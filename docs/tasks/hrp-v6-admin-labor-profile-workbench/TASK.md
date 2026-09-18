@@ -10,14 +10,14 @@
 | Audit mode | `LIGHT` |
 | Audit reason | Read services touching user data, RLS and identity dedup requires LIGHT audit. |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `READY_FOR_AUDIT` |
 | Planner | `Tier 1` |
 | Baseline | `e798af80fd4111b5c41688abc1b9b9362b3b7727` |
 | In-scope roots | `src/domains/talent/**`, `app/api/admin/labor-profiles/**`, `app/admin/labor-profiles/**` |
 | Forbidden paths | `prisma/schema.prisma` |
 | Required gates | `npm run test:unit`, `npm run build` |
-| Current execution round | `3` |
-| Current audit round | `2` |
+| Current execution round | `4` |
+| Current audit round | `3` |
 | Next gate | `LIGHT: /deliver -> /audit -> /resolve` |
 
 ## 1. Outcome
@@ -124,9 +124,13 @@
 
 | Round | Decision | Reason |
 |---|---|---|
+| `2` | REVISION_REQUIRED | Masking, filter missing |
+| `3` | REVISION_REQUIRED | Dedup mismatch, Channel wrong, PII oracle |
+| `4` | READY_FOR_AUDIT | Resolved P1 blockers |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-09-18` | Initial contract | Initial |
+| `v1.1` | `2026-09-18` | Round 2-4 fixes | Fixed PII and Dedup logic |
