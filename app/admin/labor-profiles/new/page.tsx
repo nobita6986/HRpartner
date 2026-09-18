@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function NewLaborProfilePage() {
   const router = useRouter();
@@ -11,17 +12,35 @@ export default function NewLaborProfilePage() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [cccdNumber, setCccdNumber] = useState('');
+  const [channel, setChannel] = useState('OFFLINE');
+  const [hasConsent, setHasConsent] = useState(true);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [dedupMatches, setDedupMatches] = useState<any[]>([]);
 
-  const handleNext = (e: React.FormEvent) => {
+  const checkDedup = async () => {
+    try {
+      const res = await fetch(`/api/admin/labor-profiles?search=${encodeURIComponent(phone)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setDedupMatches(data.items || []);
+      }
+    } catch (e) {
+      console.error('Dedup check failed', e);
+    }
+  };
+
+  const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim() || !phone.trim()) {
       setError('Vui lòng nhập họ tên và số điện thoại.');
       return;
     }
     setError('');
+    setLoading(true);
+    await checkDedup();
+    setLoading(false);
     setStep(2);
   };
 
@@ -40,6 +59,8 @@ export default function NewLaborProfilePage() {
           fullName: fullName.trim(),
           phone: phone.trim(),
           cccdNumber: cccdNumber.trim() || undefined,
+          channel,
+          consent: hasConsent,
         }),
       });
 
@@ -66,7 +87,7 @@ export default function NewLaborProfilePage() {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-center space-x-4 mb-8">
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold ${step === 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold ${step === 1 ? 'bg-blue-600 text-white' : 'bg-green-500 text-white'}`}>
             1
           </div>
           <div className="flex-1 h-px bg-gray-200"></div>
@@ -77,6 +98,12 @@ export default function NewLaborProfilePage() {
           <div className="flex items-center justify-center w-8 h-8 rounded-full font-bold bg-gray-100 text-gray-500">
             3
           </div>
+        </div>
+        
+        <div className="mb-6 flex justify-between px-2 text-xs text-gray-500 font-medium">
+          <span>Tiếp nhận nhanh</span>
+          <span>Hoàn thiện & Đối chiếu</span>
+          <span>Xử lý nghiệp vụ</span>
         </div>
 
         <form onSubmit={step === 1 ? handleNext : handleSubmit} className="space-y-6">
@@ -115,7 +142,26 @@ export default function NewLaborProfilePage() {
           )}
 
           {step === 2 && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              
+              {dedupMatches.length > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <h3 className="text-sm font-semibold text-yellow-800 mb-2">Phát hiện hồ sơ trùng lặp!</h3>
+                  <p className="text-sm text-yellow-700 mb-3">Đã tìm thấy {dedupMatches.length} hồ sơ khớp với số điện thoại này.</p>
+                  <ul className="space-y-2">
+                    {dedupMatches.map(m => (
+                      <li key={m.id} className="flex justify-between items-center text-sm bg-white p-2 rounded shadow-sm border border-yellow-100">
+                        <span>{m.fullName} - {m.phone}</span>
+                        <Link href={`/admin/labor-profiles/${m.id}`} className="text-blue-600 hover:underline font-medium">
+                          Xem hồ sơ
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-yellow-600 mt-3 italic">Bạn vẫn có thể tiếp tục lưu, hệ thống sẽ tự động ghép (merge) vào hồ sơ hiện có.</p>
+                </div>
+              )}
+
               <h2 className="text-lg font-semibold text-gray-900">Hoàn thiện thông tin</h2>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số CCCD (không bắt buộc)</label>
@@ -127,10 +173,32 @@ export default function NewLaborProfilePage() {
                   placeholder="001099123456"
                 />
               </div>
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  Hệ thống sẽ tự động đối chiếu SĐT và CCCD để tìm hồ sơ đã có. Nếu tìm thấy, bạn sẽ được chuyển đến hồ sơ cũ.
-                </p>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nguồn tiếp nhận</label>
+                <select 
+                  value={channel} 
+                  onChange={(e) => setChannel(e.target.value)}
+                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="OFFLINE">Trực tiếp (Offline)</option>
+                  <option value="FACEBOOK">Facebook</option>
+                  <option value="ZALO">Zalo</option>
+                  <option value="REFERRAL">Giới thiệu (Referral)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input 
+                  type="checkbox" 
+                  id="consent" 
+                  checked={hasConsent}
+                  onChange={(e) => setHasConsent(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor="consent" className="text-sm text-gray-700">
+                  Người lao động đồng ý cung cấp thông tin (Consent)
+                </label>
               </div>
             </div>
           )}

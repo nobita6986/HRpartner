@@ -22,7 +22,7 @@ export async function GET(
 
     const prisma = getPrisma();
     const result = await withDbContext(prisma, ctx, async (tx) => {
-      return getLaborProfileDetail(tx, resolvedParams.id);
+      return getLaborProfileDetail(tx, ctx, resolvedParams.id);
     });
 
     if (!result) {

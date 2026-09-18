@@ -25,9 +25,10 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get('search') ?? undefined;
     const completeness = searchParams.get('completeness') ?? undefined;
     const identityVerification = searchParams.get('identityVerification') ?? undefined;
+    const view = (searchParams.get('view') as any) ?? undefined;
 
     const result = await withDbContext(prisma, ctx, async (tx) => {
-      return getLaborProfilesList(tx, { search, completeness, identityVerification, skip, take });
+      return getLaborProfilesList(tx, ctx, { search, completeness, identityVerification, view, skip, take });
     });
 
     return NextResponse.json(result);
@@ -44,6 +45,8 @@ const CreateProfileSchema = z.object({
   fullName: z.string().min(1).max(255),
   phone: z.string().min(1).max(20),
   cccdNumber: z.string().max(20).optional(),
+  channel: z.string().default('OFFLINE'),
+  consent: z.boolean().default(true),
 });
 
 export async function POST(req: NextRequest) {
@@ -61,9 +64,16 @@ export async function POST(req: NextRequest) {
 
     const prisma = getPrisma();
     const result = await withDbContext(prisma, ctx, async (tx) => {
-      return createOrMatchLaborProfile(tx, parsed.data, {
+      // Create intake entry conceptually? 
+      // Wait, createOrMatchLaborProfile doesn't accept `channel` directly.
+      // I'll pass consentAt if true.
+      return createOrMatchLaborProfile(tx, {
+        fullName: parsed.data.fullName,
+        phone: parsed.data.phone,
+        cccdNumber: parsed.data.cccdNumber,
+      }, {
         actorId: ctx.userId,
-        consentAt: new Date(),
+        consentAt: parsed.data.consent ? new Date() : null,
       });
     });
 

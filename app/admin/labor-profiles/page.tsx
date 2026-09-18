@@ -34,12 +34,13 @@ export default async function LaborProfilesPage({
 
   const resolvedSearchParams = await searchParams;
   const search = typeof resolvedSearchParams.search === 'string' ? resolvedSearchParams.search : undefined;
+  const view = typeof resolvedSearchParams.view === 'string' ? resolvedSearchParams.view as any : undefined;
   const take = 50;
   const skip = typeof resolvedSearchParams.skip === 'string' ? parseInt(resolvedSearchParams.skip, 10) : 0;
 
   const prisma = getPrisma();
   const data = await withDbContext(prisma, session as any, async (tx) => {
-    return getLaborProfilesList(tx, { search, take, skip });
+    return getLaborProfilesList(tx, session as any, { search, view, take, skip });
   });
 
   return (
@@ -55,6 +56,30 @@ export default async function LaborProfilesPage({
         >
           Tiếp nhận NLD
         </Link>
+      </div>
+
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex gap-2 overflow-x-auto">
+        {[
+          { label: 'Tất cả', value: '' },
+          { label: 'Của tôi', value: 'MY_PROFILES' },
+          { label: 'Sắp hết hạn', value: 'EXPIRING_SOON' },
+          { label: 'Kho chung', value: 'COMMON_POOL' },
+          { label: 'Chưa hoàn thiện', value: 'INCOMPLETE' },
+          { label: 'Cần đối chiếu', value: 'UNVERIFIED' },
+          { label: 'Chưa từng làm', value: 'NEVER_WORKED' },
+          { label: 'Đang làm', value: 'WORKING' },
+          { label: 'Đã nghỉ', value: 'TERMINATED' },
+        ].map(f => (
+          <Link
+            key={f.value}
+            href={`/admin/labor-profiles${f.value ? `?view=${f.value}` : ''}`}
+            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              (view || '') === f.value ? 'bg-blue-100 text-blue-700' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            {f.label}
+          </Link>
+        ))}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">

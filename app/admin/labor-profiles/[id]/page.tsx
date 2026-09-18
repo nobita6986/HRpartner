@@ -30,7 +30,7 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
 
   const prisma = getPrisma();
   const data = await withDbContext(prisma, session as any, async (tx) => {
-    return getLaborProfileDetail(tx, resolvedParams.id);
+    return getLaborProfileDetail(tx, session as any, resolvedParams.id);
   });
 
   if (!data) {
@@ -54,8 +54,8 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
         </div>
         <div className="flex space-x-3">
           {!data.workerId && (
-            <button className="bg-gray-100 text-gray-400 px-4 py-2 rounded-lg font-medium cursor-not-allowed">
-              Chuyển đổi thành Worker (Sắp ra mắt)
+            <button disabled className="bg-gray-100 text-gray-400 px-4 py-2 rounded-lg font-medium cursor-not-allowed opacity-70 border border-gray-200" title="Tính năng đang được phát triển">
+              Chuyển đổi thành Worker
             </button>
           )}
           <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-blue-700">

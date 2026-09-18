@@ -16,9 +16,9 @@
 | In-scope roots | `src/domains/talent/**`, `app/api/admin/labor-profiles/**`, `app/admin/labor-profiles/**` |
 | Forbidden paths | `prisma/schema.prisma` |
 | Required gates | `npm run test:unit`, `npm run build` |
-| Current execution round | `0` |
-| Current audit round | `0` |
-| Next gate | `LIGHT: /deliver → /audit → /resolve` |
+| Current execution round | `2` |
+| Current audit round | `1` |
+| Next gate | `LIGHT: /deliver -> /audit -> /resolve` |
 
 ## 1. Outcome
 
@@ -95,6 +95,11 @@
 | `AC-02` | Admin UI list renders without errors and links point to details. | `npm run build` |
 | `AC-03` | Intake form calls `createOrMatchLaborProfile` and handles dedup. | `npm run test:unit` |
 | `AC-04` | Detail page renders 8 blocks, strictly showing placeholders for handler and commission. | `npm run build` |
+| `AC-05` | PII Masking & Permissions (CCCD visibility relies on CAN_VIEW_WORKER_SENSITIVE). | `npm run test:unit` |
+| `AC-06` | Real list filters (của tôi, sắp hết hạn, kho chung, chưa hoàn thiện, cần đối chiếu trùng, chưa từng đi làm, đang làm, đã nghỉ). | `npm run build` |
+| `AC-07` | Đang làm/Đã nghỉ reconciliation computed from canonical EmploymentEpisode. | `npm run test:unit` |
+| `AC-08` | Complete 3-tier intake form with deduplication preview and consent/channel. | `npm run build` |
+| `AC-09` | Convert to Worker action disabled/hidden when already a Worker or placeholder. | `npm run build` |
 
 ### 6.2 Traceability
 
