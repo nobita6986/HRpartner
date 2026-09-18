@@ -27,7 +27,6 @@ import { info, warn } from '@/src/shared/observability/logger';
 import {
   createAttributionToken,
   verifyAttributionToken,
-  TOKEN_TTL_MS,
 } from './redirect-token';
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
@@ -119,29 +118,35 @@ export async function resolveReferralRedirect(
     return { kind: 'WRITE_FAILED' };
   }
 
-  // 4. Check existing attribution cookie.
+  // 4. Check existing attribution cookie (independent of currently-clicked code).
+  // DEC-AFF-010 (first valid source wins): the cookie's row IS the authority.
+  // The currently-clicked code's referrer is irrelevant here — we re-verify
+  // the row itself (still ACTIVE, not expired, referrer still active).  Any
+  // failure → cookie is untrusted, fall through to a fresh write from the
+  // current click's code.
   if (input.hrpAffCookie) {
     const parsed = verifyAttributionToken(input.hrpAffCookie);
     if (parsed) {
-      // Signature valid and not expired.  Look up the row to verify referrer
-      // state + expiry are still current.  This is a read-only engine call.
-      const existingValid = await checkAttributionStillValid(
+      const verified = await verifyCookieAgainstRow(
         deps.engine,
+        deps.writer,
         parsed.attributionId,
-        referrer.userId,
       );
-      if (existingValid) {
+      if (verified.kind === 'OK') {
         info('referral.redirect.existing_wins', input.requestId, {
           route: 'GET /r/[code]',
           outcome: 'redirect_existing',
         });
         return { kind: 'REDIRECT_EXISTING', destination };
       }
-      // Token valid but row is gone/expired/inactive → treat as no cookie.
+      // ROW_GONE / REFERRER_INACTIVE / ERROR → untrusted, fall through.
     }
   }
 
   // 5. Create new attribution via engine writer.
+  // No Idempotency-Key, no advisory lock, no synthetic actor (Decision A §3).
+  // Concurrent initial clicks without a cookie may create orphan rows in
+  // dev/test — explicitly accepted as out-of-scope for N2-2 per Decision A.
   let attributionId: string;
   try {
     attributionId = await writeAttributionViaEngine(deps.engine, {
@@ -149,15 +154,13 @@ export async function resolveReferralRedirect(
       affiliateCodeSnapshot: input.affCode.trim(),
     });
   } catch (err) {
-    const sqlState = (err as { code?: string }).code ?? '';
-    if (sqlState === 'P2002') {
-      // Unique constraint (idempotency on id) — rare race winner. Re-read the row.
-      info('referral.redirect.race_winner', input.requestId, {
-        route: 'GET /r/[code]',
-        outcome: 'redirect_existing',
-      });
-      return { kind: 'REDIRECT_EXISTING', destination };
-    }
+    // NOTE: We do NOT special-case P2002 here.  No business-key unique
+    // constraint supports a race-winner claim, and even if the underlying
+    // PK insert collided (astronomically rare UUID collision), mapping to
+    // REDIRECT_EXISTING without a cookie for the race winner would set the
+    // browser's cookie to *this* request's value — which is NOT the winner.
+    // Decision A §3 explicitly accepts orphan initial rows; treating any
+    // write failure as WRITE_FAILED is the correct fail-closed posture.
     warn('referral.redirect.engine_error', input.requestId, {
       route: 'GET /r/[code]',
       outcome: 'write_failed',
@@ -212,41 +215,86 @@ async function lookupActiveReferrer(
   }
 }
 
-/* ─── Cookie row verification ─────────────────────────────────────────── */
+/* ─── Cookie row verification (independent of currently-clicked code) ── */
 
-async function checkAttributionStillValid(
+/**
+ * Cookie verification result.
+ * - OK: row exists, ACTIVE, not expired, row's referrer is still active in `users`.
+ * - ROW_GONE: row was deleted / expired / revoked / status != ACTIVE.
+ * - REFERRER_INACTIVE: row is otherwise valid but its stored referrer is no longer
+ *   active.  Treat as untrusted (cookie carries an attribution that can no longer
+ *   be honored downstream).
+ * - ERROR: lookup itself failed (DB unreachable / RLS deny / unexpected).  Caller
+ *   should also treat as untrusted.
+ */
+type CookieVerification =
+  | { kind: 'OK' }
+  | { kind: 'ROW_GONE' }
+  | { kind: 'REFERRER_INACTIVE' }
+  | { kind: 'ERROR' };
+
+/**
+ * Verify the cookie's row exists, is valid, and its own referrer is still active.
+ *
+ * CRITICAL: this verification is INDEPENDENT of the currently-clicked affiliate code.
+ * Per DEC-AFF-010, the cookie's row is the authority for attribution — switching
+ * to a different referrer's code does NOT overwrite the existing attribution.
+ *
+ * Reads are split across two clients (engine + writer) because:
+ *   - The row read needs `app_engine_writer` + `hrp.engine_context='link-capture'`
+ *     (set_config enforced transaction-locally to satisfy the `hrp_ra_select_engine`
+ *     RLS policy — see N2-1 migration).
+ *   - The `users` referrer lookup must go through `app_user_writer` RLS (the engine
+ *     role has no read policy on `users`); we deliberately use writer-side so the
+ *     answer reflects the user-facing definition of "active referrer".
+ */
+async function verifyCookieAgainstRow(
   engine: PrismaClient,
+  writer: PrismaClient,
   attributionId: string,
-  referrerUserId: string,
-): Promise<boolean> {
-  // CRITICAL: this SELECT goes through the `app_engine_writer` RLS policy
-  // (`hrp_ra_select_engine`), which requires `hrp.engine_context` to be set
-  // (transaction-local).  Without a tx wrapper, the connection's context is
-  // '' and the policy denies the read — see N2-1 migration §hrp_ra_select_engine.
-  // We set the context for both 'link-capture' (set by the previous capture)
-  // and 'consume' (set by N2-3+ flows) so this check passes regardless of
-  // which downstream flow wrote the row.
+): Promise<CookieVerification> {
+  // 1. Read the row via engine (RLS-gated read).
+  let rowReferrerUserId: string;
   try {
     const rows = await engine.$transaction(async (tx) => {
       await tx.$executeRawUnsafe(
         `SELECT set_config('hrp.engine_context', $1, true)`,
         ENGINE_CONTEXT,
       );
-      return tx.$queryRaw<Array<{ id: string; referrer_user_id: string }>>(
+      return tx.$queryRaw<Array<{ referrer_user_id: string }>>(
         Prisma.sql`
-          SELECT id::text, referrer_user_id::text
+          SELECT referrer_user_id::text AS referrer_user_id
           FROM referral_attributions
           WHERE id = ${attributionId}
-            AND referrer_user_id = ${referrerUserId}
             AND status = 'ACTIVE'
             AND expires_at > NOW()
           LIMIT 1
         `,
       );
     });
-    return rows.length > 0;
+    const row = rows[0];
+    if (!row) return { kind: 'ROW_GONE' };
+    rowReferrerUserId = row.referrer_user_id;
   } catch {
-    return false;
+    return { kind: 'ERROR' };
+  }
+
+  // 2. Verify the row's OWN referrer is still active in `users` (writer-side RLS).
+  // This is intentionally NOT the currently-clicked code's referrer.
+  try {
+    const users = await writer.$queryRaw<Array<{ id: string }>>(
+      Prisma.sql`
+        SELECT id::text AS id
+        FROM "users"
+        WHERE id = ${rowReferrerUserId}::text
+          AND "is_active" = true
+        LIMIT 1
+      `,
+    );
+    if (!users[0]) return { kind: 'REFERRER_INACTIVE' };
+    return { kind: 'OK' };
+  } catch {
+    return { kind: 'ERROR' };
   }
 }
 

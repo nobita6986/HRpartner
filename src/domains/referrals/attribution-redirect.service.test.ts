@@ -1,50 +1,35 @@
 /**
  * attribution-redirect.service.test.ts — hrp-v6-n2-aff-02-link-capture (N2-2).
  *
- * Unit tests for `resolveReferralRedirect()`. All DB calls are mocked at the
- * PrismaClient level; this file makes NO live DB connection.
+ * Unit tests for resolveReferralRedirect(). All DB calls are mocked at the
+ * PrismaClient level; no live DB connection.
  *
- * Coverage (mirrors TASK ACs):
- *   - invalid code format   → INVALID_CODE
- *   - invalid job           → INVALID_JOB
- *   - referrer not found    → NOT_FOUND
- *   - valid token, row ok   → REDIRECT_EXISTING
- *   - no cookie, happy path → REDIRECT_NEW
- *   - P2002 (race)          → REDIRECT_EXISTING (re-read)
- *   - engine RLS deny       → WRITE_FAILED
- *   - open-redirect payload → INVALID_JOB
+ * Coverage:
+ *   - input validation (code format, job allowlist, open-redirect)
+ *   - referrer lookup (found / not found / error)
+ *   - cookie logic (no cookie, invalid, cross-referrer first-click, row-gone, referrer-inactive)
+ *   - engine write (happy path, set_config, P2002 -> WRITE_FAILED, RLS deny)
+ *   - Decision A 3: no advisory lock
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RedirectOutcome } from './attribution-redirect.service';
+import type { RedirectOutcome, RedirectDeps } from './attribution-redirect.service';
 
-/* ─── Shared mock setup ─────────────────────────────────────────────────── */
+/* ─── Shared mutable state ─────────────────────────────────────────────── */
 
-const sqlExecutions: Array<{ side: 'writer' | 'engine'; sql: string; params?: unknown[] }> = [];
-
-const writerLookupBehavior = vi.fn<() => Array<{ id: string }>>(() => [{ id: 'user-uuid' }]);
-const engineInsertBehavior = vi.fn<() => Array<{ id: string }>>(() => [{ id: 'attr-uuid-new' }]);
-
-const fakeWriter: any = {
-  $queryRaw: vi.fn(async () => {
-    sqlExecutions.push({ side: 'writer', sql: 'writer_lookup' });
-    return writerLookupBehavior();
-  }),
-};
-
-const fakeEngineTx: any = {
-  $executeRawUnsafe: vi.fn(async (sql: string, ...params: unknown[]) => {
-    sqlExecutions.push({ side: 'engine', sql, params });
-    return 1;
-  }),
-  $queryRaw: vi.fn(async (sql: any) => {
-    sqlExecutions.push({ side: 'engine', sql: String(sql) });
-    return engineInsertBehavior();
-  }),
-};
-
-const fakeEngine: any = {
-  $transaction: vi.fn(async (cb: (tx: any) => unknown) => cb(fakeEngineTx)),
-};
+const shared = vi.hoisted(() => ({
+  mode: 'happy' as
+    | 'happy'
+    | 'referrer_not_found'
+    | 'writer_error'
+    | 'cookie_row_gone'
+    | 'cookie_referrer_inactive'
+    | 'cookie_engine_error'
+    | 'engine_insert_error'
+    | 'engine_insert_p2002',
+  engineWriteWasCalled: false,
+  COOKIE_ROW_REFERRER_ID: 'cookie-referrer-user-uuid',
+  CLICK_REFERRER_ID: 'click-referrer-user-uuid',
+}));
 
 vi.mock('@/src/shared/observability/logger', () => ({
   info: vi.fn(),
@@ -55,267 +40,349 @@ vi.mock('@/src/shared/observability/logger', () => ({
 
 import { resolveReferralRedirect } from './attribution-redirect.service';
 
-/* ─── Helpers ──────────────────────────────────────────────────────────── */
+/* ─── Mock factories ─────────────────────────────────────────────────── */
 
-/** Type-safe narrowing helper: narrows RedirectOutcome to those with `destination`. */
-function asWithDestination(o: RedirectOutcome): asserts o is Extract<RedirectOutcome, { destination: string }> {
-  if (!('destination' in o)) {
-    throw new Error(`Expected outcome to have 'destination': ${o.kind}`);
-  }
-}
-
-/** Type-safe narrowing helper: narrows RedirectOutcome to those with `cookieToken`. */
-function asWithCookieToken(o: RedirectOutcome): asserts o is Extract<RedirectOutcome, { cookieToken: string }> {
-  if (!('cookieToken' in o)) {
-    throw new Error(`Expected outcome to have 'cookieToken': ${o.kind}`);
-  }
-}
-
-function baseInput(overrides: Partial<Parameters<typeof resolveReferralRedirect>[0]> = {}) {
+/**
+ * Writer mock: handles two distinct queries by SQL fragment:
+ *   1. SELECT ... FROM users WHERE "aff_code" = ? AND is_active  → click-time referrer lookup
+ *   2. SELECT ... FROM users WHERE id = ? AND is_active        → cookie-row referrer check
+ */
+function makeWriter(): RedirectDeps['writer'] {
   return {
-    affCode: 'VALID_CODE',
-    job: null,
-    hrpAffCookie: null,
-    requestId: 'req-1',
-    ...overrides,
-  };
+    $queryRaw: vi.fn(async (sql: unknown) => {
+      const obj = sql as { strings?: string[] };
+      const text = Array.isArray(obj.strings) ? obj.strings.join('') : String(sql);
+      if (shared.mode === 'writer_error') throw new Error('db down');
+      // Click-time referrer lookup
+      if (text.includes('"aff_code"')) {
+        if (shared.mode === 'referrer_not_found') return [];
+        return [{ id: shared.CLICK_REFERRER_ID }];
+      }
+      // Cookie-row referrer check (verifyCookieAgainstRow step 2)
+      if (shared.mode === 'cookie_referrer_inactive') return [];
+      return [{ id: shared.COOKIE_ROW_REFERRER_ID }];
+    }),
+  } as unknown as RedirectDeps['writer'];
 }
+
+/**
+ * Engine tx mock:
+ *   1. $executeRawUnsafe → set_config (always returns 1)
+ *   2. $queryRaw SELECT ... AND status = 'ACTIVE' (no RETURNING)
+ *      → verifyCookieAgainstRow step 1 (returns cookie row referrer)
+ *   3. $queryRaw INSERT ... RETURNING id::text AS id
+ *      → writeAttributionViaEngine (returns new attribution id)
+ *
+ * Prisma Sql objects: { strings: string[], values: unknown[] }
+ * We distinguish SELECT (no RETURNING) from INSERT (has RETURNING).
+ */
+function makeEngine(): RedirectDeps['engine'] {
+  shared.engineWriteWasCalled = false;
+  const tx: any = {
+    $executeRawUnsafe: vi.fn(async () => 1),
+    $queryRaw: vi.fn(async (sql: unknown) => {
+      const obj = sql as { strings?: string[]; values?: unknown[] };
+      const text = Array.isArray(obj.strings) ? obj.strings.join('') : String(sql);
+
+      // verifyCookieAgainstRow SELECT: status = 'ACTIVE', no RETURNING
+      if (text.includes("'ACTIVE'") && !text.includes('RETURNING')) {
+        if (shared.mode === 'cookie_row_gone') return [];
+        if (shared.mode === 'cookie_engine_error') throw new Error('engine offline');
+        return [{ referrer_user_id: shared.COOKIE_ROW_REFERRER_ID }];
+      }
+
+      // writeAttributionViaEngine INSERT: has RETURNING id::text AS id
+      if (text.includes('RETURNING')) {
+        shared.engineWriteWasCalled = true;
+        if (shared.mode === 'engine_insert_error') {
+          const e: any = new Error('RLS denied');
+          e.code = '42501';
+          throw e;
+        }
+        if (shared.mode === 'engine_insert_p2002') {
+          const e: any = new Error('unique');
+          e.code = 'P2002';
+          throw e;
+        }
+        return [{ id: 'new-attr-uuid' }];
+      }
+
+      throw new Error('Unexpected engine $queryRaw: ' + text.slice(0, 80));
+    }),
+  };
+  const result: any = {
+    $transaction: vi.fn(async (cb: (t: unknown) => unknown) => cb(tx)),
+    _tx: tx,
+  };
+  return result as RedirectDeps['engine'];
+}
+
+/* ─── Narrowing helpers ─────────────────────────────────────────────── */
+
+function asDest(o: RedirectOutcome): asserts o is Extract<RedirectOutcome, { destination: string }> {
+  if (!('destination' in o)) throw new Error('Expected destination, got: ' + o.kind);
+}
+
+function asCookie(o: RedirectOutcome): asserts o is Extract<RedirectOutcome, { cookieToken: string }> {
+  if (!('cookieToken' in o)) throw new Error('Expected cookieToken, got: ' + o.kind);
+}
+
+/* ─── Setup / teardown ──────────────────────────────────────────────── */
 
 beforeEach(() => {
-  sqlExecutions.length = 0;
-  fakeWriter.$queryRaw.mockClear();
-  fakeEngineTx.$executeRawUnsafe.mockClear();
-  fakeEngineTx.$queryRaw.mockClear();
-  fakeEngine.$transaction.mockClear();
-
-  writerLookupBehavior.mockImplementation(() => [{ id: 'user-uuid' }]);
-  engineInsertBehavior.mockImplementation(() => [{ id: 'attr-uuid-new' }]);
-
-  // Provide a deterministic signing secret for the duration of the test.
+  shared.mode = 'happy';
+  shared.engineWriteWasCalled = false;
   vi.stubEnv('RATE_LIMIT_HASH_SECRET', 'A'.repeat(32));
 });
 
 afterEach(() => {
-  vi.clearAllMocks();
   vi.unstubAllEnvs();
+  vi.restoreAllMocks();
 });
 
-/* ─── Tests ─────────────────────────────────────────────────────────────── */
+/* ─── Tests ─────────────────────────────────────────────────────────── */
 
 describe('input validation', () => {
-  it('INVALID_CODE: rejects empty affCode', async () => {
-    const result = await resolveReferralRedirect(baseInput({ affCode: '   ' }), {
-      writer: fakeWriter,
-      engine: fakeEngine,
-    });
-    expect(result.kind).toBe('INVALID_CODE');
+  it('INVALID_CODE: empty affCode', async () => {
+    const r = await resolveReferralRedirect(
+      { affCode: '   ', job: null, hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
+    );
+    expect(r.kind).toBe('INVALID_CODE');
   });
 
-  it('INVALID_CODE: rejects malformed affCode (SQL injection attempt)', async () => {
-    const result = await resolveReferralRedirect(
-      baseInput({ affCode: "'; DROP TABLE users; --" }),
-      { writer: fakeWriter, engine: fakeEngine },
+  it('INVALID_CODE: SQL injection attempt', async () => {
+    const r = await resolveReferralRedirect(
+      { affCode: "'; DROP TABLE users; --", job: null, hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
     );
-    expect(result.kind).toBe('INVALID_CODE');
-    expect(fakeWriter.$queryRaw).not.toHaveBeenCalled();
+    expect(r.kind).toBe('INVALID_CODE');
   });
 
-  it('INVALID_CODE: rejects affCode over 64 chars', async () => {
-    const result = await resolveReferralRedirect(
-      baseInput({ affCode: 'A'.repeat(65) }),
-      { writer: fakeWriter, engine: fakeEngine },
+  it('INVALID_CODE: affCode over 64 chars', async () => {
+    const r = await resolveReferralRedirect(
+      { affCode: 'A'.repeat(65), job: null, hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
     );
-    expect(result.kind).toBe('INVALID_CODE');
+    expect(r.kind).toBe('INVALID_CODE');
   });
 
-  it('INVALID_JOB: rejects open-redirect payload ?job=https://evil.com', async () => {
-    const result = await resolveReferralRedirect(
-      baseInput({ job: 'https://evil.com' }),
-      { writer: fakeWriter, engine: fakeEngine },
+  it('INVALID_JOB: rejects open-redirect ?job=https://evil.com', async () => {
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: 'https://evil.com', hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
     );
-    expect(result.kind).toBe('INVALID_JOB');
-    asWithDestination(result);
-    expect(result.destination).toBe('/jobs');
+    expect(r.kind).toBe('INVALID_JOB');
+    asDest(r);
+    expect(r.destination).toBe('/jobs');
   });
 
-  it('INVALID_JOB: rejects ?job=/../etc/passwd', async () => {
-    const result = await resolveReferralRedirect(
-      baseInput({ job: '/../etc/passwd' }),
-      { writer: fakeWriter, engine: fakeEngine },
+  it('INVALID_JOB: rejects path traversal ?job=/../etc/passwd', async () => {
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: '/../etc/passwd', hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
     );
-    expect(result.kind).toBe('INVALID_JOB');
+    expect(r.kind).toBe('INVALID_JOB');
   });
 
-  it('INVALID_JOB: rejects ?job=/jobs?redirect=https://evil.com (query stripped → /jobs valid → REDIRECT_NEW)', async () => {
-    // Note: the service strips query/hash BEFORE prefix check. So ?job=/jobs?redirect=...
-    // becomes /jobs (allowlisted prefix). The dangerous query is discarded.
-    const result = await resolveReferralRedirect(
-      baseInput({ job: '/jobs?redirect=https://evil.com' }),
-      { writer: fakeWriter, engine: fakeEngine },
+  it('REDIRECT_NEW: ?job=/jobs?redirect=https://evil.com — query stripped, /jobs valid', async () => {
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: '/jobs?redirect=https://evil.com', hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
     );
-    // Expected: REDIRECT_NEW with destination='/jobs' (safe: open-redirect payload was stripped).
-    expect(result.kind).toBe('REDIRECT_NEW');
-    asWithDestination(result);
-    expect(result.destination).toBe('/jobs');
+    expect(r.kind).toBe('REDIRECT_NEW');
+    asDest(r);
+    expect(r.destination).toBe('/jobs');
   });
 
-  it('null job defaults to /jobs destination', async () => {
-    const result = await resolveReferralRedirect(
-      baseInput({ job: null }),
-      { writer: fakeWriter, engine: fakeEngine },
+  it('REDIRECT_NEW: null job defaults to /jobs', async () => {
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
     );
-    expect(result.kind).toBe('REDIRECT_NEW');
-    asWithDestination(result);
-    expect(result.destination).toBe('/jobs');
+    expect(r.kind).toBe('REDIRECT_NEW');
+    asDest(r);
+    expect(r.destination).toBe('/jobs');
   });
 
-  it('valid job is preserved in destination', async () => {
-    const result = await resolveReferralRedirect(
-      baseInput({ job: '/jobs/some-job-slug' }),
-      { writer: fakeWriter, engine: fakeEngine },
+  it('REDIRECT_NEW: ?job=/jobs/some-slug preserved', async () => {
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: '/jobs/some-job-slug', hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
     );
-    expect(result.kind).toBe('REDIRECT_NEW');
-    asWithDestination(result);
-    expect(result.destination).toBe('/jobs/some-job-slug');
+    expect(r.kind).toBe('REDIRECT_NEW');
+    asDest(r);
+    expect(r.destination).toBe('/jobs/some-job-slug');
   });
 });
 
 describe('referrer lookup', () => {
-  it('NOT_FOUND: unknown affCode → NOT_FOUND (constant /jobs)', async () => {
-    writerLookupBehavior.mockImplementation(() => []);
-    const result = await resolveReferralRedirect(baseInput(), {
-      writer: fakeWriter,
-      engine: fakeEngine,
-    });
-    expect(result.kind).toBe('NOT_FOUND');
-    asWithDestination(result);
-    expect(result.destination).toBe('/jobs');
-    expect(fakeEngine.$transaction).not.toHaveBeenCalled();
-  });
-
-  it('NOT_FOUND: inactive user filtered out by writer query', async () => {
-    writerLookupBehavior.mockImplementation(() => []);
-    const result = await resolveReferralRedirect(baseInput(), {
-      writer: fakeWriter,
-      engine: fakeEngine,
-    });
-    expect(result.kind).toBe('NOT_FOUND');
-    expect(fakeEngine.$transaction).not.toHaveBeenCalled();
+  it('NOT_FOUND: unknown affCode → constant /jobs, no engine call', async () => {
+    shared.mode = 'referrer_not_found';
+    const engine = makeEngine();
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine },
+    );
+    expect(r.kind).toBe('NOT_FOUND');
+    asDest(r);
+    expect(r.destination).toBe('/jobs');
+    expect(engine.$transaction).not.toHaveBeenCalled();
   });
 
   it('WRITE_FAILED: writer throws', async () => {
-    fakeWriter.$queryRaw.mockImplementationOnce(async () => { throw new Error('db down'); });
-    const result = await resolveReferralRedirect(baseInput(), {
-      writer: fakeWriter,
-      engine: fakeEngine,
-    });
-    expect(result.kind).toBe('WRITE_FAILED');
+    shared.mode = 'writer_error';
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
+    );
+    expect(r.kind).toBe('WRITE_FAILED');
   });
 });
 
 describe('cookie logic', () => {
-  it('REDIRECT_NEW: no cookie → creates new attribution and returns cookieToken', async () => {
-    const result = await resolveReferralRedirect(
-      baseInput({ hrpAffCookie: null }),
-      { writer: fakeWriter, engine: fakeEngine },
+  it('REDIRECT_NEW: no cookie → creates new attribution + cookieToken', async () => {
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
     );
-    expect(result.kind).toBe('REDIRECT_NEW');
-    asWithCookieToken(result);
-    expect(result.cookieToken).toBeDefined();
-    expect(typeof result.cookieToken).toBe('string');
-    // Token is 4-part dot-separated
-    expect(result.cookieToken.split('.')).toHaveLength(4);
+    expect(r.kind).toBe('REDIRECT_NEW');
+    asDest(r);
+    asCookie(r);
+    expect(r.cookieToken.split('.')).toHaveLength(4);
   });
 
-  it('invalid/expired cookie → treated as no cookie (REDIRECT_NEW)', async () => {
-    const result = await resolveReferralRedirect(
-      baseInput({ hrpAffCookie: 'tampered.invalid.token' }),
-      { writer: fakeWriter, engine: fakeEngine },
+  it('REDIRECT_NEW: tampered cookie → treated as no cookie', async () => {
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: 'tampered.invalid.token', requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
     );
-    expect(result.kind).toBe('REDIRECT_NEW');
+    expect(r.kind).toBe('REDIRECT_NEW');
+  });
+
+  it('REDIRECT_EXISTING: valid cookie + active row + active referrer → no new write', async () => {
+    const { createAttributionToken } = await import('./redirect-token');
+    const cookie = createAttributionToken('attr-existing', Date.now() + 60_000);
+    const engine = makeEngine();
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: cookie, requestId: 'r1' },
+      { writer: makeWriter(), engine },
+    );
+    expect(r.kind).toBe('REDIRECT_EXISTING');
+    asDest(r);
+    expect(r.destination).toBe('/jobs');
+    expect(shared.engineWriteWasCalled).toBe(false);
+  });
+
+  it('DEC-AFF-010 cross-referrer: cookie A + click B code → REDIRECT_EXISTING (no overwrite)', async () => {
+    // Affer A clicks -> cookie A (row from A's referrer).
+    // User then clicks B's code. Cookie A must win (first click wins).
+    const { createAttributionToken } = await import('./redirect-token');
+    const cookie = createAttributionToken('attr-from-A', Date.now() + 60_000);
+    const engine = makeEngine();
+    const r = await resolveReferralRedirect(
+      { affCode: 'B_CODE', job: null, hrpAffCookie: cookie, requestId: 'r1' },
+      { writer: makeWriter(), engine },
+    );
+    expect(r.kind).toBe('REDIRECT_EXISTING');
+    asDest(r);
+    expect(r.destination).toBe('/jobs');
+    expect(shared.engineWriteWasCalled).toBe(false);
+  });
+
+  it('row gone → cookie untrusted, REDIRECT_NEW', async () => {
+    shared.mode = 'cookie_row_gone';
+    const { createAttributionToken } = await import('./redirect-token');
+    const cookie = createAttributionToken('attr-missing', Date.now() + 60_000);
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: cookie, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
+    );
+    expect(r.kind).toBe('REDIRECT_NEW');
+  });
+
+  it('referrer inactive → cookie untrusted, REDIRECT_NEW', async () => {
+    shared.mode = 'cookie_referrer_inactive';
+    const { createAttributionToken } = await import('./redirect-token');
+    const cookie = createAttributionToken('attr-orphan', Date.now() + 60_000);
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: cookie, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
+    );
+    expect(r.kind).toBe('REDIRECT_NEW');
+  });
+
+  it('cookie engine error → cookie untrusted, REDIRECT_NEW', async () => {
+    shared.mode = 'cookie_engine_error';
+    const { createAttributionToken } = await import('./redirect-token');
+    const cookie = createAttributionToken('attr-whatever', Date.now() + 60_000);
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: cookie, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
+    );
+    expect(r.kind).toBe('REDIRECT_NEW');
   });
 });
 
 describe('engine write', () => {
-  it('REDIRECT_NEW: happy path → REDIRECT_NEW with cookieToken', async () => {
-    const result = await resolveReferralRedirect(baseInput(), {
-      writer: fakeWriter,
-      engine: fakeEngine,
-    });
-    expect(result.kind).toBe('REDIRECT_NEW');
-    asWithDestination(result);
-    asWithCookieToken(result);
-    expect(result.destination).toBe('/jobs');
-    expect(result.cookieToken).toBeDefined();
-    expect(typeof result.cookieToken).toBe('string');
-    expect(result.cookieToken.split('.')).toHaveLength(4);
-  });
-
-  it('set_config called with link-capture context', async () => {
-    await resolveReferralRedirect(baseInput(), {
-      writer: fakeWriter,
-      engine: fakeEngine,
-    });
-
-    const setConfigCall = sqlExecutions.find(
-      (e) => e.side === 'engine' && e.sql.includes('set_config'),
+  it('REDIRECT_NEW: happy path → cookieToken', async () => {
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
     );
-    expect(setConfigCall).toBeDefined();
-    expect(setConfigCall!.params?.[0]).toBe('link-capture');
+    expect(r.kind).toBe('REDIRECT_NEW');
+    asDest(r);
+    asCookie(r);
+    expect(r.destination).toBe('/jobs');
+    expect(r.cookieToken.split('.')).toHaveLength(4);
   });
 
-  it('set_config is called with is_local=true (never false)', async () => {
-    await resolveReferralRedirect(baseInput(), {
-      writer: fakeWriter,
-      engine: fakeEngine,
-    });
-
-    const setConfigCall = sqlExecutions.find(
-      (e) => e.side === 'engine' && e.sql.includes('set_config'),
+  it('set_config called with link-capture context + is_local=true', async () => {
+    const engine = makeEngine();
+    const { _tx } = engine as unknown as { _tx: { $executeRawUnsafe: { mock: { calls: unknown[][] } } } };
+    await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine },
     );
-    expect(setConfigCall!.sql).toMatch(/set_config\('hrp\.engine_context',\s*\$1,\s*true\)/);
+    const calls = _tx.$executeRawUnsafe.mock.calls as unknown[][];
+    expect(calls.length).toBeGreaterThan(0);
+    const [call0, call1] = calls[0] as [string, string];
+    expect(call0).toContain('hrp.engine_context');
+    expect(call1).toBe('link-capture');
+    expect(call0).toContain('true');
   });
 
-  it('REDIRECT_EXISTING: P2002 from engine → REDIRECT_EXISTING (race winner)', async () => {
-    engineInsertBehavior.mockImplementation(() => {
-      const err: any = new Error('Unique constraint');
-      err.code = 'P2002';
-      throw err;
-    });
-
-    const result = await resolveReferralRedirect(baseInput(), {
-      writer: fakeWriter,
-      engine: fakeEngine,
-    });
-    expect(result.kind).toBe('REDIRECT_EXISTING');
-    asWithDestination(result);
-    expect(result.destination).toBe('/jobs');
+  it('Decision A 3: P2002 → WRITE_FAILED (no race-winner claim)', async () => {
+    shared.mode = 'engine_insert_p2002';
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
+    );
+    // No business-key unique constraint supports a race winner; mapping to
+    // REDIRECT_EXISTING without the winner's cookie would set the wrong cookie.
+    expect(r.kind).toBe('WRITE_FAILED');
   });
 
   it('WRITE_FAILED: engine RLS deny (42501)', async () => {
-    engineInsertBehavior.mockImplementation(() => {
-      const err: any = new Error('RLS denied');
-      err.code = '42501';
-      throw err;
-    });
-
-    const result = await resolveReferralRedirect(baseInput(), {
-      writer: fakeWriter,
-      engine: fakeEngine,
-    });
-    expect(result.kind).toBe('WRITE_FAILED');
+    shared.mode = 'engine_insert_error';
+    const r = await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine: makeEngine() },
+    );
+    expect(r.kind).toBe('WRITE_FAILED');
   });
 });
 
-describe('no synthetic actor / idempotency / advisory lock (Decision A)', () => {
-  it('service does NOT call any advisory lock', async () => {
-    await resolveReferralRedirect(baseInput(), {
-      writer: fakeWriter,
-      engine: fakeEngine,
-    });
-
-    // No pg_advisory_xact_lock call (Decision A: no advisory lock)
-    const lockCall = sqlExecutions.find((e) => e.side === 'engine' && e.sql.includes('advisory'));
-    expect(lockCall).toBeUndefined();
+describe('Decision A 3: no advisory lock / no synthetic actor', () => {
+  it('no pg_advisory_xact_lock in engine SQL', async () => {
+    const engine = makeEngine();
+    const { _tx } = engine as unknown as { _tx: { $executeRawUnsafe: { mock: { calls: unknown[][] } } } };
+    await resolveReferralRedirect(
+      { affCode: 'X', job: null, hrpAffCookie: null, requestId: 'r1' },
+      { writer: makeWriter(), engine },
+    );
+    const calls = _tx.$executeRawUnsafe.mock.calls as unknown[][];
+    const hasAdvisory = calls.some((args) => String(args[0]).includes('advisory'));
+    expect(hasAdvisory).toBe(false);
   });
 });

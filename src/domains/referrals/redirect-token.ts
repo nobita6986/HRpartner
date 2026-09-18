@@ -1,12 +1,17 @@
 /**
  * redirect-token.ts — hrp-v6-n2-aff-02-link-capture (N2-2, Decision A).
  *
- * HMAC-SHA256 signed, opaque token for the `hrp_aff` cookie.
+ * Signed structured token for the `hrp_aff` cookie.
  * Format:  base64url(attributionId) | base64url(expiryTs) | base64url(hmac)
  * where hmac = HMAC-SHA256(secret, attributionId || ':' || expiryTs || ':' || keyVersion)
  *
- * The raw `attributionId` is NEVER returned to the browser; the cookie is HttpOnly.
- * `keyVersion` enables future secret rotation without invalidating all cookies at once.
+ * The token is NOT opaque in the cryptographic sense — base64url is reversible,
+ * and the attributionId is recoverable from a captured token.  The cookie is
+ * HttpOnly, which limits blast radius (browser XSS can't exfiltrate it), but
+ * operators should treat the token as bearer-secret material.
+ *
+ * If true opaqueness is required (e.g. server-side handle → id mapping),
+ * introduce an out-of-band handle store; out of N2-2 scope.
  *
  * Token expiry is signed inside the token (server-clock enforced), not just cookie Max-Age.
  */

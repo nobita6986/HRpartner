@@ -12,7 +12,8 @@
  * Coverage:
  *   AC-01  valid code → creates attribution, sets cookie, redirects to allowlisted path
  *   AC-02  forged/inactive code → constant /jobs redirect (no existence signal)
- *   AC-03  existing valid cookie → existing attribution wins, no new row created
+ *   AC-03  existing valid cookie (same code) → existing attribution wins, no new row created
+ *   AC-03b cross-referrer: cookie from code A + click code B → REDIRECT_EXISTING (first click wins)
  *   AC-04  engine context set correctly, cleared at COMMIT
  *   AC-05  open-redirect payloads blocked
  *   AC-06  job allowlist: valid slugs pass through; others redirect to /jobs
@@ -23,22 +24,23 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID as uuidv4 } from 'crypto';
 import { resolveReferralRedirect } from '@/src/domains/referrals/attribution-redirect.service';
+import type { RedirectOutcome } from '@/src/domains/referrals/attribution-redirect.service';
 import { getEnginePrisma } from '@/src/db/engine-client';
 
 const engineRole = 'app_engine_writer';
 const runNamespace = uuidv4().substring(0, 8);
 const nid = (suffix: string) => `n2-2-redirect-${runNamespace}-${suffix}`;
 
-/** Narrow RedirectOutcome to outcomes with `destination`. */
-function asWithDestination(o: any): { destination: string } {
-  if (!('destination' in o)) throw new Error(`Expected destination: ${o.kind}`);
-  return o as { destination: string };
+/** Narrows RedirectOutcome to outcomes that carry `destination`. Returns the narrowed object. */
+function asWithDestination(o: RedirectOutcome): Extract<RedirectOutcome, { destination: string }> {
+  if (!('destination' in o)) throw new Error(`Expected destination, got: ${o.kind}`);
+  return o as Extract<RedirectOutcome, { destination: string }>;
 }
 
-/** Narrow RedirectOutcome to outcomes with `cookieToken`. */
-function asWithCookieToken(o: any): { cookieToken: string } {
-  if (!('cookieToken' in o)) throw new Error(`Expected cookieToken: ${o.kind}`);
-  return o as { cookieToken: string };
+/** Narrows RedirectOutcome to outcomes that carry `cookieToken`. Returns the narrowed object. */
+function asWithCookieToken(o: RedirectOutcome): Extract<RedirectOutcome, { cookieToken: string }> {
+  if (!('cookieToken' in o)) throw new Error(`Expected cookieToken, got: ${o.kind}`);
+  return o as Extract<RedirectOutcome, { cookieToken: string }>;
 }
 
 describe('N2-2 Attribution Redirect Integration', () => {
@@ -227,6 +229,42 @@ describe('N2-2 Attribution Redirect Integration', () => {
 
     const countAfter = await countAttributions(`CODE_${runNamespace}_ACTIVE1`);
     expect(countAfter).toBe(countBefore); // no new row created
+  });
+
+  // ── AC-03b: cross-referrer first-click (P1 fix) ───────────────────────────
+  // Per DEC-AFF-010: if a cookie exists from a prior click on code A,
+  // clicking code B must NOT overwrite — the cookie's row is authoritative.
+  // The row's referrer is independent of the currently-clicked code.
+
+  it('AC-03b: cookie from code A + click code B → REDIRECT_EXISTING (first click wins)', async () => {
+    const engine = getEnginePrisma();
+
+    // Step 1: create attribution for CODE_ACTIVE1 (user A).
+    const first = await resolveReferralRedirect(
+      baseInput({ affCode: `CODE_${runNamespace}_ACTIVE1` }),
+      { writer: writerDb, engine },
+    );
+    expect(first.kind).toBe('REDIRECT_NEW');
+    const cookieA = asWithCookieToken(first).cookieToken;
+
+    const countBefore = await countAttributions(`CODE_${runNamespace}_ACTIVE1`);
+
+    // Step 2: click CODE_ACTIVE2 (user B) WITH cookie from A.
+    // DEC-AFF-010 requires: existing valid cookie wins regardless of code.
+    const second = await resolveReferralRedirect(
+      baseInput({ affCode: `CODE_${runNamespace}_ACTIVE2`, hrpAffCookie: cookieA }),
+      { writer: writerDb, engine },
+    );
+
+    expect(second.kind).toBe('REDIRECT_EXISTING');
+    expect(asWithDestination(second).destination).toBe('/jobs');
+
+    // No new row created (attribution count unchanged).
+    const countAfter = await countAttributions(`CODE_${runNamespace}_ACTIVE1`);
+    expect(countAfter).toBe(countBefore); // no new row for CODE_ACTIVE2
+
+    // The attribution belongs to CODE_ACTIVE1's referrer, not CODE_ACTIVE2.
+    // (The row was created in step 1 and is unchanged.)
   });
 
   // ── AC-04: engine context cleared at COMMIT ───────────────────────────────
