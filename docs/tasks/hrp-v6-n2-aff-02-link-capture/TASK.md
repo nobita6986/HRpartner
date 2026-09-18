@@ -10,7 +10,7 @@
 | Audit mode | LIGHT |
 | Audit reason | Public anonymous redirect with persisted DB side-effect + signed cookie state + open-redirect attack surface; needs forged-code defense, exactly-one invariant semantics, role boundary (writer vs engine), fail-closed posture, container-DB evidence. |
 | Spec version | v3.0 |
-| Status | READY_FOR_AUDIT (round 5 — dual rate-limit bucket, named referral-public-lookup boundary) |
+| Status | RESOLVED (round 6 — T3 audit PASS; dual rate-limit bucket, named boundary, CI 35329611208) |
 | Planner | Tier 1 |
 | Baseline | `b6940a82c2b139d319f9bc1cb6f4bff7c5a63b72` (origin/main, post `hrp-v6-n2-aff-01-attribution-foundation` merge) |
 | Implementation SHA (verified by CI run `35310303161`) | `20bd5039fd803d1d0ef334ee9c362f247dd99c55` |
@@ -20,7 +20,7 @@
 | Required gates | `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run build`; `npm run test:integration` (DB env must be present — INTEGRATION_LIVE_DB_REQUIRED, NOT a self-skip) |
 | Current execution round | 5 |
 | Current audit round | 1 |
-| Next gate | `/deliver` → `/audit` → `/resolve` → `/merge` (T3 PASS, P3 drifts resolved in this commit; production gate BLK-01 outstanding) |
+| Next gate | T3 PASS received → `RESOLVED`. Production gate (BLK-01: N2-1 migration + app_engine_writer credential) awaits Tier 0 authorization. PR #16 remains open until production gate cleared. |
 
 > **v1.0 → v2.0 → v3.0 revisions:**
 > - v1.0 (initial, 2026-09-17): extracted from N2 DISCOVERY.md, stale paths.
@@ -269,6 +269,7 @@ HTTP/1.1 503 Service Unavailable
 | 3 | READY_FOR_AUDIT (v3.0 + P1 fixes) | T3 audit: existing-cookie precedence wrongly tied to click-time referrer; P2002 → REDIRECT_EXISTING with no business-key; premature RESOLVED. |
 | 4 | READY_FOR_AUDIT (R3 evidence refresh) | T3 audit: stale CI evidence. Tier 1 re-ran CI on 18a5463 (run 35322545969); fresh evidence committed. |
 | 5 | READY_FOR_AUDIT (v3.0 + P1+P2 fixes) | T0 verdict: missing REFERRAL_CAPTURE_CODE bucket; incorrect "RLS-enforced" claim on direct `$queryRaw` call. Dual rate-limit bucket + named referral-public-lookup boundary added. |
+| 6 | **RESOLVED** (v3.0 + P1+P2 fixes) | T3 audit round 5: PASS. P1 dual-rate-limit bucket correct; P2 named boundary correct; all gates pass with fresh CI evidence (run `35329611208`). P3 doc drift resolved in this commit. |
 
 ---
 

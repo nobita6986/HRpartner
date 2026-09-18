@@ -12,7 +12,7 @@
 | Current audit round | 0 |
 | Baseline | `b6940a82c2b139d319f9bc1cb6f4bff7c5a63b72` (origin/main, post `hrp-v6-n2-aff-01-attribution-foundation` merge) |
 | Implementation SHA (round 2, verified by CI run `35310303161`) | `20bd5039fd803d1d0ef334ee9c362f247dd99c55` |
-| Status | `READY_FOR_AUDIT` |
+| Status | `RESOLVED` (T3 audit round 5 PASS) |
 | Next gate | `/audit` (Tier 3 LIGHT) → `/resolve` |
 
 > Brief-prescribed **production gate noted (NOT a slice blocker)**: N2-1 production migration and `app_engine_writer` credential are not yet authorized by Tier 0. This slice is a non-merge PR awaiting T3 LIGHT audit + Tier 0 authorization before any go-live step.
@@ -86,7 +86,7 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 | `AC-08` | `E-05`, `E-14` (CI integration) | Integration test AC-08: writer RLS denies INSERT; engine with link-capture context succeeds. **CI**: PASS in `35310303161/105490789083`. | None — CI run provides live assertion. |
 | `AC-09` | `E-06` (`vitest-static-checks.txt`) | Static sweep over `src/**/*.ts` for forbidden pattern `set_config('hrp.engine_context', ..., false)`. Service uses literal `, true)`. Zero matches. | None |
 | `AC-10` | `E-01` (`vitest-attribution-redirect-service.txt`) | Unit test `Decision A §3: service does NOT call any advisory lock` asserts no `pg_advisory_xact_lock` in SQL execution trace. Service does NOT import `withIdempotency` or `derivePublicActorId` (compile-time guarantee). | None |
-| `AC-11` | `E-02` (`typecheck.txt`), `E-03` (`lint-summary.txt`), `E-04` (`vitest-unit-full.txt`), `E-07` (`next-build.txt`) | typecheck exit 0; lint exit 0 (0 errors); unit 2321/2321 pass (+7 route tests); build exit 0 with `ƒ /r/[code]` in route table | None |
+| `AC-11` | `E-02` (`typecheck.txt`), `E-03` (`lint-summary.txt`), `E-04` (`vitest-unit-full.txt`), `E-07` (`next-build.txt`) | typecheck exit 0; lint exit 0 (0 errors); unit 2330/2330 pass (+7 route tests + 2 additional tests in suite); build exit 0 with `ƒ /r/[code]` in route table | None |
 | `AC-12` | `E-14` (`ci-integration-attribution-redirect.txt`), `E-15` (`ci-quality.txt`) | **CI run `35322545969`**: Quality lane (typecheck + lint + unit + build) PASS + Integration lane (15 tests) PASS. AC-03b cross-referrer verified. | None — CI run is the source of truth. |
 | `AC-13` | `E-01` (`vitest-attribution-redirect-service.txt`), `E-16` (`vitest-attribution-redirect-route.txt`) | 7 route unit tests (AC-RL-01..AC-RL-06): both buckets checked, IP denial blocks DB, CODE denial blocks DB, rate-limit unavailable → 503 fail-closed, canonical code in service input. | None |
 | `AC-14` | `E-16` (`vitest-attribution-redirect-route.txt`) | Route unit test AC-RL-05: AFF bucket value is HMAC digest (64 hex chars), NOT raw or canonical code. | None |
@@ -111,8 +111,8 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 | `E-11` | `git grep -nE 'set_config\([^,]+,[^,]+,\s*false\s*\)' src/domains/referrals/` | exit 0; 0 matches. | inline |
 | `E-12` | `git grep -nE 'pg_advisory_xact_lock|withIdempotency|derivePublicActorId|Idempotency-Key' src/domains/referrals/ app/r/` | exit 0; 0 matches (Decision A §3: all removed). | inline |
 | `E-13` | HANDOFF spec version match against TASK | TASK §0 says `v3.0`; this HANDOFF §0 says `v3.0`. | inline |
-| `E-14` | GitHub Actions Integration job log (run `35322545969`, job `105528084535`) | exit 0; 15 attribution-redirect integration tests PASS (AC-01..AC-03b, AC-06, AC-01+expires). All ACs green including AC-03b cross-referrer. | `evidence/ci-integration-attribution-redirect.txt` |
-| `E-15` | GitHub Actions Quality job log (run `35322545969`, job `105528084193`) | exit 0; typecheck + lint + unit + build all green. | `evidence/ci-quality.txt` |
+| `E-14` | GitHub Actions Integration job log (run `35329611208`, job `105550656558`) | exit 0; 15 attribution-redirect integration tests PASS (AC-01..AC-03b, AC-06, AC-01+expires). All ACs green including AC-03b cross-referrer. | `evidence/ci-integration-attribution-redirect.txt` |
+| `E-15` | GitHub Actions Quality job log (run `35329611208`, job `105550656304`) | exit 0; typecheck + lint + unit (2330) + build all green. | `evidence/ci-quality.txt` |
 | `E-16` | `npx vitest run --config vitest.unit.config.ts src/domains/referrals/attribution-redirect.route.test.ts` | exit 0; 7/7 route unit tests pass (AC-RL-01..AC-RL-06). Dual rate-limit bucket enforcement, fail-closed, HMAC-digested code. | `evidence/vitest-attribution-redirect-route.txt` |
 
 ### Self-test outputs (inline summary)
@@ -316,7 +316,7 @@ Both buckets must pass.  Either denial → 429 (rate-limit response) or 503 (fai
 | `DEV-02` | Helper convention | Deviates from the convention of "no Prisma model → refuse to add a route" by **not** introducing a Prisma model here. Two options considered: (a) add a Prisma model for `referral_attributions`; (b) use raw SQL inside the engine transaction. Chose (b) — the table was added by N2-1 raw DDL, and introducing a Prisma model in N2-2 scope would drift from N2-1 AUDIT (round 2 PASS). Tier 3 / Tier 0 may want a separate cleanup task to add the Prisma model later. | None (Tier 1 chose; documented). |
 | `DEV-03` | Decision A §3 | The "exactly-one initial capture" invariant is **deferred** to a separate CRITICAL additive schema slice. Decision A documents: simultaneous initial requests without a cookie can create orphan rows in dev/test. For production-grade exactly-one semantics, a CRITICAL additive task is needed (out of N2-2). | Tier 0 / Owner: schedule separate CRITICAL additive slice |
 | `BLK-01` | Production gate | N2-1 production migration and `app_engine_writer` credential are **not** authorized by Tier 0 — verbatim from T0 directive. This slice cannot be deployed to production until Tier 0 authorizes both. The slice is PR-ready + audit-ready and ships the contract; the production gate is out of Tier 1 scope. | Tier 0 authorize (N2-1 prod migration + engine credential) |
-| `BLK-02` | Integration evidence (RESOLVED via CI) | CI Integration lane (run `35322545969`, job `105528084535`) provides the live runtime env: all 15 attribution-redirect tests PASS including AC-03b. Local integration test still FAILS with `INTEGRATION_LIVE_DB_REQUIRED` by design (no local DB), but CI is the source of truth for the integration gate. Evidence files: `evidence/ci-integration-attribution-redirect.txt`. | RESOLVED |
+| `BLK-02` | Integration evidence (RESOLVED via CI) | CI Integration lane (run `35329611208`, job `105550656558`) provides the live runtime env: all 15 attribution-redirect tests PASS including AC-03b. Local integration test still FAILS with `INTEGRATION_LIVE_DB_REQUIRED` by design (no local DB), but CI is the source of truth for the integration gate. Evidence files: `evidence/ci-integration-attribution-redirect.txt`. | RESOLVED |
 
 No other deviations. No other blockers.
 
@@ -324,9 +324,9 @@ No other deviations. No other blockers.
 
 ## 5. Final status
 
-- **Outcome**: Public referral-link redirect endpoint delivered as pure application slice per T0 Decision A. Service + route + token signing + unit + container-DB integration test are in place. N2-1 schema, RLS policies, and triggers are **unchanged** (zero forbidden-path writes).
-- **Gates**: typecheck=0, lint=0 errors, unit=2321/2321 (+7 route tests), build=success. **CI Integration lane (run `35322545969`): PASS** — all 15 attribution-redirect integration tests green (AC-01..AC-03b, AC-06, AC-01+expires); Quality lane PASS (typecheck + lint + unit + build all green). Local intentionally FAILs with `INTEGRATION_LIVE_DB_REQUIRED` (no DB env), which is the design-correct failure mode per T0 Decision A.
+- **Outcome**: Public referral-link redirect endpoint delivered as pure application slice per T0 Decision A. Service + route + token signing + unit + container-DB integration test are in place. N2-1 schema, RLS policies, and triggers are **unchanged** (zero forbidden-path writes).  Named `referral-public-lookup` boundary delegates writer-side `users` lookup (runtime writer role/grant, not RLS — separate CRITICAL additive slice documented in BLK-01).
+- **Gates**: typecheck=0, lint=0 errors, unit=2330/2330, build=success. **CI Integration lane (run `35329611208`): PASS** — all 15 attribution-redirect integration tests green (AC-01..AC-03b, AC-06, AC-01+expires); Quality lane PASS (typecheck + lint + unit + build all green). Local intentionally FAILs with `INTEGRATION_LIVE_DB_REQUIRED` (no DB env), which is the design-correct failure mode per T0 Decision A.
 - **Production gate** (separate from this slice): N2-1 production migration + `app_engine_writer` credential — awaits Tier 0 authorization.
 - **Lane**: CRITICAL/LIGHT, as briefed. No escalation.
 
-> Handoff status: `READY_FOR_AUDIT`
+> Handoff status: `RESOLVED` (T3 audit round 5 PASS)
