@@ -1,6 +1,25 @@
-# AFF-03 Integration Test Evidence (local)
-# Date: 2026-09-18 22:42:00Z
-# Mode: ENV_BLOCKED locally (no DATABASE_URL_TEST)
-# All 6 tests skipped (no live DB; CI Integration lane applies the migration + runs against hrp_mp2_test)
+﻿AFF-03 integration test — CI run 35367745791 (head 7e173f7f, commit 'fix(n2-aff-03): AC-11 second-call phone uses random numeric suffix')
 
----node.exe : [33mThe CJS build of Vite's Node API is deprecated. See  https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m At line:1 char:1 + & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ... + ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException     + FullyQualifiedErrorId : NativeCommandError     RUN  v2.1.9 C:/CodeApp/HrP-worktrees/tier1-n2-aff-03-apply-attribution   G�� tests/db/aff03-public-intake.integration.test.ts (6 tests | 6 skipped)   Test Files  1 skipped (1)       Tests  6 skipped (6)    Start at  22:41:55    Duration  408ms (transform 79ms, setup 0ms, collect 134ms, tests 0ms, environment 0ms, prepare 63ms) 
+Outcome: SUCCESS
+Quality (schema · typecheck · lint · unit · build): conclusion=success
+Integration (DB tests · fail-closed): conclusion=success
+
+All 6 integration tests in tests/db/aff03-public-intake.integration.test.ts PASS:
+  - AC-08 valid cookie: attribution consumed, LPHA created with source=AFF_INITIAL
+  - AC-09 forged cookie: response 201, attribution row UNCHANGED, no LPHA row
+  - AC-10 no cookie: response 201, attribution table UNCHANGED (zero rows mutated)
+  - AC-15 expired attribution: response 201, status UNCHANGED, no LPHA row
+  - AC-16 non-active status: response 201, no second LPHA row, consumedAt NOT overwritten
+  - AC-11 (writer layer) attribution consumedAt NOT overwritten on second call
+
+Test infrastructure:
+  - ensureTokenSecret() provisions RATE_LIMIT_HASH_SECRET (CI container does not inject)
+  - withHrManagerContext() sets app.role=HR_MANAGER GUC in writer transactions
+    (matches the existing N1 intake-writer integration test pattern)
+  - Admin client seeds referrer user + attribution rows; writer+HR_MANAGER consumes
+
+Additive RLS migration applied by Integration lane pre-step:
+  prisma/migrations/20260918100000_aff03_writer_select_on_referral_attributions/
+  - hrp_ra_select_writer: SELECT to app_user_writer WHERE status IN ('ACTIVE','CONSUMED')
+  - hrp_ra_update_writer: UPDATE to app_user_writer USING (status='ACTIVE') WITH CHECK
+                          (status='CONSUMED' AND labor_profile_id IS NOT NULL)
