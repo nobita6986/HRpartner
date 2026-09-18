@@ -168,6 +168,20 @@ describe('P1 — dual rate-limit bucket enforcement', () => {
     expect(input.affCode).toBe('CODE_ACTIVE1'); // canonicalized
     expect(input.job).toBe('/jobs/vietnam-senior-dev');
   });
+
+  it('AC-RL-07: NOT_FOUND / INVALID_JOB redirect 302 with relative Location (no ERR_INVALID_URL)', async () => {
+    // Regression for production 500: NextResponse.redirect() throws on relative
+    // URLs in the Node runtime. NOT_FOUND/INVALID_JOB must map to a 302 with a
+    // relative Location header instead of throwing.
+    mockRateLimitEnforcer.mockResolvedValue(null);
+    for (const kind of ['NOT_FOUND', 'INVALID_JOB'] as const) {
+      mockResolveReferralRedirect.mockResolvedValueOnce({ kind, destination: '/jobs' });
+      const req = GET_request('UNKNOWNCODE');
+      const res = await GET(req, { params: Promise.resolve({ code: 'UNKNOWNCODE' }) });
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toBe('/jobs');
+    }
+  });
 });
 
 describe('P2 — referral-public-lookup boundary', () => {

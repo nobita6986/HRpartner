@@ -67,7 +67,18 @@ function setCookieResponse(
 }
 
 function redirectResponse(destination: string, requestId: string | null): NextResponse {
-  return NextResponse.redirect(destination, 302);
+  // NOTE: do NOT use `NextResponse.redirect()` here. On the Node.js runtime it
+  // requires an ABSOLUTE url and throws `ERR_INVALID_URL` for relative paths
+  // like `/jobs`, which produced a 500 in production. A relative `Location`
+  // header is valid HTTP and the browser resolves it against the request URL.
+  return new NextResponse(null, {
+    status: 302,
+    headers: {
+      Location: destination,
+      'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+      'X-Request-Id': requestId ?? '',
+    },
+  });
 }
 
 /* ─── Outcome -> HTTP ───────────────────────────────────────────────────── */
