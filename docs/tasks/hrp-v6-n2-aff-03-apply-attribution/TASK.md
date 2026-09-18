@@ -10,7 +10,7 @@
 | Audit mode | LIGHT |
 | Audit reason | Public anonymous write that consumes a signed cookie, mutates a `ReferralAttribution` row (status `CONSUMED`), and persists a `LaborProfileHandlingAssignment` via the N1 intake writer; touches the public-apply boundary that determines referrer authority on every first-party intake. |
 | Spec version | v1.0 |
-| Status | IN_PROGRESS (round 2 — Tier 0 verdict on BLK-01 APPROVED with correction; migration authorized; implementation in flight) |
+| Status | READY_FOR_AUDIT (round 2 — Tier 0 verdict on BLK-01 APPROVED with correction; implementation complete; awaiting T3 read-only audit) |
 | Planner | Tier 1 |
 | Baseline | `4e6d0c138033e963ac7ade5ed69a7d7a77243a4f` (origin/main, post AFF-05A merge) |
 | In-scope roots | `app/api/public/intake/**`, `src/domains/applications/aff03-*.ts`, `src/domains/applications/intake-route-*.test.ts`, `tests/db/aff03-*.integration.test.ts`, `docs/tasks/hrp-v6-n2-aff-03-apply-attribution/**` |

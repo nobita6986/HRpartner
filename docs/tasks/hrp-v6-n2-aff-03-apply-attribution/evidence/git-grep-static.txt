@@ -1,7 +1,1 @@
-﻿git grep -nE 'set_config\([^,]+,[^,]+,\s*false\s*\)\|pg_advisory_xact_lock' app/api/public/intake/ src/domains/applications/aff03-*.ts
--------
-
-(no matches expected; files do not exist yet at contract stage)
--------
-result=0 matches (files not created yet; contract-stage slice)
-git_sha=4e6d0c138033e963ac7ade5ed69a7d7a77243a4f
+exit=1 (1 = grep found nothing, which is the clean state)
