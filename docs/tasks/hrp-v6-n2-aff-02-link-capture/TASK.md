@@ -10,7 +10,7 @@
 | Audit mode | LIGHT |
 | Audit reason | Public anonymous redirect with persisted DB side-effect + signed cookie state + open-redirect attack surface; needs forged-code defense, exactly-one invariant semantics, role boundary (writer vs engine), fail-closed posture, container-DB evidence. |
 | Spec version | v3.0 |
-| Status | READY_FOR_AUDIT (round 7 — T0 P2 delta: removed double-HMAC; route passes canonical code to guard) |
+| Status | READY_FOR_AUDIT (round 8 — T3 R7 audit PASS; awaiting Tier 0 production-gate authorization) |
 | Planner | Tier 1 |
 | Baseline | `b6940a82c2b139d319f9bc1cb6f4bff7c5a63b72` (origin/main, post `hrp-v6-n2-aff-01-attribution-foundation` merge) |
 | Implementation SHA (verified by CI run `35310303161`) | `20bd5039fd803d1d0ef334ee9c362f247dd99c55` |
@@ -20,7 +20,7 @@
 | Required gates | `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run build`; `npm run test:integration` (DB env must be present — INTEGRATION_LIVE_DB_REQUIRED, NOT a self-skip) |
 | Current execution round | 7 |
 | Current audit round | 1 |
-| Next gate | `/deliver` → `/audit` (T0 round-7 delta: double-HMAC removed) → `/resolve`. T3 PASS round 5 followed by T0 P2 delta audit. Production gate (BLK-01: N2-1 migration + app_engine_writer credential) awaits Tier 0 authorization. PR #16 remains open until production gate cleared. |
+| Next gate | T3 R7 PASS received → status now `READY_FOR_AUDIT` (gate-allowed); T3 round-8 close-out + Tier 0 production-gate authorization (BLK-01: N2-1 migration + app_engine_writer credential). PR #16 remains open until production gate cleared. |
 
 > **v1.0 → v2.0 → v3.0 revisions:**
 > - v1.0 (initial, 2026-09-17): extracted from N2 DISCOVERY.md, stale paths.
@@ -271,6 +271,7 @@ HTTP/1.1 503 Service Unavailable
 | 5 | READY_FOR_AUDIT (v3.0 + P1+P2 fixes) | T0 verdict: missing REFERRAL_CAPTURE_CODE bucket; incorrect "RLS-enforced" claim on direct `$queryRaw` call. Dual rate-limit bucket + named referral-public-lookup boundary added. |
 | 6 | RESOLVED (v3.0 + P1+P2 fixes) | T3 audit round 5: PASS. P1 dual-rate-limit bucket correct; P2 named boundary correct; all gates pass with fresh CI evidence (run `35329611208`). P3 doc drift resolved in this commit. |
 | 7 | READY_FOR_AUDIT (v3.0 + delta fix) | T0 round-7 P2 delta: removed double-HMAC. The route previously pre-hashed the canonical code via `hashRateLimitIdentifier` and then passed the digest to `enforceRateLimits`, which performs its own canonicalization + HMAC internally. The outer hash produced a 64-hex blob where the guard expected a 32-hex digest. Fix: route now passes the canonical code directly; guard is the single hash point. |
+| 8 | RESOLVED (R7 T3 PASS + P3 doc drift resolved) | T3 audit round 7: PASS. Route no longer pre-hashes; canonicalCode reaches `enforceRateLimits` directly. AC-RL-05 updated correctly. CI run `35338056510` confirms 2330/2330 unit + 15/15 integration. P3 doc drift resolved in this commit: AC-01 row (22/22), AC-12 row (CI `35338056510`), E-04 row (2330/2330 in 151 files), E-03 row (608 warnings). |
 
 ---
 

@@ -12,7 +12,7 @@
 | Current audit round | 0 |
 | Baseline | `b6940a82c2b139d319f9bc1cb6f4bff7c5a63b72` (origin/main, post `hrp-v6-n2-aff-01-attribution-foundation` merge) |
 | Implementation SHA (round 2, verified by CI run `35310303161`) | `20bd5039fd803d1d0ef334ee9c362f247dd99c55` |
-| Status | `READY_FOR_AUDIT` (T0 round-7 P2 delta: removed double-HMAC) |
+| Status | `READY_FOR_AUDIT` (T3 R7 audit PASS, round 8; P3 doc drift resolved; awaiting Tier 0 production-gate authorization) |
 | Next gate | `/audit` (Tier 3 LIGHT) → `/resolve` |
 
 > Brief-prescribed **production gate noted (NOT a slice blocker)**: N2-1 production migration and `app_engine_writer` credential are not yet authorized by Tier 0. This slice is a non-merge PR awaiting T3 LIGHT audit + Tier 0 authorization before any go-live step.
@@ -75,7 +75,7 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 |---|---|---|---|
 | — | `verify-task.ps1 -TaskPath docs/tasks/hrp-v6-n2-aff-02-link-capture/TASK.md` | `RESULT: PASS` | None |
 | — | `verify-handoff.ps1 -TaskPath docs/tasks/hrp-v6-n2-aff-02-link-capture/TASK.md` | `RESULT: PASS` (see Evidence Registry below) | None |
-| `AC-01` | `E-01` (`vitest-attribution-redirect-service.txt`) and `E-05` (`test-integration-attribution-redirect.txt`) | Unit `npx vitest run src/domains/referrals/attribution-redirect.service.test.ts` → 19/19 tests pass; AC-01 happy-path asserts `set_config('hrp.engine_context','link-capture',true)`, INSERT returns row. | Container-DB integration RUNs in CI (`.github/workflows/ci.yml` ephemeral postgres service) |
+| `AC-01` | `E-01` (`vitest-attribution-redirect-service.txt`) and `E-05` (`test-integration-attribution-redirect.txt`) | Unit `npx vitest run src/domains/referrals/attribution-redirect.service.test.ts` → 22/22 tests pass; AC-01 happy-path asserts `set_config('hrp.engine_context','link-capture',true)`, INSERT returns row. | Container-DB integration RUNs in CI (`.github/workflows/ci.yml` ephemeral postgres service) |
 | `AC-02` | `E-01`, `E-05` | Same unit + integration runs. AC-02 branches assert: forged/inactive `affCode` returns NOT_FOUND (302 to /jobs) with NO engine call. Adversarial regex inputs (`<empty>`, `'; DROP TABLE users; --`, length > 64) all reject at format check. | None |
 | `AC-03` | `E-01`, `E-05` | Same unit + integration runs. AC-03: valid cookie + active row → REDIRECT_EXISTING; DB row count unchanged after second call | None |
 | `AC-03b` | `E-05`, `E-14` | **Round-3 P1 fix.** Cross-referrer: cookie from code A + click code B → REDIRECT_EXISTING (first click wins). No new row written for code B; DB row count unchanged.  Tests the cookie independence from currently-clicked code. | None — unit `22/22` + integration (will be re-verified in fresh CI run). |
@@ -87,7 +87,7 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 | `AC-09` | `E-06` (`vitest-static-checks.txt`) | Static sweep over `src/**/*.ts` for forbidden pattern `set_config('hrp.engine_context', ..., false)`. Service uses literal `, true)`. Zero matches. | None |
 | `AC-10` | `E-01` (`vitest-attribution-redirect-service.txt`) | Unit test `Decision A §3: service does NOT call any advisory lock` asserts no `pg_advisory_xact_lock` in SQL execution trace. Service does NOT import `withIdempotency` or `derivePublicActorId` (compile-time guarantee). | None |
 | `AC-11` | `E-02` (`typecheck.txt`), `E-03` (`lint-summary.txt`), `E-04` (`vitest-unit-full.txt`), `E-07` (`next-build.txt`) | typecheck exit 0; lint exit 0 (0 errors); unit 2330/2330 pass (+7 route tests + 2 additional tests in suite); build exit 0 with `ƒ /r/[code]` in route table | None |
-| `AC-12` | `E-14` (`ci-integration-attribution-redirect.txt`), `E-15` (`ci-quality.txt`) | **CI run `35322545969`**: Quality lane (typecheck + lint + unit + build) PASS + Integration lane (15 tests) PASS. AC-03b cross-referrer verified. | None — CI run is the source of truth. |
+| `AC-12` | `E-14` (`ci-integration-attribution-redirect.txt`), `E-15` (`ci-quality.txt`) | **CI run `35338056510`** (R7 fresh): Quality lane (typecheck + lint + unit + build) PASS + Integration lane (15 tests) PASS. AC-03b cross-referrer verified. | None — CI run is the source of truth. |
 | `AC-13` | `E-01` (`vitest-attribution-redirect-service.txt`), `E-16` (`vitest-attribution-redirect-route.txt`) | 7 route unit tests (AC-RL-01..AC-RL-06): both buckets checked, IP denial blocks DB, CODE denial blocks DB, rate-limit unavailable → 503 fail-closed, canonical code in service input. | None |
 | `AC-14` | `E-16` (`vitest-attribution-redirect-route.txt`) | Route unit test AC-RL-05: AFF bucket value is HMAC digest (64 hex chars), NOT raw or canonical code. | None |
 
@@ -99,10 +99,10 @@ These were the round-1 POST-capture implementation. Per Decision A, the entire c
 |---|---|---|---|
 | `E-01` | `npx vitest run --config vitest.unit.config.ts src/domains/referrals/` (33 tests across 2 files) | exit 0; 33/33 tests pass (22 service + 11 token). All ACs at service layer green. | `evidence/vitest-attribution-redirect-service.txt`, `evidence/vitest-redirect-token.txt` |
 | `E-02` | `npx tsc --noEmit` | exit 0 (no diagnostics) | `evidence/typecheck.txt` |
-| `E-03` | `npm run lint` | exit 0 (0 errors, 591 warnings = 584 baseline + 7 new in test mocks for `any`) | `evidence/lint-summary.txt` |
-| `E-04` | `npx vitest run --config vitest.unit.config.ts` (full suite) | exit 0; 2314/2314 tests pass in 148 files | `evidence/vitest-unit-full.txt` |
+| `E-03` | `npm run lint` | exit 0 (0 errors, 608 warnings = 591 baseline + 17 new for round 7 mock `any` casts) | `evidence/lint-summary.txt` |
+| `E-04` | `npx vitest run --config vitest.unit.config.ts` (full suite) | exit 0; 2330/2330 tests pass in 151 files | `evidence/vitest-unit-full.txt` |
 | `E-05` | `npx vitest run --config vitest.integration.config.ts tests/db/attribution-redirect.integration.test.ts` | exit 1 (LOCAL — intentional per Decision A). Error: `INTEGRATION_LIVE_DB_REQUIRED: missing DATABASE_URL_TEST, DATABASE_URL_ADMIN_TEST. Set these env vars to run integration tests against a live Postgres.` Per T0 directive: no silent SKIP. CI Integration lane runs against container DB. | `evidence/test-integration-attribution-redirect.txt` |
-**E-14** (CI) supersedes: 15/15 tests PASS in CI run `35322545969`. |
+**E-14** (CI) supersedes: 15/15 tests PASS in CI run `35338056510` (R7 fresh). |
 | `E-06` | `npx vitest run --config vitest.unit.config.ts src/db/engine-set-config.static.test.ts src/db/engine-client.test.ts src/domains/applications/marketplace-inventory.static.test.ts` | exit 0; 32/32 tests pass (1+2+29). Static lint rejects `set_config(..., false)` in 0 files of `src/**/*.ts`. Static inventory test green after `MARKETPLACE_ANON` entry removal. | `evidence/vitest-static-checks.txt` |
 | `E-07` | `npm run build` | exit 0; route table includes `ƒ /r/[code] 349 B 103 kB` | `evidence/next-build.txt` |
 | `E-08` | `npx vitest run --config vitest.integration.config.ts` (full integration config; 21 files incl. this one) | exit 1 (LOCAL — many integration tests fail without DB env, including my new test per Decision A). 21 files registered. CI provides runtime env. | `evidence/vitest-integration-files-listed.txt` |
@@ -349,4 +349,4 @@ No other deviations. No other blockers.
 - **Production gate** (separate from this slice): N2-1 production migration + `app_engine_writer` credential — awaits Tier 0 authorization.
 - **Lane**: CRITICAL/LIGHT, as briefed. No escalation.
 
-> Handoff status: `READY_FOR_AUDIT` (T0 round-7 P2 delta: removed double-HMAC)
+> Handoff status: `READY_FOR_AUDIT` (T3 R7 audit PASS, round 8; awaiting Tier 0 production-gate authorization)
