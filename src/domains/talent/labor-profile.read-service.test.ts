@@ -56,7 +56,10 @@ describe('LaborProfile Read Service', () => {
       expect(result?.cccdNumber).toBe('********3456');
     });
 
-    it('shows full phone and CCCD for admin', async () => {
+    it('shows full phone and CCCD for admin if they have CAN_VIEW_WORKER_SENSITIVE', async () => {
+      // For Admin WITH permission
+      vi.mocked(permResolver.resolveEffectivePermissions).mockImplementationOnce(async () => new Set(['CAN_VIEW_WORKER_SENSITIVE']));
+      
       mockFindUnique.mockResolvedValue({
         id: '123',
         phone: '0912345678',
@@ -73,6 +76,27 @@ describe('LaborProfile Read Service', () => {
       expect(result?.phone).toBe('0912345678');
       expect(result?.cccdNumber).toBe('001099123456');
     });
+
+    it('masks phone and CCCD for admin if they lack CAN_VIEW_WORKER_SENSITIVE (no fallback)', async () => {
+      // For Admin WITHOUT permission
+      vi.mocked(permResolver.resolveEffectivePermissions).mockImplementationOnce(async () => new Set());
+      
+      mockFindUnique.mockResolvedValue({
+        id: '123',
+        phone: '0912345678',
+        cccdNumber: '001099123456',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        intakes: [],
+        submissions: [],
+        episodes: [],
+        placementCases: [],
+      });
+
+      const result = await getLaborProfileDetail(mockTx, adminCtx, '123');
+      expect(result?.phone).toBe('091****678');
+      expect(result?.cccdNumber).toBe('********3456');
+    });
   });
 
   describe('Behavior & Filters', () => {
@@ -85,20 +109,14 @@ describe('LaborProfile Read Service', () => {
       }));
     });
 
-    it('applies TERMINATED filter correctly via episodes', async () => {
+    it('applies TERMINATED filter correctly via episodes ensuring precedence', async () => {
       await getLaborProfilesList(mockTx, adminCtx, { view: 'TERMINATED' });
       expect(mockFindMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
-          episodes: { some: { status: 'ENDED' } }
-        })
-      }));
-    });
-
-    it('applies MY_PROFILES filter correctly via intakes', async () => {
-      await getLaborProfilesList(mockTx, adminCtx, { view: 'MY_PROFILES' });
-      expect(mockFindMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: expect.objectContaining({
-          intakes: { some: { capturedByUserId: adminCtx.userId } }
+          AND: [
+            { episodes: { none: { status: 'ACTIVE' } } },
+            { episodes: { some: { status: 'ENDED' } } }
+          ]
         })
       }));
     });

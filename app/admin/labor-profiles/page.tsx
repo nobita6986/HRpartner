@@ -61,9 +61,6 @@ export default async function LaborProfilesPage({
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex gap-2 overflow-x-auto">
         {[
           { label: 'Tất cả', value: '' },
-          { label: 'Của tôi', value: 'MY_PROFILES' },
-          { label: 'Sắp hết hạn', value: 'EXPIRING_SOON' },
-          { label: 'Kho chung', value: 'COMMON_POOL' },
           { label: 'Chưa hoàn thiện', value: 'INCOMPLETE' },
           { label: 'Cần đối chiếu', value: 'UNVERIFIED' },
           { label: 'Chưa từng làm', value: 'NEVER_WORKED' },

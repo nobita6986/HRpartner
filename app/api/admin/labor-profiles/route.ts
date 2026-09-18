@@ -23,12 +23,13 @@ export async function GET(req: NextRequest) {
     const take = Math.min(parseInt(searchParams.get('take') ?? '20', 10), 100);
     const skip = parseInt(searchParams.get('skip') ?? '0', 10);
     const search = searchParams.get('search') ?? undefined;
+    const exactPhone = searchParams.get('exactPhone') ?? undefined;
     const completeness = searchParams.get('completeness') ?? undefined;
     const identityVerification = searchParams.get('identityVerification') ?? undefined;
     const view = (searchParams.get('view') as any) ?? undefined;
 
     const result = await withDbContext(prisma, ctx, async (tx) => {
-      return getLaborProfilesList(tx, ctx, { search, completeness, identityVerification, view, skip, take });
+      return getLaborProfilesList(tx, ctx, { search, exactPhone, completeness, identityVerification, view, skip, take });
     });
 
     return NextResponse.json(result);
@@ -46,7 +47,7 @@ const CreateProfileSchema = z.object({
   phone: z.string().min(1).max(20),
   cccdNumber: z.string().max(20).optional(),
   channel: z.string().default('OFFLINE'),
-  consent: z.boolean().default(true),
+  consent: z.boolean(),
 });
 
 export async function POST(req: NextRequest) {
@@ -64,10 +65,8 @@ export async function POST(req: NextRequest) {
 
     const prisma = getPrisma();
     const result = await withDbContext(prisma, ctx, async (tx) => {
-      // Create intake entry conceptually? 
-      // Wait, createOrMatchLaborProfile doesn't accept `channel` directly.
-      // I'll pass consentAt if true.
-      return createOrMatchLaborProfile(tx, {
+      // Create or match profile
+      const createResult = await createOrMatchLaborProfile(tx, {
         fullName: parsed.data.fullName,
         phone: parsed.data.phone,
         cccdNumber: parsed.data.cccdNumber,
@@ -75,6 +74,21 @@ export async function POST(req: NextRequest) {
         actorId: ctx.userId,
         consentAt: parsed.data.consent ? new Date() : null,
       });
+
+      if (createResult.laborProfileId) {
+        // Explicitly persist LaborProfileIntake to record channel
+        await tx.laborProfileIntake.create({
+          data: {
+            laborProfileId: createResult.laborProfileId,
+            channel: parsed.data.channel,
+            capturedByUserId: ctx.userId,
+            consentAt: parsed.data.consent ? new Date() : null,
+            effectiveAt: new Date(),
+          },
+        });
+      }
+
+      return { ...createResult, id: createResult.laborProfileId };
     });
 
     return NextResponse.json(result, { status: 201 });

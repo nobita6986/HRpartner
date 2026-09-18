@@ -5,9 +5,10 @@ import { maskCccd, maskPhone } from '@/src/shared/privacy/mask';
 
 export interface LaborProfileListFilter {
   search?: string;
+  exactPhone?: string;
   completeness?: string;
   identityVerification?: string;
-  view?: 'MY_PROFILES' | 'EXPIRING_SOON' | 'COMMON_POOL' | 'INCOMPLETE' | 'UNVERIFIED' | 'NEVER_WORKED' | 'WORKING' | 'TERMINATED';
+  view?: 'INCOMPLETE' | 'UNVERIFIED' | 'NEVER_WORKED' | 'WORKING' | 'TERMINATED';
   skip?: number;
   take?: number;
 }
@@ -33,7 +34,7 @@ export async function getLaborProfilesList(
   filter: LaborProfileListFilter = {},
 ): Promise<LaborProfileListResponse> {
   const permissions = await resolveEffectivePermissions({ userId: ctx.userId, role: ctx.role });
-  const canSeeSensitive = ctx.role === 'ADMIN' || permissions.has('CAN_VIEW_WORKER_SENSITIVE');
+  const canSeeSensitive = permissions.has('CAN_VIEW_WORKER_SENSITIVE');
 
   const where: Prisma.LaborProfileWhereInput = {};
   
@@ -43,6 +44,10 @@ export async function getLaborProfilesList(
       { phone: { contains: filter.search } },
       { cccdNumber: { contains: filter.search } },
     ];
+  }
+  
+  if (filter.exactPhone) {
+    where.phone = filter.exactPhone;
   }
   
   if (filter.completeness) {
@@ -55,16 +60,6 @@ export async function getLaborProfilesList(
 
   if (filter.view) {
     switch (filter.view) {
-      case 'MY_PROFILES':
-        where.intakes = { some: { capturedByUserId: ctx.userId } }; // proxy for N2 handler
-        break;
-      case 'COMMON_POOL':
-        where.NOT = { intakes: { some: { capturedByUserId: ctx.userId } } }; // proxy for N2 pool
-        break;
-      case 'EXPIRING_SOON':
-        // proxy: consentAt > 5 months ago, soon reaching 6 months
-        where.consentAt = { lt: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000) };
-        break;
       case 'INCOMPLETE':
         where.completeness = 'MINIMAL';
         break;
@@ -78,7 +73,10 @@ export async function getLaborProfilesList(
         where.episodes = { some: { status: 'ACTIVE' } };
         break;
       case 'TERMINATED':
-        where.episodes = { some: { status: 'ENDED' } }; // Or any non-active status
+        where.AND = [
+          { episodes: { none: { status: 'ACTIVE' } } },
+          { episodes: { some: { status: 'ENDED' } } }
+        ];
         break;
     }
   }
@@ -152,7 +150,7 @@ export async function getLaborProfileDetail(
   id: string,
 ): Promise<LaborProfileDetailDto | null> {
   const permissions = await resolveEffectivePermissions({ userId: ctx.userId, role: ctx.role });
-  const canSeeSensitive = ctx.role === 'ADMIN' || permissions.has('CAN_VIEW_WORKER_SENSITIVE');
+  const canSeeSensitive = permissions.has('CAN_VIEW_WORKER_SENSITIVE');
 
   const profile = await tx.laborProfile.findUnique({
     where: { id },
