@@ -49,6 +49,9 @@ export default tseslint.config(
       // part of this app's TS source. Ignoring is consistent with the
       // existing policy above for `docs/**` and `public/**`.
       'scratch/**',
+      '**/.claude/**',
+      'tier1-n2-1/**',
+      'worktree_link/**',
     ],
   },
   js.configs.recommended,

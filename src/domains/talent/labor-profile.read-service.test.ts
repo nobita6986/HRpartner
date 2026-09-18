@@ -142,5 +142,31 @@ describe('LaborProfile Read Service', () => {
         where: expect.objectContaining({ phone: '912345678' })
       }));
     });
+
+    describe('COMPANY_POOL filter', () => {
+      it('applies COMPANY_POOL filter correctly', async () => {
+        // Mock Date to ensure deterministic test
+        const mockNow = new Date('2026-09-18T12:00:00Z');
+        vi.useFakeTimers();
+        vi.setSystemTime(mockNow);
+
+        await getLaborProfilesList(mockTx, adminCtx, { view: 'COMPANY_POOL' });
+        
+        expect(mockFindMany).toHaveBeenCalledWith(expect.objectContaining({
+          where: expect.objectContaining({
+            AND: [
+              {
+                OR: [
+                  { handlingAssignments: { none: { status: 'ACTIVE' } } },
+                  { handlingAssignments: { some: { status: 'ACTIVE', expiresAt: { lt: mockNow } } } }
+                ]
+              }
+            ]
+          })
+        }));
+
+        vi.useRealTimers();
+      });
+    });
   });
 });

@@ -85,6 +85,18 @@ export async function managerAssign(
   const now = new Date();
   const expiresAt = input.days ? new Date(now.getTime() + input.days * 24 * 60 * 60 * 1000) : null;
 
+  // Validate assignee role (P1-4)
+  const newAssignee = await tx.user.findUnique({
+    where: { id: input.newAssigneeUserId },
+    select: { role: true },
+  });
+  if (!newAssignee) {
+    throw new Error('Assignee not found');
+  }
+  if (newAssignee.role !== 'HR_STAFF' && newAssignee.role !== 'HR_MANAGER') {
+    throw new Error('Only HR_STAFF or HR_MANAGER can be assigned to handle Labor Profiles');
+  }
+
   const activeAssignment = await getActiveHandlingAssignment(tx, input.laborProfileId);
 
   if (activeAssignment) {
@@ -137,4 +149,51 @@ export async function getActiveHandlingAssignment(
   }
 
   return activeAssignment;
+}
+
+export interface ReleaseHandlingAssignmentInput {
+  laborProfileId: string;
+  actorId: string;
+  reason: string;
+}
+
+export async function releaseHandlingAssignment(
+  tx: Prisma.TransactionClient,
+  input: ReleaseHandlingAssignmentInput
+) {
+  const activeAssignment = await getActiveHandlingAssignment(tx, input.laborProfileId);
+
+  if (!activeAssignment) {
+    return null;
+  }
+
+  const actor = await tx.user.findUnique({
+    where: { id: input.actorId },
+    select: { name: true },
+  });
+  const actorName = actor?.name || input.actorId;
+
+  const now = new Date();
+  return tx.laborProfileHandlingAssignment.update({
+    where: { id: activeAssignment.id },
+    data: {
+      status: ASSIGNMENT_STATUS.EXPIRED,
+      reason: `[Thu hồi bởi ${actorName}] ${input.reason}`,
+      updatedAt: now,
+    },
+  });
+}
+
+export async function getHandlingAssignmentHistory(
+  tx: Prisma.TransactionClient,
+  laborProfileId: string
+) {
+  return tx.laborProfileHandlingAssignment.findMany({
+    where: { laborProfileId },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      assigneeUser: { select: { name: true } },
+      assignedByUser: { select: { name: true } },
+    }
+  });
 }

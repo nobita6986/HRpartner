@@ -4,6 +4,7 @@ import { getPrisma } from '@/src/lib/db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { getLaborProfileDetail } from '@/src/domains/talent/labor-profile.read-service';
 import { Breadcrumb } from '@/src/shared/ui/navigation/breadcrumb';
+import { HandlingAssignmentManager } from './handling-assignment-manager';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -128,11 +129,11 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
           )}
         </div>
 
-        {/* Block 4: Người phụ trách (Placeholder N2-4) */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Người phụ trách</h2>
-          <p className="text-sm text-gray-500 italic">Chưa có dữ liệu</p>
-        </div>
+        {/* Block 4: Người phụ trách */}
+        <HandlingAssignmentManager 
+          laborProfileId={data.id} 
+          activeAssignment={data.activeHandlingAssignment} 
+        />
 
         {/* Block 5: Quyền hưởng hoa hồng (Placeholder N2-5) */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-purple-500">

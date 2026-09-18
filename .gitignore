@@ -98,3 +98,7 @@ tsc-*.txt
 # Prevents accidental commit of throwaway probe/scratch files at repo root.
 /temp*.txt
 /orca*.bat
+
+.claude/
+tier1-n2-1/
+worktree_link/
