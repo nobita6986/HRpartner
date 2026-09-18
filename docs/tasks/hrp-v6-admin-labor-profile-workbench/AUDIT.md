@@ -1,11 +1,11 @@
 # AUDIT: hrp-v6-admin-labor-profile-workbench
 
 ## Meta
-- **Audit Target HEAD:** `9dcf40b91bb351ef93489381af449230ac45a6f8` (Round 2)
-- **Previous Target HEAD:** `7886b22a8c7e629f9cc6ef8bb5db49b2f92f20d5` (Round 1)
+- **Audit Target HEAD:** `1e76ece296d612519c25e243a7f122137e26635c` (Round 3)
+- **Previous Target HEAD:** `9dcf40b91bb351ef93489381af449230ac45a6f8` (Round 2)
 - **Base:** `e798af80fd4111b5c41688abc1b9b9362b3b7727`
 - **PR:** N/A (Local Tier 1 workspace)
-- **Review Mode:** LIGHT (Delta Audit Round 2)
+- **Review Mode:** LIGHT (Delta Audit Round 3)
 - **Date:** 2026-09-18
 
 ## Verdict
@@ -14,15 +14,14 @@
 ## Findings
 *(No unresolved findings)*
 
-## Checks Verified (Round 2 Delta)
-- **PII & Permissions Masking:** Verified `labor-profile.read-service.ts` dynamically evaluates `CAN_VIEW_WORKER_SENSITIVE`. For roles lacking this permission, `maskPhone` and `maskCccd` are applied rigorously. Admin access bypasses masks correctly.
-- **List Filters:** Verified backend queries properly filter against canonical models (e.g., `episodes: { some: { status: 'ACTIVE' } }` for WORKING). Filter controls UI correctly bound to `?view=WORKING` etc.
-- **3-Tier Intake Form & Soft Dedup:** Intake UI cleanly implements a 3-step progressive layout (`app/admin/labor-profiles/new/page.tsx`). Deduplication API call (`/api/admin/labor-profiles?search=phone`) functions flawlessly to warn staff about existing profiles prior to completion.
-- **N2 Boundary Strictness:** Convert action disabled and placeholder logic kept intact, upholding future scope boundaries.
-- **Tests & Pre-flight:** Newly added focus tests covering masking logic and episode filtering passed. `npm run typecheck` and `npm run lint` successfully verified by Tier 3 (0 errors).
-- **Documentation:** `TASK.md` and `HANDOFF.md` updated with AC-05 through AC-09 and verified using `verify-task` (PASS) and `verify-handoff` (PASS).
+## Checks Verified (Round 3 Delta)
+- **Filters Scope:** Verified UI list filters now correctly remove `MY_PROFILES`, `EXPIRING_SOON`, and `COMMON_POOL` which fall outside the immediate canonical boundaries. The remaining chips map purely to strict `completeness`, `identityVerification`, and `episodes` existence.
+- **Dedup Precision:** Intake deduplication is now strictly powered by the `exactPhone` capability matching instead of a blurry wildcard search.
+- **Strict Posture Enforcement:** The `CAN_VIEW_WORKER_SENSITIVE` logic is now hardened; Admin status does not automatically bypass the mask unless explicitly granted the permission. Unit tests covering this strict enforcement cleanly pass.
+- **Terminated Query Precedence:** The `TERMINATED` filter correctly implements the intersection (`none: ACTIVE` AND `some: ENDED`) ensuring workers with active concurrent episodes aren't inadvertently categorized as terminated.
+- **Tests & Documentation:** `npm run typecheck` and `npm run lint` yields 0 errors. Documentation scripts `verify-task` and `verify-handoff` successfully passed.
 
 ## Evidence
 - `verify-task.ps1` returns `PASS`.
-- `verify-handoff.ps1` returns `PASS` (with expected warnings regarding the audit round field drift).
-- Pre-flight `npm run typecheck` & `npm run lint` yields 0 errors. Unit test suite passes seamlessly.
+- `verify-handoff.ps1` returns `PASS` (with non-blocking warnings on audit round drift).
+- Pre-flight `npm run typecheck` & `npm run lint` yields 0 errors. Unit test suite fully functional.
