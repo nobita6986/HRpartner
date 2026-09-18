@@ -1,7 +1,16 @@
 ## G0-04 / RQ-02, RQ-07. Minimal, reproducible CI: schema validation, typecheck, lint,
 ## unit tests, build — on every PR and push to main. Integration (DB) tests run in a
-## SEPARATE job that fails closed (ENV_BLOCKED) when no dedicated test-DB secret is present,
-## and never runs privileged on fork PRs.
+## SEPARATE job that fails closed (ENV_BLOCKED) when bootstrap fails, and never runs
+## privileged on fork PRs.
+##
+## v7-Update: Integration lane now spins up an EPHEMERAL `postgres:16-alpine` service
+## container on the runner instead of dialing the Neon Singapore dedicated test DB.
+## This drops Integration wall-time from ~15-20 min to ~2-4 min and removes the
+## dedicated-DB queue. RLS/role posture is reproduced by scripts/ci/container-test-db.mjs
+## (idempotent provisioning of 8 roles + grants), then `prisma migrate deploy` lays
+## down all 39 migrations including N2-1 (app_engine_writer) and N3 (Placement RLS).
+## Concurrency `hrpartner-dedicated-integration-db` is INTENTIONALLY preserved (T0
+## directive: do not remove until 2-PR-parallel-safety is proven in a follow-up PR).
 name: CI
 
 on:
@@ -64,10 +73,39 @@ jobs:
     timeout-minutes: 30
     # Never run on a FORK pull request: secrets are not exposed to forks (RQ-07), and we do
     # not want a dedicated test-DB touched from untrusted PR code. Same-repo PRs, pushes to
-    # main, and manual dispatch still run — and fail closed (ENV_BLOCKED) if no secret is set.
+    # main, and manual dispatch still run — and fail closed (ENV_BLOCKED) if bootstrap fails.
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
+    # v7: ephemeral PostgreSQL service container. Mirrors production Postgres 16.x.
+    # POSTGRES_PASSWORD is the baseline password used by container-test-db.mjs to also
+    # set LOGIN role passwords (kept simple because the container is sandbox-internal and
+    # destroyed at job end). No external secrets touched.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ci_test
+        ports:
+          - 5432:5432
+        # Health check waits for `pg_isready` so the first step (Wait for postgres) is
+        # a no-op safety net, not a hard requirement.
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ci_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # v7: container endpoints, NOT secrets. Cùng host+port+db (localhost:5432/ci_test),
+      # KHÁC role: writer = app_user_writer (RLS-enforcing), admin = postgres (superuser).
+      # preflight guard accepts these (same host+port+db, no protected match).
+      DATABASE_URL_TEST: postgresql://app_user_writer:postgres@localhost:5432/ci_test
+      DATABASE_URL_ADMIN_TEST: postgresql://postgres:postgres@localhost:5432/ci_test
+      # baseline password used by container-test-db.mjs to set LOGIN role passwords.
+      PG_BASELINE_PASSWORD: postgres
+      CI_INTEGRATION_STRICT: '1'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -133,15 +171,60 @@ jobs:
       - name: Prisma generate
         if: steps.path-filter.outputs.should_run != 'false'
         run: npm run prisma:generate
-      - name: Integration tests (dedicated test DB only; ENV_BLOCKED if absent)
-        # The preflight refuses dev/prod URLs, requires DATABASE_URL_TEST, and prints ENV_BLOCKED
+      - name: Wait for postgres (container healthy)
+        if: steps.path-filter.outputs.should_run != 'false'
+        # Belt-and-suspenders on top of services.postgres healthcheck. pg_isready exits 0
+        # once the container accepts connections AND a SELECT 1 roundtrip succeeds.
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 30); do
+            if pg_isready -h localhost -p 5432 -U postgres -d ci_test; then
+              echo "postgres ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::postgres NOT ready after 30s"
+          exit 1
+      - name: Bootstrap roles + pre-migrate grants (container RLS posture)
+        if: steps.path-filter.outputs.should_run != 'false'
+        # Phase=pre: creates 8 roles + applies schema-level + ALL TABLES + DEFAULT
+        # PRIVILEGES grants BEFORE `prisma migrate deploy`. Some migrations GRANT
+        # to `app_user_writer` (e.g. `20260816210000_s1_rls_worker`) and need that
+        # role to exist; schema-level grants are safe on an empty schema because
+        # ALTER DEFAULT PRIVILEGES auto-covers tables created later by migrations.
+        # See scripts/ci/container-test-db.mjs for the 8-role list + grant split.
+        # Exit nonzero → step fail → job fail → required check RED (fail-closed).
+        run: node scripts/ci/container-test-db.mjs --phase=pre
+      - name: Prisma migrate deploy (apply all 39 migrations on container)
+        if: steps.path-filter.outputs.should_run != 'false'
+        # directUrl=DATABASE_URL_ADMIN_TEST (admin=postgres/superuser). Include N2-1
+        # (app_engine_writer role) and all RLS/GRANT migration layers. Runs AFTER the
+        # pre-migrate bootstrap so migrations that GRANT to existing roles (e.g.
+        # `app_user_writer`) can resolve, and BEFORE the post-migrate bootstrap so
+        # table-level GRANTs (`portal_timesheets`) have a table to point at.
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ci_test
+          DATABASE_URL_ADMIN: postgresql://postgres:postgres@localhost:5432/ci_test
+        run: npx prisma migrate deploy
+      - name: 'Prisma migrate status (sanity: no drift)'
+        if: steps.path-filter.outputs.should_run != 'false'
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ci_test
+          DATABASE_URL_ADMIN: postgresql://postgres:postgres@localhost:5432/ci_test
+        run: npx prisma migrate status
+      - name: Bootstrap post-migrate grants (table-level for portal_timesheets)
+        if: steps.path-filter.outputs.should_run != 'false'
+        # Phase=post: re-converges roles (idempotent) + applies table-level grants
+        # whose target table is created by a migration (e.g. `portal_timesheets`).
+        # Wrapped in DO $$ IF EXISTS so missing-table re-runs no-op cleanly.
+        # See scripts/ci/container-test-db.mjs POST_MIGRATE_GRANTS list.
+        run: node scripts/ci/container-test-db.mjs --phase=post
+      - name: Integration tests (container test DB; fail-closed preflight on guard mismatch)
+        # preflight refuses dev/prod URLs, requires DATABASE_URL_TEST, and prints ENV_BLOCKED
         # Local runs may report ENV_BLOCKED with exit 0, but CI is always strict: a missing
         # dedicated test DB is a red blocked check, never a green/fake integration PASS.
         if: steps.path-filter.outputs.should_run != 'false'
-        env:
-          DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST }}
-          DATABASE_URL_ADMIN_TEST: ${{ secrets.DATABASE_URL_ADMIN_TEST }}
-          CI_INTEGRATION_STRICT: '1'
         run: npm run test:integration
       - name: Short-circuit success (docs/config-only PRs)
         # Runs ONLY when path-filter decided should_run=false. The job still completes with

@@ -1,0 +1,953 @@
+﻿Integration (DB tests ┬╖ fail-closed)	Set up job	∩╗┐2026-09-18T02:02:09.7693965Z Current runner version: '2.337.0'
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7719134Z ##[group]Runner Image Provisioner
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7720144Z Hosted Compute Agent
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7720810Z Version: 20260828.587
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7721522Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7722344Z Build Date: 2026-08-28T16:44:25Z
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7723203Z Worker ID: {ea3382d7-0129-4cd7-8513-cac466d96696}
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7724064Z Azure Region: northcentralus
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7724713Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7726206Z ##[group]Operating System
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7726889Z Ubuntu
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7727443Z 24.04.5
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7728095Z LTS
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7728898Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7729505Z ##[group]Runner Image
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7730326Z Image: ubuntu-24.04
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7730931Z Version: 20260907.300.1
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7732140Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7733906Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7734924Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7736020Z ##[group]GITHUB_TOKEN Permissions
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7738055Z Contents: read
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7738892Z Metadata: read
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7739577Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7741654Z Secret source: Actions
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7742804Z Cache mode: write
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.7743529Z Prepare workflow directory
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.8225654Z Prepare all required actions
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:09.8273317Z Getting action download info
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:10.0752538Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:10.1724200Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+Integration (DB tests ┬╖ fail-closed)	Set up job	2026-09-18T02:02:10.3755431Z Complete job name: Integration (DB tests ┬╖ fail-closed)
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	∩╗┐2026-09-18T02:02:10.4297348Z ##[group]Checking docker version
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.4311081Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.4904351Z '1.48'
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.4914711Z Docker daemon API version: '1.48'
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.4915528Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.5082814Z '1.48'
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.5095660Z Docker client API version: '1.48'
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.5100545Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.5102991Z ##[group]Clean up resources from previous jobs
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.5108036Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=dfa972"
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.5254954Z ##[command]/usr/bin/docker network prune --force --filter "label=dfa972"
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.5384041Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.5384583Z ##[group]Create local container network
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.5394353Z ##[command]/usr/bin/docker network create --label dfa972 github_network_5605e09819ee44ad93b5265b45b5bfd0
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.5940382Z e0e813c5b5d187a625bff2edffad7827e0e6710e744cee1a1ec1d75feb57ab5e
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.5957895Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.5982340Z ##[group]Starting postgres service container
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.6003606Z ##[command]/usr/bin/docker pull postgres:16-alpine
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:10.9893708Z 16-alpine: Pulling from library/postgres
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1265810Z e2de96513ba9: Pulling fs layer
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1266981Z 1b7f9cd581ee: Pulling fs layer
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1267799Z 210b280f9556: Pulling fs layer
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1268355Z 81717818649a: Pulling fs layer
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1269230Z 3ae6141cfd99: Pulling fs layer
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1269764Z 25b77f59fd95: Pulling fs layer
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1270298Z 6c25da34e03f: Pulling fs layer
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1270834Z a88782f92806: Pulling fs layer
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1271387Z d8d21be4bf02: Pulling fs layer
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1271917Z 6117bd39f23f: Pulling fs layer
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1272439Z 509688edf37b: Pulling fs layer
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1273011Z 81717818649a: Waiting
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1273813Z 3ae6141cfd99: Waiting
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1274315Z d8d21be4bf02: Waiting
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1274832Z 509688edf37b: Waiting
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1275317Z 25b77f59fd95: Waiting
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1275800Z 6c25da34e03f: Waiting
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1276272Z a88782f92806: Waiting
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.1276748Z 6117bd39f23f: Waiting
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.2041852Z 1b7f9cd581ee: Verifying Checksum
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.2042962Z 1b7f9cd581ee: Download complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.2162112Z 210b280f9556: Verifying Checksum
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.2163067Z 210b280f9556: Download complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.2267390Z e2de96513ba9: Verifying Checksum
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.2269158Z e2de96513ba9: Download complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.2777003Z 81717818649a: Verifying Checksum
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.2778003Z 81717818649a: Download complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.2912139Z 3ae6141cfd99: Verifying Checksum
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.2913074Z 3ae6141cfd99: Download complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.3409617Z e2de96513ba9: Pull complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.3583176Z 6c25da34e03f: Download complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.3758301Z a88782f92806: Verifying Checksum
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.3760162Z a88782f92806: Download complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.3770879Z 1b7f9cd581ee: Pull complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.4512285Z d8d21be4bf02: Verifying Checksum
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.4513725Z d8d21be4bf02: Download complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.4571830Z 6117bd39f23f: Download complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.8010281Z 509688edf37b: Verifying Checksum
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:11.8011762Z 509688edf37b: Download complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:12.0991649Z 25b77f59fd95: Verifying Checksum
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:12.0992486Z 25b77f59fd95: Download complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:13.8671981Z 210b280f9556: Pull complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:13.8774124Z 81717818649a: Pull complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:13.8863874Z 3ae6141cfd99: Pull complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.4106641Z 25b77f59fd95: Pull complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.4244979Z 6c25da34e03f: Pull complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.4331212Z a88782f92806: Pull complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.4419013Z d8d21be4bf02: Pull complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.4504645Z 6117bd39f23f: Pull complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.4601865Z 509688edf37b: Pull complete
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.4635626Z Digest: sha256:866efe7070b471f3a5397edac0e5edd65c23ff056587c6e47c07d008caaedd28
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.4646452Z Status: Downloaded newer image for postgres:16-alpine
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.4654359Z docker.io/library/postgres:16-alpine
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.4716704Z ##[command]/usr/bin/docker create --name 6310aeae7afd4ec8be065cf4d26eae90_postgres16alpine_efa10a --label dfa972 --network github_network_5605e09819ee44ad93b5265b45b5bfd0 --network-alias postgres -p 5432:5432 --health-cmd "pg_isready -U postgres -d ci_test" --health-interval 5s --health-timeout 5s --health-retries 10 -e "POSTGRES_USER=postgres" -e "POSTGRES_PASSWORD=postgres" -e "POSTGRES_DB=ci_test" -e GITHUB_ACTIONS=true -e CI=true postgres:16-alpine
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.4965271Z 3f3b4b0f8170580d5bbd9c5597c91a90d21979e9b79b4c74efaa773aa906bea4
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.4987672Z ##[command]/usr/bin/docker start 3f3b4b0f8170580d5bbd9c5597c91a90d21979e9b79b4c74efaa773aa906bea4
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.6922546Z 3f3b4b0f8170580d5bbd9c5597c91a90d21979e9b79b4c74efaa773aa906bea4
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.6947366Z ##[command]/usr/bin/docker ps --all --filter id=3f3b4b0f8170580d5bbd9c5597c91a90d21979e9b79b4c74efaa773aa906bea4 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.7090955Z 3f3b4b0f8170580d5bbd9c5597c91a90d21979e9b79b4c74efaa773aa906bea4 Up Less than a second (health: starting)
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.7114559Z ##[command]/usr/bin/docker port 3f3b4b0f8170580d5bbd9c5597c91a90d21979e9b79b4c74efaa773aa906bea4
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.7252666Z 5432/tcp -> 0.0.0.0:5432
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.7253656Z 5432/tcp -> [::]:5432
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.7302272Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.7311696Z ##[group]Waiting for all services to be ready
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.7325348Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 3f3b4b0f8170580d5bbd9c5597c91a90d21979e9b79b4c74efaa773aa906bea4
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.7463788Z starting
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:16.7486196Z postgres service is starting, waiting 2 seconds before checking again.
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:18.7484767Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 3f3b4b0f8170580d5bbd9c5597c91a90d21979e9b79b4c74efaa773aa906bea4
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:18.7610820Z starting
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:18.7624119Z postgres service is starting, waiting 3 seconds before checking again.
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:22.5102678Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 3f3b4b0f8170580d5bbd9c5597c91a90d21979e9b79b4c74efaa773aa906bea4
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:22.5233835Z healthy
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:22.5250781Z postgres service is healthy.
+Integration (DB tests ┬╖ fail-closed)	Initialize containers	2026-09-18T02:02:22.5251524Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	∩╗┐2026-09-18T02:02:22.5611997Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5619825Z ##[group]Run actions/checkout@v4
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5620240Z with:
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5620453Z   fetch-depth: 0
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5620690Z   repository: nobita6986/HRpartner
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5623264Z   token: ***
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5623493Z   ssh-strict: true
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5623713Z   ssh-user: git
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5623937Z   persist-credentials: true
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5624178Z   clean: true
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5624398Z   sparse-checkout-cone-mode: true
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5624663Z   fetch-tags: false
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5624882Z   show-progress: true
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5625099Z   lfs: false
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5625299Z   submodules: false
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5625565Z   set-safe-directory: true
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5625821Z   allow-unsafe-pr-checkout: false
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5626220Z env:
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5626681Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5627163Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5627488Z   PG_BASELINE_PASSWORD: postgres
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5627755Z   CI_INTEGRATION_STRICT: 1
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.5628013Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6675242Z Syncing repository: nobita6986/HRpartner
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6677098Z ##[group]Getting Git version info
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6677691Z Working directory is '/home/runner/work/HRpartner/HRpartner'
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6678764Z [command]/usr/bin/git version
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6707222Z git version 2.55.0
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6727032Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6741627Z Temporarily overriding HOME='/home/runner/work/_temp/81695d67-3ad5-4b42-b579-31b7f8e9c808' before making global git config changes
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6742983Z Adding repository directory to the temporary git global config as a safe directory
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6748151Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/HRpartner/HRpartner
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6796172Z Deleting the contents of '/home/runner/work/HRpartner/HRpartner'
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6800590Z ##[group]Initializing the repository
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6804367Z [command]/usr/bin/git init /home/runner/work/HRpartner/HRpartner
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6890547Z hint: Using 'master' as the name for the initial branch. This default branch name
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6891848Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6892751Z hint: to use in all of your new repositories, which will suppress this warning,
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6893489Z hint: call:
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6894322Z hint:
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6894875Z hint: 	git config --global init.defaultBranch <name>
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6895408Z hint:
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6895885Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6896725Z hint: 'development'. The just-created branch can be renamed via this command:
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6897619Z hint:
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6897940Z hint: 	git branch -m <name>
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6898306Z hint:
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6899015Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6899899Z Initialized empty Git repository in /home/runner/work/HRpartner/HRpartner/.git/
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6903945Z [command]/usr/bin/git remote add origin https://github.com/nobita6986/HRpartner
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6945214Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6945949Z ##[group]Disabling automatic garbage collection
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6949149Z [command]/usr/bin/git config --local gc.auto 0
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6983391Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6984037Z ##[group]Setting up auth
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.6991242Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.7028109Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.7376376Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.7419091Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.7677433Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.7719749Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.7964523Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.8005101Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.8005731Z ##[group]Fetching the repository
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:22.8015102Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* +12434752f9275fde8a41203a17b0feae7a020da2:refs/remotes/pull/15/merge
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8686211Z From https://github.com/nobita6986/HRpartner
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8687163Z  * [new branch]      codex/hrp-vision-portal-aff              -> origin/codex/hrp-vision-portal-aff
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8688178Z  * [new branch]      fix-ci-prisma-validate-r1                -> origin/fix-ci-prisma-validate-r1
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8689342Z  * [new branch]      hrp-v6-n2-aff-policy-contract-discovery  -> origin/hrp-v6-n2-aff-policy-contract-discovery
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8690046Z  * [new branch]      main                                     -> origin/main
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8690570Z  * [new branch]      tier1/admin-demand-tree                  -> origin/tier1/admin-demand-tree
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8691207Z  * [new branch]      tier1/admin-detail-foundation            -> origin/tier1/admin-detail-foundation
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8691815Z  * [new branch]      tier1/admin-truth-defects                -> origin/tier1/admin-truth-defects
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8692428Z  * [new branch]      tier1/hrp-v7-ci-container-db             -> origin/tier1/hrp-v7-ci-container-db
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8693247Z  * [new branch]      tier1/integration-test-budget-stabilization -> origin/tier1/integration-test-budget-stabilization
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8694018Z  * [new branch]      tier1/n-closeout-docs-config             -> origin/tier1/n-closeout-docs-config
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8694615Z  * [new branch]      tier1/n1-foundation                      -> origin/tier1/n1-foundation
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8695212Z  * [new branch]      tier1/n3-service-model-placement         -> origin/tier1/n3-service-model-placement
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8695897Z  * [new branch]      worktree-04d-detail-ui-r1                -> origin/worktree-04d-detail-ui-r1
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8696528Z  * [new branch]      worktree-n0-audit-r1                     -> origin/worktree-n0-audit-r1
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8697328Z  * [new ref]         12434752f9275fde8a41203a17b0feae7a020da2 -> pull/15/merge
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8699557Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8700185Z ##[group]Determining the checkout info
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8700868Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8720727Z [command]/usr/bin/git sparse-checkout disable
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8779179Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8810579Z ##[group]Checking out the ref
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:23.8814344Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/15/merge
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1218029Z Note: switching to 'refs/remotes/pull/15/merge'.
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1218349Z 
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1218894Z You are in 'detached HEAD' state. You can look around, make experimental
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1219389Z changes and commit them, and you can discard any commits you make in this
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1220166Z state without impacting any branches by switching back to a branch.
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1220449Z 
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1220631Z If you want to create a new branch to retain commits you create, you may
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1221073Z do so (now or later) by using -c with the switch command. Example:
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1221329Z 
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1221447Z   git switch -c <new-branch-name>
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1221690Z 
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1221804Z Or undo this operation with:
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1221959Z 
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1222054Z   git switch -
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1222185Z 
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1222397Z Turn off this advice by setting config variable advice.detachedHead to false
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1222705Z 
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1223033Z HEAD is now at 1243475 Merge 6c217b32ea11f3185d4064691356621ab1af87d7 into df68529fdd89a81952418fc16556823da6576ac4
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1235439Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1285249Z [command]/usr/bin/git log -1 --format=%H
+Integration (DB tests ┬╖ fail-closed)	Run actions/checkout@v4	2026-09-18T02:02:24.1314127Z 12434752f9275fde8a41203a17b0feae7a020da2
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	∩╗┐2026-09-18T02:02:24.1570716Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.1572255Z ##[group]Run actions/setup-node@v4
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.1572521Z with:
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.1572726Z   node-version: 22
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.1572943Z   cache: npm
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.1573153Z   always-auth: false
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.1573382Z   check-latest: false
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.1575860Z   token: ***
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.1576072Z env:
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.1576502Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.1577135Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.1577477Z   PG_BASELINE_PASSWORD: postgres
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.1577747Z   CI_INTEGRATION_STRICT: 1
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.1577988Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.3030828Z Found in cache @ /opt/hostedtoolcache/node/22.23.2/x64
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.3033386Z (node:2640) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.3034505Z (Use `node --trace-deprecation ...` to show where the warning was created)
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.3036184Z ##[group]Environment details
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.6420430Z node: v22.23.2
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.6420853Z npm: 10.9.8
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.6421101Z yarn: 1.22.22
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.6421696Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.6448304Z [command]/opt/hostedtoolcache/node/22.23.2/x64/bin/npm config get cache
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.7533696Z /home/runner/.npm
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.8740149Z Cache hit for: node-cache-Linux-x64-npm-fe29b93b127ccbd26361131b38e17a4a8100d00939daa9fbf6aef928b952fd7a
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:24.8839321Z (node:2640) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:25.9740978Z Received 128452897 of 128452897 (100.0%), 123.5 MBs/sec
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:25.9742326Z Cache Size: ~123 MB (128452897 B)
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:25.9775131Z [command]/usr/bin/tar -xf /home/runner/work/_temp/7fe1e42d-c410-41ce-9ab9-470948ec7efe/cache.tzst -P -C /home/runner/work/HRpartner/HRpartner --use-compress-program unzstd
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:26.2206988Z Cache restored successfully
+Integration (DB tests ┬╖ fail-closed)	Run actions/setup-node@v4	2026-09-18T02:02:26.2273179Z Cache restored from key: node-cache-Linux-x64-npm-fe29b93b127ccbd26361131b38e17a4a8100d00939daa9fbf6aef928b952fd7a
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	∩╗┐2026-09-18T02:02:26.2500265Z ##[group]Run set -euo pipefail
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2500672Z ^[[36;1mset -euo pipefail^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2501179Z ^[[36;1m# Resolve base ref safely: PR ΓåÆ base.sha, push ΓåÆ github.event.before, fallback ΓåÆ origin/main^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2501713Z ^[[36;1mif [ "pull_request" = "pull_request" ]; then^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2502092Z ^[[36;1m  BASE_SHA="df68529fdd89a81952418fc16556823da6576ac4"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2502831Z ^[[36;1melif [ -n "9f82fbe331a7227acc454b736e610ebba5d0c96c" ] && [ "9f82fbe331a7227acc454b736e610ebba5d0c96c" != "0000000000000000000000000000000000000000" ]; then^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2503564Z ^[[36;1m  BASE_SHA="9f82fbe331a7227acc454b736e610ebba5d0c96c"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2503889Z ^[[36;1melse^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2504140Z ^[[36;1m  BASE_SHA="$(git rev-parse origin/main)"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2504436Z ^[[36;1mfi^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2504649Z ^[[36;1mif [ -z "$BASE_SHA" ]; then^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2505051Z ^[[36;1m  echo "::warning::could not resolve BASE_SHA ΓÇö fail-safe to RUN full Integration"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2505558Z ^[[36;1m  echo "should_run=true" >> "$GITHUB_OUTPUT"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2505851Z ^[[36;1m  exit 0^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2506062Z ^[[36;1mfi^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2506333Z ^[[36;1mHEAD_SHA="12434752f9275fde8a41203a17b0feae7a020da2"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2506695Z ^[[36;1mecho "BASE_SHA=$BASE_SHA HEAD_SHA=$HEAD_SHA"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2507098Z ^[[36;1mCHANGED="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" || true)"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2507485Z ^[[36;1mif [ -z "$CHANGED" ]; then^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2507885Z ^[[36;1m  echo "::warning::empty diff (likely initial push to main) ΓÇö RUN full Integration"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2508339Z ^[[36;1m  echo "should_run=true" >> "$GITHUB_OUTPUT"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2508861Z ^[[36;1m  exit 0^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2509070Z ^[[36;1mfi^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2509279Z ^[[36;1mecho "Changed files:"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2509536Z ^[[36;1mprintf '%s\n' "$CHANGED"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2509815Z ^[[36;1mshould_run=false^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2510079Z ^[[36;1mwhile IFS= read -r f; do^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2510349Z ^[[36;1m  [ -z "$f" ] && continue^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2510600Z ^[[36;1m  case "$f" in^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2510897Z ^[[36;1m    docs/*|*.md|scratch/*|.gitignore|README*|.env.example)^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2511268Z ^[[36;1m      echo "  SKIP-eligible: $f" ;;^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2511552Z ^[[36;1m    *)^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2511766Z ^[[36;1m      should_run=true^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2512020Z ^[[36;1m      echo "  RUN-required:  $f" ;;^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2512288Z ^[[36;1m  esac^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2512500Z ^[[36;1mdone <<< "$CHANGED"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2512754Z ^[[36;1mif [ "$should_run" = "true" ]; then^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2513059Z ^[[36;1m  echo "should_run=true" >> "$GITHUB_OUTPUT"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2513471Z ^[[36;1m  echo "Decision: RUN full Integration (code/schema/RLS path changed)"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2513864Z ^[[36;1melse^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2514118Z ^[[36;1m  echo "should_run=false" >> "$GITHUB_OUTPUT"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2514593Z ^[[36;1m  echo "Decision: docs/config-only ΓÇö Integration skipped (job still reports success)"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2515107Z ^[[36;1mfi^[[0m
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2568905Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2569279Z env:
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2569976Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2571015Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2571564Z   PG_BASELINE_PASSWORD: postgres
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2571976Z   CI_INTEGRATION_STRICT: 1
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2572301Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2665611Z BASE_SHA=df68529fdd89a81952418fc16556823da6576ac4 HEAD_SHA=12434752f9275fde8a41203a17b0feae7a020da2
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2688730Z Changed files:
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2689053Z .github/workflows/ci.yml
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2689426Z docs/tasks/hrp-v7-ci-container-db/HANDOFF.md
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2689968Z docs/tasks/hrp-v7-ci-container-db/TASK.md
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2690935Z docs/tasks/hrp-v7-ci-container-db/evidence/container-test-db-selftest-output.txt
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2691603Z docs/tasks/hrp-v7-ci-container-db/evidence/container-test-db.test.mjs
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2692268Z docs/tasks/hrp-v7-ci-container-db/evidence/live-ci-integration.txt
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2692864Z docs/tasks/hrp-v7-ci-container-db/evidence/live-ci-jobs.json
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2693434Z docs/tasks/hrp-v7-ci-container-db/evidence/live-ci-run.json
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2693961Z docs/tasks/hrp-v7-ci-container-db/evidence/verify-task-output.txt
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2694554Z docs/tasks/hrp-v7-ci-container-db/evidence/yaml-check-output.txt
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2695118Z docs/tasks/hrp-v7-ci-container-db/evidence/yaml-check.mjs
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2695591Z scripts/ci/container-test-db.mjs
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2719517Z   RUN-required:  .github/workflows/ci.yml
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2720353Z   SKIP-eligible: docs/tasks/hrp-v7-ci-container-db/HANDOFF.md
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2721108Z   SKIP-eligible: docs/tasks/hrp-v7-ci-container-db/TASK.md
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2721871Z   SKIP-eligible: docs/tasks/hrp-v7-ci-container-db/evidence/container-test-db-selftest-output.txt
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2722593Z   SKIP-eligible: docs/tasks/hrp-v7-ci-container-db/evidence/container-test-db.test.mjs
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2723251Z   SKIP-eligible: docs/tasks/hrp-v7-ci-container-db/evidence/live-ci-integration.txt
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2723856Z   SKIP-eligible: docs/tasks/hrp-v7-ci-container-db/evidence/live-ci-jobs.json
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2724414Z   SKIP-eligible: docs/tasks/hrp-v7-ci-container-db/evidence/live-ci-run.json
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2724972Z   SKIP-eligible: docs/tasks/hrp-v7-ci-container-db/evidence/verify-task-output.txt
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2725588Z   SKIP-eligible: docs/tasks/hrp-v7-ci-container-db/evidence/yaml-check-output.txt
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2726136Z   SKIP-eligible: docs/tasks/hrp-v7-ci-container-db/evidence/yaml-check.mjs
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2726614Z   RUN-required:  scripts/ci/container-test-db.mjs
+Integration (DB tests ┬╖ fail-closed)	Detect changed paths (short-circuit for docs/config-only PRs)	2026-09-18T02:02:26.2727125Z Decision: RUN full Integration (code/schema/RLS path changed)
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	∩╗┐2026-09-18T02:02:26.2781844Z ##[group]Run npm ci
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:26.2782097Z ^[[36;1mnpm ci^[[0m
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:26.2821109Z shell: /usr/bin/bash -e {0}
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:26.2821388Z env:
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:26.2821870Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:26.2822357Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:26.2822691Z   PG_BASELINE_PASSWORD: postgres
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:26.2822978Z   CI_INTEGRATION_STRICT: 1
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:26.2823214Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:31.3259200Z npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0214020Z 
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0214816Z added 276 packages, and audited 277 packages in 11s
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0215268Z 
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0215517Z 87 packages are looking for funding
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0215994Z   run `npm fund` for details
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0884331Z 
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0885224Z 11 vulnerabilities (4 moderate, 5 high, 2 critical)
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0885730Z 
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0886010Z To address issues that do not require attention, run:
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0886361Z   npm audit fix
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0886583Z 
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0886852Z To address all issues (including breaking changes), run:
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0887671Z   npm audit fix --force
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0887833Z 
+Integration (DB tests ┬╖ fail-closed)	Install (clean, from lockfile)	2026-09-18T02:02:37.0887956Z Run `npm audit` for details.
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	∩╗┐2026-09-18T02:02:37.1782305Z ##[group]Run npm run prisma:generate
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:37.1783046Z ^[[36;1mnpm run prisma:generate^[[0m
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:37.1823953Z shell: /usr/bin/bash -e {0}
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:37.1824226Z env:
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:37.1824746Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:37.1825233Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:37.1825564Z   PG_BASELINE_PASSWORD: postgres
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:37.1825849Z   CI_INTEGRATION_STRICT: 1
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:37.1826100Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:37.2831965Z 
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:37.2832607Z > hrp@0.1.0 prisma:generate
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:37.2833110Z > prisma generate
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:37.2833331Z 
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:37.7301211Z Prisma schema loaded from prisma/schema.prisma
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:38.7851310Z 
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:38.7852406Z Γ£ö Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client in 507ms
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:38.7852830Z 
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:38.7853206Z Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:38.7853623Z 
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:38.7853960Z Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+Integration (DB tests ┬╖ fail-closed)	Prisma generate	2026-09-18T02:02:38.7854257Z 
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	∩╗┐2026-09-18T02:02:38.9924886Z ##[group]Run set -euo pipefail
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9925436Z ^[[36;1mset -euo pipefail^[[0m
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9925846Z ^[[36;1mfor i in $(seq 1 30); do^[[0m
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9926438Z ^[[36;1m  if pg_isready -h localhost -p 5432 -U postgres -d ci_test; then^[[0m
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9927107Z ^[[36;1m    echo "postgres ready after ${i}s"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9927564Z ^[[36;1m    exit 0^[[0m
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9927883Z ^[[36;1m  fi^[[0m
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9928198Z ^[[36;1m  sleep 1^[[0m
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9928762Z ^[[36;1mdone^[[0m
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9929162Z ^[[36;1mecho "::error::postgres NOT ready after 30s"^[[0m
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9929657Z ^[[36;1mexit 1^[[0m
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9985053Z shell: /usr/bin/bash -e {0}
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9985466Z env:
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9986334Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9987110Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9987652Z   PG_BASELINE_PASSWORD: postgres
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9988087Z   CI_INTEGRATION_STRICT: 1
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:38.9988767Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:39.0633315Z localhost:5432 - accepting connections
+Integration (DB tests ┬╖ fail-closed)	Wait for postgres (container healthy)	2026-09-18T02:02:39.0641502Z postgres ready after 1s
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	∩╗┐2026-09-18T02:02:39.0686364Z ##[group]Run node scripts/ci/container-test-db.mjs --phase=pre
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.0686861Z ^[[36;1mnode scripts/ci/container-test-db.mjs --phase=pre^[[0m
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.0725258Z shell: /usr/bin/bash -e {0}
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.0725536Z env:
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.0726347Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.0726836Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.0727169Z   PG_BASELINE_PASSWORD: postgres
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.0727465Z   CI_INTEGRATION_STRICT: 1
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.0727708Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.1488267Z BOOTSTRAP_PHASE=wait_for_ready
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.1503639Z BOOTSTRAP_PHASE=db_ready
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.1912186Z ROLE_COUNT=8
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.1912671Z GRANTS_PHASE=pre_migrate
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.1972988Z GRANTS_COUNT=11
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.1987979Z VERIFY_POSTURE_ROWS=3
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.1988937Z POSTURE_app_user=PASS login=true super=false bypassrls=false
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.1989934Z POSTURE_app_user_writer=PASS login=true super=false bypassrls=false
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.1991336Z POSTURE_hrp_etl=PASS login=true super=false bypassrls=false
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.1992522Z BOOTSTRAP_PHASE=done
+Integration (DB tests ┬╖ fail-closed)	Bootstrap roles + pre-migrate grants (container RLS posture)	2026-09-18T02:02:39.1993254Z READY role_count=8 grants_count=11
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	∩╗┐2026-09-18T02:02:39.2121990Z ##[group]Run npx prisma migrate deploy
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:39.2122341Z ^[[36;1mnpx prisma migrate deploy^[[0m
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:39.2160864Z shell: /usr/bin/bash -e {0}
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:39.2161141Z env:
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:39.2161855Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:39.2162326Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:39.2162652Z   PG_BASELINE_PASSWORD: postgres
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:39.2162936Z   CI_INTEGRATION_STRICT: 1
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:39.2163404Z   DATABASE_URL: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:39.2163880Z   DATABASE_URL_ADMIN: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:39.2164172Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:39.9065970Z Prisma schema loaded from prisma/schema.prisma
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:39.9194107Z Datasource "db": PostgreSQL database "ci_test", schema "public" at "localhost:5432"
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.0082207Z 
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.0082841Z 39 migrations found in prisma/migrations
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.0083579Z 
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.0656713Z Applying migration `20260815013341_init`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.3079225Z Applying migration `20260815084134_g22_security`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.3499853Z Applying migration `20260816010542_g0_baseline`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.3583584Z Applying migration `20260816161815_s1_integrity_idem_outbox`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.3726056Z Applying migration `20260816161958_s1_integrity_idem_outbox`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.3759830Z Applying migration `20260816180349_g0_rq09_uniq_portal_timesheets`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.3799372Z Applying migration `20260816210000_s1_rls_worker`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.3907573Z Applying migration `20260816211000_s1_rls_project`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.4042452Z Applying migration `20260816212000_s1_rls_vendor`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.4111128Z Applying migration `20260817080000_s1_rls_staffing_order_slots`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.4157104Z Applying migration `20260817160000_s1_rls_attendance_timesheet`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.4299593Z Applying migration `20260818100000_s1_rls_client_statements`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.4362711Z Applying migration `20260818150000_p1_portals_schema`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.4561094Z Applying migration `20260819083254_p2_commission_schema`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.4777056Z Applying migration `20260819104700_p2_commission_rls`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.4857511Z Applying migration `20260819104701_m13_backend_expansion`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.4961484Z Applying migration `20260821103500_m13_restore_rls_matrix`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.5170347Z Applying migration `20260823101500_mp2_apply_tracking`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.5424606Z Applying migration `20260824130000_mp3_submission_lifecycle`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.5625998Z Applying migration `20260824143000_mp3_conversion_worker_link`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.5713399Z Applying migration `20260824161500_g0_schema_reconcile`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.5934586Z Applying migration `20260824163000_g0_portal_timesheet_index_reconcile`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.5960216Z Applying migration `20260825090000_mp3c_assignment_placement_links`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.6069440Z Applying migration `20260826120000_m1_07a_ticket_rls_backstop`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.6194023Z Applying migration `20260827160000_m1_07b_rls_runtime_posture_closure`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.6448067Z Applying migration `20260829093000_mp2_public_rpc_schema_usage`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.6473762Z Applying migration `20260830214139_m14_rls_matrix_repair`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.6630656Z Applying migration `20260831103000_marketplace_search_tracking_profile`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.6686882Z Applying migration `20260831160000_public_rpc_residual_grant_revoke`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.6800394Z Applying migration `20260908001_job_opening_posting_split`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.7054681Z Applying migration `20260908150000_v6_phase1a_labor_profile_schema`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.7342820Z Applying migration `20260908150001_v6_phase1a_labor_profile_rls`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.7398302Z Applying migration `20260911001_project_company_name_denorm`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.7432137Z Applying migration `20260911002_av1_homepage_settings`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.7539158Z Applying migration `20260912001_av4_media_library`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.7759670Z Applying migration `20260912140411_n1_placement_case_foundation`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.7929798Z Applying migration `20260912140412_n1_placement_case_rls`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.7958702Z Applying migration `20260914212136_n3_service_model_placement`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8290372Z Applying migration `20260917000000_referral_attribution_foundation`
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8491873Z 
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8497858Z The following migration(s) have been applied:
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8498239Z 
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8498636Z migrations/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8499191Z   ΓööΓöÇ 20260815013341_init/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8499484Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8499795Z   ΓööΓöÇ 20260815084134_g22_security/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8500098Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8500382Z   ΓööΓöÇ 20260816010542_g0_baseline/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8500660Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8501115Z   ΓööΓöÇ 20260816161815_s1_integrity_idem_outbox/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8501496Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8501836Z   ΓööΓöÇ 20260816161958_s1_integrity_idem_outbox/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8502191Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8502532Z   ΓööΓöÇ 20260816180349_g0_rq09_uniq_portal_timesheets/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8502876Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8503173Z   ΓööΓöÇ 20260816210000_s1_rls_worker/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8503464Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8503751Z   ΓööΓöÇ 20260816211000_s1_rls_project/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8504167Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8504579Z   ΓööΓöÇ 20260816212000_s1_rls_vendor/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8504867Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8505189Z   ΓööΓöÇ 20260817080000_s1_rls_staffing_order_slots/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8505533Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8506032Z   ΓööΓöÇ 20260817160000_s1_rls_attendance_timesheet/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8506350Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8506661Z   ΓööΓöÇ 20260818100000_s1_rls_client_statements/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8506979Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8507278Z   ΓööΓöÇ 20260818150000_p1_portals_schema/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8507614Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8507975Z   ΓööΓöÇ 20260819083254_p2_commission_schema/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8508353Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8508966Z   ΓööΓöÇ 20260819104700_p2_commission_rls/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8509455Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8509770Z   ΓööΓöÇ 20260819104701_m13_backend_expansion/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8510072Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8510384Z   ΓööΓöÇ 20260821103500_m13_restore_rls_matrix/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8510707Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8511001Z   ΓööΓöÇ 20260823101500_mp2_apply_tracking/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8511309Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8511623Z   ΓööΓöÇ 20260824130000_mp3_submission_lifecycle/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8511936Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8512258Z   ΓööΓöÇ 20260824143000_mp3_conversion_worker_link/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8512581Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8512874Z   ΓööΓöÇ 20260824161500_g0_schema_reconcile/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8513171Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8513544Z   ΓööΓöÇ 20260824163000_g0_portal_timesheet_index_reconcile/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8513894Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8514253Z   ΓööΓöÇ 20260825090000_mp3c_assignment_placement_links/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8514621Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8514926Z   ΓööΓöÇ 20260826120000_m1_07a_ticket_rls_backstop/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8515234Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8515570Z   ΓööΓöÇ 20260827160000_m1_07b_rls_runtime_posture_closure/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8515898Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8516204Z   ΓööΓöÇ 20260829093000_mp2_public_rpc_schema_usage/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8516527Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8516831Z   ΓööΓöÇ 20260830214139_m14_rls_matrix_repair/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8517138Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8517495Z   ΓööΓöÇ 20260831103000_marketplace_search_tracking_profile/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8517934Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8518614Z   ΓööΓöÇ 20260831160000_public_rpc_residual_grant_revoke/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8519125Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8520057Z   ΓööΓöÇ 20260908001_job_opening_posting_split/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8520559Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8521147Z   ΓööΓöÇ 20260908150000_v6_phase1a_labor_profile_schema/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8522192Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8522887Z   ΓööΓöÇ 20260908150001_v6_phase1a_labor_profile_rls/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8523535Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8524109Z   ΓööΓöÇ 20260911001_project_company_name_denorm/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8524579Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8525104Z   ΓööΓöÇ 20260911002_av1_homepage_settings/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8525650Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8526181Z   ΓööΓöÇ 20260912001_av4_media_library/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8526756Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8527333Z   ΓööΓöÇ 20260912140411_n1_placement_case_foundation/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8527958Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8528680Z   ΓööΓöÇ 20260912140412_n1_placement_case_rls/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8529269Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8529962Z   ΓööΓöÇ 20260914212136_n3_service_model_placement/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8530534Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8531073Z   ΓööΓöÇ 20260917000000_referral_attribution_foundation/
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8531823Z     ΓööΓöÇ migration.sql
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8532159Z       
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8532679Z All migrations have been successfully applied.
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8814217Z ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8814963Z Γöé  Update available 5.22.0 -> 8.0.0-rc.15                 Γöé
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8815473Z Γöé                                                         Γöé
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8815989Z Γöé  This is a major update - please follow the guide at    Γöé
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8816543Z Γöé  https://pris.ly/d/major-version-upgrade                Γöé
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8817027Z Γöé                                                         Γöé
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8817504Z Γöé  Run the following to update                            Γöé
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8817977Z Γöé    npm i --save-dev prisma@latest                       Γöé
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8818576Z Γöé    npm i @prisma/client@latest                          Γöé
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate deploy (apply all 39 migrations on container)	2026-09-18T02:02:40.8819059Z ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	∩╗┐2026-09-18T02:02:40.9160431Z ##[group]Run npx prisma migrate status
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:40.9160966Z ^[[36;1mnpx prisma migrate status^[[0m
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:40.9214732Z shell: /usr/bin/bash -e {0}
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:40.9215142Z env:
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:40.9215957Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:40.9216724Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:40.9217243Z   PG_BASELINE_PASSWORD: postgres
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:40.9217673Z   CI_INTEGRATION_STRICT: 1
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:40.9218364Z   DATABASE_URL: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:40.9219341Z   DATABASE_URL_ADMIN: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:40.9219815Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:41.6224115Z Prisma schema loaded from prisma/schema.prisma
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:41.6339736Z Datasource "db": PostgreSQL database "ci_test", schema "public" at "localhost:5432"
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:41.7527670Z 
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:41.7528166Z 39 migrations found in prisma/migrations
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:41.7528775Z 
+Integration (DB tests ┬╖ fail-closed)	Prisma migrate status (sanity: no drift)	2026-09-18T02:02:41.7529042Z Database schema is up to date!
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	∩╗┐2026-09-18T02:02:41.8133975Z ##[group]Run node scripts/ci/container-test-db.mjs --phase=post
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.8134694Z ^[[36;1mnode scripts/ci/container-test-db.mjs --phase=post^[[0m
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.8188616Z shell: /usr/bin/bash -e {0}
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.8189051Z env:
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.8189885Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.8190753Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.8191268Z   PG_BASELINE_PASSWORD: postgres
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.8191699Z   CI_INTEGRATION_STRICT: 1
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.8192067Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.9070399Z BOOTSTRAP_PHASE=wait_for_ready
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.9085000Z BOOTSTRAP_PHASE=db_ready
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.9366618Z ROLE_COUNT=8
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.9367072Z GRANTS_PHASE=post_migrate
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.9423675Z GRANTS_COUNT=1
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.9439133Z VERIFY_POSTURE_ROWS=4
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.9451411Z POSTURE_app_engine_writer=PASS login=true super=false bypassrls=false
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.9452740Z POSTURE_app_user=PASS login=true super=false bypassrls=false
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.9453788Z POSTURE_app_user_writer=PASS login=true super=false bypassrls=false
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.9454601Z POSTURE_hrp_etl=PASS login=true super=false bypassrls=false
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.9455183Z BOOTSTRAP_PHASE=done
+Integration (DB tests ┬╖ fail-closed)	Bootstrap post-migrate grants (table-level for portal_timesheets)	2026-09-18T02:02:41.9455633Z READY role_count=8 grants_count=1
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	∩╗┐2026-09-18T02:02:41.9572418Z ##[group]Run npm run test:integration
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:41.9572951Z ^[[36;1mnpm run test:integration^[[0m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:41.9627288Z shell: /usr/bin/bash -e {0}
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:41.9627700Z env:
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:41.9628621Z   DATABASE_URL_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:41.9629414Z   DATABASE_URL_ADMIN_TEST: ***localhost:5432/ci_test
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:41.9629933Z   PG_BASELINE_PASSWORD: postgres
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:41.9630378Z   CI_INTEGRATION_STRICT: 1
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:41.9630757Z ##[endgroup]
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:42.0630351Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:42.0630673Z > hrp@0.1.0 test:integration
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:42.0631089Z > node scripts/ci/integration-preflight.mjs
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:42.0631326Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:42.0992085Z [integration-preflight] Test DB accepted (guards passed).
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:42.0999000Z [integration-preflight]   writer: postgresql://****@localhost:5432/ci_test  fp=2db199c7dd0a
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:42.1000376Z [integration-preflight]   admin : postgresql://****@localhost:5432/ci_test  fp=0289e3d52825
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:42.5962834Z ^[[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:42.6245066Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:42.6246764Z ^[[1m^[[7m^[[36m RUN ^[[39m^[[27m^[[22m ^[[36mv2.1.9 ^[[39m^[[90m/home/runner/work/HRpartner/HRpartner^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:42.6247903Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.7592778Z ^[[90mstdout^[[2m | tests/db/placement-lifecycle-integration.test.ts^[[2m > ^[[22m^[[2mN3 placement-lifecycle integration ΓÇö DB-touching proof^[[2m > ^[[22m^[[2m(vii) RLS: HR_MANAGER GUC thß║Ñy rows; PUBLIC (no GUC) thß║Ñy 0 ΓÇö FORCE RLS enforced
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.7594808Z ^[[22m^[[39mprisma:error 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.7609818Z Invalid `tx.placement.create()` invocation in
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.7610971Z /home/runner/work/HRpartner/HRpartner/tests/db/placement-lifecycle-integration.test.ts:692:24
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.7611629Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.7611880Z   689 let publicInsertErr: Error | null = null;
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.7612426Z   690 try {
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.7612876Z   691   await withPublicContext(writer, (tx) =>
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.7613605Z ΓåÆ 692     tx.placement.create(
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.7614181Z Error occurred during query execution:
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.7615607Z ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "42501", message: "new row violates row-level security policy for table \"placements\"", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.7616665Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.8836978Z ^[[90mstdout^[[2m | tests/db/placement-lifecycle-integration.test.ts^[[2m > ^[[22m^[[2mN3 placement-lifecycle integration ΓÇö DB-touching proof^[[2m > ^[[22m^[[2m(viii) UNIQUE partial index race: concurrent INSERT c├╣ng (case,opening) ΓåÆ both fulfilled, one winner one replayed
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.8839479Z ^[[22m^[[39mprisma:error 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.8840033Z Invalid `tx.placement.create()` invocation in
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.8840985Z /home/runner/work/HRpartner/HRpartner/src/domains/talent/placement.service.ts:168:40
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.8841627Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.8842013Z   165 const sp = `n3pl_insert_${Math.random().toString(36).slice(2, 10)}`;
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.8842771Z   166 await tx.$executeRawUnsafe(`SAVEPOINT ${sp}`);
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.8843260Z   167 try {
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.8843837Z ΓåÆ 168   const created = await tx.placement.create(
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.8844464Z Unique constraint failed on the (not available)
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:43.8844809Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:44.2837603Z ^[[90mstdout^[[2m | tests/db/placement-lifecycle-integration.test.ts^[[2m > ^[[22m^[[2mN3 placement-lifecycle integration ΓÇö DB-touching proof^[[2m > ^[[22m^[[2m(xiii) RLS/privilege: app_user_writer DELETE bß╗ï REVOKE ΓÇö Placement lß╗ïch sß╗¡ bß║Ñt khß║ú x├│a
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:44.2839703Z ^[[22m^[[39mprisma:error 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:44.2840078Z Invalid `tx.placement.delete()` invocation in
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:44.2840743Z /home/runner/work/HRpartner/HRpartner/tests/db/placement-lifecycle-integration.test.ts:1053:24
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:44.2841653Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:44.2841808Z   1050 let deleteErr: Error | null = null;
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:44.2842121Z   1051 try {
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:44.2842444Z   1052   await withHrManagerContext(writer, actorId, (tx) =>
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:44.2842899Z ΓåÆ 1053     tx.placement.delete(
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:44.2843231Z Error occurred during query execution:
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:44.2844384Z ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "42501", message: "permission denied for table placements", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:44.2845184Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:44.5312431Z  ^[[32mΓ£ô^[[39m tests/db/placement-lifecycle-integration.test.ts ^[[2m(^[[22m^[[2m16 tests^[[22m^[[2m)^[[22m^[[33m 1469^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.1319987Z  ^[[32mΓ£ô^[[39m src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts ^[[2m(^[[22m^[[2m32 tests^[[22m^[[2m)^[[22m^[[33m 340^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.5305322Z ^[[90mstdout^[[2m | src/domains/job-board/public-card-truth.integration.test.ts^[[2m > ^[[22m^[[2mV5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t^[[2m > ^[[22m^[[2mAC-12 ΓÇö publicSelect chß║íy d╞░ß╗¢i principal MKT, ─æ├║ng hai dß╗▒ ├ín public lß╗ìt qua
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.5307905Z ^[[22m^[[39m[gl05 list] total=2 nextOffset=null slugs=["GL05-ELEC-gl05-1789696965385-949130730","GL05-WARE-gl05-1789696965385-949130730"]
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.5308933Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.5476277Z ^[[90mstdout^[[2m | src/domains/job-board/public-card-truth.integration.test.ts^[[2m > ^[[22m^[[2mV5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t^[[2m > ^[[22m^[[2mAC-02/RQ-04 ΓÇö ba mß║úng summary v├á availableSlots ─æ├║ng tr├¬n d├▓ng thß║¡t
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.5479577Z ^[[22m^[[39m[gl05 card GL05-ELEC-gl05-1789696965385-949130730] positionTitles=["C├┤ng nh├ón lß║»p r├íp","Kiß╗âm tra chß║Ñt l╞░ß╗úng"] locations=["KCN VSIP 1 gl05-1789696965385-949130730","KCN Y├¬n Phong gl05-1789696965385-949130730"] shifts=["07:00-16:00","14:00-22:00"] availableSlots=6 shiftType=ca_ngay
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.5480506Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.5656597Z ^[[90mstdout^[[2m | src/domains/job-board/public-card-truth.integration.test.ts^[[2m > ^[[22m^[[2mV5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t^[[2m > ^[[22m^[[2mAC-01/RISK-01/RISK-07 ΓÇö hourlyRateVnd l├á BigInt THß║¼T nh╞░ng DTO chß╗ë c├│ 18 kh├│a allow-list
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.5658705Z ^[[22m^[[39m[gl05 bigint] hourlyRateVnd=45000 typeof=bigint
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.5659107Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.6150053Z ^[[90mstdout^[[2m | src/domains/job-board/public-card-truth.integration.test.ts^[[2m > ^[[22m^[[2mV5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t^[[2m > ^[[22m^[[2mAC-07/DEC-08 ΓÇö facet dß╗▒ng tß╗½ to├án tß║¡p public hß╗úp lß╗ç v├á KH├öNG co lß║íi theo filter
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.6153125Z ^[[22m^[[39m[gl05 facets] keys=["areas","shifts"] areas(RUN)=["KCN ─É├¼nh V┼⌐ gl05-1789696965385-949130730","KCN VSIP 1 gl05-1789696965385-949130730","KCN Y├¬n Phong gl05-1789696965385-949130730"] total(before)=2 total(area=dinhVu)=1
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.6154197Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.6409356Z ^[[90mstdout^[[2m | src/domains/job-board/public-card-truth.integration.test.ts^[[2m > ^[[22m^[[2mV5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t^[[2m > ^[[22m^[[2mAC-12/go-live-12 DEC-14 ΓÇö trang chi tiß║┐t kß╗â Mß╗îI vß╗ï tr├¡ c├▓n hiß╗çu lß╗▒c, card chß╗ë kß╗â vß╗ï tr├¡ c├▓n tuyß╗ân
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.6411921Z ^[[22m^[[39m[gl05 detail GL05-ELEC-gl05-1789696965385-949130730] positions=[["GL05-ASSY",4],["GL05-QC",2],["GL05-FORK",0]] availableSlots=6 needed=10 filled=4 shiftType=null
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.6412511Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.6456899Z ^[[90mstdout^[[2m | src/domains/job-board/public-card-truth.integration.test.ts^[[2m > ^[[22m^[[2mV5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t^[[2m > ^[[22m^[[2mAC-12 ΓÇö dß╗▒ ├ín nß╗Öi bß╗Ö kh├┤ng c├│ card, kh├┤ng facet, v├á trang chi tiß║┐t trß║ú null
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.6459210Z ^[[22m^[[39m[gl05 non-public] getPublicJobDetail(GL05-PRIV-gl05-1789696965385-949130730) => null
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.6459849Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.6887792Z ^[[90mstdout^[[2m | src/domains/job-board/public-card-truth.integration.test.ts^[[2m > ^[[22m^[[2mV5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t^[[2m > ^[[22m^[[2mAC-05 ΓÇö q fold dß║Ñu, kh├┤ng khß╗¢p description; area ─æß╗ìc tß║¡p slot SAU lifecycle
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.6890275Z ^[[22m^[[39m[gl05 q] fold=["GL05-ELEC-gl05-1789696965385-949130730"] description=0 slotDaDu=0
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.6890738Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.7322384Z ^[[90mstdout^[[2m | src/domains/job-board/public-card-truth.integration.test.ts^[[2m > ^[[22m^[[2mV5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t^[[2m > ^[[22m^[[2mAC-05 ΓÇö q fold dß║Ñu, kh├┤ng khß╗¢p description; area ─æß╗ìc tß║¡p slot SAU lifecycle
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.7324192Z ^[[22m^[[39m[gl05 area] yenPhong=["GL05-ELEC-gl05-1789696965385-949130730"] quangChau=0 dinhVu=["GL05-WARE-gl05-1789696965385-949130730"]
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.7325000Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.7617983Z ^[[90mstdout^[[2m | src/domains/job-board/public-card-truth.integration.test.ts^[[2m > ^[[22m^[[2mV5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t^[[2m > ^[[22m^[[2mAC-06 ΓÇö shift khß╗¢p cß║ú nh├ún KH├öNG ─æß╗⌐ng ─æß║ºu, nh├ún cß╗ºa slot ─æ├ú ─æß╗º chß╗ë ti├¬u th├¼ kh├┤ng
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.7619974Z ^[[22m^[[39m[gl05 filter] shift(14:00-22:00)=["GL05-ELEC-gl05-1789696965385-949130730"] shift(18:00-02:00)=0
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.7620524Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.8343618Z ^[[90mstdout^[[2m | src/domains/job-board/public-card-truth.integration.test.ts^[[2m > ^[[22m^[[2mV5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t^[[2m > ^[[22m^[[2mAC-04 ΓÇö total/nextOffset v├á hai trang thß║¡t khß╗¢p nhau, limit bß╗ï kß║╣p [1,50]
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.8345255Z ^[[22m^[[39m[gl05 page] p1=["GL05-WARE-gl05-1789696965385-949130730"] next=1 p2=["GL05-ELEC-gl05-1789696965385-949130730"] next=null past(offset=2)=0 total=2
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.8345861Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.8527741Z ^[[90mstdout^[[2m | src/domains/job-board/public-card-truth.integration.test.ts^[[2m > ^[[22m^[[2mV5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.8529049Z ^[[22m^[[39m[gl05 cleanup] projects c├▓n lß║íi=0 slots c├▓n lß║íi=0 (RUN=gl05-1789696965385-949130730)
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.8529422Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:45.8653245Z  ^[[32mΓ£ô^[[39m src/domains/job-board/public-card-truth.integration.test.ts ^[[2m(^[[22m^[[2m10 tests^[[22m^[[2m)^[[22m^[[33m 476^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:46.2149207Z ^[[90mstdout^[[2m | src/shared/auth/live-rls-posture.m1-07b.test.ts^[[2m > ^[[22m^[[2mV5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables)^[[2m > ^[[22m^[[2mPLN-02: writer grants on the 29 tables are least-privilege (CRUD subset, none grantable)
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:46.2150844Z ^[[22m^[[39m[PLN-02 grants] grantee=app_user_writer privileges=["DELETE","INSERT","SELECT","UPDATE"] tables_with_grants=29/29 is_grantable=NONE
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:46.2151333Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:46.3890106Z  ^[[32mΓ£ô^[[39m src/shared/auth/live-rls-posture.m1-07b.test.ts ^[[2m(^[[22m^[[2m32 tests^[[22m^[[2m)^[[22m^[[90m 283^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:47.2918316Z  ^[[32mΓ£ô^[[39m src/domains/applications/live-integration.mp3c.test.ts ^[[2m(^[[22m^[[2m7 tests^[[22m^[[2m)^[[22m^[[33m 620^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:47.7491802Z  ^[[32mΓ£ô^[[39m src/domains/applications/live-integration.mp2.test.ts ^[[2m(^[[22m^[[2m11 tests^[[22m^[[2m)^[[22m^[[90m 259^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:48.2701103Z  ^[[32mΓ£ô^[[39m src/shared/auth/live-vendor-idor.m1-08.test.ts ^[[2m(^[[22m^[[2m13 tests^[[22m^[[2m)^[[22m^[[90m 243^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:48.6650595Z ^[[90mstderr^[[2m | src/domains/applications/live-integration.ops06a.test.ts^[[2m > ^[[22m^[[2mAC-04/05/08 LIVE ΓÇö chß║╖n ΓçÆ zero write tr├¬n TEST DB thß║¡t^[[2m > ^[[22m^[[2mAC-04: limiter deny ΓçÆ 429 v├á KH├öNG c├│ row n├áo ─æ╞░ß╗úc tß║ío (before/after bß║▒ng nhau)
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:48.6652995Z ^[[22m^[[39m{"schemaVersion":"1.0","timestamp":"2026-09-18T02:02:48.661Z","level":"warn","event":"rate_limit.denied","requestId":"38dcfe9a-deae-4174-bd73-cbc097084b97","meta":{"route":"POST /api/public/jobs/[slug]/applications","status":429,"outcome":"rate_limited","detail":{"surface":"APPLY_IP","retryAfterSec":30}}}
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:48.6654335Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:48.7729520Z  ^[[32mΓ£ô^[[39m src/domains/applications/live-integration.ops06a.test.ts ^[[2m(^[[22m^[[2m6 tests^[[22m^[[2m | ^[[22m^[[33m2 skipped^[[39m^[[2m)^[[22m^[[90m 160^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:49.6112233Z  ^[[32mΓ£ô^[[39m src/domains/security/security-matrix.integration.test.ts ^[[2m(^[[22m^[[2m124 tests^[[22m^[[2m)^[[22m^[[33m 601^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:49.9318997Z  ^[[32mΓ£ô^[[39m src/domains/staffing/4role-staffing.integration.test.ts ^[[2m(^[[22m^[[2m11 tests^[[22m^[[2m)^[[22m^[[90m 74^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.2536661Z ^[[90mstdout^[[2m | src/shared/auth/live-public-read-rls.go-live-04.test.ts^[[2m > ^[[22m^[[2mV5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS^[[2m > ^[[22m^[[2mAC-10(a): current_user kh├┤ng BYPASSRLS v├á kh├┤ng SUPERUSER
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.2537958Z ^[[22m^[[39m[go-live-04][AC-10a] current_user=app_user_writer rolbypassrls=false rolsuper=false
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.2538322Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.2749485Z ^[[90mstdout^[[2m | src/shared/auth/live-public-read-rls.go-live-04.test.ts^[[2m > ^[[22m^[[2mV5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS^[[2m > ^[[22m^[[2mAC-08: c├╣ng kß║┐t nß╗æi, KH├öNG set GUC ΓçÆ app.role rß╗ùng v├á 0 d├▓ng
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.2751200Z ^[[22m^[[39m[go-live-04][AC-08] no-GUC app.role="" total=0 jobs=0 detail(GL04-PUB-gl04-1789696970167-m7gf4ki)=null
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.2751741Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3041998Z ^[[90mstdout^[[2m | src/shared/auth/live-public-read-rls.go-live-04.test.ts^[[2m > ^[[22m^[[2mV5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS^[[2m > ^[[22m^[[2mAC-10(c): helper trß║ú ΓëÑ 1 job v├á mß╗ìi d├▓ng nh├¼n thß║Ñy ─æ╞░ß╗úc ─æß╗üu is_public = true
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3043997Z ^[[22m^[[39m[go-live-04][AC-10c] app.role="MKT" app.user_id="system:public-job-board-read" transaction_read_only=on total=1 jobs=1 visibleRows=1 leaked=[]
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3044602Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3054629Z ^[[90mstdout^[[2m | src/shared/auth/live-public-read-rls.go-live-04.test.ts^[[2m > ^[[22m^[[2mV5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS^[[2m > ^[[22m^[[2mAC-06: dß╗▒ ├ín is_public = false vß║»ng mß║╖t ß╗ƒ mß╗ìi ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3056347Z ^[[22m^[[39m[go-live-04][AC-06] fixture non-public id=prj-priv-gl04-1789696970167-m7gf4ki code=GL04-PRIV-gl04-1789696970167-m7gf4ki isPublic=false status=ACTIVE
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3057217Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3234298Z ^[[90mstdout^[[2m | src/shared/auth/live-public-read-rls.go-live-04.test.ts^[[2m > ^[[22m^[[2mV5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS^[[2m > ^[[22m^[[2mAC-06: dß╗▒ ├ín is_public = false vß║»ng mß║╖t ß╗ƒ mß╗ìi ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3236113Z ^[[22m^[[39m[go-live-04][AC-06] qua helper: detail(GL04-PRIV-gl04-1789696970167-m7gf4ki)=null rlsRows=0 slugs=["GL04-PUB-gl04-1789696970167-m7gf4ki"]
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3236761Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3323113Z ^[[90mstdout^[[2m | src/shared/auth/live-public-read-rls.go-live-04.test.ts^[[2m > ^[[22m^[[2mV5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS^[[2m > ^[[22m^[[2mAC-07: DELETE ph├ít trong transaction cß╗ºa helper bß╗ï tß╗½ chß╗æi SQLSTATE 25006
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3325362Z ^[[22m^[[39m[go-live-04][AC-07] sqlstate=25006 message= Invalid `prisma.$executeRawUnsafe()` invocation: Raw query failed. Code: `25006`. Message: `ERROR: cannot execute DELETE in a read-only transaction`
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3326070Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3463982Z ^[[90mstdout^[[2m | src/shared/auth/live-public-read-rls.go-live-04.test.ts^[[2m > ^[[22m^[[2mV5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3464884Z ^[[22m^[[39m[go-live-04][cleanup] fixture c├▓n lß║íi = 0 (kß╗│ vß╗ìng 0)
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3465167Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.3541786Z  ^[[32mΓ£ô^[[39m src/shared/auth/live-public-read-rls.go-live-04.test.ts ^[[2m(^[[22m^[[2m5 tests^[[22m^[[2m)^[[22m^[[90m 183^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:50.7849719Z  ^[[32mΓ£ô^[[39m src/shared/auth/live-vendor-worker-scope.m1-06b.test.ts ^[[2m(^[[22m^[[2m10 tests^[[22m^[[2m)^[[22m^[[90m 181^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:51.2024609Z  ^[[32mΓ£ô^[[39m tests/db/referral-attribution-foundation.integration.test.ts ^[[2m(^[[22m^[[2m15 tests^[[22m^[[2m)^[[22m^[[90m 207^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:51.4936530Z  ^[[32mΓ£ô^[[39m src/domains/applications/security-boundary.mp2.test.ts ^[[2m(^[[22m^[[2m13 tests^[[22m^[[2m)^[[22m^[[90m 105^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:51.9396129Z  ^[[32mΓ£ô^[[39m src/shared/auth/live-ticket-route-boundary.m1-06d.test.ts ^[[2m(^[[22m^[[2m5 tests^[[22m^[[2m)^[[22m^[[90m 191^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:52.5686477Z  ^[[32mΓ£ô^[[39m src/domains/admin-demand-tree.integration.test.ts ^[[2m(^[[22m^[[2m17 tests^[[22m^[[2m)^[[22m^[[33m 377^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:52.9415502Z  ^[[32mΓ£ô^[[39m src/shared/auth/live-auth-scope.m1-06a.test.ts ^[[2m(^[[22m^[[2m6 tests^[[22m^[[2m)^[[22m^[[90m 128^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:53.2445369Z  ^[[32mΓ£ô^[[39m src/shared/auth/rls-context.test.ts ^[[2m(^[[22m^[[2m9 tests^[[22m^[[2m)^[[22m^[[90m 80^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:53.7190360Z  ^[[32mΓ£ô^[[39m src/shared/auth/matrix-scope.test.ts ^[[2m(^[[22m^[[2m59 tests^[[22m^[[2m)^[[22m^[[90m 254^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:54.1414270Z  ^[[32mΓ£ô^[[39m src/domains/applications/live-integration.mp3b.test.ts ^[[2m(^[[22m^[[2m1 test^[[22m^[[2m)^[[22m^[[90m 183^[[2mms^[[22m^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:54.1554769Z 
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:54.1570013Z ^[[2m Test Files ^[[22m ^[[1m^[[32m20 passed^[[39m^[[22m^[[90m (20)^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:54.1571190Z ^[[2m      Tests ^[[22m ^[[1m^[[32m400 passed^[[39m^[[22m^[[2m | ^[[22m^[[33m2 skipped^[[39m^[[90m (402)^[[39m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:54.1572045Z ^[[2m   Start at ^[[22m 02:02:42
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:54.1574103Z ^[[2m   Duration ^[[22m 11.53s^[[2m (transform 624ms, setup 0ms, collect 1.55s, tests 6.41s, environment 4ms, prepare 1.13s)^[[22m
+Integration (DB tests ┬╖ fail-closed)	Integration tests (container test DB; fail-closed preflight on guard mismatch)	2026-09-18T02:02:54.1574820Z 
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/setup-node@v4	∩╗┐2026-09-18T02:02:54.2106614Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/setup-node@v4	2026-09-18T02:02:54.2107830Z Post job cleanup.
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/setup-node@v4	2026-09-18T02:02:54.3382252Z (node:3890) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/setup-node@v4	2026-09-18T02:02:54.3383113Z (Use `node --trace-deprecation ...` to show where the warning was created)
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/setup-node@v4	2026-09-18T02:02:54.3385860Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-fe29b93b127ccbd26361131b38e17a4a8100d00939daa9fbf6aef928b952fd7a, not saving cache.
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	∩╗┐2026-09-18T02:02:54.3523104Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.3524255Z Post job cleanup.
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.4388884Z [command]/usr/bin/git version
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.4435101Z git version 2.55.0
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.4476256Z Temporarily overriding HOME='/home/runner/work/_temp/d095ea45-0e64-4f16-8f6f-56026ed02644' before making global git config changes
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.4477515Z Adding repository directory to the temporary git global config as a safe directory
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.4482610Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/HRpartner/HRpartner
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.4523148Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.4558876Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.4833197Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.4865171Z http.https://github.com/.extraheader
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.4877061Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.4917763Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.5279801Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Integration (DB tests ┬╖ fail-closed)	Post Run actions/checkout@v4	2026-09-18T02:02:54.5306069Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Integration (DB tests ┬╖ fail-closed)	Stop containers	∩╗┐2026-09-18T02:02:54.5778203Z Print service container logs: 6310aeae7afd4ec8be065cf4d26eae90_postgres16alpine_efa10a
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5783124Z ##[command]/usr/bin/docker logs --details 3f3b4b0f8170580d5bbd9c5597c91a90d21979e9b79b4c74efaa773aa906bea4
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5912886Z  The files belonging to this database system will be owned by user "postgres".
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5914585Z  sh: locale: not found
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5915019Z  This user must also own the server process.
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5916022Z  
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5917402Z  The database cluster will be initialized with locale "en_US.utf8".
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5918912Z  The default database encoding has accordingly been set to "UTF8".
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5919971Z  The default text search configuration will be set to "english".
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5920509Z  
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5920810Z  Data page checksums are disabled.
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5921223Z  
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5921701Z  fixing permissions on existing directory /var/lib/postgresql/data ... ok
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5922379Z  creating subdirectories ... ok
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5922865Z  selecting dynamic shared memory implementation ... posix
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5923235Z  selecting default max_connections ... 100
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5923546Z  selecting default shared_buffers ... 128MB
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5923848Z  selecting default time zone ... UTC
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5924140Z  creating configuration files ... ok
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5924416Z  running bootstrap script ... ok
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5924733Z  performing post-bootstrap initialization ... ok
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5925052Z  syncing data to disk ... ok
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5925296Z  
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5925483Z  
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5925730Z  Success. You can now start the database server using:
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5926062Z  
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5926320Z      pg_ctl -D /var/lib/postgresql/data -l logfile start
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5926630Z  
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5927192Z  waiting for server to start....2026-09-18 02:02:17.700 UTC [40] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5927957Z  2026-09-18 02:02:17.163 UTC [34] WARNING:  no usable system locales were found
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5928693Z  initdb: warning: enabling "trust" authentication for local connections
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5929383Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5930498Z  2026-09-18 02:02:17.972 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5931129Z  2026-09-18 02:02:17.972 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5931586Z  2026-09-18 02:02:17.972 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5932131Z  2026-09-18 02:02:17.973 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5932691Z  2026-09-18 02:02:17.976 UTC [56] LOG:  database system was shut down at 2026-09-18 02:02:17 UTC
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5933186Z  2026-09-18 02:02:17.981 UTC [1] LOG:  database system is ready to accept connections
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5933727Z  2026-09-18 02:02:43.745 UTC [109] ERROR:  new row violates row-level security policy for table "placements"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5934936Z  2026-09-18 02:02:43.745 UTC [109] STATEMENT:  INSERT INTO "public"."placements" ("id","placement_case_id","labor_profile_id","job_opening_id","status","selected_at","version","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."PlacementStatus"),$6,$7,$8,$9) RETURNING "public"."placements"."id"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5936182Z  2026-09-18 02:02:43.879 UTC [110] ERROR:  duplicate key value violates unique constraint "placements_active_unique"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5938217Z  2026-09-18 02:02:43.879 UTC [110] STATEMENT:  INSERT INTO "public"."placements" ("id","placement_case_id","labor_profile_id","job_opening_id","client_company_id","project_id","service_model_snapshot","status","selected_at","created_by_user_id","version","created_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,CAST($7::text AS "public"."ServiceModel"),CAST($8::text AS "public"."PlacementStatus"),$9,$10,$11,$12,$13) RETURNING "public"."placements"."id", "public"."placements"."status"::text, "public"."placements"."service_model_snapshot"::text, "public"."placements"."client_company_id", "public"."placements"."project_id"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5940562Z  2026-09-18 02:02:44.281 UTC [116] ERROR:  permission denied for table placements
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5943575Z  2026-09-18 02:02:44.281 UTC [116] STATEMENT:  DELETE FROM "public"."placements" WHERE ("public"."placements"."id" = $1 AND 1=1) RETURNING "public"."placements"."id", "public"."placements"."placement_case_id", "public"."placements"."labor_profile_id", "public"."placements"."job_opening_id", "public"."placements"."client_company_id", "public"."placements"."project_id", "public"."placements"."service_model_snapshot"::text, "public"."placements"."status"::text, "public"."placements"."selected_at", "public"."placements"."confirmed_at", "public"."placements"."effective_at", "public"."placements"."evidence_acknowledged_at", "public"."placements"."evidence_acknowledged_by_user_id", "public"."placements"."evidence_acknowledgement_ref", "public"."placements"."failure_reason", "public"."placements"."source_candidate_submission_id", "public"."placements"."created_by_user_id", "public"."placements"."version", "public"."placements"."created_at", "public"."placements"."updated_at"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5946627Z  2026-09-18 02:02:44.951 UTC [120] ERROR:  new row violates row-level security policy for table "tickets"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5953171Z  2026-09-18 02:02:44.951 UTC [120] STATEMENT:  INSERT INTO "public"."tickets" ("id","type","status","priority","worker_id","created_by_actor_id","created_by_role","created_at","amount_vnd","deduction_vnd","leave_from_date","leave_to_date","title","description","metadata","is_overdue","version") VALUES ($1,CAST($2::text AS "public"."TicketType"),CAST($3::text AS "public"."TicketStatus"),CAST($4::text AS "public"."TicketPriority"),$5,$6,CAST($7::text AS "public"."TicketActorRole"),$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING "public"."tickets"."id", "public"."tickets"."type"::text, "public"."tickets"."status"::text, "public"."tickets"."priority"::text, "public"."tickets"."worker_id", "public"."tickets"."created_by_actor_id", "public"."tickets"."created_by_role"::text, "public"."tickets"."created_at", "public"."tickets"."assignment_id", "public"."tickets"."work_date", "public"."tickets"."current_hours", "public"."tickets"."requested_hours", "public"."tickets"."delta_hours", "public"."tickets"."reason_code", "public"."tickets"."amount_vnd", "public"."tickets"."requested_pay_date", "public"."tickets"."deduct_month", "public"."tickets"."deduct_year", "public"."tickets"."deduction_vnd", "public"."tickets"."leave_from_date", "public"."tickets"."leave_to_date", "public"."tickets"."leave_days", "public"."tickets"."leave_type_code", "public"."tickets"."title", "public"."tickets"."description", "public"."tickets"."metadata", "public"."tickets"."sla_due_at", "public"."tickets"."is_overdue", "public"."tickets"."version"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5961469Z  2026-09-18 02:02:44.976 UTC [120] ERROR:  new row violates row-level security policy for table "tickets"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5967061Z  2026-09-18 02:02:44.976 UTC [120] STATEMENT:  INSERT INTO "public"."tickets" ("id","type","status","priority","worker_id","created_by_actor_id","created_by_role","created_at","amount_vnd","deduction_vnd","leave_from_date","leave_to_date","title","description","metadata","is_overdue","version") VALUES ($1,CAST($2::text AS "public"."TicketType"),CAST($3::text AS "public"."TicketStatus"),CAST($4::text AS "public"."TicketPriority"),$5,$6,CAST($7::text AS "public"."TicketActorRole"),$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING "public"."tickets"."id", "public"."tickets"."type"::text, "public"."tickets"."status"::text, "public"."tickets"."priority"::text, "public"."tickets"."worker_id", "public"."tickets"."created_by_actor_id", "public"."tickets"."created_by_role"::text, "public"."tickets"."created_at", "public"."tickets"."assignment_id", "public"."tickets"."work_date", "public"."tickets"."current_hours", "public"."tickets"."requested_hours", "public"."tickets"."delta_hours", "public"."tickets"."reason_code", "public"."tickets"."amount_vnd", "public"."tickets"."requested_pay_date", "public"."tickets"."deduct_month", "public"."tickets"."deduct_year", "public"."tickets"."deduction_vnd", "public"."tickets"."leave_from_date", "public"."tickets"."leave_to_date", "public"."tickets"."leave_days", "public"."tickets"."leave_type_code", "public"."tickets"."title", "public"."tickets"."description", "public"."tickets"."metadata", "public"."tickets"."sla_due_at", "public"."tickets"."is_overdue", "public"."tickets"."version"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5973146Z  2026-09-18 02:02:44.990 UTC [120] ERROR:  new row violates row-level security policy for table "tickets"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5977515Z  2026-09-18 02:02:44.990 UTC [120] STATEMENT:  INSERT INTO "public"."tickets" ("id","type","status","priority","worker_id","created_by_actor_id","created_by_role","created_at","amount_vnd","deduction_vnd","leave_from_date","leave_to_date","title","description","metadata","is_overdue","version") VALUES ($1,CAST($2::text AS "public"."TicketType"),CAST($3::text AS "public"."TicketStatus"),CAST($4::text AS "public"."TicketPriority"),$5,$6,CAST($7::text AS "public"."TicketActorRole"),$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING "public"."tickets"."id", "public"."tickets"."type"::text, "public"."tickets"."status"::text, "public"."tickets"."priority"::text, "public"."tickets"."worker_id", "public"."tickets"."created_by_actor_id", "public"."tickets"."created_by_role"::text, "public"."tickets"."created_at", "public"."tickets"."assignment_id", "public"."tickets"."work_date", "public"."tickets"."current_hours", "public"."tickets"."requested_hours", "public"."tickets"."delta_hours", "public"."tickets"."reason_code", "public"."tickets"."amount_vnd", "public"."tickets"."requested_pay_date", "public"."tickets"."deduct_month", "public"."tickets"."deduct_year", "public"."tickets"."deduction_vnd", "public"."tickets"."leave_from_date", "public"."tickets"."leave_to_date", "public"."tickets"."leave_days", "public"."tickets"."leave_type_code", "public"."tickets"."title", "public"."tickets"."description", "public"."tickets"."metadata", "public"."tickets"."sla_due_at", "public"."tickets"."is_overdue", "public"."tickets"."version"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5982460Z  2026-09-18 02:02:45.003 UTC [120] ERROR:  new row violates row-level security policy for table "tickets"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5986660Z  2026-09-18 02:02:45.003 UTC [120] STATEMENT:  INSERT INTO "public"."tickets" ("id","type","status","priority","worker_id","created_by_actor_id","created_by_role","created_at","amount_vnd","deduction_vnd","title","description","metadata","is_overdue","version") VALUES ($1,CAST($2::text AS "public"."TicketType"),CAST($3::text AS "public"."TicketStatus"),CAST($4::text AS "public"."TicketPriority"),$5,$6,CAST($7::text AS "public"."TicketActorRole"),$8,$9,$10,$11,$12,$13,$14,$15) RETURNING "public"."tickets"."id", "public"."tickets"."type"::text, "public"."tickets"."status"::text, "public"."tickets"."priority"::text, "public"."tickets"."worker_id", "public"."tickets"."created_by_actor_id", "public"."tickets"."created_by_role"::text, "public"."tickets"."created_at", "public"."tickets"."assignment_id", "public"."tickets"."work_date", "public"."tickets"."current_hours", "public"."tickets"."requested_hours", "public"."tickets"."delta_hours", "public"."tickets"."reason_code", "public"."tickets"."amount_vnd", "public"."tickets"."requested_pay_date", "public"."tickets"."deduct_month", "public"."tickets"."deduct_year", "public"."tickets"."deduction_vnd", "public"."tickets"."leave_from_date", "public"."tickets"."leave_to_date", "public"."tickets"."leave_days", "public"."tickets"."leave_type_code", "public"."tickets"."title", "public"."tickets"."description", "public"."tickets"."metadata", "public"."tickets"."sla_due_at", "public"."tickets"."is_overdue", "public"."tickets"."version"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5991464Z  2026-09-18 02:02:45.045 UTC [120] ERROR:  new row violates row-level security policy for table "ticket_comments"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5993568Z  2026-09-18 02:02:45.045 UTC [120] STATEMENT:  INSERT INTO "public"."ticket_comments" ("id","ticket_id","author_id","author_role","author_name","body","is_internal","created_at","updated_at") VALUES ($1,$2,$3,CAST($4::text AS "public"."TicketActorRole"),$5,$6,$7,$8,$9) RETURNING "public"."ticket_comments"."id", "public"."ticket_comments"."ticket_id", "public"."ticket_comments"."author_id", "public"."ticket_comments"."author_role"::text, "public"."ticket_comments"."author_name", "public"."ticket_comments"."body", "public"."ticket_comments"."is_internal", "public"."ticket_comments"."created_at", "public"."ticket_comments"."updated_at"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5995623Z  2026-09-18 02:02:46.236 UTC [125] ERROR:  new row violates row-level security policy for table "worker_deductions"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5997233Z  2026-09-18 02:02:46.236 UTC [125] STATEMENT:  INSERT INTO "public"."worker_deductions" ("id","worker_id","amount_vnd","reason","status","created_at") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."worker_deductions"."id", "public"."worker_deductions"."worker_id", "public"."worker_deductions"."amount_vnd", "public"."worker_deductions"."reason", "public"."worker_deductions"."status", "public"."worker_deductions"."created_by", "public"."worker_deductions"."created_at"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.5999010Z  2026-09-18 02:02:46.274 UTC [125] ERROR:  new row violates row-level security policy for table "client_companies"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6000599Z  2026-09-18 02:02:46.274 UTC [125] STATEMENT:  INSERT INTO "public"."client_companies" ("id","code","name","status","created_at") VALUES ($1,$2,$3,$4,$5) RETURNING "public"."client_companies"."id", "public"."client_companies"."code", "public"."client_companies"."name", "public"."client_companies"."tax_code", "public"."client_companies"."industry", "public"."client_companies"."company_size", "public"."client_companies"."status", "public"."client_companies"."created_at"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6002189Z  2026-09-18 02:02:46.305 UTC [125] ERROR:  new row violates row-level security policy for table "client_rate_cards"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6004022Z  2026-09-18 02:02:46.305 UTC [125] STATEMENT:  INSERT INTO "public"."client_rate_cards" ("id","contract_id","rate_type","price","effective_from","created_at") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."client_rate_cards"."id", "public"."client_rate_cards"."contract_id", "public"."client_rate_cards"."rate_type", "public"."client_rate_cards"."price", "public"."client_rate_cards"."work_type", "public"."client_rate_cards"."site_id", "public"."client_rate_cards"."effective_from", "public"."client_rate_cards"."effective_to", "public"."client_rate_cards"."created_at"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6006061Z  2026-09-18 02:02:46.309 UTC [125] ERROR:  new row violates row-level security policy for table "vendor_rate_cards"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6007868Z  2026-09-18 02:02:46.309 UTC [125] STATEMENT:  INSERT INTO "public"."vendor_rate_cards" ("id","contract_id","rate_type","price","effective_from","created_at") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."vendor_rate_cards"."id", "public"."vendor_rate_cards"."contract_id", "public"."vendor_rate_cards"."rate_type", "public"."vendor_rate_cards"."price", "public"."vendor_rate_cards"."work_type", "public"."vendor_rate_cards"."site_id", "public"."vendor_rate_cards"."effective_from", "public"."vendor_rate_cards"."effective_to", "public"."vendor_rate_cards"."created_at"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6010131Z  2026-09-18 02:02:46.324 UTC [125] ERROR:  new row violates row-level security policy for table "ctv_withdrawal_requests"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6012123Z  2026-09-18 02:02:46.324 UTC [125] STATEMENT:  INSERT INTO "public"."ctv_withdrawal_requests" ("id","ctv_id","amount_vnd","bank_account","bank_name","status","created_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "public"."ctv_withdrawal_requests"."id", "public"."ctv_withdrawal_requests"."ctv_id", "public"."ctv_withdrawal_requests"."amount_vnd", "public"."ctv_withdrawal_requests"."bank_account", "public"."ctv_withdrawal_requests"."bank_name", "public"."ctv_withdrawal_requests"."status", "public"."ctv_withdrawal_requests"."created_at", "public"."ctv_withdrawal_requests"."updated_at"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6014282Z  2026-09-18 02:02:46.328 UTC [125] ERROR:  new row violates row-level security policy for table "ctv_withdrawal_requests"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6016239Z  2026-09-18 02:02:46.328 UTC [125] STATEMENT:  INSERT INTO "public"."ctv_withdrawal_requests" ("id","ctv_id","amount_vnd","bank_account","bank_name","status","created_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "public"."ctv_withdrawal_requests"."id", "public"."ctv_withdrawal_requests"."ctv_id", "public"."ctv_withdrawal_requests"."amount_vnd", "public"."ctv_withdrawal_requests"."bank_account", "public"."ctv_withdrawal_requests"."bank_name", "public"."ctv_withdrawal_requests"."status", "public"."ctv_withdrawal_requests"."created_at", "public"."ctv_withdrawal_requests"."updated_at"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6018177Z  2026-09-18 02:02:47.146 UTC [127] ERROR:  duplicate key value violates unique constraint "one_active_assignment"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6019003Z  2026-09-18 02:02:47.146 UTC [127] DETAIL:  Key (worker_id)=(e24c8bfd-1b8e-46e2-ae95-458ad1833c12) already exists.
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6022896Z  2026-09-18 02:02:47.146 UTC [127] STATEMENT:  INSERT INTO "public"."project_assignments" ("id","worker_id","project_id","employee_code","employment_type","valid_from","status","is_primary","salary_per_day_vnd","salary_type","created_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "public"."project_assignments"."id", "public"."project_assignments"."worker_id", "public"."project_assignments"."project_id", "public"."project_assignments"."staffing_order_id", "public"."project_assignments"."employee_code", "public"."project_assignments"."employment_type", "public"."project_assignments"."work_setting", "public"."project_assignments"."valid_from", "public"."project_assignments"."valid_to", "public"."project_assignments"."status", "public"."project_assignments"."is_primary", "public"."project_assignments"."manager_id", "public"."project_assignments"."referrer_id", "public"."project_assignments"."salary_per_day_vnd", "public"."project_assignments"."salary_type", "public"."project_assignments"."salary_month_vnd", "public"."project_assignments"."transfer_reason", "public"."project_assignments"."submission_id", "public"."project_assignments"."staffing_order_slot_id", "public"."project_assignments"."placement_id", "public"."project_assignments"."created_at"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6027211Z  2026-09-18 02:02:47.156 UTC [127] ERROR:  duplicate key value violates unique constraint "project_assignments_submission_id_key"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6027934Z  2026-09-18 02:02:47.156 UTC [127] DETAIL:  Key (submission_id)=(da9b01ab-b2d3-4c95-aeb4-c8117638fd7f) already exists.
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6032085Z  2026-09-18 02:02:47.156 UTC [127] STATEMENT:  INSERT INTO "public"."project_assignments" ("id","worker_id","project_id","employee_code","employment_type","valid_from","status","is_primary","salary_per_day_vnd","salary_type","submission_id","created_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING "public"."project_assignments"."id", "public"."project_assignments"."worker_id", "public"."project_assignments"."project_id", "public"."project_assignments"."staffing_order_id", "public"."project_assignments"."employee_code", "public"."project_assignments"."employment_type", "public"."project_assignments"."work_setting", "public"."project_assignments"."valid_from", "public"."project_assignments"."valid_to", "public"."project_assignments"."status", "public"."project_assignments"."is_primary", "public"."project_assignments"."manager_id", "public"."project_assignments"."referrer_id", "public"."project_assignments"."salary_per_day_vnd", "public"."project_assignments"."salary_type", "public"."project_assignments"."salary_month_vnd", "public"."project_assignments"."transfer_reason", "public"."project_assignments"."submission_id", "public"."project_assignments"."staffing_order_slot_id", "public"."project_assignments"."placement_id", "public"."project_assignments"."created_at"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6036441Z  2026-09-18 02:02:47.158 UTC [127] ERROR:  duplicate key value violates unique constraint "project_assignments_project_id_employee_code_key"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6037323Z  2026-09-18 02:02:47.158 UTC [127] DETAIL:  Key (project_id, employee_code)=(902b50d8-e307-4d80-8ef2-895bec52d31f, EMP-1-1789696967110-lhdv92n) already exists.
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6041517Z  2026-09-18 02:02:47.158 UTC [127] STATEMENT:  INSERT INTO "public"."project_assignments" ("id","worker_id","project_id","employee_code","employment_type","valid_from","status","is_primary","salary_per_day_vnd","salary_type","created_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "public"."project_assignments"."id", "public"."project_assignments"."worker_id", "public"."project_assignments"."project_id", "public"."project_assignments"."staffing_order_id", "public"."project_assignments"."employee_code", "public"."project_assignments"."employment_type", "public"."project_assignments"."work_setting", "public"."project_assignments"."valid_from", "public"."project_assignments"."valid_to", "public"."project_assignments"."status", "public"."project_assignments"."is_primary", "public"."project_assignments"."manager_id", "public"."project_assignments"."referrer_id", "public"."project_assignments"."salary_per_day_vnd", "public"."project_assignments"."salary_type", "public"."project_assignments"."salary_month_vnd", "public"."project_assignments"."transfer_reason", "public"."project_assignments"."submission_id", "public"."project_assignments"."staffing_order_slot_id", "public"."project_assignments"."placement_id", "public"."project_assignments"."created_at"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6045486Z  2026-09-18 02:02:47.569 UTC [137] ERROR:  JOB_NOT_AVAILABLE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6046356Z  2026-09-18 02:02:47.569 UTC [137] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 62 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6047421Z  2026-09-18 02:02:47.569 UTC [137] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6048231Z  2026-09-18 02:02:47.575 UTC [137] ERROR:  JOB_NOT_AVAILABLE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6049265Z  2026-09-18 02:02:47.575 UTC [137] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 62 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6050306Z  2026-09-18 02:02:47.575 UTC [137] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6050858Z  2026-09-18 02:02:47.580 UTC [137] ERROR:  JOB_NOT_AVAILABLE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6051662Z  2026-09-18 02:02:47.580 UTC [137] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 62 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6052659Z  2026-09-18 02:02:47.580 UTC [137] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6053236Z  2026-09-18 02:02:47.585 UTC [137] ERROR:  JOB_NOT_AVAILABLE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6054056Z  2026-09-18 02:02:47.585 UTC [137] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 62 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6055088Z  2026-09-18 02:02:47.585 UTC [137] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6055641Z  2026-09-18 02:02:47.590 UTC [137] ERROR:  JOB_NOT_AVAILABLE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6056609Z  2026-09-18 02:02:47.590 UTC [137] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 62 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6057626Z  2026-09-18 02:02:47.590 UTC [137] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6058216Z  2026-09-18 02:02:47.603 UTC [137] ERROR:  IDEMPOTENCY_PAYLOAD_MISMATCH
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6059226Z  2026-09-18 02:02:47.603 UTC [137] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 24 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6060249Z  2026-09-18 02:02:47.603 UTC [137] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6060837Z  2026-09-18 02:02:47.610 UTC [137] ERROR:  DUPLICATE_APPLICATION
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6061686Z  2026-09-18 02:02:47.610 UTC [137] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 70 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6062704Z  2026-09-18 02:02:47.610 UTC [137] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6063486Z  2026-09-18 02:02:47.622 UTC [137] ERROR:  duplicate key value violates unique constraint "candidate_submissions_idempotency_key_hash_key"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6064315Z  2026-09-18 02:02:47.622 UTC [137] STATEMENT:  INSERT INTO candidate_submissions (id, full_name, phone, idempotency_key_hash, status, created_at)
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6064919Z  	           VALUES ($1,'Dup Guard','0900000000',$2,'NEW', now())
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6065285Z  2026-09-18 02:02:47.683 UTC [142] ERROR:  DUPLICATE_APPLICATION
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6066119Z  2026-09-18 02:02:47.683 UTC [142] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 70 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6067132Z  2026-09-18 02:02:47.683 UTC [142] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6067856Z  2026-09-18 02:02:47.683 UTC [140] ERROR:  DUPLICATE_APPLICATION
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6068858Z  2026-09-18 02:02:47.683 UTC [140] CONTEXT:  PL/pgSQL function hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text) line 70 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6069884Z  2026-09-18 02:02:47.683 UTC [140] STATEMENT:  SELECT * FROM hrp_public_apply_submission($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6070520Z  2026-09-18 02:02:50.325 UTC [154] ERROR:  cannot execute DELETE in a read-only transaction
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6071050Z  2026-09-18 02:02:50.325 UTC [154] STATEMENT:  DELETE FROM outsourcing_projects WHERE id = $1
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6071660Z  2026-09-18 02:02:51.124 UTC [158] ERROR:  new row violates row-level security policy for table "referral_attributions"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6072861Z  2026-09-18 02:02:51.124 UTC [158] STATEMENT:  INSERT INTO referral_attributions(id, referrer_user_id, affiliate_code_snapshot, first_clicked_at, expires_at, status, updated_at) VALUES ('0850c59c-8f98-4661-826a-6efa06a2f1bc', 'n2-1-b33961e5-worker', 'snap', NOW(), NOW(), 'ACTIVE', NOW())
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6074023Z  2026-09-18 02:02:51.134 UTC [158] ERROR:  new row violates row-level security policy for table "referral_attributions"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6075160Z  2026-09-18 02:02:51.134 UTC [158] STATEMENT:  INSERT INTO referral_attributions(id, referrer_user_id, affiliate_code_snapshot, first_clicked_at, expires_at, status, updated_at) VALUES ('b939aa5a-e293-42f3-b282-fbd5cf82f02c', 'n2-1-b33961e5-worker', 'snap', NOW(), NOW(), 'ACTIVE', NOW())
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6076362Z  2026-09-18 02:02:51.154 UTC [157] ERROR:  affiliate_code_snapshot is immutable
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6076924Z  2026-09-18 02:02:51.154 UTC [157] CONTEXT:  PL/pgSQL function referral_attributions_immutable_update() line 5 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6077738Z  2026-09-18 02:02:51.154 UTC [157] STATEMENT:  UPDATE referral_attributions SET affiliate_code_snapshot = 'changed' WHERE id = '469f2cb5-973b-474c-b872-777441032c67'
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6078574Z  2026-09-18 02:02:51.156 UTC [157] ERROR:  created_at is immutable
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6079098Z  2026-09-18 02:02:51.156 UTC [157] CONTEXT:  PL/pgSQL function referral_attributions_immutable_update() line 8 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6079842Z  2026-09-18 02:02:51.156 UTC [157] STATEMENT:  UPDATE referral_attributions SET created_at = NOW() WHERE id = '469f2cb5-973b-474c-b872-777441032c67'
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6080521Z  2026-09-18 02:02:51.159 UTC [157] ERROR:  labor_profile_id is write-once (NULL -> value only)
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6081169Z  2026-09-18 02:02:51.159 UTC [157] CONTEXT:  PL/pgSQL function referral_attributions_labor_profile_id_write_once() line 15 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6082034Z  2026-09-18 02:02:51.159 UTC [157] STATEMENT:  UPDATE referral_attributions SET labor_profile_id = 'n2-1-b33961e5-lp2' WHERE id = 'e75e7a95-dd76-447d-9822-38cdb69832b2'
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6082856Z  2026-09-18 02:02:51.163 UTC [157] ERROR:  referral_attributions: terminal status EXPIRED cannot transition to REVOKED
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6083552Z  2026-09-18 02:02:51.163 UTC [157] CONTEXT:  PL/pgSQL function referral_attributions_lifecycle_transition() line 8 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6084310Z  2026-09-18 02:02:51.163 UTC [157] STATEMENT:  UPDATE referral_attributions SET status = 'REVOKED' WHERE id = '5ea35175-420f-444d-a03f-1e8e55bcf281'
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6084957Z  2026-09-18 02:02:51.164 UTC [157] ERROR:  referral_attributions rows are never deleted
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6085525Z  2026-09-18 02:02:51.164 UTC [157] CONTEXT:  PL/pgSQL function referral_attributions_block_delete() line 2 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6086213Z  2026-09-18 02:02:51.164 UTC [157] STATEMENT:  DELETE FROM referral_attributions WHERE id = '96a015f1-3ed8-44b3-b848-2a1e60379adf'
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6086811Z  2026-09-18 02:02:51.165 UTC [157] ERROR:  referral_attributions rows are never deleted
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6087356Z  2026-09-18 02:02:51.165 UTC [157] CONTEXT:  PL/pgSQL function referral_attributions_block_delete() line 2 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6088188Z  2026-09-18 02:02:51.165 UTC [157] STATEMENT:  DELETE FROM referral_attributions WHERE id = '3838e021-0d66-4cca-b818-de6f392ad36c'
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6089083Z  2026-09-18 02:02:51.166 UTC [157] ERROR:  referral_attributions rows are never deleted
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6089624Z  2026-09-18 02:02:51.166 UTC [157] CONTEXT:  PL/pgSQL function referral_attributions_block_delete() line 2 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6090295Z  2026-09-18 02:02:51.166 UTC [157] STATEMENT:  DELETE FROM referral_attributions WHERE id = '469f2cb5-973b-474c-b872-777441032c67'
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6090902Z  2026-09-18 02:02:51.167 UTC [157] ERROR:  referral_attributions rows are never deleted
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6091440Z  2026-09-18 02:02:51.167 UTC [157] CONTEXT:  PL/pgSQL function referral_attributions_block_delete() line 2 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6092107Z  2026-09-18 02:02:51.167 UTC [157] STATEMENT:  DELETE FROM referral_attributions WHERE id = 'e75e7a95-dd76-447d-9822-38cdb69832b2'
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6092689Z  2026-09-18 02:02:51.167 UTC [157] ERROR:  referral_attributions rows are never deleted
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6093222Z  2026-09-18 02:02:51.167 UTC [157] CONTEXT:  PL/pgSQL function referral_attributions_block_delete() line 2 at RAISE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6093882Z  2026-09-18 02:02:51.167 UTC [157] STATEMENT:  DELETE FROM referral_attributions WHERE id = '5ea35175-420f-444d-a03f-1e8e55bcf281'
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6094810Z  2026-09-18 02:02:51.176 UTC [157] ERROR:  update or delete on table "labor_profiles" violates foreign key constraint "referral_attributions_labor_profile_id_fkey" on table "referral_attributions"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6095901Z  2026-09-18 02:02:51.176 UTC [157] DETAIL:  Key (id)=(n2-1-b33961e5-lp1) is still referenced from table "referral_attributions".
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6096667Z  2026-09-18 02:02:51.176 UTC [157] STATEMENT:  DELETE FROM labor_profiles WHERE id IN ('n2-1-b33961e5-worker', 'n2-1-b33961e5-lp1', 'n2-1-b33961e5-lp2')
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6097620Z  2026-09-18 02:02:51.186 UTC [157] ERROR:  update or delete on table "users" violates foreign key constraint "referral_attributions_referrer_user_id_fkey" on table "referral_attributions"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6098691Z  2026-09-18 02:02:51.186 UTC [157] DETAIL:  Key (id)=(n2-1-b33961e5-worker) is still referenced from table "referral_attributions".
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6099391Z  2026-09-18 02:02:51.186 UTC [157] STATEMENT:  DELETE FROM users WHERE id IN ('n2-1-b33961e5-worker', 'n2-1-b33961e5-admin')
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6100062Z  2026-09-18 02:02:51.488 UTC [163] ERROR:  new row violates row-level security policy for table "candidate_submissions"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6100755Z  2026-09-18 02:02:51.488 UTC [163] STATEMENT:  INSERT INTO candidate_submissions (id, project_id, full_name, phone, status)
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6101299Z  	             VALUES (gen_random_uuid()::text, NULL, 'x', '0', 'NEW')
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6101808Z  2026-09-18 02:02:17.700 UTC [40] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6102352Z  2026-09-18 02:02:17.703 UTC [43] LOG:  database system was shut down at 2026-09-18 02:02:17 UTC
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6102843Z  2026-09-18 02:02:17.707 UTC [40] LOG:  database system is ready to accept connections
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6103211Z   done
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6103408Z  server started
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6103621Z  CREATE DATABASE
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6103827Z  
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6104017Z  
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6104336Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6104727Z  
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6105089Z  waiting for server to shut down....2026-09-18 02:02:17.848 UTC [40] LOG:  received fast shutdown request
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6105599Z  2026-09-18 02:02:17.848 UTC [40] LOG:  aborting any active transactions
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6106150Z  2026-09-18 02:02:17.852 UTC [40] LOG:  background worker "logical replication launcher" (PID 46) exited with exit code 1
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6106818Z  2026-09-18 02:02:17.852 UTC [41] LOG:  shutting down
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6107204Z  2026-09-18 02:02:17.853 UTC [41] LOG:  checkpoint starting: shutdown immediate
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6108269Z  2026-09-18 02:02:17.867 UTC [41] LOG:  checkpoint complete: wrote 926 buffers (5.7%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.012 s, sync=0.002 s, total=0.016 s; sync files=301, longest=0.001 s, average=0.001 s; distance=4283 kB, estimate=4283 kB; lsn=0/1925D60, redo lsn=0/1925D60
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6109444Z  2026-09-18 02:02:17.875 UTC [40] LOG:  database system is shut down
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6109781Z   done
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6109976Z  server stopped
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6110187Z  
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6110432Z  PostgreSQL init process complete; ready for start up.
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6110740Z  
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6116102Z Stop and remove container: 6310aeae7afd4ec8be065cf4d26eae90_postgres16alpine_efa10a
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:54.6120982Z ##[command]/usr/bin/docker rm --force 3f3b4b0f8170580d5bbd9c5597c91a90d21979e9b79b4c74efaa773aa906bea4
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:55.2206507Z 3f3b4b0f8170580d5bbd9c5597c91a90d21979e9b79b4c74efaa773aa906bea4
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:55.2237020Z Remove container network: github_network_5605e09819ee44ad93b5265b45b5bfd0
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:55.2241720Z ##[command]/usr/bin/docker network rm github_network_5605e09819ee44ad93b5265b45b5bfd0
+Integration (DB tests ┬╖ fail-closed)	Stop containers	2026-09-18T02:02:55.3284812Z github_network_5605e09819ee44ad93b5265b45b5bfd0
+Integration (DB tests ┬╖ fail-closed)	Complete job	∩╗┐2026-09-18T02:02:55.3358788Z Cleaning up orphan processes
+Integration (DB tests ┬╖ fail-closed)	Complete job	2026-09-18T02:02:55.3700652Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
