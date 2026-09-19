@@ -8,20 +8,24 @@
 | Spec version | v1.0 |
 | Control | Value |
 |---|---|
-| Round | 2 (Tier 0 verdict on BLK-01 APPROVED with correction) |
-| Status | READY_FOR_AUDIT (round 2 — Tier 0 verdict on BLK-01 APPROVED with correction; implementation complete; awaiting T3 read-only audit) |
+| Round | 4 (T3 audit R3 PASS; T0 verdict ACCEPTED WITH GATES; SHA 71a9859 attached) |
+| Status | `READY_FOR_AUDIT` (T3 audit R3 PASS; T0 verdict ACCEPTED WITH GATES; SHA 71a9859 attached; merge decision = T0/Owner) |
 | Branch | `tier1/hrp-v6-n2-aff-03-apply-attribution` |
-| Implementation SHA | `aec3f4d` (feat: implementation — service + route + migration + tests) |
+| Implementation SHA | `e6d5f0f` (rebased onto origin/main 78d04bc — W5 merge) |
 | Contract SHA | `bc1b838` (feat: round 2 contract — Tier 0 verdict on BLK-01 APPROVED with correction) |
-| Tier 0 verdict | APPROVED with correction: (1) policy status must use `(ACTIVE,CONSUMED)` not `(NEW,CONVERTED)` — those are CandidateSubmission statuses; (2) additive migration authorized; (3) server-clock `expires_at > now()` + `status='ACTIVE'` guard required; (4) LIM-AFF-03-01/02/03 ACCEPTED |
-| Next gate | T3 read-only audit on implementation SHA `aec3f4d` |
+| Tier 0 verdict (round 3) | REVISION_REQUIRED (docs only; code OK) — applied: RQ-02 enum fixed; §4.3 transition fixed; LIM-AFF-03-03 rewritten (CONVERTED is not a valid `ReferralAttribution` status). |
+| Tier 0 verdict (round 4) | **ACCEPTED WITH GATES**: T3 audit R3 PASS acknowledged; LIM-AFF-03-01 → AFF-04 (not yet exit-green); LIM-AFF-03-02 → AFF-05B + staff-channel test (not yet exit-green); LIM-AFF-03-03 is a contract clarification (no additional guard required). **Merge NOT yet authorized** — see §5.3. |
+| Head SHA (CI green) | `71a985969e8d4786241a52fdac8369200f5e5bcd` |
+| CI run attached | `35418481137` — Quality + Integration both `success` |
+| Next gate | T0/Owner merge decision (see §5.3). T1B does NOT self-merge. |
+| Next gate | T0/Owner merge decision (see §5.3). T1B does NOT self-merge. |
 | Execution round | 1 |
 | Tier 1 sign-off | Initial — no prior delivery |
 | Baseline | `4e6d0c138033e963ac7ade5ed69a7d7a77243a4f` (origin/main post AFF-05A merge) |
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
 
-> Handoff status: `READY_FOR_AUDIT` (round 2 — Tier 0 verdict on BLK-01 APPROVED with correction; implementation complete; awaiting T3 read-only audit).
+> Handoff status: `READY_FOR_AUDIT` (round 4 — T3 audit R3 PASS; T0 verdict ACCEPTED WITH GATES; SHA `71a9859` attached to CI run `35418481137`; merge decision = T0/Owner, NOT T1B).
 
 ## 1. Outcome and changed surface
 
@@ -56,7 +60,7 @@
 | AC-02 | `npm run lint` | exit 0 (614 warnings baseline, 0 errors) | none | `evidence/lint.txt` |
 | AC-03 | `npx vitest run --config vitest.unit.config.ts` | exit 0; 2334/2334 PASS in 152 files | none | `evidence/vitest-unit.txt` |
 | AC-04 | `npx prisma generate && npm run build` | exit 0; route table includes `ƒ /api/public/intake` (355 B) | none | `evidence/vitest-build.txt` |
-| AC-05 | `npx vitest run --config vitest.integration.config.ts tests/db/aff03-public-intake.integration.test.ts` (CI Integration lane) | 6 tests: AC-08, AC-09, AC-10, AC-11, AC-15, AC-16. **ENV_BLOCKED locally** — CI Integration lane applies the additive RLS migration first, then runs against `hrp_mp2_test` | local skip; CI runs | `evidence/integration-public-intake.txt` (skipped locally) |
+| AC-05 | `npx vitest run --config vitest.integration.config.ts tests/db/aff03-public-intake.integration.test.ts` (CI Integration lane run `35418481137` on SHA `71a9859`, evidence `E-05`) | 6 tests PASS (AC-08, AC-09, AC-10, AC-11, AC-15, AC-16); Quality job also `success` | none | `evidence/integration-public-intake.txt` (CI-attached, run 35418481137) |
 | AC-06 | `bash -c 'git diff --name-only origin/main..HEAD \| grep -E "schema.prisma\|prisma/migrations/\|src/domains/talent/\|src/domains/referrals/\|app/api/jobs/apply/\|app/api/public/jobs/\[slug\]/applications/" \| wc -l'` | 0 | none | `evidence/git-diff-scope.txt` |
 | AC-07 | `git grep -nE "set_config\([^,]+,[^,]+,\s*false\s*\)\|pg_advisory_xact_lock" app/api/public/intake/ src/domains/applications/aff03-*.ts` (baseline `4e6d0c138033e963ac7ade5ed69a7d7a77243a4f`) | 0 matches (files not yet created) | baseline `4e6d0c1` | `evidence/git-grep-static.txt:1-10` |
 | AC-08 | Integration assertion: `referral_attributions.status='CONSUMED' AND consumed_at IS NOT NULL AND labor_profile_id IS NOT NULL` AND `labor_profile_handling_assignments.source='AFF_INITIAL' AND assignee_user_id=$referrerUserId` | source code complete; **CI Integration lane** runs against `hrp_mp2_test` after migration applied | runtime (CI) | `evidence/integration-public-intake.txt` (skipped locally) |
@@ -69,7 +73,7 @@
 | AC-15 | `npx vitest run --config vitest.integration.config.ts tests/db/aff03-public-intake.integration.test.ts` (CI Integration lane) | expired-attribution path: response 201; `ReferralAttribution.status` UNCHANGED; no `consumed_at`; no `LaborProfileHandlingAssignment` | source code complete; **CI Integration lane** | `evidence/integration-public-intake.txt` (skipped locally) |
 | AC-16 | `npx vitest run --config vitest.integration.config.ts tests/db/aff03-public-intake.integration.test.ts` (CI Integration lane) | non-active-status path: response 201; no second `consumed_at`; no second `LaborProfileHandlingAssignment` | source code complete; **CI Integration lane** | `evidence/integration-public-intake.txt` (skipped locally) |
 
-### 2.1 Implementation gates (locally measured at implementation SHA `aec3f4d`)
+### 2.1 Implementation gates (locally re-measured at HEAD `71a9859`; CI-attached run `35418481137`)
 
 | AC | Verification command | Result | Status |
 |---|---|---|---|
@@ -77,7 +81,7 @@
 | AC-02 lint | `npm run lint` | exit 0; 0 errors, 616 warnings (baseline 614; +2 net in new files after cleanup) | PASS — `evidence/lint.txt` |
 | AC-03 unit | `npx vitest run --config vitest.unit.config.ts` | exit 0; **2370**/2370 PASS (was 2334; +36 = 14 svc unit + 11 route unit + 11 static migration) | PASS — `evidence/vitest-unit.txt` |
 | AC-04 build | `npx prisma generate && npm run build` | exit 0; route table includes `ƒ /api/public/intake` (355 B) and `ƒ /r/[code]` (355 B) | PASS — `evidence/vitest-build.txt` |
-| AC-05 integration | `npx vitest run --config vitest.integration.config.ts tests/db/aff03-public-intake.integration.test.ts` | 6 tests; **locally: 6 skipped (ENV_BLOCKED, no live DB)**. CI Integration lane applies the additive RLS migration first, then runs against `hrp_mp2_test` | LOCAL ENV_BLOCKED; CI runs — `evidence/integration-public-intake.txt` |
+| AC-05 integration | `npx vitest run --config vitest.integration.config.ts tests/db/aff03-public-intake.integration.test.ts` (CI Integration lane run `35418481137` on SHA `71a9859`, evidence `E-05`) | 6 tests PASS; Quality job `success`; both `conclusion=success` in `gh run view 35418481137 --json jobs` | PASS — `evidence/integration-public-intake.txt` (CI-attached, run 35418481137) |
 | AC-06 scope | `git diff --name-only origin/main..HEAD \| grep -E '<forbidden>'` | forbidden paths clean (output shows only docs + evidence files; no schema/migration/talent/referrals/jobs-apply) | PASS — `evidence/git-diff-scope.txt` |
 | AC-07 static | `git grep -nE 'set_config\([^,]+,[^,]+,\s*false\s*\)\|pg_advisory_xact_lock' app/api/public/intake/ src/domains/applications/aff03-*.ts prisma/migrations/20260918100000*/` | 0 matches | PASS — `evidence/git-grep-static.txt` |
 | AC-08 happy path | SQL assertion: `referral_attributions.status='CONSUMED' AND consumed_at IS NOT NULL AND labor_profile_id IS NOT NULL` AND `labor_profile_handling_assignments.source='AFF_INITIAL' AND assignee_user_id=$referrerUserId` | source code complete; **CI Integration lane** runs against `hrp_mp2_test` after migration applied | source code ready; CI runs |
@@ -110,7 +114,7 @@
 
 ## 5. Final status
 
-Status: `READY_FOR_AUDIT`. Implementation complete; Tier 3 read-only audit requested on SHA `aec3f4d`. Tier 0 production gate (apply migration, merge to main) is NOT in this slice's scope.
+Status: `READY_FOR_AUDIT` (round 4 — T3 audit R3 PASS; T0 verdict ACCEPTED WITH GATES; SHA `71a9859` attached to CI run `35418481137`). Tier 0 production gate (apply migration to prod, merge to main) is NOT in this slice's scope — see §5.3.
 
 ### 5.1 LIM-* (mandatory exit-gate honesty per V6/aff_plan.md §14.1 clause 3)
 
@@ -155,6 +159,33 @@ AFF-03 re-records this LIM per Tier 0 round-3 verdict REVISION_REQUIRED. The val
 4. `LIM-*` statements are verbatim in this section (already met).
 5. Tier 0 has acknowledged LIM-AFF-03-01 / LIM-AFF-03-02 deferral before resolve.
 
+### 5.3 Merge gate (T0/Owner-owned; T1B does NOT self-merge)
+
+This slice's delivery is complete. T1B has NOT merged PR #20 to `main`, and T1B will NOT. The merge decision is a T0/Owner gate, explicitly separated from T1B's delivery gate.
+
+**T1B delivery gate (PASS, attached to this HANDOFF)**:
+- HEAD `71a9859` on `tier1/hrp-v6-n2-aff-03-apply-attribution` (rebased onto `origin/main` `78d04bc` post-W5).
+- CI run `35418481137` on `71a9859`: Quality `success` + Integration `success` (6/6 PASS).
+- Forbidden paths clean.
+- `verify-handoff.ps1` PASS WITH WARNINGS (H-15 only — status/next-gate fields updated between TASK and HANDOFF because of round-3/round-4 verdict ingestion; recorded in §5.4 Revision Log).
+- All LIM-* recorded verbatim in §5.1 with the round-4 disposition (LIM-01 → AFF-04; LIM-02 → AFF-05B + staff-channel test; LIM-03 = contract clarification, no extra guard).
+
+**T0/Owner merge gate (NOT delegated)**:
+1. Preflight on the additive migration `prisma/migrations/20260918100000_aff03_writer_select_on_referral_attributions/` against the production DB replica (verify DROP IF EXISTS + CREATE POLICY is a no-op on the second run, and the policies land in `pg_policies`).
+2. Apply migration to production: `npx prisma migrate deploy` (or equivalent) — T0/Owner executes.
+3. Merge PR #20 (`nobita6986/HRpartner`) to `main` after the post-deploy smoke (curl `/api/public/intake` with a forged cookie → 201, no `referral_attributions` mutation, etc.).
+4. Confirm with a follow-up smoke run that no `ReferralAttribution` row was over-consumed during the deploy window.
+
+**Why T1B does NOT self-merge or self-apply**: per the Tier 0 brief and the round-4 verdict, T1B is not authorized to mutate production schema or merge to `main`. The worktree at `71a9859` is a clean, audit-attached delivery state; T0/Owner takes it from here.
+
+### 5.4 Revision Log (handoff-level)
+
+| Spec version | Date | Change | Reason |
+|---|---|---|---|
+| v1.0 | 2026-09-18 | Initial contract | Tier 0 brief `T1B / N2-2 → hrp-v6-n2-aff-03-apply-attribution`; baseline `4e6d0c1` (origin/main post-AFF-05A); LIM-* per V6/aff_plan.md §14.1 clause 3. |
+| v1.0.r3 | 2026-09-19 | §4 LIM-AFF-03-03 rewritten; RQ-02 enum fixed; §4.3 transition fixed | Tier 0 round-3 verdict REVISION_REQUIRED (docs only; code OK). |
+| v1.0.r4 | 2026-09-19 | §0 Control updated to round 4; §2 AC-05 rows attach CI run `35418481137` to SHA `71a9859`; new §5.3 Merge gate (T0/Owner-owned) added; §5.4 Revision Log row appended | Tier 0 round-4 verdict ACCEPTED WITH GATES; T0/Owner merge gate separated from T1B delivery gate. |
+
 ---
 
-> Handoff status: `READY_FOR_AUDIT` (round 2 — Tier 0 verdict on BLK-01 APPROVED with correction; implementation complete; awaiting T3 read-only audit).
+> Handoff status: `READY_FOR_AUDIT` (round 4 — T3 audit R3 PASS; T0 verdict ACCEPTED WITH GATES; SHA `71a9859` attached to CI run `35418481137`; merge decision = T0/Owner, NOT T1B).

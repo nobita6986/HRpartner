@@ -1,38 +1,64 @@
-﻿AFF-03 integration evidence — REBASED onto origin/main 78d04bc (W5 merge)
+﻿AFF-03 integration evidence — CI-attached for SHA 71a9859 (post-rebase, post-T0-round-3 docs)
 
-Branch head (post-rebase): c7b34ae
-Last CI green run (pre-rebase, head 1ff456e): 35367745791
-  - Quality (schema · typecheck · lint · unit · build): success
-  - Integration (DB tests · fail-closed): success (6/6 PASS)
+CI run: 35418481137
+Branch: tier1/hrp-v6-n2-aff-03-apply-attribution
+Head SHA under audit: 71a985969e8d4786241a52fdac8369200f5e5bcd
+Workflow: CI (.github/workflows/*.yml)
+Trigger: push after rebase onto origin/main 78d04bc (W5 PR #21 merge)
 
-Post-rebase gates (re-run on HEAD c7b34ae):
-  - npx tsc --noEmit                          -> exit 0
-  - npm run lint                              -> 0 errors, 621 warnings (+6 from W5 merge)
-  - npx vitest run unit                       -> 2371/2371 PASS (+1 from W5 merge)
-  - npm run build                             -> exit 0; route table ƒ /api/public/intake (362 B)
-  - verify-handoff.ps1                        -> PASS WITH WARNINGS (H-15 only)
-  - Forbidden paths (post-rebase): clean
+OUTCOME
+  Quality (schema · typecheck · lint · unit · build)    -> conclusion=success
+  Integration (DB tests · fail-closed preflight)       -> conclusion=success
+  All 6 integration tests in tests/db/aff03-public-intake.integration.test.ts PASS:
+    - AC-08  happy path:       attribution consumed; LPHA created (source=AFF_INITIAL,
+                               assigneeUserId=referrerUserId).
+    - AC-09  forged cookie:    response 201; ReferralAttribution row UNCHANGED;
+                               no LaborProfileHandlingAssignment row created.
+    - AC-10  no cookie:        response 201; zero ReferralAttribution rows mutated
+                               (SELECT COUNT(*) updated since preTestTs = 0).
+    - AC-11  replay:           consumedAt UNCHANGED on second call (writer existingAttr
+                               guard, intake-writer.service.ts:130).
+    - AC-15  expired:          response 201; status UNCHANGED (ACTIVE); no LPHA row.
+    - AC-16  non-active:       response 201; consumedAt NOT overwritten; no second LPHA.
 
-Tests cover AC-08, AC-09, AC-10, AC-11, AC-15, AC-16 (6 PASS):
-  - AC-08 happy path: attribution consumed + LPHA created (source=AFF_INITIAL)
-  - AC-09 forged cookie: 201, no mutation
-  - AC-10 no cookie: 201, zero attribution rows mutated
-  - AC-11 replay: consumedAt UNCHANGED on second call (writer existingAttr guard)
-  - AC-15 expired: 201, status ACTIVE UNCHANGED, no LPHA
-  - AC-16 non-active: 201, consumedAt NOT overwritten, no second LPHA
+POST-REBASE GATES (locally re-measured on HEAD 71a9859)
+  npx tsc --noEmit                            -> exit 0
+  npm run lint                                -> 0 errors, 621 warnings (+6 from W5 merge)
+  npx vitest run --config vitest.unit.config.ts -> 2371/2371 PASS (+1 from W5 merge)
+  npm run build                               -> exit 0; route table includes ƒ /api/public/intake (362 B)
+  verify-handoff.ps1                          -> PASS WITH WARNINGS (H-15 only)
+  git diff origin/main..HEAD | grep forbidden-paths -> empty (clean)
 
-Test infrastructure (re-applied per T0 round-2 fix):
+TEST INFRASTRUCTURE (re-applied per T0 round-2 fix; preserved across rebase)
   - ensureTokenSecret(): provisions RATE_LIMIT_HASH_SECRET if CI container lacks it
-  - withHrManagerContext(): sets app.role=HR_MANAGER GUC in writer transactions
-    (matches intake-writer-integration.test.ts precedent for labor_profiles RLS)
-  - AC-11 uses randomUUID-derived 12-digit numeric phone suffixes
-    to avoid LP collision with leftover rows from prior failed CI runs
+                         (mirrors tests/db/attribution-redirect.integration.test.ts:80-84).
+  - withHrManagerContext(): wraps every writer $transaction with app.role=HR_MANAGER GUC
+                            (mirrors tests/db/intake-writer-integration.test.ts:74-85;
+                            matches labor_profiles RLS posture).
+  - AC-11 uses randomUUID-derived 12-digit numeric phone suffixes to avoid LP collision
+    with leftover rows from prior failed CI runs (root cause of round-2 fail).
 
-Additive RLS migration (T0 authorized, NOT applied to prod):
-  prisma/migrations/20260918100000_aff03_writer_select_on_referral_attributions/
+ADDITIVE RLS MIGRATION (T0 authorized, NOT applied to prod)
+  prisma/migrations/20260918100000_aff03_writer_select_on_referral_attributions/migration.sql
     - hrp_ra_select_writer: SELECT TO app_user_writer USING (status IN ('ACTIVE','CONSUMED'))
     - hrp_ra_update_writer: UPDATE TO app_user_writer USING (status='ACTIVE')
-                              WITH CHECK (status='CONSUMED' AND labor_profile_id IS NOT NULL)
+                            WITH CHECK (status='CONSUMED' AND labor_profile_id IS NOT NULL)
+  ENABLE/FORCE RLS inherited from N2-1 foundation migration.
+  DROP POLICY IF EXISTS + CREATE POLICY = idempotent.
+  Owner: T0/Owner applies to production after preflight. T1B does NOT apply to prod.
 
-Pending: re-run CI on rebased head c7b34ae to confirm Quality+Integration
-  still green (post-rebase, post-T0-round-3-docs-corrections).
+SHA CHAIN (CI green baseline)
+  4e761f1  feat(n2-aff-03): round 2 contract — Tier 0 verdict on BLK-01 APPROVED with correction
+  0ffb4f3  feat(n2-aff-03): BLOCKED contract + RLS posture escalation (awaiting Tier 0)
+  e6d5f0f  feat(n2-aff-03): implementation — service + route + migration + tests
+  7a242f5  fix(n2-aff-03): add integration test file (was missing from aec3f4d commit)
+  d4d4301  fix(n2-aff-03): integration test — provision RATE_LIMIT_HASH_SECRET + HR_MANAGER GUC
+  e456ba3  fix(n2-aff-03): AC-11 second-call phone uses random numeric suffix
+  a6cffcd  docs(n2-aff-03): CI green — both Quality + Integration jobs PASS (run 35367745791)
+  c7b34ae  docs(n2-aff-03): round-3 T0 corrections — fix status enum references
+  71a9859  docs(n2-aff-03): refresh evidence after rebase onto origin/main 78d04bc  <-- HEAD (this run)
+
+NEXT (separate, NOT in this slice)
+  - T0/Owner: preflight + apply prisma/migrations/20260918100000*/ to production.
+  - T0/Owner: merge PR #20 to main.
+  - T1B does NOT apply to production. T1B does NOT merge.
