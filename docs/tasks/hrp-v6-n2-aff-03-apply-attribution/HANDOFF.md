@@ -170,13 +170,34 @@ This slice's delivery is complete. T1B has NOT merged PR #20 to `main`, and T1B 
 - `verify-handoff.ps1` PASS WITH WARNINGS (H-15 only — status/next-gate fields updated between TASK and HANDOFF because of round-3/round-4 verdict ingestion; recorded in §5.4 Revision Log).
 - All LIM-* recorded verbatim in §5.1 with the round-4 disposition (LIM-01 → AFF-04; LIM-02 → AFF-05B + staff-channel test; LIM-03 = contract clarification, no extra guard).
 
-**T0/Owner merge gate (NOT delegated)**:
-1. Preflight on the additive migration `prisma/migrations/20260918100000_aff03_writer_select_on_referral_attributions/` against the production DB replica (verify DROP IF EXISTS + CREATE POLICY is a no-op on the second run, and the policies land in `pg_policies`).
-2. Apply migration to production: `npx prisma migrate deploy` (or equivalent) — T0/Owner executes.
-3. Merge PR #20 (`nobita6986/HRpartner`) to `main` after the post-deploy smoke (curl `/api/public/intake` with a forged cookie → 201, no `referral_attributions` mutation, etc.).
-4. Confirm with a follow-up smoke run that no `ReferralAttribution` row was over-consumed during the deploy window.
+**T0/Owner merge gate (NOT delegated; ordered sequence — STOP at any failed step)**:
 
-**Why T1B does NOT self-merge or self-apply**: per the Tier 0 brief and the round-4 verdict, T1B is not authorized to mutate production schema or merge to `main`. The worktree at `71a9859` is a clean, audit-attached delivery state; T0/Owner takes it from here.
+1. **Preflight on writable staging replica** (NOT on production read-only).
+   - Use the same Postgres major version + role set as production; create a throwaway DB; apply all prior migrations from `_prisma_migrations` to current; then apply `prisma/migrations/20260918100000_aff03_writer_select_on_referral_attributions/`.
+   - Confirm `pg_policies` rows exist: `hrp_ra_select_writer` (SELECT), `hrp_ra_update_writer` (UPDATE), and confirm ENABLE/FORCE RLS from N2-1 is preserved on `referral_attributions`.
+   - Confirm `prisma migrate status` reports the new migration as **applied** (no `Drift detected`, no pending).
+   - Confirm `prisma migrate resolve` is NOT needed (no failed migration history).
+   - **STOP** if any of the above fails — do not proceed to step 2.
+
+2. **Apply migration to production** (`npx prisma migrate deploy` or equivalent).
+   - T0/Owner executes against the production DB. This is the **only** step that mutates the production schema.
+   - Confirm `prisma migrate status` reports the new migration as applied; capture run-log to the deploy audit record.
+   - **STOP** if the migration fails or reports drift — do not proceed to step 3.
+
+3. **Merge PR #20 to `main`** (`gh pr merge 20 --squash` or equivalent).
+   - Branch `tier1/hrp-v6-n2-aff-03-apply-attribution` → `main`.
+   - **STOP** if merge conflicts appear — rebase is T1B's lane but only **after** T0/Owner explicitly delegates the rebase; T1B will NOT rebase without a fresh T0 instruction.
+
+4. **Deploy `main`** to the production app (the runtime that serves `/api/public/intake`).
+   - Standard release pipeline; verify the deployed build hash matches the post-merge `main` HEAD.
+   - **STOP** if the deploy fails — rollback to the previous release; do not smoke a half-deployed runtime.
+
+5. **Post-deploy smoke + attribution audit** (only after steps 1–4 all PASS).
+   - `curl -sS -i -X POST https://hrpartner.example/api/public/intake -H 'Idempotency-Key: <uuid>' -H 'Content-Type: application/json' -b 'hrp_aff=<forged>' --data '{...}'` → expect `201` with no referrer fields; pre- and post- `SELECT COUNT(*) FROM referral_attributions WHERE updated_at > $preTs` must be `0`.
+   - `curl -sS ... -b 'hrp_aff=<valid>' ...` → expect `201`; post- `SELECT status, consumed_at, labor_profile_id FROM referral_attributions WHERE id=$attrId` must be `('CONSUMED', non-null, <lpId>)`; post- `SELECT source, assignee_user_id FROM labor_profile_handling_assignments WHERE labor_profile_id=$lpId` must be `('AFF_INITIAL', <referrerUserId>)`.
+   - `SELECT COUNT(*) FROM referral_attributions` before vs after the smoke window; any row whose `status` flipped to `CONSUMED` outside the test cookie is a **regression** — STOP and investigate.
+
+**Why T1B does NOT self-merge or self-apply**: per the Tier 0 brief and the round-4 verdict, T1B is not authorized to mutate production schema or merge to `main`. The worktree at `71a9859` is a clean, audit-attached delivery state; T0/Owner takes steps 1–5 from here.
 
 ### 5.4 Revision Log (handoff-level)
 
@@ -185,6 +206,7 @@ This slice's delivery is complete. T1B has NOT merged PR #20 to `main`, and T1B 
 | v1.0 | 2026-09-18 | Initial contract | Tier 0 brief `T1B / N2-2 → hrp-v6-n2-aff-03-apply-attribution`; baseline `4e6d0c1` (origin/main post-AFF-05A); LIM-* per V6/aff_plan.md §14.1 clause 3. |
 | v1.0.r3 | 2026-09-19 | §4 LIM-AFF-03-03 rewritten; RQ-02 enum fixed; §4.3 transition fixed | Tier 0 round-3 verdict REVISION_REQUIRED (docs only; code OK). |
 | v1.0.r4 | 2026-09-19 | §0 Control updated to round 4; §2 AC-05 rows attach CI run `35418481137` to SHA `71a9859`; new §5.3 Merge gate (T0/Owner-owned) added; §5.4 Revision Log row appended | Tier 0 round-4 verdict ACCEPTED WITH GATES; T0/Owner merge gate separated from T1B delivery gate. |
+| v1.0.r5 | 2026-09-19 | §5.3 step sequence corrected: preflight → apply migration → merge → deploy → smoke. Preflight now explicitly targets writable staging replica (not production read-only). Merge pre-condition hardened: smoke runs AFTER merge+deploy, not before. | Tier 0 round-5 confirmation: T1B has self-attested CI run `35418481137` on SHA `71a9859`; T0 ordering correction (preflight → apply → merge → deploy → smoke; STOP at any failed step). |
 
 ---
 
