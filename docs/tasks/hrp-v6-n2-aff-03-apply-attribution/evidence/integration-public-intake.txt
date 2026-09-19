@@ -1,25 +1,38 @@
-﻿AFF-03 integration test — CI run 35367745791 (head 7e173f7f, commit 'fix(n2-aff-03): AC-11 second-call phone uses random numeric suffix')
+﻿AFF-03 integration evidence — REBASED onto origin/main 78d04bc (W5 merge)
 
-Outcome: SUCCESS
-Quality (schema · typecheck · lint · unit · build): conclusion=success
-Integration (DB tests · fail-closed): conclusion=success
+Branch head (post-rebase): c7b34ae
+Last CI green run (pre-rebase, head 1ff456e): 35367745791
+  - Quality (schema · typecheck · lint · unit · build): success
+  - Integration (DB tests · fail-closed): success (6/6 PASS)
 
-All 6 integration tests in tests/db/aff03-public-intake.integration.test.ts PASS:
-  - AC-08 valid cookie: attribution consumed, LPHA created with source=AFF_INITIAL
-  - AC-09 forged cookie: response 201, attribution row UNCHANGED, no LPHA row
-  - AC-10 no cookie: response 201, attribution table UNCHANGED (zero rows mutated)
-  - AC-15 expired attribution: response 201, status UNCHANGED, no LPHA row
-  - AC-16 non-active status: response 201, no second LPHA row, consumedAt NOT overwritten
-  - AC-11 (writer layer) attribution consumedAt NOT overwritten on second call
+Post-rebase gates (re-run on HEAD c7b34ae):
+  - npx tsc --noEmit                          -> exit 0
+  - npm run lint                              -> 0 errors, 621 warnings (+6 from W5 merge)
+  - npx vitest run unit                       -> 2371/2371 PASS (+1 from W5 merge)
+  - npm run build                             -> exit 0; route table ƒ /api/public/intake (362 B)
+  - verify-handoff.ps1                        -> PASS WITH WARNINGS (H-15 only)
+  - Forbidden paths (post-rebase): clean
 
-Test infrastructure:
-  - ensureTokenSecret() provisions RATE_LIMIT_HASH_SECRET (CI container does not inject)
-  - withHrManagerContext() sets app.role=HR_MANAGER GUC in writer transactions
-    (matches the existing N1 intake-writer integration test pattern)
-  - Admin client seeds referrer user + attribution rows; writer+HR_MANAGER consumes
+Tests cover AC-08, AC-09, AC-10, AC-11, AC-15, AC-16 (6 PASS):
+  - AC-08 happy path: attribution consumed + LPHA created (source=AFF_INITIAL)
+  - AC-09 forged cookie: 201, no mutation
+  - AC-10 no cookie: 201, zero attribution rows mutated
+  - AC-11 replay: consumedAt UNCHANGED on second call (writer existingAttr guard)
+  - AC-15 expired: 201, status ACTIVE UNCHANGED, no LPHA
+  - AC-16 non-active: 201, consumedAt NOT overwritten, no second LPHA
 
-Additive RLS migration applied by Integration lane pre-step:
+Test infrastructure (re-applied per T0 round-2 fix):
+  - ensureTokenSecret(): provisions RATE_LIMIT_HASH_SECRET if CI container lacks it
+  - withHrManagerContext(): sets app.role=HR_MANAGER GUC in writer transactions
+    (matches intake-writer-integration.test.ts precedent for labor_profiles RLS)
+  - AC-11 uses randomUUID-derived 12-digit numeric phone suffixes
+    to avoid LP collision with leftover rows from prior failed CI runs
+
+Additive RLS migration (T0 authorized, NOT applied to prod):
   prisma/migrations/20260918100000_aff03_writer_select_on_referral_attributions/
-  - hrp_ra_select_writer: SELECT to app_user_writer WHERE status IN ('ACTIVE','CONSUMED')
-  - hrp_ra_update_writer: UPDATE to app_user_writer USING (status='ACTIVE') WITH CHECK
-                          (status='CONSUMED' AND labor_profile_id IS NOT NULL)
+    - hrp_ra_select_writer: SELECT TO app_user_writer USING (status IN ('ACTIVE','CONSUMED'))
+    - hrp_ra_update_writer: UPDATE TO app_user_writer USING (status='ACTIVE')
+                              WITH CHECK (status='CONSUMED' AND labor_profile_id IS NOT NULL)
+
+Pending: re-run CI on rebased head c7b34ae to confirm Quality+Integration
+  still green (post-rebase, post-T0-round-3-docs-corrections).
