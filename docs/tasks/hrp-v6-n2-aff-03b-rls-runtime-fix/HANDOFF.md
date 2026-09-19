@@ -12,8 +12,9 @@
 | Status | `READY_FOR_AUDIT` (slice 03b delivered; T3 LIGHT audit pending) |
 | Branch | `tier1/hrp-v6-n2-aff-03-apply-attribution` |
 | Baseline | `1059f666` (origin/main HEAD post AFF-03 merge) |
-| Implementation SHA | `e7e8550fb5d5a0a2bcd20e97887f26e047dbd2bd` |
-| Head SHA (locally measured) | `e7e8550fb5d5a0a2bcd20e97887f26e047dbd2bd` (commit `e7e8550`, branch `tier1/hrp-v6-n2-aff-03-apply-attribution`, local only — no push, no merge; 23 files / +2319 / -261) |
+| Implementation SHA | `e7e8550fb5d5a0a2bcd20e97887f26e047dbd2bd` (feature commit: SECURITY DEFINER RPC, tests, evidence, docs at v1.0.r5) |
+| Documentation SHA | `d3894ce525e5e83552ff7e2500bdeda4114948c5` (follow-up commit: fills Implementation SHA + Head SHA into HANDOFF.md) |
+| Head SHA (locally measured) | `d3894ce525e5e83552ff7e2500bdeda4114948c5` (branch `tier1/hrp-v6-n2-aff-03-apply-attribution`, local only — no push, no merge; 23 files vs `origin/main`, +2321 / -263 cumulative) |
 | CI run attached | (none yet — `npm run test:integration` is ENV_BLOCKED locally without a writable test DB; CI Integration lane must re-run against `hrp_mp2_test` for AC-01..AC-13 runtime evidence) |
 | Next gate | T3 LIGHT read-only audit on frozen SHA. After T3 PASS, return to T0 for production gate (apply migration to prod, merge to main). T1B does NOT self-apply or self-merge. |
 | Execution round | 1 |
