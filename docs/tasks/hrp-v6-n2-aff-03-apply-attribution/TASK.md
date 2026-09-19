@@ -69,7 +69,7 @@
 | ID | Requirement |
 |---|---|
 | RQ-01 | Public, anonymous applicant can POST to `POST /api/public/intake` with body `{ fullName, phone, cccdNumber?, dateOfBirth?, consentAt }` + header `Idempotency-Key` (UUID). |
-| RQ-02 | If the request carries a `hrp_aff` cookie whose signed payload resolves to a `ReferralAttribution` row in `status ∈ {NEW, CONVERTED}` (any other state → fail-safe no-op), the resulting `LaborProfile` is bound to that `ReferralAttribution` and an initial `LaborProfileHandlingAssignment` (source `AFF_INITIAL`) is created. |
+| RQ-02 | If the request carries a `hrp_aff` cookie whose signed payload resolves to a `ReferralAttribution` row in `status = 'ACTIVE'` (any other state → fail-safe no-op), the resulting `LaborProfile` is bound to that `ReferralAttribution` and an initial `LaborProfileHandlingAssignment` (source `AFF_INITIAL`) is created. |
 | RQ-03 | `referrerUserId` is ALWAYS server-derived from the `ReferralAttribution` row. The client never sends `referrerUserId`, `attributionId`, or any referrer field. |
 | RQ-04 | Forged, expired, or unresolvable cookies are silently treated as "no attribution" — the route returns 201 with the standard DTO. No 401, no body delta. |
 | RQ-05 | Replay with the same Idempotency-Key returns the same response. The attribution is consumed exactly once (by the transaction that creates the first `LaborProfile`). |
@@ -98,7 +98,7 @@
 
 ### 4.3 Domain boundaries
 
-- **Data/state:** Attribution status transition `NEW|CONVERTED → CONSUMED` happens in the N1 writer (existing logic, unchanged). The first matching `LaborProfile` is the only one to consume the attribution. If a profile already has an attribution, no second attribution is bound (`existingAttr` check in writer).
+- **Data/state:** Attribution status transition `ACTIVE → CONSUMED` happens in the N1 writer (existing logic, unchanged). The first matching `LaborProfile` is the only one to consume the attribution. If a profile already has an attribution, no second attribution is bound (`existingAttr` check in writer).
 - **Permission/security:**
   - The route is anonymous. Auth comes from the signed cookie.
   - Cookie verification is in-process (`verifyAttributionToken`) — no DB call. Token expiry + HMAC integrity + key version are enforced.
@@ -114,8 +114,7 @@
 |---|---|---|
 | `LIM-AFF-03-01` | The exit-gate clause *"staff complete cùng profile không đổi attribution/handling"* (V6/aff_plan.md §AFF-03) is NOT verified by AFF-03. That gate requires a staff-channel test that exercises `createCandidateSubmissionFromIntake` with a LaborProfile that already has a `ReferralAttribution` row, and asserts the writer's `existingAttr` guard does NOT overwrite. **The writer logic already implements the guard** (intake-writer.service.ts lines 130-132), but AFF-03 does not write the staff-side test for it. This is the explicit gate that AFF-03 does NOT cover; if marked green without it, the exit gate is misleading. | Requires a staff-route integration test that crosses the `talent/` boundary. Deferred to AFF-04 (Conversion + SourceClaim + Assignment propagation) where the staff-channel + placement overlap is the natural home. |
 | `LIM-AFF-03-02` | The exit-gate clause *"staff-created direct profile không auto-credit creator"* is NOT verified by AFF-03. AFF-03 has no commission / beneficiary wiring. | Requires AFF-05B (`Universal commission beneficiary`) which is not merged. Until AFF-05B lands, no auto-credit path exists; AFF-03 cannot violate it. Once AFF-05B lands, the staff-channel credit-disabled path must be asserted separately. |
-| `LIM-AFF-03-03` | `ReferralAttribution.status === 'CONVERTED'` is treated equivalently to `NEW` for consumption by AFF-03. The N2-1 lifecycle trigger forbids `CONVERTED → CONSUMED` (terminal → non-terminal is blocked by the trigger). If `CONVERTED` is the actual status at apply time, the writer's `tx.referralAttribution.update` will throw and the route will surface a 500. **AFF-03 ships without a CONVERTED status guard; if production data ever reaches this state (AFF-04 territory), the route must be revisited.** | Pre-condition: AFF-02 lifecycle trigger is the authority; production has not yet seen a CONVERTED → CONSUMED transition. Out of AFF-03 scope. Tier 1 documents but does NOT defend this in code. |
-
+| `LIM-AFF-03-03` | `ReferralAttribution.status === 'CONVERTED'` does NOT exist in the schema. The valid `referral_attributions.status` enum (per `referral_attributions_status_check`) is `ACTIVE | CONSUMED | EXPIRED | REVOKED | SUPERSEDED`. AFF-03's server-clock + status guard in `resolveActiveAttributionId` (`status='ACTIVE' AND expires_at > now()`, per RQ-09) fail-safe-silently handles every non-ACTIVE terminal state (`EXPIRED`, `REVOKED`, `SUPERSEDED`, `CONSUMED`) by passing `referralAttributionId = null` to the writer — same path as forged / expired cookie. The cookie-verify step also rejects `UNKNOWN_ID` payloads (row not found) before any DB lookup. **There is no separate CONVERTED guard to add because CONVERTED is not a valid `ReferralAttribution` status.** | Re-recorded per Tier 0 round-3 verdict REVISION_REQUIRED: the original LIM text assumed a `CONVERTED` status that the schema does not define. The fail-safe semantic is already enforced by RQ-09. Out of AFF-03 scope to add additional state-specific guards. Tier 1 documents but does NOT defend this in code. |
 ## 5. Execution Plan
 
 | Step | Target | Intent | Verify | Stop condition |

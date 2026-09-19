@@ -138,9 +138,10 @@ Status: `READY_FOR_AUDIT`. Implementation complete; Tier 3 read-only audit reque
 
 **Required action before exit-gate green**: AFF-05B (commission beneficiary) must land AND a separate test slice must assert that staff-channel intake does NOT trigger any beneficiary resolution. Tier 1 will NOT self-author this.
 
-#### LIM-AFF-03-03 — `ReferralAttribution.status === 'CONVERTED'` is not guarded
+#### LIM-AFF-03-03 — `ReferralAttribution.status === 'CONVERTED'` does NOT exist in the schema
 
-AFF-03 treats `NEW` as the only valid pre-consumption status. If a `CONVERTED` row reaches this route (which the N2-1 lifecycle trigger would normally prevent by blocking `CONVERTED → CONSUMED`), the writer's `tx.referralAttribution.update` will throw, surfacing a 500. AFF-03 does not add a CONVERTED guard. This is by design: N2-1's lifecycle trigger is the authority on valid status transitions; AFF-03 is downstream and does not duplicate the contract. If production ever reaches this state (AFF-04 territory), revisit the route.
+AFF-03 re-records this LIM per Tier 0 round-3 verdict REVISION_REQUIRED. The valid `referral_attributions.status` enum (per `referral_attributions_status_check`) is `ACTIVE | CONSUMED | EXPIRED | REVOKED | SUPERSEDED`. There is no `CONVERTED` value. Every non-ACTIVE terminal state (`EXPIRED`, `REVOKED`, `SUPERSEDED`, `CONSUMED`) is already handled by the server-clock + status guard in `resolveActiveAttributionId` (`status='ACTIVE' AND expires_at > now()`, per RQ-09): the route treats it as a silent fail-safe (same path as forged / expired cookie), passing `referralAttributionId = null` to the writer. The cookie-verify step additionally rejects `UNKNOWN_ID` payloads (row not found) before any DB lookup. **There is no separate CONVERTED guard to add because CONVERTED is not a valid `ReferralAttribution` status.** This is by design: N2-1's lifecycle trigger is the authority on valid status transitions; AFF-03 is downstream and does not duplicate the contract.
+
 
 #### Verbatim exit-gate honesty statement
 
