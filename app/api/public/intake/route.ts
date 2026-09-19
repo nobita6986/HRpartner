@@ -1,16 +1,35 @@
 /**
- * POST /api/public/intake — AFF-03 Public apply attribution boundary (STEP-03).
+ * POST /api/public/intake — AFF-03B public anon N1 apply boundary (STEP-03).
  *
  * Canonical public anon N1 apply path. Reads signed `hrp_aff` cookie →
- * resolves `ReferralAttribution` row (if valid + ACTIVE + not expired) →
- * passes `referralAttributionId` to the existing N1 intake writer which
- * consumes the row (status: ACTIVE → CONSUMED) and creates the initial
- * `LaborProfileHandlingAssignment` via `createInitialAffiliateAssignment`
- * (AFF-05A).
+ * service-level pre-filter (`resolveActiveAttributionId`) →
+ * delegates the entire write chain to the SECURITY DEFINER RPC
+ * `hrp_public_intake_submission(p_payload jsonb)` (migration
+ * `20260919100000_aff03b_public_intake_rpc`). The RPC owns:
  *
- * Silent fail-safe: forged / expired / missing / non-active cookie → 201 with
- * the standard DTO; no identity leak; no log line that distinguishes forged
- * from missing.
+ *   - signal normalization + PL/pgSQL `scoreAndClassify` mirror (≥2-signal
+ *     EXACT_MATCH rule preserved from src/domains/talent/labor-profile.service.ts:164-168)
+ *   - INSERT labor_profiles (verdict='NEW_PROFILE' only)
+ *   - INSERT placement_cases
+ *   - INSERT candidate_submissions (vendor_id=NULL, ctv_id=NULL per DEC-13)
+ *   - (when attribution id is non-null) UPDATE referral_attributions
+ *     SET status='CONSUMED', consumed_at=now(), labor_profile_id=<lp_id>
+ *     with the WHERE predicate
+ *     AND status='ACTIVE' AND expires_at > now() AND labor_profile_id IS NULL
+ *     as the DB-level guard (DEC-11 (c); RLS does NOT apply to the definer
+ *     path because hrp_public_rpc is NOLOGIN BYPASSRLS — DEC-14)
+ *   - (when the UPDATE consumed exactly one row) INSERT labor_profile_handling_assignments
+ *     (source='AFF_INITIAL', assignee_user_id=<referrer_user_id>)
+ *
+ * The Prisma writer `createCandidateSubmissionFromIntake` is NOT called from
+ * this route. It is preserved for non-anon flows (staff intake, admin tools)
+ * that run under app_user_writer with the 2 writer policies from
+ * `20260918100000_aff03_writer_select_on_referral_attributions`.
+ *
+ * Silent fail-safe: forged / expired / missing cookie or TOKEN_SIGNING_ERROR
+ * (missing/short `RATE_LIMIT_HASH_SECRET`) → `referralAttributionId = null`;
+ * the RPC still runs in non-attributed mode and returns 201 with the standard
+ * DTO; no identity leak; no log line that distinguishes forged from missing.
  *
  * SECURITY:
  *   - Anonymous route; no auth. Auth comes from the signed cookie.
@@ -25,8 +44,8 @@
  *   - Does NOT set `app.role` (writer role default; relies on N2-1 + AFF-03 RLS).
  *   - Does NOT touch `prisma/schema.prisma`, `prisma/migrations/N2-*` (foundation
  *     and pre-existing AFF-* migrations are read-only).
- *   - Does NOT touch `src/domains/talent/**` (read-only: the writer is consumed,
- *     not modified).
+ *   - Does NOT touch `src/domains/talent/**` (read-only: the writer is consumed
+ *     for non-anon paths; not modified here).
  *   - Does NOT touch `src/domains/referrals/**` (read-only: the verify util is
  *     consumed, not modified).
  *   - Does NOT touch `/api/jobs/apply` (DEC-10 retired stub).
@@ -41,7 +60,7 @@
  *   413 PAYLOAD_TOO_LARGE — body > 16 KiB
  *   415 UNSUPPORTED_MEDIA_TYPE — content-type not application/json
  *   422 CV_UPLOAD_DISABLED — cv non-null
- *   422 POSSIBLE_MATCH_NOT_RESOLVED — possible-match from writer
+ *   422 POSSIBLE_MATCH_NOT_RESOLVED — possible-match from RPC (409 in route)
  *   429 RATE_LIMITED — IP or phone bucket exceeded
  *   503 RATE_LIMIT_UNAVAILABLE — rate-limit provider down
  *   500 INTERNAL — unclassified
@@ -59,8 +78,8 @@ import { info, warn } from '@/src/shared/observability/logger';
 import {
   submitPublicIntake,
   HRP_AFF_COOKIE,
+  PossibleMatchNotResolvedError,
 } from '@/src/domains/applications/aff03-public-intake.service';
-import { PossibleMatchNotResolvedError } from '@/src/domains/talent/intake-writer.service';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

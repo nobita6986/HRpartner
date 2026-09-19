@@ -1,0 +1,54 @@
+# E-12: integration-aff03b.txt — CI Integration lane only.
+#
+# AC-12 through AC-18 are runtime tests against a live DB on `hrp_mp2_test`
+# (Neon or equivalent). The Integration lane requires:
+#
+#   1. `hrp_public_rpc` provisioned by OP-01 (`scripts/create-public-rpc-role.cjs`).
+#   2. Both additive migrations applied in order:
+#        - prisma/migrations/20260918100000_aff03_writer_select_on_referral_attributions
+#        - prisma/migrations/20260919100000_aff03b_public_intake_rpc
+#   3. Environment variables:
+#        - DATABASE_URL_TEST            (writer role, RLS-enforcing)
+#        - DATABASE_URL_ADMIN_TEST      (admin role, fixture provisioning)
+#        - RATE_LIMIT_HASH_SECRET       (≥ 32 chars; auto-provisioned by
+#          tests/db/aff03-public-intake.integration.test.ts:57-61 if absent,
+#          but for AC-14 TOKEN_SIGNING_ERROR test the env var must be DELETED
+#          before invocation — handled in the test body.)
+#
+# LOCAL EXECUTION
+# ===============
+# Local execution against a throwaway Neon branch is ENV_BLOCKED in this
+# worktree. To reproduce, the Tier 1 / CI Integration lane runs:
+#
+#   npm run test:integration
+#
+# which executes `scripts/ci/integration-preflight.mjs` then `npx vitest run`
+# with the test-DB env vars validated by the preflight.
+#
+# EXPECTED TEST COUNTS (when run against a writable DB)
+# =====================================================
+# - 13 runtime-role tests (AC-01..AC-12 + AC-13 normalization parity) in the
+#   primary `RUNTIME ROLE` describe block.
+# - 2 masked regression tests (hrp_ra_select_writer + hrp_ra_update_writer)
+#   in the secondary `MASKED HR_MANAGER` describe block.
+# - Total: 15 tests in this file.
+#
+# EXPECTED CI RUN ARTIFACTS
+# =========================
+# When the CI Integration lane runs against the frozen SHA:
+#
+#   1. Quality job (unit suite + typecheck + lint + build) → "success"
+#   2. Integration job (this test file + container-DB) → "success"
+#   3. The CI run URL + job IDs go into HANDOFF §0 Control: `CI run attached`
+#   4. The exact run-id + SHA chain goes into HANDOFF §5.4 Revision Log
+#
+# Until CI Integration lane runs at the frozen SHA, this evidence is a
+# placeholder. Tier 3 LIGHT audit may either:
+#   (a) accept the source-code review + static boundary + unit suite as
+#       sufficient for the "implementation contract" gate, with the runtime
+#       lane deferred to post-merge smoke; OR
+#   (b) require CI to run before PASS.
+#
+# T1B's recommendation: option (b) is mandatory before production merge;
+# option (a) is acceptable for the T3 LIGHT read-only audit as long as the
+# source code is correct per static review.
