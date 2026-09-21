@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Task slug | `hrp-p0-a02-er001-evidence-storage-port` |
-| Spec version | `v1.0` |
+| Spec version | `v1.2` |
 | Status | `ACCEPTED` |
 | Branch | `codex/t1b-er001-evidence-storage-port` |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1b-er001-evidence-storage-port` |
@@ -20,7 +20,7 @@
 | Tier 3 LIGHT verdict | `PASS` (round 1; findings none; AUDIT.md v1.0) |
 | Authority | `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §17 (P0-A02), `docs/discovery/realignment/EVIDENCE_STORAGE_AUDIT.md` |
 | Assurance lane | `CRITICAL` |
-| Tier 1 sign-off | Tier 3 audit round 1 PASS — T0 greenlight for push & PR |
+| Tier 1 sign-off | ER-001 đã merge tại d3c61400e07e7ce5ca8357ffbc18ef82afd990c5, main CI và Vercel PASS. |
 | Next gate | `NONE — MERGED_AND_MAIN_VERIFIED` |
 
 ## 1. Outcome and changed surface
@@ -91,7 +91,7 @@ None. TASK plan executed as written; no scope expansion, no fallback substitutio
 
 ## 5. Final status
 
-`Handoff status: ACCEPTED` (round 1 — Tier 1 port-only delivery; **Tier 3 LIGHT audit round 1 PASS** recorded in §0 Control + AUDIT.md v1.0; post-audit status kept at `READY_FOR_AUDIT` because the pipeline verifier enum (`READY_FOR_REVIEW|READY_FOR_AUDIT|BLOCKED|IN_PROGRESS`) does not yet include a post-LIGHT status — Tier 0's authoritative greenlight for `PUSH_AND_OPEN_PR` is recorded in TASK §0 Next gate + Revision Log v1.1).
+`Handoff status: Tier 3 PASS; PR #29 squash-merged; main verified; không có DB/runtime smoke vì port chưa được wire; task ACCEPTED; next gate NONE.`
 
 Interface signature:
 

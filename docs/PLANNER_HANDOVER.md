@@ -6,14 +6,14 @@
 
 <!-- ROADMAP_CURSOR_START -->
 ```yaml
-updated_at: 2026-09-21T23:27:00.000Z
+updated_at: 2026-09-21T23:40:00+07:00
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 PHASE_MAP: |
   P0: production safety and integration foundations
   P1: thin recruitment value slice
   P2-P5: unlock only through realignment dependency/evidence gates
 current_lane: P0-A Evidence Gateway
-parallel_lane: None
+parallel_lane: CONTRACT-02B design-only follow-up for REC-002/REC-004b — no runtime implementation
 current_task: P0-A03 / ER-002 LocalVpsEvidenceStorageAdapter — PROPOSED_ONLY
 worktree_branch: NONE
 current_gate: T0_CONTRACT_APPROVAL_REQUIRED_BEFORE_ER002_TASK
