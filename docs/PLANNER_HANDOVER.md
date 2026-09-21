@@ -5,29 +5,27 @@
 ## 0. ROADMAP_CURSOR — phần duy nhất cập nhật theo tiến độ
 
 <!-- ROADMAP_CURSOR_START -->
-
 ```yaml
-updated_at: 2026-09-21T08:16:39.000Z
+updated_at: 2026-09-21T20:45:00.000Z
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 PHASE_MAP: |
   P0: production safety and integration foundations
   P1: thin recruitment value slice
   P2-P5: unlock only through realignment dependency/evidence gates
-current_lane: T1A documentation/contract reconciliation after AFF-03C
-parallel_lane: W5/HandlingAssignment repair to be assigned to a new T1B in a separate worktree
-current_task: T1A realignment documentation and contract follow-up
-worktree_branch: codex/t1a-realignment-discovery-docs
-current_gate: T1A_REBASE_ON_LATEST_MAIN_AND_OPEN_DOCS_PR
-previous_accepted: AFF-03C production closeout
-closeout_evidence: docs/tasks/hrp-v6-n2-aff-03c-cs-labor-profile-fix/CLOSEOUT.md
+current_lane: P0-A Evidence Gateway
+parallel_lane: None
+current_task: P0-A02 / ER-001 EvidenceStorage port — PROPOSED_ONLY
+worktree_branch: NONE
+current_gate: T0_APPROVAL_REQUIRED_BEFORE_OPENING_CODE_TASK
+previous_accepted: hrp-v6-w5-handling-assignment-safety
+closeout_evidence: docs/tasks/hrp-v6-w5-handling-assignment-safety/HANDOFF.md
 blocking_owner: "None"
-owner_defer: "None"
+owner_defer: "CONTRACT-02B vẫn CRM-owned, HRP chờ design package"
 next_steps:
-  - T1A rebase docs branch onto latest main; preserve AFF-03C closeout cursor; open docs-only PR
-  - T1A record REC-001 OWNER_APPROVED and REC-001-OPS OPEN/PROPOSED in a new immutable contract revision
-  - New T1B thin-slice W5/HandlingAssignment RLS, expiry sweep and REVOKED release semantics after file ownership is isolated
+  - T0: Approve or reject P0-A02 / ER-001 EvidenceStorage port proposal
+  - After T0 approval only: assign a new T1B in an isolated worktree from latest main
+  - HRP: wait for CRM CONTRACT-02B design package; do not open runtime implementation
 ```
-
 <!-- ROADMAP_CURSOR_END -->
 
 <!-- PRE_UI04_LANE_SNAPSHOT_2026-09-10_22-30 -->
