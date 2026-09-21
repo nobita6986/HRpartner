@@ -6,7 +6,7 @@
 
 <!-- ROADMAP_CURSOR_START -->
 ```yaml
-updated_at: 2026-09-21T20:40:00.000Z
+updated_at: 2026-09-21T20:45:00.000Z
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 PHASE_MAP: |
   P0: production safety and integration foundations
@@ -22,8 +22,9 @@ closeout_evidence: docs/tasks/hrp-v6-w5-handling-assignment-safety/HANDOFF.md
 blocking_owner: "None"
 owner_defer: "CONTRACT-02B vẫn CRM-owned, HRP chờ design package"
 next_steps:
-  - T1: Open docs-only PR for W5 closeout
-  - T1: Propose next slice: P0-A02 / ER-001 — EvidenceStorage port
+  - T0: Approve or reject P0-A02 / ER-001 EvidenceStorage port proposal
+  - After T0 approval only: assign a new T1B in an isolated worktree from latest main
+  - HRP: wait for CRM CONTRACT-02B design package; do not open runtime implementation
 ```
 <!-- ROADMAP_CURSOR_END -->
 

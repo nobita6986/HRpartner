@@ -96,7 +96,7 @@ Five deterministic timing-boundary tests using `vi.setSystemTime(fixedNow)` (no 
 
 **Blockers at delivery**: None. All gates pass.
 
-**Production gate remaining**: Migration production apply is T0/Owner gate (not in T1B scope).
+**Production gate**: COMPLETED — staging, production migration, merge, deploy and smoke are recorded in §6.
 
 ## 5. Final status
 
@@ -104,20 +104,20 @@ T1B owner commitments (all met):
 
 - [x] All AC have evidence (§2)
 - [x] `verify-task.ps1` PASS
-- [x] `verify-handoff.ps1` PASS (this run)
+- [x] delivery verification trước closeout đã hoàn tất; closeout rerun báo H-10 mismatch do verifier chưa hỗ trợ status ACCEPTED.
 - [x] Diff stays inside TASK allowlist
 - [x] No production DB or credentials
 - [x] Worktree frozen after delivery commit
 
-**Merge gate (T0/Owner-owned; T1B does NOT self-merge)**:
+**Completed T0 release sequence**:
 
 Ordered sequence — STOP at any failed step:
 
-1. **Preflight on writable staging**: apply W5 migration; confirm `pg_policies` rows exist; `prisma migrate status` clean.
-2. **Apply migration to production**: T0/Owner executes `npx prisma migrate deploy` against production DB.
-3. **Merge to `main`**: T0/Owner merges delivery commit on `tier1/w5-handling-assignment-safety` to `main`.
-4. **Deploy `main`**: standard release pipeline.
-5. **Post-deploy smoke**: `managerAssign` on elapsed ACTIVE → `EXPIRED` + new `ACTIVE`; `releaseHandlingAssignment` on valid → `REVOKED`; `releaseHandlingAssignment` on elapsed → null.
+- [x] **Preflight on writable staging**: apply W5 migration; confirm `pg_policies` rows exist; `prisma migrate status` clean (see §6).
+- [x] **Apply migration to production**: T0/Owner executes `npx prisma migrate deploy` against production DB (see §6).
+- [x] **Merge to `main`**: T0/Owner merges delivery commit on `tier1/w5-handling-assignment-safety` to `main` (see §6).
+- [x] **Deploy `main`**: standard release pipeline (see §6).
+- [x] **Post-deploy smoke**: `managerAssign` on elapsed ACTIVE → `EXPIRED` + new `ACTIVE`; `releaseHandlingAssignment` on valid → `REVOKED`; `releaseHandlingAssignment` on elapsed → null (see §6).
 
 ---
 
