@@ -1,4 +1,4 @@
-﻿# TIER 1 LIVING HANDOFF v2.12 — HRP V5/V6
+# TIER 1 LIVING HANDOFF v2.12 — HRP V5/V6
 
 > Tài liệu này là hợp đồng tiếp quản lâu dài cho **Tier 1 — Planner**. Khi bàn giao cho Agent Tier 1 khác, bình thường **chỉ cập nhật khối `ROADMAP_CURSOR` ở §0**. Không chép tiến độ task vào các section ổn định bên dưới.
 
@@ -394,6 +394,7 @@ Chỉ sửa khối `ROADMAP_CURSOR` ở §0 (phần nằm trong marker `<!-- ROA
 | 2.2 | 01/09/2026 | Thêm §13 — credential hygiene hoãn đến Phase 5 |
 | 2.3 | 07/09/2026 | Chuyển cursor sang TEST-01 round 4 |
 | 2.4 | 08/09/2026 | V6 Phase 1: 1/2 done, job-opening-split R4 PASS, labor-profile-schema READY, AFF §20 17/17 chưa tick |
+| 2.13 | 21/09/2026 | Cập nhật cursor sang AFF-03B (Tier 1B); Tier 1A chạy docs/discovery song song không merge trước. |
 | 2.5 | 08/09/2026 | V6 Phase 1: 2/2 schema task ACCEPTED + LIVE APPLIED hrp-live (f8bd761); cursor chuyển sang p1c-new-ui-restyling R4 (READY); thêm phase1_live_evidence note (verified no auto-deploy migration) |
 | 2.6 | 08/09/2026 | V6 Phase 1: 3/3 core task ACCEPTED — p1c-new-ui-restyling AUDIT R1 PASS (0 P0/P1/P2); cursor chuyển sang security-credential-rotation (READY_FOR_EXECUTION); thêm phase1c_audit_evidence note (gate fingerprint + frozen test hashes) |
 | 2.7 | 08/09/2026 23:57 | Task `hrp-v6-security-credential-rotation` Tier 3 audit round 1 BLOCKED (AUD-001: canary contract vs reality mismatch; AUD-002: Owner rotation pending). Tier 1 verify audit claims: AC-02 PASS (git check-ignore exit 0); AC-09 2/4 canary tồn tại + 2 OUT_OF_SCOPE. DELTA: sửa AC-02/AC-09/AC-10. bump v1.2 → v1.3. §9 Planner Resolution ghi nhận. verify-task.ps1 DRAFT-VALID exit 0 (BLOCKED = non-READY_FOR_EXECUTION). Commit `13f3e40` (AUDIT.md + TASK.md v1.3). Chờ Owner/OP rotate credential → Tier 3 re-audit round 2 → ACCEPTED. |
