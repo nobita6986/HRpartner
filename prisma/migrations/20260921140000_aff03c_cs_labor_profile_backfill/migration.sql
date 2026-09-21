@@ -68,7 +68,10 @@
 --      - RESET ROLE before the data backfill
 --      - GRANT hrp_public_rpc TO <session_user> WITH SET FALSE
 --      - REVOKE CREATE ON SCHEMA public FROM hrp_public_rpc
---      - REVOKE hrp_public_rpc FROM <session_user>   (RQ-06 hygiene)
+--      - REVOKE hrp_public_rpc FROM <session_user> when the membership was
+--        granted by the current role; managed Neon may retain a cloud_admin-
+--        granted metadata row, so the migration separately asserts that no
+--        retained direct row has SET or INHERIT capability (RQ-06 hygiene)
 --
 -- 5. hrp_public_rpc role is PRE-PROVISIONED by OP-01 (scripts/create-public-rpc-role.cjs).
 --    This migration MUST NOT create or alter the role (DEC-09, DEC-14).
@@ -88,7 +91,8 @@
 --     DB; on production the 1 affected row matches on first apply; a re-apply
 --     matches zero rows).
 --   - GRANT EXECUTE and the temporary SET-role choreography are idempotent.
---   - Membership-choreography GRANT/REVOKE idempotent.
+--   - Membership choreography is idempotent and finishes with SET/INHERIT
+--     disabled even when Neon retains a cloud_admin-granted metadata row.
 --
 -- NOT APPLIED TO PRODUCTION
 --   Per Tier 0 brief: "KHONG apply migration len production". Tier 1 ships
@@ -376,13 +380,30 @@ BEGIN
 END
 $$;
 REVOKE CREATE ON SCHEMA public FROM hrp_public_rpc;
--- RQ-06 closure: revoke the membership itself so the session role does NOT
--- remain a member of hrp_public_rpc after this migration. Without this,
--- `WITH SET FALSE` would only lower the SET-privilege; membership would
--- persist as a quiet privilege escalation vector.
+-- RQ-06 closure: try to remove the membership created for this operation.
+-- On managed Neon the membership grantor can be recorded as `cloud_admin`;
+-- a REVOKE issued by `neondb_owner` then emits a NOTICE and leaves a metadata
+-- row behind. Runtime safety depends on SET and INHERIT being false, so the
+-- assertion below checks those effective membership options explicitly.
 DO $$
 BEGIN
   EXECUTE format('REVOKE hrp_public_rpc FROM %I', session_user);
+END
+$$;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+      FROM pg_auth_members am
+     WHERE am.roleid = 'hrp_public_rpc'::regrole
+       AND am.member = session_user::regrole
+       AND (am.set_option OR am.inherit_option)
+  ) THEN
+    RAISE EXCEPTION 'AFF-03C privilege cleanup failed: % retains SET or INHERIT on hrp_public_rpc',
+      session_user
+      USING ERRCODE = '42501';
+  END IF;
 END
 $$;
 

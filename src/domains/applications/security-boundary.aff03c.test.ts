@@ -11,7 +11,7 @@ const sql = readFileSync(MIGRATION, 'utf8');
 const code = sql.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--.*$/gm, '');
 
 describe('AFF-03C candidate-submission profile link — static migration guard', () => {
-  it('replaces the existing function while executing as its hrp_public_rpc owner', () => {
+  it('replaces the existing function as its owner and closes SET/INHERIT capability', () => {
     const grantMembership = code.indexOf(
       "GRANT hrp_public_rpc TO %I WITH SET TRUE",
     );
@@ -29,6 +29,8 @@ describe('AFF-03C candidate-submission profile link — static migration guard',
     expect(replaceFunction).toBeGreaterThan(setRole);
     expect(resetRole).toBeGreaterThan(replaceFunction);
     expect(revokeMembership).toBeGreaterThan(resetRole);
+    expect(code).toContain('am.set_option OR am.inherit_option');
+    expect(code).toContain('AFF-03C privilege cleanup failed');
   });
 
   it('preserves the SECURITY DEFINER boundary and pinned search_path', () => {
