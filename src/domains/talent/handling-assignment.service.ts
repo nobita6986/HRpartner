@@ -78,12 +78,32 @@ export interface ManagerAssignInput {
   reason: string;
 }
 
+async function expireElapsedHandlingAssignments(
+  tx: Prisma.TransactionClient,
+  laborProfileId: string,
+  now: Date,
+) {
+  return tx.laborProfileHandlingAssignment.updateMany({
+    where: {
+      laborProfileId,
+      status: ASSIGNMENT_STATUS.ACTIVE,
+      expiresAt: { lte: now },
+    },
+    data: {
+      status: ASSIGNMENT_STATUS.EXPIRED,
+      updatedAt: now,
+    },
+  });
+}
+
 export async function managerAssign(
   tx: Prisma.TransactionClient,
   input: ManagerAssignInput
 ) {
   const now = new Date();
   const expiresAt = input.days ? new Date(now.getTime() + input.days * 24 * 60 * 60 * 1000) : null;
+
+  await expireElapsedHandlingAssignments(tx, input.laborProfileId, now);
 
   // Validate assignee role (P1-4)
   const newAssignee = await tx.user.findUnique({
@@ -97,7 +117,7 @@ export async function managerAssign(
     throw new Error('Only HR_STAFF or HR_MANAGER can be assigned to handle Labor Profiles');
   }
 
-  const activeAssignment = await getActiveHandlingAssignment(tx, input.laborProfileId);
+  const activeAssignment = await getActiveHandlingAssignment(tx, input.laborProfileId, now);
 
   if (activeAssignment) {
     await tx.laborProfileHandlingAssignment.update({
@@ -127,7 +147,8 @@ export async function managerAssign(
 
 export async function getActiveHandlingAssignment(
   tx: Prisma.TransactionClient,
-  laborProfileId: string
+  laborProfileId: string,
+  asOf = new Date(),
 ) {
   const activeAssignment = await tx.laborProfileHandlingAssignment.findFirst({
     where: {
@@ -143,8 +164,8 @@ export async function getActiveHandlingAssignment(
     return null;
   }
 
-  const now = new Date();
-  if (activeAssignment.expiresAt && activeAssignment.expiresAt < now) {
+  // Expired when expiresAt <= asOf (same semantics as sweep's lte)
+  if (activeAssignment.expiresAt && activeAssignment.expiresAt <= asOf) {
     return null; // Treated as expired (in Company Pool)
   }
 
@@ -161,7 +182,10 @@ export async function releaseHandlingAssignment(
   tx: Prisma.TransactionClient,
   input: ReleaseHandlingAssignmentInput
 ) {
-  const activeAssignment = await getActiveHandlingAssignment(tx, input.laborProfileId);
+  const now = new Date();
+  await expireElapsedHandlingAssignments(tx, input.laborProfileId, now);
+
+  const activeAssignment = await getActiveHandlingAssignment(tx, input.laborProfileId, now);
 
   if (!activeAssignment) {
     return null;
@@ -173,11 +197,10 @@ export async function releaseHandlingAssignment(
   });
   const actorName = actor?.name || input.actorId;
 
-  const now = new Date();
   return tx.laborProfileHandlingAssignment.update({
     where: { id: activeAssignment.id },
     data: {
-      status: ASSIGNMENT_STATUS.EXPIRED,
+      status: ASSIGNMENT_STATUS.REVOKED,
       reason: `[Thu hồi bởi ${actorName}] ${input.reason}`,
       updatedAt: now,
     },
