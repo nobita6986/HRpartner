@@ -554,6 +554,49 @@ P5 — Evidence-triggered V9
 
 These are execution priorities, not new domain authorities.
 
+## 15.1. Universal AFF continuity and re-entry
+
+`docs/V6/aff_plan.md` remains the domain/design authority for Universal Affiliate. This plan is the execution-sequencing authority: it decides when a new AFF slice may open and prevents completed production work from being restarted.
+
+Current execution state:
+
+| Area | Realignment disposition |
+|---|---|
+| AFF-01/AFF-02 | Attribution/link-capture capability baseline exists and supports the production AFF-03 path. Legacy task statuses still require documentation reconciliation; do not reopen these slices from zero. |
+| AFF-03/03B/03C | Public attribution/intake path is production verified. AFF-03C closed the missing direct `labor_profile_id` link; this does not complete Universal AFF. |
+| AFF-05A/W5 | HandlingAssignment foundation and W5 safety repair exist. W5 closes RLS, expiry sweep and `REVOKED` semantics only; it is not proof that the complete AFF-05A Company Pool/dispute scope is done. |
+| Remaining expansion | Resume with AFF-04, then reconcile residual AFF-05A scope before AFF-05B, AFF-06 and AFF-07. |
+
+Re-entry rules:
+
+1. Production defect or security hotfixes in an existing AFF path may open immediately under their own narrow gate.
+2. Feature expansion requires one approved thin-slice contract, isolated file ownership, migration/security evidence where applicable, and the normal Tier 1 → Tier 3 → Tier 0 pipeline.
+3. The first new implementation slice is AFF-04: conversion → accepted SourceClaim → server-derived Placement/ProjectAssignment propagation.
+4. Do not recreate AFF-01 through AFF-03, declare the whole AFF feature complete, or infer acceptance from stale task status fields.
+5. Full user-facing Universal AFF enablement remains P3-E and requires the AFF capability gate to pass.
+
+Evidence/CCCD readiness is not an AFF development gate. Coding, CI, preview and tests use synthetic data and must not upload real CCCD or production PII. P0-A blocks only production enablement of real evidence ingestion; it does not block unrelated AFF implementation.
+
+## 15.2. Completion semantics
+
+Completing this Realignment Plan does not mean every item ever listed in the V6, V7 or AFF backlogs has been implemented. It means the required product milestones and production gates in this plan have passed, and every relevant inherited item has an explicit disposition.
+
+Allowed dispositions are:
+
+```text
+ACCEPTED_PRODUCTION_VERIFIED
+SUPERSEDED_BY_REALIGNMENT
+DEFERRED_BY_OWNER_WITH_TRIGGER
+NOT_REQUIRED_FOR_CURRENT_PRODUCT_MILESTONE
+```
+
+Therefore:
+
+- “Realignment complete” means the milestone-driven HRP delivery is complete and its remaining backlog is explicitly dispositioned.
+- “V6 complete” or “V7 complete” may be claimed only through a separate closure matrix proving every required item in that authority set is accepted or explicitly dispositioned; architectural conformance alone is not completion.
+- “Universal AFF complete” may be claimed only when the Definition of Done in `docs/V6/aff_plan.md` passes, including the remaining AFF-04 through AFF-07 work where still applicable. P3 may ship with AFF actions hidden and therefore does not by itself prove AFF completion.
+- Deferred work must retain an owner, reopen trigger and evidence reference. Silence or an old unchecked checklist is not a disposition.
+
 ---
 
 # 16. P0 — PRODUCTION SAFETY & INTEGRATION FOUNDATIONS
@@ -704,6 +747,8 @@ filesystem access goes through EvidenceGateway
 access is authorized/audited
 backup/restore procedure exists
 ```
+
+This is a production-enablement gate for real evidence/CCCD ingestion. It is not a blanket blocker for unrelated HRP or AFF coding performed with synthetic data.
 
 ---
 
@@ -1213,6 +1258,8 @@ Poster generation optional only if recruiter usage justifies it.
 
 # 41. P3-E — UNIVERSAL AFF
 
+AFF implementation slices may be prepared earlier when their own dependencies and security gates are ready. This section controls user-facing enablement in the Recruiter Growth slice; it does not force unrelated AFF coding to wait for Evidence Gateway completion.
+
 Enable only after AFF capability passes its own gate.
 
 If unavailable:
@@ -1473,6 +1520,8 @@ Observe usage
 STEP 10
 Unlock later V8/V9 capabilities only through evidence gate
 ```
+
+This order expresses product priority, not a blanket serial coding lock. In particular, P0-A completion blocks real evidence ingestion, not synthetic-data AFF development. Parallel work is allowed only with explicit ownership and no overlapping schema/migration or coordination-file edits.
 
 ---
 
