@@ -1,4 +1,4 @@
-# TIER 1 LIVING HANDOFF v2.12 — HRP V5/V6
+﻿# TIER 1 LIVING HANDOFF v2.12 — HRP V5/V6
 
 > Tài liệu này là hợp đồng tiếp quản lâu dài cho **Tier 1 — Planner**. Khi bàn giao cho Agent Tier 1 khác, bình thường **chỉ cập nhật khối `ROADMAP_CURSOR` ở §0**. Không chép tiến độ task vào các section ổn định bên dưới.
 
