@@ -10,15 +10,14 @@
 | Audit mode | `LIGHT` |
 | Audit reason | RLS, forward-only migration, and HandlingAssignment lifecycle transitions protect recruiting responsibility and downstream commission evidence. |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_AUDIT` |
+| Status | `READY_FOR_PR` |
 | Planner | `Tier 1` |
 | Baseline | `a49ceaa83ffa986bf939823a4e9f2c803a0649d6` (post-rebase; checkpoint at `b707936` on `t1b-w5-checkpoint` branch) |
-| In-scope roots | `src/domains/talent/handling-assignment*`, `prisma/migrations/20260922100000_w5_handling_assignment_safety/**`, `tests/db/handling-assignment.integration.test.ts`, `vitest.integration-files.ts` (test registration only), `docs/tasks/hrp-v6-w5-handling-assignment-safety/**` |
-| Forbidden paths | `docs/PLANNER_HANDOVER.md`, discovery/CRM contract docs, T1A branch/worktree, hotfix worktrees, unrelated domain/UI/API files |
-| Required gates | `verify-task.ps1`, targeted unit/static tests, Prisma validate, typecheck, lint, full unit, build, integration preflight/container lane, scope diff, `verify-handoff.ps1`, Tier 3 LIGHT audit |
+| Implementation SHA | `5f4569e8183ca61fff9550f007ac0a1d2c0d10a2` |
+| Tier 3 LIGHT verdict | `PASS` (round 1; findings none) |
 | Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `/deliver → /audit → /resolve` |
+| Current audit round | `1` |
+| Next gate | `PUSH_AND_OPEN_PR → CI → T0_STAGING_PREFLIGHT` |
 
 ## 1. Outcome
 
@@ -125,9 +124,11 @@
 
 | Round | Decision | Reason |
 |---|---|---|
+| 1 | Tier 3 LIGHT verdict: PASS, findings none | AUDIT.md v1.1 synchronized; implementation SHA `5f4569e` unchanged; T0/Owner authorizes follow-up commit + push + PR |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-09-22` | Initial contract | W5 F-1/F-2/F-3 safety slice from latest main. |
+| `v1.1` | `2026-09-22` | Status `READY_FOR_PR`; Implementation SHA recorded; Tier 3 LIGHT verdict PASS round 1; next gate `PUSH_AND_OPEN_PR → CI → T0_STAGING_PREFLIGHT`; Planner Resolution round 1 entry added | Tier 3 audit round 1 PASS, findings none; AUDIT.md v1.1 in place; implementation commit unchanged. |

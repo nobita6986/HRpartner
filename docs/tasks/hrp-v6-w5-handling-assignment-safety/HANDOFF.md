@@ -7,17 +7,18 @@
 | Task slug | hrp-v6-w5-handling-assignment-safety |
 | Spec version | v1.0 |
 | Round | 1 |
-| Status | `READY_FOR_AUDIT` |
+| Status | `READY_FOR_PR` |
 | Branch | `tier1/w5-handling-assignment-safety` |
-| Implementation SHA | `tier1/w5-handling-assignment-safety` (WIP — pending delivery commit) |
+| Implementation SHA | `5f4569e8183ca61fff9550f007ac0a1d2c0d10a2` (frozen; not amended after Tier 3 audit) |
+| Tier 3 LIGHT verdict | PASS, round 1, findings none (AUDIT.md v1.1) |
 | Baseline | `a49ceaa83ffa986bf939823a4e9f2c803a0649d6` (rebased from `b707936`; checkpoint at `t1b-w5-checkpoint` branch) |
 | Original baseline | `b707936977d41ae726baf2f5170ca7ae55d721f8` |
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
-| Tier 1 sign-off | Initial delivery |
-| Next gate | Tier 3 LIGHT audit; T0/Owner merge gate |
+| Tier 1 sign-off | Delivery complete; pending CI on PR |
+| Next gate | T1B push branch and open PR → CI green → T0 writable-staging preflight/apply/verify → T0 production gate and merge sequence |
 
-> Handoff status: `READY_FOR_AUDIT` (round 1 — T1B delivery; frozen; no remote push, no PR, no production deploy).
+> Handoff status: `READY_FOR_PR` (round 1 — Tier 3 LIGHT audit PASS at HEAD `5f4569e`; follow-up commit will contain only AUDIT.md + coordination docs; implementation SHA unchanged).
 
 ## 1. Outcome and changed surface
 
@@ -120,4 +121,4 @@ Ordered sequence — STOP at any failed step:
 
 ---
 
-> Handoff status: `READY_FOR_AUDIT` (round 1 — T1B delivery complete; frozen; no remote push, no PR, no production deploy).
+> Handoff status: `READY_FOR_PR` (round 1 — Tier 3 LIGHT audit PASS at HEAD `5f4569e`; implementation SHA unchanged after audit; follow-up commit will contain only AUDIT.md + coordination docs).
