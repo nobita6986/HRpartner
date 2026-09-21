@@ -32,7 +32,7 @@
 --      POSSIBLE_MATCH instead of NEW_PROFILE; returning applicants would
 --      create duplicate labor_profiles rows).
 --   3. INSERT labor_profiles only on verdict='NEW_PROFILE'.
---   4. INSERT placement_cases.
+--   4. INSERT placement_case.
 --   5. INSERT candidate_submissions (vendor_id=NULL, ctv_id=NULL per DEC-13).
 --   6. WHEN referralAttributionId is non-NULL:
 --      a. RPC-body probe (DEC-11 (b)): SELECT 1 FROM referral_attributions
@@ -62,13 +62,13 @@
 -- SCOPE (narrowest possible — DEC-15)
 --   - labor_profiles: SELECT (for scoreAndClassify reads) + INSERT (for
 --     verdict='NEW_PROFILE' only).
---   - placement_cases: INSERT.
+--   - placement_case: INSERT (Prisma @@map = placement_case, singular).
 --   - candidate_submissions: INSERT.
 --   - labor_profile_handling_assignments: INSERT.
 --   - referral_attributions: SELECT (for the (b)-probe and to read
 --     referrer_user_id) + UPDATE (for the ACTIVE → CONSUMED transition).
 --   No DELETE on any table; no UPDATE on labor_profiles / candidate_submissions
---   / placement_cases / labor_profile_handling_assignments.
+--   / placement_case / labor_profile_handling_assignments.
 --
 -- IDEMPOTENT
 --   DROP POLICY IF EXISTS ... pattern not used (no policies added here).
@@ -394,13 +394,13 @@ BEGIN
     RETURNING id INTO v_lp_id;
   END IF;
 
-  -- 5. INSERT placement_cases (one ACTIVE case per LP — partial unique index
+  -- 5. INSERT placement_case (one ACTIVE case per LP — partial unique index
   --    placement_case_labor_profile_id_active_unique enforces; if another
   --    active case exists, we'll get a unique-violation and fall through to
   --    reuse the existing one, mirroring the writer at
   --    src/domains/talent/intake-writer.service.ts:146-160).
   BEGIN
-    INSERT INTO placement_cases (
+    INSERT INTO placement_case (
       id, labor_profile_id, status, opened_at, created_at, updated_at
     ) VALUES (
       gen_random_uuid()::text, v_lp_id, 'OPEN', now(), now(), now()
@@ -409,7 +409,7 @@ BEGIN
   EXCEPTION WHEN unique_violation THEN
     -- Reuse existing ACTIVE placement_case for this LaborProfile.
     SELECT id INTO v_pc_id
-      FROM placement_cases
+      FROM placement_case
      WHERE labor_profile_id = v_lp_id
        AND status IN ('OPEN','IN_PROGRESS','READY_TO_PLACE')
      ORDER BY opened_at DESC
@@ -563,6 +563,6 @@ $$;
 
 GRANT SELECT, INSERT ON labor_profiles TO hrp_public_rpc;
 GRANT INSERT ON candidate_submissions TO hrp_public_rpc;
-GRANT INSERT ON placement_cases TO hrp_public_rpc;
+GRANT INSERT ON placement_case TO hrp_public_rpc;
 GRANT INSERT ON labor_profile_handling_assignments TO hrp_public_rpc;
 GRANT SELECT, UPDATE ON referral_attributions TO hrp_public_rpc;

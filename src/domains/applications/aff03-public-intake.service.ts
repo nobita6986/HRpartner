@@ -11,7 +11,7 @@
  *
  * The full write chain — signal normalization + `scoreAndClassify` (≥2-signal
  * EXACT_MATCH rule preserved, mirrors `src/domains/talent/labor-profile.service.ts:108-184`)
- * + `INSERT labor_profiles` + `INSERT placement_cases` + `INSERT candidate_submissions`
+ * + `INSERT labor_profiles` + `INSERT placement_case` + `INSERT candidate_submissions`
  * + `UPDATE referral_attributions` + `INSERT labor_profile_handling_assignments`
  * — is owned by the SECURITY DEFINER RPC `hrp_public_intake_submission(jsonb)`
  * (migration `20260919100000_aff03b_public_intake_rpc`). The RPC runs under
