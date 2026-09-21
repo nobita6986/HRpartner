@@ -4,6 +4,7 @@ import {
   createInitialAffiliateAssignment,
   getActiveHandlingAssignment,
   managerAssign,
+  releaseHandlingAssignment,
   ASSIGNMENT_STATUS,
   ASSIGNMENT_SOURCE,
 } from './handling-assignment.service';
@@ -17,19 +18,18 @@ const mockTx = {
   },
   user: {
     findUnique: vi.fn(),
-  }
+  },
 } as unknown as Prisma.TransactionClient;
 
 describe('handling-assignment.service', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('should create initial affiliate assignment correctly', async () => {
     const laborProfileId = 'lp-1';
     const referrerUserId = 'user-1';
 
-    // Mock create to return what it receives
     (mockTx.laborProfileHandlingAssignment.create as any).mockImplementation(async (args: any) => ({
       id: 'assignment-1',
       ...args.data,
@@ -60,8 +60,8 @@ describe('handling-assignment.service', () => {
     expect(assignment.expiresAt).toBeDefined();
   });
 
-  it('should return null for expired assignment', async () => {
-    const pastDate = new Date(Date.now() - 1000 * 60 * 60 * 24); // 1 day ago
+  it('should return null for expired assignment (expiresAt < asOf)', async () => {
+    const pastDate = new Date(Date.now() - 1000 * 60 * 60 * 24);
 
     (mockTx.laborProfileHandlingAssignment.findFirst as any).mockResolvedValue({
       id: 'assignment-old',
@@ -73,8 +73,28 @@ describe('handling-assignment.service', () => {
     expect(active).toBeNull();
   });
 
-  it('should manager assign and revoke previous assignment', async () => {
-    const activeAssignment = { id: 'old-1' };
+  it('should return null when expiresAt exactly equals asOf (boundary: expired)', async () => {
+    const fixedNow = new Date('2026-09-22T12:00:00Z');
+    vi.setSystemTime(fixedNow);
+    const exactExpiry = new Date('2026-09-22T12:00:00Z'); // exactly same instant
+
+    (mockTx.laborProfileHandlingAssignment.findFirst as any).mockResolvedValue({
+      id: 'assignment-exact',
+      expiresAt: exactExpiry,
+      status: ASSIGNMENT_STATUS.ACTIVE,
+    });
+
+    // Same snapshot used by both sweep and getActiveHandlingAssignment
+    const asOf = new Date('2026-09-22T12:00:00Z');
+    const active = await getActiveHandlingAssignment(mockTx, 'lp-boundary', asOf);
+
+    // expiresAt === asOf is treated as expired (consistent with sweep lte)
+    expect(active).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('should manager assign and transfer previous assignment', async () => {
+    const activeAssignment = { id: 'old-1', expiresAt: null };
     (mockTx.laborProfileHandlingAssignment.findFirst as any).mockResolvedValue(activeAssignment);
     (mockTx.laborProfileHandlingAssignment.create as any).mockImplementation(async (args: any) => args.data);
     (mockTx.user.findUnique as any).mockResolvedValue({ role: 'HR_STAFF' });
@@ -87,6 +107,17 @@ describe('handling-assignment.service', () => {
       reason: 'Manual assign',
     });
 
+    expect(mockTx.laborProfileHandlingAssignment.updateMany).toHaveBeenCalledWith({
+      where: {
+        laborProfileId: 'lp-3',
+        status: ASSIGNMENT_STATUS.ACTIVE,
+        expiresAt: { lte: expect.any(Date) },
+      },
+      data: {
+        status: ASSIGNMENT_STATUS.EXPIRED,
+        updatedAt: expect.any(Date),
+      },
+    });
     expect(mockTx.laborProfileHandlingAssignment.update).toHaveBeenCalledWith({
       where: { id: 'old-1' },
       data: {
@@ -99,5 +130,223 @@ describe('handling-assignment.service', () => {
     expect(newAssignment.assigneeUserId).toBe('user-2');
     expect(newAssignment.previousAssignmentId).toBe('old-1');
     expect(newAssignment.source).toBe(ASSIGNMENT_SOURCE.MANAGER_ASSIGNMENT);
+  });
+
+  it('should create after sweeping an elapsed ACTIVE row', async () => {
+    (mockTx.laborProfileHandlingAssignment.findFirst as any).mockResolvedValue(null);
+    (mockTx.laborProfileHandlingAssignment.create as any).mockImplementation(async (args: any) => args.data);
+    (mockTx.user.findUnique as any).mockResolvedValue({ role: 'HR_STAFF' });
+
+    const newAssignment = await managerAssign(mockTx, {
+      laborProfileId: 'lp-expired',
+      newAssigneeUserId: 'user-2',
+      managerUserId: 'manager-1',
+      days: 7,
+      reason: 'Reassign expired handling',
+    });
+
+    expect(mockTx.laborProfileHandlingAssignment.updateMany).toHaveBeenCalledWith({
+      where: {
+        laborProfileId: 'lp-expired',
+        status: ASSIGNMENT_STATUS.ACTIVE,
+        expiresAt: { lte: expect.any(Date) },
+      },
+      data: {
+        status: ASSIGNMENT_STATUS.EXPIRED,
+        updatedAt: expect.any(Date),
+      },
+    });
+    expect(newAssignment.status).toBe(ASSIGNMENT_STATUS.ACTIVE);
+    expect(newAssignment.previousAssignmentId).toBeNull();
+  });
+
+  it('should record manual release as REVOKED', async () => {
+    (mockTx.laborProfileHandlingAssignment.findFirst as any).mockResolvedValue({
+      id: 'active-1',
+      expiresAt: null,
+    });
+    (mockTx.user.findUnique as any).mockResolvedValue({ name: 'Manager' });
+    (mockTx.laborProfileHandlingAssignment.update as any).mockImplementation(async (args: any) => args.data);
+
+    const released = await releaseHandlingAssignment(mockTx, {
+      laborProfileId: 'lp-release',
+      actorId: 'manager-1',
+      reason: 'Return to pool',
+    });
+
+    expect(released?.status).toBe(ASSIGNMENT_STATUS.REVOKED);
+    expect(released?.reason).toBe('[Thu hồi bởi Manager] Return to pool');
+  });
+
+  it('should expire an elapsed row and not manually revoke it', async () => {
+    (mockTx.laborProfileHandlingAssignment.findFirst as any).mockResolvedValue(null);
+
+    const released = await releaseHandlingAssignment(mockTx, {
+      laborProfileId: 'lp-elapsed-release',
+      actorId: 'manager-1',
+      reason: 'Too late',
+    });
+
+    expect(released).toBeNull();
+    expect(mockTx.laborProfileHandlingAssignment.updateMany).toHaveBeenCalledWith({
+      where: {
+        laborProfileId: 'lp-elapsed-release',
+        status: ASSIGNMENT_STATUS.ACTIVE,
+        expiresAt: { lte: expect.any(Date) },
+      },
+      data: {
+        status: ASSIGNMENT_STATUS.EXPIRED,
+        updatedAt: expect.any(Date),
+      },
+    });
+    expect(mockTx.laborProfileHandlingAssignment.update).not.toHaveBeenCalled();
+  });
+
+  // --- Timing-edge deterministic regression tests ---
+  // These tests use vi.setSystemTime so that sweep and getActive see
+  // the exact same `now` snapshot — no reliance on wall-clock timing.
+
+  it('sweep + getActive share the same `now` snapshot: expired row gets EXPIRED then new ACTIVE is created', async () => {
+    const fixedNow = new Date('2026-09-22T12:00:00Z');
+    vi.setSystemTime(fixedNow);
+
+    // Simulate: DB has an ACTIVE row whose expiresAt is already past `now`
+    (mockTx.laborProfileHandlingAssignment.findFirst as any).mockResolvedValue(null);
+
+    (mockTx.laborProfileHandlingAssignment.updateMany as any).mockResolvedValue({ count: 1 });
+    (mockTx.laborProfileHandlingAssignment.create as any).mockImplementation(async (args: any) => args.data);
+    (mockTx.user.findUnique as any).mockResolvedValue({ role: 'HR_STAFF' });
+
+    const result = await managerAssign(mockTx, {
+      laborProfileId: 'lp-same-snapshot',
+      newAssigneeUserId: 'user-2',
+      managerUserId: 'manager-1',
+      days: 7,
+      reason: 'Same-snapshot test',
+    });
+
+    // The sweep should have marked the old row EXPIRED
+    expect(mockTx.laborProfileHandlingAssignment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: ASSIGNMENT_STATUS.ACTIVE,
+          expiresAt: { lte: fixedNow },
+        }),
+        data: expect.objectContaining({
+          status: ASSIGNMENT_STATUS.EXPIRED,
+        }),
+      }),
+    );
+
+    // getActive found nothing (sweep already cleared it) → new ACTIVE created
+    expect(mockTx.laborProfileHandlingAssignment.create).toHaveBeenCalled();
+    expect(result.status).toBe(ASSIGNMENT_STATUS.ACTIVE);
+    expect(result.previousAssignmentId).toBeNull(); // no valid predecessor
+
+    vi.useRealTimers();
+  });
+
+  it('sweep + getActive share the same `now` snapshot: valid row gets TRANSFERRED then new ACTIVE links to it', async () => {
+    const fixedNow = new Date('2026-09-22T12:00:00Z');
+    vi.setSystemTime(fixedNow);
+
+    const stillValid = {
+      id: 'valid-predecessor',
+      expiresAt: new Date('2026-09-29T12:00:00Z'), // far future > now
+    };
+
+    (mockTx.laborProfileHandlingAssignment.findFirst as any).mockResolvedValue(stillValid);
+    (mockTx.laborProfileHandlingAssignment.updateMany as any).mockResolvedValue({ count: 0 });
+    (mockTx.laborProfileHandlingAssignment.update as any).mockImplementation(async (args: any) => args.data);
+    (mockTx.laborProfileHandlingAssignment.create as any).mockImplementation(async (args: any) => args.data);
+    (mockTx.user.findUnique as any).mockResolvedValue({ role: 'HR_STAFF' });
+
+    const result = await managerAssign(mockTx, {
+      laborProfileId: 'lp-valid-pred',
+      newAssigneeUserId: 'user-2',
+      managerUserId: 'manager-1',
+      days: 7,
+      reason: 'Valid predecessor',
+    });
+
+    // Sweep found 0 rows to expire (nothing elapsed)
+    expect(mockTx.laborProfileHandlingAssignment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ expiresAt: { lte: fixedNow } }),
+        data: expect.objectContaining({ status: ASSIGNMENT_STATUS.EXPIRED }),
+      }),
+    );
+
+    // getActive found the still-valid row → TRANSFERRED
+    expect(mockTx.laborProfileHandlingAssignment.update).toHaveBeenCalledWith({
+      where: { id: 'valid-predecessor' },
+      data: expect.objectContaining({ status: ASSIGNMENT_STATUS.TRANSFERRED }),
+    });
+
+    // New ACTIVE links to predecessor
+    expect(result.previousAssignmentId).toBe('valid-predecessor');
+    expect(result.status).toBe(ASSIGNMENT_STATUS.ACTIVE);
+
+    vi.useRealTimers();
+  });
+
+  it('release with valid assignment: marks REVOKED and returns the row', async () => {
+    const fixedNow = new Date('2026-09-22T12:00:00Z');
+    vi.setSystemTime(fixedNow);
+
+    const valid = {
+      id: 'valid-release',
+      expiresAt: new Date('2026-09-29T12:00:00Z'),
+    };
+    (mockTx.laborProfileHandlingAssignment.findFirst as any).mockResolvedValue(valid);
+    (mockTx.laborProfileHandlingAssignment.updateMany as any).mockResolvedValue({ count: 0 });
+    (mockTx.laborProfileHandlingAssignment.update as any).mockImplementation(async (args: any) => args.data);
+    (mockTx.user.findUnique as any).mockResolvedValue({ name: 'Manager' });
+
+    const result = await releaseHandlingAssignment(mockTx, {
+      laborProfileId: 'lp-valid-release',
+      actorId: 'manager-1',
+      reason: 'Return to pool',
+    });
+
+    expect(result?.status).toBe(ASSIGNMENT_STATUS.REVOKED);
+    expect(mockTx.laborProfileHandlingAssignment.update).toHaveBeenCalledWith({
+      where: { id: 'valid-release' },
+      data: expect.objectContaining({ status: ASSIGNMENT_STATUS.REVOKED }),
+    });
+
+    vi.useRealTimers();
+  });
+
+  it('release with expired assignment: sweep marks EXPIRED, getActive returns null, nothing updated', async () => {
+    const fixedNow = new Date('2026-09-22T12:00:00Z');
+    vi.setSystemTime(fixedNow);
+
+    // After sweep, findFirst returns null (row already swept away or null due to expiresAt <= now)
+    (mockTx.laborProfileHandlingAssignment.findFirst as any).mockResolvedValue(null);
+    (mockTx.laborProfileHandlingAssignment.updateMany as any).mockResolvedValue({ count: 1 });
+
+    const result = await releaseHandlingAssignment(mockTx, {
+      laborProfileId: 'lp-expired-release',
+      actorId: 'manager-1',
+      reason: 'Too late',
+    });
+
+    // Sweep ran
+    expect(mockTx.laborProfileHandlingAssignment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: ASSIGNMENT_STATUS.ACTIVE,
+          expiresAt: { lte: fixedNow },
+        }),
+        data: expect.objectContaining({ status: ASSIGNMENT_STATUS.EXPIRED }),
+      }),
+    );
+
+    // getActive found nothing → no update
+    expect(result).toBeNull();
+    expect(mockTx.laborProfileHandlingAssignment.update).not.toHaveBeenCalled();
+
+    vi.useRealTimers();
   });
 });

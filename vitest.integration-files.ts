@@ -57,4 +57,6 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // migration `20260918100000_aff03_writer_select_on_referral_attributions`
   // to be applied (CI Integration lane applies via the standard pipeline).
   'tests/db/aff03-public-intake.integration.test.ts',
+  // W5 HandlingAssignment: forced RLS scope plus expiry/release lifecycle.
+  'tests/db/handling-assignment.integration.test.ts',
 ];
