@@ -1,0 +1,33 @@
+﻿node.exe : [33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/tier1-n2-aff-03-apply-attribution
+
+ Γ£ô tests/db/aff03-public-intake.integration.test.ts (15 tests) 23703ms
+   Γ£ô AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-01 (runtime role): valid cookie ΓåÆ status=CONSUMED, labor_profile_id bound, LPHA created (source=AFF_INITIAL) 1362ms
+   Γ£ô AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-02 (runtime role): forged cookie ΓåÆ no mutation, no LPHA, candidate_submissions still created (non-attributed) 1144ms
+   Γ£ô AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-03 (runtime role): no cookie ΓåÆ non-attributed LaborProfile created, no LPHA 878ms
+   Γ£ô AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-04 (runtime role): row expiresAt <= now() ΓåÆ status UNCHANGED, no LPHA 1171ms
+   Γ£ô AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-05 (runtime role): row status=CONSUMED ΓåÆ consumedAt NOT overwritten, no second LPHA 1158ms
+   Γ£ô AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-06 (runtime role): TOKEN_SIGNING_ERROR ΓåÆ 201 no mutation, no log distinguishes from missing 996ms
+   Γ£ô AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-07 (runtime role): guard (a) service-level pre-filter rejects non-ACTIVE row ΓåÆ no UPDATE 1050ms
+   Γ£ô AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-08 (runtime role): guard (b) RPC-body probe rejects row bound to a DIFFERENT LP 1251ms
+   Γ£ô AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-09 (runtime role): guard (c) RPC-body WHERE predicate ΓÇö second consume blocked at WHERE (row already CONSUMED, status=ACTIVE no longer matches) 1359ms
+   Γ£ô AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-10 (runtime role): scoring parity ΓÇö phone+name+cccd match existing LP ΓåÆ EXACT_MATCH, no duplicate row 1057ms
+   Γ£ô AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-11 (runtime role): phone-only applicant ΓåÆ NEW_PROFILE (not POSSIBLE_MATCH) 835ms
+   Γ£ô AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-12 (runtime role): returning applicant (phone+name match) ΓåÆ EXACT_MATCH, NO duplicate labor_profiles row 953ms
+   Γ£ô AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-13 (static): 24-fixture normalization parity corpus ΓÇö TS and PL/pgSQL must agree 3509ms
+   Γ£ô AFF-03B writer policies ΓÇö MASKED HR_MANAGER regression > hrp_ra_select_writer permits the masked writer role to SELECT an ACTIVE row 1288ms
+   Γ£ô AFF-03B writer policies ΓÇö MASKED HR_MANAGER regression > hrp_ra_update_writer permits the masked writer role to UPDATE ACTIVEΓåÆCONSUMED with labor_profile_id bound 1578ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  13:03:22
+   Duration  24.41s (transform 120ms, setup 0ms, collect 180ms, tests 23.70s, environment 0ms, prepare 142ms)
+

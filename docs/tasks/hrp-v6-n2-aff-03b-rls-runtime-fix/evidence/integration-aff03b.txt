@@ -1,31 +1,50 @@
-# E-12: integration-aff03b.txt — CI Integration lane only.
+# E-12: integration-aff03b.txt — CI Integration lane.
 #
-# AC-12 through AC-18 are runtime tests against a live DB on the CI
-# integration lane (ephemeral `postgres:16-alpine` service container;
-# RLS/role posture pre-provisioned by `scripts/ci/container-test-db.mjs`
-# — `hrp_public_rpc` is at line 56 of that script: NOLOGIN BYPASSRLS).
+# AC-12 through AC-18 are runtime tests against the ephemeral CI DB
+# (`postgres:16-alpine` service container on PR #22). RLS/role posture is
+# pre-provisioned by `scripts/ci/container-test-db.mjs` — `hrp_public_rpc` is
+# provisioned at line 56 of that script as NOLOGIN BYPASSRLS.
 #
-# Branch: tier1/hrp-v6-n2-aff-03b-rls-runtime-fix
-# Baseline: origin/main 1059f6669482efac5b7956ef25d43996ca59d515
-# Branch HEAD (this delivery): 4909c41c077bbf8647ddd070089f39d8ac7ed66a
-#   = 4 cherry-picked commits (809e3aa feature + fcd6bfb SHA-fill + cfe44bd
-#   SHA-split + 4909c41 F-P3-1 route comment fix).
+# Branch:        tier1/hrp-v6-n2-aff-03b-rls-runtime-fix
+# Baseline:      origin/main 1059f6669482efac5b7956ef25d43996ca59d515
+# Round-2 HEAD:  1c08ecddd10564e0372f4146cf3527b5b21d4351  (frozen by Tier 0)
+# Previous Tier 3 PASS SHA (parent slice aff-03): 71a985969e8d4786241a52fdac8369200f5e5bcd
 #
-# Required CI conditions
-# ======================
+# ============================================================================
+# CI RUN ARTIFACTS — REAL, attached at HEAD 1c08ecd on PR #22
+# ============================================================================
+#   CI run URL:        https://github.com/nobita6986/HRpartner/actions/runs/35556876521
+#   Round-2 HEAD SHA:  1c08ecddd10564e0372f4146cf3527b5b21d4351
+#   Quality job id:    106202086759   conclusion=success
+#                      Steps: Typecheck (success) + Lint (success) + Unit (success, 2390/2390)
+#                             + Build (success)
+#   Integration job:   106202086882   conclusion=success
+#                      Steps: Prisma migrate deploy (39 migrations on container, success)
+#                             + Bootstrap post-migrate grants (success)
+#                             + Integration tests (430/432 PASS, 2 skipped baseline)
+#                             + Short-circuit success (skipped — docs/config-only not applicable)
+#   Vercel:            pass — preview deployment completed
+#                      (https://vercel.com/thuans-projects-0b7f4d74/hrpartner-vn/BgG5mFSTTC1HWrRK5zdpqm6sg9hQ)
+#   PR mergeState:     CLEAN (MERGEABLE)
+#
+# Required CI conditions (all satisfied at run 35556876521)
+# ==========================================================
 #   1. `hrp_public_rpc` provisioned as NOLOGIN BYPASSRLS — done by
 #      scripts/ci/container-test-db.mjs (idempotent; same in dev/staging).
 #   2. Both additive migrations applied via `npx prisma migrate deploy`:
 #        - prisma/migrations/20260918100000_aff03_writer_select_on_referral_attributions
 #        - prisma/migrations/20260919100000_aff03b_public_intake_rpc
-#   3. Environment variables exposed by .github/workflows/ci.yml:
-#        - DATABASE_URL_TEST      (= app_user_writer @ localhost:5432/ci_test)
-#        - DATABASE_URL_ADMIN_TEST (= postgres/superuser @ localhost:5432/ci_test)
-#        - RATE_LIMIT_HASH_SECRET auto-provisioned by the test itself
-#          (tests/db/aff03-public-intake.integration.test.ts:57-61) when not
-#          set; the AC-14 TOKEN_SIGNING_ERROR test deletes it before invocation.
+#   3. Environment variables exposed by .github/workflows/ci.yml use ephemeral
+#      container credentials (DATABASE_URL=postgresql://ci:ci@localhost:5432/ci_dummy,
+#      DATABASE_URL_ADMIN=postgresql://ci:ci@localhost:5432/ci_dummy). The string
+#      `ci_dummy` is the public test-DB name baked into the workflow; the password
+#      literal `ci:ci` is the local-container credential, not a real secret.
+#      No production credential appears in Git.
+#   4. RATE_LIMIT_HASH_SECRET is auto-provisioned by the test itself
+#      (tests/db/aff03-public-intake.integration.test.ts:57-61) when not set; the
+#      AC-14 TOKEN_SIGNING_ERROR test deletes it before invocation.
 #
-# EXPECTS TO PASS (when CI Integration lane runs against the frozen SHA)
+# RESULTS — observed at run 35556876521
 # =====================================================================
 # Per tests/db/aff03-public-intake.integration.test.ts:
 #   - RUNTIME ROLE describe: 13 tests (happy path, forged/expired/no cookie,
@@ -34,16 +53,68 @@
 #     regression).
 #   - MASKED HR_MANAGER describe: 2 tests (hrp_ra_select_writer + writer
 #     existingAttr).
-#   - Total: 15 integration tests.
+#   - Total: 15 integration tests for this slice.
 #
-# CI RUN ARTIFACTS (placeholders filled in by T1B after the PR CI runs)
-# ======================================================================
-#   CI run URL:    <github_actions_run_url>           (filled at PR-CI step)
-#   Quality job:   <job_id> ; status=success          (filled at PR-CI step)
-#   Integration:   <job_id> ; status=success          (filled at PR-CI step)
-#   Head SHA:      4909c41c077bbf8647ddd070089f39d8ac7ed66a (the frozen SHA)
-#   Tests passed:  48/48 unit + 15/15 integration     (filled at PR-CI step)
+# Whole-suite Integration counts at run 35556876521:
+#   Test Files  22 passed (22)
+#   Tests       430 passed | 2 skipped (432)
+#   Skipped file: live-integration.ops06a.test.ts (baseline skip — NOT introduced
+#                 by this slice; predates aff-03b).
 #
-# Until CI Integration lane runs at the frozen SHA, the "CI run attached"
-# row in HANDOFF.md §0 Control is "(pending)". T1B does NOT fill it locally
-# (ENV_BLOCKED); T0/Owner re-runs CI as the production-gate precondition.
+# Whole-suite Unit counts at run 35556876521:
+#   Test Files  156 passed (156)
+#   Tests       2390 passed (2390)
+#
+# T1B does NOT self-apply the migration to production; T0/Owner re-runs CI as
+# the production-gate precondition.
+
+# ============================================================================
+# STAGING VERIFICATION — round-3 (writable-staging `hrp_mp2_test`, Tier 0 option (a))
+# ============================================================================
+# Branch:        tier1/hrp-v6-n2-aff-03b-rls-runtime-fix (HEAD 1c08ecd, frozen)
+# Staging DB:    ep-empty-forest-azlhfyo9.c-3.ap-southeast-1.aws.neon.tech (branch hrp_mp2_test)
+# Admin URL:     user=neondb_owner @ ep-empty-forest-azlhfyo9 (REFUSE ep-shy-tree-az32as2c)
+# Writer URL:    user=app_user_writer @ ep-empty-forest-azlhfyo9 (REFUSE ep-shy-tree-az32as2c)
+# Neon branch gate: PASS — admin_ep=empty-forest-azlhfyo9 writer_ep=empty-forest-azlhfyo9
+#                            branch=hrp_mp2_test (id=br-misty-cell-az3nx5l3)
+#                            primary=hrp-live (id=br-icy-dew-azbrgthw) — NOT our branch
+#                            same_branch=true, branch_is_primary=false, branch_name_matches=true
+#                            prod_refused=ep-shy-tree-az32as2c — NEVER touched
+#
+# Preflight chain (all PASS):
+#   1. Branch gate verdict (Neon API): branch-gate-verdict-full.json
+#   2. Read-only fingerprint pre:        fingerprint.txt        (41 migrations, 2 AFF-03 policies, hrp_public_rpc exists, 0 AFF-03B fns)
+#   3. migrate status pre:              migrate-status-pre.txt (42 found, 1 pending = aff03b_public_intake_rpc, NO drift)
+#   4. migrate deploy:                  migrate-deploy.txt     (Applied 20260919100000_aff03b_public_intake_rpc successfully)
+#   5. Post-deploy fingerprint:         fingerprint-post.txt   (42 migrations, 4 AFF-03B fns, 1 SECURITY DEFINER)
+#   6. migrate status post:             migrate-status-post.txt (Database schema is up to date!)
+#
+# AFF-03B integration tests on staging (writer URL, runtime role):
+#   Command: npx vitest run tests/db/aff03-public-intake.integration.test.ts
+#            --config vitest.integration.config.ts --reporter=basic
+#   Result:  15 / 15 PASS (24.41s wall clock)
+#   Evidence: integration-aff03b-staging.txt
+#   Coverage: AC-01..AC-13 runtime role (13 cases) + masked HR_MANAGER regression (2 cases)
+#
+# Smoke public intake (HTTP, runtime role, dev server with staging DB):
+#   Smoke 1 (no cookie):    201 NEW_PROFILE (LP 987b2d5d..., PC e15b5519..., CS 8e66c2e1...)
+#   Smoke 2 (FORGED cookie): 201 NEW_PROFILE (LP 90ab4a12..., PC 3597d53c..., CS bd78f345...)
+#                            — TOKEN_SIGNING_ERROR caught as silent fail-safe
+#   Evidence: dev-server-out.txt, dev-server-err.txt
+#
+# DB verification post-smoke (psql admin):
+#   Smoke 1 LP in staging DB: ✅ 987b2d5d-...  phone 0935000001 name "Smoke Test No Cookie"
+#                              PC status OPEN, CS created, LPHA=0, RA=0
+#   Smoke 2 LP in staging DB: ✅ 90ab4a12-...  phone 0935000002 name "Smoke Test Forged Cookie"
+#                              PC status OPEN, CS created, LPHA=0, RA=0
+#   Final counts: 105 LP / 56 PC / 5 CS / 1 LPHA / 65 RA — internally consistent
+#   SQLSTATE 42501 / 42883 / orphan mutations: NONE observed
+#   Evidence: db-verification-post-smoke.txt, db-final-check.txt
+#
+# Production safety:
+#   .env SHA256 hash pre/post entire staging operation: D228B1B1BB5F6EC2CD3A0A0691DD99C7780471F8D769649FC50BB9E513DAAB3A (UNCHANGED)
+#   Production DB ep-shy-tree-az32as2c was NEVER targeted.
+#   No merge, no deploy, no remote write.
+#
+# T1B does NOT self-merge, self-deploy, or self-smoke production.
+# T1B does NOT modify source/test/migration in this docs-only commit.

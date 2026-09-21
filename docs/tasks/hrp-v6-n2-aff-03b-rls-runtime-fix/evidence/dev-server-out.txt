@@ -1,0 +1,15 @@
+   ▲ Next.js 15.5.23
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.10:3000
+
+ ✓ Starting...
+ ✓ Ready in 3.1s
+ ✓ Compiled /middleware in 387ms (173 modules)
+ ○ Compiling /api/public/intake ...
+ ✓ Compiled /api/public/intake in 829ms (327 modules)
+{"schemaVersion":"1.0","timestamp":"2026-09-21T06:18:45.995Z","level":"info","event":"talent.intake.public.create","requestId":"d7f54c5b-7c08-4b20-8608-db72b4c9a3be","meta":{"route":"POST:/api/public/intake","outcome":"NEW_PROFILE","detail":{"attributionBound":false}}}
+ POST /api/public/intake 201 in 3286ms
+{"schemaVersion":"1.0","timestamp":"2026-09-21T06:18:46.585Z","level":"info","event":"talent.intake.public.create","requestId":"4dcd9a1b-caf8-498c-a828-0d8854d16044","meta":{"route":"POST:/api/public/intake","outcome":"NEW_PROFILE","detail":{"attributionBound":false}}}
+ POST /api/public/intake 201 in 437ms
+   Reload env: .env
+ ✓ Compiled in 248ms (500 modules)
