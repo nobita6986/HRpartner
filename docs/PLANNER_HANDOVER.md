@@ -6,7 +6,7 @@
 
 <!-- ROADMAP_CURSOR_START -->
 ```yaml
-updated_at: 2026-09-21T20:45:00.000Z
+updated_at: 2026-09-21T23:27:00.000Z
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 PHASE_MAP: |
   P0: production safety and integration foundations
@@ -14,17 +14,17 @@ PHASE_MAP: |
   P2-P5: unlock only through realignment dependency/evidence gates
 current_lane: P0-A Evidence Gateway
 parallel_lane: None
-current_task: P0-A02 / ER-001 EvidenceStorage port — PROPOSED_ONLY
+current_task: P0-A03 / ER-002 LocalVpsEvidenceStorageAdapter — PROPOSED_ONLY
 worktree_branch: NONE
-current_gate: T0_APPROVAL_REQUIRED_BEFORE_OPENING_CODE_TASK
-previous_accepted: hrp-v6-w5-handling-assignment-safety
-closeout_evidence: docs/tasks/hrp-v6-w5-handling-assignment-safety/HANDOFF.md
-blocking_owner: "None"
-owner_defer: "CONTRACT-02B vẫn CRM-owned, HRP chờ design package"
+current_gate: T0_CONTRACT_APPROVAL_REQUIRED_BEFORE_ER002_TASK
+previous_accepted: hrp-p0-a02-er001-evidence-storage-port
+closeout_evidence: docs/tasks/hrp-p0-a02-er001-evidence-storage-port/HANDOFF.md
+blocking_owner: "T0"
+owner_defer: "CONTRACT-02B REC-002/REC-004b vẫn là lane thiết kế riêng; không biến thành dependency ngầm của EvidenceStorage. ER-002 chưa được mở, chưa có contract/task/code."
 next_steps:
-  - T0: Approve or reject P0-A02 / ER-001 EvidenceStorage port proposal
-  - After T0 approval only: assign a new T1B in an isolated worktree from latest main
-  - HRP: wait for CRM CONTRACT-02B design package; do not open runtime implementation
+  - 1. T0 duyệt thin-slice contract cho ER-002.
+  - 2. Chỉ sau approval mới giao T1B worktree riêng từ main mới nhất.
+  - 3. Không mở ER-003 hoặc refactor Media.
 ```
 <!-- ROADMAP_CURSOR_END -->
 

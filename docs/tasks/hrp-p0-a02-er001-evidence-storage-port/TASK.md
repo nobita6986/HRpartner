@@ -10,7 +10,7 @@
 | Audit mode | `LIGHT` |
 | Audit reason | Port is a security boundary — all evidence (CCCD, sensitive PII) must flow through a provider-neutral contract before any adapter can be wired. |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_AUDIT` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1` |
 | Baseline | `0f46f0fbf2c8bc8d106c9aa2f0d3fc6143d2850b` (latest `origin/main` post W5 closeout) |
 | Authority | `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §17 (P0-A02), `docs/discovery/realignment/EVIDENCE_STORAGE_AUDIT.md` |
@@ -21,7 +21,12 @@
 | Current audit round | `1` |
 | Tier 3 LIGHT verdict | `PASS` (round 1; findings none) |
 | Implementation SHA (frozen) | `b4701e13fc9fd048a1a25cba04e90bbdb0e7f4b8` |
-| Next gate | `PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION` |
+| Docs follow-up SHA | `2546b6352d420040e544af339dd36a897aa35156` |
+| Pull Request | `#29` (squash merge SHA: `d3c61400e07e7ce5ca8357ffbc18ef82afd990c5`) |
+| CI Status | Main CI run `35622998445` (Quality: PASS, Integration: PASS) |
+| Vercel Deployment | `PASS` (Main deployment) |
+| Next gate | `NONE — MERGED_AND_MAIN_VERIFIED` |
+| Production DB Smoke | `NOT_APPLICABLE` (slice only adds compile-time port, no adapter/runtime wiring/migration/env) |
 
 ## 1. Outcome
 
