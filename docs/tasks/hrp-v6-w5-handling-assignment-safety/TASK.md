@@ -16,7 +16,8 @@
 | Implementation SHA | `5f4569e8183ca61fff9550f007ac0a1d2c0d10a2` |
 | Tier 3 LIGHT verdict | `PASS` (round 1; findings none) |
 | Current execution round | `1` |
-| Next gate | `ACCEPTED_CLOSED` |
+| Current audit round | `1` |
+| Next gate | `NONE — task ACCEPTED` |
 
 ## 1. Outcome
 

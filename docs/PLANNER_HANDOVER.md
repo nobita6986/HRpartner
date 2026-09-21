@@ -1,13 +1,12 @@
-# TIER 1 LIVING HANDOFF v2.12 — HRP V5/V6
+﻿# TIER 1 LIVING HANDOFF v2.12 — HRP V5/V6
 
 > Tài liệu này là hợp đồng tiếp quản lâu dài cho **Tier 1 — Planner**. Khi bàn giao cho Agent Tier 1 khác, bình thường **chỉ cập nhật khối `ROADMAP_CURSOR` ở §0**. Không chép tiến độ task vào các section ổn định bên dưới.
 
 ## 0. ROADMAP_CURSOR — phần duy nhất cập nhật theo tiến độ
 
 <!-- ROADMAP_CURSOR_START -->
-
-`yaml
-updated_at: 2026-09-21T20:17:00.000Z
+```yaml
+updated_at: 2026-09-21T20:40:00.000Z
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 PHASE_MAP: |
   P0: production safety and integration foundations
@@ -15,18 +14,17 @@ PHASE_MAP: |
   P2-P5: unlock only through realignment dependency/evidence gates
 current_lane: P0-A Evidence Gateway
 parallel_lane: None
-current_task: hrp-v6-w5-handling-assignment-safety (ACCEPTED)
-worktree_branch: docs/closeout-w5
-current_gate: T0 approval required; chua m? code task/worktree
-previous_accepted: W5
+current_task: P0-A02 / ER-001 EvidenceStorage port — PROPOSED_ONLY
+worktree_branch: NONE
+current_gate: T0_APPROVAL_REQUIRED_BEFORE_OPENING_CODE_TASK
+previous_accepted: hrp-v6-w5-handling-assignment-safety
 closeout_evidence: docs/tasks/hrp-v6-w5-handling-assignment-safety/HANDOFF.md
 blocking_owner: "None"
-owner_defer: "CONTRACT-02B v?n CRM-owned, HRP ch? design package"
+owner_defer: "CONTRACT-02B vẫn CRM-owned, HRP chờ design package"
 next_steps:
   - T1: Open docs-only PR for W5 closeout
-  - T1: Propose next slice: P0-A02 / ER-001 � EvidenceStorage port
-`
-
+  - T1: Propose next slice: P0-A02 / ER-001 — EvidenceStorage port
+```
 <!-- ROADMAP_CURSOR_END -->
 
 <!-- PRE_UI04_LANE_SNAPSHOT_2026-09-10_22-30 -->

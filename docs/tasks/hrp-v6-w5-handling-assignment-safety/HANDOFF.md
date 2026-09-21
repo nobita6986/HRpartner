@@ -16,7 +16,7 @@
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
 | Tier 1 sign-off | Delivery complete |
-| Next gate | `ACCEPTED_CLOSED` |
+| Next gate | `NONE — task ACCEPTED` |
 
 > Handoff status: `ACCEPTED` (round 1 — Tier 3 LIGHT audit PASS at HEAD `5f4569e`; merged to main `1e815a40b9be1c335e635fca4959d0ed2614daf1` via PR #27).
 
