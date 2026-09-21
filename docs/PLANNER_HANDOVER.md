@@ -1,4 +1,4 @@
-﻿# TIER 1 LIVING HANDOFF v2.12 — HRP V5/V6
+# TIER 1 LIVING HANDOFF v2.12 — HRP V5/V6
 
 > Tài liệu này là hợp đồng tiếp quản lâu dài cho **Tier 1 — Planner**. Khi bàn giao cho Agent Tier 1 khác, bình thường **chỉ cập nhật khối `ROADMAP_CURSOR` ở §0**. Không chép tiến độ task vào các section ổn định bên dưới.
 
@@ -7,25 +7,24 @@
 <!-- ROADMAP_CURSOR_START -->
 
 ```yaml
-updated_at: 2026-09-21T08:16:39.000Z
+updated_at: 2026-09-21T20:06:00.000Z
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 PHASE_MAP: |
   P0: production safety and integration foundations
   P1: thin recruitment value slice
   P2-P5: unlock only through realignment dependency/evidence gates
-current_lane: T1A documentation/contract reconciliation after AFF-03C
-parallel_lane: W5/HandlingAssignment repair to be assigned to a new T1B in a separate worktree
-current_task: T1A realignment documentation and contract follow-up
-worktree_branch: codex/t1a-realignment-discovery-docs
-current_gate: T1A_REBASE_ON_LATEST_MAIN_AND_OPEN_DOCS_PR
-previous_accepted: AFF-03C production closeout
-closeout_evidence: docs/tasks/hrp-v6-n2-aff-03c-cs-labor-profile-fix/CLOSEOUT.md
+current_lane: P0 — PRODUCTION SAFETY & INTEGRATION FOUNDATIONS
+parallel_lane: None
+current_task: hrp-v6-w5-handling-assignment-safety (CLOSED_VERIFIED_PRODUCTION)
+worktree_branch: docs/closeout-w5
+current_gate: NEXT_SLICE_PROPOSAL
+previous_accepted: hrp-v6-w5-handling-assignment-safety
+closeout_evidence: docs/tasks/hrp-v6-w5-handling-assignment-safety/HANDOFF.md
 blocking_owner: "None"
 owner_defer: "None"
 next_steps:
-  - T1A rebase docs branch onto latest main; preserve AFF-03C closeout cursor; open docs-only PR
-  - T1A record REC-001 OWNER_APPROVED and REC-001-OPS OPEN/PROPOSED in a new immutable contract revision
-  - New T1B thin-slice W5/HandlingAssignment RLS, expiry sweep and REVOKED release semantics after file ownership is isolated
+  - T1: Open docs-only PR for W5 closeout
+  - T1: Propose next thin slice from P0 (e.g. P0-A Evidence Gateway or P0-C Contract Source of Truth) according to docs/HRP_EXECUTION_REALIGNMENT_PLAN.md
 ```
 
 <!-- ROADMAP_CURSOR_END -->
