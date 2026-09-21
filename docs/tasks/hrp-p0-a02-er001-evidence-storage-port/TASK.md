@@ -9,8 +9,8 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | Port is a security boundary — all evidence (CCCD, sensitive PII) must flow through a provider-neutral contract before any adapter can be wired. |
-| Spec version | `v1.0` |
-| Status | `READY_FOR_AUDIT` |
+| Spec version | `v1.2` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1` |
 | Baseline | `0f46f0fbf2c8bc8d106c9aa2f0d3fc6143d2850b` (latest `origin/main` post W5 closeout) |
 | Authority | `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §17 (P0-A02), `docs/discovery/realignment/EVIDENCE_STORAGE_AUDIT.md` |
@@ -21,7 +21,12 @@
 | Current audit round | `1` |
 | Tier 3 LIGHT verdict | `PASS` (round 1; findings none) |
 | Implementation SHA (frozen) | `b4701e13fc9fd048a1a25cba04e90bbdb0e7f4b8` |
-| Next gate | `PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION` |
+| Docs follow-up SHA | `2546b6352d420040e544af339dd36a897aa35156` |
+| Pull Request | `#29` (squash merge SHA: `d3c61400e07e7ce5ca8357ffbc18ef82afd990c5`) |
+| CI Status | Main CI run `35622998445` (Quality: PASS, Integration: PASS) |
+| Vercel Deployment | `PASS` (Main deployment) |
+| Next gate | `NONE — MERGED_AND_MAIN_VERIFIED` |
+| Production DB Smoke | `NOT_APPLICABLE` (slice only adds compile-time port, no adapter/runtime wiring/migration/env) |
 
 ## 1. Outcome
 
@@ -136,6 +141,7 @@
 | Round | Decision | Reason |
 |---|---|---|
 | 1 | Tier 3 LIGHT verdict: `PASS` round 1; findings none; AUDIT.md v1.0 staged | Implementation SHA `b4701e1` unchanged; boundary/typed-error/capability-surface audit completed by Tier 3; T0 greenlight for `PUSH_AND_OPEN_PR`; status stays `READY_FOR_AUDIT` (verifier enum) — actual post-audit status recorded in §0 + Revision Log |
+| 2 | T0 accepted; PR #29 merged; main CI/Vercel PASS; không có runtime/DB impact; ER-002 chưa mở. | ER-001 implementation merged at d3c61400e07e7ce5ca8357ffbc18ef82afd990c5. Status is ACCEPTED with next gate NONE. |
 
 ## 10. Revision Log
 
@@ -143,3 +149,4 @@
 |---|---|---|---|
 | `v1.0` | `2026-09-22` | Initial contract | ER-001 / P0-A02 thin slice from realignment plan. |
 | `v1.1` | `2026-09-22` | Tier 3 LIGHT verdict recorded (`PASS` round 1; findings none); current audit round 1; implementation SHA `b4701e1` confirmed frozen; next gate `PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION`; Planner Resolution round 1 entry | Tier 3 audit round 1 PASS, AUDIT.md v1.0 in repo; Tier 0 greenlight for push & PR open. Status kept `READY_FOR_AUDIT` because pipeline verifier enum does not include a post-LIGHT status; the actual post-audit status is recorded in §0 Control + Revision Log v1.1. |
+| `v1.2` | `2026-09-22` | Closeout documentation | T0 accepted; PR #29 merged; main CI/Vercel PASS; ER-002 chưa mở. |
