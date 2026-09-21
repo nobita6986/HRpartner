@@ -1,12 +1,13 @@
 /**
  * tests/db/aff03-public-intake.integration.test.ts
  *
- * Container-DB integration test for AFF-03B public anon apply path.
+ * Container-DB integration test for AFF-03B public anon apply path, with
+ * AFF-03C assertions layered on top.
  *
  * ENV_BLOCKED by default — bỏ qua toàn bộ nếu DATABASE_URL_TEST không có.
  * Khi env có, chạy trên `hrp_mp2_test` (T0/Owner pipeline target).
  *
- * ARCHITECTURE (rounds 0..4, T0 verdict ACCEPTED)
+ * ARCHITECTURE (rounds 0..4, T0 verdict ACCEPTED; AFF-03C hotfix layered)
  * ===============================================
  * The anon path POST /api/public/intake delegates the entire write chain to
  * SECURITY DEFINER RPC `hrp_public_intake_submission(jsonb)` which runs as
@@ -15,6 +16,17 @@
  * UPDATE referral_attributions is the WHERE predicate
  * AND status='ACTIVE' AND expires_at > now() AND labor_profile_id IS NULL
  * (DEC-11 (c)).
+ *
+ * AFF-03C FIX (2026-09-21): the AFF-03B RPC INSERT into candidate_submissions
+ * omitted `labor_profile_id` from the column list, so production smoke
+ * showed placement_case_id NOT NULL but labor_profile_id NULL. The new
+ * migration `20260921140000_aff03c_cs_labor_profile_backfill` fixes the
+ * RPC body (adds `labor_profile_id = v_lp_id` to the INSERT) and backfills
+ * orphan rows where placement_case_id IS NOT NULL AND labor_profile_id IS
+ * NULL from placement_case.labor_profile_id. Integration test adds
+ * CandidateSubmission.laborProfileId === DTO.laborProfileId assertions
+ * across NEW_PROFILE (AC-01), EXACT_MATCH (AC-10), forged (AC-02) and
+ * no-cookie (AC-03) paths.
  *
  * LANES
  * =====
@@ -30,8 +42,11 @@
  * ACCEPTANCE COVERAGE
  * ===================
  *   AC-01 happy path (valid cookie → CONSUMED + LPHA): runtime lane.
+ *     [AFF-03C] CandidateSubmission.laborProfileId === DTO.laborProfileId.
  *   AC-02 forged cookie (silent fail-safe, no mutation): runtime lane.
+ *     [AFF-03C] CandidateSubmission.laborProfileId === DTO.laborProfileId.
  *   AC-03 no cookie (silent fail-safe, zero mutation): runtime lane.
+ *     [AFF-03C] CandidateSubmission.laborProfileId === DTO.laborProfileId.
  *   AC-04 expired cookie (silent fail-safe, no mutation): runtime lane.
  *   AC-05 row already CONSUMED (silent fail-safe, no second LPHA):
  *     runtime lane.
@@ -44,6 +59,7 @@
  *   AC-09 attribution guard (c) RPC-body WHERE predicate rejects second
  *     consume: runtime lane.
  *   AC-10 scoring parity (≥2-signal EXACT_MATCH): runtime lane.
+ *     [AFF-03C] CandidateSubmission.laborProfileId === existing.id === DTO.laborProfileId.
  *   AC-11 phone-only NEW_PROFILE (regression for round-1 minimal-RPC
  *     finding): runtime lane.
  *   AC-12 returning applicant EXACT_MATCH (regression for round-1 finding):
@@ -53,11 +69,12 @@
  * Requires the additive migrations
  *   - `20260918100000_aff03_writer_select_on_referral_attributions`
  *   - `20260919100000_aff03b_public_intake_rpc`
+ *   - `20260921140000_aff03c_cs_labor_profile_backfill`  (AFF-03C hotfix)
  * to be applied (CI Integration lane applies them via the standard
- * migration apply pipeline BEFORE running this test). The second migration
- * requires OP-01 (`scripts/create-public-rpc-role.cjs`) to have been run
- * before it was applied — hrp_public_rpc must already exist with NOLOGIN
- * BYPASSRLS.
+ * migration apply pipeline BEFORE running this test). The AFF-03B and
+ * AFF-03C migrations require OP-01 (`scripts/create-public-rpc-role.cjs`)
+ * to have been run before they were applied — hrp_public_rpc must already
+ * exist with NOLOGIN BYPASSRLS.
  *
  * GUC handling: the primary runtime-role lane DOES NOT set app.role. The
  * masked lane retains `withHrManagerContext` for regression coverage of the
@@ -240,6 +257,17 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03B public anon intake — RUNTIME ROLE (prod
       expect(postRow?.consumedAt).not.toBeNull();
       expect(postRow?.laborProfileId).toBe(dto.laborProfileId);
 
+      // AFF-03C regression: the candidate_submissions row MUST carry both
+      // labor_profile_id AND placement_case_id (production smoke 2026-09-21
+      // showed placement_case_id NOT NULL but labor_profile_id NULL because
+      // the AFF-03B RPC INSERT omitted labor_profile_id from the column list).
+      const csRow = await admin.candidateSubmission.findUnique({
+        where: { id: dto.candidateSubmissionId },
+        select: { laborProfileId: true, placementCaseId: true },
+      });
+      expect(csRow?.laborProfileId).toBe(dto.laborProfileId);
+      expect(csRow?.placementCaseId).toBe(dto.placementCaseId);
+
       const lpha = await admin.laborProfileHandlingAssignment.findFirst({
         where: { laborProfileId: dto.laborProfileId!, source: 'AFF_INITIAL' },
         select: { id: true, assigneeUserId: true, source: true },
@@ -287,6 +315,16 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03B public anon intake — RUNTIME ROLE (prod
       expect(postRow?.consumedAt).toBe(preRow?.consumedAt);
       expect(postRow?.laborProfileId).toBe(preRow?.laborProfileId);
 
+      // AFF-03C regression (forged path): the candidate_submissions row
+      // MUST carry both labor_profile_id AND placement_case_id even when
+      // the cookie is forged and the attribution is not consumed.
+      const csRow = await admin.candidateSubmission.findUnique({
+        where: { id: dto.candidateSubmissionId },
+        select: { laborProfileId: true, placementCaseId: true },
+      });
+      expect(csRow?.laborProfileId).toBe(dto.laborProfileId);
+      expect(csRow?.placementCaseId).toBe(dto.placementCaseId);
+
       const lpha = await admin.laborProfileHandlingAssignment.findFirst({
         where: { laborProfileId: dto.laborProfileId!, source: 'AFF_INITIAL' },
       });
@@ -323,6 +361,17 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03B public anon intake — RUNTIME ROLE (prod
         where: { updatedAt: { gt: beforeTs } },
       });
       expect(touched).toBe(0);
+
+      // AFF-03C regression (no-cookie path): even without an attribution,
+      // the candidate_submissions row MUST carry both labor_profile_id AND
+      // placement_case_id (the production bug affected every code path
+      // through the RPC, not just the attributed one).
+      const csRow = await admin.candidateSubmission.findUnique({
+        where: { id: dto.candidateSubmissionId },
+        select: { laborProfileId: true, placementCaseId: true },
+      });
+      expect(csRow?.laborProfileId).toBe(dto.laborProfileId);
+      expect(csRow?.placementCaseId).toBe(dto.placementCaseId);
 
       const lpha = await admin.laborProfileHandlingAssignment.findFirst({
         where: { laborProfileId: dto.laborProfileId!, source: 'AFF_INITIAL' },
@@ -657,6 +706,19 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03B public anon intake — RUNTIME ROLE (prod
 
       expect(dto.verdict).toBe('EXACT_MATCH');
       expect(dto.laborProfileId).toBe(existing.id);
+
+      // AFF-03C regression (EXACT_MATCH path): the candidate_submissions row
+      // MUST carry labor_profile_id === existing LP id (the RPC reuses the
+      // existing LaborProfile, not just any LP). This is the regression
+      // that surfaced in production (the INSERT previously omitted the
+      // column entirely, so even when the RPC had v_lp_id pointing at the
+      // existing LP, the row was persisted with NULL).
+      const csRow = await admin.candidateSubmission.findUnique({
+        where: { id: dto.candidateSubmissionId },
+        select: { laborProfileId: true, placementCaseId: true },
+      });
+      expect(csRow?.laborProfileId).toBe(dto.laborProfileId);
+      expect(csRow?.placementCaseId).toBe(dto.placementCaseId);
 
       // No duplicate labor_profile row created (this is the regression
       // guard for the round-1 minimal-RPC finding).
