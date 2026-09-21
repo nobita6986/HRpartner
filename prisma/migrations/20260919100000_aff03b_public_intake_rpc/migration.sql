@@ -510,8 +510,8 @@ GRANT EXECUTE ON FUNCTION hrp_normalize_phone(text) TO PUBLIC;
 REVOKE ALL ON FUNCTION hrp_normalize_full_name(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION hrp_normalize_full_name(text) TO PUBLIC;
 
-REVOKE ALL ON FUNCTION hrp_score_labor_profile(text, text, text, date) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION hrp_score_labor_profile(text, text, text, date) TO PUBLIC;
+REVOKE ALL ON FUNCTION hrp_score_labor_profile(text, text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION hrp_score_labor_profile(text, text, text) TO PUBLIC;
 
 REVOKE ALL ON FUNCTION hrp_public_intake_submission(jsonb) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION hrp_public_intake_submission(jsonb) TO app_user_writer, app_user;
@@ -532,7 +532,7 @@ BEGIN
   EXECUTE format('GRANT hrp_public_rpc TO %I WITH SET TRUE', session_user);
 END
 $$;
-ALTER FUNCTION hrp_score_labor_profile(text, text, text, date) OWNER TO hrp_public_rpc;
+ALTER FUNCTION hrp_score_labor_profile(text, text, text) OWNER TO hrp_public_rpc;
 ALTER FUNCTION hrp_public_intake_submission(jsonb) OWNER TO hrp_public_rpc;
 -- Pure normalizers stay under session_user ownership (they have prosecdef=false
 -- so the caller's role applies; ownership by hrp_public_rpc is unnecessary and
