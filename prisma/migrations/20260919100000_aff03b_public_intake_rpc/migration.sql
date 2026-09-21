@@ -140,8 +140,7 @@ $fn$;
 CREATE OR REPLACE FUNCTION hrp_score_labor_profile(
   p_full_name text,
   p_phone text,
-  p_cccd text,
-  p_date_of_birth date
+  p_cccd text
 )
 RETURNS TABLE(
   verdict text,
@@ -170,7 +169,9 @@ BEGIN
   IF v_norm_phone <> '' THEN v_signals_provided := v_signals_provided + 1; END IF;
   IF p_cccd IS NOT NULL AND btrim(p_cccd) <> '' THEN v_signals_provided := v_signals_provided + 1; END IF;
   IF v_norm_name <> '' THEN v_signals_provided := v_signals_provided + 1; END IF;
-  IF p_date_of_birth IS NOT NULL THEN v_signals_provided := v_signals_provided + 1; END IF;
+  -- NOTE: p_date_of_birth intentionally NOT counted as a scoring signal because
+  -- LaborProfile does not store date_of_birth. Only phone + cccd + fullName are
+  -- used for identity resolution (mirrors createOrMatchLaborProfile signals).
 
   -- No signals provided → NEW_PROFILE (no candidates to match).
   IF v_signals_provided = 0 THEN
@@ -188,8 +189,7 @@ BEGIN
     SELECT lp.id AS lp_id,
            lp.normalized_phone,
            lp.cccd_number,
-           lp.full_name,
-           lp.date_of_birth
+           lp.full_name
       FROM labor_profiles lp
      WHERE (v_norm_phone <> '' AND lp.normalized_phone = v_norm_phone)
         OR (p_cccd IS NOT NULL AND btrim(p_cccd) <> '' AND lp.cccd_number = btrim(p_cccd))
@@ -221,13 +221,8 @@ BEGIN
           v_ce := v_ce || jsonb_build_object('signal', 'full_name', 'existing', r.full_name);
         END IF;
       END IF;
-      IF p_date_of_birth IS NOT NULL AND r.date_of_birth IS NOT NULL THEN
-        IF r.date_of_birth = p_date_of_birth THEN
-          v_sm := v_sm || jsonb_build_array('date_of_birth');
-        ELSE
-          v_ce := v_ce || jsonb_build_object('signal', 'date_of_birth', 'existing', r.date_of_birth);
-        END IF;
-      END IF;
+      -- NOTE: date_of_birth NOT used for scoring — LaborProfile has no date_of_birth column.
+      -- Only phone + cccd + fullName are the identity resolution signals.
 
       -- A candidate "counts" only if it has at least one matching signal.
       IF jsonb_array_length(v_sm) >= 1 THEN
@@ -351,7 +346,7 @@ BEGIN
   -- 2. Score against existing labor_profiles.
   SELECT s.verdict, s.candidate, s.has_conflict
     INTO v_verdict, v_candidate, v_has_conflict
-    FROM hrp_score_labor_profile(v_full_name, v_phone, v_cccd, v_dob) AS s
+    FROM hrp_score_labor_profile(v_full_name, v_phone, v_cccd) AS s
     LIMIT 1;
 
   v_norm_phone     := hrp_normalize_phone(v_phone);
@@ -376,7 +371,7 @@ BEGIN
     -- NEW_PROFILE: insert one row.
     INSERT INTO labor_profiles (
       id, full_name, normalized_phone, phone, cccd_number,
-      date_of_birth, consent_at, identity_verification, completeness,
+      consent_at, identity_verification, completeness,
       created_at, updated_at
     ) VALUES (
       gen_random_uuid(),
@@ -384,7 +379,6 @@ BEGIN
       NULLIF(v_norm_phone, ''),
       v_phone,
       v_cccd,
-      v_dob,
       v_consent_at,
       'UNVERIFIED',
       'MINIMAL',
