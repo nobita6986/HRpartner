@@ -10,12 +10,14 @@
 | Branch | `codex/t1b-er001-evidence-storage-port` |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1b-er001-evidence-storage-port` |
 | Baseline | `0f46f0fbf2c8bc8d106c9aa2f0d3fc6143d2850b` (origin/main post W5 closeout) |
+| Implementation SHA (frozen) | `b4701e13fc9fd048a1a25cba04e90bbdb0e7f4b8` |
 | Execution round | `1` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
+| Tier 3 LIGHT verdict | `PASS` (round 1; findings none; AUDIT.md v1.0) |
 | Authority | `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §17 (P0-A02), `docs/discovery/realignment/EVIDENCE_STORAGE_AUDIT.md` |
 | Assurance lane | `CRITICAL` |
-| Tier 1 sign-off | Port-only delivery; no adapter, no runtime wiring, no DB, no env |
-| Next gate | Tier 3 LIGHT audit → T0 staging decision |
+| Tier 1 sign-off | Tier 3 audit round 1 PASS — T0 greenlight for push & PR |
+| Next gate | `PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION` |
 
 ## 1. Outcome and changed surface
 
@@ -47,6 +49,7 @@ No files outside the allowlist were modified. No existing file was renamed or mo
 | AC | Status | Result / Limitation | Summary evidence |
 |---|---|---|---|
 | AC-00 (`verify-task.ps1`) | **PASS** | `RESULT: DRAFT-VALID` (2 non-blocking warnings on TASK §A-02 / T-05) | TASK §0..§10 complete |
+| AC-07 (Tier 3 LIGHT audit round 1) | **PASS** | AUDIT.md v1.0 staged; verdict `PASS`, findings none; implementation SHA `b4701e1` confirmed frozen; forbidden paths clean; no production DB / credentials; port boundary verified | `docs/tasks/hrp-p0-a02-er001-evidence-storage-port/AUDIT.md` |
 | AC-01 (TS strict; no provider/runtime imports) | **PASS** | `tsc --noEmit` exit 0; static boundary test in `evidence-storage.port.test.ts > "EvidenceStorage port — boundary"` reads the port source as text and asserts no `node:fs` / `node:path` / `@vercel/blob` / `process.env` symbol | targeted unit 17/17 |
 | AC-02 (capability surface; no gateway concerns) | **PASS** | `evidence-storage.port.test.ts > "type contract"` asserts presence of exactly `write(` / `read(` / `delete(` / `exists(` / `stat(` and absence of `EvidenceRecord` / `signedUrl` / `quarantine` / `retention` / `encrypt` / `versioning` | targeted unit 17/17 |
 | AC-03 (`asStorageKey` rejects dangerous shapes) | **PASS** | `evidence-storage.port.test.ts > "asStorageKey — port boundary guard"` covers empty/whitespace keys, POSIX paths (`/etc/passwd`, `/srv/hrp/evidence/file`), Windows drive (`C:\\Windows\\System32`, `D:/sensitive/file`), UNC (`\\\\server\\share`), URL schemes (`https://`, `http://`, `file:///`, `blob:`, `ftp://`); all rejected with `INVALID_KEY` reason | targeted unit 17/17 |
@@ -76,6 +79,7 @@ verify-handoff.ps1 ⇒ ran at delivery time, see HANDOFF run log saved at task d
 | E-04 | `cd C:\CodeApp\HrP-worktrees\t1b-er001-evidence-storage-port && npm run lint` | exit 0, 649 pre-existing warnings | captured during build |
 | E-05 | `cd C:\CodeApp\HrP-worktrees\t1b-er001-evidence-storage-port && npm run build` | exit 0 | captured during build |
 | E-06 | `cd C:\CodeApp\HrP-worktrees\t1b-er001-evidence-storage-port && git diff --check` | exit 0, clean | captured |
+| E-07 | `docs/tasks/hrp-p0-a02-er001-evidence-storage-port/AUDIT.md` (Tier 3 produced file) | verdict `PASS` round 1, findings none, baseline `0f46f0f`, implementation SHA `b4701e1` confirmed frozen | `docs/tasks/hrp-p0-a02-er001-evidence-storage-port/AUDIT.md` |
 
 ## 4. Deviations and blockers
 
@@ -83,7 +87,7 @@ None. TASK plan executed as written; no scope expansion, no fallback substitutio
 
 ## 5. Final status
 
-`Handoff status: READY_FOR_AUDIT` (round 1 — Tier 1 port-only delivery; Tier 3 LIGHT is the expected next gate per HRP_EXECUTION_REALIGNMENT_PLAN.md §17 P0-A02 and the security-boundary rationale recorded in TASK §0).
+`Handoff status: READY_FOR_AUDIT` (round 1 — Tier 1 port-only delivery; **Tier 3 LIGHT audit round 1 PASS** recorded in §0 Control + AUDIT.md v1.0; post-audit status kept at `READY_FOR_AUDIT` because the pipeline verifier enum (`READY_FOR_REVIEW|READY_FOR_AUDIT|BLOCKED|IN_PROGRESS`) does not yet include a post-LIGHT status — Tier 0's authoritative greenlight for `PUSH_AND_OPEN_PR` is recorded in TASK §0 Next gate + Revision Log v1.1).
 
 Interface signature:
 

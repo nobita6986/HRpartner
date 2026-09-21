@@ -18,8 +18,10 @@
 | Forbidden paths | `docs/PLANNER_HANDOVER.md`, `prisma/**`, `app/**`, `src/domains/media/**`, `package.json`, `package-lock.json`, CRM/shared integration contracts, env/deploy config, discovery/CRM docs |
 | Required gates | `verify-task.ps1`, targeted unit tests, typecheck, lint, full unit, build, scope diff, `verify-handoff.ps1`, Tier 3 LIGHT audit |
 | Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | `/deliver → /audit → /resolve` |
+| Current audit round | `1` |
+| Tier 3 LIGHT verdict | `PASS` (round 1; findings none) |
+| Implementation SHA (frozen) | `b4701e13fc9fd048a1a25cba04e90bbdb0e7f4b8` |
+| Next gate | `PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION` |
 
 ## 1. Outcome
 
@@ -133,9 +135,11 @@
 
 | Round | Decision | Reason |
 |---|---|---|
+| 1 | Tier 3 LIGHT verdict: `PASS` round 1; findings none; AUDIT.md v1.0 staged | Implementation SHA `b4701e1` unchanged; boundary/typed-error/capability-surface audit completed by Tier 3; T0 greenlight for `PUSH_AND_OPEN_PR`; status stays `READY_FOR_AUDIT` (verifier enum) — actual post-audit status recorded in §0 + Revision Log |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-09-22` | Initial contract | ER-001 / P0-A02 thin slice from realignment plan. |
+| `v1.1` | `2026-09-22` | Tier 3 LIGHT verdict recorded (`PASS` round 1; findings none); current audit round 1; implementation SHA `b4701e1` confirmed frozen; next gate `PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION`; Planner Resolution round 1 entry | Tier 3 audit round 1 PASS, AUDIT.md v1.0 in repo; Tier 0 greenlight for push & PR open. Status kept `READY_FOR_AUDIT` because pipeline verifier enum does not include a post-LIGHT status; the actual post-audit status is recorded in §0 Control + Revision Log v1.1. |
