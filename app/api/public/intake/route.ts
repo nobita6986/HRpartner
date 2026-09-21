@@ -60,7 +60,7 @@
  *   413 PAYLOAD_TOO_LARGE — body > 16 KiB
  *   415 UNSUPPORTED_MEDIA_TYPE — content-type not application/json
  *   422 CV_UPLOAD_DISABLED — cv non-null
- *   422 POSSIBLE_MATCH_NOT_RESOLVED — possible-match from RPC (409 in route)
+ *   409 POSSIBLE_MATCH_NOT_RESOLVED — possible-match from RPC (verified by AC-09 integration test)
  *   429 RATE_LIMITED — IP or phone bucket exceeded
  *   503 RATE_LIMIT_UNAVAILABLE — rate-limit provider down
  *   500 INTERNAL — unclassified
