@@ -153,10 +153,10 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $fn$
 DECLARE
-  v_norm_phone text;
-  v_norm_name  text;
-  v_signals_provided int;
-  v_match_count int;
+  v_norm_phone text := '';
+  v_norm_name  text := '';
+  v_signals_provided int := 0;
+  v_match_count int := 0;
   v_conflict bool := false;
   v_candidate_ids jsonb := '[]'::jsonb;
   v_signals_matched jsonb := '[]'::jsonb;
@@ -185,6 +185,12 @@ BEGIN
   -- Candidate set: rows where any of the normalized signals match.
   -- Mirrors createOrMatchLaborProfile's OR-of-signals at lines 222-228.
   -- We use SELECT INTO LOOP to keep the function single-statement simple.
+  --
+  -- Full-name matching uses hrp_normalize_full_name on BOTH sides to ensure
+  -- case/diacritic-insensitive comparison. Without it, the OR-of-signals
+  -- candidate set would miss candidates that match only on full_name,
+  -- under-classifying them as NEW_PROFILE (vs the correct EXACT_MATCH /
+  -- POSSIBLE_MATCH verdict from the TS createOrMatchLaborProfile).
   FOR r IN
     SELECT lp.id AS lp_id,
            lp.normalized_phone,
@@ -193,6 +199,8 @@ BEGIN
       FROM labor_profiles lp
      WHERE (v_norm_phone <> '' AND lp.normalized_phone = v_norm_phone)
         OR (p_cccd IS NOT NULL AND btrim(p_cccd) <> '' AND lp.cccd_number = btrim(p_cccd))
+        OR (v_norm_name <> '' AND lp.full_name IS NOT NULL
+            AND hrp_normalize_full_name(lp.full_name) = v_norm_name)
      LIMIT 50
   LOOP
     -- Compute signals-matched + conflicting-evidence for THIS candidate.
@@ -278,8 +286,12 @@ $fn$;
 
 CREATE OR REPLACE FUNCTION hrp_public_intake_submission(p_payload jsonb)
 RETURNS TABLE(
-  labor_profile_id uuid,
-  candidate_submission_id uuid,
+  -- NOTE: labor_profile_id and candidate_submission_id are `text` (NOT `uuid`)
+  -- because Prisma maps `@id @default(uuid())` to `TEXT` column with a UUID
+  -- string. Casting to uuid here would break the `placement_case.labor_profile_id`
+  -- FK reference (which is TEXT).
+  labor_profile_id text,
+  candidate_submission_id text,
   placement_case_id text,
   verdict text,
   possible_match jsonb,
@@ -309,12 +321,13 @@ DECLARE
   v_candidate         jsonb;
   v_has_conflict      boolean;
 
-  v_lp_id             uuid;
+  v_lp_id             text;
   v_pc_id             text;
-  v_cs_id             uuid;
+  v_cs_id             text;
 
   v_attr_referrer_uid text;
   v_attr_consumed     boolean := false;
+  v_attr_row_count   integer := 0;
   v_lpha_assignee     text;
 BEGIN
   -- 1. Read inputs from the JSONB payload.
@@ -366,7 +379,7 @@ BEGIN
 
   -- 4. Resolve / create LaborProfile.
   IF v_verdict = 'EXACT_MATCH' THEN
-    v_lp_id := (v_candidate->>'laborProfileId')::uuid;
+    v_lp_id := (v_candidate->>'laborProfileId');   -- already text (LP.id = String)
   ELSE
     -- NEW_PROFILE: insert one row.
     INSERT INTO labor_profiles (
@@ -441,7 +454,7 @@ BEGIN
   IF v_referrer_attr_id IS NOT NULL THEN
     SELECT referrer_user_id INTO v_attr_referrer_uid
       FROM referral_attributions
-     WHERE id = v_referrer_attr_id::uuid
+     WHERE id = v_referrer_attr_id
        AND status = 'ACTIVE'
        AND expires_at > now()
        AND labor_profile_id IS NULL
@@ -452,7 +465,7 @@ BEGIN
          SET status = 'CONSUMED',
              consumed_at = now(),
              labor_profile_id = v_lp_id
-       WHERE id = v_referrer_attr_id::uuid
+       WHERE id = v_referrer_attr_id
          AND status = 'ACTIVE'
          AND expires_at > now()
          AND labor_profile_id IS NULL;
@@ -460,8 +473,8 @@ BEGIN
       -- Verify exactly one row consumed (defense in depth: assert the UPDATE
       -- matched before we INSERT the LPHA; the WHERE predicate is the only
       -- guard here because the definer path has BYPASSRLS — DEC-14).
-      GET DIAGNOSTICS v_attr_consumed = ROW_COUNT;
-      v_attr_consumed := (v_attr_consumed = 1);
+      GET DIAGNOSTICS v_attr_row_count = ROW_COUNT;
+      v_attr_consumed := (v_attr_row_count = 1);
 
       IF v_attr_consumed THEN
         v_lpha_assignee := v_attr_referrer_uid;
