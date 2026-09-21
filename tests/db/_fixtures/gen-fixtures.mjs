@@ -8,6 +8,12 @@
 // prisma/migrations/20260919100000_aff03b_public_intake_rpc/migration.sql)
 // produce IDENTICAL output. This is the scoring-parity gate (RQ-14, AC-17).
 
+// Force UTF-8 output — on Windows `process.stdout` defaults to UTF-16 LE when
+// piped, which corrupts the JSON for Vite's json plugin (BOM + null bytes).
+if (process.stdout.setDefaultEncoding) {
+  process.stdout.setDefaultEncoding('utf8');
+}
+
 function normalizePhone(input) {
   if (input == null) return '';
   const trimmed = String(input).trim();
@@ -76,4 +82,11 @@ for (const f of inputs) {
   }
 }
 
-process.stdout.write(JSON.stringify(fixtures, null, 2) + '\n');
+// Write explicit UTF-8 bytes — `process.stdout.write` on Windows PowerShell
+// pipes can emit UTF-16 LE even after setDefaultEncoding, which corrupts the
+// JSON for Vite's json plugin (BOM + null bytes). The fixed JSON contract:
+//   * UTF-8 (no BOM)
+//   * LF newlines
+//   * trailing newline (keeps POSIX-friendly)
+const json = JSON.stringify(fixtures, null, 2) + '\n';
+process.stdout.write(Buffer.from(json, 'utf8'));
