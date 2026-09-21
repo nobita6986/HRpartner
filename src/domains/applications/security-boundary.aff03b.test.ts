@@ -88,19 +88,28 @@ describe('AFF-03B security boundary — STATIC (DEC-14/15, AC-19)', () => {
     );
   });
 
-  it('SEC-04: EXECUTE revoked from PUBLIC, granted only to app roles', () => {
+  it('SEC-04: EXECUTE revoked from PUBLIC on the definer RPC; granted only to app roles', () => {
+    // The SECURITY DEFINER RPC hrp_public_intake_submission must NOT be callable by
+    // PUBLIC — only app_user_writer / app_user. The IMMUTABLE helpers
+    // (hrp_normalize_phone, hrp_normalize_full_name, hrp_score_labor_profile)
+    // are safe to grant to PUBLIC since they are side-effect-free, have pinned
+    // search_path, and mirror the precedent pattern at 20260823101500_*.
     expect(sql).toMatch(
       new RegExp(`REVOKE ALL ON FUNCTION ${INTAKE_FN}\\([^)]*\\) FROM PUBLIC`),
     );
     expect(sql).toMatch(
       new RegExp(`GRANT EXECUTE ON FUNCTION ${INTAKE_FN}\\([^)]*\\) TO app_user_writer, app_user`),
     );
-    expect(sql).toMatch(
-      new RegExp(`REVOKE ALL ON FUNCTION ${SCORE_FN}\\([^)]*\\) FROM PUBLIC`),
-    );
-    expect(sql).toMatch(
-      new RegExp(`GRANT EXECUTE ON FUNCTION ${SCORE_FN}\\([^)]*\\) TO app_user_writer, app_user`),
-    );
+  });
+
+  it('SEC-04b: IMMUTABLE helpers (normalizers + scoring) are granted to PUBLIC (safe, no side-effects)', () => {
+    // IMMUTABLE helpers: safe to expose to PUBLIC. Grants use TO PUBLIC rather than
+    // app_user_writer/app_user to avoid "role does not exist" silent failures in CI
+    // bootstrap (container-test-db.mjs provisions app_user_writer at post-migrate time,
+    // not at migrate time — mirroring the precedent at 20260823101500_*:232).
+    expect(sql).toMatch(/GRANT EXECUTE ON FUNCTION hrp_normalize_phone\(text\) TO PUBLIC/);
+    expect(sql).toMatch(/GRANT EXECUTE ON FUNCTION hrp_normalize_full_name\(text\) TO PUBLIC/);
+    expect(sql).toMatch(/GRANT EXECUTE ON FUNCTION hrp_score_labor_profile\([^)]+\) TO PUBLIC/);
   });
 
   it('SEC-05: normalizers are NOT SECURITY DEFINER (pure helpers)', () => {

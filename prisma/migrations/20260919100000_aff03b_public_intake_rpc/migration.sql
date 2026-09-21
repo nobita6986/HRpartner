@@ -507,13 +507,17 @@ $fn$;
 -- ───────────────────────────────────────────────────────────────────────────
 
 REVOKE ALL ON FUNCTION hrp_normalize_phone(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION hrp_normalize_phone(text) TO app_user_writer, app_user;
+-- IMMUTABLE pure helpers — safe to expose to PUBLIC (no side-effects).
+-- Mirrors the precedent pattern: helpers don't need role-restricted EXECUTE.
+-- CI bootstrap doesn't provision app_user_writer/app_user at migration time,
+-- so granting to PUBLIC avoids "role does not exist" silent failures in GRANT.
+GRANT EXECUTE ON FUNCTION hrp_normalize_phone(text) TO PUBLIC;
 
 REVOKE ALL ON FUNCTION hrp_normalize_full_name(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION hrp_normalize_full_name(text) TO app_user_writer, app_user;
+GRANT EXECUTE ON FUNCTION hrp_normalize_full_name(text) TO PUBLIC;
 
 REVOKE ALL ON FUNCTION hrp_score_labor_profile(text, text, text, date) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION hrp_score_labor_profile(text, text, text, date) TO app_user_writer, app_user;
+GRANT EXECUTE ON FUNCTION hrp_score_labor_profile(text, text, text, date) TO PUBLIC;
 
 REVOKE ALL ON FUNCTION hrp_public_intake_submission(jsonb) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION hrp_public_intake_submission(jsonb) TO app_user_writer, app_user;
