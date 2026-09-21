@@ -134,14 +134,15 @@ describe('AFF-03B security boundary — STATIC (DEC-14/15, AC-19)', () => {
   });
 
   it('SEC-07: minimal table privileges granted to hrp_public_rpc (DEC-15)', () => {
-    // Five tables: labor_profiles (SELECT+INSERT), placement_case (INSERT),
+    // Five tables: labor_profiles (SELECT+INSERT), placement_case (SELECT+INSERT,
+    //   SELECT needed for the EXCEPTION branch's race-recovery lookup),
     // candidate_submissions (INSERT), labor_profile_handling_assignments (INSERT),
     // referral_attributions (SELECT+UPDATE).
     // NOTE: Prisma @@map("placement_case") so the actual table name is singular,
     // NOT "placement_cases". This mirrors the model at schema.prisma:1530.
     expect(sql).toMatch(/GRANT SELECT, INSERT ON labor_profiles TO hrp_public_rpc/);
     expect(sql).toMatch(/GRANT INSERT ON candidate_submissions TO hrp_public_rpc/);
-    expect(sql).toMatch(/GRANT INSERT ON placement_case TO hrp_public_rpc/);
+    expect(sql).toMatch(/GRANT SELECT, INSERT ON placement_case TO hrp_public_rpc/);
     expect(sql).toMatch(/GRANT INSERT ON labor_profile_handling_assignments TO hrp_public_rpc/);
     expect(sql).toMatch(/GRANT SELECT, UPDATE ON referral_attributions TO hrp_public_rpc/);
   });
