@@ -10,13 +10,13 @@
 | Audit mode | `LIGHT` |
 | Audit reason | RLS, forward-only migration, and HandlingAssignment lifecycle transitions protect recruiting responsibility and downstream commission evidence. |
 | Spec version | `v1.0` |
-| Status | `CLOSED_VERIFIED_PRODUCTION` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1` |
 | Baseline | `a49ceaa83ffa986bf939823a4e9f2c803a0649d6` (post-rebase; checkpoint at `b707936` on `t1b-w5-checkpoint` branch) |
 | Implementation SHA | `5f4569e8183ca61fff9550f007ac0a1d2c0d10a2` |
 | Tier 3 LIGHT verdict | `PASS` (round 1; findings none) |
 | Current execution round | `1` |
-| Next gate | `NONE_CLOSED` |
+| Next gate | `ACCEPTED_CLOSED` |
 
 ## 1. Outcome
 

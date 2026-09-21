@@ -7,7 +7,7 @@
 | Task slug | hrp-v6-w5-handling-assignment-safety |
 | Spec version | v1.0 |
 | Round | 1 |
-| Status | `CLOSED_VERIFIED_PRODUCTION` |
+| Status | `ACCEPTED` |
 | Branch | `tier1/w5-handling-assignment-safety` |
 | Implementation SHA | `5f4569e8183ca61fff9550f007ac0a1d2c0d10a2` (frozen; not amended after Tier 3 audit) |
 | Tier 3 LIGHT verdict | PASS, round 1, findings none (AUDIT.md v1.1) |
@@ -15,10 +15,10 @@
 | Original baseline | `b707936977d41ae726baf2f5170ca7ae55d721f8` |
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
-| Tier 1 sign-off | Delivery complete; pending CI on PR |
-| Next gate | T1B push branch and open PR → CI green → T0 writable-staging preflight/apply/verify → T0 production gate and merge sequence |
+| Tier 1 sign-off | Delivery complete |
+| Next gate | `ACCEPTED_CLOSED` |
 
-> Handoff status: `CLOSED_VERIFIED_PRODUCTION` (round 1 — Tier 3 LIGHT audit PASS at HEAD `5f4569e`; merged to main `1e815a4`).
+> Handoff status: `ACCEPTED` (round 1 — Tier 3 LIGHT audit PASS at HEAD `5f4569e`; merged to main `1e815a40b9be1c335e635fca4959d0ed2614daf1` via PR #27).
 
 ## 1. Outcome and changed surface
 
@@ -121,16 +121,17 @@ Ordered sequence — STOP at any failed step:
 
 ---
 
-> Handoff status: `CLOSED_VERIFIED_PRODUCTION` (round 1 — Tier 3 LIGHT audit PASS at HEAD `5f4569e`; merged to main `1e815a4`).
+> Handoff status: `ACCEPTED` (round 1 — Tier 3 LIGHT audit PASS at HEAD `5f4569e`; merged to main `1e815a40b9be1c335e635fca4959d0ed2614daf1` via PR #27).
 
 ## 6. Production Closeout Evidence
 
-- **Staging Test (hrp_mp2_test)**: Branch `br-misty-cell-az3nx5l3`, non-primary. Chỉ W5 pending trước apply; sau apply 44/44 up to date. W5 DB integration staging: 4/4 PASS.
+- **Staging Test (hrp_mp2_test)**: Branch `br-misty-cell-az3nx5l3`, non-primary. Chỉ W5 pending trước apply; sau apply 44/44 up to date. W5 DB integration staging: 4/4 PASS. Runtime writer/RLS behavior được chứng minh ở staging 4/4.
 - **RLS Metadata**: ENABLE + FORCE, đúng 3 policies. `app_user_writer`: SELECT/INSERT/UPDATE; `app_user`: SELECT. Không PUBLIC grant, không DELETE grant.
-- **Production Gate**: `hrp-live`, branch `br-icy-dew-azbrgthw`, primary, gate exit 0.
+- **Production Gate**: `hrp-live`, branch `br-icy-dew-azbrgthw`, primary, gate exit 0. Production xác minh RLS bằng metadata/grants.
 - **Production Migration**: `20260922100000_w5_handling_assignment_safety` applied thành công; 44/44 up to date; 0 failed.
-- **Main SHA sau merge**: `1e815a40b9be1c335e635fca4959d0ed2614daf1`.
+- **Main SHA sau merge**: `1e815a40b9be1c335e635fca4959d0ed2614daf1` (PR #27).
 - **Main CI**: Run 35601756022 (Quality và Integration PASS).
 - **Vercel**: Production deployment PASS.
-- **Production Lifecycle Smoke**: elapsed ACTIVE → EXPIRED rồi tạo ACTIVE mới; manual release → REVOKED; elapsed release → null và persisted EXPIRED. Transaction rollback, fixture residue users/profiles/assignments = 0.
+- **Production Lifecycle Smoke**: elapsed ACTIVE → EXPIRED rồi tạo ACTIVE mới; manual release → REVOKED; elapsed release → null và persisted EXPIRED. Production lifecycle smoke chạy bằng admin transaction rollback. Attempt `SET ROLE app_user_writer` từ `neondb_owner` bị chặn `42501`, rollback và residue 0; đây là posture observation, không phải blocker.
+- **Probe limitation**: Production hiện có 0 HandlingAssignment nên probe read 0/0 không phải behavioral proof mạnh.
 - **Worktree**: T1B vẫn sạch; remote branch không bị xóa hoặc viết lại.
