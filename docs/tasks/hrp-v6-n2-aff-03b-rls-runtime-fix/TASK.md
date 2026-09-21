@@ -10,7 +10,7 @@
 | Audit mode | LIGHT |
 | Audit reason | Public anon write path that mutates `labor_profiles`, `candidate_submissions`, `placement_cases`, `referral_attributions`, and `labor_profile_handling_assignments`. Adds a SECURITY DEFINER RPC that the AFF-03 route calls; the RPC is the new anonymous write authority on `labor_profiles`. Production schema-bound: re-applies + re-deploys a new migration. Verdict of parent slice aff-03 = STOP at smoke (T0 ticket `T0_VERIFY_aff-03_STOP_2026-09-19.md`). |
 | Spec version | v1.0.r5 |
-| Status | READY-FOR-HANDOFF (round 4 — T0 ACCEPTED, `/deliver` in progress, cleanup conditions applied) |
+| Status | READY-FOR-AUDIT (round 4 — T0 ACCEPTED, T3 LIGHT PASS at implementation-contract gate; production gate HELD pending CI Integration lane green per T3 verdict) |
 | Planner | Tier 1 |
 | Baseline | `1059f6669482efac5b7956ef25d43996ca59d515` (`origin/main`, post-aff-03-merge). The previous slice's branch `tier1/hrp-v6-n2-aff-03-apply-attribution` at `52ec423` is an ancestor; this branch must be cut from `origin/main` HEAD so `git diff origin/main..HEAD` (AC-10) genuinely reflects only the `aff-03b` change surface. |
 | In-scope roots | `app/api/public/intake/route.ts`, `src/domains/applications/aff03-public-intake.service.ts`, `src/domains/applications/aff03-public-intake.route.test.ts`, `src/domains/applications/aff03-public-intake.service.test.ts`, `tests/db/aff03-public-intake.integration.test.ts`, `prisma/migrations/<new>/migration.sql`, `docs/tasks/hrp-v6-n2-aff-03b-rls-runtime-fix/**` |

@@ -1,54 +1,49 @@
 # E-12: integration-aff03b.txt — CI Integration lane only.
 #
-# AC-12 through AC-18 are runtime tests against a live DB on `hrp_mp2_test`
-# (Neon or equivalent). The Integration lane requires:
+# AC-12 through AC-18 are runtime tests against a live DB on the CI
+# integration lane (ephemeral `postgres:16-alpine` service container;
+# RLS/role posture pre-provisioned by `scripts/ci/container-test-db.mjs`
+# — `hrp_public_rpc` is at line 56 of that script: NOLOGIN BYPASSRLS).
 #
-#   1. `hrp_public_rpc` provisioned by OP-01 (`scripts/create-public-rpc-role.cjs`).
-#   2. Both additive migrations applied in order:
+# Branch: tier1/hrp-v6-n2-aff-03b-rls-runtime-fix
+# Baseline: origin/main 1059f6669482efac5b7956ef25d43996ca59d515
+# Branch HEAD (this delivery): 4909c41c077bbf8647ddd070089f39d8ac7ed66a
+#   = 4 cherry-picked commits (809e3aa feature + fcd6bfb SHA-fill + cfe44bd
+#   SHA-split + 4909c41 F-P3-1 route comment fix).
+#
+# Required CI conditions
+# ======================
+#   1. `hrp_public_rpc` provisioned as NOLOGIN BYPASSRLS — done by
+#      scripts/ci/container-test-db.mjs (idempotent; same in dev/staging).
+#   2. Both additive migrations applied via `npx prisma migrate deploy`:
 #        - prisma/migrations/20260918100000_aff03_writer_select_on_referral_attributions
 #        - prisma/migrations/20260919100000_aff03b_public_intake_rpc
-#   3. Environment variables:
-#        - DATABASE_URL_TEST            (writer role, RLS-enforcing)
-#        - DATABASE_URL_ADMIN_TEST      (admin role, fixture provisioning)
-#        - RATE_LIMIT_HASH_SECRET       (≥ 32 chars; auto-provisioned by
-#          tests/db/aff03-public-intake.integration.test.ts:57-61 if absent,
-#          but for AC-14 TOKEN_SIGNING_ERROR test the env var must be DELETED
-#          before invocation — handled in the test body.)
+#   3. Environment variables exposed by .github/workflows/ci.yml:
+#        - DATABASE_URL_TEST      (= app_user_writer @ localhost:5432/ci_test)
+#        - DATABASE_URL_ADMIN_TEST (= postgres/superuser @ localhost:5432/ci_test)
+#        - RATE_LIMIT_HASH_SECRET auto-provisioned by the test itself
+#          (tests/db/aff03-public-intake.integration.test.ts:57-61) when not
+#          set; the AC-14 TOKEN_SIGNING_ERROR test deletes it before invocation.
 #
-# LOCAL EXECUTION
-# ===============
-# Local execution against a throwaway Neon branch is ENV_BLOCKED in this
-# worktree. To reproduce, the Tier 1 / CI Integration lane runs:
+# EXPECTS TO PASS (when CI Integration lane runs against the frozen SHA)
+# =====================================================================
+# Per tests/db/aff03-public-intake.integration.test.ts:
+#   - RUNTIME ROLE describe: 13 tests (happy path, forged/expired/no cookie,
+#     TOKEN_SIGNING_ERROR, attribution guard triad a/b/c, scoring parity,
+#     phone-only NEW_PROFILE regression, returning-applicant EXACT_MATCH
+#     regression).
+#   - MASKED HR_MANAGER describe: 2 tests (hrp_ra_select_writer + writer
+#     existingAttr).
+#   - Total: 15 integration tests.
 #
-#   npm run test:integration
+# CI RUN ARTIFACTS (placeholders filled in by T1B after the PR CI runs)
+# ======================================================================
+#   CI run URL:    <github_actions_run_url>           (filled at PR-CI step)
+#   Quality job:   <job_id> ; status=success          (filled at PR-CI step)
+#   Integration:   <job_id> ; status=success          (filled at PR-CI step)
+#   Head SHA:      4909c41c077bbf8647ddd070089f39d8ac7ed66a (the frozen SHA)
+#   Tests passed:  48/48 unit + 15/15 integration     (filled at PR-CI step)
 #
-# which executes `scripts/ci/integration-preflight.mjs` then `npx vitest run`
-# with the test-DB env vars validated by the preflight.
-#
-# EXPECTED TEST COUNTS (when run against a writable DB)
-# =====================================================
-# - 13 runtime-role tests (AC-01..AC-12 + AC-13 normalization parity) in the
-#   primary `RUNTIME ROLE` describe block.
-# - 2 masked regression tests (hrp_ra_select_writer + hrp_ra_update_writer)
-#   in the secondary `MASKED HR_MANAGER` describe block.
-# - Total: 15 tests in this file.
-#
-# EXPECTED CI RUN ARTIFACTS
-# =========================
-# When the CI Integration lane runs against the frozen SHA:
-#
-#   1. Quality job (unit suite + typecheck + lint + build) → "success"
-#   2. Integration job (this test file + container-DB) → "success"
-#   3. The CI run URL + job IDs go into HANDOFF §0 Control: `CI run attached`
-#   4. The exact run-id + SHA chain goes into HANDOFF §5.4 Revision Log
-#
-# Until CI Integration lane runs at the frozen SHA, this evidence is a
-# placeholder. Tier 3 LIGHT audit may either:
-#   (a) accept the source-code review + static boundary + unit suite as
-#       sufficient for the "implementation contract" gate, with the runtime
-#       lane deferred to post-merge smoke; OR
-#   (b) require CI to run before PASS.
-#
-# T1B's recommendation: option (b) is mandatory before production merge;
-# option (a) is acceptable for the T3 LIGHT read-only audit as long as the
-# source code is correct per static review.
+# Until CI Integration lane runs at the frozen SHA, the "CI run attached"
+# row in HANDOFF.md §0 Control is "(pending)". T1B does NOT fill it locally
+# (ENV_BLOCKED); T0/Owner re-runs CI as the production-gate precondition.

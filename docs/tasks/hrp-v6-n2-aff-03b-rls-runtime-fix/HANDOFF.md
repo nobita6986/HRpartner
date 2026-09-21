@@ -8,21 +8,25 @@
 | Spec version | v1.0.r5 |
 | Control | Value |
 |---|---|
-| Round | 1 (initial delivery — T0 verdict ACCEPTED (round 4) on DRAFT, with 2 cleanup conditions; both verified-already-present from round-3 → no edit needed; logged transparently in TASK.md §10 `v1.0.r5`) |
-| Status | `READY_FOR_AUDIT` (slice 03b delivered; T3 LIGHT audit pending) |
+| Round | 1 (initial delivery — T0 ACCEPTED round 4, T3 LIGHT PASS at implementation-contract gate, F-P3-1 fixed as follow-up; rebased onto `origin/main` `1059f666` via cherry-pick into `tier1/hrp-v6-n2-aff-03b-rls-runtime-fix`) |
+| Status | `READY_FOR_AUDIT` (slice 03b delivered; T3 LIGHT audit ACCEPTED at implementation-contract gate; production gate HELD pending CI Integration lane green) |
 | Branch | `tier1/hrp-v6-n2-aff-03-apply-attribution` |
 | Baseline | `1059f666` (origin/main HEAD post AFF-03 merge) |
-| Implementation SHA | `e7e8550fb5d5a0a2bcd20e97887f26e047dbd2bd` (feature commit: SECURITY DEFINER RPC, tests, evidence, docs at v1.0.r5) |
-| Documentation SHA | `d3894ce525e5e83552ff7e2500bdeda4114948c5` (follow-up commit: fills Implementation SHA + Head SHA into HANDOFF.md) |
-| Head SHA (locally measured) | `d3894ce525e5e83552ff7e2500bdeda4114948c5` (branch `tier1/hrp-v6-n2-aff-03-apply-attribution`, local only — no push, no merge; 23 files vs `origin/main`, +2321 / -263 cumulative) |
+| Implementation SHA | `809e3aa27c0227c2832ad8e3d1a6dec5f5fa4b03` (feature commit: SECURITY DEFINER RPC, tests, evidence, docs at v1.0.r5; cherry-picked from `e7e8550` via `git cherry-pick -x e7e8550`) |
+| Documentation SHA | `cfe44bdf9b9e0f04d3ef6ecbcf09af4ec12a2729` (cherry-picked from `96f1f70`; combined split + SHA-fill commits) |
+| HEAD SHA | `4909c41c077bbf8647ddd070089f39d8ac7ed66a` (current branch head on `tier1/hrp-v6-n2-aff-03b-rls-runtime-fix`; cherry-picked from `e3df1be` which carries F-P3-1 stale comment fix per T3 finding) |
+| Branch | `tier1/hrp-v6-n2-aff-03b-rls-runtime-fix` rooted at `origin/main` `1059f6669482efac5b7956ef25d43996ca59d515` |
+| Baseline | `1059f6669482efac5b7956ef25d43996ca59d515` (`origin/main`, post-AFF-03-merge via PR #20) |
+| `git diff` vs baseline | 23 files / +2320 / -263 cumulative (single rebase-on-origin-main slice, ancestry linear: `1059f66 → 809e3aa → fcd6bfb → cfe44bd → 4909c41`) |
+| CI run attached | (pending — T1B will push new branch + open PR; CI Integration lane (ephemeral `postgres:16-alpine` + `scripts/ci/container-test-db.mjs`) will populate this row) |
 | CI run attached | (none yet — `npm run test:integration` is ENV_BLOCKED locally without a writable test DB; CI Integration lane must re-run against `hrp_mp2_test` for AC-01..AC-13 runtime evidence) |
-| Next gate | T3 LIGHT read-only audit on frozen SHA. After T3 PASS, return to T0 for production gate (apply migration to prod, merge to main). T1B does NOT self-apply or self-merge. |
+| Next gate | Push `tier1/hrp-v6-n2-aff-03b-rls-runtime-fix` to origin, open PR; CI Integration lane runs against ephemeral `postgres:16-alpine` via `scripts/ci/container-test-db.mjs` (RLS posture pre-provisioned incl. `hrp_public_rpc` per DEC-14). On CI green: capture run URL + head SHA into `evidence/integration-aff03b.txt`; then T0/Owner applies migration to prod → merges PR → deploys → smokes per AFF-03 §5.3 sequence. T1B does NOT self-apply, self-merge, self-deploy, or self-smoke. |
 | Execution round | 1 |
 | Tier 1 sign-off | Initial — no prior delivery |
 | Assurance lane | CRITICAL |
 | Audit mode | LIGHT |
 
-> Handoff status: `READY_FOR_AUDIT` (slice 03b delivered; T3 LIGHT audit pending; merge decision = T0/Owner, NOT T1B).
+> Handoff status: `READY_FOR_AUDIT` (slice 03b delivered; T3 LIGHT audit ACCEPTED at implementation-contract gate; merge decision = T0/Owner, NOT T1B; production gate HELD pending CI Integration lane green per T3 verdict).
 
 ## 1. Outcome and changed surface
 
@@ -143,7 +147,7 @@ self-runnable; CI Integration lane must execute them for the runtime evidence.
 
 ## 5. Final status
 
-Status: `READY_FOR_AUDIT` (round 1 — slice 03b delivered; T0 verdict ACCEPTED on DRAFT v1.0.r4 with 2 cleanup conditions; both applied during /deliver; T3 LIGHT audit pending).
+Status: `READY_FOR_AUDIT` (round 1 — slice 03b delivered; T0 verdict ACCEPTED on DRAFT v1.0.r4 with 2 cleanup conditions; both verified-already-present from round-3; T3 LIGHT audit PASSED at implementation-contract gate; F-P3-1 (stale route comment) fixed as follow-up; production gate HELD pending CI Integration lane green).
 
 ### 5.1 LIM-* (mandatory exit-gate honesty per V6/aff_plan.md §14.1 clause 3)
 
