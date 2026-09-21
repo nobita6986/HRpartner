@@ -8,83 +8,100 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | Conversion and placement propagation are security and data-integrity boundaries. Incorrect attribution leads to financial credit theft or fraud. |
-| Spec version | `v1.0` |
+| Work type | `FEATURE_EXPANSION` |
+| Spec version | `v1.1` |
 | Status | `PROPOSED_ONLY` |
 | Planner | `Tier 1A` |
-| Baseline | `origin/main` |
+| Baseline | `0fdc616b61de731ded8b9fa7337002dc0bb00721` |
 | Authority | `docs/V6/aff_plan.md` §10 và §14 (AFF-04); `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §15.1 |
+| In-scope roots | `src/domains/applications/`, `src/domains/staffing/`, `prisma/` |
+| Forbidden paths | Tái cấu trúc RLS policy hiện hữu; Sửa cơ chế xác thực JWT; Nới policy ngoài phạm vi schema update; `PLANNER_HANDOVER.md` |
+| Required gates | `T0_CONTRACT_APPROVAL`, `TIER3_LIGHT_AUDIT`, `VERIFY_TASK`, `VERIFY_HANDOFF` |
 | Next gate | `T0_CONTRACT_APPROVAL` |
 
-## 1. Outcome and changed surface
+## 1. Outcome
 
-This slice (AFF-04) ensures that when a candidate converts and is placed into a project, the original valid referrer is immutably preserved as an accepted generic `SourceClaim` and propagated to `ProjectAssignment.referrerId`. It bridges the gap between attribution (AFF-02/03) and the commission ledger (AFF-05).
+**AFF-04** mở rộng capability hiện có của quá trình ứng viên đi làm. Hiện tại, quá trình conversion (`CandidateSubmission` chuyển `QUALIFIED` → `CONVERTED`) đã tạo một `SourceClaim` dạng legacy (`ctvId`). Việc placement cũng đã kiểm tra claim hợp lệ nhưng chưa ghi vào dự án, và quá trình transfer hiện đang tạo assignment mới với `referrerId: null`.
 
-**Changed surface:**
-- **Conversion Service:** Updates conversion logic to read `ReferralAttribution`/submission snapshot and create an accepted `SourceClaim` linked to a generic `User` (not just legacy `ctvId`).
-- **Placement/Assignment Propagation:** When a `Placement` becomes `EFFECTIVE` (or when `ProjectAssignment` is created), `ProjectAssignment.referrerId` is populated **server-side** by reading the unique accepted `SourceClaim` of the worker.
-- **Client/API boundary:** Removes any ability for clients to pass `referrerId` or `ctvId` in placement/assignment creation payloads.
+Slice AFF-04 sẽ đảm bảo:
+- Thêm quan hệ generic `referrerUserId` vào `SourceClaim` qua additive SQL migration, backfill từ `ctvId` (nếu có, không bịa cho vendor/HRP_DIRECT), và giữ legacy ID trong thời gian tương thích.
+- Tự động propagate (kế thừa) generic referrer từ `SourceClaim` sang `ProjectAssignment.referrerId` khi Placement được activate.
+- Tự động propagate tiếp referrer khi thực hiện Guided Transfer (chuyển NLD sang dự án mới).
+- Mọi payload từ API client sẽ hoàn toàn không được truyền (hay bị lờ đi/bỏ qua) các field độc hại như `referrerId/ctvId`.
+- Tất cả xử lý chuyển nguồn bắt buộc phải chạy dưới RLS hiện hành thông qua `withDbContext`, không sử dụng `SECURITY DEFINER` hoặc bypass.
 
-## 2. Requirements and Acceptance Criteria (AC)
+## 2. Evidence
 
-### Propagation Semantics (S-01)
-- **AC-01**: Khi LaborProfile chuyển sang CONVERTED (tạo Worker), hệ thống phải đọc snapshot nguồn từ submission hợp lệ và tự động tạo một `SourceClaim` với trạng thái `accepted = true`.
-- **AC-02**: Quá trình tạo `SourceClaim` phải idempotent, nằm trong cùng transaction với việc tạo `Worker`. Nếu Worker đã có nguồn accepted khác, transaction phải giữ nguồn cũ (không silently steal source) và ghi audit log.
-- **AC-03**: Self-referral (người dùng tự click link của chính mình rồi xin việc) vẫn tạo `SourceClaim` để giữ lịch sử, nhưng phải bị đánh dấu ineligible ở cấp độ policy (chặn ở AFF-05) hoặc chặn propagate. Trong scope AFF-04, `SourceClaim` vẫn được tạo nhưng đánh dấu rõ provenance.
+- Lịch sử mã nguồn (branch) sẽ gồm các integration, upgrade-path, preflight, orphan, clean-chain và security test (fail closed).
+- Audit logic của claim sẽ lưu trữ trong outbox hoặc logs không chứa PII không cần thiết.
 
-### Server-Derived Authority (S-02)
-- **AC-04**: Việc tạo `ProjectAssignment` phải tự động resolve `referrerId` từ `SourceClaim` accepted duy nhất của Worker. API payload không được phép chứa `referrerId` hoặc `ctvId`. Bất kỳ request nào truyền field này từ client sẽ bị loại bỏ (stripped) hoặc reject.
-- **AC-05**: Khi NLD chuyển dự án (transfer), `ProjectAssignment` mới tiếp tục thừa kế cùng `referrerId` từ `SourceClaim` gốc. Cấm ghi đè nguồn theo dự án đích.
+## 3. Decisions
 
-### RLS and Authorization Boundary (S-03)
-- **AC-06**: Quá trình conversion và placement chỉ được thực hiện bởi HR/Admin role theo RLS hiện hữu. Quá trình đọc/tạo `SourceClaim` và gán `referrerId` diễn ra dưới quyền server (SECURITY DEFINER hoặc bypassing service layer), applicant/referrer không có quyền can thiệp.
+- **AFF-OQ-04A: APPROVED** - Thực hiện additive SQL migration. Cụ thể: thêm `SourceClaim.referrerUserId` (FK to `User`, nullable); backfill từ `ctvId`; giữ `ctvId/vendorId` trong compatibility window; dual-write CTV path cho cả hai cột; thêm FK/relation/index cho `ProjectAssignment.referrerId`; không thay/tạo lại hai partial unique index hiện hành; migration có test clean-chain và fail closed nếu dữ liệu hỏng.
+- **AFF-OQ-04B: APPROVED** - Self-referral vẫn giữ `SourceClaim` và `ProjectAssignment.referrerId` làm provenance. Việc có accepted source không tự nhiên đủ điều kiện để tính commission; không thêm field eligibility vào SourceClaim. AFF-04 tuyệt đối không tạo CommissionLedger credit. Commission sẽ để cho AFF-05B deny (fail closed). Ghi audit reason `SELF_REFERRAL` khi trùng khớp canonical identity (không suy đoán qua phone).
 
-## 3. Data model and Migration (M)
+## 4. Contract
 
-- **Migration**: Schema `SourceClaim` cần hỗ trợ liên kết generic với `User` (hiện tại chỉ có `ctvId` và `vendorId`). Cần tạo field mới `referrerUserId` (nullable) và ánh xạ backfill nếu cần. Tuy nhiên, nếu Schema hiện tại không cho phép, cần một Additive Migration an toàn để không làm hỏng dữ liệu CTV/Vendor cũ.
-- **Data integrity**: Ràng buộc duy nhất: Một `Worker` chỉ có tối đa một `SourceClaim` với `accepted = true`.
+- **Nguồn (Provenance):** Generic AFF source lấy duy nhất từ `ReferralAttribution.referrerUserId` gắn liền canonical `LaborProfile`. Mọi snapshot trên `CandidateSubmission` đóng vai trò là evidence kiểm tra chéo (cross-check). Cột legacy `ctvId` chỉ là fallback. Vendor/HRP_DIRECT không được tự gắn thành generic referrer.
+- **Quyền Hạn và RLS:** Không áp dụng phương pháp bypass RLS hoặc `SECURITY DEFINER`. `conversion.service.ts`, `assignment-placement.service.ts` và `transfer.service.ts` bắt buộc chạy trong transaction `withDbContext` thuộc context RLS hiện tại.
+- **Database Index:** Tái sử dụng `one_accepted_source` và `one_accepted_source_per_submission` để ngăn chặn duplicate claim (concurrent conversion).
 
-## 4. Integration and Upgrade Path
+## 5. Execution Plan
 
-- Legacy CTV/Vendor flow phải tiếp tục hoạt động trong thời gian tương thích.
-- Không drop cột `ctvId` trong foundation này.
-
-## 5. Security and Abuse Model
-
-| Risk | Control |
-|---|---|
-| Client override referrer | API DTO chặn/strip input; Server luôn resolve từ `SourceClaim`. |
-| Concurrent conversion race | Giao dịch nguyên tử; constraint `(workerId, accepted)` duy nhất. |
-| Self-referral fraud | Record provenance accurately; commission policy (AFF-05) will deny payout based on identical User identities. |
-
-## 6. Implementation Constraints (C)
-
-- **C-01**: Cấm thay đổi cơ chế đăng nhập (JWT/Auth).
-- **C-02**: Không sửa file PLANNER_HANDOVER.md.
-- **C-03**: Phải dùng transaction bảo vệ conversion, không tạo partial data.
-
-## 7. Open Decisions / OWNER_DECISION_REQUIRED
-
-| Issue | Status | Note |
+| Step | Component | Description |
 |---|---|---|
-| `AFF-OQ-04A`: Ràng buộc Schema của `SourceClaim` | `OWNER_DECISION_REQUIRED` | Hiện tại schema `SourceClaim` đang dùng `ctvId` và `vendorId`. Việc add `referrerUserId` (FK to `User`) có cần migration SQL riêng ở scope AFF-04 không? |
-| `AFF-OQ-04B`: Self-referral behavior | `OPEN` | `SourceClaim` cho tự giới thiệu được đánh dấu `accepted = true` nhưng có field `ineligibleForCommission` không, hay để AFF-05 ledger tự lọc? Đề xuất: Để ledger (AFF-05) quyết định payout, AFF-04 chỉ giữ nguyên lịch sử khách quan. |
+| `STEP-01` | `prisma/schema.prisma` | Additive schema migration: Add `SourceClaim.referrerUserId`, add `ProjectAssignment.referrerId` and relations/indices. |
+| `STEP-02` | Migration scripts | Data backfill & validation: backfill `referrerUserId` từ `ctvId`, test upgrade/clean-chain, fail-closed for orphans. |
+| `STEP-03` | `src/domains/applications/conversion.service.ts` | Update conversion: Dual-write `ctvId` và `referrerUserId`. Resolve source from `ReferralAttribution` tied to `LaborProfile` and cross-check `CandidateSubmission`. Detect `SELF_REFERRAL` by canonical identity and audit it. Prevent stealing source from existing worker. Support concurrency safely. |
+| `STEP-04` | `src/domains/staffing/assignment-placement.service.ts` | Propagate placement: When activating placement, read the `SourceClaim.referrerUserId` and copy to `ProjectAssignment.referrerId`. Ensure idempotent replay keeps the same referrer. |
+| `STEP-05` | `src/domains/staffing/transfer.service.ts` | Propagate transfer: Guided transfer creates new assignment but inherits `referrerId` from previous assignment (not null). |
+| `STEP-06` | API Boundary & Payload | Ensure malicious payloads do not override `referrerId` / source. All processes run under `withDbContext` without expanding RLS. |
 
-## 8. File Allowlist
+## 6. Acceptance
 
-- `src/domains/conversion/conversion.service.ts`
-- `src/domains/assignment/assignment-placement.service.ts`
-- `src/domains/assignment/assignment-api.schema.ts` (để chặn input referrer từ client)
-- DTOs và Integration tests liên quan đến Conversion & Placement.
-*(Không bao gồm schema/migration trừ khi T0 quyết định OQ-04A)*
+### 6.1 Acceptance criteria
+
+| AC | Pass condition | Verification method |
+|---|---|---|
+| `AC-01` | Migration adds `referrerUserId` to `SourceClaim`, `referrerId` to `ProjectAssignment` and relations/indices. Upgrades/backfills fail-closed on invalid data. | Prisma schema migration script + preflight/upgrade-path test. |
+| `AC-02` | Mapping generic user correctly keeps legacy `ctvId` as fallback but strictly prevents creating generic referrers for `Vendor` or `HRP_DIRECT`. | Unit tests for conversion mapping logic. |
+| `AC-03` | Concurrent conversion is correctly handled by partial unique indices without failure exceptions leaking. | DB concurrency test with mock submissions. |
+| `AC-04` | Conversion handles conflict with existing-worker and does not steal source. | Negative test: attempt conversion for worker that already has an accepted source. |
+| `AC-05` | Direct, vendor, CTV, generic-user mappings are correctly applied. | Unit/integration tests over conversion mapping combinations. |
+| `AC-06` | Self-referral produces accepted source without ledger credit, logs audit reason `SELF_REFERRAL` based on canonical identity. Audit/outbox only contains canonical IDs, no PII. | Acceptance tests on self-referral submissions. |
+| `AC-07` | Placement replay is idempotent and keeps the exact same referrer; gán `referrerId` server-side. | Placement activate test with multiple invocations and verify payload strip. |
+| `AC-08` | Guided transfer preserves and inherits `referrerId` from previous assignment (not null). | Transfer test flow to assert `referrerId` remains identical. |
+| `AC-09` | Payload does not override source; RLS is respected via `withDbContext`, not widened. | Security tests attempting to inject `referrerId` payload and verify policy blocks. |
+
+### 6.2 Traceability
+
+| Requirement | Step | Acceptance |
+|---|---|---|
+| `RQ-01` | `STEP-01`, `STEP-02` | `AC-01`, `AC-02` |
+| `RQ-02` | `STEP-03` | `AC-03`, `AC-04`, `AC-05` |
+| `RQ-03` | `STEP-03` | `AC-06` |
+| `RQ-04` | `STEP-04`, `STEP-05` | `AC-07`, `AC-08` |
+| `RQ-05` | `STEP-03`, `STEP-04`, `STEP-05`, `STEP-06` | `AC-09` |
+
+## 7. Risk
+
+- Sai sót trong data backfill hoặc partial index có thể gây đứt quãng quá trình CandidateSubmission `QUALIFIED` → `CONVERTED`.
+- Rò rỉ bảo mật RLS nếu developer bypass service layer thay vì tuân thủ `withDbContext`.
+
+## 8. Open Questions
+
+- None
 
 ## 9. Planner Resolution
 
 | Round | Decision | Reason |
 |---|---|---|
-| 1 | PENDING T0 | Vừa draft AFF-04 thin-slice contract. |
+| 1 | `REVISION_REQUIRED` | T0 feedback: pin baseline, fix QUALIFIED->CONVERTED state, bỏ SECURITY_DEFINER, sửa file path (transfer.service.ts). |
+| 2 | `PENDING T0` | Cập nhật cấu trúc TASK v1.1. Thêm STEP và AC coverage đầy đủ. |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
-| `v1.0` | `2026-09-22` | Initial draft | AFF-04 proposal based on `aff_plan.md` §10. |
+| `v1.0` | `2026-09-22` | Initial draft | Proposal slice AFF-04 |
+| `v1.1` | `2026-09-22` | Revision following T0 | Added template structure, fixed states and path scopes, applied T0 decisions. |
