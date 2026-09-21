@@ -1,0 +1,150 @@
+Bắt đầu triển khai HRP V8.
+
+Trước khi viết bất kỳ production code nào, hãy đọc và tuân thủ theo thứ tự:
+
+1. `HRP_V6_PLUS_V7_MASTER_INDEX.md`
+2. `AI_CODING_GUARDRAILS.md`
+3. `V8_MASTER_PLAN.md`
+4. `V8_0_EXPERIENCE_FOUNDATION_BACKLOG.md`
+5. `V8_1_RECRUITMENT_KANBAN_BACKLOG.md`
+6. `V8_2_RECRUITER_MICROSITE_BACKLOG.md`
+7. `V8_3_ROLE_BASED_WORKSPACES_BACKLOG.md`
+8. `V8_4_WORKSPACE_ANALYTICS_PERSONALIZATION_BACKLOG.md`
+9. `V8_5_EXPERIENCE_HARDENING_BACKLOG.md`
+10. `V8_MICRO_STEP_EXECUTION_PLAN.md`
+11. `V8_DISCOVERY_REPOSITORY_AUDIT_PACKAGE.md`
+12. Universal Affiliate canonical plan hiện có.
+
+Không bắt đầu code V8 ngay.
+
+Bước đầu tiên bắt buộc là thực hiện Discovery Gate:
+
+```text
+MS-V8-D00 — Repository structure inventory
+MS-V8-D01 — V7 capability verification
+MS-V8-D02 — AFF implementation reality check
+MS-V8-D03 — UI/design-system inventory
+MS-V8-D04 — Baseline tests/build
+```
+
+Hãy kiểm tra repository thực tế và tạo đầy đủ:
+
+```text
+V8_DISCOVERY_REPORT.md
+V8_CAPABILITY_MATRIX.md
+V8_REPO_MODULE_MAP.md
+V8_BASELINE_TEST_REPORT.md
+V8_BLOCKER_REGISTER.md
+```
+
+Phải phân loại từng capability bằng một trong các trạng thái:
+
+```text
+IMPLEMENTED
+PARTIAL
+LEGACY_ONLY
+NOT_IMPLEMENTED
+CONFLICT
+UNKNOWN
+```
+
+Không được suy luận rằng một capability đã tồn tại chỉ vì nó có trong plan.
+
+Đặc biệt phải xác minh thực tế:
+
+```text
+PlacementCase
+InteractionOutcome
+NextAction
+HandlingAssignment
+Company Pool
+Application
+JobProposal
+Placement
+Worker
+EmploymentEpisode
+ProjectAssignment
+SupplyPartner
+ReferralAttribution
+CommissionBeneficiaryDecision
+Client CRM
+permissions / RLS
+public JobPosting flow
+AFF implementation
+existing workspace/UI shell
+design system
+```
+
+Đối với AFF, phải phân biệt rõ design với code đã implement và kiểm tra ít nhất:
+
+```text
+User.affCode
+/api/me/affiliate-link
+/r/:code
+ReferralAttribution
+signed attribution token/cookie
+public apply attribution
+generic referrer
+generic beneficiary
+AFF analytics
+```
+
+Nếu phát hiện conflict giữa AFF legacy handling và V7 PlacementCase handling, không tự chọn một bên. Ghi vào `V8_BLOCKER_REGISTER.md`.
+
+Các nguyên tắc bất biến:
+
+```text
+V7 owns business truth.
+V8 owns experience/distribution.
+
+Kanban Card authority = PlacementCase.
+Không tạo LaborProfile.kanbanStatus.
+Không patch lifecycle trực tiếp từ UI.
+Mọi transition quan trọng đi qua canonical command.
+
+Recruiter Microsite chỉ reference canonical JobPosting.
+Không tạo Affiliate system thứ hai.
+Không tạo RecruiterPublicProfile.affCode hoặc MicrositeReferral.
+
+Workspace permission-driven.
+Không dùng if role === SALE/ADMIN/CTV làm kiến trúc chính.
+Workspace switching không được tăng quyền.
+
+External workspace phải dùng safe projection riêng.
+Client không được browse unrestricted Talent Repository.
+Worker không được sửa workforce history.
+CTV/Vendor không được thấy dữ liệu ngoài scope.
+
+Analytics chỉ là projection.
+Không biến metric/dashboard thành business authority.
+```
+
+Tuân thủ nghiêm `AI_CODING_GUARDRAILS.md`.
+
+Không tạo god file, generic dumping-ground utils, hoặc business rule hardcode rải rác.
+
+Mỗi coding task sau Discovery chỉ nên gồm khoảng 1–3 micro-step.
+
+Nếu một bước yêu cầu canonical command chưa tồn tại, schema thực tế xung đột đáng kể, AFF capability chưa có, RLS không đủ an toàn, hoặc cần refactor lớn ngoài scope:
+
+```text
+STOP
+không tạo workaround
+không tạo duplicate authority
+ghi blocker
+đề xuất prerequisite task nhỏ nhất
+```
+
+Sau khi hoàn tất D00–D04, hãy báo cáo:
+
+```text
+1. Repository hiện đang ở đâu so với V7/V8 plan.
+2. Capability nào READY.
+3. Capability nào PARTIAL / LEGACY / MISSING / CONFLICT.
+4. Các blocker quan trọng.
+5. 1–3 micro-step an toàn nhất để triển khai tiếp theo.
+```
+
+Chưa được tự động triển khai toàn bộ V8 sau Discovery.
+
+Chỉ bắt đầu micro-step đầu tiên khi Discovery Gate đã PASS hoặc khi blocker tương ứng đã được xử lý.
