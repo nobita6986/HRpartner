@@ -1,0 +1,8 @@
+﻿{
+    "admin_endpoint_id":  "empty-forest-azlhfyo9",
+    "writer_endpoint_id":  "empty-forest-azlhfyo9",
+    "expected_branch":  "hrp_mp2_test",
+    "prod_refused_id":  "shy-tree-az32as2c",
+    "gate_exit_code":  0,
+    "gate_pass":  true
+}

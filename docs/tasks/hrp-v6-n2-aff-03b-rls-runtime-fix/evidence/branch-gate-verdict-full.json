@@ -1,0 +1,17 @@
+﻿{
+    "admin_endpoint_id":  "empty-forest-azlhfyo9",
+    "writer_endpoint_id":  "empty-forest-azlhfyo9",
+    "expected_branch_name":  "hrp_mp2_test",
+    "admin_branch_id":  "br-misty-cell-az3nx5l3",
+    "writer_branch_id":  "br-misty-cell-az3nx5l3",
+    "admin_branch_name":  "hrp_mp2_test",
+    "writer_branch_name":  "hrp_mp2_test",
+    "primary_branch_id":  "br-icy-dew-azbrgthw",
+    "primary_branch_name":  "hrp-live",
+    "same_branch":  true,
+    "branch_is_primary":  false,
+    "branch_name_matches":  true,
+    "prod_refused_endpoint_id":  "shy-tree-az32as2c",
+    "prod_refused_branch_name":  "hrp-live",
+    "gate":  "PASS"
+}

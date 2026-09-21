@@ -1,36 +1,48 @@
 /**
- * aff03-public-intake.service.test.ts — unit tests (STEP-04).
+ * aff03-public-intake.service.test.ts — unit tests (STEP-04, slice 03b).
  *
- * Pure unit tests with Prisma client mocked. Verifies:
- *   - cookie verify-fail paths (forged, expired, missing) → resolveActiveAttributionId returns null
+ * Pure unit tests with Prisma `$queryRaw` mocked. Verifies:
+ *   - cookie verify-fail paths (forged, expired, missing) →
+ *     resolveActiveAttributionId returns null
  *   - cookie verify-success path → resolveActiveAttributionId looks up the row
  *   - findUnique projection is minimal (id, referrerUserId, status, expiresAt)
  *   - server-clock expiresAt guard
  *   - status='ACTIVE' guard
- *   - submitPublicIntake passes referralAttributionId to writer when valid
- *   - submitPublicIntake passes null to writer when invalid (silent fail-safe)
+ *   - TOKEN_SIGNING_ERROR (missing/short `RATE_LIMIT_HASH_SECRET`) → null
+ *   - submitPublicIntake delegates the full write chain to
+ *     `hrp_public_intake_submission(jsonb)` (DEC-01, DEC-11) — NOT to the
+ *     Prisma writer `createCandidateSubmissionFromIntake` (which is preserved
+ *     for non-anon flows).
  *   - DTO NEVER contains referrer fields
- *   - Intent validation (JOB_INTEREST | GENERAL_INTEREST)
+ *   - RPC return shape → DTO mapping (5-row shape)
+ *   - `verdict='POSSIBLE_MATCH'` → throws PossibleMatchNotResolvedError
  *
- * No DB. Mock the writer (createCandidateSubmissionFromIntake) and Prisma's
- * referralAttribution.findUnique.
+ * No DB. Mock `tx.$queryRaw` to return canned RPC rows.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ─── Mocks ─────────────────────────────────────────────────────────────────
 
+interface IntakeRpcRow {
+  labor_profile_id: string | null;
+  candidate_submission_id: string | null;
+  placement_case_id: string | null;
+  verdict: 'EXACT_MATCH' | 'NEW_PROFILE' | 'POSSIBLE_MATCH';
+  possible_match: unknown | null;
+  attribution_consumed: boolean;
+}
+
 const mocks = vi.hoisted(() => ({
-  writerResult: null as unknown,
-  writerError: null as unknown,
-  findUniqueResult: null as unknown,
+  rpcResult: null as IntakeRpcRow[] | null,
+  rpcError: null as unknown,
+  queryRawCalls: [] as Array<{ sql: string; values: unknown[] }>,
 }));
 
 vi.mock('@/src/domains/referrals/redirect-token', () => ({
   verifyAttributionToken: vi.fn((token: string) => {
     if (!token || token === 'forged') return null;
     if (token === 'expired-token') {
-      // Return a payload with expiresAt in the past (verify itself rejects; we
-      // simulate the verify-passing-but-DB-row-expired case differently below).
+      // verify-passing-but-DB-row-expired simulated below
       return { attributionId: 'attr-expired', expiresAt: Date.now() - 1000, keyVersion: 1 };
     }
     if (token === 'valid-token') {
@@ -42,36 +54,13 @@ vi.mock('@/src/domains/referrals/redirect-token', () => ({
     if (token === 'valid-token-row-missing') {
       return { attributionId: 'attr-missing', expiresAt: Date.now() + 60_000, keyVersion: 1 };
     }
+    if (token === 'token-signing-error') {
+      // Simulates TOKEN_SIGNING_ERROR thrown by verifyAttributionToken when
+      // RATE_LIMIT_HASH_SECRET is missing or too short.
+      throw new Error('TOKEN_SIGNING_ERROR: RATE_LIMIT_HASH_SECRET missing or too short');
+    }
     return null;
   }),
-}));
-
-vi.mock('@/src/domains/talent/intake-writer.service', () => ({
-  createCandidateSubmissionFromIntake: vi.fn(async (_tx, _input) => {
-    if (mocks.writerError) throw mocks.writerError;
-    return (
-      mocks.writerResult ?? {
-        match: { verdict: 'NEW_PROFILE', laborProfileId: 'lp-1' },
-        placementCase: { placementCaseId: 'pc-1' },
-        candidateSubmission: {
-          id: 'cs-1',
-          status: 'NEW',
-          placementCaseId: 'pc-1',
-          laborProfileId: 'lp-1',
-          projectId: null,
-          channel: 'PUBLIC_MARKETPLACE',
-        },
-      }
-    );
-  }),
-  PossibleMatchNotResolvedError: class extends Error {
-    match: unknown;
-    constructor(match: unknown) {
-      super('POSSIBLE_MATCH');
-      this.name = 'PossibleMatchNotResolvedError';
-      this.match = match;
-    }
-  },
 }));
 
 // ─── Imports under test ────────────────────────────────────────────────────
@@ -79,8 +68,8 @@ vi.mock('@/src/domains/talent/intake-writer.service', () => ({
 import {
   resolveActiveAttributionId,
   submitPublicIntake,
+  PossibleMatchNotResolvedError,
 } from '@/src/domains/applications/aff03-public-intake.service';
-import { createCandidateSubmissionFromIntake } from '@/src/domains/talent/intake-writer.service';
 
 type Tx = Parameters<typeof submitPublicIntake>[0];
 
@@ -119,20 +108,41 @@ function makeTx(): Tx {
         return null;
       }),
     },
-    // Other tx methods not exercised by unit tests.
+    $queryRaw: vi.fn(async (sql: TemplateStringsArray | string, ...values: unknown[]) => {
+      // Capture for assertions; ignore template-tag-vs-string in capture.
+      const sqlText =
+        typeof sql === 'string'
+          ? sql
+          : Array.isArray(sql)
+            ? (sql as unknown as readonly string[]).join('?')
+            : String(sql);
+      mocks.queryRawCalls.push({ sql: sqlText, values });
+      if (mocks.rpcError) throw mocks.rpcError;
+      return (
+        mocks.rpcResult ?? [
+          {
+            labor_profile_id: 'lp-1',
+            candidate_submission_id: 'cs-1',
+            placement_case_id: 'pc-1',
+            verdict: 'NEW_PROFILE' as const,
+            possible_match: null,
+            attribution_consumed: false,
+          },
+        ]
+      );
+    }),
   } as unknown as Tx;
 }
 
 beforeEach(() => {
-  mocks.writerResult = null;
-  mocks.writerError = null;
-  mocks.findUniqueResult = null;
-  vi.mocked(createCandidateSubmissionFromIntake).mockClear();
+  mocks.rpcResult = null;
+  mocks.rpcError = null;
+  mocks.queryRawCalls.length = 0;
 });
 
 // ─── resolveActiveAttributionId ────────────────────────────────────────────
 
-describe('resolveActiveAttributionId (silent fail-safe)', () => {
+describe('resolveActiveAttributionId (silent fail-safe, DEC-05)', () => {
   it('returns null when cookie is missing', async () => {
     const result = await resolveActiveAttributionId(makeTx(), null);
     expect(result).toBeNull();
@@ -167,12 +177,17 @@ describe('resolveActiveAttributionId (silent fail-safe)', () => {
     const result = await resolveActiveAttributionId(makeTx(), 'expired-token');
     expect(result).toBeNull();
   });
+
+  it('returns null when TOKEN_SIGNING_ERROR is thrown (missing/short secret)', async () => {
+    const result = await resolveActiveAttributionId(makeTx(), 'token-signing-error');
+    expect(result).toBeNull();
+  });
 });
 
 // ─── submitPublicIntake ────────────────────────────────────────────────────
 
-describe('submitPublicIntake', () => {
-  it('passes referralAttributionId=null to writer when no cookie', async () => {
+describe('submitPublicIntake (Full RPC path, DEC-01/DEC-11)', () => {
+  it('passes referralAttributionId=null to RPC when no cookie', async () => {
     const tx = makeTx();
     const dto = await submitPublicIntake(tx, {
       applicant: { fullName: 'Nguyễn Văn A', phone: '0909123456', consentAt: new Date().toISOString() },
@@ -180,10 +195,16 @@ describe('submitPublicIntake', () => {
       actorId: 'system:public-intake',
     });
     expect(dto.verdict).toBe('NEW_PROFILE');
-    expect(vi.mocked(createCandidateSubmissionFromIntake)).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ referralAttributionId: null }),
-    );
+    expect(dto.laborProfileId).toBe('lp-1');
+    expect(dto.candidateSubmissionId).toBe('cs-1');
+    expect(dto.placementCaseId).toBe('pc-1');
+    expect(mocks.queryRawCalls.length).toBe(1);
+    // The payload is JSON-encoded into one arg.
+    const payloadArg = mocks.queryRawCalls[0]?.values[0];
+    expect(typeof payloadArg).toBe('string');
+    const parsed = JSON.parse(payloadArg as string) as Record<string, unknown>;
+    expect(parsed.referralAttributionId).toBeNull();
+    expect(parsed.fullName).toBe('Nguyễn Văn A');
   });
 
   it('passes referralAttributionId=null when cookie is forged (silent fail-safe)', async () => {
@@ -193,10 +214,10 @@ describe('submitPublicIntake', () => {
       hrpAffCookie: 'forged',
       actorId: 'system:public-intake',
     });
-    expect(vi.mocked(createCandidateSubmissionFromIntake)).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ referralAttributionId: null }),
-    );
+    const payloadArg = mocks.queryRawCalls[0]?.values[0];
+    expect(typeof payloadArg).toBe('string');
+    const parsed = JSON.parse(payloadArg as string) as Record<string, unknown>;
+    expect(parsed.referralAttributionId).toBeNull();
   });
 
   it('passes referralAttributionId=<id> when cookie verifies and row is ACTIVE+not expired', async () => {
@@ -206,10 +227,9 @@ describe('submitPublicIntake', () => {
       hrpAffCookie: 'valid-token',
       actorId: 'system:public-intake',
     });
-    expect(vi.mocked(createCandidateSubmissionFromIntake)).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ referralAttributionId: 'attr-active' }),
-    );
+    const payloadArg = mocks.queryRawCalls[0]?.values[0];
+    const parsed = JSON.parse(payloadArg as string) as Record<string, unknown>;
+    expect(parsed.referralAttributionId).toBe('attr-active');
   });
 
   it('passes referralAttributionId=null when row status is not ACTIVE (silent fail-safe)', async () => {
@@ -219,10 +239,9 @@ describe('submitPublicIntake', () => {
       hrpAffCookie: 'valid-token-row-inactive',
       actorId: 'system:public-intake',
     });
-    expect(vi.mocked(createCandidateSubmissionFromIntake)).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ referralAttributionId: null }),
-    );
+    const payloadArg = mocks.queryRawCalls[0]?.values[0];
+    const parsed = JSON.parse(payloadArg as string) as Record<string, unknown>;
+    expect(parsed.referralAttributionId).toBeNull();
   });
 
   it('passes referralAttributionId=null when row expiresAt <= now() (server-clock guard)', async () => {
@@ -232,10 +251,21 @@ describe('submitPublicIntake', () => {
       hrpAffCookie: 'expired-token',
       actorId: 'system:public-intake',
     });
-    expect(vi.mocked(createCandidateSubmissionFromIntake)).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ referralAttributionId: null }),
-    );
+    const payloadArg = mocks.queryRawCalls[0]?.values[0];
+    const parsed = JSON.parse(payloadArg as string) as Record<string, unknown>;
+    expect(parsed.referralAttributionId).toBeNull();
+  });
+
+  it('passes referralAttributionId=null on TOKEN_SIGNING_ERROR (silent fail-safe)', async () => {
+    const tx = makeTx();
+    await submitPublicIntake(tx, {
+      applicant: { fullName: 'A', phone: '0909123456' },
+      hrpAffCookie: 'token-signing-error',
+      actorId: 'system:public-intake',
+    });
+    const payloadArg = mocks.queryRawCalls[0]?.values[0];
+    const parsed = JSON.parse(payloadArg as string) as Record<string, unknown>;
+    expect(parsed.referralAttributionId).toBeNull();
   });
 
   it('DTO contains ONLY { candidateSubmissionId, laborProfileId, placementCaseId, verdict }', async () => {
@@ -256,21 +286,99 @@ describe('submitPublicIntake', () => {
     expect(json).not.toMatch(/referrer/i);
   });
 
-  it('throws when writer throws PossibleMatchNotResolvedError (not silently caught)', async () => {
+  it('throws PossibleMatchNotResolvedError when RPC returns verdict=POSSIBLE_MATCH', async () => {
+    mocks.rpcResult = [
+      {
+        labor_profile_id: null,
+        candidate_submission_id: null,
+        placement_case_id: null,
+        verdict: 'POSSIBLE_MATCH' as const,
+        possible_match: {
+          candidates: [
+            {
+              laborProfileId: 'lp-cand-1',
+              signalsMatched: ['phone', 'full_name'],
+              conflictingEvidence: [],
+            },
+          ],
+          signalsProvided: 3,
+        },
+        attribution_consumed: false,
+      },
+    ];
     const tx = makeTx();
-    mocks.writerError = new (await import('@/src/domains/talent/intake-writer.service'))
-      .PossibleMatchNotResolvedError({
-        verdict: 'POSSIBLE_MATCH',
-        laborProfileId: null,
-        candidates: [],
-        hasConflict: false,
-      });
     await expect(
       submitPublicIntake(tx, {
         applicant: { fullName: 'A', phone: '0909123456' },
         hrpAffCookie: null,
         actorId: 'system:public-intake',
       }),
-    ).rejects.toThrow(/POSSIBLE_MATCH/);
+    ).rejects.toThrow(PossibleMatchNotResolvedError);
+  });
+
+  it('maps verdict=EXACT_MATCH from RPC to DTO verdict=EXACT_MATCH', async () => {
+    mocks.rpcResult = [
+      {
+        labor_profile_id: 'lp-existing',
+        candidate_submission_id: 'cs-existing',
+        placement_case_id: 'pc-existing',
+        verdict: 'EXACT_MATCH' as const,
+        possible_match: null,
+        attribution_consumed: true,
+      },
+    ];
+    const tx = makeTx();
+    const dto = await submitPublicIntake(tx, {
+      applicant: { fullName: 'A', phone: '0909123456' },
+      hrpAffCookie: null,
+      actorId: 'system:public-intake',
+    });
+    expect(dto.verdict).toBe('EXACT_MATCH');
+    expect(dto.laborProfileId).toBe('lp-existing');
+  });
+
+  it('propagates RPC errors (defense in depth — never swallows)', async () => {
+    mocks.rpcError = new Error('RPC_DOWN');
+    const tx = makeTx();
+    await expect(
+      submitPublicIntake(tx, {
+        applicant: { fullName: 'A', phone: '0909123456' },
+        hrpAffCookie: null,
+        actorId: 'system:public-intake',
+      }),
+    ).rejects.toThrow(/RPC_DOWN/);
+  });
+
+  it('throws when RPC returns 0 rows (defensive guard)', async () => {
+    mocks.rpcResult = [];
+    const tx = makeTx();
+    await expect(
+      submitPublicIntake(tx, {
+        applicant: { fullName: 'A', phone: '0909123456' },
+        hrpAffCookie: null,
+        actorId: 'system:public-intake',
+      }),
+    ).rejects.toThrow(/returned 0 rows/);
+  });
+
+  it('throws when RPC returns NULL ids for verdict=EXACT_MATCH/NEW_PROFILE', async () => {
+    mocks.rpcResult = [
+      {
+        labor_profile_id: null,
+        candidate_submission_id: 'cs-1',
+        placement_case_id: 'pc-1',
+        verdict: 'NEW_PROFILE' as const,
+        possible_match: null,
+        attribution_consumed: false,
+      },
+    ];
+    const tx = makeTx();
+    await expect(
+      submitPublicIntake(tx, {
+        applicant: { fullName: 'A', phone: '0909123456' },
+        hrpAffCookie: null,
+        actorId: 'system:public-intake',
+      }),
+    ).rejects.toThrow(/NULL ids/);
   });
 });

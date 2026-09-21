@@ -1,0 +1,7 @@
+# Raw SQL matches: 1 (comment, expected).
+# Stripped-comments matches (executable SQL): 0
+# Per security-boundary.aff03b.test.ts SEC-06: the assertion runs against sqlCode = sql.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--.*$/gm, '').
+# After stripping all comments (inline + line-starting), executable SQL contains 0 CREATE ROLE / 0 BYPASSRLS (DEC-09/14 satisfied).
+# The 1 raw match is in the header comment block (line 60: 'Because the role has BYPASSRLS, NO RLS policy applies to the RPC...') which is legitimate prose documenting DEC-14, not executable SQL.
+#
+exit=0 ; time=2026-09-19T16:48:50.1794305+07:00 ; raw_matches=1 ; executable_matches=0

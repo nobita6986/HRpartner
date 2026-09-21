@@ -1,0 +1,8 @@
+# Forbidden-paths regex scan against (committed vs origin/main) + (worktree M) + (untracked ??).
+committed: 0
+worktree: 5
+untracked: 15
+total_unique: 20
+forbidden_matches_count: 0
+forbidden_paths: 
+exit=0 ; time=2026-09-19T16:47:41.1768260+07:00

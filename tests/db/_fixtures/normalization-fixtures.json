@@ -1,0 +1,218 @@
+[
+  {
+    "ts": {
+      "phone": "+84 987 654 321",
+      "fullName": ""
+    },
+    "ts_phone": "987654321",
+    "ts_full_name": "",
+    "note": "international +84 prefix, with spaces"
+  },
+  {
+    "ts": {
+      "phone": "0987654321",
+      "fullName": ""
+    },
+    "ts_phone": "987654321",
+    "ts_full_name": "",
+    "note": "VN 0-prefix 10 digits"
+  },
+  {
+    "ts": {
+      "phone": "84 987 654 321",
+      "fullName": ""
+    },
+    "ts_phone": "987654321",
+    "ts_full_name": "",
+    "note": "no +, leading 84"
+  },
+  {
+    "ts": {
+      "phone": "+84987654321",
+      "fullName": ""
+    },
+    "ts_phone": "987654321",
+    "ts_full_name": "",
+    "note": "+84 prefix, no spaces"
+  },
+  {
+    "ts": {
+      "phone": "0987 654 321",
+      "fullName": ""
+    },
+    "ts_phone": "987654321",
+    "ts_full_name": "",
+    "note": "VN with spaces"
+  },
+  {
+    "ts": {
+      "phone": "(0987) 654-321",
+      "fullName": ""
+    },
+    "ts_phone": "987654321",
+    "ts_full_name": "",
+    "note": "parentheses + dashes"
+  },
+  {
+    "ts": {
+      "phone": "  0987654321  ",
+      "fullName": ""
+    },
+    "ts_phone": "987654321",
+    "ts_full_name": "",
+    "note": "leading/trailing whitespace"
+  },
+  {
+    "ts": {
+      "phone": "09876543210",
+      "fullName": ""
+    },
+    "ts_phone": "9876543210",
+    "ts_full_name": "",
+    "note": "11 digits, VN 0-prefix"
+  },
+  {
+    "ts": {
+      "phone": "01234567890",
+      "fullName": ""
+    },
+    "ts_phone": "1234567890",
+    "ts_full_name": "",
+    "note": "11 digits, 01x prefix (mobile)"
+  },
+  {
+    "ts": {
+      "phone": "abcd",
+      "fullName": ""
+    },
+    "ts_phone": "",
+    "ts_full_name": "",
+    "note": "non-digit-only input"
+  },
+  {
+    "ts": {
+      "phone": "",
+      "fullName": ""
+    },
+    "ts_phone": "",
+    "ts_full_name": "",
+    "note": "empty string"
+  },
+  {
+    "ts": {
+      "phone": "+84  ",
+      "fullName": ""
+    },
+    "ts_phone": "84",
+    "ts_full_name": "",
+    "note": "just +84 + spaces"
+  },
+  {
+    "ts": {
+      "phone": "",
+      "fullName": "  Nguyễn   Văn   A "
+    },
+    "ts_phone": "",
+    "ts_full_name": "nguyễn văn a",
+    "note": "multi-space, leading/trailing"
+  },
+  {
+    "ts": {
+      "phone": "",
+      "fullName": "Nguyễn Văn A"
+    },
+    "ts_phone": "",
+    "ts_full_name": "nguyễn văn a",
+    "note": "single spaces"
+  },
+  {
+    "ts": {
+      "phone": "",
+      "fullName": "nguyễn văn a"
+    },
+    "ts_phone": "",
+    "ts_full_name": "nguyễn văn a",
+    "note": "already lowercase"
+  },
+  {
+    "ts": {
+      "phone": "",
+      "fullName": "NGUYỄN VĂN A"
+    },
+    "ts_phone": "",
+    "ts_full_name": "nguyễn văn a",
+    "note": "all uppercase"
+  },
+  {
+    "ts": {
+      "phone": "",
+      "fullName": "Trần Thị Bé"
+    },
+    "ts_phone": "",
+    "ts_full_name": "trần thị bé",
+    "note": "multi-word"
+  },
+  {
+    "ts": {
+      "phone": "",
+      "fullName": "\tLê\nHoàng\nNam\r\n"
+    },
+    "ts_phone": "",
+    "ts_full_name": "lê hoàng nam",
+    "note": "mixed whitespace incl tabs/newlines"
+  },
+  {
+    "ts": {
+      "phone": "",
+      "fullName": "   "
+    },
+    "ts_phone": "",
+    "ts_full_name": "",
+    "note": "whitespace-only"
+  },
+  {
+    "ts": {
+      "phone": "",
+      "fullName": ""
+    },
+    "ts_phone": "",
+    "ts_full_name": "",
+    "note": "empty"
+  },
+  {
+    "ts": {
+      "phone": "",
+      "fullName": "Phạm Minh Khôi"
+    },
+    "ts_phone": "",
+    "ts_full_name": "phạm minh khôi",
+    "note": "4 words"
+  },
+  {
+    "ts": {
+      "phone": "",
+      "fullName": "Đỗ Thanh Hà"
+    },
+    "ts_phone": "",
+    "ts_full_name": "đỗ thanh hà",
+    "note": "mixed accents"
+  },
+  {
+    "ts": {
+      "phone": "",
+      "fullName": "Đào   Văn     Long"
+    },
+    "ts_phone": "",
+    "ts_full_name": "đào văn long",
+    "note": "many spaces between words"
+  },
+  {
+    "ts": {
+      "phone": "",
+      "fullName": "Vũ Ngọc Ánh"
+    },
+    "ts_phone": "",
+    "ts_full_name": "vũ ngọc ánh",
+    "note": "middle name"
+  }
+]

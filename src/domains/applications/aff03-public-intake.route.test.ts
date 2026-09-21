@@ -31,6 +31,8 @@ const mocks = vi.hoisted(() => ({
   prismaTxnError: null as unknown,
   withIdempotencyResult: null as unknown,
   withIdempotencyError: null as unknown,
+  rpcResult: null as unknown,
+  rpcError: null as unknown,
 }));
 
 vi.mock('@/src/shared/security/rate-limit-guard', () => ({
@@ -85,6 +87,21 @@ vi.mock('@/src/lib/db', () => ({
             return null;
           }),
         },
+        $queryRaw: vi.fn(async () => {
+          if (mocks.rpcError) throw mocks.rpcError;
+          return (
+            mocks.rpcResult ?? [
+              {
+                labor_profile_id: 'lp-1',
+                candidate_submission_id: 'cs-1',
+                placement_case_id: 'pc-1',
+                verdict: 'NEW_PROFILE' as const,
+                possible_match: null,
+                attribution_consumed: false,
+              },
+            ]
+          );
+        }),
       };
       return fn(fakeTx);
     }),
@@ -140,6 +157,8 @@ beforeEach(() => {
   mocks.prismaTxnError = null;
   mocks.withIdempotencyResult = null;
   mocks.withIdempotencyError = null;
+  mocks.rpcResult = null;
+  mocks.rpcError = null;
 });
 
 // ─── Route layer ───────────────────────────────────────────────────────────
@@ -204,6 +223,30 @@ describe('POST /api/public/intake (route layer)', () => {
       .IdempotencyConflictError('key reused');
     const res = await POST(applyRequest(validBody));
     expect(res.status).toBe(409);
+  });
+
+  it('returns 409 on POSSIBLE_MATCH from RPC', async () => {
+    mocks.prismaTxnResult = null; // let $transaction call the handler with fakeTx
+    mocks.rpcResult = [
+      {
+        labor_profile_id: null,
+        candidate_submission_id: null,
+        placement_case_id: null,
+        verdict: 'POSSIBLE_MATCH' as const,
+        possible_match: {
+          candidates: [
+            { laborProfileId: 'lp-cand-1', signalsMatched: ['phone', 'full_name'], conflictingEvidence: [] },
+          ],
+          signalsProvided: 3,
+        },
+        attribution_consumed: false,
+      },
+    ];
+    const res = await POST(applyRequest(validBody));
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error).toBe('POSSIBLE_MATCH_NOT_RESOLVED');
+    expect(body.candidates).toBeDefined();
   });
 
   it('returns 500 on unclassified error', async () => {
