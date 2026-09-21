@@ -10,16 +10,16 @@
 | Audit mode | `LIGHT` |
 | Audit reason | Adapter is a security boundary; raw filesystem path operations + traversal/symlink enforcement must be correct to prevent evidence disclosure/overwrite. |
 | Spec version | `v1.0` |
-| Status | `ACCEPTED` |
+| Status | `READY_FOR_AUDIT` (Tier 3 LIGHT round 1 PASS; awaiting push/PR/CI; merge decision held by T0) |
 | Planner | `Tier 1` |
 | Baseline | `f04bc94a7b9a06b3cb5b33035f8eb2f8e3a05899` (origin/main, post ER-001 port merge) |
 | Authority | `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §17 (P0-A03) |
 | In-scope roots | `src/domains/evidence/local-vps-evidence-storage.adapter.ts`, `src/domains/evidence/local-vps-evidence-storage.adapter.test.ts`, `docs/tasks/hrp-p0-a03-er002-local-vps-evidence-storage-adapter/**` |
 | Forbidden paths | `docs/PLANNER_HANDOVER.md`, `prisma/**`, `app/**`, `src/domains/media/**`, `package.json`, `package-lock.json`, CRM/shared integration contracts, env/deploy config, discovery/CRM docs, `src/domains/evidence/evidence-storage.port.ts` |
-| Required gates | `verify-task.ps1`, targeted adapter tests, typecheck, lint, full unit, build, scope diff, `verify-handoff.ps1`, Tier 3 LIGHT audit |
+| Required gates | `verify-task.ps1`, targeted adapter tests, typecheck, lint, full unit, build, scope diff, `verify-handoff.ps1`, `verify-audit.ps1`, Tier 3 LIGHT audit (round 1 PASS) |
 | Current execution round | `1` |
-| Current audit round | `0` |
-| Next gate | Tier 3 LIGHT audit (independent) |
+| Current audit round | `1` |
+| Next gate | `PUSH_AND_OPEN_PR` (no Tier 1 merge) → remote CI → `T0_MERGE_DECISION`. Implementation SHA `7f12b9d` frozen by Tier 1; not amended, force-pushed, or rebased. |
 
 ## 1. Outcome
 
@@ -159,10 +159,13 @@
 
 | Round | Decision | Reason |
 |---|---|---|
-| 1 | Adapter slice accepted against TASK §1..§7; status `ACCEPTED`; awaiting Tier 3 LIGHT audit. | All §6 Acceptance criteria met; all gates green; no deviation; no ENV/DB touched; ER-001 carry-forward unchanged. |
+| 1 (execution) | Tier 1 delivery complete at SHA `7f12b9d`; status held at `READY_FOR_AUDIT`. | All §6 Acceptance criteria met; targeted + full unit + typecheck + lint + build green; ER-001 carry-forward unchanged; no env/DB touched; forbidden paths clean. |
+| 1 (audit) | Tier 3 LIGHT round 1 `PASS` at HEAD `7f12b9d`. | All 12 AC verified by Tier 3 (see `AUDIT.md` §2 + §4). No findings. Boundary / key / error-surface audits clean. TOCTOU residual risk explicitly enumerated (RISK-03) and accepted as gateway-layer mitigation. ER-001 port file bit-stamp unchanged vs `f04bc94`. |
+| 2 (post-audit delivery) | Status remains `READY_FOR_AUDIT` (not `ACCEPTED`) until remote `PUSH_AND_OPEN_PR` → CI → `T0_MERGE_DECISION` resolves. | `ACCEPTED` is reserved for post-merge/main verification per `00-global-rules.md`. The merge decision belongs to T0, not Tier 1. |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-09-22` | Initial contract | P0-A03 / ER-002 from realignment plan. |
+| `v1.0` | `2026-09-22` | Status `ACCEPTED` → `READY_FOR_AUDIT`; Next gate → `PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION`; audit round 0 → 1 (Tier 3 LIGHT PASS at HEAD `7f12b9d`). | Post-audit delivery: metadata alignment per `00-global-rules.md` (ACCEPTED is post-merge only); T0 keeps merge authority. |

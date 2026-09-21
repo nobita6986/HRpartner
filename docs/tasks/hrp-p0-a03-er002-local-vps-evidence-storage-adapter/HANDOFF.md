@@ -1,6 +1,6 @@
 # HANDOFF — hrp-p0-a03-er002-local-vps-evidence-storage-adapter
 
-> Handoff status: `READY_FOR_AUDIT` (round 1 — Tier 1 adapter-only delivery; frozen; no remote push, no PR, no production deploy).
+> Handoff status: `READY_FOR_AUDIT` (Tier 3 LIGHT round 1 PASS at implementation SHA `7f12b9d`; awaiting `PUSH_AND_OPEN_PR` → remote CI → `T0_MERGE_DECISION`; implementation SHA frozen by Tier 1 — no amend, no force-push, no rebase; docs-only follow-up tracked separately).
 
 ## 0. Control
 
@@ -8,16 +8,18 @@
 |---|---|
 | Task slug | `hrp-p0-a03-er002-local-vps-evidence-storage-adapter` |
 | Spec version | `v1.0` |
-| Round | `1` |
+| Round | `1` (Tier 1 delivery + Tier 3 LIGHT audit round 1) |
 | Status | `READY_FOR_AUDIT` |
 | Branch | `codex/t1b-er002-local-vps-evidence-storage-adapter` |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1b-er002-local-vps-evidence-storage-adapter` |
 | Baseline | `f04bc94a7b9a06b3cb5b33035f8eb2f8e3a05899` (origin/main, post ER-001 port merge #30) |
+| Implementation SHA (frozen) | `7f12b9da86f010c9f38d8a1f9cdca0989b7798cc` (Tier 1; not amended, force-pushed, or rebased) |
+| Tier 3 verdict | `PASS` (round 1) — see `AUDIT.md` §4 |
 | Authority | `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §17 (P0-A03 / ER-002) |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Tier 1 sign-off | Adapter-only delivery; no runtime wiring, no DB, no API, no Media-service refactor |
-| Next gate | Tier 3 LIGHT audit (independent) |
+| Next gate | `PUSH_AND_OPEN_PR` (Tier 1 does NOT merge/deploy) → remote CI → `T0_MERGE_DECISION` |
 
 ## 1. Outcome and changed surface
 
@@ -98,9 +100,21 @@ None. TASK plan executed as written. No scope expansion, no fallback substitutio
 
 ## 5. Final status
 
-`Handoff status: READY_FOR_AUDIT` (round 1 — Tier 1 adapter-only delivery; awaiting Tier 3 LIGHT audit per HRP_EXECUTION_REALIGNMENT_PLAN.md §17 P0-A03 / ER-002 and the security-boundary rationale recorded in TASK §0).
+`Handoff status: READY_FOR_AUDIT` (Tier 3 LIGHT round 1 PASS at implementation SHA `7f12b9d` — see `AUDIT.md` §4). No findings, no deviations, no ENV/DB touched. Implementation SHA frozen by Tier 1: not amended, force-pushed, or rebased. Round 1 is post-audit delivery; the merge authority remains with T0.
 
-### 5.1 Residual risks and limitations (must surface to Tier 3)
+**Next gate**: `PUSH_AND_OPEN_PR` (Tier 1 does NOT merge/deploy) → remote CI → `T0_MERGE_DECISION`. After merge lands, follow-up round will move status to `ACCEPTED` per `00-global-rules.md` (ACCEPTED is reserved for post-merge/main verification).
+
+### 5.1 Tier 3 audit verdict summary (round 1)
+
+- Verdict: `PASS` (full table in `AUDIT.md` §2 / §4).
+- All 12 AC verified (Tier 3 walked each line and re-ran the canonical commands).
+- Three security layers audited: root (sync-rejectable config mistakes fail-closed; lazy I/O failures fail-closed as `INVALID_REQUEST`), key (port-layer + adapter-layer validation; `fs.realpath` containment; symlink escape rejected), surface (typed errors only; no raw Node error / stack / absolute path / root / secret leakage).
+- `'wx'` flag provides OS-level atomic no-overwrite.
+- Streaming reads via `FileHandle.createReadStream`; no `Buffer` / `NodeJS.ReadableStream` in adapter surface.
+- Forbidden paths clean (`prisma/**`, `app/**`, `src/domains/media/**`, `package.json`, `package-lock.json`, `docs/PLANNER_HANDOVER.md`).
+- ER-001 port file (`evidence-storage.port.ts`) bit-stamp unchanged vs `f04bc94` — no accidental coupling.
+
+### 5.2 Residual risks and limitations (must surface to Tier 3)
 
 #### 5.1.1 TOCTOU on probes → operations
 
@@ -196,13 +210,13 @@ chunk.
 
 ### 5.5 Audit hand-off expectations
 
-Tier 3 LIGHT is expected to verify:
+Tier 3 LIGHT has verified (round 1 PASS — see `AUDIT.md` §2 and §4):
 
 - §0 control verdict matches §4 verdict.
 - §1 surface coverage matches `git diff --name-only f04bc94f..HEAD`.
 - §2 evidence rows cover AC-01..AC-12.
 - §5.1.1 timing/race-condition discussion covers TOCTOU.
-- §4 finding-severity matrix (no findings expected).
+- §5.2.3 finding-severity matrix (no findings — `PASS`).
 - Migration chain — no migrations in this slice (start in ER-003).
 - Production credentials / DB — NONE (no Neon, env, production).
 - Schema/RLS — NONE.
@@ -211,4 +225,25 @@ Tier 3 LIGHT is expected to verify:
 
 If Tier 3 finds anything, the default remediation is to amend the adapter or test (not bypass), and to keep the delivery SHA clean.
 
-Handoff status: `READY_FOR_AUDIT`
+**Tier 3 round 1 actual finding**: none — verdict `PASS` (see `AUDIT.md` §4). The default remediation clause above is retained for documentation completeness; it did not fire this round.
+
+### 5.6 Post-audit delivery (Tier 1 round 1 → round 2)
+
+Tier 1 does NOT amend the implementation commit. The implementation SHA `7f12b9d` is frozen. This docs-only follow-up commit aligns metadata so the verifier sees a consistent picture:
+
+- TASK §0 `Status`: `ACCEPTED` → `READY_FOR_AUDIT`. `ACCEPTED` is reserved for post-merge/main verification per `00-global-rules.md`.
+- TASK §0 `Next gate`: `Tier 3 LIGHT audit` → `PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION`.
+- TASK §0 `Current audit round`: `0` → `1`.
+- TASK §9 Planner Resolution: appends rounds 1 (audit) and 2 (post-audit delivery).
+- TASK §10 Revision Log: appends the metadata-alignment entry.
+- HANDOFF §0: adds `Implementation SHA (frozen)`, `Tier 3 verdict`, updated `Round`, updated `Next gate`.
+- HANDOFF §5 Final status: declares `READY_FOR_AUDIT` with Tier 3 round 1 PASS and the `PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION` next gate.
+- HANDOFF §5 closing line: clarifies that status remains `READY_FOR_AUDIT` until merge lands.
+
+The docs-only follow-up commit must NOT touch:
+- `src/domains/evidence/local-vps-evidence-storage.adapter.ts`
+- `src/domains/evidence/local-vps-evidence-storage.adapter.test.ts`
+- Any forbidden path (`prisma/**`, `app/**`, `src/domains/media/**`, `package.json`, `package-lock.json`, `docs/PLANNER_HANDOVER.md`).
+- ER-001 port file `evidence-storage.port.ts`.
+
+Handoff status: `READY_FOR_AUDIT` (Tier 3 LIGHT round 1 PASS at `7f12b9d`; awaiting `PUSH_AND_OPEN_PR` → CI → `T0_MERGE_DECISION`; not `ACCEPTED` until merge lands per `00-global-rules.md`).
