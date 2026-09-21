@@ -561,6 +561,6 @@ $$;
 
 GRANT SELECT, INSERT ON labor_profiles TO hrp_public_rpc;
 GRANT INSERT ON candidate_submissions TO hrp_public_rpc;
-GRANT INSERT ON placement_case TO hrp_public_rpc;
+GRANT SELECT, INSERT ON placement_case TO hrp_public_rpc;
 GRANT INSERT ON labor_profile_handling_assignments TO hrp_public_rpc;
 GRANT SELECT, UPDATE ON referral_attributions TO hrp_public_rpc;
