@@ -39,15 +39,23 @@ const REPO_ROOT = join(__dirname, '..', '..');
 const TARGET_DB_RAW = process.env.MIGRATION_TARGET_DB ?? 'aff05a_r1_migration_test';
 const ADMIN_URL = process.env.DATABASE_URL_ADMIN_TEST ?? '';
 
-// Synthetic-only DB name allowlist (round-3 fix).
+// Synthetic-only DB name + host allowlist (round-3 + round-4 fix).
 const ALLOWED_DB_NAMES = new Set([
   'aff05a_r1_test',
   'aff05a_r1_migration_test',
+  'aff05a_r1_baseline_test',
 ]);
+const ALLOWED_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
 
 function guardDbName(name) {
   if (!ALLOWED_DB_NAMES.has(name)) {
     console.error(`UNSAFE_DB_NAME target=${name} — refusing. Allowed: ${[...ALLOWED_DB_NAMES].join(', ')}`);
+    process.exit(3);
+  }
+}
+function guardHost(host) {
+  if (!ALLOWED_HOSTS.has(host)) {
+    console.error(`UNSAFE_HOST host=${host} — refusing. Allowed: ${[...ALLOWED_HOSTS].join(', ')}`);
     process.exit(3);
   }
 }
@@ -69,6 +77,8 @@ const adminConn = new URL(ADMIN_URL);
 const host = adminConn.hostname || '127.0.0.1';
 const port = adminConn.port || '5432';
 const user = adminConn.username;
+
+guardHost(host);
 
 const migrationFile = join(
   REPO_ROOT,

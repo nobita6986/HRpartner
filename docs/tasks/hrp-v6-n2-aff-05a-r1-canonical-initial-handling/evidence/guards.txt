@@ -1,0 +1,23 @@
+﻿ADMIN_URL_SET=yes
+HOST=127.0.0.1
+SOURCE_DB=aff05a_r1_test
+TARGET_DB=aff05a_r1_migration_test
+DRY_RUN=false
+VALIDATE_GUARDS=true
+VALIDATE_GUARDS==== start ===
+NEG_PASS=[scripts/ci/prepare-migration-test-db.mjs unsafe target] exit=3, no mutation
+NEG_PASS=[scripts/ci/apply-r1-migration.mjs unsafe target] exit=3, no mutation
+NEG_PASS=[scripts/ci/verify-ac06-backfill.mjs unsafe target] exit=3, no mutation
+NEG_PASS=[scripts/ci/verify-ac07-rollback.mjs unsafe target] exit=3, no mutation
+NEG_PASS=[prepare-migration-test-db unsafe source] exit=3, no mutation
+NEG_PASS=[prepare-migration-test-db source==target] exit=3, no mutation
+NEG_PASS=[scripts/ci/prepare-migration-test-db.mjs unsafe host] exit=3, no mutation
+NEG_PASS=[scripts/ci/apply-r1-migration.mjs unsafe host] exit=3, no mutation
+NEG_PASS=[scripts/ci/verify-ac06-backfill.mjs unsafe host] exit=3, no mutation
+NEG_PASS=[scripts/ci/verify-ac07-rollback.mjs unsafe host] exit=3, no mutation
+POS_PASS=[scripts/ci/prepare-migration-test-db.mjs positive] exit=1 (not 3)
+POS_PASS=[scripts/ci/apply-r1-migration.mjs positive] exit=1 (not 3)
+POS_PASS=[scripts/ci/verify-ac06-backfill.mjs positive] exit=1 (not 3)
+POS_PASS=[scripts/ci/verify-ac07-rollback.mjs positive] exit=1 (not 3)
+VALIDATE_GUARDS_RESULT=PASS ΓÇö all 4 scripts reject unsafe configs without mutation
+VALIDATE_GUARDS==== end ===

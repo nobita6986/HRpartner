@@ -36,6 +36,30 @@ const ADMIN_URL = process.env.DATABASE_URL_ADMIN_TEST ?? '';
 const TARGET_DB = process.env.MIGRATION_TARGET_DB ?? 'aff05a_r1_migration_test';
 const EVIDENCE_DIR = process.env.EVIDENCE_DIR ?? join(REPO_ROOT, 'docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/evidence');
 
+// T0 round-4: synthetic-only host + DB allowlist. Reject non-loopback hosts
+// and any DB name outside the project's synthetic prefix BEFORE any
+// destructive action.
+const ALLOWED_DB_NAMES = new Set([
+  'aff05a_r1_test',
+  'aff05a_r1_migration_test',
+  'aff05a_r1_baseline_test',
+]);
+const ALLOWED_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
+
+function guardDbName(name, role) {
+  if (!ALLOWED_DB_NAMES.has(name)) {
+    console.error(`UNSAFE_DB_NAME ${role}=${name} — refusing. Allowed: ${[...ALLOWED_DB_NAMES].join(', ')}`);
+    process.exit(3);
+  }
+}
+function guardHost(host) {
+  if (!ALLOWED_HOSTS.has(host)) {
+    console.error(`UNSAFE_HOST host=${host} — refusing. Allowed: ${[...ALLOWED_HOSTS].join(', ')}`);
+    process.exit(3);
+  }
+}
+guardDbName(TARGET_DB, 'MIGRATION_TARGET_DB');
+
 if (!ADMIN_URL) { console.error('ERROR: DATABASE_URL_ADMIN_TEST not set'); process.exit(2); }
 if (!process.env.PGPASSWORD) { console.error('ERROR: PGPASSWORD not set'); process.exit(2); }
 
@@ -49,6 +73,8 @@ const host = adminConn.hostname || '127.0.0.1';
 const port = adminConn.port || '5432';
 const user = adminConn.username;
 const password = adminConn.password;
+
+guardHost(host);
 
 const targetUrl = `postgresql://${user}:${password}@${host}:${port}/${TARGET_DB}`;
 
@@ -155,22 +181,28 @@ async function main() {
   const lpOverdue = `${TARGET_DB}-ac06-overdue-lp`;
   const lpFuture = `${TARGET_DB}-ac06-future-lp`;
   const lpTerminal = `${TARGET_DB}-ac06-terminal-lp`;
+  const lpRevoked = `${TARGET_DB}-ac06-revoked-lp`;
   const lpNonAff = `${TARGET_DB}-ac06-nonaff-lp`;
   await seedLp(lpOverdue, 'AC06 overdue LP', '0900000006');
   await seedLp(lpFuture, 'AC06 future LP', '0900000007');
   await seedLp(lpTerminal, 'AC06 terminal LP', '0900000008');
+  await seedLp(lpRevoked, 'AC06 revoked LP', '0900000010');
   await seedLp(lpNonAff, 'AC06 nonAff LP', '0900000009');
 
-  // Seed 4 legacy rows (matching T0 brief — note: schema enforces starts_at NOT NULL,
-  // so "outside predicate" case is covered by non-AFF row instead of starts_at IS NULL):
+  // Seed 5 legacy rows (T0 round-4: REVOKED overdue fixture added to prove
+  // the backfill CASE `status = 'ACTIVE'` guard prevents REVOKED from being
+  // flipped to EXPIRED — the EXPIRED terminal fixture alone cannot detect
+  // this defect):
   //   (a) Overdue ACTIVE: starts_at far past → deadline computed, status → EXPIRED.
-  //   (b) Future ACTIVE: starts_at in future → deadline computed, status ACTIVE.
-  //   (c) Terminal (REVOKED/EXPIRED): expires_at IS NULL → deadline computed, status preserved.
+  //   (b) Future ACTIVE: starts_at in past (1h ago) → deadline computed, status ACTIVE.
+  //   (c) Terminal EXPIRED: expires_at IS NULL → deadline computed, status preserved EXPIRED.
+  //   (c2) Terminal REVOKED overdue: starts_at far past, status REVOKED → status preserved REVOKED.
   //   (d) Non-AFF control: source != AFF_INITIAL → untouched by backfill predicate.
 
   const rowOverdue = `${TARGET_DB}-ac06-overdue-row`;
   const rowFuture = `${TARGET_DB}-ac06-future-row`;
   const rowTerminal = `${TARGET_DB}-ac06-terminal-row`;
+  const rowRevoked = `${TARGET_DB}-ac06-revoked-row`;
   const rowNonAff = `${TARGET_DB}-ac06-nonaff-row`;
 
   // Helper to seed a LPHA row with explicit values (bypass RLS — admin context).
@@ -207,18 +239,20 @@ async function main() {
       // but not yet expired".
       const futureStart = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // 1 hour ago
       const terminalStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const revokedStart = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString(); // 200 days ago, REVOKED
       const nonAffStart = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
 
   await seedLpha(rowOverdue, lpOverdue, 'AFF_INITIAL', overdueStart, null, 'ACTIVE');
   await seedLpha(rowFuture, lpFuture, 'AFF_INITIAL', futureStart, null, 'ACTIVE');
   await seedLpha(rowTerminal, lpTerminal, 'AFF_INITIAL', terminalStart, null, 'EXPIRED');
+  await seedLpha(rowRevoked, lpRevoked, 'AFF_INITIAL', revokedStart, null, 'REVOKED');
   await seedLpha(rowNonAff, lpNonAff, 'MANAGER', nonAffStart, null, 'ACTIVE');
 
   // Verify seeded state matches expected.
   const seedCheck = await execSql(client, `
     SELECT id, source, status, starts_at, expires_at
       FROM labor_profile_handling_assignments
-     WHERE id IN ('${rowOverdue}','${rowFuture}','${rowTerminal}','${rowNonAff}')
+     WHERE id IN ('${rowOverdue}','${rowFuture}','${rowTerminal}','${rowRevoked}','${rowNonAff}')
      ORDER BY id
   `);
   log(`SEEDED_ROWS=${seedCheck.rowCount}`);
@@ -266,7 +300,7 @@ async function main() {
   const post = await execSql(client, `
     SELECT id, source, status, starts_at, expires_at
       FROM labor_profile_handling_assignments
-     WHERE id IN ('${rowOverdue}','${rowFuture}','${rowTerminal}','${rowNonAff}')
+     WHERE id IN ('${rowOverdue}','${rowFuture}','${rowTerminal}','${rowRevoked}','${rowNonAff}')
      ORDER BY id
   `);
 
@@ -301,9 +335,29 @@ async function main() {
   // (c) Terminal: status preserved (EXPIRED); deadline computed from starts_at.
   const terminalAfter = findRow(rowTerminal);
   if (terminalAfter?.status !== 'EXPIRED') { log(`ASSERT_FAIL (c): terminal status=${terminalAfter?.status}, expected EXPIRED`); allAssertionsPassed = false; }
-  else log('ASSERT_PASS (c): terminal status preserved');
+  else log('ASSERT_PASS (c): terminal EXPIRED status preserved');
   if (!terminalAfter?.expires_at) { log('ASSERT_FAIL (c): terminal row has no expires_at (backfill set deadline)'); allAssertionsPassed = false; }
-  else log('ASSERT_PASS (c): terminal row received deadline from starts_at');
+  else log('ASSERT_PASS (c): terminal EXPIRED row received deadline from starts_at');
+
+  // (c2) Terminal REVOKED overdue: T0 round-4 — the previous fixture set had only
+  // EXPIRED terminals, which the migration would not flip regardless of the CASE
+  // guard. REVOKED overdue exercises the `status = 'ACTIVE'` guard directly:
+  // starts_at is far in the past so the deadline has passed, but status is
+  // REVOKED, NOT ACTIVE — the backfill must NOT flip it to EXPIRED.
+  const revokedAfter = findRow(rowRevoked);
+  if (revokedAfter?.status !== 'REVOKED') {
+    log(`ASSERT_FAIL (c2): REVOKED status=${revokedAfter?.status}, expected REVOKED (backfill CASE bug would flip to EXPIRED)`);
+    allAssertionsPassed = false;
+  } else log('ASSERT_PASS (c2): REVOKED status preserved (not flipped to EXPIRED)');
+  const revokedExpectedDeadline = new Date(new Date(revokedStart).getTime() + 168 * 60 * 60 * 1000);
+  if (!revokedAfter?.expires_at) {
+    log('ASSERT_FAIL (c2): REVOKED row has no expires_at (backfill set deadline)'); allAssertionsPassed = false;
+  } else {
+    const actualMs = new Date(revokedAfter.expires_at).getTime();
+    const diffMs = Math.abs(actualMs - revokedExpectedDeadline.getTime());
+    if (diffMs > 60_000) { log(`ASSERT_FAIL (c2): REVOKED deadline drift=${diffMs}ms > 60s`); allAssertionsPassed = false; }
+    else log(`ASSERT_PASS (c2): REVOKED deadline = starts_at + 168h (drift=${diffMs}ms)`);
+  }
 
   // (d) Non-AFF: untouched.
   const nonAffAfter = findRow(rowNonAff);

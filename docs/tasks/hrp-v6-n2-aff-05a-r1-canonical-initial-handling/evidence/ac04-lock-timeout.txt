@@ -1,0 +1,135 @@
+﻿AC-04 lock_timeout verify ΓÇö running at 2026-09-22T12:10:57.424Z
+TARGET_DB=aff05a_r1_migration_test
+EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac04-lock-timeout.txt
+MODE=lock-timeout
+
+=== lock_timeout MODE ===
+Step A. Reset target DB to AFF-03C predecessor state.
+ADMIN_URL_SET=yes
+HOST=127.0.0.1
+SOURCE_DB=aff05a_r1_test
+TARGET_DB=aff05a_r1_migration_test
+DRY_RUN=false
+VALIDATE_GUARDS=false
+PREPARE=drop_recreate_target_db
+TARGET_DB_CREATED=aff05a_r1_migration_test
+PREPARE=apply_predecessor_migration_chain
+PREDECESSOR_DIR=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\prisma\migrations
+MIGRATE_RESOLVE_SKIP=no_r1_record
+MIGRATE_DEPLOY_OK=stdout_len=5945
+PREDECESSOR_CHAIN_APPLIED=ok
+VERIFY_FN_SZ=7274
+VERIFY_FN_HAS_R1=false
+VERIFY_FN_HAS_LOCK=false
+VERIFY_FN_OWNER=hrp_public_rpc
+VERIFY_HANDLING_PRIVS_HRP=INSERT
+METADATA==== aff05a_r1_migration_test ===
+METADATA==== aff05a_r1_migration_test ===
+METADATA.priv=candidate_submissions=DELETE,INSERT,SELECT,UPDATE
+METADATA.priv=labor_profile_handling_assignments=INSERT,SELECT,UPDATE
+METADATA.priv=labor_profiles=DELETE,INSERT,SELECT,UPDATE
+METADATA.priv=placement_case=DELETE,INSERT,SELECT,UPDATE
+METADATA.priv=referral_attributions=SELECT,UPDATE
+METADATA.rls=labor_profile_handling_assignments: rowsec=true forcerowsec=true
+METADATA.rpc_handling_privs=INSERT
+METADATA.rpc_role_attrs=hrp_public_rpc: login=false bypassrls=true super=false createdb=false
+READY=predecessor_state
+READY target_db=aff05a_r1_migration_test
+
+STDERR: (node:25000) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+
+Step B. Connection A: BEGIN; LOCK TABLE ... (hold lock).
+CONNECTION_A: lock acquired at 2026-09-22T12:11:02.500Z
+
+Step C. Connection B: run R1 migration (must time out, NOT hang).
+MIGRATION_ELAPSED_MS=5180
+MIGRATION_EXIT_CODE=1
+STDOUT:
+TARGET_DB=aff05a_r1_migration_test
+MIGRATION_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\prisma\migrations\20260922160000_aff05a_r1_initial_handling_window\migration.sql
+MIGRATION_FAILED=true
+EXIT_CODE=3
+BEGIN
+GRANT
+DO
+SET
+CREATE FUNCTION
+REVOKE
+GRANT
+RESET
+DO
+REVOKE
+DO
+DO
+GRANT
+
+STDERR:
+psql:C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling/prisma/migrations/20260922160000_aff05a_r1_initial_handling_window/migration.sql:628: ERROR:  canceling statement due to lock timeout
+CONTEXT:  SQL statement "LOCK TABLE labor_profile_handling_assignments IN SHARE ROW EXCLUSIVE MODE"
+PL/pgSQL function inline_code_block line 24 at SQL statement
+
+ASSERT_PASS: migration aborted within 5180ms (well under 30s) ΓÇö bounded timeout works.
+ASSERT_PASS: lock_timeout error observed in migration output.
+ASSERT_PASS: migration exited non-zero (status=1).
+
+Step D. Release connection A (ROLLBACK).
+CONNECTION_A: lock released at 2026-09-22T12:11:07.686Z
+
+Step E. Re-run migration (sanity, no contention ΓÇö must succeed).
+SANITY_EXIT_CODE=0
+SANITY_STDOUT:
+TARGET_DB=aff05a_r1_migration_test
+MIGRATION_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\prisma\migrations\20260922160000_aff05a_r1_initial_handling_window\migration.sql
+MIGRATION_OK=true
+BEGIN
+GRANT
+DO
+SET
+CREATE FUNCTION
+REVOKE
+GRANT
+RESET
+DO
+REVOKE
+DO
+DO
+GRANT
+DO
+COMMIT
+
+ASSERT_PASS: sanity re-run succeeded ΓÇö lock_timeout setting does not break normal apply.
+
+=== RESULT ===
+AC-04 lock_timeout PASS ΓÇö migration aborts cleanly under contention, no indefinite hang.
+node : FATAL Error: EBUSY: resource busy or locked, open 'C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-hand
+ling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac04-lock-timeout.txt'
+At C:\Users\Admin\AppData\Local\Temp\ps-script-d8a1aee4-ef8e-4d6a-951a-c9ce8e8424be.ps1:92 char:436
++ ... tion_test"; node scripts/ci/verify-ac07-rollback.mjs --lock-timeout 2 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FATAL Error: EB...ck-timeout.txt':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    at writeFileSync (node:fs:2483:20)
+    at runLockTimeoutMode 
+(file:///C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling/scripts/ci/verify-ac07-rollback.mjs:410:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+node:fs:2483
+    return binding.writeFileUtf8(
+                   ^
+
+Error: EBUSY: resource busy or locked, open 'C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tas
+ks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac04-lock-timeout.txt'
+    at writeFileSync (node:fs:2483:20)
+    at 
+file:///C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling/scripts/ci/verify-ac07-rollback.mjs:417:3
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  errno: -4082,
+  code: 'EBUSY',
+  syscall: 'open',
+  path: 'C:\\CodeApp\\HrP-worktrees\\t1b-aff05a-r1-canonical-initial-handling\\docs\\tasks\\hrp-v6-n2-aff-05a-r1-canoni
+cal-initial-handling\\evidence\\ac04-lock-timeout.txt'
+}
+
+Node.js v24.19.0

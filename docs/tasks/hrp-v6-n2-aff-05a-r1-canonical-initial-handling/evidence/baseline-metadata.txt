@@ -1,0 +1,34 @@
+﻿DB_NAME=aff05a_r1_baseline_test
+?column?
+ROLE=app_engine_writer: login=true bypassrls=false super=false createdb=false createrole=false
+ROLE=app_user: login=true bypassrls=false super=false createdb=false createrole=false
+ROLE=app_user_writer: login=true bypassrls=false super=false createdb=false createrole=false
+ROLE=ctv_user: login=false bypassrls=false super=false createdb=false createrole=false
+ROLE=hrp_app: login=false bypassrls=false super=false createdb=false createrole=false
+ROLE=hrp_etl: login=true bypassrls=false super=false createdb=false createrole=false
+ROLE=hrp_owner: login=true bypassrls=true super=false createdb=false createrole=false
+ROLE=hrp_public_rpc: login=false bypassrls=true super=false createdb=false createrole=false
+ROLE=hrp_view: login=false bypassrls=false super=false createdb=false createrole=false
+ROLE=sale_user: login=false bypassrls=false super=false createdb=false createrole=false
+ROLE=vendor_user: login=false bypassrls=false super=false createdb=false createrole=false
+ROLE=worker_user: login=false bypassrls=false super=false createdb=false createrole=false
+?column?
+RLS=candidate_submissions: rowsec=true forcerowsec=true
+RLS=labor_profile_handling_assignments: rowsec=true forcerowsec=true
+RLS=labor_profiles: rowsec=true forcerowsec=true
+RLS=placement_case: rowsec=true forcerowsec=true
+RLS=referral_attributions: rowsec=true forcerowsec=true
+?column?
+WRITER_PRIV=candidate_submissions=DELETE,INSERT,SELECT,UPDATE
+WRITER_PRIV=labor_profile_handling_assignments=INSERT,SELECT,UPDATE
+WRITER_PRIV=labor_profiles=DELETE,INSERT,SELECT,UPDATE
+WRITER_PRIV=placement_case=DELETE,INSERT,SELECT,UPDATE
+WRITER_PRIV=referral_attributions=SELECT,UPDATE
+?column?
+RPC_PRIV=candidate_submissions=INSERT,SELECT
+RPC_PRIV=labor_profile_handling_assignments=INSERT
+RPC_PRIV=labor_profiles=INSERT,SELECT
+RPC_PRIV=placement_case=INSERT,SELECT
+RPC_PRIV=referral_attributions=SELECT,UPDATE
+?column?
+FN_HRP_PUBLIC_INTAKE size=7274 has_r1=false has_lock=false sec_definer=true

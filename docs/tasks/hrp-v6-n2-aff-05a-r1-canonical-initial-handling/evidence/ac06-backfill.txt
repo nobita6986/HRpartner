@@ -1,33 +1,41 @@
-AC-06 verify (backfill R1) — running at 2026-09-22T09:54:55.653Z
+﻿AC-06 verify (backfill R1) ΓÇö running at 2026-09-22T12:21:16.391Z
 TARGET_DB=aff05a_r1_migration_test
 EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac06-backfill.txt
 
 === STEP 1: Reset DB to AFF-03C predecessor state ===
 ADMIN_URL_SET=yes
+HOST=127.0.0.1
 SOURCE_DB=aff05a_r1_test
 TARGET_DB=aff05a_r1_migration_test
 DRY_RUN=false
+VALIDATE_GUARDS=false
 PREPARE=drop_recreate_target_db
 TARGET_DB_CREATED=aff05a_r1_migration_test
-PREPARE=dump_source_schema
-DUMP_CMD="C:\Program Files\PostgreSQL\18\bin\pg_dump.exe" --schema-only --no-owner -h 127.0.0.1 -p 5432 -U postgres aff05a_r1_test
-RESTORE_CMD="C:\Program Files\PostgreSQL\18\bin\psql.exe" -h 127.0.0.1 -p 5432 -U postgres -d aff05a_r1_migration_test -v ON_ERROR_STOP=1
-SCHEMA_RESTORED=ok
-PREPARE=replace_function_with_pred_body
-PRED_FN_LEN=7874
-STEP1_ACQUIRE=ok
-STEP2_OWNER=ok
-STEP3_SET_ROLE=ok
-STEP4_DROP=ok
-STEP5_CREATE_FN=ok
-PRED_FN_REPLACED=ok
-PRED_GRANT_REVOKED=ok
+PREPARE=apply_predecessor_migration_chain
+PREDECESSOR_DIR=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\prisma\migrations
+MIGRATE_RESOLVE_SKIP=no_r1_record
+MIGRATE_DEPLOY_OK=stdout_len=5945
+PREDECESSOR_CHAIN_APPLIED=ok
 VERIFY_FN_SZ=7274
 VERIFY_FN_HAS_R1=false
 VERIFY_FN_HAS_LOCK=false
+VERIFY_FN_OWNER=hrp_public_rpc
 VERIFY_HANDLING_PRIVS_HRP=INSERT
+METADATA==== aff05a_r1_migration_test ===
+METADATA==== aff05a_r1_migration_test ===
+METADATA.priv=candidate_submissions=DELETE,INSERT,SELECT,UPDATE
+METADATA.priv=labor_profile_handling_assignments=INSERT,SELECT,UPDATE
+METADATA.priv=labor_profiles=DELETE,INSERT,SELECT,UPDATE
+METADATA.priv=placement_case=DELETE,INSERT,SELECT,UPDATE
+METADATA.priv=referral_attributions=SELECT,UPDATE
+METADATA.rls=labor_profile_handling_assignments: rowsec=true forcerowsec=true
+METADATA.rpc_handling_privs=INSERT
+METADATA.rpc_role_attrs=hrp_public_rpc: login=false bypassrls=true super=false createdb=false
 READY=predecessor_state
 READY target_db=aff05a_r1_migration_test
+
+STDERR: (node:31468) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
 
 
 === STEP 2: Snapshot predecessor state ===
@@ -38,11 +46,12 @@ PRED_HANDLING_PRIVS_HRP=INSERT
 
 === STEP 3: Seed legacy AFF_INITIAL NULL-deadline rows + controls ===
 REF_USER=aff05a_r1_migration_test-ac06-ref1
-SEEDED_ROWS=4
-  seeded: id=aff05a_r1_migration_test-ac06-future-row source=AFF_INITIAL status=ACTIVE starts_at=2026-09-22T08:54:57.039Z expires_at=null
-  seeded: id=aff05a_r1_migration_test-ac06-nonaff-row source=MANAGER status=ACTIVE starts_at=2026-09-17T09:54:57.039Z expires_at=null
-  seeded: id=aff05a_r1_migration_test-ac06-overdue-row source=AFF_INITIAL status=ACTIVE starts_at=2026-03-06T09:54:57.039Z expires_at=null
-  seeded: id=aff05a_r1_migration_test-ac06-terminal-row source=AFF_INITIAL status=EXPIRED starts_at=2026-08-23T09:54:57.039Z expires_at=null
+SEEDED_ROWS=5
+  seeded: id=aff05a_r1_migration_test-ac06-future-row source=AFF_INITIAL status=ACTIVE starts_at=2026-09-22T11:21:20.785Z expires_at=null
+  seeded: id=aff05a_r1_migration_test-ac06-nonaff-row source=MANAGER status=ACTIVE starts_at=2026-09-17T12:21:20.785Z expires_at=null
+  seeded: id=aff05a_r1_migration_test-ac06-overdue-row source=AFF_INITIAL status=ACTIVE starts_at=2026-03-06T12:21:20.785Z expires_at=null
+  seeded: id=aff05a_r1_migration_test-ac06-revoked-row source=AFF_INITIAL status=REVOKED starts_at=2026-03-06T12:21:20.785Z expires_at=null
+  seeded: id=aff05a_r1_migration_test-ac06-terminal-row source=AFF_INITIAL status=EXPIRED starts_at=2026-08-23T12:21:20.785Z expires_at=null
 
 === STEP 4: Apply R1 migration file as single transaction ===
 MIGRATION_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\prisma\migrations\20260922160000_aff05a_r1_initial_handling_window\migration.sql
@@ -72,11 +81,13 @@ ASSERT_PASS: function body has R1 marker
 ASSERT_PASS: function body has pg_advisory_xact_lock
 ASSERT_PASS: handling SELECT granted to hrp_public_rpc
 ASSERT_PASS (a): overdue deadline = starts_at + 168h (drift=0ms)
-ASSERT_PASS (a): overdue ACTIVE → EXPIRED
+ASSERT_PASS (a): overdue ACTIVE ΓåÆ EXPIRED
 ASSERT_PASS (b): future deadline = starts_at + 168h (drift=0ms)
 ASSERT_PASS (b): future ACTIVE preserved
-ASSERT_PASS (c): terminal status preserved
-ASSERT_PASS (c): terminal row received deadline from starts_at
+ASSERT_PASS (c): terminal EXPIRED status preserved
+ASSERT_PASS (c): terminal EXPIRED row received deadline from starts_at
+ASSERT_PASS (c2): REVOKED status preserved (not flipped to EXPIRED)
+ASSERT_PASS (c2): REVOKED deadline = starts_at + 168h (drift=0ms)
 ASSERT_PASS (d): nonAff source preserved (MANAGER)
 ASSERT_PASS (d): nonAff row untouched (expires_at still NULL)
 ASSERT_PASS (d): nonAff status preserved
@@ -84,4 +95,34 @@ REMAINING_AFF_INITIAL_NULL_DEADLINE=0
 ASSERT_PASS: no AFF_INITIAL NULL-deadline rows remain
 
 === RESULT ===
-AC-06 PASS — backfill behaves correctly on predecessor DB
+AC-06 PASS ΓÇö backfill behaves correctly on predecessor DB
+node : FATAL Error: EBUSY: resource busy or locked, open 'C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-hand
+ling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac06-backfill.txt'
+At C:\Users\Admin\AppData\Local\Temp\ps-script-966be443-6739-432b-83a5-c8408230e72c.ps1:92 char:256
++ ... igration_test"; node scripts/ci/verify-ac06-backfill.mjs 2>&1 | Out-F ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FATAL Error: EB...6-backfill.txt':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    at writeFileSync (node:fs:2483:20)
+    at main 
+(file:///C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling/scripts/ci/verify-ac06-backfill.mjs:398:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+node:fs:2483
+    return binding.writeFileUtf8(
+                   ^
+
+Error: EBUSY: resource busy or locked, open 'C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tas
+ks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac06-backfill.txt'
+    at writeFileSync (node:fs:2483:20)
+    at 
+file:///C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling/scripts/ci/verify-ac06-backfill.mjs:405:3
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  errno: -4082,
+  code: 'EBUSY',
+  syscall: 'open',
+  path: 'C:\\CodeApp\\HrP-worktrees\\t1b-aff05a-r1-canonical-initial-handling\\docs\\tasks\\hrp-v6-n2-aff-05a-r1-canoni
+cal-initial-handling\\evidence\\ac06-backfill.txt'
+}
+
+Node.js v24.19.0

@@ -13,12 +13,20 @@
  *   (c) anomaly row preserved in its original state (NULL deadline, ACTIVE).
  *   (d) no spurious LPHA rows created.
  *
- * The migration file is executed as a single psql transaction (`-1`). The anomaly
+ * T0 round-4: --lock-timeout mode — two-connection evidence for the bounded
+ * `SET LOCAL lock_timeout = '5s'` setting in the R1 migration. Connection A
+ * holds `LOCK TABLE labor_profile_handling_assignments IN SHARE ROW EXCLUSIVE
+ * MODE`; connection B runs the R1 migration which must abort with
+ * `canceling statement due to lock timeout` (NOT hang indefinitely).
+ *
+ * The migration file is executed as a single psql transaction. The anomaly
  * is seeded BEFORE the migration runs, triggering the backfill's RAISE EXCEPTION
- * path. Evidence is written to `evidence/ac07-rollback.txt`.
+ * path. Evidence is written to `evidence/ac07-rollback.txt` (default mode) or
+ * `evidence/ac04-lock-timeout.txt` (`--lock-timeout` mode).
  *
  * Usage:
- *   node scripts/ci/verify-ac07-rollback.mjs
+ *   node scripts/ci/verify-ac07-rollback.mjs                # AC-07 default
+ *   node scripts/ci/verify-ac07-rollback.mjs --lock-timeout # AC-04 lock_timeout evidence
  */
 import { Client } from 'pg';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -34,11 +42,36 @@ const ADMIN_URL = process.env.DATABASE_URL_ADMIN_TEST ?? '';
 const TARGET_DB = process.env.MIGRATION_TARGET_DB ?? 'aff05a_r1_migration_test';
 const EVIDENCE_DIR = process.env.EVIDENCE_DIR ?? join(REPO_ROOT, 'docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/evidence');
 
+// T0 round-4: synthetic-only host + DB allowlist. Reject non-loopback hosts
+// and any DB name outside the project's synthetic prefix BEFORE any
+// destructive action.
+const ALLOWED_DB_NAMES = new Set([
+  'aff05a_r1_test',
+  'aff05a_r1_migration_test',
+  'aff05a_r1_baseline_test',
+]);
+const ALLOWED_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
+
+function guardDbName(name, role) {
+  if (!ALLOWED_DB_NAMES.has(name)) {
+    console.error(`UNSAFE_DB_NAME ${role}=${name} — refusing. Allowed: ${[...ALLOWED_DB_NAMES].join(', ')}`);
+    process.exit(3);
+  }
+}
+function guardHost(host) {
+  if (!ALLOWED_HOSTS.has(host)) {
+    console.error(`UNSAFE_HOST host=${host} — refusing. Allowed: ${[...ALLOWED_HOSTS].join(', ')}`);
+    process.exit(3);
+  }
+}
+guardDbName(TARGET_DB, 'MIGRATION_TARGET_DB');
+
 if (!ADMIN_URL) { console.error('ERROR: DATABASE_URL_ADMIN_TEST not set'); process.exit(2); }
 if (!process.env.PGPASSWORD) { console.error('ERROR: PGPASSWORD not set'); process.exit(2); }
 
 if (!existsSync(EVIDENCE_DIR)) mkdirSync(EVIDENCE_DIR, { recursive: true });
-const EVIDENCE_FILE = join(EVIDENCE_DIR, 'ac07-rollback.txt');
+const LOCK_TIMEOUT_MODE = process.argv.includes('--lock-timeout');
+const EVIDENCE_FILE = join(EVIDENCE_DIR, LOCK_TIMEOUT_MODE ? 'ac04-lock-timeout.txt' : 'ac07-rollback.txt');
 const logLines = [];
 const log = (line) => { console.log(line); logLines.push(line); };
 
@@ -47,6 +80,8 @@ const host = adminConn.hostname || '127.0.0.1';
 const port = adminConn.port || '5432';
 const user = adminConn.username;
 const password = adminConn.password;
+
+guardHost(host);
 
 const targetUrl = `postgresql://${user}:${password}@${host}:${port}/${TARGET_DB}`;
 
@@ -103,9 +138,18 @@ async function snapshotFn(client) {
 }
 
 async function main() {
-  log(`AC-07 verify (forced abort / rollback) — running at ${new Date().toISOString()}`);
+  log(LOCK_TIMEOUT_MODE
+    ? `AC-04 lock_timeout verify — running at ${new Date().toISOString()}`
+    : `AC-07 verify (forced abort / rollback) — running at ${new Date().toISOString()}`);
   log(`TARGET_DB=${TARGET_DB}`);
   log(`EVIDENCE_FILE=${EVIDENCE_FILE}`);
+  log(`MODE=${LOCK_TIMEOUT_MODE ? 'lock-timeout' : 'default'}`);
+
+  // Branch: lock_timeout mode runs a different flow (two-connection timeout
+  // evidence). Default mode runs the AC-07 forced-anomaly flow.
+  if (LOCK_TIMEOUT_MODE) {
+    return runLockTimeoutMode();
+  }
 
   // 1. Reset to predecessor state.
   log('\n=== STEP 1: Reset DB to AFF-03C predecessor state ===');
@@ -275,6 +319,96 @@ async function main() {
 
   writeFileSync(EVIDENCE_FILE, logLines.join('\n'));
   process.exit(allAssertionsPassed ? 0 : 1);
+}
+
+async function runLockTimeoutMode() {
+  log('\n=== lock_timeout MODE ===');
+  log('Step A. Reset target DB to AFF-03C predecessor state.');
+  const prep = spawnSync('node', [join(REPO_ROOT, 'scripts/ci/prepare-migration-test-db.mjs')], {
+    env: { ...process.env },
+    encoding: 'utf8',
+    stdio: 'pipe',
+  });
+  log(prep.stdout || '');
+  if (prep.stderr) log(`STDERR: ${prep.stderr}`);
+  if (prep.status !== 0) {
+    log(`PREPARE_FAILED exit=${prep.status}`);
+    writeFileSync(EVIDENCE_FILE, logLines.join('\n'));
+    process.exit(1);
+  }
+
+  log('\nStep B. Connection A: BEGIN; LOCK TABLE ... (hold lock).');
+  const targetUrl = new URL(ADMIN_URL);
+  targetUrl.pathname = `/${TARGET_DB}`;
+  const clientA = new Client({ connectionString: targetUrl.toString() });
+  await clientA.connect();
+  await clientA.query('BEGIN');
+  await clientA.query(`LOCK TABLE labor_profile_handling_assignments IN SHARE ROW EXCLUSIVE MODE`);
+  log(`CONNECTION_A: lock acquired at ${new Date().toISOString()}`);
+
+  log('\nStep C. Connection B: run R1 migration (must time out, NOT hang).');
+  const t0 = Date.now();
+  const result = spawnSync('node', [join(REPO_ROOT, 'scripts/ci/apply-r1-migration.mjs')], {
+    env: { ...process.env, MIGRATION_TARGET_DB: TARGET_DB },
+    encoding: 'utf8',
+    stdio: 'pipe',
+  });
+  const elapsedMs = Date.now() - t0;
+  log(`MIGRATION_ELAPSED_MS=${elapsedMs}`);
+  log(`MIGRATION_EXIT_CODE=${result.status}`);
+  log(`STDOUT:\n${result.stdout || ''}`);
+  log(`STDERR:\n${result.stderr || ''}`);
+
+  let pass = true;
+  if (elapsedMs >= 30_000) {
+    log(`ASSERT_FAIL: migration took ${elapsedMs}ms — bounded timeout not enforced.`);
+    pass = false;
+  } else {
+    log(`ASSERT_PASS: migration aborted within ${elapsedMs}ms (well under 30s) — bounded timeout works.`);
+  }
+  const combined = (result.stdout || '') + (result.stderr || '');
+  if (!/canceling statement due to lock timeout/i.test(combined)) {
+    log(`ASSERT_FAIL: expected 'canceling statement due to lock timeout' in output, not found.`);
+    pass = false;
+  } else {
+    log(`ASSERT_PASS: lock_timeout error observed in migration output.`);
+  }
+  if (result.status === 0) {
+    log(`ASSERT_FAIL: migration succeeded despite contention — should have failed.`);
+    pass = false;
+  } else {
+    log(`ASSERT_PASS: migration exited non-zero (status=${result.status}).`);
+  }
+
+  log('\nStep D. Release connection A (ROLLBACK).');
+  await clientA.query('ROLLBACK');
+  await clientA.end();
+  log(`CONNECTION_A: lock released at ${new Date().toISOString()}`);
+
+  log('\nStep E. Re-run migration (sanity, no contention — must succeed).');
+  const sanity = spawnSync('node', [join(REPO_ROOT, 'scripts/ci/apply-r1-migration.mjs')], {
+    env: { ...process.env, MIGRATION_TARGET_DB: TARGET_DB },
+    encoding: 'utf8',
+    stdio: 'pipe',
+  });
+  log(`SANITY_EXIT_CODE=${sanity.status}`);
+  log(`SANITY_STDOUT:\n${sanity.stdout || ''}`);
+  if (sanity.stderr) log(`SANITY_STDERR:\n${sanity.stderr}`);
+  if (sanity.status !== 0) {
+    log(`ASSERT_FAIL: sanity re-run failed (status=${sanity.status}).`);
+    pass = false;
+  } else {
+    log(`ASSERT_PASS: sanity re-run succeeded — lock_timeout setting does not break normal apply.`);
+  }
+
+  log('\n=== RESULT ===');
+  if (pass) {
+    log('AC-04 lock_timeout PASS — migration aborts cleanly under contention, no indefinite hang.');
+  } else {
+    log('AC-04 lock_timeout FAIL — see assertions above.');
+  }
+  writeFileSync(EVIDENCE_FILE, logLines.join('\n'));
+  process.exit(pass ? 0 : 1);
 }
 
 main().catch((e) => {

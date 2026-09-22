@@ -471,8 +471,16 @@ GRANT SELECT ON labor_profile_handling_assignments TO hrp_public_rpc;
 --      - is held until transaction end (matches DEC: backfill must run
 --        as one atomic unit),
 --      - does NOT require any additional table privilege beyond
---        migration admin (BYERRPASSRLS / superuser) — no UPDATE handling
+--        migration admin (BYPASSRLS / superuser) — no UPDATE handling
 --        grant needed.
+--
+--    T0 round-4 G4: bounded `lock_timeout` (5s) before the table lock
+--    acquisition. This guarantees the migration cannot hang indefinitely
+--    on lock contention — the worst case is a 5-second wait then a
+--    `canceling statement due to lock timeout` abort, which triggers
+--    full transaction rollback. Evidence: see
+--    docs/tasks/.../evidence/ac04-lock-timeout.txt produced by
+--    verify-ac07-rollback.mjs --lock-timeout (two-connection test).
 --
 --    Anomaly threshold note (RQ-07): TASK says "future start ngoài clock-skew
 --    được T0 chấp nhận" but does NOT pin a numeric threshold. We compute
@@ -494,6 +502,13 @@ DECLARE
   v_overdue_active     bigint := 0;
   v_unknown_status     bigint := 0;
 BEGIN
+  -- 6.0 Bounded lock timeout (T0 round-4 G4). Must come BEFORE the
+  --     LOCK TABLE statement so the lock attempt itself aborts within
+  --     5s on contention rather than hanging indefinitely. SET LOCAL
+  --     scopes this to the current transaction; the setting is released
+  --     automatically at COMMIT or ROLLBACK.
+  SET LOCAL lock_timeout = '5s';
+
   -- 6.1 Acquire real table lock on labor_profile_handling_assignments.
   --     SHARE ROW EXCLUSIVE conflicts with INSERT/UPDATE/DELETE/EXCLUSIVE,
   --     so any concurrent handling writer waits. The lock is released

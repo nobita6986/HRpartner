@@ -92,7 +92,18 @@
 2. `tests/db/aff03-public-intake.integration.test.ts`
 3. `docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/**`
 
-- **In:** one additive migration, existing canonical DB integration test, exact handling-table SELECT exception grant, read-only aggregate preflight query/result under task-local evidence, TASK/HANDOFF/AUDIT.
+**Exact File Allowlist cho AC-06/AC-07 CI evidence infrastructure** (T0 round-3 +
+round-4 cho phép chỉnh đúng 4 script hiện có):
+
+4. `scripts/ci/prepare-migration-test-db.mjs`  — synthetic-DB reset to AFF-03C predecessor state.
+5. `scripts/ci/apply-r1-migration.mjs`          — apply R1 migration to a synthetic target with `--dry-run`.
+6. `scripts/ci/verify-ac06-backfill.mjs`        — AC-06 backfill correctness evidence.
+7. `scripts/ci/verify-ac07-rollback.mjs`        — AC-07 forced-anomaly rollback evidence (also runs `--lock-timeout` for AC-04 bounded lock_timeout evidence, T0 round-4).
+
+`prepare-migration-test-db.mjs` also accepts `--validate-guards` (T0 round-4)
+to assert all four scripts reject unsafe configurations without mutation.
+
+- **In:** one additive migration, existing canonical DB integration test, exact handling-table SELECT exception grant, read-only aggregate preflight query/result under task-local evidence, TASK/HANDOFF/AUDIT, plus 4 synthetic-only helper scripts under `scripts/ci/` for AC-06/AC-07 evidence (T0 round-3 + round-4 explicit allowlist).
 - **Out:** mọi file khác; đặc biệt old migrations, `prisma/schema.prisma`, routes/services/UI, RLS policies, role attributes, blanket grants, PLANNER_HANDOVER, AFF-04/T1B worktree, production apply/deploy.
 - **Scope rule:** nếu implementation cần sửa route/idempotency helper hoặc test registration ngoài allowlist, dừng và trả Planner/T0; không tự mở scope.
 
