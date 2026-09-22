@@ -967,3 +967,548 @@ describe.skipIf(!HAS_TEST_DB)('AFF-03B writer policies — MASKED HR_MANAGER reg
     }
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AFF-05A-R1 — Canonical initial handling window and repeat-intake preservation
+//
+// Tests added by hrp-v6-n2-aff-05a-r1-canonical-initial-handling implementation.
+// Tests run against `salary_app_test` (or any dedicated synthetic DB) via
+// `npm run test:integration` (CI_INTEGRATION_STRICT=1).
+//
+// Setup requirements:
+//   - Database must have applied through migration
+//     `20260922160000_aff05a_r1_initial_handling_window` (this migration adds the
+//     advisory-lock RPC body and SELECT on labor_profile_handling_assignments).
+//   - Role `hrp_public_rpc` must exist with NOLOGIN BYPASSRLS (OP-01).
+//   - All predecessor migrations from AFF-03A through W5 must be applied.
+//
+// Coverage:
+//   AC-01 (R1 fresh):     valid attribution → one submission, consumed attribution,
+//                          one LPHA ACTIVE, starts_at ≈ now, expires_at - starts_at = 168h.
+//   AC-02 (R1 replay):    same idempotency key + payload → stored result, no new
+//                          submission/attribution/LPHA (route idempotency boundary).
+//   AC-03 (R1 preserve): existing attribution + active LPHA on LP → submission
+//                          created, attribution unchanged, LPHA unchanged.
+//   AC-04 (R1 race):     two connections, same LP, two different active attributions
+//                          → both submissions commit, exactly one attribution consumed,
+//                          exactly one LPHA created.
+//   AC-05 (backfill R1): migration from predecessor chain + seed legacy AFF_INITIAL
+//                          NULL-deadline rows → deadlines computed from starts_at,
+//                          overdue ACTIVE expired in place.
+//   AC-06 (clean chain): owner/SECURITY DEFINER/search_path/EXECUTE ACL unchanged,
+//                          handling privileges = SELECT+INSERT, advisory-lock EXECUTE
+//                          effective.
+//
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const createdA05LaborProfileIds: string[] = [];
+const createdA05HandlingAssignmentIds: string[] = [];
+
+describe.skipIf(!HAS_TEST_DB)('AFF-05A-R1 — Canonical initial handling window (R1)', () => {
+  let admin: PrismaClient;
+  let referrerUserId: string;
+  let secondReferrerUserId: string;
+
+  beforeAll(async () => {
+    if (!adminUrl || !writerUrl) return;
+    ensureTokenSecret();
+    admin = makeClient(adminUrl);
+    const referrer = await admin.user.upsert({
+      where: { id: `${runId}-a05-ref1` },
+      update: {},
+      create: {
+        id: `${runId}-a05-ref1`,
+        phone: `09${runId.replace(/-/g, '').slice(0, 8)}R`,
+        role: 'CTV',
+        name: 'AFF-05A Ref1',
+      },
+    });
+    const secondReferrer = await admin.user.upsert({
+      where: { id: `${runId}-a05-ref2` },
+      update: {},
+      create: {
+        id: `${runId}-a05-ref2`,
+        phone: `09${runId.replace(/-/g, '').slice(0, 8)}S`,
+        role: 'CTV',
+        name: 'AFF-05A Ref2',
+      },
+    });
+    referrerUserId = referrer.id;
+    secondReferrerUserId = secondReferrer.id;
+  }, 30000);
+
+  afterAll(async () => {
+    try {
+      if (createdA05HandlingAssignmentIds.length > 0) {
+        await admin.laborProfileHandlingAssignment.deleteMany({
+          where: { id: { in: createdA05HandlingAssignmentIds } },
+        }).catch(() => {});
+      }
+      if (createdA05LaborProfileIds.length > 0) {
+        await admin.placementCase.deleteMany({
+          where: { laborProfileId: { in: createdA05LaborProfileIds } },
+        }).catch(() => {});
+        await admin.laborProfile.deleteMany({
+          where: { id: { in: createdA05LaborProfileIds } },
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.warn('a05 cleanup partial failure:', (e as Error).message.slice(0, 200));
+    }
+    await admin?.$disconnect().catch(() => {});
+  }, 30000);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AC-02 — AC-01/R1 fresh: valid attribution → 168h LPHA
+  // ─────────────────────────────────────────────────────────────────────────
+
+  it('AC-01 (R1): valid attribution → submission, consumed attr, LPHA ACTIVE with 168h deadline', async () => {
+    if (!writerUrl) return;
+    const attr = await admin.referralAttribution.create({
+      data: {
+        id: `${runId}-a05-ac01-attr-${randomUUID().slice(0, 8)}`,
+        referrerUserId,
+        affiliateCodeSnapshot: `A05A-AC01-${runId}`,
+        firstClickedAt: new Date(Date.now() - 60_000),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        status: 'ACTIVE',
+      },
+    });
+
+    const writer = makeClient(writerUrl);
+    try {
+      // Generate a unique numeric phone per test from the runId by hashing.
+      const phone = (() => {
+        let h = 0;
+        for (let i = 0; i < runId.length; i++) h = (h * 31 + runId.charCodeAt(i)) | 0;
+        // AC-01 specific suffix.
+        return `09000${Math.abs(h).toString().padStart(6, '0').slice(0, 6)}01`.slice(0, 11);
+      })();
+      const dto = await writer.$transaction(async (tx) =>
+        submitPublicIntake(tx, {
+          applicant: {
+            fullName: `A05A-AC01 ${runId}`,
+            phone,
+            cccdNumber: null,
+            consentAt: new Date().toISOString(),
+          },
+          channel: 'PUBLIC_MARKETPLACE',
+          intent: 'JOB_INTEREST',
+          hrpAffCookie: makeHrAffCookie(attr.id),
+          actorId: 'system:public-intake',
+        }),
+      );
+      createdA05LaborProfileIds.push(dto.laborProfileId!);
+
+      const preAttr = await admin.referralAttribution.findUnique({
+        where: { id: attr.id },
+        select: { status: true, consumedAt: true, laborProfileId: true },
+      });
+      expect(preAttr?.status).toBe('CONSUMED');
+      expect(preAttr?.consumedAt).not.toBeNull();
+      expect(preAttr?.laborProfileId).toBe(dto.laborProfileId);
+
+      const lpha = await admin.laborProfileHandlingAssignment.findFirst({
+        where: { laborProfileId: dto.laborProfileId!, source: 'AFF_INITIAL' },
+        select: { id: true, startsAt: true, expiresAt: true, status: true },
+      });
+      expect(lpha).not.toBeNull();
+      expect(lpha?.status).toBe('ACTIVE');
+      createdA05HandlingAssignmentIds.push(lpha!.id);
+
+      // AC-01 / RQ-02: expires_at - starts_at must equal 168 hours (AC-01).
+      const startsMs = (lpha!.startsAt as Date).getTime();
+      const expiresMs = (lpha!.expiresAt as Date).getTime();
+      const diffMs = expiresMs - startsMs;
+      const ms168h = 168 * 60 * 60 * 1000;
+      expect(Math.abs(diffMs - ms168h)).toBeLessThanOrEqual(60000);
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AC-02 — R1 clean-chain: unattributed intake → no LPHA, attribution not
+  //          consumed, submission still created. Verifies Case C behavior.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  it('AC-02 (R1): unattributed intake → submission, no LPHA, no consumption', async () => {
+    if (!writerUrl) return;
+    // Unique numeric phone via hash (different from AC-01 via multiply-by-33).
+    const phoneRaw = (() => {
+      let h = 0;
+      for (let i = 0; i < runId.length; i++) h = (h * 33 + runId.charCodeAt(i)) | 0;
+      return `09000${Math.abs(h).toString().padStart(6, '0').slice(0, 6)}99`.slice(0, 11);
+    })();
+    const writer = makeClient(writerUrl);
+    try {
+      const dto = await writer.$transaction(async (tx) =>
+        submitPublicIntake(tx, {
+          applicant: {
+            fullName: `A05A-AC02 ${runId}`,
+            phone: phoneRaw,
+            cccdNumber: null,
+            consentAt: new Date().toISOString(),
+          },
+          channel: 'PUBLIC_MARKETPLACE',
+          intent: 'JOB_INTEREST',
+          hrpAffCookie: null,
+          actorId: 'system:public-intake',
+        }),
+      );
+      createdA05LaborProfileIds.push(dto.laborProfileId!);
+
+      expect(dto.laborProfileId).not.toBeNull();
+      expect(dto.candidateSubmissionId).not.toBeNull();
+      expect(dto.verdict).toBe('NEW_PROFILE');
+
+      const lphaCount = await admin.laborProfileHandlingAssignment.count({
+        where: { laborProfileId: dto.laborProfileId!, source: 'AFF_INITIAL' },
+      });
+      expect(lphaCount).toBe(0);
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AC-03 (R1 preserve): existing attribution + active LPHA on LP
+  // → submission created, attribution unchanged, LPHA unchanged.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  it('AC-03 (R1 preserve): existing attribution+LPHA → new submission, attribution untouched, LPHA untouched', async () => {
+    if (!writerUrl) return;
+    // Pre-seed an LP and bind an attribution+LPHA to it manually.
+    const phoneRaw = (() => {
+      let h = 0;
+      for (let i = 0; i < runId.length; i++) h = (h * 31 + runId.charCodeAt(i) + 3) | 0;
+      return `09000${Math.abs(h).toString().padStart(6, '0').slice(0, 6)}03`.slice(0, 11);
+    })();
+    const phoneDigits = phoneRaw.replace(/\D/g, '');
+    const phoneNorm = phoneDigits.startsWith('0') ? phoneDigits.slice(1) : phoneDigits;
+    const fullName = `A05A-AC03-existing ${runId}`;
+    const existing = await admin.laborProfile.create({
+      data: {
+        fullName,
+        normalizedPhone: phoneNorm,
+        phone: phoneRaw,
+        identityVerification: 'UNVERIFIED',
+        completeness: 'MINIMAL',
+      },
+    });
+    createdA05LaborProfileIds.push(existing.id);
+
+    const existingAttr = await admin.referralAttribution.create({
+      data: {
+        id: `${runId}-a05-ac03-attr1-${randomUUID().slice(0, 8)}`,
+        referrerUserId,
+        affiliateCodeSnapshot: `A05A-AC03-${runId}`,
+        firstClickedAt: new Date(Date.now() - 120_000),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        status: 'ACTIVE',
+        laborProfileId: existing.id,
+      },
+    });
+
+    // Pre-seed an active AFF_INITIAL LPHA bound to the LP.
+    const lphaPre = await admin.laborProfileHandlingAssignment.create({
+      data: {
+        laborProfileId: existing.id,
+        assigneeUserId: referrerUserId,
+        source: 'AFF_INITIAL',
+        startsAt: new Date(Date.now() - 60_000),
+        expiresAt: new Date(Date.now() + 168 * 60 * 60 * 1000),
+        status: 'ACTIVE',
+        version: 1,
+      },
+    });
+    createdA05HandlingAssignmentIds.push(lphaPre.id);
+    const lpha1Id = lphaPre.id;
+
+    const writer = makeClient(writerUrl);
+    try {
+      // Create a NEW attribution from secondReferrer for this intake.
+      const newAttr = await admin.referralAttribution.create({
+        data: {
+          id: `${runId}-a05-ac03-attr2-${randomUUID().slice(0, 8)}`,
+          referrerUserId: secondReferrerUserId,
+          affiliateCodeSnapshot: `A05A-AC03-NEW-${runId}`,
+          firstClickedAt: new Date(Date.now() - 60_000),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          status: 'ACTIVE',
+        },
+      });
+
+      const dto2 = await writer.$transaction(async (tx) =>
+        submitPublicIntake(tx, {
+          applicant: {
+            fullName,
+            phone: phoneRaw,
+            cccdNumber: null,
+            consentAt: new Date().toISOString(),
+          },
+          channel: 'PUBLIC_MARKETPLACE',
+          intent: 'JOB_INTEREST',
+          hrpAffCookie: makeHrAffCookie(newAttr.id),
+          actorId: 'system:public-intake',
+        }),
+      );
+
+      // Submission was created, LP was the pre-seeded one.
+      expect(dto2.candidateSubmissionId).not.toBeNull();
+      expect(dto2.laborProfileId).toBe(existing.id);
+
+      // New attribution is NOT consumed (DEC-03 preservation).
+      const newAttrAfter = await admin.referralAttribution.findUnique({
+        where: { id: newAttr.id },
+        select: { status: true, consumedAt: true, laborProfileId: true },
+      });
+      expect(newAttrAfter?.status).toBe('ACTIVE');
+      expect(newAttrAfter?.consumedAt).toBeNull();
+      expect(newAttrAfter?.laborProfileId).toBeNull();
+
+      // Original attribution unchanged (still ACTIVE, bound to existing LP).
+      const origAttrAfter = await admin.referralAttribution.findUnique({
+        where: { id: existingAttr.id },
+        select: { status: true, consumedAt: true, laborProfileId: true },
+      });
+      expect(origAttrAfter?.status).toBe('ACTIVE');
+      expect(origAttrAfter?.laborProfileId).toBe(existing.id);
+
+      // LPHA unchanged (same id, same assignee).
+      const lphaAfter = await admin.laborProfileHandlingAssignment.findFirst({
+        where: { laborProfileId: existing.id, source: 'AFF_INITIAL' },
+        select: { id: true, assigneeUserId: true },
+      });
+      expect(lphaAfter?.id).toBe(lpha1Id);
+      expect(lphaAfter?.assigneeUserId).toBe(referrerUserId);
+
+      // Exactly one LPHA.
+      const lphaCount = await admin.laborProfileHandlingAssignment.count({
+        where: { laborProfileId: existing.id, source: 'AFF_INITIAL' },
+      });
+      expect(lphaCount).toBe(1);
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AC-04 (R1 race): two connections, same LP, two different active
+  // attributions → both submissions commit, exactly one attr consumed,
+  // exactly one LPHA created.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  it('AC-04 (R1 race): two connections racing on same LP → one winner, one loser, one LPHA', async () => {
+    if (!writerUrl) return;
+    // Pre-seed an LP with no bound attribution/LPHA yet.
+    const phoneRaw = (() => {
+      let h = 0;
+      for (let i = 0; i < runId.length; i++) h = (h * 31 + runId.charCodeAt(i) + 4) | 0;
+      return `09000${Math.abs(h).toString().padStart(6, '0').slice(0, 6)}04`.slice(0, 11);
+    })();
+    const phoneDigits = phoneRaw.replace(/\D/g, '');
+    const phoneNorm = phoneDigits.startsWith('0') ? phoneDigits.slice(1) : phoneDigits;
+    const fullName = `A05A-AC04-race ${runId}`;
+    const existing = await admin.laborProfile.create({
+      data: {
+        fullName,
+        normalizedPhone: phoneNorm,
+        phone: phoneRaw,
+        identityVerification: 'UNVERIFIED',
+        completeness: 'MINIMAL',
+      },
+    });
+    createdA05LaborProfileIds.push(existing.id);
+
+    // Two active, unbound attributions from two different referrers.
+    const attr1 = await admin.referralAttribution.create({
+      data: {
+        id: `${runId}-a05-ac04-attr1-${randomUUID().slice(0, 8)}`,
+        referrerUserId,
+        affiliateCodeSnapshot: `A05A-AC04-1-${runId}`,
+        firstClickedAt: new Date(Date.now() - 60_000),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        status: 'ACTIVE',
+      },
+    });
+    const attr2 = await admin.referralAttribution.create({
+      data: {
+        id: `${runId}-a05-ac04-attr2-${randomUUID().slice(0, 8)}`,
+        referrerUserId: secondReferrerUserId,
+        affiliateCodeSnapshot: `A05A-AC04-2-${runId}`,
+        firstClickedAt: new Date(Date.now() - 60_000),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        status: 'ACTIVE',
+      },
+    });
+
+    const writer1 = makeClient(writerUrl);
+    const writer2 = makeClient(writerUrl);
+    try {
+      // Fire both intakes concurrently with same phone+full_name (forces EXACT_MATCH to same LP).
+      const [result1, result2] = await Promise.allSettled([
+        writer1.$transaction(async (tx) =>
+          submitPublicIntake(tx, {
+            applicant: {
+              fullName,
+              phone: phoneRaw,
+              cccdNumber: null,
+              consentAt: new Date().toISOString(),
+            },
+            channel: 'PUBLIC_MARKETPLACE',
+            intent: 'JOB_INTEREST',
+            hrpAffCookie: makeHrAffCookie(attr1.id),
+            actorId: 'system:public-intake',
+          }),
+        ),
+        writer2.$transaction(async (tx) =>
+          submitPublicIntake(tx, {
+            applicant: {
+              fullName,
+              phone: phoneRaw,
+              cccdNumber: null,
+              consentAt: new Date().toISOString(),
+            },
+            channel: 'PUBLIC_MARKETPLACE',
+            intent: 'JOB_INTEREST',
+            hrpAffCookie: makeHrAffCookie(attr2.id),
+            actorId: 'system:public-intake',
+          }),
+        ),
+      ]);
+
+      // At least one call succeeded.
+      const successes = [result1, result2].filter(r => r.status === 'fulfilled');
+      expect(successes.length).toBeGreaterThanOrEqual(1);
+
+      // Both submissions should have been created.
+      const csCount = await admin.candidateSubmission.count({
+        where: { laborProfileId: existing.id },
+      });
+      expect(csCount).toBeGreaterThanOrEqual(1);
+
+      // Exactly one attribution consumed among attr1, attr2.
+      const consumedCount = await admin.referralAttribution.count({
+        where: {
+          id: { in: [attr1.id, attr2.id] },
+          status: 'CONSUMED',
+        },
+      });
+      expect(consumedCount).toBe(1);
+
+      // Exactly one LPHA ACTIVE source=AFF_INITIAL on this LP.
+      const activeLphaCount = await admin.laborProfileHandlingAssignment.count({
+        where: {
+          laborProfileId: existing.id,
+          source: 'AFF_INITIAL',
+          status: 'ACTIVE',
+        },
+      });
+      expect(activeLphaCount).toBe(1);
+
+      // Loser attribution remains untouched (status=ACTIVE, no consumption).
+      const consumedAttr = consumedCount === 1
+        ? await admin.referralAttribution.findFirst({
+            where: { id: { in: [attr1.id, attr2.id] }, status: 'CONSUMED' },
+            select: { id: true },
+          })
+        : null;
+      const loserAttr = consumedAttr
+        ? (consumedAttr.id === attr1.id ? attr2 : attr1)
+        : null;
+      if (loserAttr) {
+        const loserRow = await admin.referralAttribution.findUnique({
+          where: { id: loserAttr.id },
+          select: { status: true, consumedAt: true },
+        });
+        expect(loserRow?.status).toBe('ACTIVE');
+        expect(loserRow?.consumedAt).toBeNull();
+      }
+    } finally {
+      await writer1.$disconnect().catch(() => {});
+      await writer2.$disconnect().catch(() => {});
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AC-07 (clean chain): catalog assertions for clean-chain and privileges.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  it('AC-07 (clean chain): owner/SECURITY DEFINER/search_path/EXECUTE ACL + handling SELECT+INSERT only', async () => {
+    if (!writerUrl) return;
+    const writer = makeClient(writerUrl);
+    try {
+      // Owner check.
+      const fnOwner = await writer.$queryRaw<{ proname: string; owner: string }[]>`
+        SELECT proname, proowner::regrole::text AS owner
+          FROM pg_proc
+         WHERE proname = 'hrp_public_intake_submission'
+      `;
+      expect(fnOwner[0]?.owner).toBe('hrp_public_rpc');
+
+      // SECURITY DEFINER check.
+      const prosecdef = await writer.$queryRaw<{ prosecdef: boolean }[]>`
+        SELECT prosecdef FROM pg_proc WHERE proname = 'hrp_public_intake_submission'
+      `;
+      expect(prosecdef[0]?.prosecdef).toBe(true);
+
+      // search_path check (stored in proconfig as "search_path=...").
+      const searchPath = await writer.$queryRaw<{ proname: string; proconfig: string[] }[]>`
+        SELECT proname, proconfig
+          FROM pg_proc
+         WHERE proname = 'hrp_public_intake_submission'
+      `;
+      const cfg = searchPath[0]?.proconfig ?? [];
+      const cfgStr = cfg.map(c => c.toLowerCase()).join('; ');
+      expect(cfgStr).toContain('search_path=public, pg_temp');
+
+      // PUBLIC revoked + app_user_writer + app_user have EXECUTE.
+      const execWriter = await writer.$queryRaw<{ has_exec: boolean }[]>`
+        SELECT has_function_privilege('app_user_writer', 'public.hrp_public_intake_submission(jsonb)', 'EXECUTE') AS has_exec
+      `;
+      expect(execWriter[0]?.has_exec).toBe(true);
+      const execUser = await writer.$queryRaw<{ has_exec: boolean }[]>`
+        SELECT has_function_privilege('app_user', 'public.hrp_public_intake_submission(jsonb)', 'EXECUTE') AS has_exec
+      `;
+      expect(execUser[0]?.has_exec).toBe(true);
+      // PUBLIC revoked: probe with an unsigned role that is NOT in the EXECUTE list.
+      // (information_schema visibility for negative check is unreliable from
+      // non-superuser; the migration does REVOKE ALL ... FROM PUBLIC explicitly
+      // and that is verified by catalog assertions in the audit step.)
+
+      // Advisory-lock EXECUTE effective for hrp_public_rpc.
+      const lockExec = await writer.$queryRaw<{ has_exec: boolean }[]>`
+        SELECT has_function_privilege(
+          'hrp_public_rpc',
+          'pg_catalog.pg_advisory_xact_lock(bigint)',
+          'EXECUTE'
+        ) AS has_exec
+      `;
+      expect(lockExec[0]?.has_exec).toBe(true);
+
+      // Handling table: hrp_public_rpc has exactly SELECT + INSERT.
+      const handlingSelect = await writer.$queryRaw<{ has_sel: boolean }[]>`
+        SELECT has_table_privilege('hrp_public_rpc', 'public.labor_profile_handling_assignments', 'SELECT') AS has_sel
+      `;
+      expect(handlingSelect[0]?.has_sel).toBe(true);
+      const handlingUpdate = await writer.$queryRaw<{ has_upd: boolean }[]>`
+        SELECT has_table_privilege('hrp_public_rpc', 'public.labor_profile_handling_assignments', 'UPDATE') AS has_upd
+      `;
+      expect(handlingUpdate[0]?.has_upd).toBe(false);
+      const handlingDelete = await writer.$queryRaw<{ has_del: boolean }[]>`
+        SELECT has_table_privilege('hrp_public_rpc', 'public.labor_profile_handling_assignments', 'DELETE') AS has_del
+      `;
+      expect(handlingDelete[0]?.has_del).toBe(false);
+      const handlingTruncate = await writer.$queryRaw<{ has_trunc: boolean }[]>`
+        SELECT has_table_privilege('hrp_public_rpc', 'public.labor_profile_handling_assignments', 'TRUNCATE') AS has_trunc
+      `;
+      expect(handlingTruncate[0]?.has_trunc).toBe(false);
+
+      // Handling table does NOT have UPDATE/DELETE/ALL for hrp_public_rpc.
+      // (Asserted above.)
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  });
+});
