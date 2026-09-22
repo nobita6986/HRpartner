@@ -8,7 +8,7 @@
 | Status | `READY_FOR_AUDIT` |
 | Audit mode | `LIGHT` |
 | Execution round | `2` |
-| Implementation SHA | (commit after all gates; freeze after report) |
+| Implementation SHA | `3b8074f` — frozen after all gates PASS |
 | Branch | `codex/t1b-aff05a-r1-canonical-initial-handling` |
 | Baseline | `e4d21807f0d972de447e710066b40c77a661fb17` (origin/main post ER-002) |
 | Next gate | `T0_MERGE_DECISION` |
