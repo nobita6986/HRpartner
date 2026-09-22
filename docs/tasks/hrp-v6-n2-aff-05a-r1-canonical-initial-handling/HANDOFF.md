@@ -8,7 +8,7 @@
 | Status | `READY_FOR_AUDIT` |
 | Audit mode | `LIGHT` |
 | Execution round | `2` |
-| Implementation SHA | `<NEW_SHA>` — to be frozen after all round-3 corrections and gates |
+| Implementation SHA | `8d83940` |
 | Branch | `codex/t1b-aff05a-r1-canonical-initial-handling` |
 | Baseline | `e4d21807f0d972de447e710066b40c77a661fb17` (origin/main post ER-002) |
 | Next gate | `T0_MERGE_DECISION` |
