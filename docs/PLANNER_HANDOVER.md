@@ -1,4 +1,4 @@
-﻿# TIER 1 LIVING HANDOFF v2.12 — HRP V5/V6
+﻿# TIER 1 LIVING HANDOFF v2.37 — HRP V5/V6
 
 > Tài liệu này là hợp đồng tiếp quản lâu dài cho **Tier 1 — Planner**. Khi bàn giao cho Agent Tier 1 khác, bình thường **chỉ cập nhật khối `ROADMAP_CURSOR` ở §0**. Không chép tiến độ task vào các section ổn định bên dưới.
 
@@ -6,25 +6,32 @@
 
 <!-- ROADMAP_CURSOR_START -->
 ```yaml
-updated_at: 2026-09-21T23:40:00+07:00
+updated_at: 2026-09-22T00:19:38+07:00
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 PHASE_MAP: |
   P0: production safety and integration foundations
   P1: thin recruitment value slice
   P2-P5: unlock only through realignment dependency/evidence gates
 current_lane: P0-A Evidence Gateway
-parallel_lane: CONTRACT-02B design-only follow-up for REC-002/REC-004b — no runtime implementation
-current_task: P0-A03 / ER-002 LocalVpsEvidenceStorageAdapter — PROPOSED_ONLY
-worktree_branch: NONE
-current_gate: T0_CONTRACT_APPROVAL_REQUIRED_BEFORE_ER002_TASK
+parallel_lane: CONTRACT-02B design-only follow-up for REC-002/REC-004b; Universal AFF expansion queued after ER-002 capacity frees
+current_task: P0-A03 / ER-002 LocalVpsEvidenceStorageAdapter — AUTHORIZED_ASSIGNED_AWAITING_T1B_DELIVERY
+worktree_branch: codex/t1b-er002-local-vps-evidence-storage-adapter
+current_gate: T1B_IMPLEMENTATION_FREEZE_THEN_T3_LIGHT_AUDIT
 previous_accepted: hrp-p0-a02-er001-evidence-storage-port
 closeout_evidence: docs/tasks/hrp-p0-a02-er001-evidence-storage-port/HANDOFF.md
-blocking_owner: "T0"
-owner_defer: "CONTRACT-02B REC-002/REC-004b vẫn là lane thiết kế riêng; không biến thành dependency ngầm của EvidenceStorage. ER-002 chưa được mở, chưa có contract/task/code."
+blocking_owner: "None"
+owner_defer: "Không dùng Evidence/CCCD readiness làm gate cho AFF coding. P0-A chỉ chặn production enablement của real evidence ingestion; AFF development dùng synthetic data và gate riêng."
+deferred_lane:
+  universal_aff:
+    state: PARTIAL_PRODUCTION_EXPANSION_QUEUED
+    production_proven: AFF-03/03B/03C
+    next_slice: AFF-04 conversion → accepted SourceClaim → server-derived Placement/ProjectAssignment propagation
+    coding_dependency_on_evidence_gateway: NONE
+    production_enablement: P3-E_AFTER_AFF_CAPABILITY_GATE
 next_steps:
-  - 1. T0 duyệt thin-slice contract cho ER-002.
-  - 2. Chỉ sau approval mới giao T1B worktree riêng từ main mới nhất.
-  - 3. Không mở ER-003 hoặc refactor Media.
+  - 1. Chờ T1B hoàn tất ER-002, freeze implementation SHA và bàn giao gates; không chen task code khác vào worktree.
+  - 2. T0 giao T3 LIGHT audit ER-002; chỉ merge sau PASS và CI sạch.
+  - 3. Sau ER-002 main closeout, giao T1A docs/contract lane và T1B AFF-04 trong hai worktree/file ownership tách biệt.
 ```
 <!-- ROADMAP_CURSOR_END -->
 
@@ -346,11 +353,16 @@ Hai hợp đồng V6 Phase 1 cùng ghi `prisma/schema.prisma` và cùng thứ t�
 1. Slug publish sẽ đổi — tách JobPosting đổi chỗ publish → phải kèm redirect map.
 2. `where` công khai bị đóng băng — `public-card-truth.test.ts:293` ghim `['isPublic','staffingOrders','status']`.
 
-## 8. AFF Track — bị chặn hoàn toàn
+## 8. AFF Track — continuity và re-entry
 
-§0 của `aff_plan.md` ghi `Status: DESIGN_REVIEW` và **"Current implementation gate: Chưa mở; phải đạt Definition of Ready §20"**. §20 có **17/17 ô chưa tick**. **Tuyệt đối không mở task AFF nào** cho đến khi §20 đủ.
+`aff_plan.md` là domain/design authority; `HRP_EXECUTION_REALIGNMENT_PLAN.md` là execution-sequencing authority. Dòng `DESIGN_REVIEW` và global lock 17/17 của bản AFF v2.3 đã stale sau khi AFF-01/02 capability baseline và AFF-03/03B/03C được triển khai. Không áp lại gate đó để mở lại các slice cũ từ đầu.
 
-Hai làn gặp lại ở `AFF-03` (không phải `AFF-05A`): Exit gate của 03 đòi LaborProfile + LaborProfileHandlingAssignment.
+- AFF-03/03B/03C: public attribution/intake production verified; không đồng nghĩa Universal AFF hoàn tất.
+- W5: chỉ đóng RLS, expiry sweep và `REVOKED` semantics; không đồng nghĩa toàn AFF-05A hoàn tất.
+- Next implementation slice: AFF-04 conversion → accepted SourceClaim → server-derived Placement/ProjectAssignment propagation.
+- Sau AFF-04: reconcile residual AFF-05A, rồi AFF-05B → AFF-06 → AFF-07.
+- CCCD/Evidence Gateway không phải coding gate cho AFF khi development/test chỉ dùng synthetic data. Nó chỉ chặn production enablement của real evidence ingestion.
+- Mỗi task AFF mới vẫn cần thin-slice contract, isolated ownership, gate/evidence riêng, Tier 3 theo risk và T0 merge/deploy decision.
 
 ## 9. Git safety
 
@@ -427,5 +439,6 @@ Chỉ sửa khối `ROADMAP_CURSOR` ở §0 (phần nằm trong marker `<!-- ROA
 | 2.34 | 13/09/2026 22:20 | Tier 1 commit `5b5767b` đính chính cursor/dossier của vòng NO-GO; đây là ghi nhận lịch sử trước khi production credential được cập nhật. |
 | 2.35 | 13/09/2026 22:36 | **Tier 0 áp dụng N1 Stage 4 trên `hrp-live` theo lệnh Owner “tiếp tục đi”.** Credential admin direct hoạt động; Neon production gate thật exit 0; trước deploy đúng 2 N1 pending, 35 completed/5 rolled-back/0 unfinished, không có lock chờ. `npx prisma migrate deploy` exit 0, áp đúng hai migration N1. Sau deploy Prisma status exit 0; catalog postcheck 8/8 PASS (FK, indexes, column, RLS, policy); public `/` và `/viec-lam` HTTP 200. Theo dõi DB 5 phút: rollback không tăng, không deadlock/conflict/lock chờ/giao dịch dài ở sáu snapshot. Evidence: `docs/tasks/hrp-v6-n1-placement-case-foundation/evidence/stage4-hrp-live-run/README.md`. Stage 5 `hrp-v6-n1-intake-writer` được mở cho Tier 1 lên plan/thi công; AV6 vẫn hoãn theo ưu tiên sản phẩm. |
 | 2.36 | 14/09/2026 17:05 | **N1 Stage 5 round-5 push lên origin/main (commit 55f4180, fast-forward từ 50dedee)**. Tier 0 verify origin/main ở `50dedee`, worktree N1 HEAD `55f4180` tại `C:\CodeApp\HrP-worktrees\tier1-n1-intake-writer-r2` (branch `tier1/n1-intake-writer-r2`). Tier 1 verify trước push: `git merge-base --is-ancestor 50dedee 55f4180` = TRUE (1 commit ahead); `git diff 50dedee..55f4180 --name-only` = 8 file in-scope (TASK/HANDOFF/AUDIT + src/domains/talent/** + tests/db/intake-writer-integration.test.ts + evidence/neon_branch_gate.r4.stdout.txt); forbidden paths (prisma/schema.prisma, prisma/migrations/, src/domains/staffing/, app/api/admin/assignments/, app/(jobs)/) đều diff rỗng; `git ls-remote origin refs/heads/main` = 50dedee; fetch origin trước push, vẫn 50dedee. **Push**: `git push origin 55f4180:refs/heads/main` exit 0, output `50dedee..55f4180 55f4180 -> main`. **Verify post-push**: `git ls-remote origin refs/heads/main` = `55f418078b7ff221ee6ae6656f37c785e02f833a` (khớp local HEAD). **Smoke test production an toàn** (Tier 1 không in credential, không tạo production data, không chạy migration): `GET https://hrpartner-k2958oa8l-thuans-projects-0b7f4d74.vercel.app/` → 200 (337 KB HTML); `GET /viec-lam` → 200; `POST /api/admin/intake/staff` (no auth, empty body) → 401 (auth gate đúng — admin route bắt buộc ADMIN/HR_MANAGER/HR_STAFF + Idempotency-Key); `POST /api/jobs/apply` (no auth) → 401 (auth middleware trước route handler; route thực là stub 410 theo DEC-10/RQ-08, không touch trong round-5 diff). **Giới hạn smoke test**: 200/401 chỉ chứng minh URL truy cập được và auth gate hoạt động — chưa chứng minh Vercel đã rebuild từ 55f4180 hay luồng intake admin thật sự hoạt động. **current_gate giữ nguyên**: Tier 0/Owner xác minh deploy + smoke bằng tài khoản ADMIN thật (POST /api/admin/intake/staff với credential hợp lệ → 201 + verdict). Worktree `C:\CodeApp\HrP` WIP riêng KHÔNG bị động. PLANNER_HANDOVER.md commit riêng `e1e2c3d` (docs/planner: v2.36 N1 round-5 push tracker). **Next V6**: chờ Tier 0/Owner verify production deploy + smoke admin intake; KHÔNG mở task V6 mới trong bước này; V6P-007B/V6P-008 và AV6 là task riêng, chưa mở. |
+| 2.37 | 22/09/2026 00:19 +07:00 | Reconcile AFF continuity with the active Realignment Plan: AFF-03/03B/03C production path preserved; W5 recorded as partial AFF-05A safety work; global 17/17 AFF lock removed in favor of per-slice decisions; Evidence/CCCD readiness blocks only production real-evidence ingestion, not synthetic-data AFF coding; ER-002 is authorized/assigned and AFF-04 is queued after ER-002 capacity and normal Tier 3/T0 gates. |
 
-*Cập nhật lần cuối: 14/09/2026 17:05 +07:00 bởi Tier 1*
+*Cập nhật lần cuối: 22/09/2026 00:19 +07:00 bởi Tier 0*

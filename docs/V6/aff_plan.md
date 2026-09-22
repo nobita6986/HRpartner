@@ -5,14 +5,14 @@
 | Field | Value |
 |---|---|
 | Document | `docs/V6/aff_plan.md` |
-| Design version | `v2.3` |
-| Status | `DESIGN_REVIEW` — chưa tạo TASK, chưa giao Tier 2 |
+| Design version | `v2.4` |
+| Status | `PARTIALLY_IMPLEMENTED` — production attribution/apply path đã được chứng minh; expansion được điều phối bởi Realignment Plan |
 | Product owner | Founder / sếp |
 | Design owner | Tier 1 Planner |
-| Updated | `2026-09-05 Asia/Bangkok` |
-| Authority | Nguồn thiết kế và roadmap triển khai **chính** của Universal Affiliate |
-| Relationship | Độc lập với plan Portal; `UNIFIED_PLAN_v5.md` chỉ là nguồn dependency/domain nền |
-| Current implementation gate | Chưa mở; phải đạt Definition of Ready §20 |
+| Updated | `2026-09-22 Asia/Bangkok` |
+| Authority | Domain/design authority của Universal Affiliate; không còn là authority sắp thứ tự execution |
+| Relationship | `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` quyết định thứ tự/gate mở slice; file này giữ canonical AFF semantics |
+| Current implementation gate | Mỗi slice cần contract hẹp được T0 duyệt; §20 là decision inventory theo slice, không còn là global lock |
 
 ### 0.1. Cách dùng tài liệu
 
@@ -21,7 +21,20 @@
 - Tier 1 đọc file này để chia contract `AFF-*`; mỗi contract vẫn phải nằm trong `docs/tasks/<slug>/TASK.md` theo pipeline.
 - Tier 2 không implement trực tiếp từ file này khi chưa có TASK `READY_FOR_EXECUTION`.
 - Tier 3 dùng file này làm design authority để phát hiện contract/implementation đi lệch, nhưng verdict phải bám TASK cụ thể.
-- Khi design chưa khóa hết decision gate, trạng thái giữ `DESIGN_REVIEW`; không force-ready.
+- Decision chưa khóa chỉ chặn slice thực sự phụ thuộc decision đó; không dùng một câu hỏi của AFF-05/06 để khóa AFF-04 hoặc hotfix production không liên quan.
+
+### 0.2. Execution reconciliation — 2026-09-22
+
+Ghi chú này supersede các câu execution-gate đã stale trong bản v2.3; không thay đổi product intent, canonical model hoặc các quyết định domain đã chốt.
+
+- Sequencing authority: `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`.
+- AFF-01/AFF-02 capability baseline đã tồn tại và đang hỗ trợ public attribution path; legacy TASK/HANDOFF cần reconciliation riêng, không được dùng status cũ để mở lại từ đầu hoặc tự tuyên bố ACCEPTED.
+- AFF-03/03B/03C public attribution/intake đã production verified. Evidence closeout chính: `../tasks/hrp-v6-n2-aff-03c-cs-labor-profile-fix/CLOSEOUT.md`.
+- W5 đã production verify RLS, elapsed assignment sweep và manual `REVOKED` semantics: `../tasks/hrp-v6-w5-handling-assignment-safety/HANDOFF.md`. W5 không chứng minh toàn bộ Company Pool/dispute của AFF-05A.
+- Remaining implementation order: AFF-04 → residual AFF-05A reconciliation → AFF-05B → AFF-06 → AFF-07.
+- Full feature Definition of Done tại §23 chưa đạt; `ACCEPTED` của AFF-03C không phải `ACCEPTED` cho Universal AFF.
+
+Evidence/CCCD readiness không phải coding gate của AFF. Development, CI, preview và tests chỉ dùng synthetic data, không upload CCCD thật hoặc production PII. P0-A chỉ chặn việc bật real evidence ingestion trên production. AFF slice được mở khi contract riêng, dependency domain, migration/security evidence và file ownership của chính slice đó đã sẵn sàng.
 
 ## 1. Product intent
 
@@ -983,6 +996,8 @@ Logs có correlation ID/attribution ID rút gọn hoặc hash; không log raw co
 
 ## 20. Definition of Ready — trước khi Tier 1 tạo TASK đầu tiên
 
+> **Execution reconciliation 2026-09-22:** Đây là decision inventory của thiết kế ban đầu, không còn là global lock cho toàn AFF track. Các task AFF đã được triển khai trước khi tài liệu được reconcile. Từ nay, câu hỏi chưa `RESOLVED` chỉ chặn slice nằm trong cột `Blocks`; T0 mở từng contract hẹp theo Realignment Plan. Không tick hồi tố nếu thiếu evidence và không dùng câu hỏi AFF-05/06 để chặn AFF-04 hoặc hotfix production không liên quan.
+
 - [ ] Founder chốt hoặc chấp nhận proposed defaults `AFF-PROP-001..008`.
 - [ ] `AFF-OQ-03` — Quyết định one attribution → one hay many applications.
 - [ ] `AFF-OQ-09` — Quyết định generic withdrawal/payout UX cho non-CTV User.
@@ -1007,9 +1022,9 @@ Mở rộng `05/09/2026`: danh sách tăng từ `10` lên `17` ô. Bản `v2.2` 
 trong đó `AFF-OQ-12` đúng là thứ chặn AFF-05A.
 
 **Luật tài liệu:** mọi hàng `AFF-OQ` chưa `RESOLVED` phải có ít nhất một ô trong danh sách này. §20 lệch §22 là
-**lỗi tài liệu**, không phải chi tiết bỏ qua được — vì §20 là thứ duy nhất chặn cửa Tier 1.
+**lỗi tài liệu**, không phải chi tiết bỏ qua được. Sau reconciliation, mỗi ô chỉ khóa slice được ghi trong cột `Blocks`; cửa execution do Realignment Plan và thin-slice contract điều phối.
 
-Chỉ sau checklist này Tier 1 mới tạo TASK đầu tiên. Không dùng tên `M11-AFF`; namespace đề xuất `hrp-v5-aff-01-*`, `hrp-v5-aff-02-*` để tránh task Portal legacy.
+Quy tắc “chỉ sau checklist mới tạo TASK đầu tiên” là gate lịch sử trước khi AFF execution bắt đầu và không được áp lại hồi tố. Task mới dùng namespace HRP hiện hành, phải tham chiếu slice `AFF-*` tương ứng và không dùng tên Portal/M11 legacy.
 
 ## 21. Hướng dẫn cho từng tier khi bước vào execution
 
@@ -1074,6 +1089,7 @@ Universal Affiliate chỉ được tuyên bố hoàn tất khi:
 
 | Version | Date | Change |
 |---|---|---|
+| `v2.4` | 2026-09-22 | Reconcile execution state after AFF-03/03B/03C and W5: Realignment Plan owns sequencing; §20 becomes a per-slice decision inventory instead of a global lock; Evidence/CCCD readiness blocks only production real-evidence ingestion, not synthetic-data AFF coding; next expansion slice is AFF-04 and whole-feature DoD remains unmet. |
 | `v2.3` | 2026-09-05 | Chốt tầng của `ReferralAttribution` là `LaborProfile` (`AFF-DEC-018` = `V6-DEC-029`) và sửa traceability chain §10.3 theo nó; sửa dependency graph §14.1 vì AFF-03 phụ thuộc V6 LaborProfile **và** Handling Assignment, không chỉ AFF-05A; mở rộng Definition of Ready §20 từ `10` lên `17` ô để phủ hết `AFF-OQ` còn mở, kể cả `AFF-OQ-12`. |
 | `v2.2` | 2026-09-04 | Đổi đường tài liệu sang `docs/V6/aff_plan.md`. |
 | `v2.1` | 2026-09-04 | Chốt tách ba semantic: cookie attribution 30 ngày, Handling Assignment bảo vệ 7 ngày từ LaborProfile, và beneficiary theo người xử lý thành công; thêm Company Pool, giao lại có thời hạn và dispute trong cửa sổ bảo vệ. |
