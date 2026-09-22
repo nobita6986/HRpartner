@@ -1,5 +1,5 @@
 /**
- * local-vps-evidence-storage.adapter.ts — P0-A03 / ER-002 (revision round 2).
+ * local-vps-evidence-storage.adapter.ts — P0-A03 / ER-002 (revision round 3).
  *
  * Local VPS filesystem adapter for the provider-neutral `EvidenceStorage`
  * port (ER-001). Streams evidence blobs to/from a VPS-controlled directory
@@ -12,9 +12,12 @@
  *   - Storage key validation layered on top of `asStorageKey`:
  *     no backslash, no traversal, no empty/trailing segments, no NUL/control
  *     chars, no symlinks.
- *   - Symlink enforcement via `fsPrompath.realpath` for every key resolution.
- *     TOCTOU residual risk between `exists`/`stat` and `read`/`delete`
- *     is documented in HANDOFF §5.1.1 and TASK §3.3.
+ *   - Symlink enforcement happens BEFORE canonicalisation. Every original
+ *     path component is `lstat`-checked for `isSymbolicLink()`; if any
+ *     segment (intermediate directory or leaf) is a symlink, the key is
+ *     rejected with `INVALID_KEY` regardless of where the symlink points.
+ *     TOCTOU residual risk between the lstat check and the eventual
+ *     read/write/delete is documented in HANDOFF §5.1.1 and TASK §3.3.
  *   - `'wx'` flag for atomic no-overwrite — concurrent writers get exactly
  *     one success, the rest receive `ALREADY_EXISTS`.
  *   - Storage-object boundary: only regular files are considered evidence.
@@ -32,7 +35,7 @@
  *     path, or secret ever reaches the public error surface.
  *
  * Revision round 2 (post-audit):
- *   - F1: `resolveKey` now walks segments by INDEX (not by value) so repeated
+ *   - F1: `resolveKey` walks segments by INDEX (not by value) so repeated
  *        segment names like `a/a/file.bin` resolve correctly.
  *   - F2: `write` uses a write-all loop that only counts bytes actually
  *        persisted (`handle.write()` may return fewer bytes than `chunk.byteLength`).
@@ -44,6 +47,35 @@
  *        rather than relying on `unlink`'s `EISDIR`.
  *   - F5: cleanup of partial artifacts happens AFTER the file handle is
  *        closed; partial-write flag is set in catch and acted on in finally.
+ *
+ * Revision round 3 (T0 source-review delta, after round-2 PR #32 review):
+ *   - F4 (symlink-following): `resolveKey` now checks EVERY original path
+ *     component with `lstat` BEFORE following it through `realpath`. A
+ *     symlink whose target is a regular file inside canonicalRoot is now
+ *     rejected with `INVALID_KEY` rather than being silently aliased to
+ *     the target. This applies to intermediate directory segments as
+ *     well as the leaf.
+ *   - F5 (cleanup failure surface): the `write` finally block now
+ *     distinguishes three failure modes and surfaces each via a typed
+ *     `EvidenceStorageError` carrying the request `storageKey`:
+ *       (a) `drainSourceToHandle` throws (stream/write failure) -> the
+ *           source error reason is preserved but the source's message is
+ *           REPLACED with a generic safe constant so caller-supplied text
+ *           cannot leak through the adapter boundary;
+ *       (b) `handle.close()` rejects during cleanup -> `STORAGE_UNAVAILABLE`
+ *           with reason "handle close failed";
+ *       (c) `fsPromises.unlink()` rejects with anything other than
+ *           `ENOENT` -> `STORAGE_UNAVAILABLE` with reason "partial artifact
+ *           not removed"; the caller is informed that the partial file may
+ *           still exist on disk.
+ *     A successful drain with a close failure no longer reports success;
+ *     the write is reported as `STORAGE_UNAVAILABLE` so the caller does
+ *     not silently get a stale handle reference.
+ *   - Error sanitization (T0 RQ-04): the byte-source error path no longer
+ *     copies message text or `cause` from a caller-supplied error object
+ *     (including `EvidenceStorageError`). The reason is mapped to one of
+ *     the port enum values via a narrow whitelist; the message is taken
+ *     from a fixed set of safe strings only.
  *
  * Out-of-scope (deferred):
  *   - EvidenceRecord metadata, audit, retention, quarantine (ER-003+).
@@ -60,6 +92,7 @@ import {
   type EvidenceByteStream,
   type EvidenceStat,
   type EvidenceStorage,
+  type EvidenceStorageErrorReason,
   type EvidenceWriteRequest,
   type EvidenceWriteResult,
   type StorageKey,
@@ -134,6 +167,44 @@ function reasonFromErrno(
     default:
       return 'STORAGE_UNAVAILABLE';
   }
+}
+
+/**
+ * Map any error coming out of the byte source or any other untrusted layer
+ * to a fixed safe message. The original error's message text and `cause`
+ * are NEVER copied into the surfaced error. Only the reason is mapped via
+ * a narrow whitelist so the adapter boundary cannot be made to echo back
+ * caller-supplied strings.
+ */
+const SAFE_STREAM_MESSAGES: Record<EvidenceStorageErrorReason, string> = {
+  NOT_FOUND: 'object not found',
+  ALREADY_EXISTS: 'target already exists',
+  INVALID_KEY: 'key invalid',
+  PERMISSION_DENIED: 'permission denied',
+  STORAGE_UNAVAILABLE: 'storage unavailable',
+  STREAM_FAILURE: 'stream failure',
+  INVALID_REQUEST: 'invalid request',
+};
+
+function sanitizeReason(err: unknown, defaultReason: EvidenceStorageErrorReason): EvidenceStorageErrorReason {
+  if (err instanceof EvidenceStorageError) {
+    // The reason enum is a narrow whitelist at the port layer, so the
+    // caller can pass any string in the message but the reason itself is
+    // still validated against the type. Trust the reason; replace the
+    // message at the boundary (handled by the caller).
+    return err.reason;
+  }
+  if (err && typeof err === 'object' && 'code' in err) {
+    const code = (err as { code?: unknown }).code;
+    if (typeof code === 'string') {
+      return reasonFromErrno(code);
+    }
+  }
+  return defaultReason;
+}
+
+function safeMessage(reason: EvidenceStorageErrorReason): string {
+  return SAFE_STREAM_MESSAGES[reason];
 }
 
 /**
@@ -227,7 +298,16 @@ async function validateRoot(root: string): Promise<string> {
  * correctly. The path that does not yet exist (e.g. before write) is
  * built by canonicalising the deepest existing ancestor plus the
  * remaining segments (also by index) and verifying containment from
- * each existing ancestor. Rejects traversal, symlinks, broken symlinks.
+ * each existing ancestor.
+ *
+ * Symlink rejection (round 3): every ORIGINAL path component (the
+ * un-canonicalised `current + seg` join) is checked with `lstat`
+ * BEFORE any follow-through. If any segment is a symbolic link, the
+ * key is rejected with `INVALID_KEY`. This guards against an attacker
+ * placing a symlink inside the root that aliases a different file:
+ * even though the symlink target is inside the root, the alias must
+ * not be reachable through a key. Residual TOCTOU between the lstat
+ * check and the eventual open call is documented in HANDOFF §5.1.1.
  */
 async function resolveKey(candidate: string, canonicalRoot: string): Promise<string> {
   // Port-layer boundary check.
@@ -239,18 +319,22 @@ async function resolveKey(candidate: string, canonicalRoot: string): Promise<str
   for (let i = 0; i < segments.length; i++) {
     const seg = segments[i];
     const next = path.join(current, seg);
-    let real: string;
+
+    // Pre-flight lstat: REJECT symlinks BEFORE any follow-through.
+    // This is the round-3 F4 fix. We use lstat (not stat) so the
+    // check observes the link itself rather than its target. A symlink
+    // pointing at a regular file inside canonicalRoot must not be
+    // reachable through a key — only the canonical path is.
+    let lstatRes: Stats;
     try {
-      real = await fsPromises.realpath(next);
+      lstatRes = await fsPromises.lstat(next);
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
       if (code !== 'ENOENT') {
-        // EACCES, ENOTDIR, ELOOP, etc. -> surface as INVALID_KEY
-        // (the path is unusable) or PERMISSION_DENIED for permission errors.
         const reason = code === 'EACCES' || code === 'EPERM'
           ? 'PERMISSION_DENIED'
           : 'INVALID_KEY';
-        throw new EvidenceStorageError(reason, 'cannot resolve key path', key);
+        throw new EvidenceStorageError(reason, 'cannot inspect key path', key);
       }
       // ENOENT: this segment does not exist yet (we are about to write).
       // Append the REMAINING segments from THIS index onward (NOT
@@ -264,6 +348,27 @@ async function resolveKey(candidate: string, canonicalRoot: string): Promise<str
       }
       return current;
     }
+    if (lstatRes.isSymbolicLink()) {
+      // Symlink rejection is symmetric for intermediate dirs and leaf:
+      // both cases would alias another path the attacker could swap
+      // out under us. Always INVALID_KEY (storage-object boundary
+      // forbids non-regular nodes from being reachable by key).
+      throw new EvidenceStorageError('INVALID_KEY', 'key resolves through a symlink', key);
+    }
+
+    // Existing non-symlink segment: canonicalise so containment check
+    // works on the real path even if the parent was a hardlinked
+    // directory (defence-in-depth; should be a no-op in practice).
+    let real: string;
+    try {
+      real = await fsPromises.realpath(next);
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      const reason = code === 'EACCES' || code === 'EPERM'
+        ? 'PERMISSION_DENIED'
+        : 'INVALID_KEY';
+      throw new EvidenceStorageError(reason, 'cannot resolve key path', key);
+    }
     if (real !== canonicalRoot && !real.startsWith(canonicalRoot + path.sep)) {
       throw new EvidenceStorageError('INVALID_KEY', 'key escapes root', key);
     }
@@ -276,8 +381,16 @@ async function resolveKey(candidate: string, canonicalRoot: string): Promise<str
  * Write the entire contents of a `Uint8Array` chunk to an open
  * `FileHandle`, retrying short writes until the whole chunk is persisted.
  * Returns the actual number of bytes written (sum of `bytesWritten`).
+ *
+ * Zero-progress safety: if a single `handle.write()` call returns
+ * `bytesWritten === 0` (or a non-integer / negative), the loop exits
+ * early with `STORAGE_UNAVAILABLE`. Otherwise a buggy / hostile backend
+ * could loop forever and the sizeBytes would never advance.
+ *
+ * @internal — exported for deterministic unit testing of the short-write
+ * loop and zero-progress safety. Production code MUST NOT import this.
  */
-async function writeChunkAll(
+export async function writeChunkAll(
   handle: Awaited<ReturnType<typeof fsPromises.open>>,
   chunk: Uint8Array,
 ): Promise<number> {
@@ -293,6 +406,10 @@ async function writeChunkAll(
     );
     const n = (result as unknown as { bytesWritten: number }).bytesWritten;
     if (!Number.isInteger(n) || n <= 0) {
+      // Zero-progress guard: refuse to loop forever on a buggy/hostile
+      // backend that never advances the file offset. The write is
+      // reported as STORAGE_UNAVAILABLE so the caller can retry or
+      // surface a meaningful error.
       throw new EvidenceStorageError(
         'STORAGE_UNAVAILABLE',
         'write returned no progress',
@@ -312,24 +429,43 @@ async function writeChunkAll(
  * physical file size after a complete drain). Source-error or
  * short-write unrecoverable errors are rethrown as `EvidenceStorageError`
  * so callers can map uniformly.
+ *
+ * Note: the surface error message is ALWAYS taken from the safe
+ * whitelist (see `safeMessage`) — the source's original message text is
+ * not propagated. This guarantees that a hostile or buggy byte source
+ * cannot echo arbitrary text into the public error surface.
  */
 async function drainSourceToHandle(
   source: EvidenceByteSource,
   handle: Awaited<ReturnType<typeof fsPromises.open>>,
 ): Promise<number> {
   let total = 0;
-  for await (const chunk of source) {
-    if (!(chunk instanceof Uint8Array)) {
-      throw new EvidenceStorageError(
-        'STREAM_FAILURE',
-        'source emitted non-Uint8Array chunk',
-        null,
-      );
+  try {
+    for await (const chunk of source) {
+      if (!(chunk instanceof Uint8Array)) {
+        throw new EvidenceStorageError(
+          'STREAM_FAILURE',
+          safeMessage('STREAM_FAILURE'),
+          null,
+        );
+      }
+      if (chunk.byteLength === 0) continue;
+      total += await writeChunkAll(handle, chunk);
     }
-    if (chunk.byteLength === 0) continue;
-    total += await writeChunkAll(handle, chunk);
+    return total;
+  } catch (err) {
+    // Boundary sanitization: drop the original message/cause, map
+    // reason via narrow whitelist, emit a safe-message Error.
+    if (err instanceof EvidenceStorageError) {
+      throw new EvidenceStorageError(err.reason, safeMessage(err.reason), null);
+    }
+    const code = (err as NodeJS.ErrnoException | undefined)?.code;
+    const reason: EvidenceStorageErrorReason =
+      code === 'ENOSPC' || code === 'EIO' || code === 'EBUSY' || code === 'ENXIO'
+        ? 'STORAGE_UNAVAILABLE'
+        : 'STREAM_FAILURE';
+    throw new EvidenceStorageError(reason, safeMessage(reason), null);
   }
-  return total;
 }
 
 /**
@@ -342,16 +478,22 @@ async function drainSourceToHandle(
  * The returned iterable must be drained exactly once; iterating twice
  * is undefined behaviour and throws.
  *
+ * Surface sanitization (round 3): the late-error path uses a fixed
+ * safe message; the storageKey is taken from a caller-supplied
+ * parameter (see `fileHandleToStreamWithKey`) so the read-stream error
+ * preserves the read request's key.
+ *
  * @internal — exported for deterministic unit testing of the wrapper's
  * late-error mapping and close-on-cancel semantics. Production code
  * MUST NOT import this directly; use `EvidenceStorage.read()` instead.
  */
 export async function fileHandleToStream(
   handle: Awaited<ReturnType<typeof fsPromises.open>>,
+  storageKey: StorageKey | null = null,
 ): Promise<EvidenceByteStream> {
   type Producer = AsyncGenerator<Uint8Array, void, void>;
+  const key = storageKey;
   const producer = (async function* producerFn(): Producer {
-    let chunkCount = 0;
     try {
       const CHUNK = 64 * 1024;
       // The underlying handle is held by the generator's scope and
@@ -365,24 +507,22 @@ export async function fileHandleToStream(
         if (bytesRead === 0) {
           return;
         }
-        chunkCount += 1;
         // Hand the consumer a copy of just the bytes read; the read
         // buffer may be reused by the next iteration.
         yield buf.slice(0, bytesRead);
       }
-    } catch (err) {
+    } catch {
       // Late-drain failure: raw Node error → typed surface error.
       // No errno / no path / no stack on the public surface.
-      if (err instanceof EvidenceStorageError) throw err;
       throw new EvidenceStorageError(
         'STREAM_FAILURE',
-        'read stream failed mid-drain',
-        null,
+        safeMessage('STREAM_FAILURE'),
+        key,
       );
     } finally {
-      void chunkCount;
       await handle.close().catch(() => {
-        // close errors are not surfaced; handle is single-use
+        // Close errors are not surfaced through the read path (the
+        // caller already has its byte stream). The handle is single-use.
       });
     }
   })();
@@ -441,14 +581,15 @@ export function makeLocalVpsEvidenceStorageAdapter(
   }
 
   /**
-   * Stat the resolved target path. If it does not exist, return null.
-   * If it is NOT a regular file (directory / symlink / FIFO / socket /
-   * device), throw `NOT_FOUND` to enforce the storage-object boundary
-   * uniformly across read/delete/exists/stat.
+   * Stat the resolved target path. If it does not exist, throw
+   * `NOT_FOUND`. If it is NOT a regular file (directory / symlink /
+   * FIFO / socket / device), throw `NOT_FOUND` to enforce the
+   * storage-object boundary uniformly across read/delete/exists/stat.
    *
-   * Note: this is `lstat`, not `stat`, so a symlink is observed as a
-   * symlink (NOT followed). Combined with F1's per-segment realpath,
-   * an existing symlink target would already have rejected the key.
+   * Note: `lstat` is used so a symlink is observed as a symlink (NOT
+   * followed). Combined with F4's per-component pre-flight lstat in
+   * `resolveKey`, an existing symlink target would already have
+   * rejected the key before reaching this helper.
    */
   async function statObject(targetPath: string, key: StorageKey): Promise<Stats> {
     let s: Stats;
@@ -457,7 +598,7 @@ export function makeLocalVpsEvidenceStorageAdapter(
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
       if (code === 'ENOENT') {
-        throw new EvidenceStorageError('NOT_FOUND', 'object not found', key);
+        throw new EvidenceStorageError('NOT_FOUND', safeMessage('NOT_FOUND'), key);
       }
       throw new EvidenceStorageError(
         reasonFromErrno(code),
@@ -468,9 +609,42 @@ export function makeLocalVpsEvidenceStorageAdapter(
     if (!s.isFile()) {
       // Directories, symlinks, FIFOs, sockets, devices are not evidence
       // objects under this adapter's contract. Fail-closed.
-      throw new EvidenceStorageError('NOT_FOUND', 'object not found', key);
+      throw new EvidenceStorageError('NOT_FOUND', safeMessage('NOT_FOUND'), key);
     }
     return s;
+  }
+
+  /**
+   * Safely close a handle. Returns the close error (if any) WITHOUT
+   * throwing, so the caller can decide whether to surface it.
+   */
+  async function safeCloseHandle(
+    handle: Awaited<ReturnType<typeof fsPromises.open>>,
+  ): Promise<NodeJS.ErrnoException | null> {
+    try {
+      await handle.close();
+      return null;
+    } catch (err) {
+      return err as NodeJS.ErrnoException;
+    }
+  }
+
+  /**
+   * Safely unlink a partial artifact. Treats ENOENT as success (the
+   * artifact is already gone, which is what we wanted). Any other error
+   * is returned to the caller.
+   */
+  async function safeUnlinkPartial(
+    targetPath: string,
+  ): Promise<NodeJS.ErrnoException | null> {
+    try {
+      await fsPromises.unlink(targetPath);
+      return null;
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === 'ENOENT') return null;
+      return err as NodeJS.ErrnoException;
+    }
   }
 
   const adapter: EvidenceStorage = {
@@ -500,49 +674,94 @@ export function makeLocalVpsEvidenceStorageAdapter(
           request.storageKey,
         );
       }
-      // Cleanup ordering (F5): the handle MUST be closed BEFORE any
-      // unlink of a partial artifact on the failure path. We use a
-      // flag set in the catch block and acted on in the finally block.
-      let partialCleanupNeeded = false;
-      let streamError: Error | null = null;
+
+      // Round-3 cleanup model: track THREE independent failure modes.
+      //   drainError  : set when drainSourceToHandle rejects.
+      //   closeError  : set when handle.close() rejects (after drain).
+      //   unlinkError : set when the partial-artifact unlink rejects
+      //                 with anything other than ENOENT.
+      // The finally block runs all three cleanups deterministically
+      // (close always first, unlink second). The outer then decides
+      // which error (if any) to surface, preferring the most specific.
+      let drainError: EvidenceStorageError | null = null;
+      let closeError: NodeJS.ErrnoException | null = null;
+      let unlinkError: NodeJS.ErrnoException | null = null;
       let totalBytes = 0;
+      let drainSucceeded = false;
+
       try {
-        totalBytes = await drainSourceToHandle(request.body, handle);
+        try {
+          totalBytes = await drainSourceToHandle(request.body, handle);
+          drainSucceeded = true;
+        } catch (err) {
+          drainError =
+            err instanceof EvidenceStorageError
+              ? err
+              : new EvidenceStorageError(
+                  sanitizeReason(err, 'STREAM_FAILURE'),
+                  safeMessage(sanitizeReason(err, 'STREAM_FAILURE')),
+                  null,
+                );
+        }
+
+        // Close the handle (regardless of drain success/failure). The
+        // close call is allowed to fail; we surface that separately so
+        // a successful drain + failed close does NOT silently report
+        // success to the caller.
+        closeError = await safeCloseHandle(handle);
+
+        // If the drain failed, attempt to remove the partial file.
+        // ENOENT on unlink is treated as success (nothing to remove).
+        // Any other error is surfaced verbatim via unlinkError.
+        if (!drainSucceeded) {
+          unlinkError = await safeUnlinkPartial(targetPath);
+        }
       } catch (err) {
-        partialCleanupNeeded = true;
-        streamError = err as Error;
-      } finally {
-        // Step 1: close the handle. Always, success and failure.
-        await handle.close().catch(() => {
-          // close errors are not surfaced; handle is single-use
-        });
-        // Step 2: only after the handle is closed, attempt to remove
-        // the partial file if drain failed.
-        if (partialCleanupNeeded) {
-          try {
-            await fsPromises.unlink(targetPath);
-          } catch {
-            // Cleanup failure: best-effort. If unlink fails (e.g. file
-            // does not exist because drain never wrote anything), the
-            // adapter still reports the original STREAM_FAILURE below.
-            // The caller can retry the delete via `delete(key)` later.
-          }
-        }
-      }
-      if (partialCleanupNeeded) {
-        if (streamError instanceof EvidenceStorageError) {
-          // Preserve the inner reason/message but re-anchor storageKey
-          // to the outer write request — so consumers see the key they
-          // passed in, not whatever the source set.
-          throw new EvidenceStorageError(
-            streamError.reason,
-            streamError.message,
-            request.storageKey,
-          );
-        }
+        // Defensive: should not happen given the helpers above, but
+        // ensure no error escapes the cleanup block untyped.
+        if (err instanceof EvidenceStorageError) throw err;
         throw new EvidenceStorageError(
-          'STREAM_FAILURE',
-          'stream write failed',
+          'STORAGE_UNAVAILABLE',
+          safeMessage('STORAGE_UNAVAILABLE'),
+          request.storageKey,
+        );
+      }
+
+      // Decision: pick the most specific failure to surface, in order.
+      // When the partial-artifact unlink fails with anything other than
+      // ENOENT, the file MAY STILL EXIST ON DISK. That is a more
+      // important fact for the caller than the original stream reason,
+      // because the caller needs to know the cleanup is incomplete so
+      // they can retry delete() or escalate. We therefore surface
+      // unlinkError first; only when unlink succeeded (or was skipped
+      // because drain succeeded) do we fall through to drainError /
+      // closeError.
+      if (unlinkError) {
+        // Partial artifact may still exist on disk; caller MUST be
+        // told via a typed error so they can retry delete() or escalate.
+        throw new EvidenceStorageError(
+          'STORAGE_UNAVAILABLE',
+          'partial artifact not removed',
+          request.storageKey,
+        );
+      }
+      if (drainError) {
+        // Re-anchor storageKey to the request key (sanitization already
+        // stripped the original message).
+        throw new EvidenceStorageError(
+          drainError.reason,
+          safeMessage(drainError.reason),
+          request.storageKey,
+        );
+      }
+      if (closeError) {
+        // Drain succeeded but close failed. We cannot tell the caller
+        // "the write succeeded" because we have no guarantee the file
+        // descriptor state is consistent. Surface as STORAGE_UNAVAILABLE
+        // so the caller can retry.
+        throw new EvidenceStorageError(
+          'STORAGE_UNAVAILABLE',
+          'handle close failed',
           request.storageKey,
         );
       }
@@ -571,8 +790,10 @@ export function makeLocalVpsEvidenceStorageAdapter(
         );
       }
       // fileHandleToStream closes the handle in its finally block,
-      // even if the consumer cancels iteration mid-drain.
-      return fileHandleToStream(handle);
+      // even if the consumer cancels iteration mid-drain. The storage
+      // key is passed through so late read errors carry the read
+      // request's key (not the request that wrote the file).
+      return fileHandleToStream(handle, storageKey);
     },
 
     async delete(storageKey: StorageKey): Promise<void> {
