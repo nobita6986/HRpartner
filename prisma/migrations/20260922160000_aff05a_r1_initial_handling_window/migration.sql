@@ -528,28 +528,40 @@ BEGIN
      AND expires_at IS NULL
      AND starts_at IS NOT NULL;
 
-  -- 6.5 Apply DEC-07: expire overdue ACTIVE in place (no delete/reinsert).
-  --     Only changes status; preserves assignee, source, previous link,
-  --     reason, starts_at, identity.
+  -- 6.5 Apply DEC-06 + DEC-07: set expires_at from starts_at for ALL rows matching
+  --     the predicate, and expire overdue ACTIVE rows in place (no delete/reinsert).
+  --     Preserves assignee, source, previous link, reason, starts_at, identity.
   UPDATE labor_profile_handling_assignments
-     SET status = 'EXPIRED',
+     SET status    = CASE
+                      WHEN starts_at <= v_txn_ts - interval '168 hours' THEN 'EXPIRED'
+                      ELSE status
+                    END,
+         expires_at = starts_at + interval '168 hours',
          updated_at = v_txn_ts
    WHERE source = 'AFF_INITIAL'
      AND expires_at IS NULL
-     AND status = 'ACTIVE'
-     AND starts_at IS NOT NULL
-     AND starts_at <= v_txn_ts - interval '168 hours';
+     AND starts_at IS NOT NULL;
 
   GET DIAGNOSTICS v_affected = ROW_COUNT;
 
-  RAISE NOTICE 'AFF-05A-R1 backfill complete: % overdue ACTIVE rows expired in place at %; % indefinite rows outside predicate unchanged; % future-start anomalies blocked.',
-    v_affected, v_txn_ts, v_outside_unchanged, v_future_start;
+  RAISE NOTICE 'AFF-05A-R1 backfill complete: % AFF_INITIAL rows received deadline from starts_at; % overdue ACTIVE rows expired in place; % indefinite rows outside predicate unchanged; % future-start anomalies blocked.',
+    v_affected, v_overdue_active, v_outside_unchanged, v_future_start;
 
-  -- 6.6 Final assertion: after backfill, no AFF_INITIAL + NULL deadline rows
-  --     should remain (DEC-06: all matched rows received a computed deadline).
-  IF v_remaining_indefinite > 0 THEN
-    RAISE EXCEPTION 'AFF-05A-R1 assertion failed: % AFF_INITIAL rows still have expires_at IS NULL after backfill. Migration rolled back.',
-      v_remaining_indefinite;
+  -- 6.6 Final assertion: after backfill, no ACTIVE AFF_INITIAL rows should have NULL deadline.
+  -- We re-count here (not use the pre-UPDATE v_remaining_indefinite) because non-AFF
+  -- rows also have NULL deadline and would cause a false failure.
+  -- RLS note: this assertion runs under migration admin (after RESET ROLE),
+  -- which bypasses RLS, so all rows are visible.
+  IF EXISTS (
+    SELECT 1
+      FROM labor_profile_handling_assignments
+     WHERE source = 'AFF_INITIAL'
+       AND expires_at IS NULL
+       AND starts_at IS NOT NULL
+       AND status = 'ACTIVE'
+    LIMIT 1
+  ) THEN
+    RAISE EXCEPTION 'AFF-05A-R1 assertion failed: ACTIVE AFF_INITIAL rows still have expires_at IS NULL after backfill. Migration rolled back.';
   END IF;
 
 END

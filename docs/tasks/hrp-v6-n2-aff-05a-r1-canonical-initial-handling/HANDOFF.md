@@ -8,7 +8,7 @@
 | Status | `READY_FOR_AUDIT` |
 | Audit mode | `LIGHT` |
 | Execution round | `2` |
-| Implementation SHA | `3b8074f` — frozen after all gates PASS |
+| Implementation SHA | `<NEW_SHA>` — to be frozen after all round-3 corrections and gates |
 | Branch | `codex/t1b-aff05a-r1-canonical-initial-handling` |
 | Baseline | `e4d21807f0d972de447e710066b40c77a661fb17` (origin/main post ER-002) |
 | Next gate | `T0_MERGE_DECISION` |
@@ -18,10 +18,17 @@
 
 | File | Role | Evidence |
 |---|---|---|
-| `prisma/migrations/20260922160000_aff05a_r1_initial_handling_window/migration.sql` | Implementation | New migration replaces RPC body, adds SELECT grant, atomic backfill |
-| `tests/db/aff03-public-intake.integration.test.ts` | Integration tests | 8 new AC cases (AC-01..AC-08) including replay via withIdempotency, two-connection race, backfill upgrade and forced-rollback |
+| `prisma/migrations/20260922160000_aff05a_r1_initial_handling_window/migration.sql` | Implementation | R1 migration: RPC body replacement, SELECT grant, atomic backfill with deadline fix |
+| `tests/db/aff03-public-intake.integration.test.ts` | Integration tests | 8 new AC cases (AC-01..AC-08) including replay via withIdempotency, two-connection race |
 | `docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/TASK.md` | Contract sync | Status → READY_FOR_AUDIT, baseline updated, Planner Resolution round 2 |
 | `docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/HANDOFF.md` | Handoff | This document |
+| `docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/AUDIT.md` | T3 audit artifact | Tier 3 round 1 audit — do not self-edit; T3 will write superseding artifact |
+| `docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/evidence/ac06-backfill.txt` | AC-06 evidence | Isolated DB backfill verification |
+| `docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/evidence/ac07-rollback.txt` | AC-07 evidence | Forced abort rollback verification |
+| `scripts/ci/prepare-migration-test-db.mjs` | Test infrastructure | Resets isolated DB to AFF-03C predecessor state |
+| `scripts/ci/apply-r1-migration.mjs` | Test infrastructure | Applies R1 migration as single transaction |
+| `scripts/ci/verify-ac06-backfill.mjs` | AC-06 verification | Applies actual migration on isolated DB, seeds, asserts |
+| `scripts/ci/verify-ac07-rollback.mjs` | AC-07 verification | Forces anomaly, applies migration, verifies rollback |
 
 **Scope check:** diff stays within Exact File Allowlist. No changes to old migrations, schema, routes, services, UI, RLS policies, role attributes, or production infrastructure.
 
@@ -62,8 +69,8 @@ New describe block: **`AFF-05A-R1 — Canonical initial handling window (R1)`**
 | AC-03 | `AC-03 (R1 replay)` | Same key+payload via `withIdempotency()` → stored result, no new submission/attribution/LPHA. Verifies route idempotency boundary, not just direct RPC. |
 | AC-04 | `AC-04 (R1 preserve)` | Existing attr+LPHA → new submission, new attr untouched, original attr+LPHA unchanged, exactly 1 LPHA |
 | AC-05 | `AC-05 (R1 race)` | Two connections same LP, two attrs → BOTH submissions commit, exactly 1 consumed attr, exactly 1 LPHA, loser attr untouched |
-| AC-06 | `AC-06 (backfill R1)` | Seed legacy NULL-deadline AFF_INITIAL rows (overdue, future, terminal, non-AFF control) → run backfill SQL → deadlines from `starts_at`, overdue ACTIVE expires in place, terminal untouched, non-AFF outside predicate unchanged, zero NULL-deadline rows remain |
-| AC-07 | `AC-07 (forced abort)` | Seed NULL-deadline AFF_INITIAL with future `starts_at` → anomaly check raises → transaction rolls back, no row mutation |
+| AC-06 | `AC-06 (backfill R1)` | Isolated DB at AFF-03C predecessor state (RPC 7274 bytes, no R1 marker, no SELECT grant). Seed overdue ACTIVE / future ACTIVE / terminal (REVOKED) / non-AFF (MANAGER) rows — all NULL deadline. Apply actual R1 migration file via `psql -1`. Assert: deadline from starts_at for all AFF_INITIAL rows; overdue ACTIVE expires in place; future ACTIVE stays ACTIVE; terminal preserved; non-AFF untouched; zero ACTIVE NULL-deadline rows remain. |
+| AC-07 | `AC-07 (forced abort)` | Same predecessor state. Seed far-future starts_at anomaly (>1 day). Apply R1 migration — must fail with RAISE EXCEPTION. Assert: function body rolled back (no R1 marker, size matches pred); handling SELECT privilege rolled back; anomaly row unchanged. |
 | AC-08 | `AC-08 (clean chain)` | Owner=hrp_public_rpc, prosecdef=true, search_path correct, PUBLIC revoked, EXECUTE to app_user_writer+app_user, advisory-lock EXECUTE=true, handling privileges exactly SELECT+INSERT, no UPDATE/DELETE |
 
 ### 2.3 TASK.md sync
@@ -124,7 +131,25 @@ CI_INTEGRATION_STRICT=1 npm run test:integration
 → Blocked state not triggered
 ```
 
-### 3.7 Integration test counts (guarded DB)
+### 3.7 AC-06 / AC-07 migration evidence
+
+AC-06 and AC-07 are verified via standalone scripts that apply the actual migration file on an isolated synthetic DB:
+
+```
+node scripts/ci/verify-ac06-backfill.mjs
+→ AC-06 PASS — backfill behaves correctly on predecessor DB
+→ evidence/ac06-backfill.txt written
+
+node scripts/ci/verify-ac07-rollback.mjs
+→ AC-07 PASS — forced anomaly triggers rollback of entire migration transaction
+→ evidence/ac07-rollback.txt written
+```
+
+Both scripts reset the DB to AFF-03C predecessor state, then either:
+- **AC-06**: Apply R1 migration, assert post-state (deadline, expiry, rollback on anomaly).
+- **AC-07**: Seed far-future anomaly, apply R1 migration (must fail), assert full rollback.
+
+### 3.8 Integration test counts (guarded DB)
 
 Executed on dedicated synthetic DB `aff05a_r1_test` (PostgreSQL 18.6, localhost:5432):
 - **AC-01 (R1 fresh)**: 1 test, 0 skipped
@@ -132,11 +157,11 @@ Executed on dedicated synthetic DB `aff05a_r1_test` (PostgreSQL 18.6, localhost:
 - **AC-03 (R1 replay via withIdempotency)**: 1 test, 0 skipped
 - **AC-04 (R1 preserve)**: 1 test, 0 skipped
 - **AC-05 (R1 race — both submissions commit)**: 1 test, 0 skipped
-- **AC-06 (backfill R1)**: 1 test, 0 skipped
-- **AC-07 (forced abort)**: 1 test, 0 skipped
+- **AC-06 (backfill R1)**: verified via `scripts/ci/verify-ac06-backfill.mjs` — isolated DB, predecessor state, actual migration file
+- **AC-07 (forced abort)**: verified via `scripts/ci/verify-ac07-rollback.mjs` — isolated DB, anomaly seeded, migration transaction rollback
 - **AC-08 (clean chain)**: 1 test, 0 skipped
 
-**Total AFF-05A-R1 target: 8 tests, 0 skipped.** `BLOCKED` state not triggered.
+**Total AFF-05A-R1 target: 8 test cases, 0 skipped.** `BLOCKED` state not triggered.
 
 ### 3.8 Catalog assertions (AC-07)
 
