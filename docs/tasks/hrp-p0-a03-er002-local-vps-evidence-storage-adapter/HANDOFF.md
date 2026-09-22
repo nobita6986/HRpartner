@@ -1,6 +1,6 @@
 # HANDOFF — hrp-p0-a03-er002-local-vps-evidence-storage-adapter
 
-> Handoff status: `READY_FOR_AUDIT` — Tier 3 LIGHT round 1 PASS at HEAD `7f12b9d`; T0 source-review correction at HEAD `36cbbef` (round 2 closure, F1..F5); round 3 delta at HEAD `<NEW_R3_SHA>` (hardened F4 symlink pre-check + F5 cleanup failure surfacing + error-surface sanitization + deterministic regression tests). Implementation commits `7f12b9d` and `36cbbef` are preserved (not amended, not force-pushed, not rebased). Tier 3 round 2 will audit the delta `7f12b9d..<NEW_R3_SHA>`. Status remains `READY_FOR_AUDIT` until Tier 3 round 2 PASS + T0 merge.
+> Handoff status: `READY_FOR_AUDIT` — Tier 3 LIGHT round 1 PASS at HEAD `7f12b9d`; T0 source-review correction at HEAD `36cbbef` (round 2 closure, F1..F5); round 3 delta at HEAD `d368cad88b0f2ad8686336d24ec96684f8d27e02` (hardened F4 symlink pre-check + F5 cleanup failure surfacing + error-surface sanitization + deterministic regression tests). Implementation commits `7f12b9d` and `36cbbef` are preserved (not amended, not force-pushed, not rebased). Tier 3 round 2 will audit the delta `7f12b9d..d368cad88b0f2ad8686336d24ec96684f8d27e02`. Status remains `READY_FOR_AUDIT` until Tier 3 round 2 PASS + T0 merge.
 
 ## 0. Control
 
@@ -15,13 +15,13 @@
 | Baseline | `f04bc94a7b9a06b3cb5b33035f8eb2f8e3a05899` (origin/main, post ER-001 port merge #30) |
 | Implementation SHA round 1 (frozen) | `7f12b9da86f010c9f38d8a1f9cdca0989b7798cc` — Tier 1; not amended, not force-pushed, not rebased |
 | Implementation SHA round 2 (frozen) | `36cbbef` — round-2 correction for F1..F5 |
-| Implementation SHA round 3 (frozen) | `<NEW_R3_SHA>` — round-3 F4 symlink-following fix + F5 cleanup failure surfacing + error-surface sanitization + deterministic regression tests |
-| Tier 3 verdict | round 1: `PASS` (unchanged); round 2: pending on delta `7f12b9d..<NEW_R3_SHA>` |
+| Implementation SHA round 3 (frozen) | `d368cad88b0f2ad8686336d24ec96684f8d27e02` — round-3 F4 symlink-following fix + F5 cleanup failure surfacing + error-surface sanitization + deterministic regression tests |
+| Tier 3 verdict | round 1: `PASS` (unchanged); round 2: pending on delta `7f12b9d..d368cad88b0f2ad8686336d24ec96684f8d27e02` |
 | Authority | `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §17 (P0-A03 / ER-002) |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Tier 1 sign-off | Adapter-only delivery; no runtime wiring, no DB, no API, no Media-service refactor |
-| Next gate | `TIER3_AUDIT_ROUND2` (delta `7f12b9d..<NEW_R3_SHA>`) → `PUSH_AND_OPEN_PR` (Tier 1 does NOT merge/deploy) → remote CI → `T0_MERGE_DECISION` |
+| Next gate | `TIER3_AUDIT_ROUND2` (delta `7f12b9d..d368cad88b0f2ad8686336d24ec96684f8d27e02`) → `PUSH_AND_OPEN_PR` (Tier 1 does NOT merge/deploy) → remote CI → `T0_MERGE_DECISION` |
 
 ## 1. Outcome and changed surface
 
@@ -122,7 +122,7 @@ None. TASK plan executed as written. No scope expansion, no fallback substitutio
 
 ## 5. Final status
 
-`Handoff status: READY_FOR_AUDIT` — round-1 verdict (`PASS` at `7f12b9d`) is retained; round-2 correction lives at `36cbbef` (closes F1..F5 surface defects, see §5.4); round-3 hardening lives at `<NEW_R3_SHA>` (closes F4 symlink-following, F5 cleanup-failure surfacing, error-surface sanitization, deterministic regression tests, see §5.5). Tier 3 round 2 must verify the delta `7f12b9d..<NEW_R3_SHA>` is sufficient AND that round-1 + round-2 properties (port contract, error surface safety, fail-closed root/key boundaries, `'wx'` atomicity, storage-object boundary, close-before-unlink) are preserved. Implementation commits `7f12b9d` and `36cbbef` are preserved (not amended, not force-pushed, not rebased); the round-3 commit is a strict additive correction.
+`Handoff status: READY_FOR_AUDIT` — round-1 verdict (`PASS` at `7f12b9d`) is retained; round-2 correction lives at `36cbbef` (closes F1..F5 surface defects, see §5.4); round-3 hardening lives at `d368cad88b0f2ad8686336d24ec96684f8d27e02` (closes F4 symlink-following, F5 cleanup-failure surfacing, error-surface sanitization, deterministic regression tests, see §5.5). Tier 3 round 2 must verify the delta `7f12b9d..d368cad88b0f2ad8686336d24ec96684f8d27e02` is sufficient AND that round-1 + round-2 properties (port contract, error surface safety, fail-closed root/key boundaries, `'wx'` atomicity, storage-object boundary, close-before-unlink) are preserved. Implementation commits `7f12b9d` and `36cbbef` are preserved (not amended, not force-pushed, not rebased); the round-3 commit is a strict additive correction.
 
 **Next gate**: `TIER3_AUDIT_ROUND2` → `PUSH_AND_OPEN_PR` (Tier 1 does NOT merge/deploy) → remote CI → `T0_MERGE_DECISION`. After merge lands, a follow-up round will move status to `ACCEPTED` per `00-global-rules.md` (ACCEPTED is reserved for post-merge/main verification).
 
@@ -219,7 +219,7 @@ Tier 0 source-review identified five defects after Tier 3 round-1 PASS at `7f12b
 
 ### 5.5 T0 source-review closure record (revision round 3: hardened F4 + F5 surfacing + error-surface sanitization)
 
-After PR #32 was placed on `HOLD` by T0 with the finding that round-2 closure lacked sufficient evidence, Tier 1 delivered round-3 corrections at HEAD `<NEW_R3_SHA>`. The corrections stay within the allowlist (`adapter`, `adapter tests`, `TASK.md`, `HANDOFF.md`); `AUDIT.md` and the ER-001 port remain untouched. Round-3 changes are LIMITED to:
+After PR #32 was placed on `HOLD` by T0 with the finding that round-2 closure lacked sufficient evidence, Tier 1 delivered round-3 corrections at HEAD `d368cad88b0f2ad8686336d24ec96684f8d27e02`. The corrections stay within the allowlist (`adapter`, `adapter tests`, `TASK.md`, `HANDOFF.md`); `AUDIT.md` and the ER-001 port remain untouched. Round-3 changes are LIMITED to:
 
 1. `resolveKey` now `lstat`s each ORIGINAL path component BEFORE any `realpath` follow-through, rejecting symlinks at intermediate OR leaf positions with `INVALID_KEY`. Symlinks pointing to a regular file inside the root are NO LONGER reachable through a key.
 2. `write` tracks three independent failure modes (`drainError`, `closeError`, `unlinkError`) and surfaces them via typed `EvidenceStorageError` with the request `storageKey`. Decision order: `unlinkError` wins (cleanup incomplete is the most important fact for the caller, since the partial file may still be on disk); then `drainError`; then `closeError`. A successful drain + failed close is no longer silently reported as success.
@@ -227,7 +227,7 @@ After PR #32 was placed on `HOLD` by T0 with the finding that round-2 closure la
 4. `writeChunkAll` has a zero-progress guard: if `bytesWritten <= 0` (or non-integer / negative), the loop exits after exactly 1 iteration with `STORAGE_UNAVAILABLE`, refusing to spin forever.
 5. Regression tests rewritten to deterministically activate the original failure modes via local Vitest mocks/spies (`vi.spyOn(fsPromises, 'open')`, `vi.spyOn(fsPromises, 'unlink')`, real-handle counter wraps). No new production testing framework.
 
-| ID | Round-3 finding | Closure at `<NEW_R3_SHA>` | Test |
+| ID | Round-3 finding | Closure at `d368cad88b0f2ad8686336d24ec96684f8d27e02` | Test |
 |---|---|---|---|
 | `F1` (deterministic test) | Round-2 test for `a/a/file.bin` happened to work because `write()` recursively `mkdir`ed the parent chain, masking the `indexOf` bug. The round-2 test did NOT pre-create `root/a` and leave `root/a/a` absent. | Logic preserved at round-2 form (index-based iteration, `slice(i)` on ENOENT). Test rewritten to PRE-CREATE `root/a`, leave `root/a/a` absent, then write `a/a/file.bin` and verify exact path on disk (no spurious sibling). Same shape for `x/x/x/file.bin`. | `LocalVpsEvidenceStorageAdapter — F1 regression (resolveKey by index, pre-existing parent) > resolves a/a/file.bin when <root>/a exists and <root>/a/a is missing` PASS. `… > resolves x/x/x/file.bin when <root>/x exists and x/x, x/x/x are missing` PASS. |
 | `F2` (short-write injection + zero-progress) | Round-2 test only verified `sizeBytes === stat.size` under realistic conditions; did NOT inject a short write or a zero-progress case. | `writeChunkAll` exposed via `@internal` export; helper loop confirmed by direct unit test (fake handle returns 3 then 4 bytes for a 7-byte chunk; helper returns 7 with exactly 2 calls and offset advancing to 3 between calls). Zero-progress guard verified: fake handle always returns 0 bytesWritten → helper rejects after exactly 1 iteration with `STORAGE_UNAVAILABLE`. Non-integer bytesWritten (`-1, 1.5, NaN, Infinity`) also rejected. End-to-end test injects the short-write via `vi.spyOn(fsPromises, 'open')` wrapping the real handle so its `write` reports 3 bytesWritten on the first call (after actually persisting 3) and delegates thereafter; on-disk file ends up 7 bytes, byte-exact, and `result.sizeBytes === 7`. | `… F2 regression > writeChunkAll covers short writes by looping until the chunk is fully drained` PASS. `… > writeChunkAll throws STORAGE_UNAVAILABLE on zero-progress (no infinite loop)` PASS (calls === 1). `… > writeChunkAll throws STORAGE_UNAVAILABLE when bytesWritten is non-integer / negative` PASS (covers `-1, 1.5, NaN, Infinity`). `… > sizeBytes equals the count of bytes actually persisted for a real write` PASS (8 KiB sanity). `… > sizeBytes matches a chunked (7-piece) source end-to-end` PASS (5000 bytes / 7 pieces). `… > adapter.write uses short-write-aware loop end-to-end (injected via fsPromises.open spy)` PASS. |
@@ -249,7 +249,7 @@ No other paths touched. No ER-001 port change. No `package.json` change. No `AUD
 
 #### 5.5.2 Audit delta boundary (round 3)
 
-Tier 3 LIGHT round 2 audits the delta `7f12b9d..<NEW_R3_SHA>` (covers round 2 closure at `36cbbef` AND round 3 closure at `<NEW_R3_SHA>`). The boundary excludes:
+Tier 3 LIGHT round 2 audits the delta `7f12b9d..d368cad88b0f2ad8686336d24ec96684f8d27e02` (covers round 2 closure at `36cbbef` AND round 3 closure at `d368cad88b0f2ad8686336d24ec96684f8d27e02`). The boundary excludes:
 - The original implementation commit `7f12b9d` (round 1 PASS).
 - The docs-only follow-up commit `614deb8` (metadata alignment only).
 - The PR-merge commit on `origin/main` (separate lane).
@@ -293,7 +293,7 @@ If Tier 3 finds anything, the default remediation is to amend the adapter or tes
 
 ---
 
-**Round 3 (PR #32 HOLD) — correction pass 2 (commit `<NEW_R3_SHA>`)**
+**Round 3 (PR #32 HOLD) — correction pass 2 (commit `d368cad88b0f2ad8686336d24ec96684f8d27e02`)**
 
 T0 source review on PR #32 found that round-2 closure at `36cbbef` lacked sufficient evidence for F1..F5 (round-3 RQ-01..RQ-04). Tier 1 delivered:
 
@@ -313,7 +313,7 @@ T0 source review on PR #32 found that round-2 closure at `36cbbef` lacked suffic
 - `docs/tasks/.../TASK.md`: §0 control updated; §11.2 added for round-3 closure record; §9.1/§9.2 + §10 revision log updated.
 - `docs/tasks/.../HANDOFF.md`: §0 control, §1 changed files, §2 acceptance, §3 evidence registry, §5.5 round-3 closure record, §5.6 compact evidence, §5.7 audit expectations, §5.8 this section all updated.
 
-Round 4 (delivery of `<NEW_R3_SHA>`) MUST NOT touch:
+Round 4 (delivery of `d368cad88b0f2ad8686336d24ec96684f8d27e02`) MUST NOT touch:
 - The original implementation commit `7f12b9d` (round 1 PASS; frozen; not amended, not rebased).
 - The docs-only follow-up commit `614deb8` (metadata alignment only; frozen).
 - The round-2 correction commit `36cbbef` (frozen).
@@ -322,7 +322,7 @@ Round 4 (delivery of `<NEW_R3_SHA>`) MUST NOT touch:
 - ER-001 port file `evidence-storage.port.ts` (bit-stamp unchanged vs `f04bc94`).
 - Production/staging credentials, deploy, env config, real data.
 
-The branch tip after round 4 keeps history (no force-push; no rewrite of `7f12b9d`, `614deb8`, or `36cbbef`); Tier 3 round 2 audits the delta `7f12b9d..<NEW_R3_SHA>`.
+The branch tip after round 4 keeps history (no force-push; no rewrite of `7f12b9d`, `614deb8`, or `36cbbef`); Tier 3 round 2 audits the delta `7f12b9d..d368cad88b0f2ad8686336d24ec96684f8d27e02`.
 
 **Round 1 → round 2** (docs-only follow-up, commit `614deb8`):
 
@@ -352,4 +352,4 @@ Round 3 MUST NOT touch:
 
 The branch tip after round 3 must keep history (no force-push; no rewrite of `7f12b9d` or `614deb8`); Tier 3 round 2 audits the delta `7f12b9d..36cbbef`.
 
-Handoff status: `READY_FOR_AUDIT` (round 1 PASS retained at `7f12b9d`; round 2 correction at `36cbbef`; round 3 hardening at `<NEW_R3_SHA>`; awaiting Tier 3 LIGHT round 2 PASS on delta `7f12b9d..<NEW_R3_SHA>` → `PUSH_AND_OPEN_PR` → CI → `T0_MERGE_DECISION`; not `ACCEPTED` until merge lands per `00-global-rules.md`).
+Handoff status: `READY_FOR_AUDIT` (round 1 PASS retained at `7f12b9d`; round 2 correction at `36cbbef`; round 3 hardening at `d368cad88b0f2ad8686336d24ec96684f8d27e02`; awaiting Tier 3 LIGHT round 2 PASS on delta `7f12b9d..d368cad88b0f2ad8686336d24ec96684f8d27e02` → `PUSH_AND_OPEN_PR` → CI → `T0_MERGE_DECISION`; not `ACCEPTED` until merge lands per `00-global-rules.md`).
