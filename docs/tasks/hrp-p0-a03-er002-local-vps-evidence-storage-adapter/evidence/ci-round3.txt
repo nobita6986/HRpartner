@@ -1,0 +1,26 @@
+CI run (round 3 final after F4 symlink-alias test alignment)
+- run_id: 35683018593
+- run_url: https://github.com/nobita6986/HRpartner/actions/runs/35683018593
+- pr: https://github.com/nobita6986/HRpartner/pull/32
+- head_sha: 21fe5342b0105d19b5e4101d31c2fe076c0bb619
+- head_branch: codex/t1b-er002-local-vps-evidence-storage-adapter
+- event: pull_request
+- status: completed
+- conclusion: success
+- created_at: 2026-09-22T03:24:07Z
+- updated_at: 2026-09-22T03:26:13Z
+
+Jobs:
+- Quality (schema · typecheck · lint · unit · build): PASS in 2m1s (job id 106603870668)
+- Integration (DB tests · fail-closed): PASS in 50s (job id 106603870909)
+
+Round-3 history (this slice's CI evolution):
+- 5c8df0b: PASS (round-2 SHA, F1..F5 v1)
+- b936d16: FAIL (round-2 stale docs)
+- e1195f1: FAIL (docs follow-up only — Quality failed because symlink tests did not match adapter INVALID_KEY semantics)
+- 21fe534: PASS (round-3 final — adapter pre-check lstat for symlinks + tests aligned)
+
+Local gates re-run on 21fe534 (Windows host):
+- Targeted adapter: 53/53 PASS (62 total; 9 POSIX-only skipped on Windows)
+- Full unit: 2477/2477 PASS in 160 files
+- git diff --check HEAD: exit 0, clean
