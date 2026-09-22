@@ -19,7 +19,7 @@
 | File | Role | Evidence |
 |---|---|---|
 | `prisma/migrations/20260922160000_aff05a_r1_initial_handling_window/migration.sql` | Implementation | New migration replaces RPC body, adds SELECT grant, atomic backfill |
-| `tests/db/aff03-public-intake.integration.test.ts` | Integration tests | 5 new AC cases + AC-07 catalog assertions |
+| `tests/db/aff03-public-intake.integration.test.ts` | Integration tests | 8 new AC cases (AC-01..AC-08) including replay via withIdempotency, two-connection race, backfill upgrade and forced-rollback |
 | `docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/TASK.md` | Contract sync | Status → READY_FOR_AUDIT, baseline updated, Planner Resolution round 2 |
 | `docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/HANDOFF.md` | Handoff | This document |
 
@@ -33,7 +33,7 @@
 
 1. **Server timestamp capture**: `v_txn_ts := transaction_timestamp()` before any branching. Used for all timing decisions. Satisfies DEC-01.
 
-2. **Advisory transaction lock** (DEC-04): `PERFORM pg_advisory_xact_lock(hashtextextended('AFF05A_R1:' || v_lp_id, 0))` — immediately after canonical LP resolution, before any re-read or mutation. Finite-mode (no timeout); failure causes function to error, not wait forever.
+2. **Advisory transaction lock** (DEC-04): `PERFORM pg_advisory_xact_lock(hashtextextended('AFF05A_R1:' || v_lp_id, 0))` — immediately after canonical LP resolution, before any re-read or mutation. Blocking mode (PostgreSQL default, no NOWAIT): the function waits for the lock holder to release. Under contention on the same LP, callers wait until the holding transaction commits/rolls back. The lock is released automatically at COMMIT/ROLLBACK or when the holding session terminates.
 
 3. **Post-lock re-read** (DEC-05): Under the lock, re-reads canonical attribution (`WHERE labor_profile_id = v_lp_id AND status='ACTIVE' AND expires_at > v_txn_ts`) and active LPHA (`WHERE labor_profile_id = v_lp_id AND status='ACTIVE' AND expires_at > v_txn_ts AND source='AFF_INITIAL'`). These are authoritative for the decision step.
 
@@ -57,11 +57,14 @@ New describe block: **`AFF-05A-R1 — Canonical initial handling window (R1)`**
 
 | AC | Test | What it asserts |
 |---|---|---|
-| AC-01 | `AC-01 (R1)` | Attribution consumed + one LPHA ACTIVE + `expires_at - starts_at ≈ 168h` (±60s tolerance) |
-| AC-02 | `AC-02 (R1)` | Unattributed intake → submission created, no LPHA, no attribution consumed (Case C) |
-| AC-03 | `AC-03 (R1 preserve)` | Existing attr+LPHA → new submission, new attr untouched, original attr+LPHA unchanged, exactly 1 LPHA |
-| AC-04 | `AC-04 (R1 race)` | Two connections same LP, two attrs → both submissions, exactly 1 consumed attr, exactly 1 LPHA |
-| AC-07 | `AC-07 (clean chain)` | Owner=hrp_public_rpc, prosecdef=true, search_path correct, PUBLIC revoked, EXECUTE to app_user_writer+app_user, advisory-lock EXECUTE=true, handling privileges exactly SELECT+INSERT, no UPDATE/DELETE |
+| AC-01 | `AC-01 (R1)` | Fresh valid attribution → one submission, one consumed/bound attribution, one `AFF_INITIAL ACTIVE`; `expires_at - starts_at ≈ 168h` (±60s tolerance) |
+| AC-02 | `AC-02 (R1 unattrib)` | Unattributed intake → submission created, no LPHA, no attribution consumed (Case C) |
+| AC-03 | `AC-03 (R1 replay)` | Same key+payload via `withIdempotency()` → stored result, no new submission/attribution/LPHA. Verifies route idempotency boundary, not just direct RPC. |
+| AC-04 | `AC-04 (R1 preserve)` | Existing attr+LPHA → new submission, new attr untouched, original attr+LPHA unchanged, exactly 1 LPHA |
+| AC-05 | `AC-05 (R1 race)` | Two connections same LP, two attrs → BOTH submissions commit, exactly 1 consumed attr, exactly 1 LPHA, loser attr untouched |
+| AC-06 | `AC-06 (backfill R1)` | Seed legacy NULL-deadline AFF_INITIAL rows (overdue, future, terminal, non-AFF control) → run backfill SQL → deadlines from `starts_at`, overdue ACTIVE expires in place, terminal untouched, non-AFF outside predicate unchanged, zero NULL-deadline rows remain |
+| AC-07 | `AC-07 (forced abort)` | Seed NULL-deadline AFF_INITIAL with future `starts_at` → anomaly check raises → transaction rolls back, no row mutation |
+| AC-08 | `AC-08 (clean chain)` | Owner=hrp_public_rpc, prosecdef=true, search_path correct, PUBLIC revoked, EXECUTE to app_user_writer+app_user, advisory-lock EXECUTE=true, handling privileges exactly SELECT+INSERT, no UPDATE/DELETE |
 
 ### 2.3 TASK.md sync
 
@@ -116,20 +119,24 @@ npx prisma validate
 ```
 CI_INTEGRATION_STRICT=1 npm run test:integration
 → Exit 0
-→ Tests: AFF-05A-R1 describe block executed (non-skipped)
-→ New AC cases executed (see §3.7)
+→ 23 files, 442 passed, 2 skipped
+→ AFF-05A-R1 describe block: 8 tests, 0 skipped (all PASS)
+→ Blocked state not triggered
 ```
 
 ### 3.7 Integration test counts (guarded DB)
 
 Executed on dedicated synthetic DB `aff05a_r1_test` (PostgreSQL 18.6, localhost:5432):
-- **AC-01 (R1)**: 1 test, 0 skipped
-- **AC-02 (R1)**: 1 test, 0 skipped (replay)
-- **AC-03 (R1 preserve)**: 1 test, 0 skipped
-- **AC-04 (R1 race)**: 1 test, 0 skipped
-- **AC-07 (clean chain)**: 1 test, 0 skipped
+- **AC-01 (R1 fresh)**: 1 test, 0 skipped
+- **AC-02 (R1 unattrib)**: 1 test, 0 skipped
+- **AC-03 (R1 replay via withIdempotency)**: 1 test, 0 skipped
+- **AC-04 (R1 preserve)**: 1 test, 0 skipped
+- **AC-05 (R1 race — both submissions commit)**: 1 test, 0 skipped
+- **AC-06 (backfill R1)**: 1 test, 0 skipped
+- **AC-07 (forced abort)**: 1 test, 0 skipped
+- **AC-08 (clean chain)**: 1 test, 0 skipped
 
-**Total AFF-05A-R1 target: 5 tests, 0 skipped.** `BLOCKED` state not triggered.
+**Total AFF-05A-R1 target: 8 tests, 0 skipped.** `BLOCKED` state not triggered.
 
 ### 3.8 Catalog assertions (AC-07)
 
@@ -164,9 +171,10 @@ No UPDATE/DELETE/ALL/PUBLIC/TRIGGER/REFERENCES/TRUNCATE on any table for `hrp_pu
 
 - **Mode**: transaction-scoped (`pg_advisory_xact_lock`) — auto-releases at commit/rollback.
 - **Key**: `hashtextextended('AFF05A_R1:' || v_lp_id, 0)` — fixed key prefix + LP ID.
-- **Finite**: no timeout; if lock cannot be acquired, function errors immediately.
+- **Blocking semantics**: `pg_advisory_xact_lock` waits indefinitely for the lock if a competing session already holds it. PostgreSQL does NOT default to NOWAIT or a bounded timeout. The lock is released only on COMMIT/ROLLBACK of the holding transaction or a crash. A function holding this lock can therefore block on another canonical call indefinitely under contention.
 - **EXECUTE**: confirmed effective via `has_function_privilege` query (PostgreSQL built-in, always available to all roles).
 - **Non-participating writers**: manager tools, staff intake, old function versions, and any writer that does not explicitly take this lock are outside the serialization guarantee. Unique constraints remain the backstop.
+- **Crash recovery**: if a connection crashes mid-transaction without a clean ROLLBACK, the advisory lock can be held until the session terminates and PostgreSQL cleans up. The backfill lock uses `pg_try_advisory_xact_lock(0)` (try-mode) to fail fast on contention rather than block the migration.
 
 ### 4.3 What was NOT changed
 

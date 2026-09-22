@@ -211,10 +211,14 @@ BEGIN
   --    the same `v_lp_id`. Only true-positive participants in this protocol
   --    take this lock; other writers are outside the guarantee.
   --
-  --    Finite-lock alternative: DEC-04 chose `pg_advisory_xact_lock`
-  --    without timeout. Failure here means the DB is in an unrecoverable
-  --    state (e.g., abandoned lock from a crashed connection); the function
-  --    fails fast so the caller can retry or escalate.
+  --    DEC-04 chose `pg_advisory_xact_lock` (blocking mode, no NOWAIT).
+  --    It waits for the lock holder to release. The function does NOT fail
+  --    fast; under contention on the same LP, callers wait until the holding
+  --    transaction commits or rolls back (or the holding session terminates).
+  --    This is the documented PostgreSQL default behavior. The lock cannot be
+  --    starved by hash collision (only other canonical public-intake calls
+  --    on the same LP collide), but extreme contention or a crashed holder
+  --    can leave the lock held until session cleanup.
   --
   --    Hash collision: only causes false-positive serialization between
   --    unrelated LPs; cannot permit concurrent mutation of the same LP.
