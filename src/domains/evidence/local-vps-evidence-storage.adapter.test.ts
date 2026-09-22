@@ -1143,9 +1143,11 @@ describe('LocalVpsEvidenceStorageAdapter — F4 regression (non-regular nodes ar
 
   it.skipIf(!IS_POSIX)('read / stat / exists / delete on a leaf alias do NOT follow the alias', async () => {
     // Create a real regular file at <root>/real.bin and an alias at
-    // <root>/tenant-1/alias.bin. Every port operation on the alias key
-    // must observe the SYMLINK, not the underlying file: invalid_key on
-    // write, not_found on read/stat/delete, false on exists.
+    // <root>/tenant-1/alias.bin. resolveKey rejects the alias at the
+    // FIRST non-canonical ORIGINAL path segment (symlink detected by
+    // lstat before realpath follow-through), so the underlying file is
+    // never reachable through tenant-1/alias.bin. Every port operation
+    // on the alias key surfaces INVALID_KEY; real.bin is never touched.
     await mkdir(join(tempDir, 'tenant-1'), { recursive: true });
     const realPath = join(tempDir, 'real.bin');
     await writeFile(realPath, new Uint8Array([0xAB, 0xCD]));
@@ -1154,21 +1156,25 @@ describe('LocalVpsEvidenceStorageAdapter — F4 regression (non-regular nodes ar
 
     const aliasKey = 'tenant-1/alias.bin' as unknown as Parameters<typeof adapter.write>[0]['storageKey'];
 
-    await expect(adapter.exists(aliasKey)).resolves.toBe(false);
-    await expect(adapter.read(aliasKey)).rejects.toMatchObject({ reason: 'NOT_FOUND' });
-    await expect(adapter.stat(aliasKey)).rejects.toMatchObject({ reason: 'NOT_FOUND' });
-    await expect(adapter.delete(aliasKey)).rejects.toMatchObject({ reason: 'NOT_FOUND' });
+    // All four port operations MUST reject with INVALID_KEY: the alias
+    // itself is the invalid key, regardless of what it points at.
+    await expect(adapter.exists(aliasKey)).rejects.toMatchObject({ reason: 'INVALID_KEY' });
+    await expect(adapter.read(aliasKey)).rejects.toMatchObject({ reason: 'INVALID_KEY' });
+    await expect(adapter.stat(aliasKey)).rejects.toMatchObject({ reason: 'INVALID_KEY' });
+    await expect(adapter.delete(aliasKey)).rejects.toMatchObject({ reason: 'INVALID_KEY' });
 
-    // CRITICAL invariant: delete(alias) MUST NOT have removed real.bin.
+    // CRITICAL invariant: the adapter must not have followed the alias
+    // and operated on real.bin.
     const onDisk = await (await import('node:fs/promises')).readFile(realPath);
     expect(Array.from(new Uint8Array(onDisk))).toEqual([0xAB, 0xCD]);
   });
 
   it.skipIf(!IS_POSIX)('read / stat / exists / delete on an intermediate-directory alias do NOT follow the alias', async () => {
     // Place a symlink at <root>/tenant-1/aliased-dir pointing at a real
-    // directory <root>/real-dir/evidence.bin. resolveKey must reject the
-    // alias at the FIRST non-canonical segment, so the inner regular file
-    // is never reachable through tenant-1/aliased-dir/evidence.bin.
+    // directory <root>/real-dir/. resolveKey rejects the alias at the
+    // FIRST non-canonical ORIGINAL path segment (the intermediate dir
+    // component IS a symlink), so the inner regular file is never
+    // reachable through tenant-1/aliased-dir/evidence.bin.
     await mkdir(join(tempDir, 'tenant-1'), { recursive: true });
     const realDir = join(tempDir, 'real-dir');
     await mkdir(realDir, { recursive: true });
@@ -1178,10 +1184,10 @@ describe('LocalVpsEvidenceStorageAdapter — F4 regression (non-regular nodes ar
 
     const aliasKey = 'tenant-1/aliased-dir/evidence.bin' as unknown as Parameters<typeof adapter.write>[0]['storageKey'];
 
-    await expect(adapter.exists(aliasKey)).resolves.toBe(false);
-    await expect(adapter.read(aliasKey)).rejects.toMatchObject({ reason: 'NOT_FOUND' });
-    await expect(adapter.stat(aliasKey)).rejects.toMatchObject({ reason: 'NOT_FOUND' });
-    await expect(adapter.delete(aliasKey)).rejects.toMatchObject({ reason: 'NOT_FOUND' });
+    await expect(adapter.exists(aliasKey)).rejects.toMatchObject({ reason: 'INVALID_KEY' });
+    await expect(adapter.read(aliasKey)).rejects.toMatchObject({ reason: 'INVALID_KEY' });
+    await expect(adapter.stat(aliasKey)).rejects.toMatchObject({ reason: 'INVALID_KEY' });
+    await expect(adapter.delete(aliasKey)).rejects.toMatchObject({ reason: 'INVALID_KEY' });
 
     // Inner file untouched.
     const onDisk = await (await import('node:fs/promises')).readFile(innerPath);
@@ -1209,24 +1215,28 @@ describe('LocalVpsEvidenceStorageAdapter — F4 regression (non-regular nodes ar
     expect(Array.from(new Uint8Array(onDisk))).toEqual([0x11, 0x22, 0x33]);
   });
 
-  it.skipIf(!IS_POSIX)('exists() returns false for a dangling symlink in the resolved path', async () => {
+  it.skipIf(!IS_POSIX)('exists() rejects INVALID_KEY for a dangling symlink in the resolved path', async () => {
+    // A dangling symlink is still a symlink at the original-path-component
+    // level; resolveKey's per-component lstat rejects it before any
+    // follow-through. The key is invalid, NOT not-found.
     const linkKey = 'tenant-1/dangling' as unknown as Parameters<typeof adapter.write>[0]['storageKey'];
     await mkdir(join(tempDir, 'tenant-1'), { recursive: true });
     await symlink(join(tempDir, 'no-such-target'), join(tempDir, 'tenant-1', 'dangling'), 'file');
-    await expect(adapter.exists(linkKey)).resolves.toBe(false);
+    await expect(adapter.exists(linkKey)).rejects.toMatchObject({ reason: 'INVALID_KEY' });
   });
 
-  it.skipIf(!IS_POSIX)('exists() returns false for a symlink whose target is a non-regular node', async () => {
+  it.skipIf(!IS_POSIX)('exists() rejects INVALID_KEY for a symlink whose target is a non-regular node', async () => {
+    // resolveKey walks each ORIGINAL path component with `lstat`. The
+    // 'dir-via-symlink' segment IS a symlink, so it is rejected with
+    // INVALID_KEY before any follow-through can happen, regardless of
+    // whether the target resolves inside containment or to a non-regular
+    // node.
     const linkKey = 'tenant-1/dir-via-symlink' as unknown as Parameters<typeof adapter.write>[0]['storageKey'];
     await mkdir(join(tempDir, 'tenant-1'), { recursive: true });
     const realDir = join(tempDir, 'real-dir');
     await mkdir(realDir, { recursive: true });
     await symlink(realDir, join(tempDir, 'tenant-1', 'dir-via-symlink'), 'dir');
-    // resolveKey walks each ORIGINAL path component with `lstat`. The
-    // 'dir-via-symlink' segment IS a symlink, so it is rejected before
-    // any follow-through can happen, regardless of whether the target
-    // resolves inside containment.
-    await expect(adapter.exists(linkKey)).resolves.toBe(false);
+    await expect(adapter.exists(linkKey)).rejects.toMatchObject({ reason: 'INVALID_KEY' });
   });
 });
 
