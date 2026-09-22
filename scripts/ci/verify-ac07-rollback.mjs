@@ -60,7 +60,7 @@ async function execSql(client, sql) {
 
 function psqlApplyMigration() {
   const migrationFile = join(REPO_ROOT, 'prisma/migrations/20260922160000_aff05a_r1_initial_handling_window/migration.sql');
-  const args = ['-h', host, '-p', port, '-U', user, '-d', TARGET_DB, '-1', '-v', 'ON_ERROR_STOP=1', '-f', migrationFile];
+  const args = ['-h', host, '-p', port, '-U', user, '-d', TARGET_DB, '-v', 'ON_ERROR_STOP=1', '-f', migrationFile];
   try {
     return {
       ok: false, // expect failure

@@ -1,8 +1,12 @@
-AC-06 verify (backfill R1) — running at 2026-09-22T08:56:56.818Z
+AC-06 verify (backfill R1) — running at 2026-09-22T09:54:55.653Z
 TARGET_DB=aff05a_r1_migration_test
 EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac06-backfill.txt
 
 === STEP 1: Reset DB to AFF-03C predecessor state ===
+ADMIN_URL_SET=yes
+SOURCE_DB=aff05a_r1_test
+TARGET_DB=aff05a_r1_migration_test
+DRY_RUN=false
 PREPARE=drop_recreate_target_db
 TARGET_DB_CREATED=aff05a_r1_migration_test
 PREPARE=dump_source_schema
@@ -35,13 +39,14 @@ PRED_HANDLING_PRIVS_HRP=INSERT
 === STEP 3: Seed legacy AFF_INITIAL NULL-deadline rows + controls ===
 REF_USER=aff05a_r1_migration_test-ac06-ref1
 SEEDED_ROWS=4
-  seeded: id=aff05a_r1_migration_test-ac06-future-row source=AFF_INITIAL status=ACTIVE starts_at=2026-09-22T10:56:59.564Z expires_at=null
-  seeded: id=aff05a_r1_migration_test-ac06-nonaff-row source=MANAGER status=ACTIVE starts_at=2026-09-17T08:56:59.564Z expires_at=null
-  seeded: id=aff05a_r1_migration_test-ac06-overdue-row source=AFF_INITIAL status=ACTIVE starts_at=2026-03-06T08:56:59.564Z expires_at=null
-  seeded: id=aff05a_r1_migration_test-ac06-terminal-row source=AFF_INITIAL status=EXPIRED starts_at=2026-08-23T08:56:59.564Z expires_at=null
+  seeded: id=aff05a_r1_migration_test-ac06-future-row source=AFF_INITIAL status=ACTIVE starts_at=2026-09-22T08:54:57.039Z expires_at=null
+  seeded: id=aff05a_r1_migration_test-ac06-nonaff-row source=MANAGER status=ACTIVE starts_at=2026-09-17T09:54:57.039Z expires_at=null
+  seeded: id=aff05a_r1_migration_test-ac06-overdue-row source=AFF_INITIAL status=ACTIVE starts_at=2026-03-06T09:54:57.039Z expires_at=null
+  seeded: id=aff05a_r1_migration_test-ac06-terminal-row source=AFF_INITIAL status=EXPIRED starts_at=2026-08-23T09:54:57.039Z expires_at=null
 
 === STEP 4: Apply R1 migration file as single transaction ===
 MIGRATION_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\prisma\migrations\20260922160000_aff05a_r1_initial_handling_window\migration.sql
+BEGIN
 GRANT
 DO
 SET
@@ -55,10 +60,11 @@ DO
 DO
 GRANT
 DO
+COMMIT
 
 
 === STEP 5: Assert post-migration state ===
-POST_FN_SIZE=10241
+POST_FN_SIZE=11111
 POST_FN_HAS_R1=true
 POST_FN_HAS_LOCK=true
 POST_HANDLING_PRIVS_HRP=INSERT,SELECT

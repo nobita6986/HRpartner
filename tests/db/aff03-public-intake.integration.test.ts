@@ -1419,6 +1419,297 @@ describe.skipIf(!HAS_TEST_DB)('AFF-05A-R1 — Canonical initial handling window 
   });
 
   // ─────────────────────────────────────────────────────────────────────────
+  // AC-03b (R1 preserve CONSUMED): LP already has a CONSUMED attribution
+  // bound (post-consume state). New submission with a different inbound
+  // attribution → submission commits, existing CONSUMED attribution
+  // unchanged, inbound attribution NOT consumed/rebound.
+  //
+  // Regression for round-3 finding: pre-fix migration only matched
+  // status='ACTIVE' attribution for "already bound" detection. CONSUMED
+  // rows were treated as "fresh LP" — which would re-consume inbound
+  // attribution and double-bind. The contract (DEC-03) is that ANY bound
+  // attribution is canonical, regardless of status.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  it('AC-03b (R1 preserve CONSUMED): bound CONSUMED attribution → new submission preserves, inbound untouched', async () => {
+    if (!writerUrl) return;
+    const phoneRaw = (() => {
+      let h = 0;
+      for (let i = 0; i < runId.length; i++) h = (h * 31 + runId.charCodeAt(i) + 5) | 0;
+      return `09000${Math.abs(h).toString().padStart(6, '0').slice(0, 6)}05`.slice(0, 11);
+    })();
+    const phoneDigits = phoneRaw.replace(/\D/g, '');
+    const phoneNorm = phoneDigits.startsWith('0') ? phoneDigits.slice(1) : phoneDigits;
+    const fullName = `A05A-AC03b-consumed ${runId}`;
+    const existing = await admin.laborProfile.create({
+      data: {
+        fullName,
+        normalizedPhone: phoneNorm,
+        phone: phoneRaw,
+        identityVerification: 'UNVERIFIED',
+        completeness: 'MINIMAL',
+      },
+    });
+    createdA05LaborProfileIds.push(existing.id);
+
+    // Pre-seed a CONSUMED attribution bound to this LP.
+    const consumedAttr = await admin.referralAttribution.create({
+      data: {
+        id: `${runId}-a05-ac03b-consumed-${randomUUID().slice(0, 8)}`,
+        referrerUserId,
+        affiliateCodeSnapshot: `A05A-AC03b-CONSUMED-${runId}`,
+        firstClickedAt: new Date(Date.now() - 600_000),
+        consumedAt: new Date(Date.now() - 300_000),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        status: 'CONSUMED',
+        laborProfileId: existing.id,
+      },
+    });
+
+    const writer = makeClient(writerUrl);
+    try {
+      // Create a NEW ACTIVE inbound attribution from secondReferrer.
+      const inboundAttr = await admin.referralAttribution.create({
+        data: {
+          id: `${runId}-a05-ac03b-inbound-${randomUUID().slice(0, 8)}`,
+          referrerUserId: secondReferrerUserId,
+          affiliateCodeSnapshot: `A05A-AC03b-INBOUND-${runId}`,
+          firstClickedAt: new Date(Date.now() - 60_000),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          status: 'ACTIVE',
+        },
+      });
+
+      const dto = await writer.$transaction(async (tx) =>
+        submitPublicIntake(tx, {
+          applicant: {
+            fullName,
+            phone: phoneRaw,
+            cccdNumber: null,
+            consentAt: new Date().toISOString(),
+          },
+          channel: 'PUBLIC_MARKETPLACE',
+          intent: 'JOB_INTEREST',
+          hrpAffCookie: makeHrAffCookie(inboundAttr.id),
+          actorId: 'system:public-intake',
+        }),
+      );
+
+      // Submission created.
+      expect(dto.candidateSubmissionId).not.toBeNull();
+      expect(dto.laborProfileId).toBe(existing.id);
+
+      // Inbound attribution NOT consumed (DEC-03: any bound attribution is canonical).
+      const inboundAfter = await admin.referralAttribution.findUnique({
+        where: { id: inboundAttr.id },
+        select: { status: true, consumedAt: true, laborProfileId: true },
+      });
+      expect(inboundAfter?.status).toBe('ACTIVE');
+      expect(inboundAfter?.consumedAt).toBeNull();
+      expect(inboundAfter?.laborProfileId).toBeNull();
+
+      // Original CONSUMED attribution unchanged.
+      const consumedAfter = await admin.referralAttribution.findUnique({
+        where: { id: consumedAttr.id },
+        select: { status: true, consumedAt: true, laborProfileId: true },
+      });
+      expect(consumedAfter?.status).toBe('CONSUMED');
+      expect(consumedAfter?.laborProfileId).toBe(existing.id);
+
+      // No new LPHA created (LP already has canonical attribution).
+      const lphaCount = await admin.laborProfileHandlingAssignment.count({
+        where: { laborProfileId: existing.id },
+      });
+      expect(lphaCount).toBe(0);
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AC-03c (R1 preserve active MANAGER): LP has an active MANAGER-assigned
+  // handling with indefinite deadline. New submission → submission commits,
+  // MANAGER LPHA unchanged, inbound attribution NOT consumed.
+  //
+  // Regression for round-3 finding: pre-fix migration only matched
+  // source='AFF_INITIAL' with expires_at > v_txn_ts. MANAGER rows with
+  // expires_at IS NULL were missed — public intake would create an AFF_INITIAL
+  // LPHA on top of an active manager handling. Contract (RQ-04) prohibits
+  // this: any active handler is canonical.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  it('AC-03c (R1 preserve MANAGER): active MANAGER handling indefinite → new submission preserves, no AFF_INITIAL', async () => {
+    if (!writerUrl) return;
+    const phoneRaw = (() => {
+      let h = 0;
+      for (let i = 0; i < runId.length; i++) h = (h * 31 + runId.charCodeAt(i) + 6) | 0;
+      return `09000${Math.abs(h).toString().padStart(6, '0').slice(0, 6)}06`.slice(0, 11);
+    })();
+    const phoneDigits = phoneRaw.replace(/\D/g, '');
+    const phoneNorm = phoneDigits.startsWith('0') ? phoneDigits.slice(1) : phoneDigits;
+    const fullName = `A05A-AC03c-manager ${runId}`;
+    const existing = await admin.laborProfile.create({
+      data: {
+        fullName,
+        normalizedPhone: phoneNorm,
+        phone: phoneRaw,
+        identityVerification: 'UNVERIFIED',
+        completeness: 'MINIMAL',
+      },
+    });
+    createdA05LaborProfileIds.push(existing.id);
+
+    // Pre-seed an active MANAGER LPHA with indefinite deadline.
+    // Need to seed with HR_MANAGER GUC to satisfy RLS for the writer.
+    const writer0 = makeClient(writerUrl);
+    try {
+      await writer0.$transaction(async (tx) => {
+        await tx.$executeRawUnsafe(`SELECT set_config('app.role', $1, true)`, 'HR_MANAGER');
+        await tx.$executeRawUnsafe(`SELECT set_config('app.user_id', $1, true)`, referrerUserId);
+        await tx.$executeRawUnsafe(`SELECT set_config('app.vendor_id', '', true)`);
+        await tx.$executeRawUnsafe(`SELECT set_config('app.worker_id', '', true)`);
+        await tx.laborProfileHandlingAssignment.create({
+          data: {
+            laborProfileId: existing.id,
+            assigneeUserId: referrerUserId,
+            source: 'MANAGER',
+            startsAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+            expiresAt: null,
+            status: 'ACTIVE',
+            version: 1,
+          },
+        });
+      });
+    } finally {
+      await writer0.$disconnect().catch(() => {});
+    }
+
+    // Get the LPHA id we just seeded.
+    const managerLpha = await admin.laborProfileHandlingAssignment.findFirst({
+      where: { laborProfileId: existing.id, source: 'MANAGER', status: 'ACTIVE' },
+      select: { id: true, assigneeUserId: true, startsAt: true, expiresAt: true },
+    });
+    expect(managerLpha).not.toBeNull();
+    createdA05HandlingAssignmentIds.push(managerLpha!.id);
+
+    const writer = makeClient(writerUrl);
+    try {
+      const inboundAttr = await admin.referralAttribution.create({
+        data: {
+          id: `${runId}-a05-ac03c-inbound-${randomUUID().slice(0, 8)}`,
+          referrerUserId: secondReferrerUserId,
+          affiliateCodeSnapshot: `A05A-AC03c-INBOUND-${runId}`,
+          firstClickedAt: new Date(Date.now() - 60_000),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          status: 'ACTIVE',
+        },
+      });
+
+      const dto = await writer.$transaction(async (tx) =>
+        submitPublicIntake(tx, {
+          applicant: {
+            fullName,
+            phone: phoneRaw,
+            cccdNumber: null,
+            consentAt: new Date().toISOString(),
+          },
+          channel: 'PUBLIC_MARKETPLACE',
+          intent: 'JOB_INTEREST',
+          hrpAffCookie: makeHrAffCookie(inboundAttr.id),
+          actorId: 'system:public-intake',
+        }),
+      );
+
+      // Submission created.
+      expect(dto.candidateSubmissionId).not.toBeNull();
+      expect(dto.laborProfileId).toBe(existing.id);
+
+      // Inbound attribution NOT consumed.
+      const inboundAfter = await admin.referralAttribution.findUnique({
+        where: { id: inboundAttr.id },
+        select: { status: true, consumedAt: true, laborProfileId: true },
+      });
+      expect(inboundAfter?.status).toBe('ACTIVE');
+      expect(inboundAfter?.consumedAt).toBeNull();
+      expect(inboundAfter?.laborProfileId).toBeNull();
+
+      // MANAGER LPHA unchanged.
+      const managerAfter = await admin.laborProfileHandlingAssignment.findFirst({
+        where: { laborProfileId: existing.id, source: 'MANAGER', status: 'ACTIVE' },
+        select: { id: true, assigneeUserId: true, startsAt: true, expiresAt: true },
+      });
+      expect(managerAfter?.id).toBe(managerLpha!.id);
+      expect(managerAfter?.expiresAt).toBeNull();
+
+      // No new AFF_INITIAL LPHA created.
+      const affInitialCount = await admin.laborProfileHandlingAssignment.count({
+        where: { laborProfileId: existing.id, source: 'AFF_INITIAL' },
+      });
+      expect(affInitialCount).toBe(0);
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AC-03d (R1 fresh with no attribution): LP has no bound attribution and
+  // no active handling; inbound attribution absent → submission commits,
+  // no LPHA created (DEC-03 Case C). This is the unchanged behavior path
+  // and regression-locks the no-attribution fresh-intake case.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  it('AC-03d (R1 fresh no attribution): fresh LP, no inbound → submission, no LPHA, no consumption', async () => {
+    if (!writerUrl) return;
+    // Reuse the unattrib case logic but with explicit assertion that no
+    // LPHA is created (round-3 found that pre-fix migration could still
+    // attempt LPHA INSERT when bound attribution check missed CONSUMED).
+    const phoneRaw = (() => {
+      let h = 0;
+      for (let i = 0; i < runId.length; i++) h = (h * 31 + runId.charCodeAt(i) + 7) | 0;
+      return `09000${Math.abs(h).toString().padStart(6, '0').slice(0, 6)}07`.slice(0, 11);
+    })();
+    const phoneDigits = phoneRaw.replace(/\D/g, '');
+    const phoneNorm = phoneDigits.startsWith('0') ? phoneDigits.slice(1) : phoneDigits;
+    const fullName = `A05A-AC03d-noattr ${runId}`;
+    const writer = makeClient(writerUrl);
+    try {
+      const dto = await writer.$transaction(async (tx) =>
+        submitPublicIntake(tx, {
+          applicant: {
+            fullName,
+            phone: phoneRaw,
+            cccdNumber: null,
+            consentAt: new Date().toISOString(),
+          },
+          channel: 'PUBLIC_MARKETPLACE',
+          intent: 'JOB_INTEREST',
+          hrpAffCookie: null, // No inbound attribution.
+          actorId: 'system:public-intake',
+        }),
+      );
+
+      expect(dto.candidateSubmissionId).not.toBeNull();
+
+      const lpId = dto.laborProfileId!;
+      createdA05LaborProfileIds.push(lpId);
+
+      // No LPHA created.
+      const lphaCount = await admin.laborProfileHandlingAssignment.count({
+        where: { laborProfileId: lpId },
+      });
+      expect(lphaCount).toBe(0);
+
+      // No bound attribution.
+      const boundAttrCount = await admin.referralAttribution.count({
+        where: { laborProfileId: lpId },
+      });
+      expect(boundAttrCount).toBe(0);
+    } finally {
+      await writer.$disconnect().catch(() => {});
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
   // AC-05 (R1 race): two connections, same LP, two different active
   // attributions → both submissions commit, exactly one attr consumed,
   // exactly one LPHA created.
@@ -1653,6 +1944,37 @@ describe.skipIf(!HAS_TEST_DB)('AFF-05A-R1 — Canonical initial handling window 
       });
       createdA05HandlingAssignmentIds.push(terminalId);
 
+      // (c2) REVOKED overdue terminal: starts_at far in the past (well past
+      // 168h boundary), status='REVOKED'. After backfill:
+      //   - deadline MUST be set (DEC-06: all matching rows get deadline)
+      //   - status MUST stay REVOKED (DEC-07 invariant: terminal status preserved)
+      // Round-3 finding: pre-fix migration missed status='ACTIVE' guard in CASE,
+      // so REVOKED overdue would erroneously flip to EXPIRED.
+      const revokedStart = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000); // 200 days ago
+      const revokedId = `${runId}-a05-ac06-revoked`;
+      await admin.laborProfileHandlingAssignment.create({
+        data: {
+          id: revokedId,
+          laborProfileId: (await admin.laborProfile.create({
+            data: {
+              id: `${runId}-a05-ac06-revoked-lp`,
+              fullName: `A05A-AC06-revoked ${runId}`,
+              normalizedPhone: `09000${runId.replace(/-/g, '').slice(0, 6)}5`,
+              phone: `09000${runId.replace(/-/g, '').slice(0, 6)}5`,
+              identityVerification: 'UNVERIFIED',
+              completeness: 'MINIMAL',
+            },
+          })).id,
+          assigneeUserId: referrerUserId,
+          source: 'AFF_INITIAL',
+          startsAt: revokedStart, // 200 days ago
+          expiresAt: null,
+          status: 'REVOKED',
+          version: 1,
+        },
+      });
+      createdA05HandlingAssignmentIds.push(revokedId);
+
       // (d) Control: non-AFF_INITIAL ACTIVE row — must be untouched.
       const nonAffId = `${runId}-a05-ac06-nonaff`;
       await admin.laborProfileHandlingAssignment.create({
@@ -1700,7 +2022,9 @@ describe.skipIf(!HAS_TEST_DB)('AFF-05A-R1 — Canonical initial handling window 
       expect(overdueIsOverdue).toBe(true);
       expect(futureIsOverdue).toBe(false);
 
-      // Apply backfill logic: deadline update.
+      // Apply backfill logic: deadline update (DEC-06) + DEC-07 invariant.
+      // DEC-07: only ACTIVE rows whose deadline has passed flip to EXPIRED.
+      // Terminal statuses (EXPIRED/REVOKED/TRANSFERRED/COMPLETED) are preserved.
       // RLS policy `hrp_handling_assignment_update` requires hrp_session_role()
       // IN ('ADMIN', 'HR_MANAGER'); wrap UPDATE in a tx that sets the GUC.
       await writer.$transaction(async (tx) => {
@@ -1708,7 +2032,7 @@ describe.skipIf(!HAS_TEST_DB)('AFF-05A-R1 — Canonical initial handling window 
         await tx.$executeRawUnsafe(`SELECT set_config('app.user_id', $1, true)`, referrerUserId);
         await tx.$executeRawUnsafe(`SELECT set_config('app.vendor_id', '', true)`);
         await tx.$executeRawUnsafe(`SELECT set_config('app.worker_id', '', true)`);
-        // Deadline update.
+        // Deadline update — matches AFF_INITIAL with NULL deadline + non-NULL starts_at.
         await tx.$executeRaw(Prisma.sql`
           UPDATE labor_profile_handling_assignments
           SET    expires_at = (starts_at + interval '168 hours'),
@@ -1716,9 +2040,9 @@ describe.skipIf(!HAS_TEST_DB)('AFF-05A-R1 — Canonical initial handling window 
           WHERE  source = 'AFF_INITIAL'
             AND  expires_at IS NULL
             AND  starts_at IS NOT NULL
-            AND  id IN (${overdueId}, ${futureId}, ${terminalId})
+            AND  id IN (${overdueId}, ${futureId}, ${revokedId})
         `);
-        // Overdue ACTIVE → expire in place at migration snapshot (DEC-07).
+        // DEC-07: only ACTIVE rows whose computed deadline ≤ now() flip to EXPIRED.
         await tx.$executeRaw(Prisma.sql`
           UPDATE labor_profile_handling_assignments
           SET    status = 'EXPIRED',
@@ -1762,6 +2086,18 @@ describe.skipIf(!HAS_TEST_DB)('AFF-05A-R1 — Canonical initial handling window 
       // expires_at was updated (the predicate matches terminal too since it has starts_at),
       // but this is consistent — the terminal row gets its deadline set too.
       // The key invariant: terminal status is preserved.
+
+      // REVOKED overdue: deadline MUST be set, status MUST stay REVOKED.
+      // This is the round-3 invariant: pre-fix migration erroneously flipped
+      // REVOKED → EXPIRED because the CASE missed the status='ACTIVE' guard.
+      const revokedAfter = await admin.laborProfileHandlingAssignment.findUnique({
+        where: { id: revokedId },
+        select: { expiresAt: true, status: true, startsAt: true },
+      });
+      expect(revokedAfter?.expiresAt).not.toBeNull();
+      const expectedRevokedDeadline = new Date(revokedStart.getTime() + 168 * 60 * 60 * 1000);
+      expect(revokedAfter?.expiresAt?.getTime()).toBeCloseTo(expectedRevokedDeadline.getTime(), -3);
+      expect(revokedAfter?.status).toBe('REVOKED'); // NOT EXPIRED — terminal status preserved
 
       // Non-AFF_INITIAL control: untouched (predicate uses source = 'AFF_INITIAL').
       const nonAffAfter = await admin.laborProfileHandlingAssignment.findUnique({

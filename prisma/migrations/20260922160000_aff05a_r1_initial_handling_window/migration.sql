@@ -32,6 +32,14 @@
 --    applies DEC-06 / DEC-07, asserts zero violations, and rolls back
 --    everything on any anomaly.
 --
+-- TRANSACTION BOUNDARY (TASK §4.5)
+-- ---------------------------------
+-- The entire migration body runs inside one explicit transaction (BEGIN ...
+-- COMMIT). Any RAISE EXCEPTION in any step (function replacement, GRANT,
+-- backfill UPDATE, anomaly check, final assertion) rolls back function
+-- replacement, grant and row updates together. The wrapper `psql -1` is
+-- NOT relied upon for atomicity; the file's own BEGIN/COMMIT is.
+--
 -- SCOPE (minimal — §4.2 Exact File Allowlist item 1)
 --   - Exactly one forward-only migration; no schema change.
 --   - One new RPC body; signature/owner/definer/search_path unchanged.
@@ -47,6 +55,8 @@
 --   Per Tier 0 brief. Migration file ships only. T0 runs production preflight
 --   and applies via a separate gate. Dedicated synthetic DB used for CI.
 -- ============================================================================
+
+BEGIN;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 1. Acquire the definer role before replacing the function.
@@ -228,23 +238,34 @@ BEGIN
   -- ─────────────────────────────────────────────────────────────────────────
   -- 7. DEC-05: Re-read canonical attribution + active handling under lock.
   --    This is the authoritative state for the decision in step (8).
+  --
+  --    DEC-03 (preservation) invariants:
+  --      - "already-bound" attribution = any row whose labor_profile_id
+  --        equals v_lp_id regardless of status (CONSUMED is the post-consume
+  --        state; ACTIVE-then-bound becomes CONSUMED). They all count as
+  --        "this LP already has canonical attribution bound".
+  --      - "active handler" = any LPHA on this LP with status='ACTIVE'
+  --        and a future (or indefinite) deadline. Source is not constrained
+  --        to AFF_INITIAL — manager-assigned rows also count (RQ-04: the
+  --        public-intake must not stomp on a manager's active handling).
   -- ─────────────────────────────────────────────────────────────────────────
 
-  -- Canonical attribution: the ONE ACTIVE, non-expired, unbound attribution.
+  -- Canonical attribution: any attribution already bound to this LP.
+  -- Includes CONSUMED (post-consume binding) and ACTIVE (still active).
+  -- The LP-bound uniqueness is the structural backstop (UNIQUE(labor_profile_id)).
   SELECT id INTO v_existing_attr
     FROM referral_attributions
    WHERE labor_profile_id = v_lp_id
-     AND status = 'ACTIVE'
-     AND expires_at > v_txn_ts
    LIMIT 1;
 
-  -- Active AFF_INITIAL handling assignment.
+  -- Active handling on this LP, any source (AFF_INITIAL OR MANAGER).
+  -- accepts both `expires_at IS NULL` (indefinite manager assignment) and
+  -- `expires_at > v_txn_ts` (active future-deadline).
   SELECT id INTO v_existing_lpha
     FROM labor_profile_handling_assignments
    WHERE labor_profile_id = v_lp_id
      AND status = 'ACTIVE'
-     AND expires_at > v_txn_ts
-     AND source = 'AFF_INITIAL'
+     AND (expires_at IS NULL OR expires_at > v_txn_ts)
    LIMIT 1;
 
   v_has_active_lpha := (v_existing_lpha IS NOT NULL);
@@ -441,35 +462,45 @@ GRANT SELECT ON labor_profile_handling_assignments TO hrp_public_rpc;
 -- 6. Atomic backfill — run after RESET ROLE as migration admin/superuser.
 --    Step numbering mirrors §4.5 / DEC-06 / DEC-07 / RQ-06 / RQ-07.
 --
---    Lock strategy: advisory table lock on labor_profile_handling_assignments
---    to prevent concurrent INSERT/UPDATE during the short revalidation window.
---    pg_advisory_xact_lock held for the duration of the backfill transaction;
---    finite behavior: the migration admin role is the sole applier on a clean
---    synthetic DB (no contention expected). The lock prevents accidental
---    concurrent modification if the migration is somehow re-run while a test
---    is still holding a connection.
+--    Lock strategy (TASK §4.5): acquire a real table lock on
+--    labor_profile_handling_assignments that blocks concurrent handling
+--    INSERT/UPDATE during the short revalidation window. We use
+--    LOCK TABLE ... IN SHARE ROW EXCLUSIVE MODE which:
+--      - conflicts with INSERT, UPDATE, DELETE, SHARE ROW EXCLUSIVE,
+--        EXCLUSIVE, ACCESS EXCLUSIVE (i.e. blocks all writers),
+--      - is held until transaction end (matches DEC: backfill must run
+--        as one atomic unit),
+--      - does NOT require any additional table privilege beyond
+--        migration admin (BYERRPASSRLS / superuser) — no UPDATE handling
+--        grant needed.
+--
+--    Anomaly threshold note (RQ-07): TASK says "future start ngoài clock-skew
+--    được T0 chấp nhận" but does NOT pin a numeric threshold. We compute
+--    "future start" relative to the captured `v_txn_ts` snapshot and block
+--    only on positive `starts_at > v_txn_ts` (i.e. any clock-skew beyond
+--    the migration transaction timestamp itself). A small explicit tolerance
+--    is intentionally NOT applied here — T0 owns the threshold via the
+--    production branch gate (RQ-05). If T0 later pins a tolerance, this
+--    block is the single point of change.
 -- ───────────────────────────────────────────────────────────────────────────
 
 DO $$
 DECLARE
   v_txn_ts             timestamptz;
   v_affected           integer := 0;
-  v_remaining_indefinite bigint := 0;
   v_outside_unchanged  bigint := 0;
   v_future_start       bigint := 0;
   v_null_start         bigint := 0;
   v_overdue_active     bigint := 0;
-  v_lock_ok            boolean;
+  v_unknown_status     bigint := 0;
 BEGIN
-  -- 6.1 Acquire advisory lock on the handling-assignments table (serializes
-  --     against any concurrent handling INSERT/UPDATE during revalidation).
-  --     pg_advisory_xact_lock(0) = class-free lock; only callers explicitly
-  --     using this key collide. Chosen over FOR UPDATE on the table because
-  --     the backfill needs to scan and update many rows atomically.
-  v_lock_ok := pg_try_advisory_xact_lock(0);
-  IF NOT v_lock_ok THEN
-    RAISE EXCEPTION 'AFF-05A-R1 backfill: could not acquire advisory table lock (timeout or contention). Abandoning backfill to prevent partial update.';
-  END IF;
+  -- 6.1 Acquire real table lock on labor_profile_handling_assignments.
+  --     SHARE ROW EXCLUSIVE conflicts with INSERT/UPDATE/DELETE/EXCLUSIVE,
+  --     so any concurrent handling writer waits. The lock is released
+  --     automatically at COMMIT or ROLLBACK of this transaction.
+  --     NOTE: must come BEFORE any SELECT against the table to ensure
+  --     the revalidation snapshot is consistent with the post-lock state.
+  LOCK TABLE labor_profile_handling_assignments IN SHARE ROW EXCLUSIVE MODE;
 
   -- 6.2 Capture migration snapshot timestamp (DEC-06: compute from starts_at,
   --     NOT from deploy/migration time).
@@ -478,17 +509,18 @@ BEGIN
   -- 6.3 Re-validate anomaly predicates (RQ-07 / AC-06).
   --     If any anomaly is detected, roll back the entire migration.
 
-  -- Future starts (DEC-06: outside clock skew, accepted by T0).
+  -- Future starts (RQ-07: outside clock-skew requires T0 sign-off; we block
+  -- on positive `starts_at > v_txn_ts` and let T0 pin a tolerance if needed).
   SELECT count(*) INTO v_future_start
     FROM labor_profile_handling_assignments h
     JOIN labor_profiles lp ON lp.id = h.labor_profile_id
    WHERE h.source = 'AFF_INITIAL'
      AND h.expires_at IS NULL
      AND h.starts_at IS NOT NULL
-     AND h.starts_at > v_txn_ts + interval '1 day';
+     AND h.starts_at > v_txn_ts;
 
   IF v_future_start > 0 THEN
-    RAISE EXCEPTION 'AFF-05A-R1 anomaly: % rows have future starts_at (> 1 day from migration snapshot). Stopping before backfill. T0 review required.',
+    RAISE EXCEPTION 'AFF-05A-R1 anomaly: % rows have future starts_at (> migration snapshot). Stopping before backfill. T0 review required.',
       v_future_start;
   END IF;
 
@@ -502,6 +534,21 @@ BEGIN
   IF v_null_start > 0 THEN
     RAISE EXCEPTION 'AFF-05A-R1 anomaly: % rows have source=AFF_INITIAL with both starts_at IS NULL and expires_at IS NULL. Stopping. T0 review required.',
       v_null_start;
+  END IF;
+
+  -- History inconsistency (RQ-07): any AFF_INITIAL row with NULL deadline
+  -- whose status is outside the documented set is treated as anomaly. The
+  -- documented set is 'ACTIVE','EXPIRED','REVOKED','TRANSFERRED','COMPLETED'.
+  SELECT count(*) INTO v_unknown_status
+    FROM labor_profile_handling_assignments
+   WHERE source = 'AFF_INITIAL'
+     AND expires_at IS NULL
+     AND starts_at IS NOT NULL
+     AND status NOT IN ('ACTIVE', 'EXPIRED', 'REVOKED', 'TRANSFERRED', 'COMPLETED');
+
+  IF v_unknown_status > 0 THEN
+    RAISE EXCEPTION 'AFF-05A-R1 anomaly: % AFF_INITIAL rows have NULL deadline and an unrecognized status. Stopping. T0 review required.',
+      v_unknown_status;
   END IF;
 
   -- Overdue ACTIVE (DEC-07: overdue ACTIVE expires in place at migration snapshot).
@@ -521,19 +568,17 @@ BEGIN
    WHERE (source != 'AFF_INITIAL' OR starts_at IS NOT NULL)
      AND expires_at IS NULL;
 
-  -- Count remaining indefinite after potential backfill.
-  SELECT count(*) INTO v_remaining_indefinite
-    FROM labor_profile_handling_assignments
-   WHERE source = 'AFF_INITIAL'
-     AND expires_at IS NULL
-     AND starts_at IS NOT NULL;
-
   -- 6.5 Apply DEC-06 + DEC-07: set expires_at from starts_at for ALL rows matching
-  --     the predicate, and expire overdue ACTIVE rows in place (no delete/reinsert).
-  --     Preserves assignee, source, previous link, reason, starts_at, identity.
+  --     the predicate (DEC-06), and expire overdue ACTIVE rows in place (DEC-07).
+  --     DEC-07 invariant: terminal status (EXPIRED/REVOKED/TRANSFERRED/COMPLETED)
+  --     is preserved — only ACTIVE rows whose computed deadline has passed
+  --     transition to EXPIRED. No delete/reinsert; assignee/source/previous
+  --     link/reason/starts_at/identity all preserved.
   UPDATE labor_profile_handling_assignments
      SET status    = CASE
-                      WHEN starts_at <= v_txn_ts - interval '168 hours' THEN 'EXPIRED'
+                      WHEN status = 'ACTIVE'
+                           AND starts_at <= v_txn_ts - interval '168 hours'
+                      THEN 'EXPIRED'
                       ELSE status
                     END,
          expires_at = starts_at + interval '168 hours',
@@ -547,22 +592,32 @@ BEGIN
   RAISE NOTICE 'AFF-05A-R1 backfill complete: % AFF_INITIAL rows received deadline from starts_at; % overdue ACTIVE rows expired in place; % indefinite rows outside predicate unchanged; % future-start anomalies blocked.',
     v_affected, v_overdue_active, v_outside_unchanged, v_future_start;
 
-  -- 6.6 Final assertion: after backfill, no ACTIVE AFF_INITIAL rows should have NULL deadline.
-  -- We re-count here (not use the pre-UPDATE v_remaining_indefinite) because non-AFF
-  -- rows also have NULL deadline and would cause a false failure.
-  -- RLS note: this assertion runs under migration admin (after RESET ROLE),
-  -- which bypasses RLS, so all rows are visible.
+  -- 6.6 Final assertion: after backfill, no AFF_INITIAL row matching the
+  --     DEC-06 safe predicate (source=AFF_INITIAL, expires_at IS NULL,
+  --     starts_at IS NOT NULL) may remain. We re-count here (not use the
+  --     pre-UPDATE v_remaining_indefinite) to verify the actual post-state.
+  --     RLS note: this assertion runs under migration admin (after RESET ROLE),
+  --     which bypasses RLS, so all rows are visible.
   IF EXISTS (
     SELECT 1
       FROM labor_profile_handling_assignments
      WHERE source = 'AFF_INITIAL'
        AND expires_at IS NULL
        AND starts_at IS NOT NULL
-       AND status = 'ACTIVE'
     LIMIT 1
   ) THEN
-    RAISE EXCEPTION 'AFF-05A-R1 assertion failed: ACTIVE AFF_INITIAL rows still have expires_at IS NULL after backfill. Migration rolled back.';
+    RAISE EXCEPTION 'AFF-05A-R1 assertion failed: AFF_INITIAL rows still have expires_at IS NULL after backfill. Migration rolled back.';
   END IF;
 
 END
 $$;
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 7. COMMIT (TASK §4.5).
+--    All steps above ran inside the outer BEGIN at the top of this file.
+--    Any RAISE EXCEPTION in any step rolled back function replacement,
+--    SELECT grant, and row updates together. Committing now that every
+--    assertion has passed.
+-- ───────────────────────────────────────────────────────────────────────────
+
+COMMIT;

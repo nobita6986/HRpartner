@@ -1,8 +1,12 @@
-AC-07 verify (forced abort / rollback) — running at 2026-09-22T08:57:08.874Z
+AC-07 verify (forced abort / rollback) — running at 2026-09-22T09:55:06.421Z
 TARGET_DB=aff05a_r1_migration_test
 EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac07-rollback.txt
 
 === STEP 1: Reset DB to AFF-03C predecessor state ===
+ADMIN_URL_SET=yes
+SOURCE_DB=aff05a_r1_test
+TARGET_DB=aff05a_r1_migration_test
+DRY_RUN=false
 PREPARE=drop_recreate_target_db
 TARGET_DB_CREATED=aff05a_r1_migration_test
 PREPARE=dump_source_schema
@@ -35,11 +39,12 @@ PRED_HANDLING_PRIVS_HRP=INSERT
 === STEP 3: Seed anomaly (far-future starts_at) ===
 REF_USER=aff05a_r1_migration_test-ac07-ref1
 ANOMALY_ROW_ID=aff05a_r1_migration_test-ac07-anomaly-row
-ANOMALY_STARTS_AT=2026-12-31T08:57:11.656Z
+ANOMALY_STARTS_AT=2026-12-31T09:55:08.048Z
 ANOMALY_SEEDED=ok
-  anomaly: starts_at=2026-12-31T08:57:11.656Z expires_at=null status=ACTIVE
+  anomaly: starts_at=2026-12-31T09:55:08.048Z expires_at=null status=ACTIVE
 
 === STEP 4: Attempt R1 migration (should fail with anomaly) ===
+BEGIN
 GRANT
 DO
 SET
@@ -54,8 +59,8 @@ DO
 GRANT
 
 MIGRATION_EXIT_CODE=3
-STDERR=psql:C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling/prisma/migrations/20260922160000_aff05a_r1_initial_handling_window/migration.sql:568: ERROR:  AFF-05A-R1 anomaly: 1 rows have future starts_at (> 1 day from migration snapshot). Stopping before backfill. T0 review required.
-CONTEXT:  PL/pgSQL function inline_code_block line 39 at RAISE
+STDERR=psql:C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling/prisma/migrations/20260922160000_aff05a_r1_initial_handling_window/migration.sql:613: ERROR:  AFF-05A-R1 anomaly: 1 rows have future starts_at (> migration snapshot). Stopping before backfill. T0 review required.
+CONTEXT:  PL/pgSQL function inline_code_block line 37 at RAISE
 
 ASSERT_PASS: migration failed with future starts_at anomaly
 

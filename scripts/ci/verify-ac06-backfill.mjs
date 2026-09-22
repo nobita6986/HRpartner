@@ -62,7 +62,7 @@ async function execSql(client, sql) {
 
 function psqlApplyMigration() {
   const migrationFile = join(REPO_ROOT, 'prisma/migrations/20260922160000_aff05a_r1_initial_handling_window/migration.sql');
-  const args = ['-h', host, '-p', port, '-U', user, '-d', TARGET_DB, '-1', '-v', 'ON_ERROR_STOP=1', '-f', migrationFile];
+    const args = ['-h', host, '-p', port, '-U', user, '-d', TARGET_DB, '-v', 'ON_ERROR_STOP=1', '-f', migrationFile];
   try {
     return {
       ok: true,
@@ -199,10 +199,15 @@ async function main() {
 
   // "future" here means "not yet overdue" — seed within the 1-day anomaly tolerance
   // so the migration processes it normally. Pathological far-future (>1 day) is AC-07's rollback case.
-  const overdueStart = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString();
-  const futureStart = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(); // 2 hours from now (within tolerance)
-  const terminalStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const nonAffStart = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+      const overdueStart = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString();
+      // For the new threshold `starts_at > v_txn_ts`, a "future ACTIVE" row must have
+      // starts_at <= transaction_timestamp (i.e. starts_at is in the past relative to
+      // the snapshot), but its computed deadline (starts_at + 168h) must still be in
+      // the future. Seed with starts_at = now - 1 hour so the row is "already started
+      // but not yet expired".
+      const futureStart = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // 1 hour ago
+      const terminalStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const nonAffStart = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
 
   await seedLpha(rowOverdue, lpOverdue, 'AFF_INITIAL', overdueStart, null, 'ACTIVE');
   await seedLpha(rowFuture, lpFuture, 'AFF_INITIAL', futureStart, null, 'ACTIVE');

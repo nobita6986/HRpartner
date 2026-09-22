@@ -11,7 +11,23 @@
  *     from `hrp_public_rpc` so that post-state can prove it was added back by
  *     the R1 migration.
  *
+ * SYNTHETIC-ONLY GUARD (round-3 fix):
+ *   The target DB name is validated against an allowlist prefix before ANY
+ *   DROP/CREATE/pg_dump mutation runs. Names that do not match the synthetic
+ *   test prefix (`aff05a_r1_migration_test`) are rejected with exit 3 BEFORE
+ *   any SQL is sent. The default is also pinned to the synthetic name; the
+ *   env override is allowed only if it matches the same prefix.
+ *
+ * IDENTIFIER QUOTING (round-3 fix):
+ *   Target/source DB identifiers are quoted via pg_quote_ident() before
+ *   interpolation. Direct template-string interpolation of DB names is
+ *   unsafe even for trusted internal input.
+ *
  * Idempotent: re-runs converge to predecessor state.
+ *
+ * Usage:
+ *   node scripts/ci/prepare-migration-test-db.mjs
+ *   node scripts/ci/prepare-migration-test-db.mjs --dry-run   # validate without mutating
  *
  * Requires admin password in env PGPASSWORD or DATABASE_URL_ADMIN_TEST pointing
  * to a Postgres superuser with CREATE DATABASE.
@@ -26,8 +42,26 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..');
 
 const ADMIN_URL = process.env.DATABASE_URL_ADMIN_TEST ?? '';
-const SOURCE_DB = process.env.MIGRATION_SOURCE_DB ?? 'aff05a_r1_test';
-const TARGET_DB = process.env.MIGRATION_TARGET_DB ?? 'aff05a_r1_migration_test';
+const SOURCE_DB_RAW = process.env.MIGRATION_SOURCE_DB ?? 'aff05a_r1_test';
+const TARGET_DB_RAW = process.env.MIGRATION_TARGET_DB ?? 'aff05a_r1_migration_test';
+
+// Synthetic-only allowlist: reject any target/source name that doesn't match.
+// Both names must match (a) the project's synthetic test prefix and (b) the
+// known set of CI DB names.
+const ALLOWED_DB_NAMES = new Set([
+  'aff05a_r1_test',
+  'aff05a_r1_migration_test',
+]);
+
+function guardDbName(name, role) {
+  if (!ALLOWED_DB_NAMES.has(name)) {
+    console.error(`UNSAFE_DB_NAME ${role}=${name} — refusing. Allowed: ${[...ALLOWED_DB_NAMES].join(', ')}`);
+    process.exit(3);
+  }
+}
+
+guardDbName(SOURCE_DB_RAW, 'MIGRATION_SOURCE_DB');
+guardDbName(TARGET_DB_RAW, 'MIGRATION_TARGET_DB');
 
 if (!ADMIN_URL) {
   console.error('ERROR: DATABASE_URL_ADMIN_TEST not set');
@@ -36,33 +70,55 @@ if (!ADMIN_URL) {
 
 const out = (k, v) => console.log(`${k}=${v}`);
 
+const DRY_RUN = process.argv.includes('--dry-run');
+
+async function quoteIdent(client, name) {
+  // quote_ident is the SQL standard quoting function; it doubles quotes
+  // inside the identifier so it is safe to interpolate back into SQL.
+  const r = await client.query(`SELECT quote_ident($1) AS q`, [name]);
+  return r.rows[0]?.q ?? '';
+}
+
 async function main() {
+  out('ADMIN_URL_SET', 'yes');
+  out('SOURCE_DB', SOURCE_DB_RAW);
+  out('TARGET_DB', TARGET_DB_RAW);
+  out('DRY_RUN', DRY_RUN ? 'true' : 'false');
+
+  if (DRY_RUN) {
+    out('DRY_RUN_OK', 'validation complete; no mutation performed');
+    return;
+  }
+
   const client = new Client({ connectionString: ADMIN_URL });
   await client.connect();
   try {
+    // Quote identifiers before SQL interpolation.
+    const quotedTarget = await quoteIdent(client, TARGET_DB_RAW);
+    const quotedSource = await quoteIdent(client, SOURCE_DB_RAW);
+
     // 1. Drop and recreate target DB.
     out('PREPARE', 'drop_recreate_target_db');
-    await client.query(`DROP DATABASE IF EXISTS ${TARGET_DB} WITH (FORCE)`).catch(async () => {
-      await client.query(`DROP DATABASE IF EXISTS ${TARGET_DB}`);
+    await client.query(`DROP DATABASE IF EXISTS ${quotedTarget} WITH (FORCE)`).catch(async () => {
+      await client.query(`DROP DATABASE IF EXISTS ${quotedTarget}`);
     });
-    await client.query(`CREATE DATABASE ${TARGET_DB}`);
-    out('TARGET_DB_CREATED', TARGET_DB);
+    await client.query(`CREATE DATABASE ${quotedTarget}`);
+    out('TARGET_DB_CREATED', TARGET_DB_RAW);
 
     // 2. Connect to source DB and dump schema-only.
     out('PREPARE', 'dump_source_schema');
-    const { execSync } = await import('node:child_process');
     const adminConn = new URL(ADMIN_URL);
     const port = adminConn.port || '5432';
     const host = adminConn.hostname || '127.0.0.1';
     const user = adminConn.username;
     const password = adminConn.password;
-    const targetConn = new URL(ADMIN_URL);
-    targetConn.pathname = `/${TARGET_DB}`;
 
-    const dumpCmd = `"C:\\Program Files\\PostgreSQL\\18\\bin\\pg_dump.exe" --schema-only --no-owner -h ${host} -p ${port} -U ${user} ${SOURCE_DB}`;
-    const restoreCmd = `"C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe" -h ${host} -p ${port} -U ${user} -d ${TARGET_DB} -v ON_ERROR_STOP=1`;
+    const dumpCmd = `"C:\\Program Files\\PostgreSQL\\18\\bin\\pg_dump.exe" --schema-only --no-owner -h ${host} -p ${port} -U ${user} ${quotedSource}`;
+    const restoreCmd = `"C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe" -h ${host} -p ${port} -U ${user} -d ${quotedTarget} -v ON_ERROR_STOP=1`;
     out('DUMP_CMD', dumpCmd.replace(password, '***'));
     out('RESTORE_CMD', restoreCmd);
+
+    const { execSync, spawnSync } = await import('node:child_process');
 
     const dumpOutput = execSync(dumpCmd, {
       env: { ...process.env, PGPASSWORD: password },
@@ -70,9 +126,8 @@ async function main() {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    const { spawnSync } = await import('node:child_process');
     const restore = spawnSync('C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe', [
-      '-h', host, '-p', port, '-U', user, '-d', TARGET_DB, '-v', 'ON_ERROR_STOP=1',
+      '-h', host, '-p', port, '-U', user, '-d', quotedTarget, '-v', 'ON_ERROR_STOP=1',
     ], {
       env: { ...process.env, PGPASSWORD: password },
       input: dumpOutput,
@@ -107,19 +162,17 @@ async function main() {
     out('PRED_FN_LEN', predFnBody.length.toString());
 
     // Acquire role, alter owner, then drop and recreate with predecessor body, then reset.
+    const targetConn = new URL(ADMIN_URL);
+    targetConn.pathname = `/${TARGET_DB_RAW}`;
     const targetClient = new Client({ connectionString: targetConn.toString() });
     await targetClient.connect();
     try {
-      // Use a single transaction with raw psql-style script via a single query
-      // so that DO blocks with format() strings containing GRANT/REVOKE
-      // keywords don't confuse the simple-query protocol parser.
       const acquire = `
         GRANT CREATE ON SCHEMA public TO hrp_public_rpc;
         DO $do$ BEGIN EXECUTE format('GRANT hrp_public_rpc TO %I WITH SET TRUE', session_user); END $do$;
       `;
       await targetClient.query(acquire);
       out('STEP1_ACQUIRE', 'ok');
-      // Transfer ownership of existing function to hrp_public_rpc.
       await targetClient.query(`ALTER FUNCTION public.hrp_public_intake_submission(jsonb) OWNER TO hrp_public_rpc`);
       out('STEP2_OWNER', 'ok');
       await targetClient.query(`SET ROLE hrp_public_rpc`);
@@ -173,7 +226,7 @@ async function main() {
     }
 
     out('READY', 'predecessor_state');
-    console.log(`READY target_db=${TARGET_DB}`);
+    console.log(`READY target_db=${TARGET_DB_RAW}`);
   } finally {
     await client.end();
   }
