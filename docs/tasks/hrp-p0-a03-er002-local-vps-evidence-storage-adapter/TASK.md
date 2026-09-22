@@ -10,7 +10,7 @@
 | Audit mode | `LIGHT` |
 | Audit reason | Adapter is a security boundary; raw filesystem path operations + traversal/symlink enforcement must be correct to prevent evidence disclosure/overwrite. |
 | Spec version | `v1.0` |
-| Status | `REVISION_REQUIRED` (Tier 3 LIGHT round 1 PASS; T0 source-review findings addressed in revision round 2 at HEAD `<NEW_SHA>`; awaiting Tier 3 LIGHT round 2 on delta `7f12b9d..<NEW_SHA>`) |
+| Status | `REVISION_REQUIRED` (Tier 3 LIGHT round 1 PASS; T0 source-review findings addressed in revision round 2 at HEAD `36cbbef`; awaiting Tier 3 LIGHT round 2 on delta `7f12b9d..36cbbef`) |
 | Planner | `Tier 1` |
 | Baseline | `f04bc94a7b9a06b3cb5b33035f8eb2f8e3a05899` (origin/main, post ER-001 port merge) |
 | Authority | `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §17 (P0-A03) |
@@ -18,9 +18,9 @@
 | Forbidden paths | `docs/PLANNER_HANDOVER.md`, `prisma/**`, `app/**`, `src/domains/media/**`, `package.json`, `package-lock.json`, CRM/shared integration contracts, env/deploy config, discovery/CRM docs, `src/domains/evidence/evidence-storage.port.ts`, `docs/tasks/.../AUDIT.md` |
 | Required gates | `verify-task.ps1`, targeted adapter tests, typecheck, lint, full unit, build, scope diff, `verify-handoff.ps1`, Tier 3 LIGHT audit (round 1 PASS; round 2 pending on revision delta) |
 | Current execution round | `2` |
-| Current audit round | `1 (PASS, retained)` — round 2 will audit delta `7f12b9d..<NEW_SHA>` |
-| Next gate | `TIER3_AUDIT_ROUND2 → PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION`. Implementation SHA `<NEW_SHA>` frozen by Tier 1; not amended, force-pushed, or rebased. |
-| T0 source-review findings | F1 resolveKey indexOf value bug; F2 writeChunk short-write; F3 read stream raw error / handle leak; F4 directory = NOT_FOUND; F5 close-before-unlink ordering. All five addressed at SHA `<NEW_SHA>`. |
+| Current audit round | `1 (PASS, retained)` — round 2 will audit delta `7f12b9d..36cbbef` |
+| Next gate | `TIER3_AUDIT_ROUND2 → PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION`. Implementation SHA `36cbbef` frozen by Tier 1; not amended, force-pushed, or rebased. |
+| T0 source-review findings | F1 resolveKey indexOf value bug; F2 writeChunk short-write; F3 read stream raw error / handle leak; F4 directory = NOT_FOUND; F5 close-before-unlink ordering. All five addressed at SHA `36cbbef`. |
 
 ## 1. Outcome
 
@@ -158,9 +158,9 @@
 
 ## 11. Tier 0 Source-Review Findings -- Revision Round 2
 
-Tier 0 source-review (after Tier 3 round 1 PASS at `7f12b9d`) identified five defects that were not covered by the round-1 audit. Tier 1 addressed each one in revision round 2 at HEAD `<NEW_SHA>` (this section is a verbatim closure record; the corresponding code/test diff is the authoritative evidence).
+Tier 0 source-review (after Tier 3 round 1 PASS at `7f12b9d`) identified five defects that were not covered by the round-1 audit. Tier 1 addressed each one in revision round 2 at HEAD `36cbbef` (this section is a verbatim closure record; the corresponding code/test diff is the authoritative evidence).
 
-| ID | Severity | Finding (T0 source-review) | Closure at `<NEW_SHA>` | Test |
+| ID | Severity | Finding (T0 source-review) | Closure at `36cbbef` | Test |
 |---|---|---|---|---|
 | `F1` | P1 | `resolveKey` used `segments.indexOf(seg)` — value-based lookup. With key `a/a/file.bin`, when `a` exists but the second `a` does not yet, `indexOf` returned the index of the first `a` and the loop took the ENOENT branch with the wrong remaining slice, producing a misrouted path (extra segment). | `resolveKey` now iterates segments by INDEX (`for (let i = 0; i &lt; segments.length; i++)`); on ENOENT the remaining tail is `segments.slice(i)`, anchored positionally. No `indexOf` of value anywhere in the resolver. | `LocalVpsEvidenceStorageAdapter — F1 regression (resolveKey by index) > writes and reads back a key with repeated segments (a/a/file.bin)`; `… > writes and reads back a triple-repeated segment key (x/x/x/file.bin)`. Both PASS. Filesystem ground-truth check confirms exact path `ROOT/a/a/file.bin` and `ROOT/x/x/x/file.bin` with no spurious sibling segments. |
 | `F2` | P1 | `handle.write(chunk)` return value was discarded; `total += chunk.byteLength` added the full chunk length regardless of bytes actually persisted. Short writes would inflate `sizeBytes` and leave a truncated file. | `writeChunkAll(handle, chunk)` retries short writes until the whole chunk is persisted, reading the actual `bytesWritten` from the `{ bytesWritten, buffer }` return object. `drainSourceToHandle` accumulates `writeChunkAll` results — the returned `total` equals the on-disk size. | `LocalVpsEvidenceStorageAdapter — F2 regression (short write loop) > sizeBytes equals the count of bytes actually persisted` (8 KiB payload) and `… > write does not throw when the OS returns a short write; sizeBytes = bytes actually written` (5000 bytes split into 7 pieces of sizes `[1, 17, 4097, 41, 700, 80, 64]`). Both PASS; in both cases `result.sizeBytes` matches the OS `stat.size`. |
@@ -181,7 +181,7 @@ No other paths touched. No ER-001 port change. No `package.json` change. No AUDI
 
 ### 9.2 Audit delta boundary
 
-Tier 3 LIGHT round 2 will audit the delta `7f12b9d..<NEW_SHA>`. The boundary excludes:
+Tier 3 LIGHT round 2 will audit the delta `7f12b9d..36cbbef`. The boundary excludes:
 - The original implementation commit `7f12b9d` (round 1 PASS).
 - The docs follow-up commit `614deb8` (metadata alignment only).
 - The PR-merge commit on `origin/main` (separate lane).
@@ -196,7 +196,7 @@ Tier 3 LIGHT round 2 will audit the delta `7f12b9d..<NEW_SHA>`. The boundary exc
 | 1 (execution) | Tier 1 delivery complete at SHA `7f12b9d`; status held at `READY_FOR_AUDIT`. | All §6 Acceptance criteria met; targeted + full unit + typecheck + lint + build green; ER-001 carry-forward unchanged; no env/DB touched; forbidden paths clean. |
 | 1 (audit) | Tier 3 LIGHT round 1 `PASS` at HEAD `7f12b9d`. | All 12 AC verified by Tier 3 (see `AUDIT.md` §2 + §4). No findings. Boundary / key / error-surface audits clean. TOCTOU residual risk explicitly enumerated (RISK-03) and accepted as gateway-layer mitigation. ER-001 port file bit-stamp unchanged vs `f04bc94`. |
 | 2 (post-audit delivery) | Status remains `READY_FOR_AUDIT` (not `ACCEPTED`) until remote `PUSH_AND_OPEN_PR` → CI → `T0_MERGE_DECISION` resolves. | `ACCEPTED` is reserved for post-merge/main verification per `00-global-rules.md`. The merge decision belongs to T0, not Tier 1. |
-| 3 (post-T0-source-review correction) | Status `READY_FOR_AUDIT` → `REVISION_REQUIRED`. New implementation SHA `<NEW_SHA>` carries F1..F5 closures. Round-1 audit verdict retained; round-2 audit will be applied to the delta `7f12b9d..<NEW_SHA>`. Implementation commit `7f12b9d` not amended; `AUDIT.md` not modified (Tier 3-owned). | T0 source review identified five correctness gaps not covered by round-1 audit. Each is closed by a deterministic regression test (§9) and by a typed, fail-closed code fix. Round-2 audit must confirm round-1 properties are preserved AND new regression tests are sufficient. |
+| 3 (post-T0-source-review correction) | Status `READY_FOR_AUDIT` → `REVISION_REQUIRED`. New implementation SHA `36cbbef` carries F1..F5 closures. Round-1 audit verdict retained; round-2 audit will be applied to the delta `7f12b9d..36cbbef`. Implementation commit `7f12b9d` not amended; `AUDIT.md` not modified (Tier 3-owned). | T0 source review identified five correctness gaps not covered by round-1 audit. Each is closed by a deterministic regression test (§9) and by a typed, fail-closed code fix. Round-2 audit must confirm round-1 properties are preserved AND new regression tests are sufficient. |
 
 ## 10. Revision Log
 
@@ -204,4 +204,4 @@ Tier 3 LIGHT round 2 will audit the delta `7f12b9d..<NEW_SHA>`. The boundary exc
 |---|---|---|---|
 | `v1.0` | `2026-09-22` | Initial contract | P0-A03 / ER-002 from realignment plan. |
 | `v1.0` | `2026-09-22` | Status `ACCEPTED` → `READY_FOR_AUDIT`; Next gate → `PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION`; audit round 0 → 1 (Tier 3 LIGHT PASS at HEAD `7f12b9d`). | Post-audit delivery: metadata alignment per `00-global-rules.md` (ACCEPTED is post-merge only); T0 keeps merge authority. |
-| `v1.0` | `2026-09-22` | Status `READY_FOR_AUDIT` → `REVISION_REQUIRED`; execution round 1 → 2; new implementation SHA `<NEW_SHA>` carrying F1..F5 closures; Next gate → `TIER3_AUDIT_ROUND2 → PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION`; forbidden paths add `AUDIT.md` (Tier 3-owned). | T0 source-review round (F1..F5) — see §9 for per-finding closure record. |
+| `v1.0` | `2026-09-22` | Status `READY_FOR_AUDIT` → `REVISION_REQUIRED`; execution round 1 → 2; new implementation SHA `36cbbef` carrying F1..F5 closures; Next gate → `TIER3_AUDIT_ROUND2 → PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION`; forbidden paths add `AUDIT.md` (Tier 3-owned). | T0 source-review round (F1..F5) — see §9 for per-finding closure record. |
