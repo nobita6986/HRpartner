@@ -1,4 +1,6 @@
-CI run (round 3 final after F4 symlink-alias test alignment)
+CI runs (round 3 final)
+
+== CI run on 21fe534 (test alignment + adapter correctness) ==
 - run_id: 35683018593
 - run_url: https://github.com/nobita6986/HRpartner/actions/runs/35683018593
 - pr: https://github.com/nobita6986/HRpartner/pull/32
@@ -14,13 +16,40 @@ Jobs:
 - Quality (schema · typecheck · lint · unit · build): PASS in 2m1s (job id 106603870668)
 - Integration (DB tests · fail-closed): PASS in 50s (job id 106603870909)
 
+== CI run on fb819a1 (docs follow-up commit) ==
+- run_id: 35683639100
+- run_url: https://github.com/nobita6986/HRpartner/actions/runs/35683639100
+- pr: https://github.com/nobita6986/HRpartner/pull/32
+- head_sha: fb819a18d57281915e86f5c650cae371aa65daf5
+- head_branch: codex/t1b-er002-local-vps-evidence-storage-adapter
+- event: pull_request
+- status: completed
+- conclusion: success
+
+Jobs:
+- Quality (schema · typecheck · lint · unit · build): PASS in 2m28s (job id 106605751179)
+- Integration (DB tests · fail-closed): PASS in 53s (job id 106605751235)
+
 Round-3 history (this slice's CI evolution):
 - 5c8df0b: PASS (round-2 SHA, F1..F5 v1)
 - b936d16: FAIL (round-2 stale docs)
-- e1195f1: FAIL (docs follow-up only — Quality failed because symlink tests did not match adapter INVALID_KEY semantics)
-- 21fe534: PASS (round-3 final — adapter pre-check lstat for symlinks + tests aligned)
+- e1195f1: FAIL (docs follow-up only - Quality failed because symlink tests did not match adapter INVALID_KEY semantics)
+- 21fe534: PASS (round-3 test-alignment commit + adapter pre-check lstat for symlinks)
+- fb819a1: PASS (round-3 docs follow-up commit)
 
-Local gates re-run on 21fe534 (Windows host):
+Local gates re-run on fb819a1 (Windows host):
 - Targeted adapter: 53/53 PASS (62 total; 9 POSIX-only skipped on Windows)
 - Full unit: 2477/2477 PASS in 160 files
 - git diff --check HEAD: exit 0, clean
+- verify-task.ps1: DRAFT-VALID (1 expected warning for READY_FOR_AUDIT)
+- verify-handoff.ps1: PASS WITH WARNINGS (1 expected warning for Next gate field delta)
+
+Round-3 commit chain (preserved, not amended, not force-pushed, not rebased):
+- 7f12b9d   : round 1 (Tier 3 PASS, frozen)
+- 36cbbef   : round 2 (F1..F5 v1, frozen)
+- d368cad   : round 3 substantive (F4 pre-check lstat + F5 cleanup surfacing + error sanitization + deterministic tests, frozen)
+- 21fe534   : round 3 test alignment (F4 symlink-alias tests expect INVALID_KEY uniformly; no source change)
+- fb819a1   : round 3 docs follow-up (TASK/HANDOFF + evidence, no source change)
+
+Final branch HEAD: fb819a18d57281915e86f5c650cae371aa65daf5
+Audit delta boundary for Tier 3 round 2: 7f12b9d..fb819a18d57281915e86f5c650cae371aa65daf5
