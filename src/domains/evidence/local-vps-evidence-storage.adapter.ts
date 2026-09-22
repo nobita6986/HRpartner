@@ -1,5 +1,5 @@
 /**
- * local-vps-evidence-storage.adapter.ts — P0-A03 / ER-002.
+ * local-vps-evidence-storage.adapter.ts — P0-A03 / ER-002 (revision round 2).
  *
  * Local VPS filesystem adapter for the provider-neutral `EvidenceStorage`
  * port (ER-001). Streams evidence blobs to/from a VPS-controlled directory
@@ -12,16 +12,38 @@
  *   - Storage key validation layered on top of `asStorageKey`:
  *     no backslash, no traversal, no empty/trailing segments, no NUL/control
  *     chars, no symlinks.
- *   - Symlink enforcement via `fs.realpathSync` for every key resolution.
+ *   - Symlink enforcement via `fsPrompath.realpath` for every key resolution.
  *     TOCTOU residual risk between `exists`/`stat` and `read`/`delete`
- *     is documented in HANDOFF §5 and TASK §3.3.
+ *     is documented in HANDOFF §5.1.1 and TASK §3.3.
  *   - `'wx'` flag for atomic no-overwrite — concurrent writers get exactly
  *     one success, the rest receive `ALREADY_EXISTS`.
- *   - Streaming reads via node:fs file handle createReadStream — no full
- *     body load into RAM.
+ *   - Storage-object boundary: only regular files are considered evidence.
+ *     Directories, symlinks, FIFOs, sockets, and other non-regular nodes
+ *     are uniformly treated as `NOT_FOUND` at the read/delete/exists/stat
+ *     boundary. Rationale: a directory is not a streamable evidence blob;
+ *     a symlink would alias another object; other inodes have no semantic
+ *     meaning under the port contract.
+ *   - Streaming reads via a single-use `AsyncIterable<Uint8Array>` that
+ *     wraps a `FileHandle.read()` loop; late-drain errors are mapped to
+ *     `STREAM_FAILURE`; the underlying handle is always closed (success,
+ *     failure, or consumer cancellation).
  *   - Error mapping collapses `ENOENT`/`EEXIST`/`EACCES`/etc. into the
  *     port's typed reason enum. No raw Node error, stack trace, absolute
  *     path, or secret ever reaches the public error surface.
+ *
+ * Revision round 2 (post-audit):
+ *   - F1: `resolveKey` now walks segments by INDEX (not by value) so repeated
+ *        segment names like `a/a/file.bin` resolve correctly.
+ *   - F2: `write` uses a write-all loop that only counts bytes actually
+ *        persisted (`handle.write()` may return fewer bytes than `chunk.byteLength`).
+ *   - F3: `read` returns a single-use async iterable; consumer-cancellation
+ *        and late errors are mapped to `STREAM_FAILURE`; handle is always
+ *        closed.
+ *   - F4: directory / non-regular nodes are uniformly `NOT_FOUND` at read,
+ *        delete, exists, stat. `delete` uses `lstat` to reject directories
+ *        rather than relying on `unlink`'s `EISDIR`.
+ *   - F5: cleanup of partial artifacts happens AFTER the file handle is
+ *        closed; partial-write flag is set in catch and acted on in finally.
  *
  * Out-of-scope (deferred):
  *   - EvidenceRecord metadata, audit, retention, quarantine (ER-003+).
@@ -200,9 +222,11 @@ async function validateRoot(root: string): Promise<string> {
 
 /**
  * Resolve a logical key to its canonical filesystem path, verifying
- * containment under canonicalRoot. The path that does not yet exist
- * (e.g. before write) is built by canonicalising the deepest existing
- * ancestor plus the remaining segments and verifying containment from
+ * containment under `canonicalRoot`. Walks segments BY INDEX so a key
+ * with repeated segment names (e.g. `a/a/file.bin`) is resolved
+ * correctly. The path that does not yet exist (e.g. before write) is
+ * built by canonicalising the deepest existing ancestor plus the
+ * remaining segments (also by index) and verifying containment from
  * each existing ancestor. Rejects traversal, symlinks, broken symlinks.
  */
 async function resolveKey(candidate: string, canonicalRoot: string): Promise<string> {
@@ -212,7 +236,8 @@ async function resolveKey(candidate: string, canonicalRoot: string): Promise<str
 
   const segments = candidate.split('/');
   let current = canonicalRoot;
-  for (const seg of segments) {
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
     const next = path.join(current, seg);
     let real: string;
     try {
@@ -228,12 +253,12 @@ async function resolveKey(candidate: string, canonicalRoot: string): Promise<str
         throw new EvidenceStorageError(reason, 'cannot resolve key path', key);
       }
       // ENOENT: this segment does not exist yet (we are about to write).
-      // Append remaining segments unverified by realpath; validation in
-      // validateKeyStructure already ensured no traversal/no control chars.
-      const remainingIdx = segments.indexOf(seg);
-      const remaining = segments.slice(remainingIdx);
+      // Append the REMAINING segments from THIS index onward (NOT
+      // re-locating by value — repeated segment names must resolve
+      // positionally). validateKeyStructure already excluded
+      // traversal/control characters, so un-canonicalised tail is safe.
+      const remaining = segments.slice(i);
       current = path.join(current, ...remaining);
-      // Path-equality or containment under canonicalRoot is required.
       if (current !== canonicalRoot && !current.startsWith(canonicalRoot + path.sep)) {
         throw new EvidenceStorageError('INVALID_KEY', 'key escapes root', key);
       }
@@ -244,17 +269,53 @@ async function resolveKey(candidate: string, canonicalRoot: string): Promise<str
     }
     current = real;
   }
-  // Loop completed without early ENOENT return — full path existed.
   return current;
 }
 
 /**
- * Drain an AsyncIterable<Uint8Array> via the provided writer callback.
- * Returns total bytes written.
+ * Write the entire contents of a `Uint8Array` chunk to an open
+ * `FileHandle`, retrying short writes until the whole chunk is persisted.
+ * Returns the actual number of bytes written (sum of `bytesWritten`).
  */
-async function drainSource(
+async function writeChunkAll(
+  handle: Awaited<ReturnType<typeof fsPromises.open>>,
+  chunk: Uint8Array,
+): Promise<number> {
+  let offset = 0;
+  let written = 0;
+  while (offset < chunk.byteLength) {
+    // Node.js FileHandle.write returns `{ bytesWritten, buffer }`.
+    const result = await handle.write(
+      chunk,
+      offset,
+      chunk.byteLength - offset,
+      null,
+    );
+    const n = (result as unknown as { bytesWritten: number }).bytesWritten;
+    if (!Number.isInteger(n) || n <= 0) {
+      throw new EvidenceStorageError(
+        'STORAGE_UNAVAILABLE',
+        'write returned no progress',
+        null,
+      );
+    }
+    offset += n;
+    written += n;
+  }
+  return written;
+}
+
+/**
+ * Drain an AsyncIterable<Uint8Array> into a file handle. Writes each
+ * non-empty chunk end-to-end via `writeChunkAll` and returns the total
+ * number of bytes actually persisted to the file (i.e. matches the
+ * physical file size after a complete drain). Source-error or
+ * short-write unrecoverable errors are rethrown as `EvidenceStorageError`
+ * so callers can map uniformly.
+ */
+async function drainSourceToHandle(
   source: EvidenceByteSource,
-  write: (bytes: Uint8Array) => Promise<void>,
+  handle: Awaited<ReturnType<typeof fsPromises.open>>,
 ): Promise<number> {
   let total = 0;
   for await (const chunk of source) {
@@ -266,24 +327,66 @@ async function drainSource(
       );
     }
     if (chunk.byteLength === 0) continue;
-    await write(chunk);
-    total += chunk.byteLength;
+    total += await writeChunkAll(handle, chunk);
   }
   return total;
 }
 
 /**
- * Wrap an open file handle as an async iterable byte stream. The caller
- * is responsible for draining (or causing auto-close via the stream's
- * EOF). The returned stream is single-use.
+ * Wrap an open `FileHandle` as a single-use `EvidenceByteStream`.
+ *
+ * Reads chunks via `FileHandle.read()` into a 64 KiB buffer, maps late
+ * read errors to `EvidenceStorageError('STREAM_FAILURE')`, and ALWAYS
+ * closes the handle (success, failure, consumer-break, end-of-stream).
+ *
+ * The returned iterable must be drained exactly once; iterating twice
+ * is undefined behaviour and throws.
+ *
+ * @internal — exported for deterministic unit testing of the wrapper's
+ * late-error mapping and close-on-cancel semantics. Production code
+ * MUST NOT import this directly; use `EvidenceStorage.read()` instead.
  */
-function fileHandleToStream(
+export async function fileHandleToStream(
   handle: Awaited<ReturnType<typeof fsPromises.open>>,
-): EvidenceByteStream {
-  const readable = handle.createReadStream();
-  // Node.js FileHandle.createReadStream returns a Readable stream that
-  // is async-iterable over Uint8Array chunks.
-  return readable as unknown as EvidenceByteStream;
+): Promise<EvidenceByteStream> {
+  type Producer = AsyncGenerator<Uint8Array, void, void>;
+  const producer = (async function* producerFn(): Producer {
+    let chunkCount = 0;
+    try {
+      const CHUNK = 64 * 1024;
+      // The underlying handle is held by the generator's scope and
+      // closed in finally, including generator early-return and consumer
+      // cancellation.
+      while (true) {
+        const buf = new Uint8Array(CHUNK);
+        const readResult: { bytesRead: number; buffer: Uint8Array } =
+          await handle.read(buf, 0, CHUNK, null);
+        const bytesRead = (readResult as unknown as { bytesRead: number }).bytesRead;
+        if (bytesRead === 0) {
+          return;
+        }
+        chunkCount += 1;
+        // Hand the consumer a copy of just the bytes read; the read
+        // buffer may be reused by the next iteration.
+        yield buf.slice(0, bytesRead);
+      }
+    } catch (err) {
+      // Late-drain failure: raw Node error → typed surface error.
+      // No errno / no path / no stack on the public surface.
+      if (err instanceof EvidenceStorageError) throw err;
+      throw new EvidenceStorageError(
+        'STREAM_FAILURE',
+        'read stream failed mid-drain',
+        null,
+      );
+    } finally {
+      void chunkCount;
+      await handle.close().catch(() => {
+        // close errors are not surfaced; handle is single-use
+      });
+    }
+  })();
+  return producer as unknown as EvidenceByteStream;
 }
 
 /**
@@ -314,8 +417,6 @@ export function makeLocalVpsEvidenceStorageAdapter(
   })();
 
   // 2. Validate the root lazily; first port call surfaces any failure.
-  // Lazy avoids constructing an unhandled-rejection promise when an
-  // obviously-bad root is passed at construction.
   let canonicalRootCache: string | null = null;
   let canonicalRootInflight: Promise<string> | null = null;
   async function getCanonicalRoot(): Promise<string> {
@@ -327,8 +428,6 @@ export function makeLocalVpsEvidenceStorageAdapter(
         canonicalRootCache = c;
         return c;
       } catch (err) {
-        // Drop the inflight ref so the next call can retry (matches
-        // the test expectation of "throws" rather than permanently stuck).
         canonicalRootInflight = null;
         if (err instanceof EvidenceStorageError) throw err;
         throw new EvidenceStorageError(
@@ -339,6 +438,39 @@ export function makeLocalVpsEvidenceStorageAdapter(
       }
     })();
     return canonicalRootInflight;
+  }
+
+  /**
+   * Stat the resolved target path. If it does not exist, return null.
+   * If it is NOT a regular file (directory / symlink / FIFO / socket /
+   * device), throw `NOT_FOUND` to enforce the storage-object boundary
+   * uniformly across read/delete/exists/stat.
+   *
+   * Note: this is `lstat`, not `stat`, so a symlink is observed as a
+   * symlink (NOT followed). Combined with F1's per-segment realpath,
+   * an existing symlink target would already have rejected the key.
+   */
+  async function statObject(targetPath: string, key: StorageKey): Promise<Stats> {
+    let s: Stats;
+    try {
+      s = await fsPromises.lstat(targetPath);
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === 'ENOENT') {
+        throw new EvidenceStorageError('NOT_FOUND', 'object not found', key);
+      }
+      throw new EvidenceStorageError(
+        reasonFromErrno(code),
+        'cannot probe target',
+        key,
+      );
+    }
+    if (!s.isFile()) {
+      // Directories, symlinks, FIFOs, sockets, devices are not evidence
+      // objects under this adapter's contract. Fail-closed.
+      throw new EvidenceStorageError('NOT_FOUND', 'object not found', key);
+    }
+    return s;
   }
 
   const adapter: EvidenceStorage = {
@@ -368,41 +500,68 @@ export function makeLocalVpsEvidenceStorageAdapter(
           request.storageKey,
         );
       }
+      // Cleanup ordering (F5): the handle MUST be closed BEFORE any
+      // unlink of a partial artifact on the failure path. We use a
+      // flag set in the catch block and acted on in the finally block.
+      let partialCleanupNeeded = false;
+      let streamError: Error | null = null;
+      let totalBytes = 0;
       try {
-        const totalBytes = await drainSource(request.body, async (chunk) => {
-          await handle.write(chunk);
-        });
-        return {
-          storageKey: request.storageKey,
-          sizeBytes: totalBytes,
-          etag: null,
-        };
+        totalBytes = await drainSourceToHandle(request.body, handle);
       } catch (err) {
-        // Cleanup partial file before rethrowing.
-        try {
-          await fsPromises.unlink(targetPath);
-        } catch {
-          // ignore cleanup errors
+        partialCleanupNeeded = true;
+        streamError = err as Error;
+      } finally {
+        // Step 1: close the handle. Always, success and failure.
+        await handle.close().catch(() => {
+          // close errors are not surfaced; handle is single-use
+        });
+        // Step 2: only after the handle is closed, attempt to remove
+        // the partial file if drain failed.
+        if (partialCleanupNeeded) {
+          try {
+            await fsPromises.unlink(targetPath);
+          } catch {
+            // Cleanup failure: best-effort. If unlink fails (e.g. file
+            // does not exist because drain never wrote anything), the
+            // adapter still reports the original STREAM_FAILURE below.
+            // The caller can retry the delete via `delete(key)` later.
+          }
         }
-        if (err instanceof EvidenceStorageError) throw err;
+      }
+      if (partialCleanupNeeded) {
+        if (streamError instanceof EvidenceStorageError) {
+          // Preserve the inner reason/message but re-anchor storageKey
+          // to the outer write request — so consumers see the key they
+          // passed in, not whatever the source set.
+          throw new EvidenceStorageError(
+            streamError.reason,
+            streamError.message,
+            request.storageKey,
+          );
+        }
         throw new EvidenceStorageError(
           'STREAM_FAILURE',
           'stream write failed',
           request.storageKey,
         );
-      } finally {
-        await handle.close().catch(() => {
-          // ignore close errors
-        });
       }
+      return {
+        storageKey: request.storageKey,
+        sizeBytes: totalBytes,
+        etag: null,
+      };
     },
 
     async read(storageKey: StorageKey): Promise<EvidenceByteStream> {
       const canonicalRoot = await getCanonicalRoot();
       const targetPath = await resolveKey(storageKey, canonicalRoot);
+      // Reject directories and non-regular nodes uniformly as
+      // NOT_FOUND before opening a file handle.
+      await statObject(targetPath, storageKey);
+      let handle: Awaited<ReturnType<typeof fsPromises.open>>;
       try {
-        const handle = await fsPromises.open(targetPath, 'r');
-        return fileHandleToStream(handle);
+        handle = await fsPromises.open(targetPath, 'r');
       } catch (err) {
         const code = (err as NodeJS.ErrnoException).code;
         throw new EvidenceStorageError(
@@ -411,11 +570,18 @@ export function makeLocalVpsEvidenceStorageAdapter(
           storageKey,
         );
       }
+      // fileHandleToStream closes the handle in its finally block,
+      // even if the consumer cancels iteration mid-drain.
+      return fileHandleToStream(handle);
     },
 
     async delete(storageKey: StorageKey): Promise<void> {
       const canonicalRoot = await getCanonicalRoot();
       const targetPath = await resolveKey(storageKey, canonicalRoot);
+      // Reject directories and non-regular nodes uniformly as
+      // NOT_FOUND before invoking unlink (unlink's EISDIR would
+      // surface as PERMISSION_DENIED, which is wrong semantics).
+      await statObject(targetPath, storageKey);
       try {
         await fsPromises.unlink(targetPath);
       } catch (err) {
@@ -440,7 +606,9 @@ export function makeLocalVpsEvidenceStorageAdapter(
         throw err;
       }
       try {
-        await fsPromises.access(targetPath, fsPromises.constants.F_OK);
+        const s = await fsPromises.lstat(targetPath);
+        // Storage-object boundary: only regular files are evidence.
+        if (!s.isFile()) return false;
         return true;
       } catch (err) {
         const code = (err as NodeJS.ErrnoException).code;
@@ -458,23 +626,14 @@ export function makeLocalVpsEvidenceStorageAdapter(
     async stat(storageKey: StorageKey): Promise<EvidenceStat> {
       const canonicalRoot = await getCanonicalRoot();
       const targetPath = await resolveKey(storageKey, canonicalRoot);
-      try {
-        const s = await fsPromises.stat(targetPath);
-        return {
-          storageKey,
-          contentType: null,
-          sizeBytes: s.size,
-          etag: null,
-          lastModified: s.mtime,
-        };
-      } catch (err) {
-        const code = (err as NodeJS.ErrnoException).code;
-        throw new EvidenceStorageError(
-          reasonFromErrno(code),
-          'cannot stat target',
-          storageKey,
-        );
-      }
+      const s = await statObject(targetPath, storageKey);
+      return {
+        storageKey,
+        contentType: null,
+        sizeBytes: s.size,
+        etag: null,
+        lastModified: s.mtime,
+      };
     },
   };
 

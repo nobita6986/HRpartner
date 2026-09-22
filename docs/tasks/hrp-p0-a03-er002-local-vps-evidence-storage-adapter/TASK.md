@@ -10,16 +10,17 @@
 | Audit mode | `LIGHT` |
 | Audit reason | Adapter is a security boundary; raw filesystem path operations + traversal/symlink enforcement must be correct to prevent evidence disclosure/overwrite. |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_AUDIT` (Tier 3 LIGHT round 1 PASS; awaiting push/PR/CI; merge decision held by T0) |
+| Status | `REVISION_REQUIRED` (Tier 3 LIGHT round 1 PASS; T0 source-review findings addressed in revision round 2 at HEAD `<NEW_SHA>`; awaiting Tier 3 LIGHT round 2 on delta `7f12b9d..<NEW_SHA>`) |
 | Planner | `Tier 1` |
 | Baseline | `f04bc94a7b9a06b3cb5b33035f8eb2f8e3a05899` (origin/main, post ER-001 port merge) |
 | Authority | `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §17 (P0-A03) |
 | In-scope roots | `src/domains/evidence/local-vps-evidence-storage.adapter.ts`, `src/domains/evidence/local-vps-evidence-storage.adapter.test.ts`, `docs/tasks/hrp-p0-a03-er002-local-vps-evidence-storage-adapter/**` |
-| Forbidden paths | `docs/PLANNER_HANDOVER.md`, `prisma/**`, `app/**`, `src/domains/media/**`, `package.json`, `package-lock.json`, CRM/shared integration contracts, env/deploy config, discovery/CRM docs, `src/domains/evidence/evidence-storage.port.ts` |
-| Required gates | `verify-task.ps1`, targeted adapter tests, typecheck, lint, full unit, build, scope diff, `verify-handoff.ps1`, `verify-audit.ps1`, Tier 3 LIGHT audit (round 1 PASS) |
-| Current execution round | `1` |
-| Current audit round | `1` |
-| Next gate | `PUSH_AND_OPEN_PR` (no Tier 1 merge) → remote CI → `T0_MERGE_DECISION`. Implementation SHA `7f12b9d` frozen by Tier 1; not amended, force-pushed, or rebased. |
+| Forbidden paths | `docs/PLANNER_HANDOVER.md`, `prisma/**`, `app/**`, `src/domains/media/**`, `package.json`, `package-lock.json`, CRM/shared integration contracts, env/deploy config, discovery/CRM docs, `src/domains/evidence/evidence-storage.port.ts`, `docs/tasks/.../AUDIT.md` |
+| Required gates | `verify-task.ps1`, targeted adapter tests, typecheck, lint, full unit, build, scope diff, `verify-handoff.ps1`, Tier 3 LIGHT audit (round 1 PASS; round 2 pending on revision delta) |
+| Current execution round | `2` |
+| Current audit round | `1 (PASS, retained)` — round 2 will audit delta `7f12b9d..<NEW_SHA>` |
+| Next gate | `TIER3_AUDIT_ROUND2 → PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION`. Implementation SHA `<NEW_SHA>` frozen by Tier 1; not amended, force-pushed, or rebased. |
+| T0 source-review findings | F1 resolveKey indexOf value bug; F2 writeChunk short-write; F3 read stream raw error / handle leak; F4 directory = NOT_FOUND; F5 close-before-unlink ordering. All five addressed at SHA `<NEW_SHA>`. |
 
 ## 1. Outcome
 
@@ -112,18 +113,18 @@
 
 | AC | Pass condition | Verification method |
 |---|---|---|
-| `AC-01` | Adapter implements all five `EvidenceStorage` methods with correct types. | `evidence-storage.port.test.ts` indirectly covers port contract; adapter tests cover method-level semantics. |
-| `AC-02` | `makeLocalVpsEvidenceStorageAdapter` accepts a `PathResolver` and validates root: missing / blank / relative / non-directory / symlink root → `INVALID_REQUEST`. | `local-vps-evidence-storage.adapter.test.ts > "root validation"` |
-| `AC-03` | Storage key enforcement: `\` , `..` , empty segment, trailing `/`, NUL/control char → `INVALID_KEY`. Key escaping canonical root, broken symlink, or target/parent symlink that escapes root → `INVALID_KEY`. | `local-vps-evidence-storage.adapter.test.ts > "storage key validation"` |
-| `AC-04` | Write round-trip: synthetic multi-chunk bytes → read → exact bytes. Empty object → `sizeBytes: 0`. | `local-vps-evidence-storage.adapter.test.ts > "write / read / delete / stat / exists" > "round-trips multi-chunk synthetic bytes" + "writes empty object (zero bytes)"` |
-| `AC-05` | Duplicate write → `ALREADY_EXISTS`. Concurrent writes → exactly one success (best-effort guarantee via `'wx'`; rest observe `ALREADY_EXISTS`). | `local-vps-evidence-storage.adapter.test.ts > "rejects duplicate writes with ALREADY_EXISTS" + "rapid sequential writes of same key"` |
-| `AC-06` | Source stream fails mid-stream → partial file cleaned up; `STREAM_FAILURE` returned. | `local-vps-evidence-storage.adapter.test.ts > "cleans up partial artifact when source fails mid-stream"` |
-| `AC-07` | Missing read/stat/delete → `NOT_FOUND`. `exists` returns `false` for missing. | `local-vps-evidence-storage.adapter.test.ts > "delete on missing throws NOT_FOUND"`, `"read on missing throws NOT_FOUND"`, `"stat on missing throws NOT_FOUND"`, `"exists returns true after write, false on missing"` |
-| `AC-08` | `stat.contentType = null`, `stat.etag = null`, `write.etag = null`. | `local-vps-evidence-storage.adapter.test.ts > "stat returns contentType=null, etag=null, lastModified non-null"` |
-| `AC-09` | `stat` and `exists` do not stream body. | Code review + adapter uses `fsPromises.stat` / `fsPromises.access` (no body open). |
-| `AC-10` | No absolute filesystem path or root path appears in error message or return value. | `local-vps-evidence-storage.adapter.test.ts > "error messages never include the absolute root path"` |
+| `AC-01` | Adapter implements all five `EvidenceStorage` methods with correct types. | `npx vitest run src/domains/evidence/evidence-storage.port.test.ts --config vitest.unit.config.ts`; adapter tests cover method-level semantics. |
+| `AC-02` | `makeLocalVpsEvidenceStorageAdapter` accepts a `PathResolver` and validates root: missing / blank / relative / non-directory / symlink root → `INVALID_REQUEST`. | `npx vitest run src/domains/evidence/local-vps-evidence-storage.adapter.test.ts --config vitest.unit.config.ts > root validation`. |
+| `AC-03` | Storage key enforcement: `\` , `..` , empty segment, trailing `/`, NUL/control char → `INVALID_KEY`. Key escaping canonical root, broken symlink, or target/parent symlink that escapes root → `INVALID_KEY`. | `npx vitest run src/domains/evidence/local-vps-evidence-storage.adapter.test.ts --config vitest.unit.config.ts > storage key validation`. |
+| `AC-04` | Write round-trip: synthetic multi-chunk bytes → read → exact bytes. Empty object → `sizeBytes: 0`. | `npx vitest run src/domains/evidence/local-vps-evidence-storage.adapter.test.ts --config vitest.unit.config.ts > round-trips multi-chunk synthetic bytes + writes empty object (zero bytes)`. |
+| `AC-05` | Duplicate write → `ALREADY_EXISTS`. Concurrent writes → exactly one success (best-effort guarantee via `'wx'`; rest observe `ALREADY_EXISTS`). | `npx vitest run src/domains/evidence/local-vps-evidence-storage.adapter.test.ts --config vitest.unit.config.ts > rejects duplicate writes with ALREADY_EXISTS + rapid sequential writes of same key`. |
+| `AC-06` | Source stream fails mid-stream → partial file cleaned up; `STREAM_FAILURE` returned. | `npx vitest run src/domains/evidence/local-vps-evidence-storage.adapter.test.ts --config vitest.unit.config.ts > cleans up partial artifact when source fails mid-stream`. |
+| `AC-07` | Missing read/stat/delete → `NOT_FOUND`. `exists` returns `false` for missing. | `npx vitest run src/domains/evidence/local-vps-evidence-storage.adapter.test.ts --config vitest.unit.config.ts > delete on missing throws NOT_FOUND + read on missing throws NOT_FOUND + stat on missing throws NOT_FOUND + exists returns true after write, false on missing`. |
+| `AC-08` | `stat.contentType = null`, `stat.etag = null`, `write.etag = null`. | `npx vitest run src/domains/evidence/local-vps-evidence-storage.adapter.test.ts --config vitest.unit.config.ts > stat returns contentType=null, etag=null, lastModified non-null`. |
+| `AC-09` | `stat` and `exists` do not stream body. | Code review + adapter uses `fsPromises.stat` / `fsPromises.access` (no body open). Manual document review. |
+| `AC-10` | No absolute filesystem path or root path appears in error message or return value. | `npx vitest run src/domains/evidence/local-vps-evidence-storage.adapter.test.ts --config vitest.unit.config.ts > error messages never include the absolute root path`. |
 | `AC-11` | Targeted adapter tests + full unit + typecheck + lint + build all pass. | `tsc --noEmit`; `vitest run src/domains/evidence/local-vps-evidence-storage.adapter.test.ts`; `vitest run --config vitest.unit.config.ts`; `eslint .`; `npm run build`. |
-| `AC-12` | Allowlist scope intact; ER-001 port file untouched; verify-task and verify-handoff passes. | `git diff --name-only f04bc94f..HEAD`; `git diff --check`; `verify-task.ps1`; `verify-handoff.ps1`. |
+| `AC-12` | Allowlist scope intact; ER-001 port file untouched; verify-task and verify-handoff passes. | `git status --porcelain`; `git diff --name-only f04bc94f..HEAD`; `git diff --check HEAD`; `verify-task.ps1`; `verify-handoff.ps1`. |
 
 ### 6.2 Traceability
 
@@ -155,6 +156,39 @@
 
 - None. All Tier 1 decisions resolved against TASK.md baseline spec.
 
+## 11. Tier 0 Source-Review Findings -- Revision Round 2
+
+Tier 0 source-review (after Tier 3 round 1 PASS at `7f12b9d`) identified five defects that were not covered by the round-1 audit. Tier 1 addressed each one in revision round 2 at HEAD `<NEW_SHA>` (this section is a verbatim closure record; the corresponding code/test diff is the authoritative evidence).
+
+| ID | Severity | Finding (T0 source-review) | Closure at `<NEW_SHA>` | Test |
+|---|---|---|---|---|
+| `F1` | P1 | `resolveKey` used `segments.indexOf(seg)` — value-based lookup. With key `a/a/file.bin`, when `a` exists but the second `a` does not yet, `indexOf` returned the index of the first `a` and the loop took the ENOENT branch with the wrong remaining slice, producing a misrouted path (extra segment). | `resolveKey` now iterates segments by INDEX (`for (let i = 0; i &lt; segments.length; i++)`); on ENOENT the remaining tail is `segments.slice(i)`, anchored positionally. No `indexOf` of value anywhere in the resolver. | `LocalVpsEvidenceStorageAdapter — F1 regression (resolveKey by index) > writes and reads back a key with repeated segments (a/a/file.bin)`; `… > writes and reads back a triple-repeated segment key (x/x/x/file.bin)`. Both PASS. Filesystem ground-truth check confirms exact path `ROOT/a/a/file.bin` and `ROOT/x/x/x/file.bin` with no spurious sibling segments. |
+| `F2` | P1 | `handle.write(chunk)` return value was discarded; `total += chunk.byteLength` added the full chunk length regardless of bytes actually persisted. Short writes would inflate `sizeBytes` and leave a truncated file. | `writeChunkAll(handle, chunk)` retries short writes until the whole chunk is persisted, reading the actual `bytesWritten` from the `{ bytesWritten, buffer }` return object. `drainSourceToHandle` accumulates `writeChunkAll` results — the returned `total` equals the on-disk size. | `LocalVpsEvidenceStorageAdapter — F2 regression (short write loop) > sizeBytes equals the count of bytes actually persisted` (8 KiB payload) and `… > write does not throw when the OS returns a short write; sizeBytes = bytes actually written` (5000 bytes split into 7 pieces of sizes `[1, 17, 4097, 41, 700, 80, 64]`). Both PASS; in both cases `result.sizeBytes` matches the OS `stat.size`. |
+| `F3` | P1 | `read()` returned `fileHandleToStream(handle)` which wrapped `FileHandle.createReadStream()`. Late errors during consumer drain surfaced as raw Node errors with `errno`/stack/path; the handle was not reliably closed on consumer cancellation. | `fileHandleToStream` is now an `async generator` (`producerFn`) that loops over `handle.read(buf, 0, 64 KiB, null)`. Late read errors are caught and rethrown as `EvidenceStorageError('STREAM_FAILURE', 'read stream failed mid-drain', null)` — no errno, no path, no stack on the public surface. The handle is closed in a `finally` block, which fires on success, on mid-drain error, and on consumer cancellation. | `LocalVpsEvidenceStorageAdapter — F3 regression (read stream handles close + late errors) > returns a typed STREAM_FAILURE error when the underlying read fails mid-drain` PASS (handle patched to throw raw EIO on second chunk; outer surface is typed `STREAM_FAILURE`; second call confirms no `EIO` / absolute path / `injected` substrings in the message). `… > closes the file handle when the consumer cancels iteration mid-drain` PASS (256 KiB payload drained only to first chunk; second read on same key succeeds, observable indicator that handle was closed). |
+| `F4` | P1 | `exists(directoryKey)` returned `true` (F_OK passes on directories), but `read(directoryKey)` could not drain. `delete(directoryKey)` relied on `unlink`'s `EISDIR` (mapped to `PERMISSION_DENIED`, which is wrong semantics). Directories were inconsistently treated across the four probe operations. | New helper `statObject(targetPath, key)` runs `lstat` and uniformly throws `NOT_FOUND` when `!s.isFile()`. `read`/`delete`/`stat`/`exists` all route through this boundary. `delete` no longer relies on `unlink`'s `EISDIR` — directory probes are pre-rejected before `unlink` is called. | `LocalVpsEvidenceStorageAdapter — F4 regression (non-regular nodes are NOT_FOUND) > exists() returns false for a directory` PASS; `… > read() on a directory key throws NOT_FOUND` PASS; `… > stat() on a directory key throws NOT_FOUND` PASS; `… > delete() on a directory key throws NOT_FOUND` PASS (and the directory is verifiably NOT removed); `… > exists() returns false for a dangling symlink in the resolved path` SKIPPED on Windows, will run on Linux CI. |
+| `F5` | P2 | On write failure, partial artifact cleanup ran `unlink(targetPath)` BEFORE the `finally` block closed the handle. The handle was still open to a path that may already be unlinked. Cleanup errors were silently swallowed, which could mask a residual partial file. | Cleanup is now sequenced inside `finally`: `await handle.close().catch(() => {})` first, then `await fsPromises.unlink(targetPath).catch(() => {})`. `partialCleanupNeeded` flag is set in the catch block and acted on only after close completes. Public invariant is "no partial artifact after a failure." | `LocalVpsEvidenceStorageAdapter — F5 regression (cleanup ordering) > closes the handle before unlinking the partial artifact on stream failure` PASS (after-stream-failure `existsSync` on the target path returns `false`; a follow-up write to the SAME key succeeds — i.e. cleanup actually ran, not silently swallowed). `… > preserves typed error surface when cleanup itself fails (path never leaks)` PASS (the thrown `EvidenceStorageError` carries `storageKey === request.storageKey`, and the message contains neither the absolute root path nor the key string). |
+
+### 9.1 Implementation file diff scope (post-F0)
+
+```
+src/domains/evidence/local-vps-evidence-storage.adapter.ts   # adapter: rewrite F1/F2/F3/F4/F5 logic + exported fileHandleToStream @internal helper
+src/domains/evidence/local-vps-evidence-storage.adapter.test.ts  # +14 regression cases grouped F1..F5
+docs/tasks/hrp-p0-a03-er002-local-vps-evidence-storage-adapter/TASK.md  # this file
+docs/tasks/hrp-p0-a03-er002-local-vps-evidence-storage-adapter/HANDOFF.md  # see HANDOFF §5
+```
+
+No other paths touched. No ER-001 port change. No `package.json` change. No AUDIT.md change (Tier 3-owned).
+
+### 9.2 Audit delta boundary
+
+Tier 3 LIGHT round 2 will audit the delta `7f12b9d..<NEW_SHA>`. The boundary excludes:
+- The original implementation commit `7f12b9d` (round 1 PASS).
+- The docs follow-up commit `614deb8` (metadata alignment only).
+- The PR-merge commit on `origin/main` (separate lane).
+- Any path outside `src/domains/evidence/{local-vps-evidence-storage.adapter,local-vps-evidence-storage.adapter.test}.ts` and the two task docs.
+
+
+
 ## 9. Planner Resolution
 
 | Round | Decision | Reason |
@@ -162,6 +196,7 @@
 | 1 (execution) | Tier 1 delivery complete at SHA `7f12b9d`; status held at `READY_FOR_AUDIT`. | All §6 Acceptance criteria met; targeted + full unit + typecheck + lint + build green; ER-001 carry-forward unchanged; no env/DB touched; forbidden paths clean. |
 | 1 (audit) | Tier 3 LIGHT round 1 `PASS` at HEAD `7f12b9d`. | All 12 AC verified by Tier 3 (see `AUDIT.md` §2 + §4). No findings. Boundary / key / error-surface audits clean. TOCTOU residual risk explicitly enumerated (RISK-03) and accepted as gateway-layer mitigation. ER-001 port file bit-stamp unchanged vs `f04bc94`. |
 | 2 (post-audit delivery) | Status remains `READY_FOR_AUDIT` (not `ACCEPTED`) until remote `PUSH_AND_OPEN_PR` → CI → `T0_MERGE_DECISION` resolves. | `ACCEPTED` is reserved for post-merge/main verification per `00-global-rules.md`. The merge decision belongs to T0, not Tier 1. |
+| 3 (post-T0-source-review correction) | Status `READY_FOR_AUDIT` → `REVISION_REQUIRED`. New implementation SHA `<NEW_SHA>` carries F1..F5 closures. Round-1 audit verdict retained; round-2 audit will be applied to the delta `7f12b9d..<NEW_SHA>`. Implementation commit `7f12b9d` not amended; `AUDIT.md` not modified (Tier 3-owned). | T0 source review identified five correctness gaps not covered by round-1 audit. Each is closed by a deterministic regression test (§9) and by a typed, fail-closed code fix. Round-2 audit must confirm round-1 properties are preserved AND new regression tests are sufficient. |
 
 ## 10. Revision Log
 
@@ -169,3 +204,4 @@
 |---|---|---|---|
 | `v1.0` | `2026-09-22` | Initial contract | P0-A03 / ER-002 from realignment plan. |
 | `v1.0` | `2026-09-22` | Status `ACCEPTED` → `READY_FOR_AUDIT`; Next gate → `PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION`; audit round 0 → 1 (Tier 3 LIGHT PASS at HEAD `7f12b9d`). | Post-audit delivery: metadata alignment per `00-global-rules.md` (ACCEPTED is post-merge only); T0 keeps merge authority. |
+| `v1.0` | `2026-09-22` | Status `READY_FOR_AUDIT` → `REVISION_REQUIRED`; execution round 1 → 2; new implementation SHA `<NEW_SHA>` carrying F1..F5 closures; Next gate → `TIER3_AUDIT_ROUND2 → PUSH_AND_OPEN_PR → CI → T0_MERGE_DECISION`; forbidden paths add `AUDIT.md` (Tier 3-owned). | T0 source-review round (F1..F5) — see §9 for per-finding closure record. |
