@@ -5,15 +5,17 @@
 | Field | Value |
 |---|---|
 | Task | `hrp-v6-n2-aff-05a-r1-canonical-initial-handling` |
-| Spec version | `v1.2` |
+| Spec version | `v1.3` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Execution round | `11` — Owner requested T0 to execute the narrow T1B correction directly |
 | Baseline (git ref the predecessor is built from) | `e4d21807f0d972de447e710066b40c77a661fb17` |
 | Implementation SHA — content as delivered (T0 explicitly cited as "commit cũ") | `2f5d5702e1169bd2202db932c37c58f05422fcbc` |
 | R6 + R7 status (older rounds, never accepted) | R6 was rejected by T0; R7 was rejected by T0. R6's HANDOFF edits were rolled into R7; R7's were rolled into R8. No separate R6/R7 freeze commit was made because neither round reached an accepted gate. |
-| Current implementation SHA | NOT YET COMMITTED — HEAD remains `ae652d014145b5f92b2f4b285dc670ebae0b59c8`; R5–R11 changes are dirty and are not represented by the historical implementation SHA |
-| Status | `READY_FOR_AUDIT` — LIGHT-lane delivery status; R11 synthetic gates PASS; dirty/uncommitted; T0 freeze review then independent Tier 3 delta confirmation required |
+| Current implementation SHA | `b5e62e6abec401d71578766ca6ded29e13da9137` — cumulative R5–R11 freeze, distinct from historical delivery SHA above |
+| Status | `READY_FOR_AUDIT` — retained LIGHT-lane tooling status; R11 audit PASS and T0 committed-byte equivalence verified; next gate is T0 push/PR decision and canonical CI, not a repeat audit |
+
+Current freeze authority: `FREEZE-R11.md`. Historical dirty-state descriptions below refer to their original delivery rounds; this metadata follow-up does not rewrite the audited snapshot or earlier audit conclusions.
 
 > T0 R8 directive (verbatim intent): *"Chỉ sửa bốn nhóm dưới đây, không mở lại business logic production ... Bàn giao dirty diff cho T0 review một lượt; sau khi sạch mới chốt commit và yêu cầu T3 audit delta."* This HANDOFF now reflects R8's corrections and the dirty diff is the deliverable for T0 review.
 
@@ -170,10 +172,10 @@ R10 evidence capture methodology: same `_cap.mjs` UTF-8 no-BOM, LF-only wrapper,
 
 ## 5. Final status
 
-R11 correction implemented and synthetic gates PASS. Dirty/uncommitted, no new implementation SHA.
-HANDOFF/TASK v1.2 records the Owner-authorized direct T0 execution as T1B; historical SHA `2f5d570` is not the new delivery.
+R11 correction implemented, synthetic gates PASS, independent Tier 3 R11 verdict PASS. T0 froze cumulative source at `b5e62e6abec401d71578766ca6ded29e13da9137`; 14/14 snapshot entries match committed raw blobs and the new audit is committed verbatim.
+HANDOFF/TASK v1.3 is a docs-only follow-up; historical SHA `2f5d570` is not the new delivery. See `FREEZE-R11.md` for scope, evidence limitations and historical-log normalization.
 
-Next gate: T0 freeze review, then independent Tier 3 LIGHT delta confirmation. No T3 call, commit, push, PR, merge or production action in R11.
+Next gate: T0 push/PR decision and canonical CI on the final PR HEAD. No push, PR, merge or production action has occurred. No repeated code audit is requested for this bytes-preserving freeze.
 AC-01 production branch gate and aggregate data-impact approval remain pending T0; AFF-04 ordering remains a separate decision.
 
 Handoff status: READY_FOR_AUDIT

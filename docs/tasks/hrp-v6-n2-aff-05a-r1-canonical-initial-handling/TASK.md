@@ -9,7 +9,7 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | Forward-only migration replaces SECURITY DEFINER RPC and backfills existing attribution data at the data-integrity/attribution boundary. |
-| Spec version | `v1.2` |
+| Spec version | `v1.3` |
 | Status | `READY_FOR_AUDIT` |
 | Planner | `Tier 1B` |
 | Execution owner | `Tier 1B` |
@@ -19,8 +19,8 @@
 | Forbidden paths | Mọi file ngoài Exact File Allowlist; đặc biệt `PLANNER_HANDOVER.md`, AFF-04/T1B worktree, schema, RLS migration hiện hữu, commission/CRM/ER-003 |
 | Required gates | Guarded two-connection DB test; `CI_INTEGRATION_STRICT=1 npm run test:integration`; `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run build`; `node_modules/.bin/prisma validate`; `VERIFY_TASK`; `VERIFY_HANDOFF`; Tier 3 LIGHT audit |
 | Current execution round | `11` |
-| Current audit round | `0` |
-| Next gate | `T0_FREEZE_REVIEW_THEN_TIER3_DELTA` |
+| Current audit round | `R11` — LIGHT PASS on source-snapshot bytes; committed-byte equivalence verified by T0 |
+| Next gate | `T0_PUSH_PR_DECISION_AND_CANONICAL_CI` |
 
 > Owner đã cho phép implementation trên DB synthetic cô lập, gồm T0 trực tiếp đóng correction R11. Không cho phép production preflight/migration/deploy từ coding gate; các gate production vẫn riêng và chưa hoàn tất.
 
@@ -245,9 +245,12 @@ Production branch gate/preflight/apply/deploy không thuộc coding/CI commands.
 
 ## 10. Revision Log
 
+T0 freeze resolution: cumulative implementation frozen at `b5e62e6abec401d71578766ca6ded29e13da9137` after R11 LIGHT PASS. The 14 pinned blobs match this commit exactly; audit staged verbatim. No new runtime edits, no push/PR/merge or production action. `.gitignore` scratch/env hygiene from prior rounds is explicitly accepted as delivery housekeeping, not runtime scope. Six historical logs received whitespace-only normalization; original local backups retained. Details in `FREEZE-R11.md`. This docs-only follow-up updates metadata, not the frozen implementation.
+
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-09-22` | Initial AFF-05A-R1 contract | T0 approved reconciliation `076ed531` as design input and requested legacy-data/race/security contract. |
 | `v1.1` | `2026-09-22` | Effective privileges, advisory-lock boundary, preservation cases, atomic migration and split production gate | T0 review of contract `e5e4073e3d8724e78530fa6052d86f0e8a0d4822`. |
 | `v1.1` | `2026-09-22` | Baseline updated to `e4d21807` (origin/main post ER-002); execution owner = Tier 1B; status → `READY_FOR_AUDIT`; round 2 Planner Resolution | T0 authorized implementation on synthetic dedicated DB. |
 | `v1.2` | `2026-09-23` | Round 11, explicit collision runner/task-local evidence allowlist, current freeze gate and handoff sync | Owner-authorized T0 execution as T1B; audit artifacts preserved; production gates remain pending. |
+| `v1.3` | `2026-09-23` | T0 freeze accepted; implementation SHA and audit binding recorded; next gate push/PR decision and canonical CI | R11 pinned bytes preserved in commit; no automatic production approval. |
