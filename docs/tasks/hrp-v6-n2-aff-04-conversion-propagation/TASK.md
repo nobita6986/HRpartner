@@ -10,7 +10,7 @@
 | Audit reason | Conversion and placement propagation are security and data-integrity boundaries. Incorrect attribution leads to financial credit theft or fraud. |
 | Work type | `FEATURE_EXPANSION` |
 | Spec version | `v1.6` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `READY_FOR_AUDIT` |
 | Planner | `Tier 1B` |
 | Baseline | `9e527a13e74c8361feea77b8edca522c8c37ec08` (origin/main @ 2026-09-23; includes ER-002 #32 and AFF-05A R1 #33). Contract Survey baseline `0fdc616b` retained only as historical reference. |
 | Authority | `docs/V6/aff_plan.md` §10 và §14 (AFF-04); `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §15.1 |
@@ -20,6 +20,7 @@
 | Next gate | `TIER3_LIGHT_AUDIT` |
 | Current execution round | `1` |
 | Current audit round | `0` |
+| Frozen implementation SHA | `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374` (HEAD = `f01ee35`) |
 
 ## 1. Outcome
 
@@ -187,3 +188,4 @@ Mọi source khác ngoài bảng trên đều là forbidden (trừ khi T0 duyệ
 | `v1.4` | `2026-09-22` | Semantic correction v1.4 | Exact implementation file allowlist, Route-level manual allowlist constructor, Canonical integration test, Prisma strict bounds. |
 | `v1.5` | `2026-09-23` | Authority wording fix (follow-up) | Phan biet 4 authority tier theo T0 directive 2026-09-23: (1) Contract authority = TASK v1.4 @ f3f0a23f2fa6d590f188403687d317da64f4d91e (semantic khong doi); (2) Execution contract hien hanh = TASK v1.5 @ 80479e03b9cff41e913aa52c33a67a23643427f9 (commit trong branch nay); (3) T0 execution authorization = 2026-09-23 chi chap thuan AFF-04 implementation (KHONG PHAI Tier 3 audit verdict); (4) Tier 3 implementation verdict = PENDING, chi co sau implementation freeze + Tier 3 LIGHT audit. Sua wording, KHONG sua semantic contract. T0 cu cam goi T0 directive la Tier 3 audit verdict authority. The previous v1.5 row (Execution metadata alignment) is preserved in Revision Log entries history but no longer the canonical v1.5 entry; this row supersedes it for wording accuracy.
 | `v1.6` | `2026-09-23` | Spec version bump + wording authority fix committed | Follow-up commit (khong amend) theo T0 directive 2026-09-23: (1) Spec version v1.5 -> v1.6; (2) Â§9 round 5 sua 'chot APPROVED_FOR_EXECUTION' thanh 'T0 execution authorization (KHONG PHAI Tier 3 audit verdict)'; (3) Â§10 v1.5 row rewrite thanh 'Authority wording fix' voi 4-tier authority classification (Contract authority v1.4 @ f3f0a23f, Execution contract v1.5 @ 80479e0, T0 execution authorization 2026-09-23, Tier 3 implementation verdict PENDING). Semantic contract Â§1-Â§8 khong doi. T0 cu KHONG cho phep goi T0 directive la Tier 3 audit verdict authority.
+| `v1.7` | `2026-09-23` | Implementation freeze + Status `READY_FOR_AUDIT` + Frozen SHA recorded | Tier 1B delivered STEP-01..STEP-04 implementation on `codex/t1b-aff04-conversion-propagation` @ `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374`. All 6 gates PASS on local ephemeral synthetic DB (no production/staging credentials, no access to `C:\cre_hrp.txt`): typecheck, lint (`--max-warnings=0`), unit (2501 tests), integration (455 tests), `next build`, migration clean-chain + upgrade-path. Tier 3 implementation verdict PENDING - delivered for T0 to call Tier 3 LIGHT audit. HANDOFF.md accompanies this commit. Semantic contract §1-§8 unchanged. |
