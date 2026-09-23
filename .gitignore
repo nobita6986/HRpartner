@@ -99,6 +99,28 @@ tsc-*.txt
 /temp*.txt
 /orca*.bat
 
+# T0 round-8 R8-Hygiene: scratch evidence logs (kept locally during R8
+# corrections; NEVER committed). Operator-facing canonical evidence lives
+# under each task's `evidence/` directory.
+docs/tasks/*/evidence-tmp/
+evidence-integration*.txt
+evidence-prepare-migration.txt
+evidence-prisma-validate.txt
+evidence-tsc.txt
+evidence-unit.txt
+test.txt
+_cap.mjs
+fix_planner.js
+_drop-test-dbs-r10.mjs
+
+# T0 round-8 R8-Hygiene: synthetic-DB env files with credentials. NEVER
+# commit; the operator may keep `.env-prepare*` locally for their own
+# reruns, but the canonical env contract for CI lives in the
+# `integration-preflight.mjs` posture assertion, not in any committed
+# env file.
+.env-prepare*
+.env-prisma*
+
 .claude/
 tier1-n2-1/
 worktree_link/

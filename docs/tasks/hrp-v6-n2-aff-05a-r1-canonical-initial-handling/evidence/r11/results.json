@@ -1,0 +1,102 @@
+{
+  "node": "v24.19.0",
+  "results": [
+    {
+      "name": "guards-r11",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/ci/validate-guards.mjs"
+      ],
+      "exit": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "name": "collision-predecessor-exists",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/ci/verify-collision-integration.mjs",
+        "--predecessor-exists"
+      ],
+      "exit": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "name": "collision-target-exists",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/ci/verify-collision-integration.mjs",
+        "--target-exists"
+      ],
+      "exit": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "name": "cleanup-injected-failure",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/ci/verify-collision-integration.mjs",
+        "--target-exists",
+        "--inject-failure"
+      ],
+      "exit": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "name": "ac06-run",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/ci/verify-ac06-backfill.mjs"
+      ],
+      "exit": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "name": "ac07-run",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/ci/verify-ac07-rollback.mjs"
+      ],
+      "exit": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "name": "ac04-run",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/ci/verify-ac07-rollback.mjs",
+        "--lock-timeout"
+      ],
+      "exit": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "name": "lint-r11",
+      "command": [
+        "npm.cmd",
+        "run",
+        "lint"
+      ],
+      "exit": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "name": "diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "expected": 0,
+      "pass": true
+    }
+  ]
+}

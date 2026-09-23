@@ -1,0 +1,20 @@
+AC-07 verify (forced abort / rollback) — running at 2026-09-23T07:13:44.680Z
+TARGET_DB=aff05a_r1_migration_test
+EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac07-collision-test.txt
+MODE=default
+AC-07 collision-test (negative proof) — running at 2026-09-23T07:13:44.683Z
+TARGET_DB=aff05a_r1_migration_test
+EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac07-collision-test.txt
+MODE=collision-test
+
+=== STEP 0: Clean up stale predecessor DB (collision-test setup) ===
+FATAL error: password authentication failed for user "postgres"
+    at parseErrorMessage (C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\node_modules\pg-protocol\dist\parser.js:306:11)
+    at Parser.handlePacket (C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\node_modules\pg-protocol\dist\parser.js:143:27)
+    at Parser.parse (C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\node_modules\pg-protocol\dist\parser.js:37:38)
+    at Socket.<anonymous> (C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\node_modules\pg-protocol\dist\index.js:12:42)
+    at Socket.emit (node:events:509:28)
+    at addChunk (node:internal/streams/readable:563:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:514:3)
+    at Readable.push (node:internal/streams/readable:394:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:189:23)

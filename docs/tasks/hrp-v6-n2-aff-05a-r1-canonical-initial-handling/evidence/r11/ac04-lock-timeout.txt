@@ -1,0 +1,105 @@
+AC-04 lock_timeout verify — running at 2026-09-23T09:39:34.613Z
+TARGET_DB=aff05a_r1_baseline_test
+EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\r11\ac04-lock-timeout.txt
+MODE=lock-timeout
+
+=== lock_timeout MODE ===
+FRESH_DATABASES_CHECK=PASS (both absent; before builder)
+Step A. Reset target DB to AFF-03C predecessor state.
+Step A.1 Build predecessor via Prisma CLI (single path).
+TMPDIR_CREATED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-yB7xEB
+BASELINE_REF=e4d21807f0d972de447e710066b40c77a661fb17
+SCHEMA_WRITTEN=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-yB7xEB\prisma\schema.prisma
+MIGRATION_LOCK_TOML_SOURCE=pinned_baseline=e4d21807f0d9 blob=fbffa92c2bb7c748d6fc78f9f9dcac604dabb87d
+BASELINE_MIGRATION_COUNT=44
+MIGRATIONS_MATERIALIZED=44
+TARGET_DB_COLLISION_CHECK=pass (before CREATE, db-not-exists)
+TARGET_DB_CREATED=aff05a_r1_predecessor
+BOOTSTRAP_PRE_OK=pre
+MIGRATE_DEPLOY_OK=prisma_cli
+BOOTSTRAP_POST_OK=post
+VERIFY_FN_SZ=7274
+VERIFY_FN_HAS_R1=false
+VERIFY_FN_HAS_LOCK=false
+VERIFY_HANDLING_PRIVS_HRP=INSERT
+READY=predecessor_db=aff05a_r1_predecessor tmpdir=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-yB7xEB
+READY target_db=aff05a_r1_predecessor
+TMPDIR_REMOVED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-yB7xEB
+
+STDERR: (node:30848) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Step A.2 Rename predecessor → MIGRATION_TARGET_DB (cluster only).
+PRE_RENAME_DBS=["aff05a_r1_predecessor"]
+RENAME_OK from=aff05a_r1_predecessor to=aff05a_r1_baseline_test
+
+Step B. Connection A: BEGIN; LOCK TABLE ... (hold lock).
+CONNECTION_A: lock acquired at 2026-09-23T09:39:41.223Z
+
+Step C. Connection B: run R1 migration (must time out, NOT hang).
+MIGRATION_ELAPSED_MS=5223
+MIGRATION_EXIT_CODE=1
+STDOUT:
+TARGET_DB=aff05a_r1_baseline_test
+MIGRATION_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\prisma\migrations\20260922160000_aff05a_r1_initial_handling_window\migration.sql
+MIGRATION_FAILED=true
+EXIT_CODE=3
+BEGIN
+SET
+GRANT
+DO
+SET
+CREATE FUNCTION
+REVOKE
+GRANT
+RESET
+DO
+REVOKE
+DO
+DO
+GRANT
+
+STDERR:
+psql:C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling/prisma/migrations/20260922160000_aff05a_r1_initial_handling_window/migration.sql:640: ERROR:  canceling statement due to lock timeout
+CONTEXT:  SQL statement "LOCK TABLE labor_profile_handling_assignments IN SHARE ROW EXCLUSIVE MODE"
+PL/pgSQL function inline_code_block line 24 at SQL statement
+
+ASSERT_PASS: migration aborted within 5223ms (well under 30s) — bounded timeout works.
+ASSERT_PASS: lock_timeout error observed in migration output.
+ASSERT_PASS: migration exited non-zero (status=1).
+
+Step D. Release connection A (ROLLBACK).
+CONNECTION_A: lock released at 2026-09-23T09:39:46.452Z
+
+Step D-prime. Rollback-proof gate (verify migration state is unchanged after Step C abort).
+ASSERT_PASS (rollback): function body has NO R1 marker after Step C abort — full rollback confirmed
+ASSERT_PASS (rollback): hrp_public_rpc has NO SELECT on handling table after Step C abort — grant rolled back
+ASSERT_PASS (rollback): LPHA table has 0 rows after Step C abort — no data leak
+
+Step E. Re-run migration (sanity, no contention — must succeed).
+SANITY_EXIT_CODE=0
+SANITY_STDOUT:
+TARGET_DB=aff05a_r1_baseline_test
+MIGRATION_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\prisma\migrations\20260922160000_aff05a_r1_initial_handling_window\migration.sql
+MIGRATION_OK=true
+BEGIN
+SET
+GRANT
+DO
+SET
+CREATE FUNCTION
+REVOKE
+GRANT
+RESET
+DO
+REVOKE
+DO
+DO
+GRANT
+DO
+COMMIT
+
+ASSERT_PASS: sanity re-run succeeded — lock_timeout setting does not break normal apply.
+
+=== RESULT ===
+AC-04 lock_timeout PASS — migration aborts cleanly under contention, no indefinite hang.

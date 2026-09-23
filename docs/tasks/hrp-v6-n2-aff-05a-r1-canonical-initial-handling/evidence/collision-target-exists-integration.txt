@@ -1,0 +1,176 @@
+collision-integration (target-exists) — running at 2026-09-23T08:19:55.891Z
+RID=4e7c5e05
+FIXTURE_PRED=aff05a_r1_collision_4e7c5e05_pred
+FIXTURE_TGT=aff05a_r1_collision_4e7c5e05_tgt
+FIXTURE_PRED_CLEAN=aff05a_r1_collision_4e7c5e05_pred_clean
+EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\collision-target-exists-integration.txt
+
+=== STEP 1: Build fixture DB(s) via builder ===
+building fixture aff05a_r1_collision_4e7c5e05_tgt
+FIXTURE_BUILT aff05a_r1_collision_4e7c5e05_tgt
+
+=== STEP 2: Insert sentinel row into fixture DB ===
+SENTINEL_INSERTED in aff05a_r1_collision_4e7c5e05_tgt
+
+=== STEP 3: Hold connection on fixture DB ===
+HELD_CONNECTION=open on aff05a_r1_collision_4e7c5e05_tgt
+
+=== STEP 3.5: Drop default predecessor DB for --target-exists mode ===
+DEFAULT_PREDECESSOR_DROPPED aff05a_r1_predecessor
+
+=== STEP 4: Invoke AC entrypoints (expect exit 3) ===
+
+--- invoking AC-06 ---
+PRE_INVOKE_DEFAULT_PRED_DROPPED aff05a_r1_predecessor
+AC-06 EXIT=3
+AC-06 STDOUT=
+AC-06 verify (backfill R1) — running at 2026-09-23T08:20:03.464Z
+TARGET_DB=aff05a_r1_collision_4e7c5e05_tgt
+EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac06-backfill.txt
+
+=== STEP 0: Fail-closed predecessor existence check (T0 R9) ===
+PREDECESSOR_DB_CHECK=absent (safe to build)  [PREDECESSOR_DB=aff05a_r1_predecessor]
+
+=== STEP 1: Build predecessor via Prisma CLI (single path) ===
+DB_NAME=collision_fixture:aff05a_r1_predecessor=undefined
+TMPDIR_CREATED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-YfjNpk
+BASELINE_REF=e4d21807f0d972de447e710066b40c77a661fb17
+SCHEMA_WRITTEN=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-YfjNpk\prisma\schema.prisma
+MIGRATION_LOCK_TOML_SOURCE=pinned_baseline=e4d21807f0d9 blob=fbffa92c2bb7c748d6fc78f9f9dcac604dabb87d
+BASELINE_MIGRATION_COUNT=44
+MIGRATIONS_MATERIALIZED=44
+TARGET_DB_COLLISION_CHECK=pass (pre-DROP, db-not-exists)
+DROP_TARGET_IF_EXISTS=aff05a_r1_predecessor
+TARGET_DB_CREATED=aff05a_r1_predecessor
+BOOTSTRAP_PRE_OK=pre
+MIGRATE_DEPLOY_OK=prisma_cli
+BOOTSTRAP_POST_OK=post
+VERIFY_FN_SZ=7274
+VERIFY_FN_HAS_R1=false
+VERIFY_FN_HAS_LOCK=false
+VERIFY_HANDLING_PRIVS_HRP=INSERT
+READY=predecessor_db=aff05a_r1_predecessor tmpdir=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-YfjNpk
+READY target_db=aff05a_r1_predecessor
+TMPDIR_REMOVED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-YfjNpk
+
+STDERR: (node:25524) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+
+=== STEP 1b: Rename predecessor → MIGRATION_TARGET_DB (cluster only) ===
+CLUSTER_URL=postgresql://postgres:****@127.0.0.1:5432/postgres
+PRE_RENAME_DBS=["aff05a_r1_collision_4e7c5e05_tgt","aff05a_r1_predecessor"]
+TARGET_DB_EXISTS: aff05a_r1_collision_4e7c5e05_tgt already exists — refusing to rename.
+TARGET_DB_EXISTS_HINT: Drop 'aff05a_r1_collision_4e7c5e05_tgt' manually before re-running AC-06.
+
+ASSERT_PASS [AC-06]: exit=3 (in [1,3])
+ASSERT_PASS [AC-06]: marker 'TARGET_DB_EXISTS' present
+ASSERT_PASS [AC-06]: refusal language present
+
+--- invoking AC-07 ---
+PRE_INVOKE_DEFAULT_PRED_DROPPED aff05a_r1_predecessor
+AC-07 EXIT=3
+AC-07 STDOUT=
+AC-07 verify (forced abort / rollback) — running at 2026-09-23T08:20:11.958Z
+TARGET_DB=aff05a_r1_collision_4e7c5e05_tgt
+EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac07-rollback.txt
+MODE=default
+
+=== STEP 0: Fail-closed predecessor existence check (T0 R9) ===
+PREDECESSOR_DB_CHECK=absent (safe to build)  [PREDECESSOR_DB=aff05a_r1_predecessor]
+
+=== STEP 1: Build predecessor via Prisma CLI (single path) ===
+DB_NAME=collision_fixture:aff05a_r1_predecessor=undefined
+TMPDIR_CREATED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-76pM7g
+BASELINE_REF=e4d21807f0d972de447e710066b40c77a661fb17
+SCHEMA_WRITTEN=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-76pM7g\prisma\schema.prisma
+MIGRATION_LOCK_TOML_SOURCE=pinned_baseline=e4d21807f0d9 blob=fbffa92c2bb7c748d6fc78f9f9dcac604dabb87d
+BASELINE_MIGRATION_COUNT=44
+MIGRATIONS_MATERIALIZED=44
+TARGET_DB_COLLISION_CHECK=pass (pre-DROP, db-not-exists)
+DROP_TARGET_IF_EXISTS=aff05a_r1_predecessor
+TARGET_DB_CREATED=aff05a_r1_predecessor
+BOOTSTRAP_PRE_OK=pre
+MIGRATE_DEPLOY_OK=prisma_cli
+BOOTSTRAP_POST_OK=post
+VERIFY_FN_SZ=7274
+VERIFY_FN_HAS_R1=false
+VERIFY_FN_HAS_LOCK=false
+VERIFY_HANDLING_PRIVS_HRP=INSERT
+READY=predecessor_db=aff05a_r1_predecessor tmpdir=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-76pM7g
+READY target_db=aff05a_r1_predecessor
+TMPDIR_REMOVED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-76pM7g
+
+STDERR: (node:20948) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+
+=== STEP 1b: Rename predecessor → MIGRATION_TARGET_DB (cluster only) ===
+PRE_RENAME_DBS=["aff05a_r1_collision_4e7c5e05_tgt","aff05a_r1_predecessor"]
+TARGET_DB_EXISTS: aff05a_r1_collision_4e7c5e05_tgt already exists — refusing to rename.
+TARGET_DB_EXISTS_HINT: Drop 'aff05a_r1_collision_4e7c5e05_tgt' manually before re-running AC-07.
+
+ASSERT_PASS [AC-07]: exit=3 (in [1,3])
+ASSERT_PASS [AC-07]: marker 'TARGET_DB_EXISTS' present
+ASSERT_PASS [AC-07]: refusal language present
+
+--- invoking AC-04 (lock-timeout) ---
+PRE_INVOKE_DEFAULT_PRED_DROPPED aff05a_r1_predecessor
+AC-04 (lock-timeout) EXIT=3
+AC-04 (lock-timeout) STDOUT=
+AC-04 lock_timeout verify — running at 2026-09-23T08:20:20.110Z
+TARGET_DB=aff05a_r1_collision_4e7c5e05_tgt
+EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac04-lock-timeout.txt
+MODE=lock-timeout
+
+=== lock_timeout MODE ===
+Step A.0 Fail-closed predecessor existence check (T0 R9).  [PREDECESSOR_DB=aff05a_r1_predecessor]
+PREDECESSOR_DB_CHECK=absent (safe to build)  [PREDECESSOR_DB=aff05a_r1_predecessor]
+Step A. Reset target DB to AFF-03C predecessor state.
+Step A.1 Build predecessor via Prisma CLI (single path).
+DB_NAME=collision_fixture:aff05a_r1_predecessor=undefined
+TMPDIR_CREATED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-Nt3XQg
+BASELINE_REF=e4d21807f0d972de447e710066b40c77a661fb17
+SCHEMA_WRITTEN=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-Nt3XQg\prisma\schema.prisma
+MIGRATION_LOCK_TOML_SOURCE=pinned_baseline=e4d21807f0d9 blob=fbffa92c2bb7c748d6fc78f9f9dcac604dabb87d
+BASELINE_MIGRATION_COUNT=44
+MIGRATIONS_MATERIALIZED=44
+TARGET_DB_COLLISION_CHECK=pass (pre-DROP, db-not-exists)
+DROP_TARGET_IF_EXISTS=aff05a_r1_predecessor
+TARGET_DB_CREATED=aff05a_r1_predecessor
+BOOTSTRAP_PRE_OK=pre
+MIGRATE_DEPLOY_OK=prisma_cli
+BOOTSTRAP_POST_OK=post
+VERIFY_FN_SZ=7274
+VERIFY_FN_HAS_R1=false
+VERIFY_FN_HAS_LOCK=false
+VERIFY_HANDLING_PRIVS_HRP=INSERT
+READY=predecessor_db=aff05a_r1_predecessor tmpdir=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-Nt3XQg
+READY target_db=aff05a_r1_predecessor
+TMPDIR_REMOVED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-Nt3XQg
+
+STDERR: (node:26064) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Step A.2 Rename predecessor → MIGRATION_TARGET_DB (cluster only).
+PRE_RENAME_DBS=["aff05a_r1_collision_4e7c5e05_tgt","aff05a_r1_predecessor"]
+TARGET_DB_EXISTS: aff05a_r1_collision_4e7c5e05_tgt already exists — refusing to rename.
+TARGET_DB_EXISTS_HINT: Drop 'aff05a_r1_collision_4e7c5e05_tgt' manually before re-running AC-04.
+
+ASSERT_PASS [AC-04 (lock-timeout)]: exit=3 (in [1,3])
+ASSERT_PASS [AC-04 (lock-timeout)]: marker 'TARGET_DB_EXISTS' present
+ASSERT_PASS [AC-04 (lock-timeout)]: refusal language present
+
+=== STEP 5: Verify fixture DB + sentinel + held connection intact ===
+ASSERT_PASS: fixture DB aff05a_r1_collision_4e7c5e05_tgt still exists
+ASSERT_PASS: sentinel row intact
+ASSERT_PASS: held connection still alive
+
+=== STEP 6: Cleanup own fixtures only ===
+HELD_CONNECTION_CLOSED on aff05a_r1_collision_4e7c5e05_tgt
+CLEANUP_DROPPED aff05a_r1_collision_4e7c5e05_tgt
+
+=== RESULT ===
+collision-integration (target-exists) PASS — entrypoints refuse on collision, fixtures intact
+
+---STDERR---

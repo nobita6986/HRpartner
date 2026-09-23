@@ -1,0 +1,2358 @@
+
+> hrp@0.1.0 test:integration
+> node scripts/ci/integration-preflight.mjs
+
+[integration-preflight] Test DB accepted (guards passed).
+[integration-preflight]   writer: postgresql://****@127.0.0.1:5432/aff05a_r1_baseline_test  fp=01601232635e
+[integration-preflight]   admin : postgresql://****@127.0.0.1:5432/aff05a_r1_baseline_test  fp=01601232635e
+node.exe : [33mThe CJS build of Vite's Node API is deprecated. See
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling
+
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts (26 tests | 7 failed) 3529ms
+   ├ù AFF-05A-R1 ΓÇö Canonical initial handling window (R1) > AC-01 (R1): valid attribution ΓåÆ submission, consumed attr, LPHA ACTIVE with 168h deadline 119ms
+     ΓåÆ Cannot read properties of null (reading 'getTime')
+   ├ù AFF-05A-R1 ΓÇö Canonical initial handling window (R1) > AC-03 (R1 preserve): existing attribution+LPHA ΓåÆ new submission, attribution untouched, LPHA untouched 135ms
+     ΓåÆ
+Invalid `prisma.$queryRaw()` invocation:
+
+
+Raw query failed. Code: `23505`. Message: `Key (labor_profile_id)=(52c6b6d4-cf0a-4839-8077-2b6baaae86c4) already exists.`
+   ├ù AFF-05A-R1 ΓÇö Canonical initial handling window (R1) > AC-03b (R1 preserve CONSUMED): bound CONSUMED attribution ΓåÆ new submission preserves, inbound untouched 114ms
+     ΓåÆ
+Invalid `prisma.$queryRaw()` invocation:
+
+
+Raw query failed. Code: `23505`. Message: `Key (labor_profile_id)=(bdd674dc-5d1e-42f6-a5a9-a22a1e72ff13) already exists.`
+   ├ù AFF-05A-R1 ΓÇö Canonical initial handling window (R1) > AC-03c (R1 preserve MANAGER): active MANAGER handling indefinite ΓåÆ new submission preserves, no AFF_INITIAL 198ms
+     ΓåÆ
+Invalid `prisma.$queryRaw()` invocation:
+
+
+Raw query failed. Code: `23505`. Message: `N/A`
+   ├ù AFF-05A-R1 ΓÇö Canonical initial handling window (R1) > AC-05 (R1 race): two connections racing on same LP ΓåÆ both submissions, one LPHA 176ms
+     ΓåÆ expected 1 to be 2 // Object.is equality
+   ├ù AFF-05A-R1 ΓÇö Canonical initial handling window (R1) > AC-06 (backfill R1): legacy AFF_INITIAL NULL-deadline rows get deadline from starts_at 155ms
+     ΓåÆ expected 10 to be +0 // Object.is equality
+   ├ù AFF-05A-R1 ΓÇö Canonical initial handling window (R1) > AC-08 (clean chain): owner/SECURITY DEFINER/search_path/EXECUTE ACL + handling SELECT+INSERT only 99ms
+     ΓåÆ expected false to be true // Object.is equality
+stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration ΓÇö DB-touching proof > (viii) UNIQUE partial index race: concurrent INSERT c├╣ng (case,opening) ΓåÆ both fulfilled, one winner one replayed
+prisma:error
+Invalid `tx.placement.create()` invocation in
+C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\src\domains\talent\placement.service.ts:168:40
+
+  165 const sp = `n3pl_insert_${Math.random().toString(36).slice(2, 10)}`;
+  166 await tx.$executeRawUnsafe(`SAVEPOINT ${sp}`);
+  167 try {
+ΓåÆ 168   const created = await tx.placement.create(
+Unique constraint failed on the fields: (`placement_case_id`,`COALESCE(job_opening_id`,`'__NONE__'::text)`)
+
+ Γ¥» tests/db/placement-lifecycle-integration.test.ts (16 tests | 2 failed) 2386ms
+   ├ù N3 placement-lifecycle integration ΓÇö DB-touching proof > (vii) RLS: HR_MANAGER GUC thß║Ñy rows; PUBLIC (no GUC) thß║Ñy 0 ΓÇö FORCE RLS enforced 163ms
+     ΓåÆ expected [ { ΓÇª(2) } ] to have a length of +0 but got 1
+   ├ù N3 placement-lifecycle integration ΓÇö DB-touching proof > (xiii) RLS/privilege: app_user_writer DELETE bß╗ï REVOKE ΓÇö Placement lß╗ïch sß╗¡ bß║Ñt khß║ú x├│a 117ms
+     ΓåÆ expected null not to be null
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts (32 tests | 15 failed) 609ms
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-02: WORKER A sees own tickets (self SELECT positive) 17ms
+     ΓåÆ expected false to be true // Object.is equality
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-02: WORKER A does NOT see tickets of WORKER B (cross-worker SELECT deny) 10ms
+     ΓåÆ expected [ { ΓÇª(29) } ] to have a length of +0 but got 1
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-02: WORKER A cannot UPDATE ticket of WORKER B (cross-worker UPDATE deny) 13ms
+     ΓåÆ promise resolved "{ ΓÇª(29) }" instead of rejecting
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-02: WORKER A cannot INSERT ticket for WORKER B (cross-worker INSERT deny) 10ms
+     ΓåÆ promise resolved "{ ΓÇª(29) }" instead of rejecting
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-03: ACCOUNTANT sees ADVANCE_SALARY at HR_APPROVED+ (positive) 9ms
+     ΓåÆ expected 'TIMESHEET_DISPUTE' to be 'ADVANCE_SALARY' // Object.is equality
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-03: ACCOUNTANT does NOT see non-ADVANCE_SALARY tickets (PENDING/LEAVE/DISPUTE) 9ms
+     ΓåÆ expected [ ΓÇª(2) ] to have a length of +0 but got 2
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-03: ACCOUNTANT cannot INSERT non-ADVANCE ticket (deny) 9ms
+     ΓåÆ promise resolved "{ ΓÇª(29) }" instead of rejecting
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-03: PM cannot INSERT tickets (read-only role) 6ms
+     ΓåÆ promise resolved "{ ΓÇª(29) }" instead of rejecting
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-03: PM cannot UPDATE tickets (read-only role) 9ms
+     ΓåÆ promise resolved "{ ΓÇª(29) }" instead of rejecting
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-03: DIRECTOR cannot INSERT tickets (read-only role, DEC-06) 7ms
+     ΓåÆ promise resolved "{ ΓÇª(29) }" instead of rejecting
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-03: denied roles (SALE, MKT, VENDOR_ADMIN, CTV, EMPLOYEE) see zero tickets 6ms
+     ΓåÆ expected [ ΓÇª(9) ] to have a length of +0 but got 9
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-04: WORKER cannot read internal comments 7ms
+     ΓåÆ expected false to be true // Object.is equality
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-04: ACCOUNTANT cannot read internal comments 6ms
+     ΓåÆ expected [ ΓÇª(2) ] to have a length of +0 but got 2
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-04: notification recipient isolation ΓÇö ACCOUNTANT sees only ACCOUNTANT notifications 8ms
+     ΓåÆ expected 2 to be 1 // Object.is equality
+   ├ù V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) > AC-04: WORKER cannot insert internal comment 8ms
+     ΓåÆ promise resolved "{ ΓÇª(9) }" instead of rejecting
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-12 ΓÇö publicSelect chß║íy d╞░ß╗¢i principal MKT, ─æ├║ng hai dß╗▒ ├ín public lß╗ìt qua
+[gl05 list] total=2 nextOffset=null slugs=["GL05-ELEC-gl05-1790079558671-27898753","GL05-WARE-gl05-1790079558671-27898753"]
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-02/RQ-04 ΓÇö ba mß║úng summary v├á availableSlots ─æ├║ng tr├¬n d├▓ng thß║¡t
+[gl05 card GL05-ELEC-gl05-1790079558671-27898753] positionTitles=["C├┤ng nh├ón lß║»p r├íp","Kiß╗âm tra chß║Ñt l╞░ß╗úng"] locations=["KCN VSIP 1 gl05-1790079558671-27898753","KCN Y├¬n Phong gl05-1790079558671-27898753"] shifts=["07:00-16:00","14:00-22:00"] availableSlots=6 shiftType=ca_ngay
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-01/RISK-01/RISK-07 ΓÇö hourlyRateVnd l├á BigInt THß║¼T nh╞░ng DTO chß╗ë c├│ 18 kh├│a allow-list
+[gl05 bigint] hourlyRateVnd=45000 typeof=bigint
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-07/DEC-08 ΓÇö facet dß╗▒ng tß╗½ to├án tß║¡p public hß╗úp lß╗ç v├á KH├öNG co lß║íi theo filter
+[gl05 facets] keys=["areas","shifts"] areas(RUN)=["KCN ─É├¼nh V┼⌐ gl05-1790079558671-27898753","KCN VSIP 1 gl05-1790079558671-27898753","KCN Y├¬n Phong gl05-1790079558671-27898753"] total(before)=2 total(area=dinhVu)=1
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-12/go-live-12 DEC-14 ΓÇö trang chi tiß║┐t kß╗â Mß╗îI vß╗ï tr├¡ c├▓n hiß╗çu lß╗▒c, card chß╗ë kß╗â vß╗ï tr├¡ c├▓n tuyß╗ân
+[gl05 detail GL05-ELEC-gl05-1790079558671-27898753] positions=[["GL05-ASSY",4],["GL05-QC",2],["GL05-FORK",0]] availableSlots=6 needed=10 filled=4 shiftType=null
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-12 ΓÇö dß╗▒ ├ín nß╗Öi bß╗Ö kh├┤ng c├│ card, kh├┤ng facet, v├á trang chi tiß║┐t trß║ú null
+[gl05 non-public] getPublicJobDetail(GL05-PRIV-gl05-1790079558671-27898753) => null
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-05 ΓÇö q fold dß║Ñu, kh├┤ng khß╗¢p description; area ─æß╗ìc tß║¡p slot SAU lifecycle
+[gl05 q] fold=["GL05-ELEC-gl05-1790079558671-27898753"] description=0 slotDaDu=0
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-05 ΓÇö q fold dß║Ñu, kh├┤ng khß╗¢p description; area ─æß╗ìc tß║¡p slot SAU lifecycle
+[gl05 area] yenPhong=["GL05-ELEC-gl05-1790079558671-27898753"] quangChau=0 dinhVu=["GL05-WARE-gl05-1790079558671-27898753"]
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-06 ΓÇö shift khß╗¢p cß║ú nh├ún KH├öNG ─æß╗⌐ng ─æß║ºu, nh├ún cß╗ºa slot ─æ├ú ─æß╗º chß╗ë ti├¬u th├¼ kh├┤ng
+[gl05 filter] shift(14:00-22:00)=["GL05-ELEC-gl05-1790079558671-27898753"] shift(18:00-02:00)=0
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-04 ΓÇö total/nextOffset v├á hai trang thß║¡t khß╗¢p nhau, limit bß╗ï kß║╣p [1,50]
+[gl05 page] p1=["GL05-WARE-gl05-1790079558671-27898753"] next=1 p2=["GL05-ELEC-gl05-1790079558671-27898753"] next=null past(offset=2)=0 total=2
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t
+[gl05 cleanup] projects c├▓n lß║íi=0 slots c├▓n lß║íi=0 (RUN=gl05-1790079558671-27898753)
+
+ Γ£ô src/domains/job-board/public-card-truth.integration.test.ts (10 tests) 424ms
+stdout | src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > PLN-02: writer grants on the 29 tables are least-privilege (CRUD subset, none grantable)
+[PLN-02 grants] grantee=app_user_writer privileges=["DELETE","INSERT","SELECT","UPDATE"] tables_with_grants=29/29 is_grantable=NONE
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts (32 tests | 17 failed) 410ms
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > PLN-02: writer connection identity is app_user_writer (SELECT current_user via writer) 14ms
+     ΓåÆ expected 'postgres' to be 'app_user_writer' // Object.is equality
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-07: WORKER A sees ONLY own deduction (self positive, cross zero) 13ms
+     ΓåÆ expected [ ΓÇª(2) ] to deeply equal [ 'ded-A-m107b-1790079559502-egenlf4' ]
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-08: denied role (SALE) sees zero deductions (no exceptionΓåÆ0 masking) 8ms
+     ΓåÆ expected [ { ΓÇª(7) }, { ΓÇª(7) } ] to have a length of +0 but got 2
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: WORKER cannot INSERT a deduction (deny ΓåÆ throw) 6ms
+     ΓåÆ promise resolved "{ ΓÇª(7) }" instead of rejecting
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: ACCOUNTANT can UPDATE a deduction (positive), HR_STAFF cannot (count 0) 8ms
+     ΓåÆ expected 1 to be +0 // Object.is equality
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-08: CTV/WORKER/VENDOR_ADMIN see zero client companies (deny) 4ms
+     ΓåÆ expected [ { ΓÇª(8) } ] to have a length of +0 but got 1
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: HR_STAFF can read but NOT INSERT a client company (command-aware deny ΓåÆ throw) 5ms
+     ΓåÆ promise resolved "{ ΓÇª(8) }" instead of rejecting
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: DIRECTOR can UPDATE, ACCOUNTANT cannot (command-aware split) 6ms
+     ΓåÆ expected 1 to be +0 // Object.is equality
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-07: ACCOUNTANT sees client_rate_card (positive); SALE/PM see zero 9ms
+     ΓåÆ expected [ { ΓÇª(9) } ] to have a length of +0 but got 1
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-07: HR_MANAGER sees vendor_rate_card (positive); SALE/PM see zero 8ms
+     ΓåÆ expected [ { ΓÇª(9) } ] to have a length of +0 but got 1
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: rate cards are read-only at runtime ΓÇö INSERT denied even for a finance reader (throw) 7ms
+     ΓåÆ promise resolved "{ ΓÇª(9) }" instead of rejecting
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-07: CTV A sees ONLY own withdrawal (self positive, AΓåÆB cross zero) 3ms
+     ΓåÆ expected [ ΓÇª(2) ] to deeply equal [ 'cw-A-m107b-1790079559502-egenlf4' ]
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: CTV A can INSERT own withdrawal (positive); CTV A cannot INSERT for B (throw) 10ms
+     ΓåÆ promise resolved "{ ΓÇª(8) }" instead of rejecting
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-08: non-CTV role cannot INSERT a withdrawal (WITH CHECK role=CTV ΓåÆ throw) 4ms
+     ΓåÆ promise resolved "{ ΓÇª(8) }" instead of rejecting
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: withdrawal has NO runtime UPDATE path ΓÇö approve denied (count 0) 3ms
+     ΓåÆ expected 1 to be +0 // Object.is equality
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: DELETE is denied on every seeded gap table (count 0, rows survive) 5ms
+     ΓåÆ expected 1 to be +0 // Object.is equality
+   ├ù V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > AC-04: missing GUC ΓåÆ empty role AND zero rows (deny-by-default, not masked) 5ms
+     ΓåÆ expected [ { ΓÇª(7) } ] to have a length of +0 but got 1
+ Γ£ô src/domains/applications/live-integration.mp3c.test.ts (7 tests) 700ms
+ Γ¥» src/domains/applications/live-integration.mp2.test.ts (11 tests | 1 failed) 575ms
+   Γ£ô MP-2 LIVE integration (AC-02/03/04/05) > AC-03 REAL concurrent race: N simultaneous same-key applies create exactly ONE row 324ms
+   ├ù MP-2 LIVE integration (AC-02/03/04/05) > AC-05 RLS read scope: privileged roles see an unscoped row; others do not 13ms
+     ΓåÆ WORKER must NOT see the row: expected 1 to be +0 // Object.is equality
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-01: valid active code creates attribution row via engine and returns REDIRECT_NEW
+{"schemaVersion":"1.0","timestamp":"2026-09-22T12:19:22.791Z","level":"info","event":"referral.redirect.new","requestId":"itest-e2b2e93f-86c0-49ca-be06-bcf012df8fd2","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-02: forged code ΓåÆ NOT_FOUND (constant /jobs), no attribution row
+{"schemaVersion":"1.0","timestamp":"2026-09-22T12:19:22.814Z","level":"info","event":"referral.redirect.referrer_not_found","requestId":"itest-019fc42a-fa1f-4872-86b6-76fef5b07fa8","meta":{"route":"GET /r/[code]","outcome":"not_found"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-02: inactive user code ΓåÆ NOT_FOUND, no attribution row
+{"schemaVersion":"1.0","timestamp":"2026-09-22T12:19:22.836Z","level":"info","event":"referral.redirect.referrer_not_found","requestId":"itest-d2ae3a06-495d-48c2-86f2-fc24d4bc59d8","meta":{"route":"GET /r/[code]","outcome":"not_found"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03: valid cookie + existing active row ΓåÆ REDIRECT_EXISTING (existing wins, no new row)
+{"schemaVersion":"1.0","timestamp":"2026-09-22T12:19:22.919Z","level":"info","event":"referral.redirect.new","requestId":"itest-6bd7d55a-253a-4a70-ae70-cd38a8f438fb","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03: valid cookie + existing active row ΓåÆ REDIRECT_EXISTING (existing wins, no new row)
+{"schemaVersion":"1.0","timestamp":"2026-09-22T12:19:22.930Z","level":"info","event":"referral.redirect.existing_wins","requestId":"itest-919516d9-6644-4ac9-8e73-bd29e8e4a254","meta":{"route":"GET /r/[code]","outcome":"redirect_existing"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03b: cookie from code A + click code B ΓåÆ REDIRECT_EXISTING (first click wins)
+{"schemaVersion":"1.0","timestamp":"2026-09-22T12:19:23.009Z","level":"info","event":"referral.redirect.new","requestId":"itest-a4a342c2-753d-4343-982c-3a6b8eb371be","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03b: cookie from code A + click code B ΓåÆ REDIRECT_EXISTING (first click wins)
+{"schemaVersion":"1.0","timestamp":"2026-09-22T12:19:23.020Z","level":"info","event":"referral.redirect.existing_wins","requestId":"itest-0893da6c-e131-4caa-bc76-91c1bb81e921","meta":{"route":"GET /r/[code]","outcome":"redirect_existing"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-06: ?job=/jobs/vietnam-senior-dev ΓåÆ allowlisted prefix preserved
+{"schemaVersion":"1.0","timestamp":"2026-09-22T12:19:23.357Z","level":"info","event":"referral.redirect.new","requestId":"itest-091d5b0d-67d5-4a58-86aa-ff92135e8a4b","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-06: ?job=/jobs?page=2 ΓåÆ query stripped, prefix preserved
+{"schemaVersion":"1.0","timestamp":"2026-09-22T12:19:23.432Z","level":"info","event":"referral.redirect.new","requestId":"itest-55847a73-dcb0-4ecd-940d-8e27f199b0ff","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-01 + expires: created attribution has expires_at = now + 30 days
+{"schemaVersion":"1.0","timestamp":"2026-09-22T12:19:23.538Z","level":"info","event":"referral.redirect.new","requestId":"itest-b88a4be5-e145-47bf-8250-6038b4cc435e","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+ Γ¥» tests/db/attribution-redirect.integration.test.ts (15 tests | 1 failed) 1026ms
+   ├ù N2-2 Attribution Redirect Integration > AC-08: writer cannot INSERT referral_attributions (RLS deny) 22ms
+     ΓåÆ promise resolved "1" instead of rejecting
+ Γ¥» src/shared/auth/live-vendor-idor.m1-08.test.ts (13 tests | 2 failed) 399ms
+   ├ù V5-M1-08 LIVE ΓÇö vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L2 RLS backstop: d╞░ß╗¢i GUC vendor A, plain findMany chß╗ë trß║ú row vendor A (kh├┤ng lß╗Ö vendor B) 19ms
+     ΓåÆ expected false to be true // Object.is equality
+   ├ù V5-M1-08 LIVE ΓÇö vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L2 RLS backstop: Bß╗Ä where.vendorId, d╞░ß╗¢i GUC vendor A vß║½n KH├öNG update ─æ╞░ß╗úc row vendor B (count=0, row nguy├¬n vß║╣n) 9ms
+     ΓåÆ expected 1 to be +0 // Object.is equality
+stderr | src/domains/applications/live-integration.ops06a.test.ts > AC-04/05/08 LIVE ΓÇö chß║╖n ΓçÆ zero write tr├¬n
+TEST DB thß║¡t > AC-04: limiter deny ΓçÆ 429 v├á KH├öNG c├│ row n├áo ─æ╞░ß╗úc tß║ío (before/after bß║▒ng nhau)
+{"schemaVersion":"1.0","timestamp":"2026-09-22T12:19:25.250Z","level":"warn","event":"rate_limit.denied","requestId":"4
+1ea4ce5-f14c-43b8-ad0b-bcd77b829607","meta":{"route":"POST /api/public/jobs/[slug]/applications","status":429,"outcome"
+:"rate_limited","detail":{"surface":"APPLY_IP","retryAfterSec":30}}}
+
+ Γ£ô src/domains/applications/live-integration.ops06a.test.ts (6 tests | 2 skipped) 327ms
+ Γ¥» src/domains/security/security-matrix.integration.test.ts (124 tests | 61 failed) 774ms
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: DIRECTOR > DIRECTOR ├ù attendance_events ΓåÆ exact zero rows 21ms
+     ΓåÆ expected [ 'ae-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: HR_STAFF > HR_STAFF ├ù outsourcing_projects ΓåÆ exact zero rows 5ms
+     ΓåÆ expected [ 'prj-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: HR_STAFF > HR_STAFF ├ù staffing_orders ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'so-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: HR_STAFF > HR_STAFF ├ù vendors ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'vd-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: HR_STAFF > HR_STAFF ├ù vendor_statements ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'vs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: HR_STAFF > HR_STAFF ├ù client_statements ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'cs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: SALE > SALE ├ù attendance_events ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'ae-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: SALE > SALE ├ù timesheet_periods ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'tp-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: SALE > SALE ├ù vendor_statements ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'vs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: PM > PM ├ù vendors ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'vd-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: PM > PM ├ù vendor_statements ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'vs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: PM > PM ├ù client_statements ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'cs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: ACCOUNTANT > ACCOUNTANT ├ù workers ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'wk-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: ACCOUNTANT > ACCOUNTANT ├ù outsourcing_projects ΓåÆ exact zero rows 5ms
+     ΓåÆ expected [ 'prj-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: ACCOUNTANT > ACCOUNTANT ├ù staffing_orders ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'so-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: ACCOUNTANT > ACCOUNTANT ├ù attendance_events ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'ae-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: MKT > MKT ├ù workers ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'wk-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: MKT > MKT ├ù vendors ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'vd-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: MKT > MKT ├ù attendance_events ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'ae-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: MKT > MKT ├ù timesheet_periods ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'tp-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: MKT > MKT ├ù vendor_statements ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'vs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: MKT > MKT ├ù client_statements ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'cs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN ├ù attendance_events ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'ae-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN ├ù timesheet_periods ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'tp-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN ├ù client_statements ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'cs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF ├ù attendance_events ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'ae-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF ├ù timesheet_periods ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'tp-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF ├ù client_statements ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'cs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: CTV > CTV ├ù vendors ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'vd-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: CTV > CTV ├ù attendance_events ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'ae-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: CTV > CTV ├ù timesheet_periods ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'tp-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: CTV > CTV ├ù vendor_statements ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'vs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: CTV > CTV ├ù client_statements ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'cs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: WORKER > WORKER ├ù vendors ΓåÆ exact zero rows 2ms
+     ΓåÆ expected [ 'vd-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: WORKER > WORKER ├ù timesheet_periods ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'tp-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: WORKER > WORKER ├ù vendor_statements ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'vs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: WORKER > WORKER ├ù client_statements ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'cs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù workers ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'wk-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù outsourcing_projects ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'prj-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù staffing_orders ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'so-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù vendors ΓåÆ exact zero rows 5ms
+     ΓåÆ expected [ 'vd-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù attendance_events ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'ae-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù timesheet_periods ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'tp-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù vendor_statements ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'vs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù client_statements ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'cs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù workers ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'wk-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù outsourcing_projects ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'prj-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù staffing_orders ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'so-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù vendors ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'vd-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù attendance_events ΓåÆ exact zero rows 5ms
+     ΓåÆ expected [ 'ae-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù timesheet_periods ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'tp-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù vendor_statements ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'vs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù client_statements ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'cs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù workers ΓåÆ exact zero rows 3ms
+     ΓåÆ expected [ 'wk-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù outsourcing_projects ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'prj-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù staffing_orders ΓåÆ exact zero rows 2ms
+     ΓåÆ expected [ 'so-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù vendors ΓåÆ exact zero rows 2ms
+     ΓåÆ expected [ 'vd-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù attendance_events ΓåÆ exact zero rows 6ms
+     ΓåÆ expected [ 'ae-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù timesheet_periods ΓåÆ exact zero rows 5ms
+     ΓåÆ expected [ 'tp-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù vendor_statements ΓåÆ exact zero rows 5ms
+     ΓåÆ expected [ 'vs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+   ├ù V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2 roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù client_statements ΓåÆ exact zero rows 4ms
+     ΓåÆ expected [ 'cs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+ Γ£ô src/domains/staffing/4role-staffing.integration.test.ts (11 tests) 93ms
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-10(a): current_user kh├┤ng BYPASSRLS v├á kh├┤ng SUPERUSER
+[go-live-04][AC-10a] current_user=postgres rolbypassrls=true rolsuper=true
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-08: c├╣ng kß║┐t nß╗æi, KH├öNG set GUC ΓçÆ app.role rß╗ùng v├á 0 d├▓ng
+[go-live-04][AC-08] no-GUC app.role="" total=1 jobs=1 detail(GL04-PUB-gl04-1790079567476-wxww2u4)=FOUND
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-10(c): helper trß║ú ΓëÑ 1 job v├á mß╗ìi d├▓ng nh├¼n thß║Ñy ─æ╞░ß╗úc ─æß╗üu is_public = true
+[go-live-04][AC-10c] app.role="MKT" app.user_id="system:public-job-board-read" transaction_read_only=on total=1 jobs=1 visibleRows=47 leaked=["PRJn3-396666c1i-hrp","CPRJn3-396666c1ii-client","PRJn3-396666c1iii-hrp","PRJn3-396666c1iv-replay","PRJn3-396666c1v-failed","PRJn3-396666c1vi-fk","PRJn3-396666c1vii-rls","PRJn3-396666c1viii-race","PRJn3-396666c1ix-mismatch","PRJn3-396666c1x-closed","CPRJn3-396666c1xi-effective","PRJn3-396666c1xii-hrp-reject","PRJn3-396666c1xiii-no-delete","PRJn3-396666c1xiv-race-loser","CPRJn3-396666c1xv-concurrent-close","PRJn3-26742f9ei-hrp","CPRJn3-26742f9eii-client","PRJn3-26742f9eiii-hrp","PRJn3-26742f9eiv-replay","PRJn3-26742f9ev-failed","PRJn3-26742f9evi-fk","PRJn3-26742f9evii-rls","PRJn3-4d0dd34di-hrp","CPRJn3-4d0dd34dii-client","PRJn3-4d0dd34diii-hrp","PRJn3-4d0dd34div-replay","PRJn3-4d0dd34dv-failed","PRJn3-4d0dd34dvi-fk","PRJn3-4d0dd34dvii-rls","PRJn3-4d0dd34dviii-race","PRJn3-4d0dd34dix-mismatch","PRJn3-4d0dd34dx-closed","CPRJn3-4d0dd34dxi-effective","PRJn3-4d0dd34dxii-hrp-reject","PRJn3-4d0dd34dxiii-no-delete","PRJn3-4d0dd34dxiv-race-loser","CPRJn3-4d0dd34dxv-concurrent-close","PRJn3-26742f9eviii-race","PRJn3-26742f9eix-mismatch","PRJn3-26742f9ex-closed","CPRJn3-26742f9exi-effective","PRJn3-26742f9exii-hrp-reject","PRJn3-26742f9exiii-no-delete","PRJn3-26742f9exiv-race-loser","CPRJn3-26742f9exv-concurrent-close","GL04-PRIV-gl04-1790079567476-wxww2u4"]
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-06: dß╗▒ ├ín is_public = false vß║»ng mß║╖t ß╗ƒ mß╗ìi ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai
+[go-live-04][AC-06] fixture non-public id=prj-priv-gl04-1790079567476-wxww2u4 code=GL04-PRIV-gl04-1790079567476-wxww2u4 isPublic=false status=ACTIVE
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-06: dß╗▒ ├ín is_public = false vß║»ng mß║╖t ß╗ƒ mß╗ìi ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai
+[go-live-04][AC-06] qua helper: detail(GL04-PRIV-gl04-1790079567476-wxww2u4)=null rlsRows=1 slugs=["GL04-PUB-gl04-1790079567476-wxww2u4"]
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-07: DELETE ph├ít trong transaction cß╗ºa helper bß╗ï tß╗½ chß╗æi SQLSTATE 25006
+[go-live-04][AC-07] sqlstate=25006 message= Invalid `prisma.$executeRawUnsafe()` invocation: Raw query failed. Code: `25006`. Message: `ERROR: cannot execute DELETE in a read-only transaction`
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS
+[go-live-04][cleanup] fixture c├▓n lß║íi = 0 (kß╗│ vß╗ìng 0)
+
+ Γ¥» src/shared/auth/live-public-read-rls.go-live-04.test.ts (5 tests | 4 failed) 261ms
+   ├ù V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-10(a): current_user kh├┤ng BYPASSRLS v├á kh├┤ng SUPERUSER 28ms
+     ΓåÆ expected true to be false // Object.is equality
+   ├ù V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-08: c├╣ng kß║┐t nß╗æi, KH├öNG set GUC ΓçÆ app.role rß╗ùng v├á 0 d├▓ng 24ms
+     ΓåÆ expected 1 to be +0 // Object.is equality
+   ├ù V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-10(c): helper trß║ú ΓëÑ 1 job v├á mß╗ìi d├▓ng nh├¼n thß║Ñy ─æ╞░ß╗úc ─æß╗üu is_public = true 18ms
+     ΓåÆ expected [ 'PRJn3-396666c1i-hrp', ΓÇª(45) ] to deeply equal []
+   ├ù V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-06: dß╗▒ ├ín is_public = false vß║»ng mß║╖t ß╗ƒ mß╗ìi ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai 14ms
+     ΓåÆ expected [ Array(1) ] to have a length of +0 but got 1
+ Γ£ô src/shared/auth/live-vendor-worker-scope.m1-06b.test.ts (10 tests) 311ms
+ Γ£ô tests/db/referral-attribution-foundation.integration.test.ts (15 tests) 520ms
+ Γ¥» src/domains/applications/security-boundary.mp2.test.ts (13 tests | 1 failed) 354ms
+   ├ù MP-2 security boundary ΓÇö LIVE (AC-09) > NEGATIVE: app_user_writer cannot direct-INSERT candidate_submissions under WORKER context 97ms
+     ΓåÆ promise resolved "Result{ command: 'INSERT', ΓÇª(9) }" instead of rejecting
+ Γ£ô src/shared/auth/live-ticket-route-boundary.m1-06d.test.ts (5 tests) 257ms
+ Γ¥» src/domains/admin-demand-tree.integration.test.ts (17 tests | 5 failed) 512ms
+   ├ù W3 Admin Demand Tree ΓÇö LIVE RLS Integration Test > 5. unrelated PM ΓåÆ nhß║¡n null > cannot see project 13ms
+     ΓåÆ expected { ΓÇª(9) } to be null
+   ├ù W3 Admin Demand Tree ΓÇö LIVE RLS Integration Test > 5. unrelated PM ΓåÆ nhß║¡n null > cannot see job opening 8ms
+     ΓåÆ expected { ΓÇª(8) } to be null
+   ├ù W3 Admin Demand Tree ΓÇö LIVE RLS Integration Test > 6. Client Guard verification > unrelated PM cannot see C1 (has visible projects for others, none for him) 10ms
+     ΓåÆ expected { ΓÇª(8) } to be null
+   ├ù W3 Admin Demand Tree ΓÇö LIVE RLS Integration Test > 6. Client Guard verification > Primary PM cannot see C2 (has no visible projects for him) 14ms
+     ΓåÆ expected { ΓÇª(8) } to be null
+   ├ù W3 Admin Demand Tree ΓÇö LIVE RLS Integration Test > 8. missing GUC/context ΓåÆ fail closed > fails when trying to read without RLS context applied (returns null due to 0 rows) 5ms
+     ΓåÆ expected { ΓÇª(9) } to be null
+ Γ¥» tests/db/handling-assignment.integration.test.ts (4 tests | 2 failed) 368ms
+   ├ù W5 HandlingAssignment safety > allows assignees to read only their own rows 37ms
+     ΓåÆ expected [ ΓÇª(2) ] to deeply equal [ Array(1) ]
+   ├ù W5 HandlingAssignment safety > denies missing-context reads and assignee writes 14ms
+     ΓåÆ expected [ { ΓÇª(14) } ] to deeply equal []
+ Γ£ô src/shared/auth/live-auth-scope.m1-06a.test.ts (6 tests) 221ms
+ Γ£ô src/shared/auth/rls-context.test.ts (9 tests) 125ms
+ Γ¥» src/shared/auth/matrix-scope.test.ts (59 tests | 1 failed) 314ms
+   ├ù L2 RLS ΓÇö ┬º5.7 chß╗æng leak (counts/aggregates scoped) > HR_STAFF + projects ΓåÆ 0 (HR_STAFF kh├┤ng c├│ scope project) 14ms
+     ΓåÆ expected 45 to be +0 // Object.is equality
+ Γ£ô src/domains/applications/live-integration.mp3b.test.ts (1 test) 333ms
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 119 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  src/shared/auth/matrix-scope.test.ts > L2 RLS ΓÇö ┬º5.7 chß╗æng leak (counts/aggregates scoped) > HR_STAFF +
+projects ΓåÆ 0 (HR_STAFF kh├┤ng c├│ scope project)
+AssertionError: expected 45 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 45
+
+ Γ¥» src/shared/auth/matrix-scope.test.ts:122:15
+    120|     const prisma = getPrisma();
+    121|     const n = await queryInScope(prisma, 'HR_STAFF', 'outsourcing_projΓÇª
+    122|     expect(n).toBe(0);
+       |               ^
+    123|   });
+    124| });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-02: WORKER A sees own tickets (self SELECT positive)
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:439:54
+    437|       ) as Array<{ id: string; workerId: string }>;
+    438|       expect(rows.length).toBeGreaterThanOrEqual(1);
+    439|       expect(rows.every((r) => r.workerId === wAId)).toBe(true);
+       |                                                      ^
+    440|       expect(rows.some((r) => r.id === tAdvAId)).toBe(true);
+    441|       expect(rows.some((r) => r.id === tDisputeAId)).toBe(true);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-02: WORKER A does NOT see tickets of WORKER B (cross-worker SELECT deny)
+AssertionError: expected [ { ΓÇª(29) } ] to have a length of +0 but got 1
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:449:20
+    447|         tx.ticket.findMany({ where: { id: tLeaveBId } }),
+    448|       ) as unknown[];
+    449|       expect(rows).toHaveLength(0);
+       |                    ^
+    450|     });
+    451|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-02: WORKER A cannot UPDATE ticket of WORKER B (cross-worker UPDATE deny)
+AssertionError: promise resolved "{ ΓÇª(29) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "amountVnd": 0n,
++   "assignmentId": null,
++   "createdAt": 2026-09-22T12:19:17.806Z,
++   "createdByActorId": "uB-m107a-1790079557618-kiijxc9",
++   "createdByRole": "WORKER",
++   "currentHours": null,
++   "deductMonth": null,
++   "deductYear": null,
++   "deductionVnd": 0n,
++   "deltaHours": null,
++   "description": "leave test B",
++   "id": "3fccf184-b050-4b6c-8c47-424d29a15137",
++   "isOverdue": false,
++   "leaveDays": null,
++   "leaveFromDate": 2026-09-01T00:00:00.000Z,
++   "leaveToDate": 2026-09-03T00:00:00.000Z,
++   "leaveTypeCode": null,
++   "metadata": Object {},
++   "priority": "NORMAL",
++   "reasonCode": null,
++   "requestedHours": null,
++   "requestedPayDate": null,
++   "slaDueAt": null,
++   "status": "PENDING",
++   "title": "hacked",
++   "type": "LEAVE_REQUEST",
++   "version": 1,
++   "workDate": null,
++   "workerId": "wB-m107a-1790079557618-kiijxc9",
++ }
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:461:7
+    459|           }),
+    460|         ),
+    461|       ).rejects.toThrow();
+       |       ^
+    462|     });
+    463|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-02: WORKER A cannot INSERT ticket for WORKER B (cross-worker INSERT deny)
+AssertionError: promise resolved "{ ΓÇª(29) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "amountVnd": 0n,
++   "assignmentId": null,
++   "createdAt": 2026-09-22T12:19:17.933Z,
++   "createdByActorId": "uA-m107a-1790079557618-kiijxc9",
++   "createdByRole": "WORKER",
++   "currentHours": null,
++   "deductMonth": null,
++   "deductYear": null,
++   "deductionVnd": 0n,
++   "deltaHours": null,
++   "description": "should be denied",
++   "id": "376d41d2-0734-4496-b1bd-5c5aca0faa59",
++   "isOverdue": false,
++   "leaveDays": null,
++   "leaveFromDate": 2026-10-01T00:00:00.000Z,
++   "leaveToDate": 2026-10-02T00:00:00.000Z,
++   "leaveTypeCode": null,
++   "metadata": Object {},
++   "priority": "NORMAL",
++   "reasonCode": null,
++   "requestedHours": null,
++   "requestedPayDate": null,
++   "slaDueAt": null,
++   "status": "PENDING",
++   "title": "Worker A fake for B",
++   "type": "LEAVE_REQUEST",
++   "version": 1,
++   "workDate": null,
++   "workerId": "wB-m107a-1790079557618-kiijxc9",
++ }
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:482:7
+    480|           }),
+    481|         ),
+    482|       ).rejects.toThrow();
+       |       ^
+    483|     });
+    484|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-03: ACCOUNTANT sees ADVANCE_SALARY at HR_APPROVED+ (positive)
+AssertionError: expected 'TIMESHEET_DISPUTE' to be 'ADVANCE_SALARY' // Object.is equality
+
+Expected: "ADVANCE_SALARY"
+Received: "TIMESHEET_DISPUTE"
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:538:26
+    536|       expect(rows.length).toBeGreaterThanOrEqual(2); // tAdvAId, tAdvAΓÇª
+    537|       for (const row of rows) {
+    538|         expect(row.type).toBe('ADVANCE_SALARY');
+       |                          ^
+    539|         expect(['HR_APPROVED', 'APPROVED', 'PAID', 'REJECTED', 'CLOSEDΓÇª
+    540|       }
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-03: ACCOUNTANT does NOT see non-ADVANCE_SALARY tickets (PENDING/LEAVE/DISPUTE)
+AssertionError: expected [ ΓÇª(2) ] to have a length of +0 but got 2
+
+- Expected
++ Received
+
+- 0
++ 2
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:552:20
+    550|         }),
+    551|       ) as unknown[];
+    552|       expect(rows).toHaveLength(0);
+       |                    ^
+    553|     });
+    554|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-03: ACCOUNTANT cannot INSERT non-ADVANCE ticket (deny)
+AssertionError: promise resolved "{ ΓÇª(29) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "amountVnd": 0n,
++   "assignmentId": null,
++   "createdAt": 2026-09-22T12:19:17.979Z,
++   "createdByActorId": "acc-m107a-1790079557618-kiijxc9",
++   "createdByRole": "ACCOUNTANT",
++   "currentHours": null,
++   "deductMonth": null,
++   "deductYear": null,
++   "deductionVnd": 0n,
++   "deltaHours": null,
++   "description": "should be denied",
++   "id": "6a10cc02-b14b-44ae-9cfc-cf2def619975",
++   "isOverdue": false,
++   "leaveDays": null,
++   "leaveFromDate": 2026-09-10T00:00:00.000Z,
++   "leaveToDate": 2026-09-11T00:00:00.000Z,
++   "leaveTypeCode": null,
++   "metadata": Object {},
++   "priority": "NORMAL",
++   "reasonCode": null,
++   "requestedHours": null,
++   "requestedPayDate": null,
++   "slaDueAt": null,
++   "status": "PENDING",
++   "title": "Accountant fake create",
++   "type": "LEAVE_REQUEST",
++   "version": 1,
++   "workDate": null,
++   "workerId": "wA-m107a-1790079557618-kiijxc9",
++ }
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:573:7
+    571|           }),
+    572|         ),
+    573|       ).rejects.toThrow();
+       |       ^
+    574|     });
+    575|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[8/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-03: PM cannot INSERT tickets (read-only role)
+AssertionError: promise resolved "{ ΓÇª(29) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "amountVnd": 0n,
++   "assignmentId": null,
++   "createdAt": 2026-09-22T12:19:17.996Z,
++   "createdByActorId": "uA-m107a-1790079557618-kiijxc9",
++   "createdByRole": "PM",
++   "currentHours": null,
++   "deductMonth": null,
++   "deductYear": null,
++   "deductionVnd": 0n,
++   "deltaHours": null,
++   "description": "should be denied",
++   "id": "dedf954f-75c2-4812-be40-406e71345ede",
++   "isOverdue": false,
++   "leaveDays": null,
++   "leaveFromDate": 2026-09-10T00:00:00.000Z,
++   "leaveToDate": 2026-09-11T00:00:00.000Z,
++   "leaveTypeCode": null,
++   "metadata": Object {},
++   "priority": "NORMAL",
++   "reasonCode": null,
++   "requestedHours": null,
++   "requestedPayDate": null,
++   "slaDueAt": null,
++   "status": "PENDING",
++   "title": "PM fake create",
++   "type": "LEAVE_REQUEST",
++   "version": 1,
++   "workDate": null,
++   "workerId": "wA-m107a-1790079557618-kiijxc9",
++ }
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:619:7
+    617|           }),
+    618|         ),
+    619|       ).rejects.toThrow();
+       |       ^
+    620|     });
+    621|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[9/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-03: PM cannot UPDATE tickets (read-only role)
+AssertionError: promise resolved "{ ΓÇª(29) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "amountVnd": 5000000n,
++   "assignmentId": null,
++   "createdAt": 2026-09-22T12:19:17.789Z,
++   "createdByActorId": "uA-m107a-1790079557618-kiijxc9",
++   "createdByRole": "WORKER",
++   "currentHours": null,
++   "deductMonth": 9,
++   "deductYear": 2026,
++   "deductionVnd": 0n,
++   "deltaHours": null,
++   "description": "advance salary test",
++   "id": "484ad99f-a75f-43be-a2c9-c3b07221503e",
++   "isOverdue": false,
++   "leaveDays": null,
++   "leaveFromDate": null,
++   "leaveToDate": null,
++   "leaveTypeCode": null,
++   "metadata": Object {},
++   "priority": "NORMAL",
++   "reasonCode": null,
++   "requestedHours": null,
++   "requestedPayDate": null,
++   "slaDueAt": null,
++   "status": "HR_APPROVED",
++   "title": "PM hacked",
++   "type": "ADVANCE_SALARY",
++   "version": 1,
++   "workDate": null,
++   "workerId": "wA-m107a-1790079557618-kiijxc9",
++ }
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:631:7
+    629|           }),
+    630|         ),
+    631|       ).rejects.toThrow();
+       |       ^
+    632|     });
+    633|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[10/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-03: DIRECTOR cannot INSERT tickets (read-only role, DEC-06)
+AssertionError: promise resolved "{ ΓÇª(29) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "amountVnd": 0n,
++   "assignmentId": null,
++   "createdAt": 2026-09-22T12:19:18.015Z,
++   "createdByActorId": "dir-m107a-1790079557618-kiijxc9",
++   "createdByRole": "ADMIN",
++   "currentHours": null,
++   "deductMonth": null,
++   "deductYear": null,
++   "deductionVnd": 0n,
++   "deltaHours": null,
++   "description": "should be denied",
++   "id": "1fa45846-b341-4d1b-9761-b916548fe281",
++   "isOverdue": false,
++   "leaveDays": null,
++   "leaveFromDate": null,
++   "leaveToDate": null,
++   "leaveTypeCode": null,
++   "metadata": Object {},
++   "priority": "NORMAL",
++   "reasonCode": null,
++   "requestedHours": null,
++   "requestedPayDate": null,
++   "slaDueAt": null,
++   "status": "PENDING",
++   "title": "Director fake create",
++   "type": "OTHER",
++   "version": 1,
++   "workDate": null,
++   "workerId": "wA-m107a-1790079557618-kiijxc9",
++ }
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:660:7
+    658|           }),
+    659|         ),
+    660|       ).rejects.toThrow();
+       |       ^
+    661|     });
+    662|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[11/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-03: denied roles (SALE, MKT, VENDOR_ADMIN, CTV, EMPLOYEE) see zero tickets
+AssertionError: expected [ ΓÇª(9) ] to have a length of +0 but got 9
+
+- Expected
++ Received
+
+- 0
++ 9
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:677:22
+    675|           tx.ticket.findMany({ select: { id: true } }),
+    676|         ) as unknown[];
+    677|         expect(rows).toHaveLength(0);
+       |                      ^
+    678|       }
+    679|     }, 30_000);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[12/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-04: WORKER cannot read internal comments
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:691:57
+    689|       ) as Array<{ id: string; isInternal: boolean }>;
+    690|       expect(rows.length).toBeGreaterThanOrEqual(1);
+    691|       expect(rows.every((r) => r.isInternal === false)).toBe(true);
+       |                                                         ^
+    692|     });
+    693|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[13/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-04: ACCOUNTANT cannot read internal comments
+AssertionError: expected [ ΓÇª(2) ] to have a length of +0 but got 2
+
+- Expected
++ Received
+
+- 0
++ 2
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:713:20
+    711|         }),
+    712|       ) as unknown[];
+    713|       expect(rows).toHaveLength(0);
+       |                    ^
+    714|     });
+    715|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[14/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-04: notification recipient isolation ΓÇö ACCOUNTANT sees only ACCOUNTANT notifications
+AssertionError: expected 2 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:724:27
+    722|         }),
+    723|       ) as Array<{ id: string; recipientRole: string }>;
+    724|       expect(rows.length).toBe(1);
+       |                           ^
+    725|       expect(rows[0].recipientRole).toBe('ACCOUNTANT');
+    726|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[15/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts > V5-M1-07a LIVE ΓÇö Ticket RLS scope (AC-01..AC-06) >
+AC-04: WORKER cannot insert internal comment
+AssertionError: promise resolved "{ ΓÇª(9) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "authorId": "uA-m107a-1790079557618-kiijxc9",
++   "authorName": "Worker A",
++   "authorRole": "WORKER",
++   "body": "Trying internal",
++   "createdAt": 2026-09-22T12:19:18.058Z,
++   "id": "c7c03a76-652a-406d-bb04-6e5684d4c75e",
++   "isInternal": true,
++   "ticketId": "dcec58a4-cded-40a7-9062-18128c91d326",
++   "updatedAt": 2026-09-22T12:19:18.058Z,
++ }
+
+ Γ¥» src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts:763:7
+    761|           }),
+    762|         ),
+    763|       ).rejects.toThrow();
+       |       ^
+    764|     });
+    765|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[16/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > PLN-02: writer connection identity is app_user_writer (SELECT current_user via writer)
+AssertionError: expected 'postgres' to be 'app_user_writer' // Object.is equality
+
+Expected: "app_user_writer"
+Received: "postgres"
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:197:37
+    195|     it('PLN-02: writer connection identity is app_user_writer (SELECT ΓÇª
+    196|       const rows = await writer.$queryRawUnsafe<Array<{ current_user: ΓÇª
+    197|       expect(rows[0]?.current_user).toBe('app_user_writer');
+       |                                     ^
+    198|     });
+    199|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[17/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-07: WORKER A sees ONLY own deduction (self positive, cross zero)
+AssertionError: expected [ ΓÇª(2) ] to deeply equal [ 'ded-A-m107b-1790079559502-egenlf4' ]
+
+- Expected
++ Received
+
+  Array [
+    "ded-A-m107b-1790079559502-egenlf4",
++   "ded-B-m107b-1790079559502-egenlf4",
+  ]
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:285:37
+    283|         tx.workerDeduction.findMany({ where: { id: { in: [dedAId, dedBΓÇª
+    284|       );
+    285|       expect(rows.map((r) => r.id)).toEqual([dedAId]);
+       |                                     ^
+    286|     });
+    287|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[18/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-08: denied role (SALE) sees zero deductions (no exceptionΓåÆ0 masking)
+AssertionError: expected [ { ΓÇª(7) }, { ΓÇª(7) } ] to have a length of +0 but got 2
+
+- Expected
++ Received
+
+- 0
++ 2
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:293:20
+    291|         tx.workerDeduction.findMany({ where: { id: { in: [dedAId, dedBΓÇª
+    292|       );
+    293|       expect(rows).toHaveLength(0);
+       |                    ^
+    294|     });
+    295|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[19/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-05: WORKER cannot INSERT a deduction (deny ΓåÆ throw)
+AssertionError: promise resolved "{ ΓÇª(7) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "amountVnd": 1n,
++   "createdAt": 2026-09-22T12:19:19.779Z,
++   "createdBy": null,
++   "id": "51bf5cdf-fd44-4680-8f65-24563c09cfdb",
++   "reason": "x",
++   "status": "PENDING",
++   "workerId": "wkrA-m107b-1790079559502-egenlf4",
++ }
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:313:7
+    311|           tx.workerDeduction.create({ data: { workerId: wkrAId, amountΓÇª
+    312|         ),
+    313|       ).rejects.toThrow();
+       |       ^
+    314|     });
+    315|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[20/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-05: ACCOUNTANT can UPDATE a deduction (positive), HR_STAFF cannot (count 0)
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:324:28
+    322|         tx.workerDeduction.updateMany({ where: { id: dedBId }, data: {ΓÇª
+    323|       );
+    324|       expect(denied.count).toBe(0);
+       |                            ^
+    325|     });
+    326|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[21/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-08: CTV/WORKER/VENDOR_ADMIN see zero client companies (deny)
+AssertionError: expected [ { ΓÇª(8) } ] to have a length of +0 but got 1
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:342:22
+    340|           tx.clientCompany.findMany({ where: { id: ccId } }),
+    341|         );
+    342|         expect(rows).toHaveLength(0);
+       |                      ^
+    343|       }
+    344|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[22/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-05: HR_STAFF can read but NOT INSERT a client company (command-aware deny ΓåÆ throw)
+AssertionError: promise resolved "{ ΓÇª(8) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "code": "CCZ-m107b-1790079559502-egenlf4",
++   "companySize": null,
++   "createdAt": 2026-09-22T12:19:19.814Z,
++   "id": "a1da1b02-6d22-41f5-acd5-20a9fdbaab6c",
++   "industry": null,
++   "name": "x",
++   "status": "PROSPECT",
++   "taxCode": null,
++ }
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:358:7
+    356|           tx.clientCompany.create({ data: { code: `CCZ-${RUN}`, name: ΓÇª
+    357|         ),
+    358|       ).rejects.toThrow();
+       |       ^
+    359|     });
+    360|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[23/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-05: DIRECTOR can UPDATE, ACCOUNTANT cannot (command-aware split)
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:369:28
+    367|         tx.clientCompany.updateMany({ where: { id: ccId }, data: { staΓÇª
+    368|       );
+    369|       expect(denied.count).toBe(0);
+       |                            ^
+    370|     });
+    371|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[24/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-07: ACCOUNTANT sees client_rate_card (positive); SALE/PM see zero
+AssertionError: expected [ { ΓÇª(9) } ] to have a length of +0 but got 1
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:382:22
+    380|           tx.clientRateCard.findMany({ where: { id: crcId } }),
+    381|         );
+    382|         expect(rows).toHaveLength(0);
+       |                      ^
+    383|       }
+    384|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[25/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-07: HR_MANAGER sees vendor_rate_card (positive); SALE/PM see zero
+AssertionError: expected [ { ΓÇª(9) } ] to have a length of +0 but got 1
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:395:22
+    393|           tx.vendorRateCard.findMany({ where: { id: vrcId } }),
+    394|         );
+    395|         expect(rows).toHaveLength(0);
+       |                      ^
+    396|       }
+    397|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[26/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-05: rate cards are read-only at runtime ΓÇö INSERT denied even for a finance reader (throw)
+AssertionError: promise resolved "{ ΓÇª(9) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "contractId": "ctr-m107b-1790079559502-egenlf4",
++   "createdAt": 2026-09-22T12:19:19.842Z,
++   "effectiveFrom": 2026-01-01T00:00:00.000Z,
++   "effectiveTo": null,
++   "id": "a1a105cd-fd0d-4f34-90d8-24aece8887b7",
++   "price": 1n,
++   "rateType": "MONTHLY",
++   "siteId": null,
++   "workType": null,
++ }
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:406:7
+    404|           }),
+    405|         ),
+    406|       ).rejects.toThrow();
+       |       ^
+    407|       await expect(
+    408|         asRole({ userId: `hrm-${RUN}`, role: 'HR_MANAGER' }, (tx) =>
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[27/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-07: CTV A sees ONLY own withdrawal (self positive, AΓåÆB cross zero)
+AssertionError: expected [ ΓÇª(2) ] to deeply equal [ 'cw-A-m107b-1790079559502-egenlf4' ]
+
+- Expected
++ Received
+
+  Array [
+    "cw-A-m107b-1790079559502-egenlf4",
++   "cw-B-m107b-1790079559502-egenlf4",
+  ]
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:429:37
+    427|         tx.ctvWithdrawalRequest.findMany({ where: { id: { in: [cwAId, ΓÇª
+    428|       );
+    429|       expect(rows.map((r) => r.id)).toEqual([cwAId]);
+       |                                     ^
+    430|     });
+    431|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[28/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-05: CTV A can INSERT own withdrawal (positive); CTV A cannot INSERT for B (throw)
+AssertionError: promise resolved "{ ΓÇª(8) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "amountVnd": 1n,
++   "bankAccount": "9",
++   "bankName": "TCB",
++   "createdAt": 2026-09-22T12:19:19.861Z,
++   "ctvId": "ctvB-m107b-1790079559502-egenlf4",
++   "id": "17c6fc37-1d0c-4000-b21e-3af7c12f1f3e",
++   "status": "PENDING",
++   "updatedAt": 2026-09-22T12:19:19.861Z,
++ }
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:446:7
+    444|           }),
+    445|         ),
+    446|       ).rejects.toThrow();
+       |       ^
+    447|     });
+    448|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[29/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-08: non-CTV role cannot INSERT a withdrawal (WITH CHECK role=CTV ΓåÆ throw)
+AssertionError: promise resolved "{ ΓÇª(8) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "amountVnd": 1n,
++   "bankAccount": "9",
++   "bankName": "TCB",
++   "createdAt": 2026-09-22T12:19:19.865Z,
++   "ctvId": "ctvA-m107b-1790079559502-egenlf4",
++   "id": "3edee2cc-cafc-430f-8d75-9b5ff43b215f",
++   "status": "PENDING",
++   "updatedAt": 2026-09-22T12:19:19.865Z,
++ }
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:456:7
+    454|           }),
+    455|         ),
+    456|       ).rejects.toThrow();
+       |       ^
+    457|     });
+    458|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[30/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-05: withdrawal has NO runtime UPDATE path ΓÇö approve denied (count 0)
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:463:28
+    461|         tx.ctvWithdrawalRequest.updateMany({ where: { id: cwAId }, datΓÇª
+    462|       );
+    463|       expect(denied.count).toBe(0);
+       |                            ^
+    464|     });
+    465|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[31/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-05: DELETE is denied on every seeded gap table (count 0, rows survive)
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:471:24
+    469|
+    470|       const d1 = await asRole(adminCtx, (tx) => tx.workerDeduction.delΓÇª
+    471|       expect(d1.count).toBe(0);
+       |                        ^
+    472|       const d2 = await asRole(adminCtx, (tx) => tx.clientCompany.deletΓÇª
+    473|       expect(d2.count).toBe(0);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[32/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5
+gap tables) > AC-04: missing GUC ΓåÆ empty role AND zero rows (deny-by-default, not masked)
+AssertionError: expected [ { ΓÇª(7) } ] to have a length of +0 but got 1
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» src/shared/auth/live-rls-posture.m1-07b.test.ts:498:20
+    496|         (tx as PrismaClient).workerDeduction.findMany({ where: { id: {ΓÇª
+    497|       );
+    498|       expect(rows).toHaveLength(0);
+       |                    ^
+    499|     });
+    500|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[33/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-vendor-idor.m1-08.test.ts > V5-M1-08 LIVE ΓÇö vendor object-scope/IDOR (L1) + guarded
+write & RLS backstop (L2) > L2 RLS backstop: d╞░ß╗¢i GUC vendor A, plain findMany chß╗ë trß║ú row vendor A (kh├┤ng
+lß╗Ö vendor B)
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ Γ¥» src/shared/auth/live-vendor-idor.m1-08.test.ts:241:52
+    239|     );
+    240|     expect(rows.length).toBeGreaterThanOrEqual(1);
+    241|     expect(rows.every((r) => r.vendorId === vAId)).toBe(true);
+       |                                                    ^
+    242|     expect(rows.some((r) => r.id === vsBCrossId)).toBe(false);
+    243|   }, 30_000);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[34/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-vendor-idor.m1-08.test.ts > V5-M1-08 LIVE ΓÇö vendor object-scope/IDOR (L1) + guarded
+write & RLS backstop (L2) > L2 RLS backstop: Bß╗Ä where.vendorId, d╞░ß╗¢i GUC vendor A vß║½n KH├öNG update ─æ╞░ß╗úc
+row vendor B (count=0, row nguy├¬n vß║╣n)
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» src/shared/auth/live-vendor-idor.m1-08.test.ts:254:19
+    252|       return res.count;
+    253|     });
+    254|     expect(count).toBe(0);
+       |                   ^
+    255|     const after = await admin.vendorStatement.findUnique({ where: { idΓÇª
+    256|     expect(after?.status).toBe('SENT'); // vendor B statement kh├┤ng bß╗ïΓÇª
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[35/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai
+d╞░ß╗¢i FORCE RLS > AC-10(a): current_user kh├┤ng BYPASSRLS v├á kh├┤ng SUPERUSER
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ Γ¥» src/shared/auth/live-public-read-rls.go-live-04.test.ts:116:34
+    114|     // Superuser bß╗Å qua RLS bß║Ñt chß║Ñp cß╗¥ `rolbypassrls` ΓçÆ phß║úi chß╗æt Cß║ó ΓÇª
+    115|     // chß╗ë chß╗⌐ng minh ─æ╞░ß╗úc "c├óu SQL chß║íy ─æ╞░ß╗úc", chß╗⌐ kh├┤ng chß╗⌐ng minh ─æΓÇª
+    116|     expect(rows[0].rolbypassrls).toBe(false);
+       |                                  ^
+    117|     expect(rows[0].rolsuper).toBe(false);
+    118|   }, 30_000);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[36/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai
+d╞░ß╗¢i FORCE RLS > AC-08: c├╣ng kß║┐t nß╗æi, KH├öNG set GUC ΓçÆ app.role rß╗ùng v├á 0 d├▓ng
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» src/shared/auth/live-public-read-rls.go-live-04.test.ts:133:30
+    131|     expect(probe.guc.role).toBe('');
+    132|     // C├│ d├▓ng ß╗ƒ ─æ├óy ΓçÆ Dß╗¬NG cß║ú round: kß║┐t nß╗æi bypass RLS hoß║╖c branch tΓÇª
+    133|     expect(probe.list.total).toBe(0);
+       |                              ^
+    134|     expect(probe.list.jobs).toHaveLength(0);
+    135|     expect(probe.detail).toBeNull();
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[37/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai
+d╞░ß╗¢i FORCE RLS > AC-10(c): helper trß║ú ΓëÑ 1 job v├á mß╗ìi d├▓ng nh├¼n thß║Ñy ─æ╞░ß╗úc ─æß╗üu is_public = true
+AssertionError: expected [ 'PRJn3-396666c1i-hrp', ΓÇª(45) ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "PRJn3-396666c1i-hrp",
++   "CPRJn3-396666c1ii-client",
++   "PRJn3-396666c1iii-hrp",
++   "PRJn3-396666c1iv-replay",
++   "PRJn3-396666c1v-failed",
++   "PRJn3-396666c1vi-fk",
++   "PRJn3-396666c1vii-rls",
++   "PRJn3-396666c1viii-race",
++   "PRJn3-396666c1ix-mismatch",
++   "PRJn3-396666c1x-closed",
++   "CPRJn3-396666c1xi-effective",
++   "PRJn3-396666c1xii-hrp-reject",
++   "PRJn3-396666c1xiii-no-delete",
++   "PRJn3-396666c1xiv-race-loser",
++   "CPRJn3-396666c1xv-concurrent-close",
++   "PRJn3-26742f9ei-hrp",
++   "CPRJn3-26742f9eii-client",
++   "PRJn3-26742f9eiii-hrp",
++   "PRJn3-26742f9eiv-replay",
++   "PRJn3-26742f9ev-failed",
++   "PRJn3-26742f9evi-fk",
++   "PRJn3-26742f9evii-rls",
++   "PRJn3-4d0dd34di-hrp",
++   "CPRJn3-4d0dd34dii-client",
++   "PRJn3-4d0dd34diii-hrp",
++   "PRJn3-4d0dd34div-replay",
++   "PRJn3-4d0dd34dv-failed",
++   "PRJn3-4d0dd34dvi-fk",
++   "PRJn3-4d0dd34dvii-rls",
++   "PRJn3-4d0dd34dviii-race",
++   "PRJn3-4d0dd34dix-mismatch",
++   "PRJn3-4d0dd34dx-closed",
++   "CPRJn3-4d0dd34dxi-effective",
++   "PRJn3-4d0dd34dxii-hrp-reject",
++   "PRJn3-4d0dd34dxiii-no-delete",
++   "PRJn3-4d0dd34dxiv-race-loser",
++   "CPRJn3-4d0dd34dxv-concurrent-close",
++   "PRJn3-26742f9eviii-race",
++   "PRJn3-26742f9eix-mismatch",
++   "PRJn3-26742f9ex-closed",
++   "CPRJn3-26742f9exi-effective",
++   "PRJn3-26742f9exii-hrp-reject",
++   "PRJn3-26742f9exiii-no-delete",
++   "PRJn3-26742f9exiv-race-loser",
++   "CPRJn3-26742f9exv-concurrent-close",
++   "GL04-PRIV-gl04-1790079567476-wxww2u4",
++ ]
+
+ Γ¥» src/shared/auth/live-public-read-rls.go-live-04.test.ts:166:20
+    164|     expect(seen.detail?.slug).toBe(pubCode);
+    165|     expect(seen.visible.length).toBeGreaterThanOrEqual(1);
+    166|     expect(leaked).toEqual([]);
+       |                    ^
+    167|   }, 30_000);
+    168|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[38/119]ΓÄ»
+
+ FAIL  src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai
+d╞░ß╗¢i FORCE RLS > AC-06: dß╗▒ ├ín is_public = false vß║»ng mß║╖t ß╗ƒ mß╗ìi ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai
+AssertionError: expected [ Array(1) ] to have a length of +0 but got 1
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» src/shared/auth/live-public-read-rls.go-live-04.test.ts:195:22
+    193|     expect(seen.list.jobs.map((job) => job.id)).not.toContain(privId);
+    194|     expect(seen.detail).toBeNull();
+    195|     expect(seen.row).toHaveLength(0); // RLS chß║╖n ß╗ƒ tß║ºng D├ÆNG, kh├┤ng cΓÇª
+       |                      ^
+    196|   }, 30_000);
+    197|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39/119]ΓÄ»
+
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: DIRECTOR > DIRECTOR ├ù attendance_events ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: SALE > SALE ├ù attendance_events ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: ACCOUNTANT > ACCOUNTANT ├ù attendance_events ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: MKT > MKT ├ù attendance_events ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN ├ù attendance_events ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF ├ù attendance_events ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: CTV > CTV ├ù attendance_events ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù attendance_events ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù attendance_events ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù attendance_events ΓåÆ exact zero rows
+AssertionError: expected [ 'ae-secmx-1790079565829-atpcj9d' ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "ae-secmx-1790079565829-atpcj9d",
++ ]
+
+ Γ¥» src/domains/security/security-matrix.integration.test.ts:247:25
+    245|           } else {
+    246|             // Denied: RLS filters the row out ΓÇö SELECT returns exactlΓÇª
+    247|             expect(ids).toEqual([]);
+       |                         ^
+    248|           }
+    249|         });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[40/119]ΓÄ»
+
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: HR_STAFF > HR_STAFF ├ù outsourcing_projects ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: ACCOUNTANT > ACCOUNTANT ├ù outsourcing_projects ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù outsourcing_projects ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù outsourcing_projects ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù outsourcing_projects ΓåÆ exact zero rows
+AssertionError: expected [ 'prj-secmx-1790079565829-atpcj9d' ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "prj-secmx-1790079565829-atpcj9d",
++ ]
+
+ Γ¥» src/domains/security/security-matrix.integration.test.ts:247:25
+    245|           } else {
+    246|             // Denied: RLS filters the row out ΓÇö SELECT returns exactlΓÇª
+    247|             expect(ids).toEqual([]);
+       |                         ^
+    248|           }
+    249|         });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[41/119]ΓÄ»
+
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: HR_STAFF > HR_STAFF ├ù staffing_orders ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: ACCOUNTANT > ACCOUNTANT ├ù staffing_orders ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù staffing_orders ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù staffing_orders ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù staffing_orders ΓåÆ exact zero rows
+AssertionError: expected [ 'so-secmx-1790079565829-atpcj9d' ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "so-secmx-1790079565829-atpcj9d",
++ ]
+
+ Γ¥» src/domains/security/security-matrix.integration.test.ts:247:25
+    245|           } else {
+    246|             // Denied: RLS filters the row out ΓÇö SELECT returns exactlΓÇª
+    247|             expect(ids).toEqual([]);
+       |                         ^
+    248|           }
+    249|         });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[42/119]ΓÄ»
+
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: HR_STAFF > HR_STAFF ├ù vendors ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: PM > PM ├ù vendors ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: MKT > MKT ├ù vendors ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: CTV > CTV ├ù vendors ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: WORKER > WORKER ├ù vendors ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù vendors ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù vendors ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù vendors ΓåÆ exact zero rows
+AssertionError: expected [ 'vd-secmx-1790079565829-atpcj9d' ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "vd-secmx-1790079565829-atpcj9d",
++ ]
+
+ Γ¥» src/domains/security/security-matrix.integration.test.ts:247:25
+    245|           } else {
+    246|             // Denied: RLS filters the row out ΓÇö SELECT returns exactlΓÇª
+    247|             expect(ids).toEqual([]);
+       |                         ^
+    248|           }
+    249|         });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[43/119]ΓÄ»
+
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: HR_STAFF > HR_STAFF ├ù vendor_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: SALE > SALE ├ù vendor_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: PM > PM ├ù vendor_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: MKT > MKT ├ù vendor_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: CTV > CTV ├ù vendor_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: WORKER > WORKER ├ù vendor_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù vendor_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù vendor_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù vendor_statements ΓåÆ exact zero rows
+AssertionError: expected [ 'vs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "vs-secmx-1790079565829-atpcj9d",
++ ]
+
+ Γ¥» src/domains/security/security-matrix.integration.test.ts:247:25
+    245|           } else {
+    246|             // Denied: RLS filters the row out ΓÇö SELECT returns exactlΓÇª
+    247|             expect(ids).toEqual([]);
+       |                         ^
+    248|           }
+    249|         });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[44/119]ΓÄ»
+
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: HR_STAFF > HR_STAFF ├ù client_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: PM > PM ├ù client_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: MKT > MKT ├ù client_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN ├ù client_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF ├ù client_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: CTV > CTV ├ù client_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: WORKER > WORKER ├ù client_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù client_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù client_statements ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù client_statements ΓåÆ exact zero rows
+AssertionError: expected [ 'cs-secmx-1790079565829-atpcj9d' ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "cs-secmx-1790079565829-atpcj9d",
++ ]
+
+ Γ¥» src/domains/security/security-matrix.integration.test.ts:247:25
+    245|           } else {
+    246|             // Denied: RLS filters the row out ΓÇö SELECT returns exactlΓÇª
+    247|             expect(ids).toEqual([]);
+       |                         ^
+    248|           }
+    249|         });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[45/119]ΓÄ»
+
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: SALE > SALE ├ù timesheet_periods ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: MKT > MKT ├ù timesheet_periods ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN ├ù timesheet_periods ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF ├ù timesheet_periods ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: CTV > CTV ├ù timesheet_periods ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: WORKER > WORKER ├ù timesheet_periods ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù timesheet_periods ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù timesheet_periods ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù timesheet_periods ΓåÆ exact zero rows
+AssertionError: expected [ 'tp-secmx-1790079565829-atpcj9d' ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "tp-secmx-1790079565829-atpcj9d",
++ ]
+
+ Γ¥» src/domains/security/security-matrix.integration.test.ts:247:25
+    245|           } else {
+    246|             // Denied: RLS filters the row out ΓÇö SELECT returns exactlΓÇª
+    247|             expect(ids).toEqual([]);
+       |                         ^
+    248|           }
+    249|         });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[46/119]ΓÄ»
+
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: ACCOUNTANT > ACCOUNTANT ├ù workers ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: MKT > MKT ├ù workers ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPLOYEE > EMPLOYEE ├ù workers ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE ├ù workers ΓåÆ exact zero rows
+ FAIL  src/domains/security/security-matrix.integration.test.ts > V5-M1-07b PLN-01 ΓÇö truthful security matrix (13+2
+roles ├ù 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE ├ù workers ΓåÆ exact zero rows
+AssertionError: expected [ 'wk-secmx-1790079565829-atpcj9d' ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "wk-secmx-1790079565829-atpcj9d",
++ ]
+
+ Γ¥» src/domains/security/security-matrix.integration.test.ts:247:25
+    245|           } else {
+    246|             // Denied: RLS filters the row out ΓÇö SELECT returns exactlΓÇª
+    247|             expect(ids).toEqual([]);
+       |                         ^
+    248|           }
+    249|         });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[47/119]ΓÄ»
+
+ FAIL  src/domains/applications/live-integration.mp2.test.ts > MP-2 LIVE integration (AC-02/03/04/05) > AC-05 RLS read
+scope: privileged roles see an unscoped row; others do not
+AssertionError: WORKER must NOT see the row: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» src/domains/applications/live-integration.mp2.test.ts:365:69
+    363|       // Out of scope: no vendor/ctv/pm match and not a privileged reaΓÇª
+    364|       for (const role of ['WORKER', 'VENDOR_ADMIN', 'VENDOR_STAFF', 'CΓÇª
+    365|         expect(await visible(role), `${role} must NOT see the row`).toΓÇª
+       |                                                                     ^
+    366|       }
+    367|     });
+ Γ¥» inRollback src/domains/applications/live-integration.mp2.test.ts:142:7
+ Γ¥» src/domains/applications/live-integration.mp2.test.ts:346:5
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[48/119]ΓÄ»
+
+ FAIL  src/domains/applications/security-boundary.mp2.test.ts > MP-2 security boundary ΓÇö LIVE (AC-09) > NEGATIVE:
+app_user_writer cannot direct-INSERT candidate_submissions under WORKER context
+AssertionError: promise resolved "Result{ command: 'INSERT', ΓÇª(9) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Result {
++   "RowCtor": null,
++   "_parsers": undefined,
++   "_prebuiltEmptyResultObject": null,
++   "_types": TypeOverrides {
++     "_types": Object {
++       "arrayParser": Object {
++         "create": [Function create],
++       },
++       "builtins": Object {
++         "ABSTIME": 702,
++         "ACLITEM": 1033,
++         "BIT": 1560,
++         "BOOL": 16,
++         "BPCHAR": 1042,
++         "BYTEA": 17,
++         "CHAR": 18,
++         "CID": 29,
++         "CIDR": 650,
++         "CIRCLE": 718,
++         "DATE": 1082,
++         "FLOAT4": 700,
++         "FLOAT8": 701,
++         "GTSVECTOR": 3642,
++         "INET": 869,
++         "INT2": 21,
++         "INT4": 23,
++         "INT8": 20,
++         "INTERVAL": 1186,
++         "JSON": 114,
++         "JSONB": 3802,
++         "MACADDR": 829,
++         "MACADDR8": 774,
++         "MONEY": 790,
++         "NUMERIC": 1700,
++         "OID": 26,
++         "PATH": 602,
++         "PG_DEPENDENCIES": 3402,
++         "PG_LSN": 3220,
++         "PG_NDISTINCT": 3361,
++         "PG_NODE_TREE": 194,
++         "POLYGON": 604,
++         "REFCURSOR": 1790,
++         "REGCLASS": 2205,
++         "REGCONFIG": 3734,
++         "REGDICTIONARY": 3769,
++         "REGNAMESPACE": 4089,
++         "REGOPER": 2203,
++         "REGOPERATOR": 2204,
++         "REGPROC": 24,
++         "REGPROCEDURE": 2202,
++         "REGROLE": 4096,
++         "REGTYPE": 2206,
++         "RELTIME": 703,
++         "SMGR": 210,
++         "TEXT": 25,
++         "TID": 27,
++         "TIME": 1083,
++         "TIMESTAMP": 1114,
++         "TIMESTAMPTZ": 1184,
++         "TIMETZ": 1266,
++         "TINTERVAL": 704,
++         "TSQUERY": 3615,
++         "TSVECTOR": 3614,
++         "TXID_SNAPSHOT": 2970,
++         "UUID": 2950,
++         "VARBIT": 1562,
++         "VARCHAR": 1043,
++         "XID": 28,
++         "XML": 142,
++       },
++       "getTypeParser": [Function getTypeParser],
++       "setTypeParser": [Function setTypeParser],
++     },
++     "binary": Object {},
++     "text": Object {},
++   },
++   "command": "INSERT",
++   "fields": Array [],
++   "oid": 0,
++   "rowAsArray": false,
++   "rowCount": 1,
++   "rows": Array [],
++ }
+
+ Γ¥» src/domains/applications/security-boundary.mp2.test.ts:214:7
+    212|              VALUES (gen_random_uuid()::text, NULL, 'x', '0', 'NEW')`,
+    213|         ),
+    214|       ).rejects.toThrow();
+       |       ^
+    215|     } finally {
+    216|       await client.query('ROLLBACK').catch(() => {});
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[49/119]ΓÄ»
+
+ FAIL  tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration ΓÇö DB-touching proof >
+(vii) RLS: HR_MANAGER GUC thß║Ñy rows; PUBLIC (no GUC) thß║Ñy 0 ΓÇö FORCE RLS enforced
+AssertionError: expected [ { ΓÇª(2) } ] to have a length of +0 but got 1
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ Γ¥» tests/db/placement-lifecycle-integration.test.ts:686:26
+    684|         tx.placement.findMany({ where: { id: created.placementId }, seΓÇª
+    685|       );
+    686|       expect(publicRead).toHaveLength(0);
+       |                          ^
+    687|
+    688|       // PUBLIC write attempt: INSERT blocked by RLS WITH CHECK
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[50/119]ΓÄ»
+
+ FAIL  tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration ΓÇö DB-touching proof >
+(xiii) RLS/privilege: app_user_writer DELETE bß╗ï REVOKE ΓÇö Placement lß╗ïch sß╗¡ bß║Ñt khß║ú x├│a
+AssertionError: expected null not to be null
+ Γ¥» tests/db/placement-lifecycle-integration.test.ts:1058:29
+    1056|         deleteErr = e as Error;
+    1057|       }
+    1058|       expect(deleteErr).not.toBeNull(); // privilege deny hoß║╖c RLS deny
+       |                             ^
+    1059|
+    1060|       // Verify row vß║½n c├▓n (DELETE bß╗ï chß║╖n)
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[51/119]ΓÄ»
+
+ FAIL  tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-08: writer
+cannot INSERT referral_attributions (RLS deny)
+AssertionError: promise resolved "1" instead of rejecting
+
+- Expected:
+[Error: rejected promise]
+
++ Received:
+1
+
+ Γ¥» tests/db/attribution-redirect.integration.test.ts:375:5
+    373|         'writer-test-code',
+    374|       ),
+    375|     ).rejects.toThrow();
+       |     ^
+    376|
+    377|     // Engine with link-capture context succeeds.
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[52/119]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 ΓÇö Canonical initial handling window (R1) >
+AC-01 (R1): valid attribution ΓåÆ submission, consumed attr, LPHA ACTIVE with 168h deadline
+TypeError: Cannot read properties of null (reading 'getTime')
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:1126:51
+    1124|       // AC-01 / RQ-02: expires_at - starts_at must equal 168 hours (AΓÇª
+    1125|       const startsMs = (lpha!.startsAt as Date).getTime();
+    1126|       const expiresMs = (lpha!.expiresAt as Date).getTime();
+       |                                                   ^
+    1127|       const diffMs = expiresMs - startsMs;
+    1128|       const ms168h = 168 * 60 * 60 * 1000;
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[53/119]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 ΓÇö Canonical initial handling window (R1) >
+AC-03 (R1 preserve): existing attribution+LPHA ΓåÆ new submission, attribution untouched, LPHA untouched
+PrismaClientKnownRequestError:
+Invalid `prisma.$queryRaw()` invocation:
+
+
+Raw query failed. Code: `23505`. Message: `Key (labor_profile_id)=(52c6b6d4-cf0a-4839-8077-2b6baaae86c4) already
+exists.`
+ Γ¥» $n.handleRequestError node_modules/@prisma/client/runtime/library.js:121:7315
+ Γ¥» $n.handleAndLogRequestError node_modules/@prisma/client/runtime/library.js:121:6623
+ Γ¥» $n.request node_modules/@prisma/client/runtime/library.js:121:6307
+ Γ¥» l node_modules/@prisma/client/runtime/library.js:130:9633
+ Γ¥» Module.submitPublicIntake src/domains/applications/aff03-public-intake.service.ts:159:16
+    157|   };
+    158|
+    159|   const rows = await tx.$queryRaw<IntakeRpcRow[]>`
+       |                ^
+    160|     SELECT * FROM hrp_public_intake_submission(${JSON.stringify(payloaΓÇª
+    161|   `;
+ Γ¥» Proxy._transactionWithCallback node_modules/@prisma/client/runtime/library.js:130:8000
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:1367:20
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[54/119]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 ΓÇö Canonical initial handling window (R1) >
+AC-03b (R1 preserve CONSUMED): bound CONSUMED attribution ΓåÆ new submission preserves, inbound untouched
+PrismaClientKnownRequestError:
+Invalid `prisma.$queryRaw()` invocation:
+
+
+Raw query failed. Code: `23505`. Message: `Key (labor_profile_id)=(bdd674dc-5d1e-42f6-a5a9-a22a1e72ff13) already
+exists.`
+ Γ¥» $n.handleRequestError node_modules/@prisma/client/runtime/library.js:121:7315
+ Γ¥» $n.handleAndLogRequestError node_modules/@prisma/client/runtime/library.js:121:6623
+ Γ¥» $n.request node_modules/@prisma/client/runtime/library.js:121:6307
+ Γ¥» l node_modules/@prisma/client/runtime/library.js:130:9633
+ Γ¥» Module.submitPublicIntake src/domains/applications/aff03-public-intake.service.ts:159:16
+    157|   };
+    158|
+    159|   const rows = await tx.$queryRaw<IntakeRpcRow[]>`
+       |                ^
+    160|     SELECT * FROM hrp_public_intake_submission(${JSON.stringify(payloaΓÇª
+    161|   `;
+ Γ¥» Proxy._transactionWithCallback node_modules/@prisma/client/runtime/library.js:130:8000
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:1483:19
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[55/119]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 ΓÇö Canonical initial handling window (R1) >
+AC-03c (R1 preserve MANAGER): active MANAGER handling indefinite ΓåÆ new submission preserves, no AFF_INITIAL
+PrismaClientKnownRequestError:
+Invalid `prisma.$queryRaw()` invocation:
+
+
+Raw query failed. Code: `23505`. Message: `N/A`
+ Γ¥» $n.handleRequestError node_modules/@prisma/client/runtime/library.js:121:7315
+ Γ¥» $n.handleAndLogRequestError node_modules/@prisma/client/runtime/library.js:121:6623
+ Γ¥» $n.request node_modules/@prisma/client/runtime/library.js:121:6307
+ Γ¥» l node_modules/@prisma/client/runtime/library.js:130:9633
+ Γ¥» Module.submitPublicIntake src/domains/applications/aff03-public-intake.service.ts:159:16
+    157|   };
+    158|
+    159|   const rows = await tx.$queryRaw<IntakeRpcRow[]>`
+       |                ^
+    160|     SELECT * FROM hrp_public_intake_submission(${JSON.stringify(payloaΓÇª
+    161|   `;
+ Γ¥» Proxy._transactionWithCallback node_modules/@prisma/client/runtime/library.js:130:8000
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:1608:19
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[56/119]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 ΓÇö Canonical initial handling window (R1) >
+AC-05 (R1 race): two connections racing on same LP ΓåÆ both submissions, one LPHA
+AssertionError: expected 1 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:1799:32
+    1797|       // Both calls must succeed (DEC-05: first-lock-holder semantics ΓÇª
+    1798|       const successes = [result1, result2].filter(r => r.status === 'fΓÇª
+    1799|       expect(successes.length).toBe(2);
+       |                                ^
+    1800|
+    1801|       // Both submissions must have been created.
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[57/119]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 ΓÇö Canonical initial handling window (R1) >
+AC-06 (backfill R1): legacy AFF_INITIAL NULL-deadline rows get deadline from starts_at
+AssertionError: expected 10 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 10
+
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:2115:33
+    2113|         where: { source: 'AFF_INITIAL', expiresAt: null },
+    2114|       });
+    2115|       expect(nullDeadlineCount).toBe(0); // all got deadlines
+       |                                 ^
+    2116|     } finally {
+    2117|       await writer.$disconnect().catch(() => {});
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[58/119]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 ΓÇö Canonical initial handling window (R1) >
+AC-08 (clean chain): owner/SECURITY DEFINER/search_path/EXECUTE ACL + handling SELECT+INSERT only
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:2265:42
+    2263|         SELECT has_table_privilege('hrp_public_rpc', 'public.labor_proΓÇª
+    2264|       `;
+    2265|       expect(handlingSelect[0]?.has_sel).toBe(true);
+       |                                          ^
+    2266|       const handlingUpdate = await writer.$queryRaw<{ has_upd: booleanΓÇª
+    2267|         SELECT has_table_privilege('hrp_public_rpc', 'public.labor_proΓÇª
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[59/119]ΓÄ»
+
+ FAIL  tests/db/handling-assignment.integration.test.ts > W5 HandlingAssignment safety > allows assignees to read only
+their own rows
+AssertionError: expected [ ΓÇª(2) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  Array [
+    "afff173a-4a83-4aa6-a389-744eec6351e6",
++   "426f4f98-8ea8-4e92-99c3-9db31325135b",
+  ]
+
+ Γ¥» tests/db/handling-assignment.integration.test.ts:181:44
+    179|     );
+    180|
+    181|     expect(staffRows.map((row) => row.id)).toEqual([staffAssignment.idΓÇª
+       |                                            ^
+    182|     expect(ctvRows.map((row) => row.id)).toEqual([ctvAssignment.id]);
+    183|     expect(unrelatedRows).toEqual([]);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[60/119]ΓÄ»
+
+ FAIL  tests/db/handling-assignment.integration.test.ts > W5 HandlingAssignment safety > denies missing-context reads
+and assignee writes
+AssertionError: expected [ { ΓÇª(14) } ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   Object {
++     "assignedByUserId": null,
++     "assigneeUserId": "w5-21a3ce8d-staff",
++     "completedMilestoneId": null,
++     "createdAt": 2026-09-22T12:19:32.230Z,
++     "expiresAt": null,
++     "id": "b440729e-5f1a-4e75-90c9-d5f92ddee2b9",
++     "laborProfileId": "3077cc1a-624a-42db-99a7-e3c83e65958a",
++     "previousAssignmentId": null,
++     "reason": null,
++     "source": "MANAGER_ASSIGNMENT",
++     "startsAt": 2026-09-22T12:19:32.226Z,
++     "status": "COMPLETED",
++     "updatedAt": 2026-09-22T12:19:32.230Z,
++     "version": 1,
++   },
++ ]
+
+ Γ¥» tests/db/handling-assignment.integration.test.ts:223:23
+    221|       : String(deleteError);
+    222|
+    223|     expect(noContext).toEqual([]);
+       |                       ^
+    224|     expect(updateResult.count).toBe(0);
+    225|     expect(deleteError).toBeTruthy();
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[61/119]ΓÄ»
+
+ FAIL  src/domains/admin-demand-tree.integration.test.ts > W3 Admin Demand Tree ΓÇö LIVE RLS Integration Test > 5.
+unrelated PM ΓåÆ nhß║¡n null > cannot see project
+AssertionError: expected { ΓÇª(9) } to be null
+
+- Expected:
+null
+
++ Received:
+Object {
+  "clientCompany": Object {
+    "id": "c1-w3-1790079571072-18ua9bg",
+    "name": "Client Visible",
+  },
+  "code": "P1-w3-1790079571072-18ua9bg",
+  "endDate": null,
+  "id": "p1-w3-1790079571072-18ua9bg",
+  "metrics": Object {
+    "assignmentsCount": 0,
+    "submissionsCount": 0,
+  },
+  "name": "Project Visible",
+  "staffingOrders": Array [
+    Object {
+      "code": "SO1-w3-1790079571072-18ua9bg",
+      "id": "so1-w3-1790079571072-18ua9bg",
+      "slots": Array [
+        Object {
+          "id": "jo1-w3-1790079571072-18ua9bg",
+          "jobOpeningId": "jo1-w3-1790079571072-18ua9bg",
+          "positionTitle": "Test Slot",
+        },
+      ],
+      "status": "OPEN",
+      "title": "Order 1",
+    },
+  ],
+  "startDate": "2026-09-22T00:00:00.000Z",
+  "status": "ACTIVE",
+}
+
+ Γ¥» src/domains/admin-demand-tree.integration.test.ts:182:108
+    180|   describe('5. unrelated PM ΓåÆ nhß║¡n null', () => {
+    181|     const ctx: AuthContext = { userId: uUnrelatedPm, role: 'PM' };
+    182|     it('cannot see project', async () => expect(await asRole(ctx, tx =ΓÇª
+       |                                                                                                            ^
+    183|     it('cannot see job opening', async () => expect(await asRole(ctx, ΓÇª
+    184|   });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[62/119]ΓÄ»
+
+ FAIL  src/domains/admin-demand-tree.integration.test.ts > W3 Admin Demand Tree ΓÇö LIVE RLS Integration Test > 5.
+unrelated PM ΓåÆ nhß║¡n null > cannot see job opening
+AssertionError: expected { ΓÇª(8) } to be null
+
+- Expected:
+null
+
++ Received:
+Object {
+  "associatedSlots": Array [
+    Object {
+      "id": "jo1-w3-1790079571072-18ua9bg",
+      "positionCode": "S-w3-1790079571072-18ua9bg",
+      "positionTitle": "Test Slot",
+    },
+  ],
+  "closedAt": null,
+  "id": "jo1-w3-1790079571072-18ua9bg",
+  "jobPosting": null,
+  "metrics": Object {
+    "assignmentsCount": 0,
+    "submissionsCount": 0,
+  },
+  "openedAt": null,
+  "staffingOrder": Object {
+    "code": "SO1-w3-1790079571072-18ua9bg",
+    "id": "so1-w3-1790079571072-18ua9bg",
+    "project": Object {
+      "code": "P1-w3-1790079571072-18ua9bg",
+      "id": "p1-w3-1790079571072-18ua9bg",
+      "name": "Project Visible",
+    },
+    "title": "Order 1",
+  },
+  "status": "OPEN",
+}
+
+ Γ¥» src/domains/admin-demand-tree.integration.test.ts:183:108
+    181|     const ctx: AuthContext = { userId: uUnrelatedPm, role: 'PM' };
+    182|     it('cannot see project', async () => expect(await asRole(ctx, tx =ΓÇª
+    183|     it('cannot see job opening', async () => expect(await asRole(ctx, ΓÇª
+       |                                                                                                            ^
+    184|   });
+    185|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[63/119]ΓÄ»
+
+ FAIL  src/domains/admin-demand-tree.integration.test.ts > W3 Admin Demand Tree ΓÇö LIVE RLS Integration Test > 6.
+Client Guard verification > unrelated PM cannot see C1 (has visible projects for others, none for him)
+AssertionError: expected { ΓÇª(8) } to be null
+
+- Expected:
+null
+
++ Received:
+Object {
+  "code": "CC1-w3-1790079571072-18ua9bg",
+  "id": "c1-w3-1790079571072-18ua9bg",
+  "industry": null,
+  "metrics": Object {
+    "assignmentsCount": 0,
+    "openingsCount": 1,
+    "ordersCount": 1,
+    "slotsCount": 1,
+  },
+  "name": "Client Visible",
+  "projects": Array [
+    Object {
+      "code": "P1-w3-1790079571072-18ua9bg",
+      "id": "p1-w3-1790079571072-18ua9bg",
+      "name": "Project Visible",
+      "status": "ACTIVE",
+    },
+  ],
+  "status": "PROSPECT",
+  "taxCode": null,
+}
+
+ Γ¥» src/domains/admin-demand-tree.integration.test.ts:189:77
+    187|     it('unrelated PM cannot see C1 (has visible projects for others, nΓÇª
+    188|       const ctx: AuthContext = { userId: uUnrelatedPm, role: 'PM' };
+    189|       expect(await asRole(ctx, tx => getClientDetail(tx, ctx, C1_VISIBΓÇª
+       |                                                                             ^
+    190|     });
+    191|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[64/119]ΓÄ»
+
+ FAIL  src/domains/admin-demand-tree.integration.test.ts > W3 Admin Demand Tree ΓÇö LIVE RLS Integration Test > 6.
+Client Guard verification > Primary PM cannot see C2 (has no visible projects for him)
+AssertionError: expected { ΓÇª(8) } to be null
+
+- Expected:
+null
+
++ Received:
+Object {
+  "code": "CC2-w3-1790079571072-18ua9bg",
+  "id": "c2-w3-1790079571072-18ua9bg",
+  "industry": null,
+  "metrics": Object {
+    "assignmentsCount": 0,
+    "openingsCount": 0,
+    "ordersCount": 0,
+    "slotsCount": 0,
+  },
+  "name": "Client Hidden",
+  "projects": Array [
+    Object {
+      "code": "P2-w3-1790079571072-18ua9bg",
+      "id": "p2-w3-1790079571072-18ua9bg",
+      "name": "Project Hidden",
+      "status": "ACTIVE",
+ Test Files  13 failed | 10 passed (23)
+    },
+  ],
+  "status": "PROSPECT",
+  "taxCode": null,
+}
+
+ Γ¥» src/domains/admin-demand-tree.integration.test.ts:194:76
+    192|     it('Primary PM cannot see C2 (has no visible projects for him)', aΓÇª
+    193|       const ctx: AuthContext = { userId: uPrimaryPm, role: 'PM' };
+    194|       expect(await asRole(ctx, tx => getClientDetail(tx, ctx, C2_HIDDEΓÇª
+       |                                                                            ^
+    195|     });
+    196|   });
+
+      Tests  119 failed | 326 passed | 2 skipped (447)
+   Start at  19:19:10
+   Duration  24.88s (transform 906ms, setup 0ms, collect 2.60s, tests 14.83s, environment 5ms, prepare 2.43s)
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[65/119]ΓÄ»
+
+ FAIL  src/domains/admin-demand-tree.integration.test.ts > W3 Admin Demand Tree ΓÇö LIVE RLS Integration Test > 8.
+missing GUC/context ΓåÆ fail closed > fails when trying to read without RLS context applied (returns null due to 0
+rows)
+AssertionError: expected { ΓÇª(9) } to be null
+
+- Expected:
+null
+
++ Received:
+Object {
+  "clientCompany": Object {
+    "id": "c1-w3-1790079571072-18ua9bg",
+    "name": "Client Visible",
+  },
+  "code": "P1-w3-1790079571072-18ua9bg",
+  "endDate": null,
+  "id": "p1-w3-1790079571072-18ua9bg",
+  "metrics": Object {
+    "assignmentsCount": 0,
+    "submissionsCount": 0,
+  },
+  "name": "Project Visible",
+  "staffingOrders": Array [
+    Object {
+      "code": "SO1-w3-1790079571072-18ua9bg",
+      "id": "so1-w3-1790079571072-18ua9bg",
+      "slots": Array [
+        Object {
+          "id": "jo1-w3-1790079571072-18ua9bg",
+          "jobOpeningId": "jo1-w3-1790079571072-18ua9bg",
+          "positionTitle": "Test Slot",
+        },
+      ],
+      "status": "OPEN",
+      "title": "Order 1",
+    },
+  ],
+  "startDate": "2026-09-22T00:00:00.000Z",
+  "status": "ACTIVE",
+}
+
+ Γ¥» src/domains/admin-demand-tree.integration.test.ts:206:7
+    204|     it('fails when trying to read without RLS context applied (returnsΓÇª
+    205|       // Using writer directly without withDbContext
+    206|       await expect(getProjectDetail(writer, P1_VISIBLE)).resolves.toBeΓÇª
+       |       ^
+    207|     });
+    208|   });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[66/119]ΓÄ»

@@ -1,0 +1,6 @@
+VALIDATE_GUARDS_RESULT (round 4, REFERENCE) = PASS — see evidence/guards-r5.txt for full round-5 evidence
+NOTE: Round-5 uses dedicated script scripts/ci/validate-guards.mjs and dedicated
+      artifact evidence/guards-r5.txt. R4 used prepare-migration-test-db.mjs --validate-guards
+      which was retired in R5 because that single-script approach conflated the
+      helper guard with the prepare-migration guard. R5 separation is mandated
+      by R5-G3 ("guards must be truly non-mutating and exact exit codes").

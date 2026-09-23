@@ -1,0 +1,11 @@
+MODE=target-exists; RID=dad87d45; INJECT_FAILURE=false
+FIXTURE_CREATED_AND_HELD=PASS
+AC-06: exit=3 marker=TARGET_DB_EXISTS; catalog/sentinel/held-connection preserved; PASS
+AC-07: exit=3 marker=TARGET_DB_EXISTS; catalog/sentinel/held-connection preserved; PASS
+AC-04: exit=3 marker=TARGET_DB_EXISTS; catalog/sentinel/held-connection preserved; PASS
+OWNED_FIXTURE_CLEANUP=PASS aff05a_r1_collision_dad87d45_tgt
+COLLISION_RESULT=PASS
+
+STDERR:
+
+EXIT_CODE=0

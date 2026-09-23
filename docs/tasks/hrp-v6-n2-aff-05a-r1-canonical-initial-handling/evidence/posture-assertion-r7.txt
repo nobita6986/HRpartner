@@ -1,0 +1,17 @@
+=== Canonical capture (R7-G4) ===
+cmd: node scripts/ci/assert-test-db-posture.mjs
+env_file: .env-prepare
+cwd: C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling
+started_at: 2026-09-23T02:25:14.994Z
+elapsed_ms: 214
+exit_code: 0
+signal:
+=== stdout ===
+WRITER_POSTURE user=app_user_writer session=app_user_writer super=false bypassrls=false
+ADMIN_POSTURE  user=postgres  session=postgres  super=true  bypassrls=true
+POSTURE_OK writer_is_writer admin_is_admin same_target
+
+=== stderr ===
+
+=== end ===
+EXIT_CODE=0

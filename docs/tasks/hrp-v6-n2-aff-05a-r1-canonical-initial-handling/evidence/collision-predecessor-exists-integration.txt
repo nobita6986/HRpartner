@@ -1,0 +1,80 @@
+collision-integration (predecessor-exists) — running at 2026-09-23T08:20:55.932Z
+RID=2f6b8e15
+FIXTURE_PRED=aff05a_r1_collision_2f6b8e15_pred
+FIXTURE_TGT=aff05a_r1_collision_2f6b8e15_tgt
+FIXTURE_PRED_CLEAN=aff05a_r1_collision_2f6b8e15_pred_clean
+EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\collision-predecessor-exists-integration.txt
+
+=== STEP 1: Build fixture DB(s) via builder ===
+building fixture aff05a_r1_collision_2f6b8e15_pred
+FIXTURE_BUILT aff05a_r1_collision_2f6b8e15_pred
+
+=== STEP 2: Insert sentinel row into fixture DB ===
+SENTINEL_INSERTED in aff05a_r1_collision_2f6b8e15_pred
+
+=== STEP 3: Hold connection on fixture DB ===
+HELD_CONNECTION=open on aff05a_r1_collision_2f6b8e15_pred
+
+=== STEP 4: Invoke AC entrypoints (expect exit 3) ===
+
+--- invoking AC-06 ---
+AC-06 EXIT=3
+AC-06 STDOUT=
+AC-06 verify (backfill R1) — running at 2026-09-23T08:21:03.336Z
+TARGET_DB=aff05a_r1_migration_test
+EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac06-backfill.txt
+
+=== STEP 0: Fail-closed predecessor existence check (T0 R9) ===
+PREDECESSOR_DB_EXISTS: aff05a_r1_collision_2f6b8e15_pred already exists — refusing to run.
+PREDECESSOR_DB_EXISTS_HINT: Drop 'aff05a_r1_collision_2f6b8e15_pred' manually before re-running AC-06.
+
+ASSERT_PASS [AC-06]: exit=3 (in [3])
+ASSERT_PASS [AC-06]: marker 'PREDECESSOR_DB_EXISTS' present
+ASSERT_PASS [AC-06]: refusal language present
+
+--- invoking AC-07 ---
+AC-07 EXIT=3
+AC-07 STDOUT=
+AC-07 verify (forced abort / rollback) — running at 2026-09-23T08:21:03.566Z
+TARGET_DB=aff05a_r1_migration_test
+EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac07-rollback.txt
+MODE=default
+
+=== STEP 0: Fail-closed predecessor existence check (T0 R9) ===
+PREDECESSOR_DB_EXISTS: aff05a_r1_collision_2f6b8e15_pred already exists — refusing to run.
+PREDECESSOR_DB_EXISTS_HINT: Drop 'aff05a_r1_collision_2f6b8e15_pred' manually before re-running AC-07.
+
+ASSERT_PASS [AC-07]: exit=3 (in [3])
+ASSERT_PASS [AC-07]: marker 'PREDECESSOR_DB_EXISTS' present
+ASSERT_PASS [AC-07]: refusal language present
+
+--- invoking AC-04 (lock-timeout) ---
+AC-04 (lock-timeout) EXIT=3
+AC-04 (lock-timeout) STDOUT=
+AC-04 lock_timeout verify — running at 2026-09-23T08:21:03.761Z
+TARGET_DB=aff05a_r1_migration_test
+EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac04-lock-timeout.txt
+MODE=lock-timeout
+
+=== lock_timeout MODE ===
+Step A.0 Fail-closed predecessor existence check (T0 R9).  [PREDECESSOR_DB=aff05a_r1_collision_2f6b8e15_pred]
+PREDECESSOR_DB_EXISTS: aff05a_r1_collision_2f6b8e15_pred already exists — refusing to run.
+PREDECESSOR_DB_EXISTS_HINT: Drop 'aff05a_r1_collision_2f6b8e15_pred' manually before re-running AC-04.
+
+ASSERT_PASS [AC-04 (lock-timeout)]: exit=3 (in [3])
+ASSERT_PASS [AC-04 (lock-timeout)]: marker 'PREDECESSOR_DB_EXISTS' present
+ASSERT_PASS [AC-04 (lock-timeout)]: refusal language present
+
+=== STEP 5: Verify fixture DB + sentinel + held connection intact ===
+ASSERT_PASS: fixture DB aff05a_r1_collision_2f6b8e15_pred still exists
+ASSERT_PASS: sentinel row intact
+ASSERT_PASS: held connection still alive
+
+=== STEP 6: Cleanup own fixtures only ===
+HELD_CONNECTION_CLOSED on aff05a_r1_collision_2f6b8e15_pred
+CLEANUP_DROPPED aff05a_r1_collision_2f6b8e15_pred
+
+=== RESULT ===
+collision-integration (predecessor-exists) PASS — entrypoints refuse on collision, fixtures intact
+
+---STDERR---

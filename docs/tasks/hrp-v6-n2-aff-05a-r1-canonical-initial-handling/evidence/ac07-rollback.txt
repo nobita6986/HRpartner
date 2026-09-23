@@ -1,0 +1,90 @@
+AC-07 verify (forced abort / rollback) — running at 2026-09-23T08:22:47.552Z
+TARGET_DB=aff05a_r1_test
+EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac07-rollback.txt
+MODE=default
+
+=== STEP 0: Fail-closed predecessor existence check (T0 R9) ===
+PREDECESSOR_DB_CHECK=absent (safe to build)  [PREDECESSOR_DB=aff05a_r1_predecessor]
+
+=== STEP 1: Build predecessor via Prisma CLI (single path) ===
+TMPDIR_CREATED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-19DkaL
+BASELINE_REF=e4d21807f0d972de447e710066b40c77a661fb17
+SCHEMA_WRITTEN=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-19DkaL\prisma\schema.prisma
+MIGRATION_LOCK_TOML_SOURCE=pinned_baseline=e4d21807f0d9 blob=fbffa92c2bb7c748d6fc78f9f9dcac604dabb87d
+BASELINE_MIGRATION_COUNT=44
+MIGRATIONS_MATERIALIZED=44
+TARGET_DB_COLLISION_CHECK=pass (pre-DROP, db-not-exists)
+DROP_TARGET_IF_EXISTS=aff05a_r1_predecessor
+TARGET_DB_CREATED=aff05a_r1_predecessor
+BOOTSTRAP_PRE_OK=pre
+MIGRATE_DEPLOY_OK=prisma_cli
+BOOTSTRAP_POST_OK=post
+VERIFY_FN_SZ=7274
+VERIFY_FN_HAS_R1=false
+VERIFY_FN_HAS_LOCK=false
+VERIFY_HANDLING_PRIVS_HRP=INSERT
+READY=predecessor_db=aff05a_r1_predecessor tmpdir=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-19DkaL
+READY target_db=aff05a_r1_predecessor
+TMPDIR_REMOVED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-19DkaL
+
+STDERR: (node:16128) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+
+=== STEP 1b: Rename predecessor → MIGRATION_TARGET_DB (cluster only) ===
+PRE_RENAME_DBS=["aff05a_r1_predecessor"]
+RENAME_OK from=aff05a_r1_predecessor to=aff05a_r1_test
+
+=== STEP 2: Snapshot predecessor state ===
+PRED_FN_SIZE=7274
+PRED_FN_HAS_R1=false
+PRED_FN_HAS_LOCK=false
+PRED_HANDLING_PRIVS_HRP=INSERT
+
+=== STEP 3: Seed anomaly (far-future starts_at) ===
+REF_USER=aff05a_r1_test-ac07-ref1
+ANOMALY_ROW_ID=aff05a_r1_test-ac07-anomaly-row
+ANOMALY_STARTS_AT=2027-01-01T08:22:55.173Z
+ANOMALY_SEEDED=ok
+  anomaly: starts_at=2027-01-01T08:22:55.173Z expires_at=null status=ACTIVE
+
+=== STEP 4: Attempt R1 migration (should fail with anomaly) ===
+BEGIN
+SET
+GRANT
+DO
+SET
+CREATE FUNCTION
+REVOKE
+GRANT
+RESET
+DO
+REVOKE
+DO
+DO
+GRANT
+
+MIGRATION_EXIT_CODE=3
+STDERR=psql:C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling/prisma/migrations/20260922160000_aff05a_r1_initial_handling_window/migration.sql:640: ERROR:  AFF-05A-R1 anomaly: 1 rows have future starts_at (> migration snapshot). Stopping before backfill. T0 review required.
+CONTEXT:  PL/pgSQL function inline_code_block line 44 at RAISE
+
+ASSERT_PASS: migration failed with future starts_at anomaly
+
+=== STEP 5: Assert full transaction rollback ===
+POST_FN_SIZE=7274
+POST_FN_HAS_R1=false
+POST_FN_HAS_LOCK=false
+POST_HANDLING_PRIVS_HRP=INSERT
+ASSERT_PASS (a): fn size matches predecessor
+ASSERT_PASS (a): fn body has no R1 marker after rollback
+ASSERT_PASS (a): fn body has no advisory lock after rollback
+ASSERT_PASS (b): handling SELECT privilege rolled back (INSERT only)
+ASSERT_PASS (c): anomaly row expires_at still NULL after rollback
+ASSERT_PASS (c): anomaly row status still ACTIVE after rollback
+ASSERT_PASS (c): anomaly row starts_at preserved after rollback
+ASSERT_PASS (d): no spurious rows created (all rows from seed)
+
+=== RESULT ===
+AC-07 PASS — forced anomaly triggers rollback of entire migration transaction
+
+---STDERR---

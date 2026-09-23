@@ -1,0 +1,16 @@
+EVIDENCE_BEFORE={"dir":"C:\\CodeApp\\HrP-worktrees\\t1b-aff05a-r1-canonical-initial-handling\\docs\\tasks\\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\\evidence","count":13}
+PASS=[scripts/ci/prepare-migration-test-db.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/apply-r1-migration.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/prepare-migration-test-db.mjs unsafe host] exit=3, no mutation marker
+PASS=[scripts/ci/apply-r1-migration.mjs unsafe host] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs unsafe host] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs unsafe host] exit=3, no mutation marker
+PASS=[prepare-migration-test-db source==target] exit=3, no mutation marker
+PASS=[scripts/ci/prepare-migration-test-db.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/apply-r1-migration.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[evidence-integrity] no AC evidence files modified by validation run (13 files scanned)
+VALIDATE_GUARDS_RESULT=PASS ΓÇö guards truly non-mutating, exit codes exact

@@ -1,0 +1,36 @@
+=== Canonical capture (R7-G4) ===
+cmd: node scripts/ci/build-predecessor-staging.mjs
+env_file: .env-prepare
+cwd: C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling
+started_at: 2026-09-23T02:24:54.876Z
+elapsed_ms: 6367
+exit_code: 0
+signal:
+=== stdout ===
+TMPDIR_CREATED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-i2jovM
+BASELINE_REF=e4d21807f0d972de447e710066b40c77a661fb17
+SCHEMA_WRITTEN=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-i2jovM\prisma\schema.prisma
+MIGRATION_LOCK_TOML_SOURCE=working_tree
+MIGRATION_LOCK_TOML_WRITTEN=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-i2jovM\prisma\migrations\migration_lock.toml
+BASELINE_MIGRATION_COUNT=44
+MIGRATIONS_MATERIALIZED=44
+DROP_TARGET_IF_EXISTS=aff05a_r1_predecessor
+TARGET_DB_CREATED=aff05a_r1_predecessor
+TARGET_DB_COLLISION_CHECK=pass
+BOOTSTRAP_PRE_OK=pre
+MIGRATE_DEPLOY_OK=prisma_cli
+BOOTSTRAP_POST_OK=post
+VERIFY_FN_SZ=7274
+VERIFY_FN_HAS_R1=false
+VERIFY_FN_HAS_LOCK=false
+VERIFY_HANDLING_PRIVS_HRP=INSERT
+READY=predecessor_db=aff05a_r1_predecessor tmpdir=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-i2jovM
+READY target_db=aff05a_r1_predecessor
+TMPDIR_REMOVED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-i2jovM
+
+=== stderr ===
+(node:29856) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+=== end ===
+EXIT_CODE=0

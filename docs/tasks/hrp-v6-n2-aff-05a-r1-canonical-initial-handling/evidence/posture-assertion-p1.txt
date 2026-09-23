@@ -1,0 +1,11 @@
+=== capture ===
+cmd: node scripts/ci/assert-test-db-posture.mjs
+cwd: C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling
+started_at: 2026-09-23T05:36:51.823Z
+elapsed_ms: 291
+exit_code: 0
+signal: null
+=== end capture ===
+WRITER_POSTURE user=app_user_writer session=app_user_writer super=false bypassrls=false
+ADMIN_POSTURE  user=postgres  session=postgres  super=true  bypassrls=true
+POSTURE_OK writer_is_writer admin_is_admin same_target

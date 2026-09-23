@@ -1,0 +1,340 @@
+
+> hrp@0.1.0 test:integration
+> node scripts/ci/integration-preflight.mjs
+
+[integration-preflight] Test DB accepted (guards passed).
+[integration-preflight]   writer: postgresql://****@127.0.0.1:5432/aff05a_r1_test  fp=8b6bff7eedfd
+[integration-preflight]   admin : postgresql://****@127.0.0.1:5432/aff05a_r1_test  fp=6173c8879b73
+node.exe : [33mThe CJS build of Vite's Node API is deprecated. See
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling
+
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts (26 tests | 9 failed) 2818ms
+   ├ù AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-01 (runtime role): valid cookie ΓåÆ status=CONSUMED, labor_profile_id bound, LPHA created (source=AFF_INITIAL) 192ms
+     ΓåÆ POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío mß╗¢i r├╡ r├áng
+   ├ù AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-02 (runtime role): forged cookie ΓåÆ no mutation, no LPHA, candidate_submissions still created (non-attributed) 72ms
+     ΓåÆ POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío mß╗¢i r├╡ r├áng
+   ├ù AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-03 (runtime role): no cookie ΓåÆ non-attributed LaborProfile created, no LPHA 63ms
+     ΓåÆ POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío mß╗¢i r├╡ r├áng
+   ├ù AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-04 (runtime role): row expiresAt <= now() ΓåÆ status UNCHANGED, no LPHA 173ms
+     ΓåÆ POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío mß╗¢i r├╡ r├áng
+   ├ù AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-05 (runtime role): row status=CONSUMED ΓåÆ consumedAt NOT overwritten, no second LPHA 63ms
+     ΓåÆ POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío mß╗¢i r├╡ r├áng
+   ├ù AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-06 (runtime role): TOKEN_SIGNING_ERROR ΓåÆ 201 no mutation, no log distinguishes from missing 64ms
+     ΓåÆ POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío mß╗¢i r├╡ r├áng
+   ├ù AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-07 (runtime role): guard (a) service-level pre-filter rejects non-ACTIVE row ΓåÆ no UPDATE 62ms
+     ΓåÆ POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío mß╗¢i r├╡ r├áng
+   ├ù AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-08 (runtime role): guard (b) RPC-body probe rejects row bound to a DIFFERENT LP 78ms
+     ΓåÆ POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío mß╗¢i r├╡ r├áng
+   ├ù AFF-03B public anon intake ΓÇö RUNTIME ROLE (production mirror) > AC-09 (runtime role): guard (c) RPC-body WHERE predicate ΓÇö second consume blocked at WHERE (row already CONSUMED, status=ACTIVE no longer matches) 62ms
+     ΓåÆ POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío mß╗¢i r├╡ r├áng
+stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration ΓÇö DB-touching proof > (vii) RLS: HR_MANAGER GUC thß║Ñy rows; PUBLIC (no GUC) thß║Ñy 0 ΓÇö FORCE RLS enforced
+prisma:error
+Invalid `tx.placement.create()` invocation in
+C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\tests\db\placement-lifecycle-integration.test.ts:692:24
+
+  689 let publicInsertErr: Error | null = null;
+  690 try {
+  691   await withPublicContext(writer, (tx) =>
+ΓåÆ 692     tx.placement.create(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "42501", message: "new row violates row-level security policy for table \"placements\"", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+
+stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration ΓÇö DB-touching proof > (xiii) RLS/privilege: app_user_writer DELETE bß╗ï REVOKE ΓÇö Placement lß╗ïch sß╗¡ bß║Ñt khß║ú x├│a
+prisma:error
+Invalid `tx.placement.delete()` invocation in
+C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\tests\db\placement-lifecycle-integration.test.ts:1053:24
+
+  1050 let deleteErr: Error | null = null;
+  1051 try {
+  1052   await withHrManagerContext(writer, actorId, (tx) =>
+ΓåÆ 1053     tx.placement.delete(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "42501", message: "permission denied for table placements", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+
+ Γ£ô tests/db/placement-lifecycle-integration.test.ts (16 tests) 2173ms
+   Γ£ô N3 placement-lifecycle integration ΓÇö DB-touching proof > (i) createPlacement ΓåÆ SELECTED; confirmPlacement ΓåÆ CONFIRMED 313ms
+ Γ£ô src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts (32 tests) 377ms
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-12 ΓÇö publicSelect chß║íy d╞░ß╗¢i principal MKT, ─æ├║ng hai dß╗▒ ├ín public lß╗ìt qua
+[gl05 list] total=2 nextOffset=null slugs=["GL05-ELEC-gl05-1790089004390-831011886","GL05-WARE-gl05-1790089004390-831011886"]
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-02/RQ-04 ΓÇö ba mß║úng summary v├á availableSlots ─æ├║ng tr├¬n d├▓ng thß║¡t
+[gl05 card GL05-ELEC-gl05-1790089004390-831011886] positionTitles=["C├┤ng nh├ón lß║»p r├íp","Kiß╗âm tra chß║Ñt l╞░ß╗úng"] locations=["KCN VSIP 1 gl05-1790089004390-831011886","KCN Y├¬n Phong gl05-1790089004390-831011886"] shifts=["07:00-16:00","14:00-22:00"] availableSlots=6 shiftType=ca_ngay
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-01/RISK-01/RISK-07 ΓÇö hourlyRateVnd l├á BigInt THß║¼T nh╞░ng DTO chß╗ë c├│ 18 kh├│a allow-list
+[gl05 bigint] hourlyRateVnd=45000 typeof=bigint
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-07/DEC-08 ΓÇö facet dß╗▒ng tß╗½ to├án tß║¡p public hß╗úp lß╗ç v├á KH├öNG co lß║íi theo filter
+[gl05 facets] keys=["areas","shifts"] areas(RUN)=["KCN ─É├¼nh V┼⌐ gl05-1790089004390-831011886","KCN VSIP 1 gl05-1790089004390-831011886","KCN Y├¬n Phong gl05-1790089004390-831011886"] total(before)=2 total(area=dinhVu)=1
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-12/go-live-12 DEC-14 ΓÇö trang chi tiß║┐t kß╗â Mß╗îI vß╗ï tr├¡ c├▓n hiß╗çu lß╗▒c, card chß╗ë kß╗â vß╗ï tr├¡ c├▓n tuyß╗ân
+[gl05 detail GL05-ELEC-gl05-1790089004390-831011886] positions=[["GL05-ASSY",4],["GL05-QC",2],["GL05-FORK",0]] availableSlots=6 needed=10 filled=4 shiftType=null
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-12 ΓÇö dß╗▒ ├ín nß╗Öi bß╗Ö kh├┤ng c├│ card, kh├┤ng facet, v├á trang chi tiß║┐t trß║ú null
+[gl05 non-public] getPublicJobDetail(GL05-PRIV-gl05-1790089004390-831011886) => null
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-05 ΓÇö q fold dß║Ñu, kh├┤ng khß╗¢p description; area ─æß╗ìc tß║¡p slot SAU lifecycle
+[gl05 q] fold=["GL05-ELEC-gl05-1790089004390-831011886"] description=0 slotDaDu=0
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-05 ΓÇö q fold dß║Ñu, kh├┤ng khß╗¢p description; area ─æß╗ìc tß║¡p slot SAU lifecycle
+[gl05 area] yenPhong=["GL05-ELEC-gl05-1790089004390-831011886"] quangChau=0 dinhVu=["GL05-WARE-gl05-1790089004390-831011886"]
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-06 ΓÇö shift khß╗¢p cß║ú nh├ún KH├öNG ─æß╗⌐ng ─æß║ºu, nh├ún cß╗ºa slot ─æ├ú ─æß╗º chß╗ë ti├¬u th├¼ kh├┤ng
+[gl05 filter] shift(14:00-22:00)=["GL05-ELEC-gl05-1790089004390-831011886"] shift(18:00-02:00)=0
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t > AC-04 ΓÇö total/nextOffset v├á hai trang thß║¡t khß╗¢p nhau, limit bß╗ï kß║╣p [1,50]
+[gl05 page] p1=["GL05-WARE-gl05-1790089004390-831011886"] next=1 p2=["GL05-ELEC-gl05-1790089004390-831011886"] next=null past(offset=2)=0 total=2
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE ΓÇö card viß╗çc l├ám tr├¬n dß╗» liß╗çu thß║¡t
+[gl05 cleanup] projects c├▓n lß║íi=0 slots c├▓n lß║íi=0 (RUN=gl05-1790089004390-831011886)
+
+ Γ£ô src/domains/job-board/public-card-truth.integration.test.ts (10 tests) 338ms
+stdout | src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE ΓÇö RLS runtime-posture closure (29 tables, 5 gap tables) > PLN-02: writer grants on the 29 tables are least-privilege (CRUD subset, none grantable)
+[PLN-02 grants] grantee=app_user_writer privileges=["DELETE","INSERT","SELECT","UPDATE"] tables_with_grants=29/29 is_grantable=NONE
+
+ Γ£ô src/shared/auth/live-rls-posture.m1-07b.test.ts (32 tests) 288ms
+ Γ£ô src/domains/applications/live-integration.mp3c.test.ts (7 tests) 492ms
+ Γ£ô src/domains/applications/live-integration.mp2.test.ts (11 tests) 418ms
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-01: valid active code creates attribution row via engine and returns REDIRECT_NEW
+{"schemaVersion":"1.0","timestamp":"2026-09-22T14:56:47.372Z","level":"info","event":"referral.redirect.new","requestId":"itest-68f273f3-da31-4234-8bc0-fab966e9cd38","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-02: forged code ΓåÆ NOT_FOUND (constant /jobs), no attribution row
+{"schemaVersion":"1.0","timestamp":"2026-09-22T14:56:47.389Z","level":"info","event":"referral.redirect.referrer_not_found","requestId":"itest-2ed2efda-da1a-4f9c-b3c0-cdcd98c649f3","meta":{"route":"GET /r/[code]","outcome":"not_found"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-02: inactive user code ΓåÆ NOT_FOUND, no attribution row
+{"schemaVersion":"1.0","timestamp":"2026-09-22T14:56:47.399Z","level":"info","event":"referral.redirect.referrer_not_found","requestId":"itest-23e39181-1ef3-44cc-b3f1-5b0ce3b0189f","meta":{"route":"GET /r/[code]","outcome":"not_found"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03: valid cookie + existing active row ΓåÆ REDIRECT_EXISTING (existing wins, no new row)
+{"schemaVersion":"1.0","timestamp":"2026-09-22T14:56:47.445Z","level":"info","event":"referral.redirect.new","requestId":"itest-35a8b243-8ace-4959-b542-616eabbd5f85","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03: valid cookie + existing active row ΓåÆ REDIRECT_EXISTING (existing wins, no new row)
+{"schemaVersion":"1.0","timestamp":"2026-09-22T14:56:47.451Z","level":"info","event":"referral.redirect.existing_wins","requestId":"itest-87088799-f1a3-4f66-b2a2-ac15801ca385","meta":{"route":"GET /r/[code]","outcome":"redirect_existing"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03b: cookie from code A + click code B ΓåÆ REDIRECT_EXISTING (first click wins)
+{"schemaVersion":"1.0","timestamp":"2026-09-22T14:56:47.496Z","level":"info","event":"referral.redirect.new","requestId":"itest-1047888f-005c-4079-b21a-55cbc699120e","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03b: cookie from code A + click code B ΓåÆ REDIRECT_EXISTING (first click wins)
+{"schemaVersion":"1.0","timestamp":"2026-09-22T14:56:47.500Z","level":"info","event":"referral.redirect.existing_wins","requestId":"itest-5057e95c-688d-4bfb-907e-151d73747c0a","meta":{"route":"GET /r/[code]","outcome":"redirect_existing"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-06: ?job=/jobs/vietnam-senior-dev ΓåÆ allowlisted prefix preserved
+{"schemaVersion":"1.0","timestamp":"2026-09-22T14:56:47.606Z","level":"info","event":"referral.redirect.new","requestId":"itest-023cc69d-f6b9-4a94-8f2f-e53859c50f3a","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-06: ?job=/jobs?page=2 ΓåÆ query stripped, prefix preserved
+{"schemaVersion":"1.0","timestamp":"2026-09-22T14:56:47.650Z","level":"info","event":"referral.redirect.new","requestId":"itest-d675b47b-f118-4943-8e9b-c4d493a27f9c","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-01 + expires: created attribution has expires_at = now + 30 days
+{"schemaVersion":"1.0","timestamp":"2026-09-22T14:56:47.754Z","level":"info","event":"referral.redirect.new","requestId":"itest-a35b1086-eac2-48ec-937c-6f777273aa5c","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+ Γ£ô tests/db/attribution-redirect.integration.test.ts (15 tests) 793ms
+ Γ£ô src/shared/auth/live-vendor-idor.m1-08.test.ts (13 tests) 226ms
+stderr | src/domains/applications/live-integration.ops06a.test.ts > AC-04/05/08 LIVE ΓÇö chß║╖n ΓçÆ zero write tr├¬n
+TEST DB thß║¡t > AC-04: limiter deny ΓçÆ 429 v├á KH├öNG c├│ row n├áo ─æ╞░ß╗úc tß║ío (before/after bß║▒ng nhau)
+{"schemaVersion":"1.0","timestamp":"2026-09-22T14:56:49.879Z","level":"warn","event":"rate_limit.denied","requestId":"f
+46ca0db-79f9-42fa-b8f4-63d1ae91e3af","meta":{"route":"POST /api/public/jobs/[slug]/applications","status":429,"outcome"
+:"rate_limited","detail":{"surface":"APPLY_IP","retryAfterSec":30}}}
+
+ Γ£ô src/domains/applications/live-integration.ops06a.test.ts (6 tests | 2 skipped) 306ms
+ Γ£ô src/domains/security/security-matrix.integration.test.ts (124 tests) 505ms
+ Γ£ô src/domains/staffing/4role-staffing.integration.test.ts (11 tests) 173ms
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-10(a): current_user kh├┤ng BYPASSRLS v├á kh├┤ng SUPERUSER
+[go-live-04][AC-10a] current_user=app_user_writer rolbypassrls=false rolsuper=false
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-08: c├╣ng kß║┐t nß╗æi, KH├öNG set GUC ΓçÆ app.role rß╗ùng v├á 0 d├▓ng
+[go-live-04][AC-08] no-GUC app.role="" total=0 jobs=0 detail(GL04-PUB-gl04-1790089011503-9ignjh6)=null
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-10(c): helper trß║ú ΓëÑ 1 job v├á mß╗ìi d├▓ng nh├¼n thß║Ñy ─æ╞░ß╗úc ─æß╗üu is_public = true
+[go-live-04][AC-10c] app.role="MKT" app.user_id="system:public-job-board-read" transaction_read_only=on total=3 jobs=3 visibleRows=4 leaked=[]
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-06: dß╗▒ ├ín is_public = false vß║»ng mß║╖t ß╗ƒ mß╗ìi ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai
+[go-live-04][AC-06] fixture non-public id=prj-priv-gl04-1790089011503-9ignjh6 code=GL04-PRIV-gl04-1790089011503-9ignjh6 isPublic=false status=ACTIVE
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-06: dß╗▒ ├ín is_public = false vß║»ng mß║╖t ß╗ƒ mß╗ìi ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai
+[go-live-04][AC-06] qua helper: detail(GL04-PRIV-gl04-1790089011503-9ignjh6)=null rlsRows=0 slugs=["GL04-PUB-gl04-1790089011503-9ignjh6","DA-2026-022","DA-2026-018"]
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS > AC-07: DELETE ph├ít trong transaction cß╗ºa helper bß╗ï tß╗½ chß╗æi SQLSTATE 25006
+[go-live-04][AC-07] sqlstate=25006 message= Invalid `prisma.$executeRawUnsafe()` invocation: Raw query failed. Code: `25006`. Message: `ERROR: cannot execute DELETE in a read-only transaction`
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE ΓÇö ─æ╞░ß╗¥ng ─æß╗ìc c├┤ng khai d╞░ß╗¢i FORCE RLS
+[go-live-04][cleanup] fixture c├▓n lß║íi = 0 (kß╗│ vß╗ìng 0)
+
+ Γ£ô src/shared/auth/live-public-read-rls.go-live-04.test.ts (5 tests) 166ms
+ Γ£ô src/shared/auth/live-vendor-worker-scope.m1-06b.test.ts (10 tests) 186ms
+ Γ£ô tests/db/referral-attribution-foundation.integration.test.ts (15 tests) 249ms
+ Γ£ô src/domains/applications/security-boundary.mp2.test.ts (13 tests) 459ms
+ Γ£ô src/shared/auth/live-ticket-route-boundary.m1-06d.test.ts (5 tests) 216ms
+ Γ£ô src/domains/admin-demand-tree.integration.test.ts (17 tests) 379ms
+ Γ£ô tests/db/handling-assignment.integration.test.ts (4 tests) 337ms
+ Γ£ô src/shared/auth/live-auth-scope.m1-06a.test.ts (6 tests) 247ms
+ Γ£ô src/shared/auth/rls-context.test.ts (9 tests) 67ms
+ Γ£ô src/shared/auth/matrix-scope.test.ts (59 tests) 243ms
+ Γ£ô src/domains/applications/live-integration.mp3b.test.ts (1 test) 344ms
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 9 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake ΓÇö RUNTIME ROLE (production
+mirror) > AC-01 (runtime role): valid cookie ΓåÆ status=CONSUMED, labor_profile_id bound, LPHA created
+(source=AFF_INITIAL)
+PossibleMatchNotResolvedError: POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío
+mß╗¢i r├╡ r├áng
+ Γ¥» mapRpcToDto src/domains/applications/aff03-public-intake.service.ts:237:11
+    235|       ? (possibleMatch.candidates as PossibleMatchCandidateRow[])
+    236|       : [];
+    237|     throw new PossibleMatchNotResolvedError({
+       |           ^
+    238|       verdict: 'POSSIBLE_MATCH',
+    239|       candidates,
+ Γ¥» Module.submitPublicIntake src/domains/applications/aff03-public-intake.service.ts:163:10
+ Γ¥» Proxy._transactionWithCallback node_modules/@prisma/client/runtime/library.js:130:8000
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:239:19
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/9]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake ΓÇö RUNTIME ROLE (production
+mirror) > AC-02 (runtime role): forged cookie ΓåÆ no mutation, no LPHA, candidate_submissions still created
+(non-attributed)
+PossibleMatchNotResolvedError: POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío
+mß╗¢i r├╡ r├áng
+ Γ¥» mapRpcToDto src/domains/applications/aff03-public-intake.service.ts:237:11
+    235|       ? (possibleMatch.candidates as PossibleMatchCandidateRow[])
+    236|       : [];
+    237|     throw new PossibleMatchNotResolvedError({
+       |           ^
+    238|       verdict: 'POSSIBLE_MATCH',
+    239|       candidates,
+ Γ¥» Module.submitPublicIntake src/domains/applications/aff03-public-intake.service.ts:163:10
+ Γ¥» Proxy._transactionWithCallback node_modules/@prisma/client/runtime/library.js:130:8000
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:300:19
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/9]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake ΓÇö RUNTIME ROLE (production
+mirror) > AC-03 (runtime role): no cookie ΓåÆ non-attributed LaborProfile created, no LPHA
+PossibleMatchNotResolvedError: POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío
+mß╗¢i r├╡ r├áng
+ Γ¥» mapRpcToDto src/domains/applications/aff03-public-intake.service.ts:237:11
+    235|       ? (possibleMatch.candidates as PossibleMatchCandidateRow[])
+    236|       : [];
+    237|     throw new PossibleMatchNotResolvedError({
+       |           ^
+    238|       verdict: 'POSSIBLE_MATCH',
+    239|       candidates,
+ Γ¥» Module.submitPublicIntake src/domains/applications/aff03-public-intake.service.ts:163:10
+ Γ¥» Proxy._transactionWithCallback node_modules/@prisma/client/runtime/library.js:130:8000
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:350:19
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/9]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake ΓÇö RUNTIME ROLE (production
+mirror) > AC-04 (runtime role): row expiresAt <= now() ΓåÆ status UNCHANGED, no LPHA
+PossibleMatchNotResolvedError: POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío
+mß╗¢i r├╡ r├áng
+ Γ¥» mapRpcToDto src/domains/applications/aff03-public-intake.service.ts:237:11
+    235|       ? (possibleMatch.candidates as PossibleMatchCandidateRow[])
+    236|       : [];
+    237|     throw new PossibleMatchNotResolvedError({
+       |           ^
+    238|       verdict: 'POSSIBLE_MATCH',
+    239|       candidates,
+ Γ¥» Module.submitPublicIntake src/domains/applications/aff03-public-intake.service.ts:163:10
+ Γ¥» Proxy._transactionWithCallback node_modules/@prisma/client/runtime/library.js:130:8000
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:401:19
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/9]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake ΓÇö RUNTIME ROLE (production
+mirror) > AC-05 (runtime role): row status=CONSUMED ΓåÆ consumedAt NOT overwritten, no second LPHA
+PossibleMatchNotResolvedError: POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío
+mß╗¢i r├╡ r├áng
+ Γ¥» mapRpcToDto src/domains/applications/aff03-public-intake.service.ts:237:11
+    235|       ? (possibleMatch.candidates as PossibleMatchCandidateRow[])
+    236|       : [];
+    237|     throw new PossibleMatchNotResolvedError({
+       |           ^
+    238|       verdict: 'POSSIBLE_MATCH',
+    239|       candidates,
+ Γ¥» Module.submitPublicIntake src/domains/applications/aff03-public-intake.service.ts:163:10
+ Γ¥» Proxy._transactionWithCallback node_modules/@prisma/client/runtime/library.js:130:8000
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:445:19
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/9]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake ΓÇö RUNTIME ROLE (production
+mirror) > AC-06 (runtime role): TOKEN_SIGNING_ERROR ΓåÆ 201 no mutation, no log distinguishes from missing
+PossibleMatchNotResolvedError: POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío
+mß╗¢i r├╡ r├áng
+ Γ¥» mapRpcToDto src/domains/applications/aff03-public-intake.service.ts:237:11
+    235|       ? (possibleMatch.candidates as PossibleMatchCandidateRow[])
+    236|       : [];
+    237|     throw new PossibleMatchNotResolvedError({
+       |           ^
+    238|       verdict: 'POSSIBLE_MATCH',
+    239|       candidates,
+ Γ¥» Module.submitPublicIntake src/domains/applications/aff03-public-intake.service.ts:163:10
+ Γ¥» Proxy._transactionWithCallback node_modules/@prisma/client/runtime/library.js:130:8000
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:487:21
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/9]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake ΓÇö RUNTIME ROLE (production
+mirror) > AC-07 (runtime role): guard (a) service-level pre-filter rejects non-ACTIVE row ΓåÆ no UPDATE
+PossibleMatchNotResolvedError: POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío
+mß╗¢i r├╡ r├áng
+ Γ¥» mapRpcToDto src/domains/applications/aff03-public-intake.service.ts:237:11
+    235|       ? (possibleMatch.candidates as PossibleMatchCandidateRow[])
+    236|       : [];
+    237|     throw new PossibleMatchNotResolvedError({
+       |           ^
+    238|       verdict: 'POSSIBLE_MATCH',
+    239|       candidates,
+ Γ¥» Module.submitPublicIntake src/domains/applications/aff03-public-intake.service.ts:163:10
+ Γ¥» Proxy._transactionWithCallback node_modules/@prisma/client/runtime/library.js:130:8000
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:531:19
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/9]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake ΓÇö RUNTIME ROLE (production
+mirror) > AC-08 (runtime role): guard (b) RPC-body probe rejects row bound to a DIFFERENT LP
+PossibleMatchNotResolvedError: POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío
+mß╗¢i r├╡ r├áng
+ Γ¥» mapRpcToDto src/domains/applications/aff03-public-intake.service.ts:237:11
+    235|       ? (possibleMatch.candidates as PossibleMatchCandidateRow[])
+    236|       : [];
+    237|     throw new PossibleMatchNotResolvedError({
+       |           ^
+    238|       verdict: 'POSSIBLE_MATCH',
+    239|       candidates,
+ Γ¥» Module.submitPublicIntake src/domains/applications/aff03-public-intake.service.ts:163:10
+ Γ¥» Proxy._transactionWithCallback node_modules/@prisma/client/runtime/library.js:130:8000
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:583:19
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[8/9]ΓÄ»
+
+ FAIL  tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake ΓÇö RUNTIME ROLE (production
+mirror) > AC-09 (runtime role): guard (c) RPC-body WHERE predicate ΓÇö second consume blocked at WHERE (row already
+CONSUMED, status=ACTIVE no longer matches)
+PossibleMatchNotResolvedError: POSSIBLE_MATCH ch╞░a ─æ╞░ß╗úc caller resolve; vui l├▓ng chß╗ìn candidate hoß║╖c tß║ío
+mß╗¢i r├╡ r├áng
+ Γ¥» mapRpcToDto src/domains/applications/aff03-public-intake.service.ts:237:11
+    235|       ? (possibleMatch.candidates as PossibleMatchCandidateRow[])
+    236|       : [];
+    237|     throw new PossibleMatchNotResolvedError({
+       |           ^
+    238|       verdict: 'POSSIBLE_MATCH',
+    239|       candidates,
+ Γ¥» Module.submitPublicIntake src/domains/applications/aff03-public-intake.service.ts:163:10
+ Γ¥» Proxy._transactionWithCallback node_modules/@prisma/client/runtime/library.js:130:8000
+ Γ¥» tests/db/aff03-public-intake.integration.test.ts:626:20
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[9/9]ΓÄ»
+
+ Test Files  1 failed | 22 passed (23)
+      Tests  9 failed | 436 passed | 2 skipped (447)
+   Start at  21:56:34
+   Duration  22.09s (transform 756ms, setup 0ms, collect 3.07s, tests 11.80s, environment 4ms, prepare 1.99s)
