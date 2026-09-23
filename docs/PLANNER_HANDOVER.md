@@ -1,4 +1,4 @@
-# TIER 1 LIVING HANDOFF v2.37 — HRP V5/V6
+﻿# TIER 1 LIVING HANDOFF v2.37 — HRP V5/V6
 
 > Tài liệu này là hợp đồng tiếp quản lâu dài cho **Tier 1 — Planner**. Khi bàn giao cho Agent Tier 1 khác, bình thường **chỉ cập nhật khối `ROADMAP_CURSOR` ở §0**. Không chép tiến độ task vào các section ổn định bên dưới.
 
@@ -6,17 +6,17 @@
 
 <!-- ROADMAP_CURSOR_START -->
 ```yaml
-updated_at: 2026-09-23T18:35:00+07:00
+updated_at: 2026-09-23T18:54:51+07:00
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 PHASE_MAP: |
   P0: production safety and integration foundations
   P1: thin recruitment value slice
   P2-P5: unlock only through realignment dependency/evidence gates
-current_lane: AFF-04 implementation (T1B ownership)
-parallel_lane: ER-003 and CONTRACT-03A pending evaluation/approval
-current_task: AFF-04
-worktree_branch: codex/t1b-aff04-implementation
-current_gate: T1B_IMPLEMENTATION
+current_lane: AFF-04 conversion and propagation implementation (T1B ownership)
+parallel_lane: ER-003 contract v1.1 PROPOSED_ONLY awaiting T0 review; CONTRACT-03A producer recheck PASS awaiting bilateral executable acceptance
+current_task: hrp-v6-n2-aff-04-conversion-propagation
+worktree_branch: codex/t1b-aff04-conversion-propagation
+current_gate: T1B_IMPLEMENTATION_FREEZE_THEN_T3_LIGHT_AUDIT
 previous_accepted: hrp-v6-n2-aff-05a-r1-canonical-initial-handling
 closeout_evidence: docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/HANDOFF.md
 blocking_owner: "None"
@@ -24,13 +24,14 @@ owner_defer: "Không dùng Evidence/CCCD readiness làm gate cho AFF coding. P0-
 deferred_lane:
   universal_aff:
     state: IMPLEMENTATION_IN_PROGRESS
-    production_proven: AFF-05A-R1
+    production_proven: AFF-03/03B/03C; AFF-05A-R1
     next_slice: AFF-04 conversion → accepted SourceClaim → server-derived Placement/ProjectAssignment propagation
     coding_dependency_on_evidence_gateway: NONE
     production_enablement: P3-E_AFTER_AFF_CAPABILITY_GATE
 next_steps:
-  - 1. T1B thực thi AFF-04 trên nhánh riêng.
-  - 2. ER-003 và CONTRACT-03A giữ đúng trạng thái hiện hành, không tự promote.
+  - 1. T1B thực thi AFF-04 trong Exact File Allowlist, dùng DB synthetic/ephemeral; không production migration hoặc deploy.
+  - 2. T1B freeze implementation SHA, chạy full gates và bàn giao Tier 3 LIGHT audit trước PR/merge decision.
+  - 3. ER-003 giữ PROPOSED_ONLY; CONTRACT-03A giữ ACCEPTED_SHARED NONE cho tới bilateral executable acceptance.
 ```
 <!-- ROADMAP_CURSOR_END -->
 
