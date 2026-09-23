@@ -1,4 +1,4 @@
-﻿# TIER 1 LIVING HANDOFF v2.37 — HRP V5/V6
+# TIER 1 LIVING HANDOFF v2.37 — HRP V5/V6
 
 > Tài liệu này là hợp đồng tiếp quản lâu dài cho **Tier 1 — Planner**. Khi bàn giao cho Agent Tier 1 khác, bình thường **chỉ cập nhật khối `ROADMAP_CURSOR` ở §0**. Không chép tiến độ task vào các section ổn định bên dưới.
 
@@ -6,32 +6,31 @@
 
 <!-- ROADMAP_CURSOR_START -->
 ```yaml
-updated_at: 2026-09-22T00:19:38+07:00
+updated_at: 2026-09-23T18:35:00+07:00
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 PHASE_MAP: |
   P0: production safety and integration foundations
   P1: thin recruitment value slice
   P2-P5: unlock only through realignment dependency/evidence gates
-current_lane: P0-A Evidence Gateway
-parallel_lane: CONTRACT-02B design-only follow-up for REC-002/REC-004b; Universal AFF expansion queued after ER-002 capacity frees
-current_task: P0-A03 / ER-002 LocalVpsEvidenceStorageAdapter — AUTHORIZED_ASSIGNED_AWAITING_T1B_DELIVERY
-worktree_branch: codex/t1b-er002-local-vps-evidence-storage-adapter
-current_gate: T1B_IMPLEMENTATION_FREEZE_THEN_T3_LIGHT_AUDIT
-previous_accepted: hrp-p0-a02-er001-evidence-storage-port
-closeout_evidence: docs/tasks/hrp-p0-a02-er001-evidence-storage-port/HANDOFF.md
+current_lane: AFF-04 implementation (T1B ownership)
+parallel_lane: ER-003 and CONTRACT-03A pending evaluation/approval
+current_task: AFF-04
+worktree_branch: codex/t1b-aff04-implementation
+current_gate: T1B_IMPLEMENTATION
+previous_accepted: hrp-v6-n2-aff-05a-r1-canonical-initial-handling
+closeout_evidence: docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/HANDOFF.md
 blocking_owner: "None"
 owner_defer: "Không dùng Evidence/CCCD readiness làm gate cho AFF coding. P0-A chỉ chặn production enablement của real evidence ingestion; AFF development dùng synthetic data và gate riêng."
 deferred_lane:
   universal_aff:
-    state: PARTIAL_PRODUCTION_EXPANSION_QUEUED
-    production_proven: AFF-03/03B/03C
+    state: IMPLEMENTATION_IN_PROGRESS
+    production_proven: AFF-05A-R1
     next_slice: AFF-04 conversion → accepted SourceClaim → server-derived Placement/ProjectAssignment propagation
     coding_dependency_on_evidence_gateway: NONE
     production_enablement: P3-E_AFTER_AFF_CAPABILITY_GATE
 next_steps:
-  - 1. Chờ T1B hoàn tất ER-002, freeze implementation SHA và bàn giao gates; không chen task code khác vào worktree.
-  - 2. T0 giao T3 LIGHT audit ER-002; chỉ merge sau PASS và CI sạch.
-  - 3. Sau ER-002 main closeout, giao T1A docs/contract lane và T1B AFF-04 trong hai worktree/file ownership tách biệt.
+  - 1. T1B thực thi AFF-04 trên nhánh riêng.
+  - 2. ER-003 và CONTRACT-03A giữ đúng trạng thái hiện hành, không tự promote.
 ```
 <!-- ROADMAP_CURSOR_END -->
 

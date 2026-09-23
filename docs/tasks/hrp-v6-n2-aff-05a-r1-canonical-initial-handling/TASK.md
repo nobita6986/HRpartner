@@ -9,8 +9,8 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | Forward-only migration replaces SECURITY DEFINER RPC and backfills existing attribution data at the data-integrity/attribution boundary. |
-| Spec version | `v1.3` |
-| Status | `READY_FOR_AUDIT` |
+| Spec version | `v1.4` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1B` |
 | Execution owner | `Tier 1B` |
 | Baseline | `e4d21807f0d972de447e710066b40c77a661fb17` — origin/main post ER-002 (CI/Vercel PASS) |
@@ -242,6 +242,7 @@ Production branch gate/preflight/apply/deploy không thuộc coding/CI commands.
 | 1 | `PROPOSED_ONLY`; security/serialization/gates revised | T0 accepted business direction but kept execution closed; revision resolves effective privilege, concurrency boundary, test guard and production-gate findings. |
 | 2 | `READY_FOR_AUDIT`; implementation on synthetic DB complete | T0 authorized execution on synthetic dedicated DB; migration, integration tests, all gates PASS; HANDOFF to T0 for independent Tier 3 LIGHT audit. |
 | 11 | `READY_FOR_AUDIT`; R11 helper lifecycle correction complete, dirty/uncommitted | Owner asked T0 to execute T1B correction directly. LIGHT lane requires READY_FOR_AUDIT in TASK/HANDOFF; T0 freeze review still precedes independent T3 delta. Narrow fixture grammar, pre-builder collision checks, no drop-before-create, outer owned-resource cleanup; no production/migration/application-test changes in this delta. No merge approval. |
+| 12 | `ACCEPTED` | PR #33 squash-merged to main (9e527a13e74c8361feea77b8edca522c8c37ec08); production verified with 1 applied migration. |
 
 ## 10. Revision Log
 
@@ -254,3 +255,4 @@ T0 freeze resolution: cumulative implementation frozen at `b5e62e6abec401d715787
 | `v1.1` | `2026-09-22` | Baseline updated to `e4d21807` (origin/main post ER-002); execution owner = Tier 1B; status → `READY_FOR_AUDIT`; round 2 Planner Resolution | T0 authorized implementation on synthetic dedicated DB. |
 | `v1.2` | `2026-09-23` | Round 11, explicit collision runner/task-local evidence allowlist, current freeze gate and handoff sync | Owner-authorized T0 execution as T1B; audit artifacts preserved; production gates remain pending. |
 | `v1.3` | `2026-09-23` | T0 freeze accepted; implementation SHA and audit binding recorded; next gate push/PR decision and canonical CI | R11 pinned bytes preserved in commit; no automatic production approval. |
+| `v1.4` | `2026-09-23` | Closeout documentation | PR #33 squash-merged to main; production verified with 1 applied migration. |
