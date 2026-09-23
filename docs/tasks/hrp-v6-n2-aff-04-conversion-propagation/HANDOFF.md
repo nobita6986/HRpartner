@@ -12,7 +12,7 @@
 | Execution round | `1` |
 | Current audit round | `0` |
 | Baseline | `9e527a13e74c8361feea77b8edca522c8c37ec08` (origin/main @ 2026-09-23; includes ER-002 #32 and AFF-05A R1 #33). Contract Survey baseline `0fdc616b` retained only as historical reference. |
-| Frozen implementation SHA | `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374` (HEAD = `f01ee35`; current branch HEAD after docs-only HANDOFF follow-up = `f9ae4f35c717854ffe3e1f77abd1c45aa58567c7`) |
+| Frozen implementation SHA | `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374` (HEAD at code freeze = `f01ee35`; subsequent docs-only commits recorded in §10 Revision Log) |
 | Worktree / branch | `codex/t1b-aff04-conversion-propagation` |
 | Tier 3 verdict | `PENDING` (next gate is T0 calling Tier 3 LIGHT audit) |
 | Required gates (per TASK §0) | `T0_CONTRACT_APPROVAL` PASS; `TIER3_LIGHT_AUDIT` PENDING; `VERIFY_TASK` PASS DRAFT-VALID; `VERIFY_HANDOFF` (this file) |
@@ -122,7 +122,7 @@ AFF-04 closes the source-resolution and assignment-propagation gaps between AFF-
 
 ## 5. Final status
 
-All 6 required gates PASS on a local ephemeral synthetic DB (`aff04_test`, plus the two ephemeral migration-test DBs `aff04_upgrade_test` and `aff04_pre_test` that have since been dropped). The frozen implementation SHA `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374` (HEAD = `f01ee35`) is on the local `codex/t1b-aff04-conversion-propagation` branch. HANDOFF + TASK v1.7 (control-metadata-only bump from v1.6; semantic contract §1-§8 unchanged from v1.4) accompanies this freeze. The current branch HEAD after the docs-only HANDOFF follow-up commit is `f9ae4f35c717854ffe3e1f77abd1c45aa58567c7`. TASK §10 Revision Log records the v1.7 entry pointing at the frozen implementation SHA.
+All 6 required gates PASS on a local ephemeral synthetic DB (`aff04_test`, plus the two ephemeral migration-test DBs `aff04_upgrade_test` and `aff04_pre_test` that have since been dropped). The frozen implementation SHA `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374` (HEAD at code freeze = `f01ee35`) is on the local `codex/t1b-aff04-conversion-propagation` branch. HANDOFF + TASK v1.7 (control-metadata-only bump from v1.6; semantic contract §1-§8 unchanged from v1.4) accompanies this freeze. Subsequent docs-only commits are recorded in TASK §10 Revision Log.
 
 No commit/push/PR/merge/deploy action was performed. AFF-04 is staged locally and handed off to T0 to call the Tier 3 LIGHT audit. After the Tier 3 verdict is in, T0/Owner decides on push, PR, merge, and the production migration gate (a separate decision per T0 directive).
 

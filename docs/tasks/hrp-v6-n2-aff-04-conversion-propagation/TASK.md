@@ -20,7 +20,7 @@
 | Next gate | `TIER3_LIGHT_AUDIT` |
 | Current execution round | `1` |
 | Current audit round | `0` |
-| Frozen implementation SHA | `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374` (HEAD = `f01ee35`; current working HEAD = `f9ae4f35c717854ffe3e1f77abd1c45aa58567c7` after docs-only HANDOFF follow-up) |
+| Frozen implementation SHA | `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374` (HEAD at code freeze = `f01ee35`; subsequent docs-only commits recorded in §10 Revision Log) |
 
 ## 1. Outcome
 
