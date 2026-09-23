@@ -48,6 +48,11 @@ export interface TransferResult {
   toProjectId: string;
   workerId: string;
   transferDate: string;
+  // AFF-04: inherited referrer identity (server-derived from canonical accepted
+  // SourceClaim). null for HRP_DIRECT / VENDOR_SUPPLIED claims.
+  referrerId: string | null;
+  sourceClaimId: string | null;
+  sourceClaimType: string | null;
 }
 
 // ─── Errors ─────────────────────────────────────────────────────────────────
@@ -155,6 +160,48 @@ export async function transferWorker(
     );
   }
 
+  // AFF-04 (DEC-09, RQ-08): re-read the canonical accepted SourceClaim for this
+  // worker UNDER THE LOCK. The referrer identity of the new assignment is
+  // SERVER-DERIVED from the worker-level accepted claim — never from request
+  // body, never from the old assignment's referrerId (which may have been
+  // written before AFF-04 and could be stale).
+  //
+  // Inheritance Matrix:
+  //   HRP_DIRECT (referrerUserId=null)        -> new.referrerId = null
+  //   CTV_REFERRAL with referrerUserId=X      -> new.referrerId = X (inherit)
+  //   CTV_REFERRAL with referrerUserId=null   -> new.referrerId = legacy CTV ctvId
+  //                                             (covers pre-AFF-04 claims backfilled
+  //                                              with NULL referrerUserId but valid ctvId)
+  //   VENDOR_SUPPLIED                         -> new.referrerId = null (no referrer)
+  //   Self-referral (canonical worker.user_id === canonical referrerUserId):
+  //       classify by canonical identity (CTV/CTV) and retain provenance.
+  //       AFF-04 must NOT create CommissionLedger rows — that is AFF-05B.
+  const workerClaim = await tx.sourceClaim.findFirst({
+    where: { workerId: input.workerId, accepted: true },
+    select: {
+      id: true,
+      claimType: true,
+      referrerUserId: true,
+      ctvId: true,
+      worker: { select: { userId: true } },
+    },
+  });
+  let inheritedReferrerId: string | null = null;
+  if (workerClaim) {
+    if (workerClaim.referrerUserId) {
+      inheritedReferrerId = workerClaim.referrerUserId;
+    } else if (workerClaim.claimType === 'CTV_REFERRAL' && workerClaim.ctvId) {
+      // Pre-AFF-04 accepted claim: legacy ctvId is the canonical referrer.
+      // This is the LEGACY path of the Source Resolution Matrix — preserved
+      // here so transfers never silently drop CTV provenance.
+      inheritedReferrerId = workerClaim.ctvId;
+    }
+  }
+  // self-referral note: if worker.worker.userId === inheritedReferrerId, the
+  // worker IS the referrer. AFF-04 does not modify CommissionLedger (that is
+  // AFF-05B). Self-referral stays as a normal assignment with referrerId set;
+  // downstream commission code (out of scope here) will decide how to handle it.
+
   const transferDate = new Date(input.transferDate);
 
   // ── Close old assignment ──────────────────────────────────────────────────
@@ -193,7 +240,9 @@ export async function transferWorker(
       status: 'ACTIVE',
       isPrimary: true,
       managerId: null,
-      referrerId: null,
+      // AFF-04: inherit the referrer identity from the canonical accepted
+      // SourceClaim — server-derived, never from request body.
+      referrerId: inheritedReferrerId,
       salaryPerDayVnd: 0n,
       salaryType: 'DAILY',
     },
@@ -227,6 +276,11 @@ export async function transferWorker(
       newAssignmentId: newAssignment.id,
       transferDate: input.transferDate,
       transferredBy: ctx.userId,
+      // AFF-04: surface the inherited referrer identity so consumers can build
+      // their own provenance view without an extra lookup. PII-free (user ID only).
+      referrerId: inheritedReferrerId,
+      sourceClaimId: workerClaim?.id ?? null,
+      sourceClaimType: workerClaim?.claimType ?? null,
     },
   });
 
@@ -237,6 +291,10 @@ export async function transferWorker(
     toProjectId: input.toProjectId,
     workerId: input.workerId,
     transferDate: input.transferDate,
+    // AFF-04: caller can verify the propagated referrer without an extra query.
+    referrerId: inheritedReferrerId,
+    sourceClaimId: workerClaim?.id ?? null,
+    sourceClaimType: workerClaim?.claimType ?? null,
   };
 }
 

@@ -5,6 +5,23 @@
  * one accepted SourceClaim. The caller supplies the withDbContext transaction;
  * the optimistic status/version update is acquired before any durable child
  * rows, so a losing conversion race rolls back without orphan Workers/claims.
+ *
+ * AFF-04 EXTENSION (Source Resolution Matrix + worker-level claim lookup):
+ *   - The accepted SourceClaim is bound to the worker (worker-level canonical).
+ *     Worker-level uniqueness is enforced by the partial unique index
+ *     `one_accepted_source` (existing). Re-running conversion with the same
+ *     workerId reuses the existing accepted claim (REPLAY); it does NOT create
+ *     a second one.
+ *   - For CTV_REFERRAL claims, the generic referrer identity is resolved from
+ *     the canonical chain: ReferralAttribution.referrerUserId (preferred) ->
+ *     CandidateSubmission.ctvId (legacy fallback). Conflict between the two
+ *     chains fails typed (`SOURCE_REFERRER_CONFLICT`) — we never silently
+ *     overwrite a recorded referrer.
+ *   - HRP_DIRECT / VENDOR_SUPPLIED claims always have referrerUserId = NULL.
+ *   - Submission-level replay (candidate_submissions.status='CONVERTED' AND
+ *     workerId IS NOT NULL AND an accepted claim exists for that workerId AND
+ *     that claim's submissionId === this submission) is an idempotent no-op.
+ *     This is the FAST PATH for retried POSTs.
  */
 import { Gender, Prisma } from '@prisma/client';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
@@ -31,8 +48,20 @@ export interface ConvertApplicationResult {
   status: 'CONVERTED';
   workerId: string;
   sourceClaimId: string;
+  referrerUserId: string | null;
+  claimType: string;
   version: number;
   changed: boolean;
+}
+
+export interface ResolutionSource {
+  /**
+   * Where the canonical referrerUserId was resolved from.
+   *  - 'REFERRAL_ATTRIBUTION' — ReferralAttribution.referrerUserId (preferred)
+   *  - 'LEGACY_CTV' — CandidateSubmission.ctvId (legacy fallback when no RA)
+   *  - 'NONE' — claimType is non-CTV (HRP_DIRECT / VENDOR_SUPPLIED)
+   */
+  source: 'REFERRAL_ATTRIBUTION' | 'LEGACY_CTV' | 'NONE';
 }
 
 export class ConversionError extends Error {
@@ -46,11 +75,18 @@ export class ConversionError extends Error {
       | 'DEDUP_REVIEW_REQUIRED'
       | 'DEDUP_SELECTION_INVALID'
       | 'SOURCE_CLAIM_CONFLICT'
+      | 'SOURCE_REFERRER_CONFLICT'
+      | 'REFERRAL_RESOLUTION_FAILED'
       | 'CONVERSION_CONFLICT'
       | 'CONVERSION_INVARIANT_BROKEN',
     public readonly httpStatus: number,
     message: string,
-    public readonly details?: { candidates?: DedupCandidate[]; workerId?: string },
+    public readonly details?: {
+      candidates?: DedupCandidate[];
+      workerId?: string;
+      expected?: string | null;
+      actual?: string | null;
+    },
   ) {
     super(message);
     this.name = 'ConversionError';
@@ -87,9 +123,24 @@ export async function convertApplication(
       gender: true,
       vendorId: true,
       ctvId: true,
+      // AFF-04: chain to canonical ReferralAttribution via LaborProfile.
+      laborProfileId: true,
+      laborProfile: {
+        select: {
+          referralAttribution: {
+            select: { referrerUserId: true },
+          },
+        },
+      },
       sourceClaims: {
         where: { accepted: true },
-        select: { id: true, workerId: true },
+        select: {
+          id: true,
+          workerId: true,
+          claimType: true,
+          referrerUserId: true,
+          ctvId: true,
+        },
       },
     },
   });
@@ -111,6 +162,8 @@ export async function convertApplication(
       status: 'CONVERTED',
       workerId: current.workerId,
       sourceClaimId: accepted.id,
+      referrerUserId: accepted.referrerUserId,
+      claimType: accepted.claimType,
       version: current.version,
       changed: false,
     };
@@ -166,24 +219,57 @@ export async function convertApplication(
 
   try {
     const workerId = selectedWorkerId ?? (await createWorkerFromApplication(tx, ctx, current)).id;
+    const source = sourceFor(current.vendorId, current.ctvId);
+    const resolution = resolveCanonicalReferrer({
+      claimType: source.claimType,
+      legacyCtvId: current.ctvId,
+      attributionReferrerUserId: current.laborProfile?.referralAttribution?.referrerUserId ?? null,
+    });
+
     const existingAccepted = await tx.sourceClaim.findFirst({
       where: { workerId, accepted: true },
-      select: { id: true, submissionId: true },
+      select: {
+        id: true,
+        submissionId: true,
+        claimType: true,
+        referrerUserId: true,
+      },
     });
 
     let sourceClaimId: string;
+    let effectiveReferrerUserId: string | null;
     if (existingAccepted) {
-      if (existingAccepted.submissionId !== id) {
+      // AFF-04 worker-level REPLAY: a converted submission is bound to exactly one
+      // accepted SourceClaim per worker. If this submission is that claim's source,
+      // we reuse it (idempotent no-op of durable writes). If a different submission
+      // already owns the accepted claim, the conversion fails typed.
+      if (existingAccepted.submissionId === id) {
+        sourceClaimId = existingAccepted.id;
+        effectiveReferrerUserId = existingAccepted.referrerUserId;
+      } else if (existingAccepted.submissionId === null) {
+        // Legacy accepted claim with no submissionId (orphaned before AFF-03B):
+        // bind it to this submission rather than failing — preserves provenance.
+        const updated = await tx.sourceClaim.update({
+          where: { id: existingAccepted.id },
+          data: {
+            submissionId: id,
+            ...(resolution.referrerUserId !== null && existingAccepted.referrerUserId === null
+              ? { referrerUserId: resolution.referrerUserId }
+              : {}),
+          },
+          select: { id: true, referrerUserId: true },
+        });
+        sourceClaimId = updated.id;
+        effectiveReferrerUserId = updated.referrerUserId;
+      } else {
         throw new ConversionError(
           'SOURCE_CLAIM_CONFLICT',
           409,
-          'Selected Worker already has an accepted source claim',
+          'Selected Worker already has an accepted source claim from a different submission',
           { workerId },
         );
       }
-      sourceClaimId = existingAccepted.id;
     } else {
-      const source = sourceFor(current.vendorId, current.ctvId);
       const claim = await tx.sourceClaim.create({
         data: {
           workerId,
@@ -192,13 +278,15 @@ export async function convertApplication(
           registrationChannel: source.registrationChannel,
           vendorId: current.vendorId,
           ctvId: current.ctvId,
+          referrerUserId: resolution.referrerUserId,
           accepted: true,
           acceptedBy: ctx.userId,
           claimedBy: ctx.userId,
         },
-        select: { id: true },
+        select: { id: true, referrerUserId: true },
       });
       sourceClaimId = claim.id;
+      effectiveReferrerUserId = claim.referrerUserId;
     }
 
     await tx.candidateSubmission.update({ where: { id }, data: { workerId } });
@@ -221,7 +309,15 @@ export async function convertApplication(
         reason,
         diff: {
           before: { status: 'QUALIFIED', version: current.version, workerId: null },
-          after: { status: 'CONVERTED', version: current.version + 1, workerId, sourceClaimId },
+          after: {
+            status: 'CONVERTED',
+            version: current.version + 1,
+            workerId,
+            sourceClaimId,
+            claimType: source.claimType,
+            referrerUserId: effectiveReferrerUserId,
+            resolutionSource: resolution.source,
+          },
         } as Prisma.InputJsonValue,
       },
     });
@@ -231,6 +327,8 @@ export async function convertApplication(
       status: 'CONVERTED',
       workerId,
       sourceClaimId,
+      referrerUserId: effectiveReferrerUserId,
+      claimType: source.claimType,
       version: current.version + 1,
       changed: true,
     };
@@ -313,6 +411,58 @@ function sourceFor(vendorId: string | null, ctvId: string | null) {
   if (vendorId) return { claimType: 'VENDOR_SUPPLIED', registrationChannel: 'VENDOR_ADDED' };
   if (ctvId) return { claimType: 'CTV_REFERRAL', registrationChannel: 'CTV_ADDED' };
   return { claimType: 'HRP_DIRECT', registrationChannel: 'HR_ADDED' };
+}
+
+/**
+ * AFF-04 Source Resolution Matrix.
+ *
+ * Resolves the generic referrer identity for an accepted SourceClaim:
+ *   - HRP_DIRECT / VENDOR_SUPPLIED: always NULL (no referrer concept).
+ *   - CTV_REFERRAL:
+ *       * ReferralAttribution.referrerUserId (canonical, preferred).
+ *       * CandidateSubmission.ctvId (legacy fallback).
+ *       * If both present and disagree → SOURCE_REFERRER_CONFLICT (409).
+ *       * If both absent → REFERRAL_RESOLUTION_FAILED (409 — fail closed;
+ *         a CTV claim without ANY referrer identity is a data integrity hole).
+ *
+ * The resolved value is the column `source_claims.referrer_user_id` — never
+ * sourced from request body or any client-supplied field.
+ *
+ * NB: This helper is intentionally pure (no DB calls). The caller reads
+ * `LaborProfile.referralAttribution.referrerUserId` via the submission
+ * findUnique chain above; this function only encodes the matrix.
+ */
+export function resolveCanonicalReferrer(args: {
+  claimType: string;
+  legacyCtvId: string | null;
+  attributionReferrerUserId: string | null;
+}): { referrerUserId: string | null; source: ResolutionSource['source'] } {
+  if (args.claimType !== 'CTV_REFERRAL') {
+    return { referrerUserId: null, source: 'NONE' };
+  }
+  const { attributionReferrerUserId, legacyCtvId } = args;
+  if (attributionReferrerUserId && legacyCtvId) {
+    if (attributionReferrerUserId !== legacyCtvId) {
+      throw new ConversionError(
+        'SOURCE_REFERRER_CONFLICT',
+        409,
+        'ReferralAttribution.referrerUserId conflicts with CandidateSubmission.ctvId — manual reconciliation required',
+        { expected: attributionReferrerUserId, actual: legacyCtvId },
+      );
+    }
+    return { referrerUserId: attributionReferrerUserId, source: 'REFERRAL_ATTRIBUTION' };
+  }
+  if (attributionReferrerUserId) {
+    return { referrerUserId: attributionReferrerUserId, source: 'REFERRAL_ATTRIBUTION' };
+  }
+  if (legacyCtvId) {
+    return { referrerUserId: legacyCtvId, source: 'LEGACY_CTV' };
+  }
+  throw new ConversionError(
+    'REFERRAL_RESOLUTION_FAILED',
+    409,
+    'CTV_REFERRAL claim has no referrer identity (neither ReferralAttribution nor legacy ctvId)',
+  );
 }
 
 function isUniqueConflict(error: unknown): boolean {

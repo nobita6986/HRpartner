@@ -33,6 +33,12 @@ interface World {
   vendorId?: string | null;
   ctvId?: string | null;
   acceptedClaimWorkerId?: string | null;
+  // AFF-04: referrer identity carried on the accepted SourceClaim.
+  referrerUserId?: string | null;
+  // AFF-04: CandidateSubmission.laborProfileId link (used to snapshot beneficiary).
+  laborProfileId?: string | null;
+  // AFF-04: ACTIVE LaborProfileHandlingAssignment snapshot result.
+  activeHandlingAssigneeUserId?: string | null;
   slotMissing?: boolean;
   slotsNeeded?: number;
   slotsFilled?: number;
@@ -72,9 +78,14 @@ function makeTx(w: World = {}) {
         slotId: w.slotId === undefined ? 'slot-1' : w.slotId,
         vendorId: w.vendorId ?? null,
         ctvId: w.ctvId ?? null,
+        laborProfileId: w.laborProfileId ?? null,
         sourceClaims: (w.acceptedClaimWorkerId === null)
           ? []
-          : [{ id: 'claim-1', workerId: w.acceptedClaimWorkerId ?? (w.workerId === undefined ? 'worker-1' : w.workerId) }],
+          : [{
+              id: 'claim-1',
+              workerId: w.acceptedClaimWorkerId ?? (w.workerId === undefined ? 'worker-1' : w.workerId),
+              referrerUserId: w.referrerUserId ?? null,
+            }],
       }),
     },
     projectAssignment: {
@@ -91,10 +102,10 @@ function makeTx(w: World = {}) {
         if ('employeeCode' in where) return w.employeeCodeClash ? { id: 'clash-1' } : null;
         return null;
       }),
-      create: vi.fn(async () => {
+      create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
         writes.push('assignment.create');
         if (w.createThrows) throw w.createThrows;
-        return { id: 'assign-new' };
+        return { id: 'assign-new', data };
       }),
     },
     staffingOrder: {
@@ -114,6 +125,15 @@ function makeTx(w: World = {}) {
     },
     contract: { findFirst: vi.fn(async () => (w.contract ? { id: 'contract-1' } : null)) },
     vendorRateCard: { findFirst: vi.fn(async () => (w.rateCard ? { id: 'rate-1' } : null)) },
+    // AFF-04: beneficiary snapshot lookup. The mock returns the configured assignee
+    // when an ACTIVE LaborProfileHandlingAssignment is configured, otherwise null.
+    laborProfileHandlingAssignment: {
+      findFirst: vi.fn(async () =>
+        w.activeHandlingAssigneeUserId
+          ? { assigneeUserId: w.activeHandlingAssigneeUserId }
+          : null,
+      ),
+    },
     auditLog: { create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => { writes.push('audit.create'); audit.push(data); return data; }) },
     outboxEvent: { create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => { writes.push('outbox.create'); outbox.push(data); return data; }) },
     $executeRawUnsafe: vi.fn(async (sql: string) => { raw.push(sql); return 1; }),
@@ -515,5 +535,102 @@ describe('mapWriteConflict — DB backstops map to stable codes', () => {
       .rejects.toMatchObject({ code: 'ASSIGNMENT_EXISTS' });
     expect(tx.staffingOrderSlot.update).not.toHaveBeenCalled();
     expect(tx.project.update).not.toHaveBeenCalled();
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AFF-04 propagation tests — ASSIGNMENT_EXISTS distinct semantics,
+  // referrer propagation, beneficiary snapshot, audit + outbox payload.
+  // ─────────────────────────────────────────────────────────────────────────
+  describe('AFF-04 placement propagation', () => {
+    it('propagates referrerId from accepted SourceClaim into the assignment row', async () => {
+      const { tx } = makeTx({ referrerUserId: 'ctv-001' });
+      await activatePlacement(tx as never, HR, activateInput, NOW);
+      const callArgs = (tx.projectAssignment.create.mock.calls as unknown as Array<[{ data: Record<string, unknown> }]>)[0][0];
+      expect(callArgs.data.referrerId).toBe('ctv-001');
+    });
+
+    it('propagates referrerId=null for HRP_DIRECT claims (no referrer concept)', async () => {
+      const { tx } = makeTx();
+      await activatePlacement(tx as never, HR, activateInput, NOW);
+      const callArgs = (tx.projectAssignment.create.mock.calls as unknown as Array<[{ data: Record<string, unknown> }]>)[0][0];
+      expect(callArgs.data.referrerId).toBeNull();
+    });
+
+    it('snapshots beneficiaryUserId from ACTIVE LaborProfileHandlingAssignment into the outbox payload', async () => {
+      const { tx, outbox } = makeTx({
+        laborProfileId: 'lp-1',
+        activeHandlingAssigneeUserId: 'handler-007',
+      });
+      await activatePlacement(tx as never, HR, activateInput, NOW);
+      expect(tx.laborProfileHandlingAssignment.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            laborProfileId: 'lp-1',
+            status: 'ACTIVE',
+          }),
+        }),
+      );
+      expect(outbox[0].payload).toMatchObject({
+        beneficiaryUserId: 'handler-007',
+        laborProfileId: 'lp-1',
+        referrerId: null,
+      });
+    });
+
+    it('snapshots beneficiaryUserId=null when no ACTIVE LaborProfileHandlingAssignment exists', async () => {
+      const { tx, outbox } = makeTx({ laborProfileId: 'lp-2', activeHandlingAssigneeUserId: null });
+      await activatePlacement(tx as never, HR, activateInput, NOW);
+      expect(outbox[0].payload).toMatchObject({
+        beneficiaryUserId: null,
+        laborProfileId: 'lp-2',
+      });
+    });
+
+    it('does NOT call laborProfileHandlingAssignment when laborProfileId is null', async () => {
+      const { tx } = makeTx({ laborProfileId: null });
+      await activatePlacement(tx as never, HR, activateInput, NOW);
+      expect(tx.laborProfileHandlingAssignment.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('includes referrer + beneficiary + laborProfileId in the audit log diff.after', async () => {
+      const { tx, audit } = makeTx({
+        referrerUserId: 'ctv-001',
+        laborProfileId: 'lp-1',
+        activeHandlingAssigneeUserId: 'handler-007',
+      });
+      await activatePlacement(tx as never, HR, activateInput, NOW);
+      const placementAudit = audit.find((a) => a.action === 'ASSIGNMENT_ACTIVATE');
+      expect(placementAudit).toBeDefined();
+      const diff = placementAudit?.diff as { after: Record<string, unknown> };
+      expect(diff.after).toMatchObject({
+        referrerId: 'ctv-001',
+        beneficiaryUserId: 'handler-007',
+        laborProfileId: 'lp-1',
+      });
+    });
+
+    it('ASSIGNMENT_EXISTS remains a distinct conflict from REPLAY (one active conflict per submission vs reuse)', async () => {
+      // existingForSubmission set -> ASSIGNMENT_EXISTS conflict
+      const { tx } = makeTx({ assignmentForSubmission: { id: 'old-assign', status: 'ACTIVE' } });
+      await expect(activatePlacement(tx as never, HR, activateInput, NOW))
+        .rejects.toMatchObject({ code: 'ASSIGNMENT_EXISTS', httpStatus: 409 });
+      // no writes happened
+      expect(tx.projectAssignment.create).not.toHaveBeenCalled();
+      expect(tx.staffingOrderSlot.update).not.toHaveBeenCalled();
+      expect(tx.project.update).not.toHaveBeenCalled();
+      expect(tx.auditLog.create).not.toHaveBeenCalled();
+    });
+
+    it('rollback semantics: when create throws, beneficiary lookup must NOT leak', async () => {
+      // Use createThrows to simulate a unique conflict mid-transaction; the
+      // beneficiary lookup has already happened by then, but the whole tx
+      // rolls back so no durable beneficiary state remains. We verify by
+      // checking that the outbox event was NEVER enqueued (transactional outbox).
+      const { tx, outbox } = makeTx({ createThrows: p2002(['one_active_assignment']) });
+      await expect(activatePlacement(tx as never, HR, activateInput, NOW))
+        .rejects.toMatchObject({ code: 'ACTIVE_ASSIGNMENT_CONFLICT' });
+      expect(tx.outboxEvent.create).not.toHaveBeenCalled();
+      expect(outbox).toHaveLength(0);
+    });
   });
 });

@@ -326,7 +326,15 @@ interface SubmissionFacts {
   slotId: string | null;
   vendorId: string | null;
   ctvId: string | null;
+  // AFF-04: canonical accepted SourceClaim id (worker-level) + generic referrer
+  // identity resolved at conversion time. The referrer is SERVER-DERIVED — never
+  // accepted from request body, never overwritten by client input.
   acceptedClaimId: string | null;
+  referrerUserId: string | null;
+  // AFF-04: LaborProfileId link from CandidateSubmission -> LaborProfile, used
+  // for the beneficiary snapshot at placement time (reads ACTIVE
+  // LaborProfileHandlingAssignment for that profile).
+  laborProfileId: string | null;
 }
 
 interface PlacementFacts {
@@ -359,7 +367,11 @@ async function readSubmission(
     where: { id: submissionId },
     select: {
       id: true, status: true, workerId: true, slotId: true, vendorId: true, ctvId: true,
-      sourceClaims: { where: { accepted: true }, select: { id: true, workerId: true } },
+      laborProfileId: true,
+      sourceClaims: {
+        where: { accepted: true },
+        select: { id: true, workerId: true, referrerUserId: true },
+      },
     },
   });
   if (!row) throw new PlacementError('NOT_FOUND', 404, 'Application not found');
@@ -372,6 +384,8 @@ async function readSubmission(
     vendorId: row.vendorId ?? null,
     ctvId: row.ctvId ?? null,
     acceptedClaimId: accepted?.id ?? null,
+    referrerUserId: accepted?.referrerUserId ?? null,
+    laborProfileId: row.laborProfileId ?? null,
   };
 }
 
@@ -758,6 +772,26 @@ export async function activatePlacement(
   const project = facts.project as ProjectProjection;
   const workerId = facts.submission.workerId as string;
 
+  // AFF-04 beneficiary snapshot: the placement transaction captures the ACTIVE
+  // LaborProfileHandlingAssignment.assigneeUserId for this LaborProfile, so
+  // downstream consumers (commissions, payouts, dispute resolution) can read the
+  // canonical beneficiary at activation time. The snapshot is INSIDE the same
+  // transaction as the placement write — there is no later mutation that can
+  // silently change it. Snapshot is null when no LPHA exists yet (e.g. brand-new
+  // labor profile) — that is not an error; the placement still succeeds.
+  let beneficiaryUserId: string | null = null;
+  if (facts.submission.laborProfileId) {
+    const activeHandling = await tx.laborProfileHandlingAssignment.findFirst({
+      where: {
+        laborProfileId: facts.submission.laborProfileId,
+        status: 'ACTIVE',
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { assigneeUserId: true },
+    });
+    beneficiaryUserId = activeHandling?.assigneeUserId ?? null;
+  }
+
   if (override && facts.guard) {
     // Same transaction, exactly one audit row (RQ-06/RQ-07); permission already
     // resolved pre-lock so no connection is opened here.
@@ -779,6 +813,9 @@ export async function activatePlacement(
 
   let assignment: { id: string };
   try {
+    // AFF-04 propagation: referrerId is derived from the canonical accepted
+    // SourceClaim.referrerUserId (server-side). It is null for HRP_DIRECT /
+    // VENDOR_SUPPLIED claims — that is a deliberate invariant, NOT an error.
     assignment = await tx.projectAssignment.create({
       data: {
         workerId,
@@ -793,6 +830,7 @@ export async function activatePlacement(
         validTo: attrs.validTo,
         status: 'ACTIVE',
         isPrimary: true,
+        referrerId: facts.submission.referrerUserId,
       },
       select: { id: true },
     });
@@ -845,6 +883,11 @@ export async function activatePlacement(
           employmentType: attrs.employmentType,
           slotsFilled: slotAfter.slotsFilled,
           projectFilled: projectAfter.filled,
+          // AFF-04 propagation provenance: which canonical referrer was attached,
+          // and the beneficiary snapshot at activation time. PII-free: just IDs.
+          referrerId: facts.submission.referrerUserId,
+          beneficiaryUserId,
+          laborProfileId: facts.submission.laborProfileId,
         },
         override: override
           ? { overrideCase: override.overrideCase, blockCode: facts.guard?.blockCode ?? null }
@@ -867,6 +910,12 @@ export async function activatePlacement(
       employmentType: attrs.employmentType,
       validFrom: attrs.validFrom.toISOString(),
       activatedBy: ctx.userId,
+      // AFF-04 propagation metadata in the outbox event so downstream consumers
+      // (e.g. commission ledger — NOT part of AFF-04) can read the canonical
+      // referrer identity and the beneficiary snapshot without an extra lookup.
+      referrerId: facts.submission.referrerUserId,
+      beneficiaryUserId,
+      laborProfileId: facts.submission.laborProfileId,
     },
   });
 

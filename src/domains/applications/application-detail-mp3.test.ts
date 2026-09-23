@@ -40,7 +40,7 @@ const ROW = {
     { id: 'h1', fromStatus: 'QUALIFIED', toStatus: 'CONVERTED', actorUserId: 'hr-1', reason: 'ok', createdAt: new Date('2026-08-21T00:00:00.000Z') },
   ],
   sourceClaims: [
-    { id: 'claim-1', claimType: 'VENDOR_SUPPLIED', registrationChannel: 'VENDOR_ADDED', accepted: true, workerId: 'worker-1' },
+    { id: 'claim-1', claimType: 'VENDOR_SUPPLIED', registrationChannel: 'VENDOR_ADDED', accepted: true, workerId: 'worker-1', referrerUserId: null, ctvId: null },
   ],
   assignment: {
     id: 'assign-1', status: 'ACTIVE', projectId: 'project-1', staffingOrderId: 'order-1',
@@ -63,6 +63,10 @@ describe('getApplicationDetail — MP-3 projection (RQ-08)', () => {
     expect(detail.workerId).toBe('worker-1');
     expect(detail.sourceClaim).toEqual({
       id: 'claim-1', claimType: 'VENDOR_SUPPLIED', registrationChannel: 'VENDOR_ADDED', accepted: true,
+      // AFF-04: MP-3 projection surfaces the server-derived generic referrer
+      // identity and the legacy CTV back-link (both nullable for non-CTV
+      // sources such as VENDOR_SUPPLIED).
+      referrerUserId: null, ctvId: null,
     });
     expect(detail.dedup).toEqual({
       dedupWorkerId: 'worker-9', mergedWorkerId: null, blockCode: 'IN_7D_WINDOW', overrideCase: 'S2',
