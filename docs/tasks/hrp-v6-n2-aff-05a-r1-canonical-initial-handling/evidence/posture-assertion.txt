@@ -1,0 +1,3 @@
+WRITER_POSTURE user=app_user_writer session=app_user_writer super=false bypassrls=false
+ADMIN_POSTURE  user=postgres  session=postgres  super=true  bypassrls=true
+POSTURE_OK writer_is_writer admin_is_admin same_target

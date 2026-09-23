@@ -9,7 +9,7 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | Forward-only migration replaces SECURITY DEFINER RPC and backfills existing attribution data at the data-integrity/attribution boundary. |
-| Spec version | `v1.1` |
+| Spec version | `v1.2` |
 | Status | `READY_FOR_AUDIT` |
 | Planner | `Tier 1B` |
 | Execution owner | `Tier 1B` |
@@ -18,11 +18,11 @@
 | In-scope roots | Exact File Allowlist at §4.2 |
 | Forbidden paths | Mọi file ngoài Exact File Allowlist; đặc biệt `PLANNER_HANDOVER.md`, AFF-04/T1B worktree, schema, RLS migration hiện hữu, commission/CRM/ER-003 |
 | Required gates | Guarded two-connection DB test; `CI_INTEGRATION_STRICT=1 npm run test:integration`; `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run build`; `node_modules/.bin/prisma validate`; `VERIFY_TASK`; `VERIFY_HANDOFF`; Tier 3 LIGHT audit |
-| Current execution round | `1` |
+| Current execution round | `11` |
 | Current audit round | `0` |
-| Next gate | `T0_MERGE_DECISION` |
+| Next gate | `T0_FREEZE_REVIEW_THEN_TIER3_DELTA` |
 
-> Contract này chưa cho phép code, migrate, deploy hoặc production preflight có credential. T0 có thể mở coding trên synthetic dedicated DB mà chưa cần production preflight; production branch gate, aggregate preflight và data approval là gate riêng trước merge/apply.
+> Owner đã cho phép implementation trên DB synthetic cô lập, gồm T0 trực tiếp đóng correction R11. Không cho phép production preflight/migration/deploy từ coding gate; các gate production vẫn riêng và chưa hoàn tất.
 
 ## 1. Outcome
 
@@ -93,17 +93,24 @@
 3. `docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/**`
 
 **Exact File Allowlist cho AC-06/AC-07 CI evidence infrastructure** (T0 round-3 +
-round-4 cho phép chỉnh đúng 4 script hiện có):
+round-4 cho phép chỉnh đúng 4 script hiện có; T0 round-6 R6-G4 mở rộng thêm 4
+file CI infrastructure: 3 script mới + 1 preflight hiện có):
 
 4. `scripts/ci/prepare-migration-test-db.mjs`  — synthetic-DB reset to AFF-03C predecessor state.
 5. `scripts/ci/apply-r1-migration.mjs`          — apply R1 migration to a synthetic target with `--dry-run`.
 6. `scripts/ci/verify-ac06-backfill.mjs`        — AC-06 backfill correctness evidence.
 7. `scripts/ci/verify-ac07-rollback.mjs`        — AC-07 forced-anomaly rollback evidence (also runs `--lock-timeout` for AC-04 bounded lock_timeout evidence, T0 round-4).
+8. `scripts/ci/integration-preflight.mjs`       — pre-suite posture sanity check (writer vs admin connection).
+9. `scripts/ci/assert-test-db-posture.mjs`      — pre-suite posture assertion: writer non-super non-bypassrls; admin distinct; same target.
+10. `scripts/ci/build-predecessor-staging.mjs`  — single staging-driven predecessor build (Prisma CLI in a per-run tmp dir).
+11. `scripts/ci/validate-guards.mjs`            — single non-mutating guard validator (T0 round-7 R7-G2); covers all five helpers including the builder.
 
-`prepare-migration-test-db.mjs` also accepts `--validate-guards` (T0 round-4)
-to assert all four scripts reject unsafe configurations without mutation.
+12. `scripts/ci/verify-collision-integration.mjs` — R11 Owner-authorized isolated collision proof and failure-cleanup proof; no shared DB cleanup.
+13. Task-local `evidence/r11/` capture script, logs and source hashes — R11 reproducibility artifacts, synthetic only.
 
-- **In:** one additive migration, existing canonical DB integration test, exact handling-table SELECT exception grant, read-only aggregate preflight query/result under task-local evidence, TASK/HANDOFF/AUDIT, plus 4 synthetic-only helper scripts under `scripts/ci/` for AC-06/AC-07 evidence (T0 round-3 + round-4 explicit allowlist).
+`prepare-migration-test-db.mjs`, `apply-r1-migration.mjs`, `verify-ac06-backfill.mjs`, `verify-ac07-rollback.mjs`, and `build-predecessor-staging.mjs` each accept `--probe` (T0 round-5 R5-G3 + T0 round-7 R7-G2). The dedicated validator is `scripts/ci/validate-guards.mjs` (single source of truth for guard coverage; T0 round-7 R7-G2 unified path). The previous duplicate `--validate-guards` mode inside `prepare-migration-test-db.mjs` has been REMOVED (T0 R7-G2).
+
+- **In:** one additive migration, existing canonical DB integration test, exact handling-table SELECT exception grant, read-only aggregate preflight query/result under task-local evidence, TASK/HANDOFF/AUDIT, plus the explicitly listed synthetic-only helper scripts under `scripts/ci/` for AC-06/AC-07 evidence (T0 round-3 + round-4 + round-6 explicit allowlist).
 - **Out:** mọi file khác; đặc biệt old migrations, `prisma/schema.prisma`, routes/services/UI, RLS policies, role attributes, blanket grants, PLANNER_HANDOVER, AFF-04/T1B worktree, production apply/deploy.
 - **Scope rule:** nếu implementation cần sửa route/idempotency helper hoặc test registration ngoài allowlist, dừng và trả Planner/T0; không tự mở scope.
 
@@ -234,6 +241,7 @@ Production branch gate/preflight/apply/deploy không thuộc coding/CI commands.
 | 0 | `PROPOSED_ONLY`; chờ T0 contract/data review | Contract documentation-only theo chỉ thị T0; chưa code/migrate/deploy, chưa mở PR. |
 | 1 | `PROPOSED_ONLY`; security/serialization/gates revised | T0 accepted business direction but kept execution closed; revision resolves effective privilege, concurrency boundary, test guard and production-gate findings. |
 | 2 | `READY_FOR_AUDIT`; implementation on synthetic DB complete | T0 authorized execution on synthetic dedicated DB; migration, integration tests, all gates PASS; HANDOFF to T0 for independent Tier 3 LIGHT audit. |
+| 11 | `READY_FOR_AUDIT`; R11 helper lifecycle correction complete, dirty/uncommitted | Owner asked T0 to execute T1B correction directly. LIGHT lane requires READY_FOR_AUDIT in TASK/HANDOFF; T0 freeze review still precedes independent T3 delta. Narrow fixture grammar, pre-builder collision checks, no drop-before-create, outer owned-resource cleanup; no production/migration/application-test changes in this delta. No merge approval. |
 
 ## 10. Revision Log
 
@@ -242,3 +250,4 @@ Production branch gate/preflight/apply/deploy không thuộc coding/CI commands.
 | `v1.0` | `2026-09-22` | Initial AFF-05A-R1 contract | T0 approved reconciliation `076ed531` as design input and requested legacy-data/race/security contract. |
 | `v1.1` | `2026-09-22` | Effective privileges, advisory-lock boundary, preservation cases, atomic migration and split production gate | T0 review of contract `e5e4073e3d8724e78530fa6052d86f0e8a0d4822`. |
 | `v1.1` | `2026-09-22` | Baseline updated to `e4d21807` (origin/main post ER-002); execution owner = Tier 1B; status → `READY_FOR_AUDIT`; round 2 Planner Resolution | T0 authorized implementation on synthetic dedicated DB. |
+| `v1.2` | `2026-09-23` | Round 11, explicit collision runner/task-local evidence allowlist, current freeze gate and handoff sync | Owner-authorized T0 execution as T1B; audit artifacts preserved; production gates remain pending. |

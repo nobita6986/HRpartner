@@ -1,0 +1,33 @@
+=== capture ===
+cmd: node scripts/ci/validate-guards.mjs
+cwd: C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling
+started_at: 2026-09-23T05:36:47.658Z
+elapsed_ms: 1983
+exit_code: 0
+signal: null
+=== end capture ===
+EVIDENCE_BEFORE={"dir":"C:\\CodeApp\\HrP-worktrees\\t1b-aff05a-r1-canonical-initial-handling\\docs\\tasks\\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\\evidence","count":29}
+PASS=[scripts/ci/prepare-migration-test-db.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/apply-r1-migration.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs unsafe target (both envs)] exit=3, no mutation marker
+PASS=[scripts/ci/prepare-migration-test-db.mjs unsafe host] exit=3, no mutation marker
+PASS=[scripts/ci/apply-r1-migration.mjs unsafe host] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs unsafe host] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs unsafe host] exit=3, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs unsafe host] exit=3, no mutation marker
+PASS=[prepare-migration-test-db source==target] exit=3, no mutation marker
+PASS=[prepare-migration-test-db rejected --validate-guards flag] exit=3, no mutation marker
+PASS=[prepare-migration-test-db rejected unknown flag] exit=3, no mutation marker
+PASS=[verify-ac06-backfill rejected target==predecessor] exit=3, no mutation marker
+PASS=[verify-ac07-rollback rejected target==predecessor] exit=3, no mutation marker
+PASS=[scripts/ci/prepare-migration-test-db.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/apply-r1-migration.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs probe with DATABASE_NAME] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[evidence-integrity] no AC evidence files modified by validation run (29 files scanned)
+VALIDATE_GUARDS_RESULT=PASS — guards truly non-mutating, exit codes exact

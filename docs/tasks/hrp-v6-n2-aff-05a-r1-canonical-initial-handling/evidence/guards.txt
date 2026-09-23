@@ -1,23 +1,6 @@
-﻿ADMIN_URL_SET=yes
-HOST=127.0.0.1
-SOURCE_DB=aff05a_r1_test
-TARGET_DB=aff05a_r1_migration_test
-DRY_RUN=false
-VALIDATE_GUARDS=true
-VALIDATE_GUARDS==== start ===
-NEG_PASS=[scripts/ci/prepare-migration-test-db.mjs unsafe target] exit=3, no mutation
-NEG_PASS=[scripts/ci/apply-r1-migration.mjs unsafe target] exit=3, no mutation
-NEG_PASS=[scripts/ci/verify-ac06-backfill.mjs unsafe target] exit=3, no mutation
-NEG_PASS=[scripts/ci/verify-ac07-rollback.mjs unsafe target] exit=3, no mutation
-NEG_PASS=[prepare-migration-test-db unsafe source] exit=3, no mutation
-NEG_PASS=[prepare-migration-test-db source==target] exit=3, no mutation
-NEG_PASS=[scripts/ci/prepare-migration-test-db.mjs unsafe host] exit=3, no mutation
-NEG_PASS=[scripts/ci/apply-r1-migration.mjs unsafe host] exit=3, no mutation
-NEG_PASS=[scripts/ci/verify-ac06-backfill.mjs unsafe host] exit=3, no mutation
-NEG_PASS=[scripts/ci/verify-ac07-rollback.mjs unsafe host] exit=3, no mutation
-POS_PASS=[scripts/ci/prepare-migration-test-db.mjs positive] exit=1 (not 3)
-POS_PASS=[scripts/ci/apply-r1-migration.mjs positive] exit=1 (not 3)
-POS_PASS=[scripts/ci/verify-ac06-backfill.mjs positive] exit=1 (not 3)
-POS_PASS=[scripts/ci/verify-ac07-rollback.mjs positive] exit=1 (not 3)
-VALIDATE_GUARDS_RESULT=PASS ΓÇö all 4 scripts reject unsafe configs without mutation
-VALIDATE_GUARDS==== end ===
+VALIDATE_GUARDS_RESULT (round 4, REFERENCE) = PASS — see evidence/guards-r5.txt for full round-5 evidence
+NOTE: Round-5 uses dedicated script scripts/ci/validate-guards.mjs and dedicated
+      artifact evidence/guards-r5.txt. R4 used prepare-migration-test-db.mjs --validate-guards
+      which was retired in R5 because that single-script approach conflated the
+      helper guard with the prepare-migration guard. R5 separation is mandated
+      by R5-G3 ("guards must be truly non-mutating and exact exit codes").

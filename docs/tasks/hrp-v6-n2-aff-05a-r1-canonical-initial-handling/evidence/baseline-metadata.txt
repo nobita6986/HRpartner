@@ -1,4 +1,4 @@
-﻿DB_NAME=aff05a_r1_baseline_test
+DB_NAME=aff05a_r1_baseline_test
 ?column?
 ROLE=app_engine_writer: login=true bypassrls=false super=false createdb=false createrole=false
 ROLE=app_user: login=true bypassrls=false super=false createdb=false createrole=false

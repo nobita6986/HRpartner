@@ -2,40 +2,60 @@
 /**
  * scripts/ci/prepare-migration-test-db.mjs
  *
- * AC-06/07 helper: prepare `aff05a_r1_migration_test` at AFF-03C predecessor
- * state by applying the full Prisma migration chain from the baseline
- * `e4d21807` (which DOES include AFF-03C but NOT AFF-05A-R1). This is the
- * "real predecessor state" — schema, roles, grants, RLS policies are exactly
- * what an AFF-03C-only DB would look like, with no manual function swap.
+ * AC-06/07 helper: prepare `aff05a_r1_migration_test` (candidate DB) by
+ * applying the FULL Prisma migration chain from the worktree's
+ * `prisma/migrations/` directory. The predecessor DB (R1 excluded) is
+ * built separately by `scripts/ci/build-predecessor-staging.mjs`.
  *
  * Why schema-only pg_dump was rejected (round-4 fix):
  *   T0 round-4 clarified that "restored schema" is NOT the same as
  *   "predecessor migration chain". A pg_dump of an R1-applied DB then drop
  *   the R1 function is restoring the *R1-applied schema with one function
  *   removed*. It is not the same as applying AFF-03C migrations on a fresh
- *   DB. We now use `prisma migrate deploy` against the predecessor git
- *   worktree (`e4d21807` migrations only) to produce true predecessor state.
+ *   DB. Predecessor is therefore built by `build-predecessor-staging.mjs`
+ *   which extracts `e4d21807` baseline migrations via `git show` and runs
+ *   the real `prisma migrate deploy` in a per-invocation tmp dir. This
+ *   script applies the full chain (including R1) to the candidate DB.
  *
- * SYNTHETIC-ONLY GUARDS (round-3 + round-4):
+ * T0 round-7 R7-G2: candidate preparation = bootstrap pre → migrate
+ * deploy → bootstrap post on a clean DB. The old `--validate-guards`
+ * mode (which lived in this script) has been REMOVED —
+ * `scripts/ci/validate-guards.mjs` is the SINGLE non-mutating guard
+ * validator. This script only runs the destructive prepare branch (which
+ * the validator's `--probe` mode proves is unreachable until the guard
+ * phase passes).
+ *
+ * SYNTHETIC-ONLY GUARDS (round-3 + round-4 + round-8):
  *   - Target/source DB names validated against allowlist (exit 3) BEFORE any
- *     psql/pg_dump call.
+ *     psql call.
  *   - Host allowlist: only `127.0.0.1`, `localhost` allowed (exit 3 if host
  *     is a routable IP / non-loopback).
  *   - source != target: refuse if SOURCE_DB == TARGET_DB (exit 3).
- *   - All psql/pg_dump calls use execFileSync with arg arrays (no shell,
+ *   - All psql calls use execFileSync with arg arrays (no shell,
  *     no template-string interpolation of identifier values).
+ *   - Round-8 R8-G1: CLI flag allowlist BEFORE any connection/env-var
+ *     resolution/mutation. Unknown flags (including the removed legacy
+ *     `--validate-guards`) reject with exit 3. Negative tests for the
+ *     rejection live in `scripts/ci/validate-guards.mjs`.
  *
  * Usage:
  *   node scripts/ci/prepare-migration-test-db.mjs
  *   node scripts/ci/prepare-migration-test-db.mjs --dry-run   # validate without mutating
+ *   node scripts/ci/prepare-migration-test-db.mjs --probe     # guards only, no connection
+ *
+ * T0 round-8 R8-G1: the legacy `--validate-guards` mode (which used to
+ * live inside this script) was removed in R7, but its flag was NOT
+ * rejected. With valid config, the legacy flag was silently ignored and
+ * the script fell through to the destructive prepare branch. We now
+ * EXPLICITLY REJECT `--validate-guards` (and any other unknown flag)
+ * BEFORE any connection, env-var resolution, or mutation.
  *
  * Requires admin password in env PGPASSWORD or DATABASE_URL_ADMIN_TEST pointing
  * to a Postgres superuser with CREATE DATABASE.
  */
 import { Client } from 'pg';
-import { readFileSync, existsSync, mkdtempSync, writeFileSync, unlinkSync, renameSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
@@ -44,6 +64,31 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..');
 const EVIDENCE_DIR = process.env.EVIDENCE_DIR
   ?? join(REPO_ROOT, 'docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/evidence');
+
+// T0 round-8 R8-G1: explicit CLI flag allowlist. Reject unknown flags and
+// the legacy removed `--validate-guards` flag BEFORE any env-var read,
+// connection, or mutation. With valid config, the previous (R7) script
+// silently ignored `--validate-guards` and fell through to the
+// destructive prepare branch — this rejection closes that loophole.
+// Allowed flags: --dry-run, --probe. Anything else (including
+// --validate-guards) → exit 3.
+const ALLOWED_FLAGS = new Set(['--dry-run', '--probe']);
+const REJECTED_FLAGS = new Set(['--validate-guards']);
+{
+  const args = process.argv.slice(2);
+  for (const a of args) {
+    if (a.startsWith('--')) {
+      if (REJECTED_FLAGS.has(a)) {
+        console.error(`REJECTED_LEGACY_FLAG ${a} — this flag was removed; use scripts/ci/validate-guards.mjs for non-mutating guard validation.`);
+        process.exit(3);
+      }
+      if (!ALLOWED_FLAGS.has(a)) {
+        console.error(`UNKNOWN_FLAG ${a} — refusing. Allowed: ${[...ALLOWED_FLAGS].join(', ')}`);
+        process.exit(3);
+      }
+    }
+  }
+}
 
 const ADMIN_URL = process.env.DATABASE_URL_ADMIN_TEST ?? '';
 const SOURCE_DB_RAW = process.env.MIGRATION_SOURCE_DB ?? 'aff05a_r1_test';
@@ -54,6 +99,7 @@ const ALLOWED_DB_NAMES = new Set([
   'aff05a_r1_test',
   'aff05a_r1_migration_test',
   'aff05a_r1_baseline_test', // T0 round-4: dedicated baseline DB at predecessor state
+  'aff05a_r1_predecessor', // T0 round-5 R5-G2: staging-driven predecessor DB
 ]);
 
 // T0 round-4: host allowlist. Localhost only — no public IPs / DNS names.
@@ -64,7 +110,6 @@ const ALLOWED_HOSTS = new Set([
 ]);
 
 const PSQL_BIN = 'C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe';
-const PGDUMP_BIN = 'C:\\Program Files\\PostgreSQL\\18\\bin\\pg_dump.exe';
 
 const out = (k, v) => console.log(`${k}=${v}`);
 
@@ -92,42 +137,44 @@ function guardSourceDistinct(source, target) {
 guardDbName(SOURCE_DB_RAW, 'MIGRATION_SOURCE_DB');
 guardDbName(TARGET_DB_RAW, 'MIGRATION_TARGET_DB');
 
-// Hoist VALIDATE_GUARDS for early-exit decision.
-const VALIDATE_GUARDS = process.argv.includes('--validate-guards');
-
-// In --validate-guards mode, we don't need a real ADMIN_URL (the per-invocation
-// env supplies a placeholder URL). Skip the early env check so the guard suite
-// can run in isolation.
-if (!ADMIN_URL && !VALIDATE_GUARDS) {
+if (!ADMIN_URL) {
   console.error('ERROR: DATABASE_URL_ADMIN_TEST not set');
   process.exit(2);
 }
-if (!process.env.PGPASSWORD && !VALIDATE_GUARDS) {
+if (!process.env.PGPASSWORD) {
   console.error('ERROR: PGPASSWORD not set');
   process.exit(2);
 }
 
 const DRY_RUN = process.argv.includes('--dry-run');
-// VALIDATE_GUARDS already hoisted above for early-exit decision.
 
 let adminConn, host, port, user, password;
-if (ADMIN_URL) {
-  adminConn = new URL(ADMIN_URL);
-  host = adminConn.hostname || '127.0.0.1';
-  port = adminConn.port || '5432';
-  user = adminConn.username;
-  password = adminConn.password;
-} else {
-  // In --validate-guards mode ADMIN_URL may be empty; the per-invocation
-  // child processes supply their own ADMIN_URL.
-  host = ''; port = ''; user = ''; password = '';
-}
+adminConn = new URL(ADMIN_URL);
+host = adminConn.hostname || '127.0.0.1';
+port = adminConn.port || '5432';
+user = adminConn.username;
+password = adminConn.password;
 
 // T0 round-4: host guard happens BEFORE any connection attempt.
-// Skipped in --validate-guards mode (no parent connection; the per-invocation
-// child processes supply their own URLs).
-if (!VALIDATE_GUARDS) {
-  guardHost(host);
+guardHost(host);
+
+// T0 round-5 R5-G3: --probe mode. Runs ONLY guard checks (db names, host,
+// source != target) and exits 0 with GUARD_PASS. Never opens a pg client,
+// never shells out to psql/prisma, never writes evidence. Used by
+// validate-guards.mjs to prove the guards are real.
+//
+// T0 round-7 R7-G2: this is the SINGLE non-mutating guard path. The
+// redundant `--validate-guards` mode that used to live in this script
+// has been removed — `scripts/ci/validate-guards.mjs` is the dedicated
+// non-mutating guard validator. Tests negative (unsafe target / host /
+// source==target) by asserting exit-3 from the destructive branch
+// WITHOUT any side-effect, and positive (probe) by exiting 0 with
+// GUARD_PASS and no destructive marker.
+if (process.argv.includes('--probe')) {
+  guardSourceDistinct(SOURCE_DB_RAW, TARGET_DB_RAW);
+  out('GUARD_PASS', 'source_db target_db host url_parse source_distinct');
+  out('PROBE_OK', 'no-prepare no-evidence');
+  process.exit(0);
 }
 
 async function quoteIdent(client, name) {
@@ -195,7 +242,6 @@ async function main() {
   out('SOURCE_DB', SOURCE_DB_RAW);
   out('TARGET_DB', TARGET_DB_RAW);
   out('DRY_RUN', DRY_RUN ? 'true' : 'false');
-  out('VALIDATE_GUARDS', VALIDATE_GUARDS ? 'true' : 'false');
 
   // T0 round-4: source != target guard.
   guardSourceDistinct(SOURCE_DB_RAW, TARGET_DB_RAW);
@@ -205,12 +251,11 @@ async function main() {
     return;
   }
 
-  if (VALIDATE_GUARDS) {
-    // T0 round-4: prove all four scripts reject unsafe configs without mutation.
-    // We invoke each script with bad envs and assert they exit 3 with no
-    // mutation markers.
-    return runValidateGuards();
-  }
+  // T0 round-7 R7-G2: the old `--validate-guards` mode that lived here
+  // has been removed. `scripts/ci/validate-guards.mjs` is the SINGLE
+  // non-mutating guard validator. This script now only handles the
+  // destructive prepare branch (which the validator's `--probe` mode
+  // proves is unreachable until the guard phase passes).
 
   // T0 round-4: connect to the cluster DB (postgres), not the target DB,
   // because we DROP/CREATE the target DB below and the connection would
@@ -223,167 +268,118 @@ async function main() {
     // Quote identifiers before SQL interpolation.
     const quotedTarget = await quoteIdent(client, TARGET_DB_RAW);
 
-    // 1. Drop and recreate target DB.
-    out('PREPARE', 'drop_recreate_target_db');
-    // T0 round-4: DROP DATABASE ... WITH (FORCE) can take time; we still use it
-    // but only against the allowlisted synthetic target.
-    try {
-      execFileSync(PSQL_BIN, [
-        '-h', host, '-p', port, '-U', user, '-d', 'postgres',
-        '-v', 'ON_ERROR_STOP=1',
-        '-c', `DROP DATABASE IF EXISTS ${quotedTarget} WITH (FORCE)`,
-      ], {
-        env: { ...process.env, PGPASSWORD: password },
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
-    } catch {
-      execFileSync(PSQL_BIN, [
-        '-h', host, '-p', port, '-U', user, '-d', 'postgres',
-        '-v', 'ON_ERROR_STOP=1',
-        '-c', `DROP DATABASE IF EXISTS ${quotedTarget}`,
-      ], {
-        env: { ...process.env, PGPASSWORD: password },
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
+  // T0 round-8 R8-G2: source/target collision check BEFORE any DROP. We
+  // refuse to proceed if the cluster reports that `TARGET_DB` already
+  // exists or has active (non-idle) sessions. The check runs BEFORE the
+  // destructive DROP — a marker printed AFTER DROP would not prove the
+  // destructive branch never ran. The string-level `guardSourceDistinct`
+  // already passed; this is a runtime belt-and-braces check that also
+  // catches the case where the operator forgot to clean up a leftover
+  // from a previous run.
+  {
+    const activeCheck = await client.query(
+      `SELECT count(*)::int AS n
+         FROM pg_stat_activity
+        WHERE datname = $1
+          AND state <> 'idle'
+          AND pid <> pg_backend_pid()`,
+      [TARGET_DB_RAW],
+    );
+    const active = activeCheck.rows[0]?.n ?? 0;
+    if (active > 0) {
+      console.error(`TARGET_DB_BUSY target=${TARGET_DB_RAW} active_sessions=${active} — refusing.`);
+      process.exit(5);
     }
+    const dbExists = await client.query(
+      `SELECT count(*)::int AS n FROM pg_database WHERE datname = $1`,
+      [TARGET_DB_RAW],
+    );
+    const dbExistsCount = dbExists.rows[0]?.n ?? 0;
+    if (dbExistsCount > 0) {
+      console.error(`TARGET_DB_EXISTS target=${TARGET_DB_RAW} — refusing to DROP; caller must ensure target is fresh.`);
+      process.exit(5);
+    }
+    out('TARGET_DB_COLLISION_CHECK', 'pass (pre-DROP, db-not-exists)');
+  }
+
+  // 1. Drop and recreate target DB.
+  out('PREPARE', 'drop_recreate_target_db');
+  // T0 round-4: DROP DATABASE ... WITH (FORCE) can take time; we still use it
+  // but only against the allowlisted synthetic target.
+  try {
     execFileSync(PSQL_BIN, [
       '-h', host, '-p', port, '-U', user, '-d', 'postgres',
       '-v', 'ON_ERROR_STOP=1',
-      '-c', `CREATE DATABASE ${quotedTarget}`,
+      '-c', `DROP DATABASE IF EXISTS ${quotedTarget} WITH (FORCE)`,
     ], {
       env: { ...process.env, PGPASSWORD: password },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
-    out('TARGET_DB_CREATED', TARGET_DB_RAW);
+  } catch {
+    execFileSync(PSQL_BIN, [
+      '-h', host, '-p', port, '-U', user, '-d', 'postgres',
+      '-v', 'ON_ERROR_STOP=1',
+      '-c', `DROP DATABASE IF EXISTS ${quotedTarget}`,
+    ], {
+      env: { ...process.env, PGPASSWORD: password },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  }
+  execFileSync(PSQL_BIN, [
+    '-h', host, '-p', port, '-U', user, '-d', 'postgres',
+    '-v', 'ON_ERROR_STOP=1',
+    '-c', `CREATE DATABASE ${quotedTarget}`,
+  ], {
+    env: { ...process.env, PGPASSWORD: password },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  out('TARGET_DB_CREATED', TARGET_DB_RAW);
 
-    // 2. Apply the full Prisma migration chain from baseline `e4d21807`.
-    //    T0 round-4: this is the REAL predecessor migration chain (AFF-03C
-    //    applied, but NOT AFF-05A-R1). We do NOT use a pg_dump-and-restore
-    //    shortcut.
-    out('PREPARE', 'apply_predecessor_migration_chain');
-    const predecessorDir = process.env.MIGRATION_PREDECESSOR_DIR
-      ?? join(REPO_ROOT, 'prisma', 'migrations');
-    if (!existsSync(predecessorDir)) {
-      console.error(`PREDECESSOR_DIR_NOT_FOUND ${predecessorDir}`);
-      process.exit(1);
-    }
-    out('PREDECESSOR_DIR', predecessorDir);
-    // Use `prisma migrate deploy` with the target URL.
     const targetUrl = new URL(ADMIN_URL);
     targetUrl.pathname = `/${TARGET_DB_RAW}`;
     const env = {
       ...process.env,
+      PGPASSWORD: password,
       DATABASE_URL: targetUrl.toString(),
       DATABASE_URL_ADMIN: targetUrl.toString(),
       DATABASE_URL_ADMIN_TEST: targetUrl.toString(),
       DATABASE_URL_TEST: targetUrl.toString(),
-      PGPASSWORD: password,
     };
-    // T0 round-4: temporarily move the R1 migration directory OUT of
-    // the migrations folder entirely (so Prisma cannot see it during
-    // `migrate deploy`). We restore it AFTER `prisma migrate deploy`
-    // completes. This is the only way to produce TRUE predecessor
-    // state on a synthetic DB without resorting to schema-restore
-    // tricks (which T0 round-4 explicitly rejected as not equivalent
-    // to the migration chain).
-    //
-    // We use a sibling-disabled naming rather than renaming inside the
-    // migrations folder, because Prisma scans all subdirectories of
-    // `prisma/migrations` and would pick up a `.disabled` directory
-    // as a new migration.
-    const migrationsRoot = join(REPO_ROOT, 'prisma', 'migrations');
-    const r1Dir = join(migrationsRoot, '20260922160000_aff05a_r1_initial_handling_window');
-    const r1Disabled = join(REPO_ROOT, 'prisma', '_r1_disabled_for_predecessor_proof');
-    let r1Moved = false;
-    if (existsSync(r1Dir)) {
-      renameSync(r1Dir, r1Disabled);
-      r1Moved = true;
+
+    // T0 round-7 R7-G2: bootstrap PRE on the candidate DB BEFORE migrate
+    // deploy. Some baseline migrations assume roles like `hrp_public_rpc`
+    // and `app_user_writer` already exist (so their GRANTs can succeed).
+    // Without bootstrap pre, the migration can fail at `GRANT ... TO
+    // hrp_public_rpc`. `container-test-db.mjs --phase=pre` creates those
+    // roles idempotently.
+    out('BOOTSTRAP_PRE', 'starting');
+    execFileSync('node', [join(REPO_ROOT, 'scripts', 'ci', 'container-test-db.mjs'), '--phase=pre'], {
+      cwd: REPO_ROOT,
+      env: { ...env, PG_BASELINE_PASSWORD: password },
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: process.platform === 'win32',
+    });
+    out('BOOTSTRAP_PRE_OK', 'pre');
+
+    // T0 round-7 R7-G2: apply the full Prisma migration chain from the
+    // worktree's `prisma/migrations/` directory. This includes R1 for the
+    // candidate DB. Predecessor DB (R1 excluded) is built by
+    // `build-predecessor-staging.mjs` instead. We use Prisma CLI with
+    // explicit synthetic env vars; we do NOT rename anything in the
+    // worktree.
+    out('PREPARE', 'apply_migration_chain');
+    if (!existsSync(join(REPO_ROOT, 'prisma', 'migrations'))) {
+      console.error(`PREDECESSOR_DIR_NOT_FOUND ${join(REPO_ROOT, 'prisma', 'migrations')}`);
+      process.exit(1);
     }
-    // Also temporarily move the developer's .env aside so Prisma
-    // reads our per-invocation DATABASE_URL (set via `env` option below)
-    // rather than the developer's DATABASE_URL_ADMIN pointing at aff05a_r1_test.
-    const devEnvPath = join(REPO_ROOT, '.env');
-    const devEnvBackup = devEnvPath + '.bak';
-    let envMoved = false;
-    if (existsSync(devEnvPath)) {
-      renameSync(devEnvPath, devEnvBackup);
-      envMoved = true;
-    }
+    out('PRISMA_SCHEMA', join(REPO_ROOT, 'prisma', 'schema.prisma'));
     try {
-      // T0 round-4: use `shell: true` because on Windows + Node, `npx` is a
-      // .cmd file and `execFileSync` cannot invoke it directly (EINVAL).
-      // The arguments here are NOT user-supplied — they are constructed
-      // constants plus the targetUrl derived from a parsed URL object
-      // (no shell injection risk).
-      //
-      // First: explicitly resolve the R1 migration as rolled-back if a
-      // previous prep run recorded it as applied. (Without this, Prisma
-      // would skip the entire chain because R1 is already in
-      // _prisma_migrations.) We must re-restore the R1 dir *before*
-      // calling `migrate resolve` so Prisma can find the migration
-      // directory.
-      if (r1Moved && existsSync(r1Disabled)) {
-        renameSync(r1Disabled, r1Dir);
-        r1Moved = false;
-      }
-      // Probe via a fresh target-DB client (the cluster client is
-      // bound to the admin DB and would never see _prisma_migrations
-      // for the target DB).
-      const probeClient = new Client({ connectionString: targetUrl.toString() });
-      await probeClient.connect();
-      let r1Recorded = false;
-      try {
-        // Wrap in to_regclass so a missing _prisma_migrations table
-        // (freshly created DB) returns NULL instead of throwing 42P01.
-        const probe = await probeClient.query(`
-          SELECT EXISTS(
-            SELECT 1 FROM _prisma_migrations
-             WHERE migration_name LIKE '20260922160000_aff05a_r1%'
-          ) AS r1_recorded
-        `);
-        r1Recorded = probe.rows[0]?.r1_recorded === true;
-      } catch (e) {
-        // 42P01 = table does not exist. Fresh DB = no R1 record.
-        if (e.code === '42P01') {
-          r1Recorded = false;
-        } else {
-          throw e;
-        }
-      } finally {
-        await probeClient.end();
-      }
-      if (r1Recorded) {
-        try {
-          execFileSync('npx', ['prisma', 'migrate', 'resolve', '--rolled-back', '20260922160000_aff05a_r1_initial_handling_window'], {
-            cwd: REPO_ROOT,
-            env: { ...process.env, DATABASE_URL: targetUrl.toString(), DATABASE_URL_ADMIN: targetUrl.toString() },
-            stdio: ['ignore', 'pipe', 'pipe'],
-            encoding: 'utf8',
-            shell: true,
-          });
-          out('MIGRATE_RESOLVE_OK', 'r1_record_cleared');
-        } catch (e) {
-          const stderr = (e.stderr?.toString?.() ?? '') + (e.stdout?.toString?.() ?? '');
-          console.error('MIGRATE_RESOLVE_FAIL stderr:', stderr.slice(-500));
-          console.error('MIGRATE_RESOLVE_FAIL status:', e.status);
-          process.exit(1);
-        }
-      } else {
-        out('MIGRATE_RESOLVE_SKIP', 'no_r1_record');
-      }
-      // Move R1 dir out of the migrations folder entirely so
-      // `migrate deploy` does NOT apply it. (Prisma scans only
-      // `prisma/migrations` subdirectories.)
-      if (existsSync(r1Dir)) {
-        renameSync(r1Dir, r1Disabled);
-        r1Moved = true;
-      }
       const stdout = execFileSync('npx', ['prisma', 'migrate', 'deploy'], {
         cwd: REPO_ROOT,
-        env: { ...process.env, DATABASE_URL: targetUrl.toString(), DATABASE_URL_ADMIN: targetUrl.toString() },
+        env,
         stdio: ['ignore', 'pipe', 'pipe'],
         encoding: 'utf8',
-        shell: true,
+        shell: process.platform === 'win32',
       });
       out('MIGRATE_DEPLOY_OK', 'stdout_len=' + (stdout?.length ?? 0));
     } catch (e) {
@@ -393,68 +389,23 @@ async function main() {
       console.error('MIGRATE_DEPLOY_FAIL stderr:', errStderr.slice(-500));
       console.error('MIGRATE_DEPLOY_FAIL status:', e.status, 'code:', e.code);
       process.exit(1);
-    } finally {
-      if (envMoved && existsSync(devEnvBackup)) {
-        try { renameSync(devEnvBackup, devEnvPath); }
-        catch { /* best effort */ }
-      }
-      if (r1Moved && existsSync(r1Disabled)) {
-        try { renameSync(r1Disabled, r1Dir); }
-        catch { /* best effort */ }
-      }
     }
-    out('PREDECESSOR_CHAIN_APPLIED', 'ok');
+    out('MIGRATION_CHAIN_APPLIED', 'full_chain_for_candidate_db');
 
-    // T0 round-4: open a fresh client for target-DB verification queries.
-    // The cluster-DB client is still alive for the DROP/CREATE step above.
-    const targetClient = new Client({ connectionString: targetUrl.toString() });
-    await targetClient.connect();
+    // T0 round-7 R7-G2: bootstrap POST after migrate deploy. Some
+    // post-migration grants in the project's CI helper set are conditional
+    // on tables existing (which is only true after migrate deploy
+    // completes). Running post after deploy applies those grants.
+    out('BOOTSTRAP_POST', 'starting');
+    execFileSync('node', [join(REPO_ROOT, 'scripts', 'ci', 'container-test-db.mjs'), '--phase=post'], {
+      cwd: REPO_ROOT,
+      env: { ...env, PG_BASELINE_PASSWORD: password },
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: process.platform === 'win32',
+    });
+    out('BOOTSTRAP_POST_OK', 'post');
 
-    try {
-      // 3. Verify the function state — must be AFF-03C body (no R1 marker).
-      const fn = await targetClient.query({
-        text: `
-          SELECT length(p.prosrc) AS sz,
-                 p.prosrc LIKE '%AFF05A_R1:%' AS has_r1,
-                 p.prosrc LIKE '%pg_advisory_xact_lock%' AS has_lock,
-                 r.rolname AS owner
-            FROM pg_proc p
-            JOIN pg_namespace n ON n.oid = p.pronamespace
-            LEFT JOIN pg_roles r ON r.oid = p.proowner
-           WHERE p.proname = 'hrp_public_intake_submission'
-             AND n.nspname = 'public'
-        `,
-        values: [],
-      });
-      const fnRow = fn.rows[0];
-      out('VERIFY_FN_SZ', (fnRow?.sz ?? 'missing').toString());
-      out('VERIFY_FN_HAS_R1', (fnRow?.has_r1 ?? false).toString());
-      out('VERIFY_FN_HAS_LOCK', (fnRow?.has_lock ?? false).toString());
-      out('VERIFY_FN_OWNER', fnRow?.owner ?? 'missing');
-      if (fnRow?.has_r1 === true) {
-        console.error('PREDECESSOR_HAS_R1_MARKER — refusing. Function already includes R1 changes.');
-        process.exit(4);
-      }
-      if (fnRow?.has_lock === true) {
-        console.error('PREDECESSOR_HAS_LOCK — refusing. Function already includes R1 advisory lock.');
-        process.exit(4);
-      }
-      // 4. Verify hrp_public_rpc has NOT been granted SELECT on handling yet.
-      const privs = await targetClient.query(`
-        SELECT string_agg(privilege_type, ',' ORDER BY privilege_type) AS privs
-          FROM information_schema.table_privileges
-         WHERE table_name='labor_profile_handling_assignments' AND grantee='hrp_public_rpc'
-      `);
-      out('VERIFY_HANDLING_PRIVS_HRP', privs.rows[0]?.privs ?? 'none');
-      if (privs.rows[0]?.privs && privs.rows[0].privs.split(',').includes('SELECT')) {
-        console.error('PREDECESSOR_HAS_R1_SELECT_GRANT — refusing. R1 grant already present.');
-        process.exit(4);
-      }
-    } finally {
-      await targetClient.end();
-    }
-
-    // 5. Capture role/RLS/privilege metadata (no secrets).
+    // 4. Fetch role/RLS/privilege metadata (no secrets).
     out('METADATA', `=== ${TARGET_DB_RAW} ===`);
     // T0 round-4: open a fresh target-DB client for the metadata fetch.
     const metaClient = new Client({ connectionString: targetUrl.toString() });
@@ -470,104 +421,6 @@ async function main() {
   } finally {
     await client.end();
   }
-}
-
-function runValidateGuards() {
-  out('VALIDATE_GUARDS', '=== start ===');
-  // We test the four scripts in-process via `node ...` invocations.
-  // Each call has its own env override; we assert exit code and absence
-  // of mutation markers in the combined output.
-  const SCRIPTS = [
-    'scripts/ci/prepare-migration-test-db.mjs',
-    'scripts/ci/apply-r1-migration.mjs',
-    'scripts/ci/verify-ac06-backfill.mjs',
-    'scripts/ci/verify-ac07-rollback.mjs',
-  ];
-  const baseEnv = {
-    DATABASE_URL_ADMIN_TEST: 'postgresql://postgres:placeholder@127.0.0.1:5432/aff05a_r1_test',
-    PGPASSWORD: 'placeholder-for-guard-tests',
-    EVIDENCE_DIR,
-  };
-  let pass = true;
-
-  function runScript(script, env) {
-    try {
-      const stdout = execFileSync('node', [join(REPO_ROOT, script)], {
-        env: { ...process.env, ...env },
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
-      return { status: 0, stdout, stderr: '' };
-    } catch (e) {
-      return {
-        status: e.status ?? 1,
-        stdout: e.stdout?.toString() ?? '',
-        stderr: e.stderr?.toString() ?? '',
-      };
-    }
-  }
-
-  function expectExit3(script, env, label) {
-    const r = runScript(script, env);
-    if (r.status !== 3) {
-      out('NEG_FAIL', `[${label}] exit=${r.status}, expected 3`);
-      pass = false;
-      return;
-    }
-    const combined = (r.stdout ?? '') + (r.stderr ?? '');
-    if (/MIGRATION_OK|SCHEMA_RESTORED|^READY$/m.test(combined)) {
-      out('NEG_FAIL', `[${label}] mutation marker emitted despite exit 3`);
-      pass = false;
-      return;
-    }
-    out('NEG_PASS', `[${label}] exit=3, no mutation`);
-  }
-
-  function expectAcceptable(script, env, label) {
-    const r = runScript(script, env);
-    if (r.status === 3) {
-      out('POS_FAIL', `[${label}] exit=3 for synthetic allowlist + loopback`);
-      pass = false;
-      return;
-    }
-    out('POS_PASS', `[${label}] exit=${r.status} (not 3)`);
-  }
-
-  // 1. UNSAFE_DB_NAME (target DB outside allowlist).
-  for (const s of SCRIPTS) {
-    expectExit3(s, { ...baseEnv, MIGRATION_TARGET_DB: 'production_main_db' }, `${s} unsafe target`);
-  }
-
-  // 2. UNSAFE_DB_NAME on source (only prepare-migration-test-db).
-  expectExit3('scripts/ci/prepare-migration-test-db.mjs', {
-    ...baseEnv, MIGRATION_SOURCE_DB: 'production_main_db', MIGRATION_TARGET_DB: 'aff05a_r1_migration_test',
-  }, 'prepare-migration-test-db unsafe source');
-
-  // 3. SOURCE_EQUALS_TARGET.
-  expectExit3('scripts/ci/prepare-migration-test-db.mjs', {
-    ...baseEnv, MIGRATION_SOURCE_DB: 'aff05a_r1_migration_test', MIGRATION_TARGET_DB: 'aff05a_r1_migration_test',
-  }, 'prepare-migration-test-db source==target');
-
-  // 4. UNSAFE_HOST (non-loopback).
-  for (const s of SCRIPTS) {
-    expectExit3(s, {
-      ...baseEnv,
-      DATABASE_URL_ADMIN_TEST: 'postgresql://postgres:placeholder@db.example.com:5432/aff05a_r1_test',
-    }, `${s} unsafe host`);
-  }
-
-  // 5. POSITIVE: synthetic allowlist + loopback — must NOT exit 3.
-  for (const s of SCRIPTS) {
-    expectAcceptable(s, baseEnv, `${s} positive`);
-  }
-
-  if (pass) {
-    out('VALIDATE_GUARDS_RESULT', 'PASS — all 4 scripts reject unsafe configs without mutation');
-  } else {
-    out('VALIDATE_GUARDS_RESULT', 'FAIL — at least one guard failed');
-  }
-  out('VALIDATE_GUARDS', '=== end ===');
-  process.exit(pass ? 0 : 1);
 }
 
 main().catch((e) => {

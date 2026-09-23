@@ -1,0 +1,195 @@
+=== capture ===
+cmd: node scripts/ci/integration-preflight.mjs
+cwd: C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling
+started_at: 2026-09-23T05:33:45.977Z
+elapsed_ms: 21307
+exit_code: 0
+signal: null
+=== end capture ===
+WRITER_POSTURE user=app_user_writer session=app_user_writer super=false bypassrls=false
+ADMIN_POSTURE  user=postgres  session=postgres  super=true  bypassrls=true
+POSTURE_OK writer_is_writer admin_is_admin same_target
+[integration-preflight] Test DB accepted (guards passed).
+[integration-preflight]   writer: postgresql://****@127.0.0.1:5432/aff05a_r1_test  fp=8b6bff7eedfd
+[integration-preflight]   admin : postgresql://****@127.0.0.1:5432/aff05a_r1_test  fp=6173c8879b73
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake — RUNTIME ROLE (production mirror)
+[aff03-public-intake] beforeAll rerun-cleanup runId=aff03b-733234784 lps=0 lps_preserved=0 lpha=0 pc=0 ra=0 cs=0
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake — RUNTIME ROLE (production mirror)
+[aff03-public-intake] cleanupLaborProfile d1a79597-bada-46be-a518-2ea8ac2740b0: LP bound to RA — LP preserved by schema invariant (FK RESTRICT + audit history); referral_attributions rows = 1
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake — RUNTIME ROLE (production mirror)
+[aff03-public-intake] cleanupLaborProfile 3c072003-3687-42b8-95a5-1ca165afa005: LP bound to RA — LP preserved by schema invariant (FK RESTRICT + audit history); referral_attributions rows = 1
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake — RUNTIME ROLE (production mirror)
+[aff03-public-intake] cleanupLaborProfile 7efdfd46-01b0-4aa2-93d1-c1e7ca7f31a3: LP bound to RA — LP preserved by schema invariant (FK RESTRICT + audit history); referral_attributions rows = 1
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake — RUNTIME ROLE (production mirror)
+[aff03-public-intake] afterAll user aff03b-733234784-referrer: bound to RA rows — preserved by schema invariant (FK RESTRICT + audit history)
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-03B writer policies — MASKED HR_MANAGER regression > hrp_ra_update_writer permits the masked writer role to UPDATE ACTIVE→CONSUMED with labor_profile_id bound
+[aff03-public-intake] hrp_ra_update_writer LP 8c60a75b-7ce0-4ef2-9c49-cdb0963e96de: preserved (FK RESTRICT; 1 RA row(s) bound) — schema invariant
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 — Canonical initial handling window (R1)
+[aff03-public-intake] afterAll LP cbed26b2-9aad-4056-ad5e-2ea9f33d899a: preserved (bound: RA=1, LPHA=0) — schema invariant
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 — Canonical initial handling window (R1)
+[aff03-public-intake] afterAll LP 3938b9b7-ffc8-4e2c-a16e-d2c4fda9e06b: preserved (bound: RA=1, LPHA=1) — schema invariant
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 — Canonical initial handling window (R1)
+[aff03-public-intake] afterAll LP cc19cb45-0971-4d26-85dd-7c4940a98742: preserved (bound: RA=1, LPHA=0) — schema invariant
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 — Canonical initial handling window (R1)
+[aff03-public-intake] afterAll LP d84f1c62-446c-464f-9b44-9d35518b5b77: preserved (bound: RA=1, LPHA=0) — schema invariant
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 — Canonical initial handling window (R1)
+[aff03-public-intake] afterAll LP 8bdeea99-36db-4fed-97ab-d8259957781b: preserved (bound: RA=1, LPHA=1) — schema invariant
+
+ ✓ tests/db/aff03-public-intake.integration.test.ts (26 tests) 2962ms
+stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration — DB-touching proof > (vii) RLS: HR_MANAGER GUC thấy rows; PUBLIC (no GUC) thấy 0 — FORCE RLS enforced
+prisma:error
+Invalid `tx.placement.create()` invocation in
+C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\tests\db\placement-lifecycle-integration.test.ts:692:24
+
+  689 let publicInsertErr: Error | null = null;
+  690 try {
+  691   await withPublicContext(writer, (tx) =>
+→ 692     tx.placement.create(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "42501", message: "new row violates row-level security policy for table \"placements\"", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+
+stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration — DB-touching proof > (xiii) RLS/privilege: app_user_writer DELETE bị REVOKE — Placement lịch sử bất khả xóa
+prisma:error
+Invalid `tx.placement.delete()` invocation in
+C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\tests\db\placement-lifecycle-integration.test.ts:1053:24
+
+  1050 let deleteErr: Error | null = null;
+  1051 try {
+  1052   await withHrManagerContext(writer, actorId, (tx) =>
+→ 1053     tx.placement.delete(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "42501", message: "permission denied for table placements", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+
+ ✓ tests/db/placement-lifecycle-integration.test.ts (16 tests) 2387ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (i) createPlacement → SELECTED; confirmPlacement → CONFIRMED 353ms
+ ✓ src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts (32 tests) 512ms
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-12 — publicSelect chạy dưới principal MKT, đúng hai dự án public lọt qua
+[gl05 list] total=2 nextOffset=null slugs=["GL05-ELEC-gl05-1790141634891-586994521","GL05-WARE-gl05-1790141634891-586994521"]
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-02/RQ-04 — ba mảng summary và availableSlots đúng trên dòng thật
+[gl05 card GL05-ELEC-gl05-1790141634891-586994521] positionTitles=["Công nhân lắp ráp","Kiểm tra chất lượng"] locations=["KCN VSIP 1 gl05-1790141634891-586994521","KCN Yên Phong gl05-1790141634891-586994521"] shifts=["07:00-16:00","14:00-22:00"] availableSlots=6 shiftType=ca_ngay
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-01/RISK-01/RISK-07 — hourlyRateVnd là BigInt THẬT nhưng DTO chỉ có 18 khóa allow-list
+[gl05 bigint] hourlyRateVnd=45000 typeof=bigint
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-07/DEC-08 — facet dựng từ toàn tập public hợp lệ và KHÔNG co lại theo filter
+[gl05 facets] keys=["areas","shifts"] areas(RUN)=["KCN Đình Vũ gl05-1790141634891-586994521","KCN VSIP 1 gl05-1790141634891-586994521","KCN Yên Phong gl05-1790141634891-586994521"] total(before)=2 total(area=dinhVu)=1
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-12/go-live-12 DEC-14 — trang chi tiết kể MỌI vị trí còn hiệu lực, card chỉ kể vị trí còn tuyển
+[gl05 detail GL05-ELEC-gl05-1790141634891-586994521] positions=[["GL05-ASSY",4],["GL05-QC",2],["GL05-FORK",0]] availableSlots=6 needed=10 filled=4 shiftType=null
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-12 — dự án nội bộ không có card, không facet, và trang chi tiết trả null
+[gl05 non-public] getPublicJobDetail(GL05-PRIV-gl05-1790141634891-586994521) => null
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-05 — q fold dấu, không khớp description; area đọc tập slot SAU lifecycle
+[gl05 q] fold=["GL05-ELEC-gl05-1790141634891-586994521"] description=0 slotDaDu=0
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-05 — q fold dấu, không khớp description; area đọc tập slot SAU lifecycle
+[gl05 area] yenPhong=["GL05-ELEC-gl05-1790141634891-586994521"] quangChau=0 dinhVu=["GL05-WARE-gl05-1790141634891-586994521"]
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-06 — shift khớp cả nhãn KHÔNG đứng đầu, nhãn của slot đã đủ chỉ tiêu thì không
+[gl05 filter] shift(14:00-22:00)=["GL05-ELEC-gl05-1790141634891-586994521"] shift(18:00-02:00)=0
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-04 — total/nextOffset và hai trang thật khớp nhau, limit bị kẹp [1,50]
+[gl05 page] p1=["GL05-WARE-gl05-1790141634891-586994521"] next=1 p2=["GL05-ELEC-gl05-1790141634891-586994521"] next=null past(offset=2)=0 total=2
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật
+[gl05 cleanup] projects còn lại=0 slots còn lại=0 (RUN=gl05-1790141634891-586994521)
+
+ ✓ src/domains/job-board/public-card-truth.integration.test.ts (10 tests) 453ms
+stdout | src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > PLN-02: writer grants on the 29 tables are least-privilege (CRUD subset, none grantable)
+[PLN-02 grants] grantee=app_user_writer privileges=["DELETE","INSERT","SELECT","UPDATE"] tables_with_grants=29/29 is_grantable=NONE
+
+ ✓ src/shared/auth/live-rls-posture.m1-07b.test.ts (32 tests) 477ms
+ ✓ src/domains/applications/live-integration.mp3c.test.ts (7 tests) 553ms
+ ✓ src/domains/applications/live-integration.mp2.test.ts (11 tests) 651ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-03 REAL concurrent race: N simultaneous same-key applies create exactly ONE row 442ms
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-01: valid active code creates attribution row via engine and returns REDIRECT_NEW
+{"schemaVersion":"1.0","timestamp":"2026-09-23T05:33:58.337Z","level":"info","event":"referral.redirect.new","requestId":"itest-8a93db33-624c-4876-918e-3ef33cf6b82d","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-02: forged code → NOT_FOUND (constant /jobs), no attribution row
+{"schemaVersion":"1.0","timestamp":"2026-09-23T05:33:58.351Z","level":"info","event":"referral.redirect.referrer_not_found","requestId":"itest-be1004f2-e0e2-4e10-8bab-0f2447ea2429","meta":{"route":"GET /r/[code]","outcome":"not_found"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-02: inactive user code → NOT_FOUND, no attribution row
+{"schemaVersion":"1.0","timestamp":"2026-09-23T05:33:58.363Z","level":"info","event":"referral.redirect.referrer_not_found","requestId":"itest-c8115f6d-d309-45c9-9711-7606abb335f1","meta":{"route":"GET /r/[code]","outcome":"not_found"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03: valid cookie + existing active row → REDIRECT_EXISTING (existing wins, no new row)
+{"schemaVersion":"1.0","timestamp":"2026-09-23T05:33:58.412Z","level":"info","event":"referral.redirect.new","requestId":"itest-ea27b316-431b-40f9-8f17-c7b226295704","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03: valid cookie + existing active row → REDIRECT_EXISTING (existing wins, no new row)
+{"schemaVersion":"1.0","timestamp":"2026-09-23T05:33:58.419Z","level":"info","event":"referral.redirect.existing_wins","requestId":"itest-5aa831e5-e083-487c-955b-e68f813bf30f","meta":{"route":"GET /r/[code]","outcome":"redirect_existing"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03b: cookie from code A + click code B → REDIRECT_EXISTING (first click wins)
+{"schemaVersion":"1.0","timestamp":"2026-09-23T05:33:58.467Z","level":"info","event":"referral.redirect.new","requestId":"itest-29ed7ffd-1168-43d9-a18c-cc759884c374","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03b: cookie from code A + click code B → REDIRECT_EXISTING (first click wins)
+{"schemaVersion":"1.0","timestamp":"2026-09-23T05:33:58.474Z","level":"info","event":"referral.redirect.existing_wins","requestId":"itest-644969da-59d3-480c-8ed6-7a39e756c37e","meta":{"route":"GET /r/[code]","outcome":"redirect_existing"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-06: ?job=/jobs/vietnam-senior-dev → allowlisted prefix preserved
+{"schemaVersion":"1.0","timestamp":"2026-09-23T05:33:58.588Z","level":"info","event":"referral.redirect.new","requestId":"itest-8f6c1c95-a501-404f-bcd9-22d733f2ccec","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-06: ?job=/jobs?page=2 → query stripped, prefix preserved
+{"schemaVersion":"1.0","timestamp":"2026-09-23T05:33:58.735Z","level":"info","event":"referral.redirect.new","requestId":"itest-99734b71-089e-41a6-a850-0eaaecbd4f5f","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-01 + expires: created attribution has expires_at = now + 30 days
+{"schemaVersion":"1.0","timestamp":"2026-09-23T05:33:58.862Z","level":"info","event":"referral.redirect.new","requestId":"itest-884613b6-eba8-4d96-93a5-3b299ac66bcf","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+ ✓ tests/db/attribution-redirect.integration.test.ts (15 tests) 743ms
+ ✓ src/shared/auth/live-vendor-idor.m1-08.test.ts (13 tests) 435ms
+ ✓ src/domains/applications/live-integration.ops06a.test.ts (6 tests | 2 skipped) 217ms
+ ✓ src/domains/security/security-matrix.integration.test.ts (124 tests) 740ms
+ ✓ src/domains/staffing/4role-staffing.integration.test.ts (11 tests) 65ms
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-10(a): current_user không BYPASSRLS và không SUPERUSER
+[go-live-04][AC-10a] current_user=app_user_writer rolbypassrls=false rolsuper=false
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-08: cùng kết nối, KHÔNG set GUC ⇒ app.role rỗng và 0 dòng
+[go-live-04][AC-08] no-GUC app.role="" total=0 jobs=0 detail(GL04-PUB-gl04-1790141641964-rhav2go)=null
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-10(c): helper trả ≥ 1 job và mọi dòng nhìn thấy được đều is_public = true
+[go-live-04][AC-10c] app.role="MKT" app.user_id="system:public-job-board-read" transaction_read_only=on total=1 jobs=1 visibleRows=1 leaked=[]
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-06: dự án is_public = false vắng mặt ở mọi đường đọc công khai
+[go-live-04][AC-06] fixture non-public id=prj-priv-gl04-1790141641964-rhav2go code=GL04-PRIV-gl04-1790141641964-rhav2go isPublic=false status=ACTIVE
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-06: dự án is_public = false vắng mặt ở mọi đường đọc công khai
+[go-live-04][AC-06] qua helper: detail(GL04-PRIV-gl04-1790141641964-rhav2go)=null rlsRows=0 slugs=["GL04-PUB-gl04-1790141641964-rhav2go"]
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-07: DELETE phát trong transaction của helper bị từ chối SQLSTATE 25006
+[go-live-04][AC-07] sqlstate=25006 message= Invalid `prisma.$executeRawUnsafe()` invocation: Raw query failed. Code: `25006`. Message: `ERROR: cannot execute DELETE in a read-only transaction`
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS
+[go-live-04][cleanup] fixture còn lại = 0 (kỳ vọng 0)
+
+ ✓ src/shared/auth/live-public-read-rls.go-live-04.test.ts (5 tests) 279ms
+ ✓ src/shared/auth/live-vendor-worker-scope.m1-06b.test.ts (10 tests) 202ms
+ ✓ tests/db/referral-attribution-foundation.integration.test.ts (15 tests) 249ms
+ ✓ src/domains/applications/security-boundary.mp2.test.ts (13 tests) 324ms
+ ✓ src/shared/auth/live-ticket-route-boundary.m1-06d.test.ts (5 tests) 214ms
+ ✓ src/domains/admin-demand-tree.integration.test.ts (17 tests) 337ms
+ ✓ tests/db/handling-assignment.integration.test.ts (4 tests) 230ms
+ ✓ src/shared/auth/live-auth-scope.m1-06a.test.ts (6 tests) 132ms
+ ✓ src/shared/auth/rls-context.test.ts (9 tests) 168ms
+ ✓ src/shared/auth/matrix-scope.test.ts (59 tests) 224ms
+ ✓ src/domains/applications/live-integration.mp3b.test.ts (1 test) 229ms
+
+ Test Files  23 passed (23)
+      Tests  445 passed | 2 skipped (447)
+   Start at  12:33:47
+   Duration  19.67s (transform 718ms, setup 0ms, collect 1.99s, tests 12.78s, environment 4ms, prepare 1.45s)
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+stderr | src/domains/applications/live-integration.ops06a.test.ts > AC-04/05/08 LIVE — chặn ⇒ zero write trên TEST DB thật > AC-04: limiter deny ⇒ 429 và KHÔNG có row nào được tạo (before/after bằng nhau)
+{"schemaVersion":"1.0","timestamp":"2026-09-23T05:34:00.224Z","level":"warn","event":"rate_limit.denied","requestId":"1437422a-9fc2-40cf-a40d-692a04d255ee","meta":{"route":"POST /api/public/jobs/[slug]/applications","status":429,"outcome":"rate_limited","detail":{"surface":"APPLY_IP","retryAfterSec":30}}}

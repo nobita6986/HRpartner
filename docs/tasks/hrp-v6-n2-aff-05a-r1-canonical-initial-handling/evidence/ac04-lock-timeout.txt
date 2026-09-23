@@ -1,57 +1,53 @@
-﻿AC-04 lock_timeout verify ΓÇö running at 2026-09-22T12:10:57.424Z
-TARGET_DB=aff05a_r1_migration_test
+AC-04 lock_timeout verify — running at 2026-09-23T08:23:21.406Z
+TARGET_DB=aff05a_r1_test
 EVIDENCE_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac04-lock-timeout.txt
 MODE=lock-timeout
 
 === lock_timeout MODE ===
+Step A.0 Fail-closed predecessor existence check (T0 R9).  [PREDECESSOR_DB=aff05a_r1_predecessor]
+PREDECESSOR_DB_CHECK=absent (safe to build)  [PREDECESSOR_DB=aff05a_r1_predecessor]
 Step A. Reset target DB to AFF-03C predecessor state.
-ADMIN_URL_SET=yes
-HOST=127.0.0.1
-SOURCE_DB=aff05a_r1_test
-TARGET_DB=aff05a_r1_migration_test
-DRY_RUN=false
-VALIDATE_GUARDS=false
-PREPARE=drop_recreate_target_db
-TARGET_DB_CREATED=aff05a_r1_migration_test
-PREPARE=apply_predecessor_migration_chain
-PREDECESSOR_DIR=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\prisma\migrations
-MIGRATE_RESOLVE_SKIP=no_r1_record
-MIGRATE_DEPLOY_OK=stdout_len=5945
-PREDECESSOR_CHAIN_APPLIED=ok
+Step A.1 Build predecessor via Prisma CLI (single path).
+TMPDIR_CREATED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-v5ETaw
+BASELINE_REF=e4d21807f0d972de447e710066b40c77a661fb17
+SCHEMA_WRITTEN=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-v5ETaw\prisma\schema.prisma
+MIGRATION_LOCK_TOML_SOURCE=pinned_baseline=e4d21807f0d9 blob=fbffa92c2bb7c748d6fc78f9f9dcac604dabb87d
+BASELINE_MIGRATION_COUNT=44
+MIGRATIONS_MATERIALIZED=44
+TARGET_DB_COLLISION_CHECK=pass (pre-DROP, db-not-exists)
+DROP_TARGET_IF_EXISTS=aff05a_r1_predecessor
+TARGET_DB_CREATED=aff05a_r1_predecessor
+BOOTSTRAP_PRE_OK=pre
+MIGRATE_DEPLOY_OK=prisma_cli
+BOOTSTRAP_POST_OK=post
 VERIFY_FN_SZ=7274
 VERIFY_FN_HAS_R1=false
 VERIFY_FN_HAS_LOCK=false
-VERIFY_FN_OWNER=hrp_public_rpc
 VERIFY_HANDLING_PRIVS_HRP=INSERT
-METADATA==== aff05a_r1_migration_test ===
-METADATA==== aff05a_r1_migration_test ===
-METADATA.priv=candidate_submissions=DELETE,INSERT,SELECT,UPDATE
-METADATA.priv=labor_profile_handling_assignments=INSERT,SELECT,UPDATE
-METADATA.priv=labor_profiles=DELETE,INSERT,SELECT,UPDATE
-METADATA.priv=placement_case=DELETE,INSERT,SELECT,UPDATE
-METADATA.priv=referral_attributions=SELECT,UPDATE
-METADATA.rls=labor_profile_handling_assignments: rowsec=true forcerowsec=true
-METADATA.rpc_handling_privs=INSERT
-METADATA.rpc_role_attrs=hrp_public_rpc: login=false bypassrls=true super=false createdb=false
-READY=predecessor_state
-READY target_db=aff05a_r1_migration_test
+READY=predecessor_db=aff05a_r1_predecessor tmpdir=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-v5ETaw
+READY target_db=aff05a_r1_predecessor
+TMPDIR_REMOVED=C:\Users\Admin\AppData\Local\Temp\hrp-predecessor-v5ETaw
 
-STDERR: (node:25000) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+STDERR: (node:14536) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 
+Step A.2 Rename predecessor → MIGRATION_TARGET_DB (cluster only).
+PRE_RENAME_DBS=["aff05a_r1_predecessor"]
+RENAME_OK from=aff05a_r1_predecessor to=aff05a_r1_test
 
 Step B. Connection A: BEGIN; LOCK TABLE ... (hold lock).
-CONNECTION_A: lock acquired at 2026-09-22T12:11:02.500Z
+CONNECTION_A: lock acquired at 2026-09-23T08:23:29.029Z
 
 Step C. Connection B: run R1 migration (must time out, NOT hang).
-MIGRATION_ELAPSED_MS=5180
+MIGRATION_ELAPSED_MS=5210
 MIGRATION_EXIT_CODE=1
 STDOUT:
-TARGET_DB=aff05a_r1_migration_test
+TARGET_DB=aff05a_r1_test
 MIGRATION_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\prisma\migrations\20260922160000_aff05a_r1_initial_handling_window\migration.sql
 MIGRATION_FAILED=true
 EXIT_CODE=3
 BEGIN
+SET
 GRANT
 DO
 SET
@@ -66,24 +62,30 @@ DO
 GRANT
 
 STDERR:
-psql:C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling/prisma/migrations/20260922160000_aff05a_r1_initial_handling_window/migration.sql:628: ERROR:  canceling statement due to lock timeout
+psql:C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling/prisma/migrations/20260922160000_aff05a_r1_initial_handling_window/migration.sql:640: ERROR:  canceling statement due to lock timeout
 CONTEXT:  SQL statement "LOCK TABLE labor_profile_handling_assignments IN SHARE ROW EXCLUSIVE MODE"
 PL/pgSQL function inline_code_block line 24 at SQL statement
 
-ASSERT_PASS: migration aborted within 5180ms (well under 30s) ΓÇö bounded timeout works.
+ASSERT_PASS: migration aborted within 5210ms (well under 30s) — bounded timeout works.
 ASSERT_PASS: lock_timeout error observed in migration output.
 ASSERT_PASS: migration exited non-zero (status=1).
 
 Step D. Release connection A (ROLLBACK).
-CONNECTION_A: lock released at 2026-09-22T12:11:07.686Z
+CONNECTION_A: lock released at 2026-09-23T08:23:34.244Z
 
-Step E. Re-run migration (sanity, no contention ΓÇö must succeed).
+Step D-prime. Rollback-proof gate (verify migration state is unchanged after Step C abort).
+ASSERT_PASS (rollback): function body has NO R1 marker after Step C abort — full rollback confirmed
+ASSERT_PASS (rollback): hrp_public_rpc has NO SELECT on handling table after Step C abort — grant rolled back
+ASSERT_PASS (rollback): LPHA table has 0 rows after Step C abort — no data leak
+
+Step E. Re-run migration (sanity, no contention — must succeed).
 SANITY_EXIT_CODE=0
 SANITY_STDOUT:
-TARGET_DB=aff05a_r1_migration_test
+TARGET_DB=aff05a_r1_test
 MIGRATION_FILE=C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\prisma\migrations\20260922160000_aff05a_r1_initial_handling_window\migration.sql
 MIGRATION_OK=true
 BEGIN
+SET
 GRANT
 DO
 SET
@@ -99,37 +101,9 @@ GRANT
 DO
 COMMIT
 
-ASSERT_PASS: sanity re-run succeeded ΓÇö lock_timeout setting does not break normal apply.
+ASSERT_PASS: sanity re-run succeeded — lock_timeout setting does not break normal apply.
 
 === RESULT ===
-AC-04 lock_timeout PASS ΓÇö migration aborts cleanly under contention, no indefinite hang.
-node : FATAL Error: EBUSY: resource busy or locked, open 'C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-hand
-ling\docs\tasks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac04-lock-timeout.txt'
-At C:\Users\Admin\AppData\Local\Temp\ps-script-d8a1aee4-ef8e-4d6a-951a-c9ce8e8424be.ps1:92 char:436
-+ ... tion_test"; node scripts/ci/verify-ac07-rollback.mjs --lock-timeout 2 ...
-+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: (FATAL Error: EB...ck-timeout.txt':String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
- 
-    at writeFileSync (node:fs:2483:20)
-    at runLockTimeoutMode 
-(file:///C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling/scripts/ci/verify-ac07-rollback.mjs:410:3)
-    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
-node:fs:2483
-    return binding.writeFileUtf8(
-                   ^
+AC-04 lock_timeout PASS — migration aborts cleanly under contention, no indefinite hang.
 
-Error: EBUSY: resource busy or locked, open 'C:\CodeApp\HrP-worktrees\t1b-aff05a-r1-canonical-initial-handling\docs\tas
-ks\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\evidence\ac04-lock-timeout.txt'
-    at writeFileSync (node:fs:2483:20)
-    at 
-file:///C:/CodeApp/HrP-worktrees/t1b-aff05a-r1-canonical-initial-handling/scripts/ci/verify-ac07-rollback.mjs:417:3
-    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
-  errno: -4082,
-  code: 'EBUSY',
-  syscall: 'open',
-  path: 'C:\\CodeApp\\HrP-worktrees\\t1b-aff05a-r1-canonical-initial-handling\\docs\\tasks\\hrp-v6-n2-aff-05a-r1-canoni
-cal-initial-handling\\evidence\\ac04-lock-timeout.txt'
-}
-
-Node.js v24.19.0
+---STDERR---

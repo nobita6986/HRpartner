@@ -1,0 +1,20 @@
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_AUDIT).
+  [OK]   A-02 assurance lane: CRITICAL.
+  [OK]   A-02 audit mode: LIGHT.
+  [OK]   A-02 audit selection has a recorded reason.
+  [WARN] A-04 status is 'READY_FOR_AUDIT' - placeholder and dry-run checks are non-blocking.
+  [OK]   A-05 8 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 5 referenced npm script(s) all exist.
+  [WARN] T-02 contract cites line numbers in file(s) that do not exist: docs/discovery/realignment/AFF05A_RESIDUAL_RECONCILIATION.md:1.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-05 all 8 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+  [OK]   T-07 control field change (Current execution round, Spec version) is accompanied by a section 9/10 entry.
+
+RESULT: DRAFT-VALID (2 warning(s)).
+
+EXIT_CODE=0

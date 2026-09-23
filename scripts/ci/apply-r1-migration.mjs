@@ -44,6 +44,7 @@ const ALLOWED_DB_NAMES = new Set([
   'aff05a_r1_test',
   'aff05a_r1_migration_test',
   'aff05a_r1_baseline_test',
+  'aff05a_r1_predecessor',
 ]);
 const ALLOWED_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
 
@@ -79,6 +80,17 @@ const port = adminConn.port || '5432';
 const user = adminConn.username;
 
 guardHost(host);
+
+// T0 round-5 R5-G3: --probe mode. Runs ONLY guard checks (db name, host,
+// url parse) and exits 0 with GUARD_PASS. Never opens a pg client, never
+// execs psql, never touches migration files. Used by validate-guards.mjs
+// to prove the guards are real (the destructive branch is unreachable in
+// probe mode).
+if (process.argv.includes('--probe')) {
+  out('GUARD_PASS', 'db_name host url_parse');
+  out('PROBE_OK', 'no-apply');
+  process.exit(0);
+}
 
 const migrationFile = join(
   REPO_ROOT,

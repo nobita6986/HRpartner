@@ -42,6 +42,24 @@ const ADMIN_URL = process.env.DATABASE_URL_ADMIN_TEST ?? '';
 const TARGET_DB = process.env.MIGRATION_TARGET_DB ?? 'aff05a_r1_migration_test';
 const EVIDENCE_DIR = process.env.EVIDENCE_DIR ?? join(REPO_ROOT, 'docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/evidence');
 
+// T0 round-8 R8-G2: configuration collision check. AC-06/07 build the
+// predecessor DB at the name given by COLLISION_PREDECESSOR_NAME or
+// DATABASE_NAME (defaults to 'aff05a_r1_predecessor') and then rename
+// it to MIGRATION_TARGET_DB. If MIGRATION_TARGET_DB equals the predecessor
+// name, the rename is a no-op and the test effectively re-uses the
+// predecessor — defeating the AC-06 / AC-07 invariant (run the migration
+// on a fresh DB). Reject this BEFORE calling build-predecessor-staging.mjs.
+//
+// Both names are guarded before any connection. Fixture mode is a narrow grammar, not a bypass.
+const PREDECESSOR_DB_NAME = (process.env.DATABASE_NAME ?? 'aff05a_r1_predecessor').trim();
+function guardConfigCollision(target, predecessor) {
+  if (target === predecessor) {
+    console.error(`CONFIG_COLLISION TARGET_DB=${target} equals predecessor name; refusing to call builder. Use a distinct MIGRATION_TARGET_DB.`);
+    process.exit(3);
+  }
+}
+guardConfigCollision(TARGET_DB, PREDECESSOR_DB_NAME);
+
 // T0 round-4: synthetic-only host + DB allowlist. Reject non-loopback hosts
 // and any DB name outside the project's synthetic prefix BEFORE any
 // destructive action.
@@ -49,10 +67,19 @@ const ALLOWED_DB_NAMES = new Set([
   'aff05a_r1_test',
   'aff05a_r1_migration_test',
   'aff05a_r1_baseline_test',
+  'aff05a_r1_predecessor',
 ]);
 const ALLOWED_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
 
+const IS_COLLISION_FIXTURE = process.argv.includes('--collision-fixture');
+const FIXTURE_NAME = /^aff05a_r1_collision_[0-9a-f]{8}_(?:pred|tgt)$/;
+if (process.env.COLLISION_BYPASS_DB_NAME !== undefined || process.env.COLLISION_PREDECESSOR_NAME !== undefined) {
+  console.error('UNSAFE_LEGACY_OVERRIDE: collision bypass overrides are not supported');
+  process.exit(3);
+}
+
 function guardDbName(name, role) {
+  if (IS_COLLISION_FIXTURE && FIXTURE_NAME.test(name)) return;
   if (!ALLOWED_DB_NAMES.has(name)) {
     console.error(`UNSAFE_DB_NAME ${role}=${name} — refusing. Allowed: ${[...ALLOWED_DB_NAMES].join(', ')}`);
     process.exit(3);
@@ -65,15 +92,10 @@ function guardHost(host) {
   }
 }
 guardDbName(TARGET_DB, 'MIGRATION_TARGET_DB');
+guardDbName(PREDECESSOR_DB_NAME, 'DATABASE_NAME');
 
 if (!ADMIN_URL) { console.error('ERROR: DATABASE_URL_ADMIN_TEST not set'); process.exit(2); }
 if (!process.env.PGPASSWORD) { console.error('ERROR: PGPASSWORD not set'); process.exit(2); }
-
-if (!existsSync(EVIDENCE_DIR)) mkdirSync(EVIDENCE_DIR, { recursive: true });
-const LOCK_TIMEOUT_MODE = process.argv.includes('--lock-timeout');
-const EVIDENCE_FILE = join(EVIDENCE_DIR, LOCK_TIMEOUT_MODE ? 'ac04-lock-timeout.txt' : 'ac07-rollback.txt');
-const logLines = [];
-const log = (line) => { console.log(line); logLines.push(line); };
 
 const adminConn = new URL(ADMIN_URL);
 const host = adminConn.hostname || '127.0.0.1';
@@ -83,10 +105,68 @@ const password = adminConn.password;
 
 guardHost(host);
 
+// T0 round-5 R5-G3: --probe mode. Runs ONLY guard checks (db name, host,
+// url parse) and exits 0 with GUARD_PASS. Never opens a pg client, never
+// execs psql, never touches migration files or evidence.
+//
+// T0 R10: `--probe`, `--lock-timeout`, and `--collision-fixture` are accepted.
+// Unknown flags (e.g. the now-removed `--collision-test`) must exit 3 BEFORE
+// any connection or DB read.
+const ALLOWED_FLAGS = new Set(['--probe', '--lock-timeout', '--collision-fixture']);
+for (const arg of process.argv.slice(2)) {
+  if (!ALLOWED_FLAGS.has(arg)) {
+    console.error(`UNSAFE_FLAG ${arg} — refusing. Allowed: ${[...ALLOWED_FLAGS].join(' ')}`);
+    process.exit(3);
+  }
+}
+if (process.argv.includes('--probe')) {
+  console.log('GUARD_PASS=db_name host url_parse');
+  console.log('PROBE_OK=no-apply no-evidence');
+  process.exit(0);
+}
+
+if (!existsSync(EVIDENCE_DIR)) mkdirSync(EVIDENCE_DIR, { recursive: true });
+const LOCK_TIMEOUT_MODE = process.argv.includes('--lock-timeout');
+// T0 R10: --collision-test removed. The negative proof for collision
+// scenarios lives in a separate integration runner
+// (`scripts/ci/verify-collision-integration.mjs`) so the AC entrypoints
+// themselves stay non-mutating. The AC scripts never terminate/drop a
+// pre-existing DB.
+const EVIDENCE_FILE = join(EVIDENCE_DIR, LOCK_TIMEOUT_MODE ? 'ac04-lock-timeout.txt' : 'ac07-rollback.txt');
+const logLines = [];
+// T0 round-7 R7-G4: normalize all appended lines to LF (no CRLF). The
+// verify scripts capture stdout from `spawnSync` of `psql.exe` on
+// Windows, which embeds CRLF in the per-statement output. Appending
+// such a buffer verbatim preserves those CRLFs as part of the log;
+// later normalize line endings to LF for canonical UTF-8 no-BOM, LF
+// evidence files. The helper-level separator remains `\n`.
+const log = (line) => {
+  const normalized = String(line ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  console.log(normalized);
+  logLines.push(normalized);
+};
+
 const targetUrl = `postgresql://${user}:${password}@${host}:${port}/${TARGET_DB}`;
 
 function pgClient(url) {
   return new Client({ connectionString: url });
+}
+
+// T0 round-8 R8-G4: safe evidence-write helper. If the operator
+// redirected stdout to the same file (Windows file-lock conflict),
+// fall back to a sibling `.partial` file so the AC still exits with
+// the right code. The `.partial` content is byte-identical to the
+// intended evidence file; we always have *some* durable artifact.
+function writeEvidence() {
+  const body = logLines.join('\n');
+  try {
+    writeFileSync(EVIDENCE_FILE, body);
+  } catch (e) {
+    try {
+      writeFileSync(EVIDENCE_FILE + '.partial', body);
+      console.error(`EVIDENCE_WRITE_FALLBACK ${EVIDENCE_FILE}: ${e.message}`);
+    } catch { /* truly cannot write; ignore */ }
+  }
 }
 
 async function execSql(client, sql) {
@@ -137,6 +217,34 @@ async function snapshotFn(client) {
   };
 }
 
+
+async function assertFreshDatabases() {
+  const url = new URL(ADMIN_URL);
+  url.pathname = '/postgres';
+  const client = new Client({ connectionString: url.toString() });
+  try {
+    await client.connect();
+    const result = await client.query(
+      'SELECT datname FROM pg_database WHERE datname = ANY($1::text[])',
+      [[PREDECESSOR_DB_NAME, TARGET_DB]],
+    );
+    const names = new Set(result.rows.map(row => row.datname));
+    for (const [name, marker] of [
+      [PREDECESSOR_DB_NAME, 'PREDECESSOR_DB_EXISTS'],
+      [TARGET_DB, 'TARGET_DB_EXISTS'],
+    ]) {
+      if (names.has(name)) {
+        const error = new Error(`${marker}: ${name} already exists — refusing to run before builder.`);
+        error.exitCode = 3;
+        throw error;
+      }
+    }
+    log('FRESH_DATABASES_CHECK=PASS (both absent; before builder)');
+  } finally {
+    await client.end();
+  }
+}
+
 async function main() {
   log(LOCK_TIMEOUT_MODE
     ? `AC-04 lock_timeout verify — running at ${new Date().toISOString()}`
@@ -151,18 +259,75 @@ async function main() {
     return runLockTimeoutMode();
   }
 
-  // 1. Reset to predecessor state.
-  log('\n=== STEP 1: Reset DB to AFF-03C predecessor state ===');
-  const prep = spawnSync('node', [join(REPO_ROOT, 'scripts/ci/prepare-migration-test-db.mjs')], {
-    env: { ...process.env },
+  await assertFreshDatabases();
+
+  // 1. Reset to predecessor state via the single staging-driven path.
+  //    T0 round-6 R6-G2: AC-07 must use `build-predecessor-staging.mjs`
+  //    (Prisma CLI in a per-run tmp dir) — NOT the deprecated
+  //    rename-the-worktree path. After staging, rename the predecessor DB
+  //    to `MIGRATION_TARGET_DB` at cluster level (no worktree mutation,
+  //    no schema mutation).
+  //
+  // T0 R10: pass PREDECESSOR_DB_NAME as DATABASE_NAME so STEP 0 and the
+  // builder see the same name. For --collision-fixture mode, also pass
+  // --collision-fixture to the builder.
+  log('\n=== STEP 1: Build predecessor via Prisma CLI (single path) ===');
+  const stage = spawnSync('node', [
+    join(REPO_ROOT, 'scripts/ci/build-predecessor-staging.mjs'),
+    ...(IS_COLLISION_FIXTURE ? ['--collision-fixture'] : []),
+  ], {
+    env: {
+      ...process.env,
+      DATABASE_NAME: PREDECESSOR_DB_NAME,
+      BASELINE_REF: 'e4d21807f0d972de447e710066b40c77a661fb17',
+    },
     encoding: 'utf8',
     stdio: 'pipe',
   });
-  log(prep.stdout);
-  if (prep.status !== 0) {
-    log(`PREPARE_FAILED exit=${prep.status}`);
-    writeFileSync(EVIDENCE_FILE, logLines.join('\n'));
+  log(stage.stdout);
+  if (stage.stderr) log(`STDERR: ${stage.stderr}`);
+  if (stage.status !== 0) {
+    log(`STAGING_FAILED exit=${stage.status}`);
+    writeEvidence();
     process.exit(1);
+  }
+  log('\n=== STEP 1b: Rename predecessor → MIGRATION_TARGET_DB (cluster only) ===');
+  const _adminUrl = new URL(ADMIN_URL);
+  const clusterUrlStr = new URL(ADMIN_URL).protocol + '//' + (new URL(ADMIN_URL).username ? new URL(ADMIN_URL).username + ':' + new URL(ADMIN_URL).password + '@' : '') + new URL(ADMIN_URL).hostname + ':' + (new URL(ADMIN_URL).port || '5432') + '/postgres';
+  // T0 R10: target DB must not exist before rename. Fail-closed: refuse if
+  // MIGRATION_TARGET_DB already exists (would collide with rename or silently
+  // overwrite a DB owned by another run). We do NOT auto-DROP here.
+  // T0 R10: predecessor name is configurable via PREDECESSOR_DB_NAME.
+  const clusterClient = new Client({ connectionString: clusterUrlStr });
+  await clusterClient.connect();
+  try {
+    const dbList = await clusterClient.query(
+      `SELECT datname FROM pg_database WHERE datname = ANY($1::text[]) ORDER BY datname`,
+      [[PREDECESSOR_DB_NAME, TARGET_DB]],
+    );
+    log(`PRE_RENAME_DBS=${JSON.stringify(dbList.rows.map(r => r.datname))}`);
+    const names = new Set(dbList.rows.map(r => r.datname));
+    if (names.has(TARGET_DB)) {
+      log(`TARGET_DB_EXISTS: ${TARGET_DB} already exists — refusing to rename.`);
+      log(`TARGET_DB_EXISTS_HINT: Drop '${TARGET_DB}' manually before re-running AC-07.`);
+      await clusterClient.end().catch(() => {});
+      writeEvidence();
+      process.exit(3);
+    }
+    if (!names.has(PREDECESSOR_DB_NAME)) {
+      log(`PREDECESSOR_DB_MISSING: ${PREDECESSOR_DB_NAME} not found — builder did not produce it.`);
+      await clusterClient.end().catch(() => {});
+      writeEvidence();
+      process.exit(1);
+    }
+    const qiFrom = await clusterClient.query(`SELECT quote_ident($1) AS q`, [PREDECESSOR_DB_NAME]);
+    const qiTo = await clusterClient.query(`SELECT quote_ident($1) AS q`, [TARGET_DB]);
+    const fromQ = qiFrom.rows[0]?.q;
+    const toQ = qiTo.rows[0]?.q;
+    await clusterClient.query(`ALTER DATABASE ${fromQ} RENAME TO ${toQ}`);
+    log(`RENAME_OK from=${PREDECESSOR_DB_NAME} to=${TARGET_DB}`);
+  } finally {
+    await clusterClient.end().catch(() => {});
   }
 
   // 2. Snapshot predecessor state.
@@ -229,14 +394,14 @@ async function main() {
   if (result.code === 0) {
     log('ASSERT_FAIL: migration succeeded when it should have failed due to anomaly');
     await client.end();
-    writeFileSync(EVIDENCE_FILE, logLines.join('\n'));
+    writeEvidence();
     process.exit(1);
   }
   const hasAnomalyError = (result.stdout + result.stderr).includes('future starts_at');
   if (!hasAnomalyError) {
     log('ASSERT_FAIL: migration failed but not due to future starts_at anomaly');
     await client.end();
-    writeFileSync(EVIDENCE_FILE, logLines.join('\n'));
+    writeEvidence();
     process.exit(1);
   }
   log('ASSERT_PASS: migration failed with future starts_at anomaly');
@@ -317,24 +482,70 @@ async function main() {
     log('AC-07 FAIL — at least one assertion failed');
   }
 
-  writeFileSync(EVIDENCE_FILE, logLines.join('\n'));
+  writeEvidence();
   process.exit(allAssertionsPassed ? 0 : 1);
 }
 
 async function runLockTimeoutMode() {
   log('\n=== lock_timeout MODE ===');
+  await assertFreshDatabases();
   log('Step A. Reset target DB to AFF-03C predecessor state.');
-  const prep = spawnSync('node', [join(REPO_ROOT, 'scripts/ci/prepare-migration-test-db.mjs')], {
-    env: { ...process.env },
+  log('Step A.1 Build predecessor via Prisma CLI (single path).');
+  // T0 R10: pass PREDECESSOR_DB_NAME as DATABASE_NAME so STEP A.0 and
+  // the builder see the same name.
+  const stage = spawnSync('node', [
+    join(REPO_ROOT, 'scripts/ci/build-predecessor-staging.mjs'),
+    ...(IS_COLLISION_FIXTURE ? ['--collision-fixture'] : []),
+  ], {
+    env: {
+      ...process.env,
+      DATABASE_NAME: PREDECESSOR_DB_NAME,
+      BASELINE_REF: 'e4d21807f0d972de447e710066b40c77a661fb17',
+    },
     encoding: 'utf8',
     stdio: 'pipe',
   });
-  log(prep.stdout || '');
-  if (prep.stderr) log(`STDERR: ${prep.stderr}`);
-  if (prep.status !== 0) {
-    log(`PREPARE_FAILED exit=${prep.status}`);
-    writeFileSync(EVIDENCE_FILE, logLines.join('\n'));
+  log(stage.stdout || '');
+  if (stage.stderr) log(`STDERR: ${stage.stderr}`);
+  if (stage.status !== 0) {
+    log(`STAGING_FAILED exit=${stage.status}`);
+    writeEvidence();
     process.exit(1);
+  }
+  log('Step A.2 Rename predecessor → MIGRATION_TARGET_DB (cluster only).');
+  const clusterUrlStrLt = new URL(ADMIN_URL).protocol + '//' + (new URL(ADMIN_URL).username ? new URL(ADMIN_URL).username + ':' + new URL(ADMIN_URL).password + '@' : '') + new URL(ADMIN_URL).hostname + ':' + (new URL(ADMIN_URL).port || '5432') + '/postgres';
+  // T0 R10: target DB must not exist before rename. Fail-closed.
+  // T0 R10: predecessor name is configurable via PREDECESSOR_DB_NAME.
+  const clusterClient = new Client({ connectionString: clusterUrlStrLt });
+  await clusterClient.connect();
+  try {
+    const dbList = await clusterClient.query(
+      `SELECT datname FROM pg_database WHERE datname = ANY($1::text[]) ORDER BY datname`,
+      [[PREDECESSOR_DB_NAME, TARGET_DB]],
+    );
+    log(`PRE_RENAME_DBS=${JSON.stringify(dbList.rows.map(r => r.datname))}`);
+    const names = new Set(dbList.rows.map(r => r.datname));
+    if (names.has(TARGET_DB)) {
+      log(`TARGET_DB_EXISTS: ${TARGET_DB} already exists — refusing to rename.`);
+      log(`TARGET_DB_EXISTS_HINT: Drop '${TARGET_DB}' manually before re-running AC-04.`);
+      await clusterClient.end().catch(() => {});
+      writeEvidence();
+      process.exit(3);
+    }
+    if (!names.has(PREDECESSOR_DB_NAME)) {
+      log(`PREDECESSOR_DB_MISSING: ${PREDECESSOR_DB_NAME} not found — builder did not produce it.`);
+      await clusterClient.end().catch(() => {});
+      writeEvidence();
+      process.exit(1);
+    }
+    const qiFrom = await clusterClient.query(`SELECT quote_ident($1) AS q`, [PREDECESSOR_DB_NAME]);
+    const qiTo = await clusterClient.query(`SELECT quote_ident($1) AS q`, [TARGET_DB]);
+    const fromQ = qiFrom.rows[0]?.q;
+    const toQ = qiTo.rows[0]?.q;
+    await clusterClient.query(`ALTER DATABASE ${fromQ} RENAME TO ${toQ}`);
+    log(`RENAME_OK from=${PREDECESSOR_DB_NAME} to=${TARGET_DB}`);
+  } finally {
+    await clusterClient.end().catch(() => {});
   }
 
   log('\nStep B. Connection A: BEGIN; LOCK TABLE ... (hold lock).');
@@ -385,6 +596,55 @@ async function runLockTimeoutMode() {
   await clientA.end();
   log(`CONNECTION_A: lock released at ${new Date().toISOString()}`);
 
+  // T0 round-5 R5-G4: rollback-proof gate BEFORE sanity reapply. The
+  // timeout-induced abort must have rolled back the ENTIRE migration
+  // transaction: function body, grants, and data all unchanged. If any
+  // R1 marker / grant / LPHA row leaks past Step D, the sanity reapply
+  // would silently build on a half-applied state.
+  log('\nStep D-prime. Rollback-proof gate (verify migration state is unchanged after Step C abort).');
+  const rollbackClient = new Client({ connectionString: targetUrl.toString() });
+  await rollbackClient.connect();
+  try {
+    // (a) Function body must NOT have R1 markers.
+    const fnBody = await rollbackClient.query(`
+      SELECT pg_get_functiondef(oid) AS def
+        FROM pg_proc
+       WHERE proname = 'hrp_public_intake_submission'
+    `);
+    const defText = fnBody.rows[0]?.def ?? '';
+    if (/ensure_initial_handling_window|advisory_xact_lock.*AFF05A_R1/i.test(defText)) {
+      log(`ASSERT_FAIL (rollback): function body has R1 marker after Step C abort — transaction did NOT roll back`);
+      pass = false;
+    } else {
+      log(`ASSERT_PASS (rollback): function body has NO R1 marker after Step C abort — full rollback confirmed`);
+    }
+    // (b) hrp_public_rpc must NOT have SELECT on labor_profile_handling_assignments.
+    const priv = await rollbackClient.query(`
+      SELECT 1 FROM information_schema.table_privileges
+       WHERE grantee = 'hrp_public_rpc'
+         AND table_name = 'labor_profile_handling_assignments'
+         AND privilege_type = 'SELECT'
+    `);
+    if (priv.rowCount > 0) {
+      log(`ASSERT_FAIL (rollback): hrp_public_rpc has SELECT on labor_profile_handling_assignments after Step C abort — GRANT not rolled back`);
+      pass = false;
+    } else {
+      log(`ASSERT_PASS (rollback): hrp_public_rpc has NO SELECT on handling table after Step C abort — grant rolled back`);
+    }
+    // (c) LPHA table row count must equal zero (no backfill data leak).
+    const lphaCount = await rollbackClient.query(`
+      SELECT count(*)::int AS n FROM labor_profile_handling_assignments
+    `);
+    if (lphaCount.rows[0]?.n !== 0) {
+      log(`ASSERT_FAIL (rollback): LPHA table has ${lphaCount.rows[0]?.n} rows after Step C abort — expected 0`);
+      pass = false;
+    } else {
+      log(`ASSERT_PASS (rollback): LPHA table has 0 rows after Step C abort — no data leak`);
+    }
+  } finally {
+    await rollbackClient.end();
+  }
+
   log('\nStep E. Re-run migration (sanity, no contention — must succeed).');
   const sanity = spawnSync('node', [join(REPO_ROOT, 'scripts/ci/apply-r1-migration.mjs')], {
     env: { ...process.env, MIGRATION_TARGET_DB: TARGET_DB },
@@ -407,13 +667,23 @@ async function runLockTimeoutMode() {
   } else {
     log('AC-04 lock_timeout FAIL — see assertions above.');
   }
-  writeFileSync(EVIDENCE_FILE, logLines.join('\n'));
+  // T0 R9: write evidence; fall back to sibling .partial on Windows EBUSY.
+  writeEvidence();
   process.exit(pass ? 0 : 1);
 }
+
+// T0 R10: collision-test mode removed. The negative proof for collision
+// scenarios (predecessor exists, target exists, with sentinel + connection)
+// lives in a separate integration runner:
+//   scripts/ci/verify-collision-integration.mjs
+// Keeping it out of the AC entrypoints means the AC scripts themselves
+// never terminate/drop pre-existing DBs or hold connections across
+// subprocess boundaries. The collision runner is the ONLY place where
+// fixture DBs are created and held.
 
 main().catch((e) => {
   console.error(`FATAL ${e.stack ?? e.message}`);
   logLines.push(`FATAL ${e.stack ?? e.message}`);
-  writeFileSync(EVIDENCE_FILE, logLines.join('\n'));
-  process.exit(1);
+  writeEvidence();
+  process.exitCode = e.exitCode ?? 1;
 });

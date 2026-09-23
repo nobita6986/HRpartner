@@ -1,0 +1,14 @@
+bed9641930a476bb7d772f73a0b2c40cd784f8bd5522d2225f6c174ab246b048  scripts/ci/verify-ac06-backfill.mjs
+40d6d78cb8c7ca776f357ccf34edf2ab11e581164ba8c2480f0f90646617f329  scripts/ci/verify-ac07-rollback.mjs
+3468b4d83bb989a28e2c6587d8394ad3ae43e3b1c910389aeeb4d9f09bf5b29d  scripts/ci/build-predecessor-staging.mjs
+f933ce01b3c04e5040b528c2a6af10abbeeddaff1ed183828408a70a139b59e1  scripts/ci/validate-guards.mjs
+37036f8f84f546f8e3648cc53cd2f0f46da41e4d6620d8d5eeb7415a2c1b4ec7  scripts/ci/verify-collision-integration.mjs
+8ee68d9789426aeecd3adceff4ccbabd3650fc86ea046dba13ac1dc344216605  docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/TASK.md
+22fd509ecf5eb1aa3283b4dcc892a5ce8d84b611c1825cf148266da8702cbb16  docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/HANDOFF.md
+e16b3351d60aebef1e7335b611dcce7c5a4fb05ed2e81379d601c210197e9efd  prisma/migrations/20260922160000_aff05a_r1_initial_handling_window/migration.sql
+54bb86d8d4887e31a3ed41677049659288900651db09606714da8263d3fdba9b  tests/db/aff03-public-intake.integration.test.ts
+8202aee8dc3059d67fe79cd667cc05ed48b52db6dcf8fbf48b943fd46ec93bb5  docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/AUDIT-tier3-round4.md
+4fb71b137c13cb25c9435d217f63d162d9cb50e29ef302940b145d0467e75898  docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/AUDIT-tier3-round5-r8.md
+75bf9cd3c8796561e24d13773adc0091ac7d385181a0703dc6c8b4e9f566058e  docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/AUDIT-tier3-round6-r8-p1-fix.md
+ea99d7764e07deade6461b36916b842aca0db4b531de236b1314c13e89baf76b  docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/AUDIT-tier3-round7-r9.md
+5bfe9e8abc63757241e86ca95bdb8b16a4837208aba056d5aefb1d7fd34d068c  docs/tasks/hrp-v6-n2-aff-05a-r1-canonical-initial-handling/AUDIT.md

@@ -58,6 +58,18 @@
 
 BEGIN;
 
+-- T0 round-6 G3: bounded lock_timeout established IMMEDIATELY after BEGIN,
+-- BEFORE any operation that may wait on a lock (table lock, advisory lock,
+-- grant, function replacement). Covers:
+--   - LOCK TABLE labor_profile_handling_assignments ... SHARE ROW EXCLUSIVE MODE
+--   - pg_advisory_xact_lock(...)
+--   - ALTER FUNCTION / CREATE OR REPLACE FUNCTION (waits for ACCESS EXCLUSIVE on
+--     pg_proc if another session holds it; bounded timeout prevents indefinite hang)
+--   - GRANT/REVOKE on the handling table
+-- T0 review: setting here is correct because lock_timeout is a transaction-scoped
+-- GUC; SET LOCAL persists for the duration of the outer BEGIN/COMMIT.
+SET LOCAL lock_timeout = '5s';
+
 -- ───────────────────────────────────────────────────────────────────────────
 -- 1. Acquire the definer role before replacing the function.
 -- ───────────────────────────────────────────────────────────────────────────

@@ -103,6 +103,20 @@ if (ADMIN_TEST_URL) {
   }
 }
 
+// ── 3b. T0 round-5 R5-G1: posture assertion BEFORE spawning vitest.
+//        Writer must be non-super + non-bypassrls; admin must be admin.
+//        Same host+port+db. Exits 2 on any mismatch (fail-closed).
+{
+  const r = spawnSync('node', [path.join(HERE, 'assert-test-db-posture.mjs')], {
+    stdio: 'inherit',
+    env: process.env,
+  });
+  if (r.status !== 0) {
+    appendSummary('### Integration lane: `POSTURE_REFUSED`\n\nWriter/admin posture mismatch. See `POSTURE_FAIL` reason above.');
+    refuse('writer/admin posture assertion failed (exit ' + r.status + '). See POSTURE_FAIL above.');
+  }
+}
+
 // ── 4. Guards passed → run the integration lane ───────────────────────────────
 console.log('[integration-preflight] Test DB accepted (guards passed).');
 console.log(`[integration-preflight]   writer: ${mask(TEST_URL)}  fp=${fingerprint(TEST_URL)}`);

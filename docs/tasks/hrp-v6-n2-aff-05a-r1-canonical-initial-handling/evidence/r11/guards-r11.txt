@@ -1,0 +1,52 @@
+EVIDENCE_BEFORE={"dir":"C:\\CodeApp\\HrP-worktrees\\t1b-aff05a-r1-canonical-initial-handling\\docs\\tasks\\hrp-v6-n2-aff-05a-r1-canonical-initial-handling\\evidence\\r11","count":1}
+PASS=[scripts/ci/prepare-migration-test-db.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/apply-r1-migration.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs unsafe target] exit=3, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs unsafe target (both envs)] exit=3, no mutation marker
+PASS=[scripts/ci/prepare-migration-test-db.mjs unsafe host] exit=3, no mutation marker
+PASS=[scripts/ci/apply-r1-migration.mjs unsafe host] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs unsafe host] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs unsafe host] exit=3, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs unsafe host] exit=3, no mutation marker
+PASS=[prepare-migration-test-db source==target] exit=3, no mutation marker
+PASS=[prepare-migration-test-db rejected --validate-guards flag] exit=3, no mutation marker
+PASS=[prepare-migration-test-db rejected unknown flag] exit=3, no mutation marker
+PASS=[verify-ac06-backfill rejected target==predecessor] exit=3, no mutation marker
+PASS=[verify-ac07-rollback rejected target==predecessor] exit=3, no mutation marker
+PASS=[verify-ac07-rollback rejected --collision-test flag] exit=3, no mutation marker
+PASS=[verify-ac06-backfill rejected --collision-test flag] exit=3, no mutation marker
+PASS=[scripts/ci/prepare-migration-test-db.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/apply-r1-migration.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs probe (positive)] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs probe with DATABASE_NAME] --probe exit=0, GUARD_PASS present, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs fixture rejects production_main_db] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs fixture rejects postgres] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs fixture rejects aff05a_r1_collision_bad_pred] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs rejects legacy bypass] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs fixture target remains guarded] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac06-backfill.mjs valid fixture grammar]
+PASS=[scripts/ci/verify-ac07-rollback.mjs fixture rejects production_main_db] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs fixture rejects postgres] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs fixture rejects aff05a_r1_collision_bad_pred] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs rejects legacy bypass] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs fixture target remains guarded] exit=3, no mutation marker
+PASS=[scripts/ci/verify-ac07-rollback.mjs valid fixture grammar]
+PASS=[scripts/ci/build-predecessor-staging.mjs fixture rejects production_main_db] exit=3, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs fixture rejects postgres] exit=3, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs fixture rejects aff05a_r1_collision_bad_pred] exit=3, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs rejects legacy bypass] exit=3, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs fixture target remains guarded] exit=3, no mutation marker
+PASS=[scripts/ci/build-predecessor-staging.mjs valid fixture grammar]
+PASS=[collision runner rejects non-loopback] exit=3, no mutation marker
+PASS=[collision runner rejects unknown flag] exit=3, no mutation marker
+PASS=[collision runner probe no connection]
+PASS=[evidence-integrity] no AC evidence files modified by validation run (1 files scanned)
+VALIDATE_GUARDS_RESULT=PASS — guards truly non-mutating, exit codes exact
+
+STDERR:
+
+EXIT_CODE=0
