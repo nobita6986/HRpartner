@@ -1,4 +1,4 @@
-# Bounded Manager Assignment (AFF-05A R2)
+# TASK — hrp-v6-n2-aff-05a-r2-bounded-manager-assignment
 
 ## 0. Control
 
@@ -7,136 +7,213 @@
 | Task slug | `hrp-v6-n2-aff-05a-r2-bounded-manager-assignment` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
-| Audit reason | Enforcement of strict time bounds on manager assignments to prevent infinite ownership and maintain the at-most-one-active invariant. Security risk of arbitrary duration coercion. |
+| Audit reason | Forward-only production migration plus route/service validation at the HandlingAssignment ownership boundary. |
 | Work type | `FEATURE_EXPANSION` |
-| Spec version | `v1.0` |
-| Status | `PROPOSED_ONLY` |
-| Planner | `Tier 1A` |
-| Baseline | `1e1895d16500b273575599cf88853e0d48f08e23` |
-| Authority | `docs/V6/aff_plan.md` v2.5, `docs/discovery/realignment/AFF05A_RESIDUAL_RECONCILIATION.md`, W5 & AFF-05A-R1 ACCEPTED |
-| In-scope roots | Theo Exact File Allowlist |
-| Forbidden paths | Bất kỳ file nào ngoài Exact File Allowlist; cấm: CRM, ER-003, PLANNER_HANDOVER.md, dispute/case, Ticket, commission |
-| Required gates | `T0_CONTRACT_APPROVAL`, `TIER3_LIGHT_AUDIT`, `VERIFY_TASK`, `VERIFY_HANDOFF` |
-| Next gate | `T0_CONTRACT_APPROVAL` |
-| Current execution round | `1` |
-| Current audit round | `1` |
+| Spec version | `v1.1` |
+| Status | `READY_FOR_EXECUTION` |
+| Planner | `Tier 1A`; T0 substantive correction/approval |
+| Execution owner | `Tier 1B` |
+| Baseline | `1e1895d16500b273575599cf88853e0d48f08e23` (`origin/main`) |
+| Authority | `docs/V6/aff_plan.md` v2.5; `docs/discovery/realignment/AFF05A_RESIDUAL_RECONCILIATION.md`; accepted W5 and AFF-05A-R1 evidence |
+| In-scope roots | Exact File Allowlist at §4.5 |
+| Forbidden paths | Every path outside §4.5; especially `docs/PLANNER_HANDOVER.md`, CRM, ER-003, dispute/case, `Ticket`, AFF-05B/commission, auth/global RLS, package/config and existing migrations |
+| Required gates | `VERIFY_TASK`, `VERIFY_HANDOFF`, canonical quality/integration gates, migration clean/upgrade proof, `TIER3_LIGHT_AUDIT`, T0 production gate |
+| Next gate | `T1B_IMPLEMENTATION` |
+| Current execution round | `0` |
+| Current audit round | `0` |
 | Frozen implementation SHA | `PENDING` |
 
 ## 1. Outcome
 
-Triển khai quyết định cấu hình min/max/default cho lượt manager assignment (Handling Assignment), đảm bảo không còn assignment vô thời hạn (null) và giữ nguyên derived projection của Company Pool. Giải quyết tận gốc lỗ hổng `AFF-OQ-12`. Đề xuất T0 production preflight migration aggregate đối với dữ liệu legacy.
+Make every `MANAGER_ASSIGNMENT` finite and server-controlled: minimum 1 day, default 7 days, maximum 30 days. Preserve Company Pool as the derived state “no assignment effective at server time”, preserve assignment history, and add a database backstop so direct SQL cannot create an indefinite manager assignment.
+
+This slice does not create a Company Pool table, dispute/case model, commission behavior, or new authorization surface.
 
 ## 2. Evidence
 
-- **Nguồn hiện tại (Source Evidence)**:
-  - `src/domains/talent/handling-assignment.service.ts`: Chứa `managerAssign` đang cho phép `days: number | null`.
-  - `app/api/admin/labor-profiles/[id]/handling-assignments/route.ts`: Tiếp nhận `days` truyền vào trực tiếp.
-  - `app/admin/labor-profiles/[id]/handling-assignment-manager.tsx`: Hiển thị "Company Pool" như là derived state `!activeAssignment || isExpired`.
-- **Evidence bắt buộc sinh (Executor Evidence)**:
-  - GitHub Integration Job chạy production preflight/migration ở nhánh kiểm thử.
-  - Unit / Integration tests chứng minh strict bound (1, 7, 30 ngày) và error cases (null, <1, >30).
+### 2.1 Current source
+
+| ID | Evidence | Finding |
+|---|---|---|
+| `EV-01` | `src/domains/talent/handling-assignment.service.ts` — `ManagerAssignInput`, `managerAssign`, `getActiveHandlingAssignment` | `days` is nullable and a falsy value produces `expiresAt = null`; server-clock expiry already treats a deadline equal to or earlier than `asOf` as inactive. |
+| `EV-02` | `app/api/admin/labor-profiles/[id]/handling-assignments/route.ts` | Route currently coerces `days` through `Number()` and collapses missing, zero and explicit null into the same value. |
+| `EV-03` | `app/admin/labor-profiles/[id]/handling-assignment-manager.tsx` | UI defaults to 7 but only declares `min=1`; UI validation is not authority. |
+| `EV-04` | W5 and AFF-05A-R1 accepted evidence | RLS, at-most-one-active backstop, expiry semantics and initial 7-day assignment already exist and must not be reopened. |
+
+### 2.2 T0 production read-only preflight — 2026-09-24
+
+- Neon Control Plane mapped endpoint `ep-shy-tree-az32as2c` to primary branch `hrp-live` (`br-icy-dew-azbrgthw`); gate exit `0`.
+- Credential inventory contained only the production admin tuple, so the gate used the same production endpoint for both URL inputs. This proves branch identity, not independent writer-credential posture. The full deploy gate must be rerun from the deployment environment before production migration.
+- Aggregate query ran inside `BEGIN READ ONLY` as `neondb_owner`; no PII or row identifiers were returned.
+
+| Predicate | Count |
+|---|---:|
+| `MANAGER_ASSIGNMENT AND expires_at IS NULL` | `0` |
+| target rows with `status = ACTIVE` | `0` |
+| active target rows overdue at `starts_at + 7 days` | `0` |
+| active target rows not yet due | `0` |
+| terminal target rows | `0` |
+| null `starts_at` anomaly | `0` |
+| future `starts_at` anomaly | `0` |
+| unknown status anomaly | `0` |
+
+The zero-row snapshot authorizes implementation and synthetic migration proof. It is not an immutable production snapshot and does not authorize merge/deploy without a fresh T0 preflight.
 
 ## 3. Decisions
 
-- **AFF-OQ-12: APPROVED** - Khóa thời hạn giao (Manager Assignment):
-  - Minimum: 1 ngày
-  - Default: 7 ngày (khi thiếu `days`)
-  - Maximum: 30 ngày
-  - Vô thời hạn (null) hoặc ngoài biên: Rejected (Typed validation error).
-- **Company Pool: APPROVED** - Giữ nguyên derived projection (không tạo pool table/state mới). 
+| ID | Decision | Status |
+|---|---|---|
+| `AFF05A-R2-DEC-01` | Manager assignment duration is integer days: min `1`, default `7`, max `30`. | `OWNER_APPROVED` |
+| `AFF05A-R2-DEC-02` | Missing `days` property uses server default `7`; explicit `null`, strings, booleans, non-finite numbers, fractions, zero, negative and values above 30 are rejected without coercion. | `T0_APPROVED` |
+| `AFF05A-R2-DEC-03` | Release to Company Pool remains a distinct action selected by absence of a valid `newAssigneeUserId`; it never creates a manager assignment. | `T0_APPROVED` |
+| `AFF05A-R2-DEC-04` | Legacy target deadline is `starts_at + interval '7 days'`; only overdue `ACTIVE` rows become `EXPIRED`; terminal status/history remain unchanged. | `T0_APPROVED` |
+| `AFF05A-R2-DEC-05` | Conditional DB CHECK uses `source IS DISTINCT FROM 'MANAGER_ASSIGNMENT' OR expires_at IS NOT NULL`. Prisma field remains nullable because this slice does not redefine other assignment sources. | `T0_APPROVED` |
+| `AFF05A-R2-DEC-06` | Company Pool remains a query/projection, not a persisted pool state or table. | `T0_APPROVED` |
 
 ## 4. Contract
 
-- **Route/service semantics:**
-  - Manager assignment thiếu `days` bị gán mặc định 7 ngày bởi server. 
-  - Explicit `null` hoặc input ngoài biên `1..30` (số âm, float, >30) bị từ chối bằng typed validation error. Server validations không bị thay thế bằng UI constraints.
-  - Hành động Release profile về Company Pool phải là action riêng (gọi hàm `releaseHandlingAssignment`); không được diễn giải `null` assignee hoặc `null` days thành manager assignment vô thời hạn hoặc ngầm release.
-  - Client không tự điều khiển startsAt/expiresAt/source/history links.
-- **Company Pool:**
-  - Giữ derived projection: không có assignment nào còn hiệu lực theo server clock.
-  - Trình lập lịch (scheduler) chậm không làm assignment đã quá thời hạn tiếp tục được xem là ACTIVE hợp lệ (dùng explicit date comparision như W5).
-  - Việc tái giao (reassignment) từ pool phải giữ nguyên history link (`previousAssignmentId`) và bảo đảm duy nhất 1 assignment ACTIVE tại một thời điểm (at-most-one-active invariant).
-- **Legacy manager assignments:**
-  - Thêm DB backstop ngăn chặn `MANAGER_ASSIGNMENT` mới có `expires_at IS NULL`.
-  - Yêu cầu T0 production read-only aggregate preflight trước merge đối với `source = MANAGER_ASSIGNMENT AND expires_at IS NULL`. 
-  - Forward-only migration: `deadline legacy = starts_at + 7 days`; ACTIVE đã quá deadline chuyển thành EXPIRED; giữ nguyên terminal status (COMPLETED/REVOKED/TRANSFERRED). Mọi rows ngoài narrow predicate không đổi. Nếu có anomaly, migration fail closed.
-  - **Không chạy production preflight/migration trong round contract.**
-- **Scope & Forbidden:**
-  - Không mở AFF-05A-R3 dispute/case, Không sửa Ticket.
-  - Không mở AFF-05B/commission, Không chạm CRM, ER-003, PLANNER_HANDOVER.md.
-  - Không code production trong round này (PROPOSED_ONLY). RLS/grants hiện hành không bị nới.
+### 4.1 Route and service boundary
 
-## 5. Execution Plan
+- Route constructs a manual allowlisted command object. Client input cannot set `startsAt`, `expiresAt`, `source`, status, actor, history links or previous assignment.
+- For manager assignment, detect property presence rather than truthiness:
+  - property absent → normalized duration `7`;
+  - property present → value must be a finite integer in the inclusive range `1..30`;
+  - no `Number()`, `parseInt` or silent clamping at the route/service boundary.
+- Service independently validates the normalized duration and throws a typed domain error. Route maps duration validation to HTTP `400`; concurrency conflict remains HTTP `409`; unexpected errors remain generic and do not expose SQL/stack/data.
+- Use one server `now` snapshot for expiry sweep, active lookup, transfer history and new `startsAt`/`expiresAt` calculation.
+- Release remains `releaseHandlingAssignment`; release payload does not need `days` and cannot reach `managerAssign`.
 
-| Step | Component | Description |
-|---|---|---|
-| `STEP-01` | API Route | Nâng cấp `app/api/admin/labor-profiles/[id]/handling-assignments/route.ts` ép kiểu số nguyên, xác thực biên 1..30, reject null/fractional. |
-| `STEP-02` | `handling-assignment.service.ts` | Áp dụng logic default 7 ngày nếu thiếu days. Từ chối days out of bounds ở tầng service. Không coerce. Xử lý release action rõ ràng. |
-| `STEP-03` | `schema.prisma` & Migrations | Bổ sung check DB ngăn chặn explicit null `expires_at` cho `MANAGER_ASSIGNMENT`. Soạn script forward-only update cho rows cũ. |
-| `STEP-04` | Tests & Preflight Cấu trúc | Viết integration test cho migration và unit test cho service. Không deploy migration lên production database thật. |
+### 4.2 Company Pool and concurrency
 
-## 6. Acceptance
+- A deadline equal to or earlier than server `now` is ineffective immediately even if the sweep job is late.
+- Reassignment keeps `previousAssignmentId` and terminalizes the prior active row as `TRANSFERRED` in the same transaction.
+- Existing at-most-one-active DB protection remains unchanged. Concurrent manager commands produce one active winner; the loser returns a typed conflict and must not leave duplicate active/history side effects.
+- Existing Company Pool/read-service behavior is carry-forward evidence; production read-service code is not modified in this slice.
 
-### 6.1 Requirements List
+### 4.3 Forward-only migration
 
-| RQ | Description |
-|---|---|
-| `RQ-01` | Strict time bounds (1 min, 30 max, 7 default). Vô thời hạn (null) / float bị reject. |
-| `RQ-02` | Company Pool derived state invariant. Scheduler chậm không làm over-active. Release là action độc lập. |
-| `RQ-03` | Legacy migration update expires_at = starts_at + 7. Anomaly fail closed. |
-| `RQ-04` | DB backstop checks to prevent expires_at IS NULL for MANAGER_ASSIGNMENT. |
+- Add exactly one new migration; never edit historical migrations.
+- Run in an explicit transaction with a bounded lock timeout before lock-waiting operations.
+- Revalidate current rows under the migration lock; the earlier aggregate preflight is impact evidence only.
+- Fail closed before mutation if a target has null/future `starts_at`, unknown status, invalid cardinality/history, or another condition outside the safe predicate.
+- Narrow target predicate:
 
-### 6.2 Acceptance Criteria & Verification
+```sql
+source = 'MANAGER_ASSIGNMENT'
+AND expires_at IS NULL
+AND starts_at IS NOT NULL
+```
 
-| AC | Requirement | Pass condition | Verification method |
-|---|---|---|---|
-| `AC-01` | `RQ-01` | Truyền `null`, <1, >30, float bị reject 400. Thiếu `days` lấy mặc định 7 ngày. | `npm run test:unit` cho `route.ts` và `handling-assignment.service.ts`. |
-| `AC-02` | `RQ-02` | UI và API List trả về trạng thái Company Pool đúng nếu `expiresAt` < current time dù không có cron quét liên tục. Reassignment giữ history link. | `npm run test:unit` cho logic active assignment comparison. |
-| `AC-03` | `RQ-03` | DB test chứng minh các assignment cũ được cập nhật thành starts_at + 7 days. Quá hạn => EXPIRED. | `npm run test:integration` với row giả lập. |
-| `AC-04` | `RQ-04` | Prisma/SQL schema reject insert `MANAGER_ASSIGNMENT` + `expires_at=null`. | `npm run test:integration` thử insert row vi phạm và nhận DB Error. |
-| `AC-05` | `RQ-01`, `RQ-02`, `RQ-03`, `RQ-04` | Toàn bộ canonical tests pass. Diff chỉ ở đúng Exact File Allowlist. | `npm run test:unit`, `.\.ai-pipeline\scripts\verify-task.ps1 -TaskPath docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/TASK.md`, `git diff --check HEAD`, `git status --porcelain`. |
+- Set `expires_at = starts_at + interval '7 days'` for every target.
+- Change status only when `status = 'ACTIVE'` and the derived deadline is elapsed; then set `EXPIRED`. Preserve `COMPLETED`, `REVOKED`, `TRANSFERRED` and already terminal history.
+- Add and validate the conditional CHECK from `AFF05A-R2-DEC-05`; assert zero remaining indefinite manager rows.
+- Do not change RLS, grants, roles, default privileges, SECURITY DEFINER functions, other source rows or Prisma nullability.
 
-### 6.3 Traceability
+### 4.4 Non-goals
 
-| Requirement | Step | Acceptance |
-|---|---|---|
-| `RQ-01` | `STEP-01`, `STEP-02` | `AC-01`, `AC-05` |
-| `RQ-02` | `STEP-02` | `AC-02`, `AC-05` |
-| `RQ-03` | `STEP-03`, `STEP-04` | `AC-03`, `AC-05` |
-| `RQ-04` | `STEP-03`, `STEP-04` | `AC-04`, `AC-05` |
+- No AFF-05A-R3 dispute/case and no `Ticket` change.
+- No AFF-05B/commission or CRM/ER-003 change.
+- No Company Pool table/state, scheduler, new permission, or global auth/RLS work.
+- Real CCCD upload is not a coding gate and no real PII is used in development evidence.
 
-### 6.4 Exact Implementation File Allowlist
+### 4.5 Exact Implementation File Allowlist
 
 1. `src/domains/talent/handling-assignment.service.ts`
 2. `src/domains/talent/handling-assignment.service.test.ts`
 3. `app/api/admin/labor-profiles/[id]/handling-assignments/route.ts`
-4. Khả năng có test file của route `app/api/admin/labor-profiles/[id]/handling-assignments/route.test.ts` (nếu có)
-5. `app/admin/labor-profiles/[id]/handling-assignment-manager.tsx` (Nếu cần cập nhật UI error handling form)
-6. `prisma/schema.prisma`
-7. Thư mục `prisma/migrations/*` (thêm đúng 1 thư mục migration cho backstop/forward-only update)
-8. File integration test db tương ứng trong `tests/db/` (nếu thêm mới để test migration).
-9. Các task-local markdown files (`TASK.md`, `HANDOFF.md`, v.v.).
+4. `app/api/admin/labor-profiles/[id]/handling-assignments/route.test.ts` (new)
+5. `app/admin/labor-profiles/[id]/handling-assignment-manager.tsx`
+6. `prisma/migrations/20260924140000_aff05a_r2_bounded_manager_assignment/migration.sql` (new)
+7. `tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts` (new)
+8. `vitest.integration-files.ts`
+9. `docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/**`
 
-Mọi source khác ngoài bảng trên đều forbidden (trừ khi T0 duyệt delta). Cấm CRM, ER-003, PLANNER_HANDOVER.md, dispute/case, Ticket, commission.
+`prisma/schema.prisma`, package/config files, existing migrations and every other path are forbidden unless T0 approves a named delta before the edit.
+
+## 5. Execution Plan
+
+| Step | Work | Stop condition |
+|---|---|---|
+| `STEP-01` | Reconfirm baseline, current partial unique index, route/service call path and production-free synthetic DB posture. | Stop on drift that changes the decisions or requires an out-of-allowlist path. |
+| `STEP-02` | Implement typed duration validation, exact route normalization, single-time snapshot and UI min/default/max. | Stop if authorization/RLS/global error framework must change. |
+| `STEP-03` | Add the one forward-only migration and fail-closed clean/upgrade-path evidence. | Stop on any legacy row outside the safe predicate; do not broaden the update. |
+| `STEP-04` | Add route/service/DB/concurrency regressions and run all canonical gates. | No skipped target test; missing/refused DB is BLOCKED. |
+| `STEP-05` | Freeze implementation SHA, write HANDOFF and request Tier 3 LIGHT audit. | No push/PR/merge/deploy before audit PASS and T0 authorization. |
+
+## 6. Acceptance
+
+### 6.1 Requirements
+
+| ID | Requirement |
+|---|---|
+| `RQ-01` | Manager duration is server-normalized to integer `1..30`, default `7` only when absent, with no coercion. |
+| `RQ-02` | Release and Company Pool semantics remain separate and server-clock correct. |
+| `RQ-03` | Legacy indefinite manager rows are upgraded narrowly and safely; terminal history is preserved. |
+| `RQ-04` | DB rejects every new indefinite `MANAGER_ASSIGNMENT` without changing other sources or security posture. |
+| `RQ-05` | Concurrent manager assignments leave exactly one active winner and complete history. |
+| `RQ-06` | Diff and evidence remain inside the exact allowlist and pass canonical gates. |
+
+### 6.2 Acceptance criteria
+
+| AC | RQ | Pass condition | Verification method |
+|---|---|---|---|
+| `AC-01` | `RQ-01` | Route and service accept `1`, absent→`7`, `30`; reject explicit null, string, boolean, NaN/Infinity, fraction, zero, negative and `31`; route returns typed `400`. | `npx vitest run --config vitest.unit.config.ts "app/api/admin/labor-profiles/[id]/handling-assignments/route.test.ts" src/domains/talent/handling-assignment.service.test.ts` |
+| `AC-02` | `RQ-02` | Release never enters manager assignment; elapsed assignment is ineffective once its deadline is equal to or earlier than `now`; Company Pool carry-forward remains green. | Targeted unit command above plus `npx vitest run --config vitest.unit.config.ts src/domains/talent/labor-profile.read-service.test.ts` |
+| `AC-03` | `RQ-03` | Predecessor→candidate upgrade sets exact 7-day deadline, expires only overdue ACTIVE, preserves all terminal/non-target rows, and fails/rolls back on anomaly. | `$env:CI_INTEGRATION_STRICT='1'; npm run test:integration`; inspect the isolated predecessor/rollback assertions emitted by `tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts`. |
+| `AC-04` | `RQ-04` | Catalog shows validated CHECK; violating manager insert fails; permitted non-manager nullable deadline remains unchanged; RLS/grants/index posture has zero drift. | `$env:CI_INTEGRATION_STRICT='1'; npm run test:integration`; inspect catalog/negative SQL assertions from the task DB file. |
+| `AC-05` | `RQ-05` | Two independent connections racing on one LaborProfile yield one active winner, one typed conflict and no duplicate side effect/history corruption. | `$env:CI_INTEGRATION_STRICT='1'; npm run test:integration`; inspect the two-connection case and committed-row counts. |
+| `AC-06` | `RQ-06` | Clean chain and upgrade chain pass; targeted tests have zero skip/fail; changed paths equal §4.5. | `CI_INTEGRATION_STRICT=1 npm run test:integration` in CI plus explicit migration-chain and changed-path evidence in HANDOFF. |
+| `AC-07` | `RQ-01`–`RQ-06` | Prisma validate, typecheck, lint, full unit, build, canonical integration, task/handoff verification and whitespace/scope gates all pass or disclose baseline-equivalent warnings exactly. | Run the §6.4 commands, including `git diff --check 1e1895d16500b273575599cf88853e0d48f08e23..HEAD`, and record exit codes/counts in HANDOFF. |
+
+### 6.3 Traceability
+
+| Requirement | Steps | Acceptance |
+|---|---|---|
+| `RQ-01` | `STEP-02`, `STEP-04` | `AC-01`, `AC-07` |
+| `RQ-02` | `STEP-02`, `STEP-04` | `AC-02`, `AC-07` |
+| `RQ-03` | `STEP-03`, `STEP-04` | `AC-03`, `AC-06` |
+| `RQ-04` | `STEP-03`, `STEP-04` | `AC-04`, `AC-06` |
+| `RQ-05` | `STEP-02`, `STEP-04` | `AC-05`, `AC-06` |
+| `RQ-06` | all | `AC-06`, `AC-07` |
+
+### 6.4 Canonical verification commands
+
+```powershell
+npx prisma validate
+npx tsc --noEmit
+npm run lint
+npx vitest run --config vitest.unit.config.ts
+npm run build
+$env:CI_INTEGRATION_STRICT = '1'; npm run test:integration
+& .\.ai-pipeline\scripts\verify-task.ps1 -TaskPath docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/TASK.md
+& .\.ai-pipeline\scripts\verify-handoff.ps1 -TaskPath docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/TASK.md -HandoffPath docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/HANDOFF.md
+git diff --check 1e1895d16500b273575599cf88853e0d48f08e23..HEAD
+```
 
 ## 7. Risk
 
-- Sai lệch múi giờ khi tính expiresAt gây lỗi off-by-one. (Mitigation: server UTC).
-- Có sự thay đổi/race condition khi T0 chạy aggregate preflight.
-- Migration lock time lâu (Mitigation: predicate hẹp trên `source = MANAGER_ASSIGNMENT AND expires_at IS NULL`).
+| Risk | Control |
+|---|---|
+| Input coercion reintroduces indefinite or unintended duration | Property-presence check, strict number/integer/range validation at route and service, conditional DB CHECK. |
+| Preflight becomes stale before deploy | Re-run production gate/aggregate after CI/Tier 3 and revalidate under migration lock. |
+| Concurrent managers corrupt history | Same transaction, existing unique backstop, two-connection regression and typed conflict. |
+| Migration updates unrelated rows | Exact predicate, anomaly guards, post-assertions and rollback proof. |
+| Lock blocks production | Bounded lock timeout and T0-only deploy window. |
 
 ## 8. Open Questions
 
-- None
+None. Production deployment remains a gate, not an open design decision.
 
 ## 9. Planner Resolution
 
 | Round | Decision | Reason |
 |---|---|---|
-| 1 | `PROPOSED_ONLY` | Contract drafting initial version cho T0 duyệt. |
+| 1 | `PROPOSED_ONLY` | Tier 1A initial contract draft. |
+| 2 | `READY_FOR_EXECUTION` | T0 corrected exact input semantics, migration predicate/backstop, allowlist, concurrency evidence and production-gate wording. Owner policy `1/7/30` is resolved; production aggregate preflight returned zero target/anomaly rows. |
 
 ## 10. Revision Log
 
-| Spec version | Date | Change | Reason |
-|---|---|---|---|
-| `v1.0` | `2026-09-24` | Draft | Initial Contract cho AFF-05A R2 |
+| Spec | Date | Change |
+|---|---|---|
+| `v1.1` | 2026-09-24 | T0 substantive correction and execution approval; exact allowlist/AC, strict no-coercion boundary, migration safety and read-only production preflight evidence. |
+| `v1.0` | 2026-09-24 | Tier 1A initial `PROPOSED_ONLY` contract. |
