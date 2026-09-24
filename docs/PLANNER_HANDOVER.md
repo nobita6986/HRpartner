@@ -6,7 +6,7 @@
 
 <!-- ROADMAP_CURSOR_START -->
 ```yaml
-updated_at: 2026-09-24T20:45:00+07:00
+updated_at: 2026-09-24T23:43:30+07:00
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 delivery_protocol: V2_FAST_FREEZE
 correction_budget: 1
@@ -14,24 +14,24 @@ PHASE_MAP: |
   P0: production safety and integration foundations
   P1: thin recruitment value slice
   P2-P5: unlock only through realignment dependency/evidence gates
-current_lane: Universal AFF expansion — AFF-05A-R2 bounded manager assignment
-parallel_lane: NONE
-current_task: hrp-v6-n2-aff-05a-r2-bounded-manager-assignment — FROZEN_DELIVERY_AWAITING_T0_REVIEW
-worktree_branch: codex/t1b-aff05a-r2-bounded-manager-assignment
-current_gate: T0_REVIEW_THEN_TIER3_LIGHT_AUDIT
-previous_accepted: AFF-04; ER-003 metadata schema #37; CONTRACT-03A bilateral executable acceptance; public contact UI #40
-closeout_evidence: docs/tasks/hrp-p0-a04-er003-evidence-record-metadata/HANDOFF.md
+current_lane: P1 — Job marketplace thin recruitment slice
+parallel_lane: Universal AFF expansion — AFF-05A-R2 ACCEPTED; next AFF/dispute slice not opened
+current_task: hrp-p1-a0-jobposting-authoring-publish — T1A_IMPLEMENTATION_ASSIGNED
+worktree_branch: T1A_TO_REPORT
+current_gate: T1A_P1A0_IMPLEMENTATION_HANDOFF_THEN_TIER3
+previous_accepted: AFF-05A-R2 bounded manager assignment; AFF-04; ER-003 metadata schema #37; CONTRACT-03A bilateral executable acceptance
+closeout_evidence: docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/HANDOFF.md
 blocking_owner: "None"
 owner_defer: "Không dùng Evidence/CCCD readiness làm gate cho AFF coding. P0-A chỉ chặn production enablement của real evidence ingestion; AFF development dùng synthetic data và gate riêng."
 deferred_lane:
   universal_aff:
     state: AFF04_ACCEPTED_PRODUCTION_VERIFIED
     production_proven: AFF-03/03B/03C and AFF-04
-    next_slice: AFF-05A-R2 bounded manager assignment, then separately-scoped dispute capability and AFF-05B
+    next_slice: separately-scoped handling-assignment dispute capability and AFF-05B
     coding_dependency_on_evidence_gateway: NONE
     production_enablement: P3-E_AFTER_AFF_CAPABILITY_GATE
 next_steps:
-  - 1. T0 review frozen AFF-05A-R2 delivery and exact implementation SHA; if clean, request Tier 3 LIGHT audit. Do not push/PR/merge/deploy before that gate.
+  - 1. Receive and review T1A P1-A0 JobPosting authoring/publish implementation handoff; do not unlock P1-A1 backend integration before A0 schema/service contract is frozen.
 ```
 <!-- ROADMAP_CURSOR_END -->
 
