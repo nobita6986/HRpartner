@@ -36,14 +36,13 @@ import { describe, expect, it } from 'vitest';
 
 import { INTEGRATION_TEST_FILES } from '../../../vitest.integration-files';
 
-/** Ba glob mà `RQ-05` gọi TÊN. Đây là mặt chữ của contract, không phải nguồn sự thật chống lệch.
- *
- * Sau P1-A0: thêm `src/**/*.test.tsx` để lane thu renderer.test.tsx (P1-A0 shared rich content).
- * Sau AFF-05A-R2 (T0 alignment round hrp-v6-n2-aff-05a-r2-bounded-manager-assignment):
- * widened to include the route-handler glob so that the unit tests under
- * `app/api/...` are picked up by the unit lane. DB-fail-closed sentinel
- * guarantees stay intact.
- */
+// Ba glob mà `RQ-05` gọi TÊN. Đây là mặt chữ của contract, không phải nguồn sự thật chống lệch.
+//
+// Sau P1-A0: thêm `src/**/*.test.tsx` để lane thu renderer.test.tsx (P1-A0 shared rich content).
+// Sau AFF-05A-R2 (T0 alignment round hrp-v6-n2-aff-05a-r2-bounded-manager-assignment):
+// widened to include the route-handler glob so that the unit tests under
+// `app/api/...` are picked up by the unit lane. DB-fail-closed sentinel
+// guarantees stay intact.
 const RQ05_INCLUDE_GLOBS = [
   'src/**/*.test.ts',
   'src/**/*.test.tsx',
