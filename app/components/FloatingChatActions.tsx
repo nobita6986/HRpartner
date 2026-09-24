@@ -1,23 +1,13 @@
-type ChatChannel = 'zalo' | 'messenger';
+import { unstable_cache } from 'next/cache';
+import { getPrisma } from '@/src/lib/db';
+import { getHomepageSettings } from '@/src/domains/job-board/public-settings.service';
+import { resolveChatHref } from '@/src/domains/job-board/chat-links';
 
-const CHAT_HOSTS: Record<ChatChannel, ReadonlySet<string>> = {
-  zalo: new Set(['zalo.me', 'oa.zalo.me', 'chat.zalo.me']),
-  messenger: new Set(['m.me', 'messenger.com', 'www.messenger.com']),
-};
-
-/** Keep deployment configuration from turning the launcher into an arbitrary link. */
-export function resolveChatHref(raw: string | undefined, channel: ChatChannel): string | null {
-  if (!raw?.trim()) return null;
-
-  try {
-    const url = new URL(raw.trim());
-    if (url.protocol !== 'https:' || url.username || url.password) return null;
-    if (!CHAT_HOSTS[channel].has(url.hostname.toLowerCase())) return null;
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
+const getCachedChatSettings = unstable_cache(
+  async () => getHomepageSettings(getPrisma()),
+  ['floating-chat-settings-v1'],
+  { revalidate: 60, tags: ['homepage-settings'] },
+);
 
 function ZaloIcon() {
   return (
@@ -40,9 +30,17 @@ function MessengerIcon() {
   );
 }
 
-export function FloatingChatActions() {
-  const zaloHref = resolveChatHref(process.env.ZALO_CHAT_URL, 'zalo');
-  const messengerHref = resolveChatHref(process.env.MESSENGER_CHAT_URL, 'messenger');
+export async function FloatingChatActions() {
+  let zaloHref: string | null = null;
+  let messengerHref: string | null = null;
+
+  try {
+    const settings = await getCachedChatSettings();
+    zaloHref = resolveChatHref(settings.zaloChatUrl, 'zalo');
+    messengerHref = resolveChatHref(settings.messengerChatUrl, 'messenger');
+  } catch (error) {
+    console.error('[FloatingChatActions] failed to read homepage settings:', error);
+  }
 
   if (!zaloHref && !messengerHref) return null;
 

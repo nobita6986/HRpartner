@@ -46,6 +46,8 @@ function createMockPrisma(existingRow?: Record<string, unknown> | null) {
         id: HOMEPAGE_SETTINGS_SINGLETON_ID,
         bestJobsPageSize: data.bestJobsPageSize ?? 9,
         listingPageSize: data.listingPageSize ?? 12,
+        zaloChatUrl: data.zaloChatUrl ?? null,
+        messengerChatUrl: data.messengerChatUrl ?? null,
         updatedAt: new Date(),
       })),
     },
@@ -137,12 +139,16 @@ describe('toHomepageSettingsDto', () => {
       id: HOMEPAGE_SETTINGS_SINGLETON_ID,
       bestJobsPageSize: 12,
       listingPageSize: 24,
+      zaloChatUrl: 'https://zalo.me/hrpartner',
+      messengerChatUrl: 'https://m.me/hrpartner',
       updatedAt: new Date('2026-09-11T14:00:00.000Z'),
     };
     const dto = toHomepageSettingsDto(row);
     expect(dto.id).toBe('default');
     expect(dto.bestJobsPageSize).toBe(12);
     expect(dto.listingPageSize).toBe(24);
+    expect(dto.zaloChatUrl).toBe('https://zalo.me/hrpartner');
+    expect(dto.messengerChatUrl).toBe('https://m.me/hrpartner');
     expect(dto.updatedAt).toBe('2026-09-11T14:00:00.000Z');
   });
 
@@ -151,6 +157,8 @@ describe('toHomepageSettingsDto', () => {
       id: HOMEPAGE_SETTINGS_SINGLETON_ID,
       bestJobsPageSize: 9,
       listingPageSize: 999, // out of range
+      zaloChatUrl: null,
+      messengerChatUrl: null,
       updatedAt: new Date(),
     };
     expect(toHomepageSettingsDto(row).listingPageSize).toBe(LISTING_PAGE_SIZE_MAX);
@@ -161,6 +169,8 @@ describe('toHomepageSettingsDto', () => {
       id: HOMEPAGE_SETTINGS_SINGLETON_ID,
       bestJobsPageSize: 100, // not in allow-list
       listingPageSize: 12,
+      zaloChatUrl: null,
+      messengerChatUrl: null,
       updatedAt: new Date(),
     };
     expect(toHomepageSettingsDto(row).bestJobsPageSize).toBe(9);
@@ -175,6 +185,8 @@ describe('getHomepageSettings', () => {
       id: HOMEPAGE_SETTINGS_SINGLETON_ID,
       bestJobsPageSize: 6,
       listingPageSize: 20,
+      zaloChatUrl: null,
+      messengerChatUrl: null,
       updatedAt: new Date(),
     };
     const prisma = createMockPrisma(existingRow);
@@ -252,6 +264,48 @@ describe('updateHomepageSettings', () => {
     expect(result.settings.bestJobsPageSize).toBe(6);
     expect(result.settings.listingPageSize).toBe(30);
   });
+
+  it('normalizes chat URLs and permits clearing a channel', async () => {
+    const prisma = createMockPrisma({
+      id: 'default',
+      bestJobsPageSize: 9,
+      listingPageSize: 12,
+      zaloChatUrl: null,
+      messengerChatUrl: 'https://m.me/old-page',
+      updatedAt: new Date(),
+    });
+    const result = await updateHomepageSettings(
+      prisma,
+      { zaloChatUrl: '  https://zalo.me/new-oa  ', messengerChatUrl: '' },
+      'user-1',
+    );
+
+    expect(result.settings.zaloChatUrl).toBe('https://zalo.me/new-oa');
+    expect(result.settings.messengerChatUrl).toBeNull();
+    expect(prisma.homepageSettings.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          zaloChatUrl: 'https://zalo.me/new-oa',
+          messengerChatUrl: null,
+        }),
+      }),
+    );
+  });
+
+  it('rejects an off-platform chat URL', async () => {
+    const prisma = createMockPrisma({
+      id: 'default',
+      bestJobsPageSize: 9,
+      listingPageSize: 12,
+      zaloChatUrl: null,
+      messengerChatUrl: null,
+      updatedAt: new Date(),
+    });
+
+    await expect(
+      updateHomepageSettings(prisma, { zaloChatUrl: 'https://example.com/chat' }, 'user-1'),
+    ).rejects.toThrow('URL Zalo không hợp lệ.');
+  });
 });
 
 // ─── toHomepageSettingsView ──────────────────────────────────────────────────
@@ -262,6 +316,8 @@ describe('toHomepageSettingsView', () => {
       id: 'default',
       bestJobsPageSize: 9,
       listingPageSize: 20,
+      zaloChatUrl: null,
+      messengerChatUrl: null,
       updatedAt: '2026-09-11T14:00:00.000Z',
     };
     const view = toHomepageSettingsView(dto);
