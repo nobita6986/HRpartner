@@ -664,6 +664,16 @@ body {
   }
 }
 
+/* Public job-card attention cue: a quiet 70% ↔ 100% ink pulse. */
+@keyframes job-stamp-blink {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.job-stamp-attention {
+  animation: job-stamp-blink 1.4s ease-in-out infinite;
+}
+
 /*
  * SCOPED TYPOGRAPHY CLASSES — STEP-02/DEC-21, STEP-06/AC-14
  * Bổ sung các token chưa có trong Tailwind @theme của app/globals.css.
