@@ -140,6 +140,6 @@ Handoff status: ACCEPTED
 ## 6. Closeout
 
 **T1A closeout (2026-09-24):**
-- T0 verification PASS (PR #37 merged, CI 35979076741 PASS).
-- Neon migration applied and verified empty/fail-closed with 0 policies/grants.
+- T0 verification PASS: PR #37 squash-merged at `2fb4dee919ccb045121a01fb8b87897b90e57f93`; final PR head `bae89fab1200de94b2358d9caa55f7ba04f9ea40`; CI run `35979076741` PASS.
+- Production read-only verification: migration `20260924120000_er003_evidence_record_metadata` is finished and not rolled back; `evidence_records` exists with 13 columns, RLS + FORCE RLS, 0 policies, 0 forbidden grants to `PUBLIC` / `app_user` / `app_user_writer`, and 0 rows. The verification performed no mutation.
 - Contract closed out as metadata-only slice. Không runtime upload/read/delete wiring.
