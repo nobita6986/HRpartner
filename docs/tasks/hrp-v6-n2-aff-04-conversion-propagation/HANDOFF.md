@@ -5,18 +5,18 @@
 | Field | Value |
 |---|---|
 | Task | `hrp-v6-n2-aff-04-conversion-propagation` |
-| Spec version | `v1.8` |
-| Status | `READY_FOR_AUDIT` |
+| Spec version | `v1.9` |
+| Status | `ACCEPTED` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Execution round | `1` |
-| Current audit round | `1` |
+| Current audit round | `2` |
 | Baseline | `9e527a13e74c8361feea77b8edca522c8c37ec08` (origin/main @ 2026-09-23; includes ER-002 #32 and AFF-05A R1 #33). Contract Survey baseline `0fdc616b` retained only as historical reference. |
 | Frozen implementation SHA | `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374` (HEAD at code freeze = `f01ee35`; subsequent docs-only commits recorded in §10 Revision Log) |
 | Worktree / branch | `codex/t1b-aff04-conversion-propagation` |
-| Tier 3 verdict | F-P4 `PASS` at `0f5496fded1b5ce52deefcbb38f941df3a318931`; artifact `AUDIT-tier3-aff04-fp4-review.md`. Earlier final-freeze PASS at `1b42fd4f84f65b9d7206119eaad5fd275b874125` remains historical. |
-| Required gates (per TASK §0) | `T0_CONTRACT_APPROVAL` PASS; `TIER3_LIGHT_AUDIT` PASS through F-P4; narrow delta recheck pending for test-only `0f5496f..71440f2`; `VERIFY_TASK` / `VERIFY_HANDOFF` rerun at docs freeze |
-| Next gate | `TIER3_LIGHT_DELTA_RECHECK` (PR #35 Draft; canonical CI green; production migration pending) |
+| Tier 3 verdict | `PASS` final narrow delta recheck at `c600ab3ac91affc960db9b19578c5ea3089584d9`; final artifact `AUDIT-tier3-aff04-fp4-delta-recheck.md` committed at `e3e571ae38063c9984d8547299deff5bccb7b6c2`. Earlier F-P4 PASS artifacts remain historical. |
+| Required gates (per TASK §0) | `T0_CONTRACT_APPROVAL` PASS; `TIER3_LIGHT_AUDIT` PASS; PR/main CI PASS; Vercel PASS; production branch gate PASS; aggregate preflight PASS; migration deploy PASS; post-deploy verification PASS |
+| Next gate | `NONE — MERGED_DEPLOYED_PRODUCTION_VERIFIED` |
 
 ### Authority classification (4-tier, per T0 directive 2026-09-23)
 
@@ -25,7 +25,7 @@
 | Contract authority | TASK v1.4 @ `f3f0a23f2fa6d590f188403687d317da64f4d91e` | Semantic contract §1-§8 — frozen |
 | Execution contract hien hanh | TASK v1.6 @ `e73ac9d` (commit before implementation) | Control metadata aligned |
 | T0 execution authorization | 2026-09-23 directive | "AFF-04 duoc APPROVED_FOR_EXECUTION" — Tier 1B technical autonomy on Plan + Code, architecture questions reserved to T0 / Owner |
-| Tier 3 implementation verdict | Frozen implementation `f01ee35`; F-P4 reviewed HEAD `0f5496f` | PASS — F-P4 predicate correction audited; test-only CI portability delta through `71440f2` awaits narrow recheck; no production authorization implied |
+| Tier 3 implementation verdict | Frozen implementation `f01ee35`; final reviewed delivery `c600ab3`; audit artifact freeze `e3e571a` | PASS — all implementation, F-P4 and test-only portability deltas independently closed before T0 production authorization |
 
 ## 1. Outcome and changed surface
 
@@ -128,17 +128,17 @@ AFF-04 closes the source-resolution and assignment-propagation gaps between AFF-
 | D1 | Pre-existing baseline noise | Lint produces pre-existing `no-explicit-any` and `no-unused-vars` warnings in code that AFF-04 did not touch | pre-`9e527a13` baseline | inline in E-03 | No — outside AFF-04 scope; Tier 3 LIGHT auditor can flag separately |
 | D2 | Pre-existing baseline noise | `src/shared/security/required-relation-sweep.static.test.ts` EXPECTED_HITS list was deliberately frozen as a snapshot — schema evolution REQUIRES updating the list | pre-`9e527a13` baseline | inline in E-11 | No — this is the design intent |
 | D3 | Local environment — closed | Local PostgreSQL used for synthetic ephemeral DB. Temporary `trust` rules removed; `pg_hba.conf` restored byte-for-byte from exact backup. T0 verified effective configuration: `psql -w -h 127.0.0.1 -U postgres` rejected with `fe_sendauth: no password supplied` (exit 2). | local `pg_hba.conf`; §8 hygiene record | Closed before final freeze | No |
-| D4 | Production boundary | No production / staging action was performed. PR #35 was opened in Draft and returned to Draft by T0. No production migration has run. AFF-04 stays on `codex/t1b-aff04-conversion-propagation`. | `git log`; PR #35 Draft | PR #35 Draft; production migration has not run | T0 to call next gate after F-P4 Tier 3 re-audit |
+| D4 | Production boundary | Closed by T0 after audit and CI: PR #35 merged, main/Vercel PASS, real Neon branch gate PASS, migration applied once and verified. | PR #35; main `8b8e39b`; CI `35956477961`; production aggregate/catalog verification | `CLOSED_VERIFIED_PRODUCTION` | None |
 
 ## 5. Final status
 
-All canonical gates PASS on local ephemeral synthetic databases, which have been dropped. Tier 3 performed a fresh final LIGHT audit at reviewed HEAD `1b42fd4f84f65b9d7206119eaad5fd275b874125` and returned PASS. PR #35 was returned to Draft after production preflight found the migration's non-CTV ctv_id predicate contradiction (T0 brief 2026-09-23). F-P4 correction (migration predicate fix + upgrade-path test) resolves the contradiction.
+AFF-04 is `ACCEPTED` and production verified. Tier 3 final narrow delta recheck returned PASS at `c600ab3ac91affc960db9b19578c5ea3089584d9`; its artifact was staged verbatim at `e3e571ae38063c9984d8547299deff5bccb7b6c2`. PR #35 squash-merged as main commit `8b8e39bc7f7d63e2bc9dba15695df8634936d109`. Main CI run `35956477961` passed Quality and Integration; Vercel production deployment passed.
 
-The frozen implementation SHA remains `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374`; subsequent commits are tests and documentation/evidence carry-forward only, recorded in TASK §10 and §11.
+T0 production gate confirmed `hrp-live` as the primary Neon branch (`br-icy-dew-azbrgthw`) and both URLs on endpoint `ep-shy-tree-az32as2c`. Read-only aggregate preflight matched the approved impact: one accepted CTV claim eligible for backfill, one legacy non-CTV row to preserve, zero accepted CTV rows missing `ctv_id`, zero assignment-referrer orphans, and 2/2 legacy partial unique indexes. Vercel completed without applying AFF-04, so T0 ran one manual `prisma migrate deploy`; only `20260923120000_aff04_conversion_propagation` applied.
 
-No production/staging migration was applied. PR #35 remains Draft. F-P4 Tier 3 re-audit passed at `0f5496f`; the final test-only CI portability delta through `71440f2` is green in run `35954635909` and awaits narrow Tier 3 confirmation. T0/Owner retains the separate production branch gate, migration-impact review, merge, deploy, and production verification decisions.
+Post-deploy verification passed: all 46 migrations are current; the nullable no-default `source_claims.referrer_user_id` column exists; both `ON DELETE RESTRICT / ON UPDATE CASCADE` FKs and both AFF-04 indexes exist; both legacy partial unique indexes remain; the single eligible CTV claim was backfilled; the legacy non-CTV row remained unpromoted; drift, overreach and orphan counts are zero. No production smoke fixture was required by the contract, and no production fixture was created or deleted.
 
-Handoff status: `READY_FOR_AUDIT` (verifier-compatible enum; substantive next gate is the narrow Tier 3 delta recheck for `0f5496f..71440f2`, then T0 production preflight/merge decision).
+Handoff status: `ACCEPTED`. Next AFF sequence is residual AFF-05A reconciliation, then AFF-05B; this closeout does not claim Universal AFF complete.
 
 ## 6. F-P3 correction round (2026-09-23)
 
