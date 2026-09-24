@@ -91,6 +91,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { Prisma, PrismaClient } from '@prisma/client';
@@ -291,10 +292,20 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
         }
       }
       for (const dir of pseudoRoots) {
-        try {
-          rmSync(dir, { recursive: true, force: true });
-        } catch (err: any) {
-          cleanupErrors.push(`pseudoRoot cleanup ${dir} failed: ${err?.message ?? String(err)}`);
+        let lastError: unknown;
+        for (let attempt = 1; attempt <= 15; attempt += 1) {
+          try {
+            rmSync(dir, { recursive: true, force: true });
+            lastError = undefined;
+            break;
+          } catch (err) {
+            lastError = err;
+            if (attempt < 15) await delay(Math.min(attempt * 250, 1_500));
+          }
+        }
+        if (lastError) {
+          const message = lastError instanceof Error ? lastError.message : String(lastError);
+          cleanupErrors.push(`pseudoRoot cleanup ${dir} failed after 15 attempts: ${message}`);
         }
       }
       if (cleanupErrors.length > 0) {
@@ -315,11 +326,12 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
     const staged = stagePredecessorRepo();
     pseudoRoots.push(staged.pseudoRoot);
     const { dbName: cleanDb, url: cleanUrl } = createEphemeralDb('clean');
+    const cleanClient = new PrismaClient({ datasources: { db: { url: cleanUrl } } });
     try {
       applyPredecessorMigrations(staged.pseudoRoot, staged.schemaFile, cleanUrl);
 
       // BEFORE applying R2, the constraint is NOT in pg_constraint on the target table.
-      const beforeCount = await admin!.$queryRawUnsafe<Array<{ count: string }>>(
+      const beforeCount = await cleanClient.$queryRawUnsafe<Array<{ count: string }>>(
         `SELECT count(*)::text AS count
            FROM pg_constraint
           WHERE conname = $1
@@ -334,7 +346,7 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
       applyAff05aR2MigrationFile(cleanUrl);
 
       // AFTER: exactly one CHECK with that name on the target relation.
-      const afterCount = await admin!.$queryRawUnsafe<Array<{ count: string }>>(
+      const afterCount = await cleanClient.$queryRawUnsafe<Array<{ count: string }>>(
         `SELECT count(*)::text AS count
            FROM pg_constraint
           WHERE conname = $1
@@ -345,6 +357,7 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
       );
       expect(Number(afterCount[0].count)).toBe(1);
     } finally {
+      await cleanClient.$disconnect().catch(() => {});
       const idx = ephemeralDbs.indexOf(cleanDb);
       if (idx >= 0) ephemeralDbs.splice(idx, 1);
       try { runPsql(adminUrl, `DROP DATABASE IF EXISTS "${cleanDb}"`); } catch { /* afterAll reports */ }
@@ -359,11 +372,12 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
     const staged = stagePredecessorRepo();
     pseudoRoots.push(staged.pseudoRoot);
     const { dbName: scopeDb, url: scopeUrl } = createEphemeralDb('scope');
+    const scopeClient = new PrismaClient({ datasources: { db: { url: scopeUrl } } });
     try {
       applyPredecessorMigrations(staged.pseudoRoot, staged.schemaFile, scopeUrl);
 
       // Find a small auxiliary table to host the same-named decoy CHECK.
-      const candidates = await admin!.$queryRawUnsafe<Array<{ relname: string }>>(
+      const candidates = await scopeClient.$queryRawUnsafe<Array<{ relname: string }>>(
         `SELECT c.relname
            FROM pg_class c
            JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -384,7 +398,7 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
            CHECK (true)`,
       );
 
-      const decoyCount = await admin!.$queryRawUnsafe<Array<{ count: string }>>(
+      const decoyCount = await scopeClient.$queryRawUnsafe<Array<{ count: string }>>(
         `SELECT count(*)::text AS count
            FROM pg_constraint
           WHERE conname = $1
@@ -400,7 +414,7 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
       // the decoy constraint on the other table, and will ADD the target CHECK.
       applyAff05aR2MigrationFile(scopeUrl);
 
-      const targetCount = await admin!.$queryRawUnsafe<Array<{ count: string }>>(
+      const targetCount = await scopeClient.$queryRawUnsafe<Array<{ count: string }>>(
         `SELECT count(*)::text AS count
            FROM pg_constraint
           WHERE conname = $1
@@ -411,7 +425,7 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
       );
       expect(Number(targetCount[0].count)).toBe(1);
 
-      const decoyAfter = await admin!.$queryRawUnsafe<Array<{ count: string }>>(
+      const decoyAfter = await scopeClient.$queryRawUnsafe<Array<{ count: string }>>(
         `SELECT count(*)::text AS count
            FROM pg_constraint
           WHERE conname = $1
@@ -422,6 +436,7 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
       );
       expect(Number(decoyAfter[0].count)).toBe(1);
     } finally {
+      await scopeClient.$disconnect().catch(() => {});
       const idx = ephemeralDbs.indexOf(scopeDb);
       if (idx >= 0) ephemeralDbs.splice(idx, 1);
       try { runPsql(adminUrl, `DROP DATABASE IF EXISTS "${scopeDb}"`); } catch { /* afterAll reports */ }
@@ -477,7 +492,7 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
         }
 
         const now = new Date();
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000 - 60_000);
+        const sixDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
         const tenDaysAgo = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
 
         await ephem.$executeRawUnsafe(
@@ -485,7 +500,7 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
              (id, labor_profile_id, assignee_user_id, assigned_by_user_id,
               source, starts_at, expires_at, status, created_at, updated_at, version)
            VALUES ($1, $2, $3, $4, 'MANAGER_ASSIGNMENT', $5, NULL, 'ACTIVE', now(), now(), 1)`,
-          freshId, lpId, managerId, managerId, sevenDaysAgo,
+          freshId, lpId, managerId, managerId, sixDaysAgo,
         );
         await ephem.$executeRawUnsafe(
           `INSERT INTO labor_profile_handling_assignments
@@ -506,14 +521,14 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
              (id, labor_profile_id, assignee_user_id, assigned_by_user_id,
               source, starts_at, expires_at, status, created_at, updated_at, version)
            VALUES ($1, $2, $3, NULL, 'AFF_INITIAL', $4, NULL, 'ACTIVE', now(), now(), 1)`,
-          affInitId, affLpId, managerId, sevenDaysAgo,
+          affInitId, affLpId, managerId, sixDaysAgo,
         );
         await ephem.$executeRawUnsafe(
           `INSERT INTO labor_profile_handling_assignments
              (id, labor_profile_id, assignee_user_id, assigned_by_user_id,
               source, starts_at, expires_at, status, created_at, updated_at, version)
            VALUES ($1, $2, $3, NULL, 'CASE_RESOLUTION', $4, NULL, 'ACTIVE', now(), now(), 1)`,
-          caseResId, caseLpId, managerId, sevenDaysAgo,
+          caseResId, caseLpId, managerId, sixDaysAgo,
         );
 
         applyAff05aR2MigrationFile(backfillUrl);
@@ -646,6 +661,10 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
           if (err instanceof Prisma.PrismaClientKnownRequestError) {
             loserPrismaCode = err.code ?? '';
             if (loserPrismaCode === 'P2002') loserSawTypedConflict = true;
+            if (String(err.meta?.code ?? '') === '23505') {
+              loserSqlState = '23505';
+              loserSawTypedConflict = true;
+            }
           }
           const m = msg.match(/SQLSTATE\s*([0-9A-Z]+)/i);
           if (m) loserSqlState = m[1];
@@ -756,7 +775,7 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
         }
         expect(raised, 'migration should abort on future starts_at anomaly').toBe(true);
 
-        const con = await admin!.$queryRawUnsafe<Array<{ count: string }>>(
+        const con = await ephem.$queryRawUnsafe<Array<{ count: string }>>(
           `SELECT count(*)::text AS count
              FROM pg_constraint
             WHERE conname = $1

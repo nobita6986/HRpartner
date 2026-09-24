@@ -9,7 +9,7 @@
 | Audit mode | `LIGHT` |
 | Audit reason | Forward-only production migration plus route/service validation at the HandlingAssignment ownership boundary. |
 | Work type | `FEATURE_EXPANSION` |
-| Spec version | `v1.1` |
+| Spec version | `v1.2` |
 | Status | `READY_FOR_AUDIT` |
 | Planner | `Tier 1A`; T0 substantive correction/approval |
 | Execution owner | `Tier 1B` |
@@ -18,9 +18,9 @@
 | In-scope roots | Exact File Allowlist at §4.5 |
 | Forbidden paths | Every path outside §4.5; especially `docs/PLANNER_HANDOVER.md`, CRM, ER-003, dispute/case, `Ticket`, AFF-05B/commission, auth/global RLS, package/config and existing migrations |
 | Required gates | `VERIFY_TASK`, `VERIFY_HANDOFF`, canonical quality/integration gates, migration clean/upgrade proof, `TIER3_LIGHT_AUDIT`, T0 production gate |
-| Next gate | `TIER3_LIGHT_AUDIT` |
-| Current execution round | `1` |
-| Current audit round | `0` |
+| Next gate | `TIER3_DELTA_REAUDIT` |
+| Current execution round | `2` |
+| Current audit round | `1` |
 | Frozen implementation SHA | see HANDOFF §0 `Implementation SHA` (semantic commit on `codex/t1b-aff05a-r2-bounded-manager-assignment`) |
 
 ## 1. Outcome
@@ -126,7 +126,8 @@ AND starts_at IS NOT NULL
 6. `prisma/migrations/20260924170000_aff05a_r2_bounded_manager_assignment/migration.sql` (new; main already has 20260924150000 + 20260924160000, so 20260924140000 is invalid as a forward-only timestamp)
 7. `tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts` (new)
 8. `vitest.integration-files.ts`
-9. `docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/**`
+9. `tests/db/handling-assignment.integration.test.ts` (T0-approved correction: existing W5 fixtures must satisfy the new finite-deadline database invariant)
+10. `docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/**`
 
 `prisma/schema.prisma`, package/config files, existing migrations and every other path are forbidden unless T0 approves a named delta before the edit.
 
@@ -230,11 +231,13 @@ None. Production deployment remains a gate, not an open design decision.
 |---|---|---|
 | 1 | `PROPOSED_ONLY` | Tier 1A initial contract draft. |
 | 2 | `READY_FOR_EXECUTION` | T0 corrected exact input semantics, migration predicate/backstop, allowlist, concurrency evidence and production-gate wording. Owner policy `1/7/30` is resolved; production aggregate preflight returned zero target/anomaly rows. |
+| 3 | `READY_FOR_AUDIT` | T0 authoritative PostgreSQL 18 run closed `ENV_BLOCKED`, exposed and corrected five task-test defects plus two compatibility issues (Windows cleanup retry and W5 finite-deadline fixtures). Targeted AFF-05A-R2 is 6/6 PASS; canonical integration is 27 files / 487 PASS / 2 pre-existing skips / 0 fail. |
 
 ## 10. Revision Log
 
 | Spec | Date | Change |
 |---|---|---|
+| `v1.2` | 2026-09-24 | T0 correction round after Tier 3 BLOCKED: ephemeral-DB assertions now query the correct database; fresh backfill fixture is six days old; Prisma P2010 `meta.code=23505` is recognized; Windows temp cleanup retries remain bounded and fail-visible; W5 fixtures carry finite manager deadlines; T0 synthetic PostgreSQL 18 targeted and canonical integration gates pass. |
 | `v1.1` | 2026-09-24 | T0 substantive correction and execution approval; exact allowlist/AC, strict no-coercion boundary, migration safety and read-only production preflight evidence. |
 | (T0 alignment) | 2026-09-24 | T0 alignment correction at execution start (semantic contract 1/7/30 unchanged): baseline `1e1895d1` -> `825f7639` (origin/main post-#40); migration directory `20260924140000` -> `20260924170000` because main already has `20260924150000` + `20260924160000`. Re-aligned allowlist and Revision Log row. No business-semantics change. |
 | (T0 correction batch) | 2026-09-24 | T0 correction batch after review of HEAD `f5136080a468389eeeffe99cc8d2ad6004b43f8d` (semantic contract 1/7/30 unchanged): (a) TASK.md mojibake restored (`—` `→` `"` `"` `–` `§`); (b) `pg_constraint` lookups in migration AND integration test bind `conrelid = 'public.labor_profile_handling_assignments'::regclass AND contype = 'c'` with negative scoping test; (c) integration test rewrites upgrade-path to a real predecessor (pruned migrations tree, NOT apply-all + DROP); (d) AC-05 race added as a real two-connection test (one ACTIVE winner, typed conflict on loser, no duplicate row, no orphan history); (e) AC-03 evidence uses exact 7-day deadline measurement; (f) AC-07 scope command pins baseline `825f7639`; (g) Status `READY_FOR_EXECUTION` -> `READY_FOR_AUDIT`, Next gate `T1B_IMPLEMENTATION` -> `TIER3_LIGHT_AUDIT`, Current execution round `0` -> `1` (these control field changes require §9/10 entry per T-07). No business-semantics change. |
