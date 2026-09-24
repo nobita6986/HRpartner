@@ -15,14 +15,27 @@ Tier 1 tự quyết kỹ thuật thường nhật. Chỉ hỏi Tier 0 khi thiế
 ## Một luồng delivery
 
 ```text
-INTAKE → Tier 1 khảo sát → TASK + lane/audit → verify-task
-       → implement trực tiếp hoặc chia sub-agent
-       → gates + HANDOFF + verify-handoff
-       → NONE: Tier 1 spot-check | LIGHT: Tier 3 audit
-       → Tier 1 resolve → commit/push/deploy khi đã được ủy quyền
+INTAKE → Tier 1 khảo sát → TASK + lane/audit
+       → T0 contract review một lượt → READY_TO_CODE → verify-task
+       → Tier 1 implement + self-review + canonical gates
+       → commit implementation → freeze exact SHA
+       → HANDOFF + verify-handoff
+       → NONE: Tier 1 spot-check | LIGHT: Tier 3 audit frozen SHA
+       → tối đa 1 correction batch → DELTA recheck nếu cần
+       → resolve → commit/push/deploy khi đã được ủy quyền
 ```
 
 Tier 1 không chờ một Executor riêng. Plan và code thuộc cùng một owner; thay đổi contract vẫn phải ghi Revision Log.
+
+## Ba delivery gate
+
+| Gate | Điều kiện vào | Điều kiện ra |
+|---|---|---|
+| `READY_TO_CODE` | Decisions đóng, baseline/file ownership/environment rõ | `verify-task` PASS |
+| `FROZEN_DELIVERY` | Self-review và canonical gates xong | Exact committed Implementation SHA; không còn semantic delta |
+| `AUDIT_COMPLETE` | Tier 3 nhận frozen SHA | Một verdict và toàn bộ findings current surface; tối đa một correction batch |
+
+Không dùng audit để tìm lỗi formatting mà verifier hoặc Tier 1 self-review có thể tìm trước. Không audit working tree chưa freeze.
 
 ## Contract theo rủi ro
 
@@ -51,6 +64,8 @@ Tier 1 ghi `Audit reason` một câu. `CRITICAL + NONE` phải ghi lý do và ng
 
 Không cần Tier 0 duyệt từng sub-agent trong boundary đã giao.
 
+WIP mặc định cho một stream là `1 planning + 1 coding + 1 auditing`. Có thể pipeline T1A chuẩn bị task N+1, T1B code task N và T3 audit task N-1 nếu file ownership tách biệt.
+
 ## Evidence và blocker
 
 ```text
@@ -61,7 +76,14 @@ Mọi PASS dựa trên phép đo thật. `ENV_BLOCKED`, skipped test hoặc fixt
 
 ## Audit nhẹ
 
-Tier 3 chỉ hỏi: outcome trọng yếu có đạt, có regression nghiêm trọng, diff có vượt scope/secret/bypass, và còn release blocker không. Audit cần tối thiểu hai phép đo độc lập, gồm một changed-behavior check; luôn có C-07 Git hygiene, C-09 contract validity và C-10 diff scope. Không bắt C-01..C-10 đầy đủ.
+Tier 3 chỉ hỏi: outcome trọng yếu có đạt, có regression nghiêm trọng, diff có vượt scope/secret/bypass, và còn release blocker không. Audit cần tối thiểu hai phép đo độc lập, gồm một changed-behavior check; luôn có C-07 Git hygiene, C-09 contract validity và C-10 diff scope. Không bắt C-01..C-10 đầy đủ. Auditor phải báo toàn bộ finding hiện thấy trong một lượt; DELTA không mở lại unchanged surface nếu không có evidence mới.
+
+## Round budget
+
+- Contract review: một lượt đầy đủ; correction trước code nếu cần.
+- Implementation: Tier 1 tự review trước freeze.
+- Audit: một LIGHT round và tối đa một correction batch/DELTA round.
+- Nếu vẫn còn blocker sau budget: Tier 0 nhận correction hoặc tách task; không kéo dài chuỗi code/review/code lại.
 
 ## Bộ kiểm tra
 

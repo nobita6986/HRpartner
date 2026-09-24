@@ -54,13 +54,22 @@ Dùng cho feature, refactor, bug nhiều bước hoặc mọi thay đổi vượ
 
 1. Đọc outcome/boundary và worktree; ưu tiên CodeGraph nếu có `.codegraph/`.
 2. Khảo sát đúng call path, dependency và pattern hiện hữu.
-3. Viết/cập nhật TASK vừa đủ theo lane; chọn `Audit mode: NONE | LIGHT` và ghi lý do.
-4. Chạy `verify-task.ps1`, rồi implement trực tiếp hoặc chia sub-agent.
-5. Tự sửa lỗi in-scope, chạy gate, viết HANDOFF và `verify-handoff.ps1`.
-6. `NONE`: tự review tối đa ba rủi ro trọng yếu. `LIGHT`: giao Tier 3.
-7. Resolve, commit/push/deploy nếu đã được ủy quyền, cập nhật roadmap ngắn.
+3. Viết/cập nhật TASK vừa đủ theo lane; chọn `Audit mode: NONE | LIGHT`, ghi lý do và đóng toàn bộ Owner decision.
+4. Chỉ đặt `Contract gate: READY_TO_CODE` khi baseline, file ownership, environment và canonical gates đã xác định; chạy `verify-task.ps1`.
+5. Implement trực tiếp hoặc chia sub-agent; tự review toàn changed surface trước khi bàn giao.
+6. Chạy gate canonical, commit implementation, ghi exact `Implementation SHA` và freeze source. Sau freeze chỉ được thêm docs/evidence; source/test/migration đổi tiếp phải tạo SHA mới.
+7. Viết HANDOFF, chạy `verify-handoff.ps1`. `NONE`: tự review tối đa ba rủi ro trọng yếu. `LIGHT`: chỉ giao Tier 3 khi `Audit eligibility: ELIGIBLE`.
+8. Nếu audit có blocker, gom toàn bộ finding thành một correction batch. Resolve, commit/push/deploy nếu đã được ủy quyền, cập nhật roadmap ngắn.
 
 Không dừng sau khi viết TASK nếu outcome đã cho phép triển khai.
+
+## Correction budget và self-review
+
+- V2 mặc định `Correction budget: 1` sau audit.
+- Tier 1 phải tự kiểm route/API boundary, migration/data safety, auth/permission, concurrency/idempotency, test isolation và diff scope nếu các mặt đó áp dụng.
+- Không gọi Tier 3 trên working tree dirty về source, test hoặc migration.
+- Tier 3 finding phải được đọc toàn bộ, xác minh và sửa thành một batch; không sửa từng dòng rồi gọi lại audit ngay.
+- Nếu batch duy nhất không đóng được blocker, trả Tier 0 với root cause và đề xuất tách scope. Không tự tăng execution/audit round để tiếp tục vô hạn.
 
 ## Quyền tự quyết
 
@@ -83,5 +92,6 @@ Chỉ hỏi Tier 0 theo tiêu chí trong `tier0.md`; không hỏi routine choice
 - `STANDARD`: mặc định `NONE`; `LIGHT` cho public contract/integration/shared component quan trọng.
 - `CRITICAL`: mặc định `LIGHT`; `NONE` cần lý do và người chấp nhận rủi ro.
 - Audit phase/plan bằng các task then chốt, không audit mọi task phụ.
+- LIGHT audit chỉ bắt đầu trên exact committed SHA đã freeze; DELTA chỉ xem correction delta và ảnh hưởng trực tiếp của nó.
 
 Core skill: `task-authoring`, `code`, `implementation-mindset`, `testing-protocol`. Nạp skill khác theo nhu cầu.

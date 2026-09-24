@@ -7,14 +7,13 @@ description: Use when completing tasks, implementing major features, or before m
 
 Dispatch code-reviewer subagent to catch issues before they cascade.
 
-**Core principle:** Review early, review often.
+**Core principle:** Self-review early; independent review once on a frozen, evidence-backed delivery.
 
 ## When to Request Review
 
 **Mandatory:**
-- After each task in subagent-driven development
-- After completing major feature
-- Before merge to main
+- Sau self-review và canonical gates của task có `Audit mode: LIGHT`.
+- Trước merge của changed surface rủi ro cao khi TASK yêu cầu.
 
 **Optional but valuable:**
 - When stuck (fresh perspective)
@@ -29,9 +28,11 @@ BASE_SHA=$(git rev-parse HEAD~1)  # or origin/main
 HEAD_SHA=$(git rev-parse HEAD)
 ```
 
-**2. Dispatch code-reviewer subagent:**
+**2. Freeze source and dispatch code-reviewer:**
 
 Use Task tool with `code-reviewer` type, fill template at `code-reviewer.md`
+
+Request phải pin exact committed HEAD SHA và yêu cầu reviewer trả toàn bộ finding current surface trong một batch. Không request review khi source/test/migration còn dirty.
 
 **Placeholders:**
 - `{WHAT_WAS_IMPLEMENTED}` - What you just built
@@ -77,9 +78,9 @@ You: [Fix progress indicators]
 ## Integration with Workflows
 
 **Subagent-Driven Development:**
-- Review after EACH task
-- Catch issues before they compound
-- Fix before moving to next task
+- Tier 1 tự review từng subtask khi tích hợp.
+- Independent review một lần sau khi toàn delivery đã freeze.
+- Nếu có finding, sửa một consolidated batch rồi request DELTA recheck.
 
 **Executing Plans:**
 - Review after each batch (3 tasks)

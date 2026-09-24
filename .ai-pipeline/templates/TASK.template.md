@@ -5,6 +5,7 @@
 | Field | Value |
 |---|---|
 | Task slug | `<task-slug>` |
+| Delivery protocol | `V2_FAST_FREEZE` |
 | Work type | `CODE | DOCS | DESIGN | INFRA | MIXED` |
 | Assurance lane | `FAST | STANDARD | CRITICAL` |
 | Audit mode | `NONE | LIGHT` |
@@ -13,6 +14,10 @@
 | Status | `DRAFT | READY_FOR_EXECUTION | REVISION_REQUIRED | ACCEPTED | CANCELLED` |
 | Planner | `Tier 1` |
 | Baseline | `<commit SHA>` |
+| Contract gate | `DRAFT | READY_TO_CODE` |
+| Decision state | `OPEN | CLOSED` |
+| Test environment | `READY | NOT_REQUIRED | BLOCKED` |
+| Correction budget | `1` |
 | In-scope roots | `<paths>` |
 | Forbidden paths | `<paths hoặc None>` |
 | Required gates | `<canonical commands, chỉ ghi một lần>` |
@@ -21,6 +26,8 @@
 | Next gate | `<NONE: /deliver → /resolve; LIGHT: /deliver → /audit → /resolve>` |
 
 > Lane và audit là hai quyết định riêng. FAST mặc định NONE; STANDARD mặc định NONE; CRITICAL mặc định LIGHT. CRITICAL + NONE phải ghi lý do và người chấp nhận rủi ro.
+
+> Chỉ chuyển `READY_FOR_EXECUTION` khi `Contract gate = READY_TO_CODE`, `Decision state = CLOSED`, environment đã `READY/NOT_REQUIRED`, baseline và file ownership đã pin. V2 chỉ có một consolidated correction batch sau audit.
 
 ## 1. Outcome
 
@@ -102,6 +109,8 @@ FAST nên có 1–4 STEP. STEP mô tả outcome theo thứ tự, không ép Tier
 ## 8. Open Questions
 
 - None.
+
+Không được còn câu hỏi cần Owner quyết khi `Contract gate: READY_TO_CODE`.
 
 ## 9. Planner Resolution
 

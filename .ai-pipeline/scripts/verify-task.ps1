@@ -146,6 +146,51 @@ try {
         }
     }
 
+    # -- T-09 V2 ready-to-code gate -----------------------------------------
+    # Historical artifacts remain compatible. New templates declare V2 and
+    # must close design/environment questions before implementation starts.
+    $deliveryProtocol = (Get-ControlField -Text $content -FieldName 'Delivery protocol').ToUpper()
+    if ($deliveryProtocol -ne '' -and $deliveryProtocol -ne 'V2_FAST_FREEZE') {
+        Add-DryRunFinding 'T-09' "Delivery protocol '$deliveryProtocol' is invalid; expected V2_FAST_FREEZE."
+    }
+    if ($deliveryProtocol -eq 'V2_FAST_FREEZE') {
+        $contractGate = (Get-ControlField -Text $content -FieldName 'Contract gate').ToUpper()
+        $decisionState = (Get-ControlField -Text $content -FieldName 'Decision state').ToUpper()
+        $testEnvironment = (Get-ControlField -Text $content -FieldName 'Test environment').ToUpper()
+        $correctionBudget = Get-ControlField -Text $content -FieldName 'Correction budget'
+        $baselineV2 = Get-ControlField -Text $content -FieldName 'Baseline'
+
+        if ($contractGate -notmatch '^(DRAFT|READY_TO_CODE)$') {
+            Add-DryRunFinding 'T-09' "V2 Contract gate '$contractGate' must be DRAFT or READY_TO_CODE."
+        }
+        if ($isReady -and $contractGate -ne 'READY_TO_CODE') {
+            Add-GateError $ctx 'T-09' "$statusHead requires Contract gate READY_TO_CODE."
+        }
+        if ($isReady -and $decisionState -ne 'CLOSED') {
+            Add-GateError $ctx 'T-09' "$statusHead requires Decision state CLOSED."
+        }
+        if ($isReady -and @('READY','NOT_REQUIRED') -notcontains $testEnvironment) {
+            Add-GateError $ctx 'T-09' "$statusHead requires Test environment READY or NOT_REQUIRED, got '$testEnvironment'."
+        }
+        if ($correctionBudget -ne '1') {
+            Add-DryRunFinding 'T-09' "V2 Correction budget must be exactly 1, got '$correctionBudget'."
+        }
+        if ($isReady -and $baselineV2 -notmatch '^[0-9a-fA-F]{40}$') {
+            Add-GateError $ctx 'T-09' 'V2 READY contract must pin a full 40-character Baseline SHA.'
+        }
+        $openSection = Get-MarkdownSection -Lines $lines -HeadingPattern '^##\s*8\.'
+        if ($isReady -and -not (Test-SectionSaysNone -Text $openSection)) {
+            Add-GateError $ctx 'T-09' 'V2 READY contract still has open questions; close them or return Contract gate to DRAFT.'
+        }
+        if ($ctx.Errors | Where-Object { $_ -match '^T-09\b' }) {
+            # Individual errors already carry the actionable reason.
+        } elseif ($isReady) {
+            Add-GateOk $ctx 'T-09' 'V2 READY_TO_CODE gate is closed: decisions, environment, baseline and correction budget are valid.'
+        } else {
+            Add-GateOk $ctx 'T-09' 'V2 draft fields are structurally valid.'
+        }
+    }
+
     # -- T-08 Lane cannot understate an obviously critical surface -----------
     # This is intentionally conservative and only reads Control fields/paths,
     # not prose in non-goals (where words such as auth/RLS often appear).

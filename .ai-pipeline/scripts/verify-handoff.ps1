@@ -154,6 +154,62 @@ try {
         Add-GateError $ctx 'H-03' "HANDOFF section 0 states no execution round number (expected a field 'Execution round')."
     }
 
+    # -- H-16 V2 frozen-delivery gate ---------------------------------------
+    $taskProtocol = (Get-ControlField -Text $task -FieldName 'Delivery protocol').ToUpper()
+    $handoffProtocol = (Get-ControlField -Text $handoff -FieldName 'Delivery protocol').ToUpper()
+    if ($taskProtocol -eq 'V2_FAST_FREEZE') {
+        if ($handoffProtocol -ne $taskProtocol) {
+            Add-GateError $ctx 'H-16' "Delivery protocol mismatch: TASK=$taskProtocol vs HANDOFF=$handoffProtocol."
+        }
+        $taskBaseline = Get-ControlField -Text $task -FieldName 'Baseline'
+        $handoffBaseline = Get-ControlField -Text $handoff -FieldName 'Baseline'
+        if ($handoffBaseline -ne $taskBaseline) {
+            Add-GateError $ctx 'H-16' "baseline mismatch: TASK=$taskBaseline vs HANDOFF=$handoffBaseline."
+        }
+
+        $implementationSha = Get-ControlField -Text $handoff -FieldName 'Implementation SHA'
+        if ($implementationSha -notmatch '^[0-9a-fA-F]{40}$') {
+            Add-GateError $ctx 'H-16' 'V2 HANDOFF must pin an exact 40-character Implementation SHA.'
+        } else {
+            & git -C $repoRoot rev-parse --verify --quiet "$implementationSha`^{commit}" *> $null
+            if ($LASTEXITCODE -ne 0) {
+                Add-GateError $ctx 'H-16' "Implementation SHA $implementationSha does not resolve to a local commit."
+            }
+        }
+
+        $frozen = (Get-ControlField -Text $handoff -FieldName 'Frozen delivery').ToUpper()
+        $canonical = (Get-ControlField -Text $handoff -FieldName 'Canonical gates').ToUpper()
+        $eligibility = (Get-ControlField -Text $handoff -FieldName 'Audit eligibility').ToUpper()
+        $usedRaw = Get-ControlField -Text $handoff -FieldName 'Correction batches used'
+        if ($frozen -ne 'YES') { Add-GateError $ctx 'H-16' "Frozen delivery must be YES before review/audit, got '$frozen'." }
+        if (@('PASS','NOT_REQUIRED') -notcontains $canonical) { Add-GateError $ctx 'H-16' "Canonical gates must be PASS or NOT_REQUIRED, got '$canonical'." }
+        if ($usedRaw -notmatch '^[01]$') { Add-GateError $ctx 'H-16' "Correction batches used must be 0 or 1, got '$usedRaw'." }
+
+        $dirtySemantic = New-Object System.Collections.ArrayList
+        foreach ($line in @(& git -C $repoRoot status --porcelain=v1 --untracked-files=all 2>$null)) {
+            if ($line.Length -lt 4) { continue }
+            $path = $line.Substring(3).Trim('"')
+            if ($path -match ' -> ') { $path = ($path -split ' -> ')[-1].Trim('"') }
+            if ($path -match '^(app|src|prisma|tests|scripts|packages)[/\\]') { [void]$dirtySemantic.Add($path) }
+        }
+        if ($dirtySemantic.Count -gt 0) {
+            Add-GateError $ctx 'H-16' "source/test/migration remains dirty after freeze: $(($dirtySemantic | Select-Object -First 5) -join ', ')."
+        }
+
+        if ($implementationSha -match '^[0-9a-fA-F]{40}$') {
+            $freezeRange = "$implementationSha..HEAD"
+            $postFreezeSemantic = @(& git -C $repoRoot diff --name-only $freezeRange -- app src prisma tests scripts packages 2>$null)
+            if ($LASTEXITCODE -eq 0 -and $postFreezeSemantic.Count -gt 0) {
+                Add-GateError $ctx 'H-16' "committed semantic delta exists after Implementation SHA: $(($postFreezeSemantic | Select-Object -First 5) -join ', '). Pin the newest semantic commit."
+            }
+        }
+        if ($ctx.Errors | Where-Object { $_ -match '^H-16\b' }) {
+            # Individual failures already explain the broken freeze invariant.
+        } else {
+            Add-GateOk $ctx 'H-16' 'V2 delivery pins a resolvable frozen SHA with no later semantic delta.'
+        }
+    }
+
     # -- Section bodies ------------------------------------------------------
     if ($compactHandoff) {
         $h2 = ''
@@ -315,20 +371,20 @@ try {
 
     # -- H-10 Status and closing line ----------------------------------------
     $hStatus = Get-ControlField -Text $handoff -FieldName 'Status'
-    $allowed = @('READY_FOR_REVIEW', 'READY_FOR_AUDIT', 'BLOCKED', 'IN_PROGRESS')
+    $allowed = @('READY_FOR_REVIEW', 'READY_FOR_AUDIT', 'ACCEPTED', 'BLOCKED', 'IN_PROGRESS')
     $statusHead = ''
     $mS = [regex]::Match($hStatus, '^[A-Z_]+')
     if ($mS.Success) { $statusHead = $mS.Value }
     if ($allowed -notcontains $statusHead) {
-        Add-GateError $ctx 'H-10' "HANDOFF status '$hStatus' is not one of READY_FOR_REVIEW|READY_FOR_AUDIT|BLOCKED|IN_PROGRESS."
+        Add-GateError $ctx 'H-10' "HANDOFF status '$hStatus' is not one of READY_FOR_REVIEW|READY_FOR_AUDIT|ACCEPTED|BLOCKED|IN_PROGRESS."
     }
     $closing = [regex]::Match($handoff, '(?i)Handoff status:\s*`?([A-Z_]+)`?')
     if (-not $closing.Success) {
-        Add-GateError $ctx 'H-10' "missing the mandatory last line 'Handoff status: READY_FOR_REVIEW', 'READY_FOR_AUDIT', or 'BLOCKED'."
+        Add-GateError $ctx 'H-10' "missing the mandatory last line 'Handoff status: READY_FOR_REVIEW', 'READY_FOR_AUDIT', 'ACCEPTED', or 'BLOCKED'."
     } else {
         $closingStatus = $closing.Groups[1].Value.ToUpper()
-        if (@('READY_FOR_REVIEW','READY_FOR_AUDIT','BLOCKED') -notcontains $closingStatus) {
-            Add-GateError $ctx 'H-10' "closing line says '$closingStatus'; tier1.md allows READY_FOR_REVIEW, READY_FOR_AUDIT, or BLOCKED."
+        if (@('READY_FOR_REVIEW','READY_FOR_AUDIT','ACCEPTED','BLOCKED') -notcontains $closingStatus) {
+            Add-GateError $ctx 'H-10' "closing line says '$closingStatus'; tier1.md allows READY_FOR_REVIEW, READY_FOR_AUDIT, ACCEPTED, or BLOCKED."
         } elseif ($statusHead -ne '' -and $statusHead -ne $closingStatus) {
             Add-GateError $ctx 'H-10' "section 0 Status is '$statusHead' but the closing line says '$closingStatus'."
         } else {
@@ -347,6 +403,12 @@ try {
         }
         if ($closingStatus -eq 'READY_FOR_AUDIT' -and -not $auditRequested) {
             Add-GateError $ctx 'H-10' "READY_FOR_AUDIT conflicts with TASK Audit mode NONE; use READY_FOR_REVIEW."
+        }
+        if ($taskProtocol -eq 'V2_FAST_FREEZE' -and $closingStatus -eq 'READY_FOR_AUDIT' -and $eligibility -ne 'ELIGIBLE') {
+            Add-GateError $ctx 'H-16' "READY_FOR_AUDIT requires Audit eligibility ELIGIBLE, got '$eligibility'."
+        }
+        if ($taskProtocol -eq 'V2_FAST_FREEZE' -and $closingStatus -eq 'READY_FOR_REVIEW' -and $eligibility -ne 'NOT_REQUIRED') {
+            Add-GateError $ctx 'H-16' "READY_FOR_REVIEW requires Audit eligibility NOT_REQUIRED, got '$eligibility'."
         }
     }
 

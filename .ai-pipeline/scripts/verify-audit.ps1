@@ -172,6 +172,55 @@ try {
         Add-GateWarn $ctx 'A-02' "Audit depth absent; compatibility default LIGHT applies."
     }
 
+    # -- S-22 V2 exact-SHA and complete-finding gate ------------------------
+    $taskProtocol = (Get-ControlField -Text $task -FieldName 'Delivery protocol').ToUpper()
+    if ($taskProtocol -eq 'V2_FAST_FREEZE') {
+        $handoffProtocol = (Get-ControlField -Text $handoff -FieldName 'Delivery protocol').ToUpper()
+        $auditProtocol = (Get-ControlField -Text $audit -FieldName 'Delivery protocol').ToUpper()
+        if ($handoffProtocol -ne $taskProtocol -or $auditProtocol -ne $taskProtocol) {
+            Add-GateError $ctx 'S-22' "Delivery protocol mismatch: TASK=$taskProtocol HANDOFF=$handoffProtocol AUDIT=$auditProtocol."
+        }
+        $handoffStatus = (Get-ControlField -Text $handoff -FieldName 'Status').ToUpper()
+        $handoffSha = Get-ControlField -Text $handoff -FieldName 'Implementation SHA'
+        $auditSha = Get-ControlField -Text $audit -FieldName 'Implementation SHA'
+        $frozen = (Get-ControlField -Text $handoff -FieldName 'Frozen delivery').ToUpper()
+        $eligibility = (Get-ControlField -Text $handoff -FieldName 'Audit eligibility').ToUpper()
+        $completeness = (Get-ControlField -Text $audit -FieldName 'Finding completeness').ToUpper()
+        $batch = Get-ControlField -Text $audit -FieldName 'Correction batch'
+
+        if ($handoffStatus -notmatch '^READY_FOR_AUDIT') { Add-GateError $ctx 'S-22' "V2 audit requires HANDOFF READY_FOR_AUDIT, got '$handoffStatus'." }
+        if ($frozen -ne 'YES' -or $eligibility -ne 'ELIGIBLE') { Add-GateError $ctx 'S-22' 'V2 audit requires Frozen delivery YES and Audit eligibility ELIGIBLE.' }
+        if ($handoffSha -notmatch '^[0-9a-fA-F]{40}$' -or $auditSha -ne $handoffSha) { Add-GateError $ctx 'S-22' "AUDIT Implementation SHA must exactly match HANDOFF ($handoffSha), got '$auditSha'." }
+        if ($completeness -ne 'COMPLETE_CURRENT_SURFACE') { Add-GateError $ctx 'S-22' "Finding completeness must be COMPLETE_CURRENT_SURFACE, got '$completeness'." }
+        if ($batch -notmatch '^[01]$') { Add-GateError $ctx 'S-22' "Correction batch must be 0 or 1, got '$batch'." }
+        if ($auditDepth -eq 'DELTA' -and $batch -ne '1') { Add-GateError $ctx 'S-22' 'DELTA audit is only valid for correction batch 1.' }
+        if ($auditDepth -eq 'LIGHT' -and $batch -ne '0') { Add-GateError $ctx 'S-22' 'Initial LIGHT audit must use correction batch 0.' }
+
+        if ($handoffSha -match '^[0-9a-fA-F]{40}$') {
+            & git -C $repoRoot rev-parse --verify --quiet "$handoffSha`^{commit}" *> $null
+            if ($LASTEXITCODE -ne 0) { Add-GateError $ctx 'S-22' "Implementation SHA $handoffSha does not resolve to a local commit." }
+            $freezeRange = "$handoffSha..HEAD"
+            $postFreezeSemantic = @(& git -C $repoRoot diff --name-only $freezeRange -- app src prisma tests scripts packages 2>$null)
+            if ($LASTEXITCODE -eq 0 -and $postFreezeSemantic.Count -gt 0) {
+                Add-GateError $ctx 'S-22' "semantic commits exist after audited SHA: $(($postFreezeSemantic | Select-Object -First 5) -join ', ')."
+            }
+        }
+        $dirtySemantic = New-Object System.Collections.ArrayList
+        foreach ($line in @(& git -C $repoRoot status --porcelain=v1 --untracked-files=all 2>$null)) {
+            if ($line.Length -lt 4) { continue }
+            $path = $line.Substring(3).Trim('"')
+            if ($path -match ' -> ') { $path = ($path -split ' -> ')[-1].Trim('"') }
+            if ($path -match '^(app|src|prisma|tests|scripts|packages)[/\\]') { [void]$dirtySemantic.Add($path) }
+        }
+        if ($dirtySemantic.Count -gt 0) { Add-GateError $ctx 'S-22' "audited source/test/migration is dirty: $(($dirtySemantic | Select-Object -First 5) -join ', ')." }
+
+        if ($ctx.Errors | Where-Object { $_ -match '^S-22\b' }) {
+            # Detailed failures already emitted.
+        } else {
+            Add-GateOk $ctx 'S-22' 'V2 audit is pinned to a clean frozen SHA and declares complete current-surface findings.'
+        }
+    }
+
     # -- Section bodies ------------------------------------------------------
     $sec2 = Get-MarkdownSection -Lines $auditLines -HeadingPattern '^##\s*2\.'
     if ($compactAudit) {
