@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Task | `hrp-v6-n2-aff-04-conversion-propagation` |
-| Spec version | `v1.7` |
+| Spec version | `v1.8` |
 | Status | `READY_FOR_AUDIT` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
@@ -14,9 +14,9 @@
 | Baseline | `9e527a13e74c8361feea77b8edca522c8c37ec08` (origin/main @ 2026-09-23; includes ER-002 #32 and AFF-05A R1 #33). Contract Survey baseline `0fdc616b` retained only as historical reference. |
 | Frozen implementation SHA | `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374` (HEAD at code freeze = `f01ee35`; subsequent docs-only commits recorded in §10 Revision Log) |
 | Worktree / branch | `codex/t1b-aff04-conversion-propagation` |
-| Tier 3 verdict | `PASS` at frozen HEAD `1b42fd4f84f65b9d7206119eaad5fd275b874125`; artifact `AUDIT-tier3-aff04-final-freeze.md` |
-| Required gates (per TASK §0) | `T0_CONTRACT_APPROVAL` PASS; `TIER3_LIGHT_AUDIT` PASS; `VERIFY_TASK` DRAFT-VALID; `VERIFY_HANDOFF` substantive PASS before terminal status transition |
-| Next gate | `T0_MERGE_DECISION_AFTER_PR_CI` (PR #35 Draft; production migration pending; fresh Tier 3 LIGHT audit required after F-P4 correction) |
+| Tier 3 verdict | F-P4 `PASS` at `0f5496fded1b5ce52deefcbb38f941df3a318931`; artifact `AUDIT-tier3-aff04-fp4-review.md`. Earlier final-freeze PASS at `1b42fd4f84f65b9d7206119eaad5fd275b874125` remains historical. |
+| Required gates (per TASK §0) | `T0_CONTRACT_APPROVAL` PASS; `TIER3_LIGHT_AUDIT` PASS through F-P4; narrow delta recheck pending for test-only `0f5496f..71440f2`; `VERIFY_TASK` / `VERIFY_HANDOFF` rerun at docs freeze |
+| Next gate | `TIER3_LIGHT_DELTA_RECHECK` (PR #35 Draft; canonical CI green; production migration pending) |
 
 ### Authority classification (4-tier, per T0 directive 2026-09-23)
 
@@ -25,7 +25,7 @@
 | Contract authority | TASK v1.4 @ `f3f0a23f2fa6d590f188403687d317da64f4d91e` | Semantic contract §1-§8 — frozen |
 | Execution contract hien hanh | TASK v1.6 @ `e73ac9d` (commit before implementation) | Control metadata aligned |
 | T0 execution authorization | 2026-09-23 directive | "AFF-04 duoc APPROVED_FOR_EXECUTION" — Tier 1B technical autonomy on Plan + Code, architecture questions reserved to T0 / Owner |
-| Tier 3 implementation verdict | Frozen implementation `f01ee35`; final reviewed HEAD `1b42fd4` | PASS — fresh Tier 3 LIGHT audit; no runtime/migration production authorization implied |
+| Tier 3 implementation verdict | Frozen implementation `f01ee35`; F-P4 reviewed HEAD `0f5496f` | PASS — F-P4 predicate correction audited; test-only CI portability delta through `71440f2` awaits narrow recheck; no production authorization implied |
 
 ## 1. Outcome and changed surface
 
@@ -136,9 +136,9 @@ All canonical gates PASS on local ephemeral synthetic databases, which have been
 
 The frozen implementation SHA remains `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374`; subsequent commits are tests and documentation/evidence carry-forward only, recorded in TASK §10 and §11.
 
-No production/staging migration was applied. PR #35 is in Draft state (returned by T0). AFF-04 is ready for T0 push/PR and CI after F-P4 Tier 3 re-audit. T0/Owner retains the separate production branch gate, migration-impact review, merge, deploy, and production verification decisions.
+No production/staging migration was applied. PR #35 remains Draft. F-P4 Tier 3 re-audit passed at `0f5496f`; the final test-only CI portability delta through `71440f2` is green in run `35954635909` and awaits narrow Tier 3 confirmation. T0/Owner retains the separate production branch gate, migration-impact review, merge, deploy, and production verification decisions.
 
-Handoff status: `READY_FOR_AUDIT` (verifier-compatible enum; T0 has returned PR #35 to Draft after production preflight finding; Tier 3 re-audit required before PR returns to Ready; substantive next gate is T0 PR/CI review after F-P4 Tier 3 re-audit PASS).
+Handoff status: `READY_FOR_AUDIT` (verifier-compatible enum; substantive next gate is the narrow Tier 3 delta recheck for `0f5496f..71440f2`, then T0 production preflight/merge decision).
 
 ## 6. F-P3 correction round (2026-09-23)
 
@@ -252,3 +252,24 @@ This is a TRUE predecessor upgrade-path test, not a fresh-schema test. File regi
 ### pg_hba.conf hygiene — maintained
 
 The `pg_hba.conf` was restored from the exact backup (`pg_hba.conf.aff04.bak`) during F-P3. The file remains in its restored state. No new trust rules were added during F-P4.
+
+## 8. F-P4 CI portability correction (2026-09-24)
+
+The first Linux CI run after F-P4 PASS exposed defects only in the new predecessor upgrade-path test. T0 kept PR #35 in Draft and corrected the test in follow-up commits without amending history:
+
+- `47e16d9`: choose `prisma`/`prisma.cmd` and `psql` by platform while preserving `PG_PSQL_BIN` override; remove one unused lint suppression.
+- `1b5b712`: bind both Prisma `url` and `directUrl` (`DATABASE_URL` and `DATABASE_URL_ADMIN`) to the ephemeral database.
+- `ec0bd7a` and `5c6e0d9`: seed predecessor `source_claims` through parameterized predecessor-shaped SQL; remove the nonexistent `updated_at` field, pass raw parameters correctly, and make the canonical backfill idempotency assertion use the actual narrow predicate.
+- `71440f2`: assert the real migration directory and SQL header marker before applying the byte-identical migration file.
+
+Scope proof: `git diff --name-only 0f5496f..71440f2` contains only `tests/db/aff04-conversion-propagation-upgrade-path.integration.test.ts`. The production migration, Prisma schema, runtime services and API routes are byte-identical to the F-P4 audited commit.
+
+Final canonical CI run `35954635909` at `71440f2`:
+
+- Quality: PASS (`161` unit files; `2541` tests passed).
+- Integration: PASS (`25` files; `462` passed; `2` skipped).
+- Vercel Preview: PASS.
+- Vercel Preview Comments: PASS.
+- Local pre-push checks for each correction: targeted ESLint PASS, `npx tsc --noEmit` PASS, `git diff --check` PASS.
+
+The earlier failed CI attempts are retained as diagnostic evidence; they are not PASS claims. No production/staging database or credentials were used by these corrections. Next gate is a narrow Tier 3 LIGHT delta recheck before PR #35 returns to Ready.
