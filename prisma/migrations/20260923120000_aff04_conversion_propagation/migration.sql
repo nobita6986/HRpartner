@@ -24,11 +24,22 @@
 --
 -- WHAT THIS MIGRATION DOES
 -- -------------------------
--- (1) PREROLL preflight (fail-closed):
---     - Assert NO non-CTV_REFERRAL row has a non-null ctv_id (predicate from TASK §3).
+-- (1) PREROLL preflight (fail-closed, scoped):
 --     - Assert NO accepted CTV_REFERRAL row has ctv_id IS NULL (fail-closed predicate).
 --     - Assert NO existing project_assignments.referrer_id points to a missing user
 --       (orphan preflight; orphans will block the FK we are about to add).
+--     - INFORM (NOT reject): count of non-CTV_REFERRAL rows with legacy ctv_id IS NOT NULL.
+--       The legacy column `source_claims.ctv_id` has historically been populated on non-CTV
+--       rows (HRP_DIRECT, VENDOR_SUPPLIED) by `prisma/seed.mjs` and integration fixtures —
+--       see the source evidence below. AFF-04 does NOT alter, null-out, update or delete
+--       these rows. Only `referrer_user_id` backfill is gated to CTV_REFERRAL accepted rows.
+--
+--     Production preflight finding (T0 brief 2026-09-23): on Neon branch hrp-live there is
+--     exactly 1 legacy row (claim_type=HRP_DIRECT, accepted=false, registration_channel=
+--     SALE_ADDED) that has ctv_id non-null. This row is INTENTIONALLY preserved across
+--     AFF-04 — the backfill predicate below already excludes it. The PREROLL now emits an
+--     INFORMATIONAL NOTICE rather than raising a hard exception so that the migration can
+--     apply on environments with legacy non-CTV ctv_id rows.
 --
 -- (2) FORWARD-ONLY SCHEMA:
 --     - ADD COLUMN source_claims.referrer_user_id TEXT (no DEFAULT — T0 decision b).
@@ -38,15 +49,22 @@
 --       (column already exists since mp3_conversion_worker_link; no ADD COLUMN needed).
 --     - CREATE INDEX project_assignments_referrer_id_status_idx ON (referrer_id, status).
 --
--- (3) BACKFILL (idempotent, forward-only):
+-- (3) BACKFILL (idempotent, forward-only, narrowly-scoped):
 --     - For every accepted CTV_REFERRAL row with ctv_id IS NOT NULL AND referrer_user_id IS NULL,
 --       set referrer_user_id = ctv_id. The WHERE predicate makes this idempotent: a re-run
 --       after a successful backfill matches zero rows.
+--     - Non-CTV_REFERRAL rows (HRP_DIRECT, VENDOR_SUPPLIED, etc.) are EXPLICITLY excluded from
+--       backfill. Their legacy ctv_id column is PRESERVED unchanged. referrer_user_id stays NULL.
 --
 -- (4) POST-CONDITION ASSERTION:
 --     - Assert: every accepted CTV_REFERRAL row with ctv_id NOT NULL now has
 --               referrer_user_id = ctv_id (no drift).
 --     - Assert: zero project_assignments rows have referrer_id pointing to a missing user.
+--     - Assert: every non-CTV_REFERRAL row with ctv_id NOT NULL still has ctv_id unchanged
+--               and referrer_user_id still NULL (the AFF-04 invariant: legacy ctv_id is a
+--               back-link only; generic referrer promotion is restricted to CTV_REFERRAL).
+--     - Assert: the two pre-existing partial unique indexes (one_accepted_source and
+--               one_accepted_source_per_submission) are preserved verbatim.
 --
 -- SCOPE (minimal — DEC-15)
 --   - Touched tables: source_claims, project_assignments.
@@ -73,27 +91,19 @@
 -- ============================================================================
 
 -- ───────────────────────────────────────────────────────────────────────────
--- (1) PREROLL preflight — fail closed on any predicate violation
+-- (1) PREROLL preflight — fail closed on the predicates that block apply,
+--                            emit informational notices on legacy-state fields
 -- ───────────────────────────────────────────────────────────────────────────
 
 DO $$
 DECLARE
-  v_bad_non_ctv     bigint := 0;
-  v_bad_ctv_null    bigint := 0;
-  v_orphan_ref      bigint := 0;
+  v_bad_ctv_null      bigint := 0;
+  v_orphan_ref        bigint := 0;
+  v_non_ctv_with_ctv  bigint := 0;
 BEGIN
-  -- Predicate (TASK §3): Non-CTV claim dù có legacy ctv_id → Không backfill, must be NULL post-cleanup.
-  SELECT count(*) INTO v_bad_non_ctv
-    FROM source_claims
-   WHERE claim_type <> 'CTV_REFERRAL'
-     AND ctv_id IS NOT NULL;
-  IF v_bad_non_ctv > 0 THEN
-    RAISE EXCEPTION 'AFF-04 preflight FAIL: % source_claims row(s) are NOT CTV_REFERRAL but have non-null ctv_id. Reject migration (fail-closed).',
-      v_bad_non_ctv
-      USING ERRCODE = 'P0001';
-  END IF;
-
-  -- Predicate (TASK §3): Accepted CTV_REFERRAL thiếu ctv_id → Fail closed.
+  -- Predicate (TASK §3, fail-closed): Accepted CTV_REFERRAL thiếu ctv_id → Fail closed.
+  -- This is a hard reject. We cannot backfill a referrer_user_id from ctv_id if ctv_id is NULL,
+  -- and the source resolution matrix demands a canonical referrer for an accepted CTV claim.
   SELECT count(*) INTO v_bad_ctv_null
     FROM source_claims
    WHERE claim_type = 'CTV_REFERRAL'
@@ -105,7 +115,8 @@ BEGIN
       USING ERRCODE = 'P0001';
   END IF;
 
-  -- Predicate (TASK §3): ProjectAssignment.referrerId orphan → Fail closed.
+  -- Predicate (TASK §3, fail-closed): ProjectAssignment.referrerId orphan → Fail closed.
+  -- The FK we are about to add requires referrer_id to point to a real users.id.
   SELECT count(*) INTO v_orphan_ref
     FROM project_assignments pa
    WHERE pa.referrer_id IS NOT NULL
@@ -116,7 +127,22 @@ BEGIN
       USING ERRCODE = 'P0001';
   END IF;
 
-  RAISE NOTICE 'AFF-04 preflight PASS: 0 non-CTV ctv_id, 0 accepted CTV_REFERRAL with NULL ctv_id, 0 orphan referrer_id';
+  -- Informational observation (NOT a fail-closed predicate — T0 directive F-P4-1):
+  -- count of non-CTV_REFERRAL rows with legacy ctv_id IS NOT NULL.
+  -- Background: prisma/seed.mjs and AFF-03/AFF-04 integration fixtures have historically populated
+  -- `source_claims.ctv_id` on HRP_DIRECT and VENDOR_SUPPLIED rows (the legacy column was never
+  -- strictly gated to CTV_REFERRAL claims). AFF-04 preserves those rows unchanged. The new
+  -- `referrer_user_id` column is backfilled ONLY for accepted CTV_REFERRAL rows (see step 4).
+  -- Production preflight finding (T0 brief 2026-09-23, Neon branch hrp-live): count is non-zero
+  -- (the legacy state matches expectations). Emitted as NOTICE so it shows in the migration
+  -- journal without blocking the apply.
+  SELECT count(*) INTO v_non_ctv_with_ctv
+    FROM source_claims
+   WHERE claim_type <> 'CTV_REFERRAL'
+     AND ctv_id IS NOT NULL;
+
+  RAISE NOTICE 'AFF-04 preflight PASS: 0 accepted CTV_REFERRAL with NULL ctv_id, 0 orphan referrer_id; informational: % non-CTV_REFERRAL row(s) carry legacy ctv_id (preserved unchanged by AFF-04)',
+    v_non_ctv_with_ctv;
 END
 $$;
 
@@ -178,9 +204,11 @@ $$;
 
 DO $$
 DECLARE
-  v_drift_ctv     bigint := 0;
-  v_orphan_after  bigint := 0;
-  v_dupes         bigint := 0;
+  v_drift_ctv           bigint := 0;
+  v_orphan_after        bigint := 0;
+  v_dupes               bigint := 0;
+  v_non_ctv_drift_ctv   bigint := 0;
+  v_non_ctv_overreach   bigint := 0;
 BEGIN
   -- Every accepted CTV_REFERRAL with ctv_id NOT NULL now has referrer_user_id = ctv_id.
   SELECT count(*) INTO v_drift_ctv
@@ -192,6 +220,32 @@ BEGIN
   IF v_drift_ctv > 0 THEN
     RAISE EXCEPTION 'AFF-04 post-condition FAIL: % accepted CTV_REFERRAL row(s) drift between ctv_id and referrer_user_id. Reject.',
       v_drift_ctv
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  -- Non-CTV_REFERRAL rows must NOT have been promoted: their ctv_id is unchanged
+  -- and referrer_user_id must remain NULL (T0 directive F-P4-1 — narrow backfill predicate).
+  -- This guards against any future regression that broadens the backfill.
+  SELECT count(*) INTO v_non_ctv_drift_ctv
+    FROM source_claims
+   WHERE claim_type <> 'CTV_REFERRAL'
+     AND ctv_id IS NOT NULL
+     AND referrer_user_id IS NOT NULL;
+  IF v_non_ctv_drift_ctv > 0 THEN
+    RAISE EXCEPTION 'AFF-04 post-condition FAIL: % non-CTV_REFERRAL row(s) had referrer_user_id unexpectedly set. Backfill must NOT promote non-CTV rows.',
+      v_non_ctv_drift_ctv
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  -- Sanity check: the backfill statement did not modify non-CTV rows.
+  -- We re-run the predicate and confirm zero rows match (idempotent invariant).
+  SELECT count(*) INTO v_non_ctv_overreach
+    FROM source_claims
+   WHERE claim_type <> 'CTV_REFERRAL'
+     AND referrer_user_id IS NOT NULL;
+  IF v_non_ctv_overreach > 0 THEN
+    RAISE EXCEPTION 'AFF-04 post-condition FAIL: % non-CTV_REFERRAL row(s) have non-NULL referrer_user_id after apply. Backfill predicate was not respected.',
+      v_non_ctv_overreach
       USING ERRCODE = 'P0001';
   END IF;
 
@@ -218,6 +272,6 @@ BEGIN
       USING ERRCODE = 'P0001';
   END IF;
 
-  RAISE NOTICE 'AFF-04 post-condition PASS: 0 drift, 0 orphan, 2/2 partial unique indexes preserved';
+  RAISE NOTICE 'AFF-04 post-condition PASS: 0 drift on accepted CTV, 0 non-CTV overreach, 0 orphan referrer_id, 2/2 partial unique indexes preserved';
 END
 $$;
