@@ -14,7 +14,7 @@
 | Baseline | `825f763929e4a3026fc7b5d50436e216ef66da8c` (`origin/main`, post-#40 admin-managed phone link; `1e1895d1` is no longer main) |
 | Authority | TASK v1.1 blob at commit `17d7cc26f05ede322f819f7bcdaa59a6a0805521` |
 | Semantic commit SHA | `a943170a97e773353df01c09cc252585896e5eaf` (short `a943170`) — T0 authoritative integration correction on top of `c1744ab`; business policy remains 1/7/30. |
-| Docs/evidence freeze SHA | pending docs-only follow-up after this HANDOFF sync; it must not change implementation bytes. |
+| Docs/evidence freeze | the commit containing this HANDOFF; implementation bytes remain pinned separately to `a943170`. |
 | Implementation HEAD | `a943170a97e773353df01c09cc252585896e5eaf` — exact implementation/contract SHA covered by the T0 synthetic-DB evidence below. |
 | Executor | `Tier 1B` |
 | Next gate | `TIER3_DELTA_REAUDIT` |
