@@ -1,4 +1,4 @@
-# TASK ΓÇö hrp-v6-n2-aff-05a-r2-bounded-manager-assignment
+# TASK — hrp-v6-n2-aff-05a-r2-bounded-manager-assignment
 
 ## 0. Control
 
@@ -10,22 +10,22 @@
 | Audit reason | Forward-only production migration plus route/service validation at the HandlingAssignment ownership boundary. |
 | Work type | `FEATURE_EXPANSION` |
 | Spec version | `v1.1` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `READY_FOR_AUDIT` |
 | Planner | `Tier 1A`; T0 substantive correction/approval |
 | Execution owner | `Tier 1B` |
 | Baseline | `825f763929e4a3026fc7b5d50436e216ef66da8c` (`origin/main`, post-#40 admin-managed phone link; `1e1895d1` is no longer main) |
 | Authority | `docs/V6/aff_plan.md` v2.5; `docs/discovery/realignment/AFF05A_RESIDUAL_RECONCILIATION.md`; accepted W5 and AFF-05A-R1 evidence |
-| In-scope roots | Exact File Allowlist at ┬º4.5 |
-| Forbidden paths | Every path outside ┬º4.5; especially `docs/PLANNER_HANDOVER.md`, CRM, ER-003, dispute/case, `Ticket`, AFF-05B/commission, auth/global RLS, package/config and existing migrations |
+| In-scope roots | Exact File Allowlist at §4.5 |
+| Forbidden paths | Every path outside §4.5; especially `docs/PLANNER_HANDOVER.md`, CRM, ER-003, dispute/case, `Ticket`, AFF-05B/commission, auth/global RLS, package/config and existing migrations |
 | Required gates | `VERIFY_TASK`, `VERIFY_HANDOFF`, canonical quality/integration gates, migration clean/upgrade proof, `TIER3_LIGHT_AUDIT`, T0 production gate |
-| Next gate | `T1B_IMPLEMENTATION` |
-| Current execution round | `0` |
+| Next gate | `TIER3_LIGHT_AUDIT` |
+| Current execution round | `1` |
 | Current audit round | `0` |
-| Frozen implementation SHA | `PENDING` |
+| Frozen implementation SHA | see HANDOFF §0 `Implementation SHA` (semantic commit on `codex/t1b-aff05a-r2-bounded-manager-assignment`) |
 
 ## 1. Outcome
 
-Make every `MANAGER_ASSIGNMENT` finite and server-controlled: minimum 1 day, default 7 days, maximum 30 days. Preserve Company Pool as the derived state ΓÇ£no assignment effective at server timeΓÇ¥, preserve assignment history, and add a database backstop so direct SQL cannot create an indefinite manager assignment.
+Make every `MANAGER_ASSIGNMENT` finite and server-controlled: minimum 1 day, default 7 days, maximum 30 days. Preserve Company Pool as the derived state "no assignment effective at server time", preserve assignment history, and add a database backstop so direct SQL cannot create an indefinite manager assignment.
 
 This slice does not create a Company Pool table, dispute/case model, commission behavior, or new authorization surface.
 
@@ -35,12 +35,12 @@ This slice does not create a Company Pool table, dispute/case model, commission 
 
 | ID | Evidence | Finding |
 |---|---|---|
-| `EV-01` | `src/domains/talent/handling-assignment.service.ts` ΓÇö `ManagerAssignInput`, `managerAssign`, `getActiveHandlingAssignment` | `days` is nullable and a falsy value produces `expiresAt = null`; server-clock expiry already treats a deadline equal to or earlier than `asOf` as inactive. |
+| `EV-01` | `src/domains/talent/handling-assignment.service.ts` — `ManagerAssignInput`, `managerAssign`, `getActiveHandlingAssignment` | `days` is nullable and a falsy value produces `expiresAt = null`; server-clock expiry already treats a deadline equal to or earlier than `asOf` as inactive. |
 | `EV-02` | `app/api/admin/labor-profiles/[id]/handling-assignments/route.ts` | Route currently coerces `days` through `Number()` and collapses missing, zero and explicit null into the same value. |
 | `EV-03` | `app/admin/labor-profiles/[id]/handling-assignment-manager.tsx` | UI defaults to 7 but only declares `min=1`; UI validation is not authority. |
 | `EV-04` | W5 and AFF-05A-R1 accepted evidence | RLS, at-most-one-active backstop, expiry semantics and initial 7-day assignment already exist and must not be reopened. |
 
-### 2.2 T0 production read-only preflight ΓÇö 2026-09-24
+### 2.2 T0 production read-only preflight — 2026-09-24
 
 - Neon Control Plane mapped endpoint `ep-shy-tree-az32as2c` to primary branch `hrp-live` (`br-icy-dew-azbrgthw`); gate exit `0`.
 - Credential inventory contained only the production admin tuple, so the gate used the same production endpoint for both URL inputs. This proves branch identity, not independent writer-credential posture. The full deploy gate must be rerun from the deployment environment before production migration.
@@ -76,8 +76,8 @@ The zero-row snapshot authorizes implementation and synthetic migration proof. I
 
 - Route constructs a manual allowlisted command object. Client input cannot set `startsAt`, `expiresAt`, `source`, status, actor, history links or previous assignment.
 - For manager assignment, detect property presence rather than truthiness:
-  - property absent ΓåÆ normalized duration `7`;
-  - property present ΓåÆ value must be a finite integer in the inclusive range `1..30`;
+  - property absent → normalized duration `7`;
+  - property present → value must be a finite integer in the inclusive range `1..30`;
   - no `Number()`, `parseInt` or silent clamping at the route/service boundary.
 - Service independently validates the normalized duration and throws a typed domain error. Route maps duration validation to HTTP `400`; concurrency conflict remains HTTP `409`; unexpected errors remain generic and do not expose SQL/stack/data.
 - Use one server `now` snapshot for expiry sweep, active lookup, transfer history and new `startsAt`/`expiresAt` calculation.
@@ -157,13 +157,13 @@ AND starts_at IS NOT NULL
 
 | AC | RQ | Pass condition | Verification method |
 |---|---|---|---|
-| `AC-01` | `RQ-01` | Route and service accept `1`, absentΓåÆ`7`, `30`; reject explicit null, string, boolean, NaN/Infinity, fraction, zero, negative and `31`; route returns typed `400`. | `npx vitest run --config vitest.unit.config.ts "app/api/admin/labor-profiles/[id]/handling-assignments/route.test.ts" src/domains/talent/handling-assignment.service.test.ts` |
+| `AC-01` | `RQ-01` | Route and service accept `1`, absent→`7`, `30`; reject explicit null, string, boolean, NaN/Infinity, fraction, zero, negative and `31`; route returns typed `400`. | `npx vitest run --config vitest.unit.config.ts "app/api/admin/labor-profiles/[id]/handling-assignments/route.test.ts" src/domains/talent/handling-assignment.service.test.ts` |
 | `AC-02` | `RQ-02` | Release never enters manager assignment; elapsed assignment is ineffective once its deadline is equal to or earlier than `now`; Company Pool carry-forward remains green. | Targeted unit command above plus `npx vitest run --config vitest.unit.config.ts src/domains/talent/labor-profile.read-service.test.ts` |
-| `AC-03` | `RQ-03` | PredecessorΓåÆcandidate upgrade sets exact 7-day deadline, expires only overdue ACTIVE, preserves all terminal/non-target rows, and fails/rolls back on anomaly. | `$env:CI_INTEGRATION_STRICT='1'; npm run test:integration`; inspect the isolated predecessor/rollback assertions emitted by `tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts`. |
+| `AC-03` | `RQ-03` | Predecessor→candidate upgrade sets exact 7-day deadline, expires only overdue ACTIVE, preserves all terminal/non-target rows, and fails/rolls back on anomaly. | `$env:CI_INTEGRATION_STRICT='1'; npm run test:integration`; inspect the isolated predecessor/rollback assertions emitted by `tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts`. |
 | `AC-04` | `RQ-04` | Catalog shows validated CHECK; violating manager insert fails; permitted non-manager nullable deadline remains unchanged; RLS/grants/index posture has zero drift. | `$env:CI_INTEGRATION_STRICT='1'; npm run test:integration`; inspect catalog/negative SQL assertions from the task DB file. |
 | `AC-05` | `RQ-05` | Two independent connections racing on one LaborProfile yield one active winner, one typed conflict and no duplicate side effect/history corruption. | `$env:CI_INTEGRATION_STRICT='1'; npm run test:integration`; inspect the two-connection case and committed-row counts. |
-| `AC-06` | `RQ-06` | Clean chain and upgrade chain pass; targeted tests have zero skip/fail; changed paths equal ┬º4.5. | `CI_INTEGRATION_STRICT=1 npm run test:integration` in CI plus explicit migration-chain and changed-path evidence in HANDOFF. |
-| `AC-07` | `RQ-01`ΓÇô`RQ-06` | Prisma validate, typecheck, lint, full unit, build, canonical integration, task/handoff verification and whitespace/scope gates all pass or disclose baseline-equivalent warnings exactly. | Run the ┬º6.4 commands, including `git diff --check 1e1895d16500b273575599cf88853e0d48f08e23..HEAD`, and record exit codes/counts in HANDOFF. |
+| `AC-06` | `RQ-06` | Clean chain and upgrade chain pass; targeted tests have zero skip/fail; changed paths equal §4.5. | `CI_INTEGRATION_STRICT=1 npm run test:integration` in CI plus explicit migration-chain and changed-path evidence in HANDOFF. |
+| `AC-07` | `RQ-01`–`RQ-06` | Prisma validate, typecheck, lint, full unit, build, canonical integration, task/handoff verification and whitespace/scope gates all pass or disclose baseline-equivalent warnings exactly. | Run the §6.4 commands, including `git diff --check 825f763929e4a3026fc7b5d50436e216ef66da8c..HEAD`, and record exit codes/counts in HANDOFF. |
 
 ### 6.3 Traceability
 
@@ -178,16 +178,36 @@ AND starts_at IS NOT NULL
 
 ### 6.4 Canonical verification commands
 
+Lanes are explicitly partitioned so the operator never confuses Quality with
+Integration. `npm run build` belongs to the Quality lane; the Integration lane
+runs only `npx vitest run --config vitest.integration.config.ts` (via
+`scripts/ci/integration-preflight.mjs`) and never `next build`. All commands
+must be run from the worktree root.
+
+Quality lane (no DB):
+
 ```powershell
 npx prisma validate
+npx prisma generate
 npx tsc --noEmit
 npm run lint
-npx vitest run --config vitest.unit.config.ts
 npm run build
+npx vitest run --config vitest.unit.config.ts
+```
+
+Integration lane (DB-touching, fail-closed; requires dedicated test DB):
+
+```powershell
 $env:CI_INTEGRATION_STRICT = '1'; npm run test:integration
+```
+
+Documentation and scope gates:
+
+```powershell
 & .\.ai-pipeline\scripts\verify-task.ps1 -TaskPath docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/TASK.md
 & .\.ai-pipeline\scripts\verify-handoff.ps1 -TaskPath docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/TASK.md -HandoffPath docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/HANDOFF.md
-git diff --check 1e1895d16500b273575599cf88853e0d48f08e23..HEAD
+git diff --check 825f763929e4a3026fc7b5d50436e216ef66da8c..HEAD
+git diff --name-only 825f763929e4a3026fc7b5d50436e216ef66da8c..HEAD
 ```
 
 ## 7. Risk
@@ -217,4 +237,5 @@ None. Production deployment remains a gate, not an open design decision.
 |---|---|---|
 | `v1.1` | 2026-09-24 | T0 substantive correction and execution approval; exact allowlist/AC, strict no-coercion boundary, migration safety and read-only production preflight evidence. |
 | (T0 alignment) | 2026-09-24 | T0 alignment correction at execution start (semantic contract 1/7/30 unchanged): baseline `1e1895d1` -> `825f7639` (origin/main post-#40); migration directory `20260924140000` -> `20260924170000` because main already has `20260924150000` + `20260924160000`. Re-aligned allowlist and Revision Log row. No business-semantics change. |
+| (T0 correction batch) | 2026-09-24 | T0 correction batch after review of HEAD `f5136080a468389eeeffe99cc8d2ad6004b43f8d` (semantic contract 1/7/30 unchanged): (a) TASK.md mojibake restored (`—` `→` `"` `"` `–` `§`); (b) `pg_constraint` lookups in migration AND integration test bind `conrelid = 'public.labor_profile_handling_assignments'::regclass AND contype = 'c'` with negative scoping test; (c) integration test rewrites upgrade-path to a real predecessor (pruned migrations tree, NOT apply-all + DROP); (d) AC-05 race added as a real two-connection test (one ACTIVE winner, typed conflict on loser, no duplicate row, no orphan history); (e) AC-03 evidence uses exact 7-day deadline measurement; (f) AC-07 scope command pins baseline `825f7639`; (g) Status `READY_FOR_EXECUTION` -> `READY_FOR_AUDIT`, Next gate `T1B_IMPLEMENTATION` -> `TIER3_LIGHT_AUDIT`, Current execution round `0` -> `1` (these control field changes require §9/10 entry per T-07). No business-semantics change. |
 | `v1.0` | 2026-09-24 | Tier 1A initial `PROPOSED_ONLY` contract. |

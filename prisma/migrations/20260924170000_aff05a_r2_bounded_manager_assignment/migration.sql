@@ -218,8 +218,12 @@ $$;
 -- ───────────────────────────────────────────────────────────────────────────
 -- CONDITIONAL DB CHECK (DEC-05 / AC-04)
 -- Idempotent: ADD CONSTRAINT fails with 42710 if the constraint already
--- exists; guard with information_schema check inside a DO block so re-runs
--- after first success are no-ops (no separate IF NOT EXISTS in PG < 17).
+-- exists; guard with a strict pg_constraint lookup so re-runs after first
+-- success are no-ops. The guard binds the relation (`conrelid`) and the
+-- constraint kind (`contype = 'c'`) so a same-named CHECK on a different
+-- table does NOT cause us to skip ADD CONSTRAINT on the target table. A
+-- same-named constraint on another table is fine (relation is different)
+-- and our ADD CONSTRAINT will still bind to the target relation.
 -- Source value is compared with IS DISTINCT FROM to allow NULL/empty source
 -- to coexist with NULL `expires_at`; the constraint only narrows the case
 -- where source = 'MANAGER_ASSIGNMENT'.
@@ -230,6 +234,8 @@ BEGIN
     SELECT 1
       FROM pg_constraint
      WHERE conname = 'labor_profile_handling_assignments_manager_expires_required'
+       AND conrelid = 'public.labor_profile_handling_assignments'::regclass
+       AND contype  = 'c'
   ) THEN
     ALTER TABLE labor_profile_handling_assignments
       ADD CONSTRAINT labor_profile_handling_assignments_manager_expires_required
@@ -238,15 +244,19 @@ BEGIN
 END
 $$;
 
--- Final assertion (AC-04): the constraint is present in pg_constraint.
+-- Final assertion (AC-04): the constraint is present on the target relation
+-- (conrelid strictly bound, contype='c' for CHECK). A same-named CHECK on
+-- another table would not satisfy this query because conrelid would differ.
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1
       FROM pg_constraint
      WHERE conname = 'labor_profile_handling_assignments_manager_expires_required'
+       AND conrelid = 'public.labor_profile_handling_assignments'::regclass
+       AND contype  = 'c'
   ) THEN
-    RAISE EXCEPTION 'AFF-05A-R2 assertion failed: conditional CHECK on MANAGER_ASSIGNMENT not found in pg_constraint.';
+    RAISE EXCEPTION 'AFF-05A-R2 assertion failed: conditional CHECK on MANAGER_ASSIGNMENT not found on public.labor_profile_handling_assignments in pg_constraint.';
   END IF;
 END
 $$;

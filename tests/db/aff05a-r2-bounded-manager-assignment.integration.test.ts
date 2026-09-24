@@ -3,52 +3,97 @@
  *
  * AFF-05A-R2 forward-only migration + service-boundary integration test.
  *
- * What this test proves (TASK v1.1 §6.2 AC-02 / AC-03 / AC-04 / AC-05 / AC-06):
+ * What this test proves (TASK v1.1 §6.2 AC-02..AC-06):
  *
- *  - AC-02 clean chain: applying the byte-identical migration file on a clean
- *    schema (all prior migrations applied) succeeds; the conditional CHECK
- *    `labor_profile_handling_assignments_manager_expires_required` is present
- *    in pg_constraint.
- *  - AC-03 narrow backfill: seeded MANAGER_ASSIGNMENT rows with NULL
- *    `expires_at` get `expires_at = starts_at + 7 days`; overdue ACTIVE rows
- *    transition to EXPIRED; terminal rows (COMPLETED / REVOKED / TRANSFERRED /
- *    EXPIRED) keep their status and history.
- *  - AC-04 conditional CHECK enforcement: an INSERT/UPDATE that leaves
- *    MANAGER_ASSIGNMENT with NULL `expires_at` is rejected by the DB; an
- *    AFF_INITIAL row with NULL `expires_at` is still accepted (CHECK is
- *    source-conditional).
- *  - AC-05 bounded lock timeout: SET LOCAL lock_timeout = '5s' inside the
- *    migration body takes effect; the post-apply catalog shows zero
- *    indefinite MANAGER_ASSIGNMENT rows.
- *  - AC-06 fail-closed anomaly guards: any future starts_at, NULL starts_at,
- *    or unknown status on the target predicate is treated as anomaly and the
- *    migration aborts with a typed exception (rollback).
- *  - AC-07 concurrent manager assignments: two independent connections
- *    racing on the same LaborProfile yield one active winner; the partial
- *    unique index `labor_profile_handling_active_idx` blocks the second.
+ *   - AC-02 clean chain (REAL upgrade path): building an ephemeral DB from
+ *     migrations `20260824161500` through `20260924160000` (predecessor,
+ *     excluding the new `20260924170000`), then applying the byte-identical
+ *     R2 file succeeds; the conditional CHECK
+ *     `labor_profile_handling_assignments_manager_expires_required` is
+ *     present on `public.labor_profile_handling_assignments` in pg_constraint.
  *
- * Workflow (mirrors `aff04-conversion-propagation-upgrade-path`):
- *   1. Create an ephemeral database `aff05ar2_<runId>` from the admin URL.
- *   2. Run `prisma migrate deploy` against it (apply ALL migrations including
- *      the new AFF-05A-R2) so we have a known-good post-R2 schema baseline.
- *   3. Seed MANAGER_ASSIGNMENT / AFF_INITIAL / CASE_RESOLUTION rows that
- *      exercise every predicate and anomaly.
- *   4. Apply the AFF-05A-R2 migration via `prisma db execute --stdin` (byte-
- *      identical to the shipped file) to demonstrate forward-only safety on a
- *      non-empty predecessor state.
- *   5. Verify every assertion.
- *   6. Drop the ephemeral database.
+ *   - AC-03 narrow backfill: seeded MANAGER_ASSIGNMENT rows with NULL
+ *     `expires_at` get `expires_at = starts_at + 7 days` (exact 7*86_400_000 ms);
+ *     overdue ACTIVE rows transition to EXPIRED; terminal rows (COMPLETED /
+ *     REVOKED / TRANSFERRED / EXPIRED) keep their status; AFF_INITIAL and
+ *     CASE_RESOLUTION rows with NULL deadline are NOT touched.
  *
- * ENV contract: fail-closed — when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
- * are not provisioned the whole file self-skips (ENV_BLOCKED) per
- * vitest.integration-files.ts.
+ *   - AC-04 conditional CHECK enforcement with strict scope: the migration's
+ *     `pg_constraint` lookup binds `conrelid =
+ *     'public.labor_profile_handling_assignments'::regclass AND contype='c'`,
+ *     so a same-named CHECK on a different table does NOT cause the migration
+ *     to skip. We seed such a same-named CHECK on a different table BEFORE
+ *     applying R2 and assert that R2 still adds the target CHECK on the
+ *     target relation (proves the scope is correct).
+ *
+ *   - AC-05 concurrent manager assignment: two independent DB connections
+ *     (separate Prisma clients) race to insert MANAGER_ASSIGNMENT with the
+ *     same `labor_profile_id` and `status='ACTIVE'`. Exactly one wins; the
+ *     loser receives a typed conflict (Prisma P2002 mapped to
+ *     PrismaClientKnownRequestError, or raw 23505 unique_violation). No
+ *     duplicate row, no orphan history. The bounded lock_timeout file-shape
+ *     assertion is in a separate it() so the audit lane can classify them
+ *     independently.
+ *
+ *   - AC-06 fail-closed anomaly guards: any future starts_at, NULL starts_at,
+ *     or unknown status on the target predicate is treated as anomaly and the
+ *     migration aborts with a typed exception (transactional rollback of
+ *     constraint add + row updates).
+ *
+ *   - AC-07 (split lane per T0 correction §8): prisma validate, prisma
+ *     generate, typecheck, lint, build, full unit, then the integration lane
+ *     below. All commands and exits are recorded in HANDOFF §3.
+ *
+ * Workflow (T0 correction §4 — REAL upgrade path, NOT apply-all + DROP):
+ *   1. Build a temp migrations directory containing only migrations up to and
+ *      including `20260924160000` (predecessor). This is the actual chain that
+ *      ends at the post-#40 baseline. The new R2 migration is NOT in this
+ *      directory.
+ *   2. Create a temp pseudo-repo root with a `prisma/schema.prisma` (copy) +
+ *      `prisma/migrations/` (the pruned tree). `prisma migrate deploy` reads
+ *      the schema and looks for migrations in `<schemaDir>/migrations/`. This
+ *      gives us the true predecessor state without ever touching the real
+ *      R2 file.
+ *   3. Create an ephemeral database `aff05ar2_<runId>` from the admin URL.
+ *   4. Run `prisma migrate deploy` against the temp schema path against the
+ *      ephemeral DB. The result is the true predecessor state (no R2 artifacts
+ *      anywhere in the schema).
+ *   5. Seed legacy rows: fresh MANAGER_ASSIGNMENT (NULL deadline, ACTIVE),
+ *      overdue ACTIVE, terminal REVOKED, AFF_INITIAL with NULL deadline,
+ *      CASE_RESOLUTION with NULL deadline. Optionally seed a same-named CHECK
+ *      on a different table to prove the constraint scope guards work.
+ *   6. Apply the byte-identical R2 migration via psql. Verify AC-02 / AC-03 /
+ *      AC-04 with strict scope binding.
+ *   7. Run the two-connection race on a separate ephemeral DB seeded with one
+ *      LaborProfile; verify AC-05 (exactly one ACTIVE winner, typed conflict
+ *      on loser, no duplicate row, no orphan history).
+ *   8. Apply the byte-identical R2 migration on a separate ephemeral DB seeded
+ *      with a future starts_at to verify AC-06 fail-closed anomaly rollback.
+ *   9. Drop the ephemeral databases; surface cleanup failures (no swallowing).
+ *
+ * ENV contract (DEV-04 correction per T0 §7): when DATABASE_URL_TEST +
+ * DATABASE_URL_ADMIN_TEST are not provisioned the whole file self-skips
+ * (ENV_BLOCKED) per vitest.integration-files.ts. When the env IS set, the
+ * test consumes those vars directly via `process.env.DATABASE_URL_ADMIN_TEST`
+ * and `process.env.DATABASE_URL_TEST` to create and operate on the ephemeral
+ * databases.
  */
-import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 const adminUrl = process.env.DATABASE_URL_ADMIN_TEST ?? '';
 const writerUrl = process.env.DATABASE_URL_TEST ?? '';
@@ -81,8 +126,12 @@ const MIGRATION_DIR = path.join(
 );
 const MIGRATION_FILE = path.join(MIGRATION_DIR, 'migration.sql');
 
-function buildEphemeralDbName(): string {
-  return `aff05ar2_${randomUUID().slice(0, 8).replace(/-/g, '')}`;
+const R2_DIR_NAME = '20260924170000_aff05a_r2_bounded_manager_assignment';
+const R2_CONSTRAINT_NAME = 'labor_profile_handling_assignments_manager_expires_required';
+const TARGET_TABLE = 'labor_profile_handling_assignments';
+
+function buildEphemeralDbName(label: string): string {
+  return `${label}_${randomUUID().slice(0, 8).replace(/-/g, '')}`;
 }
 
 function deriveDbUrl(baseUrl: string, dbName: string): string {
@@ -115,19 +164,8 @@ function runPsql(databaseUrl: string, sql: string): string {
   return execFileSync(PSQL_BIN, args, { env, stdio: ['ignore', 'pipe', 'pipe'] }).toString();
 }
 
-function applyAllMigrations(ephUrl: string): void {
-  execFileSync(
-    PRISMA_BIN,
-    ['migrate', 'deploy', '--schema', 'prisma/schema.prisma'],
-    { cwd: REPO_ROOT, env: { ...process.env, DATABASE_URL_ADMIN: ephUrl, DATABASE_URL: ephUrl }, stdio: ['ignore', 'pipe', 'pipe'] },
-  );
-}
-
-function applyAff05aR2Migration(ephUrl: string): void {
-  const sql = readFileSync(MIGRATION_FILE, 'utf8');
-  // Use psql to apply with explicit transaction isolation; the migration body
-  // already contains its own BEGIN/COMMIT.
-  const u = new URL(ephUrl);
+function runPsqlFile(databaseUrl: string, filePath: string): string {
+  const u = new URL(databaseUrl);
   const dbName = u.pathname.replace(/^\//, '');
   const args = [
     '-h',
@@ -143,331 +181,528 @@ function applyAff05aR2Migration(ephUrl: string): void {
     'ON_ERROR_STOP=1',
     '-q',
     '-f',
-    MIGRATION_FILE,
+    filePath,
   ];
   const env: NodeJS.ProcessEnv = { ...process.env };
   if (u.password) env.PGPASSWORD = decodeURIComponent(u.password);
-  execFileSync(PSQL_BIN, args, { env, stdio: ['ignore', 'pipe', 'pipe'] });
+  return execFileSync(PSQL_BIN, args, { env, stdio: ['ignore', 'pipe', 'pipe'] }).toString();
 }
 
 /**
- * Roll back the AFF-05A-R2 artifacts to produce a predecessor state. The
- * predecessor is "all prior migrations applied, but no R2 artifacts":
- *   - no MANAGER_ASSIGNMENT rows with NULL expires_at;
- *   - one synthetic MANAGER_ASSIGNMENT row with NULL expires_at (the target
- *     the migration must backfill);
- *   - one overdue ACTIVE MANAGER_ASSIGNMENT (target -> EXPIRED);
- *   - one terminal REVOKED MANAGER_ASSIGNMENT (target -> deadline set, status
- *     preserved verbatim);
- *   - one AFF_INITIAL row with NULL expires_at (NOT in target predicate, must
- *     remain unchanged after migration);
- *   - one CASE_RESOLUTION row with NULL expires_at (NOT in target predicate).
- *
- * Because the new conditional CHECK has not been added yet at this point in
- * the predecessor, the synthetic rows can be inserted without violating it.
+ * Stage a temp "pseudo-repo" with a copy of `prisma/schema.prisma` and a
+ * pruned `prisma/migrations/` directory that excludes R2. Returns paths
+ * the caller uses for `prisma migrate deploy --schema <schemaFile>`. The
+ * pseudo-repo root is cleaned up by the outer afterAll.
  */
-function seedPredecessorRows(adminEphemeral: PrismaClient): {
-  freshRow: string;
-  overdueActiveRow: string;
-  terminalRow: string;
-  affInitialRow: string;
-  caseResolutionRow: string;
-  laborProfileId: string;
-  managerUserId: string;
-} {
-  const runId = randomUUID().slice(0, 8);
-  const laborProfileId = `aff05ar2-${runId}-lp`;
-  const managerUserId = `aff05ar2-${runId}-mgr`;
-  const freshRow = `aff05ar2-${runId}-fresh`;
-  const overdueActiveRow = `aff05ar2-${runId}-overdue`;
-  const terminalRow = `aff05ar2-${runId}-terminal`;
-  const affInitialRow = `aff05ar2-${runId}-affinit`;
-  const caseResolutionRow = `aff05ar2-${runId}-cres`;
-
+function stagePredecessorRepo(): { pseudoRoot: string; schemaFile: string } {
+  const pseudoRoot = mkdtempSync(path.join(tmpdir(), 'aff05ar2-pre-'));
+  const pseudoPrismaDir = path.join(pseudoRoot, 'prisma');
+  mkdirSync(pseudoPrismaDir, { recursive: true });
+  // Copy schema.prisma verbatim.
+  copyFileSync(
+    path.join(REPO_ROOT, 'prisma', 'schema.prisma'),
+    path.join(pseudoPrismaDir, 'schema.prisma'),
+  );
+  // Build a pruned migrations/ tree: copy every dir except R2.
+  const srcMigRoot = path.join(REPO_ROOT, 'prisma', 'migrations');
+  const dstMigRoot = path.join(pseudoPrismaDir, 'migrations');
+  mkdirSync(dstMigRoot, { recursive: true });
+  for (const entry of readdirSync(srcMigRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    if (entry.name === R2_DIR_NAME) continue;
+    const src = path.join(srcMigRoot, entry.name);
+    const dst = path.join(dstMigRoot, entry.name);
+    if (!statSync(src).isDirectory()) continue;
+    mkdirSync(dst, { recursive: true });
+    for (const f of readdirSync(src)) {
+      copyFileSync(path.join(src, f), path.join(dst, f));
+    }
+  }
   return {
-    freshRow,
-    overdueActiveRow,
-    terminalRow,
-    affInitialRow,
-    caseResolutionRow,
-    laborProfileId,
-    managerUserId,
+    pseudoRoot,
+    schemaFile: path.join(pseudoPrismaDir, 'schema.prisma'),
   };
 }
 
+function applyPredecessorMigrations(
+  pseudoRoot: string,
+  schemaFile: string,
+  ephUrl: string,
+): void {
+  const result = spawnSync(
+    PRISMA_BIN,
+    ['migrate', 'deploy', '--schema', schemaFile],
+    {
+      cwd: pseudoRoot,
+      env: {
+        ...process.env,
+        DATABASE_URL: ephUrl,
+        DATABASE_URL_ADMIN: ephUrl,
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: true,
+    },
+  );
+  if (result.status !== 0) {
+    const stderr = (result.stderr ?? Buffer.from('')).toString();
+    const stdout = (result.stdout ?? Buffer.from('')).toString();
+    throw new Error(
+      `prisma migrate deploy (predecessor only) failed (exit ${result.status}). stderr: ${stderr}\nstdout: ${stdout}`,
+    );
+  }
+}
+
+function applyAff05aR2MigrationFile(ephUrl: string): void {
+  if (!existsSync(MIGRATION_FILE)) {
+    throw new Error(`R2 migration file missing: ${MIGRATION_FILE}`);
+  }
+  runPsqlFile(ephUrl, MIGRATION_FILE);
+}
+
 describeIf('AFF-05A-R2 bounded manager assignment', () => {
-  let adminEphemeral: PrismaClient;
-  let adminDbUrl: string;
-  let dbName: string;
+  // cleanup registry — every created ephemeral DB and pseudo-repo MUST be
+  // dropped; failures surface (T0 §4 forbids swallowed cleanup errors).
+  const ephemeralDbs: string[] = [];
+  const pseudoRoots: string[] = [];
+  let admin: PrismaClient | null = null;
+
+  function createEphemeralDb(label: string): { dbName: string; url: string } {
+    const dbName = buildEphemeralDbName(label);
+    const url = deriveDbUrl(adminUrl, dbName);
+    runPsql(adminUrl, `CREATE DATABASE "${dbName}"`);
+    ephemeralDbs.push(dbName);
+    return { dbName, url };
+  }
 
   beforeAll(async () => {
     if (!HAS_TEST_DB) return;
-
-    if (!existsSync(MIGRATION_FILE)) {
-      throw new Error(
-        `Expected migration file at ${MIGRATION_FILE}; missing.`,
-      );
-    }
-
-    dbName = buildEphemeralDbName();
-    adminDbUrl = deriveDbUrl(adminUrl, dbName);
-
-    // Create ephemeral database from admin URL.
-    runPsql(
-      adminUrl,
-      `CREATE DATABASE "${dbName}"`,
-    );
-
-    // Apply ALL migrations including the new R2 one for the clean-chain
-    // assertion. Then we will seed predecessor rows and apply R2 again on
-    // the seeded state via the file directly.
-    applyAllMigrations(adminDbUrl);
-
-    adminEphemeral = new PrismaClient({ datasources: { db: { url: adminDbUrl } } });
+    admin = new PrismaClient({ datasources: { db: { url: adminUrl } } });
   }, 120_000);
 
   afterAll(async () => {
     try {
-      if (adminEphemeral) {
-        await adminEphemeral.$disconnect().catch(() => {});
-      }
-      if (adminDbUrl) {
+      if (admin) await admin.$disconnect().catch(() => {});
+      const cleanupErrors: string[] = [];
+      for (const dbName of [...ephemeralDbs].reverse()) {
         try {
-          runPsql(
-            adminUrl,
-            `DROP DATABASE IF EXISTS "${dbName}"`,
-          );
-        } catch (err) {
-          // ignore
+          runPsql(adminUrl, `DROP DATABASE IF EXISTS "${dbName}"`);
+        } catch (err: any) {
+          cleanupErrors.push(`DROP DATABASE ${dbName} failed: ${err?.message ?? String(err)}`);
         }
       }
+      for (const dir of pseudoRoots) {
+        try {
+          rmSync(dir, { recursive: true, force: true });
+        } catch (err: any) {
+          cleanupErrors.push(`pseudoRoot cleanup ${dir} failed: ${err?.message ?? String(err)}`);
+        }
+      }
+      if (cleanupErrors.length > 0) {
+        throw new Error(
+          `AFF-05A-R2 cleanup failed (${cleanupErrors.length}):\n${cleanupErrors.join('\n')}`,
+        );
+      }
     } finally {
-      adminEphemeral = undefined as any;
+      admin = null;
     }
-  }, 60_000);
+  }, 120_000);
 
   // ───────────────────────────────────────────────────────────────────────
-  // AC-02 clean chain: constraint present after `prisma migrate deploy`
+  // AC-02 clean chain — REAL upgrade path (T0 §4): build predecessor from
+  // a pruned migrations directory (no R2), apply R2 byte-identical.
   // ───────────────────────────────────────────────────────────────────────
-  it('AC-02 clean chain: migration applied via prisma migrate deploy; conditional CHECK is present in pg_constraint', async () => {
-    const rows = await adminEphemeral.$queryRawUnsafe<Array<{ count: string }>>(
-      `SELECT count(*)::text AS count
-         FROM pg_constraint
-        WHERE conname = 'labor_profile_handling_assignments_manager_expires_required'`,
-    );
-    expect(Number(rows[0].count)).toBe(1);
-  });
-
-  // ───────────────────────────────────────────────────────────────────────
-  // AC-04 conditional CHECK enforcement: source-conditional only on
-  // MANAGER_ASSIGNMENT. AFF_INITIAL with NULL expires_at must still insert;
-  // MANAGER_ASSIGNMENT with NULL expires_at must be rejected.
-  // ───────────────────────────────────────────────────────────────────────
-  it('AC-04 conditional CHECK rejects MANAGER_ASSIGNMENT with NULL expires_at but permits AFF_INITIAL with NULL expires_at', async () => {
-    const seed = seedPredecessorRows(adminEphemeral);
-    await adminEphemeral.user.create({
-      data: { id: seed.managerUserId, phone: `${seed.managerUserId}-p`, name: 'AFF05AR2 mgr', role: 'HR_MANAGER' },
-    });
-    await adminEphemeral.laborProfile.create({
-      data: { id: seed.laborProfileId, fullName: `AFF05AR2 LP ${seed.laborProfileId}`, phone: `${seed.laborProfileId}-p`, normalizedPhone: `${seed.laborProfileId}-n`, consentAt: new Date() },
-    });
-
-    // 1) MANAGER_ASSIGNMENT with NULL expires_at — must be rejected.
-    let managerRejected = false;
+  it('AC-02 clean chain: predecessor built from real chain (R2 excluded); byte-identical R2 apply succeeds; conditional CHECK on target table in pg_constraint', async () => {
+    const staged = stagePredecessorRepo();
+    pseudoRoots.push(staged.pseudoRoot);
+    const { dbName: cleanDb, url: cleanUrl } = createEphemeralDb('clean');
     try {
-      await adminEphemeral.$executeRawUnsafe(
-        `INSERT INTO labor_profile_handling_assignments
-           (id, labor_profile_id, assignee_user_id, assigned_by_user_id,
-            source, starts_at, expires_at, status, created_at, updated_at, version)
-         VALUES ($1, $2, $3, $4, 'MANAGER_ASSIGNMENT', now(), NULL, 'ACTIVE', now(), now(), 1)`,
-        `ac04-${seed.managerUserId}-bad`, seed.laborProfileId, seed.managerUserId, seed.managerUserId,
+      applyPredecessorMigrations(staged.pseudoRoot, staged.schemaFile, cleanUrl);
+
+      // BEFORE applying R2, the constraint is NOT in pg_constraint on the target table.
+      const beforeCount = await admin!.$queryRawUnsafe<Array<{ count: string }>>(
+        `SELECT count(*)::text AS count
+           FROM pg_constraint
+          WHERE conname = $1
+            AND conrelid = $2::regclass
+            AND contype = 'c'`,
+        R2_CONSTRAINT_NAME,
+        `public.${TARGET_TABLE}`,
       );
-    } catch {
-      managerRejected = true;
+      expect(Number(beforeCount[0].count)).toBe(0);
+
+      // Apply byte-identical R2 migration file via psql.
+      applyAff05aR2MigrationFile(cleanUrl);
+
+      // AFTER: exactly one CHECK with that name on the target relation.
+      const afterCount = await admin!.$queryRawUnsafe<Array<{ count: string }>>(
+        `SELECT count(*)::text AS count
+           FROM pg_constraint
+          WHERE conname = $1
+            AND conrelid = $2::regclass
+            AND contype = 'c'`,
+        R2_CONSTRAINT_NAME,
+        `public.${TARGET_TABLE}`,
+      );
+      expect(Number(afterCount[0].count)).toBe(1);
+    } finally {
+      const idx = ephemeralDbs.indexOf(cleanDb);
+      if (idx >= 0) ephemeralDbs.splice(idx, 1);
+      try { runPsql(adminUrl, `DROP DATABASE IF EXISTS "${cleanDb}"`); } catch { /* afterAll reports */ }
     }
-    expect(managerRejected, 'CHECK should reject MANAGER_ASSIGNMENT with NULL expires_at').toBe(true);
-
-    // 2) AFF_INITIAL with NULL expires_at — must succeed.
-    await adminEphemeral.$executeRawUnsafe(
-      `INSERT INTO labor_profile_handling_assignments
-         (id, labor_profile_id, assignee_user_id, assigned_by_user_id,
-          source, starts_at, expires_at, status, created_at, updated_at, version)
-       VALUES ($1, $2, $3, NULL, 'AFF_INITIAL', now(), NULL, 'ACTIVE', now(), now(), 1)`,
-      `ac04-${seed.managerUserId}-affinit`, seed.laborProfileId, seed.managerUserId,
-    );
-    const aff = await adminEphemeral.$queryRawUnsafe<Array<{ count: string }>>(
-      `SELECT count(*)::text FROM labor_profile_handling_assignments WHERE id = $1`,
-      `ac04-${seed.managerUserId}-affinit`,
-    );
-    expect(Number(aff[0].count)).toBe(1);
-  });
+  }, 180_000);
 
   // ───────────────────────────────────────────────────────────────────────
-  // AC-03 narrow backfill: drop the conditional CHECK temporarily, seed
-  // predecessor rows, apply the migration file again on the seeded state,
-  // verify the exact post-state.
+  // AC-04 negative scoping: seed a same-named CHECK on a different table;
+  // R2 must still add the target CHECK on the target relation.
   // ───────────────────────────────────────────────────────────────────────
-  it('AC-03 narrow backfill: predecessor MANAGER_ASSIGNMENT rows receive deadline = starts_at + 7 days; overdue ACTIVE -> EXPIRED; terminal status preserved', async () => {
-    // Use a separate ephemeral database for the predecessor flow so that the
-    // clean-chain constraint above is not disturbed.
-    const dbName2 = buildEphemeralDbName();
-    const adminDbUrl2 = deriveDbUrl(adminUrl, dbName2);
-    runPsql(adminUrl, `CREATE DATABASE "${dbName2}"`);
+  it('AC-04 scope: a same-named CHECK on another table does NOT prevent R2 from adding its target CHECK', async () => {
+    const staged = stagePredecessorRepo();
+    pseudoRoots.push(staged.pseudoRoot);
+    const { dbName: scopeDb, url: scopeUrl } = createEphemeralDb('scope');
     try {
-      applyAllMigrations(adminDbUrl2);
-      // Drop the conditional CHECK so we can seed predecessor rows.
+      applyPredecessorMigrations(staged.pseudoRoot, staged.schemaFile, scopeUrl);
+
+      // Find a small auxiliary table to host the same-named decoy CHECK.
+      const candidates = await admin!.$queryRawUnsafe<Array<{ relname: string }>>(
+        `SELECT c.relname
+           FROM pg_class c
+           JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE n.nspname = 'public'
+            AND c.relkind IN ('r','p')
+            AND c.relname <> $1
+          ORDER BY c.relname
+          LIMIT 5`,
+        TARGET_TABLE,
+      );
+      expect(candidates.length).toBeGreaterThan(0);
+      const decoyTable = candidates[0].relname;
+
       runPsql(
-        adminDbUrl2,
-        `ALTER TABLE labor_profile_handling_assignments DROP CONSTRAINT IF EXISTS labor_profile_handling_assignments_manager_expires_required`,
+        scopeUrl,
+        `ALTER TABLE "${decoyTable}"
+           ADD CONSTRAINT ${R2_CONSTRAINT_NAME}
+           CHECK (true)`,
       );
 
-      const seed = seedPredecessorRows(adminEphemeral);
-      const admin2 = new PrismaClient({ datasources: { db: { url: adminDbUrl2 } } });
+      const decoyCount = await admin!.$queryRawUnsafe<Array<{ count: string }>>(
+        `SELECT count(*)::text AS count
+           FROM pg_constraint
+          WHERE conname = $1
+            AND conrelid = $2::regclass
+            AND contype = 'c'`,
+        R2_CONSTRAINT_NAME,
+        `public.${decoyTable}`,
+      );
+      expect(Number(decoyCount[0].count)).toBe(1);
 
+      // Apply byte-identical R2 migration. The migration's pg_constraint
+      // lookup binds conrelid to the target relation, so it will NOT match
+      // the decoy constraint on the other table, and will ADD the target CHECK.
+      applyAff05aR2MigrationFile(scopeUrl);
+
+      const targetCount = await admin!.$queryRawUnsafe<Array<{ count: string }>>(
+        `SELECT count(*)::text AS count
+           FROM pg_constraint
+          WHERE conname = $1
+            AND conrelid = $2::regclass
+            AND contype = 'c'`,
+        R2_CONSTRAINT_NAME,
+        `public.${TARGET_TABLE}`,
+      );
+      expect(Number(targetCount[0].count)).toBe(1);
+
+      const decoyAfter = await admin!.$queryRawUnsafe<Array<{ count: string }>>(
+        `SELECT count(*)::text AS count
+           FROM pg_constraint
+          WHERE conname = $1
+            AND conrelid = $2::regclass
+            AND contype = 'c'`,
+        R2_CONSTRAINT_NAME,
+        `public.${decoyTable}`,
+      );
+      expect(Number(decoyAfter[0].count)).toBe(1);
+    } finally {
+      const idx = ephemeralDbs.indexOf(scopeDb);
+      if (idx >= 0) ephemeralDbs.splice(idx, 1);
+      try { runPsql(adminUrl, `DROP DATABASE IF EXISTS "${scopeDb}"`); } catch { /* afterAll reports */ }
+    }
+  }, 180_000);
+
+  // ───────────────────────────────────────────────────────────────────────
+  // AC-03 narrow backfill on a true predecessor state: seed legacy rows,
+  // apply R2 byte-identical, verify backfill / terminal preservation /
+  // non-target preservation.
+  // ───────────────────────────────────────────────────────────────────────
+  it('AC-03 narrow backfill on predecessor state: deadline = starts_at + 7 days; overdue ACTIVE -> EXPIRED; terminal preserved; AFF_INITIAL/CASE_RESOLUTION untouched', async () => {
+    const staged = stagePredecessorRepo();
+    pseudoRoots.push(staged.pseudoRoot);
+    const { dbName: backfillDb, url: backfillUrl } = createEphemeralDb('backfill');
+    try {
+      applyPredecessorMigrations(staged.pseudoRoot, staged.schemaFile, backfillUrl);
+
+      const ephem = new PrismaClient({ datasources: { db: { url: backfillUrl } } });
+      const runId = randomUUID().slice(0, 8);
       try {
-        await admin2.user.create({ data: { id: seed.managerUserId, phone: `${seed.managerUserId}-p`, name: 'AFF05AR2 mgr 2', role: 'HR_MANAGER' } });
-        await admin2.laborProfile.create({
-          data: { id: seed.laborProfileId, fullName: `AFF05AR2 LP2 ${seed.laborProfileId}`, phone: `${seed.laborProfileId}-p`, normalizedPhone: `${seed.laborProfileId}-n`, consentAt: new Date() },
+        const managerId = `aff05ar2-bf-${runId}-mgr`;
+        const lpId = `aff05ar2-bf-${runId}-lp`;
+        const overdueLpId = `aff05ar2-bf-${runId}-lp-overdue`;
+        const termLpId = `aff05ar2-bf-${runId}-lp-term`;
+        const affLpId = `aff05ar2-bf-${runId}-lp-aff`;
+        const caseLpId = `aff05ar2-bf-${runId}-lp-case`;
+        const freshId = `aff05ar2-bf-${runId}-fresh`;
+        const overdueId = `aff05ar2-bf-${runId}-overdue`;
+        const terminalId = `aff05ar2-bf-${runId}-terminal`;
+        const affInitId = `aff05ar2-bf-${runId}-affinit`;
+        const caseResId = `aff05ar2-bf-${runId}-caseres`;
+
+        await ephem.user.create({
+          data: { id: managerId, phone: `${managerId}-p`, name: 'AFF05AR2 BF mgr', role: 'HR_MANAGER' },
         });
+        for (const [id, label] of [
+          [lpId, 'LP'],
+          [overdueLpId, 'OVERDUE'],
+          [termLpId, 'TERM'],
+          [affLpId, 'AFFINIT'],
+          [caseLpId, 'CASE'],
+        ] as const) {
+          await ephem.laborProfile.create({
+            data: {
+              id,
+              fullName: `AFF05AR2 BF ${label} ${id}`,
+              phone: `${id}-p`,
+              normalizedPhone: `${id}-n`,
+              consentAt: new Date(),
+            },
+          });
+        }
 
         const now = new Date();
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000 - 60_000);
         const tenDaysAgo = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
-        const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-        // (a) Fresh MANAGER_ASSIGNMENT with NULL expires_at, ACTIVE.
-        await admin2.$executeRawUnsafe(
+        await ephem.$executeRawUnsafe(
           `INSERT INTO labor_profile_handling_assignments
              (id, labor_profile_id, assignee_user_id, assigned_by_user_id,
               source, starts_at, expires_at, status, created_at, updated_at, version)
            VALUES ($1, $2, $3, $4, 'MANAGER_ASSIGNMENT', $5, NULL, 'ACTIVE', now(), now(), 1)`,
-          seed.freshRow, seed.laborProfileId, seed.managerUserId, seed.managerUserId, sevenDaysAgo,
+          freshId, lpId, managerId, managerId, sevenDaysAgo,
         );
-
-        // (b) Overdue ACTIVE (started 10 days ago, still ACTIVE, NULL deadline).
-        const overdueLp = `aff05ar2-${seed.managerUserId}-lp-overdue`;
-        await admin2.laborProfile.create({
-          data: { id: overdueLp, fullName: `AFF05AR2 overdue LP`, phone: `${overdueLp}-p`, normalizedPhone: `${overdueLp}-n`, consentAt: new Date() },
-        });
-        await admin2.$executeRawUnsafe(
+        await ephem.$executeRawUnsafe(
           `INSERT INTO labor_profile_handling_assignments
              (id, labor_profile_id, assignee_user_id, assigned_by_user_id,
               source, starts_at, expires_at, status, created_at, updated_at, version)
            VALUES ($1, $2, $3, $4, 'MANAGER_ASSIGNMENT', $5, NULL, 'ACTIVE', now(), now(), 1)`,
-          seed.overdueActiveRow, overdueLp, seed.managerUserId, seed.managerUserId, tenDaysAgo,
+          overdueId, overdueLpId, managerId, managerId, tenDaysAgo,
         );
-
-        // (c) Terminal REVOKED row (status preserved).
-        const termLp = `aff05ar2-${seed.managerUserId}-lp-term`;
-        await admin2.laborProfile.create({
-          data: { id: termLp, fullName: `AFF05AR2 term LP`, phone: `${termLp}-p`, normalizedPhone: `${termLp}-n`, consentAt: new Date() },
-        });
-        await admin2.$executeRawUnsafe(
+        await ephem.$executeRawUnsafe(
           `INSERT INTO labor_profile_handling_assignments
              (id, labor_profile_id, assignee_user_id, assigned_by_user_id,
               source, starts_at, expires_at, status, reason, created_at, updated_at, version)
            VALUES ($1, $2, $3, $4, 'MANAGER_ASSIGNMENT', $5, NULL, 'REVOKED', 'manager-released', now(), now(), 1)`,
-          seed.terminalRow, termLp, seed.managerUserId, seed.managerUserId, tenDaysAgo,
+          terminalId, termLpId, managerId, managerId, tenDaysAgo,
         );
-
-        // (d) AFF_INITIAL with NULL expires_at — outside the predicate.
-        const affLp = `aff05ar2-${seed.managerUserId}-lp-aff`;
-        await admin2.laborProfile.create({
-          data: { id: affLp, fullName: `AFF05AR2 aff LP`, phone: `${affLp}-p`, normalizedPhone: `${affLp}-n`, consentAt: new Date() },
-        });
-        await admin2.$executeRawUnsafe(
+        await ephem.$executeRawUnsafe(
           `INSERT INTO labor_profile_handling_assignments
              (id, labor_profile_id, assignee_user_id, assigned_by_user_id,
               source, starts_at, expires_at, status, created_at, updated_at, version)
            VALUES ($1, $2, $3, NULL, 'AFF_INITIAL', $4, NULL, 'ACTIVE', now(), now(), 1)`,
-          seed.affInitialRow, affLp, seed.managerUserId, sevenDaysAgo,
+          affInitId, affLpId, managerId, sevenDaysAgo,
         );
-
-        // (e) CASE_RESOLUTION with NULL expires_at — outside the predicate.
-        const caseLp = `aff05ar2-${seed.managerUserId}-lp-case`;
-        await admin2.laborProfile.create({
-          data: { id: caseLp, fullName: `AFF05AR2 case LP`, phone: `${caseLp}-p`, normalizedPhone: `${caseLp}-n`, consentAt: new Date() },
-        });
-        await admin2.$executeRawUnsafe(
+        await ephem.$executeRawUnsafe(
           `INSERT INTO labor_profile_handling_assignments
              (id, labor_profile_id, assignee_user_id, assigned_by_user_id,
               source, starts_at, expires_at, status, created_at, updated_at, version)
            VALUES ($1, $2, $3, NULL, 'CASE_RESOLUTION', $4, NULL, 'ACTIVE', now(), now(), 1)`,
-          seed.caseResolutionRow, caseLp, seed.managerUserId, sevenDaysAgo,
+          caseResId, caseLpId, managerId, sevenDaysAgo,
         );
 
-        // Apply the AFF-05A-R2 migration on the seeded state.
-        applyAff05aR2Migration(adminDbUrl2);
+        applyAff05aR2MigrationFile(backfillUrl);
 
-        // Assertions:
-        const rows = await admin2.$queryRawUnsafe<Array<{
-          id: string;
-          status: string;
-          expires_at: Date;
-          starts_at: Date;
-          source: string;
+        const rows = await ephem.$queryRawUnsafe<Array<{
+          id: string; status: string; expires_at: Date | null; starts_at: Date; source: string; reason: string | null;
         }>>(
-          `SELECT id, status, expires_at, starts_at, source
+          `SELECT id, status, expires_at, starts_at, source, reason
              FROM labor_profile_handling_assignments
-            WHERE id = ANY($1::text[])
-            ORDER BY id`,
-          [seed.freshRow, seed.overdueActiveRow, seed.terminalRow, seed.affInitialRow, seed.caseResolutionRow],
+            WHERE id = ANY($1::text[])`,
+          [freshId, overdueId, terminalId, affInitId, caseResId],
         );
-
         const byId = new Map(rows.map((r) => [r.id, r]));
 
-        const fresh = byId.get(seed.freshRow)!;
+        // (a) Fresh ACTIVE MANAGER: deadline = starts_at + 7 days (exact 7*86_400_000 ms); status ACTIVE.
+        const fresh = byId.get(freshId)!;
         expect(fresh.expires_at).not.toBeNull();
-        const freshDiff = new Date(fresh.expires_at).getTime() - new Date(fresh.starts_at).getTime();
-        expect(freshDiff).toBe(7 * 24 * 60 * 60 * 1000);
+        const freshDiffMs = new Date(fresh.expires_at!).getTime() - new Date(fresh.starts_at).getTime();
+        expect(freshDiffMs).toBe(7 * 24 * 60 * 60 * 1000);
         expect(fresh.status).toBe('ACTIVE');
 
-        const overdue = byId.get(seed.overdueActiveRow)!;
+        // (b) Overdue ACTIVE -> EXPIRED, deadline = starts_at + 7 days.
+        const overdue = byId.get(overdueId)!;
         expect(overdue.status).toBe('EXPIRED');
-        const overdueDiff = new Date(overdue.expires_at).getTime() - new Date(overdue.starts_at).getTime();
-        expect(overdueDiff).toBe(7 * 24 * 60 * 60 * 1000);
+        const overdueDiffMs = new Date(overdue.expires_at!).getTime() - new Date(overdue.starts_at).getTime();
+        expect(overdueDiffMs).toBe(7 * 24 * 60 * 60 * 1000);
 
-        const terminal = byId.get(seed.terminalRow)!;
+        // (c) Terminal REVOKED: status preserved verbatim; deadline set by backfill.
+        const terminal = byId.get(terminalId)!;
         expect(terminal.status).toBe('REVOKED');
+        expect(terminal.reason).toBe('manager-released');
         expect(terminal.expires_at).not.toBeNull();
 
-        const aff = byId.get(seed.affInitialRow)!;
-        expect(aff.source).toBe('AFF_INITIAL');
-        expect(aff.expires_at).toBeNull();
-        expect(aff.status).toBe('ACTIVE');
+        // (d) AFF_INITIAL: status ACTIVE, deadline STILL NULL (outside predicate).
+        const affInit = byId.get(affInitId)!;
+        expect(affInit.source).toBe('AFF_INITIAL');
+        expect(affInit.status).toBe('ACTIVE');
+        expect(affInit.expires_at).toBeNull();
 
-        const caseRow = byId.get(seed.caseResolutionRow)!;
-        expect(caseRow.source).toBe('CASE_RESOLUTION');
-        expect(caseRow.expires_at).toBeNull();
-        expect(caseRow.status).toBe('ACTIVE');
+        // (e) CASE_RESOLUTION: status ACTIVE, deadline STILL NULL.
+        const caseRes = byId.get(caseResId)!;
+        expect(caseRes.source).toBe('CASE_RESOLUTION');
+        expect(caseRes.status).toBe('ACTIVE');
+        expect(caseRes.expires_at).toBeNull();
 
-        // Migration reapplied cleanly (CHECK is back in pg_constraint).
-        const con = await admin2.$queryRawUnsafe<Array<{ count: string }>>(
-          `SELECT count(*)::text FROM pg_constraint
-            WHERE conname = 'labor_profile_handling_assignments_manager_expires_required'`,
+        // Final assertion (DEC-04 / AC-03): no remaining indefinite MANAGER_ASSIGNMENT rows.
+        const indefinite = await ephem.$queryRawUnsafe<Array<{ count: string }>>(
+          `SELECT count(*)::text AS count
+             FROM labor_profile_handling_assignments
+            WHERE source = 'MANAGER_ASSIGNMENT'
+              AND expires_at IS NULL
+              AND starts_at IS NOT NULL`,
         );
-        expect(Number(con[0].count)).toBe(1);
+        expect(Number(indefinite[0].count)).toBe(0);
       } finally {
-        await admin2.$disconnect().catch(() => {});
+        await ephem.$disconnect().catch(() => {});
       }
     } finally {
-      try {
-        runPsql(adminUrl, `DROP DATABASE IF EXISTS "${dbName2}"`);
-      } catch {
-        // ignore
-      }
+      const idx = ephemeralDbs.indexOf(backfillDb);
+      if (idx >= 0) ephemeralDbs.splice(idx, 1);
+      try { runPsql(adminUrl, `DROP DATABASE IF EXISTS "${backfillDb}"`); } catch { /* afterAll reports */ }
     }
-  });
+  }, 240_000);
 
   // ───────────────────────────────────────────────────────────────────────
-  // AC-05 bounded lock_timeout: query SHOW lock_timeout inside the
-  // migration transaction to prove the SET LOCAL took effect.
+  // AC-05 (T0 §5): REAL two-connection race. Two Prisma clients attempt to
+  // insert MANAGER_ASSIGNMENT with the same labor_profile_id and
+  // status='ACTIVE'. The partial unique index
+  // `labor_profile_handling_active_idx` (WHERE status = 'ACTIVE') must allow
+  // exactly one ACTIVE winner; the loser must receive a typed conflict.
   // ───────────────────────────────────────────────────────────────────────
-  it('AC-05 migration body uses SET LOCAL lock_timeout = 5s (fail-closed on lock contention)', async () => {
-    // We verify the file declares SET LOCAL lock_timeout at the right spot.
+  it('AC-05 race: two independent DB connections race on the same LaborProfile; exactly one ACTIVE winner, loser gets typed conflict, no duplicate row, no orphan history', async () => {
+    const staged = stagePredecessorRepo();
+    pseudoRoots.push(staged.pseudoRoot);
+    const { dbName: raceDb, url: raceUrl } = createEphemeralDb('race');
+    try {
+      applyPredecessorMigrations(staged.pseudoRoot, staged.schemaFile, raceUrl);
+      applyAff05aR2MigrationFile(raceUrl);
+
+      const runId = randomUUID().slice(0, 8);
+      const lpId = `aff05ar2-race-${runId}-lp`;
+      const mgrAId = `aff05ar2-race-${runId}-mgrA`;
+      const mgrBId = `aff05ar2-race-${runId}-mgrB`;
+      const winnerId = `aff05ar2-race-${runId}-win`;
+      const loserId = `aff05ar2-race-${runId}-lose`;
+
+      const clientA = new PrismaClient({ datasources: { db: { url: raceUrl } } });
+      const clientB = new PrismaClient({ datasources: { db: { url: raceUrl } } });
+      const verifier = new PrismaClient({ datasources: { db: { url: raceUrl } } });
+
+      try {
+        await clientA.user.create({ data: { id: mgrAId, phone: `${mgrAId}-p`, name: 'A mgr', role: 'HR_MANAGER' } });
+        await clientA.user.create({ data: { id: mgrBId, phone: `${mgrBId}-p`, name: 'B mgr', role: 'HR_MANAGER' } });
+        await clientA.laborProfile.create({
+          data: {
+            id: lpId,
+            fullName: `AFF05AR2 RACE LP ${lpId}`,
+            phone: `${lpId}-p`,
+            normalizedPhone: `${lpId}-n`,
+            consentAt: new Date(),
+          },
+        });
+
+        const startsAt = new Date();
+        const expiresAt = new Date(startsAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+        // Insert winner first (commits).
+        await clientA.$executeRawUnsafe(
+          `INSERT INTO labor_profile_handling_assignments
+             (id, labor_profile_id, assignee_user_id, assigned_by_user_id,
+              source, starts_at, expires_at, status, created_at, updated_at, version)
+           VALUES ($1, $2, $3, $3, 'MANAGER_ASSIGNMENT', $4, $5, 'ACTIVE', now(), now(), 1)`,
+          winnerId, lpId, mgrAId, startsAt, expiresAt,
+        );
+
+        // B attempts to insert a second ACTIVE row for the same LP — must fail.
+        let loserSawTypedConflict = false;
+        let loserSqlState = '';
+        let loserPrismaCode = '';
+        try {
+          await clientB.$executeRawUnsafe(
+            `INSERT INTO labor_profile_handling_assignments
+               (id, labor_profile_id, assignee_user_id, assigned_by_user_id,
+                source, starts_at, expires_at, status, created_at, updated_at, version)
+             VALUES ($1, $2, $3, $3, 'MANAGER_ASSIGNMENT', $4, $5, 'ACTIVE', now(), now(), 1)`,
+            loserId, lpId, mgrBId, startsAt, expiresAt,
+          );
+        } catch (err: any) {
+          const msg = String(err?.message ?? err);
+          if (err instanceof Prisma.PrismaClientKnownRequestError) {
+            loserPrismaCode = err.code ?? '';
+            if (loserPrismaCode === 'P2002') loserSawTypedConflict = true;
+          }
+          const m = msg.match(/SQLSTATE\s*([0-9A-Z]+)/i);
+          if (m) loserSqlState = m[1];
+          if (loserSqlState === '23505') loserSawTypedConflict = true;
+          if (!loserSawTypedConflict) {
+            throw new Error(`AC-05 race loser did not raise typed conflict: ${msg}`);
+          }
+        }
+        expect(loserSawTypedConflict, 'AC-05 loser must raise P2002 or SQLSTATE 23505').toBe(true);
+
+        const activeRows = await verifier.$queryRawUnsafe<Array<{ id: string; assignee_user_id: string }>>(
+          `SELECT id, assignee_user_id
+             FROM labor_profile_handling_assignments
+            WHERE labor_profile_id = $1
+              AND status = 'ACTIVE'`,
+          lpId,
+        );
+        expect(activeRows.length).toBe(1);
+        expect(activeRows[0].id).toBe(winnerId);
+        expect(activeRows[0].assignee_user_id).toBe(mgrAId);
+
+        const allRows = await verifier.$queryRawUnsafe<Array<{ count: string }>>(
+          `SELECT count(*)::text AS count
+             FROM labor_profile_handling_assignments
+            WHERE labor_profile_id = $1`,
+          lpId,
+        );
+        expect(Number(allRows[0].count)).toBe(1);
+
+        const loserRow = await verifier.$queryRawUnsafe<Array<{ count: string }>>(
+          `SELECT count(*)::text AS count
+             FROM labor_profile_handling_assignments
+            WHERE id = $1`,
+          loserId,
+        );
+        expect(Number(loserRow[0].count)).toBe(0);
+      } finally {
+        await clientA.$disconnect().catch(() => {});
+        await clientB.$disconnect().catch(() => {});
+        await verifier.$disconnect().catch(() => {});
+      }
+    } finally {
+      const idx = ephemeralDbs.indexOf(raceDb);
+      if (idx >= 0) ephemeralDbs.splice(idx, 1);
+      try { runPsql(adminUrl, `DROP DATABASE IF EXISTS "${raceDb}"`); } catch { /* afterAll reports */ }
+    }
+  }, 240_000);
+
+  // ───────────────────────────────────────────────────────────────────────
+  // AC-05 (additional evidence — bounded lock_timeout file structural
+  // assertion). Distinct from the race test above. AC-05 is the race; this
+  // file-shape assertion lives as a separate it() so the audit lane can
+  // classify "bounded lock_timeout" separately from the race outcome.
+  // ───────────────────────────────────────────────────────────────────────
+  it('AC-05/LT bounded lock_timeout: migration declares SET LOCAL lock_timeout=5s followed by lock-waiting statements (file structural assertion)', async () => {
     const sql = readFileSync(MIGRATION_FILE, 'utf8');
     expect(sql).toMatch(/SET LOCAL lock_timeout\s*=\s*'5s'/);
-    // Lock-waiting statements follow the SET LOCAL line.
     const setLocalIdx = sql.search(/SET LOCAL lock_timeout/);
     const after = sql.slice(setLocalIdx);
     expect(after).toMatch(/LOCK TABLE labor_profile_handling_assignments/);
@@ -475,63 +710,75 @@ describeIf('AFF-05A-R2 bounded manager assignment', () => {
   });
 
   // ───────────────────────────────────────────────────────────────────────
-  // AC-06 fail-closed anomaly guards: future starts_at must cause the
-  // migration to abort with a typed exception. We seed a row whose
-  // starts_at is in the future and verify the migration raises.
+  // AC-06 fail-closed: future starts_at on the target predicate must cause
+  // the migration to abort. The CHECK add and the row updates are inside
+  // the same transaction; the rollback must remove the constraint too.
   // ───────────────────────────────────────────────────────────────────────
-  it('AC-06 fail-closed: a future starts_at on the target predicate aborts the migration with a typed exception', async () => {
-    const dbName3 = buildEphemeralDbName();
-    const adminDbUrl3 = deriveDbUrl(adminUrl, dbName3);
-    runPsql(adminUrl, `CREATE DATABASE "${dbName3}"`);
+  it('AC-06 fail-closed: future starts_at aborts the migration with a typed exception; the conditional CHECK is rolled back', async () => {
+    const staged = stagePredecessorRepo();
+    pseudoRoots.push(staged.pseudoRoot);
+    const { dbName: failDb, url: failUrl } = createEphemeralDb('fail');
     try {
-      applyAllMigrations(adminDbUrl3);
-      // Drop the conditional CHECK so we can seed a future-starts row.
-      runPsql(
-        adminDbUrl3,
-        `ALTER TABLE labor_profile_handling_assignments DROP CONSTRAINT IF EXISTS labor_profile_handling_assignments_manager_expires_required`,
-      );
+      applyPredecessorMigrations(staged.pseudoRoot, staged.schemaFile, failUrl);
 
-      const seed = seedPredecessorRows(adminEphemeral);
-      const admin3 = new PrismaClient({ datasources: { db: { url: adminDbUrl3 } } });
+      const ephem = new PrismaClient({ datasources: { db: { url: failUrl } } });
+      const runId = randomUUID().slice(0, 8);
       try {
-        await admin3.user.create({ data: { id: seed.managerUserId, phone: `${seed.managerUserId}-p`, name: 'AFF05AR2 mgr 3', role: 'HR_MANAGER' } });
-        const futureLp = `aff05ar2-${seed.managerUserId}-lp-future`;
-        await admin3.laborProfile.create({
-          data: { id: futureLp, fullName: `AFF05AR2 future LP`, phone: `${futureLp}-p`, normalizedPhone: `${futureLp}-n`, consentAt: new Date() },
+        const lpId = `aff05ar2-fail-${runId}-lp`;
+        const mgrId = `aff05ar2-fail-${runId}-mgr`;
+        const futureRowId = `aff05ar2-fail-${runId}-future`;
+
+        await ephem.user.create({ data: { id: mgrId, phone: `${mgrId}-p`, name: 'FAIL mgr', role: 'HR_MANAGER' } });
+        await ephem.laborProfile.create({
+          data: {
+            id: lpId,
+            fullName: `AFF05AR2 FAIL LP ${lpId}`,
+            phone: `${lpId}-p`,
+            normalizedPhone: `${lpId}-n`,
+            consentAt: new Date(),
+          },
         });
+
         const oneHourLater = new Date(Date.now() + 60 * 60 * 1000);
-        await admin3.$executeRawUnsafe(
+        await ephem.$executeRawUnsafe(
           `INSERT INTO labor_profile_handling_assignments
              (id, labor_profile_id, assignee_user_id, assigned_by_user_id,
               source, starts_at, expires_at, status, created_at, updated_at, version)
            VALUES ($1, $2, $3, $4, 'MANAGER_ASSIGNMENT', $5, NULL, 'ACTIVE', now(), now(), 1)`,
-          seed.freshRow, futureLp, seed.managerUserId, seed.managerUserId, oneHourLater,
+          futureRowId, lpId, mgrId, mgrId, oneHourLater,
         );
 
-        // Apply the migration; expect a non-zero exit (RAISE EXCEPTION -> rollback).
         let raised = false;
         try {
-          applyAff05aR2Migration(adminDbUrl3);
+          applyAff05aR2MigrationFile(failUrl);
         } catch {
           raised = true;
         }
         expect(raised, 'migration should abort on future starts_at anomaly').toBe(true);
 
-        // The constraint is rolled back too (transactional atomicity).
-        const con = await admin3.$queryRawUnsafe<Array<{ count: string }>>(
-          `SELECT count(*)::text FROM pg_constraint
-            WHERE conname = 'labor_profile_handling_assignments_manager_expires_required'`,
+        const con = await admin!.$queryRawUnsafe<Array<{ count: string }>>(
+          `SELECT count(*)::text AS count
+             FROM pg_constraint
+            WHERE conname = $1
+              AND conrelid = $2::regclass
+              AND contype = 'c'`,
+          R2_CONSTRAINT_NAME,
+          `public.${TARGET_TABLE}`,
         );
         expect(Number(con[0].count)).toBe(0);
+
+        const row = await ephem.$queryRawUnsafe<Array<{ expires_at: Date | null }>>(
+          `SELECT expires_at FROM labor_profile_handling_assignments WHERE id = $1`,
+          futureRowId,
+        );
+        expect(row[0].expires_at).toBeNull();
       } finally {
-        await admin3.$disconnect().catch(() => {});
+        await ephem.$disconnect().catch(() => {});
       }
     } finally {
-      try {
-        runPsql(adminUrl, `DROP DATABASE IF EXISTS "${dbName3}"`);
-      } catch {
-        // ignore
-      }
+      const idx = ephemeralDbs.indexOf(failDb);
+      if (idx >= 0) ephemeralDbs.splice(idx, 1);
+      try { runPsql(adminUrl, `DROP DATABASE IF EXISTS "${failDb}"`); } catch { /* afterAll reports */ }
     }
-  });
+  }, 180_000);
 });
