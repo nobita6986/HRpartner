@@ -16,6 +16,10 @@ Tier 3 viết `AUDIT.md` chỉ khi TASK chọn `Audit mode: LIGHT`. Task mới d
 3. Mỗi finding `AUD-00X` phải có file:line trỏ tới evidence hoặc vào source.
 4. Không tự fix lỗi; Tier 1 nhận finding, sửa và resolve.
 5. DELTA chỉ rerun changed surface; CARRIED_FORWARD phải có source round/baseline/evidence và impact proof.
+6. Chỉ audit exact committed `Implementation SHA` khớp HANDOFF; từ chối audit nếu source/test/migration còn dirty hoặc `Audit eligibility` chưa `ELIGIBLE`.
+7. Báo toàn bộ findings quan sát được trên current changed surface trong cùng round; không chia nhỏ để mở thêm round.
+8. DELTA không mở lại unchanged surface hoặc tạo finding mới trên unchanged surface nếu không có evidence mới được ghi rõ.
+9. P3/documentation debt không chặn release và không tự tạo correction round.
 
 ## Severity Grades
 
@@ -30,6 +34,7 @@ Tier 3 viết `AUDIT.md` chỉ khi TASK chọn `Audit mode: LIGHT`. Task mới d
 
 - `docs/tasks/<slug>/AUDIT.md` với metadata giống `templates/AUDIT.template.md`.
 - Ghi `Assurance lane`, `Audit depth`, execution/audit round và baseline nguồn.
+- Ghi exact `Implementation SHA`, `Finding completeness: COMPLETE_CURRENT_SURFACE` và correction batch `0|1`.
 - Long evidence (log, screenshot) đặt trong `evidence/` đính kèm.
 
 ## References

@@ -5,12 +5,18 @@
 | Field | Value |
 |---|---|
 | Task | `<task-slug>` |
+| Delivery protocol | `V2_FAST_FREEZE` |
 | Spec version | `<must match TASK>` |
 | Assurance lane | `FAST | STANDARD | CRITICAL` |
 | Audit mode | `<must match TASK>` |
 | Execution round | `<N>` |
 | Baseline | `<SHA>` |
-| Status | `<Audit NONE: READY_FOR_REVIEW; LIGHT: READY_FOR_AUDIT; otherwise BLOCKED>` |
+| Implementation SHA | `<exact 40-character committed SHA>` |
+| Frozen delivery | `YES | NO` |
+| Canonical gates | `PASS | NOT_REQUIRED | BLOCKED` |
+| Audit eligibility | `<LIGHT: ELIGIBLE; NONE: NOT_REQUIRED; otherwise BLOCKED>` |
+| Correction batches used | `0 | 1` |
+| Status | `<Audit NONE: READY_FOR_REVIEW; LIGHT: READY_FOR_AUDIT; closeout: ACCEPTED; otherwise BLOCKED>` |
 
 ## 1. Outcome and changed surface
 
@@ -18,6 +24,17 @@
 - **Not delivered:** `<None hoặc phần còn lại>`
 - **Changed:** `<paths/symbols gắn STEP>`
 - **Lane escalation:** `<No hoặc lý do>`
+
+### Self-review checklist
+
+| Surface | Result | Evidence / N/A reason |
+|---|---|---|
+| Contract and diff scope | `PASS | N/A` | `<method>` |
+| API/route boundary | `PASS | N/A` | `<method>` |
+| Auth/permission/data exposure | `PASS | N/A` | `<method>` |
+| Migration/backfill/rollback | `PASS | N/A` | `<method>` |
+| Concurrency/idempotency | `PASS | N/A` | `<method>` |
+| Test isolation and cleanup | `PASS | N/A` | `<method>` |
 
 ## 2. Acceptance evidence
 
@@ -47,5 +64,6 @@ Nếu BLOCKED, thay hàng None bằng `BLK-xx`, nêu phần đã xong, blocker c
 ## 5. Final status
 
 - `<một câu: vì sao đủ READY hoặc vì sao BLOCKED>`
+- `<git status/diff evidence xác nhận source, test và migration không còn semantic delta sau Implementation SHA>`
 
-> Handoff status: `<Audit NONE: READY_FOR_REVIEW; LIGHT: READY_FOR_AUDIT; otherwise BLOCKED>`
+> Handoff status: `<READY_FOR_REVIEW | READY_FOR_AUDIT | ACCEPTED | BLOCKED>`

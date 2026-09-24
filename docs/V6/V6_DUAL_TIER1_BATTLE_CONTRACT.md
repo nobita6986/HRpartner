@@ -3,6 +3,8 @@
 
 # HỢP ĐỒNG TÁC CHIẾN — HAI STREAM TIER 1 SONG SONG (trình T0 duyệt và điều phối)
 
+> **HISTORICAL / SUPERSEDED:** Tài liệu này chỉ giữ làm evidence cho đợt điều phối 2026-09-15. Task mới dùng `.ai-pipeline` protocol `V2_FAST_FREEZE` và `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §47.1. Không dùng lại mô hình Planner-only/Executor cũ hoặc các baseline/status trong tài liệu này.
+
 > **Status:** T0 APPROVED WITH AMENDMENTS — được phép mở hai stream theo §11.
 > **T0 verdict:** 2026-09-15. Baseline thực thi: `origin/main` = `68e184e`.
 > Tài liệu này **không** phải architecture authority,

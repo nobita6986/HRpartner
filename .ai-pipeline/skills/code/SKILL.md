@@ -25,14 +25,21 @@ Tier 1 chỉ đóng round khi:
 - Mọi `STEP` đã chạy hoặc blocker ghi rõ.
 - Targeted test/check pass.
 - `deviations` rỗng hoặc đã được document.
+- Self-review đã đi qua mọi surface áp dụng: route/API, auth/permission, migration/data, concurrency/idempotency, test isolation và diff scope.
+- Implementation đã commit và HANDOFF pin exact SHA; source/test/migration không còn semantic delta ngoài SHA đó.
+- Canonical CI/gates đã PASS hoặc ghi `BLOCKED`; không freeze bằng claim chưa chạy.
 
 Audit NONE chuyển `READY_FOR_REVIEW`; LIGHT chuyển `READY_FOR_AUDIT`.
+
+V2 chỉ cho phép một consolidated correction batch sau audit. Đọc và xác minh toàn bộ findings trước khi sửa; commit một batch, freeze SHA mới và chỉ yêu cầu DELTA recheck trên phần đổi cùng impacted callers.
 
 ## Forbidden
 
 - Không giả lập verdict Tier 3 khi TASK chọn LIGHT.
 - Không bỏ qua `AC` mà không ghi rõ lý do.
 - Không để lại debug log/commented code/bypass test.
+- Không gọi Tier 3 trên working tree còn source/test/migration dirty.
+- Không tạo chuỗi commit chỉ để “đuổi HEAD”; implementation SHA là commit semantic cuối cùng, docs/evidence follow-up phải được phân biệt rõ.
 
 ## References
 
