@@ -12,9 +12,9 @@
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Execution round | `1` |
 | Baseline | `b34cdddd5c9bbfbda2cc276abf47f328e42af40c` |
-| Baseline/diff range | `b34cdddd5c9bbfbda2cc276abf47f328e42af40c..eb3ef428d55a7e65b62e9f78dfc1fb294301402c` |
-| Required starting HEAD | `578cb61e10e3794b77eae938c06cf167fc51a6ba` (frozen at 036b62d; synced with origin/main @ d5a11ec post-freeze for HANDOFF+integration-test ergonomics; this freeze HEAD is `eb3ef428d55a7e65b62e9f78dfc1fb294301402c`, the follow-up commit that finalized V2 docs) |
-| Implementation SHA | `eb3ef428d55a7e65b62e9f78dfc1fb294301402c` |
+| Baseline/diff range | `b34cdddd5c9bbfbda2cc276abf47f328e42af40c..2c240e5ef3fb77f1945062f7a1705e797d933b1f` |
+| Required starting HEAD | `578cb61e10e3794b77eae938c06cf167fc51a6ba` (frozen at 036b62d; synced with origin/main @ d5a11ec post-freeze for HANDOFF+integration-test ergonomics; this freeze HEAD is `2c240e5ef3fb77f1945062f7a1705e797d933b1f`, the follow-up commit chain `c32cf1d` (docs+test-fix merge follower) -> `2c240e5` (static-lane block-comment parsing fix) that finalized V2 docs and produced a clean unit lane) |
+| Implementation SHA | `2c240e5ef3fb77f1945062f7a1705e797d933b1f` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
@@ -22,13 +22,15 @@
 | Status | `READY_FOR_AUDIT` |
 
 > **Implementation SHA vs docs-freeze HEAD vs A0 source commit.** The **freeze HEAD (Implementation
-> SHA)** is `eb3ef428d55a7e65b62e9f78dfc1fb294301402c`. The **A0 source commit** is
+> SHA)** is `2c240e5ef3fb77f1945062f7a1705e797d933b1f`. The **A0 source commit** is
 > `036b62dad878d40df8ecd14ea95ac27dbf8b11e0` (preserved in history; carries the entire additive
-> schema, authoring service, admin UI, and rich-content boundary for P1-A0). The freeze HEAD is
-> `6331532fc005a948372371b8ecd1d5db8f6ba849` (merge of A0 source with `origin/main`) plus this
-> follow-up commit `eb3ef42` that added `HANDOFF.md`, bumped TASK.md to V2 freeze, and corrected
-> 2 integration-test assertions. HANDOFF.md tracks this three-way distinction explicitly.
-> Cumulative frozen range (used as `Baseline/diff range` for audit) is `b34cdddd..eb3ef42`.
+> schema, authoring service, admin UI, and rich-content boundary for P1-A0). The follow-up chain
+> after the merge `6331532fc005a948372371b8ecd1d5db8f6ba849` (merge of A0 source with `origin/main`)
+> is `eb3ef42` (V2 freeze: HANDOFF.md + TASK.md V2 metadata + 2 integration-test assertion fixes) ->
+> `c32cf1d` (TASK/HANDOFF SHA retarget) -> `2c240e5` (static-lane block-comment parsing fix to
+> satisfy the unit gate; semantic-delta-free). HANDOFF.md tracks this three-way distinction
+> explicitly. Cumulative frozen range (used as `Baseline/diff range` for audit) is
+> `b34cdddd..2c240e5`.
 
 ## 1. Outcome and changed surface
 
@@ -108,7 +110,7 @@
 | `E-14` | `rg "jobPostingId" prisma/schema.prisma src/domains/talent/intake-writer.service.ts` | exit 0; `rg` reports 0 hits; `tests/db/job-posting-authoring.integration.test.ts` runtime check `Prisma.dmmf.datamodel.models.find(m=>m.name==='CandidateSubmission').fields.some(f=>f.name==='jobPostingId')` = false | inline |
 | `E-15` | Synthetic-DB integration lane bootstrap: `node scripts/ci/container-test-db.mjs --phase=pre && npx prisma migrate deploy && node scripts/ci/container-test-db.mjs --phase=post && node scripts/ci/assert-test-db-posture.mjs && npx vitest run --config vitest.integration.config.ts` | exit 0; full cycle: `READY role_count=8 grants_count=11` (pre), `All migrations have been successfully applied` (50/50), `READY role_count=8 grants_count=1` (post), `POSTURE_OK writer_is_writer admin_is_admin same_target`, integration: `Test Files 27 passed (27) / Tests 494 passed | 2 skipped (496) / Duration 30.44s` | inline |
 | `E-16` | `git diff --stat 578cb61..036b62d` | exit 0; 29 files, +4885 / -719; full path list is in §1 above and confirmed unchanged for forbidden paths. Cumulative implementation range per `Baseline/diff range = b34cdddd..036b62d` is the canonical reference for audit. | inline |
-| `E-17` | `git merge --no-ff origin/main -m 'merge: sync with origin/main (AFF-05A-R2 closeout before P1-A0 freeze)'` + follow-up `git commit --no-edit` | exit 0; new merge commit `6331532fc005a948372371b8ecd1d5db8f6ba849`; `036b62d` preserved in history; no rebase, no amend, no force-push; 4-file conflict resolution kept union of HEAD + main globs/lists (byte-preserving for A0 service/schema) | inline |
+| `E-17` | `git merge --no-ff origin/main -m 'merge: sync with origin/main (AFF-05A-R2 closeout before P1-A0 freeze)'` + follow-up `git commit --no-edit` chain | exit 0; new merge commit `6331532fc005a948372371b8ecd1d5db8f6ba849`; `036b62d` preserved in history; no rebase, no amend, no force-push; 4-file conflict resolution kept union of HEAD + main globs/lists (byte-preserving for A0 service/schema). Followers: `eb3ef42` (V2 freeze), `c32cf1d` (TASK/HANDOFF SHA retarget), `2c240e5` (static-lane parsing fix) | inline |
 | `E-18` | `git status --short --ignored` filtered by `^??` | exit 0; T0 scratch files (`t0_commit_msg.txt`, `t0_encoding.ps1`, `t0_mojibake.ps1`, `t0_report.md`, `t0_step0.txt`) all `??` (untracked) — preserved per T0 directive, never staged, never deleted | inline |
 | `E-19` | UTF-8/LF/no-BOM/mojibake scan over changed docs (`docs/tasks/hrp-p1-a0-jobposting-authoring-publish/TASK.md`, `HANDOFF.md`) | exit 0; bytes-per-file scan reports no BOM (`EF BB BF` not found in either), no replacement-character `U+FFFD`, no CRLF in the diff range; `git diff --check` reports no whitespace conflicts | inline |
 | `E-20` | `npm run build` | exit 0; `next build` completed cleanly with the A0 surface; no TypeScript errors, no missing imports | inline |
@@ -134,4 +136,11 @@
   `git merge --no-ff`); no further semantic delta is pending. HANDOFF.md itself is the only tracked
   evidence change after `036b62d`. T0 scratch files remain untracked.
 
+
+## 6. Revision history
+
+| Version | Date | Change | Reason |
+|---|---|---|---|
+| v1.0 | 2026-09-24 | Initial V2 freeze rewrite (T1A correction/freeze round). | T0 directive. |
+| v1.1 | 2026-09-24 | Implementation SHA pinned to follow-up freeze HEAD `2c240e5` (was `eb3ef42`). Baseline/diff range updated to `b34cdddd..2c240e5`. Static-lane block-comment parsing fix in `src/shared/toolchain/vitest-default-lane.static.test.ts` (esbuild terminated `/** */` at `**/` substring inside literal `src/**/*.test.tsx`; converted that one JSDoc block to a single-line `//` block). Semantic contract KHÔNG đổi. | Pre-flight fix to make unit lane pass after the V2 freeze; bump pinned SHAs to current HEAD. |
 > Handoff status: `READY_FOR_AUDIT`
