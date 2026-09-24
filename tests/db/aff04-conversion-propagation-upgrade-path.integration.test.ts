@@ -123,7 +123,11 @@ function applyAllMigrations(ephUrl: string): void {
     ['migrate', 'deploy', '--schema', path.join(REPO_ROOT, 'prisma', 'schema.prisma')],
     {
       cwd: REPO_ROOT,
-      env: { ...process.env, DATABASE_URL: ephUrl },
+      env: {
+        ...process.env,
+        DATABASE_URL: ephUrl,
+        DATABASE_URL_ADMIN: ephUrl,
+      },
       stdio: 'pipe',
       shell: true,
     },
@@ -147,7 +151,11 @@ function applyAff04MigrationFile(ephUrl: string): void {
     ['db', 'execute', '--stdin', '--schema', path.join(REPO_ROOT, 'prisma', 'schema.prisma')],
     {
       cwd: REPO_ROOT,
-      env: { ...process.env, DATABASE_URL: ephUrl },
+      env: {
+        ...process.env,
+        DATABASE_URL: ephUrl,
+        DATABASE_URL_ADMIN: ephUrl,
+      },
       input: sql,
       stdio: ['pipe', 'pipe', 'pipe'],
       shell: true,
