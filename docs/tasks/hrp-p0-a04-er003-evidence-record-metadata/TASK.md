@@ -9,8 +9,8 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | Forward-only Neon migration establishes a sensitive-metadata and authorization boundary. |
-| Spec version | `v1.2.2` |
-| Status | `READY_FOR_AUDIT` |
+| Spec version | `v1.3` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1A` |
 | Execution owner | `Tier 1B` |
 | Baseline | `1e1895d16500b273575599cf88853e0d48f08e23` (`origin/main`, post-AFF-04 production-verified #36) |
@@ -18,7 +18,7 @@
 | In-scope roots | Exact File Allowlist at §4.5 |
 | Forbidden paths | All paths outside the allowlist; especially `docs/PLANNER_HANDOVER.md`, `app/**`, `src/domains/evidence/**`, existing migrations, AFF/CRM work, runtime wiring, routes, environment/config, and package files. |
 | Required gates | T0 contract approval; Prisma validate/generate; typecheck; lint; unit; guarded DB integration; clean-chain migration; task/handoff verification; scope check; Tier 3 LIGHT. |
-| Next gate | `T0_MERGE_DECISION` |
+| Next gate | `NONE — MERGED_AND_PRODUCTION_VERIFIED` |
 
 > This is a metadata-schema slice only. It does not accept, upload, read, serve, delete, or audit an evidence blob; it does not enable real-evidence/CCCD ingestion. Synthetic test bytes and synthetic identifiers remain sufficient for all coding and CI evidence.
 
@@ -185,6 +185,17 @@ All other paths are forbidden. In particular, no file under `src/domains/evidenc
 | 3 | `READY_FOR_EXECUTION` | T0 execution authorization (2026-09-24) chấp thuận ER003-DEC-01..08 và giữ ER003-DEC-09 = `DEFERRED_NOT_A_BLOCKER`. Execution baseline `1e1895d16500b273575599cf88853e0d48f08e23` (origin/main, post-AFF-04 production-verified). Tier 1B gộp Planner + Engineer; semantic contract §§1–§8 giữ nguyên. Slice metadata-only: KHÔNG runtime, KHÔNG upload, KHÔNG ghi CCCD thật. Production DB/migration/deploy vẫn thuộc T0. |
 
 ## 10. Revision Log
+
+### Round 6 — T1A closeout (2026-09-24)
+
+| Field | Before | After |
+|---|---|---|
+| Spec version | `v1.2.2` | `v1.3` |
+| Status | `READY_FOR_AUDIT` | `ACCEPTED` |
+| Next gate | `T0_MERGE_DECISION` | `NONE — MERGED_AND_PRODUCTION_VERIFIED` |
+
+Changes: T0 verification PASS (PR #37 squash-merged at `2fb4dee919ccb045121a01fb8b87897b90e57f93`; final PR head `bae89fab1200de94b2358d9caa55f7ba04f9ea40`; CI run `35979076741` PASS). Production read-only verification confirmed migration `20260924120000_er003_evidence_record_metadata` finished and not rolled back; `evidence_records` has 13 columns, RLS + FORCE RLS, 0 policies, 0 forbidden grants to `PUBLIC` / `app_user` / `app_user_writer`, and 0 rows. No production mutation was performed by the closeout verification. Contract closed out as metadata-only slice.
+
 ### Round 5 — T0 post-audit freeze (2026-09-24)
 
 | Field | Before | After |
@@ -238,3 +249,4 @@ No migration, schema, test, source, or AUDIT.md (Tier 3 artifact) altered.
 | `v1.0` | `2026-09-22` | Initial documentation-only proposal | T1A prepared a thin-slice contract for P0-A04. |
 | `v1.1` | `2026-09-22` | T0 substantive correction | Remove ambiguous polymorphic authorization and optional RLS; align metadata boundary, migration safety, and measurable DB evidence with the real plan/ER-001/ER-002 limits. |
 | `v1.2` | `2026-09-24` | T0 execution authorization (follow-up commit, no amend) | Bump `Spec version` v1.1 → v1.2; `Status` `PROPOSED_ONLY` → `READY_FOR_EXECUTION`; `Execution owner` `UNASSIGNED` → `Tier 1B`; `Baseline` `e4d2180` → `1e1895d1` (origin/main post-AFF-04 #36); `Next gate` `T0_CONTRACT_REVIEW` → `TIER3_LIGHT_AUDIT`; record T0 decision set (ER003-DEC-01..08 APPROVED, ER003-DEC-09 `DEFERRED_NOT_A_BLOCKER`); execution contract authority = TASK v1.1 blob `4ec71607...` @ `5852e14...`. Semantic contract §§1–§8 giữ nguyên. |
+| `v1.3` | `2026-09-24` | T1A closeout | Close task as ACCEPTED after T0 production verification. |

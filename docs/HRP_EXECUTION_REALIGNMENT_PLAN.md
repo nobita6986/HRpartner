@@ -1524,6 +1524,26 @@ Unlock later V8/V9 capabilities only through evidence gate
 
 This order expresses product priority, not a blanket serial coding lock. In particular, P0-A completion blocks real evidence ingestion, not synthetic-data AFF development. Parallel work is allowed only with explicit ownership and no overlapping schema/migration or coordination-file edits.
 
+## 47.1 Delivery cadence — V2_FAST_FREEZE
+
+All new HRP tasks use `.ai-pipeline` protocol `V2_FAST_FREEZE`; historical artifacts remain immutable and are not retrofitted.
+
+```text
+T1A prepares contract N+1
+T1B implements task N
+T3 audits frozen task N-1
+```
+
+Rules:
+
+1. A code task starts only after `Contract gate: READY_TO_CODE`, closed Owner decisions, exact current-main baseline, explicit file ownership and a ready/not-required test environment.
+2. Tier 1 completes one whole-surface self-review, canonical gates and a committed implementation before asking for audit. HANDOFF pins the exact `Implementation SHA`; source, tests and migrations are frozen at that SHA.
+3. Tier 3 reports all findings visible on the current changed surface in one round. P3/documentation debt is non-blocking unless Tier 0 explicitly promotes it.
+4. Tier 1 receives at most one consolidated correction batch. DELTA audit covers that correction and directly affected callers only; unchanged surfaces are not reopened without new evidence.
+5. If a blocker remains after the correction budget, Tier 0 takes the correction directly or splits a new task. No unbounded code/review loop.
+6. WIP per independent stream is limited to one planning contract, one implementation and one frozen audit. `PLANNER_HANDOVER.md` has one writer at a time.
+7. Real CCCD/evidence availability is not a coding gate. It gates only real-evidence production enablement; synthetic fixtures remain mandatory during implementation.
+
 ---
 
 # 48. FIRST AI CODING DISCOVERY PACKAGE

@@ -1,5 +1,7 @@
 # AI Delivery Pipeline — Product-speed edition
 
+> Current protocol: `V2_FAST_FREEZE`. New task artifacts use Ready-to-Code, exact frozen Implementation SHA and one correction batch. Historical artifacts remain readable without retrofit.
+
 Bộ điều hành Agent portable này ưu tiên tốc độ giao sản phẩm với ba vai trò duy nhất.
 
 > Không lưu secret, credential, PII hoặc log runtime trong `.ai-pipeline/`.
@@ -18,9 +20,11 @@ Agent chỉ đọc `README.md`, `rules/00-global-rules.md`, một role file (`ti
 
 ```text
 Tier 0 chốt outcome/boundary khi cần
-  → Tier 1 khảo sát + TASK ngắn + triển khai + HANDOFF
+  → Tier 1 khảo sát + TASK ngắn → READY_TO_CODE
+  → triển khai + self-review + canonical gates → commit/freeze SHA + HANDOFF
   → Audit NONE: Tier 1 tự review và resolve
-  → Audit LIGHT: Tier 3 kiểm tra trọng yếu, Tier 1 resolve
+  → Audit LIGHT: Tier 3 kiểm tra exact frozen SHA và báo toàn bộ finding một lượt
+  → tối đa một correction batch + DELTA recheck nếu cần
   → Tier 1 giao hàng; Tier 0 quyết định go-live/rủi ro cấp dự án
 ```
 
@@ -35,6 +39,14 @@ Lane điều chỉnh độ chặt của contract/gate; audit là quyết định
 | `CRITICAL` | Auth/RLS, permission, PII, money, schema/migration, infra/prod | `LIGHT`; `NONE` cần lý do và risk acceptance |
 
 Tier 3 không audit theo thói quen và không lặp full suite/build đã có evidence hợp lệ.
+
+## Nhịp giao hàng V2
+
+- T0 review contract CRITICAL một lần trước code; không gửi correction nhỏ giọt.
+- T1 chỉ code khi `Contract gate: READY_TO_CODE`, rồi tự review trước freeze.
+- T3 từ chối working tree chưa freeze và chỉ audit exact committed SHA.
+- P3/docs debt không chặn; sau audit chỉ có một consolidated correction batch.
+- WIP mặc định: một contract planning, một implementation và một frozen audit trên mỗi stream độc lập.
 
 ## Artifact canonical
 

@@ -62,3 +62,13 @@ Không tự cài tool/dependency chỉ để thỏa checklist nếu Tier 1 chưa
 - Có thể nâng lane khi phát hiện blast radius mới; chỉ Tier 1/Owner được đổi lane.
 - Không chạy lại phép đo còn hiệu lực chỉ để đủ checklist. Audit dùng carry-forward khi có source evidence và impact proof.
 - Tier 1 được điều phối sub-agent song song trong boundary đã giao. Mutating agents chỉ song song khi allowlist không giao nhau; một coordinator quản lý integration và Git index.
+
+## 9. Delivery protocol V2_FAST_FREEZE
+
+- Artifact V2 phải qua `READY_TO_CODE` trước implementation và pin exact baseline.
+- Task chỉ được giao audit sau khi implementation đã commit, canonical gates hoàn tất và HANDOFF pin exact frozen SHA.
+- Tier 0/Tier 3 phải gom finding thành một lượt review đầy đủ; không gửi micro-correction nhỏ giọt.
+- Sau audit chỉ có một consolidated correction batch. Vượt budget phải chuyển Tier 0 hoặc tách task mới.
+- DELTA audit không mở lại unchanged surface nếu không có evidence mới.
+- P3 và documentation drift mặc định là non-blocking debt; muốn chặn phải được Tier 0 nâng mức bằng quyết định có lý do.
+- WIP mặc định trên một delivery stream: tối đa một contract planning, một implementation và một frozen audit. Các stream chỉ chạy song song khi file ownership không giao nhau.

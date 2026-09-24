@@ -6,32 +6,32 @@
 
 <!-- ROADMAP_CURSOR_START -->
 ```yaml
-updated_at: 2026-09-24T11:53:49+07:00
+updated_at: 2026-09-24T20:45:00+07:00
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
+delivery_protocol: V2_FAST_FREEZE
+correction_budget: 1
 PHASE_MAP: |
   P0: production safety and integration foundations
   P1: thin recruitment value slice
   P2-P5: unlock only through realignment dependency/evidence gates
-current_lane: Universal AFF expansion under Realignment §15.1
-parallel_lane: P0-A04 / ER-003 EvidenceRecord metadata contract review; CONTRACT-03B packaging and consumer compatibility remain separately gated
-current_task: AFF-05A residual Company Pool/dispute reconciliation — NOT_OPENED
-worktree_branch: NONE
-current_gate: T0_THIN_SLICE_CONTRACT_APPROVAL_BEFORE_IMPLEMENTATION
-previous_accepted: hrp-v6-n2-aff-04-conversion-propagation
-closeout_evidence: docs/tasks/hrp-v6-n2-aff-04-conversion-propagation/HANDOFF.md
+current_lane: Universal AFF expansion — AFF-05A-R2 bounded manager assignment
+parallel_lane: NONE
+current_task: hrp-v6-n2-aff-05a-r2-bounded-manager-assignment — FROZEN_DELIVERY_AWAITING_T0_REVIEW
+worktree_branch: codex/t1b-aff05a-r2-bounded-manager-assignment
+current_gate: T0_REVIEW_THEN_TIER3_LIGHT_AUDIT
+previous_accepted: AFF-04; ER-003 metadata schema #37; CONTRACT-03A bilateral executable acceptance; public contact UI #40
+closeout_evidence: docs/tasks/hrp-p0-a04-er003-evidence-record-metadata/HANDOFF.md
 blocking_owner: "None"
 owner_defer: "Không dùng Evidence/CCCD readiness làm gate cho AFF coding. P0-A chỉ chặn production enablement của real evidence ingestion; AFF development dùng synthetic data và gate riêng."
 deferred_lane:
   universal_aff:
     state: AFF04_ACCEPTED_PRODUCTION_VERIFIED
     production_proven: AFF-03/03B/03C and AFF-04
-    next_slice: residual AFF-05A Company Pool/dispute reconciliation, then AFF-05B
+    next_slice: AFF-05A-R2 bounded manager assignment, then separately-scoped dispute capability and AFF-05B
     coding_dependency_on_evidence_gateway: NONE
     production_enablement: P3-E_AFTER_AFF_CAPABILITY_GATE
 next_steps:
-  - 1. Merge AFF-04 docs-only closeout; không sửa lại implementation/migration đã production verify.
-  - 2. T1A lập contract hẹp cho residual AFF-05A Company Pool/dispute từ evidence hiện có; không gộp AFF-05B commission policy.
-  - 3. Sau T0 duyệt contract, giao T1B implementation trong worktree mới từ main mới nhất; ER-003 và CONTRACT-03B tiếp tục ở lane tách biệt.
+  - 1. T0 review frozen AFF-05A-R2 delivery and exact implementation SHA; if clean, request Tier 3 LIGHT audit. Do not push/PR/merge/deploy before that gate.
 ```
 <!-- ROADMAP_CURSOR_END -->
 

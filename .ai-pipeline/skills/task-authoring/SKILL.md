@@ -40,6 +40,17 @@ Không đưa toàn bộ implementation code vào TASK.
 
 Tier 1 phải có thể triển khai mà không đoán business rule. Task LIGHT phải đủ rõ để Tier 3 tái hiện các AC trọng yếu.
 
+Với `Delivery protocol: V2_FAST_FREEZE`, chỉ đặt `Contract gate: READY_TO_CODE` khi:
+
+- Owner/business decisions đều `CLOSED`;
+- exact baseline và file ownership đã pin;
+- canonical test environment là `READY` hoặc `NOT_REQUIRED`;
+- required gates dùng command thực sự tồn tại;
+- correction budget là `1`;
+- Tier 1 đã làm một consolidated contract self-review, không để reviewer tìm lần lượt các lỗi có thể thấy cùng lúc.
+
+`READY_TO_CODE` là điểm đóng thiết kế cho execution. Nếu implementation cần đổi semantic contract, dừng và tạo một revision trước khi sửa code.
+
 ## References
 
 - `templates/TASK.template.md` — schema chuẩn của pipeline

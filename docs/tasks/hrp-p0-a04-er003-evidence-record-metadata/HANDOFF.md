@@ -5,17 +5,17 @@
 | Field | Value |
 |---|---|
 | Task slug | `hrp-p0-a04-er003-evidence-record-metadata` |
-| Spec version | `v1.2.2` |
+| Spec version | `v1.3` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Assurance lane | `CRITICAL` |
 | Execution round | `1` |
 | Current audit round | `2` |
-| Status | `READY_FOR_AUDIT` |
+| Status | `ACCEPTED` |
 | Baseline | `1e1895d16500b273575599cf88853e0d48f08e23` (`origin/main`, post-AFF-04 production-verified #36) |
 | Authority | TASK v1.1 blob `4ec7160732a4c106d991f596d570708c1b6717a8` @ `5852e14ae1b89f347ab8912a9b28a56445755fe7` |
 | Implementation SHA | see git log `codex/t1b-er003-evidence-record-metadata` HEAD at HANDOFF freeze |
 | Executor | `Tier 1B` |
-| Next gate | `T0_MERGE_DECISION` |
+| Next gate | `NONE — MERGED_AND_PRODUCTION_VERIFIED` |
 
 ## 1. Outcome and changed surface
 
@@ -135,4 +135,11 @@ Round 4 evidence-sync (2026-09-24): documentation-only. BLK-01 closed as RESOLVE
 Round 2 correction (2026-09-24): AUD-001 (E-04 truthful 3-hit classification),
 AUD-002 (19-assertion / 19 it() cases), AUD-003 (15 $executeRawUnsafe surface acknowledged).
 
-Handoff status: READY_FOR_AUDIT
+Handoff status: ACCEPTED
+
+## 6. Closeout
+
+**T1A closeout (2026-09-24):**
+- T0 verification PASS: PR #37 squash-merged at `2fb4dee919ccb045121a01fb8b87897b90e57f93`; final PR head `bae89fab1200de94b2358d9caa55f7ba04f9ea40`; CI run `35979076741` PASS.
+- Production read-only verification: migration `20260924120000_er003_evidence_record_metadata` is finished and not rolled back; `evidence_records` exists with 13 columns, RLS + FORCE RLS, 0 policies, 0 forbidden grants to `PUBLIC` / `app_user` / `app_user_writer`, and 0 rows. The verification performed no mutation.
+- Contract closed out as metadata-only slice. Không runtime upload/read/delete wiring.

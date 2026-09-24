@@ -106,9 +106,12 @@ FOR multi-item feedback:
      - Blocking issues (breaks, security)
      - Simple fixes (typos, imports)
      - Complex fixes (refactoring, logic)
-  3. Test each fix individually
-  4. Verify no regressions
+  3. Gom thành một correction batch có boundary rõ
+  4. Test từng fix khi làm, sau đó chạy canonical gates một lần cho toàn batch
+  5. Commit/freeze SHA mới và chỉ yêu cầu DELTA recheck
 ```
+
+V2 có correction budget bằng `1`. Nếu batch không thể đóng toàn bộ blocker, trả Tier 0 để nhận correction hoặc tách task; không mở chuỗi review/code lặp vô hạn.
 
 ## When To Push Back
 

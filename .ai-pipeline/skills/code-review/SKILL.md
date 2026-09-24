@@ -11,7 +11,7 @@ Hướng dẫn review chặt chẽ dựa trên evidence, không dựa trên soci
 ## Three Practices
 
 1. **Receiving feedback** — technical evaluation over performative agreement.
-2. **Requesting reviews** — systematic review via subagent.
+2. **Requesting reviews** — systematic review trên frozen delivery khi task thực sự cần audit.
 3. **Verification gates** — evidence before any completion claims.
 
 ## Iron Law
@@ -29,6 +29,8 @@ Tier 3 (Auditor) dùng skill này để:
 - `audit` skill đã setup verdict PASS/FAIL/PARTIAL — code-review này bổ sung cho subagent review.
 - Khi HANDOFF có claim nghi ngờ → `requesting-code-review` để spawn reviewer.
 - Red-flag checklist giống `anti-hallucination.md`, không trùng hai lần.
+- Reviewer phải gom mọi finding current surface thành một response; không gửi feedback nhỏ giọt.
+- Sau một consolidated correction batch, chỉ review delta và impacted callers.
 
 ## Receiving Feedback Protocol
 
