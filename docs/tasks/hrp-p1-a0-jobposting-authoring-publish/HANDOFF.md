@@ -12,9 +12,9 @@
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Execution round | `1` |
 | Baseline | `b34cdddd5c9bbfbda2cc276abf47f328e42af40c` |
-| Baseline/diff range | `b34cdddd5c9bbfbda2cc276abf47f328e42af40c..c031651ad12721e99994092cfc8a530525d50f30` |
+| Baseline/diff range | `b34cdddd5c9bbfbda2cc276abf47f328e42af40c..3e73a035a37272ee941daac0dc187e5f929f02ce` |
 | Required starting HEAD | `578cb61e10e3794b77eae938c06cf167fc51a6ba` (frozen at 036b62d; synced with origin/main @ d5a11ec post-freeze for HANDOFF+integration-test ergonomics; this freeze HEAD is `2c240e5ef3fb77f1945062f7a1705e797d933b1f`, the follow-up commit chain `c32cf1d` (docs+test-fix merge follower) -> `2c240e5` (static-lane block-comment parsing fix) that finalized V2 docs and produced a clean unit lane) |
-| Implementation SHA | `c031651ad12721e99994092cfc8a530525d50f30` |
+| Implementation SHA | `3e73a035a37272ee941daac0dc187e5f929f02ce` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
