@@ -6,7 +6,7 @@
 
 <!-- ROADMAP_CURSOR_START -->
 ```yaml
-updated_at: 2026-09-24T18:25:00+07:00
+updated_at: 2026-09-24T20:45:00+07:00
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 delivery_protocol: V2_FAST_FREEZE
 correction_budget: 1
@@ -15,11 +15,11 @@ PHASE_MAP: |
   P1: thin recruitment value slice
   P2-P5: unlock only through realignment dependency/evidence gates
 current_lane: Universal AFF expansion — AFF-05A-R2 bounded manager assignment
-parallel_lane: CONTRACT-03A bilateral executable acceptance record; ER-003 closeout documentation after ownership isolation
-current_task: hrp-v6-n2-aff-05a-r2-bounded-manager-assignment — APPROVED_CONTRACT_REBASE_REQUIRED
-worktree_branch: NONE
-current_gate: V2_READY_TO_CODE_MATERIALIZATION_ON_CURRENT_MAIN
-previous_accepted: AFF-04 and ER-003 implementation; public contact UI through PR #40
+parallel_lane: NONE
+current_task: hrp-v6-n2-aff-05a-r2-bounded-manager-assignment — FROZEN_DELIVERY_AWAITING_T0_REVIEW
+worktree_branch: codex/t1b-aff05a-r2-bounded-manager-assignment
+current_gate: T0_REVIEW_THEN_TIER3_LIGHT_AUDIT
+previous_accepted: AFF-04; ER-003 metadata schema #37; CONTRACT-03A bilateral executable acceptance; public contact UI #40
 closeout_evidence: docs/tasks/hrp-p0-a04-er003-evidence-record-metadata/HANDOFF.md
 blocking_owner: "None"
 owner_defer: "Không dùng Evidence/CCCD readiness làm gate cho AFF coding. P0-A chỉ chặn production enablement của real evidence ingestion; AFF development dùng synthetic data và gate riêng."
@@ -31,9 +31,7 @@ deferred_lane:
     coding_dependency_on_evidence_gateway: NONE
     production_enablement: P3-E_AFTER_AFF_CAPABILITY_GATE
 next_steps:
-  - 1. T1A phát hành immutable bilateral executable acceptance record cho CONTRACT-03A theo CRM-HRP-MSG-042; không mở runtime/package publish.
-  - 2. T1B materialize AFF-05A-R2 contract đã duyệt trên current origin/main, refresh exact baseline/migration timestamp, đóng V2 READY_TO_CODE rồi implement trong worktree riêng.
-  - 3. T1A chỉ mở ER-003 closeout docs sau khi acceptance record xong; T1A/T1B không đồng thời sửa PLANNER_HANDOVER.md. T3 chỉ nhận exact frozen SHA sau canonical gates.
+  - 1. T0 review frozen AFF-05A-R2 delivery and exact implementation SHA; if clean, request Tier 3 LIGHT audit. Do not push/PR/merge/deploy before that gate.
 ```
 <!-- ROADMAP_CURSOR_END -->
 
