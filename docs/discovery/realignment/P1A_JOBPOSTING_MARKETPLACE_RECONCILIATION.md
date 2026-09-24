@@ -2,12 +2,12 @@
 
 | Field | Value |
 |---|---|
-| Spec version | v1.1 |
+| Spec version | v1.2 |
 | Decision state | CLOSED |
-| Status | PROPOSED_ONLY |
-| Next gate | T0_CONTRACT_REVIEW |
+| Status | A0_READY_A1_WAITING_DEPENDENCY |
+| Next gate | T1_A0_IMPLEMENTATION_FREEZE |
 | Contract gate | DRAFT |
-| Baseline | 39c7ebc8ed8c6ca8a2384ed4c0c827f1034edd92 |
+| Baseline | b34cdddd5c9bbfbda2cc276abf47f328e42af40c (`origin/main` tại T0 contract review) |
 | Delivery protocol | V2_FAST_FREEZE |
 | Correction budget | 1 |
 | Test environment | NOT_REQUIRED (round này chỉ chuẩn bị contract; chưa chạm code/test/runtime) |
@@ -40,19 +40,21 @@ Tài liệu này xác nhận hiện trạng của kiến trúc đăng tuyển vi
 - A1 chuẩn bị pure UI projection/tests song song sau khi DTO/shared profile của A0 freeze.
 - A1 KHÔNG integrate / cut over public source trước khi A0 merge và có ít nhất một real `PUBLISHED` JobPosting.
 
-## 4. Owner Decisions — Locked (OD-P1A-01..09)
+## 4. Owner Decisions — Locked (OD-P1A-01..11)
 
 | ID | Decision | Status | Materialized in |
 |---|---|---|---|
 | `OD-P1A-01` | ADOPT Tiptap OSS (MIT, không Cloud/Collaboration/AI/paid). Pin đồng bộ `3.31.3` cho `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`, `@tiptap/static-renderer` (và peer bắt buộc `@tiptap/core@3.31.3`). KHÔNG tự xây contentEditable. | CHOSEN | TASK A0 §3.1, §4.2; reconciliation §6 evidence (npm view 2026-09-24) |
 | `OD-P1A-02` | Wrapper boundary: `src/shared/ui/editor/**` (client wrapper) + `src/shared/content/job-posting-rich-text/**` (server-side schema + validator + static renderer). A0 và A1 không tự tạo hai allowlist khác nhau. | CHOSEN | TASK A0 §4.2; TASK A1 §4.2 |
-| `OD-P1A-03` | Rich content chỉ áp dụng cho `description`, `requirements`, `benefits`, `applicationInstructions`. Structured columns (`title`, `salaryDisplay`, `slug`, `status`, `revision`, filter/sort fields, project/opening/slot identifiers) tách riêng. Canonical persistence = Tiptap/ProseMirror JSON + `contentSchemaVersion = 1`. Server validates trước khi ghi DB; invalid/unknown node hoặc mark REJECT khi write, không silently accept. Corrupted legacy payload khi public read → fail closed / omit section + diagnostic an toàn, KHÔNG render raw payload. Initial node allowlist = `doc`, `paragraph`, `text`, `heading` (level 2 hoặc 3), `bulletList`, `orderedList`, `listItem`. Initial mark allowlist = `bold`, `italic`, `link`. Link chỉ HTTPS, không `javascript:` / `data:` / `file:` / protocol-relative. `target`/`rel` do HRP renderer kiểm soát. Limits: tối đa 64 KiB UTF-8 serialized JSON / rich field, ≤ 1.000 nodes, depth ≤ 16, URL ≤ 2.048 bytes. | CHOSEN | TASK A0 §4.1, §4.3; TASK A1 §4.1, §4.3 |
-| `OD-P1A-04` | Server render public detail dùng `@tiptap/static-renderer` qua HRP wrapper trong `src/shared/content/job-posting-rich-text/**`. KHÔNG khởi tạo React editor trên server. KHÔNG `dangerouslySetInnerHTML` với dữ liệu DB chưa qua shared validator/renderer. KHÔNG phát minh package tên “safe-render”/“safe renderer” — đó là HRP wrapper dùng shared profile + `@tiptap/static-renderer`. | CHOSEN | TASK A1 §4.2, §5 STEP-04 |
+| `OD-P1A-03` | Rich content chỉ áp dụng cho `description`, `requirements`, `benefits`, `applicationInstructions`. Structured columns (`title`, `salaryDisplay`, `slug`, `status`, `revision`, filter/sort fields, project/opening/slot identifiers) tách riêng. Additive draft columns `title`/`salaryDisplay` là nullable để migration/backward compatibility an toàn; publish bắt buộc title + description hợp lệ, còn salary/requirements/benefits/applicationInstructions optional. Canonical persistence = Tiptap/ProseMirror JSON + `contentSchemaVersion = 1`. Server validates trước khi ghi DB; invalid/unknown node hoặc mark REJECT khi write, không silently accept. Corrupted legacy payload khi public read → fail closed / omit section + diagnostic an toàn, KHÔNG render raw payload. Initial node allowlist = `doc`, `paragraph`, `text`, `heading` (level 2 hoặc 3), `bulletList`, `orderedList`, `listItem`. Initial mark allowlist = `bold`, `italic`, `link`. Link chỉ HTTPS, không `javascript:` / `data:` / `file:` / protocol-relative. `target`/`rel` do HRP renderer kiểm soát. Limits: tối đa 64 KiB UTF-8 serialized JSON / rich field, ≤ 1.000 nodes, depth ≤ 16, URL ≤ 2.048 bytes. | CHOSEN | TASK A0 §4.1, §4.3; TASK A1 §4.1, §4.3 |
+| `OD-P1A-04` | Server render public detail dùng React output subpath `@tiptap/static-renderer/json/react` qua HRP wrapper trong `src/shared/content/job-posting-rich-text/**`. KHÔNG khởi tạo editor client trên server, KHÔNG render HTML string và KHÔNG dùng `dangerouslySetInnerHTML` với DB payload. KHÔNG phát minh package tên “safe-render” — đó là HRP wrapper dùng shared profile + static renderer. | CHOSEN | TASK A1 §3.1, §4.2, §5 |
 | `OD-P1A-05` | KHÔNG chạy blind data migration từ `Project.isPublic` sang `PUBLISHED` JobPosting. Production hiện có 21 ACTIVE + isPublic Projects, 0 JobOpening, 0 JobPosting (read-only preflight 2026-09-24). Mô hình cũ = 1 public card trên Project; mô hình mới = JobPosting gắn JobOpening. KHÔNG tự chọn mapping hoặc tự publish dữ liệu suy diễn. A0 chỉ làm forward-only additive schema + authoring path. Public legacy flow giữ nguyên cho tới khi A1 đạt cutover gate. Migration KHÔNG làm biến mất 21 tin cũ. | CHOSEN | TASK A0 §4.3 (Migration/rollback), §6 AC; reconciliation §7 |
 | `OD-P1A-06` | A0 phải tạo được dữ liệu thật (không hoạt động chỉ khi DB đã có sẵn JobOpening). Vertical slice A0 phải bao gồm create-or-reuse JobOpening từ StaffingOrderSlot được Admin chọn: lock canonical slot trong transaction; nếu slot đã có `jobOpeningId` thì reuse; nếu chưa thì tạo `JobOpening` DRAFT và bind lại slot; tạo/reuse đúng một `JobPosting` DRAFT cho JobOpening; chống race và replay; KHÔNG chọn ngẫu nhiên StaffingOrder/Slot; KHÔNG auto-publish. | CHOSEN | TASK A0 §5 STEP-02, §6 AC |
 | `OD-P1A-07` | Canonical JobPosting slug pattern = `<normalized-title>-<stable-short-suffix>` (slug unique, immutable sau publish đầu tiên, trừ migration riêng). KHÔNG dùng duy nhất `Project.code` vì một Project có thể có nhiều JobOpening/JobPosting. Legacy `/viec-lam/PRJ-xxx`: trước A1 cutover giữ nguyên flow hiện tại; sau cutover, route compatibility chuyển tới listing đã lọc theo project code; KHÔNG tự chọn một posting bất kỳ khi Project có nhiều posting; KHÔNG 301/308 tới một detail mơ hồ. | CHOSEN | TASK A0 §4.1, §5; TASK A1 §4.1, §6 AC |
-| `OD-P1A-08` | State transitions: `DRAFT → PUBLISHED`, `PUBLISHED → DRAFT` (explicit unpublish), `DRAFT → ARCHIVED`, `PUBLISHED → ARCHIVED`. `ARCHIVED` là terminal trong slice này. Publish yêu cầu: JobOpening hợp lệ; title hợp lệ; canonical slug; required rich fields hợp lệ; revision match; authorization/RLS pass. | CHOSEN | TASK A0 §4.3 (Data/state), §4.1 RQ |
+| `OD-P1A-08` | State transitions: `DRAFT → PUBLISHED`, `PUBLISHED → DRAFT` (explicit unpublish), `DRAFT → ARCHIVED`, `PUBLISHED → ARCHIVED`. `ARCHIVED` là terminal trong slice này. Publish yêu cầu linked JobOpening `OPEN`; title hợp lệ; canonical slug; required rich fields hợp lệ; revision match; authorization/RLS pass. | CHOSEN | TASK A0 §4.3 (Data/state), §4.1 RQ |
 | `OD-P1A-09` | A1 KHÔNG được bịa persistence `JobPostingId` vào `CandidateSubmission`. Current intake contract chỉ có canonical `slotId`/`projectId` và `jobOpeningId` dạng audit metadata (xem `src/domains/talent/intake-writer.service.ts` + `app/api/admin/intake/staff/route.ts` body schema: `slotId`/`projectId`/`jobOpeningId?` optional). A1 phải: derive `projectId`/`slotId`/`jobOpeningId` server-side từ `PUBLISHED` JobPosting qua canonical `/api/public/jobs/[slug]/applications` route; KHÔNG tin IDs do browser tự truyền; dùng current intake boundary; KHÔNG thêm `CandidateSubmission.jobPostingId` trong A1; nếu cần persisted attribution tới JobPosting, phải mở task additive riêng sau P1-A1. | CHOSEN | TASK A1 §4.1, §4.3, §6 AC |
+| `OD-P1A-10` | Publish `JobPosting` chỉ hợp lệ khi linked `JobOpening.status = OPEN`. A0 không ngầm mở một `JobOpening` DRAFT trong publish command; Admin phải dùng canonical JobOpening status flow trước. `FILLED`/`CANCELLED` luôn bị từ chối. Unpublish/archive JobPosting không tự đổi trạng thái nhu cầu nội bộ. | CHOSEN | TASK A0 §3, §4.1, §6 AC |
+| `OD-P1A-11` | Canonical anonymous apply phải resolve `JobPosting.slug`, `status = PUBLISHED`, linked `JobOpening.status = OPEN`, project và canonical slot trong CÙNG SECURITY DEFINER transaction. A1 tạo đúng một forward-only migration thay body (không đổi signature/owner/grants/search_path) của `hrp_public_apply_submission`; không dùng Node pre-read làm authority vì có TOCTOU. Route không nhận `projectId`/`jobOpeningId`; `slotId` do browser gửi bị từ chối cho canonical JobPosting flow. Không thêm `CandidateSubmission.jobPostingId`. | CHOSEN | TASK A1 §3, §4.2, §5, §6 AC |
 
 ## 5. Open Questions
 None.
@@ -95,7 +97,8 @@ Notes:
    - Chuẩn bị pure UI projection + tests song song SAU KHI DTO/shared profile A0 freeze.
    - KHÔNG integrate / cut over public source trước khi A0 merge và có ít nhất một real `PUBLISHED` JobPosting.
    - KHÔNG đồng thời sửa `prisma/schema.prisma`, `package.json`, `package-lock.json`.
-   - KHÔNG sửa schema.
+   - KHÔNG sửa Prisma schema, nhưng có đúng một forward-only migration thay body `hrp_public_apply_submission` để resolve canonical `PUBLISHED` JobPosting + `OPEN` JobOpening + slot trong cùng transaction; giữ nguyên function signature, owner, grants và `search_path`.
+   - `app/api/public/jobs/[slug]/applications/route.ts` bỏ quyền chọn provenance của browser; RPC là authority cuối cùng và revalidate atomically.
 
 3. Hai executor A0 và A1 không được đồng thời sở hữu:
    - `prisma/schema.prisma`
@@ -107,6 +110,7 @@ Notes:
 | Round | Decision | Reason |
 |---|---|---|
 | 1 | Revision documentation-only → bám Pipeline V2 (`a2ff3478`) + 9 OD chốt vòng 24/09. Status `PROPOSED_ONLY`, Contract gate `DRAFT`, Decision state `CLOSED`, Spec v1.1. | Bản 39c7ebc có semantic lệch: Build vs Adopt = `~2.2.0` sai version; thiếu section `### 3.1`; thiếu wrapper boundary rõ ràng; chưa đóng OD-P1A-01..09; READY_FOR_EXECUTION cùng READY_TO_CODE không đúng với trạng thái proposal. Correction này chỉ chuẩn bị contract, KHÔNG code. |
+| 2 | T0 contract review chốt OD-P1A-10/11: publish chỉ khi JobOpening OPEN; canonical public apply được revalidate atomically trong SECURITY DEFINER RPC theo JobPosting slug, không dùng Node pre-read authority. | Review code thật phát hiện RPC hiện resolve `Project.code`/`Project.id`; contract v1.1 thiếu route/RPC migration trong allowlist nên không thể bảo đảm apply chỉ cho PUBLISHED JobPosting. |
 
 ## 10. Revision Log
 
@@ -114,3 +118,4 @@ Notes:
 |---|---|---|---|
 | `v1.0` | `2026-09-24` | Initial contract at planning commit `39c7ebc` | Initial |
 | `v1.1` | `2026-09-24` | Revision documentation-only theo Pipeline V2 (`a2ff3478`) + OD-P1A-01..09: khóa Build vs Adopt = `ADOPT` với 4 package Tiptap OSS pinned `3.31.3` MIT (bỏ `~2.2.0`); bổ sung wrapper boundary `src/shared/ui/editor/**` + `src/shared/content/job-posting-rich-text/**`; lock state machine `DRAFT ↔ PUBLISHED → ARCHIVED`; lock rich-content allowlist (nodes + marks + link protocol + limits); lock server render qua `@tiptap/static-renderer` + shared HRP wrapper; lock forward-only migration (không DROP / không fabricate PUBLISHED từ Project.isPublic); lock create-or-reuse JobOpening từ StaffingOrderSlot; lock canonical slug `<normalized-title>-<stable-short-suffix>` và route compatibility cho `/viec-lam/PRJ-xxx`; lock A1 KHÔNG thêm `CandidateSubmission.jobPostingId` (dùng current intake boundary + derive server-side); đổi Status về `PROPOSED_ONLY`, Contract gate `DRAFT`, Next gate `T0_CONTRACT_REVIEW`; A1 đổi Assurance lane `CRITICAL`. Chỉ chuẩn bị contract, không code/install/migration/runtime. | Correction documentation-only per OD-P1A-01..09 + V2 contract gate |
+| `v1.2` | `2026-09-24` | T0 contract correction/approval: pin baseline `origin/main@b34cdddd`; A0 `READY_TO_CODE`; khóa JobPosting publish chỉ khi linked JobOpening `OPEN`; static rendering dùng `@tiptap/static-renderer/json/react`; khóa anonymous apply resolve/revalidate canonical `PUBLISHED` JobPosting + `OPEN` JobOpening + canonical slot atomically trong `hrp_public_apply_submission`; A1 được phép thêm đúng một forward-only function-body migration và sửa canonical apply route/tests, không đổi schema/signature/owner/grants/search_path, nhưng vẫn chờ A0 ACCEPTED. | Đóng aggregate ambiguity, HTML-string/TOCTOU và allowlist gap; mở implementation A0 trước A1. |
