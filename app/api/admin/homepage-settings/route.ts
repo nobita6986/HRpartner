@@ -14,7 +14,12 @@ import {
   SettingsRowMissingError,
   updateHomepageSettings,
 } from '@/src/domains/job-board/public-settings.service';
-import { InvalidChatUrlError, normalizeChatUrl } from '@/src/domains/job-board/chat-links';
+import {
+  InvalidChatUrlError,
+  InvalidPhoneNumberError,
+  normalizeChatUrl,
+  normalizePhoneNumber,
+} from '@/src/domains/job-board/chat-links';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -26,6 +31,7 @@ interface AdminSettingsBody {
   listingPageSize?: number;
   zaloChatUrl?: string | null;
   messengerChatUrl?: string | null;
+  phoneCallNumber?: string | null;
 }
 
 function badRequest(message: string): NextResponse {
@@ -55,8 +61,10 @@ function validateBody(body: AdminSettingsBody): string | null {
   try {
     if (body.zaloChatUrl !== undefined) normalizeChatUrl(body.zaloChatUrl, 'zalo');
     if (body.messengerChatUrl !== undefined) normalizeChatUrl(body.messengerChatUrl, 'messenger');
+    if (body.phoneCallNumber !== undefined) normalizePhoneNumber(body.phoneCallNumber);
   } catch (error) {
     if (error instanceof InvalidChatUrlError) return error.message;
+    if (error instanceof InvalidPhoneNumberError) return error.message;
     return 'URL kênh chat không hợp lệ.';
   }
   return null;
@@ -109,6 +117,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     ) {
       return badRequest('messengerChatUrl phải là chuỗi hoặc null.');
     }
+    if (
+      Object.prototype.hasOwnProperty.call(raw, 'phoneCallNumber') &&
+      raw.phoneCallNumber !== null &&
+      typeof raw.phoneCallNumber !== 'string'
+    ) {
+      return badRequest('phoneCallNumber phải là chuỗi hoặc null.');
+    }
     body = {
       bestJobsPageSize: typeof raw.bestJobsPageSize === 'number' ? raw.bestJobsPageSize : undefined,
       listingPageSize: typeof raw.listingPageSize === 'number' ? raw.listingPageSize : undefined,
@@ -117,6 +132,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         : undefined,
       messengerChatUrl: Object.prototype.hasOwnProperty.call(raw, 'messengerChatUrl')
         ? (raw.messengerChatUrl as string | null)
+        : undefined,
+      phoneCallNumber: Object.prototype.hasOwnProperty.call(raw, 'phoneCallNumber')
+        ? (raw.phoneCallNumber as string | null)
         : undefined,
     };
   } catch {
@@ -130,10 +148,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     body.bestJobsPageSize === undefined &&
     body.listingPageSize === undefined &&
     body.zaloChatUrl === undefined &&
-    body.messengerChatUrl === undefined
+    body.messengerChatUrl === undefined &&
+    body.phoneCallNumber === undefined
   ) {
     return badRequest(
-      'Phải cung cấp ít nhất một trường cài đặt homepage hoặc kênh chat.',
+      'Phải cung cấp ít nhất một trường cài đặt homepage hoặc kênh liên hệ.',
     );
   }
 

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { resolveChatHref } from '@/src/domains/job-board/chat-links';
+import { resolveChatHref, resolvePhoneHref } from '@/src/domains/job-board/chat-links';
 
 describe('resolveChatHref', () => {
   it('accepts canonical Zalo and Messenger HTTPS URLs', () => {
@@ -23,6 +23,20 @@ describe('resolveChatHref', () => {
     expect(resolveChatHref(undefined, 'zalo')).toBeNull();
     expect(resolveChatHref('  ', 'messenger')).toBeNull();
     expect(resolveChatHref('not a url', 'zalo')).toBeNull();
+  });
+});
+
+describe('resolvePhoneHref', () => {
+  it('accepts local and international phone numbers', () => {
+    expect(resolvePhoneHref('0901234567')).toBe('tel:0901234567');
+    expect(resolvePhoneHref('(+84) 901-234-567')).toBe('tel:+84901234567');
+  });
+
+  it('rejects missing, short and URI-shaped values', () => {
+    expect(resolvePhoneHref(undefined)).toBeNull();
+    expect(resolvePhoneHref('123')).toBeNull();
+    expect(resolvePhoneHref('tel:+84901234567')).toBeNull();
+    expect(resolvePhoneHref('javascript:alert(1)')).toBeNull();
   });
 });
 
@@ -53,5 +67,13 @@ describe('public layout wiring', () => {
     expect(component).not.toContain('process.env.MESSENGER_CHAT_URL');
     expect(adminForm).toContain('zaloChatUrl-input');
     expect(adminForm).toContain('messengerChatUrl-input');
+    expect(adminForm).toContain('phoneCallNumber-input');
+    expect(component).toContain('data-testid="phone-call-action"');
+    expect(component.indexOf('data-testid="phone-call-action"')).toBeLessThan(
+      component.indexOf('Chat với HRPartner qua Zalo'),
+    );
+    expect(component.indexOf('Chat với HRPartner qua Zalo')).toBeLessThan(
+      component.indexOf('Chat với HRPartner qua Messenger'),
+    );
   });
 });

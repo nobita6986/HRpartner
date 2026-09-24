@@ -1644,6 +1644,7 @@ model HomepageSettings {
   listingPageSize  Int      @default(12) @map("listing_page_size")
   zaloChatUrl      String?  @map("zalo_chat_url")
   messengerChatUrl String?  @map("messenger_chat_url")
+  phoneCallNumber  String?  @map("phone_call_number")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt    @map("updated_at")
   updatedById      String?  @map("updated_by_id")

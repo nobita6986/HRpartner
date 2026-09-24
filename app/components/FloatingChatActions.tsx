@@ -1,7 +1,8 @@
 import { unstable_cache } from 'next/cache';
+import { Phone } from 'lucide-react';
 import { getPrisma } from '@/src/lib/db';
 import { getHomepageSettings } from '@/src/domains/job-board/public-settings.service';
-import { resolveChatHref } from '@/src/domains/job-board/chat-links';
+import { resolveChatHref, resolvePhoneHref } from '@/src/domains/job-board/chat-links';
 
 const getCachedChatSettings = unstable_cache(
   async () => getHomepageSettings(getPrisma()),
@@ -33,16 +34,18 @@ function MessengerIcon() {
 export async function FloatingChatActions() {
   let zaloHref: string | null = null;
   let messengerHref: string | null = null;
+  let phoneHref: string | null = null;
 
   try {
     const settings = await getCachedChatSettings();
     zaloHref = resolveChatHref(settings.zaloChatUrl, 'zalo');
     messengerHref = resolveChatHref(settings.messengerChatUrl, 'messenger');
+    phoneHref = resolvePhoneHref(settings.phoneCallNumber);
   } catch (error) {
     console.error('[FloatingChatActions] failed to read homepage settings:', error);
   }
 
-  if (!zaloHref && !messengerHref) return null;
+  if (!phoneHref && !zaloHref && !messengerHref) return null;
 
   return (
     <aside
@@ -51,6 +54,19 @@ export async function FloatingChatActions() {
       style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
       data-testid="floating-chat-actions"
     >
+      {phoneHref && (
+        <a
+          href={phoneHref}
+          aria-label="Gọi điện cho HRPartner"
+          title="Gọi điện"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2DBE3F] shadow-lg ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:bg-[#27AA37] hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2DBE3F] sm:h-14 sm:w-14"
+          data-testid="phone-call-action"
+        >
+          <Phone className="h-7 w-7 fill-white text-white" aria-hidden="true" />
+          <span className="sr-only">Gọi điện</span>
+        </a>
+      )}
+
       {zaloHref && (
         <a
           href={zaloHref}

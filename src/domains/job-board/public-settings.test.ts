@@ -48,6 +48,7 @@ function createMockPrisma(existingRow?: Record<string, unknown> | null) {
         listingPageSize: data.listingPageSize ?? 12,
         zaloChatUrl: data.zaloChatUrl ?? null,
         messengerChatUrl: data.messengerChatUrl ?? null,
+        phoneCallNumber: data.phoneCallNumber ?? null,
         updatedAt: new Date(),
       })),
     },
@@ -141,6 +142,7 @@ describe('toHomepageSettingsDto', () => {
       listingPageSize: 24,
       zaloChatUrl: 'https://zalo.me/hrpartner',
       messengerChatUrl: 'https://m.me/hrpartner',
+      phoneCallNumber: '+84901234567',
       updatedAt: new Date('2026-09-11T14:00:00.000Z'),
     };
     const dto = toHomepageSettingsDto(row);
@@ -149,6 +151,7 @@ describe('toHomepageSettingsDto', () => {
     expect(dto.listingPageSize).toBe(24);
     expect(dto.zaloChatUrl).toBe('https://zalo.me/hrpartner');
     expect(dto.messengerChatUrl).toBe('https://m.me/hrpartner');
+    expect(dto.phoneCallNumber).toBe('+84901234567');
     expect(dto.updatedAt).toBe('2026-09-11T14:00:00.000Z');
   });
 
@@ -159,6 +162,7 @@ describe('toHomepageSettingsDto', () => {
       listingPageSize: 999, // out of range
       zaloChatUrl: null,
       messengerChatUrl: null,
+      phoneCallNumber: null,
       updatedAt: new Date(),
     };
     expect(toHomepageSettingsDto(row).listingPageSize).toBe(LISTING_PAGE_SIZE_MAX);
@@ -171,6 +175,7 @@ describe('toHomepageSettingsDto', () => {
       listingPageSize: 12,
       zaloChatUrl: null,
       messengerChatUrl: null,
+      phoneCallNumber: null,
       updatedAt: new Date(),
     };
     expect(toHomepageSettingsDto(row).bestJobsPageSize).toBe(9);
@@ -187,6 +192,7 @@ describe('getHomepageSettings', () => {
       listingPageSize: 20,
       zaloChatUrl: null,
       messengerChatUrl: null,
+      phoneCallNumber: null,
       updatedAt: new Date(),
     };
     const prisma = createMockPrisma(existingRow);
@@ -272,6 +278,7 @@ describe('updateHomepageSettings', () => {
       listingPageSize: 12,
       zaloChatUrl: null,
       messengerChatUrl: 'https://m.me/old-page',
+      phoneCallNumber: null,
       updatedAt: new Date(),
     });
     const result = await updateHomepageSettings(
@@ -299,12 +306,56 @@ describe('updateHomepageSettings', () => {
       listingPageSize: 12,
       zaloChatUrl: null,
       messengerChatUrl: null,
+      phoneCallNumber: null,
       updatedAt: new Date(),
     });
 
     await expect(
       updateHomepageSettings(prisma, { zaloChatUrl: 'https://example.com/chat' }, 'user-1'),
     ).rejects.toThrow('URL Zalo không hợp lệ.');
+  });
+
+  it('normalizes a formatted phone number and permits clearing it', async () => {
+    const prisma = createMockPrisma({
+      id: 'default',
+      bestJobsPageSize: 9,
+      listingPageSize: 12,
+      zaloChatUrl: null,
+      messengerChatUrl: null,
+      phoneCallNumber: null,
+      updatedAt: new Date(),
+    });
+
+    const saved = await updateHomepageSettings(
+      prisma,
+      { phoneCallNumber: '(+84) 901-234-567' },
+      'user-1',
+    );
+    expect(saved.settings.phoneCallNumber).toBe('+84901234567');
+    expect(prisma.homepageSettings.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ phoneCallNumber: '+84901234567' }),
+      }),
+    );
+
+    const cleared = await updateHomepageSettings(prisma, { phoneCallNumber: '' }, 'user-1');
+    expect(cleared.settings.phoneCallNumber).toBeNull();
+  });
+
+  it('rejects an invalid phone number', async () => {
+    const prisma = createMockPrisma({
+      id: 'default',
+      bestJobsPageSize: 9,
+      listingPageSize: 12,
+      zaloChatUrl: null,
+      messengerChatUrl: null,
+      phoneCallNumber: null,
+      updatedAt: new Date(),
+    });
+
+    await expect(
+      updateHomepageSettings(prisma, { phoneCallNumber: 'tel:javascript' }, 'user-1'),
+    ).rejects.toThrow('Số điện thoại không hợp lệ.');
   });
 });
 
@@ -318,6 +369,7 @@ describe('toHomepageSettingsView', () => {
       listingPageSize: 20,
       zaloChatUrl: null,
       messengerChatUrl: null,
+      phoneCallNumber: null,
       updatedAt: '2026-09-11T14:00:00.000Z',
     };
     const view = toHomepageSettingsView(dto);

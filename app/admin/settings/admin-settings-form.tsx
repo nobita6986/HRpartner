@@ -27,7 +27,12 @@ import {
   LISTING_PAGE_SIZE_MIN,
   type HomepageSettingsDto,
 } from '@/src/domains/job-board/public-types';
-import { InvalidChatUrlError, normalizeChatUrl } from '@/src/domains/job-board/chat-links';
+import {
+  InvalidChatUrlError,
+  InvalidPhoneNumberError,
+  normalizeChatUrl,
+  normalizePhoneNumber,
+} from '@/src/domains/job-board/chat-links';
 
 const PLACEHOLDER_GROUPS = [
   {
@@ -97,6 +102,16 @@ function validateChatUrl(value: string, channel: 'zalo' | 'messenger'): string |
   }
 }
 
+function validatePhoneNumber(value: string): string | null {
+  try {
+    normalizePhoneNumber(value);
+    return null;
+  } catch (error) {
+    if (error instanceof InvalidPhoneNumberError) return error.message;
+    return 'Số điện thoại không hợp lệ.';
+  }
+}
+
 export default function AdminSettingsForm({ initialSettings, unavailableReason }: AdminSettingsFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -107,6 +122,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const [listingPageSize, setListingPageSize] = useState<number>(initialSettings.listingPageSize);
   const [zaloChatUrl, setZaloChatUrl] = useState(initialSettings.zaloChatUrl ?? '');
   const [messengerChatUrl, setMessengerChatUrl] = useState(initialSettings.messengerChatUrl ?? '');
+  const [phoneCallNumber, setPhoneCallNumber] = useState(initialSettings.phoneCallNumber ?? '');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -114,17 +130,20 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const listingError = validateListing(listingPageSize);
   const zaloChatUrlError = validateChatUrl(zaloChatUrl, 'zalo');
   const messengerChatUrlError = validateChatUrl(messengerChatUrl, 'messenger');
+  const phoneCallNumberError = validatePhoneNumber(phoneCallNumber);
   const hasFieldError =
     bestJobsError !== null ||
     listingError !== null ||
     zaloChatUrlError !== null ||
-    messengerChatUrlError !== null;
+    messengerChatUrlError !== null ||
+    phoneCallNumberError !== null;
 
   const hasChanges =
     bestJobsPageSize !== savedSnapshot.bestJobsPageSize ||
     listingPageSize !== savedSnapshot.listingPageSize ||
     zaloChatUrl !== (savedSnapshot.zaloChatUrl ?? '') ||
-    messengerChatUrl !== (savedSnapshot.messengerChatUrl ?? '');
+    messengerChatUrl !== (savedSnapshot.messengerChatUrl ?? '') ||
+    phoneCallNumber !== (savedSnapshot.phoneCallNumber ?? '');
 
   // Clear stale success/error when user edits again.
   useEffect(() => {
@@ -132,7 +151,15 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
       setSuccess(null);
       setError(null);
     }
-  }, [bestJobsPageSize, listingPageSize, zaloChatUrl, messengerChatUrl, success, error]);
+  }, [
+    bestJobsPageSize,
+    listingPageSize,
+    zaloChatUrl,
+    messengerChatUrl,
+    phoneCallNumber,
+    success,
+    error,
+  ]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -150,6 +177,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           listingError ??
           zaloChatUrlError ??
           messengerChatUrlError ??
+          phoneCallNumberError ??
           'Có trường chưa hợp lệ.',
       );
       return;
@@ -165,6 +193,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             listingPageSize,
             zaloChatUrl,
             messengerChatUrl,
+            phoneCallNumber,
           }),
         });
         if (!res.ok) {
@@ -180,7 +209,8 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           setListingPageSize(data.settings.listingPageSize);
           setZaloChatUrl(data.settings.zaloChatUrl ?? '');
           setMessengerChatUrl(data.settings.messengerChatUrl ?? '');
-          setSuccess('Đã lưu cài đặt homepage và kênh chat.');
+          setPhoneCallNumber(data.settings.phoneCallNumber ?? '');
+          setSuccess('Đã lưu cài đặt homepage và kênh liên hệ.');
         }
         router.refresh();
       } catch (e) {
@@ -194,6 +224,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     setListingPageSize(savedSnapshot.listingPageSize);
     setZaloChatUrl(savedSnapshot.zaloChatUrl ?? '');
     setMessengerChatUrl(savedSnapshot.messengerChatUrl ?? '');
+    setPhoneCallNumber(savedSnapshot.phoneCallNumber ?? '');
     setError(null);
     setSuccess(null);
   }
@@ -353,14 +384,46 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         >
           <div className="mb-4">
             <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
-              Kênh chat công khai
+              Kênh liên hệ công khai
             </h3>
             <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
-              Để trống để ẩn kênh tương ứng. Chỉ URL HTTPS chính thức của Zalo và Messenger được chấp nhận.
+              Để trống để ẩn kênh tương ứng. Số điện thoại và URL đều được kiểm tra trước khi hiển thị.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div>
+              <label htmlFor="phoneCallNumber" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Số điện thoại
+              </label>
+              <input
+                id="phoneCallNumber"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                value={phoneCallNumber}
+                onChange={(event) => setPhoneCallNumber(event.target.value)}
+                disabled={Boolean(unavailableReason)}
+                placeholder="0901234567 hoặc +84901234567"
+                aria-invalid={phoneCallNumberError !== null}
+                aria-describedby="phoneCallNumber-help phoneCallNumber-error"
+                className="hrp-focus min-h-11 w-full rounded-lg border bg-white px-3 py-2 text-sm"
+                style={{
+                  borderColor: phoneCallNumberError ? 'var(--error)' : 'var(--outline-variant)',
+                  color: 'var(--on-surface)',
+                }}
+                data-testid="phoneCallNumber-input"
+              />
+              <p id="phoneCallNumber-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                7–15 chữ số; có thể dùng mã quốc gia với dấu +.
+              </p>
+              {phoneCallNumberError && (
+                <p id="phoneCallNumber-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
+                  {phoneCallNumberError}
+                </p>
+              )}
+            </div>
+
             <div>
               <label htmlFor="zaloChatUrl" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
                 URL Zalo OA

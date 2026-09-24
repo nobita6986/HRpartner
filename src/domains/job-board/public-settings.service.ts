@@ -26,7 +26,12 @@ import {
   normalizeBestJobsPageSize,
   type HomepageSettingsDto,
 } from './public-types';
-import { normalizeChatUrl, resolveChatHref } from './chat-links';
+import {
+  normalizeChatUrl,
+  normalizePhoneNumber,
+  resolveChatHref,
+  resolvePhoneNumber,
+} from './chat-links';
 
 export const HOMEPAGE_SETTINGS_SINGLETON_ID = 'default' as const;
 
@@ -43,6 +48,7 @@ type SettingsRow = {
   listingPageSize: number;
   zaloChatUrl: string | null;
   messengerChatUrl: string | null;
+  phoneCallNumber: string | null;
   updatedAt: Date;
 };
 
@@ -54,6 +60,7 @@ export function toHomepageSettingsDto(row: SettingsRow): HomepageSettingsDto {
     listingPageSize: clampListingPageSize(row.listingPageSize),
     zaloChatUrl: resolveChatHref(row.zaloChatUrl, 'zalo'),
     messengerChatUrl: resolveChatHref(row.messengerChatUrl, 'messenger'),
+    phoneCallNumber: resolvePhoneNumber(row.phoneCallNumber),
     updatedAt: row.updatedAt.toISOString(),
   };
 }
@@ -94,6 +101,7 @@ export interface UpdateHomepageSettingsInput {
   listingPageSize?: number;
   zaloChatUrl?: string | null;
   messengerChatUrl?: string | null;
+  phoneCallNumber?: string | null;
 }
 
 /** Result type for admin write — returns the post-write DTO. */
@@ -138,6 +146,7 @@ export async function updateHomepageSettings(
     listingPageSize?: number;
     zaloChatUrl?: string | null;
     messengerChatUrl?: string | null;
+    phoneCallNumber?: string | null;
     updatedById: string | null;
   } = { updatedById: actorId };
 
@@ -152,6 +161,9 @@ export async function updateHomepageSettings(
   }
   if (input.messengerChatUrl !== undefined) {
     data.messengerChatUrl = normalizeChatUrl(input.messengerChatUrl, 'messenger');
+  }
+  if (input.phoneCallNumber !== undefined) {
+    data.phoneCallNumber = normalizePhoneNumber(input.phoneCallNumber);
   }
 
   const updated = await prisma.homepageSettings.update({
