@@ -30,8 +30,9 @@ Ghi chú này supersede các câu execution-gate đã stale trong bản v2.3; kh
 - Sequencing authority: `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`.
 - AFF-01/AFF-02 capability baseline đã tồn tại và đang hỗ trợ public attribution path; legacy TASK/HANDOFF cần reconciliation riêng, không được dùng status cũ để mở lại từ đầu hoặc tự tuyên bố ACCEPTED.
 - AFF-03/03B/03C public attribution/intake đã production verified. Evidence closeout chính: `../tasks/hrp-v6-n2-aff-03c-cs-labor-profile-fix/CLOSEOUT.md`.
+- AFF-04 conversion, accepted SourceClaim và server-derived Placement/ProjectAssignment propagation đã production verified tại main `8b8e39b` (PR #35). Evidence closeout: `../tasks/hrp-v6-n2-aff-04-conversion-propagation/HANDOFF.md`.
 - W5 đã production verify RLS, elapsed assignment sweep và manual `REVOKED` semantics: `../tasks/hrp-v6-w5-handling-assignment-safety/HANDOFF.md`. W5 không chứng minh toàn bộ Company Pool/dispute của AFF-05A.
-- Remaining implementation order: AFF-04 → residual AFF-05A reconciliation → AFF-05B → AFF-06 → AFF-07.
+- Remaining implementation order: residual AFF-05A reconciliation → AFF-05B → AFF-06 → AFF-07.
 - Full feature Definition of Done tại §23 chưa đạt; `ACCEPTED` của AFF-03C không phải `ACCEPTED` cho Universal AFF.
 
 Evidence/CCCD readiness không phải coding gate của AFF. Development, CI, preview và tests chỉ dùng synthetic data, không upload CCCD thật hoặc production PII. P0-A chỉ chặn việc bật real evidence ingestion trên production. AFF slice được mở khi contract riêng, dependency domain, migration/security evidence và file ownership của chính slice đó đã sẵn sàng.

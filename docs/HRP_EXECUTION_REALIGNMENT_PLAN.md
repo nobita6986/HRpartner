@@ -564,14 +564,15 @@ Current execution state:
 |---|---|
 | AFF-01/AFF-02 | Attribution/link-capture capability baseline exists and supports the production AFF-03 path. Legacy task statuses still require documentation reconciliation; do not reopen these slices from zero. |
 | AFF-03/03B/03C | Public attribution/intake path is production verified. AFF-03C closed the missing direct `labor_profile_id` link; this does not complete Universal AFF. |
+| AFF-04 | Conversion, accepted SourceClaim resolution and server-derived Placement/ProjectAssignment propagation are production verified at main `8b8e39b` (PR #35). The production migration and narrow legacy backfill passed branch gate, aggregate preflight and post-deploy verification. |
 | AFF-05A/W5 | HandlingAssignment foundation and W5 safety repair exist. W5 closes RLS, expiry sweep and `REVOKED` semantics only; it is not proof that the complete AFF-05A Company Pool/dispute scope is done. |
-| Remaining expansion | Resume with AFF-04, then reconcile residual AFF-05A scope before AFF-05B, AFF-06 and AFF-07. |
+| Remaining expansion | Reconcile residual AFF-05A Company Pool/dispute scope before AFF-05B, AFF-06 and AFF-07. |
 
 Re-entry rules:
 
 1. Production defect or security hotfixes in an existing AFF path may open immediately under their own narrow gate.
 2. Feature expansion requires one approved thin-slice contract, isolated file ownership, migration/security evidence where applicable, and the normal Tier 1 → Tier 3 → Tier 0 pipeline.
-3. The first new implementation slice is AFF-04: conversion → accepted SourceClaim → server-derived Placement/ProjectAssignment propagation.
+3. AFF-04 is closed and must not be restarted. The next AFF action is a thin contract for residual AFF-05A Company Pool/dispute scope; AFF-05B remains a separate commission-policy slice.
 4. Do not recreate AFF-01 through AFF-03, declare the whole AFF feature complete, or infer acceptance from stale task status fields.
 5. Full user-facing Universal AFF enablement remains P3-E and requires the AFF capability gate to pass.
 
