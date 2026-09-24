@@ -259,16 +259,13 @@ describeIf('AFF-04 predecessor upgrade-path (T0 directive F-P4-2)', () => {
 
     // SOURCE CLAIM fixtures (predecessor state, no referrer_user_id column yet):
     // (a) accepted CTV_REFERRAL + ctv_id  -> WILL be backfilled by AFF-04
-    await ephemeral.sourceClaim.create({
-      data: {
-        id: `${workerAId}-claim-ctv`,
-        workerId: workerAId,
-        claimType: 'CTV_REFERRAL',
-        ctvId: ctvUserId,
-        accepted: true,
-        acceptedBy: adminUserId,
-      },
-    });
+    // Use predecessor-shaped SQL rather than the current generated Prisma model:
+    // after Step 3 the column referrer_user_id intentionally does not exist yet.
+    await ephemeral.$executeRawUnsafe(
+      `INSERT INTO source_claims (id, worker_id, claim_type, ctv_id, accepted, accepted_by, updated_at)
+       VALUES ($1, $2, 'CTV_REFERRAL', $3, true, $4, NOW())`,
+      [`${workerAId}-claim-ctv`, workerAId, ctvUserId, adminUserId],
+    );
     // (b) HRP_DIRECT accepted=false + legacy ctv_id  -> PRESERVED unchanged by AFF-04
     await ephemeral.$executeRawUnsafe(
       `INSERT INTO source_claims (id, worker_id, claim_type, ctv_id, accepted, registration_channel, updated_at)
