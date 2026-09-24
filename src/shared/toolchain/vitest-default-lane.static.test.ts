@@ -37,7 +37,12 @@ import { describe, expect, it } from 'vitest';
 import { INTEGRATION_TEST_FILES } from '../../../vitest.integration-files';
 
 /** Ba glob mà `RQ-05` gọi TÊN. Đây là mặt chữ của contract, không phải nguồn sự thật chống lệch. */
-const RQ05_INCLUDE_GLOBS = ['src/**/*.test.ts', 'packages/**/*.test.ts', 'prisma/**/*.test.ts'];
+const RQ05_INCLUDE_GLOBS = [
+  'src/**/*.test.ts',
+  'src/**/*.test.tsx',
+  'packages/**/*.test.ts',
+  'prisma/**/*.test.ts',
+];
 
 /**
  * Dấu hiệu của một đường chạm DB ngoài ý muốn trong default config (`RQ-02`). Mỗi mẫu là một cách
@@ -406,7 +411,12 @@ describe('rang cua hang rao — phep am tren config BIA (AC-06)', () => {
   it('phat hien include thieu glob va poolOptions bi noi long', () => {
     const globs = extractInclude(DRIFTED_CONFIG);
     expect(globs).not.toBeNull();
-    expect(difference(RQ05_INCLUDE_GLOBS, globs!)).toEqual(['prisma/**/*.test.ts']);
+    // DRIFTED_CONFIG cố tình THIẾU cả `prisma/**` lẫn `src/**/*.test.tsx` so với RQ-05 — cả hai
+    // đều phải xuất hiện trong tập thiếu. Trước P1-A0 chỉ có `prisma/**` thiếu (4-char fix). Sau
+    // P1-A0 bổ sung `src/**/*.test.tsx` để lane thu renderer.test.tsx (P1-A0 shared rich content).
+    expect(sorted(difference(RQ05_INCLUDE_GLOBS, globs!))).toEqual(
+      sorted(['prisma/**/*.test.ts', 'src/**/*.test.tsx']),
+    );
     expect(sliceBlock(DRIFTED_CONFIG, 'poolOptions')).toMatch(/maxThreads:\s*8/);
   });
 

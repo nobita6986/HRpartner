@@ -488,20 +488,33 @@ model JobOpening {
 
 // JobPosting: hình chiếu công khai của đúng MỘT JobOpening; tối đa 1 tin PUBLISHED cùng lúc
 // Vòng đời: DRAFT → PUBLISHED → ARCHIVED
+//
+// P1-A0 contract add: title + salaryDisplay + 4 rich-content JSON fields + contentSchemaVersion.
+// Tất cả nullable (draft/existing rows OK); publish mới bắt buộc title + description.
+// Migration: prisma/migrations/20260924180000_p1a0_jobposting_content_fields
 model JobPosting {
-  id           String    @id @default(uuid())
-  jobOpeningId String    @unique @map("job_opening_id")
-  slug         String
-  revision     Int       @default(1)
-  status       String    @default("DRAFT") // DRAFT | PUBLISHED | ARCHIVED
-  publishedAt  DateTime? @map("published_at")
-  archivedAt   DateTime? @map("archived_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  id                          String    @id @default(uuid())
+  jobOpeningId                String    @unique @map("job_opening_id")
+  slug                        String
+  revision                    Int       @default(1)
+  status                      String    @default("DRAFT") // DRAFT | PUBLISHED | ARCHIVED
+  publishedAt                 DateTime? @map("published_at")
+  archivedAt                  DateTime? @map("archived_at")
+  // P1-A0 additive content fields (nullable; JSON stores Tiptap/ProseMirror JSON).
+  title                       String?   @map("title")
+  salaryDisplay               String?   @map("salary_display")
+  descriptionJson             Json?     @map("description_json")
+  requirementsJson            Json?     @map("requirements_json")
+  benefitsJson                Json?     @map("benefits_json")
+  applicationInstructionsJson Json?     @map("application_instructions_json")
+  contentSchemaVersion        Int       @default(1) @map("content_schema_version")
+  createdAt                   DateTime  @default(now()) @map("created_at")
+  updatedAt                   DateTime  @updatedAt @map("updated_at")
 
   jobOpening JobOpening @relation("OpeningPosting", fields: [jobOpeningId], references: [id])
 
   @@index([jobOpeningId])
+  @@index([status])
   @@unique([slug])
   @@map("job_postings")
 }

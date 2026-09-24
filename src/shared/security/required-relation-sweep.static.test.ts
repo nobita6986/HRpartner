@@ -87,10 +87,16 @@ const EXPECTED_HITS = [
   'src/domains/crm/project-read.service.ts:40 clientCompany',
   'src/domains/staffing/job-opening-read.service.ts:41 staffingOrder',
   'src/domains/staffing/job-opening-read.service.ts:46 project',
-  'src/domains/staffing/job-posting-list.service.ts:125 jobOpening',
-  'src/domains/staffing/job-posting-list.service.ts:128 staffingOrder',
-  'src/domains/staffing/job-posting-list.service.ts:191 jobOpening',
-  'src/domains/staffing/job-posting-list.service.ts:199 staffingOrder',
+  // P1-A0 STEP-04 (hrp-p1-a0-jobposting-authoring-publish): publishJobPosting
+  // reads the linked JobOpening to gate JobOpening.status = OPEN. RLS-covered.
+  'src/domains/staffing/job-posting-authoring.service.ts:603 jobOpening',
+  // P1-A0 STEP-03: line numbers in job-posting-list.service.ts shifted because
+  // the DTOs grew (added title, salaryDisplay, *Json, contentSchemaVersion,
+  // hasContent). The four select-clauses themselves are unchanged.
+  'src/domains/staffing/job-posting-list.service.ts:136 jobOpening',
+  'src/domains/staffing/job-posting-list.service.ts:139 staffingOrder',
+  'src/domains/staffing/job-posting-list.service.ts:218 jobOpening',
+  'src/domains/staffing/job-posting-list.service.ts:226 staffingOrder',
   'src/domains/staffing/order.service.ts:153 project',
   'src/domains/staffing/order.service.ts:179 project',
   'src/domains/staffing/submission.service.ts:204 project',
@@ -287,7 +293,11 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // +4 dòng ở src/domains/crm và staffing W3 → 13 src. Tổng 16.
     // Sau AFF-04 (2026-09-23): +2 dòng (conversion.service.ts:128 laborProfile,
     // transfer.service.ts:186 worker). Tổng src = 15, tổng all = 18.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(15);
+    // Sau P1-A0 STEP-04 (2026-09-24): +1 dòng (job-posting-authoring.service.ts:603
+    // jobOpening). Tổng src = 16, tổng all = 19. Bốn dòng cũ của
+    // job-posting-list.service.ts lệch số dòng do mở rộng DTO (125/128/191/199
+    // → 136/139/218/226) — không đếm thêm, không trừ.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(16);
   });
 });
 

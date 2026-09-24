@@ -1,22 +1,24 @@
 /**
- * /admin/jobs/job-postings/[id] — AV2 JobPosting viewer + editor shell.
+ * /admin/jobs/job-postings/[id] — P1-A0 admin authoring.
  *
- * Vòng này là READ-ONLY ở persistence nhưng vẫn là editor shell thật — có
- * form chỉnh nội dung trong state cục bộ + preview phản ánh nội dung vừa
- * nhập (xem component con `editor-shell.tsx`). KHÔNG có nút Lưu/Publish
- * vì backend ghi JobPosting/section content chưa có.
+ * Server Component: reads the JobPosting through RLS via `withDbContext`,
+ * then hands the row to the client editor shell. The shell drives the real
+ * PATCH / publish / unpublish / archive API.
  *
  * RLS Phase 2 (DEC-02): JobPosting có FORCE ROW LEVEL SECURITY. Mọi SELECT
  * phải qua `withDbContext(prisma, ctx, ...)` để `applyRlsContext` set GUC
- * transaction-local (`app.user_id`, `app.role`) — RLS policy
- * `job_postings_select` (gọi `hrp_project_visible_for`) mới chạy đúng.
+ * transaction-local (`app.user_id`, `app.role`).
  *
- * Quyền page — đồng bộ với chính sách dữ liệu thực tế:
- *  - VIEWER_ROLES = { ADMIN, HR_MANAGER, PM, SALE, DIRECTOR } (5 role).
- *    HR_STAFF/ACCOUNTANT KHÔNG vào vì RLS `hrp_project_visible_for` không
- *    nhánh cho họ (xem `prisma/migrations/20260821103500_m13_restore_rls_matrix`).
- *    WORKER/MKT/VENDOR/CTV RLS cho phép nhưng mục tiêu editor shell là
- *    Admin/Sale — không mở rộng.
+ * Quyền page:
+ *   - MUTATION_ROLES = { ADMIN, HR_MANAGER, HR_STAFF } — đồng bộ với service.
+ *     Những role này được xem + ghi (publish/unpublish/archive).
+ *   - VIEWER_ROLES = { PM, SALE, DIRECTOR } — đồng bộ với RLS project visibility
+ *     của `hrp_project_visible_for` để HR_STAFF/ACCOUNTANT không thấy DRAFT
+ *     nội bộ (chờ chính sách phân quyền rõ ràng hơn).
+ *
+ * Public anonymous apply RPC (`/api/public/jobs/[slug]/applications`) KHÔNG
+ * bị ảnh hưởng — vẫn tra Project qua `getPublicJobDetail`. A1 sẽ gắn nó với
+ * JobPosting khi schema mapping được chốt.
  */
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
@@ -39,9 +41,13 @@ export const metadata = {
   title: 'JobPosting viewer — Admin',
 };
 
-const VIEWER_ROLES: ReadonlySet<SystemRole> = new Set([
+const MUTATION_ROLES: ReadonlySet<SystemRole> = new Set([
   'ADMIN',
   'HR_MANAGER',
+  'HR_STAFF',
+]);
+
+const VIEWER_ROLES: ReadonlySet<SystemRole> = new Set([
   'PM',
   'SALE',
   'DIRECTOR',
@@ -56,9 +62,11 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
   if (!session) {
     redirect('/login?callback=/admin/jobs/job-postings');
   }
-  if (!VIEWER_ROLES.has(session.role)) {
+  const allowed = MUTATION_ROLES.has(session.role) || VIEWER_ROLES.has(session.role);
+  if (!allowed) {
     redirect('/forbidden');
   }
+  const canMutate = MUTATION_ROLES.has(session.role);
 
   const { id } = await params;
   const ctx = { userId: session.userId, role: session.role };
@@ -145,8 +153,8 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
           </div>
         </header>
 
-        {/* Editor shell — form + preview cặp cho từng section content */}
-        <JobPostingEditorShell />
+        {/* Editor shell — P1-A0: real Tiptap wrapper + real persistence API */}
+        <JobPostingEditorShell initial={posting} canMutate={canMutate} />
 
         {/* Footer note — phần bị khóa */}
         <section
@@ -162,11 +170,10 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
             Phần bị khóa (chờ bước sau)
           </h2>
           <ul className="ml-4 list-disc space-y-1">
-            <li><strong>Lưu bản nháp section content</strong> (mọi thay đổi trong form phía trên) → chờ AV2 backend (Postgres persistence + API ghi). Hiện chỉ tồn tại trong state cục bộ của tab.</li>
-            <li><strong>Publish JobPosting</strong> (DRAFT → PUBLISHED) → chờ contract N3 (gắn JobPosting với JobOpening status transition).</li>
-            <li><strong>Section content thật (REAL)</strong> thay vì fixture DEMO khởi đầu → chờ AV2 backend + AV6 CMS.</li>
-            <li><strong>Gallery media</strong> (chỗ attach ảnh) → chờ AV4 Media Library integration với JobPosting owner.</li>
-            <li><strong>Mở JobPosting ở trang public</strong> (<code>/viec-lam/[slug]</code>) → trang public hiện vẫn tra Project (qua <code>getPublicJobDetail</code>), chưa gắn với JobPosting. Sẽ khôi phục liên kết khi ánh xạ JobPosting.slug → Project.code hợp lệ (chờ AV6 CMS).</li>
+            <li><strong>Mở JobPosting ở trang public</strong> (<code>/viec-lam/[slug]</code>) → trang public hiện vẫn tra Project (qua <code>getPublicJobDetail</code>), chưa gắn với JobPosting. Sẽ được khôi phục khi <code>P1-A1</code> hoàn tất ánh xạ JobPosting.slug → Project.</li>
+            <li><strong>Gallery media</strong> (ảnh đính kèm JobPosting) → chờ AV4 Media Library integration với JobPosting owner.</li>
+            <li><strong>Anonymous apply RPC gắn JobPosting</strong> (tạo CandidateSubmission.jobPostingId) → chờ P1-A1. Hiện tại vẫn qua Project/Slot cũ, không thay đổi.</li>
+            <li><strong>Sửa slug trước publish</strong> → schema lock slug sau first PUBLISHED; pre-publish rename hiện chưa expose. Cần tạo JobOpening mới nếu muốn đổi slug.</li>
           </ul>
         </section>
       </div>
