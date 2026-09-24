@@ -7,6 +7,7 @@
 | Task slug | `<task-slug>` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Work type | `CODE | DOCS | DESIGN | INFRA | MIXED` |
+| Build vs adopt | `N/A | ADOPT | CUSTOM` |
 | Assurance lane | `FAST | STANDARD | CRITICAL` |
 | Audit mode | `NONE | LIGHT` |
 | Audit reason | `<một câu; CRITICAL + NONE phải nêu risk acceptance>` |
@@ -54,6 +55,16 @@ Chỉ liệt kê bằng chứng cần để Tier 1 triển khai. FAST thường 
 | `DEC-01` | `<quyết định đã chốt>` | `CHOSEN` |
 
 Không để `NEED_USER_DECISION` khi chuyển READY_FOR_EXECUTION.
+
+### 3.1 Build vs Adopt
+
+| Capability | Existing options | Decision | License | Version/source | Wrapper boundary | Reason |
+|---|---|---|---|---|---|---|
+| `<capability hoặc N/A>` | `<candidate đã kiểm tra>` | `N/A | ADOPT | CUSTOM` | `<license hoặc N/A>` | `<package/version/source hoặc N/A>` | `<repo-owned boundary hoặc N/A>` | `<evidence/rationale>` |
+
+- `ADOPT`: phải pin license, version/source, compatibility và wrapper/test boundary.
+- `CUSTOM`: phải có marker `CUSTOM_BUILD_JUSTIFICATION` và evidence cụ thể.
+- `N/A`: ghi lý do task không tạo capability phổ thông và không đổi dependency/shared framework.
 
 ## 4. Contract
 

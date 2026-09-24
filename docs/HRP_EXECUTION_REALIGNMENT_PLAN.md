@@ -1546,6 +1546,35 @@ Rules:
 
 ---
 
+## 47.2 BUILD_VS_ADOPT — Library-first policy
+
+HRP tự xây domain rules, không tự xây lại hạ tầng kỹ thuật phổ thông đã có thư viện trưởng thành.
+
+```text
+LIBRARY_FIRST:
+editor, form, table, upload UI, date/time, chart, queue,
+email renderer, document export and accessibility primitives
+
+HRP_OWNED:
+authorization, RLS/data scope, lifecycle/state transition,
+idempotency authority, audit semantics, attribution/AFF,
+commission and product policy
+```
+
+Mọi TASK V2 phải khai `Build vs adopt: N/A | ADOPT | CUSTOM`:
+
+1. `ADOPT` chỉ sau khi kiểm tra official source, license, maintenance/security posture, React/Next/runtime compatibility, SSR khi áp dụng, bundle/operational cost và data portability/vendor lock-in.
+2. Dependency được pin bằng manifest + lockfile và chỉ được dùng qua wrapper/component/adapter do HRP sở hữu. Contract test bảo vệ wrapper; vendor API không lan trực tiếp vào domain.
+3. `CUSTOM` cần marker `CUSTOM_BUILD_JUSTIFICATION` cùng evidence rằng candidate hiện hữu không phù hợp hoặc wrapper có tổng rủi ro/chi phí cao hơn tự xây.
+4. Không copy source tùy tiện từ repository ngoài. Không coi package là authority cho permission, business transition, persistence ownership hoặc security policy.
+5. Roadmap chỉ giữ policy và default direction. Package/version cụ thể thuộc TASK + lockfile để agent tương lai phải kiểm chứng lại thay vì kế thừa mù quáng.
+
+Default direction cho P1-A và future recruiter-authored content là đánh giá **Tiptap OSS** trước. Job/search/filter fields vẫn structured; chỉ rich content dùng canonical editor JSON có schema version, server validation và sanitized/static public rendering. TASK P1-A pin version, license, extension allowlist và compatibility evidence trước khi cài package. Nếu spike chứng minh blocker thật, Tier 1 được counterproposal Lexical/BlockNote hoặc `CUSTOM` theo gate trên.
+
+Authority thực thi nằm trong `.ai-pipeline/rules/00-global-rules.md`, `tier0.md`, `tier1.md`, `TASK.template.md` và `verify-task.ps1`.
+
+---
+
 # 48. FIRST AI CODING DISCOVERY PACKAGE
 
 Before coding, AI must produce:
@@ -1853,6 +1882,10 @@ no direct HRP core Prisma access
 Integration:
 explicit shared contract authority
 S2S + idempotency + outbox
+
+Architecture delivery:
+LIBRARY_FIRST / BUILD_VS_ADOPT
+Tiptap OSS is the default P1-A editor candidate, not an installed dependency until TASK compatibility and lockfile gates pass
 ```
 
 ---

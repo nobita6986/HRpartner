@@ -45,6 +45,17 @@ Không dùng audit để tìm lỗi formatting mà verifier hoặc Tier 1 self-r
 
 Không bắt full suite/build theo thói quen. Một evidence có thể chứng minh nhiều AC. Không tạo AC cho thao tác hành chính.
 
+## BUILD_VS_ADOPT
+
+Mọi task V2 khai `Build vs adopt: N/A | ADOPT | CUSTOM` trước `READY_TO_CODE`.
+
+- Dùng `ADOPT` khi thêm library cho capability phổ thông; ghi license, package/version, runtime compatibility, portability/lock-in, wrapper do repo sở hữu và regression test tại wrapper.
+- Dùng `CUSTOM` chỉ với marker `CUSTOM_BUILD_JUSTIFICATION` và evidence candidate hiện có không phù hợp.
+- Dùng `N/A` khi không thêm/thay dependency hoặc shared framework và không tự tạo capability kỹ thuật phổ thông.
+- T0 chỉ chốt trade-off sản phẩm/license/lock-in lớn; T1 tự chọn routine package trong authority đã giao.
+
+Roadmap dự án có thể đặt default candidate, nhưng package/version cuối cùng luôn được pin trong TASK + lockfile sau compatibility check.
+
 ## Chọn audit trong TASK
 
 | Audit mode | Khi dùng | Handoff |

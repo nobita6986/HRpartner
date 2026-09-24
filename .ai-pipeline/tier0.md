@@ -17,6 +17,7 @@ Tier 0 giữ sản phẩm đi đúng hướng và loại bỏ blocker quyết đ
 - Review contract CRITICAL một lần theo checklist đầy đủ trước khi mở code.
 - Review HANDOFF một lần trước audit; chỉ giao Tier 3 khi implementation đã commit, CI/gate canonical đạt và SHA đã freeze.
 - Giữ giới hạn WIP: một contract đang chuẩn bị, một implementation đang chạy và một frozen delivery đang audit trên mỗi lane độc lập.
+- Chốt trade-off cấp sản phẩm của `BUILD_VS_ADOPT` khi có vendor lock-in, license bất thường, cloud/service trả phí hoặc thay đổi architecture; mặc định giữ authority `LIBRARY_FIRST` cho capability kỹ thuật phổ thông.
 
 ## Tier 0 không làm
 
@@ -25,6 +26,7 @@ Tier 0 giữ sản phẩm đi đúng hướng và loại bỏ blocker quyết đ
 - Không soạn TASK, HANDOFF hoặc AUDIT.
 - Không yêu cầu audit cho mọi task.
 - Không giữ Tier 1 chờ xác nhận lại việc đã nằm trong boundary được giao.
+- Không chọn thay Tier 1 package version hoặc routine library khi license/architecture boundary đã được chốt trong TASK.
 
 Tier 1 chỉ hỏi khi thiếu business decision, cần đổi roadmap/scope lớn, cần risk acceptance, có thao tác khó đảo ngược hoặc hai lựa chọn có trade-off kinh doanh đáng kể.
 

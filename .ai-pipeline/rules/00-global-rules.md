@@ -34,6 +34,15 @@ Agent phải đọc manifest/config của repo trước khi chọn tool:
 
 Không tự cài tool/dependency chỉ để thỏa checklist nếu Tier 1 chưa xác định là cần cho delivery.
 
+### 4.1 Library-first / BUILD_VS_ADOPT
+
+- Với capability kỹ thuật phổ thông (editor, form, table, upload UI, date/time, chart, queue, email renderer, document export, accessibility primitive), ưu tiên đánh giá thư viện trưởng thành trước khi tự xây.
+- Không copy source ngẫu nhiên từ repository bên ngoài. Candidate phải có nguồn chính thức, license tương thích, maintenance/security posture có thể kiểm tra và tương thích với runtime/framework của repo.
+- `ADOPT`: pin package/version qua manifest + lockfile, bọc bằng component/adapter do repo sở hữu và thêm contract/regression test tại boundary đó; không để import vendor lan khắp domain.
+- `CUSTOM`: chỉ dùng khi không có candidate phù hợp hoặc wrapper còn rủi ro/chi phí hơn; TASK phải ghi `CUSTOM_BUILD_JUSTIFICATION` bằng evidence cụ thể.
+- Thư viện không bao giờ là authority cho authorization, domain transition, idempotency, audit, data ownership hoặc policy sản phẩm.
+- Package/version cụ thể thuộc TASK và lockfile, không đóng cứng trong pipeline portable hoặc roadmap dài hạn.
+
 ## 5. Git và worktree
 
 - Luôn kiểm tra worktree trước khi sửa hoặc audit.

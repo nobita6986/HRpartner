@@ -10,6 +10,9 @@ updated_at: 2026-09-25T10:11:22+07:00
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 delivery_protocol: V2_FAST_FREEZE
 correction_budget: 1
+architecture_policy: LIBRARY_FIRST_BUILD_VS_ADOPT
+architecture_authority: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md#472-build_vs_adopt--library-first-policy
+editor_direction: Tiptap OSS default candidate; package/version remains task-owned until compatibility gate passes
 PHASE_MAP: |
   P0: production safety and integration foundations
   P1: thin recruitment value slice
