@@ -60,9 +60,17 @@ const HAS_TEST_DB =
 const describeIf = HAS_TEST_DB ? describe : describe.skip;
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
-const PRISMA_BIN = path.join(REPO_ROOT, 'node_modules', '.bin', 'prisma.cmd');
+const PRISMA_BIN = path.join(
+  REPO_ROOT,
+  'node_modules',
+  '.bin',
+  process.platform === 'win32' ? 'prisma.cmd' : 'prisma',
+);
 const PSQL_BIN =
-  process.env.PG_PSQL_BIN ?? 'C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe';
+  process.env.PG_PSQL_BIN ??
+  (process.platform === 'win32'
+    ? 'C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe'
+    : 'psql');
 const AFF04_MIGRATION_DIR = path.join(
   REPO_ROOT,
   'prisma',
@@ -277,7 +285,6 @@ describeIf('AFF-04 predecessor upgrade-path (T0 directive F-P4-2)', () => {
       runPsql(adminUrl, `DROP DATABASE IF EXISTS "${ephemeralDbName}"`);
     } catch (e) {
       // best-effort cleanup; the test still reports its own pass/fail
-      // eslint-disable-next-line no-console
       console.error('[aff04 upgrade-path] cleanup error:', e);
     } finally {
       await ephemeral?.$disconnect().catch(() => {});
