@@ -434,22 +434,40 @@ describeIf('ER-003 EvidenceRecord metadata', () => {
     expect(fetched?.sizeBytes).toBe(BigInt('9223372036854775000'));
   });
 
-  // ── AC-05 — writer (RLS-enforced, no policy) sees zero rows ──
-  it('writer (FORCE RLS, no policy) sees 0 rows even as ADMIN GUC role', async () => {
+  // ── AC-05 — writer (FORCE RLS, no policy) SELECT is permission-denied ──
+  // FORCE RLS + zero applicable policy = PostgreSQL raises SQLSTATE 42501.
+  // ADMIN GUC set_config does NOT grant BYPASSRLS; the DB enforces the deny.
+  // The set_config MUST run inside the same transaction as the SELECT: is_local=true
+  // expires at statement end, and Prisma does not guarantee subsequent queries reuse
+  // the same connection.
+  it('writer (FORCE RLS, no policy) SELECT is rejected SQLSTATE 42501 regardless of ADMIN GUC', async () => {
     const writerPosture = await writer.$queryRawUnsafe<Array<{ rolbypassrls: boolean }>>(
       `SELECT rolbypassrls FROM pg_roles WHERE rolname = current_user`,
     );
     expect(writerPosture[0].rolbypassrls).toBe(false);
 
-    const seen = await writer.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(
-        `SELECT set_config('app.user_id', $1, true), set_config('app.role', 'ADMIN', true)`,
-        userAId,
-      );
-      const rows = await tx.evidenceRecord.findMany();
-      return rows.length;
-    });
-    expect(seen).toBe(0);
+    let errorCaught: Error | null = null;
+    try {
+      await writer.$transaction(async (tx) => {
+        await tx.$executeRawUnsafe(
+          `SELECT set_config('app.user_id', $1, true),
+                  set_config('app.role', 'ADMIN', true)`,
+          userAId,
+        );
+        await tx.evidenceRecord.findMany();
+      });
+    } catch (err) {
+      errorCaught = err as Error;
+    }
+
+    // AC-05 contract: writer SELECT fails 42501 (fail-closed; no 0-row success).
+    // PostgreSQL raises SQLSTATE 42501, surfaced through PrismaClientUnknownRequestError.
+    // We do NOT depend on Prisma error code P2025 (P2025 = RecordNotFound, unrelated).
+    expect(errorCaught, 'writer SELECT should be rejected').not.toBeNull();
+    expect(
+      errorCaught?.message?.includes('42501') || errorCaught?.message?.toLowerCase().includes('permission denied'),
+      `expected SQLSTATE 42501 / permission denied, got: ${errorCaught?.message}`,
+    ).toBe(true);
   });
 
   // ── AC-04 / §4.5 scope — pre-existing partial unique indexes preserved ──

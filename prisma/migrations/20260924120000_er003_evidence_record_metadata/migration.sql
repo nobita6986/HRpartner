@@ -193,7 +193,7 @@ ALTER TABLE "evidence_records"
   CHECK (
     length("original_filename") > 0
     AND position('/'  in "original_filename") = 0
-    AND position('\\' in "original_filename") = 0
+    AND position(E'\\' in "original_filename") = 0
     AND position(E'\\x00' in "original_filename") = 0
   );
 

@@ -9,8 +9,8 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | Forward-only Neon migration establishes a sensitive-metadata and authorization boundary. |
-| Spec version | `v1.2` |
-| Status | `READY_FOR_EXECUTION` |
+| Spec version | `v1.2.2` |
+| Status | `READY_FOR_AUDIT` |
 | Planner | `Tier 1A` |
 | Execution owner | `Tier 1B` |
 | Baseline | `1e1895d16500b273575599cf88853e0d48f08e23` (`origin/main`, post-AFF-04 production-verified #36) |
@@ -18,7 +18,7 @@
 | In-scope roots | Exact File Allowlist at §4.5 |
 | Forbidden paths | All paths outside the allowlist; especially `docs/PLANNER_HANDOVER.md`, `app/**`, `src/domains/evidence/**`, existing migrations, AFF/CRM work, runtime wiring, routes, environment/config, and package files. |
 | Required gates | T0 contract approval; Prisma validate/generate; typecheck; lint; unit; guarded DB integration; clean-chain migration; task/handoff verification; scope check; Tier 3 LIGHT. |
-| Next gate | `TIER3_LIGHT_AUDIT` |
+| Next gate | `T0_MERGE_DECISION` |
 
 > This is a metadata-schema slice only. It does not accept, upload, read, serve, delete, or audit an evidence blob; it does not enable real-evidence/CCCD ingestion. Synthetic test bytes and synthetic identifiers remain sufficient for all coding and CI evidence.
 
@@ -185,6 +185,53 @@ All other paths are forbidden. In particular, no file under `src/domains/evidenc
 | 3 | `READY_FOR_EXECUTION` | T0 execution authorization (2026-09-24) chấp thuận ER003-DEC-01..08 và giữ ER003-DEC-09 = `DEFERRED_NOT_A_BLOCKER`. Execution baseline `1e1895d16500b273575599cf88853e0d48f08e23` (origin/main, post-AFF-04 production-verified). Tier 1B gộp Planner + Engineer; semantic contract §§1–§8 giữ nguyên. Slice metadata-only: KHÔNG runtime, KHÔNG upload, KHÔNG ghi CCCD thật. Production DB/migration/deploy vẫn thuộc T0. |
 
 ## 10. Revision Log
+### Round 5 — T0 post-audit freeze (2026-09-24)
+
+| Field | Before | After |
+|---|---|---|
+| Spec version | `v1.2.2` | `v1.2.2` (unchanged; control/evidence sync only) |
+| Status | `READY_FOR_EXECUTION` | `READY_FOR_AUDIT` (verifier-compatible terminal delivery status; Tier 3 already PASS) |
+| Next gate | `TIER3_LIGHT_AUDIT` | `T0_MERGE_DECISION` |
+| Tier 3 | Round 1 `BLOCKED` | LIGHT/DELTA round 2 `PASS`; `verify-audit.ps1` PASS |
+
+Changes: record the Tier 3 round-2 verdict and move control metadata to the T0 merge gate. No semantic contract, migration, schema, test, runtime, registration, or environment change.
+
+### Round 3 — T1B correction (2026-09-24)
+
+| Field | Before | After |
+|---|---|---|
+| Spec version | `v1.2.1` | `v1.2.2` |
+| Status | `READY_FOR_AUDIT` | `READY_FOR_AUDIT` |
+| Integration test (AC-05) | writer "sees 0 rows even as ADMIN GUC" via $transaction | writer SELECT inside $transaction with set_config in same tx raises PostgreSQL SQLSTATE 42501; surfaced through PrismaClientUnknownRequestError; GUC does not bypass RLS; no reliance on P2025 |
+| Migration CHECK | `position('\\' in ...)` unprefixed (non-conforming) | `position(E'\\' in "original_filename") = 0` escape literal, byte length exactly 1 (verified: `length(E'\\')=1`) |
+| HANDOFF AC-05 | "sees 0 rows even as ADMIN GUC" | "SELECT rejected SQLSTATE 42501 regardless of ADMIN GUC" |
+
+Changes: migration backslash CHECK fix (ER003-R3-F1); integration test RLS expectation fix (ER003-R3-F2); HANDOFF sync AC-05 + DEV-04 + §5. AUDIT.md Tier 3 artifact unchanged.
+
+### Round 4 — T1B evidence-sync (2026-09-24)
+
+| Field | Before | After |
+|---|---|---|
+| Spec version | `v1.2.2` | `v1.2.2` (unchanged; documentation-only evidence-sync) |
+| Status | `READY_FOR_AUDIT` | `READY_FOR_AUDIT` (unchanged) |
+| BLK-01 | ENV_BLOCKED in this sandbox; no DATABASE_URL_TEST / DATABASE_URL_ADMIN_TEST | RESOLVED_BY_T0_SYNTHETIC_DB_RUN after T0 provisioned local PostgreSQL 18 synthetic dedicated DB (NOT Neon staging, NOT production, no production credential) |
+| AC-02 / AC-03 / AC-05 / AC-06 | CI-only authoritative execution in CI Integration lane | PASS per T0 authoritative run: clean chain 47/47 migrations applied; posture POSTURE_OK (app_user_writer rolsuper=false rolbypassrls=false; postgres admin rolsuper=true rolbypassrls=true); targeted ER-003 19/19 it() cases PASS; full canonical integration 26/26 test files PASS, 481 passed, 2 intentional skip, 0 failed; ER-003 within full run 19/19 PASS |
+| E-11 | `CI_INTEGRATION_STRICT=1 npm run test:integration`; ENV_BLOCKED in sandbox | exact sequence: `container-test-db --phase=pre` → `prisma migrate deploy` (47/47) → `prisma migrate status` (up to date) → `container-test-db --phase=post` → posture check (POSTURE_OK) → targeted ER-003 (19/19) → recreate clean DB → full integration (26/26 files, 481 passed) |
+
+Changes: HANDOFF sync §1 changed-surface row (no ENV_BLOCKED wording); §2 AC-02/03/05/06 promoted to PASS; AC-04 wording corrected (3-hit classification, not "0 hits"); §3 E-11 exact sequence; §4 BLK-01 -> RESOLVED_BY_T0_SYNTHETIC_DB_RUN; §5 final status + round 4 revision-log entry. AUDIT.md Tier 3 artifact unchanged. No code/test/migration/schema/registration/runtime/env change. No production migration/deploy/smoke PASS claimed. No Tier 3 PASS pre-judged.
+
+### Round 2 — T1B correction (2026-09-24)
+
+| Field | Before | After |
+|---|---|---|
+| Spec version | `v1.2` | `v1.2.1` |
+| Status | `READY_FOR_AUDIT` | `READY_FOR_AUDIT` |
+| T3 AUD findings addressed | — | AUD-001 (E-04 truthful 3-hit classification); AUD-002 (14-test -> 19-assertion / 19 it() cases); AUD-003 (15 $executeRawUnsafe surface acknowledged as intentional design) |
+| Scope | Metadata-only; no code change | Unchanged |
+
+Changes: documentation-only corrections to HANDOFF.md sections 1, 2, 3 (E-04), 4 (DEV-03), 5.
+No migration, schema, test, source, or AUDIT.md (Tier 3 artifact) altered.
+
 
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
