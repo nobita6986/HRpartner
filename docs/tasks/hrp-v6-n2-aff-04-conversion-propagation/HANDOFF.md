@@ -122,7 +122,7 @@ AFF-04 closes the source-resolution and assignment-propagation gaps between AFF-
 |---|---|---|---|---|---|
 | D1 | Pre-existing baseline noise | Lint produces pre-existing `no-explicit-any` and `no-unused-vars` warnings in code that AFF-04 did not touch | pre-`9e527a13` baseline | inline in E-03 | No — outside AFF-04 scope; Tier 3 LIGHT auditor can flag separately |
 | D2 | Pre-existing baseline noise | `src/shared/security/required-relation-sweep.static.test.ts` EXPECTED_HITS list was deliberately frozen as a snapshot — schema evolution REQUIRES updating the list | pre-`9e527a13` baseline (frozen at STEP-06) | inline in E-11 | No — this is the design intent: any relation-shape change forces an explicit update |
-| D3 | Local environment | Local PostgreSQL was used for the synthetic ephemeral DB; `pg_hba.conf` was temporarily modified for `trust` on `localhost` (IPv4/IPv6) to allow password-less loopback connections matching the CI container pattern. The plan is to revert this rule after the Tier 3 audit verdict is in. | local dev machine `pg_hba.conf` | not in evidence dir (out of repo scope) | T0 to confirm the local `pg_hba.conf` revert is acceptable after audit |
+| D3 | Local environment — closed | Local PostgreSQL was used for the synthetic ephemeral DB. The temporary loopback `trust` rules were removed and `pg_hba.conf` was restored byte-for-byte from the recorded backup. On 2026-09-24, a passwordless `psql -w -h 127.0.0.1 -U postgres` connection was rejected with `fe_sendauth: no password supplied` (exit 2), proving the effective server configuration no longer accepts the temporary trust path. | local dev machine `pg_hba.conf`; §6 hygiene record | T0 read-only verification on 2026-09-24 | No — closed before final freeze |
 | D4 | Production boundary | No production / staging action was performed. No PR was opened. No merge. No push. AFF-04 stays local on `codex/t1b-aff04-conversion-propagation`. | `git log` shows only local commits; no upstream push from this branch | n/a | T0 to call the next gate |
 
 ## 5. Final status
@@ -188,10 +188,7 @@ Local PostgreSQL `pg_hba.conf` had been modified to add `trust` for `127.0.0.1/3
 - T0 directive F-P3-5: when exact backup exists, restore exactly and reload PostgreSQL.
 - **Restored**: `Copy-Item pg_hba.conf.aff04.bak pg_hba.conf -Force` — current file is 123 lines / `5651` bytes (matches backup byte-for-byte).
 - **Diff verified**: only 3 lines removed vs current state — the temporary AFF-04 trust rules (`host all all 127.0.0.1/32 trust` + `host all all ::1/128 trust` + the AFF-04 marker comment) are now gone; `scram-sha-256` restored for `127.0.0.1/32`.
-- **PostgreSQL reload**: file on disk is restored; `pg_ctl reload` and `Restart-Service postgresql-x64-18` both require Administrator elevation which the current PowerShell session does not have. **T0 to perform one of**:
-  - `Restart-Service postgresql-x64-18` (admin), OR
-  - `pg_ctl reload` from an elevated prompt
-  - File on disk already matches the pre-AFF-04 baseline; reload applies the restore.
+- **Effective configuration verified by T0 on 2026-09-24**: `psql -w -h 127.0.0.1 -U postgres -d postgres -tAc 'SELECT 1;'` was rejected with `fe_sendauth: no password supplied` and exit 2. The temporary passwordless trust path is not active; no restart or further operator action is required for this closeout.
 - **Evidence**: `scratch/lint-strict-current.txt`, `scratch/lint-strict-baseline.txt`, `scratch/lint-canonical.txt`; current `pg_hba.conf` is identical to backup (123 lines, 5651 bytes).
 
 ## 3. Evidence registry (updated)
