@@ -621,6 +621,10 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0 JobPosting authoring — DB-touching proof'
         { jobOpeningId: opening.id },
       ),
     );
+    const revisionBefore = draft.revision;
+    const descriptionJsonBefore = await admin.jobPosting
+      .findUnique({ where: { id: draft.id }, select: { descriptionJson: true } })
+      .then((r) => r?.descriptionJson ?? null);
     const maliciousDoc = {
       type: 'doc',
       content: [{ type: 'image', attrs: { src: 'https://x.test/evil.png' } }],
@@ -632,7 +636,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0 JobPosting authoring — DB-touching proof'
           { userId: ref.hrManagerUserId, role: 'HR_MANAGER' },
           {
             jobPostingId: draft.id,
-            expectedRevision: draft.revision,
+            expectedRevision: revisionBefore,
             title: 'Thử',
             descriptionJson: maliciousDoc,
             contentSchemaVersion: JOB_POSTING_RICH_TEXT_SCHEMA_VERSION,
@@ -641,10 +645,25 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0 JobPosting authoring — DB-touching proof'
       ),
     ).rejects.toBeInstanceOf(AuthoringError);
 
-    // DB row remains at revision=1 with no image content written.
-    const after = await admin.jobPosting.findUnique({ where: { id: draft.id } });
-    expect(after?.revision).toBe(draft.revision);
-    expect(after?.descriptionJson).toBeNull();
+    // The malicious payload MUST NOT be persisted: revision unchanged and the
+    // raw HTML / image node MUST NOT appear in any existing rich-field payload.
+    // Earlier tests in this file share the same Slot/Opening, so we snapshot
+    // the pre-attack state and assert the row is byte-identical post-rejection.
+    const after = await admin.jobPosting.findUnique({
+      where: { id: draft.id },
+      select: { revision: true, descriptionJson: true, requirementsJson: true, benefitsJson: true, applicationInstructionsJson: true, contentSchemaVersion: true },
+    });
+    expect(after?.revision).toBe(revisionBefore);
+    expect(after?.descriptionJson).toEqual(descriptionJsonBefore);
+    // No rich-text field may contain the rejected `image` node string anywhere.
+    const rowsJson = JSON.stringify([
+      after?.descriptionJson,
+      after?.requirementsJson,
+      after?.benefitsJson,
+      after?.applicationInstructionsJson,
+    ]);
+    expect(rowsJson).not.toMatch(/"type"\s*:\s*"image"/);
+    expect(rowsJson).not.toMatch(/evil\.png/);
   });
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -659,14 +678,19 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0 JobPosting authoring — DB-touching proof'
     });
   });
 
-  it('AC-09 RLS negative: PUBLIC role (no GUC) cannot read job_postings', async () => {
-    // No GUC set; RLS deny-by-default posture expects 0 rows.
-    await expect(
-      writer.$transaction(async (tx) => {
-        await tx.$queryRaw<Array<{ count: bigint }>>`
-          SELECT count(*)::bigint AS count FROM job_postings`;
-      }),
-    ).rejects.toThrow();
+  it('AC-09 RLS negative: PUBLIC role (no GUC) cannot read job_postings rows (FORCE RLS deny USING)', async () => {
+    // PUBLIC posture: app.role is left unset (GUC current_setting returns NULL),
+    // which makes hrp_session_role() return NULL → hrp_project_visible_for(...) is
+    // unknown/false for every row, so SELECT sees 0 rows. The exact contract is
+    // "RLS deny-by-default" — 0 visible rows, no exception (PG USING clause).
+    const publicRead = await writer.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(`SELECT set_config('app.user_id', '', true)`);
+      await tx.$executeRawUnsafe(`SELECT set_config('app.role', '', true)`);
+      const rows = await tx.$queryRaw<Array<{ count: bigint }>>`
+        SELECT count(*)::bigint AS count FROM job_postings`;
+      return rows[0]?.count ?? 0n;
+    });
+    expect(publicRead).toBe(0n);
   });
 
   // ───────────────────────────────────────────────────────────────────────────
