@@ -49,6 +49,7 @@
 | ID | Decision | Status |
 |---|---|---|
 | `DEC-01` | DRAFT và ARCHIVED không lộ ra ở public routes (trả về 404). | `CHOSEN` |
+| `DEC-02` | BUILD_VS_ADOPT: Rendering nội dung rich-text bắt buộc phải qua server-side `safe-render`, validate đúng allowlist node và giới hạn kích thước, không tin tưởng payload JSON trực tiếp. | `CHOSEN` |
 
 ## 4. Contract
 
@@ -62,6 +63,7 @@
 | `RQ-04` | Apply form liên kết tới đúng `JobPosting` và `JobOpening` ID. |
 | `RQ-05` | SEO metadata sử dụng nội dung thật từ `JobPosting`. |
 | `RQ-06` | Filter của danh sách vẫn hoạt động đúng trên nguồn dữ liệu mới. |
+| `RQ-07` | Render nội dung rich-text trên public (description, benefits...) sử dụng `safe-render`, validate node allowlist (chỉ paragraph, H2/H3, list, safe link, format cơ bản), chặn mọi node ngoài luồng và giới hạn kích thước. |
 
 ### 4.2 Scope boundaries
 
@@ -84,6 +86,7 @@
 | `STEP-02` | `app/(jobs)/viec-lam/**` | Xóa fixture, bind real data. | `AC-02` | UI lỗi hiển thị |
 | `STEP-03` | `app/(jobs)/viec-lam/**` | Fix filter và SEO metadata. | `AC-03` | Filter sai |
 | `STEP-04` | `app/(jobs)/viec-lam/**` | Sửa luồng Apply truyền đúng IDs. | `AC-01` | Unit test rớt |
+| `STEP-05` | `app/(jobs)/viec-lam/**` | Tích hợp `safe-render` để parse JSON rich-text payload và render an toàn. | `AC-05` | UI lỗi render |
 
 ## 6. Acceptance
 
@@ -95,6 +98,7 @@
 | `AC-02` | Không còn fixture hardcode trong trang chi tiết. | `grep -rFi "fixture" app/(jobs)/viec-lam` không tìm thấy |
 | `AC-03` | Front-end compile typecheck linter không lỗi. | `npm run typecheck && npm run lint` |
 | `AC-04` | Truy cập thử một slug không publish sẽ nhận 404. | `AC-01` |
+| `AC-05` | Unit test chứng minh `safe-render` loại bỏ các node ngoài allowlist (image, iframe) khỏi JSON payload. | `npm run test:unit src/domains/job-board` |
 
 ### 6.2 Traceability
 
@@ -106,6 +110,7 @@
 | `RQ-04` | `STEP-04` | `AC-01` |
 | `RQ-05` | `STEP-03` | `AC-01` |
 | `RQ-06` | `STEP-03` | `AC-01` |
+| `RQ-07` | `STEP-05` | `AC-05` |
 
 ## 7. Risk
 
