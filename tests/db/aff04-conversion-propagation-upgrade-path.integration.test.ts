@@ -262,21 +262,29 @@ describeIf('AFF-04 predecessor upgrade-path (T0 directive F-P4-2)', () => {
     // Use predecessor-shaped SQL rather than the current generated Prisma model:
     // after Step 3 the column referrer_user_id intentionally does not exist yet.
     await ephemeral.$executeRawUnsafe(
-      `INSERT INTO source_claims (id, worker_id, claim_type, ctv_id, accepted, accepted_by, updated_at)
-       VALUES ($1, $2, 'CTV_REFERRAL', $3, true, $4, NOW())`,
-      [`${workerAId}-claim-ctv`, workerAId, ctvUserId, adminUserId],
+      `INSERT INTO source_claims (id, worker_id, claim_type, ctv_id, accepted, accepted_by)
+       VALUES ($1, $2, 'CTV_REFERRAL', $3, true, $4)`,
+      `${workerAId}-claim-ctv`,
+      workerAId,
+      ctvUserId,
+      adminUserId,
     );
     // (b) HRP_DIRECT accepted=false + legacy ctv_id  -> PRESERVED unchanged by AFF-04
     await ephemeral.$executeRawUnsafe(
-      `INSERT INTO source_claims (id, worker_id, claim_type, ctv_id, accepted, registration_channel, updated_at)
-       VALUES ($1, $2, 'HRP_DIRECT', $3, false, 'SALE_ADDED', NOW())`,
-      [`${workerBId}-claim-hrp-legacy`, workerBId, vendorCtvUserId],
+      `INSERT INTO source_claims (id, worker_id, claim_type, ctv_id, accepted, registration_channel)
+       VALUES ($1, $2, 'HRP_DIRECT', $3, false, 'SALE_ADDED')`,
+      `${workerBId}-claim-hrp-legacy`,
+      workerBId,
+      vendorCtvUserId,
     );
     // (c) VENDOR_SUPPLIED + legacy ctv_id  -> PRESERVED unchanged by AFF-04
     await ephemeral.$executeRawUnsafe(
-      `INSERT INTO source_claims (id, worker_id, claim_type, ctv_id, vendor_id, accepted, updated_at)
-       VALUES ($1, $2, 'VENDOR_SUPPLIED', $3, $4, false, NOW())`,
-      [`${workerCId}-claim-vendor-legacy`, workerCId, vendorCtvUserId, vendorId],
+      `INSERT INTO source_claims (id, worker_id, claim_type, ctv_id, vendor_id, accepted)
+       VALUES ($1, $2, 'VENDOR_SUPPLIED', $3, $4, false)`,
+      `${workerCId}-claim-vendor-legacy`,
+      workerCId,
+      vendorCtvUserId,
+      vendorId,
     );
   }, 240_000);
 
@@ -339,21 +347,21 @@ describeIf('AFF-04 predecessor upgrade-path (T0 directive F-P4-2)', () => {
   it('backfills only accepted CTV_REFERRAL with non-null ctv_id', async () => {
     const ctvRow = await ephemeral.$queryRawUnsafe<Array<{ referrer_user_id: string | null }>>(
       `SELECT referrer_user_id FROM source_claims WHERE id = $1`,
-      [`${workerAId}-claim-ctv`],
+      `${workerAId}-claim-ctv`,
     );
     expect(ctvRow).toHaveLength(1);
     expect(ctvRow[0].referrer_user_id).toBe(ctvUserId);
 
     const hrpRow = await ephemeral.$queryRawUnsafe<Array<{ ctv_id: string | null; referrer_user_id: string | null }>>(
       `SELECT ctv_id, referrer_user_id FROM source_claims WHERE id = $1`,
-      [`${workerBId}-claim-hrp-legacy`],
+      `${workerBId}-claim-hrp-legacy`,
     );
     expect(hrpRow[0].ctv_id).toBe(vendorCtvUserId); // preserved
     expect(hrpRow[0].referrer_user_id).toBeNull(); // NOT promoted
 
     const vendorRow = await ephemeral.$queryRawUnsafe<Array<{ ctv_id: string | null; referrer_user_id: string | null }>>(
       `SELECT ctv_id, referrer_user_id FROM source_claims WHERE id = $1`,
-      [`${workerCId}-claim-vendor-legacy`],
+      `${workerCId}-claim-vendor-legacy`,
     );
     expect(vendorRow[0].ctv_id).toBe(vendorCtvUserId); // preserved
     expect(vendorRow[0].referrer_user_id).toBeNull(); // NOT promoted
@@ -403,12 +411,14 @@ describeIf('AFF-04 predecessor upgrade-path (T0 directive F-P4-2)', () => {
     ]);
   });
 
-  it('fail-closed invariants still hold at runtime (cannot backfill non-CTV row)', async () => {
-    // The narrow backfill predicate excludes non-CTV rows. Re-running it must match zero rows.
+  it('canonical backfill is idempotent and never selects non-CTV rows', async () => {
+    // Re-run the exact canonical predicate. The accepted CTV row was already
+    // backfilled, and non-CTV rows are excluded by construction.
     const r = await ephemeral.$queryRawUnsafe<Array<{ c: string }>>(
       `UPDATE source_claims
           SET referrer_user_id = ctv_id
-        WHERE claim_type <> 'CTV_REFERRAL'
+        WHERE claim_type = 'CTV_REFERRAL'
+          AND accepted = true
           AND ctv_id IS NOT NULL
           AND referrer_user_id IS NULL
         RETURNING id AS c`,
