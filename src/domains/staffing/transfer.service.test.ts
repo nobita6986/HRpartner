@@ -30,6 +30,9 @@ type MockTx = {
     update: MockFn;
     findMany: MockFn;
   };
+  sourceClaim: {
+    findFirst: MockFn;
+  };
 };
 
 function makeMockTx(overrides?: Partial<MockTx>): MockTx {
@@ -47,6 +50,11 @@ function makeMockTx(overrides?: Partial<MockTx>): MockTx {
     project: {
       update: vi.fn(),
       findMany: vi.fn(),
+    },
+    // AFF-04: source-claim lookup (returns null when no claim configured,
+    // preserving the legacy behavior).
+    sourceClaim: {
+      findFirst: vi.fn().mockResolvedValue(null),
     },
     ...overrides,
   } as unknown as MockTx;
@@ -210,6 +218,286 @@ describe('transfer.service', () => {
       expect(results.success).toHaveLength(1);
       expect(results.failed).toHaveLength(1);
       expect(results.failed[0].error).toContain('khác nhau');
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AFF-04 Transfer Matrix — re-read canonical claim under lock, inherit
+  // referrer identity into the new assignment. HRP_DIRECT / VENDOR get null.
+  // ─────────────────────────────────────────────────────────────────────────
+  describe('AFF-04 transfer propagation', () => {
+    it('inherits referrerId from canonical accepted CTV_REFERRAL claim (REFERENCED_ATTRIBUTION path)', async () => {
+      const tx = makeMockTx({
+        $queryRawUnsafe: vi.fn().mockResolvedValue([
+          { id: 'asgn-old', project_id: 'prj-A', valid_from: new Date('2026-08-01') },
+        ]),
+        sourceClaim: {
+          findFirst: vi.fn().mockResolvedValue({
+            id: 'claim-ctv',
+            claimType: 'CTV_REFERRAL',
+            referrerUserId: 'ctv-canonical',
+            ctvId: 'ctv-canonical',
+            worker: { userId: 'worker-001' },
+          }),
+        },
+        projectAssignment: {
+          update: vi.fn().mockResolvedValue({ id: 'asgn-old' }),
+          create: vi.fn().mockResolvedValue({ id: 'asgn-new' }),
+          findMany: vi.fn(),
+        },
+        project: {
+          update: vi.fn().mockImplementation(({ where }: any) =>
+            Promise.resolve({ id: where.id, filled: 5, quota: 10 }),
+          ),
+          findMany: vi.fn(),
+        },
+      });
+
+      const result = await transferWorker(tx as any, ADMIN_CTX, {
+        workerId: 'worker-001',
+        fromProjectId: 'prj-A',
+        toProjectId: 'prj-B',
+        transferDate: '2026-09-01',
+      });
+
+      expect(result.referrerId).toBe('ctv-canonical');
+      expect(result.sourceClaimId).toBe('claim-ctv');
+      expect(result.sourceClaimType).toBe('CTV_REFERRAL');
+
+      const createArgs = tx.projectAssignment.create.mock.calls[0][0];
+      expect(createArgs.data.referrerId).toBe('ctv-canonical');
+    });
+
+    it('falls back to legacy ctvId for pre-AFF-04 claims (referrerUserId=null)', async () => {
+      const tx = makeMockTx({
+        $queryRawUnsafe: vi.fn().mockResolvedValue([
+          { id: 'asgn-old', project_id: 'prj-A', valid_from: new Date('2026-08-01') },
+        ]),
+        sourceClaim: {
+          findFirst: vi.fn().mockResolvedValue({
+            id: 'claim-ctv-legacy',
+            claimType: 'CTV_REFERRAL',
+            referrerUserId: null,
+            ctvId: 'ctv-legacy-id',
+            worker: { userId: 'worker-001' },
+          }),
+        },
+        projectAssignment: {
+          update: vi.fn().mockResolvedValue({ id: 'asgn-old' }),
+          create: vi.fn().mockResolvedValue({ id: 'asgn-new' }),
+          findMany: vi.fn(),
+        },
+        project: {
+          update: vi.fn().mockImplementation(({ where }: any) =>
+            Promise.resolve({ id: where.id, filled: 5, quota: 10 }),
+          ),
+          findMany: vi.fn(),
+        },
+      });
+
+      const result = await transferWorker(tx as any, ADMIN_CTX, {
+        workerId: 'worker-001',
+        fromProjectId: 'prj-A',
+        toProjectId: 'prj-B',
+        transferDate: '2026-09-01',
+      });
+
+      expect(result.referrerId).toBe('ctv-legacy-id');
+      const createArgs = tx.projectAssignment.create.mock.calls[0][0];
+      expect(createArgs.data.referrerId).toBe('ctv-legacy-id');
+    });
+
+    it('HRP_DIRECT worker keeps referrerId=null (no referrer concept)', async () => {
+      const tx = makeMockTx({
+        $queryRawUnsafe: vi.fn().mockResolvedValue([
+          { id: 'asgn-old', project_id: 'prj-A', valid_from: new Date('2026-08-01') },
+        ]),
+        sourceClaim: {
+          findFirst: vi.fn().mockResolvedValue({
+            id: 'claim-hrp',
+            claimType: 'HRP_DIRECT',
+            referrerUserId: null,
+            ctvId: null,
+            worker: { userId: 'worker-001' },
+          }),
+        },
+        projectAssignment: {
+          update: vi.fn().mockResolvedValue({ id: 'asgn-old' }),
+          create: vi.fn().mockResolvedValue({ id: 'asgn-new' }),
+          findMany: vi.fn(),
+        },
+        project: {
+          update: vi.fn().mockImplementation(({ where }: any) =>
+            Promise.resolve({ id: where.id, filled: 5, quota: 10 }),
+          ),
+          findMany: vi.fn(),
+        },
+      });
+
+      const result = await transferWorker(tx as any, ADMIN_CTX, {
+        workerId: 'worker-001',
+        fromProjectId: 'prj-A',
+        toProjectId: 'prj-B',
+        transferDate: '2026-09-01',
+      });
+
+      expect(result.referrerId).toBeNull();
+      const createArgs = tx.projectAssignment.create.mock.calls[0][0];
+      expect(createArgs.data.referrerId).toBeNull();
+    });
+
+    it('VENDOR_SUPPLIED worker keeps referrerId=null', async () => {
+      const tx = makeMockTx({
+        $queryRawUnsafe: vi.fn().mockResolvedValue([
+          { id: 'asgn-old', project_id: 'prj-A', valid_from: new Date('2026-08-01') },
+        ]),
+        sourceClaim: {
+          findFirst: vi.fn().mockResolvedValue({
+            id: 'claim-vendor',
+            claimType: 'VENDOR_SUPPLIED',
+            referrerUserId: null,
+            ctvId: null,
+            worker: { userId: 'worker-001' },
+          }),
+        },
+        projectAssignment: {
+          update: vi.fn().mockResolvedValue({ id: 'asgn-old' }),
+          create: vi.fn().mockResolvedValue({ id: 'asgn-new' }),
+          findMany: vi.fn(),
+        },
+        project: {
+          update: vi.fn().mockImplementation(({ where }: any) =>
+            Promise.resolve({ id: where.id, filled: 5, quota: 10 }),
+          ),
+          findMany: vi.fn(),
+        },
+      });
+
+      const result = await transferWorker(tx as any, ADMIN_CTX, {
+        workerId: 'worker-001',
+        fromProjectId: 'prj-A',
+        toProjectId: 'prj-B',
+        transferDate: '2026-09-01',
+      });
+
+      expect(result.referrerId).toBeNull();
+    });
+
+    it('self-referral: worker.userId === referrerUserId retains provenance (no CommissionLedger write)', async () => {
+      const tx = makeMockTx({
+        $queryRawUnsafe: vi.fn().mockResolvedValue([
+          { id: 'asgn-old', project_id: 'prj-A', valid_from: new Date('2026-08-01') },
+        ]),
+        sourceClaim: {
+          findFirst: vi.fn().mockResolvedValue({
+            id: 'claim-self',
+            claimType: 'CTV_REFERRAL',
+            referrerUserId: 'user-self-001', // same as worker.userId below
+            ctvId: 'user-self-001',
+            worker: { userId: 'user-self-001' },
+          }),
+        },
+        projectAssignment: {
+          update: vi.fn().mockResolvedValue({ id: 'asgn-old' }),
+          create: vi.fn().mockResolvedValue({ id: 'asgn-new' }),
+          findMany: vi.fn(),
+        },
+        project: {
+          update: vi.fn().mockImplementation(({ where }: any) =>
+            Promise.resolve({ id: where.id, filled: 5, quota: 10 }),
+          ),
+          findMany: vi.fn(),
+        },
+      });
+
+      const result = await transferWorker(tx as any, ADMIN_CTX, {
+        workerId: 'user-self-001',
+        fromProjectId: 'prj-A',
+        toProjectId: 'prj-B',
+        transferDate: '2026-09-01',
+      });
+
+      // AFF-04 retains provenance; AFF-05B is the only scope that decides
+      // whether to emit a CommissionLedger row for self-referral.
+      expect(result.referrerId).toBe('user-self-001');
+      const createArgs = tx.projectAssignment.create.mock.calls[0][0];
+      expect(createArgs.data.referrerId).toBe('user-self-001');
+    });
+
+    it('re-reads sourceClaim INSIDE the transaction (after worker advisory lock)', async () => {
+      const tx = makeMockTx({
+        $queryRawUnsafe: vi.fn().mockResolvedValue([
+          { id: 'asgn-old', project_id: 'prj-A', valid_from: new Date('2026-08-01') },
+        ]),
+        sourceClaim: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        projectAssignment: {
+          update: vi.fn().mockResolvedValue({ id: 'asgn-old' }),
+          create: vi.fn().mockResolvedValue({ id: 'asgn-new' }),
+          findMany: vi.fn(),
+        },
+        project: {
+          update: vi.fn().mockImplementation(({ where }: any) =>
+            Promise.resolve({ id: where.id, filled: 5, quota: 10 }),
+          ),
+          findMany: vi.fn(),
+        },
+      });
+
+      await transferWorker(tx as any, ADMIN_CTX, {
+        workerId: 'worker-orphan',
+        fromProjectId: 'prj-A',
+        toProjectId: 'prj-B',
+        transferDate: '2026-09-01',
+      });
+
+      // advisory lock must come BEFORE sourceClaim lookup.
+      const lockCall = tx.$executeRawUnsafe.mock.invocationCallOrder[0];
+      const claimCall = tx.sourceClaim.findFirst.mock.invocationCallOrder[0];
+      expect(lockCall).toBeLessThan(claimCall);
+    });
+
+    it('outbox payload carries inherited referrerId + sourceClaim provenance (PII-free IDs)', async () => {
+      const tx = makeMockTx({
+        $queryRawUnsafe: vi.fn().mockResolvedValue([
+          { id: 'asgn-old', project_id: 'prj-A', valid_from: new Date('2026-08-01') },
+        ]),
+        sourceClaim: {
+          findFirst: vi.fn().mockResolvedValue({
+            id: 'claim-ctv',
+            claimType: 'CTV_REFERRAL',
+            referrerUserId: 'ctv-001',
+            ctvId: 'ctv-001',
+            worker: { userId: 'worker-001' },
+          }),
+        },
+        projectAssignment: {
+          update: vi.fn().mockResolvedValue({ id: 'asgn-old' }),
+          create: vi.fn().mockResolvedValue({ id: 'asgn-new' }),
+          findMany: vi.fn(),
+        },
+        project: {
+          update: vi.fn().mockImplementation(({ where }: any) =>
+            Promise.resolve({ id: where.id, filled: 5, quota: 10 }),
+          ),
+          findMany: vi.fn(),
+        },
+      });
+
+      await transferWorker(tx as any, ADMIN_CTX, {
+        workerId: 'worker-001',
+        fromProjectId: 'prj-A',
+        toProjectId: 'prj-B',
+        transferDate: '2026-09-01',
+      });
+
+      const outboxArgs = tx.outboxEvent.create.mock.calls[0][0];
+      expect(outboxArgs.data.payload).toMatchObject({
+        referrerId: 'ctv-001',
+        sourceClaimId: 'claim-ctv',
+        sourceClaimType: 'CTV_REFERRAL',
+      });
     });
   });
 });

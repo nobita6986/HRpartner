@@ -147,7 +147,11 @@ model User {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   candidateSubmissions CandidateSubmission[]
-  sourceClaims         SourceClaim[]
+  // AFF-04: bind the pre-existing `sourceClaims` (ctvId FK) to a named back-relation so it
+  //          pairs with `SourceClaim.ctv` (@relation("SourceClaimLegacyCtv")).
+  legacyCtvSourceClaims     SourceClaim[]    @relation("SourceClaimLegacyCtv")
+  // AFF-04: back-relation for the new generic referrer FK (SourceClaim.referrerUserId).
+  genericReferrerSourceClaims SourceClaim[]    @relation("SourceClaimGenericReferrer")
   payrollConfigs       PayrollConfig[]
   permissionGrants     UserPermissionGrant[]
 
@@ -159,6 +163,9 @@ model User {
   subManagedProjects1 Project[] @relation("ProjectSubPm1") // M13: phó PM thứ 1
   subManagedProjects2 Project[] @relation("ProjectSubPm2") // M13: phó PM thứ 2
   managingWorkers    Worker[]  @relation("WorkerManager")   // M13: quản lý trực tiếp worker
+
+  // AFF-04: back-relation for ProjectAssignment.referrerId FK (the propagation target).
+  referredProjectAssignments ProjectAssignment[] @relation("AssignmentReferrer")
 
   // AFF-05A: Handling Assignments & Attributions
   assignedHandlingAssignments LaborProfileHandlingAssignment[] @relation("AssigneeAssignments")
@@ -634,12 +641,21 @@ model SourceClaim {
 
   worker     Worker              @relation(fields: [workerId], references: [id])
   vendor     Vendor?             @relation(fields: [vendorId], references: [id])
-  ctv        User?               @relation(fields: [ctvId], references: [id])
+  // AFF-04: Legacy CTV relation (ctvId pre-existed as plain FK; we now bind a named relation
+  //         so the Prisma client carries explicit back-links). No DEFAULT, semantic unchanged.
+  ctv        User?               @relation("SourceClaimLegacyCtv", fields: [ctvId], references: [id], onDelete: Restrict)
+  // AFF-04: Additive nullable FK -> users.id for generic referrer (CTV referrer post-promotion,
+  //         AFF Initial, Manager-assigned handlers). NULL when source is HRP_DIRECT / VENDOR /
+  //         unresolved legacy CTV. NULL is the sentinel "no generic referrer yet" — backfilled
+  //         forward-only from accepted CTV_REFERRAL rows with a non-null ctvId (TASK §3 predicate).
+  referrerUser     User?               @relation("SourceClaimGenericReferrer", fields: [referrerUserId], references: [id], onDelete: Restrict)
+  referrerUserId   String?             @map("referrer_user_id")
   submission CandidateSubmission? @relation(fields: [submissionId], references: [id])
 
   @@index([workerId, accepted])
   @@index([vendorId, accepted]) // G22 — scope VENDOR (relation filter §9.7)
   @@index([ctvId, accepted]) // G22 — scope CTV (relation filter §9.7)
+  @@index([referrerUserId, accepted]) // AFF-04 — generic referrer lookup (decisions/scope matrix)
   @@map("source_claims")
 }
 
@@ -679,6 +695,10 @@ model ProjectAssignment {
   worker        Worker        @relation(fields: [workerId], references: [id])
   project       Project       @relation(fields: [projectId], references: [id])
   staffingOrder StaffingOrder? @relation(fields: [staffingOrderId], references: [id])
+  // AFF-04: bind the existing referrer_id String? to a named Prisma relation so callers can
+  //         traverse User <- ProjectAssignment via `assigned.referrer`. ON DELETE RESTRICT
+  //         matches the legacy-cTV / source_claims posture (we never silently drop provenance).
+  referrer      User?         @relation("AssignmentReferrer", fields: [referrerId], references: [id], onDelete: Restrict)
   submission        CandidateSubmission? @relation(fields: [submissionId], references: [id])        // MP-3C
   staffingOrderSlot StaffingOrderSlot?   @relation(fields: [staffingOrderSlotId], references: [id]) // MP-3C
   tickets       Ticket[]
@@ -687,6 +707,7 @@ model ProjectAssignment {
   @@index([workerId, status])
   @@index([projectId, status]) // G22 — scope PM (relation filter §9.7)
   @@index([staffingOrderSlotId, status]) // MP-3C: slotsFilled ↔ ACTIVE assignment reconciliation
+  @@index([referrerId, status]) // AFF-04 — placement-by-referrer audit / outbox lookup
   @@map("project_assignments")
 }
 

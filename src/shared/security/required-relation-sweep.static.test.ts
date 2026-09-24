@@ -77,8 +77,12 @@ const EXPECTED_HITS = [
   'app/api/projects/route.ts:65 clientCompany',
   'app/api/vendor/orders/route.ts:44 project',
   'app/api/vendor/submissions/route.ts:62 project',
-  'src/domains/applications/application-queue.service.ts:178 project',
-  'src/domains/applications/application-queue.service.ts:211 project',
+  'src/domains/applications/application-queue.service.ts:183 project',
+  'src/domains/applications/application-queue.service.ts:216 project',
+  // AFF-04 STEP-02: re-read canonical ReferralAttribution via LaborProfile on
+  // conversion (server-derived referrer resolution). laborProfile is nullable
+  // in schema, but the SELECT shape surfaces it in the RLS sweep.
+  'src/domains/applications/conversion.service.ts:128 laborProfile',
   'src/domains/crm/client-read.service.ts:80 staffingOrder',
   'src/domains/crm/project-read.service.ts:40 clientCompany',
   'src/domains/staffing/job-opening-read.service.ts:41 staffingOrder',
@@ -90,6 +94,10 @@ const EXPECTED_HITS = [
   'src/domains/staffing/order.service.ts:153 project',
   'src/domains/staffing/order.service.ts:179 project',
   'src/domains/staffing/submission.service.ts:204 project',
+  // AFF-04 STEP-04: re-read SourceClaim -> Worker.userId under lock for
+  // self-referral classification. Worker is required in schema, so the
+  // sweep flags it.
+  'src/domains/staffing/transfer.service.ts:186 worker',
 ] as const;
 
 interface SourceEntry {
@@ -277,7 +285,9 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // Sau STEP-06 (4 dòng RỦI RO được sửa): 5 src. Sau AV2 commit e7ee2c8 (2026-09-13):
     // +4 dòng ở src/domains/staffing/job-posting-list.service.ts → 9 src. Tổng 12.
     // +4 dòng ở src/domains/crm và staffing W3 → 13 src. Tổng 16.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(13);
+    // Sau AFF-04 (2026-09-23): +2 dòng (conversion.service.ts:128 laborProfile,
+    // transfer.service.ts:186 worker). Tổng src = 15, tổng all = 18.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(15);
   });
 });
 

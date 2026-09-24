@@ -59,4 +59,18 @@ export const INTEGRATION_TEST_FILES: string[] = [
   'tests/db/aff03-public-intake.integration.test.ts',
   // W5 HandlingAssignment: forced RLS scope plus expiry/release lifecycle.
   'tests/db/handling-assignment.integration.test.ts',
+  // hrp-v6-n2-aff-04-conversion-propagation: forward-only AFF-04 schema + invariant
+  // integration test. Covers backfill predicate matrix (CTV_REFERRAL with/without ctvId,
+  // HRP_DIRECT, VENDOR_SUPPLIED), idempotency of the migration backfill UPDATE,
+  // partial unique indexes preservation, FK ON DELETE RESTRICT for both new FKs,
+  // and no-source-steal guard via one_accepted_source. Self-skips when
+  // DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
+  'tests/db/aff04-conversion-propagation.integration.test.ts',
+  // hrp-v6-n2-aff-04-conversion-propagation upgrade-path (T0 directive F-P4-2):
+  // dựng predecessor state từ baseline 9e527a13 (drop AFF-04 artifacts), seed
+  // accepted CTV_REFERRAL + legacy non-CTV rows, apply chính file migration thật,
+  // verify backfill matrix + partial unique indexes + FK ON DELETE RESTRICT +
+  // zero non-CTV drift. Heavy test (tạo ephemeral DB, prisma migrate deploy,
+  // apply byte-identical migration file) — chạy sau integration lane chính.
+  'tests/db/aff04-conversion-propagation-upgrade-path.integration.test.ts',
 ];

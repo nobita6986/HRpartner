@@ -97,6 +97,11 @@ export interface SourceClaimSummary {
   claimType: string;
   registrationChannel: string;
   accepted: boolean;
+  // AFF-04: generic referrer identity resolved at conversion time.
+  // Server-derived — never accepted from request body.
+  referrerUserId: string | null;
+  // Legacy back-link (CTV_REFERRAL legacy path). Kept for audit.
+  ctvId: string | null;
 }
 
 export interface DedupFacts {
@@ -214,7 +219,17 @@ export async function getApplicationDetail(
       // forbidden field can ride along.
       sourceClaims: {
         where: { accepted: true },
-        select: { id: true, claimType: true, registrationChannel: true, accepted: true, workerId: true },
+        select: {
+          id: true,
+          claimType: true,
+          registrationChannel: true,
+          accepted: true,
+          workerId: true,
+          // AFF-04: surface the server-derived generic referrer so admin UI can
+          // display the canonical attribution chain.
+          referrerUserId: true,
+          ctvId: true,
+        },
       },
       assignment: {
         select: {
@@ -268,6 +283,9 @@ export async function getApplicationDetail(
           claimType: acceptedClaim.claimType,
           registrationChannel: acceptedClaim.registrationChannel,
           accepted: acceptedClaim.accepted,
+          // AFF-04: surface the server-derived generic referrer identity.
+          referrerUserId: acceptedClaim.referrerUserId ?? null,
+          ctvId: acceptedClaim.ctvId ?? null,
         }
       : null,
     dedup: {
