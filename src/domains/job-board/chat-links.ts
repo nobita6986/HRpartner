@@ -1,6 +1,7 @@
 export type ChatChannel = 'zalo' | 'messenger';
 
 export const CHAT_URL_MAX_LENGTH = 2048;
+export const PHONE_INPUT_MAX_LENGTH = 32;
 
 const CHAT_HOSTS: Record<ChatChannel, ReadonlySet<string>> = {
   zalo: new Set(['zalo.me', 'oa.zalo.me', 'chat.zalo.me']),
@@ -15,6 +16,41 @@ export class InvalidChatUrlError extends Error {
     this.name = 'InvalidChatUrlError';
     this.channel = channel;
   }
+}
+
+export class InvalidPhoneNumberError extends Error {
+  constructor() {
+    super('Số điện thoại không hợp lệ.');
+    this.name = 'InvalidPhoneNumberError';
+  }
+}
+
+/** Store a compact phone number suitable for a tel: link. */
+export function normalizePhoneNumber(raw: string | null | undefined): string | null {
+  if (raw === null || raw === undefined || raw.trim() === '') return null;
+
+  const trimmed = raw.trim();
+  if (trimmed.length > PHONE_INPUT_MAX_LENGTH || !/^[+\d\s().-]+$/.test(trimmed)) {
+    throw new InvalidPhoneNumberError();
+  }
+
+  const canonical = trimmed.replace(/[\s().-]/g, '');
+  if (!/^\+?[0-9]{7,15}$/.test(canonical)) throw new InvalidPhoneNumberError();
+  return canonical;
+}
+
+/** Defense-in-depth projection for public rendering of a stored phone number. */
+export function resolvePhoneNumber(raw: string | null | undefined): string | null {
+  try {
+    return normalizePhoneNumber(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function resolvePhoneHref(raw: string | null | undefined): string | null {
+  const phoneNumber = resolvePhoneNumber(raw);
+  return phoneNumber ? `tel:${phoneNumber}` : null;
 }
 
 /**

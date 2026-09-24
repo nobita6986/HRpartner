@@ -44,6 +44,7 @@ export default async function AdminSettingsPage() {
         listingPageSize: LISTING_PAGE_SIZE_DEFAULT,
         zaloChatUrl: null,
         messengerChatUrl: null,
+        phoneCallNumber: null,
         updatedAt: new Date(0).toISOString(),
       };
       unavailableReason =

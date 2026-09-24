@@ -102,6 +102,8 @@ export interface HomepageSettingsDto {
   zaloChatUrl: string | null;
   /** Optional public Messenger Page chat destination. */
   messengerChatUrl: string | null;
+  /** Optional public telephone destination in canonical dialable form. */
+  phoneCallNumber: string | null;
   /** ISO string of last update. */
   updatedAt: string;
 }
