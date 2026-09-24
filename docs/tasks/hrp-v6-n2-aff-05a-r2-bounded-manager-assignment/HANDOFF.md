@@ -13,7 +13,7 @@
 | Status | `READY_FOR_AUDIT` |
 | Baseline | `825f763929e4a3026fc7b5d50436e216ef66da8c` (`origin/main`, post-#40 admin-managed phone link; `1e1895d1` is no longer main) |
 | Authority | TASK v1.1 blob at commit `17d7cc26f05ede322f819f7bcdaa59a6a0805521` |
-| Implementation SHA | `f505abcbf25a3665f824d8348724e400a73156e0` (HEAD of `codex/t1b-aff05a-r2-bounded-manager-assignment`, short `f505abc`) |
+| Implementation SHA | `f505abcbf25a3665f824d8348724e400a73156e0` (HEAD of `codex/t1b-aff05a-r2-bounded-manager-assignment` at the moment all verify-task/verify-handoff/diff-check/UTF-8 gates passed; short `f505abc`. Subsequent bookkeeping SHA self-reference commits stay on the same branch and bring HEAD to `23fc38d`; no code, migration, schema, test, or runtime change.) |
 | Executor | `Tier 1B` |
 | Next gate | `TIER3_LIGHT_AUDIT` |
 
