@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-24
 **Baseline:** `origin/main@1e1895d16500b273575599cf88853e0d48f08e23`
-**Status:** `T0_REVIEWED — OWNER_DECISION_REQUIRED (AFF-OQ-12)`
+**Status:** `T0_REVIEWED — AFF-05A-R2 CONTRACT_DRAFTING_APPROVED`
 
 > **T0 disposition:** Company Pool remains a derived LaborProfile projection; no new pool table is authorized. Attendance/payroll `Ticket` is not the canonical aggregate for handling disputes. Residual AFF-05A must be split into a bounded manager-assignment slice and a later dedicated LaborProfile handling-case slice.
 
@@ -40,7 +40,7 @@ Sau khi khảo sát bằng CodeGraph và đối chiếu trực tiếp source cod
 - Giữ transfer/history hiện hành và at-most-one-active DB backstop; bổ sung evidence cho concurrent manager assignment và expired-row reassignment.
 - Slice này chỉ được chuyển từ `PROPOSED_ONLY` sang executable sau khi Owner đóng `AFF-OQ-12`.
 
-**T0 recommendation cần Owner xác nhận:** minimum `1` ngày, default `7` ngày, maximum `30` ngày; không auto-coerce và không cho vô thời hạn. Đây là proposed business policy, chưa phải `RESOLVED`.
+**Owner decision — `RESOLVED` ngày 2026-09-24:** minimum `1` ngày, default `7` ngày, maximum `30` ngày; không auto-coerce và không cho vô thời hạn.
 
 ### 4.2 AFF-05A-R3 — dedicated handling case
 
@@ -52,6 +52,6 @@ Sau khi khảo sát bằng CodeGraph và đối chiếu trực tiếp source cod
 
 ## 5. Gate tiếp theo
 
-1. Owner xác nhận hoặc counterproposal cho `AFF-OQ-12`: min/default/max.
-2. T1A tạo đúng một contract `AFF-05A-R2` cho bounded manager assignment; trạng thái `PROPOSED_ONLY`, không code.
+1. T1A tạo đúng một contract `AFF-05A-R2` cho bounded manager assignment; trạng thái `PROPOSED_ONLY`, không code.
+2. Contract phải pin Owner decision `1/7/30`, fail closed ở route/service và giữ Company Pool là derived projection.
 3. `AFF-05A-R3` chỉ mở contract riêng sau khi R2 có contract ổn định; không mở AFF-05B trong hai slice này.

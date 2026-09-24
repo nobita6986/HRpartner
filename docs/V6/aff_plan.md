@@ -5,11 +5,11 @@
 | Field | Value |
 |---|---|
 | Document | `docs/V6/aff_plan.md` |
-| Design version | `v2.4` |
+| Design version | `v2.5` |
 | Status | `PARTIALLY_IMPLEMENTED` — production attribution/apply path đã được chứng minh; expansion được điều phối bởi Realignment Plan |
 | Product owner | Founder / sếp |
 | Design owner | Tier 1 Planner |
-| Updated | `2026-09-22 Asia/Bangkok` |
+| Updated | `2026-09-24 Asia/Bangkok` |
 | Authority | Domain/design authority của Universal Affiliate; không còn là authority sắp thứ tự execution |
 | Relationship | `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` quyết định thứ tự/gate mở slice; file này giữ canonical AFF semantics |
 | Current implementation gate | Mỗi slice cần contract hẹp được T0 duyệt; §20 là decision inventory theo slice, không còn là global lock |
@@ -32,6 +32,7 @@ Ghi chú này supersede các câu execution-gate đã stale trong bản v2.3; kh
 - AFF-03/03B/03C public attribution/intake đã production verified. Evidence closeout chính: `../tasks/hrp-v6-n2-aff-03c-cs-labor-profile-fix/CLOSEOUT.md`.
 - AFF-04 conversion, accepted SourceClaim và server-derived Placement/ProjectAssignment propagation đã production verified tại main `8b8e39b` (PR #35). Evidence closeout: `../tasks/hrp-v6-n2-aff-04-conversion-propagation/HANDOFF.md`.
 - W5 đã production verify RLS, elapsed assignment sweep và manual `REVOKED` semantics: `../tasks/hrp-v6-w5-handling-assignment-safety/HANDOFF.md`. W5 không chứng minh toàn bộ Company Pool/dispute của AFF-05A.
+- `AFF-OQ-12` đã được Founder chốt ngày 2026-09-24: lượt `MANAGER_ASSIGNMENT` tối thiểu 1 ngày, mặc định 7 ngày, tối đa 30 ngày; không cho vô thời hạn, không tự coerce input ngoài biên.
 - Remaining implementation order: residual AFF-05A reconciliation → AFF-05B → AFF-06 → AFF-07.
 - Full feature Definition of Done tại §23 chưa đạt; `ACCEPTED` của AFF-03C không phải `ACCEPTED` cho Universal AFF.
 
@@ -1014,13 +1015,13 @@ Logs có correlation ID/attribution ID rút gọn hoặc hash; không log raw co
 - [ ] `AFF-OQ-07` — auto-accept affiliate claim khi convert nếu không conflict (Founder/Tier 1; chặn AFF-04).
 - [ ] `AFF-OQ-10` — milestone/rate/cap qua versioned commission policy, không hard-code (Founder/Accounting; chặn AFF-05).
 - [ ] `AFF-OQ-11` — analytics retention: detail 30–90 ngày, aggregate dài hơn, không lưu raw IP (Founder/Privacy; chặn AFF-06).
-- [ ] `AFF-OQ-12` — thời hạn lượt giao thủ công sau khi profile vào Company Pool, có biên min/max cấu hình, không vô thời hạn (Founder; chặn AFF-05A).
+- [x] `AFF-OQ-12` — `RESOLVED`: lượt giao thủ công tối thiểu 1 ngày, mặc định 7 ngày, tối đa 30 ngày; không vô thời hạn hoặc tự coerce input ngoài biên (Founder, 2026-09-24).
 - [ ] `aff_plan.md` chuyển từ `DESIGN_REVIEW` sang `DESIGN_ACCEPTED` bởi Founder/Tier 1.
 
 Mở rộng `05/09/2026`: danh sách tăng từ `10` lên `17` ô. Bản `v2.2` có `10` ô nhưng §22 có `12` hàng `AFF-OQ` với
 `1` `RESOLVED` (`AFF-OQ-02`) ⇒ `11` câu còn mở, và checklist chỉ chở `2` trong số đó (`AFF-OQ-03` ở ô hai,
 `AFF-OQ-09` ở ô ba). Nghĩa là tick hết `10` ô rồi mở AFF-01 thì **chín câu chưa trả lời vẫn nằm nguyên trong đường đi**,
-trong đó `AFF-OQ-12` đúng là thứ chặn AFF-05A.
+trong đó `AFF-OQ-12` từng là thứ chặn AFF-05A. Từ v2.5, quyết định này đã `RESOLVED`; execution vẫn phải đi qua thin-slice contract và các gate của Realignment Plan.
 
 **Luật tài liệu:** mọi hàng `AFF-OQ` chưa `RESOLVED` phải có ít nhất một ô trong danh sách này. §20 lệch §22 là
 **lỗi tài liệu**, không phải chi tiết bỏ qua được. Sau reconciliation, mỗi ô chỉ khóa slice được ghi trong cột `Blocks`; cửa execution do Realignment Plan và thin-slice contract điều phối.
@@ -1067,7 +1068,7 @@ Quy tắc “chỉ sau checklist mới tạo TASK đầu tiên” là gate lịc
 | `AFF-OQ-09` | Non-CTV rút/nhận tiền bằng UI nào? | Generic payout profile + accounting approval; không dùng tên CTV | Founder/Accounting | AFF-05 |
 | `AFF-OQ-10` | Milestone/rate/cap mặc định? | Versioned commission policy; không hard-code trong design | Founder/Accounting | AFF-05 |
 | `AFF-OQ-11` | Analytics retention? | Detail 30–90 ngày, aggregate dài hơn; no raw IP | Founder/Privacy | AFF-06 |
-| `AFF-OQ-12` | Lượt giao thủ công sau khi profile vào Company Pool dài bao lâu? | Lãnh đạo chọn trong biên min/max cấu hình; không cho vô thời hạn | Founder | AFF-05A |
+| `AFF-OQ-12` | `RESOLVED` — Lượt giao thủ công sau khi profile vào Company Pool dài bao lâu? | Minimum 1 ngày, default 7 ngày, maximum 30 ngày; không vô thời hạn và không tự coerce input ngoài biên | Founder, 2026-09-24 | AFF-05A |
 
 ## 23. Definition of Done toàn feature
 
@@ -1090,6 +1091,7 @@ Universal Affiliate chỉ được tuyên bố hoàn tất khi:
 
 | Version | Date | Change |
 |---|---|---|
+| `v2.5` | 2026-09-24 | Ghi nhận Founder đóng `AFF-OQ-12`: `MANAGER_ASSIGNMENT` có thời hạn 1–30 ngày, mặc định 7 ngày, cấm vô thời hạn; mở gate soạn contract hẹp AFF-05A-R2 nhưng chưa tự mở implementation. |
 | `v2.4` | 2026-09-22 | Reconcile execution state after AFF-03/03B/03C and W5: Realignment Plan owns sequencing; §20 becomes a per-slice decision inventory instead of a global lock; Evidence/CCCD readiness blocks only production real-evidence ingestion, not synthetic-data AFF coding; next expansion slice is AFF-04 and whole-feature DoD remains unmet. |
 | `v2.3` | 2026-09-05 | Chốt tầng của `ReferralAttribution` là `LaborProfile` (`AFF-DEC-018` = `V6-DEC-029`) và sửa traceability chain §10.3 theo nó; sửa dependency graph §14.1 vì AFF-03 phụ thuộc V6 LaborProfile **và** Handling Assignment, không chỉ AFF-05A; mở rộng Definition of Ready §20 từ `10` lên `17` ô để phủ hết `AFF-OQ` còn mở, kể cả `AFF-OQ-12`. |
 | `v2.2` | 2026-09-04 | Đổi đường tài liệu sang `docs/V6/aff_plan.md`. |
