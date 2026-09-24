@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Task | `hrp-v6-n2-aff-05a-r1-canonical-initial-handling` |
-| Spec version | `v1.3` |
+| Spec version | `v1.4` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Execution round | `11` — Owner requested T0 to execute the narrow T1B correction directly |
@@ -13,7 +13,7 @@
 | Implementation SHA — content as delivered (T0 explicitly cited as "commit cũ") | `2f5d5702e1169bd2202db932c37c58f05422fcbc` |
 | R6 + R7 status (older rounds, never accepted) | R6 was rejected by T0; R7 was rejected by T0. R6's HANDOFF edits were rolled into R7; R7's were rolled into R8. No separate R6/R7 freeze commit was made because neither round reached an accepted gate. |
 | Current implementation SHA | `b5e62e6abec401d71578766ca6ded29e13da9137` — cumulative R5–R11 freeze, distinct from historical delivery SHA above |
-| Status | `READY_FOR_AUDIT` — retained LIGHT-lane tooling status; R11 audit PASS and T0 committed-byte equivalence verified; next gate is T0 push/PR decision and canonical CI, not a repeat audit |
+| Status | `ACCEPTED` — PR #33 squash-merged and production verified. |
 
 Current freeze authority: `FREEZE-R11.md`. Historical dirty-state descriptions below refer to their original delivery rounds; this metadata follow-up does not rewrite the audited snapshot or earlier audit conclusions.
 
@@ -172,13 +172,19 @@ R10 evidence capture methodology: same `_cap.mjs` UTF-8 no-BOM, LF-only wrapper,
 
 ## 5. Final status
 
-R11 correction implemented, synthetic gates PASS, independent Tier 3 R11 verdict PASS. T0 froze cumulative source at `b5e62e6abec401d71578766ca6ded29e13da9137`; 14/14 snapshot entries match committed raw blobs and the new audit is committed verbatim.
-HANDOFF/TASK v1.3 is a docs-only follow-up; historical SHA `2f5d570` is not the new delivery. See `FREEZE-R11.md` for scope, evidence limitations and historical-log normalization.
+Task has been merged and production verified.
+- PR #33 squash-merged to main at `9e527a13e74c8361feea77b8edca522c8c37ec08`
+- Main CI run 35849749602 (Quality PASS, Integration PASS)
+- Production branch gate PASS (branch `hrp-live`, real Neon API, test_mode=false, primary=true)
+- T0 aggregate preflight passed: 0 `AFF_INITIAL` with `expires_at IS NULL`; safe predicates validated
+- T0 executed manual `prisma migrate deploy`: 45 migrations up to date, `20260922160000_aff05a_r1_initial_handling_window` applied exactly 1
+- Post-deploy catalog verification: function owner `hrp_public_rpc`, `SECURITY DEFINER=true`, exactly `SELECT+INSERT` on handling assignments
+- T0 decision: AFF-05A-R1 executes before AFF-04 (DEC-06/DEC-07 APPROVED).
+- (Contract does not require production data-writing smoke; behavior proven by rollback gates; no fabricated smoke claim made).
 
-Next gate: T0 push/PR decision and canonical CI on the final PR HEAD. No push, PR, merge or production action has occurred. No repeated code audit is requested for this bytes-preserving freeze.
-AC-01 production branch gate and aggregate data-impact approval remain pending T0; AFF-04 ordering remains a separate decision.
+Next gate: NONE.
 
-Handoff status: READY_FOR_AUDIT
+Handoff status: ACCEPTED
 
 ## 6. Baseline comparison summary (R8 re-run, writer=app_user_writer non-super, admin=postgres superuser)
 
