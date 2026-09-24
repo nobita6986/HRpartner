@@ -8,16 +8,17 @@
 | Spec version | `v1.2` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Assurance lane | `CRITICAL` |
-| Execution round | `2` |
-| Current audit round | `1` |
+| Execution round | `3` |
+| Current audit round | `3` |
 | Status | `READY_FOR_AUDIT` |
 | Baseline | `825f763929e4a3026fc7b5d50436e216ef66da8c` (`origin/main`, post-#40 admin-managed phone link; `1e1895d1` is no longer main) |
 | Authority | TASK v1.1 blob at commit `17d7cc26f05ede322f819f7bcdaa59a6a0805521` |
 | Semantic commit SHA | `a9431702b97d3be67ce28aad4d75c238c55dec37` (short `a943170`) — T0 authoritative integration correction on top of `c1744ab`; business policy remains 1/7/30. T0 brief reports `a943170a97e773353df01c09cc252585896e5eaf` (T0 brief typo, does not resolve; see AUDIT.md `AUD-001`). |
-| Docs/evidence freeze | the commit containing this HANDOFF; implementation bytes remain pinned separately to `a943170`. |
+| Docs/evidence freeze | the commit containing this HANDOFF; implementation bytes remain pinned separately to `a943170` and the post-AUD-001 docs closure to `c885274`. |
 | Implementation HEAD | `a9431702b97d3be67ce28aad4d75c238c55dec37` — exact implementation/contract SHA covered by the T0 synthetic-DB evidence below. |
 | Executor | `Tier 1B` |
-| Next gate | `TIER3_DELTA_REAUDIT` |
+| Planner Resolution | `TIER3_PASS` — round-3 AUDIT (DELTA) lifted the CONDITIONAL verdict to PASS by closing `AUD-001` via the `c885274` docs/evidence freeze (no source / test / migration / contract bytes touched). |
+| Next gate | `T0_PRODUCTION_PREFLIGHT_AND_MERGE_DECISION` — T0 fresh production read-only preflight, migration impact review, CI observation, then merge/apply/smoke decision. No `ACCEPTED` closeout yet. |
 
 T0 correction batch (2026-09-24, semantic contract 1/7/30 unchanged):
 
@@ -148,8 +149,12 @@ runtime, or existing migrations is touched.
 
 ## 5. Final status
 
-AFF-05A-R2 v1.2 implementation/contract SHA `a943170` is ready for Tier 3
-delta re-audit. The original `ENV_BLOCKED` condition is closed by E-09b.
+AFF-05A-R2 v1.2 implementation/contract SHA `a9431702b97d3be67ce28aad4d75c238c55dec37` (short `a943170`)
+cleared round-1 `ENV_BLOCKED` via T0 E-09b and round-2 AUD-001 via the `c885274`
+docs/evidence freeze. Round-3 Tier-3 DELTA re-audit (staged in `AUDIT.md`)
+lifted the CONDITIONAL verdict to PASS and closed `AUD-001`; this HANDOFF
+records Planner Resolution `TIER3_PASS` (§0 row).
+
 No production database, credential, migration, deploy, merge, push, or PR was
 used or performed in this correction round.
 
@@ -166,8 +171,41 @@ used or performed in this correction round.
 - targeted integration → 1 file / 6 passed / 0 skipped / 0 failed (E-09b)
 - canonical integration → 27 files / 487 passed / 2 pre-existing skips / 0 failed (E-09b)
 
-Tier 3 must preserve the round-1 artifact, review only `c1744ab..a943170`
-plus this HANDOFF sync, and independently confirm E-09b before changing the
-audit verdict. Production migration remains T0/Owner-only.
+Status remains `READY_FOR_AUDIT` because the `verify-task.ps1` / `verify-handoff.ps1`
+gate vocabulary does not yet have a post-audit state that accepts Tier-3 PASS
+without closing merge/apply. T0 may transition Status to `ACCEPTED` only after
+the production read-only preflight, migration impact review, and CI observation
+on the merge PR (§5.3 / §5.5 below).
+
+### 5.1 Next gate — `T0_PRODUCTION_PREFLIGHT_AND_MERGE_DECISION`
+
+T0 will:
+
+1. Run a fresh read-only preflight against the production-DB replica (no writes).
+2. Review the `20260924170000_aff05a_r2_bounded_manager_assignment` migration
+   impact on the live schema (forwards-only, idempotent re-run guard, narrow
+   predicate for backfill, fail-closed anomaly guard, bounded `lock_timeout`,
+   conditional CHECK on `labor_profile_handling_assignments`).
+3. Observe CI on the PR opened by this delivery (`codex/t1b-aff05a-r2-bounded-manager-assignment`
+   → `origin/main`).
+4. Decide: merge / apply / smoke. T1B will not merge, deploy, or run smoke.
+
+### 5.2 P3 documentation note (non-blocking)
+
+`AUDIT.md` round-3 (Tier-3-owned, `Last-line handoff note`) references `TASK.md §9`
+and the production-gate subsections `§5.3` / `§5.5`. The corresponding
+production-gate subsections are owned by T0 and may not yet be drafted at the
+Tier-1 authorship level. T0 owns those subsections; this HANDOFF provides the
+`Tier-1 ↔ Tier-3 ↔ T0` bridging language above so the upstream author can
+supersede it without re-audit. The Tier-3 AUDIT.md artifact is preserved
+verbatim per T0 directive `1` ("Commit nguyên văn staged AUDIT.md; không sửa
+artifact Tier 3.").
+
+### 5.3 / 5.5 — Reserved for T0-owned production-gate sections
+
+These sections are reserved T0 production-gate subsections (read-only preflight
+results, CI observation, and the final merge/apply/smoke decision). They are
+outside the Tier-1 authority envelope and will be populated by T0 after the
+fresh production read-only preflight completes.
 
 Handoff status: READY_FOR_AUDIT
