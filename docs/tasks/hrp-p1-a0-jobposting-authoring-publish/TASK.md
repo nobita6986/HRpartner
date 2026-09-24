@@ -15,7 +15,7 @@
 | Status | `READY_FOR_AUDIT` |
 | Planner | `Tier 1A` |
 | Baseline | `b34cdddd5c9bbfbda2cc276abf47f328e42af40c` |
-| Baseline/diff range | `b34cdddd5c9bbfbda2cc276abf47f328e42af40c..6331532fc005a948372371b8ecd1d5db8f6ba849` (cumulative frozen range — starting baseline to freeze HEAD; the A0 source commit `036b62dad878d40df8ecd14ea95ac27dbf8b11e0` is preserved in this range; NOT HEAD~1) |
+| Baseline/diff range | `b34cdddd5c9bbfbda2cc276abf47f328e42af40c..eb3ef428d55a7e65b62e9f78dfc1fb294301402c` (cumulative frozen range — starting baseline to freeze HEAD; the A0 source commit `036b62dad878d40df8ecd14ea95ac27dbf8b11e0` is preserved in this range; NOT HEAD~1) |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
@@ -25,7 +25,7 @@
 | Required gates | `npx prisma validate`; `npx prisma generate`; `npm run typecheck`; `npm run test:unit`; `npm run test:integration` (chạy `tests/db/job-posting-authoring.integration.test.ts`); `npm run lint`; `npm list @tiptap/react@3.31.3 @tiptap/pm@3.31.3 @tiptap/starter-kit@3.31.3 @tiptap/static-renderer@3.31.3 @tiptap/core@3.31.3 --depth=0` |
 | Current execution round | `1` |
 | Current audit round | `0` |
-| Implementation SHA | `6331532fc005a948372371b8ecd1d5db8f6ba849` (freeze HEAD; embeds A0 source commit `036b62dad878d40df8ecd14ea95ac27dbf8b11e0` AND the docs/config sync with origin/main via ordinary `git merge --no-ff`. Resolution of the 4 conflict files (vitest configs + integration-files inventory + default-lane static test) was byte-preserving for the A0 service/schema — see HANDOFF §1.) |
+| Implementation SHA | `eb3ef428d55a7e65b62e9f78dfc1fb294301402c` (freeze HEAD; embeds A0 source commit `036b62dad878d40df8ecd14ea95ac27dbf8b11e0` AND the docs/config sync with origin/main via ordinary `git merge --no-ff` AND this follow-up commit with HANDOFF.md (new) + V2 freeze bumps on TASK.md + 2 integration-test assertion corrections. Resolution of the merge's 4 conflict files (vitest configs + integration-files inventory + default-lane static test) was byte-preserving for the A0 service/schema — see HANDOFF §1.) |
 | Frozen delivery | `YES` |
 | Next gate | `TIER3_AUDIT` |
 

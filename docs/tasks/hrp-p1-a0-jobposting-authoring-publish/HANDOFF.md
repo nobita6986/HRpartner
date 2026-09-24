@@ -12,9 +12,9 @@
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Execution round | `1` |
 | Baseline | `b34cdddd5c9bbfbda2cc276abf47f328e42af40c` |
-| Baseline/diff range | `b34cdddd5c9bbfbda2cc276abf47f328e42af40c..6331532fc005a948372371b8ecd1d5db8f6ba849` |
-| Required starting HEAD | `578cb61e10e3794b77eae938c06cf167fc51a6ba` (frozen at 036b62d; synced with origin/main @ d5a11ec post-freeze for HANDOFF+integration-test ergonomics; merge commit is `6331532fc005a948372371b8ecd1d5db8f6ba849`) |
-| Implementation SHA | `6331532fc005a948372371b8ecd1d5db8f6ba849` |
+| Baseline/diff range | `b34cdddd5c9bbfbda2cc276abf47f328e42af40c..eb3ef428d55a7e65b62e9f78dfc1fb294301402c` |
+| Required starting HEAD | `578cb61e10e3794b77eae938c06cf167fc51a6ba` (frozen at 036b62d; synced with origin/main @ d5a11ec post-freeze for HANDOFF+integration-test ergonomics; this freeze HEAD is `eb3ef428d55a7e65b62e9f78dfc1fb294301402c`, the follow-up commit that finalized V2 docs) |
+| Implementation SHA | `eb3ef428d55a7e65b62e9f78dfc1fb294301402c` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
@@ -22,12 +22,13 @@
 | Status | `READY_FOR_AUDIT` |
 
 > **Implementation SHA vs docs-freeze HEAD vs A0 source commit.** The **freeze HEAD (Implementation
-> SHA)** is `6331532fc005a948372371b8ecd1d5db8f6ba849`. The **A0 source commit** is
+> SHA)** is `eb3ef428d55a7e65b62e9f78dfc1fb294301402c`. The **A0 source commit** is
 > `036b62dad878d40df8ecd14ea95ac27dbf8b11e0` (preserved in history; carries the entire additive
-> schema, authoring service, admin UI, and rich-content boundary for P1-A0). The freeze HEAD is the
-> merge of A0 source with `origin/main` so that the canonical gates run cleanly against the latest
-> main-line config. HANDOFF.md tracks this three-way distinction explicitly. Cumulative frozen range
-> (used as `Baseline/diff range` for audit) is `b34cdddd..6331532`.
+> schema, authoring service, admin UI, and rich-content boundary for P1-A0). The freeze HEAD is
+> `6331532fc005a948372371b8ecd1d5db8f6ba849` (merge of A0 source with `origin/main`) plus this
+> follow-up commit `eb3ef42` that added `HANDOFF.md`, bumped TASK.md to V2 freeze, and corrected
+> 2 integration-test assertions. HANDOFF.md tracks this three-way distinction explicitly.
+> Cumulative frozen range (used as `Baseline/diff range` for audit) is `b34cdddd..eb3ef42`.
 
 ## 1. Outcome and changed surface
 
