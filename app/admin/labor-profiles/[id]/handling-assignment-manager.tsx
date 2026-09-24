@@ -25,7 +25,7 @@ export function HandlingAssignmentManager({
   
   const [newAssigneeUserId, setNewAssigneeUserId] = useState('');
   const [reason, setReason] = useState('');
-  const [days, setDays] = useState<string>('7');
+  const [days, setDays] = useState<string>('');
 
   const isExpired = activeAssignment?.expiresAt && new Date(activeAssignment.expiresAt) < new Date();
   
@@ -48,24 +48,34 @@ export function HandlingAssignmentManager({
       alert('Vui lòng nhập lý do (Reason).');
       return;
     }
-    
+
     setLoading(true);
     try {
+      // AFF-05A-R2: the route treats `days` as property-presence. Only include
+      // it when the user picked a new assignee; the server picks the default
+      // when the property is absent. For new assignees, send the parsed
+      // integer (or omit the property when the input is blank so the server
+      // falls back to the 7-day default — never pre-coerce at the client).
+      const daysPayload = newAssigneeUserId
+        ? days.trim() === ''
+          ? undefined
+          : Number(days)
+        : undefined;
       const res = await fetch(`/api/admin/labor-profiles/${laborProfileId}/handling-assignments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           newAssigneeUserId: newAssigneeUserId || null,
           reason,
-          days: newAssigneeUserId && days ? parseInt(days, 10) : null,
+          ...(daysPayload === undefined ? {} : { days: daysPayload }),
         }),
       });
-      
+
       const result = await res.json();
       if (!res.ok) {
         throw new Error(result.error || 'Có lỗi xảy ra');
       }
-      
+
       setIsManaging(false);
       setNewAssigneeUserId('');
       setReason('');
@@ -196,12 +206,14 @@ export function HandlingAssignmentManager({
             
             {newAssigneeUserId && (
               <div>
-                <label className="block text-xs font-medium text-blue-800 mb-1">Số ngày thời hạn</label>
-                <input 
-                  type="number" 
+                <label className="block text-xs font-medium text-blue-800 mb-1">Số ngày thời hạn (1–30, để trống = mặc định 7 ngày)</label>
+                <input
+                  type="number"
                   value={days}
                   onChange={e => setDays(e.target.value)}
                   min="1"
+                  max="30"
+                  step="1"
                   className="w-full text-sm border-blue-200 rounded-md p-2 border focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                 />
               </div>

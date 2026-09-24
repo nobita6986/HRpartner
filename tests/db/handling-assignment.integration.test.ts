@@ -147,12 +147,14 @@ describe.skipIf(!HAS_TEST_DB)('W5 HandlingAssignment safety', () => {
   it('allows assignees to read only their own rows', async () => {
     const staffProfile = await createProfile('staff-scope');
     const ctvProfile = await createProfile('ctv-scope');
+    const staffStartsAt = new Date();
     const staffAssignment = await admin.laborProfileHandlingAssignment.create({
       data: {
         laborProfileId: staffProfile.id,
         assigneeUserId: staffId,
         source: 'MANAGER_ASSIGNMENT',
-        startsAt: new Date(),
+        startsAt: staffStartsAt,
+        expiresAt: new Date(staffStartsAt.getTime() + 7 * 24 * 60 * 60 * 1000),
         status: 'COMPLETED',
       },
     });
@@ -185,12 +187,14 @@ describe.skipIf(!HAS_TEST_DB)('W5 HandlingAssignment safety', () => {
 
   it('denies missing-context reads and assignee writes', async () => {
     const profile = await createProfile('deny');
+    const startsAt = new Date();
     const assignment = await admin.laborProfileHandlingAssignment.create({
       data: {
         laborProfileId: profile.id,
         assigneeUserId: staffId,
         source: 'MANAGER_ASSIGNMENT',
-        startsAt: new Date(),
+        startsAt,
+        expiresAt: new Date(startsAt.getTime() + 7 * 24 * 60 * 60 * 1000),
         status: 'COMPLETED',
       },
     });

@@ -11,7 +11,11 @@
  *   - DATABASE_URL FORCED to an unreachable sentinel; ambient value ignored, `.env` never read (RQ-02)
  *   - every admin/test/LIVE opt-in var blanked (RQ-03)
  *   - DB-touching files excluded through the shared INTEGRATION_TEST_FILES inventory (RQ-04)
- *   - the same three include globs as the unit lane (RQ-05)
+ *   - the same four include globs as the unit lane (RQ-05). T0 alignment round
+ *     (hrp-v6-n2-aff-05a-r2-bounded-manager-assignment) added the route-handler
+ *     glob so the unit tests under `app/api/...` are picked up by both the
+ *     default lane and the unit lane. DB-fail-closed sentinel guarantees
+ *     stay intact.
  *
  * DB tests keep their own lane: `npm run test:integration`, with TEST credentials passed in
  * explicitly. Drift between this file and vitest.unit.config.ts is caught by
@@ -37,7 +41,13 @@ export default defineConfig({
   test: {
     // `prisma/**` holds only STATIC tests that read migration files from disk (go-live-11 RQ-07);
     // nothing in there opens a DB connection, so it belongs in this collection.
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'packages/**/*.test.ts', 'prisma/**/*.test.ts'],
+    include: [
+      'src/**/*.test.ts',
+      'src/**/*.test.tsx',
+      'packages/**/*.test.ts',
+      'prisma/**/*.test.ts',
+      'app/**/*.test.ts',
+    ],
     exclude: [...configDefaults.exclude, ...INTEGRATION_TEST_FILES],
     env: {
       // FORCE unreachable — do NOT read the ambient DATABASE_URL, and never read `.env`.
