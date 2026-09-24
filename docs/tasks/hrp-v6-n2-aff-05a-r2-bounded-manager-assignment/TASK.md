@@ -9,8 +9,8 @@
 | Audit mode | `LIGHT` |
 | Audit reason | Forward-only production migration plus route/service validation at the HandlingAssignment ownership boundary. |
 | Work type | `FEATURE_EXPANSION` |
-| Spec version | `v1.2` |
-| Status | `READY_FOR_AUDIT` |
+| Spec version | `v1.3` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1A`; T0 substantive correction/approval |
 | Execution owner | `Tier 1B` |
 | Baseline | `825f763929e4a3026fc7b5d50436e216ef66da8c` (`origin/main`, post-#40 admin-managed phone link; `1e1895d1` is no longer main) |
@@ -18,9 +18,9 @@
 | In-scope roots | Exact File Allowlist at §4.5 |
 | Forbidden paths | Every path outside §4.5; especially `docs/PLANNER_HANDOVER.md`, CRM, ER-003, dispute/case, `Ticket`, AFF-05B/commission, auth/global RLS, package/config and existing migrations |
 | Required gates | `VERIFY_TASK`, `VERIFY_HANDOFF`, canonical quality/integration gates, migration clean/upgrade proof, `TIER3_LIGHT_AUDIT`, T0 production gate |
-| Next gate | `TIER3_DELTA_REAUDIT` |
-| Current execution round | `2` |
-| Current audit round | `1` |
+| Next gate | `NONE — MERGED_AND_PRODUCTION_VERIFIED` |
+| Current execution round | `3` |
+| Current audit round | `3` |
 | Frozen implementation SHA | see HANDOFF §0 `Implementation SHA` (semantic commit on `codex/t1b-aff05a-r2-bounded-manager-assignment`) |
 
 ## 1. Outcome
@@ -232,11 +232,13 @@ None. Production deployment remains a gate, not an open design decision.
 | 1 | `PROPOSED_ONLY` | Tier 1A initial contract draft. |
 | 2 | `READY_FOR_EXECUTION` | T0 corrected exact input semantics, migration predicate/backstop, allowlist, concurrency evidence and production-gate wording. Owner policy `1/7/30` is resolved; production aggregate preflight returned zero target/anomaly rows. |
 | 3 | `READY_FOR_AUDIT` | T0 authoritative PostgreSQL 18 run closed `ENV_BLOCKED`, exposed and corrected five task-test defects plus two compatibility issues (Windows cleanup retry and W5 finite-deadline fixtures). Targeted AFF-05A-R2 is 6/6 PASS; canonical integration is 27 files / 487 PASS / 2 pre-existing skips / 0 fail. |
+| 4 | `ACCEPTED` | Tier 3 DELTA round 3 PASS; PR #43 squash-merged as `bd99237d5d9a0c39843f950354812fc68dfd3b0b`; production read-only preflight returned zero target/anomaly rows; migration `20260924170000_aff05a_r2_bounded_manager_assignment` applied successfully; catalog invariant, main CI, Vercel production and HTTP smoke all PASS. |
 
 ## 10. Revision Log
 
 | Spec | Date | Change |
 |---|---|---|
+| `v1.3` | 2026-09-24 | T0 production closeout: records Tier 3 PASS, PR #43 merge, successful production migration, validated conditional CHECK, zero manager rows without deadline, main CI/Vercel PASS and HTTP smoke 200; task is now `ACCEPTED`. |
 | `v1.2` | 2026-09-24 | T0 correction round after Tier 3 BLOCKED: ephemeral-DB assertions now query the correct database; fresh backfill fixture is six days old; Prisma P2010 `meta.code=23505` is recognized; Windows temp cleanup retries remain bounded and fail-visible; W5 fixtures carry finite manager deadlines; T0 synthetic PostgreSQL 18 targeted and canonical integration gates pass. |
 | `v1.1` | 2026-09-24 | T0 substantive correction and execution approval; exact allowlist/AC, strict no-coercion boundary, migration safety and read-only production preflight evidence. |
 | (T0 alignment) | 2026-09-24 | T0 alignment correction at execution start (semantic contract 1/7/30 unchanged): baseline `1e1895d1` -> `825f7639` (origin/main post-#40); migration directory `20260924140000` -> `20260924170000` because main already has `20260924150000` + `20260924160000`. Re-aligned allowlist and Revision Log row. No business-semantics change. |
