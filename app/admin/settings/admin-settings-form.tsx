@@ -27,6 +27,7 @@ import {
   LISTING_PAGE_SIZE_MIN,
   type HomepageSettingsDto,
 } from '@/src/domains/job-board/public-types';
+import { InvalidChatUrlError, normalizeChatUrl } from '@/src/domains/job-board/chat-links';
 
 const PLACEHOLDER_GROUPS = [
   {
@@ -86,6 +87,16 @@ function validateListing(value: number): string | null {
   return null;
 }
 
+function validateChatUrl(value: string, channel: 'zalo' | 'messenger'): string | null {
+  try {
+    normalizeChatUrl(value, channel);
+    return null;
+  } catch (error) {
+    if (error instanceof InvalidChatUrlError) return error.message;
+    return 'URL không hợp lệ.';
+  }
+}
+
 export default function AdminSettingsForm({ initialSettings, unavailableReason }: AdminSettingsFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -94,16 +105,26 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const [savedSnapshot, setSavedSnapshot] = useState<HomepageSettingsDto>(initialSettings);
   const [bestJobsPageSize, setBestJobsPageSize] = useState<number>(initialSettings.bestJobsPageSize);
   const [listingPageSize, setListingPageSize] = useState<number>(initialSettings.listingPageSize);
+  const [zaloChatUrl, setZaloChatUrl] = useState(initialSettings.zaloChatUrl ?? '');
+  const [messengerChatUrl, setMessengerChatUrl] = useState(initialSettings.messengerChatUrl ?? '');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const bestJobsError = validateBestJobs(bestJobsPageSize);
   const listingError = validateListing(listingPageSize);
-  const hasFieldError = bestJobsError !== null || listingError !== null;
+  const zaloChatUrlError = validateChatUrl(zaloChatUrl, 'zalo');
+  const messengerChatUrlError = validateChatUrl(messengerChatUrl, 'messenger');
+  const hasFieldError =
+    bestJobsError !== null ||
+    listingError !== null ||
+    zaloChatUrlError !== null ||
+    messengerChatUrlError !== null;
 
   const hasChanges =
     bestJobsPageSize !== savedSnapshot.bestJobsPageSize ||
-    listingPageSize !== savedSnapshot.listingPageSize;
+    listingPageSize !== savedSnapshot.listingPageSize ||
+    zaloChatUrl !== (savedSnapshot.zaloChatUrl ?? '') ||
+    messengerChatUrl !== (savedSnapshot.messengerChatUrl ?? '');
 
   // Clear stale success/error when user edits again.
   useEffect(() => {
@@ -111,7 +132,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
       setSuccess(null);
       setError(null);
     }
-  }, [bestJobsPageSize, listingPageSize, success, error]);
+  }, [bestJobsPageSize, listingPageSize, zaloChatUrl, messengerChatUrl, success, error]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -124,7 +145,13 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     }
 
     if (hasFieldError) {
-      setError(bestJobsError ?? listingError ?? 'Có trường chưa hợp lệ.');
+      setError(
+        bestJobsError ??
+          listingError ??
+          zaloChatUrlError ??
+          messengerChatUrlError ??
+          'Có trường chưa hợp lệ.',
+      );
       return;
     }
 
@@ -133,7 +160,12 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         const res = await fetch('/api/admin/homepage-settings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bestJobsPageSize, listingPageSize }),
+          body: JSON.stringify({
+            bestJobsPageSize,
+            listingPageSize,
+            zaloChatUrl,
+            messengerChatUrl,
+          }),
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
@@ -146,7 +178,9 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           // Sync local state to the server-canonicalized values (handles clamping).
           setBestJobsPageSize(data.settings.bestJobsPageSize);
           setListingPageSize(data.settings.listingPageSize);
-          setSuccess('Đã lưu cài đặt homepage.');
+          setZaloChatUrl(data.settings.zaloChatUrl ?? '');
+          setMessengerChatUrl(data.settings.messengerChatUrl ?? '');
+          setSuccess('Đã lưu cài đặt homepage và kênh chat.');
         }
         router.refresh();
       } catch (e) {
@@ -158,6 +192,8 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   function handleReset() {
     setBestJobsPageSize(savedSnapshot.bestJobsPageSize);
     setListingPageSize(savedSnapshot.listingPageSize);
+    setZaloChatUrl(savedSnapshot.zaloChatUrl ?? '');
+    setMessengerChatUrl(savedSnapshot.messengerChatUrl ?? '');
     setError(null);
     setSuccess(null);
   }
@@ -308,6 +344,88 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 {listingError}
               </p>
             )}
+          </div>
+        </div>
+
+        <div
+          className="mt-6 border-t pt-6"
+          style={{ borderColor: 'var(--outline-variant)' }}
+        >
+          <div className="mb-4">
+            <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
+              Kênh chat công khai
+            </h3>
+            <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+              Để trống để ẩn kênh tương ứng. Chỉ URL HTTPS chính thức của Zalo và Messenger được chấp nhận.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <label htmlFor="zaloChatUrl" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                URL Zalo OA
+              </label>
+              <input
+                id="zaloChatUrl"
+                type="url"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                value={zaloChatUrl}
+                onChange={(event) => setZaloChatUrl(event.target.value)}
+                disabled={Boolean(unavailableReason)}
+                placeholder="https://zalo.me/oa-id"
+                aria-invalid={zaloChatUrlError !== null}
+                aria-describedby="zaloChatUrl-help zaloChatUrl-error"
+                className="hrp-focus min-h-11 w-full rounded-lg border bg-white px-3 py-2 text-sm"
+                style={{
+                  borderColor: zaloChatUrlError ? 'var(--error)' : 'var(--outline-variant)',
+                  color: 'var(--on-surface)',
+                }}
+                data-testid="zaloChatUrl-input"
+              />
+              <p id="zaloChatUrl-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Cho phép: zalo.me, oa.zalo.me hoặc chat.zalo.me.
+              </p>
+              {zaloChatUrlError && (
+                <p id="zaloChatUrl-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
+                  {zaloChatUrlError}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="messengerChatUrl" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                URL Messenger Page
+              </label>
+              <input
+                id="messengerChatUrl"
+                type="url"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                value={messengerChatUrl}
+                onChange={(event) => setMessengerChatUrl(event.target.value)}
+                disabled={Boolean(unavailableReason)}
+                placeholder="https://m.me/page-id"
+                aria-invalid={messengerChatUrlError !== null}
+                aria-describedby="messengerChatUrl-help messengerChatUrl-error"
+                className="hrp-focus min-h-11 w-full rounded-lg border bg-white px-3 py-2 text-sm"
+                style={{
+                  borderColor: messengerChatUrlError ? 'var(--error)' : 'var(--outline-variant)',
+                  color: 'var(--on-surface)',
+                }}
+                data-testid="messengerChatUrl-input"
+              />
+              <p id="messengerChatUrl-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Cho phép: m.me, messenger.com hoặc www.messenger.com.
+              </p>
+              {messengerChatUrlError && (
+                <p id="messengerChatUrl-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
+                  {messengerChatUrlError}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 

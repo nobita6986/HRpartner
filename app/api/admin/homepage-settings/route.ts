@@ -1,7 +1,7 @@
 /**
  * POST /api/admin/homepage-settings — AV1 admin write.
  *
- * Auth: ADMIN only. Other roles get 403.
+ * Auth: ADMIN, HR_MANAGER or DIRECTOR. Other roles get 403.
  * Validates + clamps input via `updateHomepageSettings`, then
  * `revalidateTag('homepage-settings')` so the public projection cache
  * is invalidated.
@@ -14,6 +14,7 @@ import {
   SettingsRowMissingError,
   updateHomepageSettings,
 } from '@/src/domains/job-board/public-settings.service';
+import { InvalidChatUrlError, normalizeChatUrl } from '@/src/domains/job-board/chat-links';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -23,6 +24,8 @@ const ADMIN_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'DIRECTOR']);
 interface AdminSettingsBody {
   bestJobsPageSize?: number;
   listingPageSize?: number;
+  zaloChatUrl?: string | null;
+  messengerChatUrl?: string | null;
 }
 
 function badRequest(message: string): NextResponse {
@@ -49,6 +52,13 @@ function validateBody(body: AdminSettingsBody): string | null {
       return 'listingPageSize phải nằm trong [6, 50].';
     }
   }
+  try {
+    if (body.zaloChatUrl !== undefined) normalizeChatUrl(body.zaloChatUrl, 'zalo');
+    if (body.messengerChatUrl !== undefined) normalizeChatUrl(body.messengerChatUrl, 'messenger');
+  } catch (error) {
+    if (error instanceof InvalidChatUrlError) return error.message;
+    return 'URL kênh chat không hợp lệ.';
+  }
   return null;
 }
 
@@ -73,9 +83,41 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let body: AdminSettingsBody;
   try {
     const raw = (await req.json()) as Record<string, unknown>;
+    if (
+      Object.prototype.hasOwnProperty.call(raw, 'bestJobsPageSize') &&
+      typeof raw.bestJobsPageSize !== 'number'
+    ) {
+      return badRequest('bestJobsPageSize phải là số.');
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(raw, 'listingPageSize') &&
+      typeof raw.listingPageSize !== 'number'
+    ) {
+      return badRequest('listingPageSize phải là số.');
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(raw, 'zaloChatUrl') &&
+      raw.zaloChatUrl !== null &&
+      typeof raw.zaloChatUrl !== 'string'
+    ) {
+      return badRequest('zaloChatUrl phải là chuỗi hoặc null.');
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(raw, 'messengerChatUrl') &&
+      raw.messengerChatUrl !== null &&
+      typeof raw.messengerChatUrl !== 'string'
+    ) {
+      return badRequest('messengerChatUrl phải là chuỗi hoặc null.');
+    }
     body = {
       bestJobsPageSize: typeof raw.bestJobsPageSize === 'number' ? raw.bestJobsPageSize : undefined,
       listingPageSize: typeof raw.listingPageSize === 'number' ? raw.listingPageSize : undefined,
+      zaloChatUrl: Object.prototype.hasOwnProperty.call(raw, 'zaloChatUrl')
+        ? (raw.zaloChatUrl as string | null)
+        : undefined,
+      messengerChatUrl: Object.prototype.hasOwnProperty.call(raw, 'messengerChatUrl')
+        ? (raw.messengerChatUrl as string | null)
+        : undefined,
     };
   } catch {
     return badRequest('Body không phải JSON hợp lệ.');
@@ -84,8 +126,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const violation = validateBody(body);
   if (violation) return badRequest(violation);
 
-  if (body.bestJobsPageSize === undefined && body.listingPageSize === undefined) {
-    return badRequest('Phải cung cấp ít nhất một trong bestJobsPageSize, listingPageSize.');
+  if (
+    body.bestJobsPageSize === undefined &&
+    body.listingPageSize === undefined &&
+    body.zaloChatUrl === undefined &&
+    body.messengerChatUrl === undefined
+  ) {
+    return badRequest(
+      'Phải cung cấp ít nhất một trường cài đặt homepage hoặc kênh chat.',
+    );
   }
 
   const prisma = getPrisma();

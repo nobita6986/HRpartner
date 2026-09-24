@@ -26,6 +26,7 @@ import {
   normalizeBestJobsPageSize,
   type HomepageSettingsDto,
 } from './public-types';
+import { normalizeChatUrl, resolveChatHref } from './chat-links';
 
 export const HOMEPAGE_SETTINGS_SINGLETON_ID = 'default' as const;
 
@@ -40,6 +41,8 @@ type SettingsRow = {
   id: string;
   bestJobsPageSize: number;
   listingPageSize: number;
+  zaloChatUrl: string | null;
+  messengerChatUrl: string | null;
   updatedAt: Date;
 };
 
@@ -49,6 +52,8 @@ export function toHomepageSettingsDto(row: SettingsRow): HomepageSettingsDto {
     id: 'default',
     bestJobsPageSize: normalizeBestJobsPageSize(row.bestJobsPageSize),
     listingPageSize: clampListingPageSize(row.listingPageSize),
+    zaloChatUrl: resolveChatHref(row.zaloChatUrl, 'zalo'),
+    messengerChatUrl: resolveChatHref(row.messengerChatUrl, 'messenger'),
     updatedAt: row.updatedAt.toISOString(),
   };
 }
@@ -87,6 +92,8 @@ export async function getHomepageSettings(prisma: SettingsClient): Promise<Homep
 export interface UpdateHomepageSettingsInput {
   bestJobsPageSize?: number;
   listingPageSize?: number;
+  zaloChatUrl?: string | null;
+  messengerChatUrl?: string | null;
 }
 
 /** Result type for admin write — returns the post-write DTO. */
@@ -129,6 +136,8 @@ export async function updateHomepageSettings(
   const data: {
     bestJobsPageSize?: number;
     listingPageSize?: number;
+    zaloChatUrl?: string | null;
+    messengerChatUrl?: string | null;
     updatedById: string | null;
   } = { updatedById: actorId };
 
@@ -137,6 +146,12 @@ export async function updateHomepageSettings(
   }
   if (input.listingPageSize !== undefined) {
     data.listingPageSize = clampListingPageSize(input.listingPageSize);
+  }
+  if (input.zaloChatUrl !== undefined) {
+    data.zaloChatUrl = normalizeChatUrl(input.zaloChatUrl, 'zalo');
+  }
+  if (input.messengerChatUrl !== undefined) {
+    data.messengerChatUrl = normalizeChatUrl(input.messengerChatUrl, 'messenger');
   }
 
   const updated = await prisma.homepageSettings.update({

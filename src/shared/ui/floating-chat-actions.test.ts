@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { resolveChatHref } from '@/app/components/FloatingChatActions';
+import { resolveChatHref } from '@/src/domains/job-board/chat-links';
 
 describe('resolveChatHref', () => {
   it('accepts canonical Zalo and Messenger HTTPS URLs', () => {
@@ -35,5 +35,23 @@ describe('public layout wiring', () => {
     expect(portal).toContain('<FloatingChatActions />');
     expect(jobs).toContain('<FloatingChatActions />');
     expect(root).not.toContain('FloatingChatActions');
+  });
+
+  it('reads destinations from HomepageSettings instead of environment variables', () => {
+    const component = readFileSync(
+      join(process.cwd(), 'app/components/FloatingChatActions.tsx'),
+      'utf8',
+    );
+    const adminForm = readFileSync(
+      join(process.cwd(), 'app/admin/settings/admin-settings-form.tsx'),
+      'utf8',
+    );
+
+    expect(component).toContain('getHomepageSettings');
+    expect(component).toContain("tags: ['homepage-settings']");
+    expect(component).not.toContain('process.env.ZALO_CHAT_URL');
+    expect(component).not.toContain('process.env.MESSENGER_CHAT_URL');
+    expect(adminForm).toContain('zaloChatUrl-input');
+    expect(adminForm).toContain('messengerChatUrl-input');
   });
 });

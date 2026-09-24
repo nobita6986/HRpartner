@@ -32,11 +32,18 @@ export default async function AdminSettingsPage() {
     // A deployment can briefly run newer application code before its additive
     // migration is applied. Keep the Admin shell usable and make the operational
     // problem visible instead of failing the entire route with Prisma P2021.
-    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2021') {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error.code === 'P2021' || error.code === 'P2022')
+    ) {
       initialSettings = {
         id: 'default',
         bestJobsPageSize: BEST_JOBS_PAGE_SIZE_DEFAULT,
         listingPageSize: LISTING_PAGE_SIZE_DEFAULT,
+        zaloChatUrl: null,
+        messengerChatUrl: null,
         updatedAt: new Date(0).toISOString(),
       };
       unavailableReason =

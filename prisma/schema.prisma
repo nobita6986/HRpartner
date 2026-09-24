@@ -1642,6 +1642,8 @@ model HomepageSettings {
   id               String   @id @default("default")
   bestJobsPageSize Int      @default(9)  @map("best_jobs_page_size")
   listingPageSize  Int      @default(12) @map("listing_page_size")
+  zaloChatUrl      String?  @map("zalo_chat_url")
+  messengerChatUrl String?  @map("messenger_chat_url")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt    @map("updated_at")
   updatedById      String?  @map("updated_by_id")

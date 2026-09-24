@@ -98,6 +98,10 @@ export interface HomepageSettingsDto {
   bestJobsPageSize: BestJobsPageSize;
   /** Number of jobs per page in `/viec-lam`. Validated to be 6..50. */
   listingPageSize: number;
+  /** Optional public Zalo OA chat destination. */
+  zaloChatUrl: string | null;
+  /** Optional public Messenger Page chat destination. */
+  messengerChatUrl: string | null;
   /** ISO string of last update. */
   updatedAt: string;
 }
