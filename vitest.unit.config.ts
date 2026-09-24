@@ -24,7 +24,11 @@ export default defineConfig({
   test: {
     // `prisma/**` chỉ chứa test TĨNH đọc file migration bằng filesystem (go-live-11 RQ-07);
     // không file nào trong đó mở kết nối DB, nên nó thuộc đúng lane unit này.
-    include: ['src/**/*.test.ts', 'packages/**/*.test.ts', 'prisma/**/*.test.ts'],
+    // `app/**` chứa unit test pure của Next.js route handlers (no DB, mocked).
+    // T0 approved (hrp-v6-n2-aff-05a-r2-bounded-manager-assignment alignment round)
+    // for AFF-05A-R2 route-level unit coverage. Fail-closed DB safety is unchanged:
+    // any test in this lane that opens a connection fails on the BLOCKED_DB_URL sentinel.
+    include: ['src/**/*.test.ts', 'packages/**/*.test.ts', 'prisma/**/*.test.ts', 'app/**/*.test.ts'],
     exclude: [...configDefaults.exclude, ...INTEGRATION_TEST_FILES],
     env: {
       // FORCE unreachable — do NOT read the ambient DATABASE_URL (fail-closed, RQ-05/RQ-06).

@@ -7,6 +7,11 @@ import {
   releaseHandlingAssignment,
   ASSIGNMENT_STATUS,
   ASSIGNMENT_SOURCE,
+  normalizeManagerAssignDays,
+  MANAGER_ASSIGN_DAYS_DEFAULT,
+  MANAGER_ASSIGN_DAYS_MIN,
+  MANAGER_ASSIGN_DAYS_MAX,
+  ManagerAssignDaysError,
 } from './handling-assignment.service';
 
 const mockTx = {
@@ -339,7 +344,7 @@ describe('handling-assignment.service', () => {
           status: ASSIGNMENT_STATUS.ACTIVE,
           expiresAt: { lte: fixedNow },
         }),
-        data: expect.objectContaining({ status: ASSIGNMENT_STATUS.EXPIRED }),
+          data: expect.objectContaining({ status: ASSIGNMENT_STATUS.EXPIRED }),
       }),
     );
 
@@ -348,5 +353,56 @@ describe('handling-assignment.service', () => {
     expect(mockTx.laborProfileHandlingAssignment.update).not.toHaveBeenCalled();
 
     vi.useRealTimers();
+  });
+
+  // --- AFF-05A-R2 normalized duration contract (AC-01) ---
+  describe('normalizeManagerAssignDays', () => {
+    it('returns 7 when property absent', () => {
+      expect(normalizeManagerAssignDays(false, undefined)).toBe(MANAGER_ASSIGN_DAYS_DEFAULT);
+    });
+
+    it('accepts the boundary values 1, 7, 30', () => {
+      for (const v of [MANAGER_ASSIGN_DAYS_MIN, 7, MANAGER_ASSIGN_DAYS_MAX]) {
+        expect(normalizeManagerAssignDays(true, v)).toBe(v);
+      }
+    });
+
+    it('rejects explicit null when property present', () => {
+      expect(() => normalizeManagerAssignDays(true, null)).toThrow(ManagerAssignDaysError);
+    });
+
+    it('rejects strings, booleans, NaN, Infinity', () => {
+      expect(() => normalizeManagerAssignDays(true, '7')).toThrow(ManagerAssignDaysError);
+      expect(() => normalizeManagerAssignDays(true, true)).toThrow(ManagerAssignDaysError);
+      expect(() => normalizeManagerAssignDays(true, Number.NaN)).toThrow(ManagerAssignDaysError);
+      expect(() => normalizeManagerAssignDays(true, Number.POSITIVE_INFINITY)).toThrow(ManagerAssignDaysError);
+      expect(() => normalizeManagerAssignDays(true, Number.NEGATIVE_INFINITY)).toThrow(ManagerAssignDaysError);
+    });
+
+    it('rejects fractions', () => {
+      expect(() => normalizeManagerAssignDays(true, 7.5)).toThrow(ManagerAssignDaysError);
+    });
+
+    it('rejects 0, negative, 31+', () => {
+      expect(() => normalizeManagerAssignDays(true, 0)).toThrow(ManagerAssignDaysError);
+      expect(() => normalizeManagerAssignDays(true, -1)).toThrow(ManagerAssignDaysError);
+      expect(() => normalizeManagerAssignDays(true, 31)).toThrow(ManagerAssignDaysError);
+      expect(() => normalizeManagerAssignDays(true, 1000)).toThrow(ManagerAssignDaysError);
+    });
+  });
+
+  it('managerAssign re-validates days at the service boundary', async () => {
+    (mockTx.laborProfileHandlingAssignment.findFirst as any).mockResolvedValue(null);
+    (mockTx.user.findUnique as any).mockResolvedValue({ role: 'HR_STAFF' });
+    await expect(
+      managerAssign(mockTx, {
+        laborProfileId: 'lp-bad-days',
+        newAssigneeUserId: 'user-2',
+        managerUserId: 'manager-1',
+        days: 0,
+        reason: 'should reject',
+      } as any),
+    ).rejects.toBeInstanceOf(ManagerAssignDaysError);
+    expect(mockTx.laborProfileHandlingAssignment.create).not.toHaveBeenCalled();
   });
 });

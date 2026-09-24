@@ -82,4 +82,11 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // zero non-CTV drift. Heavy test (tạo ephemeral DB, prisma migrate deploy,
   // apply byte-identical migration file) — chạy sau integration lane chính.
   'tests/db/aff04-conversion-propagation-upgrade-path.integration.test.ts',
+  // hrp-v6-n2-aff-05a-r2-bounded-manager-assignment: clean chain + upgrade path
+  // evidence for the forward-only 20260924170000 migration. Covers AC-02/AC-03/AC-04/AC-05:
+  // narrow predicate backfill, fail-closed anomaly guards, conditional CHECK
+  // enforcement on MANAGER_ASSIGNMENT, post-migration state assertions, bounded
+  // lock_timeout behavior, and terminal-history preservation. Self-skips when
+  // DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
+  'tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts',
 ];
