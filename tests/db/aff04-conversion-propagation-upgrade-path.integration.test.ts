@@ -329,7 +329,10 @@ describeIf('AFF-04 predecessor upgrade-path (T0 directive F-P4-2)', () => {
   it('applies the byte-identical AFF-04 migration file', () => {
     // The migration file content is what production will execute.
     const sql = readFileSync(AFF04_MIGRATION_FILE, 'utf8');
-    expect(sql).toContain('20260923120000_aff04_conversion_propagation');
+    expect(path.basename(AFF04_MIGRATION_DIR)).toBe(
+      '20260923120000_aff04_conversion_propagation',
+    );
+    expect(sql).toContain('Migration: hrp-v6-n2-aff-04-conversion-propagation');
     expect(sql).toContain('referrer_user_id');
     // F-P4-1: the old fail-closed predicate that REJECTED non-CTV ctv_id is gone.
     expect(sql).not.toMatch(/FAIL:\s*%\s*source_claims\s*row\(s\)\s*are\s*NOT\s*CTV_REFERRAL/i);
