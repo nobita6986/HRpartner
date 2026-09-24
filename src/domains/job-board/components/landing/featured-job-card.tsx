@@ -71,7 +71,7 @@ function RubberStamp({ stampKey }: { stampKey: StampKey }) {
   return (
     <div
       /* Y10.8+: -top-2 -left-2 (tràn 8px ra ngoài card) — đủ nổi mà không quá xa. */
-      className="pointer-events-none absolute -top-2 -left-2 z-30 opacity-35"
+      className="job-stamp-attention motion-reduce:animate-none motion-reduce:opacity-100 pointer-events-none absolute -top-2 -left-2 z-30"
       data-testid="job-stamp"
       aria-label={def.ariaLabel}
       style={{ transform: `rotate(${def.rotateDeg}deg) scale(0.7)`, transformOrigin: 'top left' }}

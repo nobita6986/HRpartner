@@ -120,6 +120,16 @@ describe('AC-07: URGENT tab Quick Apply mo ApplyModal cho job that', () => {
 });
 
 describe('Y10.6/UI04j r2: Rubber stamp redesign — không viền đen, ink texture grunge, 3D shadow', () => {
+  it('stamp blinks between 70% and 100% opacity with reduced-motion fallback', () => {
+    const globals = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8').replace(/\r\n/g, '\n');
+    expect(CARD).toContain('job-stamp-attention');
+    expect(CARD).toContain('motion-reduce:animate-none');
+    expect(CARD).toContain('motion-reduce:opacity-100');
+    expect(globals).toContain('@keyframes job-stamp-blink');
+    expect(globals).toContain('opacity: 0.7');
+    expect(globals).toContain('opacity: 1');
+  });
+
   it('RubberStamp renders với rounded-full + shadow-2xl (không border đen)', () => {
     // Y10.6/UI04j r2: stamp tròn, KHÔNG có viền đen dashed
     expect(CARD).toContain('rounded-full');
