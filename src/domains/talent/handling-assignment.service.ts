@@ -78,6 +78,52 @@ export interface ManagerAssignInput {
   reason: string;
 }
 
+/**
+ * AFF-05A-R2 normalized duration contract (DEC-01 / DEC-02):
+ *   - property absent -> 7
+ *   - property present -> finite integer in [1, 30]
+ *   - explicit null, string, boolean, NaN/Infinity, fraction, 0, negative,
+ *     values > 30 are rejected without coercion.
+ * Detect property presence (not truthiness) so that explicit `null` is
+ * distinguishable from `undefined`. The route layer is the only caller that
+ * should pass a value-bearing or property-absent `days`; this function is the
+ * final authority at the service boundary.
+ */
+export const MANAGER_ASSIGN_DAYS_DEFAULT = 7;
+export const MANAGER_ASSIGN_DAYS_MIN = 1;
+export const MANAGER_ASSIGN_DAYS_MAX = 30;
+
+export class ManagerAssignDaysError extends Error {
+  readonly code = 'MANAGER_ASSIGN_DAYS_INVALID';
+  readonly status = 400;
+  constructor(message: string) {
+    super(message);
+    this.name = 'ManagerAssignDaysError';
+  }
+}
+
+export function normalizeManagerAssignDays(
+  present: boolean,
+  raw: unknown,
+): number {
+  if (!present) return MANAGER_ASSIGN_DAYS_DEFAULT;
+  if (raw === null) {
+    throw new ManagerAssignDaysError('days must be a finite integer in [1,30] when provided (null is not allowed).');
+  }
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) {
+    throw new ManagerAssignDaysError('days must be a finite integer in [1,30].');
+  }
+  if (!Number.isInteger(raw)) {
+    throw new ManagerAssignDaysError('days must be an integer in [1,30].');
+  }
+  if (raw < MANAGER_ASSIGN_DAYS_MIN || raw > MANAGER_ASSIGN_DAYS_MAX) {
+    throw new ManagerAssignDaysError(
+      `days must be in [${MANAGER_ASSIGN_DAYS_MIN},${MANAGER_ASSIGN_DAYS_MAX}].`,
+    );
+  }
+  return raw;
+}
+
 async function expireElapsedHandlingAssignments(
   tx: Prisma.TransactionClient,
   laborProfileId: string,
@@ -100,8 +146,16 @@ export async function managerAssign(
   tx: Prisma.TransactionClient,
   input: ManagerAssignInput
 ) {
+  // AFF-05A-R2: single server `now` snapshot used for expiry sweep, active
+  // lookup, transfer history and new startsAt/expiresAt calculation. Days must
+  // already be a validated finite integer in [1,30] at this point (the route
+  // enforces it via normalizeManagerAssignDays; if the service is called from
+  // a non-route caller, we re-validate and throw typed error).
+  const daysValidated = normalizeManagerAssignDays(true, input.days);
   const now = new Date();
-  const expiresAt = input.days ? new Date(now.getTime() + input.days * 24 * 60 * 60 * 1000) : null;
+  const expiresAt = new Date(
+    now.getTime() + daysValidated * 24 * 60 * 60 * 1000,
+  );
 
   await expireElapsedHandlingAssignments(tx, input.laborProfileId, now);
 
