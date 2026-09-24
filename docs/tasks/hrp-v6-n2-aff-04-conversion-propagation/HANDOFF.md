@@ -10,13 +10,13 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Execution round | `1` |
-| Current audit round | `0` |
+| Current audit round | `1` |
 | Baseline | `9e527a13e74c8361feea77b8edca522c8c37ec08` (origin/main @ 2026-09-23; includes ER-002 #32 and AFF-05A R1 #33). Contract Survey baseline `0fdc616b` retained only as historical reference. |
 | Frozen implementation SHA | `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374` (HEAD at code freeze = `f01ee35`; subsequent docs-only commits recorded in §10 Revision Log) |
 | Worktree / branch | `codex/t1b-aff04-conversion-propagation` |
-| Tier 3 verdict | `PENDING` (next gate is T0 calling Tier 3 LIGHT audit) |
-| Required gates (per TASK §0) | `T0_CONTRACT_APPROVAL` PASS; `TIER3_LIGHT_AUDIT` PENDING; `VERIFY_TASK` PASS DRAFT-VALID; `VERIFY_HANDOFF` (this file) |
-| Next gate | `TIER3_LIGHT_AUDIT` |
+| Tier 3 verdict | `PASS` at frozen HEAD `1b42fd4f84f65b9d7206119eaad5fd275b874125`; artifact `AUDIT-tier3-aff04-final-freeze.md` |
+| Required gates (per TASK §0) | `T0_CONTRACT_APPROVAL` PASS; `TIER3_LIGHT_AUDIT` PASS; `VERIFY_TASK` DRAFT-VALID; `VERIFY_HANDOFF` substantive PASS before terminal status transition |
+| Next gate | `T0_MERGE_DECISION_AFTER_PR_CI` |
 
 ### Authority classification (4-tier, per T0 directive 2026-09-23)
 
@@ -25,7 +25,7 @@
 | Contract authority | TASK v1.4 @ `f3f0a23f2fa6d590f188403687d317da64f4d91e` | Semantic contract §1-§8 — frozen |
 | Execution contract hiện hành | TASK v1.6 @ `e73ac9d` (commit before implementation) | Control metadata aligned |
 | T0 execution authorization | 2026-09-23 directive | "AFF-04 được APPROVED_FOR_EXECUTION" — Tier 1B technical autonomy on Plan + Code, architecture questions reserved to T0 / Owner |
-| Tier 3 implementation verdict | This HANDOFF + frozen SHA `f01ee35` | PENDING — Tier 3 LIGHT audit must run |
+| Tier 3 implementation verdict | Frozen implementation `f01ee35`; final reviewed HEAD `1b42fd4` | PASS — fresh Tier 3 LIGHT audit; no runtime/migration production authorization implied |
 
 ## 1. Outcome and changed surface
 
@@ -81,11 +81,11 @@ AFF-04 closes the source-resolution and assignment-propagation gaps between AFF-
 
 | AC | Evidence | Result | Limitation |
 |---|---|---|---|
-| — | `powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v6-n2-aff-04-conversion-propagation/TASK.md` | `RESULT: DRAFT-VALID (1 warning)` — `READY_FOR_AUDIT` informational warning is non-blocking per verify-task rule A-04 | None |
+| — | `powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v6-n2-aff-04-conversion-propagation/TASK.md` | `RESULT: DRAFT-VALID` — terminal delivery status is an informational tooling limitation, not an acceptance failure | None |
 | AC-01 (Typecheck) | `npx tsc --noEmit` | exit 0 | None |
-| AC-02 (Lint canonical) | `npm run lint` | exit 0 — 0 errors, 696 warnings | Baseline `9e527a13e74c8361feea77b8edca522c8c37ec08` reproduces `npm run lint` → 673 warnings; AFF-04 delta = +23 warnings, all `no-explicit-any`/`no-unused-vars` in AFF-04 test files within Exact File Allowlist (`conversion.service.test.ts +9`, `transfer.service.test.ts +14`); no AFF-04 runtime lint regressions; see E-FP3-02/03/04 |
-| AC-02 (Lint strict) | `npx eslint . --ext .ts --max-warnings=0` | exit 1 — 696 warnings exceed max-warnings=0 | Baseline `9e527a13e74c8361feea77b8edca522c8c37ec08` reproduces `npx eslint . --ext .ts --max-warnings=0` → exit 1, 673 warnings; AFF-04 delta = +23 warnings all in allowlisted test files; `BASELINE_EQUIVALENT_NONZERO — no new AFF-04 lint ERRORS`; see E-FP3-02/03/04 |
-| AC-03 (Unit suite) | `npx vitest run --config vitest.unit.config.ts` | `Test Files 160 passed (160); Tests 2501 passed | 9 skipped (2510); EXIT_CODE=0` | Pre-existing skip count baseline `9e527a13e74c8361feea77b8edca522c8c37ec08`; reproduced `git checkout 9e527a13 && npx vitest run --config vitest.unit.config.ts` (same 9 skipped) — NOT an AFF-04 regression |
+| AC-02 (Lint canonical) | `npm run lint` | exit 0 — 0 errors, 696 warnings | Baseline `9e527a13e74c8361feea77b8edca522c8c37ec08` reproduces `npm run lint` → 672 warnings; AFF-04 delta = +24 warnings, all in Exact File Allowlist test files; no AFF-04 runtime lint errors; see E-FP3-02/03/04 |
+| AC-02 (Lint strict) | `npx eslint . --ext .ts --max-warnings=0` | exit 1 — 696 warnings exceed max-warnings=0 | Baseline `9e527a13e74c8361feea77b8edca522c8c37ec08` reproduces the strict diagnostic with exit 1 and 672 warnings; AFF-04 delta = +24 allowlisted-test warnings; `BASELINE_EQUIVALENT_NONZERO — no new AFF-04 lint ERRORS`; see E-FP3-02/03/04 |
+| AC-03 (Unit suite) | `npx vitest run --config vitest.unit.config.ts` | `Test Files 161 passed (161); Tests 2532 passed | 9 skipped (2541); EXIT_CODE=0` | Final Tier 3 re-run includes the new 31-case transfer route boundary suite; 9 tests remain intentionally skipped |
 | AC-04 (Integration suite) | `npx vitest run --config vitest.integration.config.ts` (env: `DATABASE_URL_TEST=postgresql://app_user_writer:...@localhost:5432/aff04_test`, `DATABASE_URL_ADMIN_TEST=postgresql://postgres:...@localhost:5432/aff04_test`) | `Test Files 24 passed (24); Tests 455 passed | 2 skipped (457); EXIT_CODE=0` | None — `integration-preflight.mjs` validates the env mapping BEFORE vitest runs; no fallback to `.env`, `DATABASE_URL`, or staging |
 | AC-05 (Build) | `npm run build` (reproduced at baseline `9e527a13e74c8361feea77b8edca522c8c37ec08` via `git checkout 9e527a13 && npm run build` — same warning set, NOT an AFF-04 regression) | exit 0 — all 100+ routes (API + UI pages) compiled; no errors | None |
 | AC-06 (Migration clean-chain) | `npx prisma migrate deploy` against fresh `aff04_upgrade_test` DB | 46 migrations applied; AFF-04 final; final SQL shows: `referrer_user_id TEXT NULL`, FKs present, indexes present, both partial unique indexes preserved | None |
@@ -102,8 +102,8 @@ AFF-04 closes the source-resolution and assignment-propagation gaps between AFF-
 |---|---|---|---|
 | E-01 | `verify-task` -- TASK.md contract self-verify (powershell -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v6-n2-aff-04-conversion-propagation/TASK.md) -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-v6-n2-aff-04-conversion-propagation/TASK.md` | exit 0; `RESULT: DRAFT-VALID (1 warning)` | inline stdout |
 | E-02 | `typecheck` -- `npx tsc --noEmit` | exit 0 | inline stdout |
-| E-03 | `lint` -- `npx eslint . --ext .ts --max-warnings=0` | exit 1 — 696 warnings; max-warnings=0 exceeded; delta from baseline = +23 warnings (all `no-explicit-any` / `no-unused-vars` in AFF-04 test files within Exact File Allowlist) | `scratch/lint-strict-current.txt` |
-| E-04 | `unit` -- `npx vitest run --config vitest.unit.config.ts` | exit 0; `Test Files 160 passed (160); Tests 2501 passed | 9 skipped (2510)` | `terminals/461754.txt` |
+| E-03 | `lint` -- `npx eslint . --ext .ts --max-warnings=0` | exit 1 — 696 warnings; max-warnings=0 exceeded; delta from baseline = +24 warnings in Exact File Allowlist tests | `scratch/lint-strict-current.txt`; final Tier 3 recount |
+| E-04 | `unit` -- `npx vitest run --config vitest.unit.config.ts` | exit 0; `Test Files 161 passed (161); Tests 2532 passed | 9 skipped (2541)` | final Tier 3 re-run at `1b42fd4` |
 | E-05 | `integration` -- `npx vitest run --config vitest.integration.config.ts` | exit 0; `Test Files 24 passed (24); Tests 455 passed | 2 skipped (457)` | `terminals/461755.txt` |
 | E-06 | `build` -- `npm run build` | exit 0; all routes compiled | `terminals/461756.txt` |
 | E-07 | `migration-clean-chain` -- `npx prisma migrate deploy` against fresh `aff04_upgrade_test` | 46 migrations applied; final artifacts verified via `verify-aff04-artifacts` SQL: `referrer_user_id TEXT NULL`, FK `source_claims_referrer_user_id_fkey ON DELETE RESTRICT`, FK `project_assignments_referrer_id_fkey ON DELETE RESTRICT`, index `source_claims_referrer_user_id_accepted_idx`, index `project_assignments_referrer_id_status_idx`, both partial unique indexes preserved | inline stdout + ad-hoc Node script (deleted after gate run) |
@@ -113,8 +113,8 @@ AFF-04 closes the source-resolution and assignment-propagation gaps between AFF-
 | E-11 | `relation-sweep` -- `npx vitest run src/shared/security/required-relation-sweep.static.test.ts` | `Test Files 1 passed (1); Tests 11 passed (11)` — 2 new SELECT-shape hits, 2 line shifts, count 13→15 acknowledged | inline stdout |
 | E-FP3-01 | `transfer-routes-boundary` -- `npx vitest run --config vitest.unit.config.ts src/domains/staffing/transfer.routes.test.ts` | `Test Files 1 passed (1); Tests 31 passed (31)` — single + bulk boundary; all forbidden fields dropped before service and idempotency fingerprint; see F-P3-3 | targeted run stdout |
 | E-FP3-02 | `lint-canonical` -- `npm run lint` | exit 0 — 0 errors, 696 warnings | Pre-existing baseline noise (`scratch/lint-canonical.txt`) |
-| E-FP3-03 | `lint-strict` -- `npx eslint . --ext .ts --max-warnings=0` at AFF-04 HEAD | exit 1 — 696 warnings exceed max-warnings=0; delta from baseline = +23 warnings in AFF-04 test files within allowlist | `scratch/lint-strict-current.txt`; `BASELINE_EQUIVALENT_NONZERO — no new AFF-04 lint ERRORS` |
-| E-FP3-04 | `lint-strict-baseline` -- `npx eslint . --ext .ts --max-warnings=0` at `9e527a13` | exit 1 — 673 warnings; confirms baseline noise | `scratch/lint-strict-baseline.txt` |
+| E-FP3-03 | `lint-strict` -- `npx eslint . --ext .ts --max-warnings=0` at AFF-04 HEAD | exit 1 — 696 warnings exceed max-warnings=0; delta from baseline = +24 warnings in AFF-04 test files within allowlist | `scratch/lint-strict-current.txt`; `BASELINE_EQUIVALENT_NONZERO — no new AFF-04 lint ERRORS` |
+| E-FP3-04 | `lint-strict-baseline` -- `npx eslint . --ext .ts --max-warnings=0` at `9e527a13` | exit 1 — 672 warnings; confirms baseline noise | `scratch/lint-strict-baseline.txt`; final Tier 3 recount |
 
 ## 4. Deviations and blockers
 
@@ -127,11 +127,11 @@ AFF-04 closes the source-resolution and assignment-propagation gaps between AFF-
 
 ## 5. Final status
 
-All 6 required gates PASS on a local ephemeral synthetic DB (`aff04_test`, plus the two ephemeral migration-test DBs `aff04_upgrade_test` and `aff04_pre_test` that have since been dropped). The frozen implementation SHA `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374` (HEAD at code freeze = `f01ee35`) is on the local `codex/t1b-aff04-conversion-propagation` branch. HANDOFF + TASK v1.7 (control-metadata-only bump from v1.6; semantic contract §1-§8 unchanged from v1.4) accompanies this freeze. Subsequent docs-only commits are recorded in TASK §10 Revision Log.
+All canonical gates PASS on local ephemeral synthetic databases, which have been dropped. Tier 3 performed a fresh final LIGHT audit at reviewed HEAD `1b42fd4f84f65b9d7206119eaad5fd275b874125` and returned PASS. The frozen implementation SHA remains `f01ee3513d2c1ce6a57f0e1e25860bf238ec1374`; subsequent commits are tests and documentation/evidence carry-forward only, recorded in TASK §10.
 
-No commit/push/PR/merge/deploy action was performed. AFF-04 is staged locally and handed off to T0 to call the Tier 3 LIGHT audit. After the Tier 3 verdict is in, T0/Owner decides on push, PR, merge, and the production migration gate (a separate decision per T0 directive).
+No production/staging migration, merge, or deploy was performed. AFF-04 is ready for T0 push/PR and CI. T0/Owner retains the separate production branch gate, migration-impact review, merge, deploy, and production verification decisions.
 
-Handoff status: `READY_FOR_AUDIT`.
+Handoff status: `READY_FOR_AUDIT` (verifier-compatible enum; Tier 3 verdict is PASS and the substantive next gate is T0 PR/CI review).
 
 ## 6. F-P3 correction round (2026-09-23)
 
