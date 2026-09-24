@@ -45,6 +45,15 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // Placement lifecycle + RLS/GRANT + unique partial index anti-race + FK chain resolve.
   // Self-skips when DATABASE_URL_TEST absent (ENV_BLOCKED — Tier 0/Owner cung cấp DB trước khi xét merge).
   'tests/db/placement-lifecycle-integration.test.ts',
+  // hrp-p0-a04-er003-evidence-record-metadata: forward-only metadata-only boundary for
+  // `evidence_records` (LABOR_PROFILE owner, FK + CHECK + forced RLS, deny-by-default
+  // posture for PUBLIC/app_user/app_user_writer). Covers AC-01..AC-06: synthetic valid
+  // insert, structural CHECKs reject duplicate storage_key, bad owner_type, bad evidence_type,
+  // bad status, bad checksum, negative size, basename-only filename, URL/path-shaped key,
+  // invariant deleted_at ↔ status, FK orphan rejection, BigInt round-trip, RLS posture
+  // (relrowsecurity=true, no policy for any role, no grant for PUBLIC/app_user/app_user_writer).
+  // Self-skips when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
+  'tests/db/er003-evidence-record-metadata.integration.test.ts',
   'src/domains/admin-demand-tree.integration.test.ts',
   'tests/db/referral-attribution-foundation.integration.test.ts',
   // hrp-v6-n2-aff-02-link-capture (Decision A): GET /r/[code] canonical redirect.

@@ -178,6 +178,9 @@ model User {
   // AV4 — Media library creator (nullable FK)
   mediaCreatedBy           Media[] @relation("MediaCreatedBy")
 
+  // P0-A04 / ER-003 — EvidenceRecord creator (nullable FK; RESTRICT on delete).
+  evidenceRecordsCreated   EvidenceRecord[] @relation("EvidenceRecordCreatedBy")
+
   @@index([role, isActive])
   @@map("users")
 }
@@ -1441,6 +1444,10 @@ model LaborProfile {
   handlingAssignments LaborProfileHandlingAssignment[]
   referralAttribution ReferralAttribution?
 
+  // P0-A04 / ER-003 — EvidenceRecord ownership (RESTRICT, one owner type
+  // in this slice; future owner kinds require a new contract+migration).
+  evidenceRecords EvidenceRecord[]
+
   @@index([normalizedPhone])
   @@index([cccdNumber])
   @@index([completeness, identityVerification])
@@ -1757,4 +1764,77 @@ model LaborProfileHandlingAssignment {
   @@index([laborProfileId])
   @@index([assigneeUserId])
   @@map("labor_profile_handling_assignments")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// P0-A04 / ER-003 — EvidenceRecord metadata (additive, metadata-only slice)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// ER-003 establishes a Neon `evidence_records` metadata boundary for one
+// canonical owner kind in this first slice: `LABOR_PROFILE`. The table
+// stores METADATA ONLY — never file bytes, public URLs, absolute filesystem
+// paths, provider roots, credentials, request payloads, or `bytea`.
+//
+// Application authorization is NOT introduced in this slice. RLS is
+// enabled and forced; PUBLIC, `app_user`, and `app_user_writer` receive no
+// privilege and no policy. A separately reviewed runtime slice (ER-005 /
+// ER-006) must introduce grants/policies together with canonical
+// authorization. The migration includes explicit revokes per ER003-DEC-07.
+//
+// Allowed enum values are exactly the plan's six evidence types
+// (ER003-DEC-05); the four lifecycle values (ER003-DEC-06) are stored as a
+// CHECK constraint by the migration. Adding a new owner kind or evidence
+// type requires a new contract+migration.
+
+model EvidenceRecord {
+  id               String    @id @default(uuid())
+
+  // Owner (DEC-02): only LABOR_PROFILE in this slice. owner_id is a real FK
+  // (RESTRICT) so orphan owner records cannot exist. owner_type is locked
+  // by a CHECK constraint in the migration so future contract-less expansion
+  // is impossible at the DB layer.
+  ownerType        String    @map("owner_type")
+  ownerId          String    @map("owner_id")
+  owner            LaborProfile @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+
+  // Allowlisted evidence type (DEC-05): six canonical values.
+  evidenceType     String    @map("evidence_type")
+
+  // Logical, non-public storage identifier (DEC-03 / §4.1).
+  // The later `storeEvidence` command must still mint this through the
+  // existing `asStorageKey` boundary before persisting a row.
+  storageKey       String    @unique @map("storage_key")
+
+  // Sensitive original-filename metadata (DEC-03). Basename only — the DB
+  // CHECK constraint in the migration rejects any `/` or `\\`. Treated as
+  // sensitive: never logged / never returned in public responses.
+  originalFilename String    @map("original_filename")
+
+  // Declared MIME (DEC-03). Nonblank; NOT proof of content safety.
+  mimeType         String    @map("mime_type")
+
+  // Non-negative size in bytes (DEC-03 / DEC-04). Prisma maps BigInt to
+  // SQL BIGINT. The migration adds a CHECK (size_bytes >= 0).
+  sizeBytes        BigInt    @map("size_bytes")
+
+  // Lowercase 64-character SHA-256 hex (DEC-04). CHECK enforces shape in SQL.
+  checksum         String
+
+  // Lifecycle (DEC-06): PENDING | AVAILABLE | QUARANTINED | DELETED.
+  status           String
+
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  // Optional actor FK (DEC-08). ER-003 does not invent a system identity;
+  // runtime insertion must define the authenticated user/system-actor
+  // contract first.
+  createdByUserId  String?   @map("created_by_user_id")
+  createdByUser    User?     @relation("EvidenceRecordCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  // Soft-delete tombstone. Non-null exactly for DELETED lifecycle (DEC-06).
+  deletedAt        DateTime? @map("deleted_at")
+
+  @@index([ownerType, ownerId, createdAt])
+  @@index([createdByUserId])
+  @@map("evidence_records")
 }
