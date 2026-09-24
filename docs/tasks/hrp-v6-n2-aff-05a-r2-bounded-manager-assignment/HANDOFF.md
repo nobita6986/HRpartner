@@ -5,19 +5,19 @@
 | Field | Value |
 |---|---|
 | Task slug | `hrp-v6-n2-aff-05a-r2-bounded-manager-assignment` |
-| Spec version | `v1.1` |
+| Spec version | `v1.2` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Assurance lane | `CRITICAL` |
-| Execution round | `1` |
-| Current audit round | `0` |
+| Execution round | `2` |
+| Current audit round | `1` |
 | Status | `READY_FOR_AUDIT` |
 | Baseline | `825f763929e4a3026fc7b5d50436e216ef66da8c` (`origin/main`, post-#40 admin-managed phone link; `1e1895d1` is no longer main) |
 | Authority | TASK v1.1 blob at commit `17d7cc26f05ede322f819f7bcdaa59a6a0805521` |
-| Semantic commit SHA | `86127956206362d5a1aae2502b8787cd0442cd3e` (short `8612795`) — code, migration, tests, contracts (1/7/30), scope-bounded pg_constraint lookups, real upgrade-path test, two-connection race test, fail-closed anomaly rollback, fail-visible cleanup. |
-| Docs/evidence freeze SHA | see next field — pinned on top of `8612795`. |
-| Implementation HEAD | HEAD of `codex/t1b-aff05a-r2-bounded-manager-assignment` after the docs/evidence freeze commit. The previously frozen `f513608` was the docs/evidence freeze on top of the prior semantic `23fc38d`; T0 correction batch §1 explicitly retires `f505abc` (transient `--amend` artifact) and the prior `f513608` freeze. Only this batch's semantic `8612795` and its docs freeze on top are canonical. |
+| Semantic commit SHA | `a943170a97e773353df01c09cc252585896e5eaf` (short `a943170`) — T0 authoritative integration correction on top of `c1744ab`; business policy remains 1/7/30. |
+| Docs/evidence freeze SHA | pending docs-only follow-up after this HANDOFF sync; it must not change implementation bytes. |
+| Implementation HEAD | `a943170a97e773353df01c09cc252585896e5eaf` — exact implementation/contract SHA covered by the T0 synthetic-DB evidence below. |
 | Executor | `Tier 1B` |
-| Next gate | `TIER3_LIGHT_AUDIT` |
+| Next gate | `TIER3_DELTA_REAUDIT` |
 
 T0 correction batch (2026-09-24, semantic contract 1/7/30 unchanged):
 
@@ -27,7 +27,14 @@ T0 correction batch (2026-09-24, semantic contract 1/7/30 unchanged):
 - **§4 upgrade path**: integration test now stages a temp pseudo-repo whose `prisma/migrations/` is pruned to exclude `20260924170000_*`, runs `prisma migrate deploy` against the pruned schema path on an ephemeral DB, seeds legacy rows, and applies R2 byte-identical. This is the real predecessor state — not the previous "apply all + DROP CONSTRAINT" fake.
 - **§5 AC-05 race**: a new it() opens two independent Prisma clients and races two `MANAGER_ASSIGNMENT` INSERTs against the same `labor_profile_id` and `status='ACTIVE'`. Exactly one wins; the loser receives either Prisma `P2002` or raw SQLSTATE `23505`. No duplicate row, no orphan history. The bounded lock_timeout file-shape assertion is in a separate it() so the audit lane can classify them independently.
 - **§6 canonical gates**: full re-run of `prisma validate`, `prisma generate`, `tsc --noEmit`, `npm run lint`, `npm run build`, `npx vitest run --config vitest.unit.config.ts`. Integration lane still self-skips under `ENV_BLOCKED` in this sandbox (no `DATABASE_URL_TEST`); authoritative integration run is T0's gate.
-- **§7 sync**: TASK and HANDOFF share Status=`READY_FOR_AUDIT`, Spec version=`v1.1`, Next gate=`TIER3_LIGHT_AUDIT`. Build is in the Quality lane, not Integration. DEV-04 wording corrected (integration test DOES consume `DATABASE_URL_TEST` + `DATABASE_URL_ADMIN_TEST`). AC-03 evidence uses exact 7-day deadline measurement (no "ms diff" wording). AC-07 scope command pins baseline `825f763929e4a3026fc7b5d50436e216ef66da8c`.
+- **§7 historical sync**: round 1 had TASK/HANDOFF Status=`READY_FOR_AUDIT`, Spec version=`v1.1`, Next gate=`TIER3_LIGHT_AUDIT`. Round 2 supersedes these control fields with v1.2 and `TIER3_DELTA_REAUDIT`; business policy stays 1/7/30.
+
+T0 authoritative integration correction (2026-09-24, semantic contract 1/7/30 unchanged):
+
+- T0 provisioned a dedicated PostgreSQL 18 database on loopback only, applied all 50 migrations, and used the exact `app_user_writer` non-super/non-bypass role plus a `postgres` admin connection to the same database. No Neon, staging, production credential, or production data was used.
+- The first real run exposed five defects in the task integration test that static review could not prove: three catalog assertions queried the base DB instead of their ephemeral DB, the fresh fixture was already beyond seven days, and Prisma `P2010` carried SQLSTATE `23505` in `meta.code`. All are corrected at `a943170`.
+- Windows temp cleanup now retries a bounded 15 times and still fails visibly after the bound. Existing W5 manager-assignment fixtures now include a finite seven-day deadline so they conform to the new database CHECK.
+- Targeted result: `1 file / 6 passed / 0 skipped / 0 failed`. Canonical result: `27 files / 487 passed / 2 pre-existing skips / 0 failed`. Temporary writer password verifier was restored, temporary membership revoked, and the synthetic database removed after the run.
 
 T0 alignment correction at execution start (semantic contract 1/7/30 unchanged):
 - Baseline `1e1895d1` → `825f7639` (origin/main post-#40).
@@ -78,12 +85,13 @@ Company Pool table.
 | `app/api/admin/labor-profiles/[id]/handling-assignments/route.test.ts` | New 15-case unit file (AC-01). Accepts `1`, `7`, `30`, property-absent. Rejects explicit `null`, string, boolean, NaN, Infinity, fraction, zero, negative, `31`. Release path verified: no `newAssigneeUserId` routes to `releaseHandlingAssignment`; property-present null days still rejected. |
 | `app/admin/labor-profiles/[id]/handling-assignment-manager.tsx` | UI defaults `days` to `''` (blank — server picks `7`); input gets `max="30"` and `step="1"`. Submission sends `days: undefined` (property absent) when blank, or `days: Number(days)` only when the user picked an assignee; never pre-coerces for release. |
 | `prisma/migrations/20260924170000_aff05a_r2_bounded_manager_assignment/migration.sql` | New forward-only migration. Header documents 1/7/30 contract. Body runs under `SET LOCAL lock_timeout = '5s'`. Acquires `LOCK TABLE ... IN SHARE ROW EXCLUSIVE MODE`. Fail-closed anomaly guards (future starts_at, NULL starts_at, unknown status, active overlap) abort before mutation. Narrow backfill sets `expires_at = starts_at + interval '7 days'` and transitions overdue ACTIVE → EXPIRED. Adds conditional CHECK `labor_profile_handling_assignments_manager_expires_required` via idempotent DO block guarded by `pg_constraint`. Two final assertions: zero remaining indefinite manager rows; constraint present in `pg_constraint`. |
-| `tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts` | New DB-touching integration test (fail-closed when `DATABASE_URL_TEST` / `DATABASE_URL_ADMIN_TEST` are absent — `describeIf(HAS_TEST_DB)`). Covers AC-02 clean chain (constraint present in `pg_constraint`); AC-03 narrow backfill on a fresh predecessor state with one fresh / one overdue / one terminal REVOKED / one AFF_INITIAL / one CASE_RESOLUTION row (exact `expires_at = starts_at + 7 days` arithmetic, status transitions, AFF_INITIAL/CASE_RESOLUTION untouched); AC-04 conditional CHECK enforcement (MANAGER_ASSIGNMENT + NULL rejected, AFF_INITIAL + NULL accepted); AC-05 bounded `SET LOCAL lock_timeout` plus the file structural assertions; AC-06 fail-closed anomaly guards (future starts_at aborts and rolls back the CHECK). |
+| `tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts` | DB integration test with real predecessor chain. T0 correction makes catalog assertions use their ephemeral DB clients, keeps the fresh fixture six days old, recognizes PostgreSQL `23505` through Prisma P2010 `meta.code`, and gives Windows temp cleanup a bounded fail-visible retry. Targeted T0 result: 6/6 PASS. |
+| `tests/db/handling-assignment.integration.test.ts` | T0-approved compatibility correction: two existing terminal `MANAGER_ASSIGNMENT` fixtures now include `expiresAt = startsAt + 7 days`, satisfying the new database CHECK without changing W5 authorization expectations. |
 | `vitest.integration-files.ts` | Register the new test file in the canonical guarded integration lane (only the inventory entry, no other paths touched). |
 | `vitest.unit.config.ts` | T0-approved widening: add `'app/**/*.test.ts'` to `include` so route-handler unit tests are picked up. Fail-closed DB sentinel unchanged. |
 | `vitest.config.ts` | T0-approved widening: add `'app/**/*.test.ts'` to `include` so default lane (`npm test`) is consistent with unit lane. Sentinel unchanged. |
 | `src/shared/toolchain/vitest-default-lane.static.test.ts` | T0-approved amendment: `RQ05_INCLUDE_GLOBS` now contains `app/**/*.test.ts` so AC-05 stays green against the widened configs. Drift detection logic and negative test unchanged. |
-| `docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/TASK.md` | Materialize v1.1 byte-exact from `17d7cc2`; apply T0 alignment corrections (baseline `825f7639`, migration `20260924170000`, Revision Log row). |
+| `docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/TASK.md` | v1.2 records T0 authoritative integration findings, the named W5 fixture allowlist delta, and the delta re-audit gate. |
 | `docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/HANDOFF.md` | This document. |
 
 All diff is local to the allowlisted categories plus the three T0-approved
@@ -99,12 +107,12 @@ runtime, or existing migrations is touched.
 |---|---|---|---|
 | `—` | — | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath "docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/TASK.md"` ⇒ `RESULT: PASS. TASK contract is ready for execution.` (re-runnable; §3 E-04). Contract gate green before this round executed. | none. |
 | `AC-01` | `RQ-01` | `app/api/admin/labor-profiles/[id]/handling-assignments/route.test.ts` (15 cases): accepts `1`, `7`, `30`, property-absent; rejects explicit `null`, string, boolean, NaN, Infinity, fraction, zero, negative, `31`. Service `src/domains/talent/handling-assignment.service.test.ts` adds 7 cases for `normalizeManagerAssignDays` plus 1 service-boundary case confirming `managerAssign` re-validates `days`. | Unit lane only; no DB. Authoritative integration lane (AC-02..AC-06) is the Integration lane below. |
-| `AC-02` | `RQ-02` | `tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts` AC-02 (`AC-02 clean chain`): build a temp pseudo-repo with `prisma/schema.prisma` and a `prisma/migrations/` tree pruned to exclude `20260924170000_*` (real predecessor chain ends at `20260924160000`); run `prisma migrate deploy --schema <temp>` against an ephemeral DB; assert the conditional CHECK is NOT yet on the target relation; apply R2 byte-identical via psql; assert exactly one CHECK on `public.labor_profile_handling_assignments` in `pg_constraint` with the strict scope binding `conrelid = 'public.labor_profile_handling_assignments'::regclass AND contype = 'c'`. Release path covered by service unit test ("release with elapsed/valid assignment") and the route unit test ("release path: newAssigneeUserId absent routes to release"). | DB-touching lane; runs only when `DATABASE_URL_TEST` + `DATABASE_URL_ADMIN_TEST` are reachable. In this sandbox `ENV_BLOCKED`; T0 runs the authoritative synthetic-DB lane. |
-| `AC-03` | `RQ-03` | `tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts` `AC-03 narrow backfill on predecessor state`: stage the pruned-migrations predecessor, create ephemeral DB, run `prisma migrate deploy`, seed five legacy rows (fresh MANAGER_ASSIGNMENT ACTIVE 7d-old NULL deadline; overdue ACTIVE 10d-old; terminal REVOKED 10d-old; AFF_INITIAL NULL deadline outside predicate; CASE_RESOLUTION NULL deadline outside predicate), apply R2 byte-identical. Assert: (a) fresh row ACTIVE with `expires_at = starts_at + 7 days` exact `7 * 86_400_000 ms`; (b) overdue row → EXPIRED with `expires_at = starts_at + 7 days` exact; (c) terminal REVOKED status verbatim with reason preserved; (d) AFF_INITIAL source/ACTIVE/NULL deadline byte-for-byte unchanged; (e) CASE_RESOLUTION source/ACTIVE/NULL deadline byte-for-byte unchanged; final guard `count(MANAGER_ASSIGNMENT WHERE expires_at IS NULL AND starts_at IS NOT NULL) = 0`. | DB-touching lane; same env contract as AC-02. |
-| `AC-04` | `RQ-04` | `tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts` `AC-04 scope`: BEFORE applying R2, add a same-named decoy CHECK (`CHECK (true)`) on a different existing table (e.g. an auxiliary lookup table). Assert decoy is in pg_constraint on that table (count=1) and the target relation has none. Apply R2 byte-identical. Assert R2 still adds the target CHECK on the target relation (count=1 with strict `conrelid` + `contype='c'` scope) and the decoy is preserved. The migration's own `IF NOT EXISTS` guard and final assertion both bind `conrelid = 'public.labor_profile_handling_assignments'::regclass AND contype = 'c'`, so the decoy does NOT cause R2 to skip the target CHECK. The `AC-02` and `AC-06` it() cases also assert `pg_constraint` lookup with strict scope. | DB-touching lane; same env contract as AC-02. |
-| `AC-05` | `RQ-05` | `tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts` `AC-05 race`: open TWO independent Prisma clients (separate connection pools) on the same ephemeral DB. Insert one MANAGER_ASSIGNMENT (status='ACTIVE', `expires_at = starts_at + 7 days`) as winner via client A. Then client B attempts the same INSERT for the same `labor_profile_id` and `status='ACTIVE'`. Assert: (1) the loser's exception is either `Prisma.PrismaClientKnownRequestError` with code `P2002` or contains `SQLSTATE 23505`; (2) `count(labor_profile_handling_assignments WHERE labor_profile_id = X AND status = 'ACTIVE') = 1`; (3) `count(labor_profile_handling_assignments WHERE labor_profile_id = X) = 1` (no duplicate row, no orphan history); (4) `count(labor_profile_handling_assignments WHERE id = loserId) = 0` (loser row not committed). The bounded `lock_timeout` file-shape assertion lives in a separate `AC-05/LT bounded lock_timeout` it() so the audit lane can classify them independently. | DB-touching lane; same env contract as AC-02. |
-| `AC-06` | `RQ-06` | `tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts` `AC-06 fail-closed`: stage predecessor, seed one MANAGER_ASSIGNMENT with `starts_at = now() + 1 hour` (future anomaly on the target predicate), apply R2 byte-identical. Assert: (1) `applyAff05aR2MigrationFile` raised a non-zero exit; (2) the conditional CHECK is rolled back (`count(pg_constraint WHERE conname = ... AND conrelid = 'public.labor_profile_handling_assignments'::regclass AND contype = 'c') = 0`); (3) the seeded future row's `expires_at` is still NULL (transactional atomicity). | DB-touching lane; same env contract as AC-02. |
-| `AC-07` | `RQ-01`..`RQ-06` | `npx prisma validate` exit 0 (E-01); `npx prisma generate` exit 0 (E-02); `npx tsc --noEmit` exit 0 (E-08 / E-13); `npm run lint` exit 0 (E-03); `npm run build` exit 0 (E-14, Quality lane); `npx vitest run --config vitest.unit.config.ts` exit 0, 165 files / 2570 passed / 9 skipped (E-06); `pwsh .ai-pipeline/scripts/verify-task.ps1` PASS (E-04); `pwsh .ai-pipeline/scripts/verify-handoff.ps1` PASS (E-05); `git diff --check 825f7639..HEAD` exit 0 (E-07); `git diff --name-only 825f7639..HEAD` lists only allowlisted paths + 3 T0-approved config edits (E-11). Integration lane self-skipped under `ENV_BLOCKED` in this sandbox; authoritative integration run is T0's gate (BLK-01). | All Quality-lane commands above are PASS in this sandbox; integration lane is BLOCKED in this sandbox and T0-runnable in the synthetic DB. |
+| `AC-02` | `RQ-02` | Real predecessor chain in an ephemeral DB; R2 applies byte-identical and creates exactly one scoped CHECK on the target relation. | **PASS** in T0 PostgreSQL 18 targeted run (E-09b). |
+| `AC-03` | `RQ-03` | Six-day fresh ACTIVE, ten-day overdue ACTIVE, terminal REVOKED, AFF_INITIAL and CASE_RESOLUTION fixtures prove exact seven-day arithmetic, only overdue ACTIVE→EXPIRED, terminal/non-target preservation, and zero indefinite manager rows. | **PASS** in T0 targeted run (E-09b). |
+| `AC-04` | `RQ-04` | A same-named decoy CHECK on another relation does not prevent R2 from adding the target CHECK; both remain present with strict relation/type scope. | **PASS** in T0 targeted run (E-09b). |
+| `AC-05` | `RQ-05` | Two independent clients produce one ACTIVE winner and a typed P2002/PostgreSQL `23505` loser (including Prisma P2010 `meta.code`); row counts prove no duplicate/orphan. Separate AC-05/LT verifies bounded lock timeout. | **PASS** in T0 targeted run (E-09b). |
+| `AC-06` | `RQ-06` | A future `starts_at` anomaly aborts R2; the ephemeral DB proves the CHECK is rolled back and the anomalous row remains unchanged. | **PASS** in T0 targeted run (E-09b). |
+| `AC-07` | `RQ-01`..`RQ-06` | Quality gates remain as recorded. T0 additionally ran the strict canonical integration lane on a fully migrated PostgreSQL 18 synthetic DB: 27 files / 487 passed / 2 pre-existing skips / 0 failed. | **PASS**, pending Tier 3 delta re-audit of `a943170`. |
 
 ## 3. Evidence registry
 
@@ -115,13 +123,13 @@ runtime, or existing migrations is touched.
 | `E-03` | `npm run lint` | exit `0` — 0 errors, 706 warnings (all pre-existing baseline `any` warnings on test files; no new warnings introduced by this slice) |
 | `E-04` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath "docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/TASK.md"` | exit `0` — `RESULT: PASS. TASK contract is ready for execution.` |
 | `E-05` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath "docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/TASK.md" -HandoffPath "docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/HANDOFF.md"` | exit `0` — `RESULT: PASS.` |
-| `E-06` | `npx vitest run --config vitest.unit.config.ts` | exit `0` — `Test Files  165 passed (165)` / `Tests  2570 passed | 9 skipped (2579)`. The AFF-05A-R2 route handler unit test contributes 15 passing cases; the service unit test contributes 18 passing cases (including 8 new normalization cases). |
+| `E-06` | `npx vitest run --config vitest.unit.config.ts` | exit `0` — `Test Files 165 passed (165)` / `Tests 2570 passed | 9 skipped (2579)`. Route contributes 15 passing cases; service contributes 18 total: 11 carried-in + 6 inner normalization cases + 1 service-boundary case. |
 | `E-07` | `git diff --check 825f763929e4a3026fc7b5d50436e216ef66da8c..HEAD` | exit `0` — no whitespace errors, no trailing whitespace, no mixed line endings (LF only) |
 | `E-08` | `npx tsc --noEmit` (= `npm run typecheck`) | exit `0` — `tsc --noEmit` PASS, 0 errors |
 | `E-09` | (sandbox) `npm run test:integration` | exit `0` — `ENV_BLOCKED` printed by `scripts/ci/integration-preflight.mjs` (DATABASE_URL_TEST absent). Integration lane NEVER falls back to dev/prod. Per the env contract, this is a blocked state, NOT a fake PASS. |
-| `E-09b` | (T0-authoritative, future) `DATABASE_URL_TEST=postgresql://test_admin@127.0.0.1:5432/aff05ar2_synthetic DATABASE_URL_ADMIN_TEST=... $env:CI_INTEGRATION_STRICT='1'; npm run test:integration` | T0 runs the integration lane against the local PostgreSQL 18 synthetic dedicated DB (NOT Neon staging, NOT production, no production credential). The new test consumes both `DATABASE_URL_TEST` and `DATABASE_URL_ADMIN_TEST` directly (`process.env.DATABASE_URL_TEST`, `process.env.DATABASE_URL_ADMIN_TEST`) per DEV-04. Pre-flight posture assertion runs (`scripts/ci/assert-test-db-posture.mjs`): writer non-super + non-bypassrls; admin same host+port+db. Vitest then runs the integration lane and asserts: (a) `AC-02 clean chain`; (b) `AC-03 narrow backfill on predecessor state` (the predecessor is the real chain `20260824161500`..`20260924160000`, NOT apply-all + DROP); (c) `AC-04 scope` (decoy CHECK on a different table does NOT prevent R2 from adding its target CHECK); (d) `AC-05 race` (two Prisma clients race; exactly one ACTIVE winner, typed conflict on loser, no duplicate row, no orphan history); (e) `AC-05/LT bounded lock_timeout` (file-shape); (f) `AC-06 fail-closed` (future `starts_at` raises and rolls back the CHECK add). Expected result on T0's synthetic DB: 1 file (this test) → 6 it() cases PASS, 0 skip, 0 fail. |
-| `E-10` | `rg --no-heading --line-number 'publicUrl|public_url|rootPath|root_path|token|bytea' src/domains/talent/handling-assignment.service.ts src/domains/talent/handling-assignment.service.test.ts app/api/admin/labor-profiles/[id]/handling-assignments/route.ts app/api/admin/labor-profiles/[id]/handling-assignments/route.test.ts app/admin/labor-profiles/[id]/handling-assignment-manager.tsx prisma/migrations/20260924170000_aff05a_r2_bounded_manager_assignment/migration.sql tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts vitest.integration-files.ts docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/TASK.md docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/HANDOFF.md` | 0 hits. None of the AFF-05A-R2 files references `publicUrl`, `public_url`, `rootPath`, `root_path`, `token`, or `bytea`. The conditional CHECK mentions the literal `'MANAGER_ASSIGNMENT'` only. |
-| `E-11` | `git diff --name-only 825f763929e4a3026fc7b5d50436e216ef66da8c..HEAD` | lists exactly the allowlisted paths plus the three T0-approved config edits: <br> 1. `src/domains/talent/handling-assignment.service.ts` <br> 2. `src/domains/talent/handling-assignment.service.test.ts` <br> 3. `app/api/admin/labor-profiles/[id]/handling-assignments/route.ts` <br> 4. `app/api/admin/labor-profiles/[id]/handling-assignments/route.test.ts` (new) <br> 5. `app/admin/labor-profiles/[id]/handling-assignment-manager.tsx` <br> 6. `prisma/migrations/20260924170000_aff05a_r2_bounded_manager_assignment/migration.sql` (new) <br> 7. `tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts` (new) <br> 8. `vitest.integration-files.ts` <br> 9. `vitest.unit.config.ts` (T0-approved widening) <br> 10. `vitest.config.ts` (T0-approved widening) <br> 11. `src/shared/toolchain/vitest-default-lane.static.test.ts` (T0-approved RQ05 glob amendment) <br> 12. `docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/TASK.md` <br> 13. `docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/HANDOFF.md` (new) <br> 13 files total, all inside the allowlist §4.5 or the three T0-approved config edits. Zero forbidden-path hits. |
+| `E-09b` | (T0-authoritative) set secret local loopback `DATABASE_URL_TEST` / `DATABASE_URL_ADMIN_TEST`; `$env:CI_INTEGRATION_STRICT='1'; npm run test:integration` | **PASS** on PostgreSQL `18.6`, dedicated DB `aff05ar2_t0_20260924`: posture `app_user_writer` non-super/non-bypass + `postgres` admin same target; all 50 migrations applied; canonical result `27 files / 487 passed / 2 pre-existing skips / 0 failed`. Targeted file rerun: `1 file / 6 passed / 0 skipped / 0 failed`. No Neon/staging/production credential or data. Password verifier restored, temporary membership revoked, and synthetic DB removed after the run. |
+| `E-10` | `rg --no-heading --line-number 'publicUrl|public_url|rootPath|root_path|token|bytea' -- "src/domains/talent/handling-assignment.service.ts" "src/domains/talent/handling-assignment.service.test.ts" "app/api/admin/labor-profiles/[id]/handling-assignments/route.ts" "app/api/admin/labor-profiles/[id]/handling-assignments/route.test.ts" "app/admin/labor-profiles/[id]/handling-assignment-manager.tsx" "prisma/migrations/20260924170000_aff05a_r2_bounded_manager_assignment/migration.sql" "tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts" "tests/db/handling-assignment.integration.test.ts" "vitest.integration-files.ts"` | exit `1`, 0 hits (expected ripgrep no-match exit). Quoted paths make the command PowerShell-safe despite `[id]`. |
+| `E-11` | `git diff --name-only 825f763929e4a3026fc7b5d50436e216ef66da8c..a943170` | 14 implementation/contract paths: prior 13 plus T0-approved `tests/db/handling-assignment.integration.test.ts`; zero forbidden-path hits. T3 `AUDIT.md` is excluded from this implementation count and remains Tier 3-owned. |
 | `E-12` | strict UTF-8 / no BOM / no mojibake scan over the diff | Python script reads each touched file in `rb` and asserts: (a) no `\xef\xbb\xbf` BOM; (b) no `\xef\xbf\xbd` replacement char; (c) no mojibake sequences `\xce\x93\xc7\xf6`, `\xce\x93\xe5\xc6`, `\xce\x93\xc7\xa3`, `\xce\x93\xc7\xa5`, `\xce\x93\xc7\xf4`, `\xe2\x94\xac\xc2\xba` (the six TASK.md mojibake tokens pre-correction); (d) CRLF count = 0 (LF only). 0 findings on the entire allowlisted diff. |
 | `E-13` | `npx tsc --noEmit` (= `npm run typecheck`) | exit `0`. Same as E-08; listed separately to align with TASK §6.4 canonical verification commands. |
 | `E-14` | `npm run build` | exit `0` — Next.js production build success; First Load JS shared by all ≈ 103 kB. Quality lane (NOT Integration). |
@@ -136,15 +144,14 @@ runtime, or existing migrations is touched.
 | `DEV-03` | T0 approved widening `vitest.unit.config.ts` and `vitest.config.ts` `include` to add `'app/**/*.test.ts'` so the new route-handler unit test file is picked up by both lanes. `RQ05_INCLUDE_GLOBS` in `vitest-default-lane.static.test.ts` was extended to match. Fail-closed DB sentinel (`BLOCKED_DB_URL` on `127.0.0.1:1`) is unchanged. The default lane still blanks all admin/test/LIVE opt-in vars. | Tier 1 (T0 approved). |
 | `DEV-04` | Integration test consumes `DATABASE_URL_TEST` and `DATABASE_URL_ADMIN_TEST` directly via `process.env.DATABASE_URL_TEST` and `process.env.DATABASE_URL_ADMIN_TEST`. Self-skip via `describeIf(HAS_TEST_DB)` only when those vars are missing or contain the `placeholder` sentinel. Each ephemeral DB is created with `CREATE DATABASE` via psql using the admin URL, then dropped with `DROP DATABASE` after the test. Cleanup errors are surfaced (T0 §4 forbids swallowed cleanup that produces fake evidence). The integration lane runs `scripts/ci/integration-preflight.mjs` which enforces the dedicated-test-DB invariant and runs `scripts/ci/assert-test-db-posture.mjs` for writer/admin posture. | Tier 1 (T0 §7 wording correction). |
 | `DEV-05` | T0 §8: `npm run build` is a Quality lane command, not an Integration lane command. The Quality lane runs `prisma validate` + `prisma generate` + `tsc --noEmit` + `npm run lint` + `npm run build` + `npx vitest run --config vitest.unit.config.ts`. The Integration lane runs only `npx vitest run --config vitest.integration.config.ts` (via `npm run test:integration` → `scripts/ci/integration-preflight.mjs`). Build is never run inside the Integration lane. | Tier 1 (T0 §8 correction). |
-| `BLK-01` | **ENV_BLOCKED in this sandbox**: `DATABASE_URL_TEST` is not provisioned; `scripts/ci/integration-preflight.mjs` prints the canonical `ENV_BLOCKED` token (fail-closed sentinel — never `PASS`). Resolution is T0's gate: T0 provisions a local PostgreSQL 18 synthetic dedicated DB (NOT Neon staging, NOT production, no production credential) and runs E-09b. Expected result on that DB: 1 file (this test) → 6 it() cases PASS (AC-02 / AC-04 / AC-03 / AC-05 race / AC-05/LT / AC-06), 0 skip, 0 fail. | Tier 0/Owner (synthetic DB provision + run). |
+| `BLK-01` | **CLOSED by E-09b.** T0 provisioned local PostgreSQL 18 synthetic DB, ran targeted and canonical integration successfully, then restored role state and removed the DB. | Closed; Tier 3 delta re-audit remains. |
 
 ## 5. Final status
 
-AFF-05A-R2 v1.1 delivery candidate is frozen for T0 review. Code, migration,
-service + route + integration tests, UI alignment, task delegation copy, and
-HANDOFF are aligned to the allowlist §4.5 plus the three T0-approved config
-edits. The Quality-lane gates listed in AC-07 have been re-runnable against
-the rebased baseline `825f763929e4a3026fc7b5d50436e216ef66da8c`:
+AFF-05A-R2 v1.2 implementation/contract SHA `a943170` is ready for Tier 3
+delta re-audit. The original `ENV_BLOCKED` condition is closed by E-09b.
+No production database, credential, migration, deploy, merge, push, or PR was
+used or performed in this correction round.
 
 - `npx prisma validate` → exit 0 (E-01)
 - `npx prisma generate` → exit 0 (E-02)
@@ -155,37 +162,12 @@ the rebased baseline `825f763929e4a3026fc7b5d50436e216ef66da8c`:
 - `pwsh .ai-pipeline/scripts/verify-task.ps1` → `RESULT: PASS` (E-04)
 - `pwsh .ai-pipeline/scripts/verify-handoff.ps1` → `RESULT: PASS` (E-05)
 - `git diff --check 825f7639..HEAD` → exit 0 (E-07)
-- `git diff --name-only 825f7639..HEAD` → 13 files, all inside allowlist §4.5 or T0-approved config widening (E-11)
-- `npm run test:integration` → `ENV_BLOCKED` (sandbox; E-09). Authoritative integration run is T0's gate on a synthetic dedicated DB (E-09b).
+- `git diff --name-only 825f7639..a943170` → 14 implementation/contract files, all inside §4.5 plus named T0 deltas (E-11)
+- targeted integration → 1 file / 6 passed / 0 skipped / 0 failed (E-09b)
+- canonical integration → 27 files / 487 passed / 2 pre-existing skips / 0 failed (E-09b)
 
-The DB-touching acceptance criteria (AC-02 / AC-03 / AC-04 / AC-05 race /
-AC-06) require authoritative execution against T0's local PostgreSQL 18
-synthetic dedicated DB (NOT Neon staging, NOT production, no production
-credential). The integration test has been rewritten to (a) stage a real
-predecessor state by pruning R2 out of the migrations tree, (b) bind
-`pg_constraint` lookups with strict `conrelid` + `contype='c'` scope, (c)
-seed a decoy same-named CHECK on a different table BEFORE R2 apply to prove
-scope, (d) race two independent Prisma clients on the same `labor_profile_id`
-to assert one ACTIVE winner + typed conflict on loser + no duplicate row,
-and (e) fail visibly on cleanup errors (no swallowed exceptions). In this
-sandbox `ENV_BLOCKED`; T0 runs E-09b.
-
-No push, no PR, no merge, no production migration occurred during Tier 1
-execution. Tier 3 LIGHT audit is the next gate. No tier-3 invocation was
-made by Tier 1.
-
-T0 correction batch (2026-09-24): provenance/SHA corrected
-(`8612795` semantic, docs/evidence freeze on top of it); TASK.md mojibake
-restored (six UTF-8 round-trip artifacts replaced with their correct
-characters); constraint scope bound to
-`public.labor_profile_handling_assignments::regclass AND contype='c'`
-in migration AND integration test (with negative scoping test);
-upgrade-path test rewritten to a real predecessor (no apply-all +
-DROP); AC-05 race added as a real two-connection test (1 winner, typed
-conflict on loser, no duplicate row); TASK.md and HANDOFF now share
-Status, Spec version, Next gate; build moved to Quality lane; DEV-04
-wording corrected; AC-03 evidence uses exact 7-day deadline measurement;
-AC-07 scope command pins baseline `825f7639`. Spec stays v1.1 (no
-semantic contract change). Status `READY_FOR_AUDIT`. No push/PR/merge/deploy.
+Tier 3 must preserve the round-1 artifact, review only `c1744ab..a943170`
+plus this HANDOFF sync, and independently confirm E-09b before changing the
+audit verdict. Production migration remains T0/Owner-only.
 
 Handoff status: READY_FOR_AUDIT
