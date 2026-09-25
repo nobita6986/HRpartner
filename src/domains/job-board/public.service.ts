@@ -257,8 +257,24 @@ function isExpired(date: Date | null, now: Date): boolean {
 
 /** Hình dạng dòng mà `publicSelect` trả về. Đặt tên để `toDto` và `toDetailDto` dùng đúng một kiểu. */
 type PublicSlotRow = { positionCode: string; positionTitle: string; slotsNeeded: number; slotsFilled: number; shiftStart: string | null; shiftEnd: string | null; validTo: Date | null; workLocation: string | null; hourlyRateVnd: bigint | null };
-type PublicOrderRow = { status: string; title: string; description: string | null; deadlineDate: Date | null; createdAt: Date; slots: PublicSlotRow[] };
-type PublicProjectRow = { id: string; code: string; name: string; siteAddress: string | null; clientCompanyName: string | null; staffingOrders: PublicOrderRow[] };
+/**
+ * hrp-p1-a1 (correction batch 1/1, C-02) — Hình dạng StaffingOrderSlot canonical bound tới
+ * JobOpening. Một JobPosting ↔ một JobOpening ↔ một StaffingOrderSlot, nên mỗi JobPosting chỉ
+ * project ĐÚNG slot được `JobOpening.staffingOrderSlotId` chỉ tới. Sibling slots của cùng
+ * StaffingOrder nhưng thuộc JobOpening khác KHÔNG bao giờ xuất hiện trong DTO.
+ */
+type PublicCanonicalSlotRow = { id: string; positionCode: string; positionTitle: string; slotsNeeded: number; slotsFilled: number; shiftStart: string | null; shiftEnd: string | null; validTo: Date | null; workLocation: string | null; hourlyRateVnd: bigint | null };
+type PublicOrderRow = { status: string; title: string; description: string | null; deadlineDate: Date | null; createdAt: Date; canonicalSlot: PublicCanonicalSlotRow | null };
+/**
+ * hrp-p1-a1 (correction batch 1/1, C-02) — RAW Prisma shape trước khi mapper gắn
+ * `canonicalSlot` vào StaffingOrder. Prisma không trả về `canonicalSlot` cho
+ * `jobPosting → jobOpening → staffingOrder` vì nó là derived/added ở
+ * `projectRowFromPosting`. Tách kiểu để signature `projectRowFromPosting` chỉ chấp nhận
+ * payload thô (không cần `canonicalSlot`), còn mọi consumer phía dưới (`toDto`,
+ * `toDetailDto`,...) tiếp tục xài `PublicOrderRow`.
+ */
+type PublicOrderRowRaw = Omit<PublicOrderRow, 'canonicalSlot'>;
+type PublicProjectRow = { id: string; code: string; name: string; siteAddress: string | null; clientCompanyName: string | null; staffingOrders: PublicOrderRow[]; /** hrp-p1-a1 (correction batch 1/1, C-06): dùng cho lọc legacy `PRJ-xxx` ở listing, KHÔNG phát ra DTO. */ projectCode: string };
 
 /**
  * hrp-p1-a1 — RAW SELECT payload từ Prisma cho JobPosting chain.
@@ -282,9 +298,11 @@ type PublicJobPostingSelectPayload = {
   applicationInstructionsJson: unknown | null;
   contentSchemaVersion: number;
   jobOpening: {
-    staffingOrder: PublicOrderRow & {
-      project: { siteAddress: string | null; clientCompanyName: string | null };
+    staffingOrder: PublicOrderRowRaw & {
+      project: { code: string; siteAddress: string | null; clientCompanyName: string | null };
     };
+    // C-02: linked canonical slot (một JobOpening ↔ đúng một StaffingOrderSlot).
+    staffingOrderSlot: PublicCanonicalSlotRow | null;
   } | null;
 };
 
@@ -303,7 +321,16 @@ function isSlotLive(slot: Pick<PublicSlotRow, 'validTo'>, now: Date): boolean {
 function visibleSlots(orders: PublicOrderRow[], now: Date): PublicSlotRow[] {
   return orders
     .filter((order) => isOrderVisible(order, now))
-    .flatMap((order) => order.slots.filter((slot) => isSlotLive(slot, now)));
+    .flatMap((order) => {
+      // C-02: CHỈ map linked `jobOpening.staffingOrderSlot` (canonical) vào DTO. Sibling slots
+      // thuộc cùng StaffingOrder nhưng gắn với JobOpening khác bị filter tại đây. Khi chain
+      // thiếu hoặc drift (legacy rows, JobOpening.staffingOrderSlotId NULL, hoặc reverse FK
+      // không trỏ về opening.id) thì slot không xuất hiện trong DTO ⇒ fail closed cho mọi
+      // đường read (listing + detail + apply authority).
+      if (!order.canonicalSlot) return [];
+      const slot = order.canonicalSlot;
+      return isSlotLive(slot, now) ? [slot] : [];
+    });
 }
 
 /** Số chỗ còn trống của một slot. Công thức duy nhất, dùng cho cả tổng của card và `available`. */
@@ -376,11 +403,15 @@ function summarizeSlots(slots: PublicSlotRow[], project: PublicProjectRow) {
 function searchableTextOf(project: PublicProjectRow): string {
   return [
     project.name,
-    ...project.staffingOrders.flatMap((order) => [
-      order.title,
-      order.description ?? '',
-      ...order.slots.flatMap((slot) => [slot.positionCode, slot.positionTitle]),
-    ]),
+    ...project.staffingOrders.flatMap((order) => {
+      // C-02: chỉ scan linked `canonicalSlot`, không scan toàn bộ slots của StaffingOrder.
+      const slot = order.canonicalSlot;
+      return [
+        order.title,
+        order.description ?? '',
+        ...(slot ? [slot.positionCode, slot.positionTitle] : []),
+      ];
+    }),
   ].join(' ');
 }
 
@@ -602,9 +633,17 @@ function toDetailDto(
 // Lý do cốt lõi: A0 đã freeze canonical slug thuộc `JobPosting` (`@unique([slug])`) và chỉ các bản
 // ghi `status='PUBLISHED'` mới được phép xuất hiện ngoài bề mặt công khai. A1 đọc từ bảng đó,
 // duyệt chain `jobOpening → staffingOrder → project` để lấy `siteAddress`/`clientCompanyName`/
-// `staffingOrder.status`/`staffingOrder.slots` — các trường vốn nằm trên `Project`/`StaffingOrder`
+// `staffingOrder.status`/`staffingOrder.canonicalSlot` — các trường vốn nằm trên `Project`/`StaffingOrder`
 // ở baseline. `DRAFT`/`ARCHIVED` JobPosting bị `where` loại trước khi tới mapper; `jobOpening`
 // nullable (legacy rows có thể không có) thì bị skip tại `projectRowFromPosting`.
+//
+// C-02 (correction batch 1/1): canonical slot chain. Trước đây `staffingOrder.slots` trả MỌI slot
+// thuộc cùng StaffingOrder — sibling slot của JobOpening khác có thể xuất hiện trong DTO. Nay
+// chỉ project đúng `jobOpening.staffingOrderSlot` (theo FK ngược `staffing_order_slots.job_opening_id`
+// = `job_openings.id` + `job_openings.staffing_order_slot_id` = `staffing_order_slots.id`), đảm bảo
+// `JobPosting` cho opening A chỉ render slot A và reject sibling slot ngay tại read projection.
+// Service-layer và RPC authority dùng chuỗi canonical này — không có đường nào fetch toàn bộ
+// `staffingOrder.slots` cho một JobPosting.
 //
 // Hàng rào: `public-select.static.test.ts` đọc cây nguồn và assert khóa ngoài cùng. Đổi `select`
 // thì phải cập nhật allowlist ở đó MỘT CÁCH CÓ Ý THỨC — không được kéo lại quan hệ mà principal
@@ -636,21 +675,27 @@ const publicSelect = Prisma.validator<Prisma.JobPostingSelect>()({
               siteAddress: true,
               // Y10.4/UI04g: denormalized company name (MKT role không đọc được client_companies do RLS)
               clientCompanyName: true,
+              // hrp-p1-a1 (C-06): đưa về listing để lọc legacy `PRJ-xxx`. KHÔNG phát ra DTO công khai;
+              // chỉ phục vụ nhánh `q` có hình dạng mã dự án ở `listPublicJobProjection`.
+              code: true,
             },
           },
-          slots: {
-            select: {
-              positionCode: true,
-              positionTitle: true,
-              slotsNeeded: true,
-              slotsFilled: true,
-              shiftStart: true,
-              shiftEnd: true,
-              validTo: true,
-              workLocation: true,
-              hourlyRateVnd: true,
-            },
-          },
+        },
+      },
+      // C-02: chính xác một `staffingOrderSlot` được link qua `job_openings.staffing_order_slot_id`.
+      // Đây là đường duy nhất vào DTO; `staffingOrder.slots` đã bị bỏ để chặn sibling slot.
+      staffingOrderSlot: {
+        select: {
+          id: true,
+          positionCode: true,
+          positionTitle: true,
+          slotsNeeded: true,
+          slotsFilled: true,
+          shiftStart: true,
+          shiftEnd: true,
+          validTo: true,
+          workLocation: true,
+          hourlyRateVnd: true,
         },
       },
     },
@@ -663,12 +708,19 @@ const publicSelect = Prisma.validator<Prisma.JobPostingSelect>()({
  * `getPublicJobDetail`) cùng phải chạy qua map này, nếu không số chỗ trống / facet / urgency của
  * card và trang chi tiết sẽ lệch nhau trong im lặng — đúng defect go-live-09 / RQ-24.
  *
+ * C-02 (correction batch 1/1): `canonicalSlot` được derive TỪ `jobOpening.staffingOrderSlot`
+ * (một Prisma relation 0..1 tới `StaffingOrderSlot` qua FK `job_openings.staffing_order_slot_id`).
+ * KHÔNG lấy `staffingOrder.slots` (toàn bộ sibling slots). Sibling slot thuộc StaffingOrder nhưng
+ * gắn JobOpening khác KHÔNG thể vào DTO.
+ *
  * Trả `null` khi JobPosting thiếu `jobOpening` (legacy row, hoặc chain bị xoá) — caller sẽ filter
- * tiếp tại vòng lặp ngoài.
+ * tiếp tại vòng lặp ngoài. Khi `jobOpening.staffingOrderSlot` là `null` (chain bị drift), mapper
+ * trả về DTO với `canonicalSlot: null` và `visibleSlots` trả `[]` — fail closed ở read projection.
  */
 function projectRowFromPosting(posting: PublicJobPostingSelectPayload): PublicProjectRow | null {
-  const order = posting.jobOpening?.staffingOrder;
-  if (!order) return null;
+  const opening = posting.jobOpening;
+  if (!opening) return null;
+  const order = opening.staffingOrder;
   const project = order.project;
   return {
     id: posting.id,
@@ -676,7 +728,10 @@ function projectRowFromPosting(posting: PublicJobPostingSelectPayload): PublicPr
     name: posting.title ?? '',
     siteAddress: project.siteAddress ?? null,
     clientCompanyName: project.clientCompanyName ?? null,
-    staffingOrders: [order],
+    staffingOrders: [{ ...order, canonicalSlot: opening.staffingOrderSlot }],
+    // hrp-p1-a1 (C-06): mapping internal Project.code cho lọc legacy ở listing. KHÔNG bao giờ
+    // chạm DTO.
+    projectCode: project.code,
   };
 }
 
@@ -806,8 +861,26 @@ export async function listPublicJobProjection(
   const search = opts.q?.trim();
   const area = opts.area?.trim();
   const shift = opts.shift?.trim();
+
+  // hrp-p1-a1 (correction batch 1/1, C-06) — lọc legacy `PRJ-xxx` ở listing:
+  //   Khi `q` khớp chính xác shape mã dự án (chỉ chữ cái ASCII không dấu, chữ số, gạch dưới,
+  //   gạch ngang; phải có ít nhất một gạch ngang/gạch dưới; bắt đầu bằng chữ HOA), so CHÍNH XÁC
+  //   `Project.code` thay vì `keywordHaystack` để:
+  //     1. KHÔNG chọn ngẫu nhiên một posting trong project — chuyển sang danh sách đã lọc.
+  //     2. Project không có PUBLISHED posting nào → trả 0 dòng (KHÔNG leak DRAFT/ARCHIVED — đã
+  //        filter ở tầng `where` của Prisma).
+  //     3. Khớp phân biệt HOA/thường, KHÔNG fold dấu — đây là chuỗi do HR tự đặt.
+  //   Yêu cầu có `-` hoặc `_` để tránh đụng với truy vấn tiếng Việt ngắn (ví dụ `Hanoi` không
+  //   chứa `-` nên không bị bắt nhầm thành mã dự án).
+  //   Nếu `q` không có shape mã dự án thì chuyển về `keywordHaystack` như cũ.
+  const PROJECT_CODE_RE = /^[A-Z][A-Z0-9]*[-_][A-Za-z0-9_-]*$/;
+  const isProjectCodeQuery = !!search && PROJECT_CODE_RE.test(search);
   const matched = eligible
-    .filter(({ row, job }) => !search || keywordHaystack(row, job, now).includes(foldVietnamese(search)))
+    .filter(({ row, job }) => {
+      if (!search) return true;
+      if (isProjectCodeQuery) return row.projectCode === search;
+      return keywordHaystack(row, job, now).includes(foldVietnamese(search));
+    })
     .filter(({ row, job }) => !area || areaHaystack(row, job).includes(foldVietnamese(area)))
     // Khớp trên CẢ mảng `shifts`: một việc hai kíp phải tìm ra được bằng kíp thứ hai, không chỉ bằng
     // kíp đứng đầu. Đây là chính giá trị mà facet `shifts` chào ra cho UI.

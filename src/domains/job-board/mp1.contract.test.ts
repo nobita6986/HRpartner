@@ -19,6 +19,9 @@ function project(overrides: Record<string, unknown> = {}) {
     status: 'ACTIVE',
     isPublic: false,
     version: 3,
+    // C-02: legacy `project.staffingOrders[].slots[]` chỉ còn canonical-slot-as-array để
+    // giữ tương thích với publish path cũ (publish.service.ts). Public projection chỉ đọc
+    // canonical slot từ `jobOpening.staffingOrderSlot`, không phải mảng này.
     staffingOrders: [{
       status: 'OPEN',
       deadlineDate: null,
@@ -55,8 +58,10 @@ function publicProjectionTx(projectName: string) {
           staffingOrder: {
             status: 'OPEN', title: 'Cong nhan lap rap', description: null, deadlineDate: null, createdAt: SEEDED_AT,
             project: { siteAddress: 'Bac Ninh', clientCompanyName: 'Cong ty TNHH Dien tu Kinh Bac' },
-            slots: [{ positionCode: 'ASSY', positionTitle: 'Cong nhan lap rap', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A', hourlyRateVnd: null }],
           },
+          // C-02: canonical slot per JobOpening — DUY NHẤT một slot. Mảng `slots` ở staffingOrder
+          // đã được loại bỏ khỏi `publicSelect` và mapper chỉ đọc `staffingOrderSlot` này.
+          staffingOrderSlot: { id: 'slot-1', positionCode: 'ASSY', positionTitle: 'Cong nhan lap rap', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A', hourlyRateVnd: null },
         },
       }]),
     },
@@ -107,8 +112,9 @@ describe('MP-1 publish and public job contracts', () => {
             staffingOrder: {
               status: 'OPEN', title: 'Warehouse picker', description: null, deadlineDate: null, createdAt: SEEDED_AT,
               project: { siteAddress: 'Bac Ninh', clientCompanyName: 'Cong ty TNHH Kinh Bac' },
-              slots: [{ positionCode: 'PICKER', positionTitle: 'Picker', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A', hourlyRateVnd: null }],
             },
+            // C-02: canonical slot per JobOpening (DUY NHẤT một slot trong DTO).
+            staffingOrderSlot: { id: 'slot-pick', positionCode: 'PICKER', positionTitle: 'Picker', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A', hourlyRateVnd: null },
           },
         }]),
       },

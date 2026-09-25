@@ -53,7 +53,7 @@ import { cache } from 'react';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getPrisma } from '@/src/lib/db';
 import { withPublicDb } from '@/src/shared/auth/with-public-db';
 import { getPublicJobDetail, listPublicJobProjection } from '@/src/domains/job-board/public.service';
@@ -88,6 +88,25 @@ const ROUTE_CLASS = 'GET /viec-lam/[slug]';
 
 /** Tiêu đề của nhánh bị từ chối. KHÔNG dùng lại nhãn 404, vì đó là nói sai sự thật (`RQ-03`). */
 const RATE_LIMITED_TITLE = 'Bạn thao tác quá nhanh';
+
+/**
+ * hrp-p1-a1 (correction batch 1/1, C-06) — compatibility cho link cũ có dạng
+ * `/viec-lam/PRJ-xxx`. Định danh mã dự án (`Project.code`) có hình dạng CHỮ HOA + gạch
+ * ngang/gạch dưới + ký tự ASCII (ví dụ `PRJ-CANARY-001`, `PRJ-abc-1`). Khi URL slug có
+ * đúng shape này:
+ *   - KHÔNG 301/308 tới một detail mơ hồ (mỗi Project có thể có nhiều PUBLISHED postings).
+ *   - KHÔNG 404 (HR đã chia sẻ link legacy; đây là một danh sách đã lọc, không phải "không có").
+ *   - KHÔNG để router tự chọn một posting tùy ý.
+ * → `redirect()` (HTTP 307) tới `/viec-lam?q=<slug>` để listing service lọc CHÍNH XÁC theo
+ *   `Project.code`. `redirect()` nằm TRƯỚC `loadJob` để limiter không bị trừ cho một lượt
+ *   detail đã được chuyển sang listing — limiter đếm trên URL cuối cùng, và HTTP 307 là đầu
+ *   mối HTTP 1.0/1.1 chuẩn cho "đường dẫn đã đổi vị trí, giữ method" (`DEC-13`).
+ *
+ * Các giá trị KHÔNG có shape trên (chuỗi có dấu tiếng Việt, khoảng trắng, slug JobPosting hợp
+ * lệ v.v.) đi qua nhánh detail bình thường. Regex có chủ ý KHÔNG nhận `Hanoi` hay `CaNgay`
+ * (chuỗi ngắn không có `-`/`_`) để không đụng với truy vấn tiếng Việt hợp lệ.
+ */
+const LEGACY_PROJECT_CODE_RE = /^[A-Z][A-Z0-9]*[-_][A-Za-z0-9_-]*$/;
 
 /** Lấy kiểu từ chính service, nên không có khai báo thứ hai nào phải giữ đồng bộ bằng tay. */
 type LoadedJob = NonNullable<Awaited<ReturnType<typeof getPublicJobDetail>>>;
@@ -151,8 +170,24 @@ async function loadJobAndRelated(slug: string): Promise<JobLoadResult> {
   return { kind: 'ok', job, relatedJobs };
 }
 
+/**
+ * hrp-p1-a1 (C-06): redirect legacy PRJ-shaped slug sang listing filtered by exact
+ * `Project.code`. Đặt ở đây (TRƯỚC `loadJob`) để limiter không ăn suất cho một lượt
+ * detail rồi mới 307. Cả `generateMetadata` và thân trang đều gọi qua cùng một `cache`
+ * để hai đường vào DB chỉ đếm một.
+ */
+const maybeRedirectLegacyProjectCode = cache((slug: string): null => {
+  if (LEGACY_PROJECT_CODE_RE.test(slug)) {
+    redirect(`/viec-lam?q=${encodeURIComponent(slug)}`);
+  }
+  return null;
+});
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  // C-06: redirect xảy ra ở đây để metadata cũng đi theo 307 — không có metadata cho
+  // một URL đã được chuyển sang listing.
+  maybeRedirectLegacyProjectCode(slug);
   const result = await loadJob(slug);
   // `RQ-03`: nhánh bị từ chối không được nói việc làm không tồn tại, kể cả trong thẻ tiêu đề.
   if (result.kind === 'throttled') return { title: RATE_LIMITED_TITLE };
@@ -280,6 +315,10 @@ function buildEmployerSidebar(
 
 export default async function PublicJobDetailPage({ params }: PageProps) {
   const { slug } = await params;
+  // C-06: redirect legacy PRJ-shape slug tới listing TRƯỚC khi limiter ăn suất.
+  // Hàm `redirect()` throws một control-flow exception trong Next Server Component — từ đây
+  // trở xuống không chạy nữa.
+  maybeRedirectLegacyProjectCode(slug);
   const result = await loadJob(slug);
   if (result.kind === 'throttled') return <ThrottledNotice />;
 
@@ -428,8 +467,10 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
  *
  * `doc` đi qua `renderJobPostingRichText` (HRP wrapper, A0 freeze) — KHÔNG dùng
  * cơ chế set HTML trực tiếp trong React, KHÔNG tự viết ProseMirror→React. Renderer fail closed khi
- * `schemaVersion` lệch hoặc `doc` không qua validator: section bị ẩn hoàn toàn và marker
- * `data-source="UNAVAILABLE"` được set để test tĩnh phát hiện (không leak raw payload ra DOM).
+ * `schemaVersion` lệch hoặc `doc` không qua validator: section bị ẨN HOÀN TOÀN khỏi DOM — không
+ * render fallback "Nội dung đang được cập nhật", không render raw JSON payload, không leak bất kỳ
+ * trường nào của `doc` ra DOM. Diagnostic chỉ ghi log an toàn (`title` + `reason`, KHÔNG có PII /
+ * KHÔNG có raw JSON) để test tĩnh phát hiện (C-07 correction batch 1/1).
  */
 function RichTextSection({
   title,
@@ -440,32 +481,15 @@ function RichTextSection({
   doc: unknown | null;
   schemaVersion: number | null;
 }) {
-  // No payload, no schema, hoặc schema lệch → omit section (fail-closed).
+  // Fail-closed: invalid/corrupt/schema mismatch → omit section (C-07).
   if (doc === null || doc === undefined || schemaVersion === null) return null;
   const rendered = renderJobPostingRichText(schemaVersion, doc);
   if (!rendered.ok) {
+    // Diagnostic an toàn: chỉ ghi `title` + `reason`, KHÔNG ghi `doc` (tránh PII / raw payload leak).
     if (process.env.NODE_ENV !== 'production') {
       console.warn(`[viec-lam detail] omit section "${title}": ${rendered.reason}`);
     }
-    return (
-      <section
-        data-section="rich-text"
-        data-source="UNAVAILABLE"
-        aria-label={title}
-        className="rounded-xl border p-4"
-        style={{
-          backgroundColor: 'var(--color-surface)',
-          borderColor: 'var(--color-outline-variant)',
-        }}
-      >
-        <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--color-on-surface)' }}>
-          {title}
-        </h2>
-        <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-          Nội dung đang được cập nhật.
-        </p>
-      </section>
-    );
+    return null;
   }
   return (
     <section

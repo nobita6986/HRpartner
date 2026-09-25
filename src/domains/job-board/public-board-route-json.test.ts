@@ -58,8 +58,10 @@ function rows() {
         staffingOrder: {
           status: 'OPEN', title: 'Tuyển công nhân', description: null, deadlineDate: null, createdAt: SEEDED_AT,
           project: { siteAddress: 'Bắc Ninh', clientCompanyName: 'Công ty A' },
-          slots: [slot({ workLocation: '   ' })],
         },
+        // C-02: canonical slot per JobOpening — DUY NHẤT một slot. Mảng `slots` ở staffingOrder
+        // đã bị bỏ khỏi `publicSelect`; mapper chỉ đọc `staffingOrderSlot` này.
+        staffingOrderSlot: slot({ workLocation: '   ' }),
       },
     },
     {
@@ -68,8 +70,8 @@ function rows() {
         staffingOrder: {
           status: 'OPEN', title: 'Tuyển đóng gói', description: null, deadlineDate: null, createdAt: SEEDED_AT,
           project: { siteAddress: 'Bắc Ninh', clientCompanyName: 'Công ty B' },
-          slots: [slot({ positionCode: 'PACK-01', positionTitle: 'Nhân viên đóng gói', hourlyRateVnd: 32_000n })],
         },
+        staffingOrderSlot: slot({ positionCode: 'PACK-01', positionTitle: 'Nhân viên đóng gói', hourlyRateVnd: 32_000n }),
       },
     },
     {
@@ -78,8 +80,8 @@ function rows() {
         staffingOrder: {
           status: 'OPEN', title: 'Tuyển QC', description: null, deadlineDate: null, createdAt: SEEDED_AT,
           project: { siteAddress: 'Hà Nội', clientCompanyName: 'Công ty C' },
-          slots: [slot({ positionCode: 'QC-01', positionTitle: 'Nhân viên QC', workLocation: 'KCN Thăng Long', hourlyRateVnd: 70_000n })],
         },
+        staffingOrderSlot: slot({ positionCode: 'QC-01', positionTitle: 'Nhân viên QC', workLocation: 'KCN Thăng Long', hourlyRateVnd: 70_000n }),
       },
     },
   ];

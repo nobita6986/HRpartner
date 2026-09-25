@@ -70,27 +70,33 @@ type Order = {
   description: string | null;
   deadlineDate: Date | null;
   createdAt: Date;
-  slots: Slot[];
+  // C-02 (correction batch 1/1): canonical slot per JobOpening. Một JobPosting chỉ project
+  // đúng MỘT slot qua `jobOpening.staffingOrderSlot`; sibling slot không xuất hiện trong DTO.
+  canonicalSlot: Slot | null;
 };
 
-function order(slots: Slot[], overrides: Partial<Order> = {}): Order {
+function order(slot: Slot | Slot[] | null, overrides: Partial<Order> = {}): Order {
+  const resolved: Slot | null = Array.isArray(slot) ? (slot[0] ?? null) : slot;
   return {
     status: 'OPEN',
     title: 'Tuyển công nhân lắp ráp',
     description: null,
     deadlineDate: null,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
-    slots,
+    canonicalSlot: resolved,
     ...overrides,
   };
 }
 
 /**
  * hrp-p1-a1: Row phải đúng hình dạng `PublicJobPostingSelectPayload` — JobPosting scalars bên ngoài,
- * `jobOpening.staffingOrder.slots[]` bên trong. Test dùng `row({ staffingOrders: [...] })` (dạng cũ
- * trước canonical switch) được chuyển đổi sang dạng mới bằng cách đặt order đầu tiên thành
- * `jobOpening.staffingOrder` và đặt siteAddress/clientCompanyName từ top-level overrides xuống
- * `project` trong StaffingOrder.
+ * `jobOpening.staffingOrder.canonicalSlot` + `jobOpening.staffingOrderSlot` bên trong. Test dùng
+ * `row({ staffingOrders: [...] })` (dạng cũ trước canonical switch) được chuyển đổi sang dạng mới
+ * bằng cách đặt order đầu tiên thành `jobOpening.staffingOrder` và đặt siteAddress/clientCompanyName
+ * từ top-level overrides xuống `project` trong StaffingOrder.
+ *
+ * C-02: `jobOpening.staffingOrderSlot` mang canonical slot. Fixture cũ `order([slot()])` được
+ * adapter chuyển sang `canonicalSlot: slot, staffingOrderSlot: slot` (đồng bộ).
  */
 type Row = {
   id: string;
@@ -98,13 +104,15 @@ type Row = {
   title: string | null;
   jobOpening: {
     staffingOrder: Order & { project: { siteAddress: string | null; clientCompanyName: string | null } };
+    staffingOrderSlot: Slot | null;
   } | null;
 };
 
 /**
  * Chuyển fixture dạng cũ `staffingOrders: Order[]` (project mang nhiều orders) sang dạng canonical
  * JobPosting: lấy order đầu tiên làm `jobOpening.staffingOrder`. Top-level `siteAddress` và
- * `clientCompanyName` được đặt vào `staffingOrder.project`.
+ * `clientCompanyName` được đặt vào `staffingOrder.project`. `canonicalSlot` của order được nhân
+ * đôi lên `jobOpening.staffingOrderSlot` để mapper đọc đúng (C-02).
  */
 function row(
   overrides: Partial<Row> & {
@@ -125,6 +133,7 @@ function row(
         ...firstOrder,
         project: { siteAddress: projectSite, clientCompanyName: projectClient },
       },
+      staffingOrderSlot: firstOrder.canonicalSlot,
     };
   })();
 
@@ -171,23 +180,22 @@ describe('go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không cò
     expect(job.salaryMaxVnd).toBeNull();
   });
 
-  it('nhiều slot có lương ⇒ min/max là number thật, slot không lương không kéo min về 0', async () => {
-    const job = await onlyJob([
-      row({
-        staffingOrders: [
-          order([
-            slot({ hourlyRateVnd: 45_000n }),
-            slot({ positionCode: 'QC-01', positionTitle: 'Nhân viên QC', slotsNeeded: 2, slotsFilled: 0, hourlyRateVnd: 30_000n }),
-            slot({ positionCode: 'PACK-01', positionTitle: 'Nhân viên đóng gói', slotsNeeded: 1, slotsFilled: 0, hourlyRateVnd: null }),
-          ]),
-        ],
-      }),
+  it('canonical slot có lương ⇒ min = max = hourlyRateVnd, slot null không kéo về 0', async () => {
+    // hrp-p1-a1 (C-02): canonical slot per JobPosting ⇒ chỉ một slot, không có khái niệm "nhiều slot
+    // ⇒ min/max". `salaryMinVnd === salaryMaxVnd === hourlyRateVnd` của canonical slot khi còn lương.
+    // Slot null lương → null cả hai. Đây là bất biến fail-closed của canonical chain.
+    const withSalary = await onlyJob([
+      row({ staffingOrders: [order(slot({ hourlyRateVnd: 45_000n }))] }),
     ]);
 
-    expect(job.salaryMinVnd).toBe(30_000);
-    expect(job.salaryMaxVnd).toBe(45_000);
-    expect(typeof job.salaryMinVnd).toBe('number');
-    expect(typeof job.salaryMaxVnd).toBe('number');
+    expect(withSalary.salaryMinVnd).toBe(45_000);
+    expect(withSalary.salaryMaxVnd).toBe(45_000);
+    expect(typeof withSalary.salaryMinVnd).toBe('number');
+    expect(typeof withSalary.salaryMaxVnd).toBe('number');
+
+    const withoutSalary = await onlyJob([row({ staffingOrders: [order(slot({ hourlyRateVnd: null }))] })]);
+    expect(withoutSalary.salaryMinVnd).toBeNull();
+    expect(withoutSalary.salaryMaxVnd).toBeNull();
   });
 
   it('JSON.stringify trên DTO có lương không ném — đúng bẫy BigInt của NextResponse.json', async () => {
@@ -384,14 +392,12 @@ describe('go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tín
 describe('go-live-09 / RQ-24, DEC-21 — hai mapper nói cùng một sự thật', () => {
   it('bốn field mới của toDetailDto bằng đúng bốn field của toDto trên cùng một hàng', async () => {
     // hrp-p1-a1: `getPublicJobDetail` dùng `jobPosting.findFirst` với slug, nên fixture cần slug.
+    // C-02: canonical slot per JobPosting ⇒ một slot duy nhất. salaryMin = salaryMax = hourlyRateVnd.
     const single = row({
       slug: 'lap-rap-detail-2026',
       staffingOrders: [
         order(
-          [
-            slot({ hourlyRateVnd: 45_000n }),
-            slot({ positionCode: 'QC-01', slotsNeeded: 2, slotsFilled: 0, hourlyRateVnd: 30_000n }),
-          ],
+          slot({ hourlyRateVnd: 45_000n }),
           {
             status: 'CLOSING_SOON',
             deadlineDate: inDays(3),
@@ -408,7 +414,7 @@ describe('go-live-09 / RQ-24, DEC-21 — hai mapper nói cùng một sự thật
     expect(detail).not.toBeNull();
     // Bốn giá trị được ghim CỤ THỂ trước khi so hai mapper. Nếu chỉ so `detail` với `listed` thì
     // `undefined === undefined` làm test xanh trên baseline, tức bất biến `RQ-24` không khoá gì.
-    expect(listed.salaryMinVnd).toBe(30_000);
+    expect(listed.salaryMinVnd).toBe(45_000);
     expect(listed.salaryMaxVnd).toBe(45_000);
     expect(listed.urgency).toBe('URGENT');
     expect(listed.postedAt).toBe('2026-02-03T04:05:06.000Z');

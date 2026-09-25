@@ -109,8 +109,8 @@ const EXPECTED_HITS = [
   // `staffingOrder.slots`. Cả hai là BẮT BUỘC trong schema (không optional, không list) — sweep phải
   // đếm. An toàn vì đã chặn trước bằng `status: 'PUBLISHED'` (JobPosting) + RLS `hrp_project_visible_for`
   // mà MKT thoả khi `Project.is_public=true` (migration s1_rls_project 2026-08-16).
-  'src/domains/job-board/public.service.ts:627 staffingOrder',
-  'src/domains/job-board/public.service.ts:634 project',
+  'src/domains/job-board/public.service.ts:666 staffingOrder',
+  'src/domains/job-board/public.service.ts:673 project',
 ] as const;
 
 interface SourceEntry {
