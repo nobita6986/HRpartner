@@ -31,11 +31,36 @@
  *     `tests/db/p1a1-migration-chain-proof.integration.test.ts` (registered separately) and
  *     uses the same `applyMigration` / `verifyCatalog` / `rollback` helpers from this file.
  *
- * CLEANUP:
- *   - theo đúng FK order (history → submission → posting → slot → opening → order → project → cc);
- *   - runId-scoped qua `where: { id: { startsWith: runId } }` ở mỗi bảng;
- *   - KHÔNG swallow exception: cleanup fail sẽ làm test fail ngay (fail-fast);
- *   - disconnect trong `finally`.
+ * RUN-SCOPED IDENTITY (T0 directive — final correction):
+ *   - Mọi applicant identity (fullName, phone, CCCD nếu dùng) đều derived từ
+ *     `runId` (= `p1a1-${randomUUID().slice(0, 8)}`) với per-scenario suffix. Đảm bảo
+ *     (a) re-run cùng vitest invocation cho ra cùng fixture (deterministic), và
+ *     (b) run khác nhau KHÔNG bao giờ collide với leftover `labor_profiles` rows từ
+ *     shared synthetic DB (C-04/M3 root-cause fix — T0 directive: "Chuyển TOÀN BỘ
+ *     applicant identity sang run-scoped deterministic identities").
+ *   - Phone format: `09` + 8 chữ số từ RUN_ID-derived pool. Mỗi scenario lấy 1 số
+ *     riêng (`runPhone(scenarioIdx)`) — không scenario nào dùng lại phone của
+ *     scenario khác, kể cả trong cùng run.
+ *   - FullName format: `P1A1 ${runId} Applicant ${scenarioIdx}` — anchored tới
+ *     runId + scenario index, đảm bảo DB-side `hrp_normalize_full_name` so khớp
+ *     cả trên runId-anchored names.
+ *   - CCCD format (chỉ các scenario cần scoring >= 2 signals): `0CCCD-TEST-${runId}-${scenarioIdx}` —
+ *     run-scoped, deterministic, không bao giờ collide với prior runs.
+ *
+ * LIFECYCLE TEARDOWN (T0 directive):
+ *   - Theo dõi CHÍNH XÁC `labor_profile_id` và `placement_case_id` do run hiện tại tạo
+ *     qua tracked Sets (`createdLaborProfileIds`, `createdPlacementCaseIds`,
+ *     `createdSubmissionIds`); mỗi `apply()` thành công sẽ đọc lại DB-side FK và ghi nhận.
+ *   - Cleanup FK-safe theo đúng thứ tự: history → submission → placement_case →
+ *     labor_profile → job_postings → staffing_order_slots (clear reverse FK) →
+ *     job_openings → staffing_orders → projects → client_companies.
+ *   - KHÔNG blanket delete theo `id: { startsWith: runIdPrefix }` cho lifecycle
+ *     tables (labor_profiles/placement_cases) — chỉ xóa đúng rows do run hiện tại
+ *     tạo (tracked IDs).
+ *   - KHÔNG swallow cleanup errors — mọi thất bại sẽ throw (fail-closed) để test
+ *     fail rõ ràng nếu có residue.
+ *   - Cleanup idempotent: dùng `deleteMany({ where: { id: { in: [...tracked] } } })`
+ *     — gọi nhiều lần an toàn, không double-delete error.
  *
  * KHÔNG fake PASS: nếu preflight fail, test này KHÔNG chạy và `it(...)` chỉ truy cập DB khi
  * `HAS_TEST_DB && HAS_ADMIN_TEST_DB` đều true.
@@ -45,6 +70,51 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { randomUUID } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import { withPublicDb } from "@/src/shared/auth/with-public-db";
+
+// ─── RUN-SCOPED IDENTITY GENERATORS (T0 directive — final correction) ────────
+// Each applicant identity is derived from `runId` + scenario index, ensuring:
+//   (a) re-runs of the same vitest invocation produce stable fixtures (deterministic);
+//   (b) different runs never collide with leftover labor_profiles rows from prior runs
+//       on the shared synthetic DB (root cause of C-05.1 / C-05.7 POSSIBLE_MATCH failures).
+
+const runToken = randomUUID().replaceAll("-", "").slice(0, 12);
+const runId = `p1a1-${runToken}`;
+
+// 10-digit VN mobile format: "09" + 8 digits. Digits are drawn from the runToken's
+// numeric subset padded to 8, so the same vitest invocation always produces the same
+// digits (deterministic per run). Scenario-specific suffix ensures no two scenarios
+// in the same run share a phone number.
+function runPhone(scenarioIdx: number): string {
+  const digits = `${runToken.replace(/[^0-9]/g, "").padEnd(8, "0")}`.slice(0, 8);
+  const lastDigit = String(scenarioIdx % 10);
+  return `09${digits.slice(0, 7)}${lastDigit}`.slice(0, 10);
+}
+
+// Full name anchored to runId + scenario index. Deterministic per vitest invocation.
+function runFullName(scenarioIdx: number): string {
+  return `P1A1 ${runId} Applicant ${scenarioIdx}`;
+}
+
+// CCCD format for scenarios that need ≥2 scoring signals (to achieve EXACT_MATCH).
+function runCccd(scenarioIdx: number): string {
+  return `0CCCD-TEST-${runToken}-${String(scenarioIdx).padStart(2, "0")}`;
+}
+
+// ─── TRACKED LIFECYCLE ROW IDs (FK-safe teardown) ─────────────────────────────
+// `beforeAll` seeds the fixture. Each successful `callApply` creates up to:
+//   1 labor_profile, 1 placement_case, 1 candidate_submission, 1 history row.
+// We track the actual DB-assigned IDs (read back after apply) so cleanup only
+// deletes rows from THIS run — never rows created by a different run on the same
+// synthetic DB.
+const createdLaborProfileIds = new Set<string>();
+const createdPlacementCaseIds = new Set<string>();
+const createdSubmissionIds = new Set<string>();
+
+function recordLifecycleIds(submission: { id: string; laborProfileId: string | null; placementCaseId: string | null }) {
+  if (submission.id) createdSubmissionIds.add(submission.id);
+  if (submission.laborProfileId) createdLaborProfileIds.add(submission.laborProfileId);
+  if (submission.placementCaseId) createdPlacementCaseIds.add(submission.placementCaseId);
+}
 
 const HAS_TEST_DB =
   !!process.env.DATABASE_URL_TEST &&
@@ -60,7 +130,6 @@ if (!HAS_TEST_DB) {
   );
 }
 
-const runId = `p1a1-${randomUUID().slice(0, 8)}`;
 const writerUrl = process.env.DATABASE_URL_TEST ?? "";
 const adminUrl = process.env.DATABASE_URL_ADMIN_TEST ?? "";
 
@@ -344,28 +413,64 @@ async function buildCanonicalFixture(
 }
 
 /**
- * Cleanup FK-order: history → submission → posting → slot → opening → order → project → cc.
- * Cleanup fail KHÔNG được swallow — phải fail test (theo T0 directive C-04).
+ * FK-safe lifecycle teardown using tracked IDs (T0 directive):
+ *   1. application_status_history (FK → candidate_submissions)
+ *   2. candidate_submissions
+ *   3. placement_cases (FK → labor_profiles)
+ *   4. labor_profiles
+ *   5. job_postings (FK → job_openings)
+ *   6. staffing_order_slots (clear reverse FK before delete)
+ *   7. job_openings
+ *   8. staffing_orders
+ *   9. projects
+ *   10. client_companies
+ *
+ * Uses tracked Sets (`createdLaborProfileIds`, `createdPlacementCaseIds`,
+ * `createdSubmissionIds`) for lifecycle tables so we only delete rows from THIS
+ * run, never rows from other runs on the shared synthetic DB.
+ * All operations fail-closed: a thrown error from any step propagates.
+ * Disconnect is always called in finally.
  */
 async function cleanupFixture(
   admin: PrismaClient,
   f: CanonicalFixture,
 ): Promise<void> {
   const runIdPrefix = `${runId}-`;
-  // 1. application_status_history (FK → candidate_submissions)
-  await admin.applicationStatusHistory.deleteMany({
-    where: { submission: { projectId: f.projectId } },
-  });
-  // 2. candidate_submissions
-  await admin.candidateSubmission.deleteMany({
-    where: { projectId: f.projectId },
-  });
-  // 3. job_postings (FK → job_openings)
+
+  // 1. application_status_history — by submission IDs from THIS run
+  if (createdSubmissionIds.size > 0) {
+    await admin.applicationStatusHistory.deleteMany({
+      where: { submissionId: { in: [...createdSubmissionIds] } },
+    });
+  }
+
+  // 2. candidate_submissions — by tracked IDs from THIS run
+  if (createdSubmissionIds.size > 0) {
+    await admin.candidateSubmission.deleteMany({
+      where: { id: { in: [...createdSubmissionIds] } },
+    });
+  }
+
+  // 3. placement_cases — by tracked IDs from THIS run
+  if (createdPlacementCaseIds.size > 0) {
+    await admin.placementCase.deleteMany({
+      where: { id: { in: [...createdPlacementCaseIds] } },
+    });
+  }
+
+  // 4. labor_profiles — by tracked IDs from THIS run
+  if (createdLaborProfileIds.size > 0) {
+    await admin.laborProfile.deleteMany({
+      where: { id: { in: [...createdLaborProfileIds] } },
+    });
+  }
+
+  // 5. job_postings — by runId prefix (fixture only, not lifecycle)
   await admin.jobPosting.deleteMany({
     where: { id: { startsWith: runIdPrefix } },
   });
-  // 4. staffing_order_slots (FK → staffing_orders; has reverse job_opening_id FK → job_openings)
-  // Need to clear reverse FK before deleting slots: set job_opening_id = NULL
+
+  // 6. staffing_order_slots — clear reverse FK, then delete
   await admin.staffingOrderSlot.updateMany({
     where: { id: { startsWith: runIdPrefix } },
     data: { jobOpeningId: null },
@@ -373,25 +478,31 @@ async function cleanupFixture(
   await admin.staffingOrderSlot.deleteMany({
     where: { id: { startsWith: runIdPrefix } },
   });
-  // 5. job_openings
+
+  // 7. job_openings
   await admin.jobOpening.deleteMany({
     where: { id: { startsWith: runIdPrefix } },
   });
-  // 6. staffing_orders
+
+  // 8. staffing_orders
   await admin.staffingOrder.deleteMany({
     where: { id: { startsWith: runIdPrefix } },
   });
-  // 7. projects
+
+  // 9. projects
   await admin.project.deleteMany({
     where: { id: { startsWith: runIdPrefix } },
   });
-  // 8. client_companies
+
+  // 10. client_companies
   await admin.clientCompany.deleteMany({
     where: { id: { startsWith: runIdPrefix } },
   });
 }
 
-/** Đẩy lời gọi `hrp_public_apply_submission` qua writer (app_user_writer) — không phải admin. */
+/** Đẩy lời gọi `hrp_public_apply_submission` qua writer (app_user_writer) — không phải admin.
+ * Sau apply thành công, ghi nhận submission + laborProfile + placementCase IDs
+ * vào tracked Sets để cleanup chỉ xóa đúng rows do run hiện tại tạo. */
 async function callApply(
   writer: PrismaClient,
   args: {
@@ -413,7 +524,7 @@ async function callApply(
     trackingCode: string;
   },
 ): Promise<Array<{ tracking_code: string; status: string }>> {
-  return writer.$queryRawUnsafe<
+  const rows = await writer.$queryRawUnsafe<
     Array<{ tracking_code: string; status: string }>
   >(
     `SELECT tracking_code, status FROM hrp_public_apply_submission(
@@ -440,6 +551,17 @@ async function callApply(
     args.idempotencyPayloadHash,
     args.trackingCode,
   );
+
+  // Record lifecycle IDs for FK-safe teardown (T0 directive — final correction).
+  if (rows.length > 0) {
+    const sub = await writer.candidateSubmission.findFirst({
+      where: { idempotencyKeyHash: args.idempotencyKeyHash },
+      select: { id: true, laborProfileId: true, placementCaseId: true },
+    });
+    if (sub) recordLifecycleIds(sub);
+  }
+
+  return rows;
 }
 
 function payloadHash(
@@ -473,8 +595,11 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
     try {
       await cleanupFixture(admin, fixture);
     } finally {
-      await admin.$disconnect().catch(() => undefined);
-      await writer.$disconnect().catch(() => undefined);
+      createdLaborProfileIds.clear();
+      createdPlacementCaseIds.clear();
+      createdSubmissionIds.clear();
+      await admin.$disconnect();
+      await writer.$disconnect();
     }
   }, 60_000);
 
@@ -484,16 +609,16 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
       const idemKey = idempHash(`idem-${runId}-1`);
       const pHash = payloadHash(
         fixture.slugA,
-        "Nguyen Van A",
-        "0900000001",
+        runFullName(1),
+        runPhone(1),
         null,
       );
 
       const rows = await callApply(writer, {
         slug: fixture.slugA,
         slotId: null, // RPC tự derive canonical slot
-        fullName: "Nguyen Van A",
-        phone: "0900000001",
+        fullName: runFullName(1),
+        phone: runPhone(1),
         cccdNumber: null,
         dob: null,
         gender: "M",
@@ -537,13 +662,14 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
     it("apply với slug của DRAFT posting → JOB_NOT_AVAILABLE (P0011), 0 submissions", async () => {
       const slugDraft = `${runId}-posting-c-draft`;
       const trackingCode = `APP-${randomUUID()}`;
+      const idemKey = idempHash(`idem-${runId}-2a`);
       let caught: unknown = null;
       try {
         await callApply(writer, {
           slug: slugDraft,
           slotId: null,
-          fullName: "Nguyen Van B",
-          phone: "0900000002",
+          fullName: runFullName(2),
+          phone: runPhone(2),
           cccdNumber: null,
           dob: null,
           gender: "M",
@@ -553,11 +679,11 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
           cvMimeType: "",
           cvSizeBytes: 0,
           cvStorageKey: "",
-          idempotencyKeyHash: idempHash(`idem-${runId}-2a`),
+          idempotencyKeyHash: idemKey,
           idempotencyPayloadHash: payloadHash(
             slugDraft,
-            "Nguyen Van B",
-            "0900000002",
+            runFullName(2),
+            runPhone(2),
             null,
           ),
           trackingCode,
@@ -584,13 +710,14 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
     it("apply với slug của ARCHIVED posting → JOB_NOT_AVAILABLE (P0011), 0 submissions", async () => {
       const slugArchived = `${runId}-posting-d-archived`;
       const trackingCode = `APP-${randomUUID()}`;
+      const idemKey = idempHash(`idem-${runId}-2b`);
       let caught: unknown = null;
       try {
         await callApply(writer, {
           slug: slugArchived,
           slotId: null,
-          fullName: "Nguyen Van C",
-          phone: "0900000003",
+          fullName: runFullName(3),
+          phone: runPhone(3),
           cccdNumber: null,
           dob: null,
           gender: "M",
@@ -600,11 +727,11 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
           cvMimeType: "",
           cvSizeBytes: 0,
           cvStorageKey: "",
-          idempotencyKeyHash: idempHash(`idem-${runId}-2b`),
+          idempotencyKeyHash: idemKey,
           idempotencyPayloadHash: payloadHash(
             slugArchived,
-            "Nguyen Van C",
-            "0900000003",
+            runFullName(3),
+            runPhone(3),
             null,
           ),
           trackingCode,
@@ -623,13 +750,14 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
   describe("C-05.3 — JobOpening.status NOT OPEN → fail closed", () => {
     it("apply với slug của posting mà JobOpening.status=DRAFT → JOB_NOT_AVAILABLE (P0011)", async () => {
       const trackingCode = `APP-${randomUUID()}`;
+      const idemKey = idempHash(`idem-${runId}-3`);
       let caught: unknown = null;
       try {
         await callApply(writer, {
           slug: fixture.slugE,
           slotId: null,
-          fullName: "Nguyen Van D",
-          phone: "0900000004",
+          fullName: runFullName(4),
+          phone: runPhone(4),
           cccdNumber: null,
           dob: null,
           gender: "M",
@@ -639,11 +767,11 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
           cvMimeType: "",
           cvSizeBytes: 0,
           cvStorageKey: "",
-          idempotencyKeyHash: idempHash(`idem-${runId}-3`),
+          idempotencyKeyHash: idemKey,
           idempotencyPayloadHash: payloadHash(
             fixture.slugE,
-            "Nguyen Van D",
-            "0900000004",
+            runFullName(4),
+            runPhone(4),
             null,
           ),
           trackingCode,
@@ -665,13 +793,14 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
       });
       try {
         const trackingCode = `APP-${randomUUID()}`;
+        const idemKey = idempHash(`idem-${runId}-3b`);
         let caught: unknown = null;
         try {
           await callApply(writer, {
             slug: fixture.slugA,
             slotId: null,
-            fullName: "Nguyen Van E",
-            phone: "0900000005",
+            fullName: runFullName(5),
+            phone: runPhone(5),
             cccdNumber: null,
             dob: null,
             gender: "M",
@@ -681,11 +810,11 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
             cvMimeType: "",
             cvSizeBytes: 0,
             cvStorageKey: "",
-            idempotencyKeyHash: idempHash(`idem-${runId}-3b`),
+            idempotencyKeyHash: idemKey,
             idempotencyPayloadHash: payloadHash(
               fixture.slugA,
-              "Nguyen Van E",
-              "0900000005",
+              runFullName(5),
+              runPhone(5),
               null,
             ),
             trackingCode,
@@ -714,13 +843,14 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
       });
       try {
         const trackingCode = `APP-${randomUUID()}`;
+        const idemKey = idempHash(`idem-${runId}-3c`);
         let caught: unknown = null;
         try {
           await callApply(writer, {
             slug: fixture.slugA,
             slotId: null,
-            fullName: "Nguyen Van F",
-            phone: "0900000006",
+            fullName: runFullName(6),
+            phone: runPhone(6),
             cccdNumber: null,
             dob: null,
             gender: "M",
@@ -730,11 +860,11 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
             cvMimeType: "",
             cvSizeBytes: 0,
             cvStorageKey: "",
-            idempotencyKeyHash: idempHash(`idem-${runId}-3c`),
+            idempotencyKeyHash: idemKey,
             idempotencyPayloadHash: payloadHash(
               fixture.slugA,
-              "Nguyen Van F",
-              "0900000006",
+              runFullName(6),
+              runPhone(6),
               null,
             ),
             trackingCode,
@@ -759,13 +889,14 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
   describe("C-05.4 — old Project.code-only slug → fail closed", () => {
     it("apply với slug = Project.code → JOB_NOT_AVAILABLE (P0011) — RPC KHÔNG còn resolve qua Project", async () => {
       const trackingCode = `APP-${randomUUID()}`;
+      const idemKey = idempHash(`idem-${runId}-4`);
       let caught: unknown = null;
       try {
         await callApply(writer, {
           slug: fixture.projectCode, // PRJ-${runId}
           slotId: null,
-          fullName: "Nguyen Van G",
-          phone: "0900000007",
+          fullName: runFullName(7),
+          phone: runPhone(7),
           cccdNumber: null,
           dob: null,
           gender: "M",
@@ -775,11 +906,11 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
           cvMimeType: "",
           cvSizeBytes: 0,
           cvStorageKey: "",
-          idempotencyKeyHash: idempHash(`idem-${runId}-4`),
+          idempotencyKeyHash: idemKey,
           idempotencyPayloadHash: payloadHash(
             fixture.projectCode,
-            "Nguyen Van G",
-            "0900000007",
+            runFullName(7),
+            runPhone(7),
             null,
           ),
           trackingCode,
@@ -798,13 +929,14 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
   describe("C-05.5 — sibling / wrong / expired / full slot → fail closed", () => {
     it("apply với p_slot_id = sibling slot B → JOB_NOT_AVAILABLE (canonical chain reject)", async () => {
       const trackingCode = `APP-${randomUUID()}`;
+      const idemKey = idempHash(`idem-${runId}-5a`);
       let caught: unknown = null;
       try {
         await callApply(writer, {
           slug: fixture.slugA, // posting A expects slot A
           slotId: fixture.slotBId, // SIBLING slot under same StaffingOrder
-          fullName: "Nguyen Van H",
-          phone: "0900000008",
+          fullName: runFullName(8),
+          phone: runPhone(8),
           cccdNumber: null,
           dob: null,
           gender: "M",
@@ -814,11 +946,11 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
           cvMimeType: "",
           cvSizeBytes: 0,
           cvStorageKey: "",
-          idempotencyKeyHash: idempHash(`idem-${runId}-5a`),
+          idempotencyKeyHash: idemKey,
           idempotencyPayloadHash: payloadHash(
             fixture.slugA,
-            "Nguyen Van H",
-            "0900000008",
+            runFullName(8),
+            runPhone(8),
             null,
           ),
           trackingCode,
@@ -835,13 +967,14 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
 
     it("apply với p_slot_id = non-existent → JOB_NOT_AVAILABLE", async () => {
       const trackingCode = `APP-${randomUUID()}`;
+      const idemKey = idempHash(`idem-${runId}-5b`);
       let caught: unknown = null;
       try {
         await callApply(writer, {
           slug: fixture.slugA,
           slotId: "non-existent-slot-xyz",
-          fullName: "Nguyen Van I",
-          phone: "0900000009",
+          fullName: runFullName(9),
+          phone: runPhone(9),
           cccdNumber: null,
           dob: null,
           gender: "M",
@@ -851,11 +984,11 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
           cvMimeType: "",
           cvSizeBytes: 0,
           cvStorageKey: "",
-          idempotencyKeyHash: idempHash(`idem-${runId}-5b`),
+          idempotencyKeyHash: idemKey,
           idempotencyPayloadHash: payloadHash(
             fixture.slugA,
-            "Nguyen Van I",
-            "0900000009",
+            runFullName(9),
+            runPhone(9),
             null,
           ),
           trackingCode,
@@ -878,13 +1011,14 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
       });
       try {
         const trackingCode = `APP-${randomUUID()}`;
+        const idemKey = idempHash(`idem-${runId}-5c`);
         let caught: unknown = null;
         try {
           await callApply(writer, {
             slug: fixture.slugA,
             slotId: fixture.slotAId, // canonical slot, but expired
-            fullName: "Nguyen Van J",
-            phone: "0900000010",
+            fullName: runFullName(10),
+            phone: runPhone(10),
             cccdNumber: null,
             dob: null,
             gender: "M",
@@ -894,11 +1028,11 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
             cvMimeType: "",
             cvSizeBytes: 0,
             cvStorageKey: "",
-            idempotencyKeyHash: idempHash(`idem-${runId}-5c`),
+            idempotencyKeyHash: idemKey,
             idempotencyPayloadHash: payloadHash(
               fixture.slugA,
-              "Nguyen Van J",
-              "0900000010",
+              runFullName(10),
+              runPhone(10),
               null,
             ),
             trackingCode,
@@ -927,13 +1061,14 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
       });
       try {
         const trackingCode = `APP-${randomUUID()}`;
+        const idemKey = idempHash(`idem-${runId}-5d`);
         let caught: unknown = null;
         try {
           await callApply(writer, {
             slug: fixture.slugA,
             slotId: fixture.slotAId,
-            fullName: "Nguyen Van K",
-            phone: "0900000011",
+            fullName: runFullName(11),
+            phone: runPhone(11),
             cccdNumber: null,
             dob: null,
             gender: "M",
@@ -943,11 +1078,11 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
             cvMimeType: "",
             cvSizeBytes: 0,
             cvStorageKey: "",
-            idempotencyKeyHash: idempHash(`idem-${runId}-5d`),
+            idempotencyKeyHash: idemKey,
             idempotencyPayloadHash: payloadHash(
               fixture.slugA,
-              "Nguyen Van K",
-              "0900000011",
+              runFullName(11),
+              runPhone(11),
               null,
             ),
             trackingCode,
@@ -970,17 +1105,25 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
   });
 
   describe("C-05.7/8/9 — idempotency replay / payload mismatch / duplicate", () => {
-    const phone = "0900000020";
-    const trackingCode = `APP-${randomUUID()}`;
+    // T0 directive — run-scoped unique identities. Each scenario index gets its own
+    // phone + fullName + CCCD to guarantee ≥2 signals for EXACT_MATCH (no collision
+    // with leftover LaborProfile rows from prior runs on the shared synthetic DB).
+    const SFX = 12; // scenario index for replay seed
 
     beforeAll(async () => {
-      // Seed one successful apply for replay tests
+      // Seed one successful apply for replay tests.
+      // C-04: CCCD is added so scorer has ≥2 signals → EXACT_MATCH, not POSSIBLE_MATCH.
+      // Without CCCD, a leftover LaborProfile from a prior run could match on full_name
+      // alone (signal #1) while normalized_phone doesn't match (signal #2 mismatch) →
+      // POSSIBLE_MATCH → P0014 → test fails. Adding CCCD gives us 3 signals; the
+      // leftover row (which has no matching CCCD) is excluded from the candidate set
+      // entirely → scorer returns NEW_PROFILE → EXACT_MATCH after INSERT.
       await callApply(writer, {
         slug: fixture.slugA,
         slotId: null,
-        fullName: "Nguyen Van Replay",
-        phone,
-        cccdNumber: null,
+        fullName: runFullName(SFX),
+        phone: runPhone(SFX),
+        cccdNumber: runCccd(SFX),
         dob: null,
         gender: "M",
         experience: null,
@@ -992,11 +1135,11 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
         idempotencyKeyHash: idempHash(`idem-${runId}-replay`),
         idempotencyPayloadHash: payloadHash(
           fixture.slugA,
-          "Nguyen Van Replay",
-          phone,
-          null,
+          runFullName(SFX),
+          runPhone(SFX),
+          runCccd(SFX),
         ),
-        trackingCode,
+        trackingCode: `APP-${randomUUID()}`,
       });
     }, 30_000);
 
@@ -1004,17 +1147,17 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
       const idemKey = idempHash(`idem-${runId}-replay`);
       const pHash = payloadHash(
         fixture.slugA,
-        "Nguyen Van Replay",
-        phone,
-        null,
+        runFullName(SFX),
+        runPhone(SFX),
+        runCccd(SFX),
       );
 
       const rows = await callApply(writer, {
         slug: fixture.slugA,
         slotId: null,
-        fullName: "Nguyen Van Replay",
-        phone,
-        cccdNumber: null,
+        fullName: runFullName(SFX),
+        phone: runPhone(SFX),
+        cccdNumber: runCccd(SFX),
         dob: null,
         gender: "M",
         experience: null,
@@ -1029,7 +1172,13 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
       });
 
       expect(rows).toHaveLength(1);
-      expect(rows[0]!.tracking_code).toBe(trackingCode); // SAME trackingCode as initial
+      // Replay returns the ORIGINAL tracking code from the beforeAll seed
+      const [replayRow] = await admin.candidateSubmission.findMany({
+        where: { idempotencyKeyHash: idemKey },
+        select: { publicTrackingCode: true, status: true },
+      });
+      expect(replayRow).not.toBeNull();
+      expect(rows[0]!.tracking_code).toBe(replayRow!.publicTrackingCode);
       expect(rows[0]!.status).toBe("NEW");
 
       const subs = await admin.candidateSubmission.count({
@@ -1045,12 +1194,12 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
 
     it("C-05.8 — replay với payload khác → P0010 (IDEMPOTENCY_PAYLOAD_MISMATCH)", async () => {
       const idemKey = idempHash(`idem-${runId}-replay`);
-      // Same key, but DIFFERENT payload
+      // Same key, but DIFFERENT payload (different fullName)
       const wrongHash = payloadHash(
         fixture.slugA,
         "DIFFERENT NAME",
-        phone,
-        null,
+        runPhone(SFX),
+        runCccd(SFX),
       );
 
       let caught: unknown = null;
@@ -1058,9 +1207,9 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
         await callApply(writer, {
           slug: fixture.slugA,
           slotId: null,
-          fullName: "Nguyen Van Replay",
-          phone,
-          cccdNumber: null,
+          fullName: runFullName(SFX),
+          phone: runPhone(SFX),
+          cccdNumber: runCccd(SFX),
           dob: null,
           gender: "M",
           experience: null,
@@ -1085,22 +1234,44 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
 
     it("C-05.9 — duplicate application cùng slot + cùng normalized phone → P0012", async () => {
       // Use a different idempotency key (so it is NOT a replay) but same phone.
-      const idemKey = idempHash(`idem-${runId}-dup`);
+      // T0 directive: use run-scoped unique identity for the duplicate phone scenario.
+      const dupSfx = 13; // distinct from SFX=12
+      const dupIdemKey = idempHash(`idem-${runId}-dup`);
       const pHash = payloadHash(
         fixture.slugA,
-        "Nguyen Van Replay",
-        phone,
-        null,
+        runFullName(dupSfx),
+        runPhone(dupSfx),
+        runCccd(dupSfx),
       );
-
+      // First apply with the duplicate phone (different fullName → NEW_PROFILE per scoring
+      // because the leftover row from C-05.7 beforeAll has different full_name).
+      await callApply(writer, {
+        slug: fixture.slugA,
+        slotId: null,
+        fullName: runFullName(dupSfx),
+        phone: runPhone(dupSfx),
+        cccdNumber: runCccd(dupSfx),
+        dob: null,
+        gender: "M",
+        experience: null,
+        consentAt: new Date().toISOString(),
+        cvFileName: "",
+        cvMimeType: "",
+        cvSizeBytes: 0,
+        cvStorageKey: "",
+        idempotencyKeyHash: dupIdemKey,
+        idempotencyPayloadHash: pHash,
+        trackingCode: `APP-${randomUUID()}`,
+      });
+      // Second apply: same slot + same phone + NEW idempotency key → P0012
       let caught: unknown = null;
       try {
         await callApply(writer, {
           slug: fixture.slugA,
           slotId: null,
-          fullName: "Nguyen Van Replay",
-          phone,
-          cccdNumber: null,
+          fullName: runFullName(dupSfx),
+          phone: runPhone(dupSfx),
+          cccdNumber: runCccd(dupSfx),
           dob: null,
           gender: "M",
           experience: null,
@@ -1109,7 +1280,7 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
           cvMimeType: "",
           cvSizeBytes: 0,
           cvStorageKey: "",
-          idempotencyKeyHash: idemKey,
+          idempotencyKeyHash: idempHash(`idem-${runId}-dup-2nd`),
           idempotencyPayloadHash: pHash,
           trackingCode: "SHOULD-FAIL-DUPLICATE",
         });
