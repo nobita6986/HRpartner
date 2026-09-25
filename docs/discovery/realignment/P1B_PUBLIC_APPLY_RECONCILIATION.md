@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Spec version | v1.1 |
-| Decision state | CHOSED (T0 chốt toàn bộ OD-P1B-* theo C-06; §9 không còn Open Questions) |
+| Spec version | v1.2 |
+| Decision state | CHOSEN (T0 chốt toàn bộ OD-P1B-* theo C-06; §9 không còn Open Questions) |
 | Status | PROPOSED_ONLY |
 | Next gate | `WAIT_P1_A1_ACCEPTED` |
 | Contract gate | `DRAFT` (T1B prepares this under V2 fast-freeze; correction batch C-01..C-08 đã đóng) |
@@ -248,7 +248,7 @@ Lúc đó P1-B có bề mặt ổn định để **mở rộng write chain** th�
 |---|---|---|---|
 | P1-A0 (Admin Posting Authoring + Publish) | `hrp-p1-a0-jobposting-authoring-publish` | T1A | ACCEPTED tại `c4418bb9…` (xem `docs/tasks/hrp-p1-a0-jobposting-authoring-publish/AUDIT.md`); Task §10 Revision Log v1.5. |
 | P1-A1 (Canonical Public Job Detail + Apply Boundary) | `hrp-p1-a1-canonical-public-job-detail` | T1A | PROPOSED_ONLY v1.2 (xem `docs/tasks/hrp-p1-a1-canonical-public-job-detail/TASK.md`). Round này T1A triển khai. |
-| **P1-B (Public Apply — processing & lifecycle transition)** | **`hrp-p1-b-public-apply`** | **T1B** | **Planning v1.1 (RECONCILIATION + TASK.md v1.1)** |
+| **P1-B (Public Apply — processing & lifecycle transition)** | **`hrp-p1-b-public-apply`** | **T1B** | **Planning v1.2 (RECONCILIATION + TASK.md v1.2)** |
 | P1-C (CRM review threads) | `hrp-p1-c-application-review` | T1B/T1A? | CHƯA định nghĩa task; nằm ngoài round này. |
 | P1-D (Outbound notifications / distribution) | `hrp-p1-d-candidate-notify` | T1B/T1A? | CHƯA định nghĩa task; nằm ngoài round này. |
 
@@ -259,7 +259,7 @@ P1-B chỉ khả thi sau khi A1 đạt `ACCEPTED`. Round này chuẩn bị RECON
 | Layer | File | Trạng thái |
 |---|---|---|
 | Discovery | `docs/discovery/realignment/P1B_PUBLIC_APPLY_RECONCILIATION.md` (file này) | Created ở round `codex/t1b-p1-b-public-apply-contract` |
-| Task contract | `docs/tasks/hrp-p1-b-public-apply/TASK.md` | v1.0 created; v1.1 updated theo T0 directive correction C-01..C-08 |
+| Task contract | `docs/tasks/hrp-p1-b-public-apply/TASK.md` | v1.0 created; v1.1 updated theo T0 directive correction C-01..C-08; v1.2 T0 control finalization |
 
 KHÔNG sửa bất kỳ file nào ở runtime, schema, package, hay file do T1A đang sở hữu. Đặc biệt KHÔNG sửa `docs/PLANNER_HANDOVER.md` (forbidden bởi T0 directive).
 
@@ -269,3 +269,4 @@ KHÔNG sửa bất kỳ file nào ở runtime, schema, package, hay file do T1A 
 |---|---|---|---|
 | `v1.0` | `2026-09-25` | Initial planning reconciliation dựa trên baseline `91525013fc2720a3803e808baac39e1c4497daf6`; capability matrix; A1↔B boundary; OD đề xuất §4; BUILD_VS_ADOPT §5; BUILD_VS_AUTOMATE §6; thin slice §7; OD chờ §9. | Round T1B documentation-only theo T0 directive 2026-09-25. |
 | `v1.1` | `2026-09-25` | T0 contract correction theo C-01..C-08: §4 OD-P1B-01..06 CHOSEN + mở rộng chốt thêm (slug-bound KHÔNG đọc `hrp_aff`, replace body hiện hữu không tạo `_v2`, canonical algorithm giữ nguyên, reason `PUBLIC_APPLY`, KHÔNG schema/column mới); §5 BUILD_VS_ADOPT: withIdempotency → REFERENCE ONLY, labor/placement → REFERENCE (read-only); §6 BUILD_VS_AUTOMATE: n8n task riêng ghi rõ boundary; §7 thin slice: một write authority duy nhất = SECURITY DEFINER RPC, xóa Node-side parallel guard, public response chỉ `{ trackingCode, status }`, POSSIBLE_MATCH fail closed generic 409, idempotency duy nhất = DB-level, KHÔNG wrap withIdempotency, atomic rollback toàn chain; §8 migration: đã chốt, KHÔNG tạo `_v2(jsonb)`; §9 Open Questions: toàn bộ đã đóng (C-06). §11 cập nhật. | T0 correction directive 2026-09-25 đóng gap C-01..C-08. |
+| `v1.2` | `2026-09-25` | T0 docs-only control finalization: đồng bộ TASK `Decision state = CLOSED`, `Test environment = READY`; sửa nhãn reconciliation `CHOSED` thành `CHOSEN`; không đổi semantic C-01..C-08. | Tier 1 đã dùng correction budget 1/1; T0 xử lý trực tiếp residual control/format issue. |
