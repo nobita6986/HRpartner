@@ -82,6 +82,12 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // zero non-CTV drift. Heavy test (tạo ephemeral DB, prisma migrate deploy,
   // apply byte-identical migration file) — chạy sau integration lane chính.
   'tests/db/aff04-conversion-propagation-upgrade-path.integration.test.ts',
+  // hrp-p1-a0-jobposting-authoring-publish: DB-touching proof for create-or-reuse
+  // JobOpening + DRAFT JobPosting from a StaffingOrderSlot, 2-transaction race,
+  // optimistic revision (STALE_VERSION), state machine, RLS positive/negative,
+  // canonical slug uniqueness + immutability, JobOpening lifecycle invariant.
+  // Self-skips when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
+  'tests/db/job-posting-authoring.integration.test.ts',
   // hrp-v6-n2-aff-05a-r2-bounded-manager-assignment: clean chain + upgrade path
   // evidence for the forward-only 20260924170000 migration. Covers AC-02/AC-03/AC-04/AC-05:
   // narrow predicate backfill, fail-closed anomaly guards, conditional CHECK

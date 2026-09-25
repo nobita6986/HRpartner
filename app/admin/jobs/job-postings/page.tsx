@@ -115,14 +115,15 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
               <Link href="/admin/jobs" className="hover:underline">Admin Jobs</Link>
               <span aria-hidden="true">/</span>
-              <span>JobPosting viewer (bản nháp)</span>
+              <span>JobPosting authoring &amp; publish</span>
             </div>
             <h1 className="mt-1 text-2xl font-semibold" style={{ color: 'var(--on-surface)' }}>
-              JobPosting viewer — soạn bản nháp
+              JobPosting — authoring &amp; publish
             </h1>
             <p className="mt-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-              Xem JobPosting đã tạo ở V6 Phase 1 và chỉnh nội dung bản nháp trong state
-              cục bộ. Lưu/Publish chờ AV2 backend + contract N3 — xem banner phía dưới.
+              Chọn một JobPosting để chỉnh nội dung, lưu bản nháp, publish/unpublish/archive.
+              Bản P1-A0: tạo/reuse JobOpening từ StaffingOrderSlot, schema JobPosting mở rộng
+              với rich content (Tiptap, contentSchemaVersion=1).
             </p>
           </div>
           <Link
@@ -292,11 +293,10 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             Phần bị khóa (chờ bước sau)
           </h2>
           <ul className="ml-4 list-disc space-y-1">
-            <li><strong>Lưu bản nháp section content</strong> (giới thiệu, yêu cầu, lương, hỗ trợ, hướng dẫn ứng tuyển, footer banner) → chờ AV2 backend (Postgres persistence + API ghi).</li>
-            <li><strong>Publish JobPosting</strong> (chuyển DRAFT → PUBLISHED) → chờ contract N3 (gắn JobPosting với JobOpening status transition).</li>
-            <li><strong>Section content thật (REAL)</strong> thay vì fixture DEMO → chờ AV2 backend + AV6 CMS editor (bước sau AV2).</li>
-            <li><strong>Sửa slug / revision</strong> → chờ AV2 backend (xử lý @@unique([slug]) và idempotency).</li>
-            <li><strong>Mở JobPosting ở trang public</strong> (<code>/viec-lam/[slug]</code>) → trang public hiện vẫn tra Project (qua <code>getPublicJobDetail</code>), chưa gắn với JobPosting. Sẽ khôi phục liên kết khi ánh xạ JobPosting.slug → Project.code hợp lệ.</li>
+            <li><strong>Tạo mới draft từ slot</strong> ở list page → form chọn StaffingOrderSlot chưa dựng (P1-A0 POST API đã sẵn sàng, UI form sẽ thêm ở bước sau).</li>
+            <li><strong>Mở JobPosting ở trang public</strong> (<code>/viec-lam/[slug]</code>) → trang public hiện vẫn tra Project (qua <code>getPublicJobDetail</code>), chưa gắn với JobPosting. Sẽ được khôi phục khi <code>P1-A1</code> hoàn tất ánh xạ.</li>
+            <li><strong>Gallery media</strong> (ảnh đính kèm JobPosting) → chờ AV4 Media Library integration.</li>
+            <li><strong>Anonymous apply RPC gắn JobPosting</strong> → chờ P1-A1 (CandidateSubmission.jobPostingId).</li>
           </ul>
         </section>
       </div>

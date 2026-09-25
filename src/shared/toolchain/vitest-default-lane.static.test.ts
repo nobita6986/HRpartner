@@ -36,15 +36,16 @@ import { describe, expect, it } from 'vitest';
 
 import { INTEGRATION_TEST_FILES } from '../../../vitest.integration-files';
 
-/** Ba glob mà `RQ-05` gọi TÊN. Đây là mặt chữ của contract, không phải nguồn sự thật chống lệch.
- *
- * T0 alignment round (hrp-v6-n2-aff-05a-r2-bounded-manager-assignment):
- *   widened to include the route-handler glob so that the unit tests under
- *   `app/api/...` are picked up by the unit lane. DB-fail-closed sentinel
- *   guarantees stay intact.
- */
+// Ba glob mà `RQ-05` gọi TÊN. Đây là mặt chữ của contract, không phải nguồn sự thật chống lệch.
+//
+// Sau P1-A0: thêm `src/**/*.test.tsx` để lane thu renderer.test.tsx (P1-A0 shared rich content).
+// Sau AFF-05A-R2 (T0 alignment round hrp-v6-n2-aff-05a-r2-bounded-manager-assignment):
+// widened to include the route-handler glob so that the unit tests under
+// `app/api/...` are picked up by the unit lane. DB-fail-closed sentinel
+// guarantees stay intact.
 const RQ05_INCLUDE_GLOBS = [
   'src/**/*.test.ts',
+  'src/**/*.test.tsx',
   'packages/**/*.test.ts',
   'prisma/**/*.test.ts',
   'app/**/*.test.ts',
@@ -417,7 +418,13 @@ describe('rang cua hang rao — phep am tren config BIA (AC-06)', () => {
   it('phat hien include thieu glob va poolOptions bi noi long', () => {
     const globs = extractInclude(DRIFTED_CONFIG);
     expect(globs).not.toBeNull();
-    expect(difference(RQ05_INCLUDE_GLOBS, globs!)).toEqual(['app/**/*.test.ts', 'prisma/**/*.test.ts']);
+    // DRIFTED_CONFIG cố tình THIẾU cả `prisma/**`, `src/**/*.test.tsx`, và `app/**/*.test.ts`
+    // so với RQ-05 — cả ba đều phải xuất hiện trong tập thiếu. Trước P1-A0 chỉ có `prisma/**` thiếu.
+    // Sau P1-A0 bổ sung `src/**/*.test.tsx` (renderer.test.tsx); sau AFF-05A-R2 bổ sung `app/**/*.test.ts`
+    // (route-handler unit coverage). DRIFTED_CONFIG làm bao bằng cách chỉ giữ 2 glob cũ nhất.
+    expect(sorted(difference(RQ05_INCLUDE_GLOBS, globs!))).toEqual(
+      sorted(['app/**/*.test.ts', 'prisma/**/*.test.ts', 'src/**/*.test.tsx']),
+    );
     expect(sliceBlock(DRIFTED_CONFIG, 'poolOptions')).toMatch(/maxThreads:\s*8/);
   });
 

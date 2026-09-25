@@ -1,282 +1,487 @@
 'use client';
 
 /**
- * JobPostingEditorShell — client component của AV2 editor shell.
+ * JobPostingEditorShell — P1-A0 admin authoring client component.
  *
- * Render form chỉnh nội dung section content (intro / salary / support /
- * requirements / apply-instructions / footer banner) trong state cục bộ +
- * preview phản ánh đúng nội dung vừa nhập. KHÔNG có nút Lưu / Publish —
- * persistence cho section content chờ AV2 backend (xem banner).
+ * Wires the JobPostingRichTextEditor (Tiptap) to the real persistence API:
+ *   - PATCH /api/admin/jobs/job-postings/[id]   (save draft)
+ *   - POST  /api/admin/jobs/job-postings/[id]/publish
+ *   - POST  /api/admin/jobs/job-postings/[id]/unpublish
+ *   - POST  /api/admin/jobs/job-postings/[id]/archive
  *
- * Vì sao dùng client component:
- *  - Cần `useState` cho state cục bộ của form + dirty indicator.
- *  - Parent là Server Component đọc JobPosting qua `withDbContext` (RLS).
- *  - Preview dùng đúng component UI04d đã có (ContentSection, BenefitsSection,
- *    SupportSection, FooterBannerSection) → render đúng kiểu.
+ * Optimistic revision: read initial revision from server, send it back on
+ * every write; server bumps revision atomically. On 409 INVALID_REVISION the
+ * user must reload — surface a clear error.
  *
- * Vì sao KHÔNG có nút Lưu:
- *  - Instruction Tier 0: "không mở API ghi mới". Section content chưa có
- *    persistence cho JobPosting ở vòng này → dựng nút Lưu = báo thành công
- *    giả (cấm).
- *  - Contract với Tier 0: chỉ thêm "form trong state cục bộ và preview phản
- *    ánh đúng nội dung vừa nhập, ghi rõ 'chưa lưu'".
+ * Idempotency-Key: every write uses a freshly generated UUID v4 — the API
+ * rejects duplicate keys so retries are safe.
+ *
+ * A0 allows:
+ *   - title (string, required to publish)
+ *   - salaryDisplay (string, optional)
+ *   - descriptionJson (rich Tiptap doc, required to publish)
+ *   - requirementsJson, benefitsJson, applicationInstructionsJson (optional)
+ *   - contentSchemaVersion (currently locked to 1)
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import type { JSONContent } from '@tiptap/core';
 
-import { ContentSection } from '@/src/domains/job-board/components/detail/content-section';
-import { BenefitsSection } from '@/src/domains/job-board/components/detail/benefits-section';
-import { SupportSection } from '@/src/domains/job-board/components/detail/support-section';
-import { FooterBannerSection } from '@/src/domains/job-board/components/detail/footer-banner-section';
-import type {
-  ContentSectionContent,
-  SalarySectionContent,
-  SupportSectionContent,
-  FooterBannerContent,
-  StructuredContent,
-  BenefitItem,
-  SupportItem,
-} from '@/src/domains/job-board/public-types';
-
+import { JobPostingRichTextEditor } from '@/src/shared/ui/editor/JobPostingRichTextEditor';
 import {
-  demoIntroductionContent,
-  demoRequirementsContent,
-  demoCompensationContent,
-  demoSupportContent,
-  demoApplyInstructionsContent,
-  demoFooterBannerContent,
-} from '@/src/domains/job-board/fixtures/detail-sections.fixture';
+  JOB_POSTING_RICH_TEXT_SCHEMA_VERSION,
+} from '@/src/shared/content/job-posting-rich-text';
+import type { JobPostingDetailDto } from '@/src/domains/staffing/job-posting-list.service';
+import type { JobPostingLifecycleStatus } from '@/src/domains/staffing/job-posting-authoring.service';
 
-interface DraftState {
-  introduction: ContentSectionContent;
-  requirements: ContentSectionContent;
-  compensation: SalarySectionContent;
-  support: SupportSectionContent;
-  applyInstructions: ContentSectionContent;
-  footerBanner: FooterBannerContent;
+interface JobPostingEditorShellProps {
+  initial: JobPostingDetailDto;
+  /** Mutation roles gate (server already enforces; this is just UI affordance). */
+  canMutate: boolean;
 }
 
-function initialDraft(): DraftState {
-  return {
-    introduction: cloneContent(demoIntroductionContent),
-    requirements: cloneContent(demoRequirementsContent),
-    compensation: cloneSalary(demoCompensationContent),
-    support: cloneSupport(demoSupportContent),
-    applyInstructions: cloneContent(demoApplyInstructionsContent),
-    footerBanner: cloneFooter(demoFooterBannerContent),
-  };
+type RichFieldKey = 'descriptionJson' | 'requirementsJson' | 'benefitsJson' | 'applicationInstructionsJson';
+
+const RICH_FIELD_LABELS: Record<RichFieldKey, string> = {
+  descriptionJson: 'Mô tả công việc (bắt buộc khi publish)',
+  requirementsJson: 'Yêu cầu ứng viên (tuỳ chọn)',
+  benefitsJson: 'Phúc lợi (tuỳ chọn)',
+  applicationInstructionsJson: 'Hướng dẫn ứng tuyển (tuỳ chọn)',
+};
+
+const RICH_FIELD_PLACEHOLDERS: Record<RichFieldKey, string> = {
+  descriptionJson: 'Mô tả công việc — các heading H2/H3, danh sách bullet/numbered, đoạn văn, in đậm/nghiêng, link https://',
+  requirementsJson: 'Yêu cầu ứng viên — bắt buộc có heading đầu tiên',
+  benefitsJson: 'Phúc lợi — bullet list gọn',
+  applicationInstructionsJson: 'Các bước nộp hồ sơ — numbered list',
+};
+
+function makeIdempotencyKey(): string {
+  // RFC 4122 v4 — crypto.randomUUID is available in modern browsers & Node.
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback (should not run in modern targets).
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
-function cloneContent(c: ContentSectionContent): ContentSectionContent {
-  return { ...c, blocks: c.blocks.map(cloneBlock) };
+function isRichDoc(value: unknown): value is JSONContent {
+  if (!value || typeof value !== 'object') return false;
+  return (value as { type?: unknown }).type === 'doc';
 }
-function cloneSalary(c: SalarySectionContent): SalarySectionContent {
-  return {
-    ...c,
-    salaryDetail: c.salaryDetail.map(cloneBlock),
-    bonusItems: c.bonusItems.map((b) => ({ ...b })),
-    benefitItems: c.benefitItems.map((b) => ({ ...b })),
-  };
+
+function asRichDoc(value: unknown): JSONContent {
+  if (isRichDoc(value)) return value;
+  return { type: 'doc', content: [{ type: 'paragraph' }] };
 }
-function cloneSupport(c: SupportSectionContent): SupportSectionContent {
-  return { ...c, items: c.items.map((it) => ({ ...it })) };
-}
-function cloneFooter(c: FooterBannerContent): FooterBannerContent {
-  return { ...c };
-}
-function cloneBlock(b: StructuredContent): StructuredContent {
-  switch (b.type) {
-    case 'heading':
-      return { ...b };
-    case 'paragraph':
-      return { ...b };
-    case 'list':
-      return { ...b, items: [...b.items] };
-    case 'callout':
-      return { ...b };
+
+async function readErrorMessage(res: Response): Promise<string> {
+  try {
+    const body = (await res.json()) as { error?: string; message?: string };
+    return body?.message ?? body?.error ?? `HTTP ${res.status}`;
+  } catch {
+    return `HTTP ${res.status}`;
   }
 }
 
-function updateBlock(
-  blocks: StructuredContent[],
-  index: number,
-  next: StructuredContent,
-): StructuredContent[] {
-  return blocks.map((b, i) => (i === index ? next : b));
-}
+export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorShellProps) {
+  const router = useRouter();
 
-function setBlockText(
-  blocks: StructuredContent[],
-  index: number,
-  text: string,
-): StructuredContent[] {
-  const b = blocks[index];
-  if (!b) return blocks;
-  switch (b.type) {
-    case 'heading':
-    case 'paragraph':
-    case 'callout':
-      return updateBlock(blocks, index, { ...b, text });
-    case 'list':
-      // text cho list = cả danh sách nối "\n" để dễ edit
-      return updateBlock(blocks, index, {
-        ...b,
-        items: text.split('\n').filter((s) => s.length > 0),
+  // ----- Local form state ------------------------------------------------
+  const [title, setTitle] = useState<string>(initial.title ?? '');
+  const [salaryDisplay, setSalaryDisplay] = useState<string>(initial.salaryDisplay ?? '');
+  const [descriptionJson, setDescriptionJson] = useState<JSONContent>(() =>
+    asRichDoc(initial.descriptionJson),
+  );
+  const [requirementsJson, setRequirementsJson] = useState<JSONContent>(() =>
+    asRichDoc(initial.requirementsJson),
+  );
+  const [benefitsJson, setBenefitsJson] = useState<JSONContent>(() =>
+    asRichDoc(initial.benefitsJson),
+  );
+  const [applicationInstructionsJson, setApplicationInstructionsJson] = useState<JSONContent>(() =>
+    asRichDoc(initial.applicationInstructionsJson),
+  );
+
+  // Revision comes from the server; we send it back on every write.
+  const [revision, setRevision] = useState<number>(initial.revision);
+  const [status, setStatus] = useState<JobPostingLifecycleStatus>(initial.status);
+  const [savedAt, setSavedAt] = useState<string | null>(initial.updatedAt ?? null);
+
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+
+  const initialSnapshotRef = useRef<{
+    title: string;
+    salaryDisplay: string;
+    descriptionJson: JSONContent;
+    requirementsJson: JSONContent;
+    benefitsJson: JSONContent;
+    applicationInstructionsJson: JSONContent;
+  }>({
+    title: initial.title ?? '',
+    salaryDisplay: initial.salaryDisplay ?? '',
+    descriptionJson: asRichDoc(initial.descriptionJson),
+    requirementsJson: asRichDoc(initial.requirementsJson),
+    benefitsJson: asRichDoc(initial.benefitsJson),
+    applicationInstructionsJson: asRichDoc(initial.applicationInstructionsJson),
+  });
+
+  // ----- Dirty tracking --------------------------------------------------
+  useEffect(() => {
+    const init = initialSnapshotRef.current;
+    const dirty =
+      title !== init.title ||
+      salaryDisplay !== init.salaryDisplay ||
+      JSON.stringify(descriptionJson) !== JSON.stringify(init.descriptionJson) ||
+      JSON.stringify(requirementsJson) !== JSON.stringify(init.requirementsJson) ||
+      JSON.stringify(benefitsJson) !== JSON.stringify(init.benefitsJson) ||
+      JSON.stringify(applicationInstructionsJson) !==
+        JSON.stringify(init.applicationInstructionsJson);
+    setIsDirty(dirty);
+  }, [
+    title,
+    salaryDisplay,
+    descriptionJson,
+    requirementsJson,
+    benefitsJson,
+    applicationInstructionsJson,
+  ]);
+
+  // ----- Save (PATCH) ----------------------------------------------------
+  const onSave = useCallback(async () => {
+    if (!canMutate) {
+      setErrorMessage('Role hiện tại không có quyền ghi JobPosting.');
+      return;
+    }
+    setIsSaving(true);
+    setErrorMessage(null);
+    setInfoMessage(null);
+
+    const body = {
+      expectedRevision: revision,
+      title: title.trim(),
+      salaryDisplay: salaryDisplay.trim() === '' ? null : salaryDisplay,
+      descriptionJson,
+      requirementsJson,
+      benefitsJson,
+      applicationInstructionsJson,
+      contentSchemaVersion: JOB_POSTING_RICH_TEXT_SCHEMA_VERSION,
+    };
+
+    try {
+      const res = await fetch(`/api/admin/jobs/job-postings/${initial.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': makeIdempotencyKey(),
+        },
+        body: JSON.stringify(body),
       });
-  }
-}
+      if (!res.ok) {
+        setErrorMessage(await readErrorMessage(res));
+        return;
+      }
+      const json = (await res.json()) as { jobPosting: JobPostingDetailDto; replayed?: boolean };
+      const updated = json.jobPosting;
+      setRevision(updated.revision);
+      setStatus(updated.status);
+      setSavedAt(updated.updatedAt);
+      // Update the snapshot baseline so `isDirty` flips false.
+      initialSnapshotRef.current = {
+        title: updated.title ?? '',
+        salaryDisplay: updated.salaryDisplay ?? '',
+        descriptionJson: asRichDoc(updated.descriptionJson),
+        requirementsJson: asRichDoc(updated.requirementsJson),
+        benefitsJson: asRichDoc(updated.benefitsJson),
+        applicationInstructionsJson: asRichDoc(updated.applicationInstructionsJson),
+      };
+      setTitle(initialSnapshotRef.current.title);
+      setSalaryDisplay(initialSnapshotRef.current.salaryDisplay);
+      setDescriptionJson(initialSnapshotRef.current.descriptionJson);
+      setRequirementsJson(initialSnapshotRef.current.requirementsJson);
+      setBenefitsJson(initialSnapshotRef.current.benefitsJson);
+      setApplicationInstructionsJson(initialSnapshotRef.current.applicationInstructionsJson);
+      setInfoMessage(json.replayed ? 'Đã ghi (idempotent replay).' : `Đã lưu bản nháp v${updated.revision}.`);
+    } catch (e) {
+      setErrorMessage(`Network error: ${(e as Error).message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    canMutate,
+    revision,
+    title,
+    salaryDisplay,
+    descriptionJson,
+    requirementsJson,
+    benefitsJson,
+    applicationInstructionsJson,
+    initial.id,
+  ]);
 
-function getBlockText(b: StructuredContent): string {
-  switch (b.type) {
-    case 'heading':
-    case 'paragraph':
-    case 'callout':
-      return b.text;
-    case 'list':
-      return b.items.join('\n');
-  }
-}
+  // ----- Publish / unpublish / archive ----------------------------------
+  const runStateMutation = useCallback(
+    async (action: 'publish' | 'unpublish' | 'archive') => {
+      if (!canMutate) {
+        setErrorMessage('Role hiện tại không có quyền mutate JobPosting.');
+        return;
+      }
+      setIsSaving(true);
+      setErrorMessage(null);
+      setInfoMessage(null);
+      try {
+        const res = await fetch(`/api/admin/jobs/job-postings/${initial.id}/${action}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': makeIdempotencyKey(),
+          },
+          body: JSON.stringify({ expectedRevision: revision }),
+        });
+        if (!res.ok) {
+          setErrorMessage(await readErrorMessage(res));
+          return;
+        }
+        const json = (await res.json()) as { jobPosting: JobPostingDetailDto; replayed?: boolean };
+        const updated = json.jobPosting;
+        setRevision(updated.revision);
+        setStatus(updated.status);
+        setSavedAt(updated.updatedAt);
+        setInfoMessage(
+          json.replayed
+            ? `Trạng thái đã cập nhật (idempotent replay).`
+            : `Đã ${labelOf(action)} → ${updated.status}.`,
+        );
+        // Trigger revalidation so the list page reflects the new state too.
+        router.refresh();
+      } catch (e) {
+        setErrorMessage(`Network error: ${(e as Error).message}`);
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [canMutate, revision, initial.id, router],
+  );
 
-function getBlockTypeLabel(b: StructuredContent): string {
-  switch (b.type) {
-    case 'heading': return `Tiêu đề H${b.level}`;
-    case 'paragraph': return 'Đoạn văn';
-    case 'list': return b.ordered ? 'Danh sách có thứ tự' : 'Danh sách (mỗi dòng 1 mục)';
-    case 'callout': return `Callout (${b.variant})`;
-  }
-}
-
-export function JobPostingEditorShell() {
-  const [draft, setDraft] = useState<DraftState>(() => initialDraft());
-
-  const setIntroduction = (next: ContentSectionContent) =>
-    setDraft((d) => ({ ...d, introduction: next }));
-  const setRequirements = (next: ContentSectionContent) =>
-    setDraft((d) => ({ ...d, requirements: next }));
-  const setCompensation = (next: SalarySectionContent) =>
-    setDraft((d) => ({ ...d, compensation: next }));
-  const setSupport = (next: SupportSectionContent) =>
-    setDraft((d) => ({ ...d, support: next }));
-  const setApplyInstructions = (next: ContentSectionContent) =>
-    setDraft((d) => ({ ...d, applyInstructions: next }));
-  const setFooterBanner = (next: FooterBannerContent) =>
-    setDraft((d) => ({ ...d, footerBanner: next }));
-
-  const resetAll = () => setDraft(initialDraft());
-
-  const isDirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(initialDraft()), [draft]);
+  const canPublish = useMemo(() => {
+    return (
+      canMutate &&
+      status === 'DRAFT' &&
+      title.trim().length > 0 &&
+      descriptionJson !== null
+    );
+  }, [canMutate, status, title, descriptionJson]);
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Trạng thái + reset */}
+      {/* Status banner */}
       <section
-        className="rounded-lg border p-3 text-sm"
+        className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 text-sm"
         style={{
-          borderColor: isDirty ? '#f5b5b5' : 'var(--outline)',
-          backgroundColor: isDirty ? '#fdecec' : 'var(--color-surface-container)',
-          color: isDirty ? '#8a1c1c' : 'var(--on-surface-variant)',
+          borderColor: 'var(--outline)',
+          backgroundColor: 'var(--color-surface-container)',
+          color: 'var(--on-surface-variant)',
         }}
         role="status"
         aria-live="polite"
       >
-        {isDirty
-          ? 'Đang có thay đổi CHƯA LƯU. Các nội dung bên dưới chỉ tồn tại trong tab này — tải lại trang sẽ mất.'
-          : 'Chưa có thay đổi. Sửa bất kỳ ô nào để xem preview phản ánh ngay.'}
-        {isDirty && (
-          <button
-            type="button"
-            onClick={resetAll}
-            className="ml-3 rounded border px-2 py-0.5 text-xs font-medium"
-            style={{ borderColor: '#8a1c1c', color: '#8a1c1c' }}
-          >
-            Huỷ thay đổi
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <span>
+            Trạng thái: <strong style={{ color: 'var(--on-surface)' }}>{status}</strong>
+            {' · '}
+            Revision: <strong style={{ color: 'var(--on-surface)' }}>v{revision}</strong>
+            {' · '}
+            Schema: <strong style={{ color: 'var(--on-surface)' }}>
+              v{JOB_POSTING_RICH_TEXT_SCHEMA_VERSION}
+            </strong>
+            {savedAt && (
+              <>
+                {' · '}
+                <span>Đã ghi lúc: {new Date(savedAt).toLocaleString('vi-VN')}</span>
+              </>
+            )}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <ActionButton
+            disabled={!canMutate || isSaving || !isDirty || status !== 'DRAFT'}
+            onClick={onSave}
+            label={isSaving ? 'Đang lưu…' : 'Lưu bản nháp'}
+          />
+          <ActionButton
+            disabled={!canPublish || isSaving}
+            onClick={() => runStateMutation('publish')}
+            label="Publish"
+            primary
+          />
+          <ActionButton
+            disabled={!canMutate || isSaving || status !== 'PUBLISHED'}
+            onClick={() => runStateMutation('unpublish')}
+            label="Unpublish"
+          />
+          <ActionButton
+            disabled={!canMutate || isSaving || status === 'ARCHIVED'}
+            onClick={() => runStateMutation('archive')}
+            label="Archive"
+            danger
+          />
+        </div>
       </section>
 
-      {/* Editor + Preview cặp cho mỗi section */}
-      <SectionPair
-        title="Giới thiệu công việc"
-        description="Đoạn mở đầu + tiêu đề phụ + callout nổi bật."
-        editor={
-          <ContentBlocksEditor
-            blocks={draft.introduction.blocks}
-            onChange={(blocks) => setIntroduction({ ...draft.introduction, blocks })}
-          />
-        }
-        preview={<ContentSection content={draft.introduction} />}
-      />
+      {errorMessage && (
+        <div
+          role="alert"
+          className="rounded border p-3 text-sm"
+          style={{ borderColor: '#f5b5b5', backgroundColor: '#fdecec', color: '#8a1c1c' }}
+        >
+          {errorMessage}
+        </div>
+      )}
+      {infoMessage && (
+        <div
+          role="status"
+          className="rounded border p-3 text-sm"
+          style={{ borderColor: 'var(--outline)', backgroundColor: 'var(--color-surface)', color: 'var(--on-surface)' }}
+        >
+          {infoMessage}
+        </div>
+      )}
 
-      <SectionPair
-        title="Yêu cầu và lưu ý"
-        description="Hồ sơ cần chuẩn bị + yêu cầu khác."
-        editor={
-          <ContentBlocksEditor
-            blocks={draft.requirements.blocks}
-            onChange={(blocks) => setRequirements({ ...draft.requirements, blocks })}
-          />
-        }
-        preview={<ContentSection content={draft.requirements} />}
-      />
+      {/* Title + salary */}
+      <section className="rounded-xl border p-4" style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'var(--color-surface)' }}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FieldShell label="Tiêu đề JobPosting (bắt buộc khi publish)">
+            <input
+              type="text"
+              value={title}
+              maxLength={200}
+              onChange={(e) => setTitle(e.target.value)}
+              disabled={!canMutate || isSaving || status === 'ARCHIVED'}
+              className="w-full rounded border px-2 py-1 text-sm"
+              style={{ borderColor: 'var(--outline)', backgroundColor: 'var(--surface-container-lowest)' }}
+              placeholder="Ví dụ: Kỹ sư điện công trình — Hà Nội"
+            />
+          </FieldShell>
+          <FieldShell label="Hiển thị lương (free-form, tuỳ chọn)">
+            <input
+              type="text"
+              value={salaryDisplay}
+              maxLength={200}
+              onChange={(e) => setSalaryDisplay(e.target.value)}
+              disabled={!canMutate || isSaving || status === 'ARCHIVED'}
+              className="w-full rounded border px-2 py-1 text-sm"
+              style={{ borderColor: 'var(--outline)', backgroundColor: 'var(--surface-container-lowest)' }}
+              placeholder="Ví dụ: 25–35 triệu VNĐ hoặc Thoả thuận"
+            />
+          </FieldShell>
+        </div>
+      </section>
 
-      <SectionPair
-        title="Lương & phúc lợi"
-        description="Loại lương + mô tả chi tiết + thưởng + phúc lợi."
-        editor={
-          <SalaryEditor
-            value={draft.compensation}
-            onChange={setCompensation}
-          />
-        }
-        preview={<BenefitsSection content={draft.compensation} />}
+      {/* Rich content fields */}
+      <RichFieldCard
+        label={RICH_FIELD_LABELS.descriptionJson}
+        placeholder={RICH_FIELD_PLACEHOLDERS.descriptionJson}
+        value={descriptionJson}
+        onChange={setDescriptionJson}
+        requiredForPublish
       />
-
-      <SectionPair
-        title="Hỗ trợ HRP"
-        description="Các mục hỗ trợ ứng viên (có/tùy vị trí)."
-        editor={
-          <SupportEditor value={draft.support} onChange={setSupport} />
-        }
-        preview={<SupportSection content={draft.support} />}
+      <RichFieldCard
+        label={RICH_FIELD_LABELS.requirementsJson}
+        placeholder={RICH_FIELD_PLACEHOLDERS.requirementsJson}
+        value={requirementsJson}
+        onChange={setRequirementsJson}
       />
-
-      <SectionPair
-        title="Hướng dẫn ứng tuyển"
-        description="Các bước nộp hồ sơ + callout."
-        editor={
-          <ContentBlocksEditor
-            blocks={draft.applyInstructions.blocks}
-            onChange={(blocks) => setApplyInstructions({ ...draft.applyInstructions, blocks })}
-          />
-        }
-        preview={<ContentSection content={draft.applyInstructions} />}
+      <RichFieldCard
+        label={RICH_FIELD_LABELS.benefitsJson}
+        placeholder={RICH_FIELD_PLACEHOLDERS.benefitsJson}
+        value={benefitsJson}
+        onChange={setBenefitsJson}
       />
-
-      <SectionPair
-        title="Footer banner"
-        description="CTA + hình ảnh kêu gọi xem thêm việc làm."
-        editor={
-          <FooterBannerEditor
-            value={draft.footerBanner}
-            onChange={setFooterBanner}
-          />
-        }
-        preview={<FooterBannerSection content={draft.footerBanner} />}
+      <RichFieldCard
+        label={RICH_FIELD_LABELS.applicationInstructionsJson}
+        placeholder={RICH_FIELD_PLACEHOLDERS.applicationInstructionsJson}
+        value={applicationInstructionsJson}
+        onChange={setApplicationInstructionsJson}
       />
     </div>
   );
 }
 
-function SectionPair({
-  title,
-  description,
-  editor,
-  preview,
+function labelOf(action: 'publish' | 'unpublish' | 'archive'): string {
+  if (action === 'publish') return 'publish';
+  if (action === 'unpublish') return 'unpublish';
+  return 'archive';
+}
+
+function FieldShell({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1 text-sm">
+      <span className="text-xs font-medium" style={{ color: 'var(--on-surface-variant)' }}>
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function ActionButton({
+  label,
+  onClick,
+  disabled,
+  primary,
+  danger,
 }: {
-  title: string;
-  description: string;
-  editor: React.ReactNode;
-  preview: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled: boolean;
+  primary?: boolean;
+  danger?: boolean;
+}) {
+  const bg = primary
+    ? 'var(--color-primary-soft)'
+    : danger
+    ? '#fdecec'
+    : 'var(--color-surface-container-lowest)';
+  const fg = primary ? 'var(--color-primary-dark)' : danger ? '#8a1c1c' : 'var(--on-surface)';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="rounded border px-3 py-1 text-sm font-medium"
+      style={{
+        borderColor: primary ? 'var(--color-primary)' : danger ? '#f5b5b5' : 'var(--outline)',
+        backgroundColor: bg,
+        color: fg,
+        opacity: disabled ? 0.5 : 1,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function RichFieldCard({
+  label,
+  placeholder,
+  value,
+  onChange,
+  requiredForPublish,
+}: {
+  label: string;
+  placeholder: string;
+  value: JSONContent;
+  onChange: (next: JSONContent) => void;
+  requiredForPublish?: boolean;
 }) {
   return (
     <section
@@ -287,453 +492,22 @@ function SectionPair({
         className="border-b px-4 py-3"
         style={{ borderColor: 'var(--outline-variant)' }}
       >
-        <h2 className="text-base font-semibold" style={{ color: 'var(--on-surface)' }}>
-          {title}
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
+          {label}
+          {requiredForPublish && (
+            <span className="ml-2 text-xs font-normal" style={{ color: '#8a1c1c' }}>
+              (bắt buộc)
+            </span>
+          )}
         </h2>
-        <p className="mt-0.5 text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-          {description}
-        </p>
       </header>
-      <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
-        <div>
-          <div
-            className="mb-2 text-xs font-semibold uppercase tracking-wide"
-            style={{ color: 'var(--on-surface-variant)' }}
-          >
-            Form chỉnh (chưa lưu)
-          </div>
-          <div className="flex flex-col gap-2">{editor}</div>
-        </div>
-        <div>
-          <div
-            className="mb-2 text-xs font-semibold uppercase tracking-wide"
-            style={{ color: 'var(--on-surface-variant)' }}
-          >
-            Preview phản ánh nội dung vừa nhập
-          </div>
-          <div className="rounded-lg" style={{ backgroundColor: 'var(--surface)' }}>
-            {preview}
-          </div>
-        </div>
+      <div className="p-4">
+        <JobPostingRichTextEditor
+          initialContent={value}
+          placeholder={placeholder}
+          onChange={(next) => onChange(next ?? { type: 'doc', content: [{ type: 'paragraph' }] })}
+        />
       </div>
     </section>
-  );
-}
-
-function ContentBlocksEditor({
-  blocks,
-  onChange,
-}: {
-  blocks: StructuredContent[];
-  onChange: (next: StructuredContent[]) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-3">
-      {blocks.map((b, idx) => (
-        <div
-          key={idx}
-          className="rounded-lg border p-2"
-          style={{ borderColor: 'var(--outline-variant)' }}
-        >
-          <div className="mb-1 flex items-center justify-between text-xs">
-            <span style={{ color: 'var(--on-surface-variant)' }}>{getBlockTypeLabel(b)}</span>
-            <button
-              type="button"
-              onClick={() => onChange(blocks.filter((_, i) => i !== idx))}
-              className="rounded px-1.5 py-0.5 text-xs"
-              style={{ color: '#8a1c1c', borderColor: '#f5b5b5' }}
-              aria-label={`Xoá block ${idx + 1}`}
-            >
-              Xoá
-            </button>
-          </div>
-          {b.type === 'list' && (
-            <label className="mb-1 block text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-              <input
-                type="checkbox"
-                checked={b.ordered}
-                onChange={(e) =>
-                  onChange(updateBlock(blocks, idx, { ...b, ordered: e.target.checked }))
-                }
-                className="mr-1"
-              />
-              Đánh số thứ tự
-            </label>
-          )}
-          {b.type === 'callout' && (
-            <label className="mb-1 block text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-              Variant:{' '}
-              <select
-                value={b.variant}
-                onChange={(e) =>
-                  onChange(updateBlock(blocks, idx, {
-                    ...b,
-                    variant: e.target.value as 'info' | 'warning' | 'success',
-                  }))
-                }
-                className="rounded border px-1 py-0.5 text-xs"
-                style={{ borderColor: 'var(--outline)' }}
-              >
-                <option value="info">info</option>
-                <option value="warning">warning</option>
-                <option value="success">success</option>
-              </select>
-            </label>
-          )}
-          {b.type === 'heading' && (
-            <label className="mb-1 block text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-              Cấp:{' '}
-              <select
-                value={b.level}
-                onChange={(e) =>
-                  onChange(updateBlock(blocks, idx, {
-                    ...b,
-                    level: Number(e.target.value) as 2 | 3 | 4,
-                  }))
-                }
-                className="rounded border px-1 py-0.5 text-xs"
-                style={{ borderColor: 'var(--outline)' }}
-              >
-                <option value={2}>H2</option>
-                <option value={3}>H3</option>
-                <option value={4}>H4</option>
-              </select>
-            </label>
-          )}
-          <textarea
-            value={getBlockText(b)}
-            onChange={(e) => onChange(setBlockText(blocks, idx, e.target.value))}
-            rows={b.type === 'list' ? Math.max(3, b.items.length) : 3}
-            className="w-full rounded border px-2 py-1 text-sm"
-            style={{
-              borderColor: 'var(--outline)',
-              backgroundColor: 'var(--surface-container-lowest)',
-              color: 'var(--on-surface)',
-            }}
-          />
-        </div>
-      ))}
-      <AddBlockButton
-        onAdd={(newBlock) => onChange([...blocks, newBlock])}
-      />
-    </div>
-  );
-}
-
-function AddBlockButton({ onAdd }: { onAdd: (b: StructuredContent) => void }) {
-  return (
-    <div className="flex flex-wrap gap-1">
-      <button
-        type="button"
-        onClick={() => onAdd({ type: 'paragraph', text: '' })}
-        className="rounded border px-2 py-1 text-xs"
-        style={{ borderColor: 'var(--outline)', color: 'var(--primary)' }}
-      >
-        + Đoạn văn
-      </button>
-      <button
-        type="button"
-        onClick={() => onAdd({ type: 'heading', level: 3, text: '' })}
-        className="rounded border px-2 py-1 text-xs"
-        style={{ borderColor: 'var(--outline)', color: 'var(--primary)' }}
-      >
-        + Tiêu đề H3
-      </button>
-      <button
-        type="button"
-        onClick={() => onAdd({ type: 'list', ordered: false, items: [''] })}
-        className="rounded border px-2 py-1 text-xs"
-        style={{ borderColor: 'var(--outline)', color: 'var(--primary)' }}
-      >
-        + Danh sách
-      </button>
-      <button
-        type="button"
-        onClick={() => onAdd({ type: 'callout', variant: 'info', text: '' })}
-        className="rounded border px-2 py-1 text-xs"
-        style={{ borderColor: 'var(--outline)', color: 'var(--primary)' }}
-      >
-        + Callout
-      </button>
-    </div>
-  );
-}
-
-function SalaryEditor({
-  value,
-  onChange,
-}: {
-  value: SalarySectionContent;
-  onChange: (next: SalarySectionContent) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-3">
-      <label className="block text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-        Loại lương:{' '}
-        <select
-          value={value.salaryType}
-          onChange={(e) =>
-            onChange({ ...value, salaryType: e.target.value as 'BASIC' | 'EXPECTED' | 'NEGOTIABLE' })
-          }
-          className="rounded border px-1 py-0.5 text-xs"
-          style={{ borderColor: 'var(--outline)' }}
-        >
-          <option value="BASIC">BASIC</option>
-          <option value="EXPECTED">EXPECTED</option>
-          <option value="NEGOTIABLE">NEGOTIABLE</option>
-        </select>
-      </label>
-      <div className="text-xs font-semibold" style={{ color: 'var(--on-surface-variant)' }}>
-        Mô tả lương
-      </div>
-      <ContentBlocksEditor
-        blocks={value.salaryDetail}
-        onChange={(salaryDetail) => onChange({ ...value, salaryDetail })}
-      />
-      <BenefitListEditor
-        title="Thưởng"
-        items={value.bonusItems}
-        onChange={(bonusItems) => onChange({ ...value, bonusItems })}
-      />
-      <BenefitListEditor
-        title="Phúc lợi"
-        items={value.benefitItems}
-        onChange={(benefitItems) => onChange({ ...value, benefitItems })}
-      />
-    </div>
-  );
-}
-
-function BenefitListEditor({
-  title,
-  items,
-  onChange,
-}: {
-  title: string;
-  items: BenefitItem[];
-  onChange: (next: BenefitItem[]) => void;
-}) {
-  return (
-    <div>
-      <div className="text-xs font-semibold" style={{ color: 'var(--on-surface-variant)' }}>
-        {title} ({items.length})
-      </div>
-      <div className="mt-1 flex flex-col gap-2">
-        {items.map((it, idx) => (
-          <div
-            key={idx}
-            className="rounded border p-2"
-            style={{ borderColor: 'var(--outline-variant)' }}
-          >
-            <div className="grid grid-cols-2 gap-1">
-              <input
-                value={it.icon}
-                onChange={(e) =>
-                  onChange(items.map((x, i) => (i === idx ? { ...x, icon: e.target.value } : x)))
-                }
-                placeholder="material icon"
-                className="rounded border px-1 py-0.5 text-xs"
-                style={{ borderColor: 'var(--outline)' }}
-              />
-              <input
-                value={it.title}
-                onChange={(e) =>
-                  onChange(items.map((x, i) => (i === idx ? { ...x, title: e.target.value } : x)))
-                }
-                placeholder="tiêu đề"
-                className="rounded border px-1 py-0.5 text-xs"
-                style={{ borderColor: 'var(--outline)' }}
-              />
-              <input
-                value={it.description ?? ''}
-                onChange={(e) =>
-                  onChange(
-                    items.map((x, i) =>
-                      i === idx ? { ...x, description: e.target.value || null } : x,
-                    ),
-                  )
-                }
-                placeholder="mô tả"
-                className="col-span-2 rounded border px-1 py-0.5 text-xs"
-                style={{ borderColor: 'var(--outline)' }}
-              />
-              <input
-                value={it.value ?? ''}
-                onChange={(e) =>
-                  onChange(
-                    items.map((x, i) =>
-                      i === idx ? { ...x, value: e.target.value || null } : x,
-                    ),
-                  )
-                }
-                placeholder="giá trị"
-                className="col-span-2 rounded border px-1 py-0.5 text-xs"
-                style={{ borderColor: 'var(--outline)' }}
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => onChange(items.filter((_, i) => i !== idx))}
-              className="mt-1 text-xs underline"
-              style={{ color: '#8a1c1c' }}
-            >
-              Xoá
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() =>
-            onChange([
-              ...items,
-              { icon: 'star', title: '', description: null, value: null },
-            ])
-          }
-          className="rounded border px-2 py-1 text-xs"
-          style={{ borderColor: 'var(--outline)', color: 'var(--primary)' }}
-        >
-          + Thêm
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function SupportEditor({
-  value,
-  onChange,
-}: {
-  value: SupportSectionContent;
-  onChange: (next: SupportSectionContent) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      {value.items.map((it: SupportItem, idx) => (
-        <div
-          key={idx}
-          className="rounded border p-2"
-          style={{ borderColor: 'var(--outline-variant)' }}
-        >
-          <div className="grid grid-cols-2 gap-1">
-            <input
-              value={it.icon}
-              onChange={(e) =>
-                onChange({
-                  ...value,
-                  items: value.items.map((x, i) => (i === idx ? { ...x, icon: e.target.value } : x)),
-                })
-              }
-              placeholder="icon"
-              className="rounded border px-1 py-0.5 text-xs"
-              style={{ borderColor: 'var(--outline)' }}
-            />
-            <input
-              value={it.label}
-              onChange={(e) =>
-                onChange({
-                  ...value,
-                  items: value.items.map((x, i) => (i === idx ? { ...x, label: e.target.value } : x)),
-                })
-              }
-              placeholder="nhãn"
-              className="rounded border px-1 py-0.5 text-xs"
-              style={{ borderColor: 'var(--outline)' }}
-            />
-            <input
-              value={it.description}
-              onChange={(e) =>
-                onChange({
-                  ...value,
-                  items: value.items.map((x, i) => (i === idx ? { ...x, description: e.target.value } : x)),
-                })
-              }
-              placeholder="mô tả"
-              className="col-span-2 rounded border px-1 py-0.5 text-xs"
-              style={{ borderColor: 'var(--outline)' }}
-            />
-            <label className="col-span-2 text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-              <input
-                type="checkbox"
-                checked={it.available}
-                onChange={(e) =>
-                  onChange({
-                    ...value,
-                    items: value.items.map((x, i) => (i === idx ? { ...x, available: e.target.checked } : x)),
-                  })
-                }
-                className="mr-1"
-              />
-              Đang hỗ trợ
-            </label>
-          </div>
-          <button
-            type="button"
-            onClick={() =>
-              onChange({ ...value, items: value.items.filter((_, i) => i !== idx) })
-            }
-            className="mt-1 text-xs underline"
-            style={{ color: '#8a1c1c' }}
-          >
-            Xoá
-          </button>
-        </div>
-      ))}
-      <button
-        type="button"
-        onClick={() =>
-          onChange({
-            ...value,
-            items: [
-              ...value.items,
-              { icon: 'help', label: '', description: '', available: true },
-            ],
-          })
-        }
-        className="rounded border px-2 py-1 text-xs"
-        style={{ borderColor: 'var(--outline)', color: 'var(--primary)' }}
-      >
-        + Thêm mục hỗ trợ
-      </button>
-    </div>
-  );
-}
-
-function FooterBannerEditor({
-  value,
-  onChange,
-}: {
-  value: FooterBannerContent;
-  onChange: (next: FooterBannerContent) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <label className="block text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-        CTA label:
-        <input
-          value={value.ctaLabel}
-          onChange={(e) => onChange({ ...value, ctaLabel: e.target.value })}
-          className="ml-2 w-2/3 rounded border px-1 py-0.5 text-xs"
-          style={{ borderColor: 'var(--outline)' }}
-        />
-      </label>
-      <label className="block text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-        CTA href:
-        <input
-          value={value.ctaHref}
-          onChange={(e) => onChange({ ...value, ctaHref: e.target.value })}
-          className="ml-2 w-2/3 rounded border px-1 py-0.5 text-xs"
-          style={{ borderColor: 'var(--outline)' }}
-        />
-      </label>
-      <label className="block text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-        Image URL:
-        <input
-          value={value.imageUrl}
-          onChange={(e) => onChange({ ...value, imageUrl: e.target.value })}
-          className="ml-2 w-2/3 rounded border px-1 py-0.5 text-xs"
-          style={{ borderColor: 'var(--outline)' }}
-        />
-      </label>
-    </div>
   );
 }

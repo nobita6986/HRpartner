@@ -47,7 +47,11 @@
  */
 import type { Prisma } from '@prisma/client';
 
-/** View-model hiển thị ở admin list. Date đã được serialize thành ISO string. */
+/** View-model hiển thị ở admin list. Date đã được serialize thành ISO string.
+ *
+ *  P1-A0 extension: thêm `title`, `salaryDisplay`, `hasContent` flag,
+ *  `contentSchemaVersion`. Tất cả OPTIONAL — bản cũ (DRAFT rows from V6 Phase 1)
+ *  vẫn đọc được. Consumers hiện hữu chỉ cần check optional chain. */
 export interface JobPostingListItemDto {
   id: string;
   jobOpeningId: string;
@@ -61,6 +65,13 @@ export interface JobPostingListItemDto {
   /** Tên JobOpening mà posting này gắn vào (snapshot lúc list). Có thể null nếu FK đã xoá. */
   openingStaffingOrderCode: string | null;
   openingStatus: string | null;
+  /** P1-A0: title (display), salaryDisplay (free-form). null nếu DRAFT rows từ Phase 1 chưa set. */
+  title: string | null;
+  salaryDisplay: string | null;
+  /** P1-A0: true khi bất kỳ rich content field nào (description/requirements/benefits/applicationInstructions) có JSON. */
+  hasContent: boolean;
+  /** P1-A0: contentSchemaVersion mà row này được author (default 1 cho legacy rows). */
+  contentSchemaVersion: number;
 }
 
 export interface JobPostingListPage {
@@ -146,6 +157,14 @@ export async function listJobPostingsForAdmin(
     updatedAt: row.updatedAt.toISOString(),
     openingStaffingOrderCode: row.jobOpening?.staffingOrder?.code ?? null,
     openingStatus: row.jobOpening?.status ?? null,
+    title: row.title,
+    salaryDisplay: row.salaryDisplay,
+    hasContent:
+      row.descriptionJson != null ||
+      row.requirementsJson != null ||
+      row.benefitsJson != null ||
+      row.applicationInstructionsJson != null,
+    contentSchemaVersion: row.contentSchemaVersion,
   }));
 
   return { items, total, take, skip };
@@ -169,6 +188,14 @@ export interface JobPostingDetailDto {
   archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** P1-A0: rich content (validated JSON; null nếu DRAFT rows chưa set). */
+  title: string | null;
+  salaryDisplay: string | null;
+  descriptionJson: unknown | null;
+  requirementsJson: unknown | null;
+  benefitsJson: unknown | null;
+  applicationInstructionsJson: unknown | null;
+  contentSchemaVersion: number;
   opening: {
     id: string;
     status: string;
@@ -212,6 +239,13 @@ export async function getJobPostingForAdmin(
     archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    title: row.title,
+    salaryDisplay: row.salaryDisplay,
+    descriptionJson: row.descriptionJson,
+    requirementsJson: row.requirementsJson,
+    benefitsJson: row.benefitsJson,
+    applicationInstructionsJson: row.applicationInstructionsJson,
+    contentSchemaVersion: row.contentSchemaVersion,
     opening: row.jobOpening
       ? {
           id: row.jobOpening.id,

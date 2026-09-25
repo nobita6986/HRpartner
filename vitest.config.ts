@@ -41,8 +41,13 @@ export default defineConfig({
   test: {
     // `prisma/**` holds only STATIC tests that read migration files from disk (go-live-11 RQ-07);
     // nothing in there opens a DB connection, so it belongs in this collection.
-    // `app/**` holds pure Next.js route-handler unit tests (no DB, mocked).
-    include: ['src/**/*.test.ts', 'packages/**/*.test.ts', 'prisma/**/*.test.ts', 'app/**/*.test.ts'],
+    include: [
+      'src/**/*.test.ts',
+      'src/**/*.test.tsx',
+      'packages/**/*.test.ts',
+      'prisma/**/*.test.ts',
+      'app/**/*.test.ts',
+    ],
     exclude: [...configDefaults.exclude, ...INTEGRATION_TEST_FILES],
     env: {
       // FORCE unreachable — do NOT read the ambient DATABASE_URL, and never read `.env`.
