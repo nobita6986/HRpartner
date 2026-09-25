@@ -45,6 +45,29 @@ Không dùng audit để tìm lỗi formatting mà verifier hoặc Tier 1 self-r
 
 Không bắt full suite/build theo thói quen. Một evidence có thể chứng minh nhiều AC. Không tạo AC cho thao tác hành chính.
 
+## BUILD_VS_ADOPT
+
+Mọi task V2 khai `Build vs adopt: N/A | ADOPT | CUSTOM` trước `READY_TO_CODE`.
+
+- Dùng `ADOPT` khi thêm library cho capability phổ thông; ghi license, package/version, runtime compatibility, portability/lock-in, wrapper do repo sở hữu và regression test tại wrapper.
+- Dùng `CUSTOM` chỉ với marker `CUSTOM_BUILD_JUSTIFICATION` và evidence candidate hiện có không phù hợp.
+- Dùng `N/A` khi không thêm/thay dependency hoặc shared framework và không tự tạo capability kỹ thuật phổ thông.
+- T0 chỉ chốt trade-off sản phẩm/license/lock-in lớn; T1 tự chọn routine package trong authority đã giao.
+
+Roadmap dự án có thể đặt default candidate, nhưng package/version cuối cùng luôn được pin trong TASK + lockfile sau compatibility check.
+
+## BUILD_VS_AUTOMATE
+
+Mọi task V2 khai `Build vs automate: N/A | ORCHESTRATE | CUSTOM` trước `READY_TO_CODE`.
+
+Task đã đạt `READY_TO_CODE` trước khi gate này được ban hành được đọc tương thích; verifier chỉ cảnh báo khi thiếu field. Revision kế tiếp của task phải bổ sung decision này.
+
+- Dùng `ORCHESTRATE` khi một workflow platform có thể điều phối connector, lịch, notification, retry hoặc human step qua API/event mà không giữ domain authority. TASK ghi platform/source, ownership, trigger/input/output, credential boundary, idempotency/retry, observability/recovery và fallback khi platform unavailable.
+- Dùng `CUSTOM` chỉ với marker `CUSTOM_AUTOMATION_JUSTIFICATION` và evidence rằng transaction locality, latency/throughput, compatibility, security hoặc operational cost khiến orchestration platform không phù hợp.
+- Dùng `N/A` khi task không tạo/thay connector, scheduler, notification worker hoặc multi-system/operator workflow.
+- Automation platform không được là authority cho auth/RLS, business transition, durable audit, persistence ownership, money, PII custody hoặc mutation idempotency.
+- Platform cụ thể và policy dữ liệu thuộc tài liệu dự án/TASK; pipeline portable không pin một vendor.
+
 ## Chọn audit trong TASK
 
 | Audit mode | Khi dùng | Handoff |

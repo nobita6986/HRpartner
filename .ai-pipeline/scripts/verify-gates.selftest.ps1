@@ -804,29 +804,65 @@ Add-Case -Name 'V2 TASK READY_TO_CODE hợp lệ' -Gate task -Expect PASS `
     -Why 'artifact V2 chỉ mở code khi decisions/environment/baseline/correction budget đã đóng' `
     -Mutate { param($c)
         $sha = (& git -C $root rev-parse HEAD).Trim()
-        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |")
+        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |`n| Build vs adopt | ``N/A`` |")
         $c.Task = $c.Task.Replace('| Baseline | `deadbeef` |', "| Baseline | ``$sha`` |`n| Contract gate | ``READY_TO_CODE`` |`n| Decision state | ``CLOSED`` |`n| Test environment | ``READY`` |`n| Correction budget | ``1`` |")
+        $c.Task = $c.Task.Replace('## 8. Open Questions`n`nKhông có.', '## 8. Open Questions`n`nNone.') }
+
+Add-Case -Name 'V2 TASK ADOPT có license/version/wrapper hợp lệ' -Gate task -Expect PASS `
+    -Why 'library-first adoption phải có provenance và repo-owned boundary trước READY_TO_CODE' `
+    -Mutate { param($c)
+        $sha = (& git -C $root rev-parse HEAD).Trim()
+        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |`n| Build vs adopt | ``ADOPT`` |")
+        $c.Task = $c.Task.Replace('| Baseline | `deadbeef` |', "| Baseline | ``$sha`` |`n| Contract gate | ``READY_TO_CODE`` |`n| Decision state | ``CLOSED`` |`n| Test environment | ``READY`` |`n| Correction budget | ``1`` |")
+        $c.Task = $c.Task.Replace('## 4. Contract', "### 3.1 Build vs Adopt`n`n| License | Version/source | Wrapper boundary |`n|---|---|---|`n| MIT | demo@1.0.0 | src/demo.ts |`n`n## 4. Contract")
+        $c.Task = $c.Task.Replace('## 8. Open Questions`n`nKhông có.', '## 8. Open Questions`n`nNone.') }
+
+Add-Case -Name 'V2 TASK CUSTOM thiếu justification bị từ chối' -Gate task -Expect FAIL -Token 'T-10' `
+    -Why 'không cho phép tự xây commodity capability mà thiếu evidence' `
+    -Mutate { param($c)
+        $sha = (& git -C $root rev-parse HEAD).Trim()
+        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |`n| Build vs adopt | ``CUSTOM`` |")
+        $c.Task = $c.Task.Replace('| Baseline | `deadbeef` |', "| Baseline | ``$sha`` |`n| Contract gate | ``READY_TO_CODE`` |`n| Decision state | ``CLOSED`` |`n| Test environment | ``READY`` |`n| Correction budget | ``1`` |")
+        $c.Task = $c.Task.Replace('## 4. Contract', "### 3.1 Build vs Adopt`n`nTự xây nhưng không có marker bắt buộc.`n`n## 4. Contract")
+        $c.Task = $c.Task.Replace('## 8. Open Questions`n`nKhông có.', '## 8. Open Questions`n`nNone.') }
+
+Add-Case -Name 'V2 TASK ORCHESTRATE có boundary/retry/observability hợp lệ' -Gate task -Expect PASS `
+    -Why 'orchestration-first adoption phải giữ authority trong repo và có vận hành fail-safe trước READY_TO_CODE' `
+    -Mutate { param($c)
+        $sha = (& git -C $root rev-parse HEAD).Trim()
+        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |`n| Build vs adopt | ``N/A`` |`n| Build vs automate | ``ORCHESTRATE`` |")
+        $c.Task = $c.Task.Replace('| Baseline | `deadbeef` |', "| Baseline | ``$sha`` |`n| Contract gate | ``READY_TO_CODE`` |`n| Decision state | ``CLOSED`` |`n| Test environment | ``READY`` |`n| Correction budget | ``1`` |")
+        $c.Task = $c.Task.Replace('## 4. Contract', "### 3.2 Build vs Automate`n`n| Platform/source | Authority boundary | Retry/idempotency | Observability/recovery |`n|---|---|---|---|`n| workflow-platform | Domain stays in repo | eventId + bounded retry | correlation + reconciliation |`n`n## 4. Contract")
+        $c.Task = $c.Task.Replace('## 8. Open Questions`n`nKhông có.', '## 8. Open Questions`n`nNone.') }
+
+Add-Case -Name 'V2 TASK automation CUSTOM thiếu justification bị từ chối' -Gate task -Expect FAIL -Token 'T-11' `
+    -Why 'không cho phép tự viết connector/scheduler framework khi chưa có evidence loại orchestration platform' `
+    -Mutate { param($c)
+        $sha = (& git -C $root rev-parse HEAD).Trim()
+        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |`n| Build vs adopt | ``N/A`` |`n| Build vs automate | ``CUSTOM`` |")
+        $c.Task = $c.Task.Replace('| Baseline | `deadbeef` |', "| Baseline | ``$sha`` |`n| Contract gate | ``READY_TO_CODE`` |`n| Decision state | ``CLOSED`` |`n| Test environment | ``READY`` |`n| Correction budget | ``1`` |")
+        $c.Task = $c.Task.Replace('## 4. Contract', "### 3.2 Build vs Automate`n`nTự xây nhưng không có marker bắt buộc.`n`n## 4. Contract")
         $c.Task = $c.Task.Replace('## 8. Open Questions`n`nKhông có.', '## 8. Open Questions`n`nNone.') }
 
 Add-Case -Name 'V2 TASK không được READY khi decision còn OPEN' -Gate task -Expect FAIL -Token 'T-09' `
     -Why 'không chuyển blocker thiết kế sang implementation rồi sửa nhiều vòng' `
     -Mutate { param($c)
         $sha = (& git -C $root rev-parse HEAD).Trim()
-        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |")
+        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |`n| Build vs adopt | ``N/A`` |")
         $c.Task = $c.Task.Replace('| Baseline | `deadbeef` |', "| Baseline | ``$sha`` |`n| Contract gate | ``READY_TO_CODE`` |`n| Decision state | ``OPEN`` |`n| Test environment | ``READY`` |`n| Correction budget | ``1`` |") }
 
 Add-Case -Name 'V2 HANDOFF frozen SHA hợp lệ' -Gate handoff -Expect PASS `
     -Why 'Tier 3 chỉ nhận exact committed SHA đã freeze' `
     -Mutate { param($c)
         $sha = (& git -C $root rev-parse HEAD).Trim()
-        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |")
+        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |`n| Build vs adopt | ``N/A`` |")
         $c.Handoff = $c.Handoff.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |")
         $c.Handoff = $c.Handoff.Replace('| Baseline | `deadbeef` |', "| Baseline | ``deadbeef`` |`n| Implementation SHA | ``$sha`` |`n| Frozen delivery | ``YES`` |`n| Canonical gates | ``PASS`` |`n| Audit eligibility | ``ELIGIBLE`` |`n| Correction batches used | ``0`` |") }
 
 Add-Case -Name 'V2 HANDOFF từ chối SHA không resolve' -Gate handoff -Expect FAIL -Token 'H-16' `
     -Why 'không audit claim hoặc working tree chưa có immutable commit' `
     -Mutate { param($c)
-        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |")
+        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |`n| Build vs adopt | ``N/A`` |")
         $c.Handoff = $c.Handoff.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |")
         $c.Handoff = $c.Handoff.Replace('| Baseline | `deadbeef` |', "| Baseline | ``deadbeef`` |`n| Implementation SHA | ``0000000000000000000000000000000000000000`` |`n| Frozen delivery | ``YES`` |`n| Canonical gates | ``PASS`` |`n| Audit eligibility | ``ELIGIBLE`` |`n| Correction batches used | ``0`` |") }
 
@@ -834,7 +870,7 @@ Add-Case -Name 'V2 AUDIT exact SHA và complete findings hợp lệ' -Gate audit
     -Why 'audit pin cùng delivery và cam kết report trọn current surface' `
     -Mutate { param($c)
         $sha = (& git -C $root rev-parse HEAD).Trim()
-        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |").Replace('| Audit mode | `CODE_AUDIT` |', '| Audit mode | `LIGHT` |')
+        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |`n| Build vs adopt | ``N/A`` |").Replace('| Audit mode | `CODE_AUDIT` |', '| Audit mode | `LIGHT` |')
         $c.Handoff = $c.Handoff.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |").Replace('| Audit mode (phải khớp TASK) | `CODE_AUDIT` |', '| Audit mode (phải khớp TASK) | `LIGHT` |')
         $c.Handoff = $c.Handoff.Replace('| Baseline | `deadbeef` |', "| Baseline | ``deadbeef`` |`n| Implementation SHA | ``$sha`` |`n| Frozen delivery | ``YES`` |`n| Canonical gates | ``PASS`` |`n| Audit eligibility | ``ELIGIBLE`` |`n| Correction batches used | ``0`` |")
         $c.Audit = $c.Audit.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |").Replace('| Audit depth | `FULL` |', '| Audit depth | `LIGHT` |')
@@ -844,7 +880,7 @@ Add-Case -Name 'V2 AUDIT từ chối SHA lệch HANDOFF' -Gate audit -Expect FAI
     -Why 'verdict không được áp lên commit khác delivery đã freeze' `
     -Mutate { param($c)
         $sha = (& git -C $root rev-parse HEAD).Trim()
-        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |").Replace('| Audit mode | `CODE_AUDIT` |', '| Audit mode | `LIGHT` |')
+        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |`n| Build vs adopt | ``N/A`` |").Replace('| Audit mode | `CODE_AUDIT` |', '| Audit mode | `LIGHT` |')
         $c.Handoff = $c.Handoff.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |").Replace('| Audit mode (phải khớp TASK) | `CODE_AUDIT` |', '| Audit mode (phải khớp TASK) | `LIGHT` |')
         $c.Handoff = $c.Handoff.Replace('| Baseline | `deadbeef` |', "| Baseline | ``deadbeef`` |`n| Implementation SHA | ``$sha`` |`n| Frozen delivery | ``YES`` |`n| Canonical gates | ``PASS`` |`n| Audit eligibility | ``ELIGIBLE`` |`n| Correction batches used | ``0`` |")
         $c.Audit = $c.Audit.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |").Replace('| Audit depth | `FULL` |', '| Audit depth | `LIGHT` |')

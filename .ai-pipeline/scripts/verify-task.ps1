@@ -159,6 +159,8 @@ try {
         $testEnvironment = (Get-ControlField -Text $content -FieldName 'Test environment').ToUpper()
         $correctionBudget = Get-ControlField -Text $content -FieldName 'Correction budget'
         $baselineV2 = Get-ControlField -Text $content -FieldName 'Baseline'
+        $buildVsAdopt = (Get-ControlField -Text $content -FieldName 'Build vs adopt').ToUpper()
+        $buildVsAutomate = (Get-ControlField -Text $content -FieldName 'Build vs automate').ToUpper()
 
         if ($contractGate -notmatch '^(DRAFT|READY_TO_CODE)$') {
             Add-DryRunFinding 'T-09' "V2 Contract gate '$contractGate' must be DRAFT or READY_TO_CODE."
@@ -177,6 +179,60 @@ try {
         }
         if ($isReady -and $baselineV2 -notmatch '^[0-9a-fA-F]{40}$') {
             Add-GateError $ctx 'T-09' 'V2 READY contract must pin a full 40-character Baseline SHA.'
+        }
+
+        # T-10: future V2 tasks must make the library-first decision explicit.
+        # Closed/historical V2 artifacts remain compatible because Add-DryRunFinding
+        # degrades to a warning outside READY_FOR_EXECUTION / REVISION_REQUIRED.
+        if ($buildVsAdopt -notmatch '^(N/A|ADOPT|CUSTOM)$') {
+            Add-DryRunFinding 'T-10' "V2 Build vs adopt '$buildVsAdopt' must be N/A, ADOPT or CUSTOM."
+        } else {
+            $buildSection = Get-MarkdownSection -Lines $lines -HeadingPattern '^###\s*3\.1\s+Build\s+vs\s+Adopt'
+            if ($buildVsAdopt -match '^(ADOPT|CUSTOM)$' -and [string]::IsNullOrWhiteSpace($buildSection)) {
+                Add-DryRunFinding 'T-10' "$buildVsAdopt requires section '### 3.1 Build vs Adopt'."
+            } elseif ($buildVsAdopt -eq 'ADOPT') {
+                foreach ($label in @('License', 'Version/source', 'Wrapper boundary')) {
+                    if ($buildSection -notmatch [regex]::Escape($label)) {
+                        Add-DryRunFinding 'T-10' "ADOPT section is missing '$label'."
+                    }
+                }
+            } elseif ($buildVsAdopt -eq 'CUSTOM' -and $buildSection -notmatch 'CUSTOM_BUILD_JUSTIFICATION') {
+                Add-DryRunFinding 'T-10' 'CUSTOM requires marker CUSTOM_BUILD_JUSTIFICATION with evidence.'
+            }
+
+            $t10Errors = @($ctx.Errors | Where-Object { $_ -match '^T-10\b' })
+            $t10Warnings = @($ctx.Warnings | Where-Object { $_ -match '^T-10\b' })
+            if ($t10Errors.Count -eq 0 -and $t10Warnings.Count -eq 0) {
+                Add-GateOk $ctx 'T-10' "Build vs adopt decision is explicit: $buildVsAdopt."
+            }
+        }
+
+        # T-11: orchestration-first decision. Absence is warning-only for V2
+        # artifacts created before this field was introduced; once declared,
+        # READY contracts must satisfy the selected branch.
+        if ([string]::IsNullOrWhiteSpace($buildVsAutomate)) {
+            Add-GateWarn $ctx 'T-11' 'Build vs automate is absent (legacy-compatible). New V2 contracts must declare N/A, ORCHESTRATE or CUSTOM.'
+        } elseif ($buildVsAutomate -notmatch '^(N/A|ORCHESTRATE|CUSTOM)$') {
+            Add-DryRunFinding 'T-11' "V2 Build vs automate '$buildVsAutomate' must be N/A, ORCHESTRATE or CUSTOM."
+        } else {
+            $automateSection = Get-MarkdownSection -Lines $lines -HeadingPattern '^###\s*3\.2\s+Build\s+vs\s+Automate'
+            if ($buildVsAutomate -match '^(ORCHESTRATE|CUSTOM)$' -and [string]::IsNullOrWhiteSpace($automateSection)) {
+                Add-DryRunFinding 'T-11' "$buildVsAutomate requires section '### 3.2 Build vs Automate'."
+            } elseif ($buildVsAutomate -eq 'ORCHESTRATE') {
+                foreach ($label in @('Platform/source', 'Authority boundary', 'Retry/idempotency', 'Observability/recovery')) {
+                    if ($automateSection -notmatch [regex]::Escape($label)) {
+                        Add-DryRunFinding 'T-11' "ORCHESTRATE section is missing '$label'."
+                    }
+                }
+            } elseif ($buildVsAutomate -eq 'CUSTOM' -and $automateSection -notmatch 'CUSTOM_AUTOMATION_JUSTIFICATION') {
+                Add-DryRunFinding 'T-11' 'CUSTOM automation requires marker CUSTOM_AUTOMATION_JUSTIFICATION with evidence.'
+            }
+
+            $t11Errors = @($ctx.Errors | Where-Object { $_ -match '^T-11\b' })
+            $t11Warnings = @($ctx.Warnings | Where-Object { $_ -match '^T-11\b' })
+            if ($t11Errors.Count -eq 0 -and $t11Warnings.Count -eq 0) {
+                Add-GateOk $ctx 'T-11' "Build vs automate decision is explicit: $buildVsAutomate."
+            }
         }
         $openSection = Get-MarkdownSection -Lines $lines -HeadingPattern '^##\s*8\.'
         if ($isReady -and -not (Test-SectionSaysNone -Text $openSection)) {

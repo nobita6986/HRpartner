@@ -53,8 +53,8 @@ Nếu đang direct fix mà phát hiện một dấu hiệu trên, dừng mở r�
 Dùng cho feature, refactor, bug nhiều bước hoặc mọi thay đổi vượt ranh giới direct fix:
 
 1. Đọc outcome/boundary và worktree; ưu tiên CodeGraph nếu có `.codegraph/`.
-2. Khảo sát đúng call path, dependency và pattern hiện hữu.
-3. Viết/cập nhật TASK vừa đủ theo lane; chọn `Audit mode: NONE | LIGHT`, ghi lý do và đóng toàn bộ Owner decision.
+2. Khảo sát đúng call path, dependency và pattern hiện hữu. Nếu task tạo capability kỹ thuật phổ thông hoặc thêm dependency/shared framework, hoàn tất `BUILD_VS_ADOPT`; nếu tạo connector/scheduler/notification hoặc workflow lặp lại, hoàn tất `BUILD_VS_AUTOMATE` trước khi chọn cách code.
+3. Viết/cập nhật TASK vừa đủ theo lane; chọn `Audit mode: NONE | LIGHT`, ghi lý do, chốt cả hai decision gate và đóng toàn bộ Owner decision.
 4. Chỉ đặt `Contract gate: READY_TO_CODE` khi baseline, file ownership, environment và canonical gates đã xác định; chạy `verify-task.ps1`.
 5. Implement trực tiếp hoặc chia sub-agent; tự review toàn changed surface trước khi bàn giao.
 6. Chạy gate canonical, commit implementation, ghi exact `Implementation SHA` và freeze source. Sau freeze chỉ được thêm docs/evidence; source/test/migration đổi tiếp phải tạo SHA mới.
@@ -62,6 +62,24 @@ Dùng cho feature, refactor, bug nhiều bước hoặc mọi thay đổi vượ
 8. Nếu audit có blocker, gom toàn bộ finding thành một correction batch. Resolve, commit/push/deploy nếu đã được ủy quyền, cập nhật roadmap ngắn.
 
 Không dừng sau khi viết TASK nếu outcome đã cho phép triển khai.
+
+## BUILD_VS_ADOPT
+
+- `N/A`: task không tạo capability kỹ thuật phổ thông và không thêm/thay dependency hoặc shared framework.
+- `ADOPT`: ghi candidate đã so sánh, package/version đề xuất, license, framework/runtime compatibility, dữ liệu portable hay lock-in, wrapper boundary và test bảo vệ boundary.
+- `CUSTOM`: ghi marker `CUSTOM_BUILD_JUSTIFICATION` cùng evidence chứng minh candidate hiện có không phù hợp hoặc tổng rủi ro wrapper lớn hơn tự xây.
+- Tier 1 ưu tiên dùng pattern/library đã có trong repo. Dependency mới chỉ được thêm sau khi TASK pin allowlist cho manifest/lockfile và canonical install/build/test gates.
+- Wrapper thuộc repo giữ domain API ổn định; business rule, authorization, state transition và persistence authority không được giao cho vendor library.
+- Không biến một dependency spike thành runtime adoption: chỉ commit package khi contract đã `READY_TO_CODE` và outcome yêu cầu implementation.
+
+## BUILD_VS_AUTOMATE
+
+- `N/A`: task không tạo/thay connector, scheduler, notification worker hoặc multi-system/operator workflow.
+- `ORCHESTRATE`: ghi platform/source, workflow owner, trigger/input/output, credential boundary, retry/idempotency, observability/recovery, promotion path và failure fallback.
+- `CUSTOM`: ghi marker `CUSTOM_AUTOMATION_JUSTIFICATION` cùng evidence về transaction locality, latency/throughput, compatibility, security hoặc operational cost.
+- Tier 1 ưu tiên orchestration qua versioned event/outbox và narrow API; không cho platform ghi trực tiếp domain storage hoặc giữ business/security authority.
+- Credential/PII không được ghi vào workflow export, Git hoặc evidence. Production enablement vẫn là gate riêng.
+- Platform cụ thể do roadmap/TASK của dự án chọn; Tier 1 không suy diễn vendor từ pipeline portable.
 
 ## Correction budget và self-review
 

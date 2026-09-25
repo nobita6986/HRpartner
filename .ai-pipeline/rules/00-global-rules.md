@@ -34,6 +34,23 @@ Agent phải đọc manifest/config của repo trước khi chọn tool:
 
 Không tự cài tool/dependency chỉ để thỏa checklist nếu Tier 1 chưa xác định là cần cho delivery.
 
+### 4.1 Library-first / BUILD_VS_ADOPT
+
+- Với capability kỹ thuật phổ thông (editor, form, table, upload UI, date/time, chart, queue, email renderer, document export, accessibility primitive), ưu tiên đánh giá thư viện trưởng thành trước khi tự xây.
+- Không copy source ngẫu nhiên từ repository bên ngoài. Candidate phải có nguồn chính thức, license tương thích, maintenance/security posture có thể kiểm tra và tương thích với runtime/framework của repo.
+- `ADOPT`: pin package/version qua manifest + lockfile, bọc bằng component/adapter do repo sở hữu và thêm contract/regression test tại boundary đó; không để import vendor lan khắp domain.
+- `CUSTOM`: chỉ dùng khi không có candidate phù hợp hoặc wrapper còn rủi ro/chi phí hơn; TASK phải ghi `CUSTOM_BUILD_JUSTIFICATION` bằng evidence cụ thể.
+- Thư viện không bao giờ là authority cho authorization, domain transition, idempotency, audit, data ownership hoặc policy sản phẩm.
+- Package/version cụ thể thuộc TASK và lockfile, không đóng cứng trong pipeline portable hoặc roadmap dài hạn.
+
+### 4.2 Orchestration-first / BUILD_VS_AUTOMATE
+
+- Với connector, scheduler, notification, retry/fan-out, approval wait-loop hoặc multi-system workflow, phải đánh giá orchestration platform trước khi tự viết worker/framework.
+- `ORCHESTRATE`: platform chỉ điều phối versioned event/API, có scoped credential, bounded retry, idempotency, safe logging, recovery và reviewable promotion path.
+- `CUSTOM`: chỉ khi có `CUSTOM_AUTOMATION_JUSTIFICATION` bằng evidence về transaction locality, latency/throughput, compatibility, security hoặc operational cost.
+- Automation platform không được nắm auth/RLS, domain transition, mutation idempotency authority, durable audit, money calculation, PII/evidence custody hoặc direct domain-storage writes.
+- Vendor/platform cụ thể, data residency và production policy thuộc tài liệu dự án/TASK; pipeline portable chỉ giữ decision gate.
+
 ## 5. Git và worktree
 
 - Luôn kiểm tra worktree trước khi sửa hoặc audit.
