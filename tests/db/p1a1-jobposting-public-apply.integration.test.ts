@@ -41,53 +41,34 @@
  * `HAS_TEST_DB && HAS_ADMIN_TEST_DB` đều true.
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { randomUUID } from 'node:crypto';
-import { PrismaClient } from '@prisma/client';
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { randomUUID } from "node:crypto";
+import { PrismaClient } from "@prisma/client";
+import { withPublicDb } from "@/src/shared/auth/with-public-db";
 
 const HAS_TEST_DB =
   !!process.env.DATABASE_URL_TEST &&
-  !process.env.DATABASE_URL_TEST.includes('placeholder') &&
+  !process.env.DATABASE_URL_TEST.includes("placeholder") &&
   !!process.env.DATABASE_URL_ADMIN_TEST &&
-  !process.env.DATABASE_URL_ADMIN_TEST.includes('placeholder');
+  !process.env.DATABASE_URL_ADMIN_TEST.includes("placeholder");
 
 if (!HAS_TEST_DB) {
-  // Pre-flight fail-closed: integration lane KHÔNG được phép tự biến missing DB thành PASS.
-  console.error(
-    '[P1A1 integration] ENV_BLOCKED: DATABASE_URL_TEST và DATABASE_URL_ADMIN_TEST đều phải có. ' +
-      'Canonical preflight ở scripts/ci/integration-preflight.mjs sẽ fail. ' +
-      'Status giữ ENV_BLOCKED, KHÔNG tuyên bố READY_FOR_AUDIT.',
+  throw new Error(
+    "[P1A1 integration] ENV_BLOCKED: DATABASE_URL_TEST và DATABASE_URL_ADMIN_TEST đều phải có. " +
+      "Canonical preflight ở scripts/ci/integration-preflight.mjs sẽ fail. " +
+      "Status giữ ENV_BLOCKED, KHÔNG tuyên bố READY_FOR_AUDIT.",
   );
 }
 
 const runId = `p1a1-${randomUUID().slice(0, 8)}`;
-const writerUrl = process.env.DATABASE_URL_TEST ?? '';
-const adminUrl = process.env.DATABASE_URL_ADMIN_TEST ?? '';
+const writerUrl = process.env.DATABASE_URL_TEST ?? "";
+const adminUrl = process.env.DATABASE_URL_ADMIN_TEST ?? "";
 
 function makeClient(url: string): PrismaClient {
   return new PrismaClient({
     datasources: { db: { url } },
-    log: ['error'],
+    log: ["error"],
     transactionOptions: { timeout: 15_000 },
-  });
-}
-
-/**
- * Set GUC context. PUBLIC GUC = no role (deny-by-default for FORCE RLS).
- * Khác với `withPublicDb` của codebase (helper chuyên cho principal công khai); helper
- * này đặt GUC thẳng vào transaction vì integration test cần kiểm tra RLS posture trên
- * principal thật (MKT).
- */
-async function withPublicContext<T>(
-  prisma: PrismaClient,
-  cb: (tx: import('@prisma/client').Prisma.TransactionClient) => Promise<T>,
-): Promise<T> {
-  return prisma.$transaction(async (tx) => {
-    await tx.$executeRawUnsafe(`SELECT set_config('app.user_id', '', true)`);
-    await tx.$executeRawUnsafe(`SELECT set_config('app.role', '', true)`);
-    await tx.$executeRawUnsafe(`SELECT set_config('app.vendor_id', '', true)`);
-    await tx.$executeRawUnsafe(`SELECT set_config('app.worker_id', '', true)`);
-    return cb(tx);
   });
 }
 
@@ -117,7 +98,9 @@ interface CanonicalFixture {
 }
 
 /** Build full canonical chain (ClientCompany → ... → PUBLISHED + DRAFT + ARCHIVED postings). */
-async function buildCanonicalFixture(admin: PrismaClient): Promise<CanonicalFixture> {
+async function buildCanonicalFixture(
+  admin: PrismaClient,
+): Promise<CanonicalFixture> {
   // ClientCompany
   const cc = await admin.clientCompany.create({
     data: { id: `${runId}-cc`, code: `${runId}-CC`, name: `Company ${runId}` },
@@ -132,7 +115,8 @@ async function buildCanonicalFixture(admin: PrismaClient): Promise<CanonicalFixt
       code: projectCode,
       name: `Project ${runId}`,
       clientCompanyId: cc.id,
-      status: 'ACTIVE',
+      status: "ACTIVE",
+      isPublic: true,
       startDate: new Date(),
     },
     select: { id: true },
@@ -145,7 +129,7 @@ async function buildCanonicalFixture(admin: PrismaClient): Promise<CanonicalFixt
       projectId: prj.id,
       code: `${runId}-SO`,
       title: `Order ${runId}`,
-      status: 'OPEN',
+      status: "OPEN",
     },
     select: { id: true },
   });
@@ -155,7 +139,7 @@ async function buildCanonicalFixture(admin: PrismaClient): Promise<CanonicalFixt
     data: {
       id: `${runId}-slot-a`,
       staffingOrderId: so.id,
-      positionCode: 'ELEC',
+      positionCode: "ELEC",
       positionTitle: `Engineer ${runId} A`,
       slotsNeeded: 5,
       slotsFilled: 0,
@@ -169,7 +153,7 @@ async function buildCanonicalFixture(admin: PrismaClient): Promise<CanonicalFixt
       id: `${runId}-jo-a`,
       staffingOrderId: so.id,
       staffingOrderSlotId: slotA.id,
-      status: 'OPEN',
+      status: "OPEN",
       openedAt: new Date(),
     },
     select: { id: true },
@@ -188,7 +172,7 @@ async function buildCanonicalFixture(admin: PrismaClient): Promise<CanonicalFixt
       jobOpeningId: openingA.id,
       slug: slugA,
       revision: 1,
-      status: 'PUBLISHED',
+      status: "PUBLISHED",
       publishedAt: new Date(),
     },
     select: { id: true },
@@ -199,7 +183,7 @@ async function buildCanonicalFixture(admin: PrismaClient): Promise<CanonicalFixt
     data: {
       id: `${runId}-slot-b`,
       staffingOrderId: so.id,
-      positionCode: 'PACK',
+      positionCode: "PACK",
       positionTitle: `Engineer ${runId} B`,
       slotsNeeded: 3,
       slotsFilled: 0,
@@ -213,7 +197,7 @@ async function buildCanonicalFixture(admin: PrismaClient): Promise<CanonicalFixt
       id: `${runId}-jo-b`,
       staffingOrderId: so.id,
       staffingOrderSlotId: slotB.id,
-      status: 'OPEN',
+      status: "OPEN",
       openedAt: new Date(),
     },
     select: { id: true },
@@ -231,32 +215,64 @@ async function buildCanonicalFixture(admin: PrismaClient): Promise<CanonicalFixt
       jobOpeningId: openingB.id,
       slug: slugB,
       revision: 1,
-      status: 'PUBLISHED',
+      status: "PUBLISHED",
       publishedAt: new Date(),
     },
     select: { id: true },
   });
 
-  // ──── Posting C (DRAFT) — same Project, must NOT surface via PUBLIC ────
+  async function createAuxiliaryOpening(suffix: "c" | "d") {
+    const slot = await admin.staffingOrderSlot.create({
+      data: {
+        id: `${runId}-slot-${suffix}`,
+        staffingOrderId: so.id,
+        positionCode: `AUX-${suffix.toUpperCase()}`,
+        positionTitle: `Engineer ${runId} ${suffix.toUpperCase()}`,
+        slotsNeeded: 1,
+        slotsFilled: 0,
+        validFrom: new Date(),
+      },
+      select: { id: true },
+    });
+    const opening = await admin.jobOpening.create({
+      data: {
+        id: `${runId}-jo-${suffix}`,
+        staffingOrderId: so.id,
+        staffingOrderSlotId: slot.id,
+        status: "OPEN",
+        openedAt: new Date(),
+      },
+      select: { id: true },
+    });
+    await admin.staffingOrderSlot.update({
+      where: { id: slot.id },
+      data: { jobOpeningId: opening.id },
+    });
+    return opening;
+  }
+
+  // ──── Posting C (DRAFT) — distinct canonical opening, must NOT surface via PUBLIC ────
+  const openingC = await createAuxiliaryOpening("c");
   const postingCDraft = await admin.jobPosting.create({
     data: {
       id: `${runId}-jp-c-draft`,
-      jobOpeningId: openingA.id, // reuse opening chain (DRAFT = status only)
+      jobOpeningId: openingC.id,
       slug: `${runId}-posting-c-draft`,
       revision: 1,
-      status: 'DRAFT',
+      status: "DRAFT",
     },
     select: { id: true },
   });
 
-  // ──── Posting D (ARCHIVED) ────
+  // ──── Posting D (ARCHIVED) — distinct canonical opening ────
+  const openingD = await createAuxiliaryOpening("d");
   const postingDArchived = await admin.jobPosting.create({
     data: {
       id: `${runId}-jp-d-archived`,
-      jobOpeningId: openingA.id,
+      jobOpeningId: openingD.id,
       slug: `${runId}-posting-d-archived`,
       revision: 1,
-      status: 'ARCHIVED',
+      status: "ARCHIVED",
       publishedAt: new Date(),
       archivedAt: new Date(),
     },
@@ -268,7 +284,7 @@ async function buildCanonicalFixture(admin: PrismaClient): Promise<CanonicalFixt
     data: {
       id: `${runId}-slot-e`,
       staffingOrderId: so.id,
-      positionCode: 'OTHER',
+      positionCode: "OTHER",
       positionTitle: `Engineer ${runId} E`,
       slotsNeeded: 1,
       slotsFilled: 0,
@@ -282,7 +298,7 @@ async function buildCanonicalFixture(admin: PrismaClient): Promise<CanonicalFixt
       id: `${runId}-jo-e`,
       staffingOrderId: so.id,
       staffingOrderSlotId: slotE.id,
-      status: 'DRAFT', // NOT OPEN → apply must fail
+      status: "DRAFT", // NOT OPEN → apply must fail
       openedAt: new Date(),
     },
     select: { id: true },
@@ -300,7 +316,7 @@ async function buildCanonicalFixture(admin: PrismaClient): Promise<CanonicalFixt
       jobOpeningId: openingE.id,
       slug: slugE,
       revision: 1,
-      status: 'PUBLISHED',
+      status: "PUBLISHED",
       publishedAt: new Date(),
     },
     select: { id: true },
@@ -331,7 +347,10 @@ async function buildCanonicalFixture(admin: PrismaClient): Promise<CanonicalFixt
  * Cleanup FK-order: history → submission → posting → slot → opening → order → project → cc.
  * Cleanup fail KHÔNG được swallow — phải fail test (theo T0 directive C-04).
  */
-async function cleanupFixture(admin: PrismaClient, f: CanonicalFixture): Promise<void> {
+async function cleanupFixture(
+  admin: PrismaClient,
+  f: CanonicalFixture,
+): Promise<void> {
   const runIdPrefix = `${runId}-`;
   // 1. application_status_history (FK → candidate_submissions)
   await admin.applicationStatusHistory.deleteMany({
@@ -394,7 +413,9 @@ async function callApply(
     trackingCode: string;
   },
 ): Promise<Array<{ tracking_code: string; status: string }>> {
-  return writer.$queryRawUnsafe<Array<{ tracking_code: string; status: string }>>(
+  return writer.$queryRawUnsafe<
+    Array<{ tracking_code: string; status: string }>
+  >(
     `SELECT tracking_code, status FROM hrp_public_apply_submission(
        $1::text, $2::text, $3::text, $4::text, $5::text, $6::text,
        $7::date, $8::text, $9::text, $10::timestamptz,
@@ -421,16 +442,23 @@ async function callApply(
   );
 }
 
-function payloadHash(slug: string, fullName: string, phone: string, cccd: string | null): string {
+function payloadHash(
+  slug: string,
+  fullName: string,
+  phone: string,
+  cccd: string | null,
+): string {
   // Deterministic 64-bit hex hash (synthetic). Real impl uses crypto.sha256 — equivalent here.
-  return `ph-${slug}-${fullName}-${phone}-${cccd ?? ''}`.padEnd(64, '0').slice(0, 64);
+  return `ph-${slug}-${fullName}-${phone}-${cccd ?? ""}`
+    .padEnd(64, "0")
+    .slice(0, 64);
 }
 
 function idempHash(key: string): string {
-  return `id-${key}`.padEnd(64, '0').slice(0, 64);
+  return `id-${key}`.padEnd(64, "0").slice(0, 64);
 }
 
-describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C-05)', () => {
+describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
   let admin: PrismaClient;
   let writer: PrismaClient;
   let fixture: CanonicalFixture;
@@ -450,26 +478,31 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
     }
   }, 60_000);
 
-  describe('C-05.1 — PUBLISHED + OPEN canonical slot → success', () => {
-    it('apply với slug A → 1 CandidateSubmission, 1 history row, status=NEW', async () => {
+  describe("C-05.1 — PUBLISHED + OPEN canonical slot → success", () => {
+    it("apply với slug A → 1 CandidateSubmission, 1 history row, status=NEW", async () => {
       const trackingCode = `APP-${randomUUID()}`;
       const idemKey = idempHash(`idem-${runId}-1`);
-      const pHash = payloadHash(fixture.slugA, 'Nguyen Van A', '0900000001', null);
+      const pHash = payloadHash(
+        fixture.slugA,
+        "Nguyen Van A",
+        "0900000001",
+        null,
+      );
 
       const rows = await callApply(writer, {
         slug: fixture.slugA,
         slotId: null, // RPC tự derive canonical slot
-        fullName: 'Nguyen Van A',
-        phone: '0900000001',
+        fullName: "Nguyen Van A",
+        phone: "0900000001",
         cccdNumber: null,
         dob: null,
-        gender: 'M',
+        gender: "M",
         experience: null,
         consentAt: new Date().toISOString(),
-        cvFileName: '',
-        cvMimeType: '',
+        cvFileName: "",
+        cvMimeType: "",
         cvSizeBytes: 0,
-        cvStorageKey: '',
+        cvStorageKey: "",
         idempotencyKeyHash: idemKey,
         idempotencyPayloadHash: pHash,
         trackingCode,
@@ -477,7 +510,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
 
       expect(rows).toHaveLength(1);
       expect(rows[0]!.tracking_code).toBe(trackingCode);
-      expect(rows[0]!.status).toBe('NEW');
+      expect(rows[0]!.status).toBe("NEW");
 
       // DB assertions (admin reads)
       const subs = await admin.candidateSubmission.findMany({
@@ -487,21 +520,21 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       expect(subs).toHaveLength(1);
       expect(subs[0]!.slotId).toBe(fixture.slotAId); // CANONICAL linked slot, NOT slot B
       expect(subs[0]!.projectId).toBe(fixture.projectId);
-      expect(subs[0]!.status).toBe('NEW');
+      expect(subs[0]!.status).toBe("NEW");
 
       const history = await admin.applicationStatusHistory.findMany({
         where: { submissionId: subs[0]!.id },
         select: { fromStatus: true, toStatus: true, reason: true },
       });
       expect(history).toHaveLength(1);
-      expect(history[0]!.toStatus).toBe('NEW');
+      expect(history[0]!.toStatus).toBe("NEW");
       expect(history[0]!.fromStatus).toBeNull();
-      expect(history[0]!.reason).toBe('PUBLIC_APPLY');
+      expect(history[0]!.reason).toBe("PUBLIC_APPLY");
     }, 30_000);
   });
 
-  describe('C-05.2 — DRAFT / ARCHIVED posting → fail closed', () => {
-    it('apply với slug của DRAFT posting → JOB_NOT_AVAILABLE (P0011), 0 submissions', async () => {
+  describe("C-05.2 — DRAFT / ARCHIVED posting → fail closed", () => {
+    it("apply với slug của DRAFT posting → JOB_NOT_AVAILABLE (P0011), 0 submissions", async () => {
       const slugDraft = `${runId}-posting-c-draft`;
       const trackingCode = `APP-${randomUUID()}`;
       let caught: unknown = null;
@@ -509,19 +542,24 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
         await callApply(writer, {
           slug: slugDraft,
           slotId: null,
-          fullName: 'Nguyen Van B',
-          phone: '0900000002',
+          fullName: "Nguyen Van B",
+          phone: "0900000002",
           cccdNumber: null,
           dob: null,
-          gender: 'M',
+          gender: "M",
           experience: null,
           consentAt: new Date().toISOString(),
-          cvFileName: '',
-          cvMimeType: '',
+          cvFileName: "",
+          cvMimeType: "",
           cvSizeBytes: 0,
-          cvStorageKey: '',
+          cvStorageKey: "",
           idempotencyKeyHash: idempHash(`idem-${runId}-2a`),
-          idempotencyPayloadHash: payloadHash(slugDraft, 'Nguyen Van B', '0900000002', null),
+          idempotencyPayloadHash: payloadHash(
+            slugDraft,
+            "Nguyen Van B",
+            "0900000002",
+            null,
+          ),
           trackingCode,
         });
       } catch (e) {
@@ -529,16 +567,21 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       }
       expect(caught).not.toBeNull();
       const err = caught as { meta?: { code?: string }; message?: string };
-      expect(err.meta?.code ?? err.message ?? '').toMatch(/P0011|JOB_NOT_AVAILABLE/);
+      expect(err.meta?.code ?? err.message ?? "").toMatch(
+        /P0011|JOB_NOT_AVAILABLE/,
+      );
 
       // 0 submissions created
       const subs = await admin.candidateSubmission.count({
-        where: { projectId: fixture.projectId, publicTrackingCode: trackingCode },
+        where: {
+          projectId: fixture.projectId,
+          publicTrackingCode: trackingCode,
+        },
       });
       expect(subs).toBe(0);
     }, 30_000);
 
-    it('apply với slug của ARCHIVED posting → JOB_NOT_AVAILABLE (P0011), 0 submissions', async () => {
+    it("apply với slug của ARCHIVED posting → JOB_NOT_AVAILABLE (P0011), 0 submissions", async () => {
       const slugArchived = `${runId}-posting-d-archived`;
       const trackingCode = `APP-${randomUUID()}`;
       let caught: unknown = null;
@@ -546,19 +589,24 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
         await callApply(writer, {
           slug: slugArchived,
           slotId: null,
-          fullName: 'Nguyen Van C',
-          phone: '0900000003',
+          fullName: "Nguyen Van C",
+          phone: "0900000003",
           cccdNumber: null,
           dob: null,
-          gender: 'M',
+          gender: "M",
           experience: null,
           consentAt: new Date().toISOString(),
-          cvFileName: '',
-          cvMimeType: '',
+          cvFileName: "",
+          cvMimeType: "",
           cvSizeBytes: 0,
-          cvStorageKey: '',
+          cvStorageKey: "",
           idempotencyKeyHash: idempHash(`idem-${runId}-2b`),
-          idempotencyPayloadHash: payloadHash(slugArchived, 'Nguyen Van C', '0900000003', null),
+          idempotencyPayloadHash: payloadHash(
+            slugArchived,
+            "Nguyen Van C",
+            "0900000003",
+            null,
+          ),
           trackingCode,
         });
       } catch (e) {
@@ -566,31 +614,38 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       }
       expect(caught).not.toBeNull();
       const err = caught as { meta?: { code?: string }; message?: string };
-      expect(err.meta?.code ?? err.message ?? '').toMatch(/P0011|JOB_NOT_AVAILABLE/);
+      expect(err.meta?.code ?? err.message ?? "").toMatch(
+        /P0011|JOB_NOT_AVAILABLE/,
+      );
     }, 30_000);
   });
 
-  describe('C-05.3 — JobOpening.status NOT OPEN → fail closed', () => {
-    it('apply với slug của posting mà JobOpening.status=DRAFT → JOB_NOT_AVAILABLE (P0011)', async () => {
+  describe("C-05.3 — JobOpening.status NOT OPEN → fail closed", () => {
+    it("apply với slug của posting mà JobOpening.status=DRAFT → JOB_NOT_AVAILABLE (P0011)", async () => {
       const trackingCode = `APP-${randomUUID()}`;
       let caught: unknown = null;
       try {
         await callApply(writer, {
           slug: fixture.slugE,
           slotId: null,
-          fullName: 'Nguyen Van D',
-          phone: '0900000004',
+          fullName: "Nguyen Van D",
+          phone: "0900000004",
           cccdNumber: null,
           dob: null,
-          gender: 'M',
+          gender: "M",
           experience: null,
           consentAt: new Date().toISOString(),
-          cvFileName: '',
-          cvMimeType: '',
+          cvFileName: "",
+          cvMimeType: "",
           cvSizeBytes: 0,
-          cvStorageKey: '',
+          cvStorageKey: "",
           idempotencyKeyHash: idempHash(`idem-${runId}-3`),
-          idempotencyPayloadHash: payloadHash(fixture.slugE, 'Nguyen Van D', '0900000004', null),
+          idempotencyPayloadHash: payloadHash(
+            fixture.slugE,
+            "Nguyen Van D",
+            "0900000004",
+            null,
+          ),
           trackingCode,
         });
       } catch (e) {
@@ -598,13 +653,15 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       }
       expect(caught).not.toBeNull();
       const err = caught as { meta?: { code?: string }; message?: string };
-      expect(err.meta?.code ?? err.message ?? '').toMatch(/P0011|JOB_NOT_AVAILABLE/);
+      expect(err.meta?.code ?? err.message ?? "").toMatch(
+        /P0011|JOB_NOT_AVAILABLE/,
+      );
     }, 30_000);
 
-    it('mở opening A sang FILLED → apply với slug A tiếp theo → JOB_NOT_AVAILABLE', async () => {
+    it("mở opening A sang FILLED → apply với slug A tiếp theo → JOB_NOT_AVAILABLE", async () => {
       await admin.jobOpening.update({
         where: { id: fixture.openingAId },
-        data: { status: 'FILLED' },
+        data: { status: "FILLED" },
       });
       try {
         const trackingCode = `APP-${randomUUID()}`;
@@ -613,19 +670,24 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
           await callApply(writer, {
             slug: fixture.slugA,
             slotId: null,
-            fullName: 'Nguyen Van E',
-            phone: '0900000005',
+            fullName: "Nguyen Van E",
+            phone: "0900000005",
             cccdNumber: null,
             dob: null,
-            gender: 'M',
+            gender: "M",
             experience: null,
             consentAt: new Date().toISOString(),
-            cvFileName: '',
-            cvMimeType: '',
+            cvFileName: "",
+            cvMimeType: "",
             cvSizeBytes: 0,
-            cvStorageKey: '',
+            cvStorageKey: "",
             idempotencyKeyHash: idempHash(`idem-${runId}-3b`),
-            idempotencyPayloadHash: payloadHash(fixture.slugA, 'Nguyen Van E', '0900000005', null),
+            idempotencyPayloadHash: payloadHash(
+              fixture.slugA,
+              "Nguyen Van E",
+              "0900000005",
+              null,
+            ),
             trackingCode,
           });
         } catch (e) {
@@ -633,20 +695,22 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
         }
         expect(caught).not.toBeNull();
         const err = caught as { meta?: { code?: string }; message?: string };
-        expect(err.meta?.code ?? err.message ?? '').toMatch(/P0011|JOB_NOT_AVAILABLE/);
+        expect(err.meta?.code ?? err.message ?? "").toMatch(
+          /P0011|JOB_NOT_AVAILABLE/,
+        );
       } finally {
         // Restore for downstream tests
         await admin.jobOpening.update({
           where: { id: fixture.openingAId },
-          data: { status: 'OPEN' },
+          data: { status: "OPEN" },
         });
       }
     }, 30_000);
 
-    it('mở opening A sang CANCELLED → apply với slug A → JOB_NOT_AVAILABLE', async () => {
+    it("mở opening A sang CANCELLED → apply với slug A → JOB_NOT_AVAILABLE", async () => {
       await admin.jobOpening.update({
         where: { id: fixture.openingAId },
-        data: { status: 'CANCELLED' },
+        data: { status: "CANCELLED" },
       });
       try {
         const trackingCode = `APP-${randomUUID()}`;
@@ -655,19 +719,24 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
           await callApply(writer, {
             slug: fixture.slugA,
             slotId: null,
-            fullName: 'Nguyen Van F',
-            phone: '0900000006',
+            fullName: "Nguyen Van F",
+            phone: "0900000006",
             cccdNumber: null,
             dob: null,
-            gender: 'M',
+            gender: "M",
             experience: null,
             consentAt: new Date().toISOString(),
-            cvFileName: '',
-            cvMimeType: '',
+            cvFileName: "",
+            cvMimeType: "",
             cvSizeBytes: 0,
-            cvStorageKey: '',
+            cvStorageKey: "",
             idempotencyKeyHash: idempHash(`idem-${runId}-3c`),
-            idempotencyPayloadHash: payloadHash(fixture.slugA, 'Nguyen Van F', '0900000006', null),
+            idempotencyPayloadHash: payloadHash(
+              fixture.slugA,
+              "Nguyen Van F",
+              "0900000006",
+              null,
+            ),
             trackingCode,
           });
         } catch (e) {
@@ -675,37 +744,44 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
         }
         expect(caught).not.toBeNull();
         const err = caught as { meta?: { code?: string }; message?: string };
-        expect(err.meta?.code ?? err.message ?? '').toMatch(/P0011|JOB_NOT_AVAILABLE/);
+        expect(err.meta?.code ?? err.message ?? "").toMatch(
+          /P0011|JOB_NOT_AVAILABLE/,
+        );
       } finally {
         await admin.jobOpening.update({
           where: { id: fixture.openingAId },
-          data: { status: 'OPEN' },
+          data: { status: "OPEN" },
         });
       }
     }, 30_000);
   });
 
-  describe('C-05.4 — old Project.code-only slug → fail closed', () => {
-    it('apply với slug = Project.code → JOB_NOT_AVAILABLE (P0011) — RPC KHÔNG còn resolve qua Project', async () => {
+  describe("C-05.4 — old Project.code-only slug → fail closed", () => {
+    it("apply với slug = Project.code → JOB_NOT_AVAILABLE (P0011) — RPC KHÔNG còn resolve qua Project", async () => {
       const trackingCode = `APP-${randomUUID()}`;
       let caught: unknown = null;
       try {
         await callApply(writer, {
           slug: fixture.projectCode, // PRJ-${runId}
           slotId: null,
-          fullName: 'Nguyen Van G',
-          phone: '0900000007',
+          fullName: "Nguyen Van G",
+          phone: "0900000007",
           cccdNumber: null,
           dob: null,
-          gender: 'M',
+          gender: "M",
           experience: null,
           consentAt: new Date().toISOString(),
-          cvFileName: '',
-          cvMimeType: '',
+          cvFileName: "",
+          cvMimeType: "",
           cvSizeBytes: 0,
-          cvStorageKey: '',
+          cvStorageKey: "",
           idempotencyKeyHash: idempHash(`idem-${runId}-4`),
-          idempotencyPayloadHash: payloadHash(fixture.projectCode, 'Nguyen Van G', '0900000007', null),
+          idempotencyPayloadHash: payloadHash(
+            fixture.projectCode,
+            "Nguyen Van G",
+            "0900000007",
+            null,
+          ),
           trackingCode,
         });
       } catch (e) {
@@ -713,31 +789,38 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       }
       expect(caught).not.toBeNull();
       const err = caught as { meta?: { code?: string }; message?: string };
-      expect(err.meta?.code ?? err.message ?? '').toMatch(/P0011|JOB_NOT_AVAILABLE/);
+      expect(err.meta?.code ?? err.message ?? "").toMatch(
+        /P0011|JOB_NOT_AVAILABLE/,
+      );
     }, 30_000);
   });
 
-  describe('C-05.5 — sibling / wrong / expired / full slot → fail closed', () => {
-    it('apply với p_slot_id = sibling slot B → JOB_NOT_AVAILABLE (canonical chain reject)', async () => {
+  describe("C-05.5 — sibling / wrong / expired / full slot → fail closed", () => {
+    it("apply với p_slot_id = sibling slot B → JOB_NOT_AVAILABLE (canonical chain reject)", async () => {
       const trackingCode = `APP-${randomUUID()}`;
       let caught: unknown = null;
       try {
         await callApply(writer, {
           slug: fixture.slugA, // posting A expects slot A
           slotId: fixture.slotBId, // SIBLING slot under same StaffingOrder
-          fullName: 'Nguyen Van H',
-          phone: '0900000008',
+          fullName: "Nguyen Van H",
+          phone: "0900000008",
           cccdNumber: null,
           dob: null,
-          gender: 'M',
+          gender: "M",
           experience: null,
           consentAt: new Date().toISOString(),
-          cvFileName: '',
-          cvMimeType: '',
+          cvFileName: "",
+          cvMimeType: "",
           cvSizeBytes: 0,
-          cvStorageKey: '',
+          cvStorageKey: "",
           idempotencyKeyHash: idempHash(`idem-${runId}-5a`),
-          idempotencyPayloadHash: payloadHash(fixture.slugA, 'Nguyen Van H', '0900000008', null),
+          idempotencyPayloadHash: payloadHash(
+            fixture.slugA,
+            "Nguyen Van H",
+            "0900000008",
+            null,
+          ),
           trackingCode,
         });
       } catch (e) {
@@ -745,29 +828,36 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       }
       expect(caught).not.toBeNull();
       const err = caught as { meta?: { code?: string }; message?: string };
-      expect(err.meta?.code ?? err.message ?? '').toMatch(/P0011|JOB_NOT_AVAILABLE/);
+      expect(err.meta?.code ?? err.message ?? "").toMatch(
+        /P0011|JOB_NOT_AVAILABLE/,
+      );
     }, 30_000);
 
-    it('apply với p_slot_id = non-existent → JOB_NOT_AVAILABLE', async () => {
+    it("apply với p_slot_id = non-existent → JOB_NOT_AVAILABLE", async () => {
       const trackingCode = `APP-${randomUUID()}`;
       let caught: unknown = null;
       try {
         await callApply(writer, {
           slug: fixture.slugA,
-          slotId: 'non-existent-slot-xyz',
-          fullName: 'Nguyen Van I',
-          phone: '0900000009',
+          slotId: "non-existent-slot-xyz",
+          fullName: "Nguyen Van I",
+          phone: "0900000009",
           cccdNumber: null,
           dob: null,
-          gender: 'M',
+          gender: "M",
           experience: null,
           consentAt: new Date().toISOString(),
-          cvFileName: '',
-          cvMimeType: '',
+          cvFileName: "",
+          cvMimeType: "",
           cvSizeBytes: 0,
-          cvStorageKey: '',
+          cvStorageKey: "",
           idempotencyKeyHash: idempHash(`idem-${runId}-5b`),
-          idempotencyPayloadHash: payloadHash(fixture.slugA, 'Nguyen Van I', '0900000009', null),
+          idempotencyPayloadHash: payloadHash(
+            fixture.slugA,
+            "Nguyen Van I",
+            "0900000009",
+            null,
+          ),
           trackingCode,
         });
       } catch (e) {
@@ -775,14 +865,16 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       }
       expect(caught).not.toBeNull();
       const err = caught as { meta?: { code?: string }; message?: string };
-      expect(err.meta?.code ?? err.message ?? '').toMatch(/P0011|JOB_NOT_AVAILABLE/);
+      expect(err.meta?.code ?? err.message ?? "").toMatch(
+        /P0011|JOB_NOT_AVAILABLE/,
+      );
     }, 30_000);
 
-    it('apply với p_slot_id = expired slot → JOB_NOT_AVAILABLE', async () => {
+    it("apply với p_slot_id = expired slot → JOB_NOT_AVAILABLE", async () => {
       // Mark slot A as expired
       await admin.staffingOrderSlot.update({
         where: { id: fixture.slotAId },
-        data: { validTo: new Date('2020-01-01') },
+        data: { validTo: new Date("2020-01-01") },
       });
       try {
         const trackingCode = `APP-${randomUUID()}`;
@@ -791,19 +883,24 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
           await callApply(writer, {
             slug: fixture.slugA,
             slotId: fixture.slotAId, // canonical slot, but expired
-            fullName: 'Nguyen Van J',
-            phone: '0900000010',
+            fullName: "Nguyen Van J",
+            phone: "0900000010",
             cccdNumber: null,
             dob: null,
-            gender: 'M',
+            gender: "M",
             experience: null,
             consentAt: new Date().toISOString(),
-            cvFileName: '',
-            cvMimeType: '',
+            cvFileName: "",
+            cvMimeType: "",
             cvSizeBytes: 0,
-            cvStorageKey: '',
+            cvStorageKey: "",
             idempotencyKeyHash: idempHash(`idem-${runId}-5c`),
-            idempotencyPayloadHash: payloadHash(fixture.slugA, 'Nguyen Van J', '0900000010', null),
+            idempotencyPayloadHash: payloadHash(
+              fixture.slugA,
+              "Nguyen Van J",
+              "0900000010",
+              null,
+            ),
             trackingCode,
           });
         } catch (e) {
@@ -811,7 +908,9 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
         }
         expect(caught).not.toBeNull();
         const err = caught as { meta?: { code?: string }; message?: string };
-        expect(err.meta?.code ?? err.message ?? '').toMatch(/P0011|JOB_NOT_AVAILABLE/);
+        expect(err.meta?.code ?? err.message ?? "").toMatch(
+          /P0011|JOB_NOT_AVAILABLE/,
+        );
       } finally {
         await admin.staffingOrderSlot.update({
           where: { id: fixture.slotAId },
@@ -820,7 +919,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       }
     }, 30_000);
 
-    it('apply với p_slot_id = full slot → JOB_NOT_AVAILABLE', async () => {
+    it("apply với p_slot_id = full slot → JOB_NOT_AVAILABLE", async () => {
       // Mark slot A as full
       await admin.staffingOrderSlot.update({
         where: { id: fixture.slotAId },
@@ -833,19 +932,24 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
           await callApply(writer, {
             slug: fixture.slugA,
             slotId: fixture.slotAId,
-            fullName: 'Nguyen Van K',
-            phone: '0900000011',
+            fullName: "Nguyen Van K",
+            phone: "0900000011",
             cccdNumber: null,
             dob: null,
-            gender: 'M',
+            gender: "M",
             experience: null,
             consentAt: new Date().toISOString(),
-            cvFileName: '',
-            cvMimeType: '',
+            cvFileName: "",
+            cvMimeType: "",
             cvSizeBytes: 0,
-            cvStorageKey: '',
+            cvStorageKey: "",
             idempotencyKeyHash: idempHash(`idem-${runId}-5d`),
-            idempotencyPayloadHash: payloadHash(fixture.slugA, 'Nguyen Van K', '0900000011', null),
+            idempotencyPayloadHash: payloadHash(
+              fixture.slugA,
+              "Nguyen Van K",
+              "0900000011",
+              null,
+            ),
             trackingCode,
           });
         } catch (e) {
@@ -853,7 +957,9 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
         }
         expect(caught).not.toBeNull();
         const err = caught as { meta?: { code?: string }; message?: string };
-        expect(err.meta?.code ?? err.message ?? '').toMatch(/P0011|JOB_NOT_AVAILABLE/);
+        expect(err.meta?.code ?? err.message ?? "").toMatch(
+          /P0011|JOB_NOT_AVAILABLE/,
+        );
       } finally {
         await admin.staffingOrderSlot.update({
           where: { id: fixture.slotAId },
@@ -863,8 +969,8 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
     }, 30_000);
   });
 
-  describe('C-05.7/8/9 — idempotency replay / payload mismatch / duplicate', () => {
-    const phone = '0900000020';
+  describe("C-05.7/8/9 — idempotency replay / payload mismatch / duplicate", () => {
+    const phone = "0900000020";
     const trackingCode = `APP-${randomUUID()}`;
 
     beforeAll(async () => {
@@ -872,49 +978,59 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       await callApply(writer, {
         slug: fixture.slugA,
         slotId: null,
-        fullName: 'Nguyen Van Replay',
+        fullName: "Nguyen Van Replay",
         phone,
         cccdNumber: null,
         dob: null,
-        gender: 'M',
+        gender: "M",
         experience: null,
         consentAt: new Date().toISOString(),
-        cvFileName: '',
-        cvMimeType: '',
+        cvFileName: "",
+        cvMimeType: "",
         cvSizeBytes: 0,
-        cvStorageKey: '',
+        cvStorageKey: "",
         idempotencyKeyHash: idempHash(`idem-${runId}-replay`),
-        idempotencyPayloadHash: payloadHash(fixture.slugA, 'Nguyen Van Replay', phone, null),
+        idempotencyPayloadHash: payloadHash(
+          fixture.slugA,
+          "Nguyen Van Replay",
+          phone,
+          null,
+        ),
         trackingCode,
       });
     }, 30_000);
 
-    it('C-05.7 — replay cùng key hash + cùng payload → cùng trackingCode/status, không duplicate row', async () => {
+    it("C-05.7 — replay cùng key hash + cùng payload → cùng trackingCode/status, không duplicate row", async () => {
       const idemKey = idempHash(`idem-${runId}-replay`);
-      const pHash = payloadHash(fixture.slugA, 'Nguyen Van Replay', phone, null);
+      const pHash = payloadHash(
+        fixture.slugA,
+        "Nguyen Van Replay",
+        phone,
+        null,
+      );
 
       const rows = await callApply(writer, {
         slug: fixture.slugA,
         slotId: null,
-        fullName: 'Nguyen Van Replay',
+        fullName: "Nguyen Van Replay",
         phone,
         cccdNumber: null,
         dob: null,
-        gender: 'M',
+        gender: "M",
         experience: null,
         consentAt: new Date().toISOString(),
-        cvFileName: '',
-        cvMimeType: '',
+        cvFileName: "",
+        cvMimeType: "",
         cvSizeBytes: 0,
-        cvStorageKey: '',
+        cvStorageKey: "",
         idempotencyKeyHash: idemKey,
         idempotencyPayloadHash: pHash,
-        trackingCode: 'SHOULD-BE-IGNORED-REPLAY',
+        trackingCode: "SHOULD-BE-IGNORED-REPLAY",
       });
 
       expect(rows).toHaveLength(1);
       expect(rows[0]!.tracking_code).toBe(trackingCode); // SAME trackingCode as initial
-      expect(rows[0]!.status).toBe('NEW');
+      expect(rows[0]!.status).toBe("NEW");
 
       const subs = await admin.candidateSubmission.count({
         where: { idempotencyKeyHash: idemKey },
@@ -927,85 +1043,99 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       expect(histories).toBe(1); // Exactly 1, no duplicate history
     }, 30_000);
 
-    it('C-05.8 — replay với payload khác → P0010 (IDEMPOTENCY_PAYLOAD_MISMATCH)', async () => {
+    it("C-05.8 — replay với payload khác → P0010 (IDEMPOTENCY_PAYLOAD_MISMATCH)", async () => {
       const idemKey = idempHash(`idem-${runId}-replay`);
       // Same key, but DIFFERENT payload
-      const wrongHash = payloadHash(fixture.slugA, 'DIFFERENT NAME', phone, null);
+      const wrongHash = payloadHash(
+        fixture.slugA,
+        "DIFFERENT NAME",
+        phone,
+        null,
+      );
 
       let caught: unknown = null;
       try {
         await callApply(writer, {
           slug: fixture.slugA,
           slotId: null,
-          fullName: 'Nguyen Van Replay',
+          fullName: "Nguyen Van Replay",
           phone,
           cccdNumber: null,
           dob: null,
-          gender: 'M',
+          gender: "M",
           experience: null,
           consentAt: new Date().toISOString(),
-          cvFileName: '',
-          cvMimeType: '',
+          cvFileName: "",
+          cvMimeType: "",
           cvSizeBytes: 0,
-          cvStorageKey: '',
+          cvStorageKey: "",
           idempotencyKeyHash: idemKey,
           idempotencyPayloadHash: wrongHash,
-          trackingCode: 'SHOULD-FAIL-MISMATCH',
+          trackingCode: "SHOULD-FAIL-MISMATCH",
         });
       } catch (e) {
         caught = e;
       }
       expect(caught).not.toBeNull();
       const err = caught as { meta?: { code?: string }; message?: string };
-      expect(err.meta?.code ?? err.message ?? '').toMatch(/P0010|IDEMPOTENCY_PAYLOAD_MISMATCH/);
+      expect(err.meta?.code ?? err.message ?? "").toMatch(
+        /P0010|IDEMPOTENCY_PAYLOAD_MISMATCH/,
+      );
     }, 30_000);
 
-    it('C-05.9 — duplicate application cùng slot + cùng normalized phone → P0012', async () => {
+    it("C-05.9 — duplicate application cùng slot + cùng normalized phone → P0012", async () => {
       // Use a different idempotency key (so it is NOT a replay) but same phone.
       const idemKey = idempHash(`idem-${runId}-dup`);
-      const pHash = payloadHash(fixture.slugA, 'Nguyen Van Replay', phone, null);
+      const pHash = payloadHash(
+        fixture.slugA,
+        "Nguyen Van Replay",
+        phone,
+        null,
+      );
 
       let caught: unknown = null;
       try {
         await callApply(writer, {
           slug: fixture.slugA,
           slotId: null,
-          fullName: 'Nguyen Van Replay',
+          fullName: "Nguyen Van Replay",
           phone,
           cccdNumber: null,
           dob: null,
-          gender: 'M',
+          gender: "M",
           experience: null,
           consentAt: new Date().toISOString(),
-          cvFileName: '',
-          cvMimeType: '',
+          cvFileName: "",
+          cvMimeType: "",
           cvSizeBytes: 0,
-          cvStorageKey: '',
+          cvStorageKey: "",
           idempotencyKeyHash: idemKey,
           idempotencyPayloadHash: pHash,
-          trackingCode: 'SHOULD-FAIL-DUPLICATE',
+          trackingCode: "SHOULD-FAIL-DUPLICATE",
         });
       } catch (e) {
         caught = e;
       }
       expect(caught).not.toBeNull();
       const err = caught as { meta?: { code?: string }; message?: string };
-      expect(err.meta?.code ?? err.message ?? '').toMatch(/P0012|DUPLICATE_APPLICATION/);
+      expect(err.meta?.code ?? err.message ?? "").toMatch(
+        /P0012|DUPLICATE_APPLICATION/,
+      );
     }, 30_000);
   });
 
-  describe('C-05.11/12 — public projection qua withPublicDb', () => {
-    it('PUBLIC listing chỉ thấy PUBLISHED; DRAFT/ARCHIVED không xuất hiện', async () => {
-      const visibleSlugs = await withPublicContext(writer, async (tx) => {
+  describe("C-05.11/12 — public projection qua withPublicDb", () => {
+    it("PUBLIC listing chỉ thấy PUBLISHED; DRAFT/ARCHIVED không xuất hiện", async () => {
+      const visibleSlugs = await withPublicDb(writer, async (tx) => {
         const rows = await tx.jobPosting.findMany({
-          where: { status: 'PUBLISHED' },
+          where: { status: "PUBLISHED" },
           select: { slug: true, status: true },
         });
         return rows;
       });
       // Mọi slug visible phải là PUBLISHED
       for (const row of visibleSlugs) {
-        expect(row.status).toBe('PUBLISHED');
+        expect(row.status).toBe("PUBLISHED");
       }
       // Slug C (DRAFT) và slug D (ARCHIVED) KHÔNG visible
       const visibleSet = new Set(visibleSlugs.map((r) => r.slug));
@@ -1016,10 +1146,10 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       expect(visibleSet.has(fixture.slugB)).toBe(true);
     }, 30_000);
 
-    it('PUBLIC detail query theo slug A chỉ trả 1 row', async () => {
-      const found = await withPublicContext(writer, async (tx) => {
+    it("PUBLIC detail query theo slug A chỉ trả 1 row", async () => {
+      const found = await withPublicDb(writer, async (tx) => {
         return tx.jobPosting.findFirst({
-          where: { slug: fixture.slugA, status: 'PUBLISHED' },
+          where: { slug: fixture.slugA, status: "PUBLISHED" },
           select: { id: true, slug: true, jobOpeningId: true },
         });
       });
@@ -1027,10 +1157,10 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       expect(found!.slug).toBe(fixture.slugA);
     }, 30_000);
 
-    it('C-05.12 — JobOpening.staffingOrderSlot của posting A = slot A (canonical, KHÔNG slot B)', async () => {
-      const result = await withPublicContext(writer, async (tx) => {
+    it("C-05.12 — JobOpening.staffingOrderSlot của posting A = slot A (canonical, KHÔNG slot B)", async () => {
+      const result = await withPublicDb(writer, async (tx) => {
         return tx.jobPosting.findFirst({
-          where: { slug: fixture.slugA, status: 'PUBLISHED' },
+          where: { slug: fixture.slugA, status: "PUBLISHED" },
           select: {
             slug: true,
             jobOpening: {
@@ -1047,13 +1177,15 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       expect(result!.jobOpening!.staffingOrderSlotId).toBe(fixture.slotAId);
       expect(result!.jobOpening!.staffingOrderSlot?.id).toBe(fixture.slotAId);
       // Và KHÔNG phải slot B (sibling):
-      expect(result!.jobOpening!.staffingOrderSlot?.id).not.toBe(fixture.slotBId);
+      expect(result!.jobOpening!.staffingOrderSlot?.id).not.toBe(
+        fixture.slotBId,
+      );
     }, 30_000);
 
-    it('C-05.12 — JobOpening.staffingOrderSlot của posting B = slot B (canonical)', async () => {
-      const result = await withPublicContext(writer, async (tx) => {
+    it("C-05.12 — JobOpening.staffingOrderSlot của posting B = slot B (canonical)", async () => {
+      const result = await withPublicDb(writer, async (tx) => {
         return tx.jobPosting.findFirst({
-          where: { slug: fixture.slugB, status: 'PUBLISHED' },
+          where: { slug: fixture.slugB, status: "PUBLISHED" },
           select: {
             slug: true,
             jobOpening: {
@@ -1068,7 +1200,9 @@ describe.skipIf(!HAS_TEST_DB)('P1-A1 canonical public JobPosting + apply (C-04/C
       expect(result).not.toBeNull();
       expect(result!.jobOpening!.staffingOrderSlotId).toBe(fixture.slotBId);
       expect(result!.jobOpening!.staffingOrderSlot?.id).toBe(fixture.slotBId);
-      expect(result!.jobOpening!.staffingOrderSlot?.id).not.toBe(fixture.slotAId);
+      expect(result!.jobOpening!.staffingOrderSlot?.id).not.toBe(
+        fixture.slotAId,
+      );
     }, 30_000);
   });
 });

@@ -59,7 +59,8 @@
 -- `proconfig` containing `search_path=public, pg_temp`, the absence of
 -- EXECUTE for `PUBLIC`, the retained EXECUTE for `app_user`/`app_user_writer`,
 -- the exact SELECT dependencies of `hrp_public_rpc`, and the absence of
--- leftover role membership / CREATE-on-schema posture.
+-- leftover SET ROLE capability / CREATE-on-schema posture. A carry-in
+-- `WITH SET FALSE` membership from predecessor migrations may remain.
 --
 -- C-03 also grants `SELECT ON job_postings, job_openings TO hrp_public_rpc`
 -- because the new RPC body selects from those two tables but the role's
@@ -103,18 +104,13 @@ DECLARE
 BEGIN
   -- (a) Predecessor function exists with exact signature.
   SELECT * INTO v_proc FROM pg_proc p
-    JOIN pg_namespace n ON n.oid = p.pronamespace
-   WHERE n.nspname = 'public' AND p.proname = 'hrp_public_apply_submission';
+   WHERE p.oid = to_regprocedure(
+     'public.hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text)'
+   );
   IF v_proc IS NULL THEN
     RAISE EXCEPTION 'pre_assert_failed: predecessor function hrp_public_apply_submission missing'
       USING ERRCODE = 'P0011';
   END IF;
-  IF v_proc.proargtypes::text
-     <> ARRAY['text','text','text','text','text','text','date','text','text','timestamptz','text','text','integer','text','text','text','text']::regtype[]::text THEN
-    RAISE EXCEPTION 'pre_assert_failed: predecessor function signature drift'
-      USING ERRCODE = 'P0011';
-  END IF;
-
   -- (b) Role `hrp_public_rpc` exists and is NOLOGIN BYPASSRLS.
   SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'hrp_public_rpc') INTO v_role_exists;
   IF NOT v_role_exists THEN
@@ -169,6 +165,17 @@ $pre$;
 -- ───────────────────────────────────────────────────────────────────────────
 GRANT SELECT ON TABLE job_postings TO hrp_public_rpc;
 GRANT SELECT ON TABLE job_openings   TO hrp_public_rpc;
+
+-- The predecessor function is owned by hrp_public_rpc. PostgreSQL only permits the
+-- owning role to CREATE OR REPLACE it, so enter that role before replacement and
+-- revoke the temporary membership again before postflight.
+GRANT CREATE ON SCHEMA public TO hrp_public_rpc;
+DO $$
+BEGIN
+  EXECUTE format('GRANT hrp_public_rpc TO %I WITH SET TRUE', session_user);
+END
+$$;
+SET ROLE hrp_public_rpc;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- REPLACEMENT: hrp_public_apply_submission (canonical JobOpening-slot chain)
@@ -334,37 +341,20 @@ END;
 $fn$;
 
 -- ───────────────────────────────────────────────────────────────────────────
--- Ownership + least-privilege EXECUTE (DEC-08, mirrors 20260823101500_*:238-251).
--- Role hrp_public_rpc pre-provisioned by OP-01. Migration only re-stamps ownership;
--- never creates the role. SET FALSE / no-CREATE-on-schema is restored before commit.
+-- Ownership + least-privilege EXECUTE. These statements run as the owning role.
 -- ───────────────────────────────────────────────────────────────────────────
-GRANT CREATE ON SCHEMA public TO hrp_public_rpc;
-DO $$
-BEGIN
-  EXECUTE format('GRANT hrp_public_rpc TO %I WITH SET TRUE', session_user);
-END
-$$;
-ALTER FUNCTION hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamptz,text,text,integer,text,text,text,text) OWNER TO hrp_public_rpc;
-DO $$
-BEGIN
-  EXECUTE format('GRANT hrp_public_rpc TO %I WITH SET FALSE', session_user);
-END
-$$;
--- RQ-06: WITH SET FALSE chỉ tắt SET ROLE, không xóa membership. Thu hồi membership trong
--- cùng file để definer path không để lại quyền tồn dư trên session_user sau khi commit.
+REVOKE ALL ON FUNCTION hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamptz,text,text,integer,text,text,text,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamptz,text,text,integer,text,text,text,text) TO app_user_writer, app_user;
+
+RESET ROLE;
+-- Remove the temporary SET-capable grant. Older migrations may retain a WITH SET FALSE
+-- membership row, so postflight checks effective SET capability instead of row absence.
 DO $$
 BEGIN
   EXECUTE format('REVOKE hrp_public_rpc FROM %I', session_user);
 END
 $$;
 REVOKE CREATE ON SCHEMA public FROM hrp_public_rpc;
-
--- EXECUTE grants remain identical (already in the base migration 20260823101500).
--- We re-affirm here because CREATE OR REPLACE FUNCTION on a definer re-stamps
--- pg_proc.proacl; idempotently re-granting is the safe idempotent pattern, and
--- avoids one extra migration step if a partial re-apply happens.
-REVOKE ALL ON FUNCTION hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamptz,text,text,integer,text,text,text,text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamptz,text,text,integer,text,text,text,text) TO app_user_writer, app_user;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- POST-FLIGHT ASSERTIONS (catalog verification, fail-closed).
@@ -381,23 +371,18 @@ DECLARE
   v_has_app_exec boolean;
   v_has_writer_exec boolean;
   v_rpc_select_count integer;
-  v_rpc_role_membership boolean;
+  v_rpc_set_role boolean;
   v_rpc_create_on_schema boolean;
 BEGIN
   -- (a) Function still exists with the SAME signature.
   SELECT * INTO v_proc FROM pg_proc p
-    JOIN pg_namespace n ON n.oid = p.pronamespace
-   WHERE n.nspname = 'public' AND p.proname = 'hrp_public_apply_submission';
+   WHERE p.oid = to_regprocedure(
+     'public.hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamp with time zone,text,text,integer,text,text,text,text)'
+   );
   IF v_proc IS NULL THEN
     RAISE EXCEPTION 'post_assert_failed: function missing after replacement'
       USING ERRCODE = 'P0011';
   END IF;
-  IF v_proc.proargtypes::text
-     <> ARRAY['text','text','text','text','text','text','date','text','text','timestamptz','text','text','integer','text','text','text','text']::regtype[]::text THEN
-    RAISE EXCEPTION 'post_assert_failed: function signature drifted after replacement'
-      USING ERRCODE = 'P0011';
-  END IF;
-
   -- (b) Function owner = hrp_public_rpc.
   IF (v_proc.proowner::regrole::text) IS DISTINCT FROM 'hrp_public_rpc' THEN
     RAISE EXCEPTION 'post_assert_failed: function owner is not hrp_public_rpc'
@@ -419,7 +404,9 @@ BEGIN
 
   -- (e) PUBLIC không có EXECUTE.
   SELECT EXISTS (
-    SELECT 1 FROM has_function_privilege('PUBLIC', v_proc.oid, 'EXECUTE')
+    SELECT 1
+      FROM aclexplode(COALESCE(v_proc.proacl, acldefault('f', v_proc.proowner))) acl
+     WHERE acl.grantee = 0 AND acl.privilege_type = 'EXECUTE'
   ) INTO v_has_public_exec;
   IF v_has_public_exec THEN
     RAISE EXCEPTION 'post_assert_failed: PUBLIC retains EXECUTE'
@@ -427,12 +414,10 @@ BEGIN
   END IF;
 
   -- (f) app_user và app_user_writer giữ EXECUTE.
-  SELECT EXISTS (
-    SELECT 1 FROM has_function_privilege('app_user', v_proc.oid, 'EXECUTE')
-  ) INTO v_has_app_exec;
-  SELECT EXISTS (
-    SELECT 1 FROM has_function_privilege('app_user_writer', v_proc.oid, 'EXECUTE')
-  ) INTO v_has_writer_exec;
+  SELECT has_function_privilege('app_user', v_proc.oid, 'EXECUTE')
+    INTO v_has_app_exec;
+  SELECT has_function_privilege('app_user_writer', v_proc.oid, 'EXECUTE')
+    INTO v_has_writer_exec;
   IF NOT v_has_app_exec THEN
     RAISE EXCEPTION 'post_assert_failed: app_user lost EXECUTE'
       USING ERRCODE = 'P0011';
@@ -470,15 +455,10 @@ BEGIN
       USING ERRCODE = 'P0011';
   END IF;
 
-  -- (i) session_user không còn là member của hrp_public_rpc (đã REVOKE ở trên).
-  SELECT EXISTS (
-    SELECT 1 FROM pg_auth_members m
-      JOIN pg_roles r ON r.oid = m.roleid
-     WHERE r.rolname = 'hrp_public_rpc'
-       AND m.member = session_user::regrole::oid
-  ) INTO v_rpc_role_membership;
-  IF v_rpc_role_membership THEN
-    RAISE EXCEPTION 'post_assert_failed: session_user still a member of hrp_public_rpc'
+  -- (i) session_user no longer has SET ROLE capability after the temporary grant.
+  SELECT pg_has_role(session_user, 'hrp_public_rpc', 'SET') INTO v_rpc_set_role;
+  IF v_rpc_set_role THEN
+    RAISE EXCEPTION 'post_assert_failed: session_user retains SET ROLE hrp_public_rpc'
       USING ERRCODE = 'P0011';
   END IF;
 
