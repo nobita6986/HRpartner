@@ -53,26 +53,36 @@ function slot(overrides: Record<string, unknown> = {}) {
 function rows() {
   return [
     {
-      id: 'prj-a', code: 'DA-A', name: 'Lắp ráp điện tử', siteAddress: 'Bắc Ninh',
-      clientCompanyName: 'Công ty A',
-      staffingOrders: [{
-        status: 'OPEN', title: 'Tuyển công nhân', description: null, deadlineDate: null, createdAt: SEEDED_AT,
-        slots: [slot({ workLocation: '   ' })],
-      }],
+      id: 'posting-a', slug: 'lap-rap-a-2026', title: 'Lắp ráp điện tử',
+      jobOpening: {
+        staffingOrder: {
+          status: 'OPEN', title: 'Tuyển công nhân', description: null, deadlineDate: null, createdAt: SEEDED_AT,
+          project: { siteAddress: 'Bắc Ninh', clientCompanyName: 'Công ty A' },
+        },
+        // C-02: canonical slot per JobOpening — DUY NHẤT một slot. Mảng `slots` ở staffingOrder
+        // đã bị bỏ khỏi `publicSelect`; mapper chỉ đọc `staffingOrderSlot` này.
+        staffingOrderSlot: slot({ workLocation: '   ' }),
+      },
     },
     {
-      id: 'prj-b', code: 'DA-B', name: 'Đóng gói', siteAddress: 'Bắc Ninh', clientCompanyName: 'Công ty B',
-      staffingOrders: [{
-        status: 'OPEN', title: 'Tuyển đóng gói', description: null, deadlineDate: null, createdAt: SEEDED_AT,
-        slots: [slot({ positionCode: 'PACK-01', positionTitle: 'Nhân viên đóng gói', hourlyRateVnd: 32_000n })],
-      }],
+      id: 'posting-b', slug: 'dong-goi-2026', title: 'Đóng gói',
+      jobOpening: {
+        staffingOrder: {
+          status: 'OPEN', title: 'Tuyển đóng gói', description: null, deadlineDate: null, createdAt: SEEDED_AT,
+          project: { siteAddress: 'Bắc Ninh', clientCompanyName: 'Công ty B' },
+        },
+        staffingOrderSlot: slot({ positionCode: 'PACK-01', positionTitle: 'Nhân viên đóng gói', hourlyRateVnd: 32_000n }),
+      },
     },
     {
-      id: 'prj-c', code: 'DA-C', name: 'Kiểm hàng', siteAddress: 'Hà Nội', clientCompanyName: 'Công ty C',
-      staffingOrders: [{
-        status: 'OPEN', title: 'Tuyển QC', description: null, deadlineDate: null, createdAt: SEEDED_AT,
-        slots: [slot({ positionCode: 'QC-01', positionTitle: 'Nhân viên QC', workLocation: 'KCN Thăng Long', hourlyRateVnd: 70_000n })],
-      }],
+      id: 'posting-c', slug: 'kiem-hang-2026', title: 'Kiểm hàng',
+      jobOpening: {
+        staffingOrder: {
+          status: 'OPEN', title: 'Tuyển QC', description: null, deadlineDate: null, createdAt: SEEDED_AT,
+          project: { siteAddress: 'Hà Nội', clientCompanyName: 'Công ty C' },
+        },
+        staffingOrderSlot: slot({ positionCode: 'QC-01', positionTitle: 'Nhân viên QC', workLocation: 'KCN Thăng Long', hourlyRateVnd: 70_000n }),
+      },
     },
   ];
 }
@@ -101,9 +111,10 @@ beforeEach(() => {
   __resetRateLimitRuntime();
   __captureSink();
   __setRateLimitRuntime({ provider: allowProvider() });
+  // hrp-p1-a1: `public.service` now calls `tx.jobPosting.findMany` (not `tx.project.findMany`).
   mocks.findMany.mockResolvedValue(rows());
   mocks.withPublicDb.mockImplementation(async (_p: unknown, cb: (tx: unknown) => unknown) =>
-    cb({ project: { findMany: mocks.findMany } }));
+    cb({ jobPosting: { findMany: mocks.findMany } }));
 });
 afterEach(() => {
   __resetRateLimitRuntime();
@@ -118,7 +129,7 @@ describe('go-live-09 / AC-04 — response THẬT của GET /api/jobs mang lươn
     // khẳng định. Nửa còn lại là kiểu: nếu ai đó "sửa" bằng `toString()` thì JSON mang string, nên
     // phải soi `typeof` chứ không chỉ soi giá trị.
     expect(status).toBe(200);
-    const job = body.jobs.find((j) => j.id === 'prj-c');
+    const job = body.jobs.find((j) => j.id === 'posting-c');
     expect(job).toBeDefined();
     expect(typeof job!.salaryMinVnd).toBe('number');
     expect(job!.salaryMinVnd).toBe(70_000);

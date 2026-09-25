@@ -57,9 +57,25 @@ describe('public job projection — không select quan hệ bắt buộc bị RL
     expect(publicSelectBlock()).not.toContain('clientCompany ');
   });
 
-  it('publicSelect chỉ gồm scalar của Project cộng đúng một quan hệ staffingOrders', () => {
+  it('publicSelect chỉ gồm scalar của JobPosting cộng đúng một quan hệ jobOpening chain', () => {
+    // hrp-p1-a1: nguồn chuyển từ `Project` sang `JobPosting`. Top-level keys là scalar JobPosting
+    // (`id`, `slug`, `title`, các trường rich-text + schemaVersion + salaryDisplay cho AC-03..05)
+    // + quan hệ `jobOpening` để bám StaffingOrder → Project. Đây vẫn là một quan hệ BẮT BUỘC
+    // (JobPosting.jobOpening không optional), nhưng nó được CHE bởi gate `status: 'PUBLISHED'`
+    // ở `where` của `listPublicJobProjection`/`getPublicJobProjection`/`getPublicJobDetail` —
+    // chỉ các bản ghi đã PUBLISHED mới tới được query engine, và bên trong chuỗi quan hệ MKT
+    // chỉ thấy đúng StaffingOrder/Project mà nó đã có quyền đọc (RLS).
     expect(topLevelSelectKeys(publicSelectBlock())).toEqual([
-      'clientCompanyName', 'code', 'id', 'name', 'siteAddress', 'staffingOrders',
+      'applicationInstructionsJson',
+      'benefitsJson',
+      'contentSchemaVersion',
+      'descriptionJson',
+      'id',
+      'jobOpening',
+      'requirementsJson',
+      'salaryDisplay',
+      'slug',
+      'title',
     ]);
   });
 

@@ -175,65 +175,60 @@ describe('benefits-section: render benefit list', () => {
   });
 });
 
-/* ─── Composition: page.tsx ──────────────────────────────────────────── */
+/* ─── Composition: page.tsx (hrp-p1-a1 supersedes UI04d D.A) ─────────────── */
 
-describe('composition: detail page sections', () => {
-  it('page.tsx render GallerySection', () => {
+describe('composition: detail page sections (hrp-p1-a1 — canonical JobPosting + shared renderer)', () => {
+  it('page.tsx render GallerySection (chờ AV4 Media)', () => {
     expect(PAGE).toMatch(/<GallerySection\b/);
     expect(PAGE).toMatch(/import\s*\{[^}]*GallerySection[^}]*\}/s);
   });
 
-  it('page.tsx render ContentSection (cho introduction + requirements + apply)', () => {
-    expect(PAGE).toMatch(/<ContentSection\b/);
-    expect(PAGE).toMatch(/import\s*\{[^}]*ContentSection[^}]*\}/s);
-  });
-
-  it('page.tsx render BenefitsSection + SupportSection', () => {
-    expect(PAGE).toMatch(/<BenefitsSection\b/);
-    expect(PAGE).toMatch(/<SupportSection\b/);
-  });
-
-  it('page.tsx render CtvInfoSection với visible flag', () => {
+  it('page.tsx render CtvInfoSection với visible flag (AFF-gated)', () => {
     expect(PAGE).toMatch(/<CtvInfoSection\b/);
     expect(PAGE).toMatch(/showCtvInfo\s*=\s*false/);
   });
 
-  it('page.tsx render EmployerSidebar + RelatedJobsSection + FooterBannerSection', () => {
+  it('page.tsx render EmployerSidebar + RelatedJobsSection', () => {
     expect(PAGE).toMatch(/<EmployerSidebar\b/);
     expect(PAGE).toMatch(/<RelatedJobsSection\b/);
-    expect(PAGE).toMatch(/<FooterBannerSection\b/);
   });
 
-  it('page.tsx dùng demo fixtures đúng tên', () => {
-    expect(PAGE).toMatch(/demoIntroductionContent/);
-    expect(PAGE).toMatch(/demoRequirementsContent/);
-    expect(PAGE).toMatch(/demoCompensationContent/);
-    expect(PAGE).toMatch(/demoSupportContent/);
-    expect(PAGE).toMatch(/demoApplyInstructionsContent/);
-    expect(PAGE).toMatch(/demoFooterBannerContent/);
+  // hrp-p1-a1 (AC-03..05): rich content KHÔNG render qua demo fixture nữa — JobPosting mới là
+  // canonical source và đi qua `renderJobPostingRichText` (HRP wrapper, A0 freeze). Test dưới
+  // đây cố ý phủ định các section/component fixture cũ để cắt luôn đường quay lại `detail-sections.fixture`.
+  it('page.tsx KHÔNG render ContentSection/BenefitsSection/SupportSection/FooterBannerSection (UI04d D.A superseded bởi A1)', () => {
+    expect(PAGE).not.toMatch(/<ContentSection\b/);
+    expect(PAGE).not.toMatch(/<BenefitsSection\b/);
+    expect(PAGE).not.toMatch(/<SupportSection\b/);
+    expect(PAGE).not.toMatch(/<FooterBannerSection\b/);
   });
 
-  it('thứ tự: Summary → Gallery → (Intro+Benefits+Support+Ctv+Requirements) → ApplyInstructions → RelatedJobs → FooterBanner', () => {
-    /* Match JSX render (sau comment block trong page.tsx). */
-    const re = (s: string) => {
-      /* Tìm comment { ... } trong JSX, lấy chuỗi đầu xuất hiện sau comment. */
-      const idx = PAGE.indexOf(s);
-      return idx;
-    };
-    const summary = PAGE.indexOf('SUMMARY — section 1');
-    const gallery = re('<GallerySection');
-    const introduction = re('<ContentSection content={demoIntroductionContent}');
-    const benefits = re('<BenefitsSection');
-    const apply = re('<ContentSection content={demoApplyInstructionsContent}');
-    const related = re('<RelatedJobsSection');
-    const footer = re('<FooterBannerSection');
-    expect(summary).toBeGreaterThan(0);
-    expect(gallery).toBeGreaterThan(summary);
-    expect(introduction).toBeGreaterThan(gallery);
-    expect(benefits).toBeGreaterThan(introduction);
-    expect(apply).toBeGreaterThan(benefits);
-    expect(related).toBeGreaterThan(apply);
-    expect(footer).toBeGreaterThan(related);
+  it('page.tsx KHÔNG import bất kỳ demo fixture nào (AC-06: không còn fixture authority)', () => {
+    expect(PAGE).not.toMatch(/demoIntroductionContent/);
+    expect(PAGE).not.toMatch(/demoRequirementsContent/);
+    expect(PAGE).not.toMatch(/demoCompensationContent/);
+    expect(PAGE).not.toMatch(/demoSupportContent/);
+    expect(PAGE).not.toMatch(/demoApplyInstructionsContent/);
+    expect(PAGE).not.toMatch(/demoFooterBannerContent/);
+    expect(PAGE).not.toMatch(/detail-sections\.fixture/);
+  });
+
+  it('page.tsx gọi shared renderer renderJobPostingRichText (HRP wrapper, A0 freeze)', () => {
+    // AC-03..05 + RQ-02: rich content của JobPosting đi qua `renderJobPostingRichText`, không qua
+    // raw HTML / dangerouslySetInnerHTML / tự viết ProseMirror→React.
+    expect(PAGE).toMatch(/renderJobPostingRichText/);
+    expect(PAGE).toMatch(/from\s+['"]@\/src\/shared\/content\/job-posting-rich-text['"]/);
+    expect(PAGE).not.toMatch(/dangerouslySetInnerHTML/);
+  });
+
+  it('page.tsx KHÔNG render trực tiếp rich-text JSON vào innerHTML / innerText', () => {
+    // Bảo đảm bốn trường rich-text chỉ được dùng qua `<RichTextSection>` (helper local) + shared
+    // renderer, không phải inline JSON.stringify hoặc innerHTML. Cách dùng đúng hiện tại là:
+    //   <RichTextSection doc={job.summary} schemaVersion={job.contentSchemaVersion} />
+    expect(PAGE).toMatch(/<RichTextSection\b/);
+    expect(PAGE).not.toMatch(/JSON\.stringify\(job\./);
+    expect(PAGE).not.toMatch(/innerHTML/);
+    expect(PAGE).not.toMatch(/innerText.*job\.(summary|benefits|requirements|applicationSteps)/);
   });
 
   it('related jobs lấy từ result.relatedJobs (cùng transaction với detail)', () => {

@@ -104,6 +104,13 @@ const EXPECTED_HITS = [
   // self-referral classification. Worker is required in schema, so the
   // sweep flags it.
   'src/domains/staffing/transfer.service.ts:186 worker',
+  // hrp-p1-a1 (2026-09-25): nguồn chuyển từ `Project` sang `JobPosting`; select bám JobOpening →
+  // StaffingOrder → Project để đọc `siteAddress`/`clientCompanyName`/`staffingOrder.status`/
+  // `staffingOrder.slots`. Cả hai là BẮT BUỘC trong schema (không optional, không list) — sweep phải
+  // đếm. An toàn vì đã chặn trước bằng `status: 'PUBLISHED'` (JobPosting) + RLS `hrp_project_visible_for`
+  // mà MKT thoả khi `Project.is_public=true` (migration s1_rls_project 2026-08-16).
+  'src/domains/job-board/public.service.ts:666 staffingOrder',
+  'src/domains/job-board/public.service.ts:673 project',
 ] as const;
 
 interface SourceEntry {
@@ -297,7 +304,9 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // jobOpening). Tổng src = 16, tổng all = 19. Bốn dòng cũ của
     // job-posting-list.service.ts lệch số dòng do mở rộng DTO (125/128/191/199
     // → 136/139/218/226) — không đếm thêm, không trừ.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(16);
+    // Sau P1-A1 (2026-09-25): +2 dòng ở public.service.ts (staffingOrder, project) do nguồn
+    // chuyển từ Project sang JobPosting chain. Tổng src = 18, tổng all = 21.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(18);
   });
 });
 

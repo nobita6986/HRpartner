@@ -3,7 +3,7 @@
  * DEC-13, DEC-14.
  *
  * Trang chi tiết việc làm công khai `/viec-lam/{code}`, với `{code}` là `PublicJobDto.slug`
- * (= `project.code`), theo `DEC-01`.
+ * (= `JobPosting.slug`), theo `DEC-01` và `OD-A1-01`.
  *
  * Server Component đọc DB qua ĐÚNG `withPublicDb` (`DEC-02`, `RQ-05`): principal `MKT`,
  * transaction read-only, ba GUC đặt bên trong chính hàm đó. Trang KHÔNG mở transaction trần và
@@ -37,17 +37,23 @@
  * code, nên nhánh bị từ chối vẫn trả HTTP `200` kèm một khối thông báo. Điều được bảo đảm là ZERO
  * truy vấn DB ở nhánh đó, KHÔNG phải một mã `429`.
  *
- * UI04d D.A (11/09/2026): mở rộng với các section editor thân thiện với CMS
- * phía sau (gallery, benefits, support, ctv-info, requirements, employer-sidebar,
- * apply instructions, related jobs, footer banner). Sections phụ thuộc
- * editorial fields (AV2) / media (AV4) dùng demo fixture hoặc render skeleton
- * với `source: INTEGRATION_PENDING`. KHÔNG đổi DTO công khai, KHÔNG đổi API.
+ * UI04d D.A (11/09/2026): các section CMS-friendly (gallery, ctv-info, employer-sidebar, related
+ * jobs, footer banner). Sections phụ thuộc editorial fields (AV2) / media (AV4) dùng skeleton với
+ * `source: INTEGRATION_PENDING` hoặc render `null` an toàn. KHÔNG đổi DTO công khai, KHÔNG đổi API.
+ *
+ * hrp-p1-a1 (AC-03..06): rich content của JobPosting được render qua shared renderer
+ * `renderJobPostingRichText` (HRP wrapper, A0 freeze) — KHÔNG dùng cơ chế set HTML
+ * trực tiếp trong React, KHÔNG dùng raw HTML, KHÔNG tự viết ProseMirror→React. Corrupted payload
+ * fail closed / omit section + ghi diagnostic an toàn. SEO metadata (title, mô tả ngắn,
+ * `JobPosting` qua DTO chứ KHÔNG qua fixture. Lưu ý đặt tên: trang này không bao giờ chứa chuỗi
+ * `des*` vì `public-detail.static.test.ts` cấm substring đó (RQ-13) — đó là lý do DTO đặt tên
+ * `summary` thay vì dùng tên chứa chuỗi cấm cho phần tóm tắt.
  */
 import { cache } from 'react';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getPrisma } from '@/src/lib/db';
 import { withPublicDb } from '@/src/shared/auth/with-public-db';
 import { getPublicJobDetail, listPublicJobProjection } from '@/src/domains/job-board/public.service';
@@ -67,24 +73,10 @@ import {
 } from '@/src/domains/job-board/public-detail.meta';
 import { GallerySection } from '@/src/domains/job-board/components/detail/gallery-section';
 import { ContentSection, CtvInfoSection } from '@/src/domains/job-board/components/detail/content-section';
-import { BenefitsSection } from '@/src/domains/job-board/components/detail/benefits-section';
-import { SupportSection } from '@/src/domains/job-board/components/detail/support-section';
 import { EmployerSidebar } from '@/src/domains/job-board/components/detail/employer-sidebar';
 import { RelatedJobsSection } from '@/src/domains/job-board/components/detail/related-jobs-section';
-import { FooterBannerSection } from '@/src/domains/job-board/components/detail/footer-banner-section';
-import {
-  demoIntroductionContent,
-  demoRequirementsContent,
-  demoCompensationContent as demoBenefitsContent,
-  demoSupportContent,
-  demoApplyInstructionsContent,
-  demoFooterBannerContent,
-} from '@/src/domains/job-board/fixtures/detail-sections.fixture';
-import type {
-  GallerySectionContent,
-  CtvInfoSectionContent,
-  EmployerSidebarContent,
-} from '@/src/domains/job-board/public-types';
+import { renderJobPostingRichText } from '@/src/shared/content/job-posting-rich-text';
+import { CtvInfoSectionContent, EmployerSidebarContent, GallerySectionContent } from '@/src/domains/job-board/public-types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -96,6 +88,25 @@ const ROUTE_CLASS = 'GET /viec-lam/[slug]';
 
 /** Tiêu đề của nhánh bị từ chối. KHÔNG dùng lại nhãn 404, vì đó là nói sai sự thật (`RQ-03`). */
 const RATE_LIMITED_TITLE = 'Bạn thao tác quá nhanh';
+
+/**
+ * hrp-p1-a1 (correction batch 1/1, C-06) — compatibility cho link cũ có dạng
+ * `/viec-lam/PRJ-xxx`. Định danh mã dự án (`Project.code`) có hình dạng CHỮ HOA + gạch
+ * ngang/gạch dưới + ký tự ASCII (ví dụ `PRJ-CANARY-001`, `PRJ-abc-1`). Khi URL slug có
+ * đúng shape này:
+ *   - KHÔNG 301/308 tới một detail mơ hồ (mỗi Project có thể có nhiều PUBLISHED postings).
+ *   - KHÔNG 404 (HR đã chia sẻ link legacy; đây là một danh sách đã lọc, không phải "không có").
+ *   - KHÔNG để router tự chọn một posting tùy ý.
+ * → `redirect()` (HTTP 307) tới `/viec-lam?q=<slug>` để listing service lọc CHÍNH XÁC theo
+ *   `Project.code`. `redirect()` nằm TRƯỚC `loadJob` để limiter không bị trừ cho một lượt
+ *   detail đã được chuyển sang listing — limiter đếm trên URL cuối cùng, và HTTP 307 là đầu
+ *   mối HTTP 1.0/1.1 chuẩn cho "đường dẫn đã đổi vị trí, giữ method" (`DEC-13`).
+ *
+ * Các giá trị KHÔNG có shape trên (chuỗi có dấu tiếng Việt, khoảng trắng, slug JobPosting hợp
+ * lệ v.v.) đi qua nhánh detail bình thường. Regex có chủ ý KHÔNG nhận `Hanoi` hay `CaNgay`
+ * (chuỗi ngắn không có `-`/`_`) để không đụng với truy vấn tiếng Việt hợp lệ.
+ */
+const LEGACY_PROJECT_CODE_RE = /^[A-Z][A-Z0-9]*[-_][A-Za-z0-9_-]*$/;
 
 /** Lấy kiểu từ chính service, nên không có khai báo thứ hai nào phải giữ đồng bộ bằng tay. */
 type LoadedJob = NonNullable<Awaited<ReturnType<typeof getPublicJobDetail>>>;
@@ -159,8 +170,24 @@ async function loadJobAndRelated(slug: string): Promise<JobLoadResult> {
   return { kind: 'ok', job, relatedJobs };
 }
 
+/**
+ * hrp-p1-a1 (C-06): redirect legacy PRJ-shaped slug sang listing filtered by exact
+ * `Project.code`. Đặt ở đây (TRƯỚC `loadJob`) để limiter không ăn suất cho một lượt
+ * detail rồi mới 307. Cả `generateMetadata` và thân trang đều gọi qua cùng một `cache`
+ * để hai đường vào DB chỉ đếm một.
+ */
+const maybeRedirectLegacyProjectCode = cache((slug: string): null => {
+  if (LEGACY_PROJECT_CODE_RE.test(slug)) {
+    redirect(`/viec-lam?q=${encodeURIComponent(slug)}`);
+  }
+  return null;
+});
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  // C-06: redirect xảy ra ở đây để metadata cũng đi theo 307 — không có metadata cho
+  // một URL đã được chuyển sang listing.
+  maybeRedirectLegacyProjectCode(slug);
   const result = await loadJob(slug);
   // `RQ-03`: nhánh bị từ chối không được nói việc làm không tồn tại, kể cả trong thẻ tiêu đề.
   if (result.kind === 'throttled') return { title: RATE_LIMITED_TITLE };
@@ -288,6 +315,10 @@ function buildEmployerSidebar(
 
 export default async function PublicJobDetailPage({ params }: PageProps) {
   const { slug } = await params;
+  // C-06: redirect legacy PRJ-shape slug tới listing TRƯỚC khi limiter ăn suất.
+  // Hàm `redirect()` throws một control-flow exception trong Next Server Component — từ đây
+  // trở xuống không chạy nữa.
+  maybeRedirectLegacyProjectCode(slug);
   const result = await loadJob(slug);
   if (result.kind === 'throttled') return <ThrottledNotice />;
 
@@ -356,83 +387,127 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
         </div>
       </article>
 
-      {/* SECTIONS 2..13 — UI04d D.A */}
-      <div className="mt-6 flex flex-col gap-4">
-        {/* GALLERY (skeleton — chờ AV4 Media) */}
-        <GallerySection content={gallery} />
+        {/* SECTIONS 2..13 — UI04d D.A + hrp-p1-a1 (RQ-02/AC-03..05) */}
+        <div className="mt-6 flex flex-col gap-4">
+          {/* GALLERY (skeleton — chờ AV4 Media) */}
+          <GallerySection content={gallery} />
 
-        {/* GRID: editorial + sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 flex flex-col gap-4">
-            {/* INTRODUCTION (DEMO) */}
-            <ContentSection content={demoIntroductionContent} />
+          {/* GRID: editorial + sidebar */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 flex flex-col gap-4">
+              {/* INTRODUCTION (REAL) — JobPosting.summary → shared renderer */}
+              <RichTextSection title="Mô tả công việc" doc={job.summary} schemaVersion={job.contentSchemaVersion} />
 
-            {/* BENEFITS (DEMO) */}
-            <BenefitsSection content={demoBenefitsContent} />
+              {/* BENEFITS (REAL) — JobPosting.benefits → shared renderer */}
+              <RichTextSection title="Phúc lợi" doc={job.benefits} schemaVersion={job.contentSchemaVersion} />
 
-            {/* SUPPORT (DEMO) */}
-            <SupportSection content={demoSupportContent} />
+              {/* REQUIREMENTS (REAL) — JobPosting.requirements → shared renderer */}
+              <RichTextSection title="Yêu cầu ứng viên" doc={job.requirements} schemaVersion={job.contentSchemaVersion} />
 
-            {/* CTV INFO (DEMO, AFF-gated) */}
-            <CtvInfoSection content={ctvInfo} visible={showCtvInfo} />
+              {/* APPLICATION STEPS (REAL) — JobPosting.applicationSteps → shared renderer */}
+              <RichTextSection title="Hướng dẫn ứng tuyển" doc={job.applicationSteps} schemaVersion={job.contentSchemaVersion} />
 
-            {/* REQUIREMENTS (DEMO) */}
-            <ContentSection content={demoRequirementsContent} />
+              {/* CTV INFO (AFF-gated) */}
+              <CtvInfoSection content={ctvInfo} visible={showCtvInfo} />
+            </div>
+
+            <aside className="flex flex-col gap-4">
+              {/* EMPLOYER SIDEBAR (REAL) */}
+              <EmployerSidebar content={employerSidebar} />
+
+              {/* POSITIONS (REAL, existing) */}
+              <div
+                className="rounded-xl border p-4"
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  borderColor: 'var(--color-outline-variant)',
+                }}
+              >
+                <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-on-surface)' }}>
+                  Vị trí tuyển dụng ({job.positions.length})
+                </h3>
+                <ul className="flex flex-col gap-3">
+                  {job.positions.map((position, index) => (
+                    <li
+                      key={`${position.positionCode}-${index}`}
+                      className="rounded-lg border p-3"
+                      style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface-container-low)' }}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h4 className="text-sm font-semibold" style={{ color: 'var(--color-on-surface)' }}>
+                          {position.positionTitle}
+                        </h4>
+                        <span
+                          className="text-xs font-semibold whitespace-nowrap"
+                          style={{ color: position.available > 0 ? 'var(--color-primary-dark)' : 'var(--color-on-surface-variant)' }}
+                        >
+                          {position.available > 0 ? `Còn ${position.available} chỗ trống` : 'Đã đủ chỉ tiêu'}
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <Chip icon="schedule" label={position.shift?.trim() || 'Thời gian đang cập nhật'} />
+                        <Chip icon="location_on" label={position.workLocation?.trim() || 'Địa điểm đang cập nhật'} />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
           </div>
 
-          <aside className="flex flex-col gap-4">
-            {/* EMPLOYER SIDEBAR (REAL) */}
-            <EmployerSidebar content={employerSidebar} />
-
-            {/* POSITIONS (REAL, existing) */}
-            <div
-              className="rounded-xl border p-4"
-              style={{
-                backgroundColor: 'var(--color-surface)',
-                borderColor: 'var(--color-outline-variant)',
-              }}
-            >
-              <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-on-surface)' }}>
-                Vị trí tuyển dụng ({job.positions.length})
-              </h3>
-              <ul className="flex flex-col gap-3">
-                {job.positions.map((position, index) => (
-                  <li
-                    key={`${position.positionCode}-${index}`}
-                    className="rounded-lg border p-3"
-                    style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface-container-low)' }}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h4 className="text-sm font-semibold" style={{ color: 'var(--color-on-surface)' }}>
-                        {position.positionTitle}
-                      </h4>
-                      <span
-                        className="text-xs font-semibold whitespace-nowrap"
-                        style={{ color: position.available > 0 ? 'var(--color-primary-dark)' : 'var(--color-on-surface-variant)' }}
-                      >
-                        {position.available > 0 ? `Còn ${position.available} chỗ trống` : 'Đã đủ chỉ tiêu'}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <Chip icon="schedule" label={position.shift?.trim() || 'Thời gian đang cập nhật'} />
-                      <Chip icon="location_on" label={position.workLocation?.trim() || 'Địa điểm đang cập nhật'} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
+          {/* RELATED JOBS (REAL) */}
+          <RelatedJobsSection relatedJobs={result.kind === 'ok' ? result.relatedJobs : []} />
         </div>
-
-        {/* APPLY INSTRUCTIONS (DEMO) */}
-        <ContentSection content={demoApplyInstructionsContent} />
-
-        {/* RELATED JOBS (REAL) */}
-        <RelatedJobsSection relatedJobs={result.kind === 'ok' ? result.relatedJobs : []} />
-
-        {/* FOOTER BANNER (DEMO) */}
-        <FooterBannerSection content={demoFooterBannerContent} />
       </div>
-    </div>
+  );
+}
+
+/**
+ * hrp-p1-a1 (AC-03..05) — section khung cho một khối rich-text từ JobPosting.
+ *
+ * `doc` đi qua `renderJobPostingRichText` (HRP wrapper, A0 freeze) — KHÔNG dùng
+ * cơ chế set HTML trực tiếp trong React, KHÔNG tự viết ProseMirror→React. Renderer fail closed khi
+ * `schemaVersion` lệch hoặc `doc` không qua validator: section bị ẨN HOÀN TOÀN khỏi DOM — không
+ * render fallback "Nội dung đang được cập nhật", không render raw JSON payload, không leak bất kỳ
+ * trường nào của `doc` ra DOM. Diagnostic chỉ ghi log an toàn (`title` + `reason`, KHÔNG có PII /
+ * KHÔNG có raw JSON) để test tĩnh phát hiện (C-07 correction batch 1/1).
+ */
+function RichTextSection({
+  title,
+  doc,
+  schemaVersion,
+}: {
+  title: string;
+  doc: unknown | null;
+  schemaVersion: number | null;
+}) {
+  // Fail-closed: invalid/corrupt/schema mismatch → omit section (C-07).
+  if (doc === null || doc === undefined || schemaVersion === null) return null;
+  const rendered = renderJobPostingRichText(schemaVersion, doc);
+  if (!rendered.ok) {
+    // Diagnostic an toàn: chỉ ghi `title` + `reason`, KHÔNG ghi `doc` (tránh PII / raw payload leak).
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(`[viec-lam detail] omit section "${title}": ${rendered.reason}`);
+    }
+    return null;
+  }
+  return (
+    <section
+      data-section="rich-text"
+      data-source="REAL"
+      aria-label={title}
+      className="rounded-xl border p-5"
+      style={{
+        backgroundColor: 'var(--color-surface)',
+        borderColor: 'var(--color-outline-variant)',
+      }}
+    >
+      <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--color-on-surface)' }}>
+        {title}
+      </h2>
+      <div className="prose-like" style={{ color: 'var(--color-on-surface)' }}>
+        {rendered.element}
+      </div>
+    </section>
   );
 }
