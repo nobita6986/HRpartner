@@ -12,7 +12,7 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | Đọc danh sách ứng viên/case thuộc canonical P1-C/P1-D có PII (phone/CCCD) và RLS boundary; sai shape hoặc rò PII sẽ leak dữ liệu người lao động. LIGHT audit là bắt buộc để verify PII masking, RLS boundary, deterministic NextAction/age derivation và no-leak behavior. |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `PROPOSED_ONLY` |
 | Planner | `Tier 1` |
 | Baseline | `8c8e0446b0f6d8750de2e9d42a1a25b4fb431e7b` |
@@ -20,7 +20,7 @@
 | Decision state | `OPEN` |
 | Test environment | `NOT_REQUIRED` |
 | Correction budget | `1` |
-| In-scope roots | `src/domains/talent/recruiter-workbench.read-service.ts`, `src/domains/talent/recruiter-workbench.types.ts`, `src/app/api/admin/recruiter-workbench/route.ts` |
+| In-scope roots | `src/domains/talent/recruiter-workbench.read-service.ts`, `src/domains/talent/recruiter-workbench.types.ts`, `app/api/admin/recruiter-workbench/route.ts` |
 | Forbidden paths | `prisma/schema.prisma`, `prisma/migrations/**`, `package.json`, `package-lock.json`, `docs/PLANNER_HANDOVER.md`, `src/domains/applications/conversion.service.ts`, `src/domains/applications/screening.service.ts`, `src/domains/talent/placement-case.service.ts` (trừ chỗ gọi canonical helper), `src/domains/talent/labor-profile.service.ts` (trừ chỗ gọi canonical helper), `docs/discovery/realignment/P1B_PUBLIC_APPLY_RECONCILIATION.md`, `docs/tasks/hrp-p1-b-public-apply/**`, `docs/tasks/hrp-p1-e1-recruiter-workbench-ui/**` |
 | Required gates | `.ai-pipeline/scripts/verify-task.ps1`, `git diff --check`, `git status --porcelain`, `npm run typecheck`, `npm run lint` |
 | Current execution round | `0` |
@@ -35,10 +35,10 @@
 
 ### 1.1 User-visible outcome
 
-- Recruiter (admin/reviewer thuộc một Organization) gọi được một endpoint read-only `GET /api/admin/recruiter-workbench` trả về danh sách xử lý ứng viên gồm: candidate (mask theo permission), current case stage/status, job/context, last interaction, server-derived nextAction, handler, age/overdue, primary action links (canonical routes).
+- Recruiter (ADMIN / HR_MANAGER / HR_STAFF theo role × view matrix — xem C-02 §5.1) gọi được một endpoint read-only `GET /api/admin/recruiter-workbench` trả về danh sách xử lý ứng viên gồm: candidate (fullName + phone/cccdNumber mask theo permission), current case stage/status, job/context, last interaction, server-derived nextAction, handler, age/overdue, primary action links (canonical routes).
 - Mọi giá trị hiển thị được tính **server-side** với rule deterministic, có test cover. Client **chỉ render**.
 - PII (phone, cccdNumber) được mask theo permission `CAN_VIEW_WORKER_SENSITIVE` — tái sử dụng `maskPhone`/`maskCccd`.
-- Filter/sort/page đồng bộ với URL state.
+- Filter/sort/page đồng bộ với URL state. Repo là **single-tenant HRP** — `AuthContext` chỉ có `userId`, `role`, `vendorId?`, `workerId?` (xem `src/shared/auth/auth-context.ts`). KHÔNG có `organizationId/orgId`. Multi-Org isolation là future additive contract.
 
 ### 1.2 Non-goals
 
@@ -61,7 +61,7 @@ Chỉ liệt kê bằng chứng cần để Tier 1 triển khai.
 | `EV-03` | `prisma/migrations/20260912140411_n1_placement_case_foundation/migration.sql:40` (`placement_case_labor_profile_id_active_unique` partial unique) | Quy tắc max 1 active case / LaborProfile đã ở DB — read service không cần reimplement. |
 | `EV-04` | `src/domains/talent/placement-case.service.ts` (`openPlacementCase`) | Canonical helper mở case; E0 chỉ đọc, không gọi mutation từ read path. |
 | `EV-05` | `prisma/migrations/20260922100000_w5_handling_assignment_safety/migration.sql` | Status/source/expiresAt của `LaborProfileHandlingAssignment` đã có — dùng cho handler derivation. |
-| `EV-06` | `src/shared/auth/permission-resolver.ts` (`resolveEffectivePermissions`) | Pattern resolve permission cho masking; copy, không wrap. |
+| `EV-06` | `src/shared/auth/permission-resolver.ts` (`resolveEffectivePermissions`) + `src/shared/auth/auth-context.ts` (shape: `userId`, `role`, `vendorId?`, `workerId?`) | Pattern resolve permission cho masking; copy, không wrap. Single-tenant HRP — KHÔNG có `organizationId`/`orgId` ở v1. |
 | `EV-07` | `src/shared/privacy/mask.ts` (`maskPhone`, `maskCccd`) | PII masking primitives đã chuẩn hóa. |
 | `EV-08` | `src/shared/ui/data-table/use-table-url-state.ts:58` (`useTableUrlState`) | URL-sync filter/sort primitive — E1 sẽ consume cùng shape. |
 | `EV-09` | `docs/tasks/hrp-p1-b-public-apply/TASK.md` tại `f640c0829fb5b01a67cb29487bce117c120f85a8` (§5–§6: `hrp_score_labor_profile` shape) | Design input cho shape cuối của identity resolution; E0 đọc, không freeze helper. |
@@ -74,13 +74,13 @@ Chỉ liệt kê bằng chứng cần để Tier 1 triển khai.
 | `DEC-01` | E0 cung cấp **một endpoint read-only** (`GET /api/admin/recruiter-workbench`) trả về `RecruiterWorkbenchListResponse`; không có POST/PATCH/DELETE trong E0. | `CHOSEN` |
 | `DEC-02` | `RecruiterWorkbenchRow.nextAction` là **server-derived, deterministic**, enum đóng (xem §4.1 RQ-08). Client không được tính lại. | `CHOSEN` |
 | `DEC-03` | `RecruiterWorkbenchRow.ageHours` / `isOverdue` là **server-derived** từ `PlacementCase.openedAt` và `LaborProfileHandlingAssignment.expiresAt` (khi có). | `CHOSEN` |
-| `DEC-04` | `RecruiterWorkbenchRow.handler` derive theo thứ tự: (1) `LaborProfileHandlingAssignment` ACTIVE gần nhất, (2) fallback `UNASSIGNED` nếu không có. | `CHOSEN` |
-| `DEC-05` | PII masking cho `candidatePhone`, `candidateCccdNumber` dùng `maskPhone` / `maskCccd`; chỉ mask qua permission `CAN_VIEW_WORKER_SENSITIVE`. | `CHOSEN` |
-| `DEC-06` | Filter `view` mặc định là `MINE` cho reviewer, `ALL` cho admin; user có thể đổi qua URL state. | `CHOSEN` |
-| `DEC-07` | E0 **không** thêm DB column mới; nếu cần `lastInteraction` thì chỉ join các bảng đã có (`candidate_submissions`, `application_status_history`, `placement_case`). | `CHOSEN` |
+| `DEC-04` | `RecruiterWorkbenchRow.handler` derive theo rule C-03: chọn `LaborProfileHandlingAssignment` có `status='ACTIVE'`, `startsAt <= now`, và `expiresAt IS NULL OR expiresAt > now`; nếu nhiều record, **deterministic order** `orderBy: { startsAt: 'desc', createdAt: 'desc', id: 'desc' }` rồi lấy 1. Nếu không có → `assigneeUserId=null`, `source=null`, `assigneeName=null`. **KHÔNG** fallback "current reviewer on case" vì `PlacementCase` không có field đó. | `CHOSEN` |
+| `DEC-05` | PII masking chỉ trả raw qua nested DTO `candidate.phone` / `candidate.cccdNumber` khi user có `CAN_VIEW_WORKER_SENSITIVE`; ngược lại dùng `maskPhone` / `maskCccd`. KHÔNG có alias top-level (`candidatePhone`, `candidateCccdNumber`). | `CHOSEN` |
+| `DEC-06` | Role × view authority matrix (single-tenant HRP, xem `src/shared/auth/auth-context.ts`):<br>• `ADMIN \| HR_MANAGER` được `view=ALL` và các view khác.<br>• `HR_STAFF` mặc định và TỐI ĐA là `view=MINE`; KHÔNG được đổi sang `ALL` (→ 403).<br>• `view=UNASSIGNED` chỉ khi user có `CAN_VIEW_UNASSIGNED_POOL`; thiếu permission → 403.<br>• Default `view`: `ADMIN/HR_MANAGER=ALL`, `HR_STAFF=MINE`. URL state có thể đổi trong phạm vi allowed của role. | `CHOSEN` |
+| `DEC-07` | E0 **không** thêm DB column mới; nếu cần `lastInteraction` thì chỉ join các bảng đã có (`candidate_submissions`, `application_status_history`, `placement_case`). `lastInteraction.kind ∈ {SUBMISSION, STATUS_CHANGE, null}`; chọn mới nhất bằng `createdAt DESC, id DESC`. KHÔNG có `NOTE`. | `CHOSEN` |
 | `DEC-08` | E0 **không** phụ thuộc n8n availability; read path là HRP runtime thuần. | `CHOSEN` |
-| `DEC-09` | RLS context: dùng `tx` Prisma với RLS (mẫu `labor-profile.read-service.ts`). Org boundary: filter `ctx.orgId` nếu role yêu cầu. | `CHOSEN` |
-| `DEC-10` | Permission required: `CAN_VIEW_RECRUITER_WORKBENCH` (giả định đã có hoặc sẽ thuộc một permission-set hiện hữu; nếu chưa có thì mở round permission riêng). E0 không tự grant permission mới trong DB. | `CHOSEN` |
+| `DEC-09` | RLS context: chạy trong `withDbContext(prisma, ctx, ...)` (helper `src/shared/auth/with-db-context.ts`) — apply GUC `app.user_id` / `app.role` transaction-local qua `set_config(..., true)` (`src/shared/auth/rls-context.ts`). Pattern copy từ `labor-profile.read-service.ts`. Repo single-tenant: KHÔNG filter `ctx.orgId` (vì không tồn tại). Application filter (role × view) **thu hẹp thêm trên RLS**, không thay thế RLS. | `CHOSEN` |
+| `DEC-10` | Permission gate bắt buộc: role ∈ `{ADMIN, HR_MANAGER, HR_STAFF}` (`src/shared/auth/route-guard` pattern hoặc inline role check). Nếu role ngoài allowlist → `403 FORBIDDEN` body `{ error: 'PERMISSION_DENIED' }`. **KHÔNG** viện dẫn permission generic chưa tồn tại trong catalog (`src/shared/auth/permission-catalog.ts`). 403 cũng trả khi requested view vượt authority (HR_STAFF gọi `view=ALL`; user thiếu `CAN_VIEW_UNASSIGNED_POOL` gọi `view=UNASSIGNED`). | `CHOSEN` |
 
 Không để `NEED_USER_DECISION` khi chuyển `READY_FOR_EXECUTION`.
 
@@ -120,29 +120,30 @@ Không để `NEED_USER_DECISION` khi chuyển `READY_FOR_EXECUTION`.
 | ID | Requirement |
 |---|---|
 | `RQ-01` | Endpoint `GET /api/admin/recruiter-workbench` trả về JSON `RecruiterWorkbenchListResponse` gồm `items: RecruiterWorkbenchRow[]`, `total: number`, `page: number`, `pageSize: number`. |
-| `RQ-02` | Mỗi `RecruiterWorkbenchRow` chứa đủ các field cho outcome: `caseId`, `caseStatus` (`OPEN \| IN_PROGRESS \| READY_TO_PLACE \| CLOSED`), `openedAt`, `closedAt \| null`, `candidate: { laborProfileId, fullName, phone (mask), cccdNumber (mask), identityVerification, completeness }`, `job: { jobPostingId \| null, jobPostingTitle \| null, projectName \| null, companyName \| null }`, `lastInteraction: { at \| null, kind: SUBMISSION \| STATUS_CHANGE \| NOTE \| null }`, `nextAction: ServerDerivedNextAction`, `handler: { assigneeUserId \| null, assigneeName \| null, source \| null }`, `ageHours: number`, `isOverdue: boolean`, `overdueReason: HANDLER_EXPIRED \| CASE_AGE_THRESHOLD \| null`, `primaryActions: { detailHref, submissionHref \| null }`. |
-| `RQ-03` | Query string (`zod`-validated) chấp nhận: `search`, `caseStatus`, `handlerUserId`, `view` (`MINE \| ALL \| UNASSIGNED`), `overdue` (`true \| false \| undefined`), `sort` (`ageDesc \| ageAsc \| openedDesc \| openedAsc`), `page` (≥1), `pageSize` (1–100, default 20). |
-| `RQ-04` | RLS: query chạy trong `tx` với RLS context theo role hiện tại (`ctx.role`, `ctx.orgId`). Reviewer chỉ thấy row thuộc Org + (mặc định `view=MINE` chỉ case mình handle). |
-| `RQ-05` | PII masking: `candidatePhone` và `candidateCccdNumber` chỉ trả raw khi user có `CAN_VIEW_WORKER_SENSITIVE`; ngược lại trả chuỗi mask qua `maskPhone`/`maskCccd`. |
-| `RQ-06` | Permission: bắt buộc `CAN_VIEW_RECRUITER_WORKBENCH` (hoặc permission hiện hữu tương đương nếu Tier 1 chọn); nếu user thiếu permission, trả HTTP `403 FORBIDDEN` với body `{ error: 'PERMISSION_DENIED' }` (đồng nhất với pattern `labor-profile.read-service.ts:55`). |
-| `RQ-07` | `nextAction` derive server-side bằng hàm `deriveNextAction(row)` deterministic, enum đóng `OPEN_INTAKE \| CONTACT_CANDIDATE \| REQUEST_DOCS \| SCHEDULE_SCREEN \| AWAITING_RESULT \| REVIEW_PLACEMENT \| NONE`. Mapping rule được document trong §4.4. |
+| `RQ-02` | Mỗi `RecruiterWorkbenchRow` chứa **nested shape** cho outcome: `caseId`, `caseStatus` (`OPEN \| IN_PROGRESS \| READY_TO_PLACE \| CLOSED`), `openedAt`, `closedAt \| null`, `candidate: { laborProfileId, fullName, phone (mask), cccdNumber (mask), identityVerification, completeness }`, `job: { jobPostingId \| null, jobPostingTitle \| null, projectName \| null, companyName \| null }`, `lastInteraction: { at \| null, kind: SUBMISSION \| STATUS_CHANGE \| null }`, `nextAction: ServerDerivedNextAction`, `handler: { assigneeUserId \| null, assigneeName \| null, source \| null }`, `ageHours: number`, `isOverdue: boolean`, `overdueReason: HANDLER_EXPIRED \| CASE_AGE_THRESHOLD \| null`, `primaryActions: { detailHref, submissionHref \| null }`. **KHÔNG** có alias top-level `candidatePhone`/`candidateCccdNumber` — DTO chỉ nested. |
+| `RQ-03` | Query string (`zod`-validated) chấp nhận: `search`, `caseStatus`, `handlerUserId`, `view` (`MINE \| ALL \| UNASSIGNED`), `overdue` (`true \| false \| undefined`), `sort` (`ageDesc \| ageAsc \| openedDesc \| openedAsc`), `page` (≥1), `pageSize` (∈ {20, 50, 100}, default 20). **Default omitted** (E1 server page): `view=ALL` cho ADMIN/HR_MANAGER; `view=MINE` cho HR_STAFF; `sort=ageDesc`; `pageSize=20`. |
+| `RQ-04` | RLS: query chạy trong `withDbContext(prisma, ctx, cb)` để apply 4 GUC transaction-local (`app.user_id`, `app.role`, `app.vendor_id`, `app.worker_id`) qua `set_config(..., true)`. Repo **single-tenant**: KHÔNG filter `ctx.orgId` (AuthContext không có field đó). Application filter (role × view) **thu hẹp thêm trên RLS**, không thay thế RLS. |
+| `RQ-05` | PII masking (chỉ trong nested DTO `candidate.phone` / `candidate.cccdNumber`): raw chỉ khi user có `CAN_VIEW_WORKER_SENSITIVE`; ngược lại `maskPhone` / `maskCccd`. **Search không có sensitive permission chỉ tìm `fullName`**; phone/CCCD search hoặc exact lookup khi thiếu permission PHẢI bị schema từ chối (400) hoặc 403. Tuyệt đối KHÔNG dùng raw phone/CCCD làm inference oracle. |
+| `RQ-06` | Role gate bắt buộc ở route handler: `ctx.role ∈ { ADMIN, HR_MANAGER, HR_STAFF }`. Role ngoài allowlist → HTTP `403 FORBIDDEN` body `{ error: 'PERMISSION_DENIED' }` (đồng nhất `labor-profile.read-service.ts`). View cũng gate: `HR_STAFF` gọi `view=ALL` → 403; user thiếu `CAN_VIEW_UNASSIGNED_POOL` gọi `view=UNASSIGNED` → 403. **KHÔNG** viện dẫn permission generic chưa tồn tại trong `permission-catalog.ts`. |
+| `RQ-07` | `nextAction` derive server-side bằng `deriveNextAction(row)` deterministic, enum đóng **chính xác 7 giá trị**: `OPEN_INTAKE \| REQUEST_DOCS \| SCREEN_SUBMISSION \| SCHEDULE_SCREEN \| AWAITING_RESULT \| REVIEW_PLACEMENT \| NONE`. **KHÔNG** có `CONTACT_CANDIDATE`. Mapping rule precedence từ trên xuống (§4.4); E1 chỉ render enum, không suy diễn lại. |
 | `RQ-08` | `ageHours` = `(now − openedAt) / 1h`, làm tròn 1 chữ số thập phân; `isOverdue = ageHours ≥ 72` HOẶC `handler.expiresAt < now`. Threshold 72h có thể chỉnh trong round sau, nhưng trong E0 cố định. |
-| `RQ-09` | `handler` derive: nếu `LaborProfileHandlingAssignment` có record `status=ACTIVE` và `now < expiresAt (nếu expiresAt != null)`, lấy assigneeUserId; nếu không, `assigneeUserId = null`, `source = null`, `assigneeName = null`. |
-| `RQ-10` | `lastInteraction.kind` derive: ưu tiên `STATUS_CHANGE` mới nhất, fallback `SUBMISSION` mới nhất; nếu không có, `kind = null`. Không join bảng mới. |
-| `RQ-11` | Query consistency: `count` + `findMany` chạy trong cùng `tx`; sort ổn định (deterministic tie-break bằng `placementCase.id`). |
-| `RQ-12` | `primaryActions.detailHref` = `/admin/labor-profiles/<laborProfileId>?case=<caseId>`; `submissionHref` = `/admin/applications?case=<caseId>` nếu có submission ACTIVE liên kết, ngược lại `null`. |
+| `RQ-09` | `handler` derive (rule C-03): chọn `LaborProfileHandlingAssignment` thỏa **đồng thời** `status='ACTIVE'`, `startsAt <= now`, `expiresAt IS NULL OR expiresAt > now`. Khi nhiều record, **deterministic order** `orderBy: { startsAt: 'desc', createdAt: 'desc', id: 'desc' }` rồi lấy 1. Kết quả: `assigneeUserId`, `assigneeName`, `source` (theo record). Nếu không có → `assigneeUserId=null`, `source=null`, `assigneeName=null`. **KHÔNG** fallback "current reviewer on case" vì `PlacementCase` không có field đó. `view=MINE` ⇔ có record ACTIVE với `assigneeUserId = ctx.userId`. |
+| `RQ-10` | `lastInteraction.kind` ∈ `{SUBMISSION, STATUS_CHANGE, null}` — **KHÔNG** có `NOTE`. Chọn mới nhất bằng `createdAt DESC, id DESC` trên toàn bộ submissions + history thuộc `PlacementCase`. Ưu tiên `STATUS_CHANGE` mới nhất, fallback `SUBMISSION` mới nhất; nếu không có → `kind=null, at=null`. Không join bảng mới. |
+| `RQ-11` | Query consistency: `count` + `findMany` chạy trong cùng `tx`; sort ổn định (deterministic tie-break `placementCase.id`). |
+| `RQ-12` | `primaryActions.detailHref = /admin/labor-profiles/<laborProfileId>?case=<caseId>` (page detail **đã** xử lý query đó — xem `app/admin/labor-profiles/[id]/page.tsx`). `primaryActions.submissionHref = /admin/applications` khi case có submission; `null` khi không có. **KHÔNG** dùng `?case=<caseId>` trên `/admin/applications` vì page hiện không xử lý query đó; direct-open submission tới case cụ thể sẽ là task riêng (E1 v1 chỉ mở list). |
 | `RQ-13` | E0 **không** nhận body POST/PATCH/DELETE; route handler chỉ export `GET`. Mọi mutation thuộc task khác (P1-F, conversion, screening). |
 | `RQ-14` | E0 không cache server-side; mỗi request là query thẳng DB. Không thêm dependency cache mới. |
 | `RQ-15` | E0 không đụng `prisma/schema.prisma` và **không** tạo migration mới. |
+| `RQ-16` | API route: `GET /api/admin/recruiter-workbench` — khi query string **invalid explicit**, trả `400 BAD_REQUEST` body `{ error: 'BAD_QUERY', issues: zodIssues }` và **không** chạm DB. Omitted params dùng safe defaults (§RQ-03). E1 server page tương ứng: render validation/error state khi invalid explicit và **không** query DB; khi omitted → defaults. |
 
 ### 4.2 Scope boundaries
 
 - **In:**
-  - File mới: `src/domains/talent/recruiter-workbench.read-service.ts`, `src/domains/talent/recruiter-workbench.types.ts`, `src/app/api/admin/recruiter-workbench/route.ts`.
-  - Unit test: `tests/unit/recruiter-workbench.read-service.test.ts`, `tests/unit/recruiter-workbench.derive.test.ts`.
-  - Integration test (RLS + masking): `tests/integration/recruiter-workbench.rls.test.ts` (theo pattern `tests/integration/labor-profiles.read.test.ts` nếu có).
+  - File mới: `src/domains/talent/recruiter-workbench.read-service.ts`, `src/domains/talent/recruiter-workbench.types.ts`, `app/api/admin/recruiter-workbench/route.ts`.
+  - Unit test (colocated, root `src/**/*.test.ts`): `src/domains/talent/recruiter-workbench.read-service.test.ts`, `src/domains/talent/recruiter-workbench.derive.test.ts`.
+  - DB integration test (registered in `vitest.integration-files.ts`): `tests/db/recruiter-workbench.integration.test.ts`.
 - **Out:**
-  - `prisma/schema.prisma`, `prisma/migrations/**`, `package.json`, `package-lock.json`.
+  - `prisma/schema.prisma`, `prisma/migrations/**`, `package.json`, `package-lock.json`, `vitest*.config.ts`, `vitest.integration-files.ts` (chỉ register, không sửa config).
   - `src/domains/applications/conversion.service.ts`, `src/domains/applications/screening.service.ts`, `src/domains/talent/placement-case.service.ts`, `src/domains/talent/labor-profile.service.ts` — **chỉ được đọc như canonical helper; KHÔNG sửa logic**.
   - `src/domains/talent/labor-profile.read-service.ts` — **không sửa** (copy pattern, không refactor).
   - `src/shared/auth/*`, `src/shared/privacy/*`, `src/shared/ui/data-table/*` — chỉ dùng, không sửa.
@@ -158,19 +159,33 @@ Không để `NEED_USER_DECISION` khi chuyển `READY_FOR_EXECUTION`.
   - Read-only. Không insert/update/delete trong E0.
   - Không thêm DB column mới.
 - **Permission/security:**
-  - RLS qua `tx` Prisma + `resolveEffectivePermissions`.
-  - Permission gate: `CAN_VIEW_RECRUITER_WORKBENCH` (hoặc tương đương — Tier 1 chốt khi freeze).
-  - PII masking qua `maskPhone` / `maskCccd`.
+  - RLS qua `withDbContext` + `resolveEffectivePermissions`.
+  - Role gate (route handler): `ctx.role ∈ { ADMIN, HR_MANAGER, HR_STAFF }`; thiếu → 403.
+  - View gate (route handler): `view=ALL` cần ADMIN/HR_MANAGER; `view=UNASSIGNED` cần `CAN_VIEW_UNASSIGNED_POOL`.
+  - PII masking qua `maskPhone` / `maskCccd` trong nested DTO.
+  - Single-tenant HRP — KHÔNG có Org boundary ở v1; multi-Org là future additive contract.
 - **Interface/API:**
-  - REST `GET /api/admin/recruiter-workbench` (Next.js App Router).
+  - REST `GET /api/admin/recruiter-workbench` (Next.js App Router, file path `app/api/admin/recruiter-workbench/route.ts`).
   - JSON contract deterministic; field optional có `null` thay vì `undefined`.
   - Zod validation cho query string.
 - **Migration/rollback:**
-  - Không migration. Rollback = revert commit / xóa 3 file mới + tests.
+  - Không migration. Rollback = revert commit / xóa file mới + tests đã liệt kê trong §4.2 In.
 
 ### 4.4 `nextAction` mapping rule (deterministic, server-only)
 
-Áp dụng theo thứ tự ưu tiên (early return):
+Enum đóng — **chính xác 7 giá trị** (C-04):
+
+```
+OPEN_INTAKE
+REQUEST_DOCS
+SCREEN_SUBMISSION
+SCHEDULE_SCREEN
+AWAITING_RESULT
+REVIEW_PLACEMENT
+NONE
+```
+
+Áp dụng theo thứ tự ưu tiên **từ trên xuống** (early return). KHÔNG có `CONTACT_CANDIDATE` (đã loại bỏ vì không có mapping thật). E1 chỉ render enum; KHÔNG suy diễn lại.
 
 | Điều kiện | `nextAction` |
 |---|---|
@@ -184,17 +199,17 @@ Không để `NEED_USER_DECISION` khi chuyển `READY_FOR_EXECUTION`.
 | `caseStatus = READY_TO_PLACE` | `REVIEW_PLACEMENT` |
 | default | `NONE` |
 
-> Lưu ý: enum trong RQ-07 liệt kê `OPEN_INTAKE | CONTACT_CANDIDATE | REQUEST_DOCS | SCHEDULE_SCREEN | AWAITING_RESULT | REVIEW_PLACEMENT | NONE`. Bảng trên dùng `SCREEN_SUBMISSION` chỉ để minh họa rule; Tier 1 sửa lại enum cuối khi freeze để khớp `SCREEN_SUBMISSION` hoặc alias `SCHEDULE_SCREEN`. Trong mọi trường hợp, enum là server-owned và đóng; client không được thêm giá trị mới.
+> Enum là server-owned và đóng. Client **không** được thêm giá trị mới. Nếu E0 mở rộng enum trong round sau → E1 update map ở `_components/NextActionBadge.tsx`, không tự ý thêm ở client.
 
 ## 5. Execution Plan
 
 | Step | Target | Intent | Verify | Stop condition |
 |---|---|---|---|---|
 | `STEP-01` | `src/domains/talent/recruiter-workbench.types.ts` | Định nghĩa `RecruiterWorkbenchRow`, `RecruiterWorkbenchListResponse`, `RecruiterWorkbenchQuery` (zod schema + TS type). | `npm run typecheck` xanh; `AC-01`. | Nếu type không khớp với bất kỳ field nào trong RQ-02 → dừng, trả Planner. |
-| `STEP-02` | `src/domains/talent/recruiter-workbench.read-service.ts` (helper `deriveNextAction`, `deriveHandler`, `deriveLastInteraction`, `computeAge`) | Pure functions, deterministic, có unit test riêng. | `tests/unit/recruiter-workbench.derive.test.ts` xanh; `AC-02..AC-04`. | Helper phụ thuộc DB → tách ra; nếu helper đụng Prisma client, dừng. |
-| `STEP-03` | `src/domains/talent/recruiter-workbench.read-service.ts` (hàm `getRecruiterWorkbenchList(tx, ctx, query)`) | Implement read service với RLS, masking, sort/page. | `tests/unit/recruiter-workbench.read-service.test.ts` xanh; `AC-05..AC-08`. | Nếu Prisma query vượt quá join bảng cho phép (xem §4.3) → dừng. |
-| `STEP-04` | `src/app/api/admin/recruiter-workbench/route.ts` | Export `GET` handler: validate query (zod), gọi service, trả JSON. | `AC-09`, `AC-10`. | Nếu validation thiếu field hoặc thiếu permission check → dừng. |
-| `STEP-05` | Tests integration (RLS + masking + no-leak) | Chứng minh reviewer không thấy case Org khác; thiếu `CAN_VIEW_WORKER_SENSITIVE` thì phone mask. | `tests/integration/recruiter-workbench.rls.test.ts` xanh; `AC-11..AC-13`. | Nếu leak PII → dừng, escalate. |
+| `STEP-02` | `src/domains/talent/recruiter-workbench.read-service.ts` (helper `deriveNextAction`, `deriveHandler`, `deriveLastInteraction`, `computeAge`) | Pure functions, deterministic, có unit test riêng (`src/domains/talent/recruiter-workbench.derive.test.ts`). | `npx vitest run src/domains/talent/recruiter-workbench.derive.test.ts` xanh; `AC-02..AC-04`. | Helper phụ thuộc DB → tách ra; nếu helper đụng Prisma client, dừng. |
+| `STEP-03` | `src/domains/talent/recruiter-workbench.read-service.ts` (hàm `getRecruiterWorkbenchList(prisma, ctx, query)`) | Implement read service với RLS, masking, sort/page trong `withDbContext`. | `npx vitest run src/domains/talent/recruiter-workbench.read-service.test.ts` xanh; `AC-05..AC-08`. | Nếu Prisma query vượt quá join bảng cho phép (xem §4.3) → dừng. |
+| `STEP-04` | `app/api/admin/recruiter-workbench/route.ts` | Export `GET` handler: validate query (zod), gọi service, trả JSON. | `AC-09`, `AC-10`. | Nếu validation thiếu field hoặc thiếu role gate → dừng. |
+| `STEP-05` | DB integration test (RLS + masking + no-leak + role matrix) | Chứng minh ADMIN/HR_MANAGER `view=ALL`; HR_STAFF `view=MINE only`; HR_STAFF `view=ALL` → 403; thiếu `CAN_VIEW_UNASSIGNED_POOL` mà gọi `view=UNASSIGNED` → 403; masking theo `CAN_VIEW_WORKER_SENSITIVE`; search không có sensitive permission chỉ tìm `fullName`. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts` (đã đăng ký trong `vitest.integration-files.ts`) xanh; `AC-11..AC-13`. | Nếu leak PII → dừng, escalate. |
 | `STEP-06` | `docs/tasks/hrp-p1-e0-recruiter-workbench-read-model/HANDOFF.md` | Báo cáo triển khai + diff + verify output. | `AC-14`. | Nếu HANDOFF thiếu evidence → trả Planner. |
 
 ## 6. Acceptance
@@ -204,18 +219,18 @@ Không để `NEED_USER_DECISION` khi chuyển `READY_FOR_EXECUTION`.
 | AC | Pass condition | Verification method |
 |---|---|---|
 | `AC-01` | `RecruiterWorkbenchRow` có đủ 13 field theo RQ-02; `RecruiterWorkbenchListResponse` có `items`, `total`, `page`, `pageSize`. | `npm run typecheck`; document review trên `recruiter-workbench.types.ts`. |
-| `AC-02` | `deriveNextAction` trả về đúng enum theo bảng §4.4 với 12 test case bao phủ mỗi nhánh. | `npx vitest run tests/unit/recruiter-workbench.derive.test.ts`. |
-| `AC-03` | `deriveHandler` trả `null` khi không có assignment ACTIVE; trả `assigneeUserId` khi có; rule ưu tiên theo RQ-09. | `npx vitest run tests/unit/recruiter-workbench.derive.test.ts`. |
-| `AC-04` | `computeAge` trả `ageHours` đúng công thức `(now - openedAt)/1h`; `isOverdue` đúng rule RQ-08. | `npx vitest run tests/unit/recruiter-workbench.derive.test.ts`. |
-| `AC-05` | Service chạy được với RLS context; count + findMany trong cùng `tx`. | `npx vitest run tests/unit/recruiter-workbench.read-service.test.ts`. |
-| `AC-06` | Service áp dụng đúng filter (`caseStatus`, `view`, `overdue`, `handlerUserId`, `search`) theo RQ-03. | `npx vitest run tests/unit/recruiter-workbench.read-service.test.ts`. |
-| `AC-07` | Service sort deterministic, tie-break bằng `placementCase.id`. | `npx vitest run tests/unit/recruiter-workbench.read-service.test.ts`. |
-| `AC-08` | Service paging đúng (page ≥ 1, pageSize 1–100). | `npx vitest run tests/unit/recruiter-workbench.read-service.test.ts`. |
-| `AC-09` | `GET /api/admin/recruiter-workbench` validate query bằng zod; trả 400 nếu sai. | `npx vitest run tests/integration/recruiter-workbench.rls.test.ts`. |
-| `AC-10` | Endpoint trả 401 nếu thiếu auth; 403 nếu thiếu permission. | `npx vitest run tests/integration/recruiter-workbench.rls.test.ts`. |
-| `AC-11` | Reviewer Org A không thấy case Org B. | `npx vitest run tests/integration/recruiter-workbench.rls.test.ts`. |
-| `AC-12` | User không có `CAN_VIEW_WORKER_SENSITIVE` thấy `candidatePhone` và `candidateCccdNumber` được mask; có permission thì thấy raw. | `npx vitest run tests/integration/recruiter-workbench.rls.test.ts`. |
-| `AC-13` | Endpoint không trả field nào ngoài `RecruiterWorkbenchRow` schema (no-leak). | `npx vitest run tests/integration/recruiter-workbench.rls.test.ts`. |
+| `AC-02` | `deriveNextAction` trả về đúng enum theo bảng §4.4 (chính xác 7 giá trị: `OPEN_INTAKE \| REQUEST_DOCS \| SCREEN_SUBMISSION \| SCHEDULE_SCREEN \| AWAITING_RESULT \| REVIEW_PLACEMENT \| NONE`) với test case bao phủ mỗi nhánh. | `npx vitest run src/domains/talent/recruiter-workbench.derive.test.ts`. |
+| `AC-03` | `deriveHandler` trả `null` khi không có assignment ACTIVE trong cửa sổ `startsAt <= now < expiresAt` (hoặc `expiresAt IS NULL`); trả `assigneeUserId` khi có; rule ưu tiên theo RQ-09. | `npx vitest run src/domains/talent/recruiter-workbench.derive.test.ts`. |
+| `AC-04` | `computeAge` trả `ageHours` đúng công thức `(now - openedAt)/1h`; `isOverdue` đúng rule RQ-08. | `npx vitest run src/domains/talent/recruiter-workbench.derive.test.ts`. |
+| `AC-05` | Service chạy được với RLS context qua `withDbContext` (apply GUC `app.user_id` / `app.role` transaction-local); count + findMany trong cùng `tx`. | `npx vitest run src/domains/talent/recruiter-workbench.read-service.test.ts`. |
+| `AC-06` | Service áp dụng đúng filter (`caseStatus`, `view`, `overdue`, `handlerUserId`, `search`) theo RQ-03; `view=MINE` chỉ trả case có `LaborProfileHandlingAssignment` ACTIVE với `assigneeUserId = ctx.userId`. | `npx vitest run src/domains/talent/recruiter-workbench.read-service.test.ts`. |
+| `AC-07` | Service sort deterministic, tie-break bằng `placementCase.id`. | `npx vitest run src/domains/talent/recruiter-workbench.read-service.test.ts`. |
+| `AC-08` | Service paging đúng (page ≥ 1, pageSize ∈ {20, 50, 100}; default 20). | `npx vitest run src/domains/talent/recruiter-workbench.read-service.test.ts`. |
+| `AC-09` | `GET /api/admin/recruiter-workbench` validate query bằng zod; trả 400 nếu explicit invalid; **không** gọi DB khi invalid. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts`. |
+| `AC-10` | Endpoint trả 401 nếu thiếu auth; 403 nếu role ngoài allowlist (`ADMIN \| HR_MANAGER \| HR_STAFF`) hoặc requested view vượt authority. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts`. |
+| `AC-11` | DB integration: `withDbContext` với `app_user_writer` + transaction-local GUC chứng minh (a) ADMIN/HR_MANAGER `view=ALL` thấy đủ case ACTIVE; (b) HR_STAFF `view=MINE` chỉ thấy case mình handle; (c) HR_STAFF `view=ALL` bị 403; (d) thiếu `CAN_VIEW_UNASSIGNED_POOL` mà gọi `view=UNASSIGNED` bị 403. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts`. |
+| `AC-12` | User không có `CAN_VIEW_WORKER_SENSITIVE` thấy `candidate.phone` và `candidate.cccdNumber` được mask; có permission thì thấy raw. Search không có sensitive permission chỉ tìm `fullName`; phone/CCCD search hoặc exact lookup với thiếu permission bị schema từ chối (400) hoặc 403 — không bao giờ raw. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts`. |
+| `AC-13` | Endpoint không trả field nào ngoài `RecruiterWorkbenchRow` schema (no-leak); DTO nested shape `candidate.phone` / `candidate.cccdNumber`; KHÔNG có top-level alias. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts`. |
 | `AC-14` | HANDOFF.md có bảng changed file (`git status --porcelain`) và verify output; chỉ liệt kê file trong §4.2 In. | `git status --porcelain`; document review. |
 
 ### 6.2 Traceability
@@ -237,13 +252,14 @@ Không để `NEED_USER_DECISION` khi chuyển `READY_FOR_EXECUTION`.
 | `RQ-13` | `STEP-04` | `AC-09` |
 | `RQ-14` | `STEP-03`, `STEP-04` | `AC-05` |
 | `RQ-15` | `STEP-01`, `STEP-02`, `STEP-03`, `STEP-04`, `STEP-05`, `STEP-06` | `AC-14` |
+| `RQ-16` | `STEP-04` | `AC-09` |
 
 ## 7. Risk
 
 | ID | Risk | Mitigation / rollback |
 |---|---|---|
 | `RISK-01` | Lộ PII (phone/CCCD) do masking sai hoặc thiếu permission check. | Test AC-12 bắt buộc; nếu fail → revert commit, fix trước khi merge. |
-| `RISK-02` | Reviewer Org A thấy case Org B do RLS context chưa pin đúng. | Test AC-11 với 2 Org fixture; nếu fail → rollback. |
+| `RISK-02` | RLS context chưa pin đúng → HR_STAFF có thể thấy case ngoài `view=MINE`. | Test AC-11 chứng minh HR_STAFF `view=MINE only`; HR_STAFF `view=ALL` → 403; `view=UNASSIGNED` thiếu permission → 403; nếu fail → rollback. (Repo single-tenant, KHÔNG test “Org A vs Org B”.) |
 | `RISK-03` | Client suy diễn `nextAction` ở UI dù server đã trả. | Document rule trong §4.4; P1-E1 TASK sẽ ghi ràng buộc "client chỉ render label/icon". |
 | `RISK-04` | Tier 1 thêm DB column mới mà E0 chưa đề cập. | `Forbidden paths` chặn; nếu Tier 1 cần thêm column → mở round permission mới. |
 | `RISK-05` | Conflict với worktree P1-B đang chạy song song. | File ownership tách rời (§4.2 Forbidden); nếu conflict thực sự xảy ra → tạm dừng E0 tới khi P1-B ACCEPTED. |
@@ -268,3 +284,4 @@ Tier 1 append sau review/audit. Audit LIGHT resolve từ AUDIT.
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-09-25` | Initial contract (PROPOSED_ONLY, DRAFT) | Initial planning round cho P1-E0 |
+| `v1.1` | `2026-09-25` | Applied 10-point correction batch C-01..C-10 from T0 v1.1: paths `app/...`; remove Org authority & add role × view matrix (AuthContext single-tenant); active-handler rule `status=ACTIVE AND startsAt <= now AND (expiresAt IS NULL OR expiresAt > now)` with deterministic `orderBy`; freeze 7-value `nextAction` enum (remove `CONTACT_CANDIDATE`); nested DTO `candidate.phone`/`candidate.cccdNumber` only with search no-oracle; `lastInteraction.kind ∈ {SUBMISSION, STATUS_CHANGE, null}`; remove `?case=` from `/admin/applications`; canonical test locations (`src/...test.ts` colocated, `tests/db/...integration.test.ts` in `vitest.integration-files.ts`, E1 colocated `app/**/*.test.tsx`); query validation behavior (400 API / safe defaults server / invalid URL = no DB hit); reconcile P1-B status (`2ed7e08` / `08e16508` / `BLOCKED_CORRECTION` / 53/53 migrations); remove "current reviewer on case" fallback. Status vẫn `PROPOSED_ONLY`; Next gate vẫn `WAIT_P1_B_ACCEPTED`. | T0 v1.1 correction batch (consolidated, 1 correction budget) |

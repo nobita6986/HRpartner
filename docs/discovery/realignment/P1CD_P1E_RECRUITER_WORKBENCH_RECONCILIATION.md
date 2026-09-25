@@ -5,10 +5,15 @@
 | Field | Value |
 | --- | --- |
 | Doc type | `discovery/realignment` |
+| Spec version | `v1.1` |
 | Status | `PROPOSED_ONLY` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Correction budget (this doc) | `1` |
+| Correction budget (this doc) | `1` (đã đốt cho v1.0→v1.1) |
 | Baseline (origin/main @ planning pin) | `8c8e0446b0f6d8750de2e9d42a1a25b4fb431e7b` |
+| Frozen HEAD | `2ed7e08d3400d53cde972b7d9bc250e5fe882d6c` |
+| Semantic implementation HEAD | `08e16508283d7334a0b0cac16b73836ede8f38f0` |
+| P1-B state | `BLOCKED_CORRECTION` (T0 synthetic DB gate) |
+| P1-B migrations | `53/53` applied trên synthetic PostgreSQL; canonical integration còn regression failures; correction đang xử lý |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1a-p1e-recruiter-workbench-planning` |
 | Branch | `codex/t1a-p1e-recruiter-workbench-planning` |
 | Owner of this doc | T1A (independent) |
@@ -31,7 +36,7 @@ Ngoài phạm vi (đã có task riêng hoặc đã frozen):
 
 - **P1-A0** JobPosting authoring/publish — `ACCEPTED` trên main.
 - **P1-A1** Canonical public job detail & continuous cutover — `ACCEPTED` trên main.
-- **P1-B** Public apply with candidate intake & provenance — `READY_FOR_EXECUTION` tại `f640c0829fb5b01a67cb29487bce117c120f85a8` (chưa `ACCEPTED`).
+- **P1-B** Public apply with candidate intake & provenance — Frozen HEAD `2ed7e08d3400d53cde972b7d9bc250e5fe882d6c`, semantic `08e16508283d7334a0b0cac16b73836ede8f38f0`. Trạng thái `BLOCKED_CORRECTION` sau T0 synthetic DB gate; 53/53 migrations applied trên synthetic PostgreSQL; canonical integration còn regression failures đang được xử lý. **Chưa `ACCEPTED`**.
 - **P1-F** Placement conversions & formal placement — task mới, **CHƯA** được khởi tạo trong round này.
 - Notification/n8n — **TASK RIÊNG**, không dùng tên canonical P1-D; xem `docs/N8N_AUTOMATION_BOUNDARY.md`.
 
@@ -43,7 +48,7 @@ Tài liệu này **không** sửa `docs/PLANNER_HANDOVER.md` (T0 sở hữu) và
 | --- | --- | --- |
 | P1-A0 | JobPosting authoring/publish | Đã `ACCEPTED` |
 | P1-A1 | Canonical public job detail + continuous cutover | Đã `ACCEPTED` |
-| P1-B | Public apply with candidate intake & provenance | Approved v1.3 tại `f640c08` — **chưa `ACCEPTED`** |
+| P1-B | Public apply with candidate intake & provenance | Frozen HEAD `2ed7e08` / semantic `08e16508` — `BLOCKED_CORRECTION`, **chưa `ACCEPTED`** |
 | **P1-C** | **LaborProfile create-or-match** (identity resolution) | **Reconcile trong doc này** |
 | **P1-D** | **PlacementCase** (state lifecycle) | **Reconcile trong doc này** |
 | **P1-E** | **Simple Recruiter Workbench** (E0 read-model + E1 UI) | **Contract hóa trong doc này** |
@@ -98,10 +103,10 @@ Phân loại sử dụng các tag:
 | `getLaborProfileDetail` include `placementCases` summary | `IMPLEMENTED` | `labor-profile.read-service.ts` | Chỉ là detail — không phải list read-model. |
 | **Canonical `nextAction` derivation** (server-side, stable) | `MISSING` | — | Cần ký hợp đồng rõ trong P1-E0 §3.2; **không** tính ở client. |
 | **Age/overdue derivation** (server-side, dựa trên `openedAt` + handling window) | `MISSING` | — | Cần ký hợp đồng rõ trong P1-E0 §3.3; client chỉ render. |
-| **`Recent interactions` cho từng case** (lastApplicationEvent / last note) | `MISSING` | — | Là một phần của read-model P1-E0; **không tự ý** thêm cột — chỉ join các bảng đã có. |
+| **`Recent interactions` cho từng case** (lastApplicationEvent / last status change) | `MISSING` | Là một phần của read-model P1-E0; **không tự ý** thêm cột — chỉ join các bảng đã có. `kind` chỉ ∈ `{SUBMISSION, STATUS_CHANGE, null}` (KHÔNG có `NOTE`). Chọn mới nhất bằng `createdAt DESC, id DESC` trên toàn bộ submissions/history thuộc PlacementCase. |
 | **Placement transition commands** (`SELECTED`→`CONFIRMED`→`EFFECTIVE`/`FAILED`/`CANCELLED`) | `OUT_OF_SCOPE` | `prisma/schema.prisma` `PlacementStatus` enum | Thuộc **P1-F**; E0 chỉ expose placeholder action (read-only), không mở transition. |
 | Notification/reminder trên `IN_PROGRESS` quá hạn | `OUT_OF_SCOPE` | — | Thuộc task riêng (n8n-boundary); **không** dùng tên P1-D. |
-| **Reviewer filter theo handling assignment + handler derivation cho workbench** | `MISSING` | — | Phần lõi của P1-E0 §3.4 — phải chờ P1-B ACCEPTED. |
+| **Handler derivation cho workbench** — rule ưu tiên `active LaborProfileHandlingAssignment` (xem v1.1 C-03: `status=ACTIVE AND startsAt <= now AND (expiresAt IS NULL OR expiresAt > now)`, orderBy `startsAt DESC, createdAt DESC, id DESC`) → fallback `UNASSIGNED`. | `MISSING` | Thuộc v1.1 P1-E0 RQ-09. **KHÔNG** fallback `current reviewer on case` vì `PlacementCase` không có field đó. |
 
 ### 2.3 HandlingAssignment / W5 / AFF-05A — mức sẵn sàng
 
@@ -118,14 +123,15 @@ Phân loại sử dụng các tag:
 | --- | --- | --- |
 | Canonical endpoint `/api/admin/recruiter-workbench` (list) | `MISSING` | Định nghĩa trong P1-E0 §4. |
 | Canonical DTO `RecruiterWorkbenchRow` (candidate + case + last interaction + nextAction + handler + age/overdue + primary actions) | `MISSING` | P1-E0 §3. |
-| Filter: `caseStatus`, `handler`, `overdue`, `view` (NEW/MINE/ALL) | `MISSING` | P1-E0 §3.1, §3.5. |
+| Filter: `caseStatus`, `handler`, `overdue`, `view` (`MINE \| ALL \| UNASSIGNED`) | `MISSING` | P1-E0 §3.1, §3.5. |
 | Pagination/sort (URL sync) | `MISSING` | P1-E0 §3.6. |
-| RLS boundary (admin/reviewer, Org) | `MISSING` (read service) — `IMPLEMENTED` (DB-level RLS) | P1-E0 §5. |
+| RLS boundary (ADMIN / HR_MANAGER / HR_STAFF + handler scope) | `MISSING` (read service) — `IMPLEMENTED` (DB-level RLS) | P1-E0 §5. |
 | No-leak behavior (mask PII ngoài allowlist) | `MISSING` | P1-E0 §5.3. |
 | Named canonical commands cho action | `MISSING` | P1-E0 §6 (`navigateToDetail`, `navigateToSubmission`, ...). |
-| Server-derived `nextAction` (deterministic) | `MISSING` | P1-E0 §3.2. |
+| Server-derived `nextAction` (deterministic, 7 enum đóng) | `MISSING` | P1-E0 §3.2. |
 | Server-derived `age` / `overdue` | `MISSING` | P1-E0 §3.3. |
 | UI workbench list/table | `MISSING` | P1-E1 §3. |
+| **Multi-organization isolation (`Org A` ≠ `Org B`)** | `OUT_OF_SCOPE` (future additive) | Repo hiện KHÔNG có `organizationId/orgId` trên `AuthContext`; HRP là single-tenant. P1-E0 khóa theo role × view, không theo Org. Mở round sau khi Org membership canonical xuất hiện. |
 
 ## 3. P1-C / P1-D — Residual thật sự trước P1-E
 
@@ -138,20 +144,20 @@ Dựa trên capability matrix §2.1–§2.2 và code đang ở `origin/main`, **
    - **(R-D1)** Định nghĩa **server-side, deterministic** `nextAction` derivation (`serverDerivedNextAction`) cho mỗi row workbench (xem P1-E0 §3.2). Client **không** suy diễn.
    - **(R-D2)** Định nghĩa server-side `age` (đã mở) / `overdue` (so với handling window) cho row workbench (xem P1-E0 §3.3).
    - **(R-D3)** Xác định read-model **bao gồm `lastInteraction`**: chỉ join các bảng đã có (`candidate_submissions`, `application_status_history`, `placement_case`); **không** thêm cột DB mới ở round này.
-   - **(R-D4)** Handler derivation cho workbench: derive từ `LaborProfileHandlingAssignment` ACTIVE (ưu tiên) → fallback theo “current reviewer on case” (nếu có) → fallback `UNASSIGNED`. Phải là server-side (xem P1-E0 §3.4).
-   - **(R-D5)** Filter/UI cho reviewer chỉ thấy case mình handle (theo Org boundary + assignment). Ký hợp đồng rõ trong P1-E0 §5.1, §5.2; UI ở P1-E1 §4.2.
+   - **(R-D4)** Handler derivation cho workbench: derive từ `LaborProfileHandlingAssignment` ACTIVE trong cửa sổ `startsAt <= now AND (expiresAt IS NULL OR expiresAt > now)` (orderBy `startsAt DESC, createdAt DESC, id DESC`) → fallback `UNASSIGNED`. **KHÔNG** fallback theo “current reviewer on case” vì `PlacementCase` không có field đó. Phải là server-side (xem P1-E0 §3.4).
+   - **(R-D5)** Filter/UI cho reviewer chỉ thấy case mình handle theo **role × view** matrix (HR_STAFF chỉ MINE, ADMIN/HR_MANAGER được ALL, view=UNASSIGNED cần `CAN_VIEW_UNASSIGNED_POOL`). Repo hiện KHÔNG có Org membership canonical → loại bỏ Org boundary claim. Ký hợp đồng rõ trong P1-E0 §5.1, §5.2; UI ở P1-E1 §4.2.
    - **(R-D6)** Mở rộng masking cho danh sách (giống `labor-profile.read-service.ts`): phone/cccdNumber chỉ hiện khi `CAN_VIEW_WORKER_SENSITIVE`. Tái sử dụng `maskPhone`/`maskCccd` (xem P1-E0 §5.3).
    - **(R-D7)** **Không** thêm `currentHandler`/`nextAction`/`overdueAt` column vào `PlacementCase` ở round này. Nếu cần persistent state, sẽ mở round sau với gate riêng.
 3. **P1-B gating**:
-   - **(R-B0)** Toàn bộ E0 implementation chỉ chạy sau khi P1-B `ACCEPTED`. E0 đang ở `WAIT_P1_B_ACCEPTED`.
+   - **(R-B0)** Toàn bộ E0 implementation chỉ chạy sau khi P1-B `ACCEPTED`. E0 đang ở `WAIT_P1_B_ACCEPTED`. Trạng thái P1-B hiện tại (T0 confirm sau synthetic DB gate): Frozen HEAD `2ed7e08d3400d53cde972b7d9bc250e5fe882d6c`, semantic implementation `08e16508283d7334a0b0cac16b73836ede8f38f0`, state `BLOCKED_CORRECTION`, 53/53 migrations applied; canonical integration còn regression failures, correction đang được xử lý.
 
 ## 4. P1-E — Capability target & scope guard
 
 ### 4.1 Outcome tối thiểu (P1-E0 + P1-E1)
 
-Recruiter (admin/reviewer thuộc Org) có một danh sách xử lý ứng viên gồm:
+Recruiter (ADMIN / HR_MANAGER / HR_STAFF theo role × view matrix) có một danh sách xử lý ứng viên gồm:
 
-- **Candidate**: fullName (mask nếu cần), phone (mask nếu cần), identityVerification, completeness.
+- **Candidate**: fullName, phone (mask nếu cần), cccdNumber (mask nếu cần), identityVerification, completeness.
 - **Current stage/status**: `PlacementCase.status` (`OPEN`/`IN_PROGRESS`/`READY_TO_PLACE`/`CLOSED`) + last `applicationStatus` (nếu có).
 - **Job/context**: JobPosting title, project/company denorm, opened/closed dates của JobOpening.
 - **Last interaction**: timestamp + loại event gần nhất (join các bảng đã có).
@@ -165,8 +171,8 @@ Recruiter (admin/reviewer thuộc Org) có một danh sách xử lý ứng viên
 - Canonical source: `placement_case`, `labor_profile`, `labor_profile_handling_assignment`, `candidate_submissions`, `application_status_history`, `job_posting`, `job_opening`.
 - Projection shape do server quyết định — client **chỉ render**.
 - Pagination/filter/sort: URL sync, sử dụng `use-table-url-state.ts` (xem `src/shared/ui/data-table/`) và `DataTable` wrapper.
-- RLS: `tx` với RLS context; tái sử dụng `resolveEffectivePermissions` từ `src/shared/auth/permission-resolver`.
-- Org boundary: filter theo `ctx.orgId` (nếu role yêu cầu). Mặc định admin/reviewer thuộc Org.
+- RLS: `tx` Prisma với `withDbContext` (`src/shared/auth/with-db-context.ts`) — apply GUC `app.user_id` / `app.role` transaction-local qua `set_config(..., true)` (`src/shared/auth/rls-context.ts`). Application filter thu hẹp thêm trên RLS, KHÔNG thay thế RLS. Tái sử dụng `resolveEffectivePermissions` từ `src/shared/auth/permission-resolver.ts`.
+- Role × view authority matrix: HR_STAFF chỉ `view=MINE` (và KHÔNG thể đổi sang ALL); ADMIN/HR_MANAGER được `view=ALL`; `view=UNASSIGNED` yêu cầu `CAN_VIEW_UNASSIGNED_POOL`. Repo chưa có `organizationId/orgId` trên `AuthContext` → KHÔNG claim Org isolation ở v1; multi-Org là future additive contract.
 - No-leak: chỉ trả field trong `RecruiterWorkbenchRow` DTO; phone/cccdNumber mask theo permission.
 - NextAction: deterministic, server-derived, enum đóng (xem P1-E0 §3.2).
 - Handler derivation: server-side (xem P1-E0 §3.4).
@@ -250,7 +256,7 @@ Trong round này: chỉ dừng ở bước (1a) — viết doc, chưa triển kh
 ## 9. Tóm tắt
 
 - **P1-C** đã `IMPLEMENTED` đến mức `EXACT_MATCH`/`POSSIBLE_MATCH` fail-closed/`NEW_PROFILE` + masking + RLS. Residual duy nhất là freeze shape cuối của `hrp_score_labor_profile` — **phụ thuộc P1-B ACCEPTED**.
-- **P1-D** đã `IMPLEMENTED` về model, enum, partial unique index, RLS, `openPlacementCase`. Residual là: server-derived `nextAction`, `age/overdue`, handler derivation cho list, filter theo assignment, masking cho list, lastInteraction join — **không thêm DB column mới**.
+- **P1-D** đã `IMPLEMENTED` về model, enum, partial unique index, RLS, `openPlacementCase`. Residual là: server-derived `nextAction` (7 enum đóng), `age`/`overdue`, handler derivation theo rule C-03, masking cho list, lastInteraction join với `kind ∈ {SUBMISSION, STATUS_CHANGE, null}` — **không thêm DB column mới**.
 - **P1-E** contract hóa trong E0 (read-model) + E1 (UI), không Kanban, không mutation trực tiếp, không tự suy diễn ở client, library-first trên primitives đã có.
 - **Không code / không cài package / không migration / không PR** trong round này.
 - **Open Owner decisions: None.**
@@ -258,3 +264,10 @@ Trong round này: chỉ dừng ở bước (1a) — viết doc, chưa triển kh
 ---
 
 *Tài liệu này thuộc vòng planning/reconciliation documentation-only. Implementation sẽ chờ `WAIT_P1_B_ACCEPTED`.*
+
+## 10. Revision Log
+
+| Spec version | Date | Change | Reason |
+|---|---|---|---|
+| `v1.0` | `2026-09-25` | Initial reconciliation (PROPOSED_ONLY) | Initial planning round cho P1-C/P1-D residual + P1-E0/E1 contract alignment |
+| `v1.1` | `2026-09-25` | Applied 10-point correction batch C-01..C-10 from T0 v1.1: paths `app/...` (xóa `src/app/...` cho App Router); remove Org authority & add role × view matrix (single-tenant HRP — repo chưa có `organizationId/orgId`); active-handler rule `status=ACTIVE AND startsAt <= now AND (expiresAt IS NULL OR expiresAt > now)` với `orderBy { startsAt: 'desc', createdAt: 'desc', id: 'desc' }`; freeze 7-value `nextAction` enum (remove `CONTACT_CANDIDATE`); nested DTO `candidate.phone`/`candidate.cccdNumber` only (no top-level aliases) + search no-oracle; `lastInteraction.kind ∈ {SUBMISSION, STATUS_CHANGE, null}`; remove `?case=` from `/admin/applications`; canonical test locations (E0 `src/...test.ts` colocated + `tests/db/...integration.test.ts` qua `vitest.integration-files.ts`; E1 colocated `app/**/*.test.tsx`); query validation behavior (400 API / safe defaults server / invalid URL = no DB hit); reconcile P1-B status với `2ed7e08` / `08e16508` / `BLOCKED_CORRECTION` / 53/53 migrations; remove "current reviewer on case" fallback. Status vẫn `PROPOSED_ONLY`; E0 next gate vẫn `WAIT_P1_B_ACCEPTED`, E1 next gate vẫn `WAIT_P1_E0_INTERFACE_FREEZE`. | T0 v1.1 correction batch (consolidated, 1 correction budget) |
