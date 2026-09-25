@@ -5,23 +5,24 @@
 | Field | Value |
 |---|---|
 | Task slug | `hrp-p1-b-public-apply` |
-| Spec version | `v1.3` |
+| Spec version | `v1.4` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Assurance lane | `CRITICAL` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Baseline | `8c8e0446b0f6d8750de2e9d42a1a25b4fb431e7b` |
-| Implementation SHA | `08e16508283d7334a0b0cac16b73836ede8f38f0` |
+| Implementation SHA | `927e32057d59655a6f0775b81ba628ef72f13baf` |
 | Frozen delivery | `YES` |
-| Canonical gates | `PASS` |
-| Audit eligibility | `NOT_REQUIRED` (DB-touching AC `ENV_BLOCKED`; tier1.md §audit selection: CRITICAL → LIGHT, but DB lane is fail-closed per DEC-12/RQ-12; no live DB run by T1B) |
-| Correction batches used | `0` |
-| Execution round | `1` |
+| Canonical gates | `NOT_REQUIRED` |
+| Audit eligibility | `NOT_REQUIRED` |
+| Audit eligibility rationale | DB-touching AC `ENV_BLOCKED`; tier1.md §audit selection: CRITICAL → LIGHT, but DB lane is fail-closed per DEC-12/RQ-12; no live DB run by T1B |
+| Correction batches used | `1` |
+| Execution round | `1` (round 1) / `2` (round 2 — T0 correction on scope exception test-only) |
 | Current audit round | `0` |
-| Status | `BLOCKED` |
+| Status | `READY_FOR_REVIEW` (round 2; Tier 3 chưa được gọi — T1B dừng ở READY_FOR_REVIEW với Audit eligibility NOT_REQUIRED per BLK-R2-01; T0 directive không yêu cầu Tier 3 trong round này) |
 | Executor | `Tier 1B` (independent takeover from in-progress dirty surface at branch `codex/t1b-p1b-public-apply`) |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1b-p1b-public-apply` |
 | Branch | `codex/t1b-p1b-public-apply` |
-| Next gate | `T0_PROVISION_SYNTHETIC_DB` (resolve BLK-01, then `TIER3_LIGHT_AUDIT`) |
+| Next gate | `T0_REVIEW_OUT_OF_SCOPE_A1_TEST` (resolve BLK-R2-01 — `tests/db/p1a1-jobposting-public-apply.integration.test.ts` falls outside T0's test-only scope exception but exhibits the same LaborProfile-residue collision on the shared synthetic DB; T0 quyết định có mở rộng scope hoặc yêu cầu riêng), then `TIER3_LIGHT_AUDIT` |
 
 ## 1. Outcome and changed surface
 
@@ -78,44 +79,115 @@ Node runtime không gọi `createOrMatchLaborProfile`/`openPlacementCase`/tác v
 | `E-09` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath "docs/tasks/hrp-p1-b-public-apply/TASK.md"` | exit `0` — `RESULT: PASS. TASK contract is ready for execution.` |
 | `E-10` | DB provenance + secret scan | `C:\cre_hrp.txt` exists (772 bytes), NEVER read by any P1-B path. `C:\CodeApp\HrP-worktrees\t1b-p1b-public-apply\.env` does NOT exist. `DATABASE_URL_TEST` / `DATABASE_URL_ADMIN_TEST` unset → integration preflight `ENV_BLOCKED`. No secret inlined, logged, or echoed anywhere in changed surface. |
 | `E-11` | Catalog proof for `hrp_score_labor_profile(text,text,text)` + apply RPC | `prisma/migrations/20260919100000_aff03b_public_intake_rpc/migration.sql` lines 140, 526–528: `CREATE OR REPLACE FUNCTION hrp_score_labor_profile(text, text, text)` + `REVOKE ALL FROM PUBLIC` + `GRANT EXECUTE ... TO PUBLIC` + `ALTER FUNCTION ... OWNER TO hrp_public_rpc`. Migration `20260925120000_p1b_public_apply_lifecycle` preflight asserts `to_regprocedure('public.hrp_score_labor_profile(text,text,text)')` exists with owner `hrp_public_rpc` + `SECURITY DEFINER` + `search_path=public, pg_temp`. Catalog proof is in the migration's preflight DO block (lines 10–61) — runtime verification needs a live DB (BLK-01). |
-| `E-12` | `git rev-parse --verify 08e16508283d7334a0b0cac16b73836ede8f38f0^{commit}` | exit `0` — Implementation SHA resolves to commit `feat(p1-b): canonical slug-bound apply lifecycle via SECURITY DEFINER RPC` on branch `codex/t1b-p1b-public-apply`. Commit touches 7 files: 851 insertions, 13 deletions. |
+| `E-12` | `git rev-parse --verify 08e16508283d7334a0b0cac16b73836ede8f38f0^{commit}` | exit `0` — Round 1 Implementation SHA resolves to commit `feat(p1-b): canonical slug-bound apply lifecycle via SECURITY DEFINER RPC` on branch `codex/t1b-p1b-public-apply`. Commit touches 7 files: 851 insertions, 13 deletions. |
 | `E-13` | `git diff --name-only 8c8e0446b0f6d8750de2e9d42a1a25b4fb431e7b..HEAD` (post-docs-freeze) | Lists only `docs/tasks/hrp-p1-b-public-apply/HANDOFF.md` (this file). No semantic delta after Implementation SHA freeze. |
+| `E-R2-01` | `CI_INTEGRATION_STRICT=1 npm run test:integration` (round 2; synthetic PostgreSQL 18; `DATABASE_URL_TEST`+`DATABASE_URL_ADMIN_TEST`+`MP2_LIVE_SECURITY_CHECK` set per `.env.t1b-synth.local`) | exit `1` — `Test Files 1 failed | 30 passed (31)`, `Tests 1 failed | 535 passed | 5 skipped (541)`. Single fail: `tests/db/p1a1-jobposting-public-apply.integration.test.ts` (out-of-scope, BLK-R2-01). See `docs/tasks/hrp-p1-b-public-apply/evidence/r2-correction/post-canonical-full.log`. |
+| `E-R2-02` | `npx vitest run --config vitest.integration.config.ts tests/db/p1b-public-apply-slug-bound.integration.test.ts` (round 2 targeted P1-B) | exit `0` — `Tests 10 passed (10)` (`post-c01-p1b-final.log`). |
+| `E-R2-03` | `npx vitest run --config vitest.integration.config.ts src/domains/applications/live-integration.mp2.test.ts` (round 2 targeted MP2) | exit `0` — `Tests 11 passed (11)` (`post-c04-mp2-v4.log`). |
+| `E-R2-04` | `npx vitest run --config vitest.integration.config.ts src/domains/applications/live-integration.ops06a.test.ts` (round 2 targeted OPS06A DB lane; Redis lane requires env) | exit `0` — `Tests 4 passed | 2 skipped (6)` (`post-c04-ops06a-v2.log`). 2 skipped: Redis token EVAL preflight. |
+| `E-R2-05` | `npx vitest run --config vitest.integration.config.ts tests/db/p1a1-migration-chain-proof.integration.test.ts` (round 2 targeted A1 chain proof) | exit `0` — `Tests 11 passed (11)` (`post-c05-a1chain.log`). |
+| `E-R2-06` | `npx prisma validate` (round 2) | exit `0` (`gate-prisma-validate.log`). |
+| `E-R2-07` | `npx tsc --noEmit` (round 2 typecheck) | exit `0` (`gate-typecheck.log`). |
+| `E-R2-08` | `npm run lint` (round 2 lint) | exit `0` (`gate-lint.log`). |
+| `E-R2-09` | `npm run test:unit` (round 2 full unit suite) | exit `0` (`gate-test-unit.log`). |
+| `E-R2-10` | `git diff --check` (round 2) | exit `0` (`gate-diff-check.log`). |
+| `E-R2-11` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-b-public-apply/TASK.md` (round 2) | exit `0` — `RESULT: PASS` (`gate-verify-task.log`). |
+| `E-R2-12` | `git rev-parse --verify 927e32057d59655a6f0775b81ba628ef72f13baf^{commit}` (round 2 Implementation SHA) | exit `0` — Implementation SHA resolves to commit `test(p1-b): canonical integration correction round (C-01..C-05)` on branch `codex/t1b-p1b-public-apply`. Commit touches exactly 4 in-scope test files (239 insertions, 58 deletions); no migration change, no schema change, no package/lockfile change. |
+| `E-R2-13` | `git status --porcelain` (round 2 post-implementation-freeze) | Lists exactly 4 `M` test files + 2 `M` doc files (`docs/tasks/hrp-p1-b-public-apply/{TASK.md,HANDOFF.md}`). UTF-8 no-BOM PASS on all 6. LF-only PASS on all 6. Forbidden paths (per TASK §0 list) all untouched. `prisma/schema.prisma` / `package.json` / `package-lock.json` 0-hit diff. |
+| `E-R2-14` | Synthetic PostgreSQL 18 evidence (T0 provisioned) | T0 confirmed: bootstrap pre/post PASS, `prisma migrate deploy` 53/53 PASS, `prisma migrate status` schema up to date, `app_user_writer` rolsuper=false rolbypassrls=false, admin + writer same synthetic DB. Production DB NOT used. See `evidence/r2-correction/migrate-deploy-p1b.log`. |
 
 ## 4. Deviations and blockers
 
+### 4.1 Pre-correction baseline (T0 evidence)
+
+| Metric | Pre-correction |
+|---|---|
+| Synthetic PostgreSQL 18 provision | T0 confirmed: bootstrap pre/post PASS, `prisma migrate deploy` 53/53 PASS, `prisma migrate status` up-to-date, `app_user_writer` rolsuper=false rolbypassrls=false, admin+writer same synthetic DB. Production DB NOT used. |
+| Canonical integration files | 31 files: 27 pass, 4 fail |
+| Canonical integration tests | 541 tests: 517 pass, 11 fail, 13 skip |
+| P1-B targeted | 7/10 pass, 3 fail |
+
+### 4.2 Directives C-01..C-05 (test-only scope exception — 5 paths only)
+
+| ID | Directive | File(s) modified | Result |
+|---|---|---|---|
+| `C-01` | Seed `normalizedPhone` qua `hrp_normalize_phone()` DB helper; assert scorer verdict EXACT_MATCH trước AC-02 / POSSIBLE_MATCH trước AC-04; không hạ P0014. | `tests/db/p1b-public-apply-slug-bound.integration.test.ts` | PASS — AC-02 EXACT_MATCH proven + AC-04 POSSIBLE_MATCH proven trước apply. |
+| `C-02` | `expectServiceCode` capture rejection riêng, không swallow sentinel `Expected <code>`. | `tests/db/p1b-public-apply-slug-bound.integration.test.ts` | PASS — `expectServiceCode` tách try/finally capture, không throw sentinel bên trong try block. |
+| `C-03` | AC-11 split `CREATE FUNCTION` + `CREATE TRIGGER` thành 2 `executeRawUnsafe` calls; cleanup fail-closed. | `tests/db/p1b-public-apply-slug-bound.integration.test.ts` | PASS — 2 lần `$executeRawUnsafe`, mỗi lần try/finally riêng, drop FUNCTION + TRIGGER nếu còn. Tránh SQLSTATE 42601 multi-statement. |
+| `C-04` | MP2/OPS06A canonical JobOpening + PUBLISHED JobPosting fixture; run-scoped unique identity; giữ security/rate-limit/idempotency; không ép POSSIBLE_MATCH → success. | `src/domains/applications/live-integration.mp2.test.ts` (RUN_PHONE/RUN_NORM_PHONE anchored to RUN_ID + AC-04 explicit unique fullName); `src/domains/applications/live-integration.ops06a.test.ts` (idempotency-key UUID + unique fullName). | PASS — MP2 11/11; OPS06A 4 passed + 2 skipped (Redis). |
+| `C-05` | `buildPredecessorStaging` chỉ copy migrations lexicographically strictly before `20260925000000_p1a1_canonical_apply_jobpostings`. | `tests/db/p1a1-migration-chain-proof.integration.test.ts` | PASS — A1 chain proof 11/11; proof tiếp tục xác nhận predecessor không chứa `job_postings`. |
+
+### 4.3 Post-correction results
+
+| Suite | Result | Evidence |
+|---|---|---|
+| P1-B targeted (`tests/db/p1b-public-apply-slug-bound.integration.test.ts`) | **10/10 PASS** | `docs/tasks/hrp-p1-b-public-apply/evidence/r2-correction/post-c01-p1b-final.log` |
+| MP2 (`src/domains/applications/live-integration.mp2.test.ts`) | **11/11 PASS** | `docs/tasks/hrp-p1-b-public-apply/evidence/r2-correction/post-c04-mp2-v4.log` |
+| OPS06A (`src/domains/applications/live-integration.ops06a.test.ts`) | **4 passed, 2 skipped** (Redis pre-existing skip) | `docs/tasks/hrp-p1-b-public-apply/evidence/r2-correction/post-c04-ops06a-v2.log` |
+| P1-A1 predecessor chain proof (`tests/db/p1a1-migration-chain-proof.integration.test.ts`) | **11/11 PASS** | `docs/tasks/hrp-p1-b-public-apply/evidence/r2-correction/post-c05-a1chain.log` |
+| Canonical integration (`CI_INTEGRATION_STRICT=1 npm run test:integration`) | **30/31 files pass, 1 fail** (out-of-scope `tests/db/p1a1-jobposting-public-apply.integration.test.ts` — see BLK-R2-01); 535 pass, 1 fail, 5 skip (vs 517/11/13 pre-correction). | `docs/tasks/hrp-p1-b-public-apply/evidence/r2-correction/post-canonical-full.log` |
+| `npx prisma validate` | PASS exit 0 | `docs/tasks/hrp-p1-b-public-apply/evidence/r2-correction/gate-prisma-validate.log` |
+| `npm run typecheck` | PASS exit 0 | `docs/tasks/hrp-p1-b-public-apply/evidence/r2-correction/gate-typecheck.log` |
+| `npm run lint` | PASS exit 0 | `docs/tasks/hrp-p1-b-public-apply/evidence/r2-correction/gate-lint.log` |
+| `npm run test:unit` (full) | PASS exit 0 | `docs/tasks/hrp-p1-b-public-apply/evidence/r2-correction/gate-test-unit.log` |
+| `git diff --check` | PASS exit 0 | `docs/tasks/hrp-p1-b-public-apply/evidence/r2-correction/gate-diff-check.log` |
+| `pwsh .ai-pipeline/scripts/verify-task.ps1` | PASS exit 0 | `docs/tasks/hrp-p1-b-public-apply/evidence/r2-correction/gate-verify-task.log` |
+
+### 4.4 Changed surface (round 2 — only 4 files in scope exception)
+
+| Path | Change |
+|---|---|
+| `tests/db/p1b-public-apply-slug-bound.integration.test.ts` | C-01/C-02/C-03 — derive `normalizedPhone` qua `hrp_normalize_phone(...)`, prove `EXACT_MATCH` verdict trước AC-02 + `POSSIBLE_MATCH` trước AC-04; `expectServiceCode` capture rejection riêng; AC-11 split `CREATE FUNCTION` + `CREATE TRIGGER` thành 2 `$executeRawUnsafe` calls với fail-closed cleanup. |
+| `src/domains/applications/live-integration.mp2.test.ts` | C-04 — RUN_ID anchored RUN_PHONE / RUN_NORM_PHONE / RUN_FULL_NAME; AC-04 explicit unique fullName (anchored to RUN_ID) để tránh collision với leftover LaborProfile từ race test committed writes. |
+| `src/domains/applications/live-integration.ops06a.test.ts` | C-04 — idempotency-key headers dùng `randomUUID()` (route `isUuidLike` gate); `getValidBody().fullName` anchored to RUN_ID để không collide với leftover LaborProfile rows trên shared synthetic DB. |
+| `tests/db/p1a1-migration-chain-proof.integration.test.ts` | C-05 — `buildPredecessorStaging` chỉ copy migrations `entry.name < path.basename(A1_MIGRATION_DIR)` (lexicographically strictly before `20260925000000_p1a1_canonical_apply_jobpostings`); P1-B và các migration sau A1 KHÔNG lọt vào predecessor staging. |
+
+### 4.5 Out-of-scope (NOT modified, per T0 directive)
+
+| Path | Reason |
+|---|---|
+| `tests/db/p1a1-jobposting-public-apply.integration.test.ts` | Outside T0's 5-path scope exception. T1B không modify. Currently fails on canonical integration lane (BLK-R2-01) vì hard-coded `phone='0900000020'` + `fullName='Nguyen Van Replay'` collide với leftover LaborProfile rows trên shared synthetic DB; same root-cause as MP2/OPS06A C-04 fix. |
+| `prisma/schema.prisma`, `package.json`, `package-lock.json` | Forbidden. |
+| `prisma/migrations/20260925000000_p1a1_canonical_apply_jobpostings/**`, `prisma/migrations/20260925120000_p1b_public_apply_lifecycle/**` | Forbidden — không sửa A1 runtime/migration/P1-B migration để fix test. |
+
+### 4.6 BLK / DEV registry
+
 | ID | Item | Mitigation / owner |
 |---|---|---|
-| `BLK-01` | **ENV_BLOCKED** for DB-touching integration AC (AC-01..AC-12, AC-15). Local sandbox has no `DATABASE_URL_TEST` / `DATABASE_URL_ADMIN_TEST`; integration preflight (`scripts/ci/integration-preflight.mjs`) correctly emits `ENV_BLOCKED` (E-06) — NOT a fake PASS. The new `tests/db/p1b-public-apply-slug-bound.integration.test.ts` self-throws on missing env (mirror `aff03-public-intake.integration.test.ts` pattern). All DB-touching AC are **PASS-by-design**: integration test code is in place, statically validated by `verify-task.ps1` + `verify-handoff.ps1`, lint+typecheck clean, and unit tests pass. Runtime evidence pending T0 synthetic-DB provision. | Tier 0/Owner — provision `DATABASE_URL_TEST` + `DATABASE_URL_ADMIN_TEST` against a dedicated test DB (NOT dev/prod, no production credential). Then re-run `CI_INTEGRATION_STRICT=1 npm run test:integration tests/db/p1b-public-apply-slug-bound.integration.test.ts` for the 12 it() cases. |
-| `DEV-01` | Implementation SHA `08e16508283d7334a0b0cac16b73836ede8f38f0` is pinned at HANDOFF freeze (E-12). Post-freeze, only `HANDOFF.md` is added (E-13); no source/test/migration change. | Tier 1. |
-| `DEV-02` | The 5 modified files contain only the narrow deltas needed for P1-B: route idempotency-key header transport (RQ-06/DEC-11), `mapApplySqlState` P0014 (DEC-06), marketplace test additions (RQ-15/C-04), and integration lane registration. No diff on `application.service.ts` body because the existing A1 service already maps `{tracking_code, status}` → `{trackingCode, status}` and never calls `createOrMatchLaborProfile`/`openPlacementCase` — verified by static AST guard. | Tier 1. |
+| `BLK-01` | (Round 1 — RESOLVED) **ENV_BLOCKED** for DB-touching integration AC (AC-01..AC-12, AC-15). Local sandbox had no `DATABASE_URL_TEST` / `DATABASE_URL_ADMIN_TEST`. T0 provisioned synthetic PostgreSQL 18 in round 2; `prisma migrate deploy` 53/53 PASS, `prisma migrate status` up to date. | Tier 0 — RESOLVED in round 2 via T0 synthetic-DB provision. |
+| `DEV-01` | Round 1 Implementation SHA `08e16508283d7334a0b0cac16b73836ede8f38f0` pinned at HANDOFF freeze (E-12). Post-freeze, only `HANDOFF.md` was added. | Tier 1. |
+| `DEV-02` | Round 1 modified 5 files only: route idempotency-key header transport (RQ-06/DEC-11), `mapApplySqlState` P0014 (DEC-06), marketplace test additions (RQ-15/C-04), integration lane registration. No diff on `application.service.ts` body because the existing A1 service already maps `{tracking_code, status}` → `{trackingCode, status}` and never calls `createOrMatchLaborProfile`/`openPlacementCase` — verified by static AST guard. | Tier 1. |
 | `DEV-03` | Integration test uses `$executeRawUnsafe` for the synthetic rollback trigger (AC-11). This is internal to the test surface (mirrors A1 pattern in `p1a1-migration-chain-proof.integration.test.ts`); no runtime code path is affected. | accepted. |
 | `DEV-04` | The static guard in `marketplace-apply.routes.test.ts` asserts the **migration source file** contains the defensive guard `position('v_signals_provided' IN v_apply_def) > 0` — NOT that it doesn't contain the token. This is the correct interpretation: the token is a sentinel used by the migration's own postflight to REJECT classifier copy if it ever happens. The runtime check (deployed function's `pg_get_functiondef` does NOT contain the token) is performed by integration test AC-12/15 once DB is provisioned. | Tier 1. |
 | `BLK-02` | (RESOLVED) `pwsh .ai-pipeline/scripts/verify-task.ps1` was PASSING before takeover handoff; no Tier 1 correction to TASK.md. | Tier 1. |
+| `BLK-R2-01` | **OUT-OF-SCOPE TEST FAILS** on canonical integration lane. `tests/db/p1a1-jobposting-public-apply.integration.test.ts` falls **outside** T0's test-only scope exception for round 2 (which lists exactly 5 paths: P1-B slug-bound suite + MP2/OPS06A + A1 chain proof + TASK/HANDOFF). The A1 suite's `beforeAll` block calls `apply` with hard-coded `phone = "0900000020"` and `fullName = "Nguyen Van Replay"` (test file lines ~972–1001). On T0's shared synthetic PostgreSQL 18, after many test runs these identities have leftover `labor_profiles` rows from earlier rounds: scorer searches `lp.normalized_phone = hrp_normalize_phone('0900000020') = '900000020'` (no leading 0) while the leftover rows have `normalized_phone = '0900000020'` (with leading 0, from application-side `normalizePhone` which preserves the `0`). The phone match fails → only full_name matches → 1 signal → `POSSIBLE_MATCH` → `P0014 POSSIBLE_MATCH_NOT_RESOLVED` → 409. Same root-cause as the MP2/OPS06A collisions C-04 fixed (run-scoped unique identity), but T0 directive forbids modifying files outside the scope exception list. | Tier 0/Owner — decide: (a) extend scope exception to include this A1 test, apply the same C-04 run-scoped-identity pattern (`phone`/`fullName` anchored to `RUN_ID`), and re-run canonical suite for `0 failed`; OR (b) accept 1 pre-existing A1 test failure as expected noise on the shared synthetic DB (not a regression in P1-B semantics), document in HANDOFF, and proceed to TIER3_LIGHT_AUDIT. T1B does NOT modify this file per directive. |
+| `DEV-R2-01` | T1B modified exactly 4 test files in scope exception: `tests/db/p1b-public-apply-slug-bound.integration.test.ts` (C-01/C-02/C-03), `src/domains/applications/live-integration.mp2.test.ts` (C-04), `src/domains/applications/live-integration.ops06a.test.ts` (C-04), `tests/db/p1a1-migration-chain-proof.integration.test.ts` (C-05). NO migration change, NO schema change, NO package/lockfile change, NO A1 runtime change. | Tier 1. |
+| `DEV-R2-02` | Round-2 implementation freeze SHA = `927e32057d59655a6f0775b81ba628ef72f13baf` (see §0 `Implementation SHA (round 2 — T0 correction; new)`). Post-freeze docs-only delta follows in next commit (TASK.md + HANDOFF.md). | Tier 1. |
 
-## 5. Final status
+## 5. Final status (round 2 — T0 correction)
 
-P1-B v1.3 implementation is FROZEN at `08e16508283d7334a0b0cac16b73836ede8f38f0` (Implementation SHA pinned in §0). All non-DB gates pass:
+Round 2 (T0 correction round) modified exactly 4 test files in scope exception; no A1/P1-B migration change, no schema change, no package/lockfile change.
 
-- `npx prisma validate` → exit 0 (E-01)
-- `npm run typecheck` → exit 0 (E-02)
-- `npm run lint` → exit 0 with 0 new warnings on changed surface (E-03)
-- Targeted unit tests (`apply-helpers.test.ts` + `marketplace-apply.routes.test.ts`) → 48 passed (E-04)
-- Full unit suite → 2635 passed, 9 skipped, 0 failed (E-05)
-- Integration preflight → `ENV_BLOCKED` correctly (no fake PASS) (E-06)
-- `git diff --check` → exit 0 (E-07)
-- UTF-8 no-BOM + LF-only on all 7 changed/new files (E-08)
-- `pwsh .ai-pipeline/scripts/verify-task.ps1` → `RESULT: PASS` (E-09)
-- DB provenance: no secret read/logged/inlined; `cre_hrp.txt` untouched; no `.env` in worktree (E-10)
-- Catalog proof for `hrp_score_labor_profile(text,text,text)` + apply RPC ownership/security/search_path via preflight + postflight assertions in the migration (E-11)
-- Scope/forbidden-path proof: only 5 modified + 2 new files; 18 forbidden paths all untouched (E-08)
-- Implementation SHA `08e16508283d7334a0b0cac16b73836ede8f38f0` resolves to commit; post-freeze docs-only delta (E-12, E-13)
+| Metric | Pre-correction (round 1) | Post-correction (round 2) |
+|---|---|---|
+| P1-B targeted | 7/10 pass, 3 fail | **10/10 PASS** |
+| MP2 | 10/11 pass, 1 fail | **11/11 PASS** |
+| OPS06A (DB tests) | 4 passed, 2 skipped (Redis), 1 fail (409) | **4 passed, 2 skipped** (Redis) |
+| P1-A1 chain proof | pre-existing 1 fail (C-05) | **11/11 PASS** |
+| Canonical integration | 27/31 files pass, 4 fail; 517/541 pass, 11 fail, 13 skip | **30/31 files pass, 1 fail** (out-of-scope A1 test — BLK-R2-01); 535/541 pass, 1 fail, 5 skip |
 
-DB-touching AC (AC-01..AC-12, AC-15) are **PASS-by-design** with **ENV_BLOCKED** runtime status (BLK-01). Tier 1 did not provision or use any production/Neon-staging credentials. The `tests/db/p1b-public-apply-slug-bound.integration.test.ts` suite is ready to run against T0's synthetic dedicated DB once `DATABASE_URL_TEST` + `DATABASE_URL_ADMIN_TEST` are exported.
+| Gate | Result |
+|---|---|
+| `npx prisma validate` | exit 0 (gate-prisma-validate.log) |
+| `npm run typecheck` | exit 0 (gate-typecheck.log) |
+| `npm run lint` | exit 0 (gate-lint.log) |
+| `npm run test:unit` | exit 0 (gate-test-unit.log) |
+| `git diff --check` | exit 0 (gate-diff-check.log) |
+| `pwsh .ai-pipeline/scripts/verify-task.ps1` | exit 0 — `RESULT: PASS` (gate-verify-task.log) |
+| `CI_INTEGRATION_STRICT=1 npm run test:integration` | 30/31 files PASS, 1 fail (out-of-scope); 535 tests pass, 1 fail, 5 skip (post-canonical-full.log) |
 
-**Status: BLOCKED.** T0 must either:
-1. Provision a synthetic dedicated DB (NOT Neon staging, NOT production) + run `CI_INTEGRATION_STRICT=1 npm run test:integration tests/db/p1b-public-apply-slug-bound.integration.test.ts`, OR
-2. Promote BLOCKED → ACCEPTED on the basis of the PASS-by-design static + unit evidence (Tier 3 LIGHT/DELTA verdict required before any production migration is rolled out).
+T1B modified only the 4 in-scope test files (C-01..C-05 applied exactly). NO migration change. NO schema change. NO package/lockfile change. NO A1 runtime change. NO production migration applied. NO PR opened. NO push performed. Tier 3 NOT called.
 
-No production migration was applied. No PR was opened. No push was performed. Tier 3 was not called.
+**Status: READY_FOR_REVIEW** (the remaining 1 fail is `tests/db/p1a1-jobposting-public-apply.integration.test.ts`, OUT-OF-SCOPE per T0 directive — see BLK-R2-01 for T0 decision). T1B stops at READY_FOR_REVIEW per T0 directive and does NOT call Tier 3.
 
-`Handoff status: BLOCKED`
+`Handoff status: READY_FOR_REVIEW` (round 2; Audit eligibility NOT_REQUIRED per BLK-R2-01).
