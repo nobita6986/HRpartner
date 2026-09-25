@@ -6,7 +6,7 @@
 
 <!-- ROADMAP_CURSOR_START -->
 ```yaml
-updated_at: 2026-09-24T23:43:30+07:00
+updated_at: 2026-09-25T10:11:22+07:00
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 delivery_protocol: V2_FAST_FREEZE
 correction_budget: 1
@@ -16,11 +16,11 @@ PHASE_MAP: |
   P2-P5: unlock only through realignment dependency/evidence gates
 current_lane: P1 — Job marketplace thin recruitment slice
 parallel_lane: Universal AFF expansion — AFF-05A-R2 ACCEPTED; next AFF/dispute slice not opened
-current_task: hrp-p1-a0-jobposting-authoring-publish — T1A_IMPLEMENTATION_ASSIGNED
-worktree_branch: T1A_TO_REPORT
-current_gate: T1A_P1A0_IMPLEMENTATION_HANDOFF_THEN_TIER3
-previous_accepted: AFF-05A-R2 bounded manager assignment; AFF-04; ER-003 metadata schema #37; CONTRACT-03A bilateral executable acceptance
-closeout_evidence: docs/tasks/hrp-v6-n2-aff-05a-r2-bounded-manager-assignment/HANDOFF.md
+current_task: hrp-p1-a1-canonical-public-job-detail — CONTRACT_REFRESH_REQUIRED
+worktree_branch: NONE
+current_gate: T0_REFRESH_P1A1_BASELINE_AND_UNLOCK_TIER1_IMPLEMENTATION
+previous_accepted: P1-A0 JobPosting authoring/publish; AFF-05A-R2 bounded manager assignment; AFF-04; ER-003 metadata schema #37; CONTRACT-03A bilateral executable acceptance
+closeout_evidence: docs/tasks/hrp-p1-a0-jobposting-authoring-publish/HANDOFF.md
 blocking_owner: "None"
 owner_defer: "Không dùng Evidence/CCCD readiness làm gate cho AFF coding. P0-A chỉ chặn production enablement của real evidence ingestion; AFF development dùng synthetic data và gate riêng."
 deferred_lane:
@@ -31,7 +31,7 @@ deferred_lane:
     coding_dependency_on_evidence_gateway: NONE
     production_enablement: P3-E_AFTER_AFF_CAPABILITY_GATE
 next_steps:
-  - 1. Receive and review T1A P1-A0 JobPosting authoring/publish implementation handoff; do not unlock P1-A1 backend integration before A0 schema/service contract is frozen.
+  - 1. Refresh P1-A1 contract baseline from current origin/main, consume the accepted P1-A0 schema/service/rich-content profile, then implement canonical public listing/detail/apply boundary under its own freeze and gates.
 ```
 <!-- ROADMAP_CURSOR_END -->
 
