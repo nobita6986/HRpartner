@@ -12,7 +12,9 @@
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Execution round | `2` |
 | Baseline | `91525013fc2720a3803e808baac39e1c4497daf6` |
-| Implementation SHA | `0ae001dd96e8c72c39a60b58f80aea6fcc2d306e` |
+| Implementation SHA | `a55c97c916c1f3d147dbc529cf6054955150a574` |
+
+> Implementation SHA note. SHA = `a55c97c916c1f3d147dbc529cf6054955150a574` (semantic correction commit, correction batch 1/1, round 2). Commit `0ae001dd96e8c72c39a60b58f80aea6fcc2d306e` (chốt Implementation SHA trước T0 verdict `CHANGES_REQUIRED`) là baseline semantic. Hai commit `d357bc94dc57de92efe40bf1fc772c8d9bbf0dc5` và `915dd2737082ea5437232fdf6c9a56d61e710d10` là docs-only HANDOFF SHA pinning, KHÔNG phải semantic implementation.
 | Frozen delivery | `YES` |
 | Canonical gates | `NOT_REQUIRED` |
 
@@ -21,15 +23,13 @@
 | Correction batches used | `1` |
 | Status | `BLOCKED` (DB integration không chạy thật được trong agent sandbox — preflight fail-closed đúng nghĩa `ENV_BLOCKED`). Tier 3 chỉ mở sau khi DB integration PASS thật. |
 
-> **Pin exact semantic Implementation SHA = `0ae001dd96e8c72c39a60b58f80aea6fcc2d306e`.** Hai commit docs-only HANDOFF pinning (`d357bc94dc57de92efe40bf1fc772c8d9bbf0dc5`, `915dd2737082ea5437232fdf6c9a56d61e710d10`) KHÔNG phải semantic implementation; chúng chỉ là docs/evidence freeze theo V2_FAST_FREEZE protocol.
-
-> **Cumulative diff range = `91525013fc2720a3803e808baac39e1c4497daf6..915dd2737082ea5437232fdf6c9a56d61e710d10` = 20 files, +1410 / -332** (verified `git diff --stat 91525013f..915dd27`). Stale claim "21 files +1413/-335" và stale SHA `d2d60dc74de2b1ec5d6ef6bc590e4b92b52fa3e4` đã bị xóa khỏi HANDOFF.
+> **Cumulative diff range = `91525013fc2720a3803e808baac39e1c4497daf6..a55c97c916c1f3d147dbc529cf6054955150a574` = 22 files, +3498 / -501** (verified `git diff --stat 91525013f..a55c97c9`). Stale claim "20 files +1410/-332" chỉ là pre-correction batch; "21 files +1413/-335" và stale SHA `d2d60dc74de2b1ec5d6ef6bc590e4b92b52fa3e4` đã bị xóa khỏi HANDOFF.
 
 > **Integration lane note.** Agent sandbox không có synthetic DB nên `npm run test:integration` dừng ở preflight với `ENV_BLOCKED` (xem `scripts/ci/integration-preflight.mjs`). Canonical preflight phải fail `ENV_BLOCKED` nếu thiếu `DATABASE_URL_TEST`+`DATABASE_URL_ADMIN_TEST` — KHÔNG dùng `describe.skipIf` để biến missing DB thành PASS/skip. Integration test mới (`tests/db/p1a1-jobposting-public-apply.integration.test.ts`) đã viết với `withPublicDb`/`DATABASE_URL_TEST`/`DATABASE_URL_ADMIN_TEST` để chạy thật khi synthetic DB được provision.
 
 ## 1. Outcome and changed surface
 
-- **Delivered (semantic implementation = `0ae001dd96e8c72c39a60b58f80aea6fcc2d306e`).**
+- **Delivered (semantic implementation = `a55c97c916c1f3d147dbc529cf6054955150a574` — correction batch 1/1, round 2).**
   - Continuous cutover sang `JobPosting PUBLISHED`: `getPublicJobDetail`, `listPublicJobs`, route handlers, service-level DTO mapping đọc đúng canonical table, derive siteAddress/clientCompanyName/staffingOrder thông qua `JobOpening → StaffingOrder → Project` (xem `src/domains/job-board/public.service.ts` — `staffingOrder: { select: { ... project: { ... } } }`). Public service CHỈ map linked `JobOpening.staffingOrderSlot` vào DTO, KHÔNG fetch toàn bộ `staffingOrder.slots` (C-02 atomic canonical slot).
   - Canonical slot join trong `prisma/migrations/20260925000000_p1a1_canonical_apply_jobpostings/migration.sql`: chain `s.id = jo.staffing_order_slot_id AND s.staffing_order_id = jo.staffing_order_id AND s.job_opening_id = jo.id` — sibling slot trên cùng StaffingOrder bị reject; nếu chain thiếu hoặc drift thì fail closed.
   - Migration grant: `GRANT SELECT ON job_postings, job_openings TO hrp_public_rpc` (chỉ SELECT, không INSERT/UPDATE/DELETE). Function body wrap trong `BEGIN;` ... `COMMIT;` với pre/post assertions (predecessor function signature, role posture, required tables/columns, owner, prosecdef=true, proconfig chứa `search_path=public, pg_temp`, EXECUTE grants, dependency SELECTs).
@@ -53,7 +53,7 @@
   - Distribution/notification bằng n8n là task riêng sau canonical commit.
   - Không tự gọi Tier 3 (CHANGES_REQUIRED).
   - Integration test DB-touching lane (`tests/db/p1a1-jobposting-public-apply.integration.test.ts`): test đã viết với fixture chain đầy đủ và đăng ký trong `vitest.integration-files.ts`, nhưng CHƯA chạy thật được do agent sandbox thiếu synthetic DB. Status = `ENV_BLOCKED` đúng nghĩa, không fake PASS.
-- **Changed.** Cumulative diff range = `91525013fc2720a3803e808baac39e1c4497daf6..915dd2737082ea5437232fdf6c9a56d61e710d10` = 20 files, +1410 / -332. Implementation commit message: "hrp-p1-a1 - Canonical Public Job Detail (READY_FOR_AUDIT)". Changed files:
+- **Changed.** Cumulative diff range = `91525013fc2720a3803e808baac39e1c4497daf6..a55c97c916c1f3d147dbc529cf6054955150a574` = 22 files, +3498 / -501. Implementation commit message: "hrp-p1-a1 - Canonical Public Job Detail (correction batch 1/1, round 2)". Changed files:
   - `app/(jobs)/viec-lam/[slug]/page.tsx` (bỏ demo fixtures; render rich qua `renderJobPostingRichText`; SEO metadata từ canonical; RichTextSection helper local fail-closed; legacy PRJ-xxx in-segment handler).
   - `app/api/public/jobs/[slug]/applications/route.ts` (reject browser-supplied IDs).
   - `src/domains/job-board/public.service.ts` (refactor to JobPosting PUBLISHED; `projectRowFromPosting`; DTO mapping chỉ map linked `JobOpening.staffingOrderSlot`; sibling slot không xuất hiện trong DTO).
@@ -129,9 +129,9 @@
 
 ## 5. Final status
 
-Status: `BLOCKED` (DB integration `ENV_BLOCKED` — synthetic DB thiếu trên agent sandbox). Implementation SHA `0ae001dd96e8c72c39a60b58f80aea6fcc2d306e` pin tại HEAD worktree branch `codex/t1a-p1-a1-canonical-public-job-detail` (trước docs-only HANDOFF SHA pinning commits `d357bc94dc57de92efe40bf1fc772c8d9bbf0dc5` và `915dd2737082ea5437232fdf6c9a56d61e710d10`). Correction batches used = 1. Frozen delivery = YES. Canonical gates = `NOT_REQUIRED` (static + unit + typecheck + lint + tiptap pin PASS; integration lane `BLOCKED` vì thiếu synthetic DB). Lane CRITICAL + LIGHT audit (đã chốt bởi T0 tại OD-P1A-04 + OD-P1A-09). Tự review toàn changed surface xong; không có semantic delta sau Implementation SHA.
+Status: `BLOCKED` (DB integration `ENV_BLOCKED` — synthetic DB thiếu trên agent sandbox). Implementation SHA `a55c97c916c1f3d147dbc529cf6054955150a574` (semantic correction commit, correction batch 1/1 round 2) pin tại HEAD worktree branch `codex/t1a-p1-a1-canonical-public-job-detail`. Correction batches used = 1. Frozen delivery = YES. Canonical gates = `NOT_REQUIRED` (static + unit + typecheck + lint + tiptap pin PASS; integration lane `BLOCKED` vì thiếu synthetic DB). Lane CRITICAL + LIGHT audit (đã chốt bởi T0 tại OD-P1A-04 + OD-P1A-09). Tự review toàn changed surface xong; không có semantic delta sau Implementation SHA.
 
-Cumulative diff range đã audit: `91525013fc2720a3803e808baac39e1c4497daf6..915dd2737082ea5437232fdf6c9a56d61e710d10` = 20 files, +1410 / -332.
+Cumulative diff range đã audit: `91525013fc2720a3803e808baac39e1c4497daf6..a55c97c916c1f3d147dbc529cf6054955150a574` = 22 files, +3498 / -501.
 
 Tier 3 chỉ được mở sau khi DB integration PASS thật. Nếu synthetic DB chưa được provision, KHÔNG tuyên bố READY_FOR_AUDIT/audit eligible.
 
