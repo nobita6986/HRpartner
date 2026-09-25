@@ -38,9 +38,12 @@
  *     (b) run khác nhau KHÔNG bao giờ collide với leftover `labor_profiles` rows từ
  *     shared synthetic DB (C-04/M3 root-cause fix — T0 directive: "Chuyển TOÀN BỘ
  *     applicant identity sang run-scoped deterministic identities").
- *   - Phone format: `09` + 8 chữ số từ RUN_ID-derived pool. Mỗi scenario lấy 1 số
- *     riêng (`runPhone(scenarioIdx)`) — không scenario nào dùng lại phone của
- *     scenario khác, kể cả trong cùng run.
+ *   - Phone format (v2 — final): `09` + 6 chữ số run-scoped hex + 2 chữ số scenario index
+ *     (zero-padded). Tổng 10 chữ số, luôn bắt đầu bằng `09`, có ≥2 chữ số dành riêng
+ *     cho scenario index, đảm bảo 13 scenarios (index 1..13) cho ra 13 phone khác nhau
+ *     trong cùng run và khác hoàn toàn với mọi run khác.
+ *   - `runPhone(scenarioIdx)` validates fail-closed: `scenarioIdx` phải là integer hữu hạn
+ *     trong miền [1, 99]; mọi input khác (NaN, ±Infinity, không nguyên, ngoài miền) throw.
  *   - FullName format: `P1A1 ${runId} Applicant ${scenarioIdx}` — anchored tới
  *     runId + scenario index, đảm bảo DB-side `hrp_normalize_full_name` so khớp
  *     cả trên runId-anchored names.
@@ -80,14 +83,60 @@ import { withPublicDb } from "@/src/shared/auth/with-public-db";
 const runToken = randomUUID().replaceAll("-", "").slice(0, 12);
 const runId = `p1a1-${runToken}`;
 
-// 10-digit VN mobile format: "09" + 8 digits. Digits are drawn from the runToken's
-// numeric subset padded to 8, so the same vitest invocation always produces the same
-// digits (deterministic per run). Scenario-specific suffix ensures no two scenarios
-// in the same run share a phone number.
+// Phone format (v2 — final):
+//   "09" + 6 run-scoped decimal digits (deterministically derived from runToken's
+//   first 6 hex chars) + 2 scenario-index digits (zero-padded). Total 10 digits,
+//   always starts with "09".
+//
+// Why 6 digits from runToken:
+//   - runToken has 12 hex chars; the first 6 (24 bits of entropy) yield
+//     16^6 ≈ 16M unique run prefixes — more than enough to avoid cross-run collisions
+//     on a shared synthetic DB.
+//   - Limiting to 6 digits (instead of 8) leaves room for a deterministic 2-digit
+//     scenario suffix.
+//   - Each hex char is mapped to a decimal digit via `parseInt(c, 16) % 10`,
+//     guaranteeing the prefix is digit-only and `hrp_normalize_phone` accepts it.
+//
+// Why a 2-digit scenario suffix (instead of 1):
+//   - The previous v1 used `scenarioIdx % 10` (only 1 digit), which collided between
+//     scenario 11 and 1 (both produced last digit "1"). The 2-digit format
+//     `String(scenarioIdx).padStart(2, "0")` produces "01".."13" for scenarios 1..13 —
+//     every scenario gets a distinct phone within the same run.
+//
+// Validation:
+//   - `runPhone` validates fail-closed: `scenarioIdx` must be a finite integer in
+//     [1, 99]. Any other input (NaN, ±Infinity, non-integer, out-of-range) throws
+//     TypeError or RangeError BEFORE any string concatenation, so a buggy caller
+//     fails the test immediately instead of silently producing an invalid phone.
 function runPhone(scenarioIdx: number): string {
-  const digits = `${runToken.replace(/[^0-9]/g, "").padEnd(8, "0")}`.slice(0, 8);
-  const lastDigit = String(scenarioIdx % 10);
-  return `09${digits.slice(0, 7)}${lastDigit}`.slice(0, 10);
+  if (!Number.isInteger(scenarioIdx)) {
+    throw new TypeError(
+      `runPhone: scenarioIdx must be an integer, got ${typeof scenarioIdx === "number" ? scenarioIdx : typeof scenarioIdx}`,
+    );
+  }
+  if (!Number.isFinite(scenarioIdx)) {
+    throw new RangeError(`runPhone: scenarioIdx must be finite, got ${scenarioIdx}`);
+  }
+  if (scenarioIdx < 1 || scenarioIdx > 99) {
+    throw new RangeError(
+      `runPhone: scenarioIdx must be in [1, 99], got ${scenarioIdx}`,
+    );
+  }
+  // runToken is 12 hex chars from `randomUUID().replaceAll("-","").slice(0,12)`,
+  // so each char is [0-9a-f]. Map each hex char to a decimal digit (parseInt(x,16)%10)
+  // to guarantee a digit-only run-scoped prefix; this preserves 100% determinism
+  // (same runToken => same digits) and avoids any letter leaking into the phone.
+  const runPrefix = runToken
+    .slice(0, 6)
+    .split("")
+    .map((c) => parseInt(c, 16) % 10)
+    .join("");
+  const scenarioSuffix = String(scenarioIdx).padStart(2, "0");
+  const phone = `09${runPrefix}${scenarioSuffix}`;
+  if (!/^09\d{8}$/.test(phone)) {
+    throw new Error(`runPhone: produced malformed phone ${phone}`);
+  }
+  return phone;
 }
 
 // Full name anchored to runId + scenario index. Deterministic per vitest invocation.
@@ -584,6 +633,38 @@ describe("P1-A1 canonical public JobPosting + apply (C-04/C-05)", () => {
   let admin: PrismaClient;
   let writer: PrismaClient;
   let fixture: CanonicalFixture;
+
+  // ─── Pure invariant: runPhone(scenarioIdx) is unique for ALL scenarios 1..13 ──
+  // T0 directive: "Thêm assertion/test trực tiếp chứng minh toàn bộ phone cho
+  // scenario 1..13 là unique". This is a pure assertion — no DB, no env —
+  // runs as the first test in the file and fails fast if the generator regresses.
+  it("runPhone produces a unique 10-digit phone for each scenario 1..13 (pure invariant)", () => {
+    const phones = Array.from({ length: 13 }, (_, i) => runPhone(i + 1));
+    const unique = new Set(phones);
+    expect(unique.size).toBe(13);
+    for (const p of phones) {
+      expect(p).toMatch(/^09\d{8}$/);
+      expect(p.length).toBe(10);
+    }
+    // Explicit pair-wise uniqueness for the canonical scenarios
+    for (let i = 1; i <= 13; i++) {
+      for (let j = i + 1; j <= 13; j++) {
+        expect(runPhone(i)).not.toBe(runPhone(j));
+      }
+    }
+  });
+
+  it("runPhone rejects invalid scenarioIdx fail-closed", () => {
+    expect(() => runPhone(0)).toThrow(RangeError);
+    expect(() => runPhone(-1)).toThrow(RangeError);
+    expect(() => runPhone(100)).toThrow(RangeError);
+    expect(() => runPhone(1.5)).toThrow(TypeError);
+    expect(() => runPhone(Number.NaN)).toThrow(TypeError);
+    // ±Infinity fail closed (both isInteger and isFinite reject them; either
+    // TypeError or RangeError is acceptable — both propagate before any DB call).
+    expect(() => runPhone(Number.POSITIVE_INFINITY)).toThrow();
+    expect(() => runPhone(Number.NEGATIVE_INFINITY)).toThrow();
+  });
 
   beforeAll(async () => {
     admin = makeClient(adminUrl);
