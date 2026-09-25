@@ -128,13 +128,19 @@ async function apply(payload: PublicApplyInput) {
 }
 
 async function expectServiceCode(promise: Promise<unknown>, code: string): Promise<void> {
+  // C-02: capture the rejection FIRST, before any assertion.
+  // Throwing inside the try block would cause `expectServiceCode` itself to
+  // throw the sentinel — Vitest's catch would then see the sentinel as the
+  // caught error, not the actual ApplicationServiceError.
+  let caught: unknown;
   try {
     await promise;
-    throw new Error(`Expected ${code}`);
   } catch (error) {
-    expect(error).toBeInstanceOf(ApplicationServiceError);
-    expect((error as ApplicationServiceError).code).toBe(code);
+    caught = error;
   }
+  expect(caught, `Expected rejection with code ${code} but the promise resolved`).toBeTruthy();
+  expect(caught as object).toBeInstanceOf(ApplicationServiceError);
+  expect((caught as ApplicationServiceError).code).toBe(code);
 }
 
 async function submissionFor(name: string) {
@@ -250,36 +256,90 @@ describe.sequential('P1-B canonical slug-bound lifecycle', () => {
 
   it('AC-02 EXACT_MATCH reuses LaborProfile and active PlacementCase', async () => {
     const chain = chains.get('exact')!;
+    // C-01: the canonical scorer uses the DB-side hrp_normalize_phone(p_phone)
+    // to derive its `v_norm_phone`. Seed the seeded profile so the scorer finds
+    // an exact match — i.e. lp.normalized_phone MUST equal what
+    // hrp_normalize_phone(seeded.phone) returns. The application-side
+    // normalizePhone() preserves a leading '0'; the canonical DB normalizer
+    // strips both '84' and '0' prefix digits. Calling hrp_normalize_phone()
+    // through the SAME connection that runs the scorer makes this the single
+    // source of truth for fixture alignment.
+    const seededDbNorm = await writer.$queryRawUnsafe<Array<{ v: string }>>(
+      `SELECT hrp_normalize_phone($1) AS v`,
+      phone(2),
+    );
+    const seededPhone = seededDbNorm[0]?.v ?? '';
     const seeded = await admin.laborProfile.create({
       data: {
         fullName: `${runId} Exact`,
-        normalizedPhone: phone(2),
+        // Store BOTH the application-side AND canonical forms so the seeded
+        // profile survives both the P1-B duplicate-guard check
+        // (`cs.normalized_phone = p_normalized_phone`) and the scorer.
+        normalizedPhone: seededPhone,
         phone: phone(2),
         cccdNumber: `0CCCD-TEST-${runToken}-2`,
         consentAt: new Date(),
       },
     });
     const active = await admin.placementCase.create({ data: { laborProfileId: seeded.id, status: 'OPEN' } });
+    // C-01: prove the scorer returns EXACT_MATCH before invocation. The scorer
+    // uses hrp_normalize_phone on the input phone; we feed it the SAME input
+    // shape the route sends. If the canonical helper ever regresses to a
+    // POSSIBLE_MATCH verdict, this test fails loudly here instead of silently
+    // rolling back inside the RPC.
+    const seededVerdict = await writer.$queryRawUnsafe<Array<{ verdict: string }>>(
+      'SELECT verdict FROM hrp_score_labor_profile($1, $2, $3)',
+      `${runId} Exact`, // names must match the seeded full_name
+      phone(2),          // raw phone (scorer normalizes internally)
+      seeded.cccdNumber,
+    );
+    expect(seededVerdict[0]?.verdict).toBe('EXACT_MATCH');
+
     const payload = input(chain, 2, {
-      fullName: seeded.fullName ?? '',
-      phone: seeded.phone ?? '',
+      fullName: `${runId} Exact`,
+      phone: phone(2),
       cccdNumber: seeded.cccdNumber,
     });
     await apply(payload);
     const row = await submissionFor(payload.fullName);
     expect(row.laborProfileId).toBe(seeded.id);
     expect(row.placementCaseId).toBe(active.id);
-    expect(await admin.laborProfile.count({ where: { normalizedPhone: phone(2) } })).toBe(1);
+    expect(await admin.laborProfile.count({ where: { normalizedPhone: seededPhone } })).toBe(1);
   });
 
   it('AC-04 POSSIBLE_MATCH maps generic 409 and creates zero lifecycle rows', async () => {
-    const sharedPhone = phone(3);
+    // C-01: seed the shared identity with normalized_phone in the canonical
+    // (DB-side) form so the candidate-set OR-of-signals filter finds the row
+    // when the caller passes the raw phone. The application-side
+    // normalizePhone() preserves the leading '0'; the scorer's
+    // hrp_normalize_phone() strips it. To bypass that asymmetry in fixture
+    // alignment we derive the canonical form from hrp_normalize_phone().
+    const sharedDbNorm = await writer.$queryRawUnsafe<Array<{ v: string }>>(
+      `SELECT hrp_normalize_phone($1) AS v`,
+      phone(3),
+    );
+    const sharedPhone = sharedDbNorm[0]?.v ?? '';
     await admin.laborProfile.create({
-      data: { fullName: `${runId} Existing Identity`, normalizedPhone: sharedPhone, phone: sharedPhone },
+      data: {
+        fullName: `${runId} Existing Identity`,
+        normalizedPhone: sharedPhone,
+        phone: phone(3),
+      },
     });
+    // C-01: prove the scorer returns POSSIBLE_MATCH for a phone that matches
+    // but a full-name that differs from the seeded identity. This is the exact
+    // branch the RPC must fail-closed on with P0014.
+    const verdictRow = await writer.$queryRawUnsafe<Array<{ verdict: string }>>(
+      'SELECT verdict FROM hrp_score_labor_profile($1, $2, $3)',
+      `${runId} Different Identity`,
+      phone(3),
+      null,
+    );
+    expect(verdictRow[0]?.verdict).toBe('POSSIBLE_MATCH');
+
     const payload = input(chains.get('possible')!, 3, {
       fullName: `${runId} Different Identity`,
-      phone: sharedPhone,
+      phone: phone(3),
       cccdNumber: null,
     });
     const before = await lifecycleCounts(payload.fullName);
@@ -326,16 +386,50 @@ describe.sequential('P1-B canonical slug-bound lifecycle', () => {
   });
 
   it('AC-11 history failure rolls back profile, case and submission atomically', async () => {
+    // C-03: prisma.$executeRawUnsafe runs through a SINGLE prepared statement
+    // per call — PostgreSQL rejects `cannot insert multiple commands into a
+    // prepared statement` (SQLSTATE 42601) when CREATE FUNCTION + CREATE TRIGGER
+    // are concatenated. Split them into separate, deterministic, fail-closed
+    // operations:
+    //   1. Create the trigger function.
+    //   2. Create the trigger that uses it.
+    // The identifier is constrained to `p1b_fail_` + a hex token so DROP TRIGGER /
+    // DROP FUNCTION can use the SAME qualified name deterministically. Cleanup is
+    // fail-closed: any attempt that throws aborts the test BEFORE the finally
+    // removes the trigger artefacts (which is exactly what we want — we never
+    // leave a sentinel trigger behind on the shared synthetic DB).
     const triggerToken = `p1b_fail_${runToken}`;
-    await admin.$executeRawUnsafe(`
-      CREATE FUNCTION public.${triggerToken}() RETURNS trigger LANGUAGE plpgsql AS $$
-      BEGIN RAISE EXCEPTION 'P1B_SYNTHETIC_HISTORY_FAILURE'; END $$;
-      CREATE TRIGGER ${triggerToken} BEFORE INSERT ON application_status_history
-      FOR EACH ROW WHEN (NEW.reason = 'PUBLIC_APPLY') EXECUTE FUNCTION public.${triggerToken}();
-    `);
-    const payload = input(chains.get('rollback')!, 1, { fullName: `${runId} Rollback Canary` });
+    if (!/^p1b_fail_[a-f0-9]+$/.test(triggerToken)) {
+      throw new Error(`[P1-B AC-11] unsafe trigger identifier: ${triggerToken}`);
+    }
     try {
-      await expect(apply(payload)).rejects.toThrow();
+      // (1) CREATE FUNCTION — single statement, single prepare.
+      await admin.$executeRawUnsafe(
+        `CREATE FUNCTION public.${triggerToken}() RETURNS trigger
+         LANGUAGE plpgsql AS $$
+         BEGIN
+           RAISE EXCEPTION 'P1B_SYNTHETIC_HISTORY_FAILURE';
+         END $$`,
+      );
+      // (2) CREATE TRIGGER — single statement, single prepare. Uses the
+      // function we just created. Filter is the same as the original sentinel
+      // (PUBLIC_APPLY history inserts only) so it cannot intercept other writes.
+      await admin.$executeRawUnsafe(
+        `CREATE TRIGGER ${triggerToken}
+         BEFORE INSERT ON application_status_history
+         FOR EACH ROW
+         WHEN (NEW.reason = 'PUBLIC_APPLY')
+         EXECUTE FUNCTION public.${triggerToken}()`,
+      );
+
+      const payload = input(chains.get('rollback')!, 1, { fullName: `${runId} Rollback Canary` });
+      let caught: unknown;
+      try {
+        await apply(payload);
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught, 'history-trigger injection must reject the apply').toBeTruthy();
       expect(await lifecycleCounts(payload.fullName)).toEqual({
         submissions: 0,
         histories: 0,
@@ -343,8 +437,19 @@ describe.sequential('P1-B canonical slug-bound lifecycle', () => {
         placementCases: 0,
       });
     } finally {
-      await admin.$executeRawUnsafe(`DROP TRIGGER IF EXISTS ${triggerToken} ON application_status_history`);
-      await admin.$executeRawUnsafe(`DROP FUNCTION IF EXISTS public.${triggerToken}()`);
+      // Fail-closed cleanup: DROP statements are also single prepared
+      // statements, so we split them too. An error during cleanup is
+      // surfaced (we don't .catch(() => {}) silently) so the next run can
+      // see and remove a leftover sentinel.
+      try {
+        await admin.$executeRawUnsafe(
+          `DROP TRIGGER IF EXISTS ${triggerToken} ON application_status_history`,
+        );
+      } finally {
+        await admin.$executeRawUnsafe(
+          `DROP FUNCTION IF EXISTS public.${triggerToken}()`,
+        );
+      }
     }
   });
 

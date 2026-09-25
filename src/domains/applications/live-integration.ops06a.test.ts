@@ -30,6 +30,7 @@
  * (`ops06a-live`) ⇒ key prefix tách biệt, không chạm counter của môi trường khác.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
 
 import { hashRateLimitIdentifier } from "@/src/shared/security/rate-limit-identity";
@@ -327,33 +328,51 @@ describe.skipIf(!DB_READY)(
       return { subs: Number(r.rows[0].subs), hist: Number(r.rows[0].hist) };
     }
 
-    const applyParams = { params: Promise.resolve({ slug: SLUG }) };
-    function applyReq(
-      body: unknown,
-      opts: {
-        contentType?: string | null;
-        key?: string;
-        rawBody?: string;
-        ip?: string;
-      } = {},
-    ) {
-      const headers = new Headers();
-      const ct =
-        opts.contentType === undefined ? "application/json" : opts.contentType;
-      if (ct) headers.set("content-type", ct);
-      headers.set("idempotency-key", opts.key ?? `ops06a-${SFX}-default`);
-      headers.set("x-forwarded-for", opts.ip ?? RAW_SUBJECT);
-      return new NextRequest(
-        `http://localhost/api/public/jobs/${SLUG}/applications`,
-        {
-          method: "POST",
-          headers,
-          body: opts.rawBody ?? JSON.stringify(body),
-        },
-      );
-    }
+const applyParams = { params: Promise.resolve({ slug: SLUG }) };
+  function applyReq(
+    body: unknown,
+    opts: {
+      contentType?: string | null;
+      key?: string;
+      rawBody?: string;
+      ip?: string;
+    } = {},
+  ) {
+    const headers = new Headers();
+    const ct =
+      opts.contentType === undefined ? "application/json" : opts.contentType;
+    if (ct) headers.set("content-type", ct);
+    // C-04: route isUuidLike() rejects non-UUID idempotency keys with 400
+    // IDEMPOTENCY_KEY_REQUIRED (RQ-06/DEC-11). Use a real v4 UUID per
+    // logical call so the headers pass the IDEMPOTENCY_KEY_REQUIRED gate
+    // and the rate-limit assertions can still prove their semantics
+    // independently of the UUID-form contract. The OPS-06A rate-limit
+    // windows are keyed off the HASHED identifier (DEC-05), NOT the raw
+    // idempotency key, so per-call UUIDs do not affect counting.
+    headers.set("idempotency-key", opts.key ?? randomUUID());
+    headers.set("x-forwarded-for", opts.ip ?? RAW_SUBJECT);
+    return new NextRequest(
+      `http://localhost/api/public/jobs/${SLUG}/applications`,
+      {
+        method: "POST",
+        headers,
+        body: opts.rawBody ?? JSON.stringify(body),
+      },
+    );
+  }
+    // C-04: anchor fullName to RUN_ID so the apply never collides with a
+    // LaborProfile row left over from an earlier OPS-06A run on the shared
+    // synthetic DB. The route + application.service normalize-and-store path
+    // preserves a leading '0' on normalized_phone (canonicalize-on-apply is
+    // not in scope for P1-B/C-04), so re-running with the same hard-coded
+    // fullName='Nguyen Van Live' across runs eventually produces a single
+    // full_name signal match against the leftover row ⇒ POSSIBLE_MATCH ⇒
+    // 409 POSSIBLE_MATCH_NOT_RESOLVED. Anchoring fullName to RUN_ID keeps the
+    // scorer at NEW_PROFILE for the apply call while the OPS-06A rate-limit /
+    // idempotency / payload-shape assertions stay anchored to the canonical
+    // phone + body shape.
     const getValidBody = () => ({
-      fullName: "Nguyen Van Live",
+      fullName: `OPS06A Live ${RUN_ID.slice(-8)}`,
       phone: PHONE,
       consent: true,
     });
@@ -385,7 +404,7 @@ describe.skipIf(!DB_READY)(
       __setRateLimitRuntime({ provider: denyProvider }, { NODE_ENV: "test" });
 
       const res = await APPLY(
-        applyReq(getValidBody(), { key: `ops06a-${SFX}-deny` }),
+        applyReq(getValidBody(), { key: randomUUID() }),
         applyParams,
       );
 
@@ -404,7 +423,7 @@ describe.skipIf(!DB_READY)(
       expect(
         (
           await APPLY(
-            applyReq(null, { rawBody: oversize, key: `ops06a-${SFX}-413` }),
+            applyReq(null, { rawBody: oversize, key: randomUUID() }),
             applyParams,
           )
         ).status,
@@ -428,7 +447,7 @@ describe.skipIf(!DB_READY)(
           await APPLY(
             applyReq(
               { ...getValidBody(), cv: { fileName: "cv.pdf" } },
-              { key: `ops06a-${SFX}-422` },
+              { key: randomUUID() },
             ),
             applyParams,
           )
@@ -440,7 +459,7 @@ describe.skipIf(!DB_READY)(
     it("AC-08: apply hợp lệ tạo ĐÚNG 1 submission + 1 history; replay cùng key ⇒ zero row mới", async () => {
       allowRuntime();
       const before = await counts();
-      const key = `ops06a-${SFX}-happy`;
+      const key = randomUUID();
 
       const first = await APPLY(applyReq(getValidBody(), { key }), applyParams);
       expect(first.status).toBe(201);

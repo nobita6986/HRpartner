@@ -64,13 +64,41 @@ type ApplyOpts = {
   tracking: string;
   consentAt?: string;
 };
+// C-04: derive a run-scoped canonical phone so the apply never collides with a
+// LaborProfile row left over from an earlier MP-2 run on the shared synthetic
+// DB (T0 directive: "Dùng run-scoped unique identity để không va chạm
+// LaborProfile tồn dư"). The 9-digit suffix is anchored to a per-process
+// RUN_ID captured at module load; all ACs in the same file invocation share
+// the SAME suffix so re-runs of the same vitest run produce stable fixtures,
+// while concurrent or sequential runs against the same synthetic DB do NOT
+// collide on (slot_id, normalized_phone).
+const RUN_ID =
+  `mp2-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+const RUN_PHONE_DIGITS = (() => {
+  // Build a 9-digit VN phone tail from RUN_ID. We avoid `09` prefix here so the
+  // test phone differs from the synthetic DB seed families (P1-B slug `p1b-…`
+  // and OPS-06A `0909000111`) and from any prior mp2 run that landed in
+  // labor_profiles on the shared DB.
+  let d = RUN_ID.replace(/[^0-9]/g, "");
+  while (d.length < 9) d += "7";
+  return d.slice(0, 9);
+})();
+const RUN_PHONE_RAW = `09${RUN_PHONE_DIGITS}`.slice(0, 10);
+// The scorer canonicalizes the phone via hrp_normalize_phone() internally, so
+// the raw phone is what we send. The duplicate guard uses
+// `cs.normalized_phone = p_normalized_phone` which in production is the
+// application-side normalizePhone(phone) result (preserves leading 0); here
+// the caller is the test and it sends the raw form, so we send the SAME raw
+// form on the duplicate-guard arg to keep semantics consistent.
+const RUN_PHONE = RUN_PHONE_RAW;
+const RUN_NORM_PHONE = RUN_PHONE_RAW;
 function applyArgs(o: ApplyOpts): any[] {
   return [
     o.slug,
     o.slotId ?? null,
-    o.fullName ?? "Nguyen Van A",
-    o.phone ?? "0900000001",
-    o.normPhone ?? "84900000001",
+    o.fullName ?? `Nguyen Van ${RUN_PHONE_DIGITS.slice(0, 4)}`,
+    o.phone ?? RUN_PHONE,
+    o.normPhone ?? RUN_NORM_PHONE,
     null /*cccd*/,
     null /*dob*/,
     null /*gender*/,
@@ -365,12 +393,20 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
       await inRollback(async () => {
         const job = await seedJob(writer, "ac03-dup");
         await anon();
+        // C-04: derive a run-scoped duplicate-guard phone so this test does
+        // not collide with any prior submission on the SAME slot from an
+        // earlier MP-2 run on the shared synthetic DB. The same normPhone
+        // (plus matching phone) is used for both applies inside this test
+        // so the second call hits the slot+phone partial-unique index.
+        const dupPhone = RUN_PHONE;
+        const dupNorm = RUN_NORM_PHONE;
         await writer.query(
           APPLY_CALL,
           applyArgs({
             slug: job.code,
             slotId: job.slotId,
-            normPhone: "84999888777",
+            phone: dupPhone,
+            normPhone: dupNorm,
             keyHash: `k1-${Math.random()}`,
             payloadHash: "p",
             tracking: `t1-${Math.random()}`,
@@ -382,7 +418,8 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
             applyArgs({
               slug: job.code,
               slotId: job.slotId,
-              normPhone: "84999888777",
+              phone: dupPhone,
+              normPhone: dupNorm,
               keyHash: `k2-${Math.random()}`,
               payloadHash: "p",
               tracking: `t2-${Math.random()}`,
@@ -436,7 +473,10 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
       const N = 5;
       const key = `mp2live-race-${Math.random().toString(36).slice(2)}`;
       const tracking = `mp2live-racet-${Math.random().toString(36).slice(2)}`;
-      const norm = "84900race01";
+      // C-04: run-scoped norm prevents the RACER APPLY from colliding with a
+      // pre-existing LaborProfile row for a fixed phone on the shared DB.
+      const norm = RUN_NORM_PHONE;
+      const racePhone = RUN_PHONE;
       let job: any;
       const racers: any[] = [];
       try {
@@ -456,6 +496,7 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
               applyArgs({
                 slug: job.code,
                 slotId: job.slotId,
+                phone: racePhone,
                 normPhone: norm,
                 keyHash: key,
                 payloadHash: "same",
@@ -533,12 +574,21 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
       await inRollback(async () => {
         const job = await seedJob(writer, "ac04");
         const tracking = `mp2live-t4-${Math.random().toString(36).slice(2)}`;
+        // C-04: explicit unique full_name per AC. The race AC-03 test commits a
+        // LaborProfile row with `full_name='Nguyen Van <RUN_DIGITS.slice(0,4)>'`
+        // (via NEW_PROFILE branch) and that row is NOT cleaned by the race
+        // fixture teardown. If AC-04 reuses the run-default full_name, the
+        // scorer matches on full_name signal alone → POSSIBLE_MATCH → P0014.
+        // Anchoring AC-04 to an explicit unique full_name (anchored to RUN_ID)
+        // keeps the scorer at NEW_PROFILE while reusing the run-scoped phone.
+        const ac04FullName = `AC04 ${RUN_ID.slice(-8)}`;
         await anon();
         await writer.query(
           APPLY_CALL,
           applyArgs({
             slug: job.code,
             slotId: job.slotId,
+            fullName: ac04FullName,
             keyHash: `k4-${Math.random()}`,
             payloadHash: "p",
             tracking,
