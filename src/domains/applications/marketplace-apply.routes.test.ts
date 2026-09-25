@@ -245,16 +245,19 @@ describe('RQ-06/DEC-09 — trần payload, media-type, shape và CV đã tắt',
   it('cv: null vẫn được nhận (client cũ) và KHÔNG lưu metadata CV nào', async () => {
     const res = await APPLY(applyRequest({ ...validPayload, cv: null }), applyParams);
     expect(res.status).toBe(201);
-    // Thứ tự tham số definer (0-based, sau SQL text): [9]=consentAt,
-    // [10..12]=cvFileName/cvMimeType/cvSizeBytes, [13]=cvStorageKey, [14]=idempotencyKeyHash.
+    // Thứ tự tham số definer (0-based, sau SQL text): [8]=consentAt (đã dịch vì slotId được
+    // hardcode NULL trong SQL), [9..11]=cvFileName/cvMimeType/cvSizeBytes,
+    // [12]=cvStorageKey, [13]=idempotencyKeyHash, [14]=payloadHash, [15]=trackingCode.
     const args = definerArgs();
+    expect(args[9]).toBeNull();
     expect(args[10]).toBeNull();
     expect(args[11]).toBeNull();
     expect(args[12]).toBeNull();
-    expect(args[13]).toBeNull();
     // Idempotency key xuống DB dưới dạng sha256, không phải key thô của client.
-    expect(String(args[14])).toMatch(/^[0-9a-f]{64}$/);
-    expect(String(args[14])).not.toContain('idem-key-001');
+    expect(String(args[13])).toMatch(/^[0-9a-f]{64}$/);
+    expect(String(args[13])).not.toContain('idem-key-001');
+    expect(String(args[14])).toMatch(/^[0-9a-f]{64}$/); // payload hash
+    expect(String(args[15])).toMatch(/^APP-/); // tracking code
   });
 });
 describe('RQ-05/RQ-09 — happy path giữ nguyên hợp đồng MP-2', () => {
@@ -285,8 +288,9 @@ describe('RQ-05/RQ-09 — happy path giữ nguyên hợp đồng MP-2', () => {
     await APPLY(applyRequest(validPayload), applyParams);
     const args = definerArgs();
     expect(args[0]).toBe(SLUG);
-    expect(typeof args[9]).toBe('string');
-    expect(String(args[9])).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    // hrp-p1-a1: consentAt dịch từ args[9] → args[8] (slotId được hardcode NULL trong SQL).
+    expect(typeof args[8]).toBe('string');
+    expect(String(args[8])).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
   it('thiếu consent ⇒ 422 CONSENT_REQUIRED (RQ-07 giữ yêu cầu đồng ý)', async () => {
@@ -483,9 +487,13 @@ describe('PLN-04/DEC-12 — apply/tracking service IM LẶNG trên console', () 
     // Chống test "xanh giả" do đường ghi bị vô hiệu: canary VẪN phải đi xuống definer.
     expect(queryRawUnsafe).toHaveBeenCalledTimes(1);
     const args = queryRawUnsafe.mock.calls[0].slice(1);
-    expect(args[2]).toBe(NAME_CANARY);
-    expect(args[3]).toBe(PHONE_CANARY);
-    expect(String(args[16])).toMatch(/^APP-[0-9A-Z-]+$/);
+    // hrp-p1-a1: slotId không còn là JS param — p_slot_id được hardcode NULL trong SQL.
+    // Thứ tự JS params: [0]=slug, [1]=fullName, [2]=phone, [3]=normalizedPhone, [4]=cccdNumber,
+    // [5]=dob, [6]=gender, [7]=experience, [8]=consent, [9]=cvFileName, [10]=cvMime,
+    // [11]=cvSize, [12]=cvStorage, [13]=idempHash, [14]=payloadHash, [15]=trackingCode.
+    expect(args[1]).toBe(NAME_CANARY);
+    expect(args[2]).toBe(PHONE_CANARY);
+    expect(String(args[15])).toMatch(/^APP-[0-9A-Z-]+$/);
   });
 
   it('definer lỗi (SQLSTATE map được VÀ lỗi lạ rethrow thô) vẫn KHÔNG ghi gì ra console', async () => {

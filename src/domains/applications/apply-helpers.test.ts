@@ -45,9 +45,11 @@ describe('hashing', () => {
     expect(h).not.toContain('client-key-123');
     expect(computeIdempotencyKeyHash('client-key-123')).toBe(h);
   });
-  it('payload hash is field-order stable and change-sensitive', () => {
+  it('payload hash is field-order stable and change-sensitive', async () => {
+    // hrp-p1-a1: slotId đã bị loại khỏi CanonicalApplyPayload — slot là output của RPC, không phải input.
+    // Apply hash không có slotId trong input.
     const base: CanonicalApplyPayload = {
-      slug: 'acme', slotId: 's1', fullName: '  Nguyen Van A  ', normalizedPhone: '0909123456',
+      slug: 'acme', fullName: '  Nguyen Van A  ', normalizedPhone: '0909123456',
       cccdNumber: '123', dateOfBirth: '1990-01-01', gender: 'M', experience: 'x',
       cvFileName: 'cv.pdf', cvMimeType: 'application/pdf', cvSizeBytes: 1000,
     };

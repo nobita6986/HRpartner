@@ -8,14 +8,15 @@
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Work type | `CODE` |
 | Build vs adopt | `ADOPT` |
+| Build vs automate | `N/A` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | `Public detail expose DRAFT/ARCHIVED hoặc raw payload là leak critical; lane CRITICAL + LIGHT audit (không phải NONE) cho vertical slice đầu của marketplace. Risk acceptance: Owner/T0 chấp nhận LIGHT audit cho cutover gate; người chấp nhận rủi ro: T0 (decision OD-P1A-04 + OD-P1A-09 đã chốt 2026-09-24).` |
-| Spec version | `v1.2` |
-| Status | `PROPOSED_ONLY` |
+| Spec version | `v1.3` |
+| Status | `READY_FOR_EXECUTION` |
 | Planner | `Tier 1A` |
-| Baseline | `b34cdddd5c9bbfbda2cc276abf47f328e42af40c` |
-| Contract gate | `DRAFT` |
+| Baseline | `91525013fc2720a3803e808baac39e1c4497daf6` |
+| Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
 | Correction budget | `1` |
@@ -71,7 +72,7 @@ Chỉ liệt kê bằng chứng cần để Tier 1 implement.
 | `DEC-02` | Server render public detail bằng React output subpath `@tiptap/static-renderer/json/react` qua HRP wrapper `src/shared/content/job-posting-rich-text/**`. KHÔNG khởi tạo editor client trên server; KHÔNG HTML string/`dangerouslySetInnerHTML` với DB payload. | CHOSEN |
 | `DEC-03` | Build vs Adopt = ADOPT `@tiptap/static-renderer@3.31.3` (MIT) + shared HRP profile (`src/shared/content/job-posting-rich-text/**`). KHÔNG cài bản Tiptap thứ hai; KHÔNG đổi version. KHÔNG fork profile. | CHOSEN |
 | `DEC-04` | Corrupted legacy payload (khi public read) → fail closed / omit section + ghi diagnostic an toàn; KHÔNG render raw payload. | CHOSEN |
-| `DEC-05` | Canonical slug `<normalized-title>-<stable-short-suffix>` (sinh từ A0). Public detail dùng slug JobPosting. | CHOSEN |
+| `DEC-05` | Canonical slug theo A0 invariant (sinh từ `JobPosting.title` qua `generateCanonicalSlug`, suffix stable). Public detail dùng slug JobPosting, không phải `Project.code`. | CHOSEN |
 | `DEC-06` | Legacy `/viec-lam/PRJ-xxx`: trước cutover giữ nguyên flow hiện tại; sau cutover route compatibility chuyển tới listing đã lọc theo `Project.code`; KHÔNG tự chọn một posting bất kỳ khi Project có nhiều posting; KHÔNG 301/308 tới detail mơ hồ. | CHOSEN |
 | `DEC-07` | Apply `/api/public/jobs/[slug]/applications`: derive server-side `projectId/slotId/jobOpeningId` từ `PUBLISHED` JobPosting. KHÔNG tin IDs do browser tự truyền. KHÔNG thêm `CandidateSubmission.jobPostingId` (OD-P1A-09). Nếu cần persisted attribution tới JobPosting, mở task additive riêng sau P1-A1. | CHOSEN |
 | `DEC-08` | SEO metadata (title, description, canonical URL) đến từ canonical `JobPosting`. KHÔNG dùng fixture title/desc; structured data JSON-LD chỉ dùng field đã được validator pass. | CHOSEN |
@@ -90,6 +91,29 @@ Chỉ liệt kê bằng chứng cần để Tier 1 implement.
 - `ADOPT` đã pin license + version/source + compatibility + wrapper boundary + regression test boundary.
 - `N/A` đối với shared profile / metadata projection vì đó là HRP-owned capability.
 - `CUSTOM` không áp dụng; KHÔNG tự viết lại ProseMirror→HTML; KHÔNG fork shared profile.
+
+### 3.2 Build vs Automate
+
+| Concern | Automation candidate | Decision | Reason |
+|---|---|---|---|
+| Public detail page render (`/viec-lam/[slug]`) | n8n pre-render / SSR webhook | `N/A` | Public read là server-component React render trực tiếp qua Next.js. n8n không tham gia request path. |
+| Public listing (`/viec-lam`) | n8n search/cache index | `N/A` | Listing đọc `JobPosting PUBLISHED` qua Prisma; không có n8n hop. n8n down không ảnh hưởng 200 OK. |
+| Anonymous apply (`/api/public/jobs/[slug]/applications`) | n8n workflow trigger | `N/A` | Apply là Node `route.ts` → `hrp_public_apply_submission` SECURITY DEFINER transaction. n8n post-commit/outbox distribution là task riêng sau canonical commit, không thuộc P1-A1. |
+| Notification / email distribution | n8n workflow | Out of scope | P1-A1 chỉ deliver "application accepted" 200 OK với canonical reference id. Email/slack distribution bằng n8n (post-commit) là task additive mở sau P1-A1. |
+
+n8n outage phải không ảnh hưởng public detail 200 OK và apply 200 OK. Distribution/notification có thể chạy post-commit/outbox ở task riêng (không block cutover).
+
+### 3.3 Owner decisions (closed before code)
+
+| ID | Decision | Owner | Status |
+|---|---|---|---|
+| `OD-A1-01` | Slug canonical cho public detail/listing; `/viec-lam/[slug]` resolve bằng `JobPosting.slug`, không phải `Project.code`. | T1A | CLOSED |
+| `OD-A1-02` | Public listing/detail filter `JobPosting.status='PUBLISHED'` độc quyền; DRAFT/ARCHIVED + missing slug → 404 fail-closed. | T1A | CLOSED |
+| `OD-A1-03` | Rich content render qua `renderJobPostingRichText` (shared safe renderer, P1-A0 freeze). KHÔNG raw HTML, KHÔNG `dangerouslySetInnerHTML`. | T1A | CLOSED |
+| `OD-A1-04` | `hrp_public_apply_submission` signature, owner `hrp_public_rpc`, grants, `search_path`, `SECURITY DEFINER` boundary locked. Body thay trong một forward-only migration; derive posting/opening/slot server-side trong cùng transaction. | T1A | CLOSED |
+| `OD-A1-05` | Legacy `/viec-lam/PRJ-xxx` chuyển tới listing pre-filter theo `Project.code`; KHÔNG redirect-to-detail mơ hồ, KHÔNG chọn posting tùy ý. | T1A | CLOSED |
+| `OD-A1-06` | Apply route reject browser-supplied `slotId` / `projectId` / `jobOpeningId`; server-side derivation là source of truth duy nhất. | T1A | CLOSED |
+| `OD-A1-07` | n8n KHÔNG nằm trong P1-A1 runtime boundary. Public page + apply success phải hoạt động khi n8n unavailable. Distribution/outbox là task riêng sau canonical commit. | T1A | CLOSED |
 
 ## 4. Contract
 
@@ -201,3 +225,4 @@ Chỉ liệt kê bằng chứng cần để Tier 1 implement.
 | `v1.0` | `2026-09-24` | Initial contract at planning commit `39c7ebc` | Initial |
 | `v1.1` | `2026-09-24` | Revision documentation-only theo Pipeline V2 (`a2ff3478`) + OD-P1A-01..09: `Build vs adopt` = `ADOPT` với `@tiptap/static-renderer@3.31.3` + shared HRP profile `src/shared/content/job-posting-rich-text/**` (bỏ `~2.2.0`); bổ sung section `### 3.1 Build vs Adopt` (License/Version/source/Wrapper boundary/Reason); bổ sung wrapper boundary `src/shared/content/job-posting-rich-text/**` chỉ consume (không fork); chốt DRAFT/ARCHIVED trả 404 (NO_LEAK); chốt corrupted payload fail closed / omit section + diagnostic an toàn; chốt canonical slug từ A0; chốt legacy `/viec-lam/PRJ-xxx` route compatibility (trước cutover giữ flow hiện tại; sau cutover về listing filter theo `Project.code`, KHÔNG 301/308 tới detail mơ hồ); chốt apply derive server-side + KHÔNG thêm `CandidateSubmission.jobPostingId` (OD-P1A-09); chốt KHÔNG khởi tạo React editor trên server + KHÔNG `dangerouslySetInnerHTML` với DB payload (OD-P1A-04); chốt AC chạy qua `npm run test:unit` và `npm run test:integration` (không AC dùng làm verification method); đổi Status `PROPOSED_ONLY`, Contract gate `DRAFT`, Next gate `T0_CONTRACT_REVIEW`; Audit reason ghi rõ risk acceptance của T0. Không code/install/migration/runtime. | Correction documentation-only per OD-P1A-01..09 + V2 contract gate |
 | `v1.2` | `2026-09-24` | T0 semantic correction: baseline pin exact `origin/main@b34cdddd`; thêm existing canonical apply route vào scope; cho phép đúng một forward-only `hrp_public_apply_submission` body replacement; enforce PUBLISHED JobPosting + OPEN JobOpening + canonical slot atomically; giữ signature/owner/grants/search_path; bổ sung upgrade-path/catalog/race/negative AC; renderer khóa `@tiptap/static-renderer/json/react`, không HTML string/DOMPurify branch; environment `READY`. Status vẫn `PROPOSED_ONLY`, chờ A0 ACCEPTED. | Đóng TOCTOU, hidden dependency và missing-file allowlist gap trước execution. |
+| `v1.3` | `2026-09-25` | Refresh baseline pin: `origin/main@91525013fc2720a3803e808baac39e1c4497daf6` (post-A0 closeout). Đối chiếu implementation P1-A0 thực tế: shared renderer `src/shared/content/job-posting-rich-text/renderer.tsx` đã freeze; JobPosting canonical slug đã enforce; JobOpening + StaffingOrderSlot chain đã có. Bổ sung `Build vs automate = N/A` (P1-A1 không phụ thuộc n8n; distribution/notification bằng n8n là task riêng sau canonical commit). Đóng toàn bộ Owner decisions (OD-A1-01..07) trước code. Chuyển Status → `READY_FOR_EXECUTION`, Contract gate → `READY_TO_CODE`. Không mở rộng scope sang P1-B. | A0 merge thật + shared renderer đã accept → A1 đủ điều kiện READY_TO_CODE. |

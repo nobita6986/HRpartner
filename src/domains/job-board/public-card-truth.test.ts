@@ -38,6 +38,9 @@ type Slot = {
   shiftEnd: string | null;
   validTo: Date | null;
   workLocation: string | null;
+  // hrp-p1-a1: `publicSelect` chọn `hourlyRateVnd` (BigInt? ở DB); fixture phải mang đúng field
+  // này để mapper `salaryMin/MaxVnd` nhìn thấy lương và `JSON.stringify` không phải đoán BigInt.
+  hourlyRateVnd?: bigint | null;
 };
 
 function slot(overrides: Partial<Slot> = {}): Slot {
@@ -50,11 +53,12 @@ function slot(overrides: Partial<Slot> = {}): Slot {
     shiftEnd: '16:00',
     validTo: null,
     workLocation: 'KCN VSIP 1',
+    hourlyRateVnd: null,
     ...overrides,
   };
 }
 
-type Order = { status: string; title: string; description: string | null; deadlineDate: Date | null; createdAt: Date; slots: Slot[] };
+type Order = { status: string; title: string; description: string | null; deadlineDate: Date | null; createdAt: Date; slots: Slot[]; budgetVnd?: bigint | null };
 
 function order(slots: Slot[], overrides: Partial<Order> = {}): Order {
   // go-live-09 / RQ-01: `publicSelect` nay select cả `createdAt` của đơn, nên fixture phải mang nó
@@ -62,27 +66,91 @@ function order(slots: Slot[], overrides: Partial<Order> = {}): Order {
   return { status: 'OPEN', title: 'Tuyển công nhân lắp ráp', description: null, deadlineDate: null, createdAt: new Date('2026-01-15T00:00:00.000Z'), slots, ...overrides };
 }
 
-type Row = { id: string; code: string; name: string; siteAddress: string | null; clientCompanyName: string | null; staffingOrders: Order[] };
+/**
+ * hrp-p1-a1: payload phản ánh hình dạng `publicSelect` mới — JobPosting + JobOpening → StaffingOrder → Project.
+ * Mapper `projectRowFromPosting` sẽ gỡ về `PublicProjectRow` để phần còn lại của mapper dùng nguyên xi.
+ *
+ * Tên trường public (`id`, `slug`, `title`) nằm ngoài; `staffingOrder` và `project` lồng dưới `jobOpening`
+ * — đó là cấu trúc Prisma trả về khi chạy `tx.jobPosting.findMany({ select: publicSelect })`.
+ */
+type Row = {
+  id: string;
+  slug: string;
+  title: string | null;
+  /** hrp-p1-a1: các field cấm cho phép dirty row đặt thêm để chứng minh mapper KHÔNG lộ. */
+  clientCompanyId?: string;
+  internalNotes?: string;
+  jobOpening: {
+    staffingOrder: Order & {
+      project: { siteAddress: string | null; clientCompanyName: string | null };
+    };
+  } | null;
+};
 
-/** Đúng payload của `publicSelect`: scalar của `Project` cộng nhánh `staffingOrders`, không quan hệ. */
-function row(overrides: Partial<Row> = {}): Row {
+interface RowOpts {
+  id?: string;
+  slug?: string;
+  title?: string | null;
+  siteAddress?: string | null;
+  clientCompanyName?: string | null;
+  staffingOrders?: Order[];
+}
+
+/**
+ * hrp-p1-a1: Mặc định một JobPosting PHẢI có JobOpening → StaffingOrder (chuỗi canonical 1-1-1).
+ * Trước đây buildRow có nhánh `jobOpening: null` dành cho hàng Project không mở đơn nào — cấu trúc
+ * cũ cho phép `project` tồn tại độc lập với `staffingOrder`. Canonical không có khái niệm ấy: một
+ * JobPosting không có JobOpening thì không hiển thị được, không cần tạo payload. Tests gọi
+ * `row()` không truyền `staffingOrders` vẫn phải ra một hàng HỢP LỆ theo `publicSelect`, tức là
+ * `jobOpening.staffingOrder` phải tồn tại và có ít nhất một slot để `toDto` không trả null.
+ */
+function buildRow(opts: RowOpts): Row {
+  const first: Order = opts.staffingOrders?.[0] ?? order([slot()]);
   return {
-    id: 'prj-1',
-    code: 'DA-2026-001',
-    name: 'Lắp ráp điện tử Bắc Ninh',
-    siteAddress: 'Bắc Ninh',
-    // Y10.4/UI04g: denormalized company name (MKT role không đọc được client_companies do RLS)
-    clientCompanyName: 'Công ty TNHH Điện tử Kinh Bắc',
-    staffingOrders: [order([slot()])],
-    ...overrides,
+    id: opts.id ?? 'prj-1',
+    slug: opts.slug ?? 'cong-nhan-lap-rap-bac-ninh-2026',
+    title: opts.title ?? 'Lắp ráp điện tử Bắc Ninh',
+    jobOpening: {
+      staffingOrder: {
+        ...first,
+        project: {
+          siteAddress: opts.siteAddress ?? 'Bắc Ninh',
+          clientCompanyName: opts.clientCompanyName ?? 'Công ty TNHH Điện tử Kinh Bắc',
+        },
+      },
+    },
   };
+}
+
+/**
+ * Backwards-compatible adapter: chấp nhận cả dạng cũ `row({ id, code, name, siteAddress,
+ * staffingOrders })` lẫn dạng đã chuyển `row([order([...])])`. Mọi callsite cũ vẫn hoạt động
+ * sau khi đổi tên `code`→`slug` và `name`→`title`. Đây là tấm bản lề thời gian — sẽ bị bỏ khi
+ * các file test khác đã chuyển sang dạng mới.
+ */
+// `RowOpts` cố ý để mở: alias kiểu cũ (có `code`/`name`) lẫn mới (có `slug`/`title`). Dùng
+// `Record<string, unknown>` để TS không reject key lạ — đây là điểm nối tạm trong quá trình
+// refactor, không phải API sản phẩm.
+function row(input: Record<string, unknown> | Order[] = {}): Row {
+  if (Array.isArray(input)) return buildRow({ staffingOrders: input });
+  // Map cũ → mới: `code` (project.code, trở thành canonical slug) và `name` (project.name, trở thành
+  // JobPosting.title). `id`/`siteAddress`/`clientCompanyName`/`staffingOrders` giữ nguyên tên.
+  return buildRow({
+    id: input.id as string | undefined,
+    slug: (input.slug as string | undefined) ?? (input.code as string | undefined),
+    title: (input.title as string | null | undefined) ?? (input.name as string | null | undefined) ?? null,
+    siteAddress: input.siteAddress as string | null | undefined,
+    clientCompanyName: input.clientCompanyName as string | null | undefined,
+    staffingOrders: input.staffingOrders as Order[] | undefined,
+  });
 }
 
 type PublicTx = Parameters<typeof listPublicJobProjection>[0];
 
 function listTx(rows: Row[]) {
   const findMany = vi.fn().mockResolvedValue(rows);
-  return { tx: { project: { findMany } } as unknown as PublicTx, findMany };
+  // hrp-p1-a1: source chuyển từ `tx.project` sang `tx.jobPosting`.
+  return { tx: { jobPosting: { findMany } } as unknown as PublicTx, findMany };
 }
 
 /** Gọi list và đòi đúng một job — dùng cho các case chỉ quan tâm hình dạng DTO. */
@@ -171,21 +239,44 @@ describe('AC-02/RQ-04 — summary của card tính trên ĐÚNG tập slot còn 
   });
 
   it('đơn không còn hiển thị (status hoặc deadline) bị loại khỏi mọi phép tính của card', async () => {
-    const job = await onlyJob([
+    // hrp-p1-a1: mỗi JobPosting có đúng một JobOpening → một StaffingOrder. Nếu đơn ấy không còn
+    // hiển thị (CLOSED hoặc deadline quá khứ) thì JobPosting đó KHÔNG xuất hiện trong danh sách —
+    // `eligible.push({row, job})` không được gọi vì `toDto` trả null. Đây chính là bài học của
+    // go-live-09: một JobPosting có một sự thật duy nhất, không "hợp nhất" nhiều đơn.
+    const { tx } = listTx([
+      // Việc hợp lệ: order OPEN, deadline tương lai, một slot còn chỗ.
       row({
-        staffingOrders: [
-          order([slot()], { deadlineDate: FUTURE_AT }),
-          order([slot({ positionCode: 'DRAFT-01', positionTitle: 'Vị trí đơn đã đóng', slotsNeeded: 7, slotsFilled: 0 })], { status: 'CLOSED', title: 'Đơn đã đóng' }),
-          order([slot({ positionCode: 'LATE-01', positionTitle: 'Vị trí đơn quá hạn', slotsNeeded: 8, slotsFilled: 0 })], { deadlineDate: EXPIRED_AT, title: 'Đơn quá hạn' }),
-        ],
+        id: 'posting-visible',
+        slug: 'DA-VISIBLE',
+        title: 'Lap rap OPEN',
+        staffingOrders: [order([slot()], { deadlineDate: FUTURE_AT, title: 'Đơn OPEN' })],
+      }),
+      // Việc không hiển thị: order CLOSED, slot vẫn còn nhưng `toDto` sẽ loại.
+      row({
+        id: 'posting-closed',
+        slug: 'DA-CLOSED',
+        title: 'Việc đã đóng',
+        staffingOrders: [order([slot({ positionCode: 'CLOSED-01', positionTitle: 'Vị trí đã đóng', slotsNeeded: 7, slotsFilled: 0 })], { status: 'CLOSED', title: 'Đơn đã đóng' })],
+      }),
+      // Việc không hiển thị: order OPEN nhưng deadline đã qua, slot vẫn còn nhưng `isExpired` loại.
+      row({
+        id: 'posting-expired',
+        slug: 'DA-EXPIRED',
+        title: 'Việc quá hạn',
+        staffingOrders: [order([slot({ positionCode: 'EXPIRED-01', positionTitle: 'Vị trí quá hạn', slotsNeeded: 8, slotsFilled: 0 })], { deadlineDate: EXPIRED_AT, title: 'Đơn quá hạn' })],
       }),
     ]);
 
-    expect(job.positionTitles).toEqual(['Công nhân lắp ráp']);
-    expect(job.availableSlots).toBe(4);
-    // `earliestDeadline` đọc mọi đơn của dự án, kể cả đơn đã quá hạn — pin lại hành vi ĐANG có để
-    // một lượt sửa sau không đổi nó trong im lặng.
-    expect(job.deadline).toBe(EXPIRED_AT.toISOString());
+    const result = await listPublicJobProjection(tx, {});
+
+    expect(result.jobs).toHaveLength(1);
+    expect(result.jobs[0].slug).toBe('DA-VISIBLE');
+    expect(result.jobs[0].positionTitles).toEqual(['Công nhân lắp ráp']);
+    expect(result.jobs[0].availableSlots).toBe(4);
+    // `earliestDeadline` đọc deadline của order DUY NHẤT dưới JobPosting: FUTURE_AT, không phải
+    // EXPIRED_AT (đơn quá hạn thuộc về JobPosting khác, không bị trộn vào JobPosting này).
+    expect(result.jobs[0].deadline).toBe(FUTURE_AT.toISOString());
+    expect(result.total).toBe(1);
   });
 
   it('mọi slot hết hạn hoặc đã đủ chỉ tiêu ⇒ việc bị loại hẳn khỏi danh sách', async () => {
@@ -296,10 +387,11 @@ describe('DEC-08 — facet derive từ toàn tập hợp lệ, TRƯỚC filter c
 
     expect(findMany).toHaveBeenCalledTimes(1);
     const args = findMany.mock.calls[0][0] as { where: Record<string, unknown>; orderBy: unknown };
-    expect(Object.keys(args.where).sort()).toEqual(['isPublic', 'staffingOrders', 'status']);
+    // hrp-p1-a1: nguồn chuyển từ `Project` sang `JobPosting`, where CHỈ còn `status: 'PUBLISHED'`.
+    expect(Object.keys(args.where).sort()).toEqual(['status']);
     // Nếu ai đó đẩy `q`/`area` trở lại SQL thì facet lập tức chỉ còn là facet của tập đã lọc.
     expect(JSON.stringify(args.where)).not.toContain('contains');
-    expect(args.orderBy).toEqual({ createdAt: 'desc' });
+    expect(args.orderBy).toEqual({ publishedAt: 'desc' });
   });
 });
 
@@ -359,17 +451,27 @@ describe('AC-04/RQ-05 — total, page slice và nextOffset đọc cùng một m�
 });
 
 describe('AC-05/RQ-06 — q/area/shift khớp trên dữ liệu thật, bỏ dấu, không quét text không in ra', () => {
+  // hrp-p1-a1: slug là canonical, derive từ JobPosting (slug lấy theo DEC-05: <normalized-title>-
+  // <stable-short-suffix>), không còn là `Project.code` (`DA-2026-NNN`). Hằng slug cố định dưới đây
+  // là slug thật của JobPosting tương ứng với từng fixture.
+  const SLUG_DIEN_TU = 'lap-rap-dien-tu-bac-ninh-2026';
+  const SLUG_MAY = 'may-cong-nghiep-hung-yen-2026';
+  const SLUG_DIEN_TU_HY = 'lap-rap-dien-tu-hung-yen-2026';
+
   it('q bỏ dấu khớp tên dự án, và khớp cả tên vị trí của slot còn hiệu lực', async () => {
-    const rows = [row(), row({ id: 'prj-2', code: 'DA-2026-002', name: 'May công nghiệp Hưng Yên', siteAddress: 'Hưng Yên', staffingOrders: [order([slot({ positionCode: 'SEW-01', positionTitle: 'Thợ may', workLocation: 'KCN Phố Nối' })], { title: 'Tuyển thợ may' })] })];
+    const rows = [
+      row({ slug: SLUG_DIEN_TU }),
+      row({ id: 'prj-2', slug: SLUG_MAY, title: 'May công nghiệp Hưng Yên', siteAddress: 'Hưng Yên', staffingOrders: [order([slot({ positionCode: 'SEW-01', positionTitle: 'Thợ may', workLocation: 'KCN Phố Nối' })], { title: 'Tuyển thợ may' })] }),
+    ];
 
     const byProjectName = await listPublicJobProjection(listTx(rows).tx, { q: 'dien tu' });
-    expect(byProjectName.jobs.map((job) => job.slug)).toEqual(['DA-2026-001']);
+    expect(byProjectName.jobs.map((job) => job.slug)).toEqual([SLUG_DIEN_TU]);
 
     const byPosition = await listPublicJobProjection(listTx(rows).tx, { q: 'THO MAY' });
-    expect(byPosition.jobs.map((job) => job.slug)).toEqual(['DA-2026-002']);
+    expect(byPosition.jobs.map((job) => job.slug)).toEqual([SLUG_MAY]);
 
-    const bySlug = await listPublicJobProjection(listTx(rows).tx, { q: 'da-2026-002' });
-    expect(bySlug.jobs.map((job) => job.slug)).toEqual(['DA-2026-002']);
+    const bySlug = await listPublicJobProjection(listTx(rows).tx, { q: SLUG_MAY });
+    expect(bySlug.jobs.map((job) => job.slug)).toEqual([SLUG_MAY]);
   });
 
   it('q KHÔNG khớp mô tả đơn — đoạn văn không in trên card thì không được sinh ra kết quả', async () => {
@@ -383,15 +485,15 @@ describe('AC-05/RQ-06 — q/area/shift khớp trên dữ liệu thật, bỏ d�
 
   it('area khớp siteAddress hoặc workLocation, bỏ dấu; slot hết hạn không mở đường khớp', async () => {
     const rows = [
-      row(),
-      row({ id: 'prj-hy', code: 'DA-HY', name: 'Lắp ráp điện tử Hưng Yên', siteAddress: 'Hưng Yên', staffingOrders: [order([slot({ workLocation: 'KCN Phố Nối', validTo: null }), slot({ positionCode: 'OLD-01', workLocation: 'KCN Thăng Long', slotsFilled: 0, validTo: EXPIRED_AT })])] }),
+      row({ slug: SLUG_DIEN_TU }),
+      row({ id: 'prj-hy', slug: SLUG_DIEN_TU_HY, title: 'Lắp ráp điện tử Hưng Yên', siteAddress: 'Hưng Yên', staffingOrders: [order([slot({ workLocation: 'KCN Phố Nối', validTo: null }), slot({ positionCode: 'OLD-01', workLocation: 'KCN Thăng Long', slotsFilled: 0, validTo: EXPIRED_AT })])] }),
     ];
 
     const bySite = await listPublicJobProjection(listTx(rows).tx, { area: 'hung yen' });
-    expect(bySite.jobs.map((job) => job.slug)).toEqual(['DA-HY']);
+    expect(bySite.jobs.map((job) => job.slug)).toEqual([SLUG_DIEN_TU_HY]);
 
     const byWorkLocation = await listPublicJobProjection(listTx(rows).tx, { area: 'vsip' });
-    expect(byWorkLocation.jobs.map((job) => job.slug)).toEqual(['DA-2026-001']);
+    expect(byWorkLocation.jobs.map((job) => job.slug)).toEqual([SLUG_DIEN_TU]);
 
     const byExpiredSlot = await listPublicJobProjection(listTx(rows).tx, { area: 'Thăng Long' });
     expect(byExpiredSlot.jobs).toEqual([]);
@@ -437,14 +539,24 @@ describe('AC-01/AC-03, DEC-10/RISK-01/RISK-07 — DTO đúng allow-list, JSON an
   it('không có field thương mại/nội bộ nào, kể cả khi dòng thô mang chúng', async () => {
     // Dòng thô cố tình mang ba field mà `publicSelect` KHÔNG select. Nếu một lượt sửa nào thay
     // projection bằng spread object thì case này đỏ ngay thay vì rò rỉ im lặng lên production.
-    const dirty = {
-      ...row({ staffingOrders: [order([slot()])] }),
+    //
+    // hrp-p1-a1: dirty row phải đặt field cấm dưới đúng cấu trúc JobPosting → JobOpening →
+    // StaffingOrder → slots mà `publicSelect` thực sự select. Không đặt dưới đây thì
+    // `projectRowFromPosting` trả null và `onlyJob` nổ trước khi kiểm tra allow-list.
+    const base = row({ staffingOrders: [order([slot()])] });
+    const dirty: Row = {
+      ...base,
       clientCompanyId: 'client-9',
       internalNotes: 'margin 18%',
-      staffingOrders: [
-        { ...order([{ ...slot(), hourlyRateVnd: 45_000n } as unknown as Slot]), budgetVnd: 900_000_000n },
-      ],
-    } as unknown as Row;
+      jobOpening: {
+        ...(base.jobOpening as { staffingOrder: NonNullable<typeof base.jobOpening>['staffingOrder'] }),
+        staffingOrder: {
+          ...(base.jobOpening as { staffingOrder: NonNullable<typeof base.jobOpening>['staffingOrder'] })['staffingOrder'],
+          budgetVnd: 900_000_000n,
+          slots: [{ ...slot(), hourlyRateVnd: 45_000n }],
+        },
+      },
+    };
 
     const job = await onlyJob([dirty]);
     const serialized = JSON.stringify(job);

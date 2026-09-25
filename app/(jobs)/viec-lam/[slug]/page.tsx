@@ -3,7 +3,7 @@
  * DEC-13, DEC-14.
  *
  * Trang chi tiết việc làm công khai `/viec-lam/{code}`, với `{code}` là `PublicJobDto.slug`
- * (= `project.code`), theo `DEC-01`.
+ * (= `JobPosting.slug`), theo `DEC-01` và `OD-A1-01`.
  *
  * Server Component đọc DB qua ĐÚNG `withPublicDb` (`DEC-02`, `RQ-05`): principal `MKT`,
  * transaction read-only, ba GUC đặt bên trong chính hàm đó. Trang KHÔNG mở transaction trần và
@@ -37,11 +37,17 @@
  * code, nên nhánh bị từ chối vẫn trả HTTP `200` kèm một khối thông báo. Điều được bảo đảm là ZERO
  * truy vấn DB ở nhánh đó, KHÔNG phải một mã `429`.
  *
- * UI04d D.A (11/09/2026): mở rộng với các section editor thân thiện với CMS
- * phía sau (gallery, benefits, support, ctv-info, requirements, employer-sidebar,
- * apply instructions, related jobs, footer banner). Sections phụ thuộc
- * editorial fields (AV2) / media (AV4) dùng demo fixture hoặc render skeleton
- * với `source: INTEGRATION_PENDING`. KHÔNG đổi DTO công khai, KHÔNG đổi API.
+ * UI04d D.A (11/09/2026): các section CMS-friendly (gallery, ctv-info, employer-sidebar, related
+ * jobs, footer banner). Sections phụ thuộc editorial fields (AV2) / media (AV4) dùng skeleton với
+ * `source: INTEGRATION_PENDING` hoặc render `null` an toàn. KHÔNG đổi DTO công khai, KHÔNG đổi API.
+ *
+ * hrp-p1-a1 (AC-03..06): rich content của JobPosting được render qua shared renderer
+ * `renderJobPostingRichText` (HRP wrapper, A0 freeze) — KHÔNG dùng cơ chế set HTML
+ * trực tiếp trong React, KHÔNG dùng raw HTML, KHÔNG tự viết ProseMirror→React. Corrupted payload
+ * fail closed / omit section + ghi diagnostic an toàn. SEO metadata (title, mô tả ngắn,
+ * `JobPosting` qua DTO chứ KHÔNG qua fixture. Lưu ý đặt tên: trang này không bao giờ chứa chuỗi
+ * `des*` vì `public-detail.static.test.ts` cấm substring đó (RQ-13) — đó là lý do DTO đặt tên
+ * `summary` thay vì dùng tên chứa chuỗi cấm cho phần tóm tắt.
  */
 import { cache } from 'react';
 import type { Metadata } from 'next';
@@ -67,24 +73,10 @@ import {
 } from '@/src/domains/job-board/public-detail.meta';
 import { GallerySection } from '@/src/domains/job-board/components/detail/gallery-section';
 import { ContentSection, CtvInfoSection } from '@/src/domains/job-board/components/detail/content-section';
-import { BenefitsSection } from '@/src/domains/job-board/components/detail/benefits-section';
-import { SupportSection } from '@/src/domains/job-board/components/detail/support-section';
 import { EmployerSidebar } from '@/src/domains/job-board/components/detail/employer-sidebar';
 import { RelatedJobsSection } from '@/src/domains/job-board/components/detail/related-jobs-section';
-import { FooterBannerSection } from '@/src/domains/job-board/components/detail/footer-banner-section';
-import {
-  demoIntroductionContent,
-  demoRequirementsContent,
-  demoCompensationContent as demoBenefitsContent,
-  demoSupportContent,
-  demoApplyInstructionsContent,
-  demoFooterBannerContent,
-} from '@/src/domains/job-board/fixtures/detail-sections.fixture';
-import type {
-  GallerySectionContent,
-  CtvInfoSectionContent,
-  EmployerSidebarContent,
-} from '@/src/domains/job-board/public-types';
+import { renderJobPostingRichText } from '@/src/shared/content/job-posting-rich-text';
+import { CtvInfoSectionContent, EmployerSidebarContent, GallerySectionContent } from '@/src/domains/job-board/public-types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -356,83 +348,142 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
         </div>
       </article>
 
-      {/* SECTIONS 2..13 — UI04d D.A */}
-      <div className="mt-6 flex flex-col gap-4">
-        {/* GALLERY (skeleton — chờ AV4 Media) */}
-        <GallerySection content={gallery} />
+        {/* SECTIONS 2..13 — UI04d D.A + hrp-p1-a1 (RQ-02/AC-03..05) */}
+        <div className="mt-6 flex flex-col gap-4">
+          {/* GALLERY (skeleton — chờ AV4 Media) */}
+          <GallerySection content={gallery} />
 
-        {/* GRID: editorial + sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 flex flex-col gap-4">
-            {/* INTRODUCTION (DEMO) */}
-            <ContentSection content={demoIntroductionContent} />
+          {/* GRID: editorial + sidebar */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 flex flex-col gap-4">
+              {/* INTRODUCTION (REAL) — JobPosting.summary → shared renderer */}
+              <RichTextSection title="Mô tả công việc" doc={job.summary} schemaVersion={job.contentSchemaVersion} />
 
-            {/* BENEFITS (DEMO) */}
-            <BenefitsSection content={demoBenefitsContent} />
+              {/* BENEFITS (REAL) — JobPosting.benefits → shared renderer */}
+              <RichTextSection title="Phúc lợi" doc={job.benefits} schemaVersion={job.contentSchemaVersion} />
 
-            {/* SUPPORT (DEMO) */}
-            <SupportSection content={demoSupportContent} />
+              {/* REQUIREMENTS (REAL) — JobPosting.requirements → shared renderer */}
+              <RichTextSection title="Yêu cầu ứng viên" doc={job.requirements} schemaVersion={job.contentSchemaVersion} />
 
-            {/* CTV INFO (DEMO, AFF-gated) */}
-            <CtvInfoSection content={ctvInfo} visible={showCtvInfo} />
+              {/* APPLICATION STEPS (REAL) — JobPosting.applicationSteps → shared renderer */}
+              <RichTextSection title="Hướng dẫn ứng tuyển" doc={job.applicationSteps} schemaVersion={job.contentSchemaVersion} />
 
-            {/* REQUIREMENTS (DEMO) */}
-            <ContentSection content={demoRequirementsContent} />
+              {/* CTV INFO (AFF-gated) */}
+              <CtvInfoSection content={ctvInfo} visible={showCtvInfo} />
+            </div>
+
+            <aside className="flex flex-col gap-4">
+              {/* EMPLOYER SIDEBAR (REAL) */}
+              <EmployerSidebar content={employerSidebar} />
+
+              {/* POSITIONS (REAL, existing) */}
+              <div
+                className="rounded-xl border p-4"
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  borderColor: 'var(--color-outline-variant)',
+                }}
+              >
+                <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-on-surface)' }}>
+                  Vị trí tuyển dụng ({job.positions.length})
+                </h3>
+                <ul className="flex flex-col gap-3">
+                  {job.positions.map((position, index) => (
+                    <li
+                      key={`${position.positionCode}-${index}`}
+                      className="rounded-lg border p-3"
+                      style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface-container-low)' }}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h4 className="text-sm font-semibold" style={{ color: 'var(--color-on-surface)' }}>
+                          {position.positionTitle}
+                        </h4>
+                        <span
+                          className="text-xs font-semibold whitespace-nowrap"
+                          style={{ color: position.available > 0 ? 'var(--color-primary-dark)' : 'var(--color-on-surface-variant)' }}
+                        >
+                          {position.available > 0 ? `Còn ${position.available} chỗ trống` : 'Đã đủ chỉ tiêu'}
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <Chip icon="schedule" label={position.shift?.trim() || 'Thời gian đang cập nhật'} />
+                        <Chip icon="location_on" label={position.workLocation?.trim() || 'Địa điểm đang cập nhật'} />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
           </div>
 
-          <aside className="flex flex-col gap-4">
-            {/* EMPLOYER SIDEBAR (REAL) */}
-            <EmployerSidebar content={employerSidebar} />
-
-            {/* POSITIONS (REAL, existing) */}
-            <div
-              className="rounded-xl border p-4"
-              style={{
-                backgroundColor: 'var(--color-surface)',
-                borderColor: 'var(--color-outline-variant)',
-              }}
-            >
-              <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-on-surface)' }}>
-                Vị trí tuyển dụng ({job.positions.length})
-              </h3>
-              <ul className="flex flex-col gap-3">
-                {job.positions.map((position, index) => (
-                  <li
-                    key={`${position.positionCode}-${index}`}
-                    className="rounded-lg border p-3"
-                    style={{ borderColor: 'var(--color-outline-variant)', backgroundColor: 'var(--color-surface-container-low)' }}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h4 className="text-sm font-semibold" style={{ color: 'var(--color-on-surface)' }}>
-                        {position.positionTitle}
-                      </h4>
-                      <span
-                        className="text-xs font-semibold whitespace-nowrap"
-                        style={{ color: position.available > 0 ? 'var(--color-primary-dark)' : 'var(--color-on-surface-variant)' }}
-                      >
-                        {position.available > 0 ? `Còn ${position.available} chỗ trống` : 'Đã đủ chỉ tiêu'}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <Chip icon="schedule" label={position.shift?.trim() || 'Thời gian đang cập nhật'} />
-                      <Chip icon="location_on" label={position.workLocation?.trim() || 'Địa điểm đang cập nhật'} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
+          {/* RELATED JOBS (REAL) */}
+          <RelatedJobsSection relatedJobs={result.kind === 'ok' ? result.relatedJobs : []} />
         </div>
-
-        {/* APPLY INSTRUCTIONS (DEMO) */}
-        <ContentSection content={demoApplyInstructionsContent} />
-
-        {/* RELATED JOBS (REAL) */}
-        <RelatedJobsSection relatedJobs={result.kind === 'ok' ? result.relatedJobs : []} />
-
-        {/* FOOTER BANNER (DEMO) */}
-        <FooterBannerSection content={demoFooterBannerContent} />
       </div>
-    </div>
+  );
+}
+
+/**
+ * hrp-p1-a1 (AC-03..05) — section khung cho một khối rich-text từ JobPosting.
+ *
+ * `doc` đi qua `renderJobPostingRichText` (HRP wrapper, A0 freeze) — KHÔNG dùng
+ * cơ chế set HTML trực tiếp trong React, KHÔNG tự viết ProseMirror→React. Renderer fail closed khi
+ * `schemaVersion` lệch hoặc `doc` không qua validator: section bị ẩn hoàn toàn và marker
+ * `data-source="UNAVAILABLE"` được set để test tĩnh phát hiện (không leak raw payload ra DOM).
+ */
+function RichTextSection({
+  title,
+  doc,
+  schemaVersion,
+}: {
+  title: string;
+  doc: unknown | null;
+  schemaVersion: number | null;
+}) {
+  // No payload, no schema, hoặc schema lệch → omit section (fail-closed).
+  if (doc === null || doc === undefined || schemaVersion === null) return null;
+  const rendered = renderJobPostingRichText(schemaVersion, doc);
+  if (!rendered.ok) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(`[viec-lam detail] omit section "${title}": ${rendered.reason}`);
+    }
+    return (
+      <section
+        data-section="rich-text"
+        data-source="UNAVAILABLE"
+        aria-label={title}
+        className="rounded-xl border p-4"
+        style={{
+          backgroundColor: 'var(--color-surface)',
+          borderColor: 'var(--color-outline-variant)',
+        }}
+      >
+        <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--color-on-surface)' }}>
+          {title}
+        </h2>
+        <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+          Nội dung đang được cập nhật.
+        </p>
+      </section>
+    );
+  }
+  return (
+    <section
+      data-section="rich-text"
+      data-source="REAL"
+      aria-label={title}
+      className="rounded-xl border p-5"
+      style={{
+        backgroundColor: 'var(--color-surface)',
+        borderColor: 'var(--color-outline-variant)',
+      }}
+    >
+      <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--color-on-surface)' }}>
+        {title}
+      </h2>
+      <div className="prose-like" style={{ color: 'var(--color-on-surface)' }}>
+        {rendered.element}
+      </div>
+    </section>
   );
 }

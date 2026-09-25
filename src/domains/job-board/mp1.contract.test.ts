@@ -39,21 +39,26 @@ function publishTx(row = project()) {
 }
 
 /**
- * Đúng hình dạng dòng mà `publicSelect` trả về SAU hotfix-02: chỉ scalar của `Project` cộng
- * nhánh `staffingOrders`, KHÔNG field quan hệ nào. Đó là điều kiện để query engine của Prisma
- * không phải materialize bảng bị RLS che và không ném `Inconsistent query result`.
- * Biến duy nhất giữa hai case là TEXT của dự án. go-live-14: chính vì đó là biến duy nhất mà hai
- * case phải cho CÙNG một tập khóa công khai — nhãn ngành từng là thứ duy nhất đổi theo chữ, và nó
- * đã bị bỏ khỏi DTO.
+ * Đúng hình dạng dòng mà `publicSelect` trả về SAU hrp-p1-a1: JobPosting scalars + quan hệ
+ * jobOpening → StaffingOrder → Project (siteAddress, clientCompanyName denormalized). Đây là điều
+ * kiện để query engine của Prisma không phải materialize bảng bị RLS che và không ném
+ * `Inconsistent query result`. Biến duy nhất giữa hai case là TEXT của JobPosting — đó cũng là
+ * cơ sở của RQ-01/RQ-02 trong go-live-14: cùng một tập khóa công khai vì chữ khác nhau không
+ * được tạo ra khóa mới.
  */
 function publicProjectionTx(projectName: string) {
   return {
-    project: {
+    jobPosting: {
       findMany: vi.fn().mockResolvedValue([{
-        id: 'project-9', code: 'PRJ-009', name: projectName, siteAddress: 'Bac Ninh',
-        staffingOrders: [{ status: 'OPEN', title: 'Cong nhan lap rap', description: null, deadlineDate: null, createdAt: SEEDED_AT, slots: [{ positionCode: 'ASSY', positionTitle: 'Cong nhan lap rap', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A' }] }],
+        id: 'posting-9', slug: 'lap-rap-bang-mach-2026', title: projectName,
+        jobOpening: {
+          staffingOrder: {
+            status: 'OPEN', title: 'Cong nhan lap rap', description: null, deadlineDate: null, createdAt: SEEDED_AT,
+            project: { siteAddress: 'Bac Ninh', clientCompanyName: 'Cong ty TNHH Dien tu Kinh Bac' },
+            slots: [{ positionCode: 'ASSY', positionTitle: 'Cong nhan lap rap', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A', hourlyRateVnd: null }],
+          },
+        },
       }]),
-      count: vi.fn().mockResolvedValue(1),
     },
   } as any;
 }
@@ -95,12 +100,17 @@ describe('MP-1 publish and public job contracts', () => {
 
   it('projects only public open jobs and excludes internal fields', async () => {
     const tx = {
-      project: {
+      jobPosting: {
         findMany: vi.fn().mockResolvedValue([{
-          id: 'project-1', code: 'PRJ-001', name: 'Warehouse Operators', siteAddress: 'Bac Ninh',
-          staffingOrders: [{ status: 'OPEN', title: 'Warehouse picker', description: null, deadlineDate: null, createdAt: SEEDED_AT, slots: [{ positionCode: 'PICKER', positionTitle: 'Picker', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A' }] }],
+          id: 'posting-1', slug: 'warehouse-picker-2026', title: 'Warehouse Operators',
+          jobOpening: {
+            staffingOrder: {
+              status: 'OPEN', title: 'Warehouse picker', description: null, deadlineDate: null, createdAt: SEEDED_AT,
+              project: { siteAddress: 'Bac Ninh', clientCompanyName: 'Cong ty TNHH Kinh Bac' },
+              slots: [{ positionCode: 'PICKER', positionTitle: 'Picker', slotsNeeded: 4, slotsFilled: 1, shiftStart: '07:00', shiftEnd: '16:00', validTo: null, workLocation: 'Site A', hourlyRateVnd: null }],
+            },
+          },
         }]),
-        count: vi.fn().mockResolvedValue(1),
       },
     } as any;
 
@@ -115,7 +125,8 @@ describe('MP-1 publish and public job contracts', () => {
       jobTypes: ['toan_thoi_gian'],
     });
     expect(result.jobs).toEqual([expect.objectContaining({
-      id: 'project-1', slug: 'PRJ-001', availableSlots: 3, position: 'Picker',
+      // hrp-p1-a1: `slug` xuất phát từ JobPosting.slug trong fixture, không còn từ Project.code.
+      id: 'posting-1', slug: 'warehouse-picker-2026', availableSlots: 3, position: 'Picker',
       shiftType: 'ca_ngay', jobType: 'toan_thoi_gian',
     })]);
     expect(result.jobs[0]).not.toHaveProperty('clientCompanyId');

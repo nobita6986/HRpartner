@@ -30,27 +30,42 @@ function slot(overrides: Record<string, unknown> = {}) {
   };
 }
 
-/** Đúng payload của `publicSelect`: scalar của `Project` cộng nhánh `staffingOrders`, không quan hệ. */
+/**
+ * Đúng payload của `publicSelect` SAU hrp-p1-a1: JobPosting scalars + quan hệ jobOpening → StaffingOrder → Project.
+ *
+ * Canonical slug thuộc JobPosting; theo DEC-05 trong TASK hrp-p1-a1 nó là `<normalized-title>-<stable-short-suffix>`,
+ * không còn là `Project.code`. Trong test, slug chuẩn được viết là `lap-rap-dien-tu-bac-ninh-2026` (slug hoá của
+ * `Lap rap dien tu Bac Ninh`) — đây là CÙNG thực thể nghiệp vụ mà trước đây được gọi bằng `Project.code = DA-2026-012`.
+ */
 function detailRow(slots: Array<ReturnType<typeof slot>>) {
   return {
-    id: 'project-12',
-    code: 'DA-2026-012',
-    name: 'Lap rap dien tu Bac Ninh',
-    siteAddress: 'Bac Ninh',
-    // Y10.4/UI04g: denormalized company name (MKT role không đọc được client_companies do RLS)
-    clientCompanyName: 'Cong ty TNHH Dien tu Kinh Bac',
-    staffingOrders: [
-      // go-live-09 / RQ-01: `createdAt` của đơn nay nằm trong `publicSelect`, nên payload thật có nó.
-      { status: 'OPEN', title: 'Tuyen cong nhan lap rap', description: null, deadlineDate: null, createdAt: new Date('2026-01-15T00:00:00.000Z'), slots },
-    ],
+    id: 'posting-12',
+    slug: 'lap-rap-dien-tu-bac-ninh-2026',
+    title: 'Lap rap dien tu Bac Ninh',
+    jobOpening: {
+      staffingOrder: {
+        // go-live-09 / RQ-01: `createdAt` của đơn nay nằm trong `publicSelect`, nên payload thật có nó.
+        status: 'OPEN',
+        title: 'Tuyen cong nhan lap rap',
+        description: null,
+        deadlineDate: null,
+        createdAt: new Date('2026-01-15T00:00:00.000Z'),
+        slots,
+        project: {
+          siteAddress: 'Bac Ninh',
+          // Y10.4/UI04g: denormalized company name (MKT role không đọc được client_companies do RLS)
+          clientCompanyName: 'Cong ty TNHH Dien tu Kinh Bac',
+        },
+      },
+    },
   };
 }
 
-/** Chỉ cần `project.findFirst`; cast qua đúng kiểu tham số thật, không dùng `any`. */
+/** Chỉ cần `jobPosting.findFirst`; cast qua đúng kiểu tham số thật, không dùng `any`. */
 type PublicTx = Parameters<typeof getPublicJobDetail>[0];
 
 function detailTx(row: unknown) {
-  return { project: { findFirst: vi.fn().mockResolvedValue(row) } } as unknown as PublicTx;
+  return { jobPosting: { findFirst: vi.fn().mockResolvedValue(row) } } as unknown as PublicTx;
 }
 
 const QC_SLOT = {
@@ -65,7 +80,7 @@ const QC_SLOT = {
 
 describe('getPublicJobDetail — projection của trang chi tiết công khai (RQ-12)', () => {
   it('dự án nhiều slot trả positions dài hơn 1, tổng khớp từng vị trí', async () => {
-    const detail = await getPublicJobDetail(detailTx(detailRow([slot(), slot(QC_SLOT)])), 'DA-2026-012');
+    const detail = await getPublicJobDetail(detailTx(detailRow([slot(), slot(QC_SLOT)])), 'lap-rap-dien-tu-bac-ninh-2026');
 
     if (!detail) throw new Error('mong đợi DTO chi tiết khác null');
     expect(detail.positions.length).toBeGreaterThan(1);
@@ -74,7 +89,8 @@ describe('getPublicJobDetail — projection của trang chi tiết công khai (R
     expect(detail.availableSlots).toBe(5);
     expect(detail.totalSlotsNeeded).toBe(6);
     expect(detail.totalSlotsFilled).toBe(1);
-    expect(detail.jobCode).toBe('DA-2026-012');
+    // hrp-p1-a1: `jobCode` xuất phát từ `JobPosting.slug` (canonical slug), không còn từ `Project.code`.
+    expect(detail.jobCode).toBe('lap-rap-dien-tu-bac-ninh-2026');
     expect(detail.siteAddress).toBe('Bac Ninh');
     expect(detail.positions[1]).toEqual({
       positionCode: 'QC-01',
@@ -90,8 +106,8 @@ describe('getPublicJobDetail — projection của trang chi tiết công khai (R
   it('slug không tồn tại trả null', async () => {
     const tx = detailTx(null);
 
-    await expect(getPublicJobDetail(tx, 'DA-KHONG-TON-TAI-999')).resolves.toBeNull();
-    expect(tx.project.findFirst).toHaveBeenCalledOnce();
+    await expect(getPublicJobDetail(tx, 'lap-rap-khong-ton-tai-2026')).resolves.toBeNull();
+    expect(tx.jobPosting.findFirst).toHaveBeenCalledOnce();
   });
 
   // Test KHÓA `DEC-14`: link đã chia sẻ ra ngoài không được biến thành 404 chỉ vì đủ chỉ tiêu.
@@ -102,7 +118,7 @@ describe('getPublicJobDetail — projection của trang chi tiết công khai (R
       slot({ ...QC_SLOT, slotsFilled: 2 }),
     ]);
 
-    const detail = await getPublicJobDetail(detailTx(full()), 'DA-2026-012');
+    const detail = await getPublicJobDetail(detailTx(full()), 'lap-rap-dien-tu-bac-ninh-2026');
 
     if (!detail) throw new Error('mong đợi DTO chi tiết khác null khi vẫn còn slot hợp lệ');
     expect(detail.availableSlots).toBe(0);
@@ -111,7 +127,7 @@ describe('getPublicJobDetail — projection của trang chi tiết công khai (R
     expect(detail.totalSlotsNeeded).toBe(5);
     expect(detail.totalSlotsFilled).toBe(5);
 
-    await expect(getPublicJobProjection(detailTx(full()), 'DA-2026-012')).resolves.toBeNull();
+    await expect(getPublicJobProjection(detailTx(full()), 'lap-rap-dien-tu-bac-ninh-2026')).resolves.toBeNull();
   });
 
   it('mọi slot đã hết hạn trả null', async () => {
@@ -120,6 +136,6 @@ describe('getPublicJobDetail — projection của trang chi tiết công khai (R
       slot({ ...QC_SLOT, validTo: EXPIRED_AT }),
     ]));
 
-    await expect(getPublicJobDetail(tx, 'DA-2026-012')).resolves.toBeNull();
+    await expect(getPublicJobDetail(tx, 'lap-rap-dien-tu-bac-ninh-2026')).resolves.toBeNull();
   });
 });
