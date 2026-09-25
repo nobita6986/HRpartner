@@ -43,6 +43,14 @@ Không tự cài tool/dependency chỉ để thỏa checklist nếu Tier 1 chưa
 - Thư viện không bao giờ là authority cho authorization, domain transition, idempotency, audit, data ownership hoặc policy sản phẩm.
 - Package/version cụ thể thuộc TASK và lockfile, không đóng cứng trong pipeline portable hoặc roadmap dài hạn.
 
+### 4.2 Orchestration-first / BUILD_VS_AUTOMATE
+
+- Với connector, scheduler, notification, retry/fan-out, approval wait-loop hoặc multi-system workflow, phải đánh giá orchestration platform trước khi tự viết worker/framework.
+- `ORCHESTRATE`: platform chỉ điều phối versioned event/API, có scoped credential, bounded retry, idempotency, safe logging, recovery và reviewable promotion path.
+- `CUSTOM`: chỉ khi có `CUSTOM_AUTOMATION_JUSTIFICATION` bằng evidence về transaction locality, latency/throughput, compatibility, security hoặc operational cost.
+- Automation platform không được nắm auth/RLS, domain transition, mutation idempotency authority, durable audit, money calculation, PII/evidence custody hoặc direct domain-storage writes.
+- Vendor/platform cụ thể, data residency và production policy thuộc tài liệu dự án/TASK; pipeline portable chỉ giữ decision gate.
+
 ## 5. Git và worktree
 
 - Luôn kiểm tra worktree trước khi sửa hoặc audit.

@@ -90,6 +90,7 @@ To prevent conflicting architectural and execution directives, the following hie
 8. No task should create a second authority just to bypass a missing canonical capability.
 9. Docs/FAST tasks should use lightweight governance where permitted.
 10. “Done” means usable + tested + observable, not merely code merged.
+11. Before coding a connector, scheduler or cross-system workflow, evaluate automation/orchestration first; n8n may coordinate work but never becomes a second domain or security authority.
 
 ---
 
@@ -523,6 +524,8 @@ canonical transaction
 → retry
 → receiver idempotency
 ```
+
+n8n may act as the delivery/orchestration worker after the outbox boundary. It must consume a versioned event, use a scoped service identity and call only narrow idempotent APIs. It must not write directly to HRP domain tables or become the authority for retry-safe business outcomes.
 
 Avoid:
 
@@ -974,6 +977,8 @@ public-safe fields
 ```
 
 Do not expose internal StaffingOrder/JobOpening details unnecessarily.
+
+After canonical publish exists, the first recommended n8n pilot is asynchronous JobPosting distribution to configured Zalo/Meta/email channels plus expiry reminders. The public page and publish transaction must remain usable when n8n is unavailable.
 
 ---
 
@@ -1575,6 +1580,23 @@ Authority thực thi nằm trong `.ai-pipeline/rules/00-global-rules.md`, `tier0
 
 ---
 
+## 47.3 BUILD_VS_AUTOMATE — Orchestration-first policy
+
+Before HRP implements a scheduler, connector, notification worker, approval wait-loop or multi-system retry flow, every V2 TASK must declare `Build vs automate: N/A | ORCHESTRATE | CUSTOM`.
+
+Contracts already at `READY_TO_CODE` before this policy are not reopened solely to add the field. Their next contract revision must record it; new tasks cannot omit it.
+
+1. `ORCHESTRATE` with platform/source `n8n` is preferred for asynchronous coordination, external connectors, schedules, notifications, bounded retry, operator approvals and read-only operational reporting.
+2. HRP remains authoritative for authentication, authorization/RLS, domain validation, canonical transitions, transaction/concurrency, idempotency authority, PII/evidence custody, financial calculations and durable business audit.
+3. n8n integrates through signed events/outbox and narrow APIs. Direct writes to HRP domain tables are forbidden; direct reads require a separately reviewed read-only identity/replica.
+4. `CUSTOM` requires `CUSTOM_AUTOMATION_JUSTIFICATION` with evidence that transaction locality, latency/throughput, security/compatibility or operational constraints make n8n unsuitable.
+5. Workflow credentials stay in n8n credentials/secret management, not public Admin Settings or Git. Workflow promotion, retry, replay, observability and recovery must be specified before production enablement.
+6. n8n availability must not roll back a completed HRP canonical transaction. Failed delivery remains recoverable through outbox/reconciliation.
+
+Project-specific authority, candidate matrix, security baseline and first-pilot acceptance are defined in [`docs/N8N_AUTOMATION_BOUNDARY.md`](N8N_AUTOMATION_BOUNDARY.md). The portable execution gate lives in `.ai-pipeline`; n8n-specific architecture does not.
+
+---
+
 # 48. FIRST AI CODING DISCOVERY PACKAGE
 
 Before coding, AI must produce:
@@ -1886,6 +1908,10 @@ S2S + idempotency + outbox
 Architecture delivery:
 LIBRARY_FIRST / BUILD_VS_ADOPT
 Tiptap OSS is the default P1-A editor candidate, not an installed dependency until TASK compatibility and lockfile gates pass
+
+Automation delivery:
+ORCHESTRATION_FIRST / BUILD_VS_AUTOMATE
+n8n is the default candidate for asynchronous connectors, schedules, notifications and operator workflows; HRP retains all domain/security authority
 ```
 
 ---

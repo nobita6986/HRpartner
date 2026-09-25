@@ -8,6 +8,7 @@
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Work type | `CODE | DOCS | DESIGN | INFRA | MIXED` |
 | Build vs adopt | `N/A | ADOPT | CUSTOM` |
+| Build vs automate | `N/A | ORCHESTRATE | CUSTOM` |
 | Assurance lane | `FAST | STANDARD | CRITICAL` |
 | Audit mode | `NONE | LIGHT` |
 | Audit reason | `<một câu; CRITICAL + NONE phải nêu risk acceptance>` |
@@ -65,6 +66,16 @@ Không để `NEED_USER_DECISION` khi chuyển READY_FOR_EXECUTION.
 - `ADOPT`: phải pin license, version/source, compatibility và wrapper/test boundary.
 - `CUSTOM`: phải có marker `CUSTOM_BUILD_JUSTIFICATION` và evidence cụ thể.
 - `N/A`: ghi lý do task không tạo capability phổ thông và không đổi dependency/shared framework.
+
+### 3.2 Build vs Automate
+
+| Capability | Existing platform/options | Decision | Platform/source | Authority boundary | Retry/idempotency | Observability/recovery | Reason |
+|---|---|---|---|---|---|---|---|
+| `<workflow hoặc N/A>` | `<candidate đã kiểm tra>` | `N/A | ORCHESTRATE | CUSTOM` | `<platform/source hoặc N/A>` | `<repo-owned authority hoặc N/A>` | `<policy hoặc N/A>` | `<policy hoặc N/A>` | `<evidence/rationale>` |
+
+- `ORCHESTRATE`: phải pin platform/source, credential/authority boundary, retry/idempotency, observability/recovery và failure fallback.
+- `CUSTOM`: phải có marker `CUSTOM_AUTOMATION_JUSTIFICATION` và evidence cụ thể.
+- `N/A`: ghi lý do task không tạo/thay connector, scheduler, notification worker hoặc multi-system/operator workflow.
 
 ## 4. Contract
 

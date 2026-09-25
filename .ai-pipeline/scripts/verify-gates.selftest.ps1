@@ -826,6 +826,24 @@ Add-Case -Name 'V2 TASK CUSTOM thiếu justification bị từ chối' -Gate tas
         $c.Task = $c.Task.Replace('## 4. Contract', "### 3.1 Build vs Adopt`n`nTự xây nhưng không có marker bắt buộc.`n`n## 4. Contract")
         $c.Task = $c.Task.Replace('## 8. Open Questions`n`nKhông có.', '## 8. Open Questions`n`nNone.') }
 
+Add-Case -Name 'V2 TASK ORCHESTRATE có boundary/retry/observability hợp lệ' -Gate task -Expect PASS `
+    -Why 'orchestration-first adoption phải giữ authority trong repo và có vận hành fail-safe trước READY_TO_CODE' `
+    -Mutate { param($c)
+        $sha = (& git -C $root rev-parse HEAD).Trim()
+        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |`n| Build vs adopt | ``N/A`` |`n| Build vs automate | ``ORCHESTRATE`` |")
+        $c.Task = $c.Task.Replace('| Baseline | `deadbeef` |', "| Baseline | ``$sha`` |`n| Contract gate | ``READY_TO_CODE`` |`n| Decision state | ``CLOSED`` |`n| Test environment | ``READY`` |`n| Correction budget | ``1`` |")
+        $c.Task = $c.Task.Replace('## 4. Contract', "### 3.2 Build vs Automate`n`n| Platform/source | Authority boundary | Retry/idempotency | Observability/recovery |`n|---|---|---|---|`n| workflow-platform | Domain stays in repo | eventId + bounded retry | correlation + reconciliation |`n`n## 4. Contract")
+        $c.Task = $c.Task.Replace('## 8. Open Questions`n`nKhông có.', '## 8. Open Questions`n`nNone.') }
+
+Add-Case -Name 'V2 TASK automation CUSTOM thiếu justification bị từ chối' -Gate task -Expect FAIL -Token 'T-11' `
+    -Why 'không cho phép tự viết connector/scheduler framework khi chưa có evidence loại orchestration platform' `
+    -Mutate { param($c)
+        $sha = (& git -C $root rev-parse HEAD).Trim()
+        $c.Task = $c.Task.Replace('| Task slug | `fixture-gate-selftest` |', "| Task slug | ``fixture-gate-selftest`` |`n| Delivery protocol | ``V2_FAST_FREEZE`` |`n| Build vs adopt | ``N/A`` |`n| Build vs automate | ``CUSTOM`` |")
+        $c.Task = $c.Task.Replace('| Baseline | `deadbeef` |', "| Baseline | ``$sha`` |`n| Contract gate | ``READY_TO_CODE`` |`n| Decision state | ``CLOSED`` |`n| Test environment | ``READY`` |`n| Correction budget | ``1`` |")
+        $c.Task = $c.Task.Replace('## 4. Contract', "### 3.2 Build vs Automate`n`nTự xây nhưng không có marker bắt buộc.`n`n## 4. Contract")
+        $c.Task = $c.Task.Replace('## 8. Open Questions`n`nKhông có.', '## 8. Open Questions`n`nNone.') }
+
 Add-Case -Name 'V2 TASK không được READY khi decision còn OPEN' -Gate task -Expect FAIL -Token 'T-09' `
     -Why 'không chuyển blocker thiết kế sang implementation rồi sửa nhiều vòng' `
     -Mutate { param($c)

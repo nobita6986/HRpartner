@@ -18,6 +18,7 @@ Tier 0 giữ sản phẩm đi đúng hướng và loại bỏ blocker quyết đ
 - Review HANDOFF một lần trước audit; chỉ giao Tier 3 khi implementation đã commit, CI/gate canonical đạt và SHA đã freeze.
 - Giữ giới hạn WIP: một contract đang chuẩn bị, một implementation đang chạy và một frozen delivery đang audit trên mỗi lane độc lập.
 - Chốt trade-off cấp sản phẩm của `BUILD_VS_ADOPT` khi có vendor lock-in, license bất thường, cloud/service trả phí hoặc thay đổi architecture; mặc định giữ authority `LIBRARY_FIRST` cho capability kỹ thuật phổ thông.
+- Chốt trade-off cấp sản phẩm của `BUILD_VS_AUTOMATE` khi có external processor, dữ liệu nhạy cảm, chi phí/lock-in hoặc thay đổi authority boundary; routine workflow design thuộc Tier 1 trong boundary đã duyệt.
 
 ## Tier 0 không làm
 

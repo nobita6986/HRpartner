@@ -48,6 +48,7 @@ Tier 3 không audit theo thói quen và không lặp full suite/build đã có e
 - P3/docs debt không chặn; sau audit chỉ có một consolidated correction batch.
 - WIP mặc định: một contract planning, một implementation và một frozen audit trên mỗi stream độc lập.
 - Task V2 phải chốt `BUILD_VS_ADOPT`: library-first cho capability phổ thông; custom build cần justification có evidence.
+- Task V2 cũng phải chốt `BUILD_VS_AUTOMATE`: ưu tiên nền tảng orchestration cho connector/scheduler/workflow lặp lại; custom worker cần justification có evidence.
 
 ## Artifact canonical
 

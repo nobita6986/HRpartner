@@ -56,6 +56,18 @@ Mọi task V2 khai `Build vs adopt: N/A | ADOPT | CUSTOM` trước `READY_TO_COD
 
 Roadmap dự án có thể đặt default candidate, nhưng package/version cuối cùng luôn được pin trong TASK + lockfile sau compatibility check.
 
+## BUILD_VS_AUTOMATE
+
+Mọi task V2 khai `Build vs automate: N/A | ORCHESTRATE | CUSTOM` trước `READY_TO_CODE`.
+
+Task đã đạt `READY_TO_CODE` trước khi gate này được ban hành được đọc tương thích; verifier chỉ cảnh báo khi thiếu field. Revision kế tiếp của task phải bổ sung decision này.
+
+- Dùng `ORCHESTRATE` khi một workflow platform có thể điều phối connector, lịch, notification, retry hoặc human step qua API/event mà không giữ domain authority. TASK ghi platform/source, ownership, trigger/input/output, credential boundary, idempotency/retry, observability/recovery và fallback khi platform unavailable.
+- Dùng `CUSTOM` chỉ với marker `CUSTOM_AUTOMATION_JUSTIFICATION` và evidence rằng transaction locality, latency/throughput, compatibility, security hoặc operational cost khiến orchestration platform không phù hợp.
+- Dùng `N/A` khi task không tạo/thay connector, scheduler, notification worker hoặc multi-system/operator workflow.
+- Automation platform không được là authority cho auth/RLS, business transition, durable audit, persistence ownership, money, PII custody hoặc mutation idempotency.
+- Platform cụ thể và policy dữ liệu thuộc tài liệu dự án/TASK; pipeline portable không pin một vendor.
+
 ## Chọn audit trong TASK
 
 | Audit mode | Khi dùng | Handoff |
