@@ -10,6 +10,7 @@
  *   - projection trả đúng ba identity field Owner duyệt; canary internal field không lọt ra ngoài.
  */
 import { inspect } from 'node:util';
+import { readFileSync } from 'node:fs';
 
 import { NextRequest } from 'next/server';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -80,7 +81,9 @@ function applyRequest(
   const headers = new Headers();
   const contentType = opts.contentType === undefined ? 'application/json' : opts.contentType;
   if (contentType) headers.set('content-type', contentType);
-  if (opts.idempotencyKey !== null) headers.set('idempotency-key', opts.idempotencyKey ?? 'idem-key-001');
+  if (opts.idempotencyKey !== null) {
+    headers.set('idempotency-key', opts.idempotencyKey ?? '11111111-1111-4111-8111-111111111111');
+  }
   return new NextRequest(`http://localhost/api/public/jobs/${SLUG}/applications`, {
     method: 'POST',
     headers,
@@ -307,11 +310,42 @@ describe('RQ-05/RQ-09 — happy path giữ nguyên hợp đồng MP-2', () => {
     expect(mocks.queryRawUnsafe).not.toHaveBeenCalled();
   });
 
+  it('chỉ nhận canonical Idempotency-Key header UUID; body fallback và x-header đều bị từ chối', async () => {
+    const bodyFallback = await APPLY(
+      applyRequest({ ...validPayload, idempotencyKey: '11111111-1111-4111-8111-111111111111' }, { idempotencyKey: null }),
+      applyParams,
+    );
+    expect(bodyFallback.status).toBe(400);
+    expect(await bodyFallback.json()).toMatchObject({ error: 'INVALID_INPUT' });
+
+    const xHeaderReq = applyRequest(validPayload, { idempotencyKey: null });
+    xHeaderReq.headers.set('x-idempotency-key', '11111111-1111-4111-8111-111111111111');
+    const xHeader = await APPLY(xHeaderReq, applyParams);
+    expect(xHeader.status).toBe(400);
+    expect(await xHeader.json()).toMatchObject({ error: 'IDEMPOTENCY_KEY_REQUIRED' });
+
+    const malformed = await APPLY(applyRequest(validPayload, { idempotencyKey: 'not-a-uuid' }), applyParams);
+    expect(malformed.status).toBe(400);
+    expect(await malformed.json()).toMatchObject({ error: 'IDEMPOTENCY_KEY_REQUIRED' });
+    expect(mocks.queryRawUnsafe).not.toHaveBeenCalled();
+  });
+
   it('SQLSTATE của definer vẫn map đúng mã lỗi MP-2 (duplicate ⇒ 409)', async () => {
     mocks.queryRawUnsafe.mockRejectedValue(Object.assign(new Error('pg'), { meta: { code: 'P0012' } }));
     const res = await APPLY(applyRequest(validPayload), applyParams);
     expect(res.status).toBe(409);
     expect(await res.json()).toMatchObject({ error: 'DUPLICATE_APPLICATION' });
+  });
+
+  it('POSSIBLE_MATCH fail closed thành generic 409, không leak candidates/ID/PII', async () => {
+    mocks.queryRawUnsafe.mockRejectedValue(Object.assign(new Error('pg'), { meta: { code: 'P0014' } }));
+    const res = await APPLY(applyRequest(validPayload), applyParams);
+    expect(res.status).toBe(409);
+    const json = await res.json();
+    expect(json).toEqual({ error: 'POSSIBLE_MATCH_NOT_RESOLVED', message: 'POSSIBLE_MATCH_NOT_RESOLVED' });
+    expect(JSON.stringify(json)).not.toContain(PHONE);
+    expect(JSON.stringify(json)).not.toContain('candidate');
+    expect(JSON.stringify(json)).not.toContain('laborProfile');
   });
 });
 describe('RQ-04 — tracking dual bucket + 404 generic', () => {
@@ -583,5 +617,40 @@ describe('PLN-04/DEC-12 — apply/tracking service IM LẶNG trên console', () 
     // KHÔNG phải dòng của round 4. Test chỉ pin lại: marker cố định, không nội suy PII request.
     expect(written).toContain('[public apply] unexpected error');
     for (const canary of CANARIES) expect(written).not.toContain(canary);
+  });
+});
+
+describe('P1-B static boundary — single DB authority, no provenance or PII side channel', () => {
+  const routeSource = readFileSync(
+    'app/api/public/jobs/[slug]/applications/route.ts',
+    'utf8',
+  );
+  const serviceSource = readFileSync('src/domains/applications/application.service.ts', 'utf8');
+  const migrationSource = readFileSync(
+    'prisma/migrations/20260925120000_p1b_public_apply_lifecycle/migration.sql',
+    'utf8',
+  );
+
+  it('route không dùng withIdempotency/hrp_aff và không gọi Node lifecycle writers', () => {
+    expect(routeSource).not.toMatch(/withIdempotency|idempotency_keys|hrp_aff/);
+    expect(routeSource).not.toMatch(/createOrMatchLaborProfile|openPlacementCase/);
+    expect(routeSource).not.toMatch(/console\.(?:log|info|warn|debug)\([^)]*(?:fullName|phone|cccd)/);
+  });
+
+  it('service chỉ gọi canonical apply RPC và public result chỉ có trackingCode/status', () => {
+    expect(serviceSource).toContain('hrp_public_apply_submission');
+    expect(serviceSource).not.toMatch(/createOrMatchLaborProfile|openPlacementCase/);
+    expect(serviceSource).toContain('return { trackingCode: row.tracking_code, status: row.status };');
+  });
+
+  it('migration gọi helper canonical, defensive guard chống copy classifier, không phát explicit SAVEPOINT', () => {
+    expect(migrationSource).toContain('FROM hrp_score_labor_profile(p_full_name, p_phone, p_cccd)');
+    // Defensive guard — migration postflight phải REJECT nếu deployed function chứa
+    // `v_signals_provided` (canonical local variable của AFF-03B classifier); nếu token này
+    // xuất hiện ở migration, nghĩa là guard tồn tại. Integration test AC-12/15 mới pin rằng
+    // pg_get_functiondef(...) KHÔNG chứa nó khi deploy thật.
+    expect(migrationSource).toContain("position('v_signals_provided' IN v_apply_def) > 0");
+    expect(migrationSource).not.toMatch(/^\s*SAVEPOINT\s/im);
+    expect(migrationSource).toContain("RAISE EXCEPTION 'POSSIBLE_MATCH_NOT_RESOLVED' USING ERRCODE = 'P0014'");
   });
 });

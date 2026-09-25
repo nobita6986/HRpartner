@@ -157,6 +157,8 @@ export function mapApplySqlState(code: string | undefined): ApplyHttpError | nul
       return { status: 404, error: 'JOB_NOT_AVAILABLE' };
     case 'P0012':
       return { status: 409, error: 'DUPLICATE_APPLICATION' };
+    case 'P0014':
+      return { status: 409, error: 'POSSIBLE_MATCH_NOT_RESOLVED' };
     default:
       return null;
   }

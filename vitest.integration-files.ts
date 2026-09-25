@@ -109,4 +109,9 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // canonical chain, apply byte-identical A1 migration file, verify catalog +
   // behavior + negative rollback proof. Self-skips when DB env absent (ENV_BLOCKED).
   'tests/db/p1a1-migration-chain-proof.integration.test.ts',
+  // hrp-p1-b-public-apply: canonical slug-bound lifecycle extension. Proves
+  // helper-based classification, LaborProfile/PlacementCase linkage, privacy,
+  // DB idempotency/concurrency and atomic rollback. Fails closed when either
+  // synthetic writer/admin URL is absent.
+  'tests/db/p1b-public-apply-slug-bound.integration.test.ts',
 ];
