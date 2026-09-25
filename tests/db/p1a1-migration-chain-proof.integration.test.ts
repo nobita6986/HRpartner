@@ -550,6 +550,21 @@ describe("P1-A1 migration chain proof (C-05)", () => {
     expect(rows[0]!.ok).toBe(false);
   });
 
+  it("post-apply catalog: migration admin retains no explicit SET-capable RPC membership", async () => {
+    const rows = await ephemeral.$queryRawUnsafe<Array<{ leaked: boolean }>>(
+      `SELECT EXISTS (
+         SELECT 1
+           FROM pg_auth_members membership
+           JOIN pg_roles granted_role ON granted_role.oid = membership.roleid
+           JOIN pg_roles member_role ON member_role.oid = membership.member
+          WHERE granted_role.rolname = 'hrp_public_rpc'
+            AND member_role.rolname = session_user
+            AND membership.set_option
+       ) AS leaked`,
+    );
+    expect(rows[0]!.leaked).toBe(false);
+  });
+
   it("behavior: apply via canonical chain PUBLISHED + OPEN slot A succeeds", async () => {
     // Use writer (app_user_writer) connection via prisma db execute raw.
     const slug = `${runId}-posting-a`;

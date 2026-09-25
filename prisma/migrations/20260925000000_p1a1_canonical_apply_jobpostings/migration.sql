@@ -59,8 +59,9 @@
 -- `proconfig` containing `search_path=public, pg_temp`, the absence of
 -- EXECUTE for `PUBLIC`, the retained EXECUTE for `app_user`/`app_user_writer`,
 -- the exact SELECT dependencies of `hrp_public_rpc`, and the absence of
--- leftover SET ROLE capability / CREATE-on-schema posture. A carry-in
--- `WITH SET FALSE` membership from predecessor migrations may remain.
+-- leftover explicit SET-capable membership / CREATE-on-schema posture. The
+-- migration may run as a PostgreSQL superuser in CI; superuser SET ROLE is
+-- inherent and therefore is not evidence of a leaked temporary membership.
 --
 -- C-03 also grants `SELECT ON job_postings, job_openings TO hrp_public_rpc`
 -- because the new RPC body selects from those two tables but the role's
@@ -347,8 +348,9 @@ REVOKE ALL ON FUNCTION hrp_public_apply_submission(text,text,text,text,text,text
 GRANT EXECUTE ON FUNCTION hrp_public_apply_submission(text,text,text,text,text,text,date,text,text,timestamptz,text,text,integer,text,text,text,text) TO app_user_writer, app_user;
 
 RESET ROLE;
--- Remove the temporary SET-capable grant. Older migrations may retain a WITH SET FALSE
--- membership row, so postflight checks effective SET capability instead of row absence.
+-- Remove the temporary SET-capable grant. Postflight inspects pg_auth_members
+-- directly because a PostgreSQL superuser inherently passes pg_has_role(..., 'SET')
+-- even after the explicit membership has been removed.
 DO $$
 BEGIN
   EXECUTE format('REVOKE hrp_public_rpc FROM %I', session_user);
@@ -371,7 +373,7 @@ DECLARE
   v_has_app_exec boolean;
   v_has_writer_exec boolean;
   v_rpc_select_count integer;
-  v_rpc_set_role boolean;
+  v_rpc_set_membership boolean;
   v_rpc_create_on_schema boolean;
 BEGIN
   -- (a) Function still exists with the SAME signature.
@@ -455,10 +457,20 @@ BEGIN
       USING ERRCODE = 'P0011';
   END IF;
 
-  -- (i) session_user no longer has SET ROLE capability after the temporary grant.
-  SELECT pg_has_role(session_user, 'hrp_public_rpc', 'SET') INTO v_rpc_set_role;
-  IF v_rpc_set_role THEN
-    RAISE EXCEPTION 'post_assert_failed: session_user retains SET ROLE hrp_public_rpc'
+  -- (i) No explicit SET-capable membership remains after the temporary grant.
+  -- Do not use pg_has_role(..., 'SET'): it is always true for a superuser and
+  -- would reject a clean CI posture even when REVOKE removed the membership.
+  SELECT EXISTS (
+    SELECT 1
+      FROM pg_auth_members membership
+      JOIN pg_roles granted_role ON granted_role.oid = membership.roleid
+      JOIN pg_roles member_role ON member_role.oid = membership.member
+     WHERE granted_role.rolname = 'hrp_public_rpc'
+       AND member_role.rolname = session_user
+       AND membership.set_option
+  ) INTO v_rpc_set_membership;
+  IF v_rpc_set_membership THEN
+    RAISE EXCEPTION 'post_assert_failed: session_user retains explicit SET-capable membership in hrp_public_rpc'
       USING ERRCODE = 'P0011';
   END IF;
 
