@@ -38,9 +38,15 @@ export function computeIdempotencyKeyHash(clientKey: string): string {
 
 /** Semantic apply payload, hashed in a FIXED field order so key-order and
  *  transport formatting never change the hash (DEC-03 payload-mismatch guard). */
+/**
+ * Canonical payload for the apply idempotency hash. hrp-p1-a1: đã bỏ `slotId` — slot là
+ * output của RPC, không phải input client. Việc giữ `slotId` trong payload hash sẽ làm hai
+ * request cùng một client nhưng RPC chọn hai slot khác nhau (race thật, mong muốn) bị coi
+ * là payload-mismatch → trả 409 sai. Chỉ những field dưới đây mới tạo sự thật "đơn này là
+ *  cùng một đơn với đơn kia".
+ */
 export interface CanonicalApplyPayload {
   slug: string;
-  slotId: string | null;
   fullName: string;
   normalizedPhone: string;
   cccdNumber: string | null;
@@ -55,7 +61,6 @@ export interface CanonicalApplyPayload {
 export function computeApplyPayloadHash(p: CanonicalApplyPayload): string {
   const canonical = JSON.stringify([
     (p.slug ?? '').trim(),
-    p.slotId ?? null,
     (p.fullName ?? '').trim(),
     p.normalizedPhone ?? '',
     p.cccdNumber ?? null,

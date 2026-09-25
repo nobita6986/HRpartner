@@ -38,10 +38,16 @@ describe('submitPublicApplication', () => {
     // SQL targets the definer function; a fresh tracking code + hashes are passed.
     const [sql, ...params] = db.$queryRawUnsafe.mock.calls[0];
     expect(sql).toContain('hrp_public_apply_submission');
-    expect(params[4]).toBe('0909123456'); // normalized phone (5th param)
-    expect(params[16]).toMatch(/^APP-/); // p_tracking_code (17th param)
-    expect(params[14]).toMatch(/^[0-9a-f]{64}$/); // idempotency key hash
-    expect(params[15]).toMatch(/^[0-9a-f]{64}$/); // payload hash
+    // hrp-p1-a1: p_slot_id is bound as SQL NULL (not a JS param) so positional indices shift
+    // by 1 — `params[0]` is `slug`, `params[1]` is `fullName`, `params[3]` is `normalizedPhone`,
+    // `params[15]` is p_tracking_code.
+    expect(sql).toContain('NULL'); // explicit NULL for p_slot_id
+    expect(params[0]).toBe('acme'); // slug
+    expect(params[1]).toBe('Nguyen Van A'); // fullName
+    expect(params[3]).toBe('0909123456'); // normalized phone (4th JS param)
+    expect(params[15]).toMatch(/^APP-/); // p_tracking_code (16th JS param)
+    expect(params[13]).toMatch(/^[0-9a-f]{64}$/); // idempotency key hash
+    expect(params[14]).toMatch(/^[0-9a-f]{64}$/); // payload hash
   });
 
   it('requires an idempotency key', async () => {

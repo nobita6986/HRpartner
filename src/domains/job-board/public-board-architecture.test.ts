@@ -21,6 +21,10 @@
  * query engine (bài học hotfix-01: 1418 test xanh song song với 500 cứng trên production). Thứ được
  * đo là phép biến đổi thuần trên đúng hình dạng dòng mà `publicSelect` trả về SAU `RQ-01`, tức có
  * `hourlyRateVnd` ở slot và `createdAt` ở đơn.
+ *
+ * HRP-P1-A1 UPDATE: payload trả về từ Prisma là JobPosting → JobOpening → StaffingOrder → Project,
+ * không còn Project trực tiếp. Mỗi JobPosting có đúng một StaffingOrder. Fixture phải phản ánh
+ * đúng cấu trúc này.
  */
 import { describe, expect, it, vi } from 'vitest';
 
@@ -42,7 +46,6 @@ type Slot = {
   shiftEnd: string | null;
   validTo: Date | null;
   workLocation: string | null;
-  /** `RQ-01`: field mới trong `slots.select`. `BigInt` trong Prisma ⇒ bẫy tuần tự hoá JSON. */
   hourlyRateVnd: bigint | null;
 };
 
@@ -66,36 +69,84 @@ type Order = {
   title: string;
   description: string | null;
   deadlineDate: Date | null;
-  /** `RQ-01`: field mới trong `staffingOrders.select`, nguồn duy nhất của `postedAt`. */
   createdAt: Date;
-  slots: Slot[];
+  // C-02 (correction batch 1/1): canonical slot per JobOpening. Một JobPosting chỉ project
+  // đúng MỘT slot qua `jobOpening.staffingOrderSlot`; sibling slot không xuất hiện trong DTO.
+  canonicalSlot: Slot | null;
 };
 
-function order(slots: Slot[], overrides: Partial<Order> = {}): Order {
+function order(slot: Slot | Slot[] | null, overrides: Partial<Order> = {}): Order {
+  const resolved: Slot | null = Array.isArray(slot) ? (slot[0] ?? null) : slot;
   return {
     status: 'OPEN',
     title: 'Tuyển công nhân lắp ráp',
     description: null,
     deadlineDate: null,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
-    slots,
+    canonicalSlot: resolved,
     ...overrides,
   };
 }
 
-type Row = { id: string; code: string; name: string; siteAddress: string | null; clientCompanyName: string | null; staffingOrders: Order[] };
+/**
+ * hrp-p1-a1: Row phải đúng hình dạng `PublicJobPostingSelectPayload` — JobPosting scalars bên ngoài,
+ * `jobOpening.staffingOrder.canonicalSlot` + `jobOpening.staffingOrderSlot` bên trong. Test dùng
+ * `row({ staffingOrders: [...] })` (dạng cũ trước canonical switch) được chuyển đổi sang dạng mới
+ * bằng cách đặt order đầu tiên thành `jobOpening.staffingOrder` và đặt siteAddress/clientCompanyName
+ * từ top-level overrides xuống `project` trong StaffingOrder.
+ *
+ * C-02: `jobOpening.staffingOrderSlot` mang canonical slot. Fixture cũ `order([slot()])` được
+ * adapter chuyển sang `canonicalSlot: slot, staffingOrderSlot: slot` (đồng bộ).
+ */
+type Row = {
+  id: string;
+  slug: string;
+  title: string | null;
+  jobOpening: {
+    staffingOrder: Order & { project: { siteAddress: string | null; clientCompanyName: string | null } };
+    staffingOrderSlot: Slot | null;
+  } | null;
+};
 
-/** Đúng payload của `publicSelect` sau `RQ-01`: scalar của `Project` cộng nhánh `staffingOrders`. */
-function row(overrides: Partial<Row> = {}): Row {
+/**
+ * Chuyển fixture dạng cũ `staffingOrders: Order[]` (project mang nhiều orders) sang dạng canonical
+ * JobPosting: lấy order đầu tiên làm `jobOpening.staffingOrder`. Top-level `siteAddress` và
+ * `clientCompanyName` được đặt vào `staffingOrder.project`. `canonicalSlot` của order được nhân
+ * đôi lên `jobOpening.staffingOrderSlot` để mapper đọc đúng (C-02).
+ */
+function row(
+  overrides: Partial<Row> & {
+    staffingOrders?: Order[];
+    siteAddress?: string | null;
+    clientCompanyName?: string | null;
+  } = {},
+): Row {
+  const projectSite = overrides.siteAddress ?? 'Bắc Ninh';
+  const projectClient = overrides.clientCompanyName ?? 'Công ty TNHH Điện tử Kinh Bắc';
+
+  const resolvedJobOpening = (() => {
+    if (overrides.jobOpening) return overrides.jobOpening;
+    const legacyOrders: Order[] | undefined = overrides.staffingOrders;
+    const firstOrder: Order = legacyOrders?.[0] ?? order([slot()]);
+    return {
+      staffingOrder: {
+        ...firstOrder,
+        project: { siteAddress: projectSite, clientCompanyName: projectClient },
+      },
+      staffingOrderSlot: firstOrder.canonicalSlot,
+    };
+  })();
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { staffingOrders: _unusedOrders, siteAddress: _unusedSite, clientCompanyName: _unusedClient, ...safeOverrides } = overrides as Record<string, unknown>;
+  const topLevel = { ...safeOverrides } as Partial<Row>;
+
   return {
-    id: 'prj-1',
-    code: 'DA-2026-001',
-    name: 'Lắp ráp điện tử Bắc Ninh',
-    siteAddress: 'Bắc Ninh',
-    // Y10.4/UI04g: denormalized company name
-    clientCompanyName: 'Công ty TNHH Điện tử Kinh Bắc',
-    staffingOrders: [order([slot()])],
-    ...overrides,
+    id: 'posting-1',
+    slug: 'lap-rap-dien-tu-bac-ninh-2026',
+    title: 'Lắp ráp điện tử Bắc Ninh',
+    jobOpening: resolvedJobOpening as Row['jobOpening'],
+    ...topLevel,
   };
 }
 
@@ -103,12 +154,12 @@ type PublicTx = Parameters<typeof listPublicJobProjection>[0];
 
 function listTx(rows: Row[]) {
   const findMany = vi.fn().mockResolvedValue(rows);
-  return { tx: { project: { findMany } } as unknown as PublicTx, findMany };
+  return { tx: { jobPosting: { findMany } } as unknown as PublicTx, findMany };
 }
 
 function detailTx(single: Row) {
   const findFirst = vi.fn().mockResolvedValue(single);
-  return { tx: { project: { findFirst } } as unknown as PublicTx, findFirst };
+  return { tx: { jobPosting: { findFirst } } as unknown as PublicTx, findFirst };
 }
 
 /** Gọi list và đòi đúng một job — dùng cho các case chỉ quan tâm hình dạng DTO. */
@@ -129,23 +180,22 @@ describe('go-live-09 / RQ-18 — lương giờ ra JSON đúng kiểu, không cò
     expect(job.salaryMaxVnd).toBeNull();
   });
 
-  it('nhiều slot có lương ⇒ min/max là number thật, slot không lương không kéo min về 0', async () => {
-    const job = await onlyJob([
-      row({
-        staffingOrders: [
-          order([
-            slot({ hourlyRateVnd: 45_000n }),
-            slot({ positionCode: 'QC-01', positionTitle: 'Nhân viên QC', slotsNeeded: 2, slotsFilled: 0, hourlyRateVnd: 30_000n }),
-            slot({ positionCode: 'PACK-01', positionTitle: 'Nhân viên đóng gói', slotsNeeded: 1, slotsFilled: 0, hourlyRateVnd: null }),
-          ]),
-        ],
-      }),
+  it('canonical slot có lương ⇒ min = max = hourlyRateVnd, slot null không kéo về 0', async () => {
+    // hrp-p1-a1 (C-02): canonical slot per JobPosting ⇒ chỉ một slot, không có khái niệm "nhiều slot
+    // ⇒ min/max". `salaryMinVnd === salaryMaxVnd === hourlyRateVnd` của canonical slot khi còn lương.
+    // Slot null lương → null cả hai. Đây là bất biến fail-closed của canonical chain.
+    const withSalary = await onlyJob([
+      row({ staffingOrders: [order(slot({ hourlyRateVnd: 45_000n }))] }),
     ]);
 
-    expect(job.salaryMinVnd).toBe(30_000);
-    expect(job.salaryMaxVnd).toBe(45_000);
-    expect(typeof job.salaryMinVnd).toBe('number');
-    expect(typeof job.salaryMaxVnd).toBe('number');
+    expect(withSalary.salaryMinVnd).toBe(45_000);
+    expect(withSalary.salaryMaxVnd).toBe(45_000);
+    expect(typeof withSalary.salaryMinVnd).toBe('number');
+    expect(typeof withSalary.salaryMaxVnd).toBe('number');
+
+    const withoutSalary = await onlyJob([row({ staffingOrders: [order(slot({ hourlyRateVnd: null }))] })]);
+    expect(withoutSalary.salaryMinVnd).toBeNull();
+    expect(withoutSalary.salaryMaxVnd).toBeNull();
   });
 
   it('JSON.stringify trên DTO có lương không ném — đúng bẫy BigInt của NextResponse.json', async () => {
@@ -217,28 +267,27 @@ describe('go-live-09 / RQ-03, RQ-04, RQ-18 — urgency chạy bằng trạng th�
  *
  * Vì vậy `areaCounts['Bắc Ninh']` phải là `2`. Một bản cài đặt đếm giá trị khác nhau của
  * `job.locations` — thứ duy nhất client thấy được — sẽ ra `1` và trượt đúng bất biến này.
+ *
+ * hrp-p1-a1: mỗi dòng dưới đây là một JobPosting với siteAddress được đặt vào project.siteAddress.
  */
 function boardRows(): Row[] {
   return [
     row({
-      id: 'prj-a',
-      code: 'DA-A',
+      id: 'prj-a', slug: 'lap-rap-a-2026',
       siteAddress: 'Bắc Ninh',
       staffingOrders: [
         order([slot({ workLocation: '   ', slotsNeeded: 5, slotsFilled: 1 })], { createdAt: new Date('2026-01-01T00:00:00.000Z') }),
       ],
     }),
     row({
-      id: 'prj-b',
-      code: 'DA-B',
+      id: 'prj-b', slug: 'lap-rap-b-2026',
       siteAddress: 'Bắc Ninh',
       staffingOrders: [
         order([slot({ workLocation: 'KCN VSIP 1', slotsNeeded: 3, slotsFilled: 0, hourlyRateVnd: 40_000n })], { createdAt: new Date('2026-03-01T00:00:00.000Z') }),
       ],
     }),
     row({
-      id: 'prj-c',
-      code: 'DA-C',
+      id: 'prj-c', slug: 'lap-rap-c-2026',
       siteAddress: 'Hà Nội',
       staffingOrders: [
         order([slot({ workLocation: 'KCN Thăng Long', slotsNeeded: 2, slotsFilled: 0, hourlyRateVnd: 70_000n })], { createdAt: new Date('2026-02-01T00:00:00.000Z') }),
@@ -342,23 +391,30 @@ describe('go-live-09 / RQ-21, DEC-18 — overview là con số TOÀN CỤC, tín
 
 describe('go-live-09 / RQ-24, DEC-21 — hai mapper nói cùng một sự thật', () => {
   it('bốn field mới của toDetailDto bằng đúng bốn field của toDto trên cùng một hàng', async () => {
+    // hrp-p1-a1: `getPublicJobDetail` dùng `jobPosting.findFirst` với slug, nên fixture cần slug.
+    // C-02: canonical slot per JobPosting ⇒ một slot duy nhất. salaryMin = salaryMax = hourlyRateVnd.
     const single = row({
+      slug: 'lap-rap-detail-2026',
       staffingOrders: [
-        order([slot({ hourlyRateVnd: 45_000n }), slot({ positionCode: 'QC-01', slotsNeeded: 2, slotsFilled: 0, hourlyRateVnd: 30_000n })], {
-          status: 'CLOSING_SOON',
-          deadlineDate: inDays(3),
-          createdAt: new Date('2026-02-03T04:05:06.000Z'),
-        }),
+        order(
+          slot({ hourlyRateVnd: 45_000n }),
+          {
+            status: 'CLOSING_SOON',
+            deadlineDate: inDays(3),
+            createdAt: new Date('2026-02-03T04:05:06.000Z'),
+          },
+        ),
       ],
     });
 
     const listed = await onlyJob([single]);
-    const detail = await getPublicJobDetail(detailTx(single).tx, single.code);
+    // hrp-p1-a1: truyền slug của JobPosting, không phải code của Project.
+    const detail = await getPublicJobDetail(detailTx(single).tx, single.slug);
 
     expect(detail).not.toBeNull();
     // Bốn giá trị được ghim CỤ THỂ trước khi so hai mapper. Nếu chỉ so `detail` với `listed` thì
     // `undefined === undefined` làm test xanh trên baseline, tức bất biến `RQ-24` không khoá gì.
-    expect(listed.salaryMinVnd).toBe(30_000);
+    expect(listed.salaryMinVnd).toBe(45_000);
     expect(listed.salaryMaxVnd).toBe(45_000);
     expect(listed.urgency).toBe('URGENT');
     expect(listed.postedAt).toBe('2026-02-03T04:05:06.000Z');
@@ -370,4 +426,3 @@ describe('go-live-09 / RQ-24, DEC-21 — hai mapper nói cùng một sự thật
     expect(() => JSON.stringify(detail)).not.toThrow();
   });
 });
-

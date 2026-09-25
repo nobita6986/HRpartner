@@ -27,7 +27,9 @@ export type DbClient = PrismaClient | Prisma.TransactionClient;
 
 export interface PublicApplyInput {
   slug: string;
-  slotId?: string | null;
+  // hrp-p1-a1: slotId đã bị loại khỏi interface service — nó là output của phép derive server-side
+  // (JobPosting → JobOpening → StaffingOrder → StaffingOrderSlot) do RPC tự chọn trong transaction.
+  // Browser không có đường nào chỉ định slot nữa; route layer reject field ở shape gate.
   fullName: string;
   phone: string;
   cccdNumber?: string | null;
@@ -136,12 +138,11 @@ export async function submitPublicApplication(
 
   const dob = toIsoDateOnly(input.dateOfBirth ?? null);
   const consentIso = toIsoTimestamp(input.consentAt);
-  const slotId = input.slotId ?? null;
 
   const idempotencyKeyHash = computeIdempotencyKeyHash(input.idempotencyKey);
   const payloadHash = computeApplyPayloadHash({
     slug,
-    slotId,
+    // hrp-p1-a1: payload hash KHÔNG còn slotId — slot được derive trong RPC, không phải input.
     fullName,
     normalizedPhone,
     cccdNumber: input.cccdNumber ?? null,
@@ -155,12 +156,15 @@ export async function submitPublicApplication(
   const trackingCode = generateTrackingCode();
 
   try {
+    // hrp-p1-a1: p_slot_id để NULL để RPC tự chọn slot canonical từ JobPosting chain.
+    // Việc RPC re-validate JobPosting.status='PUBLISHED' + JobOpening.status='OPEN' +
+    // StaffingOrder.status IN (OPEN/CLOSING_SOON) xảy ra trong CÙNG transaction với
+    // INSERT, nên route layer không thể trỏ nhầm job.
     const rows = await db.$queryRawUnsafe<Array<{ tracking_code: string; status: string }>>(
       `SELECT tracking_code, status FROM hrp_public_apply_submission(
-         $1, $2, $3, $4, $5, $6, $7::date, $8, $9, $10::timestamptz, $11, $12, $13::integer, $14, $15, $16, $17
+         $1, NULL, $2, $3, $4, $5, $6::date, $7, $8, $9::timestamptz, $10, $11, $12::integer, $13, $14, $15, $16
        )`,
       slug,
-      slotId,
       fullName,
       input.phone ?? null,
       normalizedPhone,

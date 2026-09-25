@@ -95,4 +95,18 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // lock_timeout behavior, and terminal-history preservation. Self-skips when
   // DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
   'tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts',
+  // hrp-p1-a1-canonical-public-job-detail (correction batch 1/1, C-04 / C-05):
+  // DB-touching proof cho canonical public JobPosting + apply RPC. Covers 12 behavior
+  // cases (publish/open chain, draft/archived posting reject, draft/filled/cancelled
+  // opening reject, old PRJ-only slug reject, sibling/wrong/expired/full slot reject,
+  // idempotency replay + payload mismatch P0010 + duplicate P0012, exact-row-count
+  // submission+history, PUBLIC projection visibility/canonical slot).
+  // Self-skips when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
+  'tests/db/p1a1-jobposting-public-apply.integration.test.ts',
+  // hrp-p1-a1-canonical-public-job-detail (correction batch 1/1, C-05): predecessor
+  // upgrade-path proof for the forward-only A1 migration. Dựng ephemeral DB,
+  // apply all migrations, rollback A1 artifacts (function body + grants), seed
+  // canonical chain, apply byte-identical A1 migration file, verify catalog +
+  // behavior + negative rollback proof. Self-skips when DB env absent (ENV_BLOCKED).
+  'tests/db/p1a1-migration-chain-proof.integration.test.ts',
 ];

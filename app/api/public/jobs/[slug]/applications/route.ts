@@ -17,7 +17,14 @@ export const runtime = 'nodejs';
 interface ApplyBody {
   fullName?: string;
   phone?: string;
-  slotId?: string | null;
+  // hrp-p1-a1: canonical slot resolution belongs SERVER-SIDE via JobPosting → JobOpening →
+  // StaffingOrder → StaffingOrderSlot. The apply RPC re-validates the chain atomically and
+  // ignores any browser-supplied slotId/projectId/jobOpeningId (defense in depth). The route
+  // explicitly REJECTS these fields at the shape gate so a tampered client cannot pin a
+  // slot that the canonical picker would have skipped.
+  projectId?: never;
+  jobOpeningId?: never;
+  slotId?: never;
   cccdNumber?: string | null;
   dateOfBirth?: string | null;
   gender?: string | null;
@@ -34,7 +41,6 @@ type RouteParams = { params: Promise<{ slug: string }> };
 const ACCEPTED_FIELDS = new Set([
   'fullName',
   'phone',
-  'slotId',
   'cccdNumber',
   'dateOfBirth',
   'gender',
@@ -47,7 +53,6 @@ const ACCEPTED_FIELDS = new Set([
 const STRING_FIELDS = [
   'fullName',
   'phone',
-  'slotId',
   'cccdNumber',
   'dateOfBirth',
   'gender',
@@ -56,10 +61,24 @@ const STRING_FIELDS = [
   'idempotencyKey',
 ] as const;
 
+/**
+ * hrp-p1-a1: prove-of-fix cho DEC-04. Các field này là OUTPUT của phép giải canonical
+ * JobPosting → JobOpening → StaffingOrder → Slot, do RPC tự derive; một client gửi chúng
+ * là đang cố ghim một trong những bước trung gian, và gateway phải fail closed.
+ */
+const FORBIDDEN_PROVENANCE_FIELDS = new Set(['slotId', 'projectId', 'jobOpeningId']);
+
 /** Trả mã lỗi khi shape sai; KHÔNG echo lại nội dung body (DEC-12). */
 function shapeViolation(body: Record<string, unknown>): string | null {
   for (const key of Object.keys(body)) {
-    if (!ACCEPTED_FIELDS.has(key)) return 'Body chứa field không được hỗ trợ.';
+    if (!ACCEPTED_FIELDS.has(key)) {
+      // hrp-p1-a1: surface provenance-field rejection separately so the caller can debug
+      // without leaking the canonical schema (the field is forbidden, not unknown).
+      if (FORBIDDEN_PROVENANCE_FIELDS.has(key)) {
+        return `Field "${key}" do client cung cấp bị từ chối: chỗ trống/dự án/đơn được suy ra server-side từ JobPosting slug.`;
+      }
+      return 'Body chứa field không được hỗ trợ.';
+    }
   }
   for (const key of STRING_FIELDS) {
     const v = body[key];
@@ -139,10 +158,14 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
   const prisma = getPrisma();
   try {
+    // hrp-p1-a1: server-side slot derivation via the canonical JobPosting chain. The
+    // SECURITY DEFINER RPC re-validates JobPosting.status='PUBLISHED' AND
+    // JobOpening.status='OPEN' AND StaffingOrder.status IN (OPEN/CLOSING_SOON) inside the
+    // same transaction, so the route cannot leak a stale slot.
     const result = await prisma.$transaction((tx) =>
       submitPublicApplication(tx, {
         slug,
-        slotId: body.slotId ?? null,
+        // slotId omitted → RPC picks the deterministic next available slot from the chain.
         fullName: body.fullName ?? '',
         phone: body.phone ?? '',
         cccdNumber: body.cccdNumber ?? null,
