@@ -12,7 +12,7 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | Đọc danh sách ứng viên/case thuộc canonical P1-C/P1-D có PII (phone/CCCD) và RLS boundary; sai shape hoặc rò PII sẽ leak dữ liệu người lao động. LIGHT audit là bắt buộc để verify PII masking, RLS boundary, deterministic NextAction/age derivation và no-leak behavior. |
-| Spec version | `v1.1` |
+| Spec version | `v1.2` |
 | Status | `PROPOSED_ONLY` |
 | Planner | `Tier 1` |
 | Baseline | `8c8e0446b0f6d8750de2e9d42a1a25b4fb431e7b` |
@@ -20,8 +20,8 @@
 | Decision state | `OPEN` |
 | Test environment | `NOT_REQUIRED` |
 | Correction budget | `1` |
-| In-scope roots | `src/domains/talent/recruiter-workbench.read-service.ts`, `src/domains/talent/recruiter-workbench.types.ts`, `app/api/admin/recruiter-workbench/route.ts` |
-| Forbidden paths | `prisma/schema.prisma`, `prisma/migrations/**`, `package.json`, `package-lock.json`, `docs/PLANNER_HANDOVER.md`, `src/domains/applications/conversion.service.ts`, `src/domains/applications/screening.service.ts`, `src/domains/talent/placement-case.service.ts` (trừ chỗ gọi canonical helper), `src/domains/talent/labor-profile.service.ts` (trừ chỗ gọi canonical helper), `docs/discovery/realignment/P1B_PUBLIC_APPLY_RECONCILIATION.md`, `docs/tasks/hrp-p1-b-public-apply/**`, `docs/tasks/hrp-p1-e1-recruiter-workbench-ui/**` |
+| In-scope roots | `src/domains/talent/recruiter-workbench.read-service.ts`, `src/domains/talent/recruiter-workbench.types.ts`, `app/api/admin/recruiter-workbench/route.ts`, `src/domains/talent/recruiter-workbench.read-service.test.ts`, `src/domains/talent/recruiter-workbench.derive.test.ts`, `tests/db/recruiter-workbench.integration.test.ts` (DB; tệp đăng ký vào `vitest.integration-files.ts`), `vitest.integration-files.ts` (registration-only: thêm đúng MỘT entry cho test ở trên; KHÔNG thay đổi shape/config, KHÔNG thêm xóa các entry khác) |
+| Forbidden paths | `prisma/schema.prisma`, `prisma/migrations/**`, `package.json`, `package-lock.json`, `vitest.config.ts`, `vitest.unit.config.ts`, `vitest.integration.config.ts`, `docs/PLANNER_HANDOVER.md`, `src/domains/applications/conversion.service.ts`, `src/domains/applications/screening.service.ts`, `src/domains/talent/placement-case.service.ts` (trừ chỗ gọi canonical helper), `src/domains/talent/labor-profile.service.ts` (trừ chỗ gọi canonical helper), `docs/discovery/realignment/P1B_PUBLIC_APPLY_RECONCILIATION.md`, `docs/tasks/hrp-p1-b-public-apply/**`, `docs/tasks/hrp-p1-e1-recruiter-workbench-ui/**` |
 | Required gates | `.ai-pipeline/scripts/verify-task.ps1`, `git diff --check`, `git status --porcelain`, `npm run typecheck`, `npm run lint` |
 | Current execution round | `0` |
 | Current audit round | `0` |
@@ -92,7 +92,7 @@ Không để `NEED_USER_DECISION` khi chuyển `READY_FOR_EXECUTION`.
 | Permission resolver | Internal `src/shared/auth/permission-resolver.ts` (`resolveEffectivePermissions`) | `ADOPT` | `N/A` (internal) | `src/shared/auth/permission-resolver.ts` | wrapper boundary = helper call trong `recruiter-workbench.read-service.ts` | Pattern đã chuẩn hóa. |
 | PII masking | Internal `src/shared/privacy/mask.ts` (`maskPhone`, `maskCccd`) | `ADOPT` | `N/A` (internal) | `src/shared/privacy/mask.ts` | wrapper boundary = helper call | Mask primitives đã có, đồng nhất với LaborProfile read. |
 | Date/age formatting | Internal helpers trong codebase | `ADOPT` | `N/A` (internal) | dùng `Intl.DateTimeFormat` chuẩn (xem các trang admin hiện hữu) | wrapper boundary = helper nhỏ trong `recruiter-workbench.read-service.ts` hoặc shared util nếu có sẵn | Không cần thêm thư viện date. |
-| API route handler | Next.js App Router chuẩn tại `app/api/admin/**` | `ADOPT` | `MIT` (Next.js) | `next@15` đã cài (xem `package.json`) | wrapper boundary = `route.ts` trong `src/app/api/admin/recruiter-workbench/` | Pattern đã có từ P1-A0/P1-A1. |
+| API route handler | Next.js App Router chuẩn tại `app/api/admin/**` | `ADOPT` | `MIT` (Next.js) | `next@15` đã cài (xem `package.json`) | wrapper boundary = `route.ts` trong `app/api/admin/recruiter-workbench/` | Pattern đã có từ P1-A0/P1-A1. Repo chỉ có MỘT cây `app/` ở root; KHÔNG có `src/app/` (Next.js App Router chỉ nhận một cây). |
 | Zod cho query validation | `zod` đã cài (xem `package.json`) | `ADOPT` | `MIT` | `zod` đã pin trong `package.json` | wrapper boundary = `recruiter-workbench.types.ts` | Validation query string an toàn, tránh injection. |
 | DataGrid / table framework | TanStack Table qua `DataTable` (`src/shared/ui/data-table/data-table.tsx`) | `ADOPT` | `MIT` | TanStack Table v8 (xem `package.json`) | wrapper boundary = `DataTable` component | E0 không render UI; E1 sẽ consume. |
 | Kanban / drag-drop | — | `N/A` | — | — | — | E0 là read-model, không Kanban. |
@@ -130,7 +130,7 @@ Không để `NEED_USER_DECISION` khi chuyển `READY_FOR_EXECUTION`.
 | `RQ-09` | `handler` derive (rule C-03): chọn `LaborProfileHandlingAssignment` thỏa **đồng thời** `status='ACTIVE'`, `startsAt <= now`, `expiresAt IS NULL OR expiresAt > now`. Khi nhiều record, **deterministic order** `orderBy: { startsAt: 'desc', createdAt: 'desc', id: 'desc' }` rồi lấy 1. Kết quả: `assigneeUserId`, `assigneeName`, `source` (theo record). Nếu không có → `assigneeUserId=null`, `source=null`, `assigneeName=null`. **KHÔNG** fallback "current reviewer on case" vì `PlacementCase` không có field đó. `view=MINE` ⇔ có record ACTIVE với `assigneeUserId = ctx.userId`. |
 | `RQ-10` | `lastInteraction.kind` ∈ `{SUBMISSION, STATUS_CHANGE, null}` — **KHÔNG** có `NOTE`. Chọn mới nhất bằng `createdAt DESC, id DESC` trên toàn bộ submissions + history thuộc `PlacementCase`. Ưu tiên `STATUS_CHANGE` mới nhất, fallback `SUBMISSION` mới nhất; nếu không có → `kind=null, at=null`. Không join bảng mới. |
 | `RQ-11` | Query consistency: `count` + `findMany` chạy trong cùng `tx`; sort ổn định (deterministic tie-break `placementCase.id`). |
-| `RQ-12` | `primaryActions.detailHref = /admin/labor-profiles/<laborProfileId>?case=<caseId>` (page detail **đã** xử lý query đó — xem `app/admin/labor-profiles/[id]/page.tsx`). `primaryActions.submissionHref = /admin/applications` khi case có submission; `null` khi không có. **KHÔNG** dùng `?case=<caseId>` trên `/admin/applications` vì page hiện không xử lý query đó; direct-open submission tới case cụ thể sẽ là task riêng (E1 v1 chỉ mở list). |
+| `RQ-12` | `primaryActions.detailHref = /admin/labor-profiles/<laborProfileId>` — KHÔNG kèm query string. Lý do: trang `app/admin/labor-profiles/[id]/page.tsx` hiện chỉ nhận `params: Promise<{ id: string }>`, KHÔNG đọc `searchParams`, KHÔNG xử lý `?case=<id>`. Đưa query vào URL sẽ tạo ảo giác deep-link nhưng trang bỏ qua hoàn toàn. E0 v1 vì vậy chỉ phát URL đến detail page với `laborProfileId`. `caseId` vẫn tồn tại trong DTO `RecruiterWorkbenchRow.caseId` (cho E1 lookup / RowKey) nhưng KHÔNG đưa vào URL ở v1. `primaryActions.submissionHref = /admin/applications` khi case có submission; `null` khi không có. **KHÔNG** dùng `?case=<caseId>` trên `/admin/applications` vì page hiện không xử lý query đó. **Deep-link trực tiếp tới PlacementCase** (cả detail page lẫn submission list) sẽ là task riêng (out-of-round); round này chỉ cam kết URL v1 phản ánh đúng đường dẫn mà repo hiện xử lý. |
 | `RQ-13` | E0 **không** nhận body POST/PATCH/DELETE; route handler chỉ export `GET`. Mọi mutation thuộc task khác (P1-F, conversion, screening). |
 | `RQ-14` | E0 không cache server-side; mỗi request là query thẳng DB. Không thêm dependency cache mới. |
 | `RQ-15` | E0 không đụng `prisma/schema.prisma` và **không** tạo migration mới. |
@@ -139,17 +139,26 @@ Không để `NEED_USER_DECISION` khi chuyển `READY_FOR_EXECUTION`.
 ### 4.2 Scope boundaries
 
 - **In:**
-  - File mới: `src/domains/talent/recruiter-workbench.read-service.ts`, `src/domains/talent/recruiter-workbench.types.ts`, `app/api/admin/recruiter-workbench/route.ts`.
-  - Unit test (colocated, root `src/**/*.test.ts`): `src/domains/talent/recruiter-workbench.read-service.test.ts`, `src/domains/talent/recruiter-workbench.derive.test.ts`.
-  - DB integration test (registered in `vitest.integration-files.ts`): `tests/db/recruiter-workbench.integration.test.ts`.
+  - File mới:
+    - `src/domains/talent/recruiter-workbench.read-service.ts`
+    - `src/domains/talent/recruiter-workbench.types.ts`
+    - `app/api/admin/recruiter-workbench/route.ts`
+  - Colocated unit tests (root `src/**/*.test.ts`):
+    - `src/domains/talent/recruiter-workbench.read-service.test.ts`
+    - `src/domains/talent/recruiter-workbench.derive.test.ts`
+  - DB integration test (gốc `tests/db/**`, file này được đăng ký trong `vitest.integration-files.ts` để lane integration nhận diện):
+    - `tests/db/recruiter-workbench.integration.test.ts`
+  - **Registration-only edit** trên `vitest.integration-files.ts`: thêm đúng MỘT entry mới trong mảng `INTEGRATION_TEST_FILES` cho `tests/db/recruiter-workbench.integration.test.ts`. KHÔNG thay đổi shape, alias, hay các entry đã có; KHÔNG đụng `vitest*.config.ts`. Đây là đăng ký registry — không phải sửa config vitest.
 - **Out:**
-  - `prisma/schema.prisma`, `prisma/migrations/**`, `package.json`, `package-lock.json`, `vitest*.config.ts`, `vitest.integration-files.ts` (chỉ register, không sửa config).
+  - `prisma/schema.prisma`, `prisma/migrations/**`, `package.json`, `package-lock.json`.
+  - **`vitest.config.ts`, `vitest.unit.config.ts`, `vitest.integration.config.ts`: KHÔNG sửa.** Đây là config; round này chỉ đăng ký 1 entry DB test qua `vitest.integration-files.ts`, KHÔNG thay đổi cấu hình vitest nào.
   - `src/domains/applications/conversion.service.ts`, `src/domains/applications/screening.service.ts`, `src/domains/talent/placement-case.service.ts`, `src/domains/talent/labor-profile.service.ts` — **chỉ được đọc như canonical helper; KHÔNG sửa logic**.
   - `src/domains/talent/labor-profile.read-service.ts` — **không sửa** (copy pattern, không refactor).
   - `src/shared/auth/*`, `src/shared/privacy/*`, `src/shared/ui/data-table/*` — chỉ dùng, không sửa.
   - P1-B worktree, P1-A0/A1 frozen files, `docs/PLANNER_HANDOVER.md`, AFF migrations, `docs/tasks/hrp-p1-b-public-apply/**`, `docs/tasks/hrp-p1-e1-recruiter-workbench-ui/**`.
   - UI page — thuộc P1-E1.
   - Notification/n8n workflow — thuộc task riêng.
+  - `vitest.integration-files.ts` ngoài phạm vi registration-only: KHÔNG xóa entry, KHÔNG reorder, KHÔNG sửa các entry khác, KHÔNG thêm helper/export mới trong file đó.
 - **Allowed task artifacts:** `docs/tasks/hrp-p1-e0-recruiter-workbench-read-model/**` (HANDOFF.md, AUDIT.md, evidence/).
 
 ### 4.3 Domain boundaries
@@ -209,7 +218,7 @@ NONE
 | `STEP-02` | `src/domains/talent/recruiter-workbench.read-service.ts` (helper `deriveNextAction`, `deriveHandler`, `deriveLastInteraction`, `computeAge`) | Pure functions, deterministic, có unit test riêng (`src/domains/talent/recruiter-workbench.derive.test.ts`). | `npx vitest run src/domains/talent/recruiter-workbench.derive.test.ts` xanh; `AC-02..AC-04`. | Helper phụ thuộc DB → tách ra; nếu helper đụng Prisma client, dừng. |
 | `STEP-03` | `src/domains/talent/recruiter-workbench.read-service.ts` (hàm `getRecruiterWorkbenchList(prisma, ctx, query)`) | Implement read service với RLS, masking, sort/page trong `withDbContext`. | `npx vitest run src/domains/talent/recruiter-workbench.read-service.test.ts` xanh; `AC-05..AC-08`. | Nếu Prisma query vượt quá join bảng cho phép (xem §4.3) → dừng. |
 | `STEP-04` | `app/api/admin/recruiter-workbench/route.ts` | Export `GET` handler: validate query (zod), gọi service, trả JSON. | `AC-09`, `AC-10`. | Nếu validation thiếu field hoặc thiếu role gate → dừng. |
-| `STEP-05` | DB integration test (RLS + masking + no-leak + role matrix) | Chứng minh ADMIN/HR_MANAGER `view=ALL`; HR_STAFF `view=MINE only`; HR_STAFF `view=ALL` → 403; thiếu `CAN_VIEW_UNASSIGNED_POOL` mà gọi `view=UNASSIGNED` → 403; masking theo `CAN_VIEW_WORKER_SENSITIVE`; search không có sensitive permission chỉ tìm `fullName`. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts` (đã đăng ký trong `vitest.integration-files.ts`) xanh; `AC-11..AC-13`. | Nếu leak PII → dừng, escalate. |
+| `STEP-05` | (a) `tests/db/recruiter-workbench.integration.test.ts` (NEW, RLS + masking + no-leak + role matrix) + (b) `vitest.integration-files.ts` (**registration-only edit**, đăng ký đúng MỘT entry `'tests/db/recruiter-workbench.integration.test.ts'` vào mảng `INTEGRATION_TEST_FILES`) | DB integration test chứng minh ADMIN/HR_MANAGER `view=ALL`; HR_STAFF `view=MINE only`; HR_STAFF `view=ALL` → 403; thiếu `CAN_VIEW_UNASSIGNED_POOL` mà gọi `view=UNASSIGNED` → 403; masking theo `CAN_VIEW_WORKER_SENSITIVE`; search không có sensitive permission chỉ tìm `fullName`; DTO nested shape không có top-level alias; `app_user_writer` + transaction-local GUC. **Registration-only** nghĩa là KHÔNG thay đổi shape/alias/entry khác của `vitest.integration-files.ts`; KHÔNG đụng `vitest*.config.ts`. | `git diff vitest.integration-files.ts` chỉ thêm 1 dòng; `npx vitest run tests/db/recruiter-workbench.integration.test.ts` xanh (sau khi đăng ký); `npx vitest run` không nhận file trong lane unit (exclude). `AC-11..AC-13`. | (a) Nếu leak PII → dừng, escalate. (b) `git diff` thêm >1 dòng hoặc sửa entry khác → revert, dừng. |
 | `STEP-06` | `docs/tasks/hrp-p1-e0-recruiter-workbench-read-model/HANDOFF.md` | Báo cáo triển khai + diff + verify output. | `AC-14`. | Nếu HANDOFF thiếu evidence → trả Planner. |
 
 ## 6. Acceptance
@@ -285,3 +294,4 @@ Tier 1 append sau review/audit. Audit LIGHT resolve từ AUDIT.
 |---|---|---|---|
 | `v1.0` | `2026-09-25` | Initial contract (PROPOSED_ONLY, DRAFT) | Initial planning round cho P1-E0 |
 | `v1.1` | `2026-09-25` | Applied 10-point correction batch C-01..C-10 from T0 v1.1: paths `app/...`; remove Org authority & add role × view matrix (AuthContext single-tenant); active-handler rule `status=ACTIVE AND startsAt <= now AND (expiresAt IS NULL OR expiresAt > now)` with deterministic `orderBy`; freeze 7-value `nextAction` enum (remove `CONTACT_CANDIDATE`); nested DTO `candidate.phone`/`candidate.cccdNumber` only with search no-oracle; `lastInteraction.kind ∈ {SUBMISSION, STATUS_CHANGE, null}`; remove `?case=` from `/admin/applications`; canonical test locations (`src/...test.ts` colocated, `tests/db/...integration.test.ts` in `vitest.integration-files.ts`, E1 colocated `app/**/*.test.tsx`); query validation behavior (400 API / safe defaults server / invalid URL = no DB hit); reconcile P1-B status (`2ed7e08` / `08e16508` / `BLOCKED_CORRECTION` / 53/53 migrations); remove "current reviewer on case" fallback. Status vẫn `PROPOSED_ONLY`; Next gate vẫn `WAIT_P1_B_ACCEPTED`. | T0 v1.1 correction batch (consolidated, 1 correction budget) |
+| `v1.2` | `2026-09-25` | **T0 acceptance cleanup** — residual path/test-registry allowlist and truthful detail-link behavior; no new business decision. (1) §3.1 BUILD_VS_ADOPT: `src/app/api/admin/recruiter-workbench/` → `app/api/admin/recruiter-workbench/` (đồng bộ với cây `app/` root duy nhất; KHÔNG có `src/app/`). (2) In-scope roots: thêm 3 file test (`recruiter-workbench.read-service.test.ts`, `recruiter-workbench.derive.test.ts`, `tests/db/recruiter-workbench.integration.test.ts`); thêm `vitest.integration-files.ts` dưới dạng **registration-only edit** (đúng MỘT entry mới cho DB test, KHÔNG sửa shape/entry khác, KHÔNG đụng `vitest*.config.ts`). Forbidden tách rõ: `vitest*.config.ts` cấm; bỏ câu "chỉ register, không sửa config" ở `vitest.integration-files.ts` (giờ đã in-scope). `STEP-05` tách thành `STEP-05a` (DB test file) và `STEP-05b` (registration-only). (3) `RQ-12`: `detailHref = /admin/labor-profiles/<laborProfileId>` (KHÔNG `?case=<caseId>`); lý do: `app/admin/labor-profiles/[id]/page.tsx` chỉ nhận `params: Promise<{ id: string }>`, KHÔNG đọc `searchParams`. `caseId` vẫn trong DTO, chỉ không đưa vào URL. Deep-link trực tiếp tới PlacementCase là task riêng. `submissionHref = /admin/applications` cũng KHÔNG `?case=`. Status vẫn `PROPOSED_ONLY`; Next gate vẫn `WAIT_P1_B_ACCEPTED`. | T0 acceptance cleanup (no new correction budget) |

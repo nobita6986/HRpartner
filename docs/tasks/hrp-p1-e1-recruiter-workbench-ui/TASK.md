@@ -12,7 +12,7 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `LIGHT` |
 | Audit reason | UI tiêu thụ read service PII/RLS; audit nhẹ để verify no business authority ở client, no-leak trên form/filter state, accessibility/empty/error states và dependency ngược đúng vào E0 frozen. CRITICAL đã được áp cho E0; E1 là consumer nên STANDARD + LIGHT đủ. |
-| Spec version | `v1.1` |
+| Spec version | `v1.2` |
 | Status | `PROPOSED_ONLY` |
 | Planner | `Tier 1` |
 | Baseline | `8c8e0446b0f6d8750de2e9d42a1a25b4fb431e7b` |
@@ -36,7 +36,7 @@
 ### 1.1 User-visible outcome
 
 - Trang `/admin/recruiter-workbench` hiển thị một bảng/list recruiter workbench với filter/sort/page URL-sync, tiêu thụ `GET /api/admin/recruiter-workbench` từ E0.
-- Mỗi row có: candidate (fullName + phone/cccdNumber mask theo `CAN_VIEW_WORKER_SENSITIVE`), case status badge, job title, last interaction timestamp, nextAction label (server-derived 7 enum đóng — KHÔNG có `CONTACT_CANDIDATE`; E1 chỉ render), handler chip, age/overdue chip, nút mở detail (canonical route `/admin/labor-profiles/<id>?case=<caseId>`), nút mở submission list `/admin/applications` nếu case có submission.
+- Mỗi row có: candidate (fullName + phone/cccdNumber mask theo `CAN_VIEW_WORKER_SENSITIVE`), case status badge, job title, last interaction timestamp, nextAction label (server-derived 7 enum đóng — KHÔNG có `CONTACT_CANDIDATE`; E1 chỉ render), handler chip, age/overdue chip, nút mở detail (canonical route `/admin/labor-profiles/<laborProfileId>` — KHÔNG kèm `?case=<caseId>` vì `app/admin/labor-profiles/[id]/page.tsx` hiện chỉ nhận `params`, không đọc `searchParams`), nút mở submission list `/admin/applications` nếu case có submission (cũng KHÔNG kèm query).
 - Trạng thái UI đầy đủ: loading, empty, error, unauthorized (403), validation-error (khi URL query explicit invalid), forbidden field mask.
 - Responsive (mobile/tablet/desktop), keyboard navigation cơ bản, `aria-*` cho badge/chip.
 - **Không** full V8.1 Kanban. **Không** animation/beauty trước usability.
@@ -133,7 +133,7 @@ Không để `NEED_USER_DECISION` khi chuyển `READY_FOR_EXECUTION`.
 | `RQ-10` | `NextActionBadge` render label/icon từ map enum→UI (chính xác 7 giá trị: `OPEN_INTAKE \| REQUEST_DOCS \| SCREEN_SUBMISSION \| SCHEDULE_SCREEN \| AWAITING_RESULT \| REVIEW_PLACEMENT \| NONE`); **không** tính lại từ row fields. Map nằm trong `_components/NextActionBadge.tsx`. |
 | `RQ-11` | `AgeCell` hiển thị `ageHours` (server trả) là "Xh" hoặc "Xd" nếu ≥ 24h; chip đỏ nếu `isOverdue` (server trả, KHÔNG tính lại ở client). |
 | `RQ-12` | `HandlerChip` hiển thị `assigneeName` nếu có, ngược lại "Chưa phân công" với style muted. |
-| `RQ-13` | `primaryActions.detailHref` render thành `<Link>` với `aria-label="Mở chi tiết hồ sơ <fullName>"`, href = `/admin/labor-profiles/<laborProfileId>?case=<caseId>`. `submissionHref` render thành nút phụ, href = `/admin/applications` (KHÔNG kèm `?case=<caseId>`); nếu `null` thì ẩn. |
+| `RQ-13` | `primaryActions.detailHref` render thành `<Link>` với `aria-label="Mở chi tiết hồ sơ <fullName>"`, href = `/admin/labor-profiles/<laborProfileId>` — **KHÔNG** kèm `?case=<caseId>`. Lý do: trang `app/admin/labor-profiles/[id]/page.tsx` hiện chỉ nhận `params: Promise<{ id: string }>`, KHÔNG đọc `searchParams`, KHÔNG xử lý query `?case=<id>`. Đặt query vào URL sẽ tạo ảo giác deep-link nhưng trang hoàn toàn bỏ qua nó — vi phạm nguyên tắc "URL phải phản ánh đường dẫn mà repo xử lý". `caseId` vẫn nằm trong DTO và E1 dùng cho `RowKey` / lookup; chỉ KHÔNG đưa vào URL ở v1. `submissionHref` render thành nút phụ, href = `/admin/applications` (cũng KHÔNG kèm `?case=<caseId>`); nếu `null` thì ẩn. **Deep-link trực tiếp tới PlacementCase** (cả detail page lẫn submission detail) sẽ là task riêng (out-of-round). |
 | `RQ-14` | PII masking hoàn toàn server-side; client chỉ render đúng giá trị server trả (chấp nhận cả raw lẫn mask). Không mask lại ở client. |
 | `RQ-15` | UI không gửi hidden/internal field nào lên server (form state chỉ chứa field user thấy). |
 | `RQ-16` | Keyboard navigation: Tab đi qua hàng → vào action link; Enter mở link. Focus ring rõ. |
@@ -206,7 +206,7 @@ Server enum (chính xác 7 giá trị — C-04; KHÔNG có `CONTACT_CANDIDATE`):
 | `STEP-03` | `app/admin/recruiter-workbench/_components/AgeCell.tsx` (+ colocated `AgeCell.test.tsx`) | Format ageHours; chip đỏ nếu isOverdue. | `npx vitest run app/admin/recruiter-workbench/_components/AgeCell.test.tsx`; `AC-11`. | Nếu helper tính lại `isOverdue` ở client → revert. |
 | `STEP-04` | `app/admin/recruiter-workbench/_components/HandlerChip.tsx` (+ colocated `HandlerChip.test.tsx`) | Render assigneeName hoặc muted "Chưa phân công". | `npx vitest run app/admin/recruiter-workbench/_components/HandlerChip.test.tsx`; `AC-12`. | Nếu helper tự query DB để lấy tên → revert. |
 | `STEP-05` | `app/admin/recruiter-workbench/_components/FilterChips.tsx`, `SortDropdown.tsx`, `PaginationControls.tsx` | Client components wrap `<Link>` thay đổi URL state. | `AC-03..AC-05`. | Nếu component gọi mutation API → dừng. |
-| `STEP-06` | `app/admin/recruiter-workbench/_components/PrimaryActions.tsx` | Render `<Link>` tới canonical route (`/admin/labor-profiles/<id>` và `/admin/applications` nếu có submission). | `AC-13`, `AC-18`. | Nếu component gọi mutation API → dừng. |
+| `STEP-06` | `app/admin/recruiter-workbench/_components/PrimaryActions.tsx` | Render `<Link>` tới canonical route — `detailHref = /admin/labor-profiles/<laborProfileId>` (KHÔNG `?case=<caseId>` vì detail page không xử lý); `submissionHref = /admin/applications` (cũng KHÔNG `?case=`). | `AC-13`, `AC-18`. | Nếu component gọi mutation API → dừng. |
 | `STEP-07` | `app/admin/recruiter-workbench/loading.tsx`, `error.tsx` | Loading skeleton + error banner. | `AC-07`, `AC-08`. | — |
 | `STEP-08` | `docs/tasks/hrp-p1-e1-recruiter-workbench-ui/HANDOFF.md` | Báo cáo triển khai + diff + verify output. | `AC-19`. | Nếu HANDOFF thiếu evidence → trả Planner. |
 
@@ -228,7 +228,7 @@ Server enum (chính xác 7 giá trị — C-04; KHÔNG có `CONTACT_CANDIDATE`):
 | `AC-10` | `NextActionBadge` render label/icon từ map (chính xác 7 enum: `OPEN_INTAKE \| REQUEST_DOCS \| SCREEN_SUBMISSION \| SCHEDULE_SCREEN \| AWAITING_RESULT \| REVIEW_PLACEMENT \| NONE`); **không** tính lại từ row fields. | `npx vitest run app/admin/recruiter-workbench/_components/NextActionBadge.test.tsx`. |
 | `AC-11` | `AgeCell` render đúng format; chip đỏ nếu `isOverdue=true`. | `npx vitest run app/admin/recruiter-workbench/_components/AgeCell.test.tsx`. |
 | `AC-12` | `HandlerChip` render assigneeName hoặc muted "Chưa phân công". | `npx vitest run app/admin/recruiter-workbench/_components/HandlerChip.test.tsx`. |
-| `AC-13` | Primary action `<Link>` có `aria-label`; submit-link ẩn khi `submissionHref=null`; KHÔNG dùng `?case=<caseId>` (page hiện không xử lý query đó). | `npx vitest run app/admin/recruiter-workbench/page.test.tsx`. |
+| `AC-13` | Primary action `<Link>` có `aria-label`; href = `/admin/labor-profiles/<laborProfileId>` (KHÔNG có query string — detail page chỉ nhận `params`, không đọc `searchParams`); submit-link ẩn khi `submissionHref=null`; submit-link href = `/admin/applications` (KHÔNG kèm `?case=`). | `npx vitest run app/admin/recruiter-workbench/page.test.tsx`. |
 | `AC-14` | UI render raw phone khi server trả raw (user có permission); render mask khi server trả mask; client KHÔNG mask lại. | `npx vitest run app/admin/recruiter-workbench/page.test.tsx`. |
 | `AC-15` | UI không gửi hidden/internal field lên server; form state chỉ chứa field user thấy. | document review trên `_components/**`. |
 | `AC-16` | Keyboard navigation: Tab đi qua hàng → action link; Enter mở link. | visual check + document review. |
@@ -293,3 +293,4 @@ Tier 1 append sau review/audit. Audit LIGHT resolve từ AUDIT.
 |---|---|---|---|
 | `v1.0` | `2026-09-25` | Initial contract (PROPOSED_ONLY, DRAFT) | Initial planning round cho P1-E1 |
 | `v1.1` | `2026-09-25` | Applied 10-point correction batch C-01..C-10 from T0 v1.1: paths `app/...`; remove Org authority & add role × view matrix (single-tenant HRP); nested DTO `candidate.phone`/`candidate.cccdNumber`; freeze 7-value `nextAction` enum (remove `CONTACT_CANDIDATE`); remove `?case=` from `/admin/applications`; canonical test locations (colocated `app/admin/recruiter-workbench/_components/*.test.tsx` + `app/admin/recruiter-workbench/page.test.tsx`, không dùng `tests/integration`); query validation behavior (omitted → safe defaults; invalid explicit → render validation/error state KHÔNG query DB); tighten search semantics (chỉ `fullName` ở UI); PII server-only masking. Status vẫn `PROPOSED_ONLY`; Next gate vẫn `WAIT_P1_E0_INTERFACE_FREEZE`. | T0 v1.1 correction batch (consolidated, 1 correction budget) |
+| `v1.2` | `2026-09-25` | **T0 acceptance cleanup** — truthful detail-link behavior; no new business decision. (1) §1.1 outcome: chi tiết detail `<Link>` là `/admin/labor-profiles/<laborProfileId>` (KHÔNG `?case=<caseId>`); submission `<Link>` cũng KHÔNG `?case=`. (2) `RQ-13`: `detailHref = /admin/labor-profiles/<laborProfileId>` — KHÔNG kèm query; lý do: `app/admin/labor-profiles/[id]/page.tsx` hiện chỉ nhận `params: Promise<{ id: string }>`, KHÔNG đọc `searchParams`. Đặt query vào URL sẽ tạo ảo giác deep-link nhưng trang bỏ qua hoàn toàn — vi phạm nguyên tắc "URL phải phản ánh đường dẫn mà repo xử lý". `caseId` vẫn trong DTO và E1 dùng cho `RowKey`/lookup; chỉ KHÔNG đưa vào URL ở v1. (3) `AC-13`: tightened — nêu rõ href = `/admin/labor-profiles/<laborProfileId>` không có query. (4) `STEP-06` intent: ghi rõ KHÔNG `?case=<caseId>` ở cả detail lẫn submission href. Deep-link trực tiếp tới PlacementCase (cả detail lẫn submission detail) là task riêng (out-of-round). Status vẫn `PROPOSED_ONLY`; Next gate vẫn `WAIT_P1_E0_INTERFACE_FREEZE`. | T0 acceptance cleanup (no new correction budget) |
