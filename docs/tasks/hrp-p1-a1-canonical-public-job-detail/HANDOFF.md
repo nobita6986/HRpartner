@@ -12,7 +12,7 @@
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Execution round | `1` |
 | Baseline | `91525013fc2720a3803e808baac39e1c4497daf6` |
-| Implementation SHA | `d539fd6392f12179b18eb085607d9fb5e5451162` |
+| Implementation SHA | `d357bc94dc57de92efe40bf1fc772c8d9bbf0dc5` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
@@ -21,7 +21,7 @@
 
 > **Integration lane note.** Agent sandbox không có synthetic DB nên `npm run test:integration` dừng ở preflight với `ENV_BLOCKED` (xem `scripts/ci/integration-preflight.mjs:9-10`). Đây là BLOCKED state đúng nghĩa, KHÔNG ghi PASS. Structural proof của RQ-01..RQ-09 được cover bởi static + unit lanes (E-04, E-05) + integration test mới đã viết với `describe.skipIf(!HAS_TEST_DB)` (sẵn sàng chạy trên CI/local có `DATABASE_URL_TEST`).
 
-> Implementation SHA `d539fd6392f12179b18eb085607d9fb5e5451162` pin tại HEAD worktree `codex/t1a-p1-a1-canonical-public-job-detail`. Cumulative diff range cho audit = `91525013fc2720a3803e808baac39e1c4497daf6..d539fd6392f12179b18eb085607d9fb5e5451162` (21 files, +1413 / -335). Commit message: "hrp-p1-a1 - Update HANDOFF to pin final Implementation SHA".
+> Implementation SHA `d357bc94dc57de92efe40bf1fc772c8d9bbf0dc5` pin tại HEAD worktree `codex/t1a-p1-a1-canonical-public-job-detail`. Cumulative diff range cho audit = `91525013fc2720a3803e808baac39e1c4497daf6..d357bc94dc57de92efe40bf1fc772c8d9bbf0dc5` (21 files, +1413 / -335). Commit message: "hrp-p1-a1 - Update HANDOFF to pin final Implementation SHA".
 
 ## 1. Outcome and changed surface
 
@@ -113,6 +113,6 @@
 
 ## 5. Final status
 
-Status: `READY_FOR_AUDIT`. Implementation SHA `d539fd6392f12179b18eb085607d9fb5e5451162` pin tại HEAD worktree branch `codex/t1a-p1-a1-canonical-public-job-detail`. Correction batches used = 0. Frozen delivery = YES. Canonical gates PASS trên static + unit + typecheck + lint; integration `NOT_REQUIRED` với thiếu synthetic DB. Lane CRITICAL + LIGHT audit (đã chốt bởi T0 tại OD-P1A-04 + OD-P1A-09). Tự review toàn changed surface xong; không có semantic delta sau Implementation SHA. Push sẽ thực hiện sau khi HANDOFF đạt PASS tại `verify-handoff.ps1`.
+Status: `READY_FOR_AUDIT`. Implementation SHA `d357bc94dc57de92efe40bf1fc772c8d9bbf0dc5` pin tại HEAD worktree branch `codex/t1a-p1-a1-canonical-public-job-detail`. Correction batches used = 0. Frozen delivery = YES. Canonical gates PASS trên static + unit + typecheck + lint; integration `NOT_REQUIRED` với thiếu synthetic DB. Lane CRITICAL + LIGHT audit (đã chốt bởi T0 tại OD-P1A-04 + OD-P1A-09). Tự review toàn changed surface xong; không có semantic delta sau Implementation SHA. Push sẽ thực hiện sau khi HANDOFF đạt PASS tại `verify-handoff.ps1`.
 
 Handoff status: READY_FOR_AUDIT
