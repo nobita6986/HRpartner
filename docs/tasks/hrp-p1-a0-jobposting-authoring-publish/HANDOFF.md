@@ -6,7 +6,7 @@
 |---|---|
 | Task | `hrp-p1-a0-jobposting-authoring-publish` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.3` |
+| Spec version | `v1.5` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
@@ -19,7 +19,7 @@
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
 | Correction batches used | `0` |
-| Status | `READY_FOR_AUDIT` |
+| Status | `ACCEPTED` |
 
 > **Implementation SHA vs docs-freeze HEAD vs A0 source commit.** The **freeze HEAD (Implementation
 > SHA)** is `2c240e5ef3fb77f1945062f7a1705e797d933b1f`. The **A0 source commit** is
@@ -135,6 +135,21 @@
   union for vitest globs/lists, AFF-05A-R2 was authored on main and merged via ordinary
   `git merge --no-ff`); no further semantic delta is pending. HANDOFF.md itself is the only tracked
   evidence change after `036b62d`. T0 scratch files remain untracked.
+- **Tier 3 LIGHT round 1:** `PASS`, 14/14 AC PASS, no P0/P1/P2; six P3 observations are
+  non-blocking and did not open another correction round.
+- **Merge:** PR #45 was squash-merged to `main` as
+  `e3831ef8d463f9a5e1f6953c90212cd684b38239`. Main CI run `36088650372` passed Quality
+  (2m19s) and Integration (1m14s); Vercel production deployment completed successfully.
+- **Production migration:** read-only preflight found the target table, zero target columns/index,
+  zero ledger row, zero `job_postings` rows and zero waiting locks. T0 applied exactly
+  `20260924180000_p1a0_jobposting_content_fields` with `prisma migrate deploy`.
+- **Production verification:** migration ledger finished once with no rollback; 7/7 target columns
+  exist; the six content/display columns are nullable; `content_schema_version` is `NOT NULL
+  DEFAULT 1`; `job_postings_status_idx` is valid/ready; the writer role can project all new columns;
+  `prisma migrate status` reports 51 migrations and schema up to date. HTTP smoke returned 200 for
+  `/`, `/viec-lam`, and `/admin/jobs/job-postings`.
+- **Closeout:** P1-A0 is `ACCEPTED`. P1-A1 remains a separate task and receives no implicit runtime
+  implementation from this closeout.
 
 
 ## 6. Revision history
@@ -143,4 +158,5 @@
 |---|---|---|---|
 | v1.0 | 2026-09-24 | Initial V2 freeze rewrite (T1A correction/freeze round). | T0 directive. |
 | v1.1 | 2026-09-24 | Implementation SHA pinned to follow-up freeze HEAD `2c240e5` (was `eb3ef42`). Baseline/diff range updated to `b34cdddd..2c240e5`. Static-lane block-comment parsing fix in `src/shared/toolchain/vitest-default-lane.static.test.ts` (esbuild terminated `/** */` at `**/` substring inside literal `src/**/*.test.tsx`; converted that one JSDoc block to a single-line `//` block). Semantic contract KHÔNG đổi. | Pre-flight fix to make unit lane pass after the V2 freeze; bump pinned SHAs to current HEAD. |
-> Handoff status: `READY_FOR_AUDIT`
+| v1.5 | 2026-09-25 | Tier 3 PASS, PR #45 merge, main CI/Vercel PASS, production migration and catalog/HTTP smoke verification; status `ACCEPTED`. | Final P1-A0 closeout. |
+> Handoff status: `ACCEPTED`
