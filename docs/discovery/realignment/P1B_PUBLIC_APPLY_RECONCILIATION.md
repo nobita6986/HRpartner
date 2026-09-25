@@ -2,11 +2,11 @@
 
 | Field | Value |
 |---|---|
-| Spec version | v1.0 |
-| Decision state | DRAFT (planning artifact — awaits T0 review) |
+| Spec version | v1.1 |
+| Decision state | CHOSED (T0 chốt toàn bộ OD-P1B-* theo C-06; §9 không còn Open Questions) |
 | Status | PROPOSED_ONLY |
-| Next gate | T0_CONTRACT_REVIEW (semantic) sau đó `WAIT_P1_A1_ACCEPTED` |
-| Contract gate | DRAFT (T1B prepares this under V2 fast-freeze; one consolidated revision budget) |
+| Next gate | `WAIT_P1_A1_ACCEPTED` |
+| Contract gate | `DRAFT` (T1B prepares this under V2 fast-freeze; correction batch C-01..C-08 đã đóng) |
 | Baseline | `91525013fc2720a3803e808baac39e1c4497daf6` (`origin/main` at T0 assignment) |
 | Delivery protocol | V2_FAST_FREEZE |
 | Correction budget | 1 |
@@ -120,18 +120,25 @@ Lúc đó P1-B có bề mặt ổn định để **mở rộng write chain** th�
 | Tracking read projection | ❌ (A1) | ❌ (B) | B verify tương thích schema; không sửa projection. |
 | CRM review threads (`ApplicantNote`, screening) | ❌ | ❌ | P1-C/D. |
 
-## 4. Owner Decisions — đề xuất cho T0 review (OD-P1B-01..06)
+## 4. Owner Decisions — chốt theo T0 directive correction C-06 (OD-P1B-01..06)
+
+**Toàn bộ OD-P1B-* đã được T0 chốt tại directive correction C-06 cùng ngày. Trạng thái CHOSEN phản ánh T0 đã duyệt nội dung. Không còn Open Questions.**
 
 | ID | Decision | Trạng thái | Materialized in |
 |---|---|---|---|
-| `OD-P1B-01` | P1-B tiếp quản canonical slug-bound apply write chain SAU khi P1-A1 ACCEPTED. P1-B KHÔNG thay atomic PUBLISHED/OPEN/slot guard (đó là DEC-10 của A1); P1-B KHÔNG tự thay route shape hay JobPosting detail. | PROPOSED | TASK.md §1/§4 |
-| `OD-P1B-02` | LaborProfile create-or-match: mirror `≥2-signal EXACT_MATCH` (`normalized_phone` + ít nhất một signal nữa, hoặc CCCD), dựa trên `src/domains/talent/labor-profile.service.ts:164-168`. SAME algorithm trong Node-side `scoreAndClassify` và PL/pgSQL mirror ở RPC. NEW_PROFILE → INSERT `labor_profiles`; EXACT_MATCH → reuse; POSSIBLE_MATCH → 409 POSSIBLE_MATCH_NOT_RESOLVED (mirror AFF-03B §error-map). | PROPOSED | TASK.md §3/§4 |
-| `OD-P1B-03` | PlacementCase open/reuse: partial unique index giữ max 1 active case per `LaborProfile`. `openPlacementCase` ở `src/domains/talent/placement-case.service.ts` đã có savepoint pattern cho race; B consume. | PROPOSED | TASK.md §4 |
-| `OD-P1B-04` | Write chain authority: vẫn là SECURITY DEFINER function, owner `hrp_public_rpc` (NOLOGIN BYPASSRLS, DEC-14). B mở rộng function body hoặc tạo function phụ đặt cùng owner để giữ nguyên signature cũ + thêm helper. Table grants tối thiểu: `INSERT/UPDATE labor_profiles`, `INSERT/UPDATE placement_cases`, `INSERT candidate_submissions` (đã có), `INSERT application_status_history` (đã có), `SELECT labor_profiles by phone/cccd` cho mirror `scoreAndClassify`. | PROPOSED | TASK.md §3/§4 |
-| `OD-P1B-05` | Idempotency: route wrap `withIdempotency` (idempotency_keys table) + DB-level replay trong RPC (legacy MP-2 invariant) — defense-in-depth 2 lớp. Replay trả về cùng `candidateSubmissionId` + `laborProfileId` + `placementCaseId` + `verdict`. Duplicate application: `slot_id + normalized_phone + status NOT IN ('REJECTED','WITHDRAWN')` → 409 `DUPLICATE_APPLICATION` (RPC error code P0012). | PROPOSED | TASK.md §4 |
-| `OD-P1B-06` | Synthetic applicant data cho integration test: row CCCD test (`0CCCD-TEST-0001`/…) tránh CCCD thật; chỉ cần round-trip DB-level guard. CCCD thật KHÔNG là coding gate. | PROPOSED | TASK.md §6 |
+| `OD-P1B-01` | P1-B tiếp quản canonical slug-bound apply write chain SAU khi P1-A1 ACCEPTED. P1-B KHÔNG thay atomic PUBLISHED/OPEN/slot guard (đó là DEC-10 của A1); P1-B KHÔNG tự thay route shape hay JobPosting detail. | CHOSEN | TASK.md v1.1 §1/§4 |
+| `OD-P1B-02` | LaborProfile create-or-match: mirror `≥2-signal EXACT_MATCH` (canonical algorithm hiện hành), dựa trên `src/domains/talent/labor-profile.service.ts:164-168`. SAME algorithm trong PL/pgSQL mirror ở RPC. NEW_PROFILE → INSERT `labor_profiles`; EXACT_MATCH → reuse; POSSIBLE_MATCH → fail closed (generic 409 `POSSIBLE_MATCH_NOT_RESOLVED` không candidates/IDs/PII). | CHOSEN | TASK.md v1.1 §3/§4 |
+| `OD-P1B-03` | PlacementCase open/reuse: partial unique index giữ max 1 active case per `LaborProfile`. Savepoint pattern trong PL/pgSQL tránh race. | CHOSEN | TASK.md v1.1 §4 |
+| `OD-P1B-04` | Write chain authority duy nhất = SECURITY DEFINER function `hrp_public_apply_submission` (A1 thay body cho PUBLISHED/OPEN guard; P1-B thay body tiếp để mirror score/case/submit chain). Giữ nguyên exact signature `RETURNS TABLE(tracking_code text, status text)`, owner `hrp_public_rpc`, grants, `SET search_path = public, pg_temp`. Table grants tối thiểu: `INSERT/UPDATE labor_profiles`, `INSERT placement_cases`, `SELECT labor_profiles by phone/cccd`. KHÔNG tạo `_v2(jsonb)` helper. | CHOSEN | TASK.md v1.1 §3/§4 |
+| `OD-P1B-05` | Idempotency authority duy nhất = DB-level trong `hrp_public_apply_submission` (legacy MP-2 invariant). Same key + same payload → stored `tracking_code`/`status`; same key + different payload → `P0010`/409; concurrent same-key → exactly one canonical mutation. Route tiếp tục yêu cầu `Idempotency-Key` header UUID. KHÔNG wrap service với `withIdempotency`/`idempotency_keys` trong slice này. | CHOSEN | TASK.md v1.1 §4 |
+| `OD-P1B-06` | Synthetic applicant data cho integration test: row CCCD test (`0CCCD-TEST-…`) chỉ round-trip DB-level; KHÔNG CCCD thật; chỉ cần trigger scoring algorithm. CCCD thật KHÔNG là coding gate. | CHOSEN | TASK.md v1.1 §6 |
 
-(Owner có thể thu hẹp/mở rộng. Các quyết định này mang tính "đề xuất" và chỉ chốt sau T0 review round này.)
+**Mở rộng chốt thêm:**
+- Slug-bound apply KHÔNG đọc/bind `hrp_aff` cookie trong P1-B. Referral attribution là task additive riêng (OD chốt C-06 / DEC-13).
+- Replace body `hrp_public_apply_submission` hiện hữu. KHÔNG tạo `_v2(jsonb)`.
+- Giữ exact canonical classification algorithm/signals hiện hành; KHÔNG tự thêm hoặc thu hẹp signal.
+- Giữ initial history reason `'PUBLIC_APPLY'`.
+- KHÔNG thêm `cs_source`, `jobPostingId`, attribution column/schema.
 
 ## 5. BUILD_VS_ADOPT — đề xuất
 
@@ -140,78 +147,100 @@ Lúc đó P1-B có bề mặt ổn định để **mở rộng write chain** th�
 | Rate-limit guard (IP + phone) | `RATE_LIMIT_RULES.APPLY_IP/APPLY_PHONE` ở `src/shared/security/rate-limit-port.ts`; provider upstash-redis + memory fallback | `ADOPT` | n/a (HRP internal) | n/a | `src/shared/security/**` | DUAL bucket + RATE_LIMIT_RULES là wrapper contract đã ổn định qua OPS-06A. KHÔNG thay đổi surface, KHÔNG tự viết lại limiter. |
 | Request body capping (16 KiB) + media-type gate | `readCappedJson` ở `src/shared/security/request-body.ts` (default `APPLY_MAX_BODY_BYTES = 16 KiB`) | `ADOPT` | n/a (HRP internal) | n/a | `src/shared/security/request-body.ts` | Wrapper đã có static test guard 413/415; reuse. |
 | Hand-crafted shape gate | `ACCEPTED_FIELDS`/`STRING_FIELDS` pattern ở A1 | `ADOPT` | n/a | n/a | `app/api/public/jobs/[slug]/applications/route.ts` | Đồng nhất với A1 §4.2 chốt (hand-crafted), không Zod. Không cài package. |
-| Idempotency wrap (service) | `withIdempotency` ở `src/shared/integrity/idempotency/**` | `ADOPT` | n/a | n/a | `src/shared/integrity/idempotency/**` | AFF-03B route đã dùng; P1-B áp dụng cho slug-bound apply. |
-| LaborProfile scoring algorithm | `scoreAndClassify` ở `src/domains/talent/labor-profile.service.ts` | `ADOPT` | n/a | n/a | `src/domains/talent/labor-profile.service.ts` | Same algorithm được mirror PL/pgSQL ở AFF-03B; B mirror cùng pattern cho RPC. KHÔNG tự sáng tác rules mới. |
-| PlacementCase open/reuse | `openPlacementCase` ở `src/domains/talent/placement-case.service.ts` + partial unique index | `ADOPT` | n/a | n/a | `src/domains/talent/placement-case.service.ts` | Race-safe savepoint pattern đã có; B consume. |
-| `hrp_public_*` RPC ownership/grants pattern | Migration pattern ở `20260823101500_mp2_apply_tracking` + `20260919100000_aff03b_public_intake_rpc` | `ADOPT` | n/a | n/a | `prisma/migrations/**` (forward-only) | B mở rộng table grants tối thiểu + thêm INSERT vào body; KHÔNG đổi signature/owner/grants/search_path của function hiện hữu (A1 thay body rồi B mới mở rộng tiếp). |
+| Idempotency wrap (service) | `withIdempotency` ở `src/shared/integrity/idempotency/**` | **REFERENCE ONLY** | n/a | n/a | `src/shared/integrity/idempotency/**` | AFF-03B route đã dùng. Nhưng canonical slug-bound apply KHÔNG wrap service với `withIdempotency` trong slice này (C-05 / DEC-07): DB-level idempotency trong `hrp_public_apply_submission` là mutation authority duy nhất. |
+| LaborProfile scoring algorithm | `scoreAndClassify` ở `src/domains/talent/labor-profile.service.ts` | **REFERENCE (read-only)** | n/a (HRP internal) | n/a | `src/domains/talent/labor-profile.service.ts` | Canonical algorithm hiện hành. PL/pgSQL mirror trong RPC `hrp_public_apply_submission` body thay thế runtime role của Node service. Conformance vectors kiểm tra PL/pgSQL khớp canonical algorithm. KHÔNG fork, KHÔNG nằm runtime write path của P1-B. |
+| PlacementCase open/reuse | `openPlacementCase` ở `src/domains/talent/placement-case.service.ts` + partial unique index | **REFERENCE (read-only)** | n/a (HRP internal) | n/a | `src/domains/talent/placement-case.service.ts` | Race-safe savepoint pattern đặt tại PL/pgSQL trong RPC body qua partial unique index. KHÔNG nằm runtime write path của P1-B. |
+| `hrp_public_*` RPC ownership/grants pattern | Migration pattern ở `20260823101500_mp2_apply_tracking` + `20260919100000_aff03b_public_intake_rpc` | `ADOPT` | n/a | n/a | `prisma/migrations/**` (forward-only) | B thay body `hrp_public_apply_submission` (giữ exact signature/owner/grants/search_path); KHÔNG tạo `_v2(jsonb)`. Bổ sung table grants tối thiểu cho chain mới. |
 | Masking (`maskPhone`/`maskCccd`) | `src/shared/privacy/mask` | `ADOPT` | n/a | n/a | `src/shared/privacy/mask` | Tracking read side đã dùng; B verify row mới tương thích. |
 | Tracking code generator | `generateTrackingCode` ở `src/domains/applications/apply-helpers.ts` | `ADOPT` | n/a | n/a | `src/domains/applications/apply-helpers.ts` | Reuse — không xây lại RNG. |
 
-`CUSTOM` không áp dụng (zero framework nào phải xây). KHÔNG cài package mới. KHÔNG fork profile.
+**KHÔNG adopt `withIdempotency`/`idempotency_keys` cho canonical slug-bound apply trong slice này (C-05): DB-level idempotency trong `hrp_public_apply_submission` là mutation authority duy nhất.**
 
-## 6. BUILD_VS_AUTOMATE — đề xuất
+## 6. BUILD_VS_AUTOMATE — chốt theo T0 directive C-08
+
+**Core P1-B: N/A (HRP-owned runtime). n8n task riêng ghi rõ boundary.**
 
 | Capability | Decision | Lý do |
 |---|---|---|
 | Public apply write chain (validation, scoring, INSERT LaborProfile/PlacementCase/CandidateSubmission) | `N/A` (HRP-owned runtime) | Core pipeline nằm trong HRP, không giao n8n. |
-| n8n post-commit notification / AI triage | `N/A` (round này chưa khảo sát) — task riêng sau P1-B | Theo `docs/N8N_AUTOMATION_BOUNDARY.md`: outbox/event hook cho async notification/distribution; B KHÔNG giao boundary này trong round này; mở task riêng đánh giá. |
-| `ReferralAttribution` cho slug-bound apply | `N/A` (round này chưa đề xuất; chờ Owner chốt policy) | Owner chưa chốt; **OD chờ**. |
+| n8n post-commit notification / AI triage | **Task riêng** sau P1-B | Theo `docs/N8N_AUTOMATION_BOUNDARY.md`: outbox/event hook cho async notification/distribution; B KHÔNG giao boundary này trong round này. Task riêng phải đảm bảo: event/outbox only, no direct DB write, no PII export mặc định, apply không phụ thuộc n8n availability. |
+| `ReferralAttribution` cho slug-bound apply | `N/A` (đã chốt KHÔNG mở trong P1-B) | DEC-13: slug-bound apply KHÔNG đọc `hrp_aff`. Referral attribution là task additive riêng sau P1-B. |
 | `Worker`/`SourceClaim` cho public anon apply | `N/A` (HRP-owned, không auto-create) | Legacy MP-2 invariant: anon apply KHÔNG tạo Worker/SourceClaim. |
 
 `ORCHESTRATE` không áp dụng (round này chưa có orchestrator). Theo `docs/N8N_AUTOMATION_BOUNDARY.md`, khi mở task riêng cho outbox/n8n cần: n8n CHỈ nhận versioned event/outbox + gọi narrow API; KHÔNG direct DB write; KHÔNG giữ auth/RLS/state/idempotency authority; apply phải thành công khi n8n unavailable; KHÔNG đưa PII/credential thật vào workflow hoặc evidence. Boundary sẽ được chốt ở task additive sau.
 
-## 7. Thin Slice — đề xuất cho P1-B
+## 7. Thin Slice — chốt theo T0 directive C-02..C-07
 
-Thin slice của P1-B (chỉ chạy sau khi A1 ACCEPTED tại cùng baseline evolution):
+**Thin slice của P1-B (chỉ chạy sau khi A1 ACCEPTED tại cùng baseline evolution). Một write authority duy nhất = SECURITY DEFINER RPC. KHÔNG Node-side parallel guard.**
 
-1. Mở rộng `hrp_public_apply_submission` body hoặc thêm helper function đặt cùng owner `hrp_public_rpc` để:
-   - Mirror score-and-classify + INSERT LaborProfile (NEW_PROFILE), reuse LaborProfile (EXACT_MATCH), REJECT POSSIBLE_MATCH (409) — KHÔNG phá signature/owner/grants/search_path cũ.
-   - INSERT `placement_cases` (status='OPEN') HOẶC reuse active case qua partial unique index.
+1. **Forward-only `CREATE OR REPLACE FUNCTION hrp_public_apply_submission(...)` thay body hiện hữu** (giữ exact signature `RETURNS TABLE(tracking_code text, status text)`, owner `hrp_public_rpc`, grants, `SET search_path = public, pg_temp`; KHÔNG tạo `_v2(jsonb)`) để:
+   - Bảo toàn A1 PUBLISHED/OPEN/slot guard.
+   - Mirror PL/pgSQL `scoreAndClassify` (≥2-signal EXACT_MATCH — canonical algorithm hiện hành). NEW_PROFILE → INSERT `labor_profiles`; EXACT_MATCH → reuse; POSSIBLE_MATCH → fail closed, RAISE custom SQLSTATE (query-local code chưa dùng, e.g. `P0014`) — không tạo partial application/profile/case.
+   - Conformance vectors: PL/pgSQL classification khớp canonical algorithm `scoreAndClassify` (`src/domains/talent/labor-profile.service.ts:164-168`).
+   - INSERT hoặc reuse `PlacementCase` qua partial unique index `placement_case_labor_profile_id_active_unique` (savepoint pattern).
    - INSERT `candidate_submissions` với `labor_profile_id` + `placement_case_id` gắn (mirror AFF-03C pattern).
    - INSERT `application_status_history` (NULL→'NEW', reason='PUBLIC_APPLY') — đã có sẵn.
-   - Khi có `referral_attribution_id` (chỉ khi Owner chốt policy trong OD sau), UPDATE referral_attributions và INSERT `labor_profile_handling_assignments` — **round này KHÔNG mở field này**.
-2. Wrap route `app/api/public/jobs/[slug]/applications` (SERVICE level) với `withIdempotency` để có lớp defense-in-depth ngoài DB-level replay.
-3. Mapping Service result `submitPublicApplication` → trả DTO `{ trackingCode, status, candidateSubmissionId, laborProfileId, placementCaseId, verdict }`, mirror AFF-03B DTO (`verdict ∈ {EXACT_MATCH, NEW_PROFILE, POSSIBLE_MATCH}`; UI route map sang 409 + candidate list cho POSSIBLE_MATCH).
-4. Static test mở rộng: `src/domains/applications/marketplace-apply.routes.static.test.ts` (nếu chưa có) hoặc AST guard bổ sung để đảm bảo route/service sửa đổi:
-   - Không tự thêm cột/fork node trên profile rich-text.
-   - Không mở CV upload.
-   - Không mở `app/jobs/apply`.
-   - DTO include đúng 4 identity field Owner duyệt (candidateSubmissionId, laborProfileId, placementCaseId, verdict).
-   - Không log raw fullName/phone/cccd.
-   - Không bỏ rate-limit guard trước parse.
-5. Integration test `tests/db/p1b-public-apply-slug-bound.integration.test.ts` (Neon container-DB, runtime-role lane KHÔNG set `app.role` GUC, mirror cấu trúc `aff03-public-intake.integration.test.ts`):
-   - Happy path: PUBLISHED JobPosting + OPEN JobOpening + valid synthetic applicant → NEW CandidateSubmission với laborProfileId + placementCaseId gắn, initial history row.
-   - EXACT_MATCH scenario: second applicant với same normalized_phone + ≥1 signal nữa → SAME LaborProfile, NEW PlacementCase if first time, REUSED placementCase for second time on same LaborProfile.
-   - NEW_PROFILE: first-time applicant → NEW LaborProfile + NEW PlacementCase.
-   - POSSIBLE_MATCH: applicant triggers only 1 signal match → 409 POSSIBLE_MATCH_NOT_RESOLVED + candidate list.
-   - DRAFT/ARCHIVED JobPosting → từ chối với error code pipeline (MIGRATE_P1A).
-   - FILLED JobOpening → từ chối.
-   - Slot ngoài linked opening → từ chối (giữ DEC-11 P1-A1).
-   - Idempotency replay: same idempotency key + same payload → stored result; same key + different payload → 409 IDEMPOTENCY_CONFLICT.
-   - Concurrency: 2 transactions same idempotency key → exactly 1 INSERT (winner) + replay route map lại stored row.
-   - Duplicate guard: same slot + same normalized_phone + status NOT (REJECTED,WITHDRAWN) → 409 DUPLICATE_APPLICATION.
-   - Synthetic CCCD row (`0CCCD-TEST-…`) chỉ round-trip DB-level; ZERO PII test.
-6. Ngân sách trace: zero thay đổi `prisma/schema.prisma`, `package.json`, `package-lock.json`, `src/shared/content/job-posting-rich-text/**`, `src/shared/ui/editor/**`, `tests/db/job-posting-authoring.integration.test.ts` (A0 territory). Mọi thay đổi thuộc B §4.2 (in-scope).
+   - Toàn chain rollback atomic nếu bất kỳ bước nào fail.
+   - DB-level idempotency (legacy MP-2 invariant): same key + same payload → stored `tracking_code`/`status`; same key + different payload → `P0010`/409; concurrent same-key → exactly one canonical mutation.
+   - Duplicate guard: `slot_id + normalized_phone + status NOT IN ('REJECTED','WITHDRAWN')` → `P0012`/409.
 
-## 8. Migration/Rollback — đề xuất
+2. **Node chỉ validate/normalize/hash/mint tracking code, gọi RPC, map public response** — KHÔNG gọi `createOrMatchLaborProfile`/`openPlacementCase`/tác vụ write khác. `labor-profile.service.ts` và `placement-case.service.ts` chỉ là algorithm/reference evidence; KHÔNG nằm trong runtime write path của P1-B.
+
+3. **Route `app/api/public/jobs/[slug]/applications`** (modify trên A1 baseline; KHÔNG thay route shape):
+   - Giữ nguyên shape gate, rate-limit IP/phone, body cap 16 KiB, CV non-null 422 (A1 đã chốt).
+   - Yêu cầu một canonical `Idempotency-Key` header UUID (KHÔNG ghi "header hoặc body").
+   - KHÔNG wrap service trong `withIdempotency`/`idempotency_keys`.
+   - Map RPC error codes: `POSSIBLE_MATCH_NOT_RESOLVED` → generic 409 không candidates/IDs/PII; `DUPLICATE_APPLICATION` → 409; `IDEMPOTENCY_CONFLICT` → 409; `JOB_NOT_AVAILABLE` (A1) → 4xx.
+   - Trả 201 chỉ `{ trackingCode, status }`. KHÔNG leak internal IDs.
+
+4. **Mapping `submitPublicApplication`** — chỉ map RPC result `{ tracking_code, status }` ra `{ trackingCode, status }`. KHÔNG gọi write services khác. Update `mapApplySqlState` cho SQLSTATE mới (POSSIBLE_MATCH) — code query-local/custom chưa dùng; KHÔNG đổi P0010/P0011/P0012.
+
+5. **Static test mở rộng**: `src/domains/applications/marketplace-apply.routes.static.test.ts` (AST guard):
+   - KHÔNG tự thêm cột/fork node trên profile rich-text.
+   - KHÔNG mở CV upload.
+   - KHÔNG mở `app/jobs/apply`.
+   - KHÔNG wrap `withIdempotency`/`idempotency_keys` cho slug-bound apply.
+   - KHÔNG gọi `createOrMatchLaborProfile`/`openPlacementCase` từ Node runtime path.
+   - KHÔNG log raw fullName/phone/cccd.
+   - KHÔNG bỏ rate-limit guard trước parse.
+   - Public response chỉ `{ trackingCode, status }`.
+
+6. **Integration test** `tests/db/p1b-public-apply-slug-bound.integration.test.ts` (Neon container-DB, runtime-role lane KHÔNG set `app.role` GUC; ENV_BLOCKED khi `DATABASE_URL_TEST` thiếu, không fake PASS):
+   - Happy path: PUBLISHED + OPEN + bound slot → 201 `{ trackingCode, status }` + DB rows: 1 LaborProfile + 1 PlacementCase + 1 CandidateSubmission (2 FK gắn) + 1 history.
+   - EXACT_MATCH reuse (fixture khác slot/job so với duplicate guard): same LaborProfile, new PlacementCase/CandidateSubmission.
+   - NEW_PROFILE first time.
+   - POSSIBLE_MATCH fail closed: generic 409, zero new LaborProfile/PlacementCase/CandidateSubmission/history rows, response không chứa candidates/IDs/PII.
+   - DRAFT/ARCHIVED → 4xx.
+   - FILLED opening → 4xx.
+   - Slot ngoài linked opening → 4xx.
+   - Idempotency replay: cùng `trackingCode`/`status` + DB row counts.
+   - Idempotency conflict: P0010/409.
+   - Concurrency race: winner INSERT + replay.
+   - Duplicate guard (fixture riêng).
+   - Atomic rollback toàn chain khi bất kỳ bước nào fail.
+   - Conformance vectors PL/pgSQL khớp canonical algorithm.
+   - Synthetic CCCD round-trip.
+
+7. **Ngân sách trace**: zero thay đổi `prisma/schema.prisma`, `package.json`, `package-lock.json`, `src/shared/content/job-posting-rich-text/**`, `src/shared/ui/editor/**`. KHÔNG tạo `public-application.types.ts`. KHÔNG fork labor-profile.service.ts / placement-case.service.ts (reference only). KHÔNG sửa public field roster đã thuộc P1-A1. KHÔNG thêm `CandidateSubmission.jobPostingId`/`cs_source`/attribution column/schema.
+
+## 8. Migration/Rollback — chốt theo T0 directive
 
 - KHÔNG schema change.
-- Forward-only migration: **nếu A1 đã thay body `hrp_public_apply_submission`** (đúng một migration của A1), thì B sẽ **tạo thêm migration thứ hai** forward-only replace body hoặc `CREATE OR REPLACE FUNCTION` thêm helper `(p_payload jsonb)` cùng owner `hrp_public_rpc`. Nếu A1 chỉ thay body một phần (chỉ PUBLISHED/OPEN guard), B sẽ sửa body ấy (giữ signature/owner/grants/search_path) để thêm mirror score/case/submit chain.
-- Tất cả grants/revoke pattern theo migration `20260823101500_mp2_apply_tracking` lines ~226–258: `REVOKE ALL FROM PUBLIC` + `GRANT EXECUTE` cho `app_user_writer`, `app_user`; `OWNER TO hrp_public_rpc`; `SET search_path = public, pg_temp`; `GRANT SELECT,INSERT,UPDATE` tối thiểu trên các bảng mới chèn.
-- Rollback atomic tại migration: nếu `OWNER` transfer hoặc create extension fail → tất cả `RAISE EXCEPTION` đã có ở predecessor rollback atomic.
-- KHÔNG tự publish bất kỳ JobPosting/JobOpening status nào (giữ OD-P1A-05 / OD-P1A-10).
+- Forward-only migration: B tạo **đúng một migration** forward-only `CREATE OR REPLACE FUNCTION hrp_public_apply_submission(...)` thay body hiện hữu (sau A1 ACCEPTED). KHÔNG tạo `_v2(jsonb)` helper. Giữ exact signature `RETURNS TABLE(tracking_code text, status text)`, owner `hrp_public_rpc`, grants, `SET search_path = public, pg_temp`. Thêm table grants tối thiểu: `INSERT/UPDATE labor_profiles`, `INSERT placement_cases`, `SELECT labor_profiles by phone/cccd` (mirror pattern `20260823101500_mp2_apply_tracking` lines ~226–258).
+- Toàn chain rollback atomic nếu bất kỳ bước nào fail (savepoint + RAISE EXCEPTION trong PL/pgSQL).
+- KHÔNG tự publish bất kỳ JobPosting/JobOpening status nào (DEC-13 / OD-P1A-05 / OD-P1A-10).
 
-## 9. Open Questions / chờ Owner
+## 9. Open Questions — đã đóng toàn bộ theo T0 directive C-06
 
-1. **OD cho slug-bound apply + referral attribution**: hiện `app/api/public/intake` đã có signed cookie + DB-level guard. Slug-bound apply chưa có. Round này B KHÔNG mở; chờ Owner chốt: (a) slug-bound apply KHÔNG đọc `hrp_aff` cookie trong thin-slice này, hoặc (b) B mở rộng RPC để nhận `referral_attribution_id` (mirror AFF-03B).
+**Không còn Open Questions.** T0 đã chốt toàn bộ OQ trong directive correction C-06:
 
-2. **Storage layout của helper RPC**: B dùng `hrp_public_apply_submission` (replace body) hay `CREATE FUNCTION hrp_public_apply_submission_v2(jsonb)` cùng owner? Trade-off: replace body giữ single interface (route không đổi), nhưng khó test riêng với plugin/permission của A1; helper jsonb có thể composition kém. Đề xuất: replace body (mirror AFF-03B style — `hrp_public_intake_submission` cũng replace body từ một legacy stub). Chờ Owner quyết.
+- OQ-01 referral attribution → DEC-13: slug-bound apply KHÔNG đọc `hrp_aff`, referral attribution là task additive riêng.
+- OQ-02 storage layout → DEC-09: replace body `hrp_public_apply_submission` hiện hữu, KHÔNG tạo `_v2(jsonb)`.
+- OQ-03 EXACT_MATCH signal set → DEC-03: giữ canonical algorithm hiện hành, KHÔNG tự thêm hoặc thu hẹp signal.
+- OQ-04 initial status reason → DEC-14: giữ `'PUBLIC_APPLY'`.
+- OQ-05 cs_source / attribution → DEC-14: KHÔNG thêm column/schema attribution.
 
-3. **EXACT_MATCH signal set**: `src/domains/talent/labor-profile.service.ts:164-168` mirror `≥2-signal`. Các signal candidates là normalized phone, CCCD (nếu đủ length/format), date_of_birth (nếu exact), full_name (nếu normalized khớp chính xác). Round này B mirror AFF-03B: same ≥2-signal rule, không tự ý định nghĩa signal mới. Nếu Owner muốn thu hẹp chỉ `(phone + cccd)`, B thêm option constant.
-
-4. **Initial status reason**: legacy MP-2 dùng `'PUBLIC_APPLY'`. Sau cutover slug-bound apply sẽ là chuẩn. Đề xuất giữ `'PUBLIC_APPLY'`.
-
-5. **`CandidateSubmission.cs_source` / attribution**: hiện vendor_id=ctv_id=NULL cho anon. Nếu OD slug-bound apply + referral attribution được chốt, schema sẽ cần column; OD §6 mở task additive riêng.
+§8 hoàn toàn đóng.
 
 ## 10. Mapping P1 chain
 
@@ -219,7 +248,7 @@ Thin slice của P1-B (chỉ chạy sau khi A1 ACCEPTED tại cùng baseline evo
 |---|---|---|---|
 | P1-A0 (Admin Posting Authoring + Publish) | `hrp-p1-a0-jobposting-authoring-publish` | T1A | ACCEPTED tại `c4418bb9…` (xem `docs/tasks/hrp-p1-a0-jobposting-authoring-publish/AUDIT.md`); Task §10 Revision Log v1.5. |
 | P1-A1 (Canonical Public Job Detail + Apply Boundary) | `hrp-p1-a1-canonical-public-job-detail` | T1A | PROPOSED_ONLY v1.2 (xem `docs/tasks/hrp-p1-a1-canonical-public-job-detail/TASK.md`). Round này T1A triển khai. |
-| **P1-B (Public Apply — processing & lifecycle transition)** | **`hrp-p1-b-public-apply`** | **T1B** | **Planning (RECONCILIATION + TASK.md này)** |
+| **P1-B (Public Apply — processing & lifecycle transition)** | **`hrp-p1-b-public-apply`** | **T1B** | **Planning v1.1 (RECONCILIATION + TASK.md v1.1)** |
 | P1-C (CRM review threads) | `hrp-p1-c-application-review` | T1B/T1A? | CHƯA định nghĩa task; nằm ngoài round này. |
 | P1-D (Outbound notifications / distribution) | `hrp-p1-d-candidate-notify` | T1B/T1A? | CHƯA định nghĩa task; nằm ngoài round này. |
 
@@ -230,7 +259,7 @@ P1-B chỉ khả thi sau khi A1 đạt `ACCEPTED`. Round này chuẩn bị RECON
 | Layer | File | Trạng thái |
 |---|---|---|
 | Discovery | `docs/discovery/realignment/P1B_PUBLIC_APPLY_RECONCILIATION.md` (file này) | Created ở round `codex/t1b-p1-b-public-apply-contract` |
-| Task contract | `docs/tasks/hrp-p1-b-public-apply/TASK.md` | Created ở round này |
+| Task contract | `docs/tasks/hrp-p1-b-public-apply/TASK.md` | v1.0 created; v1.1 updated theo T0 directive correction C-01..C-08 |
 
 KHÔNG sửa bất kỳ file nào ở runtime, schema, package, hay file do T1A đang sở hữu. Đặc biệt KHÔNG sửa `docs/PLANNER_HANDOVER.md` (forbidden bởi T0 directive).
 
@@ -239,3 +268,4 @@ KHÔNG sửa bất kỳ file nào ở runtime, schema, package, hay file do T1A 
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-09-25` | Initial planning reconciliation dựa trên baseline `91525013fc2720a3803e808baac39e1c4497daf6`; capability matrix; A1↔B boundary; OD đề xuất §4; BUILD_VS_ADOPT §5; BUILD_VS_AUTOMATE §6; thin slice §7; OD chờ §9. | Round T1B documentation-only theo T0 directive 2026-09-25. |
+| `v1.1` | `2026-09-25` | T0 contract correction theo C-01..C-08: §4 OD-P1B-01..06 CHOSEN + mở rộng chốt thêm (slug-bound KHÔNG đọc `hrp_aff`, replace body hiện hữu không tạo `_v2`, canonical algorithm giữ nguyên, reason `PUBLIC_APPLY`, KHÔNG schema/column mới); §5 BUILD_VS_ADOPT: withIdempotency → REFERENCE ONLY, labor/placement → REFERENCE (read-only); §6 BUILD_VS_AUTOMATE: n8n task riêng ghi rõ boundary; §7 thin slice: một write authority duy nhất = SECURITY DEFINER RPC, xóa Node-side parallel guard, public response chỉ `{ trackingCode, status }`, POSSIBLE_MATCH fail closed generic 409, idempotency duy nhất = DB-level, KHÔNG wrap withIdempotency, atomic rollback toàn chain; §8 migration: đã chốt, KHÔNG tạo `_v2(jsonb)`; §9 Open Questions: toàn bộ đã đóng (C-06). §11 cập nhật. | T0 correction directive 2026-09-25 đóng gap C-01..C-08. |
