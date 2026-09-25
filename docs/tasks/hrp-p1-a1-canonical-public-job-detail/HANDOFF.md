@@ -6,7 +6,7 @@
 |---|---|
 | Task | `hrp-p1-a1-canonical-public-job-detail` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.7` |
+| Spec version | `v1.8` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
@@ -21,7 +21,7 @@
 > Canonical gates note. After the CI portability correction, `CI_INTEGRATION_STRICT=1 npm run test:integration` passed 30/30 files with 529 passed, 2 Redis-only skipped, and 0 failed. Production credentials/data were not used.
 | Audit eligibility | `ELIGIBLE` |
 | Correction batches used | `1` |
-| Status | `READY_FOR_AUDIT` |
+| Status | `ACCEPTED` |
 
 > **Cumulative delivery diff range = `91525013fc2720a3803e808baac39e1c4497daf6..487cd14ca293eaef6a4db0ddd75908234888a465` = 27 files, +5725 / -1580.**
 
@@ -128,15 +128,18 @@
 | ID | Type | Description | Resolution |
 |---|---|---|---|
 | `BLK-01` | `CLOSED` | T0 provisioned the dedicated synthetic admin/writer pair through the restricted local credential channel. The canonical strict integration lane ran against that synthetic DB only. | 30/30 files, 529 passed, 2 Redis-only skips, 0 failed; public-apply 18/18 and migration-chain 11/11 PASS. Production credentials/database were not used or mutated. |
-| `CI-01` | `CLOSED — DELTA_RECHECK_REQUIRED` | PR #49 PostgreSQL 16 superuser runner exposed a false-positive postflight assertion: superusers inherently pass `pg_has_role(..., 'SET')`. | Migration now checks only explicit `pg_auth_members.set_option=true` leakage. Targeted 11/11 and full 529-test integration PASS; T3 must review the two-file delta before the prior PASS can govern the new SHA. |
+| `CI-01` | `CLOSED` | PR #49 PostgreSQL 16 superuser runner exposed a false-positive postflight assertion: superusers inherently pass `pg_has_role(..., 'SET')`. | Migration now checks only explicit `pg_auth_members.set_option=true` leakage. Targeted 11/11 and full 529-test integration PASS; Tier 3 DELTA round 2 PASS. |
 | `BLK-02` | `CORRECTION_BATCH_USED_1/1` | T0 verdict `CHANGES_REQUIRED` trên reviewed HEAD `915dd2737082ea5437232fdf6c9a56d61e710d10`. Toàn bộ directive C-01..C-08 đã được apply trong semantic commit tiếp theo (`0ae001d...`); HANDOFF/TASK đồng bộ v1.4. | Correction batch đã đóng; không còn correction budget. Nếu sau này T0 mở round mới, cần mở task additive (KHÔNG amend/force-push round cũ). |
 
 ## 5. Final status
 
-Status: `READY_FOR_AUDIT`. Implementation SHA `487cd14ca293eaef6a4db0ddd75908234888a465` is the narrow CI portability correction on branch `codex/t0-p1a1-db-gate-correction`. Correction batches used = 1. Frozen delivery = YES. Canonical gates = PASS: typecheck, lint, unit, Prisma validate, targeted DB suites and full strict integration. The prior T3 PASS remains immutable evidence for the earlier SHA; a LIGHT delta recheck is required for `279ce27..487cd14`. No production migration or deployment was performed.
+Status: `ACCEPTED`. Implementation SHA `487cd14ca293eaef6a4db0ddd75908234888a465` remains the frozen semantic correction. Tier 3 LIGHT/DELTA round 2 PASS was adopted at `13e298fde23a1c5ed5d241b2dd70aae25f108215`; PR #49 was squash-merged as `a9c5c39514449e5226f8f745d5689538f8d14651`; main CI run `36137131501` passed Quality and Integration.
 
-Cumulative delivery diff range awaiting Tier 3 delta recheck: `91525013fc2720a3803e808baac39e1c4497daf6..487cd14ca293eaef6a4db0ddd75908234888a465` = 27 files, +5725 / -1580.
+## 6. Closeout
 
-Tier 3 may now open a LIGHT audit on the frozen semantic SHA and the following docs-only freeze commit. Merge, production migration and deploy authority remain with T0/Owner.
+- **Production migration:** read-only preflight found exactly one pending migration. T0 applied `20260925000000_p1a1_canonical_apply_jobpostings`; `prisma migrate status` then reported all 52 migrations applied and schema up to date.
+- **Catalog verification:** function owner=`hrp_public_rpc`, `SECURITY DEFINER` and `search_path=public, pg_temp` preserved; `app_user`/`app_user_writer` retain EXECUTE; PUBLIC cannot execute; `hrp_public_rpc` has SELECT on `job_postings` and `job_openings` but no INSERT/UPDATE/DELETE; no explicit SET-capable membership and no CREATE on schema `public` remain.
+- **Deployment/smoke:** Vercel production status for merge commit `a9c5c39514449e5226f8f745d5689538f8d14651` is SUCCESS. `GET /` and `GET /viec-lam` returned 200; an unknown `/viec-lam/[slug]` returned 404. No real application submission or PII was created.
+- **Closeout:** P1-A1 is `ACCEPTED`. P1-B remains a separate gated task; this closeout only removes its `WAIT_P1_A1_ACCEPTED` dependency.
 
-Handoff status: READY_FOR_AUDIT
+Handoff status: ACCEPTED

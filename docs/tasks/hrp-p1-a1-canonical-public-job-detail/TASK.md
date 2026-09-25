@@ -12,8 +12,8 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | `Public detail expose DRAFT/ARCHIVED hoặc raw payload là leak critical; lane CRITICAL + LIGHT audit (không phải NONE) cho vertical slice đầu của marketplace. Risk acceptance: Owner/T0 chấp nhận LIGHT audit cho cutover gate; người chấp nhận rủi ro: T0 (decision OD-P1A-04 + OD-P1A-09 đã chốt 2026-09-24).` |
-| Spec version | `v1.7` |
-| Status | `READY_FOR_AUDIT` |
+| Spec version | `v1.8` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1A` |
 | Baseline | `91525013fc2720a3803e808baac39e1c4497daf6` |
 | Contract gate | `READY_TO_CODE` |
@@ -24,8 +24,8 @@
 | Forbidden paths | `prisma/schema.prisma`; `package.json`; `package-lock.json`; `src/shared/ui/editor/**` (client editor wrapper thuộc A0); `src/domains/staffing/job-posting-authoring.service.ts` (A0 service); mọi migration cũ và mọi migration mới ngoài đúng function-body + GRANT migration của A1; `src/domains/job-board/publish.service.ts` (legacy publish Project.isPublic — KHÔNG modify); `CandidateSubmission.jobPostingId` persistence; tự publish bất kỳ Project.isPublic nào |
 | Required gates | `npx prisma validate`; `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run test:integration` (chạy qua `tests/db/p1a1-jobposting-public-apply.integration.test.ts` đã đăng ký trong `vitest.integration-files.ts`); migration-chain/upgrade-path + clean-chain + predecessor upgrade + negative rollback proof cho function-body replacement + GRANT; `npm list @tiptap/static-renderer@3.31.3 --depth=0` (read-only check; KHÔNG install thêm); `git diff --check <baseline>..HEAD`; strict UTF-8/LF/no-BOM/mojibake scan; `verify-task.ps1`; `verify-handoff.ps1` |
 | Current execution round | `4` |
-| Current audit round | `1` |
-| Next gate | `TIER3_LIGHT_DELTA_RECHECK` |
+| Current audit round | `2` |
+| Next gate | `NONE — MERGED_AND_PRODUCTION_VERIFIED` |
 
 > Lane CRITICAL mặc định LIGHT. Risk acceptance: T0 chấp nhận LIGHT audit cho cutover gate; người chấp nhận rủi ro ghi rõ trong `Audit reason`.
 
@@ -219,6 +219,7 @@ n8n outage phải không ảnh hưởng public detail 200 OK và apply 200 OK. D
 | 3 | T0 semantic review closed; A1 vẫn `PROPOSED_ONLY` và chờ A0 ACCEPTED. Baseline pin exact `origin/main@b34cdddd`; renderer khóa React output subpath `/json/react`, bỏ nhánh DOMPurify chưa quyết. | Không code A1 trước khi package/shared profile/schema A0 freeze; tránh hidden dependency và HTML-string injection. |
 | 4 | T0 provisioned dedicated synthetic DB, repaired migration ownership/catalog assertions, added true predecessor-chain rollback proof, and aligned four carry-in integration fixtures with canonical `JobPosting`. Semantic freeze: `cb31044ac3ef1d56f23750ea7caad790f533d2c9`. Status → `READY_FOR_AUDIT`. | Canonical strict integration lane completed with 30/30 files, 528 passed, 2 Redis-only skipped, 0 failed; production was not accessed. |
 | 5 | CI correction after PR #49: replace the impossible superuser-sensitive `pg_has_role(session_user, 'hrp_public_rpc', 'SET')` postflight check with a direct `pg_auth_members.set_option` leak check; add an executable catalog regression assertion. New semantic SHA: `487cd14ca293eaef6a4db0ddd75908234888a465`. | GitHub container migration runs as PostgreSQL superuser, whose inherent SET ROLE capability remains true after membership revocation. The security invariant is absence of an explicit SET-capable membership, not absence of superuser authority. Full strict integration rerun: 30 files, 529 passed, 2 Redis-only skipped, 0 failed. |
+| 6 | Tier 3 LIGHT/DELTA round 2 PASS on frozen HEAD `9a1d40a31b700ecc7df0a3c405084ead344fb75e`; T0 adopted the audit artifact in `13e298fde23a1c5ed5d241b2dd70aae25f108215`, merged PR #49 as `a9c5c39514449e5226f8f745d5689538f8d14651`, verified main CI run `36137131501`, applied migration `20260925000000_p1a1_canonical_apply_jobpostings`, and completed catalog/HTTP smoke. Status → `ACCEPTED`. | All release gates are complete. Production catalog preserves owner, `SECURITY DEFINER`, `search_path`, EXECUTE boundaries, SELECT-only dependencies, no explicit SET-capable membership, and no schema CREATE privilege. `/` and `/viec-lam` return 200; an unknown detail slug returns 404. |
 
 ## 10. Revision Log
 
@@ -232,3 +233,4 @@ n8n outage phải không ảnh hưởng public detail 200 OK và apply 200 OK. D
 | `v1.5` | `2026-09-25` | Sau khi semantic correction commit `a55c97c916c1f3d147dbc529cf6054955150a574` được đẩy: pin exact semantic Implementation SHA = `a55c97c916c1f3d147dbc529cf6054955150a574` (correction batch 1/1, round 2) trong HANDOFF. Cumulative diff range mới = `91525013f..a55c97c9` = 22 files, +3498/-501 (verified `git diff --stat`). Cập nhật HANDOFF `Canonical gates` → `NOT_REQUIRED` (block vì thiếu synthetic DB; static/unit/lint/typecheck/tiptap-pin PASS). Status giữ `BLOCKED`; HANDOFF status ghi `BLOCKED` (env-blocked do thiếu `DATABASE_URL_TEST`+`DATABASE_URL_ADMIN_TEST`). | Semantic commit đã có; HANDOFF/TASK cập nhật SHA pin và cumulative stats. |
 | `v1.6` | `2026-09-25` | T0 DB-gate closure: provisioned synthetic admin/writer pair; corrected migration owner-role choreography and exact catalog assertions; added isolated predecessor-chain/rollback proof; made missing DB fail closed; aligned MP2/OPS06A/public-card/public-RLS fixtures to canonical `JobPosting`; all canonical gates PASS. Implementation SHA `cb31044ac3ef1d56f23750ea7caad790f533d2c9`; status `READY_FOR_AUDIT`. | The prior blocker was environmental, but running the real lane exposed carry-in fixtures that still modeled Project-only authority. Those fixtures were corrected in-scope and the full lane was rerun to zero failures. |
 | `v1.7` | `2026-09-25` | PR #49 CI correction: migration postflight now verifies no explicit `pg_auth_members.set_option=true` membership remains for `session_user → hrp_public_rpc`; it no longer treats a superuser's inherent `pg_has_role(..., 'SET')` result as leaked membership. Added the corresponding migration-chain catalog test. Implementation SHA `487cd14ca293eaef6a4db0ddd75908234888a465`; next gate `TIER3_LIGHT_DELTA_RECHECK`. | CI PostgreSQL 16 container exposed a portability error hidden by the non-superuser Neon synthetic admin. The corrected invariant is portable across both postures and retains fail-closed membership cleanup. |
+| `v1.8` | `2026-09-25` | Tier 3 DELTA PASS adopted; PR #49 squash-merged; main CI, production migration deploy, catalog verification, Vercel production deployment and HTTP smoke PASS. Status `ACCEPTED`; next gate `NONE — MERGED_AND_PRODUCTION_VERIFIED`. | Final P1-A1 closeout after production verification. |

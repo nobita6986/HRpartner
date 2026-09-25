@@ -6,7 +6,7 @@
 
 <!-- ROADMAP_CURSOR_START -->
 ```yaml
-updated_at: 2026-09-25T10:11:22+07:00
+updated_at: 2026-09-25T19:55:34+07:00
 roadmap_source: docs/HRP_EXECUTION_REALIGNMENT_PLAN.md; docs/V6/; docs/V7/
 delivery_protocol: V2_FAST_FREEZE
 correction_budget: 1
@@ -19,11 +19,11 @@ PHASE_MAP: |
   P2-P5: unlock only through realignment dependency/evidence gates
 current_lane: P1 — Job marketplace thin recruitment slice
 parallel_lane: Universal AFF expansion — AFF-05A-R2 ACCEPTED; next AFF/dispute slice not opened
-current_task: hrp-p1-a1-canonical-public-job-detail — CONTRACT_REFRESH_REQUIRED
+current_task: hrp-p1-b-public-apply — CONTRACT_V1_1_AWAITING_T0_APPROVAL
 worktree_branch: NONE
-current_gate: T0_REFRESH_P1A1_BASELINE_AND_UNLOCK_TIER1_IMPLEMENTATION
-previous_accepted: P1-A0 JobPosting authoring/publish; AFF-05A-R2 bounded manager assignment; AFF-04; ER-003 metadata schema #37; CONTRACT-03A bilateral executable acceptance
-closeout_evidence: docs/tasks/hrp-p1-a0-jobposting-authoring-publish/HANDOFF.md
+current_gate: T0_APPROVE_P1B_CONTRACT_THEN_TIER1B_IMPLEMENTATION
+previous_accepted: P1-A1 canonical public job detail/apply authority; P1-A0 JobPosting authoring/publish; AFF-05A-R2 bounded manager assignment; AFF-04; ER-003 metadata schema #37; CONTRACT-03A bilateral executable acceptance
+closeout_evidence: docs/tasks/hrp-p1-a1-canonical-public-job-detail/HANDOFF.md
 blocking_owner: "None"
 owner_defer: "Không dùng Evidence/CCCD readiness làm gate cho AFF coding. P0-A chỉ chặn production enablement của real evidence ingestion; AFF development dùng synthetic data và gate riêng."
 deferred_lane:
@@ -34,7 +34,7 @@ deferred_lane:
     coding_dependency_on_evidence_gateway: NONE
     production_enablement: P3-E_AFTER_AFF_CAPABILITY_GATE
 next_steps:
-  - 1. Refresh P1-A1 contract baseline from current origin/main, consume the accepted P1-A0 schema/service/rich-content profile, then implement canonical public listing/detail/apply boundary under its own freeze and gates.
+  - 1. T0 reviews P1-B contract v1.1 after P1-A1 ACCEPTED, then either approves it for Tier 1B implementation or issues one consolidated correction verdict; do not reopen P1-A1.
 ```
 <!-- ROADMAP_CURSOR_END -->
 
